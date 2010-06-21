@@ -1,6 +1,15 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 2.5.0
+  e - Changed qsub to allow for a -l nodes=x+procs=y syntax.
+  b - Made a fix to qmgr.c in is_attr. When checking node names against 
+      attribute keywords is_attr used strncmp and limited the length of the 
+      compare to the length of the keyword. So node names like stateless
+      were tagged as an error. I replaced strncmp with strcmp.
+  e - Enabled TORQUE to be able to parse the -l procs=x node spec. Previously
+      TORQUE simply recored the value of x for procs in Resources_List. It
+      now takes that value and allocates x processors packed on any available 
+      node. (Ken Nielson Adaptive Computing. June 17, 2010)
   f - added full support (server-scheduler-mom) for Cygwin (UIIP NAS of Belarus,
       uiip.bas-net.by)
   f - architecture and build system changes to support Cygwin (Igor Ilyenko, 

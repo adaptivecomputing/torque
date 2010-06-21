@@ -483,6 +483,14 @@ void req_quejob(
 
   while (psatl != NULL)
     {
+
+    if(psatl->al_atopl.resource)
+      {
+      if(strcmp(psatl->al_atopl.resource, "nodes") == 0)
+        {
+        pj->ji_have_nodes_request = 1;
+        }
+      }
     /* identify the attribute by name */
 
     attr_index = find_attr(job_attr_def, psatl->al_name, JOB_ATR_LAST);

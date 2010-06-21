@@ -1586,8 +1586,9 @@ static int assign_hosts(
   char  *hosttoalloc = NULL;
   pbs_net_t  momaddr = 0;
   resource *pres;
-  int   rc = 0;
+  int   rc = 0, procs=0;
   extern char  *mom_host;
+
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -1613,6 +1614,7 @@ static int assign_hosts(
     }
   else
     {
+    /* Build our host list from what is in the job attrs */
     pres = find_resc_entry(
              &pjob->ji_wattr[(int)JOB_ATR_resource],
              find_resc_def(svr_resc_def, "neednodes", svr_resc_size));
@@ -1622,6 +1624,22 @@ static int assign_hosts(
       /* assign what was in "neednodes" */
 
       hosttoalloc = pres->rs_value.at_val.at_str;
+
+      if ((hosttoalloc == NULL) || (hosttoalloc[0] == '\0'))
+        {
+        return(PBSE_UNKNODEATR);
+        }
+      }
+
+    pres = find_resc_entry(
+             &pjob->ji_wattr[(int)JOB_ATR_resource],
+             find_resc_def(svr_resc_def, "procs", svr_resc_size));
+
+    if (pres != NULL)
+      {
+      /* assign what was in "neednodes" */
+
+      procs = pres->rs_value.at_val.at_long;
 
       if ((hosttoalloc == NULL) || (hosttoalloc[0] == '\0'))
         {
@@ -1680,7 +1698,7 @@ static int assign_hosts(
     {
     if ((rc = is_ts_node(hosttoalloc)) != 0)
       {
-      rc = set_nodes(pjob, hosttoalloc, &list, FailHost, EMsg);
+      rc = set_nodes(pjob, hosttoalloc, procs, &list, FailHost, EMsg);
 
       set_exec_host = 1; /* maybe new VPs, must set */
 

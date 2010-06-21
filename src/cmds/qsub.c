@@ -144,6 +144,9 @@ static char *DefaultXauthPath = XAUTH_PATH;
 
 #define MAX_QSUB_PREFIX_LEN 32
 
+#define MAX_PROCS_DIGITS  15 /* A 15 digit number is a lot of processors. 100 trillion 
+                                     will this be enough for the future? */
+
 static char PBS_DPREFIX_DEFAULT[] = "#PBS";
 
 char PBS_Filter[256];
@@ -2806,6 +2809,7 @@ int process_opts(
   char tmp_name2[] = "/tmp/qsub.XXXXXX";
 
   char cline[4096];
+  char tmpLine[1024];
 
   char  flag;  /* submitfilter flag character */
   char *vptr;  /* submitfilter flag value */
@@ -3260,6 +3264,13 @@ int process_opts(
 
         l_opt = passet;
 
+        /* a ,procs= in the node spec is illegal. Validate the node spec */
+        if(strstr(optarg, ",procs="))
+          {
+          printf("illegal node spec: %s\n", optarg);
+          return(-1);
+          }
+
         /* defer evaluation of resources in interactive submission. */
 
         /* ORNL WRAPPER */
@@ -3279,13 +3290,92 @@ int process_opts(
         else
           {
           /* Normal evaluation of batch job resources. */
+          if(attrib)
+            {
+            if(attrib->resource)
+              {
+              /* right here we are looking for a +procs=x in the node spec */
+              char *proc_ptr = NULL;
+              char *patch_ptr;
+              /* struct attrl *proc_attrib = NULL; */
+              char  proc_val[MAX_PROCS_DIGITS + 1]; 
+              int i = 0;
+
+              proc_val[0] = 0; /* Initialize */
+
+              proc_ptr = strstr(attrib->value, "procs=");
+              if(proc_ptr)
+                {
+                /* we have the procs keyword in the node_spec. We need to take it out and
+                   install it to the Resource_List */
+                patch_ptr = proc_ptr;
+                /* Get the procs value */
+                patch_ptr = strchr(patch_ptr, '=');
+                if(patch_ptr == NULL)
+                  {
+                  return(-1);
+                  }
+                else
+                  {
+                  patch_ptr++;
+                  while(*patch_ptr != '+' && !isspace((int) *patch_ptr) && *patch_ptr != '\0'
+                        && i < MAX_PROCS_DIGITS)
+                    {
+                    proc_val[i++] = *patch_ptr++;
+                    }
+                  proc_val[i] = 0;
+
+                  /* we have a procs=x in our node spec. Add the resources */
+                  sprintf(tmpLine, "procs=%s", proc_val);
+                  if (set_resources(&attrib, tmpLine, (pass == 0)) != 0)
+                    {                                                                  
+                    fprintf(stderr, "qsub: illegal -l value\n");
+
+                    errflg++;
+                    }
+                  }
+
+                while(*patch_ptr != '+' && !isspace((int) *patch_ptr) && *patch_ptr != '\0')
+                  {
+                  patch_ptr++;
+                  }
+
+                /* remove the procs=x from the node spec.
+                   If patch_ptr has a '+' then the procs=x
+                   is followed by more specificaitons. Remove
+                   the procs=x from the spec and splice the rest
+                   of the specification back together
+                 */
+                if(*patch_ptr == '+')
+                  {
+                  
+                  patch_ptr++;
+                  *proc_ptr = 0;
+                  strcat(attrib->value, patch_ptr);
+                  }
+                else
+                  {
+                  /* Remove the procs=x from the node spec.
+                     If we are here procs=x is at the end
+                     of the node specification
+                   */
+                  if(*(proc_ptr - 1)  == '+')
+                    {
+                    proc_ptr--;
+                    }
+                  *proc_ptr = 0;
+                  }
+                } /* END if(proc_ptr)*/
+              } /* END if(attrib->resource ) */
+            } /* END if(attrib) */
 
           if (set_resources(&attrib, optarg, (pass == 0)) != 0)
-            {
+            {                                                                  
             fprintf(stderr, "qsub: illegal -l value\n");
 
             errflg++;
             }
+
 
           if (strstr(optarg, "walltime") != NULL)
             {
@@ -3301,7 +3391,6 @@ int process_opts(
                 {
                 if ((ptr = strchr(attr->value, '-')))
                   {
-                  char tmpLine[1024];
 
                   *ptr = '\0';
 

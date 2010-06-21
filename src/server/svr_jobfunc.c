@@ -157,10 +157,13 @@ extern int    DEBUGMODE;
 
 int           SvrNodeCt = 0;  /* cfg nodes or num nodes specified via resources_available */
 
+extern int  svr_clnodes;
 
 /* External Functions */
 
 extern int node_avail_complex(char *, int *, int *, int *, int *);
+extern int procs_available(int proc_ct);
+extern int procs_requested(char *spec);
 
 
 /* Private Functions */
@@ -922,6 +925,7 @@ static void chk_svr_resc_limit(
   {
   int       dummy;
   int       rc;
+  int       req_procs = 0; /* must start at 0 */
   resource *jbrc;
 
   resource *jbrc_nodes = NULL;
@@ -942,12 +946,14 @@ static void chk_svr_resc_limit(
   long      mpp_width = 0;
   long      mpp_nodect = 0;
   resource  *mppnodect_resource = NULL;
+  long      proc_ct = 0;
 
   static resource_def *noderesc     = NULL;
   static resource_def *needresc     = NULL;
   static resource_def *nodectresc   = NULL;
   static resource_def *mppwidthresc = NULL;
   static resource_def *mppnppn      = NULL;
+  static resource_def *procresc     = NULL;
 
   static time_t UpdateTime = 0;
   static time_t now;
@@ -970,6 +976,7 @@ static void chk_svr_resc_limit(
     nodectresc   = find_resc_def(svr_resc_def, "nodect",    svr_resc_size);
     mppwidthresc = find_resc_def(svr_resc_def, "mppwidth",  svr_resc_size);
     mppnppn      = find_resc_def(svr_resc_def, "mppnppn",   svr_resc_size);
+    procresc      = find_resc_def(svr_resc_def, "procs",   svr_resc_size);
 
     SvrNodeCt = 0;
 
@@ -1050,6 +1057,12 @@ static void chk_svr_resc_limit(
               comp_resc_lt++;
             }
           }
+        }
+
+      /* Added 6/14/2010 Ken Nielson for ability to parse the procs resource */
+      if((jbrc->rs_defin == procresc) && (qtype == QTYPE_Execution))
+        {
+        proc_ct = jbrc->rs_value.at_val.at_long;
         }
 
 #ifdef NERSCDEV
@@ -1264,6 +1277,9 @@ static void chk_svr_resc_limit(
 
     if (IgnTest == 0)
       {
+      /* how many processors does this spec want */
+      req_procs += procs_requested(jbrc_nodes->rs_value.at_val.at_str);
+
       if (node_avail_complex(
             jbrc_nodes->rs_value.at_val.at_str,
             &dummy,
@@ -1280,12 +1296,43 @@ static void chk_svr_resc_limit(
           {
           if ((EMsg != NULL) && (EMsg[0] == '\0'))
             strcpy(EMsg, "cannot locate feasible nodes");
-
+        
           comp_resc_lt++;
           }
         }
       }
     }    /* END if (jbrc_nodes != NULL) */
+
+  if(proc_ct > 0)
+    {
+      if(procs_available(proc_ct) == -1)
+        {
+          /* only record if:
+           *     is_transit flag is not set
+           * or  is_transit is set, but not to true
+           */
+          if ((!(pque->qu_attr[(int)QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+              (!pque->qu_attr[(int)QE_ATR_is_transit].at_val.at_long))
+            {
+            if ((EMsg != NULL) && (EMsg[0] == '\0'))
+              strcpy(EMsg, "cannot locate feasible nodes");
+      
+            comp_resc_lt++;
+            }
+        }    
+    }
+
+  if((proc_ct + req_procs) > svr_clnodes) 
+    {
+    if ((!(pque->qu_attr[(int)QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+        (!pque->qu_attr[(int)QE_ATR_is_transit].at_val.at_long))
+      {
+      if ((EMsg != NULL) && (EMsg[0] == '\0'))
+        strcpy(EMsg, "cannot locate feasible nodes");
+    
+      comp_resc_lt++;
+      }
+    }
 
   if (MPPWidth > 0)
     {
