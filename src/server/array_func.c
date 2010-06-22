@@ -74,12 +74,40 @@ static int parse_array_request(char *request, tlist_head *tl);
 int is_array(char *id)
   {
   job_array *pa;
+
+  char      *bracket_ptr;
+  char       jobid[PBS_MAXSVRJOBID];
+
+  /* remove the extra [] if present */
+  if ((bracket_ptr = strchr(id,'[')) != NULL)
+    {
+    if((bracket_ptr = strchr(bracket_ptr+1,'[')) != NULL)
+      {
+      *bracket_ptr = '\0';
+      strcpy(jobid,id);
+      *bracket_ptr = '[';
+      bracket_ptr = strchr(bracket_ptr+1,']');
+
+      if (bracket_ptr != NULL)
+        {
+        strcat(jobid,bracket_ptr+1);
+        }
+      }
+    else
+      {
+      strcpy(jobid,id);
+      }
+    }
+  else
+    {
+    strcpy(jobid,id);
+    }
   
   pa = (job_array*)GET_NEXT(svr_jobarrays);
 
   while (pa != NULL)
     {
-    if (strcmp(pa->ai_qs.parent_id, id) == 0)
+    if (strcmp(pa->ai_qs.parent_id, jobid) == 0)
       {
       return TRUE;
       }

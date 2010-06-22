@@ -641,35 +641,44 @@ void req_registerarray(
   range[0] = '\0';
   if ((bracket_ptr = strchr(array_name,'[')) != NULL)
     {
-    *bracket_ptr = '\0';
-    bracket_ptr++;
-
-    strcpy(range,bracket_ptr);
-    if ((bracket_ptr = strchr(range,']')) != NULL)
+    /* go to the 2nd pair of brackets, if present */
+    if ((bracket_ptr = strchr(bracket_ptr+1,'[')) != NULL)
       {
       *bracket_ptr = '\0';
-      num_jobs = atoi(range);
+      bracket_ptr++;
 
-      if ((dot_server = strchr(bracket_ptr+1,'.')) != NULL)
+      strcpy(range,bracket_ptr);
+      if ((bracket_ptr = strchr(range,']')) != NULL)
         {
-        strcat(array_name,dot_server);
+        *bracket_ptr = '\0';
+
+        /* only do this if range isn't empty */
+        if (strcmp(range,""))
+          {
+          num_jobs = atoi(range);
+          }
+
+        if ((dot_server = strchr(bracket_ptr+1,'.')) != NULL)
+          {
+          strcat(array_name,dot_server);
+          }
+        else 
+          {
+          /* error, no server. shouldn't get here ever due
+           * to checks in depend_on_que */
+
+          req_reject(PBSE_IVALREQ,0,preq,NULL,
+            "No server specified");
+          }
         }
-      else 
+      else
         {
-        /* error, no server. shouldn't get here ever due
-         * to checks in depend_on_que */
+        /* error, if bracket opens must close */
 
         req_reject(PBSE_IVALREQ,0,preq,NULL,
-          "No server specified");
+          "Array range format invalid, must have closed bracket ']'");
         }
-      }
-    else
-      {
-      /* error, if bracket opens must close */
-
-      req_reject(PBSE_IVALREQ,0,preq,NULL,
-        "Array range format invalid, must have closed bracket ']'");
-      }
+      } /* end second brackets if */
     }
 
   /* get the array */
