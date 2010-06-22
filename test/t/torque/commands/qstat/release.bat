@@ -53,6 +53,7 @@ execute_tests(
               "$testbase/qstat_r_n1_s_cM_cR.t",
               "$testbase/qstat_r_n1_s_cM_cR_jobid.t",
               "$testbase/qstat_r_n1_s_cM_cR_dest.t",
+              "$testbase/qstat_t.t",
               "$testbase/qstat_q.t",              
               "$testbase/qstat_q_cG.t",              
               "$testbase/qstat_q_cM.t",              

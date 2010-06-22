@@ -34,7 +34,7 @@ use constant CHECKPOINT_FILE_NAME => '^ckpt\.\d+(\.\S+)+\.\d+';
 
 # QSTAT regular expressions
 use constant QSTAT_REGEXP         => {
-                                       'name'     => '^\w+$',
+                                       'name'     => '^[\w\[\]]+$',
                                        'user'     => '^\w+$',
                                        'time_use' => '^(0|\d{2}(:\d{2})+)$',
                                        'state'    => '^(Q|R|W|H|T|C)$',
