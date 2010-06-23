@@ -24,7 +24,6 @@ my $jid2        = undef;
 my @jaids       = ();
 my $test_host   = $props->get_property("Test.Host");
 
-
 # Perform the test
 $qref = {
           'cmd'   => "sleep 5",
@@ -61,4 +60,4 @@ foreach my $jaid (@jaids)
 cmp_ok($qhash{ $jid2 }{ 'depend'  }, 'eq', "beforeokarray:$jid1\@$test_host", "Verifying the dependent job:$jid2 'depend'");
 
 # Cleanup
-#delJobs();
+delJobs();

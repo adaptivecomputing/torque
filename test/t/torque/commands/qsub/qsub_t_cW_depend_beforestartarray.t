@@ -61,4 +61,4 @@ foreach my $jaid (@jaids)
 cmp_ok($qhash{ $jid2 }{ 'depend'  }, 'eq', "beforestartarray:$jid1\@$test_host", "Verifying the dependent job:$jid2 'depend'");
 
 # Cleanup
-#delJobs();
+delJobs();
