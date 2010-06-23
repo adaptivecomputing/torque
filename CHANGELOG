@@ -5,7 +5,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Made a fix to qmgr.c in is_attr. When checking node names against 
       attribute keywords is_attr used strncmp and limited the length of the 
       compare to the length of the keyword. So node names like stateless
-      were tagged as an error. I replaced strncmp with strcmp.
+      were tagged as an error. (replaced strncmp with strcmp)
   e - Enabled TORQUE to be able to parse the -l procs=x node spec. Previously
       TORQUE simply recored the value of x for procs in Resources_List. It
       now takes that value and allocates x processors packed on any available 
@@ -48,7 +48,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       for accounting end record instead of current resources used for jobs that
       stopped running while mom was not up.
   e - TORQUE job arrays now use arrays to hold the job pointers and not 
-      linked lists (constant lookup). 
+      linked lists (allows constant lookup). 
   f - Allow users to delete a range of jobs from the job array (qdel -t)
   f - Added a slot limit to the job arrays - this restricts the number of 
       jobs that can concurrently run from one job array. 
@@ -64,8 +64,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (qstat -t expands the job array)
   f - server parameter max_job_array_size limits the number of jobs allowed
       in an array
-  b - fixed things so that arrays can't circumvent max_user_queuable
-  b - fixed things so that arrays can't circumvent max_queuable
+  b - job arrays can no longer circumvent max_user_queuable
+  b - job arrays can no longer circumvent max_queuable
   f - added server parameter max_slot_limit to restrict slot limits
   e - changed array names from jobid-index to jobid[index] for consistency
 
@@ -148,7 +148,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - epilogue.user scripts were being run with prologue argments. Fixed
       bug in run_pelog() to include PE_EPILOGUSER so epilogue arguments get
       passed to eplilogue.user script.
-
   b - Ticket 6665. pbs_mom and job recovery. Fixed a bug where the -q option 
       would terminate running processes as well as requeue jobs. This made the
       -q option the same as the -r option for pbs_mom. -q will now only reque 
