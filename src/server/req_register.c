@@ -689,7 +689,7 @@ void req_registerarray(
      * yet be recovered, that is not an error.
      */
 
-    if (server.sv_attr[(int)SRV_ATR_State].at_val.at_long != SV_STATE_INIT)
+    if (server.sv_attr[SRV_ATR_State].at_val.at_long != SV_STATE_INIT)
       {
       log_event(
         PBSEVENT_DEBUG,
@@ -922,8 +922,8 @@ void set_array_depend_holds(
              (pdep->dp_type > JOB_DEPEND_TYPE_AFTERANYARRAY)))
           {
           /* hold */
-          pjob->ji_wattr[JOB_ATR_depend].at_val.at_long |= HOLD_s;
-          pjob->ji_wattr[JOB_ATR_depend].at_flags |= ATR_VFLAG_SET;
+          pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_s;
+          pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
 
           if (LOGLEVEL >= 8)
             {
@@ -941,7 +941,7 @@ void set_array_depend_holds(
           /* release the array's hold - set_depend_hold
            * will clear holds if there are no other dependencies
            * logged in set_depend_hold */
-          set_depend_hold(pjob,&pjob->ji_wattr[(int)JOB_ATR_depend]);
+          set_depend_hold(pjob,&pjob->ji_wattr[JOB_ATR_depend]);
           }
         }
 
@@ -1005,7 +1005,7 @@ static void post_doq(
         svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, log_buffer);
         }
 
-      pattr = &pjob->ji_wattr[(int)JOB_ATR_depend];
+      pattr = &pjob->ji_wattr[JOB_ATR_depend];
 
       if (((pdp = find_depend(preq->rq_ind.rq_register.rq_dependtype, pattr)) != 0) &&
           ((pdjb = find_dependjob(pdp, preq->rq_ind.rq_register.rq_parent)) != 0))
@@ -1014,8 +1014,8 @@ static void post_doq(
 
         if (preq->rq_reply.brp_code != PBSE_BADSTATE)
           {
-          pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long |= HOLD_u;
-          pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+          pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_u;
+          pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
           pjob->ji_modified = 1;
           }
 
@@ -1614,7 +1614,7 @@ static void set_depend_hold(
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_SYNCHOLD) ||
         (pjob->ji_qs.ji_substate == JOB_SUBSTATE_DEPNHOLD))
       {
-      pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long &= ~HOLD_s;
+      pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_s;
 
       /* newstate is job's 'natural state - ie, what it would be if dependency did not exist */
 
@@ -1636,8 +1636,8 @@ static void set_depend_hold(
     {
     /* there are dependencies, set system hold accordingly */
 
-    pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long |= HOLD_s;
-    pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+    pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_s;
+    pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
 
     if (LOGLEVEL >= 8)
       {

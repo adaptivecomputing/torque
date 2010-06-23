@@ -1068,15 +1068,15 @@ void job_clone_wt(
 
       pjob = (job *)pa->jobs[i];
 
-      pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
+      pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
 
-      if (pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long == 0)
+      if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
         {
-        pjob->ji_wattr[(int)JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+        pjob->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
         }
       else
         {
-        pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+        pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
         }
 
       svr_evaljobstate(pjob, &newstate, &newsub, 1);

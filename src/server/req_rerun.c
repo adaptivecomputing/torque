@@ -194,7 +194,7 @@ void req_rerunjob(
 
   if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
     {
-    if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
+    if (pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
       {
       /* allow end-users to rerun checkpointed jobs */
 
@@ -228,7 +228,7 @@ void req_rerunjob(
 
   /* the job must be rerunnable */
 
-  if (pjob->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long == 0)
+  if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long == 0)
     {
     /* NOTE:  should force override this constraint? maybe (???) */
     /*          no, the user is saying that the job will break, and
@@ -248,7 +248,7 @@ void req_rerunjob(
     }
   else
     { 
-    if (pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long == HOLD_n)
+    if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == HOLD_n)
       {
       svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED);
       }
@@ -259,8 +259,8 @@ void req_rerunjob(
 
     /* reset some job attributes */
     
-    pjob->ji_wattr[(int)JOB_ATR_comp_time].at_flags &= ~ATR_VFLAG_SET;
-    pjob->ji_wattr[(int)JOB_ATR_reported].at_flags &= ~ATR_VFLAG_SET;
+    pjob->ji_wattr[JOB_ATR_comp_time].at_flags &= ~ATR_VFLAG_SET;
+    pjob->ji_wattr[JOB_ATR_reported].at_flags &= ~ATR_VFLAG_SET;
 
     /*
      * delete any work task entries associated with the job
@@ -327,7 +327,7 @@ void req_rerunjob(
            This is a relatively disgusting thing to do */
 
         sprintf(log_buffer, "rerun req to %s failed (rc=%d), forcibly requeueing job",
-                parse_servername(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str, &dummy),
+                parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy),
                 rc);
 
         log_event(
@@ -351,11 +351,11 @@ void req_rerunjob(
           /* in case of server shutdown, don't clear exec_host */
           /* will use it on hotstart when next comes up        */
 
-          job_attr_def[(int)JOB_ATR_exec_host].at_free(
-            &pjob->ji_wattr[(int)JOB_ATR_exec_host]);
+          job_attr_def[JOB_ATR_exec_host].at_free(
+            &pjob->ji_wattr[JOB_ATR_exec_host]);
 
-          job_attr_def[(int)JOB_ATR_session_id].at_free(
-            &pjob->ji_wattr[(int)JOB_ATR_session_id]);
+          job_attr_def[JOB_ATR_session_id].at_free(
+            &pjob->ji_wattr[JOB_ATR_session_id]);
           }
 
         pjob->ji_modified = 1;    /* force full job save */
