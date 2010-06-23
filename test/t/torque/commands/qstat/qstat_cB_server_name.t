@@ -32,7 +32,7 @@ my @servers;
 
 # We are creating an array of servers because we may want to test more than
 # just one server in the future.
-my $server1 = $props->get_property('Test.Host');
+my $server1 = $props->get_property('Test.Host').'.ac';
 
 push(@servers, $server1);
 
@@ -68,7 +68,7 @@ foreach my $server (@servers)
     {
 
     my $reg_exp = &QSTAT_B_REGEXP->{ $attribute };
-    ok($server_info{ $server }{ $attribute } =~ /${reg_exp}/, "Checking '$server' $attribute attribute");
+    ok($server_info{ substr($server,0,16) }{ $attribute } =~ /${reg_exp}/, "Checking '$server' $attribute attribute");
 
     } # END foreach my $attribue (@attributes)
 

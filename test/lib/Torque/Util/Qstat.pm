@@ -830,14 +830,15 @@ sub _auto_complete_job_id #($)
   my ($job_id) = @_;
 
   # Make sure that we know what the server name is
+  my $domain = 'ac';
   my $server_name = $props->get_property( 'Test.Host' )
      || return;
 
   # Make sure that we do need to complete the job_id
-  if ($job_id !~ /\.${server_name}$/)
+  if ($job_id !~ /\.${server_name}\.$domain$/)
     {
     
-    $job_id =~ s/\..*$/\.${server_name}/;
+    $job_id =~ s/\..*$/\.${server_name}\.$domain/;
 
     } # END 
 

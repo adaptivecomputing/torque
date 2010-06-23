@@ -33,7 +33,7 @@ ok($qsub{ 'EXIT_CODE' } == 0, "Checking exit code of '$cmd'")
 my $job_id = $qsub{ 'STDOUT' };
 
 # Detaint the job_id
-if ($job_id =~ /^(\d+\.[\w-]+)/)
+if ($job_id =~ /^(\d+\.[\w\-\.]+)/)
  {
  
  $job_id = $1;
