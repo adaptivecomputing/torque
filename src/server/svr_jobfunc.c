@@ -448,23 +448,23 @@ int svr_enquejob(
 
   /* update the current location and type attribute */
 
-  pdef    = &job_attr_def[(int)JOB_ATR_in_queue];
+  pdef    = &job_attr_def[JOB_ATR_in_queue];
 
-  pattrjb = &pjob->ji_wattr[(int)JOB_ATR_in_queue];
+  pattrjb = &pjob->ji_wattr[JOB_ATR_in_queue];
 
   pdef->at_free(pattrjb);
 
   pdef->at_decode(pattrjb, NULL, NULL, pque->qu_qs.qu_name);
 
-  pjob->ji_wattr[(int)JOB_ATR_queuetype].at_val.at_char =
-    *pque->qu_attr[(int)QA_ATR_QType].at_val.at_str;
+  pjob->ji_wattr[JOB_ATR_queuetype].at_val.at_char =
+    *pque->qu_attr[QA_ATR_QType].at_val.at_str;
 
-  pjob->ji_wattr[(int)JOB_ATR_queuetype].at_flags |= ATR_VFLAG_SET;
+  pjob->ji_wattr[JOB_ATR_queuetype].at_flags |= ATR_VFLAG_SET;
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_qtime].at_flags & ATR_VFLAG_SET) == 0)
+  if ((pjob->ji_wattr[JOB_ATR_qtime].at_flags & ATR_VFLAG_SET) == 0)
     {
-    pjob->ji_wattr[(int)JOB_ATR_qtime].at_val.at_long = time_now;
-    pjob->ji_wattr[(int)JOB_ATR_qtime].at_flags |= ATR_VFLAG_SET;
+    pjob->ji_wattr[JOB_ATR_qtime].at_val.at_long = time_now;
+    pjob->ji_wattr[JOB_ATR_qtime].at_flags |= ATR_VFLAG_SET;
 
     /* issue enqueued accounting record */
 
@@ -503,15 +503,15 @@ int svr_enquejob(
     /* check the job checkpoint against the queue's min */
 
     eval_checkpoint(
-      &pjob->ji_wattr[(int)JOB_ATR_checkpoint],
-      &pque->qu_attr[(int)QE_ATR_checkpoint_min]);
+      &pjob->ji_wattr[JOB_ATR_checkpoint],
+      &pque->qu_attr[QE_ATR_checkpoint_min]);
 
     /* do anything needed doing regarding job dependencies */
 
-    if (pjob->ji_wattr[(int)JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+    if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
       {
       if ((rc = depend_on_que(&
-                              pjob->ji_wattr[(int)JOB_ATR_depend],
+                              pjob->ji_wattr[JOB_ATR_depend],
                               pjob,
                               ATR_ACTION_NOOP)) != 0)
         {
@@ -521,11 +521,11 @@ int svr_enquejob(
 
     /* set eligible time */
 
-    if (((pjob->ji_wattr[(int)JOB_ATR_etime].at_flags & ATR_VFLAG_SET) == 0) &&
+    if (((pjob->ji_wattr[JOB_ATR_etime].at_flags & ATR_VFLAG_SET) == 0) &&
         (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))
       {
-      pjob->ji_wattr[(int)JOB_ATR_etime].at_val.at_long = time_now;
-      pjob->ji_wattr[(int)JOB_ATR_etime].at_flags |= ATR_VFLAG_SET;
+      pjob->ji_wattr[JOB_ATR_etime].at_val.at_long = time_now;
+      pjob->ji_wattr[JOB_ATR_etime].at_flags |= ATR_VFLAG_SET;
       }
       
     /* notify the scheduler we have a new job */
