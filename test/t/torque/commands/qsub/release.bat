@@ -53,7 +53,7 @@ execute_tests(
               "$testbase/qsub_stdin.t",
               "$testbase/qsub_t.t",
               "$testbase/qsub_t_slotlimit.t",
-# RT8044              "$testbase/qsub_t_cW_depend_afterstartarray.t",
+              "$testbase/qsub_t_cW_depend_afterstartarray.t",
               "$testbase/qsub_u.t",
               "$testbase/qsub_v.t",
               "$testbase/qsub_cV.t",
