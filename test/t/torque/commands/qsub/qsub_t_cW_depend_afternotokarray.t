@@ -13,7 +13,7 @@ use Torque::Job::Ctrl   qw( qsub             delJobs );
 use Torque::Job::Utils  qw( generateArrayIds         );
 
 plan('no_plan');
-setDesc('Qsub -t -W (afterstartarray)');
+setDesc('Qsub -t -W (afternotokarray)');
 
 # Variables
 my %qhash       = ();
@@ -39,7 +39,7 @@ sleep_diag(1, "Allow time for the job to queue");
 
 
 $qref = {
-          'flags' => "-W depend=afterstartarray:$jid1",
+          'flags' => "-W depend=afternotokarray:$jid1",
         };
 $jid2 = qsub($qref);
 
