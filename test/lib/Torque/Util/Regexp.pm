@@ -59,7 +59,7 @@ use constant QSTAT_A_REGEXP       => {
                                        'comment'   => '(--|\w+)'
                                      };
 use constant QSTAT_B_REGEXP       => {
-                                       'server' => '^[\w-]+$',
+                                       'server' => '^[\w-\.]+$',
                                        'max'    => '^\d+$',
                                        'tot'    => '^\d+$',
                                        'que'    => '^\d+$',
@@ -71,7 +71,7 @@ use constant QSTAT_B_REGEXP       => {
                                        'status' => '^(Hot_Start|Active|Terminating_Delay|Terminating)$'
                                      };
 use constant QSTAT_BF1_REGEXP     => {
-                                       'server'              => '^[\w-]+$',
+                                       'server'              => '^[\w-\.]+$',
                                        'server_state'        => '^(Hot_Start|Active|Terminating_Delay|Terminating)$',
                                        'scheduling'          => '^(True|False)$',
                                        'total_jobs'          => '^\d+$',
@@ -96,7 +96,7 @@ use constant QSTAT_F_REGEXP       => {
                                        'Job_Owner'               => '\w+\@\w+',
                                        'job_state'               => '^(Q|R|W|H|T|C)$', # May be incomplete list of states
                                        'queue'                   => '^\w+$',
-                                       'server'                  => '^[\w-]+$',
+                                       'server'                  => '^[\w-\.]+$',
                                        'Checkpoint'              => '^\w+$',
                                        'ctime'                   => '^\w\w\w\s+\w\w\w\s+\d{1,2}\s+\d\d:\d\d:\d\d\s+\d\d\d\d$',
                                        'Error_Path'              => '\w+\:(\/[\w\.]+)+',
