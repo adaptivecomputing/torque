@@ -92,6 +92,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (Chris Samuel - Univ. of Melbourne)
   b - properly escape characters (&"'<>) in XML output)
   b - ignore port when checking host in svr_get_privilege()
+  b - restore ability to parse -W x=geometry:{...,...}
 
 2.4.8
   e - Bugzilla bug 22. HIGH_PRECISION_FAIRSHARE for fifo scheduling.

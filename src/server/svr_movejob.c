@@ -304,7 +304,7 @@ static int local_move(
 
   strcpy(jobp->ji_qs.ji_queue, destination);
 
-  jobp->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+  jobp->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
 
   pbs_errno = svr_enquejob(jobp);
 
@@ -775,11 +775,11 @@ int send_job(
 
   pattr = jobp->ji_wattr;
 
-  for (i = 0;i < (int)JOB_ATR_LAST;i++)
+  for (i = 0;i < JOB_ATR_LAST;i++)
     {
     if (((job_attr_def + i)->at_flags & resc_access_perm) ||
       ((strncmp((job_attr_def + i)->at_name,"session_id",10) == 0) &&
-      (jobp->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)))
+      (jobp->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)))
       {
       (job_attr_def + i)->at_encode(
         pattr + i,
@@ -796,7 +796,7 @@ int send_job(
 
   strcpy(script_name, path_jobs);
 
-  if (jobp->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+  if (jobp->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
     strcat(script_name, jobp->ji_arraystruct->ai_qs.fileprefix);
     }

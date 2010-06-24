@@ -401,11 +401,11 @@ calc_job_cost(job *pjob)
   resource *pjobr;
   int   shiftct;
 
-  pcost = (struct resource_cost *)GET_NEXT(server.sv_attr[(int)SRV_ATR_resource_cost].at_val.at_list);
+  pcost = (struct resource_cost *)GET_NEXT(server.sv_attr[SRV_ATR_resource_cost].at_val.at_list);
 
   while (pcost)
     {
-    pjobr = find_resc_entry(&pjob->ji_wattr[(int)JOB_ATR_resource],
+    pjobr = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
                             pcost->rc_def);
 
     if (pjobr)

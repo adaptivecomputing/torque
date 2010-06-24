@@ -475,6 +475,14 @@ char *smart_strtok(
       {
       sb_count = 0;
       }
+    else if (*ptr == '{')
+      {
+      sb_count = 1;
+      }
+    else if (*ptr == '}')
+      {
+      sb_count = 0;
+      }
     else if (!(sq_count % 2) && !(dq_count % 2) && (sb_count == 0))
       {
       /* not in quotations, locate delimiter */

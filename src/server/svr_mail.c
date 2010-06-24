@@ -129,9 +129,9 @@ void svr_mailowner(
 
   struct array_strings *pas;
 
-  if ((server.sv_attr[(int)SRV_ATR_MailDomain].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str != NULL) &&
-      (!strcasecmp("never", server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str)))
+  if ((server.sv_attr[SRV_ATR_MailDomain].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[SRV_ATR_MailDomain].at_val.at_str != NULL) &&
+      (!strcasecmp("never", server.sv_attr[SRV_ATR_MailDomain].at_val.at_str)))
     {
     /* never send user mail under any conditions */
     if (LOGLEVEL >= 3) 
@@ -152,7 +152,7 @@ void svr_mailowner(
     snprintf(tmpBuf, LOG_BUF_SIZE, "sending '%c' mail for job %s to %s (%.64s)\n",
              (char)mailpoint,
              pjob->ji_qs.ji_jobid,
-             pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
+             pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
              (text != NULL) ? text : "---");
 
     log_event(
@@ -168,10 +168,10 @@ void svr_mailowner(
     {
     /* see if user specified mail of this type */
 
-    if (pjob->ji_wattr[(int)JOB_ATR_mailpnts].at_flags & ATR_VFLAG_SET)
+    if (pjob->ji_wattr[JOB_ATR_mailpnts].at_flags & ATR_VFLAG_SET)
       {
       if (strchr(
-            pjob->ji_wattr[(int)JOB_ATR_mailpnts].at_val.at_str,
+            pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str,
             mailpoint) == NULL)
         {
         /* do not send mail */
@@ -215,7 +215,7 @@ void svr_mailowner(
 
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
 
-  if ((mailfrom = server.sv_attr[(int)SRV_ATR_mailfrom].at_val.at_str) == NULL)
+  if ((mailfrom = server.sv_attr[SRV_ATR_mailfrom].at_val.at_str) == NULL)
     {
     if (LOGLEVEL >= 5)
       {
@@ -236,11 +236,11 @@ void svr_mailowner(
 
   *mailto = '\0';
 
-  if (pjob->ji_wattr[(int)JOB_ATR_mailuser].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_mailuser].at_flags & ATR_VFLAG_SET)
     {
     /* has mail user list, send to them rather than owner */
 
-    pas = pjob->ji_wattr[(int)JOB_ATR_mailuser].at_val.at_arst;
+    pas = pjob->ji_wattr[JOB_ATR_mailuser].at_val.at_arst;
 
     if (pas != NULL)
       {
@@ -258,12 +258,12 @@ void svr_mailowner(
     {
     /* no mail user list, just send to owner */
 
-    if ((server.sv_attr[(int)SRV_ATR_MailDomain].at_flags & ATR_VFLAG_SET) &&
-        (server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str != NULL))
+    if ((server.sv_attr[SRV_ATR_MailDomain].at_flags & ATR_VFLAG_SET) &&
+        (server.sv_attr[SRV_ATR_MailDomain].at_val.at_str != NULL))
       {
-      strcpy(mailto, pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
+      strcpy(mailto, pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
       strcat(mailto, "@");
-      strcat(mailto, server.sv_attr[(int)SRV_ATR_MailDomain].at_val.at_str);
+      strcat(mailto, server.sv_attr[SRV_ATR_MailDomain].at_val.at_str);
 
       if (LOGLEVEL >= 5) 
         {
@@ -281,11 +281,11 @@ void svr_mailowner(
     else
       {
 #ifdef TMAILDOMAIN
-      strcpy(mailto, pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
+      strcpy(mailto, pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
       strcat(mailto, "@");
       strcat(mailto, TMAILDOMAIN);
 #else /* TMAILDOMAIN */
-      strcpy(mailto, pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
+      strcpy(mailto, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
 #endif /* TMAILDOMAIN */
 
       if (LOGLEVEL >= 5)
@@ -305,10 +305,10 @@ void svr_mailowner(
 
   /* mail subject line formating statement */
 
-  if ((server.sv_attr[(int)SRV_ATR_MailSubjectFmt].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[(int)SRV_ATR_MailSubjectFmt].at_val.at_str != NULL))
+  if ((server.sv_attr[SRV_ATR_MailSubjectFmt].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[SRV_ATR_MailSubjectFmt].at_val.at_str != NULL))
     {
-    subjectfmt = server.sv_attr[(int)SRV_ATR_MailSubjectFmt].at_val.at_str;
+    subjectfmt = server.sv_attr[SRV_ATR_MailSubjectFmt].at_val.at_str;
     }
   else
     {
@@ -317,16 +317,16 @@ void svr_mailowner(
 
   /* mail body formating statement */
 
-  if ((server.sv_attr[(int)SRV_ATR_MailBodyFmt].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[(int)SRV_ATR_MailBodyFmt].at_val.at_str != NULL))
+  if ((server.sv_attr[SRV_ATR_MailBodyFmt].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[SRV_ATR_MailBodyFmt].at_val.at_str != NULL))
     {
-    bodyfmt = server.sv_attr[(int)SRV_ATR_MailBodyFmt].at_val.at_str;
+    bodyfmt = server.sv_attr[SRV_ATR_MailBodyFmt].at_val.at_str;
     }
   else
     {
     bodyfmt =  strcpy(bodyfmtbuf, "PBS Job Id: %i\n"
                                   "Job Name:   %j\n");
-    if (pjob->ji_wattr[(int)JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
+    if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
       {
       strcat(bodyfmt, "Exec host:  %h\n");
       }
