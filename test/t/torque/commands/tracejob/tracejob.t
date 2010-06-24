@@ -42,7 +42,7 @@ my @exp_lines = (
     "Job: $job_id",
     '',
     qr/^$date_regex  S    enqueuing into $queue, state 1 hop 1$/,
-    qr/^$date_regex  S    Job Queued at request of $user\@$host, owner = $user\@$host, job name = STDIN, queue = $queue$/,
+    qr/^$date_regex  S    Job Queued at request of $user\@$host\.ac, owner = $user\@$host\.ac, job name = STDIN, queue = $queue$/,
     qr/^$date_regex  A    queue=$queue$/,
     '',
 );
