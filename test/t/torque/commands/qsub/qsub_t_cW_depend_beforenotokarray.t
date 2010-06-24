@@ -22,7 +22,8 @@ my $id_exp      = '0-1';
 my $jid1        = undef;
 my $jid2        = undef;
 my @jaids       = ();
-my $test_host   = $props->get_property("Test.Host");
+my $test_host   = `hostname -f`;
+chomp $test_host;
 
 
 # Perform the test
