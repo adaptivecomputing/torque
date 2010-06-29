@@ -159,7 +159,7 @@ messages.  Both a UDP and a TCP port of this number will be used.
 .IP "\-p" 16
 (Default after version 2.4.0) (Preserve running jobs) -- Specifies the 
 impact on jobs which were in execution when the	mini-server shut-down. 
-The -p option tries to preserve any running jobs when the MOM restarts. 
+The \-p option tries to preserve any running jobs when the MOM restarts. 
 The new mini-server will not be the parent of any running jobs, MOM 
 has lost control of her	offspring (not a new situation for a mother). 
 The MOM will allow the jobs to continue to run and monitor them 
@@ -172,7 +172,7 @@ on jobs which were in execution when the mini-server shut-down.
 With the \-P option, it is assumed that either the entire system
 has been restarted or the MOM has been down so long that it can no longer
 guarantee that the pid of any running process is the same as the recorded job
-process pid of a recovering job. Unlike the -p option no attempt is made to
+process pid of a recovering job. Unlike the \-p option no attempt is made to
 try and preserve or recover running jobs. All jobs are terminated and removed
 from the queue.
 The \-q option is mutually exclusive with the \-p, \-q and \-r options.

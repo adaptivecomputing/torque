@@ -85,9 +85,9 @@ qsub [\-a date_time] [\-A account_string] [\-b secs] [\-c checkpoint_options]
 [\-C directive_prefix]
 [\-d path] [\-D path] [\-e path] [\-f] [\-h] [\-I] [\-j join] [\-k keep] [\-l resource_list]
 [\-m mail_options] [\-M user_list] [\-N name] [\-o path] 
-[\-p priority] [-P proxy_username[:group]]  [\-q destination] [\-r c] [\-S path_list] [\-t num_jobs]
+[\-p priority] [\-P proxy_username[:group]]  [\-q destination] [\-r c] [\-S path_list] [\-t num_jobs]
 [\-T prologue/epilogue script_name] [\-u user_list] [\-v variable_list] [\-V]
-[-w] path [\-W additional_attributes]
+[\-w] path [\-W additional_attributes]
 [\-x] [\-X] [\-z]
 [script]
 .SH DESCRIPTION
@@ -1079,7 +1079,7 @@ spool directory. Values starting with 0 are treated as octal values,
 otherwise the value is treated as a decimal umask value.
 .br
 .IP "\-x"
-When running an interactive job, the -x flag makes it so that the script won't be parsed for PBS directives, but instead will be a command that is launched once the interactive job has started. The job will terminate at the completion of this command.
+When running an interactive job, the \-x flag makes it so that the script won't be parsed for PBS directives, but instead will be a command that is launched once the interactive job has started. The job will terminate at the completion of this command.
 .IP "\-X" 8
 Enables X11 forwarding.  The DISPLAY environment variable must be set.
 .IP "\-z" 8
@@ -1179,25 +1179,25 @@ specifies the path to xauth
 specifies the integer seconds between retry attempts to communicate with pbs_server
 .LP
 .B VALIDATEGROUP
-set this parameter to force qsub to verify the subitter's group id
+set this parameter to force qsub to verify the submitter's group id
 .LP
 .B DEFAULTCKPT
 specifies the default value for the jobs checkpoint attribute.  The user overrides 
-this with the -c qsub option.
+this with the \-c qsub option.
 .LP
 .B VALIDATEPATH
-set this parameter to force qsub to validate local existence of a "-d" working directory 
+set this parameter to force qsub to validate local existence of a "\-d" working directory 
 .LP
 .B RERUNNABLEBYDEFAULT
 this parameter specifies if a job is rerunnable by default. The default is true, setting 
 this to false causes the rerunnable attribute value to be false unless the users specifies 
-otherwise with the -r option 
+otherwise with the \-r option 
 .LP
 .B FAULT_TOLERANT_BY_DEFAULT
 this parameter specifies if a job is fault tolerant by default.  The default value for 
 the fault_tolerant job attribute is false, setting this parameter to true causes the 
 default value of the attribute to be true. The user can specify their preference with 
-the -f qsub option.
+the \-f qsub option.
 .LP
 For example:
 .RS

@@ -103,7 +103,7 @@ the server will go into a
 state.
 While in this state, the server will not allow new jobs to be started or enqueued.
 By default, qterm will request a "quick" shutdown of the PBS server.
-Other ways of shutting down the server (specified with the -t argument),
+Other ways of shutting down the server (specified with the \-t argument),
 and their impact on running jobs, are described below.
 The qterm command will not exit until the server has completed its shutdown
 procedure.
@@ -123,7 +123,7 @@ request is
 .Sc SHUT_IMMEDIATE .
 .Ig
 .IP
-If checkpoint is supported, running jobs that were submitted with "-c shutdown"
+If checkpoint is supported, running jobs that were submitted with "\-c shutdown"
 are checkpointed, terminated, and requeued.
 If checkpoint is not supported or the job cannot be checkpointed, running
 jobs are requeued if the
@@ -136,7 +136,7 @@ is still listed as running.
 The server may be forced down by a second \*Qqterm \-t immediate\*U
 command.
 .IP delay\ 
-If checkpoint is supported, running jobs that were submitted with "-c shutdown"
+If checkpoint is supported, running jobs that were submitted with "\-c shutdown"
 are checkpointed, terminated, and requeued.
 If a job cannot be checkpointed, but can be rerun, the job is terminated
 and requeued.

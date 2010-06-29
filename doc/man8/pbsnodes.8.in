@@ -98,7 +98,7 @@ by specifying a node property prefixed by a colon.
 .br
 Nodes do not exist in a single state, but actually have a set of states.  For
 example, a node can be simultaneously "busy" and "offline".  The "free" state
-is the absense of all other states and so is never combined with other states.
+is the absence of all other states and so is never combined with other states.
 .LP
 In order to execute pbsnodes with other than the
 .B \-a
