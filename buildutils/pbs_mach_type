@@ -160,6 +160,10 @@ case "$OS" in
   
   unicosmk*) mach=unicosmk2 ;;
 
+  gnu/kfreebsd) mach=freebsd5 ;;
+
+  gnu) mach=linux ;;
+
   unicos*) mach=unicos8 ;;
 
   sn*)	if echo $OS | egrep '^sn[0-9]+$' > /dev/null ; then

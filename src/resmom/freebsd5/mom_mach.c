@@ -196,12 +196,10 @@ struct config dependent_config[] =
 
 struct nlist nl[] =
   {
-    { "_anoninfo", 0, 0, 0, 0
-    }, /* 0 */
-
-  { "_cnt", 0, 0, 0, 0 },  /* 1 */
-  { "_averunnable", 0, 0, 0, 0 }, /* 2 */
-  { "", 0, 0, 0, 0 }
+    { {"_anoninfo"}, 0, 0, 0, 0 }, /* 0 */
+    { {"_cnt"}, 0, 0, 0, 0 }, /* 1 */
+    { {"_averunnable"}, 0, 0, 0, 0 }, /* 2 */
+    { {""}, 0, 0, 0, 0 }
   };
 
 #define KSYM_ANON  0
