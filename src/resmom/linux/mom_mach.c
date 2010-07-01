@@ -3552,13 +3552,14 @@ char *size_fs(
     return(NULL);
     }
 
-  sprintf(ret_string, "%lukb:%lukb",
-
 #ifdef RPT_BAVAIL
-          (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.f_bavail) / 1024.0),
+#define RPT_STATFS_MEMBER f_bavail
 #else
-          (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.f_bfree) / 1024.0),
+#define RPT_STATFS_MEMBER f_bfree
 #endif
+
+  sprintf(ret_string, "%lukb:%lukb",
+          (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.RPT_STATFS_MEMBER) / 1024.0),
           (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.f_blocks) / 1024.0)); /* KB */
 
   return(ret_string);
