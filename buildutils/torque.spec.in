@@ -2,7 +2,7 @@
 # comment out snap if building a real release
 %define name @spec_name@
 %define version @spec_version@
-@spec_snap@
+@spec_snap@    # dist_spec_snap
 %define release 1cri
 
 
