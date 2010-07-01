@@ -9,6 +9,7 @@ EXTRA_DIST = CHANGELOG INSTALL.GNU README.configure README.mpiexec \
 	     buildutils/pbs_mkdirs.in buildutils/pbs_mach_type \
 	     buildutils/config.mk \
 	     buildutils/modulefiles.in buildutils/modulefiles.vers.in \
+	     buildutils/torque.spec.dist.in \
 	     contrib/README.pestat contrib/README.pbstop \
 	     contrib/README.qpeek contrib/pestat-1.0/pestat.c \
 	     contrib/pestat-1.0/README contrib/pestat-1.0/Makefile \
@@ -32,6 +33,7 @@ snap:
 	$(MAKE) VERSION=$(VERSION)-snap.$${snapstamp:-`date +%Y%m%d%H%M`} dist
 
 dist-hook:
+	if test -d $(srcdir)/.svn; then cp -p buildutils/torque.spec.dist $(distdir)/torque.spec ;fi
 	chmod u+w $(distdir)/README.torque $(distdir)/configure $(distdir)/torque.spec
 	sed -e 's/TORQUE .* README .*/TORQUE $(VERSION) README (released '"`date '+%b, %d %Y'`"')/' < $(srcdir)/README.torque > $(distdir)/README.torque
 	sed -e 's/VERSION=.*/VERSION=$(VERSION)/' < $(srcdir)/configure > $(distdir)/configure
