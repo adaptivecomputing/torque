@@ -1,0 +1,79 @@
+Command Updates for Arrays
+The commands qalter, qdel, qhold, and qrls now all support TORQUE 
+arrays and will have to be updated. The general command syntax is: 
+
+command <array_name> [-t array_range] [other command options]
+
+The array ranges accepted by -t here are exactly the same as the array ranges that can be specified in qsub. (http://www.clusterresources.com/products/torque/docs/commands/qsub.shtml)
+
+Slot Limits
+It is now possible to limit the amount of jobs that can concurrently run in a job array. This is called a slot limit, and the default is unlimited. This can be done two ways, the first is at job submission:
+
+qsub script.sh -t 0-299%5
+
+This sets the slot limit to 5, meaning only 5 jobs from this array can be running at the same time. 
+
+As administrators are more likely to be concerned with limiting arrays than users in many cases, this can also be done by setting the server parameter max_slot_limit. If this isn't set, then no value is used.
+
+qmgr -c 'set server max_slot_limit=10'
+
+means that no array can request a slot limit greater than 10, and any array not requesting a slot limit will receive a slot limit of 10. If a user requests a slot limit greater than 10, the job will be rejected with  the message:
+
+Requested slot limit is too large, limit is X. 
+
+In this case, X would be 10.
+
+Job Array Dependencies
+The following dependencies can now be used for job arrays:
+
+afterstartarray 
+afterokarray 
+afternotokarray 
+afteranyarray 
+beforestartarray 
+beforeokarray 
+beforenotokarray 
+beforeanyarray
+
+The general syntax is:
+
+qsub script.sh -W depend=dependtype:array_name[num_jobs]
+
+The suffix [num_jobs] should appear exactly as above, although the number of jobs is optional. If it isn't specified, the dependency will assume that it is the entire array, for example: 
+
+qsub script.sh -W depend=afterokarray:427[] 
+
+will assume every job is array 427 has to finish successfully for the dependency to be satisfied. The submission: 
+
+qsub script.sh -W depend=afterokarray:427[][5] 
+
+means that 5 of the jobs in array 427 have to successfully finish in order for the dependency to be satisfied.
+
+NOTE: it is important to remember that the "[]" is part of the array name.
+
+Qstat For Job Arrays
+Normal qstat output will display a summary of the array instead of displaying the entire array, job for job. qstat -t will expand the output to display the entire array.
+
+Array Naming Convention
+Arrays are now named with brackets following the array name, for example:
+
+dbeer@napali:~/dev/torque/array_changes$ echo sleep 20 | qsub -t 0-299 
+189[].napali 
+
+Individual jobs in the array are now also noted used square brackets instead of dashes, for example, here is part of the output of qstat -t for the above array:
+
+189[287].napali            STDIN[287]       dbeer                  0 Q batch          
+189[288].napali            STDIN[288]       dbeer                  0 Q batch          
+189[289].napali            STDIN[289]       dbeer                  0 Q batch          
+189[290].napali            STDIN[290]       dbeer                  0 Q batch          
+189[291].napali            STDIN[291]       dbeer                  0 Q batch          
+189[292].napali            STDIN[292]       dbeer                  0 Q batch          
+189[293].napali            STDIN[293]       dbeer                  0 Q batch          
+189[294].napali            STDIN[294]       dbeer                  0 Q batch          
+189[295].napali            STDIN[295]       dbeer                  0 Q batch          
+189[296].napali            STDIN[296]       dbeer                  0 Q batch          
+189[297].napali            STDIN[297]       dbeer                  0 Q batch          
+189[298].napali            STDIN[298]       dbeer                  0 Q batch          
+189[299].napali            STDIN[299]       dbeer                  0 Q batch
+
+
