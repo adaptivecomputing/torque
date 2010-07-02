@@ -1257,26 +1257,32 @@ int is_stat_get(
 
       sync_node_jobs(np, ret_info + strlen("jobs="));
       }
-    else if (server.sv_attr[(int)SRV_ATR_AutoNodeNP].at_val.at_long &&
-             !strncmp(ret_info, "ncpus=", 6))
+    else if (server.sv_attr[(int)SRV_ATR_AutoNodeNP].at_val.at_long)
       {
+      int str_res;
 
-      struct attribute nattr;
-
-      /* first we decode ret_info into nattr... */
-
-      if ((node_attr_def + ND_ATR_np)->at_decode(&nattr, ATTR_NODE_np, NULL, ret_info + 6) == 0)
-        {
-        /* ... and if MOM's ncpus is higher than our np... */
-        if (nattr.at_val.at_long > np->nd_nsn)
+          str_res = strncmp(ret_info, "ncpus=", 6);
+          if(str_res == 0)
           {
-          /* ... then we do the defined magic to create new subnodes */
-          (node_attr_def + ND_ATR_np)->at_action(&nattr, (void *)np, ATR_ACTION_ALTER);
-
-          update_nodes_file();
+          
+          struct attribute nattr;
+          
+          /* first we decode ret_info into nattr... */
+          
+          if ((node_attr_def + ND_ATR_np)->at_decode(&nattr, ATTR_NODE_np, NULL, ret_info + 6) == 0)
+            {
+            /* ... and if MOM's ncpus is higher than our np... */
+            if (nattr.at_val.at_long != np->nd_nsn)
+              {
+              /* ... then we do the defined magic to create new subnodes */
+              (node_attr_def + ND_ATR_np)->at_action(&nattr, (void *)np, ATR_ACTION_ALTER);
+            
+              update_nodes_file();
+              }
+            }
           }
-        }
       }
+      
     else if(server.sv_attr[(int)SRV_ATR_NPDefault].at_val.at_long)
       {
         struct pbsnode *pnode;
