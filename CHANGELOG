@@ -1,6 +1,12 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 2.5.0
+  b - When the server parameter auto_node_np is set to true it is suppose to 
+      set the number of processors of a node to the value returned by the MOM
+      in the ncpus value as returned in pbsnodes. If the configured processor
+      value is less thanncpus the value is adjusted but if it is greater the 
+      value was not adjusted. This fix enables pbs_server to adjust processor 
+      values down as well as up.
   e - Changed qsub to allow for a -l nodes=x+procs=y syntax.
   b - Made a fix to qmgr.c in is_attr. When checking node names against 
       attribute keywords is_attr used strncmp and limited the length of the 
