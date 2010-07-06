@@ -362,9 +362,11 @@ sch_resource_t dynamic_avail(resource *res)
   {
   if (res -> max == INFINITY && res -> avail == UNSPECIFIED)
     return INFINITY;
+
+  if (res -> avail == UNSPECIFIED)
+    return res -> max;
   else
-    return (res -> avail == UNSPECIFIED ?
-            (res -> max - res -> assigned) : (res -> avail - res -> assigned));
+    return res -> avail - res -> assigned;
   }
 
 /*
