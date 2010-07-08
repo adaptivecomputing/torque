@@ -1271,7 +1271,7 @@ int is_stat_get(
           
           if ((node_attr_def + ND_ATR_np)->at_decode(&nattr, ATTR_NODE_np, NULL, ret_info + 6) == 0)
             {
-            /* ... and if MOM's ncpus is higher than our np... */
+            /* ... and if MOM's ncpus is different than our np... */
             if (nattr.at_val.at_long != np->nd_nsn)
               {
               /* ... then we do the defined magic to create new subnodes */
