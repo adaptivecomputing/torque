@@ -99,9 +99,6 @@
 /* Define to 1 if you have the `elf' library (-lelf). */
 #undef HAVE_LIBELF
 
-/* Define to 1 if you have the `job' library (-ljob). */
-#undef HAVE_LIBJOB
-
 /* Define to 1 if you have the `kvm' library (-lkvm). */
 #undef HAVE_LIBKVM
 
@@ -520,6 +517,9 @@
 
 /* Define if building on unsupported OS */
 #undef UNSUPPORTED_MACH
+
+/* Define to enable libjob job_create support */
+#undef USEJOBCREATE
 
 /* Define on ancient linux distros */
 #undef USEOLDTTY
