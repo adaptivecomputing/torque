@@ -613,7 +613,15 @@ case "$JOBCREATE" in
         [AC_MSG_RESULT([yes])
          MOMLIBS="$MOMLIBS -ljob"],
         [AC_MSG_RESULT([no])
-         AC_MSG_ERROR([cannot link with -ljob (need libcap and libpam devel?)])])
+         AC_MSG_CHECKING([for job_create in -ljob with -lcap -lpam])
+         LIBS="$LIBS -lcap -lpam"
+         AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <job.h>]],[job_create(0, 0, 0);])],
+           [AC_MSG_RESULT([yes])
+            MOMLIBS="$MOMLIBS -ljob -lcap -lpam"],
+           [AC_MSG_RESULT([no])
+            AC_MSG_ERROR([cannot link with -ljob])
+           ])
+         ])
       LIBS="$LIBS_save"
       ;;
   no) : ;;
