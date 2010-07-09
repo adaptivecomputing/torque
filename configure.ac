@@ -606,23 +606,9 @@ AC_MSG_RESULT($JOBCREATE)
 
 case "$JOBCREATE" in
   yes) AC_DEFINE([USEJOBCREATE], 1, [Define to enable libjob job_create support])
-      AC_MSG_CHECKING([for job_create in -ljob])
-      LIBS_save="$LIBS"
-      LIBS="$LIBS -ljob"
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <job.h>]],[job_create(0, 0, 0);])],
-        [AC_MSG_RESULT([yes])
-         MOMLIBS="$MOMLIBS -ljob"],
-        [AC_MSG_RESULT([no])
-         AC_MSG_CHECKING([for job_create in -ljob with -lcap -lpam])
-         LIBS="$LIBS -lcap -lpam"
-         AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <job.h>]],[job_create(0, 0, 0);])],
-           [AC_MSG_RESULT([yes])
-            MOMLIBS="$MOMLIBS -ljob -lcap -lpam"],
-           [AC_MSG_RESULT([no])
-            AC_MSG_ERROR([cannot link with -ljob])
-           ])
-         ])
-      LIBS="$LIBS_save"
+      AC_CHECK_LIB([job],[job_create],
+        [MOMLIBS="$MOMLIBS -ljob"],
+        [AC_MSG_ERROR([--enable-job-create requires libjob support]) ])
       ;;
   no) : ;;
   *) AC_MSG_ERROR([--enable-job-create should be yes or no]) ;;
