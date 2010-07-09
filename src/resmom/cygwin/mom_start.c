@@ -153,62 +153,6 @@ int set_job(
   if (sjr != NULL)
     sjr->sj_session = sid;
 
-  /* NOTE:  only activate partition create script for XT4+ environments */
-
-  if (((PPtr = get_job_envvar(pjob, "BATCH_PARTITION_ID")) != NULL) &&
-      ((CPtr = get_job_envvar(pjob, "BATCH_ALLOC_COOKIE")) != NULL) &&
-      !strcmp(CPtr, "0"))
-    {
-    char  tmpLine[1024];
-
-    if (AllocParCmd == NULL)
-      AllocParCmd = strdup("/opt/moab/default/tools/partition.create.xt4.pl");
-
-#ifdef ENABLE_CSA
-
-    if (pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_flags & ATR_VFLAG_SET)
-      {
-      snprintf(tmpLine, sizeof(tmpLine), "%s --confirm -p %s -j %s -a %lld",
-               AllocParCmd,
-               PPtr,
-               pjob->ji_qs.ji_jobid,
-               pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll);
-      }
-    else
-#endif
-      {
-      snprintf(tmpLine, sizeof(tmpLine), "%s --confirm -p %s -j %s -a %ld",
-             AllocParCmd,
-             PPtr,
-             pjob->ji_qs.ji_jobid,
-             sid);
-      }
-
-    log_err(
-      -1,
-      id,
-      tmpLine);
-
-    rc = system(tmpLine);
-
-    if (WEXITSTATUS(rc) != 0)
-      {
-      snprintf(log_buffer, 1024, "cannot create alloc partition");
-
-      sid = -3;
-
-      if (sjr != NULL)
-        sjr->sj_session = sid;
-
-      log_err(
-        -1,
-        id,
-        log_buffer);
-
-      return(sid);
-      }
-    }    /* END if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) && ...) */
-
   return(sid);
   }  /* END set_job() */
 
