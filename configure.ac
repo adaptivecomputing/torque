@@ -586,7 +586,7 @@ case "$CSA" in
       LDFLAGS="$LDFLAGS -L/opt/cray/job/default/lib64"
       AC_CHECK_LIB([csa], [csa_check],
         [MOMLIBS="$MOMLIBS -L/opt/cray/job/default/lib64 -lcsa"],
-        [AC_MSG_ERROR([--enable-csa requires job library support])])
+        [AC_MSG_ERROR([--enable-csa requires libcsa])])
       LDFLAGS=$LDFLAGS_csasave
       ;;
   no) : ;;
@@ -595,6 +595,8 @@ esac
 
 dnl
 dnl enable libjob job_create support
+dnl We do a full link test because some platforms require libcap and libpam and we want to make sure
+dnl they are installed
 dnl
 AC_MSG_CHECKING([whether to enable libjob job_create support])
 AC_ARG_ENABLE(job_create,
@@ -604,11 +606,14 @@ AC_MSG_RESULT($JOBCREATE)
 
 case "$JOBCREATE" in
   yes) AC_DEFINE([USEJOBCREATE], 1, [Define to enable libjob job_create support])
+      AC_MSG_CHECKING([for job_create in -ljob])
       LIBS_save="$LIBS"
       LIBS="$LIBS -ljob"
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <job.h>]],[job_create(0, 0, 0);])],
-        [MOMLIBS="$MOMLIBS -ljob"],
-        [AC_MSG_ERROR([--enable-job-create requires job library support])])
+        [AC_MSG_RESULT([yes])
+         MOMLIBS="$MOMLIBS -ljob"],
+        [AC_MSG_RESULT([no])
+         AC_MSG_ERROR([cannot link with -ljob (need libcap and libpam devel?)])])
       LIBS="$LIBS_save"
       ;;
   no) : ;;
