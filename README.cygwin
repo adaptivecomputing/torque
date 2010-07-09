@@ -48,7 +48,7 @@ Download and install the default's and selected Cygwin packages.
 
 
 Setup openssh for <UserAdmin> and <SimpleUser> using the
-ssh-host-config and ssh-user-config comands
+ssh-host-config and ssh-user-config comands.
 
 Adjust an access without password prompting on each host.
 
@@ -76,8 +76,27 @@ The AddPrivileges script creates passwd&group files and adds privileges
 necessary for normal work Torque components.
 As a rule pbs_mom is demanded more privileges than pbs_server.
 
-Usage of privileges for various start of Torque components
-is resulted in the table:
+You may need to assign the user account of <UserAdmin> as well as <SimpleUser> to the correct 
+groups by hand (by default they are often assigned to "none" as primary group which causes a failure of 
+the admin check the Torque daemons perform at startup). The /etc/passwd should look similar to 
+the following:
+
+SYSTEM:*:18:544:,S-1-5-18::
+LocalService:*:19:544:U-NT AUTHORITY\LocalService,S-1-5-19::
+NetworkService:*:20:544:U-NT AUTHORITY\NetworkService,S-1-5-20::
+Administrators:*:544:544:,S-1-5-32-544::
+<UserAdmin>:unused:500:544:<UserAdmin_FullName>,<some_id>:/home/<UserAdmin>:/bin/bash
+<SimpleUser>:unused:17690:545:<SimpleUser>,<SimpleUser_FullName>,<some_id>:/home/<SimpleUser>:/bin/bash
+
+Important is the number "544" in the line of the <UserAdmin> account which tells cygwin that the <UserAdmin> 
+belongs to the local Administrator group. The /etc/group file should contain something like
+
+SYSTEM:S-1-5-18:18:
+Administrators:<some_id>:544:<UserAdmin>
+Users:<some_id>:545:<SimpleUser>
+
+The AddPrivileges script adds the following permissions to the Torque daemons 
+depending on the Windows version:
  --------------------------------------------------------------------------------------------------
 !                   !!                       !                          !                          !
 !      Run as       !!  pbs_server + sched   !         pbs_mom          !    on Windows subkind    !
@@ -144,9 +163,9 @@ Add the client's hostname to your server's submit_hosts
 
 Set your server's hostsname in the .../torque/server_name file.
 
-Submit jobs as <SimpleUser> with Limited account.
+Submit jobs as <SimpleUser> with limited account.
 
-See more the Torque Documentations.
+For more details refer to the Torque documentation.
 
 
 
@@ -177,7 +196,7 @@ Enter into working directory as <UserAdmin> and execute the following commands:
    #make install
 
 Configure and initiate Torque components.
-Instal the additional privileges (see above).
+Install the additional privileges (see above).
 
 Use cygrunsrv.exe for install, start, stop and remove services.
 See more cygrunsrv.exe --help.
@@ -185,11 +204,11 @@ See more cygrunsrv.exe --help.
 For example:
 
    #./contrib/AddPrivileges --add
-   #cygrunsrv.exe -I pbs_server -p /usr/sbin/pbs_server.exe –u <UserAdmin> -w <password>
-   #cygrunsrv.exe -I pbs_sched -p /usr/sbin/pbs_sched.exe –u <UserAdmin> -w <password>
+   #cygrunsrv.exe -I pbs_server -p /usr/sbin/pbs_server.exe -u <UserAdmin> -w <password>
+   #cygrunsrv.exe -I pbs_sched -p /usr/sbin/pbs_sched.exe -u <UserAdmin> -w <password>
 
    #./contrib/AddPrivileges --add mom
-   #cygrunsrv.exe -I pbs_mom -p /usr/sbin/pbs_mom.exe –u <UserAdmin> -w <password>
+   #cygrunsrv.exe -I pbs_mom -p /usr/sbin/pbs_mom.exe -u <UserAdmin> -w <password>
 
 On Windows XP <UserAdmin> also can start server-sched-mom as services by
 Windows native user SYSTEM (uid=18):
