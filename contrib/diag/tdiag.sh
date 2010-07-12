@@ -28,7 +28,7 @@ while getopts "d:ho:t:" flag; do
 done
 
 if [[ -n $helpme ]]; then
-  echo "USAGE: ./torque_diag [-d DATE] [-h] [-o OUTPUT_FILE] [-t TORQUE_HOME]"
+  echo "USAGE: ./tdiag [-d DATE] [-h] [-o OUTPUT_FILE] [-t TORQUE_HOME]"
   echo ""
   echo "DATE should be in the format YYYYmmdd, for example"
   echo "  20091130 would be the date for November 30th, 2009"
@@ -62,6 +62,7 @@ mkdir $outtmpdir
 cp "$mom_logs/$today" "$outtmpdir/$mom_file"
 cp "$server_logs/$today" "$outtmpdir/$server_file"
 qmgr -c 'p s' > "$outtmpdir/qmgr.txt"
+pbsnodes -a > "$outtmpdir/pbsnodes.txt"
 cp $nodes_file "$outtmpdir/nodes"
 
 cd $tmpdir
