@@ -2114,7 +2114,11 @@ int is_attr(
   /* DIAGTODO: need a list of public and read-only diag attrs */
   char **attr_public = NULL;
   char **attr_readonly = NULL;
-  int ret = FALSE;
+
+  char  *dupname  = NULL;
+  char  *name_ptr = NULL;
+
+  int    ret = FALSE;
 
   if (object == MGR_OBJ_SERVER)
     {
@@ -2132,12 +2136,24 @@ int is_attr(
     attr_readonly = node_readonly_attrs;
     }
 
+  dupname = strdup(name);
+  if (dupname == NULL)
+    {
+    return(FALSE);
+    }
+
+  name_ptr = strchr(dupname,'.');
+  if (name_ptr != NULL)
+    {
+    *name_ptr = '\0';
+    }
+
   if (attr_public != NULL && (attr_type & TYPE_ATTR_PUBLIC))
     {
     while (*attr_public != NULL && ret == FALSE)
       {
 /*      if (strncmp(name, *attr_public, strlen(*attr_public)) == 0)*/
-      if(strcmp(name, *attr_public) == 0)
+      if(strcmp(dupname, *attr_public) == 0)
         {
           ret =  TRUE;
         }
@@ -2151,7 +2167,7 @@ int is_attr(
     while (*attr_readonly != NULL && ret == FALSE)
       {
       /*if (strncmp(name, *attr_readonly, strlen(*attr_readonly)) == 0)*/
-      if (strcmp(name, *attr_readonly) == 0)
+      if (strcmp(dupname, *attr_readonly) == 0)
         ret = TRUE;
 
       attr_readonly++;
