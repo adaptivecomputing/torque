@@ -244,6 +244,7 @@ int      src_login_interactive = TRUE;
 
 /* externs */
 
+extern char *server_alias;
 extern unsigned int pe_alarm_time;
 extern time_t   pbs_tcp_timeout;
 extern long     MaxConnectTimeout;
@@ -380,6 +381,7 @@ static unsigned long setsourcelogininteractive(char *);
 static unsigned long setspoolasfinalname(char *);
 static unsigned long setremchkptdirlist(char *);
 static unsigned long setmaxconnecttimeout(char *);
+static unsigned long aliasservername(char *);
 
 
 static struct specials
@@ -440,6 +442,7 @@ static struct specials
   { "spool_as_final_name", setspoolasfinalname },
   { "remote_checkpoint_dirs", setremchkptdirlist },
   { "max_conn_timeout_micro_sec",   setmaxconnecttimeout },
+  { "alias_server_name", aliasservername },
   { NULL,                  NULL }
   };
 
@@ -3249,6 +3252,28 @@ static unsigned long setnospooldirlist(
 
   return(1);
   }  /* END setnospooldirlist() */
+
+
+static unsigned long aliasservername( char *value)
+  {
+    log_record(
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      "aliasservername",
+      value);
+
+    if(value)
+      {
+      server_alias = (char *)malloc(strlen(value)+1);
+      if (server_alias)
+        {
+        strcpy(server_alias, value);
+        }
+      }
+
+
+    return(1);
+  }
 
 
 
