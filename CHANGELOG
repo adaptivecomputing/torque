@@ -1,6 +1,15 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 2.5.0
+  e - Added new server config option alias_server_name. This option allows
+      the MOM to add an additional server name to be added to the list
+      of trusted addresses. The point of this is to be able to handle
+      alias ip addresses. UDP requests that come into an aliased ip address
+      are returned through the primary ip address in TORQUE. Because
+      the address of the reply packet from the server is not the same address
+      the MOM sent its HELLO1 request, the MOM drops the packet and the MOM
+      cannot be added to the server.
+
   b - When the server parameter auto_node_np is set to true it is suppose to 
       set the number of processors of a node to the value returned by the MOM
       in the ncpus value as returned in pbsnodes. If the configured processor
