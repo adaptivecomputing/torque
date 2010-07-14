@@ -1,3 +1,6 @@
+NOTE:
+TORQUE 2.5 uses a new format for job arrays. Therefore, it is imperative that the system be drained of any job arrays BEFORE upgrading. Upgrading with job arrays queued or running may cause data loss, crashes, etc, and is not supported.
+
 Command Updates for Arrays
 The commands qalter, qdel, qhold, and qrls now all support TORQUE 
 arrays and will have to be updated. The general command syntax is: 
