@@ -18,24 +18,30 @@ that can be specified in qsub.
 
 Slot Limits
 
-It is now possible to limit the amount of jobs that can concurrently run in a
-job array. This is called a slot limit, and the default is unlimited. This can
-be done two ways, the first is at job submission:
+It is now possible to limit the number of jobs that can run concurrently in a
+job array. This is called a slot limit, and the default is unlimited. The slot
+limit can be set in two ways.
+
+The first method can be done at job submission:
 
 qsub script.sh -t 0-299%5
 
 This sets the slot limit to 5, meaning only 5 jobs from this array can be
 running at the same time. 
 
-As administrators are more likely to be concerned with limiting arrays than
-users in many cases, this can also be done by setting the server parameter
-max_slot_limit. If this isn't set, then no value is used.
+The second method can be done on a server wide basis using the server 
+parameter max_slot_limit. Since administrators are more likely to
+be concerned with limiting arrays than users in many cases the 
+max_slot_limit parameter is a convenient way to set a global policy.
+If max_slot_limit is not set then the default limit is unlimited. To set 
+max_slot_limit you can use the following queue manager command.
 
 qmgr -c 'set server max_slot_limit=10'
 
-Means that no array can request a slot limit greater than 10, and any array not
-requesting a slot limit will receive a slot limit of 10. If a user requests a
-slot limit greater than 10, the job will be rejected with the message:
+This means that no array can request a slot limit greater than 10, and 
+any array not equesting a slot limit will receive a slot limit of 10.
+If a user requests a slot limit greater than 10, the job will be
+rejected with the message:
 
 Requested slot limit is too large, limit is X. In this case, X would be 10.
 
