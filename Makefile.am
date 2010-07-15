@@ -2,7 +2,7 @@ include $(top_srcdir)/buildutils/config.mk
 
 SUBDIRS = src doc
 
-EXTRA_DIST = CHANGELOG INSTALL.GNU README.configure README.mpiexec \
+EXTRA_DIST = CHANGELOG INSTALL.GNU README.configure \
              README.torque README.cygwin Release_Notes torque.setup buildutils/torque.spec.in \
              DEVELOPMENT PBS_License.txt torque.spec \
 	     buildutils/self-extract-head-sh.in \
