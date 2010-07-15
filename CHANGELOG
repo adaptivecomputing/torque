@@ -1,6 +1,7 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 2.5.0
+  b - Updated URLs in INSTALL file at root of build.
   e - Added new server config option alias_server_name. This option allows
       the MOM to add an additional server name to be added to the list
       of trusted addresses. The point of this is to be able to handle
