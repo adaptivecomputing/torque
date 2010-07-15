@@ -153,7 +153,7 @@ attribute_def svr_attr_def[] =
     },
 
   /* SRV_ATR_scheduling */
-  { ATTR_scheduling,
+  { ATTR_scheduling,		/* "scheduling" */
     decode_b,
     encode_b,
     set_b,
@@ -504,7 +504,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_Comment */
-  { ATTR_comment,  /* "comment"  - information */
+  { ATTR_comment,  /* "comment" */
     decode_str,
     encode_str,
     set_str,
@@ -843,7 +843,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_NextJobNumber */
-  { ATTR_nextjobnum,
+  { ATTR_nextjobnum,		/* "next_job_number" */
     decode_l,
     encode_l,
     set_nextjobnum,
@@ -856,7 +856,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_tokens */
-  {  ATTR_tokens,
+  {  ATTR_tokens,		/* "tokens" */
      decode_arst,
      encode_arst,
      set_tokens,
@@ -1115,7 +1115,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_JobForceCancelTime */
-  {   ATTR_jobforcecanceltime,     /* job_force_cancel_time */
+  {   ATTR_jobforcecanceltime,     /* "job_force_cancel_time" */
       decode_l,
       encode_l,
       set_l,
@@ -1128,7 +1128,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_MaxArraySize */
-  {  ATTR_maxarraysize,           /* max_job_array_size */
+  {  ATTR_maxarraysize,           /* "max_job_array_size" */
      decode_l,
      encode_l,
      set_l,
@@ -1141,7 +1141,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_MaxSlotLimit */
-  {  ATTR_maxslotlimit,           /* max_slot_limit */
+  {  ATTR_maxslotlimit,           /* "max_slot_limit" */
      decode_l,
      encode_l,
      set_l,
