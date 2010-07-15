@@ -42,6 +42,9 @@ INSTALL: The standard "install" target will install all of the
   shared to your nodes, you can rsh/ssh to each node and run:
   "make install_mom install_clients".
 
+  TORQUE has built-in support for making RPMs. After running
+  ./configure with all desired options, 'make rpm' should create a
+  set of binary RPMs that match your configuration.
 
   For more convienent installation on compute nodes and login machines,
   TORQUE can build customized, distributable, self-extracting packages
@@ -109,6 +112,10 @@ Apple OS X:
   with Developer Tools versions prior to 2.5) .  run configure with the 
   --disable-gcc-warnings to build TORQUE with gcc 4.0 on OS X. gcc installed 
   by Apple Developer Tools 2.5 and newer will compile TORQUE without warning
+
+  TORQUE's configure script generates many error messages on OSX. While they
+  are generally not a problem, 'autoreconf -v -f -i' will generate all new
+  scripts by the OSX version of autotools.
 
   OS X 10.5 (Leopard) support:
 
