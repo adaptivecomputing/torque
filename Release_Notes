@@ -20,8 +20,10 @@ of TORQUE or use a Tcl based scheduler.
 BUILD AND INSTALLATION DIRECTIONS
 ---------------------------------
 
-The directions to build and install are found the PBS Administrators Guide.
+The directions to build and install are found in the PBS Administrators Guide.
 A postscript and PDF copy are found in this directory.  Please read and
-following the directions CAREFULLY.
+follow the directions CAREFULLY.
+
+Installation instructions can also be found at http://www.clusterresources.com/products/torque/docs/
 
 
