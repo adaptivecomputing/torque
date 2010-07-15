@@ -1,6 +1,6 @@
 #! /bin/sh
 
-###       AddPrivileges  ver 1.2     17 Mar 2010           ###
+###       AddPrivileges  ver 1.4     12 Jul 2010           ###
 ### ------------------------------------------------------ ###
 ###  This script creates Passwd&Group files and sets       ###
 ###   additional privileges only for Windows users         ###
@@ -37,7 +37,7 @@ Usage:  AddPrivileges --help | --version      or
 
    --add           add privileges 
 
-               mom      for Torque pbs_mom
+               mom      for Torque pbs_mom (set the SeCreateTokenPrivilege)
                SYSTEM   for native Windows user
 
 EOF
@@ -46,7 +46,7 @@ EOF
 
   -v | --v*)
     echo
-    echo " AddPrivileges  ver 1.2    17 Mar 2010"
+    echo " AddPrivileges  ver 1.4    12 Jul 2010"
     exit $?
     ;;
 
@@ -99,12 +99,13 @@ if [ "$2" = "mom" ]; then
 
     editrights -a SeCreateTokenPrivilege -u "$CURRENTU"
 
-    echo "   Set mom's privileges"
+    echo "   Reboot your computer that the SeCreateTokenPrivilege has taken effect"
 
 fi
 
 
 editrights -a SeServiceLogonRight -u "$CURRENTU"
+editrights -a SeAssignPrimaryTokenPrivilege -u "$CURRENTU"
 
 
 if [[ $? -eq $SUCCESS ]]; then

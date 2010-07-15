@@ -1,7 +1,7 @@
 
 
 Tested with the stable release Cygwin 1.5.25 on 
-Windows XP Pro and on Windows Server 2003 SE (both 32-bit).
+Windows XP Pro (32/64-bit) and on Windows Server 2003 SE (32-bit).
 Tested with the stable release Cygwin 1.7.5 on 64-bit Windows 7 Ultimate.
 Can be used on heterogeneous Torque clusters.
 
@@ -11,7 +11,7 @@ Scheduler C is tested only. Can be used with Maui.
 Mail and drmaa are untested.
 In mom quota and setrlimit are not supported because Cygwin doesn't support ones.
 
-Torque needs two Windows users (local or domain) on each host:
+Torque needs at least two Windows users (local or domain) on each host:
 <UserAdmin> with Computer administrator privileges and 
 <SimpleUser> with Limited account.
 Both users must be password protected.
@@ -23,6 +23,10 @@ Run as administrator (right-click) on Windows 7 and similar.
 ###########################
 ###   Install  Cygwin   ###
 ###########################
+
+Following variants are recommended:
+   Cygwin 1.5.25  on  Windows XP/Server 2003;
+   Cygwin 1.7.5 (or later)  on  Windows 7/Server 2008.
 
 Enter into Windows as user <UserAdmin>.
 To install Cygwin 1.5.25 browse to http://cygwin.com/win-9x.html and click the "setup-legacy.exe" link.
@@ -45,10 +49,15 @@ select the following packages:
 
 Download and install the default's and selected Cygwin packages.
 
+Start a work on Cygwin with the following commands:
+
+   #mkpasswd.exe -l -d > /etc/passwd
+   #mkgroup.exe -l -d  > /etc/group
+
 
 
 Setup openssh for <UserAdmin> and <SimpleUser> using the
-ssh-host-config and ssh-user-config comands.
+ssh-host-config and ssh-user-config commands
 
 Adjust an access without password prompting on each host.
 
@@ -76,53 +85,64 @@ The AddPrivileges script creates passwd&group files and adds privileges
 necessary for normal work Torque components.
 As a rule pbs_mom is demanded more privileges than pbs_server.
 
-You may need to assign the user account of <UserAdmin> as well as <SimpleUser> to the correct 
-groups by hand (by default they are often assigned to "none" as primary group which causes a failure of 
-the admin check the Torque daemons perform at startup). The /etc/passwd should look similar to 
-the following:
+Usage of privileges for known starts of Torque components is resulted in the tables:
 
-SYSTEM:*:18:544:,S-1-5-18::
-LocalService:*:19:544:U-NT AUTHORITY\LocalService,S-1-5-19::
-NetworkService:*:20:544:U-NT AUTHORITY\NetworkService,S-1-5-20::
-Administrators:*:544:544:,S-1-5-32-544::
-<UserAdmin>:unused:500:544:<UserAdmin_FullName>,<some_id>:/home/<UserAdmin>:/bin/bash
-<SimpleUser>:unused:17690:545:<SimpleUser>,<SimpleUser_FullName>,<some_id>:/home/<SimpleUser>:/bin/bash
+ -------------------------------------------------------------------------------------------------------
+!                                                                                                       !
+!                                        Cygwin 1.5.25                                                  !
+!                                                                                                       !
+!-------------------------------------------------------------------------------------------------------!
+!                   !!                       !                               !                          !
+!      Run as       !!  pbs_server + sched   !            pbs_mom            !    on Windows subkind    !
+!                   !!                       !                               !                          !
+!===================!!=======================!===============================!==========================!
+!                   !!                       !                               !                          !
+!  Cygwin daemon    !!          ---          !    SeCreateTokenPrivilege     !  Windows XP/Server 2003  !
+!                   !!                       !                               !                          !
+!-------------------!!-----------------------!-------------------------------!--------------------------!
+!                   !!                       !                               !                          !
+!  Windows service  !!  SeServiceLogonRight  !    SeServiceLogonRight        !  Windows XP/Server 2003  !
+!   by <UserAdmin>  !!                       !    SeCreateTokenPrivilege     !       Windows 7          !
+!                   !!                       !                               !                          !
+!-------------------!!-----------------------!-------------------------------!--------------------------!
+!                   !!                       !                               !                          !
+!  Windows service  !!          ---          !              ---              !       Windows XP         !
+!     by SYSTEM     !!                       !                               !                          !
+!                   !!                       !                               !                          !
+ -------------------------------------------------------------------------------------------------------
 
-Important is the number "544" in the line of the <UserAdmin> account which tells cygwin that the <UserAdmin> 
-belongs to the local Administrator group. The /etc/group file should contain something like
 
-SYSTEM:S-1-5-18:18:
-Administrators:<some_id>:544:<UserAdmin>
-Users:<some_id>:545:<SimpleUser>
+ -------------------------------------------------------------------------------------------------------
+!                                                                                                       !
+!                                        Cygwin 1.7.5 or later                                          !
+!                                                                                                       !
+!-------------------------------------------------------------------------------------------------------!
+!                   !!                       !                               !                          !
+!      Run as       !!  pbs_server + sched   !            pbs_mom            !    on Windows subkind    !
+!                   !!                       !                               !                          !
+!===================!!=======================!===============================!==========================!
+!                   !!                       !                               !                          !
+!  Cygwin daemon    !!          ---          !    SeCreateTokenPrivilege     !  Windows XP/Server 2003  !
+!                   !!                       !                               !                          !
+!-------------------!!-----------------------!-------------------------------!--------------------------!
+!                   !!                       !                               !                          !
+!  Windows service  !!  SeServiceLogonRight  !    SeServiceLogonRight        !       Windows 7          !
+!   by <UserAdmin>  !!                       !    SeCreateTokenPrivilege     !                          !
+!                   !!                       !                               !                          !
+!-------------------!!-----------------------!-------------------------------!--------------------------!
+!                   !!                       !                               !                          !
+!  Windows service  !!  SeServiceLogonRight  ! SeServiceLogonRight           !       Windows 7          !
+!   by <UserAdmin>  !!                       ! SeAssignPrimaryTokenPrivilege !                          !
+!  via LSA registry !!                       !                               !                          !
+!                   !!                       !                               !                          !
+ -------------------------------------------------------------------------------------------------------
 
-The AddPrivileges script adds the following permissions to the Torque daemons 
-depending on the Windows version:
- --------------------------------------------------------------------------------------------------
-!                   !!                       !                          !                          !
-!      Run as       !!  pbs_server + sched   !         pbs_mom          !    on Windows subkind    !
-!                   !!                       !                          !                          !
-!===================!!=======================!==========================!==========================!
-!                   !!                       !                          !                          !
-!  Cygwin daemon    !!          ---          !  SeCreateTokenPrivilege  !  Windows XP/Server 2003  !
-!                   !!                       !                          !                          !
-!-------------------!!-----------------------!--------------------------!--------------------------!
-!                   !!                       !                          !                          !
-!  Windows service  !!  SeServiceLogonRight  !  SeServiceLogonRight     !  Windows XP/Server 2003  !
-!   by <UserAdmin>  !!                       !  SeCreateTokenPrivilege  !       Windows 7          !
-!                   !!                       !                          !                          !
-!-------------------!!-----------------------!--------------------------!--------------------------!
-!                   !!                       !                          !                          !
-!  Windows service  !!                       !                          !       Windows XP         !
-!     by SYSTEM     !!          ---          !           ---            !          only            !
-!                   !!                       !                          !                          !
-!                   !!                       !                          !                          !
- -------------------------------------------------------------------------------------------------- 
 Warning!!! You have to understand that a installing of additional privileges
 can decrease your OS security level.
 
-Open the ports for sshd, pbs_server, pbs_mom and pbs_sched in your firewalls.
+Reboot your computers that the SeCreateTokenPrivilege has taken effect!
 
-Reboot your computers!!!
+Open the ports for sshd, pbs_server, pbs_mom and pbs_sched in your firewalls.
 
 
 
@@ -163,9 +183,9 @@ Add the client's hostname to your server's submit_hosts
 
 Set your server's hostsname in the .../torque/server_name file.
 
-Submit jobs as <SimpleUser> with limited account.
+Submit jobs as <SimpleUser> with Limited account.
 
-For more details refer to the Torque documentation.
+See more the Torque Documentations.
 
 
 
@@ -196,7 +216,7 @@ Enter into working directory as <UserAdmin> and execute the following commands:
    #make install
 
 Configure and initiate Torque components.
-Install the additional privileges (see above).
+Instal the additional privileges (see above).
 
 Use cygrunsrv.exe for install, start, stop and remove services.
 See more cygrunsrv.exe --help.
@@ -210,7 +230,9 @@ For example:
    #./contrib/AddPrivileges --add mom
    #cygrunsrv.exe -I pbs_mom -p /usr/sbin/pbs_mom.exe -u <UserAdmin> -w <password>
 
-On Windows XP <UserAdmin> also can start server-sched-mom as services by
+
+
+Only on  Windows XP <UserAdmin> also can start server-sched-mom as services by
 Windows native user SYSTEM (uid=18):
 
    #./contrib/AddPrivileges --add SYSTEM
@@ -218,6 +240,25 @@ Windows native user SYSTEM (uid=18):
    #cygrunsrv.exe -I pbs_server -p /usr/sbin/pbs_server.exe
    #cygrunsrv.exe -I pbs_sched -p /usr/sbin/pbs_sched.exe
    #cygrunsrv.exe -I pbs_mom -p /usr/sbin/pbs_mom.exe
+
+
+
+On Windows 7 with Cygwin 1.7.5 (or later) can use pbs_mom as services via the LSA private registry
+area (http://cygwin.com/cygwin-ug-net/ntsec.html). Thus the very special and very dangerous
+SeCreateTokenPrivilege is not required:
+
+   #cygserver-config
+   #cygrunsrv.exe -S cygserver
+
+For each user:
+   #passwd -R
+
+   #./contrib/AddPrivileges --add
+   #cygrunsrv.exe -I pbs_mom -p /usr/sbin/pbs_mom.exe -u <UserAdmin> -w <password>
+
+This variant of Torque start has been tested with MPICH2-1.2.1 on Windows 7 x86_64.
+
+
 
 Services and privileges are managed via the Windows Control Panel or command line.
 
