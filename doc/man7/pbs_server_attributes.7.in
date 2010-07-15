@@ -166,6 +166,10 @@ Format: boolean; default value: disabled.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al allow_proxy_user
+Specifies users can proxy from one user to another. Proxy requests will be either validated by ruserok() or by the scheduler.
+Format: boolean; default value: false.
+.Ig
 .Al auto_node_np 
 Automatically configure a node's np value based on the ncpus value from
 the status update.
@@ -221,12 +225,20 @@ removed in the future.  Format: boolean; default value: false.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al disable_server_id_check
+Makes it so the user for the job doesn't have to exist on the server. The user must still exist on all the compute nodes or the job will fail when it tries to execute.
+Format: boolean; default value: false
+.Ig
 .Al extra_resc
 Add additional string-type job resources.  They have no effect within TORQUE
 and are only advisible to the scheduler.  They can not be used for
 resources_default/min/max.  Format: list; default value: none.
 .if !\n(Pb .ig Ig
 [internal type: list]
+.Ig
+.Al job_force_cancel_time
+If configured, number of seconds after a delete where a job will be purged by the server. If not configured, no such thing happens.
+Format: integer; default value: not used.
 .Ig
 .Al job_nanny
 Enables the "job deletion nanny" feature.  All job cancels will
@@ -272,6 +284,21 @@ seconds; default value: 2 seconds.
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig
+.Al lock_file
+Specifies the name and location of the lock file used to determine which high availability server should be active. 
+.br
+If a full path is specified, it is used verbatim by TORQUE. If a relative path is specified, TORQUE will prefix it with $TORQUE_HOME/server_priv.
+Format: string; default value: $TORQUE_HOME/server_priv/server.lock
+.Ig
+.Al lock_file_update_time
+Specifies how often (in seconds) the thread will update the lockfile. (for threaded high availability)
+Format: integer; default value: 3
+.Ig
+.Al lock_file_check_time
+Specifies how often (in seconds) a high availability server will check
+to see if it should become active. (for threaded high availability) Must be greater than lock_file_update_time.
+Format: integer; default value: 9
+.Ig
 .Al log_events
 A bit string which specifies the type of events which are logged, see
 the section on Event Logging in chapter 3 of the ERS.  Format: integer;
@@ -291,6 +318,10 @@ If this is set to a value >=1 and log_file_max_size is set then pbs_server
 will continue rolling the log files to logfile.log_file_roll_depth.
 .if !\n(Pb .ig Ig
 [internal type: integer]
+.Ig
+.Al log_keep_days
+If this is set then logs older than X days will be removed by the server.
+Format: integer; default value: not enforced;
 .Ig
 .Al log_level
 Controls the verbosity of server logs.  This value ranges from 0 to 7 with
@@ -414,6 +445,14 @@ Default value: root on the local host.
 .if !\n(Pb .ig Ig
 [internal type: access control list]
 .Ig
+.Al max_job_array_size
+Specifies the maximum number of jobs that can be in any requested job array. Arrays requesting more jobs than configured will be rejected.
+Format: integer; default value: Unlimited.
+.Ig
+.Al max_slot_limit
+No array can request a slot limit greater than 10. Any array that does not request a slot limit receives a slot limit of 10. Using the example above, slot requests greater than 10 are rejected.
+A slot limit is the maximum number of jobs from an array that can run concurrently.
+Format: integer; default value: Unlimited.
 .Al max_running
 The maximum number of jobs allowed to be selected for execution at
 any given time.
@@ -474,6 +513,10 @@ Format: integer; default value: 150
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig
+.Al node_ping_rate
+Specifies the maximum interval (in seconds) between successive pings sent from the pbs_server daemon to the pbs_mom daemon to determine node/daemon health.
+Format: integer; default value: 300
+.Ig
 .Al node_pack
 Controls how multiple processor nodes are allocated to jobs.
 If this attribute is set to true, jobs will be assigned to the multiple
@@ -487,6 +530,10 @@ declared to the server (in the nodes file).
 Default value: unset \- assigned to nodes as nodes in order that were declared.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
+.Ig
+.Al np_default
+np_default allows the administrator to unify the number of processors (np) on all nodes. The value can be dynamically changed. A value of 0 tells pbs_server to use the value of np found in the nodes file. The maximum value is 32767.
+Format: integer; default value: not used.
 .Ig
 .Al operators
 List of users granted batch operator privileges.
