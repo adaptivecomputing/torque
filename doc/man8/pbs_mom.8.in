@@ -267,56 +267,17 @@ An initialization value directive has a name which starts with a
 dollar sign ($) and must be known to MOM via an internal table.
 The entries in this table now are: 
 .RS
-.IP pbsserver
-which defines hostnames running pbs_server that will be allowed to
-submit jobs, issue Resource Monitor (RM) requests, and get status updates.  MOM
-will continually attempt to contact all server hosts for node status and state
-updates.  Like $PBS_SERVER_HOME/server_name, the hostname may be followed by a
-colon and a port number.  This parameter replaces the oft-confused $clienthost
-parameter from TORQUE 2.0.0p0 and earlier.  Note that the hostname in
-$PBS_SERVER_HOME/server_name is used if no $pbsserver parameters are found
-.IP pbsclient
-which causes a host name to be added to the list of hosts which will be allowed
-to connect to MOM as long as they are using a privilaged port for the purposes
-of resource monitor requests.
-For example, here are two
-configuration file lines which will allow the hosts "fred" and "wilma"
-to connect:
+.IP auto_ideal_load
+if jobs are running, sets idea_load based on a simple expression.  The expressions
+start with the variable 't' (total assigned CPUs) or 'c' (existing CPUs), an
+operator (+ \- / *), and followed by a float constant.
 .IP
-.Ty "$pbsclient      fred"
+.Ty "$auto_ideal_load t-0.2"
 .br
-.Ty "$pbsclient      wilma"
-.IP
-Two host name are always allowed to connection to pbs_mom, "localhost" and the
-name returned to pbs_mom by the system call gethostname().  These names need
-not be specified in the configuration file.  The hosts listed as "clients" can
-issue Resource Monitor (RM) requests.  Other MOM nodes and servers do not need
-to be listed as clients.
-.IP restricted
-which causes a host name to be added to the list of hosts which will be allowed
-to connect to MOM without needing to use a privilaged port.  These names
-allow for wildcard matching.  For example, here is a configuration file
-line which will allow queries from any host from the domain "ibm.com".
-.IP
-.Ty "$restricted      *.ibm.com"
-.IP
-The restriction which applies to these connections is that only
-internal queries may be made.  No resources from a config file
-will be found.  This is to prevent any shell commands from being
-run by a non-root process.
-.br
-This parameter is generally not required except for some versions of OSX.
-.IP logevent
-which sets the mask that determines which event types are logged by pbs_mom.
-For example:
-.IP
-.Ty "$logevent 0x1fff"
-.br
-.Ty "$logevent 255"
-.IP
-The first example would set the log event mask to 0x1ff (511) which enables
-logging of all events including debug events.  The second example would set
-the mask to 0x0ff (255) which enables all events except debug events.
+.IP auto_max_load
+if jobs are running, sets max_load based on a simple expression.  The expressions
+start with the variable 't' (total assigned CPUs) or 'c' (existing CPUs), an
+operator (+ \- / *), and followed by a float constant.
 .IP cputmult
 which sets a factor used to adjust cpu time used by a job.  This is provided
 to allow adjustment of time charged and limits enforced where the job might
@@ -329,18 +290,6 @@ For example:
 .Ty "$cputmult 1.5
 .br
 .Ty "$cputmult 0.75
-.IP usecp
-specifies which directories should be staged with cp instead of rcp/scp.  If a
-shared filesystem is available on all hosts in a cluster, this directive is used to
-make these filesystems known to MOM.  For example, if /home is NFS mounted on
-all nodes in a cluster:
-.IP
-.Ty "$usecp *:/home  /home"
-.br
-.IP wallmult
-which sets a factor used to adjust wall time usage by to job to a common
-reference system.  The factor is used for walltime calculations and limits
-the same as cputmult is used for cpu time.
 .IP configversion
 specifies the version of the config file data, a string.
 .IP check_poll_time
@@ -353,16 +302,50 @@ result in increased system usage by MOM.  Default is 45 seconds.
 causes MOM to report itself as state "down" to pbs_server in the event of a
 failed health check.  This feature is EXPERIMENTAL and likely to be removed in
 the future.  See HEALTH CHECK below.
+.IP enablemomrestart
+enable automatic restarts of MOM.  If enabled, MOM will check if its binary has
+been updated and restart itself at a safe point when no jobs are running; thus
+making upgrades easier.  The check is made by comparing the mtime of the
+pbs_mom executable.  Command-line args, the process name, and the PATH env
+variable are preserved across restarts.  It is recommended that this not be
+enabled in the config file, but enabled when desired with momctl (see RESOURCES
+for more information.)
 .IP ideal_load
 ideal processor load.  Represents a low water mark for the load average.  Nodes
 that are currently busy will consider itself free after falling below ideal_load.
-.IP auto_ideal_load
-if jobs are running, sets idea_load based on a simple expression.  The expressions
-start with the variable 't' (total assigned CPUs) or 'c' (existing CPUs), an
-operator (+ \- / *), and followed by a float constant.
-.IP
-.Ty "$auto_ideal_load t-0.2"
+.IP igncput
+Ignore cpu time violations on this mom, meaning jobs will not be cancelled due to exceeding their limits for cpu time.
+.IP ignmem 
+Ignore memory violations on this mom, meaning jobs will not be cancelled due to exceeding their memory limits.
+.IP ignvmem
+If set to true, then pbs_mom will ignore vmem/pvmem limit enforcement.
+.IP ignwalltime
+If set to true, then pbs_mom will ignore walltime limit enforcement.
+.IP job_output_file_mask
+Specifies a mask for creating job output and error files. Values can be specified in base 8, 10, or 16; leading 0 implies octal and leading 0x or 0X hexadecimal. A value of "userdefault" will use the user's default umask.
+.Ty "$job_output_file_mask 027"
 .br
+.IP log_directory
+Changes the log directory. Default is $TORQUEHOME/mom_logs/. $TORQUEHOME default is /var/spool/torque/ but can be changed in the ./configure script. The value is a string and should be the full path to the desired mom log directory.
+.Ty "$log_directory /opt/torque/mom_logs/"
+.br
+.IP logevent
+which sets the mask that determines which event types are logged by pbs_mom.
+For example:
+.IP
+.Ty "$logevent 0x1fff"
+.br
+.Ty "$logevent 255"
+.IP
+The first example would set the log event mask to 0x1ff (511) which enables
+logging of all events including debug events.  The second example would set
+the mask to 0x0ff (255) which enables all events except debug events.
+.IP log_file_suffix
+Optional suffix to append to log file names. If %h is the suffix, pbs_mom appends the hostname for where the log files are stored if it knows it, otherwise it will append the hostname where the mom is running.
+.Ty "$log_file_suffix tom = 20100223.tom"
+.br
+.IP log_keep_days
+Specifies how many days to keep log files. pbs_mom deletes log files older than the specified number of days. If not specified, pbs_mom won't delete log files based on their age.
 .IP loglevel
 specifies the verbosity of logging with higher numbers specifying more verbose
 logging.  Values may range between 0 and 7.
@@ -380,18 +363,6 @@ log-file-name.log_file_roll_depth.
 .IP max_load
 maximum processor load.  Nodes over this load average are considered busy (see
 ideal_load above).
-.IP auto_max_load
-if jobs are running, sets max_load based on a simple expression.  The expressions
-start with the variable 't' (total assigned CPUs) or 'c' (existing CPUs), an
-operator (+ \- / *), and followed by a float constant.
-.IP enablemomrestart
-enable automatic restarts of MOM.  If enabled, MOM will check if its binary has
-been updated and restart itself at a safe point when no jobs are running; thus
-making upgrades easier.  The check is made by comparing the mtime of the
-pbs_mom executable.  Command-line args, the process name, and the PATH env
-variable are preserved across restarts.  It is recommended that this not be
-enabled in the config file, but enabled when desired with momctl (see RESOURCES
-for more information.)
 .IP node_check_script
 specifies the fully qualified pathname of the health check script to run (see
 HEALTH CHECK for more information).
@@ -404,12 +375,46 @@ Currently supported are "jobstart" and "jobend".  This value defaults to 1 with
 no events indicating the check is run every MOM interval. (see HEALTH CHECK for
 more information)
 .IP
-.Ty "$node_check_interval 0"  Disabled.
+.Ty "$node_check_interval 0  #Disabled."
 .br
-.Ty "$node_check_interval 0,jobstart"  Only runs at job starts
+.Ty "$node_check_interval 0,jobstart  #Only runs at job starts"
 .br
 .Ty "$node_check_interval 10,jobstart,jobend"
 .IP
+.IP nodefile_suffix
+Specifies the suffix to append to a host names to denote the data channel network adapter in a multihomed compute node.
+.Ty "$nodefile_suffix i"
+With the suffix of 'i' and the control channel adapter with the name node01, the data channel would have a hostname of node01i.
+.IP nospool_dir_list
+If the job's output file should be in one of the paths specified here, then it will be spooled directly in that directory instead of the normal spool directory.
+.br
+Specified in the format path1, path2, etc.
+.Ty $nospool_dir_list /home/mike/*,/var/tmp/spool/
+.IP pbsclient
+which causes a host name to be added to the list of hosts which will be allowed
+to connect to MOM as long as they are using a privilaged port for the purposes
+of resource monitor requests.
+For example, here are two
+configuration file lines which will allow the hosts "fred" and "wilma"
+to connect:
+.IP
+.Ty "$pbsclient      fred"
+.br
+.Ty "$pbsclient      wilma"
+.IP
+Two host name are always allowed to connection to pbs_mom, "localhost" and the
+name returned to pbs_mom by the system call gethostname().  These names need
+not be specified in the configuration file.  The hosts listed as "clients" can
+issue Resource Monitor (RM) requests.  Other MOM nodes and servers do not need
+to be listed as clients.
+.IP pbsserver
+which defines hostnames running pbs_server that will be allowed to
+submit jobs, issue Resource Monitor (RM) requests, and get status updates.  MOM
+will continually attempt to contact all server hosts for node status and state
+updates.  Like $PBS_SERVER_HOME/server_name, the hostname may be followed by a
+colon and a port number.  This parameter replaces the oft-confused $clienthost
+parameter from TORQUE 2.0.0p0 and earlier.  Note that the hostname in
+$PBS_SERVER_HOME/server_name is used if no $pbsserver parameters are found
 .IP prologalarm
 Specifies maximum duration (in seconds) which the MOM will wait for the job prolog
 or job job epilog to complete.  This parameter default to 300 seconds (5 minutes)
@@ -422,6 +427,20 @@ the remote host and accept arguments of the form "user@host:files"  For example:
 .Ty "$rcpcmd /usr/bin/rcp \-rp
 .br
 .Ty "$rcpcmd /usr/bin/scp \-rpB
+.IP restricted
+which causes a host name to be added to the list of hosts which will be allowed
+to connect to MOM without needing to use a privilaged port.  These names
+allow for wildcard matching.  For example, here is a configuration file
+line which will allow queries from any host from the domain "ibm.com".
+.IP
+.Ty "$restricted      *.ibm.com"
+.IP
+The restriction which applies to these connections is that only
+internal queries may be made.  No resources from a config file
+will be found.  This is to prevent any shell commands from being
+run by a non-root process.
+.br
+This parameter is generally not required except for some versions of OSX.
 .IP remote_checkpoint_dirs
 Specifies what server checkpoint directories are remotely mounted.  This directive is used to
 tell the MOM which directories are shared with the server.  Using remote checkpoint directories eliminates the need to copy the checkpoint files back and forth between the MOM and the server. This parameter is available in 2.4.1 and later.
@@ -430,10 +449,18 @@ tell the MOM which directories are shared with the server.  Using remote checkpo
 .IP remote_reconfig
 Enables the ability to remotely reconfigure pbs_mom with a new config file.
 Default is disabled.  This parameter accepts various forms of true, yes, and 1.
-.IP timeout
-Specifies the number of seconds before TCP messages will time out.  TCP messages include job obituaries, and TM requests if RPP is disabled.
-Default is 60 seconds.
-.IP tmpdir
+.IP source_login_batch
+Specifies whether or not mom will source the /etc/profile, etc. type files for batch jobs. Parameter accepts various forms of true, false, yes, no, 1 and 0. Default is True.
+.IP source_login_interactive
+Specifies whether or not mom will source the /etc/profile, etc. type files for interactive jobs. Parameter accepts various forms of true, false, yes, no, 1 and 0. Default is True.
+.IP spool_as_final_name
+If set to true, jobs will spool directly as their output files, with no intermediate locations or steps. This is mostly useful for shared filesystems with fast writing capability. 
+.IP status_update_time
+Specifies (in seconds) how often MOM updates its status information to
+pbs_server.  This value should correlate with the server's scheduling interval.
+High values increase the load of pbs_server and the network.  Low values cause
+pbs_server to report stale information.  Default is 45 seconds.
+.IP tmpdir 
 Sets the directory basename for a per-job temporary directory.  Before job
 launch, MOM will append the jobid to the tmpdir basename and create the
 directory.  After the job exit, MOM will recursively delete it.  The env
@@ -445,11 +472,17 @@ must have write permission to create the directory.  If the directory already
 exists and is owned by the job owner, it will not be deleted after the job.  If
 the directory already exists and is NOT owned by the job owner, the job start
 will be rejected.
-.IP status_update_time
-Specifies (in seconds) how often MOM updates its status information to
-pbs_server.  This value should correlate with the server's scheduling interval.
-High values increase the load of pbs_server and the network.  Low values cause
-pbs_server to report stale information.  Default is 45 seconds.
+.IP timeout
+Specifies the number of seconds before TCP messages will time out.  TCP messages include job obituaries, and TM requests if RPP is disabled.
+Default is 60 seconds.
+.IP usecp
+specifies which directories should be staged with cp instead of rcp/scp.  If a
+shared filesystem is available on all hosts in a cluster, this directive is used to
+make these filesystems known to MOM.  For example, if /home is NFS mounted on
+all nodes in a cluster:
+.IP
+.Ty "$usecp *:/home  /home"
+.br
 .IP varattr
 This is similar to a shell escape above, but includes a TTL.  The command will
 only be run every TTL seconds.  A TTL of \-1 will cause the command to be
@@ -461,6 +494,10 @@ status output.  The command should output data in the form of
 .IP
 .Ty "$varattr 3600 /path/to/script [<ARGS>]..."
 .IP
+.IP wallmult
+which sets a factor used to adjust wall time usage by to job to a common
+reference system.  The factor is used for walltime calculations and limits
+the same as cputmult is used for cpu time.
 .RE
 .LP
 The configuration file must be executable and "secure".  It must be owned by a user id and
@@ -475,10 +512,6 @@ the format $VAR=$VAL, i.e.,
 .LP
 .IP xauthpath
 Specifies the path to the xauth binary to enable X11 fowarding.
-.IP ignvmem
-If set to true, then pbs_mom will ignore vmem/pvmem limit enforcement.
-.IP ignwalltime
-If set to true, then pbs_mom will ignore walltime limit enforcement.
 .IP mom_host
 Sets the local hostname as used by pbs_mom.
 .SH RESOURCES
