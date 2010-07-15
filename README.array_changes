@@ -63,7 +63,7 @@ the entire array, for example:
 
 qsub script.sh -W depend=afterokarray:427[] 
 
-will assume every job is array 427 has to finish successfully for the
+will assume every job in array 427[] has to finish successfully for the
 dependency to be satisfied. The submission: 
 
 qsub script.sh -W depend=afterokarray:427[][5] 
@@ -77,8 +77,9 @@ NOTE: It is important to remember that the "[]" is part of the array name.
 Qstat For Job Arrays
 
 Normal qstat output will display a summary of the array instead of displaying
-the entire array, job for job. qstat -t will expand the output to display the
-entire array.
+the entire array, job for job. 
+
+qstat -t will expand the output to display the entire array.
 
 
 Array Naming Convention
@@ -88,7 +89,7 @@ Arrays are now named with brackets following the array name, for example:
 dbeer@napali:~/dev/torque/array_changes$ echo sleep 20 | qsub -t 0-299 
 189[].napali 
 
-Individual jobs in the array are now also noted used square brackets instead of
+Individual jobs in the array are now also noted using square brackets instead of
 dashes, for example, here is part of the output of qstat -t for the above
 array:
 
