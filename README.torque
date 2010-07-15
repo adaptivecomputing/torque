@@ -23,16 +23,5 @@ to have included in this project, please send email to help@supercluster.org
 
 
 
-INSTALL ----------------------
-
-  Install directions are available at 
-
-  http://www.clusterresources.com/products/torque/docs/a.ltorquequickstart.shtml
-
-  More detailed instructions are available in the PBS Administrator's Guide 
-available in admin_guide.ps found in the 'doc' subdirectory or at
-
-  http://www.clusterresources.com/products/torque/docs/
-
 * TORQUE is not endorsed by nor affiliated with Altair.
 
