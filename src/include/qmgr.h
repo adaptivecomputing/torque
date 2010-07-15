@@ -391,7 +391,7 @@ void disconnect_from_server();
   "server_state - the current state of the server\n" \
   "state_count - total number of jobs in each state\n" \
   "total_jobs - total number of jobs managed by the server\n" \
-  "PBS_version - the release version of PBS\n" \
+  "pbs_version - the release version of PBS\n" \
    
 #define HELP_QUEUEPUBLIC \
   "Queue Public Attributes:\n" \

@@ -94,6 +94,11 @@ a user with administrator or operator privilege.
 Certain attributes require the user to have full administrator privilege.
 The following is a list of the server attributes.
 .RS .25i
+.Al accounting_keep_days
+This defines the number of days that accounting files will be kept.
+Default value: unset - pbs_server will never delete accounting files
+Format: integer
+.Ig
 .Al acl_group_sloppy 
 This is a default value for the queue attribute of the same name.
 Format: boolean, "TRUE", "True", "true", "Y", "y", "1", "FALSE", "False",
@@ -190,6 +195,9 @@ Format: integer; default value: 256.
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig 
+.Al credential_lifetime
+The number of a seconds that a client connection may stay connected without re-authenticating. Default is 3600 seconds.
+.Ig
 .Al comment
 A text string which may be set by the scheduler or other privileged client
 to provide information to the batch system users. 
@@ -382,6 +390,12 @@ be used.  Format: a domain name; Default value: none.
 .if !\n(Pb .ig Ig
 [internal type: string]
 .Ig
+.Al mail_from
+Set the From: header for all outgoing emails from pbs_server. 
+Format: an email address; Default value: "adm".
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
 .Al mail_subject_fmt
 Override the default format for the subject of outgoing mail messages. A number 
 of printf-like format specifiers and escape sequences can be used:
@@ -531,6 +545,10 @@ Default value: unset \- assigned to nodes as nodes in order that were declared.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al node_suffix
+Adds a domainname to node names before IP lookups.
+Format: string; default value: none.
+.Ig
 .Al np_default
 np_default allows the administrator to unify the number of processors (np) on all nodes. The value can be dynamically changed. A value of 0 tells pbs_server to use the value of np found in the nodes file. The maximum value is 32767.
 Format: integer; default value: not used.
@@ -544,6 +562,13 @@ Requires full manager privilege to set or alter.
 Default value: root on the local host.
 .if !\n(Pb .ig Ig
 [internal type: access control list]
+.Ig
+.Al owner_purge
+Allows job owners to forcibly purge their own jobs from the server. This short-circuits
+the normal flow of events and is hightly discouraged.
+Default value: unset
+.if !\n(Pb .ig Ig
+[internal type: boolean]
 .Ig
 .Al poll_jobs
 Controls how pbs_server will send job status requests to MOMs.  When unset or
@@ -686,6 +711,11 @@ Format: integer; default value: 6.
 The following attributes are read-only, they are maintained by the server
 and cannot be changed by a client.
 .RS .25i
+.Al pbs_version
+The release version number of the server.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
 .Al resources_assigned
 The total amount of certain types of resources allocated to running jobs.
 .if !\n(Pb .ig Ig
@@ -720,11 +750,6 @@ The total number of jobs managed by the server currently in each state.
 The total number of jobs currently managed by the server.
 .if !\n(Pb .ig Ig
 [internal type: integer]
-.Ig
-.Al PBS_version
-The release version number of the server.
-.if !\n(Pb .ig Ig
-[internal type: string]
 .Ig
 .RE
 .if \n(Pb .ig Ig

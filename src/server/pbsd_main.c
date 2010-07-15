@@ -934,7 +934,7 @@ static time_t next_task()
   struct work_task  *nxt;
 
   struct work_task  *ptask;
-  time_t      tilwhen = server.sv_attr[(int)SRV_ATR_schedule_iteration].at_val.at_long;
+  time_t      tilwhen = server.sv_attr[(int)SRV_ATR_scheduler_iteration].at_val.at_long;
 
   time_now = time((time_t *)0);
 
@@ -1128,7 +1128,7 @@ main_loop(void)
         {
         server.sv_next_schedule =
           time_now +
-          server.sv_attr[(int)SRV_ATR_schedule_iteration].at_val.at_long;
+          server.sv_attr[(int)SRV_ATR_scheduler_iteration].at_val.at_long;
 
         schedule_jobs();
         notify_listeners();

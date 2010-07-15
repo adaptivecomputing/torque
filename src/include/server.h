@@ -123,7 +123,7 @@ enum srv_atr
   SRV_ATR_resource_assn,
   SRV_ATR_resource_cost,
   SRV_ATR_sys_cost,
-  SRV_ATR_schedule_iteration,
+  SRV_ATR_scheduler_iteration,
   SRV_ATR_ping_rate,
   SRV_ATR_check_rate,
   SRV_ATR_tcp_timeout,

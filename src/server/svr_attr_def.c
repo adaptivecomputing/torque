@@ -428,8 +428,8 @@ attribute_def svr_attr_def[] = {
    ATR_TYPE_LONG,
    PARENT_TYPE_SERVER},
 
-  /* SRV_ATR_schedule_iteration */
-  {ATTR_schedit,		/* "schedule_iteration" */
+  /* SRV_ATR_scheduler_iteration */
+  {ATTR_schedit,		/* "scheduler_iteration" */
    decode_l,
    encode_l,
    set_l,
