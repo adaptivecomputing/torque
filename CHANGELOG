@@ -113,6 +113,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - from Simon Toth: If no available amount is specified for a resource 
       and the max limit is set, the requirement should be checked against 
       the maximum only (for scheduler, bugzilla 23). 
+  b - check return values from fwrite in cpuset.c to avoid warnings
+  e - expand acl host checking to allow * in the middle of hostnames, not 
+      just at the beginning. Also allow ranges like a[10-15] to mean a10,
+      a11, ..., a15.
 
 2.4.8
   e - Bugzilla bug 22. HIGH_PRECISION_FAIRSHARE for fifo scheduling.

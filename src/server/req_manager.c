@@ -124,6 +124,7 @@
 #include "pbs_job.h"
 #include "pbs_nodes.h"
 #include "work_task.h"
+#include "mcom.h"
 
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
@@ -1080,6 +1081,88 @@ void mgr_queue_delete(
 
 
 
+int hostname_check(
+
+  char *hostname)
+
+  {
+  char  myhost[PBS_MAXHOSTNAME];
+  char  extension[PBS_MAXHOSTNAME];
+  char  ret_hostname[PBS_MAXHOSTNAME];
+  char *open_bracket;
+
+  if (hostname == NULL)
+    return(SUCCESS);
+  else if(strchr(hostname,'*') != NULL)
+    return(SUCCESS);
+
+  strcpy(myhost,hostname);
+  open_bracket = strchr(myhost,'[');
+
+  ret_hostname[0] = '\0';
+
+  if (open_bracket == NULL)
+    {
+    /* handle normally */
+    if ((get_fullhostname(hostname,ret_hostname,PBS_MAXHOSTNAME,NULL)) ||
+        strncmp(hostname, ret_hostname, PBS_MAXHOSTNAME))
+      {
+      return(FAILURE);
+      }
+    }
+  else
+    {
+    /* authenticate the range */
+    int   low;
+    int   high;
+    char *dash;
+    char *host_end;
+    char *close_bracket = strchr(open_bracket,']');
+
+    low = atoi(open_bracket+1);
+    dash = strchr(open_bracket,'-');
+
+    host_end = open_bracket + strlen(open_bracket);
+
+    if ((dash == NULL) ||
+        (close_bracket == NULL))
+      {
+      /* not a valid range */
+      return(FAILURE);
+      }
+
+    high = atoi(dash+1);
+
+    /* check for anything left over */
+    extension[0] = '\0';
+
+    if (close_bracket < host_end)
+      {
+      strcpy(extension,close_bracket+1);
+      }
+
+    /* now check each hostname */
+    while (low < high)
+      {
+      sprintf(open_bracket,"%d%s",low,extension);
+
+      if ((get_fullhostname(myhost,ret_hostname,PBS_MAXHOSTNAME,NULL)) ||
+          (strncmp(myhost,ret_hostname,PBS_MAXHOSTNAME)))
+        {
+        return(FAILURE);
+        }
+
+      low++;
+      }
+    }
+
+  return(SUCCESS);
+  } /* END hostname_check() */
+
+
+
+
+
 /*
  * mgr_server_set - Set Server Attribute Values
  *
@@ -1114,7 +1197,6 @@ void mgr_server_set(
     {
     char     *bad_host;
     char     *host_entry;
-    char      hostname[PBS_MAXHOSTNAME + 1];
     attribute temp;
     int       index;
     int       i;
@@ -1160,19 +1242,13 @@ void mgr_server_set(
       for (i = 0;i < pstr->as_usedptr;++i)
         {
         host_entry = strchr(pstr->as_string[i], (int)'@');
-
-        /* if wildcard, we can't check */
-
-        if ((host_entry != NULL) && host_entry[1] != '*')
+        
+        if (hostname_check(host_entry+1) == FAILURE)
           {
-          if (get_fullhostname(host_entry + 1, hostname, PBS_MAXHOSTNAME, NULL) ||
-              strncmp(host_entry + 1, hostname, PBS_MAXHOSTNAME))
-            {
-            snprintf(bad_host, bhstrlen, "First bad host: %s",
-                     host_entry + 1);
-
-            break;
-            }
+          snprintf(bad_host, bhstrlen, "First bad host: %s",
+            host_entry + 1);
+        
+          break;
           }
         }
 
@@ -1188,18 +1264,12 @@ void mgr_server_set(
         {
         host_entry = strchr(pstr->as_string[i], (int)'@');
 
-        /* if wildcard, we can't check */
-
-        if ((host_entry != NULL) && host_entry[1] != '*')
+        if (hostname_check(host_entry+1) == FAILURE)
           {
-          if (get_fullhostname(host_entry + 1, hostname, PBS_MAXHOSTNAME, NULL) ||
-              strncmp(host_entry + 1, hostname, PBS_MAXHOSTNAME))
-            {
-            snprintf(bad_host, bhstrlen, "First bad host: %s",
-                     host_entry + 1);
+          snprintf(bad_host,bhstrlen,"First bad host: %s",
+            host_entry+1);
 
-            break;
-            }
+          break;
           }
         }
 
@@ -2265,7 +2335,6 @@ int manager_oper_chk(
   {
   char   *entry;
   int    err = 0;
-  char    hostname[PBS_MAXHOSTNAME + 1];
   int      i;
 
   struct array_strings *pstr;
@@ -2295,35 +2364,27 @@ int manager_oper_chk(
 
     entry++; /* point after the '@' */
 
-    if (*entry != '*')
+    if (hostname_check(entry) == FAILURE)
       {
-      /* if == * cannot check it any more */
-
-      /* if not wild card, must be fully qualified host */
-
-      if (get_fullhostname(entry, hostname, PBS_MAXHOSTNAME, NULL) ||
-          strncmp(entry, hostname, PBS_MAXHOSTNAME))
+      if (actmode == ATR_ACTION_RECOV)
         {
-        if (actmode == ATR_ACTION_RECOV)
-          {
-          sprintf(log_buffer, "bad entry in acl: %s",
-                  pstr->as_string[i]);
+        sprintf(log_buffer, "bad entry in acl: %s",
+          pstr->as_string[i]);
 
-          log_err(PBSE_BADACLHOST,
-                  "manager_oper_chk",
-                  log_buffer);
-          }
-        else
-          {
-          sprintf(log_buffer, "bad entry in acl: %s",
-                  pstr->as_string[i]);
+        log_err(PBSE_BADACLHOST,
+          "manager_oper_chk",
+          log_buffer);
+        }
+      else
+        {
+        sprintf(log_buffer, "bad entry in acl: %s",
+          pstr->as_string[i]);
 
-          log_err(PBSE_BADACLHOST,
-                  "manager_oper_chk",
-                  log_buffer);
+        log_err(PBSE_BADACLHOST,
+          "manager_oper_chk",
+          log_buffer);
 
-          err = PBSE_BADACLHOST;
-          }
+        err = PBSE_BADACLHOST;
         }
       }
     }

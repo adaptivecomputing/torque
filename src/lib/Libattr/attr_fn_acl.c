@@ -731,6 +731,113 @@ static int gid_match(const char *group1, const char *group2)
 
 
 
+/*
+ * checks if the range portion of a hostname matches the range in an acl
+ * if they match, moves the pointers past this portion
+ * should receive things like pm_ptr->->[0-4] and pc_ptr->->3
+ *
+ * @param pm_ptr - pointer to the pointer to the acl
+ * @param pc_ptr - pointer to the pointer to the hostname we're checking
+ * @return 0 if match, 1 otherwise
+ */
+int acl_check_range(
+
+  const char **pm_ptr, /* I/O */
+  const char **pc_ptr) /* I/O */
+
+  {
+  const char *pm = *pm_ptr;
+  const char *pc = *pc_ptr;
+
+  int   low;
+  int   high;
+  int   num;
+
+  if (*pm == '[')
+    pm++;
+  
+  low = atoi(pm);
+
+  /* find the dash */
+  while ((pm != NULL) &&
+         (*pm != '-'))
+    pm++;
+
+  /* move past the dash */
+  pm++;
+
+  high = atoi(pm);
+
+  /* find the closing bracket */
+  while ((pm != NULL) && 
+         (*pm != ']'))
+    pm++;
+
+  /* move past the ] */
+  pm++;
+
+  num = atoi(pc);
+
+  if ((num < low) ||
+      (num > high))
+    return(1);
+
+  /* it matches, now update the pointers */
+
+  /* move pc past the digits */
+  while (isdigit(*pc))
+    pc++;
+
+  *pc_ptr = pc;
+  *pm_ptr = pm;
+
+  return(0);
+  } /* END acl_check_range() */
+
+
+
+
+int acl_wildcard_check(
+
+  const char **pm_ptr,     /* I/O */
+  const char **pc_ptr,     /* I/O */
+  const char  *master_end, /* I */
+  const char  *can_end)    /* I */
+
+  {
+  const char *pm = *pm_ptr;
+  const char *pc = *pc_ptr;
+
+  if (*pm != '*')
+    return(1);
+
+  pm++;
+
+  /* we only have to do more if this isn't the end */
+  if (pm < master_end)
+    {
+    /* search through the "can" string to find a match for the rest of
+     * the acl */
+    while ((strcasecmp(pm,pc) != 0) &&
+           (pc < can_end))
+      {
+      pc++;
+      }
+
+    if (pc >= can_end)
+      return(1);
+    }
+
+  /* we're matching */
+  *pm_ptr = master_end;
+  *pc_ptr = can_end;
+
+  return(0);
+  } /* END acl_wildcard_check() */
+
+
+
+
 
 /*
  * host acl order match - match two strings from the tail end first
@@ -753,37 +860,63 @@ static int hacl_match(
   {
   const char *pc;
   const char *pm;
+  const char *can_end;
+  const char *master_end;
 
   if ((can == NULL) || (!strcmp(can, "LOCAL")))
     {
     return(0);
     }
 
-  pc = can + strlen(can) - 1;
+  pc = can;
+  pm = master;
 
-  pm = master + strlen(master) - 1;
+  can_end    = can + strlen(can);
+  master_end = master + strlen(master);
 
-  while ((pc > can) && (pm > master))
+  while ((pc < can_end) && 
+         (pm < master_end))
     {
-    if (tolower(*pc) != tolower(*pm))
-      return (1);
+    switch (*pm)
+      {
+      case '[':
 
-    pc--;
+        if (acl_check_range(&pm,&pc) != 0)
+          return(1);
 
-    pm--;
+        break;
+
+      case '*':
+
+        if (acl_wildcard_check(&pm,&pc,master_end,can_end) != 0)
+          return(1);
+
+        break;
+
+      default:
+        if (tolower(*pc) != tolower(*pm))
+          return(1);
+
+        /* only advance pointers here, other functions advance properly */
+        pc++;
+        pm++;
+
+        break;
+      }
     }
 
-  /* comparison of one or both reached the start of the string */
-
-  if (pm == master)
+  /* make sure both strings have terminated or the master has a wildcard */
+  if (pc < can_end)
+    return(1);
+  else if (pm < master_end)
     {
-    if (*pm == '*')
-      return (0);
-    else if ((pc == can) && (tolower(*pc) == tolower(*pm)))
-      return (0);
+    if ((*pm != '*') ||
+        (pm+1 < master_end))
+      return(1);
     }
 
-  return (1);
+  /* if we haven't failed by now, we're golden */
+  return (0);
   }
 
 
