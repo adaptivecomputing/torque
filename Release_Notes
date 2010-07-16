@@ -61,6 +61,9 @@ WHAT'S NEW
     run TORQUE with Cygwin see README.cygwin. TORQUE on Cygwin was a
     community project and support for this feature will be provided by
     the TORQUE community. 
+    
+    For more information concerning the installation and use of TORQUE
+    with Cygwin please see the README.cygwin file.
 
     The 'procs' keyword has been part of the qsub syntax for some time. 
     However, TORQUE itself never interpreted this argument and simply 
