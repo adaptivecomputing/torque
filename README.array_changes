@@ -1,7 +1,8 @@
 This file contains information concerning the use of the new job array 
 features in TORQUE 2.5.
 
---- WARNING --- TORQUE 2.5 uses a new format for job arrays. It in not backwards
+--- WARNING --- 
+TORQUE 2.5 uses a new format for job arrays. It in not backwards
 compatible with job arrays from version 2.3 or 2.4. Therefore, it is 
 imperative that the system be drained of any job arrays BEFORE upgrading. 
 Upgrading with job arrays queued or running may cause data loss, crashes, 

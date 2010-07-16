@@ -1,9 +1,94 @@
+				                       Release Notes
+
+TORQUE Resource Manager
+
+Software Version 2.5.0
+
 This file contains a few notes on building and installing TORQUE and 
-Release notes for each release.
+Release notes concerning some of the new features of this release.
+
+		                   	-------- WARNING! --------
 
 TORQUE 2.5 Array Changes - WARNING: TORQUE 2.5 Job Arrays are not backwards
 compatible, you MUST NOT upgrade to this from 2.3 or 2.4 while you have job
 arrays queued - See README.array_changes for more details.
+
+---------------------------------------------------------------------------
+CONTENTS
+
+   This document contains the following sections:
+     
+     * Overview
+     * What's New
+     * Requirements
+     * Installation
+
+--------------------------------------------------------------------------
+OVERVIEW
+
+    Enhanced job array functionality and Cygwin compatibility are the two
+    main new features of TORQUE 2.5.0. Several other minor enhancements 
+    have also been added to TORQUE 2.5.0 along with several bug fixes.
+    For a complete list of changes see CHANGELOG.
+    
+---------------------------------------------------------------------------
+WHAT'S NEW
+
+    Job arrays are now suported in the commands qalter, qdel, qhold, qrls 
+    in addition to the qsub command.
+
+    Slot limits are a new feature added to job arrays which allow users and
+    administrators to have more control of the number of concurrently 
+    running jobs from a job array. Slot limits can be set on a per job basis
+    or system wide with the new server parameter 'max_slot_limit'. 
+    Administrators can also control how large user arrays can be with
+    the new server parameter 'max_job_array_size'.
+
+    New job dependecy options have been added to work with job arrays. Users
+    can create dependecies based on the status of entire job arrays and
+    not just individual jobs.
+
+    qstat has also been updated to more conveniently display job array. Job
+    arrays are displayed in a summary of the array by default, however,
+    expanded display of the entire job can also be done.
+
+    Special thanks to Glen Beane and David Beer for their work on the 
+    new job array functionality. For more information concerning updates 
+    to job arrays in TORQUE 2.5.0 refer to the README.array_changes document.
+
+    TORQUE 2.5.0 can now be run with Cygwin. This feature was added by
+    Igor Ilyenko, Yauheni Charniauski and Vikentsi Lapa. To learn how to 
+    run TORQUE with Cygwin see README.cygwin. TORQUE on Cygwin was a
+    community project and support for this feature will be provided by
+    the TORQUE community. 
+
+    The 'procs' keyword has been part of the qsub syntax for some time. 
+    However, TORQUE itself never interpreted this argument and simply 
+    passed it through to the scheduler. With TORQUE 2.5.0 the 'procs' 
+    keyword is now interpreted to mean allocate a designated number of 
+    processors on any combination of nodes. For example the following
+    qsub command
+
+    qsub -l nodes=2 -l procs=2 
+
+    will allocate two separate nodes with one processor each plus it will
+    allocate two additional processors from any other available nodes.
+    The same allocation can be achieved with the following syntax as well.
+
+    qsub -l nodes=2+procs=2.
+
+    A new MOM config option was added named 'alias_server_name'. This option
+    allows a MOM to add an additional host name address to its trusted 
+    addresses. The option was added to overcome a problem with RPP and UDP
+    when alias IP addresses are used on a pbs_server.
+
+    'clone_batch_size', 'clone_batch_delay', 'job_start_timeout', and 
+    'checkpoint_defaults' were added as new qmgr server parameters. 
+
+    To find more information concerning the new parameters as well as other
+    TORQUE features see the documentation at 
+    http://www.clusterresources.com/products/torque/docs/
+
 
 
 
