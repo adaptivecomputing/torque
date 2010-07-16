@@ -549,7 +549,7 @@ attribute_def svr_attr_def[] = {
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_LogLevel */
-  {ATTR_loglevel,		/* "loglevel" */
+  {ATTR_loglevel,		/* "loglevel" - undocumented */
    decode_l,
    encode_l,
    set_l,
@@ -609,7 +609,7 @@ attribute_def svr_attr_def[] = {
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_QCQLimits */
-  {ATTR_qcqlimits,		/* "queue_centric_limits" */
+  {ATTR_qcqlimits,		/* "queue_centric_limits" - undocumented */
    decode_b,
    encode_b,
    set_b,
@@ -802,7 +802,7 @@ attribute_def svr_attr_def[] = {
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_tokens */
-  {ATTR_tokens,			/* "tokens" */
+  {ATTR_tokens,			/* "tokens" - undocumented */
    decode_arst,
    encode_arst,
    set_tokens,
@@ -922,7 +922,7 @@ attribute_def svr_attr_def[] = {
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_JobMustReport */
-  {ATTR_jobmustreport,		/* "job_must_report" */
+  {ATTR_jobmustreport,		/* "job_must_report" - undocumented */
    decode_b,
    encode_b,
    set_b,
@@ -934,7 +934,7 @@ attribute_def svr_attr_def[] = {
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_checkpoint_dir */
-  {ATTR_checkpoint_dir,		/* "checkpoint_dir" */
+  {ATTR_checkpoint_dir,		/* "checkpoint_dir" - undocumented */
    decode_str,
    encode_str,
    set_str,
@@ -946,7 +946,7 @@ attribute_def svr_attr_def[] = {
    PARENT_TYPE_SERVER},
 
   /*SRV_ATR_display_job_server_suffix */
-  {ATTR_dispsvrsuffix,		/* "display_job_server_suffix" */
+  {ATTR_dispsvrsuffix,		/* "display_job_server_suffix" - undocumented */
    decode_b,
    encode_b,
    set_b,
@@ -958,7 +958,7 @@ attribute_def svr_attr_def[] = {
    PARENT_TYPE_SERVER},
 
   /*SRV_ATR_job_suffix_alias */
-  {ATTR_jobsuffixalias,		/* "job_suffix_alias" */
+  {ATTR_jobsuffixalias,		/* "job_suffix_alias" - undocumented */
    decode_str,
    encode_str,
    set_str,

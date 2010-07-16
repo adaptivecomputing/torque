@@ -162,7 +162,7 @@ attribute_def que_attr_def[] = {
    PARENT_TYPE_QUE_ALL},
 
   /* QA_ATR_HostList *//* HostList */
-  {ATTR_hostlist,		/* "hostlist" */
+  {ATTR_hostlist,		/* "hostlist" - undocumented */
    decode_arst,
    encode_arst,
    set_hostacl,
@@ -234,7 +234,7 @@ attribute_def que_attr_def[] = {
    PARENT_TYPE_QUE_ALL},
 
   /* QA_ATR_MaxReport *//* max number of jobs reported for truncated output */
-  {ATTR_maxreport,		/* "max_report" */
+  {ATTR_maxreport,		/* "max_report" - undocumented */
    decode_l,
    encode_l,
    set_l,
@@ -366,7 +366,7 @@ attribute_def que_attr_def[] = {
    PARENT_TYPE_QUE_ALL},
 
   /* QA_ATR_AclGroup *//* Group Access Control List */
-  {ATTR_aclgroup,		/* "acl_group_list" */
+  {ATTR_aclgroup,		/* "acl_groups" */
    decode_arst,
    encode_arst,
    set_arst,
@@ -402,7 +402,7 @@ attribute_def que_attr_def[] = {
    PARENT_TYPE_QUE_ALL},
 
   /* QA_ATR_MTime */
-  {ATTR_mtime,			/* "mtime" */
+  {ATTR_mtime,			/* "mtime" - undocumented */
    decode_l,
    encode_l,
    set_null,
@@ -429,7 +429,7 @@ attribute_def que_attr_def[] = {
   /* for execution queues only */
 
   /* QE_ATR_checkpoint_dir */
-  {ATTR_checkpoint_dir,		/* "checkpoint_dir" */
+  {ATTR_checkpoint_dir,		/* "checkpoint_dir" - undocumented */
    decode_str,
    encode_str,
    set_str,
@@ -453,7 +453,7 @@ attribute_def que_attr_def[] = {
    PARENT_TYPE_QUE_EXC},
 
   /* QE_ATR_checkpoint_defaults */
-  {ATTR_checkpoint_defaults,	/* "checkpoint_defaults" */
+  {ATTR_checkpoint_defaults,	/* "checkpoint_defaults" - undocumented */
    decode_str,
    encode_str,
    set_str,
@@ -465,7 +465,7 @@ attribute_def que_attr_def[] = {
    PARENT_TYPE_QUE_EXC},
 
   /* QE_ATR_RendezvousRetry */  /* Number times to retry sync of jobs */
-  {ATTR_rndzretry,		/* "rendezvous_retry" */
+  {ATTR_rndzretry,		/* "rendezvous_retry" - undocumented */
    decode_l,
    encode_l,
    set_l,
@@ -477,7 +477,7 @@ attribute_def que_attr_def[] = {
    PARENT_TYPE_QUE_EXC},
 
   /* QE_ATR_ReservedExpedite */
-  {ATTR_rsvexpdt,		/* "reserved_expedite" */
+  {ATTR_rsvexpdt,		/* "reserved_expedite" - undocumented */
    decode_l,
    encode_l,
    set_l,
@@ -489,7 +489,7 @@ attribute_def que_attr_def[] = {
    PARENT_TYPE_QUE_EXC},
 
   /* QE_ATR_ReservedSync */
-  {ATTR_rsvsync,		/* "reserved_sync" */
+  {ATTR_rsvsync,		/* "reserved_sync" - undocumented */
    decode_l,
    encode_l,
    set_l,
