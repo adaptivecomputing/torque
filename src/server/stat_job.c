@@ -299,8 +299,8 @@ int status_attrib(
           resource *pres;
 
           int found = 0;
-          unsigned long remaining;
-          unsigned long upperBound;
+          unsigned long remaining = 0;
+          unsigned long upperBound = 0;
 
           if (((pattr + JOB_ATR_resource)->at_val.at_list.ll_next != NULL) &&
               ((pattr + JOB_ATR_resource)->at_flags & ATR_VFLAG_SET))
