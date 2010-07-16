@@ -49,12 +49,26 @@ int array_upgrade(job_array *pa, int fds, int version, int *old_version)
   /* call the appropriate upgrader function, if we ever wish to depricate an old
      array struct version, then we should delete the case from this if else-if 
      block and delete its upgrader function */
+
+  /* version 1 is depricated, but this code is left commented out as an example 
   if (version == 1)
     {
-    /* version 1 is depricated, but this code is left commented out as an example */
-    /* return array_upgrade_v1(pa, fds, version, old_version); */
-    return 1; /* version 1 is not longer supported, this if block included for 
-                 example only, returning 1 */
+
+    return array_upgrade_v1(pa, fds, version, old_version);
+
+    }
+   */
+  if (version < 3)
+    {
+    /* these versions are depricated, documentation includes a warning 
+       about the incompatibility and inability to upgrade, print a quick and 
+       dirty error message and exit */
+       
+    sprintf(log_buffer, "WARNING, unable to upgrade job array\n"
+            "structs from versions prior to 2.5.0.\n"
+            "Please downgrade TORQUE and upgrade once no job arrays are queued\n");
+    log_err(-1, "array_upgrade", log_buffer);
+    exit(1);
     }
   else
     {
