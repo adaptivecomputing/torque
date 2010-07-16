@@ -1,7 +1,10 @@
 This file contains a few notes on building and installing TORQUE and 
 Release notes for each release.
 
-TORQUE 2.5 Array Changes - See README.array_changes
+TORQUE 2.5 Array Changes - WARNING: TORQUE 2.5 Job Arrays are not backwards
+compatible, you MUST NOT upgrade to this from 2.3 or 2.4 while you have job
+arrays queued - See README.array_changes for more details.
+
 
 
 REQUIREMENTS
