@@ -1,10 +1,15 @@
-TORQUE 2.5 uses a new format for job arrays. Therefore, it is imperative that
-the system be drained of any job arrays BEFORE upgrading. Upgrading with job
-arrays queued or running may cause data loss, crashes, etc, and is not
-supported.
+This file contains information concerning the use of the new job array 
+features in TORQUE 2.5.
+
+--- WARNING --- TORQUE 2.5 uses a new format for job arrays. It in not backwards
+compatible with job arrays from version 2.3 or 2.4. Therefore, it is 
+imperative that the system be drained of any job arrays BEFORE upgrading. 
+Upgrading with job arrays queued or running may cause data loss, crashes, 
+etc, and is not supported.
 
 
-Command Updates for Arrays
+COMMAND UPDATES FOR ARRAYS
+--------------------------
 
 The commands qalter, qdel, qhold, and qrls now all support TORQUE 
 arrays and will have to be updated. The general command syntax is: 
@@ -16,7 +21,8 @@ that can be specified in qsub.
 (http://www.clusterresources.com/products/torque/docs/commands/qsub.shtml)
 
 
-Slot Limits
+SLOT LIMITS
+--------------------------
 
 It is now possible to limit the number of jobs that can run concurrently in a
 job array. This is called a slot limit, and the default is unlimited. The slot
@@ -46,7 +52,8 @@ rejected with the message:
 Requested slot limit is too large, limit is X. In this case, X would be 10.
 
 
-Job Array Dependencies
+JOB ARRAY DEPENDENCIES
+--------------------------
 
 The following dependencies can now be used for job arrays:
 
@@ -80,7 +87,8 @@ the dependency to be satisfied.
 NOTE: It is important to remember that the "[]" is part of the array name.
 
 
-Qstat For Job Arrays
+QSTAT FOR JOB ARRAYS
+--------------------------
 
 Normal qstat output will display a summary of the array instead of displaying
 the entire array, job for job. 
@@ -88,7 +96,8 @@ the entire array, job for job.
 qstat -t will expand the output to display the entire array.
 
 
-Array Naming Convention
+ARRAY NAMING CONVENTION
+--------------------------
 
 Arrays are now named with brackets following the array name, for example:
 
