@@ -275,7 +275,14 @@ Format: boolean (see acl_group_enable).
 .LP
 The following attributes apply only to execution queues:
 .RS .25i
-.Al "checkpoint_min \(sc"
+.Al "checkpoint_defaults"
+Specifies the queues default checkpointing values to be used for a job that does
+not have any checkpointing specified.  Format: string;
+default value: none.
+.if !\n(Pb .ig Ig
+[internal type: string]
+.Ig
+.Al "checkpoint_min"
 Specifies the minimum interval of cpu time, in minutes, which is allowed
 between checkpoints of a job.  If a user specifies a time less than this
 value, this value is used instead.  Format: integer;
