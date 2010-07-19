@@ -2,8 +2,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 2.5.0
 
-  b - Updated URLs in README.torque file at root of build.
-  b - Updated URLs in INSTALL file at root of build.
   e - Added new server config option alias_server_name. This option allows
       the MOM to add an additional server name to be added to the list
       of trusted addresses. The point of this is to be able to handle
@@ -12,36 +10,23 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the address of the reply packet from the server is not the same address
       the MOM sent its HELLO1 request, the MOM drops the packet and the MOM
       cannot be added to the server.
-
-  b - When the server parameter auto_node_np is set to true it is suppose to 
-      set the number of processors of a node to the value returned by the MOM
-      in the ncpus value as returned in pbsnodes. If the configured processor
-      value is less thanncpus the value is adjusted but if it is greater the 
-      value was not adjusted. This fix enables pbs_server to adjust processor 
-      values down as well as up.
-  e - Changed qsub to allow for a -l nodes=x+procs=y syntax.
-  b - Made a fix to qmgr.c in is_attr. When checking node names against 
-      attribute keywords is_attr used strncmp and limited the length of the 
-      compare to the length of the keyword. So node names like stateless
-      were tagged as an error. (replaced strncmp with strcmp)
+  n - auto_node_np will now adjust np values down as well as up.
   e - Enabled TORQUE to be able to parse the -l procs=x node spec. Previously
       TORQUE simply recored the value of x for procs in Resources_List. It
       now takes that value and allocates x processors packed on any available 
       node. (Ken Nielson Adaptive Computing. June 17, 2010)
   f - added full support (server-scheduler-mom) for Cygwin (UIIP NAS of Belarus,
       uiip.bas-net.by)
-  f - architecture and build system changes to support Cygwin (Igor Ilyenko, 
-      UIIP Minsk)
   b - fixed EINPROGRESS in net_client.c. This signal appears every time of 
       connecting and requires individual processing. The old erroneous 
-      processing brought to big network delay, especially on Cygwin.
+      processing brought a large network delay, especially on Cygwin.
   e - improved signal processing after connecting in client_to_svr and added own
       implementation of bindresvport for OS which lack it (Igor Ilyenko, 
       UIIP Minsk)
   f - created permission checking of Windows (Cygwin) users, using mkpasswd, 
       mkgroup and own functions IamRoot, IamUser (Yauheni Charniauski, 
       UIIP Minsk)
-  f - created permission checking of submited jobs (Vikentsi Lapa, 
+  f - created permission checking of submitted jobs (Vikentsi Lapa, 
       UIIP Minsk)
   f - Added the --disable-daemons configure option for start server-sched-mom
       as Windows services, cygrunsrv.exe goes its into background 
@@ -50,16 +35,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       Charniauski, UIIP Minsk)
   b - Changed pbsd_main to call daemonize_server early only if 
       high_availability_mode is set.
-  e - removed the very old A_ macros (patch provided by Simon Toth, CESNET z.s.p.o.)
   e - added new qmgr server attributes (clone_batch_size, clone_batch_delay)
       for controlling job cloning (Bugzilla #4)
   e - added new qmgr attribute (checkpoint_defaults) for setting default
       checkpoint values on Execution queues (Bugzilla #1)
-  b - Merged revision 3268 from 2.4-fixes. removed block of code that broke 
-      pbs_statjob for requested attributes
   e - print a more informative error if pbs_iff isn't found when trying to
       authenticate a client
-  n - 01/18/2010. Merged 2.4.5 revisions 3268-3375. 
   e - added qmgr server attribute job_start_timeout, specifies timeout to be
       used for sending job to mom. If not set, tcp_timeout is used.
   e - added -DUSESAVEDRESOURCES code that uses servers saved resources used
