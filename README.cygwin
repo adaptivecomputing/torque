@@ -93,13 +93,13 @@ Enter into working directory as <UserAdmin> and execute the following commands:
  
 The next command must be done for the server installation:
 
-   #./contrib/AddPrivileges --add
+   # ./contrib/AddPrivileges --add
 
-+The next command must be done for the pbs_mom installation:
+The next command must be done for the pbs_mom installation:
 
-   #./contrib/AddPrivileges --add mom
+   # ./contrib/AddPrivileges --add mom
 
-+The AddPrivileges script creates passwd & group files and adds the privileges 
+The AddPrivileges script creates passwd & group files and adds the privileges 
 necessary for normal work Torque components.
 
 As a rule pbs_mom demands more privileges than pbs_server.
@@ -126,7 +126,7 @@ Required privileges for various Torque components is shown in the table below:
 !                   !!                       !                               !                          !
 !-------------------!!-----------------------!-------------------------------!--------------------------!
 !                   !!                       !                               !                          !
-!  Windows service  !!          ---          !              ---              !       Windows XP         !
+!  Windows service  !!          ---          !              ---              !     Windows XP 32        !
 !     by SYSTEM     !!                       !                               !                          !
 !                   !!                       !                               !                          !
  -------------------------------------------------------------------------------------------------------
@@ -253,7 +253,7 @@ For example:
 
 
 
-On  Windows XP the <UserAdmin> can also start server-sched-mom as services through the Windows 
+On  Windows XP x32  the <UserAdmin> can also start server-sched-mom as services through the Windows 
 native user SYSTEM (uid=18):
 
    # ./contrib/AddPrivileges --add SYSTEM
