@@ -273,9 +273,8 @@ int client_to_svr(
   int                sock;
   unsigned short     tryport = 777;
 
-  int                errorsock;
-
 #ifndef NOPRIVPORTS
+  int                errorsock;
   int                flags;
 #endif
 
