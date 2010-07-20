@@ -473,6 +473,42 @@ dnl    AC_DEFINE(GEOMETRY_REQUESTS, 1, [Define to allow job specific geometry re
     AC_MSG_RESULT([no])
   fi
 fi
+
+dnl compile for NUMA systems - allows the site to configure:
+dnl 1. cpusets and multi-moms
+dnl 2. memory fences to only access close memory
+dnl 
+dnl --enable-numa-support
+AC_ARG_ENABLE(numa_support, [
+  --enable-numa-support  Allows cpusets to be used in conjunction with multi-moms and enables memory fencing])
+if test "x$GCC" = "xyes" ;then
+  AC_MSG_CHECKING([whether to support NUMA systems])
+  if test "${enable_numa_support}" = "yes" ; then
+    AC_MSG_RESULT([yes])
+    build_l26_cpuset=yes
+    AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
+    CFLAGS="$CFLAGS -DNUMA_SUPPORT"
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+dnl fixes errors relating to unaligned memory accesses
+dnl some systems experience these errors
+dnl 
+dnl --enable-align-memory
+AC_ARG_ENABLE(align_memory, [
+  --enable-align-memory  Change compile flags to get rid of unaligned memory access errors])
+if test "x$GCC" = "xyes" ;then
+  AC_MSG_CHECKING([whether add memory alignment flags])
+  if test "${enable_align_memory}" = "yes" ; then
+    AC_MSG_RESULT([yes])
+    CFLAGS="$CFLAGS -fstack-protector -Wformat -Wformat-security -DFORTIFY_SOURCE=2"
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
 AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
 
 dnl  irix6 can be changed to irix6array explicitly with an
