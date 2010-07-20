@@ -7,12 +7,14 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/param.h>
+#include <errno.h>
 
 #include "libpbs.h"
 #include "attribute.h"
 #include "resource.h"
 #include "server_limits.h"
 #include "pbs_job.h"
+#include "pbs_nodes.h"
 #include "log.h"
 
 /* NOTE: move these three things to utils when lib is checked in */
@@ -29,18 +31,28 @@
 #define TTORQUECPUSET_PATH "/dev/cpuset/torque"
 #define TROOTCPUSET_PATH   "/dev/cpuset"
 
+#ifdef NUMA_SUPPORT
+extern numanode numa_nodes[];
+extern int num_numa_nodes;
+#endif /* NUMA_SUPPORT */
+
 /* FIXME: TODO:  TTORQUECPUSET_PATH, enabling cpuset support, and correct error
  * checking need a run-time config */
 
 int           *VPToCPUMap = NULL;  /* map of virtual processors to cpus (alloc) */
 
-extern char    mom_host[];
+int num_cpus;
+int num_mems;
+int cpu_offset;
+extern int     LOGLEVEL;
+
 extern char    mom_short_name[];
 
 
 /* private functions */
 void remove_defunct_cpusets();
 int get_cpu_string(job *pjob,char *);
+int get_cpuset_strings(job *pjob,char *,char *);
 int create_vnodesets(job *,char *path,char *,mode_t);
 int init_jobset(char *,job *,mode_t,char *);
 /* end private functions */
@@ -175,9 +187,11 @@ void remove_defunct_cpusets()
 
   /* Find all the job cpusets. */
 
-  if ((dir = opendir(TTORQUECPUSET_PATH)) == NULL)
+  strcpy(path, TTORQUECPUSET_PATH);
+  
+  if ((dir = opendir(path)) == NULL)
     {
-    sprintf(log_buffer, "opendir(%s) failed.\n",TTORQUECPUSET_PATH);
+    sprintf(log_buffer, "opendir(%s) failed.\n",path);
 
     log_err(-1, id, log_buffer);
     }
@@ -228,6 +242,165 @@ void remove_defunct_cpusets()
 
 
 
+
+/**
+ * adjust_root_map
+ * @see remove_boot_set() - parent
+ *
+ * @param cpusetStr - (I) the cpuset string
+ * @param cpusetMap - (I/O) the cpuset map
+ * @param mapSize - (I) the map size
+ * @param add - (I) True to add cpuset to map else we remove cpuset from map
+ */
+
+void adjust_root_map(
+
+  char *cpusetStr, /* I */
+  int   cpusetMap[], /* I/O */
+  int   mapSize,   /* I */
+  int   add)       /* I */
+
+  {
+  int   val1 = -1;
+  int   val2 = -1;
+  int   i;
+  int   j;
+  int   len;
+  int   range;
+  char  *ptr;
+
+  val1 = atoi(cpusetStr);
+  range = FALSE;
+
+  len = strlen(cpusetStr);
+  for (j=0; j<len; j++)
+    {
+    if (cpusetStr[j] == '-')
+      {
+      range = TRUE;
+      ptr = cpusetStr;
+      ptr += j + 1;
+      val2 = atoi(ptr);
+      }
+    else if (cpusetStr[j] == ',')
+      {
+      if (val2 > -1)
+        {
+        for (i=val1; i<=val2; i++)
+          {
+          cpusetMap[i] = add? 1: 0;
+          }
+        range = FALSE;
+        }
+      else
+        {
+        cpusetMap[val1] = add? 1: 0;
+        }
+      ptr = cpusetStr;
+      ptr += j + 1;
+      val1 = atoi(ptr);
+      val2 = -1;
+      }
+    }
+
+  if (val2 > -1)
+    {
+    for (i=val1; i<=val2; i++)
+      {
+      cpusetMap[i] = add? 1: 0;
+      }
+    }
+  else
+    {
+    cpusetMap[val1] = add? 1: 0;
+    }
+
+  return;
+  }
+
+
+
+
+/**
+ * remove_boot_set
+ * @see initialize_root_cpuset() - parent
+ *
+ * @param rootStr - (I/O) the root cpuset string
+ * @param bootStr - (I) the boot cpuset string
+ */
+
+void remove_boot_set(
+
+  char *rootStr, /* I/O */
+  char *bootStr) /* I */
+
+  {
+  static char    id[] = "remove_boot_set";
+  int   j;
+  int   first;
+  int   cpusetMap[1024];
+  char  tmpBuf[MAXPATHLEN];
+
+  if ((rootStr == NULL) ||
+      (bootStr == NULL))
+    return;
+  
+  /* clear out map */
+  for (j=0; j<1024; j++)
+    {
+    cpusetMap[j] = 0;
+    }
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,
+      "removing boot cpuset (%s) from root cpuset (%s)",
+      bootStr, rootStr);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    }
+
+  /* add the root cpuset to the map */
+  adjust_root_map(rootStr, cpusetMap, 1024, TRUE);
+
+  /* now remove the boot cpuset from the map */
+  adjust_root_map(bootStr, cpusetMap, 1024, FALSE);
+  
+  /* convert the cpuset map back into the root cpuset string */
+
+  rootStr[0] = '\0';
+  first = TRUE;
+  for (j=0; j<1024; j++)
+    {
+    if (cpusetMap[j] > 0 )
+      {
+        if (first)
+          {
+          sprintf (rootStr, "%d", j);
+          first = FALSE;
+          }
+        else
+          {
+          sprintf (tmpBuf, ",%d", j);
+          strcat (rootStr, tmpBuf);
+          }
+      }
+    }
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,
+      "resulting root cpuset (%s)",
+      rootStr);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    }
+
+
+  return;
+  }
+
+
+
+
 /*
  * Create the root cpuset for Torque if it doesn't already exist.
  * clear out any job cpusets for jobs that no longer exist.
@@ -274,7 +447,6 @@ initialize_root_cpuset(void)
     }
 
   sprintf(path, "%s",
-
           TTORQUECPUSET_PATH);
 
   if (lstat(path, &statbuf) != 0)
@@ -289,7 +461,7 @@ initialize_root_cpuset(void)
 
     mkdir(path, 0755);
 
-    /* load all cpus in root set */
+    /* load cpus in root set */
 
     sprintf(path, "%s/cpus",
             TROOTCPUSET_PATH);
@@ -298,17 +470,10 @@ initialize_root_cpuset(void)
 
     if (fp != NULL)
       {
-      char *cptr;
-      char *dptr;
-
-      char *ptr;
-
-      int   maxindex;
-      int   mindex;
-
-      char  tmpBuf[MAXPATHLEN];
-
-      /* FORMAT:  <CPU#>[<CPU#>][,<CPU#>[<CPU#>]]... */
+      /* 
+       * FORMAT:  list of cpus or mems that may be comma delimited (0,1,2,3) or
+       * may be a range (0-3)
+       */
 
       /* read cpus from root cpuset */
 
@@ -335,45 +500,6 @@ initialize_root_cpuset(void)
         id,
         log_buffer);
 
-      /* convert string to lookup table */
-
-      strncpy(tmpBuf, cpuset_buf, sizeof(tmpBuf));
-
-      /* extract last cpu index value */
-
-      cptr = strchr(cpuset_buf, ',');
-      dptr = strchr(cpuset_buf, '-');
-
-      ptr = MAX(cptr, dptr);
-
-      if (ptr == NULL)
-        ptr = cpuset_buf;
-      else
-        ptr++;
-
-      maxindex = strtol(ptr, NULL, 10);
-
-      VPToCPUMap = (int *)calloc(1, sizeof(int) * maxindex);
-
-      strncpy(tmpBuf, cpuset_buf, sizeof(tmpBuf));
-
-      mindex = 0;
-
-      ptr = strtok(tmpBuf, ",");
-
-      /* Commented out as currently results in an infinite loop */
-#if 0
-      while (ptr != NULL)
-        {
-        ptr = strtok(ptr, "-");
-
-        while (ptr != NULL)
-          {
-          /* What was meant to be here ? - csamuel@vpac.org */
-          }
-        }
-
-#endif
       /* NOTE:  load 'boot' set */
 
       sprintf(path, "%s/boot/cpus",
@@ -385,8 +511,6 @@ initialize_root_cpuset(void)
         {
         char bootbuf[MAXPATHLEN];
 
-        /* what is format of data? */
-
         /* read cpus from boot cpuset */
 
         /* FIXME: need proper error checking and response */
@@ -396,7 +520,7 @@ initialize_root_cpuset(void)
           if (ferror(fp) != 0)
             {
             log_err(-1,id,
-              "An error occurred while reading the root cpuset, attempting to continue.\n");
+              "An error occurred while reading the boot cpuset, attempting to continue.\n");
             }
           }
 
@@ -407,10 +531,11 @@ initialize_root_cpuset(void)
 
         /* subtract bootset from rootset */
 
-        /* NYI */
+        remove_boot_set(cpuset_buf, bootbuf);
+
         }  /* END if (fp != NULL) */
 
-      /* create new TORQUE set */
+      /* create new TORQUE cpus set */
 
       sprintf(path, "%s/cpus",
               TTORQUECPUSET_PATH);
@@ -453,8 +578,6 @@ initialize_root_cpuset(void)
 
     if (fp != NULL)
       {
-      /* what is format of data? */
-
       /* read all mems from root cpuset */
 
       if (fread(cpuset_buf, sizeof(char), sizeof(cpuset_buf), fp) != sizeof(cpuset_buf))
@@ -466,7 +589,56 @@ initialize_root_cpuset(void)
           }
         }
 
+      /* Replace trailing newline with NULL */
+      *(index(cpuset_buf, '\n')) = '\0';
+
       fclose(fp);
+
+      sprintf(log_buffer, "root cpuset %s loaded with value '%s'\n",
+              path,
+              cpuset_buf);
+
+      log_event(PBSEVENT_SYSTEM,
+        PBS_EVENTCLASS_SERVER,
+        id,
+        log_buffer);
+
+      /* NOTE:  load 'boot' set */
+
+      sprintf(path, "%s/boot/mems",
+              TROOTCPUSET_PATH);
+
+      fp = fopen(path, "r");
+
+      if (fp != NULL)
+        {
+        char bootbuf[MAXPATHLEN];
+
+        /* read mems from boot cpuset */
+
+        /* FIXME: need proper error checking and response */
+
+        if (fread(bootbuf, sizeof(char), sizeof(bootbuf), fp) != sizeof(bootbuf))
+          {
+          if (ferror(fp) != 0)
+            {
+            log_err(-1,id,
+              "An error occurred while reading the boot cpuset, attempting to continue.\n");
+            }
+          }
+
+        /* Replace trailing newline with NULL */
+        *(index(bootbuf, '\n')) = '\0';
+
+        fclose(fp);
+
+        /* subtract bootset from rootset */
+
+        remove_boot_set(cpuset_buf, bootbuf);
+
+        }  /* END if (fp != NULL) */
+
+      /* create new TORQUE mems set */
 
       sprintf(path, "%s/mems",
               TTORQUECPUSET_PATH);
@@ -560,6 +732,100 @@ int get_cpu_string(
 
 
 /**
+ * get_cpuset_strings
+ * @see add_cpus_to_jobset() - parent
+ *
+ * @param pjob - (I) the job whose cpu string we're building
+ * @param CpuStr - (O) the cpu string
+ * @param MemStr - (O) the mem string
+ * @return 1 if the cpu string is built, 0 otherwise
+ */
+
+int get_cpuset_strings(
+
+  job  *pjob,   /* I */
+  char *CpuStr, /* O */
+  char *MemStr) /* O */
+
+  {
+  vnodent *np = pjob->ji_vnods;
+  int     j;
+  int     cpu_index;
+  int     mem_index;
+  int     ratio;
+  char    tmpStr[MAXPATHLEN];
+  int     numa_index;
+
+  char   *id = "get_cpuset_strings";
+
+  numanode *numa_tmp;
+
+  if ((pjob == NULL) || 
+      (CpuStr == NULL) ||
+      (MemStr == NULL))
+    return(FAILURE);
+
+  CpuStr[0] = '\0';
+  MemStr[0] = '\0';
+
+  for (j = 0;j < pjob->ji_numvnod;++j, np++)
+    {
+    char *dash = strchr(np->vn_host->hn_host,'-');
+
+    if (dash != NULL)
+      {
+      /* make sure this is the last dash in the name */
+      while ((strchr(dash+1,'-') != NULL))
+        {
+        dash = strchr(dash+1,'-');
+        }
+
+      numa_index = atoi(dash+1);
+      }
+    else
+      {
+      log_err(-1,id,"could not parse node number from node name\n");
+      numa_index = 0;
+      }
+
+    if (CpuStr[0] != '\0')
+      strcat(CpuStr, ",");
+
+    numa_tmp = numa_nodes + numa_index;
+    cpu_index = np->vn_index + numa_tmp->cpu_offset;
+    ratio = numa_tmp->num_cpus / numa_tmp->num_mems;
+    mem_index = (np->vn_index / ratio) + numa_tmp->mem_offset;
+
+    sprintf(tmpStr, "%d", cpu_index);
+
+    strcat(CpuStr, tmpStr);
+
+    sprintf(tmpStr,"%d",mem_index);
+
+    if (strstr(MemStr,tmpStr) == NULL)
+      {
+      if (MemStr[0] != '\0')
+        strcat(MemStr, ",");
+
+      strcat(MemStr, tmpStr);
+      }
+    }
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,
+      "found cpus (%s) mems (%s) ratio = %d cpu_offset = %d",
+      CpuStr, MemStr, ratio, cpu_offset);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    }
+
+  return(SUCCESS);
+  }
+
+
+
+
+/**
  * initializes the cpuset for the job
  * 
  * deletes any existing cpuset
@@ -582,7 +848,9 @@ int init_jobset(
   {
   char *id = "init_jobset";
   char  tmppath[MAXPATHLEN+1];
+#ifndef NUMA_SUPPORT
   FILE *fd;
+#endif  /* end NUMA_SUPPORT */
 
   if ((path == NULL) ||
       (pjob == NULL) ||
@@ -605,14 +873,15 @@ int init_jobset(
   /* don't "else return(FAILURE);" because the directory doesn't necessarily exist */
 
   /* create the directory and copy the relevant memory data */
+  snprintf(tmppath,sizeof(tmppath),"%s/mems",TTORQUECPUSET_PATH);
   if (access(TTORQUECPUSET_PATH, F_OK) == 0)
     {
 
     /* create the jobset */
     mkdir(path, 0755);
 
+#ifndef NUMA_SUPPORT
     /* add all mems to jobset */
-    snprintf(tmppath,sizeof(tmppath),"%s/mems",TTORQUECPUSET_PATH);
     fd = fopen(tmppath, "r");
 
     if (fd)
@@ -769,6 +1038,9 @@ int add_cpus_to_jobset(
   char *id = "add_cpus_to_jobset";
   char  cpusbuf[MAXPATHLEN+1];
   char  tmppath[MAXPATHLEN+1];
+#ifdef NUMA_SUPPORT
+  char  memsbuf[MAXPATHLEN+1];
+#endif  /* end NUMA_SUPPORT */
 
   if ((pjob == NULL) ||
       (path == NULL))
@@ -777,7 +1049,11 @@ int add_cpus_to_jobset(
     }
 
   /* Make the string defining the CPUs to add into the jobset */
+#ifdef NUMA_SUPPORT
+  get_cpuset_strings(pjob,cpusbuf,memsbuf);
+#else
   get_cpu_string(pjob,cpusbuf);
+#endif  /* end NUMA_SUPPORT */
 
   snprintf(tmppath,sizeof(tmppath),"%s/cpus",path);
 
@@ -823,7 +1099,7 @@ int create_jobset(
 
   savemask = (umask(0022));
 
-  snprintf(path,sizeof(path),"%s/%s",TTORQUECPUSET_PATH,pjob->ji_qs.ji_jobid);
+  snprintf(path,sizeof(path), "%s/%s", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid);
 
   if (init_jobset(path,pjob,savemask,membuf) == FAILURE)
     {
@@ -836,11 +1112,13 @@ int create_jobset(
     return(FAILURE);
     }
 
+#ifndef NUMA_SUPPORT
   /* Create the vnodesets */
   if (create_vnodesets(pjob,path,membuf,savemask) == FAILURE)
     {
     return(FAILURE);
     }
+#endif /* end NUMA_SUPPORT */
 
   return(SUCCESS);
   }  /* END create_jobset() */
@@ -863,6 +1141,7 @@ int move_to_jobset(
 
   sprintf(pidbuf, "%d", pid);
   sprintf(taskspath, "%s/%s/tasks", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid);
+
   sprintf(log_buffer, "CPUSET MOVE: %s  %s\n", taskspath, pidbuf);
   log_event(PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
@@ -910,6 +1189,7 @@ int move_to_taskset(
 
   sprintf(pidbuf, "%d", pid);
   sprintf(taskspath, "%s/%s/%s/tasks", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid, vnodeid);
+
   sprintf(log_buffer, "TASKSET MOVE: %s  %s\n", taskspath, pidbuf);
   log_event(PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,

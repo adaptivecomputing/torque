@@ -96,6 +96,9 @@ extern char *path_spool;
 extern char  *path_jobs;
 extern char  *TRemChkptDirList[];
 
+extern int  multi_mom;
+extern unsigned short pbs_rm_port;
+
 int        checkpoint_system_type = CST_NONE;
 char    path_checkpoint[MAXPATHLEN + 1];
 
@@ -786,6 +789,7 @@ int blcr_checkpoint_job(
   int err;
   struct attrl *attrib = NULL;
   time_t epoch;
+  unsigned short momport = 0;
 
   assert(pjob != NULL);
   assert(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str != NULL);
@@ -820,7 +824,11 @@ int blcr_checkpoint_job(
   /* Checkpoint successful (assumed) */
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
 
-  job_save(pjob,SAVEJOB_FULL); /* to save resources_used so far */
+  if(multi_mom)
+    {
+    momport = pbs_rm_port;
+    }
+  job_save(pjob,SAVEJOB_FULL, momport); /* to save resources_used so far */
 
   sprintf(log_buffer,"checkpointed to %s / %s at %ld",
     pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
@@ -1041,6 +1049,7 @@ int mom_checkpoint_job(
   int  hasold = 0;
   int  sesid = -1;
   int  ckerr;
+  unsigned short momport = 0;
 
   struct stat statbuf;
   char  path[MAXPATHLEN + 1];
@@ -1133,7 +1142,11 @@ int mom_checkpoint_job(
 
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
 
-  job_save(pjob, SAVEJOB_FULL); /* to save resources_used so far */
+  if(multi_mom)
+    {
+    momport = pbs_rm_port;
+    }
+  job_save(pjob, SAVEJOB_FULL, momport); /* to save resources_used so far */
 
   sprintf(log_buffer, "checkpointed to %s",
           path);

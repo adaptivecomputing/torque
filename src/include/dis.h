@@ -252,6 +252,7 @@ extern int  PConnTimeout(int);
 /* NOTE: THE_BUF_SZIE will be similar in size to PBS_ACCT_MAX_RCD in acct.h */
 
 #define THE_BUF_SIZE 262144 /* max size of tcp send buffer (must be big enough to contain all job attributes) */
+#define THE_LIST_SIZE 16384 /* Initial size of sister host_exec string buffer */
 
 
 struct tcpdisbuf

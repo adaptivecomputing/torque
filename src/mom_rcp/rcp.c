@@ -72,6 +72,10 @@ static char const copyright[] =
 #define MAXPATHLEN 1024
 #endif
 
+#ifndef MAXPORTLEN
+#define MAXPORTLEN  5
+#endif
+
 #ifdef KERBEROS
 #include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>

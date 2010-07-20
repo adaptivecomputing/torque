@@ -112,6 +112,7 @@
 #include "svrfunc.h"
 #include "pbs_proto.h"
 #include "csv.h"
+#include "u_tree.h"
 
 #ifndef PBS_MOM
 #include "array.h"
@@ -147,6 +148,8 @@ extern char  *msg_request;
 #ifndef PBS_MOM
 extern char            server_name[];
 #endif
+
+extern AvlTree okclients;
 
 extern int LOGLEVEL;
 
@@ -622,7 +625,7 @@ void process_request(
 #else /* THIS CODE FOR MOM ONLY */
 
     {
-    extern tree *okclients;
+    /*extern tree *okclients; */
 
     extern void mom_server_update_receive_time_by_ip(u_long ipaddr, const char *cmd);
 
@@ -641,7 +644,8 @@ void process_request(
         log_buffer);
       }
 
-    if (!tfind(svr_conn[sfds].cn_addr, &okclients))
+/*    if (!tfind(svr_conn[sfds].cn_addr, &okclients)) */
+    if (!AVL_is_in_tree(svr_conn[sfds].cn_addr, 0, okclients))
       {
       sprintf(log_buffer, "request type %s from host %s rejected (host not authorized)",
         reqtype_to_txt(request->rq_type),

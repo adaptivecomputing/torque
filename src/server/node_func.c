@@ -123,6 +123,7 @@
 #include "pbs_proto.h"
 #include "net_connect.h"
 #include "utils.h"
+#include "u_tree.h"
 
 #if !defined(H_ERRNO_DECLARED)
 extern int h_errno;
@@ -141,6 +142,8 @@ extern char *path_nodestate;
 extern char *path_nodenote;
 extern int       LOGLEVEL;
 extern attribute_def  node_attr_def[];   /* node attributes defs */
+extern AvlTree ipaddrs;
+extern AvlTree streams;
 
 
 /* Functions in this file
@@ -182,23 +185,26 @@ struct pbsnode *PGetNodeFromAddr(
         pbs_net_t addr)  /* I */
 
   {
-  int nindex;
   int aindex;
 
-  for (nindex = 0;nindex < svr_totnodes;nindex++)
+  node_iterator iter;
+  struct pbsnode *pnode;
+
+  reinitialize_node_iterator(&iter);
+
+  while ((pnode = next_node(&iter)) != NULL)
     {
-    if ((pbsndlist[nindex] == NULL) ||
-        (pbsndlist[nindex]->nd_state & INUSE_DELETED))
+    if (pnode->nd_state & INUSE_DELETED)
       continue;
 
     for (aindex = 0;aindex < 10;aindex++)
       {
-      if (pbsndlist[nindex]->nd_addrs[aindex] == 0)
+      if (pnode->nd_addrs[aindex] == 0)
         break;
 
-      if (pbsndlist[nindex]->nd_addrs[aindex] == addr)
+      if (pnode->nd_addrs[aindex] == addr)
         {
-        return(pbsndlist[nindex]);
+        return(pnode);
         }
       }    /* END for (aindex) */
     }      /* END for (nindex) */
@@ -214,12 +220,17 @@ void bad_node_warning(
   pbs_net_t addr)  /* I */
 
   {
-  int i;
+  int i = 0;
   time_t now, last;
 
-  for (i = 0;i < svr_totnodes;i++)
+  node_iterator iter;
+  struct pbsnode *pnode;
+
+  reinitialize_node_iterator(&iter);
+
+  while ((pnode = next_node(&iter)) != NULL)
     {
-    if (pbsndlist[i] == NULL || pbsndlist[i]->nd_addrs == NULL)
+    if (pnode->nd_addrs == NULL)
       {
       sprintf(log_buffer, "ALERT:  node table is corrupt at index %d",
               i);
@@ -233,14 +244,14 @@ void bad_node_warning(
       continue;
       }
 
-    if (pbsndlist[i]->nd_state & INUSE_DELETED)
+    if (pnode->nd_state & INUSE_DELETED)
       {
       /* node was deleted */
 
       continue;
       }
 
-    if (pbsndlist[i]->nd_addrs[0] != addr)
+    if (pnode->nd_addrs[0] != addr)
       {
       /* node does not match */
 
@@ -251,7 +262,7 @@ void bad_node_warning(
 
     now = time(0);
 
-    last = pbsndlist[i]->nd_warnbad;
+    last = pnode->nd_warnbad;
 
     if (last && (now - last < 3600))
       {
@@ -266,7 +277,7 @@ void bad_node_warning(
     */
 
     sprintf(log_buffer, "ALERT: unable to contact node %s",
-            pbsndlist[i]->nd_name);
+            pnode->nd_name);
 
     log_event(
       PBSEVENT_ADMIN,
@@ -278,7 +289,9 @@ void bad_node_warning(
      *  (void)set_task(WORK_Timed,now + 5,ping_nodes,NULL);
      */
 
-    pbsndlist[i]->nd_warnbad = now;
+    pnode->nd_warnbad = now;
+
+    i++;
 
     break;
     }    /* END for (i = 0) */
@@ -299,33 +312,37 @@ int addr_ok(
   pbs_net_t addr)  /* I */
 
   {
-  int i;
   int status = 1;  /* assume destination host is healthy */
+
+  node_iterator iter;
+  struct pbsnode *pnode;
+
+  reinitialize_node_iterator(&iter);
 
   if (pbsndlist != NULL)
     {
-    for (i = 0;i < svr_totnodes;i++)
+    while ((pnode = next_node(&iter)) != NULL)
       {
       /* NOTE:  should walk thru all nd_addrs for multi-homed hosts */
 
-      if (pbsndlist[i]->nd_state & INUSE_DELETED)
+      if (pnode->nd_state & INUSE_DELETED)
         continue;
 
       /* NOTE:  deleted node may have already freed nd_addrs -
                 check should be redundant */
 
-      if ((pbsndlist[i]->nd_addrs == NULL) || (pbsndlist[i]->nd_addrs[0] != addr))
+      if ((pnode->nd_addrs == NULL) || (pnode->nd_addrs[0] != addr))
         continue;
 
       /* node matches addr */
 
-      if (pbsndlist[i]->nd_state & (INUSE_DELETED | INUSE_UNKNOWN))
+      if (pnode->nd_state & (INUSE_DELETED | INUSE_UNKNOWN))
         {
         /* definitely not ok */
 
         status = 0;
         }
-      else if (pbsndlist[i]->nd_state & INUSE_DOWN)
+      else if (pnode->nd_state & INUSE_DOWN)
         {
         /* the node is ok if it is still talking to us */
 
@@ -333,12 +350,17 @@ int addr_ok(
 
         chk_len = server.sv_attr[(int)SRV_ATR_check_rate].at_val.at_long;
 
-        if (pbsndlist[i]->nd_lastupdate <= (time_now - chk_len))
+        if(pnode->nd_lastupdate == 0)
+          {
+          continue;
+          }
+
+        if (pnode->nd_lastupdate <= (time_now - chk_len) && (pnode->nd_nsn > pnode->nd_nsnfree))
           {
           status = 0;
           }
 
-        if (pbsndlist[i]->nd_stream < 0)
+        if (pnode->nd_stream < 0)
           {
           status = 0;
           }
@@ -363,25 +385,24 @@ struct pbsnode *find_nodebyname(
         char *nodename) /* I */
 
   {
-  int  i;
   char  *pslash;
 
   struct pbsnode *pnode;
 
+  node_iterator iter;
+
   if ((pslash = strchr(nodename, (int)'/')) != NULL)
     *pslash = '\0';
 
-  pnode = NULL;
+  reinitialize_node_iterator(&iter);
 
-  for (i = 0;i < svr_totnodes;i++)
+  while ((pnode = next_node(&iter)) != NULL)
     {
-    if (pbsndlist[i]->nd_state & INUSE_DELETED)
+    if (pnode->nd_state & INUSE_DELETED)
       continue;
 
-    if (strcasecmp(nodename, pbsndlist[i]->nd_name) == 0)
+    if (strcasecmp(nodename, pnode->nd_name) == 0)
       {
-      pnode = pbsndlist[i];
-
       break;
       }
     }
@@ -632,6 +653,15 @@ int status_nodeattrib(
       atemp[i].at_val.at_long = pnode->nd_nsn;
     else if (!strcmp((padef + i)->at_name, ATTR_NODE_note))
       atemp[i].at_val.at_str  = pnode->nd_note;
+    else if (!strcmp((padef + i)->at_name, ATTR_NODE_mom_port))
+      atemp[i].at_val.at_long  = pnode->nd_mom_port;
+    else if (!strcmp((padef + i)->at_name, ATTR_NODE_mom_rm_port))
+      atemp[i].at_val.at_long  = pnode->nd_mom_rm_port;
+    /* skip NUMA attributes */
+    else if (!strcmp((padef + i)->at_name, ATTR_NODE_num_numa_nodes))
+      continue;
+    else if (!strcmp((padef + i)->at_name, ATTR_NODE_numa_str))
+      continue;
     else
       {
       /*we don't ever expect this*/
@@ -726,9 +756,6 @@ int status_nodeattrib(
   }  /* END status_nodeattrib() */
 
 
-
-
-
 /*
  * initialize_pbsnode - carries out initialization on a new
  * pbs node.  The assumption is that all the parameters are valid.
@@ -738,45 +765,50 @@ static void initialize_pbsnode(
 
   struct pbsnode *pnode,
   char           *pname, /* node name */
-  u_long         *pul,  /* I - required - host byte order array */
+  u_long         *pul,  /* host byte order array */
   /* ipaddrs for this node */
   int             ntype) /* time-shared or cluster */
 
   {
-  char *id = "initialize_pbsnode";
+/*  char *id = "initialize_pbsnode";*/
 
-  int i;
+/*  int i; */
 
   memset(pnode, 0, sizeof(struct pbsnode));
 
-  pnode->nd_name    = pname;
-  pnode->nd_stream  = -1;
-  pnode->nd_addrs   = pul;       /* list of host byte order */
-  pnode->nd_ntype   = ntype;
-  pnode->nd_nsn     = 0;
-  pnode->nd_nsnfree = 0;
-  pnode->nd_needed  = 0;
-  pnode->nd_order   = 0;
-  pnode->nd_prop    = NULL;
-  pnode->nd_status  = NULL;
-  pnode->nd_note    = NULL;
-  pnode->nd_psn     = NULL;
-  pnode->nd_state   = INUSE_NEEDS_HELLO_PING | INUSE_DOWN;
-  pnode->nd_first   = init_prop(pnode->nd_name);
-  pnode->nd_last    = pnode->nd_first;
-  pnode->nd_f_st    = init_prop(pnode->nd_name);
-  pnode->nd_l_st    = pnode->nd_f_st;
-  pnode->nd_nprops  = 0;
-  pnode->nd_nstatus = 0;
-  pnode->nd_warnbad = 0;
+  pnode->nd_name        = pname;
+  pnode->nd_stream      = -1;
+  pnode->nd_mom_port    = PBS_MOM_SERVICE_PORT;
+  pnode->nd_mom_rm_port = PBS_MANAGER_SERVICE_PORT;
+  pnode->nd_addrs       = pul;       /* list of host byte order */
+  pnode->nd_ntype       = ntype;
+  pnode->nd_nsn         = 0;
+  pnode->nd_nsnfree     = 0;
+  pnode->nd_needed      = 0;
+  pnode->nd_order       = 0;
+  pnode->nd_prop        = NULL;
+  pnode->nd_status      = NULL;
+  pnode->nd_note        = NULL;
+  pnode->nd_psn         = NULL;
+  pnode->nd_state       = INUSE_NEEDS_HELLO_PING | INUSE_DOWN;
+  pnode->nd_first       = init_prop(pnode->nd_name);
+  pnode->nd_last        = pnode->nd_first;
+  pnode->nd_f_st        = init_prop(pnode->nd_name);
+  pnode->nd_l_st        = pnode->nd_f_st;
+  pnode->nd_nprops      = 0;
+  pnode->nd_nstatus     = 0;
+  pnode->nd_warnbad     = 0;
 
-  for (i = 0;pul[i];i++)
+  /*for (i = 0;pul[i];i++)
     {
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer, "node '%s' allows trust for ipaddr %s\n",
+      sprintf(log_buffer, "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
               pnode->nd_name,
-              netaddr_pbs_net_t(pul[i]));
+              (pul[i] & 0xff000000) >> 24,
+              (pul[i] & 0x00ff0000) >> 16,
+              (pul[i] & 0x0000ff00) >> 8,
+              (pul[i] & 0x000000ff));
 
       log_record(
         PBSEVENT_SCHED,
@@ -786,12 +818,10 @@ static void initialize_pbsnode(
       }
 
     tinsert(pul[i], pnode, &ipaddrs);
-    }  /* END for (i) */
+    }*/  /* END for (i) */
 
   return;
   }  /* END initialize_pbsnode() */
-
-
 
 
 /*
@@ -800,9 +830,7 @@ static void initialize_pbsnode(
  */
 
 static void subnode_delete(
-
   struct pbssubn *psubn)
-
   {
 
   struct jobinfo *jip, *jipt;
@@ -822,8 +850,6 @@ static void subnode_delete(
 
   return;
   }
-
-
 
 
 void effective_node_delete(
@@ -862,8 +888,9 @@ void effective_node_delete(
       {
       /* del node's IP addresses from tree  */
 
-      tdelete(*up, &ipaddrs);
-      }
+       /* tdelete(*up, &ipaddrs);  */
+      ipaddrs = AVL_delete_node( *up, pnode->nd_mom_port, ipaddrs);
+      } 
 
     if (pnode->nd_addrs != NULL)
       {
@@ -875,7 +902,8 @@ void effective_node_delete(
       }
     }
 
-  tdelete((u_long)pnode->nd_stream, &streams); /*take stream out of tree*/
+  /* tdelete((u_long)pnode->nd_stream, &streams); */ /*take stream out of tree*/
+  streams = AVL_delete_node((u_long)pnode->nd_stream, 0, streams);
 
   rpp_close(pnode->nd_stream);
   free(pnode->nd_name);
@@ -890,8 +918,64 @@ void effective_node_delete(
   }  /* END effective_node_delete() */
 
 
+/* free_node() - clean up and free all elements of a pbsnode that has not been
+   entered into any tables. called from create_pbs_node() */
+void free_node(
 
+  struct pbsnode *pnode)
 
+  {
+
+  struct pbssubn  *psubn;
+
+  struct pbssubn  *pnxt;
+
+  psubn = pnode->nd_psn;
+
+  while (psubn != NULL)
+    {
+    pnxt = psubn->next;
+
+    subnode_delete(psubn);
+
+    psubn = pnxt;
+    }
+
+  pnode->nd_last->next = NULL;      /* just in case */
+
+  pnode->nd_last       = NULL;
+
+  free_prop_list(pnode->nd_first);
+
+  pnode->nd_first = NULL;
+
+  if (pnode->nd_addrs != NULL)
+    {
+
+    if (pnode->nd_addrs != NULL)
+      {
+      /* remove array of IP addresses */
+
+      free(pnode->nd_addrs);
+
+      pnode->nd_addrs = NULL;
+      }
+    }
+
+  free(pnode->nd_name);
+
+  pnode->nd_name    = NULL;
+  pnode->nd_stream  = -1;
+  pnode->nd_state   = INUSE_DELETED;
+  pnode->nd_nsn     = 0;
+  pnode->nd_nsnfree = 0;
+
+#ifdef NUMA_SUPPORT
+  /* free numa nodes */
+#endif /* NUMA_SUPPORT */
+
+  return;
+  }  /* END free_node() */
 
 /**
  *  NOTE:  pul can return NULL even on SUCCESS of routine
@@ -1279,20 +1363,21 @@ recompute_ntype_cnts(void)
   {
   int   svr_loc_clnodes = 0;
   int   svr_loc_tsnodes = 0;
-  int   i;
 
   struct pbsnode  *pnode;
 
+  node_iterator iter;
+
+  reinitialize_node_iterator(&iter);
+
   if (svr_totnodes)
     {
-    for (i = 0; i < svr_totnodes; ++i)
+    while ((pnode = next_node(&iter)) != NULL)
       {
-
-      pnode = pbsndlist[i];
-
       if (pnode->nd_state & INUSE_DELETED)
         continue;
 
+      /* count normally */
       if (pnode->nd_ntype == NTYPE_CLUSTER)
         svr_loc_clnodes += pnode->nd_nsn;
       else if (pnode->nd_ntype == NTYPE_TIMESHARED)
@@ -1393,22 +1478,109 @@ static struct pbssubn *create_subnode(
 
 
 
-
-/**
- * create_pbs_node - create pbs node structure, i.e. add a node
+#ifdef NUMA_SUPPORT
+/* creates the private numa nodes on this node 
  *
- * @see initialize_pbsnode() - child
+ * @param pnode - the node that will house the numa nodes
+ *
+ * @return 0 on success, -1 on failure
+ */
+int setup_numa_nodes(
+
+  struct pbsnode *pnode)
+
+  {
+  int             i;
+  int             j;
+  struct pbsnode *pn;
+  char            pname[MAX_LINE];
+  char           *np_ptr = NULL;
+  char           *allocd_name;
+  int             np;
+  char           *delim = ",";
+
+  char           *id = "setup_numa_nodes";
+
+  if (pnode == NULL)
+    return(-1);
+
+  if (pnode->numa_str != NULL)
+    {
+    np_ptr = strtok(pnode->numa_str,delim);
+    np = atoi(np_ptr);
+    }
+  else
+    {
+    np = pnode->nd_nsn / pnode->num_numa_nodes;
+    }
+
+  for (i = 0; i < pnode->num_numa_nodes; i++)
+    {
+    pn = (struct pbsnode *)malloc(sizeof(struct pbsnode));
+
+    /* each numa node just has a number for a name */
+    snprintf(pname,sizeof(pname),"%s-%d",
+      pnode->nd_name,
+      i);
+
+    allocd_name = strdup(pname);
+    if (allocd_name == NULL)
+      {
+      /* no memory error */
+      log_err(PBSE_SYSTEM,id,"Cannot allocate memory for node name\n");
+
+      return(PBSE_SYSTEM);
+      }
+    initialize_pbsnode(pn, allocd_name, NULL, NTYPE_CLUSTER);
+
+    /* set the number of processors */
+    if (np_ptr != NULL)
+      {
+      np_ptr = strtok(NULL,delim);
+      np = atoi(np_ptr);
+      }
+
+    /* create the subnodes for this node */
+    for (j = 0; j < np; j++)
+      {
+      if (create_subnode(pn) == NULL)
+        {
+        /* ERROR */
+        pn->nd_state = INUSE_DELETED;
+
+        return(PBSE_SYSTEM);
+        }
+      }
+
+    /* add the node to the private tree */
+    pnode->numa_nodes = AVL_insert(i,
+        pn->nd_mom_port,
+        pn,
+        pnode->numa_nodes);
+    }
+
+  return(0);
+  } /* END setup_numa_nodes() */
+#endif /* NUMA_SUPPORT */
+
+
+
+
+
+/*
+ * create_pbs_node - create pbs node structure, i.e. add a node
  */
 
 int create_pbs_node(
 
-  char     *objname,  /* I */
+  char     *objname,
   svrattrl *plist,
-  int       perms,    /* I */
-  int      *bad)      /* O */
+  int       perms,
+  int      *bad)
 
   {
 
+  char *id = "create_pbs_node"; 
   struct pbsnode  *pnode = NULL;
 
   struct pbsnode **tmpndlist;
@@ -1417,12 +1589,11 @@ int create_pbs_node(
   u_long          *pul;  /* 0 terminated host adrs array*/
   int              rc;
   int              iht;
+  int              i;
+  int              reused_entry = 0;
+  u_long           addr;
 
-  if ((rc = process_host_name_part(
-              objname,        /* I */
-              &pul,           /* O */
-              &pname,         /* O */
-              &ntype)) != 0)  /* O */
+  if ((rc = process_host_name_part(objname, &pul, &pname, &ntype)) != 0)
     {
     log_err(-1, "process_host_name_part", log_buffer);
 
@@ -1449,13 +1620,14 @@ int create_pbs_node(
     return(PBSE_NODEEXIST);
     }
 
-  for (iht = 0;iht < svr_totnodes;iht++)
+  for (iht = 0; iht < svr_totnodes; iht++)
     {
     if (pbsndmast[iht]->nd_state & INUSE_DELETED)
       {
       /*available, use*/
 
       pnode = pbsndmast[iht];
+      reused_entry = 1;
 
       break;
       }
@@ -1479,7 +1651,7 @@ int create_pbs_node(
 
     /* expand pbsndmast array exactly svr_totnodes long*/
 
-    tmpndlist = (struct pbsnode **)realloc(
+/*    tmpndlist = (struct pbsnode **)realloc(
                   pbsndmast,
                   sizeof(struct pbsnode *) * (svr_totnodes + 1));
 
@@ -1490,11 +1662,11 @@ int create_pbs_node(
       free(pname);
 
       return(PBSE_SYSTEM);
-      }
+      }*/
 
-    /* add in the new entry etc */
+    /*add in the new entry etc*/
 
-    pbsndmast = tmpndlist;
+/*    pbsndmast = tmpndlist;
 
     pbsndmast[svr_totnodes++] = pnode;
 
@@ -1517,7 +1689,7 @@ int create_pbs_node(
       pbsndmast,
       svr_totnodes * sizeof(struct pbsnode *));
 
-    pbsndlist = tmpndlist;
+    pbsndlist = tmpndlist;*/
     }
 
   initialize_pbsnode(pnode, pname, pul, ntype);
@@ -1552,10 +1724,86 @@ int create_pbs_node(
     return(rc);
     }
 
+    /* expand pbsndmast array exactly svr_totnodes long*/
+
+  tmpndlist = (struct pbsnode **)realloc(
+                pbsndmast,
+                sizeof(struct pbsnode *) * (svr_totnodes + 1));
+
+  if (tmpndlist == NULL)
+    {
+    free(pnode);
+    free(pul);
+    free(pname);
+
+    return(PBSE_SYSTEM);
+    }
+
+  if(!reused_entry)
+    {
+    /*add in the new entry etc*/
+  
+    pbsndmast = tmpndlist;
+  
+    pbsndmast[svr_totnodes++] = pnode;
+  
+    tmpndlist = (struct pbsnode **)realloc(
+                  pbsndlist,
+                  sizeof(struct pbsnode *) * (svr_totnodes + 1));
+  
+    if (tmpndlist == NULL)
+      {
+      free(pnode);
+      free(pul);
+      free(pname);
+  
+      return(PBSE_SYSTEM);
+      }
+  
+    memcpy(
+  
+      tmpndlist,
+      pbsndmast,
+      svr_totnodes * sizeof(struct pbsnode *));
+  
+    pbsndlist = tmpndlist;
+    }
+
+
+  for (i = 0;pul[i];i++)
+    {
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer, "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
+              pnode->nd_name,
+              (pul[i] & 0xff000000) >> 24,
+              (pul[i] & 0x00ff0000) >> 16,
+              (pul[i] & 0x0000ff00) >> 8,
+              (pul[i] & 0x000000ff));
+
+      log_record(
+        PBSEVENT_SCHED,
+        PBS_EVENTCLASS_REQUEST,
+        id,
+        log_buffer);
+      }
+    
+/*    addr = pul[i] + pnode->nd_mom_port + pnode->nd_mom_rm_port; */
+    addr = pul[i];
+/*    tinsert(addr, pnode, &ipaddrs);*/
+      ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
+      
+    }  /* END for (i) */
+
+#ifdef NUMA_SUPPORT
+  setup_numa_nodes(pnode);
+#endif /* NUMA_SUPPORT */
+
   recompute_ntype_cnts();
 
   return(PBSE_NONE);     /*create completely successful*/
-  }  /* END create_pbs_node() */
+  } /* End create_pbs_node */
+
 
 
 
@@ -1693,8 +1941,8 @@ int setup_nodes(void)
 
   next_resource_tag = time(0); /* initialize next resource handle */
 
-  tfree(&streams);
-  tfree(&ipaddrs);
+  /*tfree(&streams);
+  tfree(&ipaddrs);*/
 
   svr_totnodes = 0;
 
@@ -2069,6 +2317,161 @@ node_np_action(
   } /* END node_np_action */
 
 
+/*
+ * node_mom_port_action - action routine for node's port attribute
+ */
+
+int node_mom_port_action(new, pobj, actmode)
+attribute *new;  /*derive props into this attribute*/
+void  *pobj;  /*pointer to a pbsnode struct     */
+int   actmode; /*action mode; "NEW" or "ALTER"   */
+  {
+
+  struct pbsnode *pnode = (struct pbsnode *)pobj;
+  int rc = 0;
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+      new->at_val.at_long = pnode->nd_mom_port;
+      break;
+
+    case ATR_ACTION_ALTER:
+      pnode->nd_mom_port = new->at_val.at_long;
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+    }
+
+  return rc;
+  }
+
+/*
+ * node_mom_rm_port_action - action routine for node's port attribute
+ */
+
+int node_mom_rm_port_action(new, pobj, actmode)
+  attribute *new;  /*derive props into this attribute*/
+  void  *pobj;  /*pointer to a pbsnode struct     */
+  int   actmode; /*action mode; "NEW" or "ALTER"   */
+  {
+
+  struct pbsnode *pnode = (struct pbsnode *)pobj;
+  int rc = 0;
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+      new->at_val.at_long = pnode->nd_mom_rm_port;
+      break;
+
+    case ATR_ACTION_ALTER:
+      pnode->nd_mom_rm_port = new->at_val.at_long;
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+    }
+
+  return rc;
+  }
+
+
+
+#ifdef NUMA_SUPPORT
+int node_numa_action(
+
+  attribute *new,           /*derive status into this attribute*/
+  void      *pnode,         /*pointer to a pbsnode struct     */
+  int        actmode)       /*action mode; "NEW" or "ALTER"   */
+
+  {
+
+  struct pbsnode *np = (struct pbsnode *)pnode;
+  int rc = 0;
+
+  switch (actmode)
+    {
+    case ATR_ACTION_NEW:
+      new->at_val.at_long = np->num_numa_nodes;
+      break;
+
+    case ATR_ACTION_ALTER:
+      np->num_numa_nodes = new->at_val.at_long;
+      break;
+
+    default:
+      rc = PBSE_INTERNAL;
+    }
+
+  return(rc);
+  } /* END node_numa_action */
+
+
+
+
+int numa_str_action(
+
+  attribute *new,           /*derive status into this attribute*/
+  void      *pnode,         /*pointer to a pbsnode struct     */
+  int        actmode)       /*action mode; "NEW" or "ALTER"   */
+
+  {
+  struct pbsnode *np = (struct pbsnode *)pnode;
+  int len;
+
+  switch (actmode)
+    {
+    case ATR_ACTION_NEW:
+
+      if (np->numa_str != NULL)
+        {
+        len = strlen(np->numa_str) + 1;
+        new->at_val.at_str = (char *)malloc(len * sizeof(char));
+
+        if (new->at_val.at_str == NULL)
+          return(PBSE_SYSTEM);
+
+        strcpy(new->at_val.at_str,np->numa_str);
+        }
+      else
+        new->at_val.at_str = NULL;
+
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      if (new->at_val.at_str != NULL)
+        {
+        len = strlen(new->at_val.at_str) + 1;
+        np->numa_str = (char *)malloc(len * sizeof(char));
+
+        if (np->numa_str == NULL)
+          return(PBSE_SYSTEM);
+
+        strcpy(np->numa_str,new->at_val.at_str);
+        }
+      else
+        np->numa_str = NULL;
+
+      break;
+
+    default:
+      return(PBSE_INTERNAL);
+    }
+
+  return(0);
+  } /* END numa_str_action */
+
+#endif /* NUMA_SUPPORT */
+
+
+
 /* create_partial_pbs_node - similar to create_pbs_node except there will
    only be a name for the new node and no attributes or properties */
 
@@ -2190,8 +2593,102 @@ int create_partial_pbs_node(
 
   recompute_ntype_cnts();
 
-  tinsert(addr, pnode, &ipaddrs);
+  AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
 
   return(PBSE_NONE);     /*create completely successful*/
   } /* END create_partial_pbs_node */
+
+
+
+
+
+/*
+ * @return a pointer to an initialized node iterator 
+ */
+node_iterator *get_node_iterator()
+
+  {
+  node_iterator *iter = (node_iterator *)malloc(sizeof(node_iterator));
+
+  if (iter != NULL)
+    {
+    iter->node_index = -1;
+    iter->numa_index = -1;
+    }
+
+  return(iter);
+  } /* END get_node_iterator() */
+
+
+
+
+
+/* 
+ * initializes an allocated node iterator 
+ */
+void reinitialize_node_iterator(
+
+  node_iterator *iter)
+
+  {
+  if (iter != NULL)
+    {
+    iter->node_index = -1;
+    iter->numa_index = -1;
+    }
+  } /* END reinitialize_node_iterator() */
+
+
+
+
+/* 
+ * @return the next node, from 0->end, accounting for numa nodes
+ */
+struct pbsnode *next_node(
+
+  node_iterator *iter)
+
+  {
+  struct pbsnode *next;
+  if (iter == NULL)
+    {
+    return(NULL);
+    }
+
+  /* conditionally advance the node index pointer */
+#ifdef NUMA_SUPPORT 
+  if ((iter->node_index == -1) ||
+      (iter->numa_index+1 >= pbsndlist[iter->node_index]->num_numa_nodes))
+#endif /* NUMA_SUPPORT */
+    {
+    iter->node_index++;
+    iter->numa_index = 0;
+    }
+#ifdef NUMA_SUPPORT
+  else
+    {
+    iter->numa_index++;
+    }
+#endif /* NUMA_SUPPORT */
+
+
+  /* conditionally return the correct node */
+  if (iter->node_index < svr_totnodes)
+    {
+    next = pbsndlist[iter->node_index];
+#ifdef NUMA_SUPPORT
+    if (next->num_numa_nodes > 0)
+      next = AVL_find(iter->numa_index,next->nd_mom_port,next->numa_nodes);
+#endif
+    return(next);
+    }
+  else
+    {
+    /* end of list, no more nodes */
+    return(NULL);
+    }
+  } /* END next_node() */
+
+
+
 

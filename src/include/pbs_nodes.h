@@ -85,7 +85,11 @@
 
 /* NOTE:  requires server_limits.h */
 
-#define BM_ERROR    -20
+#define BM_ERROR        -20
+#ifdef NUMA_SUPPORT
+#define MAX_NUMA_NODES   2048
+#define NUMA_KEYWORD     "numa"
+#endif /* NUMA_SUPPORT */
 
 enum psit
   {
@@ -126,6 +130,30 @@ struct pbssubn
   short           index;  /* subnode index */
   };
 
+
+#ifdef NUMA_SUPPORT
+typedef struct numanode_t
+  {
+
+  int              num_cpus;     /* count of cpus */
+  int              cpu_offset;   /* real index of first cpu */
+  int              index;        /* the node's index */
+  int              num_mems;     /* count of memory nodes */
+  int              mem_offset;   /* real index of first memory node */
+  unsigned long    memsize;
+  char           **path_meminfo; /* path to meminfo file */
+
+  } numanode;
+#endif /* NUMA_SUPPORT */
+
+/* struct used for iterating numa nodes */
+typedef struct node_iterator 
+  {
+  int node_index;
+  int numa_index;
+  } node_iterator;
+
+
 struct pbsnode
   {
   char   *nd_name; /* node's host name */
@@ -147,6 +175,8 @@ struct pbsnode
   char           *nd_note;  /* note set by administrator */
   int     nd_stream; /* RPP stream to Mom on host */
   enum psit   nd_flag;
+  unsigned short nd_mom_port; /* For multi-mom-mode unique port value PBS_MOM_SERVICE_PORT*/
+  unsigned short nd_mom_rm_port; /* For multi-mom-mode unique port value PBS_MANAGER_SERVICE_PORT */
   short     nd_nprops; /* number of properties */
   short                  nd_nstatus;    /* number of status items */
   short     nd_nsn; /* number of VPs  */
@@ -158,13 +188,19 @@ struct pbsnode
   short    nd_order; /* order of user's request */
   time_t                 nd_warnbad;
   time_t                 nd_lastupdate; /* time of last update. */
+#ifdef NUMA_SUPPORT
+  unsigned short  num_numa_nodes; /* number of numa nodes */
+  struct AvlNode *numa_nodes; /* private tree of numa nodes */
+  char           *numa_str; /* comma-delimited string of processor values */
+#endif /* NUMA_SUPPORT */
   };
 
 struct howl
   {
-  char        *name;
-  int          order;
-  int          index;
+  char   	*name;
+  int     	order;
+  int     	index;
+  unsigned short	port;
 
   struct howl *next;
   };
@@ -181,6 +217,19 @@ typedef struct tree_t
   struct tree_t  *right;
   } tree;
 
+typedef struct newtree_t
+  {
+  u_long	key;			/* value used to be stored and sorted */
+  int		**index;		/* optional. pointer to array of newtree_t structures*/
+  struct pbsnode *nodep;
+
+  struct newtree_t *parent;
+  struct newtree_t *left;
+  struct newtree_t *right;
+  } newtree;
+
+
+
 /* NOTE:  should remove all node references and replace with 'tree' objects (NYI) */
 
 /*
@@ -193,7 +242,6 @@ typedef struct node_t {
 
 struct pbsnode *tfind(const u_long, tree **);
 int tlist(tree *, char *, int);
-
 
 /*
  * The following INUSE_ are used in both subnode.inuse and in node.nd_state
@@ -255,6 +303,12 @@ enum nodeattr
   ND_ATR_jobs,
   ND_ATR_status,
   ND_ATR_note,
+  ND_ATR_mom_port,
+  ND_ATR_mom_rm_port,
+#ifdef NUMA_SUPPORT 
+  ND_ATR_num_numa_nodes,
+  ND_ATR_numa_str,
+#endif /* NUMA_SUPPORT */
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */
 
@@ -266,9 +320,11 @@ extern int    svr_totnodes;  /* number of nodes (hosts) */
 extern int    svr_tsnodes;  /* number of timeshared nodes */
 extern int    svr_clnodes;  /* number of cluster nodes */
 
-extern struct tree_t  *ipaddrs;
+extern int 	  MultiMomMode; /* moms configured for multiple moms per machine */
 
-extern struct tree_t  *streams;
+/*extern struct tree_t  *ipaddrs;*/
+
+/* extern struct tree_t  *streams; */
 
 extern int update_nodes_file(void);
 
@@ -283,12 +339,17 @@ extern void setup_notification(char *);
 extern struct pbssubn  *find_subnodebyname(char *);
 
 extern struct pbsnode  *find_nodebyname(char *);
+extern struct pbsnode  *find_nodebynameandaltname(char *, char *);
 extern void free_prop_list(struct prop*);
 extern void free_prop_attr(attribute*);
 extern void recompute_ntype_cnts();
 extern  int create_pbs_node(char *, svrattrl *, int, int *);
 extern  int create_partial_pbs_node(char *, unsigned long, int);
 extern  int mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);
+
+extern struct pbsnode *next_node(node_iterator *);
+extern node_iterator  *get_node_iterator();
+extern void            reinitialize_node_iterator(node_iterator *);
 
 struct prop  *init_prop(char *pname);
 #endif /* BATCH_REQUEST_H */

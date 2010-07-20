@@ -131,6 +131,8 @@ extern char *PJobState[];
 extern void cleanup_restart_file(job *);
 extern void rel_resc(job *);
 
+extern job  *chk_job_request(char *, struct batch_request *);
+extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
 
 /*
  * post_modify_req - clean up after sending modify request to MOM
@@ -281,7 +283,9 @@ int modify_job(
       sprintf(log_buffer,"setting jobsubstate for %s to RERUN\n", pjob->ji_qs.ji_jobid);
 
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
-      job_save(pjob, SAVEJOB_QUICK);
+
+      job_save(pjob, SAVEJOB_QUICK, 0);
+
       LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
                 pjob->ji_qs.ji_jobid, log_buffer);
 
@@ -411,7 +415,7 @@ int modify_job(
     }
   else
     {
-    job_save(pjob, SAVEJOB_FULL);
+    job_save(pjob, SAVEJOB_FULL, 0);
     }
 
   sprintf(log_buffer, msg_manager,
@@ -431,7 +435,7 @@ int modify_job(
   if (sendmom)
     {
     if ((rc = relay_to_mom(
-                pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+                pjob,
                 preq,
                 post_modify_req)))
       {  
@@ -457,7 +461,7 @@ int modify_job(
 
       momreq->rq_extra = (void *)pjob;
 
-      if (relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr, momreq, chkpt_xfr_done) != 0)
+      if (relay_to_mom(pjob, momreq, chkpt_xfr_done) != 0)
         {
         snprintf(log_buffer,sizeof(log_buffer),
           "Unable to relay information to mom for job '%s'\n",

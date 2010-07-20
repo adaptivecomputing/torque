@@ -132,6 +132,7 @@ extern int  svr_authorize_jobreq(struct batch_request *, job *);
 extern int  svr_chkque(job *, pbs_queue *, char *, int, char *);
 extern int  job_route(job *);
 extern int node_avail_complex(char *, int *, int *, int *, int*);
+extern void  set_chkpt_deflt(job *, pbs_queue *);
 
 /* Global Data Items: */
 
@@ -201,7 +202,7 @@ void req_quejob(
   struct batch_request *preq) /* ptr to the decoded request   */
 
   {
-  char          *id = "req_quejob";
+  char  *id = "req_quejob";
 
   char   basename[PBS_JOBBASE + 1];
   int   created_here = 0;
@@ -1377,7 +1378,7 @@ void req_rdytocommit(
 
     }
 
-  if (job_save(pj, SAVEJOB_NEW) == -1)
+  if (job_save(pj, SAVEJOB_NEW, 0) == -1)
     {
     char tmpLine[1024];
 
@@ -1616,7 +1617,7 @@ void req_commit(
     return;
     }
 
-  if (job_save(pj, SAVEJOB_FULL) != 0)
+  if (job_save(pj, SAVEJOB_FULL, 0) != 0)
     {
     job_purge(pj);
 

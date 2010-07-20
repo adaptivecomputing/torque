@@ -165,18 +165,25 @@ static const unsigned int quicksize = sizeof(struct jobfix);
 int job_save(
 
   job *pjob,  /* pointer to job structure */
-  int  updatetype) /* 0=quick, 1=full     */
+  int  updatetype, /* 0=quick, 1=full     */
+  int  mom_port)   /* if 0 ignore otherwise append to end of job name. this is for multi-mom mode */
 
   {
   int fds;
   int i;
   char namebuf1[MAXPATHLEN];
   char namebuf2[MAXPATHLEN];
+  char portname[MAXPATHLEN];
   int openflags;
   int redo;
 
   strcpy(namebuf1, path_jobs); /* job directory path */
   strcat(namebuf1, pjob->ji_qs.ji_fileprefix);
+  if(mom_port)
+    {
+    sprintf(portname, "%d", mom_port);
+    strcat(namebuf1, portname);
+    }
   strcpy(namebuf2, namebuf1); /* setup for later */
 
 #ifdef PBS_MOM
@@ -568,7 +575,7 @@ job *job_recov(
 
   if (qs_upgrade == TRUE)
     {
-    job_save(pj, SAVEJOB_FULL);
+    job_save(pj, SAVEJOB_FULL, 0);
     }
 
   return(pj);

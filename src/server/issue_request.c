@@ -103,11 +103,14 @@
 #include "net_connect.h"
 #include "svrfunc.h"
 #include "pbs_nodes.h"
-
-
+#include "pbs_job.h"
+#include "server.h"
+#include <stdint.h>
 
 /* Global Data Items: */
 
+extern struct server server;
+extern char server_name[];
 extern struct connect_handle connection[];
 extern char     *msg_daemonname;
 extern tlist_head task_list_event;
@@ -120,7 +123,7 @@ extern unsigned int pbs_mom_port;
 extern unsigned int pbs_server_port_dis;
 
 extern struct  connection svr_conn[];
-extern struct pbsnode *tfind_addr(const u_long); 
+extern struct pbsnode *tfind_addr(const u_long, uint16_t); 
 
 extern int       LOGLEVEL;
 
@@ -140,7 +143,7 @@ int issue_to_svr(char *, struct batch_request *, void (*f)(struct work_task *));
 
 int relay_to_mom(
 
-  pbs_net_t          momaddr, /* address of mom */
+  job *pjob,
   struct batch_request  *request, /* the request to send */
   void (*func)(struct work_task *))
 
@@ -149,12 +152,15 @@ int relay_to_mom(
 
   int conn; /* a client style connection handle */
   int   rc;
+  pbs_net_t addr;
 
   struct pbsnode *node;
 
   /* if MOM is down don't try to connect */
 
-  if (((node = tfind_addr(momaddr)) != NULL) &&
+  addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
+
+  if (((node = tfind_addr(addr, pjob->ji_qs.ji_un.ji_exect.ji_momport)) != NULL) &&
        (node->nd_state & (INUSE_DELETED|INUSE_DOWN)))
     {
     return(PBSE_NORELYMOM);
@@ -163,7 +169,7 @@ int relay_to_mom(
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buffer, "momaddr=%s",
-            netaddr_pbs_net_t(momaddr));
+            netaddr_pbs_net_t(pjob->ji_qs.ji_un.ji_exect.ji_momaddr));
 
     log_record(
       PBSEVENT_SCHED,
@@ -174,8 +180,8 @@ int relay_to_mom(
 
   conn = svr_connect(
 
-           momaddr,
-           pbs_mom_port,
+           pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+           pjob->ji_qs.ji_un.ji_exect.ji_momport,
            process_Dreply,
            ToServerDIS);
 

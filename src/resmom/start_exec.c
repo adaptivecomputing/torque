@@ -202,8 +202,10 @@ extern  char            *submithost_suffix;
 extern  char             DEFAULT_UMASK[];
 extern  char             PRE_EXEC[];
 
-extern int LOGLEVEL;
+extern int  LOGLEVEL;
 extern long TJobStartBlockTime;
+
+extern int  multi_mom;
 
 extern char path_checkpoint[];
 
@@ -514,6 +516,7 @@ void exec_bail(
   static char id[] = "exec_bail";
   
   int nodecount;
+  unsigned short momport = 0;
   
   nodecount = send_sisters(pjob, IM_ABORT_JOB);
   
@@ -532,8 +535,13 @@ void exec_bail(
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
   
   pjob->ji_qs.ji_un.ji_momt.ji_exitstat = code;
+
+  if (multi_mom)
+    {
+    momport = pbs_rm_port;
+    }
   
-  job_save(pjob, SAVEJOB_QUICK);
+  job_save(pjob, SAVEJOB_QUICK,momport);
   
   exiting_tasks = 1;
   
@@ -3550,13 +3558,14 @@ int TMomFinalizeJob3(
 										int         ReadErrno,	/* I (errno value from read) */
 										int        *SC)					/* O (return code) */
 
-{
+  {
 	char *id = "TMomFinalizeJob3";
 
 	struct startjob_rtn sjr;
 
 	job  *pjob;
 	task *ptask;
+  unsigned int momport = 0;
 
 	pjob = (job *)TJE->pjob;
 	ptask = (task *)TJE->ptask;
@@ -3773,7 +3782,12 @@ int TMomFinalizeJob3(
 
 	/* changed from SAVEJOB_QUICK to SAVEJOB_FULL (USC - 2/5/2005) */
 
-	job_save(pjob, SAVEJOB_FULL);
+  if (multi_mom)
+    {
+    momport = pbs_rm_port;
+    }
+
+	job_save(pjob, SAVEJOB_FULL,momport);
 
 	sprintf(log_buffer, "job %s started, pid = %ld",
 					pjob->ji_qs.ji_jobid,
@@ -3786,7 +3800,7 @@ int TMomFinalizeJob3(
 						log_buffer);
 
 	return(SUCCESS);
-}	 /* END TMomFinalizeJob3() */
+  }	 /* END TMomFinalizeJob3() */
 
 
 
@@ -3817,6 +3831,7 @@ int start_process(
 	int i, j;
 	int fd0, fd1, fd2;
 	u_long ipaddr;
+  unsigned int momport = 0;
 #ifdef USEJOBCREATE
 
 	struct  startjob_rtn sjr =
@@ -4073,7 +4088,12 @@ int start_process(
 			pjob->ji_qs.ji_state    = JOB_STATE_RUNNING;
 			pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
 
-			job_save(pjob, SAVEJOB_QUICK);
+      if (multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+
+			job_save(pjob, SAVEJOB_QUICK,momport);
 			}
 
 		sprintf(log_buffer, "%s: task started, tid %d, sid %ld, cmd %s",
@@ -7230,10 +7250,192 @@ int expand_path(
 
   return(FAILURE);
 
-#endif /* HAVE_WORD_EXP */
+#endif /* HAVE_WORDEXP */
 }
 
 
+
+/* exec_job_on_ms starts the execution of a job on the
+ *    mother superior node */
+int exec_job_on_ms(job *pjob) 
+  {
+  char id[] = "exec_job_on_ms"; 
+  pjobexec_t *TJE;
+  int         Count;
+  int         RC;
+  int     SC;
+  
+  TMOMJobGetStartInfo(NULL, &TJE);
+  
+  if (TMomFinalizeJob1(pjob, TJE, &SC) == FAILURE)
+    {
+    /* FAILURE (or at least do not continue) */
+    
+    if (SC != 0)
+      {
+      memset(TJE, 0, sizeof(pjobexec_t));
+      
+      exec_bail(pjob, SC);
+      }
+    
+    return(FAILURE);
+    }
+  /* TMomFinalizeJob2() blocks until job is fully launched */
+  
+  if (TMomFinalizeJob2(TJE, &SC) == FAILURE)
+    {
+    if (SC != 0)
+      {
+      memset(TJE, 0, sizeof(pjobexec_t));
+      
+      exec_bail(pjob, SC);
+      }
+    
+    return(FAILURE);
+    }
+  
+  /* block, wait for child to complete indicating success/failure of job launch */
+  
+  if (TMomCheckJobChild(TJE, TJobStartBlockTime, &Count, &RC) == FAILURE)
+    {
+    if (LOGLEVEL >= 3)
+      {
+      sprintf(log_buffer, "job not ready after %ld second timeout, MOM will check later",
+          TJobStartBlockTime);
+      
+      log_record(
+        PBSEVENT_SYSTEM,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      }
+    
+    return(FAILURE);
+    }
+  
+  /* NOTE:  TMomFinalizeJob3() populates SC */
+  
+  if (TMomFinalizeJob3(TJE, Count, RC, &SC) == FAILURE)
+    {
+    sprintf(log_buffer, "ALERT:  job failed phase 3 start");
+    
+    log_record(
+      PBSEVENT_ERROR,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
+    
+    memset(TJE, 0, sizeof(pjobexec_t));
+    
+    exec_bail(pjob, SC);
+    
+    return(FAILURE);
+    }
+  
+  /* SUCCESS:  MOM returns */
+  
+  memset(TJE, 0, sizeof(pjobexec_t));
+  
+  if (LOGLEVEL >= 3)
+    {
+    sprintf(log_buffer, "%s:job successfully started", id);
+    
+    log_record(
+      PBSEVENT_ERROR,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
+    }
+  
+  return(0);
+  } /* END exec_job_on_ms() */
+
+
+
+
+
+int allocate_demux_sockets(job *pjob)
+  {
+  char *id = "allocate_demux_sockets";
+  int i;
+  int ret;
+  int socks[2];
+  int ports[2];
+  struct sockaddr_in  saddr;
+  torque_socklen_t slen;
+  
+  /* Open two sockets for use by demux program later. */
+  
+  for (i = 0;i < 2;i++)
+    socks[i] = -1;
+  
+  for (i = 0;i < 2;i++)
+    {
+    if ((socks[i] = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+      break;
+    
+    memset(&saddr, '\0', sizeof(saddr));
+    
+    saddr.sin_addr.s_addr = INADDR_ANY;
+    
+    saddr.sin_family = AF_INET;
+    
+    if (bind( socks[i], (struct sockaddr *)&saddr, sizeof(saddr)) == -1)
+      break;
+    
+    slen = sizeof(saddr);
+    
+    if (getsockname(socks[i], (struct sockaddr *)&saddr, &slen) == -1)
+      break;
+    
+    ports[i] = (int)ntohs(saddr.sin_port);
+    }  /* END for (i) */
+  
+  if (i < 2)
+    {
+    /* ERROR:  cannot open sockets for stdout and stderr */
+    
+    for (i = 0;i < 2;i++)
+      {
+      if (socks[i] != -1)
+        close(socks[i]);
+      }
+
+    /* command sisters to abort job and continue */
+    
+    log_err(errno, id, "stdout/err socket");
+
+    exec_bail(pjob, JOB_EXEC_FAIL1);
+    
+    ret = JOB_EXEC_FAIL1;
+    
+    goto done;
+    }
+
+  pjob->ji_stdout = socks[0];
+  pjob->ji_stderr = socks[1];
+  
+  if (LOGLEVEL >= 3)
+    {
+    sprintf(log_buffer, "%s: stdout: %d  stderr: %d",
+      id,
+      ports[0],
+      ports[1]);
+    
+    log_record(
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
+    }
+
+  pjob->ji_portout = ports[0];
+  pjob->ji_porterr = ports[1];
+  
+  ret = PBSE_NONE;
+done:
+  return(ret);
+  } /* END allocate_demux_sockets() */
 
 
 

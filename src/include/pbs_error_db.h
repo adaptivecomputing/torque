@@ -190,6 +190,7 @@ PbsErrClient(PBSE_UNKARRAYID,        "Unknown Array ID")                        
 PbsErrClient(PBSE_BAD_ARRAY_REQ,     "Bad Job Array Request")
 /* Time out */
 PbsErrClient(PBSE_TIMEOUT,           "Time out")
+PbsErrClient(PBSE_JOBNOTFOUND,		 "Job not found")
 /* fault tolerant jobs not allowed in queue */
 PbsErrClient(PBSE_NOFAULTTOLERANT,   "Queue does not allow fault tolerant jobs")
 /* only fault tolerant jobs allowed in queue */

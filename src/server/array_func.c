@@ -559,7 +559,7 @@ int setup_array_struct(job *pjob)
   CLEAR_HEAD(pa->request_tokens);
   append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
 
-  if (job_save(pjob, SAVEJOB_FULL) != 0)
+ if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
     {
     job_purge(pjob);
 

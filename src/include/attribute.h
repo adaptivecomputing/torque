@@ -452,11 +452,17 @@ extern int      set_node_props(attribute*, attribute*, enum batch_op);
 extern int      set_null(attribute*, attribute*, enum batch_op);
 extern int      node_state(attribute*, void*, int);
 extern int      node_np_action(attribute*, void*, int);
+extern int      node_mom_port_action(attribute*, void*, int);
+extern int      node_mom_rm_port_action(attribute*, void*, int);
+extern int      node_numa_action(attribute*, void*, int);
+extern int      numa_str_action(attribute *, void *,int);
 extern int      node_ntype(attribute*, void*, int);
 extern int      node_prop_list(attribute*, void*, int);
 extern int      node_status_list(attribute*, void*, int);
 extern int      node_note(attribute*, void*, int);
+extern int      node_alt_name(attribute*, void*, int);
 extern int      set_note_str(attribute *attr, attribute *new, enum batch_op);
+extern int      set_alt_name_str(attribute *attr, attribute *new, enum batch_op);
 extern void     replace_attr_string(attribute*, char*);
 
 /* Token manipulation functions */

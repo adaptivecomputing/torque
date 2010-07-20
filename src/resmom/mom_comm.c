@@ -104,25 +104,26 @@
 #include <arpa/inet.h>
 #endif
 
-#include  "libpbs.h"
-#include  "pbs_ifl.h"
+#include "libpbs.h"
+#include "pbs_ifl.h"
 #include "list_link.h"
 #include "attribute.h"
 #include "resource.h"
 #include "server_limits.h"
 #include "pbs_job.h"
-#include        "pbs_nodes.h"
+#include "pbs_nodes.h"
 #include "pbs_error.h"
 #include "log.h"
 #include "net_connect.h"
 #include "rpp.h"
 #include "dis.h"
 #include "dis_init.h"
-#include        "mom_func.h"
-#include        "batch_request.h"
-#include        "resmon.h"
-#include        "mcom.h"
+#include "mom_func.h"
+#include "batch_request.h"
+#include "resmon.h"
+#include "mcom.h"
 #include "svrfunc.h"
+#include "u_tree.h"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
@@ -138,14 +139,17 @@ extern int  pbs_errno;
 extern unsigned int pbs_mom_port;
 extern unsigned int pbs_rm_port;
 extern unsigned int pbs_tm_port;
+extern tlist_head svr_newjobs;
 extern tlist_head mom_polljobs; /* must have resource limits polled */
 extern tlist_head svr_alljobs; /* all jobs under MOM's control */
 extern int  termin_child;
 extern time_t  time_now;
-extern tree           *okclients; /* accept connections from */
-extern  int             port_care;
-extern  char           *path_prologp;
-extern  char           *path_prologuserp;
+/*extern tree  *okclients;*/ /* accept connections from */
+extern AvlTree okclients;
+extern int   port_care;
+extern char  *path_prologp;
+extern char  *path_prologuserp;
+extern int   multi_mom;
 
 const char *PMOMCommand[] =
   {
@@ -168,10 +172,12 @@ const char *PMOMCommand[] =
 char task_fmt[] = "/%010.10ld";
 char noglobid[] = "none";
 
-extern int LOGLEVEL;
-extern long TJobStartBlockTime;
+extern int    LOGLEVEL;
+extern long   TJobStartBlockTime;
 
 /* external functions */
+
+int allocate_demux_sockets(job *pjob);
 
 extern void exec_bail(job *, int);
 extern int TMomFinalizeJob1(job *, pjobexec_t *, int *);
@@ -185,9 +191,18 @@ extern void DIS_tcp_funcs();
 extern int TTmpDirName(job *, char *);
 extern int TMakeTmpDir(job *, char *);
 extern void mom_server_close_stream(int stream);
+extern int exec_job_on_ms(job *pjob);
 char *cat_dirs(char *root, char *base);
 char *get_local_script_path(job *pjob, char *base);
-
+int get_job_struct(
+  job **pjob, 
+  char *jobid, 
+  int command, 
+  int stream, 
+  struct sockaddr_in *addr,
+  tm_node_id nodeid);
+int run_prologue_scripts(job *pjob);
+ 
 #ifdef PENABLE_LINUX26_CPUSETS
 extern int use_cpusets(job *);
 #endif /* PENABLE_LINUX26_CPUSETS */
@@ -213,10 +228,18 @@ int task_save(
   int i;
   int TaskID = 0;
   char namebuf[MAXPATHLEN];
+  char portname[MAXPATHLEN];
   int openflags;
 
   strcpy(namebuf, path_jobs);     /* job directory path */
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+
+  if(multi_mom)
+    {
+    sprintf(portname, "%d", pbs_rm_port);
+    strcat(namebuf, portname);
+    }
+
   strcat(namebuf, JOB_TASKDIR_SUFFIX);
 
   openflags = O_WRONLY | O_CREAT | O_Sync;
@@ -337,6 +360,8 @@ eventent *event_alloc(
   ep = (eventent *)malloc(sizeof(eventent));
 
   assert(ep);
+
+  memset(ep, 0, sizeof(eventent));
 
   ep->ee_command = command;
 
@@ -787,7 +812,7 @@ int send_sisters(
     {
     hnodent *np = &pjob->ji_hosts[i];
 
-    if (np->hn_node == pjob->ji_nodeid) /* this is me */
+    if (np->hn_node == pjob->ji_nodeid) /* this is me*/
       continue;
 
     if (np->hn_sister != SISTER_OKAY) /* sister is gone? */
@@ -813,8 +838,8 @@ int send_sisters(
       {
       char EMsg[1024];
 
-	  EMsg[0] = 0;
-      np->hn_stream = rpp_open(np->hn_host, pbs_rm_port, EMsg);
+	    EMsg[0] = 0;
+      np->hn_stream = rpp_open(np->hn_host, np->hn_port, EMsg);
 
       if (np->hn_stream == -1)
         {
@@ -831,17 +856,17 @@ int send_sisters(
           log_buffer);
         }
 
-	  if(LOGLEVEL >= 6)
-	    {
-	    if(EMsg[0] != 0)
-		  {
-		  log_record(
-			PBSEVENT_ERROR,
-			PBS_EVENTCLASS_JOB,
-			pjob->ji_qs.ji_jobid,
-			EMsg);
-		  }
-	    }
+	    if(LOGLEVEL >= 6)
+	      {
+	      if(EMsg[0] != 0)
+		      {
+		      log_record(
+		  	  PBSEVENT_ERROR,
+		  	  PBS_EVENTCLASS_JOB,
+		  	  pjob->ji_qs.ji_jobid,
+		  	  EMsg);
+		      }
+	      }
 
       continue;
       }
@@ -922,10 +947,6 @@ int send_sisters(
   }  /* END send_sisters() */
 
 
-
-
-
-
 #define SEND_ERR(err) \
   if (reply) { \
     im_compose(stream,jobid,cookie,IM_ERROR,event,fromtask); \
@@ -987,8 +1008,8 @@ hnodent *find_node(
 
     /* if node is not me and no stream open, open one */
 
-    if (pjob->ji_nodeid != hp->hn_node && node_addr == NULL)
-      hp->hn_stream = rpp_open(hp->hn_host, pbs_rm_port, NULL);
+    if ((pjob->ji_nodeid != hp->hn_node) && node_addr == NULL)
+      hp->hn_stream = rpp_open(hp->hn_host, hp->hn_port, NULL);
 
     return(hp);
     }
@@ -1198,9 +1219,10 @@ void node_bailout(
   {
   static char id[] = "node_bailout";
 
-  task          *ptask;
-  eventent      *ep;
-  int            i;
+  task         *ptask;
+  eventent     *ep;
+  int          i;
+  unsigned int momport = 0;
 
   ep = (eventent *)GET_NEXT(np->hn_events);
 
@@ -1210,29 +1232,30 @@ void node_bailout(
       {
 
       case IM_JOIN_JOB:
-
-        /*
-         * I'm MS and a node has failed to respond to the
-         * call.  Maybe in the future the user can specify
-         * the job can start with a range of nodes so
-         * one (or more) missing can be tolerated.  Not
-         * for now.
-         */
-
-        sprintf(log_buffer, "%s join_job failed from node %s %d - recovery attempted)",
-                pjob->ji_qs.ji_jobid,
-                np->hn_host,
-                np->hn_node);
-
-        log_err(-1, id, log_buffer);
-
-        DBPRT(("%s: JOIN_JOB %s\n",
-               id,
-               pjob->ji_qs.ji_jobid))
-
-        job_start_error(pjob, PBSE_SISCOMM, np->hn_host);
-
-        break;
+		{
+		  /*
+		   * I'm MS and a node has failed to respond to the
+		   * call.  Maybe in the future the user can specify
+		   * the job can start with a range of nodes so
+		   * one (or more) missing can be tolerated.  Not
+		   * for now.
+		   */
+  
+		  sprintf(log_buffer, "%s join_job failed from node %s %d - recovery attempted)",
+				  pjob->ji_qs.ji_jobid,
+				  np->hn_host,
+				  np->hn_node);
+  
+		  log_err(-1, id, log_buffer);
+  
+		  DBPRT(("%s: JOIN_JOB %s\n",
+				 id,
+				 pjob->ji_qs.ji_jobid))
+  
+		  job_start_error(pjob, PBSE_SISCOMM, np->hn_host);
+  
+		  break;
+		}
 
       case IM_ABORT_JOB:
 
@@ -1265,7 +1288,11 @@ void node_bailout(
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-          job_save(pjob, SAVEJOB_QUICK);
+          if(multi_mom)
+            {
+            momport = pbs_rm_port;
+            }
+          job_save(pjob, SAVEJOB_QUICK, momport);
 
           exiting_tasks = 1;
           }
@@ -1451,11 +1478,11 @@ void im_eof(
   int ret)     /* I */
 
   {
-  static char           id[] = "im_eof";
+  static char id[] = "im_eof";
 
-  int                   num = -1;
-  job                  *pjob = NULL;
-  hnodent              *np = NULL;
+  int         num = -1;
+  job         *pjob = NULL;
+  hnodent     *np = NULL;
 
   struct sockaddr_in   *addr;
 
@@ -1878,7 +1905,7 @@ void im_request(
 
   struct sockaddr_in *addr;
   u_long  ipaddr;
-  int   i, j, errcode, nodeidx = 0;
+  int   i, errcode, nodeidx = 0;
   int   reply;
   int   exitval;
   tm_node_id  nodeid;
@@ -1895,6 +1922,7 @@ void im_request(
   tlist_head  lhead;
   svrattrl  *psatl;
   attribute_def  *pdef;
+  unsigned int momport = 0;
 
   struct passwd  *check_pwd();
   extern int  resc_access_perm;
@@ -1934,17 +1962,25 @@ void im_request(
       log_buffer);
     }
 
-  if (tfind(ipaddr, &okclients) == NULL)
+  /*  if (tfind(ipaddr, &okclients) == NULL) */
+  if ( AVL_is_in_tree(ipaddr, 0, okclients) == 0 )
     {
     char tmpLine[1024];
 
     tmpLine[0] = '\0';
 
-    tlist(okclients, tmpLine, 1024);
-
+    /* tlist(okclients, tmpLine, 1024); */
+    ret = AVL_list(okclients, tmpLine, 1024);
+    if( ret == 0 )
+      {
     sprintf(log_buffer, "bad connect from %s - unauthorized (okclients: %s)",
             netaddr(addr),
             tmpLine);
+      }
+    else
+      sprintf(log_buffer, "bad connect from %s - unauthorized (could not get ok clients %d)",
+              netaddr(addr),
+              ret);
 
     log_err(-1, id, log_buffer);
 
@@ -2021,8 +2057,10 @@ void im_request(
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer,"received request '%s' for job %s from %s",
+    sprintf(log_buffer,"%s:received request '%s' (%d) for job %s from %s",
+      id,
       PMOMCommand[MIN(command,IM_MAX)],
+      command,
       jobid,
       netaddr(addr));
 
@@ -2038,7 +2076,7 @@ void im_request(
   switch (command)
     {
     case IM_JOIN_JOB:
-
+      {
       /*
        ** Sender is mother superior sending a job structure to me.
        ** I am going to become a member of a job.
@@ -2105,93 +2143,15 @@ void im_request(
 
       /* does job already exist? */
 
-      pjob = find_job(jobid);
-
-      if (pjob != NULL)
+      ret = get_job_struct(&pjob, jobid, command, stream, addr, nodeid);
+      if(ret != PBSE_NONE)
         {
-        /* job already exists locally */
-
-        if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
+        if(ret == PBSE_DISPROTO)
           {
-          if (LOGLEVEL >= 3)
-            {
-            /* if peer mom times out, MS will send new join request for same job */
-
-            sprintf(log_buffer, "WARNING:    duplicate JOIN request %s from %s (purging previous pjob)",
-                    PMOMCommand[MIN(command,IM_MAX)],
-                    netaddr(addr));
-
-            LOG_EVENT(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              jobid,
-              log_buffer);
-            }
-
-          job_purge(pjob);
+          goto err;
           }
-        else
-          {
-          if (LOGLEVEL >= 0)
-            {
-            sprintf(log_buffer, "ERROR:    received request '%s' from %s (job already exists locally)",
-                    PMOMCommand[MIN(command,IM_MAX)],
-                    netaddr(addr));
-
-            LOG_EVENT(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              jobid,
-              log_buffer);
-            }
-
-          /* should local job be purged, ie 'job_purge(pjob);' ? */
-
-          SEND_ERR(PBSE_JOBEXIST)
-
+        else 
           goto done;
-          }
-        }  /* END if (pjob != NULL) */
-
-      if ((pjob = job_alloc()) == NULL)
-        {
-        /* out of memory */
-
-        log_err(-1, id, "insufficient memory to create job");
-
-        SEND_ERR(PBSE_SYSTEM)
-
-        goto done;
-        }
-
-      pjob->ji_stdout = disrsi(stream, &ret);
-
-      if (ret != DIS_SUCCESS)
-        {
-        sprintf(log_buffer, "%s: join_job request to node %d for job %s failed - %s (stdout)",
-                id,
-                nodeid,
-                jobid,
-                dis_emsg[ret]);
-
-        log_err(-1, id, log_buffer);
-
-        goto err;
-        }
-
-      pjob->ji_stderr = disrsi(stream, &ret);
-
-      if (ret != DIS_SUCCESS)
-        {
-        sprintf(log_buffer, "%s: join_job request to node %d for job %s failed - %s (stderr)",
-                id,
-                nodeid,
-                jobid,
-                dis_emsg[ret]);
-
-        log_err(-1, id, log_buffer);
-
-        goto err;
         }
 
       pjob->ji_numnodes = nodenum;  /* XXX */
@@ -2227,6 +2187,7 @@ void im_request(
         psatl = (svrattrl *)GET_NEXT(psatl->al_link);
         }
 
+      
       strcpy(pjob->ji_qs.ji_jobid, jobid);
 
       strcpy(pjob->ji_qs.ji_fileprefix, basename);
@@ -2278,9 +2239,9 @@ void im_request(
         {
         if (LOGLEVEL >= 6)
           {
-          sprintf(log_buffer, "error %d received in joinjob - purging job",
-                  errcode);
-
+          sprintf(log_buffer, "%s:error %d received in joinjob - purging job",
+                  id, errcode);
+      
           LOG_EVENT(
             PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
@@ -2351,6 +2312,7 @@ void im_request(
         }
 
 #ifdef PENABLE_LINUX26_CPUSETS
+#ifndef NUMA_SUPPORT
 
       if (use_cpusets(pjob) == TRUE)
         {
@@ -2368,57 +2330,14 @@ void im_request(
           }
         }
 
+#endif  /* ndef NUMA_SUPPORT */
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
 
-      /* run local prolog */
 
-      if ((j = run_pelog(
-                 PE_PROLOG,
-                 path_prologp,
-                 pjob,
-                 PE_IO_TYPE_ASIS)) != 0)
+      ret = run_prologue_scripts(pjob);
+      if(ret != PBSE_NONE)
         {
-        DBPRT(("cannot run local prolog '%s': %s (rc: %d)\n",
-               path_prologp,
-               log_buffer,
-               j));
-
-        LOG_EVENT(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
-
-        job_purge(pjob);
-
-        SEND_ERR(PBSE_SYSTEM)
-
-        goto done;
-        }
-
-      /* run user prolog */
-
-      if ((j = run_pelog(
-                 PE_PROLOGUSER,
-                 path_prologuserp,
-                 pjob,
-                 PE_IO_TYPE_ASIS)) != 0)
-        {
-        DBPRT(("cannot run local user prolog '%s': %s (rc: %d)\n",
-               path_prologuserp,
-               log_buffer,
-               j));
-
-        LOG_EVENT(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
-
-        job_purge(pjob);
-
-        SEND_ERR(PBSE_SYSTEM)
-
+        SEND_ERR(ret)
         goto done;
         }
 
@@ -2437,8 +2356,13 @@ void im_request(
 
 #endif /* IBM SP */
 
-      job_save(pjob, SAVEJOB_FULL);
-
+      if(multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+      
+      job_save(pjob, SAVEJOB_FULL, momport);
+      
       sprintf(log_buffer, "JOIN JOB as node %d",
         nodeid);
 
@@ -2474,9 +2398,10 @@ void im_request(
       /*NOTREACHED*/
 
       break;  /* END IM_JOIN_JOB */
+      }
 
+  
     case IM_ALL_OKAY:
-
     case IM_ERROR:
 
       reply = 0;
@@ -2625,13 +2550,14 @@ void im_request(
   switch (command)
     {
     case IM_KILL_JOB:
-
+      {
       /*
-      ** Sender is (must be) mom superior commanding me to kill a
-      ** job which I should be a part of.
-      ** Send a signal and set the jobstate to begin the
-      ** kill.  We wait for all tasks to exit before sending
-      ** an obit to mother superior.
+        ** Sender is (must be) mom superior
+        ** commanding me to kill a job which I should be a
+        ** part of. Send a signal and set the jobstate to begin
+        ** the kill.  We wait for all tasks to exit before sending
+        ** an obit to mother superior. If I have spawned not tasks
+        ** no obit will be sent.
       **
       ** auxiliary info (
       ** none;
@@ -2655,14 +2581,20 @@ void im_request(
 
       pjob->ji_obit = event;
 
-      job_save(pjob, SAVEJOB_QUICK);
-
-      exiting_tasks = 1;
-
+        if(multi_mom)
+          {
+          momport = pbs_rm_port;
+          }
+        job_save(pjob, SAVEJOB_QUICK, momport);
+  
+        exiting_tasks = 1; /* Setting this to 1 will cause scan_for_exiting to execute */
+  
+  
       break;
+      }
 
     case IM_SPAWN_TASK:
-
+      {
       /*
       ** Sender is a MOM in a job that wants to start a task.
       ** I am MOM on the node that is to run the task.
@@ -2965,7 +2897,8 @@ void im_request(
       arrayfree(envp);
 
       break;
-
+      }
+  
     case IM_GET_TASKS:
 
       /*
@@ -3017,7 +2950,7 @@ void im_request(
       break;
 
     case IM_SIGNAL_TASK:
-
+      {
       /*
       ** Sender is MOM sending a task and signal to
       ** deliver.  If taskid is 0, signal all tasks.
@@ -3116,9 +3049,10 @@ void im_request(
       ret = im_compose(stream, jobid, cookie, IM_ALL_OKAY, event, fromtask);
 
       break;
-
+      }
+  
     case IM_OBIT_TASK:
-
+      {
       /*
       ** Sender is MOM sending a request to monitor a
       ** task for exit.
@@ -3191,9 +3125,10 @@ void im_request(
         }
 
       break;
-
+      }
+  
     case IM_GET_INFO:
-
+      {
       /*
       ** Sender is MOM sending a task and name to lookup
       ** for info to report back.
@@ -3261,9 +3196,10 @@ void im_request(
       ret = diswcs(stream, ip->ie_info, ip->ie_len);
 
       break;
-
+      }
+  
     case IM_GET_RESC:
-
+      {
       /*
       ** Sender is MOM requesting resource info to
       ** report back its client.
@@ -3309,9 +3245,10 @@ void im_request(
       free(info);
 
       break;
-
+      }
+  
     case IM_POLL_JOB:
-
+      {
       /*
       ** Sender is (must be) mom superior commanding me to send
       ** information for a job which I should be a part of.
@@ -3345,9 +3282,13 @@ void im_request(
         pjob->ji_qs.ji_state    = JOB_STATE_RUNNING;
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
 
-        job_save(pjob, SAVEJOB_QUICK);
+        if(multi_mom)
+          {
+          momport = pbs_rm_port;
+          }
+        job_save(pjob, SAVEJOB_QUICK, momport);
         }
-
+  
       /* Now comes a recomendation for killing the job. */
 
       exitval = (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_OVERLMT1 | JOB_SVFLG_OVERLMT2)) ?
@@ -3376,9 +3317,10 @@ void im_request(
       ret = diswul(stream, resc_used(pjob, "vmem", getsize));
 
       break;
-
+      }
+  
     case IM_ABORT_JOB:
-
+      {
       /*
       ** Sender is (must be) mom superior commanding me to
       ** abort a JOIN_JOB request.
@@ -3426,9 +3368,10 @@ void im_request(
       job_purge(pjob);
 
       break;
-
+      }
+  
     case IM_GET_TID:
-
+      {
       /*
        * I must be mom superior getting a request from a
        * sub-mom to get a TID.
@@ -3466,9 +3409,10 @@ void im_request(
       ret = diswsi(stream, pjob->ji_taskid++);
 
       break;
-
+      }
+  
     case IM_ALL_OKAY: /* this is a REPLY */
-
+      {
       /*
        ** Sender is another MOM telling me that a request has
        ** completed successfully.
@@ -3478,7 +3422,7 @@ void im_request(
         {
 
         case IM_JOIN_JOB:
-
+            {
           /*
           ** Sender is one of the sisterhood saying she
           ** got the job structure sent and she accepts it.
@@ -3489,6 +3433,7 @@ void im_request(
           ** )
           */
 
+  
           if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
             {
             log_err(-1, id, "got JOIN_JOB OKAY and I'm not MS");
@@ -3496,6 +3441,7 @@ void im_request(
             goto err;
             }
 
+            /* This is an O(N) algorithm We should do a countdown instead */
           for (i = 0;i < pjob->ji_numnodes;i++)
             {
             np = &pjob->ji_hosts[i];
@@ -3506,11 +3452,6 @@ void im_request(
 
           if (ep == NULL)
             {
-            pjobexec_t *TJE;
-            int         SC;
-            int         RC;
-
-            int         Count;
 
             /* no events remaining, all moms have reported in, launch job locally */
 
@@ -3520,97 +3461,18 @@ void im_request(
                 PBSEVENT_JOB,
                 PBS_EVENTCLASS_JOB,
                 pjob->ji_qs.ji_jobid,
-                "all sisters have reported in, launching job locally");
-              }
-
-            TMOMJobGetStartInfo(NULL, &TJE);
-
-            if (TMomFinalizeJob1(pjob, TJE, &SC) == FAILURE)
-              {
-              /* FAILURE (or at least do not continue) */
-
-              if (SC != 0)
-                {
-                memset(TJE, 0, sizeof(pjobexec_t));
-
-                exec_bail(pjob, SC);
+                  "im_request:all sisters have reported in, launching job locally");
                 }
+  
+            exec_job_on_ms(pjob);
 
-              break;
-              }
-
-            /* TMomFinalizeJob2() blocks until job is fully launched */
-
-            if (TMomFinalizeJob2(TJE, &SC) == FAILURE)
-              {
-              if (SC != 0)
-                {
-                memset(TJE, 0, sizeof(pjobexec_t));
-
-                exec_bail(pjob, SC);
-                }
-
-              break;
-              }
-
-            /* block, wait for child to complete indicating success/failure of job launch */
-
-            if (TMomCheckJobChild(TJE, TJobStartBlockTime, &Count, &RC) == FAILURE)
-              {
-              if (LOGLEVEL >= 3)
-                {
-                sprintf(log_buffer, "job not ready after %ld second timeout, MOM will check later",
-                        TJobStartBlockTime);
-
-                log_record(
-                  PBSEVENT_SYSTEM,
-                  PBS_EVENTCLASS_JOB,
-                  pjob->ji_qs.ji_jobid,
-                  log_buffer);
-                }
-
-              break;
-              }
-
-            /* NOTE:  TMomFinalizeJob3() populates SC */
-
-            if (TMomFinalizeJob3(TJE, Count, RC, &SC) == FAILURE)
-              {
-              sprintf(log_buffer, "ALERT:  job failed phase 3 start");
-
-              log_record(
-                PBSEVENT_ERROR,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
-
-              memset(TJE, 0, sizeof(pjobexec_t));
-
-              exec_bail(pjob, SC);
-
-              break;
-              }
-
-            /* SUCCESS:  MOM returns */
-
-            memset(TJE, 0, sizeof(pjobexec_t));
-
-            if (LOGLEVEL >= 3)
-              {
-              sprintf(log_buffer, "job successfully started");
-
-              log_record(
-                PBSEVENT_ERROR,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
-              }
             }    /* END if (ep == NULL) */
           else
             {
             if (LOGLEVEL >= 4)
               {
-              sprintf(log_buffer, "joinjob response received from node %s, (still waiting for %s)",
+                sprintf(log_buffer, "%s:joinjob response received from node %s, (still waiting for %s)",
+                        id,
                       netaddr(addr),
                       np->hn_host);
 
@@ -3623,9 +3485,9 @@ void im_request(
             }
 
           break;
-
+            }
         case IM_KILL_JOB:
-
+            {
           /*
           ** Sender is sending a response that a job
           ** which needs to die has been given the ax.
@@ -3647,8 +3509,8 @@ void im_request(
 
           if (LOGLEVEL >= 2)
             {
-            sprintf(log_buffer, "KILL_JOB acknowledgement received");
-
+              sprintf(log_buffer, "%s:KILL_JOB acknowledgement received", id);
+  
             log_record(
               PBSEVENT_JOB,
               PBS_EVENTCLASS_JOB,
@@ -3684,10 +3546,14 @@ void im_request(
 
           /* don't close stream in case other jobs use it */
 
-          np->hn_sister = SISTER_KILLDONE;
-
+            np->hn_sister = SISTER_KILLDONE;  /* We are changing this node from SISTER_OKAY which was 
+                                                  set in send_sisters() */
+  
           for (i = 1;i < pjob->ji_numnodes;i++)
             {
+              /* if we get through this loop without finding a
+                 hn_sister set to SISTER_OKAY then we know
+                 all sisters have reported in */
             if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
               break;
             }
@@ -3702,12 +3568,17 @@ void im_request(
 
             pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-            job_save(pjob, SAVEJOB_QUICK);
-
+              if(multi_mom)
+                {
+                momport = pbs_rm_port;
+                }
+              job_save(pjob, SAVEJOB_QUICK, momport);
+  
             exiting_tasks = 1;
             }
 
           break;
+            }
 
         case IM_SPAWN_TASK:
 
@@ -3725,6 +3596,17 @@ void im_request(
           if (ret != DIS_SUCCESS)
             goto err;
 
+            if (LOGLEVEL >= 5)
+              {
+              sprintf(log_buffer, "%s: SPAWN_TASK %s OKAY task %d\n", id, jobid, taskid);
+  
+              log_record(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+              }
+  
           DBPRT(("%s: SPAWN_TASK %s OKAY task %d\n",
                  id,
                  jobid,
@@ -3759,6 +3641,17 @@ void im_request(
           DBPRT(("%s: GET_TASKS %s OKAY\n",
                  id, jobid))
 
+            if (LOGLEVEL >= 5)
+              {
+              sprintf(log_buffer, "%s: GET_TASKS %s OKAY \n", id, jobid);
+  
+              log_record(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+              }
+  
           ptask = task_check(pjob, event_task);
 
           if (ptask == NULL)
@@ -3806,6 +3699,17 @@ void im_request(
           DBPRT(("%s: SIGNAL_TASK %s OKAY %d\n",
                  id, jobid, event_task))
 
+            if (LOGLEVEL >= 5)
+              {
+              sprintf(log_buffer, "%s: SIGNAL_TASK %s OKAY %d\n", id, jobid, event_task);
+  
+              log_record(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+              }
+  
           ptask = task_check(pjob, event_task);
 
           if (ptask == NULL)
@@ -3838,6 +3742,17 @@ void im_request(
                  event_task,
                  exitval))
 
+            if (LOGLEVEL >= 5)
+              {
+              sprintf(log_buffer, "%s: OBIT_TASK %s OKAY %d exit val %d\n", id, jobid, event_task, exitval);
+  
+              log_record(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+              }
+  
           ptask = task_check(pjob, event_task);
 
           if (ptask == NULL)
@@ -4017,6 +3932,17 @@ void im_request(
           ** to another MOM.
           */
 
+            if (LOGLEVEL >= 5)
+              {
+              sprintf(log_buffer, "%s: GET_TID %s OKAY task %d\n", id, jobid, taskid);
+  
+              log_record(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+              }
+  
           if (pjob->ji_nodeid != efwd.fe_node)
             {
             np = find_node(pjob, -1, efwd.fe_node);
@@ -4146,9 +4072,9 @@ void im_request(
         }  /* END switch (event_com) */
 
       break;
-
+      }
     case IM_ERROR:  /* this is a REPLY */
-
+      {
       /*
       ** Sender is responding to a request with an error code.
       **
@@ -4235,8 +4161,12 @@ void im_request(
 
             pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-            job_save(pjob, SAVEJOB_QUICK);
-
+              if(multi_mom)
+                {
+                momport = pbs_rm_port;
+                }
+              job_save(pjob, SAVEJOB_QUICK, momport);
+  
             exiting_tasks = 1;
             }
 
@@ -4342,7 +4272,8 @@ void im_request(
         }  /* END switch(event_com) */
 
       break;
-
+      }
+  
     default:
 
       sprintf(log_buffer, "unknown command %d sent",
@@ -4403,6 +4334,7 @@ fini:
     free(cookie);
 
   return;
+          
   }  /* END im_request() */
 
 
@@ -4516,6 +4448,8 @@ int tm_request(
   tm_node_id nodeid;
   tm_task_id taskid = 0, fromtask;
   attribute *at;
+  unsigned int momport = 0;
+
   extern u_long  localaddr;
 
   extern struct connection svr_conn[];
@@ -4933,7 +4867,7 @@ int tm_request(
 
         if (phost->hn_stream == -1)
           {
-          phost->hn_stream = rpp_open(phost->hn_host, pbs_rm_port, NULL);
+          phost->hn_stream = rpp_open(phost->hn_host, phost->hn_port, NULL);
           }
 
         ret = im_compose(
@@ -5222,11 +5156,15 @@ int tm_request(
 
       ep = event_alloc(IM_SPAWN_TASK, phost, event, fromtask);
 
-      job_save(pjob, SAVEJOB_FULL);
+      if(multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+      job_save(pjob, SAVEJOB_FULL, momport);
 
       if (phost->hn_stream == -1)
         {
-        phost->hn_stream = rpp_open(phost->hn_host, pbs_rm_port, NULL);
+        phost->hn_stream = rpp_open(phost->hn_host, phost->hn_port, NULL);
         }
 
       ret = im_compose(
@@ -5327,7 +5265,7 @@ int tm_request(
 
         if (phost->hn_stream == -1)
           {
-          phost->hn_stream = rpp_open(phost->hn_host, pbs_rm_port, NULL);
+          phost->hn_stream = rpp_open(phost->hn_host, phost->hn_port, NULL);
           }
 
         ret = im_compose(phost->hn_stream, jobid, cookie, IM_SIGNAL_TASK, event, fromtask);
@@ -5423,7 +5361,7 @@ int tm_request(
 
         if (phost->hn_stream == -1)
           {
-          phost->hn_stream = rpp_open(phost->hn_host, pbs_rm_port, NULL);
+          phost->hn_stream = rpp_open(phost->hn_host, phost->hn_port, NULL);
           }
 
         ret = im_compose(
@@ -5541,7 +5479,7 @@ int tm_request(
 
         if (phost->hn_stream == -1)
           {
-          phost->hn_stream = rpp_open(phost->hn_host, pbs_rm_port, NULL);
+          phost->hn_stream = rpp_open(phost->hn_host, phost->hn_port, NULL);
           }
 
         ret = im_compose(
@@ -5629,7 +5567,7 @@ int tm_request(
 
         if (phost->hn_stream == -1)
           {
-          phost->hn_stream = rpp_open(phost->hn_host, pbs_rm_port, NULL);
+          phost->hn_stream = rpp_open(phost->hn_host, phost->hn_port, NULL);
           }
 
         ret = im_compose(
@@ -5769,8 +5707,9 @@ err:
 
 static int adoptSession(pid_t sid, char *id, int command, char *cookie)
   {
-  job *pjob;
-  task *ptask;
+  job *pjob = NULL;
+  task *ptask = NULL;
+  unsigned short momport = 0;
 
   /* extern  int next_sample_time; */
   /* extern  time_t time_resc_updated; */
@@ -5880,7 +5819,11 @@ static int adoptSession(pid_t sid, char *id, int command, char *cookie)
     {
     pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-    job_save(pjob, SAVEJOB_QUICK);
+    if(multi_mom)
+      {
+      momport = pbs_rm_port;
+      }
+    job_save(pjob, SAVEJOB_QUICK, momport);
     }
 
   if (mom_get_sample() == PBSE_NONE)
@@ -5960,27 +5903,196 @@ char *cat_dirs(char *root, char *base)
 
 char *get_local_script_path(job *pjob, char *base)
 {
-  char *wdir;
-  size_t len;
-  char *pn = NULL;
-
+	char *wdir;
+	size_t len;
+	char *pn = NULL;
   
-  /* see if base is an absolute path*/
-  if(base[0] != '/')
+	
+	/* see if base is an absolute path*/
+	if(base[0] != '/')
+	  {
+	  /* base is not an absolute path. Prepend it with the working directory */
+	  wdir = get_job_envvar(pjob, "PBS_O_WORKDIR");
+	  len = strlen(wdir);
+	  if(wdir[len-1] != '/')
+		strcat(wdir, "/");
+	  pn = cat_dirs(wdir, base);
+	  }
+	else
+	  pn = cat_dirs(NULL, base);  /* cat_dirs will allocate memory to hold our string */
+  
+	return(pn);
+  }
+
+
+/* Get the job info. If the job exists get it. If not make a new one */
+int get_job_struct(
+  job **pjob, 
+  char *jobid, 
+  int command, 
+  int stream, 
+  struct sockaddr_in *addr,
+  tm_node_id nodeid)
+  {
+  char *id = "get_job_struct";
+  int ret;
+  job *new_job;
+  
+  new_job = find_job(jobid);
+  
+  
+  if (new_job != NULL)
     {
-    /* base is not an absolute path. Prepend it with the working directory */
-    wdir = get_job_envvar(pjob, "PBS_O_WORKDIR");
-    len = strlen(wdir);
-    if(wdir[len-1] != '/')
-      strcat(wdir, "/");
-    pn = cat_dirs(wdir, base);
+    /* job already exists locally */
+  
+    if (new_job->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
+      {
+      if (LOGLEVEL >= 3)
+        {
+        /* if peer mom times out, MS will send new join request for same job */
+  
+        sprintf(log_buffer, "WARNING:    duplicate JOIN request %s from %s (purging previous pjob)",
+                PMOMCommand[MIN(command,IM_MAX)],
+                netaddr(addr));
+  
+        LOG_EVENT(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          jobid,
+          log_buffer);
+        }
+  
+      job_purge(new_job);
+      }
+    else
+      {
+      if (LOGLEVEL >= 0)
+        {
+        sprintf(log_buffer, "ERROR:    received request '%s' from %s (job already exists locally)",
+                PMOMCommand[MIN(command,IM_MAX)],
+                netaddr(addr));
+  
+        LOG_EVENT(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          jobid,
+          log_buffer);
+        }
+  
+      /* should local job be purged, ie 'job_purge(pjob);' ? */
+  
+      ret = PBSE_JOBEXIST;
+  
+      goto done;
+      }
+    }  /* END if (pjob != NULL) */
+  
+  if ((new_job = job_alloc()) == NULL)
+    {
+    /* out of memory */
+  
+    log_err(-1, id, "insufficient memory to create job");
+  
+  
+    ret = PBSE_SYSTEM;
+  
+    goto done;
     }
-  else
-    pn = cat_dirs(NULL, base);  /* cat_dirs will allocate memory to hold our string */
+  
+  new_job->ji_portout = disrsi(stream, &ret);
+  
+  if (ret != DIS_SUCCESS)
+    {
+    sprintf(log_buffer, "%s: join_job request to node %d for job %s failed - %s (stdout)",
+            id,
+            nodeid,
+            jobid,
+            dis_emsg[ret]);
+  
+    log_err(-1, id, log_buffer);
+  
+    ret = PBSE_DISPROTO;
+    goto done;
+    }
+  
+  new_job->ji_porterr = disrsi(stream, &ret);
+  
+  if (ret != DIS_SUCCESS)
+    {
+    sprintf(log_buffer, "%s: join_job request to node %d for job %s failed - %s (stderr)",
+            id,
+            nodeid,
+            jobid,
+            dis_emsg[ret]);
+  
+    log_err(-1, id, log_buffer);
+  
+    ret = PBSE_DISPROTO;
+    goto done;
+    }
 
-  return(pn);
+  ret = PBSE_NONE;
+  *pjob = new_job;
+  done:
+  return(ret);
+  }
+
+int run_prologue_scripts(job *pjob)
+{
+  int j, ret;
+
+  /* run local prolog */
+  if ((j = run_pelog( PE_PROLOG,
+                      path_prologp,
+                      pjob,
+                      PE_IO_TYPE_ASIS)) != 0)
+    {
+    DBPRT(("cannot run local prolog '%s': %s (rc: %d)\n",
+           path_prologp,
+           log_buffer,
+           j));
+    
+    LOG_EVENT(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
+    
+    job_purge(pjob);
+    
+    ret = PBSE_SYSTEM;
+    goto done;
+    }
+      
+  /* run user prolog */
+      
+  if ((j = run_pelog(
+             PE_PROLOGUSER,
+             path_prologuserp,
+             pjob,
+             PE_IO_TYPE_ASIS)) != 0)
+    {
+    DBPRT(("cannot run local user prolog '%s': %s (rc: %d)\n",
+           path_prologuserp,
+           log_buffer,
+           j));
+  
+    LOG_EVENT(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
+  
+    job_purge(pjob);
+  
+    ret = PBSE_SYSTEM;
+    goto done;
+    }
+
+  ret = PBSE_NONE;
+done:
+  return(ret);
 }
-
 
 /* END mom_comm.c */
 

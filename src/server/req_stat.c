@@ -91,6 +91,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 #include <ctype.h>
+#include <stdint.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -122,7 +123,7 @@ extern int        pbs_mom_port;
 extern time_t        time_now;
 extern char       *msg_init_norerun;
 
-extern struct pbsnode *tfind_addr(const u_long);
+extern struct pbsnode *tfind_addr(const u_long, uint16_t);
 extern int             LOGLEVEL;
 
 /* Extern Functions */
@@ -750,7 +751,8 @@ int stat_to_mom(
   {
 
   struct batch_request *newrq;
-  int          rc;
+  int      rc;
+  ulong    addr;
 
   struct work_task     *pwt = 0;
 
@@ -774,7 +776,9 @@ int stat_to_mom(
 
   /* if MOM is down just return stale information */
 
-  if (((node = tfind_addr(pjob->ji_qs.ji_un.ji_exect.ji_momaddr)) != NULL) &&
+  addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
+
+  if (((node = tfind_addr(addr, pjob->ji_qs.ji_un.ji_exect.ji_momport)) != NULL) &&
       (node->nd_state & (INUSE_DELETED | INUSE_DOWN)))
     {
     if (LOGLEVEL >= 6)
@@ -797,7 +801,7 @@ int stat_to_mom(
 
   cntl->sc_conn = svr_connect(
                     pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
-                    pbs_mom_port,
+                    pjob->ji_qs.ji_un.ji_exect.ji_momport,
                     process_Dreply,
                     ToServerDIS);
 
@@ -872,7 +876,7 @@ static void stat_update(
           /* first save since running job (or the sid has changed), */
           /* must save session id    */
 
-          job_save(pjob, SAVEJOB_FULL);
+          job_save(pjob, SAVEJOB_FULL, 0);
 
           svr_mailowner(pjob, MAIL_BEGIN, MAIL_NORMAL, NULL);
           }
@@ -1181,6 +1185,52 @@ static int status_que(
 
 
 
+#ifdef NUMA_SUPPORT
+/* instead of getting the status on a node with numa nodes, report
+ * the status of all the numa nodes
+ *
+ * @param pnode - the node to report on
+ * @param preq - the batch request
+ * @param pstathd - the list to add this response to
+ *
+ * @return - 0 on SUCCESS, error code otherwise
+ */
+int get_numa_statuses(
+
+  struct pbsnode       *pnode,    /* ptr to node receiving status query */
+  struct batch_request *preq,
+  tlist_head            *pstathd)  /* head of list to append status to  */
+
+  {
+  int i;
+  int rc;
+
+  struct pbsnode *pn;
+
+  if (pnode->num_numa_nodes == 0)
+    {
+    /* no numa nodes, just return the status for this node */
+    rc = status_node(pnode,preq,pstathd);
+
+    return(rc);
+    }
+
+  for (i = 0; i < pnode->num_numa_nodes; i++)
+    {
+    pn = AVL_find(i,pnode->nd_mom_port,pnode->numa_nodes);
+
+    if (pn == NULL)
+      continue;
+
+    if ((rc = status_node(pn, preq, pstathd)) != 0)
+      return(rc);
+    }
+
+  return(rc);
+  } /* END get_numa_statuses() */
+#endif /* NUMA_SUPPORT */
+
+
 
 
 /*
@@ -1275,7 +1325,12 @@ void req_stat_node(
     {
     /* get status of the named node */
 
+#ifdef NUMA_SUPPORT
+    /* get the status on all of the numa nodes */
+    rc = get_numa_statuses(pnode,preq,&preply->brp_un.brp_status);
+#else
     rc = status_node(pnode, preq, &preply->brp_un.brp_status);
+#endif /* NUMA_SUPPORT */
     }
   else
     {
@@ -1287,8 +1342,12 @@ void req_stat_node(
 
       if ((type == 2) && !hasprop(pnode, &props))
         continue;
-
+#ifdef NUMA_SUPPORT
+      /* get the status on all of the numa nodes */
+      rc = get_numa_statuses(pnode,preq,&preply->brp_un.brp_status);
+#else
       if ((rc = status_node(pnode, preq, &preply->brp_un.brp_status)) != 0)
+#endif /* NUMA_SUPPORT */
         break;
       }
     }

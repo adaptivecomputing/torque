@@ -112,6 +112,8 @@ extern int  termin_child;
 
 extern int       LOGLEVEL;
 
+extern int   multi_mom;
+
 /* Private variables */
 #define TMAX_TJCACHESIZE 128
 job *TJCache[TMAX_TJCACHESIZE];
@@ -211,6 +213,7 @@ scan_for_terminated(void)
   job  *pjob;
   task  *ptask = 0;
   int  statloc;
+  unsigned int momport = 0;
 
   if (LOGLEVEL >= 7)
     {
@@ -347,7 +350,12 @@ scan_for_terminated(void)
 
       pjob->ji_momsubt = 0;
 
-      (void)job_save(pjob, SAVEJOB_QUICK);
+      if(multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+
+      (void)job_save(pjob, SAVEJOB_QUICK, momport);
 
       continue;
       }  /* END if (pid == pjob->ji_momsubt) */

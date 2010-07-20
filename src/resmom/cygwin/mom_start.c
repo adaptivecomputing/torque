@@ -114,6 +114,7 @@ extern int       LOGLEVEL;
 
 extern char     *AllocParCmd;
 
+extern int      multi_mom;
 
 /* Private variables */
 
@@ -269,6 +270,7 @@ void scan_for_terminated(void)
   job *pjob;
   task *ptask = NULL;
   int  statloc;
+  unsigned int momport = 0;
 
   int    tcount;
 
@@ -441,7 +443,12 @@ void scan_for_terminated(void)
 
       pjob->ji_momsubt = 0;
 
-      job_save(pjob, SAVEJOB_QUICK);
+      if(multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+
+      job_save(pjob, SAVEJOB_QUICK, momport);
 
       continue;
       }  /* END if (pid == pjob->ji_momsubt) */

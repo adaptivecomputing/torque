@@ -145,6 +145,8 @@
 #include "dis.h"
 #include "csv.h"
 #include "utils.h"
+#include "u_tree.h"
+#include "pbs_cpuset.h"
 
 #include "mcom.h"
 
@@ -156,12 +158,19 @@
 #include <sys/mman.h>
 #endif /* _POSIX_MEMLOCK */
 
+#define NO_LAYOUT_FILE      -10
 #define CHECK_POLL_TIME     45
 #define DEFAULT_SERVER_STAT_UPDATES 45
 
 #define PMAX_PORT           32000
+#define MAX_PORT_STRING_LEN         6
+#define MAX_LOCK_FILE_NAME_LEN      15
 #define MAX_RESEND_JOBS     512
 #define DUMMY_JOB_PTR       1
+
+#ifndef MAX_LINE
+#define MAX_LINE 1024
+#endif
 
 /* Global Data Items */
 
@@ -178,18 +187,32 @@ unsigned int default_server_port = 0;
 int    exiting_tasks = 0;
 float  ideal_load_val = -1.0;
 int    internal_state = 0;
+
+/* mom data items */
+#ifdef NUMA_SUPPORT
+int            num_numa_nodes;
+numanode       numa_nodes[MAX_NUMA_NODES]; 
+int            numa_index;
+#else
+char           path_meminfo[MAX_LINE];
+#endif
+
 /* by default, enforce these policies */
 int    ignwalltime = 0; 
 int    ignmem = 0;
 int    igncput = 0;
 int    ignvmem = 0; 
-int    spoolasfinalname = 0;
 /* end policies */
+int    spoolasfinalname = 0;
 int    lockfds = -1;
+int    multi_mom = 0;
 time_t loopcnt;  /* used for MD5 calc */
 float  max_load_val = -1.0;
 int    hostname_specified = 0;
 char   mom_host[PBS_MAXHOSTNAME + 1];
+#ifdef NUMA_SUPPORT
+char   mom_name[PBS_MAXHOSTNAME + 1];
+#endif /* NUMA_SUPPORT */
 char   TMOMRejectConn[1024];   /* most recent rejected connection */
 char   mom_short_name[PBS_MAXHOSTNAME + 1];
 int    num_var_env;
@@ -209,6 +232,10 @@ char        *path_aux;
 char        *path_server_name;
 char        *path_home = PBS_SERVER_HOME;
 char        *mom_home;
+
+extern int  multi_mom;
+extern unsigned int pbs_rm_port;
+char        *path_layout;
 extern char *msg_daemonname;          /* for logs     */
 extern char *msg_info_mom; /* Mom information message   */
 extern int pbs_errno;
@@ -294,7 +321,10 @@ extern void     mom_checkpoint_check_periodic_timer(job *pjob);
 extern void     mom_checkpoint_set_directory_path(char *str);
 
 void prepare_child_tasks_for_delete();
-
+static void mom_lock(int fds, int op);
+#ifdef NUMA_SUPPORT
+int bind_to_nodeboard();
+#endif /* NUMA_SUPPORT */
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
 
 
@@ -497,7 +527,8 @@ int   port_care = TRUE; /* secure connecting ports */
 uid_t   uid = 0;  /* uid we are running with */
 unsigned int   alarm_time = 10; /* time before alarm */
 
-extern tree            *okclients;  /* accept connections from */
+/*extern tree            *okclients;*/  /* accept connections from */
+extern AvlTree            okclients;  /* accept connections from */
 char                  **maskclient = NULL; /* wildcard connections */
 int   mask_num = 0;
 int   mask_max = 0;
@@ -1617,8 +1648,9 @@ u_long addclient(
 
   ipaddr = ntohl(saddr.s_addr);
 
-  tinsert(ipaddr, NULL, &okclients);
-
+/*  tinsert(ipaddr, NULL, &okclients); */
+  okclients = AVL_insert(ipaddr, 0, NULL, okclients);
+  
   return(ipaddr);
   }  /* END addclient() */
 
@@ -4277,8 +4309,6 @@ int bad_restrict(
 
 
 
-
-
 /*
 ** Process a request for the resource monitor.  The i/o
 ** will take place using DIS over a tcp fd or an rpp stream.
@@ -4346,7 +4376,8 @@ int rm_request(
     }
 
   if (((port_care != FALSE) && (port >= IPPORT_RESERVED)) ||
-      (tfind(ipadd, &okclients) == NULL))
+      /*(tfind(ipadd, &okclients) == NULL))*/
+      (AVL_is_in_tree(ipadd, 0, okclients) == 0 ))
     {
     if (bad_restrict(ipadd))
       {
@@ -4862,10 +4893,11 @@ int rm_request(
 
               tmpLine[0] = '\0';
 
-              tlist(okclients, tmpLine, sizeof(tmpLine));
+              /* tlist(okclients, tmpLine, sizeof(tmpLine)); */
+              ret = AVL_list(okclients, tmpLine, sizeof(tmpLine));
 
-              MUSNPrintF(&BPtr, &BSpace, "Trusted Client List:    %s\n",
-                         tmpLine);
+              MUSNPrintF(&BPtr, &BSpace, "Trusted Client List:  %s:  %d\n",
+                         tmpLine, ret);
               }
 
             if (verbositylevel >= 1)
@@ -5174,6 +5206,9 @@ int rm_request(
 
       close_io(iochan);
 
+      mom_lock(lockfds, F_UNLCK);
+      close(lockfds);
+
       cleanup();
 
       log_close(1);
@@ -5366,7 +5401,7 @@ void do_rpp(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
           id,
-          "got an inter-server request");
+          log_buffer);
         }
 
       rpp_close(stream);
@@ -5592,7 +5627,8 @@ void tcp_request(
 
   DIS_tcp_setup(fd);
 
-  if (tfind(ipadd, &okclients) == NULL)
+/*  if (tfind(ipadd, &okclients) == NULL) */
+  if (AVL_is_in_tree(ipadd, 0, okclients) == 0)
     {
     sprintf(log_buffer, "bad connect from %s",
             address);
@@ -5741,16 +5777,11 @@ int kill_job(
   return(ct);
   }  /* END kill_job() */
 
-
-
-
-
 /*
  * mom_lock - lock out other MOMs from this directory.
  */
 
 static void mom_lock(
-
   int fds,
   int op)   /* F_WRLCK or F_UNLCK */
 
@@ -5785,9 +5816,6 @@ static void mom_lock(
 
   return;
   }  /* END mom_lock() */
-
-
-
 
 
 /*
@@ -6545,7 +6573,7 @@ void parse_command_line(
 
   errflg = 0;
 
-  while ((c = getopt(argc, argv, "a:c:C:d:DhH:l:L:M:pPqrR:s:S:vx-:")) != -1)
+  while ((c = getopt(argc, argv, "a:c:C:d:DhH:l:L:mM:pPqrR:s:S:vx-:")) != -1)
     {
     switch (c)
       {
@@ -6626,6 +6654,9 @@ void parse_command_line(
         hostname_specified = 1;
 
         strncpy(mom_host, optarg, PBS_MAXHOSTNAME); /* remember name */
+#ifdef NUMA_SUPPORT
+        strncpy(mom_name, optarg, PBS_MAXHOSTNAME);
+#endif /* ifdef NUMA_SUPPORT */
 
         break;
 
@@ -6669,6 +6700,11 @@ void parse_command_line(
           exit(1);
           }
 
+        break;
+
+      case 'm':
+
+        multi_mom = 1;
         break;
 
       case 'p':
@@ -6813,9 +6849,14 @@ int setup_program_environment(void)
 #if !defined(DEBUG) && !defined(DISABLE_DAEMONS)
   FILE         *dummyfile;
 #endif
+  char logSuffix[MAX_PORT_STRING_LEN];
+  char momLock[MAX_LOCK_FILE_NAME_LEN];
   int  tryport;
   int  rppfd;  /* fd for rm and im comm */
   int  privfd = 0; /* fd for sending job info */
+#ifdef NUMA_SUPPORT
+  int  rc;
+#endif /* END NUMA_SUPPORT */
 
   struct sigaction act;
   char         *ptr;            /* local tmp variable */
@@ -6843,6 +6884,8 @@ int setup_program_environment(void)
 
     DOBACKGROUND = 0;
     }
+
+  memset(TMOMStartInfo, 0, sizeof(pjobexec_t)*TMAX_JE);
 
   /* modify program environment */
 
@@ -6915,6 +6958,7 @@ int setup_program_environment(void)
   path_epiloguserp = mk_dirs("mom_priv/epilogue.user.parallel");
   path_prologuserp = mk_dirs("mom_priv/prologue.user.parallel");
   path_epilogpdel  = mk_dirs("mom_priv/epilogue.precancel");
+  path_layout      = mk_dirs("mom_priv/mom.layout");
 
 #ifndef DEFAULT_MOMLOGDIR
 
@@ -6978,8 +7022,16 @@ int setup_program_environment(void)
     hostc = gethostname(mom_host, PBS_MAXHOSTNAME);
     }
 
+  if(!multi_mom)
+    {
   log_init(NULL, mom_host);
-
+    }
+  else
+    {
+    sprintf(logSuffix, "%d", pbs_mom_port);
+    log_init(logSuffix, mom_host);
+    }
+ 
   /* open log file while std in,out,err still open, forces to fd 4 */
 
   if ((c = log_open(log_file, path_log)) != 0)
@@ -6993,7 +7045,12 @@ int setup_program_environment(void)
 
   check_log(); /* see if this log should be rolled */
 
-  lockfds = open("mom.lock", O_CREAT | O_WRONLY, 0644);
+  if(!multi_mom)
+    sprintf(momLock,"mom.lock");
+  else
+    sprintf(momLock, "mom%d.lock", pbs_mom_port);
+
+  lockfds = open(momLock, O_CREAT | O_WRONLY, 0644);
 
   if (lockfds < 0)
     {
@@ -7406,6 +7463,17 @@ int setup_program_environment(void)
     return(3);
     }
 
+#ifdef NUMA_SUPPORT
+  if ((rc = bind_to_nodeboard()) != 0)
+    {
+    return(rc);
+    }
+ 
+#else
+  snprintf(path_meminfo,sizeof(path_meminfo),"%s",
+    "/proc/meminfo");
+#endif /* END NUMA_SUPPORT */
+
   /* recover & abort jobs which were under MOM's control */
 
   log_record(
@@ -7475,6 +7543,11 @@ int setup_program_environment(void)
 
     sleep(tmpL % (rand() + 1));
     }  /* END if (ptr != NULL) */
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  /* initialize cpusets */
+  initialize_root_cpuset();
+#endif /* END PENABLE_LINUX26_CPUSETS */
 
   return(0);
   }  /* END setup_program_environment() */
@@ -7642,7 +7715,8 @@ int TMOMScanForStarting(void)
 
           if (LOGLEVEL >= 3)
             {
-            sprintf(log_buffer, "job %s reported successful start",
+            sprintf(log_buffer, "%s:job %s reported successful start",
+                    id,
                     pjob->ji_qs.ji_jobid);
 
             LOG_EVENT(
@@ -7914,6 +7988,7 @@ kill_all_running_jobs(void)
 
   {
   job *pjob;
+  unsigned int momport = 0;
 
   for (pjob = (job *)GET_NEXT(svr_alljobs);
        pjob != NULL;
@@ -7925,7 +8000,11 @@ kill_all_running_jobs(void)
 
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-      job_save(pjob, SAVEJOB_QUICK);
+      if(multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+      job_save(pjob, SAVEJOB_QUICK, momport);
       }
     else
       {
@@ -8265,6 +8344,17 @@ void restart_mom(
     return;
   }
 
+  if (!envstr)
+  {
+    sprintf(log_buffer, "malloc failed prior to execing myself: %s (%d)",
+            strerror(errno),
+            errno);
+
+    log_err(errno, id, log_buffer);
+
+    return;
+  }
+
   strcpy(envstr, "PATH=");
   strcat(envstr, orig_path);
   putenv(envstr);
@@ -8297,6 +8387,219 @@ int bind_to_nodeboard()
   return(0);
   } /* END bind_to_nodeboard */
 
+
+
+
+#ifdef NUMA_SUPPORT
+/* 
+ * finds the number of elements in a range in this form: num-num
+ */
+int parse_range(
+
+  char *str) /* I */
+
+  {
+  int low;
+  int high;
+  char *dash;
+
+  if (str == NULL)
+    return(-1);
+
+  dash = strchr(str,'-');
+  if (dash == NULL)
+    return(-1);
+
+  low = atoi(str);
+  high = atoi(dash+1);
+
+  return(high-low+1);
+  } /* END parse_range() */
+
+
+
+
+
+/* 
+ * finds the number of elements in a comma separated string
+ * count is the number of commas + 1
+ */
+int get_comma_count(
+
+  char *str) /* I */
+
+{
+  int   count = 1;
+  char *comma;
+
+  /* check for error */
+  if (str == NULL)
+    return(-1);
+
+  comma = str;
+
+  while ((comma = strchr(comma,',')) != NULL)
+    {
+    count++;
+    comma++;
+    }
+  
+  return(count);
+  } /* END get_comma_count() */
+
+
+
+
+int read_layout_file()
+
+  {
+  FILE *read_layout;
+  char  line[MAX_LINE];
+  char *delims = " \t\n\r=";
+  char *tok = NULL;
+  char *val = NULL;
+  char *id = "read_layout_file";
+
+  int   i = 0;
+  int   empty_line;
+  /* make sure to have enough space for the mempath
+   * adding 5 guarantees that we allow up to 999999 numa nodes */
+  int   mempath_len = strlen("/sys/devices/system/node/node0/meminfo") + 5;
+  
+  if ((read_layout = fopen(path_layout, "r")) == NULL)
+    {
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Unable to read the layout file in %s\n",
+      path_layout);
+    log_err(errno,id,log_buffer);
+
+    return(NO_LAYOUT_FILE);
+    }
+
+  /* search for the line with our hostname on it 
+   * file in this format:
+   * hostname cpus=<X> mem=<Y> memsize=<Z> */
+  while (fgets(line, sizeof(line), read_layout) != NULL)
+    {
+    /* skip comments */
+    if (line[0] == '#')
+      continue;
+
+    empty_line = TRUE;
+
+    tok = strtok(line,delims);
+
+    /* find the specifications */
+    while (tok != NULL)
+      {
+      /* do general error checking on each pair, should be in 
+       * the format name=val, spacing optional */
+      val = strtok(NULL,delims);
+
+      if (val == NULL)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Malformed mom.layout file, line:\n%s\n",
+          line);
+        log_err(-1,id,log_buffer);
+        
+        exit(-505);
+        }
+     
+      empty_line = FALSE;
+
+      if (strcmp(tok,"cpus") == 0)
+        {
+        /* save offset, lowest index must come first */
+        numa_nodes[i].cpu_offset = atoi(val);
+
+        /* find the node count */
+        if (strchr(val,'-') != NULL)
+          numa_nodes[i].num_cpus = parse_range(val);
+        else
+          numa_nodes[i].num_cpus = get_comma_count(val);
+        }
+      else if (strcmp(tok,"mem") == 0)
+        {
+        int j;
+        /* save offset, lowest index must come first */
+        numa_nodes[i].mem_offset = atoi(val);
+
+        if (strchr(val,'-') != NULL)
+          numa_nodes[i].num_mems = parse_range(val);
+        else
+          numa_nodes[i].num_mems = get_comma_count(val);
+
+        /* save the meminfo path stuff */
+        numa_nodes[i].path_meminfo = (char **)malloc(numa_nodes[i].num_mems * sizeof(char *));
+        
+        for (j = 0; j < numa_nodes[i].num_mems; j++)
+          {
+          numa_nodes[i].path_meminfo[j] = (char *)malloc(mempath_len);
+          
+          snprintf(numa_nodes[i].path_meminfo[j],mempath_len,
+            "/sys/devices/system/node/node%d/meminfo",
+            j + numa_nodes[i].mem_offset);
+          }
+
+        }
+      else if (strcmp(tok,"memsize") == 0)
+        {
+        numa_nodes[i].memsize = atoi(val);
+        /* default to KB, keeping with TORQUE tradition */
+        if ((strstr(val,"gb")) ||
+            (strstr(val,"GB")))
+          {
+          numa_nodes[i].memsize *= 1024 * 1024;
+          }
+        else if ((strstr(val,"mb")) ||
+                 (strstr(val,"MB")))
+          {
+          numa_nodes[i].memsize *= 1024;
+          }
+        }
+      else
+        {
+        /* ignore other stuff for now */
+        }
+
+      /* advance token */
+      tok = strtok(NULL,delims);
+      } /* END while (parsing line) */
+
+    if (empty_line == FALSE)
+      i++;
+    } /* END while (parsing file) */
+
+  num_numa_nodes = i;
+ 
+  return(0);
+  } /* END read_layout_file() */
+
+
+
+
+
+
+/* handles everything for binding a specific mom to a nodeboard
+ *
+ * parses mom.layout, registers procs/mem
+ * @return nonzero if there's a problem
+ */
+int bind_to_nodeboard()
+
+  {
+  char *id = "bind_to_nodeboard";
+
+  if (read_layout_file() != 0)
+    {
+    log_err(-1,id,"Could not read layout file!\n");
+    exit(-505);
+    } 
+
+  return(0);
+  } /* END bind_to_nodeboard */
+#endif /* ifdef NUMA_SUPPORT */
 
 
 
@@ -8338,6 +8641,13 @@ int main(
     {
     return(rc);
     }
+
+#ifdef NUMA_SUPPORT
+  if ((rc = bind_to_nodeboard()) != 0)
+    {
+    return(rc);
+    }
+#endif /* NUMA_SUPPORT */
 
   main_loop();
 

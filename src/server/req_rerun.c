@@ -108,6 +108,8 @@ extern char *msg_jobrerun;
 
 extern void rel_resc(job *);
 
+extern job  *chk_job_request(char *, struct batch_request *);
+
 /*
  * post_rerun - handler for reply from mom on signal_job sent in req_rerunjob
  * If mom acknowledged the signal, then all is ok.

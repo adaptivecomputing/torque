@@ -90,6 +90,12 @@
 #ifndef PBS_JOB_H
 #define PBS_JOB_H 1
 
+#include "server_limits.h"
+
+#ifndef MAX_LINE
+#define MAX_LINE 1024
+#endif
+
 #ifndef SUCCESS
 #define SUCCESS 1
 #endif 
@@ -100,6 +106,7 @@
 #ifndef PBS_MOM
 struct job_array;
 #endif
+
 
 /*
  * Dependent Job Structures
@@ -190,6 +197,12 @@ struct array_depend_job
 #define JOB_RECOV_RUNNING     2  /* -p option */
 #define JOB_RECOV_DELETE      3  /* -P option */
 
+/* These are flags to distinguish Mother Superior from intermediate moms
+   for a job_radix */
+#define MOTHER_SUPERIOR       0
+#define INTERMEDIATE_MOM      1
+#define LEAF_MOM              2
+
 /*
  * The badplace structure is used to keep track of destinations
  * which have been tried by a route queue and given a "reject"
@@ -271,8 +284,9 @@ enum job_atr
   JOB_ATR_checkpoint, /* alphabetic order for no good reason */
   JOB_ATR_ctime,
   JOB_ATR_depend,
-  JOB_ATR_errpath,
+  JOB_ATR_errpath, /* (10) */
   JOB_ATR_exec_host,
+  JOB_ATR_exec_port,
   JOB_ATR_exectime,
   JOB_ATR_grouplst,
   JOB_ATR_hold,
@@ -280,7 +294,7 @@ enum job_atr
   JOB_ATR_join,
   JOB_ATR_keep,
   JOB_ATR_mailpnts,
-  JOB_ATR_mailuser,
+  JOB_ATR_mailuser,   /* (20) */
   JOB_ATR_mtime,         /* what triggers modification of mtime? (20) */
   JOB_ATR_outpath,
   JOB_ATR_priority,
@@ -290,10 +304,10 @@ enum job_atr
   JOB_ATR_session_id,
   JOB_ATR_shell,
   JOB_ATR_stagein,
-  JOB_ATR_stageout,
+  JOB_ATR_stageout,           /* (30) */
   JOB_ATR_substate,
   JOB_ATR_userlst,
-  JOB_ATR_variables,    /* (32) */
+  JOB_ATR_variables,    /* (33) */
   /* this set contains private attributes,  */
   /* as such not sent to clients (status)   */
 
@@ -303,7 +317,7 @@ enum job_atr
   JOB_ATR_hopcount,
   JOB_ATR_qrank,
   JOB_ATR_queuetype,
-  JOB_ATR_sched_hint,   /* 39 */
+  JOB_ATR_sched_hint,   /* 40 */
   JOB_ATR_security,
   JOB_ATR_Comment,
   JOB_ATR_Cookie,
@@ -313,8 +327,8 @@ enum job_atr
   JOB_ATR_forwardx11,
   JOB_ATR_submit_args,
   JOB_ATR_job_array_id,
-  JOB_ATR_job_array_request,
-  JOB_ATR_umask,        /* 50 */
+  JOB_ATR_job_array_request, /* (50) */
+  JOB_ATR_umask,
   JOB_ATR_start_time,  /* time when job was first started */
   JOB_ATR_start_count, /* number of times the job has been started */
   JOB_ATR_checkpoint_dir,    /* directory where job checkpoint file is stored */
@@ -358,6 +372,7 @@ typedef struct hnodent
   char *hn_host; /* hostname of node */
   int  hn_stream; /* stream to MOM on node */
   int  hn_sister; /* save error for KILL_JOB event */
+  unsigned short hn_port; /*  resmom port default 15003 */
   tlist_head hn_events; /* pointer to list of events */
   } hnodent;
 
@@ -494,21 +509,23 @@ struct job
   int (*ji_mompost)();        /* ptr to post processing func  */
 
   struct batch_request *ji_preq; /* hold request until finish_exec */
-  int  ji_numnodes; /* number of nodes (at least 1) */
-  int  ji_numvnod; /* number of virtual nodes */
-  tm_node_id ji_nodeid; /* my node id */
-  tm_task_id ji_taskid; /* generate task id's for job */
-  char ji_altid[PBS_MAXSVRJOBID + 1];
-  tm_event_t ji_obit; /* event for end-of-job */
+  int            ji_numnodes; /* number of nodes (at least 1) */
+  int            ji_numvnod; /* number of virtual nodes */
+  tm_node_id     ji_nodeid; /* my node id */
+  tm_task_id     ji_taskid; /* generate task id's for job */
+  char           ji_altid[PBS_MAXSVRJOBID + 1];
+  tm_event_t     ji_obit; /* event for end-of-job */
   hnodent        *ji_hosts; /* ptr to job host management stuff */
   vnodent        *ji_vnods; /* ptr to job vnode management stuff */
   noderes        *ji_resources; /* ptr to array of node resources */
-  tlist_head      ji_tasks; /* list of task structs */
-  tm_node_id ji_nodekill; /* set to nodeid requesting job die */
-  int  ji_flags; /* mom only flags */
-  char        *ji_globid; /* global job id */
-  int  ji_stdout; /* port for stdout */
-  int  ji_stderr; /* port for stderr */
+  tlist_head     ji_tasks; /* list of task structs */
+  tm_node_id     ji_nodekill; /* set to nodeid requesting job die */
+  int            ji_flags; /* mom only flags */
+  char           *ji_globid; /* global job id */
+  int            ji_portout; /* socket port allocated for ji_stdout */
+  int            ji_porterr; /* socket port allocated for ji_stderr */
+  int            ji_stdout; /* socket for stdout */
+  int            ji_stderr; /* socket for stderr */
 #else     /* END MOM ONLY */
   tlist_head ji_svrtask; /* links to svr work_task list */
 
@@ -560,6 +577,8 @@ struct job
       struct   /* if in execution queue .. */
         {
         pbs_net_t ji_momaddr;  /* host addr of Server */
+        unsigned short ji_momport;  /* host port of Server default 15002 */
+        unsigned short ji_mom_rmport; /* host mom manager port of Server default 15003 */
         int       ji_exitstat; /* job exit status from MOM */
         } ji_exect;
 
@@ -705,34 +724,31 @@ typedef struct infoent
 
 /* sync w/PMOMCommand[] */
 
-#define IM_ALL_OKAY 0
-#define IM_JOIN_JOB 1
-#define IM_KILL_JOB 2
-#define IM_SPAWN_TASK 3
-#define IM_GET_TASKS 4
-#define IM_SIGNAL_TASK 5
-#define IM_OBIT_TASK 6
-#define IM_POLL_JOB 7
-#define IM_GET_INFO 8
-#define IM_GET_RESC 9
-#define IM_ABORT_JOB 10
-#define IM_GET_TID 11
+#define IM_ALL_OKAY        0
+#define IM_JOIN_JOB        1
+#define IM_KILL_JOB        2
+#define IM_SPAWN_TASK      3
+#define IM_GET_TASKS       4
+#define IM_SIGNAL_TASK     5
+#define IM_OBIT_TASK       6
+#define IM_POLL_JOB        7
+#define IM_GET_INFO        8
+#define IM_GET_RESC        9
+#define IM_ABORT_JOB      10
+#define IM_GET_TID        11
 #define IM_ERROR 99
 
 #define IM_MAX          12
 
-eventent *event_alloc(
-                           int  command,
+eventent *event_alloc( int  command,
                            hnodent *pnode,
                            tm_event_t event,
                            tm_task_id taskid);
 
-task *pbs_task_create(
-                           job *pjob,
+task *pbs_task_create( job *pjob,
                            tm_task_id taskid);
 
-task *task_find(
-                     job *pjob,
+task *task_find( job *pjob,
                      tm_task_id taskid);
 
 #endif /* MOM */
@@ -903,7 +919,7 @@ extern job  *job_clone(job *,struct job_array *, int);
 extern void  job_free(job *);
 extern void  job_purge(job *);
 extern job  *job_recov(char *);
-extern int   job_save(job *, int);
+extern int   job_save(job *, int, int);
 extern int   modify_job_attr(job *, svrattrl *, int, int *);
 extern char *prefix_std_file(job *, int);
 extern char *add_std_filename(job *, char *, int);

@@ -107,7 +107,7 @@ extern int   node_reserve(char *speclist, resource_t tag);
 extern int   init_resc_defs(void);
 
 #ifdef PBS_JOB_H
-extern int   set_nodes(job *, char *, int, char **, char *, char *);
+extern int   set_nodes(job *, char *, int, char **, char **, char *, char *);
 extern int   is_ts_node(char *);
 extern char *find_ts_node(void);
 extern void  free_nodes(job *);

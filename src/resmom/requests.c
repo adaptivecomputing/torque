@@ -153,6 +153,7 @@ extern char            *msg_jobmod;
 extern char            *msg_manager;
 extern time_t  time_now;
 extern int  resc_access_perm; /* see encode_resc() */
+extern int  multi_mom;
 extern int spoolasfinalname;
 /* in attr_fn_resc.c */
 
@@ -1464,6 +1465,7 @@ void req_modifyjob(
   job  *pjob;
   svrattrl *plist;
   int   rc;
+  unsigned int momport = 0;
 
   char tmpLine[1024];
 
@@ -1645,7 +1647,12 @@ void req_modifyjob(
     return;
     }
 
-  job_save(pjob, SAVEJOB_FULL);
+  if(multi_mom)
+    {
+    momport = pbs_rm_port;
+    }
+  
+  job_save(pjob, SAVEJOB_FULL, momport);
 
   sprintf(log_buffer, msg_manager,
           msg_jobmod,
@@ -1808,13 +1815,13 @@ int sigalltasks_sisters(
     DBPRT(("%s: sending sig%d to all tasks on sister %s\n", id, signum, np->hn_host));
 
     if (np->hn_stream == -1)
-      np->hn_stream = rpp_open(np->hn_host, pbs_rm_port, NULL);
+      np->hn_stream = rpp_open(np->hn_host, np->hn_port, NULL);
 
     ep = event_alloc(IM_SIGNAL_TASK, np, TM_NULL_EVENT, TM_NULL_TASK);
 
     if (np->hn_stream == -1)
       {
-      np->hn_stream = rpp_open(np->hn_host, pbs_rm_port, NULL);
+      np->hn_stream = rpp_open(np->hn_host, np->hn_port, NULL);
       }
 
     ret = im_compose(np->hn_stream, pjob->ji_qs.ji_jobid, cookie, IM_SIGNAL_TASK, ep->ee_event, TM_NULL_TASK);
@@ -2085,6 +2092,7 @@ void req_signaljob(
   int             sig;
   int             numprocs=0;
   char           *sname;
+  unsigned int   momport = 0;
 
   struct sig_tbl *psigt;
 
@@ -2218,7 +2226,12 @@ void req_signaljob(
 
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-    job_save(pjob, SAVEJOB_QUICK);
+    if(multi_mom)
+      {
+      momport = pbs_rm_port;
+      }
+    
+    job_save(pjob, SAVEJOB_QUICK, momport);
 
     exiting_tasks = 1;
     }

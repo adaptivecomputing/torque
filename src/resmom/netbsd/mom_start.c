@@ -106,6 +106,7 @@ extern int  exiting_tasks;
 extern char  mom_host[];
 extern tlist_head svr_alljobs;
 extern int  termin_child;
+extern int  multi_mom;
 
 /* Private variables */
 

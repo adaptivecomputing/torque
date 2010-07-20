@@ -138,6 +138,9 @@ extern struct connection svr_conn[];
 extern int  resc_access_perm;
 extern char  *path_aux;
 
+extern int   multi_mom;
+extern int   pbs_rm_port;
+
 extern int   LOGLEVEL;
 
 extern char  *PJobSubState[];
@@ -298,7 +301,6 @@ hnodent *get_node(
 
 void
 scan_for_exiting(void)
-
   {
   char         *id = "scan_for_exiting";
 
@@ -314,6 +316,7 @@ scan_for_exiting(void)
   task *task_find(job *, tm_task_id);
   int im_compose(int, char *, char *, int, tm_event_t, tm_task_id);
 
+  unsigned int momport = 0;
   static int ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
   static int ObitsAllowed = 1;
 
@@ -461,12 +464,16 @@ scan_for_exiting(void)
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-          job_save(pjob, SAVEJOB_QUICK);
+          if(multi_mom)
+            {
+            momport = pbs_rm_port;
+            }
+          job_save(pjob, SAVEJOB_QUICK, momport);
           }
         else if (LOGLEVEL >= 3)
           {
-          snprintf(log_buffer, 1024, "master task has exited - sent kill job request to %d sisters",
-                   NumSisters);
+          snprintf(log_buffer, 1024, "%s: master task has exited - sent kill job request to %d sisters",
+                   id, NumSisters);
 
           LOG_EVENT(
             PBSEVENT_JOB,
@@ -561,9 +568,9 @@ scan_for_exiting(void)
       {
       if (LOGLEVEL >= 3)
         {
-        snprintf(log_buffer, 1024, "job is in non-exiting substate %s, no obit sent at this time",
-                 PJobSubState[pjob->ji_qs.ji_substate]);
-
+        snprintf(log_buffer, 1024, "%s:job is in non-exiting substate %s, no obit sent at this time",
+                 id, PJobSubState[pjob->ji_qs.ji_substate]);
+    
         LOG_EVENT(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
@@ -693,7 +700,6 @@ scan_for_exiting(void)
           log_err(-1, id, "parallel epilog failed");
           }
         }
-
       /*
       ** No tasks running ... format and send a
       ** reply to the mother superior and get rid of
@@ -732,8 +738,7 @@ scan_for_exiting(void)
       job_purge(pjob);
 
       continue;
-      }  /* END if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) */
-
+	    }
     /*
      * At this point, we know we are Mother Superior for this
      * job which is EXITING.  Time for it to die.
@@ -1468,6 +1473,7 @@ static void obit_reply(
   job   *nxjob;
   job   *pjob;
   attribute  *pattr;
+  unsigned int momport = 0;
 
   struct batch_request *preq;
   int    x; /* dummy */
@@ -1519,7 +1525,12 @@ static void obit_reply(
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
-          job_save(pjob, SAVEJOB_QUICK);
+          if(multi_mom)
+            {
+            momport = pbs_rm_port;
+            }
+
+          job_save(pjob, SAVEJOB_QUICK, momport);
 
           if (LOGLEVEL >= 4)
             {
@@ -1548,7 +1559,12 @@ static void obit_reply(
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
-          job_save(pjob, SAVEJOB_QUICK);
+          if(multi_mom)
+            {
+            momport = pbs_rm_port;
+            }
+
+          job_save(pjob, SAVEJOB_QUICK, momport);
 
           break;
 
@@ -1697,6 +1713,7 @@ void init_abort_jobs(
   char  *job_suffix = JOB_FILE_SUFFIX;
   int            job_suf_len = strlen(job_suffix);
   char  *psuffix;
+  unsigned int momport = 0;
 
   if (LOGLEVEL >= 6)
     {
@@ -1926,7 +1943,12 @@ void init_abort_jobs(
          will not try to kill the running processes for this job */
       pj->ji_qs.ji_substate = JOB_SUBSTATE_NOTERM_REQUE;
 
-      job_save(pj, SAVEJOB_QUICK);
+      if(multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+
+      job_save(pj, SAVEJOB_QUICK, momport);
 
       exiting_tasks = 1;
       }  /* END if ((recover != 2) && ...) */

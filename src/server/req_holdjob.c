@@ -124,7 +124,7 @@ int get_hold(tlist_head *, char **, attribute *);
 
 /* external functions */
 extern int svr_authorize_jobreq(struct batch_request *,job *);
-
+extern job *chk_job_request(char *,struct batch_request *);
 
 /*
  * chk_hold_priv - check that client has privilege to set/clear hold
@@ -216,7 +216,7 @@ void req_holdjob(
 
     /* have MOM attempt checkpointing */
 
-    if ((rc = relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+    if ((rc = relay_to_mom(pjob,
                            preq, process_hold_reply)) != 0)
       {
       *hold_val = old_hold;  /* reset to the old value */
@@ -226,7 +226,8 @@ void req_holdjob(
       {
       pjob->ji_qs.ji_svrflags |=
         JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
-      job_save(pjob, SAVEJOB_QUICK);
+
+      job_save(pjob, SAVEJOB_QUICK, 0);
       
       /* fill in log_buffer again, since relay_to_mom changed it */
       
@@ -313,7 +314,7 @@ void req_checkpointjob(
     {
     /* have MOM attempt checkpointing */
 
-    if ((rc = relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+    if ((rc = relay_to_mom(pjob,
                            preq, process_checkpoint_reply)) != 0)
       {
       req_reject(rc, 0, preq, NULL, NULL);
@@ -321,7 +322,8 @@ void req_checkpointjob(
     else
       {
       pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
-      job_save(pjob, SAVEJOB_QUICK);
+
+      job_save(pjob, SAVEJOB_QUICK, 0);
       LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
                 pjob->ji_qs.ji_jobid, log_buffer);
       }

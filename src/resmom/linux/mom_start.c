@@ -113,7 +113,8 @@ extern int  termin_child;
 extern int       LOGLEVEL;
 
 extern char     *AllocParCmd;
-
+extern int      multi_mom;
+extern unsigned short pbs_rm_port;
 
 /* Private variables */
 
@@ -328,6 +329,7 @@ void scan_for_terminated(void)
   job *pjob;
   task *ptask = NULL;
   int  statloc;
+  unsigned int momport = 0;
 #ifdef USESAVEDRESOURCES
   int update_stats = TRUE;
 #endif /* USESAVEDRESOURCES */
@@ -546,7 +548,12 @@ void scan_for_terminated(void)
 
       pjob->ji_momsubt = 0;
 
-      job_save(pjob, SAVEJOB_QUICK);
+      if(multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+
+      job_save(pjob, SAVEJOB_QUICK, momport);
 
       continue;
       }  /* END if (pid == pjob->ji_momsubt) */

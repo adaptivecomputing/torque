@@ -100,6 +100,7 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "pbs_job.h"
+#include "pbs_nodes.h"
 #include "queue.h"
 #include "work_task.h"
 #include "pbs_error.h"
@@ -121,7 +122,7 @@ extern int                   send_job(job *, pbs_net_t, int, int, void (*x)(), s
 extern void                  set_resc_assigned(job *, enum batch_op);
 
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
-void                         stream_eof(int, u_long, int);
+void                         stream_eof(int, u_long, uint16_t, int);
 extern int                   job_set_wait(attribute *, void *, int);
 extern void                  stat_mom_job(job *);
 
@@ -165,6 +166,8 @@ long  DispatchTime[20];
 job  *DispatchJob[20];
 char *DispatchNode[20];
 
+extern job  *chk_job_request(char *, struct batch_request *);
+extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
 
 
 /*
@@ -382,7 +385,7 @@ static void post_checkpointsend(
 
       pjob->ji_modified = 1;
       
-      job_save(pjob, SAVEJOB_FULL);
+      job_save(pjob, SAVEJOB_FULL, 0);
       
       /* continue to start job running */
 
@@ -435,7 +438,7 @@ static int svr_send_checkpoint(
   strcpy(momreq->rq_extra, pjob->ji_qs.ji_jobid);
 
   rc = relay_to_mom(
-         pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+         pjob,
          momreq,
          post_checkpointsend);
 
@@ -656,7 +659,7 @@ static int svr_stagein(
   strcpy(momreq->rq_extra, pjob->ji_qs.ji_jobid);
 
   rc = relay_to_mom(
-         pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+         pjob,
          momreq,
          post_stagein);
 
@@ -903,7 +906,7 @@ int svr_startjob(
 
     memcpy(&saddr.sin_addr, hp->h_addr, hp->h_length);
 
-    saddr.sin_port = htons(pbs_rm_port);
+    saddr.sin_port = htons(pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport);
 
     /* Connect to the host. */
 
@@ -1065,7 +1068,7 @@ static int svr_strtjob2(
   if (send_job(
         pjob,
         pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
-        pbs_mom_port,
+        pjob->ji_qs.ji_un.ji_exect.ji_momport,
         MOVE_TYPE_Exec,
         post_sendmom,
         (void *)preq) == 2)
@@ -1129,6 +1132,7 @@ static void post_sendmom(
   int  newstate;
   int  newsub;
   int  r;
+  ulong addr;
   int  stat;
   job *jobp = (job *)pwt->wt_parm1;
 
@@ -1259,7 +1263,8 @@ static void post_sendmom(
 
       /* NOTE: if r == 10, connection to mom timed out.  Mark node down */
 
-      stream_eof(-1, jobp->ji_qs.ji_un.ji_exect.ji_momaddr, 0);
+      addr = jobp->ji_qs.ji_un.ji_exect.ji_momaddr;
+      stream_eof(-1, addr, jobp->ji_qs.ji_un.ji_exect.ji_momport, 0);
 
       /* send failed, requeue the job */
 
@@ -1562,6 +1567,47 @@ static job *chk_job_torun(
 
 
 
+/* set_mother_superior_ports - The first host in list is the host
+   of Mother Superior. Find the mom manager and service ports
+   from the pbsndlist and then set the pjob mom ports accordingly */
+int set_mother_superior_ports(job *pjob, char *list)
+  {
+  char ms[PBS_MAXHOSTNAME];
+  char *ptr;
+  int  i;
+  struct pbsnode *pnode;
+
+  node_iterator *iter;
+
+  if(list == NULL)
+    {
+    return(PBSE_UNKNODEATR);
+    }
+
+  memset(ms, 0, PBS_MAXHOSTNAME);
+  ptr = list;
+
+  /* get the first name in list. This is Mother Superior */
+  for(i = 0; ptr && (*ptr != '/') && (i < PBS_MAXHOSTNAME); i++)
+    {
+    ms[i] = *ptr;
+    ptr++;
+    }
+
+  iter = get_node_iterator();
+
+  while ((pnode = next_node(iter)) != NULL)
+    {
+    if(!strcasecmp(pnode->nd_name, ms))
+      {
+      pjob->ji_qs.ji_un.ji_exect.ji_momport = pnode->nd_mom_port;
+      pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport = pnode->nd_mom_rm_port;
+      return(PBSE_NONE);
+      }
+    }
+
+  return(PBSE_UNKNODEATR);
+  }
 
 
 /*
@@ -1583,6 +1629,7 @@ static int assign_hosts(
   {
   unsigned int  dummy;
   char  *list = NULL;
+  char  *portlist = NULL;
   char  *hosttoalloc = NULL;
   pbs_net_t  momaddr = 0;
   resource *pres;
@@ -1698,7 +1745,7 @@ static int assign_hosts(
     {
     if ((rc = is_ts_node(hosttoalloc)) != 0)
       {
-      rc = set_nodes(pjob, hosttoalloc, procs, &list, FailHost, EMsg);
+      rc = set_nodes(pjob, hosttoalloc, procs, &list, &portlist, FailHost, EMsg);
 
       set_exec_host = 1; /* maybe new VPs, must set */
 
@@ -1721,6 +1768,15 @@ static int assign_hosts(
         NULL,
         hosttoalloc);  /* O */
 
+      job_attr_def[(int)JOB_ATR_exec_port].at_free(
+        &pjob->ji_wattr[(int)JOB_ATR_exec_port]);
+
+      job_attr_def[(int)JOB_ATR_exec_port].at_decode(
+        &pjob->ji_wattr[(int)JOB_ATR_exec_port],
+        NULL,
+        NULL,
+        portlist);  /* O */
+
       pjob->ji_modified = 1;
       }
     else
@@ -1730,6 +1786,7 @@ static int assign_hosts(
       momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
 
       hosttoalloc = pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str;
+      portlist = pjob->ji_wattr[(int)JOB_ATR_exec_port].at_val.at_str;
       }
 
     strncpy(
@@ -1763,10 +1820,16 @@ static int assign_hosts(
       }
 
     pjob->ji_qs.ji_un.ji_exect.ji_momaddr = momaddr;
+
+    rc = set_mother_superior_ports(pjob, list);
+
     }  /* END if (rc == 0) */
 
   if (list != NULL)
     free(list);
+
+  if(portlist != NULL)
+    free(portlist);
 
   return(rc);
   }  /* END assign_hosts() */

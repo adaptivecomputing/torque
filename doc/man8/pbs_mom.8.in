@@ -514,6 +514,15 @@ the format $VAR=$VAL, i.e.,
 Specifies the path to the xauth binary to enable X11 fowarding.
 .IP mom_host
 Sets the local hostname as used by pbs_mom.
+.br
+.SH LAYOUT FILE
+There is also an optional layout file for creating multiple moms on one box in a specified layout. In the file, each mom on the single box is given its own hostname, cpu indexes, memory nodes (a linux construct), and memory size. This is useful for NUMA systems. Each line in the file specifies one mom. The file follows the following format:
+.IP "<hostname> cpus=<X> mem=<Y> memsize=<Z>"
+cpus and mem can be comma separated lists, while memsize should be a memory size in the format:
+.IP "<number><units>"
+For example, a file could contain the following line:
+.IP "foohost-1 cpus=1,2 mem=1,2,3,4 memsize=8GB"
+This would specify that foohost-1 has cpus 1 and 2, memory nodes 1-4, and a total of 8 GB of memory.
 .SH RESOURCES
 Resource Monitor queries can be made with momctl's \-q option to retrieve and
 set pbs_mom options.  Any configured static resource may be retrieved with a

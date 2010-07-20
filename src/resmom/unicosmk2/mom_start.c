@@ -111,6 +111,7 @@ extern char  mom_host[];
 extern tlist_head svr_alljobs;
 extern int  termin_child;
 extern time_t    time_now;
+extern int multi_mom;
 
 #if SRFS
 char *fast_dir;
@@ -487,6 +488,7 @@ scan_for_terminated(void)
   resource_def *rd;
   resource *pres;
   long  himem, himpp, hisds;
+  unsigned int momport = 0;
 
 
   /* update the latest intelligence about the running jobs;         */
@@ -534,7 +536,12 @@ scan_for_terminated(void)
 
         pjob->ji_momsubt = 0;
 
-        (void)job_save(pjob, SAVEJOB_QUICK);
+        if(multi_mom)
+          {
+          momport = pbs_rm_port;
+          }
+
+        (void)job_save(pjob, SAVEJOB_QUICK, momport);
         break;
         }
 

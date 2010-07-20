@@ -750,12 +750,12 @@ int svr_setjobstate(
 
   if (pjob->ji_modified)
     {
-    return(job_save(pjob, SAVEJOB_FULL));
+    return(job_save(pjob, SAVEJOB_FULL,0));
     }
 
   if (changed)
     {
-    return(job_save(pjob, SAVEJOB_QUICK));
+    return(job_save(pjob, SAVEJOB_QUICK,0));
     }
 
   return(0);

@@ -131,9 +131,6 @@ extern struct server server;
 extern attribute_def svr_attr_def[];
 extern int    LOGLEVEL;
 
-
-
-
 /*
  * svr_shutdown() - Perform (or start of) the shutdown of the server
  */
@@ -356,7 +353,7 @@ static int shutdown_checkpoint(
     return(PBSE_SYSTEM);
     }
 
-  if (relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr, phold, post_checkpoint) != 0)
+  if (relay_to_mom(pjob, phold, post_checkpoint) != 0)
     {
     /* FAILURE */
 
@@ -376,7 +373,7 @@ static int shutdown_checkpoint(
       "shutting down with active checkpointable job");
     }
 
-  job_save(pjob, SAVEJOB_QUICK);
+  job_save(pjob, SAVEJOB_QUICK, 0);
 
   return(0);
   }  /* END shutdown_checkpoint() */

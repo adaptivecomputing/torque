@@ -116,6 +116,7 @@
 #include "resmon.h"
 #include "mcom.h"
 #include "utils.h"
+#include "u_tree.h"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -164,6 +165,8 @@ extern struct server server;
 extern tlist_head svr_newnodes;
 extern attribute_def  node_attr_def[];   /* node attributes defs */
 extern int            SvrNodeCt;
+
+extern int multi_mom;
 
 #define SKIP_NONE 0
 #define SKIP_EXCLUSIVE 1
@@ -217,8 +220,10 @@ funcs_dis(void)  /* The equivalent of DIS_tcp_funcs() */
 **      Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
 */
 
-tree *ipaddrs = NULL; /* tree of ip addrs */
-tree *streams = NULL; /* tree of stream numbers */
+/* tree *ipaddrs = NULL; */ /* tree of ip addrs */
+AvlTree ipaddrs = NULL;
+/* tree *streams = NULL; */ /* tree of stream numbers */
+AvlTree streams = NULL;
 
 
 /**
@@ -229,10 +234,11 @@ tree *streams = NULL; /* tree of stream numbers */
 
 struct pbsnode *tfind_addr(
 
-        const u_long key)
+        const u_long key,
+        uint16_t port)
 
   {
-  return tfind(key, &ipaddrs);
+  return AVL_find(key, port, ipaddrs);
   }
 
 
@@ -1011,7 +1017,8 @@ void send_cluster_addrs(
 
     rpp_close(np->nd_stream);
 
-    tdelete((u_long)np->nd_stream, &streams);
+    /* tdelete((u_long)np->nd_stream, &streams);*/
+    streams = AVL_delete_node((u_long)np->nd_stream, 0, streams);
 
     np->nd_stream = -1;
     }  /* END for (i) */
@@ -1164,6 +1171,49 @@ int is_stat_get(
 
   while (((ret_info = disrst(stream, &rc)) != NULL) && (rc == DIS_SUCCESS))
     {
+#ifdef NUMA_SUPPORT
+    /* check if this is the update on a numa node */
+    if (!strncmp(ret_info,NUMA_KEYWORD,strlen(NUMA_KEYWORD)))
+      {
+      char *numa_id;
+      struct pbsnode *tmp;
+      unsigned long numa_index;
+
+      if (np->numa_nodes == NULL)
+        {
+        /* ERROR */
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Node %s isn't declared to be NUMA, but mom is reporting\n",
+          np->nd_name);
+        log_err(-1,id,log_buffer);
+
+        return(DIS_NOCOMMIT);
+        }
+
+      numa_id = ret_info + strlen(NUMA_KEYWORD);
+      numa_index = atoi(numa_id);
+
+      tmp = AVL_find(numa_index,np->nd_mom_port,np->numa_nodes);
+
+      if (tmp == NULL)
+        {
+        /* ERROR */
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Could not find NUMA index %lu for node %s\n",
+          numa_index,
+          np->nd_name);
+        log_err(-1,id,log_buffer);
+
+        return(DIS_NOCOMMIT);
+        }
+
+      np = tmp;
+
+      /* resume normal processing on the next line */
+      continue;
+      }
+#endif /* NUMA_SUPPORT */
+
     /* add the info to the "temp" attribute */
 
     if (decode_arst(&temp, NULL, NULL, ret_info))
@@ -1414,9 +1464,10 @@ done:
 
 void stream_eof(
 
-  int  stream,  /* I (optional) */
-  u_long addr,  /* I (optional) */
-  int  ret)     /* I (ignored) */
+  int       stream,  /* I (optional) */
+  u_long    addr,  /* I (optional) */
+  uint16_t  port,  /* I (optional) */
+  int       ret)     /* I (ignored) */
 
   {
   static char     id[] = "stream_eof";
@@ -1431,12 +1482,14 @@ void stream_eof(
     {
     /* find who the stream belongs to and mark down */
 
-    np = tfind((u_long)stream, &streams);
+/*    np = tfind((u_long)stream, &streams); */
+    np = AVL_find(stream, 0, streams);
     }
 
   if ((np == NULL) && (addr != 0))
     {
-    np = tfind((u_long)addr, &ipaddrs);
+/*    np = tfind((u_long)addr, &ipaddrs); */
+    np = AVL_find(addr, port, ipaddrs);
     }
 
   if (np == NULL)
@@ -1446,7 +1499,7 @@ void stream_eof(
     return;
     }
 
-  sprintf(log_buffer, "connection to %s is bad, remote service may be down, message may be corrupt, or connection may have been dropped remotely (%s).  setting node state to down",
+  sprintf(log_buffer, "connection to %s is no longer valid, connection may have been closed remotely, remote service may be down, or message may be corrupt (%s).  setting node state to down",
 
           np->nd_name,
           dis_emsg[ret]);
@@ -1461,7 +1514,8 @@ void stream_eof(
 
   if (np->nd_stream >= 0)
     {
-    tdelete((u_long)np->nd_stream, &streams);
+/*    tdelete((u_long)np->nd_stream, &streams); */
+    streams = AVL_delete_node(np->nd_stream, 0, streams);
 
     np->nd_stream = -1;
     }
@@ -1495,7 +1549,6 @@ void ping_nodes(
 
   struct  sockaddr_in *addr;
   int                    i, ret, com;
-  extern  int            pbs_rm_port;
 
   static  int            startcount = 0;
 
@@ -1554,7 +1607,7 @@ void ping_nodes(
 
       /* open new stream */
 
-      np->nd_stream = rpp_open(np->nd_name, pbs_rm_port, NULL);
+      np->nd_stream = rpp_open(np->nd_name, np->nd_mom_rm_port, NULL);
 
       if (np->nd_stream == -1)
         {
@@ -1566,7 +1619,9 @@ void ping_nodes(
         continue;
         }
 
-      tinsert((u_long)np->nd_stream, np, &streams);
+      /* tinsert((u_long)np->nd_stream, np, &streams); */
+      streams = AVL_insert((u_long)np->nd_stream, 0, np, streams);
+        
       }  /* END if (np->nd_stream < 0) */
 
     if (LOGLEVEL >= 6)
@@ -1622,7 +1677,8 @@ void ping_nodes(
 
     rpp_close(np->nd_stream);
 
-    tdelete((u_long)np->nd_stream, &streams);
+    /* tdelete((u_long)np->nd_stream, &streams); */
+    streams = AVL_delete_node((u_long)np->nd_stream, 0, streams);
 
     np->nd_stream = -1;
     }  /* END for (i) */
@@ -1751,7 +1807,7 @@ void check_nodes(
     if (np->nd_state & (INUSE_DELETED | INUSE_DOWN))
       continue;
 
-    if (np->nd_lastupdate < (time_now - chk_len))
+    if (np->nd_lastupdate < (time_now - chk_len) && (pbsndlist[i]->nd_nsn > pbsndlist[i]->nd_nsnfree))
       {
       if (LOGLEVEL >= 0)
         {
@@ -1818,16 +1874,23 @@ void is_request(
   struct hostent *hp;      
 
   unsigned long ipaddr;
+  unsigned short  mom_port;
+  unsigned short  rm_port;
   unsigned long tmpaddr;
 
-  struct sockaddr_in *addr;
+  struct sockaddr_in *addr = NULL;
 
-  struct pbsnode *node;
+  struct pbsnode *node = NULL;
 
-  struct pbssubn *sp;
+  struct pbssubn *sp = NULL;
 
   if (cmdp != NULL)
     *cmdp = 0;
+
+  command = disrsi(stream, &ret);
+
+  if (ret != DIS_SUCCESS)
+    goto err;
 
   if (LOGLEVEL >= 4)
     {
@@ -1843,6 +1906,9 @@ void is_request(
     }
 
   addr = rpp_getaddr(stream);
+
+  mom_port = disrsi(stream, &ret);
+  rm_port = disrsi(stream, &ret);
 
   if (version != IS_PROTOCOL_VER)
     {
@@ -1861,8 +1927,8 @@ void is_request(
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer, "message received from stream %s",
-            netaddr(addr));
+    sprintf(log_buffer, "message received from stream %s: mom_port %d  - rm_port %d",
+            netaddr(addr), mom_port, rm_port);
 
     log_event(
       PBSEVENT_ADMIN,
@@ -1871,21 +1937,24 @@ void is_request(
       log_buffer);
     }
 
-  if ((node = tfind((u_long)stream, &streams)) != NULL)
+/*  if ((node = tfind((u_long)stream, &streams)) != NULL) */
+  if ((node = AVL_find((u_long)stream, 0, streams)) != NULL)
     goto found;
 
   ipaddr = ntohl(addr->sin_addr.s_addr);
 
-  if ((node = tfind(ipaddr, &ipaddrs)) != NULL)
+/*  if ((node = tfind(ipaddr, &ipaddrs)) != NULL) */
+  if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
     {
     if (node->nd_stream >= 0)
       {
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer, "stream %d from node %s already open on %d (marking node state 'unknown')",
+        sprintf(log_buffer, "stream %d from node %s already open on %d (marking node state 'unknown', current state: %d)",
                 stream,
                 node->nd_name,
-                node->nd_stream);
+                node->nd_stream,
+                node->nd_state);
 
         log_event(
           PBSEVENT_ADMIN,
@@ -1898,7 +1967,8 @@ void is_request(
 
       rpp_close(node->nd_stream);
 
-      tdelete((u_long)node->nd_stream, &streams);
+      /* tdelete((u_long)node->nd_stream, &streams); */
+      streams = AVL_delete_node((u_long)node->nd_stream, 0, streams);
 
       if (node->nd_state & INUSE_OFFLINE)
         {
@@ -1923,8 +1993,9 @@ void is_request(
 
     node->nd_stream = stream;
 
-    tinsert((u_long)stream, node, &streams);
-
+    /* tinsert((u_long)stream, node, &streams); */
+    streams = AVL_insert((u_long)stream, 0, node, streams);
+      
     goto found;
     }  /* END if ((node = tfind(ipaddr,&ipaddrs)) != NULL) */
     else if (allow_any_mom)                                           
@@ -1945,7 +2016,7 @@ void is_request(
                                                                       
           if(err == PBSE_NONE)                                        
             {   
-            node = tfind(ipaddr, &ipaddrs);                           
+            node = AVL_find(ipaddr, 0, ipaddrs);                           
             goto found;                                               
             }                                                         
         }                                                             
@@ -1972,11 +2043,6 @@ void is_request(
   return;
 
 found:
-
-  command = disrsi(stream, &ret);
-
-  if (ret != DIS_SUCCESS)
-    goto err;
 
   if (cmdp != NULL)
     *cmdp = command;
@@ -2023,6 +2089,13 @@ found:
       if (ret != DIS_SUCCESS)
         goto err;
 
+      if (LOGLEVEL >= 6)
+        {
+        sprintf(log_buffer, "Add cluster addrs to %s",
+                node->nd_name);
+
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
+        }
       if (add_cluster_addrs(stream) != DIS_SUCCESS)
         goto err;
 
@@ -2550,6 +2623,129 @@ static void mark(
 
 
 
+/*
+ * checks if a node is ok for search
+ *
+ * All parameters are exactly the same as search
+ * @param pnode - the node we're looking at
+ *
+ * @return TRUE if the node is acceptable for search's purposes
+ */
+int search_acceptable(
+
+  struct pbsnode *pnode,
+  struct prop    *glorf,
+  int             skip,
+  int             vpreq)
+
+  {
+  if (pnode->nd_state & INUSE_DELETED)
+    return(FALSE);
+
+  if (pnode->nd_ntype == NTYPE_CLUSTER)
+    {
+    if (pnode->nd_flag != okay)
+      {
+      if ((skip != SKIP_NONE_REUSE) || (pnode->nd_flag != thinking))
+        {
+        /* allow node re-use if SKIP_NONE_REUSE is set */
+
+        return(FALSE);
+        }
+      }
+
+    /* FIXME: this is rejecting job submits?
+          if (pnode->nd_state & pass)
+            continue;
+    */
+
+    if (!hasprop(pnode, glorf))
+      return(FALSE);
+
+    if ((skip == SKIP_NONE) || (skip == SKIP_NONE_REUSE))
+      {
+      if (vpreq > pnode->nd_nsn)
+        return(FALSE);
+      }
+    else if ((skip == SKIP_ANYINUSE) &&
+             ((pnode->nd_state & INUSE_SUBNODE_MASK) || (vpreq > pnode->nd_nsnfree)))
+      {
+      return(FALSE);
+      }
+    else if ((skip == SKIP_EXCLUSIVE) &&
+             ((pnode->nd_state & INUSE_SUBNODE_MASK) ||
+              (vpreq > (pnode->nd_nsnfree + pnode->nd_nsnshared))))
+      {
+      return(FALSE);
+      }
+    }
+  else
+    return(FALSE);
+
+  return(TRUE);
+  } /* END search_acceptable() */
+
+
+
+
+
+
+/*
+ * checks if a node is ok for to reshuffle
+ *
+ * All parameters are exactly the same as search
+ * @param pnode - the node we're looking at
+ *
+ * @return TRUE if the node is reshuffleable for search's purposes
+ */
+int can_reshuffle(
+
+  struct pbsnode *pnode,
+  struct prop    *glorf,
+  int             skip,
+  int             vpreq,
+  int             pass)
+
+  {
+
+  if (pnode->nd_state & INUSE_DELETED)
+    return(FALSE);
+
+  if (pnode->nd_ntype == NTYPE_CLUSTER)
+    {
+    if (pnode->nd_flag != thinking)
+      {
+      /* only shuffle nodes which have been selected above */
+
+      return(FALSE);
+      }
+
+    if (pnode->nd_state & pass)
+      return(FALSE);
+
+    if ((skip == SKIP_EXCLUSIVE) && (vpreq < pnode->nd_nsnfree))
+      return(FALSE);
+
+    if ((skip == SKIP_ANYINUSE) &&
+        (vpreq < (pnode->nd_nsnfree + pnode->nd_nsnshared)))
+      return(FALSE);
+
+    if (!hasprop(pnode, glorf))
+      return(FALSE);
+    }
+  else
+    return(FALSE);
+
+  return(TRUE);
+  } /* can_reshuffle() */
+
+
+
+
+
+
+
+
 #define RECURSIVE_LIMIT 3
 
 /*
@@ -2572,61 +2768,22 @@ static int search(
 
   struct pbsnode *pnode;
   int found;
-  int i;
+
+  node_iterator iter;
 
   if (++depth == RECURSIVE_LIMIT)
     {
     return(0);
     }
+  
+  reinitialize_node_iterator(&iter);
 
   /* look for nodes we haven't picked already */
 
-  for (i = 0;i < svr_totnodes;i++)
+  while ((pnode = next_node(&iter)) != NULL)
     {
-    pnode = pbsndlist[i];
-
-    if (pnode->nd_state & INUSE_DELETED)
-      continue;
-
-    if (pnode->nd_ntype == NTYPE_CLUSTER)
+    if (search_acceptable(pnode,glorf,skip,vpreq) == TRUE)
       {
-      if (pnode->nd_flag != okay)
-        {
-        if ((skip != SKIP_NONE_REUSE) || (pnode->nd_flag != thinking))
-          {
-          /* allow node re-use if SKIP_NONE_REUSE is set */
-
-          continue;
-          }
-        }
-
-      /* FIXME: this is rejecting job submits?
-            if (pnode->nd_state & pass)
-              continue;
-      */
-
-      if (!hasprop(pnode, glorf))
-        continue;
-
-      if ((skip == SKIP_NONE) || (skip == SKIP_NONE_REUSE))
-        {
-        if (vpreq > pnode->nd_nsn)
-          continue;
-        }
-      else if ((skip == SKIP_ANYINUSE) &&
-               ((pnode->nd_state & INUSE_SUBNODE_MASK) || (vpreq > pnode->nd_nsnfree)))
-        {
-        continue;
-        }
-      else if ((skip == SKIP_EXCLUSIVE) &&
-               ((pnode->nd_state & INUSE_SUBNODE_MASK) ||
-                (vpreq > (pnode->nd_nsnfree + pnode->nd_nsnshared))))
-        {
-        continue;
-        }
-
-      /* NOTE: allow node re-use if SKIP_NONE_REUSE by ignoring 'thinking' above */
-
       pnode->nd_flag = thinking;
 
       mark(pnode, glorf);
@@ -2649,36 +2806,12 @@ static int search(
     }
 
   /* try re-shuffling the nodes to get what we want */
+  reinitialize_node_iterator(&iter);
 
-  for (i = 0;i < svr_totnodes;i++)
+  while ((pnode = next_node(&iter)) != NULL)
     {
-    pnode = pbsndlist[i];
-
-    if (pnode->nd_state & INUSE_DELETED)
-      continue;
-
-    if (pnode->nd_ntype == NTYPE_CLUSTER)
+    if (can_reshuffle(pnode,glorf,skip,vpreq,pass) == TRUE)
       {
-      if (pnode->nd_flag != thinking)
-        {
-        /* only shuffle nodes which have been selected above */
-
-        continue;
-        }
-
-      if (pnode->nd_state & pass)
-        continue;
-
-      if ((skip == SKIP_EXCLUSIVE) && (vpreq < pnode->nd_nsnfree))
-        continue;
-
-      if ((skip == SKIP_ANYINUSE) &&
-          (vpreq < (pnode->nd_nsnfree + pnode->nd_nsnshared)))
-        continue;
-
-      if (!hasprop(pnode, glorf))
-        continue;
-
       pnode->nd_flag = conflict;
 
       /* Ben Webb patch (CRI 10/06/03) */
@@ -2694,17 +2827,16 @@ static int search(
 
       if (found)
         {
+        /* SUCCESS */
         mark(pnode, glorf);
 
         pnode->nd_needed = vpreq;
         pnode->nd_order  = order;
 
-        /* SUCCESS */
-
         return(1);
         }
       }
-    }    /* END for (i) */
+    }  /* END for (each node) */
 
   /* FAILURE */
 
@@ -2910,6 +3042,8 @@ static int listelem(
   struct pbsnode *pnode;
   int node_req = 1;
 
+  node_iterator iter;
+
   if ((i = number(str, &num)) == -1) /* get number */
     {
     /* FAILURE */
@@ -2949,10 +3083,10 @@ static int listelem(
 
   hit = 0;
 
-  for (i = 0;i < svr_totnodes;i++)
-    {
-    pnode = pbsndlist[i];
+  reinitialize_node_iterator(&iter);
 
+  while ((pnode = next_node(&iter)) != NULL)
+    {
     if (pnode->nd_state & INUSE_DELETED)
       continue;
 
@@ -3281,6 +3415,78 @@ int procs_available(int proc_ct)
   }
 
 
+/* checks if nodes are free/configured */
+int node_avail_check(
+
+  struct pbsnode *pnode)           /* I */
+
+  {
+  char           *id = "node_avail_check";
+
+  struct pbssubn *snp;
+
+#ifdef GEOMETRY_REQUESTS
+  /* must be dedicated node use for cpusets */
+  if (IS_VALID_STR(ProcBMStr)) 
+    {
+    if (pnode->nd_state != INUSE_FREE)
+      continue;
+
+    if (node_satisfies_request(pnode,ProcBMStr) == FALSE)
+      continue;
+    }
+#endif /* GEOMETRY_REQUESTS */
+
+  if (LOGLEVEL >= 6)
+    {
+    DBPRT(("%s: %s nsn %d, nsnfree %d, nsnshared %d\n",
+           id,
+           pnode->nd_name,
+           pnode->nd_nsn,
+           pnode->nd_nsnfree,
+           pnode->nd_nsnshared))
+    }
+
+  pnode->nd_flag   = okay;
+
+  pnode->nd_needed = 0;
+
+  for (snp = pnode->nd_psn;snp != NULL;snp = snp->next)
+    {
+    snp->flag = okay;
+
+    if (LOGLEVEL >= 6)
+      {
+      DBPRT(("%s: %s/%d inuse 0x%x nprops %d\n",
+             id,
+             pnode->nd_name,
+             snp->index,
+             snp->inuse,
+             pnode->nd_nprops))
+      }
+    }
+
+  if (pnode->nd_ntype == NTYPE_CLUSTER)
+    {
+    /* configured node located */
+    svr_numcfgnodes++;
+
+    if ((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) == 0)
+      {
+      /* NOTE:  checking if node is not just up, but free */
+      /* available node located */
+
+      svr_numnodes++;
+      }
+    }
+
+  return(0);
+  } /* END node_avail_check() */
+
+
+
+
+
 /*
  * Test a node specification.
  *
@@ -3304,10 +3510,11 @@ static int node_spec(
   static char id[] = "node_spec";
 
   struct pbsnode *pnode;
+  node_iterator  *iter;
 
-  struct pbssubn *snp;
   char *str, *globs, *cp, *hold;
-  int  i, num;
+  int  i;
+  int  num;
   int  rv;
   static char shared[] = "shared";
 
@@ -3473,61 +3680,25 @@ static int node_spec(
     if (pnode->nd_state & INUSE_DELETED)
       continue;
 
-#ifdef GEOMETRY_REQUESTS
-    /* must be dedicated node use for cpusets */
-    if (IS_VALID_STR(ProcBMStr)) 
+#ifdef NUMA_SUPPORT
+    if (pnode->num_numa_nodes > 0)
       {
-      if (pnode->nd_state != INUSE_FREE)
-        continue;
+      /* check each of the num nodes */
+      struct pbsnode *tmp;
+      int             j;
 
-      if (node_satisfies_request(pnode,ProcBMStr) == FALSE)
-        continue;
-      }
-#endif /* GEOMETRY_REQUESTS */
-
-    if (LOGLEVEL >= 6)
-      {
-      DBPRT(("%s: %s nsn %d, nsnfree %d, nsnshared %d\n",
-             id,
-             pnode->nd_name,
-             pnode->nd_nsn,
-             pnode->nd_nsnfree,
-             pnode->nd_nsnshared))
-      }
-
-    pnode->nd_flag   = okay;
-
-    pnode->nd_needed = 0;
-
-    for (snp = pnode->nd_psn;snp != NULL;snp = snp->next)
-      {
-      snp->flag = okay;
-
-      if (LOGLEVEL >= 6)
+      for (j = 0; j < pnode->num_numa_nodes; j++)
         {
-        DBPRT(("%s: %s/%d inuse 0x%x nprops %d\n",
-               id,
-               pnode->nd_name,
-               snp->index,
-               snp->inuse,
-               pnode->nd_nprops))
+        tmp = AVL_find(j,pnode->nd_mom_port,pnode->numa_nodes);
+
+        node_avail_check(tmp);
         }
       }
-
-    if (pnode->nd_ntype == NTYPE_CLUSTER)
+    else
+#endif /* NUMA_SUPPORT */
       {
-      /* configured node located */
-
-      svr_numcfgnodes++;
-
-      if ((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) == 0)
-        {
-        /* NOTE:  checking if node is not just up, but free */
-
-        /* available node located */
-
-        svr_numnodes++;
-        }
+      /* compute normally */
+      node_avail_check(pnode);
       }
     }    /* END for (i = 0) */
 
@@ -3624,11 +3795,10 @@ static int node_spec(
    * Here we find a replacement for any nodes chosen above
    * that are already inuse.
    */
+  iter = get_node_iterator();
 
-  for (i = 0;i < svr_totnodes;i++)
+  while ((pnode = next_node(iter)) != NULL)
     {
-    pnode = pbsndlist[i];
-
     if (pnode->nd_state & INUSE_DELETED)
       continue;
 
@@ -4084,6 +4254,7 @@ int build_host_list(
   curr->order = pnode->nd_order;
   curr->name  = pnode->nd_name;
   curr->index = snp->index;
+  curr->port = pnode->nd_mom_rm_port;
 
   /* find the proper place in the list */
   for (prev = NULL, hp = *hlistptr;hp;prev = hp, hp = hp->next)
@@ -4114,12 +4285,13 @@ int build_host_list(
 
 int set_nodes(
 
-  job   *pjob,      /* I */
-  char *spec,       /* I */
-  int  procs,       /* I */
-  char **rtnlist,   /* O */
-  char  *FailHost,  /* O (optional,minsize=1024) */
-  char  *EMsg)      /* O (optional,minsize=1024) */
+  job   *pjob,        /* I */
+  char  *spec,        /* I */
+  int    procs,       /* I */
+  char **rtnlist,     /* O */
+  char **rtnportlist, /* O */
+  char  *FailHost,    /* O (optional,minsize=1024) */
+  char  *EMsg)        /* O (optional,minsize=1024) */
 
   {
 
@@ -4128,6 +4300,7 @@ int set_nodes(
   struct howl *nxt;
 
   int     i;
+  int     count;
   int     procs_needed = 0;
   short   newstate;
 
@@ -4138,7 +4311,10 @@ int set_nodes(
   struct pbsnode *pnode;
 
   struct pbssubn *snp;
+
+  node_iterator  *iter;
   char           *nodelist;
+  char           *portlist;
 
   char   ProcBMStr[MAX_BM];
 
@@ -4204,11 +4380,12 @@ int set_nodes(
 
   newstate = exclusive ? INUSE_JOB : INUSE_JOBSHARE;
 
-  for (i = 0;i < svr_totnodes;i++)
+  /* initialize the mom port values to unset so that they're only
+   * set once */
+  iter = get_node_iterator();
+
+  while ((pnode = next_node(iter)) != NULL)
     {
-
-    pnode = pbsndlist[i];
-
     if (pnode->nd_state & INUSE_DELETED)
       continue;
 
@@ -4340,10 +4517,12 @@ int set_nodes(
   /* build list of allocated nodes */
 
   i = 1;  /* first, size list */
+  count = 1; /* count the number of nodes to be used */
 
   for (hp = hlist;hp != NULL;hp = hp->next)
     {
     i += (strlen(hp->name) + 6);
+    count++;
     }
 
   nodelist = malloc(++i);
@@ -4367,6 +4546,28 @@ int set_nodes(
 
   *nodelist = '\0';
 
+  /* port list will have a string of sister port addresses */
+  portlist = malloc((count * PBS_MAXPORTNUM) + count);
+  if (portlist == NULL)
+    {
+    sprintf(log_buffer, "no nodes can be allocated to job %s - no memory",
+      pjob->ji_qs.ji_jobid);
+
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+
+    if (EMsg != NULL)
+      sprintf(EMsg,"no nodes can be allocated to job");
+
+    return(PBSE_RESCUNAV);
+    }
+
+  *portlist = '\0';
+
+
   /* now copy in name+name+... */
 
   NCount = 0;
@@ -4379,14 +4580,18 @@ int set_nodes(
       hp->name,
       hp->index);
 
+    sprintf(portlist + strlen(portlist), "%d+", hp->port);
+
     nxt = hp->next;
 
     free(hp);
     }
 
   *(nodelist + strlen(nodelist) - 1) = '\0'; /* strip trailing + */
+  *(portlist + strlen(portlist) - 1) = 0;
 
   *rtnlist = nodelist;
+  *rtnportlist = portlist;
 
   if (LOGLEVEL >= 3)
     {
@@ -4589,7 +4794,6 @@ int node_avail(
 
   {
   char *id = "node_avail";
-  int i;
   int j;
   int holdnum;
 
@@ -4604,6 +4808,8 @@ int node_avail(
   register int xresvd;
   register int xdown;
   int          node_req = 1;
+
+  node_iterator iter;
 
   if (spec == NULL)
     {
@@ -4635,10 +4841,10 @@ int node_avail(
         }
       }
 
-    for (i = 0;i < svr_totnodes;i++)
-      {
-      pn = pbsndlist[i];
+    reinitialize_node_iterator(&iter);
 
+    while ((pn = next_node(&iter)) != NULL)
+      {
       if (pn->nd_state & INUSE_DELETED)
         continue;
 
@@ -4723,7 +4929,8 @@ int node_reserve(
 
   struct pbssubn *snp;
   int   ret_val;
-  int   i;
+
+  node_iterator iter;
 
   DBPRT(("%s: entered\n",
          id))
@@ -4745,11 +4952,10 @@ int node_reserve(
     ** Zero or more of the needed Nodes are available to be
     ** reserved.
     */
+    reinitialize_node_iterator(&iter);
 
-    for (i = 0;i < svr_totnodes;i++)
+    while ((pnode = next_node(&iter)) != NULL)
       {
-      pnode = pbsndlist[i];
-
       if (pnode->nd_state & INUSE_DELETED)
         continue;
 
@@ -4887,7 +5093,8 @@ void free_nodes(
   struct pbsnode *pnode;
 
   struct jobinfo *jp, *prev;
-  int             i;
+
+  node_iterator iter;
 
   if (LOGLEVEL >= 3)
     {
@@ -4902,11 +5109,10 @@ void free_nodes(
     }
 
   /* examine all nodes in cluster */
+  reinitialize_node_iterator(&iter);
 
-  for (i = 0;i < svr_totnodes;i++)
+  while ((pnode = next_node(&iter)) != NULL)
     {
-    pnode = pbsndlist[i];
-
     if (pnode->nd_state & INUSE_DELETED)
       continue;
 

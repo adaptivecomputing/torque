@@ -139,7 +139,34 @@ pbs_net_t get_hostaddr(
 
   extern int pbs_errno;
 
+#ifdef NUMA_SUPPORT
+  /* if this is a numa host, just get the parent node's address */
+  char *dash;
+
+  if ((dash = strchr(hostname,'-')) != NULL)
+    {
+    char *tmp;
+
+    /* make sure to use the last dash */
+    while ((tmp = strchr(dash+1,'-')))
+      dash = tmp;
+
+    /* terminate string temporarily */
+    *dash = '\0';
+
+    if (!(hp = gethostbyname(hostname)))
+      {
+      /* not a numa-owned node, act normal */
+      *dash = '-';
+      hp = gethostbyname(hostname);
+      }
+    /* otherwise proceed with just the parent hostname so 
+     * it can be resolved */
+    }
+#else
   hp = gethostbyname(hostname);
+#endif /* NUMA_SUPPORT */
+
 
   if (hp == NULL)
     {

@@ -100,6 +100,7 @@
 
 /* Global Variables */
 
+extern int multi_mom;
 extern int  exiting_tasks;
 extern char  mom_host[];
 extern tlist_head svr_alljobs;
@@ -204,6 +205,7 @@ scan_for_terminated(void)
   job  *pjob;
   task  *ptask;
   int  statloc;
+  unsigned int momport = 0;
 
   /* update the latest intelligence about the running jobs;         */
   /* must be done before we reap the zombies, else we lose the info */
@@ -281,7 +283,13 @@ scan_for_terminated(void)
 
       pjob->ji_momsubt = 0;
 
-      (void)job_save(pjob, SAVEJOB_QUICK);
+      if(multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+
+      (void)job_save(pjob, SAVEJOB_QUICK, momport);
+
       continue;
       }
 

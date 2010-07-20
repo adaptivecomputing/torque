@@ -110,8 +110,7 @@ extern int   LOGLEVEL;
 
 extern void   set_old_nodes (job *);
 
-
-
+extern job  *chk_job_request(char *, struct batch_request *);
 
 /*
  * req_signaljob - service the Signal Job Request
@@ -200,7 +199,7 @@ void req_signaljob(
   /* pass the request on to MOM */
 
   if ((rc = relay_to_mom(
-              pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+              pjob,
               preq,
               post_signal_req)))
     {
@@ -252,7 +251,7 @@ int issue_signal(
   strncpy(newreq->rq_ind.rq_signal.rq_signame, signame, PBS_SIGNAMESZ);
 
   rc = relay_to_mom(
-         pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+         pjob,
          newreq,
          func);
 
@@ -308,7 +307,7 @@ static void post_signal_req(
 
         set_statechar(pjob);
 
-        job_save(pjob, SAVEJOB_QUICK);
+        job_save(pjob, SAVEJOB_QUICK, 0);
 
         /* release resources allocated to suspended job - NORWAY */
 
@@ -327,7 +326,7 @@ static void post_signal_req(
 
         set_statechar(pjob);
 
-        job_save(pjob, SAVEJOB_QUICK);
+        job_save(pjob, SAVEJOB_QUICK, 0);
         }
       }
 

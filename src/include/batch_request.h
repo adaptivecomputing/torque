@@ -99,6 +99,7 @@
 #include "libpbs.h"
 #include "attribute.h"
 #include "credential.h"
+#include "pbs_job.h"
 
 #ifndef BATCH_REQUEST_H
 #define BATCH_REQUEST_H 1
@@ -413,7 +414,7 @@ extern void req_returnfiles (struct batch_request *req);
 #endif
 
 #ifdef SERVER_LIMITS_H
-extern int   relay_to_mom (pbs_net_t, struct batch_request *, void (*)());
+int relay_to_mom (job *, struct batch_request *, void (*func)());
 #endif  /* SERVER_LIMITS_H */
 
 /* PBS Batch Request Decode/Encode routines */

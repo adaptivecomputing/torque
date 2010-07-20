@@ -120,6 +120,7 @@
 
 #define ATTR_ctime      "ctime"
 #define ATTR_exechost   "exec_host"
+#define ATTR_execport	"exec_port"
 #define ATTR_mtime      "mtime"
 #define ATTR_qtime      "qtime"
 #define ATTR_session    "session_id"
@@ -280,13 +281,17 @@
 
 /* additional node "attributes" names */
 
-#define ATTR_NODE_state         "state"
-#define ATTR_NODE_np            "np"
-#define ATTR_NODE_properties    "properties"
-#define ATTR_NODE_ntype         "ntype"
-#define ATTR_NODE_jobs          "jobs"
-#define ATTR_NODE_status        "status"
-#define ATTR_NODE_note          "note"
+#define ATTR_NODE_state           "state"
+#define ATTR_NODE_np              "np"
+#define ATTR_NODE_properties      "properties"
+#define ATTR_NODE_ntype           "ntype"
+#define ATTR_NODE_jobs            "jobs"
+#define ATTR_NODE_status          "status"
+#define ATTR_NODE_note            "note"
+#define ATTR_NODE_mom_port	      "mom_service_port"
+#define ATTR_NODE_mom_rm_port     "mom_manager_port" 
+#define ATTR_NODE_num_numa_nodes  "num_numa_nodes"
+#define ATTR_NODE_numa_str        "numa_node_str"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"
@@ -377,6 +382,11 @@
 #ifndef MAXPATHLEN
 #define MAXPATHLEN  1024 /* max path name length */
 #endif
+
+#ifndef MAXPORTLEN
+#define MAXPORTLEN  5
+#endif
+
 #ifndef MAXNAMLEN
 #define MAXNAMLEN  255
 #endif

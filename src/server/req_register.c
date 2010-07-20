@@ -151,7 +151,7 @@ extern int   LOGLEVEL;
 extern char *PJobState[];
 
 
-
+extern int   svr_chk_owner(struct batch_request *, job *);
 
 
 /*
@@ -596,7 +596,11 @@ void req_register(
   else
     {
     if ((pjob != NULL) && (pjob->ji_modified != 0))
-      job_save(pjob, SAVEJOB_FULL);
+      {
+
+      job_save(pjob, SAVEJOB_FULL, 0);
+
+      }
 
     reply_ack(preq);
     }
