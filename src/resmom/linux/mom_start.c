@@ -330,8 +330,9 @@ void scan_for_terminated(void)
   task *ptask = NULL;
   int  statloc;
   unsigned int momport = 0;
+
 #ifdef USESAVEDRESOURCES
-  int update_stats = TRUE;
+  int  update_stats = TRUE;
 #endif /* USESAVEDRESOURCES */
 
   int    tcount;

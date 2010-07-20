@@ -905,12 +905,15 @@ int init_jobset(
         unsigned int len = strlen(membuf);
         if (fwrite(membuf, sizeof(char), len, fd) != len)
           {
-          log_err(-1,id,"ERROR:   Unable to write mems to cpuset\n");
+          log_err(-1,id,"ERROR:  Unable to write mems to cpuset\n");
           }
         fclose(fd);
         }
       return(SUCCESS);
       }
+#else
+    return(SUCCESS);
+#endif  /* end NUMA_SUPPORT */
     }
 
   return(FAILURE);
@@ -1067,17 +1070,52 @@ int add_cpus_to_jobset(
   fd = fopen(tmppath, "w");
   if (fd)
     {
-    unsigned int len = strlen(cpusbuf);
+    unsigned int len;
+
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "adding cpus %s to %s", cpusbuf, tmppath);
+      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      }
+
+    len = strlen(cpusbuf);
 
     if (fwrite(cpusbuf, sizeof(char), len, fd) != len)
       {
-      log_err(-1,id,"ERROR:   Unable to write cpus to cpuset\n");
+      log_err(-1,id,"ERROR:  Unable to write cpus to cpuset\n");
       fclose(fd);
       return(FAILURE);
       }
 
     fclose(fd);
+#ifdef NUMA_SUPPORT
+    snprintf(tmppath,sizeof(tmppath),"%s/mems",path);
+    fd = fopen(tmppath, "w");
+    if (fd)
+      {
+      unsigned int len;
+
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer, "adding mems %s to %s", memsbuf, tmppath);
+        log_ext(-1, id, log_buffer, LOG_DEBUG);
+        }
+
+      len = strlen(memsbuf);
+
+      if (fwrite(memsbuf, sizeof(char), len, fd) != len)
+        {
+        log_err(-1,id,"ERROR:  Unable to write mems to cpuset\n");
+        fclose(fd);
+        return(FAILURE);
+        }
+
+      fclose(fd);
+      return(SUCCESS);
+      }
+#else
     return(SUCCESS);
+#endif  /* end NUMA_SUPPORT */
     }
     
   return(FAILURE);
@@ -1153,7 +1191,7 @@ int move_to_jobset(
   if (fd)
     {
     unsigned int len = strlen(pidbuf);
-    
+
     if (fwrite(pidbuf, sizeof(char), len, fd) != len)
       {
       log_err(-1,id,"ERROR:   Unable to bind job to cpuset\n");

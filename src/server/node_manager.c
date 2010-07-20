@@ -3979,6 +3979,9 @@ static int node_spec(
   return(num);
   }  /* END node_spec() */
 
+
+
+
 #ifdef GEOMETRY_REQUESTS
 /**
  * get_bitmap
@@ -5326,6 +5329,7 @@ void set_old_nodes(
 
   return;
   }  /* END set_old_nodes() */
+
 
 
 /* END node_manager.c */

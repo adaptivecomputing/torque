@@ -157,9 +157,9 @@
 #define ATTR_checkpoint_name  "checkpoint_name"   /* user specified name of checkpoint file */
 #define ATTR_checkpoint_time  "checkpoint_time"   /* timestamp of start of last checkpoint */
 #define ATTR_checkpoint_restart_status  "checkpoint_restart_status"   /* checkpoint restart status */
-#define ATTR_restart_name  "restart_name"   /* saved name of checkpoint restart file */
-#define ATTR_comp_time   "comp_time"
-#define ATTR_reported    "reported"
+#define ATTR_restart_name	"restart_name"   /* saved name of checkpoint restart file */
+#define ATTR_comp_time   	"comp_time"
+#define ATTR_reported    	"reported"
 #define ATTR_intcmd      "inter_cmd"
 #define ATTR_P           "proxy_user"
 
@@ -281,17 +281,17 @@
 
 /* additional node "attributes" names */
 
-#define ATTR_NODE_state           "state"
-#define ATTR_NODE_np              "np"
-#define ATTR_NODE_properties      "properties"
-#define ATTR_NODE_ntype           "ntype"
-#define ATTR_NODE_jobs            "jobs"
-#define ATTR_NODE_status          "status"
-#define ATTR_NODE_note            "note"
-#define ATTR_NODE_mom_port	      "mom_service_port"
-#define ATTR_NODE_mom_rm_port     "mom_manager_port" 
-#define ATTR_NODE_num_numa_nodes  "num_numa_nodes"
-#define ATTR_NODE_numa_str        "numa_node_str"
+#define ATTR_NODE_state          "state"
+#define ATTR_NODE_np             "np"
+#define ATTR_NODE_properties     "properties"
+#define ATTR_NODE_ntype          "ntype"
+#define ATTR_NODE_jobs           "jobs"
+#define ATTR_NODE_status         "status"
+#define ATTR_NODE_note           "note"
+#define ATTR_NODE_mom_port	     "mom_service_port"
+#define ATTR_NODE_mom_rm_port    "mom_manager_port" 
+#define ATTR_NODE_num_numa_nodes "num_numa_nodes"
+#define ATTR_NODE_numa_str       "numa_node_str"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

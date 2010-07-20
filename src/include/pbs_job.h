@@ -96,6 +96,7 @@
 #define MAX_LINE 1024
 #endif
 
+/* anything including job.h also needs array.h so lets just include it this way*/
 #ifndef SUCCESS
 #define SUCCESS 1
 #endif 
@@ -106,7 +107,6 @@
 #ifndef PBS_MOM
 struct job_array;
 #endif
-
 
 /*
  * Dependent Job Structures
@@ -499,6 +499,7 @@ struct job
   /* MOM: time job suspend (Cray) */
   int  ji_modified; /* struct changed, needs to be saved */
   int  ji_momhandle; /* open connection handle to MOM */
+  int  ji_radix;    /* number of nodes in a job radix. used for qsub -W job_radix option  */
 #ifdef PBS_MOM    /* MOM ONLY */
 
   struct grpcache *ji_grpcache; /* cache of user's groups */
@@ -510,13 +511,19 @@ struct job
 
   struct batch_request *ji_preq; /* hold request until finish_exec */
   int            ji_numnodes; /* number of nodes (at least 1) */
+  int            ji_numsisternodes; /* number of nodes nodes for job_radix (at least 1) */
   int            ji_numvnod; /* number of virtual nodes */
+  int            ji_numsistervnod; /* number of virtual nodes job_radix*/
+  int            ji_outstanding;  /* number of nodes left to reply to an IM request*/
+  tm_node_id     ji_im_nodeid;   /* node id of an intermediate mom. If set to 1 is intermediate mom. 0 leaf or mother superior */
   tm_node_id     ji_nodeid; /* my node id */
   tm_task_id     ji_taskid; /* generate task id's for job */
   char           ji_altid[PBS_MAXSVRJOBID + 1];
   tm_event_t     ji_obit; /* event for end-of-job */
   hnodent        *ji_hosts; /* ptr to job host management stuff */
+  hnodent        *ji_sisters; /* ptr to job host management stuff for intermediate moms */
   vnodent        *ji_vnods; /* ptr to job vnode management stuff */
+  vnodent        *ji_sister_vnods; /* ptr to job vnode management stuff */
   noderes        *ji_resources; /* ptr to array of node resources */
   tlist_head     ji_tasks; /* list of task structs */
   tm_node_id     ji_nodekill; /* set to nodeid requesting job die */
@@ -526,6 +533,11 @@ struct job
   int            ji_porterr; /* socket port allocated for ji_stderr */
   int            ji_stdout; /* socket for stdout */
   int            ji_stderr; /* socket for stderr */
+  int            ji_im_stdout;
+  int            ji_im_stderr;
+  int            ji_im_portout; /* for job_radix intermediate mom demux port for ji_stdout */
+  int            ji_im_porterr; /* for job_radix intermediate mom demux port for ji_stderr */
+
 #else     /* END MOM ONLY */
   tlist_head ji_svrtask; /* links to svr work_task list */
 

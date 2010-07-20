@@ -564,12 +564,20 @@ int task_recov(
   int  fds;
   task  *pt;
   char  namebuf[MAXPATHLEN];
+  char  portname[MAXPATHLEN];
 
   struct taskfix task_save;
   tm_task_id tid;
 
   strcpy(namebuf, path_jobs);     /* job directory path */
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+
+  if(multi_mom)
+    {
+    sprintf(portname, "%d", pbs_rm_port);
+    strcat(namebuf, portname);
+    }
+
   strcat(namebuf, JOB_TASKDIR_SUFFIX);
 
 #if defined(HAVE_OPEN64) && defined(LARGEFILE_WORKS)

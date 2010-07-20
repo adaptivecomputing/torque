@@ -659,6 +659,8 @@ void req_modifyjob(
     preq->rq_noreply = TRUE; /* set for no more replies */
     }
 
+  reply_ack(preq);
+
   /* Commented out by David Beer because qalter never uses the 
    * extend string for this
    Request the copying of checkpoint files if needed 

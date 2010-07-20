@@ -135,556 +135,560 @@ char *array_disallowed_types[] = {
 
 /* for all queues */
 
-attribute_def que_attr_def[] = {
+attribute_def que_attr_def[] =
+  {
 
   /* QA_ATR_QType */
-  {ATTR_qtype,			/* "queue_type" */
-   decode_str,
-   encode_str,
-   set_str,
-   comp_str,
-   free_str,
-   set_queue_type,
-   NO_USER_SET,
-   ATR_TYPE_STR,
-   PARENT_TYPE_QUE_ALL},
+    { ATTR_qtype,  /* "queue_type" - type of queue */
+    decode_str,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    set_queue_type,
+    NO_USER_SET,
+    ATR_TYPE_STR,
+    PARENT_TYPE_QUE_ALL
+    },
+  /* QA_ATR_Priority */  /* priority of queue relative to others */
+  { ATTR_p,   /* "priority" */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  },
 
-  /* QA_ATR_Priority *//* priority of queue relative to others */
-  {ATTR_p,			/* "priority" */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
+  /* QA_ATR_HostList */            /* HostList */
+  {   ATTR_hostlist,           /* "hostlist" */
+      decode_arst,
+      encode_arst,
+      set_hostacl,
+      comp_arst,
+      free_arst,
+      NULL_FUNC,
+      NO_USER_SET,
+      ATR_TYPE_ACL,
+      PARENT_TYPE_QUE_ALL
+  },
 
-  /* QA_ATR_HostList *//* HostList */
-  {ATTR_hostlist,		/* "hostlist" - undocumented */
-   decode_arst,
-   encode_arst,
-   set_hostacl,
-   comp_arst,
-   free_arst,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_ACL,
-   PARENT_TYPE_QUE_ALL},
+  /* QA_ATR_Rerunnable */    /* rerunnable */
+  {   ATTR_rerunnable,   /* "rerunnable" */
+      decode_b,
+      encode_b,
+      set_b,
+      comp_b,
+      free_null,
+      NULL_FUNC,
+      NO_USER_SET,
+      ATR_TYPE_LONG,
+      PARENT_TYPE_QUE_ALL
+  },
 
-  /* QA_ATR_Rerunnable *//* rerunnable */
-  {ATTR_rerunnable,		/* "rerunnable" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QA_ATR_MaxJobs *//* max number of jobs allowed in queue */
-  {ATTR_maxque,			/* "max_queuable" */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QA_ATR_MaxUserJobs *//* max number of jobs per user allowed in queue */
-  {ATTR_maxuserque,		/* max_user_queuable */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QS_ATR_TotalJobs *//* current number of jobs in queue */
-  {ATTR_total,			/* "total_jobs" */
-   decode_null,
-   encode_l,
-   set_null,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   READ_ONLY,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QA_ATR_JobsByState *//* current number of jobs in queue by state */
-  {ATTR_count,			/* "state_count" */
-   decode_null,			/* note-use fixed memory in queue struct    */
-   encode_str,
-   set_null,
-   comp_str,
-   free_null,
-   NULL_FUNC,
-   READ_ONLY,
-   ATR_TYPE_STR,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QA_ATR_MaxReport *//* max number of jobs reported for truncated output */
-  {ATTR_maxreport,		/* "max_report" - undocumented */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QA_ATR_MaxRun *//* max number of jobs allowed to run */
-  {ATTR_maxrun,			/* "max_running" */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QA_ATR_AclHostEnabled *//* Host ACL to be used */
-  {ATTR_aclhten,		/* "acl_host_enable" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QA_ATR_AclHost *//* Host Access Control List */
-  {ATTR_aclhost,		/* "acl_hosts" */
-   decode_arst,
-   encode_arst,
-   set_hostacl,
-   comp_arst,
-   free_arst,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_ACL,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QA_ATR_AclUserEnabled *//* User ACL to be used */
-  {ATTR_acluren,		/* "acl_user_enable" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QA_ATR_AclUsers *//* User Acess Control List */
-  {ATTR_acluser,		/* "acl_users" */
-   decode_arst,
-   encode_arst,
-   set_uacl,
-   comp_arst,
-   free_arst,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_ACL,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QA_ATR_FromRouteOnly *//* Jobs can only enter from a routing queue */
-  {ATTR_fromroute,		/* "from_route_only" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
+  /* QA_ATR_MaxJobs */  /* max number of jobs allowed in queue */
+  { ATTR_maxque,  /* "max_queuable" */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_MaxUserJobs */ /* max number of jobs per user allowed in queue */
+  { ATTR_maxuserque, /* max_user_queuable */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QS_ATR_TotalJobs */  /* current number of jobs in queue */
+  { ATTR_total,  /* "total_jobs" */
+    decode_null,
+    encode_l,
+    set_null,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    READ_ONLY,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_JobsByState */ /* current number of jobs in queue by state */
+  { ATTR_count,  /* "state_count" */
+    decode_null,  /* note-use fixed memory in queue struct    */
+    encode_str,
+    set_null,
+    comp_str,
+    free_null,
+    NULL_FUNC,
+    READ_ONLY,
+    ATR_TYPE_STR,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_MaxReport */  /* max number of jobs reported for truncated output */
+  { ATTR_maxreport,  /* "max_report" */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_MaxRun */             /* max number of jobs allowed to run */
+  {   ATTR_maxrun,            /* "max_running" */
+      decode_l,
+      encode_l,
+      set_l,
+      comp_l,
+      free_null,
+      NULL_FUNC,
+      NO_USER_SET,
+      ATR_TYPE_LONG,
+      PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_AclHostEnabled */ /* Host ACL to be used */
+  { ATTR_aclhten,  /* "acl_host_enable" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_AclHost */  /* Host Access Control List */
+  { ATTR_aclhost,  /* "acl_hosts" */
+    decode_arst,
+    encode_arst,
+    set_hostacl,
+    comp_arst,
+    free_arst,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_ACL,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_AclUserEnabled */ /* User ACL to be used */
+  { ATTR_acluren,  /* "acl_user_enable" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_AclUsers */  /* User Acess Control List */
+  { ATTR_acluser,  /* "acl_users" */
+    decode_arst,
+    encode_arst,
+    set_uacl,
+    comp_arst,
+    free_arst,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_ACL,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_FromRouteOnly */ /* Jobs can only enter from a routing queue */
+  { ATTR_fromroute,  /* "from_route_only" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  },
   /* QA_ATR_ResourceMax */
-  {ATTR_rescmax,		/* "resources_max" */
-   decode_resc,
-   encode_resc,
-   set_resc,
-   comp_resc,
-   free_resc,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_RESC,
-   PARENT_TYPE_QUE_ALL},
-
+  { ATTR_rescmax,  /* "resources_max" */
+    decode_resc,
+    encode_resc,
+    set_resc,
+    comp_resc,
+    free_resc,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_RESC,
+    PARENT_TYPE_QUE_ALL
+  },
   /* QA_ATR_ResourceMin */
-  {ATTR_rescmin,		/* "resources_min" */
-   decode_resc,
-   encode_resc,
-   set_resc,
-   comp_resc,
-   free_resc,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_RESC,
-   PARENT_TYPE_QUE_ALL},
-
+  { ATTR_rescmin,  /* "resources_min" */
+    decode_resc,
+    encode_resc,
+    set_resc,
+    comp_resc,
+    free_resc,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_RESC,
+    PARENT_TYPE_QUE_ALL
+  },
   /* QA_ATR_ResourceDefault */
-  {ATTR_rescdflt,		/* "resources_default" */
-   decode_resc,
-   encode_resc,
-   set_resc,
-   comp_resc,
-   free_resc,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_RESC,
-   PARENT_TYPE_QUE_ALL},
+  { ATTR_rescdflt,  /* "resources_default" */
+    decode_resc,
+    encode_resc,
+    set_resc,
+    comp_resc,
+    free_resc,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_RESC,
+    PARENT_TYPE_QUE_ALL
+  },
 
-  /* QA_ATR_AclGroupEnabled *//* Group ACL to be used */
-  {ATTR_aclgren,		/* "acl_group_enable" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QA_ATR_AclGroup *//* Group Access Control List */
-  {ATTR_aclgroup,		/* "acl_groups" */
-   decode_arst,
-   encode_arst,
-   set_arst,
-   comp_arst,
-   free_arst,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_ACL,
-   PARENT_TYPE_QUE_ALL},
-
+  /* QA_ATR_AclGroupEnabled */ /* Group ACL to be used */
+  { ATTR_aclgren,  /* "acl_group_enable" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_AclGroup */  /* Group Access Control List */
+  { ATTR_aclgroup,  /* "acl_group_list" */
+    decode_arst,
+    encode_arst,
+    set_arst,
+    comp_arst,
+    free_arst,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_ACL,
+    PARENT_TYPE_QUE_ALL
+  },
   /* QA_ATR_AclLogic */
-  {ATTR_acllogic,		/* "acl_logic_or" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
+  {  ATTR_acllogic,          /* "acl_logic_or" */
+     decode_b,
+     encode_b,
+     set_b,
+     comp_b,
+     free_null,
+     NULL_FUNC,
+     NO_USER_SET,
+     ATR_TYPE_LONG,
+     PARENT_TYPE_QUE_ALL
+  },
   /* QA_ATR_AclGroupSloppy */
-  {ATTR_aclgrpslpy,		/* "acl_group_sloppy" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
+  {  ATTR_aclgrpslpy,          /* "acl_group_sloppy" */
+     decode_b,
+     encode_b,
+     set_b,
+     comp_b,
+     free_null,
+     NULL_FUNC,
+     NO_USER_SET,
+     ATR_TYPE_LONG,
+     PARENT_TYPE_QUE_ALL
+  },
   /* QA_ATR_MTime */
-  {ATTR_mtime,			/* "mtime" - undocumented */
-   decode_l,
-   encode_l,
-   set_null,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   READ_ONLY,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
+  { ATTR_mtime,  /* "mtime" */
+    decode_l,
+    encode_l,
+    set_null,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    READ_ONLY,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  },
   /* QA_ATR_DisallowedTypes */
-  {ATTR_disallowedtypes,	/* "disallowed_types" */
-   decode_arst,
-   encode_arst,
-   set_arst,
-   comp_arst,
-   free_arst,
-   disallowed_types_chk,
-   NO_USER_SET,
-   ATR_TYPE_ACL,
-   PARENT_TYPE_QUE_ALL},
-
+  {   ATTR_disallowedtypes,   /* "disallowed_types" */
+      decode_arst,
+      encode_arst,
+      set_arst,
+      comp_arst,
+      free_arst,
+      disallowed_types_chk,
+      NO_USER_SET,
+      ATR_TYPE_ACL,
+      PARENT_TYPE_QUE_ALL
+  },
 
   /* for execution queues only */
 
+
   /* QE_ATR_checkpoint_dir */
-  {ATTR_checkpoint_dir,		/* "checkpoint_dir" - undocumented */
-   decode_str,
-   encode_str,
-   set_str,
-   comp_str,
-   free_str,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_STR,
-   PARENT_TYPE_QUE_EXC},
-
+  {   ATTR_checkpoint_dir,   /* "checkpoint_dir" */
+      decode_str,
+      encode_str,
+      set_str,
+      comp_str,
+      free_str,
+      NULL_FUNC,
+      NO_USER_SET,
+      ATR_TYPE_STR,
+      PARENT_TYPE_QUE_EXC
+  },
   /* QE_ATR_checkpoint_min */
-  {ATTR_checkpoint_min,		/* "checkpoint_min" */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_EXC},
-
+  { ATTR_checkpoint_min,  /* "checkpoint_min" */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_EXC
+  },
   /* QE_ATR_checkpoint_defaults */
-  {ATTR_checkpoint_defaults,	/* "checkpoint_defaults" */
-   decode_str,
-   encode_str,
-   set_str,
-   comp_str,
-   free_str,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_STR,
-   PARENT_TYPE_QUE_EXC},
-
-  /* QE_ATR_RendezvousRetry */  /* Number times to retry sync of jobs */
-  {ATTR_rndzretry,		/* "rendezvous_retry" - undocumented */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_EXC},
-
+  {   ATTR_checkpoint_defaults,   /* "checkpoint_defaults" */
+      decode_str,
+      encode_str,
+      set_str,
+      comp_str,
+      free_str,
+      NULL_FUNC,
+      NO_USER_SET,
+      ATR_TYPE_STR,
+      PARENT_TYPE_QUE_EXC
+  },
+  /* QE_ATR_RendezvousRetry */ /* Number times to retry sync of jobs */
+  { "rendezvous_retry",
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_EXC
+  },
   /* QE_ATR_ReservedExpedite */
-  {ATTR_rsvexpdt,		/* "reserved_expedite" - undocumented */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_EXC},
-
+  { "reserved_expedite",
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_EXC
+  },
   /* QE_ATR_ReservedSync */
-  {ATTR_rsvsync,		/* "reserved_sync" - undocumented */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_EXC},
-
+  { "reserved_sync",
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_EXC
+  },
   /* QE_ATR_ResourceAvail */
-  {ATTR_rescavail,		/* "resources_available" */
-   decode_resc,
-   encode_resc,
-   set_resc,
-   comp_resc,
-   free_resc,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_RESC,
-   PARENT_TYPE_QUE_EXC},
-
+  { "resources_available",
+    decode_resc,
+    encode_resc,
+    set_resc,
+    comp_resc,
+    free_resc,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_RESC,
+    PARENT_TYPE_QUE_EXC
+  },
   /* QE_ATR_ResourceAssn */
-  {ATTR_rescassn,		/* "resources_assigned" */
-   decode_resc,
-   encode_resc,
-   set_resc,
-   comp_resc,
-   free_resc,
-   NULL_FUNC,
-   READ_ONLY,
-   ATR_TYPE_RESC,
-   PARENT_TYPE_QUE_EXC},
-
+  { ATTR_rescassn,  /* "resources_assigned" */
+    decode_resc,
+    encode_resc,
+    set_resc,
+    comp_resc,
+    free_resc,
+    NULL_FUNC,
+    READ_ONLY,
+    ATR_TYPE_RESC,
+    PARENT_TYPE_QUE_EXC
+  },
   /* QE_ATR_KillDelay */
-  {ATTR_killdelay,		/* "kill_delay" */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_EXC},
-
+  { ATTR_killdelay,  /* "kill_delay" */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_EXC
+  },
   /* QE_ATR_MaxUserRun */
-  {ATTR_maxuserrun,		/* "max_user_run" */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_EXC},
-
+  { ATTR_maxuserrun, /* "max_user_run" */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_EXC
+  },
   /* QE_ATR_MaxGrpRun */
-  {ATTR_maxgrprun,		/* "max_group_run" */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_EXC},
-
+  { ATTR_maxgrprun,  /* "max_group_run" */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_EXC
+  },
   /* QE_ATR_KeepCompleted */
-  {ATTR_keepcompleted,		/* "keep_completed" */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_EXC},
-
+  { ATTR_keepcompleted,  /* "keep_completed" */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_EXC
+  },
   /* QR_ATR_is_transit */
-  {ATTR_is_transit,		/* "is_transit" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_EXC},
-
-
+  { ATTR_is_transit,
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_EXC
+  },
   /* for routing queues */
 
   /* QR_ATR_RouteDestin */
-  {ATTR_routedest,		/* "route_destinations" */
-   decode_arst,
-   encode_arst,
-   set_arst,
-   comp_arst,
-   free_arst,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_ARST,
-   PARENT_TYPE_QUE_RTE},
-
+  { ATTR_routedest,  /* "route_destinations" */
+    decode_arst,
+    encode_arst,
+    set_arst,
+    comp_arst,
+    free_arst,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_ARST,
+    PARENT_TYPE_QUE_RTE
+  },
   /* QR_ATR_AltRouter */
-  {ATTR_altrouter,		/* "alt_router" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_RTE},
-
+  { ATTR_altrouter,  /* "alt_router" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_RTE
+  },
   /* QR_ATR_RouteHeld */
-  {ATTR_routeheld,		/* "route_held_jobs" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_RTE},
-
+  { ATTR_routeheld,  /* "route_held_jobs" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_RTE
+  },
   /* QR_ATR_RouteWaiting */
-  {ATTR_routewait,		/* "route_waiting_jobs" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_RTE},
-
+  { ATTR_routewait,  /* "route_waiting_jobs" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_RTE
+  },
   /* QR_ATR_RouteRetryTime */
-  {ATTR_routeretry,		/* "route_retry_time" */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_RTE},
-
+  { ATTR_routeretry, /* "route_retry_time" */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_RTE
+  },
   /* QR_ATR_RouteLifeTime  */
-  {ATTR_routelife,		/* "route_lifetime" */
-   decode_l,
-   encode_l,
-   set_l,
-   comp_l,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_RTE},
-
-
+  { ATTR_routelife,  /* "route_lifetime" */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_RTE
+  },
   /* site supplied attribute definitions, if any, see site_que_attr_*.h */
 #include "site_que_attr_def.h"
 
-
-  /* QA_ATR_Enabled *//* Queue enabled - jobs can be enqueued */
-  {ATTR_enable,			/* "enabled" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   check_que_enable,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL},
-
-  /* QA_ATR_Started *//* Queue enabled - jobs can be started */
-  {ATTR_start,			/* "started" */
-   decode_b,
-   encode_b,
-   set_b,
-   comp_b,
-   free_null,
-   NULL_FUNC,
-   NO_USER_SET,
-   ATR_TYPE_LONG,
-   PARENT_TYPE_QUE_ALL}
-};
+  /* QA_ATR_Enabled */  /* Queue enabled - jobs can be enqueued */
+  { ATTR_enable,  /* "enabled" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    check_que_enable,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_Started */  /* Queue enabled - jobs can be started */
+  { ATTR_start,  /* "started" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  }
+  };
