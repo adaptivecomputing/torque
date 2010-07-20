@@ -1,9 +1,20 @@
 This file contains information concerning the installation and use of 
 TORQUE 2.5.0 with Cygwin.
 
-###########################
-###   Current Status    ###
-###########################
+ CONTENTS
+
+ 1. Current Status.
+ 2. Installing Torque with Cygwin.
+ 3. Start Torque under Cygwin.
+ 4. Configuring Torque with Cygwin.
+ 5. Test Torque under Cygwin.
+ 6. Start Torque under Cygwin as Windows service.
+
+
+
+##############################
+###   1. Current Status    ###
+##############################
 
 Tested builds
 -------------
@@ -41,9 +52,9 @@ Run as administrator (right-click) on Windows 7 and similar.
 
 
 
-#########################################
-###   Installing Torque with Cygwin   ###
-#########################################
+############################################
+###   2. Installing Torque with Cygwin   ###
+############################################
 
 Following variants are recommended:
 *    Cygwin 1.5.25  on  Windows XP/Server 2003;
@@ -81,9 +92,9 @@ ssh-user-config commands.
 Setup the accounts to be able to login with SSH keys on each host.
 
 
-#####################################
-###   Start Torque under Cygwin   ###
-#####################################
+########################################
+###   3. Start Torque under Cygwin   ###
+########################################
 
 Enter into working directory as <UserAdmin> and execute the following commands:
 
@@ -131,6 +142,9 @@ Required privileges for various Torque components is shown in the table below:
 !                   !!                       !                               !                          !
  -------------------------------------------------------------------------------------------------------
 
+ SeServiceLogonRight - Log on as a service.
+ SeCreateTokenPrivilege - Create a token object.
+ SeAssignPrimaryTokenPrivilege - Replace a process level token.
 
  -------------------------------------------------------------------------------------------------------
 !                                                                                                       !
@@ -159,13 +173,14 @@ Required privileges for various Torque components is shown in the table below:
 
 Warning!!! Giving additional privileges can decrease your OS security level.
 
-You will need to reboot your computers so that the new privileges take effect.
+You will need to reboot your computer for components that used SeCreateTokenPrivilege as shown
+in the table above.
 
 Open the ports for sshd, pbs_server, pbs_mom and pbs_sched in your firewalls.
 
-##########################################
-###   Configuring Torque with Cygwin   ###
-##########################################
+#############################################
+###   4. Configuring Torque with Cygwin   ###
+#############################################
 
 Configure the .../torque/server_priv/nodes file for the pbs_server. 
 
@@ -210,9 +225,9 @@ Consult the main Torque Documentations.
 
 
 
-###################################
-###   Test Torque under Cygwin  ###
-###################################
+######################################
+###   5. Test Torque under Cygwin  ###
+######################################
 
 See node information:
 
@@ -226,9 +241,9 @@ Run simple jobs:
 
 
 
-########################################################
-###   Start Torque under Cygwin as Windows service   ###
-########################################################
+###########################################################
+###   6. Start Torque under Cygwin as Windows service   ###
+###########################################################
 
 Go to the source directory as <UserAdmin> and execute the following commands:
 
@@ -244,7 +259,7 @@ To get more assistance with that do cygrunsrv.exe --help.
 
 For example:
 
-   #./contrib/AddPrivileges --add
+   # ./contrib/AddPrivileges --add
    # cygrunsrv.exe -I pbs_server -p /usr/sbin/pbs_server.exe -u <UserAdmin> -w <password>
    # cygrunsrv.exe -I pbs_sched -p /usr/sbin/pbs_sched.exe -u <UserAdmin> -w <password>
 
@@ -253,7 +268,7 @@ For example:
 
 
 
-On  Windows XP x32  the <UserAdmin> can also start server-sched-mom as services through the Windows 
+On Windows XP x32  the <UserAdmin> can also start server-sched-mom as services through the Windows 
 native user SYSTEM (uid=18):
 
    # ./contrib/AddPrivileges --add SYSTEM
