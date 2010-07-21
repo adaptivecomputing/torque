@@ -1,5 +1,10 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+2.5.1
+  e - Allow the nodes file to use the syntax node[0-100] in the name to 
+      create identical nodes with names node0, node1, ..., node100.
+      (also node[000-100] => node000, node001, ... node100)
+
 2.5.0
 
   e - Added new server config option alias_server_name. This option allows
