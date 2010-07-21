@@ -2859,6 +2859,14 @@ static int proplist(
           return(1);
           }
         }
+      else if(strcmp(pname, "procs") == 0)
+        {
+        pequal++;
+        if ((number(&pequal, node_req) != 0) || (*pequal != '\0'))
+          {
+          return(1);
+          } 
+        }
       else
         {
         return(1); /* not recognized - error */
