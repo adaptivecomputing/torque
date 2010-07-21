@@ -1604,7 +1604,7 @@ static char *parse_node_token(
 
   for (;pt[0] != '\0';pt++)
     {
-    if (isalnum((int)*pt) || strchr("-._", *pt) || (*pt == '\0'))
+    if (isalnum((int)*pt) || strchr("-._[]", *pt) || (*pt == '\0'))
       continue;
 
     if (isspace((int)*pt))
@@ -1653,8 +1653,14 @@ int setup_nodes(void)
   char  *nodename;
   char   propstr[256];
   char  *token;
-  int   bad, i, num, linenum;
-  int   err;
+  char  *open_bracket;
+  char  *close_bracket;
+  char  *dash;
+  char   tmp_node_name[MAX_LINE];
+  int    bad, i, num, linenum;
+  int    err;
+  int    start = -1;
+  int    end = -1;
 
   struct pbsnode *np;
   char     *val;
@@ -1822,7 +1828,75 @@ int setup_nodes(void)
 
     pal = GET_NEXT(atrlist);
 
-    err = create_pbs_node(nodename, pal, perm, &bad);
+    if ((open_bracket = strchr(nodename,'[')) != NULL)
+      {
+      int num_digits;
+
+      start = atoi(open_bracket+1);
+      
+      dash = strchr(open_bracket,'-');
+      close_bracket = strchr(open_bracket,']');
+
+      if ((dash == NULL) ||
+          (close_bracket == NULL))
+        {
+        sprintf(log_buffer,
+          "malformed nodename with range: %s, must be of form [x-y]\n",
+          nodename);
+
+        log_err(-1,id,log_buffer);
+
+        goto errtoken2;
+        }
+
+      end = atoi(dash+1);
+
+      /* nullify the open bracket */
+      *open_bracket = '\0';
+
+      num_digits = dash - open_bracket - 1;
+
+      /* move past the closing bracket */
+      close_bracket++;
+
+      while (start <= end)
+        {
+        int num_len = 1;
+        int tmp = 10;
+
+        strcpy(tmp_node_name,nodename);
+       
+        /* determine the length of the number */
+        while (start / tmp > 0)
+          {
+          tmp *= 10;
+          num_len++;
+          }
+
+        /* print extra zeros if needed */
+        while (num_len < num_digits)
+          {
+          strcat(tmp_node_name,"0");
+
+          num_len++;
+          }
+
+        sprintf(tmp_node_name+strlen(tmp_node_name),"%d%s",
+          start,
+          close_bracket);
+
+        err = create_pbs_node(tmp_node_name,pal,perm,&bad);
+
+        if (err != 0)
+          break;
+
+        start++;
+        }
+      }
+    else
+      {
+      err = create_pbs_node(nodename, pal, perm, &bad);
+      }
 
     if (err == PBSE_NODEEXIST)
       {
