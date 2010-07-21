@@ -4,6 +4,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
       create identical nodes with names node0, node1, ..., node100.
       (also node[000-100] => node000, node001, ... node100)
+  b - code to parse the keyword 'procs' was not included in the function
+      proplist from src/server/node_manager.c. This code was needed to 
+      enable support of the 'procs' functionality for qsub.
 
 2.5.0
 
