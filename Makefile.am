@@ -21,7 +21,8 @@ EXTRA_DIST = CHANGELOG INSTALL.GNU README.configure \
 	     contrib/init.d/suse.pbs_server contrib/init.d/suse.pbs_sched \
 			 contrib/init.d/debian.pbs_mom contrib/init.d/debian.pbs_server \
 			 contrib/init.d/debian.pbs_sched \
-	     contrib/blcr/checkpoint_script contrib/blcr/restart_script
+	     contrib/blcr/checkpoint_script contrib/blcr/restart_script \
+	     contrib/AddPrivileges
 
 bin_SCRIPTS = pbs-config
 
