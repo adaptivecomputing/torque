@@ -129,6 +129,9 @@ extern int h_errno;
 #endif
 extern time_t  time_now;
 
+#ifndef MAX_LINE
+#define MAX_LINE 1024
+#endif
 
 /* Global Data */
 
