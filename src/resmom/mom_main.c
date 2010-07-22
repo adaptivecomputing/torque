@@ -8375,21 +8375,6 @@ void restart_mom(
 
 
 
-/* handles everything for binding a specific mom to a nodeboard
- *
- * parses mom.layout, registers procs/mem
- * @return nonzero if there's a problem
- */
-int bind_to_nodeboard()
-
-  {
-
-  return(0);
-  } /* END bind_to_nodeboard */
-
-
-
-
 #ifdef NUMA_SUPPORT
 /* 
  * finds the number of elements in a range in this form: num-num
@@ -8636,18 +8621,6 @@ int main(
     {
     return(rc);
     }
-
-  if ((rc = bind_to_nodeboard()) != 0)
-    {
-    return(rc);
-    }
-
-#ifdef NUMA_SUPPORT
-  if ((rc = bind_to_nodeboard()) != 0)
-    {
-    return(rc);
-    }
-#endif /* NUMA_SUPPORT */
 
   main_loop();
 

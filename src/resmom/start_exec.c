@@ -5040,16 +5040,17 @@ void start_exec(
 	tlist_head    phead;
 	svrattrl     *psatl;
 	int           stream;
+  int  socks[2];
+	
+  struct sockaddr_in saddr;
+	torque_socklen_t slen;
 #endif /* ndef NUMA_SUPPORT */
 
 	int  ports[2];
-  int  socks[2];
 
-	struct sockaddr_in saddr;
 
 	char          tmpdir[MAXPATHLEN];
 
-	torque_socklen_t slen;
 
 	/* Step 1.0 Generate Cookie */
 
