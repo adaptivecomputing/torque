@@ -59,17 +59,25 @@ snap:
 	$(MAKE) VERSION=$(VERSION)-snap.$${snapstamp:-`date +%Y%m%d%H%M`} dist
 
 dist-hook:
-	if test -d $(srcdir)/.svn; then cp -p buildutils/torque.spec.dist $(distdir)/torque.spec ;fi
-	spec_version=`echo $(VERSION) | sed 's/-snap.*//'`; \
+	@if test -d $(srcdir)/.svn; then \
+	  echo "Using distributed RPM spec file, not configured spec file"; \
+	  cp -p buildutils/torque.spec.dist $(distdir)/torque.spec; \
+	  missing=0; \
+	  for line in $$(cd $(srcdir); find contrib -type f | grep -v .svn); do \
+	    if ! test -f $(distdir)/$$line;then missing=1; echo "******** ERROR: $$line missing from tarball ********" 1>&2;fi \
+	  done; \
+	  test $$missing = 1 && exit 1; \
+	fi
+	@spec_version=`echo $(VERSION) | sed 's/-snap.*//'`; \
 	spec_snap=""; \
 	if test "$$spec_version" != "$(VERSION)" ;then \
   	  spec_snap="%define snap `echo $(VERSION) | sed 's/.*-snap.//'`"; \
 	  sed -e 's/.*dist_spec_snap.*/'"$$spec_snap"/ < $(distdir)/torque.spec > $(distdir)/torque.spec~ ; \
 	  mv $(distdir)/torque.spec~ $(distdir)/torque.spec; \
-	fi; \
-	chmod u+w $(distdir)/README.torque $(distdir)/configure $(distdir)/torque.spec
-	sed -e 's/TORQUE .* README .*/TORQUE $(VERSION) README (released '"`date '+%b, %d %Y'`"')/' < $(srcdir)/README.torque > $(distdir)/README.torque
-	sed -e 's/VERSION=.*/VERSION=$(VERSION)/' < $(srcdir)/configure > $(distdir)/configure
+	fi;
+	@chmod u+w $(distdir)/README.torque $(distdir)/configure $(distdir)/torque.spec
+	@sed -e 's/TORQUE .* README .*/TORQUE $(VERSION) README (released '"`date '+%b, %d %Y'`"')/' < $(srcdir)/README.torque > $(distdir)/README.torque
+	@sed -e 's/VERSION=.*/VERSION=$(VERSION)/' < $(srcdir)/configure > $(distdir)/configure
 
 srpm: dist
 	rpmbuild -ts $(distdir).tar.gz
