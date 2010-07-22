@@ -772,7 +772,6 @@ job *job_clone(
            taskid,
            hostname);
 
-  free(oldid);
 
   /* update the job filename
    * We could optimize the sub-jobs to all use the same file. We would need a
@@ -785,7 +784,8 @@ job *job_clone(
    */
 
   strncpy(basename, pnewjob->ji_qs.ji_jobid, PBS_JOBBASE);
-  basename[PBS_JOBBASE] = '\0';
+  snprintf(basename, PBS_JOBBASE, "%s-%d", oldid, taskid);
+  free(oldid);
 
   do
     {
@@ -849,7 +849,7 @@ job *job_clone(
 
         tmpstr = (char*)malloc(sizeof(char) * (slen + PBS_MAXJOBARRAYLEN + 1));
 
-        sprintf(tmpstr, "%s[%d]",
+        sprintf(tmpstr, "%s-%d",
                 template_job->ji_wattr[i].at_val.at_str,
                 taskid);
 

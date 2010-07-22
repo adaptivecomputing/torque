@@ -4,9 +4,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
       create identical nodes with names node0, node1, ..., node100.
       (also node[000-100] => node000, node001, ... node100)
-  b - code to parse the keyword 'procs' was not included in the function
-      proplist from src/server/node_manager.c. This code was needed to 
-      enable support of the 'procs' functionality for qsub.
+  b - fix support of the 'procs' functionality for qsub.
+  b - remove square brackets [] from job and default stdout/stderr filenames 
+      for job arrays (fixes conflict with some non-bash shells)
+  n - fix build system so README.array_changes is included in tar.gz file made
+      with "make dist"
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges
@@ -22,7 +24,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the address of the reply packet from the server is not the same address
       the MOM sent its HELLO1 request, the MOM drops the packet and the MOM
       cannot be added to the server.
-  n - auto_node_np will now adjust np values down as well as up.
+  e - auto_node_np will now adjust np values down as well as up.
   e - Enabled TORQUE to be able to parse the -l procs=x node spec. Previously
       TORQUE simply recored the value of x for procs in Resources_List. It
       now takes that value and allocates x processors packed on any available 
