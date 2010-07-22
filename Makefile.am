@@ -67,7 +67,7 @@ dist-hook:
 	  for line in $$(cd $(srcdir); find README* contrib -type f | grep -v .svn); do \
 	    if ! test -f $(distdir)/$$line;then missing=1; echo "******** ERROR: $$line missing from tarball ********" 1>&2;fi \
 	  done; \
-	  test $$missing = 1 && exit 1; \
+	  if test $$missing = 1;then exit 1; fi; \
 	fi
 	@spec_version=`echo $(VERSION) | sed 's/-snap.*//'`; \
 	spec_snap=""; \
