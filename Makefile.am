@@ -2,27 +2,52 @@ include $(top_srcdir)/buildutils/config.mk
 
 SUBDIRS = src doc
 
-EXTRA_DIST = CHANGELOG INSTALL.GNU README.configure README.array_changes \
-             README.torque README.cygwin Release_Notes torque.setup buildutils/torque.spec.in \
-             PBS_License.txt torque.spec \
-	     buildutils/self-extract-head-sh.in \
-	     buildutils/pbs_mkdirs.in buildutils/pbs_mach_type \
-	     buildutils/config.mk \
-	     buildutils/modulefiles.in buildutils/modulefiles.vers.in \
-	     buildutils/torque.spec.dist.in \
-	     contrib/README.pestat contrib/README.pbstop \
-	     contrib/README.qpeek contrib/pestat-1.0/pestat.c \
-	     contrib/pestat-1.0/README contrib/pestat-1.0/Makefile \
-	     contrib/README.pbs_ganglia_jobmonarch contrib/pam_authuser.tar.gz \
-	     contrib/README.pam_authuser contrib/pbstop \
-	     contrib/README.pbs_python contrib/README.pbs_weblite \
-	     contrib/qpeek contrib/init.d/pbs_mom contrib/init.d/pbs_server \
-	     contrib/init.d/pbs_sched contrib/init.d/suse.pbs_mom \
-	     contrib/init.d/suse.pbs_server contrib/init.d/suse.pbs_sched \
-			 contrib/init.d/debian.pbs_mom contrib/init.d/debian.pbs_server \
-			 contrib/init.d/debian.pbs_sched \
-	     contrib/blcr/checkpoint_script contrib/blcr/restart_script \
-	     contrib/AddPrivileges
+EXTRA_DIST = CHANGELOG \
+	INSTALL.GNU \
+	PBS_License.txt \
+	README.array_changes \
+	README.configure \
+	README.cygwin \
+	README.torque \
+	Release_Notes \
+	torque.setup \
+	torque.spec \
+	buildutils/config.mk \
+	buildutils/modulefiles.in \
+	buildutils/modulefiles.vers.in \
+	buildutils/pbs_mach_type \
+	buildutils/pbs_mkdirs.in \
+	buildutils/self-extract-head-sh.in \
+	buildutils/torque.spec.dist.in \
+	buildutils/torque.spec.in \
+	contrib/AddPrivileges \
+	contrib/blcr/checkpoint_script \
+	contrib/blcr/restart_script \
+	contrib/init.d/debian.pbs_mom \
+	contrib/init.d/debian.pbs_sched \
+	contrib/init.d/debian.pbs_server \
+	contrib/init.d/pbs_mom \
+	contrib/init.d/pbs_sched \
+	contrib/init.d/pbs_server \
+	contrib/init.d/suse.pbs_mom \
+	contrib/init.d/suse.pbs_sched \
+	contrib/init.d/suse.pbs_server \
+	contrib/pam_authuser.tar.gz \
+	contrib/pbstop \
+	contrib/pbsweb-lite-0.95.tar.gz \
+	contrib/pestat-1.0/Makefile \
+	contrib/pestat-1.0/pestat.c \
+	contrib/pestat-1.0/README \
+	contrib/qpeek \
+	contrib/qpool.gz \
+	contrib/README.pam_authuser \
+	contrib/README.pbs_ganglia_jobmonarch \
+	contrib/README.pbs_python \
+	contrib/README.pbstools \
+	contrib/README.pbstop \
+	contrib/README.pbs_weblite \
+	contrib/README.pestat \
+	contrib/README.qpeek
 
 bin_SCRIPTS = pbs-config
 
