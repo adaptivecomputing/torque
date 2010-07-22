@@ -6,6 +6,7 @@ EXTRA_DIST = CHANGELOG \
 	INSTALL.GNU \
 	PBS_License.txt \
 	README.array_changes \
+	README.coding_notes \
 	README.configure \
 	README.cygwin \
 	README.torque \
@@ -63,7 +64,7 @@ dist-hook:
 	  echo "Using distributed RPM spec file, not configured spec file"; \
 	  cp -p buildutils/torque.spec.dist $(distdir)/torque.spec; \
 	  missing=0; \
-	  for line in $$(cd $(srcdir); find contrib -type f | grep -v .svn); do \
+	  for line in $$(cd $(srcdir); find README* contrib -type f | grep -v .svn); do \
 	    if ! test -f $(distdir)/$$line;then missing=1; echo "******** ERROR: $$line missing from tarball ********" 1>&2;fi \
 	  done; \
 	  test $$missing = 1 && exit 1; \
