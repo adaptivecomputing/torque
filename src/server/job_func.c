@@ -783,7 +783,6 @@ job *job_clone(
    * make up new job file name, it is based on the new jobid
    */
 
-  strncpy(basename, pnewjob->ji_qs.ji_jobid, PBS_JOBBASE);
   snprintf(basename, PBS_JOBBASE, "%s-%d", oldid, taskid);
   free(oldid);
 
