@@ -1,12 +1,11 @@
-Coding Rules for TORQUE:
+CODING RULES FOR TORQUE
+=======================
 
 I) torque_socklen_t must be used instead of socklen_t to ensure portability
 II) O_Sync must be used instead of arch-specific O_SYNC or _FSYNC.  
   A. It is defined in svrfunc.h
   B. It is defined to 0 unless --enable-filesync is used.
-III) Creating new momarches is described in README.new-momarch.
-IV) Creating new attributes is described in README.new-attrs.
-V) Adding new files
+III) Adding new files
   A. New header files must be added to src/include/Makefile.am
   B. New directories must have a Makefile.am (even if mostly empty)
      1. configure.ac needs the Makefile listed in the AC_OUTPUT macro near the bottom
@@ -21,3 +20,105 @@ V) Adding new files
   D. Always run 'autoreconf -v -f -i' and 'make distcheck' after any additions
   E. 'svn status | grep ^/?' lists all new files that need to be added to svn control
      or svn:ignore
+
+
+
+
+HOW TO ADD NEW RESMOM ARCH
+==========================
+
+TORQUE is already highly portable and should build server and clients on any
+remotely POSIXish system (including cygwin).
+
+Unfortunately, pbs_mom needs intimate details of the OS for process management
+that go beyond POSIX specs.  These arch-specific changes are in a subdirectory
+in src/resmom/.
+
+Note that creating a new momarch is discouraged.  A few #ifdef's or run-time
+detection is more flexible and easier to maintain long-term.
+
+Here is the recipe for creating a new "momarch":
+
+1. Copy the most similar arch in src/resmom/ to a new directory and modify
+   the source files as required for the new arch.  
+2. Add this directory to DIST_SUBDIRS in src/resmom/Makefile.am.  
+3. Modify buildutils/pbs_mach_type to report your new momarch.
+4. Add the new src/resmom/<momarch>/Makefile.am to AC_OUTPUT() in configure.ac
+5. Create a new pbs_resources_<momarch> manpage in doc/man7/
+6. Add the new manpage to doc/Makefile.am
+7. Other changes to configure.ac may be required, ie, adding to $MOMLIBS
+8. Run 'autoreconf -vfi' to generate new autobuild files
+9. In a seperate objdir, run configure and 'make distcheck'.
+10. If all goes well, modify CHANGELOG and check in the changes (don't
+   forget to add the new momarch directory).
+
+
+
+HOW TO ADD NEW ATTRIBUTES
+=========================
+
+1) Define the string to ATTR_something in src/include/pbs_ifl.h.  There are
+   sections for the different types of attributes.  Node attributes are called
+   ATTR_NODE_*.
+
+     #define ATTR_foobarbaz "foo_bar_baz"
+
+   This is how clients and schedulers will refer to the attribute.
+
+
+2) Add the ATTR_something define to one of the following header files:
+   
+   src/include/qmgr_node_public.h
+   src/include/qmgr_node_readonly.h
+   src/include/qmgr_que_public.h
+   src/include/qmgr_que_readonly.h
+   src/include/qmgr_svr_public.h
+   src/include/qmgr_svr_readonly.h
+
+   Job attributes are excluded because qmgr doesn't deal with jobs.  "public"
+   header files are for 'set'-able attributes.  The "readonly" header files are
+   only shown with 'list server' in qmgr.  The distinction is very important
+   considering the 'print set' should give you valid input to qmgr.  If a readonly
+   attribute is printed, then a restore of the serverdb would fail.
+
+
+3) For server attributes, add the enum name SRV_ATR_Foo to src/include/server.h.
+   For node attributes, add the enum name ND_ATR_Foo to src/include/pbs_nodes.h.
+   For job attributes, add the enum name JOB_ATR_Foo to src/include/jobs.h.
+   For queue attributes, there are 3 forms: QE_ATR_Foo for execution queues,
+    QR_ATR_Foo for routing queues, and QA_Foo for both types.  These are added to
+    src/include/queue.h.
+   In all cases, add them to the end just before the #include.
+
+   This is how pbs_server and pbs_mom will refer to the attribute. 
+
+
+4) This is the most complicated step because this is the real work.
+   Create a new attr structure in src/server/{que,srv,job,node}_attr_def.c.
+   Use the others as a template.  Always add at the end before the #include.  The
+   position must match the position of the enums in step 3.
+
+  /* SRV_ATR_FooBarBaz */
+    {   ATTR_foobarbaz,		/* "foo_bar_baz" external name */
+        decode_str,		/* decode into machine form */
+        encode_str,		/* encode from machine to external form */
+        set_str,		/* set the value */
+        comp_str,		/* compare the value */
+        free_str,		/* free the attribute */
+        NULL_FUNC,		/* "at_action", function to call when changing the value */
+        NO_USER_SET,		/* permissions bitmask */
+        ATR_TYPE_ARST,		/* value type */
+        PARENT_TYPE_SERVER	/* attribute type */
+    },
+
+
+   For server attributes, the permissions must "READ_ONLY", "MGR_ONLY_SET", or
+   "NO_USER_SET".  If you choose "qmgr_svr_readonly.h" above, then use
+   "READ_ONLY".  Otherwise use "NO_USER_SET" to allow operators and managers, or
+   "MGR_ONLY_SET" to only allow managers.
+
+
+5) Add the new attr to doc/man7/pbs_server_attributes.7B.
+
+6) Note the change to CHANGELOG
+
