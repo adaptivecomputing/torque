@@ -9,6 +9,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       for job arrays (fixes conflict with some non-bash shells)
   n - fix build system so README.array_changes is included in tar.gz file made
       with "make dist"
+  n - fix build system so contrib/pbsweb-lite-0.95.tar.gz, contrib/qpool.gz
+      and contrib/README.pbstools are included the the tar.gz file made
+      with "make dist"
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges
