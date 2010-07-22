@@ -4924,7 +4924,7 @@ void job_nodes(
 			}
 
     /* Get the port number for this host */
-    for (cp = portstr, portptr = portnumber, portcount = 0; portcount < (MAXPORTLEN+!) && *cp; cp++, portptr++, portcount++)
+    for (cp = portstr, portptr = portnumber, portcount = 0; portcount < (MAXPORTLEN+1) && *cp; cp++, portptr++, portcount++)
       {
       if (*cp == '+')
         {
@@ -5311,13 +5311,6 @@ void start_exec(
 
 		/* serial job */
 
-		int SC;
-		int RC;
-
-		int Count;
-
-		pjobexec_t *TJE;
-
 		/* single node job - no sisters */
 
 		ports[0] = -1;
@@ -5351,7 +5344,7 @@ void start_exec(
         sprintf(log_buffer,"%s:job %s reported failure to start of %d node(s)",
           id,
           pjob->ji_qs.ji_jobid,
-          log_buffer);
+          nodenum);
 
         LOG_EVENT( PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
