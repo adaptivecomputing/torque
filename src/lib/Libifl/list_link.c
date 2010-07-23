@@ -346,6 +346,21 @@ is_linked(list_link *head, list_link *entry)
 
 
 
+int is_link_initialized(
+    
+  list_link *head)
+
+  {
+  if ((head->ll_prior != head) ||
+      (head->ll_next  != head))
+    return(1);
+
+  return(0);
+  }
+
+
+
+
 /*
  * The following routines are replaced by in-line code with the
  * GET_NEXT / GET_PRIOR macroes when NDEBUG is defined, see list_link.h

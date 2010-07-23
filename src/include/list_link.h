@@ -129,6 +129,7 @@ extern void append_link(tlist_head *head, list_link *new, void *pnewobj);
 extern void delete_link(list_link *old);
 extern void swap_link(list_link *, list_link *);
 extern int  is_linked(list_link *head, list_link *old);
+extern int  is_link_initialized(list_link *);
 extern void list_move(tlist_head *old, tlist_head *new);
 
 #ifndef NDEBUG

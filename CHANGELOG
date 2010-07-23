@@ -12,6 +12,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   n - fix build system so contrib/pbsweb-lite-0.95.tar.gz, contrib/qpool.gz
       and contrib/README.pbstools are included the the tar.gz file made
       with "make dist"
+  c - do not attempt to reinsert a job into ji_jobs_array_sum (bugzilla 73)
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges
