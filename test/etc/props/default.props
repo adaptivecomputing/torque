@@ -22,7 +22,7 @@ mom.home.dir               = /usr/test/torque/mom_priv
 mom.host.port              = 15003
 mom.host.list.file         = /tmp/mom.hostlist
 mom.single.host.list.file  = /tmp/mom.single.hostlist
-mom.version                = 2.5.0
+mom.version                = 2.6.0
 mom.communication.model    = rpp
 mom.server.update.interval = 45
 mom.check.poll.time        = 45
@@ -62,7 +62,7 @@ mom.config.loglevel            = 5
 mom.config.down_on_error       = 0
 mom.config.rcpcmd              = /usr/bin/scp -rpB
 mom.config.tape8mm             = 1
-mom.config.version             = 2.5.0
+mom.config.version             = 2.6.0
 
 tmp.mom.config.status_update_time = 50
 tmp.mom.config.check_poll_time    = 50
