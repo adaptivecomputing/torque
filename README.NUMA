@@ -1,0 +1,31 @@
+To set up pbs_mom and pbs_server to manage a NUMA system, you need to:
+
+1. configure with --enable-numa-support
+2. create the file mom_priv/mom.layout
+3. alter server_priv/nodes.
+
+#2 mom.layout:
+cpus=0-3  mem=0 
+cpus=4-7  mem=1
+cpus=8-11 mem=2
+
+cpus= should be the index of the cpus for that nodeboard or entity, and these are the cpus that will be considered part of that numa node. 
+
+mem= should be the index of the memory nodes that are associated with that nodeboard or entity, and the memory from these will be considered part of that numa node.
+
+The mom will then report each of these numa nodes to the server. 
+
+NOTE: currently, processors are reported for the entire system, so numbers like cpu usage don't reflect an individual nodeboard but instead the entire system.
+
+#3 nodes:
+
+the numa node will need to be marked as one for the server. It should have the additional attribute defined:
+
+num_numa_nodes=X
+
+X should be the number of different numa nodes that will be reported by that mom. For the above mom.layout example, this would be num_numa_nodes=3.
+
+np should be set for this node, and it should be the total number of cores on the machine, or the sum of those on all the numa nodes. In the above example, this would be 12.
+
+Once this is set up correctly, the mom will report the numa nodes to the server, and the numa nodes will appear in pbs_nodes output as though they were different nodes. TORQUE has the capability to execute jobs on this kind of system, but as with any other, a proper scheduler will be needed to make the most of things.
+

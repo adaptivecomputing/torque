@@ -2,13 +2,15 @@ include $(top_srcdir)/buildutils/config.mk
 
 SUBDIRS = src doc
 
-EXTRA_DIST = CHANGELOG \
+EXTRA_DIST = autogen.sh \
+  CHANGELOG \
 	INSTALL.GNU \
 	PBS_License.txt \
 	README.array_changes \
 	README.coding_notes \
 	README.configure \
 	README.cygwin \
+	README.NUMA \
 	README.torque \
 	Release_Notes \
 	torque.setup \
@@ -24,6 +26,7 @@ EXTRA_DIST = CHANGELOG \
 	contrib/AddPrivileges \
 	contrib/blcr/checkpoint_script \
 	contrib/blcr/restart_script \
+	contrib/diag/tdiag.sh \
 	contrib/init.d/debian.pbs_mom \
 	contrib/init.d/debian.pbs_sched \
 	contrib/init.d/debian.pbs_server \
