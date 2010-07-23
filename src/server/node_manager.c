@@ -91,6 +91,7 @@
 #include <netinet/in.h>
 #include <stdarg.h>
 #include <assert.h>
+#include <sys/socket.h>
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
@@ -1930,7 +1931,7 @@ void is_request(
     else if (allow_any_mom)                                           
       {                                                               
         {                                                             
-          hp = gethostbyaddr(&ipaddr, sizeof(ipaddr), AF_INET);       
+          hp = gethostbyaddr((void *)&ipaddr, sizeof(ipaddr), AF_INET);       
           if(hp != NULL)                                              
             {                                                         
             strncpy(nodename, hp->h_name, PBS_MAXHOSTNAME);           
