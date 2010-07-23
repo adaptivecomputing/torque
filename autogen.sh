@@ -2,5 +2,5 @@
 # autogen.sh
 # 
 
-libtoolize -c -f && aclocal && autoconf && autoheader && automake -a -c
+libtoolize -c -f && aclocal && autoconf && autoheader && automake -a -c -f
 

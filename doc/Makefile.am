@@ -58,39 +58,71 @@ nodist_man1_MANS = man1/qalter.1 man1/qdel.1 man1/qhold.1 man1/qmove.1 \
 		   man1/pbs.1 man1/pbsdsh.1 man1/nqs2pbs.1 man1/basl2c.1 \
 		   man1/xpbs.1 man1/xpbsmon.1 man1/qmgr.1 man1/qchkpt.1
 
-nodist_man3_MANS = man3/pbs_alterjob.3 man3/pbs_connect.3 man3/pbs_default.3 \
-		   man3/pbs_deljob.3 man3/pbs_disconnect.3 \
-		   man3/pbs_geterrmsg.3 man3/pbs_holdjob.3 man3/pbs_locate.3 \
-		   man3/pbs_manager.3 man3/pbs_movejob.3 man3/pbs_msgjob.3 \
-		   man3/pbs_orderjob.3 man3/pbs_rerunjob.3 \
-		   man3/pbs_rescquery.3 man3/pbs_rescreserve.3 \
-		   man3/pbs_rlsjob.3 man3/pbs_runjob.3 man3/pbs_selectjob.3 \
-		   man3/pbs_selstat.3 man3/pbs_sigjob.3 man3/pbs_stagein.3 \
-		   man3/pbs_statjob.3 man3/pbs_statnode.3 man3/pbs_statque.3 \
-		   man3/pbs_statserver.3 man3/pbs_submit.3 man3/pbs_terminate.3
+nodist_man3_MANS = man3/pbs_alterjob.3 \
+			    man3/pbs_connect.3 \
+			    man3/pbs_default.3 \
+	 		    man3/pbs_deljob.3 \
+			    man3/pbs_disconnect.3 \
+	 		    man3/pbs_geterrmsg.3 \
+			    man3/pbs_holdjob.3 \
+			    man3/pbs_locate.3 \
+	 		    man3/pbs_manager.3 \
+			    man3/pbs_movejob.3 \
+			    man3/pbs_msgjob.3 \
+	 		    man3/pbs_orderjob.3 \
+			    man3/pbs_rerunjob.3 \
+	 		    man3/pbs_rescquery.3 \
+			    man3/pbs_rescreserve.3 \
+	 		    man3/pbs_rlsjob.3 \
+			    man3/pbs_runjob.3 \
+			    man3/pbs_selectjob.3 \
+	 		    man3/pbs_selstat.3 \
+			    man3/pbs_sigjob.3 \
+			    man3/pbs_stagein.3 \
+	 		    man3/pbs_statjob.3 \
+			    man3/pbs_statnode.3 \
+			    man3/pbs_statque.3 \
+	 		    man3/pbs_statserver.3 \
+			    man3/pbs_submit.3 \
+			    man3/pbs_terminate.3
 
 dist_man3_MANS = man3/rpp.3 man3/tm.3
 
-nodist_man7_MANS = man7/pbs_job_attributes.7 man7/pbs_queue_attributes.7 \
-		   man7/pbs_server_attributes.7 \
-		   man7/pbs_resources_aix4.7 man7/pbs_resources_digitalunix.7 \
-		   man7/pbs_resources_aix5.7 man7/pbs_resources_darwin.7 \
-		   man7/pbs_resources_freebsd.7 man7/pbs_resources_fujitsu.7 \
-		   man7/pbs_resources_hpux10.7 man7/pbs_resources_irix5.7 \
-		   man7/pbs_resources_hpux11.7 \
-		   man7/pbs_resources_irix5.7 \
-		   man7/pbs_resources_irix6.7 man7/pbs_resources_irix6array.7 \
-		   man7/pbs_resources_linux.7 man7/pbs_resources_netbsd.7 \
-		   man7/pbs_resources_solaris5.7 man7/pbs_resources_solaris7.7 \
-		   man7/pbs_resources_sp2.7 man7/pbs_resources_sunos4.7 \
-		   man7/pbs_resources_unicos8.7 man7/pbs_resources_unicosmk2.7
+nodist_man7_MANS = man7/pbs_job_attributes.7 \
+			    man7/pbs_queue_attributes.7 \
+	 		    man7/pbs_server_attributes.7 \
+	 		    man7/pbs_resources_aix4.7 \
+	 		    man7/pbs_resources_aix5.7 \
+			    man7/pbs_resources_darwin.7 \
+			    man7/pbs_resources_digitalunix.7 \
+	 		    man7/pbs_resources_freebsd.7 \
+			    man7/pbs_resources_fujitsu.7 \
+	 		    man7/pbs_resources_hpux10.7 \
+	 		    man7/pbs_resources_hpux11.7 \
+			    man7/pbs_resources_irix5.7 \
+	 		    man7/pbs_resources_irix6.7 \
+			    man7/pbs_resources_irix6array.7 \
+	 		    man7/pbs_resources_linux.7 \
+			    man7/pbs_resources_netbsd.7 \
+	 		    man7/pbs_resources_solaris5.7 \
+			    man7/pbs_resources_solaris7.7 \
+	 		    man7/pbs_resources_sp2.7 \
+			    man7/pbs_resources_sunos4.7 \
+	 		    man7/pbs_resources_unicos8.7 \
+			    man7/pbs_resources_unicosmk2.7
 
-nodist_man8_MANS = man8/pbs_mom.8 man8/pbsnodes.8 \
-		   man8/pbs_sched_basl.8 man8/pbs_sched_cc.8 \
-		   man8/pbs_sched_tcl.8 man8/pbs_server.8 \
-		   man8/qdisable.8 man8/qenable.8 \
-		   man8/qrun.8 man8/qstart.8 man8/qstop.8 \
-		   man8/qterm.8
+nodist_man8_MANS = man8/pbs_mom.8 \
+									 man8/pbsnodes.8 \
+									 man8/pbs_sched_basl.8 \
+									 man8/pbs_sched_cc.8 \
+									 man8/pbs_sched_tcl.8 \
+									 man8/pbs_server.8 \
+									 man8/qdisable.8 \
+									 man8/qenable.8 \
+									 man8/qrun.8 \
+									 man8/qstart.8 \
+									 man8/qstop.8 \
+									 man8/qterm.8
 
 CLEANFILES = $(nodist_man1_MANS) $(nodist_man3_MANS) $(nodist_man7_MANS) \
 	     $(nodist_man8_MANS)
