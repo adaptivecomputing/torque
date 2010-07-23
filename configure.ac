@@ -983,7 +983,7 @@ torque_cv_have_cmsg="no"
     [torque_cv_have_cmsg="yes"])
 AC_MSG_RESULT([$torque_cv_have_cmsg])
 
-AC_MSG_CHECKING([if enabling Unix Domain socket supprt])
+AC_MSG_CHECKING([if enabling Unix Domain socket support])
 ENABLE_UNIX_SOCKETS=$torque_cv_have_cmsg
 AC_ARG_ENABLE(unixsockets, [
   --enable-unixsockets    enable the use of Unix Domain sockets for authentication.],
