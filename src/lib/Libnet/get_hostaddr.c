@@ -163,6 +163,8 @@ pbs_net_t get_hostaddr(
     /* otherwise proceed with just the parent hostname so 
      * it can be resolved */
     }
+  else
+    hp = gethostbyname(hostname);
 #else
   hp = gethostbyname(hostname);
 #endif /* NUMA_SUPPORT */
