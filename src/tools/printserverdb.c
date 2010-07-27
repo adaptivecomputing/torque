@@ -30,7 +30,7 @@ void prt_server_struct(
   printf("jobidnumber:\t\t%d\n",
          pserver->sv_qs.sv_jobidnumber);
 
-  printf("sametm:\t\t%ld\n",
+  printf("savetm:\t\t%ld\n",
          (long)pserver->sv_qs.sv_savetm);
 
   return;
