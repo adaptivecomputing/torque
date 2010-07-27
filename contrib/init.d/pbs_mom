@@ -52,7 +52,7 @@ case "$1" in
 	start)
 		echo -n "Starting TORQUE Mom: "
                 # ulimit -c unlimited  # Uncomment this to preserve core files
-		daemon $PBS_DAEMON $args
+		daemon $PBS_DAEMON $args -d $PBS_HOME
 		RET=$?
 		touch /var/lock/subsys/pbs_mom
    		echo
