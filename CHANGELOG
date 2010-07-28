@@ -13,6 +13,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       and contrib/README.pbstools are included the the tar.gz file made
       with "make dist"
   c - do not attempt to reinsert a job into ji_jobs_array_sum (bugzilla 73)
+  e - Modified buildutils/pbs_mkdirs.in to create server_priv/nodes file
+      at install time. The file only shows examples and a link to the
+      TORQUE documentation. This enhancement was first committed to trunk.
+
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges
