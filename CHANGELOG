@@ -7,6 +7,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       less world.
   c - Avoid using uninitialized resources when configured with 
       --enable-numa-support
+  e - Modified buildutils/pbs_mkdirs.in to create server_priv/nodes file
+      at install time. The file only shows examples and a link to the
+      TORQUE documentation.
 
 2.5.1
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
