@@ -1705,8 +1705,11 @@ void init_abort_jobs(
 
   DIR  *dir;
   int            i;
+  int            rc;
+#ifndef NUMA_SUPPORT
   int            j;
-  int            sisters, rc;
+  int            sisters;
+#endif /* ndef NUMA_SUPPORT */
 
   struct dirent *pdirent;
   job  *pj;

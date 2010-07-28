@@ -5916,9 +5916,12 @@ int job_over_limit(
 
   struct resource_def *rd;
   unsigned long total;
-  int  index, i;
+  int  index;
   unsigned long limit;
   char  *units;
+#ifndef NUMA_SUPPORT
+  int  i;
+#endif /* ndef NUMA_SUPPORT */
 
   if (mom_over_limit(pjob))
     {
