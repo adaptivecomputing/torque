@@ -1129,7 +1129,7 @@ int InitUserEnv(
     log_ext(-1, id, log_buffer, LOG_DEBUG);
     }
   
-  vstrs = pjob->ji_wattr[(int)JOB_ATR_variables].at_val.at_arst;
+  vstrs = pjob->ji_wattr[JOB_ATR_variables].at_val.at_arst;
   
   vtable.v_bsize = ebsize + EXTRA_VARIABLE_SPACE +
     							   (vstrs != NULL ? (vstrs->as_next - vstrs->as_buf) : 0);
@@ -1220,7 +1220,7 @@ int InitUserEnv(
   
   bld_env_variables( &vtable,
     				 variables_else[tveJobName],
-    				 pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
+    				 pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str);
   
   /* PBS_JOBID */
   
@@ -1230,7 +1230,7 @@ int InitUserEnv(
   
   bld_env_variables( &vtable,
     				 variables_else[tveQueue],
-    				 pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str);
+    				 pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str);
   
   /* SHELL */
   
@@ -1246,7 +1246,7 @@ int InitUserEnv(
   
   bld_env_variables( &vtable,
     				 variables_else[tveJobCookie],
-    				 pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str);
+    				 pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str);
   
   /* PBS_NODENUM */
   
@@ -1258,7 +1258,7 @@ int InitUserEnv(
   
   if (ptask != NULL)
       {
-      sprintf(buf, "%d", (int)ptask->ti_qs.ti_task);
+      sprintf(buf, "%d", ptask->ti_qs.ti_task);
   
       bld_env_variables(&vtable, variables_else[tveTaskNum], buf);
       }
@@ -1280,7 +1280,7 @@ int InitUserEnv(
   
   /* PBS_NNODES */
   
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
   
   prd = find_resc_def(svr_resc_def, "size", svr_resc_size);
   
@@ -1428,7 +1428,7 @@ int TMomFinalizeJob1(
 
 	/* did the job request nodes?  will need to setup node file */
 
-	pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+	pattr = &pjob->ji_wattr[JOB_ATR_resource];
 
 	prd = find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
 
@@ -2013,7 +2013,7 @@ int use_cpusets(
 		return(FALSE);
 
 	prd = find_resc_def(svr_resc_def,"procs_bitmap",svr_resc_size);
-	presc = find_resc_entry(&pjob->ji_wattr[(int)JOB_ATR_resource],prd);
+	presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],prd);
 
 	/* don't create a cpuset unless one was specifically requested */
 	if ((presc == NULL) ||
@@ -2888,7 +2888,7 @@ int TMomFinalizeChild(
 			}
 
 		presc = find_resc_entry(
-							&pjob->ji_wattr[(int)JOB_ATR_resource],
+							&pjob->ji_wattr[JOB_ATR_resource],
 							find_resc_def(svr_resc_def, "prologue", svr_resc_size));
 
 		if (presc != NULL)
@@ -4978,7 +4978,11 @@ void job_nodes(
 
 	pjob->ji_hosts[nhosts].hn_node = TM_ERROR_NODE;
 
+#ifdef NUMA_SUPPORT
+  pjob->ji_numnodes = 1;
+#else
 	pjob->ji_numnodes = nhosts;
+#endif /* NUMA_SUPPORT */
 
 	pjob->ji_numvnod  = nodenum;
 

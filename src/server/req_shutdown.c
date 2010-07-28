@@ -147,7 +147,7 @@ void svr_shutdown(
 
   /* Lets start by logging shutdown and saving everything */
 
-  state = &server.sv_attr[(int)SRV_ATR_State].at_val.at_long;
+  state = &server.sv_attr[SRV_ATR_State].at_val.at_long;
 
   strcpy(log_buffer, msg_shutdown_start);
 
@@ -220,7 +220,7 @@ void svr_shutdown(
       {
       pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART | JOB_SVFLG_HASRUN;
 
-      pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
+      pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
 
       if ((pattr->at_flags & ATR_VFLAG_SET) &&
           ((csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
@@ -334,7 +334,7 @@ static int shutdown_checkpoint(
 
   temp.at_flags = ATR_VFLAG_SET;
 
-  temp.at_type  = job_attr_def[(int)JOB_ATR_hold].at_type;
+  temp.at_type  = job_attr_def[JOB_ATR_hold].at_type;
   temp.at_val.at_long = HOLD_s;
 
   phold->rq_perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
@@ -343,10 +343,10 @@ static int shutdown_checkpoint(
 
   CLEAR_HEAD(phold->rq_ind.rq_hold.rq_orig.rq_attr);
 
-  if (job_attr_def[(int)JOB_ATR_hold].at_encode(
+  if (job_attr_def[JOB_ATR_hold].at_encode(
         &temp,
         &phold->rq_ind.rq_hold.rq_orig.rq_attr,
-        job_attr_def[(int)JOB_ATR_hold].at_name,
+        job_attr_def[JOB_ATR_hold].at_name,
         NULL,
         ATR_ENCODE_CLIENT) < 0)
     {
@@ -441,9 +441,9 @@ static void rerun_or_kill(
   char *text)  /* I */
 
   {
-  long server_state = server.sv_attr[(int)SRV_ATR_State].at_val.at_long;
+  long server_state = server.sv_attr[SRV_ATR_State].at_val.at_long;
 
-  if (pjob->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long)
+  if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long)
     {
     /* job is rerunable, mark it to be requeued */
 

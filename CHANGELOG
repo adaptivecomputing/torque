@@ -5,6 +5,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       install claiming it could not overwrite man7/pbs_resources_irix5.7 
   e - Addeded autogen.sh go make life easier in a post Makefile.in
       less world.
+  c - Avoid using uninitialized resources when configured with 
+      --enable-numa-support
 
 2.5.1
   e - Allow the nodes file to use the syntax node[0-100] in the name to 

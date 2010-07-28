@@ -791,14 +791,14 @@ int send_sisters(
       log_buffer);
     }
 
-  if (!(pjob->ji_wattr[(int)JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+  if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
     {
     /* cookie not set - return FAILURE */
 
     return(0);
     }
 
-  cookie = pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str;
+  cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
 
   num = 0;
 
@@ -2271,9 +2271,9 @@ void im_request(
       pjob->ji_qs.ji_state    = JOB_STATE_TRANSIT;
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_PRERUN;
       pjob->ji_qs.ji_stime    = time_now;
-      pjob->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long = (long)time_now;
+      pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long = (long)time_now;
 
-      pjob->ji_wattr[(int)JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
+      pjob->ji_wattr[JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
 
       /* check_pwd is setting up ji_un as type MOM
       pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
@@ -2452,7 +2452,7 @@ void im_request(
 
   /* check cookie */
 
-  if (!(pjob->ji_wattr[(int)JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+  if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
     {
     if (LOGLEVEL >= 0)
       {
@@ -2473,7 +2473,7 @@ void im_request(
     goto done;
     }
 
-  oreo = pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str;
+  oreo = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
 
   if (strcmp(oreo, cookie) != 0)
     {

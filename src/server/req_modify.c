@@ -291,7 +291,7 @@ int modify_job(
 
       /* remove checkpoint restart file if there is one */
       
-      if (pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
+      if (pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
         {
         cleanup_restart_file(pjob);
         }
@@ -337,7 +337,7 @@ int modify_job(
 
       /* NOTE:  only explicitly specified job attributes are routed down to MOM */
 
-      if (i == (int)JOB_ATR_resource)
+      if (i == JOB_ATR_resource)
         {
         /* is the specified resource modifiable while */
         /* the job is running                         */
@@ -705,7 +705,7 @@ int modify_job_attr(
   {
   int      allow_unkn;
   long      i;
-  attribute  newattr[(int)JOB_ATR_LAST];
+  attribute  newattr[JOB_ATR_LAST];
   attribute *pattr;
   int      rc;
 

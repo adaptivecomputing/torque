@@ -1340,7 +1340,7 @@ int depend_on_term(
   int        shouldkill = 0;
   int        type;
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_depend];
+  pattr = &pjob->ji_wattr[JOB_ATR_depend];
 
   pdep = (struct depend *)GET_NEXT(pattr->at_val.at_list);
 
@@ -2043,7 +2043,7 @@ static int send_depend_req(
   for (i = 0;i < PBS_MAXUSER;++i)
     {
     preq->rq_ind.rq_register.rq_owner[i] =
-      pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str[i];
+      pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str[i];
 
     if (preq->rq_ind.rq_register.rq_owner[i] == '@')
       break;

@@ -417,8 +417,8 @@ int job_abt(
     svr_mailowner(pjob, MAIL_ABORT, MAIL_NORMAL, text);
 
     if ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) &&
-        ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-         pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long))
+        ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+         pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long))
       {
       /* interactive and not yet running... send a note to qsub */
 
@@ -441,12 +441,12 @@ int job_abt(
         {
         /* notify creator that job is exited */
 
-        pjob->ji_wattr[(int)JOB_ATR_state].at_val.at_char = 'E';
+        pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'E';
 
         issue_track(pjob);
         }
 
-      if (pjob->ji_wattr[(int)JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+      if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
         {
         depend_on_term(pjob);
         }
@@ -485,7 +485,7 @@ int job_abt(
       issue_track(pjob);
       }
 
-    if (pjob->ji_wattr[(int)JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+    if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
       {
       depend_on_term(pjob);
       }

@@ -1803,6 +1803,7 @@ void init_abort_jobs(
      * Note: this only works after the job_nodes() call above.
      */
 
+#ifndef NUMA_SUPPORT 
     for (j = 0;j < pj->ji_numnodes;j++)
       {
       if (LOGLEVEL >= 6)
@@ -1820,6 +1821,7 @@ void init_abort_jobs(
 
       addclient(pj->ji_hosts[j].hn_host);
       }  /* END for (j) */
+#endif /* ndef NUMA_SUPPORT */
 
     if (LOGLEVEL >= 4)
       {
@@ -1921,6 +1923,7 @@ void init_abort_jobs(
         pj->ji_qs.ji_un.ji_momt.ji_exitstat = JOB_EXEC_INITABT;
         }
 
+#ifndef NUMA_SUPPORT 
       sisters = pj->ji_numnodes - 1;
 
       /*
@@ -1937,6 +1940,7 @@ void init_abort_jobs(
 
         continue;
         }
+#endif /* ndef NUMA_SUPPORT */
 
       /* If mom was initialized with a -r any running processes have already
          been killed. We set substate to JOB_SUBSTATE_NOTERM_REQUE so scan_for_exiting
@@ -1977,10 +1981,12 @@ void init_abort_jobs(
           log_buffer);
         }
 
+#ifndef NUMA_SUPPORT 
       sisters = pj->ji_numnodes - 1;
 
       if (sisters > 0)
         pj->ji_resources = (noderes *)calloc(sisters, sizeof(noderes));
+#endif /* ndef NUMA_SUPPORT */
 
       if (mom_do_poll(pj) && (recover == JOB_RECOV_RUNNING))
         append_link(&mom_polljobs, &pj->ji_jobque, pj);
