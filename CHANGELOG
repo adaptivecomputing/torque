@@ -16,6 +16,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Modified buildutils/pbs_mkdirs.in to create server_priv/nodes file
       at install time. The file only shows examples and a link to the
       TORQUE documentation. This enhancement was first committed to trunk.
+  c - fix pbs_server crash from invalid qsub -t argument
 
 
 2.5.1
