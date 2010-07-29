@@ -10,6 +10,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Modified buildutils/pbs_mkdirs.in to create server_priv/nodes file
       at install time. The file only shows examples and a link to the
       TORQUE documentation.
+      
+2.5.2
+    c - fix pbs_server crash from invalid qsub -t argument
+      
 
 2.5.1
   e - Allow the nodes file to use the syntax node[0-100] in the name to 

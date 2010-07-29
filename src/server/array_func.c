@@ -434,13 +434,12 @@ int array_delete(job_array *pa)
   /* first thing to do is take this out of the servers list of all arrays */
   delete_link(&pa->all_arrays);
 
+
+  /* delete the on disk copy of the struct */
+
   strcpy(path, path_arrays);
   strcat(path, pa->ai_qs.fileprefix);
   strcat(path, ARRAY_FILE_SUFFIX);
-
-
-
-  /* delete the on disk copy of the struct */
 
   if (unlink(path))
     {
@@ -643,7 +642,6 @@ int setup_array_struct(job *pjob)
 
   if (bad_token_count > 0)
     {
-    job_purge(pjob);
     array_delete(pa);
     return 2;
     }
