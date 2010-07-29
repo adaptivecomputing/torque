@@ -1504,6 +1504,13 @@ int setup_numa_nodes(
   if (pnode == NULL)
     return(-1);
 
+  /* if this isn't a numa node, return */
+  if ((pnode->num_numa_nodes == 0) &&
+      (pnode->numa_str == NULL))
+    {
+    return(0);
+    }
+
   if (pnode->numa_str != NULL)
     {
     np_ptr = strtok(pnode->numa_str,delim);

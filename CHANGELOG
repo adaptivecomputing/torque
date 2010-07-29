@@ -10,6 +10,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Modified buildutils/pbs_mkdirs.in to create server_priv/nodes file
       at install time. The file only shows examples and a link to the
       TORQUE documentation.
+  c - do not attempt to add numa nodes to non-numa nodes
       
 2.5.2
   b - remove square brackets [] from job and default stdout/stderr filenames 
