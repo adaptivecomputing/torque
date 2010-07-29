@@ -448,7 +448,6 @@ int array_delete(job_array *pa)
     }
 
 
-
   /* clear array request linked list */
 
   for (rn = (array_request_node*)GET_NEXT(pa->request_tokens);

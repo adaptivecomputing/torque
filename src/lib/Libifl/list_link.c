@@ -344,8 +344,11 @@ is_linked(list_link *head, list_link *entry)
   }
 
 
-
-
+/*
+ * returns 1 if the link points to something other than itself, 0 otherwise
+ * (links that have been cleared with the CLEAR_LINK macro will return 0)
+ *
+ */
 int is_link_initialized(
     
   list_link *head)
@@ -357,8 +360,6 @@ int is_link_initialized(
 
   return(0);
   }
-
-
 
 
 /*

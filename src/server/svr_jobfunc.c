@@ -371,7 +371,7 @@ int svr_enquejob(
 
       /* only link if it isn't already inserted. routing queues, 
        * remapping, etc. can mean it was already inserted */
-      if (is_link_initialized(&pjob->ji_jobs_array_sum) == FALSE)
+      if (!is_link_initialized(&pjob->ji_jobs_array_sum))
         {
         insert_link(&pjcur->ji_jobs_array_sum, &pjob->ji_jobs_array_sum,
           pjob,LINK_INSET_AFTER);
