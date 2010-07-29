@@ -12,7 +12,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       TORQUE documentation.
       
 2.5.2
-    c - fix pbs_server crash from invalid qsub -t argument
+  b - remove square brackets [] from job and default stdout/stderr filenames 
+      for job arrays (fixes conflict with some non-bash shells)
+  c - do not attempt to reinsert a job into ji_jobs_array_sum (bugzilla 73)
+  c - fix pbs_server crash from invalid qsub -t argument
       
 
 2.5.1
