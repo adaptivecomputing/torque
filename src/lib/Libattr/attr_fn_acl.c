@@ -501,7 +501,7 @@ static int set_allacl(struct attribute *attr, struct attribute *new, enum batch_
         /* need more pointers */
 
         j = 3 * j / 2;  /* allocate extra     */
-        need = (int)sizeof(struct array_strings) + (j - 1) * sizeof(char *);
+        need = sizeof(struct array_strings) + (j - 1) * sizeof(char *);
         tmppas = (struct array_strings *)realloc((char *)pas, (size_t)need);
 
         if (tmppas == (struct array_strings *)0)
@@ -549,7 +549,7 @@ static int set_allacl(struct attribute *attr, struct attribute *new, enum batch_
           where = pas->as_next;
           }
 
-        (void)strcpy(where, newpas->as_string[i]);
+        strcpy(where, newpas->as_string[i]);
         pas->as_string[j] = where;
         pas->as_usedptr++;
         pas->as_next += offset;
@@ -566,7 +566,7 @@ static int set_allacl(struct attribute *attr, struct attribute *new, enum batch_
           if (!strcmp(pas->as_string[i], newpas->as_string[j]))
             {
             /* compact buffer */
-            nsize = (int)strlen(pas->as_string[i]) + 1;
+            nsize = strlen(pas->as_string[i]) + 1;
             pc = pas->as_string[i] + nsize;
             need = pas->as_next - pc;
             memmove(pas->as_string[i], pc, (size_t)need);

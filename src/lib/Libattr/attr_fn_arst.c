@@ -569,7 +569,7 @@ int set_arst(
       return(PBSE_INTERNAL);
       }
 
-    need = (int)sizeof(struct array_strings) + (j - 1) * sizeof(char *);
+    need = sizeof(struct array_strings) + (j - 1) * sizeof(char *);
 
     pas = (struct array_strings *)malloc((size_t)need);
 
