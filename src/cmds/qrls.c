@@ -195,7 +195,7 @@ int main(
 
   if (errflg || optind >= argc)
     {
-    static char usage[] = "usage: qrls [-h {uos}] job_identifier...\n";
+    static char usage[] = "usage: qrls [-h {uos}] [-t array_range] job_identifier...\n";
 
     fprintf(stderr,"%s", usage);
 

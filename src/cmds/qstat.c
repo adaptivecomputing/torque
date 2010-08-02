@@ -2440,7 +2440,8 @@ int main(
                           qstat [-a|-i|-r|-e] [-u user] [-n [-1]] [-s] [-t] [-G|-M] [-R] [job_id... | destination...]\n\
                           qstat -Q [-f [-1]] [-W site_specific] [ destination... ]\n\
                           qstat -q [-G|-M] [ destination... ]\n\
-                          qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n";
+                          qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n\
+                          qstat -t\n";
 
     fprintf(stderr,"%s", usage);
 

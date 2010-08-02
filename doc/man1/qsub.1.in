@@ -85,7 +85,8 @@ qsub [\-a date_time] [\-A account_string] [\-b secs] [\-c checkpoint_options]
 [\-C directive_prefix]
 [\-d path] [\-D path] [\-e path] [\-f] [\-h] [\-I] [\-j join] [\-k keep] [\-l resource_list]
 [\-m mail_options] [\-M user_list] [\-N name] [\-o path] 
-[\-p priority] [\-P proxy_username[:group]]  [\-q destination] [\-r c] [\-S path_list] [\-t num_jobs]
+[\-p priority] [\-P proxy_username[:group]]  [\-q destination] [\-r c]
+[\-S path_list] [\-t array_request]
 [\-T prologue/epilogue script_name] [\-u user_list] [\-v variable_list] [\-V]
 [\-w] path [\-W additional_attributes]
 [\-x] [\-X] [\-z]
@@ -800,6 +801,19 @@ The
 argument is an integer id or a range of integers. Multiple ids
 or id ranges can be combined in a comma delimted list. Examples :
 \-t 1-100 or \-t 1,10,50-100
+.IP
+An optional slot limit can be specified to limit the amount of jobs that can run
+concurrently in the job array. The default value is unlimited. The slot limit
+must be the last thing specified in the array_request and is delimited from the
+array by a percent sign (%).
+.IP
+qsub script.sh -t 0-299%5
+.IP
+This sets the slot limit to 5. Only 5 jobs from this array can run at the same
+time.
+.IP
+Note: You can use qalter to modify slot limits on an array. The server parameter
+max_slot_limit can be used to set a global slot limit policy.
 .IP "\-T script_name" 8
 Allows for per job prologue and epilogue scripts. The full script name will be
 prologue.[name] or epilogue.[name]. For the job submission, only request
