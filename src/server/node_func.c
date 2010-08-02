@@ -1501,6 +1501,12 @@ int setup_numa_nodes(
 
   char           *id = "setup_numa_nodes";
 
+  struct prop    *pdest;
+  struct prop   **plink;
+
+  struct array_strings *sub;
+  struct array_strings *main_node;
+
   if (pnode == NULL)
     return(-1);
 
@@ -1559,12 +1565,51 @@ int setup_numa_nodes(
         }
       }
 
+    /* copy features/properties */
+    if (pnode->nd_prop != NULL)
+      {
+      int need;
+
+      main_node = pnode->nd_prop;
+     
+      /* allocate the properties for the numa node */
+      need = sizeof(struct array_strings) + main_node->as_npointers - 1;
+      pn->nd_prop = (struct array_strings *)malloc(need);
+      sub  = pn->nd_prop;
+
+      /* copy simple values */
+      sub->as_npointers = main_node->as_npointers;
+      sub->as_usedptr   = main_node->as_usedptr;
+      sub->as_bufsize   = main_node->as_bufsize;
+
+      /* allocate the buffer */
+      sub->as_buf = (char *)malloc(sub->as_bufsize);
+      memcpy(sub->as_buf,main_node->as_buf,sub->as_bufsize);
+
+      /* set sub's offset to the same as main_nodes. Ugly and convoluted
+       * but it works. Same process below when setting sub's as_string 
+       * values */
+      sub->as_next= sub->as_buf + (main_node->as_next - main_node->as_buf);
+
+      *plink = pn->nd_first;
+
+      for (j = 0; j < pnode->nd_nprops; j++)
+        {
+        sub->as_string[j] = sub->as_buf + (main_node->as_string[j] - main_node->as_buf);
+
+        pdest = init_prop(sub->as_string[j]);
+
+        *plink = pdest;
+        plink = &pdest->next;
+        }
+      }
+
     /* add the node to the private tree */
     pnode->numa_nodes = AVL_insert(i,
         pn->nd_mom_port,
         pn,
         pnode->numa_nodes);
-    }
+    } /* END for each numa_node */
 
   return(0);
   } /* END setup_numa_nodes() */
