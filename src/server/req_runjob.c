@@ -724,10 +724,10 @@ int svr_startjob(
   /* if not already setup, transfer the control/script file basename */
   /* into an attribute accessible by MOM */
 
-  if (!(pjob->ji_wattr[(int)JOB_ATR_hashname].at_flags & ATR_VFLAG_SET))
+  if (!(pjob->ji_wattr[JOB_ATR_hashname].at_flags & ATR_VFLAG_SET))
     {
-    if (job_attr_def[(int)JOB_ATR_hashname].at_decode(
-          &pjob->ji_wattr[(int)JOB_ATR_hashname],
+    if (job_attr_def[JOB_ATR_hashname].at_decode(
+          &pjob->ji_wattr[JOB_ATR_hashname],
           NULL,
           NULL,
           pjob->ji_qs.ji_fileprefix))
@@ -743,7 +743,7 @@ int svr_startjob(
 
   rc = 0;
 
-  f = pjob->ji_wattr[(int)JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET;
+  f = pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET;
 
   if ((f != 0) &&
       ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART) ||
@@ -752,7 +752,7 @@ int svr_startjob(
     {
     rc = assign_hosts(    /* inside svr_startjob() */
            pjob,
-           pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
+           pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
            0,
            FailHost,
            EMsg);
@@ -781,7 +781,7 @@ int svr_startjob(
 
   /* NOTE: Copy the nodes into a temp string because strtok() is destructive. */
 
-  size = strlen(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+  size = strlen(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
   hostlist = malloc(size + 1);
 
@@ -794,7 +794,7 @@ int svr_startjob(
     {
     /* Get the first host. */
 
-    strncpy(hostlist, pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str, size);
+    strncpy(hostlist, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, size);
     hostlist[size] = '\0';
     nodestr = strtok(hostlist, "+");
     }
@@ -969,7 +969,7 @@ int svr_startjob(
 
   /* Next, are there files to be staged-in? */
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_stagein].at_flags & ATR_VFLAG_SET) &&
+  if ((pjob->ji_wattr[JOB_ATR_stagein].at_flags & ATR_VFLAG_SET) &&
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_STAGECMP))
     {
     /* yes, we do that first; then start the job */
@@ -1032,15 +1032,15 @@ static int svr_strtjob2(
   old_state = pjob->ji_qs.ji_state;
   old_subst = pjob->ji_qs.ji_substate;
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_start_time];
+  pattr = &pjob->ji_wattr[JOB_ATR_start_time];
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET) == 0)
+  if ((pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET) == 0)
     {
     pattr->at_val.at_long = time(NULL);
     pattr->at_flags |= ATR_VFLAG_SET;
     }
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_start_count];
+  pattr = &pjob->ji_wattr[JOB_ATR_start_count];
 
   pattr->at_val.at_long++;
   pattr->at_flags |= ATR_VFLAG_SET;
@@ -1051,18 +1051,18 @@ static int svr_strtjob2(
 
   /* if job start timeout attribute is set use its value */
   
-  if (((server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_flags & ATR_VFLAG_SET) != 0)
-          && (server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_val.at_long > 0))
+  if (((server.sv_attr[SRV_ATR_JobStartTimeout].at_flags & ATR_VFLAG_SET) != 0)
+          && (server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long > 0))
     {
-    DIS_tcp_settimeout(server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_val.at_long);
+    DIS_tcp_settimeout(server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long);
     }
 
   /* if job start timeout attribute is set use its value */
   
-  if (((server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_flags & ATR_VFLAG_SET) != 0)
-          && (server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_val.at_long > 0))
+  if (((server.sv_attr[SRV_ATR_JobStartTimeout].at_flags & ATR_VFLAG_SET) != 0)
+          && (server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long > 0))
     {
-    DIS_tcp_settimeout(server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_val.at_long);
+    DIS_tcp_settimeout(server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long);
     }
 
   if (send_job(
@@ -1075,12 +1075,12 @@ static int svr_strtjob2(
     {
     /* SUCCESS */
 
-    DIS_tcp_settimeout(server.sv_attr[(int)SRV_ATR_tcp_timeout].at_val.at_long);
+    DIS_tcp_settimeout(server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long);
 
     return(0);
     }
 
-  DIS_tcp_settimeout(server.sv_attr[(int)SRV_ATR_tcp_timeout].at_val.at_long);
+  DIS_tcp_settimeout(server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long);
 
   sprintf(tmpLine, "unable to run job, send to MOM '%s' failed",
 
@@ -1663,7 +1663,7 @@ static int assign_hosts(
     {
     /* Build our host list from what is in the job attrs */
     pres = find_resc_entry(
-             &pjob->ji_wattr[(int)JOB_ATR_resource],
+             &pjob->ji_wattr[JOB_ATR_resource],
              find_resc_def(svr_resc_def, "neednodes", svr_resc_size));
 
     if (pres != NULL)
@@ -1679,7 +1679,7 @@ static int assign_hosts(
       }
 
     pres = find_resc_entry(
-             &pjob->ji_wattr[(int)JOB_ATR_resource],
+             &pjob->ji_wattr[JOB_ATR_resource],
              find_resc_def(svr_resc_def, "procs", svr_resc_size));
 
     if (pres != NULL)
@@ -1703,10 +1703,10 @@ static int assign_hosts(
     {
     /* assign "local" */
 
-    if ((server.sv_attr[(int)SRV_ATR_DefNode].at_flags & ATR_VFLAG_SET) &&
-        (server.sv_attr[(int)SRV_ATR_DefNode].at_val.at_str != NULL))
+    if ((server.sv_attr[SRV_ATR_DefNode].at_flags & ATR_VFLAG_SET) &&
+        (server.sv_attr[SRV_ATR_DefNode].at_val.at_str != NULL))
       {
-      hosttoalloc = server.sv_attr[(int)SRV_ATR_DefNode].at_val.at_str;
+      hosttoalloc = server.sv_attr[SRV_ATR_DefNode].at_val.at_str;
       }
     else
       {
@@ -1714,12 +1714,12 @@ static int assign_hosts(
       momaddr = pbs_mom_addr;
       }
     }
-  else if ((server.sv_attr[(int)SRV_ATR_DefNode].at_flags & ATR_VFLAG_SET) &&
-           (server.sv_attr[(int)SRV_ATR_DefNode].at_val.at_str != 0))
+  else if ((server.sv_attr[SRV_ATR_DefNode].at_flags & ATR_VFLAG_SET) &&
+           (server.sv_attr[SRV_ATR_DefNode].at_val.at_str != 0))
     {
     /* alloc server default_node */
 
-    hosttoalloc = server.sv_attr[(int)SRV_ATR_DefNode].at_val.at_str;
+    hosttoalloc = server.sv_attr[SRV_ATR_DefNode].at_val.at_str;
     }
   else if (svr_tsnodes != 0)
     {
@@ -1759,20 +1759,20 @@ static int assign_hosts(
 
     if (set_exec_host != 0)
       {
-      job_attr_def[(int)JOB_ATR_exec_host].at_free(
-        &pjob->ji_wattr[(int)JOB_ATR_exec_host]);
+      job_attr_def[JOB_ATR_exec_host].at_free(
+        &pjob->ji_wattr[JOB_ATR_exec_host]);
 
-      job_attr_def[(int)JOB_ATR_exec_host].at_decode(
-        &pjob->ji_wattr[(int)JOB_ATR_exec_host],
+      job_attr_def[JOB_ATR_exec_host].at_decode(
+        &pjob->ji_wattr[JOB_ATR_exec_host],
         NULL,
         NULL,
         hosttoalloc);  /* O */
 
-      job_attr_def[(int)JOB_ATR_exec_port].at_free(
-        &pjob->ji_wattr[(int)JOB_ATR_exec_port]);
+      job_attr_def[JOB_ATR_exec_port].at_free(
+          &pjob->ji_wattr[JOB_ATR_exec_port]);
 
-      job_attr_def[(int)JOB_ATR_exec_port].at_decode(
-        &pjob->ji_wattr[(int)JOB_ATR_exec_port],
+      job_attr_def[JOB_ATR_exec_port].at_decode(
+        &pjob->ji_wattr[JOB_ATR_exec_port],
         NULL,
         NULL,
         portlist);  /* O */
@@ -1785,8 +1785,8 @@ static int assign_hosts(
 
       momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
 
-      hosttoalloc = pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str;
-      portlist = pjob->ji_wattr[(int)JOB_ATR_exec_port].at_val.at_str;
+      hosttoalloc = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+      portlist = pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str;
       }
 
     strncpy(

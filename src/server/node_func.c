@@ -348,7 +348,7 @@ int addr_ok(
 
         int chk_len;
 
-        chk_len = server.sv_attr[(int)SRV_ATR_check_rate].at_val.at_long;
+        chk_len = server.sv_attr[SRV_ATR_check_rate].at_val.at_long;
 
         if(pnode->nd_lastupdate == 0)
           {

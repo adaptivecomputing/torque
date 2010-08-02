@@ -1083,7 +1083,7 @@ struct work_task *apply_job_delete_nanny(
 
   /* short-circuit if nanny isn't enabled */
 
-  if (!server.sv_attr[(int)SRV_ATR_JobNanny].at_val.at_long)
+  if (!server.sv_attr[SRV_ATR_JobNanny].at_val.at_long)
     {
     remove_job_delete_nanny(pjob); /* in case it was recently disabled */
 

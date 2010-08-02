@@ -154,17 +154,26 @@ int relay_to_mom(
   int   rc;
   pbs_net_t addr;
 
+
+#ifndef NUMA_SUPPORT 
   struct pbsnode *node;
+#endif /* ndef NUMA_SUPPORT */
 
   /* if MOM is down don't try to connect */
 
   addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
 
+#ifndef NUMA_SUPPORT 
+  /* this check is completely repetitive as the same thing is done in 
+   * addr_ok. For NUMA this causes a problem as it finds the main node and 
+   * not the actualy NUMA node, so I'm removing it for NUMA. However, since
+   * this is repetitive work it should probably just be removed. --dbeer */
   if (((node = tfind_addr(addr, pjob->ji_qs.ji_un.ji_exect.ji_momport)) != NULL) &&
        (node->nd_state & (INUSE_DELETED|INUSE_DOWN)))
     {
     return(PBSE_NORELYMOM);
     }
+#endif /* ndef NUMA_SUPPORT */
 
   if (LOGLEVEL >= 7)
     {
