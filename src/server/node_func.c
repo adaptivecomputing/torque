@@ -1591,7 +1591,7 @@ int setup_numa_nodes(
        * values */
       sub->as_next= sub->as_buf + (main_node->as_next - main_node->as_buf);
 
-      *plink = pn->nd_first;
+      plink = &pn->nd_first;
 
       for (j = 0; j < pnode->nd_nprops; j++)
         {
@@ -1600,6 +1600,7 @@ int setup_numa_nodes(
         pdest = init_prop(sub->as_string[j]);
 
         *plink = pdest;
+        pn->nd_last = pdest;
         plink = &pdest->next;
         }
       }
@@ -1843,7 +1844,7 @@ int create_pbs_node(
 /*    addr = pul[i] + pnode->nd_mom_port + pnode->nd_mom_rm_port; */
     addr = pul[i];
 /*    tinsert(addr, pnode, &ipaddrs);*/
-      ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
+    ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
       
     }  /* END for (i) */
 

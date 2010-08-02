@@ -127,12 +127,12 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 		if( (height( tree->right ) - height( tree->left )) == 2 )
 		  {
 		  if(key >= tree->right->key)
-			tree = single_rotate_with_right( tree );
+        tree = single_rotate_with_right( tree );
 		  
 		  else
-			tree = double_rotate_with_right( tree );
-		  }
-        }
+        tree = double_rotate_with_right( tree );
+      }
+    }
 	else
 		{
 		/* the keys are equal. sort by port */
