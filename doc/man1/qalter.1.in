@@ -85,7 +85,7 @@ qalter
 [\-a date_time] [\-A account_string] [\-c interval] [\-e path]
 [\-h hold_list] [\-j join] [\-k keep] [\-l resource_list] 
 [\-m mail_options] [\-M user_list] [\-N name] [\-o path] [\-p priority]
-[\-r c] [\-S path] [\-u user_list] [\-W additional_attributes]
+[\-r c] [\-S path] [-t array_range] [\-u user_list] [\-W additional_attributes]
 job_identifier...
 .SH DESCRIPTION
 The
@@ -580,6 +580,28 @@ argument if present, otherwise it is set to the null string.
 .IP
 This attribute can be altered once the job has begun execution, but it will
 not take affect until the job is rerun.
+.IP "\-t array_range" 8
+The
+.Ar array_range
+argument is an integer id or a range of integers. Multiple ids
+or id ranges can be combined in a comma delimted list. Examples :
+\-t 1-100 or \-t 1,10,50-100
+.IP
+If an array range isn't specified, the command tries to operate on the entire
+array. The command acts on the array (or specified range of the array) just as
+it would on an individual job.
+.IP
+An optional slot limit can be specified to limit the amount of jobs that can run concurrently in the job array. The default value is unlimited. The slot limit
+must be the last thing specified in the array_request and is delimited from the
+array by a percent sign (%).
+.IP
+qalter weatherSimulationArray[] -t %20
+.IP
+Here, the array weatherSimulationArray[] is configured to allow a maximum of 20
+concurrently running jobs.
+.IP
+Note: Slot limits can be applied at job submit time with qsub, or can be set in
+a global server parameter policy with max_slot_limit.
 .IP "\-u user_list" 8
 Replaces the user name under which the job is to run on the execution system.
 .IP

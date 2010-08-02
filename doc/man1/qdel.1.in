@@ -81,7 +81,7 @@
 .SH NAME
 qdel \- delete pbs batch job
 .SH SYNOPSIS
-qdel [\-c] [\-m message] [\-p] [\-W delay] job_identifier ...
+qdel [\-c] [\-m message] [\-p] [-t array_range] [\-W delay] job_identifier...
 .SH DESCRIPTION
 The 
 .B qdel 
@@ -130,6 +130,14 @@ Forcibly purge the job from the server.  This should only be used if a running j
 Specify a comment to be included in the email.  The argument
 .Ar message
 specifies the comment to send.  This option is only available to a batch operator or the batch administrator.
+.IP "\-t array_range" 15
+The array_range argument is an integer id or a range of integers. Multiple ids
+or id ranges can be combined in a comma delimted list. Examples: -t 1-100 or
+-t 1,10,50-100
+.IP
+If an array range isn't specified, the command tries to operate on the entire
+array. The command acts on the array (or specified range of the array) just as
+it would on an individual job.
 .LP
 .SH OPERANDS
 The qdel command accepts one or more

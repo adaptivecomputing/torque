@@ -184,7 +184,7 @@ int main(int argc, char **argv) /* qhold */
 
   if (errflg || optind >= argc)
     {
-    static char usage[] = "usage: qhold [-h hold_list] job_identifier...\n";
+    static char usage[] = "usage: qhold [-h hold_list] [-t array_range] job_identifier...\n";
     fprintf(stderr,"%s", usage);
     exit(2);
     }

@@ -91,6 +91,8 @@ qstat \-Q [\-f [\-1]][\-W site_specific] [\-l] [\^destination...\^]
 qstat \-q [\-G|\-M] [\-l] [\^destination...\^]
 .sp
 qstat \-B [\-f [\-1]][\-W site_specific] [\-l] [\^server_name...\^]
+.sp
+qstat \-t
 .SH DESCRIPTION
 The
 .B qstat
@@ -166,6 +168,17 @@ to be 8 bytes.
 .IP "\-R" 10
 In addition to other information, disk reservation information is shown.
 Not applicable to all systems.
+.IP "\-t" 10
+Normal qstat output displays a summary of the array instead of the entire array,
+job for job. qstat -t expands the output to display the entire array. Note that
+arrays are now named with brackets following the array name; for example:
+
+echo sleep 20 | qsub -t 0-299 189[].pali
+
+Individual jobs in the array are now also noted using square brackets instead of
+dashes; for example, here is part of the output of qstat -t for the preceding array:
+
+189[299].napali STDIN[299] dbeer 0 Q batch
 .IP "\-u" 10
 Job status is displayed in the alternative format.  If an operand is a job id,
 status for that job is displayed.  For a destination id operand, status for
