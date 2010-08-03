@@ -1288,6 +1288,11 @@ char *loadave(
   struct rm_attribute *attrib)
 
   {
+#ifdef NUMA_SUPPORT
+  /* the hardware provides no way to get information on specific cores,
+   * so there's no way to obtain the load average of a numa node */
+  return(NULL);
+#else
   char       *id = "loadave";
   static char  ret_string[20];
   double       la;
@@ -1313,6 +1318,7 @@ char *loadave(
           la);
 
   return(ret_string);
+#endif /* NUMA_SUPPORT */
   }  /* END loadave() */
 
 

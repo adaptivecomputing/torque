@@ -2604,6 +2604,7 @@ char *cput_proc(
 
   cputime = 0.0;
 
+
   if ((ps = get_proc_stat(pid)) == NULL)
     {
     if (errno != ENOENT)
@@ -2886,6 +2887,14 @@ static char *resi_proc(
   pid_t pid)
 
   {
+#ifdef NUMA_SUPPORT
+  /* NUMA systems, as of yet, don't have the option of reading per numa 
+   * node, so for now we just won't read the file */
+
+  ret_string[0] = '\0';
+
+  return(ret_string);
+#else
   char        *id = "resi_proc";
   proc_stat_t *ps;
 
@@ -2910,6 +2919,7 @@ static char *resi_proc(
           ((ulong)ps->rss * (ulong)pagesize) >> 10);
 
   return(ret_string);
+#endif 
   }  /* END resi_proc() */
 
 
@@ -3416,6 +3426,11 @@ static char *ncpus(
   struct rm_attribute *attrib)
 
   {
+#ifdef NUMA_SUPPORT
+  /* these numbers are configured and not in hardware, therefore they aren't
+   * meaningful */
+  return(NULL);
+#else
   char  *id = "ncpus";
   char           label[128];
   FILE  *fp;
@@ -3456,6 +3471,7 @@ static char *ncpus(
   fclose(fp);
 
   return(ret_string);
+#endif /* NUMA_SUPPORT */
   }  /* END ncpus() */
 
 
@@ -3788,7 +3804,11 @@ void scan_non_child_tasks(void)
           if (!isdigit(dent->d_name[0]))
             continue;
 
+#ifdef NUMA_SUPPORT
+          ps = NULL;
+#else
           ps = get_proc_stat(atoi(dent->d_name));
+#endif
 
           if (ps == NULL)
             continue;
@@ -4411,6 +4431,10 @@ static char *netload(
   struct rm_attribute *attrib)
 
   {
+#ifdef NUMA_SUPPORT
+  /* there's no way to determine these numbers for a numa node */
+  return(NULL);
+#else
   FILE *fp;
   int   rc; /*read count*/
 
@@ -4491,6 +4515,7 @@ static char *netload(
           bytesRX[MAX_INTERFACES] + bytesTX[MAX_INTERFACES]);
 
   return(ret_string);
+#endif /* NUMA_SUPPORT */
   }  /* END netload() */
 
 

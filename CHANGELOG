@@ -13,6 +13,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   c - do not attempt to add numa nodes to non-numa nodes
   b - fix bug in qdel - was reporting "cannot contact node" for live nodes
   b - propagate a master node's properties to its numa nodes
+  b - for NUMA, removing code to report ncpus, loadave, and netload, since
+      these cannot be discovered on a per "numa node" basis due to hardware
+      limitations
       
 2.5.2
   b - remove square brackets [] from job and default stdout/stderr filenames 
