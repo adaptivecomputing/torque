@@ -543,8 +543,8 @@ void req_modifyarray(
     preq->rq_noreply = TRUE; /* set for no more replies */
     }
 
-  /* Commented out by David Beer because qalter never uses the 
-   * extend string for this
+  /* pbs_mom sets the extend string to trigger copying of checkpoint files */
+
   if (preq->rq_extend != NULL)
     {
     if (strcmp(preq->rq_extend,CHECKPOINTHOLD) == 0)
@@ -555,7 +555,7 @@ void req_modifyarray(
       {
       checkpoint_req = CHK_CONT;
       }
-    } */
+    }
 
   /* find if an array range was specified */
   if ((preq->rq_extend != NULL) && 
@@ -655,15 +655,19 @@ void req_modifyjob(
     preq->rq_noreply = TRUE; /* set for no more replies */
     }
 
-  /* Commented out by David Beer because qalter never uses the 
-   * extend string for this
-   Request the copying of checkpoint files if needed 
-  if ((preq->rq_extend != NULL) &&
-      ((strcmp(preq->rq_extend,CHECKPOINTHOLD) == 0) ||
-      (strcmp(preq->rq_extend,CHECKPOINTCONT) == 0)))
+  /* pbs_mom sets the extend string to trigger copying of checkpoint files */
+
+  if (preq->rq_extend != NULL)
     {
-    checkpoint_req = TRUE;
-    } */
+    if (strcmp(preq->rq_extend,CHECKPOINTHOLD) == 0)
+      {
+      checkpoint_req = CHK_HOLD;
+      }
+    else if (strcmp(preq->rq_extend,CHECKPOINTCONT) == 0)
+      {
+      checkpoint_req = CHK_CONT;
+      }
+    }
 
   if ((rc = modify_job(pjob,plist,preq,checkpoint_req)) != 0)
     {
