@@ -22,6 +22,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       for job arrays (fixes conflict with some non-bash shells)
   c - do not attempt to reinsert a job into ji_jobs_array_sum (bugzilla 73)
   c - fix pbs_server crash from invalid qsub -t argument
+  b - fix so blcr checkpoint jobs work correctly when put on hold
       
 
 2.5.1
