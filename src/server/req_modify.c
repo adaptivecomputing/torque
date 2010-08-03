@@ -659,8 +659,6 @@ void req_modifyjob(
     preq->rq_noreply = TRUE; /* set for no more replies */
     }
 
-  reply_ack(preq);
-
   /* pbs_mom sets the extend string to trigger copying of checkpoint files */
 
   if (preq->rq_extend != NULL)
