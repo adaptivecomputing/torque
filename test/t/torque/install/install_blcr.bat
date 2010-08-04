@@ -13,6 +13,7 @@ my $testbase = $FindBin::Bin;
 
 my @testList = (
 "$testbase/kill_moab.t",
+"$testbase/autogen.t",
 "$testbase/configure.t",
 "$testbase/make_clean.t",
 "$testbase/make.t",

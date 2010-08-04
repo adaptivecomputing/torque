@@ -13,6 +13,7 @@ setDesc('Remote Install Torque');
 my $testbase = $FindBin::Bin;
 
 execute_tests(
+"$testbase/autogen.t",
 "$testbase/configure.t",
 "$testbase/make_clean.t",
 "$testbase/make.t",
