@@ -1487,7 +1487,8 @@ static struct pbssubn *create_subnode(
  */
 int setup_numa_nodes(
 
-  struct pbsnode *pnode)
+  struct pbsnode *pnode,
+  u_long         *pul)
 
   {
   int             i;
@@ -1544,7 +1545,8 @@ int setup_numa_nodes(
 
       return(PBSE_SYSTEM);
       }
-    initialize_pbsnode(pn, allocd_name, NULL, NTYPE_CLUSTER);
+
+    initialize_pbsnode(pn, allocd_name, pul, NTYPE_CLUSTER);
 
     /* set the number of processors */
     if (np_ptr != NULL)
@@ -1849,7 +1851,7 @@ int create_pbs_node(
     }  /* END for (i) */
 
 #ifdef NUMA_SUPPORT
-  setup_numa_nodes(pnode);
+  setup_numa_nodes(pnode,pul);
 #endif /* NUMA_SUPPORT */
 
   recompute_ntype_cnts();

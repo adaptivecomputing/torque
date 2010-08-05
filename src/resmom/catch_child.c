@@ -412,12 +412,12 @@ scan_for_exiting(void)
       }
 
 
-    if (!(pjob->ji_wattr[(int)JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+    if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
       {
       continue;
       }
 
-    cookie = pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str;
+    cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
 
     /*
     ** Check each EXITED task.  They transition to DEAD here.
@@ -673,8 +673,8 @@ scan_for_exiting(void)
         continue;
         }
 
-      if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-          pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+      if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+          pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
         {
 
         if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, PE_IO_TYPE_NULL) != 0)
@@ -1282,8 +1282,8 @@ static void preobit_reply(
       pjob->ji_qs.ji_jobid,
       log_buffer);
 
-    if (!(pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) ||
-        (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long == 0))
+    if (!(pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) ||
+        (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long == 0))
       {
       int x; /* dummy */
 
@@ -1369,13 +1369,13 @@ static void preobit_reply(
 
   /* check epilog script */
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-      pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+  if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+      pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
     {
     /* job is interactive */
 
     presc = find_resc_entry(
-          &pjob->ji_wattr[(int)JOB_ATR_resource],
+          &pjob->ji_wattr[JOB_ATR_resource],
           find_resc_def(svr_resc_def, "epilogue", svr_resc_size));
     if((presc != NULL))
       if((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
@@ -1409,7 +1409,7 @@ static void preobit_reply(
     int rc;
 
     presc = find_resc_entry(
-          &pjob->ji_wattr[(int)JOB_ATR_resource],
+          &pjob->ji_wattr[JOB_ATR_resource],
           find_resc_def(svr_resc_def, "epilogue", svr_resc_size));
     if((presc != NULL))
       if((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
@@ -1572,7 +1572,7 @@ static void obit_reply(
 
           /* all jobs discarded by server, discard job */
 
-          pattr = &pjob->ji_wattr[(int)JOB_ATR_interactive];
+          pattr = &pjob->ji_wattr[JOB_ATR_interactive];
 
           if (((pattr->at_flags & ATR_VFLAG_SET) == 0) ||
               (pattr->at_val.at_long == 0))
