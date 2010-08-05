@@ -185,26 +185,23 @@ struct pbsnode *PGetNodeFromAddr(
         pbs_net_t addr)  /* I */
 
   {
+  int nindex;
   int aindex;
 
-  node_iterator iter;
-  struct pbsnode *pnode;
-
-  reinitialize_node_iterator(&iter);
-
-  while ((pnode = next_node(&iter)) != NULL)
+  for (nindex = 0; nindex < svr_totnodes; nindex++)
     {
-    if (pnode->nd_state & INUSE_DELETED)
+    if ((pbsndlist[nindex] == NULL) || 
+        (pbsndlist[nindex]->nd_state & INUSE_DELETED))
       continue;
 
     for (aindex = 0;aindex < 10;aindex++)
       {
-      if (pnode->nd_addrs[aindex] == 0)
+      if (pbsndlist[nindex]->nd_addrs[aindex] == 0)
         break;
 
-      if (pnode->nd_addrs[aindex] == addr)
+      if (pbsndlist[nindex]->nd_addrs[aindex] == addr)
         {
-        return(pnode);
+        return(pbsndlist[nindex]);
         }
       }    /* END for (aindex) */
     }      /* END for (nindex) */
