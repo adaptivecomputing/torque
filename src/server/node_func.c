@@ -1592,17 +1592,21 @@ int setup_numa_nodes(
 
       plink = &pn->nd_first;
 
-      for (j = 0; j < pnode->nd_nprops; j++)
+      for (j = 0; j < pnode->nd_nprops-1; j++)
         {
         sub->as_string[j] = sub->as_buf + (main_node->as_string[j] - main_node->as_buf);
 
         pdest = init_prop(sub->as_string[j]);
 
         *plink = pdest;
-        pn->nd_last = pdest;
         plink = &pdest->next;
         }
       }
+
+    /* now add in name as last prop */
+    pdest  = init_prop(pn->nd_name);
+    *plink = pdest;
+    pn->nd_last = pdest;
 
     /* add the node to the private tree */
     pnode->numa_nodes = AVL_insert(i,
