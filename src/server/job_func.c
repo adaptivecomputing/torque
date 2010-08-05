@@ -529,7 +529,7 @@ int conn_qsub(
 
   if ((hostaddr = get_hostaddr(hostname)) == (pbs_net_t)0)
     {
-#if !defined(H_ERRNO_DECLARED)
+#if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
     extern int h_errno;
 #endif
 
