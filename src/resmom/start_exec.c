@@ -2219,8 +2219,32 @@ int TMomFinalizeChild(
     else
 			{
 			for (j = 0;j < vnodenum;j++)
-				{
+        {
 				vnodent *vp = &pjob->ji_vnods[j];
+
+#ifdef NUMA_SUPPORT 
+        /* make sure that the nodefile has actual hostnames, not 
+         * numa names */
+        char *dash = NULL;
+        char *tmp;
+
+        while ((tmp = strchr(vp->vn_host->hn_host,'-')) != NULL)
+          {
+          /* just advance to the last dash */
+          dash = tmp;
+          }
+
+        if (dash != NULL)
+          {
+          *dash = '\0';
+          }
+        else
+          {
+          /* this should never happen */
+          log_err(-1,id,"Numa enabled but no dash in hostname?");
+          }
+
+#endif /* def NUMA_SUPPORT */
 
 				if (nodefile_suffix != NULL)
 					{
@@ -2233,6 +2257,13 @@ int TMomFinalizeChild(
 					fprintf(nhow, "%s\n",
 									vp->vn_host->hn_host);
 					}
+
+#ifdef NUMA_SUPPORT
+        if (dash != NULL)
+          {
+          *dash = '-';
+          }
+#endif /* def NUMA_SUPPORT */
 				}		/* END for (j) */
 			}
 

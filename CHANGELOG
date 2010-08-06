@@ -17,6 +17,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       these cannot be discovered on a per "numa node" basis due to hardware
       limitations
   c - addresses are now propagated to numa nodes
+  b - correct the hostnames $PBS_NODEFILE
       
 2.5.2
   b - remove square brackets [] from job and default stdout/stderr filenames 
