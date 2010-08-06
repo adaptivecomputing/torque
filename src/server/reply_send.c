@@ -331,7 +331,7 @@ reply_ack(struct batch_request *preq)
   preq->rq_reply.brp_code    = PBSE_NONE;
   preq->rq_reply.brp_auxcode = 0;
   preq->rq_reply.brp_choice  = BATCH_REPLY_CHOICE_NULL;
-  (void)reply_send(preq);
+  reply_send(preq);
   }
 
 /*

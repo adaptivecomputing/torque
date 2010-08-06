@@ -1345,11 +1345,12 @@ void req_stat_node(
         continue;
 #ifdef NUMA_SUPPORT
       /* get the status on all of the numa nodes */
-      rc = get_numa_statuses(pnode,preq,&preply->brp_un.brp_status);
+      if ((rc = get_numa_statuses(pnode,preq,&preply->brp_un.brp_status)) != 0)
+        break;
 #else
       if ((rc = status_node(pnode, preq, &preply->brp_un.brp_status)) != 0)
-#endif /* NUMA_SUPPORT */
         break;
+#endif /* NUMA_SUPPORT */
       }
     }
 

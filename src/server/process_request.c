@@ -450,7 +450,7 @@ void process_request(
     strcpy(request->rq_host, server_name);
     }
 
-  if (server.sv_attr[(int)SRV_ATR_acl_host_enable].at_val.at_long)
+  if (server.sv_attr[SRV_ATR_acl_host_enable].at_val.at_long)
     {
     /* acl enabled, check it; always allow myself and nodes */
 
@@ -461,7 +461,7 @@ void process_request(
     if ((isanode == NULL) &&
         (strcmp(server_host, request->rq_host) != 0) &&
         (acl_check(
-           &server.sv_attr[(int)SRV_ATR_acl_hosts],
+           &server.sv_attr[SRV_ATR_acl_hosts],
            request->rq_host,
            ACL_Host) == 0))
       {
@@ -575,11 +575,11 @@ void process_request(
           (pjob->ji_qs.ji_state == JOB_STATE_RUNNING))
         {
 
-        if ((pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET) &&
-          ((csv_find_string(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str, "s") != NULL) ||
-          (csv_find_string(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str, "c") != NULL) ||
-          (csv_find_string(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str, "enabled") != NULL)) &&
-          (strstr(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str, short_host) != NULL))
+        if ((pjob->ji_wattr[JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET) &&
+          ((csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "s") != NULL) ||
+          (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "c") != NULL) ||
+          (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "enabled") != NULL)) &&
+          (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, short_host) != NULL))
           {
 
           request->rq_perm = svr_get_privilege(request->rq_user, server_host);
@@ -600,7 +600,7 @@ void process_request(
 
   /* if server shutting down, disallow new jobs and new running */
 
-  if (server.sv_attr[(int)SRV_ATR_State].at_val.at_long > SV_STATE_RUN)
+  if (server.sv_attr[SRV_ATR_State].at_val.at_long > SV_STATE_RUN)
     {
     switch (request->rq_type)
       {

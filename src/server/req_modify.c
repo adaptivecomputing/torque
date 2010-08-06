@@ -714,7 +714,7 @@ int modify_job_attr(
   if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
     allow_unkn = -1;
   else
-    allow_unkn = (int)JOB_ATR_UNKN;
+    allow_unkn = JOB_ATR_UNKN;
 
   pattr = pjob->ji_wattr;
 
@@ -733,7 +733,7 @@ int modify_job_attr(
   /* if resource limits are being changed ... */
 
   if ((rc == 0) &&
-      (newattr[(int)JOB_ATR_resource].at_flags & ATR_VFLAG_SET))
+      (newattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET))
     {
     if ((perm & (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)) == 0)
       {
@@ -742,9 +742,9 @@ int modify_job_attr(
       if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
         {
         if ((comp_resc2(
-               &pjob->ji_wattr[(int)JOB_ATR_resource],
-               &newattr[(int)JOB_ATR_resource],
-               server.sv_attr[(int)SRV_ATR_QCQLimits].at_val.at_long,
+               &pjob->ji_wattr[JOB_ATR_resource],
+               &newattr[JOB_ATR_resource],
+               server.sv_attr[SRV_ATR_QCQLimits].at_val.at_long,
                NULL) == -1) ||
             (comp_resc_lt != 0))
           {
@@ -757,7 +757,7 @@ int modify_job_attr(
       if (rc == 0)
         {
         rc = chk_resc_limits(
-               &newattr[(int)JOB_ATR_resource],
+               &newattr[JOB_ATR_resource],
                pjob->ji_qhdr,
                NULL);
         }
@@ -767,10 +767,10 @@ int modify_job_attr(
   /* special check on permissions for hold */
 
   if ((rc == 0) &&
-      (newattr[(int)JOB_ATR_hold].at_flags & ATR_VFLAG_MODIFY))
+      (newattr[JOB_ATR_hold].at_flags & ATR_VFLAG_MODIFY))
     {
-    i = newattr[(int)JOB_ATR_hold].at_val.at_long ^
-        (pattr + (int)JOB_ATR_hold)->at_val.at_long;
+    i = newattr[JOB_ATR_hold].at_val.at_long ^
+        (pattr + JOB_ATR_hold)->at_val.at_long;
 
     rc = chk_hold_priv(i, perm);
     }
@@ -795,8 +795,8 @@ int modify_job_attr(
       }    /* END for (i) */
 
     if ((rc == 0) &&
-        ((newattr[(int)JOB_ATR_userlst].at_flags & ATR_VFLAG_MODIFY) ||
-         (newattr[(int)JOB_ATR_grouplst].at_flags & ATR_VFLAG_MODIFY)))
+        ((newattr[JOB_ATR_userlst].at_flags & ATR_VFLAG_MODIFY) ||
+         (newattr[JOB_ATR_grouplst].at_flags & ATR_VFLAG_MODIFY)))
       {
       /* need to reset execution uid and gid */
 
@@ -804,51 +804,51 @@ int modify_job_attr(
       }
 
     if ((rc == 0) &&
-        (newattr[(int)JOB_ATR_outpath].at_flags & ATR_VFLAG_MODIFY))
+        (newattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_MODIFY))
       {
       /* need to recheck if JOB_ATR_outpath is a special case of host only */
 
-      if (newattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] == ':')
+      if (newattr[JOB_ATR_outpath].at_val.at_str[strlen(newattr[JOB_ATR_outpath].at_val.at_str) - 1] == ':')
         {
-        newattr[(int)JOB_ATR_outpath].at_val.at_str =
+        newattr[JOB_ATR_outpath].at_val.at_str =
           prefix_std_file(pjob, (int)'o');
         }
       /*
        * if the output path was specified and ends with a '/'
        * then append the standard file name
        */
-      else if (newattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] == '/')
+      else if (newattr[JOB_ATR_outpath].at_val.at_str[strlen(newattr[JOB_ATR_outpath].at_val.at_str) - 1] == '/')
         {
-          newattr[(int)JOB_ATR_outpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
+          newattr[JOB_ATR_outpath].at_val.at_str[strlen(newattr[JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
           
-          replace_attr_string(&newattr[(int)JOB_ATR_outpath],
+          replace_attr_string(&newattr[JOB_ATR_outpath],
                             (add_std_filename(pjob,
-                            newattr[(int)JOB_ATR_outpath].at_val.at_str,
+                            newattr[JOB_ATR_outpath].at_val.at_str,
                             (int)'o')));
         }
       }
 
     if ((rc == 0) &&
-        (newattr[(int)JOB_ATR_errpath].at_flags & ATR_VFLAG_MODIFY))
+        (newattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_MODIFY))
       {
       /* need to recheck if JOB_ATR_errpath is a special case of host only */
 
-      if (newattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] == ':')
+      if (newattr[JOB_ATR_errpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] == ':')
         {
-        newattr[(int)JOB_ATR_errpath].at_val.at_str =
+        newattr[JOB_ATR_errpath].at_val.at_str =
           prefix_std_file(pjob, (int)'e');
         }
       /*
        * if the error path was specified and ends with a '/'
        * then append the standard file name
        */
-      else if (newattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] == '/')
+      else if (newattr[JOB_ATR_errpath].at_val.at_str[strlen(newattr[JOB_ATR_errpath].at_val.at_str) - 1] == '/')
         {
-          newattr[(int)JOB_ATR_errpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
+          newattr[JOB_ATR_errpath].at_val.at_str[strlen(newattr[JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
           
-          replace_attr_string(&newattr[(int)JOB_ATR_errpath],
+          replace_attr_string(&newattr[JOB_ATR_errpath],
                             (add_std_filename(pjob,
-                            newattr[(int)JOB_ATR_errpath].at_val.at_str,
+                            newattr[JOB_ATR_errpath].at_val.at_str,
                             (int)'e')));
         }
       }
