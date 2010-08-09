@@ -195,6 +195,7 @@ PbsErrClient(PBSE_NOFAULTTOLERANT,   "Queue does not allow fault tolerant jobs")
 /* only fault tolerant jobs allowed in queue */
 PbsErrClient(PBSE_NOFAULTINTOLERANT, "Queue does not allow fault intolerant jobs")
 PbsErrClient(PBSE_NOJOBARRAYS, "Queue does not allow job arrays")
+PbsErrClient(PBSE_RELAYED_TO_MOM, "request was relayed to a MOM") /* */
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
 #endif

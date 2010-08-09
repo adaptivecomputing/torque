@@ -443,7 +443,7 @@ int modify_job(
       return(rc); /* unable to get to MOM */
       }
 
-    return(0);
+    return(PBSE_RELAYED_TO_MOM);
     }
 
   if (copy_checkpoint_files)
@@ -674,6 +674,10 @@ void req_modifyjob(
     if ((rc == PBSE_MODATRRUN) ||
         (rc == PBSE_UNKRESC))
       reply_badattr(rc,1,plist,preq);
+    else if( rc == PBSE_RELAYED_TO_MOM )
+      {
+      return;
+      }
     else
       req_reject(rc,0,preq,NULL,NULL);
     }
