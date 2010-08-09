@@ -1601,12 +1601,12 @@ int setup_numa_nodes(
         *plink = pdest;
         plink = &pdest->next;
         }
-      }
 
-    /* now add in name as last prop */
-    pdest  = init_prop(pn->nd_name);
-    *plink = pdest;
-    pn->nd_last = pdest;
+      /* now add in name as last prop */
+      pdest  = init_prop(pn->nd_name);
+      *plink = pdest;
+      pn->nd_last = pdest;
+      }
 
     /* add the node to the private tree */
     pnode->numa_nodes = AVL_insert(i,
