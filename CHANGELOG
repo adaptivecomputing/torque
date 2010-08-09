@@ -18,7 +18,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       TORQUE documentation. This enhancement was first committed to trunk.
   c - fix pbs_server crash from invalid qsub -t argument
   b - fix so blcr checkpoint jobs work correctly when put on hold
-
+  b - fixed bug 75 where pbs_server would segfault with a double free when
+      calling qalter on a running job.
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges
