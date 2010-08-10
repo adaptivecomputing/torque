@@ -2226,12 +2226,13 @@ int TMomFinalizeChild(
         /* make sure that the nodefile has actual hostnames, not 
          * numa names */
         char *dash = NULL;
-        char *tmp;
+        char *tmp = vp->vn_host->hn_host;
 
-        while ((tmp = strchr(vp->vn_host->hn_host,'-')) != NULL)
+        while ((tmp = strchr(tmp,'-')) != NULL)
           {
           /* just advance to the last dash */
           dash = tmp;
+          tmp++;
           }
 
         if (dash != NULL)
