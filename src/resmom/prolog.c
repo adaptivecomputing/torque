@@ -374,7 +374,7 @@ int run_pelog(
     return(0);
     }
 
-  ptr = pjob->ji_wattr[(int)JOB_ATR_jobtype].at_val.at_str;
+  ptr = pjob->ji_wattr[JOB_ATR_jobtype].at_val.at_str;
 
   if (ptr != NULL)
     {
@@ -432,9 +432,8 @@ int run_pelog(
           log_err(-1, id, log_buffer);
           }
 
-        add_wkm_end(pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll,
-
-                    pjob->ji_qs.ji_un.ji_momt.ji_exitstat, pjob->ji_qs.ji_jobid);
+        add_wkm_end(pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll,
+            pjob->ji_qs.ji_un.ji_momt.ji_exitstat, pjob->ji_qs.ji_jobid);
         }
 
 #endif /* ENABLE_CSA */
@@ -580,9 +579,8 @@ int run_pelog(
         log_err(-1, id, log_buffer);
         }
 
-      add_wkm_end(pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll,
-
-                  pjob->ji_qs.ji_un.ji_momt.ji_exitstat, pjob->ji_qs.ji_jobid);
+      add_wkm_end(pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll,
+          pjob->ji_qs.ji_un.ji_momt.ji_exitstat, pjob->ji_qs.ji_jobid);
       }
 
 #endif /* ENABLE_CSA */
@@ -764,19 +762,19 @@ int run_pelog(
       fprintf(stderr, "PELOGINFO:  script:'%s'  jobid:'%s'  euser:'%s'  egroup:'%s'  jobname:'%s' SSID:'%ld'  RESC:'%s'\n",
               pelog,
               pjob->ji_qs.ji_jobid,
-              pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str,
-              pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
-              pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str,
-              pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long,
-              resc_to_string(pjob, (int)JOB_ATR_resource, resc_list, sizeof(resc_list)));
+              pjob->ji_wattr[JOB_ATR_euser].at_val.at_str,
+              pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str,
+              pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str,
+              pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long,
+              resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
       }
 
     arg[0] = pelog;
 
     arg[1] = pjob->ji_qs.ji_jobid;
-    arg[2] = pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str;
-    arg[3] = pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str;
-    arg[4] = pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str;
+    arg[2] = pjob->ji_wattr[JOB_ATR_euser].at_val.at_str;
+    arg[3] = pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str;
+    arg[4] = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
 
     /* NOTE:  inside child */
 
@@ -785,15 +783,15 @@ int run_pelog(
       /* for epilog only */
 
       sprintf(sid, "%ld",
-              pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
+              pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long);
       sprintf(exit_stat,"%d",
               pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
 
       arg[5] = sid;
-      arg[6] = resc_to_string(pjob, (int)JOB_ATR_resource, resc_list, sizeof(resc_list));
-      arg[7] = resc_to_string(pjob, (int)JOB_ATR_resc_used, resc_used, sizeof(resc_used));
-      arg[8] = pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str;
-      arg[9] = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
+      arg[6] = resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list));
+      arg[7] = resc_to_string(pjob, JOB_ATR_resc_used, resc_used, sizeof(resc_used));
+      arg[8] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
+      arg[9] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
       arg[10] = exit_stat;
       arg[11] = NULL;
 
@@ -803,9 +801,9 @@ int run_pelog(
       {
       /* prolog */
 
-      arg[5] = resc_to_string(pjob, (int)JOB_ATR_resource, resc_list, sizeof(resc_list));
-      arg[6] = pjob->ji_wattr[(int)JOB_ATR_in_queue].at_val.at_str;
-      arg[7] = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
+      arg[5] = resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list));
+      arg[6] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
+      arg[7] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
       arg[8] = NULL;
 
       LastArg = 8;
@@ -827,7 +825,7 @@ int run_pelog(
      */
 
     r = find_resc_entry(
-          &pjob->ji_wattr[(int)JOB_ATR_resource],
+          &pjob->ji_wattr[JOB_ATR_resource],
           find_resc_def(svr_resc_def, "nodes", svr_resc_size));
 
     if (r != NULL)
@@ -853,7 +851,7 @@ int run_pelog(
       }  /* END if (r != NULL) */
 
     r = find_resc_entry(
-          &pjob->ji_wattr[(int)JOB_ATR_resource],
+          &pjob->ji_wattr[JOB_ATR_resource],
           find_resc_def(svr_resc_def, "gres", svr_resc_size));
 
     if (r != NULL)
@@ -1015,7 +1013,7 @@ int run_pelog(
       int VarIsSet = 0;
       int j;
 
-      vstrs = pjob->ji_wattr[(int)JOB_ATR_variables].at_val.at_arst;
+      vstrs = pjob->ji_wattr[JOB_ATR_variables].at_val.at_arst;
 
       for (j = 0;j < vstrs->as_usedptr;++j)
         {

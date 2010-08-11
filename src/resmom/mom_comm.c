@@ -420,7 +420,7 @@ task *pbs_task_create(
        ptask != NULL;
        ptask = (task *)GET_NEXT(ptask->ti_jobtask), tasks++);
 
-  at = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  at = &pjob->ji_wattr[JOB_ATR_resource];
 
   rd = find_resc_def(svr_resc_def, "taskspn", svr_resc_size);
 
@@ -1158,17 +1158,17 @@ void job_start_error(
   snprintf(tmpLine, sizeof(tmpLine), "REJHOST=%s",
            nodename);
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_sched_hint];
+  pattr = &pjob->ji_wattr[JOB_ATR_sched_hint];
 
-  job_attr_def[(int)JOB_ATR_sched_hint].at_free(pattr);
+  job_attr_def[JOB_ATR_sched_hint].at_free(pattr);
 
-  job_attr_def[(int)JOB_ATR_sched_hint].at_decode(
+  job_attr_def[JOB_ATR_sched_hint].at_decode(
     pattr,
     NULL,
     NULL,
     tmpLine);
 
-  pjob->ji_wattr[(int)JOB_ATR_errpath].at_flags =
+  pjob->ji_wattr[JOB_ATR_errpath].at_flags =
     (ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
 
   /* NOTE:  is there a way to force the updated 'sched_hint' info to pbs_server
@@ -1362,8 +1362,8 @@ void node_bailout(
         /* we should be more patient - how do we recover this connection? (NYI) */
         
         /* if job attribute fault_tolerant is not set or set to false then kill the job */
-        if ((pjob->ji_wattr[(int)JOB_ATR_fault_tolerant].at_flags & ATR_VFLAG_SET) && 
-            pjob->ji_wattr[(int)JOB_ATR_fault_tolerant].at_val.at_long) 
+        if ((pjob->ji_wattr[JOB_ATR_fault_tolerant].at_flags & ATR_VFLAG_SET) && 
+            pjob->ji_wattr[JOB_ATR_fault_tolerant].at_val.at_long) 
           {        
           sprintf(log_buffer, "%s POLL failed from node %s %d - job is fault tolerant - job will not be killed)",
                   pjob->ji_qs.ji_jobid,
@@ -1665,7 +1665,7 @@ u_long resc_used(
   resource     *pres;
   u_long        val = 0L;
 
-  at = &pjob->ji_wattr[(int)JOB_ATR_resc_used];
+  at = &pjob->ji_wattr[JOB_ATR_resc_used];
 
   if (at == NULL)
     {
@@ -1803,7 +1803,7 @@ char *resc_string(
 
   res_str[used++] = ':';
 
-  at = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  at = &pjob->ji_wattr[JOB_ATR_resource];
 
   if (at->at_type != ATR_TYPE_RESC)
     {
@@ -1814,7 +1814,7 @@ char *resc_string(
     return(res_str);
     }
 
-  ad = &job_attr_def[(int)JOB_ATR_resource];
+  ad = &job_attr_def[JOB_ATR_resource];
 
   resc_access_perm = ATR_DFLAG_USRD;
 
@@ -4574,7 +4574,7 @@ int tm_request(
     goto err;
     }
 
-  at = &pjob->ji_wattr[(int)JOB_ATR_Cookie];
+  at = &pjob->ji_wattr[JOB_ATR_Cookie];
 
   if (!(at->at_flags & ATR_VFLAG_SET))
     {
@@ -5759,7 +5759,7 @@ static int adoptSession(pid_t sid, char *id, int command, char *cookie)
   if (strcmp(cookie, "ADOPT COOKIE"))
     {
     char *oreo;
-    attribute *at = &pjob->ji_wattr[(int)JOB_ATR_Cookie];
+    attribute *at = &pjob->ji_wattr[JOB_ATR_Cookie];
 
     if (!(at->at_flags & ATR_VFLAG_SET))
       {

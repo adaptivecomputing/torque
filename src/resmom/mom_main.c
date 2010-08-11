@@ -5940,6 +5940,9 @@ int job_over_limit(
     return(1);
     }
 
+#ifndef NUMA_SUPPORT 
+  /* cannot perform this check with NUMA, numnodes always is 1 and
+   * you'll never have job stats */
   if ((pjob->ji_numnodes == 1) ||
       ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0))
     {
@@ -5949,6 +5952,7 @@ int job_over_limit(
 
     return(0);
     }
+#endif
 
   if (pjob->ji_nodekill != TM_ERROR_NODE)
     {

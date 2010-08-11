@@ -136,7 +136,7 @@ mom_checkpoint_job_is_checkpointable(job *pjob)
   attribute    *pattr;
   int           rc;
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
+  pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
 
   rc = checkpoint_system_type != CST_NONE &&
        checkpoint_script_name[0] != 0 &&
@@ -508,7 +508,7 @@ void delete_blcr_checkpoint_files(
   static char id[] = "delete_blcr_checkpoint_files";
   char namebuf[MAXPATHLEN+1];
 
-  if (((pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) == 0)
+  if (((pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) == 0)
       && (LOGLEVEL > 7))
     {
     sprintf(log_buffer,
@@ -517,13 +517,13 @@ void delete_blcr_checkpoint_files(
     return;
     }
 
-  if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
     {
     /* delete any checkpoint file */
 
-    strcpy(namebuf, pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
+    strcpy(namebuf, pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
     strcat(namebuf, "/");
-    strcat(namebuf, pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+    strcat(namebuf, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
 
     /* if we are using the default checkpoint path then we may need to clean
      * up the job directory but not if we are running on the server node
@@ -553,13 +553,13 @@ void delete_blcr_checkpoint_files(
       }
     }
 
-  if (pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
     {
     /* delete any checkpoint restart file */
 
-    strcpy(namebuf, pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
+    strcpy(namebuf, pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
     strcat(namebuf, "/");
-    strcat(namebuf, pjob->ji_wattr[(int)JOB_ATR_restart_name].at_val.at_str);
+    strcat(namebuf, pjob->ji_wattr[JOB_ATR_restart_name].at_val.at_str);
 
     /* if we are using the default checkpoint path then we may need to clean
      * up the job directory but not if we are running on the server node
@@ -720,7 +720,7 @@ void mom_checkpoint_check_periodic_timer(
     if (rdwall != NULL)
       {
       prwall = find_resc_entry(
-                 &pjob->ji_wattr[(int)JOB_ATR_resc_used],
+                 &pjob->ji_wattr[JOB_ATR_resc_used],
                  rdwall);  /* resource definition cput set in startup */
 
       if (prwall &&
@@ -792,15 +792,15 @@ int blcr_checkpoint_job(
   unsigned short momport = 0;
 
   assert(pjob != NULL);
-  assert(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str != NULL);
+  assert(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str != NULL);
 
   /* Make sure that the specified directory exists. */
 
-  if (mkdir(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str, 0755)
+  if (mkdir(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str, 0755)
       == 0)
     {
     /* Change the owner of the checkpoint directory to be the user */
-    if (chown(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
+    if (chown(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str,
           pjob->ji_qs.ji_un.ji_momt.ji_exuid,
           pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
       {
@@ -831,9 +831,9 @@ int blcr_checkpoint_job(
   job_save(pjob,SAVEJOB_FULL, momport); /* to save resources_used so far */
 
   sprintf(log_buffer,"checkpointed to %s / %s at %ld",
-    pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
-    pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
-    pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long);
+    pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str,
+    pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str,
+    pjob->ji_wattr[JOB_ATR_checkpoint_time].at_val.at_long);
 
   log_record(
     PBSEVENT_JOB,
@@ -842,17 +842,17 @@ int blcr_checkpoint_job(
     log_buffer);
 
   sprintf(sid,"%ld",
-    pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
+    pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long);
 
   arg[0] = checkpoint_script_name;
   arg[1] = sid;
   arg[2] = SET_ARG(pjob->ji_qs.ji_jobid);
-  arg[3] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
-  arg[4] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
-  arg[5] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
-  arg[6] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+  arg[3] = SET_ARG(pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
+  arg[4] = SET_ARG(pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
+  arg[5] = SET_ARG(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
+  arg[6] = SET_ARG(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
   arg[7] = (abort) ? "15" /*abort*/ : "0" /*run/continue*/;
-  arg[8] = SET_ARG(csv_find_value(pjob->ji_wattr[(int)JOB_ATR_checkpoint].at_val.at_str, "depth"));
+  arg[8] = SET_ARG(csv_find_value(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "depth"));
   arg[9] = NULL;
 
   /* XXX this should be fixed to make sure there is no chance of a buffer overrun */
@@ -922,7 +922,7 @@ int blcr_checkpoint_job(
         failed */ 
       
     /* open a connection to the server */
-    conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
+    conn = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
     
     set_attr(&attrib, ATTR_comment, err_buf);
 
@@ -970,22 +970,22 @@ int blcr_checkpoint_job(
         suceeded */ 
       
     /* open a connection to the server */
-    conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
+    conn = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
 
     sprintf(timestr,"%ld",
-        (long)pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long);
-    epoch = (time_t)pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long;
+        (long)pjob->ji_wattr[JOB_ATR_checkpoint_time].at_val.at_long);
+    epoch = (time_t)pjob->ji_wattr[JOB_ATR_checkpoint_time].at_val.at_long;
 
     sprintf(err_buf,"Job %s was checkpointed and %s to %s/%s at %s",
       pjob->ji_qs.ji_jobid,
       (request_type == PBS_BATCH_HoldJob) ? "terminated" : "continued",
-      pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
-      pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str,
+      pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str,
+      pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str,
       ctime(&epoch));
 
     set_attr(&attrib, ATTR_comment, err_buf);
     set_attr(&attrib, ATTR_checkpoint_name,
-        pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+        pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
     set_attr(&attrib, ATTR_checkpoint_time, timestr);
 
     err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, attrib,
@@ -1253,8 +1253,8 @@ void post_checkpoint(
 
   /* since checkpointing failed, clear out checkpoint name and time */
   
-  pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags = 0;
-  pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_flags = 0;
+  pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags = 0;
+  pjob->ji_wattr[JOB_ATR_checkpoint_time].at_flags = 0;
 
   /*
   ** If we get here, an error happened.  Only try to recover
@@ -1361,26 +1361,26 @@ int start_checkpoint(
         pjob->ji_qs.ji_jobid, 
         (int)time_now);
 
-      decode_str(&pjob->ji_wattr[(int)JOB_ATR_checkpoint_name], NULL, NULL, name_buffer);
+      decode_str(&pjob->ji_wattr[JOB_ATR_checkpoint_name], NULL, NULL, name_buffer);
 
-      pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags =
+      pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags =
         ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
       /* Set the checkpoint time so can determine if the checkpoint is recent */
-      pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_val.at_long = (long)time_now;
-      pjob->ji_wattr[(int)JOB_ATR_checkpoint_time].at_flags =
+      pjob->ji_wattr[JOB_ATR_checkpoint_time].at_val.at_long = (long)time_now;
+      pjob->ji_wattr[JOB_ATR_checkpoint_time].at_flags =
         ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
       /* For BLCR, there must be a directory name in the job attributes. */
 
-      if (!(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
+      if (!(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
         {
         /* No dir specified, use the default job checkpoint directory 
            e.g.  /var/spool/torque/checkpoint/42.host.domain.CK */
 
         get_jobs_default_checkpoint_dir(pjob, name_buffer);
 
-        decode_str(&pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir],NULL,NULL,name_buffer);
+        decode_str(&pjob->ji_wattr[JOB_ATR_checkpoint_dir],NULL,NULL,name_buffer);
         }
 
       break;
@@ -1646,10 +1646,10 @@ int blcr_restart_job(
     /* TODO: check return value? */
     create_missing_files(pjob);
 
-    if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
+    if (pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
       {
       /* The job has a checkpoint directory specified, use it. */
-      strcpy(namebuf, pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
+      strcpy(namebuf, pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
       }
     else
       {
@@ -1671,7 +1671,7 @@ int blcr_restart_job(
 
     strcpy(restartfile, namebuf);
     strcat(restartfile, "/");
-    strcat(restartfile, pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+    strcat(restartfile, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
    
     /* Change the owner of the checkpoint restart file to be the user */
     if (chown(restartfile,
@@ -1683,15 +1683,15 @@ int blcr_restart_job(
 
 
     sprintf(sid, "%ld",
-            pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
+            pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long);
 
     arg[0] = restart_script_name;
     arg[1] = sid;
     arg[2] = SET_ARG(pjob->ji_qs.ji_jobid);
-    arg[3] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
-    arg[4] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
+    arg[3] = SET_ARG(pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
+    arg[4] = SET_ARG(pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
     arg[5] = SET_ARG(namebuf);
-    arg[6] = SET_ARG(pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+    arg[6] = SET_ARG(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
     arg[7] = NULL;
 
     strcpy(buf, "restart args:");
@@ -1866,7 +1866,7 @@ mom_checkpoint_init_job_periodic_timer(job *pjob)
 
   /* Should we set up the job for periodic checkpoint? */
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
+  pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
 
   if ((pattr->at_flags & ATR_VFLAG_SET) &&
       (csv_find_string(pattr->at_val.at_str, "c") ||
@@ -1924,10 +1924,10 @@ int mom_checkpoint_job_has_checkpoint(
 
         /* Does the checkpoint directory exist? */
 
-        if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
+        if (pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
           {
           /* The job has a checkpoint directory specified, use it. */
-          strcpy(buf, pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
+          strcpy(buf, pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
           }
         else
           {
@@ -1951,7 +1951,7 @@ int mom_checkpoint_job_has_checkpoint(
 
     case CST_BLCR:
 
-      if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
+      if (pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
         {
         log_ext(-1, "mom_checkpoint_job_has_checkpoint", "TRUE", LOG_DEBUG);
         return(TRUE);
@@ -2060,7 +2060,7 @@ int create_missing_files(job *pjob)
 
   should_have_stderr = TRUE;
   should_have_stdout = TRUE;
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_join];
+  pattr = &pjob->ji_wattr[JOB_ATR_join];
 
   if (pattr->at_flags & ATR_VFLAG_SET)
     {

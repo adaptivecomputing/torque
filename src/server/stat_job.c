@@ -147,7 +147,7 @@ int status_job(
   if (svr_authorize_jobreq(preq, pjob) == 0)
     IsOwner = 1;
 
-  if (!server.sv_attr[(int)SRV_ATR_query_others].at_val.at_long)
+  if (!server.sv_attr[SRV_ATR_query_others].at_val.at_long)
     {
     if (IsOwner == 0)
       {

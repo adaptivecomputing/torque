@@ -660,7 +660,7 @@ void parse_command_line(int argc, char *argv[])
       case 'a':
 
         if (decode_b(
-              &server.sv_attr[(int)SRV_ATR_scheduling],
+              &server.sv_attr[SRV_ATR_scheduling],
               NULL,
               NULL,
               optarg) != 0)
@@ -670,7 +670,7 @@ void parse_command_line(int argc, char *argv[])
 
           exit(1);
           }
-        a_opt_init = server.sv_attr[(int)SRV_ATR_scheduling].at_val.at_long;
+        a_opt_init = server.sv_attr[SRV_ATR_scheduling].at_val.at_long;
 
         break;
 
@@ -966,7 +966,7 @@ static time_t next_task()
   struct work_task  *nxt;
 
   struct work_task  *ptask;
-  time_t      tilwhen = server.sv_attr[(int)SRV_ATR_scheduler_iteration].at_val.at_long;
+  time_t      tilwhen = server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long;
 
   time_now = time((time_t *)0);
 
@@ -1100,7 +1100,7 @@ main_loop(void)
   /* do not check nodes immediately as they will initially be marked
      down unless they have already reported in */
 
-  when = server.sv_attr[(int)SRV_ATR_check_rate].at_val.at_long + time_now;
+  when = server.sv_attr[SRV_ATR_check_rate].at_val.at_long + time_now;
 
   if (svr_totnodes > 1024)
     {
@@ -1127,9 +1127,9 @@ main_loop(void)
    * following section constitutes the "main" loop of the server
    */
 
-  state = &server.sv_attr[(int)SRV_ATR_State].at_val.at_long;
+  state = &server.sv_attr[SRV_ATR_State].at_val.at_long;
 
-  DIS_tcp_settimeout(server.sv_attr[(int)SRV_ATR_tcp_timeout].at_val.at_long);
+  DIS_tcp_settimeout(server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long);
 
   if (server_init_type == RECOV_HOT)
     *state = SV_STATE_HOT;
@@ -1142,7 +1142,7 @@ main_loop(void)
     {
     /* first process any task whose time delay has expired */
 
-    if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long)
+    if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
       waittime = MIN(next_task(), JobStatRate - (time_now - last_jobstat_time));
     else
       waittime = next_task();
@@ -1156,11 +1156,11 @@ main_loop(void)
       /* if time or event says to run scheduler, do it */
 
       if ((svr_do_schedule != SCH_SCHEDULE_NULL) &&
-          server.sv_attr[(int)SRV_ATR_scheduling].at_val.at_long)
+          server.sv_attr[SRV_ATR_scheduling].at_val.at_long)
         {
         server.sv_next_schedule =
           time_now +
-          server.sv_attr[(int)SRV_ATR_scheduler_iteration].at_val.at_long;
+          server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long;
 
         schedule_jobs();
         notify_listeners();
@@ -1225,11 +1225,11 @@ main_loop(void)
      */
 
     if (plogenv == NULL) /* If no specification of loglevel from env */
-      LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
+      LOGLEVEL = server.sv_attr[SRV_ATR_LogLevel].at_val.at_long;
 
     /* any running jobs need a status update? */
 
-    if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long &&
+    if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long &&
         (last_jobstat_time + JobStatRate <= time_now))
       {
 
@@ -1243,7 +1243,7 @@ main_loop(void)
           {
           /* spread these out over the next JobStatRate seconds */
 
-          when = pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long %
+          when = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long %
                  JobStatRate;
 
           ptask = set_task(WORK_Timed, when + time_now, poll_job_task, pjob);
@@ -1496,10 +1496,10 @@ int main(
    * If not use default location for it
    */
    
-  if ((server.sv_attr[(int)SRV_ATR_lockfile].at_flags & ATR_VFLAG_SET) &&
-               (server.sv_attr[(int)SRV_ATR_lockfile].at_val.at_str))
+  if ((server.sv_attr[SRV_ATR_lockfile].at_flags & ATR_VFLAG_SET) &&
+               (server.sv_attr[SRV_ATR_lockfile].at_val.at_str))
     {
-    char *LockfilePtr = server.sv_attr[(int)SRV_ATR_lockfile].at_val.at_str;
+    char *LockfilePtr = server.sv_attr[SRV_ATR_lockfile].at_val.at_str;
 
     /* check if an absolute path is specified or not */
 
@@ -1541,8 +1541,8 @@ int main(
   /* HA EVENTS MUST HAPPEN HERE */
 
   strcpy(HALockFile,lockfile);
-  HALockCheckTime = server.sv_attr[(int)SRV_ATR_LockfileCheckTime].at_val.at_long;
-  HALockUpdateTime = server.sv_attr[(int)SRV_ATR_LockfileUpdateTime].at_val.at_long;
+  HALockCheckTime = server.sv_attr[SRV_ATR_LockfileCheckTime].at_val.at_long;
+  HALockUpdateTime = server.sv_attr[SRV_ATR_LockfileUpdateTime].at_val.at_long;
 
   /* apply HA defaults */
 
@@ -1809,12 +1809,12 @@ void check_log(
 
  /* remove logs older than LogKeepDays */
 
- if ((server.sv_attr[(int)SRV_ATR_LogKeepDays].at_flags 
+ if ((server.sv_attr[SRV_ATR_LogKeepDays].at_flags 
      & ATR_VFLAG_SET) != 0)
    {
    snprintf(log_buffer,sizeof(log_buffer),"checking for old pbs_server logs in dir '%s' (older than %ld days)",
      path_svrlog,
-     server.sv_attr[(int)SRV_ATR_LogKeepDays].at_val.at_long);
+     server.sv_attr[SRV_ATR_LogKeepDays].at_val.at_long);
  
    log_event(
      PBSEVENT_SYSTEM | PBSEVENT_FORCE,
@@ -1822,17 +1822,17 @@ void check_log(
      msg_daemonname,
      log_buffer);
 
-   if (log_remove_old(path_svrlog,server.sv_attr[(int)SRV_ATR_LogKeepDays].at_val.at_long * SECS_PER_DAY) != 0)
+   if (log_remove_old(path_svrlog,server.sv_attr[SRV_ATR_LogKeepDays].at_val.at_long * SECS_PER_DAY) != 0)
      {
      log_err(-1,"check_log","failure occurred when checking for old pbs_server logs");
      }
    }
 
-  if ((server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_flags
+  if ((server.sv_attr[SRV_ATR_LogFileMaxSize].at_flags
        & ATR_VFLAG_SET) != 0)
     {
-    if ((log_size() >= server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_val.at_long)
-       && (server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_val.at_long > 0))
+    if ((log_size() >= server.sv_attr[SRV_ATR_LogFileMaxSize].at_val.at_long)
+       && (server.sv_attr[SRV_ATR_LogFileMaxSize].at_val.at_long > 0))
       {
       log_event(
         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
@@ -1840,10 +1840,10 @@ void check_log(
         msg_daemonname,
         "Rolling log file");
 
-      if ((server.sv_attr[(int)SRV_ATR_LogFileRollDepth].at_flags
+      if ((server.sv_attr[SRV_ATR_LogFileRollDepth].at_flags
            & ATR_VFLAG_SET) != 0)
         {
-        depth = server.sv_attr[(int)SRV_ATR_LogFileRollDepth].at_val.at_long;
+        depth = server.sv_attr[SRV_ATR_LogFileRollDepth].at_val.at_long;
         }
 
       if ((depth >= INT_MAX) || (depth < 1))
@@ -1860,7 +1860,7 @@ void check_log(
   /* periodically record the version and loglevel */
 
   sprintf(log_buffer, msg_info_server,
-    server.sv_attr[(int)SRV_ATR_version].at_val.at_str, LOGLEVEL);
+    server.sv_attr[SRV_ATR_version].at_val.at_str, LOGLEVEL);
 
   log_event(
     PBSEVENT_SYSTEM | PBSEVENT_FORCE,
@@ -1880,11 +1880,11 @@ void check_acct_log(
  struct work_task *ptask) /* I */
 
  {
-  if (((server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_flags & ATR_VFLAG_SET) != 0)
-       && (server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_val.at_long >= 0))
+  if (((server.sv_attr[SRV_ATR_AcctKeepDays].at_flags & ATR_VFLAG_SET) != 0)
+       && (server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long >= 0))
     {
     sprintf(log_buffer,"Checking accounting files - keep days = %ld",
-      server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_val.at_long);
+      server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long);
 
     log_event(
       PBSEVENT_SYSTEM | PBSEVENT_FORCE,
@@ -1892,7 +1892,7 @@ void check_acct_log(
       msg_daemonname,
       log_buffer);
      
-    acct_cleanup(server.sv_attr[(int)SRV_ATR_AcctKeepDays].at_val.at_long);
+    acct_cleanup(server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long);
     
     }
 
@@ -3025,31 +3025,31 @@ void restore_attr_default(
     {
     case SRV_ATR_log_events:
 
-      server.sv_attr[(int)SRV_ATR_log_events].at_val.at_long = PBSEVENT_MASK;
+      server.sv_attr[SRV_ATR_log_events].at_val.at_long = PBSEVENT_MASK;
 
       break;
 
     case SRV_ATR_tcp_timeout:
 
-      server.sv_attr[(int)SRV_ATR_tcp_timeout].at_val.at_long = PBS_TCPTIMEOUT;
+      server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long = PBS_TCPTIMEOUT;
 
       break;
 
     case SRV_ATR_JobStatRate:
 
-      server.sv_attr[(int)SRV_ATR_JobStatRate].at_val.at_long = PBS_RESTAT_JOB;
+      server.sv_attr[SRV_ATR_JobStatRate].at_val.at_long = PBS_RESTAT_JOB;
 
       break;
 
     case SRV_ATR_PollJobs:
 
-      server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long = PBS_POLLJOBS;
+      server.sv_attr[SRV_ATR_PollJobs].at_val.at_long = PBS_POLLJOBS;
 
       break;
 
     case SRV_ATR_LogLevel:
 
-      server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long = 0;
+      server.sv_attr[SRV_ATR_LogLevel].at_val.at_long = 0;
 
       break; 
 
