@@ -8572,6 +8572,16 @@ int read_layout_file()
     } /* END while (parsing file) */
 
   num_numa_nodes = i;
+
+  snprintf(log_buffer,sizeof(log_buffer),
+    "Setting up this mom to function as %d numa nodes\n",
+    num_numa_nodes);
+
+  log_event(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_NODE,
+    id,
+    log_buffer);
  
   return(0);
   } /* END read_layout_file() */

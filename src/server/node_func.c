@@ -1615,6 +1615,17 @@ int setup_numa_nodes(
         pnode->numa_nodes);
     } /* END for each numa_node */
 
+  snprintf(log_buffer,sizeof(log_buffer),
+    "Successfully created %d numa nodes for node %s\n",
+    pnode->num_numa_nodes,
+    pnode->nd_name);
+
+  log_event(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_NODE,
+    id,
+    log_buffer);
+
   return(0);
   } /* END setup_numa_nodes() */
 #endif /* NUMA_SUPPORT */
