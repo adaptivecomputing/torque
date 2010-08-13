@@ -470,12 +470,19 @@ proc_mem_t *get_proc_mem(void)
 #endif
 
 #ifdef NUMA_SUPPORT
-  ret_mm.mem_total = 0;
-  ret_mm.mem_used = 0;
-  ret_mm.mem_free = 0;
+  ret_mm.mem_total  = 0;
+  ret_mm.mem_used   = 0;
+  ret_mm.mem_free   = 0;
   ret_mm.swap_total = 0;
-  ret_mm.swap_used = 0;
-  ret_mm.swap_free = 0;
+  ret_mm.swap_used  = 0;
+  ret_mm.swap_free  = 0;
+
+  mm.mem_total  = 0;
+  mm.mem_used   = 0;
+  mm.mem_free   = 0;
+  mm.swap_total = 0;
+  mm.swap_used  = 0;
+  mm.swap_free  = 0;
 
   for (i = 0; i < numa_nodes[numa_index].num_mems; i++)
 #endif
