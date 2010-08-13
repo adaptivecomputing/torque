@@ -232,6 +232,7 @@ AvlTree streams = NULL;
  * @return a pointer to the pbsnode
 */
 
+#ifndef NUMA_SUPPORT
 struct pbsnode *tfind_addr(
 
         const u_long key,
@@ -240,6 +241,61 @@ struct pbsnode *tfind_addr(
   {
   return AVL_find(key, port, ipaddrs);
   }
+#else
+/**
+ * special version of tfind_addr to be able to locate the numa node when
+ * numa is enabled */
+struct pbsnode *tfind_addr(
+
+  const u_long key,
+  uint16_t port,
+  job *pjob)
+
+  {
+  struct pbsnode *pn = AVL_find(key,port,ipaddrs);
+
+  if (pn->num_numa_nodes == 0)
+    return(pn);
+  else
+    {
+    char *dash = NULL;
+    char *plus = NULL;
+    char *tmp = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+
+    struct pbsnode *numa = NULL;
+
+    int index;
+
+    plus = strchr(tmp,'+');
+
+    if (plus != NULL)
+      *plus = '\0';
+
+    while ((tmp = strchr(tmp,'-')) != NULL)
+      {
+      dash = tmp;
+      tmp++;
+      }
+
+    if (dash == NULL)
+      {
+      /* node has numa nodes but no dashes in exec host?? */
+      log_err(-1,"tfind_addr","Numa node but there's no dash in exec_host?");
+
+      return(pn);
+      }
+
+    index = atoi(dash+1);
+
+    numa = AVL_find(index,pn->nd_mom_port,pn->numa_nodes);
+
+    if (plus != NULL)
+      *plus = '+';
+
+    return(numa);
+    }
+  }
+#endif /* NUMA_SUPPORT */
 
 
 
@@ -636,9 +692,77 @@ job *find_job_by_node(
   struct job     *pjob = NULL;
 
   char *at;
+#ifdef NUMA_SUPPORT 
+  struct pbsnode *numa;
+
+  int i;
+#endif /* NUMA_SUPPORT */
 
   if ((at = strchr(jobid, (int)'@')) != NULL)
     * at = '\0'; /* strip off @server_name */
+
+#ifdef NUMA_SUPPORT
+  if (pnode->num_numa_nodes > 0)
+    {
+    /* check each subnode on each numa node for the job */
+    for (i = 0; i < pnode->num_numa_nodes; i++)
+      {
+      numa = AVL_find(i,pnode->nd_mom_port,pnode->numa_nodes);
+
+      for (np = numa->nd_psn; np != NULL; np = np->next)
+        {
+        for (jp = np->jobs; jp != NULL; jp = jp->next)
+          {
+          if ((jp->job != NULL) &&
+              (jp->job->ji_qs.ji_jobid != NULL) &&
+              (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0))
+            {
+            /* desired job located on node */
+
+            pjob = jp->job;
+
+            break;
+            }
+
+          /* leave loop if we found the job */
+          if (pjob != NULL)
+            break;
+          }
+
+        /* leave loop if we found a job */
+        if (pjob != NULL)
+          break;
+        }
+      }
+    }
+  else
+    {
+    /* just check each subnode for the job */
+    for (np = pnode->nd_psn;np != NULL;np = np->next)
+      {
+      /* for each jobinfo on subnode on node ... */
+
+      for (jp = np->jobs;jp != NULL;jp = jp->next)
+        {
+        if ((jp->job != NULL) &&
+            (jp->job->ji_qs.ji_jobid != NULL) &&
+            (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0))
+          {
+          /* desired job located on node */
+
+          pjob = jp->job;
+
+          break;
+          }
+
+        /* leave lopp if we found a job */
+        if (pjob != NULL)
+          break;
+        }
+      }    /* END for (np) */
+    }
+#else
+  /* just check each subnode for the job */
 
   /* for each subnode on node ... */
 
@@ -658,8 +782,13 @@ job *find_job_by_node(
 
         break;
         }
+
+      /* leave lopp if we found a job */
+      if (pjob != NULL)
+        break;
       }
-    }    /* END for (np) */
+    }  /* END for (np) */
+#endif /* NUMA SUPPORT */
 
   if (at != NULL)
     *at = '@';  /* restore @server_name */
@@ -741,11 +870,11 @@ void sync_node_jobs(
           /* double check the job struct because we could be in the middle of moving
              the job around because of data staging, suspend, or rerun */
 
-          if (pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str == NULL)
+          if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
             {
             pjob = NULL;
             }
-          else if (strstr(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str, np->nd_name) == NULL)
+          else if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, np->nd_name) == NULL)
             {
             pjob = NULL;
             }
@@ -1293,21 +1422,21 @@ int is_stat_get(
         msg_error = 1;
         }
       }
-    else if (server.sv_attr[(int)SRV_ATR_MomJobSync].at_val.at_long &&
+    else if (server.sv_attr[SRV_ATR_MomJobSync].at_val.at_long &&
              !strncmp(ret_info, "jobdata=", 8))
       {
       /* update job attributes based on what the MOM gives us */
       
       update_job_data(np, ret_info + strlen("jobdata="));
       }
-    else if (server.sv_attr[(int)SRV_ATR_MomJobSync].at_val.at_long &&
+    else if (server.sv_attr[SRV_ATR_MomJobSync].at_val.at_long &&
              !strncmp(ret_info, "jobs=", 5))
       {
       /* walk job list reported by mom */
 
       sync_node_jobs(np, ret_info + strlen("jobs="));
       }
-    else if (server.sv_attr[(int)SRV_ATR_AutoNodeNP].at_val.at_long)
+    else if (server.sv_attr[SRV_ATR_AutoNodeNP].at_val.at_long)
       {
       int str_res;
 
@@ -1333,14 +1462,14 @@ int is_stat_get(
           }
       }
       
-    else if(server.sv_attr[(int)SRV_ATR_NPDefault].at_val.at_long)
+    else if(server.sv_attr[SRV_ATR_NPDefault].at_val.at_long)
       {
         struct pbsnode *pnode;
         int i;
         long max_np;
         long nsnfreediff;
 
-        max_np = server.sv_attr[(int)SRV_ATR_NPDefault].at_val.at_long;
+        max_np = server.sv_attr[SRV_ATR_NPDefault].at_val.at_long;
 
         for(i = 0; i < svr_totnodes; i++)
           {
@@ -1370,7 +1499,7 @@ int is_stat_get(
     return(rc);
     }
 
-  if (msg_error && server.sv_attr[(int)SRV_ATR_DownOnError].at_val.at_long)
+  if (msg_error && server.sv_attr[SRV_ATR_DownOnError].at_val.at_long)
     {
     update_node_state(np, INUSE_DOWN);
     }

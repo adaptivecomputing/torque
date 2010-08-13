@@ -124,7 +124,11 @@ extern int        pbs_mom_port;
 extern time_t        time_now;
 extern char       *msg_init_norerun;
 
+#ifdef NUMA_SUPPORT
+extern struct pbsnode *tfind_addr(const u_long, uint16_t, job *);
+#else
 extern struct pbsnode *tfind_addr(const u_long, uint16_t);
+#endif /* NUMA_SUPPORT */
 extern int             LOGLEVEL;
 
 /* Extern Functions */
@@ -779,14 +783,20 @@ int stat_to_mom(
 
   addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
 
-  if (((node = tfind_addr(addr, pjob->ji_qs.ji_un.ji_exect.ji_momport)) != NULL) &&
+#ifdef NUMA_SUPPORT
+  node = tfind_addr(addr,pjob->ji_qs.ji_un.ji_exect.ji_momport,pjob);
+#else
+  node = tfind_addr(addr,pjob->ji_qs.ji_un.ji_exect.ji_momport);
+#endif
+
+  if ((node  != NULL) &&
       (node->nd_state & (INUSE_DELETED | INUSE_DOWN)))
     {
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer, "node '%s' is allocated to job but in state '%s'",
-              node->nd_name,
-              (node->nd_state & INUSE_DELETED) ? "deleted" : "down");
+      sprintf(log_buffer,"node '%s' is allocated to job but in state '%s'",
+        node->nd_name,
+        (node->nd_state & INUSE_DELETED) ? "deleted" : "down");
 
       log_event(
         PBSEVENT_SYSTEM,
