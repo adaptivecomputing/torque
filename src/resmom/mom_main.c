@@ -841,6 +841,11 @@ static char *getjoblist(
   job *pjob;
   int firstjob = 1;
 
+#ifdef NUMA_SUPPORT
+  char  mom_check_name[PBS_MAXSERVERNAME];
+  char *dot;
+#endif 
+
   if (list == NULL)
     {
     if ((list = calloc(BUFSIZ + 50, sizeof(char)))==NULL)
@@ -866,8 +871,23 @@ static char *getjoblist(
     return(" ");
     }
 
+#ifdef NUMA_SUPPORT 
+  /* initialize the name to check for for this numa mom */
+  strcpy(mom_check_name,mom_host);
+
+  if ((dot = strchr(mom_check_name,'.')) != NULL)
+    *dot = '\0';
+
+  sprintf(mom_check_name + strlen(mom_check_name),"-%d",numa_index);
+#endif
+
   for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
     {
+#ifdef NUMA_SUPPORT
+    /* skip over jobs that aren't on this node */
+    if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,mom_check_name) == NULL)
+      continue;
+#endif
     if (!firstjob)
       strcat(list, " ");
 
