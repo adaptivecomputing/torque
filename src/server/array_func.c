@@ -49,6 +49,8 @@ extern void  job_clone_wt(struct work_task *);
 extern int array_upgrade(job_array *, int, int, int *);
 extern char *get_correct_jobname(const char *jobid);
 extern int count_user_queued_jobs(pbs_queue *,char *);
+extern int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
+extern void post_modify_arrayreq(struct work_task *pwt);
 
 /* global data items used */
 
@@ -1162,8 +1164,10 @@ int modify_array_range(
   int        checkpoint_req)  /* I */
 
   {
+  char id[] = "modify_array_range";
   tlist_head tl;
-  int i;
+  int i, rc;
+  int mom_relay = 0;
 
   array_request_node *rn;
   array_request_node *to_free;
@@ -1189,7 +1193,38 @@ int modify_array_range(
             (pa->jobs[i] == NULL))
           continue;
         
-        modify_job(pa->jobs[i],plist,preq,checkpoint_req);
+        rc = modify_job(pa->jobs[i],plist,preq,checkpoint_req, NO_MOM_RELAY);
+        if(rc == PBSE_RELAYED_TO_MOM)
+          {
+          struct batch_request *array_req = NULL;
+          
+          /* We told modify_job not to call relay_to_mom so we need to contact the mom */
+          rc = copy_batchrequest(&array_req, preq, 0, i);
+          if(rc != 0)
+            {
+            return(rc);
+            }
+          
+          preq->rq_refcount++;
+          if(mom_relay == 0)
+            {
+            preq->rq_refcount++;
+            }
+          mom_relay++;
+          if ((rc = relay_to_mom(
+                      pa->jobs[i]->ji_qs.ji_un.ji_exect.ji_momaddr,
+                      array_req,
+                      post_modify_arrayreq)))
+            {  
+            snprintf(log_buffer,sizeof(log_buffer),
+              "Unable to relay information to mom for job '%s'\n",
+              pa->jobs[i]->ji_qs.ji_jobid);
+            log_err(rc,id,log_buffer);
+          
+            return(rc); /* unable to get to MOM */
+            }
+        
+          }  
         }
       
       /* release mem */
@@ -1197,6 +1232,16 @@ int modify_array_range(
       rn = (array_request_node*)GET_NEXT(rn->request_tokens_link);
       free(to_free);
       }
+    }
+
+  if(mom_relay)
+    {
+    preq->rq_refcount--;
+    if(preq->rq_refcount == 0)
+      {
+      free_br(preq);
+      }
+    return(PBSE_RELAYED_TO_MOM);
     }
 
   return(SUCCESS);

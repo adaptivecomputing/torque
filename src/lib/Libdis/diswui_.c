@@ -89,7 +89,7 @@ int
 diswui_(int stream, unsigned value)
   {
   unsigned ndigs;
-  char  *cp;
+  char  *cp = NULL;
   char  scratch[DIS_BUFSIZ+1];
 
   assert(stream >= 0);
@@ -97,6 +97,10 @@ diswui_(int stream, unsigned value)
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   cp = discui_(&scratch[DIS_BUFSIZ], value, &ndigs);
+  if(cp == NULL)
+  {
+	return(DIS_PROTO);
+  }
   *--cp = '+';
 
   while (ndigs > 1)

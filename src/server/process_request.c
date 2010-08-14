@@ -698,9 +698,6 @@ void process_request(
   }  /* END process_request() */
 
 
-
-
-
 /*
  * dispatch_request - Determine the request type and invoke the corresponding
  * function.  The function will perform the request action and return the
@@ -1213,8 +1210,11 @@ void free_br(
 
   reply_free(&preq->rq_reply);
 
-  if (preq->rq_extend)
-    free(preq->rq_extend);
+  if (preq->rq_extend && *preq->rq_extend != 0)    /* this check added for modify array calls */
+    {
+      free(preq->rq_extend);
+      preq->rq_extend = NULL;
+    }
 
   switch (preq->rq_type)
     {

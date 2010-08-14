@@ -125,13 +125,13 @@ int decode_arst_direct(
   unsigned long bksize;
   int        j;
   int        ns;
-  char      *pbuf;
-  char      *pc;
-  char      *pstr;
+  char      *pbuf = NULL;
+  char      *pc = NULL;
+  char      *pstr = NULL;
   size_t     ssize;
-  char      *tmpval;
+  char      *tmpval = NULL;
 
-  struct array_strings *stp;
+  struct array_strings *stp = NULL;
 
   /*
    * determine number of sub strings, each sub string is terminated
@@ -148,6 +148,8 @@ int decode_arst_direct(
 
     return(PBSE_SYSTEM);
     }
+
+  tmpval[0] = 0;
 
   strcpy(tmpval,val);
 
@@ -541,12 +543,12 @@ int set_arst(
   int   nsize;
   int   need;
   long  offset;
-  char *pc;
+  char *pc = NULL;
   long  used;
 
-  struct array_strings *newpas;
+  struct array_strings *newpas = NULL;
 
-  struct array_strings *pas;
+  struct array_strings *pas = NULL;
 
   assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
 
@@ -852,7 +854,10 @@ void free_arst(
   if ((attr->at_flags & ATR_VFLAG_SET) && (attr->at_val.at_arst))
     {
     if (attr->at_val.at_arst->as_buf)
+      {
       (void)free(attr->at_val.at_arst->as_buf);
+      attr->at_val.at_arst->as_buf = NULL;
+      }
 
     (void)free((char *)attr->at_val.at_arst);
     }

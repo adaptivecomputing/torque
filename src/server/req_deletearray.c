@@ -253,7 +253,10 @@ void req_deletearray(struct batch_request *preq)
     if (num_skipped != 0)
       {
       ptask = set_task(WORK_Timed, time_now + 2, array_delete_wt, preq);
-      return;
+      if(ptask)
+        {
+        return;
+        }
       }
     }
 

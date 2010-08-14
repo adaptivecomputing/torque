@@ -314,7 +314,7 @@ struct batch_request
   long rq_time; /* time batch request created  */
   char rq_user[PBS_MAXUSER+1];     /* user name request is from    */
   char rq_host[PBS_MAXHOSTNAME+1]; /* name of host sending request */
-  int   rq_XXXX;
+  int   rq_refcount;
   void *rq_extra; /* optional ptr to extra info  */
   int   rq_noreply; /* Set true if no reply is required */
   char *rq_extend; /* request "extension" data  */

@@ -111,6 +111,7 @@
 #define CHK_HOLD 1
 #define CHK_CONT 2
 
+
 /* Global Data Items: */
 
 extern attribute_def     job_attr_def[];
@@ -130,6 +131,10 @@ extern char *PJobState[];
 
 extern void cleanup_restart_file(job *);
 extern void rel_resc(job *);
+
+/* prototypes */
+void post_modify_arrayreq(struct work_task *pwt);
+static void post_modify_req(struct work_task *pwt);
 
 
 /*
@@ -238,7 +243,8 @@ int modify_job(
   void      *j,               /* O */
   svrattrl  *plist,           /* I */
   struct batch_request *preq, /* I */
-  int        checkpoint_req)  /* I */
+  int        checkpoint_req,  /* I */
+  int        flag)            /* I */
 
   {
   int   bad = 0;
@@ -430,17 +436,22 @@ int modify_job(
 
   if (sendmom)
     {
-    if ((rc = relay_to_mom(
-                pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
-                preq,
-                post_modify_req)))
-      {  
-      snprintf(log_buffer,sizeof(log_buffer),
-        "Unable to relay information to mom for job '%s'\n",
-        pjob->ji_qs.ji_jobid);
-      log_err(rc,id,log_buffer);
-
-      return(rc); /* unable to get to MOM */
+    /* if the NO_MOM_RELAY flag is set the calling function will call
+       relay_to_mom so we do not need to do it here */
+    if(flag != NO_MOM_RELAY)
+      {
+      if ((rc = relay_to_mom(
+                  pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+                  preq,
+                  post_modify_req)))
+        {  
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Unable to relay information to mom for job '%s'\n",
+          pjob->ji_qs.ji_jobid);
+        log_err(rc,id,log_buffer);
+  
+        return(rc); /* unable to get to MOM */
+        }
       }
 
     return(PBSE_RELAYED_TO_MOM);
@@ -477,6 +488,120 @@ int modify_job(
   } /* END modify_job() */
 
 
+int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid)
+  {
+    struct batch_request *request;
+    svrattrl *pal;
+    svrattrl *newpal;
+    tlist_head *phead;
+    char *ptr1, *ptr2;
+    char newjobname[PBS_MAXSVRJOBID+1];
+
+    request = alloc_br(type);
+    if(request)
+      {
+      request->rq_type = preq->rq_type;
+      request->rq_perm = preq->rq_perm;
+      request->rq_fromsvr = preq->rq_fromsvr;
+      request->rq_conn = preq->rq_conn;
+      request->rq_orgconn = preq->rq_orgconn;
+      request->rq_extsz = preq->rq_extsz;
+      request->rq_time = preq->rq_time;
+      strcpy(request->rq_user, preq->rq_user);
+      strcpy(request->rq_host, preq->rq_host);
+      request->rq_reply.brp_choice = preq->rq_reply.brp_choice;
+      request->rq_noreply = preq->rq_noreply;
+      request->rq_extend = preq->rq_extend;
+      /* remember the batch_request we copied */
+      request->rq_extra = (void *)preq;
+
+      switch(preq->rq_type)
+        {
+        /* This function was created for a modify arracy request (PBS_BATCH_ModifyJob)
+           the preq->rq_ind structure was allocated in dis_request_read. If other
+           BATCH types are needed refer to that function to see how the rq_ind structure
+           was allocated and then copy it here. */
+        case PBS_BATCH_DeleteJob:
+
+        case PBS_BATCH_HoldJob:
+
+        case PBS_BATCH_CheckpointJob:
+
+        case PBS_BATCH_ModifyJob:
+
+        case PBS_BATCH_AsyModifyJob:
+          /* based on how decode_DIS_Manage allocates data */
+          CLEAR_HEAD(request->rq_ind.rq_manager.rq_attr);
+
+          phead = &request->rq_ind.rq_manager.rq_attr;
+          request->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
+          request->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
+          /* If this is a job array it is possible we only have the array name
+             and not the individual job. We need to find out what we have and
+             modify the name if needed */
+          ptr1 = strstr(preq->rq_ind.rq_manager.rq_objname, "[]");
+          if(ptr1)
+            {
+            ptr1++;
+            strcpy(newjobname, preq->rq_ind.rq_manager.rq_objname);
+            ptr2 = strstr(newjobname, "[]");
+            ptr2++;
+            *ptr2 = 0;
+            sprintf(request->rq_ind.rq_manager.rq_objname,"%s%d%s", 
+                    newjobname,
+                    jobid,
+                    ptr1);
+            }
+          else
+            strcpy(request->rq_ind.rq_manager.rq_objname, preq->rq_ind.rq_manager.rq_objname);
+
+          /* copy the attribute list */
+          pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
+          while(pal != NULL)
+            {
+            newpal = (svrattrl *)malloc(pal->al_tsize + 1);
+            if(!newpal)
+              {
+              return(PBSE_SYSTEM);
+              }
+            CLEAR_LINK(newpal->al_link);
+
+            newpal->al_atopl.next = 0;
+            newpal->al_tsize = pal->al_tsize + 1;
+            newpal->al_nameln = pal->al_nameln;
+            newpal->al_flags  = pal->al_flags;
+            newpal->al_atopl.name = (char *)newpal + sizeof(svrattrl);
+            strcpy(newpal->al_atopl.name, pal->al_atopl.name);
+            newpal->al_nameln = pal->al_nameln;
+            newpal->al_atopl.resource = newpal->al_atopl.name + newpal->al_nameln;
+            strcpy(newpal->al_atopl.resource, pal->al_atopl.resource);
+            newpal->al_rescln = pal->al_rescln;
+            newpal->al_atopl.value = newpal->al_atopl.name + newpal->al_nameln + newpal->al_rescln;
+            strcpy(newpal->al_atopl.value, pal->al_atopl.value);
+            newpal->al_valln = pal->al_valln;
+            newpal->al_atopl.op = pal->al_atopl.op;
+
+            pal = (struct svrattrl *)GET_NEXT(pal->al_link);
+
+            }
+
+          break;
+
+        default:
+          break;
+
+        }
+      request->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
+      request->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
+      append_link(phead, &newpal->al_link, newpal);
+
+      *newreq = request;
+      return(0);
+
+      }
+    else
+      return(PBSE_SYSTEM);
+  }
 
 
 /*
@@ -492,17 +617,62 @@ int modify_whole_array(
   int        checkpoint_req)  /* I */
 
   {
+  char id[] = "modify_whole_array";
   int i;
+  int rc = 0;
+  int mom_relay = 0;
 
   for (i = 0; i < pa->ai_qs.array_size; i++)
     {
     if (pa->jobs[i] == NULL)
       continue;
 
-    modify_job(pa->jobs[i],plist,preq,checkpoint_req);
+    /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
+    rc = modify_job(pa->jobs[i],plist,preq,checkpoint_req, NO_MOM_RELAY);
+    if(rc == PBSE_RELAYED_TO_MOM)
+      {
+      struct batch_request *array_req = NULL;
+
+      /* We told modify_job not to call relay_to_mom so we need to contact the mom */
+      rc = copy_batchrequest(&array_req, preq, 0, i);
+      if(rc != 0)
+        {
+        return(rc);
+        }
+
+      preq->rq_refcount++;
+      if(mom_relay == 0)
+        {
+        preq->rq_refcount++;
+        }
+      mom_relay++;
+      if ((rc = relay_to_mom(
+                  pa->jobs[i]->ji_qs.ji_un.ji_exect.ji_momaddr,
+                  array_req,
+                  post_modify_arrayreq)))
+        {  
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Unable to relay information to mom for job '%s'\n",
+          pa->jobs[i]->ji_qs.ji_jobid);
+        log_err(rc,id,log_buffer);
+
+        return(rc); /* unable to get to MOM */
+        }
+
+      }
     }
 
-  return(SUCCESS);
+  if(mom_relay)
+    {
+    preq->rq_refcount--;
+    if(preq->rq_refcount == 0)
+      {
+      free_br(preq);
+      }
+    return(PBSE_RELAYED_TO_MOM);
+    }
+
+  return(rc);
   } /* END modify_whole_array() */
 
 
@@ -519,10 +689,12 @@ void req_modifyarray(
 
   {
   job_array *pa;
+  job *pjob;
   svrattrl *plist;
   int   checkpoint_req = FALSE;
   char *array_spec = NULL;
   char *pcnt = NULL;
+  int rc = 0, rc2 = 0;
 
   pa = get_array(preq->rq_ind.rq_modify.rq_objname);
 
@@ -582,21 +754,50 @@ void req_modifyarray(
       *pcnt = '\0';
 
     /* there is more than just a slot given, modify that range */
-    if (modify_array_range(pa,array_spec,plist,preq,checkpoint_req) == FAILURE)
+    rc = modify_array_range(pa,array_spec,plist,preq,checkpoint_req);
+    if(rc != 0 && rc != PBSE_RELAYED_TO_MOM)
       {
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
-
+  
       return;
       }
 
     if (pcnt != NULL)
       *pcnt = '%';
-    }
-  else if (modify_whole_array(pa,plist,preq,checkpoint_req) == FAILURE)
-    {
-    req_reject(PBSE_IVALREQ,0,preq,NULL,"Error altering the array");
 
-    return;
+    if(rc == PBSE_RELAYED_TO_MOM)
+      {
+      return;
+      }
+    }
+  else 
+    {
+    rc = modify_whole_array(pa,plist,preq,checkpoint_req);
+    if(rc != 0 && rc != PBSE_RELAYED_TO_MOM)
+      {
+      req_reject(PBSE_IVALREQ,0,preq,NULL,"Error altering the array");
+      return;
+      }
+
+    /* we modified the job array. We now need to update the job */
+    pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
+    rc2 = modify_job(pjob,plist,preq,checkpoint_req, NO_MOM_RELAY);
+    if(rc2 && rc != PBSE_RELAYED_TO_MOM)
+      {
+      /* there are two operations going on that give a return code:
+         one from modify_whole_array and one from modify_job_for_array.
+         If either of these fail, return the error. This makes it
+         so some elements fo the array will be updated but others are
+         not. But at least the user will know something went wrong.*/
+      req_reject(rc,0,preq,NULL,NULL);
+      return;
+      }
+
+    if(rc == PBSE_RELAYED_TO_MOM)
+      {
+      return;
+      }
+
     }
 
   /* SUCCESS */
@@ -669,7 +870,7 @@ void req_modifyjob(
       }
     }
 
-  if ((rc = modify_job(pjob,plist,preq,checkpoint_req)) != 0)
+  if ((rc = modify_job(pjob,plist,preq,checkpoint_req, 0)) != 0)
     {
     if ((rc == PBSE_MODATRRUN) ||
         (rc == PBSE_UNKRESC))
@@ -908,4 +1109,93 @@ int modify_job_attr(
   return(0);
   }  /* END modify_job_attr() */
 
+/*
+ * post_modify_arrayreq - clean up after sending modify request to MOM
+ */
+
+void post_modify_arrayreq(
+  struct work_task *pwt)
+  {
+
+  struct batch_request *preq;
+  struct batch_request *parent_req;
+  job  *pjob;
+
+  svr_disconnect(pwt->wt_event);  /* close connection to MOM */
+
+  preq = pwt->wt_parm1;
+  parent_req = preq->rq_extra; /* This is the original batch_request allocated by process_request */
+
+  preq->rq_conn = preq->rq_orgconn;  /* restore socket to client */
+
+  if ((preq->rq_reply.brp_code) && (preq->rq_reply.brp_code != PBSE_UNKJOBID))
+    {
+    sprintf(log_buffer, msg_mombadmodify, preq->rq_reply.brp_code);
+
+    log_event(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      preq->rq_ind.rq_modify.rq_objname,
+      log_buffer);
+
+    parent_req->rq_refcount--;
+    if(parent_req->rq_refcount == 0)
+      {
+      free_br(preq);
+      req_reject(parent_req->rq_reply.brp_code, 0, parent_req, NULL, NULL);
+      }
+    else
+      free_br(preq);
+    }
+  else
+    {
+    if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
+      {
+      if ((pjob = find_job(preq->rq_ind.rq_modify.rq_objname)) == NULL)
+        {
+        parent_req->rq_refcount--;
+        if(parent_req->rq_refcount == 0)
+          {
+          free_br(preq);
+          req_reject(parent_req->rq_reply.brp_code, 0, parent_req, NULL, NULL);
+          return;
+          }
+        else
+          {
+          free_br(preq);
+          return;
+          }
+        }
+      else
+        {
+        if (LOGLEVEL >= 0)
+          {
+          sprintf(log_buffer, "post_modify_req: PBSE_UNKJOBID for job %s in state %s-%s, dest = %s",
+                  (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
+                  PJobState[pjob->ji_qs.ji_state],
+                  PJobSubState[pjob->ji_qs.ji_substate],
+                  pjob->ji_qs.ji_destin);
+
+          LOG_EVENT(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            log_buffer);
+          }
+        }
+      }
+
+    parent_req->rq_refcount--;
+    if(parent_req->rq_refcount == 0)
+      {
+      parent_req->rq_reply.brp_code = preq->rq_reply.brp_code;
+      free_br(preq);
+      reply_ack(parent_req);
+      }
+    else
+      free_br(preq);
+    }
+
+  return;
+  }  /* END post_modify_arrayreq() */
 

@@ -222,6 +222,7 @@ void append_link(
     abort();
     }  /* END if ((pobj == NULL) || ...) */
 
+
 #endif  /* NDEBUG */
 
   /*

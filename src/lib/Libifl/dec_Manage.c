@@ -142,7 +142,6 @@ int decode_DIS_Manage(
     }
 
   rc = decode_DIS_svrattrl(
-
          sock,
          &preq->rq_ind.rq_manager.rq_attr);
 
