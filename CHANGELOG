@@ -21,6 +21,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Merged bug fix from 2.5-fixes for bugzilla bug 75. This patch fixes
       a problem where modifying a running job or element of a job array 
       causes pbs_server to seg fault. 08/14/2010
+      This merged 2.5-fixes revisions 3960-3984
       
 2.5.2
   b - remove square brackets [] from job and default stdout/stderr filenames 
