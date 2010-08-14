@@ -458,6 +458,7 @@
 #define CHECKPOINTCONT "checkpoint_cont"
 #define MOM_DEFAULT_CHECKPOINT_DIR "$MOMDEFAULTCHECKPOINTDIR$"
 
+#define NO_MOM_RELAY 1
 
 enum batch_op { SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT, MERGE };
 

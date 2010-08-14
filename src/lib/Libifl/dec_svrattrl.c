@@ -171,7 +171,8 @@ decode_DIS_svrattrl(int sock, tlist_head *phead)
 
     hasresc = disrui(sock, &rc);
 
-    if (rc) break;
+    if (rc) 
+	  break;
 
     if (hasresc)
       {

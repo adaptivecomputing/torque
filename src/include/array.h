@@ -108,7 +108,7 @@ int hold_array_range(job_array *,char *,attribute *);
 void hold_job(attribute *,void *);
 
 int modify_array_range(job_array *,char *,svrattrl *,struct batch_request *,int);
-int modify_job(void *,svrattrl *,struct batch_request *,int);
+int modify_job(void *,svrattrl *,struct batch_request *,int, int);
 
 void update_array_values(job_array *,void *,int,enum ArrayEventsEnum);
 

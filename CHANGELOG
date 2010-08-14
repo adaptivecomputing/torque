@@ -18,6 +18,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       limitations
   c - addresses are now propagated to numa nodes
   b - correct the hostnames $PBS_NODEFILE
+  b - Merged bug fix from 2.5-fixes for bugzilla bug 75. This patch fixes
+      a problem where modifying a running job or element of a job array 
+      causes pbs_server to seg fault. 08/14/2010
       
 2.5.2
   b - remove square brackets [] from job and default stdout/stderr filenames 
@@ -25,7 +28,14 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   c - do not attempt to reinsert a job into ji_jobs_array_sum (bugzilla 73)
   c - fix pbs_server crash from invalid qsub -t argument
   b - fix so blcr checkpoint jobs work correctly when put on hold
-      
+  b - fixed bug 75 where pbs_server would segfault with a double free when
+      calling qalter on a running job.
+  b - made another fix to bug 75. The previous fix only handled the case for 
+      running jobs that were altered. This patch fixes job arrays with running
+      job elements that are altered.
+  e - Changed free_br back to its original form and modifed copy_batchrequest
+      to make a copy of the rq_extend element which will be freed in 
+      free_br.
 
 2.5.1
   e - Allow the nodes file to use the syntax node[0-100] in the name to 

@@ -97,6 +97,10 @@
 extern int h_errno;
 #endif
 
+#ifdef _AIX
+extern const char *hstrerror(int);
+#endif
+
 /*
  * get_hostaddr.c - contains functions to provide the internal
  * internet address for a host and to provide the port

@@ -209,8 +209,7 @@ struct config dependent_config[] =
 
 struct nlist nl[] =
   {
-    { "avenrun"
-    }
+    { "avenrun"  }
   };
 
 #define KSYM_LOAD 0
