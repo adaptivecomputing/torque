@@ -511,7 +511,16 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
       strcpy(request->rq_host, preq->rq_host);
       request->rq_reply.brp_choice = preq->rq_reply.brp_choice;
       request->rq_noreply = preq->rq_noreply;
-      request->rq_extend = preq->rq_extend;
+      /* we need to copy rq_extend if there is any data */
+      if(preq->rq_extend)
+        {
+        request->rq_extend = (char *)malloc(strlen(preq->rq_extend) + 1);
+        if(request->rq_extend == NULL)
+          {
+          return(PBSE_SYSTEM);
+          }
+        strcpy(request->rq_extend, preq->rq_extend);
+        }
       /* remember the batch_request we copied */
       request->rq_extra = (void *)preq;
 
