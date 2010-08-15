@@ -785,7 +785,7 @@ job *job_clone(
    * make up new job file name, it is based on the new jobid
    */
 
-  snprintf(basename, PBS_JOBBASE, "%s-%d", oldid, taskid);
+  snprintf(basename, PBS_JOBBASE, "%s-%d.%s", oldid, taskid, hostname);
   free(oldid);
 
   do
