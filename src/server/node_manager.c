@@ -1637,7 +1637,24 @@ void stream_eof(
 
   /* mark node and all subnodes as down */
 
+#ifdef NUMA_SUPPORT
+  if (np->num_numa_nodes > 0)
+    {
+    int i;
+    struct pbsnode *pnode;
+
+    for (i = 0; i < np->num_numa_nodes; i++)
+      {
+      pnode = AVL_find(i,np->nd_mom_port,np->numa_nodes);
+
+      update_node_state(pnode,INUSE_DOWN);
+      }
+    }
+  else
+    update_node_state(np, INUSE_DOWN);
+#else
   update_node_state(np, INUSE_DOWN);
+#endif 
 
   /* remove stream from list of valid connections */
 
