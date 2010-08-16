@@ -21,8 +21,17 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
       
 2.5.2
+  e - Allow the nodes file to use the syntax node[0-100] in the name to 
+      create identical nodes with names node0, node1, ..., node100.
+      (also node[000-100] => node000, node001, ... node100)
+  b - fix support of the 'procs' functionality for qsub.
   b - remove square brackets [] from job and default stdout/stderr filenames 
       for job arrays (fixes conflict with some non-bash shells)
+  n - fix build system so README.array_changes is included in tar.gz file made
+      with "make dist"
+  n - fix build system so contrib/pbsweb-lite-0.95.tar.gz, contrib/qpool.gz
+      and contrib/README.pbstools are included the the tar.gz file made
+      with "make dist"
   c - fixed crash when moving the job to a different queue (bugzilla 73)
   c - fix pbs_server crash from invalid qsub -t argument
   b - fix so blcr checkpoint jobs work correctly when put on hold
@@ -35,9 +44,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       after a server restart
 
 2.5.1
-  e - Allow the nodes file to use the syntax node[0-100] in the name to 
-      create identical nodes with names node0, node1, ..., node100.
-      (also node[000-100] => node000, node001, ... node100)
+  b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges
 
 2.5.0
 
