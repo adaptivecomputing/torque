@@ -1620,6 +1620,8 @@ void mgr_node_set(
   int  problem_cnt = 0;
   char  *problem_names;
 
+  node_iterator iter;
+
   struct pbsnode  **problem_nodes = NULL;
 
   struct prop props;
@@ -1691,7 +1693,9 @@ void mgr_node_set(
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
-  for (i = 0;i < svr_totnodes;i++, pnode = pbsndlist[i])
+  reinitialize_node_iterator(&iter);
+
+  while ((pnode = next_node(&iter)) != NULL)
     {
     if (propnodes && !hasprop(pnode, &props))
       continue;
@@ -1769,7 +1773,7 @@ void mgr_node_set(
 
     if (!allnodes && !propnodes)
       break;
-    }  /* END for (i) */
+    }  /* END for each node */
 
   if (need_todo & WRITENODE_STATE)
     {

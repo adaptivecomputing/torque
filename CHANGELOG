@@ -19,6 +19,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   c - addresses are now propagated to numa nodes
   b - correct the hostnames $PBS_NODEFILE
   b - mark the numa nodes as down if the host node goes down 
+  b - fix the pbsnodes :prop functionality for numa nodes
       
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
