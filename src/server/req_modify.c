@@ -496,9 +496,9 @@ int modify_job(
 int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid)
   {
     struct batch_request *request;
-    svrattrl *pal;
-    svrattrl *newpal;
-    tlist_head *phead;
+    svrattrl *pal = NULL;
+    svrattrl *newpal = NULL;
+    tlist_head *phead = NULL;
     char *ptr1, *ptr2;
     char newjobname[PBS_MAXSVRJOBID+1];
 
