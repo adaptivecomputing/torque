@@ -1509,6 +1509,7 @@ void job_purge(
       {
       array_delete(pjob->ji_arraystruct);
       }
+    array_save(pa);
     }
 
   if ((pjob->ji_is_array_template == TRUE) ||
