@@ -1682,24 +1682,61 @@ void mgr_node_set(
 
   log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_NODE, nodename, log_buffer);
 
+  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
+
   if (allnodes || propnodes)
     {
-    pnode = pbsndlist[0];
+    /* handle scrolling over all nodes */
 
     problem_nodes = (struct pbsnode **)malloc(svr_totnodes * sizeof(struct pbsnode *));
 
     problem_cnt = 0;
-    }
+  
+    reinitialize_node_iterator(&iter);
 
-  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
+    while ((pnode = next_node(&iter)) != NULL)
+      {
+      if (propnodes && !hasprop(pnode, &props))
+        continue;
 
-  reinitialize_node_iterator(&iter);
+      save_characteristic(pnode);
 
-  while ((pnode = next_node(&iter)) != NULL)
+      rc = mgr_set_node_attr(
+             pnode,
+             node_attr_def,
+             ND_ATR_LAST,
+             plist,
+             preq->rq_perm,
+             &bad,
+             (void *)pnode,
+             ATR_ACTION_ALTER);
+
+      if (rc != 0)
+        {
+        if (problem_nodes)     /*we have an array in which to save*/
+          problem_nodes[ problem_cnt ] = pnode;
+        
+        ++problem_cnt;
+        }
+      else
+        {
+        /* modifications succeeded for this node */
+
+        chk_characteristic(pnode, &need_todo);
+
+        mgr_log_attr(
+          msg_man_set,
+          plist,
+          PBS_EVENTCLASS_NODE,
+          pnode->nd_name);
+        }
+
+      }  /* END for each node */
+
+    } /* END multiple node case */
+  else
     {
-    if (propnodes && !hasprop(pnode, &props))
-      continue;
-
+    /* handle single node case */
     save_characteristic(pnode);
 
     rc = mgr_set_node_attr(
@@ -1714,66 +1751,52 @@ void mgr_node_set(
 
     if (rc != 0)
       {
-      if (allnodes || propnodes)
+      /*In the specific node case, reply w/ error and return*/
+      
+      switch (rc)
         {
-        if (problem_nodes)     /*we have an array in which to save*/
-          problem_nodes[ problem_cnt ] = pnode;
+        case PBSE_INTERNAL:
+          
+        case PBSE_SYSTEM:
 
-        ++problem_cnt;
+          req_reject(rc, bad, preq, NULL, NULL);
+          
+          break;
+
+        case PBSE_NOATTR:
+          
+        case PBSE_ATTRRO:
+          
+        case PBSE_MUTUALEX:
+          
+        case PBSE_BADNDATVAL:
+          
+          reply_badattr(rc, bad, plist, preq);
+          
+          break;
+          
+        default:
+          
+          req_reject(rc, 0, preq, NULL, NULL);
+          
+          break;
         }
-      else
-        {
-        /*In the specific node case, reply w/ error and return*/
 
-        switch (rc)
-          {
-
-          case PBSE_INTERNAL:
-
-          case PBSE_SYSTEM:
-
-            req_reject(rc, bad, preq, NULL, NULL);
-
-            break;
-
-          case PBSE_NOATTR:
-
-          case PBSE_ATTRRO:
-
-          case PBSE_MUTUALEX:
-
-          case PBSE_BADNDATVAL:
-
-            reply_badattr(rc, bad, plist, preq);
-
-            break;
-
-          default:
-
-            req_reject(rc, 0, preq, NULL, NULL);
-
-            break;
-          }
-
-        return;
-        }  /* END else */
-      }
+      return;
+      } /* END if (rc != 0) */ 
     else
       {
       /* modifications succeeded for this node */
-
+      
       chk_characteristic(pnode, &need_todo);
-
+      
       mgr_log_attr(
         msg_man_set,
         plist,
         PBS_EVENTCLASS_NODE,
         pnode->nd_name);
       }
-
-    if (!allnodes && !propnodes)
-      break;
-    }  /* END for each node */
+    } /* END single node case */
 
   if (need_todo & WRITENODE_STATE)
     {
