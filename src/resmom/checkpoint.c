@@ -96,6 +96,14 @@ extern char *path_spool;
 extern char  *path_jobs;
 extern char  *TRemChkptDirList[];
 
+#ifdef USEJOBCREATE
+extern uint64_t get_jobid(char *);
+#endif /* USEJOBCREATE */
+
+#ifdef ENABLE_CSA
+extern void add_wkm_start(uint64_t, char *);
+#endif /* ENABLE_CSA */
+
 int        checkpoint_system_type = CST_NONE;
 char    path_checkpoint[MAXPATHLEN + 1];
 
@@ -1567,6 +1575,9 @@ int blcr_restart_job(
   char  restartfile[MAXPATHLEN + 1];
   char  script_buf[MAXPATHLEN + 1];
   char  **ap;
+#ifdef USEJOBCREATE
+	uint64_t job_id;
+#endif /* USEJOBCREATE */
 
 
   /* if a restart script is defined launch it */
@@ -1602,6 +1613,18 @@ int blcr_restart_job(
 
 
     }
+
+#ifdef USEJOBCREATE
+    /*
+     * Get a job id from the system
+     */
+    job_id  = get_jobid(pjob->ji_qs.ji_jobid);
+
+    pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll = job_id;
+    
+    pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_flags =
+      ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+#endif /* USEJOBCREATE */
 
   /* launch the script and return success */
   
@@ -1710,6 +1733,15 @@ int blcr_restart_job(
       perror("setsid");
       exit(-1);
       }
+
+#ifdef ENABLE_CSA
+      /*
+	     * Add a workload management start record
+	     */
+      
+      add_wkm_start(job_id, pjob->ji_qs.ji_jobid);
+      
+#endif /* ENABLE_CSA */
 
     execv(arg[0], arg);
     }  /* END if (pid == 0) */

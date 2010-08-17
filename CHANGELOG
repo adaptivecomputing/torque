@@ -25,6 +25,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       free_br.
   b - fix condition where job array "template" may not get cleaned up properly 
       after a server restart
+  b - fix to get new pagg ID and add additional CSA records when restarting from
+      checkpoint
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges
