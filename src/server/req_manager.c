@@ -1913,6 +1913,8 @@ static void mgr_node_delete(
   struct pbsnode  **problem_nodes = NULL;
   svrattrl *plist;
 
+  node_iterator iter;
+
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
     {
@@ -1954,38 +1956,32 @@ static void mgr_node_delete(
 
   log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_NODE, nodename, log_buffer);
 
+  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
+
   /*if doing many and problem arises with some, record them for report*/
   /*the array of "problem nodes" sees no use now and may never see use*/
 
   if (allnodes)
     {
-    pnode = pbsndlist[0];
-
+    /* handle all nodes */
     problem_nodes = (struct pbsnode **)malloc(
                       svr_totnodes * sizeof(struct pbsnode *));
 
     problem_cnt = 0;
-    }
 
-  /*set "deleted" bit in node's (nodes, allnodes == 1) "inuse" field*/
-  /*remove entire prop list, including the node name, from the node */
-  /*remove the IP address array hanging from the node               */
+    reinitialize_node_iterator(&iter);
 
-  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
-
-  for (i = 0;i < svr_totnodes;i++, pnode = pbsndlist[i])
-    {
-    save_characteristic(pnode);
-
-    nodename = strdup(pnode->nd_name);
-
-    effective_node_delete(pnode);
-
-    rc = 0;   /*currently, failure not possible so set rc=0   */
-
-    if (rc != 0)
+    while ((pnode = next_node(&iter)) != NULL)
       {
-      if (allnodes)
+      save_characteristic(pnode);
+
+      nodename = strdup(pnode->nd_name);
+
+      effective_node_delete(pnode);
+
+      rc = 0;   /*currently, failure not possible so set rc=0   */
+
+      if (rc != 0)
         {
         if (problem_nodes)     /*we have an array in which to save*/
           problem_nodes[problem_cnt] = pnode;
@@ -1994,20 +1990,46 @@ static void mgr_node_delete(
         }
       else
         {
-        /*In the specific node case, reply w/ error and return*/
+        /*modifications succeed for this node*/
 
-        switch (rc)
+        chk_characteristic(pnode, &need_todo);
+
+        if (nodename)
           {
+          mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, nodename);
 
-          default:
-
-            req_reject(rc, 0, preq, NULL, NULL);
-
-            break;
+          free(nodename);
           }
-
-        return;
         }
+
+      } /* end loop ( all nodes ) */
+    }
+  else
+    {
+    /* handle single nodes */
+    save_characteristic(pnode);
+
+    nodename = strdup(pnode->nd_name);
+
+    effective_node_delete(pnode);
+
+    rc = 0;   /*currently, failure not possible so set rc=0   */
+        
+    if (rc != 0)
+      {
+      /*In the specific node case, reply w/ error and return*/
+      
+      switch (rc)
+        {
+        
+        default:
+          
+          req_reject(rc, 0, preq, NULL, NULL);
+          
+          break;
+        }
+
+      return;
       }
     else
       {
@@ -2022,10 +2044,12 @@ static void mgr_node_delete(
         free(nodename);
         }
       }
+    }
 
-    if (!allnodes)
-      break;
-    } /* bottom of the for() */
+  /*set "deleted" bit in node's (nodes, allnodes == 1) "inuse" field*/
+  /*remove entire prop list, including the node name, from the node */
+  /*remove the IP address array hanging from the node               */
+
 
   if (need_todo & WRITENODE_STATE)
     {
