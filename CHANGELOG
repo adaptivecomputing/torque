@@ -1,6 +1,8 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 2.6.0
+# note for developers: the intermediate prelease fixes are here only because
+# there are users using the snapshots now. These will be removed pre-release
   b - Fixed duplicate entry in /doc/Makefile.am which caused make 
       install claiming it could not overwrite man7/pbs_resources_irix5.7 
   e - Addeded autogen.sh go make life easier in a post Makefile.in
