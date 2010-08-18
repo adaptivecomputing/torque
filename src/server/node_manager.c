@@ -254,6 +254,9 @@ struct pbsnode *tfind_addr(
   {
   struct pbsnode *pn = AVL_find(key,port,ipaddrs);
 
+  if (pn == NULL)
+    return(NULL);
+
   if (pn->num_numa_nodes == 0)
     return(pn);
   else
