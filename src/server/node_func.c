@@ -1095,10 +1095,10 @@ static int process_host_name_part(
 
     if (NodeSuffixIsSet == 0)
       {
-      if (((server.sv_attr[(int)SRV_ATR_NodeSuffix].at_flags & ATR_VFLAG_SET) != 0) &&
-          (server.sv_attr[(int)SRV_ATR_NodeSuffix].at_val.at_str != NULL))
+      if (((server.sv_attr[SRV_ATR_NodeSuffix].at_flags & ATR_VFLAG_SET) != 0) &&
+          (server.sv_attr[SRV_ATR_NodeSuffix].at_val.at_str != NULL))
         {
-        NodeSuffix = strdup(server.sv_attr[(int)SRV_ATR_NodeSuffix].at_val.at_str);
+        NodeSuffix = strdup(server.sv_attr[SRV_ATR_NodeSuffix].at_val.at_str);
         }
 
       NodeSuffixIsSet = 1;
@@ -1236,8 +1236,7 @@ static int process_host_name_part(
  *       the nodes file.
 */
 
-int
-update_nodes_file(void)
+int update_nodes_file(void)
 
   {
 #ifndef NDEBUG
@@ -1279,6 +1278,8 @@ update_nodes_file(void)
     }
 
   /* for each node ... */
+  /* NOTE: DO NOT change this loop to iterate over numa nodes. Since they
+   * aren't real hosts they should NOT appear in the nodes file */
 
   for (i = 0;i < svr_totnodes;++i)
     {
@@ -1302,6 +1303,24 @@ update_nodes_file(void)
       fprintf(nin, " %s=%d",
               ATTR_NODE_np,
               np->nd_nsn);
+
+#ifdef NUMA_SUPPORT
+    /* write out the numa attributes if needed */
+    if (np->num_numa_nodes > 0)
+      {
+      fprintf(nin, " %s=%d",
+        ATTR_NODE_num_numa_nodes,
+        np->num_numa_nodes);
+      }
+
+    if ((np->numa_str != NULL) &&
+        (np->numa_str[0] != '\0'))
+      {
+      fprintf(nin, " %s=%s",
+        ATTR_NODE_numa_str,
+        np->numa_str);
+      }
+#endif /* def NUMA_SUPPPORT */
 
     /* write out properties */
 
