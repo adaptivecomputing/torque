@@ -14,9 +14,12 @@ EXTRA_DIST = man1/qalter.1.in man1/qdel.1.in man1/qhold.1.in man1/qmove.1.in \
 	     man1/pbs.1.in man1/pbsdsh.1.in man1/nqs2pbs.1.in man1/basl2c.1.in \
 	     man1/xpbs.1.in man1/xpbsmon.1.in man1/qmgr.1.in man1/qchkpt.1.in \
 	     \
-	     man3/pbs_alterjob.3.in man3/pbs_connect.3.in man3/pbs_default.3.in \
-	     man3/pbs_deljob.3.in man3/pbs_disconnect.3.in man3/pbs_geterrmsg.3.in \
-	     man3/pbs_holdjob.3.in man3/pbs_locate.3.in man3/pbs_manager.3.in \
+	     man3/pbs_alterjob.3.in man3/pbs_checkpointjob.3.in \
+	     man3/pbs_connect.3.in \
+	     man3/pbs_default.3.in man3/pbs_deljob.3.in man3/pbs_disconnect.3.in \
+	     man3/pbs_fbserver.3.in man3/pbs_geterrmsg.3.in \
+	     man3/pbs_get_server_list.3.in man3/pbs_holdjob.3.in \
+	     man3/pbs_locate.3.in man3/pbs_manager.3.in \
 	     man3/pbs_movejob.3.in man3/pbs_msgjob.3.in man3/pbs_orderjob.3.in \
 	     man3/pbs_rerunjob.3.in man3/pbs_rescquery.3.in \
 	     man3/pbs_rescreserve.3.in man3/pbs_rlsjob.3.in man3/pbs_runjob.3.in \
@@ -58,9 +61,11 @@ nodist_man1_MANS = man1/qalter.1 man1/qdel.1 man1/qhold.1 man1/qmove.1 \
 		   man1/pbs.1 man1/pbsdsh.1 man1/nqs2pbs.1 man1/basl2c.1 \
 		   man1/xpbs.1 man1/xpbsmon.1 man1/qmgr.1 man1/qchkpt.1
 
-nodist_man3_MANS = man3/pbs_alterjob.3 man3/pbs_connect.3 man3/pbs_default.3 \
-		   man3/pbs_deljob.3 man3/pbs_disconnect.3 \
-		   man3/pbs_geterrmsg.3 man3/pbs_holdjob.3 man3/pbs_locate.3 \
+nodist_man3_MANS = man3/pbs_alterjob.3 man3/pbs_checkpointjob.3 \
+       man3/pbs_connect.3 \
+       man3/pbs_default.3 man3/pbs_deljob.3 man3/pbs_disconnect.3 \
+		   man3/pbs_fbserver.3 man3/pbs_geterrmsg.3 man3/pbs_get_server_list.3 \
+		   man3/pbs_holdjob.3 man3/pbs_locate.3 \
 		   man3/pbs_manager.3 man3/pbs_movejob.3 man3/pbs_msgjob.3 \
 		   man3/pbs_orderjob.3 man3/pbs_rerunjob.3 \
 		   man3/pbs_rescquery.3 man3/pbs_rescreserve.3 \

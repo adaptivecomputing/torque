@@ -27,6 +27,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       after a server restart
   b - fix to get new pagg ID and add additional CSA records when restarting from
       checkpoint
+  e - added documentation for pbs_alterjob_async(), pbs_checkpointjob(),
+      pbs_fbserver(), pbs_get_server_list() and pbs_sigjobasync().
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges
