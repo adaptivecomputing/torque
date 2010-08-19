@@ -23,6 +23,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - mark the numa nodes as down if the host node goes down 
   b - fix the pbsnodes :prop functionality for numa nodes
   b - make sure the node file is updated correctly when torque updates it
+  b - make the tm interface work when running as a single mom
       
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 

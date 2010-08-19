@@ -497,7 +497,11 @@ scan_for_exiting(void)
 
         /* see if this is me or another MOM */
 
+#ifndef NUMA_SUPPORT
+        /* for NUMA, we are always the mother superior and the correct
+         * node for everything to happen */
         if (pjob->ji_nodeid == pnode->hn_node)
+#endif /* ndef NUMA_SUPPORT */
           {
           task *tp;
 
@@ -516,6 +520,7 @@ scan_for_exiting(void)
             DIS_tcp_wflush(tp->ti_fd);
             }
           }
+#ifndef NUMA_SUPPORT 
         else if (pnode->hn_stream != -1)
           {
           /*
@@ -535,6 +540,7 @@ scan_for_exiting(void)
 
           rpp_flush(pnode->hn_stream);
           }
+#endif /* ndef NUMA_SUPPORT */
 
         delete_link(&pobit->oe_next);
 
@@ -589,6 +595,7 @@ scan_for_exiting(void)
     ** so I can send the obit (unless she died).
     */
 
+#ifndef NUMA_SUPPORT
     if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
       {
       int stream;
@@ -739,6 +746,8 @@ scan_for_exiting(void)
 
       continue;
 	    }
+#endif /* NUMA_SUPPORT */
+
     /*
      * At this point, we know we are Mother Superior for this
      * job which is EXITING.  Time for it to die.

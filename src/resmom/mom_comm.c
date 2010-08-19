@@ -4867,6 +4867,8 @@ int tm_request(
       if (prev_error)
         goto done;
 
+#ifndef NUMA_SUPPORT
+      /* for numa, this is always the correct mom */
       if (pjob->ji_nodeid != nodeid)
         {
         /* not me */
@@ -4905,6 +4907,7 @@ int tm_request(
 
         goto done;
         }  /* END if (pjob->ji_nodeid != nodeid) */
+#endif /* ndef NUMA_SUPPORT */
 
       ret = tm_reply(fd, TM_OKAY, event);
 
@@ -5058,8 +5061,9 @@ int tm_request(
       ** If I'm Mother Suerior and the spawn happens on
       ** me, just do it.
       */
-
+#ifndef NUMA_SUPPORT
       if ((pjob->ji_nodeid == 0) && (pjob->ji_nodeid == nodeid))
+#endif /* ndef NUMA_SUPPORT */
         {
         /* XXX */
 
@@ -5112,7 +5116,9 @@ int tm_request(
       ** If I'm a regular mom and the destination is not
       ** MS, just send a GET_TID to MS.
       */
+#ifndef NUMA_SUPPORT
       else if ((pjob->ji_nodeid != 0) && (nodeid != pjob->ji_vnods[0].vn_node))
+#endif /* ndef NUMA_SUPPORT */
         {
         /* XXX */
 
@@ -5265,6 +5271,7 @@ int tm_request(
       if (prev_error)
         goto done;
 
+#ifndef NUMA_SUPPORT
       if (pjob->ji_nodeid != nodeid)
         {
         /* not me XXX */
@@ -5305,6 +5312,7 @@ int tm_request(
 
         goto done;
         }  /* END if (pjob->ji_nodeid != nodeid) */
+#endif /* ndef NUMA_SUPPORT */
 
       /*
       ** Task should be here... look for it.
@@ -5361,6 +5369,7 @@ int tm_request(
       if (prev_error)
         goto done;
 
+#ifndef NUMA_SUPPORT
       if (pjob->ji_nodeid != nodeid)
         {
         /* not me */
@@ -5404,6 +5413,7 @@ int tm_request(
 
         goto done;
         }
+#endif /* ndef NUMA_SUPPORT */
 
       /*
       ** Task should be here... look for it.
@@ -5476,6 +5486,7 @@ int tm_request(
       if (prev_error)
         goto done;
 
+#ifndef NUMA_SUPPORT
       if (pjob->ji_nodeid != nodeid)
         {
         /* not me */
@@ -5528,6 +5539,7 @@ int tm_request(
 
         goto done;
         }  /* END if (pjob->ji_nodeid != nodeid) */
+#endif /* ndef NUMA_SUPPORT */
 
       /*
       ** Task should be here... look for it.
@@ -5567,6 +5579,7 @@ int tm_request(
       if (prev_error)
         goto done;
 
+#ifndef NUMA_SUPPORT
       if (pjob->ji_nodeid != nodeid)
         {
         /* not me XXX */
@@ -5604,6 +5617,7 @@ int tm_request(
 
         goto done;
         }  /* END if (pjob->ji_nodeid != nodeid) */
+#endif /* ndef NUMA_SUPPORT */
 
       info = resc_string(pjob);
 
