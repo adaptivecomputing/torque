@@ -1283,9 +1283,9 @@ static void preobit_reply(
       int x; /* dummy */
 
       /* do this if not interactive */
-      unlink(std_file_name(pjob, StdOut, &x));
-      unlink(std_file_name(pjob, StdErr, &x));
-      unlink(std_file_name(pjob, Checkpoint, &x));
+      job_unlink_file(pjob, std_file_name(pjob, StdOut, &x));
+      job_unlink_file(pjob, std_file_name(pjob, StdErr, &x));
+      job_unlink_file(pjob, std_file_name(pjob, Checkpoint, &x));
       }
 
     mom_deljob(pjob);
@@ -1563,9 +1563,9 @@ static void obit_reply(
             {
             /* do this if not interactive */
 
-            unlink(std_file_name(pjob, StdOut, &x));
-            unlink(std_file_name(pjob, StdErr, &x));
-            unlink(std_file_name(pjob, Checkpoint, &x));
+            job_unlink_file(pjob, std_file_name(pjob, StdOut, &x));
+            job_unlink_file(pjob, std_file_name(pjob, StdErr, &x));
+            job_unlink_file(pjob, std_file_name(pjob, Checkpoint, &x));
             }
 
           mom_deljob(pjob);

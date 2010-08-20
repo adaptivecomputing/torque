@@ -897,6 +897,7 @@ extern int   init_chkmom(job *);
 extern void  issue_track(job *);
 extern int   job_abt(job **, char *);
 extern job  *job_alloc();
+extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM
 extern job  *job_clone(job *,struct job_array *, int);
 #endif
