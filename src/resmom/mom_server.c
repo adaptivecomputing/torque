@@ -2380,12 +2380,6 @@ void check_state(
     ICount = 0;
     }
 
-  /* clear node state and node messages */
-
-  internal_state &= ~INUSE_DOWN;
-
-  PBSNodeMsgBuf[0] = '\0';
-
   /* conditions:  external state should be down if
      - inadequate file handles available (for period X)
      - external health check fails
@@ -2427,6 +2421,14 @@ void check_state(
 
     if (ICount == 0)
       {
+      /* only do this when running the check script, otherwise down nodes are 
+       * marked as up */
+      /* clear node state and node messages */
+
+      internal_state &= ~INUSE_DOWN;
+
+      PBSNodeMsgBuf[0] = '\0';
+
       if (MUReadPipe(
             PBSNodeCheckPath,
             tmpPBSNodeMsgBuf,

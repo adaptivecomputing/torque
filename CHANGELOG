@@ -26,6 +26,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - make the tm interface work when running as a single mom
   b - have pbs_track add the new executable to the cpuset when cpusets
       are enabled
+  b - only clear the mom state when actually running the 
+      health check script
       
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
