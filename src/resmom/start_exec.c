@@ -887,6 +887,10 @@ int mkdirtree(
   int rc = 0;
   mode_t oldmask = 0;
   char *path = NULL;
+
+  struct stat sb;
+
+  char *id = "mkdirtree";
   
   if (*dirpath != '/')
     {
@@ -923,6 +927,34 @@ int mkdirtree(
   	  {
   	  if (errno != EEXIST)
   	    {
+        if (errno == ENOENT)
+          {
+          /* if unable to create dir, print permissions for parent dir */
+          char c = *part;
+
+          *part = '\0';
+          if (stat(path,&sb) == 0)
+            {
+            sprintf(log_buffer,
+              "Unable to create dir %s%c%s, permissions for parent dir %s are %d",
+              path,
+              c,
+              part+1,
+              path,
+              sb.st_mode);
+
+            log_err(-1,id,log_buffer);
+            }
+          else
+            {
+            snprintf(log_buffer,sizeof(log_buffer),
+              "Cannot stat parent directory %s\n",
+              path);
+
+            log_err(errno,id,log_buffer);
+            }
+          }
+
   	    rc = errno;
   
   	    goto done;
@@ -1007,9 +1039,12 @@ int TMakeTmpDir(
     /* We made it, it's ours */
   
     pjob->ji_flags |= MOM_HAS_TMPDIR;
-    } 
+    }
   else
     {
+    /* log the first error */
+    log_err(errno,id,strerror(errno));
+
     rc = stat(tmpdir, &sb);
   
     if (rc)
@@ -1021,8 +1056,8 @@ int TMakeTmpDir(
   	  case ENOENT:
   
   		  sprintf(log_buffer,
-  						  "Unable to make job transient directory: %s",
-  						  tmpdir);
+          "Unable to make job transient directory: %s",
+          tmpdir);
   
   		  break;
   
@@ -1030,40 +1065,40 @@ int TMakeTmpDir(
   	    
   	    if (S_ISDIR(sb.st_mode))
   	      {
-  	      if (sb.st_uid == pjob->ji_qs.ji_un.ji_momt.ji_exuid)
-	       {
-	       retval = 0;	 /* owned by the job, allowed */
-	       } 
-	      else
-	       {
-	       sprintf(log_buffer,
-	     			   "Job transient tmpdir %s already exists, owned by %d",
-	     			   tmpdir,
-	     			   sb.st_uid);
-   	    
-	       retval = -1;
-	       }
-  	      } 
-	    else
-  	      {
-  	      sprintf(log_buffer,
-  	    				  "Job transient tmpdir %s exists, but is not a directory",
-  	    				  tmpdir);
-  	    
-  	      retval = -1;
-  	      }
-  	    
-  	    break;
-  
+          if (sb.st_uid == pjob->ji_qs.ji_un.ji_momt.ji_exuid)
+            {
+            retval = 0;	 /* owned by the job, allowed */
+            } 
+          else
+            {
+            sprintf(log_buffer,
+              "Job transient tmpdir %s already exists, owned by %d",
+              tmpdir,
+              sb.st_uid);
+            
+            retval = -1;
+            }
+          } 
+        else
+          {
+          sprintf(log_buffer,
+            "Job transient tmpdir %s exists, but is not a directory",
+            tmpdir);
+          
+          retval = -1;
+          }
+        
+        break;
+
   	  default:
   
   		 sprintf(log_buffer,
-  						  "Cannot name job tmp directory %s (on stat)",
-  						  tmpdir);
-  
-  		  return(0);
-  
-  		  break;
+  		   "Cannot name job tmp directory %s (on stat)",
+         tmpdir);
+       
+       return(0);
+       
+       break;
   	  }
     }		 /* END if (retval == 0) */
   

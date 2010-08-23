@@ -55,6 +55,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       checkpoint
   e - added documentation for pbs_alterjob_async(), pbs_checkpointjob(),
       pbs_fbserver(), pbs_get_server_list() and pbs_sigjobasync().
+  n - added extra logging when making the job's tmpdir fails
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges
