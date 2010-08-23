@@ -134,7 +134,6 @@ extern int  exiting_tasks;
 extern char  *msg_daemonname;
 extern int  termin_child;
 
-extern struct connection svr_conn[];
 extern int  resc_access_perm;
 extern char  *path_aux;
 

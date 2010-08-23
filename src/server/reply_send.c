@@ -109,8 +109,6 @@
 
 /* External Globals */
 
-extern struct connection svr_conn[];
-
 extern char *msg_daemonname;
 
 #ifndef PBS_MOM
