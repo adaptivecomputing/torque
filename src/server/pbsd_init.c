@@ -342,8 +342,8 @@ static int SortPrioAscend(
   {
   job *pjob1 = *((job **)A);
   job *pjob2 = *((job **)B);
-  int prio1 = pjob1->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long;
-  int prio2 = pjob2->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long;
+  int prio1 = pjob1->ji_wattr[JOB_ATR_qrank].at_val.at_long;
+  int prio2 = pjob2->ji_wattr[JOB_ATR_qrank].at_val.at_long;
   return(prio1 - prio2);
   } /*END SortPrioAscend */
 
@@ -355,7 +355,7 @@ void  update_default_np()
   long default_np;
   long npfreediff;
 
-  default_np = server.sv_attr[(int)SRV_ATR_NPDefault].at_val.at_long;
+  default_np = server.sv_attr[SRV_ATR_NPDefault].at_val.at_long;
 
 
   if(default_np > 0)
@@ -385,7 +385,7 @@ void add_server_names_to_acl_hosts(void)
   char buffer[PBS_MAXSERVERNAME+1];
   attribute temp;
 
-  struct attribute *patr = &server.sv_attr[(int)SRV_ATR_acl_hosts];
+  struct attribute *patr = &server.sv_attr[SRV_ATR_acl_hosts];
 
   server_list_ptr = pbs_get_server_list();
   list_len = csv_length(server_list_ptr);
@@ -733,18 +733,18 @@ int pbsd_init(
   for (i = 0;i < SRV_ATR_LAST;i++)
     clear_attr(&server.sv_attr[i], &svr_attr_def[i]);
 
-  server.sv_attr[(int)SRV_ATR_scheduler_iteration].at_val.at_long =
+  server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long =
     PBS_SCHEDULE_CYCLE;
 
-  server.sv_attr[(int)SRV_ATR_scheduler_iteration].at_flags =
+  server.sv_attr[SRV_ATR_scheduler_iteration].at_flags =
     ATR_VFLAG_SET;
 
-  server.sv_attr[(int)SRV_ATR_State].at_val.at_long = SV_STATE_INIT;
+  server.sv_attr[SRV_ATR_State].at_val.at_long = SV_STATE_INIT;
 
-  server.sv_attr[(int)SRV_ATR_State].at_flags = ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_State].at_flags = ATR_VFLAG_SET;
 
-  svr_attr_def[(int)SRV_ATR_mailfrom].at_decode(
-    &server.sv_attr[(int)SRV_ATR_mailfrom],
+  svr_attr_def[SRV_ATR_mailfrom].at_decode(
+    &server.sv_attr[SRV_ATR_mailfrom],
     0,
     0,
     PBS_DEFAULT_MAIL);
@@ -757,26 +757,26 @@ int pbsd_init(
     server.sv_attr[(int)SRV_ATR_ping_rate].at_flags = ATR_VFLAG_SET;
   */
 
-  server.sv_attr[(int)SRV_ATR_tcp_timeout].at_val.at_long =
+  server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long =
     PBS_TCPTIMEOUT;
 
-  server.sv_attr[(int)SRV_ATR_tcp_timeout].at_flags = ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_tcp_timeout].at_flags = ATR_VFLAG_SET;
 
-  server.sv_attr[(int)SRV_ATR_check_rate].at_val.at_long =
+  server.sv_attr[SRV_ATR_check_rate].at_val.at_long =
     PBS_NORMAL_PING_RATE / 2;
 
-  server.sv_attr[(int)SRV_ATR_check_rate].at_flags = ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_check_rate].at_flags = ATR_VFLAG_SET;
 
-  server.sv_attr[(int)SRV_ATR_JobStatRate].at_val.at_long =
+  server.sv_attr[SRV_ATR_JobStatRate].at_val.at_long =
     PBS_RESTAT_JOB;
 
-  server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long = PBS_POLLJOBS;
+  server.sv_attr[SRV_ATR_PollJobs].at_val.at_long = PBS_POLLJOBS;
 
   /* 4. force logging of all types */
 
-  server.sv_attr[(int)SRV_ATR_log_events].at_val.at_long = PBSEVENT_MASK;
+  server.sv_attr[SRV_ATR_log_events].at_val.at_long = PBSEVENT_MASK;
 
-  server.sv_attr[(int)SRV_ATR_log_events].at_flags = ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_log_events].at_flags = ATR_VFLAG_SET;
 
   /* 5. If not a "create" initialization, recover server db */
 
@@ -793,10 +793,10 @@ int pbsd_init(
       return(-1);
       }
 
-    if (server.sv_attr[(int)SRV_ATR_resource_assn].at_flags & ATR_VFLAG_SET)
+    if (server.sv_attr[SRV_ATR_resource_assn].at_flags & ATR_VFLAG_SET)
       {
-      svr_attr_def[(int)SRV_ATR_resource_assn].at_free(
-        &server.sv_attr[(int)SRV_ATR_resource_assn]);
+      svr_attr_def[SRV_ATR_resource_assn].at_free(
+        &server.sv_attr[SRV_ATR_resource_assn]);
       }
     }
   else
@@ -820,9 +820,9 @@ int pbsd_init(
       }
     }
 
-  svr_attr_def[(int)SRV_ATR_version].at_decode(
+  svr_attr_def[SRV_ATR_version].at_decode(
 
-    &server.sv_attr[(int)SRV_ATR_version],
+    &server.sv_attr[SRV_ATR_version],
     0,
     0,
     PACKAGE_VERSION);
@@ -840,8 +840,8 @@ int pbsd_init(
     {
     /* a_option was set, overrides saved value of scheduling attr */
 
-    server.sv_attr[(int)SRV_ATR_scheduling].at_val.at_long = a_opt_init;
-    server.sv_attr[(int)SRV_ATR_scheduling].at_flags |=
+    server.sv_attr[SRV_ATR_scheduling].at_val.at_long = a_opt_init;
+    server.sv_attr[SRV_ATR_scheduling].at_flags |=
       ATR_VFLAG_SET;
     }
 
@@ -912,10 +912,10 @@ int pbsd_init(
           msg_daemonname,
           log_buffer);
 
-        if (pque->qu_attr[(int)QE_ATR_ResourceAssn].at_flags & ATR_VFLAG_SET)
+        if (pque->qu_attr[QE_ATR_ResourceAssn].at_flags & ATR_VFLAG_SET)
           {
-          que_attr_def[(int)QE_ATR_ResourceAssn].at_free(
-            &pque->qu_attr[(int)QE_ATR_ResourceAssn]);
+          que_attr_def[QE_ATR_ResourceAssn].at_free(
+            &pque->qu_attr[QE_ATR_ResourceAssn]);
           }
         }
       }
@@ -1133,7 +1133,7 @@ int pbsd_init(
 
       if ((type != RECOV_COLD) &&
           (type != RECOV_CREATE) &&
-          (!(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)) &&
+          (!(pjob->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)) &&
           (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
         {
         strcpy(basen, pjob->ji_qs.ji_jobid);
@@ -1186,7 +1186,7 @@ int pbsd_init(
 
     while (pjob != NULL)
       {
-      pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+      pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
 
      job_save(pjob, SAVEJOB_FULL, 0);
 
@@ -1412,19 +1412,19 @@ static int pbsd_init_job(
 
   /* update at_server attribute in case name changed */
 
-  job_attr_def[(int)JOB_ATR_at_server].at_free(
-    &pjob->ji_wattr[(int)JOB_ATR_at_server]);
+  job_attr_def[JOB_ATR_at_server].at_free(
+    &pjob->ji_wattr[JOB_ATR_at_server]);
 
-  job_attr_def[(int)JOB_ATR_at_server].at_decode(
-    &pjob->ji_wattr[(int)JOB_ATR_at_server],
+  job_attr_def[JOB_ATR_at_server].at_decode(
+    &pjob->ji_wattr[JOB_ATR_at_server],
     NULL,
     NULL,
     server_name);
 
   /* update queue_rank if this job is higher than current */
 
-  if ((unsigned long)pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long > (unsigned long)queue_rank)
-    queue_rank = pjob->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long;
+  if ((unsigned long)pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long > (unsigned long)queue_rank)
+    queue_rank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
 
   /* now based on the initialization type */
 
@@ -1670,10 +1670,10 @@ static int pbsd_init_job(
   if ((pjob->ji_qs.ji_un_type == JOB_UNION_TYPE_EXEC) &&
       (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != 0))
     {
-    if (pjob->ji_wattr[(int)JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
+    if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
       {
       pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(
-                                                parse_servername(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str, &d));
+                                                parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &d));
       }
     else
       {
@@ -1967,28 +1967,28 @@ static void change_log_level(
     /* increase log level */
 
     if (plogenv == NULL)
-      LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
+      LOGLEVEL = server.sv_attr[SRV_ATR_LogLevel].at_val.at_long;
 
     LOGLEVEL = MIN(LOGLEVEL + 1, 7);
 
     if (plogenv == NULL)
       {
-      server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long = LOGLEVEL;
-      server.sv_attr[(int)SRV_ATR_LogLevel].at_flags = ATR_VFLAG_SET;
+      server.sv_attr[SRV_ATR_LogLevel].at_val.at_long = LOGLEVEL;
+      server.sv_attr[SRV_ATR_LogLevel].at_flags = ATR_VFLAG_SET;
       }
     }
   else if (sig == SIGUSR2)
     {
     /* decrease log level */
     if (plogenv == NULL)
-      LOGLEVEL = server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long;
+      LOGLEVEL = server.sv_attr[SRV_ATR_LogLevel].at_val.at_long;
 
     LOGLEVEL = MAX(LOGLEVEL - 1, 0);
 
     if (plogenv == NULL)
       {
-      server.sv_attr[(int)SRV_ATR_LogLevel].at_val.at_long = LOGLEVEL;
-      server.sv_attr[(int)SRV_ATR_LogLevel].at_flags = ATR_VFLAG_SET;
+      server.sv_attr[SRV_ATR_LogLevel].at_val.at_long = LOGLEVEL;
+      server.sv_attr[SRV_ATR_LogLevel].at_flags = ATR_VFLAG_SET;
       }
     }
 
@@ -2026,7 +2026,7 @@ static void stop_me(
   int sig)
 
   {
-  server.sv_attr[(int)SRV_ATR_State].at_val.at_long = SV_STATE_SHUTSIG;
+  server.sv_attr[SRV_ATR_State].at_val.at_long = SV_STATE_SHUTSIG;
 
   return;
   }
