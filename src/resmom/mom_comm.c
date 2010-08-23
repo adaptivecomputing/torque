@@ -385,7 +385,11 @@ eventent *event_alloc(
 
 
 /* Forward declaration */
+#ifdef PENABLE_LINUX26_CPUSETS
+static int adoptSession(pid_t sid, pid_t pid, char *id, int command, char *cookie);
+#else
 static int adoptSession(pid_t sid, char *id, int command, char *cookie);
+#endif
 
 /*
  * Create a new task if the current number is less then
@@ -4458,6 +4462,10 @@ int tm_request(
   attribute *at;
   unsigned int momport = 0;
 
+#ifdef PENABLE_LINUX26_CPUSETS
+  pid_t pid;
+#endif 
+
   extern u_long  localaddr;
 
   extern struct connection svr_conn[];
@@ -4529,6 +4537,12 @@ int tm_request(
 
     if (ret != DIS_SUCCESS) goto err;
 
+#ifdef PENABLE_LINUX26_CPUSETS
+    pid = disrsi(fd, &ret);
+
+    if (ret != DIS_SUCCESS) goto err;
+#endif 
+
     id = disrst(fd, &ret);
 
     if (ret != DIS_SUCCESS)
@@ -4540,7 +4554,11 @@ int tm_request(
       }
 
     /* Got all the info. Try to adopt the session */
+#ifdef PENABLE_LINUX26_CPUSETS
+    adoptStatus = adoptSession(sid, pid, id, command, cookie);
+#else
     adoptStatus = adoptSession(sid, id, command, cookie);
+#endif
 
     if (id)
       free(id);
@@ -5727,11 +5745,26 @@ err:
  * <DJH 12 Nov 2001>
  */
 
-static int adoptSession(pid_t sid, char *id, int command, char *cookie)
+static int adoptSession(
+  pid_t sid,
+#ifdef PENABLE_LINUX26_CPUSETS 
+  pid_t pid,
+#endif
+  char *id, 
+  int   command, 
+  char *cookie)
   {
   job *pjob = NULL;
   task *ptask = NULL;
   unsigned short momport = 0;
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  unsigned int len;
+
+  FILE *fp;
+  char  cpuset_path[MAXPATHLEN];
+  char  pid_str[MAXPATHLEN];
+#endif
 
   /* extern  int next_sample_time; */
   /* extern  time_t time_resc_updated; */
@@ -5853,6 +5886,41 @@ static int adoptSession(pid_t sid, char *id, int command, char *cookie)
     /* time_resc_updated = time_now; */
     (void)mom_set_use(pjob);
     }
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  /* add to the cpuset */
+  snprintf(cpuset_path,sizeof(cpuset_path),
+    "/dev/cpuset/torque/%s/tasks",
+    pjob->ji_qs.ji_jobid);
+
+  snprintf(pid_str,sizeof(pid_str),"%d",pid);
+
+  fp = fopen(cpuset_path,"w");
+
+  len = strlen(pid_str);
+
+  if (fp != NULL)
+    {
+    if (fwrite(pid_str,sizeof(char),len,fp) != len)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Unable to add process (%s) to the job's cpuset (%s)\n",
+        pid_str,
+        cpuset_path);
+
+      log_err(-1,id,log_buffer);
+      }
+    fclose(fp);
+    }
+  else
+    {
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Unable to open the cpuset's task file (%s)\n",
+      cpuset_path);
+
+    log_err(-1,id,log_buffer);
+    }
+#endif /* def PENABLE_LINUX26_CPUSETS */
 
   /* next_sample_time = 45; */
 
