@@ -4458,7 +4458,7 @@ int set_nodes(
 
   int     NCount;
 
-  static char *id = "set_nodes";
+  static char id[] = "set_nodes";
 
   struct pbsnode *pnode;
 
@@ -4519,7 +4519,7 @@ int set_nodes(
   if (i < 0)
     {
     /* request failed, corrupt request */
-
+    log_err(PBSE_UNKNODE, id, "request failed, corrupt request");
     return(PBSE_UNKNODE);
     }
 

@@ -107,7 +107,7 @@ extern uint64_t get_jobid(char *);
 extern void add_wkm_start(uint64_t, char *);
 #endif /* ENABLE_CSA */
 
-int        checkpoint_system_type = CST_NONE;
+int     checkpoint_system_type = CST_NONE;
 char    path_checkpoint[MAXPATHLEN + 1];
 
 /* BLCR variables */

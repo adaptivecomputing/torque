@@ -42,6 +42,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       and contrib/README.pbstools are included the the tar.gz file made
       with "make dist"
   c - fixed crash when moving the job to a different queue (bugzilla 73)
+  e - Modified buildutils/pbs_mkdirs.in to create server_priv/nodes file
+      at install time. The file only shows examples and a link to the
+      TORQUE documentation. This enhancement was first committed to trunk.
   c - fix pbs_server crash from invalid qsub -t argument
   b - fix so blcr checkpoint jobs work correctly when put on hold
   b - fixed bugzilla #75 where pbs_server would segfault with a double free when
@@ -55,7 +58,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       checkpoint
   e - added documentation for pbs_alterjob_async(), pbs_checkpointjob(),
       pbs_fbserver(), pbs_get_server_list() and pbs_sigjobasync().
-  n - added extra logging when making the job's tmpdir fails
+  b - Commited patch from Eygene Ryanbinkin to fix bug 61. /dev/null would
+      under some circumstances have its permissions modified when jobs exited
+      on a compute node.
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges

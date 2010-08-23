@@ -691,7 +691,7 @@ static int return_file(
   close(fds);
 
   if (remove_file == TRUE && rc == 0)
-    unlink(filename);
+    job_unlink_file(pjob, filename);
 
   return(rc);
   }  /* END return_file() */

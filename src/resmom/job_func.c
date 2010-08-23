@@ -89,6 +89,7 @@
  *
  *   job_clone    clones a job (for use with job_arrays)
  *   job_clone_wt work task for cloning a job
+ *   job_unlink_file() unlinks a given file using job credentials
  *
  * Include private function:
  *   job_init_wattr() initialize job working attribute array to "unspecified"
@@ -555,6 +556,41 @@ void job_free(
 
   return;
   }  /* END job_free() */
+
+
+ /*
+ * job_unlink_file - unlink file, but drop root credentials before
+ * doing this to avoid removing objects that aren't belong to the user.
+ */
+int job_unlink_file(
+  job *pjob,		/* I */
+  const char *name)	/* I */
+  {
+  int saved_errno = 0, result = 0;
+  uid_t uid = geteuid();
+  gid_t gid = getegid();
+
+  if (uid != 0)
+    return unlink(name);
+
+  if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1))
+    return -1;
+  if ((seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
+    {
+    saved_errno = errno;
+    setegid(gid);
+    errno = saved_errno;
+    return -1;
+    }
+  result = unlink(name);
+  saved_errno = errno;
+
+  seteuid(uid);
+  setegid(gid);
+
+  errno = saved_errno;
+  return result;
+  }  /* END job_unlink_file() */
 
 
 /*

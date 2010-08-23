@@ -178,7 +178,7 @@ extern void ping_nodes(struct work_task *);
 
 
 
-/* us IP address to look up matchin node structure */
+/* use IP address to look up matchin node structure */
 
 struct pbsnode *PGetNodeFromAddr(
 
@@ -989,6 +989,7 @@ static int process_host_name_part(
 
   {
 
+  char id[] = "process_host_name_part";
   struct hostent *hp;
 
   struct in_addr  addr;
@@ -1035,6 +1036,8 @@ static int process_host_name_part(
     sprintf(log_buffer, "host %s not found",
             objname);
 
+    log_err(PBSE_UNKNODE, id, log_buffer);
+
     free(phostname);
     phostname = NULL;
 
@@ -1074,6 +1077,8 @@ static int process_host_name_part(
               h_errno,
               errno,
               pbs_strerror(errno));
+
+      log_err(PBSE_UNKNODE, id, log_buffer);
 
       free(phostname);
       phostname = NULL;
@@ -1153,6 +1158,8 @@ static int process_host_name_part(
                 h_errno,
                 errno,
                 pbs_strerror(errno));
+
+        log_err(PBSE_UNKNODE, id, log_buffer);
 
         if (hname != NULL)
           {

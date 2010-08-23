@@ -215,7 +215,8 @@ int main(
 
   if (!testmode && (myeuid != 0))
     {
-    fprintf(stderr, "pbs_iff: file not setuid root, likely misconfigured\n");
+    fprintf(stderr, "pbs_iff: file not setuid root, likely misconfigured. \
+        check file permissions on pbs_iff. Current uid: %d\n", myeuid);
 
 #if SYSLOG
     syslog(LOG_ERR | LOG_DAEMON, "not setuid 0, likely misconfigured");
