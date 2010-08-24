@@ -1738,12 +1738,10 @@ int tm_adopt(char *id, int adoptCmd, pid_t pid)
   if (diswsi(local_conn, sid) != DIS_SUCCESS)
     return TM_ENOTCONNECTED;
 
-#ifdef PENABLE_LINUX26_CPUSETS
-  /* write the pid so the adopted process can be part of the cpuset */
+  /* write the pid so the adopted process can be part of the cpuset if needed */
 
   if (diswsi(local_conn,sid) != DIS_SUCCESS)
     return TM_ENOTCONNECTED;
-#endif 
 
   /* send job or alternative id */
   if (diswcs(local_conn, id, strlen(id)) != DIS_SUCCESS)

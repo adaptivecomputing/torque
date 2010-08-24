@@ -927,32 +927,29 @@ int mkdirtree(
   	  {
   	  if (errno != EEXIST)
   	    {
-        if (errno == ENOENT)
+        /* if unable to create dir, print permissions for parent dir */
+        char c = *part;
+
+        *part = '\0';
+        if (stat(path,&sb) == 0)
           {
-          /* if unable to create dir, print permissions for parent dir */
-          char c = *part;
+          snprintf(log_buffer,sizeof(log_buffer),
+            "Unable to create dir %s%c%s, permissions for parent dir %s are %d",
+            path,
+            c,
+            part+1,
+            path,
+            sb.st_mode);
 
-          *part = '\0';
-          if (stat(path,&sb) == 0)
-            {
-            sprintf(log_buffer,
-              "Unable to create dir %s%c%s, permissions for parent dir %s are %d",
-              path,
-              c,
-              part+1,
-              path,
-              sb.st_mode);
+          log_err(-1,id,log_buffer);
+          }
+        else
+          {
+          snprintf(log_buffer,sizeof(log_buffer),
+            "Cannot stat parent directory %s\n",
+            path);
 
-            log_err(-1,id,log_buffer);
-            }
-          else
-            {
-            snprintf(log_buffer,sizeof(log_buffer),
-              "Cannot stat parent directory %s\n",
-              path);
-
-            log_err(errno,id,log_buffer);
-            }
+          log_err(-1,id,log_buffer);
           }
 
   	    rc = errno;

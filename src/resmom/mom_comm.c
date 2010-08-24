@@ -385,11 +385,7 @@ eventent *event_alloc(
 
 
 /* Forward declaration */
-#ifdef PENABLE_LINUX26_CPUSETS
 static int adoptSession(pid_t sid, pid_t pid, char *id, int command, char *cookie);
-#else
-static int adoptSession(pid_t sid, char *id, int command, char *cookie);
-#endif
 
 /*
  * Create a new task if the current number is less then
@@ -4462,9 +4458,7 @@ int tm_request(
   attribute *at;
   unsigned int momport = 0;
 
-#ifdef PENABLE_LINUX26_CPUSETS
   pid_t pid;
-#endif 
 
   extern u_long  localaddr;
 
@@ -4537,11 +4531,9 @@ int tm_request(
 
     if (ret != DIS_SUCCESS) goto err;
 
-#ifdef PENABLE_LINUX26_CPUSETS
     pid = disrsi(fd, &ret);
 
     if (ret != DIS_SUCCESS) goto err;
-#endif 
 
     id = disrst(fd, &ret);
 
@@ -4554,11 +4546,7 @@ int tm_request(
       }
 
     /* Got all the info. Try to adopt the session */
-#ifdef PENABLE_LINUX26_CPUSETS
     adoptStatus = adoptSession(sid, pid, id, command, cookie);
-#else
-    adoptStatus = adoptSession(sid, id, command, cookie);
-#endif
 
     if (id)
       free(id);
@@ -5747,9 +5735,7 @@ err:
 
 static int adoptSession(
   pid_t sid,
-#ifdef PENABLE_LINUX26_CPUSETS 
   pid_t pid,
-#endif
   char *id, 
   int   command, 
   char *cookie)
