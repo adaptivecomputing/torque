@@ -352,7 +352,7 @@ int addr_ok(
           continue;
           }
 
-        if (pnode->nd_lastupdate <= (time_now - chk_len) && (pnode->nd_nsn > pnode->nd_nsnfree))
+        if (pnode->nd_lastupdate <= (time_now - chk_len))
           {
           status = 0;
           }

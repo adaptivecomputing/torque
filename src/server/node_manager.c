@@ -1341,6 +1341,8 @@ int is_stat_get(
 
       np = tmp;
 
+      np->nd_lastupdate = time_now;
+
       /* resume normal processing on the next line */
       continue;
       }
@@ -1929,7 +1931,7 @@ void check_nodes(
   static char     id[] = "check_nodes";
 
   struct pbsnode *np;
-  int             chk_len;
+  int    chk_len;
 
   node_iterator   iter;
 
@@ -3660,7 +3662,7 @@ static int node_spec(
   static char id[] = "node_spec";
 
   struct pbsnode *pnode;
-  node_iterator  *iter;
+  node_iterator   iter;
 
   char *str, *globs, *cp, *hold;
   int  i;
@@ -3822,34 +3824,15 @@ static int node_spec(
   svr_numnodes = 0;
 
   svr_numcfgnodes = 0;
+  
+  reinitialize_node_iterator(&iter);
 
-  for (i = 0;i < svr_totnodes;i++)
+  while ((pnode = next_node(&iter)) != NULL)
     {
-    pnode = pbsndlist[i];
-
     if (pnode->nd_state & INUSE_DELETED)
       continue;
 
-#ifdef NUMA_SUPPORT
-    if (pnode->num_numa_nodes > 0)
-      {
-      /* check each of the num nodes */
-      struct pbsnode *tmp;
-      int             j;
-
-      for (j = 0; j < pnode->num_numa_nodes; j++)
-        {
-        tmp = AVL_find(j,pnode->nd_mom_port,pnode->numa_nodes);
-
-        node_avail_check(tmp);
-        }
-      }
-    else
-#endif /* NUMA_SUPPORT */
-      {
-      /* compute normally */
-      node_avail_check(pnode);
-      }
+    node_avail_check(pnode);
     }    /* END for (i = 0) */
 
   /*
@@ -3945,9 +3928,9 @@ static int node_spec(
    * Here we find a replacement for any nodes chosen above
    * that are already inuse.
    */
-  iter = get_node_iterator();
+  reinitialize_node_iterator(&iter);
 
-  while ((pnode = next_node(iter)) != NULL)
+  while ((pnode = next_node(&iter)) != NULL)
     {
     if (pnode->nd_state & INUSE_DELETED)
       continue;
