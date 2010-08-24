@@ -1929,11 +1929,13 @@ void check_nodes(
   static char     id[] = "check_nodes";
 
   struct pbsnode *np;
-  int             i, chk_len;
+  int             chk_len;
+
+  node_iterator   iter;
 
   /* load min refresh interval */
 
-  chk_len = server.sv_attr[(int)SRV_ATR_check_rate].at_val.at_long;
+  chk_len = server.sv_attr[SRV_ATR_check_rate].at_val.at_long;
 
   if (LOGLEVEL >= 5)
     {
@@ -1948,15 +1950,14 @@ void check_nodes(
     }
 
   /* evaluate all nodes */
+  reinitialize_node_iterator(&iter);
 
-  for (i = 0;i < svr_totnodes;i++)
+  while ((np = next_node(&iter)) != NULL)
     {
-    np = pbsndmast[i];
-
     if (np->nd_state & (INUSE_DELETED | INUSE_DOWN))
       continue;
 
-    if (np->nd_lastupdate < (time_now - chk_len) && (pbsndlist[i]->nd_nsn > pbsndlist[i]->nd_nsnfree))
+    if (np->nd_lastupdate < (time_now - chk_len)) 
       {
       if (LOGLEVEL >= 0)
         {
@@ -3432,7 +3433,7 @@ static int nodecmp(
     {
     /* best is free */
 
-    if (server.sv_attr[(int)SRV_ATR_NodePack].at_val.at_long)
+    if (server.sv_attr[SRV_ATR_NodePack].at_val.at_long)
       {
       /* pack - fill up nodes first */
 
@@ -3811,7 +3812,7 @@ static int node_spec(
    * otherwise, leave unsorted
    */
 
-  if (server.sv_attr[(int)SRV_ATR_NodePack].at_flags & ATR_VFLAG_SET)
+  if (server.sv_attr[SRV_ATR_NodePack].at_flags & ATR_VFLAG_SET)
     {
     qsort(pbsndlist, svr_totnodes, sizeof(struct pbsnode *), nodecmp);
     }
@@ -4163,7 +4164,7 @@ int get_bitmap(
 
   /* read the bitmap from the resource list */
   prd = find_resc_def(svr_resc_def,"procs_bitmap",svr_resc_size);
-  presc = find_resc_entry(&pjob->ji_wattr[(int)JOB_ATR_resource],prd);
+  presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],prd);
   
   if ((presc != NULL) && 
       (presc->rs_value.at_flags & ATR_VFLAG_SET))
@@ -5438,12 +5439,12 @@ void set_old_nodes(
   int   shared = INUSE_JOB;
 
   if ((pbsndmast != NULL) &&
-      (pjob->ji_wattr[(int)JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET))
+      (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET))
     {
     /* are the nodes being used shared? Look in "neednodes" */
 
     presc = find_resc_entry(
-              &pjob->ji_wattr[(int)JOB_ATR_resource],
+              &pjob->ji_wattr[JOB_ATR_resource],
               find_resc_def(svr_resc_def, "neednodes", svr_resc_size));
 
     if ((presc != NULL) && (presc->rs_value.at_flags & ATR_VFLAG_SET))
@@ -5455,7 +5456,7 @@ void set_old_nodes(
         }
       }
 
-    old = strdup(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+    old = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
     if (old == NULL)
       {

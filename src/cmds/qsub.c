@@ -4887,18 +4887,18 @@ int main(
 
   if (Interact_opt && ((isatty(0) == 0) || (isatty(1) == 0)))
     {
-      if (have_intr_cmd)
+    if (have_intr_cmd)
       {
-        have_terminal = FALSE;
+      have_terminal = FALSE;
       }
-      else
+    else
       {
       fprintf(stderr, "qsub:\tstandard input and output must be a terminal for \n\tinteractive job submission\n");
-
+      
       unlink(script_tmp);
-
+      
       close(inter_sock);
-
+      
       exit(1);
       }
     }
@@ -4910,7 +4910,7 @@ int main(
   if (parse_destination_id(destination, &q_n_out, &s_n_out))
     {
     fprintf(stderr, "qsub: illegally formed destination: %s\n",
-            destination);
+      destination);
 
     unlink(script_tmp);
 
@@ -4932,14 +4932,14 @@ int main(
   if (connect <= 0)
     {
     fprintf(stderr, "qsub: cannot connect to server %s (errno=%d) %s\n",
-            pbs_server,
-            pbs_errno,
-            pbs_strerror(pbs_errno));
+      pbs_server,
+      pbs_errno,
+      pbs_strerror(pbs_errno));
 
     if (getenv("PBSDEBUG") != NULL)
       {
       fprintf(stderr, "qsub: pbs_server daemon may not be running on host %s or hostname in file '$TORQUEHOME/server_name' may be incorrect)\n",
-              pbs_server);
+        pbs_server);
       }
 
     unlink(script_tmp);
