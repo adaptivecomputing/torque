@@ -322,7 +322,6 @@ mk_mom_dirs()
 	install_dir $PBS_SERVER_HOME/mom_priv 751 || return 1
 	install_dir $PBS_SERVER_HOME/mom_priv/jobs 751 || return 1
 	install_dir $PBS_SERVER_HOME/mom_logs 755 || return 1
-	install_dir $PBS_SERVER_HOME/kens_logs 755 || return 1
 
 	mk_default_file || return 1
 
