@@ -209,7 +209,7 @@ char *get_job_envvar(
   pc = arst_string(
 
          variable,
-         &pjob->ji_wattr[(int)JOB_ATR_variables]);
+         &pjob->ji_wattr[JOB_ATR_variables]);
 
   if (pc != NULL)
     {
@@ -457,9 +457,9 @@ static pid_t fork_to_user(
     {
     /* set account id */
 
-    if (pjob->ji_wattr[(int)JOB_ATR_account].at_flags & ATR_VFLAG_SET)
+    if (pjob->ji_wattr[JOB_ATR_account].at_flags & ATR_VFLAG_SET)
       {
-      acctid(0, nam2acid(pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str));
+      acctid(0, nam2acid(pjob->ji_wattr[JOB_ATR_account].at_val.at_str));
       }
     }
 
@@ -1175,11 +1175,11 @@ void req_holdjob(
     {
     /* propagate servers hold state to job */
 
-    clear_attr(&tmph, &job_attr_def[(int)JOB_ATR_hold]);
+    clear_attr(&tmph, &job_attr_def[JOB_ATR_hold]);
 
     if ((pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_hold.rq_orig.rq_attr)) != NULL)
       {
-      job_attr_def[(int)JOB_ATR_hold].at_decode(
+      job_attr_def[JOB_ATR_hold].at_decode(
         &tmph,
         pal->al_name,
         NULL,
@@ -1460,7 +1460,7 @@ void req_modifyjob(
   {
   int   bad = 0;
   int   i;
-  attribute  newattr[(int)JOB_ATR_LAST];
+  attribute  newattr[JOB_ATR_LAST];
   attribute *pattr;
   job  *pjob;
   svrattrl *plist;
@@ -1802,7 +1802,7 @@ int sigalltasks_sisters(
   eventent *ep;
   int i;
 
-  cookie = pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str;
+  cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
 
   for (i = 0;i < pjob->ji_numnodes;i++)
     {

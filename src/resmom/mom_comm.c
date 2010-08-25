@@ -1895,7 +1895,7 @@ void im_request(
   int stream,   /* I */
   int version)  /* I */
 
-{
+  {
   char   *id = "im_request";
 
   int   command = 0;
@@ -5734,11 +5734,13 @@ err:
  */
 
 static int adoptSession(
+
   pid_t sid,
   pid_t pid,
   char *id, 
   int   command, 
   char *cookie)
+
   {
   job *pjob = NULL;
   task *ptask = NULL;
@@ -5937,8 +5939,13 @@ static int adoptSession(
  * <Ken Nielson Oct. 2009>
  */
 
-char *cat_dirs(char *root, char *base)
-{
+char *cat_dirs(
+    
+  char *root,
+  char *base)
+
+  {
+
   char *pn;
   int   len = 0;
 
@@ -5962,7 +5969,7 @@ char *cat_dirs(char *root, char *base)
     strcpy(pn, base);
 
   return(pn);
-}
+  }
 
 /*
  *  get_local_script_path --

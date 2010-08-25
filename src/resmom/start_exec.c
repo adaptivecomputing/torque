@@ -375,7 +375,7 @@ struct passwd *check_pwd(
 
   /* NOTE:  should cache entire pwd object (NYI) */
 
-  ptr = pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str;
+  ptr = pjob->ji_wattr[JOB_ATR_euser].at_val.at_str;
 
   if (ptr == NULL)
   	{
@@ -432,7 +432,7 @@ struct passwd *check_pwd(
 
   /* get the group and supplimentary under which the job is to be run */
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_egroup].at_flags &
+  if ((pjob->ji_wattr[JOB_ATR_egroup].at_flags &
   		 (ATR_VFLAG_SET | ATR_VFLAG_DEFLT)) == ATR_VFLAG_SET)
   	{
   	/* execution group specified and not default of login group */
@@ -441,7 +441,7 @@ struct passwd *check_pwd(
   	 * code will send a group ID over in some instances, so we should try
   	 * to work with a groupid if provided */
 
-  	grpp = getgrnam(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
+  	grpp = getgrnam(pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
 
   	if (grpp != NULL)
   		{
@@ -453,7 +453,7 @@ struct passwd *check_pwd(
   		/* check to see if we were given a groupid (group names cannot start
   		 * with a number) */
 
-  		tmpGID = (int)strtol(pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,NULL,10);
+  		tmpGID = (int)strtol(pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str,NULL,10);
 
   		if (tmpGID != 0)
   			{
@@ -463,7 +463,7 @@ struct passwd *check_pwd(
   			/* FAILURE */
 
   			sprintf(log_buffer, "no group entry for group %s, user=%s, errno=%d (%s)",
-  							pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str,
+  							pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str,
   							ptr,
   							errno,
   							strerror(errno));
@@ -675,7 +675,7 @@ static int open_pty(
   
   /* Open the slave pty as the controlling tty */
   
-  name = pjob->ji_wattr[(int)JOB_ATR_outpath].at_val.at_str;
+  name = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
   
   if ((pts = open(name, O_RDWR, 0600)) < 0)
       {
@@ -731,7 +731,7 @@ int is_joined(
   {
   attribute *pattr;
   
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_join];
+  pattr = &pjob->ji_wattr[JOB_ATR_join];
   
   if ((pattr->at_flags & ATR_VFLAG_SET) &&
   	  (pattr->at_val.at_str[0] != 'n'))
@@ -2402,8 +2402,8 @@ int TMomFinalizeChild(
 
 		/* get host where qsub resides */
 
-		phost = arst_string("PBS_O_HOST", &pjob->ji_wattr[(int)JOB_ATR_variables]);
-		pport = pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long;
+		phost = arst_string("PBS_O_HOST", &pjob->ji_wattr[JOB_ATR_variables]);
+		pport = pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long;
 
 		if ((phost == NULL) || ((phost = strchr(phost, '=')) == NULL))
 			{
@@ -2504,9 +2504,9 @@ int TMomFinalizeChild(
      */
     sjr.sj_jobid  = get_jobid(pjob->ji_qs.ji_jobid);
 
-    pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll = sjr.sj_jobid;
+    pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll = sjr.sj_jobid;
     
-    pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_flags =
+    pjob->ji_wattr[JOB_ATR_pagg_id].at_flags =
       ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 #endif /* USEJOBCREATE */
   	
@@ -2833,9 +2833,9 @@ int TMomFinalizeChild(
      */
     sjr.sj_jobid  = get_jobid(pjob->ji_qs.ji_jobid);
 
-    pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll = sjr.sj_jobid;
+    pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll = sjr.sj_jobid;
     
-    pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_flags =
+    pjob->ji_wattr[JOB_ATR_pagg_id].at_flags =
       ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 #endif /* USEJOBCREATE */
   	
@@ -5744,8 +5744,8 @@ char *std_file_name(
 	 * environment variable is $HOME--any other will cause files to be placed in
 	 * the home directory (the default location). */
 
-	if ((pjob->ji_wattr[(int)JOB_ATR_keep].at_flags & ATR_VFLAG_SET) &&
-			(strchr(pjob->ji_wattr[(int)JOB_ATR_keep].at_val.at_str, key)))
+	if ((pjob->ji_wattr[JOB_ATR_keep].at_flags & ATR_VFLAG_SET) &&
+			(strchr(pjob->ji_wattr[JOB_ATR_keep].at_val.at_str, key)))
 		{
 		/* yes, it is to be kept */
 
@@ -5753,11 +5753,11 @@ char *std_file_name(
       {
   		strcpy(path, pjob->ji_grpcache->gc_homedir);
 
-	  	pd = strrchr(pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str, '/');
+	  	pd = strrchr(pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str, '/');
 
 		  if (pd == NULL)
 			  {
-  			pd = pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str;
+  			pd = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
 
 	  		strcat(path, "/");
 		  	}

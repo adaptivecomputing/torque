@@ -480,9 +480,9 @@ void req_quejob(
 
   pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSIN;
 
-  pj->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long = (long)time_now;
+  pj->ji_wattr[JOB_ATR_mtime].at_val.at_long = (long)time_now;
 
-  pj->ji_wattr[(int)JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
+  pj->ji_wattr[JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
 
   pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
 
@@ -745,7 +745,7 @@ void req_mvjobfile(
     return;
     }
 
-  if (((pwd = getpwnam(pj->ji_wattr[(int)JOB_ATR_euser].at_val.at_str)) == NULL) ||
+  if (((pwd = getpwnam(pj->ji_wattr[JOB_ATR_euser].at_val.at_str)) == NULL) ||
       ((fds = open_std_file(pj, jft, oflag, pwd->pw_gid)) < 0))
     {
     /* FAILURE */
@@ -847,13 +847,13 @@ void req_rdytocommit(
   OrigState  = pj->ji_qs.ji_state;
 
   OrigSState = pj->ji_qs.ji_substate;
-  OrigSChar  = pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char;
-  OrigFlags  = pj->ji_wattr[(int)JOB_ATR_state].at_flags;
+  OrigSChar  = pj->ji_wattr[JOB_ATR_state].at_val.at_char;
+  OrigFlags  = pj->ji_wattr[JOB_ATR_state].at_flags;
 
   pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
   pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
-  pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char = 'T';
-  pj->ji_wattr[(int)JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
+  pj->ji_wattr[JOB_ATR_state].at_val.at_char = 'T';
+  pj->ji_wattr[JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
 
   if(multi_mom)
     {
@@ -874,8 +874,8 @@ void req_rdytocommit(
 
     pj->ji_qs.ji_state    = OrigState;
     pj->ji_qs.ji_substate = OrigSState;
-    pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char = OrigSChar;
-    pj->ji_wattr[(int)JOB_ATR_state].at_flags = OrigFlags;
+    pj->ji_wattr[JOB_ATR_state].at_val.at_char = OrigSChar;
+    pj->ji_wattr[JOB_ATR_state].at_flags = OrigFlags;
 
     req_reject(PBSE_SYSTEM, 0, preq, NULL, tmpLine);
 

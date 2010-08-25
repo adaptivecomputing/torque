@@ -63,6 +63,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       on a compute node.
   e - add --enable-top-tempdir-only to only create the top directory of the 
       job's temporary directory when configured
+  b - make the code for reconnecting to the server more robust, and remove
+      elements of not connecting if a job isn't running
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges

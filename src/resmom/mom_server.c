@@ -1469,26 +1469,37 @@ int mom_server_check_connection(
 
   {
   static char id[] = "mom_server_check_connection";
-  job *pjob;
 
   if (pms->pbs_servername[0] == '\0')
     {
     return(0);
     }
 
-  pjob = (job *)GET_NEXT(svr_alljobs); /* If there is no job running do not contact the server */
-  if ((pms->SStream != -1) && 
-      (time_now >= (pms->MOMLastSendToServerTime + (ServerStatUpdateInterval*2)))
-       && pjob != NULL)
+  if (pms->SStream != -1) 
     {
-    sprintf(log_buffer,"connection to server %s timeout", 
-      pms->pbs_servername);
+    if (time_now >= (pms->MOMLastSendToServerTime + (ServerStatUpdateInterval*2)))
+      {
+      sprintf(log_buffer,"connection to server %s timeout", 
+        pms->pbs_servername);
 
-    log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+      log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
 
-    rpp_close(pms->SStream);
+      rpp_close(pms->SStream);
 
-    pms->SStream = -1;
+      pms->SStream = -1;
+      }
+    else
+      {
+      /* we have lost the connection some other way */
+      log_record(PBSEVENT_SYSTEM,
+        0,
+        id,
+        "Connection to server lost, attempting to re-open");
+
+      rpp_close(pms->SStream);
+
+      pms->SStream = -1;
+      }
     }
 
   if (pms->SStream == -1)
@@ -1531,6 +1542,7 @@ int mom_server_check_connection(
         }
 
       }
+
     }    /* END if (pms->SStream == -1) */
 
   return(pms->received_cluster_address_count);
@@ -2625,7 +2637,7 @@ int mom_open_socket_to_jobs_server(
 
   /* See if the server address string has a ':' implying a port number. */
 
-  serverAddr = pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str;
+  serverAddr = pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str;
   if (serverAddr != NULL)
     {
     svrport = strchr(serverAddr, (int)':');

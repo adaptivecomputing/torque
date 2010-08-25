@@ -524,7 +524,7 @@ void job_free(
 
   /* remove any malloc working attribute space */
 
-  for (i = 0;i < (int)JOB_ATR_LAST;i++)
+  for (i = 0;i < JOB_ATR_LAST;i++)
     {
     job_attr_def[i].at_free(&pj->ji_wattr[i]);
     }
@@ -604,7 +604,7 @@ static void job_init_wattr(
   {
   int i;
 
-  for (i = 0;i < (int)JOB_ATR_LAST;i++)
+  for (i = 0;i < JOB_ATR_LAST;i++)
     {
     clear_attr(&pj->ji_wattr[i], &job_attr_def[i]);
     }

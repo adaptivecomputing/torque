@@ -1195,9 +1195,9 @@ int mom_set_limits(
 
   assert(pjob != NULL);
 
-  assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
+  assert(pjob->ji_wattr[JOB_ATR_resource].at_type == ATR_TYPE_RESC);
 
-  pres = (resource *)GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
+  pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
 
   /*
    * cycle through all the resource specifications,
@@ -1635,10 +1635,10 @@ int mom_do_poll(
 
   assert(pjob != NULL);
 
-  assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
+  assert(pjob->ji_wattr[JOB_ATR_resource].at_type == ATR_TYPE_RESC);
 
   pres = (resource *)GET_NEXT(
-           pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
+           pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
 
   while (pres != NULL)
     {
@@ -1838,10 +1838,10 @@ int mom_over_limit(
   resource *pres;
 
   assert(pjob != NULL);
-  assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
+  assert(pjob->ji_wattr[JOB_ATR_resource].at_type == ATR_TYPE_RESC);
 
   pres = (resource *)GET_NEXT(
-           pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
+           pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
 
   for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
     {
@@ -1982,7 +1982,7 @@ int mom_set_use(
   unsigned long *lp, lnum;
 
   assert(pjob != NULL);
-  at = &pjob->ji_wattr[(int)JOB_ATR_resc_used];
+  at = &pjob->ji_wattr[JOB_ATR_resc_used];
   assert(at->at_type == ATR_TYPE_RESC);
 
 #ifdef USESAVEDRESOURCES

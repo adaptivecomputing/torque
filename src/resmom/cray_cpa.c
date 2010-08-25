@@ -70,7 +70,7 @@ int CPACreatePartition(
 
   /* first, get the size, uid, jobid, and subnodelist from the job */
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
   prd = find_resc_def(svr_resc_def, "size", svr_resc_size);
   presc = find_resc_entry(pattr, prd);
 
@@ -94,7 +94,7 @@ int CPACreatePartition(
     return(1);
     }
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
 
   prd = find_resc_def(svr_resc_def, "subnode_list", svr_resc_size);
   presc = find_resc_entry(pattr, prd);
@@ -104,9 +104,9 @@ int CPACreatePartition(
     HostList = presc->rs_value.at_val.at_string;
     }
 
-  if (pjob->ji_wattr[(int)JOB_ATR_account].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_account].at_flags & ATR_VFLAG_SET)
     {
-    AcctID = pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str;
+    AcctID = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
     }
 
   JobID = pjob->ji_qs.ji_jobid;
@@ -371,7 +371,7 @@ int CPADestroyPartition(
   resource_def          *prd;
   attribute             *pattr;
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
 
   prd = find_resc_def(svr_resc_def, "cpapartition", svr_resc_size);
 

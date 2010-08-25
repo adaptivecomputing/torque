@@ -167,15 +167,15 @@ int set_job(
 
 #ifdef USEJOBCREATE
 
-    if ((pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_flags & ATR_VFLAG_SET) &&
-      (pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll != (long)JOB_FAIL) &&
-      (pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll > 0x00000000ffffffff))
+    if ((pjob->ji_wattr[JOB_ATR_pagg_id].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll != (long)JOB_FAIL) &&
+      (pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll > 0x00000000ffffffff))
       {
       snprintf(tmpLine, sizeof(tmpLine), "%s --confirm -p %s -j %s -a %lld",
                AllocParCmd,
                PPtr,
                pjob->ji_qs.ji_jobid,
-               pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll);
+               pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll);
       }
     else
 #endif  /* USEJOBCREATE */
@@ -276,8 +276,8 @@ char *set_shell(
 
   shell = pwdp->pw_shell;
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_shell].at_flags & ATR_VFLAG_SET) &&
-      (vstrs = pjob->ji_wattr[(int)JOB_ATR_shell].at_val.at_arst))
+  if ((pjob->ji_wattr[JOB_ATR_shell].at_flags & ATR_VFLAG_SET) &&
+      (vstrs = pjob->ji_wattr[JOB_ATR_shell].at_val.at_arst))
     {
     for (i = 0; i < vstrs->as_usedptr; ++i)
       {
