@@ -191,7 +191,7 @@ int svr_recov(
         &server,
         svr_attr_def,
         server.sv_attr,
-        (int)SRV_ATR_LAST,
+        SRV_ATR_LAST,
         0,
         !read_only) != 0 ) 
     {
@@ -208,9 +208,9 @@ int svr_recov(
     {
     server.sv_qs.sv_jobidnumber = i;
 
-    server.sv_attr[(int)SRV_ATR_NextJobNumber].at_val.at_long = i;
+    server.sv_attr[SRV_ATR_NextJobNumber].at_val.at_long = i;
 
-    server.sv_attr[(int)SRV_ATR_NextJobNumber].at_flags |= ATR_VFLAG_SET| ATR_VFLAG_MODIFY;
+    server.sv_attr[SRV_ATR_NextJobNumber].at_flags |= ATR_VFLAG_SET| ATR_VFLAG_MODIFY;
     }
 
   close(sdb);
@@ -320,7 +320,7 @@ int svr_save(
       return(-1);
       }
 
-    if (save_attr(svr_attr_def, ps->sv_attr, (int)SRV_ATR_LAST) != 0)
+    if (save_attr(svr_attr_def, ps->sv_attr, SRV_ATR_LAST) != 0)
       {
       close(sdb);
 

@@ -1488,18 +1488,6 @@ int mom_server_check_connection(
 
       pms->SStream = -1;
       }
-    else
-      {
-      /* we have lost the connection some other way */
-      log_record(PBSEVENT_SYSTEM,
-        0,
-        id,
-        "Connection to server lost, attempting to re-open");
-
-      rpp_close(pms->SStream);
-
-      pms->SStream = -1;
-      }
     }
 
   if (pms->SStream == -1)

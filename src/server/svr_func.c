@@ -162,7 +162,7 @@ int encode_svrstate(
 
   if (pattr->at_val.at_long == SV_STATE_RUN)
     {
-    if (server.sv_attr[(int)SRV_ATR_scheduling].at_val.at_long == 0)
+    if (server.sv_attr[SRV_ATR_scheduling].at_val.at_long == 0)
       psname = svr_idle;
     else if (scheduler_sock != -1)
       psname = svr_sched;
@@ -259,10 +259,10 @@ void set_resc_assigned(
     return;   /* invalid op */
     }
 
-  sysru = &server.sv_attr[(int)SRV_ATR_resource_assn];
+  sysru = &server.sv_attr[SRV_ATR_resource_assn];
 
-  queru = &pjob->ji_qhdr->qu_attr[(int)QE_ATR_ResourceAssn];
-  jobrsc = (resource *)GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
+  queru = &pjob->ji_qhdr->qu_attr[QE_ATR_ResourceAssn];
+  jobrsc = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
 
   while (jobrsc != NULL)
     {
