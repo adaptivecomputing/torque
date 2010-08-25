@@ -291,6 +291,20 @@ mk_server_dirs()
 		$PBS_SERVER_HOME/server_priv/arrays || return 1
 	chk_tree_wrap -d -n -s $PBS_SERVER_HOME/spool || return 1
 	chk_tree_wrap -n $PBS_ENVIRON || return 1
+	# Add an empty nodes file with a brief example
+	# and a link to more information in the documentation
+	if [ ! -e $PBS_NODES_FILE ]; then
+	    rm -f $PBS_NODES_FILE > /dev/null 2>&1
+	    echo -e "## This is the TORQUE server \"nodes\" file." \
+	    "\n## \n## To add a node, enter its hostname, optional processor count (np=)," \
+	    "\n## and optional feature names.\n##"  \
+	    "\n## Example:\n##    host01 np=8 featureA featureB"  \
+	    "\n##    host02 np=8 featureA featureB\n##" \
+	    "\n## for more information, please visit:\n##"  \
+	    "\n## http://www.clusterresources.com/torquedocs/nodeconfig.shtml\n" > $PBS_NODES_FILE && \
+	    chmod 644 $PBS_NODES_FILE || return 1
+	fi
+
 }
 
 
@@ -333,20 +347,6 @@ mk_default_file()
 	    rm -f $PBS_DEFAULT_FILE > /dev/null 2>&1
 	    echo $PBS_DEFAULT_SERVER > $PBS_DEFAULT_FILE && \
 		chmod 644 $PBS_DEFAULT_FILE || return 1
-	fi
-
-	# Add an empty nodes file with a brief example
-	# and a link to more information in the documentation
-	if [ ! -e $PBS_NODES_FILE ]; then
-	    rm -f $PBS_NODES_FILE > /dev/null 2>&1
-	    echo -e "## This is the TORQUE server \"nodes\" file." \
-	    "\n## \n## To add a node, enter its hostname, optional processor count (np=)," \
-	    "\n## and optional feature names.\n##"  \
-	    "\n## Example:\n##    host01 np=8 featureA featureB"  \
-	    "\n##    host02 np=8 featureA featureB\n##" \
-	    "\n## for more information, please visit:\n##"  \
-	    "\n## http://www.clusterresources.com/torquedocs/nodeconfig.shtml\n" > $PBS_NODES_FILE && \
-	    chmod 644 $PBS_NODES_FILE || return 1
 	fi
 
 	chk_tree_wrap -n $PBS_DEFAULT_FILE || return 1
