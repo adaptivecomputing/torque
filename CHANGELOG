@@ -61,6 +61,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Commited patch from Eygene Ryanbinkin to fix bug 61. /dev/null would
       under some circumstances have its permissions modified when jobs exited
       on a compute node.
+  e - add --enable-top-tempdir-only to only create the top directory of the 
+      job's temporary directory when configured
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges

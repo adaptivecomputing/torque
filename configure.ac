@@ -322,6 +322,25 @@ if test "x$GCC" = "xyes" ;then
   fi
 fi
 
+
+
+dnl ###########################################
+dnl Make only top dir mode?
+dnl
+
+AC_ARG_ENABLE(top_tempdir_only, [
+  --enable-top-tempdir-only  Creates only the top directory when creating the temporary dir for the job])
+if test "x$GCC" = "xyes" ; then
+  AC_MSG_CHECKING([whether to create only the top temporary job directory])
+  if test "${enable_top_tempdir_only}" == "yes" ; then
+    AC_MSG_RESULT([yes])
+    CFLAGS="$CFLAGS -DTOP_TEMPDIR_ONLY"
+  else
+    AC_MSG_RESULT([no])
+  fi
+  fi
+
+
 dnl
 
 dnl If hpux and gcc, force the XOPEN interface.

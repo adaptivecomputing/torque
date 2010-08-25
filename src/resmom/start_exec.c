@@ -888,10 +888,6 @@ int mkdirtree(
   mode_t oldmask = 0;
   char *path = NULL;
 
-  struct stat sb;
-
-  char *id = "mkdirtree";
-  
   if (*dirpath != '/')
     {
     rc = -1;
@@ -927,31 +923,6 @@ int mkdirtree(
   	  {
   	  if (errno != EEXIST)
   	    {
-        /* if unable to create dir, print permissions for parent dir */
-        char c = *part;
-
-        *part = '\0';
-        if (stat(path,&sb) == 0)
-          {
-          snprintf(log_buffer,sizeof(log_buffer),
-            "Unable to create dir %s%c%s, permissions for parent dir %s are %d",
-            path,
-            c,
-            part+1,
-            path,
-            sb.st_mode);
-
-          log_err(-1,id,log_buffer);
-          }
-        else
-          {
-          snprintf(log_buffer,sizeof(log_buffer),
-            "Cannot stat parent directory %s\n",
-            path);
-
-          log_err(-1,id,log_buffer);
-          }
-
   	    rc = errno;
   
   	    goto done;
@@ -1022,14 +993,32 @@ int TMakeTmpDir(
   int   retval;
   
   struct stat  sb;
+
+#ifdef TOP_TEMPDIR_ONLY
+  mode_t oldmask = 0;
+#endif
   
   if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1) ||
     	  (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
     {
     return(0);
     }
-  
+ 
+#ifdef TOP_TEMPDIR_ONLY 
+  errno = 0;
+
+  oldmask = umask(0000);
+
+  retval = mkdir(tmpdir,0755);
+
+  if (oldmask != 0)
+    umask(oldmask);
+
+  if (retval == -1)
+    retval = errno;
+#else
   retval = mkdirtree(tmpdir, 0755);
+#endif
   
   if (retval == 0)
     {
