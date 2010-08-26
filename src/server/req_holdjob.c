@@ -197,15 +197,15 @@ void req_holdjob(
     return;
     }
 
-  hold_val = &pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long;
+  hold_val = &pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
 
   old_hold = *hold_val;
   *hold_val |= temphold.at_val.at_long;
-  pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+  pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
   sprintf(log_buffer, msg_jobholdset, pset, preq->rq_user,
           preq->rq_host);
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
+  pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
 
   if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
       ((pattr->at_flags & ATR_VFLAG_SET) &&
@@ -304,7 +304,7 @@ void req_checkpointjob(
     return;
     }
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
+  pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
 
   if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
       ((pattr->at_flags & ATR_VFLAG_SET) &&
@@ -379,16 +379,16 @@ int release_job(
 
   /* unset the hold */
 
-  old_hold = pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long;
+  old_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
 
-  if ((rc = job_attr_def[(int)JOB_ATR_hold].at_set(&pjob->ji_wattr[(int)JOB_ATR_hold], &temphold, DECR)))
+  if ((rc = job_attr_def[JOB_ATR_hold].at_set(&pjob->ji_wattr[JOB_ATR_hold], &temphold, DECR)))
     {
     return(rc);
     }
 
   /* everything went well, if holds changed, update the job state */
 
-  if (old_hold != pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long)
+  if (old_hold != pjob->ji_wattr[JOB_ATR_hold].at_val.at_long)
     {
     pjob->ji_modified = 1; /* indicates attributes changed */
 
@@ -546,7 +546,7 @@ int get_hold(
 
   while (pal != NULL)
     {
-    if (!strcmp(pal->al_name, job_attr_def[(int)JOB_ATR_hold].at_name))
+    if (!strcmp(pal->al_name, job_attr_def[JOB_ATR_hold].at_name))
       {
       holdattr = pal;
 
@@ -569,9 +569,9 @@ int get_hold(
 
   /* decode into temporary attribute structure */
 
-  clear_attr(temphold, &job_attr_def[(int)JOB_ATR_hold]);
+  clear_attr(temphold, &job_attr_def[JOB_ATR_hold]);
 
-  return(job_attr_def[(int)JOB_ATR_hold].at_decode(
+  return(job_attr_def[JOB_ATR_hold].at_decode(
            temphold,
            holdattr->al_name,
            (char *)0,
@@ -621,7 +621,7 @@ static void process_hold_reply(
 
     if (rc == 0)
       {
-      rc = job_attr_def[(int)JOB_ATR_hold].at_set(&pjob->ji_wattr[(int)JOB_ATR_hold],
+      rc = job_attr_def[JOB_ATR_hold].at_set(&pjob->ji_wattr[JOB_ATR_hold],
            &temphold, DECR);
       }
 

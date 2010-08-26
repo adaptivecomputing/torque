@@ -157,7 +157,7 @@ pbs_queue *que_alloc(
 
   /* set the working attributes to "unspecified" */
 
-  for (i = 0;i < (int)QA_ATR_LAST;i++)
+  for (i = 0;i < QA_ATR_LAST;i++)
     {
     clear_attr(&pq->qu_attr[i], &que_attr_def[i]);
     }
@@ -183,7 +183,7 @@ void que_free(
 
   /* remove any malloc working attribute space */
 
-  for (i = 0;i < (int)QA_ATR_LAST;i++)
+  for (i = 0;i < QA_ATR_LAST;i++)
     {
     pdef  = &que_attr_def[i];
     pattr = &pq->qu_attr[i];

@@ -43,12 +43,12 @@ void hold_job(
   if (pjob == NULL)
     return;
 
-  hold_val = &pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long;
+  hold_val = &pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
   old_hold = *hold_val;
   *hold_val |= temphold->at_val.at_long;
-  pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+  pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
   
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_checkpoint];
+  pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
   
   if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
       ((pattr->at_flags & ATR_VFLAG_SET) &&

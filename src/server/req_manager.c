@@ -176,7 +176,7 @@ check_que_attr(pbs_queue *pque)
 
   type = pque->qu_qs.qu_type;  /* current type of queue */
 
-  for (i = 0; i < (int)QA_ATR_LAST; ++i)
+  for (i = 0; i < QA_ATR_LAST; ++i)
     {
     if (pque->qu_attr[i].at_flags & ATR_VFLAG_SET)
       {
@@ -227,7 +227,7 @@ check_que_enable(
       return (PBSE_QUENOEN);
     else if (((pbs_queue *)pque)->qu_qs.qu_type == QTYPE_RoutePush)
       {
-      datr = &((pbs_queue *)pque)->qu_attr[(int)QR_ATR_RouteDestin];
+      datr = &((pbs_queue *)pque)->qu_attr[QR_ATR_RouteDestin];
 
       if (!(datr->at_flags & ATR_VFLAG_SET) ||
           (datr->at_val.at_arst->as_usedptr == 0))
@@ -562,7 +562,7 @@ int mgr_unset_attr(
       if ((presc = find_resc_entry(pattr + index, prsdef)))
         {
         if ((pdef->at_parent != PARENT_TYPE_SERVER) ||
-            (index != (int)SRV_ATR_resource_cost))
+            (index != SRV_ATR_resource_cost))
           {
           prsdef->rs_free(&presc->rs_value);
           }
@@ -1258,7 +1258,7 @@ void mgr_server_set(
       /* nothing wrong found in the request, let's try again
          with the server's list */
 
-      pstr = server.sv_attr[(int)index].at_val.at_arst;
+      pstr = server.sv_attr[index].at_val.at_arst;
 
       for (i = 0; i < pstr->as_usedptr; ++i)
         {
@@ -1575,7 +1575,7 @@ void mgr_queue_unset(
 
     mgr_log_attr(msg_man_uns, plist, PBS_EVENTCLASS_QUEUE, pque->qu_qs.qu_name);
 
-    if ((pque->qu_attr[(int)QA_ATR_QType].at_flags & ATR_VFLAG_SET) == 0)
+    if ((pque->qu_attr[QA_ATR_QType].at_flags & ATR_VFLAG_SET) == 0)
       pque->qu_qs.qu_type = QTYPE_Unset;
 
     if (allques == FALSE)

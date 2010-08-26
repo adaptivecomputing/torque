@@ -163,8 +163,8 @@ int attempt_delete(
       }
     
     KeepSeconds = attr_ifelse_long(
-        &pque->qu_attr[(int)QE_ATR_KeepCompleted],
-        &server.sv_attr[(int)SRV_ATR_KeepCompleted],
+        &pque->qu_attr[QE_ATR_KeepCompleted],
+        &server.sv_attr[SRV_ATR_KeepCompleted],
         0);
     ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, pjob);
     

@@ -552,7 +552,7 @@ int setup_array_struct(job *pjob)
 
   strcpy(pa->ai_qs.parent_id, pjob->ji_qs.ji_jobid);
   strcpy(pa->ai_qs.fileprefix, pjob->ji_qs.ji_fileprefix);
-  strncpy(pa->ai_qs.owner, pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str, PBS_MAXUSER + PBS_MAXSERVERNAME + 2);
+  strncpy(pa->ai_qs.owner, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, PBS_MAXUSER + PBS_MAXSERVERNAME + 2);
   strncpy(pa->ai_qs.submit_host, get_variable(pjob, pbs_o_host), PBS_MAXSERVERNAME);
 
   pa->ai_qs.num_cloned = 0;

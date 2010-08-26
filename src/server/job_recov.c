@@ -307,7 +307,7 @@ int job_save(
         {
         redo++;
         }
-      else if (save_attr(job_attr_def, pjob->ji_wattr, (int)JOB_ATR_LAST) != 0)
+      else if (save_attr(job_attr_def, pjob->ji_wattr, JOB_ATR_LAST) != 0)
         {
         redo++;
         }
@@ -506,8 +506,8 @@ job *job_recov(
         pj,
         job_attr_def,
         pj->ji_wattr,
-        (int)JOB_ATR_LAST,
-        (int)JOB_ATR_UNKN,
+        JOB_ATR_LAST,
+        JOB_ATR_UNKN,
         TRUE) != 0) 
     {
     sprintf(log_buffer, "unable to recover %s (file is likely corrupted)",
@@ -535,7 +535,7 @@ job *job_recov(
 
 #else /* PBS_MOM */
 
-  if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+  if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
     /* job is part of an array.  We need to put a link back to the server
     job array struct for this array. We also have to link this job into
@@ -560,7 +560,7 @@ job *job_recov(
         }
       else
         {
-        pa->jobs[(int)pj->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = (void *)pj;
+        pa->jobs[pj->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = (void *)pj;
         pj->ji_arraystruct = pa;
         pa->jobs_recovered++;
         }

@@ -164,23 +164,23 @@ static char *acct_job(
 	 	 PBS_ACCT_MAX_RCD + 1 in size. We will make the assumption that the following
 	 	 strncat calls have ample buffer space to complete successfully */
   sprintf(ptr, "user=%s ",
-          pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str);
+          pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
 
   ptr += strlen(ptr);
 
   /* group */
 
   sprintf(ptr, "group=%s ",
-          pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
+          pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
 
   ptr += strlen(ptr);
 
   /* account */
 
-  if (pjob->ji_wattr[(int)JOB_ATR_account].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_account].at_flags & ATR_VFLAG_SET)
     {
     sprintf(ptr, "account=%s ",
-            pjob->ji_wattr[(int)JOB_ATR_account].at_val.at_str);
+            pjob->ji_wattr[JOB_ATR_account].at_val.at_str);
 
     ptr += strlen(ptr);
     }
@@ -188,7 +188,7 @@ static char *acct_job(
   /* job name */
 
   sprintf(ptr, "jobname=%s ",
-          pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
+          pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str);
 
   ptr += strlen(ptr);
 
@@ -202,21 +202,21 @@ static char *acct_job(
   /* create time */
 
   sprintf(ptr, "ctime=%ld ",
-          pjob->ji_wattr[(int)JOB_ATR_ctime].at_val.at_long);
+          pjob->ji_wattr[JOB_ATR_ctime].at_val.at_long);
 
   ptr += strlen(ptr);
 
   /* queued time */
 
   sprintf(ptr, "qtime=%ld ",
-          pjob->ji_wattr[(int)JOB_ATR_qtime].at_val.at_long);
+          pjob->ji_wattr[JOB_ATR_qtime].at_val.at_long);
 
   ptr += strlen(ptr);
 
   /* eligible time, how long ready to run */
 
   sprintf(ptr, "etime=%ld ",
-          pjob->ji_wattr[(int)JOB_ATR_etime].at_val.at_long);
+          pjob->ji_wattr[JOB_ATR_etime].at_val.at_long);
 
   ptr += strlen(ptr);
 
@@ -230,7 +230,7 @@ static char *acct_job(
   /* user */
 
   sprintf(ptr, "owner=%s ",
-          pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
+          pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
 
 
  
@@ -239,7 +239,7 @@ static char *acct_job(
 
   runningBufSize -= strlen(*Buf);
 
-  newStringLen = strlen("exec_host=")+strlen(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+  newStringLen = strlen("exec_host=")+strlen(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
   if(runningBufSize <= newStringLen+1)
   {
     Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
@@ -253,7 +253,7 @@ static char *acct_job(
 
   /* execution host name */
   snprintf(ptr, runningBufSize, "exec_host=%s ",
-           pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+           pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
   Len = strlen(ptr);
 
@@ -277,10 +277,10 @@ static char *acct_job(
 
   resc_access_perm = READ_ONLY;
 
-  job_attr_def[(int)JOB_ATR_resource].at_encode(
-    &pjob->ji_wattr[(int)JOB_ATR_resource],
+  job_attr_def[JOB_ATR_resource].at_encode(
+    &pjob->ji_wattr[JOB_ATR_resource],
     &attrlist,
-    job_attr_def[(int)JOB_ATR_resource].at_name,
+    job_attr_def[JOB_ATR_resource].at_name,
     NULL,
     ATR_ENCODE_CLIENT);
 
@@ -371,10 +371,10 @@ static char *acct_job(
 
   /* x attributes */
 
-  if (pjob->ji_wattr[(int)JOB_SITE_ATR_x].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_SITE_ATR_x].at_flags & ATR_VFLAG_SET)
     {
     sprintf(ptr, "x=%s ",
-            pjob->ji_wattr[(int)JOB_SITE_ATR_x].at_val.at_str);
+            pjob->ji_wattr[JOB_SITE_ATR_x].at_val.at_str);
 
     ptr += strlen(ptr);
     }
@@ -615,16 +615,16 @@ void account_jobend(
   /* session */
 
   sprintf(pb, "session=%ld ",
-          pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long);
+          pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long);
 
   pb += strlen(pb);
 
   /* Alternate id if present */
 
-  if (pjob->ji_wattr[(int)JOB_ATR_altid].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_altid].at_flags & ATR_VFLAG_SET)
     {
     sprintf(pb, "alt_id=%s ",
-            pjob->ji_wattr[(int)JOB_ATR_altid].at_val.at_str);
+            pjob->ji_wattr[JOB_ATR_altid].at_val.at_str);
 
     pb += strlen(pb);
     }
@@ -632,7 +632,7 @@ void account_jobend(
   /* add the execution end time */
 
 #ifdef USESAVEDRESOURCES
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_resc_used];
+  pattr = &pjob->ji_wattr[JOB_ATR_resc_used];
 
   if (pattr->at_flags & ATR_VFLAG_SET)
     {

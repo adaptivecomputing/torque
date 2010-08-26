@@ -229,7 +229,7 @@ struct batch_request *setup_cpyfiles(
     strcpy(pcf->rq_jobid, pjob->ji_qs.ji_jobid);
 
     get_jobowner(
-      pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
+      pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
       pcf->rq_owner);
 
     if (tflag == JOBCKPFILE)
@@ -241,14 +241,14 @@ struct batch_request *setup_cpyfiles(
     else
       {
       get_jobowner(
-        pjob->ji_wattr[(int)JOB_ATR_euser].at_val.at_str,
+        pjob->ji_wattr[JOB_ATR_euser].at_val.at_str,
         pcf->rq_user);
       }
 
-    if (((pjob->ji_wattr[(int)JOB_ATR_egroup].at_flags & ATR_VFLAG_DEFLT) == 0) &&
-        (pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str != 0))
+    if (((pjob->ji_wattr[JOB_ATR_egroup].at_flags & ATR_VFLAG_DEFLT) == 0) &&
+        (pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str != 0))
       {
-      strcpy(pcf->rq_group, pjob->ji_wattr[(int)JOB_ATR_egroup].at_val.at_str);
+      strcpy(pcf->rq_group, pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
       }
     else
       {
@@ -316,7 +316,7 @@ static int is_joined(
     return(0);
     }
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_join];
+  pattr = &pjob->ji_wattr[JOB_ATR_join];
 
   if (pattr->at_flags & ATR_VFLAG_SET)
     {
@@ -344,13 +344,13 @@ static struct batch_request *return_stdfile(
 
   {
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags) &&
-      (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long))
+  if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags) &&
+      (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long))
     {
     return NULL;
     }
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET) == 0)
+  if ((pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET) == 0)
     {
     return NULL;
     }
@@ -398,13 +398,13 @@ static struct batch_request *cpy_stdfile(
   char  key;
 
   attribute *jkpattr;
-  attribute *pathattr = &pjob->ji_wattr[(int)ati];
+  attribute *pathattr = &pjob->ji_wattr[ati];
 
   char *suffix;
   char *to = NULL;
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags) &&
-      (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long))
+  if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags) &&
+      (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long))
     {
     /* the job is interactive, don't bother to return output file */
 
@@ -452,7 +452,7 @@ static struct batch_request *cpy_stdfile(
    * the keep list, MOM has already placed the file in the user's HOME
    * directory.  It doesn't need to be copied.
    */
-  jkpattr = &pjob->ji_wattr[(int)JOB_ATR_keep];
+  jkpattr = &pjob->ji_wattr[JOB_ATR_keep];
 
   if ((jkpattr->at_flags & ATR_VFLAG_SET) &&
       (strchr(jkpattr->at_val.at_str, (int)key)))
@@ -542,7 +542,7 @@ struct batch_request *cpy_stage(
   char       *prmt;
   char       *to;
 
-  pattr = &pjob->ji_wattr[(int)ati];
+  pattr = &pjob->ji_wattr[ati];
 
   if (pattr->at_flags & ATR_VFLAG_SET)
     {
@@ -648,7 +648,7 @@ int mom_comm(
     if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0)
       {
       pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(
-                                                parse_servername(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str, &dummy));
+                                                parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy));
       }
 
     pjob->ji_momhandle = svr_connect(
@@ -848,7 +848,7 @@ void on_job_exit(
 
       /* see if job has any dependencies */
 
-      if (pjob->ji_wattr[(int)JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+      if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
         {
         depend_on_term(pjob);
         }
@@ -887,8 +887,8 @@ void on_job_exit(
         if ((pque = pjob->ji_qhdr) && (pque->qu_attr != NULL))
           {
           KeepSeconds = attr_ifelse_long(
-                          &pque->qu_attr[(int)QE_ATR_KeepCompleted],
-                          &server.sv_attr[(int)SRV_ATR_KeepCompleted],
+                          &pque->qu_attr[QE_ATR_KeepCompleted],
+                          &server.sv_attr[SRV_ATR_KeepCompleted],
                           0);
           }
 
@@ -1011,7 +1011,7 @@ void on_job_exit(
         if (LOGLEVEL >= 3)
           {
           snprintf(log_buffer, LOG_BUF_SIZE, "request to return spool files failed on node '%s' for job %s%s",
-                   pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
+                   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
                    pjob->ji_qs.ji_jobid,
                    (IsFaked == 1) ? "*" : "");
 
@@ -1154,7 +1154,7 @@ void on_job_exit(
 
         snprintf(log_buffer, LOG_BUF_SIZE, msg_obitnocpy,
                  pjob->ji_qs.ji_jobid,
-                 pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+                 pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
         log_event(
           PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
@@ -1165,7 +1165,7 @@ void on_job_exit(
         if (LOGLEVEL >= 3)
           {
           snprintf(log_buffer, LOG_BUF_SIZE, "request to copy stageout files failed on node '%s' for job %s%s",
-                   pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
+                   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
                    pjob->ji_qs.ji_jobid,
                    (IsFaked == 1) ? "*" : "");
 
@@ -1361,7 +1361,7 @@ void on_job_exit(
 
         snprintf(log_buffer, LOG_BUF_SIZE, msg_obitnodel,
                  pjob->ji_qs.ji_jobid,
-                 pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+                 pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
         log_event(
           PBSEVENT_JOB,
@@ -1372,7 +1372,7 @@ void on_job_exit(
         if (LOGLEVEL >= 3)
           {
           snprintf(log_buffer, LOG_BUF_SIZE, "request to remove stage-in files failed on node '%s' for job %s%s",
-                   pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
+                   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
                    pjob->ji_qs.ji_jobid,
                    (IsFaked == 1) ? "*" : "");
 
@@ -1448,7 +1448,7 @@ void on_job_exit(
 
       /* see if restarted job failed */
 
-      if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_flags & ATR_VFLAG_SET)
+      if (pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_flags & ATR_VFLAG_SET)
         {
         char *pfailtype = NULL;
         char *pfailure = NULL;
@@ -1456,7 +1456,7 @@ void on_job_exit(
         char errMsg[21];
         
         strncpy(errMsg,
-          pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_val.at_str, 20);
+          pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str, 20);
         
         pfailtype = strtok(errMsg," ");
         if (pfailtype != NULL)
@@ -1475,7 +1475,7 @@ void on_job_exit(
                 {
                 sprintf(log_buffer,
                   "Requeueing job after checkpoint restart failure: %s",
-                  pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_val.at_str);
+                  pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str);
 
                 log_event(
                   PBSEVENT_JOB,
@@ -1493,16 +1493,16 @@ void on_job_exit(
               {
               /* put job on hold */
 
-              hold_val = &pjob->ji_wattr[(int)JOB_ATR_hold].at_val.at_long;
+              hold_val = &pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
               *hold_val |= HOLD_s;
-              pjob->ji_wattr[(int)JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+              pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
               pjob->ji_modified = 1;
               svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_HELD);
               if (LOGLEVEL >= 4)
                 {
                 sprintf(log_buffer,
                   "Placing job on hold after checkpoint restart failure: %s",
-                  pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_val.at_str);
+                  pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str);
 
                 log_event(
                   PBSEVENT_JOB,
@@ -1541,8 +1541,8 @@ void on_job_exit(
       if ((pque = pjob->ji_qhdr) && (pque->qu_attr != NULL))
         {
         KeepSeconds = attr_ifelse_long(
-                        &pque->qu_attr[(int)QE_ATR_KeepCompleted],
-                        &server.sv_attr[(int)SRV_ATR_KeepCompleted],
+                        &pque->qu_attr[QE_ATR_KeepCompleted],
+                        &server.sv_attr[SRV_ATR_KeepCompleted],
                         0);
         }
 
@@ -1550,20 +1550,20 @@ void on_job_exit(
         {
         /* first time in */
 
-        if (((server.sv_attr[(int)SRV_ATR_JobMustReport].at_flags & ATR_VFLAG_SET) != 0)
-          && (server.sv_attr[(int)SRV_ATR_JobMustReport].at_val.at_long > 0))
+        if (((server.sv_attr[SRV_ATR_JobMustReport].at_flags & ATR_VFLAG_SET) != 0)
+          && (server.sv_attr[SRV_ATR_JobMustReport].at_val.at_long > 0))
           {
           MustReport = TRUE;
-          pjob->ji_wattr[(int)JOB_ATR_reported].at_val.at_long = 0;
+          pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 0;
 
-          pjob->ji_wattr[(int)JOB_ATR_reported].at_flags =
+          pjob->ji_wattr[JOB_ATR_reported].at_flags =
             ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
           job_save(pjob,SAVEJOB_FULL, 0);
           }
         }
-      else if (((pjob->ji_wattr[(int)JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0)
-        && (pjob->ji_wattr[(int)JOB_ATR_reported].at_val.at_long == 0))
+      else if (((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0)
+        && (pjob->ji_wattr[JOB_ATR_reported].at_val.at_long == 0))
         {
         MustReport = TRUE;
         }
@@ -1591,7 +1591,7 @@ void on_job_exit(
         /* is it first time in or server restart recovery */
         
         if ((handle == -1) &&
-            (pjob->ji_wattr[(int)JOB_ATR_comp_time].at_flags & ATR_VFLAG_SET))
+            (pjob->ji_wattr[JOB_ATR_comp_time].at_flags & ATR_VFLAG_SET))
           {
           /*
            * server restart - if we already have a completion_time then we
@@ -1599,15 +1599,15 @@ void on_job_exit(
            * use the comp_time to determine task invocation time
            */
           ptask = set_task(WORK_Timed,
-            pjob->ji_wattr[(int)JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
+            pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
             on_job_exit, pjob);
           }
         else
           {
           /* First time in - Set the job completion time */
 
-          pjob->ji_wattr[(int)JOB_ATR_comp_time].at_val.at_long = (long)time(NULL);
-          pjob->ji_wattr[(int)JOB_ATR_comp_time].at_flags |= ATR_VFLAG_SET;
+          pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long = (long)time(NULL);
+          pjob->ji_wattr[JOB_ATR_comp_time].at_flags |= ATR_VFLAG_SET;
 
           ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, pjob);
           job_save(pjob, SAVEJOB_FULL, 0);
@@ -1630,8 +1630,8 @@ void on_job_exit(
          */
         
         PurgeIt = TRUE;
-        if (((pjob->ji_wattr[(int)JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0)
-          && (pjob->ji_wattr[(int)JOB_ATR_reported].at_val.at_long == 0))
+        if (((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0)
+          && (pjob->ji_wattr[JOB_ATR_reported].at_val.at_long == 0))
           {
           if (LOGLEVEL >= 7)
             {
@@ -1779,7 +1779,7 @@ void on_job_rerun(
         if (LOGLEVEL >= 3)
           {
           snprintf(log_buffer, LOG_BUF_SIZE, "request to save output files failed on node '%s' for job %s%s",
-                   pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
+                   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
                    pjob->ji_qs.ji_jobid,
                    (IsFaked == 1) ? "*" : "");
 
@@ -1794,7 +1794,7 @@ void on_job_rerun(
 
         snprintf(log_buffer, LOG_BUF_SIZE, msg_obitnocpy,
                  pjob->ji_qs.ji_jobid,
-                 pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+                 pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
         log_event(
           PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
@@ -1873,7 +1873,7 @@ void on_job_rerun(
         if (LOGLEVEL >= 3)
           {
           snprintf(log_buffer, LOG_BUF_SIZE, "request to save stageout files failed on node '%s' for job %s%s",
-                   pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
+                   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
                    pjob->ji_qs.ji_jobid,
                    (IsFaked == TRUE) ? "*" : "");
 
@@ -1887,7 +1887,7 @@ void on_job_rerun(
         snprintf(log_buffer, LOG_BUF_SIZE, msg_obitnocpy,
 
                  pjob->ji_qs.ji_jobid,
-                 pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+                 pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
         log_event(
           PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
@@ -1974,7 +1974,7 @@ void on_job_rerun(
         if (LOGLEVEL >= 3)
           {
           snprintf(log_buffer, LOG_BUF_SIZE, "request to delete stagein files failed on node '%s' for job %s%s",
-                   pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
+                   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
                    pjob->ji_qs.ji_jobid,
                    (IsFaked == TRUE) ? "*" : "");
 
@@ -1989,7 +1989,7 @@ void on_job_rerun(
 
         snprintf(log_buffer, LOG_BUF_SIZE, msg_obitnocpy,
                  pjob->ji_qs.ji_jobid,
-                 pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+                 pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
         log_event(
           PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
@@ -2045,11 +2045,11 @@ void on_job_rerun(
         /* in case of server shutdown, don't clear exec_host */
         /* or session_id will use it on hotstart when next comes up */
 
-        job_attr_def[(int)JOB_ATR_exec_host].at_free(
-          &pjob->ji_wattr[(int)JOB_ATR_exec_host]);
+        job_attr_def[JOB_ATR_exec_host].at_free(
+          &pjob->ji_wattr[JOB_ATR_exec_host]);
 
-        job_attr_def[(int)JOB_ATR_session_id].at_free(
-          &pjob->ji_wattr[(int)JOB_ATR_session_id]);
+        job_attr_def[JOB_ATR_session_id].at_free(
+          &pjob->ji_wattr[JOB_ATR_session_id]);
         }
 
       pjob->ji_modified = 1; /* force full job save */
@@ -2095,7 +2095,7 @@ static int setrerun(
   job *pjob)
 
   {
-  if (pjob->ji_wattr[(int)JOB_ATR_rerunable].at_val.at_long)
+  if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long)
     {
     /* job is rerunnable */
 
@@ -2364,9 +2364,9 @@ void req_jobobit(
 
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = exitstatus;
 
-  pjob->ji_wattr[(int)JOB_ATR_exitstat].at_val.at_long = exitstatus;
+  pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = exitstatus;
 
-  pjob->ji_wattr[(int)JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
+  pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
 
   patlist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_jobobit.rq_attr);
 
@@ -2632,7 +2632,7 @@ void req_jobobit(
 
     account_jobend(pjob, acctbuf);
 
-    if (server.sv_attr[(int)SRV_ATR_log_events].at_val.at_long & PBSEVENT_JOB_USAGE)
+    if (server.sv_attr[SRV_ATR_log_events].at_val.at_long & PBSEVENT_JOB_USAGE)
       {
       /* log events set to record usage */
 
@@ -2681,7 +2681,7 @@ void req_jobobit(
 
     /* remove checkpoint restart file if there is one */
     
-    if (pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
+    if (pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
       {
       cleanup_restart_file(pjob);
       }
@@ -2695,7 +2695,7 @@ void req_jobobit(
 
     if ((pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE | JOB_SVFLG_CHECKPOINT_MIGRATEABLE)) == 0)
       {
-      job_attr_def[(int)JOB_ATR_resc_used].at_free(&pjob->ji_wattr[(int)JOB_ATR_resc_used]);
+      job_attr_def[JOB_ATR_resc_used].at_free(&pjob->ji_wattr[JOB_ATR_resc_used]);
       }
     else if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)
       {
@@ -2754,7 +2754,7 @@ void req_jobobit(
 
     /* remove checkpoint restart file if there is one */
     
-    if (pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
+    if (pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
       {
       cleanup_restart_file(pjob);
       }

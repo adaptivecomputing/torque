@@ -1048,7 +1048,7 @@ int modify_job_attr(
       {
       /* need to recheck if JOB_ATR_errpath is a special case of host only */
 
-      if (newattr[JOB_ATR_errpath].at_val.at_str[strlen(newattr[(int)JOB_ATR_errpath].at_val.at_str) - 1] == ':')
+      if (newattr[JOB_ATR_errpath].at_val.at_str[strlen(newattr[JOB_ATR_errpath].at_val.at_str) - 1] == ':')
         {
         newattr[JOB_ATR_errpath].at_val.at_str =
           prefix_std_file(pjob, (int)'e');

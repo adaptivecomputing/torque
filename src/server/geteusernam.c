@@ -162,7 +162,7 @@ static char *geteusernam(
     {
     /* default to the job owner ( 3.) */
 
-    hit = pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str;
+    hit = pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str;
 
     rule3 = 1;
     }
@@ -312,7 +312,7 @@ int set_jobexid(
   /* use the passed User_List if set, may be a newly modified one     */
   /* if not set, fall back to the job's actual User_List, may be same */
 
-  if (server.sv_attr[(int)SRV_ATR_DisableServerIdCheck].at_val.at_long)
+  if (server.sv_attr[SRV_ATR_DisableServerIdCheck].at_val.at_long)
     CheckID = 0;
   else
     CheckID = 1;
@@ -326,10 +326,10 @@ int set_jobexid(
       {
       /* start of change to use userlist instead of owner 10/17/2007 */
 
-      if ((attrry + (int)JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
-        pattr = attrry + (int)JOB_ATR_userlst;
+      if ((attrry + JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
+        pattr = attrry + JOB_ATR_userlst;
       else
-        pattr = &pjob->ji_wattr[(int)JOB_ATR_userlst];
+        pattr = &pjob->ji_wattr[JOB_ATR_userlst];
 
       if (pjob->ji_wattr[JOB_ATR_proxy_user].at_flags & ATR_VFLAG_SET)
         {
@@ -379,10 +379,10 @@ int set_jobexid(
     }  /* END if (CheckID == 0) */
   else
     {
-    if ((attrry + (int)JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
-      pattr = attrry + (int)JOB_ATR_userlst;
+    if ((attrry + JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
+      pattr = attrry + JOB_ATR_userlst;
     else
-      pattr = &pjob->ji_wattr[(int)JOB_ATR_userlst];
+      pattr = &pjob->ji_wattr[JOB_ATR_userlst];
 
     if ((puser = geteusernam(pjob, pattr)) == NULL)
       {
@@ -453,11 +453,11 @@ int set_jobexid(
         free(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
         pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str = usr_at_host;
         }
-      else if (server.sv_attr[(int)SRV_ATR_AclRoot].at_flags & ATR_VFLAG_SET)
+      else if (server.sv_attr[SRV_ATR_AclRoot].at_flags & ATR_VFLAG_SET)
         {
         if (acl_check(
-              &server.sv_attr[(int)SRV_ATR_AclRoot],
-              pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
+              &server.sv_attr[SRV_ATR_AclRoot],
+              pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
               ACL_User) == 0)
           {
           if (EMsg != NULL)
@@ -485,11 +485,11 @@ int set_jobexid(
     strncpy(tmpLine, puser, sizeof(tmpLine));
     }  /* END else (CheckID == 0) */
 
-  pattr = attrry + (int)JOB_ATR_euser;
+  pattr = attrry + JOB_ATR_euser;
 
-  job_attr_def[(int)JOB_ATR_euser].at_free(pattr);
+  job_attr_def[JOB_ATR_euser].at_free(pattr);
 
-  job_attr_def[(int)JOB_ATR_euser].at_decode(pattr, NULL, NULL, tmpLine);
+  job_attr_def[JOB_ATR_euser].at_decode(pattr, NULL, NULL, tmpLine);
 
 #ifdef _CRAY
 
@@ -517,11 +517,11 @@ int set_jobexid(
 
     /* if account (qsub -A) not specified, set default from UDB */
 
-    pattr = attrry + (int)JOB_ATR_account;
+    pattr = attrry + JOB_ATR_account;
 
     if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
       {
-      job_attr_def[(int)JOB_ATR_account].at_decode(
+      job_attr_def[JOB_ATR_account].at_decode(
         pattr,
         NULL,
         NULL,
@@ -540,10 +540,10 @@ int set_jobexid(
    * if not set, fall back to the job's actual group_list, may be same
    */
 
-  if ((attrry + (int)JOB_ATR_grouplst)->at_flags & ATR_VFLAG_SET)
-    pattr = attrry + (int)JOB_ATR_grouplst;
+  if ((attrry + JOB_ATR_grouplst)->at_flags & ATR_VFLAG_SET)
+    pattr = attrry + JOB_ATR_grouplst;
   else
-    pattr = &pjob->ji_wattr[(int)JOB_ATR_grouplst];
+    pattr = &pjob->ji_wattr[JOB_ATR_grouplst];
 
   /* extract user-specified egroup if it exists */
 
@@ -657,11 +657,11 @@ int set_jobexid(
 
   /* set new group */
 
-  pattr = attrry + (int)JOB_ATR_egroup;
+  pattr = attrry + JOB_ATR_egroup;
 
-  job_attr_def[(int)JOB_ATR_egroup].at_free(pattr);
+  job_attr_def[JOB_ATR_egroup].at_free(pattr);
 
-  job_attr_def[(int)JOB_ATR_egroup].at_decode(pattr, NULL, NULL, pgrpn);
+  job_attr_def[JOB_ATR_egroup].at_decode(pattr, NULL, NULL, pgrpn);
 
   pattr->at_flags |= addflags;
 

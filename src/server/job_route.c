@@ -213,9 +213,9 @@ int default_router(
   char       *destination;
   int        last;
 
-  if (qp->qu_attr[(int)QR_ATR_RouteDestin].at_flags & ATR_VFLAG_SET)
+  if (qp->qu_attr[QR_ATR_RouteDestin].at_flags & ATR_VFLAG_SET)
     {
-    dest_attr = qp->qu_attr[(int)QR_ATR_RouteDestin].at_val.at_arst;
+    dest_attr = qp->qu_attr[QR_ATR_RouteDestin].at_val.at_arst;
 
     last = dest_attr->as_usedptr;
     }
@@ -379,15 +379,15 @@ int job_route(
 
   qp = jobp->ji_qhdr;
 
-  if (qp->qu_attr[(int)QA_ATR_Started].at_val.at_long == 0)
+  if (qp->qu_attr[QA_ATR_Started].at_val.at_long == 0)
     {
     /* queue not started - no routing */
 
     return(0);
     }
 
-  if ((qp->qu_attr[(int)QA_ATR_MaxRun].at_flags & ATR_VFLAG_SET) &&
-      (qp->qu_attr[(int)QA_ATR_MaxRun].at_val.at_long <= qp->qu_njstate[JOB_STATE_TRANSIT]))
+  if ((qp->qu_attr[QA_ATR_MaxRun].at_flags & ATR_VFLAG_SET) &&
+      (qp->qu_attr[QA_ATR_MaxRun].at_val.at_long <= qp->qu_njstate[JOB_STATE_TRANSIT]))
     {
     /* max number of jobs being routed */
 
@@ -396,22 +396,22 @@ int job_route(
 
   /* what is the retry time and life time of a job in this queue */
 
-  if (qp->qu_attr[(int)QR_ATR_RouteRetryTime].at_flags & ATR_VFLAG_SET)
+  if (qp->qu_attr[QR_ATR_RouteRetryTime].at_flags & ATR_VFLAG_SET)
     {
     retry_time =
       (long)time_now +
-      qp->qu_attr[(int)QR_ATR_RouteRetryTime].at_val.at_long;
+      qp->qu_attr[QR_ATR_RouteRetryTime].at_val.at_long;
     }
   else
     {
     retry_time = (long)time_now + PBS_NET_RETRY_TIME;
     }
 
-  if (qp->qu_attr[(int)QR_ATR_RouteLifeTime].at_flags & ATR_VFLAG_SET)
+  if (qp->qu_attr[QR_ATR_RouteLifeTime].at_flags & ATR_VFLAG_SET)
     {
     life =
       jobp->ji_qs.ji_un.ji_routet.ji_quetime +
-      qp->qu_attr[(int)QR_ATR_RouteLifeTime].at_val.at_long;
+      qp->qu_attr[QR_ATR_RouteLifeTime].at_val.at_long;
     }
   else
     {
@@ -438,7 +438,7 @@ int job_route(
     return(0);
     }
 
-  if (qp->qu_attr[(int)QR_ATR_AltRouter].at_val.at_long == 0)
+  if (qp->qu_attr[QR_ATR_AltRouter].at_val.at_long == 0)
     {
     return(default_router(jobp, qp, retry_time));
     }

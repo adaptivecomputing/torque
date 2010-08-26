@@ -169,7 +169,7 @@ int que_save(
 
   /* save queue attributes  */
 
-  if (save_attr(que_attr_def, pque->qu_attr, (int)QA_ATR_LAST) != 0)
+  if (save_attr(que_attr_def, pque->qu_attr, QA_ATR_LAST) != 0)
     {
     log_err(-1, myid, "save_attr failed");
 
@@ -204,7 +204,7 @@ int que_save(
    * ../priv/(attr name)/(queue name)
    */
 
-  for (i = 0;i < (int)QA_ATR_LAST;i++)
+  for (i = 0;i < QA_ATR_LAST;i++)
     {
     if (pque->qu_attr[i].at_type == ATR_TYPE_ACL)
       {
@@ -282,7 +282,7 @@ pbs_queue *que_recov(
   /* read in queue attributes */
 
   if (recov_attr(fds, pq, que_attr_def, pq->qu_attr,
-	               (int)QA_ATR_LAST, 0, TRUE) != 0)
+	               QA_ATR_LAST, 0, TRUE) != 0)
     {
     log_err(-1, "que_recov", "recov_attr[common] failed");
     que_free(pq);
@@ -295,7 +295,7 @@ pbs_queue *que_recov(
    * saved separately
    */
 
-  for (i = 0;i < (int)QA_ATR_LAST;i++)
+  for (i = 0;i < QA_ATR_LAST;i++)
     {
     if (pq->qu_attr[i].at_type == ATR_TYPE_ACL)
       {

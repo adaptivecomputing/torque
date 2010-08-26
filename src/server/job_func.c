@@ -185,14 +185,14 @@ void send_qsub_delmsg(
   attribute *pattri;
   int        qsub_sock;
 
-  phost = arst_string("PBS_O_HOST", &pjob->ji_wattr[(int)JOB_ATR_variables]);
+  phost = arst_string("PBS_O_HOST", &pjob->ji_wattr[JOB_ATR_variables]);
 
   if ((phost == NULL) || ((phost = strchr(phost, '=')) == NULL))
     {
     return;
     }
 
-  pattri = &pjob->ji_wattr[(int)JOB_ATR_interactive];
+  pattri = &pjob->ji_wattr[JOB_ATR_interactive];
 
   qsub_sock = conn_qsub(phost + 1, pattri->at_val.at_long, NULL);
 
@@ -652,7 +652,7 @@ void job_free(
 
   /* remove any malloc working attribute space */
 
-  for (i = 0;i < (int)JOB_ATR_LAST;i++)
+  for (i = 0;i < JOB_ATR_LAST;i++)
     {
     job_attr_def[i].at_free(&pj->ji_wattr[i]);
     }
@@ -1106,7 +1106,7 @@ static void job_init_wattr(
   {
   int i;
 
-  for (i = 0;i < (int)JOB_ATR_LAST;i++)
+  for (i = 0;i < JOB_ATR_LAST;i++)
     {
     clear_attr(&pj->ji_wattr[i], &job_attr_def[i]);
     }
@@ -1135,7 +1135,7 @@ struct batch_request *cpy_checkpoint(
   attribute  *pattr;
   mode_t     saveumask = 0;
   
-  pattr = &pjob->ji_wattr[(int)ati];
+  pattr = &pjob->ji_wattr[ati];
 
   if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
     {
@@ -1164,13 +1164,13 @@ struct batch_request *cpy_checkpoint(
   umask(saveumask);
 
   strcat(serverfile, "/");
-  strcat(serverfile, pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+  strcat(serverfile, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
 
   /* build up the name used for MOM file */
 
-  if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
     {
-    strcpy(momfile, pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
+    strcpy(momfile, pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
     strcat(momfile, "/");
     strcat(momfile, pattr->at_val.at_str);
     }
@@ -1182,7 +1182,7 @@ struct batch_request *cpy_checkpoint(
     strcat(momfile, pjob->ji_qs.ji_fileprefix);
     strcat(momfile, JOB_CHECKPOINT_SUFFIX);
     strcat(momfile, "/");
-    strcat(momfile, pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+    strcat(momfile, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buffer, "Job has NO checkpoint dir specified, using file %s",
@@ -1300,8 +1300,8 @@ void remove_checkpoint(
     /* have files to delete  */
 
     sprintf(log_buffer,"Removing checkpoint file (%s/%s)",
-      pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str,
-      pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_val.at_str);
+      pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str,
+      pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
     log_ext(-1, id, log_buffer, LOG_DEBUG);
 
     /* change the request type from copy to delete  */
@@ -1389,7 +1389,7 @@ static void post_restartfilecleanup(
       
       /* clear restart_name attribute that we just cleaned up */
       
-      pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags &= ~ATR_VFLAG_SET;
+      pjob->ji_wattr[JOB_ATR_restart_name].at_flags &= ~ATR_VFLAG_SET;
       pjob->ji_modified = 1;
       
      job_save(pjob, SAVEJOB_FULL, 0);
@@ -1434,8 +1434,8 @@ void cleanup_restart_file(
     {
     /* have files to delete  */
     sprintf(log_buffer,"Cleaning up restart file (%s/%s)",
-      pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET? pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str : "NONE",
-      pjob->ji_wattr[(int)JOB_ATR_restart_name].at_val.at_str);
+      pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET? pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str : "NONE",
+      pjob->ji_wattr[JOB_ATR_restart_name].at_val.at_str);
     log_ext(-1, id, log_buffer, LOG_DEBUG);
 
     /* change the request type from copy to delete  */
@@ -1586,14 +1586,14 @@ void job_purge(
 
   /* remove checkpoint restart file if there is one */
   
-  if (pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
     {
     cleanup_restart_file(pjob);
     }
 
   /* delete checkpoint file directory if there is one */
   
-  if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
     {
     strcpy(namebuf, path_checkpoint);
     strcat(namebuf, pjob->ji_qs.ji_fileprefix);

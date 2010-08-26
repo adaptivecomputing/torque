@@ -630,8 +630,8 @@ jump:
       }
 
     KeepSeconds = attr_ifelse_long(
-                    &pque->qu_attr[(int)QE_ATR_KeepCompleted],
-                    &server.sv_attr[(int)SRV_ATR_KeepCompleted],
+                    &pque->qu_attr[QE_ATR_KeepCompleted],
+                    &server.sv_attr[SRV_ATR_KeepCompleted],
                     0);
     ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, pjob);
 
@@ -702,8 +702,8 @@ void change_restart_comment_if_needed(
   struct job *pjob)
 
   {
-  if ((pjob->ji_wattr[(int)JOB_ATR_start_count].at_val.at_long > 1) &&
-    (pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_flags & ATR_VFLAG_SET))
+  if ((pjob->ji_wattr[JOB_ATR_start_count].at_val.at_long > 1) &&
+    (pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_flags & ATR_VFLAG_SET))
     {
       char *token1 = NULL;
       char *token2 = NULL;
@@ -711,7 +711,7 @@ void change_restart_comment_if_needed(
       char *ptr;
       
       strncpy(commentMsg,
-        pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_val.at_str, 24);
+        pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str, 24);
       
       token1 = strtok(commentMsg," ");
       if (token1 != NULL)
@@ -720,11 +720,11 @@ void change_restart_comment_if_needed(
       if ((token2 != NULL) && 
         ((memcmp(token2,"failure",7) == 0) || (memcmp(token2,"restarted",9) == 0)))
         {
-        ptr = pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_val.at_str;
+        ptr = pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str;
         if (isupper(*ptr))
           {
             *ptr = tolower(*ptr);
-            pjob->ji_wattr[(int)JOB_ATR_checkpoint_restart_status].at_flags
+            pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_flags
               |= ATR_VFLAG_SET;
             pjob->ji_modified = 1;
           }
@@ -851,8 +851,8 @@ static void post_delete_mom1(
     {
     pque = pjob->ji_qhdr;
 
-    delay = attr_ifelse_long(&pque->qu_attr[(int)QE_ATR_KillDelay],
-                             &server.sv_attr[(int)SRV_ATR_KillDelay],
+    delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
+                             &server.sv_attr[SRV_ATR_KillDelay],
                              2);
     }
 
@@ -940,7 +940,7 @@ static int forced_jobpurge(
     if (!strncmp(preq->rq_extend, delpurgestr, strlen(delpurgestr)))
       {
       if (((preq->rq_perm & (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR)) != 0) ||
-          ((svr_chk_owner(preq, pjob) == 0) && (server.sv_attr[(int)SRV_ATR_OwnerPurge].at_val.at_long)))
+          ((svr_chk_owner(preq, pjob) == 0) && (server.sv_attr[SRV_ATR_OwnerPurge].at_val.at_long)))
         {
         sprintf(log_buffer, "purging job without checking MOM");
 
@@ -1159,7 +1159,7 @@ static void job_delete_nanny(
 
   /* short-circuit if nanny isn't enabled */
 
-  if (!server.sv_attr[(int)SRV_ATR_JobNanny].at_val.at_long)
+  if (!server.sv_attr[SRV_ATR_JobNanny].at_val.at_long)
     {
     release_req(pwt);
 
@@ -1215,7 +1215,7 @@ static void post_job_delete_nanny(
   rc       = preq_sig->rq_reply.brp_code;
 
 
-  if (!server.sv_attr[(int)SRV_ATR_JobNanny].at_val.at_long)
+  if (!server.sv_attr[SRV_ATR_JobNanny].at_val.at_long)
     {
     /* the admin disabled nanny within the last minute or so */
 
@@ -1315,14 +1315,14 @@ void purge_completed_jobs(
         pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
     {
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE) &&
-      (pjob->ji_wattr[(int)JOB_ATR_comp_time].at_val.at_long <= purge_time) &&
-      ((pjob->ji_wattr[(int)JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
-      (pjob->ji_wattr[(int)JOB_ATR_reported].at_val.at_long == 0))
+      (pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long <= purge_time) &&
+      ((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
+      (pjob->ji_wattr[JOB_ATR_reported].at_val.at_long == 0))
       {
       if (LOGLEVEL >= 4)
         {
         sprintf(log_buffer,"Reported job is COMPLETED (%ld), setting reported to TRUE",
-          pjob->ji_wattr[(int)JOB_ATR_comp_time].at_val.at_long);
+          pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long);
           
         log_event(
           PBSEVENT_JOB, 
@@ -1331,8 +1331,8 @@ void purge_completed_jobs(
           log_buffer);
         }
 
-      pjob->ji_wattr[(int)JOB_ATR_reported].at_val.at_long = 1;
-      pjob->ji_wattr[(int)JOB_ATR_reported].at_flags =
+      pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 1;
+      pjob->ji_wattr[JOB_ATR_reported].at_flags =
         ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
           
      job_save(pjob, SAVEJOB_FULL, 0); 

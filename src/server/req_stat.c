@@ -1214,7 +1214,7 @@ int get_numa_statuses(
 
   {
   int i;
-  int rc;
+  int rc = 0;
 
   struct pbsnode *pn;
 
