@@ -752,7 +752,7 @@ int get_cpuset_strings(
   int     j;
   int     cpu_index;
   int     mem_index;
-  int     ratio;
+  int     ratio = 0;
   char    tmpStr[MAXPATHLEN];
   int     numa_index;
 
