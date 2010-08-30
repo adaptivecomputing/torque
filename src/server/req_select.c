@@ -341,7 +341,7 @@ void req_selectjobs(
     {
     sel_step3(cntl);
     }
-  else if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long)
+  else if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
     {
     sel_step3(cntl);
     }
@@ -445,7 +445,7 @@ static void sel_step2(
         continue;
       }
 
-    if (server.sv_attr[(int)SRV_ATR_query_others].at_val.at_long ||
+    if (server.sv_attr[SRV_ATR_query_others].at_val.at_long ||
         (svr_authorize_jobreq(cntl->sc_origrq, pjob) == 0))
       {
       /* have permission to look at job */
@@ -557,7 +557,7 @@ static void sel_step3(
 
   while (pjob != NULL)
     {
-    if (server.sv_attr[(int)SRV_ATR_query_others].at_val.at_long ||
+    if (server.sv_attr[SRV_ATR_query_others].at_val.at_long ||
         (svr_authorize_jobreq(preq, pjob) == 0))
       {
       /* either job owner or has special permission to look at job */
@@ -654,11 +654,11 @@ static int select_job(
   {
   while (psel != NULL)
     {
-    if (psel->sl_atindx == (int)JOB_ATR_userlst)
+    if (psel->sl_atindx == JOB_ATR_userlst)
       {
       if (!acl_check(
             &psel->sl_attr,
-            pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
+            pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
             ACL_User))
         {
         /* no match */
@@ -849,7 +849,7 @@ static int build_selentry(
    * if a resource, use the resource specific one
    */
 
-  if (pdef == &job_attr_def[(int)JOB_ATR_resource])
+  if (pdef == &job_attr_def[JOB_ATR_resource])
     {
     entry->sl_def = (attribute_def *)find_resc_def(
                       svr_resc_def,

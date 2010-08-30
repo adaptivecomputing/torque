@@ -379,7 +379,7 @@ int modify_job(
         sendmom = 1;
         }
 /*
-        else if ((i == (int)JOB_ATR_checkpoint_name) || (i == (int)JOB_ATR_variables))
+        else if ((i == JOB_ATR_checkpoint_name) || (i == JOB_ATR_variables))
         {
         sendmom = 1;
         }

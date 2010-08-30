@@ -308,7 +308,7 @@ void req_stat_job(
   cntl->sc_post   = req_stat_job_step2;
   cntl->sc_jobid[0] = '\0'; /* cause "start from beginning" */
 
-  if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long)
+  if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
     cntl->sc_post = 0; /* we're not going to make clients wait */
 
   req_stat_job_step2(cntl); /* go to step 2, see if running is current */
@@ -415,7 +415,7 @@ static void req_stat_job_step2(
     pa = get_array(preq->rq_ind.rq_status.rq_id);
     }
 
-  if (!server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long)
+  if (!server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
     {
     /* polljobs not set - indicates we may need to obtain fresh data from
        MOM */
@@ -517,7 +517,7 @@ static void req_stat_job_step2(
 
       return;
       }
-    }    /* END if (!server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long) */
+    }    /* END if (!server.sv_attr[SRV_ATR_PollJobs].at_val.at_long) */
 
   /*
    * now ready for part 3, building the status reply,
@@ -637,7 +637,7 @@ static void req_stat_job_step2(
         rc = status_job(
                pjob,
                preq,
-               (pjob->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long >= DTime) ? pal : dpal,
+               (pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long >= DTime) ? pal : dpal,
                &preply->brp_un.brp_status,
                &bad);
 
@@ -874,7 +874,7 @@ static void stat_update(
         {
         sattrl = (svrattrl *)GET_NEXT(pstatus->brp_attr);
 
-        oldsid = pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long;
+        oldsid = pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long;
 
         modify_job_attr(
           pjob,
@@ -882,7 +882,7 @@ static void stat_update(
           ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
           &bad);
 
-        if (oldsid != pjob->ji_wattr[(int)JOB_ATR_session_id].at_val.at_long)
+        if (oldsid != pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long)
           {
           /* first save since running job (or the sid has changed), */
           /* must save session id    */
@@ -1016,7 +1016,7 @@ void poll_job_task(
     return;
     }
 
-  if (server.sv_attr[(int)SRV_ATR_PollJobs].at_val.at_long &&
+  if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long &&
       (pjob->ji_qs.ji_state == JOB_STATE_RUNNING))
     {
     stat_mom_job(pjob);
@@ -1144,12 +1144,12 @@ static int status_que(
 
   /* ok going to do status, update count and state counts from qu_qs */
 
-  pque->qu_attr[(int)QA_ATR_TotalJobs].at_val.at_long = pque->qu_numjobs;
+  pque->qu_attr[QA_ATR_TotalJobs].at_val.at_long = pque->qu_numjobs;
 
-  pque->qu_attr[(int)QA_ATR_TotalJobs].at_flags |= ATR_VFLAG_SET;
+  pque->qu_attr[QA_ATR_TotalJobs].at_flags |= ATR_VFLAG_SET;
 
   update_state_ct(
-    &pque->qu_attr[(int)QA_ATR_JobsByState],
+    &pque->qu_attr[QA_ATR_JobsByState],
     pque->qu_njstate,
     pque->qu_jobstbuf);
 
@@ -1486,18 +1486,18 @@ void req_stat_svr(
 
   /* update count and state counts from sv_numjobs and sv_jobstates */
 
-  server.sv_attr[(int)SRV_ATR_TotalJobs].at_val.at_long = server.sv_qs.sv_numjobs;
-  server.sv_attr[(int)SRV_ATR_TotalJobs].at_flags |= ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_TotalJobs].at_val.at_long = server.sv_qs.sv_numjobs;
+  server.sv_attr[SRV_ATR_TotalJobs].at_flags |= ATR_VFLAG_SET;
 
   update_state_ct(
-    &server.sv_attr[(int)SRV_ATR_JobsByState],
+    &server.sv_attr[SRV_ATR_JobsByState],
     server.sv_jobstates,
     server.sv_jobstbuf);
 
   nc = netcounter_get();
   sprintf(nc_buf, "%d %d %d", *nc, *(nc + 1), *(nc + 2));
-  server.sv_attr[(int)SRV_ATR_NetCounter].at_val.at_str = nc_buf;
-  server.sv_attr[(int)SRV_ATR_NetCounter].at_flags |= ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_NetCounter].at_val.at_str = nc_buf;
+  server.sv_attr[SRV_ATR_NetCounter].at_flags |= ATR_VFLAG_SET;
 
   /* allocate a reply structure and a status sub-structure */
 

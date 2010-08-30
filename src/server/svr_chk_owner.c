@@ -126,7 +126,7 @@ int svr_chk_owner(
   {
   char  owner[PBS_MAXUSER + 1];
 
-  get_jobowner(pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str, owner);
+  get_jobowner(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, owner);
 
 
   return svr_chk_owner_generic(preq, owner, get_variable(pjob, pbs_o_host));
@@ -183,7 +183,7 @@ int svr_authorize_jobreq(
   {
   char  owner[PBS_MAXUSER + 1];
 
-  get_jobowner(pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str, owner);
+  get_jobowner(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, owner);
 
   return svr_authorize_req(preq, owner, get_variable(pjob, pbs_o_host));
   }  /* END svr_authorize_jobreq() */
@@ -353,7 +353,7 @@ int svr_get_privilege(
     }
 #endif /* __CYGWIN__ */
 
-  if (!(server.sv_attr[(int)SRV_ATR_managers].at_flags & ATR_VFLAG_SET))
+  if (!(server.sv_attr[SRV_ATR_managers].at_flags & ATR_VFLAG_SET))
     {
     if (is_root)
       priv |= (ATR_DFLAG_MGRD | ATR_DFLAG_MGWR);
@@ -363,7 +363,7 @@ int svr_get_privilege(
     priv |= (ATR_DFLAG_MGRD | ATR_DFLAG_MGWR);
     }
 
-  if (!(server.sv_attr[(int)SRV_ATR_operators].at_flags & ATR_VFLAG_SET))
+  if (!(server.sv_attr[SRV_ATR_operators].at_flags & ATR_VFLAG_SET))
     {
     if (is_root)
       priv |= (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR);

@@ -168,8 +168,8 @@ void req_signaljob(
   /* interactive jobs don't resume correctly so don't allow a suspend */
 
   if (!strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_SUSPEND) &&
-      (pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-      (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long > 0))
+      (pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long > 0))
     {
     req_reject(PBSE_JOBTYPE, 0, preq, NULL, NULL);
 

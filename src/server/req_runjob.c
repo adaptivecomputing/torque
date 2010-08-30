@@ -290,7 +290,7 @@ static int is_checkpoint_restart(
 
   {
 #if 0
-  if ((pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET) == 0)
+  if ((pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET) == 0)
     {
     return(FALSE);
     }
@@ -336,7 +336,7 @@ static void post_checkpointsend(
 
       free_nodes(pjob);
 
-      pwait = &pjob->ji_wattr[(int)JOB_ATR_exectime];
+      pwait = &pjob->ji_wattr[JOB_ATR_exectime];
 
       if ((pwait->at_flags & ATR_VFLAG_SET) == 0)
         {
@@ -378,9 +378,9 @@ static void post_checkpointsend(
       
       /* set restart_name attribute to the checkpoint_name we just copied */
       
-      job_attr_def[(int)JOB_ATR_restart_name].at_set(
-        &pjob->ji_wattr[(int)JOB_ATR_restart_name],
-        &pjob->ji_wattr[(int)JOB_ATR_checkpoint_name],
+      job_attr_def[JOB_ATR_restart_name].at_set(
+        &pjob->ji_wattr[JOB_ATR_restart_name],
+        &pjob->ji_wattr[JOB_ATR_checkpoint_name],
         SET);
 
       pjob->ji_modified = 1;
@@ -494,7 +494,7 @@ void req_stagein(
     return;
     }
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_stagein].at_flags & ATR_VFLAG_SET) == 0)
+  if ((pjob->ji_wattr[JOB_ATR_stagein].at_flags & ATR_VFLAG_SET) == 0)
     {
     log_err(-1, "req_stagein", "stage-in information not set");
 
@@ -552,7 +552,7 @@ static void post_stagein(
 
       free_nodes(pjob);
 
-      pwait = &pjob->ji_wattr[(int)JOB_ATR_exectime];
+      pwait = &pjob->ji_wattr[JOB_ATR_exectime];
 
       if ((pwait->at_flags & ATR_VFLAG_SET) == 0)
         {
@@ -1243,7 +1243,7 @@ static void post_sendmom(
 
       /* if any dependencies, see if action required */
 
-      if (jobp->ji_wattr[(int)JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+      if (jobp->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
         depend_on_exec(jobp);
 
       /*
@@ -1459,7 +1459,7 @@ static job *chk_job_torun(
       {
       /* specified destination must match exec_host */
 
-      strcpy(exec_host, pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+      strcpy(exec_host, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
       if ((ptr = strchr(exec_host, '/')))
         * ptr = 0; /* For some reason, node name has "/0" on the end (i.e. "node0001/0"). */
@@ -1483,7 +1483,7 @@ static job *chk_job_torun(
 
       if ((rc = assign_hosts(  /* inside chk_job_torun() */
                   pjob,
-                  pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str,
+                  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
                   0,
                   FailHost,
                   EMsg)) != 0)   /* O */
@@ -1531,7 +1531,7 @@ static job *chk_job_torun(
 
     attribute *Attr;     /* 'neednodes' attribute */
 
-    Attr = &pjob->ji_wattr[(int)JOB_ATR_resource];
+    Attr = &pjob->ji_wattr[JOB_ATR_resource];
 
     DRes = find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
 

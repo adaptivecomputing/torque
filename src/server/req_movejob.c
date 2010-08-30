@@ -290,12 +290,12 @@ void req_orderjob(
 
   /* now swap the order of the two jobs in the queue lists */
 
-  rank = pjob1->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long;
+  rank = pjob1->ji_wattr[JOB_ATR_qrank].at_val.at_long;
 
-  pjob1->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long =
-    pjob2->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long;
+  pjob1->ji_wattr[JOB_ATR_qrank].at_val.at_long =
+    pjob2->ji_wattr[JOB_ATR_qrank].at_val.at_long;
 
-  pjob2->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long = rank;
+  pjob2->ji_wattr[JOB_ATR_qrank].at_val.at_long = rank;
 
   if (pjob1->ji_qhdr != pjob2->ji_qhdr)
     {

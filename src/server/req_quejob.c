@@ -324,9 +324,9 @@ void req_quejob(
       server.sv_qs.sv_jobidnumber = 0; /* wrap it */
 
     /* Make the current job number visible in qmgr print server commnad. */
-    server.sv_attr[(int)SRV_ATR_NextJobNumber].at_val.at_long = server.sv_qs.sv_jobidnumber;
+    server.sv_attr[SRV_ATR_NextJobNumber].at_val.at_long = server.sv_qs.sv_jobidnumber;
 
-    server.sv_attr[(int)SRV_ATR_NextJobNumber].at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+    server.sv_attr[SRV_ATR_NextJobNumber].at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
 
     if (svr_save(&server, SVR_SAVE_QUICK))
@@ -1352,13 +1352,13 @@ void req_rdytocommit(
   OrigState  = pj->ji_qs.ji_state;
 
   OrigSState = pj->ji_qs.ji_substate;
-  OrigSChar  = pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char;
-  OrigFlags  = pj->ji_wattr[(int)JOB_ATR_state].at_flags;
+  OrigSChar  = pj->ji_wattr[JOB_ATR_state].at_val.at_char;
+  OrigFlags  = pj->ji_wattr[JOB_ATR_state].at_flags;
 
   pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
   pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
-  pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char = 'T';
-  pj->ji_wattr[(int)JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
+  pj->ji_wattr[JOB_ATR_state].at_val.at_char = 'T';
+  pj->ji_wattr[JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
 
   /* if this is a job array template then we'll delete the .JB file that 
      was created for this job since we are going to save it with a different 
@@ -1366,7 +1366,7 @@ void req_rdytocommit(
      XXX: not sure why the .JB file already exists before we do the SAVEJOB_NEW
      save below
    */
-  if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+  if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
     pj->ji_is_array_template = TRUE;
 
@@ -1392,8 +1392,8 @@ void req_rdytocommit(
 
     pj->ji_qs.ji_state    = OrigState;
     pj->ji_qs.ji_substate = OrigSState;
-    pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char = OrigSChar;
-    pj->ji_wattr[(int)JOB_ATR_state].at_flags = OrigFlags;
+    pj->ji_wattr[JOB_ATR_state].at_val.at_char = OrigSChar;
+    pj->ji_wattr[JOB_ATR_state].at_flags = OrigFlags;
 
     req_reject(PBSE_SYSTEM, 0, preq, NULL, tmpLine);
 
@@ -1509,15 +1509,15 @@ void req_commit(
   OrigState  = pj->ji_qs.ji_state;
 
   OrigSState = pj->ji_qs.ji_substate;
-  OrigSChar  = pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char;
-  OrigFlags  = pj->ji_wattr[(int)JOB_ATR_state].at_flags;
+  OrigSChar  = pj->ji_wattr[JOB_ATR_state].at_val.at_char;
+  OrigFlags  = pj->ji_wattr[JOB_ATR_state].at_flags;
 
   pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
   pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
-  pj->ji_wattr[(int)JOB_ATR_state].at_val.at_char = 'T';
-  pj->ji_wattr[(int)JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
+  pj->ji_wattr[JOB_ATR_state].at_val.at_char = 'T';
+  pj->ji_wattr[JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
 
-  if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+  if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
     pj->ji_is_array_template = TRUE;
     
@@ -1587,7 +1587,7 @@ void req_commit(
         }
       return;
       }
-    }  /* end if (pj->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET) */
+    }  /* end if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET) */
 
   svr_evaljobstate(pj, &newstate, &newsub, 1);
 
@@ -1595,9 +1595,9 @@ void req_commit(
 
   /* set the queue rank attribute */
 
-  pj->ji_wattr[(int)JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+  pj->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
 
-  pj->ji_wattr[(int)JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
+  pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
   if ((rc = svr_enquejob(pj)))
     {
@@ -1645,7 +1645,7 @@ void req_commit(
 
   if ((preq->rq_fromsvr == 0) &&
       (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
-      (pque->qu_attr[(int)QA_ATR_Started].at_val.at_long != 0))
+      (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
     {
     if ((rc = job_route(pj)))
       {
@@ -1673,7 +1673,7 @@ void req_commit(
    * branch_request needs re creation since reply_jobid will free
    * the passed in one
   */
-  pattr = &pj->ji_wattr[(int)JOB_ATR_start_count];
+  pattr = &pj->ji_wattr[JOB_ATR_start_count];
 
   spec = PBS_DEFAULT_NODE;
 
@@ -1702,8 +1702,8 @@ void req_commit(
 
   sprintf(log_buffer, msg_jobnew,
           preq->rq_user, preq->rq_host,
-          pj->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str,
-          pj->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str,
+          pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+          pj->ji_wattr[JOB_ATR_jobname].at_val.at_str,
           pj->ji_qhdr->qu_qs.qu_name);
 
   /* acknowledge the request with the job id */

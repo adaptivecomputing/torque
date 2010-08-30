@@ -201,7 +201,7 @@ void req_register(
      * yet recovered, that is not an error.
      */
 
-    if (server.sv_attr[(int)SRV_ATR_State].at_val.at_long != SV_STATE_INIT)
+    if (server.sv_attr[SRV_ATR_State].at_val.at_long != SV_STATE_INIT)
       {
       log_event(
         PBSEVENT_DEBUG,
@@ -267,7 +267,7 @@ void req_register(
       log_buffer);
     }
 
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_depend];
+  pattr = &pjob->ji_wattr[JOB_ATR_depend];
 
   pjob->ji_modified = 1;
 
@@ -478,10 +478,10 @@ void req_register(
             set_depend_hold(pjob, pattr);
 
             sprintf(tmpcoststr, "%ld", preq->rq_ind.rq_register.rq_cost);
-            pjob->ji_wattr[(int)JOB_ATR_sched_hint].at_val.at_str =
+            pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str =
               strdup(tmpcoststr);
 
-            pjob->ji_wattr[(int)JOB_ATR_sched_hint].at_flags |= ATR_VFLAG_SET;
+            pjob->ji_wattr[JOB_ATR_sched_hint].at_flags |= ATR_VFLAG_SET;
             }
           else
             {
@@ -1127,7 +1127,7 @@ int depend_on_que(
     {
     /* if there are dependencies being removed, unregister them */
 
-    alter_unreg((job *)pjob, &((job *)pjob)->ji_wattr[(int)JOB_ATR_depend], pattr);
+    alter_unreg((job *)pjob, &((job *)pjob)->ji_wattr[JOB_ATR_depend], pattr);
     }
 
   /* First set a System hold if required */
@@ -1199,7 +1199,7 @@ static void post_doe(
 
   if (pjob != NULL)
     {
-    pattr = &pjob->ji_wattr[(int)JOB_ATR_depend];
+    pattr = &pjob->ji_wattr[JOB_ATR_depend];
     pdep  = find_depend(JOB_DEPEND_TYPE_BEFORESTART, pattr);
 
     pdj   = find_dependjob(pdep, preq->rq_ind.rq_register.rq_parent);
@@ -1245,7 +1245,7 @@ int depend_on_exec(
 
   pdep = find_depend(
            JOB_DEPEND_TYPE_BEFORESTART,
-           &pjob->ji_wattr[(int)JOB_ATR_depend]);
+           &pjob->ji_wattr[JOB_ATR_depend]);
 
   if (pdep != NULL)
     {
@@ -1270,7 +1270,7 @@ int depend_on_exec(
 
   pdep = find_depend(
            JOB_DEPEND_TYPE_SYNCWITH,
-           &pjob->ji_wattr[(int)JOB_ATR_depend]);
+           &pjob->ji_wattr[JOB_ATR_depend]);
 
   if (pdep != NULL)
     {
@@ -1291,7 +1291,7 @@ int depend_on_exec(
   /* If I am the master of a sync set, skip the sending (to myself) */
   /* a ready, just cut direct to releasing the next cheapest        */
 
-  pdep = find_depend(JOB_DEPEND_TYPE_SYNCCT, &pjob->ji_wattr[(int)JOB_ATR_depend]);
+  pdep = find_depend(JOB_DEPEND_TYPE_SYNCCT, &pjob->ji_wattr[JOB_ATR_depend]);
 
   if (pdep != NULL)
     {
@@ -1675,7 +1675,7 @@ void depend_clrrdy(
 
   struct depend_job *pdjb;
 
-  pdp = (struct depend *)GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_depend].at_val.at_list);
+  pdp = (struct depend *)GET_NEXT(pjob->ji_wattr[JOB_ATR_depend].at_val.at_list);
 
   while ((pdp != NULL) && (pdp->dp_type == JOB_DEPEND_TYPE_SYNCCT))
     {

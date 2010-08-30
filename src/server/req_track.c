@@ -327,13 +327,13 @@ issue_track(job *pjob)
   if (preq == (struct batch_request *)0)
     return;
 
-  preq->rq_ind.rq_track.rq_hopcount = pjob->ji_wattr[(int)JOB_ATR_hopcount].at_val.at_long;
+  preq->rq_ind.rq_track.rq_hopcount = pjob->ji_wattr[JOB_ATR_hopcount].at_val.at_long;
 
   (void)strcpy(preq->rq_ind.rq_track.rq_jid, pjob->ji_qs.ji_jobid);
 
   (void)strcpy(preq->rq_ind.rq_track.rq_location, server_name);
 
-  preq->rq_ind.rq_track.rq_state[0] = pjob->ji_wattr[(int)JOB_ATR_state].at_val.at_char;
+  preq->rq_ind.rq_track.rq_state[0] = pjob->ji_wattr[JOB_ATR_state].at_val.at_char;
 
   pc = pjob->ji_qs.ji_jobid;
 
