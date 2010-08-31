@@ -118,7 +118,7 @@ int main(
 
   tmpJobID[0] = '\0';
 
-  /* USAGE: pbs_track [-j <JOBID>] a.out arg1 arg2 ... argN */
+  /* USAGE: pbs_track [-j <JOBID>] -- a.out arg1 arg2 ... argN */
 
 #define GETOPT_ARGS "bj:"
 
@@ -163,7 +163,7 @@ int main(
       (optind >= argc) ||
       (tmpJobID[0] == '\0'))
     {
-    static char Usage[] = "USAGE: pbs_track [-j <JOBID>] [-b] a.out arg1 arg2 ... argN\n";
+    static char Usage[] = "USAGE: pbs_track [-j <JOBID>] [-b] -- a.out arg1 arg2 ... argN\n";
     fprintf(stderr, "%s", Usage);
     exit(2);
     }
@@ -250,7 +250,12 @@ int main(
 
     /* do the exec */
 
-    execv(Args[0], Args);
+    if (execv(Args[0], Args) == -1)
+      {
+      fprintf(stderr,"execv failed with error %d, message:\n%s\n",
+        errno,
+        strerror(errno));
+      }
     }  /* END if ((DoBackground == 0) || (pid == 0)) */
   else if (pid > 0)
     {
