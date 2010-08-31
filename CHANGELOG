@@ -33,6 +33,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       under some circumstances have its permissions modified when jobs exited
       on a compute node.
   b - only clear the mom state when actually running the health check script
+  e - allow input of walltime in the format of [DD]:HH:MM:SS
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges

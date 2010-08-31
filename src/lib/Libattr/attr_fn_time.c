@@ -133,6 +133,8 @@ int decode_time(
   int   i;
   char  msec[4];
   int   ncolon = 0;
+  int   use_days = 0;
+  int   days = 0;
   char *pc;
   long  rv = 0;
   char *workval;
@@ -149,7 +151,7 @@ int decode_time(
     return(0);
     }
 
-  /* FORMAT:  HH:MM:SS[.MS] */
+  /* FORMAT:  [DD]:HH:MM:SS[.MS] */
 
   workval = strdup(val);
 
@@ -171,12 +173,31 @@ int decode_time(
     {
     if (*pc == ':')
       {
-      if (++ncolon > 2)
+      if (++ncolon > 3)
         goto badval;
+
+      /* are days specified? */
+      if (ncolon > 2)
+        use_days = 1;
+      }
+    }
+
+  for (pc = workval;*pc;++pc)
+    {
+    if (*pc == ':')
+      {
 
       *pc = '\0';
 
-      rv = (rv * 60) + atoi(workval);
+      if (use_days)
+        {
+        days = atoi(workval);
+        use_days = 0;
+        }
+      else
+        {
+        rv = (rv * 60) + atoi(workval);
+        }
 
       workval = pc + 1;
 
@@ -197,6 +218,9 @@ int decode_time(
     }
 
   rv = (rv * 60) + atoi(workval);
+  
+  if (days > 0)
+   rv = rv + (days * 24 * 3600);
 
   if (rv > PBS_MAX_TIME)
     goto badval;
