@@ -67,6 +67,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       job's temporary directory when configured
   b - make the code for reconnecting to the server more robust, and remove
       elements of not connecting if a job isn't running
+  e - allow input of walltime in the format of [DD]:HH:MM:SS
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges
