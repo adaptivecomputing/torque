@@ -28,6 +28,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       are enabled
   b - only clear the mom state when actually running the 
       health check script
+  e - get_hostaddr now more robust when checking if a node is numa or not
       
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
