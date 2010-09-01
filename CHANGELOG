@@ -68,6 +68,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - make the code for reconnecting to the server more robust, and remove
       elements of not connecting if a job isn't running
   e - allow input of walltime in the format of [DD]:HH:MM:SS
+  b - Fix so BLCR checkpoint files get copied to server on qchkpt and periodic
+      checkpoints
 
 2.5.1
   b - modified Makefile.in and Makefile.am at root to include contrib/AddPrivileges
