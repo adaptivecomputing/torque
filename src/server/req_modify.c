@@ -274,7 +274,7 @@ int modify_job(
     return(PBSE_BADSTATE);
     }
 
-  if ((checkpoint_req == TRUE) &&
+  if (((checkpoint_req == CHK_HOLD) || (checkpoint_req == CHK_CONT)) &&
       (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING))
     {
     /* May need to request copy of the checkpoint file from mom */
