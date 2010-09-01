@@ -5097,10 +5097,6 @@ void start_exec(
 	tlist_head    phead;
 	svrattrl     *psatl;
 	int           stream;
-  int  socks[2];
-	
-  struct sockaddr_in saddr;
-	torque_socklen_t slen;
 #endif /* ndef NUMA_SUPPORT */
 
 	int  ports[2];
@@ -5229,6 +5225,10 @@ void start_exec(
 
     /* open a pair of sockets for pbs_demux used later */
     ret = allocate_demux_sockets(pjob);
+
+    ports[0] = pjob->ji_portout;
+    ports[1] = pjob->ji_porterr;
+
     if (ret != PBSE_NONE)
       return;
 
@@ -5261,61 +5261,6 @@ void start_exec(
 				return;
 				}
 			}		 /* END for (i) */
-
-		/* Open two sockets for use by demux program later. */
-
-		for (i = 0;i < 2;i++)
-			socks[i] = -1;
-
-		for (i = 0;i < 2;i++)
-			{
-			if ((socks[i] = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-				break;
-
-			memset(&saddr, '\0', sizeof(saddr));
-
-			saddr.sin_addr.s_addr = INADDR_ANY;
-
-			saddr.sin_family = AF_INET;
-
-			if (bind(
-							socks[i],
-							(struct sockaddr *)&saddr,
-							sizeof(saddr)) == -1)
-				{
-				break;
-				}
-
-			slen = sizeof(saddr);
-
-			if (getsockname(socks[i], (struct sockaddr *)&saddr, &slen) == -1)
-				break;
-
-			ports[i] = (int)ntohs(saddr.sin_port);
-			}	 /* END for (i) */
-
-		if (i < 2)
-			{
-			/* ERROR:  cannot open sockets for stdout and stderr */
-
-			for (i = 0;i < 2;i++)
-				{
-				if (socks[i] != -1)
-					close(socks[i]);
-				}
-
-			/* command sisters to abort job and continue */
-
-			log_err(errno, id, "stdout/err socket");
-
-			exec_bail(pjob, JOB_EXEC_FAIL1);
-
-			return;
-			}
-
-		pjob->ji_stdout = socks[0];
-
-		pjob->ji_stderr = socks[1];
 
 		/* Send out a JOIN_JOB message to all the MOM's in the sisterhood. */
 

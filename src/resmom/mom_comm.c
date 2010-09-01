@@ -2152,6 +2152,7 @@ void im_request(
       /* does job already exist? */
 
       ret = get_job_struct(&pjob, jobid, command, stream, addr, nodeid);
+
       if(ret != PBSE_NONE)
         {
         if(ret == PBSE_DISPROTO)
@@ -6082,7 +6083,7 @@ int get_job_struct(
     goto done;
     }
   
-  new_job->ji_portout = disrsi(stream, &ret);
+  new_job->ji_stdout = disrsi(stream, &ret);
   
   if (ret != DIS_SUCCESS)
     {
@@ -6098,7 +6099,7 @@ int get_job_struct(
     goto done;
     }
   
-  new_job->ji_porterr = disrsi(stream, &ret);
+  new_job->ji_stderr = disrsi(stream, &ret);
   
   if (ret != DIS_SUCCESS)
     {
