@@ -20,7 +20,7 @@ use Torque::Job::Utils   qw( generateArrayIds );
 
 # Test Description
 plan('no_plan');
-setDesc("qalter -p -t");
+setDesc("qalter -t -p");
 
 # Variables
 my $torque_home = $props->get_property("Torque.Home.Dir");
