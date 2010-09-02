@@ -43,12 +43,12 @@ my %job_info;
 my $job_params;
 my $id_exp = '0-1';
 
-my @attributes = qw(
-                     name
-                     user
-                     time_use
-                     state
-                     queue
+my @attributes = (
+# JR-TRQ-1                   'name',
+                   'user',
+                   'time_use',
+                   'state',
+                   'queue',
                    );
 
 # Submit a job
