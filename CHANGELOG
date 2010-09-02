@@ -32,6 +32,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - corrected pbs_track error messages 
   b - correct a ports error that prevented pbsdsh/tm from working among
       normal nodes
+  b - don't try to set the user id multiple times
       
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 

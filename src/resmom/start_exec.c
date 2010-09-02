@@ -5985,7 +5985,8 @@ int open_std_file(
 	if (keeping)
 		{
 		mode &= ~O_EXCL;
-		} else
+		} 
+  else
 		{
 		if (lstat(path, &statbuf) == 0)
 			{
@@ -6049,7 +6050,8 @@ int open_std_file(
 				/* fail on timeout */
 
 				return(-2);
-				} else
+				} 
+      else
 				{
 				sprintf(log_buffer, "cannot stat stdout/stderr file '%s' - file does not exist, will create",
 								path);
@@ -6060,41 +6062,45 @@ int open_std_file(
 			}
 		}		 /* END else (keeping) */
 
-	/* become user to create file */
-
-  if (setgroups(pjob->ji_grpcache->gc_ngroup,(gid_t *)pjob->ji_grpcache->gc_groups) != 0)
+	/* become user to create file, if we aren't already the user. In 
+   * run_pelog setuid etc. are called and the this function is invoked, 
+   * so doing this again fails and is unnecessary */
+  if (getuid() == 0)
     {
-    snprintf(log_buffer,sizeof(log_buffer),
-      "setgroups failed for UID = %lu, error: %s\n",
-      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-      strerror(errno));
-    
-    log_err(errno,id,log_buffer);
-    }
+    if (setgroups(pjob->ji_grpcache->gc_ngroup,(gid_t *)pjob->ji_grpcache->gc_groups) != 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "setgroups failed for UID = %lu, error: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      
+      log_err(errno,id,log_buffer);
+      }
 
-  if (setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0)
-    {
-    snprintf(log_buffer,sizeof(log_buffer),
-      "setegid(%lu) failed for UID = %lu, error: %s\n",
-      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
-      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-      strerror(errno));
+    if (setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "setegid(%lu) failed for UID = %lu, error: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
 
-    log_err(errno,id,log_buffer);
+      log_err(errno,id,log_buffer);
 
-		return(-1);
-		}
+      return(-1);
+      }
 
-  if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) != 0)
-    {
-    snprintf(log_buffer,sizeof(log_buffer),
-      "seteuid(%lu) failed, error: %s\n",
-      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-      strerror(errno));
+    if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) != 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "seteuid(%lu) failed, error: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
 
-    log_err(errno,id,log_buffer);
+      log_err(errno,id,log_buffer);
 
-		return(-1);
+      return(-1);
+      }
     }
 
 	/* open file */
