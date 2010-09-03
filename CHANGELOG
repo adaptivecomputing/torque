@@ -2,6 +2,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
+  b - don't try to set the user id multiple times
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
