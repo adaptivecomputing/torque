@@ -1194,7 +1194,8 @@ int modify_array_range(
           continue;
         
         rc = modify_job(pa->jobs[i],plist,preq,checkpoint_req, NO_MOM_RELAY);
-        if(rc == PBSE_RELAYED_TO_MOM)
+
+        if (rc == PBSE_RELAYED_TO_MOM)
           {
           struct batch_request *array_req = NULL;
           
@@ -1244,7 +1245,7 @@ int modify_array_range(
     return(PBSE_RELAYED_TO_MOM);
     }
 
-  return(SUCCESS);
+  return(PBSE_NONE);
   } /* END modify_array_range() */
 
 

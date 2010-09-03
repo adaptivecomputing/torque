@@ -643,6 +643,7 @@ int modify_whole_array(
 
     /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
     rc = modify_job(pa->jobs[i],plist,preq,checkpoint_req, NO_MOM_RELAY);
+
     if(rc == PBSE_RELAYED_TO_MOM)
       {
       struct batch_request *array_req = NULL;
@@ -769,7 +770,9 @@ void req_modifyarray(
 
     /* there is more than just a slot given, modify that range */
     rc = modify_array_range(pa,array_spec,plist,preq,checkpoint_req);
-    if(rc != 0 && rc != PBSE_RELAYED_TO_MOM)
+
+    if((rc != 0) && 
+       (rc != PBSE_RELAYED_TO_MOM))
       {
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
   
@@ -787,7 +790,9 @@ void req_modifyarray(
   else 
     {
     rc = modify_whole_array(pa,plist,preq,checkpoint_req);
-    if(rc != 0 && rc != PBSE_RELAYED_TO_MOM)
+
+    if ((rc != 0) && 
+        (rc != PBSE_RELAYED_TO_MOM))
       {
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error altering the array");
       return;
@@ -796,7 +801,9 @@ void req_modifyarray(
     /* we modified the job array. We now need to update the job */
     pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
     rc2 = modify_job(pjob,plist,preq,checkpoint_req, NO_MOM_RELAY);
-    if(rc2 && rc != PBSE_RELAYED_TO_MOM)
+
+    if ((rc2) && 
+        (rc != PBSE_RELAYED_TO_MOM))
       {
       /* there are two operations going on that give a return code:
          one from modify_whole_array and one from modify_job_for_array.
