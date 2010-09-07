@@ -234,7 +234,6 @@ attribute_def node_attr_def[] =
 	  ATR_TYPE_LONG,
 	  PARENT_TYPE_NODE,
 	},
-#ifdef NUMA_SUPPORT
   /* ND_ATR_num_numa_nodes */
   { ATTR_NODE_num_numa_nodes, /* "num_numa_nodes" */
     decode_l,
@@ -259,5 +258,4 @@ attribute_def node_attr_def[] =
     ATR_TYPE_STR,
     PARENT_TYPE_NODE,
   },
-#endif /* NUMA_SUPPORT */
   };

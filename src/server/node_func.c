@@ -967,9 +967,7 @@ void free_node(
   pnode->nd_nsn     = 0;
   pnode->nd_nsnfree = 0;
 
-#ifdef NUMA_SUPPORT
-  /* free numa nodes */
-#endif /* NUMA_SUPPORT */
+  /* NYI - free numa nodes if they exist */
 
   return;
   }  /* END free_node() */
@@ -1311,7 +1309,6 @@ int update_nodes_file(void)
               ATTR_NODE_np,
               np->nd_nsn);
 
-#ifdef NUMA_SUPPORT
     /* write out the numa attributes if needed */
     if (np->num_numa_nodes > 0)
       {
@@ -1327,7 +1324,6 @@ int update_nodes_file(void)
         ATTR_NODE_numa_str,
         np->numa_str);
       }
-#endif /* def NUMA_SUPPPORT */
 
     /* write out properties */
 
@@ -1501,7 +1497,6 @@ static struct pbssubn *create_subnode(
 
 
 
-#ifdef NUMA_SUPPORT
 /* creates the private numa nodes on this node 
  *
  * @param pnode - the node that will house the numa nodes
@@ -1534,13 +1529,14 @@ int setup_numa_nodes(
   if (pnode == NULL)
     return(-1);
 
-  /* if this isn't a numa node, return */
+  /* if this isn't a numa node, return no error */
   if ((pnode->num_numa_nodes == 0) &&
       (pnode->numa_str == NULL))
     {
-    return(0);
+    return(PBSE_NONE);
     }
 
+  /* determine the number of cores per node */
   if (pnode->numa_str != NULL)
     {
     np_ptr = strtok(pnode->numa_str,delim);
@@ -1654,7 +1650,6 @@ int setup_numa_nodes(
 
   return(0);
   } /* END setup_numa_nodes() */
-#endif /* NUMA_SUPPORT */
 
 
 
@@ -1888,9 +1883,7 @@ int create_pbs_node(
       
     }  /* END for (i) */
 
-#ifdef NUMA_SUPPORT
   setup_numa_nodes(pnode,pul);
-#endif /* NUMA_SUPPORT */
 
   recompute_ntype_cnts();
 
@@ -2550,7 +2543,6 @@ int node_mom_rm_port_action(new, pobj, actmode)
 
 
 
-#ifdef NUMA_SUPPORT
 int node_numa_action(
 
   attribute *new,           /*derive status into this attribute*/
@@ -2635,7 +2627,6 @@ int numa_str_action(
   return(0);
   } /* END numa_str_action */
 
-#endif /* NUMA_SUPPORT */
 
 
 
@@ -2816,37 +2807,33 @@ struct pbsnode *next_node(
   node_iterator *iter)
 
   {
-  struct pbsnode *next;
+  struct pbsnode *next = NULL;
+
   if (iter == NULL)
     {
     return(NULL);
     }
 
   /* conditionally advance the node index pointer */
-#ifdef NUMA_SUPPORT 
   if ((iter->node_index == -1) ||
       (iter->numa_index+1 >= pbsndlist[iter->node_index]->num_numa_nodes))
-#endif /* NUMA_SUPPORT */
     {
     iter->node_index++;
     iter->numa_index = 0;
     }
-#ifdef NUMA_SUPPORT
   else
     {
     iter->numa_index++;
     }
-#endif /* NUMA_SUPPORT */
-
 
   /* conditionally return the correct node */
   if (iter->node_index < svr_totnodes)
     {
     next = pbsndlist[iter->node_index];
-#ifdef NUMA_SUPPORT
+    
     if (next->num_numa_nodes > 0)
       next = AVL_find(iter->numa_index,next->nd_mom_port,next->numa_nodes);
-#endif
+
     return(next);
     }
   else

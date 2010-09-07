@@ -232,19 +232,6 @@ AvlTree streams = NULL;
  * @return a pointer to the pbsnode
 */
 
-#ifndef NUMA_SUPPORT
-struct pbsnode *tfind_addr(
-
-        const u_long key,
-        uint16_t port)
-
-  {
-  return AVL_find(key, port, ipaddrs);
-  }
-#else
-/**
- * special version of tfind_addr to be able to locate the numa node when
- * numa is enabled */
 struct pbsnode *tfind_addr(
 
   const u_long key,
@@ -298,7 +285,6 @@ struct pbsnode *tfind_addr(
     return(numa);
     }
   }
-#endif /* NUMA_SUPPORT */
 
 
 
@@ -695,16 +681,14 @@ job *find_job_by_node(
   struct job     *pjob = NULL;
 
   char *at;
-#ifdef NUMA_SUPPORT 
+
   struct pbsnode *numa;
 
   int i;
-#endif /* NUMA_SUPPORT */
 
   if ((at = strchr(jobid, (int)'@')) != NULL)
     * at = '\0'; /* strip off @server_name */
 
-#ifdef NUMA_SUPPORT
   if (pnode->num_numa_nodes > 0)
     {
     /* check each subnode on each numa node for the job */
@@ -764,34 +748,6 @@ job *find_job_by_node(
         }
       }    /* END for (np) */
     }
-#else
-  /* just check each subnode for the job */
-
-  /* for each subnode on node ... */
-
-  for (np = pnode->nd_psn;np != NULL;np = np->next)
-    {
-    /* for each jobinfo on subnode on node ... */
-
-    for (jp = np->jobs;jp != NULL;jp = jp->next)
-      {
-      if ((jp->job != NULL) &&
-          (jp->job->ji_qs.ji_jobid != NULL) &&
-          (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0))
-        {
-        /* desired job located on node */
-
-        pjob = jp->job;
-
-        break;
-        }
-
-      /* leave lopp if we found a job */
-      if (pjob != NULL)
-        break;
-      }
-    }  /* END for (np) */
-#endif /* NUMA SUPPORT */
 
   if (at != NULL)
     *at = '@';  /* restore @server_name */
@@ -1303,7 +1259,6 @@ int is_stat_get(
 
   while (((ret_info = disrst(stream, &rc)) != NULL) && (rc == DIS_SUCCESS))
     {
-#ifdef NUMA_SUPPORT
     /* check if this is the update on a numa node */
     if (!strncmp(ret_info,NUMA_KEYWORD,strlen(NUMA_KEYWORD)))
       {
@@ -1346,7 +1301,6 @@ int is_stat_get(
       /* resume normal processing on the next line */
       continue;
       }
-#endif /* NUMA_SUPPORT */
 
     /* add the info to the "temp" attribute */
 
@@ -1642,7 +1596,6 @@ void stream_eof(
 
   /* mark node and all subnodes as down */
 
-#ifdef NUMA_SUPPORT
   if (np->num_numa_nodes > 0)
     {
     int i;
@@ -1657,9 +1610,6 @@ void stream_eof(
     }
   else
     update_node_state(np, INUSE_DOWN);
-#else
-  update_node_state(np, INUSE_DOWN);
-#endif 
 
   /* remove stream from list of valid connections */
 
