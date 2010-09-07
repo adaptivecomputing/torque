@@ -6700,7 +6700,7 @@ uint64_t get_jobid(
   job_id = job_create(0, getuid(), 0);
 #else
   static long fakejobid = 0x00000000ffffffff;
-  srand(getpid());
+  srand(getpid() + time(NULL));
   job_id = fakejobid + rand();
 #endif /* JOBFAKE */
 
