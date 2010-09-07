@@ -86,10 +86,8 @@
 /* NOTE:  requires server_limits.h */
 
 #define BM_ERROR        -20
-#ifdef NUMA_SUPPORT
 #define MAX_NUMA_NODES   2048
 #define NUMA_KEYWORD     "numa"
-#endif /* NUMA_SUPPORT */
 
 enum psit
   {
@@ -188,11 +186,10 @@ struct pbsnode
   short    nd_order; /* order of user's request */
   time_t                 nd_warnbad;
   time_t                 nd_lastupdate; /* time of last update. */
-#ifdef NUMA_SUPPORT
+
   unsigned short  num_numa_nodes; /* number of numa nodes */
   struct AvlNode *numa_nodes; /* private tree of numa nodes */
   char           *numa_str; /* comma-delimited string of processor values */
-#endif /* NUMA_SUPPORT */
   };
 
 struct howl
