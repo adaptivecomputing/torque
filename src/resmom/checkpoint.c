@@ -774,6 +774,8 @@ void mom_checkpoint_check_periodic_timer(
  * @returns PBSE_NONE if no error
  */
 
+#define MAX_CONN_RETRY 3
+
 int blcr_checkpoint_job(
 
   job *pjob,  /* I */
@@ -793,8 +795,9 @@ int blcr_checkpoint_job(
   int request_type = 0;
   char err_buf[4098];
   char line[1028];
-  int conn;
+  int conn = -1;
   int err;
+  int conn_fail = 0;
   struct attrl *attrib = NULL;
   time_t epoch;
   unsigned short momport = 0;
@@ -930,7 +933,25 @@ int blcr_checkpoint_job(
         failed */ 
       
     /* open a connection to the server */
-    conn = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
+
+    while ((conn < 0) && (conn_fail < MAX_CONN_RETRY))
+      {
+      conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
+
+      if (conn < 0)
+        {
+        conn_fail++;
+        sleep(1);
+        if (conn_fail == MAX_CONN_RETRY)
+          {
+          sprintf(log_buffer,"Job %s failed %d times to get connection to %s",
+            pjob->ji_qs.ji_jobid,
+            MAX_CONN_RETRY,
+            pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
+          log_err(-1, id, log_buffer);
+          }
+        }
+      }
     
     set_attr(&attrib, ATTR_comment, err_buf);
 
@@ -938,8 +959,8 @@ int blcr_checkpoint_job(
 
     if (err != 0)
       {
-      sprintf(buf, "pbs_alterjob requested on job %s failed (%d)\n",
-          pjob->ji_qs.ji_jobid, err);
+      sprintf(buf, "pbs_alterjob requested on job %s failed (%d-%s)\n",
+          pjob->ji_qs.ji_jobid, err, pbs_strerror(err));
       log_err(-1, id, buf);
       if (err == PBSE_UNKJOBID)
         {
@@ -978,7 +999,25 @@ int blcr_checkpoint_job(
         suceeded */ 
       
     /* open a connection to the server */
-    conn = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
+
+    while ((conn < 0) && (conn_fail < MAX_CONN_RETRY))
+      {
+      conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
+
+      if (conn < 0)
+        {
+        conn_fail++;
+        sleep(1);
+        if (conn_fail == MAX_CONN_RETRY)
+          {
+          sprintf(log_buffer,"Job %s failed %d times to get connection to %s",
+            pjob->ji_qs.ji_jobid,
+            MAX_CONN_RETRY,
+            pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
+          log_err(-1, id, log_buffer);
+          }
+        }
+      }
 
     sprintf(timestr,"%ld",
         (long)pjob->ji_wattr[JOB_ATR_checkpoint_time].at_val.at_long);
@@ -1001,8 +1040,8 @@ int blcr_checkpoint_job(
 
     if (err != 0)
       {
-      sprintf(buf, "pbs_alterjob requested on job %s failed (%d)\n",
-          pjob->ji_qs.ji_jobid, err);
+      sprintf(buf, "pbs_alterjob requested on job %s failed (%d-%s)\n",
+          pjob->ji_qs.ji_jobid, err, pbs_strerror(err));
       log_err(-1, id, buf);
       if (err == PBSE_UNKJOBID)
         {
