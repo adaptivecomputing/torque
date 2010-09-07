@@ -1654,15 +1654,15 @@ int blcr_restart_job(
     }
 
 #ifdef USEJOBCREATE
-    /*
-     * Get a job id from the system
-     */
-    job_id  = get_jobid(pjob->ji_qs.ji_jobid);
+  /*
+   * Get a job id from the system
+   */
+  job_id  = get_jobid(pjob->ji_qs.ji_jobid);
 
-    pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll = job_id;
-    
-    pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_flags =
-      ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+  pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll = job_id;
+  
+  pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_flags =
+    ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 #endif /* USEJOBCREATE */
 
   /* launch the script and return success */
