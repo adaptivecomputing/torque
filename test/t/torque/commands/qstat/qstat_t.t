@@ -44,7 +44,7 @@ my $job_params;
 my $id_exp = '0-1';
 
 my @attributes = (
-# JR-TRQ-1                   'name',
+                   'name',
                    'user',
                    'time_use',
                    'state',
