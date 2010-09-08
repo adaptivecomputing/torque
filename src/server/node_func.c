@@ -1518,7 +1518,7 @@ int copy_properties(
   struct array_strings  *main_node;
 
   /* copy features/properties */
-  if (src->nd_prop != NULL)
+  if (src->nd_prop == NULL)
     return(PBSE_NONE);
 
   main_node = src->nd_prop;
