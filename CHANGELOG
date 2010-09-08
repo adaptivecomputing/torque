@@ -35,6 +35,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - don't try to set the user id multiple times
   e - No need to configure the server with --enable-numa-support, just make
       the server flexible
+  c - fix segfault in tracejob. It wasn't malloc'ing space for the null 
+      terminator
 
 2.5.3
   b - added some retrying to get connection and changed some log messages when
