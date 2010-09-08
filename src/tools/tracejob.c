@@ -828,7 +828,7 @@ int log_path(
           tm_ptr->tm_mon + 1,
           tm_ptr->tm_mday);
 
-  filenames[filecount] = malloc(strlen(buf));
+  filenames[filecount] = malloc(strlen(buf)+1);
 
   if(!filenames[filecount])
   {
@@ -846,7 +846,14 @@ int log_path(
     {
     while (fgets(pbuf, 512, fp) != NULL)
       {
-      filenames[filecount] = malloc(strlen(pbuf));
+      filenames[filecount] = malloc(strlen(pbuf)+1);
+
+      if (filenames[filecount] == NULL)
+        {
+        perror("malloc failed in log_path");
+        return(-1);
+        }
+
       if (isspace(pbuf[strlen(pbuf)-1]))
         {
         pbuf[strlen(pbuf)-1] = '\0';
@@ -864,8 +871,7 @@ int log_path(
 
 
 
-int
-get_cols(void)
+int get_cols(void)
   {
 
   struct winsize ws;

@@ -5,6 +5,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - don't try to set the user id multiple times
   b - added some retrying to get connection and changed some log messages when
       doing a pbs_alterjob after a checkpoint
+  c - fix segfault in tracejob. It wasn't malloc'ing space for the null 
+      terminator
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
