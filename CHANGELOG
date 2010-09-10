@@ -37,6 +37,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the server flexible
   c - fix segfault in tracejob. It wasn't malloc'ing space for the null 
       terminator
+  e - add the variables PBS_NUM_NODES and PBS_NPPN to the job environment
 
 2.5.3
   b - added some retrying to get connection and changed some log messages when
