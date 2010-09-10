@@ -242,6 +242,8 @@ enum TVarElseEnum
   tveNumNodes,
   tveTmpDir,
   tveVerID,
+  tveNumNodesStr,
+  tveNumPpn,
   tveLAST
   };
 
@@ -259,9 +261,11 @@ static char *variables_else[] =   /* variables to add, value computed */
   "PBS_TASKNUM",
   "PBS_MOMPORT",
   "PBS_NODEFILE",
-  "PBS_NNODES",		 /* number of nodes */
+  "PBS_NNODES",		  /* number of nodes specified by size */
   "TMPDIR",
   "PBS_VERSION",
+  "PBS_NUM_NODES",  /* number of nodes specified by nodes string */
+  "PBS_NUM_PPN",       /* ppn value specified by nodes string */
   NULL
   };
 
@@ -1083,6 +1087,8 @@ int InitUserEnv(
   int                   ebsize = 0;
   char                  buf[MAXPATHLEN + 2];
   int                   usertmpdir = 0;
+  int                   num_nodes = 1;
+  int                   num_ppn = 1;
   
   attribute            *pattr;
   resource             *presc;
@@ -1278,6 +1284,39 @@ int InitUserEnv(
   
     bld_env_variables(&vtable, variables_else[tveNumNodes], buf);
     }
+
+  /* PBS_NUM_NODES and PBS_NPPN */
+  prd = find_resc_def(svr_resc_def,"nodes",svr_resc_size);
+
+  presc = find_resc_entry(pattr,prd);
+
+  if (presc != NULL)
+    {
+    char *ppn_str = "ppn=";
+    char *tmp;
+
+    if (presc->rs_value.at_val.at_str != NULL)
+      {
+      num_nodes = atoi(presc->rs_value.at_val.at_str);
+      if (num_nodes != 0)
+        {
+        if ((tmp = strstr(presc->rs_value.at_val.at_str,ppn_str)) != NULL)
+          {
+          tmp += strlen(ppn_str);
+          
+          num_ppn = atoi(tmp);
+          }
+        }
+      }
+    }
+
+  /* these values have been initialized to 1, and will always be in the 
+   * environment */
+  sprintf(buf,"%d",num_nodes);
+  bld_env_variables(&vtable,variables_else[tveNumNodesStr],buf);
+
+  sprintf(buf,"%d",num_ppn);
+  bld_env_variables(&vtable,variables_else[tveNumPpn],buf);
   
   /* setup TMPDIR */
   

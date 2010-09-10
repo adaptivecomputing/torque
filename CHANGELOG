@@ -7,6 +7,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       doing a pbs_alterjob after a checkpoint
   c - fix segfault in tracejob. It wasn't malloc'ing space for the null 
       terminator
+  e - add the variables PBS_NUM_NODES and PBS_NPPN to the job environment
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
