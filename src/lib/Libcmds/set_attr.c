@@ -150,6 +150,9 @@ void set_attr(
 
   attr->next = NULL;
 
+  /* always set op to set */
+  attr->op = SET;
+
   if (*attrib == NULL)
     {
     *attrib = attr;
