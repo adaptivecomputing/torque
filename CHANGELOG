@@ -8,6 +8,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   c - fix segfault in tracejob. It wasn't malloc'ing space for the null 
       terminator
   e - add the variables PBS_NUM_NODES and PBS_NPPN to the job environment
+      (TRQ-6)
+  e - be able to append to the job's variable_list through the API 
+      (TRQ-5)
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 

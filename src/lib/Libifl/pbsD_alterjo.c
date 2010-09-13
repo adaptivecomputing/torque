@@ -140,7 +140,7 @@ int pbs_alterjob_asyncflag(
 
     ap->resource = attrib->resource;
     ap->value = attrib->value;
-    ap->op = SET;
+    ap->op = attrib->op;
     ap->next = (struct attropl *)NULL;
     attrib = attrib->next;
     }  /* END while (attrib != NULL) */
