@@ -208,6 +208,7 @@ char        *path_acct;
 char         path_log[MAXPATHLEN + 1];
 char        *path_priv = NULL;
 char        *path_arrays;
+char        *path_credentials;
 char        *path_jobs;
 char        *path_queues;
 char        *path_spool;

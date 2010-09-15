@@ -177,6 +177,7 @@ enum srv_atr
   SRV_ATR_JobForceCancelTime,
   SRV_ATR_MaxArraySize,
   SRV_ATR_MaxSlotLimit,
+  SRV_ATR_authusers,
 #include "site_svr_attr_enum.h"
   /* This must be last */
   SRV_ATR_LAST

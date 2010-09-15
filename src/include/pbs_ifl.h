@@ -277,7 +277,9 @@
 #define ATTR_jobforcecanceltime "job_force_cancel_time"
 #define ATTR_maxarraysize    "max_job_array_size"
 #define ATTR_maxslotlimit    "max_slot_limit"
-
+#ifdef MUNGE_AUTH
+  #define ATTR_authusers       "authorized_users"
+#endif
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state         "state"
@@ -400,6 +402,7 @@
 #define PBS_TERM_BUF_SZ  80 /* Interactive term buffer size */
 #define PBS_TERM_CCA  6 /* Interactive term cntl char array */
 
+#define PBS_MAXCREDENTIAL_LEN 2048 /* Maximum authentication credential length. */
 /* constants used to indicate version of job ji_qs struct written to disk.
    starting with 2.4.0 we stopped encoding the torque version number into the 
    hex value e.g. 0x00020300 for torque v2.3.0. Now we just increment a value 

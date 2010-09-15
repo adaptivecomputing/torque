@@ -154,6 +154,7 @@ extern char path_log[];
 extern char *path_priv;
 extern char *path_arrays;
 extern char *path_jobs;
+extern char *path_credentials;
 extern char *path_queues;
 extern char *path_spool;
 extern char *path_svrdb;
@@ -650,6 +651,8 @@ int pbsd_init(
 
   path_jobs      = build_path(path_priv, PBS_JOBDIR,   suffix_slash);
 
+  path_credentials = build_path(path_priv, PBS_CREDENTIALDIR, suffix_slash);
+
   path_acct  = build_path(path_priv, PBS_ACCT,     suffix_slash);
 
   if(path_svrdb == NULL)
@@ -695,6 +698,8 @@ int pbsd_init(
   rc |= chk_file_sec(path_spool, 1, 1, S_IWOTH,        0, EMsg);
 
   rc |= chk_file_sec(path_acct,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
+
+  rc |= chk_file_sec(path_credentials,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
 
   rc |= chk_file_sec(PBS_ENVIRON, 0, 0, S_IWGRP | S_IWOTH, 1, EMsg);
 

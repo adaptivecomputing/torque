@@ -138,6 +138,10 @@ int site_check_user_map(
 
   char  *dptr;
 
+#ifdef MUNGE_AUTH
+  char  uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
+#endif
+
   if (EMsg != NULL)
     EMsg[0] = '\0';
 
@@ -260,6 +264,28 @@ int site_check_user_map(
   if (dptr != NULL)
     *dptr = '.';
 
+#ifdef MUNGE_AUTH
+  sprintf(uh, "%s@%s", owner, orighost);
+  rc = acl_check(&server.sv_attr[SRV_ATR_authusers], uh, ACL_User);
+  if(rc <= 0)
+    {
+    /* rc == 0 means we did not find a match.
+       this is a failure */
+    if(EMsg != NULL)
+      {
+      snprintf(EMsg, 1024, "could not authorize user %s from %s",
+               owner, orighost);
+      }
+    rc = -1; /* -1 is what set_jobexid is expecting for a failure*/
+    }
+  else
+    {
+    /*SUCCESS*/
+    rc = 0; /* the call to ruserok below was in the code first. ruserok returns 
+               0 on success but acl_check returns a positive value on success. 
+               We set rc to 0 to be consistent with the original ruserok functionality */
+    }
+#else
   rc = ruserok(orighost, 0, owner, luser);
 
   if (rc != 0 && EMsg != NULL)
@@ -273,6 +299,9 @@ int site_check_user_map(
              luser,
              orighost);
     }
+#endif
+
+   
 
 #ifdef sun
   /* broken Sun ruserok() sets process so it appears to be owned */

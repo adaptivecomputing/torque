@@ -11,6 +11,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (TRQ-6)
   e - be able to append to the job's variable_list through the API 
       (TRQ-5)
+  e - Added support for munge authentication. This is an alternative for the 
+      default ruserok remote authentication and pbs_iff. This is a compile
+      time option. The configure option to use is --enable-munge-auth.
+      Ken Nielson (TRQ-7) September 15, 2010.
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
