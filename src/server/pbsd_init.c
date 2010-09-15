@@ -128,7 +128,7 @@
 /* global Data Items */
 
 extern char *msg_startup3;
-extern char     *msg_daemonname;
+extern char *msg_daemonname;
 extern char *msg_init_abt;
 extern char *msg_init_queued;
 extern char *msg_init_substate;
@@ -150,7 +150,7 @@ extern char *acct_file;
 extern char *log_file;
 extern char *path_home;
 extern char *path_acct;
-extern char path_log[];
+extern char  path_log[];
 extern char *path_priv;
 extern char *path_arrays;
 extern char *path_jobs;
