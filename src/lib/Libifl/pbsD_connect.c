@@ -123,7 +123,6 @@
 #define MUNGE_SIZE 256 /* I do not know what the proper size of this should be. My 
                           testing with munge shows it creates a string of 128 bytes */
 
-#define MUNGE_AUTH 1
 
 /* NOTE:  globals, must not impose per connection constraints */
 
