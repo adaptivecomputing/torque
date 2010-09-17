@@ -973,6 +973,40 @@ When this job terminates execution, jobs \fBjobid...\fP may begin.
 .IP
 If any of the \fBbefore\fP forms are used, the jobs referenced by \fBjobid\fP
 must have been submitted with a dependency type of \fBon\fP.
+.IP "\fBArray Dependencies\fP" 4
+It is now possible to have a job depend on an array. These dependencies are in the form depend=arraydep:arrayid[num]. If [num] is not present, then the dependencies applies to the entire array. If [num] is present, then num means the number of jobs that must meet the condition for the dependency to be satisfied.
+.IP "\fBafterstartarray:arrayid[count]\fP" 4
+This job may be scheduled for execution only after jobs in
+.I arrayid
+have started execution.
+.IP "\fBafterokarray:arrayid[count]\fP" 4
+This job may be scheduled for execution only after jobs in
+.I arrayid
+have terminated with no errors.
+.IP "\fBafternotok:arrayid[count]\fP" 4
+This job may be scheduled for execution only after jobs in
+.I arrayid
+have terminated with errors.
+.IP "\fBafteranyarray:arrayid[count]\fP" 4
+This job may be scheduled for execution after jobs in 
+.I array id
+have terminated, with or without errors.
+.IP "\fBbeforestartarray:arrayid[count]\fP" 4
+This job may be scheduled for execution only before jobs in
+.I arrayid
+have started execution.
+.IP "\fBbeforeokarray:arrayid[count]\fP" 4
+This job may be scheduled for execution only before jobs in
+.I arrayid
+have terminated with no errors.
+.IP "\fBbeforenotok:arrayid[count]\fP" 4
+This job may be scheduled for execution only before jobs in
+.I arrayid
+have terminated with errors.
+.IP "\fBbeforeanyarray:arrayid[count]\fP" 4
+This job may be scheduled for execution before jobs in 
+.I array id
+have terminated, with or without errors.
 .if !\n(Pb .ig Ig
 .IP
 The
@@ -996,6 +1030,10 @@ Dependency examples:
 .Ty "qsub \-W depend=afterok:123.big.iron.com /tmp/script"
 .br
 .Ty "qsub \-W depend=before:234.hunk1.com:235.hunk1.com /tmp/script"
+.br
+.Ty "qsub \-W depend=afterokarray:21.tom.com[] /tmp/script"
+.br
+.Ty "qsub \-W depend=beforenotokarray:22.tom.com[][5] /tmp/script"
 .RE
 .IP
 .Ty group_list=g_list
