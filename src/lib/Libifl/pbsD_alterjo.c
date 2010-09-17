@@ -140,6 +140,9 @@ int pbs_alterjob_asyncflag(
 
     ap->resource = attrib->resource;
     ap->value = attrib->value;
+
+    /* attributes now must have an op specified. Inside TORQUE this defaults
+     * to SET, ensuring the same behavior as before */
     ap->op = attrib->op;
     ap->next = (struct attropl *)NULL;
     attrib = attrib->next;
