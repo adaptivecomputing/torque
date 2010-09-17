@@ -897,7 +897,7 @@ dir so that job can be restarted */
 #define HOLD_s 4
 /* jobs in a job array are held until the whole array is ready for now this is
  * a system hold, but it may be a special hold in the future */
-#define HOLD_a HOLD_s
+#define HOLD_a 8
 
 /* Special Job Exit Values,  Set by the job starter (child of MOM)   */
 /* see server/req_jobobit() & mom/start_exec.c        */

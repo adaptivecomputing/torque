@@ -49,6 +49,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (TRQ-6)
   e - be able to append to the job's variable_list through the API 
       (TRQ-5)
+  b - fix the dependencies for an array. They were accidentally cleared 
+      before (RT 8593)
       
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
