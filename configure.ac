@@ -669,7 +669,20 @@ case "$JOBCREATE" in
   *) AC_MSG_ERROR([--enable-job-create should be yes or no]) ;;
 esac
 
-
+dnl compile for munge authorization - allows sites to use munge
+dnl as a means to validate user identity from remote hosts.
+dnl 
+AC_ARG_ENABLE(munge_auth, [
+  --enable-munge-auth Allows users to be authorized using munge instead of ruserok])
+if test "x$GCC" = "xyes" ;then
+  AC_MSG_CHECKING([whether to support munge authorization])
+  if test "${enable_munge_auth}" = "yes" ; then
+    AC_MSG_RESULT([yes])
+    CFLAGS="$CFLAGS -DMUNGE_AUTH"
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
 
 
 dnl

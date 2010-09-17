@@ -45,13 +45,17 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       doing a pbs_alterjob after a checkpoint
   c - fix segfault in tracejob. It wasn't malloc'ing space for the null 
       terminator
-  e - add the variables PBS_NUM_NODES and PBS_NPPN to the job environment
+  e - add the variables PBS_NUM_NODES and PBS_NUM_PPN to the job environment
       (TRQ-6)
   e - be able to append to the job's variable_list through the API 
       (TRQ-5)
+  e - Added support for munge authentication. This is an alternative for the 
+      default ruserok remote authentication and pbs_iff. This is a compile
+      time option. The configure option to use is --enable-munge-auth.
+      Ken Nielson (TRQ-7) September 15, 2010.
   b - fix the dependencies for an array. They were accidentally cleared 
       before (RT 8593)
-      
+
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
       create identical nodes with names node0, node1, ..., node100.

@@ -1155,6 +1155,20 @@ attribute_def svr_attr_def[] =
      PARENT_TYPE_SERVER
   },
 
+#ifdef MUNGE_AUTH
+  /* SRV_ATR_authusers */
+  {ATTR_authusers,		/* "autorized_users" */
+   decode_arst,
+   encode_arst,
+   set_uacl,
+   comp_arst,
+   free_arst,
+   manager_oper_chk,
+   MGR_ONLY_SET,
+   ATR_TYPE_ACL,
+   PARENT_TYPE_SERVER},
+#endif
+
   /* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
 #include "site_svr_attr_def.h"
 

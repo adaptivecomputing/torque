@@ -251,6 +251,7 @@ struct rq_register
 struct rq_authen
   {
   unsigned int rq_port;
+  char rq_cred[PBS_MAXCREDENTIAL_LEN];
   };
 
 /* Copy/Delete Files (Server -> MOM Only) */
@@ -391,6 +392,7 @@ extern void  req_stat_job (struct batch_request *);
 
 #ifndef PBS_MOM
 extern void  req_authenuser (struct batch_request *req);
+extern void  req_altauthenuser (struct batch_request *req);
 extern void  req_connect (struct batch_request *req);
 extern void  req_locatejob (struct batch_request *req);
 extern void  req_manager (struct batch_request *req);
@@ -421,6 +423,7 @@ int relay_to_mom (job *, struct batch_request *, void (*func)());
 
 /* udp decode and encode routines */
 extern int decode_DIS_Authen (int socket, struct batch_request *);
+extern int decode_DIS_AltAuthen (int socket, struct batch_request *);
 extern int decode_DIS_CopyFiles (int socket, struct batch_request *);
 extern int decode_DIS_JobCred (int socket, struct batch_request *);
 extern int decode_DIS_JobFile (int socket, struct batch_request *);

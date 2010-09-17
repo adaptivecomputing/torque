@@ -40,6 +40,8 @@ PbsErrClient(PBSE_TOOMANY,           "Too many submit retries")
 PbsErrClient(PBSE_PERM,              "Unauthorized Request ")
 /* pbs_iff not found */
 PbsErrClient(PBSE_IFF_NOT_FOUND,     "pbs_iff command not found, unable to authenticate")
+/* munge not found */
+PbsErrClient(PBSE_MUNGE_NOT_FOUND,   "munge executable not found, unable to authenticate")
 /* access from host not allowed */
 PbsErrClient(PBSE_BADHOST,           "Access from host not allowed, or unknown host")
 /* job already exists */

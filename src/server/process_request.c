@@ -155,6 +155,12 @@ extern int LOGLEVEL;
 
 /* private functions local to this file */
 
+#ifdef MUNGE_AUTH
+static const int munge_on = 1;
+#else
+static const int munge_on = 0;
+#endif 
+
 static void close_client(int sfds);
 static void freebr_manage(struct rq_manage *);
 static void freebr_cpyfile(struct rq_cpyfile *);
@@ -532,8 +538,16 @@ void process_request(
       svr_conn[sfds].cn_authen = PBS_NET_CONN_AUTHENTICATED;
       }
 
-    if (ENABLE_TRUSTED_AUTH == TRUE)
+
+    if (ENABLE_TRUSTED_AUTH == TRUE )
       rc = 0;  /* bypass the authentication of the user--trust the client completely */
+    else if(munge_on)
+      {
+      /* If munge_on is true we will validate the connection later */
+      conn_credent[sfds].timestamp = time_now;
+      svr_conn[sfds].cn_authen = PBS_NET_CONN_AUTHENTICATED;
+      rc = 0;
+      }
     else if (svr_conn[sfds].cn_authen != PBS_NET_CONN_AUTHENTICATED)
       rc = PBSE_BADCRED;
     else
@@ -1000,6 +1014,13 @@ void dispatch_request(
       /* determine if user is valid */
 
       req_authenuser(request);
+
+      break;
+
+    case PBS_BATCH_AltAuthenUser:
+      /* Use given authentication method to determine
+         if user is valid */
+       req_altauthenuser(request); 
 
       break;
 

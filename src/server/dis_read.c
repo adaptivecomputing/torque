@@ -349,11 +349,15 @@ int dis_request_read(
 
       break;
 
-    case PBS_BATCH_AuthenUser:
+	case PBS_BATCH_AuthenUser:
 
       rc = decode_DIS_Authen(sfds, request);
 
       break;
+
+	case PBS_BATCH_AltAuthenUser:
+	  rc = decode_DIS_AltAuthen(sfds, request);
+	  break;
 
     case PBS_BATCH_JobObit:
 
@@ -402,7 +406,8 @@ int dis_request_read(
     {
     /* Decode the Request Extension, if present */
 
-    if ((rc = decode_DIS_ReqExtend(sfds, request)))
+	rc = decode_DIS_ReqExtend(sfds, request);
+    if (rc != 0 )
       {
       sprintf(log_buffer, "req extension bad, dis error %d (%s), type=%s",
               rc,

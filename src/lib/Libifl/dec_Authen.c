@@ -107,3 +107,21 @@ decode_DIS_Authen(int sock, struct batch_request *preq)
   return rc;
   }
 
+
+int
+decode_DIS_AltAuthen(int sock, struct batch_request *preq)
+  {
+  int rc;
+
+  preq->rq_ind.rq_authen.rq_port = disrui(sock, &rc);
+  if(rc != 0)
+  {
+	return(rc);
+  }
+
+  rc = 	disrfst(sock, PBS_MAXCREDENTIAL_LEN + 1, preq->rq_ind.rq_authen.rq_cred);
+
+  return rc;
+  }
+
+

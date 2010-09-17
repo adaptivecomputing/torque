@@ -134,6 +134,7 @@
 #define NODE_DESCRIP  "nodes"
 #define NODE_STATUS  "node_status"
 #define NODE_NOTE  "node_note"
+#define PBS_CREDENTIALDIR "credentials"
 
 #ifndef PBS_NET_MAX_CONNECTIONS
 /* 
