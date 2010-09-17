@@ -7,7 +7,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       doing a pbs_alterjob after a checkpoint
   c - fix segfault in tracejob. It wasn't malloc'ing space for the null 
       terminator
-  e - add the variables PBS_NUM_NODES and PBS_NPPN to the job environment
+  e - add the variables PBS_NUM_NODES and PBS_NUM_PPN to the job environment
       (TRQ-6)
   e - be able to append to the job's variable_list through the API 
       (TRQ-5)
