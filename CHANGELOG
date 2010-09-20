@@ -15,8 +15,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       default ruserok remote authentication and pbs_iff. This is a compile
       time option. The configure option to use is --enable-munge-auth.
       Ken Nielson (TRQ-7) September 15, 2010.
-  b - fix the dependencies for an array. They were accidentally cleared 
+  b - fix the dependency hold for arrays. They were accidentally cleared 
       before (RT 8593)
+  e - add a logging statement if sendto fails at any points in rpp_send_out
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
