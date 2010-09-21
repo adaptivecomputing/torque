@@ -144,6 +144,13 @@ static const char *pbs_destn_file = PBS_DEFAULT_FILE;
 char *pbs_server = NULL;
 
 
+/* empty_alarm_handler -- this routine was added to help fix bug 76.
+   blocking reads would not timeout on a SIG_IGN so this routine
+   was added to enable a time out on a blocking read */
+void empty_alarm_handler(int signo)
+  {
+  }
+
 /**
  * Attempts to get a list of server names.  Trys first
  * to obtain the list from an envrionment variable PBS_DEFAULT.
@@ -1054,20 +1061,21 @@ int pbs_disconnect(
 
     /* set alarm to break out of potentially infinite read */
 
-    act.sa_handler = SIG_IGN;
+/*    act.sa_handler = SIG_IGN; */
+    act.sa_handler = empty_alarm_handler;  /* need SOME handler or blocking read never gets interrupted */
+
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
     sigaction(SIGALRM, &act, &oldact);
 
     atime = alarm(pbs_tcp_timeout);
 
-    /* NOTE:  alarm will break out of blocking read even with sigaction ignored */
-
     while (1)
       {
       /* wait for server to close connection */
 
-      /* NOTE:  if read of 'sock' is blocking, request below may hang forever */
+      /* NOTE:  if read of 'sock' is blocking, request below may hang forever
+         -- hence the signal handler above */
 
       if (read(sock, &x, sizeof(x)) < 1)
         break;
