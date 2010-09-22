@@ -1185,6 +1185,7 @@ int a_opt = FALSE;
 int b_opt = FALSE;
 int c_opt = FALSE;
 int e_opt = FALSE;
+int E_opt = FALSE;
 int f_opt = FALSE;
 int h_opt = FALSE;
 int j_opt = FALSE;
@@ -2834,9 +2835,9 @@ int process_opts(
   char search_string[256];
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:fhIj:k:l:m:M:N:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfhIj:k:l:m:M:N:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
 #else
-#define GETOPT_ARGS "a:A:c:C:e:hj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
+#define GETOPT_ARGS "a:A:c:C:e:Ehj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
 #endif /* PBS_NO_POSIX_VIOLATION */
 
   /* The following macro, together the value of passet (pass + 1) is used */
@@ -3175,6 +3176,17 @@ int process_opts(
 
             errflg++;
             }
+          }
+
+        break;
+
+      case 'E':
+
+        if_cmd_line(E_opt)
+          {
+          E_opt = passet;
+          
+          set_attr(&attrib, ATTR_node_exclusive, "TRUE");
           }
 
         break;

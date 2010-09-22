@@ -1438,6 +1438,7 @@ const char *TJobAttr[] =
   "job_type",
   "inter_cmd",
   "proxy_user",
+  "exclusive_access",
 #ifdef USEJOBCREATE
   "pagg_id",
 #endif /* USEJOBCREATE */

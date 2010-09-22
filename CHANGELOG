@@ -37,6 +37,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the server flexible
   c - fix segfault in tracejob. It wasn't malloc'ing space for the null 
       terminator
+  f - added ATTR_node_exclusive to allow a job to have a node exclusively. 
+      For numa this means all resources pertaining to numa nodes for the job
+      will be included in the cpuset.
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges

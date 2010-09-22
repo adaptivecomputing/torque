@@ -732,6 +732,84 @@ int get_cpu_string(
 
 
 /**
+ * get_exclusive_cpuset_strings
+ * @see get_cpuset_strings() - parent
+ *
+ * @param pjob -   (I) the job whose cpu string we're building
+ * @param CpuStr - (O) the cpu string
+ * @param MemStr - (O) the mem string
+ * @param np -     (I) the nodelist for pjob
+ * @return 1 if the cpu string is built, 0 otherwise
+ */
+int get_exclusive_cpuset_strings(
+
+  job     *pjob,   /* I */
+  char    *CpuStr, /* O */
+  char    *MemStr, /* O */
+  vnodent *np)     /* I */
+
+  {
+  int   prev_numa_index = -1;
+  int   numa_index = -1;
+  int   j;
+
+  char *id = "get_exclusive_cpuset_strings";
+
+  char *dash;
+  char  buf[MAXPATHLEN];
+
+  for (j = 0;j < pjob->ji_numvnod;++j, np++)
+    {
+    dash = strchr(np->vn_host->hn_host,'-');
+
+    if (dash != NULL)
+      {
+      /* make sure this is the last dash in the name */
+      while ((strchr(dash+1,'-') != NULL))
+        {
+        dash = strchr(dash+1,'-');
+        }
+
+      numa_index = atoi(dash+1);
+      }
+    else
+      {
+      log_err(-1,id,"could not parse node number from node name\n");
+      continue;
+      }
+
+    /* skip previously processed nodes */
+    if (numa_index == prev_numa_index)
+      continue;
+
+    prev_numa_index = numa_index;
+
+    if (CpuStr[0] != '\0')
+      strcat(CpuStr,",");
+
+    sprintf(buf,"%d-%d",
+      numa_nodes[numa_index].cpu_offset,
+      numa_nodes[numa_index].cpu_offset + numa_nodes[numa_index].num_cpus);
+
+    strcat(CpuStr,buf);
+
+    if (MemStr[0] != '\0')
+      strcat(MemStr,",");
+
+    sprintf(buf,"%d-%d",
+      numa_nodes[numa_index].mem_offset,
+      numa_nodes[numa_index].mem_offset + numa_nodes[numa_index].num_mems);
+
+    strcat(MemStr,buf);
+    } 
+
+  return(SUCCESS);
+  } /* END get_exclusive_cpuset_strings() */
+
+
+
+
+/**
  * get_cpuset_strings
  * @see add_cpus_to_jobset() - parent
  *
@@ -767,6 +845,14 @@ int get_cpuset_strings(
 
   CpuStr[0] = '\0';
   MemStr[0] = '\0';
+
+  if (pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
+    {
+    if (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0)
+      {
+      return(get_exclusive_cpuset_strings(pjob,CpuStr,MemStr,np));
+      }
+    }
 
   for (j = 0;j < pjob->ji_numvnod;++j, np++)
     {

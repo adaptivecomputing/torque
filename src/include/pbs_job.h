@@ -342,6 +342,7 @@ enum job_atr
   JOB_ATR_jobtype,     /* opaque job type string */
   JOB_ATR_inter_cmd,      /* command for interactive job */
   JOB_ATR_proxy_user,
+  JOB_ATR_node_exclusive,
 #ifdef USEJOBCREATE
   JOB_ATR_pagg_id,
 #endif /* USEJOBCREATE */

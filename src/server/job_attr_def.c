@@ -945,6 +945,19 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
 
+  /* JOB_ATR_node_exclusive */
+  { ATTR_node_exclusive, /* node_exclusive */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_JOB
+  },
+
 #ifdef USEJOBCREATE
   /* JOB_ATR_pagg_id */
   { ATTR_pagg,  /* "pagg_id" */
