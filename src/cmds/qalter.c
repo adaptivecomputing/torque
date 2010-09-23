@@ -125,7 +125,7 @@ int main(
   char extend[MAXPATHLEN];
   char *extend_ptr = NULL; /* only give value if extend has value */
 
-#define GETOPT_ARGS "a:A:c:e:h:j:k:l:m:M:N:o:p:qr:S:t:u:v:W:x:"
+#define GETOPT_ARGS "a:A:c:e:E:h:j:k:l:m:M:N:o:p:qr:S:t:u:v:W:x:"
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
@@ -226,6 +226,30 @@ int main(
 
           errflg++;
           }
+
+        break;
+
+      case 'E':
+
+        if (strlen(optarg) != 1)
+          {
+          fprintf(stderr, "qalter: illegal -E value\n");
+
+          errflg++;
+
+          break;
+          }
+
+        if ((*optarg != 'y') && (*optarg != 'n'))
+          {
+          fprintf(stderr, "qalter: illegal -r value\n");
+
+          errflg++;
+
+          break;
+          }
+
+        set_attr(&attrib, ATTR_node_exclusive, optarg);
 
         break;
 
