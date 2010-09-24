@@ -512,6 +512,31 @@ if test "x$GCC" = "xyes" ;then
   fi
 fi
 
+
+
+
+dnl --enable-numa-mem-monitor
+dnl allows pbs_mom to interact with memacctd in order to better monitor 
+dnl job memory usage and prevent out of memory errors
+dnl
+dnl only for use with --enable-numa-support
+dnl 
+AC_ARG_ENABLE(numa_mem_monitor, [
+  --enable-numa-mem-monitor Allows pbs_mom to query memacctd in order to better monitor job memory consumption])
+if test "x$GCC" = "xyes" ; then
+  AC_MSG_CHECKING([whether to query memacctd])
+  if test "${enable_numa_mem_monitor}" = "yes" ; then
+    AC_MSG_RESULT([yes])
+    CFLAGS="$CFLAGS -DNUMA_MEM_MONITOR"
+    MOMLIBS="$MOLIBS -lmemacct"
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+
+
+
 dnl fixes errors relating to unaligned memory accesses
 dnl some systems experience these errors
 dnl 
