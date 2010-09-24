@@ -124,6 +124,7 @@
 /* Private Functions */
 
 static int hacl_match(const char *can, const char *master);
+static int uhacl_match(const char *can, const char *master);
 static int user_match(const char *can, const char *master);
 static int gid_match(const char *can, const char *master);
 static int host_order(char *old, char *new);
@@ -227,6 +228,10 @@ int acl_check(
     case ACL_Gid:
 
       match_func = gid_match;
+      break;
+
+    case ACL_User_Host:
+      match_func = uhacl_match;
       break;
 
     case ACL_Group:
@@ -914,6 +919,154 @@ static int hacl_match(
         (pm+1 < master_end))
       return(1);
     }
+
+  /* if we haven't failed by now, we're golden */
+  return (0);
+  }
+
+
+int match_strings(const char *can, const char *master)
+  {
+
+    const char *can_end;
+    const char *master_end;
+
+    can_end    = can + strlen(can);
+    master_end = master + strlen(master);
+
+  /* see if the strings match up */
+  while ((can < can_end) && 
+         (master < master_end) && 
+         (*can != 0) && (*master != 0))
+    {
+    switch (*master)
+      {
+      case '[':
+
+        if (acl_check_range(&master,&can) != 0)
+          return(1);
+
+        break;
+
+      case '*':
+
+        if (acl_wildcard_check(&master,&can,master_end,can_end) != 0)
+          return(1);
+
+        break;
+
+      default:
+        if (tolower(*can) != tolower(*master))
+          return(1);
+
+        /* only advance pointers here, other functions advance properly */
+        can++;
+        master++;
+
+        break;
+      }
+    }
+
+  /* make sure both strings have terminated or the master has a wildcard */
+  if (can < can_end)
+    return(1);
+  else if (master < master_end)
+    {
+    if ((*master != '*') ||
+        (master+1 < master_end))
+      return(1);
+    }
+
+  return(0);
+  }
+
+/*
+ * user/host acl order match - match two strings from the tail end first
+ * 
+ * uhacl_match will accept names is a <user>@<host> format. The @ character
+ * is used as a delimeter to separate the user from the host. A string match
+ * is then done on each half of the incoming string. If both halves of can
+ * match both halves of master a 0 is returned otherwise a 1.
+ *
+ *
+ * Master string (2nd parameter) is an entry from a host acl.  It may have a
+ * leading + or - which is ignored.  It may also have an '*' as a leading
+ * name segment to be a wild card - match anything.
+ *
+ * Strings match if identical, or if match up to leading '*' on master which
+ * like a wild card, matches any prefix string on canidate domain name
+ *
+ * Returns 0 if strings match,  1 if not   - to match strcmp()
+ */
+
+static int uhacl_match(
+
+  const char *can,
+  const char *master)
+
+  {
+  const char *pchost;
+  const char *pmhost;
+  const char *pcuser;
+  const char *pmuser;
+  const char *ptr;
+
+  if ((can == NULL) || (!strcmp(can, "LOCAL")))
+    {
+    return(0);
+    }
+
+  /* separate the user and the host portions */
+  ptr = strchr(can, '@');
+  if(ptr == NULL)
+    {
+    /* we are expecting the format <user>@<host>. No @ was found */
+    return(1);
+    }
+
+  pchost = ptr;
+  pchost++;
+  if(*pchost == 0)
+    {
+    /* no host given. Fail*/
+    return(1);
+    }
+
+  /* set pcuser to can and then null terminate user by
+     setting ptr to 0 */
+  pcuser = can;
+  ptr = NULL;
+
+  /* next separate the user and host for the master */
+  ptr = strchr(master, '@');
+  if(ptr == NULL)
+    {
+    /* we are expecting the format <user>@<host>. No @ was found */
+    return(1);
+    }
+
+  pmhost = ptr;
+  pmhost++;
+  if(*pmhost == 0)
+    {
+    /* no host given. Fail */
+    return(1);
+    }
+  
+  pmuser = master;
+  ptr = NULL;
+
+  if(match_strings(pcuser, pmuser))
+    {
+    return(1);
+    }
+
+  if(match_strings(pchost, pmhost))
+    {
+      return(1);
+    }
+
+
 
   /* if we haven't failed by now, we're golden */
   return (0);

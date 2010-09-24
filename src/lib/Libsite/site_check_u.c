@@ -266,7 +266,7 @@ int site_check_user_map(
 
 #ifdef MUNGE_AUTH
   sprintf(uh, "%s@%s", owner, orighost);
-  rc = acl_check(&server.sv_attr[SRV_ATR_authusers], uh, ACL_User);
+  rc = acl_check(&server.sv_attr[SRV_ATR_authusers], uh, ACL_User_Host);
   if(rc <= 0)
     {
     /* rc == 0 means we did not find a match.

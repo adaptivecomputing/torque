@@ -20,6 +20,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - add a logging statement if sendto fails at any points in rpp_send_out
   b - Applied patch submitted by Will Nolan to fix bug 76. 
       "blocking read does not time out using signal handler"
+  e - Added functionality that allows the values for the server parameter
+      authorized_users to use wild cards for both the user and host portion.
+      
   
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
