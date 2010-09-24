@@ -88,6 +88,9 @@
 #define BM_ERROR        -20
 #define MAX_NUMA_NODES   2048
 #define NUMA_KEYWORD     "numa"
+#define TTORQUECPUSET_PATH "/dev/cpuset/torque"
+#define TROOTCPUSET_PATH   "/dev/cpuset"
+
 
 enum psit
   {

@@ -28,9 +28,6 @@
 #define SUCCESS 1
 #endif /* SUCCESS */
 
-#define TTORQUECPUSET_PATH "/dev/cpuset/torque"
-#define TROOTCPUSET_PATH   "/dev/cpuset"
-
 #ifdef NUMA_SUPPORT
 extern numanode numa_nodes[];
 extern int num_numa_nodes;

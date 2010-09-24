@@ -40,6 +40,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   f - added ATTR_node_exclusive to allow a job to have a node exclusively. 
       For numa this means all resources pertaining to numa nodes for the job
       will be included in the cpuset.
+  f - for NUMA added extra protocol to use get_weighted_memory_size() and 
+      kill jobs that exceed their memory limits
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
