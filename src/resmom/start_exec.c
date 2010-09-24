@@ -7248,11 +7248,19 @@ int expand_path(
 
 {
 #ifndef HAVE_WORDEXP
+  if ((path_in == NULL) ||
+      (path == NULL))
+    {
+    /* must have inputs and outputs */
+
+    return(FAILURE);
+    }
+
   /* no need for expansion if this isn't defined */
+  snprintf(path,pathlen,"%s",path_in);
 
   return(SUCCESS);
 #else
-
   wordexp_t  exp;
 
   if ((path_in == NULL) ||
@@ -7274,7 +7282,8 @@ int expand_path(
     else
       {
       /* if there is no environment, there's no way to expand words */
-      path = path_in;
+      snprintf(path,pathlen,"%s",path_in);
+
       return(SUCCESS);
       }
     }
