@@ -24,7 +24,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       authorized_users to use wild cards for both the user and host portion.
   c - corrected a segfault when display_job_server_suffix is set to false
       and job_suffix_alias was unset.
-      
+  b - Bugzilla bug 84. Security bug on the way checkpoint is being handled.
+      (Robin R. - Miami Univ. of Ohio)
   
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
