@@ -1157,7 +1157,7 @@ struct batch_request *cpy_checkpoint(
    */
 
   saveumask = umask(0000);
-  if ((mkdir(serverfile, 0777) == -1) && (errno != EEXIST))
+  if ((mkdir(serverfile, 01777) == -1) && (errno != EEXIST))
     {
     log_err(errno,"cpy_checkpoint", "Failed to create jobs checkpoint directory");
     }

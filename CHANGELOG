@@ -63,6 +63,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - add a logging statement if sendto fails at any points in rpp_send_out
   b - fix a bug in the $spool_as_final_name code if HAVE_WORDEXP is 
       undefined
+  b - Bugzilla bug 84. Security bug on the way checkpoint is being handled.
+      (Robin R. - Miami Univ. of Ohio)
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
