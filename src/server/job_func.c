@@ -1669,9 +1669,13 @@ char *get_correct_jobname(
   char *dot;
   /* first suffix could be the server name or the alias */
   char *first_suffix = NULL;
+
   /* second suffix can only be the alias */
   char *second_suffix = NULL;
   int   server_suffix = TRUE;
+
+  int len;
+
   char *id = "get_correct_jobname";
 
   if ((server.sv_attr[SRV_ATR_display_job_server_suffix].at_flags & ATR_VFLAG_SET) &&
@@ -1688,12 +1692,13 @@ char *get_correct_jobname(
       }
     }
 
+  dot = NULL;
+
   /* check current settings */
   if ((server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET) &&
       (server_suffix == TRUE))
     {
     /* display the server suffix and the alias */
-    int len;
     char *alias = server.sv_attr[SRV_ATR_job_suffix_alias].at_val.at_str;
 
     /* check if alias is already there */
@@ -1747,9 +1752,9 @@ char *get_correct_jobname(
     /* check for the server suffix */
     if (second_suffix != NULL)
       {
-      int len;
-      /* dot is still at the second '.' */
+      dot = second_suffix - 1;
       *dot = '\0';
+
       len = strlen(jobid) + 1 ;
 
       correct = malloc(len);
@@ -1775,7 +1780,7 @@ char *get_correct_jobname(
       }
     else
       {
-      int len = strlen(jobid) + strlen(server_name) + 2;
+      len = strlen(jobid) + strlen(server_name) + 2;
 
       correct = malloc(len);
 
@@ -1789,12 +1794,11 @@ char *get_correct_jobname(
         jobid,server_name);
       }
     } /* END if (just server_suffix) */
-  else 
+  else if (server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET)
     {
     /* just the alias, not the server */
 
     char *alias = server.sv_attr[SRV_ATR_job_suffix_alias].at_val.at_str;
-    int len;
 
     if (first_suffix == NULL)
       {
@@ -1814,8 +1818,8 @@ char *get_correct_jobname(
       {
       len = strlen(alias) + 2;
 
-      if ((dot = strchr(jobid,'.')) != NULL)
-        *dot = '\0';
+      dot = first_suffix - 1;
+      *dot = '\0';
 
       len += strlen(jobid);
       correct = malloc(len);
@@ -1832,7 +1836,30 @@ char *get_correct_jobname(
 
       *dot = '.';
       }
-    } /* END else (just alias) */
+    } /* END else if (just alias) */
+  else
+    {
+    /* no server suffix nor alias */
+    if (first_suffix != NULL)
+      {
+      dot = first_suffix - 1;
+      *dot = '\0';
+      }
+
+    len = strlen(jobid) + 1;
+    correct = malloc(len);
+
+    if (correct == NULL)
+      {
+      log_err(-1,id,"ERROR:    Fatal - Cannot allocate memory\n");
+      return(NULL);
+      }
+
+    snprintf(correct,len,"%s",jobid);
+
+    if (first_suffix != NULL)
+      *dot = '.';
+    }
 
   return(correct);
 
