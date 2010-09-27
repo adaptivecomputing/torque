@@ -22,6 +22,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       "blocking read does not time out using signal handler"
   e - Added functionality that allows the values for the server parameter
       authorized_users to use wild cards for both the user and host portion.
+  c - corrected a segfault when display_job_server_suffix is set to false
+      and job_suffix_alias was unset.
       
   
 2.5.2
