@@ -42,6 +42,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       will be included in the cpuset.
   f - for NUMA added extra protocol to use get_weighted_memory_size() and 
       kill jobs that exceed their memory limits
+  e - if different mom ports are configured for the main node, pass it down
+      to its numa nodes
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges

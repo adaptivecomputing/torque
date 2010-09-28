@@ -1630,6 +1630,9 @@ int setup_numa_nodes(
 
     initialize_pbsnode(pn, allocd_name, pul, NTYPE_CLUSTER);
 
+    pn->nd_mom_port = pnode->nd_mom_port;
+    pn->nd_mom_rm_port = pnode->nd_mom_rm_port;
+
     /* set the number of processors */
     if (np_ptr != NULL)
       {
