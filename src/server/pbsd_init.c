@@ -790,7 +790,7 @@ int pbsd_init(
     {
     /* Open the server database (save file) and read it in */
 
-    if ((rc != 0) || ((rc = svr_recov(path_svrdb, FALSE)) == -1)) 
+    if ((rc != 0) || ((rc = svr_recov_xml(path_svrdb, FALSE)) == -1)) 
       {
       log_err(rc, "pbsd_init", msg_init_baddb);
 
@@ -2295,7 +2295,7 @@ int get_svr_attr(
         }
       }
 
-    if (((rc = chk_save_file(path_svrdb))!= 0) || ((rc = svr_recov(path_svrdb, TRUE)) == -1)) 
+    if (((rc = chk_save_file(path_svrdb))!= 0) || ((rc = svr_recov_xml(path_svrdb, TRUE)) == -1)) 
       {
       log_err(rc, id ,msg_init_baddb);
 

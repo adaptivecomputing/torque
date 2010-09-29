@@ -112,6 +112,13 @@
 #include "log.h"
 #include "mcom.h"
 
+#ifndef MAXLINE 
+#define MAXLINE 1024
+#endif
+#ifndef NULL
+#define NULL 0
+#endif
+
 /* Function declarations */
 
 /* group functions in u_groups.c */
@@ -129,6 +136,7 @@ extern int MUSNPrintF (char **, int *, char *, ...);
 extern int MUStrNCat (char **, int *, char *);
 extern int MUSleep (long);
 extern int MUReadPipe (char *, char *, int);
+extern int is_whitespace (char);
 
 /* MXML functions from u_MXML.c */
 extern int MXMLGetChild (mxml_t *, char *, int *, mxml_t **);
@@ -136,6 +144,9 @@ extern int MXMLAddE (mxml_t *, mxml_t *);
 extern int MXMLGetAttrF (mxml_t *, char *, int *, void *, enum MDataFormatEnum, int);
 extern int MXMLGetAttr (mxml_t *, char *, int *, char *, int);
 extern int MXMLToString (mxml_t *, char *, int, char **, mbool_t);
+
+/* functions from u_xml.c */
+int get_parent_and_child(char *,char **,char **,char **);
 
 #endif /* END #ifndef UTILS_H */
  
