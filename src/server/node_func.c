@@ -1630,6 +1630,7 @@ int setup_numa_nodes(
 
     initialize_pbsnode(pn, allocd_name, pul, NTYPE_CLUSTER);
 
+    /* make sure the server communicates on the correct ports */
     pn->nd_mom_port = pnode->nd_mom_port;
     pn->nd_mom_rm_port = pnode->nd_mom_rm_port;
 
@@ -1661,18 +1662,21 @@ int setup_numa_nodes(
         pnode->numa_nodes);
     } /* END for each numa_node */
 
-  snprintf(log_buffer,sizeof(log_buffer),
-    "Successfully created %d numa nodes for node %s\n",
-    pnode->num_numa_nodes,
-    pnode->nd_name);
+  if (LOGLEVEL >= 3)
+    {
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Successfully created %d numa nodes for node %s\n",
+      pnode->num_numa_nodes,
+      pnode->nd_name);
 
-  log_event(
-    PBSEVENT_SYSTEM,
-    PBS_EVENTCLASS_NODE,
-    id,
-    log_buffer);
+    log_event(
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_NODE,
+      id,
+      log_buffer);
+    }
 
-  return(0);
+  return(PBSE_NONE);
   } /* END setup_numa_nodes() */
 
 
