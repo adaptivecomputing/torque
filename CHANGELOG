@@ -38,12 +38,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   c - fix segfault in tracejob. It wasn't malloc'ing space for the null 
       terminator
   f - added ATTR_node_exclusive to allow a job to have a node exclusively. 
-      For numa this means all resources pertaining to numa nodes for the job
-      will be included in the cpuset.
   f - for NUMA added extra protocol to use get_weighted_memory_size() and 
       kill jobs that exceed their memory limits
   e - if different mom ports are configured for the main node, pass it down
       to its numa nodes
+  e - when ATTR_node_exclusive is set, reserve the entire node (or entire
+      numa node if applicable) in the cpuset 
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges

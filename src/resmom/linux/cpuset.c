@@ -38,13 +38,11 @@ extern int num_numa_nodes;
 
 int           *VPToCPUMap = NULL;  /* map of virtual processors to cpus (alloc) */
 
-int num_cpus;
-int num_mems;
-int cpu_offset;
 extern int     LOGLEVEL;
 
 extern char    mom_short_name[];
 
+extern long     system_ncpus;
 
 /* private functions */
 void remove_defunct_cpusets();
@@ -707,18 +705,28 @@ int get_cpu_string(
 
   CpuStr[0] = '\0';
 
-
-  for (j = 0;j < pjob->ji_numvnod;++j, np++)
+  if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0))
     {
-    if (pjob->ji_nodeid == np->vn_host->hn_node)
+    /* if the job has node exclusive access, then make the cpuset the
+     * entire machine */
+    sprintf(CpuStr,"%d-%d",0,(int)system_ncpus);
+    }
+  else
+    {
+    /* otherwise just get the cpus assigned to the job */
+    for (j = 0;j < pjob->ji_numvnod;++j, np++)
       {
-      if (CpuStr[0] != '\0')
-        strcat(CpuStr, ",");
+      if (pjob->ji_nodeid == np->vn_host->hn_node)
+        {
+        if (CpuStr[0] != '\0')
+          strcat(CpuStr, ",");
 
-      sprintf(tmpStr, "%d", np->vn_index);
+        sprintf(tmpStr, "%d", np->vn_index);
 
-      strcat(CpuStr, tmpStr);
+        strcat(CpuStr, tmpStr);
 
+        }
       }
     }
 
@@ -897,8 +905,8 @@ int get_cpuset_strings(
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buffer,
-      "found cpus (%s) mems (%s) ratio = %d cpu_offset = %d",
-      CpuStr, MemStr, ratio, cpu_offset);
+      "found cpus (%s) mems (%s) ratio = %d",
+      CpuStr, MemStr, ratio);
     log_ext(-1, id, log_buffer, LOG_DEBUG);
     }
 
