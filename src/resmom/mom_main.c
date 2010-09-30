@@ -322,12 +322,15 @@ extern void     mom_checkpoint_set_directory_path(char *str);
 
 void prepare_child_tasks_for_delete();
 static void mom_lock(int fds, int op);
+
 #ifdef NUMA_SUPPORT
 int bind_to_nodeboard();
+#endif /* NUMA_SUPPORT */
+
 #ifdef NUMA_MEM_MONITOR
 extern long get_weighted_memory_size(pid_t);
 #endif /* NUMA_MEM_MONITOR */
-#endif /* NUMA_SUPPORT */
+
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
 
 
@@ -5951,11 +5954,11 @@ int job_over_limit(
 
 #ifndef NUMA_SUPPORT
   int  i;
-#else
+#endif /* ndef NUMA_SUPPORT */
+
 #ifdef NUMA_MEM_MONITOR
   char *id = "job_over_limit";
 #endif /* def NUMA_MEM_MONITOR */
-#endif /* ndef NUMA_SUPPORT */
 
   if (mom_over_limit(pjob))
     {
@@ -6093,7 +6096,6 @@ int job_over_limit(
 
     limit = (index == 0) ? gettime(limresc) : getsize(limresc);
 
-#ifdef NUMA_SUPPORT
 #ifdef NUMA_MEM_MONITOR
     if (!strcmp(rd->rs_name,"mem"))
       {
@@ -6162,7 +6164,6 @@ int job_over_limit(
       } /* END resc == mem */
 
 #endif /* def NUMA_MEM_MONITOR */
-#endif /* def NUMA_SUPPORT */
 
     if (limit <= total)
       break;
