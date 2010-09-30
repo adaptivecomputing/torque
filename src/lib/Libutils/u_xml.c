@@ -1,7 +1,8 @@
+
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
-* Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+* Copyright (c) 1999-2010 Veridian Information Solutions, Inc.
 * All rights reserved.
 *
 * ---------------------------------------------------------------------------
@@ -77,76 +78,110 @@
 * without reference to its choice of law rules.
 */
 
-#ifndef UTILS_H
-#define UTILS_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <pwd.h>
-#include <signal.h>
+
+
 #include <string.h>
-#include <ctype.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <time.h>
-#include <limits.h>
-#include <netdb.h>
-#include <grp.h>
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/times.h>
-#include <sys/stat.h>
-#include <sys/select.h>
+#include "utils.h"
 
-#include "portability.h"
-#include "server_limits.h"
-#include "list_link.h"
-#include "attribute.h"
-#include "pbs_nodes.h"
-#include "libpbs.h"
-#include "pbs_ifl.h"
-#include "resource.h"
-#include "svrfunc.h"
-#include "pbs_error.h"
-#include "log.h"
-#include "mcom.h"
 
-#ifndef MAXLINE 
-#define MAXLINE 1024
-#endif
-#ifndef NULL
-#define NULL 0
-#endif
 
-/* Function declarations */
+/**
+ * gets the parent and the child from an xml string 
+ * also updates end to be the first character after
+ * the parent's closing tag
+ * string must have .*?<parent>.*?</parent>.*?
+ *
+ * @param start - the start of the string to examine
+ * @param parent - where to store the parent's name (without '<>')
+ * @param parent_size - the max size of parent
+ * @param child - where to store the child data, trims whitespace
+ * @param child_size - the max size of child
+ * @param end - pointer to the first character after the closing tag
+ */
+int get_parent_and_child(
 
-/* group functions in u_groups.c */
-extern struct group *getgrnam_ext (char *);
+  char  *start,       /* I */
+  char **parent,      /* O */
+  char **child,       /* O */
+  char **end)         /* O */
 
-/* tree functions in u_tree.c */
-extern void tinsert (const u_long, struct pbsnode *, tree **);
-extern void *tdelete (const u_long, tree **);
-extern struct pbsnode *tfind (const u_long, tree **);
-extern int tlist (tree *, char *, int);
-extern void tfree (tree **);
+  {
+  char *ptr = strchr(start,'<');
+  char  closingTag[MAXLINE];
+  int   parent_len = 0;
+  char *child_start;
+  char *child_end;
 
-/* moab-like utility functions in u_mu.c */
-extern int MUSNPrintF (char **, int *, char *, ...);
-extern int MUStrNCat (char **, int *, char *);
-extern int MUSleep (long);
-extern int MUReadPipe (char *, char *, int);
-extern int is_whitespace (char);
+  char *id = "get_parent_and_child";
 
-/* MXML functions from u_MXML.c */
-extern int MXMLGetChild (mxml_t *, char *, int *, mxml_t **);
-extern int MXMLAddE (mxml_t *, mxml_t *);
-extern int MXMLGetAttrF (mxml_t *, char *, int *, void *, enum MDataFormatEnum, int);
-extern int MXMLGetAttr (mxml_t *, char *, int *, char *, int);
-extern int MXMLToString (mxml_t *, char *, int, char **, mbool_t);
+  if (ptr == NULL)
+    {
+    log_err(-1,id,"No parent tag found\n");
 
-/* functions from u_xml.c */
-int get_parent_and_child(char *,char **,char **,char **);
+    return(-1);
+    }
 
-#endif /* END #ifndef UTILS_H */
- 
+  /*advance past the '<' */
+  ptr++;
+  *parent = ptr;
+
+  /* copy the parent name and create the closing tag */
+  sprintf(closingTag,"</");
+  while (*ptr != '>')
+    {
+    closingTag[parent_len+2] = *ptr;
+    parent_len++;
+    ptr++;
+    }
+
+  *ptr = '\0';
+
+  /* NULL terminate the string */
+  closingTag[parent_len+2] = '\0';
+
+  /* advance past the '>' */
+  ptr++;
+
+  /* mark where the child begins */
+  child_start = ptr;
+
+  child_end = strstr(ptr,closingTag);
+
+  if (child_end == NULL)
+    {
+    log_err(-1,id,"Cannot find closing tag\n");
+
+    return(-1);
+    }
+
+  /* move behind the '<' */
+  *end = child_end;
+  /* NULL terminate the string */
+  *child_end = '\0';
+  /* move behind it to check for whitespace */
+  child_end--;
+
+  /* trim whitespace on start/end of child */
+  while (is_whitespace(*child_start))
+    child_start++;
+  while (is_whitespace(*child_end))
+    {
+    /* terminate the string earlier */
+    *child_end = '\0';
+    child_end--;
+    }
+
+  *child = child_start;
+
+  /* last, advance the end pointer to the end of the closing tag */
+  while (**end != '>')
+    (*end)++;
+
+  /* move past the '>' */
+  (*end)++;
+
+  return(0);
+  } /* END get_parent_and_child() */
+
+

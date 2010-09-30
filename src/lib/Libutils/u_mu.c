@@ -1,6 +1,27 @@
 #include "utils.h"
 
 
+
+
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+
+
+
+
 /**
  * similar to MUSNPrintF in moab
 */

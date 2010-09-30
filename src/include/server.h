@@ -97,6 +97,10 @@
 
 #include "server_limits.h"
 
+#define NO_BUFFER_SPACE -2
+#define NO_ATTR_DATA    1
+#define ATTR_NOT_FOUND  -2
+
 enum srv_atr
   {
   SRV_ATR_State,                 /* 0 */
@@ -244,7 +248,7 @@ extern struct server server;
 
 /* function prototypes */
 
-extern int svr_recov(char *, int);
+extern int svr_recov_xml(char *, int);
 extern int svr_save(struct server *, int);
 
 

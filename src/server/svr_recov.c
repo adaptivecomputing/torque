@@ -107,7 +107,12 @@
 #include "svrfunc.h"
 #include "log.h"
 #include "pbs_error.h"
+#include "resource.h"
+#include "utils.h"
 
+#ifndef MAXLINE
+#define MAXLINE 1024
+#endif
 
 /* Global Data Items: */
 
@@ -120,8 +125,7 @@ extern char     *path_priv;
 extern time_t    time_now;
 extern char     *msg_svdbopen;
 extern char     *msg_svdbnosv;
-
-
+extern int       resc_access_perm;
 
 
 /**
@@ -242,6 +246,717 @@ int svr_recov(
 
 
 
+int write_buffer(
+
+  char *buf,
+  int   len,
+  int   fds)
+
+  {
+  char *id = "write_buffer";
+  int   written;
+
+  while ((written = write(fds,buf,len)) != len)
+    {
+    if ((errno == EINTR) &&
+        (written == -1))
+      continue;
+
+    log_err(errno,id,msg_svdbnosv);
+
+    return(-1);
+    }
+
+  return(0);
+  } /* END write_buffer */
+
+
+
+
+
+int size_to_str(
+
+  struct size_value  szv,
+  char              *out,
+  int                space)
+
+  {
+  snprintf(out,space,"%lu",szv.atsv_num);
+  
+  if (space - strlen(out) < 3)
+    return(-1);
+
+  /* SUCCESS */
+  
+  switch (szv.atsv_shift)
+    {
+    case 10:
+      
+      strcat(out,"kb");
+      
+      break;
+      
+    case 20:
+      
+      strcat(out,"mb");
+      
+      break;
+      
+    case 30:
+      
+      strcat(out,"gb");
+      
+      break;
+      
+    case 40:
+      
+      strcat(out,"tb");
+      
+      break;
+      
+    case 50:
+      
+      strcat(out,"pb");
+    }
+
+  return(0);
+  } /* END size_to_str */
+
+
+
+
+
+/*
+ * attr_to_str
+ *
+ * @param out - the string output
+ * @param size - the largest possible string length
+ * @param aindex - the attribute's index
+ * @param attr - the attribute
+ */
+int attr_to_str(
+
+  char             *out,    /* O */
+  int               size,   /* I */
+  int               aindex, /* I */
+  struct attribute  attr)   /* I */
+
+  {
+  if ((attr.at_flags & ATR_VFLAG_SET) == FALSE)
+    return(NO_ATTR_DATA);
+
+  switch (svr_attr_def[aindex].at_type)
+    {
+    case ATR_TYPE_LONG:
+
+      snprintf(out,size,"%ld",attr.at_val.at_long);
+
+      break;
+
+    case ATR_TYPE_CHAR:
+
+      if (size > 1)
+        {
+        out[0] = attr.at_val.at_char;
+        out[1] = '\0';
+        }
+      else
+        {
+        return(NO_BUFFER_SPACE);
+        }
+
+      break;
+
+    case ATR_TYPE_STR:
+
+      if (attr.at_val.at_str == NULL)
+        return(NO_ATTR_DATA);
+
+      if (strlen(attr.at_val.at_str) == 0)
+        return(NO_ATTR_DATA);
+
+      snprintf(out,size,"%s",attr.at_val.at_str);
+
+      break;
+
+    case ATR_TYPE_ARST:
+    case ATR_TYPE_ACL:
+
+      {
+      int j;
+      struct array_strings *arst = attr.at_val.at_arst;
+
+      if (arst == NULL)
+        return(NO_ATTR_DATA);
+
+      if (size < arst->as_bufsize)
+        return(NO_BUFFER_SPACE);
+
+      /* concatenate all of the array strings into one string */
+      for (j = 0; j < arst->as_usedptr; j++)
+        {
+        if (j > 0)
+          {
+          strcat(out,",");
+          strcat(out,arst->as_string[j]);
+          }
+        else
+          {
+          strcpy(out,arst->as_string[j]);
+          }
+        }
+      }
+
+      break;
+
+    case ATR_TYPE_SIZE:
+
+      size_to_str(attr.at_val.at_size,out,size);
+
+      break;
+
+    case ATR_TYPE_RESC:
+
+      {
+      char *ptr;
+
+      int   lspace;
+      int   len;
+
+      resource *current = (resource *)GET_NEXT(attr.at_val.at_list);
+
+      if (current == NULL)
+        return(NO_ATTR_DATA);
+
+      ptr = out;
+      lspace = size;
+
+      /* print all of the resources */
+      while (current != NULL)
+        {
+
+        /* there are only 3 resource types used */
+        switch (current->rs_value.at_type)
+          {
+          case ATR_TYPE_LONG:
+
+            snprintf(ptr,lspace,"<%s>%ld</%s>",
+              current->rs_defin->rs_name,
+              current->rs_value.at_val.at_long,
+              current->rs_defin->rs_name);
+            
+            break;
+
+          case ATR_TYPE_STR:
+
+            snprintf(ptr,lspace,"<%s>%s</%s>",
+                current->rs_defin->rs_name,
+                current->rs_value.at_val.at_str,
+                current->rs_defin->rs_name);
+
+            break;
+
+          case ATR_TYPE_SIZE:
+
+            snprintf(ptr,lspace,"<%s>",current->rs_defin->rs_name);
+            len = strlen(ptr);
+            ptr += len;
+            lspace -= len;
+
+            size_to_str(current->rs_value.at_val.at_size,out,size);
+            ptr += len;
+            lspace -= len;
+
+            snprintf(ptr,lspace,"</%s>",current->rs_defin->rs_name);
+            ptr += len;
+            lspace -= len;
+
+            if (len == 0)
+              return(NO_BUFFER_SPACE);
+
+            break;
+          }
+
+        current = (resource *)GET_NEXT(current->rs_link);
+        }
+
+      }
+
+      break;
+
+    /* NYI */
+    case ATR_TYPE_LIST:
+    case ATR_TYPE_LL:
+    case ATR_TYPE_SHORT:
+    case ATR_TYPE_JINFOP:
+
+      break;
+    } /* END switch attribute type */
+
+  return(0);
+  } /* END attr_to_str */
+
+
+
+
+
+int str_to_attr(
+
+  char             *name,
+  char             *val,
+  struct attribute *attr)
+
+  {
+  int   index;
+  char *id = "str_to_attr";
+
+  if ((name == NULL) ||
+      (val  == NULL) ||
+      (attr == NULL))
+    {
+    log_err(-1,id,"Illegal NULL pointer argument");
+
+    return(-10);
+    }
+
+  index = find_attr(svr_attr_def,name,SRV_ATR_LAST);
+
+  if (index < 0)
+    {
+    /* couldn't find attribute */
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Couldn't find attribute %s\n",
+      name);
+    log_err(-1,id,log_buffer);
+
+    return(ATTR_NOT_FOUND);
+    }
+
+  switch (svr_attr_def[index].at_type)
+    {
+    case ATR_TYPE_LONG:
+
+      attr[index].at_val.at_long = atol(val);
+
+      break;
+
+    case ATR_TYPE_CHAR:
+
+      attr[index].at_val.at_char = *val;
+
+      break;
+
+    case ATR_TYPE_STR:
+
+      attr[index].at_val.at_str = (char *)malloc(strlen(val)+1);
+
+      if (attr[index].at_val.at_str == NULL)
+        {
+        log_err(PBSE_SYSTEM,id,"Cannot allocate memory\n");
+
+        return(PBSE_SYSTEM);
+        }
+
+      strcpy(attr[index].at_val.at_str,val);
+
+      break;
+
+    case ATR_TYPE_ARST:
+    case ATR_TYPE_ACL:
+
+      {
+      int   rc;
+
+      if ((rc = decode_arst(attr + index,name,NULL,val)))
+        return(rc);
+      }
+
+      break;
+
+    case ATR_TYPE_SIZE:
+
+      {
+      unsigned long number;
+
+      char *unit;
+
+      number = atol(val);
+
+      attr[index].at_val.at_size.atsv_units = ATR_SV_BYTESZ;
+      attr[index].at_val.at_size.atsv_num = number;
+      attr[index].at_val.at_size.atsv_shift = 0;
+
+      /* the string always ends with kb,mb if it has units */
+      unit = val + strlen(val) - 2;
+
+      if (unit < val)
+        break;
+      else if (isdigit(*val))
+        break;
+
+      switch (*unit)
+        {
+        case 'k':
+
+          attr[index].at_val.at_size.atsv_shift = 10;
+
+          break;
+
+        case 'm':
+
+          attr[index].at_val.at_size.atsv_shift = 20;
+
+          break;
+
+        case 'g':
+
+          attr[index].at_val.at_size.atsv_shift = 30;
+
+          break;
+
+        case 't':
+
+          attr[index].at_val.at_size.atsv_shift = 40;
+
+          break;
+
+        case 'p':
+
+          attr[index].at_val.at_size.atsv_shift = 50;
+
+          break;
+
+        }
+      }
+
+      break;
+
+    case ATR_TYPE_RESC:
+
+      {
+      char *resc_parent;
+      char *resc_child;
+      char *resc_ptr = val;
+
+      int   len = strlen(resc_ptr);
+      int   rc;
+      int   errFlg = 0;
+
+      while (resc_ptr - val < len)
+        {
+        if (get_parent_and_child(resc_ptr,&resc_parent,&resc_child,
+              &resc_ptr))
+          {
+          errFlg = TRUE;
+
+          break;
+          }
+        
+        if ((rc = decode_resc(&(server.sv_attr[index]),name,resc_parent,resc_child)))
+          {
+          snprintf(log_buffer,sizeof(log_buffer),
+            "Error decoding resource %s, %s = %s\n",
+            name,
+            resc_parent,
+            resc_child);
+          
+          errFlg = TRUE;
+
+          log_err(rc,id,log_buffer);
+          }
+        }
+
+      if (errFlg == TRUE)
+        return(-1);
+
+      }
+
+      break;
+
+    /* NYI */
+    case ATR_TYPE_LIST:
+    case ATR_TYPE_LL:
+    case ATR_TYPE_SHORT:
+    case ATR_TYPE_JINFOP:
+
+      break;
+    } /* END switch (attribute type) */
+
+  attr[index].at_flags |= ATR_VFLAG_SET;
+
+  return(0);
+  } /* END str_to_attr */
+
+
+
+
+int svr_recov_xml(
+
+  char *svrfile,  /* I */
+  int read_only)  /* I */
+
+  {
+  int   sdb;
+  int   bytes_read;
+  int   errorCount = 0;
+  int   rc;
+
+  char  buffer[MAXLINE<<10];
+  char *parent;
+  char *child;
+
+  char *current;
+  char *begin;
+  char *end;
+
+  char *id = "svr_recov_xml";
+
+  sdb = open(svrfile, O_RDONLY, 0);
+
+  if (sdb < 0)
+    {
+    if (errno == ENOENT)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "cannot locate server database '%s' - use 'pbs_server -t create' to create new database if database has not been initialized.",
+        svrfile);
+
+      log_err(errno, id, log_buffer);
+      }
+    else
+      {
+      log_err(errno, id, msg_svdbopen);
+      }
+
+    return(-1);
+    }
+
+  bytes_read = read(sdb,buffer,sizeof(buffer));
+
+  if (bytes_read < 0)
+    {
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Unable to read from serverdb file - %s",
+      strerror(errno));
+
+    log_err(errno,id,log_buffer);
+
+    return(-1);
+    }
+
+  /* start reading the serverdb file */
+  current = begin = buffer;
+
+  /* advance past the server tag */
+  current = strstr(current,"<server_db>");
+  if (current == NULL)
+    {
+    /* no server tag - check if this is the old format */
+    log_event(PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      "Cannot find a server tag, attempting to load legacy format\n");
+
+    close(sdb);
+    rc = svr_recov(svrfile,read_only);
+
+    return(rc);
+    }
+  end = strstr(current,"</server_db>");
+
+  if (end == NULL)
+    {
+    /* no server tag???? */
+    log_err(-1,id,"No server tag found in the database file???");
+
+    return(-1);
+    }
+
+  /* adjust to not process server tag */
+  current += strlen("<server>");
+  /* adjust end for the newline character preceeding the close server tag */
+  end--;
+
+  while (current < end)
+    {
+    if (get_parent_and_child(current,&parent,&child,&current))
+      {
+      /* ERROR */
+      errorCount++;
+
+      break;
+      }
+
+    if (!strcmp("numjobs",parent))
+      {
+      server.sv_qs.sv_numjobs = atoi(child);
+      }
+    else if (!strcmp("numque",parent))
+      {
+      server.sv_qs.sv_numque = atoi(child);
+      }
+    else if (!strcmp("nextjobid",parent))
+      {
+      server.sv_qs.sv_jobidnumber = atoi(child);
+      }
+    else if (!strcmp("savetime",parent))
+      {
+      server.sv_qs.sv_savetm = atol(child);
+      }
+    else if (!strcmp("attributes",parent))
+      {
+      char *attr_ptr = child;
+      char *child_parent;
+      char *child_attr;
+      
+      resc_access_perm = ATR_DFLAG_ACCESS;
+
+      while (*attr_ptr != '\0')
+        {
+        if (get_parent_and_child(attr_ptr,&child_parent,&child_attr,
+              &attr_ptr))
+          {
+          /* ERROR */
+          errorCount++;
+
+          break;
+          }
+
+        if ((rc = str_to_attr(child_parent,child_attr,server.sv_attr)))
+          {
+          /* ERROR */
+          errorCount++;
+          snprintf(log_buffer,sizeof(log_buffer),
+            "Error creating attribute %s",
+            child_parent);
+
+          log_err(rc,id,log_buffer);
+
+          break;
+          }
+        }
+      }
+    else
+      {
+      /* shouldn't get here */
+      }
+    }
+    
+  if (!read_only)
+    {
+    server.sv_attr[(int)SRV_ATR_NextJobNumber].at_val.at_long = 
+      server.sv_qs.sv_jobidnumber;
+    
+    server.sv_attr[(int)SRV_ATR_NextJobNumber].at_flags |= 
+      ATR_VFLAG_SET| ATR_VFLAG_MODIFY;
+    }
+
+  return(0);
+  }
+   
+
+
+
+
+
+
+
+int svr_save_xml(
+
+  struct server *ps,
+  int            mode)
+
+  {
+  char *id   = "svr_save_xml";
+  char  buf[MAXLINE<<8];
+  char  valbuf[MAXLINE<<7];
+
+  int   fds;
+  int   rc;
+  int   len;
+  int   i;
+
+  fds = open(path_svrdb, O_WRONLY | O_CREAT | O_Sync, 0600);
+
+  if (fds < 0)
+    {
+    log_err(errno,id,msg_svdbopen);
+
+    return(-1);
+    }
+
+  /* write the sv_qs info */
+  snprintf(buf,sizeof(buf),
+    "<server_db>\n<numjobs>%d</numjobs>\n<numque>%d</numque>\n<nextjobid>%d</nextjobid>\n<savetime>%ld</savetime>\n",
+    ps->sv_qs.sv_numjobs,
+    ps->sv_qs.sv_numque,
+    ps->sv_qs.sv_jobidnumber,
+    time_now);
+  len = strlen(buf);
+
+  if ((rc = write_buffer(buf,len,fds)))
+    return(rc);
+
+  /* write the attribute info */
+  snprintf(buf,sizeof(buf),"<attributes>");
+  if ((rc = write_buffer(buf,strlen(buf),fds)))
+    return(rc);
+
+  i = 0;
+  while (i != SRV_ATR_LAST)
+    {
+    if (ps->sv_attr[i].at_flags & ATR_VFLAG_SET)
+      {
+      buf[0] = '\0';
+      valbuf[0] = '\0';
+      if ((rc = attr_to_str(valbuf,sizeof(valbuf),i,ps->sv_attr[i]) != 0))
+        {
+        if (rc != NO_ATTR_DATA)
+          {
+          /* ERROR */
+          snprintf(log_buffer,sizeof(log_buffer),
+            "Not enough space to print attribute %s",
+            svr_attr_def[i].at_name);
+          log_err(-1,id,log_buffer);
+
+          return(rc);
+          }
+        }
+      else
+        {
+        snprintf(buf,sizeof(buf),"<%s>%s</%s>\n",
+          svr_attr_def[i].at_name,
+          valbuf,
+          svr_attr_def[i].at_name);
+        
+        if (buf[0] != '\0')
+          {
+          if ((rc = write_buffer(buf,strlen(buf),fds)))
+            return(rc);
+          }
+        }      
+      }
+
+    i++;
+    }
+  
+  snprintf(buf,sizeof(buf),"</attributes>\n");
+  if ((rc = write_buffer(buf,strlen(buf),fds)))
+    return(rc);
+
+  /* close the server_db */
+  snprintf(buf,sizeof(buf),"</server_db>");
+  if ((rc = write_buffer(buf,strlen(buf),fds)))
+    return(rc);
+
+  close(fds);
+
+  return(0);
+
+  } /* END svr_save_xml */
+
+
+
 
 
 /**
@@ -258,13 +973,15 @@ int svr_save(
   int            mode)
 
   {
-  static char *this_function_name = "svr_save";
+/*  static char *this_function_name = "svr_save";
   int i;
   int sdb;
   int save_acl(attribute *, attribute_def *, char *, char *);
+*/
 
+  return(svr_save_xml(ps,mode));
 
-  if (mode == SVR_SAVE_QUICK)
+/*  if (mode == SVR_SAVE_QUICK)
     {
     sdb = open(path_svrdb, O_WRONLY | O_CREAT | O_Sync, 0600);
 
@@ -291,10 +1008,10 @@ int svr_save(
     close(sdb);
     }
   else
-    {
+    {*/
     /* SVR_SAVE_FULL Save */
 
-    sdb = open(path_svrdb_new, O_WRONLY | O_CREAT | O_Sync, 0600);
+/*    sdb = open(path_svrdb_new, O_WRONLY | O_CREAT | O_Sync, 0600);
 
     if (sdb < 0)
       {
@@ -333,10 +1050,10 @@ int svr_save(
 
       return(-1);
       }
-
+*/
     /* new db successfully created, remove original db */
 
-    close(sdb);
+/*    close(sdb);
 
     unlink(path_svrdb);
 
@@ -352,19 +1069,19 @@ int svr_save(
       {
       unlink(path_svrdb_new);
       }
-
+*/
     /* save the server acls to their own files: */
     /*  priv/svracl/(attr name)   */
 
-    for (i = 0;i < SRV_ATR_LAST;i++)
+/*    for (i = 0;i < SRV_ATR_LAST;i++)
       {
       if (ps->sv_attr[i].at_type == ATR_TYPE_ACL)
         save_acl(&ps->sv_attr[i], &svr_attr_def[i],
                  PBS_SVRACL, svr_attr_def[i].at_name);
       }
-    }    /* END else (mode == SVR_SAVE_QUICK) */
+    }*/    /* END else (mode == SVR_SAVE_QUICK) */
 
-  return(0);
+/*  return(0);*/
   }  /* END svr_save() */
 
 

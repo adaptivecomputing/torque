@@ -69,6 +69,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       undefined
   b - Bugzilla bug 84. Security bug on the way checkpoint is being handled.
       (Robin R. - Miami Univ. of Ohio)
+  e - Now saving serverdb as an xml file instead of a byte-dump, thus 
+      allowing canned installations without qmgr scripts, as well as more
+      portability. Able to upgrade automatically from 2.1, 2.3, and 2.4
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
