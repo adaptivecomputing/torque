@@ -47,6 +47,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   n - Changed the protocol versions for all client-to-server, mom-to-server and
       mom-to-mom protocols from 1 to 2. The changes to the protocol in this version
       of TORQUE will make it incompatible with previous versions.
+  e - when a select statement is used, tally up the memory requests and mark
+      the total in the resource list. This allows memory enforcement for
+      NUMA jobs, but doesn't affect others as memory isn't enforced for 
+      multinode jobs
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
@@ -75,11 +79,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Now saving serverdb as an xml file instead of a byte-dump, thus 
       allowing canned installations without qmgr scripts, as well as more
       portability. Able to upgrade automatically from 2.1, 2.3, and 2.4
-  e - when a select statement is used, tally up the memory requests and mark
-      the total in the resource list. This allows memory enforcement for
-      NUMA jobs, but doesn't affect others as memory isn't enforced for 
-      multinode jobs
-  
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
