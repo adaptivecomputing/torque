@@ -190,6 +190,167 @@ static char *pbs_o_que = "PBS_O_QUEUE=";
 
 
 
+/*
+ * sum_select_mem_request
+ *
+ * parses the select statement for the total memory requested by the job
+ * if there is no select statement, this does nothing
+ */
+
+void sum_select_mem_request(
+
+  job * pj)
+
+  {
+  char  id[] = "sum_select_mem_request";
+  char  select[] = "select";
+  char  mem_str[] = "mem=";
+  char  memval_str[MAXPATHLEN];
+  char *end;
+  char *current;
+  char *clause_end;
+
+  int   mem_str_len = strlen(mem_str);
+  int   multiplier = 1;
+
+  unsigned long mem_total = 0;
+
+  if ((!(pj->ji_wattr[JOB_ATR_submit_args].at_flags & ATR_VFLAG_SET)) ||
+      (pj->ji_wattr[JOB_ATR_submit_args].at_val.at_str == NULL))
+    return;
+
+  current = strstr(pj->ji_wattr[JOB_ATR_submit_args].at_val.at_str,select);
+  
+  if (current != NULL)
+    {
+    /* comma delimits different options for -W */
+    end = strchr(current,',');
+    
+    /* make current the last character if no comma */
+    if (end == NULL)
+      end = current + strlen(current);
+
+    if (isdigit(*(current + 1 + strlen(select))))
+      multiplier = atoi(current + strlen(select) + 1);
+
+    clause_end = strchr(current,'+');
+
+    current = strstr(current,mem_str);
+    
+    /* find each mem request */
+    while ((current != NULL) &&
+           (current <  end - mem_str_len))
+      {
+      unsigned long tmp;
+     
+      /* make sure we have the right number of "tasks" for this mem 
+       * request */
+      if (clause_end != NULL)
+        {
+        if (current > clause_end)
+          {
+          if (isdigit(*(clause_end+1)))
+            multiplier = atoi(clause_end+1);
+          else
+            multiplier = 1;
+
+          clause_end = strchr(clause_end+1,'+');
+          }
+        }
+
+      current += mem_str_len;
+      
+      tmp = atoi(current);
+      
+      /* advance past the digits to the units */
+      while ((current != NULL) &&
+             (isdigit(*current)))
+        current++;
+
+      if (current == NULL)
+        {
+        /* no units, assume kb */
+        mem_total += tmp;
+        
+        break;
+        }
+      
+      /* if not kb, convert */
+      switch (*current)
+        {
+        case 'k':
+        case 'K':
+          
+          /* do nothing, we're converting to kb */
+          
+          break;
+          
+        case 'm':
+        case 'M':
+          
+          tmp = tmp << 10;
+          
+          break;
+          
+        case 'g':
+        case 'G':
+          
+          tmp = tmp << 20;
+          
+          break;
+          
+        case 't':
+        case 'T':
+          
+          tmp = tmp << 30;
+          
+          break;
+          
+        default:
+          
+          snprintf(log_buffer,sizeof(log_buffer),
+            "WARNING:   Unknown unit %cb used in memory request\n",
+            *current);
+          log_err(-1,id,log_buffer);
+          
+          break;
+        }
+
+      mem_total += tmp * multiplier;
+      
+      current = strstr(current,mem_str);
+      }
+    }
+
+  /* set the memory requirement so we can enfore it where applicable */
+  if (mem_total != 0)
+    {
+    resource *mem_rc = find_resc_entry(
+        &pj->ji_wattr[JOB_ATR_resource],
+        find_resc_def(svr_resc_def,"mem",svr_resc_size));
+
+    if (mem_rc != NULL)
+      {
+      mem_rc->rs_value.at_val.at_size.atsv_num = mem_total;
+      mem_rc->rs_value.at_val.at_size.atsv_shift = 10;
+      }
+    else
+      {
+      snprintf(memval_str,sizeof(memval_str),
+        "%lukb",
+        mem_total);
+
+      decode_resc(&pj->ji_wattr[JOB_ATR_resource],
+        ATTR_l,
+        "mem",
+        memval_str);
+      }
+    }
+
+  } /* END sum_select_mem_request() */
+
+
+
 
 /*
  * req_quejob - Queue Job Batch Request processing routine
@@ -586,6 +747,8 @@ void req_quejob(
         }
       }
     }    /* END for (i) */
+
+  sum_select_mem_request(pj);
 
   /*
    * Now that the attributes have been decoded, we can setup some
