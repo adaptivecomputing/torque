@@ -63,6 +63,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix the dependency hold for arrays. They were accidentally cleared 
       before (RT 8593)
   e - add a logging statement if sendto fails at any points in rpp_send_out
+  b - Applied patch submitted by Will Nolan to fix bug 76. 
+      "blocking read does not time out using signal handler"
   b - fix a bug in the $spool_as_final_name code if HAVE_WORDEXP is 
       undefined
   b - Bugzilla bug 84. Security bug on the way checkpoint is being handled.
