@@ -790,12 +790,21 @@ int pbsd_init(
     {
     /* Open the server database (save file) and read it in */
 
+#ifdef SERVER_XML
     if ((rc != 0) || ((rc = svr_recov_xml(path_svrdb, FALSE)) == -1)) 
       {
       log_err(rc, "pbsd_init", msg_init_baddb);
-
+      
       return(-1);
       }
+#else
+    if ((rc != 0) || ((rc = svr_recov(path_svrdb, FALSE)) == -1)) 
+      {
+      log_err(rc, "pbsd_init", msg_init_baddb);
+      
+      return(-1);
+      }
+#endif /* SERVER_XML */
 
     if (server.sv_attr[(int)SRV_ATR_resource_assn].at_flags & ATR_VFLAG_SET)
       {
@@ -2295,13 +2304,21 @@ int get_svr_attr(
         }
       }
 
+#ifdef SERVER_XML
     if (((rc = chk_save_file(path_svrdb))!= 0) || ((rc = svr_recov_xml(path_svrdb, TRUE)) == -1)) 
       {
       log_err(rc, id ,msg_init_baddb);
-
+      
       return(-1);
       }
-
+#else
+    if (((rc = chk_save_file(path_svrdb))!= 0) || ((rc = svr_recov(path_svrdb, TRUE)) == -1)) 
+      {
+      log_err(rc, id ,msg_init_baddb);
+      
+      return(-1);
+      }
+#endif /* SERVER_XML */
     } 
 
   return(0);

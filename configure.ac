@@ -322,6 +322,21 @@ if test "x$GCC" = "xyes" ;then
   fi
 fi
 
+dnl Configure saving the server as xml instead of bytes
+dnl
+
+AC_ARG_ENABLE(server_xml, [
+  --enable-server-xml  Tells the server to save the serverdb in xml format])
+if test "x$GCC" = "xyes" ; then
+  AC_MSG_CHECKING([whether to save the serverdb in legacy format or xml format])
+  if test "${enable_server_xml}" == "yes" ; then
+    AC_MSG_RESULT([yes])
+    CFLAGS="$CFLAGS -DSERVER_XML"
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
 dnl
 
 dnl If hpux and gcc, force the XOPEN interface.

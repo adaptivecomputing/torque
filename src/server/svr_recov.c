@@ -185,6 +185,17 @@ int svr_recov(
     return(-1);
     }
 
+  if (strstr((char *)&server.sv_qs,"<server_db>") != NULL)
+    {
+    /* attempt to read the server database in xml */
+    log_event(PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      "serverdb appears to be in xml format, attempting to read xml\n");
+
+    return(svr_recov_xml(svrfile,read_only));
+    }
+
   /* Save the sv_jobidnumber field in case it is set by the attributes. */
   i = server.sv_qs.sv_jobidnumber;
 
@@ -973,15 +984,20 @@ int svr_save(
   int            mode)
 
   {
-/*  static char *this_function_name = "svr_save";
+#ifndef SERVER_XML
+  static char *this_function_name = "svr_save";
   int i;
   int sdb;
   int save_acl(attribute *, attribute_def *, char *, char *);
-*/
+#endif /* ndef SERVER_XML */
 
-  return(svr_save_xml(ps,mode));
+  /* save the server in xml only if configured */
+#ifdef SERVER_XML
+      return(svr_save_xml(ps,mode));
+#endif /* def SERVER_XML */
 
-/*  if (mode == SVR_SAVE_QUICK)
+#ifndef SERVER_XML
+  if (mode == SVR_SAVE_QUICK)
     {
     sdb = open(path_svrdb, O_WRONLY | O_CREAT | O_Sync, 0600);
 
@@ -1008,10 +1024,10 @@ int svr_save(
     close(sdb);
     }
   else
-    {*/
+    {
     /* SVR_SAVE_FULL Save */
 
-/*    sdb = open(path_svrdb_new, O_WRONLY | O_CREAT | O_Sync, 0600);
+    sdb = open(path_svrdb_new, O_WRONLY | O_CREAT | O_Sync, 0600);
 
     if (sdb < 0)
       {
@@ -1050,10 +1066,10 @@ int svr_save(
 
       return(-1);
       }
-*/
+
     /* new db successfully created, remove original db */
 
-/*    close(sdb);
+    close(sdb);
 
     unlink(path_svrdb);
 
@@ -1069,19 +1085,20 @@ int svr_save(
       {
       unlink(path_svrdb_new);
       }
-*/
+
     /* save the server acls to their own files: */
     /*  priv/svracl/(attr name)   */
 
-/*    for (i = 0;i < SRV_ATR_LAST;i++)
+    for (i = 0;i < SRV_ATR_LAST;i++)
       {
       if (ps->sv_attr[i].at_type == ATR_TYPE_ACL)
         save_acl(&ps->sv_attr[i], &svr_attr_def[i],
                  PBS_SVRACL, svr_attr_def[i].at_name);
       }
-    }*/    /* END else (mode == SVR_SAVE_QUICK) */
+    }    /* END else (mode == SVR_SAVE_QUICK) */
 
-/*  return(0);*/
+  return(0);
+#endif /* ndef SERVER_XML */
   }  /* END svr_save() */
 
 

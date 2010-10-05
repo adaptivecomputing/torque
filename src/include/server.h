@@ -248,6 +248,7 @@ extern struct server server;
 /* function prototypes */
 
 extern int svr_recov_xml(char *, int);
+extern int svr_recov(char *, int);
 extern int svr_save(struct server *, int);
 
 
