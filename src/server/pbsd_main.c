@@ -1626,6 +1626,8 @@ int main(
     msg_daemonname,
     log_buffer);
 
+
+
   /* initialize the server objects and perform specified recovery */
   /* will be left in the server's private directory  */
   /* NOTE:  env cleared in pbsd_init() */
