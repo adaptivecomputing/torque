@@ -349,14 +349,15 @@ int attr_to_str(
 
   char             *out,    /* O */
   int               size,   /* I */
-  int               aindex, /* I */
-  struct attribute  attr)   /* I */
+  attribute_def    *at_def, /* I */
+  struct attribute  attr,   /* I */
+  int               XML)    /* I */
 
   {
   if ((attr.at_flags & ATR_VFLAG_SET) == FALSE)
     return(NO_ATTR_DATA);
 
-  switch (svr_attr_def[aindex].at_type)
+  switch (at_def->at_type)
     {
     case ATR_TYPE_LONG:
 
@@ -386,7 +387,10 @@ int attr_to_str(
       if (strlen(attr.at_val.at_str) == 0)
         return(NO_ATTR_DATA);
 
-      snprintf(out,size,"%s",attr.at_val.at_str);
+      if (XML)
+        escape_xml(attr.at_val.at_str,out,size);
+      else
+        snprintf(out,size,"%s",attr.at_val.at_str);
 
       break;
 
@@ -408,12 +412,25 @@ int attr_to_str(
         {
         if (j > 0)
           {
+          int len;
           strcat(out,",");
-          strcat(out,arst->as_string[j]);
+          if (XML)
+            {
+            len = strlen(out);
+            escape_xml(arst->as_string[j],out+len,size-len);
+            }
+          else
+            strcat(out,arst->as_string[j]);
           }
         else
           {
-          strcpy(out,arst->as_string[j]);
+          if (XML) 
+            {
+            int len = strlen(out);
+            escape_xml(arst->as_string[j],out+len,size-len);
+            }
+          else
+            strcat(out,arst->as_string[j]);
           }
         }
       }
@@ -456,14 +473,34 @@ int attr_to_str(
               current->rs_value.at_val.at_long,
               current->rs_defin->rs_name);
             
+            len = strlen(ptr);
+            ptr    += len;
+            lspace -= len;
+
             break;
 
           case ATR_TYPE_STR:
 
-            snprintf(ptr,lspace,"<%s>%s</%s>",
-                current->rs_defin->rs_name,
-                current->rs_value.at_val.at_str,
-                current->rs_defin->rs_name);
+            snprintf(ptr,lspace,"<%s>",
+              current->rs_defin->rs_name);
+            len = strlen(ptr);
+            ptr    += len;
+            lspace -= len;
+
+            if (XML)
+              escape_xml(current->rs_value.at_val.at_str,ptr,lspace);
+            else
+              snprintf(ptr,lspace,"%s",current->rs_value.at_val.at_str);
+
+            len = strlen(ptr);
+            ptr += len;
+            lspace -= len;
+
+            snprintf(ptr,lspace,"</%s>",
+              current->rs_defin->rs_name);
+            len = strlen(ptr);
+            ptr += len;
+            lspace -= len;
 
             break;
 
@@ -482,11 +519,11 @@ int attr_to_str(
             ptr += len;
             lspace -= len;
 
-            if (len == 0)
-              return(NO_BUFFER_SPACE);
-
             break;
           }
+
+        if (lspace == 0)
+          return(NO_BUFFER_SPACE);
 
         current = (resource *)GET_NEXT(current->rs_link);
         }
@@ -520,6 +557,7 @@ int str_to_attr(
   {
   int   index;
   char *id = "str_to_attr";
+  char  buf[MAXLINE<<5];
 
   if ((name == NULL) ||
       (val  == NULL) ||
@@ -559,7 +597,9 @@ int str_to_attr(
 
     case ATR_TYPE_STR:
 
-      attr[index].at_val.at_str = (char *)malloc(strlen(val)+1);
+      unescape_xml(val,buf,sizeof(buf));
+
+      attr[index].at_val.at_str = (char *)malloc(strlen(buf)+1);
 
       if (attr[index].at_val.at_str == NULL)
         {
@@ -568,7 +608,7 @@ int str_to_attr(
         return(PBSE_SYSTEM);
         }
 
-      strcpy(attr[index].at_val.at_str,val);
+      strcpy(attr[index].at_val.at_str,buf);
 
       break;
 
@@ -578,7 +618,9 @@ int str_to_attr(
       {
       int   rc;
 
-      if ((rc = decode_arst(attr + index,name,NULL,val)))
+      unescape_xml(val,buf,sizeof(buf));
+
+      if ((rc = decode_arst(attr + index,name,NULL,buf)))
         return(rc);
       }
 
@@ -920,7 +962,11 @@ int svr_save_xml(
       {
       buf[0] = '\0';
       valbuf[0] = '\0';
-      if ((rc = attr_to_str(valbuf,sizeof(valbuf),i,ps->sv_attr[i]) != 0))
+      if ((rc = attr_to_str(valbuf,
+              sizeof(valbuf),
+              svr_attr_def + i, 
+              ps->sv_attr[i],
+              TRUE) != 0))
         {
         if (rc != NO_ATTR_DATA)
           {
