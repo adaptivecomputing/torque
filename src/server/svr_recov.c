@@ -931,7 +931,7 @@ int svr_save_xml(
   int   len;
   int   i;
 
-  fds = open(path_svrdb, O_WRONLY | O_CREAT | O_Sync, 0600);
+  fds = open(path_svrdb, O_WRONLY | O_CREAT | O_Sync | O_TRUNC, 0600);
 
   if (fds < 0)
     {
