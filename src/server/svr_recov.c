@@ -500,11 +500,13 @@ int attr_to_str(
             ptr += len;
             lspace -= len;
 
-            size_to_str(current->rs_value.at_val.at_size,out,size);
+            size_to_str(current->rs_value.at_val.at_size,ptr,size);
+            len = strlen(ptr);
             ptr += len;
             lspace -= len;
 
             snprintf(ptr,lspace,"</%s>",current->rs_defin->rs_name);
+            len = strlen(ptr);
             ptr += len;
             lspace -= len;
 
