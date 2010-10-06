@@ -167,6 +167,7 @@ extern char *path_nodestate;
 extern char *path_nodenote;
 extern char *path_nodenote_new;
 extern char *path_checkpoint;
+extern char *path_jobinfo_log;
 
 extern int  queue_rank;
 extern char  server_name[];
@@ -663,6 +664,8 @@ int pbsd_init(
   path_svrdb_new = build_path(path_priv, PBS_SERVERDB, new_tag);
 
   path_svrlog = build_path(path_home, PBS_LOGFILES, suffix_slash);
+
+  path_jobinfo_log = build_path(path_home, PBS_JOBINFOLOGDIR, suffix_slash);
 
   path_track  = build_path(path_priv, PBS_TRACKING, NULL);
 

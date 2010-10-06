@@ -268,7 +268,7 @@ static void states(
 
 
 /*
- * print a attribute value string, formating to break a comma if possible
+ * print an attribute value string, formating to break a comma if possible
  */
 
 void prt_attr(
@@ -348,7 +348,7 @@ void prt_attr(
 
 
 /*
- * locate a attribute (attrl) by name (and resource) and return value
+ * locate an attribute (attrl) by name (and resource) and return value
  * returns null if not found
  */
 

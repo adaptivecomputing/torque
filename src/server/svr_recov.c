@@ -468,7 +468,7 @@ int attr_to_str(
           {
           case ATR_TYPE_LONG:
 
-            snprintf(ptr,lspace,"<%s>%ld</%s>",
+            snprintf(ptr,lspace,"\t\t<%s>%ld</%s>\n",
               current->rs_defin->rs_name,
               current->rs_value.at_val.at_long,
               current->rs_defin->rs_name);
@@ -481,7 +481,7 @@ int attr_to_str(
 
           case ATR_TYPE_STR:
 
-            snprintf(ptr,lspace,"<%s>",
+            snprintf(ptr,lspace,"\t\t<%s>",
               current->rs_defin->rs_name);
             len = strlen(ptr);
             ptr    += len;
@@ -496,7 +496,7 @@ int attr_to_str(
             ptr += len;
             lspace -= len;
 
-            snprintf(ptr,lspace,"</%s>",
+            snprintf(ptr,lspace,"</%s>\n",
               current->rs_defin->rs_name);
             len = strlen(ptr);
             ptr += len;
@@ -506,7 +506,7 @@ int attr_to_str(
 
           case ATR_TYPE_SIZE:
 
-            snprintf(ptr,lspace,"<%s>",current->rs_defin->rs_name);
+            snprintf(ptr,lspace,"\t\t<%s>",current->rs_defin->rs_name);
             len = strlen(ptr);
             ptr += len;
             lspace -= len;
@@ -516,7 +516,7 @@ int attr_to_str(
             ptr += len;
             lspace -= len;
 
-            snprintf(ptr,lspace,"</%s>",current->rs_defin->rs_name);
+            snprintf(ptr,lspace,"</%s>\n",current->rs_defin->rs_name);
             len = strlen(ptr);
             ptr += len;
             lspace -= len;

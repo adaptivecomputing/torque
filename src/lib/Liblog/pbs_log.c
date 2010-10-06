@@ -117,6 +117,7 @@
 /* Global Data */
 char log_buffer[LOG_BUF_SIZE];
 char log_directory[_POSIX_PATH_MAX/2];
+char job_log_directory[_POSIX_PATH_MAX/2];
 char log_host[1024];
 char log_suffix[1024];
 
@@ -132,6 +133,12 @@ static volatile int  log_opened = 0;
 #if SYSLOG
 static int      syslogopen = 0;
 #endif /* SYSLOG */
+
+/* variables for job logging */
+static int      joblog_open_day;
+static FILE     *joblogfile;  /* open stream for log file */
+static char     *joblogpath = NULL;
+static volatile int  job_log_opened = 0;
 
 /*
  * the order of these names MUST match the defintions of
@@ -209,6 +216,59 @@ static char *mk_log_name(
   }  /* END mk_log_name() */
 
 
+
+/*
+ * mk_job_log_name - make the log name used by MOM
+ * based on the date: yyyymmdd
+ */
+
+static char *mk_job_log_name(
+
+  char *pbuf)     /* O (minsize=1024) */
+
+  {
+
+  struct tm *ptm;
+  struct tm  tmpPtm;
+  time_t time_now;
+
+  time_now = time((time_t *)0);
+  ptm = localtime_r(&time_now,&tmpPtm);
+
+  if (log_suffix[0] != '\0')
+    {
+    if (!strcasecmp(log_suffix, "%h"))
+      {
+      sprintf(pbuf, "%s/%04d%02d%02d.%s",
+              job_log_directory,
+              ptm->tm_year + 1900,
+              ptm->tm_mon + 1,
+              ptm->tm_mday,
+              (log_host[0] != '\0') ? log_host : "localhost");
+      }
+    else
+      {
+      sprintf(pbuf, "%s/%04d%02d%02d.%s",
+              job_log_directory,
+              ptm->tm_year + 1900,
+              ptm->tm_mon + 1,
+              ptm->tm_mday,
+              log_suffix);
+      }
+    }
+  else
+    {
+    sprintf(pbuf, "%s/%04d%02d%02d",
+            job_log_directory,
+            ptm->tm_year + 1900,
+            ptm->tm_mon + 1,
+            ptm->tm_mday);
+    }
+
+  joblog_open_day = ptm->tm_yday; /* Julian date log opened */
+
+  return(pbuf);
+  }  /* END mk_job_log_name() */
 
 
 
@@ -313,6 +373,85 @@ int log_open(
 
   return(0);
   }  /* END log_open() */
+
+
+
+/*
+ * job_log_open() - open the log file for append.
+ *
+ * Opens a (new) log file.
+ * If a log file is already open, and the new file is successfully opened,
+ * the old file is closed.  Otherwise the old file is left open.
+ */
+
+int job_log_open(
+
+  char *filename,  /* abs filename or NULL */
+  char *directory) /* normal log directory */
+
+  {
+  char  buf[_POSIX_PATH_MAX];
+  int   fds;
+
+  if (job_log_opened > 0)
+    {
+    return(-1); /* already open */
+    }
+
+  if (job_log_directory != directory)  /* some calls pass in job_log_directory */
+    {
+    strncpy(job_log_directory, directory, (_POSIX_PATH_MAX) / 2 - 1);
+    }
+
+  if ((filename == NULL) || (*filename == '\0'))
+    {
+    filename = mk_job_log_name(buf);
+
+    log_auto_switch = 1;
+    }
+  else if (*filename != '/')
+    {
+    return(-1); /* must be absolute path */
+    }
+
+  if ((fds = open(filename, O_CREAT | O_WRONLY | O_APPEND, 0644)) < 0)
+    {
+    job_log_opened = -1; /* note that open failed */
+
+    return(-1);
+    }
+
+  if (fds < 3)
+    {
+    job_log_opened = fcntl(fds, F_DUPFD, 3); /* overload variable */
+
+    if (job_log_opened < 0)
+      {
+      return(-1);
+      }
+
+    close(fds);
+
+    fds = job_log_opened;
+    }
+
+  /* save the path of the last opened logfile for log_roll */
+  if (joblogpath != filename)
+    {
+    if (joblogpath != NULL)
+      free(logpath);
+
+    joblogpath = strdup(filename);
+    }
+
+  joblogfile = fdopen(fds, "a");
+
+  setvbuf(joblogfile, NULL, _IOLBF, 0); /* set line buffering */
+
+  job_log_opened = 1;   /* note that file is open */
+
+  return(0);
+  }  /* END job_log_open() */
 
 
 
@@ -507,7 +646,10 @@ const char *log_get_severity_string(
   return(result);
   }  /* END log_get_severity_string() */
 
-
+void log_job_record(char *buf)
+  {
+  fprintf(joblogfile, "%s\n", buf);
+  }
 
 
 /*
