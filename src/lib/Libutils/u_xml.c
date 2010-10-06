@@ -185,3 +185,181 @@ int get_parent_and_child(
   } /* END get_parent_and_child() */
 
 
+
+
+/* 
+ * iterates over in and writes it to out, escaping restricted xml characters
+ * as it goes
+ *
+ * @param in - the input string
+ * @param out - the output string
+ * @param size - the max size that can be written to out
+ * @return PBSE_NONE on success, nonzero otherwise
+ */
+int escape_xml(
+
+  char *in,    /* I */
+  char *out,   /* O */
+  int   size)  /* I */
+
+  {
+  int i;
+  int final_len = 0;
+  int len = strlen(in);
+
+  for (i = 0; i < len; i++)
+    {
+    switch (in[i])
+      {
+      case '<':
+
+        if (size - final_len < LT_ESCAPED_LEN)
+          return(BUFFER_OVERFLOW);
+        else
+          {
+          strcpy(out+final_len,LT_ESCAPED);
+          final_len += LT_ESCAPED_LEN;
+          }
+
+        break;
+
+      case '>':
+
+        if (size - final_len < GT_ESCAPED_LEN)
+          return(BUFFER_OVERFLOW);
+        else
+          {
+          strcpy(out+final_len,GT_ESCAPED);
+          final_len += GT_ESCAPED_LEN;
+          }
+
+        break;
+
+      case '&':
+
+        if (size - final_len < AMP_ESCAPED_LEN)
+          return(BUFFER_OVERFLOW);
+        else
+          {
+          strcpy(out+final_len,AMP_ESCAPED);
+          final_len += AMP_ESCAPED_LEN;
+          }
+
+        break;
+
+      case '"':
+
+        if (size - final_len < QUOT_ESCAPED_LEN)
+          return(BUFFER_OVERFLOW);
+        else
+          {
+          strcpy(out+final_len,QUOT_ESCAPED);
+          final_len += QUOT_ESCAPED_LEN;
+          }
+
+        break;
+
+      case '\'':
+
+        if (size - final_len < APOS_ESCAPED_LEN)
+          return(BUFFER_OVERFLOW);
+        else
+          {
+          strcpy(out+final_len,APOS_ESCAPED);
+          final_len += APOS_ESCAPED_LEN;
+          }
+
+      default:
+
+        if (size <= final_len)
+          return(BUFFER_OVERFLOW);
+        else
+          {
+          out[final_len++] = in[i];
+          }
+      }
+    }
+
+  out[final_len] = '\0';
+
+  return(PBSE_NONE);
+  } /* END escape_xml() */
+
+
+
+
+
+
+/* 
+ * reads an xml string and translates it to regular characters 
+ *
+ * @param in - the xml string
+ * @param out - the raw characters
+ * @param size - the max size out can be
+ * @return PBSE_NONE on success
+ */
+
+int unescape_xml(
+
+  char *in,   /* I */ 
+  char *out,  /* O */
+  int   size) /* I */
+
+  {
+  int i = 0;
+  int final_len = 0;
+  int len = strlen(in);
+
+  while ((i < len) &&
+         (final_len < size))
+    {
+    if (strncmp(in+i,LT_ESCAPED,LT_ESCAPED_LEN) == 0)
+      {
+      out[final_len] = '<';
+      i += LT_ESCAPED_LEN;
+      }
+    else if (strncmp(in+i,GT_ESCAPED,GT_ESCAPED_LEN) == 0)
+      {
+      out[final_len] = '>';
+      i += GT_ESCAPED_LEN;
+      }
+    else if (strncmp(in+i,QUOT_ESCAPED,QUOT_ESCAPED_LEN) == 0)
+      {
+      out[final_len] = '"';
+      i += QUOT_ESCAPED_LEN;
+      }
+    else if (strncmp(in+i,APOS_ESCAPED,APOS_ESCAPED_LEN) == 0)
+      {
+      out[final_len] = '\'';
+      i += APOS_ESCAPED_LEN;
+      }
+    else if (strncmp(in+i,AMP_ESCAPED,AMP_ESCAPED_LEN) == 0)
+      {
+      out[final_len] = '&';
+      i += AMP_ESCAPED_LEN;
+      }
+    else
+      {
+      out[final_len] = in[i];
+      i++;
+      }
+    
+    final_len++;
+    }
+
+  if (final_len < size)
+    out[final_len] = '\0';
+  else
+    out[size-1] = '\0';
+
+  /* check if we didn't finish reading the string */
+  if (i < len)
+    return(BUFFER_OVERFLOW);
+
+  return(PBSE_NONE);
+  } /* END unescape_xml() */
+
+
+
+
+

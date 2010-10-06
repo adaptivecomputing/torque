@@ -1384,18 +1384,31 @@ static int status_node(
   tlist_head            *pstathd)  /* head of list to append status to  */
 
   {
+  char     *id = "status_node";
+
   int       rc = 0;
 
   struct brp_status *pstat;
   svrattrl          *pal;
 
+  if ((rc = pthread_mutex_lock(pnode->nd_mutex)))
+    {
+    log_err(rc,id,"Could not lock node's mutex");
+
+    return(rc);
+    }
+
   if (pnode->nd_state & INUSE_DELETED)  /*node no longer valid*/
     {
+    pthread_mutex_unlock(pnode->nd_mutex);
+
     return(0);
     }
 
   if ((preq->rq_perm & ATR_DFLAG_RDACC) == 0)
     {
+    pthread_mutex_unlock(pnode->nd_mutex);
+
     return(PBSE_PERM);
     }
 
@@ -1405,6 +1418,8 @@ static int status_node(
 
   if (pstat == NULL)
     {
+    pthread_mutex_unlock(pnode->nd_mutex);
+
     return(PBSE_SYSTEM);
     }
 
@@ -1439,6 +1454,8 @@ static int status_node(
          preq->rq_perm,
          &pstat->brp_attr,
          &bad);
+
+  pthread_mutex_unlock(pnode->nd_mutex);
 
   return(rc);
   }  /* END status_node() */
