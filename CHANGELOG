@@ -38,6 +38,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       This log file is optional. It can be activated using a new server
       parameter record_job_info. By default this is false. If set to true it
       will begin recording every job record when the job is purged.
+  b - fix to cleanup job files on mom after a BLCR job is checkpointed and held
   
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 

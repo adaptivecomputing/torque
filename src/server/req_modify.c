@@ -123,6 +123,7 @@ extern int   comp_resc_lt;
 extern int   LOGLEVEL;
 extern char *path_checkpoint;
 extern char server_name[];
+extern time_t time_now;
 
 extern const char *PJobSubState[];
 extern char *PJobState[];
@@ -201,6 +202,114 @@ static void post_modify_req(
 
   return;
   }  /* END post_modify_req() */
+
+
+
+/*
+ * mom_cleanup_checkpoint_hold - Handle the clean up of mom after checkpoint and
+ * hold.  This gets messy because there is a race condition between getting the
+ * job obit and having the copy checkpoint complete.  After both have occured
+ * we can request the mom to cleanup the job
+ */
+
+void mom_cleanup_checkpoint_hold(
+
+  struct work_task *ptask)
+
+  {
+  static char *id = "mom_cleanup_checkpoint_hold";
+
+  int        rc = 0;
+  job       *pjob;
+
+  struct batch_request *preq;
+
+  pjob = (job *)ptask->wt_parm1;
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,
+      "checking mom cleanup job state is %s-%s\n",
+      PJobState[pjob->ji_qs.ji_state],
+      PJobSubState[pjob->ji_qs.ji_substate]);
+    LOG_EVENT(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
+    }
+
+  /* 
+   * if the job is no longer running then we have recieved the job obit
+   * and need to request the mom to clean up after the job
+   */
+
+  if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+    {
+    if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
+      {
+      log_err(-1, id, "unable to allocate DeleteJob request - big trouble!");
+      }
+    else
+      {
+      strcpy(preq->rq_ind.rq_delete.rq_objname, pjob->ji_qs.ji_jobid);
+
+      if ((rc = relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr, preq, release_req)) != 0)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Unable to relay information to mom for job '%s'\n",
+          pjob->ji_qs.ji_jobid);
+        log_err(rc,id,log_buffer);
+        free_br(preq);
+
+        return;
+        }
+
+      if (LOGLEVEL >= 7)
+        {
+        LOG_EVENT(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          "requested mom cleanup");
+        }
+      }
+    }
+  else
+    {
+    set_task(WORK_Timed, time_now + 1, mom_cleanup_checkpoint_hold, (void*)pjob);
+    }
+
+  }
+
+
+
+
+/*
+ * chkpt_xfr_hold - Handle the clean up of the transfer of the checkpoint files.
+ */
+
+void chkpt_xfr_hold(
+
+  struct work_task *ptask)
+
+  {
+  job       *pjob;
+  struct work_task *ptasknew;
+
+  struct batch_request *preq;
+
+  preq = (struct batch_request *)ptask->wt_parm1;
+  pjob = (job *)preq->rq_extra;
+  
+  release_req(ptask);
+
+  ptasknew = set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, (void*)pjob);
+
+  return;
+  }  /* END chkpt_xfr_hold() */
+
+
 
 
 
@@ -468,7 +577,15 @@ int modify_job(
 
       momreq->rq_extra = (void *)pjob;
 
-      if (relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr, momreq, chkpt_xfr_done) != 0)
+      if (checkpoint_req == CHK_HOLD)
+        {
+        rc = relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr, momreq, chkpt_xfr_hold);
+        }
+      else
+        {
+        rc = relay_to_mom(pjob->ji_qs.ji_un.ji_exect.ji_momaddr, momreq, chkpt_xfr_done);
+        }
+      if (rc != 0)
         {
         snprintf(log_buffer,sizeof(log_buffer),
           "Unable to relay information to mom for job '%s'\n",
