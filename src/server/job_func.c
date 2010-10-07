@@ -1488,7 +1488,7 @@ int record_jobinfo(job *pjob)
     job_log_open(log_file, path_jobinfo_log);
 
     strcpy(buf, "<Jobinfo>\n");
-    sprintf(valbuf, "\t<Job_Id>%s<\\Job_Id>", pjob->ji_qs.ji_jobid);
+    sprintf(valbuf, "\t<Job_Id>%s</Job_Id>", pjob->ji_qs.ji_jobid);
     strcat(buf, valbuf);
     log_job_record(buf);
   
@@ -1497,6 +1497,14 @@ int record_jobinfo(job *pjob)
       pattr = &(pjob->ji_wattr[i]);
       if(pattr->at_flags & ATR_VFLAG_SET)
         {
+        if(!strcmp(job_attr_def[i].at_name, "depend"))
+          {
+          /* we don't want this attribute in our log
+             The dependecies will show on the submit_args
+             element */
+          continue;
+          }
+
         strcpy(buf, "\t<");
         strcat(buf, job_attr_def[i].at_name);
         strcat(buf, ">");
@@ -1510,13 +1518,13 @@ int record_jobinfo(job *pjob)
           {
           strcat(buf, "\t");
           }
-        strcat(buf, "<\\");
+        strcat(buf, "</");
         strcat(buf, job_attr_def[i].at_name);
         strcat(buf, ">");
         log_job_record(buf);
         }
       }
-    strcpy(buf, "<\\Jobinfo>\n");
+    strcpy(buf, "</Jobinfo>\n");
     log_job_record(buf);
 
     
