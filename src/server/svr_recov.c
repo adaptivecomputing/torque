@@ -407,6 +407,8 @@ int attr_to_str(
       if (size < arst->as_bufsize)
         return(NO_BUFFER_SPACE);
 
+      out[0] = '\0';
+
       /* concatenate all of the array strings into one string */
       for (j = 0; j < arst->as_usedptr; j++)
         {
