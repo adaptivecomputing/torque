@@ -134,6 +134,7 @@
 
 /* external functions called */
 
+extern void job_log_roll(int max_depth);
 extern int  pbsd_init(int);
 extern void shutdown_ack();
 extern int  update_nodes_file(void);
@@ -1784,7 +1785,7 @@ void check_job_log(
  if ((server.sv_attr[(int)SRV_ATR_LogKeepDays].at_flags 
      & ATR_VFLAG_SET) != 0)
    {
-   snprintf(log_buffer,sizeof(log_buffer),"checking for old pbs_server logs in dir '%s' (older than %ld days)",
+   snprintf(log_buffer,sizeof(log_buffer),"checking for old job logs in dir '%s' (older than %ld days)",
      path_svrlog,
      server.sv_attr[(int)SRV_ATR_LogKeepDays].at_val.at_long);
  
@@ -1796,7 +1797,7 @@ void check_job_log(
 
    if (log_remove_old(path_jobinfo_log,server.sv_attr[(int)SRV_ATR_LogKeepDays].at_val.at_long * SECS_PER_DAY) != 0)
      {
-     log_err(-1,"check_log","failure occurred when checking for old job logs");
+     log_err(-1,"check_job_log","failure occurred when checking for old job logs");
      }
    }
 
@@ -1820,11 +1821,11 @@ void check_job_log(
 
       if ((depth >= INT_MAX) || (depth < 1))
         {
-        log_err(-1, "check_log", "job log roll cancelled, logfile depth is out of range");
+        log_err(-1, "check_job_log", "job log roll cancelled, logfile depth is out of range");
         }
       else
         {
-        log_roll(depth);
+        job_log_roll(depth);
         }
       }
     }
