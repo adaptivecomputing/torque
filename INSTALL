@@ -1,6 +1,7 @@
 How to Install using autoconf'ed TORQUE.
 
-ONLINE:http://www.clusterresources.com/torquedocs/index.shtml 
+ONLINE:http://www.clusterresources.com/products/torque/docs_20050804/torquequickstart.shtml
+
 
 - untar the tar file and cd to the top level directory
 
