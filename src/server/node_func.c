@@ -758,7 +758,7 @@ int status_nodeattrib(
  * pbs node.  The assumption is that all the parameters are valid.
 */
 
-static int initialize_pbsnode(
+static void initialize_pbsnode(
 
   struct pbsnode *pnode,
   char           *pname, /* node name */
@@ -767,7 +767,7 @@ static int initialize_pbsnode(
   int             ntype) /* time-shared or cluster */
 
   {
-  static char *id = "initialize_pbsnode";
+/*  char *id = "initialize_pbsnode";*/
 
 /*  int i; */
 
@@ -796,16 +796,6 @@ static int initialize_pbsnode(
   pnode->nd_nstatus     = 0;
   pnode->nd_warnbad     = 0;
 
-  pnode->nd_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
-  if (pnode->nd_mutex == NULL)
-    {
-    log_err(ENOMEM,id,"Could not allocate memory for the node's mutex");
-    
-    return(ENOMEM);
-    }
-
-  pthread_mutex_init(pnode->nd_mutex,NULL);
-
   /*for (i = 0;pul[i];i++)
     {
     if (LOGLEVEL >= 6)
@@ -827,7 +817,7 @@ static int initialize_pbsnode(
     tinsert(pul[i], pnode, &ipaddrs);
     }*/  /* END for (i) */
 
-  return(PBSE_NONE);
+  return;
   }  /* END initialize_pbsnode() */
 
 
@@ -1595,7 +1585,6 @@ int setup_numa_nodes(
   char           *np_ptr = NULL;
   char           *allocd_name;
   int             np;
-  int             rc;
   char           *delim = ",";
 
   char           *id = "setup_numa_nodes";
@@ -1639,9 +1628,7 @@ int setup_numa_nodes(
       return(PBSE_SYSTEM);
       }
 
-    rc = initialize_pbsnode(pn,allocd_name,pul,NTYPE_CLUSTER) != PBSE_NONE;
-    if (rc != PBSE_NONE)
-      return(rc);
+    initialize_pbsnode(pn, allocd_name, pul, NTYPE_CLUSTER);
 
     /* make sure the server communicates on the correct ports */
     pn->nd_mom_port = pnode->nd_mom_port;
@@ -1821,8 +1808,7 @@ int create_pbs_node(
     pbsndlist = tmpndlist;*/
     }
 
-  if ((rc = initialize_pbsnode(pnode, pname, pul, ntype)) != PBSE_NONE)
-    return(rc);
+  initialize_pbsnode(pnode, pname, pul, ntype);
 
   /* create and initialize the first subnode to go with the parent node */
 
@@ -2762,9 +2748,7 @@ int create_partial_pbs_node(
   memset(pul, 0, sizeof(u_long) * 2);
   *pul = addr;
   pname = strdup(nodename);
-
-  if ((rc = initialize_pbsnode(pnode, pname, pul, ntype)) != PBSE_NONE)
-    return(rc);
+  initialize_pbsnode(pnode, pname, pul, ntype);
 
   /* create and initialize the first subnode to go with the parent node */
 

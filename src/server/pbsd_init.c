@@ -110,7 +110,6 @@
 #include "array.h"
 #include "csv.h"
 #include "pbs_nodes.h"
-#include "threadpool.h"
 
 
 /*#ifndef SIGKILL*/
@@ -1332,9 +1331,6 @@ int pbsd_init(
   /* set work task to periodically save the tracking records */
 
   set_task(WORK_Timed, (long)(time_now + PBS_SAVE_TRACK_TM), track_save, 0);
-
-  /* setup the threadpool for use */
-  initialize_threadpool(&request_pool,5,5,-1);
 
   /* SUCCESS */
 
