@@ -798,7 +798,8 @@ void DIS_tcp_setup(
 
     flags = fcntl(fd, F_GETFL);
 
-    if (errno == EBADF)
+    if ((errno == EBADF) &&
+        (flags == -1))
       {
       sprintf(log_buffer, "invalid file descriptor (%d) for socket",
         fd);

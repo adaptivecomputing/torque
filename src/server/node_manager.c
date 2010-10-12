@@ -117,6 +117,7 @@
 #include "mcom.h"
 #include "utils.h"
 #include "u_tree.h"
+#include "threadpool.h"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -186,6 +187,7 @@ int node_satisfies_request(struct pbsnode *,char *);
 int reserve_node(struct pbsnode *,short,job *,char *,struct howl **);
 int build_host_list(struct howl **,struct pbssubn *,struct pbsnode *);
 int procs_available(int proc_ct);
+void check_nodes(struct work_task *);
 
 /*
 
@@ -1867,24 +1869,22 @@ int add_cluster_addrs(
 
 
 /*
- **     Mark any nodes that haven't checked in as down.
- **     This should be used rather than the ping_nodes task.  If
- **     the node isn't down then it checks to see that the
- **     last update hasn't been too long ago.
+ * wrapper task that check_nodes places in the thread pool's queue
+ * MULTITHREADED BABY
  */
+void *check_nodes_work(
 
-void check_nodes(
-
-  struct work_task *ptask)  /* I (modified) */
+  void *vp)
 
   {
-  static char     id[] = "check_nodes";
+  struct work_task *ptask = (struct work_task *)vp;
+  static char       id[] = "check_nodes_work";
 
-  struct pbsnode *np;
-  int    chk_len;
+  struct pbsnode   *np;
+  int               chk_len;
 
-  node_iterator   iter;
-
+  node_iterator     iter;
+  
   /* load min refresh interval */
 
   chk_len = server.sv_attr[SRV_ATR_check_rate].at_val.at_long;
@@ -1941,7 +1941,31 @@ void check_nodes(
       NULL);
     }
 
-  return;
+  return(NULL);
+  }
+
+
+
+
+/*
+ **     Mark any nodes that haven't checked in as down.
+ **     This should be used rather than the ping_nodes task.  If
+ **     the node isn't down then it checks to see that the
+ **     last update hasn't been too long ago.
+ */
+
+void check_nodes(
+
+  struct work_task *ptask)  /* I (modified) */
+
+  {
+  static char id[] = "check_nodes";
+  int rc = enqueue_threadpool_request(check_nodes_work,ptask);
+
+  if (rc)
+    {
+    log_err(rc,id,"Unable to enqueue check nodes task into the threadpool");
+    }
   }  /* END check_nodes() */
 
 
@@ -1958,19 +1982,16 @@ const char *PBSServerCmds2[] =
   NULL
   };
 
-/*
- * Input is coming from the pbs_mom over a DIS rpp stream.
- * Read the stream to get a Inter-Server request.
- */
 
-void is_request(
 
-  int  stream,  /* I */
-  int  version, /* I */
-  int *cmdp)    /* O (optional) */
+
+
+void *is_request_work(
+
+  void *vp)
 
   {
-  static char   id[] = "is_request";
+  static char   id[] = "is_request_work";
 
   int  command = 0;
   int  ret = DIS_SUCCESS;
@@ -1990,8 +2011,12 @@ void is_request(
 
   struct pbssubn *sp = NULL;
 
-  if (cmdp != NULL)
-    *cmdp = 0;
+  int  stream;
+  int  version;
+  int *args = (int *)vp;
+
+  stream = args[0];
+  version = args[1];
 
   command = disrsi(stream, &ret);
 
@@ -2026,7 +2051,7 @@ void is_request(
 
     rpp_close(stream);
 
-    return;
+    return(NULL);
     }
 
   /* check that machine is known */
@@ -2099,7 +2124,7 @@ void is_request(
           ping_nodes, node);
         */
 
-        return;
+        return(NULL);
         }  /* END if (node->nd_stream >= 0) */
 
       node->nd_stream = stream;
@@ -2151,12 +2176,9 @@ void is_request(
 
       rpp_close(stream);
 
-      return;
+      return(NULL);
       }
     }
-
-  if (cmdp != NULL)
-    *cmdp = command;
 
   if (LOGLEVEL >= 3)
     {
@@ -2349,7 +2371,7 @@ void is_request(
 
   pthread_mutex_unlock(node->nd_mutex);
 
-  return;
+  return(NULL);
 
 err:
 
@@ -2376,17 +2398,51 @@ err:
 
   pthread_mutex_unlock(node->nd_mutex);
 
-  return;
+  return(NULL);
+  }
+
+
+
+
+
+
+/*
+ * Input is coming from the pbs_mom over a DIS rpp stream.
+ * Read the stream to get a Inter-Server request.
+ */
+
+void is_request(
+
+  int  stream,  /* I */
+  int  version) /* I */
+
+  {
+  int args[2];
+  int rc;
+
+  static char id[] = "is_request";
+
+  args[0] = stream;
+  args[1] = version;
+
+  rc = enqueue_threadpool_request(is_request_work,args);
+
+  if (rc)
+    {
+    log_err(rc,id,"Unable to enqueue is request task into the threadpool");
+    }
+
   }  /* END is_request() */
 
 
 
 
-void
-write_node_state(void)
+
+void *write_node_state_work(
+
+  void *vp)
 
   {
-
   struct pbsnode *np;
   static char *fmt = "%s %d\n";
   int i;
@@ -2410,7 +2466,7 @@ write_node_state(void)
       {
       log_err(errno, "write_node_state", "could not truncate file");
 
-      return;
+      return(NULL);
       }
     }
   else
@@ -2424,7 +2480,7 @@ write_node_state(void)
         "write_node_state",
         "could not open file");
 
-      return;
+      return(NULL);
       }
     }
 
@@ -2457,7 +2513,24 @@ write_node_state(void)
     log_err(errno, "write_node_state", "failed saving node state to disk");
     }
 
-  return;
+  return(NULL);
+  } /* END write_node_state_work() */
+
+
+
+
+
+void
+write_node_state(void)
+
+  {
+  static char id[] = "write_node_state";
+  int rc = enqueue_threadpool_request(write_node_state_work,NULL);
+
+  if (rc)
+    {
+    log_err(rc,id,"Unable to enqueue is_request task into the threadpool");
+    }
   }  /* END write_node_state() */
 
 
@@ -2585,19 +2658,12 @@ static void free_prop(
 
 
 
-/*
- * unreserve - unreserve nodes
- *
- * If handle is set to a existing resource_t, then release all nodes
- * associated with that handle, otherwise, (this is dangerous)
- * if handle == RESOURCE_T_ALL, release all nodes period.
- */
+void *node_unreserve_work(
 
-void node_unreserve(
-
-  resource_t handle)
+  void *vp)
 
   {
+  resource_t handle = *((resource_t *)vp);
 
   struct  pbsnode *np;
 
@@ -2632,7 +2698,33 @@ void node_unreserve(
     pthread_mutex_lock(np->nd_mutex);
     }
 
-  return;
+  return(NULL);
+  } /* END node_unreserve_work() */
+
+
+
+
+
+/*
+ * unreserve - unreserve nodes
+ *
+ * If handle is set to a existing resource_t, then release all nodes
+ * associated with that handle, otherwise, (this is dangerous)
+ * if handle == RESOURCE_T_ALL, release all nodes period.
+ */
+
+void node_unreserve(
+
+  resource_t handle)
+
+  {
+  static char id[] = "node_unreserve";
+  int rc = enqueue_threadpool_request(node_unreserve_work,NULL);
+
+  if (rc)
+    {
+    log_err(rc,id,"Unable to enqueue node_unreserve task into the threadpool");
+    }
   }  /* END node_unreserve() */
 
 
@@ -2834,7 +2926,6 @@ int can_reshuffle(
   int             pass)
 
   {
-
   if (pnode->nd_state & INUSE_DELETED)
     return(FALSE);
 
@@ -2941,11 +3032,15 @@ static int search(
 
   while ((pnode = next_node(&iter)) != NULL)
     {
+    /* all paths through here treat the mutex correctly. convoluted, but 
+     * correct. This has to happen because of the potential recursion */
     pthread_mutex_lock(pnode->nd_mutex);
 
     if (can_reshuffle(pnode,glorf,skip,vpreq,pass) == TRUE)
       {
       pnode->nd_flag = conflict;
+
+      pthread_mutex_unlock(pnode->nd_mutex);
 
       /* Ben Webb patch (CRI 10/06/03) */
 
@@ -2955,6 +3050,8 @@ static int search(
                 skip,
                 pnode->nd_order,
                 depth);
+      
+      pthread_mutex_lock(pnode->nd_mutex);
 
       pnode->nd_flag = thinking;
 
@@ -2968,8 +3065,8 @@ static int search(
 
         return(1);
         }
-      }
-    
+      }  
+
     pthread_mutex_unlock(pnode->nd_mutex);
     }  /* END for (each node) */
 

@@ -118,6 +118,10 @@
 #ifndef NULL
 #define NULL 0
 #endif
+#ifndef TRUE
+#define TRUE 1
+#define FALSE 0
+#endif 
 
 #define BUFFER_OVERFLOW -5
 #define LT_ESCAPED       "&lt;"
