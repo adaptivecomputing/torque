@@ -79,6 +79,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Now saving serverdb as an xml file instead of a byte-dump, thus 
       allowing canned installations without qmgr scripts, as well as more
       portability. Able to upgrade automatically from 2.1, 2.3, and 2.4
+  b - make the tcp reading buffer able to grow dynamically to read larger 
+      values in order to avoid "invalid protocol" messages 
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
