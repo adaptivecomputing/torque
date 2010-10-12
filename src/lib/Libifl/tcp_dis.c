@@ -195,7 +195,10 @@ static int tcp_read(
   int fd)  /* I */
 
   {
-  int               i;
+  long              i;
+  long              total = 0;
+  unsigned long     newsize;
+  void             *ptr;
 #ifdef HAVE_POLL
 
   struct pollfd pollset;
@@ -277,35 +280,63 @@ static int tcp_read(
     return(-1);
     }
 
-  while ((i = read(
-                fd,
-                tp->tdis_eod,
-                tp->tdis_thebuf + tp->tdis_bufsize - tp->tdis_eod)) == -1)
+  while (1)
     {
-    if (errno != EINTR)
+    while ((i = read(
+                  fd,
+                  tp->tdis_eod,
+                  tp->tdis_thebuf + tp->tdis_bufsize - tp->tdis_eod)) == -1)
+      {
+      if (errno != EINTR)
+        break;
+      }
+    
+    if (i < 0)
+      {
+      /* FAILURE - read failed */
+      
+      tcparray[fd]->ReadErrno = errno;
+      
+      return(-1);
+      }
+    else if (i == 0)
+      {
+      /* FAILURE - no data read */
+      
+      return(-2);
+      }
+    
+    /* SUCCESS */
+    
+    tp->tdis_eod += i;
+    total += i;
+
+    /* done reading if we haven't read our max size */
+    if (i < tp->tdis_thebuf + tp->tdis_bufsize - tp->tdis_eod)
       break;
+
+    /* otherwise alloc more space and read again, add 25% more space */
+    newsize = tp->tdis_bufsize * 1.25;
+    ptr = realloc(tp->tdis_thebuf,newsize);
+
+    if (ptr == NULL)
+      {
+      /* failure to allocate memory, return NULL? */
+      log_err(ENOMEM,"tcp_read","Could not allocate memory to read buffer");
+      return(-1);
+      }
+    else
+      {
+      /* adjust the new values */
+      tp->tdis_eod += ((char *)ptr) - tp->tdis_thebuf;
+      tp->tdis_thebuf = (char *)ptr;
+      tp->tdis_bufsize = newsize;
+
+      /* fall through to continue reading more */
+      }
     }
 
-  if (i < 0)
-    {
-    /* FAILURE - read failed */
-
-    tcparray[fd]->ReadErrno = errno;
-
-    return(-1);
-    }
-  else if (i == 0)
-    {
-    /* FAILURE - no data read */
-
-    return(-2);
-    }
-
-  /* SUCCESS */
-
-  tp->tdis_eod += i;
-
-  return(i);
+  return(total);
   }  /* END tcp_read() */
 
 
@@ -798,7 +829,8 @@ void DIS_tcp_setup(
 
     flags = fcntl(fd, F_GETFL);
 
-    if (errno == EBADF)
+    if ((errno == EBADF) &&
+        (flags == -1))
       {
       sprintf(log_buffer, "invalid file descriptor (%d) for socket",
         fd);
