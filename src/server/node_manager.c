@@ -1909,8 +1909,6 @@ void check_nodes(
     if (np->nd_state & (INUSE_DELETED | INUSE_DOWN))
       continue;
 
-    pthread_mutex_lock(np->nd_mutex);
-
     if (np->nd_lastupdate < (time_now - chk_len)) 
       {
       if (LOGLEVEL >= 0)
@@ -1927,8 +1925,6 @@ void check_nodes(
         }
 
       update_node_state(np, (INUSE_DOWN));
-    
-      pthread_mutex_unlock(np->nd_mutex);
       }
     }    /* END for (i = 0) */
 
@@ -2043,117 +2039,112 @@ void is_request(
       log_buffer);
     }
 
+/*  if ((node = tfind((u_long)stream, &streams)) != NULL) */
   if ((node = AVL_find((u_long)stream, 0, streams)) != NULL)
+    goto found;
+
+  ipaddr = ntohl(addr->sin_addr.s_addr);
+
+/*  if ((node = tfind(ipaddr, &ipaddrs)) != NULL) */
+  if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
     {
-    pthread_mutex_lock(node->nd_mutex);
-    }
-  else
-    {
-    ipaddr = ntohl(addr->sin_addr.s_addr);
-
-    if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
+    if (node->nd_stream >= 0)
       {
-      pthread_mutex_lock(node->nd_mutex);
-
-      if (node->nd_stream >= 0)
+      if (LOGLEVEL >= 3)
         {
-        if (LOGLEVEL >= 3)
-          {
-          sprintf(log_buffer, "stream %d from node %s already open on %d (marking node state 'unknown', current state: %d)",
-                  stream,
-                  node->nd_name,
-                  node->nd_stream,
-                  node->nd_state);
+        sprintf(log_buffer, "stream %d from node %s already open on %d (marking node state 'unknown', current state: %d)",
+                stream,
+                node->nd_name,
+                node->nd_stream,
+                node->nd_state);
 
-          log_event(
-            PBSEVENT_ADMIN,
-            PBS_EVENTCLASS_SERVER,
-            id,
-            log_buffer);
-          }
-
-        rpp_close(stream);
-
-        rpp_close(node->nd_stream);
-
-        /* tdelete((u_long)node->nd_stream, &streams); */
-        streams = AVL_delete_node((u_long)node->nd_stream, 0, streams);
-
-        if (node->nd_state & INUSE_OFFLINE)
-          {
-          node->nd_state = (INUSE_UNKNOWN | INUSE_OFFLINE);
-          }
-        else
-          {
-          node->nd_state = INUSE_UNKNOWN;
-          }
-
-        node->nd_stream = -1;
-
-        pthread_mutex_unlock(node->nd_mutex);
-
-        /* do a ping in 5 seconds */
-
-        /*
-        set_task(WORK_Timed,time_now + 5,
-          ping_nodes, node);
-        */
-
-        return;
-        }  /* END if (node->nd_stream >= 0) */
-
-      node->nd_stream = stream;
-
-      /* tinsert((u_long)stream, node, &streams); */
-      streams = AVL_insert((u_long)stream, 0, node, streams);
-        
-      }  /* END if ((node = tfind(ipaddr,&ipaddrs)) != NULL) */
-    else if (allow_any_mom)                                           
-      { 
-      hp = gethostbyaddr(&ipaddr, sizeof(ipaddr), AF_INET);       
-      if(hp != NULL)                                              
-        {                                                         
-        strncpy(nodename, hp->h_name, PBS_MAXHOSTNAME);           
-        err = create_partial_pbs_node(nodename, ipaddr, perm);    
-        }                                                         
-      else                                                        
-        {
-        tmpaddr = ntohl(addr->sin_addr.s_addr);
-
-        sprintf(nodename, "0x%lX", tmpaddr);
-        err = create_partial_pbs_node(nodename, ipaddr, perm);
-        } 
-      
-      if(err == PBSE_NONE)
-        {
-        node = AVL_find(ipaddr, 0, ipaddrs);
-        pthread_mutex_lock(node->nd_mutex);
-        }                                                         
-      }
-      
-    if (node == NULL)
-      {
-      /* node not listed in trusted ipaddrs list */
-
-      sprintf(log_buffer, "bad attempt to connect from %s (address not trusted - check entry in server_priv/nodes)",
-              netaddr(addr));
-
-      if (LOGLEVEL >= 2)
-        {
-        log_record(
-          PBSEVENT_SCHED,
-          PBS_EVENTCLASS_REQUEST,
+        log_event(
+          PBSEVENT_ADMIN,
+          PBS_EVENTCLASS_SERVER,
           id,
           log_buffer);
         }
 
-      log_err(-1, id, log_buffer);
-
       rpp_close(stream);
 
+      rpp_close(node->nd_stream);
+
+      /* tdelete((u_long)node->nd_stream, &streams); */
+      streams = AVL_delete_node((u_long)node->nd_stream, 0, streams);
+
+      if (node->nd_state & INUSE_OFFLINE)
+        {
+        node->nd_state = (INUSE_UNKNOWN | INUSE_OFFLINE);
+        }
+      else
+        {
+        node->nd_state = INUSE_UNKNOWN;
+        }
+
+      node->nd_stream = -1;
+
+      /* do a ping in 5 seconds */
+
+      /*
+      set_task(WORK_Timed,time_now + 5,
+        ping_nodes, node);
+      */
+
       return;
+      }  /* END if (node->nd_stream >= 0) */
+
+    node->nd_stream = stream;
+
+    /* tinsert((u_long)stream, node, &streams); */
+    streams = AVL_insert((u_long)stream, 0, node, streams);
+      
+    goto found;
+    }  /* END if ((node = tfind(ipaddr,&ipaddrs)) != NULL) */
+    else if (allow_any_mom)                                           
+      {                                                               
+        {                                                             
+          hp = gethostbyaddr(&ipaddr, sizeof(ipaddr), AF_INET);       
+          if(hp != NULL)                                              
+            {                                                         
+            strncpy(nodename, hp->h_name, PBS_MAXHOSTNAME);           
+            err = create_partial_pbs_node(nodename, ipaddr, perm);    
+            }                                                         
+          else                                                        
+            {      
+            tmpaddr = ntohl(addr->sin_addr.s_addr);                                                   
+            sprintf(nodename, "0x%lX", tmpaddr);
+            err = create_partial_pbs_node(nodename, ipaddr, perm);    
+            }                                                         
+                                                                      
+          if(err == PBSE_NONE)                                        
+            {   
+            node = AVL_find(ipaddr, 0, ipaddrs);                           
+            goto found;                                               
+            }                                                         
+        }                                                             
       }
+
+  /* node not listed in trusted ipaddrs list */
+
+  sprintf(log_buffer, "bad attempt to connect from %s (address not trusted - check entry in server_priv/nodes)",
+          netaddr(addr));
+
+  if (LOGLEVEL >= 2)
+    {
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
     }
+
+  log_err(-1, id, log_buffer);
+
+  rpp_close(stream);
+
+  return;
+
+found:
 
   if (cmdp != NULL)
     *cmdp = command;
@@ -2347,8 +2338,6 @@ void is_request(
 
   rpp_eom(stream);
 
-  pthread_mutex_unlock(node->nd_mutex);
-
   return;
 
 err:
@@ -2373,8 +2362,6 @@ err:
   rpp_close(stream);
 
   update_node_state(node, INUSE_DOWN);
-
-  pthread_mutex_unlock(node->nd_mutex);
 
   return;
   }  /* END is_request() */
@@ -2437,8 +2424,6 @@ write_node_state(void)
     {
     np = pbsndmast[i];
 
-    pthread_mutex_lock(np->nd_mutex);
-
     if (np->nd_state & INUSE_DELETED)
       continue;
 
@@ -2448,8 +2433,6 @@ write_node_state(void)
               np->nd_name,
               np->nd_state & savemask);
       }
-
-    pthread_mutex_unlock(np->nd_mutex);
     }    /* END for (i) */
 
   if (fflush(nstatef) != 0)
@@ -2506,8 +2489,6 @@ write_node_note(void)
     {
     np = pbsndmast[i];
 
-    pthread_mutex_lock(np->nd_mutex);
-
     if (np->nd_state & INUSE_DELETED)
       continue;
 
@@ -2519,8 +2500,6 @@ write_node_note(void)
               np->nd_name,
               np->nd_note);
       }
-    
-    pthread_mutex_unlock(np->nd_mutex);
     }
 
   fflush(nin);
@@ -2610,8 +2589,6 @@ void node_unreserve(
     {
     np = pbsndlist[i];
 
-    pthread_mutex_lock(np->nd_mutex);
-
     if (np->nd_state & INUSE_DELETED)
       continue;
 
@@ -2628,8 +2605,6 @@ void node_unreserve(
           }
         }
       }
-    
-    pthread_mutex_lock(np->nd_mutex);
     }
 
   return;
@@ -2909,8 +2884,6 @@ static int search(
 
   while ((pnode = next_node(&iter)) != NULL)
     {
-    pthread_mutex_lock(pnode->nd_mutex);
-
     if (search_acceptable(pnode,glorf,skip,vpreq) == TRUE)
       {
       pnode->nd_flag = thinking;
@@ -2925,8 +2898,6 @@ static int search(
 
       return(1);
       }
-    
-    pthread_mutex_unlock(pnode->nd_mutex);
     }
 
   if (glorf == NULL)  /* no property */
@@ -2941,8 +2912,6 @@ static int search(
 
   while ((pnode = next_node(&iter)) != NULL)
     {
-    pthread_mutex_lock(pnode->nd_mutex);
-
     if (can_reshuffle(pnode,glorf,skip,vpreq,pass) == TRUE)
       {
       pnode->nd_flag = conflict;
@@ -2969,8 +2938,6 @@ static int search(
         return(1);
         }
       }
-    
-    pthread_mutex_unlock(pnode->nd_mutex);
     }  /* END for (each node) */
 
   /* FAILURE */

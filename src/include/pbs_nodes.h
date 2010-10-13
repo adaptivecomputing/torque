@@ -83,8 +83,6 @@
 ** Header file used for the node tracking routines.
 */
 
-#include <pthread.h>
-
 /* NOTE:  requires server_limits.h */
 
 #define BM_ERROR        -20
@@ -92,6 +90,7 @@
 #define NUMA_KEYWORD     "numa"
 #define TTORQUECPUSET_PATH "/dev/cpuset/torque"
 #define TROOTCPUSET_PATH   "/dev/cpuset"
+
 
 enum psit
   {
@@ -158,44 +157,42 @@ typedef struct node_iterator
 
 struct pbsnode
   {
-  char                 *nd_name; /* node's host name */
+  char   *nd_name; /* node's host name */
 
-  struct pbssubn       *nd_psn; /* ptr to list of subnodes */
+  struct pbssubn *nd_psn; /* ptr to list of subnodes */
 
-  struct prop          *nd_first; /* first and last property */
+  struct prop           *nd_first; /* first and last property */
 
-  struct prop          *nd_last;
+  struct prop         *nd_last;
 
-  struct prop          *nd_f_st;       /* first and last status */
+  struct prop           *nd_f_st;       /* first and last status */
 
-  struct prop          *nd_l_st;
-  u_long               *nd_addrs; /* IP addresses of host */
+  struct prop           *nd_l_st;
+  u_long  *nd_addrs; /* IP addresses of host */
 
   struct array_strings *nd_prop; /* array of properities */
 
-  struct array_strings *nd_status;
-  char                 *nd_note;  /* note set by administrator */
-  int                   nd_stream; /* RPP stream to Mom on host */
-  enum psit             nd_flag;
-  unsigned short        nd_mom_port; /* For multi-mom-mode unique port value PBS_MOM_SERVICE_PORT*/
-  unsigned short        nd_mom_rm_port; /* For multi-mom-mode unique port value PBS_MANAGER_SERVICE_PORT */
-  short                 nd_nprops; /* number of properties */
-  short                 nd_nstatus;    /* number of status items */
-  short                 nd_nsn; /* number of VPs  */
-  short                 nd_nsnfree; /* number of VPs free */
-  short                 nd_nsnshared; /* number of VPs shared */
-  short                 nd_needed; /* number of VPs needed */
-  unsigned short        nd_state;      /* node state (see INUSE_* #defines below) */
-  unsigned short        nd_ntype; /* node type */
-  short                 nd_order; /* order of user's request */
-  time_t                nd_warnbad;
-  time_t                nd_lastupdate; /* time of last update. */
+  struct array_strings  *nd_status;
+  char           *nd_note;  /* note set by administrator */
+  int     nd_stream; /* RPP stream to Mom on host */
+  enum psit   nd_flag;
+  unsigned short nd_mom_port; /* For multi-mom-mode unique port value PBS_MOM_SERVICE_PORT*/
+  unsigned short nd_mom_rm_port; /* For multi-mom-mode unique port value PBS_MANAGER_SERVICE_PORT */
+  short     nd_nprops; /* number of properties */
+  short                  nd_nstatus;    /* number of status items */
+  short     nd_nsn; /* number of VPs  */
+  short     nd_nsnfree; /* number of VPs free */
+  short    nd_nsnshared; /* number of VPs shared */
+  short    nd_needed; /* number of VPs needed */
+  unsigned short  nd_state;      /* node state (see INUSE_* #defines below) */
+  unsigned short  nd_ntype; /* node type */
+  short    nd_order; /* order of user's request */
+  time_t                 nd_warnbad;
+  time_t                 nd_lastupdate; /* time of last update. */
 
-  unsigned short        num_numa_nodes; /* number of numa nodes */
-  struct AvlNode       *numa_nodes; /* private tree of numa nodes */
-  char                 *numa_str; /* comma-delimited string of processor values */
-
-  pthread_mutex_t      *nd_mutex; /* semaphore for accessing this node's data */
+  unsigned short  num_numa_nodes; /* number of numa nodes */
+  struct AvlNode *numa_nodes; /* private tree of numa nodes */
+  char           *numa_str; /* comma-delimited string of processor values */
   };
 
 struct howl
