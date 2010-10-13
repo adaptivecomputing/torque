@@ -199,6 +199,7 @@ static int tcp_read(
   long              total = 0;
   unsigned long     newsize;
   void             *ptr;
+  int               done = 0;
 #ifdef HAVE_POLL
 
   struct pollfd pollset;
@@ -307,12 +308,14 @@ static int tcp_read(
       }
     
     /* SUCCESS */
+    if (i < tp->tdis_thebuf + tp->tdis_bufsize - tp->tdis_eod)
+      done = 1;
     
     tp->tdis_eod += i;
     total += i;
 
     /* done reading if we haven't read our max size */
-    if (i < tp->tdis_thebuf + tp->tdis_bufsize - tp->tdis_eod)
+    if (done)
       break;
 
     /* otherwise alloc more space and read again, add 25% more space */
@@ -329,6 +332,8 @@ static int tcp_read(
       {
       /* adjust the new values */
       tp->tdis_eod += ((char *)ptr) - tp->tdis_thebuf;
+      tp->tdis_trailp += ((char *)ptr) - tp->tdis_thebuf;
+      tp->tdis_leadp += ((char *)ptr) - tp->tdis_thebuf;
       tp->tdis_thebuf = (char *)ptr;
       tp->tdis_bufsize = newsize;
 
