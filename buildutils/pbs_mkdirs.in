@@ -261,6 +261,7 @@ mk_server_dirs()
 	install_dir_by_varname PBS_SERVER_HOME 755 || return 1
 
 	install_dir $PBS_SERVER_HOME/spool 1777 || return 1
+	install_dir $PBS_SERVER_HOME/checkpoint 1777 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/jobs 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/hostlist 750 || return 1
@@ -321,7 +322,7 @@ mk_mom_dirs()
 	test -d $PBS_SERVER_HOME/spool || \
 	    install_dir $PBS_SERVER_HOME/spool 1777 || return 1
 
-	install_dir $PBS_SERVER_HOME/checkpoint 770 || return 1
+	install_dir $PBS_SERVER_HOME/checkpoint 1777 || return 1
 	install_dir $PBS_SERVER_HOME/undelivered  1777 || return 1
 	install_dir $PBS_SERVER_HOME/mom_priv 751 || return 1
 	install_dir $PBS_SERVER_HOME/mom_priv/jobs 751 || return 1

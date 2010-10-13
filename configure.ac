@@ -1073,6 +1073,11 @@ AC_ARG_WITH(momlogsuffix,
     AC_DEFINE_UNQUOTED(DEFAULT_MOMLOGSUFFIX,"$with_momlogsuffix",[Alternate suffix for MOM logs])
 )
 
+dnl Possibly define server checkpoint directory
+AC_ARG_WITH(servchkptdir,
+    [  --with-servchkptdir     use this directory for Server checkpoint files.],
+    AC_DEFINE_UNQUOTED(SERVER_CHKPTDIR,"$with_servchkptdir",[Directory for Server checkpoint files])
+)
 
 dnl Declare which of scp, rcp, or mom_rcp is to be used for file delivery
 dnl As of TORQUE 2.1.0, default to scp if found, otherwise use the internal mom_rcp

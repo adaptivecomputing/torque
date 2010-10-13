@@ -289,7 +289,7 @@ int DArrayFree(
 
 
 /**
- * Append Item onto the end of Array, resizing it if necessary 
+ * Append Item onto the end of Array, resizing it if necessary
  * @param Array (I/O)
  * @param Item (I)
  */
@@ -679,7 +679,56 @@ int pbsd_init(
 
   path_nodenote_new = build_path(path_priv, NODE_NOTE, new_tag);
 
+#ifdef SERVER_CHKPTDIR
+  /* need to make sure path ends with a '/' */
+
+  if (*(SERVER_CHKPTDIR + strlen(SERVER_CHKPTDIR) - 1)  == '/')
+    {
+    path_checkpoint = strdup(SERVER_CHKPTDIR);
+    }
+  else
+    {
+    path_checkpoint = malloc(strlen(SERVER_CHKPTDIR) + strlen(suffix_slash) + 1);
+    strcpy (path_checkpoint, SERVER_CHKPTDIR);
+    strcat (path_checkpoint, suffix_slash);
+    }
+
+#else
   path_checkpoint     = build_path(path_home, PBS_CHKPTDIR, suffix_slash);
+#endif
+
+  /* check existance amd make sure it is a directory */
+
+  if (stat(path_checkpoint, &statbuf) < 0)
+    {
+    sprintf(log_buffer,
+            "unable to stat checkpoint directory %s, errno %d (%s)",
+            path_checkpoint,
+            errno,
+            strerror(errno));
+    log_err(errno, "pbs_init", log_buffer);
+
+    return(-1);
+    }
+
+  if (!S_ISDIR(statbuf.st_mode))
+    {
+    sprintf(log_buffer,
+            "checkpoint directory path %s is not a directory",
+            path_checkpoint);
+    log_err(errno, "pbs_init", log_buffer);
+
+    return(-1);
+    }
+
+#ifdef SERVER_CHKPTDIR
+  /* set permissions on checkpoint path, if needed */
+
+	if ((statbuf.st_mode && 01777) != 01777) 
+	  {
+    chmod(path_checkpoint, 01777);
+	  }
+#endif
 
   if (svr_resc_def == NULL)
     {
@@ -1083,7 +1132,7 @@ int pbsd_init(
           if ((pjob = job_recov(pdirent->d_name)) != NULL)
             {
             pjob->ji_is_array_template = TRUE;
-            
+
             if (DArrayAppend(&Array,pjob) == FAILURE)
               {
               log_err(ENOMEM,"main","out of memory reloading jobs");
@@ -1225,11 +1274,11 @@ int pbsd_init(
   while (pa != NULL)
     {
     pa->template_job = find_array_template(pa->ai_qs.parent_id);
-    
+
     if (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)
       {
 
-      /* if we can't finish building the job array then delete whats been done 
+      /* if we can't finish building the job array then delete whats been done
          so far */
       if (pa->template_job == NULL)
         {
@@ -1250,8 +1299,8 @@ int pbsd_init(
         }
       else
         {
-        /* TODO Someone must have been naughty and did a kill -9 on pbs_server, 
-           we might need to validate that the last job was fully initialized 
+        /* TODO Someone must have been naughty and did a kill -9 on pbs_server,
+           we might need to validate that the last job was fully initialized
            before continuing the cloning process. */
         wt = set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pa->template_job);
 
@@ -1326,7 +1375,7 @@ int pbsd_init(
 
     log_err(errno,"pbs_init","calloc failure");
 
-    return(-1);	
+    return(-1);
     }
 
   for (i = 0;i < server.sv_tracksize;i++)
@@ -1548,7 +1597,7 @@ static int pbsd_init_job(
     case JOB_SUBSTATE_WAITING:
 
     case JOB_SUBSTATE_PRERUN:
-    
+
     case JOB_SUBSTATE_ARRAY_TEMP:
 
       pbsd_init_reque(pjob, CHANGE_STATE);
@@ -2293,8 +2342,8 @@ int get_svr_attr(
   static char id[] = "get_svr_attr";
   int	 rc;
   char	*suffix_slash = "/";
-  
-  if (type != RECOV_CREATE) 
+
+  if (type != RECOV_CREATE)
     {
     /* Open the server database (save file) and read it in */
 
@@ -2333,7 +2382,7 @@ int get_svr_attr(
       return(-1);
       }
 #endif /* SERVER_XML */
-    } 
+    }
 
   return(0);
   }  /* END get_svr_attr() */

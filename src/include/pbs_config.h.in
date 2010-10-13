@@ -21,6 +21,9 @@
 /* Alternate suffix for MOM logs */
 #undef DEFAULT_MOMLOGSUFFIX
 
+/* Directory for server checkpoint files */
+#undef SERVER_CHKPTDIR
+
 /* Define to disable daemons */
 #undef DISABLE_DAEMONS
 

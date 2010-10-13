@@ -41,6 +41,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix to cleanup job files on mom after a BLCR job is checkpointed and held
   b - make the tcp reading buffer able to grow dynamically to read larger 
       values in order to avoid "invalid protocol" messages 
+  e - change so checkpoint files are transfered as the user, not as root.
+  f - Added configure option --with-servchkptdir which allows specifying path
+      for server's checkpoint files
   
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
