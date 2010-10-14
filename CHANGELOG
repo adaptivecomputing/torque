@@ -44,6 +44,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - change so checkpoint files are transfered as the user, not as root.
   f - Added configure option --with-servchkptdir which allows specifying path
       for server's checkpoint files
+  b - could not set the server HA parameters lock_file_update_time and 
+      lock_file_check_time previously. Fixed.
   
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
