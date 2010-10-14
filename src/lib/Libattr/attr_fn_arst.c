@@ -784,12 +784,11 @@ int set_arst(
         {
         char *tail;
         int   len;
-        int   MatchFound; /* boolean */
+        int   MatchFound = 0; /* boolean */
 
         if ((tail = strchr(pas->as_string[i],'=')))
           {
           len = tail - pas->as_string[i];
-          MatchFound = 0;
 
           for (j = 0;j < newpas->as_usedptr;j++)
             {
@@ -801,13 +800,13 @@ int set_arst(
               }
             }
 
-          if (MatchFound == 0)
-            {
-            strcpy(tmp_arst->as_next,pas->as_string[i]);
-
-            tmp_arst->as_string[tmp_arst->as_usedptr++] = tmp_arst->as_next;
-            tmp_arst->as_next += strlen(tmp_arst->as_next) + 1;
-            }
+          }
+        if (MatchFound == 0)
+          {
+          strcpy(tmp_arst->as_next,pas->as_string[i]);
+          
+          tmp_arst->as_string[tmp_arst->as_usedptr++] = tmp_arst->as_next;
+          tmp_arst->as_next += strlen(tmp_arst->as_next) + 1;
           }
         }
 
