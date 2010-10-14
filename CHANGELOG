@@ -81,6 +81,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       portability. Able to upgrade automatically from 2.1, 2.3, and 2.4
   b - make the tcp reading buffer able to grow dynamically to read larger 
       values in order to avoid "invalid protocol" messages 
+  b - could not set the server HA parameters lock_file_update_time and 
+      lock_file_check_time previously. Fixed.
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
