@@ -278,6 +278,7 @@
 #define ATTR_maxarraysize    "max_job_array_size"
 #define ATTR_maxslotlimit    "max_slot_limit"
 #define ATTR_recordjobinfo   "record_job_info"
+#define ATTR_recordjobscript   "record_job_script"
 #ifdef MUNGE_AUTH
   #define ATTR_authusers       "authorized_users"
 #endif

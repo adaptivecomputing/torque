@@ -46,6 +46,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       for server's checkpoint files
   b - could not set the server HA parameters lock_file_update_time and 
       lock_file_check_time previously. Fixed.
+  e - Added new server parameter record_job_script. This works with record_job_info.
+      These are both boolean values and default to false. record_job_info must be
+      true in order for record_job_script to be enabled. If both values are 
+      enabled the entire content of the job script will be recorded to the job log
+      file.
   
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 

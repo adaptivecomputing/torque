@@ -1425,35 +1425,39 @@ int record_jobinfo(job *pjob)
         }
       }
 
-    /* This is for Baylor. We will make it a server parameter eventually
-       Write the contents of the script to our log file*/
-    strcpy(buf, "\t<script_info>");
-    strcpy(namebuf, path_jobs);
-    strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-    strcat(namebuf, JOB_SCRIPT_SUFFIX);
-
-    fd = open(namebuf, O_RDONLY);
-    if(fd > 0)
+    if(server.sv_attr[(int)SRV_ATR_RecordJobScript].at_val.at_long)
       {
-      do
+  
+      /* This is for Baylor. We will make it a server parameter eventually
+         Write the contents of the script to our log file*/
+      strcpy(buf, "\t<job_script>");
+      strcpy(namebuf, path_jobs);
+      strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+      strcat(namebuf, JOB_SCRIPT_SUFFIX);
+  
+      fd = open(namebuf, O_RDONLY);
+      if(fd > 0)
         {
-        bytes_read = read(fd, valbuf, sizeof(valbuf));
-        if(bytes_read > 0)
+        do
           {
-          valbuf[bytes_read] = 0; /* null terminate the buffer for strcpy */
-          strcat(buf, valbuf);
-          }
-        }while(bytes_read > 0);
-        close(fd);
+          bytes_read = read(fd, valbuf, sizeof(valbuf));
+          if(bytes_read > 0)
+            {
+            valbuf[bytes_read] = 0; /* null terminate the buffer for strcpy */
+            strcat(buf, valbuf);
+            }
+          }while(bytes_read > 0);
+          close(fd);
+        }
+      else
+        {
+        strcat(buf, "unable to open script file\n");
+        }
+  
+  
+      strcat(buf, "\t</job_script>\n");
+      log_job_record(buf);
       }
-    else
-      {
-      strcat(buf, "unable to open script file\n");
-      }
-
-
-    strcat(buf, "\t</script_info>\n");
-    log_job_record(buf);
 
     strcpy(buf, "</Jobinfo>\n");
     log_job_record(buf);

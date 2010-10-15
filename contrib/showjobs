@@ -120,7 +120,8 @@ foreach my $jobFile (@jobFiles)
 {
     open JOBS, "< $jobFile"
       or die "Unable to open job file ($jobFile) for reading: $!\n";
-    foreach my $line (<JOBS>)
+    my @lines = <JOBS>;
+    while (defined(my $line = shift @lines))
     {
         chomp $line;
         if ($line =~ /<Jobinfo>/)
@@ -199,6 +200,22 @@ foreach my $jobFile (@jobFiles)
         elsif ($line =~ /<\/resource_List>/)  { $context = 'JobInfo'; }
         elsif ($line =~ /<resources_used>/)   { $context = 'resources_used'; }
         elsif ($line =~ /<\/resources_used>/) { $context = 'JobInfo'; }
+        elsif ($line =~ /<job_script>([^<]*)/)
+        {
+            my $jobScript = $1;
+            while (defined($line = shift @lines))
+            {
+                if ($line =~ /<\/job_script>/)
+                {
+                    last;
+                }
+                else
+                {
+                    $jobScript .= "\n$line";
+                }
+            }
+            $jobAttr{'Job Script'} = $jobScript;
+        }
         elsif ($line =~ /<start_time>([^<]+)</)
         {
             $jobAttr{'Start Time'} = $1;
@@ -307,6 +324,7 @@ foreach my $job (@jobs)
         'Master Host',
         'Interactive',
         'Job Dependencies',
+        'Job Script',
       )
     {
         if (defined $jobAttr{$name})
@@ -326,6 +344,7 @@ foreach my $job (@jobs)
             printf "%-18s: %s\n", $name, $value;
         }
     }
+    print '-' x 80, "\n";
     print "\n";
 }
 

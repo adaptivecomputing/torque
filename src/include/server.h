@@ -182,6 +182,7 @@ enum srv_atr
   SRV_ATR_MaxArraySize,
   SRV_ATR_MaxSlotLimit,
   SRV_ATR_RecordJobInfo,
+  SRV_ATR_RecordJobScript,
 #ifdef MUNGE_AUTH
   SRV_ATR_authusers,
 #endif

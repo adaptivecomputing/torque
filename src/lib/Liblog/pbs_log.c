@@ -1252,4 +1252,35 @@ long log_size(void)
   return(file_stat.st_size / 1024);
   }
 
+/* return size of job log file in kilobytes */
+
+long job_log_size(void)
+
+  {
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
+
+  struct stat64 file_stat;
+#else
+
+  struct stat file_stat;
+#endif
+
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
+
+  if (job_log_opened && (fstat64(fileno(joblogfile), &file_stat) != 0))
+#else
+  if (job_log_opened && (fstat(fileno(joblogfile), &file_stat) != 0))
+#endif
+    {
+    /* FAILURE */
+
+    log_err(errno, "log_size", "PBS cannot fstat logfile");
+
+    return(0);
+    }
+
+  return(file_stat.st_size / 1024);
+  }
+
+
 /* END pbs_log.c */
