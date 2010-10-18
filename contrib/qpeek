@@ -10,98 +10,133 @@
 #   -h      Show only the beginning of the output file ("head")
 #   -t      Show only the end of the output file ("tail")
 #   -f      Show only the end of the file and keep listening ("tail -f")
-#   -#      Show only # lines of output
 #   -e      Show the stderr file of the job
 #   -o      Show the stdout file of the job
-#   -?      Display help
+#
+#   -ssh               Use the ssh command to remote access the mother superior node
+#   -rsh               Use the rsh command to remote access the mother superior node
+#   -spool=<spool_loc> Specifiy the location of the spool directory, defaults to /var/spool/torque/spool
+#   -host=<host>       The name of the host to use in the filename for the jobs stdout or stderr
+#
+#   -help|? Display help message
 
-$tool="cat";
-$numlines="";
-$suffix="OU";
-$spool="/var/spool/torque/spool";
-$host="oscbw";
+use strict;
+use warnings;
 
-while ( $ARGV[0] =~ /^-.*/ )
-  {
-    if ( $ARGV[0] eq "-c" )
-      {
-        $tool="cat";
-      }
-    elsif ( $ARGV[0] eq "-f" )
-      {
-        $tool="tail -f";
-      }
-    elsif ( $ARGV[0] eq "-h" )
-      {
-        $tool="head";
-      }
-    elsif ( $ARGV[0] eq "-t" )
-      {
-        $tool="tail";
-      }
-    elsif ( $ARGV[0] =~ /^-[0-9]+$/ )
-      {
-        $numlines=$ARGV[0];
-      }
-    elsif ( $ARGV[0] eq "-e" )
-      {
-        $suffix="ER"
-      }
-    elsif ( $ARGV[0] eq "-o" )
-      {
-        $suffix="OU"
-      }
-    elsif ( $ARGV[0] eq "-?" || $ARGV[0] eq "-help" )
-      {
-        print STDERR <<EOF;
-qpeek:  Peek into a job's output spool files
+use Getopt::Long qw(:config bundling);
 
- Usage:  qpeek [options] JOBID
+MAIN:
+{
 
- Options:
-   -c      Show all of the output file ("cat", default)
-   -h      Show only the beginning of the output file ("head")
-   -t      Show only the end of the output file ("tail")
-   -f      Show only the end of the file and keep listening ("tail -f")
-   -#      Show only # lines of output
-   -e      Show the stderr file of the job
-   -o      Show the stdout file of the job (default)
-   -?      Display this help message
+  # Options Variables
+  my $tool    = "cat";
+  my $spool   = "/opt/torque/spool";
+  my $host    = "set_the_host";
+  my $rsh_cmd = "rsh";
+  my $help    = 0;
+  my $o       = 0;
+  my $e       = 0;
+
+  GetOptions(
+    'c'   => sub { $tool    = "cat" },
+    'f'   => sub { $tool    = "tail -f" },
+    'h'   => sub { $tool    = "head" },
+    't'   => sub { $tool    = "tail" },
+    'e'   => \$e,
+    'o'   => \$o,
+    'ssh' => sub { $rsh_cmd = "ssh" },
+    'rsh' => sub { $rsh_cmd = "rsh" },
+    'spooldir|spool=s' => \$spool,
+    'host=s'           => \$host,
+    'help|?'           => \$help,
+  );
+
+  # Set OU as the default spool suffix
+  $o = 1
+    unless ($o or $e);
+
+  # Print help
+  printHelp()
+    if $help;
+
+  # Get the job id
+  my $jobid = shift(@ARGV) || die "No job id given!";
+  $jobid =~ s/\.[A-z0-9.]+$//;
+
+  die "No jobid given!\n"
+    if ($jobid eq "");
+
+  # Get the mother superior node
+  my $node = &motherSuperior($jobid);
+
+  die "Job $jobid is not running!\n"
+    if ($node eq "");
+
+  # Format and run the command
+  my $cmd = "$rsh_cmd $node $tool";
+
+  $cmd .= " $spool/$jobid.$host.OU"
+    if $o;
+  $cmd .= " $spool/$jobid.$host.ER"
+    if $e;
+
+  $cmd .= "\n";
+
+  exec $cmd;
+
+  exit 0;
+
+}    # END MAIN
+
+#------------------------------------------------------------------------------
+# printHelp
+#------------------------------------------------------------------------------
+sub printHelp    #()
+{
+  print STDERR <<EOF;
+Usage:  qpeek [options] JOBID
+
+Options:
+  -c      Show all of the output file ("cat", default)
+  -h      Show only the beginning of the output file ("head")
+  -t      Show only the end of the output file ("tail")
+  -f      Show only the end of the file and keep listening ("tail -f")
+  -e      Show the stderr file of the job
+  -o      Show the stdout file of the job
+
+  -ssh               Use the ssh command rather than rsh to remote access the mother superior node
+  -spool=<spool_loc> Specifiy the location of the spool directory, defaults to /var/spool/torque/spool
+  -host=<host>       The name of the host to use in the filename for the jobs stdout or stderr
+
+  -help|? Display help message
 EOF
-        exit;
-      }
-    else
-      {
-        print STDERR "qpeek:  Unrecognized option $ARGV[0] ignored\n";
-      }
-    shift(@ARGV);
+
+  exit 0;
+
+}    # END sub printHelp #()
+
+#------------------------------------------------------------------------------
+# motherSuperior
+#------------------------------------------------------------------------------
+sub motherSuperior    #($)
+{
+  my $jobid;
+  my $node;
+  my $keyword;
+
+  $jobid = $_[0];
+  $node  = "";
+  open(QSTAT, "qstat -f $jobid |");
+  while (<QSTAT>)
+  {
+    chop;
+    if ($_ =~ /exec_host/)
+    {
+      ($keyword, $node) = split(/=/);
+      $node =~ s:/[0-9]+[A-z0-9/+]*::;
+    }
   }
 
-$jobid=shift(@ARGV);
-$jobid=~s/\.[A-z0-9.]+$//;
-die "No jobid given!\n" if ( $jobid eq "" );
-
-$node=&mothersuperior($jobid);
-die "Job $jobid is not running!\n" if ( $node eq "" );
-
-exec "rsh $node $tool $numlines $spool/$jobid.$host.$suffix\n";
-
-
-sub mothersuperior
-{
-  local($jobid,$node);
-  $jobid=$_[0];
-  $node="";
-  open(QSTAT,"qstat -f $jobid |");
-  while ( <QSTAT> )
-    {
-      chop;
-      if ( $_ =~ /exec_host/ )
-        {
-	  ($keyword,$node)=split(/=/);
-	  $node=~s:/[0-9]+[A-z0-9/+]*::;
-	}
-    }
-  $node;
-}
+  return $node;
+}    # END sub motherSuperior #($)
 

@@ -51,6 +51,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       true in order for record_job_script to be enabled. If both values are 
       enabled the entire content of the job script will be recorded to the job log
       file.
+  e - qpeek now has the options --ssh, --rsh, --spool, --host, -o, and 
+      -e. Can now output both the STDOUT and STDERR files.  Eliminated 
+      numlines, which didn't work.
   
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
