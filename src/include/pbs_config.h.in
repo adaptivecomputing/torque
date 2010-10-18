@@ -21,9 +21,6 @@
 /* Alternate suffix for MOM logs */
 #undef DEFAULT_MOMLOGSUFFIX
 
-/* Directory for server checkpoint files */
-#undef SERVER_CHKPTDIR
-
 /* Define to disable daemons */
 #undef DISABLE_DAEMONS
 
@@ -364,9 +361,6 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
-/* Define to the home page for this package. */
-#undef PACKAGE_URL
-
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
@@ -437,6 +431,9 @@
 /* full pathname of sendmail */
 #undef SENDMAIL_CMD
 
+/* Directory for Server checkpoint files */
+#undef SERVER_CHKPTDIR
+
 /* Define to set the controlling tty */
 #undef SETCONTROLLINGTTY
 
@@ -446,40 +443,40 @@
 /* job script name passed as the shell's arg */
 #undef SHELL_USE_ARGV
 
-/* The size of `double', as computed by sizeof. */
+/* The size of a `double', as computed by sizeof. */
 #undef SIZEOF_DOUBLE
 
-/* The size of `float', as computed by sizeof. */
+/* The size of a `float', as computed by sizeof. */
 #undef SIZEOF_FLOAT
 
-/* The size of `int', as computed by sizeof. */
+/* The size of a `int', as computed by sizeof. */
 #undef SIZEOF_INT
 
-/* The size of `long', as computed by sizeof. */
+/* The size of a `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
-/* The size of `long double', as computed by sizeof. */
+/* The size of a `long double', as computed by sizeof. */
 #undef SIZEOF_LONG_DOUBLE
 
-/* The size of `short', as computed by sizeof. */
+/* The size of a `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
 
-/* The size of `signed char', as computed by sizeof. */
+/* The size of a `signed char', as computed by sizeof. */
 #undef SIZEOF_SIGNED_CHAR
 
-/* The size of `unsigned', as computed by sizeof. */
+/* The size of a `unsigned', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED
 
-/* The size of `unsigned char', as computed by sizeof. */
+/* The size of a `unsigned char', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_CHAR
 
-/* The size of `unsigned int', as computed by sizeof. */
+/* The size of a `unsigned int', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_INT
 
-/* The size of `unsigned long', as computed by sizeof. */
+/* The size of a `unsigned long', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_LONG
 
-/* The size of `unsigned short', as computed by sizeof. */
+/* The size of a `unsigned short', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_SHORT
 
 /* include support for SRFS on Cray */
@@ -554,7 +551,7 @@
 /* type to use for 2nd arg of pam_get_user */
 #undef pam_get_user_2nd_arg_t
 
-/* Define to `unsigned int' if <sys/types.h> does not define. */
+/* Define to `unsigned' if <sys/types.h> does not define. */
 #undef size_t
 
 /* type to use in place of socklen_t if not defined */
