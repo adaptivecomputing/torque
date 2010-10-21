@@ -271,6 +271,7 @@ mk_server_dirs()
 	install_dir $PBS_SERVER_HOME/server_priv/acl_groups 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/disallowed_types 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/accounting 755 || return 1
+	install_dir $PBS_SERVER_HOME/job_logs 755 || return 1
 	install_dir $PBS_SERVER_HOME/server_logs 755 || return 1
 	install_dir $PBS_SERVER_HOME/sched_priv 750 || return 1
 	install_dir $PBS_SERVER_HOME/sched_priv/accounting 755 || return 1
@@ -288,6 +289,7 @@ mk_server_dirs()
 		$PBS_SERVER_HOME/server_priv/acl_users \
 		$PBS_SERVER_HOME/server_priv/acl_groups \
 		$PBS_SERVER_HOME/server_priv/accounting \
+		$PBS_SERVER_HOME/job_logs \
 		$PBS_SERVER_HOME/server_logs \
 		$PBS_SERVER_HOME/server_priv/arrays \
 		$PBS_SERVER_HOME/server_priv/credentials || return 1
@@ -376,6 +378,7 @@ do_check_tree()
 		$PBS_SERVER_HOME/server_priv/acl_users \
 		$PBS_SERVER_HOME/server_priv/acl_groups \
 		$PBS_SERVER_HOME/server_priv/accounting \
+		$PBS_SERVER_HOME/job_logs || return 1
 		$PBS_SERVER_HOME/server_logs || return 1
 	chk_tree_wrap -d $PBS_SERVER_HOME/checkpoint \
 		$PBS_SERVER_HOME/mom_priv/jobs \

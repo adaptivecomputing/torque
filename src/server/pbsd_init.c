@@ -167,6 +167,7 @@ extern char *path_nodestate;
 extern char *path_nodenote;
 extern char *path_nodenote_new;
 extern char *path_checkpoint;
+extern char *path_jobinfo_log;
 
 
 extern int  queue_rank;
@@ -665,6 +666,8 @@ int pbsd_init(
 
   path_svrlog = build_path(path_home, PBS_LOGFILES, suffix_slash);
 
+  path_jobinfo_log = build_path(path_home, PBS_JOBINFOLOGDIR, suffix_slash);
+
   path_track  = build_path(path_priv, PBS_TRACKING, NULL);
 
   path_nodes  = build_path(path_priv, NODE_DESCRIP, NULL);
@@ -832,12 +835,18 @@ int pbsd_init(
     0,
     PACKAGE_VERSION);
 
-  /* 6. open accounting file */
+  /* 6. open accounting file and job log file if logging is set */
 
   if (acct_open(acct_file) != 0)
     {
     return(-1);
     }
+
+  if(server.sv_attr[(int)SRV_ATR_RecordJobInfo].at_val.at_long)
+    {
+    job_log_open(log_file, path_jobinfo_log);
+    }
+
 
   /* 7. Set up other server and global variables */
 

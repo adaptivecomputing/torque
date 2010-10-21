@@ -143,6 +143,8 @@
 #define FALSE 0
 #endif
 
+#define MAXLINE 1024
+
 int conn_qsub(char *, long, char *);
 void job_purge(job *);
 
@@ -150,12 +152,18 @@ void job_purge(job *);
 
 extern void cleanup_restart_file(job *);
 extern struct batch_request *setup_cpyfiles(struct batch_request *,job *,char*,char *,int,int);
+extern int job_log_open(char *, char *);
+extern void log_job_record(char *buf);
+extern void check_job_log(struct work_task *ptask);
+int attr_to_str(char *out, int size, attribute_def *at_def, struct attribute  attr, int  XML);
 
 /* Local Private Functions */
 
 static void job_init_wattr(job *);
 
 /* Global Data items */
+
+int check_job_log_started = 0;
 
 extern struct server   server;
 extern int queue_rank;
@@ -173,6 +181,8 @@ extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
 extern tlist_head svr_jobs_array_sum;
 extern char *path_checkpoint;
+extern char *path_jobinfo_log;
+extern char *log_file;
 
 
 void send_qsub_delmsg(
@@ -1468,6 +1478,61 @@ void cleanup_restart_file(
   }  /* END cleanup_restart_file() */
 
 
+int record_jobinfo(job *pjob)
+  {
+    attribute    *pattr;
+    int i;
+    int rc;
+    char buf[MAXLINE << 3];
+    char valbuf[MAXLINE << 2];
+
+
+    job_log_open(log_file, path_jobinfo_log);
+
+    strcpy(buf, "<Jobinfo>\n");
+    sprintf(valbuf, "\t<Job_Id>%s</Job_Id>", pjob->ji_qs.ji_jobid);
+    strcat(buf, valbuf);
+    log_job_record(buf);
+  
+    for(i = 0; i < JOB_ATR_LAST; i++)
+      {
+      pattr = &(pjob->ji_wattr[i]);
+      if(pattr->at_flags & ATR_VFLAG_SET)
+        {
+        if(!strcmp(job_attr_def[i].at_name, "depend"))
+          {
+          /* we don't want this attribute in our log
+             The dependecies will show on the submit_args
+             element */
+          continue;
+          }
+
+        strcpy(buf, "\t<");
+        strcat(buf, job_attr_def[i].at_name);
+        strcat(buf, ">");
+        if(pattr->at_type == ATR_TYPE_RESC)
+          {
+          strcat(buf, "\n");
+          }
+        rc = attr_to_str(valbuf, sizeof(valbuf), job_attr_def+i, pjob->ji_wattr[i], 1);
+        strcat(buf, valbuf);
+        if(pattr->at_type == ATR_TYPE_RESC)
+          {
+          strcat(buf, "\t");
+          }
+        strcat(buf, "</");
+        strcat(buf, job_attr_def[i].at_name);
+        strcat(buf, ">");
+        log_job_record(buf);
+        }
+      }
+    strcpy(buf, "</Jobinfo>\n");
+    log_job_record(buf);
+
+    
+    
+    return(0);  
+  }
 
 
 
@@ -1489,6 +1554,19 @@ void job_purge(
 
   char          namebuf[MAXPATHLEN + 1];
   extern char  *msg_err_purgejob;
+
+  /* check to see if we are keeping a log of all jobs completed */
+  if(server.sv_attr[(int)SRV_ATR_RecordJobInfo].at_val.at_long)
+    {
+    record_jobinfo(pjob);
+
+    /* Start a task to monitor job log roll over if it is not already started */
+    if(check_job_log_started == 0)
+      {
+      set_task(WORK_Timed,time_now + 10,check_job_log,NULL);
+      check_job_log_started = 1;
+      }
+    }
 
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN) &&
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM))
