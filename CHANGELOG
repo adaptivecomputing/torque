@@ -166,6 +166,44 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   f - added server parameter max_slot_limit to restrict slot limits
   e - changed array names from jobid-index to jobid[index] for consistency
 
+2.4.11 
+  b - changed type cast for calloc of ioenv from sizeof(char) to sizof(char *)
+      in pbsdsh.c. This fixes bug 79.
+  e - allow input of walltime in the format of [DD]:HH:MM:SS (backported from
+      2.5.2)
+  b - only clear the mom state when actually running the health check script
+      (backported from 2.5.3)
+  b - don't try to set the user id multiple times - (backported from 2.5.3)
+  c - fix segfault in tracejob. It wasn't malloc'ing space for the null 
+      terminator (back-ported from 2.5.3)
+  e - add the variables PBS_NUM_NODES and PBS_NUM_PPN to the job environment
+      (backported from 2.5.3, TRQ-6)
+  e - be able to append to the job's variable_list through the API 
+      (backported from 2.5.3, TRQ-5)
+  b - Added patch to fix bug 76, "blocking read does not time out using 
+      signal handler.
+  b - Bugzilla bug 84. Security bug on the way checkpoint is being handled.
+     (Robin R. - Miami Univ. of Ohio, back-ported from 2.5.3)
+  b - make the tcp reading buffer able to grow dynamically to read larger 
+      values in order to avoid "invalid protocol" messages (backported from
+      2.5.3)
+  b - could not set the server HA parameters lock_file_update_time and 
+      lock_file_check_time previously. Fixed. (backported from 2.5.3)
+  e - qpeek now has the options --ssh, --rsh, --spool, --host, -o, and 
+      -e. Can now output both the STDOUT and STDERR files.  Eliminated 
+      numlines, which didn't work. (backported from 2.5.3)
+  b - Modified the pbs_server startup routine to skip unknown hosts in the 
+      nodes file instead of terminating the server startup.
+
+2.4.10
+  b - fix to get new pagg ID and add additional CSA records when restarting from
+      checkpoint (backported from 2.5.2)
+  e - added documentation for pbs_alterjob_async(), pbs_checkpointjob(),
+      pbs_fbserver(), pbs_get_server_list() and pbs_sigjobasync(). (backported 
+      from 2.5.2)
+  b - fix for bug 61. The fix takes care of a problem where pbs_mom under
+      some situations will change the mode and permissions of /dev/null.
+
 2.4.9
   b - Bugzilla bug 57. Check return value of malloc for tracejob for Linux
       (Chris Samuel - Univ. of Melbourne)
