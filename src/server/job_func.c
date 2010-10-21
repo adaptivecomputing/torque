@@ -1485,6 +1485,9 @@ int record_jobinfo(job *pjob)
     int rc;
     char buf[MAXLINE << 3];
     char valbuf[MAXLINE << 2];
+    char namebuf[MAXPATHLEN + 1];
+    int fd;
+    size_t bytes_read = 0;
 
 
     job_log_open(log_file, path_jobinfo_log);
@@ -1526,6 +1529,41 @@ int record_jobinfo(job *pjob)
         log_job_record(buf);
         }
       }
+
+    if(server.sv_attr[(int)SRV_ATR_RecordJobScript].at_val.at_long)
+      {
+  
+      /* This is for Baylor. We will make it a server parameter eventually
+         Write the contents of the script to our log file*/
+      strcpy(buf, "\t<job_script>");
+      strcpy(namebuf, path_jobs);
+      strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+      strcat(namebuf, JOB_SCRIPT_SUFFIX);
+  
+      fd = open(namebuf, O_RDONLY);
+      if(fd > 0)
+        {
+        do
+          {
+          bytes_read = read(fd, valbuf, sizeof(valbuf));
+          if(bytes_read > 0)
+            {
+            valbuf[bytes_read] = 0; /* null terminate the buffer for strcpy */
+            strcat(buf, valbuf);
+            }
+          }while(bytes_read > 0);
+          close(fd);
+        }
+      else
+        {
+        strcat(buf, "unable to open script file\n");
+        }
+  
+  
+      strcat(buf, "\t</job_script>\n");
+      log_job_record(buf);
+      }
+
     strcpy(buf, "</Jobinfo>\n");
     log_job_record(buf);
 
@@ -1563,7 +1601,7 @@ void job_purge(
     /* Start a task to monitor job log roll over if it is not already started */
     if(check_job_log_started == 0)
       {
-      set_task(WORK_Timed,time_now + 10,check_job_log,NULL);
+      set_task(WORK_Timed, time_now + 10, check_job_log, NULL);
       check_job_log_started = 1;
       }
     }

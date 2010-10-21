@@ -51,7 +51,8 @@ EXTRA_DIST = autogen.sh \
 	contrib/README.pbstop \
 	contrib/README.pbs_weblite \
 	contrib/README.pestat \
-	contrib/README.qpeek
+	contrib/README.qpeek \
+	contrib/showjobs
 
 bin_SCRIPTS = pbs-config
 

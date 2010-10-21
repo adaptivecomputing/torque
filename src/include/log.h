@@ -158,6 +158,7 @@ extern int  job_log_open (char *, char *);
 extern void log_record (int, int, char *, char *);
 extern void log_roll (int);
 extern long log_size (void);
+extern long job_log_size (void);
 extern int  log_remove_old (char *,unsigned long);
 extern char log_buffer[LOG_BUF_SIZE];
 int log_init (char *, char *);

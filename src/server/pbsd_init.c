@@ -1957,6 +1957,11 @@ static void change_logs(
 
   acct_open(acct_file);
 
+  if(server.sv_attr[(int)SRV_ATR_RecordJobInfo].at_val.at_long)
+    {
+    job_log_open(NULL, path_jobinfo_log);
+    }
+
   rpp_dbprt = 1 - rpp_dbprt; /* toggle debug prints for RPP */
 
   return;

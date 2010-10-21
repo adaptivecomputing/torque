@@ -113,6 +113,7 @@
 #include <syslog.h>
 #endif
 
+void job_log_close(int msg);
 
 /* Global Data */
 char log_buffer[LOG_BUF_SIZE];
@@ -135,6 +136,7 @@ static int      syslogopen = 0;
 #endif /* SYSLOG */
 
 /* variables for job logging */
+static int      job_log_auto_switch = 0;
 static int      joblog_open_day;
 static FILE     *joblogfile;  /* open stream for log file */
 static char     *joblogpath = NULL;
@@ -407,7 +409,7 @@ int job_log_open(
     {
     filename = mk_job_log_name(buf);
 
-    log_auto_switch = 1;
+    job_log_auto_switch = 1;
     }
   else if (*filename != '/')
     {
@@ -648,6 +650,27 @@ const char *log_get_severity_string(
 
 void log_job_record(char *buf)
   {
+  struct tm *ptm;
+  struct tm tmpPtm;
+  time_t now;
+
+  now = time((time_t *)0);
+  ptm = localtime_r(&now,&tmpPtm);
+
+  /* do we need to switch the log to the new day? */
+  if (job_log_auto_switch && (ptm->tm_yday != joblog_open_day))
+    {
+    job_log_close(1);
+
+    job_log_open(NULL, log_directory);
+
+    if (log_opened < 1)
+      {
+      return;
+      }
+    }
+
+
   fprintf(joblogfile, "%s\n", buf);
   }
 
@@ -818,6 +841,44 @@ void log_close(
 
   return;
   }  /* END log_close() */
+
+/*
+ * job_log_close - close the current open job log file
+ */
+
+void job_log_close(
+
+  int msg)  /* BOOLEAN - write close message */
+
+  {
+  if (job_log_opened == 1)
+    {
+    log_auto_switch = 0;
+
+    if (msg)
+      {
+      log_record(
+        PBSEVENT_SYSTEM,
+        PBS_EVENTCLASS_SERVER,
+        "Log",
+        "Log closed");
+      }
+
+    fclose(joblogfile);
+
+    job_log_opened = 0;
+    }
+
+#if SYSLOG
+
+  if (syslogopen)
+    closelog();
+
+#endif /* SYSLOG */
+
+  return;
+  }  /* END job_log_close() */
+
 
 
 
@@ -1041,6 +1102,122 @@ done_roll:
   return;
   } /* END log_roll() */
 
+void job_log_roll(
+
+  int max_depth)
+
+  {
+  int i, suffix_size, file_buf_len, as;
+  int err = 0;
+  char *source  = NULL;
+  char *dest    = NULL;
+
+  if (!job_log_opened)
+    {
+    return;
+    }
+
+  /* save value of log_auto_switch */
+
+  as = job_log_auto_switch;
+
+  log_close(1);
+
+  /* find out how many characters the suffix could be. (save in suffix_size)
+     start at 1 to account for the "."  */
+
+  for (i = max_depth, suffix_size = 1;i > 0;suffix_size++, i /= 10);
+
+  /* allocate memory for rolling */
+
+  file_buf_len = sizeof(char) * (strlen(logpath) + suffix_size + 1);
+
+  source = (char*)malloc(file_buf_len);
+
+  dest   = (char*)malloc(file_buf_len);
+
+  if ((source == NULL) || (dest == NULL))
+    {
+    err = errno;
+
+    goto done_roll;
+    }
+
+  /* call unlink to delete logname.max_depth - it doesn't matter if it
+     doesn't exist, so we'll ignore ENOENT */
+
+  sprintf(dest, "%s.%d",
+    joblogpath,
+    max_depth);
+
+  if ((unlink(dest) != 0) && (errno != ENOENT))
+    {
+    err = errno;
+    goto done_roll;
+    }
+
+  /* logname.max_depth is gone, so roll the rest of the log files */
+
+  for (i = max_depth - 1;i >= 0;i--)
+    {
+    if (i == 0)
+      {
+      strcpy(source, logpath);
+      }
+    else
+      {
+      sprintf(source, "%s.%d",
+        logpath,
+        i);
+      }
+
+    sprintf(dest, "%s.%d",
+      logpath,
+      i + 1);
+
+    /* rename file if it exists */
+
+    if ((rename(source, dest) != 0) && (errno != ENOENT))
+      {
+      err = errno;
+      goto done_roll;
+      }
+    }    /* END for (i) */
+
+done_roll:
+
+  if (as)
+    {
+    log_open(NULL, job_log_directory);
+    }
+  else
+    {
+    log_open(logpath, job_log_directory);
+    }
+
+  if (source != NULL)
+    free(source);
+
+  if (dest != NULL)
+    free(dest);
+
+  if (err != 0)
+    {
+    log_err(err, "log_roll", "error while rollng logs");
+    }
+  else
+    {
+    log_record(
+      PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      "Log",
+      "Log Rolled");
+    }
+
+  return;
+  } /* END job_log_roll() */
+
+
 
 
 
@@ -1074,5 +1251,36 @@ long log_size(void)
 
   return(file_stat.st_size / 1024);
   }
+
+/* return size of job log file in kilobytes */
+
+long job_log_size(void)
+
+  {
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
+
+  struct stat64 file_stat;
+#else
+
+  struct stat file_stat;
+#endif
+
+#if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
+
+  if (job_log_opened && (fstat64(fileno(joblogfile), &file_stat) != 0))
+#else
+  if (job_log_opened && (fstat(fileno(joblogfile), &file_stat) != 0))
+#endif
+    {
+    /* FAILURE */
+
+    log_err(errno, "log_size", "PBS cannot fstat logfile");
+
+    return(0);
+    }
+
+  return(file_stat.st_size / 1024);
+  }
+
 
 /* END pbs_log.c */

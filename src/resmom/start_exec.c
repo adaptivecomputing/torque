@@ -450,7 +450,8 @@ struct passwd *check_pwd(
   	if (grpp != NULL)
   		{
   		pjob->ji_qs.ji_un.ji_momt.ji_exgid = grpp->gr_gid;
-  		} else
+  		} 
+		else
   		{
   		int tmpGID;
 
@@ -462,7 +463,8 @@ struct passwd *check_pwd(
   		if (tmpGID != 0)
   			{
   			pjob->ji_qs.ji_un.ji_momt.ji_exgid = tmpGID;
-  			} else
+  			} 
+			else
   			{
   			/* FAILURE */
 
@@ -475,7 +477,8 @@ struct passwd *check_pwd(
   			return(NULL);
   			}
   		}	 /* END if (grpp != NULL) */
-  	} else
+  	} 
+	else
   	{
   	/* if no group specified, default to login group */
 
@@ -838,12 +841,12 @@ static int open_std_out_err(
   				   "open_std_out_err",
   				   log_buffer);
   	  }
-	else
-  	  {
+	  else
+      {
   	  log_err(
-  				   errno,
-  				   "open_std_out_err",
-  				   "unable to open standard output/error");
+  	  			   errno,
+  	  			   "open_std_out_err",
+  	  			   "unable to open standard output/error");
   	  }
   
     return(-1);
@@ -2102,17 +2105,12 @@ int TMomFinalizeChild(
 
   {
 	static char           *id = "TMomFinalizeChild";
-
 	int                    aindex;
-
 	char                  *arg[32];
-
 	char                   buf[MAXPATHLEN + 2];
 	pid_t                  cpid;
 	int                    i, j, vnodenum;
-
 	char                   qsubhostname[1024];
-
 	char                  *phost = NULL;
 	int                    pport = 0;
 	int                    pts;
@@ -2134,12 +2132,9 @@ int TMomFinalizeChild(
 
 #endif /* USEJOBCREATE */
 
-
 	job                   *pjob;
 	task                  *ptask;
-
 	struct passwd         *pwdp;
-
 	char                   EMsg[1024];
 
 
@@ -2462,7 +2457,8 @@ int TMomFinalizeChild(
 			snprintf(qsubhostname, sizeof(qsubhostname), "%s%s",
 							 phost,
 							 submithost_suffix);
-			} else
+			} 
+		else
 			{
 			strncpy(qsubhostname, phost, sizeof(qsubhostname));
 			}
@@ -2714,7 +2710,8 @@ int TMomFinalizeChild(
 				close(qsub_sock);
 
 				/* continue setting up and exec-ing shell */
-				} else
+				} 
+			else
 				{
 				if (shellpid > 0)
 					{
@@ -2737,7 +2734,8 @@ int TMomFinalizeChild(
 
 					mom_reader_go = 1;
 					mom_reader(qsub_sock, TJE->ptc);
-					} else
+					} 
+				else
 					{
 					log_err(errno, id, "can't fork reader");
 					}
@@ -4372,7 +4370,8 @@ int start_process(
 		log_err(errno, id, "could not open dev/null");
 
 		close(0);
-		} else
+		} 
+	else
 		{
 		dup2(fd0, 0);
 
@@ -4548,7 +4547,8 @@ int start_process(
 
 		if (fd2 != pts)
 			close(fd2);
-		} else
+		} 
+	else
 		{
 		/* This code block may be dead (may never be run). This is due to the fact that
 		 * start_process() is only called by a sister who has received a IM_SPAWN_TASK,
@@ -4763,7 +4763,8 @@ int start_process(
 
 			starter_return(kid_write, kid_read, JOB_EXEC_FAIL2, &sjr);
 			}
-		} else
+		} 
+	else
 		{
 		/* in start_process() executed as user */
 
@@ -6269,7 +6270,6 @@ static int find_env_slot(
  */
 
 void bld_env_variables(
-
   struct var_table *vtable,	 /* I (modified) */
   char             *name,		 /* I (required) */
   char             *value)	 /* I (optional) */
@@ -6295,7 +6295,7 @@ void bld_env_variables(
 			}
 		}
 
-	if (LOGLEVEL >= 10)
+	if (LOGLEVEL >= 6)
 		{
 		char tmpLine[1024];
 
@@ -6340,7 +6340,8 @@ void bld_env_variables(
 	if ((i = find_env_slot(vtable, vtable->v_block)) < 0)
 		{
 		*(vtable->v_envp + vtable->v_used++) = vtable->v_block;
-		} else
+		} 
+	else
 		{
 		*(vtable->v_envp + i) = vtable->v_block;
 		}
@@ -6458,7 +6459,8 @@ int init_groups(
 		log_err(errno, id, "initgroups");
 
 		n = -1;
-		} else
+		} 
+	else
 		{
 		n = getgroups(groupsize, (gid_t *)groups);
 		}
@@ -6561,7 +6563,8 @@ static void catchinter(
 		kill(shellpid, SIGKILL);
 
 		wait(&status);
-		} else
+		} 
+	else
 		{
 		kill(writerpid, SIGKILL);
 
@@ -6812,7 +6815,8 @@ int check_csa_status(
 		{
 		/* since the call to csa_check was successful, we know csa is installed */
 		csa_stat = 1;
-		} else
+		} 
+	else
 		{
 		csa_stat = (ck_req.ck_stat.am_status != ACS_ON) ? 0 : 1;
 		}

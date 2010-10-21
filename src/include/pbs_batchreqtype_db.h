@@ -64,8 +64,7 @@ PbsBatchReqType(PBS_BATCH_GAP046,               "NONE")
 PbsBatchReqType(PBS_BATCH_GAP047,               "NONE")
 PbsBatchReqType(PBS_BATCH_StageIn,              "StageIn")
 PbsBatchReqType(PBS_BATCH_AuthenUser,           "AuthenticateUser")
-PbsBatchReqType(PBS_BATCH_AltAuthenUser,        "AlternateUserAuthentication") /* = 50 */
-PbsBatchReqType(PBS_BATCH_OrderJob,             "OrderJob")           
+PbsBatchReqType(PBS_BATCH_OrderJob,             "OrderJob")          /* = 50 */
 PbsBatchReqType(PBS_BATCH_SelStat,              "SelStat")
 PbsBatchReqType(PBS_BATCH_RegistDep,            "RegisterDependency")
 PbsBatchReqType(PBS_BATCH_ReturnFiles,          "ReturnFiles")
@@ -75,5 +74,6 @@ PbsBatchReqType(PBS_BATCH_JobObit,              "JobObituary")
 PbsBatchReqType(PBS_BATCH_MvJobFile,            "MoveJobFile")
 PbsBatchReqType(PBS_BATCH_StatusNode,           "StatusNode")
 PbsBatchReqType(PBS_BATCH_Disconnect,           "Disconnect")
-PbsBatchReqType(PBS_BATCH_AsySignalJob,         "AsyncSignalJob")     /* = 61 */
+PbsBatchReqType(PBS_BATCH_AsySignalJob,         "AsyncSignalJob")     /* = 60 */
+PbsBatchReqType(PBS_BATCH_AltAuthenUser,        "AlternateUserAuthentication") 
 #endif
