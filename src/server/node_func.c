@@ -2287,7 +2287,8 @@ int setup_nodes(void)
         id,
         log_buffer);
 
-      goto errtoken2;
+      free_attrlist(&atrlist);
+      continue;
       }
 
     if (LOGLEVEL >= 3)
