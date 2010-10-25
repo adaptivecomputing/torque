@@ -204,6 +204,7 @@ void          restore_attr_default (struct attribute *);
 int          high_availability_mode = FALSE;
 char        *acct_file = NULL;
 char        *log_file  = NULL;
+char        *job_log_file = NULL;
 char        *path_home = PBS_SERVER_HOME;
 char        *path_acct;
 char         path_log[MAXPATHLEN + 1];
@@ -1767,6 +1768,8 @@ int main(
   acct_close();
 
   log_close(1);
+
+  job_log_close(1);
 
   exit(0);
   }  /* END main() */
