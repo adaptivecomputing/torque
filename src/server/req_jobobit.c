@@ -232,18 +232,9 @@ struct batch_request *setup_cpyfiles(
       pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
       pcf->rq_owner);
 
-    if (tflag == JOBCKPFILE)
-      {
-      get_jobowner(
-        PBS_DEFAULT_ADMIN,
-        pcf->rq_user);
-      }
-    else
-      {
-      get_jobowner(
-        pjob->ji_wattr[JOB_ATR_euser].at_val.at_str,
-        pcf->rq_user);
-      }
+    get_jobowner(
+      pjob->ji_wattr[JOB_ATR_euser].at_val.at_str,
+      pcf->rq_user);
 
     if (((pjob->ji_wattr[JOB_ATR_egroup].at_flags & ATR_VFLAG_DEFLT) == 0) &&
         (pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str != 0))

@@ -1182,6 +1182,9 @@ struct batch_request *cpy_checkpoint(
     {
     strcpy(momfile, pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
     strcat(momfile, "/");
+    strcat(momfile, pjob->ji_qs.ji_fileprefix);
+    strcat(momfile, JOB_CHECKPOINT_SUFFIX);
+    strcat(momfile, "/");
     strcat(momfile, pattr->at_val.at_str);
     }
   else
@@ -1230,7 +1233,7 @@ struct batch_request *cpy_checkpoint(
         log_buffer);
       }
    }
- 
+
   to = (char *)malloc(strlen(serverfile) + strlen(server_name) + 2);
 
   if (to == NULL)
@@ -1251,7 +1254,7 @@ struct batch_request *cpy_checkpoint(
   strcpy(to, server_name);
   strcat(to, ":");
   strcat(to, serverfile);
-  
+
   from = (char *)malloc(strlen(momfile) + 1);
 
   if (from == NULL)
@@ -1268,7 +1271,7 @@ struct batch_request *cpy_checkpoint(
 
     return(preq);
     }
-    
+
   strcpy(from, momfile);
 
   if (LOGLEVEL >= 7)
@@ -1280,7 +1283,7 @@ struct batch_request *cpy_checkpoint(
       pjob->ji_qs.ji_jobid,
       log_buffer);
     }
-  
+
   preq = setup_cpyfiles(preq, pjob, from, to, direction, JOBCKPFILE);
 
   return(preq);
@@ -1348,84 +1351,6 @@ void remove_checkpoint(
 
 
 /*
- * post_restartfilecleanup - process reply from MOM to checkpoint copy request
- */
-
-static void post_restartfilecleanup(
-
-  struct work_task *pwt)
-
-  {
-  int        code;
-  job       *pjob;
-
-  struct batch_request *preq;
-
-  preq = pwt->wt_parm1;
-  code = preq->rq_reply.brp_code;
-  pjob = find_job(preq->rq_ind.rq_cpyfile.rq_jobid);
-
-  free(preq->rq_extra);
-
-  if (pjob != NULL)
-    {
-    if (code != 0)
-      {
-      /* restart file cleanup failed - just log it */
-
-      if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
-        {
-        sprintf(log_buffer, "Failed to cleanup checkpoint restart file on mom - %s",
-                preq->rq_reply.brp_un.brp_txt.brp_str);
-
-        log_event(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
-        
-        svr_mailowner(
-          pjob,
-          MAIL_CHKPTCOPY,
-          MAIL_FORCE,
-          preq->rq_reply.brp_un.brp_txt.brp_str);
-        }
-      }
-    else
-      {
-      /* checkpoint restart file cleanup was successful */
-
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_COPIED;
-      
-      /* clear restart_name attribute that we just cleaned up */
-      
-      pjob->ji_wattr[JOB_ATR_restart_name].at_flags &= ~ATR_VFLAG_SET;
-      pjob->ji_modified = 1;
-      
-     job_save(pjob, SAVEJOB_FULL, 0);
-
-      if (LOGLEVEL >= 7)
-        {
-          sprintf(log_buffer, "Successfully cleaned up checkpoint restart file on mom");
-
-          log_event(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buffer);
-        }
-      }
-    }    /* END if (pjob != NULL) */
-
-  release_req(pwt); /* close connection and release request */
-
-  return;
-  }  /* END post_restartfilecleanup() */
-
-
-
-
-/*
  * cleanup_restart_file() - request that mom cleanup checkpoint restart file for
  * a job. used when the job has completed or put on hold or deleted
  */
@@ -1435,44 +1360,16 @@ void cleanup_restart_file(
   job *pjob)  /* I */
 
   {
-  static char *id = "cleanup_restart_file";
-  struct batch_request *preq = 0;
+    /* checkpoint restart file cleanup was successful */
 
-  preq = cpy_checkpoint(preq, pjob, JOB_ATR_restart_name, CKPT_DIR_OUT);
+/*    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_COPIED; */
 
-  if (preq != NULL)
-    {
-    /* have files to delete  */
-    sprintf(log_buffer,"Cleaning up restart file (%s/%s)",
-      pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET? pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str : "NONE",
-      pjob->ji_wattr[JOB_ATR_restart_name].at_val.at_str);
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    /* clear restart_name attribute since purging job will clean it up */
 
-    /* change the request type from copy to delete  */
+    pjob->ji_wattr[(int)JOB_ATR_restart_name].at_flags &= ~ATR_VFLAG_SET;
+    pjob->ji_modified = 1;
 
-    preq->rq_type = PBS_BATCH_DelFiles;
-
-    preq->rq_extra = NULL;
-
-    if (relay_to_mom(
-          pjob,
-          preq,
-          post_restartfilecleanup) == 0)
-      {
-      }
-    else
-      {
-      /* log that we were unable to cleanup the files */
-
-      log_event(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_FILE,
-        pjob->ji_qs.ji_jobid,
-        "unable to cleanup checkpoint restart file for job");
-
-      free_br(preq);
-      }
-    }
+    job_save(pjob, SAVEJOB_FULL, 0);
 
   return;
   }  /* END cleanup_restart_file() */
@@ -1769,7 +1666,7 @@ void job_purge(
 
 /*
  * get_correct_jobname() - makes sure the job searches for the correct name
- * necessary because of SRV_ATR_display_job_server_suffix and 
+ * necessary because of SRV_ATR_display_job_server_suffix and
  * SRV_ATR_job_suffix_alias
  *
  * allocs the correct job name

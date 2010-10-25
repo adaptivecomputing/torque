@@ -304,6 +304,19 @@ void chkpt_xfr_hold(
 
   preq = (struct batch_request *)ptask->wt_parm1;
   pjob = (job *)preq->rq_extra;
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,
+      "BLCR copy completed (state is %s-%s)",
+      PJobState[pjob->ji_qs.ji_state],
+      PJobSubState[pjob->ji_qs.ji_substate]);
+    LOG_EVENT(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buffer);
+    }
   
   release_req(ptask);
 

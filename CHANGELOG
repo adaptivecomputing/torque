@@ -79,8 +79,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Now saving serverdb as an xml file instead of a byte-dump, thus 
       allowing canned installations without qmgr scripts, as well as more
       portability. Able to upgrade automatically from 2.1, 2.3, and 2.4
+  b - fix to cleanup job files on mom after a BLCR job is checkpointed and held
   b - make the tcp reading buffer able to grow dynamically to read larger 
       values in order to avoid "invalid protocol" messages 
+  e - change so checkpoint files are transfered as the user, not as root.
+  f - Added configure option --with-servchkptdir which allows specifying path
+      for server's checkpoint files
   b - could not set the server HA parameters lock_file_update_time and 
       lock_file_check_time previously. Fixed.
   e - qpeek now has the options --ssh, --rsh, --spool, --host, -o, and 
