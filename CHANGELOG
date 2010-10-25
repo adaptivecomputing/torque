@@ -90,6 +90,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - qpeek now has the options --ssh, --rsh, --spool, --host, -o, and 
       -e. Can now output both the STDOUT and STDERR files.  Eliminated 
       numlines, which didn't work.
+  b - fix to prevent a possible segfault when using checkpointing.
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
