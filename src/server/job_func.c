@@ -183,6 +183,7 @@ extern tlist_head svr_jobs_array_sum;
 extern char *path_checkpoint;
 extern char *path_jobinfo_log;
 extern char *log_file;
+extern char *job_log_file;
 
 
 void send_qsub_delmsg(
@@ -1387,7 +1388,7 @@ int record_jobinfo(job *pjob)
     size_t bytes_read = 0;
 
 
-    job_log_open(log_file, path_jobinfo_log);
+    job_log_open(job_log_file, path_jobinfo_log);
 
     strcpy(buf, "<Jobinfo>\n");
     sprintf(valbuf, "\t<Job_Id>%s</Job_Id>", pjob->ji_qs.ji_jobid);

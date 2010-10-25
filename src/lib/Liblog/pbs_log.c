@@ -648,6 +648,8 @@ const char *log_get_severity_string(
   return(result);
   }  /* END log_get_severity_string() */
 
+
+/* record job information of completed job to job log */
 void log_job_record(char *buf)
   {
   struct tm *ptm;
@@ -662,9 +664,9 @@ void log_job_record(char *buf)
     {
     job_log_close(1);
 
-    job_log_open(NULL, log_directory);
+    job_log_open(NULL, job_log_directory);
 
-    if (log_opened < 1)
+    if (job_log_opened < 1)
       {
       return;
       }
@@ -853,7 +855,7 @@ void job_log_close(
   {
   if (job_log_opened == 1)
     {
-    log_auto_switch = 0;
+    job_log_auto_switch = 0;
 
     if (msg)
       {

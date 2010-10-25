@@ -148,6 +148,7 @@ extern char *msg_script_open;
 
 extern char *acct_file;
 extern char *log_file;
+extern char *job_log_file;
 extern char *path_home;
 extern char *path_acct;
 extern char  path_log[];
@@ -893,7 +894,7 @@ int pbsd_init(
 
   if(server.sv_attr[(int)SRV_ATR_RecordJobInfo].at_val.at_long)
     {
-    job_log_open(log_file, path_jobinfo_log);
+    job_log_open(job_log_file, path_jobinfo_log);
     }
 
 
@@ -2008,7 +2009,7 @@ static void change_logs(
 
   if(server.sv_attr[(int)SRV_ATR_RecordJobInfo].at_val.at_long)
     {
-    job_log_open(NULL, path_jobinfo_log);
+    job_log_open(job_log_file, path_jobinfo_log);
     }
 
   rpp_dbprt = 1 - rpp_dbprt; /* toggle debug prints for RPP */
