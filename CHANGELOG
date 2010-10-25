@@ -56,6 +56,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       numlines, which didn't work.
   e - Added the server parameters job_log_file_max_size, job_log_file_roll_depth and
       job_log_keep_days to help manage job log files.
+  b - fix to prevent a possible segfault when using checkpointing.
   
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
