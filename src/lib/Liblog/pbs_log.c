@@ -1123,7 +1123,7 @@ void job_log_roll(
 
   as = job_log_auto_switch;
 
-  log_close(1);
+  job_log_close(1);
 
   /* find out how many characters the suffix could be. (save in suffix_size)
      start at 1 to account for the "."  */
@@ -1190,11 +1190,11 @@ done_roll:
 
   if (as)
     {
-    log_open(NULL, job_log_directory);
+    job_log_open(NULL, job_log_directory);
     }
   else
     {
-    log_open(logpath, job_log_directory);
+    job_log_open(joblogpath, job_log_directory);
     }
 
   if (source != NULL)
@@ -1212,8 +1212,8 @@ done_roll:
     log_record(
       PBSEVENT_SYSTEM,
       PBS_EVENTCLASS_SERVER,
-      "Log",
-      "Log Rolled");
+      "Job Log",
+      "Job Log Rolled");
     }
 
   return;
