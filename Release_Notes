@@ -34,6 +34,24 @@ OVERVIEW
 ---------------------------------------------------------------------------
 WHAT'S NEW
 
+    Completed job information can now be logged. A new Boolean server parameter 
+    record_job_info can be set to TRUE and a log file will be created
+    under $TORQUE_HOME/job_logs. The log file is in XML format and 
+    contains the same information that would be produced by qstat -f.
+
+    The serverdb file which contains the queue and server configuration
+    data can optionally be converted to XML format. If you configure 
+    TORQUE with the --enable-server-xml option the serverdb file will
+    be stored in XML format. If you are upgrading from a version of 
+    TORQUE earlier than 2.5.3 the old serverdb file will be converted 
+    to the new XML format.
+
+    Munge has been added as an option for user authorization on the server.
+    The default user authorization for TORQUE uses privileged ports and 
+    ruserok to authorize client applications. Munge creates an alternative 
+    which is more scalable and can bypass the rsh type ruserok function
+    call.
+
     Job arrays are now suported in the commands qalter, qdel, qhold, qrls 
     in addition to the qsub command.
 
