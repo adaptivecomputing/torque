@@ -1,0 +1,483 @@
+#! /usr/bin/perl -w
+################################################################################
+#
+# showjobs - list historical job information
+#
+#   Copyright (C) 2010 by Adaptive Computing Enterprises, Inc. All Rights Reserved.
+#
+# To enable job logging set the TORQUE server parameter record_job_info to TRUE
+# Edit this file to set $torqueHomeDir to the Torque home directory
+# Move or link to this file in a directory in your user's path
+# Run showjobs --help for a brief help message or showjobs --man for a man page
+#
+################################################################################
+
+use strict;
+use Getopt::Long 2.24 qw(:config no_ignore_case);
+use Time::Local;
+use autouse 'Pod::Usage' => qw(pod2usage);
+use subs qw(ddhhmmsss epochdate);
+
+# Set $torqueHomeDir to the Torque home directory
+my $torqueHomeDir = "/var/spool/torque";
+
+# Parse Command Line Arguments
+my (
+    $account,        $endDate,   $full, $group,
+    $help,           $man,       $num,  $queue,
+    $specifiedJobId, $startDate, $user
+);
+GetOptions(
+    'account=s'   => \$account,
+    'queue=s'     => \$queue,
+    'endDate=s'   => \$endDate,
+    'full'        => \$full,
+    'group=s'     => \$group,
+    'help|?'      => \$help,
+    'jobid=s'     => \$specifiedJobId,
+    'man'         => \$man,
+    'num=i'       => \$num,
+    'startDate=s' => \$startDate,
+    'user=s'      => \$user,
+) or pod2usage(2);
+
+# Display usage if necessary
+pod2usage(2) if $help;
+if ($man)
+{
+    if ($< == 0)    # Cannot invoke perldoc as root
+    {
+        my $id = eval { getpwnam("nobody") };
+        $id = eval { getpwnam("nouser") } unless defined $id;
+        $id = -2                          unless defined $id;
+        $<  = $id;
+    }
+    $> = $<;                         # Disengage setuid
+    $ENV{PATH} = "/bin:/usr/bin";    # Untaint PATH
+    delete @ENV{'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
+    if ($0 =~ /^([-\/\w\.]+)$/) { $0 = $1; }    # Untaint $0
+    else { die "Illegal characters were found in \$0 ($0)\n"; }
+    pod2usage(-exitstatus => 0, -verbose => 2);
+}
+
+# Use remaining argument as job id
+if (@ARGV)
+{
+    if (@ARGV == 1 && ! $specifiedJobId)
+    {
+        ($specifiedJobId) = @ARGV;
+    }
+    else
+    {
+        pod2usage(2);
+    }
+}
+
+# Build a sorted list of job files
+chdir("${torqueHomeDir}/job_logs")
+  or die
+  "Unable to change directory to job_logs directory (${torqueHomeDir}/job_logs): $!\n";
+my @jobFiles = glob("20*");
+@jobFiles = sort @jobFiles;
+if ($startDate)
+{
+    if ($startDate =~ /^(\d{4})[\/\-](\d{2})[\/\-](\d{2})$/)
+    {
+        my $startEpoch = timelocal(0, 0, 0, $3, $2 - 1, $1 - 1900);
+        @jobFiles = grep { epochDate($_) >= $startEpoch } @jobFiles;
+    }
+    else
+    {
+        die "Start Date ($startDate) is not in YYYY-MM-DD format.\n";
+    }
+}
+if ($endDate)
+{
+    if ($endDate =~ /^(\d{4})[\/\-](\d{2})[\/\-](\d{2})$/)
+    {
+        my $endEpoch = timelocal(0, 0, 0, $3, $2 - 1, $1 - 1900);
+        @jobFiles = grep { epochDate($_) <= $endEpoch } @jobFiles;
+    }
+    else
+    {
+        die "End Date ($endDate) is not in YYYY-MM-DD format.\n";
+    }
+}
+if ($num)
+{
+    my $firstIndex = ($num <= @jobFiles) ? @jobFiles - $num : 0;
+    my $lastIndex = $#jobFiles;
+    @jobFiles = @jobFiles[$firstIndex .. $lastIndex];
+}
+
+# Parse the job files and populate %job
+# Torque job attribute names are found in src/include/pbs_ifl.h
+# This will be done via manual XML parsing for performance reasons
+my %jobAttr = ();
+my @jobs    = ();
+my $context = '';
+foreach my $jobFile (@jobFiles)
+{
+    open JOBS, "< $jobFile"
+      or die "Unable to open job file ($jobFile) for reading: $!\n";
+    my @lines = <JOBS>;
+    while (defined(my $line = shift @lines))
+    {
+        chomp $line;
+        if ($line =~ /<Jobinfo>/)
+        {
+            # Initialize
+            %jobAttr = ();
+            $context = 'JobInfo';
+        }
+        elsif ($line =~ /<Job_Id>([^<]+)</)
+        {
+            $jobAttr{'Job Id'} = $1;
+        }
+        elsif ($line =~ /<Account_Name>([^<]+)</)
+        {
+            $jobAttr{'Account Name'} = $1;
+        }
+        elsif ($line =~ /<arch>([^<]+)</ && $context eq 'resource_List')
+        {
+            $jobAttr{'Architecture'} = $1;
+        }
+        elsif ($line =~ /<comp_time>([^<]+)</) { $jobAttr{'End Time'} = $1; }
+        elsif ($line =~ /<cput>([^<]+)</ && $context eq 'resources_used')
+        {
+            $jobAttr{'CPUTime'} = $1;
+        }
+        elsif ($line =~ /<egroup>([^<]+)</) { $jobAttr{'Group Name'} = $1; }
+        elsif ($line =~ /<Error_Path>([^<]+)</)
+        {
+            $jobAttr{'Error File'} = $1;
+        }
+        elsif ($line =~ /<euser>([^<]+)</) { $jobAttr{'User Name'} = $1; }
+        elsif ($line =~ /<exec_host>([^<]+)</)
+        {
+            my $masterHost = $1;
+            $masterHost =~ s/\/.*//;
+            $jobAttr{'Master Host'} = $masterHost;
+        }
+        elsif ($line =~ /<exit_status>([^<]+)</)
+        {
+            $jobAttr{'Exit Code'} = $1;
+        }
+        elsif ($line =~ /<interactive>([^<]+)</)
+        {
+            $jobAttr{'Interactive'} = 'True';
+        }
+        elsif ($line =~ /<depend>([^<]+)</)
+        {
+            $jobAttr{'Job Dependencies'} = $1;
+        }
+        elsif ($line =~ /<Job_Name>([^<]+)</) { $jobAttr{'Job Name'} = $1; }
+        elsif ($line =~ /<Job_Owner>([^<]+)</)
+        {
+            my $userName = $1;
+            $userName =~ s/\@.*//;
+            $jobAttr{'User Name'} = $userName;
+        }
+        elsif ($line =~ /<mem>([^<]+)</ && $context eq 'resources_used')
+        {
+            $jobAttr{'Memory Used'} = $1;
+        }
+        elsif ($line =~ /<opsys>([^<]+)</ && $context eq 'resource_List')
+        {
+            $jobAttr{'Operating System'} = $1;
+        }
+        elsif ($line =~ /<Output_Path>([^<]+)</)
+        {
+            $jobAttr{'Output File'} = $1;
+        }
+        elsif ($line =~ /<qos>([^<]+)</ && $context eq 'resource_List')
+        {
+            $jobAttr{'Quality Of Service'} = $1;
+        }
+        elsif ($line =~ /<qtime>([^<]+)</) { $jobAttr{'Submit Time'} = $1; }
+        elsif ($line =~ /<queue>([^<]+)</) { $jobAttr{'Queue Name'} = $1; }
+        elsif ($line =~ /<resource_List>/)    { $context = 'resource_List'; }
+        elsif ($line =~ /<\/resource_List>/)  { $context = 'JobInfo'; }
+        elsif ($line =~ /<resources_used>/)   { $context = 'resources_used'; }
+        elsif ($line =~ /<\/resources_used>/) { $context = 'JobInfo'; }
+        elsif ($line =~ /<job_script>([^<]*)/)
+        {
+            my $jobScript = $1;
+            while (defined($line = shift @lines))
+            {
+                if ($line =~ /<\/job_script>/)
+                {
+                    last;
+                }
+                else
+                {
+                    $jobScript .= "\n$line";
+                }
+            }
+            $jobAttr{'Job Script'} = $jobScript;
+        }
+        elsif ($line =~ /<start_time>([^<]+)</)
+        {
+            $jobAttr{'Start Time'} = $1;
+        }
+        elsif ($line =~ /<submit_args>([^<]+)</)
+        {
+            $jobAttr{'Submit Arguments'} = $1;
+        }
+        elsif ($line =~ /<Variable_List>([^<]+)</)
+        {
+            my $content = $1;
+            while ($content =~ /(\w+)=([^,]*)/g)
+            {
+                my ($name, $value) = ($1, $2);
+                if ($name eq 'PBS_O_HOME')
+                {
+                    $jobAttr{'Home Directory'} = $value;
+                }
+                elsif ($name eq 'PBS_O_WORKDIR')
+                {
+                    $jobAttr{'Working Directory'} = $value;
+                }
+                #elsif ($name eq 'PBS_O_SHELL')
+                #{
+                #    $jobAttr{'Shell Name'} = $value;
+                #}
+            }
+        }
+        elsif ($line =~ /<walltime>([^<]+)</ && $context eq 'resource_List')
+        {
+            $jobAttr{'Wallclock Limit'} = $1;
+        }
+        elsif ($line =~ /<walltime>([^<]+)</ && $context eq 'resources_used')
+        {
+            $jobAttr{'Wallclock Duration'} = $1;
+        }
+        elsif ($line =~ /<(\w+)>([^<]+)</) { $jobAttr{$1} = $2; }
+        elsif ($line =~ /<\/Jobinfo>/)
+        {
+            # Finalize
+            $context = '';
+            next
+              if (
+                defined $specifiedJobId
+                && (! defined $jobAttr{'Job Id'}
+                    || $jobAttr{'Job Id'} !~ /^${specifiedJobId}\b/)
+              );
+            next
+              if (
+                defined $user
+                && (! defined $jobAttr{'User Name'}
+                    || $jobAttr{'User Name'} !~ /^$user$/i)
+              );
+            next
+              if (
+                defined $group
+                && (! defined $jobAttr{'Group Name'}
+                    || $jobAttr{'Group Name'} !~ /^$group$/i)
+              );
+            next
+              if (
+                defined $account
+                && (! defined $jobAttr{'Account Name'}
+                    || $jobAttr{'Account Name'} !~ /^$account$/i)
+              );
+            next
+              if (
+                defined $queue
+                && (! defined $jobAttr{'Queue Name'}
+                    || $jobAttr{'Queue Name'} !~ /^$queue$/i)
+              );
+            my %jobAttrCopy = %jobAttr;
+            push @jobs, \%jobAttrCopy;
+        }
+    }
+}
+
+# Print out the jobs
+foreach my $job (@jobs)
+{
+    my %jobAttr = %{$job};
+    foreach my $name (
+        'Job Id',
+        'Job Name',
+        'Output File',
+        'Error File',
+        'Working Directory',
+        'Home Directory',
+        'Submit Arguments',
+        'User Name',
+        'Group Name',
+        'Account Name',
+        'Queue Name',
+        'Quality Of Service',
+        'Architecture',
+        'Operating System',
+        'Node Count',
+        'Wallclock Limit',
+        'Wallclock Duration',
+        'CPUTime',
+        'Memory Used',
+        'Submit Time',
+        'Start Time',
+        'End Time',
+        'Exit Code',
+        'Master Host',
+        'Interactive',
+        'Job Dependencies',
+        'Job Script',
+      )
+    {
+        if (defined $jobAttr{$name})
+        {
+            my $value = $jobAttr{$name};
+            if    ($name =~ / Time$/)     { $value = localtime $value; }
+            elsif ($name =~ / Duration$/) { $value = ddhhmmss($value); }
+            printf "%-18s: %s\n", $name, $value;
+            delete $jobAttr{$name};
+        }
+    }
+    if ($full)
+    {
+        foreach my $name (sort keys %jobAttr)
+        {
+            my $value = $jobAttr{$name};
+            printf "%-18s: %s\n", $name, $value;
+        }
+    }
+    print '-' x 80, "\n";
+    print "\n";
+}
+
+# Exit with status code
+exit 0;
+
+################################################################################
+# $epochDate = epochDate($jobFile)
+# Returns the epoch date for a job file
+################################################################################
+sub epochDate
+{
+    my ($jobFile) = @_;
+
+    $jobFile =~ s/.*\///;
+    my ($year, $mon, $day) = unpack "A4A2A2", $jobFile;
+    my $epochDate = timelocal(0, 0, 0, $day, $mon - 1, $year - 1900);
+
+    return $epochDate;
+}
+
+################################################################################
+# $hRTime = toHRT($epochTime)
+# Converts an epoch time to a human readable time
+################################################################################
+sub hrTime
+{
+    my ($jobFile) = @_;
+
+    $jobFile =~ s/.*\///;
+    my ($year, $mon, $day) = unpack "A4A2A2", $jobFile;
+    my $epochDate = timelocal(0, 0, 0, $day, $mon - 1, $year - 1900);
+
+    return $epochDate;
+}
+
+################################################################################
+# $ddhhmmss = ddhhmmss($seconds)
+# Converts a duration in seconds to dd:hh:mm:ss
+################################################################################
+sub ddhhmmss
+{
+    my ($seconds) = @_;
+
+    # Convert duration in minutes to ddhhmm
+    my $days = int($seconds / 86400);
+    $seconds = $seconds % 86400;
+    my $hours = int($seconds / 3600);
+    $seconds = $seconds % 3600;
+    my $minutes = int($seconds / 60);
+    $seconds = $seconds % 60;
+
+    if ($days)
+    {
+        return sprintf('%d:%02d:%02d:%02d', $days, $hours, $minutes, $seconds);
+    }
+    else { return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds); }
+}
+
+##############################################################################
+
+__END__
+
+=head1 NAME
+
+B<showjobs> - list historical job information
+
+=head1 SYNOPSIS
+
+B<showjobs> [B<-u> I<user_name>] [B<-g> I<group_name>] [B<-a> I<account_name>] [B<-q> I<queue_name>] [B<-s> I<start date>] [B<-e> I<end date>] [B<-n> I<days>] [B<--help>] [B<--man>] [[B<-j>] <job id>]
+
+=head1 DESCRIPTION
+
+The B<showjobs> command is used to list past job information. It searches through the designated job files while filtering according to the specified options. The relevant fields for each job are shown in a multi-line format, with a blank line between jobs.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-a> I<account_name>
+
+Show only job records matching the specified account.
+
+=item B<-e> I<end_date>
+
+Restricts the search to job files ending with the specified date. The date is specified in the format YYYY-MM-DD. The default query searches to the latest available job file.
+
+=item B<-g> I<group_name>
+
+Show only job records matching the specified group.
+
+=item [B<-j>] I<job_id>
+
+Show only job records matching the specified job id.
+
+=item B<-n> I<days>
+
+Restricts the number of past job files to search.
+
+=item B<-q> I<queue_name>
+
+Show only job records matching the specified queue.
+
+=item B<-s> I<start_date>
+
+Restricts the search to job files starting with the specified date. The date is specified in the format YYYY-MM-DD. The default query searches from the earliest available job file.
+
+=item B<-u> I<user_name>
+
+Show only job records matching the specified user.
+
+=item B<-? | --help>
+
+brief help message
+
+=item B<--man>
+
+full documentation
+
+=back
+
+=head1 EXAMPLE
+
+Show job information for job id 220 and restrict the search to the last 4 days.
+
+showjobs -n 4 -j 220
+
+=head1 AUTHOR
+
+Adaptive Computing, Inc., E<lt>http://www.adaptivecomputing.com/E<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2010 by Adaptive Computing Enterprises, Inc. All Rights Reserved.
+
+=cut
