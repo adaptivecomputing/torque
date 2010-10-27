@@ -76,7 +76,6 @@
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
-#ifdef ENABLE_PTHREADS 
 
 
 #include <errno.h>
@@ -87,9 +86,10 @@
 
 
 
-
-threadpool_t *request_pool;
 sigset_t      fillset;
+
+#ifdef ENABLE_PTHREADS 
+threadpool_t *request_pool;
 
 static void *work_thread(void *);
 
