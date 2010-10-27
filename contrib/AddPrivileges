@@ -63,7 +63,7 @@ ADMINGRL=544
 ADMINGRD=10512
 
 mkpasswd -l -d > $PASSWDF
-mkgroup -l -d -u > $GROUPF;
+mkgroup -l -d  > $GROUPF;
 
 if id -G | grep -q "$ADMINGRD"
 
