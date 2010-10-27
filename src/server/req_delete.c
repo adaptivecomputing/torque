@@ -567,7 +567,7 @@ jump:
     if ((preq->rq_extend != NULL) &&
           !strncmp(preq->rq_extend,DELASYNC,strlen(DELASYNC)))
       {
-      struct batch_request *preq_tmp = '\0';
+      struct batch_request *preq_tmp = NULL;
       /*
        * Respond with an ack now instead of after MOM processing
        * Create a new batch request and fill it in. It will be freed by reply_ack
@@ -592,6 +592,7 @@ jump:
       memcpy(preq_tmp->rq_host, preq->rq_host, PBS_MAXHOSTNAME + 1);
 
       reply_ack(preq_tmp);
+      free(preq_tmp);
       preq->rq_noreply = TRUE; /* set for no more replies */
       }
 

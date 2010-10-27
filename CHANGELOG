@@ -58,6 +58,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       NUMA jobs, but doesn't affect others as memory isn't enforced for 
       multinode jobs
   e - add an asynchronous option to qdel 
+  b - do not reply when an asynchronous reply has already been sent
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
