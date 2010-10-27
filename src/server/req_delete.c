@@ -141,6 +141,7 @@ void change_restart_comment_if_needed(struct job *);
 
 static char *deldelaystr = DELDELAY;
 static char *delpurgestr = DELPURGE;
+static char *delasyncstr = DELASYNC;
 
 /* Extern Functions */
 
@@ -342,6 +343,7 @@ void req_deletejob(
   if (preq->rq_extend != NULL)
     {
     if (strncmp(preq->rq_extend, deldelaystr, strlen(deldelaystr)) &&
+        strncmp(preq->rq_extend, delasyncstr, strlen(delasyncstr)) &&
         strncmp(preq->rq_extend, delpurgestr, strlen(delpurgestr)))
       {
       /* have text message in request extension, add it */
@@ -559,6 +561,39 @@ jump:
       }
 
     apply_job_delete_nanny(pjob, time_now + 60);
+
+    /* check if we are getting a asynchronous delete */
+
+    if ((preq->rq_extend != NULL) &&
+          !strncmp(preq->rq_extend,DELASYNC,strlen(DELASYNC)))
+      {
+      struct batch_request *preq_tmp = '\0';
+      /*
+       * Respond with an ack now instead of after MOM processing
+       * Create a new batch request and fill it in. It will be freed by reply_ack
+       */
+
+      LOG_EVENT(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+
+      preq_tmp = alloc_br(PBS_BATCH_DeleteJob);
+      preq_tmp->rq_perm = preq->rq_perm;
+      preq_tmp->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
+      preq_tmp->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
+      preq_tmp->rq_fromsvr = preq->rq_fromsvr;
+      preq_tmp->rq_extsz = preq->rq_extsz;
+      preq_tmp->rq_conn = preq->rq_conn;
+      memcpy(preq_tmp->rq_ind.rq_manager.rq_objname,
+          preq->rq_ind.rq_manager.rq_objname, PBS_MAXSVRJOBID + 1);
+      memcpy(preq_tmp->rq_user, preq->rq_user, PBS_MAXUSER + 1);
+      memcpy(preq_tmp->rq_host, preq->rq_host, PBS_MAXHOSTNAME + 1);
+
+      reply_ack(preq_tmp);
+      preq->rq_noreply = TRUE; /* set for no more replies */
+      }
 
     /*
      * Send signal request to MOM.  The server will automagically

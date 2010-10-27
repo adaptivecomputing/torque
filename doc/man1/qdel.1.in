@@ -81,7 +81,7 @@
 .SH NAME
 qdel \- delete pbs batch job
 .SH SYNOPSIS
-qdel [\-c] [\-m message] [\-p] [-t array_range] [\-W delay] job_identifier...
+qdel [\-a] [\-c] [\-m message] [\-p] [-t array_range] [\-W delay] job_identifier...
 .SH DESCRIPTION
 The 
 .B qdel 
@@ -118,6 +118,9 @@ specifies a unsigned integer number of seconds.
 This option is an extension to POSIX 1003.2d.
 .NL
 .Ig
+.IP "\-a" 15
+Request the job(s) be deleted asynchronously, which for a Running job means that the reply will return before the MOM is requested to delete the job.
+.NL
 .IP "\-c" 15
 Clean up unreported jobs from the server.  This should only be used if the
 scheduler is unable to purge unreported jobs.  This option is only available

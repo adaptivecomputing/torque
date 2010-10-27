@@ -113,6 +113,7 @@
 #include "pbs_proto.h"
 #include "csv.h"
 #include "u_tree.h"
+#include "threadpool.h"
 
 #ifndef PBS_MOM
 #include "array.h"
@@ -199,7 +200,7 @@ void req_shutdown(struct batch_request *preq);
 void req_signaljob(struct batch_request *preq);
 void req_mvjobfile(struct batch_request *preq);
 #ifndef PBS_MOM
-void req_stat_node(struct batch_request *preq);
+void *req_stat_node(void *vp);
 void req_track(struct batch_request *preq);
 void req_jobobit(struct batch_request *preq);
 void req_stagein(struct batch_request *preq);
@@ -977,8 +978,11 @@ void dispatch_request(
       break;
 
     case PBS_BATCH_StatusNode:
-
+#ifdef ENABLE_PTHREADS
+      enqueue_threadpool_request(req_stat_node,request);
+#else
       req_stat_node(request);
+#endif
 
       break;
 

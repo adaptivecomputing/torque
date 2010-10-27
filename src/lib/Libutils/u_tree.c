@@ -4,17 +4,17 @@
 
 /* height - returns the height of the given node */
 static int height(NodeEntry node)
-{
+  {
 	if( node == NULL )
 		return( -1 );
 	else
 		return( node->height );
-}
+  }
 
 static int Max( int right_side, int left_side )
-{
-	return( left_side > right_side ? left_side : right_side );
-}
+  {
+  return( left_side > right_side ? left_side : right_side );
+  }
 
 
 /* This function can be called only if K2 has a left child */
@@ -22,36 +22,36 @@ static int Max( int right_side, int left_side )
 /* Update heights, then return new root */
 
 static NodeEntry single_rotate_with_left( NodeEntry K2 )
-{
-    NodeEntry K1;
-
-    K1 = K2->left;
-    K2->left = K1->right;
-    K1->right = K2;
-
-    K2->height = Max( height( K2->left ), height( K2->right ) ) + 1;
-    K1->height = Max( height( K1->left ), K2->height ) + 1;
-
-    return K1;  /* New root */
-}
+  {
+  NodeEntry K1;
+  
+  K1 = K2->left;
+  K2->left = K1->right;
+  K1->right = K2;
+  
+  K2->height = Max( height( K2->left ), height( K2->right ) ) + 1;
+  K1->height = Max( height( K1->left ), K2->height ) + 1;
+  
+  return K1;  /* New root */
+  }
 
 /* This function can be called only if K1 has a right child */
 /* Perform a rotate between a node (K1) and its right child */
 /* Update heights, then return new root */
 
 static NodeEntry single_rotate_with_right( NodeEntry K1 )
-{
-    NodeEntry K2;
-
-    K2 = K1->right;
-    K1->right = K2->left;
-    K2->left = K1;
-
-    K1->height = Max( height( K1->left ), height( K1->right ) ) + 1;
-    K2->height = Max( height( K2->right ), K1->height ) + 1;
-
-    return K2;  /* New root */
-}
+  {
+  NodeEntry K2;
+  
+  K2 = K1->right;
+  K1->right = K2->left;
+  K2->left = K1;
+  
+  K1->height = Max( height( K1->left ), height( K1->right ) ) + 1;
+  K2->height = Max( height( K2->right ), K1->height ) + 1;
+  
+  return K2;  /* New root */
+  }
 
 /* This function can be called only if K3 has a left */
 /* child and K3's left child has a right child */
@@ -59,13 +59,13 @@ static NodeEntry single_rotate_with_right( NodeEntry K1 )
 /* Update heights, then return new root */
 
 static NodeEntry double_rotate_with_left( NodeEntry K3 )
-{
-    /* Rotate between K1 and K2 */
-    K3->left = single_rotate_with_right( K3->left );
-
-    /* Rotate between K3 and K2 */
-    return single_rotate_with_left( K3 );
-}
+  {
+  /* Rotate between K1 and K2 */
+  K3->left = single_rotate_with_right( K3->left );
+  
+  /* Rotate between K3 and K2 */
+  return single_rotate_with_left( K3 );
+  }
 
 /* This function can be called only if K1 has a right */
 /* child and K1's right child has a left child */
@@ -73,13 +73,13 @@ static NodeEntry double_rotate_with_left( NodeEntry K3 )
 /* Update heights, then return new root */
 
 static NodeEntry double_rotate_with_right( NodeEntry K1 )
-{
-    /* Rotate between K3 and K2 */
-    K1->right = single_rotate_with_left( K1->right );
-
-    /* Rotate between K1 and K2 */
-    return single_rotate_with_right( K1 );
-}
+  {
+  /* Rotate between K3 and K2 */
+  K1->right = single_rotate_with_left( K1->right );
+  
+  /* Rotate between K1 and K2 */
+  return single_rotate_with_right( K1 );
+  }
 
 AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tree )
   {
@@ -91,13 +91,13 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 	  }
 
 	if(tree == NULL)
-	  {
-	  /* Create and return a node */
-	  tree = ( AvlTree )malloc( sizeof( struct AvlNode ) );
-	  if(tree == NULL)
-	  	{
-	  	return( tree );
-	  	}
+    {
+    /* Create and return a node */
+    tree = ( AvlTree )malloc( sizeof( struct AvlNode ) );
+    if(tree == NULL)
+      {
+      return( tree );
+      }
 
 	  tree->key = key;
 	  tree->port = port;
@@ -330,55 +330,55 @@ AvlTree AVL_delete_node(
  * return 1 if Buf or T are null 
  */ 
 int AVL_list( AvlTree tree, char *Buf, uint32_t BufSize )
-{
+  {
 	uint32_t len;
 	char     tmpLine[32];
 	int rc;
 
 	if( tree == NULL || Buf == NULL || BufSize == 0 )
-	{
-		return( 1 );
-	}
+    {
+    return( 1 );
+    }
 
 	len = BufSize;
 
 	/* start down the left side */
 	if( tree->left != NULL )
-	{
+    {
 		rc = AVL_list( tree->left, Buf, len );
 		if( rc )
-		{
-			return( rc );
-		}
-		len -= strlen( Buf );
-	}
+      {
+      return( rc );
+      }
+    len -= strlen( Buf );
+    }
 
 	/* now go right */
 	if( tree->right != NULL )
-	{
-		rc = AVL_list( tree->right, Buf, len );
-		if( rc )
-		{
+    {
+    rc = AVL_list( tree->right, Buf, len );		
+    if( rc )
+      {
 			return( rc );
-		}
-		len -= strlen( Buf );
-	}
+      }
+    len -= strlen( Buf );
+    }
 
 	/* each entry can be a maximum of 21 bytes plus one for
 	   NULL termination and one for a ','. We need at least 23 bytes to make
 	   this work. (entry format XXX.XXX.XXX.XXX:XXXXX --
 	   This does not work for IPV6 )*/
 	if( len < 23 )
-	{
-	   return( -1 );
-	}
+    {
+    return( -1 );
+    }
 
 	sprintf( tmpLine, "%ld.%ld.%ld.%ld:%d",
-			 (tree->key & 0xFF000000) >> 24,
-			 (tree->key & 0x00FF0000) >> 16,
-			 (tree->key & 0x0000FF00) >> 8,
-			 (tree->key & 0x000000FF),
-			 tree->port);
+	  (tree->key & 0xFF000000) >> 24,
+    (tree->key & 0x00FF0000) >> 16,
+    (tree->key & 0x0000FF00) >> 8,
+    (tree->key & 0x000000FF),
+    tree->port);
 
 	/* Buf must come in with at least the first byte set to NULL
 	   initially. Every time after that append
@@ -394,5 +394,5 @@ int AVL_list( AvlTree tree, char *Buf, uint32_t BufSize )
 	  }
 
 	return( 0 );
-} /* end AVL_list */
+  } /* end AVL_list */
 

@@ -110,6 +110,9 @@
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif /* ENABLE_PTHREADS */
 
 #include "rpp.h"
 #include "log.h"
@@ -207,6 +210,9 @@ char *server_alias = NULL;
 void rpp_shutdown_on_exit(int, void *);
 
 /* END external prototypes */
+#ifdef ENABLE_PTHREADS
+pthread_mutex_t *stream_mutexes = NULL;
+#endif /* ENABLE_PTHREADS */
 
 
 
@@ -416,6 +422,8 @@ struct stream
   int   recv_attempt; /* number bytes, from start */
   /* of current message, that */
   /* have been read */
+
+  int   being_attended; /* if a thread has been queued to handle this stream */
   };
 
 /*
@@ -1128,6 +1136,9 @@ rpp_create_sp(void)
   int i;
 
   struct stream *sp = NULL;
+#ifdef ENABLE_PTHREADS
+  static pthread_mutexattr_t mutex_attr;
+#endif 
 
   if (stream_array == NULL)
     {
@@ -1141,6 +1152,19 @@ rpp_create_sp(void)
     memset(stream_array, '\0', sizeof(struct stream));
 
     stream_num = 1;
+
+#ifdef ENABLE_PTHREADS 
+    /* create the mutex */
+    stream_mutexes = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+
+    if (stream_mutexes == NULL)
+      return(-1);
+
+    memset(&mutex_attr,0,sizeof(pthread_mutexattr_t));
+    pthread_mutexattr_settype(&mutex_attr,PTHREAD_MUTEX_ERRORCHECK);
+    
+    pthread_mutex_init(stream_mutexes,&mutex_attr);
+#endif /* def ENABLE_PTHREADS */
     }
 
   for (i = 0;i < stream_num;i++)
@@ -1182,10 +1206,39 @@ rpp_create_sp(void)
         }
 
       stream_num++;
+
+#ifdef ENABLE_PTHREADS 
+      stream_mutexes = (pthread_mutex_t *)realloc(
+          stream_mutexes,
+          (stream_num) * sizeof(pthread_mutex_t));
+
+      if (stream_mutexes == NULL)
+        return(-1);
+
+      pthread_mutex_init(stream_mutexes + stream_num - 1,&mutex_attr);
+#endif /* def ENABLE_PTHREADS */
       }
     else
       {
+#ifdef ENABLE_PTHREADS 
+      int j;
+#endif 
+
       stream_num *= 2;
+
+#ifdef ENABLE_PTHREADS 
+      stream_mutexes = (pthread_mutex_t *)realloc(
+          stream_mutexes,
+          (stream_num) * sizeof(pthread_mutex_t));
+
+      if (stream_mutexes == NULL)
+        return(-1);
+
+      for (j = stream_num / 2; j < stream_num; j++)
+        {
+        pthread_mutex_init(stream_mutexes + j,&mutex_attr);
+        }
+#endif /* ENABLE_PTHREADS */
       }
 
     stream_array = sp;
@@ -3890,6 +3943,64 @@ int rpp_skip(
 
 
 
+#ifdef ENABLE_PTHREADS 
+/**
+ * Mark this stream as being serviced currently
+ */
+void started_servicing(
+
+  int index)
+
+  {
+  pthread_mutex_lock(stream_mutexes+index);
+  stream_array[index].being_attended = TRUE;
+  pthread_mutex_unlock(stream_mutexes+index);
+  } /* END started_servicing() */
+
+
+
+
+
+/**
+ * Mark this stream as no longer being serviced
+ */
+void done_servicing(
+
+  int index)
+
+  {
+  pthread_mutex_lock(stream_mutexes+index);
+  stream_array[index].being_attended = FALSE;
+  pthread_mutex_unlock(stream_mutexes+index);
+  } /* END done_servicing() */
+#endif /* def ENABLE_PTHREADS */
+
+
+
+/**
+ * @return TRUE if this stream is being serviced, false otherwise 
+ */
+int being_serviced(
+
+  int index)
+
+  {
+#ifdef ENABLE_PTHREADS
+  int rc;
+  
+  pthread_mutex_lock(stream_mutexes+index);
+  rc = stream_array[index].being_attended;
+  pthread_mutex_unlock(stream_mutexes+index);
+
+  return(rc);
+#else
+  return(FALSE);
+#endif
+  }
+
+
+
+
 /*
 ** Check for any stream with a message waiting and
 ** return the stream number or a -1 if there are none.
@@ -3927,7 +4038,8 @@ int rpp_poll(void)
 
   for (i = 0;i < stream_num;i++)
     {
-    if (rpp_attention(i))
+    if ((rpp_attention(i)) &&
+        (!being_serviced(i)))
       break;
     }
 

@@ -117,6 +117,7 @@
 #include "mcom.h"
 #include "utils.h"
 #include "u_tree.h"
+#include "threadpool.h"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -186,6 +187,12 @@ int node_satisfies_request(struct pbsnode *,char *);
 int reserve_node(struct pbsnode *,short,job *,char *,struct howl **);
 int build_host_list(struct howl **,struct pbssubn *,struct pbsnode *);
 int procs_available(int proc_ct);
+void check_nodes(struct work_task *);
+
+/* marks a stream as finished being serviced */
+#ifdef ENABLE_PTHREADS
+extern void done_servicing(int);
+#endif
 
 /*
 
@@ -1867,24 +1874,22 @@ int add_cluster_addrs(
 
 
 /*
- **     Mark any nodes that haven't checked in as down.
- **     This should be used rather than the ping_nodes task.  If
- **     the node isn't down then it checks to see that the
- **     last update hasn't been too long ago.
+ * wrapper task that check_nodes places in the thread pool's queue
+ * MULTITHREADED BABY
  */
+void *check_nodes_work(
 
-void check_nodes(
-
-  struct work_task *ptask)  /* I (modified) */
+  void *vp)
 
   {
-  static char     id[] = "check_nodes";
+  struct work_task *ptask = (struct work_task *)vp;
+  static char       id[] = "check_nodes_work";
 
-  struct pbsnode *np;
-  int    chk_len;
+  struct pbsnode   *np;
+  int               chk_len;
 
-  node_iterator   iter;
-
+  node_iterator     iter;
+  
   /* load min refresh interval */
 
   chk_len = server.sv_attr[SRV_ATR_check_rate].at_val.at_long;
@@ -1909,6 +1914,10 @@ void check_nodes(
     if (np->nd_state & (INUSE_DELETED | INUSE_DOWN))
       continue;
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(np->nd_mutex);
+#endif
+
     if (np->nd_lastupdate < (time_now - chk_len)) 
       {
       if (LOGLEVEL >= 0)
@@ -1924,8 +1933,12 @@ void check_nodes(
           log_buffer);
         }
 
-      update_node_state(np, (INUSE_DOWN));
+      update_node_state(np, (INUSE_DOWN));    
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(np->nd_mutex);
+#endif
     }    /* END for (i = 0) */
 
   if (ptask->wt_parm1 == NULL)
@@ -1937,7 +1950,35 @@ void check_nodes(
       NULL);
     }
 
-  return;
+  return(NULL);
+  }
+
+
+
+
+/*
+ **     Mark any nodes that haven't checked in as down.
+ **     This should be used rather than the ping_nodes task.  If
+ **     the node isn't down then it checks to see that the
+ **     last update hasn't been too long ago.
+ */
+
+void check_nodes(
+
+  struct work_task *ptask)  /* I (modified) */
+
+  {
+#ifdef ENABLE_PTHREADS
+  static char id[] = "check_nodes";
+  int rc = enqueue_threadpool_request(check_nodes_work,ptask);
+
+  if (rc)
+    {
+    log_err(rc,id,"Unable to enqueue check nodes task into the threadpool");
+    }
+#else
+  check_nodes_work(ptask);
+#endif
   }  /* END check_nodes() */
 
 
@@ -1954,19 +1995,16 @@ const char *PBSServerCmds2[] =
   NULL
   };
 
-/*
- * Input is coming from the pbs_mom over a DIS rpp stream.
- * Read the stream to get a Inter-Server request.
- */
 
-void is_request(
 
-  int  stream,  /* I */
-  int  version, /* I */
-  int *cmdp)    /* O (optional) */
+
+
+void *is_request_work(
+
+  void *vp)
 
   {
-  static char   id[] = "is_request";
+  static char   id[] = "is_request_work";
 
   int  command = 0;
   int  ret = DIS_SUCCESS;
@@ -1986,8 +2024,12 @@ void is_request(
 
   struct pbssubn *sp = NULL;
 
-  if (cmdp != NULL)
-    *cmdp = 0;
+  int  stream;
+  int  version;
+  int *args = (int *)vp;
+
+  stream = args[0];
+  version = args[1];
 
   command = disrsi(stream, &ret);
 
@@ -2022,7 +2064,13 @@ void is_request(
 
     rpp_close(stream);
 
-    return;
+    free(vp);
+  
+#ifdef ENABLE_PTHREADS
+    done_servicing(stream);
+#endif
+  
+    return(NULL);
     }
 
   /* check that machine is known */
@@ -2039,115 +2087,137 @@ void is_request(
       log_buffer);
     }
 
-/*  if ((node = tfind((u_long)stream, &streams)) != NULL) */
   if ((node = AVL_find((u_long)stream, 0, streams)) != NULL)
-    goto found;
-
-  ipaddr = ntohl(addr->sin_addr.s_addr);
-
-/*  if ((node = tfind(ipaddr, &ipaddrs)) != NULL) */
-  if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
     {
-    if (node->nd_stream >= 0)
-      {
-      if (LOGLEVEL >= 3)
-        {
-        sprintf(log_buffer, "stream %d from node %s already open on %d (marking node state 'unknown', current state: %d)",
-                stream,
-                node->nd_name,
-                node->nd_stream,
-                node->nd_state);
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(node->nd_mutex);
+#endif 
+    }
+  else
+    {
+    ipaddr = ntohl(addr->sin_addr.s_addr);
 
-        log_event(
-          PBSEVENT_ADMIN,
-          PBS_EVENTCLASS_SERVER,
+    if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(node->nd_mutex);
+#endif 
+
+      if (node->nd_stream >= 0)
+        {
+        if (LOGLEVEL >= 3)
+          {
+          sprintf(log_buffer, "stream %d from node %s already open on %d (marking node state 'unknown', current state: %d)",
+                  stream,
+                  node->nd_name,
+                  node->nd_stream,
+                  node->nd_state);
+
+          log_event(
+            PBSEVENT_ADMIN,
+            PBS_EVENTCLASS_SERVER,
+            id,
+            log_buffer);
+          }
+
+        rpp_close(stream);
+
+        rpp_close(node->nd_stream);
+
+        /* tdelete((u_long)node->nd_stream, &streams); */
+        streams = AVL_delete_node((u_long)node->nd_stream, 0, streams);
+
+        if (node->nd_state & INUSE_OFFLINE)
+          {
+          node->nd_state = (INUSE_UNKNOWN | INUSE_OFFLINE);
+          }
+        else
+          {
+          node->nd_state = INUSE_UNKNOWN;
+          }
+
+        node->nd_stream = -1;
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(node->nd_mutex);
+#endif 
+
+        /* do a ping in 5 seconds */
+
+        /*
+        set_task(WORK_Timed,time_now + 5,
+          ping_nodes, node);
+        */
+
+        free(vp);
+  
+#ifdef ENABLE_PTHREADS
+        done_servicing(stream);
+#endif
+
+        return(NULL);
+        }  /* END if (node->nd_stream >= 0) */
+
+      node->nd_stream = stream;
+
+      /* tinsert((u_long)stream, node, &streams); */
+      streams = AVL_insert((u_long)stream, 0, node, streams);
+        
+      }  /* END if ((node = tfind(ipaddr,&ipaddrs)) != NULL) */
+    else if (allow_any_mom)                                           
+      { 
+      hp = gethostbyaddr(&ipaddr, sizeof(ipaddr), AF_INET);       
+      if(hp != NULL)                                              
+        {                                                         
+        strncpy(nodename, hp->h_name, PBS_MAXHOSTNAME);           
+        err = create_partial_pbs_node(nodename, ipaddr, perm);    
+        }                                                         
+      else                                                        
+        {
+        tmpaddr = ntohl(addr->sin_addr.s_addr);
+
+        sprintf(nodename, "0x%lX", tmpaddr);
+        err = create_partial_pbs_node(nodename, ipaddr, perm);
+        } 
+      
+      if(err == PBSE_NONE)
+        {
+        node = AVL_find(ipaddr, 0, ipaddrs);
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_lock(node->nd_mutex);
+#endif 
+        }                                                         
+      }
+      
+    if (node == NULL)
+      {
+      /* node not listed in trusted ipaddrs list */
+
+      sprintf(log_buffer, "bad attempt to connect from %s (address not trusted - check entry in server_priv/nodes)",
+              netaddr(addr));
+
+      if (LOGLEVEL >= 2)
+        {
+        log_record(
+          PBSEVENT_SCHED,
+          PBS_EVENTCLASS_REQUEST,
           id,
           log_buffer);
         }
 
+      log_err(-1, id, log_buffer);
+
       rpp_close(stream);
 
-      rpp_close(node->nd_stream);
-
-      /* tdelete((u_long)node->nd_stream, &streams); */
-      streams = AVL_delete_node((u_long)node->nd_stream, 0, streams);
-
-      if (node->nd_state & INUSE_OFFLINE)
-        {
-        node->nd_state = (INUSE_UNKNOWN | INUSE_OFFLINE);
-        }
-      else
-        {
-        node->nd_state = INUSE_UNKNOWN;
-        }
-
-      node->nd_stream = -1;
-
-      /* do a ping in 5 seconds */
-
-      /*
-      set_task(WORK_Timed,time_now + 5,
-        ping_nodes, node);
-      */
-
-      return;
-      }  /* END if (node->nd_stream >= 0) */
-
-    node->nd_stream = stream;
-
-    /* tinsert((u_long)stream, node, &streams); */
-    streams = AVL_insert((u_long)stream, 0, node, streams);
-      
-    goto found;
-    }  /* END if ((node = tfind(ipaddr,&ipaddrs)) != NULL) */
-    else if (allow_any_mom)                                           
-      {                                                               
-        {                                                             
-          hp = gethostbyaddr(&ipaddr, sizeof(ipaddr), AF_INET);       
-          if(hp != NULL)                                              
-            {                                                         
-            strncpy(nodename, hp->h_name, PBS_MAXHOSTNAME);           
-            err = create_partial_pbs_node(nodename, ipaddr, perm);    
-            }                                                         
-          else                                                        
-            {      
-            tmpaddr = ntohl(addr->sin_addr.s_addr);                                                   
-            sprintf(nodename, "0x%lX", tmpaddr);
-            err = create_partial_pbs_node(nodename, ipaddr, perm);    
-            }                                                         
-                                                                      
-          if(err == PBSE_NONE)                                        
-            {   
-            node = AVL_find(ipaddr, 0, ipaddrs);                           
-            goto found;                                               
-            }                                                         
-        }                                                             
+      free(vp);
+  
+#ifdef ENABLE_PTHREADS
+      done_servicing(stream);
+#endif
+  
+      return(NULL);
       }
-
-  /* node not listed in trusted ipaddrs list */
-
-  sprintf(log_buffer, "bad attempt to connect from %s (address not trusted - check entry in server_priv/nodes)",
-          netaddr(addr));
-
-  if (LOGLEVEL >= 2)
-    {
-    log_record(
-      PBSEVENT_SCHED,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
     }
-
-  log_err(-1, id, log_buffer);
-
-  rpp_close(stream);
-
-  return;
-
-found:
-
-  if (cmdp != NULL)
-    *cmdp = command;
 
   if (LOGLEVEL >= 3)
     {
@@ -2338,42 +2408,118 @@ found:
 
   rpp_eom(stream);
 
-  return;
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(node->nd_mutex);
+#endif
+  free(vp);
+  
+#ifdef ENABLE_PTHREADS
+  done_servicing(stream);
+#endif
+
+  return(NULL);
 
 err:
 
   /* a DIS write error has occurred */
 
-  if (LOGLEVEL >= 1)
+  if (node != NULL)
     {
-    DBPRT(("%s: error processing node %s\n",
-           id,
-           node->nd_name))
+    if (LOGLEVEL >= 1)
+      {
+      DBPRT(("%s: error processing node %s\n",
+            id,
+            node->nd_name))
+      }
+
+    sprintf(log_buffer, "%s from %s(%s)",
+      dis_emsg[ret],
+      node->nd_name,
+      netaddr(addr));
+    
+    update_node_state(node, INUSE_DOWN);
+    
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(node->nd_mutex);
+#endif 
+    }
+  else
+    {
+    sprintf(log_buffer,"%s occurred when trying to read stream %d",
+      dis_emsg[ret],
+      stream);
+    }
+    
+  log_err(-1, id, log_buffer);
+    
+  rpp_close(stream);
+    
+  free(vp);
+
+#ifdef ENABLE_PTHREADS
+  done_servicing(stream);
+#endif
+
+  return(NULL);
+
+  } /* END is_request_work */
+
+
+
+
+
+
+/*
+ * Input is coming from the pbs_mom over a DIS rpp stream.
+ * Read the stream to get a Inter-Server request.
+ */
+
+void is_request(
+
+  int  stream,  /* I */
+  int  version) /* I */
+
+  {
+  int *args;
+#ifdef ENABLE_PTHREADS
+  int rc;
+#endif
+
+  static char id[] = "is_request";
+
+  args = (int *)malloc(sizeof(int) * 2);
+
+  if (args == NULL)
+    {
+    log_err(ENOMEM,id,"Cannot allocate memory...system failure inevitable");
+    return;
     }
 
-  sprintf(log_buffer, "%s from %s(%s)",
+  args[0] = stream;
+  args[1] = version;
 
-          dis_emsg[ret],
-          node->nd_name,
-          netaddr(addr));
+#ifdef ENABLE_PTHREADS
+  rc = enqueue_threadpool_request(is_request_work,args);
 
-  log_err(-1, id, log_buffer);
+  if (rc)
+    {
+    log_err(rc,id,"Unable to enqueue is request task into the threadpool");
+    }
+#else
+  is_request_work(args);
+#endif
 
-  rpp_close(stream);
-
-  update_node_state(node, INUSE_DOWN);
-
-  return;
   }  /* END is_request() */
 
 
 
 
-void
-write_node_state(void)
+
+void *write_node_state_work(
+
+  void *vp)
 
   {
-
   struct pbsnode *np;
   static char *fmt = "%s %d\n";
   int i;
@@ -2397,7 +2543,7 @@ write_node_state(void)
       {
       log_err(errno, "write_node_state", "could not truncate file");
 
-      return;
+      return(NULL);
       }
     }
   else
@@ -2411,7 +2557,7 @@ write_node_state(void)
         "write_node_state",
         "could not open file");
 
-      return;
+      return(NULL);
       }
     }
 
@@ -2423,9 +2569,18 @@ write_node_state(void)
   for (i = 0;i < svr_totnodes;i++)
     {
     np = pbsndmast[i];
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(np->nd_mutex);
+#endif
 
     if (np->nd_state & INUSE_DELETED)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(np->nd_mutex);
+#endif
+
       continue;
+      }
 
     if (np->nd_state & INUSE_OFFLINE)
       {
@@ -2433,6 +2588,10 @@ write_node_state(void)
               np->nd_name,
               np->nd_state & savemask);
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(np->nd_mutex);
+#endif
     }    /* END for (i) */
 
   if (fflush(nstatef) != 0)
@@ -2440,7 +2599,28 @@ write_node_state(void)
     log_err(errno, "write_node_state", "failed saving node state to disk");
     }
 
-  return;
+  return(NULL);
+  } /* END write_node_state_work() */
+
+
+
+
+
+void
+write_node_state(void)
+
+  {
+#ifdef ENABLE_PTHREADS
+  static char id[] = "write_node_state";
+  int rc = enqueue_threadpool_request(write_node_state_work,NULL);
+
+  if (rc)
+    {
+    log_err(rc,id,"Unable to enqueue is_request task into the threadpool");
+    }
+#else
+  write_node_state_work(NULL);
+#endif
   }  /* END write_node_state() */
 
 
@@ -2488,9 +2668,18 @@ write_node_note(void)
   for (i = 0;i < svr_totnodes;++i)
     {
     np = pbsndmast[i];
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(np->nd_mutex);
+#endif
 
     if (np->nd_state & INUSE_DELETED)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(np->nd_mutex);
+#endif
+
       continue;
+      }
 
     /* write node name followed by its note string */
 
@@ -2500,6 +2689,10 @@ write_node_note(void)
               np->nd_name,
               np->nd_note);
       }
+    
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(np->nd_mutex);
+#endif
     }
 
   fflush(nin);
@@ -2564,19 +2757,12 @@ static void free_prop(
 
 
 
-/*
- * unreserve - unreserve nodes
- *
- * If handle is set to a existing resource_t, then release all nodes
- * associated with that handle, otherwise, (this is dangerous)
- * if handle == RESOURCE_T_ALL, release all nodes period.
- */
+void *node_unreserve_work(
 
-void node_unreserve(
-
-  resource_t handle)
+  void *vp)
 
   {
+  resource_t handle = *((resource_t *)vp);
 
   struct  pbsnode *np;
 
@@ -2588,9 +2774,18 @@ void node_unreserve(
   for (i = 0;i < svr_totnodes;i++)
     {
     np = pbsndlist[i];
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(np->nd_mutex);
+#endif
 
     if (np->nd_state & INUSE_DELETED)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(np->nd_mutex);
+#endif
+
       continue;
+      }
 
     for (sp = np->nd_psn;sp;sp = sp->next)
       {
@@ -2605,9 +2800,43 @@ void node_unreserve(
           }
         }
       }
+    
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(np->nd_mutex);
+#endif
     }
 
-  return;
+  return(NULL);
+  } /* END node_unreserve_work() */
+
+
+
+
+
+/*
+ * unreserve - unreserve nodes
+ *
+ * If handle is set to a existing resource_t, then release all nodes
+ * associated with that handle, otherwise, (this is dangerous)
+ * if handle == RESOURCE_T_ALL, release all nodes period.
+ */
+
+void node_unreserve(
+
+  resource_t handle)
+
+  {
+#ifdef ENABLE_PTHREADS
+  static char id[] = "node_unreserve";
+  int rc = enqueue_threadpool_request(node_unreserve_work,NULL);
+
+  if (rc)
+    {
+    log_err(rc,id,"Unable to enqueue node_unreserve task into the threadpool");
+    }
+#else
+  node_unreserve_work(NULL);
+#endif
   }  /* END node_unreserve() */
 
 
@@ -2809,7 +3038,6 @@ int can_reshuffle(
   int             pass)
 
   {
-
   if (pnode->nd_state & INUSE_DELETED)
     return(FALSE);
 
@@ -2884,6 +3112,10 @@ static int search(
 
   while ((pnode = next_node(&iter)) != NULL)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pnode->nd_mutex);
+#endif
+
     if (search_acceptable(pnode,glorf,skip,vpreq) == TRUE)
       {
       pnode->nd_flag = thinking;
@@ -2895,9 +3127,16 @@ static int search(
       pnode->nd_order  = order;
 
       /* SUCCESS */
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pnode->nd_mutex);
+#endif
 
       return(1);
       }
+    
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pnode->nd_mutex);
+#endif
     }
 
   if (glorf == NULL)  /* no property */
@@ -2912,9 +3151,19 @@ static int search(
 
   while ((pnode = next_node(&iter)) != NULL)
     {
+    /* all paths through here treat the mutex correctly. convoluted, but 
+     * correct. This has to happen because of the potential recursion */
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pnode->nd_mutex);
+#endif
+
     if (can_reshuffle(pnode,glorf,skip,vpreq,pass) == TRUE)
       {
       pnode->nd_flag = conflict;
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pnode->nd_mutex);
+#endif
 
       /* Ben Webb patch (CRI 10/06/03) */
 
@@ -2924,6 +3173,10 @@ static int search(
                 skip,
                 pnode->nd_order,
                 depth);
+      
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(pnode->nd_mutex);
+#endif
 
       pnode->nd_flag = thinking;
 
@@ -2934,10 +3187,17 @@ static int search(
 
         pnode->nd_needed = vpreq;
         pnode->nd_order  = order;
-
+    
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pnode->nd_mutex);
+#endif
         return(1);
         }
-      }
+      }  
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pnode->nd_mutex);
+#endif
     }  /* END for (each node) */
 
   /* FAILURE */
@@ -3518,6 +3778,7 @@ int procs_available(int proc_ct)
 
 
 /* checks if nodes are free/configured */
+/* NOTE: must always be called by a thread that already holds the mutex for pnode */
 int node_avail_check(
 
   struct pbsnode *pnode)           /* I */
@@ -3779,10 +4040,24 @@ static int node_spec(
 
   while ((pnode = next_node(&iter)) != NULL)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pnode->nd_mutex);
+#endif
+
     if (pnode->nd_state & INUSE_DELETED)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pnode->nd_mutex);
+#endif
+
       continue;
+      }
 
     node_avail_check(pnode);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pnode->nd_mutex);
+#endif
     }    /* END for (i = 0) */
 
   /*
@@ -3882,12 +4157,23 @@ static int node_spec(
 
   while ((pnode = next_node(&iter)) != NULL)
     {
-    if (pnode->nd_state & INUSE_DELETED)
-      continue;
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pnode->nd_mutex);
+#endif
 
+    if (pnode->nd_state & INUSE_DELETED)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pnode->nd_mutex);
+#endif
+      continue;
+      }
     if (pnode->nd_ntype != NTYPE_CLUSTER)
       {
       /* node is ok */
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pnode->nd_mutex);
+#endif
 
       continue;
       }
@@ -3895,6 +4181,9 @@ static int node_spec(
     if (pnode->nd_flag != thinking)  /* thinking is global */
       {
       /* node is ok */
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pnode->nd_mutex);
+#endif
 
       continue;
       }
@@ -3904,6 +4193,9 @@ static int node_spec(
       if (pnode->nd_needed <= pnode->nd_nsnfree)
         {
         /* adequate virtual nodes available - node is ok */
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pnode->nd_mutex);
+#endif
 
         continue;
         }
@@ -3912,6 +4204,9 @@ static int node_spec(
           (pnode->nd_needed < pnode->nd_nsnfree + pnode->nd_nsnshared))
         {
         /* shared node - node is ok */
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pnode->nd_mutex);
+#endif
 
         continue;
         }
@@ -3922,6 +4217,9 @@ static int node_spec(
           (pnode->nd_needed <= pnode->nd_nsnfree + pnode->nd_nsnshared))
         {
         /* shared node - node is ok */
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pnode->nd_mutex);
+#endif
 
         continue;
         }
@@ -3932,6 +4230,10 @@ static int node_spec(
     /* Ben Webb search patch applied (CRI 10/03/03) */
 
     pnode->nd_flag = okay;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pnode->nd_mutex);
+#endif
 
     if (search(
           pnode->nd_first,
@@ -3948,6 +4250,10 @@ static int node_spec(
     if (early != 0)
       {
       /* FAILURE */
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(pnode->nd_mutex);
+#endif
 
       /* specified node not available and replacement cannot be located */
 
@@ -4035,6 +4341,10 @@ static int node_spec(
 
       if (FailNode != NULL)
         strncpy(FailNode, pnode->nd_name, 1024);
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pnode->nd_mutex);
+#endif
 
       return(0);
       }  /* END if (early != 0) */
@@ -4134,6 +4444,8 @@ int get_bitmap(
  * @param ProcBMStr (I) - the bitmap of procs requested
  * @return TRUE - if the node satisfies the bitmap, FALSE otherwise
  * @return BM_ERROR if the bitmap isn't valid
+ *
+ * NOTE: must always be called by a thread already locking the pnode's mutex
  */
 int node_satisfies_request(
 
@@ -4472,11 +4784,25 @@ int set_nodes(
 
   while ((pnode = next_node(iter)) != NULL)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pnode->nd_mutex);
+#endif 
+
     if (pnode->nd_state & INUSE_DELETED)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pnode->nd_mutex);
+#endif 
+
       continue;
+      }
 
     if (pnode->nd_flag != thinking)
       {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pnode->nd_mutex);
+#endif 
+
       /* node is not considered/eligible for job - see search() */
 
       /* skip node */
@@ -4494,6 +4820,10 @@ int set_nodes(
         reserve_node(pnode,newstate,pjob,ProcBMStr,&hlist);
         }
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pnode->nd_mutex);
+#endif 
+
       continue;
       }
 #endif /* GEOMETRY_REQUESTS */
@@ -4503,12 +4833,24 @@ int set_nodes(
       if (exclusive)
         {
         if (snp->inuse != INUSE_FREE)
+          {
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pnode->nd_mutex);
+#endif 
+          
           continue;
+          }
         }
       else
         {
         if ((snp->inuse != INUSE_FREE) && (snp->inuse != INUSE_JOBSHARE))
+          {
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pnode->nd_mutex);
+#endif 
+          
           continue;
+          }
         }
 
       /* Mark subnode as being IN USE */
@@ -4518,6 +4860,9 @@ int set_nodes(
       build_host_list(&hlist,snp,pnode);
       }  /* END for (snp) */
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pnode->nd_mutex);
+#endif 
     }    /* END for (i) */
 
   /* did we have a request for procs? Do those now */
@@ -4547,20 +4892,39 @@ int set_nodes(
       {
       pnode = pbsndlist[i];
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(pnode->nd_mutex);
+#endif 
+
       if (pnode->nd_state & INUSE_DELETED)
+        {
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pnode->nd_mutex);
+#endif 
         continue;
+        }
 
       for (snp = pnode->nd_psn;snp && procs_needed > 0;snp = snp->next)
         {
         if(exclusive)
           {
           if(snp->inuse != INUSE_FREE)
+            {
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pnode->nd_mutex);
+#endif 
             continue;
+            }
           }
         else
           {
           if ((snp->inuse != INUSE_FREE) && (snp->inuse != INUSE_JOBSHARE))
+            {
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pnode->nd_mutex);
+#endif 
             continue;
+            }
           }
         /* Mark subnode as being IN USE */
 
@@ -4575,6 +4939,9 @@ int set_nodes(
 
         } /* END for (snp) */
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pnode->nd_mutex);
+#endif 
       }
     }
 

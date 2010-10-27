@@ -1242,9 +1242,9 @@ int get_numa_statuses(
  * set of nodes at a destination.
  */
 
-void req_stat_node(
+void *req_stat_node(
 
-  struct batch_request *preq) /* ptr to the decoded request   */
+  void *vp) /* ptr to the decoded request   */
 
   {
   char    *name;
@@ -1256,6 +1256,7 @@ void req_stat_node(
   int     rc   = 0;
   int     type = 0;
   int     i;
+  struct batch_request *preq = (struct batch_request *)vp;
 
   struct prop props;
 
@@ -1282,7 +1283,7 @@ void req_stat_node(
     {
     req_reject(PBSE_NONODES, 0, preq, NULL, "node list is empty - check 'server_priv/nodes' file");
 
-    return;
+    return(NULL);
     }
 
   name = preq->rq_ind.rq_status.rq_id;
@@ -1313,7 +1314,7 @@ void req_stat_node(
       {
       req_reject(PBSE_UNKNODE, 0, preq, NULL, "cannot locate specified node");
 
-      return;
+      return(NULL);
       }
     }
 
@@ -1366,7 +1367,7 @@ void req_stat_node(
       }
     }
 
-  return;
+  return(NULL);
   }  /* END req_stat_node() */
 
 
@@ -1389,11 +1390,6 @@ static int status_node(
   struct brp_status *pstat;
   svrattrl          *pal;
 
-  if (pnode->nd_state & INUSE_DELETED)  /*node no longer valid*/
-    {
-    return(0);
-    }
-
   if ((preq->rq_perm & ATR_DFLAG_RDACC) == 0)
     {
     return(PBSE_PERM);
@@ -1406,6 +1402,19 @@ static int status_node(
   if (pstat == NULL)
     {
     return(PBSE_SYSTEM);
+    }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(pnode->nd_mutex);
+#endif
+
+  if (pnode->nd_state & INUSE_DELETED)  /*node no longer valid*/
+    {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pnode->nd_mutex);
+#endif
+
+    return(0);
     }
 
   pstat->brp_objtype = MGR_OBJ_NODE;
@@ -1439,6 +1448,10 @@ static int status_node(
          preq->rq_perm,
          &pstat->brp_attr,
          &bad);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pnode->nd_mutex);
+#endif
 
   return(rc);
   }  /* END status_node() */

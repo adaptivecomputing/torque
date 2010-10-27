@@ -565,16 +565,23 @@ parse_equal_string(char *start, char **name, char **value)
 
 char *parse_comma_string(
 
-  char *start)  /* I (optional) */
+  char  *start, /* I (optional) */
+  char **ptr)   /* I */
 
   {
-  static char *pc; /* if start is null, restart from here */
+  char *pc; /* if start is null, restart from here */
 
   char     *back;
   char     *rv;
 
+  if ((ptr == NULL) ||
+      ((*ptr == NULL) && (start == NULL)))
+    return(NULL);
+
   if (start != NULL)
     pc = start;
+  else
+    pc = *ptr;
 
   if (*pc == '\0')
     {
@@ -612,6 +619,8 @@ char *parse_comma_string(
 
   if (*pc != '\0')
     *pc++ = '\0'; /* if not end, terminate this and adv past */
+
+  *ptr = pc;
 
   return(rv);
   }  /* END parse_comma_string() */

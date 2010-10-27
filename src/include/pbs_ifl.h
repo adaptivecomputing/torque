@@ -284,6 +284,11 @@
 #ifdef MUNGE_AUTH
   #define ATTR_authusers       "authorized_users"
 #endif
+#ifdef ENABLE_PTHREADS
+#define ATTR_minthreads        "min_threads"
+#define ATTR_maxthreads        "max_threads"
+#define ATTR_threadidleseconds "thread_idle_seconds"
+#endif
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state          "state"
@@ -315,6 +320,7 @@
 #define ARRAY_RANGE "array_range=" /* see qdel.c */
 #define DELDELAY  "deldelay=" /* see qdel.c */
 #define DELPURGE  "delpurge="   /* see qdel.c */
+#define DELASYNC  "delasync"   /* see req_delete.c */
 #define PURGECOMP  "purgecomplete="   /* see req_delete.c */
 #define EXECQUEONLY  "exec_queue_only"   /* see req_stat.c */
 #define RERUNFORCE "force"

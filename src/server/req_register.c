@@ -2178,6 +2178,7 @@ int decode_depend(
   {
   int  rc;
   char *valwd;
+  char *ptr = NULL;
 
   if ((val == NULL) || (*val == '\0'))
     {
@@ -2193,7 +2194,7 @@ int decode_depend(
    * add a depend or depend_child structure.
    */
 
-  valwd = parse_comma_string(val);
+  valwd = parse_comma_string(val,&ptr);
 
   while (valwd != NULL)
     {
@@ -2204,7 +2205,7 @@ int decode_depend(
       return(rc);
       }
 
-    valwd = parse_comma_string(NULL);
+    valwd = parse_comma_string(NULL,&ptr);
     }
 
   patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;

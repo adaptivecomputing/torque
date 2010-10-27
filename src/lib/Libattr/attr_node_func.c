@@ -531,6 +531,7 @@ int decode_state(
 
   char  strbuf[512]; /*should handle most vals*/
   char *sbufp;
+  char *ptr = NULL;
   int   slen;
 
   if (val == NULL)
@@ -559,7 +560,7 @@ int decode_state(
 
   strcpy(sbufp, val);
 
-  if ((str = parse_comma_string(sbufp)) == NULL)
+  if ((str = parse_comma_string(sbufp,&ptr)) == NULL)
     {
     if (slen >= 512)
       free(sbufp);
@@ -583,7 +584,7 @@ int decode_state(
   /*last call left off.  The initial comma separated string   */
   /*copy pointed to by sbufp is modified with each func call  */
 
-  while ((str = parse_comma_string(NULL)) != NULL)
+  while ((str = parse_comma_string(NULL,&ptr)) != NULL)
     {
     if ((rc = set_nodeflag(str, &flag)) != 0)
       break;

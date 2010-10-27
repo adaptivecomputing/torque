@@ -1196,6 +1196,48 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER},
 #endif
 
+#ifdef ENABLE_PTHREADS
+  /* SRV_ATR_minthreads */
+  {ATTR_minthreads,               /* "min_threads" */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   MGR_ONLY_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER
+  },
+
+  /* SRV_ATR_maxthreads */
+  {ATTR_maxthreads,               /* "max_threads" */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   MGR_ONLY_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER
+  },
+
+  /* SRV_ATR_threadidleseconds */
+  {ATTR_threadidleseconds,        /* "thread_idle_seconds" */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   MGR_ONLY_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER
+  },
+
+#endif /* def ENABLE_PTHREADS */
+
   /* site supplied server attribute definitions if any, see site_svr_attr_*.h  */
 #include "site_svr_attr_def.h"
 

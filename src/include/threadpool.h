@@ -1,7 +1,11 @@
+#ifndef THREADPOOL_H
+#define THREADPOOL_H
+
+#ifdef ENABLE_PTHREADS
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
-* Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+* Copyright (c) 1999-2010 Veridian Information Solutions, Inc.
 * All rights reserved.
 *
 * ---------------------------------------------------------------------------
@@ -77,123 +81,66 @@
 * without reference to its choice of law rules.
 */
 
-#ifndef UTILS_H
-#define UTILS_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <pwd.h>
-#include <signal.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <time.h>
-#include <limits.h>
-#include <netdb.h>
-#include <grp.h>
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/times.h>
-#include <sys/stat.h>
-#include <sys/select.h>
 
-#include "portability.h"
-#include "server_limits.h"
-#include "list_link.h"
-#include "attribute.h"
-#include "pbs_nodes.h"
-#include "libpbs.h"
-#include "pbs_ifl.h"
-#include "resource.h"
-#include "svrfunc.h"
-#include "pbs_error.h"
-#include "log.h"
-#include "mcom.h"
 
-#ifndef MAXLINE 
-#define MAXLINE 1024
-#endif
-#ifndef NULL
-#define NULL 0
-#endif
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif
 
-#define BUFFER_OVERFLOW -5
-#define LT_ESCAPED       "&lt;"
-#define LT_ESCAPED_LEN   4
-#define GT_ESCAPED       "&gt;"
-#define GT_ESCAPED_LEN   4
-#define AMP_ESCAPED      "&amp;"
-#define AMP_ESCAPED_LEN  5
-#define QUOT_ESCAPED     "&quot;"
-#define QUOT_ESCAPED_LEN 6
-#define APOS_ESCAPED     "&apos;"
-#define APOS_ESCAPED_LEN 6
 
-#ifndef MAXLINE 
-#define MAXLINE 1024
-#endif
-#ifndef NULL
-#define NULL 0
-#endif
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif 
 
-#define BUFFER_OVERFLOW -5
-#define LT_ESCAPED       "&lt;"
-#define LT_ESCAPED_LEN   4
-#define GT_ESCAPED       "&gt;"
-#define GT_ESCAPED_LEN   4
-#define AMP_ESCAPED      "&amp;"
-#define AMP_ESCAPED_LEN  5
-#define QUOT_ESCAPED     "&quot;"
-#define QUOT_ESCAPED_LEN 6
-#define APOS_ESCAPED     "&apos;"
-#define APOS_ESCAPED_LEN 6
+#include <pthread.h>
 
-/* Function declarations */
 
-/* group functions in u_groups.c */
-extern struct group *getgrnam_ext (char *);
+#define POOL_DESTROY 0x1
 
-/* tree functions in u_tree.c */
-extern void tinsert (const u_long, struct pbsnode *, tree **);
-extern void *tdelete (const u_long, tree **);
-extern struct pbsnode *tfind (const u_long, tree **);
-extern int tlist (tree *, char *, int);
-extern void tfree (tree **);
-extern int is_whitespace (char);
 
-/* moab-like utility functions in u_mu.c */
-extern int MUSNPrintF (char **, int *, char *, ...);
-extern int MUStrNCat (char **, int *, char *);
-extern int MUSleep (long);
-extern int MUReadPipe (char *, char *, int);
-extern int is_whitespace (char);
 
-/* MXML functions from u_MXML.c */
-extern int MXMLGetChild (mxml_t *, char *, int *, mxml_t **);
-extern int MXMLAddE (mxml_t *, mxml_t *);
-extern int MXMLGetAttrF (mxml_t *, char *, int *, void *, enum MDataFormatEnum, int);
-extern int MXMLGetAttr (mxml_t *, char *, int *, char *, int);
-extern int MXMLToString (mxml_t *, char *, int, char **, mbool_t);
+typedef struct tp_work tp_work_t;
+struct tp_work
+  {
+  tp_work_t *next;
+  void      *(*work_func)(void *); /* function to call */
+  void      *work_arg; /* argument */
+  };
 
-/* functions from u_xml.c */
-int get_parent_and_child(char *,char **,char **,char **);
-int escape_xml(char *,char *,int);
-int unescape_xml(char *,char *,int);
 
-/* functions from u_xml.c */
-int get_parent_and_child(char *,char **,char **,char **);
-int escape_xml(char *,char *,int);
-int unescape_xml(char *,char *,int);
 
-#endif /* END #ifndef UTILS_H */
- 
+
+typedef struct tp_working tp_working_t;
+struct tp_working
+  {
+  tp_working_t *next;
+  pthread_t     working_id; /* id of thread currently working */
+  };
+
+
+
+
+typedef struct threadpool threadpool_t;
+struct threadpool
+  {
+  pthread_mutex_t  tp_mutex;
+  pthread_cond_t   tp_waiting_work; /* what waiting threads pend on */
+  pthread_cond_t   tp_can_destroy; /* thread pool is ready to be deleted */
+  tp_working_t    *tp_active;  /* list of currently working threads */
+  tp_work_t       *tp_first; /* first in queue */
+  tp_work_t       *tp_last;  /* last in queue */
+  pthread_attr_t   tp_attr; /* attributes for workers */
+  int              tp_nthreads; /* number of threads */
+  int              tp_min_threads; /* minimum number of threads */
+  int              tp_max_threads; /* maximum number of threads */
+  int              tp_idle_threads; /* number of currently idle threads */
+  int              tp_max_idle_secs; /* number of seconds before a thread terminates */
+  int              tp_flags; /* pool state flags */
+  };
+
+
+
+
+extern threadpool_t *request_pool;
+extern int enqueue_threadpool_request(void *(*func)(void *),void *arg);
+extern int initialize_threadpool(threadpool_t **,int,int,int);
+extern void destroy_request_pool();
+
+#endif /* def ENABLE_PTHREADS */
+#endif /* ndef THREADPOOL_H */ 
+

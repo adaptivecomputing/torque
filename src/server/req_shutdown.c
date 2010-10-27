@@ -101,6 +101,7 @@
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "csv.h"
+#include "threadpool.h"
 
 /* Private Fuctions Local to this File */
 
@@ -202,6 +203,11 @@ void svr_shutdown(
     PBS_EVENTCLASS_SERVER,
     msg_daemonname,
     log_buffer);
+
+#ifdef ENABLE_PTHREADS
+  /* shutdown the threads */
+  destroy_request_pool();
+#endif
 
   if ((type == SHUT_QUICK) || (type == SHUT_SIG)) /* quick, leave jobs as are */
     {

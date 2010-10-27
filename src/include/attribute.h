@@ -423,7 +423,7 @@ extern void free_resc(attribute *);
 extern void free_depend(attribute *);
 extern void free_unkn(attribute *);
 extern int   parse_equal_string(char *, char **, char **);
-extern char *parse_comma_string(char *);
+extern char *parse_comma_string(char *,char **);
 
 #define NULL_FUNC (int (*)())0
 

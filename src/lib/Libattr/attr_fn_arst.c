@@ -130,6 +130,7 @@ int decode_arst_direct(
   char      *pstr = NULL;
   size_t     ssize;
   char      *tmpval = NULL;
+  char      *tmp = NULL;
 
   struct array_strings *stp = NULL;
 
@@ -206,7 +207,7 @@ int decode_arst_direct(
 
   j  = 0;
 
-  pstr = parse_comma_string(tmpval);
+  pstr = parse_comma_string(tmpval,&tmp);
 
   while ((pstr != NULL) && (j < ns))
     {
@@ -225,7 +226,7 @@ int decode_arst_direct(
 
     j++;
 
-    pstr = parse_comma_string(NULL);
+    pstr = parse_comma_string(NULL,&tmp);
     }  /* END while ((pstr != NULL) && (j < ns)) */
 
   stp->as_usedptr = j;

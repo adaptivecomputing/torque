@@ -168,3 +168,8 @@ ATTR_recordjobscript,
 #ifdef MUNGE_AUTH
 ATTR_authusers,
 #endif
+#ifdef ENABLE_PTHREADS
+ATTR_minthreads,
+ATTR_maxthreads,
+ATTR_threadidleseconds,
+#endif

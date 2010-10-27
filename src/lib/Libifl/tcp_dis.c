@@ -130,12 +130,24 @@ int DIS_tcp_istimeout(
   int sock)
 
   {
+  int rc;
+
   if (tcparray == NULL)
     {
     return(0);
     }
 
-  return(tcparray[sock]->IsTimeout);
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&(tcparray[sock]->tcp_mutex));
+#endif
+
+  rc = tcparray[sock]->IsTimeout;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&(tcparray[sock]->tcp_mutex));
+#endif
+
+  return(rc);
   }  /* END DIS_tcp_istimeout() */
 
 
@@ -192,7 +204,7 @@ static void tcp_pack_buff(
 
 static int tcp_read(
 
-  int fd)  /* I */
+  int fd)          /* I */
 
   {
   long              i;
@@ -297,7 +309,7 @@ static int tcp_read(
       /* FAILURE - read failed */
       
       tcparray[fd]->ReadErrno = errno;
-      
+
       return(-1);
       }
     else if (i == 0)
@@ -326,6 +338,7 @@ static int tcp_read(
       {
       /* failure to allocate memory, return NULL? */
       log_err(ENOMEM,"tcp_read","Could not allocate memory to read buffer");
+
       return(-1);
       }
     else
@@ -369,6 +382,10 @@ int DIS_tcp_wflush(
 
   struct tcpdisbuf *tp;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
+#endif
+
   tp = &tcparray[fd]->writebuf;
   pb = tp->tdis_thebuf;
 
@@ -394,6 +411,10 @@ int DIS_tcp_wflush(
                 strerror(errno));
         }
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+#endif
+
       return(-1);
       }  /* END if (i == -1) */
 
@@ -407,6 +428,10 @@ int DIS_tcp_wflush(
   tp->tdis_eod = tp->tdis_leadp;
 
   tcp_pack_buff(tp);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+#endif
 
   return(0);
   }  /* END DIS_tcp_wflush() */
@@ -446,10 +471,18 @@ void DIS_tcp_reset(
 
   tcp = tcparray[fd];
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&tcp->tcp_mutex);
+#endif
+
   if (i == 0)
     DIS_tcp_clear(&tcp->readbuf);
   else
     DIS_tcp_clear(&tcp->writebuf);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&tcp->tcp_mutex);
+#endif
 
   return;
   }  /* END DIS_tcp_reset() */
@@ -473,16 +506,27 @@ static int tcp_rskip(
 
   struct tcpdisbuf *tp;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
+#endif
+
   tp = &tcparray[fd]->readbuf;
 
   if (tp->tdis_leadp - tp->tdis_eod < (ssize_t)ct)
     {
     /* this isn't the best thing to do, but this isn't used, so */
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+#endif
 
     return(-1);
     }
 
   tp->tdis_leadp += ct;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+#endif
 
   return(0);
   }
@@ -508,6 +552,13 @@ static int tcp_getc(
 
   struct tcpdisbuf *tp;
 
+  if (tcparray[fd] == NULL)
+    return(-2);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
+#endif
+
   tp = &tcparray[fd]->readbuf;
 
   if (tp->tdis_leadp >= tp->tdis_eod)
@@ -518,11 +569,20 @@ static int tcp_getc(
 
     if (x <= 0)
       {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+#endif
       return((x == -2) ? -2 : -1); /* Error or EOF */
       }
     }
 
-  return((int)*tp->tdis_leadp++);
+  x = (int)*tp->tdis_leadp++;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+#endif
+
+  return(x);
   }  /* END tcp_getc() */
 
 
@@ -549,6 +609,13 @@ static int tcp_gets(
 
   struct tcpdisbuf *tp;
 
+  if (tcparray[fd] == NULL)
+    return(-2);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
+#endif
+
   tp = &tcparray[fd]->readbuf;
 
   while (tp->tdis_eod - tp->tdis_leadp < (ssize_t)ct)
@@ -559,6 +626,10 @@ static int tcp_gets(
 
     if (x <= 0)
       {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+#endif
+
       return(x);  /* Error or EOF */
       }
     }
@@ -566,6 +637,10 @@ static int tcp_gets(
   memcpy((char *)str, tp->tdis_leadp, ct);
 
   tp->tdis_leadp += ct;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+#endif
 
   return((int)ct);
   }  /* END tcp_gets() */
@@ -578,19 +653,24 @@ int PConnTimeout(
   int sock)  /* I */
 
   {
+  int rc; 
+
   if ((tcparray == NULL) || (tcparray[sock] == NULL))
     {
     return(0);
     }
 
-  if (tcparray[sock]->IsTimeout == 1)
-    {
-    /* timeout occurred, report 'TRUE' */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&(tcparray[sock]->tcp_mutex));
+#endif
 
-    return(1);
-    }
+  rc = (tcparray[sock]->IsTimeout == 1);
 
-  return(0);
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&(tcparray[sock]->tcp_mutex));
+#endif
+
+  return(rc);
   }  /* END PConnTimeout() */
 
 
@@ -601,12 +681,24 @@ int TConnGetReadErrno(
   int sock)  /* I */
 
   {
+  int rc;
+
   if ((tcparray == NULL) || (tcparray[sock] == NULL))
     {
     return(0);
     }
 
-  return(tcparray[sock]->ReadErrno);
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&(tcparray[sock]->tcp_mutex));
+#endif
+
+  rc = tcparray[sock]->ReadErrno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&(tcparray[sock]->tcp_mutex));
+#endif
+
+  return(rc);
   }  /* END TConnGetReadErrno() */
 
 
@@ -618,12 +710,24 @@ int TConnGetSelectErrno(
   int sock)  /* I */
 
   {
+  int rc;
+
   if ((tcparray == NULL) || (tcparray[sock] == NULL))
     {
     return(0);
     }
 
-  return(tcparray[sock]->SelectErrno);
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&(tcparray[sock]->tcp_mutex));
+#endif
+  
+  rc = tcparray[sock]->SelectErrno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&(tcparray[sock]->tcp_mutex));
+#endif
+
+  return(rc);
   }  /* END TConnGetSelectErrno() */
 
 
@@ -657,6 +761,13 @@ static int tcp_puts(
 
   tcp = tcparray[fd];
 
+  if (tcp == NULL)
+    return(-2);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&tcp->tcp_mutex);
+#endif
+
   /* NOTE:  currently, failures may occur if THE_BUF_SIZE is not large enough */
   /*        this should be changed to allow proper operation with degraded    */
   /*        performance (how?) */
@@ -679,6 +790,10 @@ static int tcp_puts(
              (int)(tp->tdis_leadp - tp->tdis_thebuf),
              (int)ct))
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(&tcp->tcp_mutex);
+#endif
+
       return(-1);
       }
 
@@ -694,6 +809,10 @@ static int tcp_puts(
   memcpy(tp->tdis_leadp, (char *)str, ct);
 
   tp->tdis_leadp += ct;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&tcp->tcp_mutex);
+#endif
 
   return(ct);
   }  /* END tcp_puts() */
@@ -714,6 +833,13 @@ static int tcp_rcommit(
 
   struct tcpdisbuf *tp;
 
+  if (tcparray[fd] == NULL)
+    return(-2);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
+#endif
+
   tp = &tcparray[fd]->readbuf;
 
   if (commit_flag)
@@ -728,6 +854,10 @@ static int tcp_rcommit(
 
     tp->tdis_leadp = tp->tdis_trailp;
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+#endif
 
   return(0);
   }  /* END tcp_rcommit() */
@@ -749,6 +879,13 @@ static int tcp_wcommit(
 
   struct tcpdisbuf *tp;
 
+  if (tcparray[fd] == NULL)
+    return(-2);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
+#endif
+
   tp = &tcparray[fd]->writebuf;
 
   if (commit_flag)
@@ -763,6 +900,10 @@ static int tcp_wcommit(
 
     tp->tdis_leadp = tp->tdis_trailp;
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+#endif
 
   return(0);
   }
@@ -792,6 +933,68 @@ DIS_tcp_funcs(void)
 
 
 
+#ifdef ENABLE_PTHREADS
+
+/**
+ * locks the mutexes for all tcp channels
+ */
+int lock_all_channels()
+
+  {
+  int rc = 0;
+  int last_locked;
+  int i;
+
+  for (i = 0; i < tcparraymax; i++)
+    {
+    if (tcparray[i] != NULL)
+      {
+      rc = pthread_mutex_lock(&(tcparray[i]->tcp_mutex));
+      
+      if (rc)
+        {
+        last_locked = i - 1;
+        
+        break;
+        }
+      }
+    }
+
+  if (rc)
+    {
+    for (i = 0; i < tcparraymax; i++)
+      {
+      if (tcparray[i] != NULL)
+        pthread_mutex_unlock(&(tcparray[i]->tcp_mutex));
+      }
+    }
+
+  return(rc);
+  } /* END lock_all_channels() */
+
+
+
+
+/**
+ * unlocks the mutexes for all tcp channels
+ */
+int unlock_all_channels()
+
+  {
+  int i;
+
+  for (i = 0; i < tcparraymax; i++)
+    {
+    if (tcparray[i] != NULL)
+      pthread_mutex_unlock(&(tcparray[i]->tcp_mutex));
+    }
+
+  return(0);
+  } /* END unlock_all_channels() */
+#endif /* def ENABLE_PTHREADS */
+
+
+
 
 /*
  * DIS_tcp_setup - setup supports routines for dis, "data is strings", to
@@ -818,8 +1021,17 @@ void DIS_tcp_setup(
     return;
     }
 
-  /* set DIS function pointers to tcp routines */
+#ifdef ENABLE_PTHREADS
+  if (lock_all_channels())
+    {
+    /* FAILURE */
+    log_err(-1,"DIS_tcp_setup","Couln't lock mutexes for reallocating");
+    
+    return;
+    }
+#endif
 
+  /* set DIS function pointers to tcp routines */
   DIS_tcp_funcs();
 
   if (fd >= tcparraymax)
@@ -841,7 +1053,7 @@ void DIS_tcp_setup(
         fd);
       log_err(errno, "DIS_tcp_setup", log_buffer);
 
-      return;
+      goto error;
       }
 
     tcparraymax = fd + 10;
@@ -858,7 +1070,7 @@ void DIS_tcp_setup(
 
         log_err(errno,"DIS_tcp_setup","calloc failure");
 
-        return;
+        goto error;
         }
       }
     else
@@ -875,7 +1087,7 @@ void DIS_tcp_setup(
 
         log_err(errno,"DIS_tcp_setup","realloc failure");
 
-        return;
+        goto error;
         }
 
       tcparray = tmpTA;
@@ -896,8 +1108,13 @@ void DIS_tcp_setup(
       {
       log_err(errno, "DIS_tcp_setup", "malloc failure");
 
-      return;
+      goto error;
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_init(&tcp->tcp_mutex,NULL);
+    pthread_mutex_lock(&tcp->tcp_mutex);
+#endif
 
     tp = &tcp->readbuf;
 
@@ -906,7 +1123,7 @@ void DIS_tcp_setup(
       {
       log_err(errno,"DIS_tcp_setup","malloc failure");
 
-      return;
+      goto error;
       }
     tp->tdis_bufsize = THE_BUF_SIZE;
 
@@ -917,18 +1134,20 @@ void DIS_tcp_setup(
       {
       log_err(errno,"DIS_tcp_setup","malloc failure");
 
-      return;
+      goto error;
       }
     tp->tdis_bufsize = THE_BUF_SIZE;
-
-
     }
 
   /* initialize read and write buffers */
-
   DIS_tcp_clear(&tcp->readbuf);
 
   DIS_tcp_clear(&tcp->writebuf);
+
+error:
+#ifdef ENABLE_PTHREADS
+  unlock_all_channels();
+#endif
 
   return;
   }  /* END DIS_tcp_setup() */

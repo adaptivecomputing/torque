@@ -126,9 +126,10 @@
 #include "batch_request.h"
 #include "pbs_proto.h"
 #include "u_tree.h"
-#ifdef USE_HA_THREADS
+/* #ifdef USE_HA_THREADS */
 #include <pthread.h>
-#endif /* USE_HA_THREADS */
+/* #endif */ /* USE_HA_THREADS */
+#include "threadpool.h"
 
 
 #define TSERVER_HA_CHECK_TIME  1  /* 1 second sleep time between checks on the lock file for high availability */
@@ -149,6 +150,10 @@ extern void acct_close(void);
 extern int  svr_startjob(job *, struct batch_request *, char *, char *);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
+#ifdef ENABLE_PTHREADS
+extern void started_servicing(int);
+extern void done_servicing(int);
+#endif
 #ifdef NO_SIGCHLD
 extern void check_children();
 #endif
@@ -247,6 +252,7 @@ char      OriginalPath[MAXPATHLEN+1];
 mutex_t   EUIDMutex; /* prevents thread from trying to lock the file 
                         from a different euid */
 int HALockFD;
+
 /* END HA global data items */
 
 struct server server;  /* the server structure */
@@ -281,6 +287,12 @@ char           *NodeSuffix = NULL;
 int MultiMomMode = 0;
 
 int allow_any_mom = FALSE;
+
+#ifdef ENABLE_PTHREADS
+int             min_threads;
+int             max_threads;
+int             thread_idle_time;
+#endif
 
 void DIS_rpp_reset(void)
 
@@ -320,6 +332,12 @@ void do_rpp(
 
   void is_request(int, int, int *);
   void stream_eof(int, u_long, uint16_t, int);
+
+#ifdef ENABLE_PTHREADS
+  int  stream_done = TRUE;
+
+  started_servicing(stream);
+#endif
 
   if (LOGLEVEL >= 4)
     {
@@ -390,6 +408,10 @@ void do_rpp(
 
     stream_eof(stream, 0, 0, ret);
 
+#ifdef ENABLE_PTHREADS
+    done_servicing(stream);
+#endif
+
     return;
     }  /* END if (ret != DIS_SUCCESS) */
 
@@ -412,6 +434,10 @@ void do_rpp(
       }
 
     stream_eof(stream, 0, 0, ret);
+    
+#ifdef ENABLE_PTHREADS
+    done_servicing(stream);
+#endif
 
     return;
     }
@@ -433,6 +459,9 @@ void do_rpp(
         }
 
       is_request(stream, version, NULL);
+#ifdef ENABLE_PTHREADS
+      stream_done = FALSE;
+#endif
 
       break;
 
@@ -450,7 +479,12 @@ void do_rpp(
 
       break;
     }  /* END switch(proto) */
-
+    
+#ifdef ENABLE_PTHREADS
+  if (stream_done == TRUE)
+    done_servicing(stream);
+#endif
+   
   return;
   }  /* END do_rpp() */
 
@@ -483,6 +517,7 @@ void rpp_request(
 
     if (stream == -2)
       break;
+
 
     do_rpp(stream);
     }
@@ -1715,6 +1750,25 @@ int main(
       exit(2);
       }
     }
+#ifdef ENABLE_PTHREADS
+  /* setup the threadpool for use */
+  if (server.sv_attr[SRV_ATR_minthreads].at_flags & ATR_VFLAG_SET) 
+    min_threads = server.sv_attr[SRV_ATR_minthreads].at_val.at_long;
+  else
+    min_threads = DEFAULT_MIN_THREADS;
+
+  if (server.sv_attr[SRV_ATR_maxthreads].at_flags & ATR_VFLAG_SET)
+    max_threads = server.sv_attr[SRV_ATR_maxthreads].at_val.at_long;
+  else
+    max_threads = DEFAULT_MAX_THREADS;
+
+  if (server.sv_attr[SRV_ATR_threadidleseconds].at_flags & ATR_VFLAG_SET)
+    thread_idle_time = server.sv_attr[SRV_ATR_threadidleseconds].at_val.at_long;
+  else
+    thread_idle_time = DEFAULT_THREAD_IDLE;
+      
+  initialize_threadpool(&request_pool,min_threads,max_threads,thread_idle_time);
+#endif 
 
   sprintf(log_buffer, "%ld\n", (long)sid);
 

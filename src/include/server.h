@@ -100,6 +100,12 @@
 #define NO_BUFFER_SPACE -2
 #define NO_ATTR_DATA    1
 #define ATTR_NOT_FOUND  -2
+#ifdef ENABLE_PTHREADS
+/* default multi threading options */
+#define DEFAULT_MAX_THREADS    5
+#define DEFAULT_MIN_THREADS    5
+#define DEFAULT_THREAD_IDLE    -1
+#endif
 
 enum srv_atr
   {
@@ -185,6 +191,11 @@ enum srv_atr
   SRV_ATR_RecordJobScript,
 #ifdef MUNGE_AUTH
   SRV_ATR_authusers,
+#endif
+#ifdef ENABLE_PTHREADS
+  SRV_ATR_minthreads,
+  SRV_ATR_maxthreads,
+  SRV_ATR_threadidleseconds,
 #endif
 
 #include "site_svr_attr_enum.h"

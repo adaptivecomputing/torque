@@ -324,6 +324,25 @@ fi
 
 
 
+dnl check if we should use pthreads or not
+AC_ARG_ENABLE(pthreads, [
+  --enable-pthreads  Enables multithreaded TORQUE])
+if test "x$GCC" = "xyes" ; then
+  AC_MSG_CHECKING([whether to use pthreads])
+  if test "${enable_pthreads}" == "yes" ; then
+    AC_MSG_RESULT([yes])
+    AC_DEFINE(HAVE_PTHREAD,1,[Use posix threads])
+    PTHREAD_LIBS=-lpthread
+    LIBS="$LIBS $PTHREAD_LIBS -lrt"
+    CFLAGS="$CFLAGS -D_GNU_SOURCE -DENABLE_PTHREADS"
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+
+
+
 dnl ###########################################
 dnl Make only top dir mode?
 dnl

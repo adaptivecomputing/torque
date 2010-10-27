@@ -1,5 +1,11 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+3.0
+  e - make node functionality multi-threaded. Data is now protected, and 
+      TORQUE can run with a customizable amount of threads available in the
+      threadpool using min_threads, max_threads, and thread_idle_seconds.
+      Only available when configured with --enable-pthreads
+
 2.6.0
 # note for developers: the intermediate prelease fixes are here only because
 # there are users using the snapshots now. These will be removed pre-release
@@ -51,6 +57,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the total in the resource list. This allows memory enforcement for
       NUMA jobs, but doesn't affect others as memory isn't enforced for 
       multinode jobs
+  e - add an asynchronous option to qdel 
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
