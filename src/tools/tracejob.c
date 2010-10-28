@@ -422,7 +422,7 @@ int parse_log(
 
   struct log_entry tmp; /* temporary log entry */
   char buf[32768]; /* buffer to read in from file */
-  char *p;  /* pointer to use for strtok */
+  char *pa, *pe;   /* pointers to use for splitting */
   int field_count; /* which field in log entry */
   int j = 0;
 
@@ -441,67 +441,75 @@ int parse_log(
 
     buf[strlen(buf) - 1] = '\0';
 
-    p = strtok(buf, ";");
-
     field_count = 0;
-
+    pa = buf;
     memset(&tmp, 0, sizeof(struct log_entry));
 
-    for (field_count = 0;(field_count < 6) && (p != NULL);field_count++)
+    for(field_count = 0; (pa != NULL) && (field_count <= FLD_MSG); field_count++) 
       {
-      switch (field_count)
+
+      /* instead of using strtok every time, conditionally advance the pa (the field pointer)
+       * on semicolons. This prevents data from getting cut out of messages with semicolons in
+       * them */
+      if(field_count < FLD_MSG) 
         {
-
-        case FLD_DATE:
-
-          tmp.date = p;
-
-          if (ind == IND_ACCT)
-            field_count = 2;
-
-          break;
-
-        case FLD_EVENT:
-
-          tmp.event = p;
-
-          break;
-
-        case FLD_OBJ:
-
-          tmp.obj = p;
-
-          break;
-
-        case FLD_TYPE:
-
-          tmp.type = p;
-
-          break;
-
-        case FLD_NAME:
-
-          tmp.name = p;
-
-          break;
-
-        case FLD_MSG:
-
-          tmp.msg = p;
-
-          break;
-
-        default:
-
-          printf("Field count too big!\n");
-
-          printf("%s\n", p);
-
-          break;
+        if((pe = strchr(pa, ';')))
+          *pe = '\0';
+        } 
+      else 
+        {
+        pe = NULL;
         }
 
-      p = strtok(NULL, ";");
-      }  /* END for (field_count) */
+      switch (field_count) 
+        
+        {
+        case FLD_DATE:
+
+          tmp.date = pa;
+          if(ind == IND_ACCT)
+            field_count += 2;
+
+          break;
+
+      case FLD_EVENT:
+        
+          tmp.event = pa;
+        
+          break;
+
+      case FLD_OBJ:
+        
+          tmp.obj = pa;
+        
+          break;
+
+      case FLD_TYPE:
+        
+          tmp.type = pa;
+        
+        
+          break;
+
+      case FLD_NAME:
+        
+          tmp.name = pa;
+        
+          break;
+
+      case FLD_MSG:
+        
+          tmp.msg = pa;
+        
+          break;
+      }
+
+      if(pe)
+        pa = pe + 1;
+      else
+        pa = NULL;
+
+    } /* END for (field_count) */
 
     if ((tmp.name != NULL) &&
         !strncmp(job, tmp.name, strlen(job)) &&
