@@ -5656,15 +5656,16 @@ static void set_one_old(
   int   shared) /* how used flag, either INUSE_JOB or INUSE_JOBSHARE */
 
   {
-  int  i;
-  int  index;
+  int             index;
 
   struct pbsnode *pnode;
 
   struct pbssubn *snp;
 
   struct jobinfo *jp;
-  char        *pc;
+  char           *pc;
+
+  node_iterator   iter;
 
   if ((pc = strchr(name, (int)'/')))
     {
@@ -5677,10 +5678,10 @@ static void set_one_old(
     index = 0;
     }
 
-  for (i = 0;i < svr_totnodes;i++)
-    {
-    pnode = pbsndmast[i];
+  reinitialize_node_iterator(&iter);
 
+  while ((pnode = next_node(&iter)) != NULL)
+    {
     if (strcmp(name, pnode->nd_name) == 0)
       {
       /* Mark node as being IN USE ...  */
