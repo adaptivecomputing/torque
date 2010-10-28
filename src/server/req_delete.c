@@ -592,7 +592,6 @@ jump:
       memcpy(preq_tmp->rq_host, preq->rq_host, PBS_MAXHOSTNAME + 1);
 
       reply_ack(preq_tmp);
-      free(preq_tmp);
       preq->rq_noreply = TRUE; /* set for no more replies */
       }
 
