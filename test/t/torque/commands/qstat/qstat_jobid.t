@@ -77,7 +77,7 @@ foreach my $job_id (@job_ids)
     {
 
     my $reg_exp = &QSTAT_REGEXP->{ $attribute };
-    ok($job_info{ $job_id }{ $attribute } =~ /${reg_exp}/, "Checking the '$job_id' $attribute attribute"); 
+    like($job_info{ $job_id }{ $attribute }, qr/${reg_exp}/, "Checking the '$job_id' $attribute attribute"); 
 
     } # END foreach my $attribute (@attributes)
 
