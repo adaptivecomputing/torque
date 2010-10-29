@@ -132,7 +132,7 @@ if test $install -gt 0;then
       while read line;do
          chown $user $destdir$line; chgrp $group $destdir$line
          case $line in
-            *$bindir/${program_prefix}pbs_iff${program_suffix})
+            *$sbindir/${program_prefix}pbs_iff${program_suffix})
                chmod u+s $destdir$sbindir/${program_prefix}pbs_iff${program_suffix};;
             *$bindir/${program_prefix}pbs_rcp${program_suffix})
                chmod u+s $destdir$bindir/${program_prefix}pbs_rcp${program_suffix};;
