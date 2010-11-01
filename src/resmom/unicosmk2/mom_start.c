@@ -154,7 +154,7 @@ gid_t gid;
 
   for (i = 0; i < DIR_RETRY; i++)
     {
-    if (mkdir(name, 0777) == -1)
+    if (mkdir(name, 01777) == -1)
       {
       if (errno == EEXIST)
         {

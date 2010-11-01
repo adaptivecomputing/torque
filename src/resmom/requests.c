@@ -3635,7 +3635,7 @@ void req_cpyfile(
 
         saveumask = umask(0000);
 
-        if ((mkdir(needdir, 0777) == -1) && (errno != EEXIST))
+        if ((mkdir(needdir, 01777) == -1) && (errno != EEXIST))
           {
           log_err(errno, id, "Failed to create jobs checkpoint directory");
           }
