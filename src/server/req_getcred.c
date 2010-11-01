@@ -266,6 +266,13 @@ int unmunge_request(int s, struct batch_request *preq)
 	return(-1);
 	}
 
+	rc = fsync(fd);
+	if(rc < 0)
+		{
+		close(fd);
+		return(rc);
+		}
+
   close(fd);
 
   /* For the child to run the unmunge utility on the file we just created.
@@ -281,75 +288,85 @@ int unmunge_request(int s, struct batch_request *preq)
 
   pid = fork();
   if(pid != 0)
-	{
-	/* This is the parent*/
-	/* set up the pipe to be able to read from the child */
-	close(fd_pipe[1]);
-
-	memset(buf, 0, MUNGE_SIZE);
-	memset(munge_buf, 0, MUNGE_SIZE);
-	ptr = munge_buf; 
-
-	do
 	  {
-	  bytes_read = read(fd_pipe[0], buf, MUNGE_SIZE);
-	  if(bytes_read > 0)
-		{
-		total_bytes_read += bytes_read;
-		memcpy(ptr, buf, bytes_read);
-		ptr += bytes_read;
-		}
-	  }while(bytes_read > 0);
-
-	  if(bytes_read == -1)
-		{
-		/* read failed */
-		unlink(mungeFileName);
-		req_reject(PBSE_SYSTEM, 0, preq, NULL, "error reading unmunge data");
-		return(-1);
-		}
-	  unlink(mungeFileName);
-
-	  if(total_bytes_read == 0)
-		{
-		/* unmunge failed. Probably a bad credential. But we do not know */
-		req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not unmunge credentials");
-		return(-1);
-		}
-
-	  rc = get_encode_host(s, munge_buf, preq);
-	  if(rc)
-		{
-		return(rc);
-		}
-
-	  rc = get_UID(s, munge_buf, preq);
-	  if(rc)
-		{
-		return(rc);
-		}
-	}
+	  /* This is the parent*/
+	  /* set up the pipe to be able to read from the child */
+	  close(fd_pipe[1]);
+	  
+	  memset(buf, 0, MUNGE_SIZE);
+	  memset(munge_buf, 0, MUNGE_SIZE);
+	  ptr = munge_buf; 
+	  
+	  do
+	    {
+	    bytes_read = read(fd_pipe[0], buf, MUNGE_SIZE);
+	    if(bytes_read > 0)
+	  	  {
+	  	  total_bytes_read += bytes_read;
+	  	  memcpy(ptr, buf, bytes_read);
+	  	  ptr += bytes_read;
+	  	  }
+	    }while(bytes_read > 0);
+	  
+	    if(bytes_read == -1)
+	  	  {
+	  	  /* read failed */
+	  	  unlink(mungeFileName);
+	  	  req_reject(PBSE_SYSTEM, 0, preq, NULL, "error reading unmunge data");
+	  		close(fd_pipe[0]);
+	  	  return(-1);
+	  	  }
+	  
+	  
+	    if(total_bytes_read == 0)
+	  	  {
+	  	  /* unmunge failed. Probably a bad credential. But we do not know */
+	  	  req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not unmunge credentials");
+				unlink(mungeFileName);
+	  		close(fd_pipe[0]);
+	  	  return(-1);
+	  	  }
+	  
+	    rc = get_encode_host(s, munge_buf, preq);
+	    if(rc)
+	  	  {
+				unlink(mungeFileName);
+	  		close(fd_pipe[0]);
+	  	  return(rc);
+	  	  }
+	  
+	    rc = get_UID(s, munge_buf, preq);
+	    if(rc)
+	    	{
+				unlink(mungeFileName);
+	  		close(fd_pipe[0]);
+    		return(rc);
+	  	  }
+	  
+	  	unlink(mungeFileName);
+	  }
   else
-	{
+	  {
+	  close(fd_pipe[0]);
+	  newfd = dup2(fd_pipe[1], 1);
+	  strcpy(execname, "unmunge");
+	  strcpy(com1, "unmunge");
+	  strcpy(com2, "--input=");
+	  strcat(com2, mungeFileName);
+	  options[0] = com1;
+	  options[1] = com2;
+	  options[2] = NULL;
+	  
+	  rc = execvp(execname, options);
+	  
+	  /* Something went wrong. We will have to depend on the parent
+	     to let everyone know */
+	  close(fd_pipe[1]);
+	  exit(0);
+	  
+	  }
+
 	close(fd_pipe[0]);
-	newfd = dup2(fd_pipe[1], 1);
-	strcpy(execname, "unmunge");
-	strcpy(com1, "unmunge");
-	strcpy(com2, "--input=");
-	strcat(com2, mungeFileName);
-	options[0] = com1;
-	options[1] = com2;
-	options[2] = NULL;
-
-	rc = execvp(execname, options);
-
-	/* Something went wrong. We will have to depend on the parent
-	   to let everyone know */
-
-	exit(0);
-
-	}
-
   return(0);
 
 }
