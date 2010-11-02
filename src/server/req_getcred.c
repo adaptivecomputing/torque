@@ -248,7 +248,7 @@ int unmunge_request(int s, struct batch_request *preq)
   if(fd == -1)
 	{
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not create temporary munge file");
-	return(-1);
+	  return(-1);
 	}
 
   /* Write the munge credential to the newly created file */
@@ -257,6 +257,7 @@ int unmunge_request(int s, struct batch_request *preq)
   if(cred_size == 0)
 	{
     req_reject(PBSE_BADCRED, 0, preq, NULL, NULL);
+		return(-1);
 	}
 
   bytes_written = write(fd, preq->rq_ind.rq_authen.rq_cred, cred_size);
