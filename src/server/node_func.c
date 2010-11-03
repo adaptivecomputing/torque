@@ -395,13 +395,27 @@ struct pbsnode *find_nodebyname(
 
   while ((pnode = next_node(&iter)) != NULL)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pnode->nd_mutex);
+#endif
+
     if (pnode->nd_state & INUSE_DELETED)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(pnode->nd_mutex);
+#endif
+
       continue;
+      }
 
     if (strcasecmp(nodename, pnode->nd_name) == 0)
       {
       break;
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pnode->nd_mutex);
+#endif
     }
 
   if (pslash != NULL)
@@ -427,13 +441,20 @@ struct pbssubn *find_subnodebyname(
   {
 
   struct pbsnode  *pnode;
+  struct pbssubn *tmp;
 
   if ((pnode = find_nodebyname(nodename)) == NULL)
     {
     return(NULL);
     }
 
-  return(pnode->nd_psn);
+  tmp = pnode->nd_psn;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pnode->nd_mutex);
+#endif
+
+  return(tmp);
   }  /* END find_subnodebyname() */
 
 
@@ -1304,8 +1325,18 @@ int update_nodes_file(void)
     {
     np = pbsndmast[i];
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(np->nd_mutex);
+#endif
+
     if (np->nd_state & INUSE_DELETED)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(np->nd_mutex);
+#endif
+
       continue;
+      }
 
     /* ... write its name, and if time-shared, append :ts */
 
@@ -1365,6 +1396,9 @@ int update_nodes_file(void)
 
       return(-1);
       }
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(np->nd_mutex);
+#endif
     }
 
   fclose(nin);
@@ -1745,10 +1779,14 @@ int create_pbs_node(
     return(PBSE_SYSTEM);
     }
 
-  if (find_nodebyname(pname))
+  if ((pnode = find_nodebyname(pname)) != NULL)
     {
     free(pname);
     free(pul);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pnode->nd_mutex);
+#endif
 
     return(PBSE_NODEEXIST);
     }
@@ -2474,12 +2512,12 @@ static void delete_a_subnode(
  * node_np_action - action routine for node's np attribute
  */
 
-int
-node_np_action(
+int node_np_action(
+    
   attribute *new,  /*derive props into this attribute*/
-  void *pobj,  /*pointer to a pbsnode struct     */
-  int actmode /*action mode; "NEW" or "ALTER"   */
-)
+  void *pobj,      /*pointer to a pbsnode struct     */
+  int actmode)     /*action mode; "NEW" or "ALTER"   */
+  
   {
 
   struct pbsnode *pnode = (struct pbsnode *)pobj;

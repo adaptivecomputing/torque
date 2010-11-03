@@ -86,6 +86,9 @@
 #ifdef _AIX
 #include <arpa/aixrcmds.h>
 #endif /* _AIX */
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 #include "portability.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -138,6 +141,8 @@ int site_check_user_map(
 
   char  *dptr;
 
+  struct pbsnode *tmp;
+
 #ifdef MUNGE_AUTH
   char  uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
 #endif
@@ -174,8 +179,8 @@ int site_check_user_map(
     return(-1);
     }
 
-  if ((server.sv_attr[(int)SRV_ATR_AllowProxyUser].at_flags & ATR_VFLAG_SET) && \
-      (server.sv_attr[(int)SRV_ATR_AllowProxyUser].at_val.at_long == 1))
+  if ((server.sv_attr[SRV_ATR_AllowProxyUser].at_flags & ATR_VFLAG_SET) && \
+      (server.sv_attr[SRV_ATR_AllowProxyUser].at_val.at_long == 1))
     {
     ProxyAllowed = 1;
     }
@@ -209,9 +214,12 @@ int site_check_user_map(
   if ((HostAllowed == 0) &&
       (server.sv_attr[SRV_ATR_AllowNodeSubmit].at_flags & ATR_VFLAG_SET) &&
       (server.sv_attr[SRV_ATR_AllowNodeSubmit].at_val.at_long == 1) &&
-      (find_nodebyname(orighost) != NULL))
+      ((tmp = find_nodebyname(orighost)) != NULL))
     {
     /* job submitted from compute host, access allowed */
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(tmp->nd_mutex);
+#endif
 
     if (dptr != NULL)
       *dptr = '.';
@@ -227,14 +235,14 @@ int site_check_user_map(
     }
 
   if ((HostAllowed == 0) &&
-      (server.sv_attr[(int)SRV_ATR_SubmitHosts].at_flags & ATR_VFLAG_SET))
+      (server.sv_attr[SRV_ATR_SubmitHosts].at_flags & ATR_VFLAG_SET))
     {
 
     struct array_strings *submithosts = NULL;
     char                 *testhost;
     int                   hostnum = 0;
 
-    submithosts = server.sv_attr[(int)SRV_ATR_SubmitHosts].at_val.at_arst;
+    submithosts = server.sv_attr[SRV_ATR_SubmitHosts].at_val.at_arst;
 
     for (hostnum = 0;hostnum < submithosts->as_usedptr;hostnum++)
       {

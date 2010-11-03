@@ -1139,6 +1139,10 @@ void send_cluster_addrs(
       if (np != NULL)
         {
         np->nd_state &= ~INUSE_OFFLINE;
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(np->nd_mutex);
+#endif
         }
 
       delete_link(&nnew->nn_link);
@@ -1182,6 +1186,10 @@ void setup_notification(char *pname)
 
     if (nnew == NULL)
       {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pnode->nd_mutex);
+#endif
+
       return;
       }
 
@@ -1190,6 +1198,10 @@ void setup_notification(char *pname)
     nnew->nn_name = strdup(pname);
 
     append_link(&svr_newnodes, &nnew->nn_link, nnew);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pnode->nd_mutex);
+#endif
     }
 
   set_task(
@@ -5070,7 +5082,10 @@ int set_nodes(
  * return processors requested on success
  * return -1 on error 
  */ 
-int procs_requested(char *spec)
+int procs_requested(
+    
+  char *spec)
+
   {
   char *id = "procs_requested";
   char *str, *globs, *cp, *hold;
