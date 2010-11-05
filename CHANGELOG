@@ -101,7 +101,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix to prevent a possible segfault when using checkpointing.
   f - added the ability to track gpus. Users set gpus=X in the nodes file for
       relevant node, and then request gpus in the nodes request: 
-      -l nodes=X[:ppn=Y][:gpu=Z]. The gpus appear in $PBS_NODEFILE 
+      -l nodes=X[:ppn=Y][:gpus=Z]. The gpus appear in $PBS_NODEFILE 
       <hostname>-gpu<index> and in a new job attribute exec_gpus: 
       <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
 

@@ -3411,7 +3411,7 @@ static int proplist(
           return(1);
           }
         }
-      else if (strcmp(pname, "gpu") == 0)
+      else if (strcmp(pname, "gpus") == 0)
         {
         pequal++;
 
