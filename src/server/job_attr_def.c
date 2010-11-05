@@ -295,6 +295,20 @@ attribute_def job_attr_def[] =
     ATR_TYPE_STR,
     PARENT_TYPE_JOB
   },
+
+  /* JOB_ATR_exec_gpus */
+  { ATTR_exec_gpus,  /* exec_gpus */
+    decode_str,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    NULL_FUNC,
+    READ_ONLY | ATR_DFLAG_MOM | ATR_DFLAG_OPWR | ATR_DFLAG_SvWR,  /* allow operator/scheduler to modify exec_host */
+    ATR_TYPE_STR,
+    PARENT_TYPE_JOB,
+  },
+
   /* JOB_ATR_exectime */
   { ATTR_a,   /* "Execution_Time" (aka release_date) */
     decode_l,

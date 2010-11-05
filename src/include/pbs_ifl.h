@@ -163,6 +163,7 @@
 #define ATTR_intcmd      "inter_cmd"
 #define ATTR_P           "proxy_user"
 #define ATTR_node_exclusive "node_exclusive"
+#define ATTR_exec_gpus   "exec_gpus"
 
 #ifdef USEJOBCREATE
 #define ATTR_pagg         "pagg_id"
@@ -302,6 +303,7 @@
 #define ATTR_NODE_mom_rm_port    "mom_manager_port" 
 #define ATTR_NODE_num_numa_nodes "num_numa_nodes"
 #define ATTR_NODE_numa_str       "numa_node_str"
+#define ATTR_NODE_gpus           "gpus"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

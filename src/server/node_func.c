@@ -643,6 +643,7 @@ int status_nodeattrib(
 
   int             *bad)         /*if node-attribute error, record it's*/
 /*list position here                 */
+
   {
   int   i;
   int   rc = 0;  /*return code, 0 == success*/
@@ -680,6 +681,10 @@ int status_nodeattrib(
       continue;
     else if (!strcmp((padef + i)->at_name, ATTR_NODE_numa_str))
       continue;
+    else if (!strcmp((padef + i)->at_name, ATTR_NODE_gpus))
+      {
+      atemp[i].at_val.at_long  = pnode->nd_ngpus;
+      }
     else
       {
       /*we don't ever expect this*/
@@ -1541,6 +1546,42 @@ static struct pbssubn *create_subnode(
 
   return(psubn);
   }  /* END create_subnode() */
+
+
+
+
+int create_a_gpusubnode(
+    
+  struct pbsnode *pnode)
+
+  {
+  static char *id = "create_a_gpusubnode";
+  struct gpusubn *tmp;
+ 
+  if (pnode->nd_ngpus > 0)
+    tmp = realloc(pnode->nd_gpusn,sizeof(struct gpusubn) * (1 + pnode->nd_ngpus));
+  else
+    tmp = malloc(sizeof(struct gpusubn));
+
+  if (tmp == NULL)
+    {
+    log_err(ENOMEM,id,"Couldn't allocate memory for a subnode. EPIC FAILURE");
+    return(ENOMEM);
+    }
+
+  pnode->nd_gpusn = tmp;
+
+  /* initialize the node */
+  memset(pnode->nd_gpusn + pnode->nd_ngpus,0,sizeof(struct gpusubn));
+  pnode->nd_gpusn[pnode->nd_ngpus].index = pnode->nd_ngpus;
+
+  /* increment the number of gpu subnodes and gpus free */
+  pnode->nd_ngpus++;
+  pnode->nd_ngpus_free++;
+
+  return(PBSE_NONE);
+  } /* END create_a_gpusubnode() */
+
 
 
 
@@ -2506,6 +2547,37 @@ static void delete_a_subnode(
 
 
 
+/* 
+ * deletes the last gpu subnode
+ * frees the node and decrements the number to adjust 
+ */
+static void delete_a_gpusubnode(
+
+  struct pbsnode *pnode)
+
+  {
+  struct gpusubn *tmp = pnode->nd_gpusn + (pnode->nd_ngpus - 1);
+
+  if (pnode->nd_ngpus < 1)
+    {
+    /* ERROR, can't free non-existent subnodes */
+    return;
+    }
+
+  if (tmp->inuse == FALSE)
+    pnode->nd_ngpus_free--;
+
+  /* decrement the number of gpu subnodes */
+  pnode->nd_gpusn--;
+
+  /* free the gpu subnode */
+  free(tmp);
+
+  /* DONE */
+  } /* END delete_a_gpusubnode() */
+
+
+
 
 
 /*
@@ -2625,6 +2697,58 @@ int node_mom_rm_port_action(new, pobj, actmode)
 
   return rc;
   }
+
+
+
+int node_gpus_action(
+
+  attribute *new,
+  void      *pnode,
+  int        actmode)
+
+  {
+  struct pbsnode *np = (struct pbsnode *)pnode;
+  int             old_gp;
+  int             new_gp;
+  int             rc = 0;
+
+  switch (actmode)
+    {
+    case ATR_ACTION_NEW:
+      new->at_val.at_long = np->nd_ngpus;
+      break;
+
+    case ATR_ACTION_ALTER:
+      old_gp = np->nd_ngpus;
+      new_gp = new->at_val.at_long;
+
+      if (new_gp <= 0)
+        return PBSE_BADATVAL;
+
+      while (new_gp != old_gp)
+        {
+
+        if (new_gp < old_gp)
+          {
+          delete_a_gpusubnode(pnode);
+          old_gp--;
+          }
+        else
+          {
+          create_a_gpusubnode(pnode);
+          old_gp++;
+          }
+        }
+
+      break;
+
+    default:
+      rc = PBSE_INTERNAL;
+    }
+
+  return(rc);
+  } /* END node_gpus_action() */
+
 
 
 

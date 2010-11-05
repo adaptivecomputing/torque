@@ -455,6 +455,7 @@ extern int      node_np_action(attribute*, void*, int);
 extern int      node_mom_port_action(attribute*, void*, int);
 extern int      node_mom_rm_port_action(attribute*, void*, int);
 extern int      node_numa_action(attribute*, void*, int);
+extern int      node_gpus_action(attribute*, void*, int);
 extern int      numa_str_action(attribute *, void *,int);
 extern int      node_ntype(attribute*, void*, int);
 extern int      node_prop_list(attribute*, void*, int);

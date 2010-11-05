@@ -134,6 +134,14 @@ struct pbssubn
   short           index;  /* subnode index */
   };
 
+struct gpusubn
+  {
+  struct job     *pjob;   /* job on this gpu subnode */
+  unsigned short  inuse;  /* 1 if this node is in use, 0 otherwise */
+  enum psit       flag;   /* same as for pbssubn */
+  short           index;  /* gpu index */
+  };
+
 
 #ifdef NUMA_SUPPORT
 typedef struct numanode_t
@@ -192,6 +200,11 @@ struct pbsnode
   short                 nd_order; /* order of user's request */
   time_t                nd_warnbad;
   time_t                nd_lastupdate; /* time of last update. */
+
+  short                 nd_ngpus;        /* number of gpus */ 
+  struct gpusubn       *nd_gpusn;        /* gpu subnodes */
+  short                 nd_ngpus_free;   /* number of free gpus */
+  short                 nd_ngpus_needed; /* number of gpus needed */
 
   unsigned short        num_numa_nodes; /* number of numa nodes */
   struct AvlNode       *numa_nodes; /* private tree of numa nodes */
@@ -312,10 +325,9 @@ enum nodeattr
   ND_ATR_note,
   ND_ATR_mom_port,
   ND_ATR_mom_rm_port,
-#ifdef NUMA_SUPPORT 
   ND_ATR_num_numa_nodes,
   ND_ATR_numa_str,
-#endif /* NUMA_SUPPORT */
+  ND_ATR_gpus,
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */
 

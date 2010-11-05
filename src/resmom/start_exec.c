@@ -1564,7 +1564,7 @@ int TMomFinalizeJob1(
 
 			get_chkpt_dir_to_use(pjob, buf);
 			strcat(buf, "/");
-			strcat(buf, pjob->ji_wattr[(int)JOB_ATR_restart_name].at_val.at_str);
+			strcat(buf, pjob->ji_wattr[JOB_ATR_restart_name].at_val.at_str);
 
 			stat(buf, &sb);
 
@@ -2099,6 +2099,99 @@ int use_cpusets(
 
 
 
+
+/*
+ * writes the exec_gpu str to a file
+ * receives strings in the format: <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
+ * and prints them in the format: <hostname>-gpu<index>[\n<hostname>-gpu<index>...]
+ *
+ * @param file - the file to print to
+ * @param pjob - the job whose gpu string will be printed
+ * @return PBSE_NONE if success, error code otherwise
+ */
+int write_gpus_to_file(
+    
+  FILE *file, /* I/O */
+  job  *pjob) /* I */
+
+  {
+  static char *id = "write_gpus_to_file";
+
+  char *gpu_str;
+  char *gpu_worker;
+
+  char *plus;
+  char *slash;
+  char *next;
+  char *curr;
+
+  /* if there are no gpus, do nothing */
+  if ((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) == 0)
+    return(PBSE_NONE);
+
+  gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+
+  if (gpu_str == NULL)
+    return(PBSE_NONE);
+
+  gpu_worker = malloc(strlen(gpu_str) + 1);
+  if (gpu_worker == NULL)
+    {
+    log_err(ENOMEM,id,"Couldn't allocate a string to work with? EPIC FAIL");
+    
+    return(ENOMEM);
+    }
+
+  strcpy(gpu_worker,gpu_str);
+
+  curr = gpu_worker;
+
+  while (curr != NULL)
+    {
+    plus = strchr(curr,'+');
+    
+    if (plus == NULL)
+      {
+      /* we have reached the last string */
+      next = NULL;
+      }
+    else 
+      {
+      /* there is more, set up things to print this one */
+      next = plus + 1;
+      *plus = '\0';
+      }
+
+    /* remove the slash replace it with a dash */
+    slash = strchr(curr,'/');
+
+    if (slash == NULL)
+      {
+      /* should never happen, but we'll attempt to handle it anyway */
+      fprintf(file,"%s\n",curr);
+      }
+    else
+      {
+      *slash = '\0';
+      fprintf(file,"%s%s\n",curr,slash+1);
+      }
+
+    /* advance to the next chunk */
+    curr = next;
+    }
+
+  /* SUCCESS */
+  free(gpu_worker);
+
+  return(PBSE_NONE);
+  } /* END write_gpus_to_file() */
+
+
+
+
+
+
+
 /* child portion of job launch executed as user - called by TMomFinalize2() */
 /* will execute run_pelog()
  * issues setuid to pjob->ji_qs.ji_un.ji_momt.ji_exuid */
@@ -2325,6 +2418,8 @@ int TMomFinalizeChild(
           }
 #endif /* def NUMA_SUPPORT */
 				}		/* END for (j) */
+
+      write_gpus_to_file(nhow,pjob);
 			}
 
 		fclose(nhow);
@@ -4925,6 +5020,10 @@ void job_nodes(
   int  nhosts;
   int  nodenum;
 	int  ix;
+
+  static char *gpu_str = "-gpu/";
+  char *gpu_ptr;
+
 	char  *cp = NULL;
   char  *nodestr = NULL;
   char  *portstr = NULL;
@@ -4947,10 +5046,20 @@ void job_nodes(
 			{
       /* count how many nodes there are by counting the number of '+'
        * characters in the string */
+      gpu_ptr = strstr(nodestr,gpu_str);
+
 			for (cp = nodestr;*cp;cp++)
 				{
 				if (*cp == '+')
-					nodenum++;
+          {
+          if ((gpu_ptr != NULL) &&
+              (gpu_ptr < cp))
+            {
+            gpu_ptr = strstr(cp,gpu_str);
+            }
+          else
+            nodenum++;
+          }
 				}
 			}
 		} 

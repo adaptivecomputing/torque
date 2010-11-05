@@ -287,6 +287,7 @@ enum job_atr
   JOB_ATR_errpath, /* (10) */
   JOB_ATR_exec_host,
   JOB_ATR_exec_port,
+  JOB_ATR_exec_gpus,
   JOB_ATR_exectime,
   JOB_ATR_grouplst,
   JOB_ATR_hold,
