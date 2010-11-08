@@ -126,6 +126,14 @@ struct pbssubn
   short           index;  /* subnode index */
   };
 
+struct gpusubn
+  {
+  struct job     *pjob;   /* job on this gpu subnode */
+  unsigned short  inuse;  /* 1 if this node is in use, 0 otherwise */
+  enum psit       flag;   /* same as for pbssubn */
+  short           index;  /* gpu index */
+  };
+
 struct pbsnode
   {
   char   *nd_name; /* node's host name */
@@ -158,6 +166,11 @@ struct pbsnode
   short    nd_order; /* order of user's request */
   time_t                 nd_warnbad;
   time_t                 nd_lastupdate; /* time of last update. */
+
+  short                 nd_ngpus;        /* number of gpus */ 
+  struct gpusubn       *nd_gpusn;        /* gpu subnodes */
+  short                 nd_ngpus_free;   /* number of free gpus */
+  short                 nd_ngpus_needed; /* number of gpus needed */
   };
 
 struct howl
@@ -255,6 +268,7 @@ enum nodeattr
   ND_ATR_jobs,
   ND_ATR_status,
   ND_ATR_note,
+  ND_ATR_gpus,
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */
 

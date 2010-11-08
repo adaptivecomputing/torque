@@ -954,6 +954,7 @@ static void chk_svr_resc_limit(
   static resource_def *mppwidthresc = NULL;
   static resource_def *mppnppn      = NULL;
   static resource_def *procresc     = NULL;
+  static resource_def *gpuresc      = NULL;
 
   static time_t UpdateTime = 0;
   static time_t now;
@@ -976,7 +977,8 @@ static void chk_svr_resc_limit(
     nodectresc   = find_resc_def(svr_resc_def, "nodect",    svr_resc_size);
     mppwidthresc = find_resc_def(svr_resc_def, "mppwidth",  svr_resc_size);
     mppnppn      = find_resc_def(svr_resc_def, "mppnppn",   svr_resc_size);
-    procresc      = find_resc_def(svr_resc_def, "procs",   svr_resc_size);
+    procresc     = find_resc_def(svr_resc_def, "procs",   svr_resc_size);
+    gpuresc      = find_resc_def(svr_resc_def, "gpus",   svr_resc_size);
 
     SvrNodeCt = 0;
 

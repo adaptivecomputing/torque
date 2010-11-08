@@ -161,6 +161,7 @@
 #define ATTR_reported    "reported"
 #define ATTR_intcmd      "inter_cmd"
 #define ATTR_P           "proxy_user"
+#define ATTR_exec_gpus   "exec_gpus"
 
 #ifdef USEJOBCREATE
 #define ATTR_pagg         "pagg_id"
@@ -294,6 +295,7 @@
 #define ATTR_NODE_jobs          "jobs"
 #define ATTR_NODE_status        "status"
 #define ATTR_NODE_note          "note"
+#define ATTR_NODE_gpus           "gpus"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

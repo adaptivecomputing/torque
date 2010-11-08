@@ -211,4 +211,16 @@ attribute_def node_attr_def[] = {
    PARENT_TYPE_NODE,
    },
 
+  /* ND_ATR_gpus */
+  { ATTR_NODE_gpus,    /* "gpus" */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_null,
+    free_null,
+    node_gpus_action,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_NODE,
+  },
 };

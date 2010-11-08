@@ -452,6 +452,7 @@ extern int      set_node_props(attribute*, attribute*, enum batch_op);
 extern int      set_null(attribute*, attribute*, enum batch_op);
 extern int      node_state(attribute*, void*, int);
 extern int      node_np_action(attribute*, void*, int);
+extern int      node_gpus_action(attribute *,void *,int);
 extern int      node_ntype(attribute*, void*, int);
 extern int      node_prop_list(attribute*, void*, int);
 extern int      node_status_list(attribute*, void*, int);
