@@ -49,6 +49,11 @@ New in 2.5.3
     be stored in XML format. If you are upgrading from a version of 
     TORQUE earlier than 2.5.3 the old serverdb file will be converted 
     to the new XML format.
+    
+    WARNING -- If you wish to upgrade to the XML serverdb format please
+    backup the serverdb before doing the upgrade. This is a one-way upgrade.
+    Once the file has been converted to XML it cannot be converted back
+    to the binary format.
 
     Munge has been added as an option for user authorization on the server.
     The default user authorization for TORQUE uses privileged ports and 
