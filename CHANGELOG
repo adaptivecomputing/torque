@@ -7,6 +7,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       environment variable, in the form: <hostname>-gpu<index> and in a 
       new job attribute exec_gpus: 
       <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
+  b - clean up job mom checkpoint directory on checkpoint failure
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges

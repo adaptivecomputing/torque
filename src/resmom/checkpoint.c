@@ -950,6 +950,14 @@ int blcr_checkpoint_job(
     /* checkpoint script returned a non-zero value.  We assume the checkpoint
         failed */
 
+    /* remove checkpoint directory that was created for this checkpoint attempt */
+
+    sprintf(buf, "Checkpoint failed for job %s, removing checkpoint directory\n",
+        pjob->ji_qs.ji_jobid);
+    log_ext(-1, id, buf, LOG_DEBUG);
+
+    delete_blcr_checkpoint_files(pjob);
+
     /* open a connection to the server */
 
     while ((conn < 0) && (conn_fail < MAX_CONN_RETRY))
