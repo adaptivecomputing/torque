@@ -247,6 +247,7 @@ enum TVarElseEnum
   tveVerID,
   tveNumNodesStr,
   tveNumPpn,
+  tveGpuFile,
   tveLAST
   };
 
@@ -268,7 +269,8 @@ static char *variables_else[] =   /* variables to add, value computed */
   "TMPDIR",
   "PBS_VERSION",
   "PBS_NUM_NODES",  /* number of nodes specified by nodes string */
-  "PBS_NUM_PPN",       /* ppn value specified by nodes string */
+  "PBS_NUM_PPN",    /* ppn value specified by nodes string */
+  "PBS_GPUFILE",    /* file containing which GPUs to access */
   NULL
   };
 
@@ -1265,12 +1267,12 @@ int InitUserEnv(
   /* SHELL */
   
   if (shell != NULL)
-      bld_env_variables(&vtable, variables_else[tveShell], shell);
+    bld_env_variables(&vtable, variables_else[tveShell], shell);
   
   /* USER, for compatability */
   
   if (pwdp != NULL)
-      bld_env_variables(&vtable, variables_else[tveUser], pwdp->pw_name);
+    bld_env_variables(&vtable, variables_else[tveUser], pwdp->pw_name);
   
   /* PBS_JOBCOOKIE */
   
@@ -1287,11 +1289,11 @@ int InitUserEnv(
   /* PBS_TASKNUM */
   
   if (ptask != NULL)
-      {
-      sprintf(buf, "%d", ptask->ti_qs.ti_task);
-  
-      bld_env_variables(&vtable, variables_else[tveTaskNum], buf);
-      }
+    {
+    sprintf(buf, "%d", ptask->ti_qs.ti_task);
+    
+    bld_env_variables(&vtable, variables_else[tveTaskNum], buf);
+    }
   
   /* PBS_MOMPORT */
   
@@ -1302,12 +1304,17 @@ int InitUserEnv(
   /* PBS_NODEFILE */
   
   if (pjob->ji_flags & MOM_HAS_NODEFILE)
-      {
-      sprintf(buf, "%s/%s",	path_aux, pjob->ji_qs.ji_jobid);
-  
-      bld_env_variables(&vtable, variables_else[tveNodeFile], buf);
-      }
-  
+    {
+    sprintf(buf, "%s/%s",	path_aux, pjob->ji_qs.ji_jobid);
+    
+    bld_env_variables(&vtable, variables_else[tveNodeFile], buf);
+
+    /* add the gpu file as well */
+    sprintf(buf, "%s/%sgpu", path_aux, pjob->ji_qs.ji_jobid);
+
+    bld_env_variables(&vtable, variables_else[tveGpuFile], buf);
+    }
+
   /* PBS_NNODES */
   
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
@@ -2111,11 +2118,12 @@ int use_cpusets(
  */
 int write_gpus_to_file(
     
-  FILE *file, /* I/O */
   job  *pjob) /* I */
 
   {
   static char *id = "write_gpus_to_file";
+  char         filename[MAXPATHLEN];
+  FILE *file;
 
   char *gpu_str;
   char *gpu_worker;
@@ -2133,6 +2141,33 @@ int write_gpus_to_file(
 
   if (gpu_str == NULL)
     return(PBSE_NONE);
+  
+  /* open the file just like $PBS_NODEFILE */
+  sprintf(filename, "%s/%sgpu",
+    path_aux,
+    pjob->ji_qs.ji_jobid);
+
+  if ((file = fopen(filename, "w")) == NULL)
+    {
+    sprintf(log_buffer, "cannot open %s",
+      filename);
+  
+    log_err(errno, id, log_buffer);
+   
+    return(-1);
+    }
+
+  if (fchmod(fileno(file), 0644) == -1)
+    {
+    sprintf(log_buffer, "cannot chmod %s",
+      filename);
+    
+    log_err(errno, id, log_buffer);
+    
+    fclose(file);
+
+    return(-1);
+    }
 
   gpu_worker = malloc(strlen(gpu_str) + 1);
   if (gpu_worker == NULL)
@@ -2182,6 +2217,8 @@ int write_gpus_to_file(
 
   /* SUCCESS */
   free(gpu_worker);
+
+  fclose(file);
 
   return(PBSE_NONE);
   } /* END write_gpus_to_file() */
@@ -2418,11 +2455,18 @@ int TMomFinalizeChild(
           }
 #endif /* def NUMA_SUPPORT */
 				}		/* END for (j) */
-
-      write_gpus_to_file(nhow,pjob);
 			}
 
 		fclose(nhow);
+
+    if (write_gpus_to_file(pjob) == -1)
+      {
+			starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
+
+			/*NOTREACHED*/
+
+			exit(1);
+      }
 		}	 /* END if (pjob->ji_flags & MOM_HAS_NODEFILE) */
 
 	if (LOGLEVEL >= 10)

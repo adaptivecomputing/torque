@@ -59,6 +59,14 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       multinode jobs
   e - add an asynchronous option to qdel 
   b - do not reply when an asynchronous reply has already been sent
+  
+2.5.4
+  f - added the ability to track gpus. Users set gpus=X in the nodes file for
+      relevant node, and then request gpus in the nodes request: 
+      -l nodes=X[:ppn=Y][:gpus=Z]. The gpus appear in $PBS_GPUFILE, a new 
+      environment variable, in the form: <hostname>-gpu<index> and in a 
+      new job attribute exec_gpus: 
+      <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
@@ -99,11 +107,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       -e. Can now output both the STDOUT and STDERR files.  Eliminated 
       numlines, which didn't work.
   b - fix to prevent a possible segfault when using checkpointing.
-  f - added the ability to track gpus. Users set gpus=X in the nodes file for
-      relevant node, and then request gpus in the nodes request: 
-      -l nodes=X[:ppn=Y][:gpus=Z]. The gpus appear in $PBS_NODEFILE 
-      <hostname>-gpu<index> and in a new job attribute exec_gpus: 
-      <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
 
 2.5.2
   e - Allow the nodes file to use the syntax node[0-100] in the name to 
