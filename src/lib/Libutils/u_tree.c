@@ -329,9 +329,9 @@ AvlTree AVL_delete_node(
  * return -1 if Buffer is too small 
  * return 1 if Buf or T are null 
  */ 
-int AVL_list( AvlTree tree, char *Buf, unsigned long BufSize )
+int AVL_list( AvlTree tree, char *Buf, long BufSize )
   {
-	unsigned long len;
+	long len;
 	char     tmpLine[32];
 	int rc;
 

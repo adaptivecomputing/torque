@@ -22,7 +22,7 @@ typedef struct AvlNode *NodeEntry;
 AvlTree AVL_delete_node( u_long key, uint16_t port, AvlTree tree);
 struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree);
 AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tree );
-int AVL_list( AvlTree tree, char *Buf, unsigned long BufSize );
+int AVL_list( AvlTree tree, char *Buf, long BufSize );
 int AVL_is_in_tree(u_long key, uint16_t port, AvlTree tree);
 
 
