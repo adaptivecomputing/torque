@@ -34,6 +34,7 @@ OVERVIEW
 ---------------------------------------------------------------------------
 WHAT'S NEW
 
+New in 2.5.3
     Completed job information can now be logged. A new Boolean server parameter 
     record_job_info can be set to TRUE and a log file will be created
     under $TORQUE_HOME/job_logs. The log file is in XML format and 
@@ -51,6 +52,8 @@ WHAT'S NEW
     ruserok to authorize client applications. Munge creates an alternative 
     which is more scalable and can bypass the rsh type ruserok function
     call.
+
+New in verions 2.5.2 and earlier 2.5.x versions.
 
     Job arrays are now suported in the commands qalter, qdel, qhold, qrls 
     in addition to the qsub command.
