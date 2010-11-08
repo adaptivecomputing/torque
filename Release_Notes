@@ -39,6 +39,9 @@ New in 2.5.3
     record_job_info can be set to TRUE and a log file will be created
     under $TORQUE_HOME/job_logs. The log file is in XML format and 
     contains the same information that would be produced by qstat -f.
+    For more information about how to setup and use job logs go to
+    http://www.clusterresources.com/products/torque/docs/10.1joblogging.shtml
+    
 
     The serverdb file which contains the queue and server configuration
     data can optionally be converted to XML format. If you configure 
@@ -51,7 +54,8 @@ New in 2.5.3
     The default user authorization for TORQUE uses privileged ports and 
     ruserok to authorize client applications. Munge creates an alternative 
     which is more scalable and can bypass the rsh type ruserok function
-    call.
+    call. For more information see 1.3.2.8 Using MUNGE Authentication at
+    http://www.clusterresources.com/products/torque/docs/1.3advconfig.shtml
 
 New in verions 2.5.2 and earlier 2.5.x versions.
 
