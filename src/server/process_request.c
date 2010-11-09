@@ -96,9 +96,6 @@
 #if HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
-#ifdef ENABLE_PTHREADS
-#include <pthread.h>
-#endif
 
 #include "libpbs.h"
 #include "pbs_error.h"
@@ -181,43 +178,11 @@ extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 #endif
 
 /* request processing prototypes */
-#ifdef PBS_MOM
 void req_quejob(struct batch_request *preq);
-#else
-#ifdef ENABLE_PTHREADS
-void *req_quejob(void *preq);
-#else
-void req_quejob(struct batch_request *preq);
-#endif
-#endif
 void req_jobcredential(struct batch_request *preq);
-#ifdef PBS_MOM
 void req_jobscript(struct batch_request *preq);
-#else
-#ifdef ENABLE_PTHREADS
-void *req_jobscript(void *preq);
-#else
-void req_jobscript(struct batch_request *preq);
-#endif
-#endif
-#ifdef PBS_MOM
 void req_rdytocommit(struct batch_request *preq);
-#else
-#ifdef ENABLE_PTHREADS
-void *req_rdytocommit(void *preq);
-#else
-void req_rdytocommit(struct batch_request *preq);
-#endif
-#endif
-#ifdef PBS_MOM
 void req_commit(struct batch_request *preq);
-#else
-#ifdef ENABLE_PTHREADS
-void *req_commit(void *preq);
-#else
-void req_commit(struct batch_request *preq);
-#endif
-#endif
 void req_deletejob(struct batch_request *preq);
 void req_holdjob(struct batch_request *preq);
 void req_checkpointjob(struct batch_request *preq);
@@ -348,8 +313,6 @@ int get_creds(int sd, char *username, char *hostname)
  * - Validate requesting host and user.
  * - Call function to process request based on type.
  *    That function MUST free the request by calling free_br()
- *
- * NOTE: the caller functions hold the mutex for the connection
  */
 
 void process_request(
@@ -401,7 +364,7 @@ void process_request(
     close_conn(sfds);
 
     free_br(request);
-    
+
     return;
     }
 
@@ -460,12 +423,12 @@ void process_request(
 
     sprintf(log_buffer, "%s: %lu",
             pbse_to_txt(PBSE_BADHOST),
-            get_connectaddr(sfds,FALSE));
+            get_connectaddr(sfds));
 
     LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buffer);
 
     snprintf(tmpLine, sizeof(tmpLine), "cannot determine hostname for connection from %lu",
-             get_connectaddr(sfds,FALSE));
+             get_connectaddr(sfds));
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
 
@@ -500,7 +463,7 @@ void process_request(
 
     struct pbsnode *isanode;
 
-    isanode = PGetNodeFromAddr(get_connectaddr(sfds,FALSE));
+    isanode = PGetNodeFromAddr(get_connectaddr(sfds));
 
     if ((isanode == NULL) &&
         (strcmp(server_host, request->rq_host) != 0) &&
@@ -566,9 +529,7 @@ void process_request(
       req_connect(request);
 
       if (svr_conn[sfds].cn_socktype == PBS_SOCK_INET)
-        {
         return;
-        }
 
       }
 
@@ -792,15 +753,8 @@ void dispatch_request(
 
       net_add_close_func(sfds, close_quejob);
 
-#ifdef PBS_MOM
       req_quejob(request);
-#else
-#ifdef ENABLE_PTHREADS
-      enqueue_threadpool_request(req_quejob,request);
-#else
-      req_quejob(request);
-#endif
-#endif
+
       break;
 
     case PBS_BATCH_JobCred:
@@ -811,41 +765,19 @@ void dispatch_request(
 
     case PBS_BATCH_jobscript:
 
-#ifdef PBS_MOM
       req_jobscript(request);
-#else
-#ifdef ENABLE_PTHREADS
-      enqueue_threadpool_request(req_jobscript,request);
-#else
-      req_jobscript(request);
-#endif
-#endif
+
       break;
 
     case PBS_BATCH_RdytoCommit:
 
-#ifdef PBS_MOM
       req_rdytocommit(request);
-#else
-#ifdef ENABLE_PTHREADS
-      enqueue_threadpool_request(req_rdytocommit,request);
-#else
-      req_rdytocommit(request);
-#endif
-#endif
+
       break;
 
     case PBS_BATCH_Commit:
 
-#ifdef PBS_MOM
       req_commit(request);
-#else
-#ifdef ENABLE_PTHREADS
-      enqueue_threadpool_request(req_commit,request);
-#else
-      req_commit(request);
-#endif
-#endif
 
       net_add_close_func(sfds, (void (*)())0);
 
@@ -1025,6 +957,12 @@ void dispatch_request(
 
       break;
 
+    case PBS_BATCH_StatusJob:
+
+      req_stat_job(request);
+
+      break;
+
     case PBS_BATCH_MvJobFile:
 
       req_mvjobfile(request);
@@ -1102,23 +1040,7 @@ void dispatch_request(
 
       break;
 
-    case PBS_BATCH_StatusJob:
-
-#ifdef ENABLE_PTHREADS
-      enqueue_threadpool_request(req_stat_job,request);
-#else
-      req_stat_job(request);
-#endif
-
-      break;
-
 #else /* MOM only functions */
-
-    case PBS_BATCH_StatusJob:
-
-      req_stat_job(request);
-
-      break;
 
     case PBS_BATCH_ReturnFiles:
 
@@ -1251,10 +1173,6 @@ static void close_quejob(
 
   while (pjob != NULL)
     {
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pjob->ji_mutex);
-#endif
-
     npjob = GET_NEXT(pjob->ji_alljobs);
 
     if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds)
@@ -1296,10 +1214,6 @@ static void close_quejob(
 
       break;
       }  /* END if (..) */
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     pjob = npjob;
     }

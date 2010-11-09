@@ -552,10 +552,6 @@ struct job
   int  ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
 #endif/* PBS_MOM */   /* END SERVER ONLY */
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_t *ji_mutex;
-#endif 
-
   /*
    * fixed size internal data - maintained via "quick save"
    * some of the items are copies of attributes, if so this

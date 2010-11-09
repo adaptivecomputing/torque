@@ -708,29 +708,19 @@ job *find_job_by_node(
         for (jp = np->jobs; jp != NULL; jp = jp->next)
           {
           if ((jp->job != NULL) &&
-              (jp->job->ji_qs.ji_jobid != NULL))
+              (jp->job->ji_qs.ji_jobid != NULL) &&
+              (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0))
             {
-#ifdef ENABLE_PTHREADS
-            pthread_mutex_lock(jp->job->ji_mutex);
-#endif 
+            /* desired job located on node */
 
-            if (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0)
-              {
-              /* desired job located on node */
-              
-              pjob = jp->job;
-              
-              break;
-              }
+            pjob = jp->job;
+
+            break;
             }
 
           /* leave loop if we found the job */
           if (pjob != NULL)
             break;
-
-#ifdef ENABLE_PTHREADS
-          pthread_mutex_unlock(jp->job->ji_mutex);
-#endif
           }
 
         /* leave loop if we found a job */
@@ -749,28 +739,19 @@ job *find_job_by_node(
       for (jp = np->jobs;jp != NULL;jp = jp->next)
         {
         if ((jp->job != NULL) &&
-            (jp->job->ji_qs.ji_jobid != NULL))
+            (jp->job->ji_qs.ji_jobid != NULL) &&
+            (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0))
           {
-#ifdef ENABLE_PTHREADS
-          pthread_mutex_lock(jp->job->ji_mutex);
-#endif 
-          if (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0)
-            {
-            /* desired job located on node */
-            
-            pjob = jp->job;
-            
-            break;
-            }
+          /* desired job located on node */
+
+          pjob = jp->job;
+
+          break;
           }
 
         /* leave lopp if we found a job */
         if (pjob != NULL)
           break;
-
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(jp->job->ji_mutex);
-#endif
         }
       }    /* END for (np) */
     }
@@ -857,16 +838,10 @@ void sync_node_jobs(
 
           if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
             {
-#ifdef ENABLE_PTHREADS
-            pthread_mutex_unlock(pjob->ji_mutex);
-#endif
             pjob = NULL;
             }
           else if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, np->nd_name) == NULL)
             {
-#ifdef ENABLE_PTHREADS
-            pthread_mutex_unlock(pjob->ji_mutex);
-#endif
             pjob = NULL;
             }
           }
@@ -914,10 +889,6 @@ void sync_node_jobs(
 
           DIS_rpp_reset();
           }
-#ifdef ENABLE_PTHREADS
-        else
-          pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
       }
 
@@ -1031,9 +1002,6 @@ void update_job_data(
 
           attr_name = strtok(NULL, "=");
           }
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
       else if (pjob == NULL)
         {

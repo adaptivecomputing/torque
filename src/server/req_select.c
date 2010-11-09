@@ -89,9 +89,6 @@
 #include <stdlib.h>
 #include "libpbs.h"
 #include <string.h>
-#ifdef ENABLE_PTHREADS
-#include <pthread.h>
-#endif
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -411,18 +408,10 @@ static void sel_step2(
         }
       else if (cntl->sc_pque)
         {
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(pjob->ji_mutex);
-#endif
-
         pjob = (job *)GET_NEXT(pjob->ji_jobque_array_sum);
         }
       else
         {
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(pjob->ji_mutex);
-#endif
-
         pjob = (job *)GET_NEXT(pjob->ji_jobs_array_sum);
         }
       }
@@ -437,28 +426,16 @@ static void sel_step2(
         }
       else if (cntl->sc_pque)
         {
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(pjob->ji_mutex);
-#endif
-
         pjob = (job *)GET_NEXT(pjob->ji_jobque);
         }
       else
         {
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(pjob->ji_mutex);
-#endif
-
         pjob = (job *)GET_NEXT(pjob->ji_alljobs);
         }
       }
 
     if (pjob == NULL)
       break;
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
     if (exec_only)
       {
@@ -484,19 +461,11 @@ static void sel_step2(
 
           if ((rc = stat_to_mom(pjob, cntl)) == PBSE_SYSTEM)
             {
-#ifdef ENABLE_PTHREADS
-            pthread_mutex_unlock(pjob->ji_mutex);
-#endif
-
             break;
             }
 
           if (rc == 0)
             {
-#ifdef ENABLE_PTHREADS
-            pthread_mutex_unlock(pjob->ji_mutex);
-#endif
-
             return;
             }
 
@@ -588,10 +557,6 @@ static void sel_step3(
 
   while (pjob != NULL)
     {
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pjob->ji_mutex);
-#endif
-
     if (server.sv_attr[SRV_ATR_query_others].at_val.at_long ||
         (svr_authorize_jobreq(preq, pjob) == 0))
       {
@@ -618,10 +583,6 @@ static void sel_step3(
           if (pselect == NULL)
             {
             rc = PBSE_SYSTEM;
-
-#ifdef ENABLE_PTHREADS
-            pthread_mutex_unlock(pjob->ji_mutex);
-#endif
             break;
             }
 
@@ -640,20 +601,12 @@ static void sel_step3(
           rc = status_job(pjob, preq, NULL, &preply->brp_un.brp_status, &bad);
 
           if (rc && (rc != PBSE_PERM))
-            {
-#ifdef ENABLE_PTHREADS
-            pthread_mutex_unlock(pjob->ji_mutex);
-#endif
             break;
-            }
           }
         }
       }
 
 nextjob:
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     if(summarize_arrays)
       {
@@ -739,11 +692,8 @@ static int select_job(
  * Returns 1 if attribute meets criteria, 0 if not
  */
 
-static int sel_attr(
-    
-  attribute *jobat,
-  struct select_list *pselst)
-
+static int
+sel_attr(attribute *jobat, struct select_list *pselst)
   {
   int    rc;
   resource  *rescjb;
@@ -803,10 +753,8 @@ static int sel_attr(
  * free_sellist - free a select_list list
  */
 
-static void free_sellist(
-    
-  struct select_list *pslist)
-
+static void
+free_sellist(struct select_list *pslist)
   {
 
   struct select_list *next;

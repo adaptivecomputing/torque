@@ -452,7 +452,7 @@ void req_quejob(
 
       pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
       pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
-      pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock,FALSE);
+      pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock);
       pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
 
       /* Per Eric R., req_mvjobfile was giving error in open_std_file, 
@@ -488,7 +488,7 @@ void req_quejob(
 
   pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
 
-  pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock,FALSE);
+  pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock);
 
   pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
 
@@ -980,7 +980,7 @@ void req_commit(
 
   pj->ji_qs.ji_un_type = JOB_UNION_TYPE_MOM;
 
-  pj->ji_qs.ji_un.ji_momt.ji_svraddr = get_connectaddr(preq->rq_conn,FALSE);
+  pj->ji_qs.ji_un.ji_momt.ji_svraddr = get_connectaddr(preq->rq_conn);
 
   pj->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
 
@@ -1089,7 +1089,7 @@ static job *locate_new_job(
     {
     if ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1) ||
         ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == sock) &&
-         (pj->ji_qs.ji_un.ji_newt.ji_fromaddr == get_connectaddr(sock,FALSE))))
+         (pj->ji_qs.ji_un.ji_newt.ji_fromaddr == get_connectaddr(sock))))
       {
       if ((jobid != NULL) && (*jobid != '\0'))
         {

@@ -347,10 +347,6 @@ static void post_routejob(
   char *id = "post_routejob";
   job *jobp = (job *)pwt->wt_parm1;
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(jobp->ji_mutex);
-#endif
-
   if (WIFEXITED(stat))
     {
     r = WEXITSTATUS(stat);
@@ -415,10 +411,6 @@ static void post_routejob(
         job_abt(&jobp, pbse_to_txt(PBSE_ROUTEREJ));
       else if (r != 0)
         job_abt(&jobp, msg_routexceed);
-#ifdef ENABLE_PTHREADS
-      else
-        pthread_mutex_unlock(jobp->ji_mutex);
-#endif
 
       break;
     }  /* END switch (r) */
@@ -455,10 +447,6 @@ static void post_movejob(
   int stat;
   int r;
   job *jobp;
-
-#ifdef ENABLE_PTHREADS
-  int  has_mutex = TRUE;
-#endif
 
   req  = (struct batch_request *)pwt->wt_parm2;
 
@@ -508,10 +496,6 @@ static void post_movejob(
               req->rq_host);
 
       job_purge(jobp);
-
-#ifdef ENABLE_PTHREADS
-      has_mutex = FALSE;
-#endif
       }
     else
       {
@@ -549,11 +533,6 @@ static void post_movejob(
     {
     reply_ack(req);
     }
-
-#ifdef ENABLE_PTHREADS
-  if (has_mutex == TRUE)
-    pthread_mutex_unlock(jobp->ji_mutex);
-#endif 
 
   return;
   }  /* END post_movejob() */
@@ -1254,12 +1233,8 @@ static int should_retry_route(
 
 
 
-static int move_job_file(
-   
-  int conn, 
-  job *pjob, 
-  enum job_file which)
-
+static int
+move_job_file(int conn, job *pjob, enum job_file which)
   {
   char path[MAXPATHLEN+1];
 
@@ -1282,5 +1257,4 @@ static int move_job_file(
     }
 
   return PBSD_jobfile(conn, PBS_BATCH_MvJobFile, path, pjob->ji_qs.ji_jobid, which);
-  } /* END move_job_file() */
-
+  }

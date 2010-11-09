@@ -85,9 +85,6 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef ENABLE_PTHREADS
-#include <pthread.h>
-#endif
 #include "libpbs.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -225,11 +222,11 @@ void req_register(
   type = preq->rq_ind.rq_register.rq_dependtype;
 
   if (((pjob->ji_qs.ji_state == JOB_STATE_COMPLETE) ||
-       (pjob->ji_qs.ji_state == JOB_STATE_EXITING)) &&
-      ((type = JOB_DEPEND_TYPE_AFTERSTART) ||
-       (type = JOB_DEPEND_TYPE_AFTERANY) ||
-       ((type = JOB_DEPEND_TYPE_AFTEROK) && (pjob->ji_qs.ji_un.ji_exect.ji_exitstat == 0)) ||
-       ((type = JOB_DEPEND_TYPE_AFTERNOTOK) && (pjob->ji_qs.ji_un.ji_exect.ji_exitstat != 0))))
+    (pjob->ji_qs.ji_state == JOB_STATE_EXITING)) &&
+    ((type = JOB_DEPEND_TYPE_AFTERSTART) ||
+    (type = JOB_DEPEND_TYPE_AFTERANY) ||
+    ((type = JOB_DEPEND_TYPE_AFTEROK) && (pjob->ji_qs.ji_un.ji_exect.ji_exitstat == 0)) ||
+    ((type = JOB_DEPEND_TYPE_AFTERNOTOK) && (pjob->ji_qs.ji_un.ji_exect.ji_exitstat != 0))))
     {
     if (LOGLEVEL >= 8)
       {
@@ -237,27 +234,23 @@ void req_register(
         PJobState[pjob->ji_qs.ji_state],
         preq->rq_ind.rq_register.rq_parent,
         preq->rq_ind.rq_register.rq_child);
-      
+
       log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
         log_buffer);
       }
-    
-    log_event(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      preq->rq_ind.rq_register.rq_parent,
-      pbse_to_txt(PBSE_BADSTATE));
-    
-    req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pjob->ji_mutex);
-#endif
-    
-    return;
+      log_event(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        preq->rq_ind.rq_register.rq_parent,
+        pbse_to_txt(PBSE_BADSTATE));
+
+      req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
+
+      return;
     }
 
   if (LOGLEVEL >= 8)
@@ -612,10 +605,6 @@ void req_register(
     reply_ack(preq);
     }
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(pjob->ji_mutex);
-#endif
-
   return;
   }  /* END req_register() */
 
@@ -958,11 +947,8 @@ void set_array_depend_holds(
            * logged in set_depend_hold */
           set_depend_hold(pjob,&pjob->ji_wattr[JOB_ATR_depend]);
           }
-
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
+
 
       pdj = (struct array_depend_job *)GET_NEXT(pdj->dc_link);
       }
@@ -1038,10 +1024,6 @@ static void post_doq(
           }
 
         set_depend_hold(pjob, pattr);
-
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
       }
     }
@@ -1230,9 +1212,6 @@ static void post_doe(
 
       del_depend(pdep);
       }
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pjob->ji_mutex);
-#endif
     }
 
   release_req(pwt);
@@ -1725,8 +1704,8 @@ void depend_clrrdy(
 
 static struct depend *find_depend(
 
-  int        type,
-  attribute *pattr)
+        int        type,
+        attribute *pattr)
 
   {
 
@@ -1758,8 +1737,8 @@ static struct depend *find_depend(
 
 static struct depend *make_depend(
 
-  int        type,
-  attribute *pattr)
+        int        type,
+        attribute *pattr)
 
   {
 
@@ -2616,11 +2595,8 @@ int set_depend(
  *  -1
  */
 
-int comp_depend(
-    
-  struct attribute *attr, 
-  struct attribute *with)
-
+int
+comp_depend(struct attribute *attr, struct attribute *with)
   {
 
   return (-1);

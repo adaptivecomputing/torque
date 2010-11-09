@@ -4,9 +4,6 @@
 #include <stdio.h>
 #include <signal.h>
 #include <ctype.h>
-#ifdef ENABLE_PTHREADS
-#include <pthread.h>
-#endif
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -339,10 +336,6 @@ void array_delete_wt(struct work_task *ptask)
 
       pjob = (job *)pa->jobs[i];
 
-#ifdef ENABLE_PTHREADS
-      pthread_mutex_lock(pjob->ji_mutex);
-#endif
-
       num_jobs++;
 
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
@@ -369,9 +362,6 @@ void array_delete_wt(struct work_task *ptask)
             append_link(&pjob->ji_svrtask, &pwtnew->wt_linkobj, pwtnew);
             }
 
-#ifdef ENABLE_PTHREADS
-          pthread_mutex_unlock(pjob->ji_mutex);
-#endif
           }
         else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
           {
@@ -400,6 +390,9 @@ void array_delete_wt(struct work_task *ptask)
 
     }
 
+
+
   req_deletearray(preq);
 
-  } /* END array_delete_wt() */
+
+  }

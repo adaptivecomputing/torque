@@ -31,12 +31,10 @@
  * "managers" and "operators"
  */
 
-int token_chk(
-    
-  attribute *pattr, 
-  void *pobject, 
-  int actmode)
-  
+int token_chk(pattr, pobject, actmode)
+attribute *pattr;
+void *pobject;
+int actmode;
   {
   char   *entry;
   int    err = 0;
@@ -74,11 +72,8 @@ int token_chk(
   return (err);
   }
 
-int compare_tokens(
-    
-  char *token1,
-  char *token2)
-
+int
+compare_tokens(char *token1, char *token2)
   {
   char *entry1;
   char *entry2;
@@ -109,11 +104,8 @@ int compare_tokens(
  * between the new and old list.
  */
 
-static int chk_dup_token(
-    
-  struct array_strings *old,
-  struct array_strings *new)
-
+static int
+chk_dup_token(struct array_strings *old, struct array_strings *new)
   {
   int i;
   int j;
@@ -158,11 +150,8 @@ static int chk_dup_token(
   }
 
 
-int set_tokens(
-    
-  struct attribute *attr, 
-  struct attribute *new, 
-  enum batch_op op)
+int
+set_tokens(struct attribute *attr, struct attribute *new, enum batch_op op)
 
   {
 

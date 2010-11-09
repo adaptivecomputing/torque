@@ -90,10 +90,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#ifdef ENABLE_PTHREADS
-#include <pthread.h>
-#endif
-
 #include "pbs_ifl.h"
 #include "log.h"
 #include "list_link.h"
@@ -357,8 +353,7 @@ static int SortPrioAscend(
 
 
 void  update_default_np()
-  
-  {
+{
   struct pbsnode *pnode;
   int i;
   long default_np;
@@ -381,24 +376,20 @@ void  update_default_np()
     }
 
   return;
-  }
+}
 
 /* Add the server names from /var/spool/torque/server_name to the trusted hosts list. */
 
 void add_server_names_to_acl_hosts(void)
 
   {
-  int        n; 
-  int        list_len; 
-  int        rc;
+  int n, list_len, rc;
+  char *server_list_ptr;
+  char *tp;
+  char buffer[PBS_MAXSERVERNAME+1];
+  attribute temp;
 
-  char      *server_list_ptr;
-  char      *tp;
-  char       buffer[PBS_MAXSERVERNAME+1];
-
-  attribute  temp;
-
-  attribute *patr = &server.sv_attr[SRV_ATR_acl_hosts];
+  struct attribute *patr = &server.sv_attr[SRV_ATR_acl_hosts];
 
   server_list_ptr = pbs_get_server_list();
   list_len = csv_length(server_list_ptr);
@@ -1143,10 +1134,6 @@ int pbsd_init(
               }
             }
 
-#ifdef ENABLE_PTHREADS
-          pthread_mutex_unlock(pjob->ji_mutex);
-#endif 
-
           continue;
           }
 
@@ -1163,10 +1150,6 @@ int pbsd_init(
             exit(-1);
 
             }
-
-#ifdef ENABLE_PTHREADS
-          pthread_mutex_unlock(pjob->ji_mutex);
-#endif 
           }
         else
           {
@@ -1202,10 +1185,6 @@ int pbsd_init(
       {
       job *pjob = (job *)Array.Data[Index];
 
-#ifdef ENABLE_PTHREADS
-      pthread_mutex_lock(pjob->ji_mutex);
-#endif 
-
       if (pbsd_init_job(pjob, type) == FAILURE)
         {
         log_event(
@@ -1213,10 +1192,6 @@ int pbsd_init(
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
           msg_script_open);
-
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(pjob->ji_mutex);
-#endif 
 
         continue;
         }
@@ -1241,10 +1216,6 @@ int pbsd_init(
           init_abt_job(pjob);
           }
         }
-
-#ifdef ENABLE_PTHREADS
-      pthread_mutex_unlock(pjob->ji_mutex);
-#endif 
       }
 
     DArrayFree(&Array);
@@ -1280,17 +1251,9 @@ int pbsd_init(
 
     while (pjob != NULL)
       {
-#ifdef ENABLE_PTHREADS
-      pthread_mutex_lock(pjob->ji_mutex);
-#endif 
-
       pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
 
      job_save(pjob, SAVEJOB_FULL, 0);
-
-#ifdef ENABLE_PTHREADS
-     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
       pjob = (job *)GET_NEXT(pjob->ji_alljobs);
       }

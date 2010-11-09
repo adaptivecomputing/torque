@@ -388,6 +388,7 @@ extern int   authenticate_user (struct batch_request *, struct credential *);
 extern void  dispatch_request (int, struct batch_request *);
 extern void  free_br (struct batch_request *);
 extern int   isode_request_read (int, struct batch_request *);
+extern void  req_stat_job (struct batch_request *);
 
 #ifndef PBS_MOM
 extern void  req_authenuser (struct batch_request *req);
@@ -408,9 +409,7 @@ extern void  req_stat_que (struct batch_request *req);
 extern void  req_stat_svr (struct batch_request *req);
 /* DIAGTODO: declr req_stat_diag() */
 extern void  req_trackjob (struct batch_request *req);
-extern void *req_stat_job (void *batch_req);
 #else
-extern void  req_stat_job (struct batch_request *req);
 extern void  req_cpyfile (struct batch_request *req);
 extern void  req_delfile (struct batch_request *req);
 extern void req_returnfiles (struct batch_request *req);

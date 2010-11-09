@@ -102,9 +102,6 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <string.h>
-#ifdef ENABLE_PTHREADS
-#include <pthread.h>
-#endif
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -361,13 +358,12 @@ void sum_select_mem_request(
  *
  */
 
-void *req_quejob(
+void req_quejob(
 
-  void *vp) /* ptr to the decoded request   */
+  struct batch_request *preq) /* ptr to the decoded request   */
 
   {
   char  *id = "req_quejob";
-  struct batch_request *preq = (struct batch_request *)vp;
 
   char   basename[PBS_JOBBASE + 1];
   int   created_here = 0;
@@ -377,8 +373,8 @@ void *req_quejob(
   attribute_def *pdef;
   job  *pj;
   svrattrl *psatl;
-  int   sock = preq->rq_conn;
   int   rc;
+  int   sock = preq->rq_conn;
 
   int   i;
   char   buf[256];
@@ -388,8 +384,8 @@ void *req_quejob(
   pbs_queue *pque;
   char  *qname;
   attribute  tempattr;
-  char           EMsg[MAXPATHLEN];
-  
+  char           EMsg[1024];
+
   /* set basic (user) level access permission */
 
   resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
@@ -418,7 +414,7 @@ void *req_quejob(
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "job not allowed from client");
 
-    return(NULL);
+    return;
     }
   else
     {
@@ -500,7 +496,7 @@ void *req_quejob(
 
       req_reject(PBSE_INTERNAL, 0, preq, NULL, NULL);
 
-      return(NULL);
+      return;
       }
     }
 
@@ -527,11 +523,7 @@ void *req_quejob(
 
     req_reject(PBSE_JOBEXIST, 0, preq, NULL, NULL);
 
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
-
-    return(NULL);
+    return;
     }
 
   /* find requested queue, is it there? */
@@ -563,7 +555,7 @@ void *req_quejob(
 
     req_reject(rc, 0, preq, NULL, "cannot locate queue"); /* not there   */
 
-    return(NULL);
+    return;
     }
 
   /*
@@ -602,7 +594,7 @@ void *req_quejob(
 
             req_reject(PBSE_INTERNAL, 0, preq, NULL, "job file is corrupt");
 
-            return(NULL);
+            return;
             }
           }
 
@@ -616,7 +608,7 @@ void *req_quejob(
 
         req_reject(PBSE_SYSTEM, 0, preq, NULL, "cannot open new job file");
 
-        return(NULL);
+        return;
         }
       }
     }
@@ -636,12 +628,8 @@ void *req_quejob(
 
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "cannot alloc new job structure");
 
-    return(NULL);
+    return;
     }
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(pj->ji_mutex);
-#endif
 
   strcpy(pj->ji_qs.ji_jobid, jid);
 
@@ -690,7 +678,7 @@ void *req_quejob(
 
       reply_badattr(PBSE_ATTRRO, 1, psatl, preq);
 
-      return(NULL);
+      return;
       }
 
     /* decode attribute */
@@ -719,7 +707,7 @@ void *req_quejob(
 
           reply_badattr(rc, 1, psatl, preq);
 
-          return(NULL);
+          return;
           }
         }
       else
@@ -732,7 +720,7 @@ void *req_quejob(
 
         reply_badattr(rc, 1, psatl, preq);
 
-        return(NULL);
+        return;
         }
       }    /* END if (rc != 0) */
 
@@ -755,7 +743,7 @@ void *req_quejob(
 
         req_reject(rc, i, preq, NULL, "cannot execute attribute action");
 
-        return(NULL);
+        return;
         }
       }
     }    /* END for (i) */
@@ -795,7 +783,7 @@ void *req_quejob(
 
         req_reject(PBSE_BADATVAL, 0, preq, NULL, "invalid job priority");
 
-        return(NULL);
+        return;
         }
       }
 
@@ -923,7 +911,7 @@ void *req_quejob(
 
       req_reject(PBSE_NOATTR, 0, preq, NULL, "no output/error file specified");
 
-      return(NULL);
+      return;
       }
 
     /*
@@ -993,7 +981,7 @@ void *req_quejob(
 
         req_reject(PBSE_BADACCT, 0, preq, NULL, "invalid account");
 
-        return(NULL);
+        return;
         }
       }
     else
@@ -1014,7 +1002,7 @@ void *req_quejob(
 
         req_reject(PBSE_BADACCT, 0, preq, NULL, "no default account available");
 
-        return(NULL);
+        return;
         }
       }
 
@@ -1034,7 +1022,7 @@ void *req_quejob(
 
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "no job owner specified");
 
-      return(NULL);
+      return;
       }
 
     /* increment hop count */
@@ -1045,7 +1033,7 @@ void *req_quejob(
 
       req_reject(PBSE_HOPCOUNT, 0, preq, NULL, "max job hop reached");
 
-      return(NULL);
+      return;
       }
     }
 
@@ -1100,7 +1088,7 @@ void *req_quejob(
 
     req_reject(rc, 0, preq, NULL, EMsg);
 
-    return(NULL);
+    return;
     }
 
   /* FIXME: if EMsg[0] != '\0', send a warning email to the user */
@@ -1125,7 +1113,7 @@ void *req_quejob(
 
   pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
 
-  pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock,TRUE);
+  pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock);
 
   pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
 
@@ -1139,18 +1127,14 @@ void *req_quejob(
 
     job_purge(pj);
 
-    return(NULL);
+    return;
     }
 
   /* link job into server's new jobs list request  */
 
   append_link(&svr_newjobs, &pj->ji_alljobs, pj);
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(pj->ji_mutex);
-#endif
-
-  return(NULL);
+  return;
   }  /* END req_quejob() */
 
 
@@ -1184,18 +1168,10 @@ void req_jobcredential(
     {
     req_reject(PBSE_PERM, 0, preq, NULL, "job request not authorized");
 
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
-
     return;
     }
 
   reply_ack(preq);
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
   return;
   }  /* END req_jobcredential() */
@@ -1257,10 +1233,6 @@ void req_jobscript(
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buffer);
 
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
-
     return;
     }
 
@@ -1271,10 +1243,6 @@ void req_jobscript(
     log_err(errno, id, "cannot authorize request");
 
     req_reject(PBSE_PERM, 0, preq, NULL, "cannot receive job script");
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
     return;
     }
@@ -1312,10 +1280,6 @@ void req_jobscript(
 
     req_reject(PBSE_INTERNAL, 0, preq, NULL, tmpLine);
 
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
-
     return;
     }
 
@@ -1332,10 +1296,6 @@ void req_jobscript(
 
     close(fds);
 
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
-
     return;
     }
 
@@ -1351,10 +1311,6 @@ void req_jobscript(
   /* SUCCESS */
 
   reply_ack(preq);
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
   return;
   }  /* END req_jobscript() */
@@ -1394,10 +1350,6 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
     log_err(errno, "req_mvjobfile", log_buffer);
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
     return;
     }
@@ -1488,10 +1440,6 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
 
   reply_ack(preq);
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(pj->ji_mutex);
-#endif
-
   return;
   }  /* END req_mvjobfile() */
 
@@ -1540,9 +1488,6 @@ void req_rdytocommit(
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 
     /* FAILURE */
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
     return;
     }
@@ -1554,9 +1499,6 @@ void req_rdytocommit(
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
     /* FAILURE */
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
     return;
     }
@@ -1566,9 +1508,6 @@ void req_rdytocommit(
     req_reject(PBSE_PERM, 0, preq, NULL, "cannot authorize jobreq");
 
     /* FAILURE */
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
     return;
     }
@@ -1622,9 +1561,6 @@ void req_rdytocommit(
     req_reject(PBSE_SYSTEM, 0, preq, NULL, tmpLine);
 
     /* FAILURE */
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
     return;
     }
@@ -1658,10 +1594,6 @@ void req_rdytocommit(
       (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
       "ready to commit job completed");
     }
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
   return;
   }  /* END req_rdytocommit() */
@@ -1733,9 +1665,6 @@ void req_commit(
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
     /* FAILURE */
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
     return;
     }
@@ -1770,10 +1699,6 @@ void req_commit(
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
-
     return;
     }
 
@@ -1789,9 +1714,6 @@ void req_commit(
         (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
         "no permission to start job");
       }
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
     return;
     }
@@ -1826,10 +1748,6 @@ void req_commit(
         {
         req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, NULL);
         }
-
-#ifdef ENABLE_PTHREADS
-      pthread_mutex_unlock(pj->ji_mutex);
-#endif
       return;
       }
     }  /* end if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET) */
@@ -1998,10 +1916,6 @@ void req_commit(
 
 #endif /* AUTORUN_JOBS */
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(pj->ji_mutex);
-#endif
-
   return;
   }  /* END req_commit() */
 
@@ -2037,13 +1951,9 @@ static job *locate_new_job(
 
   while (pj != NULL)
     {
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pj->ji_mutex);
-#endif
-
     if ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1) ||
         ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == sock) &&
-         (pj->ji_qs.ji_un.ji_newt.ji_fromaddr == get_connectaddr(sock,TRUE))))
+         (pj->ji_qs.ji_un.ji_newt.ji_fromaddr == get_connectaddr(sock))))
       {
       if ((jobid != NULL) && (*jobid != '\0'))
         {
@@ -2067,10 +1977,6 @@ static job *locate_new_job(
         break;
         }
       }    /* END if ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1) || ...) */
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
     pj = (job *)GET_NEXT(pj->ji_alljobs);
     }  /* END while(pj != NULL) */

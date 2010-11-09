@@ -257,15 +257,8 @@ int svr_connect(
     add_conn(sock, ToServerDIS, hostaddr, port, PBS_SOCK_INET, func);
     }
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(svr_conn[sock].cn_mutex);
-#endif
-
   svr_conn[sock].cn_authen = PBS_NET_CONN_AUTHENTICATED;
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-#endif
   /* find a connect_handle entry we can use and pass to the PBS_*() */
 
   handle = socket_to_handle(sock);
@@ -381,17 +374,10 @@ int socket_to_handle(
     connection[i].ch_errno  = 0;
     connection[i].ch_socket = sock;
     connection[i].ch_errtxt = 0;
+
     /* SUCCESS - save handle for later close */
 
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(svr_conn[sock].cn_mutex);
-#endif
-
     svr_conn[sock].cn_handle = i;
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-#endif
 
     if (i >= (PBS_NET_MAX_CONNECTIONS/2))
       {

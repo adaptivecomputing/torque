@@ -85,11 +85,8 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-#include <signal.h>
-#ifdef ENABLE_PTHREADS
-#include <pthread.h>
-#endif
 #include "libpbs.h"
+#include <signal.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -120,10 +117,8 @@ extern job  *chk_job_request(char *, struct batch_request *);
  * This request sends (via MOM) a message to a running job.
  */
 
-void req_messagejob(
-    
-  struct batch_request *preq)
-
+void
+req_messagejob(struct batch_request *preq)
   {
   job   *pjob;
   int    rc;
@@ -136,10 +131,6 @@ void req_messagejob(
   if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
     {
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pjob->ji_mutex);
-#endif
     return;
     }
 
@@ -150,21 +141,16 @@ void req_messagejob(
     req_reject(rc, 0, preq, NULL, NULL); /* unable to get to MOM */
 
   /* After MOM acts and replies to us, we pick up in post_message_req() */
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(pjob->ji_mutex);
-#endif
-  } /* END req_messagejob() */
+  }
 
 /*
  * post_message_req - complete a Message Job Request
  */
 
-static void post_message_req(
-    
-  struct work_task *pwt)
-
+static void
+post_message_req(struct work_task *pwt)
   {
+
   struct batch_request *preq;
 
   svr_disconnect(pwt->wt_event); /* close connection to MOM */
@@ -179,5 +165,4 @@ static void post_message_req(
     req_reject(preq->rq_reply.brp_code, 0, preq, NULL, NULL);
   else
     reply_ack(preq);
-  } /* END post_message_req() */
-
+  }

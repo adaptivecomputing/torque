@@ -680,8 +680,6 @@ int issue_Drequest(
 /*
  * process_reply - process the reply received for a request issued to
  * another server via issue_request()
- *
- * should be called when the relevant svr_conn mutex is already held
  */
 
 void process_Dreply(
@@ -689,7 +687,6 @@ void process_Dreply(
   int sock)
 
   {
-  static char *id = "process_Dreply";
   int    handle;
 
   struct work_task *ptask;
@@ -714,7 +711,7 @@ void process_Dreply(
 
   if (ptask == NULL)
     {
-    log_err(-1, id, msg_err_malloc);
+    log_err(-1, "process_Dreply", msg_err_malloc);
 
     close_conn(sock);
 
