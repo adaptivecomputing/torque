@@ -82,6 +82,9 @@
 #include "portability.h"
 #include <sys/types.h>
 #include "net_connect.h"
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 
 /* global data */
 
@@ -92,12 +95,12 @@ extern struct connection svr_conn[];
  *  the network connection
  */
 
-void net_add_close_func(sd, func)
-int sd;
-void (*func)(int);
-  {
-  if (svr_conn[sd].cn_active == Idle)
-    return;
+void net_add_close_func(
+    
+  int sd, 
+  void (*func)(int))
 
-  svr_conn[sd].cn_oncl =  func;
+  {
+  if (svr_conn[sd].cn_active != Idle)
+    svr_conn[sd].cn_oncl =  func;
   }

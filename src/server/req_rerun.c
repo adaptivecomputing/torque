@@ -86,6 +86,9 @@
 #include <sys/types.h>
 #include "libpbs.h"
 #include <signal.h>
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 #include "server_limits.h"
 #include "list_link.h"
 #include "work_task.h"
@@ -145,6 +148,10 @@ static void post_rerun(
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
 
       svr_setjobstate(pjob, newstate, newsub);
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif
       }
     }
 
@@ -215,6 +222,10 @@ void req_rerunjob(
 
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
     return;
     }
 
@@ -224,6 +235,10 @@ void req_rerunjob(
     /* FAILURE */
 
     req_reject(PBSE_PERM, 0, preq, NULL, NULL);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
     return;
     }
@@ -238,6 +253,10 @@ void req_rerunjob(
                 if rerunable==FALSE -garrick */
 
     req_reject(PBSE_NORERUN, 0, preq, NULL, NULL);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
     return;
     }
@@ -318,6 +337,10 @@ void req_rerunjob(
         {
         req_reject(PBSE_MOMREJECT, 0, preq, NULL, NULL);
 
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
         return;
         }
       else
@@ -395,6 +418,10 @@ void req_rerunjob(
   /* note in accounting file */
 
   account_record(PBS_ACCT_RERUN, pjob, NULL);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
   }  /* END req_rerunjob() */
 
 

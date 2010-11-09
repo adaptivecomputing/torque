@@ -28,7 +28,9 @@
 #endif /* !O_SYNC */
 
 #include <unistd.h>
-
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 
 #include "pbs_ifl.h"
 #include "log.h"
@@ -286,8 +288,16 @@ job *find_array_template(char *arrayid)
 
   while (pj != NULL)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pj->ji_mutex);
+#endif
+
     if (!strcmp(comp, pj->ji_qs.ji_jobid))
       break;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pj->ji_mutex);
+#endif
 
     pj = (job *)GET_NEXT(pj->ji_jobs_array_sum);
     }
@@ -299,7 +309,7 @@ job *find_array_template(char *arrayid)
     free(comp);
 
   return(pj);  /* may be NULL */
-  }   /* END find_job() */
+  }   /* END find_array_template() */
 
 
 
@@ -531,7 +541,10 @@ int set_slot_limit(
   } /* END set_slot_limit() */
 
 
-int setup_array_struct(job *pjob)
+int setup_array_struct(
+    
+  job *pjob)
+
   {
   job_array *pa;
 
@@ -560,10 +573,9 @@ int setup_array_struct(job *pjob)
   CLEAR_HEAD(pa->request_tokens);
   append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
 
- if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
+  if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
     {
     job_purge(pjob);
-
 
     if (LOGLEVEL >= 6)
       {
@@ -598,10 +610,9 @@ int setup_array_struct(job *pjob)
   pa->ai_qs.num_failed = 0;
   pa->ai_qs.num_successful = 0;
   
-  bad_token_count =
-
-    parse_array_request(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str,
-                        &(pa->request_tokens));
+  bad_token_count = parse_array_request(
+                      pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str,
+                      &(pa->request_tokens));
 
   /* get the number of elements that should be allocated in the array */
   rn = (array_request_node *)GET_NEXT(pa->request_tokens);
@@ -650,10 +661,16 @@ int setup_array_struct(job *pjob)
 
   return 0;
 
-  }
+  } /* END setup_array_struct() */
 
 
-static int is_num(char *str)
+
+
+
+static int is_num(
+    
+  char *str)
+
   {
   int i;
   int len;
@@ -674,9 +691,15 @@ static int is_num(char *str)
     }
 
   return 1;
-  }
+  } /* END is_num() */
 
-int array_request_token_count(char *str)
+
+
+
+int array_request_token_count(
+    
+  char *str)
+
   {
   int token_count;
   int len;
@@ -697,9 +720,17 @@ int array_request_token_count(char *str)
 
   return token_count;
 
-  }
+  } /* END array_request_token_count() */
 
-static int array_request_parse_token(char *str, int *start, int *end)
+
+
+
+static int array_request_parse_token(
+    
+  char *str, 
+  int *start, 
+  int *end)
+
   {
   int num_ids;
   long start_l;
@@ -784,10 +815,14 @@ static int array_request_parse_token(char *str, int *start, int *end)
     }
 
   return num_ids;
-  }
+  } /* END array_request_parse_token() */
 
 
-static int parse_array_request(char *request, tlist_head *tl)
+static int parse_array_request(
+    
+  char *request, 
+  tlist_head *tl)
+
   {
   char *temp_str;
   int num_tokens;
@@ -886,7 +921,7 @@ static int parse_array_request(char *request, tlist_head *tl)
   free(temp_str);
 
   return num_bad_tokens;
-  }
+  } /* END parse_array_request() */
 
 
 
@@ -945,14 +980,30 @@ int delete_array_range(
 
       pjob = pa->jobs[i];
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(pjob->ji_mutex);
+#endif 
+
       if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
         {
         /* invalid state for request,  skip */
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif 
+
         continue;
         }
 
       if (attempt_delete((void *)pjob) == FALSE)
+        {
+#ifdef ENABLE_PTHREADS
+        /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
+         * release it here */
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif 
+
         num_skipped++;
+        }
       }
 
     to_free = rn;
@@ -1013,16 +1064,31 @@ int delete_whole_array(
     if (pa->jobs[i] == NULL)
       continue;
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif 
+
     pjob = (job *)pa->jobs[i];
 
     if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
       {
       /* invalid state for request,  skip */
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif 
       continue;
       }
 
     if (attempt_delete((void *)pjob) == FALSE)
+      {
+#ifdef ENABLE_PTHREADS
+      /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
+       * release it here */
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif 
+
       num_skipped++;
+      }
     }
 
   return(num_skipped);
@@ -1078,8 +1144,16 @@ int hold_array_range(
         /* don't stomp on other memory */
         if (i >= pa->ai_qs.array_size)
           continue;
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_lock(pa->jobs[i]->ji_mutex);
+#endif
         
         hold_job(temphold,pa->jobs[i]);
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+#endif
         }
       
       /* release mem */
@@ -1137,9 +1211,23 @@ int release_array_range(
       /* don't stomp on other memory */
       if (i >= pa->ai_qs.array_size)
         continue;
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(pa->jobs[i]->ji_mutex);
+#endif
       
       if ((rc = release_job(preq,pa->jobs[i])))
+        {
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+#endif
+        
         return(rc);
+        }
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+#endif
       }
     
     /* release mem */
@@ -1192,7 +1280,11 @@ int modify_array_range(
         if ((i >= pa->ai_qs.array_size) ||
             (pa->jobs[i] == NULL))
           continue;
-        
+  
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_lock(pa->jobs[i]->ji_mutex);
+#endif
+
         rc = modify_job(pa->jobs[i],plist,preq,checkpoint_req, NO_MOM_RELAY);
 
         if (rc == PBSE_RELAYED_TO_MOM)
@@ -1222,10 +1314,18 @@ int modify_array_range(
               pa->jobs[i]->ji_qs.ji_jobid);
             log_err(rc,id,log_buffer);
           
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+#endif
+
             return(rc); /* unable to get to MOM */
             }
         
-          }  
+          }
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+#endif 
         }
       
       /* release mem */
@@ -1345,6 +1445,10 @@ void update_array_statuses()
       
       if (pj != NULL)
         {
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_lock(pj->ji_mutex);
+#endif
+
         if (pj->ji_qs.ji_state == JOB_STATE_RUNNING)
           {
           running++;
@@ -1361,6 +1465,9 @@ void update_array_statuses()
           {
           complete++;
           }
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pj->ji_mutex);
+#endif
         }
       }
     

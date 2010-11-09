@@ -89,6 +89,9 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -186,6 +189,11 @@ void req_holdjob(
                      &temphold)) != 0)
     {
     req_reject(rc, 0, preq, NULL, NULL);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
     return;
     }
 
@@ -194,6 +202,11 @@ void req_holdjob(
   if ((rc = chk_hold_priv(temphold.at_val.at_long, preq->rq_perm)) != 0)
     {
     req_reject(rc, 0, preq, NULL, NULL);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
     return;
     }
 
@@ -280,6 +293,10 @@ void req_holdjob(
 
     reply_ack(preq);
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
   }  /* END req_holdjob() */
 
 
@@ -340,6 +357,10 @@ void req_checkpointjob(
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "job is not checkpointable");
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
   }  /* END req_checkpointjob() */
 
 
@@ -406,7 +427,7 @@ int release_job(
             log_buffer);
 
   return(rc);
-  }
+  } /* END release_job() */
 
 
 
@@ -442,6 +463,10 @@ void req_releasejob(
     reply_ack(preq);
     }
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
   return;
   }  /* END req_releasejob() */
 
@@ -461,10 +486,18 @@ int release_whole_array(
     if (pa->jobs[i] == NULL)
       continue;
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pa->jobs[i]->ji_mutex);
+#endif
+
     if ((rc = release_job(preq,pa->jobs[i])) != 0)
       {
       return(rc);
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+#endif
     }
 
   /* SUCCESS */
@@ -487,12 +520,24 @@ void req_releasearray(
   pa = get_array(preq->rq_ind.rq_release.rq_objname);
   pjob = (job *)pa->jobs[first_job_index(pa)];
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
   if (svr_authorize_jobreq(preq, pjob) == -1)
     {
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
     return;
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
   range = preq->rq_extend;
   if ((range != NULL) &&
@@ -532,8 +577,8 @@ int get_hold(
 
   tlist_head *phead,
   char      **pset,     /* O - ptr to hold value */
-  attribute *temphold   /* O - ptr to attribute to decode value into  */
-)
+  attribute *temphold)   /* O - ptr to attribute to decode value into  */
+
 
   {
   int   have_one = 0;
@@ -592,6 +637,7 @@ int get_hold(
 static void process_hold_reply(
 
   struct work_task *pwt)
+
   {
   job       *pjob;
 
@@ -613,6 +659,8 @@ static void process_hold_reply(
               preq->rq_ind.rq_hold.rq_orig.rq_objname,
               msg_postmomnojob);
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, msg_postmomnojob);
+
+    return;
     }
   else if (preq->rq_reply.brp_code != 0)
     {
@@ -668,7 +716,11 @@ static void process_hold_reply(
     account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed and held"); /* note in accounting file */
     reply_ack(preq);
     }
-  }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+  } /* END process_hold_reply() */
 
 /*
  * process_checkpoint_reply
@@ -679,6 +731,7 @@ static void process_hold_reply(
 static void process_checkpoint_reply(
 
   struct work_task *pwt)
+
   {
   job       *pjob;
 
@@ -702,5 +755,10 @@ static void process_checkpoint_reply(
 
     account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed"); /* note in accounting file */
     reply_ack(preq);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
     }
-  }
+  } /* END process_checkpoint_reply() */
+

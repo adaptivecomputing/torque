@@ -126,9 +126,13 @@
 #include "batch_request.h"
 #include "pbs_proto.h"
 #include "u_tree.h"
-/* #ifdef USE_HA_THREADS */
+#ifdef USE_HA_THREADS 
 #include <pthread.h>
-/* #endif */ /* USE_HA_THREADS */
+#else
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
+#endif /* USE_HA_THREADS */
 #include "threadpool.h"
 
 
@@ -1073,6 +1077,10 @@ static int start_hot_jobs(void)
        pjob != NULL;
        pjob = (job *)GET_NEXT(pjob->ji_alljobs))
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED) &&
         (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART))
       {
@@ -1086,6 +1094,9 @@ static int start_hot_jobs(void)
 
       ct++;
       }
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
     }
 
   return(ct);
@@ -1279,6 +1290,10 @@ main_loop(void)
            pjob != NULL;
            pjob = (job *)GET_NEXT(pjob->ji_alljobs))
         {
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
         if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
           {
           /* spread these out over the next JobStatRate seconds */
@@ -1293,6 +1308,9 @@ main_loop(void)
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
             }
           }
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
         }
 
       last_jobstat_time = time_now;
@@ -1325,8 +1343,16 @@ main_loop(void)
        pjob != NULL;
        pjob = (job *)GET_NEXT(pjob->ji_alljobs))
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
     }
 
   if (svr_chngNodesfile)

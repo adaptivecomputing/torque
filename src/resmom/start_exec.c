@@ -5065,9 +5065,6 @@ void job_nodes(
   int  nodenum;
 	int  ix;
 
-  static char *gpu_str = "-gpu/";
-  char *gpu_ptr;
-
 	char  *cp = NULL;
   char  *nodestr = NULL;
   char  *portstr = NULL;
@@ -5090,19 +5087,12 @@ void job_nodes(
 			{
       /* count how many nodes there are by counting the number of '+'
        * characters in the string */
-      gpu_ptr = strstr(nodestr,gpu_str);
 
 			for (cp = nodestr;*cp;cp++)
 				{
 				if (*cp == '+')
           {
-          if ((gpu_ptr != NULL) &&
-              (gpu_ptr < cp))
-            {
-            gpu_ptr = strstr(cp,gpu_str);
-            }
-          else
-            nodenum++;
+          nodenum++;
           }
 				}
 			}

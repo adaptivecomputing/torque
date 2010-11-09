@@ -88,6 +88,9 @@
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 #include "server_limits.h"
 #include "list_link.h"
 #include "work_task.h"
@@ -220,6 +223,10 @@ void svr_shutdown(
 
   while ((pjob = pnxt) != NULL)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
     pnxt = (job *)GET_NEXT(pjob->ji_alljobs);
 
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
@@ -236,7 +243,13 @@ void svr_shutdown(
         /* do checkpoint of job */
 
         if (shutdown_checkpoint(pjob) == 0)
+          {
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
           continue;
+          }
         }
 
       /* if no checkpoint (not supported, not allowed, or fails */
@@ -244,6 +257,10 @@ void svr_shutdown(
 
       rerun_or_kill(pjob, msg_on_shutdown);
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
     }
 
   return;
@@ -433,6 +450,11 @@ static void post_checkpoint(
     }
 
   release_req(ptask);
+
+#ifdef ENABLE_PTHREADS
+  if (pjob != NULL)
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
   }  /* END post_checkpoint() */
 
 
@@ -495,3 +517,4 @@ static void rerun_or_kill(
 
   return;
   }  /* END rerun_or_kill() */
+

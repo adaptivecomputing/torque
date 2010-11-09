@@ -180,7 +180,7 @@ void add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void (
 int  find_conn(pbs_net_t);
 int  client_to_svr(pbs_net_t, unsigned int, int, char *);
 void close_conn(int);
-pbs_net_t get_connectaddr(int);
+pbs_net_t get_connectaddr(int,int);
 int  get_connecthost(int sock, char *, int);
 pbs_net_t get_hostaddr(char *);
 int  get_fullhostname(char *, char *, int, char *);
@@ -205,6 +205,9 @@ struct connection
   time_t cn_lasttime;    /* time last active */
   void (*cn_func)(int);  /* read function when data rdy */
   void (*cn_oncl)(int);  /* func to call on close */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_t *cn_mutex;
+#endif
   };
 
 struct netcounter

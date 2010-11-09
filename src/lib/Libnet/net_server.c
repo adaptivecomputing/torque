@@ -106,7 +106,9 @@
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
-
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 
 
 
@@ -150,8 +152,8 @@ static void accept_conn();
 
 static struct netcounter nc_list[60];
 
-void
-netcounter_incr(void)
+void netcounter_incr(void)
+
   {
   time_t now, lastmin;
   int i;
@@ -188,8 +190,8 @@ int get_num_connections()
   }
 
 
-int *
-netcounter_get(void)
+int *netcounter_get(void)
+
   {
   static int netrates[3];
   int netsums[3] = {0, 0, 0};
@@ -269,7 +271,19 @@ int init_network(
   if (initialized == 0)
     {
     for (i = 0;i < PBS_NET_MAX_CONNECTIONS;i++)
+      {
+#ifdef ENABLE_PTHREADS
+      svr_conn[i].cn_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+      pthread_mutex_init(svr_conn[i].cn_mutex,NULL);
+      pthread_mutex_lock(svr_conn[i].cn_mutex);
+#endif
+
       svr_conn[i].cn_active = Idle;
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_conn[i].cn_mutex);
+#endif
+      }
 
     /* initialize global "read" socket FD bitmap */
     GlobalSocketReadSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
@@ -497,6 +511,10 @@ int wait_request(
 
       n--;
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(svr_conn[i].cn_mutex);
+#endif 
+
       svr_conn[i].cn_lasttime = time((time_t *)0);
 
       if (svr_conn[i].cn_active != Idle)
@@ -520,6 +538,10 @@ int wait_request(
 
         log_err(-1,id,tmpLine);
         }
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_conn[i].cn_mutex);
+#endif
       }
     }    /* END for (i) */
 
@@ -540,16 +562,38 @@ int wait_request(
 
     struct connection *cp;
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(svr_conn[i].cn_mutex);
+#endif
+
     cp = &svr_conn[i];
 
     if (cp->cn_active != FromClientDIS)
+      {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_conn[i].cn_mutex);
+#endif
+
       continue;
+      }
 
     if ((now - cp->cn_lasttime) <= PBS_NET_MAXCONNECTIDLE)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_conn[i].cn_mutex);
+#endif
+  
       continue;
+      }
 
     if (cp->cn_authen & PBS_NET_CONN_NOTIMEOUT)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_conn[i].cn_mutex);
+#endif
+  
       continue; /* do not time-out this connection */
+      }
 
     /* NOTE:  add info about node associated with connection - NYI */
 
@@ -565,6 +609,10 @@ int wait_request(
     /* NYI */
 
     close_conn(i);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_conn[i].cn_mutex);
+#endif
     }  /* END for (i) */
 
   free(SelectSet);
@@ -582,6 +630,8 @@ int wait_request(
  * the new socket is added to the select set and the connection
  * structure - the processing routine is set to the external
  * function: process_request(socket)
+ *
+ * NOTE: accept conn is called by functions that have a mutex on the socket already 
  */
 
 static void accept_conn(
@@ -665,6 +715,10 @@ void add_conn(
 
   FD_SET(sock, GlobalSocketReadSet);
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_conn[sock].cn_mutex);
+#endif
+
   svr_conn[sock].cn_active   = type;
   svr_conn[sock].cn_addr     = addr;
   svr_conn[sock].cn_port     = (unsigned short)port;
@@ -699,6 +753,10 @@ void add_conn(
     }
 
 #endif /* !NOPRIVPORTS */
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+#endif
 
   return;
   }  /* END add_conn() */
@@ -783,9 +841,17 @@ void net_close(
     {
     if (i != but)
       {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(svr_conn[i].cn_mutex);
+#endif
+
       svr_conn[i].cn_oncl = 0;
 
       close_conn(i);
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_conn[i].cn_mutex);
+#endif
       }
     }    /* END for (i) */
 
@@ -798,14 +864,31 @@ void net_close(
 /*
  * get_connectaddr - return address of host connected via the socket
  * This is in host order.
+ *
+ * mutex is TRUE if the mutex should be obtained, false otherwise
  */
 
 pbs_net_t get_connectaddr(
 
-  int sock)  /* I */
+  int sock,   /* I */
+  int mutex)  /* I */
 
   {
-  return(svr_conn[sock].cn_addr);
+  pbs_net_t tmp;
+
+#ifdef ENABLE_PTHREADS
+  if (mutex == TRUE)
+    pthread_mutex_lock(svr_conn[sock].cn_mutex);
+#endif
+
+  tmp = svr_conn[sock].cn_addr;
+
+#ifdef ENABLE_PTHREADS
+  if (mutex == TRUE)
+    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+#endif
+
+  return(tmp);
   }
 
 
@@ -823,10 +906,21 @@ int find_conn(
 
   for (index = 0;index < PBS_NET_MAX_CONNECTIONS;index++)
     {
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_conn[index].cn_mutex);
+#endif
+
     if (addr == svr_conn[index].cn_addr)
       {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_conn[index].cn_mutex);
+#endif
+
       return(index);
       }
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_conn[index].cn_mutex);
+#endif
     }    /* END for (index) */
 
   return(-1);
