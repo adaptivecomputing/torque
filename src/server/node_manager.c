@@ -5086,6 +5086,7 @@ void free_nodes(
   struct jobinfo *jp, *prev;
 
   int             i;
+  int             j;
 
   if (LOGLEVEL >= 3)
     {
@@ -5108,9 +5109,9 @@ void free_nodes(
     if (pnode->nd_state & INUSE_DELETED)
       continue;
 
-    for (i = 0; i < pnode->nd_ngpus; i++)
+    for (j = 0; j < pnode->nd_ngpus; j++)
       {
-      struct gpusubn *gn = pnode->nd_gpusn + i;
+      struct gpusubn *gn = pnode->nd_gpusn + j;
       if (gn->pjob == pjob)
         {
         gn->inuse = FALSE;

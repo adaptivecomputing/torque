@@ -1585,10 +1585,7 @@ int create_a_gpusubnode(
   static char *id = "create_a_gpusubnode";
   struct gpusubn *tmp;
  
-  if (pnode->nd_ngpus > 0)
-    tmp = realloc(pnode->nd_gpusn,sizeof(struct gpusubn) * (1 + pnode->nd_ngpus));
-  else
-    tmp = malloc(sizeof(struct gpusubn));
+  tmp = malloc(sizeof(struct gpusubn) * (1 + pnode->nd_ngpus));
 
   if (tmp == NULL)
     {
@@ -1596,10 +1593,20 @@ int create_a_gpusubnode(
     return(ENOMEM);
     }
 
+  if (pnode->nd_ngpus > 0)
+    {
+    /* copy old memory to the new place */
+    memcpy(tmp,pnode->nd_gpusn,(sizeof(struct gpusubn) * pnode->nd_ngpus));
+    }
+
+  /* now use the new memory */
+  free(pnode->nd_gpusn);
   pnode->nd_gpusn = tmp;
 
   /* initialize the node */
-  memset(pnode->nd_gpusn + pnode->nd_ngpus,0,sizeof(struct gpusubn));
+  pnode->nd_gpusn[pnode->nd_ngpus].pjob = NULL;
+  pnode->nd_gpusn[pnode->nd_ngpus].inuse = FALSE;
+  pnode->nd_gpusn[pnode->nd_ngpus].flag = 0;
   pnode->nd_gpusn[pnode->nd_ngpus].index = pnode->nd_ngpus;
 
   /* increment the number of gpu subnodes and gpus free */
