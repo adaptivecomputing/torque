@@ -1871,12 +1871,12 @@ void check_job_log(
 
  /* remove logs older than LogKeepDays */
 
- if ((server.sv_attr[(int)SRV_ATR_LogKeepDays].at_flags 
+ if ((server.sv_attr[(int)SRV_ATR_JobLogKeepDays].at_flags 
      & ATR_VFLAG_SET) != 0)
    {
    snprintf(log_buffer,sizeof(log_buffer),"checking for old job logs in dir '%s' (older than %ld days)",
      path_svrlog,
-     server.sv_attr[(int)SRV_ATR_LogKeepDays].at_val.at_long);
+     server.sv_attr[(int)SRV_ATR_JobLogKeepDays].at_val.at_long);
  
    log_event(
      PBSEVENT_SYSTEM | PBSEVENT_FORCE,
@@ -1884,17 +1884,17 @@ void check_job_log(
      msg_daemonname,
      log_buffer);
 
-   if (log_remove_old(path_jobinfo_log,server.sv_attr[(int)SRV_ATR_LogKeepDays].at_val.at_long * SECS_PER_DAY) != 0)
+   if (log_remove_old(path_jobinfo_log,server.sv_attr[(int)SRV_ATR_JobLogKeepDays].at_val.at_long * SECS_PER_DAY) != 0)
      {
      log_err(-1,"check_job_log","failure occurred when checking for old job logs");
      }
    }
 
-  if ((server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_flags
+  if ((server.sv_attr[(int)SRV_ATR_JobLogFileMaxSize].at_flags
        & ATR_VFLAG_SET) != 0)
     {
-    if ((job_log_size() >= server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_val.at_long)
-       && (server.sv_attr[(int)SRV_ATR_LogFileMaxSize].at_val.at_long > 0))
+    if ((job_log_size() >= server.sv_attr[(int)SRV_ATR_JobLogFileMaxSize].at_val.at_long)
+       && (server.sv_attr[(int)SRV_ATR_JobLogFileMaxSize].at_val.at_long > 0))
       {
       log_event(
         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
@@ -1902,10 +1902,10 @@ void check_job_log(
         msg_daemonname,
         "Rolling job log file");
 
-      if ((server.sv_attr[(int)SRV_ATR_LogFileRollDepth].at_flags
+      if ((server.sv_attr[(int)SRV_ATR_JobLogFileRollDepth].at_flags
            & ATR_VFLAG_SET) != 0)
         {
-        depth = server.sv_attr[(int)SRV_ATR_LogFileRollDepth].at_val.at_long;
+        depth = server.sv_attr[(int)SRV_ATR_JobLogFileRollDepth].at_val.at_long;
         }
 
       if ((depth >= INT_MAX) || (depth < 1))

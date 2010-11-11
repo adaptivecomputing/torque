@@ -1104,6 +1104,7 @@ done_roll:
   return;
   } /* END log_roll() */
 
+
 void job_log_roll(
 
   int max_depth)
@@ -1132,7 +1133,7 @@ void job_log_roll(
 
   /* allocate memory for rolling */
 
-  file_buf_len = sizeof(char) * (strlen(logpath) + suffix_size + 1);
+  file_buf_len = sizeof(char) * (strlen(joblogpath) + suffix_size + 1);
 
   source = (char*)malloc(file_buf_len);
 
@@ -1142,7 +1143,7 @@ void job_log_roll(
     {
     err = errno;
 
-    goto done_roll;
+    goto done_job_roll;
     }
 
   /* call unlink to delete logname.max_depth - it doesn't matter if it
@@ -1152,11 +1153,13 @@ void job_log_roll(
     joblogpath,
     max_depth);
 
+
   if ((unlink(dest) != 0) && (errno != ENOENT))
     {
     err = errno;
-    goto done_roll;
+    goto done_job_roll;
     }
+
 
   /* logname.max_depth is gone, so roll the rest of the log files */
 
@@ -1164,17 +1167,17 @@ void job_log_roll(
     {
     if (i == 0)
       {
-      strcpy(source, logpath);
+      strcpy(source, joblogpath);
       }
     else
       {
       sprintf(source, "%s.%d",
-        logpath,
+        joblogpath,
         i);
       }
 
     sprintf(dest, "%s.%d",
-      logpath,
+      joblogpath,
       i + 1);
 
     /* rename file if it exists */
@@ -1182,11 +1185,11 @@ void job_log_roll(
     if ((rename(source, dest) != 0) && (errno != ENOENT))
       {
       err = errno;
-      goto done_roll;
+      goto done_job_roll;
       }
     }    /* END for (i) */
 
-done_roll:
+done_job_roll:
 
   if (as)
     {

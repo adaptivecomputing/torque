@@ -467,9 +467,6 @@ static int PBSD_munge_authenticate(
 
     rc = execvp(execname, options);
 
-    /* Something went wrong. Let the user know*/
-    fprintf(stderr, "execve: %d: errno: %d\n", rc, errno);
-
     exit(0);
     }
 

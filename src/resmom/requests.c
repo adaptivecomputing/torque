@@ -297,17 +297,6 @@ static pid_t fork_to_user(
       return(-PBSE_BADUSER);
       }
 
-#ifdef __CYGWIN__
-    /* printf("TRY IAMADMIN FOR %s ", preq->rq_ind.rq_cpyfile.rq_user); */
-
-    if (IamUser() == 0)
-    {
-      log_err(errno, id, "Can`t run job with Administrator privileges");
-
-      return(-PBSE_BADUSER);
-    }
-#endif  /* __CYGWIN__ */
-
     useruid = pwdp->pw_uid;
 
     if (preq->rq_ind.rq_cpyfile.rq_group[0] == '\0')

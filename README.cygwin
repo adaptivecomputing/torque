@@ -21,7 +21,7 @@ Tested builds
 
 * Tested with the stable release Cygwin 1.5.25 on Windows XP Pro (32/64-bit) and on Windows Server 2003 SE (32-bit).
 
-* Tested with the stable release Cygwin 1.7.5 on 64-bit Windows 7 Ultimate.
+* Tested with the stable release Cygwin 1.7.7 on 64-bit Windows 7 Ultimate.
 
 * Can be used on heterogeneous Torque clusters.
 
@@ -75,7 +75,8 @@ Click through the defaults and under the package selection select the following 
    gcc or gcc4;
    make;
    openssh;
-   sunrpc;
+   sunrpc 4.0-3;
+   tcltk;
    util-linux;
    vim or mc is desirable.
 

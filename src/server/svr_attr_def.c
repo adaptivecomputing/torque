@@ -830,7 +830,7 @@ attribute_def svr_attr_def[] =
       PARENT_TYPE_SERVER
   },
 
-  /* SVR_ATR_Log_Keep_Days */
+  /* SVR_ATR_LogKeepDays */
   {
       ATTR_logkeepdays,          /* "log_keep_days" */
       decode_l,
@@ -1181,6 +1181,42 @@ attribute_def svr_attr_def[] =
      PARENT_TYPE_SERVER
   },
 
+  /* SRV_ATR_JobLogFileMaxSize */
+  {ATTR_joblogfilemaxsize,		/* "job_log_file_max_size" */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   NO_USER_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER},
+
+  /* SRV_ATR_JobLogFileRollDepth */
+  {ATTR_joblogfilerolldepth,	/* "job_log_file_roll_depth" */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   NO_USER_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER},
+
+  /* SVR_ATR_JobLogKeepDays */
+  {
+   ATTR_joblogkeepdays,		/* "job_log_keep_days" */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   NO_USER_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER},
 
 #ifdef MUNGE_AUTH
   /* SRV_ATR_authusers */

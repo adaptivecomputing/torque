@@ -282,6 +282,9 @@
 #define ATTR_maxslotlimit    "max_slot_limit"
 #define ATTR_recordjobinfo   "record_job_info"
 #define ATTR_recordjobscript   "record_job_script"
+#define ATTR_joblogfilemaxsize "job_log_file_max_size"
+#define ATTR_joblogfilerolldepth "job_log_file_roll_depth"
+#define ATTR_joblogkeepdays  "job_log_keep_days"
 #ifdef MUNGE_AUTH
   #define ATTR_authusers       "authorized_users"
 #endif

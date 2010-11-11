@@ -6252,7 +6252,11 @@ int open_std_file(
 	/* become user to create file, if we aren't already the user. In
    * run_pelog setuid etc. are called and the this function is invoked,
    * so doing this again fails and is unnecessary */
+#ifdef __CYGWIN__
+	if (IamRoot() == 1)
+#else
   if (getuid() == 0)
+#endif
     {
     if (setgroups(pjob->ji_grpcache->gc_ngroup,(gid_t *)pjob->ji_grpcache->gc_groups) != 0)
       {

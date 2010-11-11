@@ -518,8 +518,9 @@ int main(
 
         while (*pc)
           {
-          if (*pc != 'E' && *pc != 'H' && *pc != 'Q' &&
-              *pc != 'R' && *pc != 'T' && *pc != 'W')
+          if (*pc != 'C' && *pc != 'E' && *pc != 'H' && 
+              *pc != 'Q' && *pc != 'R' && *pc != 'T' && 
+              *pc != 'W')
             {
             fprintf(stderr, "qselect: illegal -s value\n");
             errflg++;
