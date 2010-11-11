@@ -1875,6 +1875,7 @@ void im_request(
   hnodent  *np;
   eventent  *ep = NULL;
   infoent  *ip;
+  int kill_done = 0;
 
   struct sockaddr_in *addr;
   u_long  ipaddr;
@@ -3706,6 +3707,7 @@ void im_request(
 
             exiting_tasks = 1;
             }
+          kill_done = 1;
 
           break;
 
@@ -4361,6 +4363,7 @@ done:
 
   rpp_eom(stream);
 
+
   if (reply)
     {
     /* check if write worked */
@@ -4370,11 +4373,17 @@ done:
       log_err(errno, id, "rpp_flush");
 
       rpp_close(stream);
+      kill_done = 0;
 
       if ((np != NULL) && (np->hn_stream == stream))
         np->hn_stream = -1;
       }
     }
+
+  if(kill_done)
+    {
+    rpp_close(stream);
+    }  
 
   goto fini;
 
