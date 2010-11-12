@@ -234,7 +234,7 @@ int task_save(
   strcpy(namebuf, path_jobs);     /* job directory path */
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
 
-  if(multi_mom)
+  if (multi_mom)
     {
     sprintf(portname, "%d", pbs_rm_port);
     strcat(namebuf, portname);
@@ -572,7 +572,7 @@ int task_recov(
   strcpy(namebuf, path_jobs);     /* job directory path */
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
 
-  if(multi_mom)
+  if (multi_mom)
     {
     sprintf(portname, "%d", pbs_rm_port);
     strcat(namebuf, portname);
@@ -864,9 +864,9 @@ int send_sisters(
           log_buffer);
         }
 
-	    if(LOGLEVEL >= 6)
+	    if (LOGLEVEL >= 6)
 	      {
-	      if(EMsg[0] != 0)
+	      if (EMsg[0] != 0)
 		      {
 		      log_record(
 		  	  PBSEVENT_ERROR,
@@ -1296,7 +1296,7 @@ void node_bailout(
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-          if(multi_mom)
+          if (multi_mom)
             {
             momport = pbs_rm_port;
             }
@@ -1980,16 +1980,16 @@ void im_request(
 
     /* tlist(okclients, tmpLine, 1024); */
     ret = AVL_list(okclients, tmpLine, 1024);
-    if( ret == 0 )
+    if ( ret == 0 )
       {
-    sprintf(log_buffer, "bad connect from %s - unauthorized (okclients: %s)",
-            netaddr(addr),
-            tmpLine);
+      sprintf(log_buffer, "bad connect from %s - unauthorized (okclients: %s)",
+        netaddr(addr),
+        tmpLine);
       }
     else
       sprintf(log_buffer, "bad connect from %s - unauthorized (could not get ok clients %d)",
-              netaddr(addr),
-              ret);
+        netaddr(addr),
+        ret);
 
     log_err(-1, id, log_buffer);
 
@@ -2154,9 +2154,9 @@ void im_request(
 
       ret = get_job_struct(&pjob, jobid, command, stream, addr, nodeid);
 
-      if(ret != PBSE_NONE)
+      if (ret != PBSE_NONE)
         {
-        if(ret == PBSE_DISPROTO)
+        if (ret == PBSE_DISPROTO)
           {
           goto err;
           }
@@ -2345,7 +2345,7 @@ void im_request(
 
 
       ret = run_prologue_scripts(pjob);
-      if(ret != PBSE_NONE)
+      if (ret != PBSE_NONE)
         {
         SEND_ERR(ret)
         goto done;
@@ -2366,7 +2366,7 @@ void im_request(
 
 #endif /* IBM SP */
 
-      if(multi_mom)
+      if (multi_mom)
         {
         momport = pbs_rm_port;
         }
@@ -2591,7 +2591,7 @@ void im_request(
 
       pjob->ji_obit = event;
 
-        if(multi_mom)
+        if (multi_mom)
           {
           momport = pbs_rm_port;
           }
@@ -3292,7 +3292,7 @@ void im_request(
         pjob->ji_qs.ji_state    = JOB_STATE_RUNNING;
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
 
-        if(multi_mom)
+        if (multi_mom)
           {
           momport = pbs_rm_port;
           }
@@ -3578,7 +3578,7 @@ void im_request(
 
             pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-              if(multi_mom)
+              if (multi_mom)
                 {
                 momport = pbs_rm_port;
                 }
@@ -4172,7 +4172,7 @@ void im_request(
 
             pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-              if(multi_mom)
+              if (multi_mom)
                 {
                 momport = pbs_rm_port;
                 }
@@ -5186,7 +5186,7 @@ int tm_request(
 
       ep = event_alloc(IM_SPAWN_TASK, phost, event, fromtask);
 
-      if(multi_mom)
+      if (multi_mom)
         {
         momport = pbs_rm_port;
         }
@@ -5872,7 +5872,7 @@ static int adoptSession(
     {
     pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-    if(multi_mom)
+    if (multi_mom)
       {
       momport = pbs_rm_port;
       }
@@ -5959,18 +5959,18 @@ char *cat_dirs(
   char *pn;
   int   len = 0;
 
-  if(root)
+  if (root)
     len = strlen(root);
 
   len += strlen(base);
 
   pn = malloc(len+2);
-  if(!pn)
+  if (!pn)
     {
     return(NULL);
     }
 
-  if(root)
+  if (root)
     {
     strcpy(pn, root);
     strcat(pn, base);
@@ -6002,12 +6002,12 @@ char *get_local_script_path(job *pjob, char *base)
   
 	
 	/* see if base is an absolute path*/
-	if(base[0] != '/')
+	if (base[0] != '/')
 	  {
 	  /* base is not an absolute path. Prepend it with the working directory */
 	  wdir = get_job_envvar(pjob, "PBS_O_WORKDIR");
 	  len = strlen(wdir);
-	  if(wdir[len-1] != '/')
+	  if (wdir[len-1] != '/')
 		strcat(wdir, "/");
 	  pn = cat_dirs(wdir, base);
 	  }

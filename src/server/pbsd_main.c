@@ -373,7 +373,7 @@ void do_rpp(
 /*      node = tfind((u_long)stream, &streams); */
       node = AVL_find((u_long)stream, 0, streams);
 
-      if(ret == DIS_EOF)
+      if (ret == DIS_EOF)
         {
         sprintf(log_buffer, "stream %d closed.(node: \"%s\", %s) rc=%d (%s)",
                 stream,
@@ -1603,7 +1603,7 @@ int main(
 
   /* handle running in the background or not if we're debugging */
 
-  if(high_availability_mode)
+  if (high_availability_mode)
     {
     if (daemonize_server(TDoBackground,&sid) == FAILURE)
       {
@@ -1743,7 +1743,7 @@ int main(
 
   /* handle running in the background or not if we're debugging */
 
-  if(!high_availability_mode)
+  if (!high_availability_mode)
     {
     if (daemonize_server(TDoBackground,&sid) == FAILURE)
       {

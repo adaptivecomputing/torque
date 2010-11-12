@@ -129,6 +129,9 @@ extern int mom_kill(int, int); /* Kill a session */
 extern int mom_close_poll();  /* Terminate poll ability */
 extern int mach_checkpoint(struct task *, char *, int);
 extern long mach_restart(struct task *, char *); /* Restart checkpointed job */
+#ifdef USEMEMACCTD
+extern long get_weighted_memory_size(pid_t pid); /* Return the weighted memory (RSS) size for a pid, in bytes */
+#endif
 
 
 typedef struct proc_stat

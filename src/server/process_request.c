@@ -542,7 +542,7 @@ void process_request(
 
     if (ENABLE_TRUSTED_AUTH == TRUE )
       rc = 0;  /* bypass the authentication of the user--trust the client completely */
-    else if(munge_on)
+    else if (munge_on)
       {
       /* If munge_on is true we will validate the connection later */
       conn_credent[sfds].timestamp = time_now;

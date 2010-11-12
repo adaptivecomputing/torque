@@ -304,17 +304,17 @@ int DArrayAppend(
 
   {
 
-  if(Array->AppendIndex >= Array->Length)
+  if (Array->AppendIndex >= Array->Length)
     {
     int newLength = Array->Length * 2;
 
-    if(newLength <= 10)
+    if (newLength <= 10)
       newLength = 10;
 
     Array->Length = newLength;
     Array->Data = realloc(Array->Data,sizeof(Array->Data[0]) * Array->Length);
 
-    if(Array->Data == NULL)
+    if (Array->Data == NULL)
       {
       Array->Length = 0;
       Array->AppendIndex = 0;
@@ -362,7 +362,7 @@ void  update_default_np()
   default_np = server.sv_attr[SRV_ATR_NPDefault].at_val.at_long;
 
 
-  if(default_np > 0)
+  if (default_np > 0)
     {
     for(i = 0; i < svr_totnodes; i++)
       {
@@ -642,7 +642,7 @@ int pbsd_init(
 
   /* 2. set up the various paths and other global variables we need */
 
-  if(path_priv == NULL)
+  if (path_priv == NULL)
     {
     path_priv      = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
     }
@@ -659,7 +659,7 @@ int pbsd_init(
 
   path_acct  = build_path(path_priv, PBS_ACCT,     suffix_slash);
 
-  if(path_svrdb == NULL)
+  if (path_svrdb == NULL)
     {
     path_svrdb     = build_path(path_priv, PBS_SERVERDB, NULL);
     }
@@ -893,7 +893,7 @@ int pbsd_init(
     return(-1);
     }
 
-  if(server.sv_attr[(int)SRV_ATR_RecordJobInfo].at_val.at_long)
+  if (server.sv_attr[SRV_ATR_RecordJobInfo].at_val.at_long)
     {
     job_log_open(job_log_file, path_jobinfo_log);
     }
@@ -2008,7 +2008,7 @@ static void change_logs(
 
   acct_open(acct_file);
 
-  if(server.sv_attr[(int)SRV_ATR_RecordJobInfo].at_val.at_long)
+  if (server.sv_attr[SRV_ATR_RecordJobInfo].at_val.at_long)
     {
     job_log_open(job_log_file, path_jobinfo_log);
     }
@@ -2341,11 +2341,11 @@ int get_svr_attr(
     {
     /* Open the server database (save file) and read it in */
 
-    if(path_priv == NULL)
+    if (path_priv == NULL)
       {
       path_priv = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
       }
-    if(path_svrdb == NULL)
+    if (path_svrdb == NULL)
       {
       path_svrdb     = build_path(path_priv, PBS_SERVERDB, NULL);
       }

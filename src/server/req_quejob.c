@@ -646,9 +646,9 @@ void req_quejob(
   while (psatl != NULL)
     {
 
-    if(psatl->al_atopl.resource)
+    if (psatl->al_atopl.resource)
       {
-      if(strcmp(psatl->al_atopl.resource, "nodes") == 0)
+      if (strcmp(psatl->al_atopl.resource, "nodes") == 0)
         {
         pj->ji_have_nodes_request = 1;
         }

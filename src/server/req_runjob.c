@@ -1579,7 +1579,7 @@ int set_mother_superior_ports(job *pjob, char *list)
 
   node_iterator *iter;
 
-  if(list == NULL)
+  if (list == NULL)
     {
     return(PBSE_UNKNODEATR);
     }
@@ -1598,7 +1598,7 @@ int set_mother_superior_ports(job *pjob, char *list)
 
   while ((pnode = next_node(iter)) != NULL)
     {
-    if(!strcasecmp(pnode->nd_name, ms))
+    if (!strcasecmp(pnode->nd_name, ms))
       {
       pjob->ji_qs.ji_un.ji_exect.ji_momport = pnode->nd_mom_port;
       pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport = pnode->nd_mom_rm_port;
@@ -1828,7 +1828,7 @@ static int assign_hosts(
   if (list != NULL)
     free(list);
 
-  if(portlist != NULL)
+  if (portlist != NULL)
     free(portlist);
 
   return(rc);

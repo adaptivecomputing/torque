@@ -260,7 +260,7 @@ int job_qs_upgrade(
 
   source = fdopen(dup(fds), "r");
 
-  if((backup = fopen(namebuf, "wb")) == NULL)
+  if ((backup = fopen(namebuf, "wb")) == NULL)
     {
     sprintf(log_buffer, "Cannot open backup file.\n");
     log_err(errno, id, log_buffer);

@@ -240,13 +240,13 @@ static char *acct_job(
   runningBufSize -= strlen(*Buf);
 
   newStringLen = strlen("exec_host=")+strlen(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-  if(runningBufSize <= newStringLen+1)
-  {
+  if (runningBufSize <= newStringLen+1)
+    {
     Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
-    if(Len == 0)
+    if (Len == 0)
       return(ptr);
     runningBufSize += newStringLen+EXTRA_PAD;
-  }
+    }
 
   ptr = *Buf;
   ptr += strlen(*Buf);
@@ -290,10 +290,10 @@ static char *acct_job(
 		 	 we still have enough to make these small strncpy calls */
 
 		newStringLen = strlen(pal->al_name);
-		if(runningBufSize <= newStringLen+1)
+		if (runningBufSize <= newStringLen+1)
 			{
 			Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
-			if(Len == 0)
+			if (Len == 0)
 				return(ptr);
 
 			runningBufSize += newStringLen+EXTRA_PAD;
@@ -305,10 +305,10 @@ static char *acct_job(
 
     if (pal->al_resc != NULL)
       {
-			if(runningBufSize <= (int)(strlen(pal->al_resc)+2)) /*one for 0 and one for the '.' for 2 */
+			if (runningBufSize <= (int)(strlen(pal->al_resc)+2)) /*one for 0 and one for the '.' for 2 */
 				{
 				Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
-				if(Len == 0)
+				if (Len == 0)
 					return(ptr);
 
 				runningBufSize += newStringLen+EXTRA_PAD;
@@ -319,10 +319,10 @@ static char *acct_job(
 			ptr += strlen(ptr);
       }
 
-		if(runningBufSize <= 2)
+		if (runningBufSize <= 2)
 			{
 			Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
-			if(Len == 0)
+			if (Len == 0)
 				return(ptr);
 
 			runningBufSize += newStringLen+EXTRA_PAD;
@@ -332,14 +332,14 @@ static char *acct_job(
 
     runningBufSize -= strlen(ptr);
     newStringLen = strlen(pal->al_value);
-    if(runningBufSize <= newStringLen+1)
-    {
+    if (runningBufSize <= newStringLen+1)
+      {
       Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
-      if(Len == 0)
+      if (Len == 0)
         return(ptr);
 
       runningBufSize += newStringLen+EXTRA_PAD;
-    }
+      }
 
     strncat(ptr, pal->al_value, runningBufSize);
     strncat(ptr, " ", runningBufSize);
@@ -567,7 +567,7 @@ void account_jobstr(
   /* pack in general information about the job */
 
   buf = (char *)malloc(bufSize+1);
-  if(!buf)
+  if (!buf)
     return;
   acct_job(pjob, &buf, &bufSize);
 
@@ -607,7 +607,7 @@ void account_jobend(
   /* pack in general information about the job */
 
   buf = (char *)malloc(bufSize);
-  if(!buf)
+  if (!buf)
     return;
 
   pb = acct_job(pjob, &buf, &bufSize);
@@ -703,7 +703,7 @@ void acct_cleanup(
 	 char *newBuf;
 
    newBuf = (char *)realloc(*Buf, *BufSize+newStringLen+EXTRA_PAD); /* add 1000 so we don't have to realloc for the small strings */
-   if(newBuf == NULL)
+   if (newBuf == NULL)
      {
      char tmpLine[1024];
 

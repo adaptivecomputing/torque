@@ -2807,12 +2807,12 @@ int TMomFinalizeChild(
 									&pjob->ji_wattr[JOB_ATR_resource],
 									find_resc_def(svr_resc_def, "prologue", svr_resc_size));
 			if ((presc != NULL))
-			  if((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str))
+			  if ((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str))
 				{
 
 				path_prologuserjob = get_local_script_path(pjob, presc->rs_value.at_val.at_str);
 
-				if(path_prologuserjob)
+				if (path_prologuserjob)
 				  {
 				  if (run_pelog(
 									PE_PROLOGUSERJOB,
@@ -3126,12 +3126,12 @@ int TMomFinalizeChild(
 
 		if (presc != NULL)
       {
-		  if((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
+		  if ((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
         {
         
         path_prologuserjob = get_local_script_path(pjob, presc->rs_value.at_val.at_str);
         
-        if(path_prologuserjob)
+        if (path_prologuserjob)
           {
           if ((j = run_pelog(
                   PE_PROLOGUSERJOB,

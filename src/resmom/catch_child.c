@@ -463,7 +463,7 @@ scan_for_exiting(void)
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-          if(multi_mom)
+          if (multi_mom)
             {
             momport = pbs_rm_port;
             }
@@ -620,7 +620,7 @@ scan_for_exiting(void)
             "connection to server lost - no obit sent - job will be purged");
           }
 
-        if(pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
+        if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
           {
           kill_job(pjob, SIGKILL, id, "connection to server lost - no obit sent");
           }
@@ -754,7 +754,7 @@ scan_for_exiting(void)
 
     pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
-    if(pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
+    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
       kill_job(pjob, SIGKILL, id, "local task termination detected");
     else
       {
@@ -1385,11 +1385,11 @@ static void preobit_reply(
     presc = find_resc_entry(
           &pjob->ji_wattr[JOB_ATR_resource],
           find_resc_def(svr_resc_def, "epilogue", svr_resc_size));
-    if((presc != NULL))
-      if((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
+    if ((presc != NULL))
+      if ((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
         {
         path_epiloguserjob = get_local_script_path(pjob, presc->rs_value.at_val.at_str);
-        if(path_epiloguserjob)
+        if (path_epiloguserjob)
           {
           if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, PE_IO_TYPE_NULL) != 0)
             {
@@ -1419,12 +1419,12 @@ static void preobit_reply(
     presc = find_resc_entry(
           &pjob->ji_wattr[JOB_ATR_resource],
           find_resc_def(svr_resc_def, "epilogue", svr_resc_size));
-    if((presc != NULL))
-      if((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
+    if ((presc != NULL))
+      if ((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
         {
         path_epiloguserjob = get_local_script_path(pjob, presc->rs_value.at_val.at_str);
 
-        if(path_epiloguserjob)
+        if (path_epiloguserjob)
           {
           if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, PE_IO_TYPE_STD) != 0)
             {
@@ -1533,7 +1533,7 @@ static void obit_reply(
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
-          if(multi_mom)
+          if (multi_mom)
             {
             momport = pbs_rm_port;
             }
@@ -1567,7 +1567,7 @@ static void obit_reply(
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
-          if(multi_mom)
+          if (multi_mom)
             {
             momport = pbs_rm_port;
             }
@@ -1958,7 +1958,7 @@ void init_abort_jobs(
          will not try to kill the running processes for this job */
       pj->ji_qs.ji_substate = JOB_SUBSTATE_NOTERM_REQUE;
 
-      if(multi_mom)
+      if (multi_mom)
         {
         momport = pbs_rm_port;
         }

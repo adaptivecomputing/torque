@@ -2320,7 +2320,7 @@ void catchchild(
 
   /* reset terminal to cooked mode */
 
-  if(have_terminal)
+  if (have_terminal)
     tcsetattr(0, TCSANOW, &oldtio);
 
   exit(0);
@@ -3285,7 +3285,7 @@ int process_opts(
         l_opt = passet;
 
         /* a ,procs= in the node spec is illegal. Validate the node spec */
-        if(strstr(optarg, ",procs="))
+        if (strstr(optarg, ",procs="))
           {
           printf("illegal node spec: %s\n", optarg);
           return(-1);
@@ -3310,9 +3310,9 @@ int process_opts(
         else
           {
           /* Normal evaluation of batch job resources. */
-          if(attrib)
+          if (attrib)
             {
-            if(attrib->resource)
+            if (attrib->resource)
               {
               /* right here we are looking for a +procs=x in the node spec */
               char *proc_ptr = NULL;
@@ -3324,14 +3324,14 @@ int process_opts(
               proc_val[0] = 0; /* Initialize */
 
               proc_ptr = strstr(attrib->value, "procs=");
-              if(proc_ptr)
+              if (proc_ptr)
                 {
                 /* we have the procs keyword in the node_spec. We need to take it out and
                    install it to the Resource_List */
                 patch_ptr = proc_ptr;
                 /* Get the procs value */
                 patch_ptr = strchr(patch_ptr, '=');
-                if(patch_ptr == NULL)
+                if (patch_ptr == NULL)
                   {
                   return(-1);
                   }
@@ -3366,7 +3366,7 @@ int process_opts(
                    the procs=x from the spec and splice the rest
                    of the specification back together
                  */
-                if(*patch_ptr == '+')
+                if (*patch_ptr == '+')
                   {
                   
                   patch_ptr++;
@@ -3379,15 +3379,15 @@ int process_opts(
                      If we are here procs=x is at the end
                      of the node specification
                    */
-                  if(*(proc_ptr - 1)  == '+')
+                  if (*(proc_ptr - 1)  == '+')
                     {
                     proc_ptr--;
                     }
                   *proc_ptr = 0;
                   }
-                } /* END if(proc_ptr)*/
-              } /* END if(attrib->resource ) */
-            } /* END if(attrib) */
+                } /* END if (proc_ptr)*/
+              } /* END if (attrib->resource ) */
+            } /* END if (attrib) */
 
           if (set_resources(&attrib, optarg, (pass == 0)) != 0)
             {                                                                  

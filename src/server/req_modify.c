@@ -565,7 +565,7 @@ int modify_job(
     {
     /* if the NO_MOM_RELAY flag is set the calling function will call
        relay_to_mom so we do not need to do it here */
-    if(flag != NO_MOM_RELAY)
+    if (flag != NO_MOM_RELAY)
       {
       if ((rc = relay_to_mom(
                   pjob,
@@ -634,7 +634,7 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
     char newjobname[PBS_MAXSVRJOBID+1];
 
     request = alloc_br(type);
-    if(request)
+    if (request)
       {
       request->rq_type = preq->rq_type;
       request->rq_perm = preq->rq_perm;
@@ -648,10 +648,10 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
       request->rq_reply.brp_choice = preq->rq_reply.brp_choice;
       request->rq_noreply = preq->rq_noreply;
       /* we need to copy rq_extend if there is any data */
-      if(preq->rq_extend)
+      if (preq->rq_extend)
         {
         request->rq_extend = (char *)malloc(strlen(preq->rq_extend) + 1);
-        if(request->rq_extend == NULL)
+        if (request->rq_extend == NULL)
           {
           return(PBSE_SYSTEM);
           }
@@ -685,7 +685,7 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
              and not the individual job. We need to find out what we have and
              modify the name if needed */
           ptr1 = strstr(preq->rq_ind.rq_manager.rq_objname, "[]");
-          if(ptr1)
+          if (ptr1)
             {
             ptr1++;
             strcpy(newjobname, preq->rq_ind.rq_manager.rq_objname);
@@ -705,7 +705,7 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
           while(pal != NULL)
             {
             newpal = (svrattrl *)malloc(pal->al_tsize + 1);
-            if(!newpal)
+            if (!newpal)
               {
               return(PBSE_SYSTEM);
               }
@@ -775,19 +775,19 @@ int modify_whole_array(
     /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
     rc = modify_job(pa->jobs[i],plist,preq,checkpoint_req, NO_MOM_RELAY);
 
-    if(rc == PBSE_RELAYED_TO_MOM)
+    if (rc == PBSE_RELAYED_TO_MOM)
       {
       struct batch_request *array_req = NULL;
 
       /* We told modify_job not to call relay_to_mom so we need to contact the mom */
       rc = copy_batchrequest(&array_req, preq, 0, i);
-      if(rc != 0)
+      if (rc != 0)
         {
         return(rc);
         }
 
       preq->rq_refcount++;
-      if(mom_relay == 0)
+      if (mom_relay == 0)
         {
         preq->rq_refcount++;
         }
@@ -808,10 +808,10 @@ int modify_whole_array(
       }
     }
 
-  if(mom_relay)
+  if (mom_relay)
     {
     preq->rq_refcount--;
-    if(preq->rq_refcount == 0)
+    if (preq->rq_refcount == 0)
       {
       free_br(preq);
       }
@@ -902,7 +902,7 @@ void req_modifyarray(
     /* there is more than just a slot given, modify that range */
     rc = modify_array_range(pa,array_spec,plist,preq,checkpoint_req);
 
-    if((rc != 0) && 
+    if ((rc != 0) && 
        (rc != PBSE_RELAYED_TO_MOM))
       {
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
@@ -913,7 +913,7 @@ void req_modifyarray(
     if (pcnt != NULL)
       *pcnt = '%';
 
-    if(rc == PBSE_RELAYED_TO_MOM)
+    if (rc == PBSE_RELAYED_TO_MOM)
       {
       return;
       }
@@ -945,7 +945,7 @@ void req_modifyarray(
       return;
       }
 
-    if(rc == PBSE_RELAYED_TO_MOM)
+    if (rc == PBSE_RELAYED_TO_MOM)
       {
       return;
       }
@@ -1027,7 +1027,7 @@ void req_modifyjob(
     if ((rc == PBSE_MODATRRUN) ||
         (rc == PBSE_UNKRESC))
       reply_badattr(rc,1,plist,preq);
-    else if( rc == PBSE_RELAYED_TO_MOM )
+    else if ( rc == PBSE_RELAYED_TO_MOM )
       {
       return;
       }
@@ -1291,7 +1291,7 @@ void post_modify_arrayreq(
       log_buffer);
 
     parent_req->rq_refcount--;
-    if(parent_req->rq_refcount == 0)
+    if (parent_req->rq_refcount == 0)
       {
       free_br(preq);
       req_reject(parent_req->rq_reply.brp_code, 0, parent_req, NULL, NULL);
@@ -1306,7 +1306,7 @@ void post_modify_arrayreq(
       if ((pjob = find_job(preq->rq_ind.rq_modify.rq_objname)) == NULL)
         {
         parent_req->rq_refcount--;
-        if(parent_req->rq_refcount == 0)
+        if (parent_req->rq_refcount == 0)
           {
           free_br(preq);
           req_reject(parent_req->rq_reply.brp_code, 0, parent_req, NULL, NULL);
@@ -1338,7 +1338,7 @@ void post_modify_arrayreq(
       }
 
     parent_req->rq_refcount--;
-    if(parent_req->rq_refcount == 0)
+    if (parent_req->rq_refcount == 0)
       {
       parent_req->rq_reply.brp_code = preq->rq_reply.brp_code;
       free_br(preq);

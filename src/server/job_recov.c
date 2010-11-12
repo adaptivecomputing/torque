@@ -179,7 +179,7 @@ int job_save(
 
   strcpy(namebuf1, path_jobs); /* job directory path */
   strcat(namebuf1, pjob->ji_qs.ji_fileprefix);
-  if(mom_port)
+  if (mom_port)
     {
     sprintf(portname, "%d", mom_port);
     strcat(namebuf1, portname);

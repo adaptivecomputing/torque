@@ -327,10 +327,6 @@ static void mom_lock(int fds, int op);
 int bind_to_nodeboard();
 #endif /* NUMA_SUPPORT */
 
-#ifdef NUMA_MEM_MONITOR
-extern long get_weighted_memory_size(pid_t);
-#endif /* NUMA_MEM_MONITOR */
-
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
 
 
@@ -670,10 +666,11 @@ extern void DIS_tcp_funcs();
 
 /* Local public functions */
 
-static void stop_me(int);
-static void PBSAdjustLogLevel(int);
-int         TMOMScanForStarting(void);
-
+static void    stop_me(int);
+static void    PBSAdjustLogLevel(int);
+int            TMOMScanForStarting(void);
+unsigned long  getsize(resource *);
+unsigned long  gettime(resource *);
 
 /* Local private functions */
 
@@ -3326,7 +3323,7 @@ static unsigned long aliasservername( char *value)
       "aliasservername",
       value);
 
-    if(value)
+    if (value)
       {
       server_alias = (char *)malloc(strlen(value)+1);
       if (server_alias)
@@ -4951,20 +4948,57 @@ int rm_request(
               }
             else
               {
-              int    numvnodes = 0;
-              task  *ptask;
-              char   SIDList[1024];
-
-              char  *VPtr;  /* job env variable value pointer */
-
-              char *SPtr;
-              int   SSpace;
+              int            numvnodes = 0;
+              resource      *pres;
+              char          *resname;
+              unsigned long  resvalue;
+              char           SIDList[1024];
+              task          *ptask;
+              char          *VPtr;  /* job env variable value pointer */
+              char          *SPtr;
+              int            SSpace;
 
               for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
                 {
-                SPtr   = SIDList;
-                SSpace = sizeof(SIDList);
 
+                numvnodes += pjob->ji_numvnod;
+
+                /* JobId, job state */
+                sprintf(tmpLine, "job[%s]  state=%s",
+                        pjob->ji_qs.ji_jobid,
+                        PJobSubState[pjob->ji_qs.ji_substate]);
+                MUStrNCat(&BPtr, &BSpace, tmpLine);
+
+                /* Selected resources used by job (on this node) */
+                if (verbositylevel >= 2)
+                  {
+                  if (pjob->ji_wattr[JOB_ATR_resc_used].at_type != ATR_TYPE_RESC)
+                    return(-1);
+
+                  pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_list);
+                  for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
+                    {
+                    if (pres->rs_defin == NULL) 
+                      return(-1);
+
+                    resname = pres->rs_defin->rs_name;
+                    if (!(strcmp(resname, "mem")))
+                      resvalue = getsize(pres);
+                    else if (!(strcmp(resname, "vmem")))
+                      resvalue = getsize(pres);
+                    else if (!(strcmp(resname, "cput")))
+                      resvalue = gettime(pres);
+                    else
+                      continue;
+
+                    sprintf(tmpLine, " %s=%lu", resname, resvalue);
+                    MUStrNCat(&BPtr, &BSpace, tmpLine);
+                    }
+                  }
+
+                /* List of job's sessionIds */
+                SPtr       = SIDList;
+                SSpace     = sizeof(SIDList);
                 SIDList[0] = '\0';
 
                 for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
@@ -4984,13 +5018,8 @@ int rm_request(
                              ptask->ti_qs.ti_sid);
                   }  /* END for (task) */
 
-                numvnodes += pjob->ji_numvnod;
-
-                sprintf(tmpLine, "job[%s]  state=%s  sidlist=%s",
-                        pjob->ji_qs.ji_jobid,
-                        PJobSubState[pjob->ji_qs.ji_substate],
+                sprintf(tmpLine, " sidlist=%s",
                         SIDList);
-
                 MUStrNCat(&BPtr, &BSpace, tmpLine);
 
                 if (verbositylevel >= 4)
@@ -5956,10 +5985,6 @@ int job_over_limit(
   int  i;
 #endif /* ndef NUMA_SUPPORT */
 
-#ifdef NUMA_MEM_MONITOR
-  char *id = "job_over_limit";
-#endif /* def NUMA_MEM_MONITOR */
-
   if (mom_over_limit(pjob))
     {
     /* mom limits violated, log_buffer populated */
@@ -6095,75 +6120,6 @@ int job_over_limit(
 #endif /* ndef NUMA_SUPPORT */
 
     limit = (index == 0) ? gettime(limresc) : getsize(limresc);
-
-#ifdef NUMA_MEM_MONITOR
-    if (!strcmp(rd->rs_name,"mem"))
-      {
-      FILE *tasks_file;
-      char  file_path[MAXPATHLEN];
-      char  tasks_buf[MAXPATHLEN<<4];
-
-      char *delims = "\n\t\r ,";
-      char *ptr;
-
-      pid_t pid;
-
-      /* query memacctd to discover if this job is over its memory limit */
-      snprintf(file_path,sizeof(file_path),"%s/%s/tasks",
-        TTORQUECPUSET_PATH,
-        pjob->ji_qs.ji_jobid);
-
-      tasks_file = fopen(file_path,"r");
-      total = 0;
-      
-      if (fread(tasks_buf, sizeof(char), sizeof(tasks_buf), tasks_file))
-        {
-        if (ferror(tasks_file) != 0)
-          {
-          log_err(-1,id,
-            "An error occurred while reading cpuset's tasks\n");
-
-          continue;
-          }
-        }
-
-      ptr = strtok(tasks_buf,delims);
-
-      /* parse the tasks file for pids */
-      while (ptr != NULL)
-        {
-        pid = atoi(ptr);
-
-        if (pid != 0)
-          {
-          /* only attempt with good pids */
-          unsigned long tmp = get_weighted_memory_size(pid);
-
-          if (tmp > 0)
-            {
-            /* shift tmp before adding - tmp is in bytes and limit is kb */
-            total += (tmp >> 10);
-
-            /* check now to prevent overflow problems */
-            if (limit <= total)
-              break;
-            }
-          else
-            {
-            snprintf(log_buffer,sizeof(log_buffer),
-              "Couldn't find memory usage for pid %d from job %s",
-              (int)pid,
-              pjob->ji_qs.ji_jobid);
-
-            log_err(errno,id,log_buffer);
-            }
-          }
-
-        ptr = strtok(NULL,delims);
-        } /* end for each pid */
-      } /* END resc == mem */
-
-#endif /* def NUMA_MEM_MONITOR */
 
     if (limit <= total)
       break;
@@ -7137,7 +7093,7 @@ int setup_program_environment(void)
     hostc = gethostname(mom_host, PBS_MAXHOSTNAME);
     }
 
-  if(!multi_mom)
+  if (!multi_mom)
     {
   log_init(NULL, mom_host);
     }
@@ -7160,7 +7116,7 @@ int setup_program_environment(void)
 
   check_log(); /* see if this log should be rolled */
 
-  if(!multi_mom)
+  if (!multi_mom)
     sprintf(momLock,"mom.lock");
   else
     sprintf(momLock, "mom%d.lock", pbs_mom_port);
@@ -8115,7 +8071,7 @@ kill_all_running_jobs(void)
 
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-      if(multi_mom)
+      if (multi_mom)
         {
         momport = pbs_rm_port;
         }
@@ -8367,7 +8323,7 @@ void main_loop(void)
     if (recover == JOB_RECOV_RUNNING)
       scan_non_child_tasks();
 
-    if(recover == JOB_RECOV_DELETE)
+    if (recover == JOB_RECOV_DELETE)
       {
       prepare_child_tasks_for_delete();
       /* we can only do this once so set recover back to the default */

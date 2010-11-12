@@ -620,7 +620,7 @@ void req_jobscript(
   strcpy(namebuf, path_jobs);
 
   strcat(namebuf, pj->ji_qs.ji_fileprefix);
-  if(multi_mom)
+  if (multi_mom)
     {
     sprintf(portname, "%d", pbs_rm_port);
     strcat(namebuf, portname);
@@ -855,7 +855,7 @@ void req_rdytocommit(
   pj->ji_wattr[JOB_ATR_state].at_val.at_char = 'T';
   pj->ji_wattr[JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
 
-  if(multi_mom)
+  if (multi_mom)
     {
     momport = pbs_rm_port;
     }
@@ -1040,7 +1040,7 @@ void req_commit(
     reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Commit);
     }
 
-  if(multi_mom)
+  if (multi_mom)
     {
     momport = pbs_rm_port;
     }

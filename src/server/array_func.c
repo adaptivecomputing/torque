@@ -83,7 +83,7 @@ int is_array(char *id)
   /* remove the extra [] if present */
   if ((bracket_ptr = strchr(id,'[')) != NULL)
     {
-    if((bracket_ptr = strchr(bracket_ptr+1,'[')) != NULL)
+    if ((bracket_ptr = strchr(bracket_ptr+1,'[')) != NULL)
       {
       *bracket_ptr = '\0';
       strcpy(jobid,id);
@@ -1201,13 +1201,13 @@ int modify_array_range(
           
           /* We told modify_job not to call relay_to_mom so we need to contact the mom */
           rc = copy_batchrequest(&array_req, preq, 0, i);
-          if(rc != 0)
+          if (rc != 0)
             {
             return(rc);
             }
           
           preq->rq_refcount++;
-          if(mom_relay == 0)
+          if (mom_relay == 0)
             {
             preq->rq_refcount++;
             }
@@ -1235,10 +1235,10 @@ int modify_array_range(
       }
     }
 
-  if(mom_relay)
+  if (mom_relay)
     {
     preq->rq_refcount--;
-    if(preq->rq_refcount == 0)
+    if (preq->rq_refcount == 0)
       {
       free_br(preq);
       }

@@ -1398,9 +1398,9 @@ int record_jobinfo(job *pjob)
     for(i = 0; i < JOB_ATR_LAST; i++)
       {
       pattr = &(pjob->ji_wattr[i]);
-      if(pattr->at_flags & ATR_VFLAG_SET)
+      if (pattr->at_flags & ATR_VFLAG_SET)
         {
-        if(!strcmp(job_attr_def[i].at_name, "depend"))
+        if (!strcmp(job_attr_def[i].at_name, "depend"))
           {
           /* we don't want this attribute in our log
              The dependecies will show on the submit_args
@@ -1411,13 +1411,13 @@ int record_jobinfo(job *pjob)
         strcpy(buf, "\t<");
         strcat(buf, job_attr_def[i].at_name);
         strcat(buf, ">");
-        if(pattr->at_type == ATR_TYPE_RESC)
+        if (pattr->at_type == ATR_TYPE_RESC)
           {
           strcat(buf, "\n");
           }
         rc = attr_to_str(valbuf, sizeof(valbuf), job_attr_def+i, pjob->ji_wattr[i], 1);
         strcat(buf, valbuf);
-        if(pattr->at_type == ATR_TYPE_RESC)
+        if (pattr->at_type == ATR_TYPE_RESC)
           {
           strcat(buf, "\t");
           }
@@ -1428,7 +1428,7 @@ int record_jobinfo(job *pjob)
         }
       }
 
-    if(server.sv_attr[(int)SRV_ATR_RecordJobScript].at_val.at_long)
+    if (server.sv_attr[SRV_ATR_RecordJobScript].at_val.at_long)
       {
   
       /* This is for Baylor. We will make it a server parameter eventually
@@ -1439,17 +1439,17 @@ int record_jobinfo(job *pjob)
       strcat(namebuf, JOB_SCRIPT_SUFFIX);
   
       fd = open(namebuf, O_RDONLY);
-      if(fd > 0)
+      if (fd > 0)
         {
         do
           {
           bytes_read = read(fd, valbuf, sizeof(valbuf));
-          if(bytes_read > 0)
+          if (bytes_read > 0)
             {
             valbuf[bytes_read] = 0; /* null terminate the buffer for strcpy */
             strcat(buf, valbuf);
             }
-          }while(bytes_read > 0);
+          } while(bytes_read > 0);
           close(fd);
         }
       else
@@ -1492,12 +1492,12 @@ void job_purge(
   extern char  *msg_err_purgejob;
 
   /* check to see if we are keeping a log of all jobs completed */
-  if(server.sv_attr[(int)SRV_ATR_RecordJobInfo].at_val.at_long)
+  if (server.sv_attr[SRV_ATR_RecordJobInfo].at_val.at_long)
     {
     record_jobinfo(pjob);
 
     /* Start a task to monitor job log roll over if it is not already started */
-    if(check_job_log_started == 0)
+    if (check_job_log_started == 0)
       {
       set_task(WORK_Timed, time_now + 10, check_job_log, NULL);
       check_job_log_started = 1;

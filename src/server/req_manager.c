@@ -1108,7 +1108,7 @@ int hostname_check(
 
   if (hostname == NULL)
     return(SUCCESS);
-  else if(strchr(hostname,'*') != NULL)
+  else if (strchr(hostname,'*') != NULL)
     return(SUCCESS);
 
   strcpy(myhost,hostname);

@@ -126,7 +126,7 @@ void svr_format_job(
             break;
           } /* END switch(p[1]) */
         }
-        else if(*p == '%') /* format statement */
+        else if (*p == '%') /* format statement */
           {
           switch(p[1])
             {

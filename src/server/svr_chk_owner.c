@@ -259,7 +259,7 @@ int svr_get_privilege(
   char  host_no_port[PBS_MAXHOSTNAME+1];
   char *colon_loc = NULL;
 
-  if(!user)
+  if (!user)
     {
 
     sprintf(log_buffer, "Invalid user: %s", "null");
@@ -275,7 +275,7 @@ int svr_get_privilege(
     }
 
   /* user name cannot be longer than PBS_MAXUSER*/
-  if(strlen(user) > PBS_MAXUSER)
+  if (strlen(user) > PBS_MAXUSER)
     {
     sprintf(log_buffer, "Invalid user: %s", user);
 
@@ -288,7 +288,7 @@ int svr_get_privilege(
     return(0);
     }
 
-  if(!host)
+  if (!host)
     return(0);
 
   colon_loc = strchr(host, ':');

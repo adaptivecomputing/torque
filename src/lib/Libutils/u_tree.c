@@ -5,7 +5,7 @@
 /* height - returns the height of the given node */
 static int height(NodeEntry node)
   {
-	if( node == NULL )
+	if ( node == NULL )
 		return( -1 );
 	else
 		return( node->height );
@@ -85,16 +85,16 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
   {
 
 	/* If this key is already in the tree do nothing */
-	if(AVL_is_in_tree( key, port, tree ))
+	if (AVL_is_in_tree( key, port, tree ))
 	  {
 	  return( tree );
 	  }
 
-	if(tree == NULL)
+	if (tree == NULL)
     {
     /* Create and return a node */
     tree = ( AvlTree )malloc( sizeof( struct AvlNode ) );
-    if(tree == NULL)
+    if (tree == NULL)
       {
       return( tree );
       }
@@ -110,12 +110,12 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 
 	/* If key is less than current node value go left else go right.
 		 If equal compare port and go left or right accordingly */
-	if ( key < tree->key )
+	if (key < tree->key)
 		{
 		tree->left = AVL_insert( key, port, node, tree->left );
-		if( height( tree->left ) - height( tree->right ) == 2 )
+		if (height( tree->left ) - height( tree->right ) == 2 )
 			{
-			if( key <= tree->left->key )
+			if (key <= tree->left->key )
 				tree = single_rotate_with_left( tree );
 			else
 				tree = double_rotate_with_left( tree );
@@ -124,9 +124,9 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 	else if (key > tree->key )
 		{
 		tree->right = AVL_insert( key, port, node, tree->right );
-		if( (height( tree->right ) - height( tree->left )) == 2 )
+		if ((height( tree->right ) - height( tree->left )) == 2 )
 		  {
-		  if(key >= tree->right->key)
+		  if (key >= tree->right->key)
         tree = single_rotate_with_right( tree );
 		  
 		  else
@@ -136,14 +136,14 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 	else
 		{
 		/* the keys are equal. sort by port */
-		if( port != 0 )
+		if (port != 0)
 			{
-			if( port < tree->port )
+			if (port < tree->port)
 			  {
 			  tree->left = AVL_insert( key, port, node, tree->left );
-			  if( height( tree->left ) - height( tree->right ) == 2 )
+			  if (height( tree->left ) - height( tree->right ) == 2)
 			  	{
-			  	if( port <= tree->left->port)
+			  	if (port <= tree->left->port)
 			  		tree = single_rotate_with_left( tree );
 			  	else
 			  		tree = double_rotate_with_left( tree );
@@ -152,9 +152,9 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 			else if (port > tree->port )
 			  {
 			  tree->right = AVL_insert( key, port, node, tree->right );
-			  if( height( tree->right ) - height( tree->left ) == 2 )
+			  if (height( tree->right ) - height( tree->left ) == 2)
 			  	{
-			  	if( port >= tree->right->port)
+			  	if (port >= tree->right->port)
 			  		tree = single_rotate_with_right( tree );
 			  	else
 			  		tree = double_rotate_with_right( tree );
@@ -171,18 +171,18 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 /* return a pbsnode with the corresponding key and port */
 struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
   {
-	if(tree == NULL)
+	if (tree == NULL)
 		{
 		return( NULL );
 		}
 
-	if( key < tree->key )
+	if (key < tree->key)
 		return( AVL_find( key, port, tree->left ));
 	else if ( key > tree->key )
 		return( AVL_find( key, port, tree->right ));
 	else
 		{
-		if( port < tree->port )
+		if (port < tree->port)
 			return( AVL_find( key, port, tree->left ) );
 		else if ( port > tree->port )
 			return( AVL_find( key, port, tree->right ));
@@ -194,18 +194,18 @@ struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
 /* If the key and port are found return 1 otherwise return 0 */
 int AVL_is_in_tree(u_long key, uint16_t port, AvlTree tree)
   {
-	if(tree == NULL)
+	if (tree == NULL)
 		{
 		return( 0 );
 		}
 
-	if( key < tree->key )
+	if (key < tree->key)
 		return( AVL_is_in_tree( key, port, tree->left ));
 	else if ( key > tree->key )
 		return( AVL_is_in_tree( key, port, tree->right ));
 	else
 		{
-		if( port < tree->port )
+		if (port < tree->port)
 			return( AVL_is_in_tree( key, port, tree->left ) );
 		else if ( port > tree->port )
 			return( AVL_is_in_tree( key, port, tree->right ));
@@ -228,18 +228,18 @@ AvlTree AVL_delete_node(
   if (tree == NULL)
     return(NULL);
 
-  if( key < tree->key )
+  if (key < tree->key)
     {
-    if( tree->left )
+    if (tree->left)
       {
       h1 = AVL_delete_node(key, port, tree->left);
       tree->left = h1;
       }
     return(tree);
     }
-  else if( key > tree->key )
+  else if (key > tree->key)
     {
-    if( tree->right )
+    if (tree->right)
       {
       h1 = AVL_delete_node(key, port, tree->right);
       tree->right = h1;
@@ -249,18 +249,18 @@ AvlTree AVL_delete_node(
   else if ( key == tree->key )
     {
     /* we found the key. Now find the port */
-    if(port < tree->port)
+    if (port < tree->port)
       {
-      if( tree->left )
+      if (tree->left)
         {
         h1 = AVL_delete_node(key, port, tree->left);
         tree->left = h1;
         }
       return(tree);
       }
-    else if(port > tree->port)
+    else if (port > tree->port)
       {
-      if( tree->right )
+      if (tree->right)
         {
         h1 = AVL_delete_node(key, port, tree->right);
         tree->left = h1;
@@ -271,7 +271,7 @@ AvlTree AVL_delete_node(
       {
       
       /* We found our node. Delete it */
-      if(tree->right == NULL && tree->left == NULL)
+      if (tree->right == NULL && tree->left == NULL)
         {
         free(tree);
         return(NULL);
@@ -294,14 +294,14 @@ AvlTree AVL_delete_node(
          * Otherwise get the right nodes left most decendent and 
          * promote it to the deleted node */
         h1 = tree->right;
-        if(h1->left == NULL)
+        if (h1->left == NULL)
           {
           h1->left = tree->left;
           return(h1);
           }
         
         /* Find the left most node of this branch */
-        while(h1->left != NULL)
+        while (h1->left != NULL)
           {
           h2 = h1;
           h1 = h1->left;
@@ -335,7 +335,7 @@ int AVL_list( AvlTree tree, char *Buf, long BufSize )
 	char     tmpLine[32];
 	int rc;
 
-	if( tree == NULL || Buf == NULL || BufSize == 0 )
+	if ( tree == NULL || Buf == NULL || BufSize == 0 )
     {
     return( 1 );
     }
@@ -343,10 +343,10 @@ int AVL_list( AvlTree tree, char *Buf, long BufSize )
 	len = BufSize;
 
 	/* start down the left side */
-	if( tree->left != NULL )
+	if ( tree->left != NULL )
     {
 		rc = AVL_list( tree->left, Buf, len );
-		if( rc )
+		if ( rc )
       {
       return( rc );
       }
@@ -354,10 +354,10 @@ int AVL_list( AvlTree tree, char *Buf, long BufSize )
     }
 
 	/* now go right */
-	if( tree->right != NULL )
+	if ( tree->right != NULL )
     {
     rc = AVL_list( tree->right, Buf, len );		
-    if( rc )
+    if ( rc )
       {
 			return( rc );
       }
@@ -368,7 +368,7 @@ int AVL_list( AvlTree tree, char *Buf, long BufSize )
 	   NULL termination and one for a ','. We need at least 23 bytes to make
 	   this work. (entry format XXX.XXX.XXX.XXX:XXXXX --
 	   This does not work for IPV6 )*/
-	if( len < 23 )
+	if (len < 23)
     {
     return( -1 );
     }
@@ -383,7 +383,7 @@ int AVL_list( AvlTree tree, char *Buf, long BufSize )
 	/* Buf must come in with at least the first byte set to NULL
 	   initially. Every time after that append
 	   a comma */
-	if(Buf[0] == 0)
+	if (Buf[0] == 0)
 	  {
 		strcpy(Buf, tmpLine);
 	  }

@@ -1637,7 +1637,7 @@ void req_modifyjob(
     return;
     }
 
-  if(multi_mom)
+  if (multi_mom)
     {
     momport = pbs_rm_port;
     }
@@ -2216,7 +2216,7 @@ void req_signaljob(
 
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-    if(multi_mom)
+    if (multi_mom)
       {
       momport = pbs_rm_port;
       }

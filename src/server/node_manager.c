@@ -1363,11 +1363,11 @@ int is_stat_get(
         update_node_state(np, INUSE_UNKNOWN);
         }
       }
-    else if(!strncmp(ret_info, "uname", 5) && allow_any_mom)
+    else if (!strncmp(ret_info, "uname", 5) && allow_any_mom)
       {
         /* for any mom mode if an address did not succeed at gethostbyaddr it was
            given the hex value of its ip address */
-        if(!strncmp(np->nd_name, "0x", 2))
+        if (!strncmp(np->nd_name, "0x", 2))
           {
             char *cp;
             char node_name[PBS_MAXHOSTNAME + 1];
@@ -1419,7 +1419,7 @@ int is_stat_get(
       int str_res;
 
           str_res = strncmp(ret_info, "ncpus=", 6);
-          if(str_res == 0)
+          if (str_res == 0)
           {
           
           struct attribute nattr;
@@ -1440,7 +1440,7 @@ int is_stat_get(
           }
       }
       
-    else if(server.sv_attr[SRV_ATR_NPDefault].at_val.at_long)
+    else if (server.sv_attr[SRV_ATR_NPDefault].at_val.at_long)
       {
         struct pbsnode *pnode;
         int i;
@@ -2179,7 +2179,7 @@ void *is_request_work(
     else if (allow_any_mom)                                           
       { 
       hp = gethostbyaddr(&ipaddr, sizeof(ipaddr), AF_INET);       
-      if(hp != NULL)                                              
+      if (hp != NULL)                                              
         {                                                         
         strncpy(nodename, hp->h_name, PBS_MAXHOSTNAME);           
         err = create_partial_pbs_node(nodename, ipaddr, perm);    
@@ -2192,7 +2192,7 @@ void *is_request_work(
         err = create_partial_pbs_node(nodename, ipaddr, perm);
         } 
       
-      if(err == PBSE_NONE)
+      if (err == PBSE_NONE)
         {
         node = AVL_find(ipaddr, 0, ipaddrs);
 #ifdef ENABLE_PTHREADS
@@ -3822,7 +3822,7 @@ int procs_available(int proc_ct)
   int procs_avail = 0;
   struct pbsnode *pnode;
 
-  if(proc_ct > svr_clnodes)
+  if (proc_ct > svr_clnodes)
     {
     /* user requested more processors than are available on the system*/
     return(-1);
@@ -3838,7 +3838,7 @@ int procs_available(int proc_ct)
     procs_avail += pnode->nd_nsnfree;
     }
 
-  if(proc_ct > procs_avail)
+  if (proc_ct > procs_avail)
     {
     return(0);
     }
@@ -5022,10 +5022,10 @@ int set_nodes(
     }    /* END for (i) */
 
   /* did we have a request for procs? Do those now */
-  if(procs > 0)
+  if (procs > 0)
     {
     /* check to see if a -l nodes request was made */
-    if(pjob->ji_have_nodes_request)
+    if (pjob->ji_have_nodes_request)
       {
       procs_needed = procs;
       }
@@ -5036,7 +5036,7 @@ int set_nodes(
          TORQUE allocates 1 node by default if a -l nodes specification
          is not given.
       */
-      if(procs > 1)
+      if (procs > 1)
         {
         procs_needed = procs - 1;
         }
@@ -5062,9 +5062,9 @@ int set_nodes(
 
       for (snp = pnode->nd_psn;snp && procs_needed > 0;snp = snp->next)
         {
-        if(exclusive)
+        if (exclusive)
           {
-          if(snp->inuse != INUSE_FREE)
+          if (snp->inuse != INUSE_FREE)
             {
 #ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pnode->nd_mutex);
@@ -5344,7 +5344,7 @@ int procs_requested(
   do
     {
 
-    if((i = number(&str, &num_nodes)) == -1 )
+    if ((i = number(&str, &num_nodes)) == -1 )
       {
       /* Bad string syntax. Fail */
       return(-1);

@@ -208,6 +208,9 @@ static char *ncpus    (struct rm_attribute *);
 static char *walltime (struct rm_attribute *);
 static char *quota    (struct rm_attribute *);
 static char *netload  (struct rm_attribute *);
+#ifdef USEMEMACCTD
+static long get_memacct_resi(pid_t pid);
+#endif
 
 #ifndef mbool_t
 #define mbool_t char
@@ -454,8 +457,26 @@ proc_stat_t *get_proc_stat(
   }  /* END get_proc_stat() */
 
 
+#ifdef USEMEMACCTD
+/*
+ * Retrieve weighted RSS value for process with pid from memacctd.
+ * Returns the value in bytes on success, returns -1 on failure.
+ */
 
+long get_memacct_resi(pid_t pid)
+  {
+  char *id = "get_memacct_resi";
+  long  w_rss;
 
+  if ((w_rss = get_weighted_memory_size(pid)) == -1)
+    {
+    sprintf(log_buffer, "get_weighted_memory_size(%d) failed", pid);
+    log_err(errno, id, log_buffer);
+    }
+
+  return(w_rss);
+  } /* END get_memacct_resi() */
+#endif
 
 proc_mem_t *get_proc_mem(void)
 
@@ -977,23 +998,21 @@ static int overcpu_proc(
 
 
 /*
- * Internal session memory usage function.
+ * Internal session virtual memory usage function.
  *
  * Returns the total number of bytes of address
  * space consumed by all current processes within the job.
  */
-
-/* NOTE:  routine should be modified to return llu */
 
 static unsigned long long mem_sum(
 
   job *pjob)
 
   {
-  char   *id = "mem_sum";
-  int                    i;
-  unsigned long long     segadd;
-  proc_stat_t  *ps;
+  char               *id = "mem_sum";
+  int                 i;
+  unsigned long long  segadd;
+  proc_stat_t        *ps;
 
   segadd = 0;
 
@@ -1001,7 +1020,6 @@ static unsigned long long mem_sum(
     {
     sprintf(log_buffer, "proc_array loop start - jobid = %s",
             pjob->ji_qs.ji_jobid);
-
     log_record(PBSEVENT_DEBUG, 0, id, log_buffer);
     }
 
@@ -1013,6 +1031,18 @@ static unsigned long long mem_sum(
       continue;
 
     segadd += ps->vsize;
+
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer, "%s: session=%d pid=%d vsize=%llu sum=%llu",
+              id,
+              ps->session,
+              ps->pid,
+              ps->vsize,
+              segadd);
+      log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+      }
+
     }  /* END for (i) */
 
   return(segadd);
@@ -1021,21 +1051,25 @@ static unsigned long long mem_sum(
 
 
 
-
 /*
- * Internal session workingset size function.
+ * Internal session memory usage function.
+ *
+ * Returns the total number of bytes of resident memory
+ * consumed by all current processes within the job.
  */
 
-static unsigned long resi_sum(
+static unsigned long long resi_sum(
 
   job *pjob)
 
   {
-  char  *id = "resi_sum";
-
-  ulong          resisize;
-  int            i;
-  proc_stat_t *ps;
+  char               *id = "resi_sum";
+  int                 i;
+  unsigned long long  resisize;
+  proc_stat_t        *ps;
+#ifdef USEMEMACCTD
+  long                w_rss;
+#endif
 
   resisize = 0;
 
@@ -1043,7 +1077,6 @@ static unsigned long resi_sum(
     {
     sprintf(log_buffer, "proc_array loop start - jobid = %s",
             pjob->ji_qs.ji_jobid);
-
     log_record(PBSEVENT_DEBUG, 0, id, log_buffer);
     }
 
@@ -1054,7 +1087,46 @@ static unsigned long resi_sum(
     if (!injob(pjob, ps->session))
       continue;
 
+#ifdef USEMEMACCTD
+
+    /* Ask memacctd for weighted rss of pid, use this instead of ps->rss */
+
+    w_rss = get_memacct_resi(ps->pid);
+
+    if (w_rss == -1)
+      resisize += ps->rss * pagesize;
+    else
+      resisize += w_rss;
+
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer, "%s: session=%d pid=%d rss=%llu w_rss=%ld sum=%llu",
+              id,
+              ps->session,
+              ps->pid,
+              ps->rss * pagesize,
+              w_rss,
+              resisize);
+      log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+      }
+
+#else
+
     resisize += ps->rss * pagesize;
+
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer, "%s: session=%d pid=%d rss=%llu sum=%llu",
+              id,
+              ps->session,
+              ps->pid,
+              ps->rss * pagesize,
+              resisize);
+      log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+      }
+
+#endif
+
     }  /* END for (i) */
 
   return(resisize);
@@ -1064,7 +1136,7 @@ static unsigned long resi_sum(
 
 
 /*
- * Return TRUE if any process in the job is over limit for memory usage.
+ * Return TRUE if any process in the job is over limit for virtual memory usage.
  */
 
 static int overmem_proc(
@@ -1518,10 +1590,10 @@ int mom_set_limits(
 
       /* NO-OP */
       }
-    else if(!strcmp(pname, "prologue"))
+    else if (!strcmp(pname, "prologue"))
       {
       }
-    else if(!strcmp(pname, "epilogue"))
+    else if (!strcmp(pname, "epilogue"))
       {
       }
     else if ((pres->rs_defin->rs_flags & ATR_DFLAG_RMOMIG) == 0)
@@ -2842,11 +2914,14 @@ static char *resi_job(
   pid_t jobid)
 
   {
-  char         *id = "resi_job";
-  ulong         resisize;
-  int           found = 0;
-  proc_stat_t  *ps;
-  int           i;
+  char               *id = "resi_job";
+  int                 i;
+  int                 found = 0; 
+  unsigned long long  resisize;
+  proc_stat_t        *ps;
+#ifdef USEMEMACCTD
+  long                w_rss;
+#endif
 
   resisize = 0;
 
@@ -2854,7 +2929,6 @@ static char *resi_job(
     {
     sprintf(log_buffer, "proc_array loop start - jobid = %d",
             jobid);
-
     log_record(PBSEVENT_DEBUG, 0, id, log_buffer);
     }
 
@@ -2867,15 +2941,33 @@ static char *resi_job(
 
     found = 1;
 
+#ifdef USEMEMACCTD
+
+    /* Ask memacctd for weighted rss of pid, use this instead of ps->rss */
+
+    w_rss = get_memacct_resi(ps->pid);
+    if (w_rss == -1)
+      resisize += ps->rss * pagesize;
+    else
+      resisize += w_rss;
+
+#else
+
     resisize += ps->rss;
+
+#endif
     }  /* END for (i) */
 
   if (found)
     {
     /* in KB */
 
-    sprintf(ret_string, "%lukb",
-            (resisize * (ulong)pagesize) >> 10);
+#ifdef USEMEMACCTD
+    sprintf(ret_string, "%llukb", resisize >> 10);
+#else
+    sprintf(ret_string, "%llukb",
+            (resisize * (unsigned long long)pagesize) >> 10);
+#endif
 
     return(ret_string);
     }
@@ -2897,13 +2989,16 @@ static char *resi_proc(
   char        *id = "resi_proc";
   proc_stat_t *ps;
 
+#ifdef USEMEMACCTD
+  long          w_rss;
+#endif
+
   if ((ps = get_proc_stat(pid)) == NULL)
     {
     if (errno != ENOENT)
       {
       sprintf(log_buffer, "%d: get_proc_stat(PIOCPSINFO)",
               pid);
-
       log_err(errno, id, log_buffer);
       }
 
@@ -2912,10 +3007,21 @@ static char *resi_proc(
     return(NULL);
     }
 
+#ifdef USEMEMACCTD
+  
+  /* Ask memacctd for weighted rss of pid, use this instead of ps->rss */
+ 
+  if ((w_rss = get_memacct_resi(ps->pid)) == -1)
+    sprintf(ret_string, "%llukb", (ps->rss * (unsigned long long)pagesize) >> 10);
+  else
+    sprintf(ret_string, "%ldkb", w_rss >> 10);
+
+#else
   /* in KB */
 
   sprintf(ret_string, "%lukb",
           ((ulong)ps->rss * (ulong)pagesize) >> 10);
+#endif
 
   return(ret_string);
   }  /* END resi_proc() */

@@ -347,7 +347,7 @@ int addr_ok(
 
         chk_len = server.sv_attr[SRV_ATR_check_rate].at_val.at_long;
 
-        if(pnode->nd_lastupdate == 0)
+        if (pnode->nd_lastupdate == 0)
           {
           continue;
           }
@@ -1959,7 +1959,7 @@ int create_pbs_node(
     return(PBSE_SYSTEM);
     }
 
-  if(!reused_entry)
+  if (!reused_entry)
     {
     /*add in the new entry etc*/
   
@@ -2866,7 +2866,7 @@ int create_partial_pbs_node(
 
   for(iht = 0; iht < svr_totnodes; iht++)
     {
-    if(pbsndmast[iht]->nd_state & INUSE_DELETED)
+    if (pbsndmast[iht]->nd_state & INUSE_DELETED)
       {
       /* there is a slot available */
       pnode = pbsndmast[iht];
@@ -2927,7 +2927,7 @@ int create_partial_pbs_node(
 
   ntype = NTYPE_CLUSTER;
   pul = (u_long *)malloc(sizeof(u_long) * 2);
-  if(!pul)
+  if (!pul)
     {
     free(pnode);
     return(PBSE_SYSTEM);

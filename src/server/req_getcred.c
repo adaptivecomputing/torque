@@ -149,7 +149,7 @@ int get_encode_host(int s, char *munge_buf, struct batch_request *preq)
 
   /* ENCODE_HOST: is a keyword in the unmunge data that holds the host name */
   ptr = strstr(munge_buf, "ENCODE_HOST:");
-  if(!ptr)
+  if (!ptr)
     {
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not read unmunge data host");
     return(-1);
@@ -185,7 +185,7 @@ int get_UID(int s, char *munge_buf, struct batch_request *preq)
 
 
   ptr = strstr(munge_buf, "UID:");
-	if(!ptr)
+	if (!ptr)
 		{
 		req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not read unmunge data user");
 		return(-1);
@@ -212,7 +212,7 @@ int get_UID(int s, char *munge_buf, struct batch_request *preq)
 }
 
 int unmunge_request(int s, struct batch_request *preq)
-{
+  {
   time_t myTime;
   struct timeval tv;
   suseconds_t millisecs;
@@ -245,30 +245,30 @@ int unmunge_request(int s, struct batch_request *preq)
 	  timeinfo->tm_sec, (int)millisecs);
 
   fd = open(mungeFileName, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-  if(fd == -1)
-	{
+  if (fd == -1)
+    {
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not create temporary munge file");
-	  return(-1);
-	}
+    return(-1);
+    }
 
   /* Write the munge credential to the newly created file */
 
   cred_size = strlen(preq->rq_ind.rq_authen.rq_cred);
-  if(cred_size == 0)
-	{
+  if (cred_size == 0)
+    {
     req_reject(PBSE_BADCRED, 0, preq, NULL, NULL);
-		return(-1);
-	}
+    return(-1);
+    }
 
   bytes_written = write(fd, preq->rq_ind.rq_authen.rq_cred, cred_size);
-  if(bytes_written == -1 || (bytes_written != cred_size))
-	{
-	req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not write credential to temporary munge file");
-	return(-1);
-	}
+  if (bytes_written == -1 || (bytes_written != cred_size))
+    {
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not write credential to temporary munge file");
+    return(-1);
+    }
 
 	rc = fsync(fd);
-	if(rc < 0)
+	if (rc < 0)
 		{
 		close(fd);
 		return(rc);
@@ -280,15 +280,15 @@ int unmunge_request(int s, struct batch_request *preq)
    	 The parent will read from the child and use the unmunged data to validate
 	 the user */
   rc = pipe(fd_pipe);
-  if(rc == -1)
-	{
-	unlink(mungeFileName);
-	req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not create pipe to unmunge");
-	return(-1);
-	}
+  if (rc == -1)
+    {
+    unlink(mungeFileName);
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not create pipe to unmunge");
+    return(-1);
+    }
 
   pid = fork();
-  if(pid != 0)
+  if (pid != 0)
 	  {
 	  /* This is the parent*/
 	  /* set up the pipe to be able to read from the child */
@@ -301,15 +301,15 @@ int unmunge_request(int s, struct batch_request *preq)
 	  do
 	    {
 	    bytes_read = read(fd_pipe[0], buf, MUNGE_SIZE);
-	    if(bytes_read > 0)
+	    if (bytes_read > 0)
 	  	  {
 	  	  total_bytes_read += bytes_read;
 	  	  memcpy(ptr, buf, bytes_read);
 	  	  ptr += bytes_read;
 	  	  }
-	    }while(bytes_read > 0);
+	    } while(bytes_read > 0);
 	  
-	    if(bytes_read == -1)
+	    if (bytes_read == -1)
 	  	  {
 	  	  /* read failed */
 	  	  unlink(mungeFileName);
@@ -319,7 +319,7 @@ int unmunge_request(int s, struct batch_request *preq)
 	  	  }
 	  
 	  
-	    if(total_bytes_read == 0)
+	    if (total_bytes_read == 0)
 	  	  {
 	  	  /* unmunge failed. Probably a bad credential. But we do not know */
 	  	  req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not unmunge credentials");
@@ -329,7 +329,7 @@ int unmunge_request(int s, struct batch_request *preq)
 	  	  }
 	  
 	    rc = get_encode_host(s, munge_buf, preq);
-	    if(rc)
+	    if (rc)
 	  	  {
 				unlink(mungeFileName);
 	  		close(fd_pipe[0]);
@@ -337,7 +337,7 @@ int unmunge_request(int s, struct batch_request *preq)
 	  	  }
 	  
 	    rc = get_UID(s, munge_buf, preq);
-	    if(rc)
+	    if (rc)
 	    	{
 				unlink(mungeFileName);
 	  		close(fd_pipe[0]);
@@ -455,23 +455,23 @@ void req_altauthenuser(
       {
       continue;
       }
-	break;
+    break;
     }  /* END for (s) */
 
   /* If s is less than PBS_NET_MAX_CONNECTIONS we have our port */
-  if(s >= PBS_NET_MAX_CONNECTIONS)
-	{
-	req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user");
-	return;
-	}
+  if (s >= PBS_NET_MAX_CONNECTIONS)
+    {
+    req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user");
+    return;
+    }
 
 
   rc = unmunge_request(s, preq);
-  if(rc)
-	{
-	/* FAILED */
-	return;
-	}
+  if (rc)
+    {
+    /* FAILED */
+    return;
+    }
 
   /* SUCCESS */
 
