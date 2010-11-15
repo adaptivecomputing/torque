@@ -67,7 +67,7 @@ case "$1" in
 		echo -n "Starting TORQUE Mom with purge: "
 		daemon $PBS_DAEMON -r
 		RET=$?
-		touch /var/lock/subsys/pbs_mom
+		[ $RET -eq 0 ] &&  touch /var/lock/subsys/pbs_mom
    		echo
 		;;
 	stop)
