@@ -20,6 +20,10 @@ fi
 case "$1" in
 	start) 
 		echo -n "Starting TORQUE Scheduler: "
+		status pbs_sched 2>&1 > /dev/null
+		RET=$?
+		[ $RET -eq 0 ] && echo -n "pbs_sched already running" && success && echo && exit 0
+
 		daemon $PBS_DAEMON -d $PBS_HOME
 		RET=$?
 		touch /var/lock/subsys/pbs_sched
@@ -27,6 +31,10 @@ case "$1" in
 		;;
 	stop)
 		echo -n "Shutting down TORQUE Scheduler: "
+		status pbs_sched 2>&1 > /dev/null
+		RET=$?
+		[ ! $RET -eq 0 ] && echo -n "pbs_sched already stopped" && success && echo && exit 0
+
 		killproc pbs_sched
 		RET=$?
 		rm -f /var/lock/subsys/pbs_sched
