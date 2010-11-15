@@ -32,7 +32,7 @@ case "$1" in
 			daemon $PBS_DAEMON -t create -d $PBS_HOME
 		fi
 		RET=$?
-		touch /var/lock/subsys/pbs_server
+		[ $RET -eq 0 ] && touch /var/lock/subsys/pbs_server
 		echo
 		;;
 	stop)
