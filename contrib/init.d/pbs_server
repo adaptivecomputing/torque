@@ -20,6 +20,10 @@ fi
 case "$1" in
 	start) 
 		echo -n "Starting TORQUE Server: "
+		status pbs_server 2>&1 > /dev/null
+		RET=$?
+		[ $RET -eq 0 ] && echo -n "pbs_server already running" && success && echo && exit 0
+
                 # ulimit -c unlimited  # Uncomment this to preserve core files
 		if [ -r $PBS_HOME/server_priv/serverdb ]
 		then
@@ -33,6 +37,10 @@ case "$1" in
 		;;
 	stop)
 		echo -n "Shutting down TORQUE Server: "
+		status pbs_server 2>&1 > /dev/null
+		RET=$?
+		[ ! $RET -eq 0 ] && echo -n "pbs_server already stopped" && success && echo && exit 0
+
 		killproc pbs_server
 		RET=$?
 		rm -f /var/lock/subsys/pbs_server

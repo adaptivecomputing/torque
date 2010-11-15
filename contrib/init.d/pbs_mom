@@ -51,6 +51,11 @@ kill_pbs_mom() {
 case "$1" in
 	start)
 		echo -n "Starting TORQUE Mom: "
+		# check if pbs_mom is already running
+		status pbs_mom 2>&1 > /dev/null
+		RET=$?
+		[ $RET -eq 0 ] && echo -n "pbs_mom already running" && success && echo && exit 0
+
                 # ulimit -c unlimited  # Uncomment this to preserve core files
 		daemon $PBS_DAEMON $args -d $PBS_HOME
 		RET=$?
@@ -67,6 +72,11 @@ case "$1" in
 		;;
 	stop)
 		echo -n "Shutting down TORQUE Mom: "
+		# check if pbs_mom is running
+		status pbs_mom 2>&1 > /dev/null
+		RET=$?
+		[ ! $RET -eq 0 ] && echo -n "pbs_mom already stopped" && success && echo && exit 0
+
 		kill_pbs_mom
 		RET=$?
 		[ $RET -eq 0 ] && success "shutdown" || failure "shutdown"

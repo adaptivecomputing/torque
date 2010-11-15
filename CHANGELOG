@@ -8,6 +8,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       new job attribute exec_gpus: 
       <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
   b - clean up job mom checkpoint directory on checkpoint failure
+  e - Bugzilla bug 91. Check the status before the service is actually started.
+      (Steve Traylen - CERN)
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
