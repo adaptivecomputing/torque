@@ -89,11 +89,14 @@
 
 /* NOTE:  requires server_limits.h */
 
-#define BM_ERROR        -20
-#define MAX_NUMA_NODES   2048
-#define NUMA_KEYWORD     "numa"
+#define BM_ERROR           -20
+#define MAX_NUMA_NODES      2048
+#define NUMA_KEYWORD       "numa"
 #define TTORQUECPUSET_PATH "/dev/cpuset/torque"
 #define TROOTCPUSET_PATH   "/dev/cpuset"
+#ifdef USELIBCPUSET
+#define TTORQUECPUSET_BASE "/torque"
+#endif
 
 enum psit
   {

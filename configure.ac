@@ -518,7 +518,7 @@ dnl 2. memory fences to only access close memory
 dnl
 dnl --enable-numa-support
 AC_ARG_ENABLE(numa_support, [
-  --enable-numa-support   Allows cpusets to be used in conjunction with multi-moms and enables memory fencing])
+  --enable-numa-support   Specifies that the mom report itself as several numa nodes instead of one node, while adding numa reporting and numa cpusets, which include memory fencing])
 if test "x$GCC" = "xyes" ;then
   AC_MSG_CHECKING([whether to support NUMA systems])
   if test "${enable_numa_support}" = "yes" ; then
@@ -534,23 +534,45 @@ fi
 
 
 
+dnl enable pbs_mom to use the cpuset API from libcpuset
+dnl makes only sense with --enable-numa-support
+AC_ARG_ENABLE(libcpuset, [  --enable-libcpuset      Allows pbs_mom to use the cpuset API from libcpuset])
+if test "x$GCC" = "xyes"; then
+AC_MSG_CHECKING([whether to enable libcpuset support])
+  if test "${enable_libcpuset}" = "yes" ; then
+    if test "$build_l26_cpuset" = "yes" ;then
+      AC_DEFINE([USELIBCPUSET], 1, [Define to enable libcpuset support])
+      AC_CHECK_LIB([cpuset],[cpuset_version],
+          [MOMLIBS="$MOMLIBS -lcpuset"],
+          [AC_MSG_ERROR([--enable-libcpuset requires libcpuset support]) ])
+    else
+      AC_MSG_RESULT([no because we are not using cpusets])
+    fi
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+
+
+
 dnl enable pbs_mom to query SGI memacctd to get rss values that are more reliable
 dnl
-dnl --enable-memacctd
-AC_MSG_CHECKING([whether to enable memacctd support])
-AC_ARG_ENABLE(memacctd, [
-  --enable-memacctd       Allows pbs_mom to query SGI memacctd in order to better monitor job memory consumption],
+dnl --enable-memacct
+AC_MSG_CHECKING([whether to enable memacct support])
+AC_ARG_ENABLE(memacct, [
+  --enable-memacct       Allows pbs_mom to query SGI memacctd in order to better monitor job memory consumption],
     MEMACCT=$enableval,MEMACCT=no)
 AC_MSG_RESULT($MEMACCT)
 
 case "$MEMACCT" in
-  yes) AC_DEFINE([USEMEMACCTD], 1, [Define to enable memacctd support])
+  yes) AC_DEFINE([USELIBMEMACCT], 1, [Define to enable memacct support])
       AC_CHECK_LIB([memacct],[get_weighted_memory_size],
         [MOMLIBS="$MOMLIBS -lmemacct"],
-        [AC_MSG_ERROR([--enable-memacctd requires libmemacct support]) ])
+        [AC_MSG_ERROR([--enable-memacct requires libmemacct support]) ])
       ;;
   no) : ;;
-  *) AC_MSG_ERROR([--enable-memacctd should be yes or no]) ;;
+  *) AC_MSG_ERROR([--enable-memacct should be yes or no]) ;;
 esac
 
 dnl fixes errors relating to unaligned memory accesses

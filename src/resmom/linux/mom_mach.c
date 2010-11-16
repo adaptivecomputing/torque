@@ -121,6 +121,9 @@
 #include "resmon.h"
 #include "../rm_dep.h"
 #include "pbs_nodes.h"
+#ifdef PENABLE_LINUX26_CPUSETS
+#include "pbs_cpuset.h"
+#endif
 
 
 /*
@@ -208,7 +211,7 @@ static char *ncpus    (struct rm_attribute *);
 static char *walltime (struct rm_attribute *);
 static char *quota    (struct rm_attribute *);
 static char *netload  (struct rm_attribute *);
-#ifdef USEMEMACCTD
+#ifdef USELIBMEMACCT
 static long get_memacct_resi(pid_t pid);
 #endif
 
@@ -216,7 +219,7 @@ static long get_memacct_resi(pid_t pid);
 #define mbool_t char
 #endif /* mbool_t */
 
-mbool_t ProcIsChild(char *,char *,char *);
+mbool_t ProcIsChild(char *,pid_t,char *);
 
 extern char *loadave(struct rm_attribute *);
 extern char *nullproc(struct rm_attribute *);
@@ -457,7 +460,7 @@ proc_stat_t *get_proc_stat(
   }  /* END get_proc_stat() */
 
 
-#ifdef USEMEMACCTD
+#ifdef USELIBMEMACCT
 /*
  * Retrieve weighted RSS value for process with pid from memacctd.
  * Returns the value in bytes on success, returns -1 on failure.
@@ -948,15 +951,32 @@ static int overcpu_proc(
   unsigned long  limit)  /* I */
 
   {
-  char  *id = "overcpu_proc";
-  ulong  memsize;
+  char          *id = "overcpu_proc";
+  ulong          cputime;
+  pid_t          pid;
 
+  proc_stat_t   *ps;
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  struct pidl   *pids = NULL;
+  struct pidl   *pp;
+#else
   struct dirent *dent;
-  ulong  cputime;
-  proc_stat_t *ps;
+#endif /* PENABLE_LINUX26_CPUSETS */
 
-  memsize = 0;
+#ifdef PENABLE_LINUX26_CPUSETS
 
+  /* Instead of collect stats of all processes running on a large SMP system,
+   * collect stats of processes running in and below the cpuset of the job, only. */
+
+  pids = get_cpuset_pidlist(pjob->ji_qs.ji_jobid, pids);
+  pp   = pids;
+
+  while (pp != NULL)
+    {
+    pid = pp->pid;
+    pp  = pp->next;
+#else
   rewinddir(pdir);
 
   while ((dent = readdir(pdir)) != NULL)
@@ -964,12 +984,13 @@ static int overcpu_proc(
     if (!isdigit(dent->d_name[0]))
       continue;
 
-    if ((ps = get_proc_stat(atoi(dent->d_name))) == NULL)
+    pid = atoi(dent->d_name);
+#endif /* PENABLE_LINUX26_CPUSETS */
+    if ((ps = get_proc_stat(pid)) == NULL)
       {
       if (errno != ENOENT)
         {
-        sprintf(log_buffer, "%s: get_proc_stat",
-                dent->d_name);
+        sprintf(log_buffer, "%d: get_proc_stat", pid);
 
         log_err(errno, id, log_buffer);
         }
@@ -977,8 +998,11 @@ static int overcpu_proc(
       continue;
       }
 
+#ifndef PENABLE_LINUX26_CPUSETS 
+    /* if it was in the cpuset, its part of the job, no need to check */
     if (!injob(pjob, ps->session))
       continue;
+#endif /* PENABLE_LINUX26_CPUSETS */
 
     /* change from ps->cutime to ps->utime, and ps->cstime to ps->stime */
 
@@ -986,9 +1010,17 @@ static int overcpu_proc(
 
     if (cputime > limit)
       {
+#ifdef PENABLE_LINUX26_CPUSETS
+      free_cpuset_pidlist(pids);
+#endif
+
       return(TRUE);
       }
     }
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  free_cpuset_pidlist(pids);
+#endif
 
   return(FALSE);
   }  /* END overcpu_proc() */
@@ -1067,7 +1099,7 @@ static unsigned long long resi_sum(
   int                 i;
   unsigned long long  resisize;
   proc_stat_t        *ps;
-#ifdef USEMEMACCTD
+#ifdef USELIBMEMACCT
   long                w_rss;
 #endif
 
@@ -1087,7 +1119,7 @@ static unsigned long long resi_sum(
     if (!injob(pjob, ps->session))
       continue;
 
-#ifdef USEMEMACCTD
+#ifdef USELIBMEMACCT
 
     /* Ask memacctd for weighted rss of pid, use this instead of ps->rss */
 
@@ -1145,10 +1177,10 @@ static int overmem_proc(
   unsigned long long  limit) /* I */
 
   {
-  char  *id = "overmem_proc";
-  unsigned long long memsize;
-  int            i;
-  proc_stat_t *ps;
+  char               *id = "overmem_proc";
+  unsigned long long  memsize;
+  int                 i;
+  proc_stat_t        *ps;
 
   memsize = 0;
 
@@ -1802,17 +1834,20 @@ mom_open_poll(void)
  * @see mom_set_use() - populate job structure with usage data for local use or to send to mother superior
  */
 
-int
-mom_get_sample(void)
+int mom_get_sample(void)
 
   {
-  char          *id = "mom_get_sample";
-
-  struct dirent *dent;
-  proc_stat_t   *pi;
-  proc_stat_t   *ps;
-
-  rewinddir(pdir);
+  char                  *id = "mom_get_sample";
+ 
+  proc_stat_t           *pi;
+  proc_stat_t           *ps;
+  pid_t                  pid;
+#ifdef PENABLE_LINUX26_CPUSETS
+  struct pidl           *pids = NULL;
+  struct pidl           *pp;
+#else
+  struct dirent         *dent;
+#endif
 
   nproc = 0;
 
@@ -1823,17 +1858,38 @@ mom_get_sample(void)
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id, "proc_array load started");
     }
 
+#ifdef PENABLE_LINUX26_CPUSETS
+
+  /* Instead of collect stats of all processes running on a large SMP system,
+   * collect stats of processes running in and below the Torque cpuset, only
+   * This relies on reliable process starters for MPI, which bind their tasks
+   * to the cpuset of the job. */
+
+#ifdef USELIBCPUSET
+  pids = get_cpuset_pidlist(TTORQUECPUSET_BASE, pids);
+#else
+  pids = get_cpuset_pidlist(TTORQUECPUSET_PATH, pids);
+#endif
+  pp = pids;
+  while (pp != NULL)
+    {
+    pid = pp->pid;
+    pp  = pp->next;
+#else
+  rewinddir(pdir);
+
   while ((dent = readdir(pdir)) != NULL)
     {
     if (!isdigit(dent->d_name[0]))
       continue;
 
-    if ((ps = get_proc_stat(atoi(dent->d_name))) == NULL)
+    pid = atoi(dent->d_name);
+#endif
+    if ((ps = get_proc_stat(pid)) == NULL)
       {
       if (errno != ENOENT)
         {
-        sprintf(log_buffer, "%s: get_proc_stat",
-                dent->d_name);
+        sprintf(log_buffer, "%d: get_proc_stat", pid);
 
         log_err(errno, id, log_buffer);
         }
@@ -1872,7 +1928,11 @@ mom_get_sample(void)
     pi = &proc_array[nproc++];
 
     memcpy(pi, ps, sizeof(proc_stat_t));
-    }  /* END while ((dent = readdir(pdir)) != NULL) */
+    }  /* END while (...) != NULL) */
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  free_cpuset_pidlist(pids);
+#endif
 
   if (LOGLEVEL >= 6)
     {
@@ -2207,8 +2267,14 @@ int kill_task(
 
   int            ct = 0;  /* num of processes killed */
   int            NumProcessesFound = 0; /* number of processes found with session ID */
+#ifdef PENABLE_LINUX26_CPUSETS
+  struct pidl   *pids = NULL;
+  struct pidl   *pp;
+#else
+   struct dirent *dent;
+#endif
+  pid_t          pid;
 
-  struct dirent *dent;
   proc_stat_t   *ps;
   int            sesid;
   pid_t          mompid;
@@ -2253,9 +2319,26 @@ int kill_task(
   /* pdir is global */
 
   /* NOTE:  do not use cached proc-buffer since we need up-to-date info */
+#ifdef PENABLE_LINUX26_CPUSETS
+
+  /* Instead of collect stats of all processes running on a large SMP system,
+   * collect stats of processes running in and below the Torque cpuset, only
+   * This relies on reliable process starters for MPI, which bind their tasks
+   * to the cpuset of the job. */
+ 
+#ifdef USELIBCPUSET
+  pids = get_cpuset_pidlist(TTORQUECPUSET_BASE, pids);
+#else
+  pids = get_cpuset_pidlist(TTORQUECPUSET_PATH, pids);
+#endif /* USELIBCPUSET */
+  pp = pids;
+  while (pp != NULL)
+    {
+    pid = pp->pid;
+    pp  = pp->next;
+#else
 
   /* pdir is global */
-
   rewinddir(pdir);
 
   while ((dent = readdir(pdir)) != NULL)
@@ -2263,12 +2346,13 @@ int kill_task(
     if (!isdigit(dent->d_name[0]))
       continue;
 
-    if ((ps = get_proc_stat(atoi(dent->d_name))) == NULL)
+    pid = atoi(dent->d_name);
+#endif /* PENABLE_LINUX26_CPUSETS */
+    if ((ps = get_proc_stat(pid)) == NULL)
       {
       if (errno != ENOENT)
         {
-        sprintf(log_buffer, "%s: get_proc_stat",
-                dent->d_name);
+        sprintf(log_buffer, "%d: get_proc_stat", pid);
 
         log_err(errno,id,log_buffer);
         }
@@ -2277,7 +2361,7 @@ int kill_task(
       }
 
     if ((sesid == ps->session) ||
-        (ProcIsChild(procfs,dent->d_name,ptask->ti_job->ji_qs.ji_jobid) == TRUE))
+        (ProcIsChild(procfs,pid,ptask->ti_job->ji_qs.ji_jobid) == TRUE))
 
       {
       NumProcessesFound++;
@@ -2439,7 +2523,11 @@ int kill_task(
         ++ct;
         }  /* END else ((ps->state == 'Z') || (ps->pid == 0)) */
       }    /* END if (sesid == ps->session) */
-    }      /* END while ((dent = readdir(pdir)) != NULL) */
+    }      /* END while (...) != NULL) */
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  free_cpuset_pidlist(pids);
+#endif
 
   /* NOTE:  to fix bad state situations resulting from a hard crash, the logic
             below should be triggered any time no processes are found (NYI) */ 
@@ -2919,7 +3007,7 @@ static char *resi_job(
   int                 found = 0; 
   unsigned long long  resisize;
   proc_stat_t        *ps;
-#ifdef USEMEMACCTD
+#ifdef USELIBMEMACCT
   long                w_rss;
 #endif
 
@@ -2941,7 +3029,7 @@ static char *resi_job(
 
     found = 1;
 
-#ifdef USEMEMACCTD
+#ifdef USELIBMEMACCT
 
     /* Ask memacctd for weighted rss of pid, use this instead of ps->rss */
 
@@ -2962,7 +3050,7 @@ static char *resi_job(
     {
     /* in KB */
 
-#ifdef USEMEMACCTD
+#ifdef USELIBMEMACCT
     sprintf(ret_string, "%llukb", resisize >> 10);
 #else
     sprintf(ret_string, "%llukb",
@@ -2989,7 +3077,7 @@ static char *resi_proc(
   char        *id = "resi_proc";
   proc_stat_t *ps;
 
-#ifdef USEMEMACCTD
+#ifdef USELIBMEMACCT
   long          w_rss;
 #endif
 
@@ -3007,7 +3095,7 @@ static char *resi_proc(
     return(NULL);
     }
 
-#ifdef USEMEMACCTD
+#ifdef USELIBMEMACCT
   
   /* Ask memacctd for weighted rss of pid, use this instead of ps->rss */
  
@@ -3852,9 +3940,15 @@ void scan_non_child_tasks(void)
 
     for (task = GET_NEXT(job->ji_tasks);task != NULL;task = GET_NEXT(task->ti_jobtask))
       {
-
+#ifdef PENABLE_LINUX26_CPUSETS
+      struct pidl   *pids = NULL;
+      struct pidl   *pp;
+#else
       struct dirent *dent;
-      int found;
+#endif
+      pid_t          pid;
+      proc_stat_t   *ps;
+      int            found;
 
       /*
        * Check for tasks that were exiting when mom went down, set back to
@@ -3898,19 +3992,25 @@ void scan_non_child_tasks(void)
       else
         {
         /* session master cannot be found, look for other pid in session */
-
+#ifdef PENABLE_LINUX26_CPUSETS
+        pids = get_cpuset_pidlist(job->ji_qs.ji_jobid, pids);
+        pp   = pids;
+        while (pp != NULL)
+          {
+          pid = pp->pid;
+          pp  = pp->next;
+#else
+          
         rewinddir(pdir);
 
         while ((dent = readdir(pdir)) != NULL)
           {
-          proc_stat_t *ps;
-
           if (!isdigit(dent->d_name[0]))
             continue;
 
-          ps = get_proc_stat(atoi(dent->d_name));
-
-          if (ps == NULL)
+          pid = atoi(dent->d_name);
+#endif /* PENABLE_LINUX26_CPUSETS */
+          if ((ps = get_proc_stat(pid)) == NULL)
             continue;
 
           if (ps->session == task->ti_qs.ti_sid)
@@ -3920,6 +4020,9 @@ void scan_non_child_tasks(void)
             break;
             }
           }    /* END while ((dent) != NULL) */
+#ifdef PENABLE_LINUX26_CPUSETS
+        free_cpuset_pidlist(pids);
+#endif
         }
 
       if (!found)
@@ -4624,9 +4727,9 @@ static char *netload(
 
 mbool_t ProcIsChild(
 
-  char *Dir,    /* I */
-  char *PID,    /* I */
-  char *JobID)  /* I */
+  char  *Dir,    /* I */
+  pid_t  PID,    /* I */
+  char  *JobID)  /* I */
 
   {
   return(FALSE);

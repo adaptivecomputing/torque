@@ -8,6 +8,10 @@
 #include <unistd.h>
 #include <sys/param.h>
 #include <errno.h>
+#ifdef USELIBCPUSET
+#include <bitmask.h>
+#include <cpuset.h>
+#endif
 
 #include "libpbs.h"
 #include "attribute.h"
@@ -32,6 +36,8 @@
 extern numanode numa_nodes[];
 extern int num_numa_nodes;
 #endif /* NUMA_SUPPORT */
+
+extern long system_ncpus;
 
 /* FIXME: TODO:  TTORQUECPUSET_PATH, enabling cpuset support, and correct error
  * checking need a run-time config */
@@ -754,17 +760,22 @@ int get_exclusive_cpuset_strings(
   vnodent *np)     /* I */
 
   {
-  int   prev_numa_index = -1;
-  int   numa_index = -1;
-  int   j;
-
+#ifdef NUMA_SUPPORT
   char *id = "get_exclusive_cpuset_strings";
 
+  int   prev_numa_index = -1;
+  int   numa_index = -1;
   char *dash;
+#else
+  char *old_name = NULL;
+#endif
+
+  int   j;
   char  buf[MAXPATHLEN];
 
   for (j = 0;j < pjob->ji_numvnod;++j, np++)
     {
+#ifdef NUMA_SUPPORT
     dash = strchr(np->vn_host->hn_host,'-');
 
     if (dash != NULL)
@@ -804,8 +815,24 @@ int get_exclusive_cpuset_strings(
     sprintf(buf,"%d-%d",
       numa_nodes[numa_index].mem_offset,
       numa_nodes[numa_index].mem_offset + numa_nodes[numa_index].num_mems);
-
+    
     strcat(MemStr,buf);
+#else
+    if (old_name == NULL)
+      old_name = np->vn_host->hn_host;
+    else if (!strcmp(np->vn_host->hn_host,old_name))
+      continue;
+
+    if (CpuStr[0] != '\0')
+      strcat(CpuStr,",");
+
+    sprintf(buf,"%d",(int)system_ncpus);
+
+    strcat(CpuStr,buf);
+
+    /* on a non-NUMA system, there is no need to do anything with memory */
+#endif
+
     } 
 
   return(SUCCESS);
@@ -831,17 +858,19 @@ int get_cpuset_strings(
   char *MemStr) /* O */
 
   {
+  char   *id = "get_cpuset_strings";
+
   vnodent *np = pjob->ji_vnods;
   int     j;
   int     cpu_index;
-  int     mem_index;
   int     ratio = 0;
   char    tmpStr[MAXPATHLEN];
   int     numa_index;
 
-  char   *id = "get_cpuset_strings";
-
+#ifdef NUMA_SUPPORT
   numanode *numa_tmp;
+  int     mem_index;
+#endif
 
   if ((pjob == NULL) || 
       (CpuStr == NULL) ||
@@ -882,15 +911,20 @@ int get_cpuset_strings(
     if (CpuStr[0] != '\0')
       strcat(CpuStr, ",");
 
+#ifdef NUMA_SUPPORT
     numa_tmp = numa_nodes + numa_index;
     cpu_index = np->vn_index + numa_tmp->cpu_offset;
     ratio = numa_tmp->num_cpus / numa_tmp->num_mems;
     mem_index = (np->vn_index / ratio) + numa_tmp->mem_offset;
+#else
+    cpu_index = np->vn_index;
+#endif /* NUMA_SUPPORT */
 
     sprintf(tmpStr, "%d", cpu_index);
 
     strcat(CpuStr, tmpStr);
 
+#ifdef NUMA_SUPPORT
     sprintf(tmpStr,"%d",mem_index);
 
     if (strstr(MemStr,tmpStr) == NULL)
@@ -900,6 +934,7 @@ int get_cpuset_strings(
 
       strcat(MemStr, tmpStr);
       }
+#endif
     }
 
   if (LOGLEVEL >= 7)
@@ -1348,5 +1383,208 @@ int move_to_taskset(
 
   return 0;
   }  /* END move_to_taskset() */
+
+
+
+
+
+
+/**
+ * lists tasks currently attached to a cpuset incl. its child cpusets
+ *
+ * @param cpusetname - name of cpuset to be inspected
+ * @return new allocated list of pids, must be freed with free_cpuset_pidlist().
+ *         on error or if no pids are found, NULL is returned.
+ */
+
+struct pidl *get_cpuset_pidlist(
+
+  const char  *cpusetname,
+  struct pidl *pids)
+
+  {
+  static char            id[] = "get_cpuset_pidlist";
+  char                   path[MAXPATHLEN + 1];
+  struct pidl           *pl;
+  struct pidl           *pp;
+  int                    npids = 0;
+#ifdef USELIBCPUSET
+  struct cpuset_pidlist *plist;
+  int                    i;
+#else
+  char                   childpath[MAXPATHLEN + 1];
+  char                   tfile[MAXPATHLEN + 1];
+  char                   tnum[1024], *pt;
+  struct stat            statbuf;
+  struct dirent         *pdirent;
+  DIR                   *dir;
+  FILE                  *fd;
+#endif
+
+#ifdef USELIBCPUSET
+
+  /* Construct the name of the cpuset.
+   * libcpuset does not want the root-cpuset path in it */
+
+  if (cpusetname[0] == '/')
+    strncpy(path, cpusetname, sizeof(path));
+  else
+    snprintf(path, sizeof(path), "%s/%s", TTORQUECPUSET_BASE, cpusetname);
+
+  /* Get the list of PIDs attached to the cpuset,
+   * do not care if the cpuset does not exist */
+
+  if ((plist = cpuset_init_pidlist(path, 1)) == NULL)
+    {
+    if (errno != ENOENT)
+      {
+      sprintf(log_buffer, "%s: cpuset_init_pidlist", path);
+      log_err(errno, id, log_buffer);
+      }
+    return(NULL);
+    }
+
+  /* Transform the PID list into what we return */
+
+  pl = NULL;
+  for (i = 0; i < cpuset_pidlist_length(plist); i++)
+    {
+    if ((pp = (struct pidl *)malloc(sizeof(struct pidl))) == NULL)
+      {
+      log_err(errno, id, "malloc");
+      break;
+      }
+
+    pp->pid  = cpuset_get_pidlist(plist, i);
+    pp->next = NULL;
+    npids++;
+
+    if (pl)
+      pl->next = pp;
+    else
+      pids = pp;
+
+    pl = pp;
+    } /* END for(i) */
+
+  /* Free the initial PID list */
+  cpuset_freepidlist(plist);
+
+#else
+
+  /* Construct the name of the cpuset */
+  if (cpusetname[0] == '/')
+    strncpy(path, cpusetname, sizeof(path));
+  else
+    snprintf(path, sizeof(path), "%s/%s", TTORQUECPUSET_PATH, cpusetname);
+
+  /* Try to open cpuset directory, don't care if it does not exist */
+  if ((dir = opendir(path)) == NULL)
+    {
+    if (errno != ENOENT)
+      {
+      sprintf(log_buffer, "%s: opendir", path);
+      log_err(errno, id, log_buffer);
+      }
+    }
+  else
+    {
+    /* Dive into child cpusets, if they exist */
+
+    while ((pdirent = readdir(dir)) != NULL)
+      {
+      /* Skip . and .. */
+      if (! strcmp(pdirent->d_name, ".") || ! strcmp(pdirent->d_name, ".."))
+        continue;
+
+      /* Construct the child path name */
+      snprintf(childpath, sizeof(childpath), "%s/%s", path, pdirent->d_name);
+
+      /* If it is a directory, parse its content */
+      if ((stat(childpath, &statbuf) == -1))
+        continue;
+      if (statbuf.st_mode&S_IFDIR)
+        pids = get_cpuset_pidlist(childpath, pids);
+      } /* END while(readdir) */
+
+    /* Read tasks list of this cpuset */
+    snprintf(tfile, sizeof(tfile), "%s/tasks", path);
+    if ((fd = fopen(tfile, "r")) != NULL)
+      {
+      /* Find last pidl entry in pids */
+      if (pids != NULL)
+        {
+        pl = pids;
+        while(pl->next != NULL)
+          pl = pl->next;
+        }
+      else
+        {
+        pl = NULL;
+        }
+
+      /* Read tasks list line by line, store */
+
+      while ((pt = fgets(tnum, sizeof(tnum), fd)) != NULL)
+        {
+        if ((pp = (struct pidl *)malloc(sizeof(struct pidl))) == NULL)
+          {
+          log_err(errno, id, "malloc");
+          break;
+          }
+        else
+          {
+          pp->pid  = atoi(tnum);
+          pp->next = NULL;
+          npids++;
+
+          if (pl)
+            pl->next = pp;
+          else
+            pids = pp;
+
+          pl = pp;
+          }
+        } /* END while(fgets) */
+
+      fclose(fd);
+      }
+    
+    closedir(dir);
+    }  /* END if (opendir) */
+
+#endif
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer, "cpuset %s contains %d PIDs", path, npids);
+    log_record(PBSEVENT_DEBUG, 0, id, log_buffer);
+    }
+
+  return(pids);
+  } /* END get_cpuset_pidlist() */
+
+
+
+/**
+ * free a pid list that is got from get_cpuset_pidlist()
+ *
+ * @param pl - a pointer to a linked list of pidl structs
+ */
+
+void free_cpuset_pidlist(
+
+  struct pidl *pl)
+
+  {
+  if (pl != NULL)
+    {
+    if (pl->next != NULL)
+      free_cpuset_pidlist(pl->next);
+    free(pl);
+    }
+  } /* END free_cpuset_pidlist() */
+
+
 
 
