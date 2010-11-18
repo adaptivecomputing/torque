@@ -73,6 +73,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Bugzilla bug 89. Only touch lock/subsys files if service actually starts.
       (Steve Traylen - CERN)
   c - when using job_force_cancel_time, fix a crash in rare cases
+  e - add server parameter moab_array_compatible. When set to true, this parameter
+      places a limit hold on jobs past the slot limit. Once one of the unheld jobs 
+      completes or is deleted, one of the held jobs is freed.
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
