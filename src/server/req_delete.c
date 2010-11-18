@@ -543,6 +543,20 @@ jump:
      * comments at job_delete_nanny()).
      */
 
+  /* make a cleanup task if set */
+  if ((server.sv_attr[SRV_ATR_JobForceCancelTime].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long > 0))
+    {
+    pwtcheck = set_task(
+        WORK_Timed,
+        time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
+        ensure_deleted,
+        preq);
+    
+    if (pwtcheck != NULL)
+      append_link(&pjob->ji_svrtask, &pwtcheck->wt_linkobj, pwtcheck);
+    }
+
     if (has_job_delete_nanny(pjob))
       {
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "job cancel in progress");
@@ -577,6 +591,20 @@ jump:
 
     return;
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
+
+  /* make a cleanup task if set */
+  if ((server.sv_attr[SRV_ATR_JobForceCancelTime].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long > 0))
+    {
+    pwtcheck = set_task(
+        WORK_Timed,
+        time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
+        ensure_deleted,
+        preq);
+    
+    if (pwtcheck != NULL)
+      append_link(&pjob->ji_svrtask, &pwtcheck->wt_linkobj, pwtcheck);
+    }
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
@@ -632,34 +660,6 @@ jump:
       append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
       }
     }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
-
-  /* make a cleanup task if set */
-  if ((server.sv_attr[SRV_ATR_JobForceCancelTime].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long > 0))
-    {
-    pwtcheck = set_task(
-        WORK_Timed,
-        time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
-        ensure_deleted,
-        preq);
-    
-    if (pwtcheck != NULL)
-      append_link(&pjob->ji_svrtask, &pwtcheck->wt_linkobj, pwtcheck);
-    }
-
-  /* make a cleanup task if set */
-  if ((server.sv_attr[SRV_ATR_JobForceCancelTime].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long > 0))
-    {
-    pwtcheck = set_task(
-        WORK_Timed,
-        time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
-        ensure_deleted,
-        preq);
-    
-    if (pwtcheck != NULL)
-      append_link(&pjob->ji_svrtask, &pwtcheck->wt_linkobj, pwtcheck);
-    }
 
   reply_ack(preq);
 
