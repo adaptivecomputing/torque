@@ -286,6 +286,7 @@
 #ifdef MUNGE_AUTH
   #define ATTR_authusers       "authorized_users"
 #endif
+#define ATTR_moabarraycompatible "moab_array_compatible"
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state         "state"

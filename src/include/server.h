@@ -189,6 +189,7 @@ enum srv_atr
 #ifdef MUNGE_AUTH
   SRV_ATR_authusers,
 #endif
+  SRV_ATR_MoabArrayCompatible,
 #include "site_svr_attr_enum.h"
   /* This must be last */
   SRV_ATR_LAST
@@ -271,7 +272,6 @@ extern int svr_save(struct server *, int);
 #ifndef JobStatRate
 #define JobStatRate MAX(PBS_JOBSTAT_MIN,server.sv_attr[(int)SRV_ATR_JobStatRate].at_val.at_long)
 #endif
-
 
 /* maintain a list of new nodes */
 

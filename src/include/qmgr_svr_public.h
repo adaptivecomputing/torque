@@ -171,3 +171,4 @@ ATTR_joblogkeepdays,
 #ifdef MUNGE_AUTH
 ATTR_authusers,
 #endif
+ATTR_moabarraycompatible,
