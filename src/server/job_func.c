@@ -1070,6 +1070,7 @@ void job_clone_wt(
   else
     {
     int i;
+    int actual_job_count = 0;
     /* this is the last batch of jobs */
 
     /* scan over all the jobs in the array and unset the hold */
@@ -1078,9 +1079,22 @@ void job_clone_wt(
       if (pa->jobs[i] == NULL)
         continue;
 
+      actual_job_count++;
+
       pjob = (job *)pa->jobs[i];
 
       pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
+
+      if (server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_long != FALSE)
+        {
+        /* if configured and necessary, apply a slot limit hold to all
+         * jobs above the slot limit threshold */
+        if ((pa->ai_qs.slot_limit != NO_SLOT_LIMIT) &&
+            (actual_job_count > pa->ai_qs.slot_limit))
+          {
+          pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_l;
+          }
+        }
 
       if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
         {

@@ -176,3 +176,4 @@ ATTR_minthreads,
 ATTR_maxthreads,
 ATTR_threadidleseconds,
 #endif
+ATTR_moabarraycompatible,

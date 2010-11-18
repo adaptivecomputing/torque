@@ -105,6 +105,7 @@
 #include "acct.h"
 #include "log.h"
 #include "svrfunc.h"
+#include "array.h"
 
 
 /* Global Data Items: */
@@ -594,6 +595,20 @@ jump:
       reply_ack(preq_tmp);
       preq->rq_noreply = TRUE; /* set for no more replies */
       }
+  
+    /* make a cleanup task if set */
+    if ((server.sv_attr[SRV_ATR_JobForceCancelTime].at_flags & ATR_VFLAG_SET) &&
+        (server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long > 0))
+      {
+      pwtcheck = set_task(
+        WORK_Timed,
+        time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
+        ensure_deleted,
+        preq);
+    
+      if (pwtcheck != NULL)
+        append_link(&pjob->ji_svrtask, &pwtcheck->wt_linkobj, pwtcheck);
+      }
 
     /*
      * Send signal request to MOM.  The server will automagically
@@ -620,6 +635,60 @@ jump:
 
     return;
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
+
+  /* make a cleanup task if set */
+  if ((server.sv_attr[SRV_ATR_JobForceCancelTime].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long > 0))
+    {
+    pwtcheck = set_task(
+        WORK_Timed,
+        time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
+        ensure_deleted,
+        preq);
+    
+    if (pwtcheck != NULL)
+      append_link(&pjob->ji_svrtask, &pwtcheck->wt_linkobj, pwtcheck);
+    }
+
+  /* if configured, and this job didn't have a slot limit hold, free a job
+   * held with the slot limit hold */
+  if ((server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_long != FALSE) &&
+      ((pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == FALSE))
+    {
+    if ((pjob->ji_arraystruct != NULL) &&
+        (pjob->ji_is_array_template == FALSE))
+      {
+      int        i;
+      int        newstate;
+      int        newsub;
+      job       *tmp;
+      job_array *pa = pjob->ji_arraystruct;
+
+      for (i = 0; i < pa->ai_qs.array_size; i++)
+        {
+        if (pa->jobs[i] == NULL)
+          continue;
+
+        tmp = (job *)pa->jobs[i];
+
+        if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+          {
+          tmp->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
+              
+          if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+            {
+            tmp->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+            }
+          
+          svr_evaljobstate(tmp, &newstate, &newsub, 1);
+          svr_setjobstate(tmp, newstate, newsub);
+          job_save(tmp, SAVEJOB_FULL, 0);
+
+          break;
+          }
+        }
+      }
+    } /* END MoabArrayCompatible check */
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
@@ -675,48 +744,6 @@ jump:
       append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
       }
     }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
-
-  /* make a cleanup task if set */
-  if ((server.sv_attr[SRV_ATR_JobForceCancelTime].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long > 0))
-    {
-    pwtcheck = set_task(
-        WORK_Timed,
-        time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
-        ensure_deleted,
-        preq);
-    
-    if (pwtcheck != NULL)
-      append_link(&pjob->ji_svrtask, &pwtcheck->wt_linkobj, pwtcheck);
-    }
-
-  /* make a cleanup task if set */
-  if ((server.sv_attr[SRV_ATR_JobForceCancelTime].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long > 0))
-    {
-    pwtcheck = set_task(
-        WORK_Timed,
-        time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
-        ensure_deleted,
-        preq);
-    
-    if (pwtcheck != NULL)
-      append_link(&pjob->ji_svrtask, &pwtcheck->wt_linkobj, pwtcheck);
-    }
-
-  /* make a cleanup task if set */
-  if ((server.sv_attr[SRV_ATR_JobForceCancelTime].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long > 0))
-    {
-    pwtcheck = set_task(
-        WORK_Timed,
-        time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
-        ensure_deleted,
-        preq);
-    
-    if (pwtcheck != NULL)
-      append_link(&pjob->ji_svrtask, &pwtcheck->wt_linkobj, pwtcheck);
-    }
 
   reply_ack(preq);
 

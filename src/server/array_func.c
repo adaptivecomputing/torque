@@ -1305,6 +1305,44 @@ void update_array_values(
         pa->ai_qs.num_failed++;
         }
 
+      /* update slot limit hold if necessary */
+      if (server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_long != FALSE)
+        {
+        /* only need to update if the job wasn't previously held */
+        if ((pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == FALSE)
+          {
+          int  i;
+          int  newstate;
+          int  newsub;
+          job *pj;
+
+          /* find the first held job and release its hold */
+          for (i = 0; i < pa->ai_qs.array_size; i++)
+            {
+            if (pa->jobs[i] == NULL)
+              continue;
+
+            pj = (job *)pa->jobs[i];
+
+            if (pj->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+              {
+              pj->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
+
+              if (pj->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+                {
+                pj->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+                }
+             
+              svr_evaljobstate(pj, &newstate, &newsub, 1);
+              svr_setjobstate(pj, newstate, newsub);
+              job_save(pj, SAVEJOB_FULL, 0);
+
+              break;
+              }
+            }
+          }
+        }
+
       break;
 
     default:

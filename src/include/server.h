@@ -200,6 +200,7 @@ enum srv_atr
   SRV_ATR_maxthreads,
   SRV_ATR_threadidleseconds,
 #endif
+  SRV_ATR_MoabArrayCompatible,
 
 #include "site_svr_attr_enum.h"
   /* This must be last */

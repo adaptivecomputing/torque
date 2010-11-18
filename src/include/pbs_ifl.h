@@ -293,6 +293,7 @@
 #define ATTR_maxthreads        "max_threads"
 #define ATTR_threadidleseconds "thread_idle_seconds"
 #endif
+#define ATTR_moabarraycompatible "moab_array_compatible"
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state          "state"

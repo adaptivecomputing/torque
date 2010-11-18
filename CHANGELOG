@@ -72,6 +72,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (Steve Traylen - CERN)
   e - Bugzilla bug 89. Only touch lock/subsys files if service actually starts.
       (Steve Traylen - CERN)
+  c - when using job_force_cancel_time, fix a crash in rare cases
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
