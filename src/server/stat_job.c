@@ -288,7 +288,8 @@ int status_attrib(
           ATR_ENCODE_CLIENT);
 
         /* add walltime remaining if started */
-        if (index == JOB_ATR_start_time)
+        if ((index == JOB_ATR_start_time) &&
+            ((pattr + index)->at_flags & ATR_VFLAG_SET))
           {
           /* encode walltime remaining, this is custom because walltime 
            * remaining isn't an attribute */
@@ -334,9 +335,9 @@ int status_attrib(
 
           if (found == TRUE)
             {
-            snprintf(buf,sizeof(buf),"%ld",remaining);
+            snprintf(buf,sizeof(buf),"%lu",remaining);
 
-            len = strlen(buf+1);
+            len = strlen(buf) + 1;
             pal = attrlist_create("Walltime","Remaining",len);
 
             if (pal != NULL)
