@@ -335,7 +335,7 @@ int status_attrib(
 
           if (found == TRUE)
             {
-            snprintf(buf,sizeof(buf),"%ld",remaining);
+            snprintf(buf,sizeof(buf),"%lu",remaining);
 
             len = strlen(buf) + 1;
             pal = attrlist_create("Walltime","Remaining",len);
