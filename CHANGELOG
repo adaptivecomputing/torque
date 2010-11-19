@@ -17,6 +17,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       places a limit hold on jobs past the slot limit. Once one of the unheld jobs 
       completes or is deleted, one of the held jobs is freed.
   b - fix a potential memory corruption for walltime remaining for jobs
+      (Vikentsi Lapa)
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
