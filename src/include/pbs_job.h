@@ -539,6 +539,10 @@ struct job
   int            ji_im_stderr;
   int            ji_im_portout; /* for job_radix intermediate mom demux port for ji_stdout */
   int            ji_im_porterr; /* for job_radix intermediate mom demux port for ji_stderr */
+#ifdef PENABLE_LINUX26_CPUSETS
+  int            ji_mempressure_curr;  /* current memory_pressure value */
+  int            ji_mempressure_cnt;   /* counts MOM cycles memory_pressure is over threshold */
+#endif
 
 #else     /* END MOM ONLY */
   tlist_head ji_svrtask; /* links to svr work_task list */

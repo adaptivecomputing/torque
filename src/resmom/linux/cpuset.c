@@ -1588,3 +1588,110 @@ void free_cpuset_pidlist(
 
 
 
+
+/**
+ * 
+ *
+ * @param cpusetname - name of cpuset to be inspected
+ * @return the current memory_pressure of the cpuset
+ *         on error -1 is returned.
+ *
+ * NOTE: when USELIBCPUSET is configured, we rely on
+ *       cpuset_open_memory_pressure() and the like to
+ *       be present in libcpuset. These functions
+ *       are "optional". Should we check their presence
+ *       via configure?
+ */
+
+int get_cpuset_mempressure(
+
+  const char  *cpusetname)
+
+  {
+
+  static char            id[] = "get_cpuset_mempressure";
+  char                   path[MAXPATHLEN + 1];
+  int                    rc;
+#ifdef USELIBCPUSET
+  int                    fd;
+#else
+  FILE                  *fd;
+#endif
+
+#ifdef USELIBCPUSET
+
+  /* Construct the name of the cpuset.
+   * libcpuset does not want the root-cpuset path in it */
+
+  if (cpusetname[0] == '/')
+    strncpy(path, cpusetname, sizeof(path));
+  else
+    snprintf(path, sizeof(path), "%s/%s", TTORQUECPUSET_BASE, cpusetname);
+
+  /* Open, read, close */
+
+  if((fd = cpuset_open_memory_pressure(path)) == -1)
+    {
+    if (errno != ENOENT)
+      {
+      sprintf(log_buffer, "%s: cpuset_open_memory_pressure", path);
+      log_err(errno, id, log_buffer);
+      }
+    return(-1);
+    }
+
+  if((rc = cpuset_read_memory_pressure(fd)) == -1)
+    {
+    sprintf(log_buffer, "%s: cpuset_read_memory_pressure", path);
+    log_err(errno, id, log_buffer);
+    }
+
+  cpuset_close_memory_pressure(fd);
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer, "cpuset %s/memory_pressure=%d", path, rc);
+    log_record(PBSEVENT_DEBUG, 0, id, log_buffer);
+    }
+
+#else
+
+  /* Construct the name of the cpuset's memory_pressure file */
+
+  if (cpusetname[0] == '/')
+    snprintf(path, sizeof(path), "%s/memory_pressure", cpusetname);
+  else
+    snprintf(path, sizeof(path), "%s/%s/memory_pressure", TTORQUECPUSET_PATH, cpusetname);
+
+  /* Open, read, close */
+
+  if ((fd = fopen(path, "r")) == NULL)
+    {
+    if (errno != ENOENT)
+      {
+      sprintf(log_buffer, "%s: fopen", path);
+      log_err(errno, id, log_buffer);
+      }
+    return(-1);
+    }
+
+  if ((fscanf(fd, "%d", &rc)) != 1)
+    {
+    sprintf(log_buffer, "%s: fscanf", path);
+    rc = -1;
+    }
+
+  fclose(fd);
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer, "cpuset %s=%d", path, rc);
+    log_record(PBSEVENT_DEBUG, 0, id, log_buffer);
+    }
+
+#endif
+
+  return(rc);
+  } /* END get_cpuset_mempressure() */
+
+

@@ -269,6 +269,11 @@ char           *AllocParCmd = NULL;  /* (alloc) */
 int      src_login_batch = TRUE;
 int      src_login_interactive = TRUE;
 
+#ifdef PENABLE_LINUX26_CPUSETS
+int      memory_pressure_threshold = 0; /* 0: off, >0: check and log alerts */
+short    memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
+#endif
+
 /* externs */
 
 extern char *server_alias;
@@ -414,6 +419,10 @@ static unsigned long setspoolasfinalname(char *);
 static unsigned long setremchkptdirlist(char *);
 static unsigned long setmaxconnecttimeout(char *);
 static unsigned long aliasservername(char *);
+#ifdef PENABLE_LINUX26_CPUSETS
+static unsigned long setmempressthr(char *);
+static unsigned long setmempressdur(char *);
+#endif
 
 
 static struct specials
@@ -475,6 +484,10 @@ static struct specials
   { "remote_checkpoint_dirs", setremchkptdirlist },
   { "max_conn_timeout_micro_sec",   setmaxconnecttimeout },
   { "alias_server_name", aliasservername },
+#ifdef PENABLE_LINUX26_CPUSETS
+  { "memory_pressure_threshold",    setmempressthr },
+  { "memory_pressure_duration",     setmempressdur },
+#endif
   { NULL,                  NULL }
   };
 
@@ -3412,6 +3425,51 @@ static unsigned long setremchkptdirlist(
 
 
 
+#ifdef PENABLE_LINUX26_CPUSETS
+static u_long setmempressthr(
+
+  char *value)
+
+  {
+  long long val;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "memory_pressure_threshold", value);
+
+  if ((val = atoll(value)) < 0)
+    return(0);  /* error, leave as is */
+
+  if (val > INT_MAX)
+    val = INT_MAX;
+
+  memory_pressure_threshold = (int)val;
+
+  return(TRUE);
+  }
+
+static u_long setmempressdur(
+
+  char *value)
+
+  {
+  int val;
+
+  val = atoi(value);
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "memory_pressure_duration", value);
+
+  if ((val = atoi(value)) < 0)
+    return(0);  /* error, leave as is */
+
+  if (val > SHRT_MAX)
+    val = SHRT_MAX;
+
+  memory_pressure_duration = (short)val;
+
+  return(TRUE);
+  }
+#endif
+
+
 
 
 void
@@ -4193,6 +4251,10 @@ process_hup(void)
   log_open(log_file, path_log);
   log_file_max_size = 0;
   log_file_roll_depth = 1;
+#ifdef PENABLE_LINUX26_CPUSETS
+  memory_pressure_threshold = 0;
+  memory_pressure_duration  = 0;
+#endif
   read_config(NULL);
   check_log();
   cleanup();
@@ -4660,6 +4722,26 @@ int rm_request(
 
                     rcp_path, rcp_args);
             }
+#ifdef PENABLE_LINUX26_CPUSETS
+          else if (!strncasecmp(name, "memory_pressure_threshold", strlen("memory_pressure_threshold")))
+            {
+            /* set or report memory_pressure_threshold */
+
+            if ((*curr == '=') && ((*curr) + 1 != '\0'))
+              setmempressthr(curr + 1);
+
+            sprintf(output, "memory_pressure_threshold=%d", memory_pressure_threshold);
+            }
+          else if (!strncasecmp(name, "memory_pressure_duration", strlen("memory_pressure_duration")))
+            {
+            /* set or report memory_pressure_duration */
+
+            if ((*curr == '=') && ((*curr) + 1 != '\0'))
+              setmempressdur(curr + 1);
+
+            sprintf(output, "memory_pressure_duration=%d", memory_pressure_duration);
+            }
+#endif
           else if (!strncasecmp(name, "version", strlen("version")))
             {
             /* report version */
@@ -4994,6 +5076,12 @@ int rm_request(
                     sprintf(tmpLine, " %s=%lu", resname, resvalue);
                     MUStrNCat(&BPtr, &BSpace, tmpLine);
                     }
+
+#ifdef PENABLE_LINUX26_CPUSETS
+                  /* report current memory pressure */
+                  sprintf(tmpLine, " %s=%d", "mempressure", pjob->ji_mempressure_curr);
+                  MUStrNCat(&BPtr, &BSpace, tmpLine);
+#endif
                   }
 
                 /* List of job's sessionIds */

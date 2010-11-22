@@ -13,5 +13,6 @@ extern int          move_to_jobset(pid_t, job *);
 extern int          move_to_taskset(pid_t, job *, char *);
 extern struct pidl *get_cpuset_pidlist(const char *, struct pidl *);
 extern void         free_cpuset_pidlist(struct pidl *);
+extern int          get_cpuset_mempressure(const char *);
 
 #endif /* END PBS_CPUSET_H */

@@ -363,6 +363,23 @@ log-file-name.log_file_roll_depth.
 .IP max_load
 maximum processor load.  Nodes over this load average are considered busy (see
 ideal_load above).
+.
+.IP memory_pressure_threshold
+The option is only available, if pbs_mom is enabled to use cpusets.
+If set to a value > 0, a job gets killed if its memory pressure exceeds
+this value, and if $memory_pressure_duration is set.
+The default is 0 (memory pressure recording is off). 
+.br
+See cpuset(7) for more information about memory pressure.
+.IP memory_pressure_duration
+The option is only available, if pbs_mom is enabled to use cpusets.
+Specifies the number of subsequent MOM intervals a job's memory pressure must be
+above $memory_pressure_threshold to get killed.
+The default is 0 (jobs are never killed due to memory pressure).
+set
+.br
+See cpuset(7) for more information about memory pressure.
+.
 .IP node_check_script
 specifies the fully qualified pathname of the health check script to run (see
 HEALTH CHECK for more information).

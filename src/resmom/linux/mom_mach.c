@@ -192,6 +192,10 @@ extern int      ignwalltime;
 extern int      igncput;
 extern int      ignvmem;
 extern int      ignmem;
+#ifdef PENABLE_LINUX26_CPUSETS
+extern int      memory_pressure_threshold;
+extern short    memory_pressure_duration;
+#endif
 #ifdef NUMA_SUPPORT
 extern int      num_numa_nodes;
 extern numanode numa_nodes[MAX_NUMA_NODES]; 
@@ -1961,10 +1965,13 @@ int mom_over_limit(
   job *pjob)  /* I */
 
   {
-  char  *pname;
-  int  retval;
-  unsigned long value;
-  unsigned long num;
+#ifdef PENABLE_LINUX26_CPUSETS
+  static char       *id = "mom_over_limit";
+#endif
+  char              *pname;
+  int                retval;
+  unsigned long      value;
+  unsigned long      num;
   unsigned long long numll;
 
   resource *pres;
@@ -2076,6 +2083,42 @@ int mom_over_limit(
       }
     }  /* END for (pres) */
 
+#ifdef PENABLE_LINUX26_CPUSETS
+  /* Check memory_pressure */
+
+  if (memory_pressure_threshold > 0)
+    {
+    /*
+     * If last recorded memory_pressure is over threshold, increment counter.
+     * If duration is enabled, throw over_limit if counter reaches duration.
+     */
+
+      if (pjob->ji_mempressure_curr < memory_pressure_threshold)
+        {
+        pjob->ji_mempressure_cnt = 0; /* reset */
+        }
+      else
+        {
+        pjob->ji_mempressure_cnt++;   /* count */
+
+        sprintf(log_buffer, "job %s memory_pressure is over %d for %d (%d) cycles",
+          pjob->ji_qs.ji_jobid,
+          memory_pressure_threshold,
+          pjob->ji_mempressure_cnt,
+          memory_pressure_duration);
+        log_ext(-1, id, log_buffer,LOG_ALERT);
+
+        if (memory_pressure_duration && (pjob->ji_mempressure_cnt >= memory_pressure_duration))
+          {
+          sprintf(log_buffer, "swap rate due to memory oversubscription is too high");
+          return(TRUE);
+          }
+
+        }
+
+    }
+#endif
+
   return(FALSE);
   }  /* END mom_over_limit() */
 
@@ -2108,10 +2151,17 @@ int mom_set_use(
   job *pjob)  /* I (modified) */
 
   {
+#ifdef PENABLE_LINUX26_CPUSETS
+  static char       *id = "mom_set_use";
+#endif
   resource      *pres;
   attribute     *at;
   resource_def  *rd;
-  unsigned long *lp, lnum;
+  unsigned long *lp;
+  unsigned long  lnum;
+#ifdef PENABLE_LINUX26_CPUSETS
+  int            inum;
+#endif
 
   assert(pjob != NULL);
   at = &pjob->ji_wattr[JOB_ATR_resc_used];
@@ -2236,6 +2286,30 @@ int mom_set_use(
   lnum = (resi_sum(pjob) + 1023) >> pres->rs_value.at_val.at_size.atsv_shift; /* as KB */
 
   *lp = MAX(*lp, lnum);
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  /* get memory_pressure */
+
+  if (memory_pressure_threshold > 0)
+    {
+    inum = get_cpuset_mempressure(pjob->ji_qs.ji_jobid);
+
+    /* Store if success */
+    if(inum != -1)
+      pjob->ji_mempressure_curr = inum;
+
+    /* Alert if there is pressure */
+    if(inum > 0)
+      {
+      sprintf(log_buffer, "job %s causes memory_pressure %d", pjob->ji_qs.ji_jobid, inum);
+      log_ext(-1, id, log_buffer, LOG_ALERT);
+      }
+    }
+  else
+    {
+    pjob->ji_mempressure_curr = 0;
+    }
+#endif
 
   return(PBSE_NONE);
   }  /* END mom_set_use() */
