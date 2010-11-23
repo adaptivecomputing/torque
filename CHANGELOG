@@ -18,6 +18,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       completes or is deleted, one of the held jobs is freed.
   b - fix a potential memory corruption for walltime remaining for jobs
       (Vikentsi Lapa)
+  b - fix potential buffer overrun in pbs_sched (Bugzilla #98, patch from 
+      Stephen Usher @ University of Oxford)
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges

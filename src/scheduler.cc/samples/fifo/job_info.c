@@ -670,6 +670,11 @@ void update_job_on_run(int pbs_sd, job_info *jinfo)
  *   non-zero: the comment did not need to be updated (same as before etc)
  *
  */
+
+#include <string.h>
+
+#define UDC_CLONEBUFSIZ 256
+
 int update_job_comment(int pbs_sd, job_info *jinfo, char *comment)
   {
   /* the pbs_alterjob() call takes a linked list of attrl structures to alter
@@ -681,6 +686,8 @@ int update_job_comment(int pbs_sd, job_info *jinfo, char *comment)
     NULL, ATTR_comment, NULL, NULL, 0
     };
 
+  static char clone[UDC_CLONEBUFSIZ];
+  
   if (jinfo == NULL)
     return 1;
 
@@ -692,7 +699,14 @@ int update_job_comment(int pbs_sd, job_info *jinfo, char *comment)
 
     jinfo -> comment = string_dup(comment);
 
-    attr.value = comment;
+    /* Assign new, copied version of "comment" to a pointer we can guarantee
+       pbs_alterjob() can't mangle anything important. */
+
+    strncpy(clone, comment, (size_t) (UDC_CLONEBUFSIZ - 1));
+
+    clone[UDC_CLONEBUFSIZ - 1] = '\0';
+
+    attr.value = clone;
 
     pbs_alterjob(pbs_sd, jinfo -> name, &attr, NULL);
 
