@@ -8,7 +8,7 @@
 
 extern void         initialize_root_cpuset();
 extern int          create_jobset(job *);
-extern int          cpuset_delete(char *);
+extern int          delete_cpuset(char *);
 extern int          move_to_jobset(pid_t, job *);
 extern int          move_to_taskset(pid_t, job *, char *);
 extern struct pidl *get_cpuset_pidlist(const char *, struct pidl *);

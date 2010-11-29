@@ -683,11 +683,11 @@ void job_purge(
 
   if (use_cpusets(pjob) == TRUE)
     {
-    extern void cpuset_delete(char *);
+    extern void delete_cpuset(char *);
 
     /* Delete the cpuset for the job. */
 
-    cpuset_delete(pjob->ji_qs.ji_jobid);
+    delete_cpuset(pjob->ji_qs.ji_jobid);
     }
 
 #endif /* PENABLE_LINUX26_CPUSETS */

@@ -65,7 +65,7 @@ int init_jobset(char *,job *,mode_t,char *);
  * @param cpusetname - name of cpuset to be deleted
  * @return -1 on failure, 0 otherwise
  */
-int cpuset_delete(
+int delete_cpuset(
 
   char *cpusetname)  /* I */
 
@@ -77,7 +77,7 @@ int cpuset_delete(
   DIR   *dir;
 
   struct dirent *pdirent;
-  static char id[] = "cpuset_delete";
+  static char id[] = "delete_cpuset";
 
   struct stat statbuf;
 
@@ -114,7 +114,7 @@ int cpuset_delete(
 
     if (statbuf.st_mode&S_IFDIR)
       {
-      if (cpuset_delete(childpath) == 0)
+      if (delete_cpuset(childpath) == 0)
         {
         sprintf(log_buffer, "Unused cpuset '%s' deleted.",
                 childpath);
@@ -166,7 +166,7 @@ int cpuset_delete(
   /* SUCCESS */
 
   return(0);
-  }  /* END cpuset_delete() */
+  }  /* END delete_cpuset() */
 
 
 
@@ -220,7 +220,7 @@ void remove_defunct_cpusets()
       /* If the job isn't found, delete its cpuset. */
       if (find_job(pdirent->d_name) == NULL)
         {
-        if (cpuset_delete(pdirent->d_name) == 0)
+        if (delete_cpuset(pdirent->d_name) == 0)
           {
           sprintf(log_buffer, "Unused cpuset '%s' deleted.", path);
           log_event(PBSEVENT_SYSTEM,
@@ -988,7 +988,7 @@ int init_jobset(
   /* delete the current cpuset for the job if it exists */
   if (access(path, F_OK) == 0)
     {
-    if (cpuset_delete(path) != 0)
+    if (delete_cpuset(path) != 0)
       {
       sprintf(log_buffer, "Could not delete cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
       log_err(-1, id, log_buffer);
@@ -1390,7 +1390,53 @@ int move_to_taskset(
 
 
 /**
- * lists tasks currently attached to a cpuset incl. its child cpusets
+ * Check if a pid_t number is a process ID or thread ID.
+ *
+ * Return 1 if it is a pid.
+ * Return 0 if it is a tid.
+ * Return -1 if error.
+ *
+ * The check compares the tread group ID from /proc/<id>/status with pid.
+ * If both are equal, id is the master thread of the thread group, and is regarded as "process ID".
+ * If they are not, id is a child thread in the thread group, and is regarded as "thread ID".
+ */
+
+static int PidIsPid(
+
+  pid_t pid)
+
+  {
+  char    path[1024];
+  char    readbuf[1024];
+  FILE   *fd;
+  pid_t   tgid;
+  int     rc = -1;
+
+  sprintf(path, "/proc/%d/status", pid);
+
+  if ((fd = fopen(path, "r")) != NULL)
+    {
+    while ((fgets(readbuf, sizeof(readbuf), fd)) != NULL)
+      {
+      if ((strncmp(readbuf, "Tgid:",5)) == 0)
+        {
+        if ((sscanf(readbuf + 5, " %d", &tgid)) == 1)
+          rc = tgid == pid;
+        break;
+        }
+      }
+    fclose(fd);
+    }
+
+  return(rc);
+  } /* END PidIsPid() */
+
+
+
+
+
+/**
+ * Lists tasks currently attached to a cpuset incl. its child cpusets
  *
  * @param cpusetname - name of cpuset to be inspected
  * @return new allocated list of pids, must be freed with free_cpuset_pidlist().
@@ -1408,13 +1454,14 @@ struct pidl *get_cpuset_pidlist(
   struct pidl           *pl;
   struct pidl           *pp;
   int                    npids = 0;
+  pid_t                  pid;
 #ifdef USELIBCPUSET
   struct cpuset_pidlist *plist;
   int                    i;
 #else
   char                   childpath[MAXPATHLEN + 1];
   char                   tfile[MAXPATHLEN + 1];
-  char                   tnum[1024], *pt;
+  char                   tnum[1024];
   struct stat            statbuf;
   struct dirent         *pdirent;
   DIR                   *dir;
@@ -1449,13 +1496,20 @@ struct pidl *get_cpuset_pidlist(
   pl = NULL;
   for (i = 0; i < cpuset_pidlist_length(plist); i++)
     {
+    pid = cpuset_get_pidlist(plist, i);
+
+    /* Do not store IDs of individual threads */
+
+    if((PidIsPid(pid)) != 1)
+      continue;
+
     if ((pp = (struct pidl *)malloc(sizeof(struct pidl))) == NULL)
       {
       log_err(errno, id, "malloc");
       break;
       }
 
-    pp->pid  = cpuset_get_pidlist(plist, i);
+    pp->pid  = pid;
     pp->next = NULL;
     npids++;
 
@@ -1465,7 +1519,7 @@ struct pidl *get_cpuset_pidlist(
       pids = pp;
 
     pl = pp;
-    } /* END for(i) */
+    } /* END for (i) */
 
   /* Free the initial PID list */
   cpuset_freepidlist(plist);
@@ -1525,8 +1579,15 @@ struct pidl *get_cpuset_pidlist(
 
       /* Read tasks list line by line, store */
 
-      while ((pt = fgets(tnum, sizeof(tnum), fd)) != NULL)
+      while ((fgets(tnum, sizeof(tnum), fd)) != NULL)
         {
+        pid = atoi(tnum);
+
+        /* Do not store IDs of individual threads */
+
+        if((PidIsPid(pid)) != 1)
+          continue;
+
         if ((pp = (struct pidl *)malloc(sizeof(struct pidl))) == NULL)
           {
           log_err(errno, id, "malloc");
@@ -1534,7 +1595,7 @@ struct pidl *get_cpuset_pidlist(
           }
         else
           {
-          pp->pid  = atoi(tnum);
+          pp->pid  = pid;
           pp->next = NULL;
           npids++;
 
@@ -1545,7 +1606,7 @@ struct pidl *get_cpuset_pidlist(
 
           pl = pp;
           }
-        } /* END while(fgets) */
+        } /* END while (fgets) */
 
       fclose(fd);
       }
