@@ -2208,17 +2208,6 @@ int kill_task(
               log_buffer);
             }
 
-          if (LOGLEVEL >= 3)
-            {
-            sprintf(log_buffer, "%s: not killing process %d. Avoid sending signal because child task still has MOM's session id", id, ps->pid);
-
-            log_record(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              ptask->ti_job->ji_qs.ji_jobid,
-              log_buffer);
-            }
-
           continue;
           }  /* END if (ps->pid == mompid) */
 
@@ -2251,7 +2240,27 @@ int kill_task(
           for (i = 0;i < 20;i++)
             {
             /* check if process is gone */
+            if ((ps = get_proc_stat(ps->pid)) == NULL)
+              {
+              break;
+              }
+            else
+              {
+              sprintf(log_buffer, "%s: process (pid=%d/state=%c) after sig %d",
+                      id,
+                      ps->pid,
+                      ps->state,
+                      sig);
+              log_record(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                ptask->ti_job->ji_qs.ji_jobid,
+                log_buffer);
+              if (ps->state == 'Z')
+                break;
+              }
 
+            /* try to kill again */
             if (kill(ps->pid, 0) == -1)
               break;
 
