@@ -250,9 +250,9 @@ int main(
 
     /* do the exec */
 
-    if (execv(Args[0], Args) == -1)
+    if (execvp(Args[0], Args) == -1)
       {
-      fprintf(stderr,"execv failed with error %d, message:\n%s\n",
+      fprintf(stderr,"execvp failed with error %d, message:\n%s\n",
         errno,
         strerror(errno));
       }
