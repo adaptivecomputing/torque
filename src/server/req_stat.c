@@ -757,7 +757,7 @@ int stat_to_mom(
 
   struct batch_request *newrq;
   int      rc;
-  ulong    addr;
+  unsigned long    addr;
 
   struct work_task     *pwt = 0;
 

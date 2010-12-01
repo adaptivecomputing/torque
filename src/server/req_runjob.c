@@ -1132,7 +1132,7 @@ static void post_sendmom(
   int  newstate;
   int  newsub;
   int  r;
-  ulong addr;
+  unsigned long addr;
   int  stat;
   job *jobp = (job *)pwt->wt_parm1;
 

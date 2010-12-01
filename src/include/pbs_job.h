@@ -81,11 +81,12 @@
  * job.h - structure definations for job objects
  *
  * Include Files Required:
- * <sys/types.h>
  * "list_link.h"
  * "attribute.h"
  * "server_limits.h"
  */
+
+#include <sys/types.h>
 
 #ifndef PBS_JOB_H
 #define PBS_JOB_H 1

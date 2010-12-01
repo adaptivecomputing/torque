@@ -105,6 +105,7 @@ extern int  exiting_tasks;
 extern char  mom_host[];
 extern tlist_head svr_alljobs;
 extern int  termin_child;
+extern unsigned int pbs_rm_port;
 
 /* Private variables */
 
