@@ -182,8 +182,8 @@ static int            max_proc = 0;
 /*
 ** external functions and data
 */
-extern struct	config		*search(struct config *,char *);
-extern struct	rm_attribute	*momgetattr(char *);
+extern struct  config          *search(struct config *,char *);
+extern struct  rm_attribute    *momgetattr(char *);
 extern int                      rm_errno;
 extern double	cputfactor;
 extern double	wallfactor;
@@ -1015,7 +1015,7 @@ static int overcpu_proc(
     if (cputime > limit)
       {
 #ifdef PENABLE_LINUX26_CPUSETS
-      free_cpuset_pidlist(pids);
+      free_pidlist(pids);
 #endif
 
       return(TRUE);
@@ -1023,7 +1023,7 @@ static int overcpu_proc(
     }
 
 #ifdef PENABLE_LINUX26_CPUSETS
-  free_cpuset_pidlist(pids);
+  free_pidlist(pids);
 #endif
 
   return(FALSE);
@@ -1935,7 +1935,7 @@ int mom_get_sample(void)
     }  /* END while (...) != NULL) */
 
 #ifdef PENABLE_LINUX26_CPUSETS
-  free_cpuset_pidlist(pids);
+  free_pidlist(pids);
 #endif
 
   if (LOGLEVEL >= 6)
@@ -2527,7 +2527,7 @@ int kill_task(
                       id,
                       ps->pid,
                       ps->state,
-                      sig);
+                      SIGTERM);
               log_record(
                 PBSEVENT_JOB,
                 PBS_EVENTCLASS_JOB,
@@ -2609,7 +2609,7 @@ int kill_task(
     }      /* END while (...) != NULL) */
 
 #ifdef PENABLE_LINUX26_CPUSETS
-  free_cpuset_pidlist(pids);
+  free_pidlist(pids);
 #endif
 
   /* NOTE:  to fix bad state situations resulting from a hard crash, the logic
@@ -3255,21 +3255,26 @@ static char *resi(
 
 
 
-
 char *sessions(
 
   struct rm_attribute *attrib) /* I */
 
   {
-  char          *id = "sessions";
-  int            i;
-  int            j;
-  proc_stat_t   *ps;
-  char          *fmt;
-  int            njids = 0;
-  pid_t         *jids, *hold;
-  static int     maxjid = 200;
-  register pid_t jobid;
+  char              *id    = "sessions";
+  int                nsids = 0;
+  pid_t              sid;
+  char              *s;
+#ifdef NUMA_SUPPORT
+  extern char        mom_host[];
+  extern tlist_head  svr_alljobs;
+  char               mom_check_name[PBS_MAXSERVERNAME];
+  job               *pjob;
+  task              *ptask;
+#else
+  proc_stat_t       *ps;
+  struct pidl       *sids  = NULL, *sl = NULL, *sp;
+  int                i;
+#endif
 
   if (attrib != NULL)
     {
@@ -3280,16 +3285,65 @@ char *sessions(
     return(NULL);
     }
 
-  if ((jids = (pid_t *)calloc(maxjid, sizeof(pid_t))) == NULL)
+  ret_string[0] = '\0';
+
+#ifdef NUMA_SUPPORT
+
+  /* Initialize the node name to check for for this NUMA node */
+
+  strcpy(mom_check_name, mom_host);
+  if ((s = strchr(mom_check_name, '.')) != NULL)
+    *s = '\0';
+  sprintf(mom_check_name + strlen(mom_check_name), "-%d/", numa_index);
+
+  /* Initialize the return string */
+
+  s = ret_string;
+
+  /* Walk through job list, look for jobs running on this NUMA node */
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
+       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
     {
-    log_err(errno, id, "no memory");
+    if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, mom_check_name) == NULL)
+      continue;
 
-    rm_errno = RM_ERR_SYSTEM;
+    /* Show all tasks registered for this job */
 
-    return(NULL);
-    }
+    for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+         ptask != NULL;
+         ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+      {
 
-  /* Search for members of session */
+      if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
+        continue;
+
+      sid = ptask->ti_qs.ti_sid;
+
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer, "%s[%d]: job %s on %s? sid %d",
+          id,
+          nsids,
+          pjob->ji_qs.ji_jobid,
+          mom_check_name,
+          sid);
+        log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+        }
+
+      checkret(&s, 100);
+      sprintf(s, "%s%d", (ret_string[0] != '\0') ? " " : "", sid);
+      s += strlen(s);
+      nsids++;
+
+      } /* END for(ptask) */
+
+    } /* END for(pjob) */
+
+#else
+
+  /* Walk through proc_array, store unique session IDs in the pids list */
 
   for (i = 0;i < nproc;i++)
     {
@@ -3298,93 +3352,85 @@ char *sessions(
     if (ps->uid == 0)
       continue;
 
-    if ((jobid = ps->session) == 0)
+    if ((sid = ps->session) == 0)
       continue;
 
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer, "%s[%d]: pid %d sid %d",
-              id,
-              njids,
-              ps->pid,
-              jobid);
-
-      log_record(
-        PBSEVENT_SYSTEM,
-        0,
-        id,
-        log_buffer);
+      sprintf(log_buffer, "%s[%d]: pid %d sid %d", id, nsids, ps->pid, sid);
+      log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
       }
 
-    for (j = 0;j < njids;j++)
+    sp = sids;
+    while (sp)
       {
-      if (jids[j] == jobid)
+      if (sp->pid == sid)  /* found */
         break;
+      sp = sp->next;
       }
 
-    if (j == njids)
+    if (sp)
+      continue;
+
+    /* not found */
+    if ((sp = (struct pidl *)malloc(sizeof(struct pidl))) == NULL)
       {
-      /* not found */
-
-      if (njids == maxjid)
-        {
-        /* need more space */
-
-        maxjid += 100;
-
-        hold = (pid_t *)realloc(jids, maxjid);
-
-        if (hold == NULL)
-          {
-          log_err(errno, id, "realloc");
-
-          rm_errno = RM_ERR_SYSTEM;
-
-          free(jids);
-
-          return(NULL);
-          }
-
-        jids = hold;
-        }
-
-      jids[njids++] = jobid; /* add jobid to list */
+      log_err(errno, id, "no memory");
+      rm_errno = RM_ERR_SYSTEM;
+      if (sids)
+        free_pidlist(sids);
+      return(NULL);
       }
-    }
 
-  if (njids == 0)
-    {
-    free(jids);
-
-    return(NULL);
-    }
-
-  fmt = ret_string;
-
-  for (j = 0;j < njids;j++)
-    {
-    checkret(&fmt, 100);
-
-    if (j == 0)
-      {
-      sprintf(fmt, "%d",
-              (int)jids[j]);
-      }
+    sp->pid  = sid;
+    sp->next = NULL;
+    nsids++;
+    if (sl)
+      sl->next = sp;
     else
-      {
-      sprintf(fmt, " %d",
-              (int)jids[j]);
-      }
+      sids = sp;
+    sl = sp;
 
-    fmt += strlen(fmt);
-    }  /* END for (j) */
+    } /* END for(i) */
 
-  free(jids);
+  /*
+   * Assemble return string.
+   * Return empty string if no sessions.
+   */
+
+  s  = ret_string;
+  sp = sids;
+  while (sp)
+    {
+    checkret(&s, 100);
+
+    if (sp == sids)
+      sprintf(s, "%d", sp->pid);
+    else
+      sprintf(s, " %d", sp->pid);
+
+    s += strlen(s);
+
+    sp = sp->next;
+
+    } /* END while(pp) */
+
+  /* Done */
+
+  if (sids)
+    free_pidlist(sids);
+
+#endif
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer, "nsessions=%d", nsids);
+    log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+    }
 
   return(ret_string);
-  }  /* END sessions() */
 
-
+  }
 
 
 
@@ -3394,17 +3440,21 @@ char *nsessions(
 
   {
   char *result, *ch;
-  int    num = 1;
+  int    num;
 
   if ((result = sessions(attrib)) == NULL)
-    {
     return(result);
-    }
 
-  for (ch = result;*ch;ch++)
+  if (result[0] == '\0')
     {
-    if (*ch == ' ')  /* count blanks */
-      num++;
+    num = 0;
+    }
+  else
+    {
+    num = 1;
+    for (ch = result;*ch;ch++)
+      if (*ch == ' ')  /* count blanks */
+        num++;
     }  /* END for (ch) */
 
   sprintf(ret_string, "%d",
@@ -3513,14 +3563,21 @@ char *nusers(
   struct rm_attribute *attrib)
 
   {
-  char         *id = "nusers";
-  int  j;
-  int           i;
-  proc_stat_t  *ps;
-  int  nuids = 0;
-  uid_t  *uids, *hold;
-  static int maxuid = 200;
-  register uid_t uid;
+  char              *id = "nusers";
+  int                j;
+  int                nuids = 0;
+  uid_t             *uids, *hold;
+  static int         maxuid = 200;
+  register uid_t     uid;
+#ifdef NUMA_SUPPORT
+  extern char        mom_host[];
+  extern tlist_head  svr_alljobs;
+  char               mom_check_name[PBS_MAXSERVERNAME], *s;
+  job               *pjob;
+#else
+  int                i;
+  proc_stat_t       *ps;
+#endif
 
   if (attrib != NULL)
     {
@@ -3540,6 +3597,42 @@ char *nusers(
     return(NULL);
     }
 
+#ifdef NUMA_SUPPORT
+
+  /* Initialize the node name to check for for this NUMA node */
+
+  strcpy(mom_check_name, mom_host);
+  if ((s = strchr(mom_check_name, '.')) != NULL)
+    *s = '\0';
+  sprintf(mom_check_name + strlen(mom_check_name), "-%d/", numa_index);
+
+  /* Walk through job list, look for jobs running on this NUMA node */
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
+       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+    {
+    if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, mom_check_name) == NULL)
+      continue;
+
+    /* Store uid of job owner */
+
+    uid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
+
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "%s[%d]: job %s on %s? uid %d",
+        id,
+        nuids,
+        pjob->ji_qs.ji_jobid,
+        mom_check_name,
+        uid);
+
+      log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+      }
+
+#else
+
   for (i = 0;i < nproc;i++)
     {
     ps = &proc_array[i];
@@ -3557,6 +3650,8 @@ char *nusers(
 
       log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
       }
+
+#endif
 
     for (j = 0;j < nuids;j++)
       {
@@ -3587,10 +3682,22 @@ char *nusers(
           return(NULL);
           }
 
-        uids = hold;
-        }
+        if (LOGLEVEL >= 7)
+          {
+          sprintf(log_buffer, "%s[%d]: need more space: %d",
+                  id,
+                  nuids,
+		  maxuid);
+          log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+          }
 
-      uids[nuids++] = uid; /* add uid to list */
+        hold[nuids++] = uid; /* add uid to list */
+        uids          = hold;
+        }
+      else
+        {
+        uids[nuids++] = uid; /* add uid to list */
+        }
       }
     }    /* END for (i) */
 
@@ -3598,6 +3705,12 @@ char *nusers(
           nuids);
 
   free(uids);
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer, "nusers=%d", nuids);
+    log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+    }
 
   return(ret_string);
   }  /* END nusers() */
@@ -4104,7 +4217,7 @@ void scan_non_child_tasks(void)
             }
           }    /* END while ((dent) != NULL) */
 #ifdef PENABLE_LINUX26_CPUSETS
-        free_cpuset_pidlist(pids);
+        free_pidlist(pids);
 #endif
         }
 

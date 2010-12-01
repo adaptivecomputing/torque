@@ -1439,7 +1439,7 @@ static int PidIsPid(
  * Lists tasks currently attached to a cpuset incl. its child cpusets
  *
  * @param cpusetname - name of cpuset to be inspected
- * @return new allocated list of pids, must be freed with free_cpuset_pidlist().
+ * @return new allocated list of pids, must be freed with free_pidlist().
  *         on error or if no pids are found, NULL is returned.
  */
 
@@ -1624,28 +1624,6 @@ struct pidl *get_cpuset_pidlist(
 
   return(pids);
   } /* END get_cpuset_pidlist() */
-
-
-
-/**
- * free a pid list that is got from get_cpuset_pidlist()
- *
- * @param pl - a pointer to a linked list of pidl structs
- */
-
-void free_cpuset_pidlist(
-
-  struct pidl *pl)
-
-  {
-  if (pl != NULL)
-    {
-    if (pl->next != NULL)
-      free_cpuset_pidlist(pl->next);
-    free(pl);
-    }
-  } /* END free_cpuset_pidlist() */
-
 
 
 

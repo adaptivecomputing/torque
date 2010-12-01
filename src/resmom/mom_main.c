@@ -529,7 +529,7 @@ long                    TJobStartTimeout = 300; /* seconds to wait for job to la
 
 
 char                   *ret_string;
-int   ret_size;
+long                    ret_size;
 
 struct config         *config_array = NULL;
 
@@ -894,7 +894,7 @@ static char *getjoblist(
   if ((dot = strchr(mom_check_name,'.')) != NULL)
     *dot = '\0';
 
-  sprintf(mom_check_name + strlen(mom_check_name),"-%d",numa_index);
+  sprintf(mom_check_name + strlen(mom_check_name),"-%d/",numa_index);
 #endif
 
   for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
@@ -1565,7 +1565,7 @@ void memcheck(
 void checkret(
 
   char **spot,
-  int    len)
+  long   len)
 
   {
   char *id = "checkret";
@@ -1578,7 +1578,7 @@ void checkret(
 
   ret_size += len * 2;  /* new buf size */
 
-  sprintf(log_buffer, "size increased to %d",
+  sprintf(log_buffer, "size increased to %ld",
           ret_size);
 
   log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
@@ -1593,8 +1593,6 @@ void checkret(
 
   return;
   }  /* END checkret() */
-
-
 
 
 

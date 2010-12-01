@@ -92,6 +92,9 @@
 
 #ifndef LIST_LINK_H
 #define LIST_LINK_H 1
+
+#include <sys/types.h>
+
 /* list entry list sub-structure */
 
 typedef struct list_link
@@ -104,6 +107,16 @@ typedef struct list_link
   } list_link;
 
 typedef list_link tlist_head;
+
+/*
+** Simple struct to construct linked PID lists
+*/
+
+typedef struct pidl
+  {
+  pid_t        pid;
+  struct pidl *next;
+  } pidl;
 
 
 /* macros to clear list head or link */
@@ -131,6 +144,7 @@ extern void swap_link(list_link *, list_link *);
 extern int  is_linked(list_link *head, list_link *old);
 extern int  is_link_initialized(list_link *);
 extern void list_move(tlist_head *old, tlist_head *new);
+extern void free_pidlist(struct pidl *pl);
 
 #ifndef NDEBUG
 extern void *get_next(list_link, char *file, int line);

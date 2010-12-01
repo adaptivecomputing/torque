@@ -4591,10 +4591,13 @@ int start_process(
 
 				/* FIXME: temp debugging info */
 
-				sprintf(log_buffer, "about to move to taskset for job %s/%s.\n",
-								pjob->ji_qs.ji_jobid, nodeidbuf);
-
-				log_ext(-1, id, log_buffer, LOG_DEBUG);
+        if (LOGLEVEL >= 6)
+          {
+          sprintf(log_buffer, "about to move to taskset for job %s/%s.\n",
+            pjob->ji_qs.ji_jobid, nodeidbuf);
+          
+          log_ext(-1, id, log_buffer, LOG_DEBUG);
+          }
 
 				/* Move this mom process into the cpuset so the job will start in it. */
 

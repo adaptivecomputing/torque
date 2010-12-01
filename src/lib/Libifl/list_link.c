@@ -437,3 +437,23 @@ list_move(tlist_head *from, tlist_head *to)
     CLEAR_HEAD((*from));
     }
   }
+
+/**
+ * free a linked pid list
+ *
+ * @param pl - a pointer to a linked list of pidl structs
+ */
+
+void free_pidlist(
+
+  struct pidl *pl)
+
+  {
+  if(pl != NULL)
+    {
+    if(pl->next != NULL)
+      free_pidlist(pl->next);
+    free(pl);
+    }
+  } /* END free_pidlist() */
+

@@ -742,15 +742,6 @@ typedef struct infoent
 #define TI_STATE_DEAD    3
 
 
-/* Simple struct to construct linked PID lists  */
-
-typedef struct pidl
-  {
-  pid_t        pid;
-  struct pidl *next;
-  } pidl;
-
-
 /*
 **      Here is the set of commands for InterMOM (IM) requests.
 */

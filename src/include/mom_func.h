@@ -181,7 +181,7 @@ extern struct passwd *check_pwd(job *);
 extern int   send_sisters(job *, int);
 extern int   task_save(task *) ;
 extern void  DIS_rpp_reset(void);
-extern void  checkret(char **, int);
+extern void  checkret(char **, long);
 extern char *get_job_envvar(job *, char *);
 extern int   mom_open_socket_to_jobs_server(job* pjob, char *id, void (*message_hander)(int));
 
