@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <signal.h>
 #include <ctype.h>
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -183,7 +186,10 @@ int attempt_delete(
 
 
 
-void req_deletearray(struct batch_request *preq)
+void req_deletearray(
+    
+  struct batch_request *preq)
+
   {
   job_array *pa;
 
@@ -220,6 +226,10 @@ void req_deletearray(struct batch_request *preq)
       preq->rq_ind.rq_delete.rq_objname,
       log_buffer);
 
+#ifdef ENABLE_PTHREADS
+    /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
+
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
     return;
     }
@@ -235,6 +245,9 @@ void req_deletearray(struct batch_request *preq)
     if (num_skipped < 0)
       {
       /* ERROR */
+#ifdef ENABLE_PTHREADS
+      /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error in specified array range");
       return;
@@ -245,9 +258,17 @@ void req_deletearray(struct batch_request *preq)
     num_skipped = delete_whole_array(pa);
     }
 
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
+
   /* check if the array is gone */
   if ((pa = get_array(preq->rq_ind.rq_delete.rq_objname)) != NULL)
     {
+#ifdef ENABLE_PTHREADS
+    /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
+
     /* some jobs were not deleted.  They must have been running or had
        JOB_SUBSTATE_TRANSIT */
     if (num_skipped != 0)
@@ -269,7 +290,10 @@ void req_deletearray(struct batch_request *preq)
 
 
 
-static void post_delete(struct work_task *pwt)
+static void post_delete(
+    
+  struct work_task *pwt)
+
   {
   /* no op - do not reply to client */
   }
@@ -281,7 +305,10 @@ static void post_delete(struct work_task *pwt)
    if it has been less than 10 seconds or if there are jobs in
    other statest then req_deletearray is called again */
 
-void array_delete_wt(struct work_task *ptask)
+void array_delete_wt(
+    
+  struct work_task *ptask)
+
   {
 
   struct batch_request *preq;
@@ -336,6 +363,10 @@ void array_delete_wt(struct work_task *ptask)
 
       pjob = (job *)pa->jobs[i];
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
       num_jobs++;
 
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
@@ -362,6 +393,9 @@ void array_delete_wt(struct work_task *ptask)
             append_link(&pjob->ji_svrtask, &pwtnew->wt_linkobj, pwtnew);
             }
 
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
           }
         else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
           {
@@ -375,24 +409,29 @@ void array_delete_wt(struct work_task *ptask)
           {
           job_abt(&pjob, NULL);
           }
-
-        }
-
-      }
+        } /* END if (ji_substate == JOB_SUBSTATE_PRERUN) */
+      } /* END for each job in array */
 
     if (num_jobs == num_prerun)
       {
       reply_ack(preq);
       free(last_id);
       last_id = NULL;
+
+#ifdef ENABLE_PTHREADS
+      /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
+
       return;
       }
-
     }
 
-
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
 
   req_deletearray(preq);
 
+  } /* END array_delete_wt() */
 
-  }
+

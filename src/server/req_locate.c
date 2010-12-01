@@ -91,6 +91,9 @@
 #include "libpbs.h"
 #include <signal.h>
 #include <string.h>
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -132,6 +135,10 @@ void req_locatejob(
 
   if (pjob)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
     location = server_name;
     }
   else
@@ -173,3 +180,4 @@ void req_locatejob(
 
   return;
   }  /* END req_locatejob() */
+

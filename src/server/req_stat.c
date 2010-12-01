@@ -131,6 +131,12 @@ extern struct pbsnode *tfind_addr(const u_long, uint16_t, job *);
 
 extern int             LOGLEVEL;
 
+#ifdef ENABLE_PTHREADS
+extern pthread_mutex_t *svr_alljobs_mutex;
+/*extern pthread_mutex_t *svr_jobs_array_sum_mutex;*/
+extern pthread_mutex_t *netrates_mutex;
+#endif
+
 /* Extern Functions */
 
 int status_job(job *, struct batch_request *, svrattrl *, tlist_head *, int *);
@@ -187,18 +193,18 @@ enum TJobStatTypeEnum
   tjstLAST
   };
 
-void req_stat_job(
+void *req_stat_job(
 
-  struct batch_request *preq) /* ptr to the decoded request   */
+  void *vp)  /* ptr to the decoded request */
 
   {
+  struct stat_cntl     *cntl; /* see svrfunc.h  */
+  char                 *name;
+  job                  *pjob = NULL;
+  pbs_queue            *pque = NULL;
+  int                   rc = 0;
 
-  struct stat_cntl *cntl; /* see svrfunc.h  */
-  char     *name;
-  job     *pjob = NULL;
-  pbs_queue    *pque = NULL;
-  int      rc = 0;
-
+  struct batch_request *preq = (struct batch_request *)vp;
 
   enum TJobStatTypeEnum type = tjstNONE;
 
@@ -249,7 +255,10 @@ void req_stat_job(
         rc = PBSE_UNKJOBID;
         }
       }
-      
+#ifdef ENABLE_PTHREADS
+    if (pjob != NULL)
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif
     
     }
   else if (isalpha(name[0]))
@@ -284,7 +293,7 @@ void req_stat_job(
 
     req_reject(rc, 0, preq, NULL, NULL);
 
-    return;
+    return(NULL);
     }
 
   preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_Status;
@@ -297,7 +306,7 @@ void req_stat_job(
     {
     req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 
-    return;
+    return(NULL);
     }
 
   cntl->sc_type   = (int)type;
@@ -313,7 +322,7 @@ void req_stat_job(
 
   req_stat_job_step2(cntl); /* go to step 2, see if running is current */
 
-  return;
+  return(NULL);
   }  /* END req_stat_job() */
 
 
@@ -345,6 +354,7 @@ static void req_stat_job_step2(
   {
   svrattrl        *pal;
   job         *pjob = NULL;
+  job         *next = NULL;
 
   struct batch_request *preq;
 
@@ -362,7 +372,7 @@ static void req_stat_job_step2(
 
   static svrattrl      *dpal = NULL;
   
-  int job_array_index = 0;
+  int        job_array_index = 0;
   job_array *pa = NULL;
   
 
@@ -452,32 +462,58 @@ static void req_stat_job_step2(
           if ((type == tjstTruncatedServer) || (type == tjstTruncatedQueue))
             IsTruncated = TRUE;
 
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_lock(svr_alljobs_mutex);
+#endif
+
           pjob = (job *)GET_NEXT(svr_alljobs);
+
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(svr_alljobs_mutex);
+#endif
           }
+
         }    /* END if (pjob == NULL) */
       else
         {
         /* get next job */
 
         if (type == tjstJob)
+          {
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
           break;
+          }
 
         if (type == tjstQueue)
-          pjob = (job *)GET_NEXT(pjob->ji_jobque);
+          next = (job *)GET_NEXT(pjob->ji_jobque);
         else
-          pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+          {
+          next = (job *)GET_NEXT(pjob->ji_alljobs);
+          }
           
         if (type == tjstArray)
           {
-          pjob = NULL;
+          next = NULL;
           /* increment job_array_index until we find a non-null pointer or hit the end */
-          while (++job_array_index < pa->ai_qs.array_size && (pjob = pa->jobs[job_array_index]) == NULL)
+          while (++job_array_index < pa->ai_qs.array_size && (next = pa->jobs[job_array_index]) == NULL)
             ;
           }
         }
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+      pjob = next;
 
       if (pjob == NULL)
         break;
+#ifdef ENABLE_PTHREADS
+      else if (type != tjstJob)
+        pthread_mutex_lock(pjob->ji_mutex);
+#endif
 
       /* PBS_RESTAT_JOB defaults to 30 seconds */
 
@@ -490,6 +526,9 @@ static void req_stat_job_step2(
 
         if ((rc = stat_to_mom(pjob, cntl)) == PBSE_SYSTEM)
           {
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
           break;
           }
 
@@ -499,6 +538,11 @@ static void req_stat_job_step2(
 
           continue;
           }
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+        /*if (pa != NULL)*/
+          /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
 
         return; /* will pick up after mom replies */
         }
@@ -509,6 +553,11 @@ static void req_stat_job_step2(
 
     if (rc != 0)
       {
+#ifdef ENABLE_PTHREADS
+      if (pa != NULL)
+        /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
+
       free(cntl);
 
       reply_free(preply);
@@ -526,7 +575,17 @@ static void req_stat_job_step2(
 
   if (type == tjstSummarizeArraysQueue || type == tjstSummarizeArraysServer)
     {
+#ifdef ENABLE_PTHREADS
+    /*if (pa != NULL)*/
+      /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
+
     update_array_statuses();
+
+#ifdef ENABLE_PTHREADS
+    /*if (pa != NULL)*/
+      /*pthread_mutex_lock(pa->ai_mutex);*/
+#endif
     }
 
   if (type == tjstJob)
@@ -536,7 +595,17 @@ static void req_stat_job_step2(
   else if (type == tjstSummarizeArraysQueue)
     pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs_array_sum);
   else if (type == tjstSummarizeArraysServer)
+    {
+#ifdef ENABLE_PTHREADS
+    /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
+#endif
+
     pjob = (job *)GET_NEXT(svr_jobs_array_sum);
+
+#ifdef ENABLE_PTHREADS
+    /*pthread_mutex_unlock(svr_jobs_array_sum_mutex);*/
+#endif
+    }
   else if (type == tjstArray)
     {
     job_array_index = 0;
@@ -546,7 +615,23 @@ static void req_stat_job_step2(
         job_array_index++;
     }
   else
+    {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(svr_alljobs_mutex);
+#endif
+
     pjob = (job *)GET_NEXT(svr_alljobs);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_alljobs_mutex);
+#endif
+    }
+
+#ifdef ENABLE_PTHREADS
+  if ((pjob != NULL) &&
+      (type != tjstJob))
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif
 
   DTime = 0;
 
@@ -619,15 +704,26 @@ static void req_stat_job_step2(
       sentJobCounter = 0;
 
       /* loop through jobs in queue */
+#ifdef ENABLE_PTHREADS
+      if (pjob != NULL)
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
       for (pjob = (job *)GET_NEXT(pque->qu_jobs);
            pjob != NULL;
            pjob = (job *)GET_NEXT(pjob->ji_jobque))
         {
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
         if ((qjcounter >= qmaxreport) &&
             (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))
           {
           /* max_report of queued jobs reached for queue */
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
           continue;
           }
@@ -644,6 +740,11 @@ static void req_stat_job_step2(
         if ((rc != 0) && (rc != PBSE_PERM))
           {
           req_reject(rc, bad, preq, NULL, NULL);
+#ifdef ENABLE_PTHREADS
+          /*if (pa != NULL)*/
+            /*pthread_mutex_unlock(pa->ai_mutex);*/
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
           return;
           }
@@ -652,6 +753,10 @@ static void req_stat_job_step2(
 
         if (pjob->ji_qs.ji_state == JOB_STATE_QUEUED)
           qjcounter++;
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
         }    /* END for (pjob) */
 
       if (LOGLEVEL >= 5)
@@ -667,6 +772,10 @@ static void req_stat_job_step2(
           log_buffer);
         }
       }      /* END for (pque) */
+#ifdef ENABLE_PTHREADS
+    /*if (pa == NULL)*/
+      /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
 
     reply_send(preq);
 
@@ -696,6 +805,12 @@ static void req_stat_job_step2(
 
     if ((rc != 0) && (rc != PBSE_PERM))
       {
+#ifdef ENABLE_PTHREADS
+      /*if (pa != NULL)*/
+        /*pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
       req_reject(rc, bad, preq, NULL, NULL);
 
       return;
@@ -704,29 +819,51 @@ static void req_stat_job_step2(
     /* get next job */
 
 nextjob:
-
     if (type == tjstJob)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
       break;
+      }
 
     if (type == tjstQueue)
-      pjob = (job *)GET_NEXT(pjob->ji_jobque);
+      next = (job *)GET_NEXT(pjob->ji_jobque);
     else if (type == tjstSummarizeArraysQueue)
-      pjob = (job *)GET_NEXT(pjob->ji_jobque_array_sum);
+      next = (job *)GET_NEXT(pjob->ji_jobque_array_sum);
     else if (type == tjstSummarizeArraysServer)
-      pjob = (job *)GET_NEXT(pjob->ji_jobs_array_sum);
+      next = (job *)GET_NEXT(pjob->ji_jobs_array_sum);
     else if (type == tjstArray)
       {
-      pjob = NULL;
+      next = NULL;
       /* increment job_array_index until we find a non-null pointer or hit the end */
-      while (++job_array_index < pa->ai_qs.array_size && (pjob = pa->jobs[job_array_index]) == NULL)
+      while (++job_array_index < pa->ai_qs.array_size && (next = pa->jobs[job_array_index]) == NULL)
         ;
       }
     else
-      pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+      {
+      next = (job *)GET_NEXT(pjob->ji_alljobs);
+      }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+    pjob = next;
+
+#ifdef ENABLE_PTHREADS
+    if (pjob != NULL)
+      pthread_mutex_lock(pjob->ji_mutex);
+#endif
 
     rc = 0;
     }  /* END while (pjob != NULL) */
 
+#ifdef ENABLE_PTHREADS
+  /*if (pa != NULL)*/
+    /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
  
   reply_send(preq);
 
@@ -905,6 +1042,10 @@ static void stat_update(
 #endif    /* USESAVEDRESOURCES */
 
         pjob->ji_momstat = time_now;
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
         }
 
       pstatus = (struct brp_status *)GET_NEXT(pstatus->brp_stlink);
@@ -1521,6 +1662,9 @@ void req_stat_svr(
 
   nc = netcounter_get();
   sprintf(nc_buf, "%d %d %d", *nc, *(nc + 1), *(nc + 2));
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(netrates_mutex);
+#endif
   server.sv_attr[SRV_ATR_NetCounter].at_val.at_str = nc_buf;
   server.sv_attr[SRV_ATR_NetCounter].at_flags |= ATR_VFLAG_SET;
 
@@ -1587,8 +1731,12 @@ void req_stat_svr(
  * attributes.
  */
 
-static void
-update_state_ct(attribute *pattr, int *ct_array, char *buf)
+static void update_state_ct(
+    
+  attribute *pattr,
+  int *ct_array,
+  char *buf)
+
   {
   static char *statename[] = { "Transit", "Queued", "Held",
                                "Waiting", "Running", "Exiting"
@@ -1606,4 +1754,6 @@ update_state_ct(attribute *pattr, int *ct_array, char *buf)
   pattr->at_val.at_str = buf;
 
   pattr->at_flags |= ATR_VFLAG_SET;
-  }
+  } /* END update_state_ct() */
+
+

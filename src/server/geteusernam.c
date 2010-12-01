@@ -127,7 +127,8 @@ static char *geteusernam(
   struct array_strings *parst;
   char *pn;
   char *ptr;
-  static char username[PBS_MAXUSER + 1];
+  char  username[PBS_MAXUSER + 1];
+  char *ret_user;
 
   /* search the user-list attribute */
 
@@ -179,7 +180,10 @@ static char *geteusernam(
       strcpy(username, ptr);
     }
 
-  return(username);
+  ret_user = malloc(strlen(username) + 1);
+  strcpy(ret_user,username);
+
+  return(ret_user);
   }  /* END geteusernam() */
 
 
@@ -209,7 +213,8 @@ static char *getegroup(
   struct array_strings *parst;
   char *pn;
   char *ptr;
-  static char groupname[PBS_MAXUSER + 1];
+  char  groupname[PBS_MAXUSER + 1];
+  char *ret_group;
 
   /* search the group-list attribute */
 
@@ -251,7 +256,10 @@ static char *getegroup(
 
   get_jobowner(hit, groupname);
 
-  return(groupname);
+  ret_group = malloc(strlen(groupname) + 1);
+  strcpy(ret_group,groupname);
+
+  return(ret_group);
   }  /* END getegroup() */
 
 
@@ -282,29 +290,31 @@ int set_jobexid(
   char      *EMsg)    /* O (optional,minsize=1024) */
 
   {
-  int   addflags = 0;
-  attribute *pattr;
-  char        **pmem;
+  int             addflags = 0;
+  attribute      *pattr;
+  char          **pmem;
 
-  struct group *gpent;
-  char  *puser = NULL;
-  char  *id = "set_jobexid";
-  char *at;
-  char *usr_at_host = NULL;
-  int len;
+  struct group   *gpent;
+  int             free_puser = FALSE;
+  char           *puser = NULL;
+  char           *id = "set_jobexid";
+  char           *at;
+  char           *usr_at_host = NULL;
+  int             len;
 
 
-  struct passwd *pwent = NULL;
-  char  *pgrpn;
-  char   gname[PBS_MAXGRPN + 1];
+  struct passwd  *pwent = NULL;
+  char           *pgrpn;
+  int             free_pgrpn = TRUE;
+  char            gname[PBS_MAXGRPN + 1];
 #ifdef _CRAY
 
-  struct udb    *pudb;
+  struct udb     *pudb;
 #endif
 
-  char           tmpLine[1024 + 1];
+  char            tmpLine[1024 + 1];
 
-  int            CheckID;  /* boolean */
+  int             CheckID;  /* boolean */
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -366,6 +376,8 @@ int set_jobexid(
         return(PBSE_BADUSER);
         }
 
+      free_puser = TRUE;
+
       sprintf(tmpLine, "%s",
 
               puser);
@@ -383,6 +395,8 @@ int set_jobexid(
       pattr = attrry + JOB_ATR_userlst;
     else
       pattr = &pjob->ji_wattr[JOB_ATR_userlst];
+
+    free_puser = TRUE;
 
     if ((puser = geteusernam(pjob, pattr)) == NULL)
       {
@@ -405,6 +419,8 @@ int set_jobexid(
       if (EMsg != NULL)
         snprintf(EMsg,1024,"%s",log_buffer);
 
+      free(puser);
+
       return(PBSE_BADUSER);
       }
 
@@ -413,6 +429,9 @@ int set_jobexid(
       /* add check here for virtual user */
       if (pjob->ji_wattr[JOB_ATR_proxy_user].at_flags & ATR_VFLAG_SET)
         {
+        free(puser);
+        free_puser = FALSE;
+
         puser = pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str;
 
         pwent = getpwnam(puser);
@@ -507,11 +526,17 @@ int set_jobexid(
         snprintf(EMsg, 1024, "user %s not located in user data base",
                  puser);
 
+      if (free_puser == TRUE)
+        free(puser);
+
       return(PBSE_BADUSER);
       }
 
     if (pudb->ue_permbits & (PERMBITS_NOBATCH | PERMBITS_RESTRICTED))
       {
+      if (free_puser == TRUE)
+        free(puser);
+
       return(PBSE_QACESS);
       }
 
@@ -551,6 +576,8 @@ int set_jobexid(
 
   if (pgrpn == NULL)
     {
+    free_pgrpn = FALSE;
+
     if ((pwent != NULL) || ((pwent = getpwnam(puser)) != NULL))
       {
       /* egroup not specified - use user login group */
@@ -581,6 +608,9 @@ int set_jobexid(
 
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "user does not exist in server password file");
+
+      if (free_puser == TRUE)
+        free(puser);
 
       return(PBSE_BADUSER);
       }
@@ -620,6 +650,11 @@ int set_jobexid(
           snprintf(EMsg, 1024, "cannot locate group %s in server group file",
                    pgrpn);
 
+      if (free_puser == TRUE)
+        free(puser);
+
+      free(pgrpn);
+
       return(PBSE_BADGRP);  /* no such group */
       }
 
@@ -650,6 +685,11 @@ int set_jobexid(
         if (EMsg != NULL)
           snprintf(EMsg, 1024, "%s",log_buffer);
 
+        if (free_puser == TRUE)
+          free(puser);
+
+        free(pgrpn);
+
         return(PBSE_BADGRP); /* user not in group */
         }
       }
@@ -666,6 +706,11 @@ int set_jobexid(
   pattr->at_flags |= addflags;
 
   /* SUCCESS */
+  if (free_puser == TRUE)
+    free(puser);
+
+  if (free_pgrpn == TRUE)
+    free(pgrpn);
 
   return(0);
   }  /* END set_jobexid() */

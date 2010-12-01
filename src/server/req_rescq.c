@@ -116,8 +116,10 @@ resource_t next_resource_tag;
  * Currently only recognizes "nodes"
  */
 
-void
-req_rescq(struct batch_request *preq)
+void req_rescq(
+    
+  struct batch_request *preq)
+
   {
   int i;
   char *pn;
@@ -201,8 +203,10 @@ req_rescq(struct batch_request *preq)
  * Reserve a set of resources (only "nodes" for now)
  */
 
-void
-req_rescreserve(struct batch_request *preq)
+void req_rescreserve(
+    
+  struct batch_request *preq)
+
   {
   int i;
   int freeold = 0;
@@ -297,8 +301,10 @@ req_rescreserve(struct batch_request *preq)
  * req_rescfree - Free a reserved set of resources
  */
 
-void
-req_rescfree(struct batch_request *preq)
+void req_rescfree(
+    
+  struct batch_request *preq)
+
   {
   if ((preq->rq_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)) == 0)
     {
@@ -310,3 +316,4 @@ req_rescfree(struct batch_request *preq)
 
   reply_ack(preq);
   }
+

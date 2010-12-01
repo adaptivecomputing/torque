@@ -103,7 +103,11 @@
 #include "queue.h"
 #include "svrfunc.h"
 #include "log.h"
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
 
+extern pthread_mutex_t *setup_save_mutex;
+#endif
 
 /* data global to this file */
 
@@ -153,6 +157,15 @@ int que_save(
     }
 
   /* set up save buffering system */
+#ifdef ENABLE_PTHREADS
+  if (setup_save_mutex == NULL)
+    {
+    setup_save_mutex = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(setup_save_mutex,NULL);
+    }
+
+  pthread_mutex_lock(setup_save_mutex);
+#endif
 
   save_setup(fds);
 
@@ -163,6 +176,10 @@ int que_save(
     log_err(-1, myid, "save_struct failed");
 
     close(fds);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(setup_save_mutex);
+#endif
 
     return(-1);
     }
@@ -175,6 +192,10 @@ int que_save(
 
     close(fds);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(setup_save_mutex);
+#endif
+
     return(-1);
     }
 
@@ -182,8 +203,15 @@ int que_save(
     {
     log_err(-1, myid, "save_flush failed");
     (void)close(fds);
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(setup_save_mutex);
+#endif
     return (-1);
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(setup_save_mutex);
+#endif
 
   (void)close(fds);
 

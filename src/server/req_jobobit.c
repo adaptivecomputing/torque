@@ -90,6 +90,9 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif 
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -329,9 +332,10 @@ static int is_joined(
 
 
 static struct batch_request *return_stdfile(
-        struct batch_request *preq,
-        job                  *pjob,
-        enum job_atr          ati)
+
+  struct batch_request *preq,
+  job                  *pjob,
+  enum job_atr          ati)
 
   {
 
@@ -380,9 +384,9 @@ static struct batch_request *return_stdfile(
 
 static struct batch_request *cpy_stdfile(
 
-        struct batch_request *preq,
-        job                  *pjob,
-        enum job_atr         ati) /* JOB_ATR_ output or error path */
+  struct batch_request *preq,
+  job                  *pjob,
+  enum job_atr         ati) /* JOB_ATR_ output or error path */
 
   {
   char *from;
@@ -518,10 +522,10 @@ static struct batch_request *cpy_stdfile(
 
 struct batch_request *cpy_stage(
 
-        struct batch_request *preq,
-        job       *pjob,
-        enum job_atr       ati,  /* JOB_ATR_stageout */
-        int        direction) /* 1 = , 2 = */
+  struct batch_request *preq,
+  job       *pjob,
+  enum job_atr       ati,  /* JOB_ATR_stageout */
+  int        direction) /* 1 = , 2 = */
 
   {
   int        i;
@@ -638,8 +642,8 @@ int mom_comm(
 
     if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0)
       {
-      pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(
-                                                parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy));
+      char *tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
+      pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(tmp);
       }
 
     pjob->ji_momhandle = svr_connect(
@@ -767,11 +771,22 @@ void on_job_exit(
     pjob = (job *)preq->rq_extra;
     }
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
 #ifdef VNODETESTING
   /* FIXME: there might be a race with calling on_job_exit after a job has
    * already been free'd.  This is temp code */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_alljobs_mutex);
+#endif
 
   pj = (job *)GET_NEXT(svr_alljobs);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_alljobs_mutex);
+#endif
 
   while (pj != NULL)
     {
@@ -813,6 +828,9 @@ void on_job_exit(
     ((handle = mom_comm(pjob,on_job_exit)) < 0))
     {
     /* FAILURE - cannot connect to mom */
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
     return;
     }
@@ -991,6 +1009,10 @@ void on_job_exit(
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
             }
 
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
           return;
           }
 
@@ -1028,7 +1050,6 @@ void on_job_exit(
       svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEOUT);
 
       ptask->wt_type = WORK_Immed;
-
 
       /* NO BREAK -- FALL INTO NEXT CASE */
 
@@ -1074,9 +1095,11 @@ void on_job_exit(
 
           if (issue_Drequest(handle, preq, on_job_exit, 0) == 0)
             {
-
             /* request sucessfully sent, we'll come back to this function
                when mom replies */
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
             return;
             }
@@ -1128,6 +1151,10 @@ void on_job_exit(
             {
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
             }
+
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
           return;
           }
@@ -1302,12 +1329,14 @@ void on_job_exit(
           if (issue_Drequest(handle, preq, on_job_exit, 0) == 0)
             {
             /* request issued,  we'll come back when mom replies */
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
             return;
             }
 
           /* FAILURE */
-
           if (LOGLEVEL >= 2)
             {
             log_event(
@@ -1321,7 +1350,6 @@ void on_job_exit(
 
           /* set up as if mom returned error since the issue_Drequest
              failed */
-
           preq->rq_reply.brp_code = PBSE_MOMREJECT;
           preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
 
@@ -1339,6 +1367,9 @@ void on_job_exit(
             {
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
             }
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
           return;
           }
@@ -1474,6 +1505,10 @@ void on_job_exit(
                   pjob->ji_qs.ji_jobid,
                   log_buffer);
                 }
+#ifdef ENABLE_PTHREADS
+              pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
               return;
               }
             /* 
@@ -1501,6 +1536,10 @@ void on_job_exit(
                   pjob->ji_qs.ji_jobid,
                   log_buffer);
                 }
+#ifdef ENABLE_PTHREADS
+              pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
               return;
               }
             }
@@ -1541,8 +1580,8 @@ void on_job_exit(
         {
         /* first time in */
 
-        if (((server.sv_attr[SRV_ATR_JobMustReport].at_flags & ATR_VFLAG_SET) != 0)
-          && (server.sv_attr[SRV_ATR_JobMustReport].at_val.at_long > 0))
+        if (((server.sv_attr[SRV_ATR_JobMustReport].at_flags & ATR_VFLAG_SET) != 0) &&
+             (server.sv_attr[SRV_ATR_JobMustReport].at_val.at_long > 0))
           {
           MustReport = TRUE;
           pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 0;
@@ -1553,8 +1592,8 @@ void on_job_exit(
           job_save(pjob,SAVEJOB_FULL, 0);
           }
         }
-      else if (((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0)
-        && (pjob->ji_wattr[JOB_ATR_reported].at_val.at_long == 0))
+      else if (((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
+                (pjob->ji_wattr[JOB_ATR_reported].at_val.at_long == 0))
         {
         MustReport = TRUE;
         }
@@ -1656,6 +1695,11 @@ void on_job_exit(
       break;
     }  /* END switch (pjob->ji_qs.ji_substate) */
 
+#ifdef ENABLE_PTHREADS
+  if (!PurgeIt)
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
   return;
   }  /* END on_job_exit() */
 
@@ -1699,8 +1743,16 @@ void on_job_rerun(
     pjob = (job *)preq->rq_extra;
     }
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
   if ((handle = mom_comm(pjob, on_job_rerun)) < 0)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
     return;
     }
 
@@ -1726,6 +1778,10 @@ void on_job_rerun(
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
             }
 
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
           return;
           }
 
@@ -1737,6 +1793,9 @@ void on_job_rerun(
 
         if (preq == NULL)
           {
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
           return;
           }
 
@@ -1747,6 +1806,9 @@ void on_job_rerun(
         if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
           {
           /* request ok, will come back when its done */
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
           return;
           }
@@ -1823,6 +1885,9 @@ void on_job_rerun(
 
           if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
             {
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pjob->ji_mutex);
+#endif
             return;  /* come back when mom replies */
             }
 
@@ -1850,6 +1915,9 @@ void on_job_rerun(
             {
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
             }
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
           return;
           }
@@ -1930,6 +1998,9 @@ void on_job_rerun(
 
           if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
             {
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pjob->ji_mutex);
+#endif
             return;
             }
 
@@ -1951,6 +2022,9 @@ void on_job_rerun(
             {
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
             }
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
           return;
           }
@@ -2054,6 +2128,10 @@ void on_job_rerun(
 
       break;
     }  /* END switch (pjob->ji_qs.ji_substate) */
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
   return;
   }  /* END on_job_rerun() */
@@ -2245,6 +2323,7 @@ void req_jobobit(
   int    newstate;
   int    newsubst;
   char   *pc;
+  char   *tmp;
   job    *pjob;
   char   jobid[PBS_MAXSVRJOBID+1];
 
@@ -2255,9 +2334,10 @@ void req_jobobit(
   strcpy(jobid, preq->rq_ind.rq_jobobit.rq_jid);  /* This will be needed later for logging after preq is freed. */
   pjob = find_job(preq->rq_ind.rq_jobobit.rq_jid);
 
+  tmp = parse_servername(preq->rq_host, &dummy);
+
   if ((pjob == NULL) ||
-      (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != get_hostaddr(
-         parse_servername(preq->rq_host, &dummy))))
+      (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != get_hostaddr(tmp)))
     {
     /* not found or from wrong node */
 
@@ -2287,8 +2367,17 @@ void req_jobobit(
       jobid,
       log_buffer);
 
+#ifdef ENABLE_PTHREADS
+    if (pjob != NULL)
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+    free(tmp);
+
     return;
     }  /* END if ((pjob == NULL) || ...) */
+
+  free(tmp);
 
   if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
     {
@@ -2325,6 +2414,10 @@ void req_jobobit(
       NULL,
       NULL);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
     return;
     }  /* END if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) */
 
@@ -2339,6 +2432,9 @@ void req_jobobit(
       {
       req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
       }
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
     return;
     }
@@ -2424,6 +2520,10 @@ void req_jobobit(
         PBS_EVENTCLASS_REQUEST,
         id,
         log_buffer);
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
       return;
       }
@@ -2567,6 +2667,10 @@ void req_jobobit(
 
         svr_disconnect(pjob->ji_momhandle);
 
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
         return;
 
         /*NOTREACHED*/
@@ -2652,8 +2756,17 @@ void req_jobobit(
     if ((pjob->ji_arraystruct != NULL) &&
         (pjob->ji_is_array_template == FALSE))
       {
-      update_array_values(pjob->ji_arraystruct,
-        pjob,JOB_STATE_RUNNING,aeTerminate);
+      job_array *pa = pjob->ji_arraystruct;
+
+#ifdef ENABLE_PTHREADS
+      /*pthread_mutex_lock(pa->ai_mutex);*/
+#endif
+
+      update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
+
+#ifdef ENABLE_PTHREADS
+      /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
       }
 
     if (ptask != NULL)
@@ -2702,6 +2815,10 @@ void req_jobobit(
       svr_setjobstate(pjob, newstate, newsubst);
 
       svr_disconnect(pjob->ji_momhandle);
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
       return;
       }
@@ -2764,6 +2881,10 @@ void req_jobobit(
       jobid,
       "req_jobobit completed");
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
   return;
   }  /* END req_jobobit() */

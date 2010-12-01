@@ -99,7 +99,10 @@
 #include "server_limits.h"
 #include "list_link.h"
 #include "work_task.h"
+#include "utils.h"
 
+
+extern void check_nodes(struct work_task *);
 
 /* Global Data Items: */
 
@@ -187,6 +190,27 @@ struct work_task *set_task(
 
 
 
+/* 
+ * checks if the task has been queued into a threadpool
+ * right now, check_nodes is the only one done that way, but all
+ * future ones should be added here
+ */
+
+int task_is_in_threadpool(
+
+  struct work_task *ptask)
+
+  {
+  if (ptask->wt_func == check_nodes)
+    return(TRUE);
+
+  return(FALSE);
+  } /* END task_is_in_threadpool() */
+
+
+
+
+
 /*
  * dispatch_task - dispatch a work task found on a work list
  *
@@ -205,7 +229,9 @@ void dispatch_task(
   if (ptask->wt_func != NULL)
     ptask->wt_func(ptask);  /* dispatch process function */
 
-  free(ptask);
+  /* some tasks are executed as threads and these will be freed there */
+  if (task_is_in_threadpool(ptask) == FALSE)
+    free(ptask);
 
   return;
   }  /* END dispatch_task() */

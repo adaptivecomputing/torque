@@ -144,8 +144,10 @@ static int  svr_numnodes = 0; /* number of nodes currently available (global!!! 
 static int  svr_numcfgnodes = 0;   /* number of nodes currently configured (global!!! - set in node_spec) */
 static int  exclusive;  /* node allocation type */
 
-static FILE  *nstatef = NULL;
 static int       num_addrnote_tasks = 0; /* number of outstanding send_cluster_addrs tasks */
+#ifdef ENABLE_PTHREADS
+pthread_mutex_t *addrnote_mutex = NULL;
+#endif
 
 extern int  server_init_type;
 extern int  has_nodes;
@@ -203,8 +205,7 @@ extern void done_servicing(int);
 
 */
 
-static void
-funcs_dis(void)  /* The equivalent of DIS_tcp_funcs() */
+static void funcs_dis(void)  /* The equivalent of DIS_tcp_funcs() */
 
   {
   if (dis_getc != rpp_getc)
@@ -708,19 +709,29 @@ job *find_job_by_node(
         for (jp = np->jobs; jp != NULL; jp = jp->next)
           {
           if ((jp->job != NULL) &&
-              (jp->job->ji_qs.ji_jobid != NULL) &&
-              (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0))
+              (jp->job->ji_qs.ji_jobid != NULL))
             {
-            /* desired job located on node */
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_lock(jp->job->ji_mutex);
+#endif 
 
-            pjob = jp->job;
-
-            break;
+            if (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0)
+              {
+              /* desired job located on node */
+              
+              pjob = jp->job;
+              
+              break;
+              }
             }
 
           /* leave loop if we found the job */
           if (pjob != NULL)
             break;
+
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(jp->job->ji_mutex);
+#endif
           }
 
         /* leave loop if we found a job */
@@ -739,19 +750,28 @@ job *find_job_by_node(
       for (jp = np->jobs;jp != NULL;jp = jp->next)
         {
         if ((jp->job != NULL) &&
-            (jp->job->ji_qs.ji_jobid != NULL) &&
-            (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0))
+            (jp->job->ji_qs.ji_jobid != NULL))
           {
-          /* desired job located on node */
-
-          pjob = jp->job;
-
-          break;
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_lock(jp->job->ji_mutex);
+#endif 
+          if (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0)
+            {
+            /* desired job located on node */
+            
+            pjob = jp->job;
+            
+            break;
+            }
           }
 
         /* leave lopp if we found a job */
         if (pjob != NULL)
           break;
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(jp->job->ji_mutex);
+#endif
         }
       }    /* END for (np) */
     }
@@ -838,12 +858,22 @@ void sync_node_jobs(
 
           if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
             {
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pjob->ji_mutex);
+#endif
             pjob = NULL;
             }
           else if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, np->nd_name) == NULL)
             {
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pjob->ji_mutex);
+#endif
             pjob = NULL;
             }
+#ifdef ENABLE_PTHREADS
+          else
+            pthread_mutex_unlock(pjob->ji_mutex);
+#endif
           }
 
         if (pjob == NULL)
@@ -889,6 +919,10 @@ void sync_node_jobs(
 
           DIS_rpp_reset();
           }
+#ifdef ENABLE_PTHREADS
+        else
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif
         }
       }
 
@@ -1002,6 +1036,9 @@ void update_job_data(
 
           attr_name = strtok(NULL, "=");
           }
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
         }
       else if (pjob == NULL)
         {
@@ -1034,12 +1071,17 @@ void send_cluster_addrs(
 
   struct work_task *ptask)
   {
-  char id[] = "send_cluster_addrs";
-  static int startcount = 0;
+  static char     id[] = "send_cluster_addrs";
+  static int      startcount = 0;
 
   struct pbsnode *np;
-  new_node *nnew;
-  int i, ret;
+  new_node       *nnew;
+  int             i; 
+  int             ret;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(addrnote_mutex);
+#endif
 
   num_addrnote_tasks--;
 
@@ -1050,6 +1092,10 @@ void send_cluster_addrs(
     DBPRT(("%s: not sending addrs yet, %d tasks exist\n",
            id,
            num_addrnote_tasks));
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(addrnote_mutex);
+#endif
 
     startcount = 0;
 
@@ -1151,6 +1197,11 @@ void send_cluster_addrs(
     /* reset startcount, as we've sent the updates for all servers */
     startcount = 0;
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(addrnote_mutex);
+#endif
+
   }     /* END send_cluster_addrs */
 
 
@@ -1211,7 +1262,21 @@ void setup_notification(char *pname)
     send_cluster_addrs,
     NULL);
 
+#ifdef ENABLE_PTHREADS
+  if (addrnote_mutex == NULL)
+    {
+    addrnote_mutex = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(addrnote_mutex,NULL);
+    }
+
+  pthread_mutex_lock(addrnote_mutex);
+#endif
+
   num_addrnote_tasks++;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(addrnote_mutex);
+#endif
 
   return;
   }
@@ -1860,12 +1925,15 @@ int add_cluster_addrs(
 
       if (LOGLEVEL >= 8)
         {
+        char *tmp = netaddr_pbs_net_t(ipaddr);
         sprintf(log_buffer, "adding node[%d] interface[%d] %s to hello response",
                 i,
                 j,
-                netaddr_pbs_net_t(ipaddr));
+                tmp);
 
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
+
+        free(tmp);
         }
 
       ret = diswul(stream, ipaddr);
@@ -1887,7 +1955,6 @@ int add_cluster_addrs(
 
 /*
  * wrapper task that check_nodes places in the thread pool's queue
- * MULTITHREADED BABY
  */
 void *check_nodes_work(
 
@@ -1923,12 +1990,18 @@ void *check_nodes_work(
 
   while ((np = next_node(&iter)) != NULL)
     {
-    if (np->nd_state & (INUSE_DELETED | INUSE_DOWN))
-      continue;
-
 #ifdef ENABLE_PTHREADS
     pthread_mutex_lock(np->nd_mutex);
 #endif
+
+    if (np->nd_state & (INUSE_DELETED | INUSE_DOWN))
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(np->nd_mutex);
+#endif
+
+      continue;
+      }
 
     if (np->nd_lastupdate < (time_now - chk_len)) 
       {
@@ -1962,8 +2035,11 @@ void *check_nodes_work(
       NULL);
     }
 
+  /* since this is done via threading, we now free the task here */
+  free(ptask);
+
   return(NULL);
-  }
+  } /* check_nodes_work() */
 
 
 
@@ -2533,10 +2609,22 @@ void *write_node_state_work(
 
   {
   struct pbsnode *np;
-  static char *fmt = "%s %d\n";
+  static char    *fmt = "%s %d\n";
+  static FILE    *nstatef = NULL;
   int i;
 
   int   savemask;
+#ifdef ENABLE_PTHREADS
+  static pthread_mutex_t *node_state_mutex = NULL;
+
+  if (node_state_mutex == NULL)
+    {
+    node_state_mutex = malloc(sizeof(node_state_mutex));
+    pthread_mutex_init(node_state_mutex,NULL);
+    }
+
+  pthread_mutex_lock(node_state_mutex);
+#endif
 
   if (LOGLEVEL >= 5)
     {
@@ -2555,6 +2643,9 @@ void *write_node_state_work(
       {
       log_err(errno, "write_node_state", "could not truncate file");
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(node_state_mutex);
+#endif
       return(NULL);
       }
     }
@@ -2569,6 +2660,9 @@ void *write_node_state_work(
         "write_node_state",
         "could not open file");
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(node_state_mutex);
+#endif
       return(NULL);
       }
     }
@@ -2610,6 +2704,10 @@ void *write_node_state_work(
     {
     log_err(errno, "write_node_state", "failed saving node state to disk");
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(node_state_mutex);
+#endif
 
   return(NULL);
   } /* END write_node_state_work() */

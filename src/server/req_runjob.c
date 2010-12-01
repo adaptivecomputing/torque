@@ -91,6 +91,9 @@
 #include <netdb.h>
 #include <errno.h>
 #include <time.h>
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -118,8 +121,8 @@
 
 /* External Functions Called: */
 
-extern int                   send_job(job *, pbs_net_t, int, int, void (*x)(), struct batch_request *);
-extern void                  set_resc_assigned(job *, enum batch_op);
+extern int  send_job(job *, pbs_net_t, int, int, void (*x)(), struct batch_request *);
+extern void set_resc_assigned(job *, enum batch_op);
 
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 void                         stream_eof(int, u_long, uint16_t, int);
@@ -236,6 +239,10 @@ void req_runjob(
       (pjob->ji_is_array_template == FALSE))
     {
     job_array *pa = pjob->ji_arraystruct;
+
+#ifdef ENABLE_PTHREADS
+    /*pthread_mutex_lock(pa->ai_mutex);*/
+#endif
     
     if ((pa->ai_qs.slot_limit < 0) ||
         (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running))
@@ -251,8 +258,16 @@ void req_runjob(
       
       req_reject(PBSE_IVALREQ,0,preq,NULL,log_buffer);
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob->ji_mutex);
+      /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
+
       return;
       }
+#ifdef ENABLE_PTHREADS
+    /*pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
     }
 
   /* NOTE:  nodes assigned to job in svr_startjob() */
@@ -275,6 +290,10 @@ void req_runjob(
       }
     }
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
   return;
   }  /* END req_runjob() */
 
@@ -286,7 +305,7 @@ void req_runjob(
 
 static int is_checkpoint_restart(
 
-  job                  *pjob)     /* I */
+  job *pjob)     /* I */
 
   {
 #if 0
@@ -391,6 +410,10 @@ static void post_checkpointsend(
 
       svr_strtjob2(pjob, NULL);
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
     }    /* END if (pjob != NULL) */
 
   release_req(pwt); /* close connection and release request */
@@ -499,6 +522,10 @@ void req_stagein(
     log_err(-1, "req_stagein", "stage-in information not set");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
+ 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
     return;
     }
@@ -513,6 +540,10 @@ void req_stagein(
 
     req_reject(rc, 0, preq, NULL, NULL);
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
   return;
   }  /* END req_stagein() */
@@ -609,6 +640,10 @@ static void post_stagein(
         svr_setjobstate(pjob, newstate, newsub);
         }
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
     }    /* END if (pjob != NULL) */
 
   release_req(pwt); /* close connection and release request */
@@ -1143,6 +1178,10 @@ static void post_sendmom(
   int    jindex;
   long DTime = time_now - 10000;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(jobp->ji_mutex);
+#endif
+
   if (LOGLEVEL >= 6)
     {
     log_record(
@@ -1363,6 +1402,10 @@ static void post_sendmom(
       }
     }  /* END switch (r) */
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(jobp->ji_mutex);
+#endif
+
   return;
   }  /* END post_sendmom() */
 
@@ -1413,6 +1456,10 @@ static job *chk_job_torun(
 
     req_reject(PBSE_BADSTATE, 0, preq, NULL, "job already running");
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
     return(NULL);
     }
 
@@ -1424,6 +1471,10 @@ static job *chk_job_torun(
 
       req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
       return(NULL);
       }
     }
@@ -1433,6 +1484,10 @@ static job *chk_job_torun(
     /* FAILURE - run request not authorized */
 
     req_reject(PBSE_PERM, 0, preq, NULL, NULL);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
     return(NULL);
     }
@@ -1444,6 +1499,10 @@ static job *chk_job_torun(
     log_err(-1, id, "attempt to start job in non-execution queue");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "job not in execution queue");
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
     return(NULL);
     }
@@ -1473,6 +1532,9 @@ static job *chk_job_torun(
         else
           req_reject(PBSE_EXECTHERE, 0, preq, NULL, "allocated nodes must match input file stagein location");
 
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
         return(NULL);
         }
       }
@@ -1490,6 +1552,9 @@ static job *chk_job_torun(
         {
         req_reject(PBSE_EXECTHERE, 0, preq, FailHost, EMsg);
 
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
         return(NULL);
         }
       }
@@ -1515,6 +1580,10 @@ static job *chk_job_torun(
       /* FAILURE - cannot assign correct hosts */
 
       req_reject(rc, 0, preq, FailHost, EMsg);
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
       return(NULL);
       }
@@ -1570,7 +1639,12 @@ static job *chk_job_torun(
 /* set_mother_superior_ports - The first host in list is the host
    of Mother Superior. Find the mom manager and service ports
    from the pbsndlist and then set the pjob mom ports accordingly */
-int set_mother_superior_ports(job *pjob, char *list)
+
+int set_mother_superior_ports(
+    
+  job *pjob,
+  char *list)
+
   {
   char ms[PBS_MAXHOSTNAME];
   char *ptr;
@@ -1756,6 +1830,7 @@ static int assign_hosts(
   if (rc == 0)
     {
     /* set_nodes succeeded */
+    char *tmp;
 
     if (set_exec_host != 0)
       {
@@ -1789,11 +1864,11 @@ static int assign_hosts(
       portlist = pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str;
       }
 
-    strncpy(
+    tmp = parse_servername(hosttoalloc, &dummy);
 
-      pjob->ji_qs.ji_destin,
-      parse_servername(hosttoalloc, &dummy),
-      PBS_MAXROUTEDEST);
+    strncpy(pjob->ji_qs.ji_destin,tmp,PBS_MAXROUTEDEST);
+
+    free(tmp);
 
     if (momaddr == 0)
       {

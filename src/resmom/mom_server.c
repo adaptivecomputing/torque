@@ -2080,17 +2080,20 @@ void is_request(
 
         if (LOGLEVEL >= 4)
           {
-          char tmpLine[1024];
+          char  tmpLine[1024];
+          char *tmp = netaddr_pbs_net_t(ipaddr);
 
           sprintf(tmpLine, "%s:\t%s added to okclients",
                   id,
-                  netaddr_pbs_net_t(ipaddr));
+                  tmp);
 
           log_record(
             PBSEVENT_ERROR,
             PBS_EVENTCLASS_JOB,
             id,
             tmpLine);
+
+          free(tmp);
           }
         }  /* END for (;;) */
 

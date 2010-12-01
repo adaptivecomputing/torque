@@ -34,7 +34,13 @@ struct array_info_v1
   
 
 
-int array_upgrade(job_array *pa, int fds, int version, int *old_version)
+int array_upgrade(
+    
+  job_array *pa,
+  int        fds,
+  int        version,
+  int       *old_version)
+
   {
 
   /* reset the file descriptor */

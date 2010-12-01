@@ -206,6 +206,9 @@ static char *check_que_attr(
   return ((char *)0); /* all attributes are ok */
   } /* END check_que_attr() */
 
+
+
+
 /*
  * check_que_enable - check if attempt to enable incompletely defined queue
  * This is the at_action() routine for QA_ATR_Enabled

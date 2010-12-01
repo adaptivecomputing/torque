@@ -95,6 +95,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -129,6 +132,10 @@ void req_connect(
   {
   int  sock = preq->rq_conn;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_conn[sock].cn_mutex);
+#endif
+
   if (svr_conn[sock].cn_authen == 0)
     {
     reply_ack(preq);
@@ -137,12 +144,23 @@ void req_connect(
     {
     req_reject(PBSE_BADCRED, 0, preq, NULL, NULL);
     }
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+#endif
 
   return;
   }  /* END req_connect() */
 
-int get_encode_host(int s, char *munge_buf, struct batch_request *preq)
-{
+
+
+
+int get_encode_host(
+  
+  int s, 
+  char *munge_buf, 
+  struct batch_request *preq)
+  
+  {
   char *ptr;
   char host_name[PBS_MAXHOSTNAME];
   int i;
@@ -167,18 +185,27 @@ int get_encode_host(int s, char *munge_buf, struct batch_request *preq)
   memset(host_name, 0, PBS_MAXHOSTNAME);
   i = 0;
   while(*ptr != SPACE && !isspace(*ptr))
-	{
-	host_name[i++] = *ptr;
-	ptr++;
-	}
+    {
+    host_name[i++] = *ptr;
+    ptr++;
+    }
 
   strcpy(conn_credent[s].hostname, host_name);
+
   return(0);
+  } /* END get_encode_host() */
 
-}
 
-int get_UID(int s, char *munge_buf, struct batch_request *preq)
-{
+
+
+
+int get_UID(
+    
+  int s, 
+  char *munge_buf, 
+  struct batch_request *preq)
+  
+  {
   char *ptr;
   char user_name[PBS_MAXHOSTNAME];
   int i;
@@ -207,11 +234,17 @@ int get_UID(int s, char *munge_buf, struct batch_request *preq)
 	  }
 
 	strcpy(conn_credent[s].username, user_name);
-	return(0);
+	
+  return(0);
+  }
 
-}
 
-int unmunge_request(int s, struct batch_request *preq)
+
+int unmunge_request(
+    
+  int s,
+  struct batch_request *preq)
+ 
   {
   time_t myTime;
   struct timeval tv;
@@ -289,88 +322,87 @@ int unmunge_request(int s, struct batch_request *preq)
 
   pid = fork();
   if (pid != 0)
-	  {
-	  /* This is the parent*/
-	  /* set up the pipe to be able to read from the child */
-	  close(fd_pipe[1]);
-	  
-	  memset(buf, 0, MUNGE_SIZE);
-	  memset(munge_buf, 0, MUNGE_SIZE);
-	  ptr = munge_buf; 
-	  
-	  do
-	    {
-	    bytes_read = read(fd_pipe[0], buf, MUNGE_SIZE);
-	    if (bytes_read > 0)
-	  	  {
-	  	  total_bytes_read += bytes_read;
-	  	  memcpy(ptr, buf, bytes_read);
+    {
+    /* This is the parent*/
+    /* set up the pipe to be able to read from the child */
+    close(fd_pipe[1]);
+    
+    memset(buf, 0, MUNGE_SIZE);
+    memset(munge_buf, 0, MUNGE_SIZE);
+    ptr = munge_buf; 
+    
+    do
+      {
+      bytes_read = read(fd_pipe[0], buf, MUNGE_SIZE);
+      if (bytes_read > 0)
+        {
+        total_bytes_read += bytes_read;
+        memcpy(ptr, buf, bytes_read);
 	  	  ptr += bytes_read;
 	  	  }
 	    } while(bytes_read > 0);
 	  
-	    if (bytes_read == -1)
-	  	  {
-	  	  /* read failed */
-	  	  unlink(mungeFileName);
-	  	  req_reject(PBSE_SYSTEM, 0, preq, NULL, "error reading unmunge data");
-	  		close(fd_pipe[0]);
-	  	  return(-1);
-	  	  }
+    if (bytes_read == -1)
+      {
+      /* read failed */
+      unlink(mungeFileName);
+      req_reject(PBSE_SYSTEM, 0, preq, NULL, "error reading unmunge data");
+      close(fd_pipe[0]);
+      return(-1);
+      }
+    
+    
+    if (total_bytes_read == 0)
+      {
+      /* unmunge failed. Probably a bad credential. But we do not know */
+      req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not unmunge credentials");
+      unlink(mungeFileName);
+      close(fd_pipe[0]);
+      return(-1);
+      }
+    
+    rc = get_encode_host(s, munge_buf, preq);
+    if (rc)
+      {
+      unlink(mungeFileName);
+      close(fd_pipe[0]);
+      return(rc);
+      }
 	  
-	  
-	    if (total_bytes_read == 0)
-	  	  {
-	  	  /* unmunge failed. Probably a bad credential. But we do not know */
-	  	  req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not unmunge credentials");
-				unlink(mungeFileName);
-	  		close(fd_pipe[0]);
-	  	  return(-1);
-	  	  }
-	  
-	    rc = get_encode_host(s, munge_buf, preq);
-	    if (rc)
-	  	  {
-				unlink(mungeFileName);
-	  		close(fd_pipe[0]);
-	  	  return(rc);
-	  	  }
-	  
-	    rc = get_UID(s, munge_buf, preq);
-	    if (rc)
-	    	{
-				unlink(mungeFileName);
-	  		close(fd_pipe[0]);
-    		return(rc);
-	  	  }
-	  
-	  	unlink(mungeFileName);
-	  }
+    rc = get_UID(s, munge_buf, preq);
+    if (rc)
+      {
+      unlink(mungeFileName);
+      close(fd_pipe[0]);
+      return(rc);
+      }
+    
+    unlink(mungeFileName);
+    }
   else
-	  {
-	  close(fd_pipe[0]);
-	  newfd = dup2(fd_pipe[1], 1);
-	  strcpy(execname, "unmunge");
-	  strcpy(com1, "unmunge");
-	  strcpy(com2, "--input=");
-	  strcat(com2, mungeFileName);
-	  options[0] = com1;
-	  options[1] = com2;
-	  options[2] = NULL;
-	  
-	  rc = execvp(execname, options);
-	  
-	  /* Something went wrong. We will have to depend on the parent
-	     to let everyone know */
-	  close(fd_pipe[1]);
+    {
+    close(fd_pipe[0]);
+    newfd = dup2(fd_pipe[1], 1);
+    strcpy(execname, "unmunge");
+    strcpy(com1, "unmunge");
+    strcpy(com2, "--input=");
+    strcat(com2, mungeFileName);
+    options[0] = com1;
+    options[1] = com2;
+    options[2] = NULL;
+    
+    rc = execvp(execname, options);
+    
+    /* Something went wrong. We will have to depend on the parent
+       to let everyone know */
+    close(fd_pipe[1]);
 	  exit(0);
 	  
 	  }
 
 	close(fd_pipe[0]);
   return(0);
-
-}
+  }
 
 
 
@@ -395,8 +427,16 @@ void req_authenuser(
 
   for (s = 0;s < PBS_NET_MAX_CONNECTIONS;++s)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(svr_conn[s].cn_mutex);
+#endif
+
     if (preq->rq_ind.rq_authen.rq_port != svr_conn[s].cn_port)
       {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_conn[s].cn_mutex);
+#endif
+
       continue;
       }
 
@@ -417,6 +457,9 @@ void req_authenuser(
     reply_ack(preq);
 
     /* SUCCESS */
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_conn[s].cn_mutex);
+#endif
 
     return;
     }  /* END for (s) */
@@ -481,9 +524,13 @@ void req_altauthenuser(
 
   svr_conn[s].cn_authen = PBS_NET_CONN_AUTHENTICATED;
 
-  reply_ack(preq);
-  return;
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_conn[s].cn_mutex);
+#endif
 
+  reply_ack(preq);
+  
+  return;
   }  /* END req_altauthenuser() */
 
 

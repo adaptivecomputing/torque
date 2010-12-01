@@ -126,9 +126,13 @@
 #include "batch_request.h"
 #include "pbs_proto.h"
 #include "u_tree.h"
-/* #ifdef USE_HA_THREADS */
+#ifdef USE_HA_THREADS 
 #include <pthread.h>
-/* #endif */ /* USE_HA_THREADS */
+#else
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
+#endif /* USE_HA_THREADS */
 #include "threadpool.h"
 
 
@@ -187,6 +191,9 @@ static int try_lock_out (int,int);
 extern int    svr_chngNodesfile;
 extern int    svr_totnodes;
 extern AvlTree streams;
+#ifdef ENABLE_PTHREADS
+extern pthread_mutex_t *svr_alljobs_mutex;
+#endif
 
 /* External Functions */
 
@@ -365,7 +372,6 @@ void do_rpp(
 
     if (LOGLEVEL >= 1)
       {
-
       struct pbsnode *node;
 
       /* extern tree *streams; */        /* tree of stream numbers */
@@ -376,12 +382,12 @@ void do_rpp(
       if (ret == DIS_EOF)
         {
         sprintf(log_buffer, "stream %d closed.(node: \"%s\", %s) rc=%d (%s)",
-                stream,
-                (node != NULL) ? node->nd_name : "NULL",
-                netaddr(rpp_getaddr(stream)),
-                ret,
-                dis_emsg[ret]);
-
+          stream,
+          (node != NULL) ? node->nd_name : "NULL",
+          netaddr(rpp_getaddr(stream)),
+          ret,
+          dis_emsg[ret]);
+        
         log_record(
           PBSEVENT_SCHED,
           PBS_EVENTCLASS_REQUEST,
@@ -391,21 +397,21 @@ void do_rpp(
         }
       else
         {
-      sprintf(log_buffer, "corrupt rpp request received on stream %d (node: \"%s\", %s) - invalid protocol - rc=%d (%s)",
-              stream,
-              (node != NULL) ? node->nd_name : "NULL",
-              netaddr(rpp_getaddr(stream)),
-              ret,
-              dis_emsg[ret]);
-
-      log_record(
-        PBSEVENT_SCHED,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
+        sprintf(log_buffer, "corrupt rpp request received on stream %d (node: \"%s\", %s) - invalid protocol - rc=%d (%s)",
+          stream,
+          (node != NULL) ? node->nd_name : "NULL",
+          netaddr(rpp_getaddr(stream)),
+          ret,
+          dis_emsg[ret]);
+        
+        log_record(
+          PBSEVENT_SCHED,
+          PBS_EVENTCLASS_REQUEST,
+          id,
+          log_buffer);
+        }
       }
-      }
-
+    
     stream_eof(stream, 0, 0, ret);
 
 #ifdef ENABLE_PTHREADS
@@ -459,6 +465,7 @@ void do_rpp(
         }
 
       is_request(stream, version, NULL);
+
 #ifdef ENABLE_PTHREADS
       stream_done = FALSE;
 #endif
@@ -517,7 +524,6 @@ void rpp_request(
 
     if (stream == -2)
       break;
-
 
     do_rpp(stream);
     }
@@ -606,7 +612,12 @@ int PBSShowUsage(
  *
  * parse the parameters from the command line
  */
-void parse_command_line(int argc, char *argv[])
+
+void parse_command_line(
+    
+  int argc,
+  char *argv[])
+
   {
   extern int   optind;
   extern char *optarg;
@@ -1068,11 +1079,24 @@ static int start_hot_jobs(void)
   {
   int  ct = 0;
   job *pjob;
+  job *next;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_alljobs_mutex);
+#endif
+
+  pjob = (job *)GET_NEXT(svr_alljobs);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_alljobs_mutex);
+#endif
+
+  while (pjob != NULL)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED) &&
         (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART))
       {
@@ -1086,6 +1110,13 @@ static int start_hot_jobs(void)
 
       ct++;
       }
+    next = (job *)GET_NEXT(pjob->ji_alljobs);
+    
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+    pjob = next;
     }
 
   return(ct);
@@ -1097,14 +1128,15 @@ static int start_hot_jobs(void)
 
 
 
-void
-main_loop(void)
+void main_loop(void)
+
   {
   int  c;
   long  *state;
   time_t waittime;
   pbs_queue *pque;
   job *pjob;
+  job *next;
   time_t last_jobstat_time;
   int    when;
 
@@ -1145,7 +1177,7 @@ main_loop(void)
   if (svr_totnodes > 1024)
     {
     /* for large systems, give newly reported nodes more time before
-       being marked down while pbs_moms are intialy reporting in */
+       being marked down while pbs_moms are initialy reporting in */
 
     set_task(WORK_Timed, when + svr_totnodes / 12, check_nodes, NULL);
     }
@@ -1272,13 +1304,24 @@ main_loop(void)
     if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long &&
         (last_jobstat_time + JobStatRate <= time_now))
       {
-
       struct work_task *ptask;
 
-      for (pjob = (job *)GET_NEXT(svr_alljobs);
-           pjob != NULL;
-           pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(svr_alljobs_mutex);
+#endif
+
+      pjob = (job *)GET_NEXT(svr_alljobs);
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_alljobs_mutex);
+#endif
+
+      while (pjob != NULL)
         {
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
         if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
           {
           /* spread these out over the next JobStatRate seconds */
@@ -1293,6 +1336,14 @@ main_loop(void)
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
             }
           }
+
+        next = (job *)GET_NEXT(pjob->ji_alljobs);
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+        pjob = next;
         }
 
       last_jobstat_time = time_now;
@@ -1320,13 +1371,32 @@ main_loop(void)
   track_save(NULL);                     /* save tracking data */
 
   /* save any jobs that need saving */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_alljobs_mutex);
+#endif
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  pjob = (job *)GET_NEXT(svr_alljobs);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_alljobs_mutex);
+#endif
+
+  while (pjob != NULL)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);
+    
+    next = (job *)GET_NEXT(pjob->ji_alljobs);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+    pjob = next;
     }
 
   if (svr_chngNodesfile)
@@ -1345,8 +1415,8 @@ main_loop(void)
  * Set the intial state of global variables.
  */
 
-void
-initialize_globals(void)
+void initialize_globals(void)
+
   {
   strcpy(pbs_current_user, "PBS_Server");
 
@@ -1362,8 +1432,7 @@ initialize_globals(void)
  * the program environment variables.
  */
 
-void
-set_globals_from_environment(void)
+void set_globals_from_environment(void)
 
   {
   char  *ptr;
@@ -1695,8 +1764,6 @@ int main(
     msg_daemonname,
     log_buffer);
 
-
-
   /* initialize the server objects and perform specified recovery */
   /* will be left in the server's private directory  */
   /* NOTE:  env cleared in pbsd_init() */
@@ -1750,6 +1817,7 @@ int main(
       exit(2);
       }
     }
+
 #ifdef ENABLE_PTHREADS
   /* setup the threadpool for use */
   if (server.sv_attr[SRV_ATR_minthreads].at_flags & ATR_VFLAG_SET) 
@@ -2080,6 +2148,8 @@ static int get_port(
       }
 
     *addr = get_hostaddr(name);
+
+    free(name);
     }
 
   if ((*port <= 0) || (*addr == 0))

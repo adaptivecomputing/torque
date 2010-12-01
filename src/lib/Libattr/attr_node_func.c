@@ -340,14 +340,13 @@ int encode_state(
  *       or nothing to encode
  */
 
-int
-encode_ntype(
+int encode_ntype(
+  
   attribute *pattr, /*struct attribute being encoded  */
-  tlist_head *ph,  /*head of a list of  "svrattrl"   */
-  char *aname, /*attribute's name    */
-  char *rname, /*resource's name (null if none)  */
-  int mode  /*mode code, unused here   */
-)
+  tlist_head *ph,   /*head of a list of  "svrattrl"   */
+  char *aname,      /*attribute's name    */
+  char *rname,      /*resource's name (null if none)  */
+  int mode)         /*mode code, unused here   */
 
   {
   svrattrl *pal;

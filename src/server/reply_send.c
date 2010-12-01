@@ -107,8 +107,12 @@
 #include "work_task.h"
 
 
-/* External Globals */
 
+
+extern void release_tcp_mutex(int);
+extern void obtain_tcp_mutex(int);
+
+/* External Globals */
 extern char *msg_daemonname;
 
 #ifndef PBS_MOM
@@ -194,9 +198,14 @@ static int dis_reply_write(
       PBS_EVENTCLASS_REQUEST,
       "dis_reply_write",
       log_buffer);
+  
+    obtain_tcp_mutex(sfds);
 
     close_conn(sfds);
+  
+    release_tcp_mutex(sfds);
     }
+
 
   return(rc);
   }  /* END dis_reply_write() */

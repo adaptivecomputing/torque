@@ -459,7 +459,9 @@ struct pbssubn *find_subnodebyname(
 
 
 
-
+#ifdef ENABLE_PTHREADS
+pthread_mutex_t *node_char_mutex = NULL;
+#endif
 static struct pbsnode *old_address = 0;   /*node in question */
 
 static struct prop *old_first = (struct prop *)0xdead; /*node's first prop*/
@@ -488,6 +490,16 @@ void save_characteristic(
     {
     return;
     }
+
+#ifdef ENABLE_PTHREADS
+  if (node_char_mutex == NULL)
+    {
+    node_char_mutex = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(node_char_mutex,NULL);
+    }
+
+  pthread_mutex_lock(node_char_mutex);
+#endif
 
   old_address = pnode;
 
@@ -613,6 +625,10 @@ int chk_characteristic(
     }
 
   old_address = NULL;
+  
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(node_char_mutex);
+#endif
 
   return(0);
   }  /* END chk_characteristic() */
@@ -1556,9 +1572,7 @@ int create_a_gpusubnode(
 
   {
   static char *id = "create_a_gpusubnode";
-  struct gpusubn *tmp;
- 
-  tmp = malloc(sizeof(struct gpusubn) * (1 + pnode->nd_ngpus));
+  struct gpusubn *tmp = malloc(sizeof(struct gpusubn) * (1 + pnode->nd_ngpus));
 
   if (tmp == NULL)
     {

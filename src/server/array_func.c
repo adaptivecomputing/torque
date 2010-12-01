@@ -28,7 +28,9 @@
 #endif /* !O_SYNC */
 
 #include <unistd.h>
-
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 
 #include "pbs_ifl.h"
 #include "log.h"
@@ -58,6 +60,10 @@ extern void post_modify_arrayreq(struct work_task *pwt);
 extern struct server   server;
 extern tlist_head svr_jobarrays;
 extern tlist_head svr_jobs_array_sum;
+#ifdef ENABLE_PTHREADS
+/*extern pthread_mutex_t *svr_jobarrays_mutex;*/
+/*extern pthread_mutex_t *svr_jobs_array_sum_mutex;*/
+#endif
 extern char *path_arrays;
 extern char *path_jobs;
 extern time_t time_now;
@@ -76,6 +82,7 @@ static int parse_array_request(char *request, tlist_head *tl);
 int is_array(char *id)
   {
   job_array *pa;
+  job_array *next;
 
   char      *bracket_ptr;
   char       jobid[PBS_MAXSVRJOBID];
@@ -104,32 +111,65 @@ int is_array(char *id)
     {
     strcpy(jobid,id);
     }
-  
+ 
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
+#endif
+
   pa = (job_array*)GET_NEXT(svr_jobarrays);
+ 
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
+#endif
 
   while (pa != NULL)
     {
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_lock(pa->ai_mutex);*/
+#endif
+
     if (strcmp(pa->ai_qs.parent_id, jobid) == 0)
       {
       return TRUE;
       }
 
-    pa = (job_array*)GET_NEXT(pa->all_arrays);
+    next = (job_array*)GET_NEXT(pa->all_arrays);
+
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
+
+    pa = next;
     }
 
   return FALSE;
   }
 
 /* return a server's array info struct corresponding to an array id */
-job_array *get_array(char *id)
+job_array *get_array(
+    
+  char *id)
+
   {
   job_array *pa;
-
+  job_array *next;
+ 
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
+#endif
 
   pa = (job_array*)GET_NEXT(svr_jobarrays);
+ 
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
+#endif
 
   while (pa != NULL)
     {
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_lock(pa->ai_mutex);*/
+#endif
+
     if (strcmp(pa->ai_qs.parent_id, id) == 0)
       {
       return pa;
@@ -137,12 +177,18 @@ job_array *get_array(char *id)
 
     if (pa == GET_NEXT(pa->all_arrays))
       {
-      pa = NULL;
+      next = NULL;
       }
     else
       {
-      pa = (job_array*)GET_NEXT(pa->all_arrays);
+      next = (job_array*)GET_NEXT(pa->all_arrays);
       }
+
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
+
+    pa = next;
     }
 
   return (job_array*)NULL;
@@ -150,7 +196,9 @@ job_array *get_array(char *id)
 
 
 /* save a job array struct to disk returns zero if no errors*/
-int array_save(job_array *pa)
+int array_save(
+    
+  job_array *pa)
 
   {
 
@@ -215,7 +263,11 @@ int array_save(job_array *pa)
 /* if a job belongs to an array, this will return the id of the parent job
  * returns job id if not array parent id
  */
-void array_get_parent_id(char *job_id, char *parent_id)
+void array_get_parent_id(
+    
+  char *job_id,
+  char *parent_id)
+
   {
   char *c;
   char *pid;
@@ -257,18 +309,30 @@ void array_get_parent_id(char *job_id, char *parent_id)
  * Return NULL if not found or pointer to job struct if found
  */
 
-job *find_array_template(char *arrayid)
+job *find_array_template(
+    
+  char *arrayid)
+
   {
   char *at;
   char *comp;
   int   different = FALSE;
 
   job  *pj;
+  job  *next;
 
   if ((at = strchr(arrayid, (int)'@')) != NULL)
     * at = '\0'; /* strip off @server_name */
 
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
+#endif
+
   pj = (job *)GET_NEXT(svr_jobs_array_sum);
+
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_unlock(svr_jobs_array_sum_mutex);*/
+#endif
 
   if ((server.sv_attr[SRV_ATR_display_job_server_suffix].at_flags & ATR_VFLAG_SET) ||
       (server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET))
@@ -286,10 +350,20 @@ job *find_array_template(char *arrayid)
 
   while (pj != NULL)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pj->ji_mutex);
+#endif
+
     if (!strcmp(comp, pj->ji_qs.ji_jobid))
       break;
 
-    pj = (job *)GET_NEXT(pj->ji_jobs_array_sum);
+    next = (job *)GET_NEXT(pj->ji_jobs_array_sum);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pj->ji_mutex);
+#endif
+
+    pj = next;
     }
 
   if (at)
@@ -299,13 +373,16 @@ job *find_array_template(char *arrayid)
     free(comp);
 
   return(pj);  /* may be NULL */
-  }   /* END find_job() */
+  }   /* END find_array_template() */
 
 
 
 /* array_recov reads in  an array struct saved to disk and inserts it into
    the servers list of arrays */
-job_array *array_recov(char *path)
+job_array *array_recov(
+    
+  char *path)
+
   {
   extern tlist_head svr_jobarrays;
   job_array *pa;
@@ -331,8 +408,6 @@ job_array *array_recov(char *path)
   CLEAR_HEAD(pa->request_tokens);
 
   fd = open(path, O_RDONLY, 0);
-
-
 
   /* read the file into the struct previously allocated.
    */
@@ -415,27 +490,50 @@ job_array *array_recov(char *path)
     }
 
   /* link the struct into the servers list of job arrays */
+#ifdef ENABLE_PTHREADS
+/*  pa->ai_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(pa->ai_mutex,NULL);
+  pthread_mutex_lock(pa->ai_mutex);
+*/
+  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
+#endif
+ 
   append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
 
-  return pa;
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
+#endif
 
-  }
+  return(pa);
+  } /* END array_recov() */
 
 
 /* delete a job array struct from memory and disk. This is used when the number
  *  of jobs that belong to the array becomes zero.
  *  returns zero if there are no errors, non-zero otherwise
  */
-int array_delete(job_array *pa)
-  {
+int array_delete(
+    
+  job_array *pa)
 
+  {
   char path[MAXPATHLEN + 1];
   array_request_node *rn;
 
-
   /* first thing to do is take this out of the servers list of all arrays */
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
+#endif
+
   delete_link(&pa->all_arrays);
 
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
+
+  /* unlock the mutex and free it 
+  pthread_mutex_unlock(pa->ai_mutex);
+  free(pa->ai_mutex);*/
+#endif
 
   /* delete the on disk copy of the struct */
 
@@ -448,7 +546,6 @@ int array_delete(job_array *pa)
     sprintf(log_buffer, "unable to delete %s", path);
     log_err(errno, "array_delete", log_buffer);
     }
-
 
   /* clear array request linked list */
 
@@ -469,7 +566,7 @@ int array_delete(job_array *pa)
     {
     job_purge(pa->template_job);
     }
-    
+
   /* free the memory allocated for the struct */
   free(pa);
 
@@ -531,7 +628,10 @@ int set_slot_limit(
   } /* END set_slot_limit() */
 
 
-int setup_array_struct(job *pjob)
+int setup_array_struct(
+    
+  job *pjob)
+
   {
   job_array *pa;
 
@@ -558,12 +658,25 @@ int setup_array_struct(job *pjob)
   pa->ai_qs.num_cloned = 0;
   CLEAR_LINK(pa->all_arrays);
   CLEAR_HEAD(pa->request_tokens);
+
+#ifdef ENABLE_PTHREADS
+/*  pa->ai_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(pa->ai_mutex,NULL);
+  pthread_mutex_lock(pa->ai_mutex);*/
+
+  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
+#endif
+
   append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
 
- if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
-    {
-    job_purge(pjob);
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
+#endif
 
+  if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
+    {
+    /* the array is deleted in job_purge */
+    job_purge(pjob);
 
     if (LOGLEVEL >= 6)
       {
@@ -598,10 +711,9 @@ int setup_array_struct(job *pjob)
   pa->ai_qs.num_failed = 0;
   pa->ai_qs.num_successful = 0;
   
-  bad_token_count =
-
-    parse_array_request(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str,
-                        &(pa->request_tokens));
+  bad_token_count = parse_array_request(
+                      pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str,
+                      &(pa->request_tokens));
 
   /* get the number of elements that should be allocated in the array */
   rn = (array_request_node *)GET_NEXT(pa->request_tokens);
@@ -648,12 +760,21 @@ int setup_array_struct(job *pjob)
     return 2;
     }
 
+#ifdef ENABLE_PTHREADS
+/*  pthread_mutex_unlock(pa->ai_mutex); */
+#endif
+
   return 0;
+  } /* END setup_array_struct() */
 
-  }
 
 
-static int is_num(char *str)
+
+
+static int is_num(
+    
+  char *str)
+
   {
   int i;
   int len;
@@ -674,9 +795,15 @@ static int is_num(char *str)
     }
 
   return 1;
-  }
+  } /* END is_num() */
 
-int array_request_token_count(char *str)
+
+
+
+int array_request_token_count(
+    
+  char *str)
+
   {
   int token_count;
   int len;
@@ -697,9 +824,17 @@ int array_request_token_count(char *str)
 
   return token_count;
 
-  }
+  } /* END array_request_token_count() */
 
-static int array_request_parse_token(char *str, int *start, int *end)
+
+
+
+static int array_request_parse_token(
+    
+  char *str, 
+  int *start, 
+  int *end)
+
   {
   int num_ids;
   long start_l;
@@ -784,10 +919,14 @@ static int array_request_parse_token(char *str, int *start, int *end)
     }
 
   return num_ids;
-  }
+  } /* END array_request_parse_token() */
 
 
-static int parse_array_request(char *request, tlist_head *tl)
+static int parse_array_request(
+    
+  char *request, 
+  tlist_head *tl)
+
   {
   char *temp_str;
   int num_tokens;
@@ -886,7 +1025,7 @@ static int parse_array_request(char *request, tlist_head *tl)
   free(temp_str);
 
   return num_bad_tokens;
-  }
+  } /* END parse_array_request() */
 
 
 
@@ -945,14 +1084,30 @@ int delete_array_range(
 
       pjob = pa->jobs[i];
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(pjob->ji_mutex);
+#endif 
+
       if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
         {
         /* invalid state for request,  skip */
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif 
+
         continue;
         }
 
       if (attempt_delete((void *)pjob) == FALSE)
+        {
+#ifdef ENABLE_PTHREADS
+        /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
+         * release it here */
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif 
+
         num_skipped++;
+        }
       }
 
     to_free = rn;
@@ -1013,16 +1168,31 @@ int delete_whole_array(
     if (pa->jobs[i] == NULL)
       continue;
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif 
+
     pjob = (job *)pa->jobs[i];
 
     if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
       {
       /* invalid state for request,  skip */
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif 
       continue;
       }
 
     if (attempt_delete((void *)pjob) == FALSE)
+      {
+#ifdef ENABLE_PTHREADS
+      /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
+       * release it here */
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif 
+
       num_skipped++;
+      }
     }
 
   return(num_skipped);
@@ -1078,8 +1248,16 @@ int hold_array_range(
         /* don't stomp on other memory */
         if (i >= pa->ai_qs.array_size)
           continue;
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_lock(pa->jobs[i]->ji_mutex);
+#endif
         
         hold_job(temphold,pa->jobs[i]);
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+#endif
         }
       
       /* release mem */
@@ -1137,9 +1315,23 @@ int release_array_range(
       /* don't stomp on other memory */
       if (i >= pa->ai_qs.array_size)
         continue;
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(pa->jobs[i]->ji_mutex);
+#endif
       
       if ((rc = release_job(preq,pa->jobs[i])))
+        {
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+#endif
+        
         return(rc);
+        }
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+#endif
       }
     
     /* release mem */
@@ -1192,7 +1384,11 @@ int modify_array_range(
         if ((i >= pa->ai_qs.array_size) ||
             (pa->jobs[i] == NULL))
           continue;
-        
+  
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_lock(pa->jobs[i]->ji_mutex);
+#endif
+
         rc = modify_job(pa->jobs[i],plist,preq,checkpoint_req, NO_MOM_RELAY);
 
         if (rc == PBSE_RELAYED_TO_MOM)
@@ -1222,10 +1418,18 @@ int modify_array_range(
               pa->jobs[i]->ji_qs.ji_jobid);
             log_err(rc,id,log_buffer);
           
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+#endif
+
             return(rc); /* unable to get to MOM */
             }
         
-          }  
+          }
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+#endif 
         }
       
       /* release mem */
@@ -1361,6 +1565,7 @@ void update_array_values(
 void update_array_statuses()
   {
   job_array *pa;
+  job_array *next;
   job *pj;
   int i;
   unsigned int running;
@@ -1368,10 +1573,22 @@ void update_array_statuses()
   unsigned int held;
   unsigned int complete;
   
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
+#endif
+
   pa = (job_array*)GET_NEXT(svr_jobarrays);
+
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
+#endif
 
   while (pa != NULL)
     {
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_lock(pa->ai_mutex);*/
+#endif
+
     running = 0;
     queued = 0;
     held = 0;
@@ -1383,6 +1600,10 @@ void update_array_statuses()
       
       if (pj != NULL)
         {
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_lock(pj->ji_mutex);
+#endif
+
         if (pj->ji_qs.ji_state == JOB_STATE_RUNNING)
           {
           running++;
@@ -1399,6 +1620,9 @@ void update_array_statuses()
           {
           complete++;
           }
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pj->ji_mutex);
+#endif
         }
       }
     
@@ -1420,7 +1644,13 @@ void update_array_statuses()
       svr_setjobstate(pa->template_job, JOB_STATE_QUEUED, pa->template_job->ji_qs.ji_substate);
       }
       
-    pa = (job_array*)GET_NEXT(pa->all_arrays);
+    next = (job_array*)GET_NEXT(pa->all_arrays);
+
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
+
+    pa = next;
     }
   }
 

@@ -88,6 +88,9 @@
 #include "libpbs.h"
 #include <errno.h>
 #include <signal.h>
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -141,6 +144,10 @@ void req_signaljob(
     {
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
     return;
     }
 
@@ -172,6 +179,10 @@ void req_signaljob(
       (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long > 0))
     {
     req_reject(PBSE_JOBTYPE, 0, preq, NULL, NULL);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
     return;
     }
@@ -205,12 +216,19 @@ void req_signaljob(
     {
     req_reject(rc, 0, preq, NULL, NULL);  /* unable to get to MOM */
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
     return;
     }
 
   /* After MOM acts and replies to us, we pick up in post_signal_req() */
 
   /* SUCCESS */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
   return;
   }  /* END req_signaljob() */
@@ -299,6 +317,10 @@ static void post_signal_req(
     {
     pjob = preq->rq_extra;
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
     if (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_SUSPEND) == 0)
       {
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
@@ -332,6 +354,9 @@ static void post_signal_req(
 
     reply_ack(preq);
     }
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
   return;
   }  /* END post_signal_req() */

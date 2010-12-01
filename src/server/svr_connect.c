@@ -153,9 +153,10 @@ int svr_connect(
 
   if (LOGLEVEL >= 4)
     {
+    char *tmp = netaddr_pbs_net_t(hostaddr);
     sprintf(log_buffer, "attempting connect to %s %s port %d",
             (hostaddr == pbs_server_addr) ? "server" : "host",
-            ((int)hostaddr != 0) ? netaddr_pbs_net_t(hostaddr) : "localhost",
+            ((int)hostaddr != 0) ? tmp : "localhost",
             port);
 
     log_event(
@@ -163,6 +164,8 @@ int svr_connect(
       PBS_EVENTCLASS_SERVER,
       id,
       log_buffer);
+
+    free(tmp);
     }
 
   /* First, determine if the request is to another server or ourselves */
@@ -257,8 +260,15 @@ int svr_connect(
     add_conn(sock, ToServerDIS, hostaddr, port, PBS_SOCK_INET, func);
     }
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_conn[sock].cn_mutex);
+#endif
+
   svr_conn[sock].cn_authen = PBS_NET_CONN_AUTHENTICATED;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+#endif
   /* find a connect_handle entry we can use and pass to the PBS_*() */
 
   handle = socket_to_handle(sock);
@@ -374,10 +384,17 @@ int socket_to_handle(
     connection[i].ch_errno  = 0;
     connection[i].ch_socket = sock;
     connection[i].ch_errtxt = 0;
-
     /* SUCCESS - save handle for later close */
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(svr_conn[sock].cn_mutex);
+#endif
+
     svr_conn[sock].cn_handle = i;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+#endif
 
     if (i >= (PBS_NET_MAX_CONNECTIONS/2))
       {
@@ -423,7 +440,8 @@ char *parse_servername(
   unsigned int *service)  /* RETURN: service_port if :port */
 
   {
-  static char  buf[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
+  char  buf[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
+  char *val;
 
   int   i = 0;
   char *pc;
@@ -438,7 +456,7 @@ char *parse_servername(
     {
     /* invalid name specified */
 
-    return(buf);
+    return("");
     }
 
   while (*pc && (i < PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2))
@@ -460,7 +478,10 @@ char *parse_servername(
 
   buf[i] = '\0';
 
-  return(buf);
+  val = malloc(strlen(buf) + 1);
+  strcpy(val,buf);
+
+  return(val);
   }  /* END parse_servername() */
 
 

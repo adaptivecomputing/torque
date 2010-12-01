@@ -111,6 +111,34 @@ time_t pbs_tcp_timeout = 20;  /* reduced from 60 to 20 (CRI - Nov/03/2004) */
 
 
 
+
+void obtain_tcp_mutex(
+
+  int fd)
+
+  {
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
+#endif
+  } /* END obtain_tcp_mutex() */
+
+
+
+
+void release_tcp_mutex(
+
+  int fd)
+
+  {
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+#endif
+  } /* END release_tcp_mutex() */
+
+
+
+
+
 void DIS_tcp_settimeout(
 
   long timeout)  /* I */
@@ -942,7 +970,7 @@ int lock_all_channels()
 
   {
   int rc = 0;
-  int last_locked;
+  int last_locked = -1;
   int i;
 
   for (i = 0; i < tcparraymax; i++)
@@ -962,7 +990,7 @@ int lock_all_channels()
 
   if (rc)
     {
-    for (i = 0; i < tcparraymax; i++)
+    for (i = 0; i <= last_locked; i++)
       {
       if (tcparray[i] != NULL)
         pthread_mutex_unlock(&(tcparray[i]->tcp_mutex));
@@ -1021,16 +1049,6 @@ void DIS_tcp_setup(
     return;
     }
 
-#ifdef ENABLE_PTHREADS
-  if (lock_all_channels())
-    {
-    /* FAILURE */
-    log_err(-1,"DIS_tcp_setup","Couln't lock mutexes for reallocating");
-    
-    return;
-    }
-#endif
-
   /* set DIS function pointers to tcp routines */
   DIS_tcp_funcs();
 
@@ -1039,6 +1057,16 @@ void DIS_tcp_setup(
     int hold = tcparraymax;
     int flags;
     
+#ifdef ENABLE_PTHREADS
+    if (lock_all_channels())
+      {
+      /* FAILURE */
+      log_err(-1,"DIS_tcp_setup","Couln't lock mutexes for reallocating");
+      
+      return;
+      }
+#endif
+
     /*
     ** Check if this is a valid file descriptor, if not log an error and don't
     ** do any memory allocations
@@ -1049,6 +1077,10 @@ void DIS_tcp_setup(
     if ((errno == EBADF) &&
         (flags == -1))
       {
+#ifdef ENABLE_PTHREADS
+      unlock_all_channels();
+#endif
+
       sprintf(log_buffer, "invalid file descriptor (%d) for socket",
         fd);
       log_err(errno, "DIS_tcp_setup", log_buffer);
@@ -1067,6 +1099,9 @@ void DIS_tcp_setup(
       if (tcparray == NULL)
         {
         /* FAILURE */
+#ifdef ENABLE_PTHREADS
+        unlock_all_channels();
+#endif
 
         log_err(errno,"DIS_tcp_setup","calloc failure");
 
@@ -1084,6 +1119,9 @@ void DIS_tcp_setup(
       if (tmpTA == NULL)
         {
         /* FAILURE */
+#ifdef ENABLE_PTHREADS
+        unlock_all_channels();
+#endif
 
         log_err(errno,"DIS_tcp_setup","realloc failure");
 
@@ -1094,6 +1132,10 @@ void DIS_tcp_setup(
 
       memset(&tcparray[hold], '\0', (tcparraymax - hold) * sizeof(struct tcp_chan *));
       }
+
+#ifdef ENABLE_PTHREADS
+    unlock_all_channels();
+#endif
     }    /* END if (fd >= tcparraymax) */
 
   tcp = tcparray[fd];
@@ -1121,6 +1163,10 @@ void DIS_tcp_setup(
     tp->tdis_thebuf = (char *)malloc(THE_BUF_SIZE);
     if(tp->tdis_thebuf == NULL)
       {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(&tcp->tcp_mutex);
+#endif
+
       log_err(errno,"DIS_tcp_setup","malloc failure");
 
       goto error;
@@ -1132,22 +1178,31 @@ void DIS_tcp_setup(
     tp->tdis_thebuf = (char *)malloc(THE_BUF_SIZE);
     if(tp->tdis_thebuf == NULL)
       {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(&tcp->tcp_mutex);
+#endif
+
       log_err(errno,"DIS_tcp_setup","malloc failure");
 
       goto error;
       }
     tp->tdis_bufsize = THE_BUF_SIZE;
     }
+#ifdef ENABLE_PTHREADS
+  else
+    pthread_mutex_lock(&tcp->tcp_mutex);
+#endif
 
   /* initialize read and write buffers */
   DIS_tcp_clear(&tcp->readbuf);
 
   DIS_tcp_clear(&tcp->writebuf);
 
-error:
 #ifdef ENABLE_PTHREADS
-  unlock_all_channels();
+  pthread_mutex_unlock(&tcp->tcp_mutex);
 #endif
+
+error:
 
   return;
   }  /* END DIS_tcp_setup() */

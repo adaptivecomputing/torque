@@ -90,6 +90,10 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
+
 #include "pbs_ifl.h"
 #include "log.h"
 #include "list_link.h"
@@ -185,6 +189,18 @@ extern tlist_head svr_jobarrays;
 extern tlist_head task_list_immed;
 extern tlist_head task_list_timed;
 extern tlist_head task_list_event;
+
+#ifdef ENABLE_PTHREADS
+extern pthread_mutex_t *svr_newjobs_mutex;
+extern pthread_mutex_t *svr_requests_mutex;
+extern pthread_mutex_t *svr_alljobs_mutex;
+/*pthread_mutex_t *svr_jobs_array_sum_mutex;*/
+/*pthread_mutex_t *svr_jobarrays_mutex;*/
+extern pthread_mutex_t *task_list_immed_mutex;
+extern pthread_mutex_t *task_list_timed_mutex;
+extern pthread_mutex_t *task_list_event_mutex;
+#endif
+
 extern time_t  time_now;
 
 extern int a_opt_init;
@@ -353,7 +369,8 @@ static int SortPrioAscend(
 
 
 void  update_default_np()
-{
+  
+  {
   struct pbsnode *pnode;
   int i;
   long default_np;
@@ -376,20 +393,24 @@ void  update_default_np()
     }
 
   return;
-}
+  }
 
 /* Add the server names from /var/spool/torque/server_name to the trusted hosts list. */
 
 void add_server_names_to_acl_hosts(void)
 
   {
-  int n, list_len, rc;
-  char *server_list_ptr;
-  char *tp;
-  char buffer[PBS_MAXSERVERNAME+1];
-  attribute temp;
+  int        n; 
+  int        list_len; 
+  int        rc;
 
-  struct attribute *patr = &server.sv_attr[SRV_ATR_acl_hosts];
+  char      *server_list_ptr;
+  char      *tp;
+  char       buffer[PBS_MAXSERVERNAME+1];
+
+  attribute  temp;
+
+  attribute *patr = &server.sv_attr[SRV_ATR_acl_hosts];
 
   server_list_ptr = pbs_get_server_list();
   list_len = csv_length(server_list_ptr);
@@ -464,6 +485,7 @@ int pbsd_init(
 
   struct work_task *wt;
   job_array *pa;
+  job_array *next;
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char   EMsg[1024];
@@ -738,7 +760,7 @@ int pbsd_init(
     rc = init_resc_defs();
     if (rc != 0)
       {
-        log_err(rc, "pbsd_init", msg_init_baddb);
+        log_err(rc, id, msg_init_baddb);
 
         return(-1);
       }
@@ -765,6 +787,29 @@ int pbsd_init(
 
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
 
+#ifdef ENABLE_PTHREADS
+  /* initialize the global list mutexes */
+  svr_requests_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(svr_requests_mutex,NULL);
+  pthread_mutex_lock(svr_requests_mutex);
+
+  svr_newjobs_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(svr_newjobs_mutex,NULL);
+  pthread_mutex_lock(svr_newjobs_mutex);
+
+  svr_alljobs_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(svr_alljobs_mutex,NULL);
+  pthread_mutex_lock(svr_alljobs_mutex);
+
+  /*svr_jobarrays_mutex = malloc(sizeof(pthread_mutex_t));*/
+  /*pthread_mutex_init(svr_jobarrays_mutex,NULL);*/
+  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
+
+  /*svr_jobs_array_sum_mutex = malloc(sizeof(pthread_mutex_t));*/
+  /*pthread_mutex_init(svr_jobs_array_sum_mutex,NULL);*/
+  /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
+#endif
+
   CLEAR_HEAD(svr_requests);
 
   CLEAR_HEAD(task_list_immed);
@@ -784,6 +829,14 @@ int pbsd_init(
   CLEAR_HEAD(svr_newnodes);
 
   CLEAR_HEAD(svr_jobarrays);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_requests_mutex);
+  pthread_mutex_unlock(svr_newjobs_mutex);
+  pthread_mutex_unlock(svr_alljobs_mutex);
+  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
+  /*pthread_mutex_unlock(svr_jobs_array_sum_mutex);*/
+#endif
 
   time_now = time((time_t *)0);
 
@@ -847,7 +900,7 @@ int pbsd_init(
 
     if ((rc != 0) || ((rc = svr_recov_xml(path_svrdb, FALSE)) == -1)) 
       {
-      log_err(rc, "pbsd_init", msg_init_baddb);
+      log_err(rc, id, msg_init_baddb);
 
       return(-1);
       }
@@ -916,7 +969,7 @@ int pbsd_init(
     {
     /* log_buffer set in setup_nodes */
 
-    log_err(-1, "pbsd_init(setup_nodes)", log_buffer);
+    log_err(-1, id, log_buffer);
 
     return(-1);
     }
@@ -933,7 +986,7 @@ int pbsd_init(
     {
     sprintf(log_buffer, msg_init_chdir, path_queues);
 
-    log_err(errno, "pbsd_init", log_buffer);
+    log_err(errno, id, log_buffer);
 
     return(-1);
     }
@@ -946,7 +999,7 @@ int pbsd_init(
 
   if (dir == NULL)
     {
-    log_err(-1, "pbsd_init", msg_init_noqueues);
+    log_err(-1, id, msg_init_noqueues);
 
     return(-1);
     }
@@ -1010,7 +1063,7 @@ int pbsd_init(
     sprintf(log_buffer, msg_init_chdir,
             path_arrays);
 
-    log_err(errno, "pbsd_init", log_buffer);
+    log_err(errno, id, log_buffer);
 
     return(-1);
     }
@@ -1046,14 +1099,16 @@ int pbsd_init(
                   "job array can not be recovered.",
                   pdirent->d_name);
 
-          log_err(errno, "pbsd_init", log_buffer);
+          log_err(errno, id, log_buffer);
 
           continue;
-
           }
 
         pa->jobs_recovered = 0;
 
+#ifdef ENABLE_PTHREADS
+/*        pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
         }
       else
         {
@@ -1073,7 +1128,7 @@ int pbsd_init(
     sprintf(log_buffer, msg_init_chdir,
             path_jobs);
 
-    log_err(errno, "pbsd_init", log_buffer);
+    log_err(errno, id, log_buffer);
 
     return(-1);
     }
@@ -1101,7 +1156,7 @@ int pbsd_init(
         sprintf(log_buffer, msg_init_exptjobs,
                 had, 0);
 
-        log_err(-1, "pbsd_init", log_buffer);
+        log_err(-1, id, log_buffer);
         }
       }
     }
@@ -1132,6 +1187,9 @@ int pbsd_init(
               log_err(ENOMEM,"main","out of memory reloading jobs");
               exit(-1);
               }
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pjob->ji_mutex);
+#endif 
             }
 
           continue;
@@ -1150,13 +1208,17 @@ int pbsd_init(
             exit(-1);
 
             }
+
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pjob->ji_mutex);
+#endif 
           }
         else
           {
           sprintf(log_buffer, msg_init_badjob,
                   pdirent->d_name);
 
-          log_err(-1, "pbsd_init", log_buffer);
+          log_err(-1, id, log_buffer);
 
           /* remove corrupt job */
 
@@ -1168,7 +1230,7 @@ int pbsd_init(
 
           if (link(pdirent->d_name, basen) < 0)
             {
-            log_err(errno, "pbsd_init", "failed to link corrupt .JB file to .BD");
+            log_err(errno, id, "failed to link corrupt .JB file to .BD");
             }
           else
             {
@@ -1185,6 +1247,10 @@ int pbsd_init(
       {
       job *pjob = (job *)Array.Data[Index];
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(pjob->ji_mutex);
+#endif 
+
       if (pbsd_init_job(pjob, type) == FAILURE)
         {
         log_event(
@@ -1192,6 +1258,10 @@ int pbsd_init(
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
           msg_script_open);
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif 
 
         continue;
         }
@@ -1215,7 +1285,17 @@ int pbsd_init(
 
           init_abt_job(pjob);
           }
+#ifdef ENABLE_PTHREADS
+        else
+          {
+          pthread_mutex_unlock(pjob->ji_mutex);
+          }
+#endif 
         }
+#ifdef ENABLE_PTHREADS
+      else
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif 
       }
 
     DArrayFree(&Array);
@@ -1245,17 +1325,37 @@ int pbsd_init(
 
   if (queue_rank < 0)
     {
+    job *next;
+
     queue_rank = 0;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(svr_alljobs_mutex);
+#endif
 
     pjob = (job *)GET_NEXT(svr_alljobs);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_alljobs_mutex);
+#endif
+
     while (pjob != NULL)
       {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(pjob->ji_mutex);
+#endif 
+
       pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+      
+      job_save(pjob, SAVEJOB_FULL, 0);
+      
+      next = (job *)GET_NEXT(pjob->ji_alljobs);
+      
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
-     job_save(pjob, SAVEJOB_FULL, 0);
-
-      pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+      pjob = next;
       }
     }
 
@@ -1263,10 +1363,22 @@ int pbsd_init(
      look for empty arrays and delete them
      also look for arrays that weren't fully built and setup a work task to
      continue the cloning process*/
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
+#endif
+
   pa = (job_array*)GET_NEXT(svr_jobarrays);
+
+#ifdef ENABLE_PTHREADS
+  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
+#endif
 
   while (pa != NULL)
     {
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_lock(pa->ai_mutex);*/
+#endif
+
     pa->template_job = find_array_template(pa->ai_qs.parent_id);
 
     if (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)
@@ -1311,9 +1423,14 @@ int pbsd_init(
 
     if (pa != NULL)
       {
-      pa = (job_array*)GET_NEXT(pa->all_arrays);
+      next = (job_array*)GET_NEXT(pa->all_arrays);
       }
 
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
+
+    pa = next;
     }
 
 
@@ -1335,7 +1452,7 @@ int pbsd_init(
 
   if (fd < 0)
     {
-    log_err(errno, "pbsd_init", "unable to open tracking file");
+    log_err(errno, id, "unable to open tracking file");
 
     return(-1);
     }
@@ -1671,8 +1788,17 @@ static int pbsd_init_job(
       if ((pjob->ji_arraystruct != NULL) &&
           (pjob->ji_is_array_template == FALSE))
         {
-        update_array_values(pjob->ji_arraystruct,
-          pjob,JOB_STATE_RUNNING,aeTerminate);
+        job_array *pa = pjob->ji_arraystruct;
+
+#ifdef ENABLE_PTHREADS
+/*        pthread_mutex_lock(pa->ai_mutex);*/
+#endif
+
+        update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
+
+#ifdef ENABLE_PTHREADS
+/*        pthread_mutex_unlock(pa->ai_mutex);*/
+#endif
         }
 
       break;
@@ -1737,8 +1863,9 @@ static int pbsd_init_job(
     {
     if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
       {
-      pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(
-                                                parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &d));
+      char *tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &d);
+      pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(tmp);
+      free(tmp);
       }
     else
       {

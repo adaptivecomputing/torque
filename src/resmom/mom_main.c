@@ -4434,6 +4434,7 @@ int rm_request(
 
   int   NotTrusted = 0;
 
+  char *tmp;
   char *BPtr;
   int   BSpace;
 
@@ -4442,8 +4443,16 @@ int rm_request(
 
   if (tcp)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(svr_conn[iochan].cn_mutex);
+#endif
+
     ipadd = svr_conn[iochan].cn_addr;
     port = svr_conn[iochan].cn_port;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_conn[iochan].cn_mutex);
+#endif
 
     close_io = close_conn;
     flush_io = DIS_tcp_wflush;
@@ -5410,15 +5419,18 @@ int rm_request(
   return 0;
 
 bad:
+  tmp = netaddr_pbs_net_t(ipadd);
 
   sprintf(output, "\n\tmessage refused from port %d addr %s",
           port,
-          netaddr_pbs_net_t(ipadd));
+          tmp);
 
   sprintf(TMOMRejectConn, "%s:%d  %s",
-          netaddr_pbs_net_t(ipadd),
+          tmp,
           port,
           (NotTrusted == 1) ? "(server not authorized)" : "(request corrupt)");
+
+  free(tmp);
 
   strcat(log_buffer, output);
 
@@ -5751,14 +5763,27 @@ void tcp_request(
   int  c;
   long  ipadd;
   char  address[80];
+  char *tmp;
 
   extern struct connection svr_conn[];
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_conn[fd].cn_mutex);
+#endif
+
   ipadd = svr_conn[fd].cn_addr;
 
+  tmp = netaddr_pbs_net_t(ipadd);
+
   sprintf(address, "%s:%d",
-          netaddr_pbs_net_t(ipadd),
+          tmp,
           ntohs(svr_conn[fd].cn_port));
+
+  free(tmp);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_conn[fd].cn_mutex);
+#endif
 
   if (LOGLEVEL >= 6)
     {
@@ -7835,7 +7860,7 @@ int TMOMScanForStarting(void)
 
         /* if job has been in prerun > TJobStartTimeout, purge job */
 
-        STime = pjob->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long;
+        STime = pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long;
 
         if ((STime > 0) && ((time_now - STime) > TJobStartTimeout))
           {

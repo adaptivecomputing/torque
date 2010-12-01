@@ -89,6 +89,9 @@
 #include <sys/param.h>
 #include "libpbs.h"
 #include <errno.h>
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 
 #include "server_limits.h"
 #include "list_link.h"
@@ -107,6 +110,9 @@ extern char *msg_manager;
 extern char *msg_movejob;
 extern int  pbs_errno;
 extern char *pbs_o_host;
+#ifdef ENABLE_PTHREADS
+extern pthread_mutex_t *svr_alljobs_mutex;
+#endif
 
 extern int svr_movejob(job *, char *, struct batch_request *);
 extern int svr_chkque(job *, pbs_queue *, char *, int, char *);
@@ -152,6 +158,10 @@ void req_movejob(
 #endif /* NDEBUG */
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(jobp->ji_mutex);
+#endif
 
     return;
     }
@@ -206,6 +216,10 @@ void req_movejob(
 
       break;
     }  /* END switch (svr_movejob(jobp,req->rq_ind.rq_move.rq_destin,req)) */
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(jobp->ji_mutex);
+#endif
 
   return;
   }  /* END req_movejob() */
@@ -263,6 +277,11 @@ void req_orderjob(
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob1->ji_mutex);
+    pthread_mutex_unlock(pjob2->ji_mutex);
+#endif
+
     return;
     }
   else if (pjob1->ji_qhdr != pjob2->ji_qhdr)
@@ -283,6 +302,11 @@ void req_orderjob(
                 NULL)))
       {
       req_reject(rc, 0, req, NULL, NULL);
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob1->ji_mutex);
+      pthread_mutex_unlock(pjob2->ji_mutex);
+#endif
 
       return;
       }
@@ -311,6 +335,7 @@ void req_orderjob(
   else
     {
     swap_link(&pjob1->ji_jobque,  &pjob2->ji_jobque);
+
     swap_link(&pjob1->ji_alljobs, &pjob2->ji_alljobs);
     }
 
@@ -323,6 +348,10 @@ void req_orderjob(
   reply_ack(req);
 
   /* SUCCESS */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob1->ji_mutex);
+  pthread_mutex_unlock(pjob2->ji_mutex);
+#endif
 
   return;
   }  /* END req_orderjob() */

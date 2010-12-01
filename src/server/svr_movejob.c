@@ -211,13 +211,16 @@ int svr_movejob(
   if ((toserver = strchr(destination, '@')) != NULL)
     {
     /* check to see if the part after '@' is this server */
+    char *tmp = parse_servername(++toserver, &port);
 
-    destaddr = get_hostaddr(parse_servername(++toserver, &port));
+    destaddr = get_hostaddr(tmp);
 
     if (destaddr != pbs_server_addr)
       {
       local = 0;
       }
+
+    free(tmp);
     }
 
   if (local != 0)
@@ -347,6 +350,10 @@ static void post_routejob(
   char *id = "post_routejob";
   job *jobp = (job *)pwt->wt_parm1;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(jobp->ji_mutex);
+#endif
+
   if (WIFEXITED(stat))
     {
     r = WEXITSTATUS(stat);
@@ -411,6 +418,10 @@ static void post_routejob(
         job_abt(&jobp, pbse_to_txt(PBSE_ROUTEREJ));
       else if (r != 0)
         job_abt(&jobp, msg_routexceed);
+#ifdef ENABLE_PTHREADS
+      else
+        pthread_mutex_unlock(jobp->ji_mutex);
+#endif
 
       break;
     }  /* END switch (r) */
@@ -447,6 +458,10 @@ static void post_movejob(
   int stat;
   int r;
   job *jobp;
+
+#ifdef ENABLE_PTHREADS
+  int  has_mutex = TRUE;
+#endif
 
   req  = (struct batch_request *)pwt->wt_parm2;
 
@@ -496,6 +511,10 @@ static void post_movejob(
               req->rq_host);
 
       job_purge(jobp);
+
+#ifdef ENABLE_PTHREADS
+      has_mutex = FALSE;
+#endif
       }
     else
       {
@@ -533,6 +552,11 @@ static void post_movejob(
     {
     reply_ack(req);
     }
+
+#ifdef ENABLE_PTHREADS
+  if (has_mutex == TRUE)
+    pthread_mutex_unlock(jobp->ji_mutex);
+#endif 
 
   return;
   }  /* END post_movejob() */
@@ -1110,6 +1134,7 @@ int net_move(
   void (*post_func)(struct work_task *);
   char  *toserver;
   char  *id = "net_move";
+  char  *tmp;
 
   /* Determine to whom are we sending the job */
 
@@ -1125,8 +1150,12 @@ int net_move(
 
   toserver++;  /* point to server name */
 
-  hostname = parse_servername(toserver, &port);
+  tmp = parse_servername(toserver, &port);
+
+  hostname = tmp;
   hostaddr = get_hostaddr(hostname);
+
+  free(tmp);
 
   if (req)
     {
@@ -1221,8 +1250,12 @@ static int should_retry_route(
 
 
 
-static int
-move_job_file(int conn, job *pjob, enum job_file which)
+static int move_job_file(
+   
+  int conn, 
+  job *pjob, 
+  enum job_file which)
+
   {
   char path[MAXPATHLEN+1];
 
@@ -1245,4 +1278,5 @@ move_job_file(int conn, job *pjob, enum job_file which)
     }
 
   return PBSD_jobfile(conn, PBS_BATCH_MvJobFile, path, pjob->ji_qs.ji_jobid, which);
-  }
+  } /* END move_job_file() */
+

@@ -170,14 +170,16 @@ int relay_to_mom(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buffer, "momaddr=%s",
-            netaddr_pbs_net_t(pjob->ji_qs.ji_un.ji_exect.ji_momaddr));
+    char *tmp = netaddr_pbs_net_t(pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
+    sprintf(log_buffer, "momaddr=%s",tmp);
 
     log_record(
       PBSEVENT_SCHED,
       PBS_EVENTCLASS_REQUEST,
       id,
       log_buffer);
+
+    free(tmp);
     }
 
   conn = svr_connect(
@@ -274,6 +276,8 @@ int issue_to_svr(
 
   svrname = parse_servername(servern, &port);
   svraddr = get_hostaddr(svrname);
+
+  free(svrname);
 
   if (svraddr == (pbs_net_t)0)
     {
@@ -680,6 +684,8 @@ int issue_Drequest(
 /*
  * process_reply - process the reply received for a request issued to
  * another server via issue_request()
+ *
+ * should be called when the relevant svr_conn mutex is already held
  */
 
 void process_Dreply(
@@ -687,6 +693,7 @@ void process_Dreply(
   int sock)
 
   {
+  static char *id = "process_Dreply";
   int    handle;
 
   struct work_task *ptask;
@@ -711,7 +718,7 @@ void process_Dreply(
 
   if (ptask == NULL)
     {
-    log_err(-1, "process_Dreply", msg_err_malloc);
+    log_err(-1, id, msg_err_malloc);
 
     close_conn(sock);
 

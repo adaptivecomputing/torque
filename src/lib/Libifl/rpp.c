@@ -452,6 +452,11 @@ static int  open_key = 0;  /* monotonicly increasing */
 static struct send_packet *top = NULL; /* ptrs to beginning and end */
 
 static struct send_packet *bottom = NULL; /* of master send list; */
+
+#ifdef ENABLE_PTHREADS
+pthread_mutex_t *master_list_mutex = NULL;
+#endif
+
 /* All sent date is linked */
 /* between top and bottom. */
 
@@ -472,6 +477,9 @@ int  rpp_fd = -1;
 ** entries.  The value of rpp_fd will be contained in this array.
 */
 int  *rpp_fd_array = NULL;
+#ifdef ENABLE_PTHREADS
+/*pthread_mutex_t *rpp_fd_mutex = NULL;*/
+#endif
 
 /*
 ** Number of elements in rpp_fd_array
@@ -942,6 +950,16 @@ static void rpp_form_pkt(
   I8TOH(crc(pktp->data, (u_long)(len + RPP_PKT_CRC)),
         (char *)&pktp->data[len+RPP_PKT_CRC])
 
+#ifdef ENABLE_PTHREADS
+  if (master_list_mutex == NULL)
+    {
+    master_list_mutex = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(master_list_mutex,NULL);
+    }
+
+  pthread_mutex_lock(master_list_mutex);
+#endif
+
   if (bottom)
     bottom->down = pktp;
 
@@ -951,6 +969,10 @@ static void rpp_form_pkt(
     top = pktp;
 
   bottom = pktp;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(master_list_mutex);
+#endif
 
   return;
   }
@@ -1054,8 +1076,7 @@ bad:
 ** down to bottom.  Will not cause state change.
 */
 
-static void
-rpp_send_out(void)
+static void rpp_send_out(void)
 
   {
   struct send_packet *pp;
@@ -1067,6 +1088,16 @@ rpp_send_out(void)
   char *id = "rpp_send_out";
 
   curr = time(NULL);
+
+#ifdef ENABLE_PTHREADS
+  if (master_list_mutex == NULL)
+    {
+    master_list_mutex = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(master_list_mutex,NULL);
+    }
+
+  pthread_mutex_lock(master_list_mutex);
+#endif
 
   for (pp = top;pp != NULL;pp = pp->down)
     {
@@ -1116,6 +1147,10 @@ rpp_send_out(void)
 
     pp->sent_out++;
     }  /* END for (pp) */
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(master_list_mutex);
+#endif
 
   /* NOTE:  failure cannot be detected */
 
@@ -1422,6 +1457,10 @@ static void dqueue(
   struct send_packet *pp)
 
   {
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(master_list_mutex);
+#endif
+
   if (pp->down == NULL)
     bottom = pp->up;
   else
@@ -1431,6 +1470,10 @@ static void dqueue(
     top = pp->down;
   else
     pp->up->down = pp->down;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(master_list_mutex);
+#endif
 
   if (--pkts_sent < 0)
     pkts_sent = 0;
@@ -1486,11 +1529,19 @@ static void clear_send(
       struct send_packet *look; /* might not be */
       /* on send queue */
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(master_list_mutex);
+#endif
+
       for (look = top;look;look = look->down)
         {
         if (look == spp)
           break;
         }
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(master_list_mutex);
+#endif
 
       if (look == NULL)
         {
@@ -2137,6 +2188,16 @@ static int rpp_recv_pkt(
         I8TOH(crc(spp->data, (u_long)(len + RPP_PKT_CRC)),
               (char *)&spp->data[len+RPP_PKT_CRC])
 
+#ifdef ENABLE_PTHREADS
+        if (master_list_mutex == NULL)
+          {
+          master_list_mutex = malloc(sizeof(pthread_mutex_t));
+          pthread_mutex_init(master_list_mutex,NULL);
+          }
+
+        pthread_mutex_lock(master_list_mutex);
+#endif
+
         if (bottom)
           bottom->down = spp;
 
@@ -2148,6 +2209,10 @@ static int rpp_recv_pkt(
           top = spp;
 
         bottom = spp;
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(master_list_mutex);
+#endif
         }
 
       break;
@@ -2188,6 +2253,9 @@ static int rpp_recv_all(void)
   int rc = -3;
 
   LOCAL_DBPRT((DBTO, "entered rpp_recv_all\n"))
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_lock(rpp_fd_mutex);*/
+#endif
 
   for (i = 0;i < rpp_fd_num;i++)
     {
@@ -2202,6 +2270,10 @@ static int rpp_recv_all(void)
       break;
       }
     }  /* END for (i) */
+
+#ifdef ENABLE_PTHREADS
+/*  pthread_mutex_unlock(rpp_fd_mutex);*/
+#endif
 
   return(rc);
   }  /* rpp_recv_all() */
@@ -2547,13 +2619,23 @@ int rpp_bind(
     {
     int i;
 
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_lock(rpp_fd_mutex);*/
+#endif
+
     for (i = 0;i < rpp_fd_num;i++)
       {
       if (rpp_fd_array[i] == rpp_fd)
         {
+#ifdef ENABLE_PTHREADS
+/*        pthread_mutex_unlock(rpp_fd_mutex);*/
+#endif
         return(rpp_fd);
         }
       }
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_unlock(rpp_fd_mutex);*/
+#endif
     }
 
   memset(&from, '\0', sizeof(from));
@@ -2574,6 +2656,12 @@ int rpp_bind(
 
   if (rpp_fd_array == NULL)
     {
+#ifdef ENABLE_PTHREADS
+/*    rpp_fd_mutex = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(rpp_fd_mutex,NULL);
+    pthread_mutex_lock(rpp_fd_mutex);*/
+#endif
+
     rpp_fd_array = (int *)malloc(sizeof(int));
 
     rpp_fd_num = 1;
@@ -2590,6 +2678,10 @@ int rpp_bind(
     }
   else
     {
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_lock(rpp_fd_mutex);*/
+#endif
+
     rpp_fd_num++;
 
     rpp_fd_array = (int *)realloc(rpp_fd_array, sizeof(int) * rpp_fd_num);
@@ -2598,6 +2690,10 @@ int rpp_bind(
   assert(rpp_fd_array);
 
   rpp_fd_array[rpp_fd_num-1] = rpp_fd;
+
+#ifdef ENABLE_PTHREADS
+/*  pthread_mutex_unlock(rpp_fd_mutex);*/
+#endif
 
   return(rpp_fd);
   }
@@ -2890,6 +2986,10 @@ rpp_terminate(void)
   struct recv_packet *rpp;
   int   i;
 
+#ifdef ENABLE_PTHREADS
+/*  pthread_mutex_lock(rpp_fd_mutex);*/
+#endif
+
   for (i = 0;i < rpp_fd_num;i++)
     close(rpp_fd_array[i]);
 
@@ -2900,6 +3000,10 @@ rpp_terminate(void)
     rpp_fd_array = NULL;
     rpp_fd_num = 0;
     }
+
+#ifdef ENABLE_PTHREADS
+/*  pthread_mutex_lock(rpp_fd_mutex);*/
+#endif
 
   for (i = 0;i < stream_num;i++)
     {
@@ -2937,9 +3041,17 @@ rpp_terminate(void)
       }
     }
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(master_list_mutex);
+#endif
+
   top = NULL;
 
   bottom = NULL;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(master_list_mutex);
+#endif
 
   if (stream_array)
     free(stream_array);
@@ -3023,8 +3135,16 @@ rpp_shutdown(void)
       tv.tv_sec  = RPPTimeOut;
       tv.tv_usec = 0;
 
+#ifdef ENABLE_PTHREADS
+/*      pthread_mutex_lock(rpp_fd_mutex);*/
+#endif
+
       for (i = 0;i < rpp_fd_num;i++)
         FD_SET(rpp_fd_array[i], &fdset);
+
+#ifdef ENABLE_PTHREADS
+/*      pthread_mutex_unlock(rpp_fd_mutex);*/
+#endif
 
       i = select(FD_SETSIZE, &fdset, NULL, NULL, &tv);
 
@@ -3383,8 +3503,16 @@ static int rpp_okay(
     tv.tv_sec  = RPPTimeOut;
     tv.tv_usec = 0;
 
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_lock(rpp_fd_mutex);*/
+#endif
+
     for (i = 0;i < rpp_fd_num;i++)
       FD_SET(rpp_fd_array[i], &fdset);
+
+#ifdef ENABLE_PTHREADS
+/*    pthread_mutex_unlock(rpp_fd_mutex);*/
+#endif
 
     i = select(FD_SETSIZE, &fdset, NULL, NULL, &tv);
 

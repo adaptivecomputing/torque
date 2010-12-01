@@ -1,6 +1,6 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
-3.0
+3.1
   e - make node functionality multi-threaded. Data is now protected, and 
       TORQUE can run with a customizable amount of threads available in the
       threadpool using min_threads, max_threads, and thread_idle_seconds.

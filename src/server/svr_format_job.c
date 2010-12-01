@@ -40,140 +40,173 @@ void svr_format_job(
   char *text)       /* (optional) additional message text */
 
   {
-    char *p, *stdmessage = NULL, *reason = NULL;
-
-    /* First get the "standard" message */
-
-    switch (mailpoint)
-      {
-
-      case MAIL_ABORT:
-
-        stdmessage = msg_job_abort;
-        reason = msg_job_abort;
-
-        break;
-
-      case MAIL_BEGIN:
-
-        stdmessage = msg_job_start;
-        reason = msg_job_start;
-
-        break;
-
-      case MAIL_END:
-
-        stdmessage = msg_job_end;
-        reason = msg_job_end;
-
-        break;
-
-      case MAIL_DEL:
-
-        stdmessage = msg_job_del;
-        reason = msg_job_del;
-
-        break;
-
-      case MAIL_STAGEIN:
-
-        stdmessage = msg_job_stageinfail;
-        reason = pbse_to_txt(PBSE_STAGEIN); /* NB: short version used */
-
-        break;
-
-      case MAIL_CHKPTCOPY:
+  char *p, *stdmessage = NULL, *reason = NULL;
   
-        stdmessage = msg_job_copychkptfail;
-	reason = msg_job_copychkptfail;
+  /* First get the "standard" message */
   
-        break;
-
-      case MAIL_OTHER:
-
-      default:
-
-        stdmessage = msg_job_otherfail;
-        reason = msg_job_otherfail;
-
-        break;
-      }  /* END switch (mailpoint) */
-
-
-    p = fmt;
-    while (*p)
+  switch (mailpoint)
+    {
+    
+    case MAIL_ABORT:
+      
+      stdmessage = msg_job_abort;
+      reason = msg_job_abort;
+      
+      break;
+      
+    case MAIL_BEGIN:
+      
+      stdmessage = msg_job_start;
+      reason = msg_job_start;
+      
+      break;
+      
+    case MAIL_END:
+      
+      stdmessage = msg_job_end;
+      reason = msg_job_end;
+      
+      break;
+      
+    case MAIL_DEL:
+      
+      stdmessage = msg_job_del;
+      reason = msg_job_del;
+      
+      break;
+      
+    case MAIL_STAGEIN:
+      
+      stdmessage = msg_job_stageinfail;
+      reason = pbse_to_txt(PBSE_STAGEIN); /* NB: short version used */
+      
+      break;
+      
+    case MAIL_CHKPTCOPY:
+      
+      stdmessage = msg_job_copychkptfail;
+      reason = msg_job_copychkptfail;
+      
+      break;
+      
+    case MAIL_OTHER:
+      
+    default:
+      
+      stdmessage = msg_job_otherfail;
+      reason = msg_job_otherfail;
+      
+      break;
+    }  /* END switch (mailpoint) */
+    
+  p = fmt;
+  while (*p)
+    {
+    if (*p == '\\')      /* escape sequences */
       {
-      if (*p == '\\')      /* escape sequences */
+      switch(p[1])
         {
-        switch(p[1])
-          {
-          case 'n':  /* newline */
-            fputc('\n', fh);
-            p += 2;
-            break;
-          case 't':  /* tab */
-            fputc('\t', fh);
-            p += 2;
-            break;
-          case '\\': /* backslash */
-          case '\'': /* quote */
-          case '\"': /* double-quote */
-            fputc(p[1], fh);
-            p += 2;
-            break;
-          default:  /* we don't recognise this escape, ignore it (catches p[1]==0) */
-            fputc(*p++, fh);
-            break;
-          } /* END switch(p[1]) */
-        }
-        else if (*p == '%') /* format statement */
-          {
-          switch(p[1])
-            {
-            case 'd':  /* details */
-              if (text != NULL)
-                {
-                fprintf(fh, "%s", text);
-                }
-              p += 2;
-              break;
-            case 'h':  /* host */
-              if (pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str != NULL)
-                {
-                fprintf(fh, "%s", pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
-                }
-              p += 2;
-              break;
-            case 'i':  /* jobId */
-              fprintf(fh, "%s", pjob->ji_qs.ji_jobid);
-              p += 2;
-              break;
-            case 'j':  /* jobname */
-              fprintf(fh, "%s", pjob->ji_wattr[(int)JOB_ATR_jobname].at_val.at_str);
-              p += 2;
-              break;
-            case 'm':  /* stdmessage */
-              if (stdmessage != NULL)
-                {
-                fprintf(fh, "%s", stdmessage);
-                }
-              p += 2;
-              break;
-            case 'r':  /* reason */
-              if (reason != NULL)
-                {
-                fprintf(fh, "%s", reason);
-                }
-              p += 2;
-              break;
-            default:  /* we don't recognise this format, ignore it (catches p[1]==0) */
-              fputc(*p++, fh);
-              break;
-            } /* END switch(p[1]) */
-          }
-        else               /* ordinary character */
-          {
+        case 'n':  /* newline */
+
+          fputc('\n', fh);
+          p += 2;
+
+          break;
+
+        case 't':  /* tab */
+
+          fputc('\t', fh);
+
+          p += 2;
+
+          break;
+
+        case '\\': /* backslash */
+        case '\'': /* quote */
+        case '\"': /* double-quote */
+
+
+          fputc(p[1], fh);
+          p += 2;
+  
+          break;
+
+        default:  /* we don't recognise this escape, ignore it (catches p[1]==0) */
+
           fputc(*p++, fh);
-          }
-      } /* END while (*p) */
+
+          break;
+        } /* END switch(p[1]) */
+      }
+    else if (*p == '%') /* format statement */
+      {
+      switch(p[1])
+        {
+        case 'd':  /* details */
+
+          if (text != NULL)
+            {
+            fprintf(fh, "%s", text);
+            }
+          p += 2;
+
+          break;
+
+        case 'h':  /* host */
+
+          if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+            {
+            fprintf(fh, "%s", pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+            }
+          p += 2;
+
+          break;
+
+        case 'i':  /* jobId */
+
+          fprintf(fh, "%s", pjob->ji_qs.ji_jobid);
+          p += 2;
+
+          break;
+
+        case 'j':  /* jobname */
+
+          fprintf(fh, "%s", pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str);
+          p += 2;
+
+          break;
+
+        case 'm':  /* stdmessage */
+
+          if (stdmessage != NULL)
+            {
+            fprintf(fh, "%s", stdmessage);
+            }
+          p += 2;
+
+          break;
+
+        case 'r':  /* reason */
+
+          if (reason != NULL)
+            {
+            fprintf(fh, "%s", reason);
+            }
+          p += 2;
+
+          break;
+
+        default:  /* we don't recognise this format, ignore it (catches p[1]==0) */
+
+          fputc(*p++, fh);
+
+          break;
+        } /* END switch(p[1]) */
+      }
+    else               /* ordinary character */
+      {
+      fputc(*p++, fh);
+      }
+    } /* END while (*p) */
   } /* END format_job() */
+

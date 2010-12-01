@@ -96,6 +96,9 @@
 #if HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 
 #include "libpbs.h"
 #include "pbs_error.h"
@@ -134,6 +137,13 @@
 /* global data items */
 
 tlist_head svr_requests;
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+pthread_mutex_t *svr_requests_mutex = NULL;
+pthread_mutex_t *svr_newjobs_mutex = NULL;
+pthread_mutex_t *svr_alljobs_mutex = NULL;
+#endif
+#endif
 
 extern struct    connection svr_conn[];
 
@@ -178,11 +188,27 @@ extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 #endif
 
 /* request processing prototypes */
+#ifdef PBS_MOM
 void req_quejob(struct batch_request *preq);
 void req_jobcredential(struct batch_request *preq);
 void req_jobscript(struct batch_request *preq);
 void req_rdytocommit(struct batch_request *preq);
 void req_commit(struct batch_request *preq);
+#else
+#ifdef ENABLE_PTHREADS
+void *req_jobcredential(void *preq);
+void *req_quejob(void *preq);
+void *req_rdytocommit(void *preq);
+void *req_jobscript(void *preq);
+void *req_commit(void *preq);
+#else
+void req_jobscript(struct batch_request *preq);
+void req_rdytocommit(struct batch_request *preq);
+void req_jobcredential(struct batch_request *preq);
+void req_quejob(struct batch_request *preq);
+void req_commit(struct batch_request *preq);
+#endif
+#endif
 void req_deletejob(struct batch_request *preq);
 void req_holdjob(struct batch_request *preq);
 void req_checkpointjob(struct batch_request *preq);
@@ -313,6 +339,8 @@ int get_creds(int sd, char *username, char *hostname)
  * - Validate requesting host and user.
  * - Call function to process request based on type.
  *    That function MUST free the request by calling free_br()
+ *
+ * NOTE: the caller functions hold the mutex for the connection
  */
 
 void process_request(
@@ -339,6 +367,9 @@ void process_request(
    */
 
 #ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_conn[sfds].cn_mutex);
+#endif
 
   if (svr_conn[sfds].cn_active == FromClientDIS)
     {
@@ -363,8 +394,12 @@ void process_request(
 
     close_conn(sfds);
 
-    free_br(request);
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+#endif
 
+    free_br(request);
+    
     return;
     }
 
@@ -381,6 +416,12 @@ void process_request(
 
     close_client(sfds);
 
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+#endif
+#endif
+
     free_br(request);
 
     return;
@@ -395,6 +436,12 @@ void process_request(
     /* ??? not sure about this ??? */
 
     close_client(sfds);
+
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+#endif
+#endif
 
     free_br(request);
 
@@ -414,6 +461,12 @@ void process_request(
 
     close_client(sfds);
 
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+#endif
+#endif
+
     return;
     }
 
@@ -423,14 +476,20 @@ void process_request(
 
     sprintf(log_buffer, "%s: %lu",
             pbse_to_txt(PBSE_BADHOST),
-            get_connectaddr(sfds));
+            get_connectaddr(sfds,FALSE));
 
     LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buffer);
 
     snprintf(tmpLine, sizeof(tmpLine), "cannot determine hostname for connection from %lu",
-             get_connectaddr(sfds));
+             get_connectaddr(sfds,FALSE));
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
+
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+#endif
+#endif
 
     return;
     }
@@ -463,7 +522,7 @@ void process_request(
 
     struct pbsnode *isanode;
 
-    isanode = PGetNodeFromAddr(get_connectaddr(sfds));
+    isanode = PGetNodeFromAddr(get_connectaddr(sfds,FALSE));
 
     if ((isanode == NULL) &&
         (strcmp(server_host, request->rq_host) != 0) &&
@@ -480,6 +539,10 @@ void process_request(
       req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
 
       close_client(sfds);
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+#endif
 
       return;
       }
@@ -529,7 +592,13 @@ void process_request(
       req_connect(request);
 
       if (svr_conn[sfds].cn_socktype == PBS_SOCK_INET)
+        {
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+#endif
+
         return;
+        }
 
       }
 
@@ -559,6 +628,10 @@ void process_request(
       req_reject(rc, 0, request, NULL, NULL);
 
       close_client(sfds);
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+#endif
 
       return;
       }
@@ -601,6 +674,9 @@ void process_request(
           skip = TRUE;
 
           }
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
         }
       if (!skip)
         {
@@ -627,6 +703,10 @@ void process_request(
       case PBS_BATCH_StageIn:
       case PBS_BATCH_jobscript:
 
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+#endif
+
         req_reject(PBSE_SVRDOWN, 0, request, NULL, NULL);
 
         return;
@@ -636,6 +716,10 @@ void process_request(
         break;
       }
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+#endif
 
 #else /* THIS CODE FOR MOM ONLY */
 
@@ -660,6 +744,10 @@ void process_request(
       }
 
 /*    if (!tfind(svr_conn[sfds].cn_addr, &okclients)) */
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(svr_conn[sfds].cn_mutex);
+#endif
+
     if (!AVL_is_in_tree(svr_conn[sfds].cn_addr, 0, okclients))
       {
       sprintf(log_buffer, "request type %s from host %s rejected (host not authorized)",
@@ -675,6 +763,10 @@ void process_request(
       req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
 
       close_client(sfds);
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+#endif
 
       return;
       }
@@ -693,6 +785,10 @@ void process_request(
       }
 
     mom_server_update_receive_time_by_ip(svr_conn[sfds].cn_addr, reqtype_to_txt(request->rq_type));
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+#endif
     }    /* END BLOCK */
 
   request->rq_fromsvr = 1;
@@ -753,31 +849,68 @@ void dispatch_request(
 
       net_add_close_func(sfds, close_quejob);
 
+#ifdef PBS_MOM
       req_quejob(request);
-
+#else
+#ifdef ENABLE_PTHREADS
+      enqueue_threadpool_request(req_quejob,request);
+#else
+      req_quejob(request);
+#endif
+#endif
       break;
 
     case PBS_BATCH_JobCred:
 
+#ifdef PBS_MOM
       req_jobcredential(request);
+#else
+#ifdef ENABLE_PTHREADS
+      enqueue_threadpool_request(req_jobcredential,request);
+#else
+      req_jobcredential(request);
+#endif
+#endif
 
       break;
 
     case PBS_BATCH_jobscript:
 
+#ifdef PBS_MOM
       req_jobscript(request);
-
+#else
+#ifdef ENABLE_PTHREADS
+      enqueue_threadpool_request(req_jobscript,request);
+#else
+      req_jobscript(request);
+#endif
+#endif
       break;
 
     case PBS_BATCH_RdytoCommit:
 
+#ifdef PBS_MOM
       req_rdytocommit(request);
-
+#else
+#ifdef ENABLE_PTHREADS
+      enqueue_threadpool_request(req_rdytocommit,request);
+#else
+      req_rdytocommit(request);
+#endif
+#endif
       break;
 
     case PBS_BATCH_Commit:
 
+#ifdef PBS_MOM
       req_commit(request);
+#else
+#ifdef ENABLE_PTHREADS
+      enqueue_threadpool_request(req_commit,request);
+#else
+      req_commit(request);
+#endif
+#endif
 
       net_add_close_func(sfds, (void (*)())0);
 
@@ -957,12 +1090,6 @@ void dispatch_request(
 
       break;
 
-    case PBS_BATCH_StatusJob:
-
-      req_stat_job(request);
-
-      break;
-
     case PBS_BATCH_MvJobFile:
 
       req_mvjobfile(request);
@@ -1040,7 +1167,23 @@ void dispatch_request(
 
       break;
 
+    case PBS_BATCH_StatusJob:
+
+#ifdef ENABLE_PTHREADS
+      enqueue_threadpool_request(req_stat_job,request);
+#else
+      req_stat_job(request);
+#endif
+
+      break;
+
 #else /* MOM only functions */
+
+    case PBS_BATCH_StatusJob:
+
+      req_stat_job(request);
+
+      break;
 
     case PBS_BATCH_ReturnFiles:
 
@@ -1093,6 +1236,12 @@ static void close_client(
 
   close_conn(sfds); /* close the connection */
 
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_requests_mutex);
+#endif
+#endif
+
   preq = (struct batch_request *)GET_NEXT(svr_requests);
 
   while (preq != NULL)
@@ -1107,6 +1256,12 @@ static void close_client(
 
     preq = (struct batch_request *)GET_NEXT(preq->rq_link);
     }
+
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_requests_mutex);
+#endif
+#endif
 
   return;
   }  /* END close_client() */
@@ -1139,7 +1294,6 @@ struct batch_request *alloc_br(
 
   req->rq_type = type;
 
-  CLEAR_LINK(req->rq_link);
 
   req->rq_conn = -1;  /* indicate not connected */
   req->rq_orgconn = -1;  /* indicate not connected */
@@ -1147,7 +1301,21 @@ struct batch_request *alloc_br(
   req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
   req->rq_noreply = FALSE;  /* indicate reply is needed */
 
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_requests_mutex);
+#endif
+#endif
+
+  CLEAR_LINK(req->rq_link);
+
   append_link(&svr_requests, &req->rq_link, req);
+
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_requests_mutex);
+#endif
+#endif
 
   return(req);
   }
@@ -1169,14 +1337,36 @@ static void close_quejob(
   job *pjob;
   job *npjob;
 
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_newjobs_mutex);
+#endif
+#endif
+
   pjob = (job *)GET_NEXT(svr_newjobs);
+
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_newjobs_mutex);
+#endif
+#endif
 
   while (pjob != NULL)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
     npjob = GET_NEXT(pjob->ji_alljobs);
 
     if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds)
       {
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(svr_newjobs_mutex);
+#endif
+#endif
+
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_TRANSICM)
         {
 
@@ -1212,8 +1402,18 @@ static void close_quejob(
         job_purge(pjob);
         }
 
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_newjobs_mutex);
+#endif
+#endif
+
       break;
       }  /* END if (..) */
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
     pjob = npjob;
     }
@@ -1235,7 +1435,19 @@ void free_br(
   struct batch_request *preq)
 
   {
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(svr_requests_mutex);
+#endif
+#endif
+
   delete_link(&preq->rq_link);
+
+#ifndef PBS_MOM
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(svr_requests_mutex);
+#endif
+#endif
 
   reply_free(&preq->rq_reply);
 

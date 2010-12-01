@@ -94,8 +94,11 @@
 
 
 
-int
-encode_DIS_reply(int sock, struct batch_reply *reply)
+int encode_DIS_reply(
+    
+  int sock, 
+  struct batch_reply *reply)
+
   {
   int      ct;
   int      i;

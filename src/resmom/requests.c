@@ -2598,7 +2598,7 @@ static int del_files(
         add_bad_list(pbadfile,log_buffer,1);
 
         return(-1);
-      }
+        }
 
       /* run as the user */
       if (setuid(useruid) != 0 && EUID0 == TRUE)
@@ -2612,7 +2612,7 @@ static int del_files(
         add_bad_list(pbadfile,log_buffer,1);
 
         return(-1);
-      }
+        }
 
       EUID0 = FALSE;
       UID0 = FALSE;

@@ -89,6 +89,9 @@
 #include <stdlib.h>
 #include "libpbs.h"
 #include <string.h>
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -101,6 +104,10 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "svrfunc.h"
+#ifdef ENABLE_PTHREADS
+extern pthread_mutex_t *svr_alljobs_mutex;
+/*extern pthread_mutex_t *svr_jobs_array_sum_mutex;*/
+#endif
 
 /* Private Data */
 
@@ -369,6 +376,7 @@ static void sel_step2(
 
   {
   job       *pjob;
+  job       *next;
   int        rc;
   int        exec_only = 0;
   int        summarize_arrays = 0;
@@ -404,15 +412,37 @@ static void sel_step2(
         if (cntl->sc_pque)
           pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs_array_sum);
         else
+          {
+#ifdef ENABLE_PTHREADS
+          /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
+#endif
+
           pjob = (job *)GET_NEXT(svr_jobs_array_sum);
+
+#ifdef ENABLE_PTHREADS
+          /*pthread_mutex_unlock(svr_jobs_array_sum_mutex);*/
+#endif
+          }
         }
       else if (cntl->sc_pque)
         {
-        pjob = (job *)GET_NEXT(pjob->ji_jobque_array_sum);
+        next = (job *)GET_NEXT(pjob->ji_jobque_array_sum);
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+        pjob = next;
         }
       else
         {
-        pjob = (job *)GET_NEXT(pjob->ji_jobs_array_sum);
+        next = (job *)GET_NEXT(pjob->ji_jobs_array_sum);
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+        pjob = next;
         }
       }
     else
@@ -422,20 +452,46 @@ static void sel_step2(
         if (cntl->sc_pque)
           pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs);
         else
+          {
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_lock(svr_alljobs_mutex);
+#endif
+
           pjob = (job *)GET_NEXT(svr_alljobs);
+
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(svr_alljobs_mutex);
+#endif
+          }
         }
       else if (cntl->sc_pque)
         {
-        pjob = (job *)GET_NEXT(pjob->ji_jobque);
+        next = (job *)GET_NEXT(pjob->ji_jobque);
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+        pjob = next;
         }
       else
         {
-        pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+        next = (job *)GET_NEXT(pjob->ji_alljobs);
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+        pjob = next;
         }
       }
 
     if (pjob == NULL)
       break;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif
 
     if (exec_only)
       {
@@ -461,11 +517,19 @@ static void sel_step2(
 
           if ((rc = stat_to_mom(pjob, cntl)) == PBSE_SYSTEM)
             {
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
             break;
             }
 
           if (rc == 0)
             {
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
             return;
             }
 
@@ -496,6 +560,7 @@ static void sel_step3(
   int        bad = 0;
   int        summarize_arrays = 0;
   job       *pjob;
+  job       *next;
 
   struct batch_request *preq;
 
@@ -544,19 +609,43 @@ static void sel_step3(
     if (cntl->sc_pque)
       pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs_array_sum);
     else
+      {
+#ifdef ENABLE_PTHREADS
+      /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
+#endif
+
       pjob = (job *)GET_NEXT(svr_jobs_array_sum);
+
+#ifdef ENABLE_PTHREADS
+      /*pthread_mutex_unlock(svr_jobs_array_sum_mutex);*/
+#endif
+      }
     }
   else
     {
     if (cntl->sc_pque)
       pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs);
     else
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(svr_alljobs_mutex);
+#endif
+
       pjob = (job *)GET_NEXT(svr_alljobs);
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_alljobs_mutex);
+#endif
+      }
     }
 
 
   while (pjob != NULL)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
     if (server.sv_attr[SRV_ATR_query_others].at_val.at_long ||
         (svr_authorize_jobreq(preq, pjob) == 0))
       {
@@ -583,6 +672,10 @@ static void sel_step3(
           if (pselect == NULL)
             {
             rc = PBSE_SYSTEM;
+
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pjob->ji_mutex);
+#endif
             break;
             }
 
@@ -601,7 +694,12 @@ static void sel_step3(
           rc = status_job(pjob, preq, NULL, &preply->brp_un.brp_status, &bad);
 
           if (rc && (rc != PBSE_PERM))
+            {
+#ifdef ENABLE_PTHREADS
+            pthread_mutex_unlock(pjob->ji_mutex);
+#endif
             break;
+            }
           }
         }
       }
@@ -611,17 +709,25 @@ nextjob:
     if(summarize_arrays)
       {
       if (cntl->sc_pque)
-        pjob = (job *)GET_NEXT(pjob->ji_jobque_array_sum);
+        next = (job *)GET_NEXT(pjob->ji_jobque_array_sum);
       else
-        pjob = (job *)GET_NEXT(pjob->ji_jobs_array_sum);
+        next = (job *)GET_NEXT(pjob->ji_jobs_array_sum);
       }
     else
       {
       if (cntl->sc_pque)
-        pjob = (job *)GET_NEXT(pjob->ji_jobque);
+        next = (job *)GET_NEXT(pjob->ji_jobque);
       else
-        pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+        {
+        next = (job *)GET_NEXT(pjob->ji_alljobs);
+
+        }
       }
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+    pjob = next;
     }
 
   free_sellist(cntl->sc_select);
@@ -692,8 +798,11 @@ static int select_job(
  * Returns 1 if attribute meets criteria, 0 if not
  */
 
-static int
-sel_attr(attribute *jobat, struct select_list *pselst)
+static int sel_attr(
+    
+  attribute *jobat,
+  struct select_list *pselst)
+
   {
   int    rc;
   resource  *rescjb;
@@ -753,8 +862,10 @@ sel_attr(attribute *jobat, struct select_list *pselst)
  * free_sellist - free a select_list list
  */
 
-static void
-free_sellist(struct select_list *pslist)
+static void free_sellist(
+    
+  struct select_list *pslist)
+
   {
 
   struct select_list *next;
