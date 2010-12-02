@@ -5,6 +5,20 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       TORQUE can run with a customizable amount of threads available in the
       threadpool using min_threads, max_threads, and thread_idle_seconds.
       Only available when configured with --enable-pthreads
+  b - Merged revision 4325 from 2.5-fixes. Fixed a problem where the -m n
+      (request no mail on qsub) was not always being recongnized.
+  e - Merged buildutils/torque.spec.in from 2.4-fixes.
+      Refactored torque spec file to comply with established RPM best
+      practices, including the following:
+        - Standard installation locations based on RPM macro configuration
+          (e.g., %{_prefix})
+        - Latest upstream RPM conditional build semantics with fallbacks for
+          older versions of RPM (e.g., RHEL4)
+        - Initial set of optional features (GUI, PAM, syslog, SCP) with more
+          planned
+        - Basic working configuration automatically generated at install-time
+        - Reduce the number of unnecessary subpackages by consolidating where
+          it makes sense and using existing RPM features (e.g., --excludedocs).
 
 2.6.0
 # note for developers: the intermediate prelease fixes are here only because
