@@ -149,7 +149,7 @@ void svr_mailowner(
     {
     char tmpBuf[LOG_BUF_SIZE];
 
-    snprintf(tmpBuf, LOG_BUF_SIZE, "sending '%c' mail for job %s to %s (%.64s)\n",
+    snprintf(tmpBuf, LOG_BUF_SIZE, "preparing to send '%c' mail for job %s to %s (%.64s)\n",
              (char)mailpoint,
              pjob->ji_qs.ji_jobid,
              pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
@@ -166,10 +166,19 @@ void svr_mailowner(
 
   if (force != MAIL_FORCE)
     {
-    /* see if user specified mail of this type */
 
     if (pjob->ji_wattr[JOB_ATR_mailpnts].at_flags & ATR_VFLAG_SET)
       {
+      if (*(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str) ==  MAIL_NONE)
+        {
+        /* do not send mail. No mail requested on job */
+        log_event(PBSEVENT_JOB,
+                  PBS_EVENTCLASS_JOB,
+                  pjob->ji_qs.ji_jobid,
+                  "Not sending email: job requested no e-mail");
+        return;
+        }
+      /* see if user specified mail of this type */
       if (strchr(
             pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str,
             mailpoint) == NULL)
