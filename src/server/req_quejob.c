@@ -672,6 +672,7 @@ void *req_quejob(
   pj->ji_modified       = 1;
   pj->ji_qs.ji_svrflags = created_here;
   pj->ji_qs.ji_un_type  = JOB_UNION_TYPE_NEW;
+  pj->ji_wattr[JOB_ATR_mailpnts].at_val.at_str = 0;
 
   /* decode attributes from request into job structure */
 
