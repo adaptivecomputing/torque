@@ -24,6 +24,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the time for killing a task exponentially, although this will show mostly for
       SMP/NUMA systems, but it will help everywhere.
       (Dr. Bernd Kallies)
+  b - Fixed a problem where the -m n (request no mail on qsub) was not
+      always being recongnized.
+
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
