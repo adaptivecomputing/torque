@@ -494,8 +494,16 @@ void req_altauthenuser(
 
   for (s = 0;s < PBS_NET_MAX_CONNECTIONS;++s)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(svr_conn[s].cn_mutex);
+#endif
+
     if (preq->rq_ind.rq_authen.rq_port != svr_conn[s].cn_port)
       {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_conn[s].cn_mutex);
+#endif
+
       continue;
       }
     break;
