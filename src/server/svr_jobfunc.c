@@ -145,7 +145,6 @@ static void eval_checkpoint(attribute *j, attribute *q);
 
 extern struct server server;
 
-extern tlist_head svr_alljobs;
 extern tlist_head svr_jobs_array_sum;
 extern tlist_head svr_jobarrays;
 extern char  *msg_badwait;  /* error message */
@@ -166,7 +165,6 @@ int           SvrNodeCt = 0;  /* cfg nodes or num nodes specified via resources_
 extern int  svr_clnodes;
 
 #ifdef ENABLE_PTHREADS
-/*extern pthread_mutex_t *svr_alljobs_mutex;*/
 /*extern pthread_mutex_t *svr_jobs_array_sum_mutex;*/
 #endif
 
@@ -328,41 +326,11 @@ int svr_enquejob(
 
   if (!pjob->ji_is_array_template)
     {
-#ifdef ENABLE_PTHREADS
-    /*pthread_mutex_lock(svr_alljobs_mutex);*/
-#endif
-
-    pjcur = (job *)GET_PRIOR(svr_alljobs);
-
-    while (pjcur != NULL)
-      {
-      if ((unsigned long)pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long >=
-          (unsigned long)pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
-        break;
-
-      pjcur = (job *)GET_PRIOR(pjcur->ji_alljobs);
-      }  /* END while (pjcur != NULL) */
-
-    if (pjcur == 0)
-      {
-      /* link first in server's list */
-
-      insert_link(&svr_alljobs, &pjob->ji_alljobs, pjob, LINK_INSET_AFTER);
-      }
-    else
-      {
-      /* link after 'current' job in server's list */
-
-      insert_link(&pjcur->ji_alljobs, &pjob->ji_alljobs, pjob, LINK_INSET_AFTER);
-      }
+    insert_job(pjob);
 
     server.sv_qs.sv_numjobs++;
 
     server.sv_jobstates[pjob->ji_qs.ji_state]++;
-
-#ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(svr_alljobs_mutex);*/
-#endif
     }
   
   /* place into svr_jobs_array_sum if necessary */
@@ -420,8 +388,7 @@ int svr_enquejob(
 #endif
         }
       }
-      
-    }
+    } /* END if (pjob->is_array_template) */
 
   /* place into queue in order of queue rank starting at end */
 
@@ -605,14 +572,10 @@ void svr_dequejob(
   resource  *presc;
 
   /* remove job from server's all job list and reduce server counts */
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_lock(svr_alljobs_mutex);*/
-#endif
 
-  if (is_linked(&svr_alljobs, &pjob->ji_alljobs))
+  /* the only error is if the job isn't present */
+  if (remove_job(pjob) == PBSE_NONE)
     {
-    delete_link(&pjob->ji_alljobs);
-
     if (!pjob->ji_is_array_template)
       {
       if (--server.sv_qs.sv_numjobs < 0)
@@ -622,10 +585,6 @@ void svr_dequejob(
         bad_ct = 1;
       }
     }
-
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(svr_alljobs_mutex);*/
-#endif
 
   if ((pque = pjob->ji_qhdr) != (pbs_queue *)0)
     {
@@ -2652,11 +2611,11 @@ static void correct_ct(
   pbs_queue *pqj)
 
   {
-  int        i;
-  char      *pc;
-  job       *pjob;
-  job       *next;
-  pbs_queue *pque;
+  int           i;
+  char         *pc;
+  job          *pjob;
+  pbs_queue    *pque;
+  job_iterator  iter;
 
   sprintf(log_buffer, "Job state counts incorrect, server %d: ",
           server.sv_qs.sv_numjobs);
@@ -2706,22 +2665,10 @@ static void correct_ct(
       pque->qu_njstate[i] = 0;
     }
 
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_lock(svr_alljobs_mutex);*/
-#endif
+  initialize_job_iterator(&iter);
 
-  pjob = (job *)GET_NEXT(svr_alljobs);
-
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(svr_alljobs_mutex);*/
-#endif
-
-  while (pjob != NULL)
+  while ((pjob = next_job(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pjob->ji_mutex);
-#endif
-
     server.sv_qs.sv_numjobs++;
 
     server.sv_jobstates[pjob->ji_qs.ji_state]++;
@@ -2740,13 +2687,9 @@ static void correct_ct(
         pque->qu_numcompleted++;
       }
 
-    next = (job *)GET_NEXT(pjob->ji_alljobs);
-
 #ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
-
-    pjob = next;
     }  /* END for (pjob) */
 
   return;

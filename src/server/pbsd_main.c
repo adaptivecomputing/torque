@@ -191,9 +191,6 @@ static int try_lock_out (int,int);
 extern int    svr_chngNodesfile;
 extern int    svr_totnodes;
 extern AvlTree streams;
-#ifdef ENABLE_PTHREADS
-extern pthread_mutex_t *svr_alljobs_mutex;
-#endif
 
 /* External Functions */
 
@@ -270,7 +267,6 @@ char         server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int  svr_delay_entry = 0;
 int  svr_do_schedule = SCH_SCHEDULE_NULL;
 tlist_head svr_queues;            /* list of queues                   */
-tlist_head svr_alljobs;           /* list of all jobs in server       */
 tlist_head svr_jobs_array_sum;    /* list of jobs in server, arrays summarized as single "placeholder" job */
 tlist_head svr_newjobs;           /* list of incoming new jobs        */
 tlist_head svr_newnodes;          /* list of newly created nodes      */
@@ -1077,25 +1073,15 @@ static time_t next_task()
 static int start_hot_jobs(void)
 
   {
-  int  ct = 0;
-  job *pjob;
-  job *next;
+  int           ct = 0;
+  job          *pjob;
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(svr_alljobs_mutex);
-#endif
+  job_iterator  iter;
 
-  pjob = (job *)GET_NEXT(svr_alljobs);
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(svr_alljobs_mutex);
-#endif
-
-  while (pjob != NULL)
+  initialize_job_iterator(&iter);
+  
+  while ((pjob = next_job(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED) &&
         (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART))
@@ -1110,13 +1096,10 @@ static int start_hot_jobs(void)
 
       ct++;
       }
-    next = (job *)GET_NEXT(pjob->ji_alljobs);
     
 #ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
-
-    pjob = next;
     }
 
   return(ct);
@@ -1131,22 +1114,22 @@ static int start_hot_jobs(void)
 void main_loop(void)
 
   {
-  int  c;
-  long  *state;
-  time_t waittime;
-  pbs_queue *pque;
-  job *pjob;
-  job *next;
-  time_t last_jobstat_time;
-  int    when;
+  int            c;
+  long         *state;
+  time_t        waittime;
+  pbs_queue    *pque;
+  job          *pjob;
+  job_iterator  iter;
+  time_t        last_jobstat_time;
+  int           when;
+
+  extern char  *msg_startup2; /* log message   */
 
   void ping_nodes(struct work_task *);
   void check_nodes(struct work_task *);
   void check_log(struct work_task *);
   void check_job_log(struct work_task *);
   void check_acct_log(struct work_task *);
-
-  extern char *msg_startup2; /* log message   */
 
   last_jobstat_time = time_now;
   server.sv_started = time(&time_now); /* time server started */
@@ -1306,21 +1289,10 @@ void main_loop(void)
       {
       struct work_task *ptask;
 
-#ifdef ENABLE_PTHREADS
-      pthread_mutex_lock(svr_alljobs_mutex);
-#endif
+      initialize_job_iterator(&iter);
 
-      pjob = (job *)GET_NEXT(svr_alljobs);
-
-#ifdef ENABLE_PTHREADS
-      pthread_mutex_unlock(svr_alljobs_mutex);
-#endif
-
-      while (pjob != NULL)
+      while ((pjob = next_job(&iter)) != NULL)
         {
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
         if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
           {
@@ -1337,13 +1309,9 @@ void main_loop(void)
             }
           }
 
-        next = (job *)GET_NEXT(pjob->ji_alljobs);
-
 #ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
 #endif
-
-        pjob = next;
         }
 
       last_jobstat_time = time_now;
@@ -1371,32 +1339,16 @@ void main_loop(void)
   track_save(NULL);                     /* save tracking data */
 
   /* save any jobs that need saving */
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(svr_alljobs_mutex);
-#endif
+  initialize_job_iterator(&iter);
 
-  pjob = (job *)GET_NEXT(svr_alljobs);
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(svr_alljobs_mutex);
-#endif
-
-  while (pjob != NULL)
+  while ((pjob = next_job(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pjob->ji_mutex);
-#endif
-
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);
     
-    next = (job *)GET_NEXT(pjob->ji_alljobs);
-
 #ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
-
-    pjob = next;
     }
 
   if (svr_chngNodesfile)

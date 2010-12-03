@@ -119,15 +119,10 @@ extern char *msg_delrunjobsig;
 extern char *msg_manager;
 extern char *msg_permlog;
 extern char *msg_badstate;
-extern tlist_head svr_alljobs;    /* list of all jobs in server       */
 
 extern struct server server;
 extern time_t time_now;
 extern int   LOGLEVEL;
-
-#ifdef ENABLE_PTHREADS
-extern pthread_mutex_t *svr_alljobs_mutex;
-#endif
 
 /* Private Functions in this file */
 
@@ -1431,10 +1426,11 @@ void purge_completed_jobs(
   struct batch_request *preq)  /* I */
 
   {
-  char *id = "purge_completed_jobs";
-  job  *pjob;
-  char *time_str;
-  time_t purge_time = 0;
+  char         *id = "purge_completed_jobs";
+  job          *pjob;
+  char         *time_str;
+  time_t        purge_time = 0;
+  job_iterator  iter;
 
   /* get the time to purge the jobs that completed before */
   time_str = preq->rq_extend;
@@ -1466,22 +1462,10 @@ void purge_completed_jobs(
       log_buffer);
     }
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(svr_alljobs_mutex);
-#endif
+  initialize_job_iterator(&iter);
 
-  pjob = (job *)GET_NEXT(svr_alljobs);
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(svr_alljobs_mutex);
-#endif
-
-  for (; pjob != NULL; pjob = (job *)GET_NEXT(pjob->ji_alljobs)) 
+  while ((pjob = next_job(&iter)) != NULL) 
     {
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pjob->ji_mutex);
-#endif 
-
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE) &&
         (pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long <= purge_time) &&
         ((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
@@ -1504,6 +1488,7 @@ void purge_completed_jobs(
           
       job_save(pjob, SAVEJOB_FULL, 0); 
       }
+
 #ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif

@@ -141,7 +141,6 @@ tlist_head svr_requests;
 #ifdef ENABLE_PTHREADS
 pthread_mutex_t *svr_requests_mutex = NULL;
 pthread_mutex_t *svr_newjobs_mutex = NULL;
-pthread_mutex_t *svr_alljobs_mutex = NULL;
 #endif
 #endif
 

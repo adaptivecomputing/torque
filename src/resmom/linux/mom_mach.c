@@ -3815,9 +3815,8 @@ static char *ncpus(
 
   {
 #ifdef NUMA_SUPPORT
-  /* these numbers are configured and not in hardware, therefore they aren't
-   * meaningful */
-  return(NULL);
+  /* report the configured ncpus for this numa node */
+  sprintf(ret_string,"%d",numa_nodes[numa_index].num_cpus);
 #else
   char  *id = "ncpus";
   char           label[128];
@@ -3858,8 +3857,8 @@ static char *ncpus(
 
   fclose(fp);
 
-  return(ret_string);
 #endif /* NUMA_SUPPORT */
+  return(ret_string);
   }  /* END ncpus() */
 
 

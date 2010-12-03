@@ -115,7 +115,6 @@
 /* Global Data Items: */
 
 extern struct server   server;
-extern tlist_head      svr_alljobs;
 extern tlist_head      svr_jobs_array_sum;
 extern tlist_head      svr_queues;
 extern char            server_name[];
@@ -132,7 +131,6 @@ extern struct pbsnode *tfind_addr(const u_long, uint16_t, job *);
 extern int             LOGLEVEL;
 
 #ifdef ENABLE_PTHREADS
-extern pthread_mutex_t *svr_alljobs_mutex;
 /*extern pthread_mutex_t *svr_jobs_array_sum_mutex;*/
 extern pthread_mutex_t *netrates_mutex;
 #endif
@@ -374,6 +372,8 @@ static void req_stat_job_step2(
   
   int        job_array_index = 0;
   job_array *pa = NULL;
+
+  job_iterator iter;
   
 
   preq   = cntl->sc_origrq;
@@ -425,6 +425,8 @@ static void req_stat_job_step2(
     pa = get_array(preq->rq_ind.rq_status.rq_id);
     }
 
+  initialize_job_iterator(&iter);
+
   if (!server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
     {
     /* polljobs not set - indicates we may need to obtain fresh data from
@@ -462,15 +464,7 @@ static void req_stat_job_step2(
           if ((type == tjstTruncatedServer) || (type == tjstTruncatedQueue))
             IsTruncated = TRUE;
 
-#ifdef ENABLE_PTHREADS
-          pthread_mutex_lock(svr_alljobs_mutex);
-#endif
-
-          pjob = (job *)GET_NEXT(svr_alljobs);
-
-#ifdef ENABLE_PTHREADS
-          pthread_mutex_unlock(svr_alljobs_mutex);
-#endif
+          pjob = next_job(&iter);
           }
 
         }    /* END if (pjob == NULL) */
@@ -489,18 +483,16 @@ static void req_stat_job_step2(
 
         if (type == tjstQueue)
           next = (job *)GET_NEXT(pjob->ji_jobque);
-        else
-          {
-          next = (job *)GET_NEXT(pjob->ji_alljobs);
-          }
-          
-        if (type == tjstArray)
+        else if (type == tjstArray)
           {
           next = NULL;
           /* increment job_array_index until we find a non-null pointer or hit the end */
           while (++job_array_index < pa->ai_qs.array_size && (next = pa->jobs[job_array_index]) == NULL)
             ;
           }
+        else
+          next = next_job(&iter);
+          
         }
 #ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
@@ -511,7 +503,9 @@ static void req_stat_job_step2(
       if (pjob == NULL)
         break;
 #ifdef ENABLE_PTHREADS
-      else if (type != tjstJob)
+      else if ((type != tjstJob) && 
+               ((type == tjstQueue) ||
+                (type == tjstArray)))
         pthread_mutex_lock(pjob->ji_mutex);
 #endif
 
@@ -615,21 +609,14 @@ static void req_stat_job_step2(
         job_array_index++;
     }
   else
-    {
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(svr_alljobs_mutex);
-#endif
-
-    pjob = (job *)GET_NEXT(svr_alljobs);
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(svr_alljobs_mutex);
-#endif
-    }
+    pjob = next_job(&iter);
 
 #ifdef ENABLE_PTHREADS
   if ((pjob != NULL) &&
-      (type != tjstJob))
+      ((type != tjstJob) ||
+       (type == tjstQueue) ||
+       (type == tjstSummarizeArraysQueue) ||
+       (type == tjstSummarizeArraysServer)))
     pthread_mutex_lock(pjob->ji_mutex);
 #endif
 
@@ -843,10 +830,14 @@ nextjob:
       }
     else
       {
-      next = (job *)GET_NEXT(pjob->ji_alljobs);
+      next = next_job(&iter);
       }
 
 #ifdef ENABLE_PTHREADS
+    if ((type == tjstQueue) || 
+        (type == tjstSummarizeArraysQueue) ||
+        (type == tjstSummarizeArraysServer) ||
+        (type == tjstArray))
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 

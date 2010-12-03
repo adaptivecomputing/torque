@@ -642,6 +642,45 @@ struct job
 typedef struct job job;
 
 
+
+#ifndef PBS_MOM
+#define INITIAL_JOB_SIZE 5000
+#define JOB_NOT_FOUND   -1
+
+/* on the server this array will replace svr_alljobs because svr_alljobs
+ * will never be multithreaded */
+struct all_jobs
+  {
+  int   max_jobs; /* max number of jobs */
+  int   num_jobs; /* current number of jobs */
+  int   next_slot; /* index of the next open slot */
+
+  job **jobs; /* pointers to the jobs */
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_t *alljobs_mutex;
+#endif
+  };
+
+void initialize_all_jobs_array();
+int  insert_job(job *);
+int  remove_job(job *);
+int  swap_jobs(job *,job *);
+
+struct job_iterator
+  {
+  int index;
+  };
+
+typedef struct job_iterator job_iterator;
+
+void initialize_job_iterator(job_iterator *);
+job *next_job(job_iterator *);
+
+#endif
+
+
+
 #ifdef PBS_MOM
 /*
 ** Tasks are sessions belonging to a job, running on one of the

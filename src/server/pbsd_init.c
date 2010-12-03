@@ -180,7 +180,6 @@ extern int  queue_rank;
 extern char  server_name[];
 extern int  svr_delay_entry;
 extern tlist_head svr_newjobs;
-extern tlist_head svr_alljobs;
 extern tlist_head svr_jobs_array_sum;
 extern tlist_head svr_queues;
 extern tlist_head svr_requests;
@@ -193,7 +192,6 @@ extern tlist_head task_list_event;
 #ifdef ENABLE_PTHREADS
 extern pthread_mutex_t *svr_newjobs_mutex;
 extern pthread_mutex_t *svr_requests_mutex;
-extern pthread_mutex_t *svr_alljobs_mutex;
 /*pthread_mutex_t *svr_jobs_array_sum_mutex;*/
 /*pthread_mutex_t *svr_jobarrays_mutex;*/
 extern pthread_mutex_t *task_list_immed_mutex;
@@ -797,10 +795,6 @@ int pbsd_init(
   pthread_mutex_init(svr_newjobs_mutex,NULL);
   pthread_mutex_lock(svr_newjobs_mutex);
 
-  svr_alljobs_mutex = malloc(sizeof(pthread_mutex_t));
-  pthread_mutex_init(svr_alljobs_mutex,NULL);
-  pthread_mutex_lock(svr_alljobs_mutex);
-
   /*svr_jobarrays_mutex = malloc(sizeof(pthread_mutex_t));*/
   /*pthread_mutex_init(svr_jobarrays_mutex,NULL);*/
   /*pthread_mutex_lock(svr_jobarrays_mutex);*/
@@ -820,7 +814,7 @@ int pbsd_init(
 
   CLEAR_HEAD(svr_queues);
 
-  CLEAR_HEAD(svr_alljobs);
+  initialize_all_jobs_array();
 
   CLEAR_HEAD(svr_jobs_array_sum);
 
@@ -833,7 +827,6 @@ int pbsd_init(
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_requests_mutex);
   pthread_mutex_unlock(svr_newjobs_mutex);
-  pthread_mutex_unlock(svr_alljobs_mutex);
   /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
   /*pthread_mutex_unlock(svr_jobs_array_sum_mutex);*/
 #endif
@@ -1325,37 +1318,21 @@ int pbsd_init(
 
   if (queue_rank < 0)
     {
-    job *next;
+    job_iterator iter;
 
     queue_rank = 0;
 
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(svr_alljobs_mutex);
-#endif
+    initialize_job_iterator(&iter);
 
-    pjob = (job *)GET_NEXT(svr_alljobs);
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(svr_alljobs_mutex);
-#endif
-
-    while (pjob != NULL)
+    while ((pjob = next_job(&iter)) != NULL)
       {
-#ifdef ENABLE_PTHREADS
-      pthread_mutex_lock(pjob->ji_mutex);
-#endif 
-
       pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       
       job_save(pjob, SAVEJOB_FULL, 0);
       
-      next = (job *)GET_NEXT(pjob->ji_alljobs);
-      
 #ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
 #endif
-
-      pjob = next;
       }
     }
 

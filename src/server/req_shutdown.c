@@ -118,7 +118,6 @@ static struct batch_request *pshutdown_request = 0;
 
 /* Global Data Items: */
 
-extern tlist_head svr_alljobs;
 extern char *msg_abort_on_shutdown;
 extern char *msg_daemonname;
 extern char *msg_init_queued;
@@ -134,9 +133,6 @@ extern tlist_head task_list_event;
 extern struct server server;
 extern attribute_def svr_attr_def[];
 extern int    LOGLEVEL;
-#ifdef ENABLE_PTHREADS
-extern pthread_mutex_t *svr_alljobs_mutex;
-#endif
 
 /*
  * svr_shutdown() - Perform (or start of) the shutdown of the server
@@ -147,10 +143,10 @@ void svr_shutdown(
   int type) /* I */
 
   {
-  attribute *pattr;
-  job     *pjob;
-  job     *pnxt;
-  long     *state;
+  attribute    *pattr;
+  job          *pjob;
+  long         *state;
+  job_iterator  iter;
 
   /* Lets start by logging shutdown and saving everything */
 
@@ -222,24 +218,10 @@ void svr_shutdown(
 
   svr_save(&server, SVR_SAVE_QUICK);
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(svr_alljobs_mutex);
-#endif
+  initialize_job_iterator(&iter);
 
-  pnxt = (job *)GET_NEXT(svr_alljobs);
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(svr_alljobs_mutex);
-#endif
-
-  while ((pjob = pnxt) != NULL)
+  while ((pjob = next_job(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pjob->ji_mutex);
-#endif
-
-    pnxt = (job *)GET_NEXT(pjob->ji_alljobs);
-
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
       pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART | JOB_SVFLG_HASRUN;
@@ -288,8 +270,7 @@ void svr_shutdown(
  * before going away.
  */
 
-void
-shutdown_ack(void)
+void shutdown_ack(void)
 
   {
   if (pshutdown_request)

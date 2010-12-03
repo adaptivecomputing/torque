@@ -105,7 +105,6 @@
 #include "log.h"
 #include "svrfunc.h"
 #ifdef ENABLE_PTHREADS
-extern pthread_mutex_t *svr_alljobs_mutex;
 /*extern pthread_mutex_t *svr_jobs_array_sum_mutex;*/
 #endif
 
@@ -121,7 +120,6 @@ extern int   svr_authorize_jobreq(struct batch_request *, job *);
 
 extern struct server server;
 extern int  resc_access_perm;
-extern tlist_head svr_alljobs;
 extern tlist_head      svr_jobs_array_sum;
 extern time_t  time_now;
 
@@ -375,12 +373,15 @@ static void sel_step2(
   struct stat_cntl *cntl)
 
   {
-  job       *pjob;
-  job       *next;
-  int        rc;
-  int        exec_only = 0;
-  int        summarize_arrays = 0;
-  pbs_queue *pque = NULL;
+  job          *pjob;
+  job          *next;
+  int           rc;
+  int           exec_only = 0;
+  int           summarize_arrays = 0;
+  pbs_queue    *pque = NULL;
+  job_iterator  iter;
+
+  initialize_job_iterator(&iter);
 
   /* do first pass of finding jobs that match the selection criteria */
 
@@ -452,17 +453,7 @@ static void sel_step2(
         if (cntl->sc_pque)
           pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs);
         else
-          {
-#ifdef ENABLE_PTHREADS
-          pthread_mutex_lock(svr_alljobs_mutex);
-#endif
-
-          pjob = (job *)GET_NEXT(svr_alljobs);
-
-#ifdef ENABLE_PTHREADS
-          pthread_mutex_unlock(svr_alljobs_mutex);
-#endif
-          }
+          pjob = next_job(&iter);
         }
       else if (cntl->sc_pque)
         {
@@ -476,13 +467,11 @@ static void sel_step2(
         }
       else
         {
-        next = (job *)GET_NEXT(pjob->ji_alljobs);
-
 #ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-        pjob = next;
+        pjob = next_job(&iter);
         }
       }
 
@@ -490,7 +479,8 @@ static void sel_step2(
       break;
 
 #ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pjob->ji_mutex);
+    if (cntl->sc_pque)
+      pthread_mutex_lock(pjob->ji_mutex);
 #endif
 
     if (exec_only)
@@ -573,6 +563,8 @@ static void sel_step3(
   int        exec_only = 0;
   pbs_queue           *pque = NULL;
 
+  job_iterator iter;
+
   if (cntl->sc_origrq->rq_extend != NULL)
     {
     if (!strncmp(cntl->sc_origrq->rq_extend, "summarize_arrays", strlen("summarize_arrays")))
@@ -602,7 +594,7 @@ static void sel_step3(
       exec_only = 1;
 
   /* now start checking for jobs that match the selection criteria */
-
+  initialize_job_iterator(&iter);
 
   if (summarize_arrays)
     {
@@ -626,24 +618,15 @@ static void sel_step3(
     if (cntl->sc_pque)
       pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs);
     else
-      {
-#ifdef ENABLE_PTHREADS
-      pthread_mutex_lock(svr_alljobs_mutex);
-#endif
-
-      pjob = (job *)GET_NEXT(svr_alljobs);
-
-#ifdef ENABLE_PTHREADS
-      pthread_mutex_unlock(svr_alljobs_mutex);
-#endif
-      }
+      pjob = next_job(&iter);
     }
 
 
   while (pjob != NULL)
     {
 #ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pjob->ji_mutex);
+    if (cntl->sc_pque)
+      pthread_mutex_lock(pjob->ji_mutex);
 #endif
 
     if (server.sv_attr[SRV_ATR_query_others].at_val.at_long ||
@@ -705,6 +688,9 @@ static void sel_step3(
       }
 
 nextjob:
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
     if(summarize_arrays)
       {
@@ -718,16 +704,8 @@ nextjob:
       if (cntl->sc_pque)
         next = (job *)GET_NEXT(pjob->ji_jobque);
       else
-        {
-        next = (job *)GET_NEXT(pjob->ji_alljobs);
-
-        }
+        pjob = next_job(&iter);
       }
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pjob->ji_mutex);
-#endif
-
-    pjob = next;
     }
 
   free_sellist(cntl->sc_select);

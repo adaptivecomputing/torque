@@ -110,9 +110,6 @@ extern char *msg_manager;
 extern char *msg_movejob;
 extern int  pbs_errno;
 extern char *pbs_o_host;
-#ifdef ENABLE_PTHREADS
-extern pthread_mutex_t *svr_alljobs_mutex;
-#endif
 
 extern int svr_movejob(job *, char *, struct batch_request *);
 extern int svr_chkque(job *, pbs_queue *, char *, int, char *);
@@ -336,7 +333,7 @@ void req_orderjob(
     {
     swap_link(&pjob1->ji_jobque,  &pjob2->ji_jobque);
 
-    swap_link(&pjob1->ji_alljobs, &pjob2->ji_alljobs);
+    swap_jobs(pjob1,pjob2);
     }
 
   /* need to update disk copy of both jobs to save new order */

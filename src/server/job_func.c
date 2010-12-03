@@ -151,7 +151,6 @@
 
 #define MAXLINE 1024
 #ifdef ENABLE_PTHREADS
-extern pthread_mutex_t *svr_alljobs_mutex;
 /*extern pthread_mutex_t *svr_jobs_array_sum_mutex;*/
 /*extern pthread_mutex_t *svr_jobarrays_mutex;*/
 #endif
@@ -173,6 +172,7 @@ int attr_to_str(char *out, int size, attribute_def *at_def, struct attribute  at
 static void job_init_wattr(job *);
 
 /* Global Data items */
+static struct all_jobs alljobs;
 
 int check_job_log_started = 0;
 
@@ -189,7 +189,6 @@ extern time_t time_now;
 extern int   LOGLEVEL;
 
 extern tlist_head svr_newjobs;
-extern tlist_head svr_alljobs;
 extern tlist_head svr_jobs_array_sum;
 extern char *path_checkpoint;
 extern char *path_jobinfo_log;
@@ -1983,10 +1982,11 @@ job *find_job(
   char *at;
   char *comp;
   int   different = FALSE;
-  int   array = FALSE;
+  /*int   array = FALSE;*/
+  int   i;
 
-  job  *pj;
-  job  *next;
+  job  *pj = NULL;
+  /*job  *next;*/
 
   if ((at = strchr(jobid, (int)'@')) != NULL)
     * at = '\0'; /* strip off @server_name */
@@ -2005,20 +2005,48 @@ job *find_job(
     comp = jobid;
     }
 
-  /* if its the name of a job array, look in the other list */
-  if (strstr(jobid,"[]") != NULL)
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(alljobs.alljobs_mutex);
+#endif
+
+  for (i = 0; i < alljobs.max_jobs; i++)
     {
+    if (alljobs.jobs[i] != NULL)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(alljobs.jobs[i]->ji_mutex);
+#endif
+
+      if (!strcmp(comp,alljobs.jobs[i]->ji_qs.ji_jobid))
+        {
+        pj = alljobs.jobs[i];
+        break;
+        }
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(alljobs.jobs[i]->ji_mutex);
+#endif
+      }
+    }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(alljobs.alljobs_mutex);
+#endif
+
+  /* if its the name of a job array, look in the other list 
+  if (strstr(jobid,"[]") != NULL)
+    {*/
 #ifdef ENABLE_PTHREADS
   /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
 #endif
 
-    pj = (job *)GET_NEXT(svr_jobs_array_sum);
+    /*pj = (job *)GET_NEXT(svr_jobs_array_sum);*/
 
 #ifdef ENABLE_PTHREADS
   /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
 #endif
 
-    array = TRUE;
+/*    array = TRUE;
     }
   else
     {
@@ -2058,7 +2086,7 @@ job *find_job(
 #endif
 
     pj = next;
-    }
+    }*/
 
   if (at)
     *at = '@'; /* restore @server_name */
@@ -2068,6 +2096,238 @@ job *find_job(
 
   return(pj);  /* may be NULL */
   }   /* END find_job() */
+
+
+
+
+/* initializes the all_jobs array */
+void initialize_all_jobs_array()
+  {
+  alljobs.max_jobs = INITIAL_JOB_SIZE;
+  alljobs.num_jobs = 0;
+  alljobs.next_slot = 0;
+
+  alljobs.jobs = malloc(sizeof(job *) * INITIAL_JOB_SIZE);
+  memset(alljobs.jobs,0,sizeof(job *) * INITIAL_JOB_SIZE);
+
+#ifdef ENABLE_PTHREADS
+  alljobs.alljobs_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(alljobs.alljobs_mutex,NULL);
+#endif
+  } /* END initialize_all_jobs_array() */
+
+
+
+
+/*
+ * insert a new job into the array
+ *
+ * @param pjob - the job to be inserted
+ * @return PBSE_NONE if the job is inserted correctly
+ */
+int insert_job(
+    
+  job *pjob)
+
+  {
+  static char  *id = "insert_job";
+  job         **tmp;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(alljobs.alljobs_mutex);
+#endif
+  
+  /* check if the array must be resized */
+  if (alljobs.max_jobs == alljobs.num_jobs)
+    {
+    long remaining;
+    long size = alljobs.max_jobs * 2 * sizeof(job *);
+
+    tmp = realloc(alljobs.jobs,size);
+
+    if (tmp == NULL)
+      {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(alljobs.alljobs_mutex);
+#endif
+
+      log_err(ENOMEM,id,"There is no memory left!! System failure\n");
+      return(ENOMEM);
+      }
+
+    if (alljobs.next_slot == alljobs.max_jobs)
+      alljobs.next_slot++;
+
+    remaining = alljobs.max_jobs * sizeof(job *);
+    
+    memset(tmp + alljobs.max_jobs,0,remaining);
+
+    tmp[alljobs.next_slot] = pjob;
+
+    alljobs.jobs = tmp;
+
+    alljobs.max_jobs *= 2;
+    }
+  else
+    {
+    alljobs.jobs[alljobs.next_slot] = pjob;
+    }
+
+  alljobs.num_jobs++;
+
+  /* now update the next_slot pointer */
+  while ((alljobs.next_slot < alljobs.max_jobs) && 
+         (alljobs.jobs[alljobs.next_slot] != NULL))
+    alljobs.next_slot++;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(alljobs.alljobs_mutex);
+#endif
+
+  return(PBSE_NONE);
+  } /* END insert_job() */
+
+
+
+
+/* 
+ * remove a job from the array
+ *
+ * @param pjob - the job to remove
+ * @return PBSE_NONE if the job is removed 
+ */
+
+int  remove_job(
+    
+  job *pjob)
+
+  {
+  int i;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(alljobs.alljobs_mutex);
+#endif
+
+  /* find the job */
+  for (i = 0; i < alljobs.max_jobs; i++)
+    {
+    if (alljobs.jobs[i] == pjob)
+      break;
+    }
+
+  if (i == alljobs.max_jobs)
+    {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(alljobs.alljobs_mutex);
+#endif
+
+    return(JOB_NOT_FOUND);
+    }
+
+  alljobs.jobs[i] = NULL;
+
+  /* reset the next_slot index if necessary */
+  if (i < alljobs.next_slot)
+    {
+    alljobs.next_slot = i;
+    }
+  
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(alljobs.alljobs_mutex);
+#endif
+
+  return(PBSE_NONE);
+  } /* END remove_job() */
+
+
+
+
+/*
+ *
+ */
+void initialize_job_iterator(
+    
+  job_iterator *iter)
+
+  {
+  iter->index = 0;
+  } /* END initialize_job_iterator() */
+
+
+
+
+
+job *next_job(
+
+  job_iterator *iter)
+
+  {
+  job *pjob = NULL;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(alljobs.alljobs_mutex);
+#endif
+
+  if (alljobs.num_jobs > 0)
+    {
+    while ((iter->index < alljobs.max_jobs) &&
+           (alljobs.jobs[iter->index] == NULL))
+      iter->index++;
+
+    if (iter->index < alljobs.max_jobs)
+      pjob = alljobs.jobs[iter->index];
+    }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(alljobs.alljobs_mutex);
+
+  if (pjob != NULL)
+    pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
+  /* increment the index once more - you want to be one past the job you're returning */
+  if (iter->index < alljobs.max_jobs)
+    iter->index++;
+
+  return(pjob);
+  } /* END next_job() */
+
+
+
+
+
+int swap_jobs(
+
+  job *job1,
+  job *job2)
+
+  {
+  int index1 = -1;
+  int index2 = -1;
+  int i;
+
+  for (i = 0; i < alljobs.max_jobs; i++)
+    {
+    if (job1 == alljobs.jobs[i])
+      index1 = i;
+    
+    if (job2 == alljobs.jobs[i])
+      index2 = i;
+
+    if ((index1 != -1) &&
+        (index2 != -1))
+      break;
+    }
+
+  if ((index1 == -1) ||
+      (index2 == -1))
+    return(JOB_NOT_FOUND);
+
+  alljobs.jobs[index1] = job1;
+  alljobs.jobs[index2] = job2;
+
+  return(PBSE_NONE);
+  } /* END swap_jobs() */
 
 /* END job_func.c */
 

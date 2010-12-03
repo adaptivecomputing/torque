@@ -165,7 +165,6 @@ const char *TJobFileType[] =
   };
 
 extern int  resc_access_perm;
-extern tlist_head svr_alljobs;
 extern tlist_head svr_newjobs;
 extern attribute_def job_attr_def[];
 extern char *path_jobs;

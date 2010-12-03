@@ -731,8 +731,6 @@ void rel_resc(
  * rq_extra field in the request points to the job.
  */
 
-extern tlist_head svr_alljobs;
-
 void on_job_exit(
 
   struct work_task *ptask)  /* I */
@@ -742,6 +740,7 @@ void on_job_exit(
   job   *pjob;
 #ifdef VNODETESTING
   job   *pj;
+  job_iterator iter;
 #endif
 
   struct batch_request *preq;
@@ -755,6 +754,7 @@ void on_job_exit(
   char *namebuf2;
   int spool_file_exists;
   int rc = 0;
+
 
   extern void remove_job_delete_nanny(struct job *);
 
@@ -771,29 +771,20 @@ void on_job_exit(
     pjob = (job *)preq->rq_extra;
     }
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(pjob->ji_mutex);
-#endif
-
 #ifdef VNODETESTING
   /* FIXME: there might be a race with calling on_job_exit after a job has
    * already been free'd.  This is temp code */
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(svr_alljobs_mutex);
-#endif
+  initialize_job_iterator(&iter);
 
-  pj = (job *)GET_NEXT(svr_alljobs);
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(svr_alljobs_mutex);
-#endif
-
-  while (pj != NULL)
+  /* the mutex is obtained in the next_job method */
+  while ((pj = next_job(&iter)) != NULL)
     {
     if (pjob == pj)
       break;
 
-    pj = (job *)GET_NEXT(pj->ji_alljobs);
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pj->ji_mutex);
+#endif
     }
 
   if (pj == NULL)
@@ -825,7 +816,7 @@ void on_job_exit(
    */
   
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) &&
-    ((handle = mom_comm(pjob,on_job_exit)) < 0))
+      ((handle = mom_comm(pjob,on_job_exit)) < 0))
     {
     /* FAILURE - cannot connect to mom */
 #ifdef ENABLE_PTHREADS
