@@ -485,18 +485,30 @@ int encode_arst(
 
   while (pfrom < end)
     {
-    if ((*pfrom == '"') || (*pfrom == '\'') || (*pfrom == ',') || (*pfrom == '\\') || (*pfrom == '\n'))
+    switch (*pfrom)
       {
-      *pc++ = '\\';
-      *pc   = *pfrom;
-      }
-    else if (*pfrom == '\0')
-      {
-      *pc = separator;
-      }
-    else
-      {
-      *pc = *pfrom;
+      case '\0':
+
+        *pc = separator;
+
+        break;
+
+      case '"':
+      case '\'':
+      case ',':
+      case '\\':
+      case '\n':
+
+        *pc++ = '\\';
+        *pc   = separator;
+
+        break;
+
+      default:
+
+        *pc = *pfrom;
+
+        break;
       }
 
     pc++;
