@@ -26,6 +26,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (Dr. Bernd Kallies)
   b - Fixed a problem where the -m n (request no mail on qsub) was not
       always being recongnized.
+  b - Added patch for bug 101 by Martin Siegert. A null string was causing a segfault
+      in pbs_server when record_jobinfo called into attr_to_string. 
 
 
 2.5.3
