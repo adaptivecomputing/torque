@@ -483,6 +483,17 @@ int attr_to_str(
 
           case ATR_TYPE_STR:
 
+            /* Patch provided by Martin Siegert to fix seg-fault
+             * when current->rs_value.at_val.at_str is NULL 
+             * Bugzilla bug 101 
+             */
+
+            if(current->rs_value.at_val.at_str == NULL)
+              break;
+
+            if(strlen(current->rs_value.at_val.at_str) == 0)
+              break;
+
             snprintf(ptr,lspace,"\t\t<%s>",
               current->rs_defin->rs_name);
             len = strlen(ptr);
