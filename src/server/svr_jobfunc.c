@@ -146,7 +146,6 @@ static void eval_checkpoint(attribute *j, attribute *q);
 extern struct server server;
 
 extern tlist_head svr_jobs_array_sum;
-extern tlist_head svr_jobarrays;
 extern char  *msg_badwait;  /* error message */
 extern char  *msg_daemonname;
 extern char  *pbs_o_host;
@@ -163,10 +162,6 @@ extern int    DEBUGMODE;
 int           SvrNodeCt = 0;  /* cfg nodes or num nodes specified via resources_available */
 
 extern int  svr_clnodes;
-
-#ifdef ENABLE_PTHREADS
-/*extern pthread_mutex_t *svr_jobs_array_sum_mutex;*/
-#endif
 
 /* External Functions */
 
@@ -336,15 +331,7 @@ int svr_enquejob(
   /* place into svr_jobs_array_sum if necessary */
   if (pjob->ji_is_array_template || pjob->ji_arraystruct == NULL)
     {
-#ifdef ENABLE_PTHREADS
-    /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
-#endif
-
     pjcur = (job *)GET_PRIOR(svr_jobs_array_sum);
-    
-#ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(svr_jobs_array_sum_mutex);*/
-#endif
 
     while (pjcur != NULL)
       {
@@ -358,15 +345,7 @@ int svr_enquejob(
     if (pjcur == 0)
       {
       /* link first in server's list */
-#ifdef ENABLE_PTHREADS
-      /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
-#endif
-
       insert_link(&svr_jobs_array_sum, &pjob->ji_jobs_array_sum, pjob, LINK_INSET_AFTER);
-
-#ifdef ENABLE_PTHREADS
-      /*pthread_mutex_unlock(svr_jobs_array_sum_mutex);*/
-#endif
       }
     else
       {
@@ -1437,13 +1416,13 @@ int count_queued_jobs(
   for (i = 0; i < num_arrays; i++)
     {
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_lock(arrays[i]->ai_mutex);*/
+    pthread_mutex_lock(arrays[i]->ai_mutex);
 #endif
 
     num_jobs += (arrays[i]->ai_qs.num_jobs - arrays[i]->ai_qs.num_cloned);
 
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(arrays[i]->ai_mutex);*/
+    pthread_mutex_unlock(arrays[i]->ai_mutex);
 #endif
     }
 
@@ -2615,7 +2594,7 @@ static void correct_ct(
   char         *pc;
   job          *pjob;
   pbs_queue    *pque;
-  job_iterator  iter;
+  int           iter = 0;
 
   sprintf(log_buffer, "Job state counts incorrect, server %d: ",
           server.sv_qs.sv_numjobs);
@@ -2664,8 +2643,6 @@ static void correct_ct(
     for (i = 0;i < PBS_NUMJOBSTATE;++i)
       pque->qu_njstate[i] = 0;
     }
-
-  initialize_job_iterator(&iter);
 
   while ((pjob = next_job(&iter)) != NULL)
     {

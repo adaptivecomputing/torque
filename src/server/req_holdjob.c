@@ -529,7 +529,7 @@ void req_releasearray(
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
 
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(pa->ai_mutex);*/
+    pthread_mutex_unlock(pa->ai_mutex);
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
@@ -548,7 +548,7 @@ void req_releasearray(
     if ((rc = release_array_range(pa,preq,range)) != 0)
       {
 #ifdef ENABLE_PTHREADS
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
       req_reject(rc,0,preq,NULL,NULL);
@@ -559,7 +559,7 @@ void req_releasearray(
   else if ((rc = release_whole_array(pa,preq)) != 0)
     {
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(pa->ai_mutex);*/
+    pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
     req_reject(rc,0,preq,NULL,NULL);
@@ -568,11 +568,11 @@ void req_releasearray(
     }
 
 #ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(pa->ai_mutex);*/
+  pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
   reply_ack(preq);
-  }
+  } /* END req_releasearray() */
 
 
 

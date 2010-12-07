@@ -639,7 +639,8 @@ job *job_recov(
       }
 
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(pa->ai_mutex);*/
+    if (pa != NULL)
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
     }
 

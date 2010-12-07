@@ -92,6 +92,7 @@
 #define PBS_JOB_H 1
 
 #include "server_limits.h"
+#include "resizable_array.h"
 
 #ifndef MAX_LINE
 #define MAX_LINE 1024
@@ -651,11 +652,7 @@ typedef struct job job;
  * will never be multithreaded */
 struct all_jobs
   {
-  int   max_jobs; /* max number of jobs */
-  int   num_jobs; /* current number of jobs */
-  int   next_slot; /* index of the next open slot */
-
-  job **jobs; /* pointers to the jobs */
+  resizable_array *ra;
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_t *alljobs_mutex;
@@ -667,15 +664,7 @@ int  insert_job(job *);
 int  remove_job(job *);
 int  swap_jobs(job *,job *);
 
-struct job_iterator
-  {
-  int index;
-  };
-
-typedef struct job_iterator job_iterator;
-
-void initialize_job_iterator(job_iterator *);
-job *next_job(job_iterator *);
+job *next_job(int *);
 
 #endif
 

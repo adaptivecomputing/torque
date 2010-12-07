@@ -379,9 +379,7 @@ static void sel_step2(
   int           exec_only = 0;
   int           summarize_arrays = 0;
   pbs_queue    *pque = NULL;
-  job_iterator  iter;
-
-  initialize_job_iterator(&iter);
+  int           iter = 0;
 
   /* do first pass of finding jobs that match the selection criteria */
 
@@ -563,7 +561,7 @@ static void sel_step3(
   int        exec_only = 0;
   pbs_queue           *pque = NULL;
 
-  job_iterator iter;
+  int         iter = 0;
 
   if (cntl->sc_origrq->rq_extend != NULL)
     {
@@ -594,8 +592,6 @@ static void sel_step3(
       exec_only = 1;
 
   /* now start checking for jobs that match the selection criteria */
-  initialize_job_iterator(&iter);
-
   if (summarize_arrays)
     {
     if (cntl->sc_pque)

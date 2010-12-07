@@ -241,7 +241,7 @@ void req_runjob(
     job_array *pa = pjob->ji_arraystruct;
 
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_lock(pa->ai_mutex);*/
+    pthread_mutex_lock(pa->ai_mutex);
 #endif
     
     if ((pa->ai_qs.slot_limit < 0) ||
@@ -260,13 +260,13 @@ void req_runjob(
 
 #ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
       return;
       }
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(pa->ai_mutex);*/
+    pthread_mutex_unlock(pa->ai_mutex);
 #endif
     }
 

@@ -373,7 +373,7 @@ static void req_stat_job_step2(
   int        job_array_index = 0;
   job_array *pa = NULL;
 
-  job_iterator iter;
+  int        iter = 0;
   
 
   preq   = cntl->sc_origrq;
@@ -424,8 +424,6 @@ static void req_stat_job_step2(
     {
     pa = get_array(preq->rq_ind.rq_status.rq_id);
     }
-
-  initialize_job_iterator(&iter);
 
   if (!server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
     {
@@ -534,8 +532,8 @@ static void req_stat_job_step2(
           }
 #ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-        /*if (pa != NULL)*/
-          /*pthread_mutex_unlock(pa->ai_mutex);*/
+        if (pa != NULL)
+          pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
         return; /* will pick up after mom replies */
@@ -549,7 +547,7 @@ static void req_stat_job_step2(
       {
 #ifdef ENABLE_PTHREADS
       if (pa != NULL)
-        /*pthread_mutex_unlock(pa->ai_mutex);*/
+        pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
       free(cntl);
@@ -570,15 +568,15 @@ static void req_stat_job_step2(
   if (type == tjstSummarizeArraysQueue || type == tjstSummarizeArraysServer)
     {
 #ifdef ENABLE_PTHREADS
-    /*if (pa != NULL)*/
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+    if (pa != NULL)
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
     update_array_statuses();
 
 #ifdef ENABLE_PTHREADS
-    /*if (pa != NULL)*/
-      /*pthread_mutex_lock(pa->ai_mutex);*/
+    if (pa != NULL)
+      pthread_mutex_lock(pa->ai_mutex);
 #endif
     }
 
@@ -613,10 +611,10 @@ static void req_stat_job_step2(
 
 #ifdef ENABLE_PTHREADS
   if ((pjob != NULL) &&
-      ((type != tjstJob) ||
-       (type == tjstQueue) ||
+      ((type == tjstQueue) ||
        (type == tjstSummarizeArraysQueue) ||
-       (type == tjstSummarizeArraysServer)))
+       (type == tjstSummarizeArraysServer) ||
+       (type == tjstArray)))
     pthread_mutex_lock(pjob->ji_mutex);
 #endif
 
@@ -728,8 +726,8 @@ static void req_stat_job_step2(
           {
           req_reject(rc, bad, preq, NULL, NULL);
 #ifdef ENABLE_PTHREADS
-          /*if (pa != NULL)*/
-            /*pthread_mutex_unlock(pa->ai_mutex);*/
+          if (pa != NULL)
+            pthread_mutex_unlock(pa->ai_mutex);
           pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
@@ -760,8 +758,8 @@ static void req_stat_job_step2(
         }
       }      /* END for (pque) */
 #ifdef ENABLE_PTHREADS
-    /*if (pa == NULL)*/
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+    if (pa == NULL)
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
     reply_send(preq);
@@ -793,8 +791,8 @@ static void req_stat_job_step2(
     if ((rc != 0) && (rc != PBSE_PERM))
       {
 #ifdef ENABLE_PTHREADS
-      /*if (pa != NULL)*/
-        /*pthread_mutex_unlock(pa->ai_mutex);*/
+      if (pa != NULL)
+        pthread_mutex_unlock(pa->ai_mutex);
       pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
@@ -834,26 +832,26 @@ nextjob:
       }
 
 #ifdef ENABLE_PTHREADS
-    if ((type == tjstQueue) || 
-        (type == tjstSummarizeArraysQueue) ||
-        (type == tjstSummarizeArraysServer) ||
-        (type == tjstArray))
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
     pjob = next;
 
 #ifdef ENABLE_PTHREADS
-    if (pjob != NULL)
-      pthread_mutex_lock(pjob->ji_mutex);
+    if ((pjob != NULL) &&
+        ((type == tjstQueue) || 
+         (type == tjstSummarizeArraysQueue) ||
+         (type == tjstSummarizeArraysServer) ||
+         (type == tjstArray)))
+    pthread_mutex_lock(pjob->ji_mutex);
 #endif
 
     rc = 0;
     }  /* END while (pjob != NULL) */
 
 #ifdef ENABLE_PTHREADS
-  /*if (pa != NULL)*/
-    /*pthread_mutex_unlock(pa->ai_mutex);*/
+  if (pa != NULL)
+    pthread_mutex_unlock(pa->ai_mutex);
 #endif
  
   reply_send(preq);

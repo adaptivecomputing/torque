@@ -270,7 +270,6 @@ tlist_head svr_queues;            /* list of queues                   */
 tlist_head svr_jobs_array_sum;    /* list of jobs in server, arrays summarized as single "placeholder" job */
 tlist_head svr_newjobs;           /* list of incoming new jobs        */
 tlist_head svr_newnodes;          /* list of newly created nodes      */
-tlist_head svr_jobarrays;         /* list of all job arrays           */
 tlist_head task_list_immed;
 tlist_head task_list_timed;
 tlist_head task_list_event;
@@ -1073,12 +1072,10 @@ static time_t next_task()
 static int start_hot_jobs(void)
 
   {
-  int           ct = 0;
-  job          *pjob;
+  int  ct = 0;
+  job *pjob;
 
-  job_iterator  iter;
-
-  initialize_job_iterator(&iter);
+  int  iter = 0;
   
   while ((pjob = next_job(&iter)) != NULL)
     {
@@ -1119,7 +1116,7 @@ void main_loop(void)
   time_t        waittime;
   pbs_queue    *pque;
   job          *pjob;
-  job_iterator  iter;
+  int           iter = 0;
   time_t        last_jobstat_time;
   int           when;
 
@@ -1288,8 +1285,7 @@ void main_loop(void)
         (last_jobstat_time + JobStatRate <= time_now))
       {
       struct work_task *ptask;
-
-      initialize_job_iterator(&iter);
+      iter = 0;
 
       while ((pjob = next_job(&iter)) != NULL)
         {
@@ -1338,9 +1334,9 @@ void main_loop(void)
 
   track_save(NULL);                     /* save tracking data */
 
-  /* save any jobs that need saving */
-  initialize_job_iterator(&iter);
+  iter = 0;
 
+  /* save any jobs that need saving */
   while ((pjob = next_job(&iter)) != NULL)
     {
     if (pjob->ji_modified)

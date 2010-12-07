@@ -699,7 +699,7 @@ jump:
       job_array *pa = pjob->ji_arraystruct;
 
 #ifdef ENABLE_PTHREADS
-      /*pthread_mutex_lock(pa->ai_mutex);*/
+      pthread_mutex_lock(pa->ai_mutex);
 #endif
 
       for (i = 0; i < pa->ai_qs.array_size; i++)
@@ -726,7 +726,7 @@ jump:
           }
         }
 #ifdef ENABLE_PTHREADS
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
       }
     } /* END MoabArrayCompatible check */
@@ -1430,7 +1430,7 @@ void purge_completed_jobs(
   job          *pjob;
   char         *time_str;
   time_t        purge_time = 0;
-  job_iterator  iter;
+  int           iter = 0;
 
   /* get the time to purge the jobs that completed before */
   time_str = preq->rq_extend;
@@ -1461,8 +1461,6 @@ void purge_completed_jobs(
       id,
       log_buffer);
     }
-
-  initialize_job_iterator(&iter);
 
   while ((pjob = next_job(&iter)) != NULL) 
     {

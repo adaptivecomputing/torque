@@ -955,7 +955,7 @@ void req_modifyarray(
        (rc != PBSE_RELAYED_TO_MOM))
       {
 #ifdef ENABLE_PTHREADS
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
@@ -969,7 +969,7 @@ void req_modifyarray(
     if (rc == PBSE_RELAYED_TO_MOM)
       {
 #ifdef ENABLE_PTHREADS
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
       return;
@@ -983,7 +983,7 @@ void req_modifyarray(
         (rc != PBSE_RELAYED_TO_MOM))
       {
 #ifdef ENABLE_PTHREADS
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error altering the array");
@@ -1003,7 +1003,7 @@ void req_modifyarray(
          so some elements fo the array will be updated but others are
          not. But at least the user will know something went wrong.*/
 #ifdef ENABLE_PTHREADS
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pa->ai_mutex);
       pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
@@ -1014,7 +1014,7 @@ void req_modifyarray(
     if (rc == PBSE_RELAYED_TO_MOM)
       {
 #ifdef ENABLE_PTHREADS
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pa->ai_mutex);
       pthread_mutex_unlock(pjob->ji_mutex);
 #endif
       return;
@@ -1027,11 +1027,10 @@ void req_modifyarray(
 
   /* SUCCESS */
 #ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(pa->ai_mutex);*/
+  pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
   reply_ack(preq);
-
   } /* END req_modifyarray() */
 
 

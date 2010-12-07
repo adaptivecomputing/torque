@@ -728,7 +728,7 @@ void req_registerarray(
   if (type < JOB_DEPEND_TYPE_AFTERSTARTARRAY)
     {
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(pa->ai_mutex);*/
+    pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
     req_reject(PBSE_IVALREQ,0,preq,NULL,
@@ -764,7 +764,7 @@ void req_registerarray(
     } /* END switch (preq->rq_ind.rq_register.rq_op */
 
 #ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(pa->ai_mutex);*/
+  pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
   } /* END req_registerarray() */

@@ -21,6 +21,7 @@
 #define NO_SLOT_LIMIT      -1
 #define ARRAY_TOO_LARGE    -5
 #define INVALID_SLOT_LIMIT -6
+#define INITIAL_NUM_ARRAYS  50
 
 #define ARRAY_FILE_SUFFIX ".AR"
 
@@ -37,7 +38,6 @@ typedef struct
   int start;
   int end;
   } array_request_node;
-
 
 
 #define ARRAY_QS_STRUCT_VERSION 3
@@ -62,7 +62,7 @@ struct job_array
   job *template_job; /* pointer to the template job */
 
 #ifdef ENABLE_PTHREADS
-/*  pthread_mutex_t *ai_mutex;*/
+  pthread_mutex_t *ai_mutex;
 #endif
 
   /* this info is saved in the array file */
@@ -92,6 +92,15 @@ struct job_array
   };
 
 typedef struct job_array job_array;
+
+struct all_arrays
+  {
+  resizable_array *ra;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_t *allarrays_mutex;
+#endif
+  };
 
 int  is_array(char *id);
 int  array_delete(job_array *pa);
@@ -127,5 +136,10 @@ int first_job_index(job_array *);
 void update_array_statuses();
 
 int num_array_jobs(char *);
+
+int        insert_array(job_array *);
+int        remove_array(job_array *);
+job_array *next_array(int *);
+void       initialize_all_arrays_array();
 
 #endif

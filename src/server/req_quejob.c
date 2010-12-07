@@ -144,7 +144,6 @@ extern char *path_spool;
 extern struct server server;
 extern char  server_name[];
 extern int   queue_rank;
-extern tlist_head svr_jobarrays;
 extern tlist_head svr_jobs_array_sum;
 #ifdef ENABLE_PTHREADS
 extern pthread_mutex_t *svr_newjobs_mutex;

@@ -120,7 +120,7 @@ void req_holdarray(
       log_buffer);
 
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(pa->ai_mutex);*/
+    pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
@@ -132,7 +132,7 @@ void req_holdarray(
                      &temphold)) != 0)
     {
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(pa->ai_mutex);*/
+    pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
     req_reject(rc, 0, preq, NULL, NULL);
@@ -144,7 +144,7 @@ void req_holdarray(
   if ((rc = chk_hold_priv(temphold.at_val.at_long, preq->rq_perm)) != 0)
     {
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(pa->ai_mutex);*/
+    pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
     req_reject(rc, 0, preq, NULL, NULL);
@@ -183,7 +183,7 @@ void req_holdarray(
     }
 
 #ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(pa->ai_mutex);*/
+  pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
   reply_ack(preq);

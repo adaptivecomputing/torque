@@ -740,7 +740,7 @@ void on_job_exit(
   job   *pjob;
 #ifdef VNODETESTING
   job   *pj;
-  job_iterator iter;
+  int    iter = 0;
 #endif
 
   struct batch_request *preq;
@@ -774,7 +774,6 @@ void on_job_exit(
 #ifdef VNODETESTING
   /* FIXME: there might be a race with calling on_job_exit after a job has
    * already been free'd.  This is temp code */
-  initialize_job_iterator(&iter);
 
   /* the mutex is obtained in the next_job method */
   while ((pj = next_job(&iter)) != NULL)
@@ -2750,13 +2749,13 @@ void req_jobobit(
       job_array *pa = pjob->ji_arraystruct;
 
 #ifdef ENABLE_PTHREADS
-      /*pthread_mutex_lock(pa->ai_mutex);*/
+      pthread_mutex_lock(pa->ai_mutex);
 #endif
 
       update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
 
 #ifdef ENABLE_PTHREADS
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
       }
 

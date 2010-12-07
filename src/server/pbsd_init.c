@@ -184,7 +184,6 @@ extern tlist_head svr_jobs_array_sum;
 extern tlist_head svr_queues;
 extern tlist_head svr_requests;
 extern tlist_head svr_newnodes;
-extern tlist_head svr_jobarrays;
 extern tlist_head task_list_immed;
 extern tlist_head task_list_timed;
 extern tlist_head task_list_event;
@@ -193,7 +192,6 @@ extern tlist_head task_list_event;
 extern pthread_mutex_t *svr_newjobs_mutex;
 extern pthread_mutex_t *svr_requests_mutex;
 /*pthread_mutex_t *svr_jobs_array_sum_mutex;*/
-/*pthread_mutex_t *svr_jobarrays_mutex;*/
 extern pthread_mutex_t *task_list_immed_mutex;
 extern pthread_mutex_t *task_list_timed_mutex;
 extern pthread_mutex_t *task_list_event_mutex;
@@ -471,7 +469,8 @@ int pbsd_init(
   pbs_queue *pque;
   char *psuffix;
   int  rc;
-  int Index;
+  int  Index;
+  int  iter = 0;
 
   struct stat statbuf;
   char *suffix_slash = "/";
@@ -483,7 +482,6 @@ int pbsd_init(
 
   struct work_task *wt;
   job_array *pa;
-  job_array *next;
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char   EMsg[1024];
@@ -795,10 +793,6 @@ int pbsd_init(
   pthread_mutex_init(svr_newjobs_mutex,NULL);
   pthread_mutex_lock(svr_newjobs_mutex);
 
-  /*svr_jobarrays_mutex = malloc(sizeof(pthread_mutex_t));*/
-  /*pthread_mutex_init(svr_jobarrays_mutex,NULL);*/
-  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
-
   /*svr_jobs_array_sum_mutex = malloc(sizeof(pthread_mutex_t));*/
   /*pthread_mutex_init(svr_jobs_array_sum_mutex,NULL);*/
   /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
@@ -822,12 +816,11 @@ int pbsd_init(
 
   CLEAR_HEAD(svr_newnodes);
 
-  CLEAR_HEAD(svr_jobarrays);
+  initialize_all_arrays_array();
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_requests_mutex);
   pthread_mutex_unlock(svr_newjobs_mutex);
-  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
   /*pthread_mutex_unlock(svr_jobs_array_sum_mutex);*/
 #endif
 
@@ -1100,7 +1093,7 @@ int pbsd_init(
         pa->jobs_recovered = 0;
 
 #ifdef ENABLE_PTHREADS
-/*        pthread_mutex_unlock(pa->ai_mutex);*/
+        pthread_mutex_unlock(pa->ai_mutex);
 #endif
         }
       else
@@ -1318,11 +1311,9 @@ int pbsd_init(
 
   if (queue_rank < 0)
     {
-    job_iterator iter;
+    iter = 0;
 
     queue_rank = 0;
-
-    initialize_job_iterator(&iter);
 
     while ((pjob = next_job(&iter)) != NULL)
       {
@@ -1340,22 +1331,10 @@ int pbsd_init(
      look for empty arrays and delete them
      also look for arrays that weren't fully built and setup a work task to
      continue the cloning process*/
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
-#endif
+  iter = 0;
 
-  pa = (job_array*)GET_NEXT(svr_jobarrays);
-
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
-#endif
-
-  while (pa != NULL)
+  while ((pa = next_array(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
-/*    pthread_mutex_lock(pa->ai_mutex);*/
-#endif
-
     pa->template_job = find_array_template(pa->ai_qs.parent_id);
 
     if (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)
@@ -1398,16 +1377,9 @@ int pbsd_init(
       continue;
       }
 
-    if (pa != NULL)
-      {
-      next = (job_array*)GET_NEXT(pa->all_arrays);
-      }
-
 #ifdef ENABLE_PTHREADS
-/*    pthread_mutex_unlock(pa->ai_mutex);*/
+    pthread_mutex_unlock(pa->ai_mutex);
 #endif
-
-    pa = next;
     }
 
 
@@ -1768,13 +1740,13 @@ static int pbsd_init_job(
         job_array *pa = pjob->ji_arraystruct;
 
 #ifdef ENABLE_PTHREADS
-/*        pthread_mutex_lock(pa->ai_mutex);*/
+        pthread_mutex_lock(pa->ai_mutex);
 #endif
 
         update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
 
 #ifdef ENABLE_PTHREADS
-/*        pthread_mutex_unlock(pa->ai_mutex);*/
+        pthread_mutex_unlock(pa->ai_mutex);
 #endif
         }
 

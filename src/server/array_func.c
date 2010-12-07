@@ -58,10 +58,11 @@ extern void post_modify_arrayreq(struct work_task *pwt);
 
 /* list of job arrays */
 extern struct server   server;
-extern tlist_head svr_jobarrays;
 extern tlist_head svr_jobs_array_sum;
+
+static struct all_arrays allarrays;
+
 #ifdef ENABLE_PTHREADS
-/*extern pthread_mutex_t *svr_jobarrays_mutex;*/
 /*extern pthread_mutex_t *svr_jobs_array_sum_mutex;*/
 #endif
 extern char *path_arrays;
@@ -79,10 +80,15 @@ static int parse_array_request(char *request, tlist_head *tl);
 
 
 /* search job array list to determine if id is a job array */
-int is_array(char *id)
+
+int is_array(
+    
+  char *id)
+
   {
-  job_array *pa;
-  job_array *next;
+  job_array      *pa;
+
+  int             iter;
 
   char      *bracket_ptr;
   char       jobid[PBS_MAXSVRJOBID];
@@ -111,39 +117,29 @@ int is_array(char *id)
     {
     strcpy(jobid,id);
     }
- 
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
-#endif
 
-  pa = (job_array*)GET_NEXT(svr_jobarrays);
- 
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
-#endif
-
-  while (pa != NULL)
+  while ((pa = next_array(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
-/*    pthread_mutex_lock(pa->ai_mutex);*/
-#endif
-
     if (strcmp(pa->ai_qs.parent_id, jobid) == 0)
       {
-      return TRUE;
-      }
-
-    next = (job_array*)GET_NEXT(pa->all_arrays);
-
 #ifdef ENABLE_PTHREADS
-/*    pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
-    pa = next;
+      return(TRUE);
+      }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pa->ai_mutex);
+#endif
     }
 
-  return FALSE;
-  }
+  return(FALSE);
+  } /* END is_array() */
+
+
+
+
 
 /* return a server's array info struct corresponding to an array id */
 job_array *get_array(
@@ -151,48 +147,27 @@ job_array *get_array(
   char *id)
 
   {
-  job_array *pa;
-  job_array *next;
+  job_array      *pa;
  
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
-#endif
+  int             iter = 0;
 
-  pa = (job_array*)GET_NEXT(svr_jobarrays);
- 
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
-#endif
-
-  while (pa != NULL)
+  while ((pa = next_array(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
-/*    pthread_mutex_lock(pa->ai_mutex);*/
-#endif
-
     if (strcmp(pa->ai_qs.parent_id, id) == 0)
       {
-      return pa;
-      }
-
-    if (pa == GET_NEXT(pa->all_arrays))
-      {
-      next = NULL;
-      }
-    else
-      {
-      next = (job_array*)GET_NEXT(pa->all_arrays);
+      return(pa);
       }
 
 #ifdef ENABLE_PTHREADS
-/*    pthread_mutex_unlock(pa->ai_mutex);*/
+    pthread_mutex_unlock(pa->ai_mutex);
 #endif
-
-    pa = next;
     }
 
-  return (job_array*)NULL;
-  }
+  return(NULL);
+  } /* END get_array() */
+
+
+
 
 
 /* save a job array struct to disk returns zero if no errors*/
@@ -201,8 +176,6 @@ int array_save(
   job_array *pa)
 
   {
-
-
   int fds;
   char namebuf[MAXPATHLEN];
   array_request_node *rn;
@@ -384,7 +357,6 @@ job_array *array_recov(
   char *path)
 
   {
-  extern tlist_head svr_jobarrays;
   job_array *pa;
   array_request_node *rn;
   int fd;
@@ -489,20 +461,15 @@ job_array *array_recov(
     array_save(pa);
     }
 
-  /* link the struct into the servers list of job arrays */
 #ifdef ENABLE_PTHREADS
-/*  pa->ai_mutex = malloc(sizeof(pthread_mutex_t));
+  pa->ai_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(pa->ai_mutex,NULL);
-  pthread_mutex_lock(pa->ai_mutex);
-*/
-  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
-#endif
- 
-  append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
 
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
+  pthread_mutex_lock(pa->ai_mutex);
 #endif
+
+  /* link the struct into the servers list of job arrays */
+  insert_array(pa);
 
   return(pa);
   } /* END array_recov() */
@@ -521,18 +488,12 @@ int array_delete(
   array_request_node *rn;
 
   /* first thing to do is take this out of the servers list of all arrays */
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
-#endif
-
-  delete_link(&pa->all_arrays);
+  remove_array(pa);
 
 #ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
-
-  /* unlock the mutex and free it 
+  /* unlock the mutex and free it */
   pthread_mutex_unlock(pa->ai_mutex);
-  free(pa->ai_mutex);*/
+  free(pa->ai_mutex);
 #endif
 
   /* delete the on disk copy of the struct */
@@ -571,7 +532,10 @@ int array_delete(
   free(pa);
 
   return 0;
-  }
+  } /* END array_delete() */
+
+
+
 
 
 /* 
@@ -583,6 +547,7 @@ int array_delete(
  *
  * @return 0 on SUCCESS
  */
+
 int set_slot_limit(
 
   char      *request, /* I */
@@ -660,18 +625,12 @@ int setup_array_struct(
   CLEAR_HEAD(pa->request_tokens);
 
 #ifdef ENABLE_PTHREADS
-/*  pa->ai_mutex = malloc(sizeof(pthread_mutex_t));
+  pa->ai_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(pa->ai_mutex,NULL);
-  pthread_mutex_lock(pa->ai_mutex);*/
-
-  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
+  pthread_mutex_lock(pa->ai_mutex);
 #endif
 
-  append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
-
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
-#endif
+  insert_array(pa);
 
   if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
     {
@@ -761,10 +720,10 @@ int setup_array_struct(
     }
 
 #ifdef ENABLE_PTHREADS
-/*  pthread_mutex_unlock(pa->ai_mutex); */
+  pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
-  return 0;
+  return(PBSE_NONE);
   } /* END setup_array_struct() */
 
 
@@ -1563,32 +1522,20 @@ void update_array_values(
 
 
 void update_array_statuses()
+
   {
-  job_array *pa;
-  job_array *next;
-  job *pj;
-  int i;
-  unsigned int running;
-  unsigned int queued;
-  unsigned int held;
-  unsigned int complete;
-  
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_lock(svr_jobarrays_mutex);*/
-#endif
+  job_array      *pa;
+  job            *pj;
+  int             i;
+  unsigned int    running;
+  unsigned int    queued;
+  unsigned int    held;
+  unsigned int    complete;
 
-  pa = (job_array*)GET_NEXT(svr_jobarrays);
+  int             iter = 0;
 
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(svr_jobarrays_mutex);*/
-#endif
-
-  while (pa != NULL)
+  while ((pa = next_array(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
-/*    pthread_mutex_lock(pa->ai_mutex);*/
-#endif
-
     running = 0;
     queued = 0;
     held = 0;
@@ -1644,15 +1591,11 @@ void update_array_statuses()
       svr_setjobstate(pa->template_job, JOB_STATE_QUEUED, pa->template_job->ji_qs.ji_substate);
       }
       
-    next = (job_array*)GET_NEXT(pa->all_arrays);
-
 #ifdef ENABLE_PTHREADS
-/*    pthread_mutex_unlock(pa->ai_mutex);*/
+    pthread_mutex_unlock(pa->ai_mutex);
 #endif
-
-    pa = next;
     }
-  }
+  } /* END update_array_statuses() */
 
 
 
@@ -1714,6 +1657,102 @@ int num_array_jobs(
 
 
 
+
+/*
+ * initializes the array to store all job_array pointers 
+ */
+void initialize_all_arrays_array()
+
+  {
+  allarrays.ra = initialize_resizable_array(INITIAL_NUM_ARRAYS);
+
+#ifdef ENABLE_PTHREADS
+  allarrays.allarrays_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(allarrays.allarrays_mutex,NULL);
+#endif
+  } /* END initialize_all_arrays_array() */
+
+
+
+
+
+/* 
+ * insert pa into the global array 
+ */
+int insert_array(
+
+  job_array *pa)
+
+  {
+  static char  *id = "insert_array";
+  int           rc;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(allarrays.allarrays_mutex);
+#endif
+
+  if ((rc = insert_thing(allarrays.ra,pa)) == ENOMEM)
+    {
+    log_err(rc,id,"No memory to resize the array...SYSTEM FAILURE\n");
+    }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(allarrays.allarrays_mutex);
+#endif
+
+  return(rc);
+  } /* END insert_array() */
+
+
+
+
+
+int remove_array(
+
+  job_array *pa)
+
+  {
+  int rc;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(allarrays.allarrays_mutex);
+#endif
+
+  rc = remove_thing(allarrays.ra,pa);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(allarrays.allarrays_mutex);
+#endif
+
+  return(rc);
+  } /* END remove_array() */
+
+
+
+
+
+job_array *next_array(
+
+  int *iter)
+
+  {
+  job_array *pa = NULL;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(allarrays.allarrays_mutex);
+#endif
+
+  pa = (job_array *)next_thing(allarrays.ra,iter);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(allarrays.allarrays_mutex);
+
+  if (pa != NULL)
+    pthread_mutex_lock(pa->ai_mutex);
+#endif
+
+  return(pa);
+  } /* END next_array() */
 
 
 /* END array_func.c */

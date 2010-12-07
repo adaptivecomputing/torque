@@ -227,7 +227,7 @@ void req_deletearray(
       log_buffer);
 
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(pa->ai_mutex);*/
+    pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
@@ -246,7 +246,7 @@ void req_deletearray(
       {
       /* ERROR */
 #ifdef ENABLE_PTHREADS
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error in specified array range");
@@ -259,14 +259,14 @@ void req_deletearray(
     }
 
 #ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(pa->ai_mutex);*/
+  pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
   /* check if the array is gone */
   if ((pa = get_array(preq->rq_ind.rq_delete.rq_objname)) != NULL)
     {
 #ifdef ENABLE_PTHREADS
-    /*pthread_mutex_unlock(pa->ai_mutex);*/
+    pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
     /* some jobs were not deleted.  They must have been running or had
@@ -419,7 +419,7 @@ void array_delete_wt(
       last_id = NULL;
 
 #ifdef ENABLE_PTHREADS
-      /*pthread_mutex_unlock(pa->ai_mutex);*/
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
       return;
@@ -427,7 +427,7 @@ void array_delete_wt(
     }
 
 #ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(pa->ai_mutex);*/
+  pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
   req_deletearray(preq);
