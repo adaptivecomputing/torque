@@ -118,6 +118,7 @@
 
 /* External Global Data Items */
 
+extern struct         all_jobs alljobs;
 extern unsigned int   pbs_mom_port;
 extern unsigned int   pbs_rm_port;
 extern char *path_spool;
@@ -776,7 +777,7 @@ void on_job_exit(
    * already been free'd.  This is temp code */
 
   /* the mutex is obtained in the next_job method */
-  while ((pj = next_job(&iter)) != NULL)
+  while ((pj = next_job(&alljobs,&iter)) != NULL)
     {
     if (pjob == pj)
       break;
@@ -2749,7 +2750,13 @@ void req_jobobit(
       job_array *pa = pjob->ji_arraystruct;
 
 #ifdef ENABLE_PTHREADS
-      pthread_mutex_lock(pa->ai_mutex);
+      if (pthread_mutex_trylock(pa->ai_mutex) != 0)
+        {
+        /* always get mutexes in order to avoid deadlock - array and then job */
+        pthread_mutex_unlock(pjob->ji_mutex);
+        pthread_mutex_lock(pa->ai_mutex);
+        pthread_mutex_lock(pjob->ji_mutex);
+        }
 #endif
 
       update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);

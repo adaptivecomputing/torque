@@ -191,6 +191,7 @@ static int try_lock_out (int,int);
 extern int    svr_chngNodesfile;
 extern int    svr_totnodes;
 extern AvlTree streams;
+extern struct all_jobs alljobs;
 
 /* External Functions */
 
@@ -267,7 +268,6 @@ char         server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int  svr_delay_entry = 0;
 int  svr_do_schedule = SCH_SCHEDULE_NULL;
 tlist_head svr_queues;            /* list of queues                   */
-tlist_head svr_jobs_array_sum;    /* list of jobs in server, arrays summarized as single "placeholder" job */
 tlist_head svr_newjobs;           /* list of incoming new jobs        */
 tlist_head svr_newnodes;          /* list of newly created nodes      */
 tlist_head task_list_immed;
@@ -1077,7 +1077,7 @@ static int start_hot_jobs(void)
 
   int  iter = 0;
   
-  while ((pjob = next_job(&iter)) != NULL)
+  while ((pjob = next_job(&alljobs,&iter)) != NULL)
     {
 
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED) &&
@@ -1287,7 +1287,7 @@ void main_loop(void)
       struct work_task *ptask;
       iter = 0;
 
-      while ((pjob = next_job(&iter)) != NULL)
+      while ((pjob = next_job(&alljobs,&iter)) != NULL)
         {
 
         if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
@@ -1337,7 +1337,7 @@ void main_loop(void)
   iter = 0;
 
   /* save any jobs that need saving */
-  while ((pjob = next_job(&iter)) != NULL)
+  while ((pjob = next_job(&alljobs,&iter)) != NULL)
     {
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);

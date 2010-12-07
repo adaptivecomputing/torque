@@ -144,8 +144,9 @@ static void eval_checkpoint(attribute *j, attribute *q);
 /* Global Data Items: */
 
 extern struct server server;
+extern struct all_jobs alljobs;
+extern struct all_jobs array_summary;
 
-extern tlist_head svr_jobs_array_sum;
 extern char  *msg_badwait;  /* error message */
 extern char  *msg_daemonname;
 extern char  *pbs_o_host;
@@ -321,51 +322,19 @@ int svr_enquejob(
 
   if (!pjob->ji_is_array_template)
     {
-    insert_job(pjob);
+    insert_job(&alljobs,pjob);
 
     server.sv_qs.sv_numjobs++;
 
     server.sv_jobstates[pjob->ji_qs.ji_state]++;
     }
   
-  /* place into svr_jobs_array_sum if necessary */
+  /* place into array_summary if necessary */
   if (pjob->ji_is_array_template || pjob->ji_arraystruct == NULL)
     {
-    pjcur = (job *)GET_PRIOR(svr_jobs_array_sum);
-
-    while (pjcur != NULL)
+    if (has_job(&array_summary,pjob) == FALSE)
       {
-      if ((unsigned long)pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long >=
-          (unsigned long)pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
-        break;
-      
-      pjcur = (job *)GET_PRIOR(pjcur->ji_alljobs);
-      }  /* END while (pjcur != NULL) */
-      
-    if (pjcur == 0)
-      {
-      /* link first in server's list */
-      insert_link(&svr_jobs_array_sum, &pjob->ji_jobs_array_sum, pjob, LINK_INSET_AFTER);
-      }
-    else
-      {
-      /* link after 'current' job in server's list */
-
-       /* only link if it isn't already inserted. routing queues, 
-       * remapping, etc. can mean it was already inserted */
-      if (!is_link_initialized(&pjob->ji_jobs_array_sum))
-        {
-#ifdef ENABLE_PTHREADS
-        /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
-#endif
-
-        insert_link(&pjcur->ji_jobs_array_sum, &pjob->ji_jobs_array_sum,
-          pjob,LINK_INSET_AFTER);
-
-#ifdef ENABLE_PTHREADS
-        /*pthread_mutex_unlock(svr_jobs_array_sum_mutex);*/
-#endif
-        }
+      insert_job(&array_summary,pjob);
       }
     } /* END if (pjob->is_array_template) */
 
@@ -553,7 +522,7 @@ void svr_dequejob(
   /* remove job from server's all job list and reduce server counts */
 
   /* the only error is if the job isn't present */
-  if (remove_job(pjob) == PBSE_NONE)
+  if (remove_job(&alljobs,pjob) == PBSE_NONE)
     {
     if (!pjob->ji_is_array_template)
       {
@@ -2644,7 +2613,7 @@ static void correct_ct(
       pque->qu_njstate[i] = 0;
     }
 
-  while ((pjob = next_job(&iter)) != NULL)
+  while ((pjob = next_job(&alljobs,&iter)) != NULL)
     {
     server.sv_qs.sv_numjobs++;
 

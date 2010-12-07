@@ -123,6 +123,7 @@ extern char *msg_badstate;
 extern struct server server;
 extern time_t time_now;
 extern int   LOGLEVEL;
+extern struct all_jobs alljobs;
 
 /* Private Functions in this file */
 
@@ -699,7 +700,13 @@ jump:
       job_array *pa = pjob->ji_arraystruct;
 
 #ifdef ENABLE_PTHREADS
-      pthread_mutex_lock(pa->ai_mutex);
+      if (pthread_mutex_trylock(pa->ai_mutex) != 0)
+        {
+        /* always get mutexes in order to avoid deadlock - array and then job */
+        pthread_mutex_unlock(pjob->ji_mutex);
+        pthread_mutex_lock(pa->ai_mutex);
+        pthread_mutex_lock(pjob->ji_mutex);
+        }
 #endif
 
       for (i = 0; i < pa->ai_qs.array_size; i++)
@@ -1462,7 +1469,7 @@ void purge_completed_jobs(
       log_buffer);
     }
 
-  while ((pjob = next_job(&iter)) != NULL) 
+  while ((pjob = next_job(&alljobs,&iter)) != NULL) 
     {
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE) &&
         (pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long <= purge_time) &&

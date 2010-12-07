@@ -178,6 +178,27 @@ int insert_thing(
 
 
 
+
+int is_present(
+
+  resizable_array *ra,
+  void            *thing)
+
+  {
+  int i;
+
+  for (i = 0; i < ra->max; i++)
+    if (ra->slots[i] == thing)
+      return(TRUE);
+
+  return(FALSE);
+  } /* END is_present() */
+
+
+
+
+
+
 /* 
  * remove a thing from the array
  *
@@ -228,13 +249,14 @@ resizable_array *initialize_resizable_array(
 
   {
   resizable_array *ra = malloc(sizeof(resizable_array));
+  long             amount = sizeof(void *) * size;
 
   ra->max = size;
   ra->num = 0;
   ra->next_slot = 0;
 
-  ra->slots = malloc(sizeof(void *) * size);
-  memset(ra->slots,0,sizeof(void *) * size);
+  ra->slots = malloc(amount);
+  memset(ra->slots,0,amount);
 
   return(ra);
   } /* END initialize_resizable_array() */

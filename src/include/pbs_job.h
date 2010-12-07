@@ -495,7 +495,6 @@ struct job
   list_link       ji_alljobs; /* link to next job in server job list */
   list_link       ji_jobque;  /* SVR: link to next job in queue list */
 #ifndef PBS_MOM
-  list_link       ji_jobs_array_sum; /*linked list of jobs with arrays summarized as a single "placeholder" job */
   list_link       ji_jobque_array_sum;
 #endif
   /* MOM: links to polled jobs */
@@ -659,12 +658,13 @@ struct all_jobs
 #endif
   };
 
-void initialize_all_jobs_array();
-int  insert_job(job *);
-int  remove_job(job *);
+void initialize_all_jobs_array(struct all_jobs *);
+int  insert_job(struct all_jobs *, job *);
+int  remove_job(struct all_jobs *,job *);
+int  has_job(struct all_jobs *,job *);
 int  swap_jobs(job *,job *);
 
-job *next_job(int *);
+job *next_job(struct all_jobs *,int *);
 
 #endif
 

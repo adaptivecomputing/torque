@@ -1293,7 +1293,6 @@ struct batch_request *alloc_br(
 
   req->rq_type = type;
 
-
   req->rq_conn = -1;  /* indicate not connected */
   req->rq_orgconn = -1;  /* indicate not connected */
   req->rq_time = time_now;

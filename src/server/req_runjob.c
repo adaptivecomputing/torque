@@ -241,7 +241,13 @@ void req_runjob(
     job_array *pa = pjob->ji_arraystruct;
 
 #ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pa->ai_mutex);
+    if (pthread_mutex_trylock(pa->ai_mutex) != 0)
+      {
+      /* always get mutexes in order to avoid deadlock - array and then job */
+      pthread_mutex_unlock(pjob->ji_mutex);
+      pthread_mutex_lock(pa->ai_mutex);
+      pthread_mutex_lock(pjob->ji_mutex);
+      }
 #endif
     
     if ((pa->ai_qs.slot_limit < 0) ||

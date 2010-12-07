@@ -5,7 +5,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       customizable using min_threads and max_threads, and idle time before
       exiting can be set using thread_idle_seconds.
   e - make node functionality multi-threaded. 
-  e - make job interactions multi-threaded to a large degree. 
+  e - make job interactions multi-threaded. 
+  e - make job array interactions multi-threaded.
 
 3.0.0
   e - serverdb is now stored as xml, this is no longer configurable.

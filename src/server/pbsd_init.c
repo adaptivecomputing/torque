@@ -180,18 +180,18 @@ extern int  queue_rank;
 extern char  server_name[];
 extern int  svr_delay_entry;
 extern tlist_head svr_newjobs;
-extern tlist_head svr_jobs_array_sum;
 extern tlist_head svr_queues;
 extern tlist_head svr_requests;
 extern tlist_head svr_newnodes;
 extern tlist_head task_list_immed;
 extern tlist_head task_list_timed;
 extern tlist_head task_list_event;
+extern struct all_jobs alljobs;
+extern struct all_jobs array_summary;
 
 #ifdef ENABLE_PTHREADS
 extern pthread_mutex_t *svr_newjobs_mutex;
 extern pthread_mutex_t *svr_requests_mutex;
-/*pthread_mutex_t *svr_jobs_array_sum_mutex;*/
 extern pthread_mutex_t *task_list_immed_mutex;
 extern pthread_mutex_t *task_list_timed_mutex;
 extern pthread_mutex_t *task_list_event_mutex;
@@ -243,11 +243,12 @@ static void  stop_me(int);
  * dynamic array, with utility functions for easy appending
 */
 
-typedef struct darray_t {
+typedef struct darray_t 
+  {
   int Length;
   void **Data;
   int AppendIndex;
-} darray_t;
+  } darray_t;
 
 
 
@@ -792,10 +793,6 @@ int pbsd_init(
   svr_newjobs_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(svr_newjobs_mutex,NULL);
   pthread_mutex_lock(svr_newjobs_mutex);
-
-  /*svr_jobs_array_sum_mutex = malloc(sizeof(pthread_mutex_t));*/
-  /*pthread_mutex_init(svr_jobs_array_sum_mutex,NULL);*/
-  /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
 #endif
 
   CLEAR_HEAD(svr_requests);
@@ -808,9 +805,8 @@ int pbsd_init(
 
   CLEAR_HEAD(svr_queues);
 
-  initialize_all_jobs_array();
-
-  CLEAR_HEAD(svr_jobs_array_sum);
+  initialize_all_jobs_array(&alljobs);
+  initialize_all_jobs_array(&array_summary);
 
   CLEAR_HEAD(svr_newjobs);
 
@@ -821,7 +817,6 @@ int pbsd_init(
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_requests_mutex);
   pthread_mutex_unlock(svr_newjobs_mutex);
-  /*pthread_mutex_unlock(svr_jobs_array_sum_mutex);*/
 #endif
 
   time_now = time((time_t *)0);
@@ -1315,7 +1310,7 @@ int pbsd_init(
 
     queue_rank = 0;
 
-    while ((pjob = next_job(&iter)) != NULL)
+    while ((pjob = next_job(&alljobs,&iter)) != NULL)
       {
       pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       
@@ -1378,6 +1373,9 @@ int pbsd_init(
       }
 
 #ifdef ENABLE_PTHREADS
+    if (pa->template_job != NULL)
+      pthread_mutex_unlock(pa->template_job->ji_mutex);
+
     pthread_mutex_unlock(pa->ai_mutex);
 #endif
     }
@@ -1740,7 +1738,13 @@ static int pbsd_init_job(
         job_array *pa = pjob->ji_arraystruct;
 
 #ifdef ENABLE_PTHREADS
-        pthread_mutex_lock(pa->ai_mutex);
+        if (pthread_mutex_trylock(pa->ai_mutex) != 0)
+          {
+          /* always get mutexes in order to avoid deadlock - array and then job */
+          pthread_mutex_unlock(pjob->ji_mutex);
+          pthread_mutex_lock(pa->ai_mutex);
+          pthread_mutex_lock(pjob->ji_mutex);
+          }
 #endif
 
         update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);

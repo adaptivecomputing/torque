@@ -133,6 +133,7 @@ extern tlist_head task_list_event;
 extern struct server server;
 extern attribute_def svr_attr_def[];
 extern int    LOGLEVEL;
+extern struct all_jobs alljobs;
 
 /*
  * svr_shutdown() - Perform (or start of) the shutdown of the server
@@ -218,7 +219,7 @@ void svr_shutdown(
 
   svr_save(&server, SVR_SAVE_QUICK);
 
-  while ((pjob = next_job(&iter)) != NULL)
+  while ((pjob = next_job(&alljobs,&iter)) != NULL)
     {
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {

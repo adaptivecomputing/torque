@@ -58,13 +58,10 @@ extern void post_modify_arrayreq(struct work_task *pwt);
 
 /* list of job arrays */
 extern struct server   server;
-extern tlist_head svr_jobs_array_sum;
 
+struct all_jobs          array_summary;
 static struct all_arrays allarrays;
 
-#ifdef ENABLE_PTHREADS
-/*extern pthread_mutex_t *svr_jobs_array_sum_mutex;*/
-#endif
 extern char *path_arrays;
 extern char *path_jobs;
 extern time_t time_now;
@@ -88,7 +85,7 @@ int is_array(
   {
   job_array      *pa;
 
-  int             iter;
+  int             iter = 0;
 
   char      *bracket_ptr;
   char       jobid[PBS_MAXSVRJOBID];
@@ -290,22 +287,12 @@ job *find_array_template(
   char *at;
   char *comp;
   int   different = FALSE;
+  int   iter = 0;
 
   job  *pj;
-  job  *next;
 
   if ((at = strchr(arrayid, (int)'@')) != NULL)
     * at = '\0'; /* strip off @server_name */
-
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_lock(svr_jobs_array_sum_mutex);*/
-#endif
-
-  pj = (job *)GET_NEXT(svr_jobs_array_sum);
-
-#ifdef ENABLE_PTHREADS
-  /*pthread_mutex_unlock(svr_jobs_array_sum_mutex);*/
-#endif
 
   if ((server.sv_attr[SRV_ATR_display_job_server_suffix].at_flags & ATR_VFLAG_SET) ||
       (server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET))
@@ -321,22 +308,14 @@ job *find_array_template(
     comp = arrayid;
     }
 
-  while (pj != NULL)
+  while ((pj = next_job(&array_summary,&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pj->ji_mutex);
-#endif
-
     if (!strcmp(comp, pj->ji_qs.ji_jobid))
       break;
-
-    next = (job *)GET_NEXT(pj->ji_jobs_array_sum);
 
 #ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pj->ji_mutex);
 #endif
-
-    pj = next;
     }
 
   if (at)
@@ -1521,21 +1500,30 @@ void update_array_values(
   } /* END update_array_values() */
 
 
-void update_array_statuses()
+void update_array_statuses(job_array *owned)
 
   {
   job_array      *pa;
   job            *pj;
   int             i;
+  int             j;
   unsigned int    running;
   unsigned int    queued;
   unsigned int    held;
   unsigned int    complete;
 
-  int             iter = 0;
-
-  while ((pa = next_array(&iter)) != NULL)
+  for (j = 0; j < allarrays.ra->max; j++)
     {
+    pa = ((job_array **)allarrays.ra->slots)[j];
+
+    if (pa == NULL)
+      continue;
+
+#ifdef ENABLE_PTHREADS
+    if (pa != owned)
+      pthread_mutex_lock(pa->ai_mutex);
+#endif
+
     running = 0;
     queued = 0;
     held = 0;
@@ -1592,7 +1580,8 @@ void update_array_statuses()
       }
       
 #ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pa->ai_mutex);
+    if (pa != owned)
+      pthread_mutex_unlock(pa->ai_mutex);
 #endif
     }
   } /* END update_array_statuses() */
