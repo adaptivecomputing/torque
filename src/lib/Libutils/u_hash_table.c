@@ -108,7 +108,11 @@ hash_table_t *create_hash(
 
   /* initialize the buckets */
   for (i = 0; i < size; i++)
+    {
+    ht->buckets[i].next  = NULL;
+    ht->buckets[i].key   = NULL;
     ht->buckets[i].value = -1;
+    }
 
   return(ht);
   } /* END create_hash() */
@@ -116,7 +120,7 @@ hash_table_t *create_hash(
 
 
 
-
+/* this will be replaced with a real hash function soon, but this works for testing */
 int get_hash(
     
   hash_table_t *ht,
@@ -222,6 +226,9 @@ int add_hash(
 
       while (b != NULL)
         {
+        if (b->key == NULL)
+          break;
+
         new_index = get_hash(ht,b->key);
 
         add_to_bucket(tmp,new_index,b->key,b->value);
@@ -261,6 +268,12 @@ int remove_hash(
 
   while (b != NULL)
     {
+    if (b->key == NULL)
+      {
+      b = NULL;
+      break;
+      }
+
     if (!strcmp(key,b->key))
       break;
 
@@ -319,6 +332,12 @@ int get_value_hash(
 
   while (b != NULL)
     {
+    if (b->key == NULL)
+      {
+      b = NULL;
+      break;
+      }
+
     if (!strcmp(b->key,key))
       break;
 
