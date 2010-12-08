@@ -28,6 +28,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       always being recongnized.
   b - Added patch for bug 101 by Martin Siegert. A null string was causing a segfault
       in pbs_server when record_jobinfo called into attr_to_string. 
+  b - Submitted patch from Vikentsi Lapa for bug 104. This patch adds the global 
+      variable pbsuser and sets it to the user id of the current user. This was 
+      needed for cygwin because the code had hard coded the value of 0 for root
+      for seteuid. In the case of cygwin root cannot be used.
 
 
 2.5.3
