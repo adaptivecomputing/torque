@@ -92,7 +92,11 @@
 #define PBS_JOB_H 1
 
 #include "server_limits.h"
+#include "list_link.h"
+#include "pbs_ifl.h"
+#include "attribute.h"
 #include "resizable_array.h"
+#include "hash_table.h"
 
 #ifndef MAX_LINE
 #define MAX_LINE 1024
@@ -652,6 +656,7 @@ typedef struct job job;
 struct all_jobs
   {
   resizable_array *ra;
+  hash_table_t    *ht;
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_t *alljobs_mutex;

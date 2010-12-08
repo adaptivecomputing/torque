@@ -80,16 +80,18 @@
 #ifndef RESIZABLE_ARRAY_H
 #define RESIZABLE_ARRAY_H
 
+#include "hash_table.h"
+
 #define THING_NOT_FOUND -2
 
 /* Struct definitions */
 struct resizable_array
   {
-  int    max;       /* number of alloc'd slots */
-  int    num;       /* current number of occupied slots */
-  int    next_slot; /* index of the next open slot */
+  int            max;       /* number of alloc'd slots */
+  int            num;       /* current number of occupied slots */
+  int            next_slot; /* index of the next open slot */
 
-  void **slots;     /* pointers to the jobs */
+  void         **slots;     /* pointers to the jobs */
   };
 
 typedef struct resizable_array resizable_array;

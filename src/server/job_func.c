@@ -2021,25 +2021,16 @@ job *find_job(
 #ifdef ENABLE_PTHREADS
     pthread_mutex_lock(alljobs.alljobs_mutex);
 #endif
-    
-    for (i = 0; i < alljobs.ra->max; i++)
+
+    i = get_value_hash(alljobs.ht,comp);
+
+    if (i >= 0)
       {
-      if (((job **)alljobs.ra->slots)[i] != NULL)
-        {
+      pj = ((job **)alljobs.ra->slots)[i];
+
 #ifdef ENABLE_PTHREADS
-        pthread_mutex_lock(((job **)alljobs.ra->slots)[i]->ji_mutex);
+      pthread_mutex_lock(pj->ji_mutex);
 #endif
-        
-        if (!strcmp(comp,((job **)alljobs.ra->slots)[i]->ji_qs.ji_jobid))
-          {
-          pj = alljobs.ra->slots[i];
-          break;
-          }
-        
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(((job **)alljobs.ra->slots)[i]->ji_mutex);
-#endif
-        }
       }
     
 #ifdef ENABLE_PTHREADS
@@ -2053,24 +2044,15 @@ job *find_job(
     pthread_mutex_lock(array_summary.alljobs_mutex);
 #endif
 
-    for (i = 0; i < array_summary.ra->max; i++)
+    i = get_value_hash(array_summary.ht,comp);
+
+    if (i >= 0)
       {
-      if (((job **)array_summary.ra->slots)[i] != NULL)
-        {
+      pj = ((job **)array_summary.ra->slots)[i];
+
 #ifdef ENABLE_PTHREADS
-        pthread_mutex_lock(((job **)array_summary.ra->slots)[i]->ji_mutex);
+      pthread_mutex_lock(pj->ji_mutex);
 #endif
-        
-        if (!strcmp(comp,((job **)array_summary.ra->slots)[i]->ji_qs.ji_jobid))
-          {
-          pj = array_summary.ra->slots[i];
-          break;
-          }
-        
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(((job **)array_summary.ra->slots)[i]->ji_mutex);
-#endif
-        }
       }
 
 #ifdef ENABLE_PTHREADS
@@ -2097,6 +2079,7 @@ void initialize_all_jobs_array(
 
   {
   aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
+  aj->ht = create_hash(INITIAL_JOB_SIZE);
 
 #ifdef ENABLE_PTHREADS
   aj->alljobs_mutex = malloc(sizeof(pthread_mutex_t));
@@ -2130,6 +2113,8 @@ int insert_job(
     {
     log_err(rc,id,"No memory to resize the array...SYSTEM FAILURE\n");
     }
+  else
+    add_hash(aj->ht,rc,pjob->ji_qs.ji_jobid);
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(aj->alljobs_mutex);
@@ -2158,7 +2143,10 @@ int has_job(
   pthread_mutex_lock(aj->alljobs_mutex);
 #endif
 
-  rc = is_present(aj->ra,pjob);
+  if (get_value_hash(aj->ht,pjob->ji_qs.ji_jobid) < 0)
+    rc = FALSE;
+  else
+    rc = TRUE;
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(aj->alljobs_mutex);
@@ -2184,13 +2172,20 @@ int  remove_job(
   job             *pjob)
 
   {
-  int rc;
+  int rc = PBSE_NONE;
+  int index;
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_lock(aj->alljobs_mutex);
 #endif
 
-  rc = remove_thing(aj->ra,pjob);
+  if ((index = get_value_hash(aj->ht,pjob->ji_qs.ji_jobid)) < 0)
+    rc = THING_NOT_FOUND;
+  else
+    {
+    aj->ra->slots[index] = NULL;
+    remove_hash(aj->ht,pjob->ji_qs.ji_jobid);
+    }
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(aj->alljobs_mutex);

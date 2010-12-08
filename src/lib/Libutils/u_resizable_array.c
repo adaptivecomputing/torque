@@ -81,10 +81,14 @@
 #include <errno.h>
 #include <signal.h>
 #include <time.h>
+#include "pbs_job.h"
 #include "utils.h"
+#include "hash_table.h"
 #include "resizable_array.h"
 #include "pbs_error.h"
 
+extern struct all_jobs alljobs;
+extern struct all_jobs array_summary;
 
 
 int swap_things(
@@ -118,12 +122,33 @@ int swap_things(
   ra->slots[index1] = thing2;
   ra->slots[index2] = thing1;
 
+  /* this is a hack, but unfortunately its necessary */
+  if (ra == alljobs.ra) 
+    {
+    job *pjob = (job *)thing1;
+    change_value_hash(alljobs.ht,pjob->ji_qs.ji_jobid,index2);
+    pjob = (job *)thing2;
+    change_value_hash(alljobs.ht,pjob->ji_qs.ji_jobid,index1);
+    }
+  else if (ra == array_summary.ra)
+    {
+    job *pjob = (job *)thing1;
+    change_value_hash(array_summary.ht,pjob->ji_qs.ji_jobid,index2);
+    pjob = (job *)thing2;
+    change_value_hash(array_summary.ht,pjob->ji_qs.ji_jobid,index1);
+    }
+
   return(PBSE_NONE);
   } /* END swap_things() */
 
 
 
 
+/*
+ * inserts an item, resizing the array if necessary
+ *
+ * @return the index in the array or ENOMEM
+ */
 int insert_thing(
     
   resizable_array *ra,
@@ -132,6 +157,7 @@ int insert_thing(
   {
   static char   *id = "insert_thing";
   void         **tmp;
+  int            rc;
   
   /* check if the array must be resized */
   if (ra->max == ra->num)
@@ -165,6 +191,7 @@ int insert_thing(
     ra->slots[ra->next_slot] = thing;
     }
 
+  rc = ra->next_slot;
   ra->num++;
 
   /* now update the next_slot pointer */
@@ -172,7 +199,7 @@ int insert_thing(
          (ra->slots[ra->next_slot] != NULL))
     ra->next_slot++;
 
-  return(PBSE_NONE);
+  return(rc);
   } /* END insert_thing() */
 
 
