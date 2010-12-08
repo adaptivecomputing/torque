@@ -213,6 +213,7 @@ extern char *msg_daemonname;          /* for logs     */
 extern char *msg_info_mom; /* Mom information message   */
 extern int pbs_errno;
 gid_t  pbsgroup;
+uid_t pbsuser;
 unsigned int pbs_mom_port = 0;
 unsigned int pbs_rm_port = 0;
 tlist_head mom_polljobs; /* jobs that must have resource limits polled */
@@ -6344,7 +6345,8 @@ void initialize_globals(void)
   mom_server_all_init();
 
   pbsgroup = getgid();
-  loopcnt = time(NULL);
+  pbsuser  = getuid();
+  loopcnt  = time(NULL);
 
   MOMExePath = MOMFindMyExe(program_name);
   MOMExeTime = MOMGetFileMtime(MOMExePath);

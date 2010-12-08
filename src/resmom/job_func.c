@@ -161,6 +161,7 @@ static void job_init_wattr(job *);
 /* Global Data items */
 
 extern gid_t pbsgroup;
+extern uid_t pbsuser;
 extern char *msg_abt_err;
 extern char *path_jobs;
 extern char *path_spool;
@@ -653,7 +654,7 @@ void job_purge(
 
       rc = remtree(namebuf);
 
-      seteuid(0);
+      seteuid(pbsuser);
       setegid(pbsgroup);
 
       if ((rc != 0) && (LOGLEVEL >= 5))

@@ -194,6 +194,7 @@ extern  char            *path_prologuserp;
 extern char  *path_spool;
 extern char  *path_aux;
 extern gid_t   pbsgroup;
+extern uid_t   pbsuser;
 extern time_t  time_now;
 extern unsigned int pbs_rm_port;
 extern u_long  localaddr;
@@ -1061,7 +1062,7 @@ int TMakeTmpDir(
   	  }
     }		 /* END if (retval == 0) */
 
-  seteuid(0);
+  seteuid(pbsuser);
 
   setegid(pbsgroup);
 
@@ -5989,7 +5990,7 @@ char *std_file_name(
 
 	  	rcstat = stat(path_alt, &myspooldir);
 
-		  seteuid(0);
+		  seteuid(pbsuser);
 
   		if ((rcstat == 0) && (S_ISDIR(myspooldir.st_mode)))
 	  		strncpy(path, path_alt, sizeof(path));
@@ -6334,7 +6335,7 @@ int open_std_file(
 		umask(old_umask);
 		}
 
-	seteuid(0);
+	seteuid(pbsuser);
 
 	setegid(pbsgroup);
 
