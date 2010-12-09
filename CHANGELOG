@@ -32,6 +32,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       variable pbsuser and sets it to the user id of the current user. This was 
       needed for cygwin because the code had hard coded the value of 0 for root
       for seteuid. In the case of cygwin root cannot be used.
+  b - Fix for reque failures on mom.  Forked pbs_mom would silently segfault and
+      job was left in Exiting state.
 
 
 2.5.3

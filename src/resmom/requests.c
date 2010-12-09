@@ -2807,6 +2807,7 @@ void req_rerunjob(
   job  *pjob;
   int        sock;
   int   rc;
+  int   retrycnt = 0;
 
   pjob = find_job(preq->rq_ind.rq_rerun);
 
@@ -2846,10 +2847,17 @@ void req_rerunjob(
    * This is acceptable because we are a child process, not pbs_mom.
    */
 
+retry:
   sock = mom_open_socket_to_jobs_server(pjob, id, NULL);
 
   if (sock < 0)
     {
+    retrycnt++;
+    if (retrycnt < 10)
+      {
+      sleep(1);
+      goto retry;
+      }
     /* FAILURE */
 
     req_reject(PBSE_NOSERVER, 0, preq, NULL, NULL);

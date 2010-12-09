@@ -2563,6 +2563,10 @@ int mom_open_socket_to_jobs_server(
       if (pms->SStream != -1)
         {
         addr = rpp_getaddr(pms->SStream);
+        if (addr == NULL)
+        {
+          continue;
+        }
         ipaddr = ntohl(addr->sin_addr.s_addr);
         ipport = ntohs(addr->sin_port);
 
