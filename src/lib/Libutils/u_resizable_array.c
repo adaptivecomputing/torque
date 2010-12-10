@@ -170,7 +170,7 @@ int insert_thing(
     if (tmp == NULL)
       {
       log_err(ENOMEM,id,"There is no memory left!! System failure\n");
-      return(ENOMEM);
+      return(-1);
       }
 
     if (ra->next_slot == ra->max)
@@ -195,9 +195,16 @@ int insert_thing(
   ra->num++;
 
   /* now update the next_slot pointer */
-  while ((ra->next_slot < ra->max) && 
-         (ra->slots[ra->next_slot] != NULL))
+  while (ra->slots[ra->next_slot] != NULL)
+    {
     ra->next_slot++;
+
+    /* start over from the beginning if we aren't full but next slot
+     * is at the end. This can happen in rare cases */
+    if ((ra->next_slot >= ra->max) &&
+        (ra->num < ra->max))
+      ra->next_slot = 0;
+    }
 
   return(rc);
   } /* END insert_thing() */
@@ -252,6 +259,7 @@ int  remove_thing(
     return(THING_NOT_FOUND);
 
   ra->slots[i] = NULL;
+  ra->num--;
 
   /* reset the next_slot index if necessary */
   if (i < ra->next_slot)

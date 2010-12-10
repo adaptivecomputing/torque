@@ -841,6 +841,7 @@ int set_arst(
           if (!strcmp(pas->as_string[i], newpas->as_string[j]))
             {
             /* compact buffer */
+            int k;
 
             nsize = strlen(pas->as_string[i]) + 1;
 
@@ -848,7 +849,10 @@ int set_arst(
 
             need = pas->as_next - pc;
 
-            memcpy(pas->as_string[i], pc, (size_t)need);
+            for (k = 0; k < need; k++)
+              pas->as_string[i][k] = *(pc + k);
+              
+/*            memcpy(pas->as_string[i], pc, (size_t)need);*/
 
             pas->as_next -= nsize;
 

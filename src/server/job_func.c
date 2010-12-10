@@ -2079,7 +2079,7 @@ void initialize_all_jobs_array(
 
   {
   aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
-  aj->ht = create_hash(INITIAL_JOB_SIZE);
+  aj->ht = create_hash(INITIAL_HASH_SIZE);
 
 #ifdef ENABLE_PTHREADS
   aj->alljobs_mutex = malloc(sizeof(pthread_mutex_t));
@@ -2109,8 +2109,9 @@ int insert_job(
   pthread_mutex_lock(aj->alljobs_mutex);
 #endif
 
-  if ((rc = insert_thing(aj->ra,pjob)) == ENOMEM)
+  if ((rc = insert_thing(aj->ra,pjob)) == -1)
     {
+    rc = ENOMEM;
     log_err(rc,id,"No memory to resize the array...SYSTEM FAILURE\n");
     }
   else
@@ -2184,6 +2185,9 @@ int  remove_job(
   else
     {
     aj->ra->slots[index] = NULL;
+    aj->ra->num--;
+    if (index < aj->ra->next_slot)
+      aj->ra->next_slot = index;
     remove_hash(aj->ht,pjob->ji_qs.ji_jobid);
     }
 
@@ -2225,7 +2229,7 @@ job *next_job(
 
 
 
-
+/* currently this function can only be called for jobs in the alljobs array */
 int swap_jobs(
 
   job *job1,
@@ -2233,12 +2237,20 @@ int swap_jobs(
 
   {
   int rc;
+  int new1;
+  int new2;
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_lock(alljobs.alljobs_mutex);
 #endif
 
+  new2 = get_value_hash(alljobs.ht,job1->ji_qs.ji_jobid);
+  new1 = get_value_hash(alljobs.ht,job2->ji_qs.ji_jobid);
+
   rc = swap_things(alljobs.ra,job1,job2);
+
+  change_value_hash(alljobs.ht,job1->ji_qs.ji_jobid,new1);
+  change_value_hash(alljobs.ht,job2->ji_qs.ji_jobid,new2);
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(alljobs.alljobs_mutex);

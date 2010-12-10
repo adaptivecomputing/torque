@@ -80,7 +80,61 @@
 #ifndef HASH_TABLE_H
 #define HASH_TABLE_H
 
-#define KEY_NOT_FOUND -1
+#ifdef __BYTE_ORDER
+# if __BYTE_ORDER == __LITTLE_ENDIAN
+#  define LITTLEENDIAN
+# else
+#  if __BYTE_ORDER == __BIG_ENDIAN
+#   define BIGENDIAN
+#  else
+Error: unknown byte order!
+#  endif
+# endif
+#endif /* __BYTE_ORDER */
+
+#ifdef BYTE_ORDER
+# if BYTE_ORDER == LITTLE_ENDIAN
+#  define LITTLEENDIAN
+# else
+#  if BYTE_ORDER == BIG_ENDIAN
+#   define BIGENDIAN
+#  else
+Error: unknown byte order!
+#  endif
+# endif
+#endif /* BYTE_ORDER */
+
+#if defined(__AIX43) || defined(__AIX51) || defined(__AIX52) || defined(__AIX53) || defined(__AIX54) || defined(__HPUX) || defined(__IRIX) || defined(__SOLARIS) || defined(__UNICOS) || defined(MBIGENDIAN)
+
+/*
+ * BIG_ENDIAN is used for runtime checking of architecture
+ * BIGENDIAN  is used for compile-time checking of architecture
+ */
+
+/* big endian arch */
+# define HASH_BIG_ENDIAN    1
+# define HASH_LITTLE_ENDIAN 0
+
+#else
+
+/*
+ * LITTLE_ENDIAN is used for runtime checking of architecture
+ * LITTLEENDIAN  is used for compile-time checking of architecture
+ */
+
+
+/* little endian arch */
+# define HASH_BIG_ENDIAN    0
+# define HASH_LITTLE_ENDIAN 1
+
+#endif /* defined(__AIX43) || ... */
+
+#if !defined(BIGENDIAN) && !defined(LITTLE_ENDIAN)
+Error: unknown byte order!
+#endif
+
+#define KEY_NOT_FOUND     -1
+#define INITIAL_HASH_SIZE 8096
 
 /* PLEASE NOTE:
  *
@@ -102,9 +156,9 @@ typedef struct bucket bucket;
 
 struct hash_table_t
   {
-  int     size;
-  int     num;
-  bucket *buckets;
+  int      size;
+  int      num;
+  bucket **buckets;
   };
 
 typedef struct hash_table_t hash_table_t;

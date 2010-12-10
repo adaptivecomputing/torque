@@ -1686,6 +1686,8 @@ int set_mother_superior_ports(
       }
     }
 
+  free(iter);
+
   return(PBSE_UNKNODEATR);
   }
 

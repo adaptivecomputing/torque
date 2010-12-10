@@ -223,6 +223,7 @@ void dispatch_task(
   struct work_task *ptask)
 
   {
+  int free_task = !task_is_in_threadpool(ptask);
   delete_link(&ptask->wt_linkall);
   delete_link(&ptask->wt_linkobj);
 
@@ -230,7 +231,7 @@ void dispatch_task(
     ptask->wt_func(ptask);  /* dispatch process function */
 
   /* some tasks are executed as threads and these will be freed there */
-  if (task_is_in_threadpool(ptask) == FALSE)
+  if (free_task == TRUE)
     free(ptask);
 
   return;

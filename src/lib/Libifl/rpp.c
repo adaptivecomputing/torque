@@ -1164,8 +1164,7 @@ static void rpp_send_out(void)
 ** Create or reuse a position in stream_array.
 */
 
-static int
-rpp_create_sp(void)
+static int rpp_create_sp(void)
 
   {
   int i;

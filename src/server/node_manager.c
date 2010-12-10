@@ -5119,6 +5119,8 @@ int set_nodes(
 #endif 
     }    /* END for (i) */
 
+  free(iter);
+
   /* did we have a request for procs? Do those now */
   if (procs > 0)
     {
