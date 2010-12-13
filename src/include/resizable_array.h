@@ -99,6 +99,7 @@ typedef struct resizable_array resizable_array;
 /* functions in u_resizable_array.c */
 int              insert_thing(resizable_array *,void *);
 int              remove_thing(resizable_array *,void *);
+int              remove_thing_from_index(resizable_array *,int);
 int              swap_things(resizable_array *,void *,void *);
 int              is_present(resizable_array *,void *);
 resizable_array *initialize_resizable_array(int);

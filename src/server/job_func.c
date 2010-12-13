@@ -2184,10 +2184,7 @@ int  remove_job(
     rc = THING_NOT_FOUND;
   else
     {
-    aj->ra->slots[index] = NULL;
-    aj->ra->num--;
-    if (index < aj->ra->next_slot)
-      aj->ra->next_slot = index;
+    remove_thing_from_index(aj->ra,index);
     remove_hash(aj->ht,pjob->ji_qs.ji_jobid);
     }
 

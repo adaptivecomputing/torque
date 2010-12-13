@@ -195,16 +195,9 @@ int insert_thing(
   ra->num++;
 
   /* now update the next_slot pointer */
-  while (ra->slots[ra->next_slot] != NULL)
-    {
+  while ((ra->next_slot < ra->max) &&
+         (ra->slots[ra->next_slot] != NULL))
     ra->next_slot++;
-
-    /* start over from the beginning if we aren't full but next slot
-     * is at the end. This can happen in rare cases */
-    if ((ra->next_slot >= ra->max) &&
-        (ra->num < ra->max))
-      ra->next_slot = 0;
-    }
 
   return(rc);
   } /* END insert_thing() */
@@ -272,6 +265,33 @@ int  remove_thing(
 
 
 
+
+int remove_thing_from_index(
+
+  resizable_array *ra,
+  int              index)
+
+  {
+  int rc = PBSE_NONE;
+
+  if (ra->slots[index] == NULL)
+    rc = THING_NOT_FOUND;
+  else
+    {
+    /* FOUND */
+    ra->slots[index] = NULL;
+    ra->num--;
+
+    if (index < ra->next_slot)
+      ra->next_slot = index;
+    }
+
+  return(rc);
+  } /* END remove_thing_from_index() */
+
+
+
+
 /*
  * mallocs and returns a resizable array with initial size size
  *
@@ -326,6 +346,7 @@ void *next_thing(
 
   return(thing);
   } /* END next_thing() */
+
 
 
 
