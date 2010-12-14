@@ -741,7 +741,7 @@ void on_job_exit(
   job   *pjob;
 #ifdef VNODETESTING
   job   *pj;
-  int    iter = 0;
+  int    iter;
 #endif
 
   struct batch_request *preq;
@@ -777,6 +777,7 @@ void on_job_exit(
    * already been free'd.  This is temp code */
 
   /* the mutex is obtained in the next_job method */
+  initialize_ra_iterator(&iter);
   while ((pj = next_job(&alljobs,&iter)) != NULL)
     {
     if (pjob == pj)
@@ -1601,6 +1602,7 @@ void on_job_exit(
           }
         else
           {
+          PurgeIt = TRUE;
           job_purge(pjob);
 
           break;

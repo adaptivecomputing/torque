@@ -471,7 +471,7 @@ int pbsd_init(
   char *psuffix;
   int  rc;
   int  Index;
-  int  iter = 0;
+  int  iter;
 
   struct stat statbuf;
   char *suffix_slash = "/";
@@ -1306,7 +1306,7 @@ int pbsd_init(
 
   if (queue_rank < 0)
     {
-    iter = 0;
+    iter = -1;
 
     queue_rank = 0;
 

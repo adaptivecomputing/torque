@@ -82,16 +82,28 @@
 
 #include "hash_table.h"
 
-#define THING_NOT_FOUND -2
+#define THING_NOT_FOUND    -2
+#define ALWAYS_EMPTY_INDEX  0
 
 /* Struct definitions */
+struct slot_t
+  {
+  int   prev;
+  int   next;
+  void *item;
+  };
+
+typedef struct slot_t slot;
+
 struct resizable_array
   {
-  int            max;       /* number of alloc'd slots */
-  int            num;       /* current number of occupied slots */
-  int            next_slot; /* index of the next open slot */
+  int   max;        /* number of alloc'd slots */
+  int   num;        /* current number of occupied slots */
+  int   next_slot;  /* index of the next open slot */
+  int   first;      /* index of the first slot being used */
+  int   last;       /* index of the last slot being used */
 
-  void         **slots;     /* pointers to the jobs */
+  slot *slots;     /* pointers to the jobs */
   };
 
 typedef struct resizable_array resizable_array;
@@ -104,5 +116,6 @@ int              swap_things(resizable_array *,void *,void *);
 int              is_present(resizable_array *,void *);
 resizable_array *initialize_resizable_array(int);
 void            *next_thing(resizable_array *,int *);
+void             initialize_ra_iterator(resizable_array *,int *);
 
 #endif /* RESIZABLE_ARRAY_H */

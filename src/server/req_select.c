@@ -377,7 +377,7 @@ static void sel_step2(
   int           exec_only = 0;
   int           summarize_arrays = 0;
   pbs_queue    *pque = NULL;
-  int           iter = 0;
+  int           iter;
 
   /* do first pass of finding jobs that match the selection criteria */
 
@@ -393,6 +393,8 @@ static void sel_step2(
     else if (!strncmp(cntl->sc_origrq->rq_extend, "summarize_arrays", strlen("summarize_arrays")))
       summarize_arrays = 1;
     }
+
+  iter = -1;
 
   while (1)
     {
@@ -547,7 +549,7 @@ static void sel_step3(
   int        exec_only = 0;
   pbs_queue           *pque = NULL;
 
-  int         iter = 0;
+  int         iter = -1;
 
   if (cntl->sc_origrq->rq_extend != NULL)
     {

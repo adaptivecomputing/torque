@@ -100,43 +100,29 @@ int swap_things(
   {
   int index1 = -1;
   int index2 = -1;
-  int i;
+  int i = ra->slots[ALWAYS_EMPTY_INDEX].next;
 
-  for (i = 0; i < ra->max; i++)
+  while (i != 0)
     {
-    if (thing1 == ra->slots[i])
+    if (thing1 == ra->slots[i].item)
       index1 = i;
     
-    if (thing2 == ra->slots[i])
+    if (thing2 == ra->slots[i].item)
       index2 = i;
 
     if ((index1 != -1) &&
         (index2 != -1))
       break;
+
+    i = ra->slots[i].next;
     }
 
   if ((index1 == -1) ||
       (index2 == -1))
     return(THING_NOT_FOUND);
 
-  ra->slots[index1] = thing2;
-  ra->slots[index2] = thing1;
-
-  /* this is a hack, but unfortunately its necessary */
-  if (ra == alljobs.ra) 
-    {
-    job *pjob = (job *)thing1;
-    change_value_hash(alljobs.ht,pjob->ji_qs.ji_jobid,index2);
-    pjob = (job *)thing2;
-    change_value_hash(alljobs.ht,pjob->ji_qs.ji_jobid,index1);
-    }
-  else if (ra == array_summary.ra)
-    {
-    job *pjob = (job *)thing1;
-    change_value_hash(array_summary.ht,pjob->ji_qs.ji_jobid,index2);
-    pjob = (job *)thing2;
-    change_value_hash(array_summary.ht,pjob->ji_qs.ji_jobid,index1);
-    }
+  ra->slots[index1].item = thing2;
+  ra->slots[index2].item = thing1;
 
   return(PBSE_NONE);
   } /* END swap_things() */
@@ -156,14 +142,14 @@ int insert_thing(
 
   {
   static char   *id = "insert_thing";
-  void         **tmp;
+  slot          *tmp;
   int            rc;
   
   /* check if the array must be resized */
-  if (ra->max == ra->num)
+  if (ra->max == ra->num + 1)
     {
     long remaining;
-    long size = ra->max * 2 * sizeof(void *);
+    long size = ra->max * 2 * sizeof(slot);
 
     tmp = realloc(ra->slots,size);
 
@@ -180,7 +166,7 @@ int insert_thing(
     
     memset(tmp + ra->max,0,remaining);
 
-    tmp[ra->next_slot] = thing;
+    tmp[ra->next_slot].item = thing;
 
     ra->slots = tmp;
 
@@ -188,15 +174,31 @@ int insert_thing(
     }
   else
     {
-    ra->slots[ra->next_slot] = thing;
+    ra->slots[ra->next_slot].item = thing;
+    }
+ 
+  /* save the insertion point */
+  rc = ra->next_slot;
+
+  /* handle the backwards pointer, next pointer is left at zero */
+  ra->slots[rc].prev = ra->last;
+
+  /* make sure the empty slot points to the next occupied slot */
+  if (ra->last == ALWAYS_EMPTY_INDEX)
+    {
+    ra->slots[ALWAYS_EMPTY_INDEX].next = rc;
     }
 
-  rc = ra->next_slot;
+  /* update the last index */
+  ra->slots[ra->last].next = rc;
+  ra->last = rc;
+
+  /* increase the count */
   ra->num++;
 
   /* now update the next_slot pointer */
   while ((ra->next_slot < ra->max) &&
-         (ra->slots[ra->next_slot] != NULL))
+         (ra->slots[ra->next_slot].item != NULL))
     ra->next_slot++;
 
   return(rc);
@@ -212,15 +214,46 @@ int is_present(
   void            *thing)
 
   {
-  int i;
+  int i = ra->slots[ALWAYS_EMPTY_INDEX].next;
 
-  for (i = 0; i < ra->max; i++)
-    if (ra->slots[i] == thing)
+  while (i != 0)
+    {
+    if (ra->slots[i].item == thing)
       return(TRUE);
+
+    i = ra->slots[i].next;
+    }
 
   return(FALSE);
   } /* END is_present() */
 
+
+
+
+
+/*
+ * fix the next pointer for the box pointing to this index 
+ *
+ * @param ra - the array we're fixing
+ * @param index - index of the slot we're unlinking
+ */
+void unlink_slot(
+
+  resizable_array *ra,
+  int              index)
+
+  {
+  int prev = ra->slots[index].prev;
+  int next = ra->slots[index].next;
+
+  ra->slots[prev].next = next;
+
+  /* update last if necessary, otherwise update prev's next index */
+  if (ra->last == index)
+    ra->last = prev;
+  else 
+    ra->slots[next].prev = prev;
+  } /* END unlink_slot() */
 
 
 
@@ -239,19 +272,29 @@ int  remove_thing(
   void            *thing)
 
   {
-  int i;
+  int i = ra->slots[ALWAYS_EMPTY_INDEX].next;
+  int found = FALSE;
 
   /* find the thing */
-  for (i = 0; i < ra->max; i++)
+  while (i != 0)
     {
-    if (ra->slots[i] == thing)
+    if (ra->slots[i].item == thing)
+      {
+      found = TRUE;
       break;
+      }
+
+    i = ra->slots[i].next;
     }
 
-  if (i == ra->max)
+  if (found == FALSE)
     return(THING_NOT_FOUND);
 
-  ra->slots[i] = NULL;
+  unlink_slot(ra,i);
+
+  ra->slots[i].prev = 0;
+  ra->slots[i].next = 0;
+  ra->slots[i].item = NULL;
   ra->num--;
 
   /* reset the next_slot index if necessary */
@@ -274,12 +317,15 @@ int remove_thing_from_index(
   {
   int rc = PBSE_NONE;
 
-  if (ra->slots[index] == NULL)
+  if (ra->slots[index].item == NULL)
     rc = THING_NOT_FOUND;
   else
     {
     /* FOUND */
-    ra->slots[index] = NULL;
+    unlink_slot(ra,index);
+    ra->slots[index].prev = 0;
+    ra->slots[index].next = 0;
+    ra->slots[index].item = NULL;
     ra->num--;
 
     if (index < ra->next_slot)
@@ -304,11 +350,12 @@ resizable_array *initialize_resizable_array(
 
   {
   resizable_array *ra = malloc(sizeof(resizable_array));
-  long             amount = sizeof(void *) * size;
+  long             amount = sizeof(slot) * size;
 
   ra->max = size;
   ra->num = 0;
-  ra->next_slot = 0;
+  ra->next_slot = 1;
+  ra->last = 0;
 
   ra->slots = malloc(amount);
   memset(ra->slots,0,amount);
@@ -327,26 +374,35 @@ void *next_thing(
   int             *iter)
 
   {
-  void *thing = NULL;
+  void *thing;
   int   i = *iter;
 
-  /* advance to the next occupied slot */
-  while ((i < ra->max) &&
-         (ra->slots[i] == NULL))
-    i++;
-
-  /* make the iter one past i and assign the thing */
-  if (i < ra->max)
+  if (i == -1)
     {
-    thing = ra->slots[i];
-    *iter = i + 1;
+    /* initialize first */
+    i = ra->slots[ALWAYS_EMPTY_INDEX].next;
     }
-  else
-    *iter = i;
+
+  thing = ra->slots[i].item;
+  *iter = ra->slots[i].next;
 
   return(thing);
   } /* END next_thing() */
 
+
+
+
+/* 
+ * initialize the iterator for this array 
+ */
+void initialize_ra_iterator(
+
+  resizable_array *ra,
+  int             *iter)
+
+  {
+  *iter = ra->slots[ALWAYS_EMPTY_INDEX].next;
+  } /* END initialize_ra_iterator() */
 
 
 

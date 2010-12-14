@@ -2563,7 +2563,7 @@ static void correct_ct(
   char         *pc;
   job          *pjob;
   pbs_queue    *pque;
-  int           iter = 0;
+  int           iter;
 
   sprintf(log_buffer, "Job state counts incorrect, server %d: ",
           server.sv_qs.sv_numjobs);
@@ -2612,6 +2612,8 @@ static void correct_ct(
     for (i = 0;i < PBS_NUMJOBSTATE;++i)
       pque->qu_njstate[i] = 0;
     }
+
+  iter = -1;
 
   while ((pjob = next_job(&alljobs,&iter)) != NULL)
     {

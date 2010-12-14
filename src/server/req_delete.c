@@ -1437,7 +1437,7 @@ void purge_completed_jobs(
   job          *pjob;
   char         *time_str;
   time_t        purge_time = 0;
-  int           iter = 0;
+  int           iter;
 
   /* get the time to purge the jobs that completed before */
   time_str = preq->rq_extend;
@@ -1468,6 +1468,8 @@ void purge_completed_jobs(
       id,
       log_buffer);
     }
+
+  iter = -1;
 
   while ((pjob = next_job(&alljobs,&iter)) != NULL) 
     {

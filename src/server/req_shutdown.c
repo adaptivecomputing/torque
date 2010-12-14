@@ -147,7 +147,7 @@ void svr_shutdown(
   attribute    *pattr;
   job          *pjob;
   long         *state;
-  int           iter = 0;
+  int           iter;
 
   /* Lets start by logging shutdown and saving everything */
 
@@ -218,6 +218,8 @@ void svr_shutdown(
     }
 
   svr_save(&server, SVR_SAVE_QUICK);
+
+  iter = -1;
 
   while ((pjob = next_job(&alljobs,&iter)) != NULL)
     {

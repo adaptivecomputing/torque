@@ -2026,7 +2026,7 @@ job *find_job(
 
     if (i >= 0)
       {
-      pj = ((job **)alljobs.ra->slots)[i];
+      pj = (job *)alljobs.ra->slots[i].item;
 
 #ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pj->ji_mutex);
@@ -2048,7 +2048,7 @@ job *find_job(
 
     if (i >= 0)
       {
-      pj = ((job **)array_summary.ra->slots)[i];
+      pj = (job *)array_summary.ra->slots[i].item;
 
 #ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pj->ji_mutex);

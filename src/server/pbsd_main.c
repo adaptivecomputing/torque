@@ -1075,7 +1075,7 @@ static int start_hot_jobs(void)
   int  ct = 0;
   job *pjob;
 
-  int  iter = 0;
+  int  iter = -1;
   
   while ((pjob = next_job(&alljobs,&iter)) != NULL)
     {
@@ -1116,7 +1116,7 @@ void main_loop(void)
   time_t        waittime;
   pbs_queue    *pque;
   job          *pjob;
-  int           iter = 0;
+  int           iter;
   time_t        last_jobstat_time;
   int           when;
 
@@ -1285,7 +1285,7 @@ void main_loop(void)
         (last_jobstat_time + JobStatRate <= time_now))
       {
       struct work_task *ptask;
-      iter = 0;
+      iter = -1;
 
       while ((pjob = next_job(&alljobs,&iter)) != NULL)
         {
@@ -1334,7 +1334,7 @@ void main_loop(void)
 
   track_save(NULL);                     /* save tracking data */
 
-  iter = 0;
+  iter = -1;
 
   /* save any jobs that need saving */
   while ((pjob = next_job(&alljobs,&iter)) != NULL)

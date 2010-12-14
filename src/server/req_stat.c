@@ -372,7 +372,7 @@ static void req_stat_job_step2(
   int        job_array_index = 0;
   job_array *pa = NULL;
 
-  int        iter = 0;
+  int        iter;
   
 
   preq   = cntl->sc_origrq;
@@ -423,6 +423,8 @@ static void req_stat_job_step2(
     {
     pa = get_array(preq->rq_ind.rq_status.rq_id);
     }
+
+  iter = -1;
 
   if (!server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
     {

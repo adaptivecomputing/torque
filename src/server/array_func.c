@@ -85,7 +85,7 @@ int is_array(
   {
   job_array      *pa;
 
-  int             iter = 0;
+  int             iter = -1;
 
   char      *bracket_ptr;
   char       jobid[PBS_MAXSVRJOBID];
@@ -146,7 +146,7 @@ job_array *get_array(
   {
   job_array      *pa;
  
-  int             iter = 0;
+  int             iter = -1;
 
   while ((pa = next_array(&iter)) != NULL)
     {
@@ -287,7 +287,7 @@ job *find_array_template(
   char *at;
   char *comp;
   int   different = FALSE;
-  int   iter = 0;
+  int   iter = -1;
 
   job  *pj;
 
@@ -1514,7 +1514,7 @@ void update_array_statuses(job_array *owned)
 
   for (j = 0; j < allarrays.ra->max; j++)
     {
-    pa = ((job_array **)allarrays.ra->slots)[j];
+    pa = (job_array *)allarrays.ra->slots[j].item;
 
     if (pa == NULL)
       continue;
