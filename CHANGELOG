@@ -98,6 +98,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the time for killing a task exponentially, although this will show mostly for
       SMP/NUMA systems, but it will help everywhere.
       (Dr. Bernd Kallies)
+  b - Fix for reque failures on mom.  Forked pbs_mom would silently segfault and
+      job was left in Exiting state.
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
