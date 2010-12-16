@@ -1559,6 +1559,7 @@ void req_rdytocommit(
 
   char *id = "req_rdytocommit";
   char  namebuf[MAXPATHLEN+1];
+  char *jobid = NULL;
 
   pj = locate_new_job(sock, preq->rq_ind.rq_rdytocommit);
 
@@ -1665,6 +1666,12 @@ void req_rdytocommit(
     }
 
   /* acknowledge the request with the job id */
+  jobid = pj->ji_qs.ji_jobid;
+
+#ifdef ENABLE_PTHREADS
+  /* unlock now to prevent a potential deadlock */
+  pthread_mutex_unlock(pj->ji_mutex);
+#endif
 
   if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_RdytoCom) != 0)
     {
@@ -1678,6 +1685,10 @@ void req_rdytocommit(
 
     close_conn(sock);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(pj->ji_mutex);
+#endif
+
     job_purge(pj);
 
     /* FAILURE */
@@ -1690,13 +1701,9 @@ void req_rdytocommit(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+      (jobid != NULL) ? jobid : "NULL",
       "ready to commit job completed");
     }
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
   return;
   }  /* END req_rdytocommit() */

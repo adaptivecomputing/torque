@@ -195,6 +195,7 @@ extern pthread_mutex_t *svr_requests_mutex;
 extern pthread_mutex_t *task_list_immed_mutex;
 extern pthread_mutex_t *task_list_timed_mutex;
 extern pthread_mutex_t *task_list_event_mutex;
+extern pthread_mutex_t *node_state_mutex;
 #endif
 
 extern time_t  time_now;
@@ -793,6 +794,9 @@ int pbsd_init(
   svr_newjobs_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(svr_newjobs_mutex,NULL);
   pthread_mutex_lock(svr_newjobs_mutex);
+
+  node_state_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(node_state_mutex,NULL);
 #endif
 
   CLEAR_HEAD(svr_requests);

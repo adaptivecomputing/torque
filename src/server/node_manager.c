@@ -194,6 +194,7 @@ void check_nodes(struct work_task *);
 /* marks a stream as finished being serviced */
 #ifdef ENABLE_PTHREADS
 extern void done_servicing(int);
+pthread_mutex_t *node_state_mutex = NULL;
 #endif
 
 /*
@@ -2614,15 +2615,8 @@ void *write_node_state_work(
   int i;
 
   int   savemask;
+
 #ifdef ENABLE_PTHREADS
-  static pthread_mutex_t *node_state_mutex = NULL;
-
-  if (node_state_mutex == NULL)
-    {
-    node_state_mutex = malloc(sizeof(node_state_mutex));
-    pthread_mutex_init(node_state_mutex,NULL);
-    }
-
   pthread_mutex_lock(node_state_mutex);
 #endif
 
