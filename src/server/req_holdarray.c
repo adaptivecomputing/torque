@@ -78,13 +78,14 @@ void hold_job(
 
 
 
-void req_holdarray(
+void *req_holdarray(
     
-  struct batch_request *preq)
+  void *vp) /* I */
 
   {
   int i;
 
+  struct batch_request *preq = (struct batch_request *)vp;
   char *pset;
   char *range_str;
   int rc;
@@ -124,7 +125,7 @@ void req_holdarray(
 #endif
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
-    return;
+    return(NULL);
     }
 
 
@@ -136,7 +137,7 @@ void req_holdarray(
 #endif
 
     req_reject(rc, 0, preq, NULL, NULL);
-    return;
+    return(NULL);
     }
 
   /* if other than HOLD_u is being set, must have privil */
@@ -148,7 +149,7 @@ void req_holdarray(
 #endif
 
     req_reject(rc, 0, preq, NULL, NULL);
-    return;
+    return(NULL);
     }
 
   /* get the range of jobs to iterate over */
@@ -187,5 +188,7 @@ void req_holdarray(
 #endif
 
   reply_ack(preq);
+
+  return(NULL);
   } /* END req_holdarray() */
 

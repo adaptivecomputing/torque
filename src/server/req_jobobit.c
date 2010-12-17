@@ -148,7 +148,7 @@ extern void cleanup_restart_file(job *);
 
 /* Local public functions  */
 
-void req_jobobit(struct batch_request *);
+void *req_jobobit(void *);
 
 
 
@@ -2298,9 +2298,9 @@ void encode_job_used(
  * This notice is sent from MOM when a job terminates.
  */
 
-void req_jobobit(
+void *req_jobobit(
 
-  struct batch_request *preq)  /* I */
+  void *vp) /* I */
 
   {
 #ifdef USESAVEDRESOURCES
@@ -2319,6 +2319,7 @@ void req_jobobit(
   char   *tmp;
   job    *pjob;
   char   jobid[PBS_MAXSVRJOBID+1];
+  struct batch_request *preq = (struct batch_request *)vp;  
 
   struct work_task *ptask;
   svrattrl  *patlist;
@@ -2367,7 +2368,7 @@ void req_jobobit(
 
     free(tmp);
 
-    return;
+    return(NULL);
     }  /* END if ((pjob == NULL) || ...) */
 
   free(tmp);
@@ -2411,7 +2412,7 @@ void req_jobobit(
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-    return;
+    return(NULL);
     }  /* END if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) */
 
   if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
@@ -2429,7 +2430,7 @@ void req_jobobit(
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-    return;
+    return(NULL);
     }
 
   /*
@@ -2518,7 +2519,7 @@ void req_jobobit(
       pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-      return;
+      return(NULL);
       }
 
     CLEAR_HEAD(tmppreq->rq_ind.rq_jobobit.rq_attr);
@@ -2664,7 +2665,7 @@ void req_jobobit(
         pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-        return;
+        return(NULL);
 
         /*NOTREACHED*/
 
@@ -2819,7 +2820,7 @@ void req_jobobit(
       pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-      return;
+      return(NULL);
       }
 
     svr_setjobstate(
@@ -2885,7 +2886,7 @@ void req_jobobit(
   pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-  return;
+  return(NULL);
   }  /* END req_jobobit() */
 
 

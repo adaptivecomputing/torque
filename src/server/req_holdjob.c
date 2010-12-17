@@ -161,9 +161,9 @@ int chk_hold_priv(
  * The state of the job may change as a result.
  */
 
-void req_holdjob(
+void *req_holdjob(
 
-  struct batch_request *preq)
+  void *vp) /* I */
 
   {
   long  *hold_val;
@@ -175,12 +175,13 @@ void req_holdjob(
   int     rc;
   attribute temphold;
   attribute *pattr;
+  struct batch_request *preq = (struct batch_request *)vp;
 
   pjob = chk_job_request(preq->rq_ind.rq_hold.rq_orig.rq_objname, preq);
 
   if (pjob == NULL)
     {
-    return;
+    return(NULL);
     }
 
   /* cannot do anything until we decode the holds to be set */
@@ -194,7 +195,7 @@ void req_holdjob(
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-    return;
+    return(NULL);
     }
 
   /* if other than HOLD_u is being set, must have privil */
@@ -207,7 +208,7 @@ void req_holdjob(
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-    return;
+    return(NULL);
     }
 
   hold_val = &pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
@@ -297,6 +298,8 @@ void req_holdjob(
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pjob->ji_mutex);
 #endif
+
+  return(NULL);
   }  /* END req_holdjob() */
 
 

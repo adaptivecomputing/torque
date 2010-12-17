@@ -1391,6 +1391,21 @@ int update_nodes_file(void)
         np->numa_str);
       }
 
+    /* write out the ports if needed */
+    if (np->nd_mom_port != PBS_MOM_SERVICE_PORT)
+      {
+      fprintf(nin, " %s=%d",
+        ATTR_NODE_mom_port,
+        np->nd_mom_port);
+      }
+
+    if (np->nd_mom_rm_port != PBS_MANAGER_SERVICE_PORT)
+      {
+      fprintf(nin, " %s=%d",
+        ATTR_NODE_mom_rm_port,
+        np->nd_mom_rm_port);
+      }
+
     /* write out properties */
 
     for (j = 0;j < np->nd_nprops - 1;++j)

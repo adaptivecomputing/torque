@@ -193,48 +193,37 @@ void req_jobcredential(struct batch_request *preq);
 void req_jobscript(struct batch_request *preq);
 void req_rdytocommit(struct batch_request *preq);
 void req_commit(struct batch_request *preq);
+void req_holdjob(struct batch_request *preq);
+void req_deletejob(struct batch_request *preq);
+void req_rerunjob(struct batch_request *preq);
 #else
-#ifdef ENABLE_PTHREADS
 void *req_jobcredential(void *preq);
 void *req_quejob(void *preq);
 void *req_rdytocommit(void *preq);
 void *req_jobscript(void *preq);
 void *req_commit(void *preq);
-#else
-void req_jobscript(struct batch_request *preq);
-void req_rdytocommit(struct batch_request *preq);
-void req_jobcredential(struct batch_request *preq);
-void req_quejob(struct batch_request *preq);
-void req_commit(struct batch_request *preq);
-#endif
-#endif
-void req_deletejob(struct batch_request *preq);
-void req_holdjob(struct batch_request *preq);
-void req_checkpointjob(struct batch_request *preq);
-void req_messagejob(struct batch_request *preq);
-void req_modifyjob(struct batch_request *preq);
-#ifndef PBS_MOM
+void *req_holdjob(void *preq);
+void *req_holdarray(void *preq);
+void *req_stat_node(void *vp);
+void *req_jobobit(void *preq);
+void *req_stagein(void *preq);
+void *req_deletearray(void *preq);
+void *req_deletejob(void *preq);
+
+void req_track(struct batch_request *preq);
+void req_modifyarray(struct batch_request *preq);
 void req_orderjob(struct batch_request *preq);
 void req_rescreserve(struct batch_request *preq);
 void req_rescfree(struct batch_request *preq);
+
 #endif
-#ifdef PBS_MOM
-void req_rerunjob(struct batch_request *preq);
-#endif
+
 void req_shutdown(struct batch_request *preq);
 void req_signaljob(struct batch_request *preq);
 void req_mvjobfile(struct batch_request *preq);
-#ifndef PBS_MOM
-void *req_stat_node(void *vp);
-void req_track(struct batch_request *preq);
-void req_jobobit(struct batch_request *preq);
-void req_stagein(struct batch_request *preq);
-
-void req_deletearray(struct batch_request *preq);
-void req_holdarray(struct batch_request *preq);
-void req_modifyarray(struct batch_request *preq);
-
-#endif
+void req_checkpointjob(struct batch_request *preq);
+void req_messagejob(struct batch_request *preq);
+void req_modifyjob(struct batch_request *preq);
 
 /* END request processing prototypes */
 
@@ -926,6 +915,12 @@ void dispatch_request(
       * normal req_deltejob() function.
       */
 
+#ifdef ENABLE_PTHREADS
+      if (is_array(request->rq_ind.rq_delete.rq_objname))
+        enqueue_threadpool_request(req_deletearray,request);
+      else
+        enqueue_threadpool_request(req_deletejob,request);
+#else
       if (is_array(request->rq_ind.rq_delete.rq_objname))
         {
         req_deletearray(request);
@@ -934,6 +929,7 @@ void dispatch_request(
         {
         req_deletejob(request);
         }
+#endif
 
 #endif
       break;
@@ -943,6 +939,12 @@ void dispatch_request(
       req_holdjob(request);
 
 #else
+#ifdef ENABLE_PTHREADS
+      if (is_array(request->rq_ind.rq_hold.rq_orig.rq_objname))
+        enqueue_threadpool_request(req_holdarray,request);
+      else
+        enqueue_threadpool_request(req_holdjob,request);
+#else
       if (is_array(request->rq_ind.rq_hold.rq_orig.rq_objname))
         {
         req_holdarray(request);
@@ -951,6 +953,7 @@ void dispatch_request(
         {
         req_holdjob(request);
         }
+#endif
 
 #endif
       break;
@@ -1156,13 +1159,22 @@ void dispatch_request(
 
     case PBS_BATCH_JobObit:
 
+#ifdef ENABLE_PTHREADS
+      enqueue_threadpool_request(req_jobobit,request);
+#else
       req_jobobit(request);
+#endif
 
       break;
 
     case PBS_BATCH_StageIn:
 
+#ifdef ENABLE_PTHREADS
+      enqueue_threadpool_request(req_stagein,request);
+#else
       req_stagein(request);
+#endif
+
 
       break;
 

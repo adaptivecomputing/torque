@@ -503,15 +503,16 @@ static int svr_send_checkpoint(
  * Client must be privileged.
  */
 
-void req_stagein(
+void *req_stagein(
 
-  struct batch_request *preq)  /* I */
+  void *vp)  /* I */
 
   {
   job *pjob;
   int  rc;
 
   int  setneednodes;
+  struct batch_request *preq = (struct batch_request *)vp;
 
   if (getenv("TORQUEAUTONN"))
     setneednodes = 1;
@@ -520,7 +521,7 @@ void req_stagein(
 
   if ((pjob = chk_job_torun(preq, setneednodes)) == NULL)
     {
-    return;
+    return(NULL);
     }
 
   if ((pjob->ji_wattr[JOB_ATR_stagein].at_flags & ATR_VFLAG_SET) == 0)
@@ -533,7 +534,7 @@ void req_stagein(
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-    return;
+    return(NULL);
     }
 
   if ((rc = svr_stagein(
@@ -551,7 +552,7 @@ void req_stagein(
   pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-  return;
+  return(NULL);
   }  /* END req_stagein() */
 
 
