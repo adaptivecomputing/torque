@@ -34,6 +34,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       for seteuid. In the case of cygwin root cannot be used.
   b - Fix for reque failures on mom.  Forked pbs_mom would silently segfault and
       job was left in Exiting state.
+  b - prevent the nodes file from being overwritten when running make packages
 
 
 2.5.3
