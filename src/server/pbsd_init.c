@@ -179,7 +179,6 @@ extern char *path_jobinfo_log;
 extern int  queue_rank;
 extern char  server_name[];
 extern int  svr_delay_entry;
-extern tlist_head svr_newjobs;
 extern tlist_head svr_queues;
 extern tlist_head svr_requests;
 extern tlist_head svr_newnodes;
@@ -188,9 +187,9 @@ extern tlist_head task_list_timed;
 extern tlist_head task_list_event;
 extern struct all_jobs alljobs;
 extern struct all_jobs array_summary;
+extern struct all_jobs newjobs;
 
 #ifdef ENABLE_PTHREADS
-extern pthread_mutex_t *svr_newjobs_mutex;
 extern pthread_mutex_t *svr_requests_mutex;
 extern pthread_mutex_t *task_list_immed_mutex;
 extern pthread_mutex_t *task_list_timed_mutex;
@@ -791,10 +790,6 @@ int pbsd_init(
   pthread_mutex_init(svr_requests_mutex,NULL);
   pthread_mutex_lock(svr_requests_mutex);
 
-  svr_newjobs_mutex = malloc(sizeof(pthread_mutex_t));
-  pthread_mutex_init(svr_newjobs_mutex,NULL);
-  pthread_mutex_lock(svr_newjobs_mutex);
-
   node_state_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(node_state_mutex,NULL);
 #endif
@@ -811,8 +806,7 @@ int pbsd_init(
 
   initialize_all_jobs_array(&alljobs);
   initialize_all_jobs_array(&array_summary);
-
-  CLEAR_HEAD(svr_newjobs);
+  initialize_all_jobs_array(&newjobs);
 
   CLEAR_HEAD(svr_newnodes);
 
@@ -820,7 +814,6 @@ int pbsd_init(
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_requests_mutex);
-  pthread_mutex_unlock(svr_newjobs_mutex);
 #endif
 
   time_now = time((time_t *)0);
@@ -1601,7 +1594,7 @@ static int pbsd_init_job(
 
         pjob->ji_qs.ji_un.ji_newt.ji_fromsock = -1;
 
-        append_link(&svr_newjobs, &pjob->ji_alljobs, pjob);
+        insert_job(&newjobs,pjob);
         }
 
       break;

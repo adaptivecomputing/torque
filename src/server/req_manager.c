@@ -2270,11 +2270,13 @@ void mgr_node_create(
  * appropriate function is called to perform the operation.
  */
 
-void req_manager(
+void *req_manager(
 
-  struct batch_request *preq)  /* I */
+  void *vp) /* I */
 
   {
+  struct batch_request *preq = (struct batch_request *)vp;
+
   switch (preq->rq_ind.rq_manager.rq_cmd)
     {
 
@@ -2286,7 +2288,7 @@ void req_manager(
         {
         req_reject(PBSE_PERM, 0, preq, NULL, NULL);
 
-        return;
+        return(NULL);
         }
 
       switch (preq->rq_ind.rq_manager.rq_objtype)
@@ -2314,7 +2316,7 @@ void req_manager(
 
           req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
-          return;
+          return(NULL);
 
           break;
         }
@@ -2327,7 +2329,7 @@ void req_manager(
         {
         req_reject(PBSE_PERM, 0, preq, NULL, NULL);
 
-        return;
+        return(NULL);
         }
 
       switch (preq->rq_ind.rq_manager.rq_objtype)
@@ -2366,7 +2368,7 @@ void req_manager(
         {
         req_reject(PBSE_PERM, 0, preq, NULL, NULL);
 
-        return;
+        return(NULL);
         }
 
       switch (preq->rq_ind.rq_manager.rq_objtype)
@@ -2412,7 +2414,7 @@ void req_manager(
       break;
     }  /* END switch() */
 
-  return;
+  return(NULL);
   }  /* END req_manager() */
 
 

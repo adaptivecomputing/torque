@@ -119,21 +119,22 @@ extern job  *chk_job_request(char *, struct batch_request *);
  * req_movejob = move a job to a new destination (local or remote)
  */
 
-void req_movejob(
+void *req_movejob(
 
-  struct batch_request *req)
+  void *vp) /* I */
 
   {
 #ifndef NDEBUG
   char *id = "req_movejob";
 #endif
   job *jobp;
+  struct batch_request *req = (struct batch_request *)vp;
 
   jobp = chk_job_request(req->rq_ind.rq_move.rq_jid, req);
 
   if (jobp == NULL)
     {
-    return;
+    return(NULL);
     }
 
   if ((jobp->ji_qs.ji_state != JOB_STATE_QUEUED) &&
@@ -160,7 +161,7 @@ void req_movejob(
     pthread_mutex_unlock(jobp->ji_mutex);
 #endif
 
-    return;
+    return(NULL);
     }
 
   /*
@@ -218,7 +219,7 @@ void req_movejob(
   pthread_mutex_unlock(jobp->ji_mutex);
 #endif
 
-  return;
+  return(NULL);
   }  /* END req_movejob() */
 
 
@@ -230,9 +231,9 @@ void req_movejob(
  * req_orderjob = reorder the jobs in a queue
  */
 
-void req_orderjob(
+void *req_orderjob(
 
-  struct batch_request *req)  /* I */
+  void *vp) /* I */
 
   {
 #ifndef NDEBUG
@@ -244,15 +245,16 @@ void req_orderjob(
   int  rank;
   int  rc;
   char  tmpqn[PBS_MAXQUEUENAME+1];
+  struct batch_request *req = (struct batch_request *)vp;
 
   if ((pjob1 = chk_job_request(req->rq_ind.rq_move.rq_jid, req)) == NULL)
     {
-    return;
+    return(NULL);
     }
 
   if ((pjob2 = chk_job_request(req->rq_ind.rq_move.rq_destin, req)) == NULL)
     {
-    return;
+    return(NULL);
     }
 
   if (((pjob = pjob1)->ji_qs.ji_state == JOB_STATE_RUNNING) ||
@@ -279,7 +281,7 @@ void req_orderjob(
     pthread_mutex_unlock(pjob2->ji_mutex);
 #endif
 
-    return;
+    return(NULL);
     }
   else if (pjob1->ji_qhdr != pjob2->ji_qhdr)
     {
@@ -305,7 +307,7 @@ void req_orderjob(
       pthread_mutex_unlock(pjob2->ji_mutex);
 #endif
 
-      return;
+      return(NULL);
       }
     }
 
@@ -350,6 +352,6 @@ void req_orderjob(
   pthread_mutex_unlock(pjob2->ji_mutex);
 #endif
 
-  return;
+  return(NULL);
   }  /* END req_orderjob() */
 

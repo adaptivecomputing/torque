@@ -268,7 +268,6 @@ char         server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int  svr_delay_entry = 0;
 int  svr_do_schedule = SCH_SCHEDULE_NULL;
 tlist_head svr_queues;            /* list of queues                   */
-tlist_head svr_newjobs;           /* list of incoming new jobs        */
 tlist_head svr_newnodes;          /* list of newly created nodes      */
 tlist_head task_list_immed;
 tlist_head task_list_timed;

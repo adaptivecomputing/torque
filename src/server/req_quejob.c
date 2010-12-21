@@ -139,14 +139,12 @@ extern void  set_chkpt_deflt(job *, pbs_queue *);
 
 /* Global Data Items: */
 
+extern struct all_jobs newjobs;
 extern char *path_spool;
 
 extern struct server server;
 extern char  server_name[];
 extern int   queue_rank;
-#ifdef ENABLE_PTHREADS
-extern pthread_mutex_t *svr_newjobs_mutex;
-#endif
 
 extern const char *PJobSubState[];
 
@@ -163,7 +161,6 @@ const char *TJobFileType[] =
   };
 
 extern int  resc_access_perm;
-extern tlist_head svr_newjobs;
 extern attribute_def job_attr_def[];
 extern char *path_jobs;
 extern char *pbs_o_host;
@@ -508,33 +505,15 @@ void *req_quejob(
 
   if ((pj = find_job(jid)) == NULL)
     {
-    job *next;
+    int  iter = -1;
 
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(svr_newjobs_mutex);
-#endif
-
-    pj = (job *)GET_NEXT(svr_newjobs);
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(svr_newjobs_mutex);
-#endif
-
-    while (pj != NULL)
+    while ((pj = next_job(&newjobs,&iter)) != NULL)
       {
-#ifdef ENABLE_PTHREADS
-      pthread_mutex_lock(pj->ji_mutex);
-#endif
       if (!strcmp(pj->ji_qs.ji_jobid, jid))
         break;
-
-      next = (job *)GET_NEXT(pj->ji_alljobs);
-
 #ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pj->ji_mutex);
 #endif
-
-      pj = next;
       }
     }
 
@@ -1163,14 +1142,9 @@ void *req_quejob(
     }
 
   /* link job into server's new jobs list request  */
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(svr_newjobs_mutex);
-#endif
-
-  append_link(&svr_newjobs, &pj->ji_alljobs, pj);
+  insert_job(&newjobs,pj);
 
 #ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(svr_newjobs_mutex);
   pthread_mutex_unlock(pj->ji_mutex);
 #endif
 
@@ -1839,15 +1813,8 @@ void req_commit(
     }
 
   /* remove job from the server new job list, set state, and enqueue it */
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(svr_newjobs_mutex);
-#endif
-
-  delete_link(&pj->ji_alljobs);
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(svr_newjobs_mutex);
-#endif
+  remove_job(&newjobs,pj);
+  
   /* job array, setup the array task
      *** job array under development */
   if (pj->ji_is_array_template)
@@ -2022,6 +1989,10 @@ void req_commit(
     issue_track(pj);
     }
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pj->ji_mutex);
+#endif
+
 #ifdef AUTORUN_JOBS
   /* If we are auto running jobs with start_count = 0 then the
    * branch_request was re created. Now we run the job if any nodes
@@ -2045,10 +2016,6 @@ void req_commit(
     }
 
 #endif /* AUTORUN_JOBS */
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
   return;
   }  /* END req_commit() */
@@ -2080,24 +2047,10 @@ static job *locate_new_job(
 
   {
   job *pj;
-  job *next;
+  int  iter = -1;
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(svr_newjobs_mutex);
-#endif
-
-  pj = (job *)GET_NEXT(svr_newjobs);
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(svr_newjobs_mutex);
-#endif
-
-  while (pj != NULL)
+  while ((pj = next_job(&newjobs,&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(pj->ji_mutex);
-#endif
-
     if ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1) ||
         ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == sock) &&
          (pj->ji_qs.ji_un.ji_newt.ji_fromaddr == get_connectaddr(sock,TRUE))))
@@ -2125,13 +2078,9 @@ static job *locate_new_job(
         }
       }    /* END if ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1) || ...) */
 
-    next = (job *)GET_NEXT(pj->ji_alljobs);
-
 #ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pj->ji_mutex);
 #endif
-
-    pj = next;
     }  /* END while(pj != NULL) */
 
   /* return job slot located (NULL on FAILURE) */

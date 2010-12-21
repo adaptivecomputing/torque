@@ -185,7 +185,6 @@ extern char  server_name[];
 extern time_t time_now;
 extern int   LOGLEVEL;
 
-extern tlist_head svr_newjobs;
 extern char *path_checkpoint;
 extern char *path_jobinfo_log;
 extern char *log_file;

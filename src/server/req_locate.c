@@ -118,15 +118,16 @@ extern int    LOGLEVEL;
  * This request attempts to locate a job.
  */
 
-void req_locatejob(
+void *req_locatejob(
 
-  struct batch_request *preq)
+  void *vp)
 
   {
   char   *at;
   int   i;
   job  *pjob;
   char  *location = (char *)0;
+  struct batch_request *preq = (struct batch_request *)vp;
 
   if ((at = strchr(preq->rq_ind.rq_locate, (int)'@')))
     * at = '\0';  /* strip off @server_name */
@@ -178,6 +179,6 @@ void req_locatejob(
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
     }
 
-  return;
+  return(NULL);
   }  /* END req_locatejob() */
 

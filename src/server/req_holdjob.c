@@ -442,19 +442,20 @@ int release_job(
  * As a result, the job might change state.
  */
 
-void req_releasejob(
+void *req_releasejob(
 
-  struct batch_request *preq) /* ptr to the decoded request   */
+  void *vp) /* ptr to the decoded request   */
 
   {
   job  *pjob;
   int   rc;
+  struct batch_request *preq = (struct batch_request *)vp; 
 
   pjob = chk_job_request(preq->rq_ind.rq_release.rq_objname, preq);
 
   if (pjob == NULL)
     {
-    return;
+    return(NULL);
     }
 
   if ((rc = release_job(preq,pjob)) != 0)
@@ -470,7 +471,7 @@ void req_releasejob(
   pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-  return;
+  return(NULL);
   }  /* END req_releasejob() */
 
 
@@ -510,15 +511,16 @@ int release_whole_array(
 
 
 
-void req_releasearray(
+void *req_releasearray(
 
-  struct batch_request *preq)
+  void *vp) /* I */
 
   {
   job       *pjob;
   job_array *pa;
   char      *range;
   int        rc;
+  struct batch_request *preq = (struct batch_request *)vp;
 
   pa = get_array(preq->rq_ind.rq_release.rq_objname);
   pjob = (job *)pa->jobs[first_job_index(pa)];
@@ -536,7 +538,7 @@ void req_releasearray(
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-    return;
+    return(NULL);
     }
 
 #ifdef ENABLE_PTHREADS
@@ -556,7 +558,7 @@ void req_releasearray(
 
       req_reject(rc,0,preq,NULL,NULL);
 
-      return;
+      return(NULL);
       }
     }
   else if ((rc = release_whole_array(pa,preq)) != 0)
@@ -567,7 +569,7 @@ void req_releasearray(
 
     req_reject(rc,0,preq,NULL,NULL);
 
-    return;
+    return(NULL);
     }
 
 #ifdef ENABLE_PTHREADS
@@ -575,6 +577,8 @@ void req_releasearray(
 #endif
 
   reply_ack(preq);
+
+  return(NULL);
   } /* END req_releasearray() */
 
 

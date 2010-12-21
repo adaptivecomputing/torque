@@ -878,18 +878,20 @@ int modify_whole_array(
  * additionally, can change the slot limit of the array
  */
 
-void req_modifyarray(
+void *req_modifyarray(
 
-  struct batch_request *preq)  /* I */
+  void *vp) /* I */
 
   {
-  job_array *pa;
-  job *pjob;
-  svrattrl *plist;
-  int   checkpoint_req = FALSE;
-  char *array_spec = NULL;
-  char *pcnt = NULL;
-  int rc = 0, rc2 = 0;
+  job_array            *pa;
+  job                  *pjob;
+  svrattrl             *plist;
+  int                   checkpoint_req = FALSE;
+  char                 *array_spec = NULL;
+  char                 *pcnt = NULL;
+  int                   rc = 0;
+  int                   rc2 = 0;
+  struct batch_request *preq = (struct batch_request *)vp;
 
   pa = get_array(preq->rq_ind.rq_modify.rq_objname);
 
@@ -897,7 +899,7 @@ void req_modifyarray(
     {
     req_reject(PBSE_IVALREQ,0,preq,NULL,"Cannot find array");
 
-    return;
+    return(NULL);
     }
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
@@ -960,7 +962,7 @@ void req_modifyarray(
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
   
-      return;
+      return(NULL);
       }
 
     if (pcnt != NULL)
@@ -972,7 +974,7 @@ void req_modifyarray(
       pthread_mutex_unlock(pa->ai_mutex);
 #endif
 
-      return;
+      return(NULL);
       }
     }
   else 
@@ -987,7 +989,7 @@ void req_modifyarray(
 #endif
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error altering the array");
-      return;
+      return(NULL);
       }
 
     /* we modified the job array. We now need to update the job */
@@ -1008,7 +1010,7 @@ void req_modifyarray(
 #endif
 
       req_reject(rc,0,preq,NULL,NULL);
-      return;
+      return(NULL);
       }
 
     if (rc == PBSE_RELAYED_TO_MOM)
@@ -1017,7 +1019,7 @@ void req_modifyarray(
       pthread_mutex_unlock(pa->ai_mutex);
       pthread_mutex_unlock(pjob->ji_mutex);
 #endif
-      return;
+      return(NULL);
       }
 
 #ifdef ENABLE_PTHREADS
@@ -1031,6 +1033,8 @@ void req_modifyarray(
 #endif
 
   reply_ack(preq);
+
+  return(NULL);
   } /* END req_modifyarray() */
 
 
@@ -1045,21 +1049,22 @@ void req_modifyarray(
  * @see relay_to_mom() - child - routes change down to pbs_mom
  */
 
-void req_modifyjob(
+void *req_modifyjob(
 
-  struct batch_request *preq)
+  void *vp) /* I */
 
   {
   job  *pjob;
   svrattrl *plist;
   int   rc;
   int   checkpoint_req = FALSE;
+  struct batch_request *preq = (struct batch_request *)vp;
 
   pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
 
   if (pjob == NULL)
     {
-    return;
+    return(NULL);
     }
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
@@ -1075,7 +1080,7 @@ void req_modifyjob(
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-    return;
+    return(NULL);
     }
 
   /* If async modify, reply now; otherwise reply is handled later */
@@ -1110,7 +1115,7 @@ void req_modifyjob(
 #ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
 #endif
-      return;
+      return(NULL);
       }
     else
       req_reject(rc,0,preq,NULL,NULL);
@@ -1122,7 +1127,7 @@ void req_modifyjob(
   pthread_mutex_unlock(pjob->ji_mutex);
 #endif
   
-  return;
+  return(NULL);
   }  /* END req_modifyjob() */
 
 
