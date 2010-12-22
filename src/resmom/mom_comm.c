@@ -1240,33 +1240,33 @@ void node_bailout(
       {
 
       case IM_JOIN_JOB:
-		{
-		  /*
-		   * I'm MS and a node has failed to respond to the
-		   * call.  Maybe in the future the user can specify
-		   * the job can start with a range of nodes so
-		   * one (or more) missing can be tolerated.  Not
-		   * for now.
-		   */
+        {
+        /*
+         * I'm MS and a node has failed to respond to the
+  		   * call.  Maybe in the future the user can specify
+	  	   * the job can start with a range of nodes so
+		     * one (or more) missing can be tolerated.  Not
+		     * for now.
+  		   */
   
-		  sprintf(log_buffer, "%s join_job failed from node %s %d - recovery attempted)",
-				  pjob->ji_qs.ji_jobid,
-				  np->hn_host,
-				  np->hn_node);
-  
-		  log_err(-1, id, log_buffer);
-  
-		  DBPRT(("%s: JOIN_JOB %s\n",
-				 id,
-				 pjob->ji_qs.ji_jobid))
-  
-		  job_start_error(pjob, PBSE_SISCOMM, np->hn_host);
-  
-		  break;
-		}
-
+        sprintf(log_buffer, "%s join_job failed from node %s %d - recovery attempted)",
+          pjob->ji_qs.ji_jobid,
+          np->hn_host,
+          np->hn_node);
+        
+        log_err(-1, id, log_buffer);
+        
+        DBPRT(("%s: JOIN_JOB %s\n",
+          id,
+          pjob->ji_qs.ji_jobid))
+          
+          job_start_error(pjob, PBSE_SISCOMM, np->hn_host);
+        
+        break;
+        }
+      
       case IM_ABORT_JOB:
-
+      
       case IM_KILL_JOB:
 
         /*
@@ -1351,10 +1351,10 @@ void node_bailout(
 #ifdef __TRR  /* roadrunner */
 
         sprintf(log_buffer, "%s POLL failed from node %s %d - recovery attempted - job will not be killed)",
-                pjob->ji_qs.ji_jobid,
-                np->hn_host,
-                np->hn_node);
-
+          pjob->ji_qs.ji_jobid,
+          np->hn_host,
+          np->hn_node);
+        
         log_err(-1, id, log_buffer);
 
 #else /* __TRR */
@@ -1366,22 +1366,22 @@ void node_bailout(
             pjob->ji_wattr[JOB_ATR_fault_tolerant].at_val.at_long) 
           {        
           sprintf(log_buffer, "%s POLL failed from node %s %d - job is fault tolerant - job will not be killed)",
-                  pjob->ji_qs.ji_jobid,
-                  np->hn_host,
-                  np->hn_node);
+            pjob->ji_qs.ji_jobid,
+            np->hn_host,
+            np->hn_node);
           }
         else
           {           
           sprintf(log_buffer, "%s POLL failed from node %s %d - recovery not attempted - job will be killed)",
-                  pjob->ji_qs.ji_jobid,
-                  np->hn_host,
-                  np->hn_node);
-            
+            pjob->ji_qs.ji_jobid,
+            np->hn_host,
+            np->hn_node);
+          
           pjob->ji_nodekill = np->hn_node;  
           }
-          
+        
         log_err(-1, id, log_buffer);
-
+        
 #endif /* __TRR */
 
         break;
@@ -1695,8 +1695,11 @@ u_long resc_used(
 /*
 ** Find named info for a task.
 */
-infoent *
-task_findinfo(task *ptask, char *name)
+infoent *task_findinfo(
+  
+  task *ptask,
+  char *name)
+
   {
   infoent  *ip;
 
@@ -1972,7 +1975,7 @@ void im_request(
     }
 
   /*  if (tfind(ipaddr, &okclients) == NULL) */
-  if ( AVL_is_in_tree(ipaddr, 0, okclients) == 0 )
+  if (AVL_is_in_tree(ipaddr, 0, okclients) == 0 )
     {
     char tmpLine[1024];
 
@@ -3432,7 +3435,7 @@ void im_request(
         {
 
         case IM_JOIN_JOB:
-            {
+          {
           /*
           ** Sender is one of the sisterhood saying she
           ** got the job structure sent and she accepts it.
@@ -3495,9 +3498,9 @@ void im_request(
             }
 
           break;
-            }
+          }
         case IM_KILL_JOB:
-            {
+          {
           /*
           ** Sender is sending a response that a job
           ** which needs to die has been given the ax.
@@ -3555,15 +3558,15 @@ void im_request(
             }  /* END if (pjob_ji_resources != NULL) */
 
           /* don't close stream in case other jobs use it */
-
-            np->hn_sister = SISTER_KILLDONE;  /* We are changing this node from SISTER_OKAY which was 
+          
+          np->hn_sister = SISTER_KILLDONE;  /* We are changing this node from SISTER_OKAY which was 
                                                   set in send_sisters() */
   
           for (i = 1;i < pjob->ji_numnodes;i++)
             {
-              /* if we get through this loop without finding a
-                 hn_sister set to SISTER_OKAY then we know
-                 all sisters have reported in */
+            /* if we get through this loop without finding a
+             *  hn_sister set to SISTER_OKAY then we know
+             *  all sisters have reported in */
             if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
               break;
             }
@@ -3589,7 +3592,7 @@ void im_request(
           kill_done = 1;
 
           break;
-            }
+          }
 
         case IM_SPAWN_TASK:
 
@@ -3652,24 +3655,24 @@ void im_request(
           DBPRT(("%s: GET_TASKS %s OKAY\n",
                  id, jobid))
 
-            if (LOGLEVEL >= 5)
-              {
-              sprintf(log_buffer, "%s: GET_TASKS %s OKAY \n", id, jobid);
-  
-              log_record(
-                PBSEVENT_JOB,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
-              }
-  
+          if (LOGLEVEL >= 5)
+            {
+            sprintf(log_buffer, "%s: GET_TASKS %s OKAY \n", id, jobid);
+            
+            log_record(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              log_buffer);
+            }
+          
           ptask = task_check(pjob, event_task);
-
+          
           if (ptask == NULL)
             break;
-
+          
           tm_reply(ptask->ti_fd, TM_OKAY, event);
-
+          
           for (;;)
             {
             DIS_rpp_reset();
@@ -3710,22 +3713,22 @@ void im_request(
           DBPRT(("%s: SIGNAL_TASK %s OKAY %d\n",
                  id, jobid, event_task))
 
-            if (LOGLEVEL >= 5)
-              {
-              sprintf(log_buffer, "%s: SIGNAL_TASK %s OKAY %d\n", id, jobid, event_task);
-  
-              log_record(
-                PBSEVENT_JOB,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
-              }
-  
+          if (LOGLEVEL >= 5)
+            {
+            sprintf(log_buffer, "%s: SIGNAL_TASK %s OKAY %d\n", id, jobid, event_task);
+            
+            log_record(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              log_buffer);
+            }
+          
           ptask = task_check(pjob, event_task);
-
+          
           if (ptask == NULL)
             break;
-
+          
           tm_reply(ptask->ti_fd, TM_OKAY, event);
 
           DIS_tcp_wflush(ptask->ti_fd);
@@ -3753,16 +3756,16 @@ void im_request(
                  event_task,
                  exitval))
 
-            if (LOGLEVEL >= 5)
-              {
-              sprintf(log_buffer, "%s: OBIT_TASK %s OKAY %d exit val %d\n", id, jobid, event_task, exitval);
-  
-              log_record(
-                PBSEVENT_JOB,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
-              }
+          if (LOGLEVEL >= 5)
+            {
+            sprintf(log_buffer, "%s: OBIT_TASK %s OKAY %d exit val %d\n", id, jobid, event_task, exitval);
+            
+            log_record(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              log_buffer);
+            }
   
           ptask = task_check(pjob, event_task);
 
@@ -3937,36 +3940,36 @@ void im_request(
 
           if (ret != DIS_SUCCESS)
             goto err;
-
+          
           /*
           ** Check to see if I need to forward the taskid
           ** to another MOM.
           */
 
-            if (LOGLEVEL >= 5)
-              {
-              sprintf(log_buffer, "%s: GET_TID %s OKAY task %d\n", id, jobid, taskid);
-  
-              log_record(
-                PBSEVENT_JOB,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
-              }
-  
+          if (LOGLEVEL >= 5)
+            {
+            sprintf(log_buffer, "%s: GET_TID %s OKAY task %d\n", id, jobid, taskid);
+            
+            log_record(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              log_buffer);
+            }
+          
           if (pjob->ji_nodeid != efwd.fe_node)
             {
             np = find_node(pjob, -1, efwd.fe_node);
-
+            
             if (np == NULL)
               goto done;
-
+            
             ep = event_alloc(
-                   IM_SPAWN_TASK,
-                   np,
-                   efwd.fe_event,
-                   efwd.fe_taskid);
-
+                  IM_SPAWN_TASK,
+                  np,
+                  efwd.fe_event,
+                  efwd.fe_taskid);
+            
             ret = im_compose(
                     np->hn_stream,
                     jobid,
@@ -3977,26 +3980,26 @@ void im_request(
 
             if (ret != DIS_SUCCESS)
               goto done;
-
+            
             ret = diswsi(np->hn_stream, pjob->ji_nodeid);
-
+            
             if (ret != DIS_SUCCESS)
               goto done;
-
+            
             ret = diswsi(np->hn_stream, taskid);
-
+            
             if (ret != DIS_SUCCESS)
               goto done;
-
+            
             ret = diswst(np->hn_stream, pjob->ji_globid);
-
+            
             if (ret != DIS_SUCCESS)
               goto done;
-
+            
             for (i = 0;argv[i];i++)
               {
               ret = diswst(np->hn_stream, argv[i]);
-
+              
               if (ret != DIS_SUCCESS)
                 goto done;
               }
@@ -4303,7 +4306,6 @@ done:
 
   rpp_eom(stream);
 
-
   if (reply)
     {
     /* check if write worked */
@@ -4320,7 +4322,7 @@ done:
       }
     }
 
-  if(kill_done)
+  if (kill_done)
     {
     rpp_close(stream);
     }  

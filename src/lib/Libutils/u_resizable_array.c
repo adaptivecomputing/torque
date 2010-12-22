@@ -162,7 +162,7 @@ int insert_thing(
     if (ra->next_slot == ra->max)
       ra->next_slot++;
 
-    remaining = ra->max * sizeof(void *);
+    remaining = ra->max * sizeof(slot);
     
     memset(tmp + ra->max,0,remaining);
 
