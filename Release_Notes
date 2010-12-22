@@ -34,6 +34,20 @@ OVERVIEW
 ---------------------------------------------------------------------------
 WHAT'S NEW
 
+New in 2.5.4
+    Generic GPGPU support has been added to TORQUE 2.5.4. Users are able to
+    manually set the number of GPUs on a system in the $TORQUE_HOME/server_priv/nodes
+    file. GPUs are then requested on job submission as part of the nodes resource
+    list using the following syntax:  -l nodes=X[:ppn=Y][:gpus=Z]. The allocated
+    gpus appear in $PBS_GPUFILE, a new environment variable, in the 
+    form: <hostname>-gpu<index> and in a  new job attribute exec_gpus:
+   <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]. For more information
+   about using GPUs with TORQUE 2.5.4 see the documentation in section 1.5.3 at 
+   http://www.clusterresources.com/products/torque/docs/1.5nodeconfig.shtml
+   and also section 2.1.2 at 
+   http://www.clusterresources.com/products/torque/docs/2.1jobsubmission.shtml#resources
+
+
 New in 2.5.3
     Completed job information can now be logged. A new Boolean server parameter 
     record_job_info can be set to TRUE and a log file will be created
