@@ -290,7 +290,9 @@ AC_ARG_ENABLE(gcc_warnings, [
                           gcc, default is to error on any warning])
 if test "x$GCC" = "xyes" ;then
   AC_MSG_CHECKING([whether to use strict gcc warnings])
-  if test "${enable_gcc_warnings}" == "yes" ; then
+  if test "${enable_gcc_warnings}" == "no" ; then
+    AC_MSG_RESULT([no])
+  else
     if test "x$build_drmaa" = "xyes" ;then
       AC_MSG_RESULT([no... because DRMAA is being built])
     else
@@ -298,8 +300,6 @@ if test "x$GCC" = "xyes" ;then
       AX_CFLAGS_GCC_OPTION([-W -Wall -Wno-unused-parameter -Wno-long-long -pedantic -Werror])
       gccwarnings=yes
     fi
-  else
-    AC_MSG_RESULT([no])
   fi
 fi
 
