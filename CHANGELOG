@@ -100,6 +100,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (Dr. Bernd Kallies)
   b - Fix for reque failures on mom.  Forked pbs_mom would silently segfault and
       job was left in Exiting state.
+  b - change so "mom_checkpoint_job_has_checkpoint" and "execing command" log
+      messages do not always get logged
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
