@@ -3584,7 +3584,7 @@ int TMomFinalizeChild(
 			} 
 		else
 			{
-			if ((TRUE) || (LOGLEVEL >= 10))
+			if (LOGLEVEL >= 10)
 				{
 				char cmd[1024];
 				int i;
