@@ -41,11 +41,28 @@ New in 2.5.4
     list using the following syntax:  -l nodes=X[:ppn=Y][:gpus=Z]. The allocated
     gpus appear in $PBS_GPUFILE, a new environment variable, in the 
     form: <hostname>-gpu<index> and in a  new job attribute exec_gpus:
-   <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]. For more information
-   about using GPUs with TORQUE 2.5.4 see the documentation in section 1.5.3 at 
-   http://www.clusterresources.com/products/torque/docs/1.5nodeconfig.shtml
-   and also section 2.1.2 at 
-   http://www.clusterresources.com/products/torque/docs/2.1jobsubmission.shtml#resources
+    <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]. For more information
+    about using GPUs with TORQUE 2.5.4 see the documentation in section 1.5.3 at 
+    http://www.clusterresources.com/products/torque/docs/1.5nodeconfig.shtml
+    and also section 2.1.2 at 
+    http://www.clusterresources.com/products/torque/docs/2.1jobsubmission.shtml#resources
+
+    The buildutils/torque.spec.in file has been modified to comply more closely with RPM
+    standards. This may cause some problems with exiting RPM and TORQUE routines.
+
+    If TORQUE configure options such as --with-pam are used you will need to add the 
+    option to the make rpm call such as the following:
+    	make rpm RPMOPTS="--with-pam"
+
+    While Adaptive Computing distributes the RPM files it does not support 
+    those files. Not every Linux distribution uses RPM. Adaptive Computing provides a single
+    solution using make and make install that works across all Linux distributions and most
+    UNIX systems. We recognize the RPM format provides many advantages for distribution but 
+    it is up to the indiviual site to repackage the TORQUE installation to match their individual
+    site.
+
+    If you have issues with the new spec files please post the issue or questions to the torque users
+    (torqueusers@supercluster.org) mailing list
 
 
 New in 2.5.3
