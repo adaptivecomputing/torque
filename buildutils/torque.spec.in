@@ -1,118 +1,170 @@
-
-# comment out snap if building a real release
-%define name @spec_name@
-%define version @spec_version@
-@spec_snap@    # dist_spec_snap
-%define release 1cri
-
-
-%define torquehomedir @PBS_SERVER_HOME@
-%define server_name @PBS_DEFAULT_SERVER@
-
-%define _libdir @rpmlibdir@
-%define _mandir @rpmmandir@
-%define _bindir @rpmbindir@
-%define _sbindir @rpmsbindir@
-%define _includedir @rpmincludedir@
-%define drmaadocdir @rpmdrmaadocdir@
-
-%define use_tcl @use_tcl@
-%define build_server @build_server@
-%define build_mom @build_mom@
-%define build_clients @build_clients@
-%define build_gui @build_gui@
-%define build_pbs_rcp @build_pbs_rcp@
-%define build_drmaa @build_drmaa@
-%define build_drmaa_docs @build_drmaa_docs@
-%define pammoddir @pammoddir@
-%define modulefiles_dir @MODULEFILES_DIR@
-
-%define configure_args ''@ac_configure_args@
-
-
-############################################
-## no user serviceable parts below this line
-
-%if "%build_gui" == "yes"
-%if "%use_tcl" == "0"
-%error GUI cannot be built without TCL support
+# Conditional build stuff; from rpm 4.4 /usr/lib/rpm/macros.
+# bcond_without defaults to WITH, and vice versa.
+%if %{!?with:1}0
+%define with() %{expand:%%{?with_%{1}:1}%%{!?with_%{1}:0}}
 %endif
+%if %{!?without:1}0
+%define without() %{expand:%%{?with_%{1}:0}%%{!?with_%{1}:1}}
+%endif
+%if %{!?bcond_with:1}0
+%define bcond_with() %{expand:%%{?_with_%{1}:%%global with_%{1} 1}}
+%endif
+%if %{!?bcond_without:1}0
+%define bcond_without() %{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}
 %endif
 
-%define shared_description %(echo -e "TORQUE (Tera-scale Open-source Resource and QUEue manager) is a resource \\nmanager providing control over batch jobs and distributed compute nodes.  \\nTorque is based on OpenPBS version 2.3.12 and incorporates scalability, \\nfault tolerance, and feature extension patches provided by USC, NCSA, OSC, \\nthe U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many \\nother leading edge HPC organizations.\\n\\nThis build was configured with:\\n   %{?configure_args}\\n  \\n")
+### Features disabled by default
+%bcond_with    gui
+%bcond_with    pam
 
+### Features enabled by default
+%bcond_without scp
+%bcond_without syslog
+
+### Autoconf macro expansions
+%define ac_with_gui     --%{?with_gui:en}%{!?with_gui:dis}able-gui --with%{!?with_gui:out}-tcl
+%define ac_with_pam     --with%{!?with_pam:out}-pam%{?with_pam:=/%{_lib}/security}
+%define ac_with_scp     --with-rcp=%{?with_scp:scp}%{!?with_scp:pbs_rcp}
+%define ac_with_syslog  --%{?with_syslog:en}%{!?with_syslog:dis}able-syslog
+
+### Build Requirements
+%define breq_gui %{?with_gui:tcl-devel tk-devel tclx}
+%define breq_pam %{?with_pam:pam-devel}
+%define breq_scp %{?with_scp:/usr/bin/scp}
+
+### Macro variables
+%{!?torque_user:%global torque_user torque}
+%{!?torque_home:%global torque_home %{_var}/spool/%{name}}
+%{!?torque_server:%global torque_server localhost}
+
+### Do not strip executables
+#define __os_install_post /usr/lib/rpm/brp-compress
 
 Summary: Tera-scale Open-source Resource and QUEue manager
-Name: %{name}
-Version: %{version}
-Release: %{?snap:snap.%snap.}%{release}
-Source: torque-%{version}%{?snap:-snap.%snap}.tar.gz
-License: OpenPBS
-Group: System Environment/Daemons
+Name: @spec_name@
+Version: @spec_version@
+Release: 1.cri
+License: OpenPBS License (ASF-like)
+Group: Applications/System
 URL: http://www.clusterresources.com/products/torque/
-BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
-Provides: pbs
-BuildRequires: ed
+Source: http://www.clusterresources.com/downloads/torque/%{name}-%{version}.tar.gz
+Packager: %{?_packager:%{_packager}}%{!?_packager:%{_vendor}}
+Vendor: %{?_vendorinfo:%{_vendorinfo}}%{!?_vendorinfo:%{_vendor}}
+Distribution: %{?_distribution:%{_distribution}}%{!?_distribution:%{_vendor}}
+#BuildSuggests: openssh-clients tcl-devel tclx tk-devel
+BuildRequires: %{breq_gui} %{breq_pam} %{breq_scp} make
 Conflicts: pbspro, openpbs, openpbs-oscar
-Obsoletes: scatorque
-
-%if "%build_gui" == "no"
-Obsoletes: %{name}-gui
-%endif
+Obsoletes: scatorque <= %{version}-%{release}, %{!?with_gui:%{name}-gui < %{version}-%{release}}
+Provides: pbs, pbs-docs, pbs-pam, %{!?with_gui:%{name}-gui = %{version}-%{release}}
+Provides: %{name}-docs = %{version}-%{release}
+Prefix: %{_prefix}
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
-%shared_description
-This package holds just a few shared files and directories.
+TORQUE is an open source resource manager providing control over batch
+jobs and distributed compute nodes. It is a community effort based on
+the original *PBS project and, with more than 1,200 patches, has
+incorporated significant advances in the areas of scalability, fault
+tolerance, and feature extensions contributed by NCSA, OSC, USC, the
+U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many
+other leading edge HPC organizations.
 
+%package server
+Summary: TORQUE Server
+Group: Applications/System
+Provides: pbs-server = %{version}-%{release}
 
+%description server
+Package for TORQUE server systems.
+
+%package devel
+Summary: TORQUE Development Files
+Group: Applications/System
+Requires: %{name} = %{version}-%{release}
+Provides: pbs-devel = %{version}-%{release}
+Provides: lib%{name}-devel = %{version}-%{release}
+
+%description devel
+Development headers and libraries for TORQUE
+
+%package scheduler
+Summary: TORQUE FIFO Scheduler
+Group: Applications/System
+Requires: %{name} = %{version}-%{release}
+Provides: pbs-scheduler = %{version}-%{release}
+
+%description scheduler
+A simple FIFO scheduler for TORQUE
+
+%package client
+Summary: TORQUE Client
+Group: Applications/System
+Requires: %{name} = %{version}-%{release}
+Provides: pbs-client pbs-mom %{?with_pam:pbs-pam}
+Provides: %{name}-mom = %{version}-%{release}
+%if %{with pam}
+Provides: %{name}-pam = %{version}-%{release}
+%endif
+
+%description client
+Package for TORQUE client systems.
+
+%if %{with gui}
+%package gui
+Summary: TORQUE GUI
+Group: Applications/System
+Requires: %{name}-client = %{version}-%{release}
+Provides: pbs-gui = %{version}-%{release}, xpbs, xpbsmon
+
+%description gui
+Graphical clients for TORQUE
+%endif
 
 %prep
-%setup -n torque-%{version}%{?snap:-snap.%snap}
-
+%setup -q 
 
 %build
-CFLAGS="%{optflags}" ./configure %{?configure_args}
+CFLAGS="%{?cflags:%{cflags}}%{!?cflags:$RPM_OPT_FLAGS}"
+CXXFLAGS="%{?cxxflags:%{cxxflags}}%{!?cxxflags:$RPM_OPT_FLAGS}"
+export CFLAGS CXXFLAGS
 
-%{__make} %{?_smp_mflags}
-
+%configure --includedir=%{_includedir}/%{name} --with-default-server=%{torque_server} \
+    %{ac_with_gui} %{ac_with_scp} %{ac_with_syslog} %{ac_with_pam} \
+    --disable-gcc-warnings --with-server-home=%{torque_home} --disable-qsub-keep-override \
+    --with-high-availability --with-sendmail=%{_sbindir}/sendmail %{?acflags}
+%{__make} %{?_smp_mflags} %{?mflags}
 
 %install
-[ "$RPM_BUILD_ROOT" != "/" ] && %{__rm} -rf "$RPM_BUILD_ROOT"
+cd $RPM_BUILD_DIR/%{name}-%{version}
+%{__make} install DESTDIR=$RPM_BUILD_ROOT %{?mflags_install}
+%{__rm} -rf $RPM_BUILD_ROOT/%{_lib}/security/*a $RPM_BUILD_ROOT%{_sysconfdir}/modulefiles
 
-%{__make} install DESTDIR=$RPM_BUILD_ROOT INSTALL="%{__install} -p"
-
-env DESTDIR=$RPM_BUILD_ROOT sh ./buildutils/pbs_mkdirs common
-
-if [ -f /etc/SuSE-release ];then
-  initpre="suse."
-else
-  initpre=""
-fi
-
-# install initscripts
-serverinit="`test "%build_server" == "yes" && echo pbs_sched pbs_server || echo`"
-mominit="`test "%build_mom" == "yes" && echo pbs_mom || echo`"
+# init.d scripts
 %{__mkdir_p} $RPM_BUILD_ROOT%{_initrddir}
-for initscript in $serverinit $mominit; do
-  %__sed -e 's|^PBS_HOME=.*|PBS_HOME=%{torquehomedir}|' \
-         -e 's|^PBS_DAEMON=.*|PBS_DAEMON=%{_sbindir}/'$initscript'|' \
-        < contrib/init.d/$initpre$initscript > $RPM_BUILD_ROOT%{_initrddir}/$initscript
-  %__chmod 755 $RPM_BUILD_ROOT%{_initrddir}/$initscript
+INIT_PREFIX=""
+test -f /etc/SuSE-release && INIT_PREFIX="suse."
+for PROG in pbs_mom pbs_sched pbs_server ; do
+    %{__sed} -e 's|^PBS_HOME=.*|PBS_HOME=%{torque_home}|' \
+             -e 's|^PBS_DAEMON=.*|PBS_DAEMON=%{_sbindir}/'$PROG'|' contrib/init.d/$INIT_PREFIX$PROG \
+        > $RPM_BUILD_ROOT%{_initrddir}/$PROG
+    %{__chmod} 0755 $RPM_BUILD_ROOT%{_initrddir}/$PROG
 done
 
-# remove libtool droppings
-%{__rm} -vf $RPM_BUILD_ROOT/%pammoddir/pam_pbssimpleauth.{a,la} $RPM_BUILD_ROOT/%{_libdir}/*.la
+# Configuration
+echo %{torque_server} > $RPM_BUILD_ROOT%{torque_home}/server_priv/nodes
+echo '$pbsserver %{torque_server}' > $RPM_BUILD_ROOT%{torque_home}/mom_priv/config
 
+# Moab requires libtorque.so.0, but works with libtorque.so.2, so fudge it.
+%{__ln_s} libtorque.so.2 $RPM_BUILD_ROOT%{_libdir}/libtorque.so.0
 
-%clean
-[ "$RPM_BUILD_ROOT" != "/" ] && %{__rm} -rf $RPM_BUILD_ROOT
+%post -p /sbin/ldconfig
 
+%postun -p /sbin/ldconfig
 
-%post
-if %__grep -q "PBS services" /etc/services;then
-   : PBS services already installed
-else
-   cat<<-__EOF__>>/etc/services
+%post server
+if [ $1 -eq 1 ]; then
+    grep '^%{torque_user}:' /etc/passwd >/dev/null 2>&1 || useradd -r %{torque_user} || :
+    grep 'PBS services' /etc/services >/dev/null 2>&1 || cat <<-EOF >>/etc/services
 	# Standard PBS services
 	pbs           15001/tcp           # pbs server (pbs_server)
 	pbs           15001/udp           # pbs server (pbs_server)
@@ -122,275 +174,164 @@ else
 	pbs_resmom    15003/udp           # mom resource management requests
 	pbs_sched     15004/tcp           # scheduler
 	pbs_sched     15004/udp           # scheduler
-	__EOF__
+	EOF
+    pbs_server -t create || exit 0
+
+    if [ "%{torque_server}" = "localhost" ]; then
+        TORQUE_SERVER=`hostname`
+        perl -pi -e "s/localhost/$TORQUE_SERVER/g" %{torque_home}/server_name %{torque_home}/server_priv/nodes 2>/dev/null || :
+    else
+        TORQUE_SERVER="%{torque_server}"
+    fi
+
+    qmgr -c "set server scheduling = true" >/dev/null 2>&1 || :
+    qmgr -c "set server operators += root@$TORQUE_SERVER" >/dev/null 2>&1 || :
+    qmgr -c "set server managers += root@$TORQUE_SERVER" >/dev/null 2>&1 || :
+    qmgr -c "set server operators += %{torque_user}@$TORQUE_SERVER" >/dev/null 2>&1 || :
+    qmgr -c "set server managers += %{torque_user}@$TORQUE_SERVER" >/dev/null 2>&1 || :
+    qmgr -c "create queue batch queue_type = execution" >/dev/null 2>&1 || :
+    qmgr -c "set queue batch started = true" >/dev/null 2>&1 || :
+    qmgr -c "set queue batch enabled = true" >/dev/null 2>&1 || :
+    qmgr -c "set queue batch resources_default.walltime = 1:00:00" >/dev/null 2>&1 || :
+    qmgr -c "set queue batch resources_default.nodes = 1" >/dev/null 2>&1 || :
+    qmgr -c "set server default_queue = batch" >/dev/null 2>&1 || :
+    qmgr -c "set node $TORQUE_SERVER state = free" >/dev/null 2>&1 || :
+
+    chkconfig pbs_server on >/dev/null 2>&1 || :
+    service pbs_server condrestart >/dev/null 2>&1 || :
 fi
 
+%preun server
+if [ $1 -eq 0 ]; then
+    chkconfig pbs_server off
+    service pbs_server stop >/dev/null 2>&1 || :
+fi
+
+%post client
+if [ $1 -eq 1 ]; then
+    grep 'PBS services' /etc/services >/dev/null 2>&1 || cat <<-EOF >>/etc/services
+	# Standard PBS services
+	pbs           15001/tcp           # pbs server (pbs_server)
+	pbs           15001/udp           # pbs server (pbs_server)
+	pbs_mom       15002/tcp           # mom to/from server
+	pbs_mom       15002/udp           # mom to/from server
+	pbs_resmom    15003/tcp           # mom resource management requests
+	pbs_resmom    15003/udp           # mom resource management requests
+	pbs_sched     15004/tcp           # scheduler
+	pbs_sched     15004/udp           # scheduler
+	EOF
+    if [ "%{torque_server}" = "localhost" ]; then
+        TORQUE_SERVER=`hostname`
+        perl -pi -e "s/localhost/$TORQUE_SERVER/g" %{torque_home}/mom_priv/config 2>/dev/null || :
+    fi
+    chkconfig pbs_mom on
+    service pbs_mom condrestart >/dev/null 2>&1 || :
+fi
+
+%preun client
+if [ $1 -eq 0 ]; then
+    chkconfig pbs_mom off
+    service pbs_mom stop >/dev/null 2>&1 || :
+fi
+
+%post scheduler
+if [ $1 -eq 1 ]; then
+    chkconfig pbs_sched on
+    service pbs_sched condrestart >/dev/null 2>&1 || :
+fi
+
+%preun scheduler
+if [ $1 -eq 0 ]; then
+    chkconfig pbs_sched off
+    service pbs_sched stop >/dev/null 2>&1 || :
+fi
+
+%clean
+test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-, root, root)
-%doc INSTALL README.torque torque.setup Release_Notes CHANGELOG PBS_License.txt
-%config(noreplace) %{torquehomedir}/server_name
-%config(noreplace) %{torquehomedir}/pbs_environment
-%{torquehomedir}/spool
-%{torquehomedir}/aux
-%{_libdir}/libtorque*.so.*
-%if "%modulefiles_dir" != "no"
-%modulefiles_dir/%{name}
-%endif
-
-
-%package docs
-Group: Documentation
-Summary: docs for Torque
-Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
-Provides: pbs-docs
-%description docs
-%shared_description
-This package holds the documentation files.
-
-%files docs
-%defattr(-, root, root)
-%doc doc/admin_guide.ps
-%{_mandir}/man*/*
-
-
-%package scheduler
-Group: System Environment/Daemons
-Summary: scheduler part of Torque
-Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
-Provides: pbs-scheduler
-%description scheduler
-%shared_description
-This package holds the fifo C scheduler.
-
-%if "%build_server" == "yes"
-%files scheduler
-%defattr(-, root, root)
-%{_sbindir}/pbs_sched
-%{_sbindir}/qschedd
-%{_initrddir}/pbs_sched
-%dir %{torquehomedir}/sched_priv
-%config(noreplace) %{torquehomedir}/sched_priv/*
-%{torquehomedir}/sched_logs
-%endif
-
-%post scheduler
-/sbin/chkconfig --add pbs_sched
-
-%preun scheduler
-[ $1 = 0 ] || exit 0
-/sbin/chkconfig --del pbs_sched
-
-
-%package server
-Group: System Environment/Daemons
-Summary: server part of Torque
-Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
-Provides: pbs-server
-%description server
-%shared_description
-This package holds the server.
-
-%if "%build_server" == "yes"
-%files server
-%defattr(-, root, root)
-%{_sbindir}/pbs_server
-%{_sbindir}/qserverd
-%{_initrddir}/pbs_server
-%{torquehomedir}/server_logs
-%{torquehomedir}/server_priv
-%endif
-
-%post server
-/sbin/chkconfig --add pbs_server
-
-%preun server
-[ $1 = 0 ] || exit 0
-/sbin/chkconfig --del pbs_server
-
-
-%package mom
-Group: System Environment/Daemons
-Summary: execution part of Torque
-Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
-Provides: pbs-mom
-%description mom
-%shared_description
-This package holds the execute daemon required on every node.
-
-%if "%build_mom" == "yes"
-%files mom
-%defattr(-, root, root)
-%{_sbindir}/pbs_mom
-%{_sbindir}/qnoded
-%{_sbindir}/pbs_demux
-%{_bindir}/pbs_track
-%{_initrddir}/pbs_mom
-%if "%build_pbs_rcp" == "yes"
-%attr(4755 root root) %{_sbindir}/pbs_rcp
-%endif
-%{torquehomedir}/mom_priv/*
-%{torquehomedir}/mom_logs
-%{torquehomedir}/checkpoint
-%{torquehomedir}/undelivered
-%endif
-
-%post mom
-/sbin/chkconfig --add pbs_mom
-
-%preun mom
-[ $1 = 0 ] || exit 0
-/sbin/chkconfig --del pbs_mom
-
-
-%package client
-Group: Applications/System
-Summary: client part of Torque
-Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
-Provides: pbs-client
-%description client
-%shared_description
-This package holds the command-line client programs.
-
-%if "%build_clients" == "yes"
-%files client
-%defattr(-, root, root)
-%{_bindir}/q*
+%doc INSTALL INSTALL.GNU CHANGELOG PBS_License.txt README.* Release_Notes src/pam/README.pam
+%doc doc/READ_ME doc/doc_fonts doc/soelim.c doc/ers
+%config(noreplace) %{torque_home}/pbs_environment
+%config(noreplace) %{torque_home}/server_name
 %{_bindir}/chk_tree
 %{_bindir}/hostn
 %{_bindir}/nqs2pbs
+%{_bindir}/pbs_track
 %{_bindir}/pbsdsh
 %{_bindir}/pbsnodes
 %{_bindir}/printjob
-%{_bindir}/printtracking
 %{_bindir}/printserverdb
+%{_bindir}/printtracking
+%{_bindir}/q*
 %{_bindir}/tracejob
+%attr(4755, root, root) %{_sbindir}/pbs_iff
+%if %{without scp}
+%attr(4755, root, root) %{_sbindir}/pbs_rcp
+%endif
+%{_libdir}/lib%{name}.so.*
+%{torque_home}/aux
+%{torque_home}/spool
+%{_mandir}/man*/*
+
+%files server
+%defattr(-, root, root)
+%doc torque.setup doc/admin_guide.ps
+%dir %{torque_home}/server_priv
+%config(noreplace) %{torque_home}/server_priv/nodes
+%{_initrddir}/pbs_server
 %{_sbindir}/momctl
-%attr(4755 root root) %{_sbindir}/pbs_iff
-%if "%use_tcl" == "1"
-%{_bindir}/pbs_tclsh
-%endif
-%endif
-
-
-%package gui
-Group: Applications/System
-Summary: graphical client part of Torque
-Requires: %{name}-client = %{?epoch:%{epoch}:}%{version}-%{release}
-Provides: xpbs xpbsmon
-%description gui
-%shared_description
-This package holds the graphical clients.
-
-%if "%build_gui" == "yes"
-%files gui
-%defattr(-, root, root)
-%{_bindir}/pbs_wish
-%{_bindir}/xpbs
-%{_bindir}/xpbsmon
-%{_libdir}/xpbs
-%{_libdir}/xpbsmon
-%endif
-
-
-%package localhost
-Group: Applications/System
-Summary: installs and configures a minimal localhost-only batch queue system
-PreReq: pbs-mom pbs-server pbs-client pbs-scheduler
-%description localhost
-%shared_description
-This package installs and configures a minimal localhost-only batch queue system.
-
-%files localhost
-%defattr(-, root, root)
-%post localhost
-/sbin/chkconfig pbs_mom on
-/sbin/chkconfig pbs_server on
-/sbin/chkconfig pbs_sched on
-/bin/hostname --long > %{torquehomedir}/server_priv/nodes
-/bin/hostname --long > %{torquehomedir}/server_name
-/bin/hostname --long > %{torquehomedir}/mom_priv/config
-pbs_server -t create
-qmgr -c "s s scheduling=true"
-qmgr -c "c q batch queue_type=execution"
-qmgr -c "s q batch started=true"
-qmgr -c "s q batch enabled=true"
-qmgr -c "s q batch resources_default.nodes=1"
-qmgr -c "s q batch resources_default.walltime=3600"
-qmgr -c "s s default_queue=batch"
-%{_initrddir}/pbs_mom restart
-%{_initrddir}/pbs_sched restart
-%{_initrddir}/pbs_server restart
-qmgr -c "s n `/bin/hostname --long` state=free" -e
-
-
-%package devel
-Summary: Development tools for programs which will use the %{name} library
-Group: Development/Libraries
-Provides: lib%{name}-devel
-Requires: %{name} = %{?epoch:%{epoch}:}%{version}-%{release}
-%description devel
-%shared_description
-This package includes the header files and static libraries
-necessary for developing programs which will use %{name}.
+%{_sbindir}/pbs_server
+%{_sbindir}/qserverd
+%{torque_home}/server_logs
+%{torque_home}/server_priv/accounting
+%{torque_home}/server_priv/acl*
+%{torque_home}/server_priv/arrays
+%{torque_home}/server_priv/disallowed_types
+%{torque_home}/server_priv/hostlist
+%{torque_home}/server_priv/jobs
+%{torque_home}/server_priv/queues
 
 %files devel
 %defattr(-, root, root)
-%{_libdir}/libtorque*.a
-%{_libdir}/libtorque*.so
-%{_includedir}/pbs_error.h
-%{_includedir}/pbs_error_db.h
-%{_includedir}/pbs_ifl.h
-%{_includedir}/rm.h
-%{_includedir}/rpp.h
-%{_includedir}/tm_.h
-%{_includedir}/tm.h
 %{_bindir}/pbs-config
+%{_includedir}/%{name}
+%{_libdir}/lib%{name}*a
+%{_libdir}/lib%{name}*so
 
-
-
-%package pam
-Summary: PAM module for PBS MOM nodes
-Group: System Environment/Base
-%description pam
-%shared_description
-A simple PAM module to authorize users on PBS MOM nodes with a running job.
-
-%if "%pammoddir" != "disabled"
-%files pam
+%files scheduler
 %defattr(-, root, root)
-%doc src/pam/README.pam
-%pammoddir/pam_pbssimpleauth.so
+%dir %{torque_home}/sched_priv
+%config(noreplace) %{torque_home}/sched_priv/*
+%{_sbindir}/pbs_sched
+%{_sbindir}/qschedd
+%{_initrddir}/pbs_sched
+%{torque_home}/sched_logs
+
+%files client
+%defattr(-, root, root)
+%{_initrddir}/pbs_mom
+%{_sbindir}/pbs_demux
+%{_sbindir}/pbs_mom
+%{_sbindir}/qnoded
+%if %{with pam}
+/%{_lib}/security/pam_pbssimpleauth.so
+%endif
+%{torque_home}/checkpoint
+%{torque_home}/mom_logs
+%{torque_home}/mom_priv
+%{torque_home}/undelivered
+
+%if %{with gui}
+%files gui
+%defattr(-, root, root)
+%{_bindir}/pbs_tclsh
+%{_bindir}/pbs_wish
+%{_bindir}/xpbs*
+%{_libdir}/xpbs*
 %endif
 
-
-%package drmaa
-Summary: DRMAA 1.0 implementation for PBS/TORQUE
-Group: System Environment/Base
-%description drmaa
-%shared_description
-An API specification for the submission and control of jobs to one or more
-Distributed Resource Management (DRM) systems.
-
-%if "%build_drmaa" == "yes"
-%files drmaa
-%defattr(-, root, root)
-%{_libdir}/libdrmaa.*
-%{_includedir}/drmaa.h
-%endif
-
-%package drmaa-docs
-Summary: DRMAA 1.0 implementation for PBS/TORQUE
-Group: System Environment/Base
-%description drmaa-docs
-%shared_description
-An API specification for the submission and control of jobs to one or more
-Distributed Resource Management (DRM) systems.
-
-%if "%build_drmaa_docs" == "yes"
-%files drmaa-docs
-%defattr(-, root, root)
-%{drmaadocdir}
-%endif
-
-
+%changelog
+* Sat Apr 07 2007 Mezzanine <mezzanine@kainx.org>
+- Specfile auto-generated by Mezzanine
