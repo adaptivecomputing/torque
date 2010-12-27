@@ -14,6 +14,7 @@
 %endif
 
 ### Features disabled by default
+%bcond_with    drmaa
 %bcond_with    gui
 %bcond_with    pam
 
@@ -22,15 +23,16 @@
 %bcond_without syslog
 
 ### Autoconf macro expansions
+%define ac_with_drmaa   --%{?with_drmaa:en}%{!?with_drmaa:dis}able-drmaa
 %define ac_with_gui     --%{?with_gui:en}%{!?with_gui:dis}able-gui --with%{!?with_gui:out}-tcl
 %define ac_with_pam     --with%{!?with_pam:out}-pam%{?with_pam:=/%{_lib}/security}
 %define ac_with_scp     --with-rcp=%{?with_scp:scp}%{!?with_scp:pbs_rcp}
 %define ac_with_syslog  --%{?with_syslog:en}%{!?with_syslog:dis}able-syslog
 
 ### Build Requirements
-%define breq_gui %{?with_gui:tcl-devel tk-devel tclx}
-%define breq_pam %{?with_pam:pam-devel}
-%define breq_scp %{?with_scp:/usr/bin/scp}
+%define breq_gui   %{?with_gui:tcl-devel tk-devel tclx}
+%define breq_pam   %{?with_pam:pam-devel}
+%define breq_scp   %{?with_scp:/usr/bin/scp}
 
 ### Macro variables
 %{!?torque_user:%global torque_user torque}
@@ -120,6 +122,16 @@ Provides: pbs-gui = %{version}-%{release}, xpbs, xpbsmon
 Graphical clients for TORQUE
 %endif
 
+%if %{with drmaa}
+%package drmaa
+Summary: DRMAA 1.0 Implementation for TORQUE
+Group: Applications/System
+Provides: pbs-drmaa = %{version}-%{release}
+
+%description
+This package contains a DRMAA 1.0 implementation for use with TORQUE.
+%endif
+
 %prep
 %setup -q 
 
@@ -129,13 +141,12 @@ CXXFLAGS="%{?cxxflags:%{cxxflags}}%{!?cxxflags:$RPM_OPT_FLAGS}"
 export CFLAGS CXXFLAGS
 
 %configure --includedir=%{_includedir}/%{name} --with-default-server=%{torque_server} \
-    %{ac_with_gui} %{ac_with_scp} %{ac_with_syslog} %{ac_with_pam} \
+    %{ac_with_gui} %{ac_with_scp} %{ac_with_syslog} %{ac_with_pam} %{ac_with_drmaa} \
     --disable-gcc-warnings --with-server-home=%{torque_home} --disable-qsub-keep-override \
     --with-high-availability --with-sendmail=%{_sbindir}/sendmail %{?acflags}
 %{__make} %{?_smp_mflags} %{?mflags}
 
 %install
-cd $RPM_BUILD_DIR/%{name}-%{version}
 %{__make} install DESTDIR=$RPM_BUILD_ROOT %{?mflags_install}
 %{__rm} -rf $RPM_BUILD_ROOT/%{_lib}/security/*a $RPM_BUILD_ROOT%{_sysconfdir}/modulefiles
 
@@ -156,6 +167,11 @@ echo '$pbsserver %{torque_server}' > $RPM_BUILD_ROOT%{torque_home}/mom_priv/conf
 
 # Moab requires libtorque.so.0, but works with libtorque.so.2, so fudge it.
 %{__ln_s} libtorque.so.2 $RPM_BUILD_ROOT%{_libdir}/libtorque.so.0
+
+%if %{with drmaa}
+# Move DRMAA docs back to the source tree so we can install them properly.
+mv $RPM_BUILD_ROOT%{_docdir}/*drmaa* drmaa-doc-dir
+%endif
 
 %post -p /sbin/ldconfig
 
@@ -330,6 +346,14 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %{_bindir}/pbs_wish
 %{_bindir}/xpbs*
 %{_libdir}/xpbs*
+%endif
+
+%if %{with drmaa}
+%files drmaa
+%defattr(-, root, root)
+%doc drmaa-doc-dir/*
+%{_includedir}/%{name}/drmaa.h
+%{_libdir}/libdrmaa.*
 %endif
 
 %changelog

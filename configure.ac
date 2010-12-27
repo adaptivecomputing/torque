@@ -49,6 +49,7 @@ fi
 AC_SUBST(program_prefix)
 AC_SUBST(program_suffix)
 
+RPM_AC_OPTS=""
 
 dnl  Instead of putting a long list of defines on the command line
 dnl  for each compile, use a file called "pbs_config.h" that will
@@ -186,7 +187,7 @@ AC_SUBST(build_clients)
 
 AC_MSG_CHECKING([whether to build DRMAA lib])
 AC_ARG_ENABLE(drmaa,
-    [  --disable-drmaa         do not build the DRMAA 1.0 library (default is off)],
+    [  --enable-drmaa          build the DRMAA 1.0 library (default is off)],
     build_drmaa=$enableval, build_drmaa=no)
 AC_MSG_RESULT($build_drmaa)
 AM_CONDITIONAL(INCLUDE_DRMAA, [test "x$build_drmaa" = "xyes"])
@@ -945,10 +946,10 @@ AC_DEFINE_UNQUOTED(PLOCK_DAEMONS, ${PLOCK_DAEMONS},
 AC_ARG_ENABLE(syslog, [
   --enable-syslog         enable (default) the use of syslog for error reporting],
 [case "${enableval}" in
-  yes) SYSLOG=1 ;;
-  no)  SYSLOG=0 ;;
+  yes) SYSLOG=1 ; RPM_AC_OPTS="$RPM_AC_OPTS --with syslog" ;;
+  no)  SYSLOG=0 ; RPM_AC_OPTS="$RPM_AC_OPTS --without syslog" ;;
   *)   AC_MSG_ERROR(--enable-syslog cannot take a value.) ;;
-esac],[SYSLOG=1])dnl
+esac],[SYSLOG=1 ; RPM_AC_OPTS="$RPM_AC_OPTS --with syslog"])dnl
 AC_DEFINE_UNQUOTED(SYSLOG, ${SYSLOG}, [Define to enable syslog])
 AM_CONDITIONAL(USING_SYSLOG, [test "$SYSLOG" = "1"])
 
@@ -1096,7 +1097,8 @@ AC_MSG_RESULT([$ENABLE_UNIX_SOCKETS])
 AC_ARG_WITH(server_home, [
   --with-server-home=DIR  set the server home/spool directory for PBS use
                           defaults to /var/spool/torque],
-    [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="/var/spool/torque"])
+    [PBS_SERVER_HOME="${withval}" ; RPM_AC_OPTS="$RPM_AC_OPTS --define \"torque_home ${withval}\"" ],
+    [PBS_SERVER_HOME="/var/spool/torque"])
 AC_SUBST(PBS_SERVER_HOME)
 
     dnl [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="$localstatedir/spool/torque"])
@@ -1125,7 +1127,8 @@ AC_ARG_WITH(default_server, [
                           access when no machine name is specified as part
                           of the queue name. It defaults to the hostname
                           of the machine on which PBS is being compiled.],
-[PBS_DEFAULT_SERVER="${withval}"], [PBS_DEFAULT_SERVER="`uname -n`"])
+[PBS_DEFAULT_SERVER="${withval}" ; RPM_AC_OPTS="$RPM_AC_OPTS --define \"torque_server ${withval}\"" ],
+[PBS_DEFAULT_SERVER="`uname -n`"])
 AC_DEFINE_UNQUOTED(PBS_DEFAULT_SERVER, "${PBS_DEFAULT_SERVER}",
 	[Define to the name of the default PBS server])
 AC_SUBST(PBS_DEFAULT_SERVER)
@@ -1213,6 +1216,9 @@ if test "x$RCP_PATH" = "x" ;then
   AC_PATH_PROG(RCP_PATH, scp, error)
   if test "x$RCP_PATH" = "xerror" ;then
     RCP_PATH=mom_rcp
+    RPM_AC_OPTS="$RPM_AC_OPTS --without scp"
+  else
+    RPM_AC_OPTS="$RPM_AC_OPTS --with scp"
   fi
 fi
 
@@ -1279,6 +1285,11 @@ case "$pammoddir" in
   /*) ;;
   *) AC_MSG_ERROR([--with-pam takes a full path to a directory $pammoddir]);;
 esac
+if test "x$pammoddir" = "xdisabled" ; then
+  RPM_AC_OPTS="$RPM_AC_OPTS --without pam"
+else
+  RPM_AC_OPTS="$RPM_AC_OPTS --with pam"
+fi
 AC_MSG_RESULT([$pammoddir])
 AC_SUBST(pammoddir)
 AM_CONDITIONAL(INCLUDE_PAM, [test "x$pammoddir" != "xdisabled"])
@@ -1515,10 +1526,12 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>]],
   AC_MSG_RESULT([no])
 ])
 
- build_drmaa_docs=yes
+  build_drmaa_docs=yes
+  RPM_AC_OPTS="$RPM_AC_OPTS --with drmaa"
 else  
   DOXYGEN=none
- build_drmaa_docs=no
+  build_drmaa_docs=no
+  RPM_AC_OPTS="$RPM_AC_OPTS --without drmaa"
 fi
 AM_CONDITIONAL(DRMAA_DOCS, [test "$DOXYGEN" != "none"])
 AC_SUBST(build_drmaa_docs)
@@ -1544,6 +1557,7 @@ AC_SUBST(spec_name)
 AC_SUBST(spec_version)
 AC_SUBST(spec_snap)
 AC_SUBST(ac_configure_args)
+AC_SUBST(RPM_AC_OPTS)
 rpmlibdir=`eval eval echo $libdir`
 rpmmandir=`eval eval echo $mandir`
 rpmbindir=`eval eval echo $bindir`
@@ -1594,8 +1608,7 @@ AC_DEFINE_UNQUOTED([PBS_CONFIG_ARGS],"${ac_configure_args}",[Define to the insta
 AC_DEFINE_UNQUOTED([PBS_CFLAGS],"${CFLAGS}",[Define to the install directory])
 
 AC_CONFIG_FILES([torque.spec:buildutils/torque.spec.in])
-AC_OUTPUT(buildutils/torque.spec.dist
-	  buildutils/pbs_mkdirs
+AC_OUTPUT(buildutils/pbs_mkdirs
 	  buildutils/self-extract-head-sh
 	  buildutils/modulefiles
 	  buildutils/modulefiles.vers
