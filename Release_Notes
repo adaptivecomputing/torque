@@ -48,14 +48,16 @@ New in 2.5.4
     http://www.clusterresources.com/products/torque/docs/2.1jobsubmission.shtml#resources
 
     The buildutils/torque.spec.in file has been modified to comply more closely with RPM
-    standards. This may cause some problems with exiting RPM and TORQUE routines.
+    standards. Users may experience some unexpected behavior from what they have experienced
+    in past versions of TORQUE. Please post your questions, problems and concerns to
+    the mailing list at torqueuers@supercluster.org
 
-    While Adaptive Computing distributes the RPM files it does not support 
+    While Adaptive Computing distributes the RPM files as part of the build it does not support 
     those files. Not every Linux distribution uses RPM. Adaptive Computing provides a single
     solution using make and make install that works across all Linux distributions and most
-    UNIX systems. We recognize the RPM format provides many advantages for distribution but 
+    UNIX systems. We recognize the RPM format provides many advantages for deployment but 
     it is up to the indiviual site to repackage the TORQUE installation to match their individual
-    site.
+    needs.
 
     If you have issues with the new spec files please post the issue or questions to the torque users
     (torqueusers@supercluster.org) mailing list
