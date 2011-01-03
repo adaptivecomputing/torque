@@ -42,7 +42,6 @@ DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(top_srcdir)/buildutils/modulefiles.vers.in \
 	$(top_srcdir)/buildutils/pbs_mkdirs.in \
 	$(top_srcdir)/buildutils/self-extract-head-sh.in \
-	$(top_srcdir)/buildutils/torque.spec.dist.in \
 	$(top_srcdir)/buildutils/torque.spec.in \
 	$(top_srcdir)/configure INSTALL buildutils/compile \
 	buildutils/config.guess buildutils/config.sub \
@@ -66,9 +65,9 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/buildutils/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/include/pbs_config.h
-CONFIG_CLEAN_FILES = torque.spec buildutils/torque.spec.dist \
-	buildutils/pbs_mkdirs buildutils/self-extract-head-sh \
-	buildutils/modulefiles buildutils/modulefiles.vers
+CONFIG_CLEAN_FILES = torque.spec buildutils/pbs_mkdirs \
+	buildutils/self-extract-head-sh buildutils/modulefiles \
+	buildutils/modulefiles.vers
 am__installdirs = "$(DESTDIR)$(bindir)"
 binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
 SCRIPTS = $(bin_SCRIPTS)
@@ -198,6 +197,7 @@ RCP_ARGS = @RCP_ARGS@
 RCP_PATH = @RCP_PATH@
 READLINE_LIBS = @READLINE_LIBS@
 ROFF = @ROFF@
+RPM_AC_OPTS = @RPM_AC_OPTS@
 RSH_PATH = @RSH_PATH@
 SCHD_BASL_FALSE = @SCHD_BASL_FALSE@
 SCHD_BASL_TRUE = @SCHD_BASL_TRUE@
@@ -358,7 +358,6 @@ EXTRA_DIST = CHANGELOG \
 	buildutils/pbs_mach_type \
 	buildutils/pbs_mkdirs.in \
 	buildutils/self-extract-head-sh.in \
-	buildutils/torque.spec.dist.in \
 	buildutils/torque.spec.in \
 	contrib/AddPrivileges \
 	contrib/blcr/checkpoint_script \
@@ -451,8 +450,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 torque.spec: $(top_builddir)/config.status $(top_srcdir)/buildutils/torque.spec.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-buildutils/torque.spec.dist: $(top_builddir)/config.status $(top_srcdir)/buildutils/torque.spec.dist.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 buildutils/pbs_mkdirs: $(top_builddir)/config.status $(top_srcdir)/buildutils/pbs_mkdirs.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
@@ -870,11 +867,10 @@ snap:
 	$(MAKE) VERSION=$(VERSION)-snap.$${snapstamp:-`date +%Y%m%d%H%M`} dist
 
 dist-hook:
-	if test -d $(srcdir)/.svn; then cp -p buildutils/torque.spec.dist $(distdir)/torque.spec ;fi
 	spec_version=`echo $(VERSION) | sed 's/-snap.*//'`; \
 	spec_snap=""; \
 	if test "$$spec_version" != "$(VERSION)" ;then \
-  	  spec_snap="%define snap `echo $(VERSION) | sed 's/.*-snap.//'`"; \
+	  spec_snap="%define snap `echo $(VERSION) | sed 's/.*-snap.//'`"; \
 	  sed -e 's/.*dist_spec_snap.*/'"$$spec_snap"/ < $(distdir)/torque.spec > $(distdir)/torque.spec~ ; \
 	  mv $(distdir)/torque.spec~ $(distdir)/torque.spec; \
 	fi; \
@@ -886,7 +882,7 @@ srpm: dist
 	rpmbuild -ts $(distdir).tar.gz
 
 rpm: dist
-	rpmbuild $(RPMOPTS) -tb $(distdir).tar.gz
+	rpmbuild $(RPM_AC_OPTS) $(RPMOPTS) -tb $(distdir).tar.gz
 
 install_server install_mom install_clients install_gui install_lib install_pam install_drmaa:
 	(cd src && $(MAKE) $@)
