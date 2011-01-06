@@ -1,6 +1,6 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
-3.1
+4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 
       customizable using min_threads and max_threads, and idle time before
       exiting can be set using thread_idle_seconds.

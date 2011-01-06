@@ -946,11 +946,11 @@ static void post_delete_mom1(
     else
       {
       req_reject(rc, 0, preq_clt, NULL, NULL);
-      }
 
 #ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pjob->ji_mutex);
+      pthread_mutex_unlock(pjob->ji_mutex);
 #endif
+      }
 
     return;
     }
