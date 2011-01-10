@@ -3943,7 +3943,8 @@ int procs_available(int proc_ct)
 /* NOTE: must always be called by a thread that already holds the mutex for pnode */
 int node_avail_check(
 
-  struct pbsnode *pnode)           /* I */
+  struct pbsnode *pnode,           /* I */
+  char           *ProcBMStr)       /* I */
 
   {
   char           *id = "node_avail_check";
@@ -3955,10 +3956,10 @@ int node_avail_check(
   if (IS_VALID_STR(ProcBMStr)) 
     {
     if (pnode->nd_state != INUSE_FREE)
-      continue;
+      return(-1);
 
     if (node_satisfies_request(pnode,ProcBMStr) == FALSE)
-      continue;
+      return(-1);
     }
 #endif /* GEOMETRY_REQUESTS */
 
@@ -4215,7 +4216,7 @@ static int node_spec(
       continue;
       }
 
-    node_avail_check(pnode);
+    node_avail_check(pnode,ProcBMStr);
 
 #ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pnode->nd_mutex);
