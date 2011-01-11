@@ -1,5 +1,8 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+2.5.5
+  b - change so gpus get written back to nodes file
+
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for
       relevant node, and then request gpus in the nodes request: 
@@ -37,7 +40,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - prevent the nodes file from being overwritten when running make packages
   b - change so "mom_checkpoint_job_has_checkpoint" and "execing command" log
       messages do not always get logged
-
 
 2.5.3
   b - stop reporting errors on success when modifying array ranges
