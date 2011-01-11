@@ -73,7 +73,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
         - Reduce the number of unnecessary subpackages by consolidating where
           it makes sense and using existing RPM features (e.g., --excludedocs).
   b - fix bug in qdel - was reporting "cannot contact node" for live nodes
-  
+
+2.5.5
+  b - change so gpus get written back to nodes file
+
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for
       relevant node, and then request gpus in the nodes request: 

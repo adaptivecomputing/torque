@@ -1375,6 +1375,14 @@ int update_nodes_file(void)
               ATTR_NODE_np,
               np->nd_nsn);
 
+    /* if number of gpus is gt 0, write that; if none,   */
+    /* don't write to maintain compatability with old style file */
+
+    if (np->nd_ngpus > 0)
+      fprintf(nin, " %s=%d",
+              ATTR_NODE_gpus,
+              np->nd_ngpus);
+
     /* write out the numa attributes if needed */
     if (np->num_numa_nodes > 0)
       {
