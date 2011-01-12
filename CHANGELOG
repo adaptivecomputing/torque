@@ -76,6 +76,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 2.5.5
   b - change so gpus get written back to nodes file
+  e - make it so that even if an array request has multiple consecutive '%' the slot 
+      limit will be set correctly
 
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for

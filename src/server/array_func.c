@@ -545,10 +545,13 @@ int set_slot_limit(
   if ((pcnt = strchr(request,'%')) != NULL)
     {
     /* remove '%' from the request, or else it can't be parsed */
-    *pcnt = '\0';
+    while (*pcnt == '%')
+      {
+      *pcnt = '\0';
+      pcnt++;
+      }
 
     /* read the number if one is given */
-    pcnt++;
     if (strlen(pcnt) > 0)
       {
       pa->ai_qs.slot_limit = atoi(pcnt);
