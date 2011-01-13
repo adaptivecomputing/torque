@@ -1323,7 +1323,7 @@ int pbsd_init(
      look for empty arrays and delete them
      also look for arrays that weren't fully built and setup a work task to
      continue the cloning process*/
-  iter = 0;
+  iter = -1;
 
   while ((pa = next_array(&iter)) != NULL)
     {
