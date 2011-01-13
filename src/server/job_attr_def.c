@@ -930,6 +930,30 @@ attribute_def job_attr_def[] = {
    ATR_TYPE_STR,
    PARENT_TYPE_JOB},
 
+  /* JOB_ATR_submit_host */
+  {ATTR_submit_host,		/* "submit_host - undocumented */
+   decode_str,
+   encode_str,
+   set_str,
+   comp_str,
+   free_str,
+   NULL_FUNC,
+   READ_ONLY | ATR_DFLAG_SvRD | ATR_DFLAG_Creat,
+   ATR_TYPE_STR,
+   PARENT_TYPE_JOB},
+
+  /* JOB_ATR_init_work_dir */
+  {ATTR_init_work_dir,		/* "init_work_dir - undocumented */
+   decode_str,
+   encode_str,
+   set_str,
+   comp_str,
+   free_str,
+   NULL_FUNC,
+   READ_ONLY | ATR_DFLAG_SvRD | ATR_DFLAG_Creat,
+   ATR_TYPE_STR,
+   PARENT_TYPE_JOB},
+
 #ifdef USEJOBCREATE
   /* JOB_ATR_pagg_id */
   {ATTR_pagg,			/* "pagg_id" - undocumented */
