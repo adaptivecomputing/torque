@@ -441,7 +441,7 @@ int job_log_open(
   if (joblogpath != filename)
     {
     if (joblogpath != NULL)
-      free(logpath);
+      free(joblogpath);
 
     joblogpath = strdup(filename);
     }

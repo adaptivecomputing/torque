@@ -389,6 +389,9 @@ void add_server_names_to_acl_hosts(void)
 
   struct attribute *patr = &server.sv_attr[(int)SRV_ATR_acl_hosts];
 
+  memset(buffer, 0, PBS_MAXSERVERNAME+1);
+  memset(&temp, 0, sizeof(attribute));
+
   server_list_ptr = pbs_get_server_list();
   list_len = csv_length(server_list_ptr);
 

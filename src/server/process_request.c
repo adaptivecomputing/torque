@@ -322,7 +322,7 @@ void process_request(
 
   int                   rc;
 
-  struct batch_request *request;
+  struct batch_request *request = NULL;
 
   time_now = time(NULL);
 
@@ -1116,7 +1116,7 @@ struct batch_request *alloc_br(
 
   {
 
-  struct batch_request *req;
+  struct batch_request *req = NULL;
 
   req = (struct batch_request *)malloc(sizeof(struct batch_request));
 

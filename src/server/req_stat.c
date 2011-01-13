@@ -1147,6 +1147,7 @@ static int status_que(
     return(PBSE_SYSTEM);
     }
 
+  memset(pstat, 0, sizeof(struct brp_status));
   pstat->brp_objtype = MGR_OBJ_QUEUE;
 
   strcpy(pstat->brp_objname, pque->qu_qs.qu_name);
@@ -1354,6 +1355,8 @@ static int status_node(
     {
     return(PBSE_SYSTEM);
     }
+
+  memset(pstat, 0, sizeof(struct brp_status));
 
   pstat->brp_objtype = MGR_OBJ_NODE;
 

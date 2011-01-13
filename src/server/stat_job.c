@@ -164,6 +164,8 @@ int status_job(
     return(PBSE_SYSTEM);
     }
 
+  memset(pstat, 0, sizeof(struct brp_status));
+
   CLEAR_LINK(pstat->brp_stlink);
 
   pstat->brp_objtype = MGR_OBJ_JOB;

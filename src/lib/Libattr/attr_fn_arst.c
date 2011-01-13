@@ -149,7 +149,7 @@ int decode_arst_direct(
     return(PBSE_SYSTEM);
     }
 
-  tmpval[0] = 0;
+  memset(tmpval, 0, ssize);
 
   strcpy(tmpval,val);
 
@@ -182,6 +182,8 @@ int decode_arst_direct(
     return(PBSE_SYSTEM);
     }
 
+  memset(pbuf, 0, ssize);
+
   bksize = (ns - 1) * sizeof(char *) + sizeof(struct array_strings);
 
   if ((stp = (struct array_strings *)malloc(bksize)) == NULL)
@@ -190,6 +192,8 @@ int decode_arst_direct(
 
     return(PBSE_SYSTEM);
     }
+
+  memset(stp, 0, bksize);
 
   stp->as_npointers = ns;
 
@@ -278,12 +282,13 @@ int decode_arst(
     return(0);
     }
 
+  memset(&temp, 0, sizeof(attribute));
+
   if ((patr->at_flags & ATR_VFLAG_SET) && (patr->at_val.at_arst))
     {
     /* already have values, decode new into temp */
     /* then use set(incr) to add new to existing */
 
-    temp.at_val.at_arst = NULL;
 
     /* convert value string into attribute array */
 
@@ -775,6 +780,8 @@ int set_arst(
       if (pc == NULL)
         return(PBSE_SYSTEM);
 
+      memset(pc, 0, need);
+
       tmp_arst->as_buf = pc;
       tmp_arst->as_next = pc;
       tmp_arst->as_npointers = j;
@@ -815,7 +822,7 @@ int set_arst(
           }
         if (MatchFound == 0)
           {
-          strcpy(tmp_arst->as_next,pas->as_string[i]);
+          strcpy(tmp_arst->as_next, pas->as_string[i]);
           
           tmp_arst->as_string[tmp_arst->as_usedptr++] = tmp_arst->as_next;
           tmp_arst->as_next += strlen(tmp_arst->as_next) + 1;
