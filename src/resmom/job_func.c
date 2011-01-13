@@ -479,8 +479,11 @@ job_alloc(void)
   pj->ji_numnodes = 0;
   pj->ji_numvnod  = 0;
   pj->ji_hosts = NULL;
+  pj->ji_sisters = NULL;
   pj->ji_vnods = NULL;
   pj->ji_resources = NULL;
+  pj->ji_outstanding = 0;
+  pj->ji_im_nodeid = 0;
   pj->ji_obit = TM_NULL_EVENT;
   pj->ji_preq = NULL;
   pj->ji_nodekill = TM_ERROR_NODE;

@@ -463,7 +463,7 @@ int encode_jobs(
     return -(PBSE_SYSTEM);
     }
 
-  job_str[0] = '\0';
+  memset(job_str, 0, strsize);
 
   i = 0;
 

@@ -215,7 +215,7 @@ struct pbsnode
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_t      *nd_mutex; /* semaphore for accessing this node's data */
-#endif /* ENABLE_PTHREADS */
+#endif
   };
 
 struct howl

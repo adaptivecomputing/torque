@@ -406,7 +406,7 @@ int DIS_tcp_wflush(
   {
   size_t ct;
   int  i;
-  char *pb;
+  char *pb = NULL;
 
   struct tcpdisbuf *tp;
 
@@ -781,9 +781,9 @@ static int tcp_puts(
   char *id = "tcp_puts";
 #endif
 
-  struct tcp_chan *tcp;
-  struct tcpdisbuf *tp;
-  char *temp;
+  struct tcp_chan *tcp = NULL;
+  struct tcpdisbuf *tp = NULL;
+  char *temp = NULL;
   int leadpct, trailpct; 
   size_t newbufsize;
 
@@ -1039,8 +1039,8 @@ void DIS_tcp_setup(
   int fd)
 
   {
-  struct tcp_chan *tcp;
-  struct tcpdisbuf *tp;
+  struct tcp_chan *tcp = NULL;
+  struct tcpdisbuf *tp = NULL;
 
   /* check for bad file descriptor */
 
@@ -1092,6 +1092,7 @@ void DIS_tcp_setup(
 
     if (tcparray == NULL)
       {
+      /* Remember calloc will initialize memory to 0 */
       tcparray = (struct tcp_chan **)calloc(
         tcparraymax,
         sizeof(struct tcp_chan *));
@@ -1144,6 +1145,8 @@ void DIS_tcp_setup(
     {
     tcparray[fd] = (struct tcp_chan *)malloc(sizeof(struct tcp_chan));
 
+    memset(tcparray[fd], 0, sizeof(struct tcp_chan));
+
     tcp = tcparray[fd];
 
     if (tcp == NULL)
@@ -1158,6 +1161,7 @@ void DIS_tcp_setup(
     pthread_mutex_lock(&tcp->tcp_mutex);
 #endif
 
+    /* Setting up the read buffer */
     tp = &tcp->readbuf;
 
     tp->tdis_thebuf = (char *)malloc(THE_BUF_SIZE);
@@ -1171,8 +1175,12 @@ void DIS_tcp_setup(
 
       goto error;
       }
+
+    memset(tp->tdis_thebuf, 0, THE_BUF_SIZE);
+
     tp->tdis_bufsize = THE_BUF_SIZE;
 
+    /* Setting up the write buffer */
     tp = &tcp->writebuf;
 
     tp->tdis_thebuf = (char *)malloc(THE_BUF_SIZE);
@@ -1186,7 +1194,11 @@ void DIS_tcp_setup(
 
       goto error;
       }
+
+    memset(tp->tdis_thebuf, 0, THE_BUF_SIZE);
+
     tp->tdis_bufsize = THE_BUF_SIZE;
+
     }
 #ifdef ENABLE_PTHREADS
   else

@@ -137,10 +137,11 @@
 /* NOTE:  submitfilter specified using SUBMITFILTER in $TORQUEHOME/torque.cfg */
 
 static char *DefaultFilterPath = "/usr/local/sbin/torque_submitfilter";
-
 static char *DefaultXauthPath = XAUTH_PATH;
 
 #define SUBMIT_FILTER_ADMIN_REJECT_CODE -1
+
+#define MAX_RADIX_NUM_LEN 4 /* allow only 9999 for a maximum number on the radix */
 
 #define MAX_QSUB_PREFIX_LEN 32
 
@@ -183,7 +184,6 @@ static char *x11_get_proto(
   FILE *f;
   int  got_data = 0;
   char *display, *p;
-
   struct stat st;
 
   proto[0]  = '\0';
@@ -196,14 +196,12 @@ static char *x11_get_proto(
   if ((display = getenv("DISPLAY")) == NULL)
     {
     fprintf(stderr, "qsub: DISPLAY not set\n");
-
     return(NULL);
     }
 
   if (stat(xauth_path, &st))
     {
     perror("qsub: xauth: ");
-
     return(NULL);
     }
 
@@ -372,7 +370,7 @@ char *smart_strtok(
 
   start = *ptrPtr;
 
-  tmpLineSize = (line == NULL) ? strlen(*ptrPtr) + 1 : strlen(line) + 1;
+  tmpLineSize = (line == NULL) ? strlen(*ptrPtr + 1) : strlen(line) + 1;
   tmpLine = (char *)malloc(tmpLineSize * sizeof(char));
 
   tmpLine[0] = '\0';
@@ -1215,6 +1213,7 @@ int Stagein_opt   = FALSE;
 int Stageout_opt  = FALSE;
 int Grouplist_opt = FALSE;
 int Forwardx11_opt = FALSE;
+int Jobradix_opt  = FALSE;
 int Umask_opt = FALSE;
 char *v_value = NULL;
 
@@ -3871,6 +3870,40 @@ int process_opts(
               set_attr(&attrib, ATTR_depend, pdepend);
               }
             }
+          else if(!strcmp(keyword, ATTR_job_radix))
+            {
+              int radix_value;
+              int len;
+
+              if_cmd_line(Jobradix_opt)
+              {
+                Jobradix_opt = passet;
+
+                len = strlen(valuewd);
+                if (len > MAX_RADIX_NUM_LEN)
+                  {
+                  fprintf(stderr, "qsub: illegal -W value for job_radix\n");
+                  }
+                for(i = 0; i < len; i++)
+                  {
+                  if(!isdigit(valuewd[i])) /* verify the string is all digits */
+                    break;
+                  }
+                    
+                if(i == len) /* we parsed the whole valuewd string and it is a number */
+                  {
+                  radix_value = atoi(valuewd);
+                  if(radix_value < 2)
+                    {
+                    fprintf(stderr, "qsub: illegal -W. job_radix must be >= 2\n");
+                    }
+                  else
+                    set_attr(&attrib, ATTR_job_radix, valuewd);
+                  }
+                else
+                  fprintf(stderr, "qsub: illegal -W value for job_radix\n");
+              }
+            }
           else if (!strcmp(keyword, ATTR_stagein))
             {
             if_cmd_line(Stagein_opt)
@@ -4778,6 +4811,12 @@ int main(
 
       exit(1);
       }
+    }
+
+  /* If job_radix is not set set it to 0 */
+  if(Jobradix_opt == FALSE)
+    {
+    set_attr(&attrib, ATTR_job_radix, "0");
     }
 
   /* if script is empty, get standard input */

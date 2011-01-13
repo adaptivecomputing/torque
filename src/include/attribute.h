@@ -101,6 +101,9 @@
  * are created with default values.
  */
 
+#include <sys/time.h>
+#include <time.h>
+
 #ifndef ATTRIBUTE_H
 #define ATTRIBUTE_H 1
 
@@ -178,6 +181,7 @@ union attr_val    /* the attribute value */
 
   struct  pbsnode      *at_jinfo; /* ptr to node's job info  */
   short        at_short; /* short int; node's state */
+  struct timeval	at_timeval; 
   };
 
 
@@ -237,6 +241,7 @@ typedef struct attribute_def attribute_def;
 #define ATR_TYPE_LL      9 /* Long (64 bit) integer */
 #define ATR_TYPE_SHORT   10 /* short integer    */
 #define ATR_TYPE_JINFOP  13 /* struct jobinfo*  */
+#define ATR_TYPE_TV		 14 /* struct timeval */
 
 /* Defines for  Flag field in attribute_def         */
 
@@ -361,7 +366,8 @@ extern int  decode_depend(attribute *patr, char *name, char *rn, char *val);
 extern int  decode_hold(attribute *patr, char *name, char *rn, char *val);
 extern int  decode_uacl(attribute *patr, char *name, char *rn, char *val);
 extern int  decode_unkn(attribute *patr, char *name, char *rn, char *val);
-
+extern int decode_tv(attribute *patr, char *name,  char *rescn,	char *val);
+ 
 extern int  encode_b(attribute *attr, tlist_head *phead, char *atname,
                            char *rsname, int mode);
 extern int  encode_c(attribute *attr, tlist_head *phead, char *atname,
@@ -388,6 +394,9 @@ extern int encode_depend(attribute *attr, tlist_head *phead, char *atname,
                                char *rsname, int mode);
 extern int encode_hold(attribute *attr, tlist_head *phead, char *atname,
                              char *rsname, int mode);
+int encode_tv(attribute *attr, tlist_head *phead, char *atname,
+							char *rsname, int mode);
+
 
 extern int set_b(attribute *attr, attribute *new, enum batch_op);
 extern int set_c(attribute *attr, attribute *new, enum batch_op);
@@ -401,6 +410,8 @@ extern int set_hostacl(attribute *attr, attribute *new, enum batch_op);
 extern int set_uacl(attribute *attr, attribute *new, enum batch_op);
 extern int set_unkn(attribute *attr, attribute *new, enum batch_op);
 extern int set_depend(attribute *attr, attribute *new, enum batch_op);
+extern int set_tv(struct attribute *attr, struct attribute *new, enum batch_op op);
+
 
 extern int comp_b(attribute *, attribute *);
 extern int comp_c(attribute *, attribute *);
@@ -414,6 +425,7 @@ extern int comp_resc2(attribute *, attribute *, int, char *);
 extern int comp_unkn(attribute *, attribute *);
 extern int comp_depend(attribute *, attribute *);
 extern int comp_hold(attribute *, attribute *);
+int comp_tv(struct attribute *attr, struct attribute *with);
 
 extern int action_depend(attribute *, void *, int);
 
@@ -465,6 +477,7 @@ extern int      node_alt_name(attribute*, void*, int);
 extern int      set_note_str(attribute *attr, attribute *new, enum batch_op);
 extern int      set_alt_name_str(attribute *attr, attribute *new, enum batch_op);
 extern void     replace_attr_string(attribute*, char*);
+extern int 		job_radix_action (attribute *new, void *pobj, int actmode);
 
 /* Token manipulation functions */
 

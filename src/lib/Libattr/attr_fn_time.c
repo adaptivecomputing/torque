@@ -301,10 +301,11 @@ int encode_time(
   n   = n % 60;
   sec = n;
 
-  pv = cvnbuf;
 
-  sprintf(pv, "%02d:%02d:%02d",
+  sprintf(cvnbuf, "%02d:%02d:%02d",
           hr, min, sec);
+
+  pv = cvnbuf;
 
   pv += strlen(pv);
 

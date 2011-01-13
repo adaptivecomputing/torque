@@ -1627,12 +1627,30 @@ void on_job_exit(
           }
         else
           {
+          struct timeval tv, *tv_attr, result;
+          struct timezone tz;
+
           /* First time in - Set the job completion time */
 
           pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long = (long)time(NULL);
           pjob->ji_wattr[JOB_ATR_comp_time].at_flags |= ATR_VFLAG_SET;
 
           ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, pjob);
+
+          if(gettimeofday(&tv, &tz) == 0)
+            {
+            tv_attr = &pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval;
+            timeval_subtract(&result, &tv, tv_attr);
+            pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval.tv_sec = result.tv_sec;
+            pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval.tv_usec = result.tv_usec;
+            pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_flags |= ATR_VFLAG_SET;
+            }
+          else
+            {
+            pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval.tv_sec = 0;
+            pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval.tv_usec = 0;
+            }
+
           job_save(pjob, SAVEJOB_FULL, 0);
           }
 

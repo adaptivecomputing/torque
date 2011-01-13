@@ -44,6 +44,7 @@ extern long system_ncpus;
 
 int           *VPToCPUMap = NULL;  /* map of virtual processors to cpus (alloc) */
 
+extern char    mom_host[];
 extern int     LOGLEVEL;
 
 extern char    mom_short_name[];

@@ -160,7 +160,10 @@
 #define ATTR_restart_name	"restart_name"   /* saved name of checkpoint restart file */
 #define ATTR_comp_time   	"comp_time"
 #define ATTR_reported    	"reported"
-#define ATTR_intcmd      "inter_cmd"
+#define ATTR_intcmd      	"inter_cmd"
+#define ATTR_job_radix		"job_radix"
+#define ATTR_sister_list	"sister_list"
+#define ATTR_total_runtime  "total_runtime"
 #define ATTR_P           "proxy_user"
 #define ATTR_node_exclusive "node_exclusive"
 #define ATTR_exec_gpus   "exec_gpus"

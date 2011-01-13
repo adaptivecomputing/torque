@@ -174,6 +174,8 @@ extern char *get_local_script_path(job *pjob, char *base);
 
 /* END external prototypes */
 
+void exit_mom_job(job *pjob, task *ptask, int mom_radix);
+
 /*
  * catch_child() - the signal handler for SIGCHLD.
  *
@@ -318,6 +320,8 @@ scan_for_exiting(void)
   unsigned int momport = 0;
   static int ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
   static int ObitsAllowed = 1;
+  int mom_radix = 0;
+  int index;
 
   int NumSisters;
 
@@ -422,6 +426,16 @@ scan_for_exiting(void)
     ** Check each EXITED task.  They transition to DEAD here.
     */
 
+    if (LOGLEVEL >= 6)
+      {
+      log_record(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_SERVER,
+        id,
+        "working on a job");
+      }
+
+
     for (
       ptask = (task *)GET_NEXT(pjob->ji_tasks);
       ptask != NULL;
@@ -446,7 +460,44 @@ scan_for_exiting(void)
           pjob->ji_qs.ji_jobid,
           "job was terminated");
 
-        NumSisters = send_sisters(pjob, IM_KILL_JOB);
+        if(mom_radix < 2)
+          {
+          NumSisters = send_sisters(pjob, IM_KILL_JOB);
+          }
+        else
+          {
+          NumSisters = 1; /* We use this for later */
+          if(pjob->ji_sampletim == 0)
+            {
+            pjob->ji_sampletim = time(NULL);
+            if((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
+              {
+              /* only call send_sisters_radix if this is mother superior
+                 intermediate moms already called this in im_request
+                 IM_KILL_JOB_RADIX */
+              NumSisters = send_sisters_radix(pjob, IM_KILL_JOB_RADIX);
+              pjob->ji_outstanding = NumSisters;
+              }
+            }
+          else
+            {
+            time_t time_now;
+
+            time_now = time(NULL);
+            if(time_now - pjob->ji_sampletim > 5)
+              {
+               
+               if((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
+                 {
+                 /* only call send_sisters_radix if this is mother superior
+                    intermediate moms already called this in im_request
+                    IM_KILL_JOB_RADIX */
+                 NumSisters = send_sisters_radix(pjob, IM_KILL_JOB_RADIX);
+                 pjob->ji_outstanding = NumSisters;
+                 }
+               }
+            }
+          }        
 
         if (NumSisters == 0)
           {
@@ -564,6 +615,25 @@ scan_for_exiting(void)
       task_save(ptask);
       }  /* END for (ptask) */
 
+	  /* If we are an intermediate mom we need to see if everyone has checked in */
+	  if((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
+	    {
+	    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) && (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
+	  	  {
+	  	  if(LOGLEVEL >= 3)
+	  	    {
+	  	    snprintf(log_buffer, 1024, "%s:intermediate mom has not received reply from all siblings", id);
+	  	  	LOG_EVENT(
+	  	  	  PBSEVENT_JOB,
+	  	  	  PBS_EVENTCLASS_JOB,
+	  	  	  pjob->ji_qs.ji_jobid,
+	  	  	  log_buffer);
+	  	    }
+        
+	  	    continue;
+	  	  }
+	    }
+
     /*
     ** Look to see if the job has terminated.  If it is
     ** in any state other than EXITING continue on.
@@ -595,156 +665,42 @@ scan_for_exiting(void)
     */
 
 #ifndef NUMA_SUPPORT
-    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+    if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+    && ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0))
       {
-      int stream;
+      exit_mom_job(pjob, ptask, mom_radix);
+      continue;
+      }  /* END if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) */
 
-      stream = (pjob->ji_hosts == NULL) ?
-               -1 :
-               pjob->ji_hosts[0].hn_stream;
 
-      /*
-      ** Check to see if I'm still in touch with
-      ** the mother superior.  If not, I'm just going to
-      ** get rid of this job.
-      */
-
-      if (stream == -1)
+    /* Are we an intermediate mom? If so kill our job
+       and tell the mom who called us */
+    if(pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
+      {
+      if(pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING)
         {
-        if (LOGLEVEL >= 3)
-          {
-          LOG_EVENT(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            "connection to server lost - no obit sent - job will be purged");
-          }
-
-        if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
-          {
-          kill_job(pjob, SIGKILL, id, "connection to server lost - no obit sent");
-          }
-
-        job_purge(pjob);
-
-        continue;
-        }
-
-      /*
-      ** No event waiting for sending info to MS
-      ** so I'll just sit tight.
-      */
-
-      if (pjob->ji_obit == TM_NULL_EVENT)
-        {
-        if (LOGLEVEL >= 3)
-          {
-          LOG_EVENT(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            "obit method not specified for job - no obit sent");
-          }
-
-        continue;
-        }
-
-      /*
-      ** Check to see if any tasks are running.
-      */
-
-      ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
-      while (ptask != NULL)
-        {
-        if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
-          break;
-
-        ptask = (task *)GET_NEXT(ptask->ti_jobtask);
-        }
-
-      /* Still somebody there so don't send it yet.  */
-
-      if (ptask != NULL)
-        {
-        if (LOGLEVEL >= 3)
-          {
-          LOG_EVENT(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            "one or more running tasks found - no obit sent");
-          }
-
-        continue;
-        }
-
-      if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-          pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
-        {
-
-        if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, PE_IO_TYPE_NULL) != 0)
-          {
-          log_err(-1, id, "user parallel epilog failed");
-          }
-
-        if (run_pelog(PE_EPILOG, path_epilogp, pjob, PE_IO_TYPE_NULL) != 0)
-          {
-          log_err(-1, id, "parallel epilog failed");
-          }
+        pjob->ji_obit = 1;
+        exit_mom_job(pjob, ptask, mom_radix);
         }
       else
         {
+        kill_job(pjob, SIGKILL, id, "kill_job message received");
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-        if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, PE_IO_TYPE_STD) != 0)
-          {
-          log_err(-1, id, "parallel user epilog failed");
-          }
+          /*pjob->ji_obit = event;*/
 
-        if (run_pelog(PE_EPILOG, path_epilogp, pjob, PE_IO_TYPE_STD) != 0)
-          {
-          log_err(-1, id, "parallel epilog failed");
-          }
+          if(multi_mom)
+            {
+            momport = pbs_rm_port;
+            }
+          job_save(pjob, SAVEJOB_QUICK, momport);
+
+          exiting_tasks = 1; /* Setting this to 1 will cause scan_for_exiting to execute */
+
         }
-      /*
-      ** No tasks running ... format and send a
-      ** reply to the mother superior and get rid of
-      ** the job.
-      */
+        continue;
+      }
 
-      im_compose(
-        stream,
-        pjob->ji_qs.ji_jobid,
-        cookie,
-        IM_ALL_OKAY,
-        pjob->ji_obit,
-        TM_NULL_TASK);
-
-      diswul(stream, resc_used(pjob, "cput", gettime));
-
-      diswul(stream, resc_used(pjob, "mem", getsize));
-
-      diswul(stream, resc_used(pjob, "vmem", getsize));
-
-      rpp_flush(stream);
-
-      if (LOGLEVEL >= 6)
-        {
-        LOG_EVENT(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "all tasks complete - purging job as sister");
-        }
-
-      DBPRT(("all tasks complete - purging job as sister (%s)\n",
-
-             pjob->ji_qs.ji_jobid));
-
-      job_purge(pjob);
-
-      continue;
-	    }
 #endif /* NUMA_SUPPORT */
 
     /*
@@ -800,6 +756,15 @@ scan_for_exiting(void)
      * +  Run the epilogue script (if one)
      * +  Send the Job Obit Request (notice).
      */
+
+    if (LOGLEVEL >= 6)
+      {
+      log_record(
+        PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_SERVER,
+        id,
+        "calling mom_open_socket_to_jobs_server");
+      }
 
     sock = mom_open_socket_to_jobs_server(pjob, id, preobit_reply);
 
@@ -1722,9 +1687,12 @@ void init_abort_jobs(
   struct dirent *pdirent;
   job  *pj;
   char  *job_suffix = JOB_FILE_SUFFIX;
-  int            job_suf_len = strlen(job_suffix);
+  int   job_suf_len = strlen(job_suffix);
   char  *psuffix;
   unsigned int momport = 0;
+  int mom_radix = 0;
+  int index;
+
 
   if (LOGLEVEL >= 6)
     {
@@ -1947,10 +1915,22 @@ void init_abort_jobs(
 
         pj->ji_resources = (noderes *)calloc(sisters, sizeof(noderes));
 
-        send_sisters(pj, IM_KILL_JOB);
+        index = find_attr(job_attr_def, "job_radix", JOB_ATR_LAST);
+
+        mom_radix = pj->ji_wattr[index].at_val.at_long;
+
+        if(mom_radix)
+          {
+          send_sisters_radix(pj, IM_KILL_JOB_RADIX);
+          }
+        else
+          {
+          send_sisters(pj, IM_KILL_JOB);
+          }
 
         continue;
         }
+
 #endif /* ndef NUMA_SUPPORT */
 
       /* If mom was initialized with a -r any running processes have already
@@ -2059,5 +2039,208 @@ void mom_deljob(
   return;
   }  /* END mom_deljob() */
 
+
+
+void exit_mom_job( job *pjob, task *ptask, int mom_radix )
+  {
+  char *id = "exit_mom_job";
+  int stream;
+  char  *cookie;
+  u_long gettime(resource *);
+  u_long getsize(resource *);
+  int im_compose(int, char *, char *, int, tm_event_t, tm_task_id);
+
+    stream = (pjob->ji_hosts == NULL) ?
+             -1 :
+             pjob->ji_hosts[0].hn_stream;
+    
+  
+  if (LOGLEVEL >= 6)
+    {
+    log_record(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      "I'm not mother superior");
+    }
+  
+  
+  /*
+  ** Check to see if I'm still in touch with
+  ** the mother superior.  If not, I'm just going to
+  ** get rid of this job.
+  */
+  
+  if (stream == -1)
+    {
+    if (LOGLEVEL >= 3)
+      {
+      LOG_EVENT(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "connection to server lost - no obit sent - job will be purged");
+      }
+  
+    if(pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
+      {
+      kill_job(pjob, SIGKILL, id, "connection to server lost - no obit sent");
+      }
+  
+    job_purge(pjob);
+  
+    return;
+    }
+  
+  /*
+  ** No event waiting for sending info to MS
+  ** so I'll just sit tight.
+  */
+  
+  if (pjob->ji_obit == TM_NULL_EVENT)
+    {
+    if (LOGLEVEL >= 3)
+      {
+      LOG_EVENT(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "obit method not specified for job - no obit sent");
+      }
+  
+    return;
+    }
+  
+  
+  /*
+  ** Check to see if any tasks are running.
+  */
+  
+  ptask = (task *)GET_NEXT(pjob->ji_tasks);
+  
+  while (ptask != NULL)
+    {
+    if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
+      break;
+  
+    ptask = (task *)GET_NEXT(ptask->ti_jobtask);
+    }
+  
+  /* Still somebody there so don't send it yet. */
+  
+  if (ptask != NULL)
+    {
+    if (LOGLEVEL >= 3)
+      {
+      LOG_EVENT(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "one or more running tasks found - no obit sent");
+      }
+  
+    return;
+    }
+  
+  if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+      pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+    {
+  
+    if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, PE_IO_TYPE_NULL) != 0)
+      {
+      log_err(-1, id, "user parallel epilog failed");
+      }
+  
+    if (run_pelog(PE_EPILOG, path_epilogp, pjob, PE_IO_TYPE_NULL) != 0)
+      {
+      log_err(-1, id, "parallel epilog failed");
+      }
+    }
+  else
+    {
+  
+    if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, PE_IO_TYPE_STD) != 0)
+      {
+      log_err(-1, id, "parallel user epilog failed");
+      }
+  
+    if (run_pelog(PE_EPILOG, path_epilogp, pjob, PE_IO_TYPE_STD) != 0)
+      {
+      log_err(-1, id, "parallel epilog failed");
+      }
+    }
+  
+  /*
+  ** No tasks running ... format and send a
+  ** reply to the mother superior and get rid of
+  ** the job.
+  */
+  
+  if (LOGLEVEL >= 3)
+    {
+    log_record(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      "sending IM_RADIX_ALL_OK");
+    }
+  
+  cookie = pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str;
+  
+  if(mom_radix < 2)
+    {
+    im_compose(
+      stream,
+      pjob->ji_qs.ji_jobid,
+      cookie,
+      IM_ALL_OKAY,
+      pjob->ji_obit,
+      TM_NULL_TASK);
+    }
+  else
+    {
+    im_compose(
+      stream,
+      pjob->ji_qs.ji_jobid,
+      cookie,
+      IM_RADIX_ALL_OK,
+      IM_KILL_JOB_RADIX,
+      TM_NULL_TASK);
+    }
+  
+  diswul(stream, resc_used(pjob, "cput", gettime));
+  
+  diswul(stream, resc_used(pjob, "mem", getsize));
+  
+  diswul(stream, resc_used(pjob, "vmem", getsize));
+
+  if(mom_radix >= 2)
+    {
+    diswsi(stream, pjob->ji_nodeid);		
+    }
+  
+  rpp_flush(stream);
+  
+  if (LOGLEVEL >= 6)
+    {
+    LOG_EVENT(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "all tasks complete - purging job as sister");
+    }
+  
+  DBPRT(("all tasks complete - purging job as sister (%s)\n",
+  
+         pjob->ji_qs.ji_jobid));
+  
+  job_purge(pjob);
+
+  return;
+  
+  }
+
+
 /* END catch_child() */
+
 

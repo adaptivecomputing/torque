@@ -1068,8 +1068,9 @@ static int svr_strtjob2(
   int old_state;
   int old_subst;
   attribute *pattr;
-
   char tmpLine[1024];
+  struct timeval start_time;
+  struct timezone tz;
 
   old_state = pjob->ji_qs.ji_state;
   old_subst = pjob->ji_qs.ji_substate;
@@ -1086,6 +1087,15 @@ static int svr_strtjob2(
 
   pattr->at_val.at_long++;
   pattr->at_flags |= ATR_VFLAG_SET;
+
+  /* This marks the start of total run time from the server's perspective */
+  pattr = &pjob->ji_wattr[(int)JOB_ATR_total_runtime];
+  if(gettimeofday(&start_time, &tz) == 0)
+    {
+    pattr->at_val.at_timeval.tv_sec = start_time.tv_sec;
+    pattr->at_val.at_timeval.tv_usec = start_time.tv_usec;
+    }
+
 
   /* send the job to MOM */
 

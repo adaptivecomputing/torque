@@ -204,7 +204,19 @@ int escape_xml(
   {
   int i;
   int final_len = 0;
-  int len = strlen(in);
+  int len;
+
+  if(in == NULL)
+    {
+    return(BUFFER_OVERFLOW);
+    }
+
+  if(out == NULL)
+    {
+    return(BUFFER_OVERFLOW);
+    }
+
+  len = strlen(in);
 
   for (i = 0; i < len; i++)
     {

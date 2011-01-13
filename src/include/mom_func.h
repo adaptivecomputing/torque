@@ -115,6 +115,17 @@ struct cphosts
   char *cph_to;
   };
 
+struct radix_buf
+  {
+  int current_string_len;
+  int max_string_len;
+  char *host_list;
+  char *port_list;
+  int current_port_str_len;
+  int max_port_str_len;
+  int count;
+  };				  
+
 extern int cphosts_num;
 
 /* holds the varattrs */
@@ -179,6 +190,7 @@ extern void  term_job(job *);
 
 extern struct passwd *check_pwd(job *);
 extern int   send_sisters(job *, int);
+extern int   send_sisters_radix(job *, int);
 extern int   task_save(task *) ;
 extern void  DIS_rpp_reset(void);
 extern void  checkret(char **, long);

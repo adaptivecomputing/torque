@@ -103,6 +103,7 @@
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
+#include <sys/wait.h>
 
 #include "libpbs.h"
 #include "pbs_ifl.h"
@@ -165,7 +166,10 @@ const char *PMOMCommand[] =
   "GET_RESC",
   "ABORT_JOB",
   "GET_TID",
-  "ERROR",     /* 12+ */
+  "RADIX_ALL_OK",
+  "JOIN_JOB_RADIX",
+  "KILL_JOB_RADIX",
+  "ERROR",     /* 14+ */
   NULL
   };
 
@@ -174,10 +178,34 @@ char noglobid[] = "none";
 
 extern int    LOGLEVEL;
 extern long   TJobStartBlockTime;
+enum rwhich {invalid, listen_out, listen_err, new_out, new_err};
+struct routefd
+  {
+    enum rwhich       r_which; /* Is this the listen out, err or new out and err sockets */
+      unsigned short    r_fd;
+        };
+
+fd_set readset;
+
 
 /* external functions */
 
-int allocate_demux_sockets(job *pjob);
+extern struct radix_buf **allocate_sister_list(int radix);
+extern int add_host_to_sister_list(char *, unsigned short , struct radix_buf *);
+extern void free_sisterlist(struct radix_buf **list, int radix);
+extern int open_demux(u_long addr, int    port);
+extern int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval *y);
+
+
+extern int open_rpp_stream_to_sisters(
+  job *pjob, 
+  int com,
+  int mom_radix, 
+  hnodent *hosts,
+  struct radix_buf **sister_list, 
+  tlist_head *phead,
+  int    flag);
+int allocate_demux_sockets(job *pjob, int flag);
 
 extern void exec_bail(job *, int);
 extern int TMomFinalizeJob1(job *, pjobexec_t *, int *);
@@ -186,22 +214,13 @@ extern int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
 extern int TMOMJobGetStartInfo(job *, pjobexec_t **) ;
 extern int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
 extern void job_nodes(job *);
+extern void sister_job_nodes( job *pjob, char *radix_hosts, char *radix_ports );
 extern int tlist(tree *, char *, int);
 extern void DIS_tcp_funcs();
 extern int TTmpDirName(job *, char *);
 extern int TMakeTmpDir(job *, char *);
 extern void mom_server_close_stream(int stream);
 extern int exec_job_on_ms(job *pjob);
-char *cat_dirs(char *root, char *base);
-char *get_local_script_path(job *pjob, char *base);
-int get_job_struct(
-  job **pjob, 
-  char *jobid, 
-  int command, 
-  int stream, 
-  struct sockaddr_in *addr,
-  tm_node_id nodeid);
-int run_prologue_scripts(job *pjob);
  
 #ifdef PENABLE_LINUX26_CPUSETS
 extern int use_cpusets(job *);
@@ -210,6 +229,13 @@ extern int use_cpusets(job *);
 
 /* END external functions */
 
+int run_prologue_scripts(job *pjob);
+int get_job_struct(job **pjob, char *jobid, int command, int stream, struct sockaddr_in *addr, tm_node_id nodeid);
+char *cat_dirs(char *root, char *base);
+char *get_local_script_path(job *pjob, char *base);
+int run_prologue_scripts(job *pjob);
+void *im_demux_thread(void *threadArg);
+void fork_demux(job *pjob);
 
 
 /*
@@ -234,7 +260,7 @@ int task_save(
   strcpy(namebuf, path_jobs);     /* job directory path */
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
 
-  if (multi_mom)
+  if(multi_mom)
     {
     sprintf(portname, "%d", pbs_rm_port);
     strcat(namebuf, portname);
@@ -572,7 +598,7 @@ int task_recov(
   strcpy(namebuf, path_jobs);     /* job directory path */
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
 
-  if (multi_mom)
+  if(multi_mom)
     {
     sprintf(portname, "%d", pbs_rm_port);
     strcat(namebuf, portname);
@@ -864,9 +890,9 @@ int send_sisters(
           log_buffer);
         }
 
-	    if (LOGLEVEL >= 6)
+	    if(LOGLEVEL >= 6)
 	      {
-	      if (EMsg[0] != 0)
+	      if(EMsg[0] != 0)
 		      {
 		      log_record(
 		  	  PBSEVENT_ERROR,
@@ -953,6 +979,215 @@ int send_sisters(
 
   return(num);
   }  /* END send_sisters() */
+
+
+/**
+ * Send a message (command = com) to all the other MOMs in the 
+ * job -> pjob->ji_sisters. 
+ *
+ * @see scan_for_exiting() - parent - report to sisters upon job completion
+ * @see examine_all_polled_jobs() - parent - poll job status info
+ * @see exec_bail() - parent - abort parallel job
+ *
+ * @see start_exec() - peer - opens connections to sisters at parallel job start
+ *
+ * @return 0 on FAILURE or number of sister mom's successfully contacted on SUCCESS
+ */
+
+int send_sisters_radix(
+
+  job *pjob,  /* I */
+  int  com)   /* I (command to send to all sisters) */
+
+  {
+  char *id = "send_sisters_radix";
+
+  int     i, num, ret, job_radix;
+  eventent *ep;
+  char     *cookie;
+  char EMsg[1024];
+
+  if (LOGLEVEL >= 4)
+    {
+    sprintf(log_buffer, "sending command %s for job %s (%d)",
+            PMOMCommand[com],
+            pjob->ji_qs.ji_jobid,
+            com);
+
+    LOG_EVENT(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+    }
+
+  if (!(pjob->ji_wattr[(int)JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+    {
+    /* cookie not set - return FAILURE */
+
+    return(0);
+    }
+
+  cookie = pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str;
+
+  num = 0;
+
+  if (com == IM_ABORT_JOB)
+    {
+    snprintf(log_buffer, 1024, "sending ABORT to sisters for job %s",
+             pjob->ji_qs.ji_jobid);
+
+    LOG_EVENT(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+    }
+
+  /* walk thru sister node list, contact each mom in the radix */
+  job_radix = 0;
+  for (i = 1; (i < pjob->ji_numsisternodes) && (job_radix < pjob->ji_radix); i++)
+    {
+    hnodent *np = &pjob->ji_sisters[i];
+
+	if((pjob->ji_nodeid == 0 && np->hn_node == 0) || (pjob->ji_im_nodeid == 1 && np->hn_node == 1))
+	  continue;	 /* this is me */
+      
+
+    job_radix++;
+    if (np->hn_sister != SISTER_OKAY) /* sister is gone? */
+      {
+      snprintf(log_buffer, 1024, "%s:  sister #%d (%s) is not ok (%d)",
+               id,
+               i,
+               (np->hn_host != NULL) ? np->hn_host : "NULL",
+               np->hn_sister);
+
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+
+      /* garrick commented out continue statement below */
+
+      /* continue; */
+      }
+
+    EMsg[0] = 0;
+    np->hn_stream = rpp_open(np->hn_host, np->hn_port, EMsg);
+
+    if (np->hn_stream == -1)
+      {
+      snprintf(log_buffer, 1024, "%s:  cannot open rpp connection to sister #%d (%s) - %s",
+               id,
+               i,
+               (np->hn_host != NULL) ? np->hn_host : "NULL",
+               EMsg);
+
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      }
+
+    if(LOGLEVEL >= 6)
+	    {
+	    if(EMsg[0] != 0)
+		    {
+		    log_record(
+		    PBSEVENT_ERROR,
+		    PBS_EVENTCLASS_JOB,
+		    pjob->ji_qs.ji_jobid,
+		    EMsg);
+		    }
+	    }
+
+    
+
+    ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);
+
+    if (ep == NULL)
+      {
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "cannot alloc event object in send_sisters");
+
+      continue;
+      }
+
+    ret = im_compose(
+            np->hn_stream,
+            pjob->ji_qs.ji_jobid,
+            cookie,
+            com,
+            ep->ee_event,
+            TM_NULL_TASK);
+
+    if (ret != DIS_SUCCESS)
+      {
+      snprintf(log_buffer, 1024, "%s:  cannot compose message to sister #%d (%s) - %d",
+               id,
+               i,
+               (np->hn_host != NULL) ? np->hn_host : "NULL",
+               ret);
+
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+
+      ret = rpp_flush(np->hn_stream);
+      /*rpp_close(np->hn_stream);*/
+
+      np->hn_stream = -1;
+      np->hn_sister = SISTER_EOF;
+
+      continue;
+      }
+
+    ret = rpp_flush(np->hn_stream);
+
+    if (ret == -1)
+      {
+      snprintf(log_buffer, 1024, "%s:  cannot flush message to sister #%d (%s)",
+               id,
+               i,
+               (np->hn_host != NULL) ? np->hn_host : "NULL");
+
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+
+      rpp_close(np->hn_stream);
+
+      np->hn_stream = -1;
+      np->hn_sister = SISTER_EOF;
+
+      continue;
+      }
+
+    np->hn_sister = SISTER_OKAY;
+
+    num++;
+    }  /* END for (i) */
+
+  /* ji_sisters[0] is the MOM who called me and ji_sisters[1] is me.
+     set these sisters to SISTER_KILLDONE */
+  if(pjob->ji_sisters)
+    {
+    pjob->ji_sisters[0].hn_sister = SISTER_KILLDONE;
+    pjob->ji_sisters[1].hn_sister = SISTER_KILLDONE;
+    }
+
+  return(num);
+  }  /* END send_sisters_radix() */
 
 
 #define SEND_ERR(err) \
@@ -1296,7 +1531,7 @@ void node_bailout(
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-          if (multi_mom)
+          if(multi_mom)
             {
             momport = pbs_rm_port;
             }
@@ -1873,6 +2108,103 @@ char *resc_string(
   }  /* END resc_string() */
 
 
+/* create the list of sisters to contact for this radix group
+ * and send the job along
+ */
+int contact_sisters(
+  job *pjob, 
+  int sister_count,
+  char *radix_hosts,
+  char *radix_ports )
+  {
+  int index, j, i,  mom_radix;
+  hnodent      *np;
+  struct radix_buf **sister_list;
+  int ret;
+  tlist_head    phead;
+  attribute     *pattr;
+
+  /* we have to have a sister count of 2 or more for
+     this to work */
+  if(sister_count <= 2)
+    {
+    return(-1);
+    }
+
+  mom_radix = pjob->ji_radix;
+
+  CLEAR_HEAD(phead);
+	  
+  pattr = pjob->ji_wattr;
+	  
+  /* prepare the attributes to go out on the wire. at_encode does this */
+  for (i = 0;i < (int)JOB_ATR_LAST;i++)
+    {
+    (job_attr_def + i)->at_encode(
+  	  pattr + i,
+  	  &phead,
+  	  (job_attr_def + i)->at_name,
+  	  NULL,
+  	  ATR_ENCODE_MOM);
+    }  /* END for (i) */
+    
+  attrl_fixlink(&phead);
+
+  /* We have to put this job into the proper queues. These queues are filled
+	 in req_quejob and req_commit on Mother Superior for non-job_radix jobs */
+  append_link(&svr_newjobs, &pjob->ji_alljobs, pjob); /* from req_quejob */
+
+  delete_link(&pjob->ji_alljobs); /* from req_commit */
+  append_link(&svr_alljobs, &pjob->ji_alljobs, pjob); /* from req_commit */
+
+  /* initialize the nodes for every sister in this job
+     only the first mom_radix+1 entries will be used
+     for communication */
+  sister_job_nodes(pjob, radix_hosts, radix_ports);
+
+  /* we now need to create the list of sisters to send to
+     our intermediate MOMs in our job_radix */
+  sister_list = allocate_sister_list(mom_radix);
+
+  /* First add this MOM as the first entry for everyone in the
+     job_radix. This is how the children will know who
+     called them. */
+  np = &pjob->ji_sisters[1]; 
+  for(j = 0; j < mom_radix; j++)
+    {
+    add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[j]);
+    }
+
+  index = 2;   /* index 2 is the first child node. */
+
+  do
+    {
+    for(j = 0; j < mom_radix && index < sister_count; j++)
+      {
+	  	  /* Generate a list of sisters divided in to 'mom_radix' number of lists.
+	  	  	 For example an exec_host list of host1+host2+host3+host4+host5+host6+host7
+	  	  	 would create sister lists on a mom_radix of 3 like the following
+	  	  	 host1+host4+host7
+	  	  	 host2+host5
+	  	  	 host3+host6
+	  	  	*/
+	  	  np = &pjob->ji_sisters[index];
+	  	  add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[j]);
+	  	  index++;      
+      }
+    }while(index < sister_count);
+
+  pjob->ji_sisters[1].hn_node = 1; /* This will also identify us an an intermediate node later */
+
+  /* we go to pjob->ji_sisters[1] because we do not want to include the parent node that
+   	 sent the IM_JOIN_JOB_RADIX request as a sister to lower MOMs */
+  ret = open_rpp_stream_to_sisters(pjob, IM_JOIN_JOB_RADIX, mom_radix, &pjob->ji_sisters[1], sister_list, &phead, INTERMEDIATE_MOM);
+
+  free_sisterlist(sister_list, mom_radix);
+  free_attrlist(&phead);
+
+  return(ret);
+  } /*end contact_sisters */
 
 
 
@@ -1917,6 +2249,7 @@ void im_request(
 
   struct sockaddr_in *addr;
   u_long  ipaddr;
+  int   sister_count = 0;
   int   i, errcode, nodeidx = 0;
   int   reply;
   int   exitval;
@@ -1935,6 +2268,9 @@ void im_request(
   svrattrl  *psatl;
   attribute_def  *pdef;
   unsigned int momport = 0;
+
+  char *radix_hosts = NULL;
+  char *radix_ports = NULL;
 
   struct passwd  *check_pwd();
   extern int  resc_access_perm;
@@ -2413,11 +2749,420 @@ void im_request(
       break;  /* END IM_JOIN_JOB */
       }
 
+    case IM_JOIN_JOB_RADIX:
+      {
+      
+        /*
+         ** Sender is mother superior sending a job structure to me.
+         ** I am going to become a member of a job. But this is a job_radix
+         ** call so I am an intermediate MOM.
+         **
+         ** auxiliary info (
+         ** localnode id int;
+         ** number of nodes int;
+         ** stdout port int;
+         ** stderr port int;
+         ** nodeid 0 int;
+         ** ...
+         ** nodeid n-1 int;
+         ** jobattrs attrl;
+         ** )
+         */
+      
+      reply = 1;
+      
+      if (check_ms(stream, NULL))
+        goto fini;
+      
+      nodeid = disrsi(stream, &ret);
+      
+      if (ret != DIS_SUCCESS)
+        {
+        sprintf(log_buffer,"join_job request for job %s failed - %s (nodeid)",
+                jobid,
+                dis_emsg[ret]);
+      
+        log_err(-1, id, log_buffer);
+      
+        goto err;
+        }
+      
+      nodenum = disrsi(stream, &ret);
+      
+      if (ret != DIS_SUCCESS)
+        {
+        sprintf(log_buffer, "join_job request from node %d for job %s failed - %s (nodenum)",
+                nodeid,
+                jobid,
+                dis_emsg[ret]);
+      
+        log_err(-1, id, log_buffer);
+      
+        goto err;
+        }
+      
+      if (LOGLEVEL >= 3)
+        {
+        sprintf(log_buffer, "%s: JOIN_JOB_RADIX %s node %d",
+                id,
+                jobid,
+                nodeid);
+      
+        log_record(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          jobid,
+          log_buffer);
+        }
+      
+      np = NULL;
+      
+      /* does job already exist? */
+      
+      ret = get_job_struct(&pjob, jobid, command, stream, addr, nodeid);
+      if(ret != PBSE_NONE)
+        {
+        if(ret == PBSE_DISPROTO)
+          {
+          goto err;
+          }
+        else 
+          goto done;
+        }
+      
+      pjob->ji_numnodes = nodenum;  /* XXX */
+      
+      /* Get the nodes for this radix */
+      radix_hosts = disrst(stream, &ret);
+      if (ret != DIS_SUCCESS)
+        {
+        sprintf(log_buffer, "%s: join_job_radix request to node %d for job %s failed - %s (radix_hosts)",
+                id,
+                nodeid,
+                jobid,
+                dis_emsg[ret]);
+      
+        log_err(-1, id, log_buffer);
+      
+        goto err;
+        }
+      
+      radix_ports = disrst(stream, &ret);
+      if (ret != DIS_SUCCESS)
+        {
+        sprintf(log_buffer, "%s: join_job_radix request to node %d for job %s failed - %s (radix_ports)",
+                id,
+                nodeid,
+                jobid,
+                dis_emsg[ret]);
+      
+        log_err(-1, id, log_buffer);
+      
+        goto err;
+        }
+      
+      sister_count = disrsi(stream, &ret);
+      if (ret != DIS_SUCCESS)
+        {
+        sprintf(log_buffer, "%s: join_job_radix request to node %d for job %s failed - %s (radix_ports)",
+                id,
+                nodeid,
+                jobid,
+                dis_emsg[ret]);
+      
+        log_err(-1, id, log_buffer);
+      
+        goto err;
+        }
+
+      CLEAR_HEAD(lhead);
+      
+      if (decode_DIS_svrattrl(stream, &lhead) != DIS_SUCCESS)
+        {
+        sprintf(log_buffer, "%s: join_job request to node %d for job %s failed - %s (decode)",
+                id,
+                nodeid,
+                jobid,
+                dis_emsg[ret]);
+      
+        log_err(-1, id, log_buffer);
+      
+        goto err;
+        }
+      
+      /* Get the hashname from the attribute. */
+      
+      psatl = (svrattrl *)GET_NEXT(lhead);
+      
+      while (psatl)
+        {
+        if (!strcmp(psatl->al_name, ATTR_hashname))
+          {
+          strcpy(basename, psatl->al_value);
+      
+          break;
+          }
+      
+        psatl = (svrattrl *)GET_NEXT(psatl->al_link);
+        }
+      
+      strcpy(pjob->ji_qs.ji_jobid, jobid);
+      
+      strcpy(pjob->ji_qs.ji_fileprefix, basename);
+      
+      pjob->ji_modified       = 1;
+      pjob->ji_nodeid         = nodeid;
+      if(sister_count > 2)
+        pjob->ji_qs.ji_svrflags = JOB_SVFLG_INTERMEDIATE_MOM;
+      else
+        pjob->ji_qs.ji_svrflags = 0;
+
+      pjob->ji_qs.ji_un_type  = JOB_UNION_TYPE_MOM;
+      
+      /* decode attributes from request into job structure */
+      
+      errcode = 0;
+      resc_access_perm = READ_WRITE;
+      
+      for (psatl = (svrattrl *)GET_NEXT(lhead);
+           psatl;
+           psatl = (svrattrl *)GET_NEXT(psatl->al_link))
+        {
+        /* identify the attribute by name */
+      
+        index = find_attr(job_attr_def, psatl->al_name, JOB_ATR_LAST);
+      
+        if (index < 0)
+          {
+          /* didn`t recognize the name */
+      
+          errcode = PBSE_NOATTR;
+      
+          break;
+          }
+      
+        pdef = &job_attr_def[index];
+      
+        /* decode attribute */
+      
+        errcode = pdef->at_decode(
+                    &pjob->ji_wattr[index],
+                    psatl->al_name,
+                    psatl->al_resc,
+                    psatl->al_value);
+      
+        if (errcode != 0)
+          break;
+        }  /* END for (psatl) */
+      
+      free_attrlist(&lhead);
+      
+      if (errcode != 0)
+        {
+        if (LOGLEVEL >= 6)
+          {
+          sprintf(log_buffer, "%s:error %d received in joinjob - purging job",
+                  id, errcode);
+      
+          LOG_EVENT(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            log_buffer);
+          }
+      
+        job_purge(pjob);
+      
+        SEND_ERR(errcode)
+      
+        goto done;
+        }
+      
+      job_nodes(pjob);
+      
+      /* set remaining job structure elements */
+      
+      pjob->ji_qs.ji_state    = JOB_STATE_TRANSIT;
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_PRERUN;
+      pjob->ji_qs.ji_stime    = time_now;
+      pjob->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long = (long)time_now;
+      
+      pjob->ji_wattr[(int)JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
+      
+      /* check_pwd is setting up ji_un as type MOM
+      pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
+      pjob->ji_qs.ji_un.ji_newt.ji_fromsock = -1;
+      pjob->ji_qs.ji_un.ji_newt.ji_fromaddr = addr->sin_addr.s_addr;
+      pjob->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
+      */
+      
+      if (check_pwd(pjob) == NULL)
+        {
+        /* log_buffer populated in check_pwd() */
+      
+        LOG_EVENT(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buffer);
+      
+        job_purge(pjob);
+      
+        SEND_ERR(PBSE_BADUSER)
+      
+        goto done;
+        }
+      
+      /* should we make a tmpdir? */
+      
+      if (TTmpDirName(pjob, namebuf))
+        {
+        if (!TMakeTmpDir(pjob, namebuf))
+          {
+          LOG_EVENT(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            "cannot create tmp dir");
+      
+          job_purge(pjob);
+      
+          SEND_ERR(PBSE_BADUSER)
+      
+          goto done;
+          }
+        }
+      
+      #ifdef PENABLE_LINUX26_CPUSETS
+      
+      if (use_cpusets(pjob) == TRUE)
+        {
+        sprintf(log_buffer, "about to create cpuset for job %s.\n",
+          pjob->ji_qs.ji_jobid);
+      
+        log_ext(-1, id, log_buffer, LOG_INFO);
+      
+        if (create_jobset(pjob) == FAILURE)
+          {
+          sprintf(log_buffer, "Could not create cpuset for job %s.\n",
+            pjob->ji_qs.ji_jobid);
+      
+          log_err(-1, id, log_buffer);
+          }
+        }
+      
+      #endif  /* (PENABLE_LINUX26_CPUSETS) */
+      
+      ret = run_prologue_scripts(pjob);
+      if(ret != PBSE_NONE)
+        {
+        SEND_ERR(ret)
+        goto done;
+        }
+     
+      #if IBM_SP2==2  /* IBM SP with PSSP 3.1 */
+      
+      if (load_sp_switch(pjob) != 0)
+        {
+        job_purge(pjob);
+      
+        log_err(-1, id, "cannot load sp switch table");
+      
+        SEND_ERR(PBSE_SYSTEM)
+      
+        goto done;
+        }
+      
+      #endif /* IBM SP */
+      
+      if(multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+      
+      job_save(pjob, SAVEJOB_FULL, momport);
+      
+      sprintf(log_buffer, "JOIN JOB as node %d",
+        nodeid);
+      
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        jobid,
+        log_buffer);
+      
+      /* pass the radix on. Call all sisters in the sister list. The first
+         node in the list is the current mom so skip it. If the sister_count
+         is 1 then this is a leaf. Do not call contact_sisters */
+      
+        /*
+        ** if certain resource limits require that the job usage be
+        ** polled, we link the job to mom_polljobs.
+        **
+        ** NOTE: we overload the job field ji_jobque for this as it
+        ** is not used otherwise by MOM
+        */
+      
+      if(sister_count > 2)
+        {
+        index = find_attr(job_attr_def, "job_radix", JOB_ATR_LAST);
+ 
   
+        if((pjob->ji_wattr[index].at_flags & ATR_VFLAG_SET) &&
+	       (pjob->ji_wattr[index].at_val.at_long != 0))
+	        {
+	        /* parallel job */
+	        pjob->ji_radix = pjob->ji_wattr[index].at_val.at_long;
+	        }
+        pjob->ji_im_nodeid = 1; /* This will identify us as an intermediate node later */
+        if(allocate_demux_sockets(pjob, INTERMEDIATE_MOM))
+          goto done;
+
+        contact_sisters(pjob, sister_count, radix_hosts, radix_ports);
+        pjob->ji_sisters[0].hn_stream = stream; /* This is who called us */
+        job_save(pjob, SAVEJOB_FULL, momport);
+        reply = 0;
+        goto done; 
+        }
+      else
+        {
+      
+        sister_job_nodes(pjob, radix_hosts, radix_ports);
+        if (mom_do_poll(pjob))
+          append_link(&mom_polljobs, &pjob->ji_jobque, pjob);
+      
+        append_link(&svr_alljobs, &pjob->ji_alljobs, pjob);
+
+      
+        ret = im_compose(
+            stream,
+            jobid,
+            cookie,
+            IM_RADIX_ALL_OK,
+            IM_JOIN_JOB_RADIX,
+            fromtask);
+        }
+      
+      
+      goto done;
+      
+      /*NOTREACHED*/
+      
+      break;  /* END IM_JOIN_JOB_RADIX */
+      }  
+
     case IM_ALL_OKAY:
     case IM_ERROR:
 
       reply = 0;
+
+      break;
+
+    case IM_RADIX_ALL_OK:
+    case IM_KILL_JOB:
+    case IM_KILL_JOB_RADIX:
+
+      reply = 1;
 
       break;
 
@@ -2433,8 +3178,9 @@ void im_request(
   /*
   ** Check if job already exists.
   */
+  pjob = find_job(jobid);
 
-  if ((pjob = find_job(jobid)) == NULL)
+  if (pjob == NULL)
     {
     if (LOGLEVEL >= 0)
       {
@@ -2605,6 +3351,73 @@ void im_request(
   
       break;
       }
+
+    case IM_KILL_JOB_RADIX:
+      {
+        /*
+        ** Sender is (must be) mom superior or intermediate mom
+        ** commanding me to kill a job which I should be a
+        ** part of. Send a signal and set the jobstate to begin
+        ** the kill.  We wait for all tasks to exit before sending
+        ** an obit to mother superior. If I have spawned not tasks
+        ** no obit will be sent.
+        **
+        ** auxiliary info (
+        ** none;
+        ** )
+        */
+  
+        if (check_ms(stream, pjob))
+          goto fini;
+  
+        /*
+        ** Send the jobs a signal but we have to wait to
+        ** do a reply to mother superior until the procs
+        ** die and are reaped.
+        */
+  
+        reply = 0;                        
+
+        /* If we are an intermediate mom we need to tell our radix
+           the job has been killed */
+        if(pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
+          {
+          pjob->ji_outstanding = send_sisters_radix(pjob, IM_KILL_JOB_RADIX);
+
+          kill_job(pjob, SIGKILL, id, "kill_job message received");
+    
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+    
+          pjob->ji_obit = event;
+
+		  if(multi_mom)
+            {
+            momport = pbs_rm_port;
+            }
+          job_save(pjob, SAVEJOB_QUICK, momport);
+          exiting_tasks = 1; /* Setting this to 1 will cause scan_for_exiting to execute */
+          }
+        else
+          {
+    
+          kill_job(pjob, SIGKILL, id, "kill_job message received");
+    
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+    
+          pjob->ji_obit = event;
+    
+          if(multi_mom)
+            {
+            momport = pbs_rm_port;
+            }
+          job_save(pjob, SAVEJOB_QUICK, momport);
+    
+          exiting_tasks = 1; /* Setting this to 1 will cause scan_for_exiting to execute */
+    
+          }
+  
+        break;
+      }    
 
     case IM_SPAWN_TASK:
       {
@@ -3454,7 +4267,7 @@ void im_request(
             goto err;
             }
 
-            /* This is an O(N) algorithm We should do a countdown instead */
+          /* This is an O(N) algorithm We should do a countdown instead */
           for (i = 0;i < pjob->ji_numnodes;i++)
             {
             np = &pjob->ji_hosts[i];
@@ -3465,6 +4278,25 @@ void im_request(
 
           if (ep == NULL)
             {
+            if(LOGLEVEL >= 6)
+              {
+
+              struct timeval tv, *tv_attr, result;
+              struct timezone tz;
+
+              if(gettimeofday(&tv, &tz) == 0)
+                {
+                tv_attr = &pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval;
+                timeval_subtract(&result, &tv, tv_attr);
+                sprintf(log_buffer, "im_request: total wire-up time for job %ld.%ld", result.tv_sec, result.tv_usec);
+                LOG_EVENT(
+                  PBSEVENT_JOB,
+                  PBS_EVENTCLASS_JOB,
+                  pjob->ji_qs.ji_jobid,
+                  log_buffer);
+                }
+
+              }
 
             /* no events remaining, all moms have reported in, launch job locally */
 
@@ -3474,8 +4306,8 @@ void im_request(
                 PBSEVENT_JOB,
                 PBS_EVENTCLASS_JOB,
                 pjob->ji_qs.ji_jobid,
-                  "im_request:all sisters have reported in, launching job locally");
-                }
+                "im_request:all sisters have reported in, launching job locally");
+              }
   
             exec_job_on_ms(pjob);
 
@@ -3484,8 +4316,8 @@ void im_request(
             {
             if (LOGLEVEL >= 4)
               {
-                sprintf(log_buffer, "%s:joinjob response received from node %s, (still waiting for %s)",
-                        id,
+              sprintf(log_buffer, "%s:joinjob response received from node %s, (still waiting for %s)",
+                      id,
                       netaddr(addr),
                       np->hn_host);
 
@@ -3499,6 +4331,7 @@ void im_request(
 
           break;
           }
+
         case IM_KILL_JOB:
           {
           /*
@@ -3522,7 +4355,7 @@ void im_request(
 
           if (LOGLEVEL >= 2)
             {
-              sprintf(log_buffer, "%s:KILL_JOB acknowledgement received", id);
+            sprintf(log_buffer, "%s:KILL_JOB acknowledgement received", id);
   
             log_record(
               PBSEVENT_JOB,
@@ -3565,8 +4398,8 @@ void im_request(
           for (i = 1;i < pjob->ji_numnodes;i++)
             {
             /* if we get through this loop without finding a
-             *  hn_sister set to SISTER_OKAY then we know
-             *  all sisters have reported in */
+             * hn_sister set to SISTER_OKAY then we know
+             * all sisters have reported in */
             if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
               break;
             }
@@ -4087,6 +4920,409 @@ void im_request(
 
       break;
       }
+
+    case IM_RADIX_ALL_OK: /* this is a reply */
+      {
+      reply = 0;
+      
+      /*
+      ** Sender is an intermediate MOM or leaf within the radix
+      ** of the current MOM. The sending intermediate mom
+      ** has received the job structure sent plus all of
+      ** her children have also received the job structure
+      ** and accepted it. 
+      **  
+      ** This node can be the mother superior 
+      ** or an intermediate MOM.
+      ** 
+      ** auxiliary info (
+      ** none;
+      ** )
+      */
+  
+      switch (event)
+        {
+
+        case IM_JOIN_JOB_RADIX:
+          {
+
+          pjob = find_job(jobid);
+          if(pjob != NULL)
+            {
+            if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
+                 && ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0))
+              {
+              log_err(-1, id, "got JOIN_JOB OKAY and I'm not an intermediate MOM or Mother Superior");
+        
+              goto err;
+              }
+      
+            if(pjob->ji_outstanding > 0)
+              {
+              pjob->ji_outstanding--;
+              }
+        
+            if(pjob->ji_outstanding == 0)
+              {
+
+              if(LOGLEVEL >= 5)
+                {
+
+                struct timeval tv, *tv_attr, result;
+                struct timezone tz;
+
+                if(gettimeofday(&tv, &tz) == 0)
+                  {
+                  tv_attr = &pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval;
+                  timeval_subtract(&result, &tv, tv_attr);
+                  sprintf(log_buffer, "im_request: job_radix total wire-up time for job %ld.%ld", result.tv_sec, result.tv_usec);
+                  LOG_EVENT(
+                    PBSEVENT_JOB,
+                    PBS_EVENTCLASS_JOB,
+                    pjob->ji_qs.ji_jobid,
+                    log_buffer);
+                  }
+
+                }
+
+              reply = 1;
+              /* All sisters in our job radix have reported in */
+              if(pjob->ji_im_nodeid == 1)
+                {
+                sprintf(log_buffer, "im_request:all sisters for intermediate mom %s reported in", 
+                    pjob->ji_sisters[0].hn_host);
+                }
+              else
+                {
+                sprintf(log_buffer, "im_request:all sisters for Mother Superior %s reported in", 
+                    pjob->ji_hosts[0].hn_host);
+                }
+      
+              if (LOGLEVEL >= 2)
+                {
+                LOG_EVENT(
+                  PBSEVENT_JOB,
+                  PBS_EVENTCLASS_JOB,
+                  pjob->ji_qs.ji_jobid,
+                  log_buffer);
+                }
+              
+             
+              /* no events remaining, all moms have reported in, launch job report back
+                 to parent MOM unless I am Mother superior and then execute job */
+              
+              if(pjob->ji_im_nodeid == 1)
+                {
+                sprintf(log_buffer, "im_request:all sisters for intermediate mom %s reported in", 
+                        pjob->ji_sisters[0].hn_host);
+                if (LOGLEVEL >= 2)
+                  {
+                  LOG_EVENT(
+                    PBSEVENT_JOB,
+                    PBS_EVENTCLASS_JOB,
+                    pjob->ji_qs.ji_jobid,
+                    log_buffer);
+                  }
+              
+              
+                np = &pjob->ji_sisters[0]; /* 0 is always the intermediate mom that called us */
+                log_buffer[0] = 0;
+                 
+                /* at this point stream is the connection between the intermediate mom and her sister.
+                   we need to finish this stream and then we are going to either open a new connection
+                   to the mom that called us or reuse an existing connection */
+                rpp_eom(stream);
+
+                if(np->hn_stream == -1)
+				          {
+				          /* we need to close the current stream before we open a new one */
+                          
+				          np->hn_stream = rpp_open(np->hn_host, np->hn_port, log_buffer);
+				          if (np->hn_stream < 0)
+				            {
+				            pjob->ji_nodekill = pjob->ji_nodeid;
+				            
+				            if (log_buffer[0] != '\0')
+				              {
+				              sprintf(log_buffer, "rpp_open failed on %s",
+				            		  np->hn_host);
+				              }
+				              
+				            log_err(errno, id, log_buffer);
+				              
+				            exec_bail(pjob, JOB_EXEC_FAIL1);
+				              
+				            return;
+				            }
+				          
+				          }
+                      
+				        stream = np->hn_stream;
+                ep = event_alloc(IM_RADIX_ALL_OK, np, IM_JOIN_JOB_RADIX, TM_NULL_TASK);
+                  
+                ret = im_compose(
+                        stream,
+                        jobid,
+                        cookie,
+                        IM_RADIX_ALL_OK,
+                        ep->ee_event,
+                        TM_NULL_TASK);
+             
+                /* We need to open our intermediate demux here */
+                fork_demux(pjob);
+                goto done;
+                  
+                }
+              else
+                {
+                /* I am Mother Superior. Start job execution */
+                if (LOGLEVEL >= 2)
+                  {
+                  LOG_EVENT(
+                    PBSEVENT_JOB,
+                    PBS_EVENTCLASS_JOB,
+                    pjob->ji_qs.ji_jobid,
+                    "im_request:all sisters have reported in, launching job locally");
+                  }
+                
+                exec_job_on_ms(pjob);
+                }
+              }
+              /* SUCCESS:  MOM returns */
+                /* END if(pjob->ji_outstanding == 0) */
+            else
+              {
+              if (LOGLEVEL >= 4)
+                {
+              
+              
+                sprintf(log_buffer, "%s:joinjob response received from node %s",
+                       id,
+                       netaddr(addr));
+              
+                LOG_EVENT(
+                   PBSEVENT_JOB,
+                   PBS_EVENTCLASS_JOB,
+                   pjob->ji_qs.ji_jobid,
+                   log_buffer);
+                }
+              }
+            }
+          else
+            {
+            if (LOGLEVEL >= 0)
+              {
+              sprintf(log_buffer, "ERROR: received request '%s' from %s for job '%s' (job does not exist locally):IM_RADIX_ALL_OK",
+                PMOMCommand[MIN(command,IM_MAX)],
+                netaddr(addr),
+                jobid);
+            
+              LOG_EVENT(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                jobid,
+                log_buffer);
+              }
+            
+            SEND_ERR(PBSE_JOBEXIST)
+            
+            }
+    
+          goto done;
+          }
+
+        case IM_KILL_JOB_RADIX:
+          {
+          /*
+          ** Sender is sending a response that a job
+          ** which needs to die has been given the ax.
+          ** I'm mother superior.
+          **
+          ** auxiliary info (
+          **   cput    ulong;
+          **   mem     ulong;
+          **   vmem    ulong;
+          ** )
+          */
+		  long	 cput;
+		  long	 mem;
+		  long	 vmem;
+
+
+          if(pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+            {
+            if (LOGLEVEL >= 2)
+              {
+              sprintf(log_buffer, "KILL_JOB_RADIX acknowledgement received");
+  
+              log_record(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+              }
+  
+			cput = disrul(stream, &ret);
+			if (ret != DIS_SUCCESS)
+			  goto err;
+
+			mem  = disrul(stream, &ret);
+			if (ret != DIS_SUCCESS)
+			  goto err;
+
+			vmem  = disrul(stream, &ret);
+			if (ret != DIS_SUCCESS)
+			  goto err;
+
+			nodeid = disrsi(stream, &ret);
+			if (ret != DIS_SUCCESS)
+			  goto err;
+
+
+            np = &pjob->ji_hosts[nodeid];
+
+            if (pjob->ji_resources != NULL)
+              {
+              pjob->ji_resources[nodeid - 1].nr_cput = cput;
+              pjob->ji_resources[nodeid - 1].nr_mem = mem;
+			  pjob->ji_resources[nodeid - 1].nr_vmem = vmem;
+  
+                
+              DBPRT(("%s: %s FINAL from %d  cpu %lu sec  mem %lu kb  vmem %ld kb\n",
+                     id,
+                     jobid,
+                     nodeid,
+                     pjob->ji_resources[nodeid - 1].nr_cput,
+                     pjob->ji_resources[nodeid - 1].nr_mem,
+                     pjob->ji_resources[nodeid - 1].nr_vmem))
+              }  /* END if (pjob_ji_resources != NULL) */
+  
+            /* don't close stream in case other jobs use it */
+  
+            np->hn_sister = SISTER_KILLDONE;
+  
+            for (i = 1; i < pjob->ji_radix + 1;i++)
+              {
+              if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
+                break;
+              }
+  
+            if (i == pjob->ji_radix + 1 )
+              {
+              /* all dead */
+  
+              DBPRT(("%s: ALL DONE, set EXITING job %s\n",
+                     id,
+                     jobid))
+  
+              pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+  
+              if(multi_mom)
+                {
+                momport = pbs_rm_port;
+                }
+
+              job_save(pjob, SAVEJOB_QUICK, momport);
+  
+              exiting_tasks = 1;
+              }
+            }
+          else if(pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
+            {
+            if (LOGLEVEL >= 2)
+			  {
+			  sprintf(log_buffer, "KILL_JOB_RADIX acknowledgement received");
+	          
+			  log_record(
+			    PBSEVENT_JOB,
+			    PBS_EVENTCLASS_JOB,
+			    pjob->ji_qs.ji_jobid,
+			    log_buffer);
+			  }
+  
+			cput = disrul(stream, &ret);
+			if (ret != DIS_SUCCESS)
+			  goto err;
+
+			mem  = disrul(stream, &ret);
+			if (ret != DIS_SUCCESS)
+			  goto err;
+
+			vmem  = disrul(stream, &ret);
+			if (ret != DIS_SUCCESS)
+			  goto err;
+
+			nodeid = disrsi(stream, &ret);
+			if (ret != DIS_SUCCESS)
+			  goto err;
+
+
+			np = &pjob->ji_sisters[nodeid+1]; /* yes this is klugey but the sisters are off by one on the index */
+
+			if (pjob->ji_resources != NULL)
+			  {
+			  pjob->ji_resources[nodeid - 1].nr_cput = cput;
+			  pjob->ji_resources[nodeid - 1].nr_mem = mem;
+			  pjob->ji_resources[nodeid - 1].nr_vmem = vmem;
+
+
+			  DBPRT(("%s: %s FINAL from %d  cpu %lu sec  mem %lu kb  vmem %ld kb\n",
+			  	   id,
+			  	   jobid,
+			  	   nodeid,
+			  	   pjob->ji_resources[nodeid - 1].nr_cput,
+			  	   pjob->ji_resources[nodeid - 1].nr_mem,
+			  	   pjob->ji_resources[nodeid - 1].nr_vmem))
+			  }  /* END if (pjob_ji_resources != NULL) */
+
+        
+              /* don't close stream in case other jobs use it */
+        
+            np->hn_sister = SISTER_KILLDONE;
+        
+			if(pjob->ji_outstanding > 0)
+			  {
+			  pjob->ji_outstanding--;
+			  }
+
+      if(pjob->ji_outstanding == 0)
+			  {
+              /* all dead */
+        
+              DBPRT(("%s: ALL DONE, set EXITING job %s\n",
+                     id,
+                     jobid))
+
+              pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+        
+              if(multi_mom)
+                {
+                momport = pbs_rm_port;
+                }
+
+              job_save(pjob, SAVEJOB_QUICK, momport);
+        
+              exiting_tasks = 1;
+              }
+            }
+          else
+            {
+            log_err(-1, id, "KILL_JOB_RADIX OK received on a leaf node");
+        
+            goto err;
+            }
+          
+         
+          break;
+          }
+
+        default:
+          break;
+        }
+        
+      break;
+      }
+
     case IM_ERROR:  /* this is a REPLY */
       {
       /*
@@ -4796,6 +6032,16 @@ int tm_request(
 
       /*NOTREACHED*/
 
+      break;
+
+    case TM_FINALIZE:
+
+      DIS_tcp_wflush(fd);
+
+      close(fd);
+
+      reply = 0;
+      goto done;
       break;
 
     case TM_REGISTER:
@@ -6094,7 +7340,7 @@ int get_job_struct(
     goto done;
     }
   
-  new_job->ji_stdout = disrsi(stream, &ret);
+  new_job->ji_portout = disrsi(stream, &ret);
   
   if (ret != DIS_SUCCESS)
     {
@@ -6110,7 +7356,7 @@ int get_job_struct(
     goto done;
     }
   
-  new_job->ji_stderr = disrsi(stream, &ret);
+  new_job->ji_porterr = disrsi(stream, &ret);
   
   if (ret != DIS_SUCCESS)
     {
@@ -6188,6 +7434,298 @@ int run_prologue_scripts(job *pjob)
 done:
   return(ret);
 }
+
+
+#define READ_BUF_SIZE 1024
+
+int readit(
+
+  int sock,
+  int fd)
+
+  {
+  int   amt;
+  char  buf[READ_BUF_SIZE];
+  int   i;
+  size_t  ret;
+
+  i = 0;
+  
+
+  if ((amt = recv(sock, buf, READ_BUF_SIZE, 0)) > 0)
+    {
+    ret = send(fd, buf, amt, 0);
+    if(ret == (size_t) -1)
+      {
+      close(sock);
+      close(fd);
+      FD_CLR(sock, &readset);
+      }
+    }
+  else
+    {
+    close(sock);
+
+    FD_CLR(sock, &readset);
+    }
+
+  return(amt);
+  }  /* END readit() */
+
+
+void demux_wait(int sig)
+  {
+  wait(0);
+  }
+
+void fork_demux(job *pjob)
+  {
+  char *id = "fork_demux";
+  pid_t cpid;
+  struct timeval timeout;
+  int i, retries;
+  int maxfd;
+  int n, ret;
+  int newsock;
+  int fd1, fd2;
+  int im_mom_stdout, im_mom_stderr;
+  char *momhost;
+  fd_set selset;
+  pid_t  parent;
+  u_long ipaddr;
+  struct addrinfo *res;
+  unsigned char nu;
+	struct sigaction act;
+  struct routefd  *routem;
+  int open_sockets = 0;
+
+  maxfd = sysconf(_SC_OPEN_MAX);
+
+  routem = (struct routefd *)calloc(sizeof(struct routefd), maxfd);
+  if(routem == NULL)
+    {
+    fprintf(stderr, "cannot allocate memory in fork_demux");
+    return;
+    }
+
+  for(i = 0; i < maxfd; i++)
+    {
+    routem[i].r_which = invalid;
+    routem[i].r_fd = -1;
+    }
+
+  /* set up signal handler so we know when our child process goes away */
+	sigemptyset(&act.sa_mask);
+
+	act.sa_flags = SA_NOCLDSTOP;
+	act.sa_handler = demux_wait;
+	sigaction(SIGCHLD, &act, NULL);
+
+  im_mom_stdout = dup(pjob->ji_im_stdout);
+  if(im_mom_stdout == -1)
+    {
+    fprintf(stderr, "could not dup stdout in fork_demux");
+    return;
+    }
+  close(pjob->ji_im_stdout);
+
+  im_mom_stderr = dup(pjob->ji_im_stderr);
+  if(im_mom_stdout == -1)
+    {
+    fprintf(stderr, "could not dup stdout in fork_demux");
+    return;
+    }
+  close(pjob->ji_im_stderr);
+
+  routem[im_mom_stdout].r_which = listen_out;
+  routem[im_mom_stderr].r_which = listen_err;
+
+  parent = getppid();
+
+  cpid = fork();
+  if(cpid)
+    {
+    return;
+    }
+
+
+  /* we need to open a stream to our parent mom for stderr and stdout */
+  momhost = pjob->ji_sisters[0].hn_host; /* ji_sisters[0] is always the mom who called us */
+
+  if (momhost == NULL)
+    {
+    fprintf(stderr, "job %s has no stream to MS",
+            pjob->ji_qs.ji_jobid);
+
+    log_err(-1, id, log_buffer);
+
+    _exit(5);
+    }
+
+  ret = getaddrinfo(momhost, NULL, NULL, &res);
+  if(ret)
+    {
+    fprintf(stderr,"get addrinfo failed in im_demux_thread: %d\n", ret);
+
+    _exit(5);
+    }
+
+  nu = (unsigned char)res->ai_addr->sa_data[2];
+  ipaddr = (ulong)nu;
+  ipaddr = ipaddr << 8;
+  nu = (unsigned char)res->ai_addr->sa_data[3];
+  ipaddr = ipaddr + (ulong)nu;
+  ipaddr = ipaddr << 8;
+  nu = (unsigned char)res->ai_addr->sa_data[4];
+  ipaddr = ipaddr + (ulong)nu;
+  ipaddr = ipaddr << 8;
+  nu = (unsigned char)res->ai_addr->sa_data[5];
+  ipaddr = ipaddr + (ulong)nu;
+
+  /*  maxfd = sysconf(_SC_OPEN_MAX); */
+
+  FD_ZERO(&readset);
+  FD_SET(im_mom_stdout, &readset);
+  FD_SET(im_mom_stderr, &readset);
+
+  if (listen(im_mom_stdout, TORQUE_LISTENQUEUE) < 0)
+    {
+    perror("listen on out");
+
+    _exit(5);
+    }
+
+  if (listen(im_mom_stderr, TORQUE_LISTENQUEUE) < 0)
+    {
+    perror("listen on err");
+
+    _exit(5);
+    }
+
+  /* We have our sockets open for listening. Now we can connect to those listen ports on
+       our parent MOM */
+  retries = 0;
+  do
+    {
+      fd1 = open_demux(htonl(ipaddr), pjob->ji_portout);
+      if(fd1 >= 0)
+        break;
+
+      retries++;
+    }while(retries < 10);
+
+    fd2 = open_demux(htonl(ipaddr), pjob->ji_porterr);
+    if(fd2 < 0)
+      {
+      perror("cannot open mux stderr port");
+      _exit(5);
+      }
+
+
+    while (1)
+      {
+      selset = readset;
+      timeout.tv_usec = 0;
+      timeout.tv_sec  = 20;
+
+      n = select(FD_SETSIZE, &selset, (fd_set *)0, (fd_set *)0, &timeout);
+
+      if (n == -1)
+        {
+        if (errno == EINTR)
+          {
+          n = 0;
+          }
+        else
+          {
+          perror("fork_demux: select failed\n");
+
+          _exit(1);
+          }
+        }
+      else if (n == 0)
+        {
+        /* NOTE:  on TRU64, init process does not have pid==1 */
+
+        if (getppid() != parent)
+          {
+  #ifdef DEBUG
+          fprintf(stderr, "%s: Parent has gone, and so will I\n",
+                  id);
+  #endif /* DEBUG */
+
+          break;
+          }
+        }    /* END else if (n == 0) */
+
+                    
+      for (i = 0;(n != 0) && (i < maxfd);++i)
+        {
+        if (FD_ISSET(i, &selset))
+          {
+          /* this socket has data */
+          n--;
+
+          switch (routem[i].r_which)
+            {
+
+            case listen_out:
+
+            case listen_err:
+
+              newsock = accept(i, 0, 0);
+			        if(newsock < 0)
+				      {
+				      perror("accept failed");
+				      _exit(5);
+				      }
+
+              routem[newsock].r_which = routem[i].r_which == listen_out ? new_out : new_err;
+              routem[newsock].r_fd = newsock;
+              open_sockets++;
+
+              FD_SET(newsock, &readset);
+
+              break;
+
+            case new_out:
+
+              readit(i, fd1);
+              
+            case new_err:
+
+              readit(i, fd2);
+              break;
+
+            default:
+
+              if(routem[i].r_which == invalid)
+                {
+                continue;
+                }
+
+              perror("internal error");
+              close(fd1);
+              close(fd2);
+              close(im_mom_stdout);
+              close(im_mom_stderr);
+              _exit(2);
+
+              /*NOTREACHED*/
+
+              break;
+            }
+          }
+        }
+      }    /* END while(1) */
+
+    close(fd1);
+    close(fd2);
+    close(im_mom_stdout);
+    close(im_mom_stderr);
+    _exit(0);
+
+  }
 
 /* END mom_comm.c */
 

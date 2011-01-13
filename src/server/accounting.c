@@ -569,6 +569,9 @@ void account_jobstr(
   buf = (char *)malloc(bufSize+1);
   if (!buf)
     return;
+
+	memset(buf, 0, bufSize+1);
+
   acct_job(pjob, &buf, &bufSize);
 
   buf[bufSize] = '\0';
@@ -609,6 +612,8 @@ void account_jobend(
   buf = (char *)malloc(bufSize);
   if (!buf)
     return;
+
+	memset(buf, 0, bufSize);
 
   pb = acct_job(pjob, &buf, &bufSize);
 

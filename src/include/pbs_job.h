@@ -348,6 +348,9 @@ enum job_atr
   JOB_ATR_reported, /* tracks whether job has been reported to scheduler */
   JOB_ATR_jobtype,     /* opaque job type string */
   JOB_ATR_inter_cmd,      /* command for interactive job */
+  JOB_ATR_job_radix,    /* 64 */
+  JOB_ATR_total_runtime, /* the difference between JOB_ATR_comp_time and JOB_ATR_start_time */
+  JOB_ATR_sister_list,  /* For job_radix. List of sisters in a particular radix */
   JOB_ATR_proxy_user,
   JOB_ATR_node_exclusive,
 #ifdef USEJOBCREATE
@@ -794,8 +797,12 @@ typedef struct infoent
 #define IM_ABORT_JOB      10
 #define IM_GET_TID        11
 #define IM_ERROR 99
+#define IM_RADIX_ALL_OK   12
+#define IM_JOIN_JOB_RADIX 13
+#define IM_KILL_JOB_RADIX 14
+#define IM_ERROR          99
 
-#define IM_MAX          12
+#define IM_MAX            15
 
 eventent *event_alloc( int  command,
                            hnodent *pnode,
@@ -828,6 +835,7 @@ task *task_find( job *pjob,
 #define JOB_SVFLG_HasNodes 0x1000 /* job has nodes allocated to it */
 #define JOB_SVFLG_RescAssn 0x2000 /* job resources accumulated in server/que */
 #define JOB_SVFLG_CHECKPOINT_COPIED 0x4000 /* job checkpoint file that has been copied */
+#define JOB_SVFLG_INTERMEDIATE_MOM  0x8000 /* This is for job_radix. I am an intermediate mom */
 
 /*
  * Related defines

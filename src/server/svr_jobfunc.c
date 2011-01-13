@@ -2176,6 +2176,7 @@ char *prefix_std_file(
 
     if (name)
       {
+      memset(name, 0, len);
       strcpy(name, qsubhost); /* the qsub host name */
       strcat(name, ":");        /* the :  */
 

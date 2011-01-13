@@ -443,6 +443,7 @@ static int set_allacl(struct attribute *attr, struct attribute *new, enum batch_
           return (PBSE_SYSTEM);
           }
 
+        memset(pas->as_buf, 0, nsize);
         pas->as_bufsize = nsize;
 
         }

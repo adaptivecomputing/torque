@@ -1251,6 +1251,7 @@ static int status_que(
     return(PBSE_SYSTEM);
     }
 
+  memset(pstat, 0, sizeof(struct brp_status));
   pstat->brp_objtype = MGR_OBJ_QUEUE;
 
   strcpy(pstat->brp_objname, pque->qu_qs.qu_name);
@@ -1527,6 +1528,11 @@ static int status_node(
   struct brp_status *pstat;
   svrattrl          *pal;
 
+  if (pnode->nd_state & INUSE_DELETED)  /*node no longer valid*/
+    {
+    return(0);
+    }
+
   if ((preq->rq_perm & ATR_DFLAG_RDACC) == 0)
     {
     return(PBSE_PERM);
@@ -1541,8 +1547,8 @@ static int status_node(
     return(PBSE_SYSTEM);
     }
 
-  if (pnode->nd_state & INUSE_DELETED)  /*node no longer valid*/
-    return(0);
+  memset(pstat, 0, sizeof(struct brp_status));
+
 
   pstat->brp_objtype = MGR_OBJ_NODE;
 
