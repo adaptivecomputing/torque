@@ -376,7 +376,7 @@ char *smart_strtok(
 
   start = *ptrPtr;
 
-  tmpLineSize = (line == NULL) ? strlen(*ptrPtr + 1) : strlen(line) + 1;
+  tmpLineSize = (line == NULL) ? strlen(*ptrPtr) + 1 : strlen(line) + 1;
   tmpLine = (char *)malloc(tmpLineSize * sizeof(char));
 
   tmpLine[0] = '\0';
@@ -3889,38 +3889,38 @@ int process_opts(
               set_attr(&attrib, ATTR_depend, pdepend);
               }
             }
-          else if(!strcmp(keyword, ATTR_job_radix))
+          else if (!strcmp(keyword, ATTR_job_radix))
             {
-              int radix_value;
-              int len;
-
-              if_cmd_line(Jobradix_opt)
+            int radix_value;
+            int len;
+            
+            if_cmd_line(Jobradix_opt)
               {
-                Jobradix_opt = passet;
-
-                len = strlen(valuewd);
-                if (len > MAX_RADIX_NUM_LEN)
+              Jobradix_opt = passet;
+              
+              len = strlen(valuewd);
+              if (len > MAX_RADIX_NUM_LEN)
+                {
+                fprintf(stderr, "qsub: illegal -W value for job_radix\n");
+                }
+              for (i = 0; i < len; i++)
+                {
+                if (!isdigit(valuewd[i])) /* verify the string is all digits */
+                  break;
+                }
+              
+              if (i == len) /* we parsed the whole valuewd string and it is a number */
+                {
+                radix_value = atoi(valuewd);
+                if (radix_value < 2)
                   {
-                  fprintf(stderr, "qsub: illegal -W value for job_radix\n");
-                  }
-                for(i = 0; i < len; i++)
-                  {
-                  if(!isdigit(valuewd[i])) /* verify the string is all digits */
-                    break;
-                  }
-                    
-                if(i == len) /* we parsed the whole valuewd string and it is a number */
-                  {
-                  radix_value = atoi(valuewd);
-                  if(radix_value < 2)
-                    {
-                    fprintf(stderr, "qsub: illegal -W. job_radix must be >= 2\n");
-                    }
-                  else
-                    set_attr(&attrib, ATTR_job_radix, valuewd);
+                  fprintf(stderr, "qsub: illegal -W. job_radix must be >= 2\n");
                   }
                 else
-                  fprintf(stderr, "qsub: illegal -W value for job_radix\n");
+                  set_attr(&attrib, ATTR_job_radix, valuewd);
+                }
+              else
+                fprintf(stderr, "qsub: illegal -W value for job_radix\n");
               }
             }
           else if (!strcmp(keyword, ATTR_stagein))
@@ -4833,7 +4833,7 @@ int main(
     }
 
   /* If job_radix is not set set it to 0 */
-  if(Jobradix_opt == FALSE)
+  if (Jobradix_opt == FALSE)
     {
     set_attr(&attrib, ATTR_job_radix, "0");
     }

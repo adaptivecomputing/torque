@@ -948,35 +948,35 @@ attribute_def job_attr_def[] =
 
   /* JOB_ATR_job_radix */
   { ATTR_job_radix,  /* "job_radix" */
-	decode_l,
-	encode_l,
-	set_l,
-	comp_l,
-	free_null,
-	job_radix_action,
-	READ_WRITE | ATR_DFLAG_SSET | ATR_DFLAG_MOM,
-	ATR_TYPE_LONG,
-	PARENT_TYPE_JOB
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    job_radix_action,
+    READ_WRITE | ATR_DFLAG_SSET | ATR_DFLAG_MOM,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_JOB
   },
 
   /* JOB_ATR_total_runtime */
   { ATTR_total_runtime, /* total time from start_time to comp_time in milliseconds */
-	decode_tv,
-	encode_tv,
-	set_tv,
-	comp_tv,
-	free_null,
-	NULL_FUNC,
-	READ_ONLY | ATR_DFLAG_SSET,
-	ATR_TYPE_TV,
-	PARENT_TYPE_JOB
+    decode_tv,
+    encode_tv,
+    set_tv,
+    comp_tv,
+    free_null,
+    NULL_FUNC,
+    READ_ONLY | ATR_DFLAG_SSET,
+    ATR_TYPE_TV,
+    PARENT_TYPE_JOB
   },
 
   /* JOB_ATR_sister_list */
   { ATTR_sister_list, /* sister_list */
-	decode_str,
-	encode_str,
-	set_str,
+    decode_str,
+    encode_str,
+    set_str,
     comp_str,
     free_str,
     NULL_FUNC,
