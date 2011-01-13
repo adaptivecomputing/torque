@@ -4,6 +4,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - change so gpus get written back to nodes file
   e - make it so that even if an array request has multiple consecutive '%' the slot 
       limit will be set correctly
+  b - Fixed bug in job_log_open where teh global variable logpath was freed instead 
+      of joblogpath.
+  b - Fixed memory leak in function procs_requested.
+  b - Validated incoming data for escape_xml to prevent a seg-fault with incoming
+      null pointers
 
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for
