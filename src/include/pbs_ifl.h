@@ -115,6 +115,8 @@
 #define ATTR_stagein  "stagein"
 #define ATTR_stageout "stageout"
 #define ATTR_jobtype  "jobtype"
+#define ATTR_submit_host "submit_host"
+#define ATTR_init_work_dir "init_work_dir"
 
 /* additional job and general attribute names */
 

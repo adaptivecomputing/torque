@@ -357,11 +357,17 @@ char *smart_strtok(
 
   char *ptr;
 
-  if (line != NULL)
+  if (ptrPtr == NULL)
+    {
+    /* FAILURE */
+
+    return(head);
+    }
+  else if (line != NULL)
     {
     *ptrPtr = line;
     }
-  else if (ptrPtr == NULL)
+  else if (*ptrPtr == NULL)
     {
     /* FAILURE */
 
@@ -1389,6 +1395,7 @@ int set_job_env(
   if (PBS_WorkDir[0] != '\0')
     {
     len += strlen("PBS_O_WORKDIR=") + strlen(PBS_WorkDir) + 1;
+    set_attr(&attrib, ATTR_init_work_dir, PBS_WorkDir);
     }
 
   len += strlen("PBS_SERVER=") + 1;
@@ -1466,8 +1473,12 @@ int set_job_env(
     {
     if ((rc = get_fullhostname(qsub_host, qsub_host, PBS_MAXHOSTNAME, NULL)) == 0)
       {
+      s = job_env + strlen(job_env);
       strcat(job_env, ",PBS_O_HOST=");
       strcat(job_env, qsub_host);
+      s++;
+      set_attr(&attrib, ATTR_submit_host, qsub_host);
+      s = 0;
       }   
     }
     
@@ -1544,6 +1555,7 @@ int set_job_env(
     strcat(job_env, ",PBS_O_WORKDIR=");
 
     strcat(job_env, PBS_WorkDir);
+    set_attr(&attrib, ATTR_init_work_dir, PBS_WorkDir);
     }
   else
     {
@@ -1581,6 +1593,7 @@ int set_job_env(
             !memcmp(&ino, &statbuf.st_ino, sizeof(ino_t)))
           {
           strcat(job_env, c);
+          set_attr(&attrib, ATTR_init_work_dir, c);
           }
         else
           {
@@ -1595,7 +1608,13 @@ int set_job_env(
       c = job_env + strlen(job_env);
 
       if (getcwd(c, MAXPATHLEN + 1) == NULL)
+        {
         *s = '\0';
+        }
+      else
+        {
+          set_attr(&attrib, ATTR_init_work_dir, PBS_WorkDir);
+        }
       }
     }
 

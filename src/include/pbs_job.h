@@ -353,6 +353,8 @@ enum job_atr
   JOB_ATR_sister_list,  /* For job_radix. List of sisters in a particular radix */
   JOB_ATR_proxy_user,
   JOB_ATR_node_exclusive,
+  JOB_ATR_submit_host,  /* host which submitted the job */
+  JOB_ATR_init_work_dir,    /* initial working directory */
 #ifdef USEJOBCREATE
   JOB_ATR_pagg_id,
 #endif /* USEJOBCREATE */
