@@ -1445,7 +1445,11 @@ static job *chk_job_torun(
 
   /* where to execute the job */
 
+#ifdef ENABLE_BLCR
+  if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
+#else
   if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE | JOB_SVFLG_StagedIn))
+#endif
     {
     /* job has been checkpointed or files already staged in */
     /* in this case, exec_host must be already set          */
