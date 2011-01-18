@@ -13,6 +13,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       values are now displayed with a qstat -f. The submit_host is
       the name of the host from where the job was submitted. init_work_dir
       is the working directory as in PBS_O_WORKDIR.
+  e - change so blcr checkpoint jobs can restart on different node. Use
+      configure --enable-blcr to allow.
 
 
 2.5.4
