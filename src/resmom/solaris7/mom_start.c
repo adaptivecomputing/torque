@@ -118,8 +118,11 @@ extern int  termin_child;
  *  -2 - if other, message in log_buffer
  */
 
-int
-set_job(job *pjob, struct startjob_rtn *sjr)
+int set_job(
+    
+  job *pjob, 
+  struct startjob_rtn *sjr)
+
   {
   return (sjr->sj_session = setsid());
   }
