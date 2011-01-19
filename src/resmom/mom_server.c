@@ -244,7 +244,8 @@
 
 #ifdef NUMA_SUPPORT
 extern int numa_index;
-extern int num_numa_nodes;
+extern int num_node_boards;
+extern void collect_cpuact(void);
 #endif /* NUMA_SUPPORT */
 
 
@@ -1300,12 +1301,15 @@ void mom_server_all_update_stat(void)
    */
 
   if (LOGLEVEL >= 6)
-    {
     log_record(PBSEVENT_SYSTEM, 0, id, "composing status update for server");
-    }
 
 #ifdef NUMA_SUPPORT
-  for (numa_index = 0; numa_index < num_numa_nodes; numa_index++)
+  /* Precalculate cpu activities. */
+
+  collect_cpuact();
+
+  /* Generate and send status strings for each node board */
+  for (numa_index = 0; numa_index < num_node_boards; numa_index++)
 #endif /* NUMA_SUPPORT */
     {
     memset(status_strings, 0, sizeof(status_strings));
@@ -2089,7 +2093,7 @@ void is_request(
 
           log_record(
             PBSEVENT_ERROR,
-            PBS_EVENTCLASS_JOB,
+            PBS_EVENTCLASS_SERVER,
             id,
             tmpLine);
 

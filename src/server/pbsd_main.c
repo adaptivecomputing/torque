@@ -2179,10 +2179,10 @@ int is_ha_lock_file_valid(
 
   if (stat(LockDir,&Stat) != 0)
     {
-    char tmpLine[MAX_LINE];
+    char *tmpLine;
 
     /* stat failed */
-    strerror_r(errno,ErrorString,sizeof(ErrorString));
+    tmpLine = strerror(errno);
 
     snprintf(tmpLine,sizeof(tmpLine),"could not stat the lockfile dir '%s': %s",
       LockDir,
@@ -2452,12 +2452,12 @@ void *update_ha_lock_thread(
 
     if ((rc == -1) && !ISEMPTYSTR(HALockFile))
       {
-      char ErrorString[MAX_LINE];
+      char *ErrorString;
       /* error occurred--immediate shutdown needed */
 
       if (LocalErrno != 0)
         {
-        strerror_r(LocalErrno,ErrorString,sizeof(ErrorString));
+        ErrorString = strerror(LocalErrno);
 
         sprintf(log_buffer,"could not update HA lock file '%s' in heartbeat thread (%s - errno %d:%s)",
           HALockFile,

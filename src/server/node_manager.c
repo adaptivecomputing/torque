@@ -253,7 +253,7 @@ struct pbsnode *tfind_addr(
   if (pn == NULL)
     return(NULL);
 
-  if (pn->num_numa_nodes == 0)
+  if (pn->num_node_boards == 0)
     return(pn);
   else
     {
@@ -286,7 +286,7 @@ struct pbsnode *tfind_addr(
 
     index = atoi(dash+1);
 
-    numa = AVL_find(index,pn->nd_mom_port,pn->numa_nodes);
+    numa = AVL_find(index,pn->nd_mom_port,pn->node_boards);
 
     if (plus != NULL)
       *plus = '+';
@@ -698,12 +698,12 @@ job *find_job_by_node(
   if ((at = strchr(jobid, (int)'@')) != NULL)
     * at = '\0'; /* strip off @server_name */
 
-  if (pnode->num_numa_nodes > 0)
+  if (pnode->num_node_boards > 0)
     {
     /* check each subnode on each numa node for the job */
-    for (i = 0; i < pnode->num_numa_nodes; i++)
+    for (i = 0; i < pnode->num_node_boards; i++)
       {
-      numa = AVL_find(i,pnode->nd_mom_port,pnode->numa_nodes);
+      numa = AVL_find(i,pnode->nd_mom_port,pnode->node_boards);
 
       for (np = numa->nd_psn; np != NULL; np = np->next)
         {
@@ -1352,7 +1352,7 @@ int is_stat_get(
       struct pbsnode *tmp;
       unsigned long numa_index;
 
-      if (np->numa_nodes == NULL)
+      if (np->node_boards == NULL)
         {
         /* ERROR */
         snprintf(log_buffer,sizeof(log_buffer),
@@ -1366,7 +1366,7 @@ int is_stat_get(
       numa_id = ret_info + strlen(NUMA_KEYWORD);
       numa_index = atoi(numa_id);
 
-      tmp = AVL_find(numa_index,np->nd_mom_port,np->numa_nodes);
+      tmp = AVL_find(numa_index,np->nd_mom_port,np->node_boards);
 
       if (tmp == NULL)
         {
@@ -1682,14 +1682,14 @@ void stream_eof(
 
   /* mark node and all subnodes as down */
 
-  if (np->num_numa_nodes > 0)
+  if (np->num_node_boards > 0)
     {
     int i;
     struct pbsnode *pnode;
 
-    for (i = 0; i < np->num_numa_nodes; i++)
+    for (i = 0; i < np->num_node_boards; i++)
       {
-      pnode = AVL_find(i,np->nd_mom_port,np->numa_nodes);
+      pnode = AVL_find(i,np->nd_mom_port,np->node_boards);
 
       update_node_state(pnode,INUSE_DOWN);
       }

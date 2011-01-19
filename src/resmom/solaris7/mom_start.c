@@ -101,11 +101,12 @@ static char ident[] = "@(#) $RCSfile$ $Revision$";
 
 /* Global Variables */
 
-extern int  exiting_tasks;
-extern char  mom_host[];
-extern tlist_head svr_alljobs;
-extern int  termin_child;
-extern int  multi_mom;
+extern int          exiting_tasks;
+extern char         mom_host[];
+extern tlist_head   svr_alljobs;
+extern int          termin_child;
+extern int          multi_mom;
+extern unsigned int pbs_rm_port;
 
 /* Private variables */
 
@@ -119,8 +120,11 @@ extern int  multi_mom;
  *  -2 - if other, message in log_buffer
  */
 
-int
-set_job(job *pjob, struct startjob_rtn *sjr)
+int set_job(
+    
+  job *pjob, 
+  struct startjob_rtn *sjr)
+
   {
   return (sjr->sj_session = setsid());
   }

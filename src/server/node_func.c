@@ -693,7 +693,7 @@ int status_nodeattrib(
     else if (!strcmp((padef + i)->at_name, ATTR_NODE_mom_rm_port))
       atemp[i].at_val.at_long  = pnode->nd_mom_rm_port;
     /* skip NUMA attributes */
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_num_numa_nodes))
+    else if (!strcmp((padef + i)->at_name, ATTR_NODE_num_node_boards))
       continue;
     else if (!strcmp((padef + i)->at_name, ATTR_NODE_numa_str))
       continue;
@@ -1384,11 +1384,11 @@ int update_nodes_file(void)
               np->nd_ngpus);
 
     /* write out the numa attributes if needed */
-    if (np->num_numa_nodes > 0)
+    if (np->num_node_boards > 0)
       {
       fprintf(nin, " %s=%d",
-        ATTR_NODE_num_numa_nodes,
-        np->num_numa_nodes);
+        ATTR_NODE_num_node_boards,
+        np->num_node_boards);
       }
 
     if ((np->numa_str != NULL) &&
@@ -1705,7 +1705,7 @@ int copy_properties(
  *
  * @return 0 on success, -1 on failure
  */
-int setup_numa_nodes(
+int setup_node_boards(
 
   struct pbsnode *pnode,
   u_long         *pul)
@@ -1721,13 +1721,13 @@ int setup_numa_nodes(
   int             rc;
   char           *delim = ",";
 
-  char           *id = "setup_numa_nodes";
+  char           *id = "setup_node_boards";
 
   if (pnode == NULL)
     return(-1);
 
   /* if this isn't a numa node, return no error */
-  if ((pnode->num_numa_nodes == 0) &&
+  if ((pnode->num_node_boards == 0) &&
       (pnode->numa_str == NULL))
     {
     return(PBSE_NONE);
@@ -1741,10 +1741,10 @@ int setup_numa_nodes(
     }
   else
     {
-    np = pnode->nd_nsn / pnode->num_numa_nodes;
+    np = pnode->nd_nsn / pnode->num_node_boards;
     }
 
-  for (i = 0; i < pnode->num_numa_nodes; i++)
+  for (i = 0; i < pnode->num_node_boards; i++)
     {
     pn = (struct pbsnode *)malloc(sizeof(struct pbsnode));
 
@@ -1792,17 +1792,17 @@ int setup_numa_nodes(
     copy_properties(pn,pnode);
 
     /* add the node to the private tree */
-    pnode->numa_nodes = AVL_insert(i,
+    pnode->node_boards = AVL_insert(i,
         pn->nd_mom_port,
         pn,
-        pnode->numa_nodes);
-    } /* END for each numa_node */
+        pnode->node_boards);
+    } /* END for each node_board */
 
   if (LOGLEVEL >= 3)
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "Successfully created %d numa nodes for node %s\n",
-      pnode->num_numa_nodes,
+      pnode->num_node_boards,
       pnode->nd_name);
 
     log_event(
@@ -1813,7 +1813,7 @@ int setup_numa_nodes(
     }
 
   return(PBSE_NONE);
-  } /* END setup_numa_nodes() */
+  } /* END setup_node_boards() */
 
 
 
@@ -2052,7 +2052,7 @@ int create_pbs_node(
       
     }  /* END for (i) */
 
-  setup_numa_nodes(pnode,pul);
+  setup_node_boards(pnode,pul);
 
   recompute_ntype_cnts();
 
@@ -2810,11 +2810,11 @@ int node_numa_action(
   switch (actmode)
     {
     case ATR_ACTION_NEW:
-      new->at_val.at_long = np->num_numa_nodes;
+      new->at_val.at_long = np->num_node_boards;
       break;
 
     case ATR_ACTION_ALTER:
-      np->num_numa_nodes = new->at_val.at_long;
+      np->num_node_boards = new->at_val.at_long;
       break;
 
     default:
@@ -3071,7 +3071,7 @@ struct pbsnode *next_node(
 
   /* conditionally advance the node index pointer */
   if ((iter->node_index == -1) ||
-      (iter->numa_index+1 >= pbsndlist[iter->node_index]->num_numa_nodes))
+      (iter->numa_index+1 >= pbsndlist[iter->node_index]->num_node_boards))
     {
     iter->node_index++;
     iter->numa_index = 0;
@@ -3086,8 +3086,8 @@ struct pbsnode *next_node(
     {
     next = pbsndlist[iter->node_index];
     
-    if (next->num_numa_nodes > 0)
-      next = AVL_find(iter->numa_index,next->nd_mom_port,next->numa_nodes);
+    if (next->num_node_boards > 0)
+      next = AVL_find(iter->numa_index,next->nd_mom_port,next->node_boards);
 
     return(next);
     }

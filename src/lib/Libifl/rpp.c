@@ -1170,9 +1170,6 @@ static int rpp_create_sp(void)
   int i;
 
   struct stream *sp = NULL;
-#ifdef ENABLE_PTHREADS
-  static pthread_mutexattr_t mutex_attr;
-#endif 
 
   if (stream_array == NULL)
     {
@@ -1194,10 +1191,7 @@ static int rpp_create_sp(void)
     if (stream_mutexes == NULL)
       return(-1);
 
-    memset(&mutex_attr,0,sizeof(pthread_mutexattr_t));
-    pthread_mutexattr_settype(&mutex_attr,PTHREAD_MUTEX_ERRORCHECK);
-    
-    pthread_mutex_init(stream_mutexes,&mutex_attr);
+    pthread_mutex_init(stream_mutexes,NULL);
 #endif /* def ENABLE_PTHREADS */
     }
 
@@ -1242,14 +1236,12 @@ static int rpp_create_sp(void)
       stream_num++;
 
 #ifdef ENABLE_PTHREADS 
-      stream_mutexes = (pthread_mutex_t *)realloc(
-          stream_mutexes,
-          (stream_num) * sizeof(pthread_mutex_t));
+      stream_mutexes = realloc(stream_mutexes,stream_num * sizeof(pthread_mutex_t));
 
       if (stream_mutexes == NULL)
         return(-1);
 
-      pthread_mutex_init(stream_mutexes + stream_num - 1,&mutex_attr);
+      pthread_mutex_init(stream_mutexes + stream_num - 1,NULL);
 #endif /* def ENABLE_PTHREADS */
       }
     else
@@ -1261,16 +1253,14 @@ static int rpp_create_sp(void)
       stream_num *= 2;
 
 #ifdef ENABLE_PTHREADS 
-      stream_mutexes = (pthread_mutex_t *)realloc(
-          stream_mutexes,
-          (stream_num) * sizeof(pthread_mutex_t));
+      stream_mutexes = realloc(stream_mutexes,stream_num * sizeof(pthread_mutex_t));
 
       if (stream_mutexes == NULL)
         return(-1);
 
       for (j = stream_num / 2; j < stream_num; j++)
         {
-        pthread_mutex_init(stream_mutexes + j,&mutex_attr);
+        pthread_mutex_init(stream_mutexes + j,NULL);
         }
 #endif /* ENABLE_PTHREADS */
       }
@@ -1470,16 +1460,16 @@ static void dqueue(
   else
     pp->up->down = pp->down;
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(master_list_mutex);
-#endif
-
   if (--pkts_sent < 0)
     pkts_sent = 0;
 
   free(pp->data);
 
   free(pp);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(master_list_mutex);
+#endif
 
   return;
   }
