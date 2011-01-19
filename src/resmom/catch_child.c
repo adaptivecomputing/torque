@@ -1993,6 +1993,12 @@ void init_abort_jobs(
 
   closedir(dir);
 
+#if defined(PENABLE_LINUX26_CPUSETS)
+  /* Create the top level torque cpuset if it doesn't already exist. */
+  initialize_root_cpuset();
+
+#endif
+
   return;
   }  /* END init_abort_jobs() */
 

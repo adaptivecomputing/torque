@@ -146,9 +146,7 @@
 #include "csv.h"
 #include "utils.h"
 #include "u_tree.h"
-#ifdef PENABLE_LINUX26_CPUSETS
-#  include "pbs_cpuset.h"
-#endif
+#include "pbs_cpuset.h"
 
 #include "mcom.h"
 
@@ -161,7 +159,6 @@
 #endif /* _POSIX_MEMLOCK */
 
 #define NO_LAYOUT_FILE      -10
-#define BAD_LAYOUT_FILE     -505
 #define CHECK_POLL_TIME     45
 #define DEFAULT_SERVER_STAT_UPDATES 45
 
@@ -193,8 +190,8 @@ int    internal_state = 0;
 
 /* mom data items */
 #ifdef NUMA_SUPPORT
-int            num_node_boards;
-nodeboard      node_boards[MAX_NODE_BOARDS]; 
+int            num_numa_nodes;
+numanode       numa_nodes[MAX_NUMA_NODES]; 
 int            numa_index;
 #else
 char           path_meminfo[MAX_LINE];
@@ -274,11 +271,8 @@ int      src_login_batch = TRUE;
 int      src_login_interactive = TRUE;
 
 #ifdef PENABLE_LINUX26_CPUSETS
-hwloc_topology_t topology = NULL;       /* system topology */
-
-int      memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
+int      memory_pressure_threshold = 0; /* 0: off, >0: check and log alerts */
 short    memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
-int      MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 #endif
 
 /* externs */
@@ -336,7 +330,7 @@ void prepare_child_tasks_for_delete();
 static void mom_lock(int fds, int op);
 
 #ifdef NUMA_SUPPORT
-int setup_nodeboards();
+int bind_to_nodeboard();
 #endif /* NUMA_SUPPORT */
 
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
@@ -427,7 +421,6 @@ static unsigned long setremchkptdirlist(char *);
 static unsigned long setmaxconnecttimeout(char *);
 static unsigned long aliasservername(char *);
 #ifdef PENABLE_LINUX26_CPUSETS
-static unsigned long setusesmt(char *);
 static unsigned long setmempressthr(char *);
 static unsigned long setmempressdur(char *);
 #endif
@@ -493,7 +486,6 @@ static struct specials
   { "max_conn_timeout_micro_sec",   setmaxconnecttimeout },
   { "alias_server_name", aliasservername },
 #ifdef PENABLE_LINUX26_CPUSETS
-  { "use_smt",                      setusesmt      },
   { "memory_pressure_threshold",    setmempressthr },
   { "memory_pressure_duration",     setmempressdur },
 #endif
@@ -1325,6 +1317,9 @@ static char *validuser(
   }    /* END validuser() */
 
 
+
+
+
 char *loadave(
 
   struct rm_attribute *attrib)
@@ -1362,6 +1357,9 @@ char *loadave(
   return(ret_string);
 #endif /* NUMA_SUPPORT */
   }  /* END loadave() */
+
+
+
 
 
 /*
@@ -1597,6 +1595,8 @@ void checkret(
   return;
   }  /* END checkret() */
 
+
+
 char *skipwhite(
 
   char *str)
@@ -1658,55 +1658,6 @@ void rmnl(
   }
 
 
-/*
- * Parse a boolean config option value.
- * Return 1 (true), 0 (false), -1 (error).
- * Accepts: "true", "yes", "on", "1", "false", "no", "off", "0"
- */
-
-static int setbool(
-
-  char *value) /* I */
-
-  {
-  int enable = -1;
-
-  if (value != NULL)
-    {
-
-    switch (value[0])
-      {
-
-      case 't':
-      case 'T':
-      case 'y':
-      case 'Y':
-      case '1':
-        enable = 1;
-        break;
-
-      case 'f':
-      case 'F':
-      case 'n':
-      case 'N':
-      case '0':
-        enable = 0;
-        break;
-
-      case 'o':
-      case 'O':
-        if((strcasecmp(value,"on") == 0))
-          enable = 1;
-        else if((strcasecmp(value,"off") == 0))
-          enable = 0;
-        break;
-
-      }
-
-    }
-
-  return(enable);
-  }
 
 
 
@@ -2007,32 +1958,119 @@ static u_long configversion(
 
 static u_long setdownonerror(
 
-  char *value)  /* I */
+  char *Value)  /* I */
 
   {
-  int enable;
+  static char   id[] = "setdownonerror";
+  int           enable = -1;
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "down_on_error", value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, Value);
 
-  if ((enable = setbool(value)) != -1)
+  if (Value == NULL)
+    {
+    /* FAILURE */
+
+    return(0);
+    }
+
+  /* accept various forms of "true", "yes", and "1" */
+  switch (Value[0])
+    {
+
+    case 't':
+
+    case 'T':
+
+    case 'y':
+
+    case 'Y':
+
+    case '1':
+
+      enable = 1;
+
+      break;
+
+    case 'f':
+
+    case 'F':
+
+    case 'n':
+
+    case 'N':
+
+    case '0':
+
+      enable = 0;
+
+      break;
+
+    }
+
+  if (enable != -1)
+    {
     MOMConfigDownOnError = enable;
+    }
 
   return(1);
   }  /* END setdownonerror() */
 
 
-
 static u_long setenablemomrestart(
 
-  char *value)  /* I */
+  char *Value)  /* I */
 
   {
-  int enable;
+  static char   id[] = "setenablemomrestart";
+  int           enable = -1;
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "enablemomrestart", value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, Value);
 
-  if ((enable = setbool(value)) != -1)
+  if (Value == NULL)
+    {
+    /* FAILURE */
+
+    return(0);
+    }
+
+  /* accept various forms of "true", "yes", and "1" */
+  switch (Value[0])
+    {
+
+    case 't':
+
+    case 'T':
+
+    case 'y':
+
+    case 'Y':
+
+    case '1':
+
+      enable = 1;
+
+      break;
+
+    case 'f':
+
+    case 'F':
+
+    case 'n':
+
+    case 'N':
+
+    case '0':
+
+      enable = 0;
+
+      break;
+
+    }
+
+  if (enable != -1)
+    {
     MOMConfigRestart = enable;
+    }
 
   return(1);
   }  /* END setenablemomrestart() */
@@ -2357,12 +2395,59 @@ static unsigned long setsourceloginbatch(
   char *value)  /* I */
 
   {
-  int enable;
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "source_login_batch", value);
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "setsourceloginbatch",
+    value);
 
-  if ((enable = setbool(value)) != -1)
-    src_login_batch = enable;
+  if (value[0] != '\0')
+    {
+    /* accept various forms of "true", "yes", and "1" */
+    switch (value[0])
+      {
+
+      case 't':
+
+      case 'T':
+
+      case 'y':
+
+      case 'Y':
+
+      case '1':
+
+        src_login_batch = TRUE;
+
+        break;
+
+      case 'f':
+
+      case 'F':
+
+      case 'n':
+
+      case 'N':
+
+      case '0':
+
+        src_login_batch = FALSE;
+
+        break;
+
+      default:
+        sprintf(log_buffer, "Unknown value of %s", value);
+
+        log_record(
+          PBSEVENT_SYSTEM,
+          PBS_EVENTCLASS_SERVER,
+          "setsourceloginbatch",
+          log_buffer);
+        break;
+
+      }
+    }
 
   return(1);
   }  /* END setsourceloginbatch() */
@@ -2373,16 +2458,62 @@ static unsigned long setsourcelogininteractive(
   char *value)  /* I */
 
   {
-  int enable;
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "source_login_interactive", value);
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "setsourcelogininteractive",
+    value);
 
-  if ((enable = setbool(value)) != -1)
-    src_login_interactive = enable;
+  if (value[0] != '\0')
+    {
+    /* accept various forms of "true", "yes", and "1" */
+    switch (value[0])
+      {
+
+      case 't':
+
+      case 'T':
+
+      case 'y':
+
+      case 'Y':
+
+      case '1':
+
+        src_login_interactive = TRUE;
+
+        break;
+
+      case 'f':
+
+      case 'F':
+
+      case 'n':
+
+      case 'N':
+
+      case '0':
+
+        src_login_interactive = FALSE;
+
+        break;
+
+      default:
+        sprintf(log_buffer, "Unknown value of %s", value);
+
+        log_record(
+          PBSEVENT_SYSTEM,
+          PBS_EVENTCLASS_SERVER,
+          "setsourcelogininteractive",
+          log_buffer);
+        break;
+
+      }
+    }
 
   return(1);
   }  /* END setsourcelogininteractive() */
-
 
 
 static unsigned long jobstartblocktime(
@@ -2588,12 +2719,26 @@ static unsigned long setignwalltime(
   char *value)  /* I */
 
   {
-  int enable;
+  char newstr[50] = "ignwalltime ";
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "ignwalltime", value);
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "ignwalltime",
+    value);
 
-  if((enable = setbool(value)) != -1)
-    ignwalltime = enable;
+  if (!strncasecmp(value, "t", 1) || (value[0] == '1') || !strcasecmp(value, "on"))
+    {
+    ignwalltime = 1;
+    }
+  else
+    {
+    ignwalltime = 0;
+    }
+
+  strcat(newstr, value);
+
+  /* SUCCESS */
 
   return(1);
   }  /* END setignwalltime() */
@@ -2605,12 +2750,16 @@ static unsigned long setignmem(
   char *value)  /* I */
 
   {
-  int enable;
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "ignmem",
+    value);
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "ignmem", value);
-
-  if((enable = setbool(value)) != -1)
-    ignmem = enable;
+  if (!strncasecmp(value,"t",1) || (value[0] == '1') || !strcasecmp(value,"on") )
+    ignmem = 1;
+  else
+    ignmem = 0;
 
   return(1);
   } /* END setignmem() */
@@ -2622,12 +2771,16 @@ static unsigned long setigncput(
   char *value) /* I */
 
   {
-  int enable;
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "igncput",
+    value);
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "igncput", value);
-
-  if((enable = setbool(value)) != -1)
-    igncput = enable;
+  if (!strncasecmp(value,"t",1) || (value[0] == '1') || !strcasecmp(value,"on") )
+    igncput = 1;
+  else
+    igncput = 0;
 
   return(1);
   }
@@ -2638,12 +2791,26 @@ static unsigned long setignvmem(
   char *value)  /* I */
 
   {
-  int enable;
+  char newstr[50] = "setignvmem ";
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "ignvmem", value);
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "setignvmem",
+    value);
 
-  if((enable = setbool(value)) != -1)
-    ignvmem = enable;
+  if (!strncasecmp(value, "t", 1) || (value[0] == '1') || !strcasecmp(value, "on"))
+    {
+    ignvmem = 1;
+    }
+  else
+    {
+    ignvmem = 0;
+    }
+
+  strcat(newstr, value);
+
+  /* SUCCESS */
 
   return(1);
   }  /* END setignvmem() */
@@ -2803,6 +2970,8 @@ static unsigned long setnodecheckinterval(
 
   return(1);
   }  /* END setnodecheckinterval() */
+
+
 
 
 
@@ -3058,15 +3227,59 @@ static unsigned long setmomhost(
 
 static u_long setrreconfig(
 
-  char *value)  /* I */
+  char *Value)  /* I */
 
   {
-  int enable;
+  static char   id[] = "setrreconfig";
+  int           enable = -1;
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "remote_reconfig", value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, Value);
 
-  if ((enable = setbool(value)) != -1)
+  if (Value == NULL)
+    {
+    /* FAILURE */
+
+    return(0);
+    }
+
+  /* accept various forms of "true", "yes", and "1" */
+  switch (Value[0])
+    {
+
+    case 't':
+
+    case 'T':
+
+    case 'y':
+
+    case 'Y':
+
+    case '1':
+
+      enable = 1;
+
+      break;
+
+    case 'f':
+
+    case 'F':
+
+    case 'n':
+
+    case 'N':
+
+    case '0':
+
+      enable = 0;
+
+      break;
+
+    }
+
+  if (enable != -1)
+    {
     MOMConfigRReconfig = enable;
+    }
 
   return(1);
   }  /* END setrreconfig() */
@@ -3143,12 +3356,16 @@ static unsigned long setspoolasfinalname(
   char *value)  /* I */
 
   {
-  int enable;
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "spoolasfinalname",
+    value);
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "spool_as_final_name", value);
-
-  if ((enable = setbool(value)) != -1)
-    spoolasfinalname = enable;
+  if (!strncasecmp(value,"t",1) || (value[0] == '1') || !strcasecmp(value,"on") )
+    spoolasfinalname = 1;
+  else
+    spoolasfinalname = 0;
 
   return(1);
   }  /* END setspoolasfinalname() */
@@ -3204,6 +3421,52 @@ static unsigned long setremchkptdirlist(
   return (1);
   }  /* END setremchkptdirlist() */
 
+
+
+
+#ifdef PENABLE_LINUX26_CPUSETS
+static u_long setmempressthr(
+
+  char *value)
+
+  {
+  long long val;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "memory_pressure_threshold", value);
+
+  if ((val = atoll(value)) < 0)
+    return(0);  /* error, leave as is */
+
+  if (val > INT_MAX)
+    val = INT_MAX;
+
+  memory_pressure_threshold = (int)val;
+
+  return(TRUE);
+  }
+
+static u_long setmempressdur(
+
+  char *value)
+
+  {
+  int val;
+
+  val = atoi(value);
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "memory_pressure_duration", value);
+
+  if ((val = atoi(value)) < 0)
+    return(0);  /* error, leave as is */
+
+  if (val > SHRT_MAX)
+    val = SHRT_MAX;
+
+  memory_pressure_duration = (short)val;
+
+  return(TRUE);
+  }
+#endif
 
 
 
@@ -3562,65 +3825,6 @@ int read_config(
 
 
 
-#ifdef PENABLE_LINUX26_CPUSETS
-static u_long setusesmt(
-
-    char *value)  /* I */
-
-  {
-  int enable;
-
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "use_smt", value);
-
-  if ((enable = setbool(value)) != -1)
-    MOMConfigUseSMT = enable;
-
-  return(1);
-  }  /* END setusesmt() */
-
-
-static u_long setmempressthr(
-
-  char *value)
-
-  {
-  long long val;
-
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "memory_pressure_threshold", value);
-
-  if ((val = atoll(value)) < 0)
-    return(0);  /* error, leave as is */
-
-  if (val > INT_MAX)
-    val = INT_MAX;
-
-  memory_pressure_threshold = (int)val;
-
-  return(1);
-  }
-
-static u_long setmempressdur(
-
-  char *value)
-
-  {
-  int val;
-
-  val = atoi(value);
-
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "memory_pressure_duration", value);
-
-  if ((val = atoi(value)) < 0)
-    return(0);  /* error, leave as is */
-
-  if (val > SHRT_MAX)
-    val = SHRT_MAX;
-
-  memory_pressure_duration = (short)val;
-
-  return(1);
-  }
-#endif
 
 
 
@@ -4846,6 +5050,7 @@ int rm_request(
 
               for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
                 {
+
                 numvnodes += pjob->ji_numvnod;
 
                 /* JobId, job state */
@@ -6833,9 +7038,9 @@ int setup_program_environment(void)
   int  tryport;
   int  rppfd;  /* fd for rm and im comm */
   int  privfd = 0; /* fd for sending job info */
-#ifdef PENABLE_LINUX26_CPUSETS
+#ifdef NUMA_SUPPORT
   int  rc;
-#endif
+#endif /* END NUMA_SUPPORT */
 
   struct sigaction act;
   char         *ptr;            /* local tmp variable */
@@ -7426,47 +7631,6 @@ int setup_program_environment(void)
   add_conn(rppfd, Primary, (pbs_net_t)0, 0, PBS_SOCK_INET, rpp_request);
   add_conn(privfd, Primary, (pbs_net_t)0, 0, PBS_SOCK_INET, rpp_request);
 
-#ifdef PENABLE_LINUX26_CPUSETS
-  /* load system topology */
-
-  if((hwloc_topology_init(&topology) == -1))
-    {
-    log_err(-1, msg_daemonname, "Unable to init machine topology");
-    return(-1);
-    }
-
-  if((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) != 0))
-    {
-    log_err(-1, msg_daemonname, "Unable to configure machine topology");
-    return(-1);
-    }
-
-  if((hwloc_topology_load(topology) == -1))
-    {
-    log_err(-1, msg_daemonname, "Unable to load machine topology");
-    return(-1);
-    }
-
-  sprintf(log_buffer, "machine topology contains %d memory nodes, %d cpus",
-          hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
-          hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
-
-#endif
-
-#ifdef NUMA_SUPPORT
-  if ((rc = setup_nodeboards()) != 0)
-    return(rc);
-#else
-  snprintf(path_meminfo,sizeof(path_meminfo),"%s",
-    "/proc/meminfo");
-#endif /* END NUMA_SUPPORT */
-
-#ifdef PENABLE_LINUX26_CPUSETS
-  if ((rc = init_torque_cpuset()) != 0)
-    return(rc);
-#endif /* END PENABLE_LINUX26_CPUSETS */
-
   /* initialize machine-dependent polling routines */
 
   if ((c = mom_open_poll()) != PBSE_NONE)
@@ -7483,6 +7647,17 @@ int setup_program_environment(void)
     return(3);
     }
 
+#ifdef NUMA_SUPPORT
+  if ((rc = bind_to_nodeboard()) != 0)
+    {
+    return(rc);
+    }
+ 
+#else
+  snprintf(path_meminfo,sizeof(path_meminfo),"%s",
+    "/proc/meminfo");
+#endif /* END NUMA_SUPPORT */
+
   /* recover & abort jobs which were under MOM's control */
 
   log_record(
@@ -7492,13 +7667,6 @@ int setup_program_environment(void)
     "before init_abort_jobs");
 
   init_abort_jobs(recover);
-
-#if PENABLE_LINUX26_CPUSETS
-
-  /* Nuke cpusets that do not correspond to existing jobs */
-  cleanup_torque_cpuset();
-
-#endif
 
 #ifdef _POSIX_MEMLOCK
   /* call mlockall() only 1 time, since it seems to leak mem */
@@ -7559,6 +7727,11 @@ int setup_program_environment(void)
 
     sleep(tmpL % (rand() + 1));
     }  /* END if (ptr != NULL) */
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  /* initialize cpusets */
+  initialize_root_cpuset();
+#endif /* END PENABLE_LINUX26_CPUSETS */
 
   return(0);
   }  /* END setup_program_environment() */
@@ -8387,26 +8560,82 @@ void restart_mom(
 
 
 #ifdef NUMA_SUPPORT
-/*
- * Parses mom.layout for layout of nodeboards.
- * Initializes nodeset of each nodeboard.
- * num_node_boards is set to the number of nodeboards.
- * Return 0 on success, other on error.
+/* 
+ * finds the number of elements in a range in this form: num-num
  */
+int parse_range(
+
+  char *str) /* I */
+
+  {
+  int low;
+  int high;
+  char *dash;
+
+  if (str == NULL)
+    return(-1);
+
+  dash = strchr(str,'-');
+  if (dash == NULL)
+    return(-1);
+
+  low = atoi(str);
+  high = atoi(dash+1);
+
+  return(high-low+1);
+  } /* END parse_range() */
+
+
+
+
+
+/* 
+ * finds the number of elements in a comma separated string
+ * count is the number of commas + 1
+ */
+int get_comma_count(
+
+  char *str) /* I */
+
+{
+  int   count = 1;
+  char *comma;
+
+  /* check for error */
+  if (str == NULL)
+    return(-1);
+
+  comma = str;
+
+  while ((comma = strchr(comma,',')) != NULL)
+    {
+    count++;
+    comma++;
+    }
+  
+  return(count);
+  } /* END get_comma_count() */
+
+
+
+
 int read_layout_file()
 
   {
-  char          *id = "read_layout_file";
-  FILE          *layout;
-  char           line[MAX_LINE];
-  char          *delims = " \t\n\r=";
-  char          *tok = NULL;
-  char          *val = NULL;
-  int            i = 0;
-  int            empty_line;
-  hwloc_bitmap_t nodeset = NULL;
+  FILE *read_layout;
+  char  line[MAX_LINE];
+  char *delims = " \t\n\r=";
+  char *tok = NULL;
+  char *val = NULL;
+  char *id = "read_layout_file";
+
+  int   i = 0;
+  int   empty_line;
+  /* make sure to have enough space for the mempath
+   * adding 5 guarantees that we allow up to 999999 numa nodes */
+  int   mempath_len = strlen("/sys/devices/system/node/node0/meminfo") + 5;
   
-  if ((layout = fopen(path_layout, "r")) == NULL)
+  if ((read_layout = fopen(path_layout, "r")) == NULL)
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "Unable to read the layout file in %s\n",
@@ -8416,17 +8645,16 @@ int read_layout_file()
     return(NO_LAYOUT_FILE);
     }
 
-  /* parse lines. format is:
-   * nodes=<X>  
-   * extra key=value pairs are ignored by TORQUE but don't cause a failure */
-  while (fgets(line, sizeof(line), layout) != NULL)
+  /* search for the line with our hostname on it 
+   * file in this format:
+   * hostname cpus=<X> mem=<Y> memsize=<Z> */
+  while (fgets(line, sizeof(line), read_layout) != NULL)
     {
+    /* skip comments */
+    if (line[0] == '#')
+      continue;
 
     empty_line = TRUE;
-
-    /* Strip off comments */
-    if((tok = strchr(line, '#')) != NULL)
-      *tok = '\0';
 
     tok = strtok(line,delims);
 
@@ -8442,46 +8670,63 @@ int read_layout_file()
         snprintf(log_buffer,sizeof(log_buffer),
           "Malformed mom.layout file, line:\n%s\n",
           line);
-        goto failure;
+        log_err(-1,id,log_buffer);
+        
+        exit(-505);
         }
      
       empty_line = FALSE;
 
-      if (strcmp(tok,"nodes") == 0)
+      if (strcmp(tok,"cpus") == 0)
         {
+        /* save offset, lowest index must come first */
+        numa_nodes[i].cpu_offset = atoi(val);
 
-        /* Allocate temp nodeset */
-	if ((nodeset = hwloc_bitmap_alloc()) == NULL)
-          {
-          log_err(errno,id,"failed to allocate nodeset");
-          return(-1);
-          }
+        /* find the node count */
+        if (strchr(val,'-') != NULL)
+          numa_nodes[i].num_cpus = parse_range(val);
+        else
+          numa_nodes[i].num_cpus = get_comma_count(val);
+        }
+      else if (strcmp(tok,"mem") == 0)
+        {
+        int j;
+        /* save offset, lowest index must come first */
+        numa_nodes[i].mem_offset = atoi(val);
 
-        /* Parse val into nodeset, abort if parsing fails */
-        if ((node_boards[i].num_nodes = hwloc_bitmap_parselist(val, nodeset)) < 0)
+        if (strchr(val,'-') != NULL)
+          numa_nodes[i].num_mems = parse_range(val);
+        else
+          numa_nodes[i].num_mems = get_comma_count(val);
+
+        /* save the meminfo path stuff */
+        numa_nodes[i].path_meminfo = (char **)malloc(numa_nodes[i].num_mems * sizeof(char *));
+        
+        for (j = 0; j < numa_nodes[i].num_mems; j++)
           {
-          sprintf(log_buffer, "failed to parse mom.layout file token: nodes=%s", val);
-          goto failure;
+          numa_nodes[i].path_meminfo[j] = (char *)malloc(mempath_len);
+          
+          snprintf(numa_nodes[i].path_meminfo[j],mempath_len,
+            "/sys/devices/system/node/node%d/meminfo",
+            j + numa_nodes[i].mem_offset);
           }
 
         }
-
       else if (strcmp(tok,"memsize") == 0)
         {
-        node_boards[i].memsize = atoi(val);
+        numa_nodes[i].memsize = atoi(val);
         /* default to KB, keeping with TORQUE tradition */
         if ((strstr(val,"gb")) ||
             (strstr(val,"GB")))
           {
-          node_boards[i].memsize *= 1024 * 1024;
+          numa_nodes[i].memsize *= 1024 * 1024;
           }
         else if ((strstr(val,"mb")) ||
                  (strstr(val,"MB")))
           {
-          node_boards[i].memsize *= 1024;
+          numa_nodes[i].memsize *= 1024;
           }
         }
-
       else
         {
         /* ignore other stuff for now */
@@ -8492,179 +8737,49 @@ int read_layout_file()
       } /* END while (parsing line) */
 
     if (empty_line == FALSE)
-      {
-
-      /* Check if we have a nodeset, abort if not */
-      if(nodeset != NULL)
-        {
-        /* Store nodeset of node_boards[i], may be empty */
-        if ((node_boards[i].nodeset = hwloc_bitmap_dup(nodeset)) == NULL)
-          {
-          log_err(errno,id,"failed to duplicate nodeset");      
-          return(-1);
-          }
-
-        /* Free temp nodeset */
-        hwloc_bitmap_free(nodeset);
-        nodeset = NULL;
-
-        /* Show what we have */
-        sprintf(log_buffer, "nodeboard %2d: %d NUMA nodes: ", i, node_boards[i].num_nodes);
-        hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer),
-                                 sizeof(log_buffer) - strlen(log_buffer),
-                                 node_boards[i].nodeset);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
-        }
-      else
-        {
-        sprintf(log_buffer, "nodeboard %d has no nodeset", i);
-        goto failure;
-        }
-
-      /* Done with this nodeboard */
       i++;
-
-      }
     } /* END while (parsing file) */
 
-  num_node_boards = i;
+  num_numa_nodes = i;
 
   snprintf(log_buffer,sizeof(log_buffer),
     "Setting up this mom to function as %d numa nodes\n",
-    num_node_boards);
+    num_numa_nodes);
 
-  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, id, log_buffer);
+  log_event(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_NODE,
+    id,
+    log_buffer);
  
   return(0);
-
-failure:
-
-  log_err(-1,id,log_buffer);
-  if(nodeset)
-    hwloc_bitmap_free(nodeset);
-  return(BAD_LAYOUT_FILE);
-
   } /* END read_layout_file() */
 
 
 
-/* Parses mom.layout, registers procs/mem. Dies if there's a problem.
- * Currently we allow nodeset and/or cpuset to be empty.
- * We also do not check if nodesets/cpusets of nodeboards overlap.
+
+
+
+/* handles everything for binding a specific mom to a nodeboard
+ *
+ * parses mom.layout, registers procs/mem
+ * @return nonzero if there's a problem
  */
-int setup_nodeboards()
+int bind_to_nodeboard()
 
   {
-  char           *id = "setup_nodeboards";
-  hwloc_obj_t     obj, pu;
-  int             i, j, k;
-  int             rc;
-  int             mempath_len = strlen("/sys/devices/system/node/node999999/meminfo");
+  char *id = "bind_to_nodeboard";
 
-  /* Read mom.layout, init nodesets */
-  if ((rc = read_layout_file()) != 0)
+  if (read_layout_file() != 0)
     {
     log_err(-1,id,"Could not read layout file!\n");
-    exit(rc);
-    }
-
-  /*
-   * Walk through nodeboards
-   * - set up cpuset and nodeset
-   * - set up meminfo
-   */
-  for (i = 0; i < num_node_boards; i++)
-    {
-
-    /* Allocate cpuset for this nodeboard */
-    if ((node_boards[i].cpuset = hwloc_bitmap_alloc()) == NULL)
-      {
-      log_err(errno, id, "failed to allocate cpuset");
-      exit(-1);
-      }
-
-    /* Derive cpuset from nodeset */
-    hwloc_cpuset_from_nodeset_strict(topology, node_boards[i].cpuset, node_boards[i].nodeset);
-
-    /*
-     * Handle SMT CPUs.
-     * If a system has SMT enabled, there are more than one logical CPU per physical core.
-     * If MOMConfigUseSMT is off, we only want the first logical CPU of a core in the cpuset.
-     * Thus we map the additional logical CPUs out of the cpuset.
-     * To be portable among architectures as much as possible, the only assumption that
-     * is made here is that the CPUs to become mapped out are HWLOC_OBJ_PU objects that
-     * are children of a HWLOC_OBJ_CORE object.
-     * If there are no HWLOC_OBJ_CORE objects in the cpuset, we cannot detect if cpuset members
-     * are physical or logical. Then the cpuset is left as-is.
-     */
-    if (! MOMConfigUseSMT)
-      {
-      for (obj = hwloc_get_next_obj_inside_cpuset_by_type(topology, node_boards[i].cpuset, HWLOC_OBJ_CORE, NULL);
-           obj;
-           obj = hwloc_get_next_obj_inside_cpuset_by_type(topology, node_boards[i].cpuset, HWLOC_OBJ_CORE, obj))
-        {
-        j = 1;
-        while ((pu = hwloc_get_obj_inside_cpuset_by_type(topology, obj->cpuset, HWLOC_OBJ_PU, j++)) != NULL)
-          hwloc_bitmap_andnot(node_boards[i].cpuset, node_boards[i].cpuset, pu->cpuset);
-        }
-      }
-
-    /* Number of CPUs in cpuset */
-    node_boards[i].num_cpus = hwloc_bitmap_weight(node_boards[i].cpuset);
-
-    /*
-     * Convert cpuset back to nodeset.
-     * This maps out NUMA nodes, which were given in mom.layout,
-     * but which do not exist for whatever reason.
-     */
-
-    hwloc_cpuset_to_nodeset_strict(topology, node_boards[i].cpuset, node_boards[i].nodeset);
-    node_boards[i].num_nodes = hwloc_bitmap_weight(node_boards[i].nodeset);
-
-    /* Set up meminfo paths */
-    if(node_boards[i].num_nodes)
-      {
-      if((node_boards[i].path_meminfo = (char **)malloc(node_boards[i].num_nodes * sizeof(char *))) == NULL)
-        {
-        log_err(errno,id,"failed to allocate memory");   
-        exit(-1);
-        }
-
-      k = 0;
-      hwloc_bitmap_foreach_begin(j, node_boards[i].nodeset)
-        {
-        if((node_boards[i].path_meminfo[k] = (char *)malloc(mempath_len)) == NULL)
-          {
-          log_err(errno,id,"failed to allocate memory");   
-          exit(-1);
-          }
-
-        snprintf(node_boards[i].path_meminfo[k], mempath_len,
-                 "/sys/devices/system/node/node%d/meminfo", j);
-
-        k++;
-        }
-      hwloc_bitmap_foreach_end();
-      }
-
-    /* Show what we have */
-    snprintf(log_buffer, sizeof(log_buffer),
-             "nodeboard %2d: %d cpus (", i, node_boards[i].num_cpus);
-    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
-                             node_boards[i].cpuset);
-    snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
-             "), %d mems (", node_boards[i].num_nodes);
-    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
-                             node_boards[i].nodeset);
-    snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
-             ")");
-    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
-
-    }
+    exit(-505);
+    } 
 
   return(0);
-  } /* END setup_nodeboards */
+  } /* END bind_to_nodeboard */
 #endif /* ifdef NUMA_SUPPORT */
+
 
 
 

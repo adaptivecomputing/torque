@@ -2678,14 +2678,12 @@ int TMomFinalizeChild(
 	if (use_cpusets(pjob) == TRUE)
 #endif /* ALWAYS_USE_CPUSETS */
 		{
+		sprintf(log_buffer, "about to create cpuset for job %s.\n",
+						pjob->ji_qs.ji_jobid);
 
-                if (LOGLEVEL >= 6)
-                  {
-		  sprintf(log_buffer, "about to create cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
-                  log_ext(-1, id, log_buffer, LOG_DEBUG);
-                  }
+		log_ext(-1, id, log_buffer, LOG_DEBUG);
 
-		if (create_job_cpuset(pjob) == FAILURE)
+		if (create_jobset(pjob) == FAILURE)
 			{
 			/* FAILURE */
 
@@ -3383,12 +3381,7 @@ int TMomFinalizeChild(
 
 	if (use_cpusets(pjob) == TRUE)
 		{
-                if (LOGLEVEL >= 6)
-                  {
-                  sprintf(log_buffer, "about to move to cpuset of job %s", pjob->ji_qs.ji_jobid);
-		  log_ext(-1, id, log_buffer, LOG_DEBUG);
-                  }
-		move_to_job_cpuset(getpid(), pjob);
+		move_to_jobset(getpid(), pjob);
 		}
 
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
@@ -4776,6 +4769,7 @@ int start_process(
 	if (use_cpusets(pjob) == TRUE)
 		{
 		int j;
+		char nodeidbuf[1024];
 
 		/* FIXME: vnodenum needs to be stored in the task struct so that we don't
 		 * have to fish it out here.  Then we just pass the int to move_to_taskset
@@ -4785,10 +4779,14 @@ int start_process(
 			{
 			if (!strncmp(vtable.v_envp[j], "PBS_VNODENUM=", strlen("PBS_VNODENUM=")))
 				{
+				strcpy(nodeidbuf, vtable.v_envp[j] + strlen("PBS_VNODENUM="));
+
+				/* FIXME: temp debugging info */
+
         if (LOGLEVEL >= 6)
           {
-          sprintf(log_buffer, "about to move to cpuset for job %s.\n",
-            pjob->ji_qs.ji_jobid);
+          sprintf(log_buffer, "about to move to taskset for job %s/%s.\n",
+            pjob->ji_qs.ji_jobid, nodeidbuf);
           
           log_ext(-1, id, log_buffer, LOG_DEBUG);
           }
@@ -4798,7 +4796,7 @@ int start_process(
 				/* Changed to move_to_jobset for OpenMPI jobs - CS - 20080526 */
 
 				/* move_to_taskset(getpid(),pjob,nodeidbuf); */
-				move_to_job_cpuset(getpid(), pjob);
+				move_to_jobset(getpid(), pjob);
 				}
 			}
 		}

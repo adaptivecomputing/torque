@@ -80,7 +80,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       limit will be set correctly
   e - change so blcr checkpoint jobs can restart on different node. Use
       configure --enable-blcr to allow.
-  b - remove the use of a GNU specific function, and fix an error for solaris builds
 
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for
