@@ -492,7 +492,7 @@ proc_mem_t *get_proc_mem(void)
   proc_mem_t          mm;
   FILE               *fp;
   char                str[32];
-  unsigned long long  bfsz, casz;
+  long long           bfsz, casz, fcasz;
 #ifdef NUMA_SUPPORT
   int i;
 #endif
@@ -505,17 +505,8 @@ proc_mem_t *get_proc_mem(void)
   ret_mm.swap_used  = 0;
   ret_mm.swap_free  = 0;
 
-  mm.mem_total  = 0;
-  mm.mem_used   = 0;
-  mm.mem_free   = 0;
-  mm.swap_total = 0;
-  mm.swap_used  = 0;
-  mm.swap_free  = 0;
-
   for (i = 0; i < numa_nodes[numa_index].num_mems; i++)
-#endif
     {
-#ifdef NUMA_SUPPORT
     if ((fp = fopen(numa_nodes[numa_index].path_meminfo[i],"r")) == NULL)
 #else
     if ((fp = fopen(path_meminfo,"r")) == NULL)
@@ -523,6 +514,14 @@ proc_mem_t *get_proc_mem(void)
       {
       return(NULL);
       }
+
+    bfsz = casz = fcasz = -1;
+    mm.mem_total  = 0;
+    mm.mem_used   = 0;
+    mm.mem_free   = 0;
+    mm.swap_total = 0;
+    mm.swap_used  = 0;
+    mm.swap_free  = 0;
 
     if (fscanf(fp,"%30s",str) != 1)
       {
@@ -540,7 +539,7 @@ proc_mem_t *get_proc_mem(void)
 
       /* umu vmem patch */
 
-      if (fscanf(fp, "%*s %llu %llu %llu %*u %llu %llu",
+      if (fscanf(fp, "%*s %llu %llu %llu %*u %lld %lld",
                  &mm.mem_total,
                  &mm.mem_used,
                  &mm.mem_free,
@@ -598,23 +597,33 @@ proc_mem_t *get_proc_mem(void)
           }
         else if (!strncmp(str, "Buffers:", sizeof(str)))
           {
-          if (fscanf(fp, "%llu",
+          if (fscanf(fp, "%lld",
                      &bfsz) != 1)
             {
             return(NULL);
             }
 
-          mm.mem_free += bfsz * 1024;
+          bfsz *= 1024;
           }
         else if (!strncmp(str, "Cached:", sizeof(str)))
           {
-          if (fscanf(fp, "%llu",
+          if (fscanf(fp, "%lld",
                      &casz) != 1)
             {
             return(NULL);
             }
 
-          mm.mem_free += casz * 1024;
+          casz *= 1024;
+          }
+        else if (!strncmp(str, "FilePages:", sizeof(str)))
+          {
+          if (fscanf(fp, "%lld",
+                     &fcasz) != 1)
+            {
+            return(NULL);
+            }
+
+          fcasz *= 1024;
           }
         else if (!strncmp(str, "SwapTotal:", sizeof(str)))
           {
@@ -642,6 +651,19 @@ proc_mem_t *get_proc_mem(void)
 
     fclose(fp);
   
+    if (bfsz >= 0 || casz >= 0)
+      {
+      if (bfsz > 0)
+        mm.mem_free += bfsz;
+      if (casz > 0)
+        mm.mem_free += casz;
+      }
+    else if (fcasz > 0)
+      {
+      mm.mem_free += fcasz;
+      }
+
+#ifdef NUMA_SUPPORT
     ret_mm.mem_total += mm.mem_total;
     ret_mm.mem_used += mm.mem_used;
     ret_mm.mem_free += mm.mem_free;
@@ -649,6 +671,14 @@ proc_mem_t *get_proc_mem(void)
     ret_mm.swap_used += mm.swap_used;
     ret_mm.swap_free += mm.swap_free;
     }
+#else
+    ret_mm.mem_total  = mm.mem_total;
+    ret_mm.mem_used   = mm.mem_used;
+    ret_mm.mem_free   = mm.mem_free;
+    ret_mm.swap_total = mm.swap_total;
+    ret_mm.swap_used  = mm.swap_used;
+    ret_mm.swap_free  = mm.swap_free;
+#endif
 
   return(&ret_mm);
   }  /* END get_proc_mem() */
