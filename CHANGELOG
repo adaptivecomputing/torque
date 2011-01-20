@@ -8,6 +8,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - make job interactions multi-threaded. 
   e - make job array interactions multi-threaded.
 
+3.0.1
+  e - updated qsub's man page to include ATTR_node_exclusive
+  b - when updating the nodes file, write out the ports for the mom if needed
+  b - fix a bug for non-NUMA systems that was continuously increasing memory values
+
 3.0.0
   e - serverdb is now stored as xml, this is no longer configurable.
   f - added --enable-numa-support for supporting NUMA-type architectures. We

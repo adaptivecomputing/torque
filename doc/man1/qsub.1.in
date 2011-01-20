@@ -83,14 +83,12 @@ qsub \- submit pbs job
 .SH SYNOPSIS
 qsub [\-a date_time] [\-A account_string] [\-b secs] [\-c checkpoint_options]
 [\-C directive_prefix]
-[\-d path] [\-D path] [\-e path] [\-f] [\-h] [\-I] [\-j join] [\-k keep] [\-l resource_list]
-[\-m mail_options] [\-M user_list] [\-N name] [\-o path] 
-[\-p priority] [\-P proxy_username[:group]]  [\-q destination] [\-r c]
-[\-S path_list] [\-t array_request]
-[\-T prologue/epilogue script_name] [\-u user_list] [\-v variable_list] [\-V]
-[\-w] path [\-W additional_attributes]
-[\-x] [\-X] [\-z]
-[script]
+[\-d path] [\-D path] [\-e path] [\-E node exclusive] [\-f] [\-h] [\-I] [\-j join] 
+[\-k keep] [\-l resource_list] [\-m mail_options] [\-M user_list] [\-N name] 
+[\-o path] [\-p priority] [\-P proxy_username[:group]]  [\-q destination] [\-r c]
+[\-S path_list] [\-t array_request] [\-T prologue/epilogue script_name] 
+[\-u user_list] [\-v variable_list] [\-V] [\-w] path 
+[\-W additional_attributes] [\-x] [\-X] [\-z] [script]
 .SH DESCRIPTION
 To create a job is to submit an executable script to a batch server.
 The batch server will be the default server unless the
@@ -387,6 +385,10 @@ job is submitted.
 This option sets the job attribute
 .At Error_Path .
 .Ig
+.IP "\-E" 8
+Specifies that the job has exclusive access to the nodes it is executing on. This is intended to be used in
+conjunction with a scheduler that enforces exclusive access, and it tells the cpuset to give the job access
+to all of that node's resources.
 .IP "\-f" 8
 Specifies that the job is fault tolerant. The
 .At fault_tolerant
