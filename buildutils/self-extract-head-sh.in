@@ -24,7 +24,7 @@ conffiles="$PBS_SERVER_HOME/sched_priv/sched_config
            $PBS_SERVER_HOME/sched_priv/dedicated_time
            $PBS_ENVIRON
            $PBS_DEFAULT_FILE
-           $PBS_SERVER_HOME/server_priv_nodes"
+           $PBS_SERVER_HOME/server_priv/nodes"
 
 saveext=save.$$
 
