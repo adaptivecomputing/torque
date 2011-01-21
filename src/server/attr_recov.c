@@ -103,6 +103,8 @@
 #include "attribute.h"
 #include "log.h"
 #include "svrfunc.h"
+#include "utils.h"
+#include "server.h"
 
 
 /* Global Variables */
@@ -252,8 +254,7 @@ int save_struct(
  *  -1 on failure (flush failed)
  */
 
-int
-save_flush(void)
+int save_flush(void)
 
   {
   int   i;
@@ -380,6 +381,68 @@ int save_attr(
   }  /* END save_attr() */
 
 
+
+
+#ifndef PBS_MOM
+int save_attr_xml(
+
+
+  struct attribute_def *padef,   /* attribute definition array */
+  struct attribute     *pattr,   /* ptr to attribute value array */
+  int                   numattr, /* number of attributes in array */
+  int                   fds)     /* file descriptor where attributes are written */
+
+  {
+  int  i;
+  int  rc;
+  char buf[MAXLINE<<8];
+  char valbuf[MAXLINE<<7];
+
+  /* write the opening tag for attributes */
+  snprintf(buf,sizeof(buf),"<attributes>\n");
+  if ((rc = write_buffer(buf,strlen(buf),fds)) != 0)
+    return(rc);
+
+  for (i = 0; i < numattr; i++)
+    {
+    if (pattr[i].at_flags & ATR_VFLAG_SET)
+      {
+      buf[0] = '\0';
+      valbuf[0] = '\0';
+
+      if ((rc = attr_to_str(valbuf,sizeof(valbuf),padef+i,pattr[i],TRUE)) != 0)
+        {
+        if (rc != NO_ATTR_DATA)
+          {
+          /* ERROR */
+          snprintf(log_buffer,sizeof(log_buffer),
+            "Not enough space to print attribute %s",
+            padef[i].at_name);
+
+          return(rc);
+          }
+        }
+      else
+        {
+        snprintf(buf,sizeof(buf),"<%s>%s</%s>\n",
+          padef[i].at_name,
+          valbuf,
+          padef[i].at_name);
+
+        if ((rc = write_buffer(buf,strlen(buf),fds)) != 0)
+          return(rc);
+        }
+      }
+    } /* END for each attribute */
+
+  /* close the attributes */
+  snprintf(buf,sizeof(buf),"</attributes>\n");
+  rc = write_buffer(buf,strlen(buf),fds);
+
+  /* we can just return this since its the last write */
+  return(rc);
+  } /* END save_attr_xml() */
+#endif /* ndef PBS_MOM */
 
 
 

@@ -103,6 +103,7 @@
 #include "queue.h"
 #include "svrfunc.h"
 #include "log.h"
+#include "utils.h"
 #ifdef ENABLE_PTHREADS
 #include <pthread.h>
 
@@ -111,41 +112,31 @@ extern pthread_mutex_t *setup_save_mutex;
 
 /* data global to this file */
 
-extern char *path_queues;
-extern time_t        time_now;
+extern char   *path_queues;
+extern time_t  time_now;
+extern int     resc_access_perm;
+ 
 
-/*
- * que_save() - Saves a queue structure image on disk
- *
- *
- * For a save, to insure no data is ever lost due to system crash:
- * 1. write new image to a new file using a temp name
- * 2. unlink the old (image) file
- * 3. link the correct name to the new file
- * 4. unlink the temp name
- *
- * Then, if the queue has any access control lists, they are saved
- * to their own files.
- */
+int que_save_xml(
 
-int que_save(
-
-  pbs_queue *pque) /* pointer to queue structure */
+  pbs_queue *pque)
 
   {
   int fds;
-  int i;
-  char   *myid = "que_save";
+  int rc;
+  char   *myid = "que_save_xml";
   char namebuf1[MAXPATHLEN];
   char namebuf2[MAXPATHLEN];
+  char buf[MAXLINE<<8];
 
   pque->qu_attr[QA_ATR_MTime].at_val.at_long = time_now;
   pque->qu_attr[QA_ATR_MTime].at_flags = ATR_VFLAG_SET;
 
-  strcpy(namebuf1, path_queues);
-  strcat(namebuf1, pque->qu_qs.qu_name);
-  strcpy(namebuf2, namebuf1);
-  strcat(namebuf2, ".new");
+  snprintf(namebuf1,sizeof(namebuf1),
+    "%s%s",
+    path_queues,
+    pque->qu_qs.qu_name);
+  snprintf(namebuf2,sizeof(namebuf2),"%s.new",namebuf1);
 
   fds = open(namebuf2, O_CREAT | O_WRONLY | O_Sync, 0600);
 
@@ -170,10 +161,17 @@ int que_save(
   save_setup(fds);
 
   /* save basic queue structure (fixed length stuff) */
+  snprintf(buf,sizeof(buf),
+    "<queue>\n<modified>%d</modified>\n<type>%d</type>\n<create_time>%llu</create_time>\n<modify_time>%llu</modify_time>\n<name>%s</name>\n",
+    pque->qu_qs.qu_modified,
+    pque->qu_qs.qu_type,
+    (long long)pque->qu_qs.qu_ctime,
+    (long long)pque->qu_qs.qu_mtime,
+    pque->qu_qs.qu_name);
 
-  if (save_struct((char *)&pque->qu_qs, sizeof(struct queuefix)) != 0)
+  if ((rc = write_buffer(buf,strlen(buf),fds)))
     {
-    log_err(-1, myid, "save_struct failed");
+    log_err(rc,myid,"unable to write to the file");
 
     close(fds);
 
@@ -186,7 +184,7 @@ int que_save(
 
   /* save queue attributes  */
 
-  if (save_attr(que_attr_def, pque->qu_attr, QA_ATR_LAST) != 0)
+  if (save_attr_xml(que_attr_def, pque->qu_attr, QA_ATR_LAST,fds) != 0)
     {
     log_err(-1, myid, "save_attr failed");
 
@@ -199,8 +197,143 @@ int que_save(
     return(-1);
     }
 
+  /* close the queue tag */
+  snprintf(buf,sizeof(buf),"</queue>");
+  if ((rc = write_buffer(buf,strlen(buf),fds)))
+    {
+    log_err(rc,myid,"unable to write to the queue's file");
+    close(fds);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(setup_save_mutex);
+#endif
+
+    return(-1);
+    }
+
   if (save_flush() != 0)   /* flush the save buffer */
     {
+    log_err(-1, myid, "save_flush failed");
+    close(fds);
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(setup_save_mutex);
+#endif
+    return (-1);
+    }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(setup_save_mutex);
+#endif
+
+  close(fds);
+
+  unlink(namebuf1);
+
+  if (link(namebuf2, namebuf1) < 0)
+    {
+    log_err(errno, myid, "unable to link queue name");
+    }
+  else
+    {
+    unlink(namebuf2);
+    }
+
+  return(0);
+  } /* END que_save_xml() */
+
+
+
+
+
+/*
+ * que_save() - Saves a queue structure image on disk
+ *
+ *
+ * For a save, to insure no data is ever lost due to system crash:
+ * 1. write new image to a new file using a temp name
+ * 2. unlink the old (image) file
+ * 3. link the correct name to the new file
+ * 4. unlink the temp name
+ *
+ * Then, if the queue has any access control lists, they are saved
+ * to their own files.
+ */
+
+int que_save(
+
+  pbs_queue *pque) /* pointer to queue structure */
+
+  {
+/*  int fds;
+  int i;
+  char   *myid = "que_save";
+  char namebuf1[MAXPATHLEN];
+  char namebuf2[MAXPATHLEN];
+*/
+  return(que_save_xml(pque));
+
+/*  pque->qu_attr[QA_ATR_MTime].at_val.at_long = time_now;
+  pque->qu_attr[QA_ATR_MTime].at_flags = ATR_VFLAG_SET;
+
+  strcpy(namebuf1, path_queues);
+  strcat(namebuf1, pque->qu_qs.qu_name);
+  strcpy(namebuf2, namebuf1);
+  strcat(namebuf2, ".new");
+
+  fds = open(namebuf2, O_CREAT | O_WRONLY | O_Sync, 0600);
+
+  if (fds < 0)
+    {
+    log_err(errno, myid, "open error");
+
+    return(-1);
+    }
+
+*/  /* set up save buffering system */
+/*#ifdef ENABLE_PTHREADS
+  if (setup_save_mutex == NULL)
+    {
+    setup_save_mutex = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(setup_save_mutex,NULL);
+    }
+
+  pthread_mutex_lock(setup_save_mutex);
+#endif
+
+  save_setup(fds);
+
+*/  /* save basic queue structure (fixed length stuff) */
+
+/*  if (save_struct((char *)&pque->qu_qs, sizeof(struct queuefix)) != 0)
+    {
+    log_err(-1, myid, "save_struct failed");
+
+    close(fds);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(setup_save_mutex);
+#endif
+
+    return(-1);
+    }
+
+*/  /* save queue attributes  */
+
+/*  if (save_attr(que_attr_def, pque->qu_attr, QA_ATR_LAST) != 0)
+    {
+    log_err(-1, myid, "save_attr failed");
+
+    close(fds);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(setup_save_mutex);
+#endif
+
+    return(-1);
+    }
+
+  if (save_flush() != 0) */  /* flush the save buffer */
+/*    {
     log_err(-1, myid, "save_flush failed");
     (void)close(fds);
 #ifdef ENABLE_PTHREADS
@@ -223,16 +356,16 @@ int que_save(
     }
   else
     {
-    (void)unlink(namebuf2);
+    unlink(namebuf2);
     }
-
+*/
   /*
    * now search queue's attributes for access control lists,
    * they are saved separately in their own file:
    * ../priv/(attr name)/(queue name)
    */
 
-  for (i = 0;i < QA_ATR_LAST;i++)
+/*  for (i = 0;i < QA_ATR_LAST;i++)
     {
     if (pque->qu_attr[i].at_type == ATR_TYPE_ACL)
       {
@@ -244,8 +377,174 @@ int que_save(
       }
     }
 
-  return(0);
-  }
+  return(0);*/
+  } /* END que_save() */
+
+
+
+
+
+pbs_queue *que_recov_xml(
+
+  char *filename)
+
+  {
+  int          fds;
+  int          rc;
+  pbs_queue   *pq;
+  char         namebuf[MAXPATHLEN];
+  char         buf[MAXLINE<<10];
+  char        *parent;
+  char        *child;
+
+  char        *current;
+  char        *begin;
+  char        *end;
+
+  static char *id = "que_recov_xml";
+
+  pq = que_alloc(filename);  /* allocate & init queue structure space */
+
+  if (pq == NULL)
+    {
+    log_err(-1, id, "que_alloc failed");
+
+    return(NULL);
+    }
+
+  strcpy(namebuf, path_queues);
+
+  strcat(namebuf, filename);
+
+  fds = open(namebuf, O_RDONLY, 0);
+
+  if (fds < 0)
+    {
+    log_err(errno, id, "open error");
+
+    que_free(pq);
+
+    return(NULL);
+    }
+
+  /* read in queue save sub-structure */
+  if (read(fds,buf,sizeof(buf)) < 0)
+    {
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Unable to read from queue file %s",
+      filename);
+    log_err(errno,id,log_buffer);
+
+    return(NULL);
+    }
+
+  current = begin = buf;
+
+  /* advance past the queue tag */
+  current = strstr(current,"<queue>");
+  if (current == NULL)
+    {
+    log_event(PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      "Cannot find a queue tag, attempting to load legacy format");
+    que_free(pq);
+
+    return(que_recov(filename));
+    }
+
+  end = strstr(current,"</queue>");
+
+  if (end == NULL)
+    {
+    log_err(-1,id,"No queue tag found in the queue file???");
+    que_free(pq);
+    return(NULL);
+    }
+
+  /* move past the queue tag */
+  current += strlen("<queue>");
+  /* adjust the end for the newline preceeding the close queue tag */
+  end--;
+
+  while (current < end)
+    {
+    if (get_parent_and_child(current,&parent,&child,&current))
+      {
+      /* ERROR */
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Bad XML in the queue file at: %s",
+        current);
+      log_err(-1,id,log_buffer);
+
+      que_free(pq);
+      return(NULL);
+      }
+
+    if (!strcmp(parent,"modified"))
+      pq->qu_qs.qu_modified = atoi(child);
+    else if (!strcmp(parent,"type"))
+      pq->qu_qs.qu_type = atoi(child);
+    else if (!strcmp(parent,"create_time"))
+      pq->qu_qs.qu_ctime = atoi(child);
+    else if (!strcmp(parent,"modify_time"))
+      pq->qu_qs.qu_mtime = atoi(child);
+    else if (!strcmp(parent,"name"))
+      snprintf(pq->qu_qs.qu_name,sizeof(pq->qu_qs.qu_name),"%s",child);
+    else if (!strcmp(parent,"attributes"))
+      {
+      char *attr_ptr = child;
+      char *child_parent;
+      char *child_attr;
+      
+      resc_access_perm = ATR_DFLAG_ACCESS;
+
+      while (*attr_ptr != '\0')
+        {
+        if (get_parent_and_child(attr_ptr,&child_parent,&child_attr,&attr_ptr))
+          {
+          /* ERROR */
+          snprintf(log_buffer,sizeof(log_buffer),
+            "Bad XML in the queue file at: %s",
+            current);
+          log_err(-1,id,log_buffer);
+          
+          que_free(pq);
+          return(NULL);
+          }
+
+        if ((rc = str_to_attr(child_parent,child_attr,pq->qu_attr,que_attr_def)))
+          {
+          /* ERROR */
+          snprintf(log_buffer,sizeof(log_buffer),
+            "Error creating attribute %s",
+            child_parent);
+          log_err(rc,id,log_buffer);
+
+          que_free(pq);
+          return(NULL);
+          }
+        }
+      }
+    } 
+
+  /* all done recovering the queue */
+
+  close(fds);
+
+  if ((pq->qu_attr[QA_ATR_MTime].at_flags & ATR_VFLAG_SET) == 0)
+    {
+    /* if we are recovering a pre-2.1.2 queue, save a new mtime */
+
+    pq->qu_attr[QA_ATR_MTime].at_val.at_long = time_now;
+    pq->qu_attr[QA_ATR_MTime].at_flags = ATR_VFLAG_SET;
+
+    que_save(pq);
+    }
+
+  return(pq);
+  } /* END que_recov_xml() */
+
 
 
 
@@ -303,7 +602,7 @@ pbs_queue *que_recov(
     {
     log_err(errno, "que_recov", "read error");
     que_free(pq);
-    (void)close(fds);
+    close(fds);
     return ((pbs_queue *)0);
     }
 
@@ -314,7 +613,7 @@ pbs_queue *que_recov(
     {
     log_err(-1, "que_recov", "recov_attr[common] failed");
     que_free(pq);
-    (void)close(fds);
+    close(fds);
     return ((pbs_queue *)0);
     }
 

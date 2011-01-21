@@ -447,6 +447,11 @@ extern void  attrl_fixlink(tlist_head *svrattrl);
 extern void  recov_acl(attribute *, attribute_def *, char *, char *);
 extern int   save_acl(attribute *, attribute_def *,  char *, char *);
 extern int   save_attr(attribute_def *, attribute *, int);
+extern int   save_attr_xml(attribute_def *,attribute *,int,int);
+extern int   write_buffer(char *,int,int);
+extern int   size_to_str(struct size_value,char *,int);
+extern int   attr_to_str(char *,int, attribute_def *,struct attribute,int);
+extern int   str_to_attr(char *,char *,struct attribute *,struct attribute_def *);
 
 extern int      encode_state(attribute *, tlist_head *, char *, char *, int);
 extern int      encode_props(attribute*, tlist_head*, char*, char*, int);

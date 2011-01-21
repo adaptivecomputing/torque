@@ -191,6 +191,7 @@ extern pbs_queue *find_queuebyname(char *);
 extern pbs_queue *get_dfltque();
 extern pbs_queue *que_alloc(char *name);
 extern void   que_free(pbs_queue *);
+extern pbs_queue *que_recov_xml(char *);
 extern pbs_queue *que_recov(char *);
 extern int    que_save(pbs_queue *);
 

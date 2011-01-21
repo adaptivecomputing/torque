@@ -551,12 +551,16 @@ int attr_to_str(
 
 
 
+/* converts a string to an attribute 
+ * @return PBSE_NONE on success
+ */
 
 int str_to_attr(
 
-  char             *name,
-  char             *val,
-  struct attribute *attr)
+  char                *name,    /* I */
+  char                 *val,    /* I */
+  struct attribute     *attr,   /* O */
+  struct attribute_def *padef)  /* I */
 
   {
   int   index;
@@ -572,7 +576,7 @@ int str_to_attr(
     return(-10);
     }
 
-  index = find_attr(svr_attr_def,name,SRV_ATR_LAST);
+  index = find_attr(padef,name,SRV_ATR_LAST);
 
   if (index < 0)
     {
@@ -585,7 +589,7 @@ int str_to_attr(
     return(ATTR_NOT_FOUND);
     }
 
-  switch (svr_attr_def[index].at_type)
+  switch (padef[index].at_type)
     {
     case ATR_TYPE_LONG:
 
@@ -709,7 +713,7 @@ int str_to_attr(
           break;
           }
         
-        if ((rc = decode_resc(&(server.sv_attr[index]),name,resc_parent,resc_child)))
+        if ((rc = decode_resc(&(attr[index]),name,resc_parent,resc_child)))
           {
           snprintf(log_buffer,sizeof(log_buffer),
             "Error decoding resource %s, %s = %s\n",
@@ -741,7 +745,7 @@ int str_to_attr(
 
   attr[index].at_flags |= ATR_VFLAG_SET;
 
-  return(0);
+  return(PBSE_NONE);
   } /* END str_to_attr */
 
 
@@ -830,7 +834,7 @@ int svr_recov_xml(
     }
 
   /* adjust to not process server tag */
-  current += strlen("<server>");
+  current += strlen("<server_db>");
   /* adjust end for the newline character preceeding the close server tag */
   end--;
 
@@ -879,7 +883,7 @@ int svr_recov_xml(
           break;
           }
 
-        if ((rc = str_to_attr(child_parent,child_attr,server.sv_attr)))
+        if ((rc = str_to_attr(child_parent,child_attr,server.sv_attr,svr_attr_def)))
           {
           /* ERROR */
           errorCount++;
@@ -901,10 +905,10 @@ int svr_recov_xml(
     
   if (!read_only)
     {
-    server.sv_attr[(int)SRV_ATR_NextJobNumber].at_val.at_long = 
+    server.sv_attr[SRV_ATR_NextJobNumber].at_val.at_long = 
       server.sv_qs.sv_jobidnumber;
     
-    server.sv_attr[(int)SRV_ATR_NextJobNumber].at_flags |= 
+    server.sv_attr[SRV_ATR_NextJobNumber].at_flags |= 
       ATR_VFLAG_SET| ATR_VFLAG_MODIFY;
     }
 
@@ -924,14 +928,12 @@ int svr_save_xml(
   int            mode)
 
   {
-  char *id   = "svr_save_xml";
+  char *id = "svr_save_xml";
   char  buf[MAXLINE<<8];
-  char  valbuf[MAXLINE<<7];
 
   int   fds;
   int   rc;
   int   len;
-  int   i;
 
   fds = open(path_svrdb, O_WRONLY | O_CREAT | O_Sync | O_TRUNC, 0600);
 
@@ -954,55 +956,7 @@ int svr_save_xml(
   if ((rc = write_buffer(buf,len,fds)))
     return(rc);
 
-  /* write the attribute info */
-  snprintf(buf,sizeof(buf),"<attributes>");
-  if ((rc = write_buffer(buf,strlen(buf),fds)))
-    return(rc);
-
-  i = 0;
-  while (i != SRV_ATR_LAST)
-    {
-    if (ps->sv_attr[i].at_flags & ATR_VFLAG_SET)
-      {
-      buf[0] = '\0';
-      valbuf[0] = '\0';
-      if ((rc = attr_to_str(valbuf,
-              sizeof(valbuf),
-              svr_attr_def + i, 
-              ps->sv_attr[i],
-              TRUE) != 0))
-        {
-        if (rc != NO_ATTR_DATA)
-          {
-          /* ERROR */
-          snprintf(log_buffer,sizeof(log_buffer),
-            "Not enough space to print attribute %s",
-            svr_attr_def[i].at_name);
-          log_err(-1,id,log_buffer);
-
-          return(rc);
-          }
-        }
-      else
-        {
-        snprintf(buf,sizeof(buf),"<%s>%s</%s>\n",
-          svr_attr_def[i].at_name,
-          valbuf,
-          svr_attr_def[i].at_name);
-        
-        if (buf[0] != '\0')
-          {
-          if ((rc = write_buffer(buf,strlen(buf),fds)))
-            return(rc);
-          }
-        }      
-      }
-
-    i++;
-    }
-  
-  snprintf(buf,sizeof(buf),"</attributes>\n");
-  if ((rc = write_buffer(buf,strlen(buf),fds)))
+  if ((rc = save_attr_xml(svr_attr_def,ps->sv_attr,SRV_ATR_LAST,fds)) != 0)
     return(rc);
 
   /* close the server_db */
@@ -1013,7 +967,6 @@ int svr_save_xml(
   close(fds);
 
   return(0);
-
   } /* END svr_save_xml */
 
 

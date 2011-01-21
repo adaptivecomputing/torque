@@ -997,7 +997,7 @@ int pbsd_init(
       {
       /* recover queue */
 
-      if ((pque = que_recov(pdirent->d_name)) != NULL)
+      if ((pque = que_recov_xml(pdirent->d_name)) != NULL)
         {
         /* que_recov increments sv_numque */
 
