@@ -709,6 +709,14 @@ void job_purge(
     unlink(file);
 
     pjob->ji_flags &= ~MOM_HAS_NODEFILE;
+
+    /* delete the gpufile if still hanging around */
+
+    sprintf(file, "%s/%sgpu",
+      path_aux,
+      pjob->ji_qs.ji_jobid);
+
+    unlink(file);
     }
 
   delete_link(&pjob->ji_jobque);
