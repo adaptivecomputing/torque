@@ -18,6 +18,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - remove the use of a GNU specific function, and fix an error for solaris builds
   b - Updated PBS_License.txt to remove the implication that the software
       is not freely redistributable. 
+  b - remove the $PBS_GPUFILE when job is done on mom
 
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for
