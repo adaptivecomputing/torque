@@ -19,6 +19,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Updated PBS_License.txt to remove the implication that the software
       is not freely redistributable. 
   b - remove the $PBS_GPUFILE when job is done on mom
+  b - fix a race condition when issuing a qrerun followed by a qdel that caused the job to be 
+      queued instead of deleted sometimes.
 
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for

@@ -415,10 +415,16 @@ void req_deletejob(
     return;
     }
 
-  if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
+  if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN ||
+      pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN ||
+      pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1 ||
+      pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN2 ||
+      pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN3 )
     {
-    /* being sent to MOM, wait till she gets it going */
+    /* If JOB_SUBSTATE_PRERUN being sent to MOM, wait till she gets it going */
     /* retry in one second                            */
+    /* If JOB_SUBSTATE_RERUN, RERUN1, RERUN2 or RERUN3 the
+       job is being requeued. Wait until finished */
 
     static time_t  cycle_check_when = 0;
     static char    cycle_check_jid[PBS_MAXSVRJOBID + 1];
