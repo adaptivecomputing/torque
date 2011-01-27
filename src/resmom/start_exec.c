@@ -5019,6 +5019,9 @@ int start_process(
 
 	/* become the user and execv the shell and become the real job */
 
+  /* NOTE: must set groups before setting the user because not all users can
+   * call setgid and setgroups, even if its their group, see setgid's man page */
+
 	if (setgroups(pjob->ji_grpcache->gc_ngroup,
 								(gid_t *)pjob->ji_grpcache->gc_groups) != 0)
 		{
@@ -6807,6 +6810,8 @@ int open_std_file(
   if (getuid() == 0)
 #endif
     {
+    /* NOTE: must set groups before setting the user because not all users can
+     * call setgid and setgroups, even if its their group, see setgid's man page */
     if (setgroups(pjob->ji_grpcache->gc_ngroup,(gid_t *)pjob->ji_grpcache->gc_groups) != 0)
       {
       snprintf(log_buffer,sizeof(log_buffer),
