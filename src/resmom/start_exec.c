@@ -3495,6 +3495,8 @@ int TMomFinalizeChild(
 		log_ext(-1, id, log_buffer, LOG_DEBUG);
 		}
 
+  /* NOTE: must set groups before setting the user because not all users can
+   * call setgid and setgroups, even if its their group, see setgid's man page */
 	if (setgroups(
 							 pjob->ji_grpcache->gc_ngroup,
 							 (gid_t *)pjob->ji_grpcache->gc_groups) != 0)
