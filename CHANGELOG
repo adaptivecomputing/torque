@@ -12,6 +12,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - updated qsub's man page to include ATTR_node_exclusive
   b - when updating the nodes file, write out the ports for the mom if needed
   b - fix a bug for non-NUMA systems that was continuously increasing memory values
+  e - Added code from 2.5-fixes which will try and find nodes that did not
+      resolve when pbs_server started up. This is in reference to Bugzilla
+      bug 110.
 
 3.0.0
   e - serverdb is now stored as xml, this is no longer configurable.
@@ -87,8 +90,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       configure --enable-blcr to allow.
   b - remove the use of a GNU specific function, and fix an error for solaris builds
   b - remove the $PBS_GPUFILE when job is done on mom
-  b - fix a race condition when issuing a qrerun followed by a qdel that caused the job to be 
-      queued instead of deleted sometimes.
+  b - fix a race condition when issuing a qrerun followed by a qdel that caused 
+      the job to be queued instead of deleted sometimes.
+  e - Implemented Bugzilla Bug 110. If a host in the nodes file cannot be resolved
+      at startup the server will try once every 5 minutes until the node 
+      will resolve and it will add it to the nodes list.
 
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for
