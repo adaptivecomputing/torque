@@ -133,6 +133,16 @@ extern time_t  time_now;
 #define MAX_LINE 1024
 #endif
 
+typedef struct _node_info_
+  {
+  char     *nodename;
+  svrattrl *plist;
+  int      perms;
+  tlist_head atrlist;
+  }node_info;
+
+
+
 /* Global Data */
 
 extern int  svr_totnodes;
@@ -1414,7 +1424,41 @@ static struct pbssubn *create_subnode(
   }  /* END create_subnode() */
 
 
+/* recheck_for_node :
+ * This function is called whenever an entry in the nodes file does
+ * not resolve on server initialization. This function is called 
+ * periodically to see if the node is now resolvable and if so 
+ * add it to the list of available MOM nodes. */ 
+void recheck_for_node( struct work_task *ptask)
+  {
+  node_info *host_info;
+  int rc;
+  int bad;
 
+  host_info = ptask->wt_parm1;
+  if(host_info == NULL)
+    {
+    return;
+    }
+
+
+  rc = create_pbs_node( host_info->nodename, host_info->plist, host_info->perms, &bad);
+  if(rc)
+    {
+    /* we created a new host_info in create_pbs_node. We
+       need to free this one */
+    free_attrlist(&host_info->atrlist);
+    if(host_info->nodename)
+      {
+      free(host_info->nodename);
+      }
+
+    free(host_info);
+    }
+
+  return;
+
+  }
 
 
 /**
@@ -1440,6 +1484,7 @@ int create_pbs_node(
   u_long          *pul;  /* 0 terminated host adrs array*/
   int              rc;
   int              iht;
+  node_info        *host_info;
 
   if ((rc = process_host_name_part(
               objname,        /* I */
@@ -1447,7 +1492,60 @@ int create_pbs_node(
               &pname,         /* O */
               &ntype)) != 0)  /* O */
     {
+    svrattrl *pal, *pattrl;
+
     log_err(-1, "process_host_name_part", log_buffer);
+
+    /* the host name in the nodes file did not resolve.
+       We will set up a process to check periodically
+       to see if the node will resolve later */
+
+    host_info = (node_info *)calloc(1, sizeof(node_info));
+    if(host_info == NULL)
+      {
+      log_err(-1, "create_pbs_node calloc failed", log_buffer);
+      return(PBSE_SYSTEM);
+      }
+
+    CLEAR_HEAD(host_info->atrlist);
+
+    /* allocate and copy the objname plist and perms */
+    host_info->perms = perms;
+    pal = plist;
+
+    while(pal != NULL)
+      {
+      pattrl = attrlist_create(pal->al_atopl.name, 0, strlen(pal->al_atopl.value) + 1);
+      if(pattrl == NULL)
+        {
+        log_err(-1, "cannot create node attribute", log_buffer);
+        return(PBSE_SYSTEM);                    
+        }
+
+      strcpy(pattrl->al_value, pal->al_atopl.value);
+      pattrl->al_flags = SET;
+
+      append_link(&host_info->atrlist, &pattrl->al_link, pattrl);
+      pal = GET_NEXT(pal->al_link);
+      }
+
+    pattrl = GET_NEXT(host_info->atrlist);
+    host_info->plist = pattrl;
+
+    if(objname != NULL)
+      {
+      host_info->nodename = (char *)calloc(1, strlen(objname)+1);
+      if(host_info->nodename == NULL)
+        {
+        free(host_info);
+        log_err(-1, "create_pbs_node calloc failed", log_buffer);
+        return(PBSE_SYSTEM);
+        }
+      strcpy(host_info->nodename, objname);
+      }
+
+      
+    set_task(WORK_Timed, time_now + 30 /*PBS_LOG_CHECK_RATE  five minutes */, recheck_for_node, host_info);
 
     return(rc);
     }
