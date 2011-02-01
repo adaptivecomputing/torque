@@ -212,6 +212,7 @@ struct pbsnode
   unsigned short        num_numa_nodes; /* number of numa nodes */
   struct AvlNode       *numa_nodes; /* private tree of numa nodes */
   char                 *numa_str; /* comma-delimited string of processor values */
+  char           *gpu_str; /* comma-delimited string of the number of gpus for each nodeboard */
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_t      *nd_mutex; /* semaphore for accessing this node's data */
@@ -331,6 +332,7 @@ enum nodeattr
   ND_ATR_num_numa_nodes,
   ND_ATR_numa_str,
   ND_ATR_gpus,
+  ND_ATR_gpus_str,
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */
 

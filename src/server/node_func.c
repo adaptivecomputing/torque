@@ -705,6 +705,8 @@ int status_nodeattrib(
       continue;
     else if (!strcmp((padef + i)->at_name, ATTR_NODE_numa_str))
       continue;
+    else if (!strcmp((padef + i)->at_name, ATTR_NODE_gpus_str))
+      continue;
     else if (!strcmp((padef + i)->at_name, ATTR_NODE_gpus))
       {
       atemp[i].at_val.at_long  = pnode->nd_ngpus;
@@ -1422,6 +1424,14 @@ int update_nodes_file(void)
         np->nd_mom_rm_port);
       }
 
+    if ((np->gpu_str != NULL) &&
+        (np->gpu_str[0] != '\0'))
+      {
+      fprintf(nin, " %s=%s",
+        ATTR_NODE_gpus_str,
+        np->gpu_str);
+      }
+
     /* write out properties */
 
     for (j = 0;j < np->nd_nprops - 1;++j)
@@ -1706,6 +1716,36 @@ int copy_properties(
 
 
 
+/*
+ * accepts a string of numbers separated by commas. it places the 
+ * number in val and advances the string to the next number past the comma
+ */
+
+int read_val_and_advance(
+
+  int   *val,
+  char **str)
+
+  {
+  char *comma;
+
+  if ((*str == NULL) ||
+      (val == NULL))
+    return(-1);
+
+  *val = atoi(*str);
+
+  comma = strchr(*str,',');
+
+  if (comma != NULL)
+    *str += comma - *str + 1;
+
+  return(PBSE_NONE);
+  } /* END read_val_and_advance() */
+
+
+
+
 
 /* creates the private numa nodes on this node 
  *
@@ -1724,10 +1764,11 @@ int setup_numa_nodes(
   struct pbsnode *pn;
   char            pname[MAX_LINE];
   char           *np_ptr = NULL;
+  char           *gp_ptr = NULL;
   char           *allocd_name;
   int             np;
+  int             gpus;
   int             rc;
-  char           *delim = ",";
 
   char           *id = "setup_numa_nodes";
 
@@ -1744,13 +1785,20 @@ int setup_numa_nodes(
   /* determine the number of cores per node */
   if (pnode->numa_str != NULL)
     {
-    np_ptr = strtok(pnode->numa_str,delim);
-    np = atoi(np_ptr);
+    np_ptr = pnode->numa_str;
+    read_val_and_advance(&np,&np_ptr);
     }
   else
-    {
     np = pnode->nd_nsn / pnode->num_numa_nodes;
+
+  /* determine the number of gpus per node */
+  if (pnode->gpu_str != NULL)
+    {
+    gp_ptr = pnode->gpu_str;
+    read_val_and_advance(&gpus,&gp_ptr);
     }
+  else
+    gpus = pnode->nd_ngpus / pnode->num_numa_nodes;
 
   for (i = 0; i < pnode->num_numa_nodes; i++)
     {
@@ -1778,12 +1826,9 @@ int setup_numa_nodes(
     pn->nd_mom_port = pnode->nd_mom_port;
     pn->nd_mom_rm_port = pnode->nd_mom_rm_port;
 
-    /* set the number of processors */
+    /* update the np string pointer */
     if (np_ptr != NULL)
-      {
-      np_ptr = strtok(NULL,delim);
-      np = atoi(np_ptr);
-      }
+      read_val_and_advance(&np,&np_ptr);
 
     /* create the subnodes for this node */
     for (j = 0; j < np; j++)
@@ -1796,6 +1841,22 @@ int setup_numa_nodes(
         return(PBSE_SYSTEM);
         }
       }
+
+    /* create the gpu subnodes for this node */
+    for (j = 0; j < gpus; j++)
+      {
+      if (create_a_gpusubnode(pn) != PBSE_NONE)
+        {
+        /* ERROR */
+        pn->nd_state = INUSE_DELETED;
+
+        return(PBSE_SYSTEM);
+        }
+      }
+
+    /* update the gpu string pointer */
+    if (gp_ptr != NULL)
+      read_val_and_advance(&gpus,&gp_ptr);
 
     copy_properties(pn,pnode);
 
@@ -2177,6 +2238,7 @@ static char *parse_node_token(
 
   char *start, /* if null, restart where left off */
   int   cok, /* flag - non-zero if colon ":" allowed in token */
+  int   comma, /* flag - non-zero if comma ',' allowed in token */
   int  *err, /* RETURN: non-zero if error */
   char *term) /* RETURN: character terminating token */
 
@@ -2210,6 +2272,9 @@ static char *parse_node_token(
       break;
 
     if (cok && (*pt == ':'))
+      continue;
+
+    if (comma && (*pt == ','))
       continue;
 
     if (!cok && (*pt == '='))
@@ -2316,7 +2381,7 @@ int setup_nodes(void)
 
     propstr[0] = '\0';
 
-    token = parse_node_token(line, 1, &err, &xchar);
+    token = parse_node_token(line, 1, 0, &err, &xchar);
 
     if (token == NULL)
       continue; /* blank line */
@@ -2346,7 +2411,7 @@ int setup_nodes(void)
 
     while (1)
       {
-      token = parse_node_token(NULL, 0, &err, &xchar);
+      token = parse_node_token(NULL, 0, 0, &err, &xchar);
 
       if (err != 0)
         goto errtoken1;
@@ -2358,7 +2423,7 @@ int setup_nodes(void)
         {
         /* have new style attribute, keyword=value */
 
-        val = parse_node_token(NULL, 0, &err, &xchar);
+        val = parse_node_token(NULL, 0, 1, &err, &xchar);
 
         if ((val == NULL) || (err != 0) || (xchar == '='))
           goto errtoken1;
@@ -2974,7 +3039,63 @@ int numa_str_action(
     }
 
   return(0);
-  } /* END numa_str_action */
+  } /* END numa_str_action() */
+
+
+
+
+int gpu_str_action(
+
+  attribute *new,
+  void      *pnode,
+  int        actmode)
+
+  {
+  struct pbsnode *np = (struct pbsnode *)pnode;
+  int             len;
+
+  switch (actmode)
+    {
+    case ATR_ACTION_NEW:
+
+      if (np->gpu_str != NULL)
+        {
+        len = strlen(np->gpu_str) + 1;
+        new->at_val.at_str = (char *)malloc(len * sizeof(char));
+
+        if (new->at_val.at_str == NULL)
+          return(PBSE_SYSTEM);
+
+        strcpy(new->at_val.at_str,np->gpu_str);
+        }
+      else
+        new->at_val.at_str = NULL;
+
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      if (new->at_val.at_str != NULL)
+        {
+        len = strlen(new->at_val.at_str) + 1;
+        np->gpu_str = (char *)malloc(len * sizeof(char));
+
+        if (np->gpu_str == NULL)
+          return(PBSE_SYSTEM);
+
+        strcpy(np->gpu_str,new->at_val.at_str);
+        }
+      else
+        np->gpu_str = NULL;
+
+      break;
+
+    default:
+      return(PBSE_INTERNAL);
+    }
+
+  return(PBSE_NONE);
+  } /* END gpu_str_action() */
 
 
 

@@ -313,6 +313,7 @@
 #define ATTR_NODE_num_numa_nodes "num_numa_nodes"
 #define ATTR_NODE_numa_str       "numa_node_str"
 #define ATTR_NODE_gpus           "gpus"
+#define ATTR_NODE_gpus_str       "numa_gpu_node_str"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

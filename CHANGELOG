@@ -15,6 +15,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Added code from 2.5-fixes which will try and find nodes that did not
       resolve when pbs_server started up. This is in reference to Bugzilla
       bug 110.
+  e - make gpus compatible with NUMA systems, and add the node attribute
+      numa_gpu_node_str for an additional way to specify gpus on node boards
 
 3.0.0
   e - serverdb is now stored as xml, this is no longer configurable.

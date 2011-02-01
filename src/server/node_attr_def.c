@@ -270,4 +270,16 @@ attribute_def node_attr_def[] =
     ATR_TYPE_LONG,
     PARENT_TYPE_NODE,
   },
+  /* ND_ATR_gpus_str */
+  { ATTR_NODE_gpus_str, /* "numa_gpu_node_str" */
+    decode_str,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    gpu_str_action,
+    NO_USER_SET | ATR_DFLAG_NOSTAT,
+    ATR_TYPE_STR,
+    PARENT_TYPE_NODE,
+  },
   };
