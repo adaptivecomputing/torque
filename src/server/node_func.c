@@ -1486,11 +1486,7 @@ int create_pbs_node(
   int              iht;
   node_info        *host_info;
 
-  if ((rc = process_host_name_part(
-              objname,        /* I */
-              &pul,           /* O */
-              &pname,         /* O */
-              &ntype)) != 0)  /* O */
+  if ((rc = process_host_name_part(objname, &pul, &pname, &ntype)) != 0)
     {
     svrattrl *pal, *pattrl;
 
