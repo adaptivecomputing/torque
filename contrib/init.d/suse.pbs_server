@@ -40,7 +40,7 @@ case "$1" in
 			startproc $PBS_DAEMON $SERVER_ARGS
 #		else
 #			startproc $PBS_DAEMON -t create $DAEMON_ARGS
-		fi
+#		fi
 		rc_status -v
 		;;
 	stop)
