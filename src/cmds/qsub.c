@@ -109,6 +109,7 @@
 #include <assert.h>
 #include <grp.h>
 #include <csv.h>
+#include <pwd.h>
 
 #ifdef sun
 #include <sys/stream.h>
@@ -167,6 +168,7 @@ int x11child = 0;
 int do_dir(char *);
 int process_opts(int, char **, int);
 int have_terminal = TRUE;
+int   validate_group = FALSE;
 
 char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
 
@@ -2803,6 +2805,62 @@ interactive(void)
 
 
 
+int validate_group_list(
+
+  char *glist)
+
+  {
+  /* check each group to determine if it is a valid group that the user can be a part of.
+   * group list is of the form group[@host][,group[@host]...] */
+  char          *groups = strdup(glist);
+  char          *delims = ",";
+  char          *tmp_group = strtok(groups,delims); 
+  char          *at;
+  char          *u_name;
+  char         **pmem;
+  struct group  *grent;
+  struct passwd *pwent;
+  int            is_member = FALSE;
+
+  pwent = getpwuid(getuid());
+  u_name = pwent->pw_name;
+  
+  while (tmp_group != NULL)
+    {
+    if ((at = strchr(tmp_group,'@')) != NULL)
+      *at = '\0';
+    
+    if ((grent = getgrnam(tmp_group)) == NULL)
+      return(FALSE);
+    
+    pmem = grent->gr_mem;
+    
+    if (pmem == NULL)
+      return(FALSE);
+    
+    while (*pmem != NULL)
+      {
+      if (!strcmp(*pmem,u_name))
+        break;
+
+      pmem++;
+      }
+
+    if (*pmem == NULL)
+      {
+      /* match not found */
+      return(FALSE);
+      }
+
+    tmp_group = strtok(NULL,delims);
+    }
+
+  return(TRUE);
+  }
+
+
+
+
 /** 
  * Process command line options.
  *
@@ -3989,6 +4047,17 @@ int process_opts(
                 break;
                 }
 
+              if (validate_group == TRUE)
+                {
+                if (validate_group_list(valuewd) == FALSE)
+                  {
+                  fprintf(stderr,"qsub: User isn't a member of one or more groups in %s\n",
+                    valuewd);
+                  errflg++;
+                  break;
+                  }
+                }
+
               set_attr(&attrib, ATTR_g, valuewd);
               }
             }
@@ -4728,6 +4797,8 @@ int main(
 
         exit(1);
         }
+
+      validate_group = TRUE;
       }
 
     if ((param_val = get_param("DEFAULTCKPT", config_buf)) != NULL)
