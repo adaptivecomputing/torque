@@ -304,6 +304,7 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %{torque_home}/server_priv/accounting
 %{torque_home}/server_priv/acl*
 %{torque_home}/server_priv/arrays
+%{torque_home}/server_priv/credentials
 %{torque_home}/server_priv/disallowed_types
 %{torque_home}/server_priv/hostlist
 %{torque_home}/server_priv/jobs
