@@ -6,7 +6,7 @@
 # description: PBS is a versatile batch system for SMPs and clusters
 #
 # Source the library functions
-#. /etc/rc.d/init.d/functions
+. /etc/rc.d/init.d/functions
 
 create() {
     echo -n "Creating initial TORQUE configuration: "
