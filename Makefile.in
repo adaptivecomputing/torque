@@ -344,7 +344,7 @@ SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
 SUBDIRS = src doc
 EXTRA_DIST = CHANGELOG \
 	INSTALL.GNU \
-	PBS_License.txt \
+	PBS_License_2.5.txt \
 	README.array_changes \
 	README.configure \
 	README.cygwin \
@@ -379,6 +379,7 @@ EXTRA_DIST = CHANGELOG \
 	contrib/pestat-1.0/README \
 	contrib/qpeek \
 	contrib/qpool.gz \
+	contrib/PBS_License_2.3.txt \
 	contrib/README.pam_authuser \
 	contrib/README.pbs_ganglia_jobmonarch \
 	contrib/README.pbs_python \
