@@ -34,6 +34,31 @@ OVERVIEW
 ---------------------------------------------------------------------------
 WHAT'S NEW
 
+New in 2.5.5
+    Corrected the license file. With TORQUE 2.5.0 Adaptive Computing in good faith
+    updated the license file to reflect that TORQUE is currently administered by
+    Adaptive Computing. It also tried to remove the expired portions of the license
+    to make it easier to understand. While it was working to update the file it 
+    inadvertently left in provision (2) from the OpenPBS v2.3 Software license 
+    without the accompanying statement which explains that the provision expired on 
+    December 31, 2001. This was an oversight on the part of Adaptive Computing.
+    Adaptive Computing does not have the authority nor the desire to change
+    the terms of the licensing. The updated licence file has been changed to 
+    PBS_License_2.5.txt and is found in the root of the source. A copy of the 
+    license file from version 2.4.x and earlier is available in the contrib 
+    directory under PBS_License_2.3.txt.
+    
+    The script contrib/init.d/pbs_server was changed to be able to create the
+    TORQUE serverdb file if it does not already exist.
+
+    Modified qsub to use the torque.cfg directive VALIDATEGROUPS and verify
+    that users who submit jobs using a -W group_list directive are part of
+    the group on the submit host. This helps plug a security hole when 
+    disable_server_id_check is set to TRUE.
+
+    For all other bug fixes please see the CHANGELOG for the 2.5.5 build.
+
+
 New in 2.5.4
     Generic GPGPU support has been added to TORQUE 2.5.4. Users are able to
     manually set the number of GPUs on a system in the $TORQUE_HOME/server_priv/nodes

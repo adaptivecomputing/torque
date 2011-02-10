@@ -267,7 +267,7 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-, root, root)
-%doc INSTALL INSTALL.GNU CHANGELOG PBS_License.txt README.* Release_Notes src/pam/README.pam
+%doc INSTALL INSTALL.GNU CHANGELOG PBS_License_2.5.txt README.* Release_Notes src/pam/README.pam
 %doc doc/READ_ME doc/doc_fonts doc/soelim.c doc/ers
 %config(noreplace) %{torque_home}/pbs_environment
 %config(noreplace) %{torque_home}/server_name

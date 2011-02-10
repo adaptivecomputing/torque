@@ -123,7 +123,7 @@ fi
 
 %files
 %defattr(-, root, root)
-%doc INSTALL README.torque torque.setup Release_Notes CHANGELOG PBS_License.txt
+%doc INSTALL README.torque torque.setup Release_Notes CHANGELOG PBS_License_2.5.txt
 %config(noreplace) %{torquehomedir}/server_name
 %config(noreplace) %{torquehomedir}/pbs_environment
 %{torquehomedir}/spool
