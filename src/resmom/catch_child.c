@@ -460,6 +460,10 @@ scan_for_exiting(void)
           pjob->ji_qs.ji_jobid,
           "job was terminated");
 
+        index = find_attr(job_attr_def, "job_radix", JOB_ATR_LAST);
+
+        mom_radix = pj->ji_wattr[index].at_val.at_long;
+
         if(mom_radix < 2)
           {
           NumSisters = send_sisters(pjob, IM_KILL_JOB);
