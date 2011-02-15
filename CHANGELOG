@@ -29,6 +29,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       in reference to Bugzilla bug 90.
   e - Add code to verify the group list as well when VALIDATEGROUPS is set in torque.cfg
       (backported from 3.0.1)
+  b - Fix a bug where if geometry requests are enabled and cpusets are enabled, the cpuset
+      wasn't deleted unless a geometry request was made. (backported from 3.0.1)
 
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for
