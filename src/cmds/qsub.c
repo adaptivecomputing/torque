@@ -2820,7 +2820,6 @@ int validate_group_list(
   char         **pmem;
   struct group  *grent;
   struct passwd *pwent;
-  int            is_member = FALSE;
 
   pwent = getpwuid(getuid());
   u_name = pwent->pw_name;

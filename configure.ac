@@ -493,7 +493,7 @@ AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
 
 dnl turn on the new feature to request a specific geometry for a process
 dnl this uses cpusets to bind the job to that geometry
-dnl --enable-geometry-request
+dnl --enable-geometry-requests
 AC_ARG_ENABLE(geometry_requests, [
   --enable-geometry-requests  Enables the user to request a specific geometry using a cpuset implementation])
 if test "x$GCC" = "xyes" ;then
