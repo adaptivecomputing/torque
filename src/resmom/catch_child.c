@@ -462,7 +462,7 @@ scan_for_exiting(void)
 
         index = find_attr(job_attr_def, "job_radix", JOB_ATR_LAST);
 
-        mom_radix = pj->ji_wattr[index].at_val.at_long;
+        mom_radix = pjob->ji_wattr[index].at_val.at_long;
 
         if(mom_radix < 2)
           {

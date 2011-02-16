@@ -1349,11 +1349,11 @@ void req_jobscript(
 
   /* SUCCESS */
 
-  reply_ack(preq);
-
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pj->ji_mutex);
 #endif
+
+  reply_ack(preq);
 
   return;
   }  /* END req_jobscript() */
