@@ -760,7 +760,10 @@ scan_for_exiting(void)
               "kill_job found a task to kill");
             }
 
-          ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
+          if (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != 0)
+            ptask->ti_qs.ti_exitstat = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
+          else
+            ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
           ptask->ti_qs.ti_status   = TI_STATE_EXITED;
 
           task_save(ptask);

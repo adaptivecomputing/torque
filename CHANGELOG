@@ -31,6 +31,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (backported from 3.0.1)
   b - Fix a bug where if geometry requests are enabled and cpusets are enabled, the cpuset
       wasn't deleted unless a geometry request was made. (backported from 3.0.1)
+  b - Fix a race condition for pbs_mom -q, exitstatus was getting overwritten and as a result 
+      pbs_server wasn't always re-queued, but were being deleted instead. (backported from 3.0.1)
 
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for

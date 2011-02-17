@@ -1942,6 +1942,10 @@ static int unregister_sync(
   return(0);
   }  /* END unregister_sync() */
 
+
+
+
+
 /*
  * find_dependjob - find a child dependent job with a certain job id
  */
@@ -1996,6 +2000,7 @@ static struct depend_job *make_dependjob(
     pdj->dc_cost  = 0;
 
     strcpy(pdj->dc_child, jobid);
+
     strcpy(pdj->dc_svr, host);
 
     append_link(&pdep->dp_jobs, &pdj->dc_link, pdj);
