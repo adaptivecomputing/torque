@@ -217,6 +217,7 @@ static char *quota    (struct rm_attribute *);
 static char *netload  (struct rm_attribute *);
 #ifdef USELIBMEMACCT
 static long get_memacct_resi(pid_t pid);
+extern long get_weighted_memory_size(pid_t);
 #endif
 
 #ifndef mbool_t
