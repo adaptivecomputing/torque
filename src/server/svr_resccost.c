@@ -438,7 +438,7 @@ calc_job_cost(job *pjob)
     pcost = (struct resource_cost *)GET_NEXT(pcost->rc_link);
     }
 
-  cost += server.sv_attr[(int)SRV_ATR_sys_cost].at_val.at_long;
+  cost += server.sv_attr[SRV_ATR_sys_cost].at_val.at_long;
 
   return (cost);
   }

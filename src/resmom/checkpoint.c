@@ -433,7 +433,7 @@ void get_chkpt_dir_to_use(
 
   char job_dir[MAXPATHLEN+1];
 
-  if ((!(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)) ||
+  if ((!(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)) ||
     (checkpoint_system_type != CST_BLCR))
 
     {
@@ -447,11 +447,11 @@ void get_chkpt_dir_to_use(
     sprintf(job_dir,"%s%s",
       pjob->ji_qs.ji_fileprefix, JOB_CHECKPOINT_SUFFIX);
 
-    strcpy(chkpt_dir, pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str);
+    strcpy(chkpt_dir, pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
 
-    if ((strlen(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str) <=
+    if ((strlen(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str) <=
       strlen(job_dir)) ||
-      (strcmp(job_dir, &pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str[strlen(pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_val.at_str) - strlen(job_dir)])))
+      (strcmp(job_dir, &pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str[strlen(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str) - strlen(job_dir)])))
       {
 
       if (chkpt_dir[strlen(chkpt_dir) - 1] != '/')
@@ -582,7 +582,7 @@ void delete_blcr_checkpoint_files(
   static char id[] = "delete_blcr_checkpoint_files";
   char namebuf[MAXPATHLEN+1];
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) == 0)
+  if ((pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) == 0)
     {
     if (LOGLEVEL > 7)
       {
@@ -593,7 +593,7 @@ void delete_blcr_checkpoint_files(
     return;
     }
 
-  if (pjob->ji_wattr[(int)JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
     {
     /*
     * Get jobs checkpoint directory.
@@ -970,7 +970,7 @@ int blcr_checkpoint_job(
 
     while ((conn < 0) && (conn_fail < MAX_CONN_RETRY))
       {
-      conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
+      conn = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
 
       if (conn < 0)
         {
@@ -981,7 +981,7 @@ int blcr_checkpoint_job(
           sprintf(log_buffer,"Job %s failed %d times to get connection to %s",
             pjob->ji_qs.ji_jobid,
             MAX_CONN_RETRY,
-            pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
+            pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
           log_err(-1, id, log_buffer);
           }
         }
@@ -1036,7 +1036,7 @@ int blcr_checkpoint_job(
 
     while ((conn < 0) && (conn_fail < MAX_CONN_RETRY))
       {
-      conn = pbs_connect(pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
+      conn = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
 
       if (conn < 0)
         {
@@ -1047,7 +1047,7 @@ int blcr_checkpoint_job(
           sprintf(log_buffer,"Job %s failed %d times to get connection to %s",
             pjob->ji_qs.ji_jobid,
             MAX_CONN_RETRY,
-            pjob->ji_wattr[(int)JOB_ATR_at_server].at_val.at_str);
+            pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
           log_err(-1, id, log_buffer);
           }
         }
@@ -1706,9 +1706,9 @@ int blcr_restart_job(
    */
   job_id  = get_jobid(pjob->ji_qs.ji_jobid);
 
-  pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_val.at_ll = job_id;
+  pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll = job_id;
 
-  pjob->ji_wattr[(int)JOB_ATR_pagg_id].at_flags =
+  pjob->ji_wattr[JOB_ATR_pagg_id].at_flags =
     ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 #endif /* USEJOBCREATE */
 

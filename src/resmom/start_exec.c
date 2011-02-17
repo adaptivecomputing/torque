@@ -1476,7 +1476,7 @@ int open_rpp_stream_to_sisters(
 	  
 	  im_compose( stream,
 	  				pjob->ji_qs.ji_jobid,
-	  				pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str,
+	  				pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
 	  				com,
 	  				ep->ee_event,
 	  				TM_NULL_TASK);

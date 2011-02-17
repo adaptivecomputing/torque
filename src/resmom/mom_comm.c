@@ -1021,14 +1021,14 @@ int send_sisters_radix(
       log_buffer);
     }
 
-  if (!(pjob->ji_wattr[(int)JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+  if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
     {
     /* cookie not set - return FAILURE */
 
     return(0);
     }
 
-  cookie = pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str;
+  cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
 
   num = 0;
 
@@ -2138,7 +2138,7 @@ int contact_sisters(
   pattr = pjob->ji_wattr;
 	  
   /* prepare the attributes to go out on the wire. at_encode does this */
-  for (i = 0;i < (int)JOB_ATR_LAST;i++)
+  for (i = 0;i < JOB_ATR_LAST;i++)
     {
     (job_attr_def + i)->at_encode(
   	  pattr + i,
@@ -2985,9 +2985,9 @@ void im_request(
       pjob->ji_qs.ji_state    = JOB_STATE_TRANSIT;
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_PRERUN;
       pjob->ji_qs.ji_stime    = time_now;
-      pjob->ji_wattr[(int)JOB_ATR_mtime].at_val.at_long = (long)time_now;
+      pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long = (long)time_now;
       
-      pjob->ji_wattr[(int)JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
+      pjob->ji_wattr[JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
       
       /* check_pwd is setting up ji_un as type MOM
       pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
@@ -4286,7 +4286,7 @@ void im_request(
 
               if(gettimeofday(&tv, &tz) == 0)
                 {
-                tv_attr = &pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval;
+                tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
                 timeval_subtract(&result, &tv, tv_attr);
                 sprintf(log_buffer, "im_request: total wire-up time for job %ld.%ld", result.tv_sec, result.tv_usec);
                 LOG_EVENT(
@@ -4973,7 +4973,7 @@ void im_request(
 
                 if(gettimeofday(&tv, &tz) == 0)
                   {
-                  tv_attr = &pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval;
+                  tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
                   timeval_subtract(&result, &tv, tv_attr);
                   sprintf(log_buffer, "im_request: job_radix total wire-up time for job %ld.%ld", result.tv_sec, result.tv_usec);
                   LOG_EVENT(

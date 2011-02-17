@@ -733,7 +733,10 @@ scan_for_exiting(void)
               "kill_job found a task to kill");
             }
 
-          ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
+          if (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != 0)
+            ptask->ti_qs.ti_exitstat = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
+          else
+            ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
           ptask->ti_qs.ti_status   = TI_STATE_EXITED;
 
           task_save(ptask);
@@ -2146,8 +2149,8 @@ void exit_mom_job( job *pjob, task *ptask, int mom_radix )
     return;
     }
   
-  if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-      pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+  if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+      pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
     {
   
     if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, PE_IO_TYPE_NULL) != 0)
@@ -2189,7 +2192,7 @@ void exit_mom_job( job *pjob, task *ptask, int mom_radix )
       "sending IM_RADIX_ALL_OK");
     }
   
-  cookie = pjob->ji_wattr[(int)JOB_ATR_Cookie].at_val.at_str;
+  cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
   
   if(mom_radix < 2)
     {

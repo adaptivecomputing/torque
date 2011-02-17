@@ -1089,7 +1089,7 @@ static int svr_strtjob2(
   pattr->at_flags |= ATR_VFLAG_SET;
 
   /* This marks the start of total run time from the server's perspective */
-  pattr = &pjob->ji_wattr[(int)JOB_ATR_total_runtime];
+  pattr = &pjob->ji_wattr[JOB_ATR_total_runtime];
   if(gettimeofday(&start_time, &tz) == 0)
     {
     pattr->at_val.at_timeval.tv_sec = start_time.tv_sec;

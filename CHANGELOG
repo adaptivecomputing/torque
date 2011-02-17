@@ -18,7 +18,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - make gpus compatible with NUMA systems, and add the node attribute
       numa_gpu_node_str for an additional way to specify gpus on node boards
   b - Fix a bug where if geometry requests are enabled and cpusets are enabled, the cpuset
-      wasn't deleted unless a geometry request was made. (backported from 3.0.1)
+      wasn't deleted unless a geometry request was made. 
+  b - Fix a race condition for pbs_mom -q, exitstatus was getting overwritten and as a result 
+      pbs_server wasn't always re-queued, but were being deleted instead. 
 
 3.0.0
   e - serverdb is now stored as xml, this is no longer configurable.

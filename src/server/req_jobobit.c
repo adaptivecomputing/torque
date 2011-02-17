@@ -1639,16 +1639,16 @@ void on_job_exit(
 
           if(gettimeofday(&tv, &tz) == 0)
             {
-            tv_attr = &pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval;
+            tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
             timeval_subtract(&result, &tv, tv_attr);
-            pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval.tv_sec = result.tv_sec;
-            pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval.tv_usec = result.tv_usec;
-            pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_flags |= ATR_VFLAG_SET;
+            pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval.tv_sec = result.tv_sec;
+            pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval.tv_usec = result.tv_usec;
+            pjob->ji_wattr[JOB_ATR_total_runtime].at_flags |= ATR_VFLAG_SET;
             }
           else
             {
-            pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval.tv_sec = 0;
-            pjob->ji_wattr[(int)JOB_ATR_total_runtime].at_val.at_timeval.tv_usec = 0;
+            pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval.tv_sec = 0;
+            pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval.tv_usec = 0;
             }
 
           job_save(pjob, SAVEJOB_FULL, 0);
