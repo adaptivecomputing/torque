@@ -21,6 +21,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       wasn't deleted unless a geometry request was made. 
   b - Fix a race condition for pbs_mom -q, exitstatus was getting overwritten and as a result 
       pbs_server wasn't always re-queued, but were being deleted instead. 
+  e - Add a configure option --with-tcp-retry-limit to prevent potential 4+ hour hangs on 
+      pbs_server. We recommend --with-tcp-retry-limit=2
 
 3.0.0
   e - serverdb is now stored as xml, this is no longer configurable.

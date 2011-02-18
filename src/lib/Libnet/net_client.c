@@ -513,22 +513,37 @@ jump_to_check:
     case EADDRNOTAVAIL:		/* Cannot assign requested address */
 
         if (local_port != FALSE)
-	{
-	  if (trycount++ > (NPORTS))
-    	  {
-        	close(sock);
-
-		return(PBS_NET_RC_RETRY);
-	  }
-
+          {
+          if (trycount++ > (NPORTS))
+            {
+            close(sock);
+            
+            return(PBS_NET_RC_RETRY);
+            }
+#if TCP_RETRY_LIMIT != 0
+          else if (trycount > TCP_RETRY_LIMIT)
+            {       
+            if (EMsg != NULL)
+              sprintf(EMsg, "cannot connect to port %d in %s - errno:%d %s",
+                tryport,
+                id,
+                errno,
+                strerror(errno));
+            
+            close(sock);
+            
+            return(PBS_NET_RC_FATAL);
+            }
+#endif /* def TCP_RETRY_LIMIT */
+          
           /* continue port search (rentec) */
-
+          
           tryport++;
-
+          
           close(sock);
-
+          
           goto retry;
-        }
+          }
 
     default:
 

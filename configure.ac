@@ -1121,6 +1121,21 @@ esac
 AC_SUBST(PBS_DEFAULT_FILE)
 
 
+
+
+AC_ARG_WITH(tcp_retry_limit, [
+  --with-tcp-retry-limit=NUMBER
+                         set the number of tcp retries. This avoids a rare
+                         but potential server hang. When a tcp connection
+                         between a mom and the server dies unexpectedly,
+                         such as the machine crashing, pbs_server can hang
+                         for long periods of time while retrying all possible
+                         sockets. This limits those retries.],
+    [TCP_RETRY_LIMIT=${withval}],[TCP_RETRY_LIMIT=0])
+AC_DEFINE_UNQUOTED(TCP_RETRY_LIMIT,${TCP_RETRY_LIMIT},[Define to set a max retry limit])
+
+
+
 AC_ARG_WITH(default_server, [
   --with-default-server=HOSTNAME
                           set the name of the computer that clients will
