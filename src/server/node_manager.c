@@ -713,7 +713,12 @@ job *find_job_by_node(
               (jp->job->ji_qs.ji_jobid != NULL))
             {
 #ifdef ENABLE_PTHREADS
-            pthread_mutex_lock(jp->job->ji_mutex);
+            if (pthread_mutex_trylock(jp->job->ji_mutex) != 0)
+              {
+              pthread_mutex_unlock(pnode->nd_mutex);
+              pthread_mutex_lock(jp->job->ji_mutex);
+              pthread_mutex_lock(pnode->nd_mutex);
+              }
 #endif 
 
             if (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0)
@@ -726,20 +731,20 @@ job *find_job_by_node(
               }
             }
 
-          /* leave loop if we found the job */
-          if (pjob != NULL)
-            break;
-
 #ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(jp->job->ji_mutex);
 #endif
-          }
+          } /* END for each job on subnode */
 
         /* leave loop if we found a job */
         if (pjob != NULL)
           break;
-        }
-      }
+        } /* END for each subnode */
+
+      /* leave loop if we found the job */
+      if (pjob != NULL)
+        break;
+      } /* END for each numa node */
     }
   else
     {
@@ -754,7 +759,12 @@ job *find_job_by_node(
             (jp->job->ji_qs.ji_jobid != NULL))
           {
 #ifdef ENABLE_PTHREADS
-          pthread_mutex_lock(jp->job->ji_mutex);
+          if (pthread_mutex_trylock(jp->job->ji_mutex) != 0)
+            {
+            pthread_mutex_unlock(pnode->nd_mutex);
+            pthread_mutex_lock(jp->job->ji_mutex);
+            pthread_mutex_lock(pnode->nd_mutex);
+            }
 #endif 
           if (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0)
             {
@@ -766,15 +776,15 @@ job *find_job_by_node(
             }
           }
 
-        /* leave lopp if we found a job */
-        if (pjob != NULL)
-          break;
-
 #ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(jp->job->ji_mutex);
 #endif
-        }
-      }    /* END for (np) */
+        } /* END for each job on the subnode */
+
+      /* leave loop if we found a job */
+      if (pjob != NULL)
+        break;
+      } /* END for each subnode */
     }
 
   if (at != NULL)
@@ -925,6 +935,10 @@ void sync_node_jobs(
           pthread_mutex_unlock(pjob->ji_mutex);
 #endif
         }
+#ifdef ENABLE_PTHREADS
+      else
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
       }
 
     jobidstr = strtok(NULL, " ");
