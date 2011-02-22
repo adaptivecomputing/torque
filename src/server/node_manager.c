@@ -856,7 +856,7 @@ void sync_node_jobs(
     {
     if (strstr(jobidstr, server_name) != NULL)
       {
-      if (find_job_by_node(np, jobidstr) == NULL)
+      if ((pjob = find_job_by_node(np, jobidstr)) == NULL)
         {
         pjob = find_job(jobidstr);
 
