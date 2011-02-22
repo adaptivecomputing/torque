@@ -83,8 +83,8 @@ qalter \- alter pbs batch job
 .SH SYNOPSIS
 qalter
 [\-a date_time] [\-A account_string] [\-c interval] [\-e path]
-[\-h hold_list] [\-j join] [\-k keep] [\-l resource_list] 
-[\-m mail_options] [\-M user_list] [\-N name] [\-o path] [\-p priority]
+[\-h hold_list] [\-j join] [\-k keep] [\-l resource_list] [\-m mail_options]
+[\-M user_list] [\-n node exclusive] [\-N name] [\-o path] [\-p priority]
 [\-r c] [\-S path] [-t array_range] [\-u user_list] [\-W additional_attributes]
 job_identifier...
 .SH DESCRIPTION
@@ -458,6 +458,11 @@ argument is of the form:
 The
 .At Mail_Users
 attribute is set to the argument.
+.Ig
+.IP "\-n node exclusive" 8
+Sets whether or not the job has node exclusive access. 
+To specify node exclusive access, just use the single character 'y'. To specify that the job should
+not have node exclusive access, just use the single character 'n'.
 .Ig
 .IP "\-N name" 8
 Renames the job.

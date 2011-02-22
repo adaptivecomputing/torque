@@ -23,6 +23,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       pbs_server wasn't always re-queued, but were being deleted instead. 
   e - Add a configure option --with-tcp-retry-limit to prevent potential 4+ hour hangs on 
       pbs_server. We recommend --with-tcp-retry-limit=2
+  n - Changing the way to set ATTR_node_exclusive from -E to -n, in order to continue 
+      compatibility with Moab.
 
 3.0.0
   e - serverdb is now stored as xml, this is no longer configurable.
