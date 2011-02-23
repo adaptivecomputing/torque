@@ -31,8 +31,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (backported from 3.0.1)
   b - Fix a bug where if geometry requests are enabled and cpusets are enabled, the cpuset
       wasn't deleted unless a geometry request was made. (backported from 3.0.1)
-  b - Fix a race condition for pbs_mom -q, exitstatus was getting overwritten and as a result 
-      pbs_server wasn't always re-queued, but were being deleted instead. (backported from 3.0.1)
+  b - Fix a race condition when starting pbs_mom with the -q option. exitstatus was getting 
+      overwritten and as a result jobs would not always be requeued to pbs_server
+      but were being deleted instead. (backported from 3.0.1)
   e - Add a configure option --with-tcp-retry-limit to prevent potential 4+ hour hangs on 
       pbs_server. We recommend --with-tcp-retry-limit=2 (backported from 3.0.1)
 
