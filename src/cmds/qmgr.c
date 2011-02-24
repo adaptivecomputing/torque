@@ -499,7 +499,7 @@ int attributes(
 
         case '+':
 
-          paol->op = INCR;
+          paol->op = INCR_OLD;
           c += 2;
 
           break;

@@ -36,6 +36,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       but were being deleted instead. (backported from 3.0.1)
   e - Add a configure option --with-tcp-retry-limit to prevent potential 4+ hour hangs on 
       pbs_server. We recommend --with-tcp-retry-limit=2 (backported from 3.0.1)
+  b - preserve the order on array strings in TORQUE, like the route_destinations for a 
+      routing queue (backported from 3.0.1)
 
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for
