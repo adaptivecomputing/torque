@@ -665,8 +665,9 @@ int set_arst(
 
       pas->as_next = pas->as_buf;
 
-      /* no break, "SET" falls into "INCR" to add strings */
+      /* no break, "SET" falls into "MERGE" to add strings */
 
+    case INCR_OLD:
     case MERGE:
 
       nsize = newpas->as_next - newpas->as_buf;   /* space needed */

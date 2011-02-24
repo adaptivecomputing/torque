@@ -484,7 +484,7 @@
 
 #define NO_MOM_RELAY 1
 
-enum batch_op { SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT, MERGE };
+enum batch_op { SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT, MERGE, INCR_OLD };
 
 /*
 ** This structure is identical to attropl so they can be used

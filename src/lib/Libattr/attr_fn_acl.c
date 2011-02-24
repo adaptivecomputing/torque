@@ -456,6 +456,7 @@ static int set_allacl(struct attribute *attr, struct attribute *new, enum batch_
 
       /* No break, "Set" falls into "Incr" to add strings */
 
+    case INCR_OLD:
     case INCR:
 
       /* check for duplicates within new and between new and old  */

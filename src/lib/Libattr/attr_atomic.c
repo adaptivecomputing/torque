@@ -221,7 +221,7 @@ int attr_atomic_set(
     /* update new copy with temp, MODIFY is set on ones changed */
 
     if ((plist->al_op != INCR) && (plist->al_op != DECR) &&
-        (plist->al_op != SET))
+        (plist->al_op != SET) && (plist->al_op != INCR_OLD))
       {
       plist->al_op = SET;
       }

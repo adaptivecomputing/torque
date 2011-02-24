@@ -25,6 +25,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       pbs_server. We recommend --with-tcp-retry-limit=2
   n - Changing the way to set ATTR_node_exclusive from -E to -n, in order to continue 
       compatibility with Moab.
+  b - preserve the order on array strings in TORQUE, like the route_destinations for a 
+      routing queue 
 
 3.0.0
   e - serverdb is now stored as xml, this is no longer configurable.
