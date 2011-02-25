@@ -6071,6 +6071,7 @@ void usage(
   fprintf(stderr, "  -L <PATH> \\\\ Logfile\n");
   fprintf(stderr, "  -M <INT>  \\\\ MOM Port\n");
   fprintf(stderr, "  -p        \\\\ Recover Jobs (Default)\n");
+  fprintf(stderr, "  -P        \\\\ Purge Jobs\n");
   fprintf(stderr, "  -q        \\\\ Do Not Recover Jobs\n");
   fprintf(stderr, "  -r        \\\\ Recover Jobs (2)\n");
   fprintf(stderr, "  -R <INT>  \\\\ RM Port\n");
