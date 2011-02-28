@@ -1055,21 +1055,32 @@ void make_argv(
     {
     if ((*c == '"') || (*c == '\''))
       {
-      quote = *c;
-      c++;
-
-      while ((*c != quote) && *c)
-        *b++ = *c++;
-
-      if (*c == '\0')
+      if ((*c == '\'') &&
+          (strchr(c+1,'\'') == NULL) &&
+          (!strcmp(argv[*argc-1],"-M")))
         {
-        fprintf(stderr, "qsub: unmatched %c\n",
-                *c);
-
-        exit(1);
+        /* if this is an email list and it has a single quote, this is a legal character,
+         * so allow unmatched quotes as part of the qsub */
+        *b++ = *c++;
         }
-
-      c++;
+      else
+        {
+        quote = *c;
+        c++;
+        
+        while ((*c != quote) && *c)
+          *b++ = *c++;
+        
+        if (*c == '\0')
+          {
+          fprintf(stderr, "qsub: unmatched %c\n",
+              *c);
+          
+          exit(1);
+          }
+  
+        c++;
+        }
       }
     else if (*c == '\\')
       {

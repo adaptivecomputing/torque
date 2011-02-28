@@ -506,9 +506,6 @@ int encode_arst(
       case '\n':
 
         *pc++ = '\\';
-        *pc   = separator;
-
-        break;
 
       default:
 
