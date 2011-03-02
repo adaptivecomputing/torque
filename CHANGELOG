@@ -42,6 +42,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (backported from 3.0.1)
   b - allow apostrophes in Mail_Users attributes, as apostrophes are rare but legal email
       characters (backported from 3.0.1)
+  b - Fixed a problem in parse_node_token where the local static variable pt would be advanced
+      past the end of the line input if there is no newline character at the end of the nodes 
+      file.
 
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for
