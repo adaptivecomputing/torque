@@ -1,9 +1,8 @@
-PBS tools
-http://www.osc.edu/~troy/pbstools/
+PBS Tools
 
 Website:  http://www.nics.tennessee.edu/~troy/pbstools/
 SVN repo:  http://svn.nics.utk.edu/repos/pbstools/
- 
+
 PBS Tools is a collection of utilities that have been developed at
 OSC, NICS, and elsewhere to aid in the administration and management
 of PBS variants (including OpenPBS, PBS Pro, and TORQUE).  They have
@@ -25,10 +24,10 @@ bin/qps -- ps for PBS jobs; relies on the "all" command.
 bin/qpeek -- Allows users to look at spooled output of running jobs.
 
 bin/qexec -- Workalike for SGE qlogin/qrsh/qsh
- 
+
 bin/parallel-command-processor -- An MPI program for running an array
 of serial jobs in the context of a single parallel job (a.k.a. the poor
-    +man's job arrays).
+man's job arrays).
 
 bin/supermover -- A highly configurable data movement tool that can
 wrap scp, globus-url-copy, hsi, and a host of other data movement
@@ -42,6 +41,7 @@ it's configured.
 bin/dagsub -- A workalike for condor_submit_dag.  This allows the
 submission of large, complex sets of dependent jobs using a relatively
 simple syntax.  Relies on dmsub for emulating Stork data movement jobs.
+
 
 Admin tools:
 ------------
@@ -61,7 +61,7 @@ give a time-sorted list of log messages from all hosts involved.  Must
 run on host where pbs_server resides; requires root privilege.
 
 sbin/reaver -- Find (and optionally clean up) processes on a host
-which have not been allocated jobs on that host; requires root 
+which have not been allocated jobs on that host; requires root
 privilege.
 
 sbin/showscript.pbs-server -- Show the script associated with a jobid.
@@ -122,7 +122,7 @@ a date range.
 
 web/problem-jobs.php -- Searches for potentially problematic jobs over
 a date range.  (Note that what constitutes "problematic" is extremely
-+site specific.)
+site specific.)
 
 web/usage-summary.php -- Presents a usage summary over a date range.
 
@@ -134,6 +134,7 @@ job DB.
 examples/db-example -- An example of putting job data from multiple PBS
 instances into a single job DB.
 
+
 Suggestions:
 ------------
 
@@ -142,8 +143,7 @@ them to Troy Baer <tbaer@utk.edu> or Doug Johnson <djohnson@osc.edu>.
 
 Copyright:
 ----------
-PBS Tools (including this document) are copyright 2005-2009 Ohio
-Supercomputer Center and/or copyright 2008-2009 University of Tennessee,
-and are licensed under the terms of the GNU GPL.
-
+PBS Tools are copyright 2005-2009 Ohio Supercomputer Center and/or
+copyright 2008-2011 University of Tennessee, and are licensed under
+the terms of the GNU GPL v2.
 
