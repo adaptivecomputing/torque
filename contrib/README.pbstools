@@ -1,12 +1,13 @@
-PBS tools
-http://www.osc.edu/~troy/pbstools/
+PBS Tools
 
-PBS tools is a collection of utilities that have been developed at OSC
-to aid in the administration and management of PBS variants (including
-OpenPBS, PBS Pro, and TORQUE).  They have been developed primarily on
-Linux clusters, but most of them should be applicable to virtually any
-system running PBS.  Several of the commands rely on the parallel rsh
-wrapper "all", which is available at http://svn.osc.edu/repos/all/.
+Website:  http://www.nics.tennessee.edu/~troy/pbstools/
+SVN repo:  http://svn.nics.utk.edu/repos/pbstools/
+
+PBS Tools is a collection of utilities that have been developed at
+OSC, NICS, and elsewhere to aid in the administration and management
+of PBS variants (including OpenPBS, PBS Pro, and TORQUE).  They have
+been developed primarily on Linux clusters, but most of them should be
+applicable to virtually any system running PBS.
 
 
 User tools:
@@ -14,15 +15,42 @@ User tools:
 
 bin/ja -- Job accounting within a PBS job; similar to "ja" in NQE.
 
-bin/pbsdcp -- Distributed copy command within a PBS job.
+bin/pbsdcp -- Distributed copy command within a PBS job.  This can
+optionally include an MPI-based scatter functionality that should
+scale better than the default rcp-based approach.
 
 bin/qps -- ps for PBS jobs; relies on the "all" command.
 
 bin/qpeek -- Allows users to look at spooled output of running jobs.
 
+bin/qexec -- Workalike for SGE qlogin/qrsh/qsh
+
+bin/parallel-command-processor -- An MPI program for running an array
+of serial jobs in the context of a single parallel job (a.k.a. the poor
+man's job arrays).
+
+bin/supermover -- A highly configurable data movement tool that can
+wrap scp, globus-url-copy, hsi, and a host of other data movement
+utilities.
+
+bin/dmsub -- Submits data movement jobs using a variety of batch and
+data movement back-ends; understands the transfer description formats
+of RFT, DMover, and Stork.  May rely on supermover, depending on how
+it's configured.
+
+bin/dagsub -- A workalike for condor_submit_dag.  This allows the
+submission of large, complex sets of dependent jobs using a relatively
+simple syntax.  Relies on dmsub for emulating Stork data movement jobs.
+
 
 Admin tools:
 ------------
+
+bin/js -- Command line lookup of job scripts in the accounting
+database.
+
+bin/jobinfo -- Command line lookup of usage data in the accounting
+database.
 
 sbin/dezombify -- Requeue a "running" PBS job that's not actually
 running because it had JOIN JOB failures.  Relies on the "all"
@@ -33,7 +61,8 @@ give a time-sorted list of log messages from all hosts involved.  Must
 run on host where pbs_server resides; requires root privilege.
 
 sbin/reaver -- Find (and optionally clean up) processes on a host
-which have not been allocated jobs on that host.
+which have not been allocated jobs on that host; requires root
+privilege.
 
 sbin/showscript.pbs-server -- Show the script associated with a jobid.
 Must run on host where pbs_server resides; requires root privilege.
@@ -76,22 +105,45 @@ user (over an optional date range) from the job DB.
 web/jobs-by-group.php -- Presents information on all jobs by a given
 group (over an optional date range) from the job DB.
 
+web/jobs-by-node.php -- Presents information on all jobs on a given
+node (over an optional date range) from the job DB.
+
+web/jobstats*.php -- Presents statistics on all jobs (over an optional
+date range) from the job DB.
+
+web/software-usage*.php -- Presents information on software
+usage on all jobs (over an optional date range) from the job DB.
+
+web/active-users.php -- Presents a list of the most active users over
+a date range.
+
+web/active-groups.php -- Presents a list of the most active groups over
+a date range.
+
+web/problem-jobs.php -- Searches for potentially problematic jobs over
+a date range.  (Note that what constitutes "problematic" is extremely
+site specific.)
+
+web/usage-summary.php -- Presents a usage summary over a date range.
+
+web/site-specific.php -- Site specific settings.
+
 web/sql-term.php -- "Terminal" for running arbitrary SQL queries on
 job DB.
 
 examples/db-example -- An example of putting job data from multiple PBS
 instances into a single job DB.
 
-Development:
-------------
-
-Revision control for PBS tools is managed by OSC's Subversion server,
-http://svn.osc.edu/.  Anonymously accessible read-only access to the
-latest version of the software is available at
-http://svn.osc.edu/repos/pbstools/trunk/.
 
 Suggestions:
 ------------
 
 Comments and suggestions on this software are welcomed; please send
-them to Troy Baer <troy@osc.edu>.
+them to Troy Baer <tbaer@utk.edu> or Doug Johnson <djohnson@osc.edu>.
+
+Copyright:
+----------
+PBS Tools are copyright 2005-2009 Ohio Supercomputer Center and/or
+copyright 2008-2011 University of Tennessee, and are licensed under
+the terms of the GNU GPL v2.
+
