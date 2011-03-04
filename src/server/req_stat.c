@@ -819,6 +819,14 @@ nextjob:
  
   reply_send(preq);
 
+  if (LOGLEVEL >= 7)
+    {
+    log_event(PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_JOB,
+      "req_statjob",
+      "Successfully returned the status of queued jobs\n");
+    }
+
   return;
   }  /* END req_stat_job_step2() */
 
