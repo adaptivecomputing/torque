@@ -905,7 +905,12 @@ int pbsd_init(
 
   if(server.sv_attr[(int)SRV_ATR_RecordJobInfo].at_val.at_long)
     {
-    job_log_open(job_log_file, path_jobinfo_log);
+    rc = job_log_open(job_log_file, path_jobinfo_log);
+    if(rc != 0)
+      {
+      fprintf(stderr, "Could not open job_logs \n");
+      return(-1);
+      }
     }
 
 
