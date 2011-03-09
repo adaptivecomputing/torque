@@ -6852,6 +6852,11 @@ int open_std_file(
       }
     }
 
+  if (pjob->ji_wattr[JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
+    {
+    old_umask = umask(pjob->ji_wattr[JOB_ATR_umask].at_val.at_long);
+    }
+
 	/* open file */
 
 	fds = open(path, mode, 0666);
