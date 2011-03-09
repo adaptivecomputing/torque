@@ -4,6 +4,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Made changes to record_jobinfo and supporting functions to be
       able to use dynamically allcated buffers for data. This fixed
       a problem where incoming data overran fixed sized buffers.
+  b - restored functionality for -W umask as reported in bugzilla 115
+      (backported from 3.0.1)
 
 
 2.5.5
