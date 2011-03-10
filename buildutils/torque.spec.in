@@ -42,14 +42,25 @@
 ### Do not strip executables
 #define __os_install_post /usr/lib/rpm/brp-compress
 
+### Handle logic for snapshots
+%define tarversion @SPEC_VERSION@
+#define snap 0
+%if %{?snap}0
+%{expand:%%define version %(echo %{tarversion} | sed 's/-snap\..*$//')}
+%{expand:%%define release 0.cri.snap.%(echo %{tarversion} | sed 's/^.*-snap\.//')}
+%else
+%define version %{tarversion}
+%define release 1.cri
+%endif
+
 Summary: Tera-scale Open-source Resource and QUEue manager
-Name: @spec_name@
-Version: @spec_version@
-Release: 1.cri
+Name: @SPEC_NAME@
+Version: %{version}
+Release: %{release}
 License: OpenPBS License (ASF-like)
 Group: Applications/System
 URL: http://www.clusterresources.com/products/torque/
-Source: http://www.clusterresources.com/downloads/torque/%{name}-%{version}.tar.gz
+Source: http://www.clusterresources.com/downloads/torque/%{name}-%{tarversion}.tar.gz
 Packager: %{?_packager:%{_packager}}%{!?_packager:%{_vendor}}
 Vendor: %{?_vendorinfo:%{_vendorinfo}}%{!?_vendorinfo:%{_vendor}}
 Distribution: %{?_distribution:%{_distribution}}%{!?_distribution:%{_vendor}}
@@ -133,7 +144,7 @@ This package contains a DRMAA 1.0 implementation for use with TORQUE.
 %endif
 
 %prep
-%setup -q 
+%setup -q -n %{name}-%{tarversion}
 
 %build
 CFLAGS="%{?cflags:%{cflags}}%{!?cflags:$RPM_OPT_FLAGS}"
