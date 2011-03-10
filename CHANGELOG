@@ -6,6 +6,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       a problem where incoming data overran fixed sized buffers.
   b - restored functionality for -W umask as reported in bugzilla 115
       (backported from 3.0.1)
+  b - Updated torque.spec.in to be able to handle the snapshot
+      names of builds.
 
 
 2.5.5
