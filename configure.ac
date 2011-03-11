@@ -1459,29 +1459,11 @@ dnl
 AC_CREATE_GENERIC_CONFIG([pbs],[-ltorque])
 
 dnl these are quoted, and this removes them
-spec_name=$PACKAGE_TARNAME
-spec_version=`echo $PACKAGE_VERSION | sed 's/-snap.*//'`
-spec_snap=""
-if test "$spec_version" != "$PACKAGE_VERSION" ;then
-  spec_snap="%define snap `echo $PACKAGE_VERSION | sed 's/.*-snap.//'`"
-fi
-AC_SUBST(spec_name)
-AC_SUBST(spec_version)
-AC_SUBST(spec_snap)
-AC_SUBST(ac_configure_args)
+SPEC_NAME=$PACKAGE_TARNAME
+SPEC_VERSION=$PACKAGE_VERSION
+AC_SUBST(SPEC_NAME)
+AC_SUBST(SPEC_VERSION)
 AC_SUBST(RPM_AC_OPTS)
-rpmlibdir=`eval eval echo $libdir`
-rpmmandir=`eval eval echo $mandir`
-rpmbindir=`eval eval echo $bindir`
-rpmsbindir=`eval eval echo $sbindir`
-rpmincludedir=`eval eval echo $includedir`
-rpmdrmaadocdir=`eval eval echo $drmaadocdir`
-AC_SUBST(rpmlibdir)
-AC_SUBST(rpmmandir)
-AC_SUBST(rpmbindir)
-AC_SUBST(rpmsbindir)
-AC_SUBST(rpmincludedir)
-AC_SUBST(rpmdrmaadocdir)
 
 dnl  Head and bottom for the config-file
 AH_TOP([#ifndef _PBS_CONFIG_H_
