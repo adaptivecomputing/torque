@@ -2,15 +2,12 @@ include $(top_srcdir)/buildutils/config.mk
 
 SUBDIRS = src doc
 
-EXTRA_DIST = autogen.sh \
-  CHANGELOG \
+EXTRA_DIST = CHANGELOG \
 	INSTALL.GNU \
-	PBS_License.txt \
+	PBS_License_2.5.txt \
 	README.array_changes \
-	README.coding_notes \
 	README.configure \
 	README.cygwin \
-	README.NUMA \
 	README.torque \
 	Release_Notes \
 	torque.setup \
@@ -25,7 +22,6 @@ EXTRA_DIST = autogen.sh \
 	contrib/AddPrivileges \
 	contrib/blcr/checkpoint_script \
 	contrib/blcr/restart_script \
-	contrib/diag/tdiag.sh \
 	contrib/init.d/debian.pbs_mom \
 	contrib/init.d/debian.pbs_sched \
 	contrib/init.d/debian.pbs_server \
@@ -43,6 +39,7 @@ EXTRA_DIST = autogen.sh \
 	contrib/pestat-1.0/README \
 	contrib/qpeek \
 	contrib/qpool.gz \
+	contrib/PBS_License_2.3.txt \
 	contrib/README.pam_authuser \
 	contrib/README.pbs_ganglia_jobmonarch \
 	contrib/README.pbs_python \
@@ -63,16 +60,18 @@ snap:
 	$(MAKE) VERSION=$(VERSION)-snap.$${snapstamp:-`date +%Y%m%d%H%M`} dist
 
 dist-hook:
-	spec_version=`echo $(VERSION) | sed 's/-snap.*//'`; \
-	spec_snap=""; \
-	if test "$$spec_version" != "$(VERSION)" ;then \
-	  spec_snap="%define snap `echo $(VERSION) | sed 's/.*-snap.//'`"; \
-	  sed -e 's/.*dist_spec_snap.*/'"$$spec_snap"/ < $(distdir)/torque.spec > $(distdir)/torque.spec~ ; \
-	  mv $(distdir)/torque.spec~ $(distdir)/torque.spec; \
-	fi;
-	@chmod u+w $(distdir)/README.torque $(distdir)/configure $(distdir)/torque.spec
-	@sed -e 's/TORQUE .* README .*/TORQUE $(VERSION) README (released '"`date '+%b, %d %Y'`"')/' < $(srcdir)/README.torque > $(distdir)/README.torque
-	@sed -e 's/VERSION=.*/VERSION=$(VERSION)/' < $(srcdir)/configure > $(distdir)/configure
+	case $(VERSION) in *-snap.*) \
+	    for SPEC in torque.spec buildutils/torque.spec.in ; do \
+	        chmod u+w $(distdir)/$$SPEC ; \
+	        sed -e 's/^.define snap .*/%define snap 1/;' \
+	            -e 's/^.define tarversion .*/%define tarversion $(VERSION)/' \
+	            $(srcdir)/$$SPEC > $(distdir)/$$SPEC ; \
+	    done ; \
+	    chmod u+wx $(distdir)/configure ; \
+	    sed -e 's/VERSION=.*/VERSION=$(VERSION)/' $(srcdir)/configure > $(distdir)/configure ;; \
+	esac
+	chmod u+w $(distdir)/README.torque
+	sed -e 's/TORQUE .* README .*/TORQUE $(VERSION) README (released '"`date '+%b, %d %Y'`"')/' $(srcdir)/README.torque > $(distdir)/README.torque
 
 srpm: dist
 	rpmbuild -ts $(distdir).tar.gz

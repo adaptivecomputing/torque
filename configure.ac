@@ -25,7 +25,7 @@ dnl by David Beer (dbeer@adaptivecomputing.com)
 dnl
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [4.0.0], [torqueusers@supercluster.org])
+AC_INIT([torque], [2.5.6], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
@@ -323,43 +323,20 @@ if test "x$GCC" = "xyes" ;then
   fi
 fi
 
+dnl Configure saving the server as xml instead of bytes
+dnl
 
-
-dnl check if we should use pthreads or not
-AC_ARG_ENABLE(pthreads, [
-  --enable-pthreads  Enables multithreaded TORQUE])
+AC_ARG_ENABLE(server_xml, [
+  --enable-server-xml  Tells the server to save the serverdb in xml format])
 if test "x$GCC" = "xyes" ; then
-  AC_MSG_CHECKING([whether to use pthreads])
-  if test "${enable_pthreads}" == "yes" ; then
+  AC_MSG_CHECKING([whether to save the serverdb in legacy format or xml format])
+  if test "${enable_server_xml}" == "yes" ; then
     AC_MSG_RESULT([yes])
-    AC_DEFINE(HAVE_PTHREAD,1,[Use posix threads])
-    PTHREAD_LIBS=-lpthread
-    LIBS="$LIBS $PTHREAD_LIBS -lrt"
-    CFLAGS="$CFLAGS -D_GNU_SOURCE -DENABLE_PTHREADS"
+    CFLAGS="$CFLAGS -DSERVER_XML"
   else
     AC_MSG_RESULT([no])
   fi
 fi
-
-
-
-
-dnl ###########################################
-dnl Make only top dir mode?
-dnl
-
-AC_ARG_ENABLE(top_tempdir_only, [
-  --enable-top-tempdir-only  Creates only the top directory when creating the temporary dir for the job])
-if test "x$GCC" = "xyes" ; then
-  AC_MSG_CHECKING([whether to create only the top temporary job directory])
-  if test "${enable_top_tempdir_only}" == "yes" ; then
-    AC_MSG_RESULT([yes])
-    CFLAGS="$CFLAGS -DTOP_TEMPDIR_ONLY"
-  else
-    AC_MSG_RESULT([no])
-  fi
-  fi
-
 
 dnl
 
@@ -512,86 +489,6 @@ dnl    AC_DEFINE(GEOMETRY_REQUESTS, 1, [Define to allow job specific geometry re
     AC_MSG_RESULT([no])
   fi
 fi
-
-dnl compile for NUMA systems - allows the site to configure:
-dnl 1. cpusets and multi-moms
-dnl 2. memory fences to only access close memory
-dnl
-dnl --enable-numa-support
-AC_ARG_ENABLE(numa_support, [
-  --enable-numa-support   Specifies that the mom report itself as several numa nodes instead of one node, while adding numa reporting and numa cpusets, which include memory fencing])
-if test "x$GCC" = "xyes" ;then
-  AC_MSG_CHECKING([whether to support NUMA systems])
-  if test "${enable_numa_support}" = "yes" ; then
-    AC_MSG_RESULT([yes])
-    build_l26_cpuset=yes
-    AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
-    CFLAGS="$CFLAGS -DNUMA_SUPPORT"
-  else
-    AC_MSG_RESULT([no])
-  fi
-fi
-
-
-
-
-dnl enable pbs_mom to use the cpuset API from libcpuset
-dnl makes only sense with --enable-numa-support
-AC_ARG_ENABLE(libcpuset, [  --enable-libcpuset      Allows pbs_mom to use the cpuset API from libcpuset])
-if test "x$GCC" = "xyes"; then
-AC_MSG_CHECKING([whether to enable libcpuset support])
-  if test "${enable_libcpuset}" = "yes" ; then
-    if test "$build_l26_cpuset" = "yes" ;then
-      AC_DEFINE([USELIBCPUSET], 1, [Define to enable libcpuset support])
-      AC_CHECK_LIB([cpuset],[cpuset_version],
-          [MOMLIBS="$MOMLIBS -lcpuset"],
-          [AC_MSG_ERROR([--enable-libcpuset requires libcpuset support]) ])
-    else
-      AC_MSG_RESULT([no because we are not using cpusets])
-    fi
-  else
-    AC_MSG_RESULT([no])
-  fi
-fi
-
-
-
-
-dnl enable pbs_mom to query SGI memacctd to get rss values that are more reliable
-dnl
-dnl --enable-memacct
-AC_MSG_CHECKING([whether to enable memacct support])
-AC_ARG_ENABLE(memacct, [
-  --enable-memacct       Allows pbs_mom to query SGI memacctd in order to better monitor job memory consumption],
-    MEMACCT=$enableval,MEMACCT=no)
-AC_MSG_RESULT($MEMACCT)
-
-case "$MEMACCT" in
-  yes) AC_DEFINE([USELIBMEMACCT], 1, [Define to enable memacct support])
-      AC_CHECK_LIB([memacct],[get_weighted_memory_size],
-        [MOMLIBS="$MOMLIBS -lmemacct"],
-        [AC_MSG_ERROR([--enable-memacct requires libmemacct support]) ])
-      ;;
-  no) : ;;
-  *) AC_MSG_ERROR([--enable-memacct should be yes or no]) ;;
-esac
-
-dnl fixes errors relating to unaligned memory accesses
-dnl some systems experience these errors
-dnl 
-dnl --enable-align-memory
-AC_ARG_ENABLE(align_memory, [
-  --enable-align-memory  Change compile flags to get rid of unaligned memory access errors])
-if test "x$GCC" = "xyes" ;then
-  AC_MSG_CHECKING([whether add memory alignment flags])
-  if test "${enable_align_memory}" = "yes" ; then
-    AC_MSG_RESULT([yes])
-    CFLAGS="$CFLAGS -fstack-protector -Wformat -Wformat-security -DFORTIFY_SOURCE=2"
-  else
-    AC_MSG_RESULT([no])
-  fi
-fi
-
 AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
 
 dnl  irix6 can be changed to irix6array explicitly with an
@@ -1079,7 +976,7 @@ torque_cv_have_cmsg="no"
     [torque_cv_have_cmsg="yes"])
 AC_MSG_RESULT([$torque_cv_have_cmsg])
 
-AC_MSG_CHECKING([if enabling Unix Domain socket support])
+AC_MSG_CHECKING([if enabling Unix Domain socket supprt])
 ENABLE_UNIX_SOCKETS=$torque_cv_have_cmsg
 AC_ARG_ENABLE(unixsockets, [
   --enable-unixsockets    enable the use of Unix Domain sockets for authentication.],
@@ -1562,29 +1459,11 @@ dnl
 AC_CREATE_GENERIC_CONFIG([pbs],[-ltorque])
 
 dnl these are quoted, and this removes them
-spec_name=$PACKAGE_TARNAME
-spec_version=`echo $PACKAGE_VERSION | sed 's/-snap.*//'`
-spec_snap=""
-if test "$spec_version" != "$PACKAGE_VERSION" ;then
-  spec_snap="%define snap `echo $PACKAGE_VERSION | sed 's/.*-snap.//'`"
-fi
-AC_SUBST(spec_name)
-AC_SUBST(spec_version)
-AC_SUBST(spec_snap)
-AC_SUBST(ac_configure_args)
+SPEC_NAME=$PACKAGE_TARNAME
+SPEC_VERSION=$PACKAGE_VERSION
+AC_SUBST(SPEC_NAME)
+AC_SUBST(SPEC_VERSION)
 AC_SUBST(RPM_AC_OPTS)
-rpmlibdir=`eval eval echo $libdir`
-rpmmandir=`eval eval echo $mandir`
-rpmbindir=`eval eval echo $bindir`
-rpmsbindir=`eval eval echo $sbindir`
-rpmincludedir=`eval eval echo $includedir`
-rpmdrmaadocdir=`eval eval echo $drmaadocdir`
-AC_SUBST(rpmlibdir)
-AC_SUBST(rpmmandir)
-AC_SUBST(rpmbindir)
-AC_SUBST(rpmsbindir)
-AC_SUBST(rpmincludedir)
-AC_SUBST(rpmdrmaadocdir)
 
 dnl  Head and bottom for the config-file
 AH_TOP([#ifndef _PBS_CONFIG_H_
