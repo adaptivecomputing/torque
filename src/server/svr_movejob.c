@@ -579,8 +579,6 @@ int send_job(
 
   char  *id = "send_job";
 
-  char   job_id[PBS_MAXSVRJOBID + 1];
-
   attribute *pattr;
 
   pid_t  pid;
@@ -807,9 +805,6 @@ int send_job(
 
   strcat(script_name, JOB_SCRIPT_SUFFIX);
 
-  /* save the job id for when after we purge the job */
-
-  strcpy(job_id, jobp->ji_qs.ji_jobid);
 
   pbs_errno = 0;
   con = -1;
@@ -962,7 +957,7 @@ int send_job(
         log_err(errno, id, "sigprocmask\n");
       }
 
-    if (PBSD_rdytocmt(con, job_id) != 0)
+    if (PBSD_rdytocmt(con, jobp->ji_qs.ji_jobid) != 0)
       {
       if (sigprocmask(SIG_UNBLOCK, &all_set, NULL) == -1)
         log_err(errno, id, "sigprocmask\n");
@@ -970,15 +965,8 @@ int send_job(
       continue;
       }
 
-    /*
-     * we are sure that the other side has everything, so we can
-     * safely purge the job
-     */
 
-    if (move_type != MOVE_TYPE_Exec) /* not if sending to MOM */
-      job_purge(jobp);
-
-    if ((rc = PBSD_commit(con, job_id)) != 0)
+    if ((rc = PBSD_commit(con, jobp->ji_qs.ji_jobid)) != 0)
       {
       int errno2;
 
@@ -1025,7 +1013,7 @@ int send_job(
 
         exit(1);
         }
-      }    /* END if ((rc = PBSD_commit(con,job_id)) != 0) */
+      }    /* END if ((rc = PBSD_commit(con,jobp->ji_qs.ji_jobid)) != 0) */
 
     svr_disconnect(con);
 
