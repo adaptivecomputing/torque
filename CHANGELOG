@@ -8,7 +8,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (backported from 3.0.1)
   b - Updated torque.spec.in to be able to handle the snapshot
       names of builds.
-
+  e - Added new MOM configure option job_starter. This options will execute
+      the script submitted in qsub to the executable or script provided
+      as the argument to the job_starter option of the MOM configure file.
 
 2.5.5
   b - change so gpus get written back to nodes file
