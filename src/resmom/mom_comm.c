@@ -888,21 +888,21 @@ int send_sisters(
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
           log_buffer);
+	    
+        if(LOGLEVEL >= 6)
+          {
+          if(EMsg[0] != 0)
+            {
+            log_record(
+              PBSEVENT_ERROR,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              EMsg);
+            }
+          }
+        
+        continue;
         }
-
-	    if(LOGLEVEL >= 6)
-	      {
-	      if(EMsg[0] != 0)
-		      {
-		      log_record(
-		  	  PBSEVENT_ERROR,
-		  	  PBS_EVENTCLASS_JOB,
-		  	  pjob->ji_qs.ji_jobid,
-		  	  EMsg);
-		      }
-	      }
-
-      continue;
       }
 
     ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);
