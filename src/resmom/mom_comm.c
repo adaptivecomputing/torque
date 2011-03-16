@@ -813,37 +813,37 @@ int send_sisters(
       {
       char EMsg[1024];
 
-	  EMsg[0] = 0;
+      EMsg[0] = 0;
       np->hn_stream = rpp_open(np->hn_host, pbs_rm_port, EMsg);
-
+      
       if (np->hn_stream == -1)
         {
         snprintf(log_buffer, 1024, "%s:  cannot open rpp connection to sister #%d (%s) - %s",
-                 id,
-                 i,
-                 (np->hn_host != NULL) ? np->hn_host : "NULL",
-                 EMsg);
-
+          id,
+          i,
+          (np->hn_host != NULL) ? np->hn_host : "NULL",
+          EMsg);
+        
         log_record(
           PBSEVENT_ERROR,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
           log_buffer);
+      
+        if(LOGLEVEL >= 6)
+          {
+          if(EMsg[0] != 0)
+            {
+            log_record(
+              PBSEVENT_ERROR,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              EMsg);
+            }
+          }
+        
+        continue;
         }
-
-	  if(LOGLEVEL >= 6)
-	    {
-	    if(EMsg[0] != 0)
-		  {
-		  log_record(
-			PBSEVENT_ERROR,
-			PBS_EVENTCLASS_JOB,
-			pjob->ji_qs.ji_jobid,
-			EMsg);
-		  }
-	    }
-
-      continue;
       }
 
     ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);

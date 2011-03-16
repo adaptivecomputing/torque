@@ -2252,7 +2252,7 @@ int TMomFinalizeChild(
 
 										 pjobexec_t *TJE)		/* I */
 
-{
+  {
 	static char           *id = "TMomFinalizeChild";
 	int                    aindex;
 	char                  *arg[32];
@@ -3808,7 +3808,7 @@ int TMomFinalizeChild(
 	/*NOTREACHED*/
 
 	return(-1);
-}	 /* END TMomFinalizeChild() */
+  }  /* END TMomFinalizeChild() */
 
 
 
