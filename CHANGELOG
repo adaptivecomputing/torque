@@ -12,6 +12,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the script submitted in qsub to the executable or script provided
       as the argument to the job_starter option of the MOM configure file.
   b - fix pbs_mom -q to work with parallel jobs (backported from 3.0.1)
+  b - fixed a problem with pbs_server high availability where the current 
+      server could not keep the HA lock. The problem was a result of truncating
+      the directory name where the lock file was kept. TORQUE would fail to 
+      validate permissions because it would do a stat on the wrong directory.
 
 2.5.5
   b - change so gpus get written back to nodes file

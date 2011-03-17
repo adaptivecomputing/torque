@@ -2035,7 +2035,7 @@ char *extract_dir(
 
   Dir[0] = '\0';
 
-  snprintf(Dir,sizeof(Dir),"%s",FullPath);
+  snprintf(Dir, DirSize,"%s",FullPath);
 
   ptr = strrchr(Dir,'/');
 
@@ -2067,12 +2067,12 @@ int is_ha_lock_file_valid(
   struct stat Stat;
   bool_t      GoodPermissions = FALSE;
 
-  if (HALockFile[0] == '\0')
+  if (lockfile[0] == '\0')
     {
     return(FALSE);
     }
 
-  extract_dir(HALockFile,LockDir,sizeof(LockDir));
+  extract_dir(lockfile, LockDir, sizeof(LockDir));
 
   if (stat(LockDir,&Stat) != 0)
     {
