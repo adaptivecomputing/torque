@@ -4316,6 +4316,46 @@ int bad_restrict(
   }  /* END bad_restrict() */
 
 
+/*
+ * mom_lock - lock out other MOMs from this directory.
+ */
+
+static void mom_lock(
+
+  int fds,
+  int op)   /* F_WRLCK or F_UNLCK */
+
+  {
+
+  struct flock flock;
+
+  flock.l_type   = op;
+  flock.l_whence = SEEK_SET;
+  flock.l_start  = 0;
+  flock.l_len    = 0; /* whole file */
+
+  if (fcntl(fds, F_SETLK, &flock) < 0)
+    {
+    char tmpPath[256];
+
+    tmpPath[0] = '\0';
+
+    if (getcwd(tmpPath, sizeof(tmpPath)) == NULL)
+      tmpPath[0] = '\0';
+
+    sprintf(log_buffer, "cannot lock '%s/mom.lock' - another mom running",
+            (tmpPath[0] != '\0') ? tmpPath : "$MOM_HOME");
+
+    log_err(errno, msg_daemonname, log_buffer);
+
+    fprintf(stderr, "%s\n",
+            log_buffer);
+
+    exit(1);
+    }
+
+  return;
+  }  /* END mom_lock() */
 
 
 
@@ -5213,6 +5253,9 @@ int rm_request(
       flush_io(iochan);
 
       close_io(iochan);
+      
+      mom_lock(lockfds, F_UNLCK);
+      close(lockfds);
 
       cleanup();
 
@@ -5780,54 +5823,6 @@ int kill_job(
 
   return(ct);
   }  /* END kill_job() */
-
-
-
-
-
-/*
- * mom_lock - lock out other MOMs from this directory.
- */
-
-static void mom_lock(
-
-  int fds,
-  int op)   /* F_WRLCK or F_UNLCK */
-
-  {
-
-  struct flock flock;
-
-  flock.l_type   = op;
-  flock.l_whence = SEEK_SET;
-  flock.l_start  = 0;
-  flock.l_len    = 0; /* whole file */
-
-  if (fcntl(fds, F_SETLK, &flock) < 0)
-    {
-    char tmpPath[256];
-
-    tmpPath[0] = '\0';
-
-    if (getcwd(tmpPath, sizeof(tmpPath)) == NULL)
-      tmpPath[0] = '\0';
-
-    sprintf(log_buffer, "cannot lock '%s/mom.lock' - another mom running",
-            (tmpPath[0] != '\0') ? tmpPath : "$MOM_HOME");
-
-    log_err(errno, msg_daemonname, log_buffer);
-
-    fprintf(stderr, "%s\n",
-            log_buffer);
-
-    exit(1);
-    }
-
-  return;
-  }  /* END mom_lock() */
-
-
-
 
 
 /*
