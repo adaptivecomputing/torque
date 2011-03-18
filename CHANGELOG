@@ -17,8 +17,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the directory name where the lock file was kept. TORQUE would fail to 
       validate permissions because it would do a stat on the wrong directory.
   b - Added code to free the mom.lock file during MOM shutdown.
-
-      
+  b - fixed a bug in set_resources that prevented the last resource in a list from being
+      checked. As a result the last item in the list would always be added
+      without regard to previous entries.
 
 2.5.5
   b - change so gpus get written back to nodes file

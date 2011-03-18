@@ -106,7 +106,7 @@ int set_resources(
   char *r, *eq, *v, *e = NULL;
   char *str;
 
-  struct attrl *attr, *ap;
+  struct attrl *attr, *ap, *aplast;
 
   int found, len;
 
@@ -309,20 +309,21 @@ int set_resources(
       }
     else
       {
-      ap = *attrib;
+      aplast = ap = *attrib;
 
       found = FALSE;
 
-      while (ap->next != NULL)
+      while (ap != NULL)
         {
         if (!strcmp(ap->name, ATTR_l) && !strcmp(ap->resource, attr->resource))
           found = TRUE;
 
+        aplast = ap;
         ap = ap->next;
         }
 
       if (add || !found)
-        ap->next = attr;
+        aplast->next = attr;
       }
 
     /* Get ready for next resource/value pair */
