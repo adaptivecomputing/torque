@@ -2638,10 +2638,7 @@ static void lock_out_ha()
 
     NumChecks++;
 
-    if (is_ha_lock_file_valid(HALockFile) == FALSE)
-      {
-      UseFLock = TRUE;
-      }
+    UseFLock = is_ha_lock_file_valid(HALockFile);
 
     if (UseFLock == TRUE)
       {

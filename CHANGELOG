@@ -34,6 +34,13 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       characters 
   b - restored functionality for -W umask as reported in bugzilla 115
   b - fix pbs_mom -q to work with parallel jobs
+  b - Added code to free the mom.lock file during MOM shutdown.
+  b - Added code to free the mom.lock file during MOM shutdown.
+  b - merged code from 3.0-fixes branch. These changes came from 2.5-fixes revisions
+      4555,4556 and 4557. These fixes address a problme in high availability where
+      the lock files directory name was being truncated so the server could not acquire
+      the HA lock on reboot. The pbs_mom was also fixed to release its lock on the 
+      mom.lock file so subsequent starts of pbs_mom could succeed.
 
 3.0.0
   e - serverdb is now stored as xml, this is no longer configurable.
@@ -100,6 +107,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
         - Reduce the number of unnecessary subpackages by consolidating where
           it makes sense and using existing RPM features (e.g., --excludedocs).
   b - fix bug in qdel - was reporting "cannot contact node" for live nodes
+
+      
 
 2.5.5
   b - change so gpus get written back to nodes file
