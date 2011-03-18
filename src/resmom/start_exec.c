@@ -210,6 +210,8 @@ extern int  multi_mom;
 extern unsigned int pbs_rm_port;
 
 extern char path_checkpoint[];
+extern char jobstarter_exe_name[];
+extern int  jobstarter_set;
 
 int              mom_reader_go;	 /* see catchinter() & mom_writer() */
 
@@ -369,6 +371,7 @@ static void no_hang(
 
    return;
   }	 /* END no_hang() */
+
 
 
 struct passwd *check_pwd(
@@ -569,6 +572,7 @@ void exec_bail(
   
   return;
   }	 /* END exec_bail() */
+
 
 #define RETRY 3
 
@@ -1408,6 +1412,64 @@ int InitUserEnv(
   return(0);
   }	 /* END InitUserEnv() */
 
+
+/**
+ * mom_jobstarter_execute_job
+ *
+ * This routine is called from the newly created child process.
+ *
+ * @param pjob Pointer to job structure.
+ * @see TMomFinalizeChild
+ */
+int mom_jobstarter_execute_job(job *pjob, char *shell, char *arg[], struct var_table *vtable)
+  {
+  static char          *id = "mom_jobstarter_execute_job";
+
+  /* Launch job executable with cr_run command so that cr_checkpoint command will work. */
+
+  /* shuffle up the existing args */
+  arg[5] = arg[4];
+  arg[4] = arg[3];
+  arg[3] = arg[2];
+  arg[2] = arg[1];
+  /* replace first arg with shell name
+     note, this func is called from a child process that exits after the
+     executable is launched, so we don't have to worry about freeing
+     this malloc later */
+  arg[1] = malloc(strlen(shell) + 1);
+
+  if (arg[1] == NULL)
+    {
+    log_err(errno,id,"cannot alloc env");
+
+    return(-1);
+    }
+
+  strcpy(arg[1], shell);
+  arg[0] = jobstarter_exe_name;
+
+  if (LOGLEVEL >= 10)
+    {
+    char cmd[MAXPATHLEN + 1];
+    int i;
+
+    strcpy(cmd,arg[0]);
+    for (i = 1; arg[i] != NULL; i++)
+      {
+      strcat(cmd," ");
+      strcat(cmd,arg[i]);
+      }
+    strcat(cmd,")");
+
+    log_buffer[0] = '\0';
+    sprintf(log_buffer, "execing jobstarter command (%s)\n", cmd);
+    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    }
+
+  execve(jobstarter_exe_name, arg, vtable->v_envp);
+
+  return (0);
+  }
 
 /* For intermediate moms when job_radix is set.
  * open a stream to each sister mom in this radix group 
@@ -3854,6 +3916,18 @@ int TMomFinalizeChild(
 				aindex++;
 				}
 
+			}
+
+		if(jobstarter_set)
+			{
+			if(mom_jobstarter_execute_job(pjob, shell, arg, &vtable) == -1)
+				{
+				starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
+
+				/*NOTREACHED*/
+
+				return(-1);
+				}
 			}
 
 		if (mom_checkpoint_job_is_checkpointable(pjob))

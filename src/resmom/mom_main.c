@@ -270,6 +270,9 @@ char           *AllocParCmd = NULL;  /* (alloc) */
 int      src_login_batch = TRUE;
 int      src_login_interactive = TRUE;
 
+char    jobstarter_exe_name[MAXPATHLEN + 1];
+int     jobstarter_set = 0;
+
 #ifdef PENABLE_LINUX26_CPUSETS
 int      memory_pressure_threshold = 0; /* 0: off, >0: check and log alerts */
 short    memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
@@ -420,6 +423,7 @@ static unsigned long setspoolasfinalname(char *);
 static unsigned long setremchkptdirlist(char *);
 static unsigned long setmaxconnecttimeout(char *);
 static unsigned long aliasservername(char *);
+unsigned long jobstarter(char *value);
 #ifdef PENABLE_LINUX26_CPUSETS
 static unsigned long setmempressthr(char *);
 static unsigned long setmempressdur(char *);
@@ -485,6 +489,7 @@ static struct specials
   { "remote_checkpoint_dirs", setremchkptdirlist },
   { "max_conn_timeout_micro_sec",   setmaxconnecttimeout },
   { "alias_server_name", aliasservername },
+  { "job_starter", jobstarter},
 #ifdef PENABLE_LINUX26_CPUSETS
   { "memory_pressure_threshold",    setmempressthr },
   { "memory_pressure_duration",     setmempressdur },
@@ -3371,6 +3376,36 @@ static unsigned long setspoolasfinalname(
   }  /* END setspoolasfinalname() */
 
 
+/******************************************************** 
+ *  jobstarter - set the name of the job starter program
+ *  to the value given in the mom config file
+ *
+ *  Return: 1 success
+ *          0 file named by value does not exist. fail
+ *******************************************************/
+unsigned long jobstarter(char *value)  /* I */
+  {
+  struct stat sbuf;
+
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "checkpoint_run_exe",
+    value);
+
+  if ((stat(value, &sbuf) == -1) || !(sbuf.st_mode & S_IXUSR))
+    {
+    /* file does not exist or is not executable */
+
+    return(0);  /* error */
+    }
+
+  strncpy(jobstarter_exe_name, value, sizeof(jobstarter_exe_name));
+
+  jobstarter_set = 1;
+
+  return(1);
+  }  /* END jobstarter() */
 
 
 static unsigned long setremchkptdirlist(

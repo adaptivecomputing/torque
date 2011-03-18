@@ -41,6 +41,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the lock files directory name was being truncated so the server could not acquire
       the HA lock on reboot. The pbs_mom was also fixed to release its lock on the 
       mom.lock file so subsequent starts of pbs_mom could succeed.
+  e - Added new MOM configure option job_starter. This options will execute
+      the script submitted in qsub to the executable or script provided
 
 3.0.0
   e - serverdb is now stored as xml, this is no longer configurable.
