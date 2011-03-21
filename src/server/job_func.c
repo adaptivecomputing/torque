@@ -1548,7 +1548,7 @@ int record_jobinfo(job *pjob)
         strcpy(buf + buf_index, attrname_buf);
         buf_index += strlen(attrname_buf);
 
-        rc = attr_to_str(valbuf, sizeof(valbuf), job_attr_def+i, pjob->ji_wattr[i], 1);
+        rc = attr_to_str(valbuf, valbuf_size, job_attr_def+i, pjob->ji_wattr[i], 1);
         if(rc == NO_BUFFER_SPACE)
           {
           do
