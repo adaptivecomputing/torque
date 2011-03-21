@@ -392,12 +392,15 @@ int job_log_open(
   char *directory) /* normal log directory */
 
   {
+  char  id[] = "job_log_open";
   char  buf[_POSIX_PATH_MAX];
+  char  err_log[256];
   int   fds;
 
   if (job_log_opened > 0)
     {
-    return(-1); /* already open */
+    log_err(-1, id, "job log already open");
+    return(1); /* already open */
     }
 
   if (job_log_directory != directory)  /* some calls pass in job_log_directory */
@@ -413,6 +416,8 @@ int job_log_open(
     }
   else if (*filename != '/')
     {
+    sprintf(err_log, "must use absolute file path: %s", filename);
+    log_err(-1, id, err_log);
     return(-1); /* must be absolute path */
     }
 
@@ -420,6 +425,8 @@ int job_log_open(
     {
     job_log_opened = -1; /* note that open failed */
 
+    sprintf(err_log, "could not open %d ", filename);
+    log_err(errno, id, err_log);
     return(-1);
     }
 
@@ -429,6 +436,7 @@ int job_log_open(
 
     if (job_log_opened < 0)
       {
+      log_err(errno, id, "failed to dup job log file descriptor");
       return(-1);
       }
 
@@ -650,8 +658,9 @@ const char *log_get_severity_string(
 
 
 /* record job information of completed job to job log */
-void log_job_record(char *buf)
+int log_job_record(char *buf)
   {
+  char id[] = "log_job_record";
   struct tm *ptm;
   struct tm tmpPtm;
   time_t now;
@@ -668,12 +677,14 @@ void log_job_record(char *buf)
 
     if (job_log_opened < 1)
       {
-      return;
+      log_err(-1, id, "job_log_opened < 1");
+      return(-1);
       }
     }
 
 
   fprintf(joblogfile, "%s\n", buf);
+  return(0);
   }
 
 

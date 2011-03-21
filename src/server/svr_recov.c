@@ -343,6 +343,8 @@ int attr_to_str(
   int               XML)    /* I */
 
   {
+  int rc;
+
   if ((attr.at_flags & ATR_VFLAG_SET) == FALSE)
     return(NO_ATTR_DATA);
 
@@ -377,7 +379,13 @@ int attr_to_str(
         return(NO_ATTR_DATA);
 
       if (XML)
-        escape_xml(attr.at_val.at_str,out,size);
+        {
+        rc = escape_xml(attr.at_val.at_str,out,size);
+        if(rc == BUFFER_OVERFLOW)
+          {
+          return(NO_BUFFER_SPACE);
+          }
+        }
       else
         snprintf(out,size,"%s",attr.at_val.at_str);
 
@@ -408,7 +416,11 @@ int attr_to_str(
           if (XML)
             {
             len = strlen(out);
-            escape_xml(arst->as_string[j],out+len,size-len);
+            rc = escape_xml(arst->as_string[j],out+len,size-len);
+            if(rc == BUFFER_OVERFLOW)
+              {
+              return(NO_BUFFER_SPACE);
+              }
             }
           else
             strcat(out,arst->as_string[j]);
@@ -418,7 +430,11 @@ int attr_to_str(
           if (XML) 
             {
             int len = strlen(out);
-            escape_xml(arst->as_string[j],out+len,size-len);
+            rc = escape_xml(arst->as_string[j],out+len,size-len);
+            if(rc == BUFFER_OVERFLOW)
+              {
+              return(NO_BUFFER_SPACE);
+              }
             }
           else
             strcat(out,arst->as_string[j]);
@@ -490,7 +506,11 @@ int attr_to_str(
             lspace -= len;
 
             if (XML)
-              escape_xml(current->rs_value.at_val.at_str,ptr,lspace);
+              rc = escape_xml(current->rs_value.at_val.at_str,ptr,lspace);
+            if(rc == BUFFER_OVERFLOW)
+              {
+              return(NO_BUFFER_SPACE);
+              }
             else
               snprintf(ptr,lspace,"%s",current->rs_value.at_val.at_str);
 

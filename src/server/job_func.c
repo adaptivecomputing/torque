@@ -160,7 +160,7 @@ void job_purge(job *);
 extern void cleanup_restart_file(job *);
 extern struct batch_request *setup_cpyfiles(struct batch_request *,job *,char*,char *,int,int);
 extern int job_log_open(char *, char *);
-extern void log_job_record(char *buf);
+extern int log_job_record(char *buf);
 extern void check_job_log(struct work_task *ptask);
 int attr_to_str(char *out, int size, attribute_def *at_def, struct attribute  attr, int  XML);
 
@@ -1459,23 +1459,58 @@ void cleanup_restart_file(
 
 int record_jobinfo(job *pjob)
   {
+    char id[] = "record_jobinfo";
     attribute    *pattr;
     int i;
     int rc;
-    char buf[MAXLINE << 3];
-    char valbuf[MAXLINE << 2];
+    char *tmpPtr;
+    char *buf;
+    int  buf_size;
+    int  buf_index = 0;
+    char *valbuf;
+    int valbuf_size;
+    int valbuf_index = 0;
+    char attrname_buf[MAXPATHLEN + 1]; /* As long as the longest attribute name 
+                                          does not exceed MAXPATHLEN + 1 this 
+                                          should be big enough*/
     char namebuf[MAXPATHLEN + 1];
     int fd;
     size_t bytes_read = 0;
 
 
-    job_log_open(job_log_file, path_jobinfo_log);
+    rc = job_log_open(job_log_file, path_jobinfo_log);
+    if(rc < 0)
+      {
+      log_err(rc, id, "Could not open job log ");
+      return(rc);
+      }
+
+    buf = malloc(MAXLINE << 3); /* MAXLINE << 3 is 8192 */
+    if(!buf)
+      {
+      log_err(errno, id, "could not malloc buffer");
+      return(-1);
+      }
+    buf_size = MAXLINE << 3;
+
+    valbuf = malloc(MAXLINE << 2); /* MAXLINE << 2 is 4096 */
+    if(!valbuf)
+      {
+      log_err(errno, id, "could not malloc buffer");
+      return(-1);
+      }
+    valbuf_size = MAXLINE << 2;
 
     strcpy(buf, "<Jobinfo>\n");
     sprintf(valbuf, "\t<Job_Id>%s</Job_Id>", pjob->ji_qs.ji_jobid);
     strcat(buf, valbuf);
-    log_job_record(buf);
-  
+    rc = log_job_record(buf);
+    if(rc)
+      {
+      log_err(rc, id, "log_job_record failed");
+      return(rc);
+      }
+
     for(i = 0; i < JOB_ATR_LAST; i++)
       {
       pattr = &(pjob->ji_wattr[i]);
@@ -1489,23 +1524,118 @@ int record_jobinfo(job *pjob)
           continue;
           }
 
-        strcpy(buf, "\t<");
-        strcat(buf, job_attr_def[i].at_name);
-        strcat(buf, ">");
+        strcpy(attrname_buf, "\t<");
+        strcat(attrname_buf, job_attr_def[i].at_name);
+        strcat(attrname_buf, ">");
         if (pattr->at_type == ATR_TYPE_RESC)
           {
-          strcat(buf, "\n");
+          strcat(attrname_buf, "\n");
           }
+
+        if(buf_size - buf_index <= strlen(attrname_buf))
+          {
+          /* need to resize */
+          tmpPtr = realloc(buf, buf_size << 2);
+          buf_size = buf_size << 2;
+
+          if(tmpPtr == NULL)
+            {
+            log_err(ENOMEM,id,"failed realloc in recored_jobinfo");
+            return(ENOMEM);
+            }
+          buf = tmpPtr;
+          }
+        strcpy(buf + buf_index, attrname_buf);
+        buf_index += strlen(attrname_buf);
+
         rc = attr_to_str(valbuf, sizeof(valbuf), job_attr_def+i, pjob->ji_wattr[i], 1);
-        strcat(buf, valbuf);
+        if(rc == NO_BUFFER_SPACE)
+          {
+          do
+            {
+            /* keep going until we get a valbuf large enough to hold the data */
+            tmpPtr = realloc(valbuf, valbuf_size << 2);
+            valbuf_size = valbuf_size << 2;
+            if(tmpPtr == NULL)
+              {
+              free(buf);
+              log_err(ENOMEM,id,"failed realloc in recored_jobinfo");
+              return(ENOMEM);
+              }
+
+            valbuf = tmpPtr;
+            rc = attr_to_str(valbuf, valbuf_size, job_attr_def+i, pjob->ji_wattr[i], 1);
+
+            }while(rc == NO_BUFFER_SPACE);
+
+            if(rc && rc != NO_BUFFER_SPACE)
+              {
+              free(buf);
+              free(valbuf);
+              log_err(rc, id, "could not malloc");
+              return(rc);
+              }
+          }
+        else if (rc)
+          {
+          free(buf);
+          free(valbuf);
+          log_err(rc, id, "failed to convert attribute to string");
+          return(rc);
+          }
+
         if (pattr->at_type == ATR_TYPE_RESC)
           {
-          strcat(buf, "\t");
+          strcat(valbuf, "\t");
           }
-        strcat(buf, "</");
-        strcat(buf, job_attr_def[i].at_name);
-        strcat(buf, ">");
-        log_job_record(buf);
+        if(buf_size - buf_index <= strlen(valbuf))
+          {
+          while(buf_size < strlen(valbuf))
+            {
+            buf_size = buf_size << 2;
+            }
+          /* need to resize */
+          tmpPtr = realloc(buf, buf_size);
+
+          if(buf == NULL)
+            {
+            log_err(ENOMEM,id,"failed realloc in recored_jobinfo");
+            return(ENOMEM);
+            }
+
+          buf = tmpPtr;
+          }
+        strcpy(buf + buf_index, valbuf);
+        buf_index += strlen(valbuf);
+
+
+        strcpy(attrname_buf, "</");
+        strcat(attrname_buf, job_attr_def[i].at_name);
+        strcat(attrname_buf, ">");
+        if(buf_size - buf_index <= strlen(attrname_buf))
+          {
+          /* need to resize */
+          tmpPtr = realloc(buf, buf_size << 2);
+          buf_size = buf_size << 2;
+
+          if(buf == NULL)
+            {
+            log_err(ENOMEM,id,"failed realloc in recored_jobinfo");
+            return(ENOMEM);
+            }
+          buf = tmpPtr;
+          }
+        strcpy(buf + buf_index, attrname_buf);
+
+        rc = log_job_record(buf);
+        if(rc)
+          {
+          log_err(rc, id, "log_job_record failed recording attributes");
+          free(buf);
+          free(valbuf);
+          return(rc);
+          }
+        buf_index = 0; /* we are starting over again */
         }
       }
 
@@ -1514,7 +1644,24 @@ int record_jobinfo(job *pjob)
   
       /* This is for Baylor. We will make it a server parameter eventually
          Write the contents of the script to our log file*/
-      strcpy(buf, "\t<job_script>");
+      strcpy(attrname_buf, "\t<job_script>");
+      if(buf_size - buf_index <= strlen(attrname_buf))
+        {
+        /* need to resize */
+        tmpPtr = realloc(buf, buf_size << 2);
+        buf_size = buf_size << 2;
+
+        if(buf == NULL)
+          {
+          free(valbuf);
+          log_err(ENOMEM,id,"failed realloc in recored_jobinfo");
+          return(ENOMEM);
+          }
+        buf = tmpPtr;
+        }
+      strcpy(buf + buf_index, attrname_buf);
+      buf_index += strlen(attrname_buf);
+
       strcpy(namebuf, path_jobs);
       strcat(namebuf, pjob->ji_qs.ji_fileprefix);
       strcat(namebuf, JOB_SCRIPT_SUFFIX);
@@ -1524,11 +1671,25 @@ int record_jobinfo(job *pjob)
         {
         do
           {
-          bytes_read = read(fd, valbuf, sizeof(valbuf));
+          bytes_read = read(fd, valbuf, valbuf_size);
           if (bytes_read > 0)
             {
-            valbuf[bytes_read] = 0; /* null terminate the buffer for strcpy */
-            strcat(buf, valbuf);
+            if(buf_size - buf_index <= bytes_read)
+              {
+              /* we need a bigger valbuf */
+              tmpPtr = realloc(buf, buf_size << 2);
+              if(buf == NULL)
+                {
+                free(valbuf);
+                log_err(ENOMEM,id,"failed realloc in recored_jobinfo");
+                return(ENOMEM);
+                }
+              buf = tmpPtr;
+              buf_size = buf_size << 2;
+              }
+            valbuf[bytes_read] = 0;
+            strcpy(buf + buf_index, valbuf);
+            buf_index += strlen(valbuf);
             }
           } while(bytes_read > 0);
           close(fd);
@@ -1540,15 +1701,22 @@ int record_jobinfo(job *pjob)
   
   
       strcat(buf, "\t</job_script>\n");
-      log_job_record(buf);
+      rc = log_job_record(buf);
+      if(rc)
+        {
+        free(buf);
+        free(valbuf);
+        log_err(rc, id, "log_job_record failed");
+        return(rc);
+        }
       }
 
     strcpy(buf, "</Jobinfo>\n");
-    log_job_record(buf);
+    rc = log_job_record(buf);
 
-    
-    
-    return(0);  
+    free(valbuf);
+    free(buf);
+    return(rc);  
   }
 
 
