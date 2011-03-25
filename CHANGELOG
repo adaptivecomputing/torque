@@ -20,6 +20,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fixed a bug in set_resources that prevented the last resource in a list from being
       checked. As a result the last item in the list would always be added
       without regard to previous entries.
+  e - Added new symbol JOB_EXEC_OVERLIMIT. When a job exceeds a limit (i.e. walltime) the
+      job will fail with the JOB_EXEC_OVERLIMIT value and
+      also produce an abort case for mailing purposes. Previous to this change
+      a job exceeding a limit returned 0 on success and no mail
+      was sent to the user if requested on abort.
+
 
 2.5.5
   b - change so gpus get written back to nodes file
