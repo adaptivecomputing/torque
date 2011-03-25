@@ -888,6 +888,7 @@ dir so that job can be restarted */
 #define JOB_EXEC_BADRESRT -7 /* job restart failed */
 #define JOB_EXEC_CMDFAIL  -8 /* exec() of user command failed */
 #define JOB_EXEC_STDOUTFAIL -9 /* could not create/open stdout stderr files */
+#define JOB_EXEC_OVERLIMIT      -10 /* job aborted after successful start */
 
 extern void  add_dest(job *);
 extern void  depend_clrrdy(job *);

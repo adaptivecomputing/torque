@@ -5934,6 +5934,7 @@ int job_over_limit(
     /* no more POLL's */
 
     pjob->ji_nodekill = pjob->ji_nodeid;
+    pjob->ji_qs.ji_un.ji_momt.ji_exitstat = JOB_EXEC_OVERLIMIT;
 
     return(1);
     }

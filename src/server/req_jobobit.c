@@ -2463,6 +2463,7 @@ void req_jobobit(
       {
 
       case JOB_EXEC_FAIL1:
+      case JOB_EXEC_OVERLIMIT:
 
       default:
 
