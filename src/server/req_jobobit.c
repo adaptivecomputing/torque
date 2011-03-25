@@ -125,6 +125,7 @@ extern char *msg_job_end_sig;
 extern char *msg_job_end_stat;
 extern char *msg_momnoexec1;
 extern char *msg_momnoexec2;
+extern char *msg_momjoboverlimit;
 extern char *msg_obitnojob;
 extern char *msg_obitnocpy;
 extern char *msg_obitnodel;
@@ -2462,8 +2463,14 @@ void req_jobobit(
     switch (exitstatus)
       {
 
-      case JOB_EXEC_FAIL1:
       case JOB_EXEC_OVERLIMIT:
+        /* the job exceeded some resource limit such as walltime, mem, pmem, cput, etc */
+        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjoboverlimit);
+        alreadymailed = 1;
+
+        break;
+
+      case JOB_EXEC_FAIL1:
 
       default:
 
