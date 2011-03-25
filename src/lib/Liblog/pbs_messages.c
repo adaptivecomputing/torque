@@ -147,6 +147,7 @@ char *msg_mombadmodify = "MOM rejected modify request, error: %d";
 char *msg_momsetlim = "Job start failed.  Can't set \"%s\" limit: %s.\n";
 char *msg_momnoexec1 = "Job cannot be executed\nSee Administrator for help";
 char *msg_momnoexec2 = "Job cannot be executed\nSee job standard error file";
+char *msg_momjoboverlimit = "Job exceeded some resource limit (walltime, mem, etc.). Job was aborted\nSee Administrator for help";
 char *msg_movejob = "Job moved to ";
 char *msg_norelytomom = "Server could not connect to MOM";
 char *msg_obitnojob  = "Job Obit notice received from %s has error %d";

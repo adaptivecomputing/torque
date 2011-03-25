@@ -43,74 +43,39 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       mom.lock file so subsequent starts of pbs_mom could succeed.
   e - Added new MOM configure option job_starter. This options will execute
       the script submitted in qsub to the executable or script provided
+  e - Added new symbol JOB_EXEC_OVERLIMIT. When a job exceeds a limit (i.e. walltime) the
+      job will fail with the JOB_EXEC_OVERLIMIT value and
+      also produce an abort case for mailing purposes. Previous to this change
+      a job exceeding a limit returned 0 on success and no mail
+      was sent to the user if requested on abort.
 
-3.0.0
-  e - serverdb is now stored as xml, this is no longer configurable.
-  f - added --enable-numa-support for supporting NUMA-type architectures. We
-      have tested this build on UV and Altix machines. The server treats the
-      mom as a node with several special numa nodes embedded, and the pbs_mom
-      reports on these numa nodes instead of itself as a whole.
-  f - for numa configurations, pbs_mom creates cpusets for memory as well as
-      cpus
-  e - adapted the task manager interface to interact properly with NUMA 
-      systems, including tm_adopt
-  e - Addeded autogen.sh go make life easier in a Makefile.in-less world.
-  e - Modified buildutils/pbs_mkdirs.in to create server_priv/nodes file
-      at install time. The file only shows examples and a link to the
-      TORQUE documentation.
-  f - added ATTR_node_exclusive to allow a job to have a node exclusively. 
-  f - added --enable-memacct to use an extra protocol in order to 
-      accurately track jobs that exceed over their memory limits and kill 
-      them 
-  e - when ATTR_node_exclusive is set, reserve the entire node (or entire
-      numa node if applicable) in the cpuset 
-  n - Changed the protocol versions for all client-to-server, mom-to-server and
-      mom-to-mom protocols from 1 to 2. The changes to the protocol in this version
-      of TORQUE will make it incompatible with previous versions.
-  e - when a select statement is used, tally up the memory requests and mark
-      the total in the resource list. This allows memory enforcement for
-      NUMA jobs, but doesn't affect others as memory isn't enforced for 
-      multinode jobs
-  e - add an asynchronous option to qdel 
-  e - make the mem, vmem, and cput usage available on a per-mom basis using momctl -d2
-      (Dr. Bernd Kallies)
-  e - move the memory monitor functionality to linux/mom_mach.c in order to store the 
-      more accurate statistics for usage, and still use it for applying limits.
-      (Dr. Bernd Kallies)
-  e - when pbs_mom is compiled to use cpusets, instead of looking at all processes, 
-      only examine the ones in cpuset task files. For busy machines (especially large
-      (Dr. Bernd Kallies)
-  e - when cpusets are configured and memory pressure enabled, add the ability to 
-      check memory pressure for a job. Using $memory_pressure_threshold and 
-      $memory_pressure_duration in the mom's config, the admin sets a threshold at 
-      which a job becomes a problem. If duration is set, the job will be killed if
-      it exceeds the threshold for the configured number of checks. If duration isn't 
-      set, then an arror is logged.
-      (Dr. Bernd Kallies)
-  e - have pbs_track add the new executable to the cpuset when cpusets
-      are enabled
-  e - change pbs_track to look for the executable in the existing path so it doesn't always
-      need a complete path.
-      (Dr. Bernd Kallies)
-  e - report sessions on a per numa node basis when NUMA is enabled
-      (Dr. Bernd Kallies)
-  b - Merged revision 4325 from 2.5-fixes. Fixed a problem where the -m n
-      (request no mail on qsub) was not always being recongnized.
-  e - Merged buildutils/torque.spec.in from 2.4-fixes.
-      Refactored torque spec file to comply with established RPM best
-      practices, including the following:
-        - Standard installation locations based on RPM macro configuration
-          (e.g., %{_prefix})
-        - Latest upstream RPM conditional build semantics with fallbacks for
-          older versions of RPM (e.g., RHEL4)
-        - Initial set of optional features (GUI, PAM, syslog, SCP) with more
-          planned
-        - Basic working configuration automatically generated at install-time
-        - Reduce the number of unnecessary subpackages by consolidating where
-          it makes sense and using existing RPM features (e.g., --excludedocs).
-  b - fix bug in qdel - was reporting "cannot contact node" for live nodes
 
-      
+2.5.6
+  b - Made changes to record_jobinfo and supporting functions to be
+      able to use dynamically allcated buffers for data. This fixed
+      a problem where incoming data overran fixed sized buffers.
+  b - restored functionality for -W umask as reported in bugzilla 115
+      (backported from 3.0.1)
+  b - Updated torque.spec.in to be able to handle the snapshot
+      names of builds.
+  e - Added new MOM configure option job_starter. This options will execute
+      the script submitted in qsub to the executable or script provided
+      as the argument to the job_starter option of the MOM configure file.
+  b - fix pbs_mom -q to work with parallel jobs (backported from 3.0.1)
+  b - fixed a problem with pbs_server high availability where the current
+      server could not keep the HA lock. The problem was a result of truncating
+      the directory name where the lock file was kept. TORQUE would fail to
+      validate permissions because it would do a stat on the wrong directory.
+  b - Added code to free the mom.lock file during MOM shutdown.
+  b - fixed a bug in set_resources that prevented the last resource in a list from being
+      checked. As a result the last item in the list would always be added
+      without regard to previous entries.
+  e - Added new symbol JOB_EXEC_OVERLIMIT. When a job exceeds a limit (i.e. walltime) the
+      job will fail with the JOB_EXEC_OVERLIMIT value and
+      also produce an abort case for mailing purposes. Previous to this change
+      a job exceeding a limit returned 0 on success and no mail
+      was sent to the user if requested on abort.
+
 
 2.5.5
   b - change so gpus get written back to nodes file
