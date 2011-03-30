@@ -118,6 +118,8 @@ extern char *msg_daemonname;
 #ifndef PBS_MOM
 extern tlist_head task_list_event;
 extern tlist_head task_list_immed;
+extern pthread_mutex_t *task_list_event_mutex;
+extern pthread_mutex_t *task_list_immed_mutex;
 extern int LOGLEVEL;
 #endif /* PBS_MOM */
 
@@ -252,6 +254,10 @@ int reply_send(
      * the immediate list for dispatching.
      */
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(task_list_event_mutex);
+#endif
+
     ptask = (struct work_task *)GET_NEXT(task_list_event);
 
     while (ptask != NULL)
@@ -261,13 +267,26 @@ int reply_send(
         {
         delete_link(&ptask->wt_linkall);
 
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(task_list_event_mutex);
+        pthread_mutex_lock(task_list_immed_mutex);
+#endif
+
         append_link(&task_list_immed, &ptask->wt_linkall, ptask);
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(task_list_immed_mutex);
+#endif
 
         return(0);
         }
 
       ptask = (struct work_task *)GET_NEXT(ptask->wt_linkall);
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(task_list_event_mutex);
+#endif
 
     /* should have found a task and didn't */
 

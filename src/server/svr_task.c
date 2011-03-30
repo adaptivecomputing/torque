@@ -109,6 +109,24 @@ extern void check_nodes(struct work_task *);
 extern tlist_head task_list_immed;
 extern tlist_head task_list_timed;
 extern tlist_head task_list_event;
+extern tlist_head task_list_child;
+
+#ifdef ENABLE_PTHREADS
+extern pthread_mutex_t *task_list_immed_mutex;
+extern pthread_mutex_t *task_list_timed_mutex;
+extern pthread_mutex_t *task_list_event_mutex;
+extern pthread_mutex_t *task_list_child_mutex;
+
+void mark_task_linkobj_mutex(
+
+  struct work_task *ptask,
+  pthread_mutex_t  *mutex)
+
+  {
+  ptask->wt_objmutex = mutex;
+  }
+#endif
+
 
 
 
@@ -121,15 +139,13 @@ extern tlist_head task_list_event;
 
 struct work_task *set_task(
 
-        enum work_type  type,
-        long          event_id,  /* I - based on type can be time of event */
-        void (*func)(),
-        void         *parm)
+  enum work_type  type,
+  long          event_id,  /* I - based on type can be time of event */
+  void (*func)(),
+  void         *parm)
 
   {
-
   struct work_task *pnew;
-
   struct work_task *pold;
 
   pnew = (struct work_task *)malloc(sizeof(struct work_task));
@@ -143,19 +159,32 @@ struct work_task *set_task(
 
   CLEAR_LINK(pnew->wt_linkobj);
 
-  pnew->wt_event = event_id;
-  pnew->wt_type  = type;
-  pnew->wt_func  = func;
-  pnew->wt_parm1 = parm;
-  pnew->wt_parm2 = NULL;
-  pnew->wt_aux   = 0;
+  pnew->wt_event    = event_id;
+  pnew->wt_type     = type;
+  pnew->wt_func     = func;
+  pnew->wt_parm1    = parm;
+  pnew->wt_parm2    = NULL;
+  pnew->wt_aux      = 0;
+  pnew->wt_objmutex = NULL;
 
   if (type == WORK_Immed)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(task_list_immed_mutex);
+#endif
+
     append_link(&task_list_immed, &pnew->wt_linkall, pnew);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(task_list_immed_mutex);
+#endif
     }
   else if (type == WORK_Timed)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(task_list_timed_mutex);
+#endif
+
     pold = (struct work_task *)GET_NEXT(task_list_timed);
 
     while (pold != NULL)
@@ -168,20 +197,41 @@ struct work_task *set_task(
 
     if (pold != NULL)
       {
-      insert_link(
-        &pold->wt_linkall,
-        &pnew->wt_linkall,
-        pnew,
-        LINK_INSET_BEFORE);
+      insert_link(&pold->wt_linkall,&pnew->wt_linkall,pnew,LINK_INSET_BEFORE);
       }
     else
       {
       append_link(&task_list_timed, &pnew->wt_linkall, pnew);
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(task_list_timed_mutex);
+#endif
+
+    }
+  else if (type == WORK_Deferred_Child)
+    {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(task_list_child_mutex);
+#endif
+
+    append_link(&task_list_child, &pnew->wt_linkall, pnew);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(task_list_child_mutex);
+#endif
     }
   else
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(task_list_event_mutex);
+#endif
+
     append_link(&task_list_event, &pnew->wt_linkall, pnew);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(task_list_event_mutex);
+#endif
     }
 
   return(pnew);
@@ -220,12 +270,39 @@ int task_is_in_threadpool(
 
 void dispatch_task(
 
-  struct work_task *ptask)
+  struct work_task *ptask,
+  void             *mutex)
 
   {
   int free_task = !task_is_in_threadpool(ptask);
+
+  if (mutex != NULL)
+    {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock((pthread_mutex_t *)mutex);
+#endif
+    }
+
   delete_link(&ptask->wt_linkall);
+
+#ifdef ENABLE_PTHREADS
+  if (ptask->wt_objmutex != NULL)
+    pthread_mutex_lock(ptask->wt_objmutex);
+#endif
+
   delete_link(&ptask->wt_linkobj);
+
+#ifdef ENABLE_PTHREADS
+  if (ptask->wt_objmutex != NULL)
+    pthread_mutex_unlock(ptask->wt_objmutex);
+#endif
+
+  if (mutex != NULL)
+    {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock((pthread_mutex_t *)mutex);
+#endif
+    }
 
   if (ptask->wt_func != NULL)
     ptask->wt_func(ptask);  /* dispatch process function */
@@ -245,10 +322,31 @@ void dispatch_task(
  * delete_task - unlink and free a work_task structure.
  */
 
-void
-delete_task(struct work_task *ptask)
+void delete_task(
+    
+  struct work_task *ptask,          /* M */
+  int               obj_mutex_held) /* I */
+
   {
+#ifdef ENABLE_PTHREADS
+  if (obj_mutex_held == FALSE)
+    {
+    pthread_mutex_lock(ptask->wt_objmutex);
+    }
+#endif
+
   delete_link(&ptask->wt_linkobj);
+
+#ifdef ENABLE_PTHREADS
+  if (obj_mutex_held == FALSE)
+    {
+    pthread_mutex_unlock(ptask->wt_objmutex);
+    }
+#endif
+
   delete_link(&ptask->wt_linkall);
   (void)free(ptask);
-  }
+
+  } /* END delete_task() */
+
+

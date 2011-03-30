@@ -5810,8 +5810,6 @@ void start_exec(
 
 #endif /* ndef NUMA_SUPPORT */
 
-	int  ports[2];
-
 	char          tmpdir[MAXPATHLEN];
 
 

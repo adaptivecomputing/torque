@@ -185,6 +185,7 @@ extern tlist_head svr_newnodes;
 extern tlist_head task_list_immed;
 extern tlist_head task_list_timed;
 extern tlist_head task_list_event;
+extern tlist_head task_list_child;
 extern struct all_jobs alljobs;
 extern struct all_jobs array_summary;
 extern struct all_jobs newjobs;
@@ -194,6 +195,7 @@ extern pthread_mutex_t *svr_requests_mutex;
 extern pthread_mutex_t *task_list_immed_mutex;
 extern pthread_mutex_t *task_list_timed_mutex;
 extern pthread_mutex_t *task_list_event_mutex;
+extern pthread_mutex_t *task_list_child_mutex;
 extern pthread_mutex_t *node_state_mutex;
 #endif
 
@@ -482,6 +484,9 @@ int pbsd_init(
 
   struct sigaction oact;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutexattr_t recursive_attr;
+#endif
 
   struct work_task *wt;
   job_array *pa;
@@ -794,6 +799,27 @@ int pbsd_init(
 
   node_state_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(node_state_mutex,NULL);
+
+  /* make the task list child and events mutexes recursive because 
+   * they can be called by a signal handler */
+
+  task_list_immed_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(task_list_immed_mutex,NULL);
+  pthread_mutex_lock(task_list_immed_mutex);
+
+  task_list_timed_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(task_list_timed_mutex,NULL);
+  pthread_mutex_lock(task_list_timed_mutex);
+
+  pthread_mutexattr_settype(&recursive_attr,PTHREAD_MUTEX_RECURSIVE);
+
+  task_list_event_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(task_list_event_mutex,&recursive_attr);
+  pthread_mutex_lock(task_list_event_mutex);
+
+  task_list_child_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(task_list_child_mutex,&recursive_attr);
+  pthread_mutex_lock(task_list_child_mutex);
 #endif
 
   CLEAR_HEAD(svr_requests);
@@ -803,6 +829,8 @@ int pbsd_init(
   CLEAR_HEAD(task_list_timed);
 
   CLEAR_HEAD(task_list_event);
+
+  CLEAR_HEAD(task_list_child);
 
   CLEAR_HEAD(svr_queues);
 
@@ -816,6 +844,10 @@ int pbsd_init(
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_requests_mutex);
+  pthread_mutex_unlock(task_list_immed_mutex);
+  pthread_mutex_unlock(task_list_timed_mutex);
+  pthread_mutex_unlock(task_list_event_mutex);
+  pthread_mutex_unlock(task_list_child_mutex);
 #endif
 
   time_now = time((time_t *)0);
@@ -1630,6 +1662,10 @@ static int pbsd_init_job(
       if (pwt)
         {
         append_link(&pjob->ji_svrtask, &pwt->wt_linkobj, pwt);
+
+#ifdef ENABLE_PTHREADS
+        mark_task_linkobj_mutex(pwt,pjob->ji_mutex);
+#endif
         }
 
       break;
@@ -1716,6 +1752,10 @@ static int pbsd_init_job(
       if (pwt)
         {
         append_link(&pjob->ji_svrtask, &pwt->wt_linkobj, pwt);
+
+#ifdef ENABLE_PTHREADS
+        mark_task_linkobj_mutex(pwt,pjob->ji_mutex);
+#endif
         }
 
       pbsd_init_reque(pjob, KEEP_STATE);
@@ -1731,6 +1771,10 @@ static int pbsd_init_job(
       if (pwt)
         {
         append_link(&pjob->ji_svrtask, &pwt->wt_linkobj, pwt);
+
+#ifdef ENABLE_PTHREADS
+        mark_task_linkobj_mutex(pwt,pjob->ji_mutex);
+#endif
         }
 
       pbsd_init_reque(pjob, KEEP_STATE);
@@ -1769,6 +1813,10 @@ static int pbsd_init_job(
         if (pwt)
           {
           append_link(&pjob->ji_svrtask, &pwt->wt_linkobj, pwt);
+
+#ifdef ENABLE_PTHREADS
+          mark_task_linkobj_mutex(pwt,pjob->ji_mutex);
+#endif
           }
         }
 
@@ -1785,6 +1833,10 @@ static int pbsd_init_job(
       if (pwt)
         {
         append_link(&pjob->ji_svrtask, &pwt->wt_linkobj, pwt);
+
+#ifdef ENABLE_PTHREADS
+        mark_task_linkobj_mutex(pwt,pjob->ji_mutex);
+#endif
         }
 
       pbsd_init_reque(pjob, KEEP_STATE);
@@ -1959,7 +2011,7 @@ static void catch_child(
   int sig)
 
   {
-
+  static char *id = "catch_child";
   struct work_task *ptask;
   pid_t    pid;
   int    statloc;
@@ -1972,11 +2024,7 @@ static void catch_child(
       {
       if ((LOGLEVEL >= 7) && (errno != ECHILD))
         {
-#ifdef NO_SIGCHLD
-        log_err(errno, "catch_child", "waitpid failed");
-#else
-        DBPRT(("catch_child waitpid failed %d (%s)\n", errno, pbs_strerror(errno)));
-#endif
+        log_err(errno, id, "waitpid failed");
         }
 
       return;
@@ -1989,7 +2037,6 @@ static void catch_child(
 
     if (LOGLEVEL >= 7)
       {
-#ifdef NO_SIGCHLD
       sprintf(log_buffer, "caught SIGCHLD for pid %d",
               pid);
 
@@ -1998,29 +2045,41 @@ static void catch_child(
         PBS_EVENTCLASS_SERVER,
         msg_daemonname,
         log_buffer);
-#else
-      DBPRT(("catch_child caught pid %d\n", pid));
-#endif
       }
 
     found = FALSE;
 
-    ptask = (struct work_task *)GET_NEXT(task_list_event);
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(task_list_child_mutex);
+#endif
+
+    ptask = (struct work_task *)GET_NEXT(task_list_child);
 
     while (ptask != NULL)
       {
-      if ((ptask->wt_type == WORK_Deferred_Child) &&
-          (ptask->wt_event == pid))
+      if (ptask->wt_event == pid)
         {
         ptask->wt_type = WORK_Deferred_Cmp;
         ptask->wt_aux = (int)statloc; /* exit status */
+
+        /* NYI: move this to the events list */
+        delete_link(&ptask->wt_linkall);
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_lock(task_list_event_mutex);
+#endif 
+
+        append_link(&task_list_event, &ptask->wt_linkall, ptask);
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(task_list_event_mutex);
+#endif 
 
         svr_delay_entry++; /* see next_task() */
         found = TRUE;
 
         if (LOGLEVEL >= 7)
           {
-#ifdef NO_SIGCHLD
           sprintf(log_buffer, "work task found for pid %d",
                   pid);
 
@@ -2029,9 +2088,6 @@ static void catch_child(
             PBS_EVENTCLASS_SERVER,
             msg_daemonname,
             log_buffer);
-#else
-          DBPRT(("catch_child found work task found for pid %d\n", pid));
-#endif
           }
 
         }
@@ -2039,16 +2095,16 @@ static void catch_child(
       ptask = (struct work_task *)GET_NEXT(ptask->wt_linkall);
       }
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(task_list_child_mutex);
+#endif
+
     if ((found == FALSE) && (LOGLEVEL >= 7))
       {
-#ifdef NO_SIGCHLD
       sprintf(log_buffer, "no work task found for pid %d",
               pid);
 
-      log_err(-1, "catch_child", log_buffer);
-#else
-      DBPRT(("catch_child no work task found for pid %d\n", pid));
-#endif
+      log_err(-1, id, log_buffer);
       }
     }    /* END while (1) */
 

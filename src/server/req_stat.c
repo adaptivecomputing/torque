@@ -917,7 +917,7 @@ int stat_to_mom(
     /* request failed */
 
     if (pwt)
-      delete_task(pwt);
+      delete_task(pwt,TRUE);
 
     free_br(newrq);
 

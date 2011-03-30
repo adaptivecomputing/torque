@@ -1952,6 +1952,10 @@ static void job_wait_over(
 
   pjob = (job *)pwt->wt_parm1;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
 #ifndef NDEBUG
     {
     time_t now = time((time_t *)0);
@@ -1970,7 +1974,17 @@ static void job_wait_over(
       ptask = set_task(WORK_Timed, when, job_wait_over, pjob);
 
       if (ptask != NULL)
+        {
         append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+        mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
+        }
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
       return;
       }
@@ -1989,6 +2003,10 @@ static void job_wait_over(
   svr_evaljobstate(pjob, &newstate, &newsub, 0);
 
   svr_setjobstate(pjob, newstate, newsub);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
   return;
   }
@@ -2051,6 +2069,10 @@ int job_set_wait(
     }
 
   append_link(&((job *)pjob)->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+  mark_task_linkobj_mutex(ptask,((job *)pjob)->ji_mutex);
+#endif
 
   /* set JOB_SVFLG_HASWAIT to show job has work task entry */
 

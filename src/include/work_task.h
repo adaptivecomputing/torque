@@ -95,6 +95,10 @@
 #ifndef WORK_TASK_H
 #define WORK_TASK_H 1
 
+#ifdef ENABLE_PTHREADS
+#include <pthread.h>
+#endif
+
 enum work_type
   {
   WORK_Immed,  /* immediate action: see state */
@@ -112,6 +116,9 @@ struct work_task
   {
   list_link  wt_linkall; /* link to event type work list */
   list_link  wt_linkobj; /* link to others of same object */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_t *wt_objmutex;
+#endif
   long   wt_event; /* event id: time, pid, socket, ... */
   enum work_type  wt_type; /* type of event */
   void (*wt_func)(struct work_task *);
@@ -123,9 +130,12 @@ struct work_task
   int   wt_aux; /* optional info: e.g. child status */
   };
 
+#ifdef ENABLE_PTHREADS
+void mark_task_linkobj_mutex(struct work_task *,pthread_mutex_t *);
+#endif
 extern struct work_task *set_task(enum work_type, long event, void (*func)(), void *param);
 extern void clear_task(struct work_task *ptask);
-extern void dispatch_task(struct work_task *);
-extern void delete_task(struct work_task *ptask);
+extern void dispatch_task(struct work_task *,void *);
+extern void delete_task(struct work_task *ptask,int);
 
 #endif /* WORK_TASK_H */

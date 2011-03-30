@@ -272,6 +272,13 @@ tlist_head svr_newnodes;          /* list of newly created nodes      */
 tlist_head task_list_immed;
 tlist_head task_list_timed;
 tlist_head task_list_event;
+tlist_head task_list_child;
+#ifdef ENABLE_PTHREADS
+pthread_mutex_t *task_list_immed_mutex;
+pthread_mutex_t *task_list_timed_mutex;
+pthread_mutex_t *task_list_event_mutex;
+pthread_mutex_t *task_list_child_mutex;
+#endif
 pid_t    sid;
 
 time_t  time_now = 0;
@@ -1005,25 +1012,39 @@ void parse_command_line(
 static time_t next_task()
 
   {
-  time_t      delay;
+  time_t            delay;
 
-  struct work_task  *nxt;
+  struct work_task *nxt;
 
-  struct work_task  *ptask;
-  time_t      tilwhen = server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long;
+  struct work_task *ptask;
+  time_t            tilwhen = server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long;
+  void             *mutex;
 
   time_now = time((time_t *)0);
 
+
   if (svr_delay_entry)
     {
+#ifdef ENABLE_PTHREADS 
+    mutex = task_list_event_mutex;
+#endif
+
     ptask = (struct work_task *)GET_NEXT(task_list_event);
 
     while (ptask != NULL)
       {
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(task_list_event_mutex);
+#endif
+
       nxt = (struct work_task *)GET_NEXT(ptask->wt_linkall);
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(task_list_event_mutex);
+#endif
+
       if (ptask->wt_type == WORK_Deferred_Cmp)
-        dispatch_task(ptask);
+        dispatch_task(ptask,mutex);
 
       ptask = nxt;
       }
@@ -1031,8 +1052,29 @@ static time_t next_task()
     svr_delay_entry = 0;
     }
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(task_list_immed_mutex);
+  mutex = task_list_immed_mutex;
+#endif
+
   while ((ptask = (struct work_task *)GET_NEXT(task_list_immed)) != NULL)
-    dispatch_task(ptask);
+    {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(task_list_immed_mutex);
+#endif
+
+    dispatch_task(ptask,mutex);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(task_list_immed_mutex);
+#endif
+    }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(task_list_immed_mutex);
+  pthread_mutex_lock(task_list_timed_mutex);
+  mutex = task_list_timed_mutex;
+#endif
 
   while ((ptask = (struct work_task *)GET_NEXT(task_list_timed)) != NULL)
     {
@@ -1045,9 +1087,21 @@ static time_t next_task()
       }
     else
       {
-      dispatch_task(ptask); /* will delete link */
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(task_list_timed_mutex);
+#endif
+
+      dispatch_task(ptask,mutex); /* will delete link */
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(task_list_timed_mutex);
+#endif
       }
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(task_list_timed_mutex);
+#endif
 
   /* should the scheduler be run?  If so, adjust the delay time  */
 
@@ -1301,6 +1355,10 @@ void main_loop(void)
           if (ptask != NULL)
             {
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
             }
           }
 
@@ -1320,6 +1378,10 @@ void main_loop(void)
      * and all children are done, change state to DOWN
      */
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(task_list_event_mutex);
+#endif
+
     if ((*state > SV_STATE_RUN) &&
         (server.sv_jobstates[JOB_STATE_RUNNING] == 0) &&
         (server.sv_jobstates[JOB_STATE_EXITING] == 0) &&
@@ -1327,6 +1389,10 @@ void main_loop(void)
       {
       *state = SV_STATE_DOWN;
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(task_list_event_mutex);
+#endif
     }    /* END while (*state != SV_STATE_DOWN) */
 
   svr_save(&server, SVR_SAVE_FULL); /* final recording of server */

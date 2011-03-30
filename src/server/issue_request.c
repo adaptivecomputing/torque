@@ -114,6 +114,9 @@ extern char server_name[];
 extern struct connect_handle connection[];
 extern char     *msg_daemonname;
 extern tlist_head task_list_event;
+#ifdef ENABLE_PTHREADS
+extern pthread_mutex_t *task_list_event_mutex;
+#endif
 extern time_t time_now;
 extern char *msg_daemonname;
 extern char *msg_issuebad;
@@ -664,7 +667,7 @@ int issue_Drequest(
 
       log_err(-1, id, log_buffer);
 
-      delete_task(ptask);
+      delete_task(ptask,FALSE);
 
       rc = -1;
 
@@ -701,7 +704,13 @@ void process_Dreply(
 
   struct batch_request *request;
 
+  void                 *mutex;
+
   /* find the work task for the socket, it will point us to the request */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(task_list_event_mutex);
+  mutex = task_list_event_mutex;
+#endif
 
   ptask = (struct work_task *)GET_NEXT(task_list_event);
 
@@ -715,6 +724,10 @@ void process_Dreply(
 
     ptask = (struct work_task *)GET_NEXT(ptask->wt_linkall);
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(task_list_event_mutex);
+#endif
 
   if (ptask == NULL)
     {
@@ -738,8 +751,7 @@ void process_Dreply(
     }
 
   /* now dispatch the reply to the routine in the work task */
-
-  dispatch_task(ptask);
+  dispatch_task(ptask,mutex);
 
   return;
   }  /* END process_Dreply() */

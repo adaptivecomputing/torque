@@ -425,7 +425,7 @@ int job_log_open(
     {
     job_log_opened = -1; /* note that open failed */
 
-    sprintf(err_log, "could not open %d ", filename);
+    sprintf(err_log, "could not open %s ", filename);
     log_err(errno, id, err_log);
     return(-1);
     }

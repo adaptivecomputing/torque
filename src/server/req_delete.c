@@ -644,7 +644,13 @@ jump:
         preq);
     
       if (pwtcheck != NULL)
+        {
         append_link(&pjob->ji_svrtask, &pwtcheck->wt_linkobj, pwtcheck);
+
+#ifdef ENABLE_PTHREADS
+        mark_task_linkobj_mutex(pwtcheck,pjob->ji_mutex);
+#endif
+        }
       }
 
     /*
@@ -688,7 +694,13 @@ jump:
         preq);
     
     if (pwtcheck != NULL)
+      {
       append_link(&pjob->ji_svrtask, &pwtcheck->wt_linkobj, pwtcheck);
+
+#ifdef ENABLE_PTHREADS
+      mark_task_linkobj_mutex(pwtcheck,pjob->ji_mutex);
+#endif
+      }
     }
 
   /* if configured, and this job didn't have a slot limit hold, free a job
@@ -759,6 +771,10 @@ jump:
     if (pwtnew)
       {
       append_link(&pjob->ji_svrtask, &pwtnew->wt_linkobj, pwtnew);
+
+#ifdef ENABLE_PTHREADS
+      mark_task_linkobj_mutex(pwtnew,pjob->ji_mutex);
+#endif
       }
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
@@ -800,6 +816,10 @@ jump:
     if (ptask != NULL)
       {
       append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+      mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
       }
     }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
 
@@ -990,8 +1010,11 @@ static void post_delete_mom1(
   if (pwtnew)
     {
     /* insure that work task will be removed if job goes away */
-
     append_link(&pjob->ji_svrtask, &pwtnew->wt_linkobj, pwtnew);
+
+#ifdef ENABLE_PTHREADS
+    mark_task_linkobj_mutex(pwtnew,pjob->ji_mutex);
+#endif
     }
 
   /*
@@ -1178,18 +1201,6 @@ void remove_job_delete_nanny(
     return;
     }
 
-  if (pjob->ji_svrtask.ll_next == NULL)
-    {
-    /* no nanny, nothing to delete */
-    return;
-    }
-
-  if (pjob->ji_svrtask.ll_next == NULL)
-    {
-    /* no nanny, nothing to delete */
-    return;
-    }
-
   pwtiter = (struct work_task *)GET_NEXT(pjob->ji_svrtask);
 
   while (pwtiter != NULL)
@@ -1198,7 +1209,7 @@ void remove_job_delete_nanny(
       {
       pwtdel = pwtiter;
       pwtiter = (struct work_task *)GET_NEXT(pwtiter->wt_linkobj);
-      delete_task(pwtdel);
+      delete_task(pwtdel,TRUE);
       }
     else
       {
@@ -1264,9 +1275,12 @@ struct work_task *apply_job_delete_nanny(
 
   if (pwtnew)
     {
-    /* insure that work task will be removed if job goes away */
-
+    /* ensure that work task will be removed if job goes away */
     append_link(&pjob->ji_svrtask, &pwtnew->wt_linkobj, pwtnew);
+
+#ifdef ENABLE_PTHREADS
+    mark_task_linkobj_mutex(pwtnew,pjob->ji_mutex);
+#endif
     }
 
   return(pwtnew);

@@ -712,7 +712,7 @@ void job_free(
 
   while ((pwt = (struct work_task *)GET_NEXT(pj->ji_svrtask)) != NULL)
     {
-    delete_task(pwt);
+    delete_task(pwt,TRUE);
     }
 
   /* free any bad destination structs */
@@ -1469,7 +1469,6 @@ int record_jobinfo(job *pjob)
     int  buf_index = 0;
     char *valbuf;
     int valbuf_size;
-    int valbuf_index = 0;
     char attrname_buf[MAXPATHLEN + 1]; /* As long as the longest attribute name 
                                           does not exceed MAXPATHLEN + 1 this 
                                           should be big enough*/
@@ -1532,7 +1531,7 @@ int record_jobinfo(job *pjob)
           strcat(attrname_buf, "\n");
           }
 
-        if(buf_size - buf_index <= strlen(attrname_buf))
+        if (buf_size - buf_index <= (int)strlen(attrname_buf))
           {
           /* need to resize */
           tmpPtr = realloc(buf, buf_size << 2);
@@ -1588,9 +1587,9 @@ int record_jobinfo(job *pjob)
           {
           strcat(valbuf, "\t");
           }
-        if(buf_size - buf_index <= strlen(valbuf))
+        if (buf_size - buf_index <= (int)strlen(valbuf))
           {
-          while(buf_size < strlen(valbuf))
+          while (buf_size < (int)strlen(valbuf))
             {
             buf_size = buf_size << 2;
             }
@@ -1612,7 +1611,7 @@ int record_jobinfo(job *pjob)
         strcpy(attrname_buf, "</");
         strcat(attrname_buf, job_attr_def[i].at_name);
         strcat(attrname_buf, ">");
-        if(buf_size - buf_index <= strlen(attrname_buf))
+        if (buf_size - buf_index <= (int)strlen(attrname_buf))
           {
           /* need to resize */
           tmpPtr = realloc(buf, buf_size << 2);
@@ -1645,7 +1644,7 @@ int record_jobinfo(job *pjob)
       /* This is for Baylor. We will make it a server parameter eventually
          Write the contents of the script to our log file*/
       strcpy(attrname_buf, "\t<job_script>");
-      if(buf_size - buf_index <= strlen(attrname_buf))
+      if (buf_size - buf_index <= (int)strlen(attrname_buf))
         {
         /* need to resize */
         tmpPtr = realloc(buf, buf_size << 2);
@@ -1674,7 +1673,7 @@ int record_jobinfo(job *pjob)
           bytes_read = read(fd, valbuf, valbuf_size);
           if (bytes_read > 0)
             {
-            if(buf_size - buf_index <= bytes_read)
+            if (buf_size - buf_index <= (int)bytes_read)
               {
               /* we need a bigger valbuf */
               tmpPtr = realloc(buf, buf_size << 2);

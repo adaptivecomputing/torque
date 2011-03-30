@@ -136,6 +136,10 @@ int attempt_delete(
     if (pwtnew)
       {
       append_link(&pjob->ji_svrtask, &pwtnew->wt_linkobj, pwtnew);
+
+#ifdef ENABLE_PTHREADS
+        mark_task_linkobj_mutex(pwtnew,pjob->ji_mutex);
+#endif
       }
    
     }
@@ -174,6 +178,10 @@ int attempt_delete(
     if (ptask != NULL)
       {
       append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+        mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
       }
     }
 
@@ -391,6 +399,10 @@ void array_delete_wt(
           if (pwtnew)
             {
             append_link(&pjob->ji_svrtask, &pwtnew->wt_linkobj, pwtnew);
+
+#ifdef ENABLE_PTHREADS
+            mark_task_linkobj_mutex(pwtnew,pjob->ji_mutex);
+#endif
             }
 
 #ifdef ENABLE_PTHREADS

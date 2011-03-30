@@ -290,7 +290,7 @@ void req_rerunjob(
 
     while ((pwt = (struct work_task *)GET_NEXT(pjob->ji_svrtask)) != NULL) 
       {
-      delete_task(pwt);
+      delete_task(pwt,TRUE);
       }
 
     set_statechar(pjob);

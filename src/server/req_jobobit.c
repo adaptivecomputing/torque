@@ -144,6 +144,7 @@ extern const char *PJobState[];
 
 /* External Functions called */
 
+int timeval_subtract(struct timeval *,struct timeval *,struct timeval *);
 extern void set_resc_assigned(job *, enum batch_op);
 extern void cleanup_restart_file(job *);
 
@@ -680,6 +681,10 @@ int mom_comm(
         /* insure that work task will be removed if job goes away */
 
         append_link(&pjob->ji_svrtask, &pwt->wt_linkobj, pwt);
+
+#ifdef ENABLE_PTHREADS
+        mark_task_linkobj_mutex(pwt,pjob->ji_mutex);
+#endif
         }
 
       return(-1);
@@ -1000,6 +1005,10 @@ void on_job_exit(
           if (ptask != NULL)
             {
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
             }
 
 #ifdef ENABLE_PTHREADS
@@ -1143,6 +1152,10 @@ void on_job_exit(
           if (ptask != NULL)
             {
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
             }
 
 #ifdef ENABLE_PTHREADS
@@ -1359,6 +1372,10 @@ void on_job_exit(
           if (ptask)
             {
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
             }
 #ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
@@ -1638,7 +1655,7 @@ void on_job_exit(
 
           ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, pjob);
 
-          if(gettimeofday(&tv, &tz) == 0)
+          if (gettimeofday(&tv, &tz) == 0)
             {
             tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
             timeval_subtract(&result, &tv, tv_attr);
@@ -1660,6 +1677,10 @@ void on_job_exit(
           /* insure that work task will be removed if job goes away */
 
           append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+          mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
           }
         }
       else
@@ -1691,9 +1712,12 @@ void on_job_exit(
 
           if (ptask != NULL)
             {
-            /* insure that work task will be removed if job goes away */
-
+            /* ensure that work task will be removed if job goes away */
             append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+
+#ifdef ENABLE_PTHREADS
+            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
             }
             
             PurgeIt = FALSE;
@@ -1788,6 +1812,10 @@ void on_job_rerun(
           if (ptask)
             {
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
             }
 
 #ifdef ENABLE_PTHREADS
@@ -1926,7 +1954,12 @@ void on_job_rerun(
           if (ptask)
             {
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
             }
+
 #ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
 #endif
@@ -2033,7 +2066,12 @@ void on_job_rerun(
           if (ptask)
             {
             append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
             }
+
 #ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
 #endif
@@ -2798,6 +2836,10 @@ void *req_jobobit(
       {
       append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
 
+#ifdef ENABLE_PTHREADS
+      mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
+
       if (LOGLEVEL >= 4)
         {
         log_event(
@@ -2858,6 +2900,10 @@ void *req_jobobit(
     if (ptask != NULL)
       {
       append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+
+#ifdef ENABLE_PTHREADS
+      mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+#endif
 
       if (LOGLEVEL >= 4)
         {

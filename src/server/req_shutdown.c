@@ -128,8 +128,6 @@ extern char *msg_stillrunning;
 extern char *msg_on_shutdown;
 extern char *msg_job_abort;
 
-extern tlist_head task_list_event;
-
 extern struct server server;
 extern attribute_def svr_attr_def[];
 extern int    LOGLEVEL;

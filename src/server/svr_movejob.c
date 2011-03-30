@@ -689,10 +689,11 @@ int send_job(
 
     ptask->wt_parm2 = data;
 
-    append_link(
-      &((job *)jobp)->ji_svrtask,
-      &ptask->wt_linkobj,
-      ptask);
+    append_link(&jobp->ji_svrtask,&ptask->wt_linkobj,ptask);
+
+#ifdef ENABLE_PTHREADS
+    mark_task_linkobj_mutex(ptask,jobp->ji_mutex);
+#endif
 
     /* now can unblock SIGCHLD */
 
