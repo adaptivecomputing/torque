@@ -115,9 +115,9 @@ extern struct server server;
 
 static int decode_nodes(struct attribute *, char *, char *, char *);
 static int set_node_ct(resource *, attribute *, int actmode);
+static int set_proc_ct(resource *, attribute *, int actmode);
 static int set_tokens(struct attribute *attr, struct attribute *new, enum batch_op actmode);
 static int set_mppnodect(resource *, attribute *, int actmode);
-
 resource_def *svr_resc_def;
 
 resource_def svr_resc_def_const[] =
@@ -253,7 +253,8 @@ resource_def svr_resc_def_const[] =
     NO_USER_SET | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG,
     ATR_TYPE_LL
   },
-  { "host",    /* host to execute on */
+    { 
+    "host",    /* host to execute on */
     decode_str,
     encode_str,
     set_str,
@@ -262,8 +263,9 @@ resource_def svr_resc_def_const[] =
     NULL_FUNC,
     READ_WRITE,
     ATR_TYPE_STR
-  },
-  { "nodes",   /* user specification of nodes */
+    },
+    { 
+    "nodes",   /* user specification of nodes */
     decode_nodes,
     encode_str,
     set_str,
@@ -272,8 +274,9 @@ resource_def svr_resc_def_const[] =
     set_node_ct,
     READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG,
     ATR_TYPE_STR
-  },
-  { "neednodes",   /* scheduler modified specification */
+    },
+    { 
+    "neednodes",   /* scheduler modified specification */
     decode_str,   /* of nodes */
     encode_str,
     set_str,
@@ -282,8 +285,9 @@ resource_def svr_resc_def_const[] =
     NULL_FUNC,
     ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_SvWR | ATR_DFLAG_RMOMIG | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
     ATR_TYPE_STR
-  },
-  { "nodect",   /* count of number of nodes requested */
+    },
+    { 
+    "nodect",   /* count of number of nodes requested */
     decode_l,   /* read-only, set by server whenever  */
     encode_l,   /* "nodes" is set, for use by sched   */
     set_l,
@@ -292,7 +296,20 @@ resource_def svr_resc_def_const[] =
     NULL_FUNC,
     READ_ONLY | ATR_DFLAG_MGWR | ATR_DFLAG_RASSN | ATR_DFLAG_RMOMIG,
     ATR_TYPE_LONG
-  },
+    },
+
+    { 
+    "procct",   /* count of number of processors requested */
+    decode_l,   /* read-only, set by server whenever       */
+    encode_l,   /* "nodes" and/or "procs" is set           */
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    READ_ONLY | ATR_DFLAG_MGWR | ATR_DFLAG_RMOMIG,
+    ATR_TYPE_LONG
+    },
+  
     {
     "mpplabel",   /* PE label required for execution */
     decode_str,
@@ -443,7 +460,7 @@ resource_def svr_resc_def_const[] =
     encode_size,
     set_size,
     comp_size,
-    free_null,
+    set_proc_ct,
     NULL_FUNC,
     READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
     ATR_TYPE_SIZE
@@ -946,8 +963,45 @@ int ctnodes(
   }  /* END ctnodes() */
 
 
+ /*
+ * count_proc = count the number of processors in a node spec
+ */
 
+long count_proc(
 
+  char *spec)
+
+  {
+  long num_nodes = 0, num_procs = 0, total_procs = 0;
+  char *substr, *ppnloc;
+
+  spec = strdup(spec);
+  if (spec == NULL) 
+    return(-1);
+
+  /* split on + */
+  substr = strtok(spec, "+");
+  do
+    {
+    num_nodes = atoi(substr);
+    if (num_nodes == 0)
+      /* no number */
+      num_nodes = 1;
+
+    ppnloc = strstr(substr, ":ppn=");
+    if (ppnloc == NULL)
+      num_procs = 1;
+    else
+      num_procs = atoi(ppnloc + 5);
+      
+    total_procs += num_procs * num_nodes;
+    substr = strtok(NULL, "+");
+    } while(substr != NULL);
+
+  free(spec);
+  return(total_procs);
+
+  }  /* END count_proc */
 
 
 /*
@@ -956,6 +1010,8 @@ int ctnodes(
  * This is the "at_action" routine for the resource "nodes".
  * When the resource_list attribute changes, then set/update
  * the value of the resource "nodect" for use by the scheduler.
+ * When the resource_list attribute changes, then set/update the
+ * value of the resources "nodect" and "procct" for use by the scheduler.
  */
 
 static int set_node_ct(
@@ -967,6 +1023,10 @@ static int set_node_ct(
   {
   resource *pnct;
   resource_def *pndef;
+  resource *ppct;
+  resource_def *ppdef;
+  resource *pprocsp;
+  resource_def *pprocsdef;
 
   if (actmode == ATR_ACTION_RECOV)
     {
@@ -1023,12 +1083,117 @@ static int set_node_ct(
 
   pnct->rs_value.at_flags |= ATR_VFLAG_SET;
 
-  /* SUCCESS */
+  /* SUCCESS nodect */
+
+  /* set "procct" to count of processors in "nodes" plus "procs" */
+
+  ppdef = find_resc_def(svr_resc_def, "procct", svr_resc_size);
+
+  if (ppdef == NULL)
+    {
+    return(PBSE_SYSTEM);
+    }
+
+  if ((ppct = find_resc_entry(pattr, ppdef)) == NULL)
+    {
+    if ((ppct = add_resource_entry(pattr, ppdef)) == 0)
+      {
+      return(PBSE_SYSTEM);
+      }
+    }
+
+  pprocsdef = find_resc_def(svr_resc_def, "procs", svr_resc_size);
+  if (pprocsdef == NULL)
+    {
+    return(PBSE_SYSTEM);
+    }
+
+  if ((pprocsp = find_resc_entry(pattr, pprocsdef)) == NULL)
+    {
+    ppct->rs_value.at_val.at_long =
+      count_proc(pnodesp->rs_value.at_val.at_str);
+    }
+  else
+    { 
+    ppct->rs_value.at_val.at_long =
+      count_proc(pnodesp->rs_value.at_val.at_str)
+      + pprocsp->rs_value.at_val.at_long;
+    }
+
+  ppct->rs_value.at_flags |= ATR_VFLAG_SET;
+
+  /* SUCCESS procct */
 
   return(0);
   }  /* END set_node_ct() */
 
+ /*
+ * set_proc_ct = set processor count
+ *
+ * This is the "at_action" routine for the resource "procs".
+ * When the resource_list attribute changes, then set/update
+ * the value of the resource "procct"
+ */
 
+static int set_proc_ct(
+
+  resource  *pprocsp,  /* I */
+  attribute *pattr,    /* I */
+  int        actmode)  /* I */
+
+  {
+  resource *pnodesp;
+  resource_def *pndef;
+  resource *ppct;
+  resource_def *ppdef;
+
+  if (actmode == ATR_ACTION_RECOV)
+    {
+    /* SUCCESS */
+
+    return(0);
+    }
+
+  /* set "procct" to count of processors in "nodes" plus "procs" */
+
+  ppdef = find_resc_def(svr_resc_def, "procct", svr_resc_size);
+
+  if (ppdef == NULL)
+    {
+    return(PBSE_SYSTEM);
+    }
+
+  if ((ppct = find_resc_entry(pattr, ppdef)) == NULL)
+    {
+    if ((ppct = add_resource_entry(pattr, ppdef)) == 0)
+      {
+      return(PBSE_SYSTEM);
+      }
+    }
+
+  pndef = find_resc_def(svr_resc_def, "nodes", svr_resc_size);
+  if (pndef == NULL)
+    {
+    return(PBSE_SYSTEM);
+    }
+
+  if ((pnodesp = find_resc_entry(pattr, pndef)) == NULL)
+    {
+    ppct->rs_value.at_val.at_long =
+      pprocsp->rs_value.at_val.at_long;
+    }
+  else
+    {
+    ppct->rs_value.at_val.at_long =
+      pprocsp->rs_value.at_val.at_long;
+
+    count_proc(pnodesp->rs_value.at_val.at_str);
+    }
+
+  ppct->rs_value.at_flags |= ATR_VFLAG_SET;
+
+  return(0);
+  }  /* END set_proc_ct() */
 
 
 

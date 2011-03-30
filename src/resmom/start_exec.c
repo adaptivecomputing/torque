@@ -247,6 +247,7 @@ enum TVarElseEnum
   tveNumNodesStr,
   tveNumPpn,
   tveGpuFile,
+  tveNprocs,
   tveLAST
   };
 
@@ -270,6 +271,7 @@ static char *variables_else[] =   /* variables to add, value computed */
   "PBS_NUM_NODES",  /* number of nodes specified by nodes string */
   "PBS_NUM_PPN",    /* ppn value specified by nodes string */
   "PBS_GPUFILE",    /* file containing which GPUs to access */
+	"PBS_NP",         /* number of processors requested */
   NULL
   };
 
@@ -2460,6 +2462,10 @@ int TMomFinalizeChild(
 	sprintf(buf, "%d", 0);
 
 	bld_env_variables(&vtable, "PBS_VNODENUM", buf);
+
+	/* PBS_NP */
+	sprintf(buf, "%d", vnodenum);
+	bld_env_variables(&vtable, variables_else[tveNprocs], buf);
 
 #ifdef PENABLE_LINUX26_CPUSETS
 
