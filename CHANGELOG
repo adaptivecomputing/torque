@@ -28,6 +28,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Added options to buildutils/torque.spec.in to conditionally build munge, BLCR, 
       high-availability, cpusets, and spooling. Also allows customization of the
       sendmail path and allows for optional XML conversion to serverdb.
+  b - --with-tcp-retry-limit now actually changes things without needing to run autoheader
 
 
 2.5.5
