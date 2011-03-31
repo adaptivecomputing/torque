@@ -165,7 +165,9 @@ struct work_task *set_task(
   pnew->wt_parm1    = parm;
   pnew->wt_parm2    = NULL;
   pnew->wt_aux      = 0;
+#ifdef ENABLE_PTHREADS
   pnew->wt_objmutex = NULL;
+#endif
 
   if (type == WORK_Immed)
     {
