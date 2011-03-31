@@ -503,6 +503,9 @@
 /* Define if PBS should build qstat with Tcl */
 #undef TCL_QSTAT
 
+/* Define to set a max retry limit */
+#undef TCP_RETRY_LIMIT
+
 /* Define to prevent sync writes */
 #undef TDISABLEFILESYNC
 
