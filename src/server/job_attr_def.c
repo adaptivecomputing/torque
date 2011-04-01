@@ -291,7 +291,7 @@ attribute_def job_attr_def[] =
     comp_str,
     free_str,
     NULL_FUNC,
-    READ_ONLY | ATR_DFLAG_MOM | ATR_DFLAG_OPWR | ATR_DFLAG_SvWR,  /* allow operator/scheduler to modify exec_host */
+    READ_ONLY | ATR_DFLAG_MOM | ATR_DFLAG_OPWR | ATR_DFLAG_SvWR,  /* allow operator/scheduler to modify exec_port */
     ATR_TYPE_STR,
     PARENT_TYPE_JOB
   },

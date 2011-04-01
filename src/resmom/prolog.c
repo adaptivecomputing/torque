@@ -100,6 +100,7 @@
 #include "resource.h"
 #include "pbs_proto.h"
 #include "net_connect.h"
+#include "utils.h"
 
 
 #define PBS_PROLOG_TIME 300
@@ -113,6 +114,8 @@ extern int  DEBUGMODE;
 
 extern int  lockfds;
 extern char *path_aux;
+
+extern int  reduceprologchecks;
 
 unsigned int pe_alarm_time = PBS_PROLOG_TIME;
 static pid_t child;
@@ -294,6 +297,42 @@ static void pelogalm(
 
 
 
+/* 
+ * sets the user and group ids back to how they were
+ *
+ */
+
+int undo_set_euid_egid(
+
+  int    which,
+  uid_t  real_uid,
+  gid_t  real_gid,
+  int    num_gids,
+  gid_t *real_gids,
+  char  *id)
+    
+  {
+  if ((which == PE_PROLOGUSER) || 
+      (which == PE_EPILOGUSER) || 
+      (which == PE_PROLOGUSERJOB) || 
+      (which == PE_EPILOGUSERJOB))
+    {
+    if ((seteuid(real_uid) != 0) ||
+        (setegid(real_gid) != 0) ||
+        (setgroups(num_gids,real_gids) != 0))
+      {
+      log_err(errno,id,"Couldn't revert back to the root user - IMMINENT FAILURE but will try to continue\n");
+      }
+
+    return(-1);
+    }
+
+  return(0);
+  } /* END undo_set_euid_egid() */
+
+
+
+
 
 /*
  * run_pelog() - Run the Prologue/Epilogue script
@@ -340,7 +379,8 @@ int run_pelog(
   {
   char *id = "run_pelog";
 
-  struct sigaction act, oldact;
+  struct sigaction act;
+  struct sigaction oldact;
   char *arg[12];
   int   fds1 = 0;
   int   fds2 = 0;
@@ -355,6 +395,11 @@ int run_pelog(
   int    isjoined;  /* boolean */
   char   buf[MAXPATHLEN + 1024];
   char   pelog[MAXPATHLEN + 1024];
+
+  uid_t  real_uid;
+  gid_t *real_gids = NULL;
+  gid_t  real_gid;
+  int    num_gids;
 
   int    jobtypespecified = 0;
 
@@ -387,6 +432,86 @@ int run_pelog(
   else
     {
     strncpy(pelog,specpelog,sizeof(pelog));
+    }
+
+  /* to support root squashing, become the user before performing file checks */
+  if ((which == PE_PROLOGUSER) || 
+      (which == PE_EPILOGUSER) || 
+      (which == PE_PROLOGUSERJOB) || 
+      (which == PE_EPILOGUSERJOB))
+    {
+    real_uid = getuid();
+    real_gid = getgid();
+
+    if ((num_gids = getgroups(0,real_gids)) < 0)
+      {
+      log_err(errno,id,"getgroups failed\n");
+
+      return(-1);
+      }
+    else
+      {
+      real_gids = malloc(sizeof(gid_t) * num_gids);
+      
+      if (real_gids == NULL)
+        {
+        log_err(ENOMEM,id,"Cannot allocate memory! FAILURE\n");
+
+        return(-1);
+        }
+
+      if (getgroups(num_gids,real_gids) < 0)
+        {
+        log_err(errno,id,"getgroups failed\n");
+        
+        return(-1);
+        }
+      }
+
+    if (setgroups(
+          pjob->ji_grpcache->gc_ngroup,
+          (gid_t *)pjob->ji_grpcache->gc_groups) != 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "setgroups() for UID = %lu failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      
+      log_err(errno, id, log_buffer);
+      
+      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      
+      return(-1);
+      }
+    
+    if (setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "setegid(%lu) for UID = %lu failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      
+      log_err(errno, id, log_buffer);
+      
+      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      
+      return(-1);
+      }
+    
+    if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) != 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "seteuid(%lu) failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      
+      log_err(errno, id, log_buffer);
+      
+      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+
+      return(-1);
+      }
     }
 
   rc = stat(pelog,&sbuf);
@@ -438,8 +563,12 @@ int run_pelog(
 
 #endif /* ENABLE_CSA */
 
+      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+
       return(0);
       }
+      
+    undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
 
     return(pelog_err(pjob,pelog,errno,"cannot stat"));
     }
@@ -457,38 +586,54 @@ int run_pelog(
   /* script must be owned by root, be regular file, read and execute by user *
    * and not writeable by group or other */
 
-  if(which == PE_PROLOGUSERJOB || which == PE_EPILOGUSERJOB)
+  if (reduceprologchecks == TRUE)
     {
-    if ((sbuf.st_uid != pjob->ji_qs.ji_un.ji_momt.ji_exuid) ||
-        (!S_ISREG(sbuf.st_mode)) ||
-        ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||
-        (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
+    if ((!S_ISREG(sbuf.st_mode)) ||
+        (!(sbuf.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH))))
       {
+      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
       return(pelog_err(pjob,pelog,-1,"permission Error"));
       }
     }
-  else if ((sbuf.st_uid != 0) ||
-      (!S_ISREG(sbuf.st_mode)) ||
-      ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||
-      (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
+  else
     {
-    return(pelog_err(pjob,pelog,-1,"permission Error"));
-    }
-
-  if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER))
-    {
-    /* script must also be read and execute by other */
-
-    if ((sbuf.st_mode & (S_IROTH | S_IXOTH)) != (S_IROTH | S_IXOTH))
+    if (which == PE_PROLOGUSERJOB || which == PE_EPILOGUSERJOB)
       {
-      return(pelog_err(pjob, pelog, -1, "permission Error"));
+      if ((sbuf.st_uid != pjob->ji_qs.ji_un.ji_momt.ji_exuid) || 
+          (!S_ISREG(sbuf.st_mode)) ||
+          ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||
+          (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
+        {
+        undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+        return(pelog_err(pjob,pelog,-1,"permission Error"));
+        }
       }
-    }
+    else if ((sbuf.st_uid != 0) ||
+        (!S_ISREG(sbuf.st_mode)) ||
+        ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||\
+        (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
+      {
+      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      return(pelog_err(pjob,pelog,-1,"permission Error"));
+      }
+    
+    if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER))
+      {
+      /* script must also be read and execute by other */
+      
+      if ((sbuf.st_mode & (S_IROTH | S_IXOTH)) != (S_IROTH | S_IXOTH))
+        {
+        undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+        return(pelog_err(pjob, pelog, -1, "permission Error"));
+        }
+      }
+    } /* END !reduceprologchecks */
 
   fd_input = pe_input(pjob->ji_qs.ji_jobid);
 
   if (fd_input < 0)
     {
+    undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
     return(pelog_err(pjob, pelog, -2, "no pro/epilogue input file"));
     }
 
@@ -503,6 +648,9 @@ int run_pelog(
     /* parent - watch for prolog/epilog to complete */
 
     close(fd_input);
+
+    /* switch back to root if necessary */
+    undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
 
     act.sa_handler = pelogalm;
 
@@ -613,48 +761,6 @@ int run_pelog(
       }
 
     net_close(-1);
-
-    if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER) || (which == PE_PROLOGUSERJOB) || which == PE_EPILOGUSERJOB)
-      {
-      if (setgroups(
-          pjob->ji_grpcache->gc_ngroup,
-          (gid_t *)pjob->ji_grpcache->gc_groups) != 0)
-        {
-        snprintf(log_buffer,sizeof(log_buffer),
-          "setgroups() for UID = %lu failed: %s\n",
-          (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-          strerror(errno));
-
-        log_err(errno, id, log_buffer);
-
-        exit(255);
-        }
-
-      if (setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0)
-        {
-        snprintf(log_buffer,sizeof(log_buffer),
-          "setgid(%lu) for UID = %lu failed: %s\n",
-          (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
-          (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-          strerror(errno));
-
-        log_err(errno, id, log_buffer);
-
-        exit(255);
-        }
-
-      if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) != 0)
-        {
-        snprintf(log_buffer,sizeof(log_buffer),
-          "setuid(%lu) failed: %s\n",
-          (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-          strerror(errno));
-
-        log_err(errno, id, log_buffer);
-
-        exit(255);
-        }
-      }
 
     if (fd_input != 0)
       {

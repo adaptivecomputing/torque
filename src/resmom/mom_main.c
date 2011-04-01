@@ -204,6 +204,7 @@ int    igncput = 0;
 int    ignvmem = 0; 
 /* end policies */
 int    spoolasfinalname = 0;
+int    reduceprologchecks;
 int    lockfds = -1;
 int    multi_mom = 0;
 time_t loopcnt;  /* used for MD5 calc */
@@ -428,6 +429,7 @@ unsigned long jobstarter(char *value);
 static unsigned long setmempressthr(char *);
 static unsigned long setmempressdur(char *);
 #endif
+static unsigned long setreduceprologchecks(char *);
 
 
 static struct specials
@@ -494,6 +496,7 @@ static struct specials
   { "memory_pressure_threshold",    setmempressthr },
   { "memory_pressure_duration",     setmempressdur },
 #endif
+  { "reduce_prolog_checks",         setreduceprologchecks},
   { NULL,                  NULL }
   };
 
@@ -2910,6 +2913,26 @@ static unsigned long setmaxconnecttimeout(
   return(1);
   }
 
+
+
+static unsigned long setreduceprologchecks(
+
+  char *value)
+
+  {
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "reduceprologchecks",
+    value);
+  
+  if (!strncasecmp(value,"t",1) || (value[0] == '1') || !strcasecmp(value,"on") )
+    reduceprologchecks = TRUE;
+  else
+    reduceprologchecks = FALSE;
+
+  return(1);
+  } /* END setreduceprologchecks() */
 
 
 

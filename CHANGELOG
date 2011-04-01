@@ -76,6 +76,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       also produce an abort case for mailing purposes. Previous to this change
       a job exceeding a limit returned 0 on success and no mail
       was sent to the user if requested on abort.
+  e - altered the prologue/epilogue code to allow root squashing
+  f - added the mom config parameter $reduce_prolog_checks. This makes it so TORQUE only checks
+      to verify that the file is a regular file and is executable.
 
 
 2.5.5

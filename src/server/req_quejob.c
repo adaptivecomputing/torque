@@ -1951,9 +1951,7 @@ void req_commit(
     preq_run->rq_noreply = TRUE; /* set for no replies */
     memcpy(preq_run->rq_user, preq->rq_user, PBS_MAXUSER + 1);
     memcpy(preq_run->rq_host, preq->rq_host, PBS_MAXHOSTNAME + 1);
-    memcpy(preq_run->rq_ind.rq_run.rq_jid, preq->rq_ind.rq_rdytocommit,
-           PBS_MAXSVRJOBID + 1);
-
+    memcpy(preq_run->rq_ind.rq_run.rq_jid, preq->rq_ind.rq_rdytocommit,PBS_MAXSVRJOBID + 1);
     }
 
 #endif
