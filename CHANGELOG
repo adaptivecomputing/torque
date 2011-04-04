@@ -29,6 +29,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       high-availability, cpusets, and spooling. Also allows customization of the
       sendmail path and allows for optional XML conversion to serverdb.
   b - --with-tcp-retry-limit now actually changes things without needing to run autoheader
+  e - allow more than 5 concurrent connections to TORQUE using pbsD_connect. Increase it to 10
+      (backported from 3.0.1)
 
 
 2.5.5
