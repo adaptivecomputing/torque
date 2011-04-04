@@ -49,6 +49,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       also produce an abort case for mailing purposes. Previous to this change
       a job exceeding a limit returned 0 on success and no mail
       was sent to the user if requested on abort.
+  e - allow more than 5 concurrent connections to TORQUE using pbsD_connect. Increase it to 10
 
 
 2.5.6
