@@ -1923,6 +1923,19 @@ int svr_chkque(
 
       return(i);
       }
+    else
+      {
+      if (strcmp(pque->qu_attr->at_val.at_str, "Execution") == 0)
+        {
+        /* job routed to Execution queue successfully */
+        /* unset job's procct resource */
+        resource_def *pctdef;
+        resource *pctresc;
+        pctdef = find_resc_def(svr_resc_def, "procct", svr_resc_size);
+        if ((pctresc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource], pctdef)) != NULL)
+           pctdef->rs_free(&pctresc->rs_value);
+        }
+      }
     }    /* END if (mtype != MOVE_TYPE_MgrMv) */
 
   /* SUCCESS - job can enter queue */

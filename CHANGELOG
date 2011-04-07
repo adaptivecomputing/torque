@@ -13,13 +13,15 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 3.0.1
   e - updated qsub's man page to include ATTR_node_exclusive
-  b - when updating the nodes file, write out the ports for the mom if needed
+  b - when updating the nodes file, write out the ports for the mom if needed 
   b - fix a bug for non-NUMA systems that was continuously increasing memory values
+  e - the queue files are now stored as XML, just like the serverdb
   e - Added code from 2.5-fixes which will try and find nodes that did not
       resolve when pbs_server started up. This is in reference to Bugzilla
       bug 110.
   e - make gpus compatible with NUMA systems, and add the node attribute
       numa_gpu_node_str for an additional way to specify gpus on node boards
+  e - Add code to verify the group list as well when VALIDATEGROUPS is set in torque.cfg
   b - Fix a bug where if geometry requests are enabled and cpusets are enabled, the cpuset
       wasn't deleted unless a geometry request was made. 
   b - Fix a race condition for pbs_mom -q, exitstatus was getting overwritten and as a result 
@@ -34,24 +36,87 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - allow apostrophes in Mail_Users attributes, as apostrophes are rare but legal email
       characters 
   b - restored functionality for -W umask as reported in bugzilla 115
+  b - Updated torque.spec.in to be able to handle the snapshot names of builds.
   b - fix pbs_mom -q to work with parallel jobs
   b - Added code to free the mom.lock file during MOM shutdown.
-  b - Added code to free the mom.lock file during MOM shutdown.
-  b - merged code from 3.0-fixes branch. These changes came from 2.5-fixes revisions
-      4555,4556 and 4557. These fixes address a problme in high availability where
-      the lock files directory name was being truncated so the server could not acquire
-      the HA lock on reboot. The pbs_mom was also fixed to release its lock on the 
-      mom.lock file so subsequent starts of pbs_mom could succeed.
   e - Added new MOM configure option job_starter. This options will execute
       the script submitted in qsub to the executable or script provided
-  e - Added new symbol JOB_EXEC_OVERLIMIT. When a job exceeds a limit (i.e. walltime) the
-      job will fail with the JOB_EXEC_OVERLIMIT value and
-      also produce an abort case for mailing purposes. Previous to this change
-      a job exceeding a limit returned 0 on success and no mail
-      was sent to the user if requested on abort.
+  b - fixed a bug in set_resources that prevented the last resource in a list from being
+      checked. As a result the last item in the list would always be added
+      without regard to previous entries.
+  e - altered the prologue/epilogue code to allow root squashing
+  f - added the mom config parameter $reduce_prolog_checks. This makes it so TORQUE only checks
+      to verify that the file is a regular file and is executable.
   e - allow more than 5 concurrent connections to TORQUE using pbsD_connect. Increase it to 10
   b - fix a segfault when receiving an obit for a job that no longer exists
+  e - Added options to conditionally build munge, BLCR, high-availability, cpusets,
+      and spooling. Also allows customization of the sendmail path and allows for 
+      optional XML conversion to serverdb.
 
+3.0.0
+  e - serverdb is now stored as xml, this is no longer configurable.
+  f - added --enable-numa-support for supporting NUMA-type architectures. We
+      have tested this build on UV and Altix machines. The server treats the
+      mom as a node with several special numa nodes embedded, and the pbs_mom
+      reports on these numa nodes instead of itself as a whole.
+  f - for numa configurations, pbs_mom creates cpusets for memory as well as
+      cpus
+  e - adapted the task manager interface to interact properly with NUMA 
+      systems, including tm_adopt
+  e - Addeded autogen.sh go make life easier in a Makefile.in-less world.
+  e - Modified buildutils/pbs_mkdirs.in to create server_priv/nodes file
+      at install time. The file only shows examples and a link to the
+      TORQUE documentation.
+  f - added ATTR_node_exclusive to allow a job to have a node exclusively. 
+  f - added --enable-memacct to use an extra protocol in order to 
+      accurately track jobs that exceed over their memory limits and kill 
+      them 
+  e - when ATTR_node_exclusive is set, reserve the entire node (or entire
+      numa node if applicable) in the cpuset 
+  n - Changed the protocol versions for all client-to-server, mom-to-server and
+      mom-to-mom protocols from 1 to 2. The changes to the protocol in this version
+      of TORQUE will make it incompatible with previous versions.
+  e - when a select statement is used, tally up the memory requests and mark
+      the total in the resource list. This allows memory enforcement for
+      NUMA jobs, but doesn't affect others as memory isn't enforced for 
+      multinode jobs
+  e - add an asynchronous option to qdel 
+  b - do not reply when an asynchronous reply has already been sent
+  e - make the mem, vmem, and cput usage available on a per-mom basis using momctl -d2
+      (Dr. Bernd Kallies)
+  e - move the memory monitor functionality to linux/mom_mach.c in order to store the 
+      more accurate statistics for usage, and still use it for applying limits.
+      (Dr. Bernd Kallies)
+  e - when pbs_mom is compiled to use cpusets, instead of looking at all processes, 
+      only examine the ones in cpuset task files. For busy machines (especially large
+      systems like UVs) this can exponentially reduce job monitoring/harvesting times.
+      (Dr. Bernd Kallies)
+  e - when cpusets are configured and memory pressure enabled, add the ability to 
+      check memory pressure for a job. Using $memory_pressure_threshold and 
+      $memory_pressure_duration in the mom's config, the admin sets a threshold at 
+      which a job becomes a problem. If duration is set, the job will be killed if
+      it exceeds the threshold for the configured number of checks. If duration isn't 
+      set, then an arror is logged.
+      (Dr. Bernd Kallies)
+  e - change pbs_track to look for the executable in the existing path so it doesn't always
+      need a complete path.
+      (Dr. Bernd Kallies)
+  e - report sessions on a per numa node basis when NUMA is enabled
+      (Dr. Bernd Kallies)
+  b - Merged revision 4325 from 2.5-fixes. Fixed a problem where the -m n 
+      (request no mail on qsub) was not always being recongnized.
+  e - Merged buildutils/torque.spec.in from 2.4-fixes. 
+      Refactored torque spec file to comply with established RPM best
+      practices, including the following:
+        - Standard installation locations based on RPM macro configuration
+          (e.g., %{_prefix})
+        - Latest upstream RPM conditional build semantics with fallbacks for
+          older versions of RPM (e.g., RHEL4)
+        - Initial set of optional features (GUI, PAM, syslog, SCP) with more
+          planned
+        - Basic working configuration automatically generated at install-time
+        - Reduce the number of unnecessary subpackages by consolidating where
+          it makes sense and using existing RPM features (e.g., --excludedocs).
 
 2.5.6
   b - Made changes to record_jobinfo and supporting functions to be
@@ -65,9 +130,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the script submitted in qsub to the executable or script provided
       as the argument to the job_starter option of the MOM configure file.
   b - fix pbs_mom -q to work with parallel jobs (backported from 3.0.1)
-  b - fixed a problem with pbs_server high availability where the current
+  b - fixed a problem with pbs_server high availability where the current 
       server could not keep the HA lock. The problem was a result of truncating
-      the directory name where the lock file was kept. TORQUE would fail to
+      the directory name where the lock file was kept. TORQUE would fail to 
       validate permissions because it would do a stat on the wrong directory.
   b - Added code to free the mom.lock file during MOM shutdown.
   b - fixed a bug in set_resources that prevented the last resource in a list from being
@@ -78,18 +143,40 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       also produce an abort case for mailing purposes. Previous to this change
       a job exceeding a limit returned 0 on success and no mail
       was sent to the user if requested on abort.
-  e - altered the prologue/epilogue code to allow root squashing
-  f - added the mom config parameter $reduce_prolog_checks. This makes it so TORQUE only checks
-      to verify that the file is a regular file and is executable.
+  e - Added options to buildutils/torque.spec.in to conditionally build munge, BLCR, 
+      high-availability, cpusets, and spooling. Also allows customization of the
+      sendmail path and allows for optional XML conversion to serverdb.
+  b - --with-tcp-retry-limit now actually changes things without needing to run autoheader
+  e - allow more than 5 concurrent connections to TORQUE using pbsD_connect. Increase it to 10
+      (backported from 3.0.1)
+  b - fix a segfault when receiving an obit for a job that no longer exists (backported from 3.0.1)
+  b - Fixed a bug in patch submitted by Martin Siegert for Bugzilla 116. This patch adds a
+      new resource named procct. procct allows administrators the ability to limit jobs
+      based on total execution slots (ppn) for a job. The bug occured when a -l nodes=x
+      option was not used in the qsub operation. The procct resource needs to be kept 
+      exclusively in TORQUE. But without the -l option the procct resource was written
+      to the Resource_List attribute and Moab treated procct as a generic resource. Because
+      there are no generic resources named procct the job will not be run by Moab.
 
 
 2.5.5
   b - change so gpus get written back to nodes file
   e - make it so that even if an array request has multiple consecutive '%' the slot 
       limit will be set correctly
+  b - Fixed bug in job_log_open where the global variable logpath was freed instead 
+      of joblogpath.
+  b - Fixed memory leak in function procs_requested.
+  b - Validated incoming data for escape_xml to prevent a seg-fault with incoming
+      null pointers
+  e - Added submit_host and init_work_dir as job attributes. These two
+      values are now displayed with a qstat -f. The submit_host is
+      the name of the host from where the job was submitted. init_work_dir
+      is the working directory as in PBS_O_WORKDIR.
   e - change so blcr checkpoint jobs can restart on different node. Use
       configure --enable-blcr to allow.
   b - remove the use of a GNU specific function, and fix an error for solaris builds
+  b - Updated PBS_License.txt to remove the implication that the software
+      is not freely redistributable. 
   b - remove the $PBS_GPUFILE when job is done on mom
   b - fix a race condition when issuing a qrerun followed by a qdel that caused 
       the job to be queued instead of deleted sometimes.
@@ -100,9 +187,24 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       can be created if it does not exist at startup time. This is an enhancement
       in reference to Bugzilla bug 90.
   e - Add code to verify the group list as well when VALIDATEGROUPS is set in torque.cfg
+      (backported from 3.0.1)
+  b - Fix a bug where if geometry requests are enabled and cpusets are enabled, the cpuset
+      wasn't deleted unless a geometry request was made. (backported from 3.0.1)
+  b - Fix a race condition when starting pbs_mom with the -q option. exitstatus was getting 
+      overwritten and as a result jobs would not always be requeued to pbs_server
+      but were being deleted instead. (backported from 3.0.1)
+  e - Add a configure option --with-tcp-retry-limit to prevent potential 4+ hour hangs on 
+      pbs_server. We recommend --with-tcp-retry-limit=2 (backported from 3.0.1)
+  b - preserve the order on array strings in TORQUE, like the route_destinations for a 
+      routing queue (backported from 3.0.1)
+  b - fix bugzilla #111, multi-line environment variables causing errors in TORQUE.
+      (backported from 3.0.1)
+  b - allow apostrophes in Mail_Users attributes, as apostrophes are rare but legal email
+      characters (backported from 3.0.1)
   b - Fixed a problem in parse_node_token where the local static variable pt would be advanced
       past the end of the line input if there is no newline character at the end of the nodes 
       file.
+
 
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for
