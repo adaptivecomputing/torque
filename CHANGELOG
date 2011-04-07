@@ -50,6 +50,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       a job exceeding a limit returned 0 on success and no mail
       was sent to the user if requested on abort.
   e - allow more than 5 concurrent connections to TORQUE using pbsD_connect. Increase it to 10
+  b - fix a segfault when receiving an obit for a job that no longer exists
 
 
 2.5.6
