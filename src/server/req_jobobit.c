@@ -745,10 +745,8 @@ void on_job_exit(
   {
   int    handle = -1;
   job   *pjob;
-#ifdef VNODETESTING
   job   *pj;
-  int    iter;
-#endif
+  int    iter = -1;
 
   struct batch_request *preq;
 
@@ -778,12 +776,9 @@ void on_job_exit(
     pjob = (job *)preq->rq_extra;
     }
 
-#ifdef VNODETESTING
-  /* FIXME: there might be a race with calling on_job_exit after a job has
-   * already been free'd.  This is temp code */
+  /* make sure the job is actually still there */
 
   /* the mutex is obtained in the next_job method */
-  initialize_ra_iterator(&iter);
   while ((pj = next_job(&alljobs,&iter)) != NULL)
     {
     if (pjob == pj)
@@ -794,28 +789,24 @@ void on_job_exit(
 #endif
     }
 
+  /* if the job doesn't exist, just exit */
   if (pj == NULL)
     {
     sprintf(log_buffer, "on_job_exit called with INVALID pjob: %p",
             pjob);
+  
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"NULL",log_buffer);
+
+    return;
     }
   else
     {
     sprintf(log_buffer, "on_job_exit valid pjob: %p (substate=%d)",
             pjob,
             pjob->ji_qs.ji_substate);
+    
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"NULL",log_buffer);
     }
-
-  log_event(
-
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
-
-  DBPRT(("%s\n",
-         log_buffer));
-#endif /* END VNODETESTING */
 
   /*
    * we don't need a handle if we are complete. On starting up we will NOT have
