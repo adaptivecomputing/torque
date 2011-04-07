@@ -32,6 +32,13 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - allow more than 5 concurrent connections to TORQUE using pbsD_connect. Increase it to 10
       (backported from 3.0.1)
   b - fix a segfault when receiving an obit for a job that no longer exists (backported from 3.0.1)
+  b - Fixed a bug in patch submitted by Martin Siegert for Bugzilla 116. This patch adds a
+      new resource named procct. procct allows administrators the ability to limit jobs
+      based on total execution slots (ppn) for a job. The bug occured when a -l nodes=x
+      option was not used in the qsub operation. The procct resource needs to be kept 
+      exclusively in TORQUE. But without the -l option the procct resource was written
+      to the Resource_List attribute and Moab treated procct as a generic resource. Because
+      there are no generic resources named procct the job will not be run by Moab.
 
 
 2.5.5

@@ -1014,7 +1014,7 @@ long count_proc(
  * value of the resources "nodect" and "procct" for use by the scheduler.
  */
 
-static int set_node_ct(
+int set_node_ct(
 
   resource  *pnodesp,  /* I */
   attribute *pattr,    /* I */
@@ -1135,7 +1135,7 @@ static int set_node_ct(
  * the value of the resource "procct"
  */
 
-static int set_proc_ct(
+int set_proc_ct(
 
   resource  *pprocsp,  /* I */
   attribute *pattr,    /* I */
