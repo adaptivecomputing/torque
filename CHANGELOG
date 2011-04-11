@@ -86,6 +86,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed a problem in parse_node_token where the local static variable pt would be advanced
       past the end of the line input if there is no newline character at the end of the nodes 
       file.
+  b - Fixed a problem with minimum sizes in queues. Minimum sizes were not getting enforced because
+      the logic checking the queue against the user request used and && when it need a || in the 
+      comparison.
 
 2.5.4
   f - added the ability to track gpus. Users set gpus=X in the nodes file for

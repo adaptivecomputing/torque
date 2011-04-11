@@ -544,8 +544,8 @@ int comp_resc2(
 
         if (wiresc != NULL)
           {
-          if ((wiresc->rs_value.at_flags & ATR_VFLAG_SET) &&
-              (wiresc->rs_value.at_flags & ATR_VFLAG_DEFLT))
+          if ((wiresc->rs_value.at_flags & ATR_VFLAG_SET) ||
+              (wiresc->rs_value.at_flags & ATR_VFLAG_DEFLT)) 
             {
             if ((rc = atresc->rs_defin->rs_comp(
                         &atresc->rs_value,
