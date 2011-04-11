@@ -157,6 +157,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       exclusively in TORQUE. But without the -l option the procct resource was written
       to the Resource_List attribute and Moab treated procct as a generic resource. Because
       there are no generic resources named procct the job will not be run by Moab.
+  b - Fixed a problem with minimum sizes in queues. Minimum sizes were not getting enforced because
+      the logic checking the queue against the user request used and && when it need a || in the 
+      comparison.
 
 
 2.5.5
