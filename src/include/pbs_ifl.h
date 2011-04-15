@@ -164,6 +164,7 @@
 #define ATTR_intcmd      "inter_cmd"
 #define ATTR_P           "proxy_user"
 #define ATTR_exec_gpus   "exec_gpus"
+#define ATTR_J           "job_id"
 
 #ifdef USEJOBCREATE
 #define ATTR_pagg         "pagg_id"

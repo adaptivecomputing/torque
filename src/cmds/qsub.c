@@ -1207,11 +1207,13 @@ int e_opt = FALSE;
 int f_opt = FALSE;
 int h_opt = FALSE;
 int j_opt = FALSE;
+int J_opt = FALSE;
 int k_opt = FALSE;
 int l_opt = FALSE;
 int m_opt = FALSE;
 int o_opt = FALSE;
 int p_opt = FALSE;
+int P_opt = FALSE;
 int q_opt = FALSE;
 int r_opt = FALSE;
 int t_opt = FALSE;
@@ -2922,9 +2924,9 @@ int process_opts(
   char search_string[256];
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:fhIj:k:l:m:M:N:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:fhIJ:j:k:l:m:M:N:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
 #else
-#define GETOPT_ARGS "a:A:c:C:e:hj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
+#define GETOPT_ARGS "a:A:c:C:e:hJ:j:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
 #endif /* PBS_NO_POSIX_VIOLATION */
 
   /* The following macro, together the value of passet (pass + 1) is used */
@@ -3331,6 +3333,17 @@ int process_opts(
 
         break;
 
+      case 'J':
+
+        if_cmd_line(J_opt)
+          {
+          J_opt = passet;
+
+          set_attr(&attrib,ATTR_J,optarg);
+          }
+
+        break;
+
       case 'k':
 
         /* FORMAT:  {o|e} */
@@ -3690,38 +3703,42 @@ int process_opts(
 
       case 'P':
 
-        if (strlen(optarg) > 0)
+        if_cmd_line(P_opt)
           {
-          char *user;
-          char *group;
-          char *colon;
+          P_opt = passet;
 
-          /* make sure this is the super user */
-          if (geteuid() != (uid_t)0)
+          if (strlen(optarg) > 0)
             {
-            fprintf(stderr, "qsub: Must be the super user to submit a proxy job\n");
-
+            char *user;
+            char *group;
+            char *colon;
+            
+            /* make sure this is the super user */
+            if (geteuid() != (uid_t)0)
+              {
+              fprintf(stderr, "qsub: Must be the super user to submit a proxy job\n");
+              
+              errflg++;
+              }
+            user = optarg;
+            colon = strchr(user,':');
+            
+            if (colon != NULL)
+              {
+              group = colon+1;
+              *colon = '\0';
+              set_attr(&attrib, ATTR_g, group);
+              }
+            
+            set_attr(&attrib, ATTR_P, user);
+            }
+          else
+            {
+            fprintf(stderr, "qsub: -P requires a user name\n");
+            
             errflg++;
             }
-          user = optarg;
-          colon = strchr(user,':');
-
-          if (colon != NULL)
-            {
-            group = colon+1;
-            *colon = '\0';
-            set_attr(&attrib, ATTR_g, group);
-            }
-
-          set_attr(&attrib, ATTR_P, user);
           }
-        else
-          {
-          fprintf(stderr, "qsub: -P requires a user name\n");
-
-          errflg++;
-          }
-
         break;
 
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -4176,6 +4193,16 @@ int process_opts(
         break;
       }
     }  /* END while ((c = getopt(argc,argv,GETOPT_ARGS)) != EOF) */
+
+  /* make sure that only root users are using the -J option */
+  if ((J_opt) &&
+      (!P_opt))
+    {
+    fprintf(stderr,"The -J option can only be used in conjunction with -P\n");
+    errflg++;
+
+    goto err;
+    }
 
   /* ORNL WRAPPER */
 

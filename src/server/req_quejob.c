@@ -656,6 +656,39 @@ void req_quejob(
         }
       }
 
+    /* check if a job id was supplied, and if so overwrite the job id */
+    if (pj->ji_wattr[JOB_ATR_job_id].at_flags & ATR_VFLAG_SET)
+      {
+      char  end[PBS_MAXSVRJOBID];
+      char *dot = strchr(pj->ji_qs.ji_jobid,'.');
+      job  *tmp;
+
+      end[0] = '\0';
+      if (dot != NULL)
+        {
+        strcpy(end,dot);
+        strcpy(pj->ji_qs.ji_jobid,pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
+        strcat(pj->ji_qs.ji_jobid,dot);
+        }
+      else
+        {
+        strcpy(pj->ji_qs.ji_jobid,pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
+        }
+
+      if ((tmp = find_job(pj->ji_qs.ji_jobid)) != NULL)
+        {
+        /* not unique, reject job */
+        job_purge(pj);
+
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Job with id %s already exists, cannot set job id\n",
+          pj->ji_qs.ji_jobid);
+        req_reject(PBSE_JOBEXIST,0,preq,NULL,log_buffer);
+
+        return;
+        }
+      }
+
     /* set job owner attribute to user@host */
 
     job_attr_def[JOB_ATR_job_owner].at_free(
