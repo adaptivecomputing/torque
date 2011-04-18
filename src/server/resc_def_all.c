@@ -96,6 +96,7 @@
 #include "pbs_error.h"
 #include "server_limits.h"
 #include "server.h"
+#include "array.h"
 
 extern struct server server;
 
@@ -1046,15 +1047,13 @@ int set_node_ct(
 
   if ((pnct = find_resc_entry(pattr, pndef)) == NULL)
     {
-    if ((pnct = add_resource_entry(pattr, pndef)) == 0)
+    if ((pnct = add_resource_entry(pattr, pndef)) == NULL)
       {
       return(PBSE_SYSTEM);
       }
     }
 
-  pnct->rs_value.at_val.at_long =
-
-    ctnodes(pnodesp->rs_value.at_val.at_str);
+  pnct->rs_value.at_val.at_long = ctnodes(pnodesp->rs_value.at_val.at_str);
 
   pnct->rs_value.at_flags |= ATR_VFLAG_SET;
 
@@ -1110,14 +1109,12 @@ int set_node_ct(
 
   if ((pprocsp = find_resc_entry(pattr, pprocsdef)) == NULL)
     {
-    ppct->rs_value.at_val.at_long =
-      count_proc(pnodesp->rs_value.at_val.at_str);
+    ppct->rs_value.at_val.at_long = count_proc(pnodesp->rs_value.at_val.at_str);
     }
   else
     { 
-    ppct->rs_value.at_val.at_long =
-      count_proc(pnodesp->rs_value.at_val.at_str)
-      + pprocsp->rs_value.at_val.at_long;
+    ppct->rs_value.at_val.at_long = pprocsp->rs_value.at_val.at_long;
+    ppct->rs_value.at_val.at_long += count_proc(pnodesp->rs_value.at_val.at_str);
     }
 
   ppct->rs_value.at_flags |= ATR_VFLAG_SET;
