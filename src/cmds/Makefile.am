@@ -6,7 +6,7 @@ PBS_LIBS = ../lib/Libpbs/libtorque.la \
 dist_bin_SCRIPTS = nqs2pbs
 bin_PROGRAMS = qalter qdel qhold qmove qorder qmsg qrerun qrls qselect qsig \
 	       qstat qsub pbsdsh qdisable qenable qrun qstart qstop qterm \
-	       pbsnodes qmgr qchkpt pbs_track @PBSPOE@
+	       pbsnodes qmgr qchkpt qgpumode qgpureset pbs_track @PBSPOE@
 EXTRA_PROGRAMS = pbspd pbspoe
 EXTRA_DIST = nqs2pbs.in sample.qstatrc
 
@@ -49,6 +49,8 @@ qstop_SOURCES = qstop.c
 qsub_SOURCES = qsub.c
 qterm_SOURCES = qterm.c
 qchkpt_SOURCES = qchkpt.c
+qgpumode_SOURCES = qgpumode.c
+qgpureset_SOURCES = qgpureset.c
 pbs_track_SOURCES = pbs_track.c
 
 CLEANFILES = $(dist_bin_SCRIPTS)

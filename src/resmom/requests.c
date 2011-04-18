@@ -1219,6 +1219,96 @@ void req_checkpointjob(
 
 
 
+void req_gpuctrl(
+
+  struct batch_request *preq)  /* I */
+
+  {
+  char   *id = "req_gpuctrl";
+
+  char *mom_node;
+  char *gpuid;
+  int   gpumode = -1;
+  int   reset_perm = -1;
+  int   reset_vol = -1;
+  int   rc = -1;
+
+  gpuid = preq->rq_ind.rq_gpuctrl.rq_gpuid;
+  gpumode = preq->rq_ind.rq_gpuctrl.rq_gpumode;
+  mom_node = preq->rq_ind.rq_gpuctrl.rq_momnode;
+  reset_perm = preq->rq_ind.rq_gpuctrl.rq_reset_perm;
+  reset_vol = preq->rq_ind.rq_gpuctrl.rq_reset_vol;
+
+#ifdef NVIDIA_GPUS
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(
+      log_buffer,
+      "GPU control request for node %s gpuid %s mode %d reset_perm %d reset_vol %d",
+      mom_node,
+      gpuid,
+      gpumode,
+      reset_perm,
+      reset_vol);
+    log_ext(-1, id, log_buffer, LOG_INFO);
+    }
+
+    /* assume success? */
+
+  if (gpumode != -1)
+    {
+    rc = setgpumode(gpuid, gpumode);
+    }
+  else if ((reset_perm != -1) || (reset_vol != -1))
+    {
+    rc = resetgpuecc(gpuid, reset_perm, reset_vol);
+    }
+
+  if (rc)
+    {
+    reply_ack(preq);
+    
+    /* 
+     * if we were successful changing the mode then we need to update the gpu
+     * statuses
+     */
+
+    if (gpumode != -1)
+      {
+      mom_server_all_update_gpustat();
+      }
+    }
+  else
+    {
+    req_reject(PBSE_RMSYSTEM, 0, preq, mom_host, "failed to set gpu status");
+    }
+#else
+
+    sprintf(
+      log_buffer,
+      "GPU control request not supported: node %s gpuid %s mode %d reset_perm %d reset_vol %d",
+      mom_node,
+      gpuid,
+      gpumode,
+      reset_perm,
+      reset_vol);
+
+  if (LOGLEVEL >= 3)
+    {
+      log_ext(-1, id, log_buffer, LOG_INFO);
+    }
+
+  req_reject(PBSE_NOSUP, 0, preq, NULL, NULL);
+
+#endif  /* NVIDIA_GPUS */
+
+  return;
+  }  /* END req_deletejob() */
+
+
+
+
+
 /*
  *  Write text into a job's output file,
  *  Return a PBS error code.
@@ -3890,7 +3980,7 @@ error:
         }
       else if (dir == CKPT_DIR_OUT)
         {
-        /* 
+        /*
          * we need to clean up the job checkpoint file
          * the job directory gets deleted when job is done
          */

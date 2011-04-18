@@ -118,11 +118,12 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 
 /* sync w/PBSServerCmds[] in resmom/mom_main.c and PBSServerCmds2[] in server/node_manager.c */
 
-#define IS_NULL   0
-#define IS_HELLO  1
-#define IS_CLUSTER_ADDRS 2
-#define IS_UPDATE  3
-#define IS_STATUS               4
+#define IS_NULL   			0
+#define IS_HELLO  			1
+#define IS_CLUSTER_ADDRS 	2
+#define IS_UPDATE  			3
+#define IS_STATUS           4
+#define IS_GPU_STATUS		5
 
 
 /* return codes for client_to_svr() */

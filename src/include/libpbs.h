@@ -284,6 +284,9 @@ int
 PBSD_sig_put (int connect, char *jobid, char *signal, char *extend);
 
 int
+PBSD_gpu_put (int connect, char *node, char *id, int mode, int reset_perm, int reset_vol, char *extend);
+
+int
 PBSD_async_sig_put (int connect, char *jobid, char *signal, char *extend);
 
 int
@@ -309,6 +312,7 @@ char * PBSD_queuejob (int c, char *j, char *d, struct attropl *a, char *ex);
 extern int decode_DIS_JobId (int socket, char *jobid);
 extern int decode_DIS_replyCmd (int socket, struct batch_reply *);
 
+extern int encode_DIS_GpuCtrl (int socket, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol);
 extern int encode_DIS_JobCred (int socket, int type, char *cred, int len);
 extern int encode_DIS_JobFile (int socket, int, char *, int, char *, int);
 extern int encode_DIS_JobId (int socket, char *);

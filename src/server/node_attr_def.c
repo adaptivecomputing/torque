@@ -223,4 +223,18 @@ attribute_def node_attr_def[] = {
     ATR_TYPE_LONG,
     PARENT_TYPE_NODE,
   },
+
+  /* ND_ATR_gpustatus */
+  {ATTR_NODE_gpustatus,		/* "gpu_status" */
+   decode_arst,
+   encode_arst,
+   set_arst,
+   comp_null,
+   free_arst,
+   node_gpustatus_list,
+   MGR_ONLY_SET,
+   ATR_TYPE_ARST,
+   PARENT_TYPE_NODE,
+   },
+
 };

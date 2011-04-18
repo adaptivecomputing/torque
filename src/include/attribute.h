@@ -456,6 +456,7 @@ extern int      node_gpus_action(attribute *,void *,int);
 extern int      node_ntype(attribute*, void*, int);
 extern int      node_prop_list(attribute*, void*, int);
 extern int      node_status_list(attribute*, void*, int);
+extern int      node_gpustatus_list(attribute*, void*, int);
 extern int      node_note(attribute*, void*, int);
 extern int      set_note_str(attribute *attr, attribute *new, enum batch_op);
 extern void     replace_attr_string(attribute*, char*);

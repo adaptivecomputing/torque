@@ -179,10 +179,10 @@ int    exiting_tasks = 0;
 float  ideal_load_val = -1.0;
 int    internal_state = 0;
 /* by default, enforce these policies */
-int    ignwalltime = 0; 
+int    ignwalltime = 0;
 int    ignmem = 0;
 int    igncput = 0;
-int    ignvmem = 0; 
+int    ignvmem = 0;
 int    spoolasfinalname = 0;
 /* end policies */
 int    lockfds = -1;
@@ -275,6 +275,9 @@ int             MOMConfigRReconfig        = 0;
 long            system_ncpus = 0;
 char           *auto_ideal_load = NULL;
 char           *auto_max_load   = NULL;
+#ifdef NVIDIA_GPUS
+int             MOMNvidiaDriverVersion    = 0;
+#endif  /* NVIDIA_GPUS */
 
 #define TMAX_JE  64
 
@@ -288,6 +291,7 @@ extern void     mom_server_all_diag(char **BPtr, int *BSpace);
 extern void     mom_server_update_receive_time(int stream, const char *command_name);
 extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
+extern void     mom_server_all_update_gpustat(void);
 extern int      mark_for_resend(job *);
 extern int      mom_server_all_check_connection(void);
 extern int      mom_server_all_send_state(void);
@@ -297,6 +301,11 @@ extern int      post_epilogue(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
 extern void     mom_checkpoint_set_directory_path(char *str);
+
+#if defined(NVIDIA_GPUS) && defined(NVML_API)
+extern int      init_nvidia_nvml();
+extern int      shut_nvidia_nvml();
+#endif  /* NVIDIA_GPUS and NVML_API */
 
 void prepare_child_tasks_for_delete();
 
@@ -827,7 +836,7 @@ static char *getjoblist(
 
       /* since memory cannot be allocated, report no jobs */
 
-      return (" ");	
+      return (" ");
       }
 
     listlen = BUFSIZ;
@@ -1023,7 +1032,7 @@ retryread:
         tmpBuf[child_len] = '\0';
 
         /* Transfer returned data into var value field */
-        
+
         first_line = TRUE;
 
         ptr = strtok(tmpBuf,"\n;");
@@ -1032,7 +1041,7 @@ retryread:
 
         ptr2[0] = '\0';
 
-        /* 
+        /*
          * OUTPUT FORMAT:  Take what script gives us.
          * Script should output 1 or more lines of Name=value1+value2+...
          */
@@ -1455,6 +1464,10 @@ void die(
 
   cleanup();
 
+#if defined(NVIDIA_GPUS) && defined(NVML_API)
+  shut_nvidia_nvml();
+#endif  /* NVIDIA_GPUS and NVML_API */
+
   log_close(1);
 
   exit(1);
@@ -1815,7 +1828,7 @@ static u_long restricted(
 
       log_err(errno,id,"cannot alloc memory");
 
-      return(-1);	
+      return(-1);
       }
 
     mask_max = 4;
@@ -3031,7 +3044,7 @@ static unsigned long setlogfilesuffix(
 
 
 static unsigned long setlogkeepdays(
- 
+
   char *value)  /* I */
 
   {
@@ -3350,7 +3363,7 @@ static unsigned long setremchkptdirlist(
 
   int   index = 0;
   char  tmpLine[1024];
-  
+
   while ((TRemChkptDirList[index] != NULL) && (index < TMAX_RCDCOUNT))
     {
     index++;
@@ -3416,7 +3429,7 @@ check_log(void)
     snprintf(log_buffer,sizeof(log_buffer),"checking for old pbs_mom logs in dir '%s' (older than %d days)",
       path_log,
       LOGKEEPDAYS);
-   
+
     log_event(
       PBSEVENT_SYSTEM | PBSEVENT_FORCE,
       PBS_EVENTCLASS_SERVER,
@@ -5258,6 +5271,10 @@ int rm_request(
       close(lockfds);
 
       cleanup();
+
+#if defined(NVIDIA_GPUS) && defined(NVML_API)
+      shut_nvidia_nvml();
+#endif  /* NVIDIA_GPUS and NVML_API */
 
       log_close(1);
 
@@ -7369,7 +7386,7 @@ int setup_program_environment(void)
 
   time_now = time((time_t *)0);
 
-  ret_size = 4096;
+  ret_size = RETURN_STRING_SIZE;
 
   if ((ret_string = malloc(ret_size)) == NULL)
     {
@@ -7938,7 +7955,7 @@ void examine_all_jobs_to_resend(void)
       }
     }
   }  /* END examine_all_jobs_to_resend() */
-    
+
 
 
 
@@ -8005,7 +8022,7 @@ int mark_for_resend(
 
   for (jindex = 0;jindex < MAX_RESEND_JOBS;jindex++)
     {
-    if ((JobsToResend[jindex] == NULL) || 
+    if ((JobsToResend[jindex] == NULL) ||
         (JobsToResend[jindex] == (job *)DUMMY_JOB_PTR))
       {
       JobsToResend[jindex] = pjob;
@@ -8032,9 +8049,9 @@ int mark_for_resend(
 
 
 /*
- * This is for a mom starting with the -P option. Set all existing 
- * tasks to TI_STATE_EXITED so they can be cleanup up on the mom 
- * and at the server 
+ * This is for a mom starting with the -P option. Set all existing
+ * tasks to TI_STATE_EXITED so they can be cleanup up on the mom
+ * and at the server
  */
 void prepare_child_tasks_for_delete()
   {
@@ -8144,7 +8161,7 @@ void main_loop(void)
 
 #endif
       {
-      if ((time_now >= (LastServerUpdateTime + ServerStatUpdateInterval)) || 
+      if ((time_now >= (LastServerUpdateTime + ServerStatUpdateInterval)) ||
           (ForceServerUpdate == TRUE))
         {
         ForceServerUpdate = FALSE;
@@ -8155,6 +8172,10 @@ void main_loop(void)
           check_state((LastServerUpdateTime == 0));
 
         mom_server_all_update_stat();
+
+#ifdef NVIDIA_GPUS
+        mom_server_all_update_gpustat();
+#endif  /* NVIDIA_GPUS */
 
         LastServerUpdateTime = time_now;
         }
@@ -8217,7 +8238,7 @@ void main_loop(void)
       /* we can only do this once so set recover back to the default */
       recover = JOB_RECOV_RUNNING;
       }
-      
+
 
     if (exiting_tasks)
       scan_for_exiting();
@@ -8357,6 +8378,13 @@ int main(
     return(rc);
     }
 
+#if defined(NVIDIA_GPUS) && defined(NVML_API)
+  if (!init_nvidia_nvml())
+    {
+    return(1);
+    }
+#endif  /* NVIDIA_GPUS and NVML_API */
+
   main_loop();
 
   if (mom_run_state == MOM_RUN_STATE_KILLALL)
@@ -8365,6 +8393,10 @@ int main(
     }
 
   /* shutdown mom */
+
+#if defined(NVIDIA_GPUS) && defined(NVML_API)
+  shut_nvidia_nvml();
+#endif  /* NVIDIA_GPUS and NVML_API */
 
   mom_close_poll();
 

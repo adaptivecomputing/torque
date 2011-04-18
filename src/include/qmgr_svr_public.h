@@ -172,3 +172,4 @@ ATTR_joblogkeepdays,
 ATTR_authusers,
 #endif
 ATTR_moabarraycompatible,
+ATTR_autonodegpu,

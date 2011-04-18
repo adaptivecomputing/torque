@@ -117,6 +117,7 @@ extern int set_tokens (struct attribute *attr, struct attribute *new,
 extern int extra_resc_chk (attribute * pattr, void *pobject, int actmode);
 extern void free_extraresc (attribute * attr);
 extern void restore_attr_default (struct attribute *);
+extern int update_gpus (attribute * pattr, void *pobject, int actmode);
 
 /* DIAGTODO: write diag_attr_def.c */
 
@@ -1162,6 +1163,19 @@ attribute_def svr_attr_def[] = {
    free_null,
    NULL_FUNC,
    NO_USER_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER
+  },
+
+  /* SRV_ATR_AutoNodeGPU */
+  {ATTR_autonodegpu,		/* "auto_node_gpu" */
+   decode_b,
+   encode_b,
+   set_b,
+   comp_b,
+   free_null,
+   update_gpus,
+   MGR_ONLY_SET,
    ATR_TYPE_LONG,
    PARENT_TYPE_SERVER
   },

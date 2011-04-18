@@ -76,4 +76,5 @@ PbsBatchReqType(PBS_BATCH_StatusNode,           "StatusNode")
 PbsBatchReqType(PBS_BATCH_Disconnect,           "Disconnect")
 PbsBatchReqType(PBS_BATCH_AsySignalJob,         "AsyncSignalJob")     /* = 60 */
 PbsBatchReqType(PBS_BATCH_AltAuthenUser,        "AlternateUserAuthentication") 
+PbsBatchReqType(PBS_BATCH_GpuCtrl,              "GPUControl") 
 #endif

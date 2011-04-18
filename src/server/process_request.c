@@ -952,6 +952,12 @@ void dispatch_request(
 
       break;
 
+    case PBS_BATCH_GpuCtrl:
+
+      req_gpuctrl(request);
+
+      break;
+
     case PBS_BATCH_StatusJob:
 
       req_stat_job(request);

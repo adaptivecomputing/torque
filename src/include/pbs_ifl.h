@@ -290,6 +290,7 @@
   #define ATTR_authusers       "authorized_users"
 #endif
 #define ATTR_moabarraycompatible "moab_array_compatible"
+#define ATTR_autonodegpu  "auto_node_gpu"
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state         "state"
@@ -300,6 +301,7 @@
 #define ATTR_NODE_status        "status"
 #define ATTR_NODE_note          "note"
 #define ATTR_NODE_gpus           "gpus"
+#define ATTR_NODE_gpustatus      "gpu_status"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"
@@ -398,6 +400,7 @@
 
 #define PBS_MAXUSER  32 /* max user name length */
 #define PBS_MAXGRPN  16 /* max group name length */
+#define PBS_MAXGPUID 16 /* max gpu id length */
 #define PBS_MAXQUEUENAME 15 /* max queue name length */
 #define PBS_MAXSERVERNAME PBS_MAXHOSTNAME /* max server name length */
 #define PBS_MAXJOBARRAYLEN      7       /* number of characters allowed in jobarray portion of job id, including '[]' */
@@ -415,8 +418,8 @@
 
 #define PBS_MAXCREDENTIAL_LEN 2048 /* Maximum authentication credential length. */
 /* constants used to indicate version of job ji_qs struct written to disk.
-   starting with 2.4.0 we stopped encoding the torque version number into the 
-   hex value e.g. 0x00020300 for torque v2.3.0. Now we just increment a value 
+   starting with 2.4.0 we stopped encoding the torque version number into the
+   hex value e.g. 0x00020300 for torque v2.3.0. Now we just increment a value
    which is added to the last version encoded that way */
 #define PBS_QS_VERSION_BASE 0x00020300 /* magic number do not change */
 #define PBS_QS_VERSION_INT 2 /* increment this version number with every change to the ji_qs struct */
@@ -607,6 +610,8 @@ extern int
 
 extern int
   usepool(int connect, int update);
+
+extern int pbs_gpumode(int connect, char *node, char *gpuid, int gpumode);
 
 #endif /* _PBS_IFL_DEF */
 

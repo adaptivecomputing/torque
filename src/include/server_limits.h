@@ -117,6 +117,10 @@
 #define PBS_LOCKFILE_UPDATE_TIME 3   /* how often TORQUE updates HA lock file */
 #define PBS_LOCKFILE_CHECK_TIME  9   /* how often secondary TORQUE checks HA lock file */
 
+
+#define RETURN_STRING_SIZE 4096
+
+
 /* Server Database information - path names */
 
 #define PBS_SVR_PRIVATE  "server_priv"

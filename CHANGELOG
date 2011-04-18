@@ -37,6 +37,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       in TORQUE. This makes TORQUE easier to use in grid configurations. (backported from 3.0.2)
   c - fix a segfault when queue has acl_group_enable and acl_group_sloppy set
       true and no acl_groups are defined. (backported from 3.0.1)
+  f - Added the ability to detect Nvidia gpus using nvidia-smi (default) or NVML.
+      Server receives gpu statuses from pbs_mom. Added server attribute auto_node_gpu
+      that allows automatically setting number of gpus for nodes based on gpu
+      statuses. Added new configure options --enable-nvidia-gpus,
+      --with-nvml-include and --with-nvml-lib.  
 
 
 2.5.5

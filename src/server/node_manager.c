@@ -134,6 +134,7 @@ int    svr_totnodes = 0; /* total number nodes defined       */
 int   svr_clnodes  = 0; /* number of cluster nodes     */
 int   svr_tsnodes  = 0; /* number of time shared nodes     */
 int   svr_chngNodesfile = 0; /* 1 signals want nodes file update */
+int   gpu_mode_rqstd = -1;  /* default gpu mode requested */
 /* on server shutdown, (qmgr mods)  */
 
 struct pbsnode **pbsndlist = NULL;
@@ -1362,6 +1363,441 @@ int is_stat_get(
 
 
 
+#ifdef NVIDIA_GPUS
+/*
+ * Function to check if there is a job assigned to this gpu
+ */
+
+int count_gpu_jobs(
+  char *mom_node,
+  int  gpuid)
+  {
+  char id[] = "count_gpu_jobs";
+
+  job   *pjob;
+  extern tlist_head  svr_alljobs;
+  char  *gpu_str;
+  char  *found_str;
+  char   tmp_str[PBS_MAXHOSTNAME + 5];
+  char   num_str[6];
+  int    job_count = 0;
+
+  if ((pjob = (job *)GET_NEXT(svr_alljobs)) != NULL)
+    {
+    for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+      {
+      /*
+       * Does this job have this gpuid assigned? skip non running jobs
+       * if so, return TRUE
+       */
+      if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+          (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
+        {
+        gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+
+        if (gpu_str != NULL)
+          {
+          strcpy (tmp_str, mom_node);
+          strcat (tmp_str, "-gpu/");
+          sprintf (num_str, "%d", gpuid);
+          strcat (tmp_str, num_str);
+
+          /* look thru the string and see if it has this host and gpuid.
+           * exec_gpus string should be in format of 
+           * <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
+           */
+
+          found_str = strstr (gpu_str, tmp_str);
+          if (found_str != NULL)
+            {
+            job_count++;
+            }
+          }
+        }
+      }
+    }  /* END for (pjob) */
+
+  return(job_count);
+  }
+#endif  /* NVIDIA_GPUS */
+
+
+
+#ifdef NVIDIA_GPUS
+/*
+ * Function to process gpu status messages received from the mom
+ */
+
+int is_gpustat_get(
+
+  struct pbsnode *np)  /* I (modified) */
+
+  {
+  char      *id = "is_gpustat_get";
+
+  int stream = np->nd_stream;
+  int        rc;
+  char      *ret_info;
+  attribute  temp;
+  attribute  tempx;
+  char      *gpuid;
+  int        gpuidx = -1;
+  char       gpuinfo[2048];
+  int        need_delimiter;
+  int        gpucnt = 0;
+  int        drv_ver;
+
+  extern int TConnGetSelectErrno();
+  extern int TConnGetReadErrno();
+
+  if (LOGLEVEL >= 3)
+    {
+    sprintf(log_buffer, "received gpu status from node %s",
+            (np != NULL) ? np->nd_name : "NULL");
+
+    log_record(
+      PBSEVENT_SCHED,
+      PBS_EVENTCLASS_REQUEST,
+      id,
+      log_buffer);
+    }
+
+  if (stream < 0)
+    {
+    return(DIS_EOF);
+    }
+
+  /*
+   *  Before filling the "temp" attribute, initialize it.
+   *  The second and third parameter to decode_arst are never
+   *  used, so just leave them empty. (GBS)
+   */
+
+  memset(&temp, 0, sizeof(temp));
+  memset(gpuinfo, 0, 2048);
+
+  rc = DIS_SUCCESS;
+
+  if (decode_arst(&temp, NULL, NULL, NULL))
+    {
+    DBPRT(("is_stat_get:  cannot initialize attribute\n"));
+
+    rpp_eom(stream);
+
+    return(DIS_NOCOMMIT);
+    }
+
+  funcs_dis();
+
+  while (((ret_info = disrst(stream, &rc)) != NULL) && (rc == DIS_SUCCESS))
+    {
+    /* add the info to the "temp" attribute */
+
+    /* get timestamp */
+    if(!strncmp(ret_info, "timestamp=", 10))
+      {
+      if (decode_arst(&temp, NULL, NULL, ret_info))
+        {
+        DBPRT(("is_gpustat_get: cannot add attributes\n"));
+
+        free_arst(&temp);
+
+        free(ret_info);
+
+        rpp_eom(stream);
+
+        return(DIS_NOCOMMIT);
+        }
+      continue;
+      }
+
+    /* get driver version, if there is one */
+    if(!strncmp(ret_info, "driver_ver=", 11))
+      {
+      if (decode_arst(&temp, NULL, NULL, ret_info))
+        {
+        DBPRT(("is_gpustat_get: cannot add attributes\n"));
+
+        free_arst(&temp);
+
+        free(ret_info);
+
+        rpp_eom(stream);
+
+        return(DIS_NOCOMMIT);
+        }
+      drv_ver = atoi(ret_info + 11);
+      continue;
+      }
+
+    /* gpuid must come before the rest or we will be in trouble */
+
+    if(!strncmp(ret_info, "gpuid=", 6))
+      {
+      if (strlen(gpuinfo) > 0)
+        {
+        if (decode_arst(&temp, NULL, NULL, gpuinfo))
+          {
+          DBPRT(("is_gpustat_get: cannot add attributes\n"));
+
+          free_arst(&temp);
+
+          free(ret_info);
+
+          rpp_eom(stream);
+
+          return(DIS_NOCOMMIT);
+          }
+        memset(gpuinfo, 0, 2048);
+        }
+
+      gpuid = &ret_info[6];
+
+      /*
+       * Get this gpus index, if it does not yet exist then find an empty entry.
+       * We need to allow for the gpu status results being returned in
+       * different orders since the nvidia order may change upon mom's reboot
+       */
+
+      gpuidx = gpu_entry_by_id(np, gpuid, TRUE);
+      if (gpuidx == -1)
+        {
+        /*
+         * Failure - we could not get / create a nd_gpusn entry for this gpu,
+         * log an error message.
+         */
+
+        if (LOGLEVEL >= 3)
+          {
+          sprintf (log_buffer,
+              "Failed to get/create entry for gpu %s on node %s\n",
+              gpuid, np->nd_name);
+
+          log_ext(-1, id, log_buffer, LOG_DEBUG);
+          }
+
+        free_arst(&temp);
+
+        free(ret_info);
+
+        return(DIS_SUCCESS);
+        }
+
+      sprintf(gpuinfo, "gpu[%d]=gpu_id=%s;", gpuidx, gpuid);
+      need_delimiter = FALSE;
+      gpucnt++;
+      np->nd_gpusn[gpuidx].driver_ver = drv_ver;
+
+      /* mark that this gpu node is not virtual */
+      np->nd_gpus_real = TRUE;
+      
+      /*
+       * if we have not filled in the gpu_id returned by the mom node
+       * then fill it in
+       */
+      if ((gpuidx >= 0) && (np->nd_gpusn[gpuidx].gpuid == NULL))
+        {
+        np->nd_gpusn[gpuidx].gpuid = strdup(gpuid);
+        }      
+
+      }
+    else
+      {
+      if (need_delimiter)
+        {
+        strcat(gpuinfo, ";");
+        }
+      strcat(gpuinfo, ret_info);
+      need_delimiter = TRUE;
+      }
+
+    /* check current gpu mode and determine gpu state */
+    
+    if (!memcmp(ret_info, "gpu_mode=", 9))
+      {
+      if ((!memcmp(ret_info+9, "Normal", 6)) || (!memcmp(ret_info+9, "Default", 7)))
+        {
+        np->nd_gpusn[gpuidx].mode = gpu_normal;
+        if (count_gpu_jobs(np->nd_name, gpuidx) > 0)
+          {
+          np->nd_gpusn[gpuidx].state = gpu_shared;
+          }
+        else
+          {
+          np->nd_gpusn[gpuidx].inuse = 0;
+          np->nd_gpusn[gpuidx].state = gpu_unallocated;
+          }
+        }
+      else if ((!memcmp(ret_info+9, "Exclusive", 9)) ||
+              (!memcmp(ret_info+9, "Exclusive_Thread", 16)))
+        {
+        np->nd_gpusn[gpuidx].mode = gpu_exclusive_thread;
+        if (count_gpu_jobs(np->nd_name, gpuidx) > 0)
+          {
+          np->nd_gpusn[gpuidx].state = gpu_exclusive;
+          }
+        else
+          {
+          np->nd_gpusn[gpuidx].inuse = 0;
+          np->nd_gpusn[gpuidx].state = gpu_unallocated;
+          }
+        }
+      else if (!memcmp(ret_info+9, "Exclusive_Process", 17))
+        {
+        np->nd_gpusn[gpuidx].mode = gpu_exclusive_process;
+        if (count_gpu_jobs(np->nd_name, gpuidx) > 0)
+          {
+          np->nd_gpusn[gpuidx].state = gpu_exclusive;
+          }
+        else
+          {
+          np->nd_gpusn[gpuidx].inuse = 0;
+          np->nd_gpusn[gpuidx].state = gpu_unallocated;
+          }
+        }
+      else if (!memcmp(ret_info+9, "Prohibited", 10))
+        {
+        np->nd_gpusn[gpuidx].mode = gpu_prohibited;
+        np->nd_gpusn[gpuidx].state = gpu_unavailable;
+        }
+      else
+        {
+        /* unknown mode, default to prohibited */
+        np->nd_gpusn[gpuidx].mode = gpu_prohibited;
+        np->nd_gpusn[gpuidx].state = gpu_unavailable;
+        if (LOGLEVEL >= 3)
+          {
+          sprintf(log_buffer, "GPU %s has unknown mode on node %s",
+                  gpuid,
+                  np->nd_name);
+
+          log_ext(-1, id, log_buffer, LOG_DEBUG);
+          }
+        }
+ 
+      /* add gpu_mode so it gets added to the attribute */
+
+      if (need_delimiter)
+        {
+        strcat(gpuinfo, ";");
+        }
+
+      switch (np->nd_gpusn[gpuidx].state)
+        {
+        case gpu_unallocated:
+          strcat (gpuinfo, "gpu_state=Unallocated");
+          break;
+        case gpu_shared:
+          strcat (gpuinfo, "gpu_state=Shared");
+          break;
+        case gpu_exclusive:
+          strcat (gpuinfo, "gpu_state=Exclusive");
+          break;
+        case gpu_unavailable:
+          strcat (gpuinfo, "gpu_state=Unavailable");
+          break;
+        }
+      }
+
+    } /* end of while disrst */
+
+    if (strlen(gpuinfo) > 0)
+      {
+      if (decode_arst(&temp, NULL, NULL, gpuinfo))
+        {
+        DBPRT(("is_gpustat_get: cannot add attributes\n"));
+
+        free_arst(&temp);
+
+        free(ret_info);
+
+        rpp_eom(stream);
+
+        return(DIS_NOCOMMIT);
+        }
+      }
+
+  /* maintain the gpu count */
+
+  if (gpucnt != np->nd_ngpus)
+    {
+    np->nd_ngpus = gpucnt;
+
+    /* check if gpu count needs to be updated in the nodes file */
+
+    if (server.sv_attr[(int)SRV_ATR_AutoNodeGPU].at_val.at_long)
+      {
+      update_nodes_file();
+      }
+    }
+
+  node_gpustatus_list(&temp, np, ATR_ACTION_ALTER);
+
+  return(DIS_SUCCESS);
+
+  }  /* END is_gpustat_get() */
+#endif  /* NVIDIA_GPUS */
+
+
+
+/*
+** Function to update gpu counts and node file when auto_node_gpu is enabled
+*/
+
+int  update_gpus(
+  attribute *pattr,
+  void      *pobj,
+  int        actmode)
+
+  {
+  /* set gpu count according to gpu_status */
+
+#ifdef NVIDIA_GPUS
+  if ((actmode == ATR_ACTION_ALTER) && (pattr->at_val.at_long))
+    {
+    struct pbsnode *pnode;
+    int i;
+    char      *ptr;
+    attribute  temp;
+    int        nongpucnt;
+
+    memset(&temp, 0, sizeof(temp));
+    temp.at_type= ATR_TYPE_ARST;
+    temp.at_flags = ATR_VFLAG_SET;
+
+    for(i = 0; i < svr_totnodes; i++)
+      {
+      pnode = pbsndlist[i];
+
+      /* set non gpu count to 1 since we always have a timestamp */
+      nongpucnt = 1;
+
+      if (pnode->nd_ngpustatus > 0)
+        {
+        /*
+        ** if we have gpu status for this node then we should have # of
+        ** gpu status - 1 to allow for the timestamp gpu status and
+        ** maybe -1 for the driver version
+        */
+
+        temp.at_val.at_arst = pnode->nd_gpustatus;
+        ptr = arst_string("driver_ver=", &temp);
+        if (ptr)
+          {
+          nongpucnt++;
+          }
+        
+        pnode->nd_ngpus = pnode->nd_ngpustatus - nongpucnt;
+        }
+      }
+    update_nodes_file();
+    }
+#endif  /* NVIDIA_GPUS */
+
+  return(0);
+  }
+
+
 
 /*
 ** Start a standard inter-server message.
@@ -2150,6 +2586,56 @@ found:
 
       break;
 
+    case IS_GPU_STATUS:
+
+      /* pbs_server brought up
+         pbs_mom brought up
+         they send IS_HELLO to each other
+         pbs_mom sends IS_STATUS followed by
+         IS_GPU_STATUS message to pbs_server (replying to IS_HELLO)
+         pbs_server sends IS_CLUSTER_ADDRS message to pbs_mom  (replying to IS_HELLO)
+         pbs_mom uses IS_CLUSTER_ADDRS message to authorize contacts from sisters */
+
+#ifdef NVIDIA_GPUS
+      if (LOGLEVEL >= 2)
+        {
+        sprintf(log_buffer, "IS_GPU_STATUS received from %s",
+                node->nd_name);
+
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
+        }
+
+      ret = is_gpustat_get(node);
+
+      if (ret != DIS_SUCCESS)
+        {
+        if (LOGLEVEL >= 1)
+          {
+          sprintf(log_buffer, "IS_GPU_STATUS error %d on node %s",
+                  ret,
+                  node->nd_name);
+
+          log_err(ret, id, log_buffer);
+          }
+
+        goto err;
+        }
+
+      node->nd_lastupdate = time_now;
+#else
+      if (LOGLEVEL >= 2)
+        {
+        sprintf(log_buffer, "Not configured: IS_GPU_STATUS received from %s",
+                node->nd_name);
+
+        log_err(ret, id, log_buffer);
+        }
+
+#endif  /* NVIDIA_GPUS */
+
+      break;
+
+
     default:
 
       sprintf(log_buffer, "unknown command %d sent from %s",
@@ -2517,34 +3003,6 @@ static int hasppn(
 
 
 
-/* 
- * see if pnode has the number of gpus required 
- */
-static int hasgpu(
-
-  struct pbsnode *pnode,
-  int             gpu_req,
-  int             free)
-
-  {
-  if ((free != SKIP_NONE) &&
-      (free != SKIP_NONE_REUSE) &&
-      (pnode->nd_ngpus_free >= gpu_req))
-    {
-    return(TRUE);
-    }
-  
-  if ((free == SKIP_NONE) &&
-      (pnode->nd_ngpus >= gpu_req))
-    {
-    return(TRUE);
-    }
-
-  return(FALSE);
-  } /* END hasgpu() */
-
-
-
 /*
 ** Mark the properties of a node that match the marked
 ** properties given.
@@ -2579,6 +3037,146 @@ static void mark(
 
   return;
   }  /* END mark() */
+
+
+
+
+/*
+** Count how many gpus are available for use on this node
+*/
+static int gpu_count(
+
+  struct pbsnode *pnode,  /* I */
+  int    freeonly)        /* I */
+
+  {
+  int count = 0;
+
+  if ((pnode->nd_state & INUSE_DELETED) ||
+      (pnode->nd_state & INUSE_OFFLINE) ||
+      (pnode->nd_state & INUSE_UNKNOWN) ||
+      (pnode->nd_state & INUSE_DOWN))
+    {
+    sprintf(log_buffer,
+      "Counted %d gpus %s on node %s that was skipped",
+      count,
+      (freeonly? "free":"available"),
+      pnode->nd_name);
+
+    DBPRT(("%s\n",
+           log_buffer));
+    return (count);
+    }
+
+#ifdef NVIDIA_GPUS
+  if (pnode->nd_gpus_real)
+    {
+    int j;
+
+    for (j = 0; j < pnode->nd_ngpus; j++)
+      {
+      struct gpusubn *gn = pnode->nd_gpusn + j;
+
+      /* always ignore unavailable gpus */
+      if (gn->state == gpu_unavailable)
+        continue;
+
+      if ((gpu_mode_rqstd == -1) || (gn->mode == gpu_mode_rqstd))
+        {
+        if (!freeonly)
+          {
+          count++;
+          }
+        else if ((gn->state == gpu_unallocated) || (gn->state == gpu_shared))
+          {
+          count++;;
+          }
+        }
+      }
+    }
+  else
+#endif  /* NVIDIA_GPUS */
+    {
+    /* virtual gpus */
+    if (freeonly)
+      {
+      count = pnode->nd_ngpus_free;
+      }
+    else
+      {
+      count = pnode->nd_ngpus;
+      }
+    }
+
+    sprintf(log_buffer,
+      "Counted %d gpus %s on node %s",
+      count,
+      (freeonly? "free":"available"),
+      pnode->nd_name);
+
+    DBPRT(("%s\n",
+           log_buffer));
+
+  return (count);
+  }  /* END gpu_count() */
+
+
+
+
+
+#ifdef NVIDIA_GPUS
+/*
+** get gpu index for this gpuid
+*/
+int gpu_entry_by_id(
+
+  struct pbsnode *pnode,  /* I */
+  char   *gpuid,
+  int    get_empty)
+
+  {
+
+  if (pnode->nd_gpus_real)
+    {
+    int j;
+
+    for (j = 0; j < pnode->nd_ngpus; j++)
+      {
+      struct gpusubn *gn = pnode->nd_gpusn + j;
+
+      if ((gn->gpuid != NULL) && (strcmp(gpuid, gn->gpuid) == 0))
+        {
+        return(j);
+        }
+      }
+    }
+
+  /*
+   * we did not find the entry.  if get_empty is set then look for an empty
+   * slot.  If none is found then try to add a new entry to nd_gpusn
+   */
+
+  if (get_empty)
+    {
+    int j;
+
+    for (j = 0; j < pnode->nd_ngpus; j++)
+      {
+      struct gpusubn *gn = pnode->nd_gpusn + j;
+
+      if (gn->gpuid == NULL)
+        {
+        return(j);
+        }
+      }
+
+    create_a_gpusubnode(pnode);
+    return (pnode->nd_ngpus - 1);    
+    }
+
+  return (-1);
+  }  /* END gpu_entry_by_id() */
+#endif  /* NVIDIA_GPUS */
 
 
 
@@ -2642,23 +3240,40 @@ static int search(
       if (!hasprop(pnode, glorf))
         continue;
 
+      if (LOGLEVEL >= 6)
+        {
+        sprintf(log_buffer,
+          "search: starting eval gpus on node %s need %d(%d) mode %d has %d free %d skip %d depth %d",
+          pnode->nd_name,
+          gpureq,
+          pnode->nd_ngpus_needed,
+          gpu_mode_rqstd,
+          pnode->nd_ngpus,
+          gpu_count(pnode, TRUE),
+          skip,
+          depth);
+
+         DBPRT(("%s\n",
+           log_buffer));
+         }
+
       if ((skip == SKIP_NONE) || (skip == SKIP_NONE_REUSE))
         {
         if ((vpreq > pnode->nd_nsn) ||
-            (gpureq > pnode->nd_ngpus))
+            (gpureq > gpu_count(pnode, FALSE)))
           continue;
         }
       else if ((skip == SKIP_ANYINUSE) &&
                ((pnode->nd_state & INUSE_SUBNODE_MASK) || 
                 (vpreq > pnode->nd_nsnfree) ||
-                (gpureq > pnode->nd_ngpus_free)))
+                (gpureq > gpu_count(pnode, TRUE))))
         {
         continue;
         }
       else if ((skip == SKIP_EXCLUSIVE) &&
                ((pnode->nd_state & INUSE_SUBNODE_MASK) ||
                 (vpreq > (pnode->nd_nsnfree + pnode->nd_nsnshared)) ||
-                (gpureq > (pnode->nd_ngpus_free))))
+                (gpureq > gpu_count(pnode, TRUE))))
         {
         continue;
         }
@@ -2676,6 +3291,22 @@ static int search(
       pnode->nd_order  = order;
 
       /* SUCCESS */
+      if (LOGLEVEL >= 6)
+        {
+        sprintf(log_buffer,
+          "search: successful gpus on node %s need %d(%d) mode %d has %d free %d skip %d depth %d",
+          pnode->nd_name,
+          gpureq,
+          pnode->nd_ngpus_needed,
+          gpu_mode_rqstd,
+          pnode->nd_ngpus,
+          gpu_count(pnode, TRUE),
+          skip,
+          depth);
+
+         DBPRT(("%s\n",
+           log_buffer));
+         }
 
       return(1);
       }
@@ -2709,14 +3340,31 @@ static int search(
       if (pnode->nd_state & pass)
         continue;
 
+      if (LOGLEVEL >= 6)
+        {
+        sprintf(log_buffer,
+          "search(2): starting eval gpus on node %s need %d(%d) mode %d has %d free %d skip %d depth %d",
+          pnode->nd_name,
+          gpureq,
+          pnode->nd_ngpus_needed,
+          gpu_mode_rqstd,
+          pnode->nd_ngpus,
+          gpu_count(pnode, TRUE),
+          skip,
+          depth);
+
+         DBPRT(("%s\n",
+           log_buffer));
+         }
+
       if ((skip == SKIP_EXCLUSIVE) && 
           (vpreq < pnode->nd_nsnfree) &&
-          (gpureq < pnode->nd_ngpus_free))
+          (gpureq < gpu_count(pnode, TRUE)))
         continue;
 
       if ((skip == SKIP_ANYINUSE) &&
           (vpreq < (pnode->nd_nsnfree + pnode->nd_nsnshared)) &&
-          (gpureq < pnode->nd_ngpus_free))
+          (gpureq < gpu_count(pnode, TRUE)))
         continue;
 
       if (!hasprop(pnode, glorf))
@@ -2745,6 +3393,22 @@ static int search(
         pnode->nd_order  = order;
 
         /* SUCCESS */
+      if (LOGLEVEL >= 6)
+        {
+        sprintf(log_buffer,
+          "search(2): successful gpus on node %s need %d(%d) mode %d has %d free %d skip %d depth %d",
+          pnode->nd_name,
+          gpureq,
+          pnode->nd_ngpus_needed,
+          gpu_mode_rqstd,
+          pnode->nd_ngpus,
+          gpu_count(pnode, TRUE),
+          skip,
+          depth);
+
+         DBPRT(("%s\n",
+           log_buffer));
+         }
 
         return(1);
         }
@@ -2874,6 +3538,9 @@ static int proplist(
   struct prop *pp;
   char  *pname;
   char  *pequal;
+#ifdef NVIDIA_GPUS
+  int    have_gpus = FALSE;
+#endif  /* NVIDIA_GPUS */
 
   *node_req = 1; /* default to 1 processor per node */
 
@@ -2911,7 +3578,7 @@ static int proplist(
         if ((number(&pequal, node_req) != 0) || (*pequal != '\0'))
           {
           return(1);
-          } 
+          }
         }
       else if (strcmp(pname, "gpus") == 0)
         {
@@ -2921,12 +3588,37 @@ static int proplist(
           {
           return(1);
           }
+#ifdef NVIDIA_GPUS
+        have_gpus = TRUE;
+#endif  /* NVIDIA_GPUS */
+
+        /* default value if no other gets specified */
+
+        gpu_mode_rqstd = gpu_exclusive_thread;
         }
       else
         {
         return(1); /* not recognized - error */
         }
       }
+#ifdef NVIDIA_GPUS
+    else if (have_gpus && (!strcasecmp(pname, "exclusive_thread")))
+      {
+      gpu_mode_rqstd = gpu_exclusive_thread;
+      }
+    else if (have_gpus && (!strcasecmp(pname, "exclusive")))
+      {
+      gpu_mode_rqstd = gpu_exclusive_thread;
+      }
+    else if (have_gpus && (!strcasecmp(pname, "exclusive_process")))
+      {
+      gpu_mode_rqstd = gpu_exclusive_process;
+      }
+    else if (have_gpus && (!strcasecmp(pname, "shared")))
+      {
+      gpu_mode_rqstd = gpu_normal;
+      }
+#endif  /* NVIDIA_GPUS */
     else
       {
       pp = (struct prop *)malloc(sizeof(struct prop));
@@ -2937,6 +3629,18 @@ static int proplist(
 
       *plist = pp;
       }
+
+#ifdef NVIDIA_GPUS
+    if (have_gpus)
+      {
+      sprintf(log_buffer,
+        "proplist: set needed gpu mode to %d",
+        gpu_mode_rqstd);
+
+      DBPRT(("%s\n",
+             log_buffer));
+      }
+#endif  /* NVIDIA_GPUS */
 
     if (**str != ':')
       break;
@@ -3024,7 +3728,7 @@ static int listelem(
       {
       if ((hasprop(pnode, prop)) && 
           (hasppn(pnode, node_req, SKIP_NONE)) &&
-          (hasgpu(pnode, gpu_req, SKIP_NONE)))
+          (gpu_count(pnode, FALSE) >= gpu_req))
         hit++;
 
       if (hit == num)
@@ -3712,13 +4416,25 @@ static int node_spec(
       continue;
       }
 
+    sprintf(log_buffer, "starting eval gpus on node %s need %d free %d",
+      pnode->nd_name,
+      pnode->nd_ngpus_needed,
+      gpu_count(pnode, TRUE));
+
+    DBPRT(("%s\n",
+           log_buffer));
+
     if (pnode->nd_state == INUSE_FREE)
       {
       if (pnode->nd_needed <= pnode->nd_nsnfree)
         {
-        if (pnode->nd_ngpus_needed <= pnode->nd_ngpus_free)
+        if (pnode->nd_ngpus_needed <= gpu_count(pnode, TRUE))
           {
           /* adequate virtual nodes and gpus available - node is ok */
+          sprintf(log_buffer, "adequate virtual nodes and gpus available - node is ok");
+
+          DBPRT(("%s\n",
+                 log_buffer));
           
           continue;
           }
@@ -3727,7 +4443,7 @@ static int node_spec(
       if (!exclusive &&
           (pnode->nd_needed < pnode->nd_nsnfree + pnode->nd_nsnshared))
         {
-        if (pnode->nd_ngpus_needed <= pnode->nd_ngpus_free)
+        if (pnode->nd_ngpus_needed <= gpu_count(pnode, TRUE))
           {
           /* shared node - node is ok */
           
@@ -3768,6 +4484,10 @@ static int node_spec(
     if (early != 0)
       {
       /* FAILURE */
+      sprintf(log_buffer, "failure early");
+
+      DBPRT(("%s\n",
+             log_buffer));
 
       /* specified node not available and replacement cannot be located */
 
@@ -3817,7 +4537,7 @@ static int node_spec(
                  pnode->nd_needed,
                  pnode->nd_nsnfree,
                  pnode->nd_ngpus_needed,
-                 pnode->nd_ngpus_free,
+                 gpu_count(pnode, TRUE),
                  JobList);
 
 #ifdef BROKENVNODECHECKS
@@ -4146,12 +4866,19 @@ int add_job_to_gpu_subnode(
   job            *pjob)
 
   {
-  /* update the gpu subnode */
-  gn->pjob = pjob;
-  gn->inuse = TRUE;
+#ifdef NVIDIA_GPUS
+  if (!pnode->nd_gpus_real)
+#endif  /* NVIDIA_GPUS */
+    {
+    /* update the gpu subnode */
+    gn->pjob = pjob;
+    gn->inuse = TRUE;
 
-  /* update the main node */
-  pnode->nd_ngpus_free--;
+    /* update the main node */
+    pnode->nd_ngpus_free--;
+    }
+
+  /* this seems to be a temporary variable needed for node selection */
   pnode->nd_ngpus_needed--;
 
   return(PBSE_NONE);
@@ -4384,13 +5111,75 @@ int set_nodes(
     /* place the gpus in the gpulist */
     for (j = 0; j < pnode->nd_ngpus && pnode->nd_ngpus_needed > 0; j++)
       {
+      sprintf(log_buffer,
+        "node: %s j %d ngpus %d need %d",
+        pnode->nd_name,
+        j,
+        pnode->nd_ngpus,
+        pnode->nd_ngpus_needed);
+
+      DBPRT(("%s\n",
+             log_buffer));
+
       struct gpusubn *gn = pnode->nd_gpusn + j;
-      if (gn->inuse == TRUE)
+      if ((gn->state == gpu_unavailable) ||
+#ifdef NVIDIA_GPUS
+          ((gn->state == gpu_exclusive) && pnode->nd_gpus_real) ||
+          (pnode->nd_gpus_real && (gn->mode != gpu_mode_rqstd)) ||
+          ((!pnode->nd_gpus_real) && (gn->inuse == TRUE)))
+#else
+          (gn->inuse == TRUE))
+#endif  /* NVIDIA_GPUS */
         continue;
 
       add_job_to_gpu_subnode(pnode,gn,pjob);
+
+      sprintf(log_buffer,
+        "ADDING gpu %s/%d to exec_gpus still need %d",
+        pnode->nd_name,
+        j,
+        pnode->nd_ngpus_needed);
+
+      DBPRT(("%s\n",
+             log_buffer));
+
       add_gpu_to_hostlist(&gpu_list,gn,pnode);
+      
+#ifdef NVIDIA_GPUS
+      /*
+       * If this a real gpu in exclusive/single job mode, then we change state
+       * to exclusive so we cannot assign another job to it
+       */
+       
+      if ((pnode->nd_gpus_real) && ((gn->mode == gpu_exclusive_thread) ||
+         (gn->mode == gpu_exclusive_process)))
+        {
+        gn->state = gpu_exclusive;
+        }
+#endif  /* NVIDIA_GPUS */
       }
+
+    /* make sure we found gpus to use, if job needed them */
+
+    if (pnode->nd_ngpus_needed > 0)
+    {
+    /* no resources located, request failed */
+
+    if (EMsg != NULL)
+      {
+      sprintf(log_buffer, "could not locate requested gpu resources '%.4000s' (node_spec failed) %s",
+        spec,
+        EMsg);
+
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
+      }
+
+    return(PBSE_RESCUNAV);
+    }
 
     for (snp = pnode->nd_psn;snp && pnode->nd_needed;snp = snp->next)
       {
@@ -4805,6 +5594,7 @@ int node_avail(
   register int xdown;
   int          node_req = 1;
   int          gpu_req = 0;
+  int          gpu_mode = gpu_exclusive_thread;
 
   if (spec == NULL)
     {
@@ -5091,6 +5881,9 @@ void free_nodes(
 
   int             i;
   int             j;
+  char           *gpu_str = NULL;
+  char            tmp_str[PBS_MAXHOSTNAME + 5];
+  char            num_str[6];
 
   if (LOGLEVEL >= 3)
     {
@@ -5104,6 +5897,11 @@ void free_nodes(
       log_buffer);
     }
 
+  if ((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
+    {
+    gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+    }
+
   /* examine all nodes in cluster */
 
   for (i = 0;i < svr_totnodes;i++)
@@ -5113,15 +5911,65 @@ void free_nodes(
     if (pnode->nd_state & INUSE_DELETED)
       continue;
 
-    for (j = 0; j < pnode->nd_ngpus; j++)
+    if (gpu_str != NULL)
       {
-      struct gpusubn *gn = pnode->nd_gpusn + j;
-      if (gn->pjob == pjob)
+      /* reset gpu nodes */
+      for (j = 0; j < pnode->nd_ngpus; j++)
         {
-        gn->inuse = FALSE;
-        gn->pjob = NULL;
+        struct gpusubn *gn = pnode->nd_gpusn + j;
+#ifdef NVIDIA_GPUS
+        if (pnode->nd_gpus_real)
+          {
+          /* reset real gpu nodes */
+          strcpy (tmp_str, pnode->nd_name);
+          strcat (tmp_str, "-gpu/");
+          sprintf (num_str, "%d", j);
+          strcat (tmp_str, num_str);
 
-        pnode->nd_ngpus_free++;
+          /* look thru the string and see if it has this host and gpuid.
+           * exec_gpus string should be in format of 
+           * <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
+           *
+           * if we are using the gpu node exclusively, then set it's state
+           * unallocated so its available for a new job. Takes time to get the
+           * gpu status report from the moms.
+           */
+
+          if (strstr (gpu_str, tmp_str) != NULL)
+            {
+            if ((gn->mode == gpu_exclusive_thread) ||
+                 (gn->mode == gpu_exclusive_process))
+              {
+              gn->state = gpu_unallocated;
+
+              if (LOGLEVEL >= 7)
+                {
+                sprintf(log_buffer, "freeing node %s gpu %d for job %s",
+                        pnode->nd_name,
+                        j,
+                        pjob->ji_qs.ji_jobid);
+
+                log_record(
+                  PBSEVENT_SCHED,
+                  PBS_EVENTCLASS_REQUEST,
+                  id,
+                  log_buffer);
+                }
+
+              }
+            }
+          }
+        else
+          {
+#endif  /* NVIDIA_GPUS */
+          if (gn->pjob == pjob)
+            {
+            gn->inuse = FALSE;
+            gn->pjob = NULL;
+
+            pnode->nd_ngpus_free++;
+            }
+          }
         }
       }
 

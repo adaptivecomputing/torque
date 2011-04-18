@@ -17,7 +17,7 @@ pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
 		     node_manager.c pbsd_init.c pbsd_main.c \
 		     process_request.c queue_attr_def.c queue_func.c \
 		     queue_recov.c reply_send.c req_delete.c \
-                     req_deletearray.c req_getcred.c \
+		     req_deletearray.c req_getcred.c req_gpuctrl.c \
 		     req_holdjob.c req_jobobit.c req_locate.c req_manager.c \
 		     req_message.c req_modify.c req_movejob.c req_quejob.c \
 		     req_register.c req_rerun.c req_rescq.c req_runjob.c \
