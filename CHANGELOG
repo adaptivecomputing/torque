@@ -35,6 +35,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - also remove the procct resource when it is applied because of a default (backported from 3.0.1)
   e - allow an administator using the proxy user submission to also set the job id to be used 
       in TORQUE. This makes TORQUE easier to use in grid configurations. (backported from 3.0.2)
+  c - fix a segfault when queue has acl_group_enable and acl_group_sloppy set
+      true and no acl_groups are defined. (backported from 3.0.1)
 
 
 2.5.5
