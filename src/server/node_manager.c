@@ -5960,8 +5960,8 @@ void free_nodes(
             }
           }
         else
-          {
 #endif  /* NVIDIA_GPUS */
+          {
           if (gn->pjob == pjob)
             {
             gn->inuse = FALSE;
