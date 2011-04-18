@@ -664,8 +664,8 @@ void *req_quejob(
         pj->ji_have_nodes_request = 1;
         }
       }
-    /* identify the attribute by name */
 
+    /* identify the attribute by name */
     attr_index = find_attr(job_attr_def, psatl->al_name, JOB_ATR_LAST);
 
     if (attr_index < 0)
@@ -736,46 +736,15 @@ void *req_quejob(
       }    /* END if (rc != 0) */
 
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
-    }      /* END while (psatl != NULL) */
-
-  /* We need to check this for procct which was added at 2.5.6 */
-  if(!pj->ji_have_nodes_request)
-    {
-    attr_index = find_attr(job_attr_def, "Resource_List", JOB_ATR_LAST);
-
-    pdef = &job_attr_def[attr_index];
-
-    /* Is attribute not writeable by manager or by a server? */
-
-    if ((pdef->at_flags & resc_access_perm) == 0)
-      {
-      /* FAILURE */
-
-      job_purge(pj);
-
-      reply_badattr(PBSE_ATTRRO, 1, psatl, preq);
-
-      return;
-      }
-
-      /* decode attribute */
-
-    rc = pdef->at_decode(
-                 &pj->ji_wattr[attr_index],
-                 "Resource_List",
-                 "nodes",
-                 "1");
-
-    }
-
+    } /* END while (psatl != NULL) */
 
   /* perform any at_action routine declared for the attributes */
-
-  for (i = 0;i < JOB_ATR_LAST;++i)
+  for (i = 0; i < JOB_ATR_LAST; ++i)
     {
     pdef = &job_attr_def[i];
 
-    if ((pj->ji_wattr[i].at_flags & ATR_VFLAG_SET) && (pdef->at_action))
+    if ((pj->ji_wattr[i].at_flags & ATR_VFLAG_SET) && 
+        (pdef->at_action))
       {
       rc = pdef->at_action(&pj->ji_wattr[i], pj, ATR_ACTION_NEW);
 

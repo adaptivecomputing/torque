@@ -52,6 +52,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Added options to conditionally build munge, BLCR, high-availability, cpusets,
       and spooling. Also allows customization of the sendmail path and allows for 
       optional XML conversion to serverdb.
+  b - also remove the procct resource when it is applied because of a default
 
 3.0.0
   e - serverdb is now stored as xml, this is no longer configurable.
@@ -122,14 +123,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Made changes to record_jobinfo and supporting functions to be
       able to use dynamically allcated buffers for data. This fixed
       a problem where incoming data overran fixed sized buffers.
-  b - restored functionality for -W umask as reported in bugzilla 115
-      (backported from 3.0.1)
   b - Updated torque.spec.in to be able to handle the snapshot
       names of builds.
   e - Added new MOM configure option job_starter. This options will execute
       the script submitted in qsub to the executable or script provided
       as the argument to the job_starter option of the MOM configure file.
-  b - fix pbs_mom -q to work with parallel jobs (backported from 3.0.1)
   b - fixed a problem with pbs_server high availability where the current 
       server could not keep the HA lock. The problem was a result of truncating
       the directory name where the lock file was kept. TORQUE would fail to 
@@ -147,16 +145,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       high-availability, cpusets, and spooling. Also allows customization of the
       sendmail path and allows for optional XML conversion to serverdb.
   b - --with-tcp-retry-limit now actually changes things without needing to run autoheader
-  e - allow more than 5 concurrent connections to TORQUE using pbsD_connect. Increase it to 10
-      (backported from 3.0.1)
-  b - fix a segfault when receiving an obit for a job that no longer exists (backported from 3.0.1)
-  b - Fixed a bug in patch submitted by Martin Siegert for Bugzilla 116. This patch adds a
-      new resource named procct. procct allows administrators the ability to limit jobs
-      based on total execution slots (ppn) for a job. The bug occured when a -l nodes=x
-      option was not used in the qsub operation. The procct resource needs to be kept 
-      exclusively in TORQUE. But without the -l option the procct resource was written
-      to the Resource_List attribute and Moab treated procct as a generic resource. Because
-      there are no generic resources named procct the job will not be run by Moab.
   b - Fixed a problem with minimum sizes in queues. Minimum sizes were not getting enforced because
       the logic checking the queue against the user request used and && when it need a || in the 
       comparison.
@@ -189,21 +177,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Added a "create" method to pbs_server init.d script so a serverdb file
       can be created if it does not exist at startup time. This is an enhancement
       in reference to Bugzilla bug 90.
-  e - Add code to verify the group list as well when VALIDATEGROUPS is set in torque.cfg
-      (backported from 3.0.1)
-  b - Fix a bug where if geometry requests are enabled and cpusets are enabled, the cpuset
-      wasn't deleted unless a geometry request was made. (backported from 3.0.1)
-  b - Fix a race condition when starting pbs_mom with the -q option. exitstatus was getting 
-      overwritten and as a result jobs would not always be requeued to pbs_server
-      but were being deleted instead. (backported from 3.0.1)
-  e - Add a configure option --with-tcp-retry-limit to prevent potential 4+ hour hangs on 
-      pbs_server. We recommend --with-tcp-retry-limit=2 (backported from 3.0.1)
-  b - preserve the order on array strings in TORQUE, like the route_destinations for a 
-      routing queue (backported from 3.0.1)
-  b - fix bugzilla #111, multi-line environment variables causing errors in TORQUE.
-      (backported from 3.0.1)
-  b - allow apostrophes in Mail_Users attributes, as apostrophes are rare but legal email
-      characters (backported from 3.0.1)
   b - Fixed a problem in parse_node_token where the local static variable pt would be advanced
       past the end of the line input if there is no newline character at the end of the nodes 
       file.
@@ -871,8 +844,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix qdel of entire job arrays for non operator/managers
   b - fix problem where job array .AR files are not saved to disk
   b - fixed problem with tracking job memory usage on OS X
-  b - fix memory leak in server and mom with MoveJobFile requests
-      (backported from 2.3.1)
   b - pbs_server doesn't try to "upgrade" .JB files if they have a newer 
       version of the job_qs struct
 
@@ -997,7 +968,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - compile error with size_fs() on digitalunix
   e - pbs_server will now print build details with --about
   e - new freebsd5 mom arch for Freebsd 5.x and 6.x (trasz)
-  f - backported new queue attribute "max_user_queuable"
   e - optimize acl_group_sloppy
   e - fix "list_head" symbol clash on Solaris 10
   e - allow pam_pbssimpleauth to be built on OSX and Solaris

@@ -2378,11 +2378,14 @@ void set_resc_deflt(
   attribute *ji_wattr) /* I (optional) decoded attributes  */
 
   {
-  attribute *ja;
+  resource_def  *pctdef;
+  resource      *pctresc;
+  attribute     *ja;
 
-  pbs_queue *pque;
+  pbs_queue     *pque;
   attribute_def *pdef;
-  int i, rc;
+  int            i;
+  int            rc;
 
   pque = pjob->ji_qhdr;
 
@@ -2428,6 +2431,12 @@ void set_resc_deflt(
         }
       }
     }
+  
+  /* unset the procct resource if it has been set */
+  pctdef = find_resc_def(svr_resc_def, "procct", svr_resc_size);
+
+  if ((pctresc = find_resc_entry(ja, pctdef)) != NULL)
+    pctdef->rs_free(&pctresc->rs_value);
 
   return;
   }  /* END set_resc_deflt() */
