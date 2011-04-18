@@ -53,6 +53,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       and spooling. Also allows customization of the sendmail path and allows for 
       optional XML conversion to serverdb.
   b - also remove the procct resource when it is applied because of a default
+  c - fix a segfault when queue has acl_group_enable and acl_group_sloppy set
+      true and no acl_groups are defined.
 
 3.0.0
   e - serverdb is now stored as xml, this is no longer configurable.

@@ -1702,7 +1702,7 @@ int svr_chkque(
 
         pas = pque->qu_attr[QA_ATR_AclGroup].at_val.at_arst;
 
-        for (i = 0;i < pas->as_usedptr;i++)
+        for (i = 0; pas != NULL && i < pas->as_usedptr;i++)
           {
           if ((grp = getgrnam(pas->as_string[i])) == NULL)
             continue;
