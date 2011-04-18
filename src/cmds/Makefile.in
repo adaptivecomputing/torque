@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 
-SOURCES = $(pbs_track_SOURCES) $(pbsdsh_SOURCES) $(pbsnodes_SOURCES) $(pbspd_SOURCES) $(pbspoe_SOURCES) $(qalter_SOURCES) $(qchkpt_SOURCES) $(qdel_SOURCES) $(qdisable_SOURCES) $(qenable_SOURCES) $(qhold_SOURCES) $(qmgr_SOURCES) $(qmove_SOURCES) $(qmsg_SOURCES) $(qorder_SOURCES) $(qrerun_SOURCES) $(qrls_SOURCES) $(qrun_SOURCES) $(qselect_SOURCES) $(qsig_SOURCES) $(qstart_SOURCES) $(qstat_SOURCES) $(qstop_SOURCES) $(qsub_SOURCES) $(qterm_SOURCES)
+SOURCES = $(pbs_track_SOURCES) $(pbsdsh_SOURCES) $(pbsnodes_SOURCES) $(pbspd_SOURCES) $(pbspoe_SOURCES) $(qalter_SOURCES) $(qchkpt_SOURCES) $(qdel_SOURCES) $(qdisable_SOURCES) $(qenable_SOURCES) $(qgpumode_SOURCES) $(qgpureset_SOURCES) $(qhold_SOURCES) $(qmgr_SOURCES) $(qmove_SOURCES) $(qmsg_SOURCES) $(qorder_SOURCES) $(qrerun_SOURCES) $(qrls_SOURCES) $(qrun_SOURCES) $(qselect_SOURCES) $(qsig_SOURCES) $(qstart_SOURCES) $(qstat_SOURCES) $(qstop_SOURCES) $(qsub_SOURCES) $(qterm_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -47,7 +47,8 @@ bin_PROGRAMS = qalter$(EXEEXT) qdel$(EXEEXT) qhold$(EXEEXT) \
 	qsub$(EXEEXT) pbsdsh$(EXEEXT) qdisable$(EXEEXT) \
 	qenable$(EXEEXT) qrun$(EXEEXT) qstart$(EXEEXT) qstop$(EXEEXT) \
 	qterm$(EXEEXT) pbsnodes$(EXEEXT) qmgr$(EXEEXT) qchkpt$(EXEEXT) \
-	pbs_track$(EXEEXT) @PBSPOE@
+	qgpumode$(EXEEXT) qgpureset$(EXEEXT) pbs_track$(EXEEXT) \
+	@PBSPOE@ $(am__empty)
 EXTRA_PROGRAMS = pbspd$(EXEEXT) pbspoe$(EXEEXT)
 subdir = src/cmds
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -111,6 +112,14 @@ am_qenable_OBJECTS = qenable.$(OBJEXT)
 qenable_OBJECTS = $(am_qenable_OBJECTS)
 qenable_LDADD = $(LDADD)
 qenable_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am_qgpumode_OBJECTS = qgpumode.$(OBJEXT)
+qgpumode_OBJECTS = $(am_qgpumode_OBJECTS)
+qgpumode_LDADD = $(LDADD)
+qgpumode_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am_qgpureset_OBJECTS = qgpureset.$(OBJEXT)
+qgpureset_OBJECTS = $(am_qgpureset_OBJECTS)
+qgpureset_LDADD = $(LDADD)
+qgpureset_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_qhold_OBJECTS = qhold.$(OBJEXT)
 qhold_OBJECTS = $(am_qhold_OBJECTS)
 qhold_LDADD = $(LDADD)
@@ -187,21 +196,22 @@ LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 SOURCES = $(pbs_track_SOURCES) $(pbsdsh_SOURCES) $(pbsnodes_SOURCES) \
 	$(pbspd_SOURCES) $(pbspoe_SOURCES) $(qalter_SOURCES) \
 	$(qchkpt_SOURCES) $(qdel_SOURCES) $(qdisable_SOURCES) \
-	$(qenable_SOURCES) $(qhold_SOURCES) $(qmgr_SOURCES) \
+	$(qenable_SOURCES) $(qgpumode_SOURCES) $(qgpureset_SOURCES) \
+	$(qhold_SOURCES) $(qmgr_SOURCES) $(qmove_SOURCES) \
+	$(qmsg_SOURCES) $(qorder_SOURCES) $(qrerun_SOURCES) \
+	$(qrls_SOURCES) $(qrun_SOURCES) $(qselect_SOURCES) \
+	$(qsig_SOURCES) $(qstart_SOURCES) $(qstat_SOURCES) \
+	$(qstop_SOURCES) $(qsub_SOURCES) $(qterm_SOURCES)
+DIST_SOURCES = $(pbs_track_SOURCES) $(pbsdsh_SOURCES) \
+	$(pbsnodes_SOURCES) $(pbspd_SOURCES) $(pbspoe_SOURCES) \
+	$(qalter_SOURCES) $(qchkpt_SOURCES) $(qdel_SOURCES) \
+	$(qdisable_SOURCES) $(qenable_SOURCES) $(qgpumode_SOURCES) \
+	$(qgpureset_SOURCES) $(qhold_SOURCES) $(qmgr_SOURCES) \
 	$(qmove_SOURCES) $(qmsg_SOURCES) $(qorder_SOURCES) \
 	$(qrerun_SOURCES) $(qrls_SOURCES) $(qrun_SOURCES) \
 	$(qselect_SOURCES) $(qsig_SOURCES) $(qstart_SOURCES) \
 	$(qstat_SOURCES) $(qstop_SOURCES) $(qsub_SOURCES) \
 	$(qterm_SOURCES)
-DIST_SOURCES = $(pbs_track_SOURCES) $(pbsdsh_SOURCES) \
-	$(pbsnodes_SOURCES) $(pbspd_SOURCES) $(pbspoe_SOURCES) \
-	$(qalter_SOURCES) $(qchkpt_SOURCES) $(qdel_SOURCES) \
-	$(qdisable_SOURCES) $(qenable_SOURCES) $(qhold_SOURCES) \
-	$(qmgr_SOURCES) $(qmove_SOURCES) $(qmsg_SOURCES) \
-	$(qorder_SOURCES) $(qrerun_SOURCES) $(qrls_SOURCES) \
-	$(qrun_SOURCES) $(qselect_SOURCES) $(qsig_SOURCES) \
-	$(qstart_SOURCES) $(qstat_SOURCES) $(qstop_SOURCES) \
-	$(qsub_SOURCES) $(qterm_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -484,6 +494,8 @@ qstop_SOURCES = qstop.c
 qsub_SOURCES = qsub.c
 qterm_SOURCES = qterm.c
 qchkpt_SOURCES = qchkpt.c
+qgpumode_SOURCES = qgpumode.c
+qgpureset_SOURCES = qgpureset.c
 pbs_track_SOURCES = pbs_track.c
 CLEANFILES = $(dist_bin_SCRIPTS)
 do_subst = sed -e 's,[@]AWK[@],$(AWK),g'
@@ -578,6 +590,12 @@ qdisable$(EXEEXT): $(qdisable_OBJECTS) $(qdisable_DEPENDENCIES)
 qenable$(EXEEXT): $(qenable_OBJECTS) $(qenable_DEPENDENCIES) 
 	@rm -f qenable$(EXEEXT)
 	$(LINK) $(qenable_LDFLAGS) $(qenable_OBJECTS) $(qenable_LDADD) $(LIBS)
+qgpumode$(EXEEXT): $(qgpumode_OBJECTS) $(qgpumode_DEPENDENCIES) 
+	@rm -f qgpumode$(EXEEXT)
+	$(LINK) $(qgpumode_LDFLAGS) $(qgpumode_OBJECTS) $(qgpumode_LDADD) $(LIBS)
+qgpureset$(EXEEXT): $(qgpureset_OBJECTS) $(qgpureset_DEPENDENCIES) 
+	@rm -f qgpureset$(EXEEXT)
+	$(LINK) $(qgpureset_LDFLAGS) $(qgpureset_OBJECTS) $(qgpureset_LDADD) $(LIBS)
 qhold$(EXEEXT): $(qhold_OBJECTS) $(qhold_DEPENDENCIES) 
 	@rm -f qhold$(EXEEXT)
 	$(LINK) $(qhold_LDFLAGS) $(qhold_OBJECTS) $(qhold_LDADD) $(LIBS)
@@ -660,6 +678,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qdel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qdisable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qenable.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qgpumode.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qgpureset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qhold.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qmgr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qmove.Po@am__quote@

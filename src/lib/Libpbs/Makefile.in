@@ -79,20 +79,21 @@ am_libtorque_la_OBJECTS = csv.lo dis.lo discui_.lo discul_.lo \
 	dec_QueueJob.lo dec_Reg.lo dec_ReqExt.lo dec_ReqHdr.lo \
 	dec_Resc.lo dec_ReturnFile.lo dec_rpyc.lo dec_rpys.lo \
 	dec_RunJob.lo dec_Shut.lo dec_Sig.lo dec_Status.lo \
-	dec_svrattrl.lo dec_Track.lo enc_attrl.lo enc_attropl.lo \
-	enc_CpyFil.lo enc_JobCred.lo enc_JobFile.lo enc_JobId.lo \
-	enc_JobObit.lo enc_Manage.lo enc_MoveJob.lo enc_MsgJob.lo \
-	enc_QueueJob.lo enc_Reg.lo enc_reply.lo enc_ReturnFile.lo \
-	enc_ReqExt.lo enc_ReqHdr.lo enc_RunJob.lo enc_Shut.lo \
-	enc_Sig.lo enc_Status.lo enc_svrattrl.lo enc_Track.lo \
-	get_svrport.lo nonblock.lo PBS_attr.lo pbsD_alterjo.lo \
-	pbsD_asyrun.lo PBS_data.lo pbsD_connect.lo pbsD_deljob.lo \
-	pbsD_holdjob.lo pbsD_chkptjob.lo pbsD_locjob.lo \
-	PBSD_manage2.lo pbsD_manager.lo pbsD_movejob.lo \
-	PBSD_manager_caps.lo PBSD_msg2.lo pbsD_msgjob.lo \
-	pbsD_orderjo.lo PBSD_rdrpy.lo pbsD_rerunjo.lo pbsD_resc.lo \
-	pbsD_rlsjob.lo pbsD_runjob.lo pbsD_selectj.lo PBSD_sig2.lo \
-	pbsD_sigjob.lo pbsD_stagein.lo pbsD_statjob.lo \
+	dec_svrattrl.lo dec_Track.lo dec_Gpu.lo enc_attrl.lo \
+	enc_attropl.lo enc_CpyFil.lo enc_JobCred.lo enc_JobFile.lo \
+	enc_JobId.lo enc_JobObit.lo enc_Manage.lo enc_MoveJob.lo \
+	enc_MsgJob.lo enc_QueueJob.lo enc_Reg.lo enc_reply.lo \
+	enc_ReturnFile.lo enc_ReqExt.lo enc_Gpu.lo enc_ReqHdr.lo \
+	enc_RunJob.lo enc_Shut.lo enc_Sig.lo enc_Status.lo \
+	enc_svrattrl.lo enc_Track.lo get_svrport.lo nonblock.lo \
+	PBS_attr.lo pbsD_alterjo.lo pbsD_asyrun.lo PBS_data.lo \
+	pbsD_connect.lo pbsD_deljob.lo pbsD_holdjob.lo \
+	pbsD_chkptjob.lo pbsD_locjob.lo pbsD_gpuctrl.lo \
+	PBSD_gpuctrl2.lo PBSD_manage2.lo pbsD_manager.lo \
+	pbsD_movejob.lo PBSD_manager_caps.lo PBSD_msg2.lo \
+	pbsD_msgjob.lo pbsD_orderjo.lo PBSD_rdrpy.lo pbsD_rerunjo.lo \
+	pbsD_resc.lo pbsD_rlsjob.lo pbsD_runjob.lo pbsD_selectj.lo \
+	PBSD_sig2.lo pbsD_sigjob.lo pbsD_stagein.lo pbsD_statjob.lo \
 	pbsD_statnode.lo pbsD_statque.lo pbsD_statsrv.lo \
 	PBSD_status2.lo PBSD_status.lo pbsD_submit.lo \
 	PBSD_submit_caps.lo pbsD_termin.lo pbs_geterrmg.lo \
@@ -394,6 +395,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/dec_RunJob.c ../Libifl/dec_Shut.c \
 		    ../Libifl/dec_Sig.c ../Libifl/dec_Status.c \
 		    ../Libifl/dec_svrattrl.c ../Libifl/dec_Track.c \
+		    ../Libifl/dec_Gpu.c \
 		    ../Libifl/enc_attrl.c ../Libifl/enc_attropl.c \
 		    ../Libifl/enc_CpyFil.c ../Libifl/enc_JobCred.c \
 		    ../Libifl/enc_JobFile.c ../Libifl/enc_JobId.c \
@@ -401,7 +403,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/enc_MoveJob.c ../Libifl/enc_MsgJob.c \
 		    ../Libifl/enc_QueueJob.c ../Libifl/enc_Reg.c \
 		    ../Libifl/enc_reply.c ../Libifl/enc_ReturnFile.c \
-		    ../Libifl/enc_ReqExt.c \
+		    ../Libifl/enc_ReqExt.c ../Libifl/enc_Gpu.c \
 		    ../Libifl/enc_ReqHdr.c ../Libifl/enc_RunJob.c \
 		    ../Libifl/enc_Shut.c ../Libifl/enc_Sig.c \
 		    ../Libifl/enc_Status.c ../Libifl/enc_svrattrl.c \
@@ -411,6 +413,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/PBS_data.c ../Libifl/pbsD_connect.c \
 		    ../Libifl/pbsD_deljob.c ../Libifl/pbsD_holdjob.c  \
 		    ../Libifl/pbsD_chkptjob.c  ../Libifl/pbsD_locjob.c \
+		    ../Libifl/pbsD_gpuctrl.c ../Libifl/PBSD_gpuctrl2.c \
 		    ../Libifl/PBSD_manage2.c ../Libifl/pbsD_manager.c \
 		    ../Libifl/pbsD_movejob.c ../Libifl/PBSD_manager_caps.c \
 		    ../Libifl/PBSD_msg2.c ../Libifl/pbsD_msgjob.c \
@@ -511,6 +514,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PBSD_gpuctrl2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PBSD_manage2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PBSD_manager_caps.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PBSD_msg2.Plo@am__quote@
@@ -528,6 +532,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cvtdate.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_Authen.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_CpyFil.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_Gpu.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_JobCred.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_JobFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dec_JobId.Plo@am__quote@
@@ -586,6 +591,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diswui_.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diswul.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_CpyFil.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_Gpu.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_JobCred.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_JobFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enc_JobId.Plo@am__quote@
@@ -630,6 +636,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsD_chkptjob.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsD_connect.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsD_deljob.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsD_gpuctrl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsD_holdjob.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsD_locjob.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbsD_manager.Plo@am__quote@
@@ -1105,6 +1112,13 @@ dec_Track.lo: ../Libifl/dec_Track.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o dec_Track.lo `test -f '../Libifl/dec_Track.c' || echo '$(srcdir)/'`../Libifl/dec_Track.c
 
+dec_Gpu.lo: ../Libifl/dec_Gpu.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT dec_Gpu.lo -MD -MP -MF "$(DEPDIR)/dec_Gpu.Tpo" -c -o dec_Gpu.lo `test -f '../Libifl/dec_Gpu.c' || echo '$(srcdir)/'`../Libifl/dec_Gpu.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/dec_Gpu.Tpo" "$(DEPDIR)/dec_Gpu.Plo"; else rm -f "$(DEPDIR)/dec_Gpu.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../Libifl/dec_Gpu.c' object='dec_Gpu.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o dec_Gpu.lo `test -f '../Libifl/dec_Gpu.c' || echo '$(srcdir)/'`../Libifl/dec_Gpu.c
+
 enc_attrl.lo: ../Libifl/enc_attrl.c
 @am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT enc_attrl.lo -MD -MP -MF "$(DEPDIR)/enc_attrl.Tpo" -c -o enc_attrl.lo `test -f '../Libifl/enc_attrl.c' || echo '$(srcdir)/'`../Libifl/enc_attrl.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/enc_attrl.Tpo" "$(DEPDIR)/enc_attrl.Plo"; else rm -f "$(DEPDIR)/enc_attrl.Tpo"; exit 1; fi
@@ -1209,6 +1223,13 @@ enc_ReqExt.lo: ../Libifl/enc_ReqExt.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../Libifl/enc_ReqExt.c' object='enc_ReqExt.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o enc_ReqExt.lo `test -f '../Libifl/enc_ReqExt.c' || echo '$(srcdir)/'`../Libifl/enc_ReqExt.c
+
+enc_Gpu.lo: ../Libifl/enc_Gpu.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT enc_Gpu.lo -MD -MP -MF "$(DEPDIR)/enc_Gpu.Tpo" -c -o enc_Gpu.lo `test -f '../Libifl/enc_Gpu.c' || echo '$(srcdir)/'`../Libifl/enc_Gpu.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/enc_Gpu.Tpo" "$(DEPDIR)/enc_Gpu.Plo"; else rm -f "$(DEPDIR)/enc_Gpu.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../Libifl/enc_Gpu.c' object='enc_Gpu.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o enc_Gpu.lo `test -f '../Libifl/enc_Gpu.c' || echo '$(srcdir)/'`../Libifl/enc_Gpu.c
 
 enc_ReqHdr.lo: ../Libifl/enc_ReqHdr.c
 @am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT enc_ReqHdr.lo -MD -MP -MF "$(DEPDIR)/enc_ReqHdr.Tpo" -c -o enc_ReqHdr.lo `test -f '../Libifl/enc_ReqHdr.c' || echo '$(srcdir)/'`../Libifl/enc_ReqHdr.c; \
@@ -1335,6 +1356,20 @@ pbsD_locjob.lo: ../Libifl/pbsD_locjob.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../Libifl/pbsD_locjob.c' object='pbsD_locjob.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pbsD_locjob.lo `test -f '../Libifl/pbsD_locjob.c' || echo '$(srcdir)/'`../Libifl/pbsD_locjob.c
+
+pbsD_gpuctrl.lo: ../Libifl/pbsD_gpuctrl.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pbsD_gpuctrl.lo -MD -MP -MF "$(DEPDIR)/pbsD_gpuctrl.Tpo" -c -o pbsD_gpuctrl.lo `test -f '../Libifl/pbsD_gpuctrl.c' || echo '$(srcdir)/'`../Libifl/pbsD_gpuctrl.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbsD_gpuctrl.Tpo" "$(DEPDIR)/pbsD_gpuctrl.Plo"; else rm -f "$(DEPDIR)/pbsD_gpuctrl.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../Libifl/pbsD_gpuctrl.c' object='pbsD_gpuctrl.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pbsD_gpuctrl.lo `test -f '../Libifl/pbsD_gpuctrl.c' || echo '$(srcdir)/'`../Libifl/pbsD_gpuctrl.c
+
+PBSD_gpuctrl2.lo: ../Libifl/PBSD_gpuctrl2.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT PBSD_gpuctrl2.lo -MD -MP -MF "$(DEPDIR)/PBSD_gpuctrl2.Tpo" -c -o PBSD_gpuctrl2.lo `test -f '../Libifl/PBSD_gpuctrl2.c' || echo '$(srcdir)/'`../Libifl/PBSD_gpuctrl2.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/PBSD_gpuctrl2.Tpo" "$(DEPDIR)/PBSD_gpuctrl2.Plo"; else rm -f "$(DEPDIR)/PBSD_gpuctrl2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../Libifl/PBSD_gpuctrl2.c' object='PBSD_gpuctrl2.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o PBSD_gpuctrl2.lo `test -f '../Libifl/PBSD_gpuctrl2.c' || echo '$(srcdir)/'`../Libifl/PBSD_gpuctrl2.c
 
 PBSD_manage2.lo: ../Libifl/PBSD_manage2.c
 @am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT PBSD_manage2.lo -MD -MP -MF "$(DEPDIR)/PBSD_manage2.Tpo" -c -o PBSD_manage2.lo `test -f '../Libifl/PBSD_manage2.c' || echo '$(srcdir)/'`../Libifl/PBSD_manage2.c; \

@@ -72,18 +72,18 @@ am_pbs_server_OBJECTS = accounting.$(OBJEXT) array_func.$(OBJEXT) \
 	queue_func.$(OBJEXT) queue_recov.$(OBJEXT) \
 	reply_send.$(OBJEXT) req_delete.$(OBJEXT) \
 	req_deletearray.$(OBJEXT) req_getcred.$(OBJEXT) \
-	req_holdjob.$(OBJEXT) req_jobobit.$(OBJEXT) \
-	req_locate.$(OBJEXT) req_manager.$(OBJEXT) \
-	req_message.$(OBJEXT) req_modify.$(OBJEXT) \
-	req_movejob.$(OBJEXT) req_quejob.$(OBJEXT) \
-	req_register.$(OBJEXT) req_rerun.$(OBJEXT) req_rescq.$(OBJEXT) \
-	req_runjob.$(OBJEXT) req_select.$(OBJEXT) \
-	req_shutdown.$(OBJEXT) req_signal.$(OBJEXT) req_stat.$(OBJEXT) \
-	req_track.$(OBJEXT) resc_def_all.$(OBJEXT) run_sched.$(OBJEXT) \
-	stat_job.$(OBJEXT) svr_attr_def.$(OBJEXT) \
-	svr_chk_owner.$(OBJEXT) svr_connect.$(OBJEXT) \
-	svr_func.$(OBJEXT) svr_jobfunc.$(OBJEXT) svr_mail.$(OBJEXT) \
-	svr_movejob.$(OBJEXT) svr_recov.$(OBJEXT) \
+	req_gpuctrl.$(OBJEXT) req_holdjob.$(OBJEXT) \
+	req_jobobit.$(OBJEXT) req_locate.$(OBJEXT) \
+	req_manager.$(OBJEXT) req_message.$(OBJEXT) \
+	req_modify.$(OBJEXT) req_movejob.$(OBJEXT) \
+	req_quejob.$(OBJEXT) req_register.$(OBJEXT) \
+	req_rerun.$(OBJEXT) req_rescq.$(OBJEXT) req_runjob.$(OBJEXT) \
+	req_select.$(OBJEXT) req_shutdown.$(OBJEXT) \
+	req_signal.$(OBJEXT) req_stat.$(OBJEXT) req_track.$(OBJEXT) \
+	resc_def_all.$(OBJEXT) run_sched.$(OBJEXT) stat_job.$(OBJEXT) \
+	svr_attr_def.$(OBJEXT) svr_chk_owner.$(OBJEXT) \
+	svr_connect.$(OBJEXT) svr_func.$(OBJEXT) svr_jobfunc.$(OBJEXT) \
+	svr_mail.$(OBJEXT) svr_movejob.$(OBJEXT) svr_recov.$(OBJEXT) \
 	svr_resccost.$(OBJEXT) svr_task.$(OBJEXT) req_tokens.$(OBJEXT) \
 	job_qs_upgrade.$(OBJEXT) req_holdarray.$(OBJEXT) \
 	svr_format_job.$(OBJEXT)
@@ -361,7 +361,7 @@ pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
 		     node_manager.c pbsd_init.c pbsd_main.c \
 		     process_request.c queue_attr_def.c queue_func.c \
 		     queue_recov.c reply_send.c req_delete.c \
-                     req_deletearray.c req_getcred.c \
+		     req_deletearray.c req_getcred.c req_gpuctrl.c \
 		     req_holdjob.c req_jobobit.c req_locate.c req_manager.c \
 		     req_message.c req_modify.c req_movejob.c req_quejob.c \
 		     req_register.c req_rerun.c req_rescq.c req_runjob.c \
@@ -468,6 +468,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_delete.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_deletearray.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_getcred.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_gpuctrl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_holdarray.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_holdjob.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/req_jobobit.Po@am__quote@
