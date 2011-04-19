@@ -387,6 +387,7 @@ void *req_quejob(
   attribute  tempattr;
   char           EMsg[MAXPATHLEN];
   
+  struct stat stat_buf;
   /* set basic (user) level access permission */
 
   resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
@@ -891,6 +892,36 @@ void *req_quejob(
           pj->ji_wattr[JOB_ATR_outpath].at_val.at_str,
           (int)'o')));
       }
+    else if (pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET)
+      {
+      /* check to see if the path pointed to is a directory. If so apendd the default output file name.
+         Otherwise we treat the string as a path to a file */
+      char *ptr;
+
+      ptr = strchr(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, ':');
+      if(ptr)
+        {
+        ptr++;
+        rc = stat(ptr, &stat_buf);
+        }
+      else 
+        {
+        rc = stat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, &stat_buf);
+        }
+      if(rc == 0)
+        {
+        if(S_ISDIR(stat_buf.st_mode))
+          {
+/*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
+          replace_attr_string(
+            &pj->ji_wattr[JOB_ATR_outpath],
+            (add_std_filename(pj,
+            pj->ji_wattr[JOB_ATR_outpath].at_val.at_str,
+            (int)'o')));
+      
+          }
+        }
+      }
 
     if (!(pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) ||
         (((pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] == ':'))))
@@ -914,6 +945,36 @@ void *req_quejob(
           (add_std_filename(pj,
           pj->ji_wattr[JOB_ATR_errpath].at_val.at_str,
           (int)'e')));
+      }
+    else if (pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET)
+      {
+        /* check to see if the path pointed to is a directory. If so apendd the default output file name.
+           Otherwise we treat the string as a path to a file */
+      char *ptr;
+
+      ptr = strchr(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, ':');
+      if(ptr)
+        {
+        ptr++;
+        rc = stat(ptr, &stat_buf);
+        }
+      else 
+        {
+        rc = stat(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, &stat_buf);
+        }
+      if(rc == 0)
+        {
+        if(S_ISDIR(stat_buf.st_mode))
+          {
+/*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
+          replace_attr_string(
+            &pj->ji_wattr[JOB_ATR_errpath],
+            (add_std_filename(pj,
+            pj->ji_wattr[JOB_ATR_errpath].at_val.at_str,
+            (int)'e')));
+      
+          }
+        }
       }
 
     if ((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str == NULL) ||

@@ -150,6 +150,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed a problem with minimum sizes in queues. Minimum sizes were not getting enforced because
       the logic checking the queue against the user request used and && when it need a || in the 
       comparison.
+  e - The -e and -o options of qsub allow a user to specify a path or optionally a filename for output. 
+      If the path given by the user ended with a directory name but no '/' character at the end then
+      TORQUE was confused and would not convert the .OU or .ER file to the final output/error file. The
+      code has now been changed to stat the path to see if the end path element is a path or directory
+      and handled appropriately.
 
 
 2.5.5
