@@ -623,6 +623,7 @@ const char *PBSServerCmds[] =
   "CLUSTER_ADDRS",
   "UPDATE",
   "STATUS",
+  "GPU_STATUS",
   NULL
   };
 
