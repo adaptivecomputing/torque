@@ -1018,7 +1018,7 @@ static time_t next_task()
 
   struct work_task *ptask;
   time_t            tilwhen = server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long;
-  void             *mutex;
+  void             *mutex = NULL;
 
   time_now = time((time_t *)0);
 

@@ -793,7 +793,7 @@ void on_job_exit(
   if (pj == NULL)
     {
     sprintf(log_buffer, "on_job_exit called with INVALID pjob: %p",
-            pjob);
+        (void *)pjob);
   
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"NULL",log_buffer);
 
@@ -802,8 +802,8 @@ void on_job_exit(
   else
     {
     sprintf(log_buffer, "on_job_exit valid pjob: %p (substate=%d)",
-            pjob,
-            pjob->ji_qs.ji_substate);
+        (void *)pjob,
+        pjob->ji_qs.ji_substate);
     
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"NULL",log_buffer);
     }

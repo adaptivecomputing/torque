@@ -704,7 +704,7 @@ void process_Dreply(
 
   struct batch_request *request;
 
-  void                 *mutex;
+  void                 *mutex = NULL;
 
   /* find the work task for the socket, it will point us to the request */
 #ifdef ENABLE_PTHREADS
