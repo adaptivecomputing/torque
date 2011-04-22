@@ -112,8 +112,7 @@ pbs_gpumode(int c, char *node, char *gpuid, int gpumode)
 
 
 
-int
-pbs_gpureset(int c, char *node, char *gpuid, int permanent, int vol)
+int pbs_gpureset(int c, char *node, char *gpuid, int permanent, int vol)
   {
   int      rc;
 

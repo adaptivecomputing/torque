@@ -184,6 +184,7 @@ void req_holdjob(struct batch_request *preq);
 void req_checkpointjob(struct batch_request *preq);
 void req_messagejob(struct batch_request *preq);
 void req_modifyjob(struct batch_request *preq);
+void req_gpuctrl(struct batch_request *preq);
 #ifndef PBS_MOM
 void req_orderjob(struct batch_request *preq);
 void req_rescreserve(struct batch_request *preq);

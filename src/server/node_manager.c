@@ -5012,7 +5012,7 @@ int set_nodes(
   struct pbssubn *snp;
   char           *nodelist;
   char           *gpu_str = NULL;
-
+  struct gpusubn *gn;
   char   ProcBMStr[MAX_BM];
 
   if (FailHost != NULL)
@@ -5122,7 +5122,7 @@ int set_nodes(
       DBPRT(("%s\n",
              log_buffer));
 
-      struct gpusubn *gn = pnode->nd_gpusn + j;
+      gn = pnode->nd_gpusn + j;
       if ((gn->state == gpu_unavailable) ||
 #ifdef NVIDIA_GPUS
           ((gn->state == gpu_exclusive) && pnode->nd_gpus_real) ||
@@ -5595,7 +5595,7 @@ int node_avail(
   register int xdown;
   int          node_req = 1;
   int          gpu_req = 0;
-  int          gpu_mode = gpu_exclusive_thread;
+  /*int          gpu_mode = gpu_exclusive_thread;*/
 
   if (spec == NULL)
     {
@@ -5883,8 +5883,8 @@ void free_nodes(
   int             i;
   int             j;
   char           *gpu_str = NULL;
-  char            tmp_str[PBS_MAXHOSTNAME + 5];
-  char            num_str[6];
+  /*char            tmp_str[PBS_MAXHOSTNAME + 5];*/
+  /*char            num_str[6];*/
 
   if (LOGLEVEL >= 3)
     {

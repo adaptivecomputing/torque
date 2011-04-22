@@ -104,7 +104,9 @@
 
 /* Private Functions Local to this file */
 
+#ifdef NVIDIA_GPUS
 static void process_gpu_request_reply(struct work_task *);
+#endif
 
 /* Global Data Items: */
 
@@ -121,15 +123,11 @@ void req_gpuctrl(
   {
   char   *id = "req_gpuctrl";
 
-  struct pbsnode *pnode = NULL;
   char  *nodename = NULL;
   char  *gpuid = NULL;
   int    gpumode = -1;
-  int    gpuidx = -1;
   int    reset_perm = -1;
   int    reset_vol = -1;
-  int    rc = 0;
-  int    conn;
 
   if ((preq->rq_perm &
        (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR)) == 0)

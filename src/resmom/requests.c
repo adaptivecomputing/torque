@@ -1231,7 +1231,6 @@ void req_gpuctrl(
   int   gpumode = -1;
   int   reset_perm = -1;
   int   reset_vol = -1;
-  int   rc = -1;
 
   gpuid = preq->rq_ind.rq_gpuctrl.rq_gpuid;
   gpumode = preq->rq_ind.rq_gpuctrl.rq_gpumode;

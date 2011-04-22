@@ -96,6 +96,8 @@ int   c;
 char *node;
 char *gpuid;
 int   gpumode;
+int  reset_perm;
+int  reset_vol;
 char *extend;
   {
   int sock;

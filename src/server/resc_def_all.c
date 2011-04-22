@@ -116,7 +116,6 @@ extern struct server server;
 
 static int decode_nodes(struct attribute *, char *, char *, char *);
 static int set_node_ct(resource *, attribute *, int actmode);
-static int set_proc_ct(resource *, attribute *, int actmode);
 static int set_tokens(struct attribute *attr, struct attribute *new, enum batch_op actmode);
 static int set_mppnodect(resource *, attribute *, int actmode);
 resource_def *svr_resc_def;
@@ -461,7 +460,7 @@ resource_def svr_resc_def_const[] =
     encode_size,
     set_size,
     comp_size,
-    set_proc_ct,
+    free_null,
     NULL_FUNC,
     READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
     ATR_TYPE_SIZE
@@ -1124,73 +1123,6 @@ int set_node_ct(
   return(0);
   }  /* END set_node_ct() */
 
- /*
- * set_proc_ct = set processor count
- *
- * This is the "at_action" routine for the resource "procs".
- * When the resource_list attribute changes, then set/update
- * the value of the resource "procct"
- */
-
-int set_proc_ct(
-
-  resource  *pprocsp,  /* I */
-  attribute *pattr,    /* I */
-  int        actmode)  /* I */
-
-  {
-  resource *pnodesp;
-  resource_def *pndef;
-  resource *ppct;
-  resource_def *ppdef;
-
-  if (actmode == ATR_ACTION_RECOV)
-    {
-    /* SUCCESS */
-
-    return(0);
-    }
-
-  /* set "procct" to count of processors in "nodes" plus "procs" */
-
-  ppdef = find_resc_def(svr_resc_def, "procct", svr_resc_size);
-
-  if (ppdef == NULL)
-    {
-    return(PBSE_SYSTEM);
-    }
-
-  if ((ppct = find_resc_entry(pattr, ppdef)) == NULL)
-    {
-    if ((ppct = add_resource_entry(pattr, ppdef)) == 0)
-      {
-      return(PBSE_SYSTEM);
-      }
-    }
-
-  pndef = find_resc_def(svr_resc_def, "nodes", svr_resc_size);
-  if (pndef == NULL)
-    {
-    return(PBSE_SYSTEM);
-    }
-
-  if ((pnodesp = find_resc_entry(pattr, pndef)) == NULL)
-    {
-    ppct->rs_value.at_val.at_long =
-      pprocsp->rs_value.at_val.at_long;
-    }
-  else
-    {
-    ppct->rs_value.at_val.at_long =
-      pprocsp->rs_value.at_val.at_long;
-
-    count_proc(pnodesp->rs_value.at_val.at_str);
-    }
-
-  ppct->rs_value.at_flags |= ATR_VFLAG_SET;
-
-  return(0);
-  }  /* END set_proc_ct() */
 
 
 
