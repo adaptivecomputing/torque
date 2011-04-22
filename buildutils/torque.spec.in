@@ -127,8 +127,10 @@ Group: Applications/System
 Requires: %{name} = %{version}-%{release}
 Provides: pbs-client pbs-mom %{?with_pam:pbs-pam}
 Provides: %{name}-mom = %{version}-%{release}
+Obsoletes: %{name}-mom < %{version}-%{release}
 %if %{with pam}
 Provides: %{name}-pam = %{version}-%{release}
+Obsoletes: %{name}-pam < %{version}-%{release}
 %endif
 
 %description client
@@ -353,6 +355,8 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 
 %files client
 %defattr(-, root, root)
+%dir %{torque_home}/mom_priv
+%config(noreplace) %{torque_home}/mom_priv/config
 %{_initrddir}/pbs_mom
 %{_sbindir}/pbs_demux
 %{_sbindir}/pbs_mom
@@ -362,7 +366,7 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %endif
 %{torque_home}/checkpoint
 %{torque_home}/mom_logs
-%{torque_home}/mom_priv
+%{torque_home}/mom_priv/jobs/
 %{torque_home}/undelivered
 
 %if %{with gui}
