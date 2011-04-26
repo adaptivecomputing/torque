@@ -101,6 +101,11 @@
 #include "svrfunc.h"
 #include "log.h"
 
+/* External Functions */
+
+#ifdef NVIDIA_GPUS
+extern int gpu_entry_by_id(struct pbsnode *,char *, int);
+#endif  /* NVIDIA_GPUS */
 
 /* Private Functions Local to this file */
 
@@ -128,6 +133,12 @@ void req_gpuctrl(
   int    gpumode = -1;
   int    reset_perm = -1;
   int    reset_vol = -1;
+#ifdef NVIDIA_GPUS
+  struct pbsnode *pnode = NULL;
+  int    gpuidx = -1;
+  int    rc = 0;
+  int    conn;
+#endif  /* NVIDIA_GPUS */
 
   if ((preq->rq_perm &
        (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR)) == 0)

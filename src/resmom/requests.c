@@ -138,6 +138,12 @@ extern int TTmpDirName(job*, char *);
 
 #endif /* HAVE_WORDEXP */
 
+#ifdef NVIDIA_GPUS
+int setgpumode(char *, int);
+int resetgpuecc(char *, int, int);
+extern void mom_server_all_update_gpustat(void);
+#endif /* NVIDIA_GPUS */
+
 /* External Global Data Items */
 
 extern unsigned int alarm_time;
@@ -1231,6 +1237,9 @@ void req_gpuctrl(
   int   gpumode = -1;
   int   reset_perm = -1;
   int   reset_vol = -1;
+#ifdef NVIDIA_GPUS
+  int   rc = -1;
+#endif  /* NVIDIA_GPUS */
 
   gpuid = preq->rq_ind.rq_gpuctrl.rq_gpuid;
   gpumode = preq->rq_ind.rq_gpuctrl.rq_gpumode;

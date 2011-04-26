@@ -301,6 +301,9 @@ extern char *dependent(char *res, struct rm_attribute *attr);
 extern char *reqgres(struct rm_attribute *);
 
 #ifdef NVIDIA_GPUS
+extern int find_file(char *, char *);
+extern int MXMLFromString(mxml_t **, char *, char **, char *);
+ 
 extern int             MOMNvidiaDriverVersion;
 #endif  /* NVIDIA_GPUS */
 
@@ -1376,7 +1379,6 @@ static char *gpus(
   int  total_bytes_read = 0;
   char buf[RETURN_STRING_SIZE];
   char cmdbuf[101];
-  int  rc;
 
   if (!check_nvidia_path())
     {
@@ -1462,10 +1464,7 @@ static int gpumodes(
 
   FILE *fd;
   char *ptr; /* pointer to the current place to copy data into buf */
-  int  bytes_read;
-  int  total_bytes_read = 0;
   char buf[201];
-  int  rc;
   int  idx;
   int  gpuid;
   int  gpumode;
@@ -1475,7 +1474,7 @@ static int gpumodes(
     return (FALSE);
     }
 
-  for (idx=0; idx++; idx<buffer_size)
+  for (idx=0; idx<buffer_size; idx++)
     {
     buffer[idx] = -1;
     }
@@ -2168,11 +2167,8 @@ void generate_server_gpustatus_smi(
   static char id[] = "generate_server_gpustatus_smi";
 
   char *dataptr, *outptr, *tmpptr1, *tmpptr2, *savptr;
-  char *parent;
-  char *child;
   char gpu_string[16 * 1024];
   int  gpu_modes[32];
-  int  rc;
   int  have_modes = FALSE;
   int  gpuid;
   int  drv_ver = 0;

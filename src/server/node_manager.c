@@ -152,6 +152,10 @@ extern int  has_nodes;
 
 extern time_t    time_now;
 
+#ifdef NVIDIA_GPUS
+extern int create_a_gpusubnode(struct pbsnode *);
+#endif  /* NVIDIA_GPUS */
+
 extern int ctnodes(char *);
 extern char *path_home;
 extern char *path_nodes;
@@ -185,6 +189,9 @@ int node_satisfies_request(struct pbsnode *,char *);
 int reserve_node(struct pbsnode *,short,job *,char *,struct howl **);
 int build_host_list(struct howl **,struct pbssubn *,struct pbsnode *);
 int procs_available(int proc_ct);
+#ifdef NVIDIA_GPUS
+int gpu_entry_by_id(struct pbsnode *,char *, int);
+#endif  /* NVIDIA_GPUS */
 
 /*
 
@@ -1372,7 +1379,6 @@ int count_gpu_jobs(
   char *mom_node,
   int  gpuid)
   {
-  char id[] = "count_gpu_jobs";
 
   job   *pjob;
   extern tlist_head  svr_alljobs;
@@ -1439,7 +1445,6 @@ int is_gpustat_get(
   int        rc;
   char      *ret_info;
   attribute  temp;
-  attribute  tempx;
   char      *gpuid;
   int        gpuidx = -1;
   char       gpuinfo[2048];
@@ -3082,7 +3087,7 @@ static int gpu_count(
       if (gn->state == gpu_unavailable)
         continue;
 
-      if ((gpu_mode_rqstd == -1) || (gn->mode == gpu_mode_rqstd))
+      if ((gpu_mode_rqstd == -1) || ((int)gn->mode == gpu_mode_rqstd))
         {
         if (!freeonly)
           {
@@ -5126,7 +5131,7 @@ int set_nodes(
       if ((gn->state == gpu_unavailable) ||
 #ifdef NVIDIA_GPUS
           ((gn->state == gpu_exclusive) && pnode->nd_gpus_real) ||
-          (pnode->nd_gpus_real && (gn->mode != gpu_mode_rqstd)) ||
+          (pnode->nd_gpus_real && ((int)gn->mode != gpu_mode_rqstd)) ||
           ((!pnode->nd_gpus_real) && (gn->inuse == TRUE)))
 #else
           (gn->inuse == TRUE))
@@ -5883,8 +5888,10 @@ void free_nodes(
   int             i;
   int             j;
   char           *gpu_str = NULL;
-  /*char            tmp_str[PBS_MAXHOSTNAME + 5];*/
-  /*char            num_str[6];*/
+#ifdef NVIDIA_GPUS
+  char            tmp_str[PBS_MAXHOSTNAME + 5];
+  char            num_str[6];
+#endif  /* NVIDIA_GPUS */
 
   if (LOGLEVEL >= 3)
     {
