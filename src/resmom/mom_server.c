@@ -2748,7 +2748,7 @@ void mom_server_update_gpustat(
   char       *status_strings)
 
   {
-  static char *id = "mom_server_update_stat";
+  static char *id = "mom_server_update_gpustat";
   char *cp;
 
   if (pms->pbs_servername[0] == 0)
