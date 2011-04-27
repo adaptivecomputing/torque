@@ -2236,7 +2236,7 @@ void generate_server_gpustatus_smi(
 
           if (!have_modes)
             {
-            have_modes = gpumodes(gpu_modes, sizeof(gpu_modes));
+            have_modes = gpumodes(gpu_modes, 32);
             }
 
           strcat(outptr, "gpu_mode=");
