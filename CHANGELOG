@@ -47,6 +47,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       TORQUE was confused and would not convert the .OU or .ER file to the final output/error file. The
       code has now been changed to stat the path to see if the end path element is a path or directory
       and handled appropriately.
+  c - fix a segfault when using --enable-nvidia-gpus and pbs_mom has Nvidia driver
+      older than 260 that still has nvidia-smi command
 
 
 2.5.5

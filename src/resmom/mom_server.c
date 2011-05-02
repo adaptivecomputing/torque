@@ -2219,6 +2219,13 @@ void generate_server_gpustatus_smi(
       MOMNvidiaDriverVersion = drv_ver;
       }
     }
+  else
+    {
+    /* cannot determine driver version */
+    strcat(outptr, "driver_ver=UNKNOWN");
+    outptr += strlen(outptr) + 1;
+    return;
+    }
 
   while ((dataptr = strstr(dataptr, "<gpu id=")) != NULL)
     {
