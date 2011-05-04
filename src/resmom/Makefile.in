@@ -62,14 +62,14 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
-am_pbs_demux_OBJECTS = pbs_demux.$(OBJEXT)
+am_pbs_demux_OBJECTS = pbs_demux-pbs_demux.$(OBJEXT)
 pbs_demux_OBJECTS = $(am_pbs_demux_OBJECTS)
-pbs_demux_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = ../lib/Libattr/libattr.a ../lib/Libsite/libsite.a \
 	../lib/Libutils/libutils.a ../lib/Libpbs/libtorque.la
-pbs_demux_DEPENDENCIES = @PBS_MACH@/libmommach.a $(am__DEPENDENCIES_1) \
+am__DEPENDENCIES_3 = @PBS_MACH@/libmommach.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_2)
+pbs_demux_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_3)
 am__pbs_mom_SOURCES_DIST = catch_child.c mom_comm.c mom_inter.c \
 	mom_main.c mom_server.c prolog.c requests.c start_exec.c \
 	checkpoint.c tmsock_recov.c req_quejob.c job_func.c \
@@ -122,6 +122,9 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BLCR_BINDIR = @BLCR_BINDIR@
+BLCR_CPPFLAGS = @BLCR_CPPFLAGS@
+BLCR_LDFLAGS = @BLCR_LDFLAGS@
 BUILDCPA_FALSE = @BUILDCPA_FALSE@
 BUILDCPA_TRUE = @BUILDCPA_TRUE@
 BUILD_L26_CPUSETS_FALSE = @BUILD_L26_CPUSETS_FALSE@
@@ -153,6 +156,7 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 GENERIC_CONFIG = @GENERIC_CONFIG@
 GPERF = @GPERF@
+HAVE_CR_RESTART = @HAVE_CR_RESTART@
 HAVE_DOT = @HAVE_DOT@
 INCLUDE_CLIENTS_FALSE = @INCLUDE_CLIENTS_FALSE@
 INCLUDE_CLIENTS_TRUE = @INCLUDE_CLIENTS_TRUE@
@@ -378,6 +382,9 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
 	../server/reply_send.c ../server/resc_def_all.c \
 	../server/job_qs_upgrade.c $(am__append_1)
 pbs_demux_SOURCES = pbs_demux.c
+# use LDADD here so that we don't have to link MOM with libcr
+pbs_demux_LDADD = $(BLCR_LDFLAGS) -lcr $(LDADD)
+pbs_demux_CPPFLAGS = $(BLCR_CPPFLAGS) $(CPPFLAGS)
 all: all-recursive
 
 .SUFFIXES:
@@ -465,7 +472,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mom_inter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mom_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mom_server.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_demux.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_demux-pbs_demux.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process_request.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prolog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reply_send.Po@am__quote@
@@ -495,6 +502,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+pbs_demux-pbs_demux.o: pbs_demux.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pbs_demux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pbs_demux-pbs_demux.o -MD -MP -MF "$(DEPDIR)/pbs_demux-pbs_demux.Tpo" -c -o pbs_demux-pbs_demux.o `test -f 'pbs_demux.c' || echo '$(srcdir)/'`pbs_demux.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_demux-pbs_demux.Tpo" "$(DEPDIR)/pbs_demux-pbs_demux.Po"; else rm -f "$(DEPDIR)/pbs_demux-pbs_demux.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='pbs_demux.c' object='pbs_demux-pbs_demux.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pbs_demux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pbs_demux-pbs_demux.o `test -f 'pbs_demux.c' || echo '$(srcdir)/'`pbs_demux.c
+
+pbs_demux-pbs_demux.obj: pbs_demux.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pbs_demux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pbs_demux-pbs_demux.obj -MD -MP -MF "$(DEPDIR)/pbs_demux-pbs_demux.Tpo" -c -o pbs_demux-pbs_demux.obj `if test -f 'pbs_demux.c'; then $(CYGPATH_W) 'pbs_demux.c'; else $(CYGPATH_W) '$(srcdir)/pbs_demux.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pbs_demux-pbs_demux.Tpo" "$(DEPDIR)/pbs_demux-pbs_demux.Po"; else rm -f "$(DEPDIR)/pbs_demux-pbs_demux.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='pbs_demux.c' object='pbs_demux-pbs_demux.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pbs_demux_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pbs_demux-pbs_demux.obj `if test -f 'pbs_demux.c'; then $(CYGPATH_W) 'pbs_demux.c'; else $(CYGPATH_W) '$(srcdir)/pbs_demux.c'; fi`
 
 attr_recov.o: ../server/attr_recov.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT attr_recov.o -MD -MP -MF "$(DEPDIR)/attr_recov.Tpo" -c -o attr_recov.o `test -f '../server/attr_recov.c' || echo '$(srcdir)/'`../server/attr_recov.c; \

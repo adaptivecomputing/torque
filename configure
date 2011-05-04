@@ -466,7 +466,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os MAKE INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT program_prefix program_suffix PBS_MACH INCLUDE_SERVER_TRUE INCLUDE_SERVER_FALSE build_server INCLUDE_MOM_TRUE INCLUDE_MOM_FALSE build_mom INCLUDE_CLIENTS_TRUE INCLUDE_CLIENTS_FALSE build_clients INCLUDE_DRMAA_TRUE INCLUDE_DRMAA_FALSE build_drmaa CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CPP EGREP AR LN_S ECHO ac_ct_AR RANLIB ac_ct_RANLIB CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL LEX LEXLIB LEX_OUTPUT_ROOT YACC TBL PIC ROFF PBSPOE PBSPOEO BUILD_L26_CPUSETS_TRUE BUILD_L26_CPUSETS_FALSE BUILDCPA_TRUE BUILDCPA_FALSE MOMLIBS SCHD_TYPE_SUBDIR SCHD_TYPE SCHD_BASL_TRUE SCHD_BASL_FALSE SCHD_LIBS SCHD_CODE USING_RPP_TRUE USING_RPP_FALSE USING_SYSLOG_TRUE USING_SYSLOG_FALSE PBS_SERVER_HOME PBS_DEFAULT_FILE PBS_DEFAULT_SERVER PBS_ENVIRON RCP_PATH RCP_ARGS RSH_PATH build_pbs_rcp INCLUDE_MOM_RCP_TRUE INCLUDE_MOM_RCP_FALSE SENDMAIL_CMD pammoddir INCLUDE_PAM_TRUE INCLUDE_PAM_FALSE xauth_path INSTALL_MODULEFILES_TRUE INSTALL_MODULEFILES_FALSE MODULEFILES_DIR READLINE_LIBS CYGPATH TCL_VERSION TCL_BIN_DIR TCL_SRC_DIR TCL_LIB_FILE TCL_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC TCL_LIBS TCL_DEFS TCL_EXTRA_CFLAGS TCL_LD_FLAGS TCL_SHLIB_LD_LIBS TCL_INCLUDES tclx_VERSION tclx_SRC_DIR tclx_LIB_FILE tclx_LIB_SPEC tclx_STUB_LIB_FILE tclx_STUB_LIB_SPEC tclx_STUB_LIB_PATH TK_VERSION TK_BIN_DIR TK_SRC_DIR TK_LIB_FILE TK_LIB_FLAG TK_LIB_SPEC TK_STUB_LIB_FILE TK_STUB_LIB_FLAG TK_STUB_LIB_SPEC TK_LIBS TK_XINCLUDES TK_INCLUDES tkx_VERSION tkx_SRC_DIR tkx_LIB_FILE tkx_LIB_SPEC tkx_STUB_LIB_FILE tkx_STUB_LIB_SPEC tkx_STUB_LIB_PATH build_gui INCLUDE_GUI_TRUE INCLUDE_GUI_FALSE MY_TCL_LIBS MY_TCL_INCS MY_TCLTK_LIBS MY_TCLTK_INCS USING_TCL_TRUE USING_TCL_FALSE USING_TK_TRUE USING_TK_FALSE use_tcl use_tk TCLSH_PROG WISH_PROG EXTRA_QSTAT_LIBS USE_TCLQSTAT_TRUE USE_TCLQSTAT_FALSE GPERF HAVE_DOT DOXYGEN acx_pthread_config PTHREAD_LIBS PTHREAD_CFLAGS DRMAA_DOCS_TRUE DRMAA_DOCS_FALSE build_drmaa_docs drmaadocdir GENERIC_CONFIG SPEC_NAME SPEC_VERSION RPM_AC_OPTS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os MAKE INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT program_prefix program_suffix PBS_MACH INCLUDE_SERVER_TRUE INCLUDE_SERVER_FALSE build_server INCLUDE_MOM_TRUE INCLUDE_MOM_FALSE build_mom INCLUDE_CLIENTS_TRUE INCLUDE_CLIENTS_FALSE build_clients INCLUDE_DRMAA_TRUE INCLUDE_DRMAA_FALSE build_drmaa CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CPP EGREP AR LN_S ECHO ac_ct_AR RANLIB ac_ct_RANLIB CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL LEX LEXLIB LEX_OUTPUT_ROOT YACC TBL PIC ROFF PBSPOE PBSPOEO BUILD_L26_CPUSETS_TRUE BUILD_L26_CPUSETS_FALSE BLCR_LDFLAGS BLCR_CPPFLAGS HAVE_CR_RESTART BLCR_BINDIR BUILDCPA_TRUE BUILDCPA_FALSE MOMLIBS SCHD_TYPE_SUBDIR SCHD_TYPE SCHD_BASL_TRUE SCHD_BASL_FALSE SCHD_LIBS SCHD_CODE USING_RPP_TRUE USING_RPP_FALSE USING_SYSLOG_TRUE USING_SYSLOG_FALSE PBS_SERVER_HOME PBS_DEFAULT_FILE PBS_DEFAULT_SERVER PBS_ENVIRON RCP_PATH RCP_ARGS RSH_PATH build_pbs_rcp INCLUDE_MOM_RCP_TRUE INCLUDE_MOM_RCP_FALSE SENDMAIL_CMD pammoddir INCLUDE_PAM_TRUE INCLUDE_PAM_FALSE xauth_path INSTALL_MODULEFILES_TRUE INSTALL_MODULEFILES_FALSE MODULEFILES_DIR READLINE_LIBS CYGPATH TCL_VERSION TCL_BIN_DIR TCL_SRC_DIR TCL_LIB_FILE TCL_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC TCL_LIBS TCL_DEFS TCL_EXTRA_CFLAGS TCL_LD_FLAGS TCL_SHLIB_LD_LIBS TCL_INCLUDES tclx_VERSION tclx_SRC_DIR tclx_LIB_FILE tclx_LIB_SPEC tclx_STUB_LIB_FILE tclx_STUB_LIB_SPEC tclx_STUB_LIB_PATH TK_VERSION TK_BIN_DIR TK_SRC_DIR TK_LIB_FILE TK_LIB_FLAG TK_LIB_SPEC TK_STUB_LIB_FILE TK_STUB_LIB_FLAG TK_STUB_LIB_SPEC TK_LIBS TK_XINCLUDES TK_INCLUDES tkx_VERSION tkx_SRC_DIR tkx_LIB_FILE tkx_LIB_SPEC tkx_STUB_LIB_FILE tkx_STUB_LIB_SPEC tkx_STUB_LIB_PATH build_gui INCLUDE_GUI_TRUE INCLUDE_GUI_FALSE MY_TCL_LIBS MY_TCL_INCS MY_TCLTK_LIBS MY_TCLTK_INCS USING_TCL_TRUE USING_TCL_FALSE USING_TK_TRUE USING_TK_FALSE use_tcl use_tk TCLSH_PROG WISH_PROG EXTRA_QSTAT_LIBS USE_TCLQSTAT_TRUE USE_TCLQSTAT_FALSE GPERF HAVE_DOT DOXYGEN acx_pthread_config PTHREAD_LIBS PTHREAD_CFLAGS DRMAA_DOCS_TRUE DRMAA_DOCS_FALSE build_drmaa_docs drmaadocdir GENERIC_CONFIG SPEC_NAME SPEC_VERSION RPM_AC_OPTS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1139,6 +1139,10 @@ Optional Packages:
   --with-tags[=TAGS]
                           include additional configurations [automatic]
   --with-debug            compile with debugging symbols
+  --with-blcr=DIR          BLCR installation prefix
+  --with-blcr-include=DIR  include path for libcr.h
+  --with-blcr-lib=DIR      lib path for libcr
+  --with-blcr-bin=DIR      bin path for BLCR utilities
   --with-nvml-include=DIR include path for nvml.h
   --with-nvml-lib=DIR     lib path for libnvidia-ml
   --with-cpa-include=DIR  include path for cpalib.h
@@ -4511,7 +4515,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4514 "configure"' > conftest.$ac_ext
+  echo '#line 4518 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5848,7 +5852,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5851:" \
+echo "$as_me:5855:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6882,11 +6886,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6885: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6889: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6889: \$? = $ac_status" >&5
+   echo "$as_me:6893: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -7115,11 +7119,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7118: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7122: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7122: \$? = $ac_status" >&5
+   echo "$as_me:7126: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -7175,11 +7179,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7178: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7182: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7182: \$? = $ac_status" >&5
+   echo "$as_me:7186: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8509,7 +8513,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 8512 "configure"' > conftest.$ac_ext
+    echo '#line 8516 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -9380,7 +9384,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9383 "configure"
+#line 9387 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9478,7 +9482,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9481 "configure"
+#line 9485 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11657,11 +11661,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11660: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11664: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11664: \$? = $ac_status" >&5
+   echo "$as_me:11668: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -11717,11 +11721,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11720: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11724: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11724: \$? = $ac_status" >&5
+   echo "$as_me:11728: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12228,7 +12232,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 12231 "configure"' > conftest.$ac_ext
+    echo '#line 12235 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -13099,7 +13103,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 13102 "configure"
+#line 13106 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13197,7 +13201,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 13200 "configure"
+#line 13204 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14024,11 +14028,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14027: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14031: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14031: \$? = $ac_status" >&5
+   echo "$as_me:14035: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -14084,11 +14088,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14087: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14091: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14091: \$? = $ac_status" >&5
+   echo "$as_me:14095: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15398,7 +15402,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 15401 "configure"' > conftest.$ac_ext
+    echo '#line 15405 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -16139,11 +16143,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16142: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16146: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16146: \$? = $ac_status" >&5
+   echo "$as_me:16150: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -16372,11 +16376,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16375: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16379: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16379: \$? = $ac_status" >&5
+   echo "$as_me:16383: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -16432,11 +16436,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16435: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16439: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16439: \$? = $ac_status" >&5
+   echo "$as_me:16443: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -17766,7 +17770,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 17769 "configure"' > conftest.$ac_ext
+    echo '#line 17773 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -18637,7 +18641,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18640 "configure"
+#line 18644 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18735,7 +18739,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18738 "configure"
+#line 18742 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -22311,17 +22315,360 @@ else
 fi;
 echo "$as_me:$LINENO: result: $BLCR" >&5
 echo "${ECHO_T}$BLCR" >&6
+
+
+# Check whether --with-blcr or --without-blcr was given.
+if test "${with_blcr+set}" = set; then
+  withval="$with_blcr"
+
+        blcrprefix=$withval
+        BLCR=yes
+        blcrlib="${blcrprefix}/lib"
+        blcrbin="${blcrprefix}/bin"
+        blcrinclude="${blcrprefix}/include"
+
+else
+
+        blcrprefix=none
+        blcrlib=none
+        blcrbin=none
+        blcrinclude=none
+
+fi;
+
+# Check whether --with-blcr_include or --without-blcr_include was given.
+if test "${with_blcr_include+set}" = set; then
+  withval="$with_blcr_include"
+  blcrinclude=$withval
+fi;
+
+# Check whether --with-blcr_lib or --without-blcr_lib was given.
+if test "${with_blcr_lib+set}" = set; then
+  withval="$with_blcr_lib"
+  blcrlib=$withval
+fi;
+
+# Check whether --with-blcr_bin or --without-blcr_bin was given.
+if test "${with_blcr_bin+set}" = set; then
+  withval="$with_blcr_bin"
+  blcrbin=$withval
+fi;
+
 case "$BLCR" in
   yes)
 cat >>confdefs.h <<\_ACEOF
 #define ENABLE_BLCR 1
 _ACEOF
- ;;
+
+    if test "x$blcrlib" != xnone; then
+
+      BLCR_LDFLAGS="-L$blcrlib"
+
+else
+
+      BLCR_LDFLAGS=""
+
+fi
+
+    SAVE_LDFLAGS="$LDFLAGS"
+    LDFLAGS="$BLCR_LDFLAGS $LDFLAGS"
+    echo "$as_me:$LINENO: checking for cr_init in -lcr" >&5
+echo $ECHO_N "checking for cr_init in -lcr... $ECHO_C" >&6
+if test "${ac_cv_lib_cr_cr_init+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcr  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char cr_init ();
+int
+main ()
+{
+cr_init ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_cr_cr_init=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_cr_cr_init=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_cr_cr_init" >&5
+echo "${ECHO_T}$ac_cv_lib_cr_cr_init" >&6
+if test $ac_cv_lib_cr_cr_init = yes; then
+   :
+else
+  { { echo "$as_me:$LINENO: error: pass the path to libcr.so to --with-blcr-lib" >&5
+echo "$as_me: error: pass the path to libcr.so to --with-blcr-lib" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+    LDFLAGS="$SAVE_LDFLAGS"
+
+
+    if test "x$blcrinclude" != xnone; then
+
+      BLCR_CPPFLAGS="-I$blcrinclude -std=gnu99"
+
+else
+
+      BLCR_CPPFLAGS=""
+
+fi
+
+    SAVE_CPPFLAGS="$CPPFLAGS"
+    CPPFLAGS="$BLCR_CPPFLAGS $CPPFLAGS"
+    if test "${ac_cv_header_libcr_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for libcr.h" >&5
+echo $ECHO_N "checking for libcr.h... $ECHO_C" >&6
+if test "${ac_cv_header_libcr_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_libcr_h" >&5
+echo "${ECHO_T}$ac_cv_header_libcr_h" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking libcr.h usability" >&5
+echo $ECHO_N "checking libcr.h usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <libcr.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking libcr.h presence" >&5
+echo $ECHO_N "checking libcr.h presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <libcr.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: libcr.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: libcr.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: libcr.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: libcr.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: libcr.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: libcr.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: libcr.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: libcr.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: libcr.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: libcr.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: libcr.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: libcr.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: libcr.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: libcr.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: libcr.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: libcr.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ------------------------------------------- ##
+## Report this to torqueusers@supercluster.org ##
+## ------------------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for libcr.h" >&5
+echo $ECHO_N "checking for libcr.h... $ECHO_C" >&6
+if test "${ac_cv_header_libcr_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_libcr_h=$ac_header_preproc
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_libcr_h" >&5
+echo "${ECHO_T}$ac_cv_header_libcr_h" >&6
+
+fi
+if test $ac_cv_header_libcr_h = yes; then
+   :
+else
+  { { echo "$as_me:$LINENO: error: pass the path to libcr.so to --with-blcr-include" >&5
+echo "$as_me: error: pass the path to libcr.so to --with-blcr-include" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+
+    CPPFLAGS="$SAVE_CPPFLAGS"
+
+
+    if test "x$blcrbin" != xnone; then
+
+        BLCR_BINDIR="$blcrbin"
+        BLCR_PATH="$PATH_SEPARATOR$BLCR_BINDIR"
+
+else
+
+        BLCR_BINDIR=""
+        BLCR_PATH=""
+
+fi
+
+    for ac_prog in cr_restart
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_HAVE_CR_RESTART+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$HAVE_CR_RESTART"; then
+  ac_cv_prog_HAVE_CR_RESTART="$HAVE_CR_RESTART" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_HAVE_CR_RESTART="$ac_prog"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+fi
+fi
+HAVE_CR_RESTART=$ac_cv_prog_HAVE_CR_RESTART
+if test -n "$HAVE_CR_RESTART"; then
+  echo "$as_me:$LINENO: result: $HAVE_CR_RESTART" >&5
+echo "${ECHO_T}$HAVE_CR_RESTART" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  test -n "$HAVE_CR_RESTART" && break
+done
+test -n "$HAVE_CR_RESTART" || HAVE_CR_RESTART="PATH=$PATH$BLCR_PATH"
+
+
+    ;;
   no) : ;;
   *) { { echo "$as_me:$LINENO: error: --enable-blcr should be yes or no" >&5
 echo "$as_me: error: --enable-blcr should be yes or no" >&2;}
    { (exit 1); exit 1; }; } ;;
 esac
+
 
 echo "$as_me:$LINENO: checking whether to build Nvidia gpu support" >&5
 echo $ECHO_N "checking whether to build Nvidia gpu support... $ECHO_C" >&6
@@ -35242,7 +35589,11 @@ _ACEOF
 
           ac_config_files="$ac_config_files torque.spec:buildutils/torque.spec.in"
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ac_config_files="$ac_config_files buildutils/pbs_mkdirs buildutils/self-extract-head-sh buildutils/modulefiles buildutils/modulefiles.vers Makefile doc/Makefile doc/man1/Makefile doc/man3/Makefile doc/man7/Makefile doc/man8/Makefile src/Makefile src/cmds/Makefile src/iff/Makefile src/gui/Makefile src/gui/Ccode/Makefile src/include/Makefile src/lib/Makefile src/lib/Libattr/Makefile src/lib/Libcmds/Makefile src/lib/Libcsv/Makefile src/lib/Libdis/Makefile src/lib/Libifl/Makefile src/lib/Liblog/Makefile src/lib/Libnet/Makefile src/lib/Libpbs/Makefile src/lib/Libsite/Makefile src/lib/Libutils/Makefile src/mom_rcp/Makefile src/momctl/Makefile src/resmom/Makefile src/resmom/aix4/Makefile src/resmom/aix5/Makefile src/resmom/cygwin/Makefile src/resmom/darwin/Makefile src/resmom/digitalunix/Makefile src/resmom/freebsd/Makefile src/resmom/freebsd5/Makefile src/resmom/fujitsu/Makefile src/resmom/hpux10/Makefile src/resmom/hpux11/Makefile src/resmom/irix5/Makefile src/resmom/irix6/Makefile src/resmom/irix6array/Makefile src/resmom/linux/Makefile src/resmom/netbsd/Makefile src/resmom/solaris5/Makefile src/resmom/solaris7/Makefile src/resmom/sunos4/Makefile src/resmom/unicos8/Makefile src/resmom/unicosmk2/Makefile src/scheduler.basl/Makefile src/scheduler.cc/Makefile src/scheduler.cc/samples/Makefile src/scheduler.cc/samples/cray_t3e/Makefile src/scheduler.cc/samples/dec_cluster/Makefile src/scheduler.cc/samples/fifo/Makefile src/scheduler.cc/samples/msic_cluster/Makefile src/scheduler.cc/samples/sgi_origin/Makefile src/scheduler.cc/samples/umn_cluster/Makefile src/scheduler.tcl/Makefile src/server/Makefile src/tools/Makefile src/tools/xpbsmon/Makefile src/drmaa/Makefile src/drmaa/src/Makefile src/drmaa/test/Makefile src/drmaa/Doxyfile src/pam/Makefile"
+          ac_config_files="$ac_config_files contrib/blcr/checkpoint_script"
+
+          ac_config_files="$ac_config_files contrib/blcr/restart_script"
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ac_config_files="$ac_config_files buildutils/pbs_mkdirs buildutils/self-extract-head-sh buildutils/modulefiles buildutils/modulefiles.vers Makefile contrib/blcr/Makefile doc/Makefile doc/man1/Makefile doc/man3/Makefile doc/man7/Makefile doc/man8/Makefile src/Makefile src/cmds/Makefile src/iff/Makefile src/gui/Makefile src/gui/Ccode/Makefile src/include/Makefile src/lib/Makefile src/lib/Libattr/Makefile src/lib/Libcmds/Makefile src/lib/Libcsv/Makefile src/lib/Libdis/Makefile src/lib/Libifl/Makefile src/lib/Liblog/Makefile src/lib/Libnet/Makefile src/lib/Libpbs/Makefile src/lib/Libsite/Makefile src/lib/Libutils/Makefile src/mom_rcp/Makefile src/momctl/Makefile src/resmom/Makefile src/resmom/aix4/Makefile src/resmom/aix5/Makefile src/resmom/cygwin/Makefile src/resmom/darwin/Makefile src/resmom/digitalunix/Makefile src/resmom/freebsd/Makefile src/resmom/freebsd5/Makefile src/resmom/fujitsu/Makefile src/resmom/hpux10/Makefile src/resmom/hpux11/Makefile src/resmom/irix5/Makefile src/resmom/irix6/Makefile src/resmom/irix6array/Makefile src/resmom/linux/Makefile src/resmom/netbsd/Makefile src/resmom/solaris5/Makefile src/resmom/solaris7/Makefile src/resmom/sunos4/Makefile src/resmom/unicos8/Makefile src/resmom/unicosmk2/Makefile src/scheduler.basl/Makefile src/scheduler.cc/Makefile src/scheduler.cc/samples/Makefile src/scheduler.cc/samples/cray_t3e/Makefile src/scheduler.cc/samples/dec_cluster/Makefile src/scheduler.cc/samples/fifo/Makefile src/scheduler.cc/samples/msic_cluster/Makefile src/scheduler.cc/samples/sgi_origin/Makefile src/scheduler.cc/samples/umn_cluster/Makefile src/scheduler.tcl/Makefile src/server/Makefile src/tools/Makefile src/tools/xpbsmon/Makefile src/drmaa/Makefile src/drmaa/src/Makefile src/drmaa/test/Makefile src/drmaa/Doxyfile src/pam/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -35933,11 +36284,14 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "torque.spec" ) CONFIG_FILES="$CONFIG_FILES torque.spec:buildutils/torque.spec.in" ;;
+  "contrib/blcr/checkpoint_script" ) CONFIG_FILES="$CONFIG_FILES contrib/blcr/checkpoint_script" ;;
+  "contrib/blcr/restart_script" ) CONFIG_FILES="$CONFIG_FILES contrib/blcr/restart_script" ;;
   "buildutils/pbs_mkdirs" ) CONFIG_FILES="$CONFIG_FILES buildutils/pbs_mkdirs" ;;
   "buildutils/self-extract-head-sh" ) CONFIG_FILES="$CONFIG_FILES buildutils/self-extract-head-sh" ;;
   "buildutils/modulefiles" ) CONFIG_FILES="$CONFIG_FILES buildutils/modulefiles" ;;
   "buildutils/modulefiles.vers" ) CONFIG_FILES="$CONFIG_FILES buildutils/modulefiles.vers" ;;
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+  "contrib/blcr/Makefile" ) CONFIG_FILES="$CONFIG_FILES contrib/blcr/Makefile" ;;
   "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
   "doc/man1/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/man1/Makefile" ;;
   "doc/man3/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/man3/Makefile" ;;
@@ -36183,6 +36537,10 @@ s,@PBSPOE@,$PBSPOE,;t t
 s,@PBSPOEO@,$PBSPOEO,;t t
 s,@BUILD_L26_CPUSETS_TRUE@,$BUILD_L26_CPUSETS_TRUE,;t t
 s,@BUILD_L26_CPUSETS_FALSE@,$BUILD_L26_CPUSETS_FALSE,;t t
+s,@BLCR_LDFLAGS@,$BLCR_LDFLAGS,;t t
+s,@BLCR_CPPFLAGS@,$BLCR_CPPFLAGS,;t t
+s,@HAVE_CR_RESTART@,$HAVE_CR_RESTART,;t t
+s,@BLCR_BINDIR@,$BLCR_BINDIR,;t t
 s,@BUILDCPA_TRUE@,$BUILDCPA_TRUE,;t t
 s,@BUILDCPA_FALSE@,$BUILDCPA_FALSE,;t t
 s,@MOMLIBS@,$MOMLIBS,;t t
@@ -36527,6 +36885,11 @@ s,@INSTALL@,$ac_INSTALL,;t t
     rm -f $tmp/out
   fi
 
+  # Run the commands associated with the file.
+  case $ac_file in
+    contrib/blcr/checkpoint_script ) chmod +x contrib/blcr/checkpoint_script ;;
+    contrib/blcr/restart_script ) chmod +x contrib/blcr/restart_script ;;
+  esac
 done
 _ACEOF
 cat >>$CONFIG_STATUS <<\_ACEOF
