@@ -49,13 +49,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       and handled appropriately.
   c - fix a segfault when using --enable-nvidia-gpus and pbs_mom has Nvidia driver
       older than 260 that still has nvidia-smi command
-  e - Applied patch submitted by Eric Roman. This patch addresses some build issues
-      with BLCR, and fixes an error where BLCR would report -ENOSUPPORT when trying
-      to checkpoint a parallel job. The patch adds a --with-blcr option to configure
-      to find the path to the BLCR libaries.  There are --with-blcr-include,
-      --with-blcr-lib and --with-blcr-bin to override the search paths, if necessary.
-      The last option, --with-blcr-bin is used to generate contrib/blcr/checkpoint_script
-      and contrib/blcr/restart_script from the information supplied at configure time.
 
 
 2.5.5

@@ -1,5 +1,4 @@
 #! /usr/bin/perl
-# @configure_input@
 ################################################################################
 #
 # Usage: checkpoint_script <session_id> <job_id> <user_id> <group_id> <checkpoint_dir> <checkpoint_name> <signal_num> <checkpoint_depth>   
@@ -11,13 +10,9 @@
 use strict;
 use Sys::Syslog;
 
-# configure should assign a value to blcr_bindir
-# blcr_bindir, if non-empty, is appended to path 
-my $blcr_bindir="@BLCR_BINDIR@";
-
 # Customize the following script variables
 # Customize the PATH to include location of blcr cr_checkpoint command
-$ENV{PATH} .= ":$blcr_bindir" if $blcr_bindir;
+$ENV{PATH} .= ":/usr/local/bin";
 my $logLevel = 3; # 0 = none, 1 = fail, 2 = info, 3 = debug
 
 logPrint(2, "Invoked: $0 " . join(' ', @ARGV) . "\n");

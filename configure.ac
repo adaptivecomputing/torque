@@ -523,71 +523,11 @@ AC_ARG_ENABLE(blcr,
     [  --enable-blcr           enable BLCR support],
     BLCR=$enableval,BLCR=no)
 AC_MSG_RESULT($BLCR)
-
-AC_ARG_WITH(blcr,
-    [  --with-blcr=DIR          BLCR installation prefix],
-    [
-        blcrprefix=$withval
-        BLCR=yes
-        blcrlib="${blcrprefix}/lib"
-        blcrbin="${blcrprefix}/bin"
-        blcrinclude="${blcrprefix}/include"
-    ],[
-        blcrprefix=none
-        blcrlib=none
-        blcrbin=none
-        blcrinclude=none
-    ])
-AC_ARG_WITH(blcr_include,
-    [  --with-blcr-include=DIR  include path for libcr.h],
-    blcrinclude=$withval)
-AC_ARG_WITH(blcr_lib,
-    [  --with-blcr-lib=DIR      lib path for libcr],
-    blcrlib=$withval)
-AC_ARG_WITH(blcr_bin,
-    [  --with-blcr-bin=DIR      bin path for BLCR utilities],
-    blcrbin=$withval)
-
 case "$BLCR" in
-  yes) AC_DEFINE([ENABLE_BLCR], 1, [Define to enable BLCR support])
-    AS_IF([test "x$blcrlib" != xnone], [
-      BLCR_LDFLAGS="-L$blcrlib"
-    ],[
-      BLCR_LDFLAGS=""
-    ])
-    SAVE_LDFLAGS="$LDFLAGS"
-    LDFLAGS="$BLCR_LDFLAGS $LDFLAGS"
-    AC_CHECK_LIB([cr], [cr_init], [ :], 
-      AC_MSG_ERROR([pass the path to libcr.so to --with-blcr-lib]))
-    LDFLAGS="$SAVE_LDFLAGS"
-    AC_SUBST([BLCR_LDFLAGS])
-
-    AS_IF([test "x$blcrinclude" != xnone], [
-      BLCR_CPPFLAGS="-I$blcrinclude -std=gnu99"
-    ],[
-      BLCR_CPPFLAGS=""
-    ])
-    SAVE_CPPFLAGS="$CPPFLAGS"
-    CPPFLAGS="$BLCR_CPPFLAGS $CPPFLAGS"
-    AC_CHECK_HEADER([libcr.h], [ :], 
-      AC_MSG_ERROR([pass the path to libcr.so to --with-blcr-include]))
-    CPPFLAGS="$SAVE_CPPFLAGS"
-    AC_SUBST([BLCR_CPPFLAGS])
-
-    AS_IF([test "x$blcrbin" != xnone], [
-        BLCR_BINDIR="$blcrbin"
-        BLCR_PATH="$PATH_SEPARATOR$BLCR_BINDIR"
-    ],[
-        BLCR_BINDIR=""
-        BLCR_PATH=""
-    ])
-    AC_CHECK_PROGS([HAVE_CR_RESTART], [cr_restart], [PATH=$PATH$BLCR_PATH])
-    AC_SUBST([BLCR_BINDIR])
-    ;;
+  yes) AC_DEFINE([ENABLE_BLCR], 1, [Define to enable BLCR support]) ;;
   no) : ;;
   *) AC_MSG_ERROR([--enable-blcr should be yes or no]) ;;
 esac
-
 
 dnl
 dnl enable Nvidia gpu support
@@ -1598,16 +1538,11 @@ AC_DEFINE_UNQUOTED([PBS_CONFIG_ARGS],"${ac_configure_args}",[Define to the insta
 AC_DEFINE_UNQUOTED([PBS_CFLAGS],"${CFLAGS}",[Define to the install directory])
 
 AC_CONFIG_FILES([torque.spec:buildutils/torque.spec.in])
-AC_CONFIG_FILES([contrib/blcr/checkpoint_script], 
-                [chmod +x contrib/blcr/checkpoint_script])
-AC_CONFIG_FILES([contrib/blcr/restart_script], 
-                [chmod +x contrib/blcr/restart_script])
 AC_OUTPUT(buildutils/pbs_mkdirs
 	  buildutils/self-extract-head-sh
 	  buildutils/modulefiles
 	  buildutils/modulefiles.vers
 	  Makefile
-  contrib/blcr/Makefile
 	  doc/Makefile
 	  doc/man1/Makefile
 	  doc/man3/Makefile
