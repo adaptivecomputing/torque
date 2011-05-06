@@ -155,6 +155,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       TORQUE was confused and would not convert the .OU or .ER file to the final output/error file. The
       code has now been changed to stat the path to see if the end path element is a path or directory
       and handled appropriately.
+  e - Added new MOM configuration option $rpp_throttle. The syntax for this in the 
+      $TORQUE_HOME/mom_priv/config file is $rpp_throttle <value> where value is a long
+      representing microseconds. Setting this values causes rpp data to pause after every
+      sendto for <value> microseconds. This may help with large jobs where full data does
+      not arrive at sister nodes.
 
 
 2.5.5
