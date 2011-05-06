@@ -49,6 +49,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       and handled appropriately.
   c - fix a segfault when using --enable-nvidia-gpus and pbs_mom has Nvidia driver
       older than 260 that still has nvidia-smi command
+  e - Added new MOM configuration option $rpp_throttle. The syntax for this in the 
+      $TORQUE_HOME/mom_priv/config file is $rpp_throttle <value> where value is a long
+      representing microseconds. Setting this values causes rpp data to pause after every
+      sendto for <value> microseconds. This may help with large jobs where full data does
+      not arrive at sister nodes.
 
 
 2.5.5

@@ -145,6 +145,7 @@
 #include "dis.h"
 #include "csv.h"
 #include "utils.h"
+#include "rpp.h"
 
 #include "mcom.h"
 
@@ -395,9 +396,9 @@ static unsigned long setsourcelogininteractive(char *);
 static unsigned long setspoolasfinalname(char *);
 static unsigned long setremchkptdirlist(char *);
 static unsigned long setmaxconnecttimeout(char *);
-static unsigned long aliasservername(char *);
+unsigned long aliasservername(char *);
 unsigned long jobstarter(char *value);
-
+unsigned long rppthrottle(char *value);
 
 static struct specials
   {
@@ -459,6 +460,7 @@ static struct specials
   { "max_conn_timeout_micro_sec",   setmaxconnecttimeout },
   { "alias_server_name", aliasservername },
   { "job_starter", jobstarter},
+  { "rpp_throttle", rppthrottle },
   { NULL,                  NULL }
   };
 
@@ -2998,6 +3000,21 @@ static unsigned long setlogfilemaxsize(
   }
 
 
+unsigned long rppthrottle(
+
+  char *value)  /* I */
+
+  {
+  long rpp_throttle_time;
+  rpp_throttle_time = strtol(value, NULL, 10);
+  /* call into Libifl to tell it what the sleep time is */
+  set_rpp_throttle_sleep_time(rpp_throttle_time);
+
+  return(rpp_throttle_time);
+  }
+
+
+
 
 
 static unsigned long setlogfilerolldepth(
@@ -3275,7 +3292,7 @@ static unsigned long setnospooldirlist(
   }  /* END setnospooldirlist() */
 
 
-static unsigned long aliasservername( char *value)
+unsigned long aliasservername( char *value)
   {
     log_record(
       PBSEVENT_SYSTEM,

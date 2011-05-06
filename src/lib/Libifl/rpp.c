@@ -201,6 +201,7 @@ int RPPTimeOut = DEFAULT_RPP_TIMEOUT;
 int RPPRetry   = DEFAULT_RPP_RETRY;
 
 char *server_alias = NULL;
+long rpp_throttle_sleeptime = 0;
 
 /* external prototypes */
 
@@ -855,6 +856,18 @@ netaddr(struct sockaddr_in *ap)
   }
 
 
+/*
+**  set_rpp_throttle_sleep_time sets the throttle sleep time
+**  for rpp. This is an option set in the MOM config file.
+**  By default the value of rpp_throttle_sleeptime is 0
+**  which means false. Other wise the value is in micro seconds
+**  to be used with the usleep function
+*/
+void set_rpp_throttle_sleep_time(long sleep_time)
+{
+  rpp_throttle_sleeptime = sleep_time;
+  return;
+}
 
 
 /*
@@ -1099,6 +1112,13 @@ rpp_send_out(void)
       pp->sent_out++;
 
       continue;
+      }
+
+    /* has the rpp_throttle option been set? If it is
+     * not 0 it is set. */
+    if(rpp_throttle_sleeptime > 0)
+      {
+      usleep(rpp_throttle_sleeptime);
       }
 
     if (pp->time_sent == 0)  /* new one */

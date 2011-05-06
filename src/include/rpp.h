@@ -101,6 +101,7 @@ int rpp_get_stream_state(int index);
 
 unsigned long  crc(unsigned char *, unsigned long);
 
+void set_rpp_throttle_sleep_time(long sleep_time);
 
 extern int rpp_fd;
 extern int rpp_dbprt;
