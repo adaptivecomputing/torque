@@ -271,17 +271,16 @@ int attr_atomic_set(
  * values from an svrattrl
 */
 
-int
-attr_atomic_node_set(
-  struct svrattrl *plist,  /*list of attribute modif structs*/
-  attribute *old,  /*unused*/
-  attribute *new,  /*new attribute array begins here*/
-  attribute_def *pdef,  /*begin array  definition structs*/
-  int limit,  /*number elts in definition array*/
-  int unkn,  /*<0 unknown attrib not permitted*/
-  int privil, /*requester's access privileges  */
-  int *badattr /*return list position wher bad  */
-)
+int attr_atomic_node_set(
+
+  struct svrattrl *plist,  /* list of attribute modif structs */
+  attribute *old,          /* unused */
+  attribute *new,          /* new attribute array begins here */
+  attribute_def *pdef,     /* begin array  definition structs */
+  int limit,               /* number elts in definition array */
+  int unkn,                /* <0 unknown attrib not permitted */
+  int privil,              /* requester's access privileges   */
+  int *badattr)            /* return list position wher bad   */
 
   {
   int     acc;
