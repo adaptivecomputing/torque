@@ -807,8 +807,13 @@ void log_record(
     clearerr(logfile);
     savlog = logfile;
     logfile = fopen("/dev/console", "w");
-    log_err(rc, "log_record", "PBS cannot write to its log");
-    fclose(logfile);
+    /* we need to add this check to make sure the disk isn't full so we don't segfault 
+     * if we can't open this then we're going to have a nice surprise failure */
+    if (logfile != NULL)
+      {
+      log_err(rc, "log_record", "PBS cannot write to its log");
+      fclose(logfile);
+      }
     logfile = savlog;
     }
 
