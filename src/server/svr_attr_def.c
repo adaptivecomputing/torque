@@ -100,11 +100,11 @@ extern int set_nextjobnum (attribute * attr, attribute * new,
 extern int poke_scheduler (attribute * pattr, void *pobject, int actmode);
 
 extern int encode_svrstate (attribute * pattr, tlist_head * phead,
-			    char *aname, char *rsname, int mode);
+			    char *aname, char *rsname, int mode, int perm);
 
-extern int decode_rcost (attribute * patr, char *name, char *rn, char *val);
+extern int decode_rcost (attribute * patr, char *name, char *rn, char *val, int perm);
 extern int encode_rcost (attribute * attr, tlist_head * phead, char *atname,
-			 char *rsname, int mode);
+			 char *rsname, int mode, int perm);
 extern int set_rcost (attribute * attr, attribute * new, enum batch_op);
 extern void free_rcost (attribute * attr);
 extern int set_null (attribute * patr, attribute * new, enum batch_op op);
