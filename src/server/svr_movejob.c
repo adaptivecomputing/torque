@@ -159,7 +159,6 @@ extern char    *pbs_o_host;
 extern pbs_net_t pbs_server_addr;
 extern unsigned int pbs_server_port_dis;
 extern time_t pbs_tcp_timeout;
-extern int resc_access_perm;
 extern int      LOGLEVEL;
 
 int net_move(job *, struct batch_request *);
@@ -600,6 +599,7 @@ int send_job(
   int    encode_type;
   int    i;
   int    NumRetries;
+  int    resc_access_perm;
 
   char  *id = "send_job";
 
@@ -801,15 +801,16 @@ int send_job(
   for (i = 0;i < JOB_ATR_LAST;i++)
     {
     if (((job_attr_def + i)->at_flags & resc_access_perm) ||
-      ((strncmp((job_attr_def + i)->at_name,"session_id",10) == 0) &&
-      (jobp->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)))
+        ((strncmp((job_attr_def + i)->at_name,"session_id",10) == 0) &&
+         (jobp->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)))
       {
       (job_attr_def + i)->at_encode(
         pattr + i,
         &attrl,
         (job_attr_def + i)->at_name,
         NULL,
-        encode_type);
+        encode_type,
+        resc_access_perm);
       }
     }    /* END for (i) */
 

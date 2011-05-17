@@ -123,13 +123,14 @@
  *  *patr elements set
  */
 
-int
-decode_ll(
-  struct attribute *patr,
-  char *name,  /* attribute name */
-  char *rescn,  /* resource name, unused here */
-  char *val  /* attribute value */
-)
+int decode_ll(
+
+  attribute *patr,
+  char      *name,  /* attribute name */
+  char      *rescn, /* resource name, unused here */
+  char      *val,   /* attribute value */
+  int        perm)  /* only used for resources */
+
   {
   char *pc;
 
@@ -163,14 +164,15 @@ decode_ll(
 /*ARGSUSED*/
 
 
-int
-encode_ll(
-  attribute *attr,   /* ptr to attribute */
+int encode_ll(
+
+  attribute  *attr,   /* ptr to attribute */
   tlist_head *phead,   /* head of attrlist list */
-  char *atname,  /* attribute name */
-  char *rsname,  /* resource name or null */
-  int mode   /* encode mode, unused here */
-)
+  char       *atname,  /* attribute name */
+  char       *rsname,  /* resource name or null */
+  int         mode,   /* encode mode, unused here */
+  int         perm)  /* only used for resources */
+
   {
   size_t   ct;
   const char *cvn;

@@ -125,7 +125,6 @@ extern char     *path_priv;
 extern time_t    time_now;
 extern char     *msg_svdbopen;
 extern char     *msg_svdbnosv;
-extern int       resc_access_perm;
 
 
 /**
@@ -648,7 +647,7 @@ int str_to_attr(
 
       unescape_xml(val,buf,sizeof(buf));
 
-      if ((rc = decode_arst(attr + index,name,NULL,buf)))
+      if ((rc = decode_arst(attr + index,name,NULL,buf,0)))
         return(rc);
       }
 
@@ -733,7 +732,7 @@ int str_to_attr(
           break;
           }
         
-        if ((rc = decode_resc(&(attr[index]),name,resc_parent,resc_child)))
+        if ((rc = decode_resc(&(attr[index]),name,resc_parent,resc_child,ATR_DFLAG_ACCESS)))
           {
           snprintf(log_buffer,sizeof(log_buffer),
             "Error decoding resource %s, %s = %s\n",
@@ -889,8 +888,6 @@ int svr_recov_xml(
       char *attr_ptr = child;
       char *child_parent;
       char *child_attr;
-      
-      resc_access_perm = ATR_DFLAG_ACCESS;
 
       while (*attr_ptr != '\0')
         {
@@ -1078,7 +1075,7 @@ int save_acl(
 
   CLEAR_HEAD(head);
 
-  i = pdef->at_encode(attr, &head, pdef->at_name, (char *)0, ATR_ENCODE_SAVE);
+  i = pdef->at_encode(attr, &head, pdef->at_name, (char *)0, ATR_ENCODE_SAVE, ATR_DFLAG_ACCESS);
 
   if (i < 0)
     {
@@ -1227,7 +1224,7 @@ void recov_acl(
 
   clear_attr(&tempat, pdef);
 
-  if (pdef->at_decode(&tempat, pdef->at_name, NULL, buf) < 0)
+  if (pdef->at_decode(&tempat, pdef->at_name, NULL, buf, ATR_DFLAG_ACCESS) < 0)
     {
     sprintf(log_buffer, "decode of acl %s failed",
             pdef->at_name);

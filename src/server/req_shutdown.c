@@ -362,7 +362,8 @@ static int shutdown_checkpoint(
         &phold->rq_ind.rq_hold.rq_orig.rq_attr,
         job_attr_def[JOB_ATR_hold].at_name,
         NULL,
-        ATR_ENCODE_CLIENT) < 0)
+        ATR_ENCODE_CLIENT,
+        0) < 0)
     {
     return(PBSE_SYSTEM);
     }

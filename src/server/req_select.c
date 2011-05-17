@@ -116,7 +116,6 @@ extern int   svr_authorize_jobreq(struct batch_request *, job *);
 /* Global Data Items  */
 
 extern struct server server;
-extern int  resc_access_perm;
 extern time_t  time_now;
 extern struct all_jobs alljobs;
 extern struct all_jobs array_summary;
@@ -850,7 +849,7 @@ static int build_selentry(
 
   svrattrl            *plist,
   attribute_def       *pdef,
-  int         perm,
+  int                  perm,
   struct select_list **rtnentry) /* O */
 
   {
@@ -897,7 +896,8 @@ static int build_selentry(
               &entry->sl_attr,
               plist->al_name,
               plist->al_resc,
-              plist->al_value)))
+              plist->al_value,
+              perm)))
     {
     free(entry);
 
@@ -956,25 +956,21 @@ static int build_selentry(
 
 static int build_selist(
 
-  svrattrl     *plist,
-  int       perm,
+  svrattrl            *plist,
+  int                  perm,
   struct select_list **pselist, /* RETURN - select list */
-  pbs_queue    **pque, /* RETURN - queue ptr if limit to que */
-  int      *bad) /* RETURN - index of bad attr */
+  pbs_queue          **pque,    /* RETURN - queue ptr if limit to que */
+  int                 *bad)     /* RETURN - index of bad attr */
 
   {
 
+  char               *pc;
+  int                 i;
+  int                 rc;
+
   struct select_list *entry;
-  int      i;
-  char     *pc;
-  attribute_def    *pdef;
-
   struct select_list *prior = (struct select_list *)0;
-  int      rc;
-
-  /* set permission for decode_resc() */
-
-  resc_access_perm = perm;
+  attribute_def      *pdef;
 
   *pque = (pbs_queue *)0;
   *bad = 0;

@@ -100,9 +100,6 @@
  * The prototypes are declared in "attr_func.h"
  */
 
-/* Global Variables */
-
-extern int resc_access_perm; /* see lib/Libattr/attr_fn_resc.c */
 
 /*
  * attr_atomic_set - atomically set a attribute array with values from
@@ -121,17 +118,16 @@ int attr_atomic_set(
   int  *badattr)
 
   {
-  int     acc;
-  int     index;
-  int     listidx;
-  resource *prc;
-  int     rc;
-  attribute temp;
+  int        acc;
+  int        index;
+  int        listidx;
+  resource  *prc;
+  int        rc;
+  attribute  temp;
+  int        resc_access_perm = privil; /* set privilege for decode_resc() */
 
   for (index = 0;index < limit;index++)
     clear_attr(new + index, pdef + index);
-
-  resc_access_perm = privil; /* set privilege for decode_resc() */
 
   listidx = 0;
 
@@ -182,7 +178,8 @@ int attr_atomic_set(
 
     clear_attr(&temp, pdef + index);
 
-    if ((rc = (pdef + index)->at_decode(&temp, plist->al_name, plist->al_resc, plist->al_value)) != 0)
+    rc = (pdef + index)->at_decode(&temp, plist->al_name, plist->al_resc, plist->al_value,resc_access_perm);
+    if (rc != 0)
       {
       if ((rc == PBSE_UNKRESC) && (unkn > 0))
         rc = 0; /* ignore the "error" */
@@ -337,7 +334,7 @@ int attr_atomic_node_set(
     clear_attr(&temp, pdef + index);
 
     if ((rc = (pdef + index)->at_decode(&temp, plist->al_name,
-                                        plist->al_resc, plist->al_value) != 0))
+                                        plist->al_resc, plist->al_value,0) != 0))
       {
       if ((rc == PBSE_UNKRESC) && (unkn > 0))
         rc = 0;              /*ignore the "error"*/

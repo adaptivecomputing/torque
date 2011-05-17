@@ -772,7 +772,8 @@ int svr_startjob(
           &pjob->ji_wattr[JOB_ATR_hashname],
           NULL,
           NULL,
-          pjob->ji_qs.ji_fileprefix))
+          pjob->ji_qs.ji_fileprefix,
+          0))
       {
       return(PBSE_SYSTEM);
       }
@@ -1864,7 +1865,8 @@ static int assign_hosts(
         &pjob->ji_wattr[JOB_ATR_exec_host],
         NULL,
         NULL,
-        hosttoalloc);  /* O */
+        hosttoalloc,
+        0);  /* O */
 
       job_attr_def[JOB_ATR_exec_port].at_free(
           &pjob->ji_wattr[JOB_ATR_exec_port]);
@@ -1873,7 +1875,8 @@ static int assign_hosts(
         &pjob->ji_wattr[JOB_ATR_exec_port],
         NULL,
         NULL,
-        portlist);  /* O */
+        portlist,
+        0);  /* O */
 
       pjob->ji_modified = 1;
       }

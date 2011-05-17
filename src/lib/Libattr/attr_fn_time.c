@@ -124,10 +124,11 @@
 
 int decode_time(
 
-  struct attribute *patr,  /* I/O (modified) */
-  char             *name,  /* I - attribute name (not used) */
-  char             *rescn, /* I - resource name (not used) */
-  char             *val)   /* I - attribute value */
+  attribute *patr,  /* I/O (modified) */
+  char      *name,  /* I - attribute name (not used) */
+  char      *rescn, /* I - resource name (not used) */
+  char      *val,   /* I - attribute value */
+  int        perm)  /* only used for resources */
 
   {
   int   i;
@@ -265,11 +266,12 @@ badval:
 
 int encode_time(
 
-  attribute *attr,   /* ptr to attribute (value in attr->at_val.at_long) */
+  attribute  *attr,   /* ptr to attribute (value in attr->at_val.at_long) */
   tlist_head *phead,  /* head of attrlist list (optional) */
-  char      *atname, /* attribute name */
-  char      *rsname, /* resource name (optional) */
-  int        mode)   /* encode mode (not used) */
+  char       *atname, /* attribute name */
+  char       *rsname, /* resource name (optional) */
+  int         mode,   /* encode mode (not used) */
+  int         perm)  /* only used for resources */
 
   {
   size_t  ct;

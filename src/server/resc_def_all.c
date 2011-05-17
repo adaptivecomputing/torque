@@ -114,7 +114,7 @@ extern struct server server;
 
 /* sync w/job_attr_def.c */
 
-static int decode_nodes(struct attribute *, char *, char *, char *);
+static int decode_nodes(struct attribute *, char *, char *, char *, int);
 static int set_node_ct(resource *, attribute *, int actmode);
 static int set_proc_ct(resource *, attribute *, int actmode);
 static int set_tokens(struct attribute *attr, struct attribute *new, enum batch_op actmode);
@@ -865,10 +865,11 @@ int init_resc_defs(void)
 
 static int decode_nodes(
 
-  struct attribute *patr,
-  char             *name,   /* attribute name */
-  char             *rescn,  /* resource name - unused here */
-  char             *val)    /* attribute value */
+  attribute *patr,
+  char      *name,   /* attribute name */
+  char      *rescn,  /* resource name - unused here */
+  char      *val,    /* attribute value */
+  int        perm)   /* replaces resc_access_perm */
 
   {
   char *pc;
@@ -924,7 +925,7 @@ static int decode_nodes(
     ++pc;
     }  /* END while(1) */
 
-  return(decode_str(patr, name, rescn, val));
+  return(decode_str(patr, name, rescn, val, perm));
   }  /* END decode_nodes() */
 
 
@@ -1078,7 +1079,7 @@ int set_node_ct(
     pndef->rs_free(&pnct->rs_value);
     }
 
-  pndef->rs_decode(&pnct->rs_value, NULL, NULL, pnodesp->rs_value.at_val.at_str);
+  pndef->rs_decode(&pnct->rs_value, NULL, NULL, pnodesp->rs_value.at_val.at_str, ATR_DFLAG_ACCESS);
 
   pnct->rs_value.at_flags |= ATR_VFLAG_SET;
 

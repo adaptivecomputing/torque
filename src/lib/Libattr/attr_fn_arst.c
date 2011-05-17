@@ -268,7 +268,8 @@ int decode_arst(
   struct attribute *patr,    /* O (modified) */
   char             *name,    /* I attribute name (notused) */
   char             *rescn,   /* I resource name (notused) */
-  char             *val)     /* I attribute value */
+  char             *val,     /* I attribute value */
+  int               perm) /* only used for resources */
 
   {
   int   rc;
@@ -420,7 +421,8 @@ int encode_arst(
   tlist_head *phead,  /* O ptr to head of attrlist list */
   char       *atname, /* I attribute name */
   char       *rsname, /* I resource name or NULL (optional) */
-  int         mode)   /* I encode mode */
+  int         mode,   /* I encode mode */
+  int         perm)   /* only used for resources */
 
   {
   char  *end;

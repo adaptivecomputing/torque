@@ -208,9 +208,9 @@ typedef struct attribute attribute;
 struct attribute_def
   {
   char *at_name;
-  int (*at_decode)(attribute *patr, char *name, char *rn, char *val);
+  int (*at_decode)(attribute *patr, char *name, char *rn, char *val, int perm);
   int (*at_encode)(attribute *pattr, tlist_head *phead,
-                      char *aname, char *rsname, int mode);
+                      char *aname, char *rsname, int mode, int perm);
   int (*at_set)(attribute *pattr, attribute *new, enum batch_op);
   int (*at_comp)(attribute *pattr, attribute *with);
   void (*at_free)(attribute *pattr);
@@ -351,51 +351,51 @@ extern int  attr_atomic_node_set(svrattrl *plist, attribute *old,
                                        int unkn, int privil, int *badattr);
 extern void attr_atomic_kill(attribute *temp, attribute_def *pdef, int);
 
-extern int  decode_b(attribute *patr, char *name, char *rn, char *val);
-extern int  decode_c(attribute *patr, char *name, char *rn, char *val);
-extern int  decode_l(attribute *patr, char *name, char *rn, char *val);
-extern int  decode_ll(attribute *patr, char *name, char *rn, char *val);
-extern int  decode_size(attribute *patr, char *name, char *rn, char *val);
-extern int  decode_str(attribute *patr, char *name, char *rn, char *val);
-extern int  decode_time(attribute *patr, char *name, char *rn, char *val);
-extern int  decode_arst(attribute *patr, char *name, char *rn, char *val);
-extern int  decode_arst_direct(attribute *patr, char *val);
-extern int  decode_arst_merge(attribute *,char *,char *,char *);
-extern int  decode_resc(attribute *patr, char *name, char *rn, char *val);
-extern int  decode_depend(attribute *patr, char *name, char *rn, char *val);
-extern int  decode_hold(attribute *patr, char *name, char *rn, char *val);
-extern int  decode_uacl(attribute *patr, char *name, char *rn, char *val);
-extern int  decode_unkn(attribute *patr, char *name, char *rn, char *val);
-extern int decode_tv(attribute *patr, char *name,  char *rescn,	char *val);
+int  decode_b(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_c(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_l(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_ll(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_size(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_str(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_time(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_arst(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_arst_direct(attribute *patr, char *val);
+int  decode_arst_merge(attribute *,char *,char *,char *);
+int  decode_resc(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_depend(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_hold(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_uacl(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_unkn(attribute *patr, char *name, char *rn, char *val, int);
+int  decode_tv(attribute *patr, char *name,  char *rescn,	char *val, int);
  
-extern int  encode_b(attribute *attr, tlist_head *phead, char *atname,
-                           char *rsname, int mode);
-extern int  encode_c(attribute *attr, tlist_head *phead, char *atname,
-                           char *rsname, int mode);
-extern int encode_l(attribute *attr, tlist_head *phead, char *atname,
-                           char *rsname, int mode);
-extern int encode_ll(attribute *attr, tlist_head *phead, char *atname,
-                           char *rsname, int mode);
-extern int encode_size(attribute *attr, tlist_head *phead, char *atname,
-                              char *rsname, int mode);
-extern int encode_str(attribute *attr, tlist_head *phead, char *atname,
-                             char *rsname, int mode);
-extern int encode_time(attribute *attr, tlist_head *phead, char *atname,
-                             char *rsname, int mode);
-extern int encode_arst(attribute *attr, tlist_head *phead, char *atname,
-                             char *rsname, int mode);
-extern int encode_resc(attribute *attr, tlist_head *phead, char *atname,
-                             char *rsname, int mode);
-extern int encode_inter(attribute *attr, tlist_head *phead, char *atname,
-                              char *rsname, int mode);
-extern int encode_unkn(attribute *attr, tlist_head *phead, char *atname,
-                             char *rsname, int mode);
-extern int encode_depend(attribute *attr, tlist_head *phead, char *atname,
-                               char *rsname, int mode);
-extern int encode_hold(attribute *attr, tlist_head *phead, char *atname,
-                             char *rsname, int mode);
+int  encode_b(attribute *attr, tlist_head *phead, char *atname,
+                           char *rsname, int mode, int perm);
+int  encode_c(attribute *attr, tlist_head *phead, char *atname,
+                           char *rsname, int mode, int perm);
+int encode_l(attribute *attr, tlist_head *phead, char *atname,
+                           char *rsname, int mode, int perm);
+int encode_ll(attribute *attr, tlist_head *phead, char *atname,
+                           char *rsname, int mode, int perm);
+int encode_size(attribute *attr, tlist_head *phead, char *atname,
+                              char *rsname, int mode, int perm);
+int encode_str(attribute *attr, tlist_head *phead, char *atname,
+                             char *rsname, int mode, int perm);
+int encode_time(attribute *attr, tlist_head *phead, char *atname,
+                             char *rsname, int mode, int perm);
+int encode_arst(attribute *attr, tlist_head *phead, char *atname,
+                             char *rsname, int mode, int perm);
+int encode_resc(attribute *attr, tlist_head *phead, char *atname,
+                             char *rsname, int mode, int perm);
+int encode_inter(attribute *attr, tlist_head *phead, char *atname,
+                              char *rsname, int mode, int perm);
+int encode_unkn(attribute *attr, tlist_head *phead, char *atname,
+                             char *rsname, int mode, int perm);
+int encode_depend(attribute *attr, tlist_head *phead, char *atname,
+                               char *rsname, int mode, int perm);
+int encode_hold(attribute *attr, tlist_head *phead, char *atname,
+                             char *rsname, int mode, int perm);
 int encode_tv(attribute *attr, tlist_head *phead, char *atname,
-							char *rsname, int mode);
+							char *rsname, int mode, int perm);
 
 
 extern int set_b(attribute *attr, attribute *new, enum batch_op);
@@ -453,14 +453,14 @@ extern int   size_to_str(struct size_value,char *,int);
 extern int   attr_to_str(char *,int, attribute_def *,struct attribute,int);
 extern int   str_to_attr(char *,char *,struct attribute *,struct attribute_def *);
 
-extern int      encode_state(attribute *, tlist_head *, char *, char *, int);
-extern int      encode_props(attribute*, tlist_head*, char*, char*, int);
-extern int      encode_jobs(attribute*, tlist_head*, char*, char*, int);
-extern int      encode_ntype(attribute*, tlist_head*, char*, char*, int);
-extern int      decode_state(attribute*, char*, char*, char*);
-extern int      decode_props(attribute*, char*, char*, char*);
-extern int      decode_ntype(attribute*, char*, char*, char*);
-extern int      decode_null(attribute*, char*, char*, char*);
+extern int      encode_state(attribute *, tlist_head *, char *, char *, int, int);
+extern int      encode_props(attribute*, tlist_head*, char*, char*, int, int);
+extern int      encode_jobs(attribute*, tlist_head*, char*, char*, int, int);
+extern int      encode_ntype(attribute*, tlist_head*, char*, char*, int, int);
+extern int      decode_state(attribute*, char*, char*, char*, int);
+extern int      decode_props(attribute*, char*, char*, char*, int);
+extern int      decode_ntype(attribute*, char*, char*, char*, int);
+extern int      decode_null(attribute*, char*, char*, char*, int);
 extern int      comp_null(attribute*, attribute*);
 extern int      count_substrings(char*, int*);
 extern int      set_node_state(attribute*, attribute*, enum batch_op);
@@ -487,7 +487,7 @@ extern int 		job_radix_action (attribute *new, void *pobj, int actmode);
 
 /* Token manipulation functions */
 
-extern int  decode_tokens(attribute *, char *, char *, char *);
+extern int  decode_tokens(attribute *, char *, char *, char *, int);
 
 /* "type" to pass to acl_check() */
 #define ACL_Host  1

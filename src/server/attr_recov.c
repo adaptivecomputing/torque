@@ -107,9 +107,6 @@
 #include "server.h"
 
 
-/* Global Variables */
-
-extern int resc_access_perm;
 
 /* data items global to functions in this file */
 
@@ -318,12 +315,13 @@ int save_attr(
   int                   numattr) /* number of attributes in array */
 
   {
-  svrattrl  dummy;
-  int   errct = 0;
-  tlist_head   lhead;
-  int   i;
-  svrattrl *pal;
-  int   rc;
+  int         errct = 0;
+  int         i;
+  int         rc;
+  int         resc_access_perm = ATR_DFLAG_ACCESS;
+  svrattrl    dummy;
+  svrattrl   *pal;
+  tlist_head  lhead;
 
   /* encode each attribute which has a value (not non-set) */
 
@@ -340,7 +338,8 @@ int save_attr(
              &lhead,
              (padef + i)->at_name,
              NULL,
-             ATR_ENCODE_SAVE);
+             ATR_ENCODE_SAVE,
+             resc_access_perm);
 
       if (rc < 0)
         errct++;
@@ -466,18 +465,20 @@ int recov_attr(
 
   {
   static char  id[] = "recov_attr";
-  int     amt;
-  int     i;
-  int     index;
+
+  int       amt;
+  int       i;
+  int       index;
+  int       palsize = 0;
+  int       resc_access_perm = ATR_DFLAG_ACCESS;
+
   svrattrl *pal = NULL;
-  int     palsize = 0;
   svrattrl  tempal;
 
   /* set all privileges (read and write) for decoding resources */
   /* This is a special (kludge) flag for the recovery case, see */
   /* decode_resc() in lib/Libattr/attr_fn_resc.c                        */
 
-  resc_access_perm = ATR_DFLAG_ACCESS;
 
   /* For each attribute, read in the attr_extern header */
 
@@ -582,7 +583,8 @@ int recov_attr(
       pattr + index,
       pal->al_name,
       pal->al_resc,
-      pal->al_value);
+      pal->al_value,
+      resc_access_perm);
 
     if ((do_actions) && (padef + index)->at_action != (int (*)())0)
       (padef + index)->at_action(pattr + index, parent, ATR_ACTION_RECOV);

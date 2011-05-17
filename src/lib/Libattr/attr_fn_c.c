@@ -120,13 +120,14 @@
  *  *patr elements set
  */
 
-int
-decode_c(
-  struct attribute *patr,
-  char *name,  /* attribute name */
-  char *rescn,  /* resource name, unused here */
-  char *val  /* attribute value */
-)
+int decode_c(
+
+  attribute *patr,
+  char      *name,  /* attribute name */
+  char      *rescn,  /* resource name, unused here */
+  char      *val,  /* attribute value */
+  int        perm) /* only used for resources */
+
   {
   if ((val == (char *)0) || (strlen(val) == 0))
     {
@@ -152,14 +153,15 @@ decode_c(
  */
 /*ARGSUSED*/
 
-int
-encode_c(
-  attribute *attr,  /* ptr to attribute */
+int encode_c(
+
+  attribute  *attr,  /* ptr to attribute */
   tlist_head *phead,  /* head of attrlist list */
-  char *atname, /* attribute name */
-  char *rsname, /* resource name or null */
-  int mode  /* encode mode, unused here */
-)
+  char       *atname, /* attribute name */
+  char       *rsname, /* resource name or null */
+  int         mode,  /* encode mode, unused here */
+  int         perm) /* only used for resources */
+
   {
 
   svrattrl *pal;

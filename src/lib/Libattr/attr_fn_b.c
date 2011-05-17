@@ -124,13 +124,14 @@ static char false_val[] = ATR_FALSE;
  *  *patr elements set
  */
 
-int
-decode_b(
-  struct attribute *patr,
-  char *name,  /* attribute name */
-  char *rescn,  /* resource name, unused here */
-  char *val  /* attribute value */
-)
+int decode_b(
+
+  attribute *patr,
+  char      *name,  /* attribute name */
+  char      *rescn,  /* resource name, unused here */
+  char      *val,  /* attribute value */
+  int        perm) /* only used for resources */
+
   {
   char *pc;
 
@@ -181,14 +182,15 @@ decode_b(
  */
 /*ARGSUSED*/
 
-int
-encode_b(
-  attribute *attr,  /* ptr to attribute */
+int encode_b(
+
+  attribute  *attr,  /* ptr to attribute */
   tlist_head *phead,  /* head of attribute list */
-  char *atname, /* attribute name */
-  char *rsname, /* resource name or null */
-  int mode  /* encode mode, unused here */
-)
+  char       *atname, /* attribute name */
+  char       *rsname, /* resource name or null */
+  int         mode,  /* encode mode, unused here */
+  int         perm) /* only used for resources */
+
   {
   size_t   ct;
   svrattrl *pal;

@@ -108,21 +108,21 @@
 
 typedef struct resource
   {
-  list_link       rs_link; /* link to other resources in list */
+  list_link            rs_link; /* link to other resources in list */
 
   struct resource_def *rs_defin; /* pointer to definition entry */
-  attribute      rs_value; /* attribute struct holding value */
+  attribute            rs_value; /* attribute struct holding value */
   } resource;
 
 typedef struct resource_def
   {
   char   *rs_name;
-  int (*rs_decode)(attribute *, char *, char *, char *);
-  int (*rs_encode)(attribute *, tlist_head *, char *, char *, int);
-  int (*rs_set)(attribute *, attribute *, enum batch_op);
-  int (*rs_comp)(attribute *, attribute *);
-  void (*rs_free)(attribute *);
-  int (*rs_action)(resource *, attribute *, int);
+  int     (*rs_decode)(attribute *, char *, char *, char *, int);
+  int     (*rs_encode)(attribute *, tlist_head *, char *, char *, int, int);
+  int     (*rs_set)(attribute *, attribute *, enum batch_op);
+  int     (*rs_comp)(attribute *, attribute *);
+  void    (*rs_free)(attribute *);
+  int     (*rs_action)(resource *, attribute *, int);
 
 unsigned int rs_flags:
   ATRFLAG; /* flags: R/O, ..., see attribute.h */

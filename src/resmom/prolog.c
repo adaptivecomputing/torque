@@ -176,7 +176,7 @@ static char *resc_to_string(
 
   if (aindex == JOB_ATR_resource)
     {
-    if (encode_resc(pattr, &svlist, "x", NULL, ATR_ENCODE_CLIENT) <= 0)
+    if (encode_resc(pattr, &svlist, "x", NULL, ATR_ENCODE_CLIENT, ATR_DFLAG_ACCESS) <= 0)
       {
       return(buf);
       }

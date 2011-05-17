@@ -1346,7 +1346,7 @@ int is_stat_get(
 
   rc = DIS_SUCCESS;
 
-  if (decode_arst(&temp, NULL, NULL, NULL))
+  if (decode_arst(&temp, NULL, NULL, NULL, 0))
     {
     DBPRT(("is_stat_get:  cannot initialize attribute\n"));
 
@@ -1404,7 +1404,7 @@ int is_stat_get(
 
     /* add the info to the "temp" attribute */
 
-    if (decode_arst(&temp, NULL, NULL, ret_info))
+    if (decode_arst(&temp, NULL, NULL, ret_info, 0))
       {
       DBPRT(("is_stat_get: cannot add attributes\n"));
 
@@ -1507,7 +1507,7 @@ int is_stat_get(
           
           /* first we decode ret_info into nattr... */
           
-          if ((node_attr_def + ND_ATR_np)->at_decode(&nattr, ATTR_NODE_np, NULL, ret_info + 6) == 0)
+          if ((node_attr_def + ND_ATR_np)->at_decode(&nattr, ATTR_NODE_np, NULL, ret_info + 6, 0) == 0)
             {
             /* ... and if MOM's ncpus is different than our np... */
             if (nattr.at_val.at_long != np->nd_nsn)
@@ -1568,7 +1568,7 @@ int is_stat_get(
   sprintf(date_attrib, "rectime=%ld",
           (long)time_now);
 
-  if (decode_arst(&temp, NULL, NULL, date_attrib))
+  if (decode_arst(&temp, NULL, NULL, date_attrib, 0))
     {
     DBPRT(("is_stat_get:  cannot add date_attrib\n"));
 
@@ -5342,7 +5342,8 @@ int set_nodes(
         &pjob->ji_wattr[JOB_ATR_exec_gpus],
         NULL,
         NULL,
-        gpu_str);  /* O */
+        gpu_str,
+        0);  /* O */
 
     free(gpu_str);
     }

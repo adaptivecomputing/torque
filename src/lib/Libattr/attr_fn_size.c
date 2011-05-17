@@ -128,10 +128,11 @@ int normalize_size(struct size_value *a, struct size_value *b,
 
 int decode_size(
 
-  struct attribute *patr,
-  char             *name, /* attribute name */
-  char             *rescn, /* resource name, unused here */
-  char             *val) /* attribute value */
+  attribute *patr,
+  char      *name, /* attribute name */
+  char      *rescn, /* resource name, unused here */
+  char      *val, /* attribute value */
+  int        perm)  /* only used for resources */
 
   {
 
@@ -171,11 +172,12 @@ int decode_size(
 
 int encode_size(
 
-  attribute *attr,    /* ptr to attribute */
+  attribute  *attr,    /* ptr to attribute */
   tlist_head *phead,   /* head of attrlist list */
-  char      *atname,  /* attribute name */
-  char      *rsname,  /* resource name (optional) */
-  int        mode)    /* encode mode (not used) */
+  char       *atname,  /* attribute name */
+  char       *rsname,  /* resource name (optional) */
+  int         mode,    /* encode mode (not used) */
+  int         perm)  /* only used for resources */
 
   {
   size_t    ct;

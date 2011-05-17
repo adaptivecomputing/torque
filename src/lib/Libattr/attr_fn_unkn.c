@@ -126,13 +126,14 @@
  *  *patr members set
  */
 
-int
-decode_unkn(
-  struct attribute *patr,  /* May be Modified on Return */
-  char *name,
-  char *rescn,
-  char *value
-)
+int decode_unkn(
+
+  attribute *patr,  /* May be Modified on Return */
+  char      *name,
+  char      *rescn,
+  char      *value,
+  int        perm)  /* only used for resources */
+
   {
   svrattrl *entry;
   size_t      valln;
@@ -188,14 +189,15 @@ decode_unkn(
  */
 /*ARGSUSED*/
 
-int
-encode_unkn(
-  attribute *attr,   /* ptr to attribute to encode */
+int encode_unkn(
+
+  attribute  *attr,   /* ptr to attribute to encode */
   tlist_head *phead,   /* list to place entry in */
-  char *atname,  /* attribute name, not used here */
-  char *rsname,  /* resource name, not used here */
-  int mode   /* encode mode, unused here */
-)
+  char       *atname,  /* attribute name, not used here */
+  char       *rsname,  /* resource name, not used here */
+  int         mode,   /* encode mode, unused here */
+  int         perm)  /* only used for resources */
+
   {
   svrattrl *plist;
   svrattrl *pnew;

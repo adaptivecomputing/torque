@@ -114,7 +114,6 @@ extern pthread_mutex_t *setup_save_mutex;
 
 extern char   *path_queues;
 extern time_t  time_now;
-extern int     resc_access_perm;
  
 
 int que_save_xml(
@@ -496,8 +495,6 @@ pbs_queue *que_recov_xml(
       char *attr_ptr = child;
       char *child_parent;
       char *child_attr;
-      
-      resc_access_perm = ATR_DFLAG_ACCESS;
 
       while (*attr_ptr != '\0')
         {

@@ -118,7 +118,6 @@ static int      acct_auto_switch = 0;
 
 extern attribute_def job_attr_def[];
 extern char     *path_acct;
-extern int      resc_access_perm;
 extern time_t      time_now;
 extern int       LOGLEVEL;
 
@@ -143,8 +142,9 @@ static char *acct_job(
   {
   char *ptr;
   int   Len;
-  int  runningBufSize = *BufSize;
-  int  newStringLen;
+  int   runningBufSize = *BufSize;
+  int   newStringLen;
+  int   resc_access_perm = READ_ONLY;
 
   tlist_head attrlist;
   svrattrl *pal;
@@ -275,14 +275,14 @@ static char *acct_job(
 
   /* now encode the job's resource_list attribute */
 
-  resc_access_perm = READ_ONLY;
 
   job_attr_def[JOB_ATR_resource].at_encode(
     &pjob->ji_wattr[JOB_ATR_resource],
     &attrlist,
     job_attr_def[JOB_ATR_resource].at_name,
     NULL,
-    ATR_ENCODE_CLIENT);
+    ATR_ENCODE_CLIENT,
+    resc_access_perm);
 
   while ((pal = GET_NEXT(attrlist)) != NULL)
     {

@@ -91,7 +91,6 @@
 #include "attribute.h"
 #include "svrfunc.h"
 
-extern int decode_null (attribute * patr, char *name, char *rn, char *val);
 extern int set_null (attribute * patr, attribute * new, enum batch_op op);
 extern int disallowed_types_chk (attribute * pattr, void *pobject,
 				 int actmode);

@@ -132,11 +132,12 @@ static char *svr_state_names[] =
 
 int encode_svrstate(
 
-  attribute       *pattr,   /* ptr to attribute */
-  tlist_head      *phead,   /* head of attrlist list */
-  char            *atname,  /* attribute name */
-  char            *rsname,  /* null */
-  int              mode)    /* encode mode */
+  attribute  *pattr,   /* ptr to attribute */
+  tlist_head *phead,   /* head of attrlist list */
+  char       *atname,  /* attribute name */
+  char       *rsname,  /* null */
+  int         mode,    /* encode mode */
+  int         perm)    /* only used for resources */
 
   {
   svrattrl *pal;
@@ -398,8 +399,7 @@ int ck_checkpoint(
  * and queue ) attributes.  It just returns 0.
  */
 
-int
-decode_null(attribute *patr, char *name, char *rn, char *val)
+int decode_null(attribute *patr, char *name, char *rn, char *val, int perm)
   {
   return 0;
   }

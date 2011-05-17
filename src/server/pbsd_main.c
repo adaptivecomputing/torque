@@ -714,7 +714,8 @@ void parse_command_line(
               &server.sv_attr[SRV_ATR_scheduling],
               NULL,
               NULL,
-              optarg) != 0)
+              optarg,
+              0) != 0)
           {
           (void)fprintf(stderr, "%s: bad -a option\n",
                         argv[0]);

@@ -130,17 +130,18 @@
  */
 /*ARGSUSED*/
 
-int
-encode_inter(
-  attribute *attr,  /* ptr to attribute */
+int encode_inter(
+
+  attribute  *attr,  /* ptr to attribute */
   tlist_head *phead,  /* head of attribute list */
-  char *atname, /* attribute name */
-  char *rsname, /* resource name or null */
-  int mode  /* encode mode, unused here */
-)
+  char       *atname, /* attribute name */
+  char       *rsname, /* resource name or null */
+  int         mode,  /* encode mode, unused here */
+  int         perm) /* only used for resources */
+
   {
   if (mode == ATR_ENCODE_CLIENT)
-    return (encode_b(attr, phead, atname, rsname, mode));
+    return (encode_b(attr, phead, atname, rsname, mode, perm));
   else
-    return (encode_l(attr, phead, atname, rsname, mode));
+    return (encode_l(attr, phead, atname, rsname, mode, perm));
   }

@@ -20,11 +20,12 @@
 
 int decode_tokens(
 
-  struct attribute *patr,
-  char *name,             /* attribute name */
-  char *rescn,            /* resource name, unused here */
-  char *val               /* attribute value */
-)
+  attribute *patr,
+  char      *name,  /* attribute name */
+  char      *rescn, /* resource name, unused here */
+  char      *val,   /* attribute value */
+  int        perm)  /* only used for resources */
+
 
   {
   int ret = 0;
@@ -49,7 +50,7 @@ int decode_tokens(
 
   if (ret == 0)
     {
-    ret = decode_str(patr, name, rescn, val);
+    ret = decode_str(patr, name, rescn, val, perm);
     }
 
   return ret;

@@ -1401,7 +1401,8 @@ void job_start_error(
     pattr,
     NULL,
     NULL,
-    tmpLine);
+    tmpLine,
+    0);
 
   pjob->ji_wattr[JOB_ATR_errpath].at_flags =
     (ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
@@ -2014,7 +2015,7 @@ char *resc_string(
   int   len, used, tot;
   char   *res_str, *ch;
   char   *getuname();
-  extern int  resc_access_perm;
+  int  resc_access_perm = ATR_DFLAG_USRD;
 
   char   *tmpResStr;
 
@@ -2054,8 +2055,6 @@ char *resc_string(
 
   ad = &job_attr_def[JOB_ATR_resource];
 
-  resc_access_perm = ATR_DFLAG_USRD;
-
   CLEAR_HEAD(lhead);
 
   ad->at_encode(
@@ -2063,7 +2062,8 @@ char *resc_string(
     &lhead,
     ad->at_name,
     NULL,
-    ATR_ENCODE_CLIENT);
+    ATR_ENCODE_CLIENT,
+    resc_access_perm);
 
   attrl_fixlink(&lhead);
 
@@ -2147,7 +2147,8 @@ int contact_sisters(
   	  &phead,
   	  (job_attr_def + i)->at_name,
   	  NULL,
-  	  ATR_ENCODE_MOM);
+  	  ATR_ENCODE_MOM,
+      ATR_DFLAG_ACCESS);
     }  /* END for (i) */
     
   attrl_fixlink(&phead);
@@ -2275,7 +2276,7 @@ void im_request(
   char *radix_ports = NULL;
 
   struct passwd  *check_pwd();
-  extern int  resc_access_perm;
+  int  resc_access_perm;
   int start_process(task *, char **, char **);
   u_long gettime(resource *);
   u_long getsize(resource *);
@@ -2578,7 +2579,8 @@ void im_request(
                     &pjob->ji_wattr[index],
                     psatl->al_name,
                     psatl->al_resc,
-                    psatl->al_value);
+                    psatl->al_value,
+                    resc_access_perm);
 
         if (errcode != 0)
           break;
@@ -2951,7 +2953,8 @@ void im_request(
                     &pjob->ji_wattr[index],
                     psatl->al_name,
                     psatl->al_resc,
-                    psatl->al_value);
+                    psatl->al_value,
+                    resc_access_perm);
       
         if (errcode != 0)
           break;

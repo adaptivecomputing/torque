@@ -134,7 +134,6 @@ extern int  exiting_tasks;
 extern char  *msg_daemonname;
 extern int  termin_child;
 
-extern int  resc_access_perm;
 extern char  *path_aux;
 
 extern int   multi_mom;
@@ -155,8 +154,8 @@ static void preobit_reply (int);
 static void obit_reply (int);
 extern int tm_reply (int, int, tm_event_t);
 extern u_long addclient (char *);
-extern void encode_used (job *, tlist_head *);
-extern void encode_flagged_attrs (job *, tlist_head *);
+extern void encode_used (job *, int, tlist_head *);
+extern void encode_flagged_attrs (job *, int, tlist_head *);
 extern void job_nodes (job *);
 extern int task_recov (job *);
 extern void mom_server_all_update_stat(void);
@@ -881,6 +880,7 @@ int post_epilogue(
   char id[] = "post_epilogue";
 
   int sock;
+  int resc_access_perm;
 
   struct batch_request *preq;
 
@@ -963,9 +963,9 @@ int post_epilogue(
 
   resc_access_perm = ATR_DFLAG_RDACC;
 
-  encode_used(pjob, &preq->rq_ind.rq_jobobit.rq_attr);
+  encode_used(pjob, resc_access_perm, &preq->rq_ind.rq_jobobit.rq_attr);
 
-  encode_flagged_attrs(pjob, &preq->rq_ind.rq_jobobit.rq_attr);
+  encode_flagged_attrs(pjob, resc_access_perm, &preq->rq_ind.rq_jobobit.rq_attr);
 
   DIS_tcp_setup(sock);
 

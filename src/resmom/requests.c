@@ -152,7 +152,6 @@ extern attribute_def job_attr_def[];
 extern char            *msg_jobmod;
 extern char            *msg_manager;
 extern time_t  time_now;
-extern int  resc_access_perm; /* see encode_resc() */
 extern int  multi_mom;
 extern int spoolasfinalname;
 /* in attr_fn_resc.c */
@@ -1172,7 +1171,8 @@ void req_holdjob(
         &tmph,
         pal->al_name,
         NULL,
-        pal->al_value);
+        pal->al_value,
+        0);
       }
 
     if ((rc = start_checkpoint(pjob,1,preq)) != PBSE_NONE)
@@ -2242,6 +2242,7 @@ void req_signaljob(
 void encode_used(
 
   job        *pjob,   /* I */
+  int         perm,   /* I */
   tlist_head *phead)  /* O */
 
   {
@@ -2267,7 +2268,7 @@ void encode_used(
     attribute     val;
     int           rc;
 
-    if ((rd->rs_flags & resc_access_perm) == 0)
+    if ((rd->rs_flags & perm) == 0)
       continue;
 
     val = rs->rs_value; /* copy resource attribute */
@@ -2304,12 +2305,12 @@ void encode_used(
       }
 
     rc = rd->rs_encode(
-
            &val,
            phead,
            ad->at_name,
            rd->rs_name,
-           ATR_ENCODE_CLIENT);
+           ATR_ENCODE_CLIENT,
+           perm);
 
     if (rc < 0)
       break;
@@ -2322,6 +2323,7 @@ void encode_used(
 void encode_flagged_attrs(
 
   job        *pjob,   /* I */
+  int         perm,   /* I */
   tlist_head *phead)  /* O */
 
   {
@@ -2353,12 +2355,12 @@ void encode_flagged_attrs(
         }
 
       ad->at_encode(
-
         at,
         phead,
         ad->at_name,
         NULL,
-        ATR_ENCODE_CLIENT);
+        ATR_ENCODE_CLIENT,
+        perm);
       }
     }
   }
@@ -2384,9 +2386,10 @@ void req_stat_job(
   struct batch_request *preq)  /* I */
 
   {
-  int   all;
+  int     all;
+  int     resc_access_perm = preq->rq_perm & ATR_DFLAG_RDACC;
   char   *name;
-  job   *pjob;
+  job    *pjob;
 
   struct batch_reply *preply = &preq->rq_reply;
 
@@ -2423,10 +2426,6 @@ void req_stat_job(
 
   CLEAR_HEAD(preply->brp_un.brp_status);
 
-  /* pass user-client privilege to encode_resc() */
-
-  resc_access_perm = preq->rq_perm & ATR_DFLAG_RDACC;
-
   for (;pjob;pjob = all ? (job *)GET_NEXT(pjob->ji_alljobs) : NULL)
     {
     if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
@@ -2451,9 +2450,9 @@ void req_stat_job(
 
     append_link(&preply->brp_un.brp_status, &pstat->brp_stlink, pstat);
 
-    encode_used(pjob, &pstat->brp_attr); /* adds resources_used attr */
+    encode_used(pjob, resc_access_perm, &pstat->brp_attr); /* adds resources_used attr */
 
-    encode_flagged_attrs(pjob, &pstat->brp_attr); /* adds other flagged attrs */
+    encode_flagged_attrs(pjob, resc_access_perm, &pstat->brp_attr); /* adds other flagged attrs */
     }
 
   reply_send(preq);

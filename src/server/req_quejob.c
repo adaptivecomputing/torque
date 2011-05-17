@@ -160,7 +160,6 @@ const char *TJobFileType[] =
   NULL
   };
 
-extern int  resc_access_perm;
 extern attribute_def job_attr_def[];
 extern char *path_jobs;
 extern char *pbs_o_host;
@@ -343,7 +342,8 @@ void sum_select_mem_request(
       decode_resc(&pj->ji_wattr[JOB_ATR_resource],
         ATTR_l,
         "mem",
-        memval_str);
+        memval_str,
+        ATR_DFLAG_ACCESS);
       }
     }
 
@@ -363,35 +363,34 @@ void *req_quejob(
   void *vp) /* ptr to the decoded request   */
 
   {
-  char  *id = "req_quejob";
+  static char          *id = "req_quejob";
   struct batch_request *preq = (struct batch_request *)vp;
 
-  char   basename[PBS_JOBBASE + 1];
-  int   created_here = 0;
-  int   attr_index;
-  char  *jid;
-  char   namebuf[MAXPATHLEN + 1];
-  attribute_def *pdef;
-  job  *pj;
-  svrattrl *psatl;
-  int   sock = preq->rq_conn;
-  int   rc;
-
-  int   i;
-  char   buf[256];
-  int   fds;
-  char   jidbuf[PBS_MAXSVRJOBID + 1];
-  char  *pc;
-  pbs_queue *pque;
-  char  *qname;
-  attribute  tempattr;
-  char           EMsg[MAXPATHLEN];
-  
-  struct stat stat_buf;
+  int                   created_here = 0;
+  int                   attr_index;
+  int                   sock = preq->rq_conn;
+  int                   rc;
   /* set basic (user) level access permission */
+  int                   resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
+  int                   i;
+  int                   fds;
 
-  resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
+  char                 *jid;
+  char                 *pc;
+  char                 *qname;
+  char                  jidbuf[PBS_MAXSVRJOBID + 1];
+  char                  basename[PBS_JOBBASE + 1];
+  char                  namebuf[MAXPATHLEN + 1];
+  char                  buf[256];
+  char                  EMsg[MAXPATHLEN];
 
+  job                  *pj;
+  attribute_def        *pdef;
+  svrattrl             *psatl;
+  pbs_queue            *pque;
+  attribute             tempattr;
+  
+  struct stat           stat_buf;
 
   /*
    * if the job id is supplied, the request had better be
@@ -699,7 +698,8 @@ void *req_quejob(
            &pj->ji_wattr[attr_index],
            psatl->al_name,
            psatl->al_resc,
-           psatl->al_value);
+           psatl->al_value,
+           resc_access_perm);
 
     if (rc != 0)
       {
@@ -782,7 +782,8 @@ void *req_quejob(
         &pj->ji_wattr[JOB_ATR_jobname],
         NULL,
         NULL,
-        "none");
+        "none",
+        resc_access_perm);
       }
 
     /* check value of priority */
@@ -815,7 +816,8 @@ void *req_quejob(
       &pj->ji_wattr[JOB_ATR_job_owner],
       NULL,
       NULL,
-      buf);
+      buf,
+      resc_access_perm);
 
     /* set create time */
 
@@ -858,7 +860,8 @@ void *req_quejob(
         &tempattr,
         NULL,
         NULL,
-        buf);
+        buf,
+        resc_access_perm);
 
     job_attr_def[JOB_ATR_variables].at_set(
       &pj->ji_wattr[JOB_ATR_variables],
@@ -1013,7 +1016,8 @@ void *req_quejob(
           &pj->ji_wattr[JOB_ATR_checkpoint_dir],
           NULL,
           NULL,
-          vp);
+          vp,
+          resc_access_perm);
         }
       else if ((pque->qu_attr[QE_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
                (pque->qu_attr[QE_ATR_checkpoint_dir].at_val.at_str))
@@ -1065,7 +1069,8 @@ void *req_quejob(
         &pj->ji_wattr[JOB_ATR_account],
         NULL,
         NULL,
-        (char *)user_account_default(preq->rq_user));
+        (char *)user_account_default(preq->rq_user),
+        resc_access_perm);
 
       if (pj->ji_wattr[JOB_ATR_account].at_val.at_str == 0)
         {
@@ -1091,7 +1096,7 @@ void *req_quejob(
       {
       job_purge(pj);
 
-      log_err(errno, "req_quejob", "job owner not set");
+      log_err(errno, id, "job owner not set");
 
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "no job owner specified");
 
@@ -1116,7 +1121,8 @@ void *req_quejob(
     &pj->ji_wattr[JOB_ATR_at_server],
     NULL,
     NULL,
-    server_name);
+    server_name,
+    resc_access_perm);
 
   /*
    * See if the job is qualified to go into the requested queue.
@@ -1576,7 +1582,7 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
  * req_rdytocommit - Ready To Commit Batch Request
  *
  * Set substate to JOB_SUBSTATE_TRANSICM and
- * record job to permanent storage, i.e. written to the job save file
+ e record job to permanent storage, i.e. written to the job save file
  *      (called by both pbs_server and pbs_mom)
  */
 

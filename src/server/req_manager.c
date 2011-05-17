@@ -1248,7 +1248,7 @@ void mgr_server_set(
       index = find_attr(svr_attr_def, plist->al_name, SRV_ATR_LAST);
 
       clear_attr(&temp, &svr_attr_def[index]);
-      svr_attr_def[index].at_decode(&temp, plist->al_name, plist->al_resc, plist->al_value);
+      svr_attr_def[index].at_decode(&temp, plist->al_name, plist->al_resc, plist->al_value, 0);
 
       pstr = temp.at_val.at_arst;
 

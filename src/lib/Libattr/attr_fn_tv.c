@@ -124,11 +124,13 @@ int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval 
  */
 
 int decode_tv(
-   struct attribute *patr,
-   char *name,  /* attribute name */
-   char *rescn, /* resource name*/
-   char *val	/* attribute value */
-   )
+
+  attribute *patr,
+  char      *name,  /* attribute name */
+  char      *rescn, /* resource name*/
+  char      *val,   /* attribute value */
+  int        perm)  /* only used for resources */
+   
   {
   char 		*pc;
   time_t 		secs = 0;
@@ -204,11 +206,13 @@ badval:
   */
 
 int encode_tv(
-  attribute *attr,   /* ptr to attribute (value in attr->at_val.at_long) */
+
+  attribute  *attr,   /* ptr to attribute (value in attr->at_val.at_long) */
   tlist_head *phead,  /* head of attrlist list (optional) */
-  char      *atname, /* attribute name */
-  char      *rsname, /* resource name (optional) */
-  int 		mode)	/* endcode mode (not used) */
+  char       *atname, /* attribute name */
+  char       *rsname, /* resource name (optional) */
+  int 		    mode,   /* endcode mode (not used) */
+  int         perm)   /* only used for resources */
 
   {
   size_t 		 ct;

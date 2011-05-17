@@ -36,7 +36,6 @@ static int      acct_auto_switch = 0;
 /* Global Data */
 
 extern char     path_acct[];
-extern int      resc_access_perm;
 
 /*
  * token_acct_open() - open the acct file for append.

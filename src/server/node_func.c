@@ -750,7 +750,8 @@ int status_nodeattrib(
                 phead,
                 (padef + index)->at_name,
                 NULL,
-                ATR_ENCODE_CLIENT));
+                ATR_ENCODE_CLIENT,
+                0));
 
         if (rc < 0)
           {
@@ -783,7 +784,8 @@ int status_nodeattrib(
                phead,
                (padef + index)->at_name,
                NULL,
-               ATR_ENCODE_CLIENT);
+               ATR_ENCODE_CLIENT,
+               0);
 
         if (rc < 0)
           {

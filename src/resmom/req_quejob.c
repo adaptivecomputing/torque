@@ -141,7 +141,6 @@ const char *TJobFileType[] =
   NULL
   };
 
-extern int  resc_access_perm;
 extern tlist_head svr_alljobs;
 extern tlist_head svr_newjobs;
 extern attribute_def job_attr_def[];
@@ -198,15 +197,14 @@ void req_quejob(
   int    sock = preq->rq_conn;
 
   int    IsCheckpoint = 0;
-
   /* set basic (user) level access permission */
-
-  resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
+  int resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
 
   if (PBSNodeCheckProlog)
     {
     check_state(1);
 
+    /* NYI: remove this? Why are we sending an update here? */
     mom_server_all_update_stat();
 
     if (internal_state & INUSE_DOWN)
@@ -392,7 +390,8 @@ void req_quejob(
              &pj->ji_wattr[index],
              psatl->al_name,
              psatl->al_resc,
-             psatl->al_value);
+             psatl->al_value,
+             resc_access_perm);
       }
 
     if (rc != 0)

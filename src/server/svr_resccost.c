@@ -170,10 +170,11 @@ static struct resource_cost *add_cost_entry(
 
 int decode_rcost(
 
-  struct attribute *patr,
-  char             *name, /* attribute name */
-  char             *rescn, /* resource name, unused here */
-  char             *val) /* attribute value */
+  attribute *patr,
+  char      *name,  /* attribute name */
+  char      *rescn, /* resource name, unused here */
+  char      *val,   /* attribute value */
+  int        perm)  /* used only with resources */
 
   {
   resource_def *prdef;
@@ -243,11 +244,12 @@ int decode_rcost(
 
 int encode_rcost(
 
-  attribute *attr,   /* ptr to attribute */
+  attribute  *attr,   /* ptr to attribute */
   tlist_head *phead,   /* head of attrlist list */
-  char  *atname,  /* attribute name */
-  char  *rsname,  /* resource name or null */
-  int  mode)   /* encode mode, unused here */
+  char       *atname,  /* attribute name */
+  char       *rsname,  /* resource name or null */
+  int         mode,   /* encode mode, unused here */
+  int         perm)  /* used only with resources */
 
   {
   svrattrl *pal;

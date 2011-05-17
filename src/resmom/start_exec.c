@@ -1967,7 +1967,8 @@ int TMomFinalizeJob1(
 													 pattr,
 													 NULL,
 													 NULL,
-													 TJE->ptc_name);
+													 TJE->ptc_name,
+                           0);
 
 		pjob->ji_wattr[JOB_ATR_outpath].at_flags =
 		(ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
@@ -1980,7 +1981,8 @@ int TMomFinalizeJob1(
 													 pattr,
 													 NULL,
 													 NULL,
-													 TJE->ptc_name);
+													 TJE->ptc_name,
+                           0);
 
 		pjob->ji_wattr[JOB_ATR_errpath].at_flags =
 		(ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
@@ -5957,7 +5959,8 @@ void start_exec(
 				&phead,
 				(job_attr_def + i)->at_name,
 				NULL,
-				ATR_ENCODE_MOM);
+				ATR_ENCODE_MOM,
+        ATR_DFLAG_ACCESS);
 			}  /* END for (i) */
 
 		attrl_fixlink(&phead);
@@ -6048,7 +6051,8 @@ void start_exec(
 																	 &phead,
 																	 (job_attr_def + i)->at_name,
 																	 NULL,
-																	 ATR_ENCODE_MOM);
+																	 ATR_ENCODE_MOM,
+                                   ATR_DFLAG_ACCESS);
 			}	 /* END for (i) */
 
 		attrl_fixlink(&phead);

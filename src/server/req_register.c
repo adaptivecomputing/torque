@@ -2205,10 +2205,11 @@ struct dependnames
 
 int decode_depend(
 
-  struct attribute *patr,
-  char             *name, /* attribute name */
-  char             *rescn, /* resource name, unused here */
-  char             *val) /* attribute value */
+  attribute *patr,
+  char      *name,  /* attribute name */
+  char      *rescn, /* resource name, unused here */
+  char      *val,   /* attribute value */
+  int        perm)  /* only used for resources */
 
   {
   int  rc;
@@ -2418,7 +2419,8 @@ int encode_depend(
   tlist_head   *phead,  /* ptr to head of attrlist list */
   char	       *atname, /* attribute name */
   char	       *rsname, /* resource name or null */
-  int           mode)   /* encode mode, unused here */
+  int           mode,   /* encode mode, unused here */
+  int           perm)   /* only used for resources */
 
   {
   int      ct = 0;

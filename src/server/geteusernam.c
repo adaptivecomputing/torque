@@ -508,7 +508,7 @@ int set_jobexid(
 
   job_attr_def[JOB_ATR_euser].at_free(pattr);
 
-  job_attr_def[JOB_ATR_euser].at_decode(pattr, NULL, NULL, tmpLine);
+  job_attr_def[JOB_ATR_euser].at_decode(pattr, NULL, NULL, tmpLine, 0);
 
 #ifdef _CRAY
 
@@ -701,7 +701,7 @@ int set_jobexid(
 
   job_attr_def[JOB_ATR_egroup].at_free(pattr);
 
-  job_attr_def[JOB_ATR_egroup].at_decode(pattr, NULL, NULL, pgrpn);
+  job_attr_def[JOB_ATR_egroup].at_decode(pattr, NULL, NULL, pgrpn, 0);
 
   pattr->at_flags |= addflags;
 

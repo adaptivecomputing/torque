@@ -116,10 +116,6 @@
  * ----------------------------------------------------------------------------
  */
 
-/* Global Variables */
-
-int resc_access_perm;
-
 /* External Global Items */
 
 int comp_resc_gt; /* count of resources compared > */
@@ -143,7 +139,8 @@ int decode_resc(
   struct attribute *patr,  /* Modified on Return */
   char             *name,  /* attribute name */
   char             *rescn, /* I resource name - is used here */
-  char             *val)   /* resource value */
+  char             *val,   /* resource value */
+  int               perm)  /* access permissions */
 
   {
   resource *prsc;
@@ -190,15 +187,15 @@ int decode_resc(
 
   /* note special use of ATR_DFLAG_ACCESS, see server/attr_recov() */
 
-  if (((prsc->rs_defin->rs_flags & resc_access_perm & ATR_DFLAG_WRACC) == 0) &&
-      (resc_access_perm != ATR_DFLAG_ACCESS))
+  if (((prsc->rs_defin->rs_flags & perm & ATR_DFLAG_WRACC) == 0) &&
+      (perm != ATR_DFLAG_ACCESS))
     {
     return(PBSE_ATTRRO);
     }
 
   patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
-  rv = prdef->rs_decode(&prsc->rs_value, name, rescn, val);
+  rv = prdef->rs_decode(&prsc->rs_value, name, rescn, val, perm);
 
   if (rv == 0)
     {
@@ -230,7 +227,7 @@ int decode_resc(
  * reset if the default changes or it is moved.
  *
  * If the mode is ATR_ENCODE_CLIENT or ATR_ENCODE_MOM, the client permission
- * passed in the global variable resc_access_perm is checked against each
+ * passed in ac_perm is checked against each
  * definition.  This allows a resource by resource access setting, not just
  * on the attribute.
  *
@@ -241,11 +238,12 @@ int decode_resc(
 
 int encode_resc(
 
-  attribute *attr,   /* ptr to attribute to encode */
+  attribute  *attr,    /* ptr to attribute to encode */
   tlist_head *phead,   /* head of attrlist list */
-  char  *atname,   /* attribute name */
-  char  *rsname,   /* resource name, null on call */
-  int   mode)   /* encode mode */
+  char       *atname,  /* attribute name */
+  char       *rsname,  /* resource name, null on call */
+  int         mode,    /* encode mode */
+  int         ac_perm) /* access permissions */
 
   {
   int     dflt;
@@ -276,7 +274,7 @@ int encode_resc(
      * encode if sending to server and not default and have permission
      */
 
-    perm = prsc->rs_defin->rs_flags & resc_access_perm ;
+    perm = prsc->rs_defin->rs_flags & ac_perm ;
     dflt = prsc->rs_value.at_flags & ATR_VFLAG_DEFLT;
 
     if (((mode == ATR_ENCODE_CLIENT) && perm)  ||
@@ -286,8 +284,7 @@ int encode_resc(
       {
 
       rsname = prsc->rs_defin->rs_name;
-      rc = prsc->rs_defin->rs_encode(&prsc->rs_value, phead,
-                                     atname, rsname, mode);
+      rc = prsc->rs_defin->rs_encode(&prsc->rs_value, phead, atname, rsname, mode, ac_perm);
 
       if (rc < 0)
         return (rc);

@@ -107,7 +107,6 @@ extern int encode_rcost (attribute * attr, tlist_head * phead, char *atname,
 			 char *rsname, int mode);
 extern int set_rcost (attribute * attr, attribute * new, enum batch_op);
 extern void free_rcost (attribute * attr);
-extern int decode_null (attribute * patr, char *name, char *rn, char *val);
 extern int set_null (attribute * patr, attribute * new, enum batch_op op);
 
 extern int token_chk (attribute * pattr, void *pobject, int actmode);

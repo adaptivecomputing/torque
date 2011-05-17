@@ -871,7 +871,8 @@ int pbsd_init(
     &server.sv_attr[SRV_ATR_mailfrom],
     0,
     0,
-    PBS_DEFAULT_MAIL);
+    PBS_DEFAULT_MAIL,
+    0);
 
   /* disable ping_rate.  no longer used */
 
@@ -949,7 +950,8 @@ int pbsd_init(
     &server.sv_attr[SRV_ATR_version],
     0,
     0,
-    PACKAGE_VERSION);
+    PACKAGE_VERSION,
+    0);
 
   /* 6. open accounting file and job log file if logging is set */
 
@@ -1584,7 +1586,8 @@ static int pbsd_init_job(
     &pjob->ji_wattr[JOB_ATR_at_server],
     NULL,
     NULL,
-    server_name);
+    server_name,
+    0);
 
   /* update queue_rank if this job is higher than current */
 

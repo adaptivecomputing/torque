@@ -918,7 +918,8 @@ job *job_clone(
           &tempattr,
           NULL,
           NULL,
-          tmpstr);
+          tmpstr,
+          ATR_DFLAG_ACCESS);
 
         job_attr_def[i].at_set(
           &pnewjob->ji_wattr[i],
@@ -959,7 +960,8 @@ job *job_clone(
   job_attr_def[JOB_ATR_variables].at_decode(&tempattr,
       NULL,
       NULL,
-      buf);
+      buf,
+      0);
 
   job_attr_def[JOB_ATR_variables].at_set(
     &pnewjob->ji_wattr[JOB_ATR_variables],

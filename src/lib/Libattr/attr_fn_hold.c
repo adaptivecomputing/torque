@@ -107,13 +107,14 @@
  *  *patr members set
  */
 
-int
-decode_hold(
-  struct attribute *patr,
-  char *name,  /* attribute name */
-  char *rescn,  /* resource name - unused here */
-  char *val  /* attribute value */
-)
+int decode_hold(
+
+  attribute *patr,
+  char      *name,  /* attribute name */
+  char      *rescn,  /* resource name - unused here */
+  char      *val,  /* attribute value */
+  int        perm) /* only used for resources */
+
   {
   char  *pc;
 
@@ -167,14 +168,15 @@ decode_hold(
  */
 /*ARGSUSED*/
 
-int
-encode_hold(
-  attribute *attr,   /* ptr to attribute */
+int encode_hold(
+
+  attribute  *attr,   /* ptr to attribute */
   tlist_head *phead,   /* head of attrlist */
-  char *atname,  /* name of attribute */
-  char *rsname,  /* resource name or null */
-  int mode   /* encode mode, unused here */
-)
+  char       *atname,  /* name of attribute */
+  char       *rsname,  /* resource name or null */
+  int         mode,   /* encode mode, unused here */
+  int         perm) /* only used for resources */
+
 
   {
   int       i;

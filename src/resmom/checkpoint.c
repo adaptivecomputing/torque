@@ -1442,7 +1442,7 @@ int start_checkpoint(
         pjob->ji_qs.ji_jobid,
         (int)time_now);
 
-      decode_str(&pjob->ji_wattr[JOB_ATR_checkpoint_name], NULL, NULL, name_buffer);
+      decode_str(&pjob->ji_wattr[JOB_ATR_checkpoint_name], NULL, NULL, name_buffer, 0);
 
       pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags =
         ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
@@ -1461,7 +1461,7 @@ int start_checkpoint(
 
         get_jobs_default_checkpoint_dir(pjob, name_buffer);
 
-        decode_str(&pjob->ji_wattr[JOB_ATR_checkpoint_dir],NULL,NULL,name_buffer);
+        decode_str(&pjob->ji_wattr[JOB_ATR_checkpoint_dir],NULL,NULL,name_buffer,0);
         }
 
       break;

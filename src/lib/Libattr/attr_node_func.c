@@ -266,7 +266,8 @@ int encode_state(
 
   char      *aname, /*attribute's name    */
   char      *rname, /*resource's name (null if none)  */
-  int        mode) /*mode code, unused here   */
+  int        mode, /*mode code, unused here   */
+  int        perm) /* only used for resources */
 
   {
   int   i;
@@ -342,11 +343,12 @@ int encode_state(
 
 int encode_ntype(
   
-  attribute *pattr, /*struct attribute being encoded  */
-  tlist_head *ph,   /*head of a list of  "svrattrl"   */
-  char *aname,      /*attribute's name    */
-  char *rname,      /*resource's name (null if none)  */
-  int mode)         /*mode code, unused here   */
+  attribute  *pattr, /*struct attribute being encoded  */
+  tlist_head *ph,    /*head of a list of  "svrattrl"   */
+  char       *aname, /*attribute's name    */
+  char       *rname, /*resource's name (null if none)  */
+  int         mode,  /*mode code, unused here   */
+  int         perm)  /* only used for resources */
 
   {
   svrattrl *pal;
@@ -403,12 +405,13 @@ int encode_ntype(
 
 int encode_jobs(
 
-  attribute *pattr, /*struct attribute being encoded  */
-  tlist_head *ph, /*head of a  list of "svrattrl"   */
+  attribute  *pattr, /*struct attribute being encoded  */
+  tlist_head *ph,    /*head of a  list of "svrattrl"   */
   /*structs which are to be returned*/
-  char      *aname, /*attribute's name    */
-  char      *rname, /*resource's name (null if none)  */
-  int      mode) /*mode code, unused here   */
+  char       *aname, /*attribute's name    */
+  char       *rname, /*resource's name (null if none)  */
+  int         mode,  /*mode code, unused here   */
+  int         perm)  /* only used for resources */
 
   {
   svrattrl  *pal;
@@ -521,7 +524,8 @@ int decode_state(
   attribute *pattr,   /* I (modified) */
   char      *name,    /* attribute name */
   char      *rescn,   /* resource name, unused here */
-  char      *val)     /* attribute value */
+  char      *val,     /* attribute value */
+  int        perm)    /* only used for resources */
 
   {
   int   rc = 0;  /*return code; 0==success*/
@@ -625,13 +629,14 @@ int decode_state(
  * that the types are going to be mutually exclusive
  */
 
-int
-decode_ntype(
+int decode_ntype(
+
   attribute *pattr,
-  char *name,             /* attribute name */
-  char *rescn,            /* resource name, unused here */
-  char *val              /* attribute value */
-)
+  char      *name,   /* attribute name */
+  char      *rescn,  /* resource name, unused here */
+  char      *val,    /* attribute value */
+  int        perm)   /* only used for resources */
+
 
   {
   int rc = 0;  /*return code; 0==success*/

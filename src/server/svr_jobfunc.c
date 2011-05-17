@@ -412,7 +412,7 @@ int svr_enquejob(
 
   pdef->at_free(pattrjb);
 
-  pdef->at_decode(pattrjb, NULL, NULL, pque->qu_qs.qu_name);
+  pdef->at_decode(pattrjb, NULL, NULL, pque->qu_qs.qu_name, 0);
 
   pjob->ji_wattr[JOB_ATR_queuetype].at_val.at_char =
     *pque->qu_attr[QA_ATR_QType].at_val.at_str;
@@ -2578,7 +2578,7 @@ static void eval_checkpoint(
 
       free_str(jobckp);
 
-      decode_str(jobckp, 0, 0, queues);
+      decode_str(jobckp, 0, 0, queues, 0);
       }
     }
 

@@ -112,7 +112,6 @@ int status_attrib(svrattrl *, attribute_def *, attribute *, int, int, tlist_head
 /* Global Data Items: */
 
 extern attribute_def job_attr_def[];
-extern int      resc_access_perm; /* see encode_resc() in attr_fn_resc.c */
 
 extern struct server server;
 extern time_t time_now;
@@ -226,10 +225,10 @@ int status_attrib(
   {
   int   index;
   int   nth = 0;
+  int   resc_access_perm;
 
   priv &= ATR_DFLAG_RDACC;  /* user-client privilege  */
-
-  resc_access_perm = priv;  /* pass privilege to encode_resc() */
+  resc_access_perm = priv; 
 
   /* for each attribute asked for or for all attributes, add to reply */
 
@@ -261,7 +260,8 @@ int status_attrib(
             phead,
             (padef + index)->at_name,
             NULL,
-            ATR_ENCODE_CLIENT);
+            ATR_ENCODE_CLIENT,
+            resc_access_perm);
           }
         }
 
@@ -287,7 +287,8 @@ int status_attrib(
           phead,
           (padef + index)->at_name,
           NULL,
-          ATR_ENCODE_CLIENT);
+          ATR_ENCODE_CLIENT,
+          resc_access_perm);
 
         /* add walltime remaining if started */
         if ((index == JOB_ATR_start_time) &&
