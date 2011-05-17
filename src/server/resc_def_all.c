@@ -461,8 +461,8 @@ resource_def svr_resc_def_const[] =
     encode_size,
     set_size,
     comp_size,
+    free_null,
     set_proc_ct,
-    NULL_FUNC,
     READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
     ATR_TYPE_SIZE
   },
