@@ -118,6 +118,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
+#include <pthread.h>
 
 #include "pbs_ifl.h"
 #include "list_link.h"
@@ -612,7 +613,7 @@ static void job_init_wattr(
 
 
 /*
- * job_purge - purge job from system
+ * job_purge_thread - purge job from system
  *
  * The job is dequeued; the job control file, script file and any spooled
  * output files are unlinked, and the job structure is freed.
@@ -620,13 +621,10 @@ static void job_init_wattr(
  * removed.
  */
 
-void job_purge(
-
-  job *pjob)  /* I (modified) */
-
+void *job_purge_thread(void *jobtopurge)
   {
-  static char   id[] = "job_purge";
-
+  static char   id[] = "job_purge_thread";
+  job *pjob;
   char          namebuf[MAXPATHLEN + 1];
   extern char  *msg_err_purgejob;
   int           rc;
@@ -635,6 +633,8 @@ void job_purge(
 #endif  /* NVIDIA_GPUS */
 
   extern void MOMCheckRestart(void);
+
+  pjob = (job *)jobtopurge;
 
   if (pjob->ji_flags & MOM_HAS_TMPDIR)
     {
@@ -654,7 +654,7 @@ void job_purge(
         {
         /* FAILURE */
 
-        return;
+        pthread_exit(NULL);
         }
 
       rc = remtree(namebuf);
@@ -811,6 +811,50 @@ void job_purge(
 
   if (((job *)GET_NEXT(svr_alljobs)) == NULL)
     MOMCheckRestart();
+
+  pthread_exit(NULL);
+  }
+
+void job_purge(
+
+  job *pjob)  /* I (modified) */
+
+  {
+  static char   id[] = "job_purge";
+  pthread_attr_t attr;
+  pthread_t *thread;
+  int rc;
+
+  rc = pthread_attr_init( &attr );
+  if(rc)
+    {
+    sprintf(log_buffer, "pthread_attr_init failded. job number %s", pjob->ji_qs.ji_jobid);
+    log_err(rc, id, log_buffer);
+    return;
+    }
+
+  rc = pthread_attr_setdetachstate(
+     &attr, PTHREAD_CREATE_DETACHED );
+  if(rc)
+    {
+    sprintf(log_buffer, "pthread_attr_setdetachstate failded. job number %s", pjob->ji_qs.ji_jobid);
+    log_err(rc, id, log_buffer);
+    return;
+    }
+  thread = (pthread_t *)malloc(sizeof(pthread_t));
+  if(thread == NULL) 
+    {
+    sprintf(log_buffer, "Could not allocate memory for job_purge thread");
+    log_err(errno, id, log_buffer);
+    return;
+    }
+
+  rc = pthread_create(thread, &attr, &job_purge_thread, pjob);
+  if(rc)
+    {
+    sprintf(log_buffer, "pthread_create failed: %d", rc);
+    log_err(rc, id, log_buffer);
+    }
 
   return;
   }  /* END job_purge() */
