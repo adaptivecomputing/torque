@@ -311,10 +311,6 @@
 /* Define if open64, stat64, and friends work */
 #undef LARGEFILE_WORKS
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
-#undef LT_OBJDIR
-
 /* the machine specific resc_def_* file name */
 #undef MACH_RESC_DEFS
 
