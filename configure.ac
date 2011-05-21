@@ -723,6 +723,9 @@ AC_ARG_ENABLE(job_create,
     JOBCREATE=$enableval,JOBCREATE=no)
 AC_MSG_RESULT($JOBCREATE)
 
+dnl We need pthreads by default in the MOM
+  AC_CHECK_LIB(pthread, pthread_create, MOMLIBS="$MOMLIBS -lpthread")
+
 case "$JOBCREATE" in
   yes) AC_DEFINE([USEJOBCREATE], 1, [Define to enable libjob job_create support])
       AC_CHECK_LIB([job],[job_create],
