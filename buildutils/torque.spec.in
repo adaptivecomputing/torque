@@ -13,6 +13,8 @@
 %define bcond_without() %{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}
 %endif
 
+%define _missing_doc_files_terminate_build 0
+
 ### Features disabled by default
 %bcond_with    blcr
 %bcond_with    cpuset
