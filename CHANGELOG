@@ -56,6 +56,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       not arrive at sister nodes.
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it
       (backported from 3.0.2)
+  b - Added patch from Michael Jennings to buildutils/torque.spec.in. This patch
+      allows an rpm configured with DRMAA to complete even if all of the
+      support files are not present on the system.
 
 2.5.5
   b - change so gpus get written back to nodes file
@@ -397,9 +400,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - change so "mom_checkpoint_job_has_checkpoint" and "execing command" log
       messages do not always get logged (back-ported from 2.5.4)
   b - remove the use of a GNU specific function. (back-ported from 2.5.5)
-  b - Added patch from Michael Jennings to buildutils/torque.spec.in. This patch
-      allows an rpm configured with DRMAA to complete even if all of the
-      support files are not present on the system.
 
 
 2.4.11 
