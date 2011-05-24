@@ -303,7 +303,7 @@ extern char *reqgres(struct rm_attribute *);
 #ifdef NVIDIA_GPUS
 extern int find_file(char *, char *);
 extern int MXMLFromString(mxml_t **, char *, char **, char *);
- 
+extern char  mom_host[]; 
 extern int             MOMNvidiaDriverVersion;
 #endif  /* NVIDIA_GPUS */
 
@@ -315,6 +315,9 @@ void mom_server_all_update_gpustat(void);
 #endif  /* NVIDIA_GPUS */
 extern void DIS_rpp_reset(void);
 
+#ifdef NVIDIA_GPUS
+int    nvidia_gpu_modes[50];
+#endif  /* NVIDIA_GPUS */
 /**
  * mom_server_init
  *
@@ -1578,6 +1581,15 @@ int setgpumode(
   
   if (device_hndl != NULL)
     {
+	  if (LOGLEVEL >= 7)
+	    {
+      sprintf(log_buffer, "changing to mode %d for gpu %s",
+			        gpumode,
+			        gpuid);
+
+      log_ext(-1, id, log_buffer, LOG_DEBUG);
+	    }
+
     rc = nvmlDeviceSetComputeMode(device_hndl, compute_mode);
     
     if (rc == NVML_SUCCESS)
@@ -1708,6 +1720,16 @@ int resetgpuecc(
   
   if (device_hndl != NULL)
     {
+	  if (LOGLEVEL >= 7)
+	    {
+		  sprintf(log_buffer, "reseting error count %d-%d for gpu %s",
+						  reset_perm,
+						  reset_vol,
+						  gpuid);
+
+		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+	    }
+
     rc = nvmlDeviceClearEccErrorCounts(device_hndl, counter_type);
     
     if (rc == NVML_SUCCESS)
@@ -1830,6 +1852,126 @@ int resetgpuecc(
 
 
 
+#ifdef NVIDIA_GPUS
+/*
+ * uses the gpu_flags to determine what to set up for job
+ *
+ * @param pjob - the job to set up gpus for
+ * @return PBSE_NONE if success, error code otherwise
+ */
+int setup_gpus_for_job(
+    
+  job  *pjob) /* I */
+
+  {
+  static char *id = "setup_gpus_for_job";
+
+  char *gpu_str;
+  char *ptr;
+  char  tmp_str[PBS_MAXHOSTNAME + 5];
+  int   gpu_flags = 0;
+  char  gpu_id[30];
+  int   gpu_mode = -1;
+
+  /* if node does not have Nvidia recognized driver version then forget it */
+
+  if ((MOMNvidiaDriverVersion != 270) && (MOMNvidiaDriverVersion != 260))
+    return(PBSE_NONE);
+ 
+  /* if there are no gpus, do nothing */
+  if ((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) == 0)
+    return(PBSE_NONE);
+
+  /* if there are no gpu flags, do nothing */
+  if ((pjob->ji_wattr[JOB_ATR_gpu_flags].at_flags & ATR_VFLAG_SET) == 0)
+    return(PBSE_NONE);
+
+  gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+  
+  if (gpu_str == NULL)
+    return(PBSE_NONE);
+  
+  gpu_flags = pjob->ji_wattr[JOB_ATR_gpu_flags].at_val.at_long;
+
+  if (LOGLEVEL >= 7)
+    {
+		sprintf(log_buffer, "job %s has exec_gpus %s gpu_flags %d",
+						pjob->ji_qs.ji_jobid,
+						gpu_str,
+						gpu_flags);
+
+	  log_ext(-1, id, log_buffer, LOG_DEBUG);
+    }
+
+  /* traverse the gpu_str to see what gpus we have assigned */
+  
+  strcpy(tmp_str, mom_host);
+  strcat(tmp_str, "-gpu/");
+  
+  ptr = strstr(gpu_str, tmp_str);
+  
+  while(ptr != NULL)
+    {
+    ptr = strchr(ptr, '/');
+    if (ptr != NULL)
+      {
+      ptr++;
+      sprintf(gpu_id,"%d",atoi(ptr));
+
+      /* do we need to reset volatile error counts on gpu */
+      if (gpu_flags >= 1000)
+        {
+        if (LOGLEVEL >= 7)
+          {
+    		  sprintf(log_buffer, "job %s reseting gpuid %s volatile error counts",
+						  pjob->ji_qs.ji_jobid,
+						  gpu_id);
+
+	        log_ext(-1, id, log_buffer, LOG_DEBUG);
+          }
+
+        resetgpuecc(gpu_id, 0, 1);
+        }
+    
+      gpu_mode = gpu_flags;
+      if (gpu_mode  >= 1000)
+        {
+        gpu_mode -= 1000;
+        }
+
+      /* do we need to change modes on gpu */
+      if (nvidia_gpu_modes[atoi(ptr)] != gpu_mode)
+        {
+        if (LOGLEVEL >= 7)
+          {
+    		  sprintf(log_buffer, "job %s change to mode %d for gpuid %s",
+					    pjob->ji_qs.ji_jobid,
+					    gpu_mode,
+					    gpu_id);
+
+          log_ext(-1, id, log_buffer, LOG_DEBUG);
+          }
+
+        setgpumode(gpu_id, gpu_mode);
+        }
+    
+      ptr = strstr(ptr, tmp_str);
+      }
+    }
+
+  /* do we need to change mode on gpu */
+
+
+  return(PBSE_NONE);
+  } /* END setup_gpus_for_job() */
+#endif  /* NVIDIA_GPUS */
+
+
+
+
+
+
+
 /**
  * generate_server_status
  *
@@ -1912,6 +2054,7 @@ void generate_server_gpustatus_nvml(
     strcat(outptr, "driver_ver=");
     strcat(outptr, tmpbuf);
     outptr += strlen(outptr) + 1;
+    MOMNvidiaDriverVersion = atoi(tmpbuf);
     }
   else
     {
@@ -2043,18 +2186,23 @@ void generate_server_gpustatus_nvml(
         {
           case NVML_COMPUTEMODE_DEFAULT:
             strcat(outptr, "Default");
+            nvidia_gpu_modes[idx] = gpu_normal;
             break;
           case NVML_COMPUTEMODE_EXCLUSIVE_THREAD:
             strcat(outptr, "Exclusive_Thread");
+            nvidia_gpu_modes[idx] = gpu_exclusive_thread;
             break;
           case NVML_COMPUTEMODE_PROHIBITED:
             strcat(outptr, "Prohibited");
+            nvidia_gpu_modes[idx] = gpu_prohibited;
             break;
           case NVML_COMPUTEMODE_EXCLUSIVE_PROCESS:
             strcat(outptr, "Exclusive_Process");
+            nvidia_gpu_modes[idx] = gpu_exclusive_process;
             break;
           default:
             strcat(outptr, "Unknown");
+            nvidia_gpu_modes[idx] = -1;
             break;
         }
       outptr += strlen(outptr) + 1;
@@ -2170,8 +2318,7 @@ void generate_server_gpustatus_smi(
   char gpu_string[16 * 1024];
   int  gpu_modes[32];
   int  have_modes = FALSE;
-  int  gpuid;
-  int  drv_ver = 0;
+  int  gpuid = -1;
   mxml_t *EP;
   char *Tail;
   char Emsg[256];
@@ -2213,11 +2360,7 @@ void generate_server_gpustatus_smi(
     strcat(outptr, "driver_ver=");
     strcat(outptr, EP->Val);
     outptr += strlen(outptr) + 1;
-    drv_ver = atoi(EP->Val);
-    if (MOMNvidiaDriverVersion != drv_ver)
-      {
-      MOMNvidiaDriverVersion = drv_ver;
-      }
+    MOMNvidiaDriverVersion = atoi(EP->Val);
     }
   else
     {
@@ -2235,10 +2378,18 @@ void generate_server_gpustatus_smi(
         strcat(outptr, "gpuid=");
         strcat(outptr, EP->AVal[0]);
         outptr += strlen(outptr) + 1;
-        gpuid = atoi(EP->AVal[0]);
-
-        if (drv_ver == 260)
+        if (MOMNvidiaDriverVersion == 260)
           {
+          gpuid = atoi(EP->AVal[0]);
+          }
+        else
+          {
+          gpuid++;
+          }
+
+        if (MOMNvidiaDriverVersion == 260)
+          {
+          gpuid = atoi(EP->AVal[0]);
           /* Get and add mode rules information for driver 260 */
 
           if (!have_modes)
@@ -2251,15 +2402,19 @@ void generate_server_gpustatus_smi(
             {
               case 0:
                 strcat(outptr, "Normal");
+                nvidia_gpu_modes[gpuid] = gpu_normal;
                 break;
               case 1:
                 strcat(outptr, "Exclusive");
+                nvidia_gpu_modes[gpuid] = gpu_exclusive_thread;
                 break;
               case 2:
                 strcat(outptr, "Prohibited");
+                nvidia_gpu_modes[gpuid] = gpu_prohibited;
                 break;
               default:
                 strcat(outptr, "None");
+                nvidia_gpu_modes[gpuid] = -1;
                 break;
             }
             outptr += strlen(outptr) + 1;
@@ -2403,9 +2558,9 @@ void generate_server_gpustatus_smi(
             dataptr = savptr;
             }
 
-          } /* end (drv_ver == 260) */
+          } /* end (MOMNvidiaDriverVersion == 260) */
 
-        else if (drv_ver == 270)
+        else if (MOMNvidiaDriverVersion == 270)
           {
           savptr = dataptr;
           dataptr = strstr(dataptr, "<product_name>");
@@ -2511,6 +2666,26 @@ void generate_server_gpustatus_smi(
             strcat(outptr, "gpu_mode=");
             strcat(outptr, EP->Val);
             outptr += strlen(outptr) + 1;
+            if (EP->Val[0] == 'D') /* Default */
+              {
+              nvidia_gpu_modes[gpuid] = gpu_normal;
+              }
+            else if (EP->Val[0] == 'P') /* Prohibited */
+              {
+              nvidia_gpu_modes[gpuid] = gpu_prohibited;
+              }
+            else if (EP->Val[10] == 'T') /* Exclusive_Thread */
+              {
+              nvidia_gpu_modes[gpuid] = gpu_exclusive_thread;
+              }
+            else if (EP->Val[10] == 'P') /* Exclusive_Process */
+              {
+              nvidia_gpu_modes[gpuid] = gpu_exclusive_process;
+              }
+            else /* unknown */
+              {
+              nvidia_gpu_modes[gpuid] = -1;
+              }
             }
           else
             {
@@ -2611,7 +2786,7 @@ void generate_server_gpustatus_smi(
             dataptr = savptr;
             }
 
-          } /* end (drv_ver == 270) */
+          } /* end (MOMNvidiaDriverVersion == 270) */
 
         else
           {

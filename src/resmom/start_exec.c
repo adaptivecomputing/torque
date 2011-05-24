@@ -311,6 +311,9 @@ extern int  mom_checkpoint_start_restart(job *pjob);
 extern void get_chkpt_dir_to_use(job *pjob, char *chkpt_dir);
 extern char *cat_dirs(char *root, char *base);
 extern char *get_local_script_path(job *pjob, char *base);
+#ifdef NVIDIA_GPUS
+extern int  setup_gpus_for_job(job *pjob);
+#endif  /* NVIDIA_GPUS */
 
 
 /* END prototypes */
@@ -2452,6 +2455,18 @@ int TMomFinalizeChild(
 
 			exit(1);
       }
+
+#ifdef NVIDIA_GPUS
+    if (setup_gpus_for_job(pjob) == -1)
+      {
+			starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
+
+			/*NOTREACHED*/
+
+			exit(1);
+      }
+#endif  /* NVIDIA_GPUS */
+
 		}	 /* END if (pjob->ji_flags & MOM_HAS_NODEFILE) */
 
 	if (LOGLEVEL >= 10)

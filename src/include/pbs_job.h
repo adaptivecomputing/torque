@@ -335,6 +335,9 @@ enum job_atr
   JOB_ATR_pagg_id,
 #endif /* USEJOBCREATE */
   JOB_ATR_job_id,
+#ifdef NVIDIA_GPUS
+  JOB_ATR_gpu_flags,		/* gpu flags - mode and reset flags */
+#endif  /* NVIDIA_GPUS */
 #include "site_job_attr_enum.h"
 
   JOB_ATR_UNKN,  /* the special "unknown" type    */

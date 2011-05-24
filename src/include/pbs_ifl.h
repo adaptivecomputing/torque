@@ -170,6 +170,11 @@
 #define ATTR_pagg         "pagg_id"
 #endif /* USEJOBCREATE */
 
+#ifdef NVIDIA_GPUS
+  /* JOB_ATR_gpu_flags */
+#define ATTR_gpu_flags		"gpu_flags"
+#endif  /* NVIDIA_GPUS */
+
 /* additional queue attributes names */
 
 #define ATTR_aclgren    "acl_group_enable"
@@ -290,7 +295,6 @@
   #define ATTR_authusers       "authorized_users"
 #endif
 #define ATTR_moabarraycompatible "moab_array_compatible"
-#define ATTR_autonodegpu  "auto_node_gpu"
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state         "state"

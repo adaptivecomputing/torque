@@ -188,6 +188,10 @@ extern void mom_server_close_stream(int stream);
 char *cat_dirs(char *root, char *base);
 char *get_local_script_path(job *pjob, char *base);
 
+#ifdef NVIDIA_GPUS
+extern int  setup_gpus_for_job(job *pjob);
+#endif  /* NVIDIA_GPUS */
+
 #ifdef PENABLE_LINUX26_CPUSETS
 extern int use_cpusets(job *);
 #endif /* PENABLE_LINUX26_CPUSETS */
@@ -2437,6 +2441,19 @@ void im_request(
         }
 
 #endif /* IBM SP */
+
+#ifdef NVIDIA_GPUS
+      if (setup_gpus_for_job(pjob) == -1)
+        {
+        job_purge(pjob);
+
+        log_err(-1, id, "cannot set up gpus");
+
+        SEND_ERR(PBSE_SYSTEM)
+
+        goto done;
+        }
+#endif  /* NVIDIA_GPUS */
 
       job_save(pjob, SAVEJOB_FULL);
 

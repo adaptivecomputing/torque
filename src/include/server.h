@@ -190,7 +190,6 @@ enum srv_atr
   SRV_ATR_authusers,
 #endif
   SRV_ATR_MoabArrayCompatible,
-  SRV_ATR_AutoNodeGPU,
 #include "site_svr_attr_enum.h"
   /* This must be last */
   SRV_ATR_LAST

@@ -980,6 +980,20 @@ attribute_def job_attr_def[] = {
    ATR_TYPE_STR,
    PARENT_TYPE_JOB},
 
+#ifdef NVIDIA_GPUS
+  /* JOB_ATR_gpu_flags */
+  {ATTR_gpu_flags,		/* "gpu_flags" - mode and reset flags */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   READ_ONLY | ATR_DFLAG_MOM,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_JOB},
+#endif  /* NVIDIA_GPUS */
+
   /* Site defined attributes if any, see site_job_attr_*.h  */
 #include "site_job_attr_def.h"
 

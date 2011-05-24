@@ -628,9 +628,6 @@ void *job_purge_thread(void *jobtopurge)
   char          namebuf[MAXPATHLEN + 1];
   extern char  *msg_err_purgejob;
   int           rc;
-#ifdef NVIDIA_GPUS
-  int           used_gpu = FALSE;
-#endif  /* NVIDIA_GPUS */
 
   extern void MOMCheckRestart(void);
 
@@ -675,19 +672,6 @@ void *job_purge_thread(void *jobtopurge)
       pjob->ji_flags &= ~MOM_HAS_TMPDIR;
       }
     }
-
-#ifdef NVIDIA_GPUS
-  /*
-   * Did this job have a gpuid assigned?
-   * if so, then update gpu status
-   */
-  if (((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0) &&
-      (pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL))
-    {
-    used_gpu = TRUE;
-    mom_server_all_update_gpustat();
-    }
-#endif  /* NVIDIA_GPUS */
 
 #ifdef PENABLE_LINUX26_CPUSETS
 
@@ -800,13 +784,6 @@ void *job_purge_thread(void *jobtopurge)
 
   job_free(pjob);
 
-#ifdef NVIDIA_GPUS
-  if (used_gpu)
-    {
-    mom_server_all_update_gpustat();
-    }
-#endif  /* NVIDIA_GPUS */
-
   /* if no jobs are left, check if MOM should be restarted */
 
   if (((job *)GET_NEXT(svr_alljobs)) == NULL)
@@ -824,6 +801,18 @@ void job_purge(
   pthread_attr_t attr;
   pthread_t *thread;
   int rc;
+
+#ifdef NVIDIA_GPUS
+  /*
+   * Did this job have a gpuid assigned?
+   * if so, then update gpu status
+   */
+  if (((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0) &&
+      (pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL))
+    {
+    mom_server_all_update_gpustat();
+    }
+#endif  /* NVIDIA_GPUS */
 
   rc = pthread_attr_init( &attr );
   if(rc)

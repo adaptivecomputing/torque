@@ -59,6 +59,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Added patch from Michael Jennings to buildutils/torque.spec.in. This patch
       allows an rpm configured with DRMAA to complete even if all of the
       support files are not present on the system.
+  e - Added capability to automatically set mode on Nvidia gpus. Added support for
+      gpu reseterr option on qsub. Removed server attribute auto_node_gpu. The 
+      nodes file will be updated with Nvidia gpu count when --enable-nvidia-gpu
+      configure option is used. Moved some code out of job_purge_thread to prevent
+      segfault on mom.
 
 2.5.5
   b - change so gpus get written back to nodes file

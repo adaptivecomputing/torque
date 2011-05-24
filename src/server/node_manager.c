@@ -135,6 +135,9 @@ int   svr_clnodes  = 0; /* number of cluster nodes     */
 int   svr_tsnodes  = 0; /* number of time shared nodes     */
 int   svr_chngNodesfile = 0; /* 1 signals want nodes file update */
 int   gpu_mode_rqstd = -1;  /* default gpu mode requested */
+#ifdef NVIDIA_GPUS
+int   gpu_err_reset = FALSE;    /* was a gpu errcount reset requested */
+#endif  /* NVIDIA_GPUS */
 /* on server shutdown, (qmgr mods)  */
 
 struct pbsnode **pbsndlist = NULL;
@@ -1728,12 +1731,9 @@ int is_gpustat_get(
     {
     np->nd_ngpus = gpucnt;
 
-    /* check if gpu count needs to be updated in the nodes file */
+    /* update the nodes file */
 
-    if (server.sv_attr[(int)SRV_ATR_AutoNodeGPU].at_val.at_long)
-      {
-      update_nodes_file();
-      }
+    update_nodes_file();
     }
 
   node_gpustatus_list(&temp, np, ATR_ACTION_ALTER);
@@ -1742,65 +1742,6 @@ int is_gpustat_get(
 
   }  /* END is_gpustat_get() */
 #endif  /* NVIDIA_GPUS */
-
-
-
-/*
-** Function to update gpu counts and node file when auto_node_gpu is enabled
-*/
-
-int  update_gpus(
-  attribute *pattr,
-  void      *pobj,
-  int        actmode)
-
-  {
-  /* set gpu count according to gpu_status */
-
-#ifdef NVIDIA_GPUS
-  if ((actmode == ATR_ACTION_ALTER) && (pattr->at_val.at_long))
-    {
-    struct pbsnode *pnode;
-    int i;
-    char      *ptr;
-    attribute  temp;
-    int        nongpucnt;
-
-    memset(&temp, 0, sizeof(temp));
-    temp.at_type= ATR_TYPE_ARST;
-    temp.at_flags = ATR_VFLAG_SET;
-
-    for(i = 0; i < svr_totnodes; i++)
-      {
-      pnode = pbsndlist[i];
-
-      /* set non gpu count to 1 since we always have a timestamp */
-      nongpucnt = 1;
-
-      if (pnode->nd_ngpustatus > 0)
-        {
-        /*
-        ** if we have gpu status for this node then we should have # of
-        ** gpu status - 1 to allow for the timestamp gpu status and
-        ** maybe -1 for the driver version
-        */
-
-        temp.at_val.at_arst = pnode->nd_gpustatus;
-        ptr = arst_string("driver_ver=", &temp);
-        if (ptr)
-          {
-          nongpucnt++;
-          }
-        
-        pnode->nd_ngpus = pnode->nd_ngpustatus - nongpucnt;
-        }
-      }
-    update_nodes_file();
-    }
-#endif  /* NVIDIA_GPUS */
-
-  return(0);
-  }
 
 
 
@@ -3087,16 +3028,14 @@ static int gpu_count(
       if (gn->state == gpu_unavailable)
         continue;
 
-      if ((gpu_mode_rqstd == -1) || ((int)gn->mode == gpu_mode_rqstd))
+      if (!freeonly)
         {
-        if (!freeonly)
-          {
-          count++;
-          }
-        else if ((gn->state == gpu_unallocated) || (gn->state == gpu_shared))
-          {
-          count++;;
-          }
+        count++;
+        }
+      else if ((gn->state == gpu_unallocated) ||
+            ((gn->state == gpu_shared) && (gpu_mode_rqstd == gpu_normal)))
+        {
+        count++;;
         }
       }
     }
@@ -3114,14 +3053,14 @@ static int gpu_count(
       }
     }
 
-    sprintf(log_buffer,
-      "Counted %d gpus %s on node %s",
-      count,
-      (freeonly? "free":"available"),
-      pnode->nd_name);
+  sprintf(log_buffer,
+    "Counted %d gpus %s on node %s",
+    count,
+    (freeonly? "free":"available"),
+    pnode->nd_name);
 
-    DBPRT(("%s\n",
-           log_buffer));
+  DBPRT(("%s\n",
+         log_buffer));
 
   return (count);
   }  /* END gpu_count() */
@@ -3596,6 +3535,7 @@ static int proplist(
           }
 #ifdef NVIDIA_GPUS
         have_gpus = TRUE;
+        gpu_err_reset = FALSE; /* default to no */
 #endif  /* NVIDIA_GPUS */
 
         /* default value if no other gets specified */
@@ -3623,6 +3563,10 @@ static int proplist(
     else if (have_gpus && (!strcasecmp(pname, "shared")))
       {
       gpu_mode_rqstd = gpu_normal;
+      }
+    else if (have_gpus && (!strcasecmp(pname, "reseterr")))
+      {
+      gpu_err_reset = TRUE;
       }
 #endif  /* NVIDIA_GPUS */
     else
@@ -5020,6 +4964,10 @@ int set_nodes(
   struct gpusubn *gn;
   char   ProcBMStr[MAX_BM];
 
+#ifdef NVIDIA_GPUS
+  int gpu_flags = 0;
+#endif  /* NVIDIA_GPUS */
+
   if (FailHost != NULL)
     FailHost[0] = '\0';
 
@@ -5131,7 +5079,8 @@ int set_nodes(
       if ((gn->state == gpu_unavailable) ||
 #ifdef NVIDIA_GPUS
           ((gn->state == gpu_exclusive) && pnode->nd_gpus_real) ||
-          (pnode->nd_gpus_real && ((int)gn->mode != gpu_mode_rqstd)) ||
+          (pnode->nd_gpus_real && ((int)gn->mode == gpu_normal) &&
+          ((gpu_mode_rqstd != gpu_normal) && (gn->state != gpu_unallocated))) ||
           ((!pnode->nd_gpus_real) && (gn->inuse == TRUE)))
 #else
           (gn->inuse == TRUE))
@@ -5379,6 +5328,34 @@ int set_nodes(
   *(nodelist + strlen(nodelist) - 1) = '\0'; /* strip trailing + */
 
   *rtnlist = nodelist;
+
+#ifdef NVIDIA_GPUS
+  /* if we have exec_gpus then fill in the extra gpu_flags */
+  if ((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
+    {
+    if (gpu_mode_rqstd != -1)
+        gpu_flags = gpu_mode_rqstd;
+    if (gpu_err_reset)
+        gpu_flags += 1000;
+    if (gpu_flags >= 0)
+      {
+      pjob->ji_wattr[(int)JOB_ATR_gpu_flags].at_val.at_long = gpu_flags;
+      pjob->ji_wattr[(int)JOB_ATR_gpu_flags].at_flags =
+        ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+	    if (LOGLEVEL >= 7)
+	      {
+        sprintf(log_buffer, "setting gpu_flags for job %s to %d %ld",
+                pjob->ji_qs.ji_jobid,
+                gpu_flags,
+                pjob->ji_wattr[(int)JOB_ATR_gpu_flags].at_val.at_long);
+
+  		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+	      }
+      job_save(pjob,SAVEJOB_FULL);
+      }
+    }
+#endif  /* NVIDIA_GPUS */
 
   if (LOGLEVEL >= 3)
     {
