@@ -227,8 +227,8 @@ mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table
  * This routine is called from the mom startup code.
  * @see setup_program_environment
  */
-int
-mom_checkpoint_init(void)
+int mom_checkpoint_init(void)
+
   {
   int   c = 0;
   char *path_checkpt_tmp;
@@ -249,7 +249,7 @@ mom_checkpoint_init(void)
     /* set permissions on default checkpoint path, if needed */
     struct stat sb;
     
-    if ((stat(path_checkpoint, &sb) == 0) && ((sb.st_mode && 01777) != 01777)) 
+    if ((stat(path_checkpoint, &sb) == 0) && ((sb.st_mode & 01777) != 01777)) 
       {
       chmod(path_checkpoint, 01777);
       }
@@ -277,8 +277,10 @@ mom_checkpoint_init(void)
 /*========================================================================*/
 
 
-void
-mom_checkpoint_set_directory_path(char *str)
+void mom_checkpoint_set_directory_path(
+    
+  char *str)
+
   {
   char *cp;
 
