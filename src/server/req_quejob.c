@@ -1307,17 +1307,19 @@ void req_jobscript(
     {
     if (errno == 0)
       {
-      sprintf(log_buffer, "job %s in unexpected state '%s'",
-              pj->ji_qs.ji_jobid,
-              PJobSubState[pj->ji_qs.ji_substate]);
+      snprintf(log_buffer, sizeof(log_buffer),
+        "job %s in unexpected state '%s'",
+        pj->ji_qs.ji_jobid,
+        PJobSubState[pj->ji_qs.ji_substate]);
       }
     else
       {
-      sprintf(log_buffer, "job %s in unexpected state '%s' (errno=%d - %s)",
-              pj->ji_qs.ji_jobid,
-              PJobSubState[pj->ji_qs.ji_substate],
-              errno,
-              strerror(errno));
+      snprintf(log_buffer, sizeof(log_buffer),
+        "job %s in unexpected state '%s' (errno=%d - %s)",
+        pj->ji_qs.ji_jobid,
+        PJobSubState[pj->ji_qs.ji_substate],
+        errno,
+        strerror(errno));
       }
 
     log_err(errno, id, log_buffer);
@@ -1555,9 +1557,10 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "successfully moved file '%s' for job '%s'",
-            namebuf,
-            preq->rq_ind.rq_jobfile.rq_jobid);
+    snprintf(log_buffer, sizeof(log_buffer),
+      "successfully moved file '%s' for job '%s'",
+      namebuf,
+      preq->rq_ind.rq_jobfile.rq_jobid);
 
     log_record(
       PBSEVENT_JOB,
@@ -1684,9 +1687,10 @@ void req_rdytocommit(
     {
     char tmpLine[1024];
 
-    sprintf(tmpLine, "cannot save job - errno=%d - %s",
-            errno,
-            strerror(errno));
+    snprintf(tmpLine, sizeof(tmpLine),
+      "cannot save job - errno=%d - %s",
+      errno,
+      strerror(errno));
 
     log_err(errno, id, tmpLine);
 
@@ -1719,9 +1723,10 @@ void req_rdytocommit(
     {
     /* reply failed, purge the job and close the connection */
 
-    sprintf(log_buffer, "cannot report jobid - errno=%d - %s",
-            errno,
-            strerror(errno));
+    snprintf(log_buffer, sizeof(log_buffer),
+      "cannot report jobid - errno=%d - %s",
+      errno,
+      strerror(errno));
 
     log_err(errno, id, log_buffer);
 
@@ -2026,11 +2031,12 @@ void req_commit(
 
   /* need to format message first, before request goes away */
 
-  sprintf(log_buffer, msg_jobnew,
-          preq->rq_user, preq->rq_host,
-          pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-          pj->ji_wattr[JOB_ATR_jobname].at_val.at_str,
-          pj->ji_qhdr->qu_qs.qu_name);
+  snprintf(log_buffer, sizeof(log_buffer),
+    msg_jobnew,
+    preq->rq_user, preq->rq_host,
+    pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+    pj->ji_wattr[JOB_ATR_jobname].at_val.at_str,
+    pj->ji_qhdr->qu_qs.qu_name);
 
   /* acknowledge the request with the job id */
 
@@ -2069,8 +2075,10 @@ void req_commit(
     {
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer, "Trying to AUTORUN job %s",
-              pj->ji_qs.ji_jobid);
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Trying to AUTORUN job %s",
+        pj->ji_qs.ji_jobid);
+
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,

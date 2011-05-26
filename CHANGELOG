@@ -13,6 +13,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it
+  b - fix a potential buffer overflow security issue in job names and host address names
 
 3.0.1
   e - updated qsub's man page to include ATTR_node_exclusive
