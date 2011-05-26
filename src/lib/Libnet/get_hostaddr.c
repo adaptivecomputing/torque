@@ -147,7 +147,8 @@ pbs_net_t get_hostaddr(
 
   if (hp == NULL)
     {
-    sprintf(log_buffer,"cannot resolve IP address for host '%s' herror=%d: %s",
+    snprintf(log_buffer, sizeof(log_buffer),
+      "cannot resolve IP address for host '%s' herror=%d: %s",
       hostname,
       h_errno,
       hstrerror(h_errno));
