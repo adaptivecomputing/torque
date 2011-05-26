@@ -104,36 +104,15 @@
 
 #define MAX_INT_LEN 256;
 
+#ifdef ENABLE_PTHREADS
+pthread_mutex_t *tcparraymax_mutex = NULL;
+#endif
+
 static struct tcp_chan **tcparray = NULL;
 static int    tcparraymax = 0;
 
 time_t pbs_tcp_timeout = 20;  /* reduced from 60 to 20 (CRI - Nov/03/2004) */
 
-
-
-
-void obtain_tcp_mutex(
-
-  int fd)
-
-  {
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-#endif
-  } /* END obtain_tcp_mutex() */
-
-
-
-
-void release_tcp_mutex(
-
-  int fd)
-
-  {
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-#endif
-  } /* END release_tcp_mutex() */
 
 
 
@@ -808,15 +787,15 @@ static int tcp_puts(
     trailpct = (int)(tp->tdis_thebuf - tp->tdis_trailp);
     newbufsize = tp->tdis_bufsize + THE_BUF_SIZE;
     temp = (char *)malloc(newbufsize);
-    if(!temp)
+    if (!temp)
       {
       /* FAILURE */
-
-      DBPRT(("%s: error!  out of space in buffer and cannot realloc message buffer (bufsize=%ld, buflen=%d, ct=%d)\n",
-             id,
-             tp->tdis_bufsize,
-             (int)(tp->tdis_leadp - tp->tdis_thebuf),
-             (int)ct))
+      snprintf(log_buffer,sizeof(log_buffer),
+        "out of space in buffer and cannot realloc message buffer (bufsize=%ld, buflen=%d, ct=%d)\n",
+        tp->tdis_bufsize,
+        (int)(tp->tdis_leadp - tp->tdis_thebuf),
+        (int)ct);
+      log_err(ENOMEM,id,log_buffer);
 
 #ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(&tcp->tcp_mutex);
@@ -972,6 +951,9 @@ int lock_all_channels()
   int rc = 0;
   int last_locked = -1;
   int i;
+  int max;
+
+  max = tcparraymax;
 
   for (i = 0; i < tcparraymax; i++)
     {
@@ -1024,39 +1006,31 @@ int unlock_all_channels()
 
 
 
-/*
- * DIS_tcp_setup - setup supports routines for dis, "data is strings", to
- * use tcp stream I/O.  Also initializes an array of pointers to
- * buffers and a buffer to be used for the given fd.
- * 
- * NOTE:  tmpArray is global
- *
- * NOTE:  does not return FAILURE - FIXME
- */
 
-void DIS_tcp_setup(
+int resize_tcp_array_if_needed(
 
   int fd)
 
   {
-  struct tcp_chan *tcp = NULL;
-  struct tcpdisbuf *tp = NULL;
+  int rc = 0;
+  int hold;
+  int flags;
 
-  /* check for bad file descriptor */
-
-  if (fd < 0)
+#ifdef ENABLE_PTHREADS
+  if (tcparraymax_mutex == NULL)
     {
-    return;
+    tcparraymax_mutex = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(tcparraymax_mutex,NULL);
     }
 
-  /* set DIS function pointers to tcp routines */
-  DIS_tcp_funcs();
+  pthread_mutex_lock(tcparraymax_mutex);
+#endif
 
   if (fd >= tcparraymax)
     {
-    int hold = tcparraymax;
-    int flags;
-    
+    hold = tcparraymax;
+
+    /* NYI: maybe remove the lock/unlock all functionality?? */
 #ifdef ENABLE_PTHREADS
     if (lock_all_channels())
       {
@@ -1077,67 +1051,99 @@ void DIS_tcp_setup(
     if ((errno == EBADF) &&
         (flags == -1))
       {
-#ifdef ENABLE_PTHREADS
-      unlock_all_channels();
-#endif
-
       sprintf(log_buffer, "invalid file descriptor (%d) for socket",
         fd);
       log_err(errno, "DIS_tcp_setup", log_buffer);
 
-      goto error;
-      }
-
-    tcparraymax = fd + 10;
-
-    if (tcparray == NULL)
-      {
-      /* Remember calloc will initialize memory to 0 */
-      tcparray = (struct tcp_chan **)calloc(
-        tcparraymax,
-        sizeof(struct tcp_chan *));
-
-      if (tcparray == NULL)
-        {
-        /* FAILURE */
-#ifdef ENABLE_PTHREADS
-        unlock_all_channels();
-#endif
-
-        log_err(errno,"DIS_tcp_setup","calloc failure");
-
-        goto error;
-        }
+      rc = -1;
       }
     else
       {
-      struct tcp_chan **tmpTA;
-
-      tmpTA = (struct tcp_chan **)realloc(
-        tcparray,
-        tcparraymax * sizeof(struct tcp_chan *));
-
-      if (tmpTA == NULL)
+      /* grow by double */
+      if (tcparraymax * 2 <= fd)
+        tcparraymax = fd + 10;
+      else
+        tcparraymax *= 2;
+      
+      if (tcparray == NULL)
         {
-        /* FAILURE */
-#ifdef ENABLE_PTHREADS
-        unlock_all_channels();
-#endif
-
-        log_err(errno,"DIS_tcp_setup","realloc failure");
-
-        goto error;
+        /* Remember calloc will initialize memory to 0 */
+        tcparray = calloc(tcparraymax,sizeof(struct tcp_chan *));
+        
+        if (tcparray == NULL)
+          {
+          /* FAILURE */
+          rc = ENOMEM;
+          log_err(rc,"DIS_tcp_setup","calloc failure");
+          }
+        /* SUCCESS if we didn't enter the above if */
         }
-
-      tcparray = tmpTA;
-
-      memset(&tcparray[hold], '\0', (tcparraymax - hold) * sizeof(struct tcp_chan *));
+      else
+        {
+        struct tcp_chan **tmpTA;
+        
+        tmpTA = realloc(tcparray,tcparraymax * sizeof(struct tcp_chan *));
+        
+        if (tmpTA == NULL)
+          {
+          /* FAILURE */
+          log_err(ENOMEM,"DIS_tcp_setup","realloc failure");
+          
+          rc = ENOMEM;
+          }
+        else
+          {
+          /* SUCCESS */
+          tcparray = tmpTA;
+          
+          memset(&tcparray[hold], '\0', (tcparraymax - hold) * sizeof(struct tcp_chan *));
+          }
+        }
       }
-
+    
 #ifdef ENABLE_PTHREADS
     unlock_all_channels();
 #endif
-    }    /* END if (fd >= tcparraymax) */
+    }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(tcparraymax_mutex);
+#endif
+  } /* END resize_tcp_array() */
+
+
+
+
+
+/*
+ * DIS_tcp_setup - setup supports routines for dis, "data is strings", to
+ * use tcp stream I/O.  Also initializes an array of pointers to
+ * buffers and a buffer to be used for the given fd.
+ * 
+ * NOTE:  tmpArray is global
+ *
+ * NOTE:  does not return FAILURE - FIXME
+ */
+
+void DIS_tcp_setup(
+
+  int fd)
+
+  {
+  struct tcp_chan  *tcp = NULL;
+  struct tcpdisbuf *tp = NULL;
+
+  /* check for bad file descriptor */
+
+  if (fd < 0)
+    {
+    return;
+    }
+
+  /* set DIS function pointers to tcp routines */
+  DIS_tcp_funcs();
+
+  resize_tcp_array_if_needed(fd);
 
   tcp = tcparray[fd];
 
@@ -1151,7 +1157,7 @@ void DIS_tcp_setup(
 
     if (tcp == NULL)
       {
-      log_err(errno, "DIS_tcp_setup", "malloc failure");
+      log_err(ENOMEM, "DIS_tcp_setup", "malloc failure");
 
       goto error;
       }
@@ -1165,7 +1171,7 @@ void DIS_tcp_setup(
     tp = &tcp->readbuf;
 
     tp->tdis_thebuf = (char *)malloc(THE_BUF_SIZE);
-    if(tp->tdis_thebuf == NULL)
+    if (tp->tdis_thebuf == NULL)
       {
 #ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(&tcp->tcp_mutex);
@@ -1184,7 +1190,7 @@ void DIS_tcp_setup(
     tp = &tcp->writebuf;
 
     tp->tdis_thebuf = (char *)malloc(THE_BUF_SIZE);
-    if(tp->tdis_thebuf == NULL)
+    if (tp->tdis_thebuf == NULL)
       {
 #ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(&tcp->tcp_mutex);

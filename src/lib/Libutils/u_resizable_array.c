@@ -362,6 +362,47 @@ resizable_array *initialize_resizable_array(
 
 
 
+
+/*
+ * pop the first thing from the array
+ *
+ * @return the first thing in the array or NULL if empty
+ */
+
+void *pop_thing(
+    
+  resizable_array *ra)
+
+  {
+  void *thing = NULL;
+  int   i = ra->slots[ALWAYS_EMPTY_INDEX].next;
+  
+  if (i != ALWAYS_EMPTY_INDEX)
+    {
+    /* get the thing we're returning */
+    thing = ra->slots[i].item;
+    
+    /* handle the deletion and removal */
+    unlink_slot(ra,i);
+    
+    ra->slots[i].prev = ALWAYS_EMPTY_INDEX;
+    ra->slots[i].next = ALWAYS_EMPTY_INDEX;
+    ra->slots[i].item = NULL;
+    
+    ra->num--;
+    /* reset the next slot index if necessary */
+    if (i < ra->next_slot)
+      {
+      ra->next_slot = i;
+      }
+    }
+  
+  return(thing);
+  } /* END pop_thing() */
+
+
+
+
 /*
  * returns the next available item and increments *iter
  */

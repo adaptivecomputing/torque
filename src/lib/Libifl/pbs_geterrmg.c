@@ -93,12 +93,24 @@ char *pbs_geterrmsg(
   int connect) /* I - socket descriptor */
 
   {
+  char *errmsg;
+
   if ((connect < 0) || (connect > PBS_NET_MAX_CONNECTIONS))
     {
     return(NULL);
     }
 
-  return(connection[connect].ch_errtxt);
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[connect].ch_mutex);
+#endif
+
+  errmsg = connection[connect].ch_errtxt;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+
+  return(errmsg);
   }  /* END pbs_geterrmsg() */
 
 

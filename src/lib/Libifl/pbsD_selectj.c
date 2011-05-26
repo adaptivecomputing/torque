@@ -125,11 +125,20 @@ struct batch_status *
   }
 
 
-static int
-PBSD_select_put(int c, int type, struct attropl *attrib, char *extend)
+static int PBSD_select_put(
+    
+  int             c,
+  int             type,
+  struct attropl *attrib,
+  char           *extend)
+
   {
   int rc;
   int sock;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
   sock = connection[c].ch_socket;
 
@@ -142,8 +151,17 @@ PBSD_select_put(int c, int type, struct attropl *attrib, char *extend)
       (rc = encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
 
   /* write data */
 
@@ -156,8 +174,10 @@ PBSD_select_put(int c, int type, struct attropl *attrib, char *extend)
   }
 
 
-static char **
-PBSD_select_get(int c)
+static char **PBSD_select_get(
+    
+  int c)
+
   {
   int   i;
 
@@ -169,6 +189,10 @@ PBSD_select_get(int c)
 
   struct brp_select *sr;
   char **retval = (char **)NULL;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
   /* read reply from stream */
 
@@ -212,6 +236,11 @@ PBSD_select_get(int c)
     if (retval == (char **)NULL)
       {
       pbs_errno = PBSE_SYSTEM;
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
       return (char **)NULL;
       }
 
@@ -230,7 +259,11 @@ PBSD_select_get(int c)
     retval[i] = (char *)NULL;
     }
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
   PBSD_FreeReply(reply);
 
-  return retval;
+  return(retval);
   }

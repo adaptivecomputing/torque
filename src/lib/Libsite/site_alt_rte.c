@@ -87,8 +87,12 @@
 #include "queue.h"
 #include "pbs_job.h"
 
-int
-site_alt_router(job *jobp, pbs_queue *qp, long retry_time)
+int site_alt_router(
+    
+  job *jobp,
+  pbs_queue *qp,
+  long retry_time)
+
   {
   return (default_router(jobp, qp, retry_time));
   }

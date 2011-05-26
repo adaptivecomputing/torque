@@ -87,8 +87,13 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int
-pbs_orderjob(int c, char *job1, char *job2, char *extend)
+int pbs_orderjob(
+    
+  int   c,
+  char *job1,
+  char *job2,
+  char *extend)
+
   {
 
   struct batch_reply *reply;
@@ -99,6 +104,10 @@ pbs_orderjob(int c, char *job1, char *job2, char *extend)
   if ((job1 == (char *)0) || (*job1 == '\0') ||
       (job2 == (char *)0) || (*job2 == '\0'))
     return (pbs_errno = PBSE_IVALREQ);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
   sock = connection[c].ch_socket;
 
@@ -111,11 +120,20 @@ pbs_orderjob(int c, char *job1, char *job2, char *extend)
       (rc = encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
 
@@ -125,5 +143,11 @@ pbs_orderjob(int c, char *job1, char *job2, char *extend)
 
   PBSD_FreeReply(reply);
 
-  return connection[c].ch_errno;
-  }
+  rc = connection[c].ch_errno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
+  return(rc);
+  } /* END pbs_orderjob() */

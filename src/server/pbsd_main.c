@@ -140,6 +140,8 @@
 
 /* external functions called */
 
+void         *finish_sendmom_processes(void *);
+void         *finish_locution_processes(void *);
 extern void job_log_roll(int max_depth);
 extern int  pbsd_init(int);
 extern void shutdown_ack();
@@ -1516,6 +1518,10 @@ int main(
   extern char *msg_svrdown; /* log message   */
   extern char *msg_startup1; /* log message   */
 
+#ifdef ENABLE_PTHREADS
+  pthread_t helper_thread;
+#endif
+
   ProgName = argv[0];
 
   initialize_globals();
@@ -1755,6 +1761,49 @@ int main(
     }
 #endif
 
+  /* handle running in the background or not if we're debugging */
+
+  if (!high_availability_mode)
+    {
+    if (daemonize_server(TDoBackground,&sid) == FAILURE)
+      {
+      exit(2);
+      }
+    }
+
+#ifdef ENABLE_PTHREADS
+  /* setup the threadpool for use */
+  if (server.sv_attr[SRV_ATR_minthreads].at_flags & ATR_VFLAG_SET) 
+    min_threads = server.sv_attr[SRV_ATR_minthreads].at_val.at_long;
+  else
+    min_threads = DEFAULT_MIN_THREADS;
+
+  if (server.sv_attr[SRV_ATR_maxthreads].at_flags & ATR_VFLAG_SET)
+    max_threads = server.sv_attr[SRV_ATR_maxthreads].at_val.at_long;
+  else
+    max_threads = DEFAULT_MAX_THREADS;
+
+  if (server.sv_attr[SRV_ATR_threadidleseconds].at_flags & ATR_VFLAG_SET)
+    thread_idle_time = server.sv_attr[SRV_ATR_threadidleseconds].at_val.at_long;
+  else
+    thread_idle_time = DEFAULT_THREAD_IDLE;
+      
+  initialize_threadpool(&request_pool,min_threads,max_threads,thread_idle_time);
+#endif 
+
+  sprintf(log_buffer, "%ld\n", (long)sid);
+
+  if (!high_availability_mode)
+    {
+    if (write(lockfds, log_buffer, strlen(log_buffer)) !=
+        (ssize_t)strlen(log_buffer))
+      {
+      log_err(errno, msg_daemonname, "failed to write pid to lockfile");
+
+      exit(-1);
+      }
+    }
+
   /*
    * Open the log file so we can start recording events
    *
@@ -1821,49 +1870,10 @@ int main(
     exit(3);
     }
 
-
-  /* handle running in the background or not if we're debugging */
-
-  if (!high_availability_mode)
-    {
-    if (daemonize_server(TDoBackground,&sid) == FAILURE)
-      {
-      exit(2);
-      }
-    }
-
 #ifdef ENABLE_PTHREADS
-  /* setup the threadpool for use */
-  if (server.sv_attr[SRV_ATR_minthreads].at_flags & ATR_VFLAG_SET) 
-    min_threads = server.sv_attr[SRV_ATR_minthreads].at_val.at_long;
-  else
-    min_threads = DEFAULT_MIN_THREADS;
-
-  if (server.sv_attr[SRV_ATR_maxthreads].at_flags & ATR_VFLAG_SET)
-    max_threads = server.sv_attr[SRV_ATR_maxthreads].at_val.at_long;
-  else
-    max_threads = DEFAULT_MAX_THREADS;
-
-  if (server.sv_attr[SRV_ATR_threadidleseconds].at_flags & ATR_VFLAG_SET)
-    thread_idle_time = server.sv_attr[SRV_ATR_threadidleseconds].at_val.at_long;
-  else
-    thread_idle_time = DEFAULT_THREAD_IDLE;
-      
-  initialize_threadpool(&request_pool,min_threads,max_threads,thread_idle_time);
-#endif 
-
-  sprintf(log_buffer, "%ld\n", (long)sid);
-
-  if (!high_availability_mode)
-    {
-    if (write(lockfds, log_buffer, strlen(log_buffer)) !=
-        (ssize_t)strlen(log_buffer))
-      {
-      log_err(errno, msg_daemonname, "failed to write pid to lockfile");
-
-      exit(-1);
-      }
-    }
+  pthread_create(&helper_thread,NULL,finish_sendmom_processes,NULL);
+  pthread_create(&helper_thread,NULL,finish_locution_processes,NULL);
+#endif
 
 #if (PLOCK_DAEMONS & 1)
   plock(PROCLOCK);

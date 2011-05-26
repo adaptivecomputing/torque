@@ -269,8 +269,8 @@ int svr_connect(
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 #endif
-  /* find a connect_handle entry we can use and pass to the PBS_*() */
 
+  /* find a connect_handle entry we can use and pass to the PBS_*() */
   handle = socket_to_handle(sock);
 
   if (handle == -1)
@@ -318,6 +318,10 @@ void svr_disconnect(
 
   if ((handle >= 0) && (handle < PBS_LOCAL_CONNECTION))
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(connection[handle].ch_mutex);
+#endif
+
     sock = connection[handle].ch_socket;
 
     DIS_tcp_setup(sock);
@@ -349,6 +353,10 @@ void svr_disconnect(
     connection[handle].ch_errno = 0;
 
     connection[handle].ch_inuse = 0;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[handle].ch_mutex);
+#endif
     }
 
   return;
@@ -376,36 +384,57 @@ int socket_to_handle(
 
   for (i = 0;i < PBS_NET_MAX_CONNECTIONS;i++)
     {
-    if (connection[i].ch_inuse != 0)
-      continue;
-
-    connection[i].ch_stream = 0;
-    connection[i].ch_inuse  = 1;
-    connection[i].ch_errno  = 0;
-    connection[i].ch_socket = sock;
-    connection[i].ch_errtxt = 0;
-    /* SUCCESS - save handle for later close */
-
 #ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(svr_conn[sock].cn_mutex);
-#endif
-
-    svr_conn[sock].cn_handle = i;
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-#endif
-
-    if (i >= (PBS_NET_MAX_CONNECTIONS/2))
+    if (connection[i].ch_mutex == NULL)
       {
-      sprintf(log_buffer,"internal socket table is half-full at %d (expected num_connections is %d)!",
-        i,
-        get_num_connections());
-
-      log_ext(-1,id,log_buffer,LOG_CRIT);
+      connection[i].ch_mutex = malloc(sizeof(pthread_mutex_t));
+      pthread_mutex_init(connection[i].ch_mutex,NULL);
       }
 
-    return(i);
+    if (pthread_mutex_trylock(connection[i].ch_mutex) != PBSE_NONE)
+      {
+      /* if we can't lock the mutex, it is busy*/
+      continue;
+      }
+#endif
+
+    if (connection[i].ch_inuse == FALSE)
+      {
+      
+      connection[i].ch_stream = 0;
+      connection[i].ch_inuse  = 1;
+      connection[i].ch_errno  = 0;
+      connection[i].ch_socket = sock;
+      connection[i].ch_errtxt = 0;
+
+      /* SUCCESS - save handle for later close */
+      
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(connection[i].ch_mutex);
+      pthread_mutex_lock(svr_conn[sock].cn_mutex);
+#endif
+      
+      svr_conn[sock].cn_handle = i;
+      
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+#endif
+      
+      if (i >= (PBS_NET_MAX_CONNECTIONS/2))
+        {
+        sprintf(log_buffer,"internal socket table is half-full at %d (expected num_connections is %d)!",
+          i,
+          get_num_connections());
+        
+        log_ext(-1,id,log_buffer,LOG_CRIT);
+        }
+      
+      return(i);
+      }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[i].ch_mutex);
+#endif
     }  /* END for (i) */
 
   sprintf(log_buffer,"internal socket table full (%d) - num_connections is %d",

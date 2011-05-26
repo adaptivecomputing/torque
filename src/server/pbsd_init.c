@@ -78,6 +78,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <grp.h>
+#include <semaphore.h>
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -207,6 +208,11 @@ extern int LOGLEVEL;
 extern char *plogenv;
 
 extern struct server server;
+
+sem_t *job_locution;
+sem_t *sent_to_mom;
+locution_records sendmom_records;
+locution_records job_locutions;
 
 /* External Functions Called */
 
@@ -849,6 +855,16 @@ int pbsd_init(
   pthread_mutex_unlock(task_list_event_mutex);
   pthread_mutex_unlock(task_list_child_mutex);
 #endif
+
+  /* set up the threads that handle post-processing for mom sendjob, 
+   * routing jobs, and moving jobs */
+  job_locution = malloc(sizeof(sem_t));
+  sent_to_mom  = malloc(sizeof(sem_t));
+  sem_init(job_locution,0,0);
+  sem_init(sent_to_mom,0,0);
+
+  initialize_locution_records(&sendmom_records);
+  initialize_locution_records(&job_locutions);
 
   time_now = time((time_t *)0);
 

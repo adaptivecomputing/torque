@@ -816,6 +816,53 @@ task *pbs_task_create( job *pjob,
 
 task *task_find( job *pjob,
                      tm_task_id taskid);
+#else
+
+#define LOCUTION_SUCCESS  0
+#define LOCUTION_FAIL    -1
+#define LOCUTION_REQUEUE -2
+
+#define LOCUTION_SIZE     20
+
+
+typedef struct send_job_request
+  {
+  char      *jobid;
+  pbs_net_t  addr;
+  int        port;
+  int        move_type;
+  void      *data;
+  } send_job_request;
+
+
+struct locution_record
+  {
+  char                  jobid[PBS_MAXSVRJOBID+1];
+  char                  node_name[80];
+  long                  time;
+  int                   type; /* the type of movement that occurred */
+  int                   status; /* success, fail, retry */
+  struct batch_request *preq;
+  };
+
+
+
+struct locution_records
+  {
+  resizable_array *ra;
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_t *locution_mutex;
+#endif
+  };
+
+typedef struct locution_record locution_record;
+typedef struct locution_records locution_records;
+
+
+void             initialize_locution_records(locution_records *);
+int              insert_locution_record(locution_records *,locution_record *);
+locution_record *pop_locution_record(locution_records *);
+
 
 #endif /* MOM */
 

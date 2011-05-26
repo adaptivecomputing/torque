@@ -89,8 +89,12 @@
 #include "dis.h"
 #include "log.h"
 
-char *
-pbs_locjob(int c, char *jobid, char *extend)
+char * pbs_locjob(
+    
+  int   c,
+  char *jobid,
+  char *extend)
+
   {
   int rc;
 
@@ -105,6 +109,10 @@ pbs_locjob(int c, char *jobid, char *extend)
     return (ploc);
     }
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
+
   sock = connection[c].ch_socket;
 
   /* setup DIS support routines for following DIS calls */
@@ -116,16 +124,25 @@ pbs_locjob(int c, char *jobid, char *extend)
       (rc = encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     pbs_errno = PBSE_PROTOCOL;
-    return (char *)NULL;
+    return(NULL);
     }
 
   /* write data over tcp stream */
 
   if (DIS_tcp_wflush(sock))
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     pbs_errno = PBSE_PROTOCOL;
-    return (char *)NULL;
+    return(NULL);
     }
 
   /* read reply from stream */
@@ -152,5 +169,9 @@ pbs_locjob(int c, char *jobid, char *extend)
 
   PBSD_FreeReply(reply);
 
-  return ploc;
-  }
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
+  return(ploc);
+  } /* END pbs_locjob() */

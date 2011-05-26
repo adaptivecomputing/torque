@@ -87,8 +87,13 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int
-pbs_stagein(int c, char *jobid, char *location, char *extend)
+int pbs_stagein(
+    
+  int   c,
+  char *jobid,
+  char *location,
+  char *extend)
+
   {
   int rc;
 
@@ -102,6 +107,9 @@ pbs_stagein(int c, char *jobid, char *location, char *extend)
   if (location == (char *)0)
     location = "";
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
   sock = connection[c].ch_socket;
 
@@ -116,11 +124,20 @@ pbs_stagein(int c, char *jobid, char *location, char *extend)
       (rc = encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
 
@@ -130,7 +147,11 @@ pbs_stagein(int c, char *jobid, char *location, char *extend)
 
   rc = connection[c].ch_errno;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
   PBSD_FreeReply(reply);
 
-  return rc;
+  return(rc);
   }

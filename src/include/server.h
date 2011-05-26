@@ -102,8 +102,8 @@
 #define ATTR_NOT_FOUND  -2
 #ifdef ENABLE_PTHREADS
 /* default multi threading options */
-#define DEFAULT_MAX_THREADS    5
-#define DEFAULT_MIN_THREADS    5
+#define DEFAULT_MAX_THREADS    10
+#define DEFAULT_MIN_THREADS    10
 #define DEFAULT_THREAD_IDLE    -1
 #endif
 

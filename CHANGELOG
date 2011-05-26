@@ -10,6 +10,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Updated torque.spec.in to be able to handle the snapshot 
       names of builds.
   e - make task functionality threadsafe
+  e - remove the forking from pbs_server running a job. Instead use threads and semaphores
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it

@@ -109,11 +109,9 @@
 
 
 
-extern void release_tcp_mutex(int);
-extern void obtain_tcp_mutex(int);
-
 /* External Globals */
 extern char *msg_daemonname;
+extern struct connection svr_conn[];
 
 #ifndef PBS_MOM
 extern tlist_head task_list_event;
@@ -200,12 +198,9 @@ static int dis_reply_write(
       PBS_EVENTCLASS_REQUEST,
       "dis_reply_write",
       log_buffer);
-  
-    obtain_tcp_mutex(sfds);
 
+    /* don't need to get the lock here because we already have it from process request */
     close_conn(sfds);
-  
-    release_tcp_mutex(sfds);
     }
 
 

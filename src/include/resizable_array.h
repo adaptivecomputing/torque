@@ -117,5 +117,6 @@ int              is_present(resizable_array *,void *);
 resizable_array *initialize_resizable_array(int);
 void            *next_thing(resizable_array *,int *);
 void             initialize_ra_iterator(resizable_array *,int *);
+void            *pop_thing(resizable_array *);
 
 #endif /* RESIZABLE_ARRAY_H */

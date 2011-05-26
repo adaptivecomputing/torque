@@ -412,7 +412,15 @@ int issue_Drequest(
     }
   else
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(connection[conn].ch_mutex);
+#endif
+
     sock = connection[conn].ch_socket;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[conn].ch_mutex);
+#endif
 
     request->rq_conn = sock;
 

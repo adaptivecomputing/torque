@@ -135,11 +135,20 @@ resource_t    rh;
   return rc;
   }
 
-static int
-PBS_resc(int c, int reqtype, char **rescl, int ct, resource_t rh)
+static int PBS_resc(
+    
+  int          c,
+  int          reqtype, 
+  char       **rescl,
+  int          ct,
+  resource_t   rh)
   {
   int rc;
   int sock;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
   sock = connection[c].ch_socket;
 
@@ -152,8 +161,17 @@ PBS_resc(int c, int reqtype, char **rescl, int ct, resource_t rh)
       (rc = encode_DIS_ReqExtend(sock, (char *)0)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
 
   if (DIS_tcp_wflush(sock))
     {
@@ -161,7 +179,7 @@ PBS_resc(int c, int reqtype, char **rescl, int ct, resource_t rh)
     }
 
   return (0);
-  }
+  } /* END PBS_resc() */
 
 
 
@@ -186,9 +204,17 @@ int pbs_rescquery(
   struct batch_reply *reply;
   int                 rc = 0;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
+
   if (resclist == NULL)
     {
     connection[c].ch_errno = PBSE_RMNOPARAM;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
 
     pbs_errno = PBSE_RMNOPARAM;
 
@@ -199,6 +225,10 @@ int pbs_rescquery(
 
   if ((rc = PBS_resc(c, PBS_BATCH_Rescq, resclist, num_resc, (resource_t)0)) != 0)
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return(rc);
     }
 
@@ -221,6 +251,10 @@ int pbs_rescquery(
 
   PBSD_FreeReply(reply);
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
   return(rc);
   }  /* END pbs_rescquery() */
 
@@ -229,34 +263,54 @@ int pbs_rescquery(
 
 /* pbs_reserve() - reserve resources */
 
-int
-pbs_rescreserve(
-  int c,  /* connection */
-  char **rl,  /* list of resources */
-  int num_resc, /* number of items in list */
-  resource_t *prh /* ptr to resource reservation handle */
-)
+int pbs_rescreserve(
+  
+  int          c,        /* connection */
+  char       **rl,       /* list of resources */
+  int          num_resc, /* number of items in list */
+  resource_t  *prh)      /* ptr to resource reservation handle */
+
   {
   int rc;
 
   struct batch_reply *reply;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
+
   if (rl == NULL)
     {
     connection[c].ch_errno = PBSE_RMNOPARAM;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_RMNOPARAM);
     }
 
   if (prh == NULL)
     {
     connection[c].ch_errno = PBSE_RMBADPARAM;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_RMBADPARAM);
     }
 
   /* send request */
 
   if ((rc = PBS_resc(c, PBS_BATCH_ReserveResc, rl, num_resc, *prh)) != 0)
+    {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (rc);
+    }
 
   /*
    * now get reply, if reservation successful, the reservation handle,
@@ -273,6 +327,10 @@ pbs_rescreserve(
 
   PBSD_FreeReply(reply);
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
   return (rc);
   }
 
@@ -283,8 +341,11 @@ pbs_rescreserve(
  * list is empty.
  */
 
-int
-pbs_rescrelease(int c, resource_t rh)
+int pbs_rescrelease(
+    
+  int        c,
+  resource_t rh)
+
   {
 
   struct batch_reply *reply;
@@ -293,13 +354,22 @@ pbs_rescrelease(int c, resource_t rh)
   if ((rc = PBS_resc(c, PBS_BATCH_ReleaseResc, (char **)0, 0, rh)) != 0)
     return (rc);
 
-  /* now get reply */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
+  /* now get reply */
   reply = PBSD_rdrpy(c);
 
   PBSD_FreeReply(reply);
 
-  return (connection[c].ch_errno);
+  rc = connection[c].ch_errno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
+  return(rc);
   }
 
 /*
@@ -328,7 +398,11 @@ int totpool(int con, int update)
 
 /* usepool() - return number of nodes in use, includes reserved and down */
 
-int usepool(int con, int update)
+int usepool(
+    
+  int con,
+  int update)
+
   {
   if (update)
     if (pbs_rescquery(con, &resc_nodes, 1, &nodes_avail,
@@ -348,7 +422,11 @@ int usepool(int con, int update)
  * "?" if error in request
  */
 
-char *avail(int con, char *resc)
+char *avail(
+    
+  int   con,
+  char *resc)
+
   {
   int av;
   int al;

@@ -539,6 +539,10 @@ void process_request(
 
       return;
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(isanode->nd_mutex);
+#endif
     }
 
   /*

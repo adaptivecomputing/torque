@@ -109,6 +109,10 @@ int PBSD_rdytocmt(
   struct batch_reply *reply;
   int sock;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[connect].ch_mutex);
+#endif
+
   sock = connection[connect].ch_socket;
   DIS_tcp_setup(sock);
 
@@ -118,6 +122,10 @@ int PBSD_rdytocmt(
     {
     connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+
     pbs_errno = PBSE_PROTOCOL;
 
     return(pbs_errno);
@@ -125,6 +133,10 @@ int PBSD_rdytocmt(
 
   if (DIS_tcp_wflush(sock))
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+  
     pbs_errno = PBSE_PROTOCOL;
 
     return(pbs_errno);
@@ -136,7 +148,13 @@ int PBSD_rdytocmt(
 
   PBSD_FreeReply(reply);
 
-  return(connection[connect].ch_errno);
+  rc = connection[connect].ch_errno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+
+  return(rc);
   }
 
 
@@ -160,6 +178,10 @@ int PBSD_commit(
   int rc;
   int sock;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[connect].ch_mutex);
+#endif
+
   sock = connection[connect].ch_socket;
 
   DIS_tcp_setup(sock);
@@ -170,6 +192,10 @@ int PBSD_commit(
     {
     connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+
     pbs_errno = PBSE_PROTOCOL;
 
     return(pbs_errno);
@@ -177,18 +203,27 @@ int PBSD_commit(
 
   if (DIS_tcp_wflush(sock))
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+  
     pbs_errno = PBSE_PROTOCOL;
 
     return(pbs_errno);
     }
 
   /* PBSD_rdrpy sets connection[connect].ch_errno */
-
   reply = PBSD_rdrpy(connect);
 
   PBSD_FreeReply(reply);
 
-  return(connection[connect].ch_errno);
+  rc = connection[connect].ch_errno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+
+  return(rc);
   }  /* END PBSD_commit() */
 
 
@@ -218,6 +253,10 @@ static int PBSD_scbuf(
   int rc;
   int sock;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
+
   sock = connection[c].ch_socket;
 
   DIS_tcp_setup(sock);
@@ -231,6 +270,10 @@ static int PBSD_scbuf(
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     pbs_errno = PBSE_PROTOCOL;
 
     return(pbs_errno);
@@ -238,6 +281,10 @@ static int PBSD_scbuf(
 
   if (DIS_tcp_wflush(sock))
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     pbs_errno = PBSE_PROTOCOL;
 
     return(pbs_errno);
@@ -249,7 +296,13 @@ static int PBSD_scbuf(
 
   PBSD_FreeReply(reply);
 
-  return(connection[c].ch_errno);
+  rc = connection[c].ch_errno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
+  return(rc);
   }
 
 
@@ -263,11 +316,17 @@ static int PBSD_scbuf(
  * transfer chunks of the script to the server.
 */
 
-int PBSD_jscript(int c, char *script_file, char *jobid)
+int PBSD_jscript(
+    
+  int   c,
+  char *script_file,
+  char *jobid)
+
   {
-  int i;
-  int fd;
-  int cc;
+  int  i;
+  int  fd;
+  int  cc;
+  int  rc;
   char s_buf[SCRIPT_CHUNK_Z];
 
   if ((fd = open(script_file, O_RDONLY, 0)) < 0)
@@ -290,7 +349,17 @@ int PBSD_jscript(int c, char *script_file, char *jobid)
   if (cc < 0) /* read failed */
     return (-1);
 
-  return connection[c].ch_errno;
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
+
+  rc = connection[c].ch_errno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
+  return(rc);
   }
 
 
@@ -316,6 +385,7 @@ int PBSD_jobfile(
   {
   int   i;
   int   cc;
+  int   rc;
   int   fd;
   char  s_buf[SCRIPT_CHUNK_Z];
 
@@ -343,7 +413,17 @@ int PBSD_jobfile(
     return(-1);
     }
 
-  return(connection[c].ch_errno);
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
+
+  rc = connection[c].ch_errno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
+  return(rc);
   }  /* END PBSD_jobfile() */
 
 
@@ -369,6 +449,10 @@ char *PBSD_queuejob(
   int    rc;
   int    sock;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[connect].ch_mutex);
+#endif
+
   sock = connection[connect].ch_socket;
 
   DIS_tcp_setup(sock);
@@ -381,6 +465,10 @@ char *PBSD_queuejob(
     {
     connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+
     pbs_errno = PBSE_PROTOCOL;
 
     return(return_jobid);
@@ -388,6 +476,10 @@ char *PBSD_queuejob(
 
   if (DIS_tcp_wflush(sock))
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+
     pbs_errno = PBSE_PROTOCOL;
 
     return(return_jobid);
@@ -420,6 +512,10 @@ char *PBSD_queuejob(
     }
 
   PBSD_FreeReply(reply);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
 
   return(return_jobid);
   }  /* END PBSD_queuejob() */

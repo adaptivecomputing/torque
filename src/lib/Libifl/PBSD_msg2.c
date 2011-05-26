@@ -94,11 +94,21 @@
  * Send the MessageJob request, does not read the reply.
  */
 
-int
-PBSD_msg_put(int c, char *jobid, int fileopt, char *msg, char *extend)
+int PBSD_msg_put(
+    
+  int   c,
+  char *jobid,
+  int   fileopt,
+  char *msg,
+  char *extend)
+
   {
   int rc = 0;
   int sock;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
   sock = connection[c].ch_socket;
   DIS_tcp_setup(sock);
@@ -108,8 +118,17 @@ PBSD_msg_put(int c, char *jobid, int fileopt, char *msg, char *extend)
       (rc = encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
 
   if (DIS_tcp_wflush(sock))
     {
@@ -117,5 +136,6 @@ PBSD_msg_put(int c, char *jobid, int fileopt, char *msg, char *extend)
     rc   = pbs_errno;
     }
 
-  return rc;
-  }
+  return(rc);
+  } /* END PBSD_msg_put() */
+

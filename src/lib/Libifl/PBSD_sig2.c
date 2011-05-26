@@ -91,14 +91,20 @@
  * Send the Signal Job Batch Request
 */
 
-int PBSD_sig_put(c, jobid, signal, extend)
-int c;
-char *jobid;
-char *signal;
-char *extend;
+int PBSD_sig_put(
+    
+  int   c,
+  char *jobid,
+  char *signal, 
+  char *extend)
+  
   {
   int sock;
   int rc = 0;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
   sock = connection[c].ch_socket;
   DIS_tcp_setup(sock);
@@ -108,6 +114,11 @@ char *extend;
       (rc = encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
 
@@ -117,18 +128,28 @@ char *extend;
     rc = pbs_errno;
     }
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
   return rc;
   }
 
 
-int PBSD_async_sig_put(c,jobid,signal,extend)
-int c;
-char *jobid;
-char *signal;
-char *extend;
+int PBSD_async_sig_put(
+    
+  int   c,
+  char *jobid,
+  char *signal,
+  char *extend)
+  
   {
   int sock;
   int rc = 0;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
   sock = connection[c].ch_socket;
   DIS_tcp_setup(sock);
@@ -138,8 +159,17 @@ char *extend;
       (rc = encode_DIS_ReqExtend(sock,extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
     
   if (DIS_tcp_wflush(sock))
     {

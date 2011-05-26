@@ -88,8 +88,12 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int
-pbs_rerunjob(int c, char *jobid, char *extend)
+int pbs_rerunjob(
+    
+  int   c,
+  char *jobid,
+  char *extend)
+
   {
   int rc;
 
@@ -98,6 +102,10 @@ pbs_rerunjob(int c, char *jobid, char *extend)
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
     return (pbs_errno = PBSE_IVALREQ);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
   sock = connection[c].ch_socket;
 
@@ -110,6 +118,11 @@ pbs_rerunjob(int c, char *jobid, char *extend)
       (rc = encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
 
@@ -117,6 +130,10 @@ pbs_rerunjob(int c, char *jobid, char *extend)
 
   if (DIS_tcp_wflush(sock))
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
 
@@ -126,5 +143,11 @@ pbs_rerunjob(int c, char *jobid, char *extend)
 
   PBSD_FreeReply(reply);
 
-  return connection[c].ch_errno;
-  }
+  rc = connection[c].ch_errno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
+  return(rc);
+  } /* END pbs_rerunjob() */

@@ -119,13 +119,22 @@ int PBSD_manager(
     return(rc);
     }
 
-  /* read reply from stream into presentation element */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
+  /* read reply from stream into presentation element */
   reply = PBSD_rdrpy(c);
 
   PBSD_FreeReply(reply);
 
-  return(connection[c].ch_errno);
+  rc = connection[c].ch_errno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
+  return(rc);
   }  /* END PBSD_manager() */
 
 /* END PBSD_manager.c */

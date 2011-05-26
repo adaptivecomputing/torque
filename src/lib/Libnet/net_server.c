@@ -298,6 +298,8 @@ int init_network(
 
   if (initialized == 0)
     {
+    initialize_connections_table();
+
     for (i = 0;i < PBS_NET_MAX_CONNECTIONS;i++)
       {
 #ifdef ENABLE_PTHREADS

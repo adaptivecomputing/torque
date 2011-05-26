@@ -99,7 +99,7 @@
 
 struct batch_reply *PBSD_rdrpy(
 
-        int c)  /* I */
+  int c)  /* I */
 
   {
   int      rc;
@@ -119,6 +119,7 @@ struct batch_reply *PBSD_rdrpy(
   if ((reply = (struct batch_reply *)calloc(1, sizeof(struct batch_reply))) == NULL)
     {
     connection[c].ch_errno = PBSE_SYSTEM;
+
     pbs_errno = PBSE_SYSTEM;
 
     return(NULL);

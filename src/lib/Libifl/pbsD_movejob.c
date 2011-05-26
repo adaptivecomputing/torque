@@ -85,8 +85,13 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int
-pbs_movejob(int c, char *jobid, char *destin, char *extend)
+int pbs_movejob(
+    
+  int   c,
+  char *jobid,
+  char *destin,
+  char *extend)
+
   {
   int      rc;
 
@@ -100,6 +105,10 @@ pbs_movejob(int c, char *jobid, char *destin, char *extend)
   if (destin == (char *)0)
     destin = "";
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
+
   sock = connection[c].ch_socket;
 
   /* setup DIS support routines for following DIS calls */
@@ -111,11 +120,20 @@ pbs_movejob(int c, char *jobid, char *destin, char *extend)
       (rc = encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     return (pbs_errno = PBSE_PROTOCOL);
     }
 
@@ -125,5 +143,11 @@ pbs_movejob(int c, char *jobid, char *destin, char *extend)
 
   PBSD_FreeReply(reply);
 
-  return connection[c].ch_errno;
-  }
+  rc = connection[c].ch_errno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
+  return(rc);
+  } /* END pbs_movejob() */

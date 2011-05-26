@@ -101,6 +101,10 @@ int PBSD_status_put(
   int rc = 0;
   int sock;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
+
   sock = connection[c].ch_socket;
 
   DIS_tcp_setup(sock);
@@ -111,10 +115,18 @@ int PBSD_status_put(
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
     pbs_errno = PBSE_PROTOCOL;
 
     return(pbs_errno);
     }
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
 
   if (DIS_tcp_wflush(sock))
     {

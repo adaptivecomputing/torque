@@ -144,10 +144,13 @@ struct batch_status *PBSD_status_get(
   struct batch_reply  *reply;
   int i;
 
-  /* read reply from stream into presentation element */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
   pbs_errno = 0;
 
+  /* read reply from stream into presentation element */
   reply = PBSD_rdrpy(c);
 
   if (reply == NULL)
@@ -232,6 +235,10 @@ struct batch_status *PBSD_status_get(
       rbsp = (struct batch_status *)NULL;
       }
     }    /* END else */
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
 
   PBSD_FreeReply(reply);
 

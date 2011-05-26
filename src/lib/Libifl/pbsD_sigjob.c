@@ -86,11 +86,13 @@
 #include "libpbs.h"
 
 
-int pbs_sigjob(c, jobid, signal, extend)
-int c;
-char *jobid;
-char *signal;
-char *extend;
+int pbs_sigjob(
+    
+  int   c,
+  char *jobid,
+  char *signal,
+  char *extend)
+  
   {
   int rc = 0;
 
@@ -105,13 +107,22 @@ char *extend;
   if ((rc = PBSD_sig_put(c, jobid, signal, extend)) != 0)
     return (rc);
 
-  /* read reply */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
+  /* read reply */
   reply = PBSD_rdrpy(c);
 
   PBSD_FreeReply(reply);
 
-  return (connection[c].ch_errno);
+  rc = connection[c].ch_errno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
+  return(rc);
   }
 
 
@@ -136,14 +147,22 @@ int pbs_sigjobasync(
   if ((rc = PBSD_async_sig_put(c, jobid, signal, extend)) != 0)
     return (rc);
 
-  /* read reply */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[c].ch_mutex);
+#endif
 
+  /* read reply */
   reply = PBSD_rdrpy(c);
 
   PBSD_FreeReply(reply);
 
-  return (connection[c].ch_errno);
-  
+  rc = connection[c].ch_errno;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[c].ch_mutex);
+#endif
+
+  return(rc);
   }
 
 

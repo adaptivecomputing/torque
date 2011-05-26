@@ -247,11 +247,12 @@ char *pbs_get_server_list(void)
  */
 
 char *pbs_default(void)
+
   {
   char *cp;
 
   pbs_get_server_list();
-  server_name[0] = 0;
+  server_name[0] = '\0';
   cp = csv_nth(server_list, 0); /* get the first item from list */
 
   if (cp)
@@ -261,7 +262,7 @@ char *pbs_default(void)
     }
 
   return(server_name);
-  }
+  } /* END pbs_default() */
 
 
 
@@ -279,6 +280,7 @@ char *pbs_default(void)
  */
 
 char *pbs_fbserver(void)
+
   {
   char *cp;
 
@@ -293,7 +295,7 @@ char *pbs_fbserver(void)
     }
 
   return(server_name);
-  }
+  } /* END pbs_fbserver() */
 
 
 
@@ -360,7 +362,9 @@ static char *PBS_get_server(
  */
 #ifdef MUNGE_AUTH
 static int PBSD_munge_authenticate(
+
   int psock) /* I */
+
   {
   int fd_pipe[2];
 
@@ -404,55 +408,66 @@ static int PBSD_munge_authenticate(
      just created for mungeFileName. The parent will wait for the file to be written
      and then copy the certificate to the batch request and send it to the server */
   pid = fork();
-  if(pid != 0)    {
+  if (pid != 0)
+    {
     /* This is the parent*/
     /* set up the pipe to be able to read from the child */
     close(fd_pipe[1]);
+
     do
       {
       bytes_read = read(fd_pipe[0], buf, MUNGE_SIZE);
-      if(bytes_read > 0)
+      if (bytes_read > 0)
         {
         total_bytes_read += bytes_read;
         memcpy(ptr, buf, bytes_read);
         ptr += bytes_read;
         }
-      }while(bytes_read > 0);
+      } while(bytes_read > 0);
 
-      if(bytes_read == -1)
-        {
-        /* read failed */
-        fprintf(stderr, "error reading pipe in PBSD_munge_authenticate: errno = %d\n", errno);
-        return(-1);
-        }
+    if (bytes_read == -1)
+      {
+      /* read failed */
+      fprintf(stderr, "error reading pipe in PBSD_munge_authenticate: errno = %d\n", errno);
+      return(-1);
+      }
+    
+    /* We got the certificate. Now make the PBS_BATCH_AltAuthenUser request */
+    myrealuid = getuid();
+    
+    pwent = getpwuid(myrealuid);
+    
+    rc = getsockname(psock,
+        (struct sockaddr *)&sockname,
+        &socknamelen);
+    
+    if (rc == -1)
+      {
+      fprintf(stderr, "getsockname failed: %d\n", errno);
+      return(-1);
+      }
+    
+    user_port = ntohs(sockname.sin_port);
+    
+    DIS_tcp_setup(psock);
+    
+    rc = encode_DIS_ReqHdr(psock, PBS_BATCH_AltAuthenUser, pwent->pw_name);
+    rc = diswui(psock, user_port);
+    rc = diswst(psock, munge_buf);
+    rc = encode_DIS_ReqExtend(psock, NULL);
+    rc = DIS_tcp_wflush(psock);
+    
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(connection[1].ch_mutex);
+#endif
+    
+    /* read the reply */
+    reply = PBSD_rdrpy(1);
 
-      /* We got the certificate. Now make the PBS_BATCH_AltAuthenUser request */
-      myrealuid = getuid();
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[1].ch_mutex);
+#endif
 
-      pwent = getpwuid(myrealuid);
-
-      rc = getsockname(psock, 
-                       (struct sockaddr *)&sockname,
-                       &socknamelen);
-
-      if(rc == -1)
-        {
-        fprintf(stderr, "getsockname failed: %d\n", errno);
-        return(-1);
-        }
-
-      user_port = ntohs(sockname.sin_port);
-
-      DIS_tcp_setup(psock);
-
-      rc = encode_DIS_ReqHdr(psock, PBS_BATCH_AltAuthenUser, pwent->pw_name);
-      rc = diswui(psock, user_port);
-      rc = diswst(psock, munge_buf);
-      rc = encode_DIS_ReqExtend(psock, NULL);
-      rc = DIS_tcp_wflush(psock);
-
-      /* read the reply */
-      reply = PBSD_rdrpy(1);
     }
   else
     {
@@ -708,20 +723,31 @@ int pbs_original_connect(
 
   for (i = 1;i < NCONNECTS;i++)
     {
-    if (connection[i].ch_inuse)
-      continue;
+#ifdef ENABLE_PTHREADS
+    if (connection[i].ch_mutex == NULL)
+      {
+      connection[i].ch_mutex = malloc(sizeof(pthread_mutex_t));
+      pthread_mutex_init(connection[i].ch_mutex,NULL);
+      }
 
-    out = i;
+    pthread_mutex_lock(connection[i].ch_mutex);
+#endif
 
-    connection[out].ch_inuse  = 1;
+    if (connection[i].ch_inuse == FALSE)
+      {
+      out = i;
+      
+      connection[out].ch_inuse  = 1;
+      connection[out].ch_errno  = 0;
+      connection[out].ch_socket = -1;
+      connection[out].ch_errtxt = NULL;
 
-    connection[out].ch_errno  = 0;
+      break;
+      }
 
-    connection[out].ch_socket = -1;
-
-    connection[out].ch_errtxt = NULL;
-
-    break;
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[i].ch_mutex);
+#endif
     }
 
   if (out < 0)
@@ -732,6 +758,7 @@ int pbs_original_connect(
       fprintf(stderr, "ALERT:  cannot locate free channel\n");
 
     /* FAILURE */
+    /* no need to unlock mutex here - in this case no connection was found */
 
     return(-1);
     }
@@ -743,6 +770,11 @@ int pbs_original_connect(
   if (server == NULL)
     {
     connection[out].ch_inuse = 0;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[out].ch_mutex);
+#endif
+
     pbs_errno = PBSE_NOSERVER;
 
     if (getenv("PBSDEBUG"))
@@ -764,6 +796,10 @@ int pbs_original_connect(
       fprintf(stderr, "ALERT:  cannot get password info for uid %ld\n",
               (long)pbs_current_uid);
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[out].ch_mutex);
+#endif
 
     return(-1);
     }
@@ -877,6 +913,10 @@ int pbs_original_connect(
 
       connection[out].ch_inuse = 0;
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(connection[out].ch_mutex);
+#endif
+
       pbs_errno = PBSE_PROTOCOL;
 
       return(-1);
@@ -901,6 +941,10 @@ int pbs_original_connect(
                 strerror(errno));
         }
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(connection[out].ch_mutex);
+#endif
+
       return(-1);
       }
 
@@ -924,6 +968,10 @@ int pbs_original_connect(
                 errno,
                 strerror(errno));
         }
+
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(connection[out].ch_mutex);
+#endif
 
       return(-1);
       }
@@ -968,6 +1016,10 @@ int pbs_original_connect(
           }
         }
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(connection[out].ch_mutex);
+#endif
+
       return(-1);
       }
     
@@ -1002,6 +1054,10 @@ int pbs_original_connect(
           }
         }
 
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(connection[out].ch_mutex);
+#endif
+
       return(-1);
       }
 #endif /* ifdef MUNGE_AUTH */
@@ -1026,6 +1082,10 @@ int pbs_original_connect(
     pbs_tcp_timeout = 10800;      /* set for 3 hour time out */
     }
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[out].ch_mutex);
+#endif
+
   return(out);
   }  /* END pbs_original_connect() */
 
@@ -1041,8 +1101,11 @@ int pbs_disconnect(
   int  sock;
   static char x[THE_BUF_SIZE / 4];
 
-  /* send close-connection message */
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[connect].ch_mutex);
+#endif
 
+  /* send close-connection message */
   sock = connection[connect].ch_socket;
 
   DIS_tcp_setup(sock);
@@ -1092,6 +1155,10 @@ int pbs_disconnect(
 
   connection[connect].ch_inuse = 0;
 
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+
   return(0);
   }  /* END pbs_disconnect() */
 
@@ -1109,7 +1176,10 @@ int pbs_disconnect(
  * @returns A file descriptor number.
  */
 
-int pbs_connect(char *server_name_ptr)    /* I (optional) */
+int pbs_connect(
+    
+  char *server_name_ptr)    /* I (optional) */
+
   {
   int connect = -1;
   int i, list_len;
@@ -1184,7 +1254,11 @@ int pbs_connect(char *server_name_ptr)    /* I (optional) */
  * @param retry_seconds The period of time for which retrys should be attempted.
  * @returns A file descriptor number.
  */
-int pbs_connect_with_retry(char *server_name_ptr, int retry_seconds)
+int pbs_connect_with_retry(
+    
+  char *server_name_ptr, /* I */
+  int   retry_seconds)   /* I */
+
   {
   int n_times_to_try = retry_seconds / CNTRETRYDELAY;
   int connect = -1;
@@ -1202,12 +1276,29 @@ int pbs_connect_with_retry(char *server_name_ptr, int retry_seconds)
   }
 
 
-int
-pbs_query_max_connections(void)
+int pbs_query_max_connections(void)
 
   {
   return(NCONNECTS - 1);
   }
+
+
+
+
+void initialize_connections_table()
+
+  {
+#ifdef ENABLE_PTHREADS
+  int i;
+
+  for (i = 1;i < NCONNECTS;i++)
+    {
+    connection[i].ch_mutex = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(connection[i].ch_mutex,NULL);
+    }
+#endif
+  } /* END initialize_connections_table() */
+
 
 
 /* END pbsD_connect.c */
