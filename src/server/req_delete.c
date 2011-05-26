@@ -1233,11 +1233,10 @@ void remove_job_delete_nanny(
 
 struct work_task *apply_job_delete_nanny(
 
-        struct job *pjob,
-        int         delay)  /* I */
+  struct job *pjob,
+  int         delay)  /* I */
 
   {
-
   struct work_task *pwtnew;
   enum work_type tasktype;
 

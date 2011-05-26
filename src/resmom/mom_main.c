@@ -148,6 +148,7 @@
 #include "u_tree.h"
 #include "pbs_cpuset.h"
 #include "rpp.h"
+#include "threadpool.h"
 
 #include "mcom.h"
 
@@ -163,11 +164,13 @@
 #define CHECK_POLL_TIME     45
 #define DEFAULT_SERVER_STAT_UPDATES 45
 
-#define PMAX_PORT           32000
-#define MAX_PORT_STRING_LEN         6
-#define MAX_LOCK_FILE_NAME_LEN      15
-#define MAX_RESEND_JOBS     512
-#define DUMMY_JOB_PTR       1
+#define PMAX_PORT                 32000
+#define MAX_PORT_STRING_LEN       6
+#define MAX_LOCK_FILE_NAME_LEN    15
+#define MAX_RESEND_JOBS           512
+#define DUMMY_JOB_PTR             1
+#define MOM_THREADS               2
+#define THREAD_INFINITE          -1
 
 #ifndef MAX_LINE
 #define MAX_LINE 1024
@@ -7099,6 +7102,7 @@ void parse_command_line(
  */
 
 int setup_program_environment(void)
+
   {
   static char   id[] = "setup_program_environment";
   int           c;
@@ -7119,10 +7123,9 @@ int setup_program_environment(void)
   char         *ptr;            /* local tmp variable */
 
   /* must be started with real and effective uid of 0 */
-
   if (IamRoot() == 0)
     {
-        return(1);
+    return(1);
     }
 
   /* The following is code to reduce security risks                */
@@ -7805,6 +7808,8 @@ int setup_program_environment(void)
   /* initialize cpusets */
   initialize_root_cpuset();
 #endif /* END PENABLE_LINUX26_CPUSETS */
+
+  initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
 
   return(0);
   }  /* END setup_program_environment() */
