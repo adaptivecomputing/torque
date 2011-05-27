@@ -359,8 +359,9 @@ static char *PBS_get_server(
  * a user connection with the server. 
  */
 #ifdef MUNGE_AUTH
-static int PBSD_munge_authenticate(
-  int psock) /* I */
+int PBSD_munge_authenticate(
+  int psock, /* I */
+  int handle) /* I */
   {
   int fd_pipe[2];
 
@@ -452,7 +453,7 @@ static int PBSD_munge_authenticate(
       rc = DIS_tcp_wflush(psock);
 
       /* read the reply */
-      reply = PBSD_rdrpy(1);
+      reply = PBSD_rdrpy(handle);
     }
   else
     {
@@ -480,7 +481,7 @@ static int PBSD_munge_authenticate(
  */
 
 #ifndef MUNGE_AUTH
-static int PBSD_authenticate(
+int PBSD_authenticate(
 
   int psock)  /* I */
 
@@ -939,7 +940,7 @@ int pbs_original_connect(
 #endif
 
 #ifdef MUNGE_AUTH
-    auth = PBSD_munge_authenticate(connection[out].ch_socket);
+    auth = PBSD_munge_authenticate(connection[out].ch_socket, out);
     if(auth != 0)
       {
       close(connection[out].ch_socket);

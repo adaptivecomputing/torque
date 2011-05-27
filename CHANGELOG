@@ -66,7 +66,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       nodes file will be updated with Nvidia gpu count when --enable-nvidia-gpu
       configure option is used. Moved some code out of job_purge_thread to prevent
       segfault on mom.
+  b - Fixed problem where calling qstat with a non-existent job id would hang the qstat
+      command. This was only a problem when configured with MUNGE.
   b - fix a potential buffer overflow security issue in job names and host address names
+
 
 2.5.5
   b - change so gpus get written back to nodes file
