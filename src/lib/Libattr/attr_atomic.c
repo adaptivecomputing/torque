@@ -347,7 +347,7 @@ int attr_atomic_node_set(
     (new + index)->at_flags &= ~ATR_VFLAG_MODIFY;
 
     if ((plist->al_op != INCR) && (plist->al_op != DECR) &&
-        (plist->al_op != SET))
+        (plist->al_op != SET) && (plist->al_op != INCR_OLD))
       plist->al_op = SET;
 
 
