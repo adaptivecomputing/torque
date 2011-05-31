@@ -132,6 +132,14 @@ This option is for use in testing with multiple batch systems on a single host.
 Specifies an absolute path name of the file to use as the accounting file.
 If not specified, the file is named for the current date in the
 PBS_HOME/server_priv/accounting directory.
+.IP "\-l scheduler_port"
+Specifies the host name and port number of listening schedulers. By default pbs_server
+communicates to the scheduler on the loop back address at port 15004. If the scheduler 
+and pbs_server are not on the same host the -l option tells pbs_server where to find 
+the scheduler.  When using TORQUE in high availability mode the -l option should be 
+used to let TORQUE know where all potential schedulers are located. If pbs_server and
+the scheduler are not on the same node the -l option or the -S option must be used
+in order for TORQUE to communicate with the scheduler.
 .IP "\-L logfile"
 Specifies an absolute path name of the file to use as the log file.
 If not specified, the file is one named for the current date in the
@@ -150,7 +158,9 @@ Specifies the port number on which the the server should query the up/down
 status of Mom.    See the \-R option for pbs_mom(8).
 .IP "\-S scheduler_port" 15
 Specifies the port number to which the server should connect when
-contacting the Scheduler.  The option argument,
+contacting the Scheduler.  By default pbs_server looks for the scheduler
+on the loopback address at port 15004. The -S option changes the default to the value 
+given in the option argument. The option argument,
 .Ar scheduler_conn ,
 is of the same syntax as under the \-M option.
 .IP "\-H hostname"
