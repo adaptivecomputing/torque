@@ -81,6 +81,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       --with-blcr-lib and --with-blcr-bin to override the search paths, if necessary.
       The last option, --with-blcr-bin is used to generate contrib/blcr/checkpoint_script
       and contrib/blcr/restart_script from the information supplied at configure time.
+  b - Added the -l (listener) option to the man page for pbs_server. The -l option has
+      been part of TORQUE for quite some time but the option has never been documented.
 
 2.5.5
   b - change so gpus get written back to nodes file
