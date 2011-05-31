@@ -166,6 +166,18 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       representing microseconds. Setting this values causes rpp data to pause after every
       sendto for <value> microseconds. This may help with large jobs where full data does
       not arrive at sister nodes.
+  c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it
+      (backported from 3.0.2)
+  b - Added patch from Michael Jennings to buildutils/torque.spec.in. This patch
+      allows an rpm configured with DRMAA to complete even if all of the
+      support files are not present on the system.
+  b - commited patch submitted by Michael Jennings to fix bug 130. TORQUE on the MOM would call
+      lstat as root when it should call it as user in open_std_file.
+  e - Added capability to automatically set mode on Nvidia gpus. Added support for
+      gpu reseterr option on qsub. Removed server attribute auto_node_gpu. The 
+      nodes file will be updated with Nvidia gpu count when --enable-nvidia-gpu
+      configure option is used. Moved some code out of job_purge_thread to prevent
+      segfault on mom.
 
 
 2.5.5

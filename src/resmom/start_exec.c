@@ -6803,90 +6803,6 @@ int open_std_file(
 		return(-1);
 		}
 
-	/* these checks are a bit complicated.  If keeping, we do what the user
-	 * says.  Otherwise, make sure we aren't following a symlink and that
-		 the user owns the file without breaking /dev/null. */
-
-	if (keeping)
-		{
-		mode &= ~O_EXCL;
-		}
-  else
-		{
-		if (lstat(path, &statbuf) == 0)
-			{
-			/* lstat succeeded */
-
-			if (S_ISLNK(statbuf.st_mode))
-				{
-				log_err(-1, id, "std file is symlink, someone is doing something fishy");
-
-				return(-1);
-				}
-
-			if (S_ISREG(statbuf.st_mode))
-				{
-				if (statbuf.st_uid != pjob->ji_qs.ji_un.ji_momt.ji_exuid)
-					{
-					log_err(-1, id, "std file exists with the wrong owner, someone is doing something fishy");
-
-					return(-1);
-					}
-
-				if ((statbuf.st_gid != exgid) && (statbuf.st_gid != 0))
-					{
-          int i;
-          int equal = FALSE;
-
-          /* check all of the secondary groups before throwing an error */
-          for (i = 0; i < pjob->ji_grpcache->gc_ngroup; i++)
-            {
-            if (statbuf.st_gid == (gid_t)pjob->ji_grpcache->gc_groups[i])
-              equal = TRUE;
-            }
-
-          if (equal == FALSE)
-            {
-  					log_err(-1, id, "std file exists with the wrong group, someone is doing something fishy");
-
-	  				return(-1);
-            }
-					}
-				}
-
-			/* seems reasonably safe to append to the existing file */
-
-			/* file exists - do not need to create or open exclusive */
-
-			mode &= ~(O_EXCL | O_CREAT);
-			}	 /* END if (lstat(path,&statbuf) == 0) */
-		else
-			{
-			/* lstat failed - should we return failure in all cases? */
-
-			if (errno == EINTR)
-				{
-				sprintf(log_buffer, "cannot stat stdout/stderr file '%s' (timeout)",
-								path);
-
-				if (LOGLEVEL >= 6)
-					log_err(errno, id, log_buffer);
-
-				/* fail on timeout */
-
-				return(-2);
-				}
-      else
-				{
-				sprintf(log_buffer, "cannot stat stdout/stderr file '%s' - file does not exist, will create",
-								path);
-
-				if (LOGLEVEL >= 6)
-					log_ext(errno, id, log_buffer, LOG_DEBUG);
-				}
-			}
-		}		 /* END else (keeping) */
-
 	/* become user to create file, if we aren't already the user. In
    * run_pelog setuid etc. are called and the this function is invoked,
    * so doing this again fails and is unnecessary */
@@ -6896,8 +6812,6 @@ int open_std_file(
   if (getuid() == 0)
 #endif
     {
-    /* NOTE: must set groups before setting the user because not all users can
-     * call setgid and setgroups, even if its their group, see setgid's man page */
     if (setgroups(pjob->ji_grpcache->gc_ngroup,(gid_t *)pjob->ji_grpcache->gc_groups) != 0)
       {
       snprintf(log_buffer,sizeof(log_buffer),
@@ -6930,9 +6844,94 @@ int open_std_file(
 
       log_err(errno,id,log_buffer);
 
+      setegid(pbsgroup);
       return(-1);
       }
     }
+
+	/* these checks are a bit complicated.  If keeping, we do what the user
+	 * says.  Otherwise, make sure we aren't following a symlink and that
+		 the user owns the file without breaking /dev/null. */
+
+	if (keeping)
+		{
+		mode &= ~O_EXCL;
+		}
+  else
+		{
+		if (lstat(path, &statbuf) == 0)
+			{
+			/* lstat succeeded */
+
+			if (S_ISLNK(statbuf.st_mode))
+				{
+				log_err(-1, id, "std file is symlink, someone is doing something fishy");
+
+				goto reset_ids_fail;
+				}
+
+			if (S_ISREG(statbuf.st_mode))
+				{
+				if (statbuf.st_uid != pjob->ji_qs.ji_un.ji_momt.ji_exuid)
+					{
+					log_err(-1, id, "std file exists with the wrong owner, someone is doing something fishy");
+
+					goto reset_ids_fail;
+					}
+
+				if ((statbuf.st_gid != exgid) && (statbuf.st_gid != 0))
+					{
+          int i;
+          int equal = FALSE;
+
+          /* check all of the secondary groups before throwing an error */
+          for (i = 0; i < pjob->ji_grpcache->gc_ngroup; i++)
+            {
+            if (statbuf.st_gid == (gid_t)pjob->ji_grpcache->gc_groups[i])
+              equal = TRUE;
+            }
+
+          if (equal == FALSE)
+            {
+  					log_err(-1, id, "std file exists with the wrong group, someone is doing something fishy");
+
+	  				goto reset_ids_fail;
+            }
+					}
+				}
+
+			/* seems reasonably safe to append to the existing file */
+
+			/* file exists - do not need to create or open exclusive */
+
+			mode &= ~(O_EXCL | O_CREAT);
+			}	 /* END if (lstat(path,&statbuf) == 0) */
+		else
+			{
+			/* lstat failed - should we return failure in all cases? */
+
+			if (errno == EINTR)
+				{
+				sprintf(log_buffer, "cannot stat stdout/stderr file '%s' (timeout)",
+								path);
+
+				if (LOGLEVEL >= 6)
+					log_err(errno, id, log_buffer);
+
+				/* fail on timeout */
+
+				goto reset_ids_timeout;
+				}
+      else
+				{
+				sprintf(log_buffer, "cannot stat stdout/stderr file '%s' - file does not exist, will create",
+								path);
+
+				if (LOGLEVEL >= 6)
+					log_ext(errno, id, log_buffer, LOG_DEBUG);
+				}
+			}
+		}		 /* END else (keeping) */
 
   if (pjob->ji_wattr[JOB_ATR_umask].at_flags & ATR_VFLAG_SET)
     {
@@ -7021,7 +7020,15 @@ int open_std_file(
 		}
 
 	return(fds);
-  }	 /* END open_std_file() */
+reset_ids_fail:
+    seteuid(pbsuser);
+    setegid(pbsgroup);
+    return(-1);
+reset_ids_timeout:
+    seteuid(pbsuser);
+    setegid(pbsgroup);
+    return(-2);
+}	 /* END open_std_file() */
 
 
 
