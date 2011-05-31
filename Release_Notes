@@ -34,6 +34,28 @@ OVERVIEW
 ---------------------------------------------------------------------------
 WHAT'S NEW
 
+New in 2.5.6
+    The most visible new feature added in 2.5.6 was the auto detection of GPUs 
+    when using the NVIDIA GPU devices. Also added is the ablility to report
+    statistics about NVIDIA GPUs. Statistics are returned in the pbsnodes
+    output.
+
+    job_starter is a new MOM configuration parameter. This directs the MOM to
+    run a user specified script or binary. For more information see $job_starter
+    at http://www.adaptivecomputing.com/resources/docs/torque/a.cmomconfig.php.
+
+    rpp_throttle is a new MOM configuration parameter. This allows the administrator
+    to set a limit to how fast rpp packets (mostly mom to mom communication) are 
+    put on the network. rpp uses UDP so this helps prevent large jobs with 
+    large amounts of data from getting lost due to network conjestion. see
+    $rpp_throttle at http://www.adaptivecomputing.com/resources/docs/torque/a.cmomconfig.php.
+
+    Added a new queue resource called procct which allows an administrator
+    to limit jobs allowed in a queue based on the number of processes 
+    requested in the job. 
+
+    For other bugfixes and features added to TORQUE 2.5.6 please see the CHANGELOG.
+
 New in 2.5.5
     Corrected the license file. With TORQUE 2.5.0 Adaptive Computing in good faith
     updated the license file to reflect that TORQUE is currently administered by
