@@ -102,6 +102,9 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BLCR_BINDIR = @BLCR_BINDIR@
+BLCR_CPPFLAGS = @BLCR_CPPFLAGS@
+BLCR_LDFLAGS = @BLCR_LDFLAGS@
 BUILDCPA_FALSE = @BUILDCPA_FALSE@
 BUILDCPA_TRUE = @BUILDCPA_TRUE@
 BUILD_L26_CPUSETS_FALSE = @BUILD_L26_CPUSETS_FALSE@
@@ -133,6 +136,7 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 GENERIC_CONFIG = @GENERIC_CONFIG@
 GPERF = @GPERF@
+HAVE_CR_RESTART = @HAVE_CR_RESTART@
 HAVE_DOT = @HAVE_DOT@
 INCLUDE_CLIENTS_FALSE = @INCLUDE_CLIENTS_FALSE@
 INCLUDE_CLIENTS_TRUE = @INCLUDE_CLIENTS_TRUE@
@@ -333,7 +337,7 @@ DEMUX_PATH = $(sbindir)/$(program_prefix)pbs_demux$(program_suffix)
 XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
 SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
-SUBDIRS = src doc
+SUBDIRS = src doc contrib/blcr
 EXTRA_DIST = CHANGELOG \
 	INSTALL.GNU \
 	PBS_License_2.5.txt \
@@ -352,8 +356,6 @@ EXTRA_DIST = CHANGELOG \
 	buildutils/self-extract-head-sh.in \
 	buildutils/torque.spec.in \
 	contrib/AddPrivileges \
-	contrib/blcr/checkpoint_script \
-	contrib/blcr/restart_script \
 	contrib/init.d/debian.pbs_mom \
 	contrib/init.d/debian.pbs_sched \
 	contrib/init.d/debian.pbs_server \
@@ -605,7 +607,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/buildutils $(distdir)/contrib $(distdir)/contrib/blcr $(distdir)/contrib/init.d $(distdir)/contrib/pestat-1.0 $(distdir)/src/drmaa
+	$(mkdir_p) $(distdir)/buildutils $(distdir)/contrib $(distdir)/contrib/init.d $(distdir)/contrib/pestat-1.0 $(distdir)/src/drmaa
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

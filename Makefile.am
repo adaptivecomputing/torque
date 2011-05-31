@@ -1,6 +1,6 @@
 include $(top_srcdir)/buildutils/config.mk
 
-SUBDIRS = src doc
+SUBDIRS = src doc contrib/blcr
 
 EXTRA_DIST = CHANGELOG \
 	INSTALL.GNU \
@@ -20,8 +20,6 @@ EXTRA_DIST = CHANGELOG \
 	buildutils/self-extract-head-sh.in \
 	buildutils/torque.spec.in \
 	contrib/AddPrivileges \
-	contrib/blcr/checkpoint_script \
-	contrib/blcr/restart_script \
 	contrib/init.d/debian.pbs_mom \
 	contrib/init.d/debian.pbs_sched \
 	contrib/init.d/debian.pbs_server \
