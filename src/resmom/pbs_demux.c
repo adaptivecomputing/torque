@@ -98,6 +98,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#ifdef ENABLE_BLCR
+#include <libcr.h>
+#endif /* ENABLE_BLCR */
 
 #if defined(FD_SET_IN_SYS_SELECT_H)
 #  include <sys/select.h>
@@ -192,8 +195,17 @@ void readit(
   return;
   }  /* END readit() */
 
+#ifdef ENABLE_BLCR
+static int demux_callback(void* arg)
+{
+    fflush(stdout);
+    fflush(stderr);
 
+    cr_checkpoint(CR_CHECKPOINT_OMIT);
 
+    return 0;
+}
+#endif /* ENABLE_BLCR */
 
 int main(
 
@@ -212,6 +224,16 @@ int main(
   fd_set selset;
 
   struct routem *routem;
+
+#ifdef ENABLE_BLCR
+  if (cr_init() < 0)
+    {
+    perror("Failed to initialize BLCR.");
+    exit(5);
+    }
+
+  (void)cr_register_callback(demux_callback, NULL, CR_THREAD_CONTEXT);
+#endif /* ENABLE_BLCR */
 
   parent = getppid();
 

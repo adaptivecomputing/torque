@@ -1,4 +1,5 @@
 #! /usr/bin/perl
+# @configure_input@
 ################################################################################
 #
 # Usage: restart_script <session_id> <job_id> <user_id> <group_id> <checkpoint_dir> <checkpoint_name>
@@ -9,11 +10,21 @@
 use strict;
 use Sys::Syslog;
 
+#
+# These variables should be initialized by configure.
+#
+my $blcr_bindir="@BLCR_BINDIR@";
+my $torque_bindir="@bindir@";
+my $mom_priv="@PBS_SERVER_HOME@/mom_priv";
+
 # Customize the following variables
 # Customize the PATH to include location of blcr checkpoint commands
 # (e.g. cr_restart), torque client commands (e.g. qalter),
 # and pbs_mom checkpoint/restart scripts (e.g. restart_script,run_on_success)
-$ENV{PATH} .= ":/usr/local/bin:/opt/torque/bin:/var/torque/mom_priv";
+$ENV{PATH} .= ":$blcr_bindir" if $blcr_bindir;
+$ENV{PATH} .= ":$torque_bindir" if $torque_bindir;
+$ENV{PATH} .= ":$mom_priv" if $mom_priv;
+
 my $logLevel = 3; # 0 = none, 1 = fail, 2 = info, 3 = debug
 
 logPrint(2, "Invoked: $0 " . join(' ', @ARGV) . "\n");
@@ -143,3 +154,4 @@ sub logDie
     logPrint($level, $message);
     die($message);
 }
+

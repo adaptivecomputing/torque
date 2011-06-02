@@ -621,16 +621,78 @@ AC_ARG_ENABLE(array,
 dnl
 dnl enable BLCR support
 dnl
-AC_MSG_CHECKING([whether to build BLCR support])
 AC_ARG_ENABLE(blcr,
     [  --enable-blcr           enable BLCR support],
     BLCR=$enableval,BLCR=no)
+
+AC_ARG_WITH(blcr,
+    [  --with-blcr=DIR          BLCR installation prefix],
+    [
+        blcrprefix=$withval
+        BLCR=yes
+        blcrlib="${blcrprefix}/lib"
+        blcrbin="${blcrprefix}/bin"
+        blcrinclude="${blcrprefix}/include"
+    ],[
+        blcrprefix=none
+        blcrlib=none
+        blcrbin=none
+        blcrinclude=none
+    ])
+AC_ARG_WITH(blcr_include,
+    [  --with-blcr-include=DIR  include path for libcr.h],
+    blcrinclude=$withval)
+AC_ARG_WITH(blcr_lib,
+    [  --with-blcr-lib=DIR      lib path for libcr],
+    blcrlib=$withval)
+AC_ARG_WITH(blcr_bin,
+    [  --with-blcr-bin=DIR      bin path for BLCR utilities],
+    blcrbin=$withval)
+
+AC_MSG_CHECKING([whether to build BLCR support])
 AC_MSG_RESULT($BLCR)
+
 case "$BLCR" in
-  yes) AC_DEFINE([ENABLE_BLCR], 1, [Define to enable BLCR support]) ;;
+  yes) AC_DEFINE([ENABLE_BLCR], 1, [Define to enable BLCR support])
+    AS_IF([test "x$blcrlib" != xnone], [
+      BLCR_LDFLAGS="-L$blcrlib -lcr"
+    ],[
+      BLCR_LDFLAGS=""
+    ])
+    SAVE_LDFLAGS="$LDFLAGS"
+    LDFLAGS="$BLCR_LDFLAGS $LDFLAGS"
+    AC_CHECK_LIB([cr], [cr_init], [ :], 
+      AC_MSG_ERROR([pass the path to libcr.so to --with-blcr-lib]))
+    LDFLAGS="$SAVE_LDFLAGS"
+    AC_SUBST([BLCR_LDFLAGS])
+
+    AS_IF([test "x$blcrinclude" != xnone], [
+      BLCR_CPPFLAGS="-I$blcrinclude -std=gnu99"
+    ],[
+      BLCR_CPPFLAGS=""
+    ])
+    SAVE_CPPFLAGS="$CPPFLAGS"
+    CPPFLAGS="$BLCR_CPPFLAGS $CPPFLAGS"
+    AC_CHECK_HEADER([libcr.h], [ :], 
+      AC_MSG_ERROR([pass the path to libcr.so to --with-blcr-include]))
+    CPPFLAGS="$SAVE_CPPFLAGS"
+    AC_SUBST([BLCR_CPPFLAGS])
+
+    AS_IF([test "x$blcrbin" != xnone], [
+        BLCR_BINDIR="$blcrbin"
+        BLCR_PATH="$PATH_SEPARATOR$BLCR_BINDIR"
+    ],[
+        BLCR_BINDIR=""
+        BLCR_PATH=""
+    ])
+    AC_CHECK_PROGS([HAVE_CR_RESTART], [cr_restart], [no],
+      [PATH=$PATH$BLCR_PATH])
+    AC_SUBST([BLCR_BINDIR])
+    ;;
   no) : ;;
   *) AC_MSG_ERROR([--enable-blcr should be yes or no]) ;;
 esac
+
 
 dnl
 dnl enable logging of x attributes for accounting
@@ -1613,6 +1675,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  buildutils/modulefiles
 	  buildutils/modulefiles.vers
 	  Makefile
+	  contrib/blcr/Makefile
 	  doc/Makefile
 	  doc/man1/Makefile
 	  doc/man3/Makefile
