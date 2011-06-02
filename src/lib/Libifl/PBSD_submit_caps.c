@@ -160,6 +160,75 @@ int PBSD_rdytocmt(
 
 
 
+int PBSD_commit_get_sid(
+
+  int   connect, /* I */
+  long *sid,     /* O */
+  char *jobid)   /* I */
+
+  {
+  struct batch_reply *reply;
+  int rc;
+  int sock;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(connection[connect].ch_mutex);
+#endif
+
+  sock = connection[connect].ch_socket;
+
+  DIS_tcp_setup(sock);
+
+  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_Commit, pbs_current_user)) ||
+      (rc = encode_DIS_JobId(sock, jobid)) ||
+      (rc = encode_DIS_ReqExtend(sock, NULL)))
+    {
+    connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+
+    pbs_errno = PBSE_PROTOCOL;
+
+    return(pbs_errno);
+    }
+
+  if (DIS_tcp_wflush(sock))
+    {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+  
+    pbs_errno = PBSE_PROTOCOL;
+
+    return(pbs_errno);
+    }
+
+  /* PBSD_rdrpy sets connection[connect].ch_errno */
+  reply = PBSD_rdrpy(connect);
+
+  rc = connection[connect].ch_errno;
+ 
+  /* read the sid if given and no error */
+  if (rc == PBSE_NONE)
+    {
+    if (sid != NULL)
+      *sid = atol(reply->brp_un.brp_txt.brp_str);
+    }
+
+  PBSD_FreeReply(reply);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(connection[connect].ch_mutex);
+#endif
+
+  return(rc);
+  } /* END PBSD_commit_get_sid() */
+
+
+
+
 
 /* PBS_commit.c
 

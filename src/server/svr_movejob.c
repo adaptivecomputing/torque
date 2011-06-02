@@ -144,8 +144,6 @@ static int move_job_file(int con, job *pjob, enum job_file which);
 /* Global Data */
 
 extern time_t            time_now;
-extern sem_t            *job_locution;
-extern sem_t            *sent_to_mom;
 extern locution_records  job_locutions;
 extern locution_records  sendmom_records;
 extern char             *path_jobs;
@@ -441,14 +439,13 @@ static void post_routejob(
 
 void finish_routing_processing(
 
-  locution_record *record)
+  job *pjob)
 
   {
   static char *id = "finishing_routing_processing";
   int  newstate;
   int  newsub;
   int  status;
-  job *pjob = find_job(record->jobid);
 
   switch (status)
     {
@@ -510,16 +507,15 @@ void finish_routing_processing(
 
 void finish_moving_processing(
 
-  locution_record *record)
+  job                  *pjob,
+  struct batch_request *req,
+  int                   status)
 
   {
   static char *id = "finish_moving_processing";
 
-  struct batch_request *req = record->preq;
   int newstate;
   int newsub;
-  int status = record->status;
-  job *pjob;
 
   if (req->rq_type != PBS_BATCH_MoveJob)
     {
@@ -528,18 +524,6 @@ void finish_moving_processing(
     log_err(-1, id, log_buffer);
 
     return;
-    }
-
-  pjob = find_job(req->rq_ind.rq_move.rq_jid);
-
-  if (pjob == NULL)
-    {
-    sprintf(log_buffer, "job %s not found\n",
-            req->rq_ind.rq_move.rq_jid);
-
-    log_err(-1, id, log_buffer);
-
-    status = LOCUTION_FAIL;
     }
 
   switch (status)
@@ -585,59 +569,6 @@ void finish_moving_processing(
     } /* END switch (status) */
   
   } /* END finish_moving_processing() */
-
-
-
-
-
-/* 
- * spawned as a thread that runs as long as pbs_server is running:
- * it waits on the job_locution semaphore, gets the locution record
- * and handles the post processing for routing and moving jobs
- */
-void *finish_locution_processes(
-
-  void *vp)
-
-  {
-  locution_record *record;
-  int              status;
-
-  while (TRUE)
-    {
-    sem_wait(job_locution);
-
-    if ((record = pop_locution_record(&job_locutions)) == NULL)
-      continue;
-
-    /* check if shutting down */
-    if (!strcmp(record->jobid,"shutdown"))
-      {
-      free(record);
-
-      break;
-      }
-
-    switch (record->type)
-      {
-      case MOVE_TYPE_Route:
-
-        finish_routing_processing(record);
-
-        break;
-
-      case MOVE_TYPE_Move:
-
-        finish_moving_processing(record);
-
-        break;
-      }
-
-    free(record);
-    } /* infinite loop for post locution processing */
-
-  return(NULL);
-  } /* END finish_locution_processes() */
 
 
 
@@ -774,32 +705,37 @@ static void post_movejob(
 
 
 
-void update_records(
+void finish_move_process(
 
-  locution_record *record,
-  int              status)
+  job                  *pjob,
+  struct batch_request *preq,
+  long                  time,
+  char                 *node_name,
+  int                   status,
+  int                   type)
 
   {
-  record->status = status;
-
-  switch (record->type)
+  switch (type)
     {
     case MOVE_TYPE_Move:
-    case MOVE_TYPE_Route:
 
-      insert_locution_record(&job_locutions,record);
-      sem_post(job_locution);
+      finish_moving_processing(pjob,preq,status);
+
+      break;
+
+    case MOVE_TYPE_Route:
+        
+      finish_routing_processing(pjob);
 
       break;
 
     case MOVE_TYPE_Exec:
 
-      insert_locution_record(&sendmom_records,record);
-      sem_post(sent_to_mom);
+      finish_sendmom(pjob,preq,time,node_name,status);
 
       break;
-    }
-  } /* END update_records() */
+    } /* END switch (type) */
+  } /* END finish_move_process() */
 
 
 
@@ -827,33 +763,35 @@ void *send_job(
   void *vp) /* I: jobid, hostaddr, port, move_type, and data */
 
   {
-  static char      *id = "send_job";
+  static char          *id = "send_job";
 
-  send_job_request *args = (send_job_request *)vp;
-  char             *jobid = args->jobid;
-  job              *pjob;
-  pbs_net_t         hostaddr = args->addr;       /* host address, host byte order */
-  int               port = args->port;           /* service port, host byte order */
-  int               move_type = args->move_type; /* move, route, or execute */
-  void             *data = args->data;           /* optional pointer to batch_request */
+  send_job_request     *args = (send_job_request *)vp;
+  char                 *jobid = args->jobid;
+  job                  *pjob;
+  pbs_net_t             hostaddr = args->addr;       /* host address, host byte order */
+  int                   port = args->port;           /* service port, host byte order */
+  int                   type = args->move_type; /* move, route, or execute */
 
-  tlist_head        attrl;
-  enum conn_type    cntype = ToServerDIS;
-  int               con;
-  int               encode_type;
-  int               i;
-  int               NumRetries;
-  int               resc_access_perm;
-  char             *destin;
-  char              script_name[MAXPATHLEN + 1];
-  char             *pc;
+  tlist_head            attrl;
+  enum conn_type        cntype = ToServerDIS;
+  int                   con;
+  int                   encode_type;
+  int                   i;
+  int                   NumRetries;
+  int                   resc_access_perm;
+  char                 *destin;
+  char                  script_name[MAXPATHLEN + 1];
+  char                 *pc;
+  char                 *node_name = NULL;
+  long                  time = time_now;
+  long                  sid;
 
-  struct attropl   *pqjatr;      /* list (single) of attropl for quejob */
-  struct work_task *ptask;
-  struct pbsnode   *np;
-  attribute        *pattr;
-  mbool_t           Timeout = FALSE;
-  locution_record  *record;
+  struct batch_request *preq = (struct batch_request *)args->data;
+  struct attropl       *pqjatr;      /* list (single) of attropl for quejob */
+  struct work_task     *ptask;
+  struct pbsnode       *np;
+  attribute            *pattr;
+  mbool_t               Timeout = FALSE;
 
   pjob = find_job(jobid);
   destin = pjob->ji_qs.ji_destin;
@@ -861,21 +799,14 @@ void *send_job(
   if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer,"about to send job - type=%d",
-      move_type);
+      type);
  
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
 
-  /* create the locution record */
-  record = malloc(sizeof(locution_record));
-  strcpy(record->jobid,jobid);
-  record->time = time_now;
-  record->type = move_type;
-  record->preq = (struct batch_request *)data;
-
   if ((np = PGetNodeFromAddr(hostaddr)) != NULL)
     {
-    strcpy(record->node_name,np->nd_name);
+    node_name = np->nd_name;
 
 #ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(np->nd_mutex);
@@ -886,7 +817,7 @@ void *send_job(
   CLEAR_HEAD(attrl);
 
   /* select attributes/resources to send based on move type */
-  if (move_type == MOVE_TYPE_Exec)
+  if (type == MOVE_TYPE_Exec)
     {
     /* moving job to MOM - ie job start */
 
@@ -951,6 +882,7 @@ void *send_job(
   for (NumRetries = 0;NumRetries < RETRY;NumRetries++)
     {
     int rc;
+    int sock;
 
     /* connect to receiving server with retries */
 
@@ -970,11 +902,8 @@ void *send_job(
 
         log_err(pbs_errno, id, log_buffer);
 
-        update_records(record,LOCUTION_FAIL);
 
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+        finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
 
         return(NULL);
         }
@@ -992,14 +921,20 @@ void *send_job(
 
       log_err(pbs_errno, id, log_buffer);
   
-      update_records(record,LOCUTION_FAIL);
-
-#ifdef ENABLE_PTHREADS
-      pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+      finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
 
       return(NULL);
       }
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_lock(connection[con].ch_mutex);
+#endif
+      
+    sock = connection[con].ch_socket;
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(connection[con].ch_mutex);
+#endif
 
     if (con == PBS_NET_RC_RETRY)
       {
@@ -1039,7 +974,7 @@ void *send_job(
           Timeout = TRUE;
           }
 
-        if ((pbs_errno == PBSE_JOBEXIST) && (move_type == MOVE_TYPE_Exec))
+        if ((pbs_errno == PBSE_JOBEXIST) && (type == MOVE_TYPE_Exec))
           {
           /* already running, mark it so */
 
@@ -1049,11 +984,7 @@ void *send_job(
             pjob->ji_qs.ji_jobid,
             "MOM reports job already running");
 
-          update_records(record,LOCUTION_SUCCESS);
-
-#ifdef ENABLE_PTHREADS
-          pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+          finish_move_process(pjob,preq,time,node_name,LOCUTION_SUCCESS,type);
 
           return(NULL);
           }
@@ -1083,7 +1014,7 @@ void *send_job(
          a mom on the same host and the mom and server are not sharing the same
          spool directory, then we still need to move the file */
 
-      if ((move_type == MOVE_TYPE_Exec) &&
+      if ((type == MOVE_TYPE_Exec) &&
           (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) &&
           (hostaddr != pbs_server_addr))
         {
@@ -1108,7 +1039,7 @@ void *send_job(
       }
 
 
-    if ((rc = PBSD_commit(con, jobid)) != 0)
+    if ((rc = PBSD_commit_get_sid(con, &sid, jobid)) != PBSE_NONE)
       {
       int   errno2;
       char *err_text;
@@ -1128,8 +1059,8 @@ void *send_job(
       errno2 = errno;
 
       sprintf(log_buffer, "send_job commit failed, rc=%d (%s)",
-              rc,
-              (err_text != NULL) ? err_text : "N/A");
+        rc,
+        (err_text != NULL) ? err_text : "N/A");
 
       log_ext(errno2, id, log_buffer, LOG_WARNING);
 
@@ -1162,26 +1093,25 @@ void *send_job(
         log_ext(errno2, id, log_buffer, LOG_CRIT);
 
         /* FAILURE */
-        update_records(record,LOCUTION_FAIL);
-
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+        finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
 
         return(NULL);
         }
-      }    /* END if ((rc = PBSD_commit(con,jobid)) != 0) */
+      } /* END if ((rc = PBSD_commit(con,jobid)) != 0) */
+    else if (sid != -1)
+      {
+      /* save the sid */
+      pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long = sid;
+      pjob->ji_wattr[JOB_ATR_session_id].at_flags |= ATR_VFLAG_SET;
+      }
 
     svr_disconnect(con);
 
-    /* child process is done */
+    /* why is this necessary? it works though */
+    close(sock);
 
     /* SUCCESS */
-    update_records(record,LOCUTION_SUCCESS);
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+    finish_move_process(pjob,preq,time,node_name,LOCUTION_SUCCESS,type);
 
     return(NULL);
     }  /* END for (NumRetries) */
@@ -1198,11 +1128,7 @@ void *send_job(
 
     log_ext(pbs_errno, id, log_buffer, LOG_WARNING);
 
-    update_records(record,LOCUTION_REQUEUE);
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+    finish_move_process(pjob,preq,time,node_name,LOCUTION_REQUEUE,type);
     
     return(NULL);
     }
@@ -1213,20 +1139,12 @@ void *send_job(
 
     log_err(pbs_errno, id, log_buffer);
 
-    update_records(record,LOCUTION_FAIL);
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+    finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
     
     return(NULL);
     }
 
-  update_records(record,LOCUTION_REQUEUE);
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+  finish_move_process(pjob,preq,time,node_name,LOCUTION_REQUEUE,type);
 
   return(NULL);
   }  /* END send_job() */

@@ -109,6 +109,7 @@
 #include <pwd.h>
 #include "mom_func.h"
 #include "pbs_nodes.h"
+#include "utils.h"
 
 /* External Functions Called: */
 
@@ -919,6 +920,39 @@ void req_rdytocommit(
 
 
 
+
+void reply_sid(
+
+  struct batch_request *preq,  /* M */
+  long                  sid,   /* I */
+  int                   which) /* I */
+
+  {
+  char sid_text[MAXLINE];
+
+  if (preq->rq_reply.brp_choice != BATCH_REPLY_CHOICE_NULL)
+    {
+    /* in case another reply was being built up, clean it out */
+
+    reply_free(&preq->rq_reply);
+    }
+
+  sprintf(sid_text,"%lu",sid);
+    
+  preq->rq_reply.brp_choice                = which;
+  preq->rq_reply.brp_un.brp_txt.brp_str    = strdup(sid_text);
+  preq->rq_reply.brp_un.brp_txt.brp_txtlen = strlen(sid_text);
+
+  preq->rq_reply.brp_code    = 0;
+  preq->rq_reply.brp_auxcode = 0;
+
+  reply_send(preq);
+  }  /* END reply_text() */
+
+
+
+
+
 /*
  * req_commit - commit ownership of job
  *
@@ -931,10 +965,8 @@ void req_commit(
   struct batch_request *preq)  /* I */
 
   {
-  job   *pj;
-  unsigned int momport = 0;
-
-  pj = locate_new_job(preq->rq_conn, preq->rq_ind.rq_commit);
+  unsigned int  momport = 0;
+  job          *pj = locate_new_job(preq->rq_conn, preq->rq_ind.rq_commit);
 
   if (LOGLEVEL >= 6)
     {
@@ -1036,13 +1068,14 @@ void req_commit(
     }
   else
     {
-    reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Commit);
+    reply_sid(preq, pj->ji_wattr[JOB_ATR_session_id].at_val.at_long,BATCH_REPLY_CHOICE_Text);
     }
 
   if (multi_mom)
     {
     momport = pbs_rm_port;
     }
+
   job_save(pj, SAVEJOB_FULL, momport);
 
   /* NOTE: we used to flag JOB_ATR_errpath, JOB_ATR_outpath,

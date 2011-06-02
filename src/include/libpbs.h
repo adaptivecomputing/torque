@@ -204,15 +204,15 @@ struct brp_rescq              /* reply to Resource Query Request */
  * the following is the basic Batch Reply structure
  */
 
-#define BATCH_REPLY_CHOICE_NULL  1 /* no reply choice, just code */
-#define BATCH_REPLY_CHOICE_Queue 2 /* Job ID, see brp_jid   */
-#define BATCH_REPLY_CHOICE_RdytoCom 3 /* select, see brp_jid    */
-#define BATCH_REPLY_CHOICE_Commit 4 /* commit, see brp_jid   */
-#define BATCH_REPLY_CHOICE_Select 5 /* select, see brp_select */
-#define BATCH_REPLY_CHOICE_Status 6 /* status, see brp_status */
-#define BATCH_REPLY_CHOICE_Text  7 /* text,   see brp_txt   */
-#define BATCH_REPLY_CHOICE_Locate 8 /* locate, see brp_locate */
-#define BATCH_REPLY_CHOICE_RescQuery 9 /* Resource Query         */
+#define BATCH_REPLY_CHOICE_NULL      1  /* no reply choice, just code */
+#define BATCH_REPLY_CHOICE_Queue     2  /* Job ID, see brp_jid   */
+#define BATCH_REPLY_CHOICE_RdytoCom  3  /* select, see brp_jid    */
+#define BATCH_REPLY_CHOICE_Commit    4  /* commit, see brp_jid   */
+#define BATCH_REPLY_CHOICE_Select    5  /* select, see brp_select */
+#define BATCH_REPLY_CHOICE_Status    6  /* status, see brp_status */
+#define BATCH_REPLY_CHOICE_Text      7  /* text,   see brp_txt   */
+#define BATCH_REPLY_CHOICE_Locate    8  /* locate, see brp_locate */
+#define BATCH_REPLY_CHOICE_RescQuery 9  /* Resource Query         */
 
 struct batch_reply
   {

@@ -463,17 +463,17 @@ scan_for_exiting(void)
 
         mom_radix = pjob->ji_wattr[index].at_val.at_long;
 
-        if(mom_radix < 2)
+        if (mom_radix < 2)
           {
           NumSisters = send_sisters(pjob, IM_KILL_JOB);
           }
         else
           {
           NumSisters = 1; /* We use this for later */
-          if(pjob->ji_sampletim == 0)
+          if (pjob->ji_sampletim == 0)
             {
             pjob->ji_sampletim = time(NULL);
-            if((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
+            if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
               {
               /* only call send_sisters_radix if this is mother superior
                  intermediate moms already called this in im_request
@@ -487,10 +487,10 @@ scan_for_exiting(void)
             time_t time_now;
 
             time_now = time(NULL);
-            if(time_now - pjob->ji_sampletim > 5)
+            if (time_now - pjob->ji_sampletim > 5)
               {
                
-               if((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
+               if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
                  {
                  /* only call send_sisters_radix if this is mother superior
                     intermediate moms already called this in im_request
@@ -500,7 +500,7 @@ scan_for_exiting(void)
                  }
                }
             }
-          }        
+          } 
 
         if (NumSisters == 0)
           {

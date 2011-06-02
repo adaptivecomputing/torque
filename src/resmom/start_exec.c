@@ -1423,7 +1423,13 @@ int InitUserEnv(
  * @param pjob Pointer to job structure.
  * @see TMomFinalizeChild
  */
-int mom_jobstarter_execute_job(job *pjob, char *shell, char *arg[], struct var_table *vtable)
+int mom_jobstarter_execute_job(
+    
+  job *pjob,
+  char *shell,
+  char *arg[],
+  struct var_table *vtable)
+
   {
   static char          *id = "mom_jobstarter_execute_job";
 
@@ -3926,9 +3932,9 @@ int TMomFinalizeChild(
 
 			}
 
-		if(jobstarter_set)
+		if (jobstarter_set)
 			{
-			if(mom_jobstarter_execute_job(pjob, shell, arg, &vtable) == -1)
+			if (mom_jobstarter_execute_job(pjob, shell, arg, &vtable) == -1)
 				{
 				starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 

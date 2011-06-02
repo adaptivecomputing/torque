@@ -140,8 +140,6 @@
 
 /* external functions called */
 
-void         *finish_sendmom_processes(void *);
-void         *finish_locution_processes(void *);
 extern void job_log_roll(int max_depth);
 extern int  pbsd_init(int);
 extern void shutdown_ack();
@@ -1869,11 +1867,6 @@ int main(
 
     exit(3);
     }
-
-#ifdef ENABLE_PTHREADS
-  pthread_create(&helper_thread,NULL,finish_sendmom_processes,NULL);
-  pthread_create(&helper_thread,NULL,finish_locution_processes,NULL);
-#endif
 
 #if (PLOCK_DAEMONS & 1)
   plock(PROCLOCK);

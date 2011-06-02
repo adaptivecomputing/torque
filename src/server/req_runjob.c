@@ -1177,210 +1177,163 @@ static int svr_strtjob2(
 
 
 
-/*
- * spawned as a thread that runs as long as pbs_server is running:
- * it waits on the sent_to_mom sempahore, gets the locution record and 
- * handles the post processing for a job having been sent to a mom
- */
 
-void *finish_sendmom_processes(
+void finish_sendmom(
 
-  void *vp)
+  job                  *pjob,
+  struct batch_request *preq,
+  long                  time,
+  char                 *node_name,
+  int                   status)
 
   {
-  locution_record      *record;
-  job                  *pjob;
-  struct batch_request *preq;
-  int                   status;
-  int                   newstate;
-  int                   newsub;
-  long                  duration;
-  u_long                addr;
+  pbs_net_t addr;
+  int       newstate;
+  int       newsub;
 
-  while (TRUE)
+  if (LOGLEVEL >= 6)
     {
-    sem_wait(sent_to_mom);
+    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"entering post_sendmom");
+    }
 
-    if ((record = pop_locution_record(&sendmom_records)) == NULL)
-      continue;
+  if (LOGLEVEL >= 1)
+    {
+    sprintf(log_buffer, "child reported %s for job after %ld seconds (dest=%s), rc=%d",
+      (status == 0) ? "success" : "failure",
+      time_now - time,
+      (node_name != NULL) ? node_name : "???",
+      status);
 
-    /* check if shutting down */
-    if (!strcmp(record->jobid,"shutdown"))
-      {
-      free(record);
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    }
 
-      break;
-      }
+  switch (status)
+    {
+    case LOCUTION_SUCCESS:  /* send to MOM went ok */
 
-    if ((pjob = find_job(record->jobid)) == NULL)
-      {
-      free(record);
-
-      continue;
-      }
-  
-    if (LOGLEVEL >= 6)
-      {
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"entering post_sendmom");
-      }
-
-    status = record->status;
-    preq = record->preq;
-
-    if (LOGLEVEL >= 1)
-      {
-      sprintf(log_buffer, "child reported %s for job after %ld seconds (dest=%s), rc=%d",
-        (status == 0) ? "success" : "failure",
-        time_now - record->time,
-        (record->node_name[0] != '\0') ? record->node_name : "???",
-        status);
+      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HOTSTART;
       
-      log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
-      }
-    
-    switch (status)
-      {
-      case LOCUTION_SUCCESS:  /* send to MOM went ok */
-        
-        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HOTSTART;
-  
-        if (preq != NULL)
-          reply_ack(preq);
-        
-        /* record start time for accounting */      
-        pjob->ji_qs.ji_stime = time_now;
-
-        /* update resource usage attributes */        
-        set_resc_assigned(pjob, INCR);
-        
-        if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
-          {
-          /* may be EXITING if job finished first */
-          svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_RUNNING);
-          
-          /* above saves job structure */
-          }
-        
-        /* accounting log for start or restart */
-        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)
-          account_record(PBS_ACCT_RESTRT, pjob, "Restart from checkpoint");
-        else
-          account_jobstr(pjob);
-        
-        /* if any dependencies, see if action required */
-        if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
-          depend_on_exec(pjob);
-        
-        /*
-         * it is unfortunate, but while the job has gone into execution,
-         * there is no way of obtaining the session id except by making
-         * a status request of MOM.  (Even if the session id was passed
-         * back to the sending child, it couldn't get up to the parent.)
-         */
-        
-        pjob->ji_momstat = 0;
-        
-        stat_mom_job(pjob);
-        
-        break;
-        
-      case LOCUTION_REQUEUE:
-        
-        /* NOTE: connection to mom timed out.  Mark node down */        
-        addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
-        stream_eof(-1, addr, pjob->ji_qs.ji_un.ji_exect.ji_momport, 0);
-        
-        /* send failed, requeue the job */
-        log_event(PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "unable to run job, MOM rejected/timeout");
-        
-        free_nodes(pjob);
-        
-        if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_ABORT)
-          {
-          if (preq != NULL)
-            req_reject(PBSE_MOMREJECT, 0, preq, record->node_name, "connection to mom timed out");
-          
-          svr_evaljobstate(pjob, &newstate, &newsub, 1);
-          svr_setjobstate(pjob, newstate, newsub);
-          }
-        else
-          {
-          if (preq != NULL)
-            req_reject(PBSE_BADSTATE, 0, preq, record->node_name, "job was aborted by mom");
-          }
-        
-        break;
-        
-      case LOCUTION_FAIL:   /* commit failed */
-        
-      default:
-        
+      if (preq != NULL)
+        reply_ack(preq);
+      
+      /* record start time for accounting */      
+      pjob->ji_qs.ji_stime = time_now;
+      
+      /* update resource usage attributes */        
+      set_resc_assigned(pjob, INCR);
+      
+      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
         {
-        int JobOK = FALSE;
+        /* may be EXITING if job finished first */
+        svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_RUNNING);
+
+        /* above saves job structure */
+        }
+      
+      /* accounting log for start or restart */
+      if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)
+        account_record(PBS_ACCT_RESTRT, pjob, "Restart from checkpoint");
+      else
+        account_jobstr(pjob);
+      
+      /* if any dependencies, see if action required */
+      if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+        depend_on_exec(pjob);
+      
+      break;
+
+    case LOCUTION_REQUEUE:
+      
+      /* NOTE: connection to mom timed out.  Mark node down */        
+      addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
+      stream_eof(-1, addr, pjob->ji_qs.ji_un.ji_exect.ji_momport, 0);
+      
+      /* send failed, requeue the job */
+      log_event(PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "unable to run job, MOM rejected/timeout");
+
+      free_nodes(pjob);
+      
+      if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_ABORT)
+        {
+        if (preq != NULL)
+          req_reject(PBSE_MOMREJECT, 0, preq, node_name, "connection to mom timed out");
         
-        /* send failed, requeue the job */
-        sprintf(log_buffer, "unable to run job, MOM rejected/rc=%d", status);
-        
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
-        
-        free_nodes(pjob);
-        
-        if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_ABORT)
+        svr_evaljobstate(pjob, &newstate, &newsub, 1);
+        svr_setjobstate(pjob, newstate, newsub);
+        }
+      else
+        {
+        if (preq != NULL)
+          req_reject(PBSE_BADSTATE, 0, preq, node_name, "job was aborted by mom");
+        }
+      
+      break;
+      
+    case LOCUTION_FAIL:   /* commit failed */
+      
+    default:
+
+      {
+      int JobOK = FALSE;
+      
+      /* send failed, requeue the job */
+      sprintf(log_buffer, "unable to run job, MOM rejected/rc=%d", status);
+      
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      
+      free_nodes(pjob);
+      
+      if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_ABORT)
+        {
+        if (preq != NULL)
           {
-          if (preq != NULL)
-            {
-            char tmpLine[1024];
-            
-            if (preq->rq_reply.brp_code == PBSE_JOBEXIST)
-              {
-              /* job already running, start request failed but return success since
-               * desired behavior (job is running) is accomplished */
-              
-              JobOK = TRUE;
-              }
-            else
-              {
-              sprintf(tmpLine, "cannot send job to %s, state=%s",
-                (record->node_name[0] != '\0') ? record->node_name : "mom",
-                PJobSubState[pjob->ji_qs.ji_substate]);
-              
-              req_reject(PBSE_MOMREJECT, 0, preq, record->node_name, tmpLine);
-              }
-            }
+          char tmpLine[1024];
           
-          if (JobOK == TRUE)
+          if (preq->rq_reply.brp_code == PBSE_JOBEXIST)
             {
-            /* do not re-establish accounting - completed first time job was started */
-            pjob->ji_momstat = 0;
+            /* job already running, start request failed but return success since
+             * desired behavior (job is running) is accomplished */
             
-            /* update mom-based job status */
-            stat_mom_job(pjob);
+            JobOK = TRUE;
             }
           else
             {
-            svr_evaljobstate(pjob, &newstate, &newsub, 1);
-            svr_setjobstate(pjob, newstate, newsub);
+            sprintf(tmpLine, "cannot send job to %s, state=%s",
+              (node_name != NULL) ? node_name : "mom",
+              PJobSubState[pjob->ji_qs.ji_substate]);
+            
+            req_reject(PBSE_MOMREJECT, 0, preq, node_name, tmpLine);
             }
           }
-        else if (preq != NULL)
-          req_reject(PBSE_BADSTATE, 0, preq, record->node_name, "send failed - abort");
-  
-        break;
+        
+        if (JobOK == TRUE)
+          {
+          /* do not re-establish accounting - completed first time job was started */
+          pjob->ji_momstat = 0;
+          
+          /* update mom-based job status */
+          stat_mom_job(pjob);
+          }
+        else
+          {
+          svr_evaljobstate(pjob, &newstate, &newsub, 1);
+          svr_setjobstate(pjob, newstate, newsub);
+          }
         }
-      }  /* END switch (status) */
-
-    free(record);
+      else if (preq != NULL)
+        req_reject(PBSE_BADSTATE, 0, preq, node_name, "send failed - abort");
+      
+      break;
+      }
+    }  /* END switch (status) */
 
 #ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pjob->ji_mutex);
-#endif    
-    } /* infinite loop unless shutting down */
-
-  return(NULL);
-  } /* END finish_sendmom_processes() */
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+  } /* END finish_sendmom() */
 
 
 
