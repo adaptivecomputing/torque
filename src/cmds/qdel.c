@@ -287,12 +287,7 @@ int main(
 
     strcpy(job_id, argv[optind]);
 
-    if ((strcmp("all", job_id) == 0) || (strcmp("ALL", job_id) == 0))
-      {
-      qdel_all(extend);
-      continue;
-      }
-    else if (get_server(job_id, job_id_out, server_out))
+    if (get_server(job_id, job_id_out, server_out))
       {
       fprintf(stderr, "qdel: illegally formed job identifier: %s\n",
               job_id);
@@ -355,6 +350,7 @@ cnt:
  * 'C'omplete or 'E'xiting state
  */
 void qdel_all(
+
   char *extend)   /* I */
 
   {

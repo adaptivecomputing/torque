@@ -97,6 +97,7 @@
 #include "log.h"
 #include "svrfunc.h"
 #include "mcom.h"
+#include "utils.h"
 
 /* Global Data */
 
@@ -481,6 +482,80 @@ int authenticate_user(
 
 
 
+void chk_job_req_permissions(
+
+  job                  **pjob_ptr, /* M */
+  struct batch_request  *preq) /* I */
+
+  {
+  job  *pjob = *pjob_ptr;
+  char  tmpLine[MAXLINE];
+
+  if (svr_authorize_jobreq(preq, pjob) == -1)
+    {
+    sprintf(log_buffer, msg_permlog,
+            preq->rq_type,
+            "Job",
+            pjob->ji_qs.ji_jobid,
+            preq->rq_user,
+            preq->rq_host);
+
+    log_event(PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+
+    req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+    *pjob_ptr = NULL;
+    }
+  else if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+    {
+    /* job has completed */
+
+    switch (preq->rq_type)
+      {
+
+      case PBS_BATCH_Rerun:
+
+        /* allow re-run to be executed for completed jobs */
+
+        /* NO-OP */
+
+        break;
+
+      default:
+
+        sprintf(log_buffer, "%s %s",
+          pbse_to_txt(PBSE_BADSTATE),
+          PJobState[pjob->ji_qs.ji_state]);
+
+        log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+
+        snprintf(tmpLine, sizeof(tmpLine), 
+          "invalid state for job - %s",
+          PJobState[pjob->ji_qs.ji_state]);
+
+        req_reject(PBSE_BADSTATE, 0, preq, NULL, tmpLine);
+
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(pjob->ji_mutex);
+#endif
+
+        *pjob_ptr = NULL;
+
+        break;
+      }  /* END switch (preq->rq_type) */
+    }    /* END if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING) */
+
+  /* SUCCESS - request is valid */
+  } /* END chk_job_req_permissions() */
+
+
+
+
+
 /*
  * chk_job_request - check legality of a request against a job
  *
@@ -510,78 +585,8 @@ job *chk_job_request(
     return(NULL);
     }
 
-  if (svr_authorize_jobreq(preq, pjob) == -1)
-    {
-    sprintf(log_buffer, msg_permlog,
-            preq->rq_type,
-            "Job",
-            pjob->ji_qs.ji_jobid,
-            preq->rq_user,
-            preq->rq_host);
-
-    log_event(
-      PBSEVENT_SECURITY,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
-
-    req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(pjob->ji_mutex);
-#endif
-
-    return(NULL);
-    }
-
-  if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
-    {
-    /* job has completed */
-
-    switch (preq->rq_type)
-      {
-
-      case PBS_BATCH_Rerun:
-
-        /* allow re-run to be executed for completed jobs */
-
-        /* NO-OP */
-
-        break;
-
-      default:
-
-        {
-        char tmpLine[1024];
-
-        sprintf(log_buffer, "%s %s",
-                pbse_to_txt(PBSE_BADSTATE),
-                PJobState[pjob->ji_qs.ji_state]);
-
-        log_event(
-          PBSEVENT_DEBUG,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
-
-        sprintf(tmpLine, "invalid state for job - %s",
-                PJobState[pjob->ji_qs.ji_state]);
-
-        req_reject(PBSE_BADSTATE, 0, preq, NULL, tmpLine);
-
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(pjob->ji_mutex);
-#endif
-        return(NULL);
-        }
-
-      /*NOTREACHED*/
-
-      break;
-      }  /* END switch (preq->rq_type) */
-    }    /* END if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING) */
-
-  /* SUCCESS - request is valid */
+  /* if we aren't authorized, pjob will be set to NULL in chk_job_req_permissions */
+  chk_job_req_permissions(&pjob,preq);
 
   return(pjob);
   }  /* END chk_job_request() */

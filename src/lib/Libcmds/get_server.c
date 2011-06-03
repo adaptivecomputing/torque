@@ -195,6 +195,7 @@ TShowAbout(void)
  * @param server_out Output string containing nothing or a host url if specified.
  */
 int get_server(
+
   char *job_id_in,    /* read only */
   char *job_id_out,   /* write only */
   char *server_out)   /* write only */
@@ -209,104 +210,108 @@ int get_server(
 
   /* parse the job_id_in into components */
 
-  if (parse_jobid(job_id_in, &seq_number, &parent_server, &current_server))
+  if (!strcasecmp("all",job_id_in))
     {
-    return(1);
-    }
-
-  /* Apply the above rules, in order, except for the locate job request.
-     That request is only sent if the job is not found on the local server.
-  */
-
-  if (notNULL(current_server))
-    {
-    /* @server found */
-
-    strcpy(server_out, current_server);
-    }
-  else if (notNULL(parent_server))
-    {
-    /* .server found */
-
-    strcpy(server_out, parent_server);
+    strcpy(job_id_out,job_id_in);
+    server_out[0] = '\0';
     }
   else
     {
-    /* can't locate a server, so return a NULL
-        to tell pbs_connect to use default */
-
-    server_out[0] = '\0';
-    }
-
-  /* Make a fully qualified name of the job id. */
-
-  strcpy(job_id_out, seq_number);
-
-  strcat(job_id_out, ".");
-
-  if (notNULL(parent_server))
-    {
+    if (parse_jobid(job_id_in, &seq_number, &parent_server, &current_server))
+      {
+      return(1);
+      }
+    
+    /* Apply the above rules, in order, except for the locate job request.
+     * That request is only sent if the job is not found on the local server. */
+    
     if (notNULL(current_server))
       {
-      /* parent_server might not be resolvable if current_server specified */
-      strcat(job_id_out, parent_server);
+      /* @server found */
+      
+      strcpy(server_out, current_server);
+      }
+    else if (notNULL(parent_server))
+      {
+      /* .server found */
+      
+      strcpy(server_out, parent_server);
       }
     else
       {
-      if (get_fullhostname(parent_server, host_server, PBS_MAXSERVERNAME, NULL) != 0)
+      /* can't locate a server, so return a NULL to tell pbs_connect to use default */
+      
+      server_out[0] = '\0';
+      }
+    
+    /* Make a fully qualified name of the job id. */  
+    strcpy(job_id_out, seq_number);
+    
+    strcat(job_id_out, ".");
+    
+    if (notNULL(parent_server))
+      {
+      if (notNULL(current_server))
         {
-        /* FAILURE */
-
+        /* parent_server might not be resolvable if current_server specified */
+        strcat(job_id_out, parent_server);
+        }
+      else
+        {
+        if (get_fullhostname(parent_server, host_server, PBS_MAXSERVERNAME, NULL) != 0)
+         {
+         /* FAILURE */
+         return(1);
+         }
+        
+        strcat(job_id_out, host_server);
+        }
+      
+      if ((c = strchr(parent_server, ':')) != 0)
+        {
+        if (*(c - 1) == '\\')
+          c--;
+        
+        strcat(job_id_out, c);
+        }
+      }
+    else
+      {
+      parent_server = pbs_default();
+      
+      if ((parent_server == (char *)NULL) || (*parent_server == '\0'))
+        {
         return(1);
         }
 
+      strncpy(def_server, parent_server, PBS_MAXSERVERNAME);
+      
+      c = def_server;
+      
+      while ((*c != '\n') && (*c != '\0'))
+        c++;
+      
+      *c = '\0';
+      
+      if (get_fullhostname(def_server, host_server, PBS_MAXSERVERNAME, NULL) != 0)
+        {
+        /* FAILURE */
+        
+        return(1);
+        }
+      
       strcat(job_id_out, host_server);
-      }
 
-    if ((c = strchr(parent_server, ':')) != 0)
-      {
-      if (*(c - 1) == '\\')
-        c--;
-
-      strcat(job_id_out, c);
-      }
+      if ((c = strchr(def_server, ':')) != 0)
+        {
+        if (*(c - 1) == '\\')
+          c--;
+        
+        strcat(job_id_out, c);
+        }
+      }    /* END else */
     }
-  else
-    {
-    parent_server = pbs_default();
-
-    if ((parent_server == (char *)NULL) || (*parent_server == '\0'))
-      {
-      return(1);
-      }
-
-    strncpy(def_server, parent_server, PBS_MAXSERVERNAME);
-
-    c = def_server;
-
-    while ((*c != '\n') && (*c != '\0'))
-      c++;
-
-    *c = '\0';
-
-    if (get_fullhostname(def_server, host_server, PBS_MAXSERVERNAME, NULL) != 0)
-      {
-      /* FAILURE */
-
-      return(1);
-      }
-
-    strcat(job_id_out, host_server);
-
-    if ((c = strchr(def_server, ':')) != 0)
-      {
-      if (*(c - 1) == '\\')
-        c--;
-
-      strcat(job_id_out, c);
-      }
-    }    /* END else */
-
+  
   return(0);
   }  /* END get_server() */
 

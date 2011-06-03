@@ -130,7 +130,7 @@ extern struct all_jobs alljobs;
 static void post_delete_route(struct work_task *);
 static void post_delete_mom1(struct work_task *);
 static void post_delete_mom2(struct work_task *);
-static int forced_jobpurge(struct batch_request *);
+static int forced_jobpurge(job *,struct batch_request *);
 static void job_delete_nanny(struct work_task *);
 static void post_job_delete_nanny(struct work_task *);
 static void purge_completed_jobs(struct batch_request *);
@@ -250,62 +250,21 @@ void ensure_deleted(
 
 
 
-/*
- * req_deletejob - service the Delete Job Request
- *
- * This request deletes a job. The request is
- * initiated from an external program, most commonly
- * qdel.  Shown below is the normal messaging.
- * There are many exceptions to the normal case
- * such as missing job descriptions and failure
- * of messages to propagate.  There are also
- * exceptions related to the state of the job.
- *
- * The code at this point does not seem particularly
- * robust.  For example, some stages of the processing
- * check for existense of the job structure while
- * others do not.
- *
- * The fragileness of the code seems to be reflected
- * in practice as there are many reports in the
- * user's groups of trouble in deleting jobs.
- * There also seems to have been several attempts
- * to patch over the problems.  The purge option
- * seems to have been an afterthought as does the
- * job deletion nanny code.
- *
- * The problems in this code stem from a lack of a
- * state processing model for job deletion.
- *
- *    qdel-command     pbs_server       pbs_mom
- *    -------------    -------------    -------------
- *          |                |                |
- *          +-- DeleteJob -->|                |
- *          |                |                |
- *          |                +-- DeleteJob -->|
- *          |                |                |
- *          |                |<-- Ack --------+
- *          |                |                |
- *          |<-- Ack --------+                |
- *          |                |                |
- *          |                |                |
- */
 
-void req_deletejob(
+int execute_job_delete(
 
-  struct batch_request *preq)  /* I */
+  job                  *pjob, /* M */
+  struct batch_request *preq) /* I */
 
   {
-  job              *pjob;
-
   struct work_task *pwtold;
-
   struct work_task *pwtnew;
   struct work_task *pwtcheck;
 
   int               rc;
   int               iter = -1;
   char             *sigt = "SIGTERM";
+  char             *jobid;
 
   char             *Msg = NULL;
 
@@ -313,40 +272,12 @@ void req_deletejob(
   int               has_mutex = TRUE;
 #endif
 
-  /* check if we are getting a purgecomplete from scheduler */
-  if ((preq->rq_extend != NULL) && 
-        !strncmp(preq->rq_extend,PURGECOMP,strlen(PURGECOMP)))
-    {
-
-    /*
-     * purge_completed_jobs will respond with either an ack or reject
-     */
-    purge_completed_jobs(preq);
-
-    return;
-    }
-
-  /* The way this is implemented, if the user enters the command "qdel -p <jobid>",
-   * they can then delete jobs other than their own since the authorization
-   * checks are made below in chk_job_request. This should probably be fixed.
-   */
-
-  if (forced_jobpurge(preq) != 0)
-    {
-    return;
-    }
-
-  /* NOTE:  should support rq_objname={<JOBID>|ALL|<name:<JOBNAME>} */
-
-  /* NYI */
-
-  pjob = chk_job_request(preq->rq_ind.rq_delete.rq_objname, preq);
+  chk_job_req_permissions(&pjob,preq);
 
   if (pjob == NULL)
     {
-    /* NOTE:  chk_job_request() will issue req_reject() */
-
-    return;
+    /* preq is rejected in chk_job_req_permissions here */
+    return(-1);
     }
 
   if (preq->rq_extend != NULL)
@@ -372,8 +303,9 @@ void req_deletejob(
 #endif
 
         req_reject(PBSE_PERM, 0, preq, NULL,
-                   "must have operator or manager privilege to use -m parameter");
-        return;
+          "must have operator or manager privilege to use -m parameter");
+
+        return(-1);
         }
       }
     }
@@ -419,7 +351,7 @@ void req_deletejob(
           pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-          return; /* all done for now */
+          return(-1); /* all done for now */
           }
         else
           {
@@ -430,7 +362,7 @@ void req_deletejob(
 
           req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 
-          return;
+          return(-1);
           }
         }
 
@@ -449,7 +381,7 @@ void req_deletejob(
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-    return;
+    return(-1);
     }
 
   if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN ||
@@ -500,17 +432,9 @@ void req_deletejob(
 
     sprintf(log_buffer, "job cannot be deleted, state=PRERUN, requeuing delete request");
 
-    log_event(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 
-    pwtnew = set_task(
-               WORK_Timed,
-               time_now + 1,
-               post_delete_route,
-               preq);
+    pwtnew = set_task(WORK_Timed,time_now + 1,post_delete_route,preq);
 
     if (pwtnew == 0)
       req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
@@ -520,7 +444,7 @@ void req_deletejob(
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-    return;
+    return(-1);
     }  /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) */
 
 jump:
@@ -543,11 +467,7 @@ jump:
           preq->rq_user,
           preq->rq_host);
 
-  log_event(
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 
   /* NOTE:  should incorporate job delete message */
 
@@ -600,7 +520,7 @@ jump:
 
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "job cancel in progress");
 
-      return;
+      return(-1);
       }
 
     apply_job_delete_nanny(pjob, time_now + 60);
@@ -616,11 +536,7 @@ jump:
        * Create a new batch request and fill it in. It will be freed by reply_ack
        */
 
-      LOG_EVENT(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 
       preq_tmp = alloc_br(PBS_BATCH_DeleteJob);
       preq_tmp->rq_perm = preq->rq_perm;
@@ -675,17 +591,13 @@ jump:
     sprintf(log_buffer, msg_delrunjobsig,
             sigt);
 
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 
 #ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-    return;
+    return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
 
   /* make a cleanup task if set */
@@ -755,6 +667,7 @@ jump:
           break;
           }
         }
+
 #ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->ai_mutex);
 #endif
@@ -833,7 +746,116 @@ jump:
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-  reply_ack(preq);
+  return(PBSE_NONE);
+  } /* END execute_job_delete() */
+
+
+
+
+/*
+ * req_deletejob - service the Delete Job Request
+ *
+ * This request deletes a job. The request is
+ * initiated from an external program, most commonly
+ * qdel.  Shown below is the normal messaging.
+ * There are many exceptions to the normal case
+ * such as missing job descriptions and failure
+ * of messages to propagate.  There are also
+ * exceptions related to the state of the job.
+ *
+ * The code at this point does not seem particularly
+ * robust.  For example, some stages of the processing
+ * check for existense of the job structure while
+ * others do not.
+ *
+ * The fragileness of the code seems to be reflected
+ * in practice as there are many reports in the
+ * user's groups of trouble in deleting jobs.
+ * There also seems to have been several attempts
+ * to patch over the problems.  The purge option
+ * seems to have been an afterthought as does the
+ * job deletion nanny code.
+ *
+ * The problems in this code stem from a lack of a
+ * state processing model for job deletion.
+ *
+ *    qdel-command     pbs_server       pbs_mom
+ *    -------------    -------------    -------------
+ *          |                |                |
+ *          +-- DeleteJob -->|                |
+ *          |                |                |
+ *          |                +-- DeleteJob -->|
+ *          |                |                |
+ *          |                |<-- Ack --------+
+ *          |                |                |
+ *          |<-- Ack --------+                |
+ *          |                |                |
+ *          |                |                |
+ */
+
+void req_deletejob(
+
+  struct batch_request *preq)  /* I */
+
+  {
+  job              *pjob;
+
+  struct work_task *pwtold;
+
+  struct work_task *pwtnew;
+  struct work_task *pwtcheck;
+
+  int               rc = -1;
+  int               iter = -1;
+  char             *sigt = "SIGTERM";
+  char             *jobid;
+
+  char             *Msg = NULL;
+
+  /* check if we are getting a purgecomplete from scheduler */
+  if ((preq->rq_extend != NULL) && 
+        !strncmp(preq->rq_extend,PURGECOMP,strlen(PURGECOMP)))
+    {
+    /*
+     * purge_completed_jobs will respond with either an ack or reject
+     */
+
+    purge_completed_jobs(preq);
+
+    return;
+    }
+
+  if (strcasecmp(preq->rq_ind.rq_delete.rq_objname,"all") == 0)
+    {
+    while ((pjob = next_job(&alljobs,&iter)) != NULL)
+      {
+      /* mutex is freed below */
+      if (forced_jobpurge(pjob,preq) == PBSE_NONE)
+        rc = execute_job_delete(pjob,preq);
+      }
+    }
+  else
+    {
+    jobid = preq->rq_ind.rq_delete.rq_objname;
+
+    pjob = find_job(jobid);
+   
+    if (pjob == NULL)
+      {
+      log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jobid,pbse_to_txt(PBSE_UNKJOBID));
+      
+      req_reject(PBSE_UNKJOBID, 0, preq, NULL, "cannot locate job");
+      }
+    else
+      {
+      /* mutex is freed below */
+      if (forced_jobpurge(pjob,preq) == PBSE_NONE)
+        rc = execute_job_delete(pjob,preq);
+      }
+    }
+
+  if (rc == PBSE_NONE)
+    reply_ack(preq);
 
   return;
   }  /* END req_deletejob() */
@@ -1080,28 +1102,17 @@ static void post_delete_mom2(
 
 /*
  * forced_jobpurge - possibly forcibly purge a job
+ *
+ * @return PBSE_NONE if the job hasn't been deleted but possibly can be
+ * return 1 if the job was deleted, and -1 if the job hasn't been deleted and can't be
  */
 
 static int forced_jobpurge(
 
+  job                  *pjob,
   struct batch_request *preq)
 
   {
-  job *pjob;
-
-  if ((pjob = find_job(preq->rq_ind.rq_delete.rq_objname)) == NULL)
-    {
-    log_event(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      preq->rq_ind.rq_delete.rq_objname,
-      pbse_to_txt(PBSE_UNKJOBID));
-
-    req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
-
-    return(-1);
-    }
-
   /* check about possibly purging the job */
 
   if (preq->rq_extend != NULL)
@@ -1118,8 +1129,6 @@ static int forced_jobpurge(
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
           log_buffer);
-
-        reply_ack(preq);
 
         free_nodes(pjob);
 
@@ -1151,7 +1160,7 @@ static int forced_jobpurge(
   pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END forced_jobpurge() */
 
 
