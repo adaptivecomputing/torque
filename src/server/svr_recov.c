@@ -848,6 +848,7 @@ int svr_recov_xml(
     {
     /* no server tag???? */
     log_err(-1,id,"No server tag found in the database file???");
+    close(sdb);
 
     return(-1);
     }
@@ -920,6 +921,8 @@ int svr_recov_xml(
       }
     }
     
+  close(sdb);
+    
   if (!read_only)
     {
     server.sv_attr[SRV_ATR_NextJobNumber].at_val.at_long = 
@@ -930,9 +933,7 @@ int svr_recov_xml(
     }
 
   return(0);
-  }
-   
-
+  } /* END svr_recov_xml() */
 
 
 

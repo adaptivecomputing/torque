@@ -555,7 +555,7 @@ struct job
 #endif
 
 #else     /* END MOM ONLY */
-  tlist_head ji_svrtask; /* links to svr work_task list */
+  struct all_tasks *ji_svrtask; /* holds this job's tasks */
 
   struct pbs_queue *ji_qhdr; /* current queue header */
   int  ji_lastdest; /* last destin tried by route */
@@ -656,8 +656,7 @@ typedef struct job job;
 #define INITIAL_JOB_SIZE 5000
 #define JOB_NOT_FOUND   -1
 
-/* on the server this array will replace svr_alljobs because svr_alljobs
- * will never be multithreaded */
+/* on the server this array will replace many of the doubly linked-lists */
 struct all_jobs
   {
   resizable_array *ra;
@@ -670,11 +669,14 @@ struct all_jobs
 
 void initialize_all_jobs_array(struct all_jobs *);
 int  insert_job(struct all_jobs *, job *);
+int  insert_job_after(struct all_jobs *,job *before,job *after);
+int  insert_job_first(struct all_jobs *,job *);
 int  remove_job(struct all_jobs *,job *);
 int  has_job(struct all_jobs *,job *);
-int  swap_jobs(job *,job *);
+int  swap_jobs(struct all_jobs *,job *,job *);
 
 job *next_job(struct all_jobs *,int *);
+job *next_job_from_back(struct all_jobs *,int *);
 
 #endif
 
@@ -766,6 +768,9 @@ typedef struct infoent
   size_t ie_len;  /* how much glop */
   list_link ie_next; /* link to next one */
   } infoent;
+
+
+
 
 #define TI_FLAGS_INIT           1  /* task has called tm_init */
 #define TI_FLAGS_CHECKPOINT     2  /* task has checkpointed */

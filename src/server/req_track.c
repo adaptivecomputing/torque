@@ -269,14 +269,22 @@ void track_save(
   {
   int fd;
   char *myid = "save_track";
+  work_task *wt;
 
   /* set task for next round trip */
 
   if (pwt)    /* set up another work task for next time period */
     {
-    if (!set_task(WORK_Timed, (long)time_now + PBS_SAVE_TRACK_TM,
-                  track_save, 0))
+    wt = set_task(WORK_Timed, (long)time_now + PBS_SAVE_TRACK_TM, track_save, 0);
+
+    if (wt == NULL)
       log_err(errno, myid, "Unable to set task for save");
+#ifdef ENABLE_PTHREADS
+    else
+      {
+      pthread_mutex_unlock(wt->wt_mutex);
+      }
+#endif
     }
 
   if (server.sv_trackmodifed == 0)

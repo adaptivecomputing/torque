@@ -470,61 +470,32 @@ void queue_route(
   pbs_queue *pque)
 
   {
-  job *nxjb = NULL;
   job *pjob = NULL;
 
   int  rc;
-#ifdef ENABLE_PTHREADS
-  /* here comes some convoluted code but it is necessary. job_abt will release the mutex on the
-   * job that is being aborted, so we have to keep track of whether we have it or not. 
-   * It ain't pretty but it works, and that is beautiful */
-  int  has_mutex = FALSE;
-#endif
+  int  iter = -1;
 
-  pjob = (job *)GET_NEXT(pque->qu_jobs);
-
-#ifdef ENABLE_PTHREADS
-  if (pjob != NULL)
-    pthread_mutex_lock(pjob->ji_mutex);
-#endif
-
-  while (pjob != NULL)
+  while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
     {
-    nxjb = (job *)GET_NEXT(pjob->ji_jobque);
-
-#ifdef ENABLE_PTHREADS
-    has_mutex = TRUE;
-
-    if (nxjb != NULL)
-      pthread_mutex_lock(nxjb->ji_mutex);
-#endif
-
     if (pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now)
       {
       if ((rc = job_route(pjob)) == PBSE_ROUTEREJ)
         {
-#ifdef ENABLE_PTHREADS
-        has_mutex = FALSE;
-#endif
-
         job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
+
+        continue;
         }
       else if (rc == PBSE_ROUTEEXPD)
         {
-#ifdef ENABLE_PTHREADS
-        has_mutex = FALSE;
-#endif
-
         job_abt(&pjob, msg_routexceed);
+
+        continue;
         }
       }
 
 #ifdef ENABLE_PTHREADS
-    if (has_mutex == TRUE)
-      pthread_mutex_unlock(pjob->ji_mutex);
+    pthread_mutex_unlock(pjob->ji_mutex);
 #endif
-
-    pjob = nxjb;
     }
 
   return;

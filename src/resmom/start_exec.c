@@ -2442,8 +2442,9 @@ int write_gpus_to_file(
   gpu_worker = malloc(strlen(gpu_str) + 1);
   if (gpu_worker == NULL)
     {
+    fclose(file);
+
     log_err(ENOMEM,id,"Couldn't allocate a string to work with? EPIC FAIL");
-    
     return(ENOMEM);
     }
 

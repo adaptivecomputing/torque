@@ -53,10 +53,12 @@ int attempt_delete(
   void *j) /* I */
 
   {
-  int skipped = FALSE;
-  struct work_task *pwtold;
-  struct work_task *pwtnew;
-  job *pjob;
+  int        skipped = FALSE;
+  int        iter = -1;
+
+  work_task *pwtold;
+  work_task *pwtnew;
+  job       *pjob;
 
   /* job considered deleted if null */
   if (j == NULL)
@@ -72,9 +74,7 @@ int attempt_delete(
      * Next, signal the router and wait for its completion;
      */
     
-    pwtold = (struct work_task *)GET_NEXT(pjob->ji_svrtask);
-    
-    while (pwtold != NULL)
+    while ((pwtold = next_task(pjob->ji_svrtask,&iter)) != NULL)
       {
       if ((pwtold->wt_type == WORK_Deferred_Child) ||
           (pwtold->wt_type == WORK_Deferred_Cmp))
@@ -84,7 +84,9 @@ int attempt_delete(
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_ABORT;
         }
       
-      pwtold = (struct work_task *)GET_NEXT(pwtold->wt_linkobj);
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pwtold->wt_mutex);
+#endif
       }
 
     skipped = TRUE;
@@ -135,10 +137,10 @@ int attempt_delete(
     
     if (pwtnew)
       {
-      append_link(&pjob->ji_svrtask, &pwtnew->wt_linkobj, pwtnew);
+      insert_task(pjob->ji_svrtask,pwtnew,TRUE);
 
 #ifdef ENABLE_PTHREADS
-        mark_task_linkobj_mutex(pwtnew,pjob->ji_mutex);
+      pthread_mutex_unlock(pwtnew->wt_mutex);
 #endif
       }
    
@@ -177,10 +179,10 @@ int attempt_delete(
     
     if (ptask != NULL)
       {
-      append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+      insert_task(pjob->ji_svrtask, ptask, TRUE);
 
 #ifdef ENABLE_PTHREADS
-        mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+      pthread_mutex_unlock(ptask->wt_mutex);
 #endif
       }
     }
@@ -284,6 +286,10 @@ void req_deletearray(
       ptask = set_task(WORK_Timed, time_now + 2, array_delete_wt, preq);
       if (ptask)
         {
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(ptask->wt_mutex);
+#endif
+
         return;
         }
       }
@@ -398,10 +404,10 @@ void array_delete_wt(
 
           if (pwtnew)
             {
-            append_link(&pjob->ji_svrtask, &pwtnew->wt_linkobj, pwtnew);
+            insert_task(pjob->ji_svrtask, pwtnew, TRUE);
 
 #ifdef ENABLE_PTHREADS
-            mark_task_linkobj_mutex(pwtnew,pjob->ji_mutex);
+            pthread_mutex_unlock(pwtnew->wt_mutex);
 #endif
             }
 

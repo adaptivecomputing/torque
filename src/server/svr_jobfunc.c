@@ -291,9 +291,10 @@ int svr_enquejob(
   {
   attribute     *pattrjb;
   attribute_def *pdef;
-  job         *pjcur;
+  job           *pjcur;
   pbs_queue     *pque;
   int            rc;
+  int            iter;
 
   /* make sure queue is still there, there exists a small window ... */
 
@@ -344,30 +345,33 @@ int svr_enquejob(
 
   if (!pjob->ji_is_array_template)
     {
+    iter = -1;
     pjob->ji_qhdr = pque;
 
-    pjcur = (job *)GET_PRIOR(pque->qu_jobs);
-
-    while (pjcur != NULL)
+    while ((pjcur = next_job_from_back(pque->qu_jobs,&iter)) != NULL)
       {
       if ((unsigned long)pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long >=
           (unsigned long)pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
         break;
 
-      pjcur = (job *)GET_PRIOR(pjcur->ji_jobque);
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjcur->ji_mutex);
+#endif
       }
 
     if (pjcur == NULL)
       {
       /* link first in list */
-
-      insert_link(&pque->qu_jobs, &pjob->ji_jobque, pjob, LINK_INSET_AFTER);
+      insert_job_first(pque->qu_jobs,pjob);
       }
     else
       {
       /* link after 'current' job in list */
+      insert_job_after(pque->qu_jobs,pjcur,pjob);
 
-      insert_link(&pjcur->ji_jobque, &pjob->ji_jobque, pjob, LINK_INSET_AFTER);
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjcur->ji_mutex);
+#endif 
       }
 
     /* update counts: queue and queue by state */
@@ -379,28 +383,32 @@ int svr_enquejob(
   
   if (pjob->ji_is_array_template || pjob->ji_arraystruct == NULL)
     {
-    pjcur = (job *)GET_PRIOR(pque->qu_jobs_array_sum);
+    iter = -1;
 
-    while (pjcur != NULL)
+    while ((pjcur = next_job_from_back(pque->qu_jobs_array_sum,&iter)) != NULL)
       {
       if ((unsigned long)pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long >=
           (unsigned long)pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
         break;
 
-      pjcur = (job *)GET_PRIOR(pjcur->ji_jobque_array_sum);
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjcur->ji_mutex);
+#endif
       }
 
     if (pjcur == NULL)
       {
       /* link first in list */
-
-      insert_link(&pque->qu_jobs_array_sum, &pjob->ji_jobque_array_sum, pjob, LINK_INSET_AFTER);
+      insert_job_first(pque->qu_jobs_array_sum,pjob);
       }
     else
       {
       /* link after 'current' job in list */
+      insert_job_after(pque->qu_jobs_array_sum,pjcur,pjob);
 
-      insert_link(&pjcur->ji_jobque_array_sum, &pjob->ji_jobque_array_sum, pjob, LINK_INSET_AFTER);
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(pjcur->ji_mutex);
+#endif
       }
     }
 
@@ -536,9 +544,9 @@ void svr_dequejob(
 
   if ((pque = pjob->ji_qhdr) != (pbs_queue *)0)
     {
-    if (is_linked(&pque->qu_jobs, &pjob->ji_jobque))
+    if (has_job(pque->qu_jobs,pjob) == TRUE)
       {
-      delete_link(&pjob->ji_jobque);
+      remove_job(pque->qu_jobs,pjob);
 
       if (--pque->qu_numjobs < 0)
         bad_ct = 1;
@@ -550,11 +558,10 @@ void svr_dequejob(
         if (--pque->qu_numcompleted < 0)
           bad_ct = 1;
       }
-    
-    if (is_linked(&pque->qu_jobs_array_sum, &pjob->ji_jobque_array_sum))
-      {
-      delete_link(&pjob->ji_jobque_array_sum);
-      }
+
+    /* just call remove job because nothing happens if it isn't there */
+    remove_job(pque->qu_jobs_array_sum,pjob);
+
     pjob->ji_qhdr = (pbs_queue *)0;
     }
 
@@ -1328,6 +1335,7 @@ int count_queued_jobs(
 
   int        num_jobs = 0;
   int        i;
+  int        iter = -1;
   int        num_arrays = 0;
   job_array *arrays[PBS_MAXJOBARRAY];
 
@@ -1336,9 +1344,7 @@ int count_queued_jobs(
     return(-1);
     }
 
-  pj = (job *)GET_NEXT(pque->qu_jobs);
-
-  while (pj != NULL)
+  while ((pj = next_job(pque->qu_jobs,&iter)) != NULL)
     {
     if (pj->ji_qs.ji_state <= JOB_STATE_RUNNING)
       {
@@ -1366,6 +1372,11 @@ int count_queued_jobs(
         if (arrays[i] == pj->ji_arraystruct)
           {
           found = TRUE;
+
+#ifdef ENABLE_PTHREADS
+          pthread_mutex_unlock(pj->ji_mutex);
+#endif
+
           break;
           }
         }
@@ -1377,7 +1388,9 @@ int count_queued_jobs(
         }
       }
 
-    pj = (job *)GET_NEXT(pj->ji_jobque);
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pj->ji_mutex);
+#endif
     }
 
   /* also count any jobs not yet queued that have already been accepted
@@ -1988,10 +2001,10 @@ static void job_wait_over(
 
       if (ptask != NULL)
         {
-        append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+        insert_task(pjob->ji_svrtask,ptask,TRUE);
 
 #ifdef ENABLE_PTHREADS
-        mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+        pthread_mutex_unlock(ptask->wt_mutex);
 #endif
         }
 
@@ -2042,9 +2055,9 @@ int job_set_wait(
   int        mode) /* unused, do it for all action modes */
 
   {
-
-  struct work_task *ptask;
-  long              when;
+  work_task *ptask;
+  long       when;
+  int        iter = -1;
 
   if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
     {
@@ -2053,13 +2066,11 @@ int job_set_wait(
 
   when  = pattr->at_val.at_long;
 
-  ptask = (struct work_task *)GET_NEXT(((job *)pjob)->ji_svrtask);
-
   /* Is there already an entry for this job?  Then reuse it */
 
   if (((job *)pjob)->ji_qs.ji_svrflags & JOB_SVFLG_HASWAIT)
     {
-    while (ptask != NULL)
+    while ((ptask = next_task(((job *)pjob)->ji_svrtask,&iter)) != NULL)
       {
       if ((ptask->wt_type == WORK_Timed) &&
           (ptask->wt_func == job_wait_over) &&
@@ -2067,11 +2078,17 @@ int job_set_wait(
         {
         ptask->wt_event = when;
 
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(ptask->wt_mutex);
+#endif
+
         return(0);
         }
 
-      ptask = (struct work_task *)GET_NEXT(ptask->wt_linkobj);
-      }
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_unlock(ptask->wt_mutex);
+#endif
+      } /* END for each task */
     }
 
   ptask = set_task(WORK_Timed, when, job_wait_over, pjob);
@@ -2081,14 +2098,13 @@ int job_set_wait(
     return(-1);
     }
 
-  append_link(&((job *)pjob)->ji_svrtask, &ptask->wt_linkobj, ptask);
+  insert_task(((job *)pjob)->ji_svrtask,ptask,TRUE);
 
 #ifdef ENABLE_PTHREADS
-  mark_task_linkobj_mutex(ptask,((job *)pjob)->ji_mutex);
+  pthread_mutex_unlock(ptask->wt_mutex);
 #endif
 
   /* set JOB_SVFLG_HASWAIT to show job has work task entry */
-
   ((job *)pjob)->ji_qs.ji_svrflags |= JOB_SVFLG_HASWAIT;
 
   return(0);

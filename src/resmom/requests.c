@@ -625,13 +625,6 @@ static int return_file(
     return(0);
     }
 
-  fds = open(filename, O_RDONLY, 0);
-
-  if (fds < 0)
-    {
-    return(0);
-    }
-
   prq = alloc_br(PBS_BATCH_MvJobFile);
 
   if (prq == NULL)
@@ -639,6 +632,13 @@ static int return_file(
     /* no memory */
 
     return(PBSE_SYSTEM);
+    }
+
+  fds = open(filename, O_RDONLY, 0);
+
+  if (fds < 0)
+    {
+    return(0);
     }
 
   strcpy(prq->rq_host, mom_host);
@@ -666,8 +666,6 @@ static int return_file(
     if ((DIS_reply_read(sock, &prq->rq_reply) != 0) ||
         (prq->rq_reply.brp_code != 0))
       {
-      close(fds);
-
       rc = -1;
 
       break;
@@ -1280,6 +1278,8 @@ int message_job(
     {
     if ((pstr = malloc(len + 2)) == NULL)
       {
+      close(fds);
+
       return(PBSE_INTERNAL);
       }
 

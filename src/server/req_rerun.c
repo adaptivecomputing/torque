@@ -179,14 +179,13 @@ void req_rerunjob(
   struct batch_request *preq) /* I */
 
   {
-  job *pjob;
-  struct work_task	*pwt;
+  job       *pjob;
+  work_task	*pwt;
 
-  int  Force;
-
-  int  rc;
-
-  int  MgrRequired = TRUE;
+  int        Force;
+  int        rc;
+  int        iter = -1;
+  int        MgrRequired = TRUE;
 
   /* check if requestor is admin, job owner, etc */
 
@@ -288,9 +287,9 @@ void req_rerunjob(
      * there may be tasks for keep_completed proccessing
      */
 
-    while ((pwt = (struct work_task *)GET_NEXT(pjob->ji_svrtask)) != NULL) 
+    while ((pwt = next_task(pjob->ji_svrtask,&iter)) != NULL) 
       {
-      delete_task(pwt,TRUE);
+      delete_task(pwt);
       }
 
     set_statechar(pjob);

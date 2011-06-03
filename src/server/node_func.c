@@ -1941,6 +1941,7 @@ int create_pbs_node(
   struct pbsnode  *pnode = NULL;
 
   struct pbsnode **tmpndlist;
+  work_task       *wt;
   int              ntype; /* node type; time-shared, not */
   char            *pname; /* node name w/o any :ts       */
   u_long          *pul;  /* 0 terminated host adrs array*/
@@ -2006,7 +2007,11 @@ int create_pbs_node(
       }
 
 
-    set_task(WORK_Timed, time_now + 30 /*PBS_LOG_CHECK_RATE  five minutes */, recheck_for_node, host_info);
+    wt = set_task(WORK_Timed, time_now + 30 /*PBS_LOG_CHECK_RATE  five minutes */, recheck_for_node, host_info);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(wt->wt_mutex);
+#endif
 
     return(rc);
     }

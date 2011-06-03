@@ -114,10 +114,8 @@ extern char *msg_daemonname;
 extern struct connection svr_conn[];
 
 #ifndef PBS_MOM
-extern tlist_head task_list_event;
-extern tlist_head task_list_immed;
-extern pthread_mutex_t *task_list_event_mutex;
-extern pthread_mutex_t *task_list_immed_mutex;
+extern all_tasks task_list_event;
+extern all_tasks task_list_immed;
 extern int LOGLEVEL;
 #endif /* PBS_MOM */
 
@@ -229,6 +227,7 @@ int reply_send(
 
   {
   int      rc = 0;
+  int      iter = -1;
   int      sfds = request->rq_conn;  /* socket */
 
 #ifndef PBS_MOM
@@ -249,39 +248,21 @@ int reply_send(
      * the immediate list for dispatching.
      */
 
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(task_list_event_mutex);
-#endif
-
-    ptask = (struct work_task *)GET_NEXT(task_list_event);
-
-    while (ptask != NULL)
+    while ((ptask = next_task(&task_list_event,&iter)) != NULL)
       {
       if ((ptask->wt_type == WORK_Deferred_Local) &&
           (ptask->wt_parm1 == (void *)request))
         {
-        delete_link(&ptask->wt_linkall);
-
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(task_list_event_mutex);
-        pthread_mutex_lock(task_list_immed_mutex);
-#endif
-
-        append_link(&task_list_immed, &ptask->wt_linkall, ptask);
-
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(task_list_immed_mutex);
-#endif
+        remove_task(&task_list_event,ptask);
+        insert_task(&task_list_immed,ptask,FALSE);
 
         return(0);
         }
 
-      ptask = (struct work_task *)GET_NEXT(ptask->wt_linkall);
-      }
-
 #ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(task_list_event_mutex);
+      pthread_mutex_unlock(ptask->wt_mutex);
 #endif
+      }
 
     /* should have found a task and didn't */
 

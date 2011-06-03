@@ -433,6 +433,8 @@ pbs_queue *que_recov_xml(
       "Unable to read from queue file %s",
       filename);
     log_err(errno,id,log_buffer);
+    
+    close(fds);
 
     return(NULL);
     }
@@ -448,6 +450,8 @@ pbs_queue *que_recov_xml(
       id,
       "Cannot find a queue tag, attempting to load legacy format");
     que_free(pq);
+    
+    close(fds);
 
     return(que_recov(filename));
     }
@@ -458,6 +462,7 @@ pbs_queue *que_recov_xml(
     {
     log_err(-1,id,"No queue tag found in the queue file???");
     que_free(pq);
+    close(fds);
     return(NULL);
     }
 
@@ -477,6 +482,7 @@ pbs_queue *que_recov_xml(
       log_err(-1,id,log_buffer);
 
       que_free(pq);
+      close(fds);
       return(NULL);
       }
 
@@ -507,6 +513,7 @@ pbs_queue *que_recov_xml(
           log_err(-1,id,log_buffer);
           
           que_free(pq);
+          close(fds);
           return(NULL);
           }
 
@@ -519,6 +526,7 @@ pbs_queue *que_recov_xml(
           log_err(rc,id,log_buffer);
 
           que_free(pq);
+          close(fds);
           return(NULL);
           }
         }

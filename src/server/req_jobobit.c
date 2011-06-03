@@ -678,12 +678,11 @@ int mom_comm(
 
       if (pwt != NULL)
         {
-        /* insure that work task will be removed if job goes away */
-
-        append_link(&pjob->ji_svrtask, &pwt->wt_linkobj, pwt);
+        /* ensure that work task will be removed if job goes away */
+        insert_task(pjob->ji_svrtask,pwt,TRUE);
 
 #ifdef ENABLE_PTHREADS
-        mark_task_linkobj_mutex(pwt,pjob->ji_mutex);
+        pthread_mutex_unlock(pwt->wt_mutex);
 #endif
         }
 
@@ -995,10 +994,10 @@ void on_job_exit(
 
           if (ptask != NULL)
             {
-            append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+            insert_task(pjob->ji_svrtask,ptask,TRUE);
 
 #ifdef ENABLE_PTHREADS
-            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+            pthread_mutex_unlock(ptask->wt_mutex);
 #endif
             }
 
@@ -1142,10 +1141,10 @@ void on_job_exit(
 
           if (ptask != NULL)
             {
-            append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+            insert_task(pjob->ji_svrtask,ptask,TRUE);
 
 #ifdef ENABLE_PTHREADS
-            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+            pthread_mutex_unlock(ptask->wt_mutex);
 #endif
             }
 
@@ -1362,12 +1361,13 @@ void on_job_exit(
 
           if (ptask)
             {
-            append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+            insert_task(pjob->ji_svrtask,ptask,TRUE);
 
 #ifdef ENABLE_PTHREADS
-            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+            pthread_mutex_unlock(ptask->wt_mutex);
 #endif
             }
+
 #ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
 #endif
@@ -1665,12 +1665,11 @@ void on_job_exit(
 
         if (ptask != NULL)
           {
-          /* insure that work task will be removed if job goes away */
-
-          append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+          /* ensure that work task will be removed if job goes away */
+          insert_task(pjob->ji_svrtask,ptask,TRUE);
 
 #ifdef ENABLE_PTHREADS
-          mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+          pthread_mutex_unlock(ptask->wt_mutex);
 #endif
           }
         }
@@ -1704,15 +1703,16 @@ void on_job_exit(
           if (ptask != NULL)
             {
             /* ensure that work task will be removed if job goes away */
-            append_link(&pjob->ji_svrtask,&ptask->wt_linkobj,ptask);
+            insert_task(pjob->ji_svrtask,ptask,TRUE);
 
 #ifdef ENABLE_PTHREADS
-            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+            pthread_mutex_unlock(ptask->wt_mutex);
 #endif
             }
             
             PurgeIt = FALSE;
           }
+
         if (PurgeIt)
           {
           job_purge(pjob);
@@ -1802,10 +1802,10 @@ void on_job_rerun(
 
           if (ptask)
             {
-            append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+            insert_task(pjob->ji_svrtask,ptask,TRUE);
 
 #ifdef ENABLE_PTHREADS
-            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+            pthread_mutex_unlock(ptask->wt_mutex);
 #endif
             }
 
@@ -1944,10 +1944,10 @@ void on_job_rerun(
 
           if (ptask)
             {
-            append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+            insert_task(pjob->ji_svrtask,ptask,TRUE);
 
 #ifdef ENABLE_PTHREADS
-            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+            pthread_mutex_unlock(ptask->wt_mutex);
 #endif
             }
 
@@ -2056,10 +2056,10 @@ void on_job_rerun(
 
           if (ptask)
             {
-            append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+            insert_task(pjob->ji_svrtask,ptask,TRUE);
 
 #ifdef ENABLE_PTHREADS
-            mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+            pthread_mutex_unlock(ptask->wt_mutex);
 #endif
             }
 
@@ -2474,7 +2474,9 @@ void *req_jobobit(
       {
       req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
       }
+
 #ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(ptask->wt_mutex);
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
@@ -2825,10 +2827,10 @@ void *req_jobobit(
 
     if (ptask != NULL)
       {
-      append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+      insert_task(pjob->ji_svrtask,ptask,TRUE);
 
 #ifdef ENABLE_PTHREADS
-      mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+      pthread_mutex_unlock(ptask->wt_mutex);
 #endif
 
       if (LOGLEVEL >= 4)
@@ -2890,10 +2892,10 @@ void *req_jobobit(
 
     if (ptask != NULL)
       {
-      append_link(&pjob->ji_svrtask, &ptask->wt_linkobj, ptask);
+      insert_task(pjob->ji_svrtask,ptask,TRUE);
 
 #ifdef ENABLE_PTHREADS
-      mark_task_linkobj_mutex(ptask,pjob->ji_mutex);
+      pthread_mutex_unlock(ptask->wt_mutex);
 #endif
 
       if (LOGLEVEL >= 4)

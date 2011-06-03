@@ -8818,6 +8818,8 @@ int read_layout_file()
       i++;
     } /* END while (parsing file) */
 
+  fclose(read_layout);
+
   num_numa_nodes = i;
 
   snprintf(log_buffer,sizeof(log_buffer),

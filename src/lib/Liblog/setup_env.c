@@ -150,7 +150,11 @@ int setup_env(
         if (evbufsize < len)
           {
           if ((envbuf = malloc(PBS_ENV_CHUNCK)) == NULL)
+            {
+            fclose(efile);
+
             goto err;
+            }
 
           evbufsize = PBS_ENV_CHUNCK;
           }
@@ -166,7 +170,11 @@ int setup_env(
         envp[nstr++] = envbuf;
 
         if (nstr == PBS_ENVP_STR)
+          {
+          fclose(efile);
+
           goto err;
+          }
 
         envp[nstr] = NULL;
 
@@ -188,7 +196,11 @@ int setup_env(
       envp[nstr++] = envbuf;
 
       if (nstr == PBS_ENVP_STR)
+        {
+        fclose(efile);
+
         goto err;
+        }
 
       envp[nstr] = NULL;
 
@@ -211,5 +223,6 @@ int setup_env(
 err:
 
   log_err(-1, "setup_env", "could not set up the environment");
+
   return(-1);
   }  /* END setup_env() */

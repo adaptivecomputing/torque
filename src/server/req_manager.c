@@ -2589,7 +2589,16 @@ int extra_resc_chk(
   /* the new resource is at pattr->at_val.at_str */
   ptask = set_task(WORK_Immed, 0, on_extra_resc, NULL);
 
-  return (ptask == NULL);
+  if (ptask != NULL)
+    {
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(ptask->wt_mutex);
+#endif
+
+    return(TRUE);
+    }
+  else
+    return(FALSE);
   }
 
 /*
@@ -2601,7 +2610,11 @@ void free_extraresc(
   struct attribute *attr)
 
   {
-  set_task(WORK_Immed, 0, on_extra_resc, NULL);
+  work_task *wt = set_task(WORK_Immed, 0, on_extra_resc, NULL);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(wt->wt_mutex);
+#endif
 
   free_arst(attr);
   }

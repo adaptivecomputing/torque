@@ -1091,6 +1091,7 @@ void send_cluster_addrs(
 
   struct pbsnode *np;
   new_node       *nnew;
+  work_task      *wt;
   int             i; 
   int             ret;
 
@@ -1186,8 +1187,11 @@ void send_cluster_addrs(
   if (startcount < svr_totnodes)
     {
     /* continue outstanding pings after checking for other requests */
+    wt = set_task(WORK_Timed, time_now, send_cluster_addrs, NULL);
 
-    set_task(WORK_Timed, time_now, send_cluster_addrs, NULL);
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(wt->wt_mutex);
+#endif
     }
   else
     {
@@ -1238,6 +1242,7 @@ void setup_notification(char *pname)
 
   struct pbsnode *pnode;
   new_node       *nnew;
+  work_task      *wt;
 
   if (pname != NULL)
     {
@@ -1270,14 +1275,11 @@ void setup_notification(char *pname)
 #endif
     }
 
-  set_task(
-
-    WORK_Timed,
-    time_now + 5,
-    send_cluster_addrs,
-    NULL);
+  wt = set_task(WORK_Timed,time_now + 5,send_cluster_addrs,NULL);
 
 #ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(wt->wt_mutex);
+
   if (addrnote_mutex == NULL)
     {
     addrnote_mutex = malloc(sizeof(pthread_mutex_t));
@@ -1747,6 +1749,7 @@ void ping_nodes(
   static  char         *id = "ping_nodes";
 
   struct  pbsnode *np;
+  work_task       *wt;
 
   struct  sockaddr_in *addr;
   int                    i, ret, com;
@@ -1894,7 +1897,11 @@ void ping_nodes(
     {
     /* continue outstanding pings in TNODE_PINGRETRYTIME seconds */
 
-    set_task(WORK_Timed, time_now + TNODE_PINGRETRYTIME, ping_nodes, NULL);
+    wt = set_task(WORK_Timed, time_now + TNODE_PINGRETRYTIME, ping_nodes, NULL);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(wt->wt_mutex);
+#endif
     }
 
   return;
@@ -1977,8 +1984,10 @@ void *check_nodes_work(
   void *vp)
 
   {
-  struct work_task *ptask = (struct work_task *)vp;
   static char       id[] = "check_nodes_work";
+
+  work_task *ptask = (struct work_task *)vp;
+  work_task *wt;
 
   struct pbsnode   *np;
   int               chk_len;
@@ -2044,11 +2053,11 @@ void *check_nodes_work(
 
   if (ptask->wt_parm1 == NULL)
     {
-    set_task(
-      WORK_Timed,
-      time_now + chk_len,
-      check_nodes,
-      NULL);
+    wt = set_task(WORK_Timed,time_now + chk_len,check_nodes,NULL);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(wt->wt_mutex);
+#endif
     }
 
   /* since this is done via threading, we now free the task here */
@@ -2714,6 +2723,8 @@ void *write_node_state_work(
     {
     log_err(errno, "write_node_state", "failed saving node state to disk");
     }
+
+  fclose(nstatef);
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(node_state_mutex);

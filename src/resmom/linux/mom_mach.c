@@ -268,8 +268,7 @@ unsigned linux_time = 0;
  * support routine for getting system time -- sets linux_time
  */
 
-void
-proc_get_btime(void)
+void proc_get_btime(void)
 
   {
   FILE *fp;
@@ -526,6 +525,8 @@ proc_mem_t *get_proc_mem(void)
 
     if (fscanf(fp,"%30s",str) != 1)
       {
+      fclose(fp);
+
       return(NULL);
       }
 
@@ -535,6 +536,8 @@ proc_mem_t *get_proc_mem(void)
 
       if (fscanf(fp,"%*[^\n]%*c") != 0)     /* remove text header */
         {
+        fclose(fp);
+
         return(NULL);
         }
 
@@ -547,6 +550,8 @@ proc_mem_t *get_proc_mem(void)
                  &bfsz,
                  &casz) != 5)
         {
+        fclose(fp);
+
         return(NULL);
         }
 
@@ -567,6 +572,8 @@ proc_mem_t *get_proc_mem(void)
                  &mm.swap_used,
                  &mm.swap_free) != 3)
         {
+        fclose(fp);
+
         return(NULL);
         }
       }
@@ -581,6 +588,8 @@ proc_mem_t *get_proc_mem(void)
           if (fscanf(fp, "%llu",
                      &mm.mem_total) != 1)
             {
+            fclose(fp);
+
             return(NULL);
             }
 
@@ -591,6 +600,8 @@ proc_mem_t *get_proc_mem(void)
           if (fscanf(fp, "%llu",
                      &mm.mem_free) != 1)
             {
+            fclose(fp);
+
             return(NULL);
             }
 
@@ -601,6 +612,8 @@ proc_mem_t *get_proc_mem(void)
           if (fscanf(fp, "%lld",
                      &bfsz) != 1)
             {
+            fclose(fp);
+
             return(NULL);
             }
 
@@ -611,6 +624,8 @@ proc_mem_t *get_proc_mem(void)
           if (fscanf(fp, "%lld",
                      &casz) != 1)
             {
+            fclose(fp);
+
             return(NULL);
             }
 
@@ -621,6 +636,8 @@ proc_mem_t *get_proc_mem(void)
           if (fscanf(fp, "%lld",
                      &fcasz) != 1)
             {
+            fclose(fp);
+
             return(NULL);
             }
 
@@ -631,6 +648,7 @@ proc_mem_t *get_proc_mem(void)
           if (fscanf(fp, "%llu",
                      &mm.swap_total) != 1)
             {
+            fclose(fp);
             return(NULL);
             }
 
@@ -641,6 +659,7 @@ proc_mem_t *get_proc_mem(void)
           if (fscanf(fp, "%llu",
                      &mm.swap_free) != 1)
             {
+            fclose(fp);
             return(NULL);
             }
 
@@ -689,8 +708,7 @@ proc_mem_t *get_proc_mem(void)
 
 #ifdef PNOT
 
-proc_mem_t *
-get_proc_mem(void)
+proc_mem_t *get_proc_mem(void)
 
   {
   static proc_mem_t mm;
@@ -751,8 +769,7 @@ void dep_initialize(void)
 
 
 
-void
-dep_cleanup(void)
+void dep_cleanup(void)
 
   {
   char *id = "dep_cleanup";

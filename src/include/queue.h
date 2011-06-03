@@ -162,9 +162,14 @@ extern attribute_def que_attr_def[];
 
 struct pbs_queue
   {
-  list_link  qu_link;  /* forward/backward links */
-  tlist_head qu_jobs;  /* jobs in this queue */
-  tlist_head qu_jobs_array_sum; /* jobs with job arrays summarized */
+  list_link       qu_link;  /* forward/backward links */
+#ifndef PBS_MOM
+  struct all_jobs *qu_jobs;  /* jobs in this queue */
+  struct all_jobs *qu_jobs_array_sum; /* jobs with job arrays summarized */
+#else
+  tlist_head      qu_jobs;  /* jobs in this queue */
+  tlist_head      qu_jobs_array_sum; /* jobs with job arrays summarized */
+#endif
 
   struct queuefix
     {
@@ -175,10 +180,10 @@ struct pbs_queue
     char   qu_name[PBS_MAXQUEUENAME]; /* queue name */
     } qu_qs;
 
-  int  qu_numjobs;  /* current numb jobs in queue */
-  int  qu_numcompleted;  /* current numb completed jobs in queue */
-  int  qu_njstate[PBS_NUMJOBSTATE]; /* # of jobs per state */
-  char qu_jobstbuf[100];
+  int             qu_numjobs;  /* current numb jobs in queue */
+  int             qu_numcompleted;  /* current numb completed jobs in queue */
+  int             qu_njstate[PBS_NUMJOBSTATE]; /* # of jobs per state */
+  char            qu_jobstbuf[100];
 
   /* the queue attributes */
 

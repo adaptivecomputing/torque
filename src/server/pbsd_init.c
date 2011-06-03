@@ -183,20 +183,15 @@ extern int  svr_delay_entry;
 extern tlist_head svr_queues;
 extern tlist_head svr_requests;
 extern tlist_head svr_newnodes;
-extern tlist_head task_list_immed;
-extern tlist_head task_list_timed;
-extern tlist_head task_list_event;
-extern tlist_head task_list_child;
+extern all_tasks  task_list_immed;
+extern all_tasks  task_list_timed;
+extern all_tasks  task_list_event;
 extern struct all_jobs alljobs;
 extern struct all_jobs array_summary;
 extern struct all_jobs newjobs;
 
 #ifdef ENABLE_PTHREADS
 extern pthread_mutex_t *svr_requests_mutex;
-extern pthread_mutex_t *task_list_immed_mutex;
-extern pthread_mutex_t *task_list_timed_mutex;
-extern pthread_mutex_t *task_list_event_mutex;
-extern pthread_mutex_t *task_list_child_mutex;
 extern pthread_mutex_t *node_state_mutex;
 #endif
 
@@ -490,10 +485,6 @@ int pbsd_init(
 
   struct sigaction oact;
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutexattr_t recursive_attr;
-#endif
-
   struct work_task *wt;
   job_array *pa;
 
@@ -679,16 +670,11 @@ int pbsd_init(
     path_priv      = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
     }
 
-  path_arrays  = build_path(path_priv, PBS_ARRAYDIR, suffix_slash);
-
+  path_arrays    = build_path(path_priv, PBS_ARRAYDIR, suffix_slash);
   path_spool     = build_path(path_home, PBS_SPOOLDIR, suffix_slash);
-
   path_queues    = build_path(path_priv, PBS_QUEDIR,   suffix_slash);
-
   path_jobs      = build_path(path_priv, PBS_JOBDIR,   suffix_slash);
-
   path_credentials = build_path(path_priv, PBS_CREDENTIALDIR, suffix_slash);
-
   path_acct  = build_path(path_priv, PBS_ACCT,     suffix_slash);
 
   if (path_svrdb == NULL)
@@ -697,21 +683,13 @@ int pbsd_init(
     }
 
   path_svrdb_new = build_path(path_priv, PBS_SERVERDB, new_tag);
-
   path_svrlog = build_path(path_home, PBS_LOGFILES, suffix_slash);
-
   path_jobinfo_log = build_path(path_home, PBS_JOBINFOLOGDIR, suffix_slash);
-
   path_track  = build_path(path_priv, PBS_TRACKING, NULL);
-
   path_nodes  = build_path(path_priv, NODE_DESCRIP, NULL);
-
   path_nodes_new = build_path(path_priv, NODE_DESCRIP, new_tag);
-
   path_nodestate = build_path(path_priv, NODE_STATUS,  NULL);
-
   path_nodenote  = build_path(path_priv, NODE_NOTE,    NULL);
-
   path_nodenote_new = build_path(path_priv, NODE_NOTE, new_tag);
 
 #ifdef SERVER_CHKPTDIR
@@ -779,15 +757,10 @@ int pbsd_init(
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
   rc  = chk_file_sec(path_jobs,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
-
   rc |= chk_file_sec(path_queues, 1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
-
   rc |= chk_file_sec(path_spool, 1, 1, S_IWOTH,        0, EMsg);
-
   rc |= chk_file_sec(path_acct,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
-
   rc |= chk_file_sec(path_credentials,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
-
   rc |= chk_file_sec(PBS_ENVIRON, 0, 0, S_IWGRP | S_IWOTH, 1, EMsg);
 
   if (rc != 0)
@@ -808,35 +781,13 @@ int pbsd_init(
 
   /* make the task list child and events mutexes recursive because 
    * they can be called by a signal handler */
-
-  task_list_immed_mutex = malloc(sizeof(pthread_mutex_t));
-  pthread_mutex_init(task_list_immed_mutex,NULL);
-  pthread_mutex_lock(task_list_immed_mutex);
-
-  task_list_timed_mutex = malloc(sizeof(pthread_mutex_t));
-  pthread_mutex_init(task_list_timed_mutex,NULL);
-  pthread_mutex_lock(task_list_timed_mutex);
-
-  pthread_mutexattr_settype(&recursive_attr,PTHREAD_MUTEX_RECURSIVE);
-
-  task_list_event_mutex = malloc(sizeof(pthread_mutex_t));
-  pthread_mutex_init(task_list_event_mutex,&recursive_attr);
-  pthread_mutex_lock(task_list_event_mutex);
-
-  task_list_child_mutex = malloc(sizeof(pthread_mutex_t));
-  pthread_mutex_init(task_list_child_mutex,&recursive_attr);
-  pthread_mutex_lock(task_list_child_mutex);
 #endif
 
   CLEAR_HEAD(svr_requests);
 
-  CLEAR_HEAD(task_list_immed);
-
-  CLEAR_HEAD(task_list_timed);
-
-  CLEAR_HEAD(task_list_event);
-
-  CLEAR_HEAD(task_list_child);
+  initialize_all_tasks_array(&task_list_immed);
+  initialize_all_tasks_array(&task_list_timed);
+  initialize_all_tasks_array(&task_list_event);
 
   CLEAR_HEAD(svr_queues);
 
@@ -850,10 +801,6 @@ int pbsd_init(
 
 #ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_requests_mutex);
-  pthread_mutex_unlock(task_list_immed_mutex);
-  pthread_mutex_unlock(task_list_timed_mutex);
-  pthread_mutex_unlock(task_list_event_mutex);
-  pthread_mutex_unlock(task_list_child_mutex);
 #endif
 
   /* set up the threads that handle post-processing for mom sendjob, 
@@ -1415,6 +1362,9 @@ int pbsd_init(
            before continuing the cloning process. */
         wt = set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pa->template_job);
 
+#ifdef ENABLE_PTHREADS
+        pthread_mutex_unlock(wt->wt_mutex);
+#endif
         }
 
       }
@@ -1507,8 +1457,11 @@ int pbsd_init(
   server.sv_trackmodifed = 0;
 
   /* set work task to periodically save the tracking records */
+  wt = set_task(WORK_Timed, (long)(time_now + PBS_SAVE_TRACK_TM), track_save, 0);
 
-  set_task(WORK_Timed, (long)(time_now + PBS_SAVE_TRACK_TM), track_save, 0);
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(wt->wt_mutex);
+#endif
 
   /* SUCCESS */
 
@@ -1680,10 +1633,10 @@ static int pbsd_init_job(
 
       if (pwt)
         {
-        append_link(&pjob->ji_svrtask, &pwt->wt_linkobj, pwt);
+        insert_task(pjob->ji_svrtask,pwt,TRUE);
 
 #ifdef ENABLE_PTHREADS
-        mark_task_linkobj_mutex(pwt,pjob->ji_mutex);
+        pthread_mutex_unlock(pwt->wt_mutex);
 #endif
         }
 
@@ -1770,10 +1723,10 @@ static int pbsd_init_job(
 
       if (pwt)
         {
-        append_link(&pjob->ji_svrtask, &pwt->wt_linkobj, pwt);
+        insert_task(pjob->ji_svrtask,pwt,TRUE);
 
 #ifdef ENABLE_PTHREADS
-        mark_task_linkobj_mutex(pwt,pjob->ji_mutex);
+        pthread_mutex_unlock(pwt->wt_mutex);
 #endif
         }
 
@@ -1789,10 +1742,10 @@ static int pbsd_init_job(
 
       if (pwt)
         {
-        append_link(&pjob->ji_svrtask, &pwt->wt_linkobj, pwt);
+        insert_task(pjob->ji_svrtask,pwt,TRUE);
 
 #ifdef ENABLE_PTHREADS
-        mark_task_linkobj_mutex(pwt,pjob->ji_mutex);
+        pthread_mutex_unlock(pwt->wt_mutex);
 #endif
         }
 
@@ -1831,10 +1784,10 @@ static int pbsd_init_job(
 
         if (pwt)
           {
-          append_link(&pjob->ji_svrtask, &pwt->wt_linkobj, pwt);
+          insert_task(pjob->ji_svrtask,pwt,TRUE);
 
 #ifdef ENABLE_PTHREADS
-          mark_task_linkobj_mutex(pwt,pjob->ji_mutex);
+          pthread_mutex_unlock(pwt->wt_mutex);
 #endif
           }
         }
@@ -1851,10 +1804,10 @@ static int pbsd_init_job(
 
       if (pwt)
         {
-        append_link(&pjob->ji_svrtask, &pwt->wt_linkobj, pwt);
+        insert_task(pjob->ji_svrtask,pwt,TRUE);
 
 #ifdef ENABLE_PTHREADS
-        mark_task_linkobj_mutex(pwt,pjob->ji_mutex);
+        pthread_mutex_unlock(pwt->wt_mutex);
 #endif
         }
 
@@ -2022,7 +1975,7 @@ static void catch_abort(
  *
  * Collect child status and add to work list entry for that child.
  * The list entry is marked as immediate to show the child is gone and
- * svr_delay_entry is incremented to indicate to next_task() to check for it.
+ * svr_delay_entry is incremented to indicate to check_tasks() to check for it.
  */
 
 static void catch_child(
@@ -2035,6 +1988,7 @@ static void catch_child(
   pid_t    pid;
   int    statloc;
   int     found;
+  int     iter = -1;
 
   while (1)
     {
@@ -2064,66 +2018,6 @@ static void catch_child(
         PBS_EVENTCLASS_SERVER,
         msg_daemonname,
         log_buffer);
-      }
-
-    found = FALSE;
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(task_list_child_mutex);
-#endif
-
-    ptask = (struct work_task *)GET_NEXT(task_list_child);
-
-    while (ptask != NULL)
-      {
-      if (ptask->wt_event == pid)
-        {
-        ptask->wt_type = WORK_Deferred_Cmp;
-        ptask->wt_aux = (int)statloc; /* exit status */
-
-        /* NYI: move this to the events list */
-        delete_link(&ptask->wt_linkall);
-
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_lock(task_list_event_mutex);
-#endif 
-
-        append_link(&task_list_event, &ptask->wt_linkall, ptask);
-
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_unlock(task_list_event_mutex);
-#endif 
-
-        svr_delay_entry++; /* see next_task() */
-        found = TRUE;
-
-        if (LOGLEVEL >= 7)
-          {
-          sprintf(log_buffer, "work task found for pid %d",
-                  pid);
-
-          log_record(
-            PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-            PBS_EVENTCLASS_SERVER,
-            msg_daemonname,
-            log_buffer);
-          }
-
-        }
-
-      ptask = (struct work_task *)GET_NEXT(ptask->wt_linkall);
-      }
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(task_list_child_mutex);
-#endif
-
-    if ((found == FALSE) && (LOGLEVEL >= 7))
-      {
-      sprintf(log_buffer, "no work task found for pid %d",
-              pid);
-
-      log_err(-1, id, log_buffer);
       }
     }    /* END while (1) */
 
@@ -2303,7 +2197,17 @@ static void resume_net_move(
   struct work_task *ptask)
 
   {
+  job *pjob = (job *)ptask->wt_parm1;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_lock(pjob->ji_mutex);
+#endif
+
   net_move((job *)ptask->wt_parm1, 0);
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(pjob->ji_mutex);
+#endif
 
   return;
   }
@@ -2448,6 +2352,7 @@ static void rm_files(
           }
         }
       }
+    closedir(dir);
     }
 
   return;

@@ -98,6 +98,9 @@
 #ifdef ENABLE_PTHREADS
 #include <pthread.h>
 #endif
+#include "resizable_array.h"
+
+#define INITIAL_ALL_TASKS_SIZE 4
 
 enum work_type
   {
@@ -112,12 +115,27 @@ enum work_type
   /* a WORK_Deferred_Child is ready            */
   };
 
-struct work_task
+
+
+
+typedef struct all_tasks
   {
-  list_link  wt_linkall; /* link to event type work list */
-  list_link  wt_linkobj; /* link to others of same object */
+  resizable_array *ra;
+
+#ifdef ENABLE_PTHREADS 
+  pthread_mutex_t *alltasks_mutex;
+#endif 
+  } all_tasks;
+
+
+
+
+typedef struct work_task
+  {
+  all_tasks *wt_tasklist; 
+  all_tasks *wt_obj_tasklist;
 #ifdef ENABLE_PTHREADS
-  pthread_mutex_t *wt_objmutex;
+  pthread_mutex_t *wt_mutex; 
 #endif
   long   wt_event; /* event id: time, pid, socket, ... */
   enum work_type  wt_type; /* type of event */
@@ -128,14 +146,22 @@ struct work_task
   void (*wt_parmfunc)(struct work_task *);
   /* used in reissue_to_svr to store wt_func */
   int   wt_aux; /* optional info: e.g. child status */
-  };
+  } work_task;
 
-#ifdef ENABLE_PTHREADS
-void mark_task_linkobj_mutex(struct work_task *,pthread_mutex_t *);
-#endif
+
+void       initialize_all_tasks_array(all_tasks *);
+int        insert_task(all_tasks *,work_task *,int);
+int        insert_task_before(all_tasks *,work_task *before,work_task *after);
+int        insert_task_first(all_tasks *,work_task *);
+int        remove_task(all_tasks *,work_task *);
+int        has_task(all_tasks *);
+work_task *next_task(all_tasks *,int *);
+
+
+
 extern struct work_task *set_task(enum work_type, long event, void (*func)(), void *param);
 extern void clear_task(struct work_task *ptask);
-extern void dispatch_task(struct work_task *,void *);
-extern void delete_task(struct work_task *ptask,int);
+extern void dispatch_task(struct work_task *);
+extern void delete_task(struct work_task *ptask);
 
 #endif /* WORK_TASK_H */

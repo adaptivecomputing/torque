@@ -448,7 +448,7 @@ static void req_stat_job_step2(
           }
         else if (type == tjstQueue)
           {
-          pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs);
+          pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
           }
         else if (type == tjstArray)
           {
@@ -478,7 +478,7 @@ static void req_stat_job_step2(
           break;
 
         if (type == tjstQueue)
-          pjob = (job *)GET_NEXT(pjob->ji_jobque);
+          pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
         else if (type == tjstArray)
           {
           pjob = NULL;
@@ -495,8 +495,7 @@ static void req_stat_job_step2(
         break;
 #ifdef ENABLE_PTHREADS
       else if ((type != tjstJob) && 
-               ((type == tjstQueue) ||
-                (type == tjstArray)))
+               (type == tjstArray))
         pthread_mutex_lock(pjob->ji_mutex);
 #endif
 
@@ -565,12 +564,16 @@ static void req_stat_job_step2(
 
   if (type == tjstJob)
     pjob = find_job(preq->rq_ind.rq_status.rq_id);
+
   else if (type == tjstQueue)
-    pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs);
+    pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
+
   else if (type == tjstSummarizeArraysQueue)
-    pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs_array_sum);
+    pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
+
   else if (type == tjstSummarizeArraysServer)
     pjob = next_job(&array_summary,&iter);
+
   else if (type == tjstArray)
     {
     job_array_index = 0;
@@ -584,9 +587,7 @@ static void req_stat_job_step2(
 
 #ifdef ENABLE_PTHREADS
   if ((pjob != NULL) &&
-      ((type == tjstQueue) ||
-       (type == tjstSummarizeArraysQueue) ||
-       (type == tjstArray)))
+      (type == tjstArray))
     pthread_mutex_lock(pjob->ji_mutex);
 #endif
 
@@ -666,14 +667,10 @@ static void req_stat_job_step2(
         pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-      for (pjob = (job *)GET_NEXT(pque->qu_jobs);
-           pjob != NULL;
-           pjob = (job *)GET_NEXT(pjob->ji_jobque))
-        {
-#ifdef ENABLE_PTHREADS
-        pthread_mutex_lock(pjob->ji_mutex);
-#endif
+      iter = -1;
 
+      while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
+        {
         if ((qjcounter >= qmaxreport) &&
             (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))
           {
@@ -697,6 +694,7 @@ static void req_stat_job_step2(
         if ((rc != 0) && (rc != PBSE_PERM))
           {
           req_reject(rc, bad, preq, NULL, NULL);
+
 #ifdef ENABLE_PTHREADS
           if (pa != NULL)
             pthread_mutex_unlock(pa->ai_mutex);
@@ -714,7 +712,7 @@ static void req_stat_job_step2(
 #ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
 #endif
-        }    /* END for (pjob) */
+        }    /* END foreach (pjob from pque) */
 
       if (LOGLEVEL >= 5)
         {
@@ -785,9 +783,9 @@ nextjob:
       break;
 
     if (type == tjstQueue)
-      pjob = (job *)GET_NEXT(pjob->ji_jobque);
+      pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
     else if (type == tjstSummarizeArraysQueue)
-      pjob = (job *)GET_NEXT(pjob->ji_jobque_array_sum);
+      pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
     else if (type == tjstSummarizeArraysServer)
       pjob = next_job(&array_summary,&iter);
     else if (type == tjstArray)
@@ -803,9 +801,7 @@ nextjob:
 
 #ifdef ENABLE_PTHREADS
     if ((pjob != NULL) &&
-        ((type == tjstQueue) || 
-         (type == tjstSummarizeArraysQueue) ||
-         (type == tjstArray)))
+        (type == tjstArray))
     pthread_mutex_lock(pjob->ji_mutex);
 #endif
 
@@ -917,7 +913,7 @@ int stat_to_mom(
     /* request failed */
 
     if (pwt)
-      delete_task(pwt,TRUE);
+      delete_task(pwt);
 
     free_br(newrq);
 

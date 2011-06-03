@@ -1776,6 +1776,7 @@ void req_commit(
   int    newsub;
   pbs_queue *pque;
   int    rc;
+  work_task *wt;
 
 #ifdef AUTORUN_JOBS
 
@@ -2045,7 +2046,11 @@ void req_commit(
   /* if job array, setup the cloning work task */
   if (pj->ji_is_array_template)
     {
-    set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pj);
+    wt = set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pj);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(wt->wt_mutex);
+#endif
     }
     
   LOG_EVENT(

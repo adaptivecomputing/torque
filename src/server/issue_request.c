@@ -113,10 +113,7 @@ extern struct server server;
 extern char server_name[];
 extern struct connect_handle connection[];
 extern char     *msg_daemonname;
-extern tlist_head task_list_event;
-#ifdef ENABLE_PTHREADS
-extern pthread_mutex_t *task_list_event_mutex;
-#endif
+extern all_tasks task_list_event;
 extern time_t time_now;
 extern char *msg_daemonname;
 extern char *msg_issuebad;
@@ -317,6 +314,10 @@ int issue_to_svr(
 
     pwt->wt_parmfunc = replyfunc;
 
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(pwt);
+#endif
+
     return(0);
     }
 
@@ -431,12 +432,16 @@ int issue_Drequest(
 
   ptask = set_task(wt, (long)conn, func, (void *)request);
 
+  if (ppwt != NULL)
+    *ppwt = ptask;
+
+#ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(ptask->wt_mutex);
+#endif
+
   if (ptask == NULL)
     {
     log_err(errno, id, "could not set_task");
-
-    if (ppwt != NULL)
-      *ppwt = 0;
 
     return(-1);
     }
@@ -446,9 +451,6 @@ int issue_Drequest(
     /* the request should be issued to ourself */
 
     dispatch_request(PBS_LOCAL_CONNECTION, request);
-
-    if (ppwt != NULL)
-      *ppwt = ptask;
 
     return(0);
     }
@@ -675,15 +677,16 @@ int issue_Drequest(
 
       log_err(-1, id, log_buffer);
 
-      delete_task(ptask,FALSE);
+#ifdef ENABLE_PTHREADS
+      pthread_mutex_lock(ptask->wt_mutex);
+#endif
+
+      delete_task(ptask);
 
       rc = -1;
 
       break;
     }  /* END switch (request->rq_type) */
-
-  if (ppwt != NULL)
-    *ppwt = ptask;
 
   return(rc);
   }  /* END issue_Drequest() */
@@ -709,33 +712,24 @@ void process_Dreply(
 
   struct work_task *ptask;
   int    rc;
+  int    iter = -1;
 
   struct batch_request *request;
 
-  void                 *mutex = NULL;
-
   /* find the work task for the socket, it will point us to the request */
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(task_list_event_mutex);
-  mutex = task_list_event_mutex;
-#endif
-
-  ptask = (struct work_task *)GET_NEXT(task_list_event);
-
   handle = svr_conn[sock].cn_handle;
 
-  while (ptask != NULL)
+  while ((ptask = next_task(&task_list_event,&iter)) != NULL)
     {
     if ((ptask->wt_type == WORK_Deferred_Reply) &&
         (ptask->wt_event == handle))
       break;
 
-    ptask = (struct work_task *)GET_NEXT(ptask->wt_linkall);
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(ptask->wt_mutex);
+#endif
     }
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(task_list_event_mutex);
-#endif
 
   if (ptask == NULL)
     {
@@ -759,7 +753,7 @@ void process_Dreply(
     }
 
   /* now dispatch the reply to the routine in the work task */
-  dispatch_task(ptask,mutex);
+  dispatch_task(ptask);
 
   return;
   }  /* END process_Dreply() */

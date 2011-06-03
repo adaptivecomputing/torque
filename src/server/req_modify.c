@@ -294,7 +294,11 @@ void mom_cleanup_checkpoint_hold(
     }
   else
     {
-    set_task(WORK_Timed, time_now + 1, mom_cleanup_checkpoint_hold, (void*)pjob);
+    ptask = set_task(WORK_Timed, time_now + 1, mom_cleanup_checkpoint_hold, (void*)pjob);
+
+#ifdef ENABLE_PTHREADS
+    pthread_mutex_unlock(ptask->wt_mutex);
+#endif
     }
 
 #ifdef ENABLE_PTHREADS
@@ -344,6 +348,7 @@ void chkpt_xfr_hold(
   ptasknew = set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, (void*)pjob);
 
 #ifdef ENABLE_PTHREADS
+  pthread_mutex_unlock(ptasknew->wt_mutex);
   pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 

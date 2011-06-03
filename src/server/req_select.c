@@ -371,7 +371,6 @@ static void sel_step2(
 
   {
   job          *pjob;
-  job          *next;
   int           rc;
   int           exec_only = 0;
   int           summarize_arrays = 0;
@@ -408,27 +407,25 @@ static void sel_step2(
       if (pjob == NULL)
         {
         if (cntl->sc_pque)
-          pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs_array_sum);
+          pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
         else
           next_job(&array_summary,&iter);
         }
       else if (cntl->sc_pque)
         {
-        next = (job *)GET_NEXT(pjob->ji_jobque_array_sum);
-
 #ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-        pjob = next;
+        pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
         }
       else
         {
-        next = next_job(&array_summary,&iter);;
-
 #ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
 #endif
+
+        pjob = next_job(&array_summary,&iter);;
         }
       }
     else
@@ -436,19 +433,17 @@ static void sel_step2(
       if (pjob == NULL)
         {
         if (cntl->sc_pque)
-          pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs);
+          pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
         else
           pjob = next_job(&alljobs,&iter);
         }
       else if (cntl->sc_pque)
         {
-        next = (job *)GET_NEXT(pjob->ji_jobque);
-
 #ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-        pjob = next;
+        pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
         }
       else
         {
@@ -462,11 +457,6 @@ static void sel_step2(
 
     if (pjob == NULL)
       break;
-
-#ifdef ENABLE_PTHREADS
-    if (cntl->sc_pque)
-      pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
     if (exec_only)
       {
@@ -582,7 +572,7 @@ static void sel_step3(
   if (summarize_arrays)
     {
     if (cntl->sc_pque)
-      pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs_array_sum);
+      pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
     else
       {
       pjob = next_job(&array_summary,&iter);
@@ -591,7 +581,7 @@ static void sel_step3(
   else
     {
     if (cntl->sc_pque)
-      pjob = (job *)GET_NEXT(cntl->sc_pque->qu_jobs);
+      pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
     else
       pjob = next_job(&alljobs,&iter);
     }
@@ -599,11 +589,6 @@ static void sel_step3(
 
   while (pjob != NULL)
     {
-#ifdef ENABLE_PTHREADS
-    if (cntl->sc_pque)
-      pthread_mutex_lock(pjob->ji_mutex);
-#endif
-
     if (server.sv_attr[SRV_ATR_query_others].at_val.at_long ||
         (svr_authorize_jobreq(preq, pjob) == 0))
       {
@@ -667,17 +652,17 @@ nextjob:
     pthread_mutex_unlock(pjob->ji_mutex);
 #endif
 
-    if(summarize_arrays)
+    if (summarize_arrays)
       {
       if (cntl->sc_pque)
-        next = (job *)GET_NEXT(pjob->ji_jobque_array_sum);
+        next = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
       else
         next = next_job(&array_summary,&iter);
       }
     else
       {
       if (cntl->sc_pque)
-        next = (job *)GET_NEXT(pjob->ji_jobque);
+        next = next_job(cntl->sc_pque->qu_jobs,&iter);
       else
         next = next_job(&alljobs,&iter);
       }

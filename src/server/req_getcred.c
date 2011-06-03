@@ -290,6 +290,7 @@ int unmunge_request(
   if (cred_size == 0)
     {
     req_reject(PBSE_BADCRED, 0, preq, NULL, NULL);
+    close(fd);
     return(-1);
     }
 
@@ -297,6 +298,7 @@ int unmunge_request(
   if (bytes_written == -1 || (bytes_written != cred_size))
     {
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not write credential to temporary munge file");
+    close(fd);
     return(-1);
     }
 

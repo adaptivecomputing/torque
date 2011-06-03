@@ -333,9 +333,8 @@ void *req_orderjob(
     }
   else
     {
-    swap_link(&pjob1->ji_jobque,  &pjob2->ji_jobque);
-
-    swap_jobs(pjob1,pjob2);
+    swap_jobs(pjob1->ji_qhdr->qu_jobs,pjob1,pjob2);
+    swap_jobs(NULL,pjob1,pjob2);
     }
 
   /* need to update disk copy of both jobs to save new order */
