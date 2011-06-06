@@ -31,16 +31,20 @@ extern char *msg_job_stageinfail;
 extern char *msg_job_copychkptfail;
 extern char *msg_job_otherfail;
 
+
+
 void svr_format_job(
      
-  FILE *fh,         /* output file handle */
-  job  *pjob,       /* I */
-  char *fmt,        /* printf-like format description */
-  int   mailpoint,  /* note, single character  */
-  char *text)       /* (optional) additional message text */
+  FILE      *fh,  /* output file handle */
+  mail_info *mi,  /* I */
+  char      *fmt) /* printf-like format description */
 
   {
-  char *p, *stdmessage = NULL, *reason = NULL;
+  int   mailpoint = mi->mail_point;
+  char *text = mi->text;
+  char *p;
+  char *stdmessage = NULL;
+  char *reason = NULL;
   
   /* First get the "standard" message */
   
@@ -154,9 +158,9 @@ void svr_format_job(
 
         case 'h':  /* host */
 
-          if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+          if (mi->exec_host != NULL)
             {
-            fprintf(fh, "%s", pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+            fprintf(fh, "%s", mi->exec_host);
             }
           p += 2;
 
@@ -164,14 +168,16 @@ void svr_format_job(
 
         case 'i':  /* jobId */
 
-          fprintf(fh, "%s", pjob->ji_qs.ji_jobid);
+          fprintf(fh, "%s", mi->jobid);
           p += 2;
 
           break;
 
         case 'j':  /* jobname */
 
-          fprintf(fh, "%s", pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str);
+          if (mi->jobname != NULL)
+            fprintf(fh, "%s", mi->jobname);
+
           p += 2;
 
           break;

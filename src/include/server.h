@@ -285,6 +285,17 @@ extern int svr_save(struct server *, int);
 #endif
 
 
+typedef struct mail_info
+  {
+  char *mailto;
+  char *exec_host;
+  char *jobid;
+  char *jobname;
+  char *text;        /* additional optional text */
+  int   mail_point;
+  } mail_info;
+
+
 /* maintain a list of new nodes */
 
 typedef struct new_node
