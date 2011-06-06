@@ -171,12 +171,7 @@ extern void check_children();
 #define MAX_CMD_ARGS 10
 #endif
 
-#ifdef USE_HA_THREADS
 static void lock_out_ha ();
-#else
-static void lock_out (int,int);
-static int try_lock_out (int,int);
-#endif
 
 /* external data items */
 
@@ -1570,22 +1565,6 @@ int main(
       PBS_SVR_PRIVATE);
     }
 
-#ifndef USE_HA_THREADS
-  if ((lockfds = open(lockfile, O_CREAT | O_TRUNC | O_WRONLY, 0600)) < 0)
-    {
-    sprintf(log_buffer, "%s: unable to open lock file '%s'",
-            msg_daemonname,
-            lockfile);
-
-    fprintf(stderr, "%s\n",
-            log_buffer);
-
-    log_err(errno, msg_daemonname, log_buffer);
-
-    exit(2);
-    }
-#endif /* !USE_HA_THREADS */
-
   /* HA EVENTS MUST HAPPEN HERE */
 
   strcpy(HALockFile,lockfile);
@@ -1619,30 +1598,6 @@ int main(
       }
     }
 
-#ifdef OS_LOSES_FD_OVER_FORK
-  /* NOTE:  file descriptors may be lost across forks in SLES 10 SP1 */
-
-#ifndef USE_HA_THREADS
-  close(lockfds);
-
-  if ((lockfds = open(lockfile, O_CREAT | O_TRUNC | O_WRONLY, 0600)) < 0)
-    {
-    sprintf(log_buffer, "%s: unable to open lock file '%s'",
-      msg_daemonname,
-      lockfile);
-
-    fprintf(stderr, "%s\n",log_buffer);
-
-    log_err(errno, msg_daemonname, log_buffer);
-
-    exit(2);
-    }
-
-#endif /* !USE_HA_THREADS */
-  /* no file descriptor was held if we're using ha threads */
-#endif /* OS_LOSES_FD_OVER_FORK */
-
-#ifdef USE_HA_THREADS
   if (high_availability_mode)
     {
     lock_out_ha();
@@ -1662,26 +1617,8 @@ int main(
       exit(2);
       }
     }
-#else
-  if (high_availability_mode)
-    {
-    /* This will allow multiple instance of the pbs_server to be
-     * running.  This must be done before setting up the client
-     * sockets interface, reading the config file, and contacting
-     * the compute nodes.
-     */
-
-    while (try_lock_out(lockfds, F_WRLCK))
-      sleep(TSERVER_HA_CHECK_TIME); /* Relinquish */
-    }  /* END if (high_availability_mode) */
-  else
-    {
-    lock_out(lockfds, F_WRLCK);
-    }
-#endif
 
   /* handle running in the background or not if we're debugging */
-
   if (!high_availability_mode)
     {
     if (daemonize_server(TDoBackground,&sid) == FAILURE)
@@ -2488,15 +2425,6 @@ void *update_ha_lock_thread(
 int start_update_ha_lock_thread()
 
   {
-#ifndef USE_HA_THREADS
-  /* not compiled with threads */
-
-  log_err(-1,"start_update_ha_lock_thread",
-      "WARNING:   cannot create HA update thread - pthreads not enabled\n");
-
-  return(FAILURE);
-#else /* USE_HA_THREADS is defined */
-
   pthread_t      HALockThread;
   pthread_attr_t HALockThreadAttr;
 
@@ -2545,7 +2473,6 @@ int start_update_ha_lock_thread()
     PBS_EVENTCLASS_SERVER,
     id,
     "HA Lock update thread is now created\n");
-#endif /* ifndef USE_HA_THREADS */
 
   return(SUCCESS);
   } /* END start_update_ha_lock_thread() */
@@ -2558,14 +2485,12 @@ int mutex_lock(
   mutex_t *Mutex) /* I */
 
   {
-#ifdef USE_HA_THREADS
   if (pthread_mutex_lock(Mutex) != 0)
     {
     log_err(-1,"mutex_lock","ALERT:   cannot lock mutex!\n");
 
     return(FAILURE);
     }
-#endif /* ifdef USE_HA_THREADS */
 
   return(SUCCESS);
   } /* END mutex_lock() */
@@ -2578,14 +2503,12 @@ int mutex_unlock(
   mutex_t *Mutex) /* I */
 
   {
-#ifdef USE_HA_THREADS
   if (pthread_mutex_unlock(Mutex) != 0)
     {
     log_err(-1,"mutex_unlock","ALERT:   cannot unlock mutex!\n");
 
     return(FAILURE);
     }
-#endif /* ifdef USE_HA_THREADS */
 
   return(SUCCESS);
   } /* END mutex_unlock() */
@@ -2594,7 +2517,6 @@ int mutex_unlock(
 
 
 
-#ifdef USE_HA_THREADS
 /*
  *  * lock_out_ha - lock out using moab style high availability
  *   */
@@ -2721,7 +2643,6 @@ static void lock_out_ha()
     id,
     "high availability file lock obtained");
   } /* END lock_out_ha() */
-#endif /* USE_HA_THREADS */
 
 
 
@@ -2840,51 +2761,6 @@ static int daemonize_server(
   } /* END daemonize_server() */
 
 
-
-#ifndef USE_HA_THREADS
-/*
- * lock_out - lock out other daemons from this directory.
- */
-static void lock_out(
-
-  int fds,
-  int op)   /* F_WRLCK  or  F_UNLCK */
-
-  {
-  if (try_lock_out(fds,op))
-    {
-    strcpy(log_buffer,"pbs_server: another server running\n");
-   
-    
-    log_err(errno,msg_daemonname,log_buffer);
-    
-    fprintf(stderr,"%s", log_buffer);
-    
-    exit(1);
-    }
-  }
-
-
-/**
- *  * Try to lock
- *   * @return Zero on success, one on failure
- *    */
-static int try_lock_out(
-
-  int fds,
-  int op)   /* F_WRLCK  or  F_UNLCK */
-
-  {
-  struct flock flock;
-  
-  flock.l_type   = op;
-  flock.l_whence = SEEK_SET;
-  flock.l_start  = 0;
-  flock.l_len    = 0;
-  
-  return(fcntl(fds,F_SETLK,&flock) != 0);
-  }
-#endif /* !USE_HA_THREADS */
 
 
 
