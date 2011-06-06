@@ -92,9 +92,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <sys/stat.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -200,9 +198,8 @@ static void post_modify_req(
             pjob->ji_qs.ji_jobid,
             log_buffer);
           }
-#ifdef ENABLE_PTHREADS
+        
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
       }
 
@@ -235,9 +232,7 @@ void mom_cleanup_checkpoint_hold(
 
   pjob = (job *)ptask->wt_parm1;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
   if (LOGLEVEL >= 7)
     {
@@ -275,9 +270,7 @@ void mom_cleanup_checkpoint_hold(
         log_err(rc,id,log_buffer);
         free_br(preq);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
         return;
         }
@@ -296,14 +289,10 @@ void mom_cleanup_checkpoint_hold(
     {
     ptask = set_task(WORK_Timed, time_now + 1, mom_cleanup_checkpoint_hold, (void*)pjob);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(ptask->wt_mutex);
-#endif
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(pjob->ji_mutex);
-#endif
   } /* END mom_cleanup_checkpoint_hold() */
 
 
@@ -326,9 +315,7 @@ void chkpt_xfr_hold(
   preq = (struct batch_request *)ptask->wt_parm1;
   pjob = (job *)preq->rq_extra;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
   if (LOGLEVEL >= 7)
     {
@@ -347,10 +334,8 @@ void chkpt_xfr_hold(
 
   ptasknew = set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, (void*)pjob);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(ptasknew->wt_mutex);
   pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
   return;
   }  /* END chkpt_xfr_hold() */
@@ -812,9 +797,7 @@ int modify_whole_array(
     if (pa->jobs[i] == NULL)
       continue;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(pa->jobs[i]->ji_mutex);
-#endif
 
     /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
     rc = modify_job(pa->jobs[i],plist,preq,checkpoint_req, NO_MOM_RELAY);
@@ -827,9 +810,8 @@ int modify_whole_array(
       rc = copy_batchrequest(&array_req, preq, 0, i);
       if (rc != 0)
         {
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
-#endif
+        
         return(rc);
         }
 
@@ -849,17 +831,14 @@ int modify_whole_array(
           pa->jobs[i]->ji_qs.ji_jobid);
         log_err(rc,id,log_buffer);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
-#endif
+        
         return(rc); /* unable to get to MOM */
         }
 
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
-#endif
     }
 
   if (mom_relay)
@@ -961,9 +940,7 @@ void *req_modifyarray(
     if ((rc != 0) && 
        (rc != PBSE_RELAYED_TO_MOM))
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
   
@@ -975,9 +952,7 @@ void *req_modifyarray(
 
     if (rc == PBSE_RELAYED_TO_MOM)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
       return(NULL);
       }
@@ -989,9 +964,7 @@ void *req_modifyarray(
     if ((rc != 0) && 
         (rc != PBSE_RELAYED_TO_MOM))
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error altering the array");
       return(NULL);
@@ -1009,10 +982,8 @@ void *req_modifyarray(
          If either of these fail, return the error. This makes it
          so some elements fo the array will be updated but others are
          not. But at least the user will know something went wrong.*/
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->ai_mutex);
       pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
       req_reject(rc,0,preq,NULL,NULL);
       return(NULL);
@@ -1020,22 +991,17 @@ void *req_modifyarray(
 
     if (rc == PBSE_RELAYED_TO_MOM)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->ai_mutex);
       pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+      
       return(NULL);
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
     }
 
   /* SUCCESS */
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
   reply_ack(preq);
 
@@ -1081,9 +1047,7 @@ void *req_modifyjob(
     reply_ack(preq);
 
     /* SUCCESS */
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     return(NULL);
     }
@@ -1117,9 +1081,8 @@ void *req_modifyjob(
       reply_badattr(rc,1,plist,preq);
     else if ( rc == PBSE_RELAYED_TO_MOM )
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+      
       return(NULL);
       }
     else
@@ -1128,9 +1091,7 @@ void *req_modifyjob(
   else
     reply_ack(preq);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pjob->ji_mutex);
-#endif
   
   return(NULL);
   }  /* END req_modifyjob() */
@@ -1425,15 +1386,10 @@ void post_modify_arrayreq(
                   PJobSubState[pjob->ji_qs.ji_substate],
                   pjob->ji_qs.ji_destin);
 
-          LOG_EVENT(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buffer);
+          log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
           }
-#ifdef ENABLE_PTHREADS
+        
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
       }
 

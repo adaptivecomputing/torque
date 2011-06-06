@@ -1231,7 +1231,6 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER},
 #endif
 
-#ifdef ENABLE_PTHREADS
   /* SRV_ATR_minthreads */
   {ATTR_minthreads,               /* "min_threads" */
    decode_l,
@@ -1270,8 +1269,6 @@ attribute_def svr_attr_def[] =
    ATR_TYPE_LONG,
    PARENT_TYPE_SERVER
   },
-
-#endif /* def ENABLE_PTHREADS */
 
   /* SRV_ATR_MoabArrayCompatible */
   {ATTR_moabarraycompatible,

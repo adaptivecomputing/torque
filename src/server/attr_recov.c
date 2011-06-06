@@ -119,9 +119,7 @@ static size_t  spaceavail; /* space in pk_buffer available */
 static size_t  spaceused = 0; /* amount of space used  in pkbuffer */
 
 #ifndef PBS_MOM
-#ifdef  ENABLE_PTHREADS
 pthread_mutex_t *setup_save_mutex = NULL;
-#endif
 #endif
 
 

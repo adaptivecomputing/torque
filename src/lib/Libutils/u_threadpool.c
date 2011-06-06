@@ -88,7 +88,6 @@
 
 sigset_t      fillset;
 
-#ifdef ENABLE_PTHREADS 
 threadpool_t *request_pool;
 
 static void *work_thread(void *);
@@ -431,5 +430,4 @@ void destroy_request_pool(void)
   }
 
 
-#endif /* def ENABLE_PTHREADS */
 

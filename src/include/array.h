@@ -61,9 +61,7 @@ struct job_array
 
   job *template_job; /* pointer to the template job */
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_t *ai_mutex;
-#endif
 
   /* this info is saved in the array file */
   struct array_info
@@ -97,9 +95,7 @@ struct all_arrays
   {
   resizable_array *ra;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_t *allarrays_mutex;
-#endif
   };
 
 int  is_array(char *id);

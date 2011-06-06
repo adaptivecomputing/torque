@@ -115,6 +115,8 @@
 #include <string.h>
 #include <time.h>
 #include <ctype.h>
+#include <pthread.h>
+
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -131,9 +133,6 @@
 #include "pbs_proto.h"
 #include "csv.h"
 #include "array.h"
-#ifdef ENABLE_PTHREADS
-#include <pthread.h>
-#endif
 
 
 /* Private Functions */
@@ -354,9 +353,7 @@ int svr_enquejob(
           (unsigned long)pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
         break;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjcur->ji_mutex);
-#endif
       }
 
     if (pjcur == NULL)
@@ -369,9 +366,7 @@ int svr_enquejob(
       /* link after 'current' job in list */
       insert_job_after(pque->qu_jobs,pjcur,pjob);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjcur->ji_mutex);
-#endif 
       }
 
     /* update counts: queue and queue by state */
@@ -391,9 +386,7 @@ int svr_enquejob(
           (unsigned long)pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
         break;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjcur->ji_mutex);
-#endif
       }
 
     if (pjcur == NULL)
@@ -406,9 +399,7 @@ int svr_enquejob(
       /* link after 'current' job in list */
       insert_job_after(pque->qu_jobs_array_sum,pjcur,pjob);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjcur->ji_mutex);
-#endif
       }
     }
 
@@ -1373,9 +1364,7 @@ int count_queued_jobs(
           {
           found = TRUE;
 
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pj->ji_mutex);
-#endif
 
           break;
           }
@@ -1388,24 +1377,18 @@ int count_queued_jobs(
         }
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pj->ji_mutex);
-#endif
     }
 
   /* also count any jobs not yet queued that have already been accepted
    * into the queue */
   for (i = 0; i < num_arrays; i++)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(arrays[i]->ai_mutex);
-#endif
 
     num_jobs += (arrays[i]->ai_qs.num_jobs - arrays[i]->ai_qs.num_cloned);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(arrays[i]->ai_mutex);
-#endif
     }
 
   return(num_jobs);
@@ -1978,9 +1961,7 @@ static void job_wait_over(
 
   pjob = (job *)pwt->wt_parm1;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
 #ifndef NDEBUG
     {
@@ -2003,14 +1984,10 @@ static void job_wait_over(
         {
         insert_task(pjob->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(ptask->wt_mutex);
-#endif
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
       return;
       }
@@ -2030,9 +2007,7 @@ static void job_wait_over(
 
   svr_setjobstate(pjob, newstate, newsub);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
   return;
   }
@@ -2078,16 +2053,12 @@ int job_set_wait(
         {
         ptask->wt_event = when;
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(ptask->wt_mutex);
-#endif
 
         return(0);
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(ptask->wt_mutex);
-#endif
       } /* END for each task */
     }
 
@@ -2100,9 +2071,7 @@ int job_set_wait(
 
   insert_task(((job *)pjob)->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(ptask->wt_mutex);
-#endif
 
   /* set JOB_SVFLG_HASWAIT to show job has work task entry */
   ((job *)pjob)->ji_qs.ji_svrflags |= JOB_SVFLG_HASWAIT;
@@ -2696,9 +2665,7 @@ static void correct_ct(
         pque->qu_numcompleted++;
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
     }  /* END for (pjob) */
 
   return;

@@ -91,10 +91,7 @@
 #include <netdb.h>
 #include <errno.h>
 #include <time.h>
-#include <semaphore.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -148,8 +145,6 @@ static int  assign_hosts(job *, char *, int, char *, char *);
 
 extern pbs_net_t pbs_mom_addr;
 extern int  pbs_mom_port;
-extern sem_t *sent_to_mom;
-extern locution_records sendmom_records;
 
 extern struct server server;
 extern char  server_host[PBS_MAXHOSTNAME + 1];
@@ -168,9 +163,7 @@ extern const char   *PJobSubState[];
 extern unsigned int  pbs_rm_port;
 extern char         *msg_err_malloc;
 
-#ifdef ENABLE_PTHREADS
 pthread_mutex_t *dispatch_mutex = NULL;
-#endif
 long  DispatchTime[20];
 job  *DispatchJob[20];
 char *DispatchNode[20];
@@ -246,7 +239,6 @@ void req_runjob(
     {
     job_array *pa = pjob->ji_arraystruct;
 
-#ifdef ENABLE_PTHREADS
     if (pthread_mutex_trylock(pa->ai_mutex) != 0)
       {
       /* always get mutexes in order to avoid deadlock - array and then job */
@@ -254,7 +246,6 @@ void req_runjob(
       pthread_mutex_lock(pa->ai_mutex);
       pthread_mutex_lock(pjob->ji_mutex);
       }
-#endif
     
     if ((pa->ai_qs.slot_limit < 0) ||
         (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running))
@@ -270,16 +261,13 @@ void req_runjob(
       
       req_reject(PBSE_IVALREQ,0,preq,NULL,log_buffer);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
       pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
       return;
       }
-#ifdef ENABLE_PTHREADS
+    
     pthread_mutex_unlock(pa->ai_mutex);
-#endif
     }
 
   /* NOTE:  nodes assigned to job in svr_startjob() */
@@ -302,9 +290,7 @@ void req_runjob(
       }
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
   return;
   }  /* END req_runjob() */
@@ -423,9 +409,7 @@ static void post_checkpointsend(
       svr_strtjob2(pjob, NULL);
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
     }    /* END if (pjob != NULL) */
 
   release_req(pwt); /* close connection and release request */
@@ -536,9 +520,7 @@ void *req_stagein(
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
  
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     return(NULL);
     }
@@ -554,9 +536,7 @@ void *req_stagein(
     req_reject(rc, 0, preq, NULL, NULL);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
   return(NULL);
   }  /* END req_stagein() */
@@ -654,9 +634,7 @@ static void post_stagein(
         }
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
     }    /* END if (pjob != NULL) */
 
   release_req(pwt); /* close connection and release request */
@@ -1330,9 +1308,7 @@ void finish_sendmom(
       }
     }  /* END switch (status) */
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pjob->ji_mutex);
-#endif
   } /* END finish_sendmom() */
 
 
@@ -1375,9 +1351,7 @@ static void post_sendmom(
   int    jindex;
   long DTime = time_now - 10000;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(jobp->ji_mutex);
-#endif
 
   if (LOGLEVEL >= 6)
     {
@@ -1413,9 +1387,7 @@ static void post_sendmom(
     }
 
   /* maintain local struct to associate job id with dispatch time */
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(dispatch_mutex);
-#endif
 
   for (jindex = 0;jindex < 20;jindex++)
     {
@@ -1431,9 +1403,7 @@ static void post_sendmom(
       }
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(dispatch_mutex);
-#endif
 
   if (LOGLEVEL >= 1)
     {
@@ -1606,9 +1576,7 @@ static void post_sendmom(
       }
     }  /* END switch (r) */
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(jobp->ji_mutex);
-#endif
 
   return;
   }  /* END post_sendmom() */
@@ -1660,9 +1628,7 @@ static job *chk_job_torun(
 
     req_reject(PBSE_BADSTATE, 0, preq, NULL, "job already running");
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     return(NULL);
     }
@@ -1675,9 +1641,7 @@ static job *chk_job_torun(
 
       req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
       return(NULL);
       }
@@ -1689,9 +1653,7 @@ static job *chk_job_torun(
 
     req_reject(PBSE_PERM, 0, preq, NULL, NULL);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     return(NULL);
     }
@@ -1704,9 +1666,7 @@ static job *chk_job_torun(
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "job not in execution queue");
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     return(NULL);
     }
@@ -1740,9 +1700,8 @@ static job *chk_job_torun(
         else
           req_reject(PBSE_EXECTHERE, 0, preq, NULL, "allocated nodes must match input file stagein location");
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+        
         return(NULL);
         }
       }
@@ -1760,9 +1719,8 @@ static job *chk_job_torun(
         {
         req_reject(PBSE_EXECTHERE, 0, preq, FailHost, EMsg);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+        
         return(NULL);
         }
       }
@@ -1789,9 +1747,7 @@ static job *chk_job_torun(
 
       req_reject(rc, 0, preq, FailHost, EMsg);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
       return(NULL);
       }
@@ -2124,82 +2080,6 @@ static int assign_hosts(
 
 
 
-
-void initialize_locution_records(
-
-  locution_records *container)
-
-  {
-  static char *id = "initialize_locution_records";
-
-  if ((container->ra = initialize_resizable_array(LOCUTION_SIZE)) == NULL)
-    {
-    log_err(ENOMEM,id,"Cannot allocate space for locution records");
-    }
-#ifdef ENABLE_PTHREADS
-  else if((container->locution_mutex = malloc(sizeof(pthread_mutex_t))) == NULL)
-    {
-    log_err(ENOMEM,id,"Cannot allocate space for locution records mutex");
-    }
-  else
-    {
-    pthread_mutex_init(container->locution_mutex,NULL);
-    }
-#endif
-  } /* END initialize_locution_records() */
-
-
-
-
-
-int insert_locution_record(
-
-  locution_records *container,
-  locution_record  *record)
-
-  {
-  static char *id = "insert_locution_record";
-  int          rc;
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(container->locution_mutex);
-#endif
-
-  if ((rc = insert_thing(container->ra,record)) == -1)
-    {
-    rc = ENOMEM;
-    log_err(rc,id,"Cannot allocate space to resize the array");
-    }
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(container->locution_mutex);
-#endif
-
-  return(rc);
-  } /* END insert_loctution_record() */
-
-
-
-
-locution_record *pop_locution_record(
-
-  locution_records *container)
-
-  {
-  locution_record *record;
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(container->locution_mutex);
-#endif
-
-  record = pop_thing(container->ra);
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(container->locution_mutex);
-#endif
-
-  return(record);
-  }
 
 
 /* END req_runjob.c */

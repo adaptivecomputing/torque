@@ -100,15 +100,11 @@ char *pbs_geterrmsg(
     return(NULL);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[connect].ch_mutex);
-#endif
 
   errmsg = connection[connect].ch_errtxt;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[connect].ch_mutex);
-#endif
 
   return(errmsg);
   }  /* END pbs_geterrmsg() */

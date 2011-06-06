@@ -4557,16 +4557,8 @@ int rm_request(
 
   if (tcp)
     {
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_lock(svr_conn[iochan].cn_mutex);
-#endif
-
     ipadd = svr_conn[iochan].cn_addr;
     port = svr_conn[iochan].cn_port;
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(svr_conn[iochan].cn_mutex);
-#endif
 
     close_io = close_conn;
     flush_io = DIS_tcp_wflush;
@@ -5881,10 +5873,6 @@ void tcp_request(
 
   extern struct connection svr_conn[];
 
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(svr_conn[fd].cn_mutex);
-#endif
-
   ipadd = svr_conn[fd].cn_addr;
 
   tmp = netaddr_pbs_net_t(ipadd);
@@ -5894,10 +5882,6 @@ void tcp_request(
           ntohs(svr_conn[fd].cn_port));
 
   free(tmp);
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_lock(svr_conn[fd].cn_mutex);
-#endif
 
   if (LOGLEVEL >= 6)
     {

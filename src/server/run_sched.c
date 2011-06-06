@@ -84,9 +84,7 @@
 #include "portability.h"
 #include <errno.h>
 #include <netinet/in.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 #include "log.h"
 #include "pbs_ifl.h"
 #include "net_connect.h"
@@ -206,15 +204,11 @@ static int contact_sched(
     PBS_SOCK_INET,
     process_request);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
-#endif
 
   svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-#endif
 
   net_add_close_func(sock, scheduler_close);
 
@@ -342,15 +336,11 @@ static int contact_listener(
     PBS_SOCK_INET,
     process_request);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
-#endif
 
   svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-#endif
 
   net_add_close_func(sock, listener_close);
 

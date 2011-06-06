@@ -100,9 +100,7 @@ int pbs_terminate(
   int rc = 0;
   int sock;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   /* send request */
   sock = connection[c].ch_socket;
@@ -117,9 +115,7 @@ int pbs_terminate(
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     pbs_errno = PBSE_PROTOCOL;
 
@@ -128,9 +124,7 @@ int pbs_terminate(
 
   if (DIS_tcp_wflush(sock))
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     pbs_errno = PBSE_PROTOCOL;
 
@@ -142,9 +136,7 @@ int pbs_terminate(
 
   rc = connection[c].ch_errno;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   PBSD_FreeReply(reply);
 

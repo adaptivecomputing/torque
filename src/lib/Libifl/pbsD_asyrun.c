@@ -112,9 +112,7 @@ int pbs_asyrunjob(
   if (location == NULL)
     location = "";
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   sock = connection[c].ch_socket;
 
@@ -130,9 +128,7 @@ int pbs_asyrunjob(
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     pbs_errno = PBSE_PROTOCOL;
 
@@ -141,9 +137,7 @@ int pbs_asyrunjob(
 
   if (DIS_tcp_wflush(sock))
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     pbs_errno = PBSE_PROTOCOL;
 
@@ -156,9 +150,7 @@ int pbs_asyrunjob(
 
   rc = connection[c].ch_errno;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   PBSD_FreeReply(reply);
 

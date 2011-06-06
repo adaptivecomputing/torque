@@ -205,9 +205,7 @@ struct connection
   time_t cn_lasttime;    /* time last active */
   void (*cn_func)(int);  /* read function when data rdy */
   void (*cn_oncl)(int);  /* func to call on close */
-#ifdef ENABLE_PTHREADS
   pthread_mutex_t *cn_mutex;
-#endif
   };
 
 struct netcounter

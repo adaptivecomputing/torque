@@ -293,11 +293,9 @@
 #ifdef MUNGE_AUTH
   #define ATTR_authusers       "authorized_users"
 #endif
-#ifdef ENABLE_PTHREADS
 #define ATTR_minthreads        "min_threads"
 #define ATTR_maxthreads        "max_threads"
 #define ATTR_threadidleseconds "thread_idle_seconds"
-#endif
 #define ATTR_moabarraycompatible "moab_array_compatible"
 /* additional node "attributes" names */
 

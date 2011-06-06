@@ -89,9 +89,7 @@
 #include <stdlib.h>
 #include "libpbs.h"
 #include <string.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -413,17 +411,13 @@ static void sel_step2(
         }
       else if (cntl->sc_pque)
         {
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
         pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
         }
       else
         {
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
         pjob = next_job(&array_summary,&iter);;
         }
@@ -439,17 +433,13 @@ static void sel_step2(
         }
       else if (cntl->sc_pque)
         {
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
         pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
         }
       else
         {
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
         pjob = next_job(&alljobs,&iter);
         }
@@ -482,18 +472,14 @@ static void sel_step2(
 
           if ((rc = stat_to_mom(pjob, cntl)) == PBSE_SYSTEM)
             {
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
             break;
             }
 
           if (rc == 0)
             {
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
             return;
             }
@@ -616,9 +602,8 @@ static void sel_step3(
             {
             rc = PBSE_SYSTEM;
 
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+            
             break;
             }
 
@@ -638,9 +623,8 @@ static void sel_step3(
 
           if (rc && (rc != PBSE_PERM))
             {
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+            
             break;
             }
           }
@@ -648,9 +632,8 @@ static void sel_step3(
       }
 
 nextjob:
-#ifdef ENABLE_PTHREADS
+    
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     if (summarize_arrays)
       {

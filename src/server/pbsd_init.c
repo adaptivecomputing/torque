@@ -91,9 +91,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 
 #include "pbs_ifl.h"
 #include "log.h"
@@ -190,10 +188,8 @@ extern struct all_jobs alljobs;
 extern struct all_jobs array_summary;
 extern struct all_jobs newjobs;
 
-#ifdef ENABLE_PTHREADS
 extern pthread_mutex_t *svr_requests_mutex;
 extern pthread_mutex_t *node_state_mutex;
-#endif
 
 extern time_t  time_now;
 
@@ -203,11 +199,6 @@ extern int LOGLEVEL;
 extern char *plogenv;
 
 extern struct server server;
-
-sem_t *job_locution;
-sem_t *sent_to_mom;
-locution_records sendmom_records;
-locution_records job_locutions;
 
 /* External Functions Called */
 
@@ -770,7 +761,6 @@ int pbsd_init(
 
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
 
-#ifdef ENABLE_PTHREADS
   /* initialize the global list mutexes */
   svr_requests_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(svr_requests_mutex,NULL);
@@ -781,7 +771,6 @@ int pbsd_init(
 
   /* make the task list child and events mutexes recursive because 
    * they can be called by a signal handler */
-#endif
 
   CLEAR_HEAD(svr_requests);
 
@@ -799,19 +788,7 @@ int pbsd_init(
 
   initialize_all_arrays_array();
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_requests_mutex);
-#endif
-
-  /* set up the threads that handle post-processing for mom sendjob, 
-   * routing jobs, and moving jobs */
-  job_locution = malloc(sizeof(sem_t));
-  sent_to_mom  = malloc(sizeof(sem_t));
-  sem_init(job_locution,0,0);
-  sem_init(sent_to_mom,0,0);
-
-  initialize_locution_records(&sendmom_records);
-  initialize_locution_records(&job_locutions);
 
   time_now = time((time_t *)0);
 
@@ -1088,9 +1065,7 @@ int pbsd_init(
 
         pa->jobs_recovered = 0;
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pa->ai_mutex);
-#endif
         }
       else
         {
@@ -1169,9 +1144,8 @@ int pbsd_init(
               log_err(ENOMEM,"main","out of memory reloading jobs");
               exit(-1);
               }
-#ifdef ENABLE_PTHREADS
+            
             pthread_mutex_unlock(pjob->ji_mutex);
-#endif 
             }
 
           continue;
@@ -1191,9 +1165,7 @@ int pbsd_init(
 
             }
 
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
-#endif 
           }
         else
           {
@@ -1229,9 +1201,7 @@ int pbsd_init(
       {
       job *pjob = (job *)Array.Data[Index];
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pjob->ji_mutex);
-#endif 
 
       if (pbsd_init_job(pjob, type) == FAILURE)
         {
@@ -1241,9 +1211,7 @@ int pbsd_init(
           pjob->ji_qs.ji_jobid,
           msg_script_open);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif 
 
         continue;
         }
@@ -1267,17 +1235,13 @@ int pbsd_init(
 
           init_abt_job(pjob);
           }
-#ifdef ENABLE_PTHREADS
         else
           {
           pthread_mutex_unlock(pjob->ji_mutex);
           }
-#endif 
         }
-#ifdef ENABLE_PTHREADS
       else
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif 
       }
 
     DArrayFree(&Array);
@@ -1317,9 +1281,7 @@ int pbsd_init(
       
       job_save(pjob, SAVEJOB_FULL, 0);
       
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
-#endif
       }
     }
 
@@ -1362,9 +1324,7 @@ int pbsd_init(
            before continuing the cloning process. */
         wt = set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pa->template_job);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(wt->wt_mutex);
-#endif
         }
 
       }
@@ -1376,12 +1336,10 @@ int pbsd_init(
       continue;
       }
 
-#ifdef ENABLE_PTHREADS
     if (pa->template_job != NULL)
       pthread_mutex_unlock(pa->template_job->ji_mutex);
 
     pthread_mutex_unlock(pa->ai_mutex);
-#endif
     }
 
 
@@ -1459,12 +1417,9 @@ int pbsd_init(
   /* set work task to periodically save the tracking records */
   wt = set_task(WORK_Timed, (long)(time_now + PBS_SAVE_TRACK_TM), track_save, 0);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(wt->wt_mutex);
-#endif
 
   /* SUCCESS */
-
   return(0);
   }  /* END pbsd_init() */
 
@@ -1635,9 +1590,7 @@ static int pbsd_init_job(
         {
         insert_task(pjob->ji_svrtask,pwt,TRUE);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pwt->wt_mutex);
-#endif
         }
 
       break;
@@ -1725,9 +1678,7 @@ static int pbsd_init_job(
         {
         insert_task(pjob->ji_svrtask,pwt,TRUE);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pwt->wt_mutex);
-#endif
         }
 
       pbsd_init_reque(pjob, KEEP_STATE);
@@ -1744,9 +1695,7 @@ static int pbsd_init_job(
         {
         insert_task(pjob->ji_svrtask,pwt,TRUE);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pwt->wt_mutex);
-#endif
         }
 
       pbsd_init_reque(pjob, KEEP_STATE);
@@ -1757,7 +1706,6 @@ static int pbsd_init_job(
         {
         job_array *pa = pjob->ji_arraystruct;
 
-#ifdef ENABLE_PTHREADS
         if (pthread_mutex_trylock(pa->ai_mutex) != 0)
           {
           /* always get mutexes in order to avoid deadlock - array and then job */
@@ -1765,13 +1713,10 @@ static int pbsd_init_job(
           pthread_mutex_lock(pa->ai_mutex);
           pthread_mutex_lock(pjob->ji_mutex);
           }
-#endif
 
         update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pa->ai_mutex);
-#endif
         }
 
       break;
@@ -1786,9 +1731,7 @@ static int pbsd_init_job(
           {
           insert_task(pjob->ji_svrtask,pwt,TRUE);
 
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pwt->wt_mutex);
-#endif
           }
         }
 
@@ -1806,9 +1749,7 @@ static int pbsd_init_job(
         {
         insert_task(pjob->ji_svrtask,pwt,TRUE);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pwt->wt_mutex);
-#endif
         }
 
       pbsd_init_reque(pjob, KEEP_STATE);
@@ -2199,15 +2140,11 @@ static void resume_net_move(
   {
   job *pjob = (job *)ptask->wt_parm1;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
   net_move((job *)ptask->wt_parm1, 0);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
   return;
   }

@@ -324,22 +324,12 @@ if test "x$GCC" = "xyes" ;then
 fi
 
 
+dnl We need pthreads
+AC_CHECK_LIB(pthread, pthread_create, 
+    PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lrt",
+    [AC_MSG_ERROR([TORQUE needs pthreads in order to build]) ])
+LIBS="$LIBS $PTHREAD_LIBS"
 
-dnl check if we should use pthreads or not
-AC_ARG_ENABLE(pthreads, [
-  --enable-pthreads  Enables multithreaded TORQUE])
-if test "x$GCC" = "xyes" ; then
-  AC_MSG_CHECKING([whether to use pthreads])
-  if test "${enable_pthreads}" == "yes" ; then
-    AC_MSG_RESULT([yes])
-    AC_DEFINE(HAVE_PTHREAD,1,[Use posix threads])
-    PTHREAD_LIBS=-lpthread
-    LIBS="$LIBS $PTHREAD_LIBS -lrt"
-    CFLAGS="$CFLAGS -D_GNU_SOURCE -DENABLE_PTHREADS"
-  else
-    AC_MSG_RESULT([no])
-  fi
-fi
 
 
 
@@ -784,9 +774,6 @@ AC_ARG_ENABLE(job_create,
     [  --enable-job-create     enable libjob job_create support],
     JOBCREATE=$enableval,JOBCREATE=no)
 AC_MSG_RESULT($JOBCREATE)
-
-dnl We need pthreads by default in the MOM
-  AC_CHECK_LIB(pthread, pthread_create, MOMLIBS="$MOMLIBS -lpthread")
 
 case "$JOBCREATE" in
   yes) AC_DEFINE([USEJOBCREATE], 1, [Define to enable libjob job_create support])

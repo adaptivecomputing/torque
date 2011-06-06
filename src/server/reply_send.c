@@ -259,9 +259,7 @@ int reply_send(
         return(0);
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(ptask->wt_mutex);
-#endif
       }
 
     /* should have found a task and didn't */

@@ -96,9 +96,7 @@
 #ifndef _MEMORY_H
 #include <memory.h>
 #endif /* _MEMORY_H */
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 
 #include "pbs_ifl.h"
 #include "list_link.h"
@@ -157,9 +155,7 @@ struct connect_handle
   void   *ch_stream;
   int ch_errno; /* last error on this connection */
   char *ch_errtxt; /* pointer to last server error text */
-#ifdef ENABLE_PTHREADS
   pthread_mutex_t *ch_mutex;
-#endif
   };
 
 extern struct connect_handle connection[];

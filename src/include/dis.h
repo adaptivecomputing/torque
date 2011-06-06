@@ -84,9 +84,7 @@
 #include <string.h>
 #include <limits.h>
 #include <float.h>
-#ifdef ENABLE_PTHREADS 
 #include <pthread.h>
-#endif /* ENABLE_PTHREADS */
 
 #ifndef TRUE
 #define TRUE 1
@@ -277,9 +275,7 @@ struct tcp_chan
   int              IsTimeout;  /* (boolean)  1 - true */
   int              ReadErrno;
   int              SelectErrno;
-#ifdef ENABLE_PTHREADS
   pthread_mutex_t tcp_mutex;
-#endif /* def ENABLE_PTHREADS */
   };
 
 #endif /* DATA_IS_STRINGS_ */

@@ -260,15 +260,11 @@ int svr_connect(
     add_conn(sock, ToServerDIS, hostaddr, port, PBS_SOCK_INET, func);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
-#endif
 
   svr_conn[sock].cn_authen = PBS_NET_CONN_AUTHENTICATED;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-#endif
 
   /* find a connect_handle entry we can use and pass to the PBS_*() */
   handle = socket_to_handle(sock);
@@ -318,9 +314,7 @@ void svr_disconnect(
 
   if ((handle >= 0) && (handle < PBS_LOCAL_CONNECTION))
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(connection[handle].ch_mutex);
-#endif
 
     sock = connection[handle].ch_socket;
 
@@ -354,9 +348,7 @@ void svr_disconnect(
 
     connection[handle].ch_inuse = 0;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[handle].ch_mutex);
-#endif
     }
 
   return;
@@ -384,7 +376,6 @@ int socket_to_handle(
 
   for (i = 0;i < PBS_NET_MAX_CONNECTIONS;i++)
     {
-#ifdef ENABLE_PTHREADS
     if (connection[i].ch_mutex == NULL)
       {
       connection[i].ch_mutex = malloc(sizeof(pthread_mutex_t));
@@ -396,7 +387,6 @@ int socket_to_handle(
       /* if we can't lock the mutex, it is busy*/
       continue;
       }
-#endif
 
     if (connection[i].ch_inuse == FALSE)
       {
@@ -408,17 +398,12 @@ int socket_to_handle(
       connection[i].ch_errtxt = 0;
 
       /* SUCCESS - save handle for later close */
-      
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(connection[i].ch_mutex);
       pthread_mutex_lock(svr_conn[sock].cn_mutex);
-#endif
       
       svr_conn[sock].cn_handle = i;
       
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-#endif
       
       if (i >= (PBS_NET_MAX_CONNECTIONS/2))
         {
@@ -432,9 +417,7 @@ int socket_to_handle(
       return(i);
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[i].ch_mutex);
-#endif
     }  /* END for (i) */
 
   sprintf(log_buffer,"internal socket table full (%d) - num_connections is %d",

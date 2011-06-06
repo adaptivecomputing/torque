@@ -82,9 +82,7 @@
 #include "portability.h"
 #include <sys/types.h>
 #include "net_connect.h"
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 
 /* global data */
 
@@ -101,14 +99,10 @@ void net_add_close_func(
   void (*func)(int))
 
   {
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(svr_conn[sd].cn_mutex);
-#endif
 
   if (svr_conn[sd].cn_active != Idle)
     svr_conn[sd].cn_oncl =  func;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_conn[sd].cn_mutex);
-#endif
   }

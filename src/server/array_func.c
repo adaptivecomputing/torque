@@ -28,9 +28,7 @@
 #endif /* !O_SYNC */
 
 #include <unistd.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 
 #include "pbs_ifl.h"
 #include "log.h"
@@ -119,16 +117,12 @@ int is_array(
     {
     if (strcmp(pa->ai_qs.parent_id, jobid) == 0)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
       return(TRUE);
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pa->ai_mutex);
-#endif
     }
 
   return(FALSE);
@@ -155,9 +149,7 @@ job_array *get_array(
       return(pa);
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pa->ai_mutex);
-#endif
     }
 
   return(NULL);
@@ -313,9 +305,7 @@ job *find_array_template(
     if (!strcmp(comp, pj->ji_qs.ji_jobid))
       break;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pj->ji_mutex);
-#endif
     }
 
   if (at)
@@ -440,12 +430,10 @@ job_array *array_recov(
     array_save(pa);
     }
 
-#ifdef ENABLE_PTHREADS
   pa->ai_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(pa->ai_mutex,NULL);
 
   pthread_mutex_lock(pa->ai_mutex);
-#endif
 
   /* link the struct into the servers list of job arrays */
   insert_array(pa);
@@ -469,11 +457,9 @@ int array_delete(
   /* first thing to do is take this out of the servers list of all arrays */
   remove_array(pa);
 
-#ifdef ENABLE_PTHREADS
   /* unlock the mutex and free it */
   pthread_mutex_unlock(pa->ai_mutex);
   free(pa->ai_mutex);
-#endif
 
   /* delete the on disk copy of the struct */
 
@@ -604,11 +590,9 @@ int setup_array_struct(
   CLEAR_LINK(pa->all_arrays);
   CLEAR_HEAD(pa->request_tokens);
 
-#ifdef ENABLE_PTHREADS
   pa->ai_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(pa->ai_mutex,NULL);
   pthread_mutex_lock(pa->ai_mutex);
-#endif
 
   insert_array(pa);
 
@@ -699,9 +683,7 @@ int setup_array_struct(
     return 2;
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
   return(PBSE_NONE);
   } /* END setup_array_struct() */
@@ -1023,27 +1005,21 @@ int delete_array_range(
 
       pjob = pa->jobs[i];
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pjob->ji_mutex);
-#endif 
 
       if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
         {
         /* invalid state for request,  skip */
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif 
 
         continue;
         }
 
       if (attempt_delete((void *)pjob) == FALSE)
         {
-#ifdef ENABLE_PTHREADS
         /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
          * release it here */
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif 
 
         num_skipped++;
         }
@@ -1107,28 +1083,23 @@ int delete_whole_array(
     if (pa->jobs[i] == NULL)
       continue;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(pjob->ji_mutex);
-#endif 
 
     pjob = (job *)pa->jobs[i];
 
     if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
       {
       /* invalid state for request,  skip */
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
-#endif 
+      
       continue;
       }
 
     if (attempt_delete((void *)pjob) == FALSE)
       {
-#ifdef ENABLE_PTHREADS
       /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
        * release it here */
       pthread_mutex_unlock(pjob->ji_mutex);
-#endif 
 
       num_skipped++;
       }
@@ -1188,15 +1159,11 @@ int hold_array_range(
         if (i >= pa->ai_qs.array_size)
           continue;
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_lock(pa->jobs[i]->ji_mutex);
-#endif
         
         hold_job(temphold,pa->jobs[i]);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
-#endif
         }
       
       /* release mem */
@@ -1255,22 +1222,16 @@ int release_array_range(
       if (i >= pa->ai_qs.array_size)
         continue;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pa->jobs[i]->ji_mutex);
-#endif
       
       if ((rc = release_job(preq,pa->jobs[i])))
         {
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
-#endif
         
         return(rc);
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
-#endif
       }
     
     /* release mem */
@@ -1324,9 +1285,7 @@ int modify_array_range(
             (pa->jobs[i] == NULL))
           continue;
   
-#ifdef ENABLE_PTHREADS
         pthread_mutex_lock(pa->jobs[i]->ji_mutex);
-#endif
 
         rc = modify_job(pa->jobs[i],plist,preq,checkpoint_req, NO_MOM_RELAY);
 
@@ -1357,18 +1316,14 @@ int modify_array_range(
               pa->jobs[i]->ji_qs.ji_jobid);
             log_err(rc,id,log_buffer);
           
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
-#endif
 
             return(rc); /* unable to get to MOM */
             }
         
           }
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
-#endif 
         }
       
       /* release mem */
@@ -1520,10 +1475,8 @@ void update_array_statuses(job_array *owned)
     if (pa == NULL)
       continue;
 
-#ifdef ENABLE_PTHREADS
     if (pa != owned)
       pthread_mutex_lock(pa->ai_mutex);
-#endif
 
     running = 0;
     queued = 0;
@@ -1536,9 +1489,7 @@ void update_array_statuses(job_array *owned)
       
       if (pj != NULL)
         {
-#ifdef ENABLE_PTHREADS
         pthread_mutex_lock(pj->ji_mutex);
-#endif
 
         if (pj->ji_qs.ji_state == JOB_STATE_RUNNING)
           {
@@ -1556,9 +1507,8 @@ void update_array_statuses(job_array *owned)
           {
           complete++;
           }
-#ifdef ENABLE_PTHREADS
+        
         pthread_mutex_unlock(pj->ji_mutex);
-#endif
         }
       }
     
@@ -1580,10 +1530,8 @@ void update_array_statuses(job_array *owned)
       svr_setjobstate(pa->template_job, JOB_STATE_QUEUED, pa->template_job->ji_qs.ji_substate);
       }
       
-#ifdef ENABLE_PTHREADS
     if (pa != owned)
       pthread_mutex_unlock(pa->ai_mutex);
-#endif
     }
   } /* END update_array_statuses() */
 
@@ -1656,10 +1604,8 @@ void initialize_all_arrays_array()
   {
   allarrays.ra = initialize_resizable_array(INITIAL_NUM_ARRAYS);
 
-#ifdef ENABLE_PTHREADS
   allarrays.allarrays_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(allarrays.allarrays_mutex,NULL);
-#endif
   } /* END initialize_all_arrays_array() */
 
 
@@ -1677,18 +1623,14 @@ int insert_array(
   static char  *id = "insert_array";
   int           rc;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(allarrays.allarrays_mutex);
-#endif
 
   if ((rc = insert_thing(allarrays.ra,pa)) == ENOMEM)
     {
     log_err(rc,id,"No memory to resize the array...SYSTEM FAILURE\n");
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(allarrays.allarrays_mutex);
-#endif
 
   return(rc);
   } /* END insert_array() */
@@ -1704,15 +1646,11 @@ int remove_array(
   {
   int rc;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(allarrays.allarrays_mutex);
-#endif
 
   rc = remove_thing(allarrays.ra,pa);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(allarrays.allarrays_mutex);
-#endif
 
   return(rc);
   } /* END remove_array() */
@@ -1728,18 +1666,14 @@ job_array *next_array(
   {
   job_array *pa = NULL;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(allarrays.allarrays_mutex);
-#endif
 
   pa = (job_array *)next_thing(allarrays.ra,iter);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(allarrays.allarrays_mutex);
 
   if (pa != NULL)
     pthread_mutex_lock(pa->ai_mutex);
-#endif
 
   return(pa);
   } /* END next_array() */

@@ -105,9 +105,7 @@ int pbs_movejob(
   if (destin == (char *)0)
     destin = "";
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   sock = connection[c].ch_socket;
 
@@ -121,18 +119,14 @@ int pbs_movejob(
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     return (pbs_errno = PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     return (pbs_errno = PBSE_PROTOCOL);
     }
@@ -145,9 +139,7 @@ int pbs_movejob(
 
   rc = connection[c].ch_errno;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   return(rc);
   } /* END pbs_movejob() */

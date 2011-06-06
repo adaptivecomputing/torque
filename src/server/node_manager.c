@@ -145,9 +145,7 @@ static int  svr_numcfgnodes = 0;   /* number of nodes currently configured (glob
 static int  exclusive;  /* node allocation type */
 
 static int       num_addrnote_tasks = 0; /* number of outstanding send_cluster_addrs tasks */
-#ifdef ENABLE_PTHREADS
 pthread_mutex_t *addrnote_mutex = NULL;
-#endif
 
 extern int  server_init_type;
 extern int  has_nodes;
@@ -192,10 +190,8 @@ int procs_available(int proc_ct);
 void check_nodes(struct work_task *);
 
 /* marks a stream as finished being serviced */
-#ifdef ENABLE_PTHREADS
 extern void done_servicing(int);
 pthread_mutex_t *node_state_mutex = NULL;
-#endif
 
 /*
 
@@ -712,14 +708,12 @@ job *find_job_by_node(
           if ((jp->job != NULL) &&
               (jp->job->ji_qs.ji_jobid != NULL))
             {
-#ifdef ENABLE_PTHREADS
             if (pthread_mutex_trylock(jp->job->ji_mutex) != 0)
               {
               pthread_mutex_unlock(pnode->nd_mutex);
               pthread_mutex_lock(jp->job->ji_mutex);
               pthread_mutex_lock(pnode->nd_mutex);
               }
-#endif 
 
             if (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0)
               {
@@ -731,9 +725,7 @@ job *find_job_by_node(
               }
             }
 
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(jp->job->ji_mutex);
-#endif
           } /* END for each job on subnode */
 
         /* leave loop if we found a job */
@@ -758,14 +750,13 @@ job *find_job_by_node(
         if ((jp->job != NULL) &&
             (jp->job->ji_qs.ji_jobid != NULL))
           {
-#ifdef ENABLE_PTHREADS
           if (pthread_mutex_trylock(jp->job->ji_mutex) != 0)
             {
             pthread_mutex_unlock(pnode->nd_mutex);
             pthread_mutex_lock(jp->job->ji_mutex);
             pthread_mutex_lock(pnode->nd_mutex);
             }
-#endif 
+          
           if (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0)
             {
             /* desired job located on node */
@@ -776,9 +767,7 @@ job *find_job_by_node(
             }
           }
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(jp->job->ji_mutex);
-#endif
         } /* END for each job on the subnode */
 
       /* leave loop if we found a job */
@@ -869,22 +858,18 @@ void sync_node_jobs(
 
           if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
             {
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+            
             pjob = NULL;
             }
           else if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, np->nd_name) == NULL)
             {
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+            
             pjob = NULL;
             }
-#ifdef ENABLE_PTHREADS
           else
             pthread_mutex_unlock(pjob->ji_mutex);
-#endif
           }
 
         if (pjob == NULL)
@@ -930,15 +915,11 @@ void sync_node_jobs(
 
           DIS_rpp_reset();
           }
-#ifdef ENABLE_PTHREADS
         else
           pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
-#ifdef ENABLE_PTHREADS
       else
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
       }
 
     jobidstr = strtok(NULL, " ");
@@ -1051,9 +1032,8 @@ void update_job_data(
 
           attr_name = strtok(NULL, "=");
           }
-#ifdef ENABLE_PTHREADS
+        
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
       else if (pjob == NULL)
         {
@@ -1095,9 +1075,7 @@ void send_cluster_addrs(
   int             i; 
   int             ret;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(addrnote_mutex);
-#endif
 
   num_addrnote_tasks--;
 
@@ -1109,9 +1087,7 @@ void send_cluster_addrs(
            id,
            num_addrnote_tasks));
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(addrnote_mutex);
-#endif
 
     startcount = 0;
 
@@ -1189,9 +1165,7 @@ void send_cluster_addrs(
     /* continue outstanding pings after checking for other requests */
     wt = set_task(WORK_Timed, time_now, send_cluster_addrs, NULL);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(wt->wt_mutex);
-#endif
     }
   else
     {
@@ -1205,9 +1179,7 @@ void send_cluster_addrs(
         {
         np->nd_state &= ~INUSE_OFFLINE;
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(np->nd_mutex);
-#endif
         }
 
       delete_link(&nnew->nn_link);
@@ -1217,10 +1189,7 @@ void send_cluster_addrs(
     startcount = 0;
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(addrnote_mutex);
-#endif
-
   }     /* END send_cluster_addrs */
 
 
@@ -1257,9 +1226,7 @@ void setup_notification(char *pname)
 
     if (nnew == NULL)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif
 
       return;
       }
@@ -1270,14 +1237,11 @@ void setup_notification(char *pname)
 
     append_link(&svr_newnodes, &nnew->nn_link, nnew);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pnode->nd_mutex);
-#endif
     }
 
   wt = set_task(WORK_Timed,time_now + 5,send_cluster_addrs,NULL);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(wt->wt_mutex);
 
   if (addrnote_mutex == NULL)
@@ -1287,13 +1251,10 @@ void setup_notification(char *pname)
     }
 
   pthread_mutex_lock(addrnote_mutex);
-#endif
 
   num_addrnote_tasks++;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(addrnote_mutex);
-#endif
 
   return;
   }
@@ -1899,9 +1860,7 @@ void ping_nodes(
 
     wt = set_task(WORK_Timed, time_now + TNODE_PINGRETRYTIME, ping_nodes, NULL);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(wt->wt_mutex);
-#endif
     }
 
   return;
@@ -2015,15 +1974,11 @@ void *check_nodes_work(
 
   while ((np = next_node(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(np->nd_mutex);
-#endif
 
     if (np->nd_state & (INUSE_DELETED | INUSE_DOWN))
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(np->nd_mutex);
-#endif
 
       continue;
       }
@@ -2046,18 +2001,14 @@ void *check_nodes_work(
       update_node_state(np, (INUSE_DOWN));    
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(np->nd_mutex);
-#endif
     }    /* END for (i = 0) */
 
   if (ptask->wt_parm1 == NULL)
     {
     wt = set_task(WORK_Timed,time_now + chk_len,check_nodes,NULL);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(wt->wt_mutex);
-#endif
     }
 
   /* since this is done via threading, we now free the task here */
@@ -2081,7 +2032,6 @@ void check_nodes(
   struct work_task *ptask)  /* I (modified) */
 
   {
-#ifdef ENABLE_PTHREADS
   static char id[] = "check_nodes";
   int rc = enqueue_threadpool_request(check_nodes_work,ptask);
 
@@ -2089,9 +2039,6 @@ void check_nodes(
     {
     log_err(rc,id,"Unable to enqueue check nodes task into the threadpool");
     }
-#else
-  check_nodes_work(ptask);
-#endif
   }  /* END check_nodes() */
 
 
@@ -2179,9 +2126,7 @@ void *is_request_work(
 
     free(vp);
   
-#ifdef ENABLE_PTHREADS
     done_servicing(stream);
-#endif
   
     return(NULL);
     }
@@ -2202,9 +2147,7 @@ void *is_request_work(
 
   if ((node = AVL_find((u_long)stream, 0, streams)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(node->nd_mutex);
-#endif 
     }
   else
     {
@@ -2212,25 +2155,20 @@ void *is_request_work(
 
     if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(node->nd_mutex);
-#endif 
 
       if (node->nd_stream >= 0)
         {
         if (LOGLEVEL >= 3)
           {
-          sprintf(log_buffer, "stream %d from node %s already open on %d (marking node state 'unknown', current state: %d)",
-                  stream,
-                  node->nd_name,
-                  node->nd_stream,
-                  node->nd_state);
+          sprintf(log_buffer,
+            "stream %d from node %s already open on %d (marking node state 'unknown', current state: %d)",
+            stream,
+            node->nd_name,
+            node->nd_stream,
+            node->nd_state);
 
-          log_event(
-            PBSEVENT_ADMIN,
-            PBS_EVENTCLASS_SERVER,
-            id,
-            log_buffer);
+          log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
           }
 
         rpp_close(stream);
@@ -2251,22 +2189,11 @@ void *is_request_work(
 
         node->nd_stream = -1;
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(node->nd_mutex);
-#endif 
-
-        /* do a ping in 5 seconds */
-
-        /*
-        set_task(WORK_Timed,time_now + 5,
-          ping_nodes, node);
-        */
 
         free(vp);
   
-#ifdef ENABLE_PTHREADS
         done_servicing(stream);
-#endif
 
         return(NULL);
         }  /* END if (node->nd_stream >= 0) */
@@ -2296,9 +2223,8 @@ void *is_request_work(
       if (err == PBSE_NONE)
         {
         node = AVL_find(ipaddr, 0, ipaddrs);
-#ifdef ENABLE_PTHREADS
+        
         pthread_mutex_lock(node->nd_mutex);
-#endif 
         }                                                         
       }
       
@@ -2324,9 +2250,7 @@ void *is_request_work(
 
       free(vp);
   
-#ifdef ENABLE_PTHREADS
       done_servicing(stream);
-#endif
   
       return(NULL);
       }
@@ -2521,14 +2445,11 @@ void *is_request_work(
 
   rpp_eom(stream);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(node->nd_mutex);
-#endif
+  
   free(vp);
   
-#ifdef ENABLE_PTHREADS
   done_servicing(stream);
-#endif
 
   return(NULL);
 
@@ -2553,9 +2474,7 @@ err:
     
     update_node_state(node, INUSE_DOWN);
     
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(node->nd_mutex);
-#endif 
     }
   else
     {
@@ -2570,9 +2489,7 @@ err:
     
   free(vp);
 
-#ifdef ENABLE_PTHREADS
   done_servicing(stream);
-#endif
 
   return(NULL);
 
@@ -2595,9 +2512,7 @@ void is_request(
 
   {
   int *args;
-#ifdef ENABLE_PTHREADS
   int rc;
-#endif
 
   static char id[] = "is_request";
 
@@ -2612,17 +2527,12 @@ void is_request(
   args[0] = stream;
   args[1] = version;
 
-#ifdef ENABLE_PTHREADS
   rc = enqueue_threadpool_request(is_request_work,args);
 
   if (rc)
     {
     log_err(rc,id,"Unable to enqueue is request task into the threadpool");
     }
-#else
-  is_request_work(args);
-#endif
-
   }  /* END is_request() */
 
 
@@ -2641,9 +2551,7 @@ void *write_node_state_work(
 
   int   savemask;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(node_state_mutex);
-#endif
 
   if (LOGLEVEL >= 5)
     {
@@ -2662,9 +2570,8 @@ void *write_node_state_work(
       {
       log_err(errno, "write_node_state", "could not truncate file");
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(node_state_mutex);
-#endif
+      
       return(NULL);
       }
     }
@@ -2679,9 +2586,8 @@ void *write_node_state_work(
         "write_node_state",
         "could not open file");
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(node_state_mutex);
-#endif
+      
       return(NULL);
       }
     }
@@ -2694,15 +2600,12 @@ void *write_node_state_work(
   for (i = 0;i < svr_totnodes;i++)
     {
     np = pbsndmast[i];
-#ifdef ENABLE_PTHREADS
+
     pthread_mutex_lock(np->nd_mutex);
-#endif
 
     if (np->nd_state & INUSE_DELETED)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(np->nd_mutex);
-#endif
 
       continue;
       }
@@ -2714,9 +2617,7 @@ void *write_node_state_work(
               np->nd_state & savemask);
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(np->nd_mutex);
-#endif
     }    /* END for (i) */
 
   if (fflush(nstatef) != 0)
@@ -2726,9 +2627,7 @@ void *write_node_state_work(
 
   fclose(nstatef);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(node_state_mutex);
-#endif
 
   return(NULL);
   } /* END write_node_state_work() */
@@ -2737,11 +2636,9 @@ void *write_node_state_work(
 
 
 
-void
-write_node_state(void)
+void write_node_state(void)
 
   {
-#ifdef ENABLE_PTHREADS
   static char id[] = "write_node_state";
   int rc = enqueue_threadpool_request(write_node_state_work,NULL);
 
@@ -2749,9 +2646,6 @@ write_node_state(void)
     {
     log_err(rc,id,"Unable to enqueue is_request task into the threadpool");
     }
-#else
-  write_node_state_work(NULL);
-#endif
   }  /* END write_node_state() */
 
 
@@ -2761,8 +2655,7 @@ write_node_state(void)
  *   The note file could get up to:
  *      (# of nodes) * (2 + MAX_NODE_NAME + MAX_NOTE)  bytes in size
  */
-int
-write_node_note(void)
+int write_node_note(void)
   {
 #ifndef NDEBUG
   static char id[] = "write_node_note";
@@ -2799,15 +2692,12 @@ write_node_note(void)
   for (i = 0;i < svr_totnodes;++i)
     {
     np = pbsndmast[i];
-#ifdef ENABLE_PTHREADS
+
     pthread_mutex_lock(np->nd_mutex);
-#endif
 
     if (np->nd_state & INUSE_DELETED)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(np->nd_mutex);
-#endif
 
       continue;
       }
@@ -2821,9 +2711,7 @@ write_node_note(void)
               np->nd_note);
       }
     
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(np->nd_mutex);
-#endif
     }
 
   fflush(nin);
@@ -2905,15 +2793,12 @@ void *node_unreserve_work(
   for (i = 0;i < svr_totnodes;i++)
     {
     np = pbsndlist[i];
-#ifdef ENABLE_PTHREADS
+
     pthread_mutex_lock(np->nd_mutex);
-#endif
 
     if (np->nd_state & INUSE_DELETED)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(np->nd_mutex);
-#endif
 
       continue;
       }
@@ -2932,9 +2817,7 @@ void *node_unreserve_work(
         }
       }
     
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(np->nd_mutex);
-#endif
     }
 
   return(NULL);
@@ -2957,7 +2840,6 @@ void node_unreserve(
   resource_t handle)
 
   {
-#ifdef ENABLE_PTHREADS
   static char id[] = "node_unreserve";
   int rc = enqueue_threadpool_request(node_unreserve_work,NULL);
 
@@ -2965,9 +2847,6 @@ void node_unreserve(
     {
     log_err(rc,id,"Unable to enqueue node_unreserve task into the threadpool");
     }
-#else
-  node_unreserve_work(NULL);
-#endif
   }  /* END node_unreserve() */
 
 
@@ -3284,9 +3163,7 @@ static int search(
 
   while ((pnode = next_node(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(pnode->nd_mutex);
-#endif
 
     if (search_acceptable(pnode,glorf,skip,vpreq,gpureq) == TRUE)
       {
@@ -3301,16 +3178,12 @@ static int search(
       pnode->nd_order  = order;
 
       /* SUCCESS */
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif
 
       return(1);
       }
     
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pnode->nd_mutex);
-#endif
     }
 
   if (glorf == NULL)  /* no property */
@@ -3327,17 +3200,13 @@ static int search(
     {
     /* all paths through here treat the mutex correctly. convoluted, but 
      * correct. This has to happen because of the potential recursion */
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(pnode->nd_mutex);
-#endif
 
     if (can_reshuffle(pnode,glorf,skip,vpreq,gpureq,pass) == TRUE)
       {
       pnode->nd_flag = conflict;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif
 
       /* Ben Webb patch (CRI 10/06/03) */
 
@@ -3349,9 +3218,7 @@ static int search(
                 pnode->nd_order,
                 depth);
       
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pnode->nd_mutex);
-#endif
 
       pnode->nd_flag = thinking;
 
@@ -3364,16 +3231,13 @@ static int search(
         pnode->nd_ngpus_needed = gpureq;
         pnode->nd_order  = order;
     
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pnode->nd_mutex);
-#endif
+        
         return(1);
         }
       }  
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pnode->nd_mutex);
-#endif
     }  /* END for (each node) */
 
   /* FAILURE */
@@ -4230,24 +4094,18 @@ static int node_spec(
 
   while ((pnode = next_node(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(pnode->nd_mutex);
-#endif
 
     if (pnode->nd_state & INUSE_DELETED)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif
 
       continue;
       }
 
     node_avail_check(pnode,ProcBMStr);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pnode->nd_mutex);
-#endif
     }    /* END for (i = 0) */
 
   /*
@@ -4347,23 +4205,18 @@ static int node_spec(
 
   while ((pnode = next_node(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(pnode->nd_mutex);
-#endif
 
     if (pnode->nd_state & INUSE_DELETED)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif
+      
       continue;
       }
     if (pnode->nd_ntype != NTYPE_CLUSTER)
       {
       /* node is ok */
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif
 
       continue;
       }
@@ -4371,9 +4224,7 @@ static int node_spec(
     if (pnode->nd_flag != thinking)  /* thinking is global */
       {
       /* node is ok */
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif
 
       continue;
       }
@@ -4385,9 +4236,7 @@ static int node_spec(
         if (pnode->nd_ngpus_needed <= pnode->nd_ngpus_free)
           {
           /* adequate virtual nodes and gpus available - node is ok */
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pnode->nd_mutex);
-#endif
           
           continue;
           }
@@ -4399,9 +4248,7 @@ static int node_spec(
         if (pnode->nd_ngpus_needed <= pnode->nd_ngpus_free)
           {
           /* shared node - node is ok */
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pnode->nd_mutex);
-#endif
           
           continue;
           }
@@ -4415,9 +4262,7 @@ static int node_spec(
         if (pnode->nd_ngpus_needed <= pnode->nd_ngpus_free)
           {
           /* shared node - node is ok */
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pnode->nd_mutex);
-#endif
           
           continue;
           }
@@ -4430,9 +4275,7 @@ static int node_spec(
 
     pnode->nd_flag = okay;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pnode->nd_mutex);
-#endif
 
     if (search(
           pnode->nd_first,
@@ -4450,10 +4293,7 @@ static int node_spec(
     if (early != 0)
       {
       /* FAILURE */
-
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pnode->nd_mutex);
-#endif
 
       /* specified node not available and replacement cannot be located */
 
@@ -4545,9 +4385,7 @@ static int node_spec(
       if (FailNode != NULL)
         strncpy(FailNode, pnode->nd_name, 1024);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif
 
       return(0);
       }  /* END if (early != 0) */
@@ -5058,24 +4896,18 @@ int set_nodes(
 
   while ((pnode = next_node(iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(pnode->nd_mutex);
-#endif 
 
     if (pnode->nd_state & INUSE_DELETED)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif 
 
       continue;
       }
 
     if (pnode->nd_flag != thinking)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif 
 
       /* node is not considered/eligible for job - see search() */
 
@@ -5094,9 +4926,7 @@ int set_nodes(
         reserve_node(pnode,newstate,pjob,ProcBMStr,&hlist);
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif 
 
       continue;
       }
@@ -5136,9 +4966,7 @@ int set_nodes(
       build_host_list(&hlist,snp,pnode);
       }  /* END for (snp) */
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pnode->nd_mutex);
-#endif 
     }    /* END for (i) */
 
   free(iter);
@@ -5170,15 +4998,12 @@ int set_nodes(
       {
       pnode = pbsndlist[i];
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pnode->nd_mutex);
-#endif 
 
       if (pnode->nd_state & INUSE_DELETED)
         {
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pnode->nd_mutex);
-#endif 
+       
         continue;
         }
 
@@ -5188,9 +5013,8 @@ int set_nodes(
           {
           if (snp->inuse != INUSE_FREE)
             {
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pnode->nd_mutex);
-#endif 
+            
             continue;
             }
           }
@@ -5198,9 +5022,8 @@ int set_nodes(
           {
           if ((snp->inuse != INUSE_FREE) && (snp->inuse != INUSE_JOBSHARE))
             {
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pnode->nd_mutex);
-#endif 
+            
             continue;
             }
           }
@@ -5217,9 +5040,7 @@ int set_nodes(
 
         } /* END for (snp) */
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif 
       }
     }
 

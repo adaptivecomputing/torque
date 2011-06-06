@@ -95,9 +95,7 @@
 #ifndef WORK_TASK_H
 #define WORK_TASK_H 1
 
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 #include "resizable_array.h"
 
 #define INITIAL_ALL_TASKS_SIZE 4
@@ -122,9 +120,7 @@ typedef struct all_tasks
   {
   resizable_array *ra;
 
-#ifdef ENABLE_PTHREADS 
   pthread_mutex_t *alltasks_mutex;
-#endif 
   } all_tasks;
 
 
@@ -132,20 +128,18 @@ typedef struct all_tasks
 
 typedef struct work_task
   {
-  all_tasks *wt_tasklist; 
-  all_tasks *wt_obj_tasklist;
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_t *wt_mutex; 
-#endif
-  long   wt_event; /* event id: time, pid, socket, ... */
-  enum work_type  wt_type; /* type of event */
-  void (*wt_func)(struct work_task *);
+  all_tasks           *wt_tasklist; 
+  all_tasks           *wt_obj_tasklist;
+  pthread_mutex_t     *wt_mutex; 
+  long                 wt_event; /* event id: time, pid, socket, ... */
+  enum work_type       wt_type; /* type of event */
+  void (*wt_func)      (struct work_task *);
   /* function to perform task */
-  void  *wt_parm1; /* obj pointer for use by func */
-  void  *wt_parm2; /* optional pointer for use by func */
-  void (*wt_parmfunc)(struct work_task *);
+  void                *wt_parm1; /* obj pointer for use by func */
+  void                *wt_parm2; /* optional pointer for use by func */
+  void (*wt_parmfunc)  (struct work_task *);
   /* used in reissue_to_svr to store wt_func */
-  int   wt_aux; /* optional info: e.g. child status */
+  int                  wt_aux; /* optional info: e.g. child status */
   } work_task;
 
 

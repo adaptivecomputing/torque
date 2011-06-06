@@ -109,9 +109,7 @@ char * pbs_locjob(
     return (ploc);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   sock = connection[c].ch_socket;
 
@@ -125,9 +123,7 @@ char * pbs_locjob(
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     pbs_errno = PBSE_PROTOCOL;
     return(NULL);
@@ -137,9 +133,7 @@ char * pbs_locjob(
 
   if (DIS_tcp_wflush(sock))
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     pbs_errno = PBSE_PROTOCOL;
     return(NULL);
@@ -169,9 +163,7 @@ char * pbs_locjob(
 
   PBSD_FreeReply(reply);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   return(ploc);
   } /* END pbs_locjob() */

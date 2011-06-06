@@ -403,15 +403,11 @@ struct pbsnode *find_nodebyname(
 
   while ((pnode = next_node(&iter)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(pnode->nd_mutex);
-#endif
 
     if (pnode->nd_state & INUSE_DELETED)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pnode->nd_mutex);
-#endif
 
       continue;
       }
@@ -421,9 +417,7 @@ struct pbsnode *find_nodebyname(
       break;
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pnode->nd_mutex);
-#endif
     }
 
   if (pslash != NULL)
@@ -458,18 +452,14 @@ struct pbssubn *find_subnodebyname(
 
   tmp = pnode->nd_psn;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pnode->nd_mutex);
-#endif
 
   return(tmp);
   }  /* END find_subnodebyname() */
 
 
 
-#ifdef ENABLE_PTHREADS
 pthread_mutex_t *node_char_mutex = NULL;
-#endif
 static struct pbsnode *old_address = 0;   /*node in question */
 
 static struct prop *old_first = (struct prop *)0xdead; /*node's first prop*/
@@ -499,7 +489,6 @@ void save_characteristic(
     return;
     }
 
-#ifdef ENABLE_PTHREADS
   if (node_char_mutex == NULL)
     {
     node_char_mutex = malloc(sizeof(pthread_mutex_t));
@@ -507,7 +496,6 @@ void save_characteristic(
     }
 
   pthread_mutex_lock(node_char_mutex);
-#endif
 
   old_address = pnode;
 
@@ -634,9 +622,7 @@ int chk_characteristic(
 
   old_address = NULL;
   
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(node_char_mutex);
-#endif
 
   return(0);
   }  /* END chk_characteristic() */
@@ -821,9 +807,7 @@ static int initialize_pbsnode(
   int             ntype) /* time-shared or cluster */
 
   {
-#ifdef ENABLE_PTHREADS
   static char *id = "initialize_pbsnode";
-#endif
 
 /*  int i; */
 
@@ -852,7 +836,6 @@ static int initialize_pbsnode(
   pnode->nd_nstatus     = 0;
   pnode->nd_warnbad     = 0;
 
-#ifdef ENABLE_PTHREADS
   pnode->nd_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
     {
@@ -862,7 +845,6 @@ static int initialize_pbsnode(
     }
 
   pthread_mutex_init(pnode->nd_mutex,NULL);
-#endif /* ENABLE_PTHREADS */
 
   /*for (i = 0;pul[i];i++)
     {
@@ -1358,15 +1340,11 @@ int update_nodes_file(void)
     {
     np = pbsndmast[i];
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(np->nd_mutex);
-#endif
 
     if (np->nd_state & INUSE_DELETED)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(np->nd_mutex);
-#endif
 
       continue;
       }
@@ -1460,9 +1438,8 @@ int update_nodes_file(void)
 
       return(-1);
       }
-#ifdef ENABLE_PTHREADS
+    
     pthread_mutex_unlock(np->nd_mutex);
-#endif
     }
 
   fclose(nin);
@@ -2009,9 +1986,7 @@ int create_pbs_node(
 
     wt = set_task(WORK_Timed, time_now + 30 /*PBS_LOG_CHECK_RATE  five minutes */, recheck_for_node, host_info);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(wt->wt_mutex);
-#endif
 
     return(rc);
     }
@@ -2033,9 +2008,7 @@ int create_pbs_node(
     free(pname);
     free(pul);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pnode->nd_mutex);
-#endif
 
     return(PBSE_NODEEXIST);
     }

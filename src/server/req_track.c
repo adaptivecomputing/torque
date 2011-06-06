@@ -279,12 +279,10 @@ void track_save(
 
     if (wt == NULL)
       log_err(errno, myid, "Unable to set task for save");
-#ifdef ENABLE_PTHREADS
     else
       {
       pthread_mutex_unlock(wt->wt_mutex);
       }
-#endif
     }
 
   if (server.sv_trackmodifed == 0)
@@ -323,8 +321,10 @@ void track_save(
  * issue_track - issue a Track Job Request to another server
  */
 
-void
-issue_track(job *pjob)
+void issue_track(
+    
+  job *pjob)
+
   {
 
   struct batch_request   *preq;

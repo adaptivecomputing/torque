@@ -104,11 +104,9 @@
 #include "svrfunc.h"
 #include "log.h"
 #include "utils.h"
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
 
 extern pthread_mutex_t *setup_save_mutex;
-#endif
 
 /* data global to this file */
 
@@ -116,7 +114,23 @@ extern char   *path_queues;
 extern time_t  time_now;
  
 
-int que_save_xml(
+
+
+/*
+ * que_save() - Saves a queue structure image on disk
+ *
+ *
+ * For a save, to insure no data is ever lost due to system crash:
+ * 1. write new image to a new file using a temp name
+ * 2. unlink the old (image) file
+ * 3. link the correct name to the new file
+ * 4. unlink the temp name
+ *
+ * Then, if the queue has any access control lists, they are saved
+ * to their own files.
+ */
+
+int que_save(
 
   pbs_queue *pque)
 
@@ -147,7 +161,6 @@ int que_save_xml(
     }
 
   /* set up save buffering system */
-#ifdef ENABLE_PTHREADS
   if (setup_save_mutex == NULL)
     {
     setup_save_mutex = malloc(sizeof(pthread_mutex_t));
@@ -155,7 +168,6 @@ int que_save_xml(
     }
 
   pthread_mutex_lock(setup_save_mutex);
-#endif
 
   save_setup(fds);
 
@@ -174,9 +186,7 @@ int que_save_xml(
 
     close(fds);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(setup_save_mutex);
-#endif
 
     return(-1);
     }
@@ -189,9 +199,7 @@ int que_save_xml(
 
     close(fds);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(setup_save_mutex);
-#endif
 
     return(-1);
     }
@@ -203,9 +211,7 @@ int que_save_xml(
     log_err(rc,myid,"unable to write to the queue's file");
     close(fds);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(setup_save_mutex);
-#endif
 
     return(-1);
     }
@@ -214,15 +220,11 @@ int que_save_xml(
     {
     log_err(-1, myid, "save_flush failed");
     close(fds);
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(setup_save_mutex);
-#endif
     return (-1);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(setup_save_mutex);
-#endif
 
   close(fds);
 
@@ -239,145 +241,6 @@ int que_save_xml(
 
   return(0);
   } /* END que_save_xml() */
-
-
-
-
-
-/*
- * que_save() - Saves a queue structure image on disk
- *
- *
- * For a save, to insure no data is ever lost due to system crash:
- * 1. write new image to a new file using a temp name
- * 2. unlink the old (image) file
- * 3. link the correct name to the new file
- * 4. unlink the temp name
- *
- * Then, if the queue has any access control lists, they are saved
- * to their own files.
- */
-
-int que_save(
-
-  pbs_queue *pque) /* pointer to queue structure */
-
-  {
-/*  int fds;
-  int i;
-  char   *myid = "que_save";
-  char namebuf1[MAXPATHLEN];
-  char namebuf2[MAXPATHLEN];
-*/
-  return(que_save_xml(pque));
-
-/*  pque->qu_attr[QA_ATR_MTime].at_val.at_long = time_now;
-  pque->qu_attr[QA_ATR_MTime].at_flags = ATR_VFLAG_SET;
-
-  strcpy(namebuf1, path_queues);
-  strcat(namebuf1, pque->qu_qs.qu_name);
-  strcpy(namebuf2, namebuf1);
-  strcat(namebuf2, ".new");
-
-  fds = open(namebuf2, O_CREAT | O_WRONLY | O_Sync, 0600);
-
-  if (fds < 0)
-    {
-    log_err(errno, myid, "open error");
-
-    return(-1);
-    }
-
-*/  /* set up save buffering system */
-/*#ifdef ENABLE_PTHREADS
-  if (setup_save_mutex == NULL)
-    {
-    setup_save_mutex = malloc(sizeof(pthread_mutex_t));
-    pthread_mutex_init(setup_save_mutex,NULL);
-    }
-
-  pthread_mutex_lock(setup_save_mutex);
-#endif
-
-  save_setup(fds);
-
-*/  /* save basic queue structure (fixed length stuff) */
-
-/*  if (save_struct((char *)&pque->qu_qs, sizeof(struct queuefix)) != 0)
-    {
-    log_err(-1, myid, "save_struct failed");
-
-    close(fds);
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(setup_save_mutex);
-#endif
-
-    return(-1);
-    }
-
-*/  /* save queue attributes  */
-
-/*  if (save_attr(que_attr_def, pque->qu_attr, QA_ATR_LAST) != 0)
-    {
-    log_err(-1, myid, "save_attr failed");
-
-    close(fds);
-
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(setup_save_mutex);
-#endif
-
-    return(-1);
-    }
-
-  if (save_flush() != 0) */  /* flush the save buffer */
-/*    {
-    log_err(-1, myid, "save_flush failed");
-    (void)close(fds);
-#ifdef ENABLE_PTHREADS
-    pthread_mutex_unlock(setup_save_mutex);
-#endif
-    return (-1);
-    }
-
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_unlock(setup_save_mutex);
-#endif
-
-  (void)close(fds);
-
-  (void)unlink(namebuf1);
-
-  if (link(namebuf2, namebuf1) < 0)
-    {
-    log_err(errno, myid, "unable to link queue name");
-    }
-  else
-    {
-    unlink(namebuf2);
-    }
-*/
-  /*
-   * now search queue's attributes for access control lists,
-   * they are saved separately in their own file:
-   * ../priv/(attr name)/(queue name)
-   */
-
-/*  for (i = 0;i < QA_ATR_LAST;i++)
-    {
-    if (pque->qu_attr[i].at_type == ATR_TYPE_ACL)
-      {
-      save_acl(
-        &pque->qu_attr[i],
-        &que_attr_def[i],
-        que_attr_def[i].at_name,
-        pque->qu_qs.qu_name);
-      }
-    }
-
-  return(0);*/
-  } /* END que_save() */
 
 
 

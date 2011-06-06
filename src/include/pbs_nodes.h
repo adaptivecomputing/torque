@@ -83,9 +83,7 @@
 ** Header file used for the node tracking routines.
 */
 
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif /* ENABLE_PTHREADS */
 
 /* NOTE:  requires server_limits.h */
 
@@ -214,9 +212,7 @@ struct pbsnode
   char                 *numa_str; /* comma-delimited string of processor values */
   char           *gpu_str; /* comma-delimited string of the number of gpus for each nodeboard */
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_t      *nd_mutex; /* semaphore for accessing this node's data */
-#endif
   };
 
 struct howl

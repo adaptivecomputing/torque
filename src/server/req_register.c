@@ -85,9 +85,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 #include "libpbs.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -253,9 +251,7 @@ void req_register(
     
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
     
     return;
     }
@@ -612,10 +608,8 @@ void req_register(
     reply_ack(preq);
     }
 
-#ifdef ENABLE_PTHREADS
   if (pjob != NULL)
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
   return;
   }  /* END req_register() */
@@ -727,9 +721,7 @@ void req_registerarray(
 
   if (type < JOB_DEPEND_TYPE_AFTERSTARTARRAY)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
     req_reject(PBSE_IVALREQ,0,preq,NULL,
       "Arrays may only be given array dependencies");
@@ -763,9 +755,7 @@ void req_registerarray(
       break;
     } /* END switch (preq->rq_ind.rq_register.rq_op */
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
   } /* END req_registerarray() */
 
@@ -968,9 +958,7 @@ void set_array_depend_holds(
           set_depend_hold(pjob,&pjob->ji_wattr[JOB_ATR_depend]);
           }
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
 
       pdj = (struct array_depend_job *)GET_NEXT(pdj->dc_link);
@@ -1048,9 +1036,7 @@ static void post_doq(
 
         set_depend_hold(pjob, pattr);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
       }
     }
@@ -1239,9 +1225,8 @@ static void post_doe(
 
       del_depend(pdep);
       }
-#ifdef ENABLE_PTHREADS
+    
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
     }
 
   release_req(pwt);
@@ -1627,10 +1612,8 @@ static void set_depend_hold(
             substate = JOB_SUBSTATE_DEPNHOLD;
             }
 
-#ifdef ENABLE_PTHREADS
           if (djp != NULL)
             pthread_mutex_unlock(djp->ji_mutex);
-#endif
           }
 
         break;

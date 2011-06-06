@@ -86,9 +86,7 @@
 #ifdef _AIX
 #include <arpa/aixrcmds.h>
 #endif /* _AIX */
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 #include "portability.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -217,9 +215,7 @@ int site_check_user_map(
       ((tmp = find_nodebyname(orighost)) != NULL))
     {
     /* job submitted from compute host, access allowed */
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(tmp->nd_mutex);
-#endif
 
     if (dptr != NULL)
       *dptr = '.';

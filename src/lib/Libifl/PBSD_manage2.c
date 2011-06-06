@@ -102,9 +102,7 @@ int PBSD_mgr_put(
   int rc;
   int sock;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   sock = connection[c].ch_socket;
 
@@ -116,9 +114,7 @@ int PBSD_mgr_put(
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     pbs_errno = PBSE_PROTOCOL;
 
@@ -127,18 +123,14 @@ int PBSD_mgr_put(
 
   if (DIS_tcp_wflush(sock))
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     pbs_errno = PBSE_PROTOCOL;
 
     return(pbs_errno);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   return(0);
   }  /* END PBSD_mgr_put() */

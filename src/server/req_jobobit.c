@@ -90,9 +90,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif 
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -681,9 +679,7 @@ int mom_comm(
         /* ensure that work task will be removed if job goes away */
         insert_task(pjob->ji_svrtask,pwt,TRUE);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pwt->wt_mutex);
-#endif
         }
 
       return(-1);
@@ -783,9 +779,7 @@ void on_job_exit(
     if (pjob == pj)
       break;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pj->ji_mutex);
-#endif
     }
 
   /* if the job doesn't exist, just exit */
@@ -816,9 +810,7 @@ void on_job_exit(
       ((handle = mom_comm(pjob,on_job_exit)) < 0))
     {
     /* FAILURE - cannot connect to mom */
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     return;
     }
@@ -996,14 +988,10 @@ void on_job_exit(
             {
             insert_task(pjob->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(ptask->wt_mutex);
-#endif
             }
 
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
           return;
           }
@@ -1089,9 +1077,7 @@ void on_job_exit(
             {
             /* request sucessfully sent, we'll come back to this function
                when mom replies */
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
             return;
             }
@@ -1143,14 +1129,10 @@ void on_job_exit(
             {
             insert_task(pjob->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(ptask->wt_mutex);
-#endif
             }
 
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
           return;
           }
@@ -1325,9 +1307,7 @@ void on_job_exit(
           if (issue_Drequest(handle, preq, on_job_exit, 0) == 0)
             {
             /* request issued,  we'll come back when mom replies */
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
             return;
             }
@@ -1363,14 +1343,10 @@ void on_job_exit(
             {
             insert_task(pjob->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(ptask->wt_mutex);
-#endif
             }
 
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
           return;
           }
@@ -1506,9 +1482,8 @@ void on_job_exit(
                   pjob->ji_qs.ji_jobid,
                   log_buffer);
                 }
-#ifdef ENABLE_PTHREADS
+
               pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
               return;
               }
@@ -1537,9 +1512,8 @@ void on_job_exit(
                   pjob->ji_qs.ji_jobid,
                   log_buffer);
                 }
-#ifdef ENABLE_PTHREADS
+
               pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
               return;
               }
@@ -1668,9 +1642,7 @@ void on_job_exit(
           /* ensure that work task will be removed if job goes away */
           insert_task(pjob->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(ptask->wt_mutex);
-#endif
           }
         }
       else
@@ -1705,9 +1677,7 @@ void on_job_exit(
             /* ensure that work task will be removed if job goes away */
             insert_task(pjob->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(ptask->wt_mutex);
-#endif
             }
             
             PurgeIt = FALSE;
@@ -1722,10 +1692,8 @@ void on_job_exit(
       break;
     }  /* END switch (pjob->ji_qs.ji_substate) */
 
-#ifdef ENABLE_PTHREADS
   if (!PurgeIt)
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
   return;
   }  /* END on_job_exit() */
@@ -1770,15 +1738,11 @@ void on_job_rerun(
     pjob = (job *)preq->rq_extra;
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
   if ((handle = mom_comm(pjob, on_job_rerun)) < 0)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     return;
     }
@@ -1804,14 +1768,10 @@ void on_job_rerun(
             {
             insert_task(pjob->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(ptask->wt_mutex);
-#endif
             }
 
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
           return;
           }
@@ -1824,9 +1784,8 @@ void on_job_rerun(
 
         if (preq == NULL)
           {
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+          
           return;
           }
 
@@ -1837,9 +1796,7 @@ void on_job_rerun(
         if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
           {
           /* request ok, will come back when its done */
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
           return;
           }
@@ -1916,9 +1873,8 @@ void on_job_rerun(
 
           if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
             {
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+            
             return;  /* come back when mom replies */
             }
 
@@ -1946,14 +1902,10 @@ void on_job_rerun(
             {
             insert_task(pjob->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(ptask->wt_mutex);
-#endif
             }
 
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
           return;
           }
@@ -2034,9 +1986,8 @@ void on_job_rerun(
 
           if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
             {
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+            
             return;
             }
 
@@ -2058,14 +2009,10 @@ void on_job_rerun(
             {
             insert_task(pjob->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(ptask->wt_mutex);
-#endif
             }
 
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
           return;
           }
@@ -2170,9 +2117,7 @@ void on_job_rerun(
       break;
     }  /* END switch (pjob->ji_qs.ji_substate) */
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
   return;
   }  /* END on_job_rerun() */
@@ -2409,10 +2354,8 @@ void *req_jobobit(
       jobid,
       log_buffer);
 
-#ifdef ENABLE_PTHREADS
     if (pjob != NULL)
       pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     free(tmp);
 
@@ -2449,16 +2392,9 @@ void *req_jobobit(
       bad = PBSE_BADSTATE;
       }
 
-    req_reject(
-      bad,
-      0,
-      preq,
-      NULL,
-      NULL);
+    req_reject(bad,0,preq,NULL,NULL);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     return(NULL);
     }  /* END if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) */
@@ -2475,10 +2411,8 @@ void *req_jobobit(
       req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(ptask->wt_mutex);
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
     return(NULL);
     }
@@ -2565,9 +2499,7 @@ void *req_jobobit(
         id,
         log_buffer);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
       return(NULL);
       }
@@ -2717,9 +2649,7 @@ void *req_jobobit(
 
         svr_disconnect(pjob->ji_momhandle);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
         return(NULL);
 
@@ -2808,7 +2738,6 @@ void *req_jobobit(
       {
       job_array *pa = pjob->ji_arraystruct;
 
-#ifdef ENABLE_PTHREADS
       if (pthread_mutex_trylock(pa->ai_mutex) != 0)
         {
         /* always get mutexes in order to avoid deadlock - array and then job */
@@ -2816,22 +2745,17 @@ void *req_jobobit(
         pthread_mutex_lock(pa->ai_mutex);
         pthread_mutex_lock(pjob->ji_mutex);
         }
-#endif
 
       update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->ai_mutex);
-#endif
       }
 
     if (ptask != NULL)
       {
       insert_task(pjob->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(ptask->wt_mutex);
-#endif
 
       if (LOGLEVEL >= 4)
         {
@@ -2876,9 +2800,7 @@ void *req_jobobit(
 
       svr_disconnect(pjob->ji_momhandle);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
       return(NULL);
       }
@@ -2894,9 +2816,7 @@ void *req_jobobit(
       {
       insert_task(pjob->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(ptask->wt_mutex);
-#endif
 
       if (LOGLEVEL >= 4)
         {
@@ -2946,9 +2866,7 @@ void *req_jobobit(
       "req_jobobit completed");
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
   return(NULL);
   }  /* END req_jobobit() */

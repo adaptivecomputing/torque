@@ -120,9 +120,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 
 #include "pbs_ifl.h"
 #include "list_link.h"
@@ -473,7 +471,6 @@ int job_abt(
         {
         job_array *pa = pjob->ji_arraystruct;
 
-#ifdef ENABLE_PTHREADS
         if (pthread_mutex_trylock(pa->ai_mutex) != 0)
           {
           /* always get mutexes in order to avoid deadlock - array and then job */
@@ -481,13 +478,10 @@ int job_abt(
           pthread_mutex_lock(pa->ai_mutex);
           pthread_mutex_lock(pjob->ji_mutex);
           }
-#endif
 
         update_array_values(pa,pjob,old_state,aeTerminate);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pa->ai_mutex);
-#endif
         }
 
       job_purge(pjob);
@@ -528,7 +522,6 @@ int job_abt(
       {
       job_array *pa = pjob->ji_arraystruct;
 
-#ifdef ENABLE_PTHREADS
       if (pthread_mutex_trylock(pa->ai_mutex) != 0)
         {
         /* always get mutexes in order to avoid deadlock - array and then job */
@@ -536,13 +529,10 @@ int job_abt(
         pthread_mutex_lock(pa->ai_mutex);
         pthread_mutex_lock(pjob->ji_mutex);
         }
-#endif
 
       update_array_values(pa,pjob,old_state,aeTerminate);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->ai_mutex);
-#endif
       }
 
     job_purge(pjob);
@@ -661,10 +651,8 @@ job *job_alloc(void)
   /* set the working attributes to "unspecified" */
   job_init_wattr(pj);
 
-#ifdef ENABLE_PTHREADS
   pj->ji_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(pj->ji_mutex,NULL);
-#endif
   
   pj->ji_svrtask = malloc(sizeof(all_tasks));
   initialize_all_tasks_array(pj->ji_svrtask);
@@ -728,11 +716,9 @@ void job_free(
     bp = (badplace *)GET_NEXT(pj->ji_rejectdest);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pj->ji_mutex);
   free(pj->ji_mutex);
   pj->ji_mutex = NULL;
-#endif 
 
   /* now free the main structure */
   free((char *)pj);
@@ -772,9 +758,7 @@ job *job_clone(
 
   int    i;
   int    slen;
-#ifdef ENABLE_PTHREADS
   int    release_mutex = FALSE;
-#endif
 
   if (taskid > PBS_MAXJOBARRAY)
     {
@@ -973,19 +957,16 @@ job *job_clone(
   /* we need to put the cloned job into the array */
   if (pa == NULL)
     {
-#ifdef ENABLE_PTHREADS
     release_mutex = TRUE;
-#endif
+    
     pa = get_array(template_job->ji_qs.ji_jobid);
     }
 
   pa->jobs[taskid] = pnewjob;
   pnewjob->ji_arraystruct = pa;
 
-#ifdef ENABLE_PTHREADS
   if (release_mutex == TRUE)
     pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
   return(pnewjob);
   } /* END job_clone() */
@@ -1132,9 +1113,7 @@ void job_clone_wt(
     {
     new_task = set_task(WORK_Timed, time_now + clone_delay, job_clone_wt, ptask->wt_parm1);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(new_task->wt_mutex);
-#endif
     }
   else
     {
@@ -1182,9 +1161,7 @@ void job_clone_wt(
       }
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
   return;
   }  /* END job_clone_wt */
@@ -1762,9 +1739,7 @@ void job_purge(
       {
       work_task *wt = set_task(WORK_Timed, time_now + 10, check_job_log, NULL);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(wt->wt_mutex);
-#endif
 
       check_job_log_started = 1;
       }
@@ -1782,7 +1757,6 @@ void job_purge(
     {
     job_array *pa = pjob->ji_arraystruct;
 
-#ifdef ENABLE_PTHREADS    
     if (pthread_mutex_trylock(pa->ai_mutex) != 0)
       {
       /* always get mutexes in order to avoid deadlock - array and then job */
@@ -1790,7 +1764,6 @@ void job_purge(
       pthread_mutex_lock(pa->ai_mutex);
       pthread_mutex_lock(pjob->ji_mutex);
       }
-#endif
 
     /* erase the pointer to this job in the job array */
     pa->jobs[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = NULL;
@@ -1805,9 +1778,7 @@ void job_purge(
       {
       array_save(pa);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->ai_mutex);
-#endif
       }
     }
 
@@ -2202,9 +2173,7 @@ job *find_job(
 
   if (strstr(jobid,"[]") == NULL)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(alljobs.alljobs_mutex);
-#endif
 
     i = get_value_hash(alljobs.ht,comp);
 
@@ -2212,21 +2181,15 @@ job *find_job(
       {
       pj = (job *)alljobs.ra->slots[i].item;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pj->ji_mutex);
-#endif
       }
     
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(alljobs.alljobs_mutex);
-#endif
     } /* END if (not an array template job) */
   else
     {
     /* search in the array summary */
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(array_summary.alljobs_mutex);
-#endif
 
     i = get_value_hash(array_summary.ht,comp);
 
@@ -2234,14 +2197,10 @@ job *find_job(
       {
       pj = (job *)array_summary.ra->slots[i].item;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pj->ji_mutex);
-#endif
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(array_summary.alljobs_mutex);
-#endif
     } /* END if (job is array template) */
 
   if (at)
@@ -2265,10 +2224,8 @@ void initialize_all_jobs_array(
   aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
   aj->ht = create_hash(INITIAL_HASH_SIZE);
 
-#ifdef ENABLE_PTHREADS
   aj->alljobs_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(aj->alljobs_mutex,NULL);
-#endif
   } /* END initialize_all_jobs_array() */
 
 
@@ -2289,9 +2246,7 @@ int insert_job(
   static char  *id = "insert_job";
   int           rc;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(aj->alljobs_mutex);
-#endif
 
   if ((rc = insert_thing(aj->ra,pjob)) == -1)
     {
@@ -2305,9 +2260,7 @@ int insert_job(
     rc = PBSE_NONE;
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(aj->alljobs_mutex);
-#endif
 
   return(rc);
   } /* END insert_job() */
@@ -2334,9 +2287,7 @@ int insert_job_after(
   int          rc;
   int          i;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(aj->alljobs_mutex);
-#endif
 
   i = get_value_hash(aj->ht,already_in->ji_qs.ji_jobid);
   
@@ -2356,9 +2307,7 @@ int insert_job_after(
       }
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(aj->alljobs_mutex);
-#endif
 
   return(rc);
   } /* END insert_job_after() */
@@ -2377,9 +2326,7 @@ int insert_job_first(
   static char *id = "insert_job_first";
   int          rc;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(aj->alljobs_mutex);
-#endif
 
   if ((rc = insert_thing_after(aj->ra,pjob,ALWAYS_EMPTY_INDEX)) == -1)
     {
@@ -2392,9 +2339,7 @@ int insert_job_first(
     rc = PBSE_NONE;
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(aj->alljobs_mutex);
-#endif
 
   return(rc);
   } /* END insert_job_first () */
@@ -2415,18 +2360,14 @@ int has_job(
   {
   int rc;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(aj->alljobs_mutex);
-#endif
 
   if (get_value_hash(aj->ht,pjob->ji_qs.ji_jobid) < 0)
     rc = FALSE;
   else
     rc = TRUE;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(aj->alljobs_mutex);
-#endif
 
   return(rc);
   } /* END has_job() */
@@ -2451,9 +2392,7 @@ int  remove_job(
   int rc = PBSE_NONE;
   int index;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(aj->alljobs_mutex);
-#endif
 
   if ((index = get_value_hash(aj->ht,pjob->ji_qs.ji_jobid)) < 0)
     rc = THING_NOT_FOUND;
@@ -2463,9 +2402,7 @@ int  remove_job(
     remove_hash(aj->ht,pjob->ji_qs.ji_jobid);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(aj->alljobs_mutex);
-#endif
 
   return(rc);
   } /* END remove_job() */
@@ -2482,18 +2419,14 @@ job *next_job(
   {
   job *pjob;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(aj->alljobs_mutex);
-#endif
 
   pjob = (job *)next_thing(aj->ra,iter);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(aj->alljobs_mutex);
 
   if (pjob != NULL)
     pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
   return(pjob);
   } /* END next_job() */
@@ -2510,18 +2443,14 @@ job *next_job_from_back(
   {
   job *pjob;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(aj->alljobs_mutex);
-#endif
 
   pjob = (job *)next_thing_from_back(aj->ra,iter);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(aj->alljobs_mutex);
 
   if (pjob != NULL)
     pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
   return(pjob);
   } /* END next_job_from_back() */
@@ -2546,9 +2475,7 @@ int swap_jobs(
     aj = &alljobs;
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(aj->alljobs_mutex);
-#endif
 
   new2 = get_value_hash(aj->ht,job1->ji_qs.ji_jobid);
   new1 = get_value_hash(aj->ht,job2->ji_qs.ji_jobid);
@@ -2566,9 +2493,7 @@ int swap_jobs(
     change_value_hash(aj->ht,job2->ji_qs.ji_jobid,new2);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(aj->alljobs_mutex);
-#endif
   
   return(rc);
   } /* END swap_jobs() */

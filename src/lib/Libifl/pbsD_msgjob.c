@@ -109,17 +109,13 @@ int pbs_msgjob(
 
 /*  DIS_tcp_setup(connection[c].ch_socket); */
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   if ((rc = PBSD_msg_put(c, jobid, fileopt, msg, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     return (pbs_errno = PBSE_PROTOCOL);
     }
@@ -130,9 +126,7 @@ int pbs_msgjob(
 
   rc = connection[c].ch_errno;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   PBSD_FreeReply(reply);
 

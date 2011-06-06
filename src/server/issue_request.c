@@ -314,9 +314,7 @@ int issue_to_svr(
 
     pwt->wt_parmfunc = replyfunc;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pwt);
-#endif
 
     return(0);
     }
@@ -413,15 +411,11 @@ int issue_Drequest(
     }
   else
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(connection[conn].ch_mutex);
-#endif
 
     sock = connection[conn].ch_socket;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[conn].ch_mutex);
-#endif
 
     request->rq_conn = sock;
 
@@ -435,9 +429,7 @@ int issue_Drequest(
   if (ppwt != NULL)
     *ppwt = ptask;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(ptask->wt_mutex);
-#endif
 
   if (ptask == NULL)
     {
@@ -677,9 +669,7 @@ int issue_Drequest(
 
       log_err(-1, id, log_buffer);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(ptask->wt_mutex);
-#endif
 
       delete_task(ptask);
 
@@ -725,9 +715,7 @@ void process_Dreply(
         (ptask->wt_event == handle))
       break;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(ptask->wt_mutex);
-#endif
     }
 
 

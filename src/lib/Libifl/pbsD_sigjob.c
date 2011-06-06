@@ -107,9 +107,7 @@ int pbs_sigjob(
   if ((rc = PBSD_sig_put(c, jobid, signal, extend)) != 0)
     return (rc);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   /* read reply */
   reply = PBSD_rdrpy(c);
@@ -118,9 +116,7 @@ int pbs_sigjob(
 
   rc = connection[c].ch_errno;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   return(rc);
   }
@@ -147,9 +143,7 @@ int pbs_sigjobasync(
   if ((rc = PBSD_async_sig_put(c, jobid, signal, extend)) != 0)
     return (rc);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   /* read reply */
   reply = PBSD_rdrpy(c);
@@ -158,9 +152,7 @@ int pbs_sigjobasync(
 
   rc = connection[c].ch_errno;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   return(rc);
   }

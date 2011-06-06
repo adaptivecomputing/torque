@@ -4,9 +4,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <ctype.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -84,9 +82,7 @@ int attempt_delete(
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_ABORT;
         }
       
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pwtold->wt_mutex);
-#endif
       }
 
     skipped = TRUE;
@@ -139,9 +135,7 @@ int attempt_delete(
       {
       insert_task(pjob->ji_svrtask,pwtnew,TRUE);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pwtnew->wt_mutex);
-#endif
       }
    
     }
@@ -181,9 +175,7 @@ int attempt_delete(
       {
       insert_task(pjob->ji_svrtask, ptask, TRUE);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(ptask->wt_mutex);
-#endif
       }
     }
 
@@ -236,9 +228,7 @@ void req_deletearray(
       preq->rq_ind.rq_delete.rq_objname,
       log_buffer);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
     return;
@@ -255,9 +245,7 @@ void req_deletearray(
     if (num_skipped < 0)
       {
       /* ERROR */
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error in specified array range");
       return;
@@ -268,16 +256,12 @@ void req_deletearray(
     num_skipped = delete_whole_array(pa);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
   /* check if the array is gone */
   if ((pa = get_array(preq->rq_ind.rq_delete.rq_objname)) != NULL)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
     /* some jobs were not deleted.  They must have been running or had
        JOB_SUBSTATE_TRANSIT */
@@ -286,9 +270,7 @@ void req_deletearray(
       ptask = set_task(WORK_Timed, time_now + 2, array_delete_wt, preq);
       if (ptask)
         {
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(ptask->wt_mutex);
-#endif
 
         return;
         }
@@ -377,9 +359,7 @@ void array_delete_wt(
 
       pjob = (job *)pa->jobs[i];
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pjob->ji_mutex);
-#endif
 
       num_jobs++;
 
@@ -406,14 +386,10 @@ void array_delete_wt(
             {
             insert_task(pjob->ji_svrtask, pwtnew, TRUE);
 
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(pwtnew->wt_mutex);
-#endif
             }
 
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
-#endif
           }
         else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
           {
@@ -436,20 +412,15 @@ void array_delete_wt(
       free(last_id);
       last_id = NULL;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
       return;
       }
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pa->ai_mutex);
-#endif
 
   req_deletearray(preq);
-
   } /* END array_delete_wt() */
 
 

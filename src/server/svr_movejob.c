@@ -144,8 +144,6 @@ static int move_job_file(int con, job *pjob, enum job_file which);
 /* Global Data */
 
 extern time_t            time_now;
-extern locution_records  job_locutions;
-extern locution_records  sendmom_records;
 extern char             *path_jobs;
 extern char             *path_spool;
 extern attribute_def     job_attr_def[];
@@ -355,9 +353,7 @@ static void post_routejob(
   char *id = "post_routejob";
   job *jobp = (job *)pwt->wt_parm1;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(jobp->ji_mutex);
-#endif
 
   if (WIFEXITED(stat))
     {
@@ -423,10 +419,8 @@ static void post_routejob(
         job_abt(&jobp, pbse_to_txt(PBSE_ROUTEREJ));
       else if (r != 0)
         job_abt(&jobp, msg_routexceed);
-#ifdef ENABLE_PTHREADS
       else
         pthread_mutex_unlock(jobp->ji_mutex);
-#endif
 
       break;
     }  /* END switch (r) */
@@ -468,9 +462,7 @@ void finish_routing_processing(
         /* job delete in progress, just set to queued status */
         svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT);
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
         return;
         }
@@ -490,10 +482,8 @@ void finish_routing_processing(
         job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
       else if (status != 0)
         job_abt(&pjob, msg_routexceed);
-#ifdef ENABLE_PTHREADS
       else
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
       break;
     }  /* END switch (status) */
@@ -560,9 +550,7 @@ void finish_moving_processing(
         svr_evaljobstate(pjob, &newstate, &newsub, 1);
         svr_setjobstate(pjob, newstate, newsub);
    
-#ifdef ENABLE_PTHREADS 
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
 
       req_reject(status, 0, req, NULL, NULL);
@@ -600,9 +588,7 @@ static void post_movejob(
   int r;
   job *jobp;
 
-#ifdef ENABLE_PTHREADS
   int  has_mutex = TRUE;
-#endif
 
   req  = (struct batch_request *)pwt->wt_parm2;
 
@@ -653,9 +639,7 @@ static void post_movejob(
 
       job_purge(jobp);
 
-#ifdef ENABLE_PTHREADS
       has_mutex = FALSE;
-#endif
       }
     else
       {
@@ -694,10 +678,8 @@ static void post_movejob(
     reply_ack(req);
     }
 
-#ifdef ENABLE_PTHREADS
   if (has_mutex == TRUE)
     pthread_mutex_unlock(jobp->ji_mutex);
-#endif 
 
   return;
   }  /* END post_movejob() */
@@ -808,9 +790,7 @@ void *send_job(
     {
     node_name = np->nd_name;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(np->nd_mutex);
-#endif
     }
 
   /* encode job attributes to be moved */
@@ -926,15 +906,11 @@ void *send_job(
       return(NULL);
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(connection[con].ch_mutex);
-#endif
       
     sock = connection[con].ch_socket;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[con].ch_mutex);
-#endif
 
     if (con == PBS_NET_RC_RETRY)
       {
@@ -1044,15 +1020,11 @@ void *send_job(
       int   errno2;
       char *err_text;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(connection[con].ch_mutex);
-#endif
 
       err_text = connection[con].ch_errtxt;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(connection[con].ch_mutex);
-#endif
 
       /* NOTE:  errno is modified by log_err */
 

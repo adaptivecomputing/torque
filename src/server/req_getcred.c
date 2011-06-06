@@ -95,9 +95,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctype.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -132,9 +130,7 @@ void req_connect(
   {
   int  sock = preq->rq_conn;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
-#endif
 
   if (svr_conn[sock].cn_authen == 0)
     {
@@ -144,9 +140,8 @@ void req_connect(
     {
     req_reject(PBSE_BADCRED, 0, preq, NULL, NULL);
     }
-#ifdef ENABLE_PTHREADS
+
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-#endif
 
   return;
   }  /* END req_connect() */
@@ -429,15 +424,11 @@ void req_authenuser(
 
   for (s = 0;s < PBS_NET_MAX_CONNECTIONS;++s)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(svr_conn[s].cn_mutex);
-#endif
 
     if (preq->rq_ind.rq_authen.rq_port != svr_conn[s].cn_port)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(svr_conn[s].cn_mutex);
-#endif
 
       continue;
       }
@@ -459,9 +450,7 @@ void req_authenuser(
     reply_ack(preq);
 
     /* SUCCESS */
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(svr_conn[s].cn_mutex);
-#endif
 
     return;
     }  /* END for (s) */
@@ -496,15 +485,11 @@ void req_altauthenuser(
 
   for (s = 0;s < PBS_NET_MAX_CONNECTIONS;++s)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(svr_conn[s].cn_mutex);
-#endif
 
     if (preq->rq_ind.rq_authen.rq_port != svr_conn[s].cn_port)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(svr_conn[s].cn_mutex);
-#endif
 
       continue;
       }
@@ -534,9 +519,7 @@ void req_altauthenuser(
 
   svr_conn[s].cn_authen = PBS_NET_CONN_AUTHENTICATED;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_conn[s].cn_mutex);
-#endif
 
   reply_ack(preq);
   

@@ -14,6 +14,7 @@
 #include <string.h>
 #include <errno.h>
 #include <syslog.h>
+#include <pthread.h>
 #include "libpbs.h"
 #include "dis.h"
 #include "server_limits.h"
@@ -272,6 +273,8 @@ int main(
     return(4);
     }
 
+  connection[1].ch_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(connection[1].ch_mutex,NULL);
   connection[1].ch_inuse = 1;
 
   connection[1].ch_errno = 0;

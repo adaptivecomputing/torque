@@ -146,9 +146,7 @@ static int PBS_resc(
   int rc;
   int sock;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   sock = connection[c].ch_socket;
 
@@ -162,16 +160,12 @@ static int PBS_resc(
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     return (pbs_errno = PBSE_PROTOCOL);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   if (DIS_tcp_wflush(sock))
     {
@@ -204,17 +198,13 @@ int pbs_rescquery(
   struct batch_reply *reply;
   int                 rc = 0;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   if (resclist == NULL)
     {
     connection[c].ch_errno = PBSE_RMNOPARAM;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     pbs_errno = PBSE_RMNOPARAM;
 
@@ -225,9 +215,7 @@ int pbs_rescquery(
 
   if ((rc = PBS_resc(c, PBS_BATCH_Rescq, resclist, num_resc, (resource_t)0)) != 0)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     return(rc);
     }
@@ -251,9 +239,7 @@ int pbs_rescquery(
 
   PBSD_FreeReply(reply);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   return(rc);
   }  /* END pbs_rescquery() */
@@ -275,17 +261,13 @@ int pbs_rescreserve(
 
   struct batch_reply *reply;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   if (rl == NULL)
     {
     connection[c].ch_errno = PBSE_RMNOPARAM;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     return (pbs_errno = PBSE_RMNOPARAM);
     }
@@ -294,9 +276,7 @@ int pbs_rescreserve(
     {
     connection[c].ch_errno = PBSE_RMBADPARAM;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     return (pbs_errno = PBSE_RMBADPARAM);
     }
@@ -305,9 +285,7 @@ int pbs_rescreserve(
 
   if ((rc = PBS_resc(c, PBS_BATCH_ReserveResc, rl, num_resc, *prh)) != 0)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     return (rc);
     }
@@ -327,9 +305,7 @@ int pbs_rescreserve(
 
   PBSD_FreeReply(reply);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   return (rc);
   }
@@ -354,9 +330,7 @@ int pbs_rescrelease(
   if ((rc = PBS_resc(c, PBS_BATCH_ReleaseResc, (char **)0, 0, rh)) != 0)
     return (rc);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   /* now get reply */
   reply = PBSD_rdrpy(c);
@@ -365,9 +339,7 @@ int pbs_rescrelease(
 
   rc = connection[c].ch_errno;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   return(rc);
   }

@@ -566,9 +566,7 @@ struct job
   int  ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
 #endif/* PBS_MOM */   /* END SERVER ONLY */
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_t *ji_mutex;
-#endif 
 
   /*
    * fixed size internal data - maintained via "quick save"
@@ -662,9 +660,7 @@ struct all_jobs
   resizable_array *ra;
   hash_table_t    *ht;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_t *alljobs_mutex;
-#endif
   };
 
 void initialize_all_jobs_array(struct all_jobs *);
@@ -839,34 +835,6 @@ typedef struct send_job_request
   void      *data;
   } send_job_request;
 
-
-struct locution_record
-  {
-  char                  jobid[PBS_MAXSVRJOBID+1];
-  char                  node_name[80];
-  long                  time;
-  int                   type; /* the type of movement that occurred */
-  int                   status; /* success, fail, retry */
-  struct batch_request *preq;
-  };
-
-
-
-struct locution_records
-  {
-  resizable_array *ra;
-#ifdef ENABLE_PTHREADS
-  pthread_mutex_t *locution_mutex;
-#endif
-  };
-
-typedef struct locution_record locution_record;
-typedef struct locution_records locution_records;
-
-
-void             initialize_locution_records(locution_records *);
-int              insert_locution_record(locution_records *,locution_record *);
-locution_record *pop_locution_record(locution_records *);
 
 
 #endif /* MOM */

@@ -96,9 +96,7 @@
 #if HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 
 #include "libpbs.h"
 #include "pbs_error.h"
@@ -138,9 +136,7 @@
 
 tlist_head svr_requests;
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
 pthread_mutex_t *svr_requests_mutex = NULL;
-#endif
 #endif
 
 extern struct    connection svr_conn[];
@@ -360,9 +356,7 @@ void process_request(
    */
 
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(svr_conn[sfds].cn_mutex);
-#endif
 
   if (svr_conn[sfds].cn_active == FromClientDIS)
     {
@@ -387,9 +381,7 @@ void process_request(
 
     close_conn(sfds);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 
     free_br(request);
     
@@ -410,9 +402,7 @@ void process_request(
     close_client(sfds);
 
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 #endif
 
     free_br(request);
@@ -431,9 +421,7 @@ void process_request(
     close_client(sfds);
 
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 #endif
 
     free_br(request);
@@ -455,9 +443,7 @@ void process_request(
     close_client(sfds);
 
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 #endif
 
     return;
@@ -479,9 +465,7 @@ void process_request(
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
 
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 #endif
 
     return;
@@ -533,16 +517,12 @@ void process_request(
 
       close_client(sfds);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 
       return;
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(isanode->nd_mutex);
-#endif
     }
 
   /*
@@ -590,9 +570,7 @@ void process_request(
 
       if (svr_conn[sfds].cn_socktype == PBS_SOCK_INET)
         {
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 
         return;
         }
@@ -626,9 +604,7 @@ void process_request(
 
       close_client(sfds);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 
       return;
       }
@@ -671,9 +647,8 @@ void process_request(
           skip = TRUE;
 
           }
-#ifdef ENABLE_PTHREADS
+        
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
       if (!skip)
         {
@@ -700,9 +675,7 @@ void process_request(
       case PBS_BATCH_StageIn:
       case PBS_BATCH_jobscript:
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 
         req_reject(PBSE_SVRDOWN, 0, request, NULL, NULL);
 
@@ -714,9 +687,7 @@ void process_request(
       }
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 
 #else /* THIS CODE FOR MOM ONLY */
 
@@ -741,9 +712,7 @@ void process_request(
       }
 
 /*    if (!tfind(svr_conn[sfds].cn_addr, &okclients)) */
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(svr_conn[sfds].cn_mutex);
-#endif
 
     if (!AVL_is_in_tree(svr_conn[sfds].cn_addr, 0, okclients))
       {
@@ -761,9 +730,7 @@ void process_request(
 
       close_client(sfds);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 
       return;
       }
@@ -783,9 +750,7 @@ void process_request(
 
     mom_server_update_receive_time_by_ip(svr_conn[sfds].cn_addr, reqtype_to_txt(request->rq_type));
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
     }    /* END BLOCK */
 
   request->rq_fromsvr = 1;
@@ -849,11 +814,7 @@ void dispatch_request(
 #ifdef PBS_MOM
       req_quejob(request);
 #else
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_quejob,request);
-#else
-      req_quejob(request);
-#endif
 #endif
       break;
 
@@ -862,11 +823,7 @@ void dispatch_request(
 #ifdef PBS_MOM
       req_jobcredential(request);
 #else
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_jobcredential,request);
-#else
-      req_jobcredential(request);
-#endif
 #endif
 
       break;
@@ -876,11 +833,7 @@ void dispatch_request(
 #ifdef PBS_MOM
       req_jobscript(request);
 #else
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_jobscript,request);
-#else
-      req_jobscript(request);
-#endif
 #endif
       break;
 
@@ -889,11 +842,7 @@ void dispatch_request(
 #ifdef PBS_MOM
       req_rdytocommit(request);
 #else
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_rdytocommit,request);
-#else
-      req_rdytocommit(request);
-#endif
 #endif
       break;
 
@@ -902,11 +851,7 @@ void dispatch_request(
 #ifdef PBS_MOM
       req_commit(request);
 #else
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_commit,request);
-#else
-      req_commit(request);
-#endif
 #endif
 
       net_add_close_func(sfds, (void (*)())0);
@@ -924,21 +869,10 @@ void dispatch_request(
       * normal req_deltejob() function.
       */
 
-#ifdef ENABLE_PTHREADS
       if (is_array(request->rq_ind.rq_delete.rq_objname))
         enqueue_threadpool_request(req_deletearray,request);
       else
         enqueue_threadpool_request(req_deletejob,request);
-#else
-      if (is_array(request->rq_ind.rq_delete.rq_objname))
-        {
-        req_deletearray(request);
-        }
-      else
-        {
-        req_deletejob(request);
-        }
-#endif
 
 #endif
       break;
@@ -948,21 +882,10 @@ void dispatch_request(
       req_holdjob(request);
 
 #else
-#ifdef ENABLE_PTHREADS
       if (is_array(request->rq_ind.rq_hold.rq_orig.rq_objname))
         enqueue_threadpool_request(req_holdarray,request);
       else
         enqueue_threadpool_request(req_holdjob,request);
-#else
-      if (is_array(request->rq_ind.rq_hold.rq_orig.rq_objname))
-        {
-        req_holdarray(request);
-        }
-      else
-        {
-        req_holdjob(request);
-        }
-#endif
 
 #endif
       break;
@@ -977,21 +900,13 @@ void dispatch_request(
 
     case PBS_BATCH_LocateJob:
 
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_locatejob,request);
-#else
-      req_locatejob(request);
-#endif
 
       break;
 
     case PBS_BATCH_Manager:
 
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_manager,request);
-#else
-      req_manager(request);
-#endif
 
       break;
 
@@ -1007,22 +922,10 @@ void dispatch_request(
 
     case PBS_BATCH_ModifyJob:
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
       if (is_array(request->rq_ind.rq_delete.rq_objname))
         enqueue_threadpool_request(req_modifyarray,request);
       else
         enqueue_threadpool_request(req_modifyjob,request);
-
-#else
-      if (is_array(request->rq_ind.rq_delete.rq_objname))
-        {
-        req_modifyarray(request);
-        }
-      else
-        {
-        req_modifyjob(request);
-        }
-#endif 
 
 #else /* END ifndef PBS_MOM */
       req_modifyjob(request);
@@ -1040,21 +943,13 @@ void dispatch_request(
 
     case PBS_BATCH_MoveJob:
 
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_movejob,request);
-#else
-      req_movejob(request);
-#endif
 
       break;
 
     case PBS_BATCH_OrderJob:
 
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_orderjob,request);
-#else
-      req_orderjob(request);
-#endif
 
       break;
 
@@ -1078,21 +973,10 @@ void dispatch_request(
 
     case PBS_BATCH_ReleaseJob:
 
-#ifdef ENABLE_PTHREADS
       if (is_array(request->rq_ind.rq_delete.rq_objname))
         enqueue_threadpool_request(req_releasearray,request);
       else
         enqueue_threadpool_request(req_releasejob,request);
-#else
-      if (is_array(request->rq_ind.rq_delete.rq_objname))
-        {
-        req_releasearray(request);
-        }
-      else
-        {
-        req_releasejob(request);
-        }
-#endif
 
       break;
 
@@ -1111,11 +995,7 @@ void dispatch_request(
       /* handle special 'truncated' keyword */
 
       if (!strncasecmp(request->rq_ind.rq_status.rq_id, "truncated", strlen("truncated")))
-#ifdef ENABLE_PTHREADS
         enqueue_threadpool_request(req_stat_job,request);
-#else
-        req_stat_job(request);
-#endif
       else
         req_selectjobs(request);
 
@@ -1152,11 +1032,7 @@ void dispatch_request(
       break;
 
     case PBS_BATCH_StatusNode:
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_stat_node,request);
-#else
-      req_stat_node(request);
-#endif
 
       break;
 
@@ -1204,33 +1080,20 @@ void dispatch_request(
 
     case PBS_BATCH_JobObit:
 
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_jobobit,request);
-#else
-      req_jobobit(request);
-#endif
 
       break;
 
     case PBS_BATCH_StageIn:
 
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_stagein,request);
-#else
-      req_stagein(request);
-#endif
-
 
       break;
 
     case PBS_BATCH_StatusJob:
 
-#ifdef ENABLE_PTHREADS
       enqueue_threadpool_request(req_stat_job,request);
-#else
-      req_stat_job(request);
-#endif
-
+      
       break;
 
 #else /* MOM only functions */
@@ -1293,9 +1156,7 @@ static void close_client(
   close_conn(sfds); /* close the connection */
 
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(svr_requests_mutex);
-#endif
 #endif
 
   preq = (struct batch_request *)GET_NEXT(svr_requests);
@@ -1314,9 +1175,7 @@ static void close_client(
     }
 
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_requests_mutex);
-#endif
 #endif
 
   return;
@@ -1357,9 +1216,7 @@ struct batch_request *alloc_br(
   req->rq_noreply = FALSE;  /* indicate reply is needed */
 
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(svr_requests_mutex);
-#endif
 #endif
 
   CLEAR_LINK(req->rq_link);
@@ -1367,9 +1224,7 @@ struct batch_request *alloc_br(
   append_link(&svr_requests, &req->rq_link, req);
 
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_requests_mutex);
-#endif
 #endif
 
   return(req);
@@ -1460,15 +1315,11 @@ static void close_quejob(
       break;
       }  /* END if (..) */
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
     }
 
-#ifdef ENABLE_PTHREADS
   if (pjob != NULL)
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 #endif /* PBS_MOM or not */
 
   return;
@@ -1489,17 +1340,13 @@ void free_br(
 
   {
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(svr_requests_mutex);
-#endif
 #endif
 
   delete_link(&preq->rq_link);
 
 #ifndef PBS_MOM
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(svr_requests_mutex);
-#endif
 #endif
 
   reply_free(&preq->rq_reply);

@@ -126,13 +126,7 @@
 #include "batch_request.h"
 #include "pbs_proto.h"
 #include "u_tree.h"
-#ifdef USE_HA_THREADS 
 #include <pthread.h>
-#else
-#ifdef ENABLE_PTHREADS
-#include <pthread.h>
-#endif
-#endif /* USE_HA_THREADS */
 #include "threadpool.h"
 
 
@@ -154,10 +148,8 @@ extern void acct_close(void);
 extern int  svr_startjob(job *, struct batch_request *, char *, char *);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
-#ifdef ENABLE_PTHREADS
 extern void started_servicing(int);
 extern void done_servicing(int);
-#endif
 #ifdef NO_SIGCHLD
 extern void check_children();
 #endif
@@ -289,11 +281,9 @@ int MultiMomMode = 0;
 
 int allow_any_mom = FALSE;
 
-#ifdef ENABLE_PTHREADS
 int             min_threads;
 int             max_threads;
 int             thread_idle_time;
-#endif
 
 void DIS_rpp_reset(void)
 
@@ -334,11 +324,9 @@ void do_rpp(
   void is_request(int, int, int *);
   void stream_eof(int, u_long, uint16_t, int);
 
-#ifdef ENABLE_PTHREADS
   int  stream_done = TRUE;
 
   started_servicing(stream);
-#endif
 
   if (LOGLEVEL >= 4)
     {
@@ -408,9 +396,7 @@ void do_rpp(
     
     stream_eof(stream, 0, 0, ret);
 
-#ifdef ENABLE_PTHREADS
     done_servicing(stream);
-#endif
 
     return;
     }  /* END if (ret != DIS_SUCCESS) */
@@ -435,9 +421,7 @@ void do_rpp(
 
     stream_eof(stream, 0, 0, ret);
     
-#ifdef ENABLE_PTHREADS
     done_servicing(stream);
-#endif
 
     return;
     }
@@ -460,9 +444,7 @@ void do_rpp(
 
       is_request(stream, version, NULL);
 
-#ifdef ENABLE_PTHREADS
       stream_done = FALSE;
-#endif
 
       break;
 
@@ -481,10 +463,8 @@ void do_rpp(
       break;
     }  /* END switch(proto) */
     
-#ifdef ENABLE_PTHREADS
   if (stream_done == TRUE)
     done_servicing(stream);
-#endif
    
   return;
   }  /* END do_rpp() */
@@ -1020,10 +1000,8 @@ static time_t check_tasks()
       {
       if (ptask->wt_type == WORK_Deferred_Cmp)
         dispatch_task(ptask);
-#ifdef ENABLE_PTHREADS
       else
         pthread_mutex_unlock(ptask->wt_mutex);
-#endif
       }
 
     svr_delay_entry = 0;
@@ -1045,9 +1023,7 @@ static time_t check_tasks()
       if (tilwhen > delay)
         tilwhen = delay;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(ptask->wt_mutex);
-#endif
 
       break;
       }
@@ -1101,9 +1077,7 @@ static int start_hot_jobs(void)
       ct++;
       }
     
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
     }
 
   return(ct);
@@ -1169,17 +1143,13 @@ void main_loop(void)
 
     pwt = set_task(WORK_Timed, when + svr_totnodes / 12, check_nodes, NULL);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pwt->wt_mutex);
-#endif
     }
   else
     {
     pwt = set_task(WORK_Timed, when, check_nodes, NULL);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pwt->wt_mutex);
-#endif
     }
 
   /* Just check the nodes with check_nodes above and don't ping anymore. */
@@ -1188,15 +1158,11 @@ void main_loop(void)
 
   pwt = set_task(WORK_Timed, time_now + 5, check_log, NULL);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pwt->wt_mutex);
-#endif
 
   pwt = set_task(WORK_Timed,time_now + 10,check_acct_log,NULL);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pwt->wt_mutex);
-#endif
 
   /*
    * Now at last, we are ready to do some batch work.  The
@@ -1327,15 +1293,11 @@ void main_loop(void)
             {
             insert_task(pjob->ji_svrtask,ptask,TRUE);
 
-#ifdef ENABLE_PTHREADS
             pthread_mutex_unlock(ptask->wt_mutex);
-#endif
             }
           }
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(pjob->ji_mutex);
-#endif
         }
 
       last_jobstat_time = time_now;
@@ -1373,9 +1335,7 @@ void main_loop(void)
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);
     
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
     }
 
   if (svr_chngNodesfile)
@@ -1480,10 +1440,6 @@ int main(
 
   extern char *msg_svrdown; /* log message   */
   extern char *msg_startup1; /* log message   */
-
-#ifdef ENABLE_PTHREADS
-  pthread_t helper_thread;
-#endif
 
   ProgName = argv[0];
 
@@ -1734,7 +1690,6 @@ int main(
       }
     }
 
-#ifdef ENABLE_PTHREADS
   /* setup the threadpool for use */
   if (server.sv_attr[SRV_ATR_minthreads].at_flags & ATR_VFLAG_SET) 
     min_threads = server.sv_attr[SRV_ATR_minthreads].at_val.at_long;
@@ -1752,7 +1707,6 @@ int main(
     thread_idle_time = DEFAULT_THREAD_IDLE;
       
   initialize_threadpool(&request_pool,min_threads,max_threads,thread_idle_time);
-#endif 
 
   sprintf(log_buffer, "%ld\n", (long)sid);
 
@@ -1982,9 +1936,7 @@ void check_job_log(
 
   ptask = set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_job_log, NULL);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(ptask->wt_mutex);
-#endif
 
   return;
   } /* END check_job_log */
@@ -2062,9 +2014,7 @@ void check_log(
 
   ptask = set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_log, NULL);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(ptask->wt_mutex);
-#endif
 
   return;
   } /* END check_log */
@@ -2094,9 +2044,7 @@ void check_acct_log(
 
   ptask = set_task(WORK_Timed,time_now + PBS_ACCT_CHECK_RATE,check_acct_log,NULL);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(ptask->wt_mutex);
-#endif
 
   return;
   } /* END check_acct_log */

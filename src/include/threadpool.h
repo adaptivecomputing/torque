@@ -1,7 +1,6 @@
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
 
-#ifdef ENABLE_PTHREADS
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -141,6 +140,5 @@ extern int enqueue_threadpool_request(void *(*func)(void *),void *arg);
 extern int initialize_threadpool(threadpool_t **,int,int,int);
 extern void destroy_request_pool();
 
-#endif /* def ENABLE_PTHREADS */
 #endif /* ndef THREADPOOL_H */ 
 

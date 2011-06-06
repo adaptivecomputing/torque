@@ -136,9 +136,7 @@ static int PBSD_select_put(
   int rc;
   int sock;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   sock = connection[c].ch_socket;
 
@@ -152,16 +150,12 @@ static int PBSD_select_put(
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     return (pbs_errno = PBSE_PROTOCOL);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   /* write data */
 
@@ -190,9 +184,7 @@ static char **PBSD_select_get(
   struct brp_select *sr;
   char **retval = (char **)NULL;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   /* read reply from stream */
 
@@ -237,9 +229,7 @@ static char **PBSD_select_get(
       {
       pbs_errno = PBSE_SYSTEM;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
       return (char **)NULL;
       }
@@ -259,9 +249,7 @@ static char **PBSD_select_get(
     retval[i] = (char *)NULL;
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   PBSD_FreeReply(reply);
 

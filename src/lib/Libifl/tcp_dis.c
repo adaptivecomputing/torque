@@ -104,9 +104,7 @@
 
 #define MAX_INT_LEN 256;
 
-#ifdef ENABLE_PTHREADS
 pthread_mutex_t *tcparraymax_mutex = NULL;
-#endif
 
 static struct tcp_chan **tcparray = NULL;
 static int    tcparraymax = 0;
@@ -144,15 +142,11 @@ int DIS_tcp_istimeout(
     return(0);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(&(tcparray[sock]->tcp_mutex));
-#endif
 
   rc = tcparray[sock]->IsTimeout;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&(tcparray[sock]->tcp_mutex));
-#endif
 
   return(rc);
   }  /* END DIS_tcp_istimeout() */
@@ -389,9 +383,7 @@ int DIS_tcp_wflush(
 
   struct tcpdisbuf *tp;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-#endif
 
   tp = &tcparray[fd]->writebuf;
   pb = tp->tdis_thebuf;
@@ -418,9 +410,7 @@ int DIS_tcp_wflush(
                 strerror(errno));
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-#endif
 
       return(-1);
       }  /* END if (i == -1) */
@@ -436,9 +426,7 @@ int DIS_tcp_wflush(
 
   tcp_pack_buff(tp);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-#endif
 
   return(0);
   }  /* END DIS_tcp_wflush() */
@@ -478,18 +466,14 @@ void DIS_tcp_reset(
 
   tcp = tcparray[fd];
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(&tcp->tcp_mutex);
-#endif
 
   if (i == 0)
     DIS_tcp_clear(&tcp->readbuf);
   else
     DIS_tcp_clear(&tcp->writebuf);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&tcp->tcp_mutex);
-#endif
 
   return;
   }  /* END DIS_tcp_reset() */
@@ -513,27 +497,21 @@ static int tcp_rskip(
 
   struct tcpdisbuf *tp;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-#endif
 
   tp = &tcparray[fd]->readbuf;
 
   if (tp->tdis_leadp - tp->tdis_eod < (ssize_t)ct)
     {
     /* this isn't the best thing to do, but this isn't used, so */
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-#endif
 
     return(-1);
     }
 
   tp->tdis_leadp += ct;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-#endif
 
   return(0);
   }
@@ -562,9 +540,7 @@ static int tcp_getc(
   if (tcparray[fd] == NULL)
     return(-2);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-#endif
 
   tp = &tcparray[fd]->readbuf;
 
@@ -576,18 +552,15 @@ static int tcp_getc(
 
     if (x <= 0)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-#endif
+
       return((x == -2) ? -2 : -1); /* Error or EOF */
       }
     }
 
   x = (int)*tp->tdis_leadp++;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-#endif
 
   return(x);
   }  /* END tcp_getc() */
@@ -619,9 +592,7 @@ static int tcp_gets(
   if (tcparray[fd] == NULL)
     return(-2);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-#endif
 
   tp = &tcparray[fd]->readbuf;
 
@@ -633,9 +604,7 @@ static int tcp_gets(
 
     if (x <= 0)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-#endif
 
       return(x);  /* Error or EOF */
       }
@@ -645,9 +614,7 @@ static int tcp_gets(
 
   tp->tdis_leadp += ct;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-#endif
 
   return((int)ct);
   }  /* END tcp_gets() */
@@ -667,15 +634,11 @@ int PConnTimeout(
     return(0);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(&(tcparray[sock]->tcp_mutex));
-#endif
 
   rc = (tcparray[sock]->IsTimeout == 1);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&(tcparray[sock]->tcp_mutex));
-#endif
 
   return(rc);
   }  /* END PConnTimeout() */
@@ -695,15 +658,11 @@ int TConnGetReadErrno(
     return(0);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(&(tcparray[sock]->tcp_mutex));
-#endif
 
   rc = tcparray[sock]->ReadErrno;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&(tcparray[sock]->tcp_mutex));
-#endif
 
   return(rc);
   }  /* END TConnGetReadErrno() */
@@ -724,15 +683,11 @@ int TConnGetSelectErrno(
     return(0);
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(&(tcparray[sock]->tcp_mutex));
-#endif
   
   rc = tcparray[sock]->SelectErrno;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&(tcparray[sock]->tcp_mutex));
-#endif
 
   return(rc);
   }  /* END TConnGetSelectErrno() */
@@ -771,9 +726,7 @@ static int tcp_puts(
   if (tcp == NULL)
     return(-2);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(&tcp->tcp_mutex);
-#endif
 
   /* NOTE:  currently, failures may occur if THE_BUF_SIZE is not large enough */
   /*        this should be changed to allow proper operation with degraded    */
@@ -797,9 +750,7 @@ static int tcp_puts(
         (int)ct);
       log_err(ENOMEM,id,log_buffer);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(&tcp->tcp_mutex);
-#endif
 
       return(-1);
       }
@@ -817,9 +768,7 @@ static int tcp_puts(
 
   tp->tdis_leadp += ct;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&tcp->tcp_mutex);
-#endif
 
   return(ct);
   }  /* END tcp_puts() */
@@ -843,9 +792,7 @@ static int tcp_rcommit(
   if (tcparray[fd] == NULL)
     return(-2);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-#endif
 
   tp = &tcparray[fd]->readbuf;
 
@@ -862,9 +809,7 @@ static int tcp_rcommit(
     tp->tdis_leadp = tp->tdis_trailp;
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-#endif
 
   return(0);
   }  /* END tcp_rcommit() */
@@ -889,9 +834,7 @@ static int tcp_wcommit(
   if (tcparray[fd] == NULL)
     return(-2);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-#endif
 
   tp = &tcparray[fd]->writebuf;
 
@@ -908,9 +851,7 @@ static int tcp_wcommit(
     tp->tdis_leadp = tp->tdis_trailp;
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-#endif
 
   return(0);
   }
@@ -940,7 +881,6 @@ DIS_tcp_funcs(void)
 
 
 
-#ifdef ENABLE_PTHREADS
 
 /**
  * locks the mutexes for all tcp channels
@@ -1001,7 +941,6 @@ int unlock_all_channels()
 
   return(0);
   } /* END unlock_all_channels() */
-#endif /* def ENABLE_PTHREADS */
 
 
 
@@ -1016,7 +955,6 @@ int resize_tcp_array_if_needed(
   int hold;
   int flags;
 
-#ifdef ENABLE_PTHREADS
   if (tcparraymax_mutex == NULL)
     {
     tcparraymax_mutex = malloc(sizeof(pthread_mutex_t));
@@ -1024,14 +962,12 @@ int resize_tcp_array_if_needed(
     }
 
   pthread_mutex_lock(tcparraymax_mutex);
-#endif
 
   if (fd >= tcparraymax)
     {
     hold = tcparraymax;
 
     /* NYI: maybe remove the lock/unlock all functionality?? */
-#ifdef ENABLE_PTHREADS
     if (lock_all_channels())
       {
       /* FAILURE */
@@ -1039,7 +975,6 @@ int resize_tcp_array_if_needed(
       
       return;
       }
-#endif
 
     /*
     ** Check if this is a valid file descriptor, if not log an error and don't
@@ -1101,14 +1036,10 @@ int resize_tcp_array_if_needed(
         }
       }
     
-#ifdef ENABLE_PTHREADS
     unlock_all_channels();
-#endif
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(tcparraymax_mutex);
-#endif
   } /* END resize_tcp_array() */
 
 
@@ -1162,10 +1093,8 @@ void DIS_tcp_setup(
       goto error;
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_init(&tcp->tcp_mutex,NULL);
     pthread_mutex_lock(&tcp->tcp_mutex);
-#endif
 
     /* Setting up the read buffer */
     tp = &tcp->readbuf;
@@ -1173,9 +1102,7 @@ void DIS_tcp_setup(
     tp->tdis_thebuf = (char *)malloc(THE_BUF_SIZE);
     if (tp->tdis_thebuf == NULL)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(&tcp->tcp_mutex);
-#endif
 
       log_err(errno,"DIS_tcp_setup","malloc failure");
 
@@ -1192,9 +1119,7 @@ void DIS_tcp_setup(
     tp->tdis_thebuf = (char *)malloc(THE_BUF_SIZE);
     if (tp->tdis_thebuf == NULL)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(&tcp->tcp_mutex);
-#endif
 
       log_err(errno,"DIS_tcp_setup","malloc failure");
 
@@ -1206,19 +1131,15 @@ void DIS_tcp_setup(
     tp->tdis_bufsize = THE_BUF_SIZE;
 
     }
-#ifdef ENABLE_PTHREADS
   else
     pthread_mutex_lock(&tcp->tcp_mutex);
-#endif
 
   /* initialize read and write buffers */
   DIS_tcp_clear(&tcp->readbuf);
 
   DIS_tcp_clear(&tcp->writebuf);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(&tcp->tcp_mutex);
-#endif
 
 error:
 

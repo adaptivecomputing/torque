@@ -103,9 +103,7 @@ int pbs_rerunjob(
   if ((jobid == (char *)0) || (*jobid == '\0'))
     return (pbs_errno = PBSE_IVALREQ);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   sock = connection[c].ch_socket;
 
@@ -119,9 +117,7 @@ int pbs_rerunjob(
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     return (pbs_errno = PBSE_PROTOCOL);
     }
@@ -130,9 +126,7 @@ int pbs_rerunjob(
 
   if (DIS_tcp_wflush(sock))
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
     return (pbs_errno = PBSE_PROTOCOL);
     }
@@ -145,9 +139,7 @@ int pbs_rerunjob(
 
   rc = connection[c].ch_errno;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   return(rc);
   } /* END pbs_rerunjob() */

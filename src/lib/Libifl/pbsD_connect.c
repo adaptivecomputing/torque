@@ -457,16 +457,12 @@ static int PBSD_munge_authenticate(
     rc = encode_DIS_ReqExtend(psock, NULL);
     rc = DIS_tcp_wflush(psock);
     
-#ifdef ENABLE_PTHREADS
     pthread_mutex_lock(connection[1].ch_mutex);
-#endif
     
     /* read the reply */
     reply = PBSD_rdrpy(1);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[1].ch_mutex);
-#endif
 
     }
   else
@@ -723,7 +719,6 @@ int pbs_original_connect(
 
   for (i = 1;i < NCONNECTS;i++)
     {
-#ifdef ENABLE_PTHREADS
     if (connection[i].ch_mutex == NULL)
       {
       connection[i].ch_mutex = malloc(sizeof(pthread_mutex_t));
@@ -731,7 +726,6 @@ int pbs_original_connect(
       }
 
     pthread_mutex_lock(connection[i].ch_mutex);
-#endif
 
     if (connection[i].ch_inuse == FALSE)
       {
@@ -745,9 +739,7 @@ int pbs_original_connect(
       break;
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[i].ch_mutex);
-#endif
     }
 
   if (out < 0)
@@ -771,9 +763,7 @@ int pbs_original_connect(
     {
     connection[out].ch_inuse = 0;
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[out].ch_mutex);
-#endif
 
     pbs_errno = PBSE_NOSERVER;
 
@@ -797,9 +787,7 @@ int pbs_original_connect(
               (long)pbs_current_uid);
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(connection[out].ch_mutex);
-#endif
 
     return(-1);
     }
@@ -913,9 +901,7 @@ int pbs_original_connect(
 
       connection[out].ch_inuse = 0;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(connection[out].ch_mutex);
-#endif
 
       pbs_errno = PBSE_PROTOCOL;
 
@@ -941,9 +927,7 @@ int pbs_original_connect(
                 strerror(errno));
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(connection[out].ch_mutex);
-#endif
 
       return(-1);
       }
@@ -969,9 +953,7 @@ int pbs_original_connect(
                 strerror(errno));
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(connection[out].ch_mutex);
-#endif
 
       return(-1);
       }
@@ -1016,9 +998,7 @@ int pbs_original_connect(
           }
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(connection[out].ch_mutex);
-#endif
 
       return(-1);
       }
@@ -1054,9 +1034,7 @@ int pbs_original_connect(
           }
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(connection[out].ch_mutex);
-#endif
 
       return(-1);
       }
@@ -1082,9 +1060,7 @@ int pbs_original_connect(
     pbs_tcp_timeout = 10800;      /* set for 3 hour time out */
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[out].ch_mutex);
-#endif
 
   return(out);
   }  /* END pbs_original_connect() */
@@ -1101,9 +1077,7 @@ int pbs_disconnect(
   int  sock;
   static char x[THE_BUF_SIZE / 4];
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[connect].ch_mutex);
-#endif
 
   /* send close-connection message */
   sock = connection[connect].ch_socket;
@@ -1155,9 +1129,7 @@ int pbs_disconnect(
 
   connection[connect].ch_inuse = 0;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[connect].ch_mutex);
-#endif
 
   return(0);
   }  /* END pbs_disconnect() */
@@ -1288,7 +1260,6 @@ int pbs_query_max_connections(void)
 void initialize_connections_table()
 
   {
-#ifdef ENABLE_PTHREADS
   int i;
 
   for (i = 1;i < NCONNECTS;i++)
@@ -1296,7 +1267,6 @@ void initialize_connections_table()
     connection[i].ch_mutex = malloc(sizeof(pthread_mutex_t));
     pthread_mutex_init(connection[i].ch_mutex,NULL);
     }
-#endif
   } /* END initialize_connections_table() */
 
 

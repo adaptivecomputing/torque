@@ -107,12 +107,10 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
-#ifdef ENABLE_PTHREADS
-#include <pthread.h>
-#endif /* ENABLE_PTHREADS */
 
 #include "rpp.h"
 #include "log.h"
@@ -211,9 +209,7 @@ long rpp_throttle_sleeptime = 0;
 void rpp_shutdown_on_exit(int, void *);
 
 /* END external prototypes */
-#ifdef ENABLE_PTHREADS
 pthread_mutex_t *stream_mutexes = NULL;
-#endif /* ENABLE_PTHREADS */
 
 
 
@@ -454,9 +450,7 @@ static struct send_packet *top = NULL; /* ptrs to beginning and end */
 
 static struct send_packet *bottom = NULL; /* of master send list; */
 
-#ifdef ENABLE_PTHREADS
 pthread_mutex_t *master_list_mutex = NULL;
-#endif
 
 /* All sent date is linked */
 /* between top and bottom. */
@@ -478,9 +472,7 @@ int  rpp_fd = -1;
 ** entries.  The value of rpp_fd will be contained in this array.
 */
 int  *rpp_fd_array = NULL;
-#ifdef ENABLE_PTHREADS
 /*pthread_mutex_t *rpp_fd_mutex = NULL;*/
-#endif
 
 /*
 ** Number of elements in rpp_fd_array
@@ -963,7 +955,6 @@ static void rpp_form_pkt(
   I8TOH(crc(pktp->data, (u_long)(len + RPP_PKT_CRC)),
         (char *)&pktp->data[len+RPP_PKT_CRC])
 
-#ifdef ENABLE_PTHREADS
   if (master_list_mutex == NULL)
     {
     master_list_mutex = malloc(sizeof(pthread_mutex_t));
@@ -971,7 +962,6 @@ static void rpp_form_pkt(
     }
 
   pthread_mutex_lock(master_list_mutex);
-#endif
 
   if (bottom)
     bottom->down = pktp;
@@ -983,9 +973,7 @@ static void rpp_form_pkt(
 
   bottom = pktp;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(master_list_mutex);
-#endif
 
   return;
   }
@@ -1102,7 +1090,6 @@ static void rpp_send_out(void)
 
   curr = time(NULL);
 
-#ifdef ENABLE_PTHREADS
   if (master_list_mutex == NULL)
     {
     master_list_mutex = malloc(sizeof(pthread_mutex_t));
@@ -1110,7 +1097,6 @@ static void rpp_send_out(void)
     }
 
   pthread_mutex_lock(master_list_mutex);
-#endif
 
   for (pp = top;pp != NULL;pp = pp->down)
     {
@@ -1168,9 +1154,7 @@ static void rpp_send_out(void)
     pp->sent_out++;
     }  /* END for (pp) */
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(master_list_mutex);
-#endif
 
   /* NOTE:  failure cannot be detected */
 
@@ -1190,9 +1174,6 @@ static int rpp_create_sp(void)
   int i;
 
   struct stream *sp = NULL;
-#ifdef ENABLE_PTHREADS
-  static pthread_mutexattr_t mutex_attr;
-#endif 
 
   if (stream_array == NULL)
     {
@@ -1207,18 +1188,13 @@ static int rpp_create_sp(void)
 
     stream_num = 1;
 
-#ifdef ENABLE_PTHREADS 
     /* create the mutex */
     stream_mutexes = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
 
     if (stream_mutexes == NULL)
       return(-1);
-
-    memset(&mutex_attr,0,sizeof(pthread_mutexattr_t));
-    pthread_mutexattr_settype(&mutex_attr,PTHREAD_MUTEX_ERRORCHECK);
     
-    pthread_mutex_init(stream_mutexes,&mutex_attr);
-#endif /* def ENABLE_PTHREADS */
+    pthread_mutex_init(stream_mutexes,NULL);
     }
 
   for (i = 0;i < stream_num;i++)
@@ -1261,7 +1237,6 @@ static int rpp_create_sp(void)
 
       stream_num++;
 
-#ifdef ENABLE_PTHREADS 
       stream_mutexes = (pthread_mutex_t *)realloc(
           stream_mutexes,
           (stream_num) * sizeof(pthread_mutex_t));
@@ -1269,18 +1244,14 @@ static int rpp_create_sp(void)
       if (stream_mutexes == NULL)
         return(-1);
 
-      pthread_mutex_init(stream_mutexes + stream_num - 1,&mutex_attr);
-#endif /* def ENABLE_PTHREADS */
+      pthread_mutex_init(stream_mutexes + stream_num - 1,NULL);
       }
     else
       {
-#ifdef ENABLE_PTHREADS 
       int j;
-#endif 
 
       stream_num *= 2;
 
-#ifdef ENABLE_PTHREADS 
       stream_mutexes = (pthread_mutex_t *)realloc(
           stream_mutexes,
           (stream_num) * sizeof(pthread_mutex_t));
@@ -1290,9 +1261,8 @@ static int rpp_create_sp(void)
 
       for (j = stream_num / 2; j < stream_num; j++)
         {
-        pthread_mutex_init(stream_mutexes + j,&mutex_attr);
+        pthread_mutex_init(stream_mutexes + j,NULL);
         }
-#endif /* ENABLE_PTHREADS */
       }
 
     stream_array = sp;
@@ -1476,9 +1446,7 @@ static void dqueue(
   struct send_packet *pp)
 
   {
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(master_list_mutex);
-#endif
 
   if (pp->down == NULL)
     bottom = pp->up;
@@ -1490,9 +1458,7 @@ static void dqueue(
   else
     pp->up->down = pp->down;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(master_list_mutex);
-#endif
 
   if (--pkts_sent < 0)
     pkts_sent = 0;
@@ -1548,9 +1514,7 @@ static void clear_send(
       struct send_packet *look; /* might not be */
       /* on send queue */
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(master_list_mutex);
-#endif
 
       for (look = top;look;look = look->down)
         {
@@ -1558,9 +1522,7 @@ static void clear_send(
           break;
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(master_list_mutex);
-#endif
 
       if (look == NULL)
         {
@@ -2207,7 +2169,6 @@ static int rpp_recv_pkt(
         I8TOH(crc(spp->data, (u_long)(len + RPP_PKT_CRC)),
               (char *)&spp->data[len+RPP_PKT_CRC])
 
-#ifdef ENABLE_PTHREADS
         if (master_list_mutex == NULL)
           {
           master_list_mutex = malloc(sizeof(pthread_mutex_t));
@@ -2215,7 +2176,6 @@ static int rpp_recv_pkt(
           }
 
         pthread_mutex_lock(master_list_mutex);
-#endif
 
         if (bottom)
           bottom->down = spp;
@@ -2229,9 +2189,7 @@ static int rpp_recv_pkt(
 
         bottom = spp;
 
-#ifdef ENABLE_PTHREADS
         pthread_mutex_unlock(master_list_mutex);
-#endif
         }
 
       break;
@@ -2272,9 +2230,6 @@ static int rpp_recv_all(void)
   int rc = -3;
 
   LOCAL_DBPRT((DBTO, "entered rpp_recv_all\n"))
-#ifdef ENABLE_PTHREADS
-/*    pthread_mutex_lock(rpp_fd_mutex);*/
-#endif
 
   for (i = 0;i < rpp_fd_num;i++)
     {
@@ -2289,10 +2244,6 @@ static int rpp_recv_all(void)
       break;
       }
     }  /* END for (i) */
-
-#ifdef ENABLE_PTHREADS
-/*  pthread_mutex_unlock(rpp_fd_mutex);*/
-#endif
 
   return(rc);
   }  /* rpp_recv_all() */
@@ -2638,23 +2589,13 @@ int rpp_bind(
     {
     int i;
 
-#ifdef ENABLE_PTHREADS
-/*    pthread_mutex_lock(rpp_fd_mutex);*/
-#endif
-
     for (i = 0;i < rpp_fd_num;i++)
       {
       if (rpp_fd_array[i] == rpp_fd)
         {
-#ifdef ENABLE_PTHREADS
-/*        pthread_mutex_unlock(rpp_fd_mutex);*/
-#endif
         return(rpp_fd);
         }
       }
-#ifdef ENABLE_PTHREADS
-/*    pthread_mutex_unlock(rpp_fd_mutex);*/
-#endif
     }
 
   memset(&from, '\0', sizeof(from));
@@ -2675,12 +2616,6 @@ int rpp_bind(
 
   if (rpp_fd_array == NULL)
     {
-#ifdef ENABLE_PTHREADS
-/*    rpp_fd_mutex = malloc(sizeof(pthread_mutex_t));
-    pthread_mutex_init(rpp_fd_mutex,NULL);
-    pthread_mutex_lock(rpp_fd_mutex);*/
-#endif
-
     rpp_fd_array = (int *)malloc(sizeof(int));
 
     rpp_fd_num = 1;
@@ -2697,10 +2632,6 @@ int rpp_bind(
     }
   else
     {
-#ifdef ENABLE_PTHREADS
-/*    pthread_mutex_lock(rpp_fd_mutex);*/
-#endif
-
     rpp_fd_num++;
 
     rpp_fd_array = (int *)realloc(rpp_fd_array, sizeof(int) * rpp_fd_num);
@@ -2709,10 +2640,6 @@ int rpp_bind(
   assert(rpp_fd_array);
 
   rpp_fd_array[rpp_fd_num-1] = rpp_fd;
-
-#ifdef ENABLE_PTHREADS
-/*  pthread_mutex_unlock(rpp_fd_mutex);*/
-#endif
 
   return(rpp_fd);
   }
@@ -3005,10 +2932,6 @@ rpp_terminate(void)
   struct recv_packet *rpp;
   int   i;
 
-#ifdef ENABLE_PTHREADS
-/*  pthread_mutex_lock(rpp_fd_mutex);*/
-#endif
-
   for (i = 0;i < rpp_fd_num;i++)
     close(rpp_fd_array[i]);
 
@@ -3019,10 +2942,6 @@ rpp_terminate(void)
     rpp_fd_array = NULL;
     rpp_fd_num = 0;
     }
-
-#ifdef ENABLE_PTHREADS
-/*  pthread_mutex_lock(rpp_fd_mutex);*/
-#endif
 
   for (i = 0;i < stream_num;i++)
     {
@@ -3060,17 +2979,13 @@ rpp_terminate(void)
       }
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(master_list_mutex);
-#endif
 
   top = NULL;
 
   bottom = NULL;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(master_list_mutex);
-#endif
 
   if (stream_array)
     free(stream_array);
@@ -3154,16 +3069,8 @@ rpp_shutdown(void)
       tv.tv_sec  = RPPTimeOut;
       tv.tv_usec = 0;
 
-#ifdef ENABLE_PTHREADS
-/*      pthread_mutex_lock(rpp_fd_mutex);*/
-#endif
-
       for (i = 0;i < rpp_fd_num;i++)
         FD_SET(rpp_fd_array[i], &fdset);
-
-#ifdef ENABLE_PTHREADS
-/*      pthread_mutex_unlock(rpp_fd_mutex);*/
-#endif
 
       i = select(FD_SETSIZE, &fdset, NULL, NULL, &tv);
 
@@ -3522,16 +3429,8 @@ static int rpp_okay(
     tv.tv_sec  = RPPTimeOut;
     tv.tv_usec = 0;
 
-#ifdef ENABLE_PTHREADS
-/*    pthread_mutex_lock(rpp_fd_mutex);*/
-#endif
-
     for (i = 0;i < rpp_fd_num;i++)
       FD_SET(rpp_fd_array[i], &fdset);
-
-#ifdef ENABLE_PTHREADS
-/*    pthread_mutex_unlock(rpp_fd_mutex);*/
-#endif
 
     i = select(FD_SETSIZE, &fdset, NULL, NULL, &tv);
 
@@ -4090,7 +3989,6 @@ int rpp_skip(
 
 
 
-#ifdef ENABLE_PTHREADS 
 /**
  * Mark this stream as being serviced currently
  */
@@ -4120,7 +4018,6 @@ void done_servicing(
   stream_array[index].being_attended = FALSE;
   pthread_mutex_unlock(stream_mutexes+index);
   } /* END done_servicing() */
-#endif /* def ENABLE_PTHREADS */
 
 
 
@@ -4132,7 +4029,6 @@ int being_serviced(
   int index)
 
   {
-#ifdef ENABLE_PTHREADS
   int rc;
   
   pthread_mutex_lock(stream_mutexes+index);
@@ -4140,9 +4036,6 @@ int being_serviced(
   pthread_mutex_unlock(stream_mutexes+index);
 
   return(rc);
-#else
-  return(FALSE);
-#endif
   }
 
 

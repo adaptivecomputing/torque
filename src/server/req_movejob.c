@@ -89,9 +89,7 @@
 #include <sys/param.h>
 #include "libpbs.h"
 #include <errno.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 
 #include "server_limits.h"
 #include "list_link.h"
@@ -157,9 +155,7 @@ void *req_movejob(
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(jobp->ji_mutex);
-#endif
 
     return(NULL);
     }
@@ -215,9 +211,7 @@ void *req_movejob(
       break;
     }  /* END switch (svr_movejob(jobp,req->rq_ind.rq_move.rq_destin,req)) */
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(jobp->ji_mutex);
-#endif
 
   return(NULL);
   }  /* END req_movejob() */
@@ -276,10 +270,8 @@ void *req_orderjob(
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob1->ji_mutex);
     pthread_mutex_unlock(pjob2->ji_mutex);
-#endif
 
     return(NULL);
     }
@@ -302,10 +294,8 @@ void *req_orderjob(
       {
       req_reject(rc, 0, req, NULL, NULL);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pjob1->ji_mutex);
       pthread_mutex_unlock(pjob2->ji_mutex);
-#endif
 
       return(NULL);
       }
@@ -346,10 +336,8 @@ void *req_orderjob(
   reply_ack(req);
 
   /* SUCCESS */
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pjob1->ji_mutex);
   pthread_mutex_unlock(pjob2->ji_mutex);
-#endif
 
   return(NULL);
   }  /* END req_orderjob() */

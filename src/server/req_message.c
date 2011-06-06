@@ -86,9 +86,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <signal.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -137,9 +135,8 @@ void req_messagejob(
     {
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
+    
     return;
     }
 
@@ -151,9 +148,7 @@ void req_messagejob(
 
   /* After MOM acts and replies to us, we pick up in post_message_req() */
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(pjob->ji_mutex);
-#endif
   } /* END req_messagejob() */
 
 /*

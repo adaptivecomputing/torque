@@ -145,7 +145,6 @@ struct work_task *set_task(
   pnew->wt_func     = func;
   pnew->wt_parm1    = parm;
 
-#ifdef ENABLE_PTHREADS
   pnew->wt_mutex = malloc(sizeof(pthread_mutex_t));
 
   if (pnew->wt_mutex == NULL)
@@ -156,7 +155,6 @@ struct work_task *set_task(
 
   pthread_mutex_init(pnew->wt_mutex,NULL);
   pthread_mutex_lock(pnew->wt_mutex);
-#endif
 
 
   if (type == WORK_Immed)
@@ -170,18 +168,14 @@ struct work_task *set_task(
       if (pold->wt_event > pnew->wt_event)
         break;
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pold->wt_mutex);
-#endif
       }
 
     if (pold != NULL)
       {
       insert_task_before(&task_list_timed,pnew,pold);
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pold->wt_mutex);
-#endif
       }
     else
       {
@@ -270,10 +264,8 @@ void delete_task(
   if (ptask->wt_obj_tasklist)
     remove_task(ptask->wt_obj_tasklist,ptask);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(ptask->wt_mutex);
   free(ptask->wt_mutex);
-#endif
 
   (void)free(ptask);
 
@@ -301,7 +293,7 @@ void initialize_all_tasks_array(
     {
     log_err(ENOMEM,id,"Cannot allocate space for array...FAILURE");
     }
-#ifdef ENABLE_PTHREADS
+  
   at->alltasks_mutex = malloc(sizeof(pthread_mutex_t));
 
   if (at->alltasks_mutex == NULL)
@@ -312,7 +304,6 @@ void initialize_all_tasks_array(
     {
     pthread_mutex_init(at->alltasks_mutex,NULL);
     }
-#endif
   } /* END initialize_all_tasks_array() */
 
 
@@ -329,18 +320,14 @@ work_task *next_task(
   {
   work_task *wt;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(at->alltasks_mutex);
-#endif
 
   wt = next_thing(at->ra,iter);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(at->alltasks_mutex);
 
   if (wt != NULL)
     pthread_mutex_lock(wt->wt_mutex);
-#endif
 
   return(wt);
   } /* END next_task() */
@@ -362,9 +349,7 @@ int insert_task(
   static char *id = "insert_task";
   int rc;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(at->alltasks_mutex);
-#endif
 
   if ((rc = insert_thing(at->ra,wt)) == -1)
     {
@@ -372,9 +357,7 @@ int insert_task(
     log_err(rc,id,"Cannot allocate space to resize the array");
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(at->alltasks_mutex);
-#endif
 
   if (object == TRUE)
     wt->wt_obj_tasklist = at;
@@ -401,9 +384,7 @@ int insert_task_before(
   int          rc;
   int          i;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(at->alltasks_mutex);
-#endif
 
   i = get_index(at->ra,after);
 
@@ -420,9 +401,7 @@ int insert_task_before(
       }
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(at->alltasks_mutex);
-#endif
 
   before->wt_tasklist = at;
 
@@ -442,9 +421,7 @@ int insert_task_first(
   static char *id = "insert_task_first";
   int          rc;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(at->alltasks_mutex);
-#endif
 
   if ((rc = insert_thing_after(at->ra,wt,ALWAYS_EMPTY_INDEX)) == -1)
     {
@@ -452,9 +429,7 @@ int insert_task_first(
     log_err(rc,id,"Cannot allocate space to resize the array");
     }
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(at->alltasks_mutex);
-#endif
   
   wt->wt_tasklist = at;
 
@@ -478,16 +453,12 @@ int has_task(
   {
   int rc = FALSE;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(at->alltasks_mutex);
-#endif
 
   if (at->ra->num > 0)
     rc = TRUE;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(at->alltasks_mutex);
-#endif
 
   return(rc);
   } /* END has_task() */
@@ -506,15 +477,11 @@ int remove_task(
   {
   int rc;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(at->alltasks_mutex);
-#endif
 
   rc = remove_thing(at->ra,wt);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(at->alltasks_mutex);
-#endif
 
   return(rc);
   } /* END remove_task() */

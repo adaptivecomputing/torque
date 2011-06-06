@@ -109,9 +109,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -1705,9 +1703,7 @@ void mgr_node_set(
   if (allnodes || propnodes)
     {
     /* handle scrolling over all nodes */
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pnode->nd_mutex);
-#endif
 
     problem_nodes = (struct pbsnode **)malloc(svr_totnodes * sizeof(struct pbsnode *));
 
@@ -1717,9 +1713,7 @@ void mgr_node_set(
 
     while ((pnode = next_node(&iter)) != NULL)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pnode->nd_mutex);
-#endif
 
       if (propnodes && !hasprop(pnode, &props))
         continue;
@@ -1756,9 +1750,7 @@ void mgr_node_set(
           pnode->nd_name);
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif
       }  /* END for each node */
 
     } /* END multiple node case */
@@ -1810,9 +1802,8 @@ void mgr_node_set(
           break;
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif
+      
       return;
       } /* END if (rc != 0) */ 
     else
@@ -1828,9 +1819,7 @@ void mgr_node_set(
         pnode->nd_name);
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pnode->nd_mutex);
-#endif
     } /* END single node case */
 
   if (need_todo & WRITENODE_STATE)
@@ -1998,9 +1987,8 @@ static void mgr_node_delete(
 
   if (allnodes)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pnode->nd_mutex);
-#endif
+    
     /* handle all nodes */
     problem_nodes = (struct pbsnode **)malloc(
                       svr_totnodes * sizeof(struct pbsnode *));
@@ -2011,9 +1999,7 @@ static void mgr_node_delete(
 
     while ((pnode = next_node(&iter)) != NULL)
       {
-#ifdef ENABLE_PTHREADS
       pthread_mutex_lock(pnode->nd_mutex);
-#endif
 
       save_characteristic(pnode);
 
@@ -2044,9 +2030,7 @@ static void mgr_node_delete(
           }
         }
 
-#ifdef ENABLE_PTHREADS
       pthread_mutex_unlock(pnode->nd_mutex);
-#endif
       } /* end loop ( all nodes ) */
     }
   else
@@ -2089,9 +2073,8 @@ static void mgr_node_delete(
         free(nodename);
         }
       }
-#ifdef ENABLE_PTHREADS
+    
     pthread_mutex_unlock(pnode->nd_mutex);
-#endif
     }
 
   /*set "deleted" bit in node's (nodes, allnodes == 1) "inuse" field*/
@@ -2591,9 +2574,7 @@ int extra_resc_chk(
 
   if (ptask != NULL)
     {
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(ptask->wt_mutex);
-#endif
 
     return(TRUE);
     }
@@ -2612,9 +2593,7 @@ void free_extraresc(
   {
   work_task *wt = set_task(WORK_Immed, 0, on_extra_resc, NULL);
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(wt->wt_mutex);
-#endif
 
   free_arst(attr);
   }

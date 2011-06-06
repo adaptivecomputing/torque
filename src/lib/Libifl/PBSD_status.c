@@ -144,9 +144,7 @@ struct batch_status *PBSD_status_get(
   struct batch_reply  *reply;
   int i;
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_lock(connection[c].ch_mutex);
-#endif
 
   pbs_errno = 0;
 
@@ -236,9 +234,7 @@ struct batch_status *PBSD_status_get(
       }
     }    /* END else */
 
-#ifdef ENABLE_PTHREADS
   pthread_mutex_unlock(connection[c].ch_mutex);
-#endif
 
   PBSD_FreeReply(reply);
 

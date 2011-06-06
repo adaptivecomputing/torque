@@ -88,9 +88,7 @@
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
-#ifdef ENABLE_PTHREADS
 #include <pthread.h>
-#endif
 #include "server_limits.h"
 #include "list_link.h"
 #include "work_task.h"
@@ -205,10 +203,8 @@ void svr_shutdown(
     msg_daemonname,
     log_buffer);
 
-#ifdef ENABLE_PTHREADS
   /* shutdown the threads */
   destroy_request_pool();
-#endif
 
   if ((type == SHUT_QUICK) || (type == SHUT_SIG)) /* quick, leave jobs as are */
     {
@@ -236,9 +232,7 @@ void svr_shutdown(
 
         if (shutdown_checkpoint(pjob) == 0)
           {
-#ifdef ENABLE_PTHREADS
           pthread_mutex_unlock(pjob->ji_mutex);
-#endif
 
           continue;
           }
@@ -250,9 +244,7 @@ void svr_shutdown(
       rerun_or_kill(pjob, msg_on_shutdown);
       }
 
-#ifdef ENABLE_PTHREADS
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
     }
 
   return;
@@ -443,10 +435,8 @@ static void post_checkpoint(
 
   release_req(ptask);
 
-#ifdef ENABLE_PTHREADS
   if (pjob != NULL)
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif
   }  /* END post_checkpoint() */
 
 
