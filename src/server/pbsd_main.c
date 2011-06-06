@@ -171,7 +171,7 @@ extern void check_children();
 #define MAX_CMD_ARGS 10
 #endif
 
-static void lock_out_ha ();
+static void lock_out_ha();
 
 /* external data items */
 

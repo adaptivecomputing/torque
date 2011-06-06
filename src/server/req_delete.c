@@ -109,6 +109,7 @@
 #include "svrfunc.h"
 #include "array.h"
 
+#define PURGE_SUCCESS 1
 
 /* Global Data Items: */
 
@@ -794,8 +795,10 @@ void req_deletejob(
     while ((pjob = next_job(&alljobs,&iter)) != NULL)
       {
       /* mutex is freed below */
-      if (forced_jobpurge(pjob,preq) == PBSE_NONE)
+      if ((rc = forced_jobpurge(pjob,preq)) == PBSE_NONE)
         rc = execute_job_delete(pjob,preq);
+      else if (rc != PURGE_SUCCESS)
+        break;
       }
     }
   else
@@ -813,12 +816,13 @@ void req_deletejob(
     else
       {
       /* mutex is freed below */
-      if (forced_jobpurge(pjob,preq) == PBSE_NONE)
+      if ((rc = forced_jobpurge(pjob,preq)) == PBSE_NONE)
         rc = execute_job_delete(pjob,preq);
       }
     }
 
-  if (rc == PBSE_NONE)
+  if ((rc == PBSE_NONE) ||
+      (rc == PURGE_SUCCESS))
     reply_ack(preq);
 
   return;
@@ -1093,7 +1097,7 @@ static int forced_jobpurge(
 
         job_purge(pjob);
 
-        return(1);
+        return(PURGE_SUCCESS);
         }
       else
         {

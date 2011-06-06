@@ -731,9 +731,6 @@ void finish_move_process(
  *
  * @see svr_strtjob2() - parent
  *
- * Returns (parent): 2 on success (child forked),
- *    -1 on failure (pbs_errno set to error number)
- *
  * Child exit status:
  *  0 success, job sent
  *  1 permanent failure or rejection
