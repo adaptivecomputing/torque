@@ -338,6 +338,7 @@ enum job_atr
 #ifdef NVIDIA_GPUS
   JOB_ATR_gpu_flags,		/* gpu flags - mode and reset flags */
 #endif  /* NVIDIA_GPUS */
+  JOB_ATR_arguments,
 #include "site_job_attr_enum.h"
 
   JOB_ATR_UNKN,  /* the special "unknown" type    */
