@@ -501,10 +501,11 @@ struct job
   /* Note: these members, up to ji_qs, are not saved to disk
             (except for ji_stdout, ji_stderr) */
 
-  list_link       ji_alljobs; /* link to next job in server job list */
-  list_link       ji_jobque;  /* SVR: link to next job in queue list */
 #ifndef PBS_MOM
   list_link       ji_jobque_array_sum;
+#else
+  list_link       ji_jobque;  /* used for polling in mom */
+  list_link       ji_alljobs; /* link to next job in mom's global job list */
 #endif
   /* MOM: links to polled jobs */
   time_t  ji_momstat; /* SVR: time of last status from MOM */

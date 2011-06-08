@@ -640,8 +640,6 @@ job *job_alloc(void)
 
   pj->ji_qs.qs_version = PBS_QS_VERSION;
 
-  CLEAR_LINK(pj->ji_alljobs);
-
   CLEAR_HEAD(pj->ji_rejectdest);
   pj->ji_arraystruct = NULL;
   pj->ji_is_array_template = FALSE;
@@ -781,7 +779,6 @@ job *job_clone(
   /* new job structure is allocated,
      now we need to copy the old job, but modify based on taskid */
 
-  CLEAR_LINK(pnewjob->ji_alljobs);
   pnewjob->ji_svrtask = malloc(sizeof(all_tasks));
   initialize_all_tasks_array(pnewjob->ji_svrtask);
   CLEAR_HEAD(pnewjob->ji_rejectdest);
