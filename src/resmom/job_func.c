@@ -135,6 +135,7 @@
 #include "acct.h"
 #include "net_connect.h"
 #include "portability.h"
+#include "threadpool.h"
 
 
 #ifndef TRUE
@@ -673,6 +674,8 @@ void *remove_dir(
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"",log_buffer);
       }
     }
+
+  return(NULL);
   } /* END remove_dir() */
 
 
@@ -689,7 +692,6 @@ void job_purge(
   char          namebuf[MAXPATHLEN + 1];
   char         *alloced_path;
   char          portname[MAXPATHLEN + 1];
-  extern char  *msg_err_purgejob;
   int           rc;
 
   extern void MOMCheckRestart(void);

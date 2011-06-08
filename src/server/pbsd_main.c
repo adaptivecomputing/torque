@@ -254,7 +254,7 @@ int   server_init_type = RECOV_WARM;
 char         server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int  svr_delay_entry = 0;
 int  svr_do_schedule = SCH_SCHEDULE_NULL;
-tlist_head svr_queues;            /* list of queues                   */
+extern all_queues svr_queues;
 tlist_head svr_newnodes;          /* list of newly created nodes      */
 all_tasks task_list_immed;
 all_tasks task_list_timed;
@@ -1227,14 +1227,15 @@ void main_loop(void)
         }
       }
 
-    /* any jobs to route today */
+    iter = -1;
 
-    for (pque = (pbs_queue *)GET_NEXT(svr_queues);
-         pque != NULL;
-         pque = (pbs_queue *)GET_NEXT(pque->qu_link))
+    /* any jobs to route today */
+    while ((pque = next_queue(&svr_queues,&iter)) != NULL)
       {
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
         queue_route(pque);
+
+      pthread_mutex_unlock(pque->qu_mutex);
       }
 
 #ifdef NO_SIGCHLD

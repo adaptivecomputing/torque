@@ -117,7 +117,6 @@
 /* Global Data Items: */
 
 extern struct server server;
-extern tlist_head svr_queues;
 extern attribute_def svr_attr_def[];
 extern char     *path_svrdb;
 extern char     *path_svrdb_new;

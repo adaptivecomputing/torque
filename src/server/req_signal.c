@@ -339,11 +339,11 @@ static void post_signal_req(
         job_save(pjob, SAVEJOB_QUICK, 0);
         }
       }
+  
+    pthread_mutex_unlock(pjob->ji_mutex);
 
     reply_ack(preq);
     }
-
-  pthread_mutex_unlock(pjob->ji_mutex);
 
   return;
   }  /* END post_signal_req() */

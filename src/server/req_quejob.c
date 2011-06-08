@@ -534,7 +534,6 @@ void *req_quejob(
   if ((*qname == '\0') || (*qname == '@'))
     {
     /* use default queue */
-
     pque = get_dfltque();
 
     rc   = PBSE_QUENODFLT;
@@ -542,7 +541,6 @@ void *req_quejob(
   else
     {
     /* else find the named queue */
-
     pque = find_queuebyname(preq->rq_ind.rq_queuejob.rq_destin);
 
     rc   = PBSE_UNKQUE;
@@ -590,6 +588,7 @@ void *req_quejob(
           if (pc <= basename)
             {
             /* FAILURE */
+            pthread_mutex_unlock(pque->qu_mutex);
 
             log_err(errno, id, "job file is corrupt");
 
@@ -604,6 +603,7 @@ void *req_quejob(
       else
         {
         /* FAILURE */
+        pthread_mutex_unlock(pque->qu_mutex);
 
         log_err(errno, id, "cannot create job file");
 
@@ -622,6 +622,7 @@ void *req_quejob(
   if ((pj = job_alloc()) == NULL)
     {
     /* FAILURE */
+    pthread_mutex_unlock(pque->qu_mutex);
 
     log_err(errno, id, "cannot alloc new job");
 
@@ -677,6 +678,7 @@ void *req_quejob(
     if ((pdef->at_flags & resc_access_perm) == 0)
       {
       /* FAILURE */
+      pthread_mutex_unlock(pque->qu_mutex);
 
       job_purge(pj);
 
@@ -707,6 +709,7 @@ void *req_quejob(
         if (pque->qu_qs.qu_type == QTYPE_Execution)
           {
           /* FAILURE */
+          pthread_mutex_unlock(pque->qu_mutex);
 
           job_purge(pj);
 
@@ -718,6 +721,7 @@ void *req_quejob(
       else
         {
         /* FAILURE */
+        pthread_mutex_unlock(pque->qu_mutex);
 
         /* any other error is fatal */
 
@@ -744,6 +748,8 @@ void *req_quejob(
 
       if (rc)
         {
+        pthread_mutex_unlock(pque->qu_mutex);
+
         job_purge(pj);
 
         req_reject(rc, i, preq, NULL, "cannot execute attribute action");
@@ -786,6 +792,8 @@ void *req_quejob(
       if ((pj->ji_wattr[JOB_ATR_priority].at_val.at_long < -1024) ||
           (pj->ji_wattr[JOB_ATR_priority].at_val.at_long > 1024))
         {
+        pthread_mutex_unlock(pque->qu_mutex);
+
         job_purge(pj);
 
         req_reject(PBSE_BADATVAL, 0, preq, NULL, "invalid job priority");
@@ -976,6 +984,8 @@ void *req_quejob(
     if ((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str == NULL) ||
         (pj->ji_wattr[JOB_ATR_errpath].at_val.at_str == NULL))
       {
+      pthread_mutex_unlock(pque->qu_mutex);
+
       job_purge(pj);
 
       req_reject(PBSE_NOATTR, 0, preq, NULL, "no output/error file specified");
@@ -1047,6 +1057,8 @@ void *req_quejob(
             preq->rq_user,
             pj->ji_wattr[JOB_ATR_account].at_val.at_str) == 0)
         {
+        pthread_mutex_unlock(pque->qu_mutex);
+
         job_purge(pj);
 
         req_reject(PBSE_BADACCT, 0, preq, NULL, "invalid account");
@@ -1068,6 +1080,7 @@ void *req_quejob(
       if (pj->ji_wattr[JOB_ATR_account].at_val.at_str == 0)
         {
         /* no default found */
+        pthread_mutex_unlock(pque->qu_mutex);
 
         job_purge(pj);
 
@@ -1087,6 +1100,8 @@ void *req_quejob(
 
     if (!(pj->ji_wattr[JOB_ATR_job_owner].at_flags & ATR_VFLAG_SET))
       {
+      pthread_mutex_unlock(pque->qu_mutex);
+
       job_purge(pj);
 
       log_err(errno, id, "job owner not set");
@@ -1100,6 +1115,8 @@ void *req_quejob(
 
     if (++pj->ji_wattr[JOB_ATR_hopcount].at_val.at_long > PBS_MAX_HOPCOUNT)
       {
+      pthread_mutex_unlock(pque->qu_mutex);
+
       job_purge(pj);
 
       req_reject(PBSE_HOPCOUNT, 0, preq, NULL, "max job hop reached");
@@ -1156,6 +1173,8 @@ void *req_quejob(
 
   if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
     {
+    pthread_mutex_unlock(pque->qu_mutex);
+
     job_purge(pj);
 
     req_reject(rc, 0, preq, NULL, EMsg);
@@ -1194,6 +1213,7 @@ void *req_quejob(
   if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) != 0)
     {
     /* reply failed, purge the job and close the connection */
+    pthread_mutex_unlock(pque->qu_mutex);
 
     close_conn(sock);
 
@@ -1205,6 +1225,7 @@ void *req_quejob(
   /* link job into server's new jobs list request  */
   insert_job(&newjobs,pj);
 
+  pthread_mutex_unlock(pque->qu_mutex);
   pthread_mutex_unlock(pj->ji_mutex);
 
   return(NULL);
@@ -1927,12 +1948,22 @@ void req_commit(
 
   pque = pj->ji_qhdr;
 
+  if (pthread_mutex_trylock(pque->qu_mutex) != 0)
+    {
+    pthread_mutex_unlock(pj->ji_mutex);
+    pque = pj->ji_qhdr;
+    pthread_mutex_lock(pque->qu_mutex);
+    pthread_mutex_lock(pj->ji_mutex);
+    }
+
   if ((preq->rq_fromsvr == 0) &&
       (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
       (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
     {
     if ((rc = job_route(pj)))
       {
+      pthread_mutex_unlock(pque->qu_mutex);
+
       job_purge(pj);
 
       req_reject(rc, 0, preq, NULL, NULL);
@@ -1951,6 +1982,8 @@ void req_commit(
       return;
       }
     }
+      
+  pthread_mutex_unlock(pque->qu_mutex);
 
 #ifdef AUTORUN_JOBS
   /* If we are auto running jobs with start_count = 0 then the

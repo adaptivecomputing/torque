@@ -433,6 +433,15 @@ int run_pelog(
     {
     strncpy(pelog,specpelog,sizeof(pelog));
     }
+    
+  real_uid = getuid();
+  real_gid = getgid();
+  if ((num_gids = getgroups(0,real_gids)) < 0)
+    {
+    log_err(errno,id,"getgroups failed\n");
+    
+    return(-1);
+    }
 
   /* to support root squashing, become the user before performing file checks */
   if ((which == PE_PROLOGUSER) || 
@@ -440,34 +449,23 @@ int run_pelog(
       (which == PE_PROLOGUSERJOB) || 
       (which == PE_EPILOGUSERJOB))
     {
-    real_uid = getuid();
-    real_gid = getgid();
 
-    if ((num_gids = getgroups(0,real_gids)) < 0)
+    real_gids = malloc(sizeof(gid_t) * num_gids);
+    
+    if (real_gids == NULL)
       {
-      log_err(errno,id,"getgroups failed\n");
-
+      log_err(ENOMEM,id,"Cannot allocate memory! FAILURE\n");
+      
       return(-1);
       }
-    else
+    
+    if (getgroups(num_gids,real_gids) < 0)
       {
-      real_gids = malloc(sizeof(gid_t) * num_gids);
+      log_err(errno,id,"getgroups failed\n");
       
-      if (real_gids == NULL)
-        {
-        log_err(ENOMEM,id,"Cannot allocate memory! FAILURE\n");
-
-        return(-1);
-        }
-
-      if (getgroups(num_gids,real_gids) < 0)
-        {
-        log_err(errno,id,"getgroups failed\n");
-        
-        return(-1);
-        }
+      return(-1);
       }
-
+    
     if (setgroups(
           pjob->ji_grpcache->gc_ngroup,
           (gid_t *)pjob->ji_grpcache->gc_groups) != 0)

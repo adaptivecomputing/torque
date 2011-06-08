@@ -178,7 +178,6 @@ extern char *path_jobinfo_log;
 extern int  queue_rank;
 extern char  server_name[];
 extern int  svr_delay_entry;
-extern tlist_head svr_queues;
 extern tlist_head svr_requests;
 extern tlist_head svr_newnodes;
 extern all_tasks  task_list_immed;
@@ -187,6 +186,7 @@ extern all_tasks  task_list_event;
 extern struct all_jobs alljobs;
 extern struct all_jobs array_summary;
 extern struct all_jobs newjobs;
+all_queues svr_queues;
 
 extern pthread_mutex_t *svr_requests_mutex;
 extern pthread_mutex_t *node_state_mutex;
@@ -778,8 +778,6 @@ int pbsd_init(
   initialize_all_tasks_array(&task_list_timed);
   initialize_all_tasks_array(&task_list_event);
 
-  CLEAR_HEAD(svr_queues);
-
   initialize_all_jobs_array(&alljobs);
   initialize_all_jobs_array(&array_summary);
   initialize_all_jobs_array(&newjobs);
@@ -789,6 +787,8 @@ int pbsd_init(
   initialize_all_arrays_array();
 
   pthread_mutex_unlock(svr_requests_mutex);
+
+  initialize_allques_array(&svr_queues);
 
   time_now = time((time_t *)0);
 
@@ -994,6 +994,8 @@ int pbsd_init(
           que_attr_def[QE_ATR_ResourceAssn].at_free(
             &pque->qu_attr[QE_ATR_ResourceAssn]);
           }
+
+        pthread_mutex_unlock(pque->qu_mutex);
         }
       }
     }
@@ -1925,11 +1927,8 @@ static void catch_child(
 
   {
   static char *id = "catch_child";
-  struct work_task *ptask;
   pid_t    pid;
   int    statloc;
-  int     found;
-  int     iter = -1;
 
   while (1)
     {

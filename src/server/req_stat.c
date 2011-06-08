@@ -109,13 +109,14 @@
 #include "log.h"
 #include "u_tree.h"
 #include "array.h"
+#include "queue.h"
 
 /* Global Data Items: */
 
 extern struct all_jobs alljobs;
 extern struct all_jobs array_summary;
 extern struct server   server;
-extern tlist_head      svr_queues;
+extern all_queues      svr_queues;
 extern char            server_name[];
 extern attribute_def   svr_attr_def[];
 extern attribute_def   que_attr_def[];
@@ -262,6 +263,7 @@ void *req_stat_job(
     else
       type = tjstTruncatedQueue;
 
+    /* if found, this mutex is released later */
     if ((pque = find_queuebyname(name)) == NULL)
       {
       rc = PBSE_UNKQUE;
@@ -313,6 +315,9 @@ void *req_stat_job(
     cntl->sc_post = 0; /* we're not going to make clients wait */
 
   req_stat_job_step2(cntl); /* go to step 2, see if running is current */
+
+  if (pque != NULL)
+    pthread_mutex_unlock(pque->qu_mutex);
 
   return(NULL);
   }  /* END req_stat_job() */
@@ -602,12 +607,11 @@ static void req_stat_job_step2(
     long sentJobCounter;
     long qjcounter;
     long qmaxreport;
+    int  iter = -1;
 
     /* loop through all queues */
 
-    for (pque = (pbs_queue *)GET_NEXT(svr_queues);
-         pque != NULL;
-         pque = (pbs_queue *)GET_NEXT(pque->qu_link))
+    while ((pque = next_queue(&svr_queues,&iter)) != NULL)
       {
       qjcounter = 0;
 
@@ -615,6 +619,7 @@ static void req_stat_job_step2(
           (pque->qu_qs.qu_type != QTYPE_Execution))
         {
         /* ignore routing queues */
+        pthread_mutex_unlock(pque->qu_mutex);
 
         continue;
         }
@@ -677,6 +682,7 @@ static void req_stat_job_step2(
           if (pa != NULL)
             pthread_mutex_unlock(pa->ai_mutex);
           pthread_mutex_unlock(pjob->ji_mutex);
+          pthread_mutex_unlock(pque->qu_mutex);
 
           return;
           }
@@ -701,6 +707,8 @@ static void req_stat_job_step2(
           pque->qu_qs.qu_name,
           log_buffer);
         }
+    
+      pthread_mutex_unlock(pque->qu_mutex);
       }      /* END for (pque) */
 
     if (pa == NULL)
@@ -717,10 +725,24 @@ static void req_stat_job_step2(
 
     if (exec_only)
       {
-      pque = find_queuebyname(pjob->ji_qs.ji_queue);
+      if (cntl->sc_pque != NULL)
+        {
+        if (cntl->sc_pque->qu_qs.qu_type != QTYPE_Execution)
+          goto nextjob;
+        }
+      else
+        {
+        pque = find_queuebyname(pjob->ji_qs.ji_queue);
+        
+        if (pque->qu_qs.qu_type != QTYPE_Execution)
+          {
+          pthread_mutex_unlock(pque->qu_mutex);
+        
+          goto nextjob;
+          }
 
-      if (pque->qu_qs.qu_type != QTYPE_Execution)
-        goto nextjob;
+        pthread_mutex_unlock(pque->qu_mutex);
+        }
       }
 
     pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
@@ -1137,14 +1159,15 @@ void req_stat_que(
     /* get status of the named queue */
 
     rc = status_que(pque, preq, &preply->brp_un.brp_status);
+
+    pthread_mutex_unlock(pque->qu_mutex);
     }
   else
     {
+    int iter = -1;
+
     /* get status of all queues */
-
-    pque = (pbs_queue *)GET_NEXT(svr_queues);
-
-    while (pque != NULL)
+    while ((pque = next_queue(&svr_queues,&iter)) != NULL)
       {
       rc = status_que(pque, preq, &preply->brp_un.brp_status);
 
@@ -1156,7 +1179,7 @@ void req_stat_que(
         rc = 0;
         }
 
-      pque = (pbs_queue *)GET_NEXT(pque->qu_link);
+      pthread_mutex_unlock(pque->qu_mutex);
       }
     }
 

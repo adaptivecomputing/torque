@@ -227,7 +227,9 @@ int reply_send(
 
   {
   int      rc = 0;
+#ifndef PBS_MOM
   int      iter = -1;
+#endif
   int      sfds = request->rq_conn;  /* socket */
 
 #ifndef PBS_MOM

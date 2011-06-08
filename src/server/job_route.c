@@ -312,7 +312,7 @@ int default_router(
 
 int job_route(
 
-  job *jobp) /* job to route */
+  job *jobp)      /* job to route */
 
   {
   int      bad_state = 0;
@@ -422,14 +422,9 @@ int job_route(
 
   if (life && (life < time_now))
     {
-    log_event(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      jobp->ji_qs.ji_jobid,
-      msg_routexceed);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobp->ji_qs.ji_jobid,msg_routexceed);
 
     /* job too long in queue */
-
     return(PBSE_ROUTEEXPD);
     }
 
@@ -437,7 +432,7 @@ int job_route(
     {
     /* not currently routing this job */
 
-    return(0);
+    return(PBSE_NONE);
     }
 
   if (qp->qu_attr[QR_ATR_AltRouter].at_val.at_long == 0)
@@ -475,7 +470,11 @@ void queue_route(
 
   while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
     {
-    if (pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now)
+    /* the second condition says we only want to try if routing
+     * has been tried once - this is to let req_commit have the 
+     * first crack at routing always */
+    if ((pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now) &&
+        (pjob->ji_qs.ji_un.ji_routet.ji_rteretry != 0))
       {
       if ((rc = job_route(pjob)) == PBSE_ROUTEREJ)
         {

@@ -119,6 +119,7 @@ extern int  LOGLEVEL;
 
 /* External Functions Called */
 
+void initialize_connections_table();
 extern void process_request(int);
 
 extern time_t time(time_t *);

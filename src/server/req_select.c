@@ -352,6 +352,9 @@ void req_selectjobs(
     sel_step2(cntl);
     }
 
+  if (pque != NULL)
+    pthread_mutex_unlock(pque->qu_mutex);
+
   return;
   }  /* END req_selectjobs() */
 
@@ -450,10 +453,26 @@ static void sel_step2(
 
     if (exec_only)
       {
-      pque = find_queuebyname(pjob->ji_qs.ji_queue);
-
-      if (pque->qu_qs.qu_type != QTYPE_Execution)
-        continue;
+      if (cntl->sc_pque != NULL)
+        {
+        pque = cntl->sc_pque;
+        
+        if (pque->qu_qs.qu_type != QTYPE_Execution)
+          continue;
+        }
+      else
+        {
+        pque = find_queuebyname(pjob->ji_qs.ji_queue);
+        
+        if (pque->qu_qs.qu_type != QTYPE_Execution)
+          {
+          pthread_mutex_unlock(pque->qu_mutex);
+          
+          continue;
+          }
+        
+        pthread_mutex_unlock(pque->qu_mutex);
+        }
       }
 
     if (server.sv_attr[SRV_ATR_query_others].at_val.at_long ||
@@ -466,8 +485,6 @@ static void sel_step2(
         if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) &&
             ((time_now - pjob->ji_momstat) > JobStatRate))
           {
-          /* need to ask MOM for new status */
-
           strcpy(cntl->sc_jobid, pjob->ji_qs.ji_jobid);
 
           if ((rc = stat_to_mom(pjob, cntl)) == PBSE_SYSTEM)
@@ -572,7 +589,6 @@ static void sel_step3(
       pjob = next_job(&alljobs,&iter);
     }
 
-
   while (pjob != NULL)
     {
     if (server.sv_attr[SRV_ATR_query_others].at_val.at_long ||
@@ -582,10 +598,24 @@ static void sel_step3(
 
       if (exec_only)
         {
-        pque = find_queuebyname(pjob->ji_qs.ji_queue);
-
-        if (pque->qu_qs.qu_type != QTYPE_Execution)
-          goto nextjob;
+        if (cntl->sc_pque != NULL)
+          {
+          if (cntl->sc_pque->qu_qs.qu_type != QTYPE_Execution)
+            goto nextjob;
+          }
+        else
+          {
+          pque = find_queuebyname(pjob->ji_qs.ji_queue);
+          
+          if (pque->qu_qs.qu_type != QTYPE_Execution)
+            {
+            pthread_mutex_unlock(pque->qu_mutex);
+            
+            goto nextjob;
+            }
+          
+          pthread_mutex_unlock(pque->qu_mutex);
+          }
         }
 
       if (select_job(pjob, cntl->sc_select))
@@ -960,8 +990,7 @@ static int build_selist(
           {
 
           /* does specified destination exist? */
-
-          *pque = find_queuebyname(plist->al_value);
+          *pque = find_queuebyname(plist->al_value); /* mutex freed later */
 
           if (*pque == (pbs_queue *)0)
             return (PBSE_UNKQUE);

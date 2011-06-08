@@ -82,6 +82,11 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
+#include "resizable_array.h"
+#include "hash_table.h"
+
+#define INITIAL_QUEUE_SIZE 5
+
 #define QTYPE_Unset 0
 #define QTYPE_Execution 1
 #define QTYPE_RoutePush 2
@@ -162,13 +167,12 @@ extern attribute_def que_attr_def[];
 
 struct pbs_queue
   {
-  list_link       qu_link;  /* forward/backward links */
 #ifndef PBS_MOM
   struct all_jobs *qu_jobs;  /* jobs in this queue */
   struct all_jobs *qu_jobs_array_sum; /* jobs with job arrays summarized */
 #else
-  tlist_head      qu_jobs;  /* jobs in this queue */
-  tlist_head      qu_jobs_array_sum; /* jobs with job arrays summarized */
+  tlist_head       qu_jobs;  /* jobs in this queue */
+  tlist_head       qu_jobs_array_sum; /* jobs with job arrays summarized */
 #endif
 
   struct queuefix
@@ -180,10 +184,12 @@ struct pbs_queue
     char   qu_name[PBS_MAXQUEUENAME]; /* queue name */
     } qu_qs;
 
-  int             qu_numjobs;  /* current numb jobs in queue */
-  int             qu_numcompleted;  /* current numb completed jobs in queue */
-  int             qu_njstate[PBS_NUMJOBSTATE]; /* # of jobs per state */
-  char            qu_jobstbuf[100];
+  pthread_mutex_t *qu_mutex; /* this queue's mutex */
+
+  int              qu_numjobs;  /* current numb jobs in queue */
+  int              qu_numcompleted;  /* current numb completed jobs in queue */
+  int              qu_njstate[PBS_NUMJOBSTATE]; /* # of jobs per state */
+  char             qu_jobstbuf[100];
 
   /* the queue attributes */
 
@@ -192,6 +198,17 @@ struct pbs_queue
 
 typedef struct pbs_queue pbs_queue;
 
+
+
+typedef struct all_queues
+  {
+  resizable_array *ra;
+  hash_table_t    *ht;
+
+  pthread_mutex_t *allques_mutex;
+  } all_queues;
+
+
 extern pbs_queue *find_queuebyname(char *);
 extern pbs_queue *get_dfltque();
 extern pbs_queue *que_alloc(char *name);
@@ -199,5 +216,10 @@ extern void   que_free(pbs_queue *);
 extern pbs_queue *que_recov_xml(char *);
 extern pbs_queue *que_recov(char *);
 extern int    que_save(pbs_queue *);
+
+pbs_queue *next_queue(all_queues *,int *);
+int        insert_queue(all_queues *,pbs_queue *);
+int        remove_queue(all_queues *,pbs_queue *);
+void       initialize_allques_array(all_queues *);
 
 #endif /* QUEUE_H */

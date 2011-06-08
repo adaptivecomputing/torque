@@ -7268,7 +7268,7 @@ int setup_program_environment(void)
 
   if (!multi_mom)
     {
-  log_init(NULL, mom_host);
+    log_init(NULL, mom_host);
     }
   else
     {

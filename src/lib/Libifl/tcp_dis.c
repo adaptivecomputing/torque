@@ -973,7 +973,7 @@ int resize_tcp_array_if_needed(
       /* FAILURE */
       log_err(-1,"DIS_tcp_setup","Couln't lock mutexes for reallocating");
       
-      return;
+      return(-1);
       }
 
     /*
@@ -1040,6 +1040,8 @@ int resize_tcp_array_if_needed(
     }
 
   pthread_mutex_unlock(tcparraymax_mutex);
+
+  return(rc);
   } /* END resize_tcp_array() */
 
 

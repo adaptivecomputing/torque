@@ -15,6 +15,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - change qdel to simply send qdel all - previously this was executed by a qstat and a qdel
       of every individual job 
   e - no longer fork to send mail, just use a thread
+  e - make queues threadsafe
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it

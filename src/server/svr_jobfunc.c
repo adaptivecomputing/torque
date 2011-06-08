@@ -150,7 +150,7 @@ extern char  *msg_badwait;  /* error message */
 extern char  *msg_daemonname;
 extern char  *pbs_o_host;
 extern char   server_name[];
-extern tlist_head svr_queues;
+extern all_queues svr_queues;
 extern int    comp_resc_lt;
 extern int    comp_resc_gt;
 extern int    svr_do_schedule;
@@ -472,6 +472,8 @@ int svr_enquejob(
                               pjob,
                               ATR_ACTION_NOOP)) != 0)
         {
+        pthread_mutex_unlock(pque->qu_mutex);
+
         return(rc);
         }
       }
@@ -496,6 +498,8 @@ int svr_enquejob(
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
     pjob->ji_qs.ji_un.ji_routet.ji_rteretry = 0;
     }
+        
+  pthread_mutex_unlock(pque->qu_mutex);
 
   return(0);
   }  /* END svr_enquejob() */
@@ -2632,15 +2636,15 @@ static void correct_ct(
 
             log_buffer);
 
-  for (pque = (pbs_queue *)GET_NEXT(svr_queues);
-       pque != NULL;
-       pque = (pbs_queue *)GET_NEXT(pque->qu_link))
+  while ((pque = next_queue(&svr_queues,&iter)) != NULL)
     {
     pque->qu_numjobs = 0;
     pque->qu_numcompleted = 0;
 
     for (i = 0;i < PBS_NUMJOBSTATE;++i)
       pque->qu_njstate[i] = 0;
+
+    pthread_mutex_unlock(pque->qu_mutex);
     }
 
   iter = -1;
@@ -2657,12 +2661,18 @@ static void correct_ct(
     if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
       {
       pque = pjob->ji_qhdr;
+
       if (pque == NULL)
-        {
         pque = find_queuebyname(pjob->ji_qs.ji_queue);
-        }
+      else
+        pthread_mutex_lock(pque->qu_mutex);
+
       if (pque != NULL)
+        {
         pque->qu_numcompleted++;
+
+        pthread_mutex_unlock(pque->qu_mutex);
+        }
       }
 
     pthread_mutex_unlock(pjob->ji_mutex);

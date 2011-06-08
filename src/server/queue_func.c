@@ -109,6 +109,7 @@
 #if __STDC__ != 1
 #include <memory.h>
 #endif
+#include <pthread.h>
 
 /* Global Data */
 
@@ -116,7 +117,7 @@ extern char     *msg_err_unlink;
 extern char *path_queues;
 
 extern struct    server server;
-extern tlist_head svr_queues;
+extern all_queues svr_queues;
 
 /*
  * que_alloc - allocate space for a queue structure and initialize
@@ -130,6 +131,9 @@ pbs_queue *que_alloc(
   char *name)
 
   {
+  static char *id = "que_alloc";
+  static char *mem_err = "no memory";
+
   int        i;
   pbs_queue *pq;
 
@@ -137,7 +141,7 @@ pbs_queue *que_alloc(
 
   if (pq == NULL)
     {
-    log_err(errno, "que_alloc", "no memory");
+    log_err(errno, id, mem_err);
 
     return(NULL);
     }
@@ -146,22 +150,32 @@ pbs_queue *que_alloc(
 
   pq->qu_qs.qu_type = QTYPE_Unset;
 
+  pq->qu_mutex = malloc(sizeof(pthread_mutex_t));
   pq->qu_jobs = malloc(sizeof(struct all_jobs));
   pq->qu_jobs_array_sum = malloc(sizeof(struct all_jobs));
+  
+  if ((pq->qu_mutex == NULL) ||
+      (pq->qu_jobs == NULL) ||
+      (pq->qu_jobs_array_sum == NULL))
+    {
+    log_err(ENOMEM,id,mem_err);
+    return(NULL);
+    }
 
   initialize_all_jobs_array(pq->qu_jobs);
   initialize_all_jobs_array(pq->qu_jobs_array_sum);
-  CLEAR_LINK(pq->qu_link);
+  pthread_mutex_init(pq->qu_mutex,NULL);
+  pthread_mutex_lock(pq->qu_mutex);
 
   strncpy(pq->qu_qs.qu_name, name, PBS_MAXQUEUENAME);
 
-  append_link(&svr_queues, &pq->qu_link, pq);
+  insert_queue(&svr_queues,pq);
 
   server.sv_qs.sv_numque++;
 
   /* set the working attributes to "unspecified" */
 
-  for (i = 0;i < QA_ATR_LAST;i++)
+  for (i = 0; i < QA_ATR_LAST; i++)
     {
     clear_attr(&pq->qu_attr[i], &que_attr_def[i]);
     }
@@ -208,7 +222,7 @@ void que_free(
 
   server.sv_qs.sv_numque--;
 
-  delete_link(&pq->qu_link);
+  remove_queue(&svr_queues,pq);
 
   free((char *)pq);
 
@@ -267,8 +281,9 @@ pbs_queue *find_queuebyname(
 
   {
   char  *pc;
-  pbs_queue *pque;
+  pbs_queue *pque = NULL;
   char   qname[PBS_MAXDEST + 1];
+  int    i;
 
   strncpy(qname, quename, PBS_MAXDEST);
 
@@ -279,15 +294,18 @@ pbs_queue *find_queuebyname(
   if (pc != NULL)
     *pc = '\0';
 
-  pque = (pbs_queue *)GET_NEXT(svr_queues);
+  pthread_mutex_lock(svr_queues.allques_mutex);
 
-  while (pque != NULL)
+  i = get_value_hash(svr_queues.ht,qname);
+
+  if (i >= 0)
     {
-    if (!strcmp(qname, pque->qu_qs.qu_name))
-      break;
+    pque = svr_queues.ra->slots[i].item;
 
-    pque = (pbs_queue *)GET_NEXT(pque->qu_link);
+    pthread_mutex_lock(pque->qu_mutex);
     }
+
+  pthread_mutex_unlock(svr_queues.allques_mutex);
 
   if (pc != NULL)
     *pc = '@'; /* restore '@' server portion */
@@ -315,6 +333,106 @@ pbs_queue *get_dfltque(void)
 
   return(pq);
   }  /* END get_dfltque() */
+
+
+
+
+void initialize_allques_array(
+
+  all_queues *aq)
+
+  {
+  aq->ra = initialize_resizable_array(INITIAL_QUEUE_SIZE);
+  aq->ht = create_hash(INITIAL_HASH_SIZE);
+
+  aq->allques_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(aq->allques_mutex,NULL);
+  } /* END initialize_all_ques_array() */
+
+
+
+
+int insert_queue(
+
+  all_queues *aq,
+  pbs_queue  *pque)
+
+  {
+  static char *id = "insert_queue";
+  int          rc;
+
+  pthread_mutex_lock(aq->allques_mutex);
+
+  if ((rc = insert_thing(aq->ra,pque)) == -1)
+    {
+    rc = ENOMEM;
+    log_err(rc,id,"No memory to resize the array");
+    }
+  else
+    {
+    add_hash(aq->ht,rc,pque->qu_qs.qu_name);
+    rc = PBSE_NONE;
+    }
+
+  pthread_mutex_unlock(aq->allques_mutex);
+
+  return(rc);
+  } /* END insert_queue() */
+
+
+
+
+
+int remove_queue(
+
+  all_queues *aq,
+  pbs_queue  *pque)
+
+  {
+  int rc = PBSE_NONE;
+  int index;
+
+  pthread_mutex_lock(aq->allques_mutex);
+
+  if ((index = get_value_hash(aq->ht,pque->qu_qs.qu_name)) < 0)
+    rc = THING_NOT_FOUND;
+  else
+    {
+    remove_thing_from_index(aq->ra,index);
+    remove_hash(aq->ht,pque->qu_qs.qu_name);
+    }
+
+  pthread_mutex_unlock(aq->allques_mutex);
+
+  return(rc);
+  } /* END remove_queue() */
+
+
+
+
+
+pbs_queue *next_queue(
+
+  all_queues *aq,
+  int        *iter)
+
+  {
+  pbs_queue *pque;
+
+  pthread_mutex_lock(aq->allques_mutex);
+
+  pque = (pbs_queue *)next_thing(aq->ra,iter);
+
+  pthread_mutex_unlock(aq->allques_mutex);
+
+  if (pque != NULL)
+    pthread_mutex_lock(pque->qu_mutex);
+
+  return(pque);
+  } /* END next_queue() */
+
+
+
 
 /* END queue_func.c */
 

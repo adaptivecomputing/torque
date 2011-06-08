@@ -152,6 +152,7 @@ extern void set_resc_assigned(job *, enum batch_op);
 extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 extern int   svr_chk_owner(struct batch_request *, job *);
+void chk_job_req_permissions(job **,struct batch_request *);
 
 /*
  * remove_stagein() - request that mom delete staged-in files for a job
@@ -263,7 +264,6 @@ int execute_job_delete(
   int               rc;
   int               iter = -1;
   char             *sigt = "SIGTERM";
-  char             *jobid;
 
   char             *Msg = NULL;
 
@@ -765,17 +765,10 @@ void req_deletejob(
   {
   job              *pjob;
 
-  struct work_task *pwtold;
-
-  struct work_task *pwtnew;
-  struct work_task *pwtcheck;
-
   int               rc = -1;
   int               iter = -1;
-  char             *sigt = "SIGTERM";
   char             *jobid;
 
-  char             *Msg = NULL;
 
   /* check if we are getting a purgecomplete from scheduler */
   if ((preq->rq_extend != NULL) && 

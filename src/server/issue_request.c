@@ -314,7 +314,7 @@ int issue_to_svr(
 
     pwt->wt_parmfunc = replyfunc;
 
-    pthread_mutex_unlock(pwt);
+    pthread_mutex_unlock(pwt->wt_mutex);
 
     return(0);
     }

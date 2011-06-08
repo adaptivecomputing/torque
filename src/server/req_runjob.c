@@ -112,6 +112,7 @@
 #include "net_connect.h"
 #include "pbs_proto.h"
 #include "array.h"
+#include "threadpool.h"
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -119,8 +120,8 @@
 
 /* External Functions Called: */
 
-extern int  send_job(job *, pbs_net_t, int, int, void (*x)(), struct batch_request *);
-extern void set_resc_assigned(job *, enum batch_op);
+extern void *send_job(void *);
+extern void  set_resc_assigned(job *, enum batch_op);
 
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 void                         stream_eof(int, u_long, uint16_t, int);
@@ -135,7 +136,6 @@ int  svr_startjob(job *, struct batch_request *, char *, char *);
 
 /* Private Functions local to this file */
 
-static void post_sendmom(struct work_task *);
 static int  svr_stagein(job *, struct batch_request *, int, int);
 static int  svr_strtjob2(job *, struct batch_request *);
 static job *chk_job_torun(struct batch_request *, int);
@@ -1310,276 +1310,6 @@ void finish_sendmom(
 
   pthread_mutex_unlock(pjob->ji_mutex);
   } /* END finish_sendmom() */
-
-
-
-
-
-/*
- * post_sendmom - clean up action for child started in send_job
- * which was sending a job "home" to MOM
- *
- * If send was successful, mark job as executing, and call stat_mom_job()
- * to obtain session id.
- *
- * If send didn't work, requeue the job.
- *
- * If the work_task has a non-null wt_parm2, it is the address of a batch
- * request to which a reply must be sent.
- *
- * Returns: none.
- */
-
-static void post_sendmom(
-
-  struct work_task *pwt)  /* I */
-
-  {
-  char *id = "post_sendmom";
-
-  int  newstate;
-  int  newsub;
-  int  r;
-  unsigned long addr;
-  int  stat;
-  job *jobp = (job *)pwt->wt_parm1;
-
-  struct batch_request *preq = (struct batch_request *)pwt->wt_parm2;
-
-  char  *MOMName = NULL;
-
-  int    jindex;
-  long DTime = time_now - 10000;
-
-  pthread_mutex_lock(jobp->ji_mutex);
-
-  if (LOGLEVEL >= 6)
-    {
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      jobp->ji_qs.ji_jobid,
-      "entering post_sendmom");
-    }
-
-  stat = pwt->wt_aux;
-
-  if (WIFEXITED(stat))
-    {
-    r = WEXITSTATUS(stat);
-    }
-  else
-    {
-    r = 2;
-
-    /* cannot get child exit status */
-
-    sprintf(log_buffer, msg_badexit,
-            stat);
-
-    strcat(log_buffer, id);
-
-    log_event(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_JOB,
-      jobp->ji_qs.ji_jobid,
-      log_buffer);
-    }
-
-  /* maintain local struct to associate job id with dispatch time */
-  pthread_mutex_lock(dispatch_mutex);
-
-  for (jindex = 0;jindex < 20;jindex++)
-    {
-    if (DispatchJob[jindex] == jobp)
-      {
-      DTime = DispatchTime[jindex];
-
-      DispatchJob[jindex] = NULL;
-
-      MOMName = DispatchNode[jindex];
-
-      break;
-      }
-    }
-
-  pthread_mutex_unlock(dispatch_mutex);
-
-  if (LOGLEVEL >= 1)
-    {
-    sprintf(log_buffer, "child reported %s for job after %ld seconds (dest=%s), rc=%d",
-            (r == 0) ? "success" : "failure",
-            time_now - DTime,
-            (MOMName != NULL) ? MOMName : "???",
-            r);
-
-    log_event(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_JOB,
-      jobp->ji_qs.ji_jobid,
-      log_buffer);
-    }
-
-  switch (r)
-    {
-
-    case 0:  /* send to MOM went ok */
-
-      jobp->ji_qs.ji_svrflags &= ~JOB_SVFLG_HOTSTART;
-
-      if (preq != NULL)
-        reply_ack(preq);
-
-      /* record start time for accounting */
-
-      jobp->ji_qs.ji_stime = time_now;
-
-      /* update resource usage attributes */
-
-      set_resc_assigned(jobp, INCR);
-
-      if (jobp->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
-        {
-        /* may be EXITING if job finished first */
-
-        svr_setjobstate(jobp, JOB_STATE_RUNNING, JOB_SUBSTATE_RUNNING);
-
-        /* above saves job structure */
-        }
-
-      /* accounting log for start or restart */
-
-      if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)
-        account_record(PBS_ACCT_RESTRT, jobp, "Restart from checkpoint");
-      else
-        account_jobstr(jobp);
-
-      /* if any dependencies, see if action required */
-
-      if (jobp->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
-        depend_on_exec(jobp);
-
-      /*
-       * it is unfortunate, but while the job has gone into execution,
-       * there is no way of obtaining the session id except by making
-       * a status request of MOM.  (Even if the session id was passed
-       * back to the sending child, it couldn't get up to the parent.)
-       */
-
-      jobp->ji_momstat = 0;
-
-      stat_mom_job(jobp);
-
-      break;
-
-    case 10:
-
-      /* NOTE: if r == 10, connection to mom timed out.  Mark node down */
-
-      addr = jobp->ji_qs.ji_un.ji_exect.ji_momaddr;
-      stream_eof(-1, addr, jobp->ji_qs.ji_un.ji_exect.ji_momport, 0);
-
-      /* send failed, requeue the job */
-
-      log_event(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        jobp->ji_qs.ji_jobid,
-        "unable to run job, MOM rejected/timeout");
-
-      free_nodes(jobp);
-
-      if (jobp->ji_qs.ji_substate != JOB_SUBSTATE_ABORT)
-        {
-        if (preq != NULL)
-          req_reject(PBSE_MOMREJECT, 0, preq, MOMName, "connection to mom timed out");
-
-        svr_evaljobstate(jobp, &newstate, &newsub, 1);
-
-        svr_setjobstate(jobp, newstate, newsub);
-        }
-      else
-        {
-        if (preq != NULL)
-          req_reject(PBSE_BADSTATE, 0, preq, MOMName, "job was aborted by mom");
-        }
-
-      break;
-
-    case 1:   /* commit failed */
-
-    default:
-
-      {
-      int JobOK = 0;
-
-      /* send failed, requeue the job */
-
-      sprintf(log_buffer, "unable to run job, MOM rejected/rc=%d",
-              r);
-
-      log_event(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        jobp->ji_qs.ji_jobid,
-        log_buffer);
-
-      free_nodes(jobp);
-
-      if (jobp->ji_qs.ji_substate != JOB_SUBSTATE_ABORT)
-        {
-        if (preq != NULL)
-          {
-          char tmpLine[1024];
-
-          if (preq->rq_reply.brp_code == PBSE_JOBEXIST)
-            {
-            /* job already running, start request failed but return success since
-             * desired behavior (job is running) is accomplished */
-
-            JobOK = 1;
-            }
-          else
-            {
-            sprintf(tmpLine, "cannot send job to %s, state=%s",
-                    (MOMName != NULL) ? MOMName : "mom",
-                    PJobSubState[jobp->ji_qs.ji_substate]);
-
-            req_reject(PBSE_MOMREJECT, 0, preq, MOMName, tmpLine);
-            }
-          }
-
-        if (JobOK == 1)
-          {
-          /* do not re-establish accounting - completed first time job was started */
-
-          /* update mom-based job status */
-
-          jobp->ji_momstat = 0;
-
-          stat_mom_job(jobp);
-          }
-        else
-          {
-          svr_evaljobstate(jobp, &newstate, &newsub, 1);
-
-          svr_setjobstate(jobp, newstate, newsub);
-          }
-        }
-      else
-        {
-        if (preq != NULL)
-          req_reject(PBSE_BADSTATE, 0, preq, MOMName, "send failed - abort");
-        }
-
-      break;
-      }
-    }  /* END switch (r) */
-
-  pthread_mutex_unlock(jobp->ji_mutex);
-
-  return;
-  }  /* END post_sendmom() */
 
 
 

@@ -134,7 +134,7 @@
 /* Global Data Items: */
 
 extern struct server server;
-extern tlist_head     svr_queues;
+extern all_queues     svr_queues;
 extern attribute_def que_attr_def[];
 extern attribute_def svr_attr_def[];
 extern attribute_def  node_attr_def[];   /* node attributes defs */
@@ -963,8 +963,10 @@ void mgr_queue_create(
     return;
     }
 
-  if (find_queuebyname(preq->rq_ind.rq_manager.rq_objname))
+  if ((pque = find_queuebyname(preq->rq_ind.rq_manager.rq_objname)))
     {
+    pthread_mutex_unlock(pque->qu_mutex);
+
     req_reject(PBSE_QUEEXIST, 0, preq, NULL, NULL);
 
     return;
@@ -1002,11 +1004,7 @@ void mgr_queue_create(
             preq->rq_user,
             preq->rq_host);
 
-    log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_QUEUE,
-      pque->qu_qs.qu_name,
-      log_buffer);
+    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_QUEUE,pque->qu_qs.qu_name,log_buffer);
 
     mgr_log_attr(
       msg_man_set,
@@ -1015,11 +1013,9 @@ void mgr_queue_create(
       preq->rq_ind.rq_manager.rq_objname);
 
     /* check the appropriateness of the attributes vs. queue type */
-
     if ((badattr = check_que_attr(pque)) != NULL)
       {
       /* mismatch, issue warning */
-
       sprintf(log_buffer, msg_attrtype,
               pque->qu_qs.qu_name,
               badattr);
@@ -1030,6 +1026,8 @@ void mgr_queue_create(
       {
       reply_ack(preq);
       }
+
+    pthread_mutex_unlock(pque->qu_mutex);
     }
 
   return;
@@ -1414,6 +1412,7 @@ void mgr_queue_set(
   pbs_queue *pque;
   char      *qname;
   int    rc;
+  int    iter = -1;
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
@@ -1421,7 +1420,9 @@ void mgr_queue_set(
     qname   = all_quename;
     allques = TRUE;
 
-    pque = (pbs_queue *)GET_NEXT(svr_queues);
+    pque = next_queue(&svr_queues,&iter);
+
+    pthread_mutex_lock(pque->qu_mutex);
     }
   else
     {
@@ -1439,16 +1440,12 @@ void mgr_queue_set(
     }
 
   /* set the attributes */
-
   sprintf(log_buffer, msg_manager,
           msg_man_set,
           preq->rq_user,
           preq->rq_host);
 
   log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_QUEUE, qname, log_buffer);
-
-  if (allques == TRUE)
-    pque = (pbs_queue *)GET_NEXT(svr_queues);
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
@@ -1464,9 +1461,10 @@ void mgr_queue_set(
            (void *)pque,
            ATR_ACTION_ALTER);
 
-
     if (rc != 0)
       {
+      pthread_mutex_unlock(pque->qu_mutex);
+    
       reply_badattr(rc, bad, plist, preq);
 
       return;
@@ -1478,33 +1476,37 @@ void mgr_queue_set(
 
     if (allques == FALSE)
       break;
+    
+    pthread_mutex_unlock(pque->qu_mutex);
 
-    pque = (pbs_queue *)GET_NEXT(pque->qu_link);
+    pque = next_queue(&svr_queues,&iter);
     }  /* END while (pque != NULL) */
 
   /* check the appropriateness of the attributes based on queue type */
 
-  if (allques == TRUE)
-    pque = (pbs_queue *)GET_NEXT(svr_queues);
-
-  while (pque != NULL)
+  while ((pque = next_queue(&svr_queues,&iter)) != NULL)
     {
+    pthread_mutex_lock(pque->qu_mutex);
+
     if ((badattr = check_que_attr(pque)) != NULL)
       {
       sprintf(log_buffer, msg_attrtype,
               pque->qu_qs.qu_name,
               badattr);
 
+      pthread_mutex_unlock(pque->qu_mutex);
+
       reply_text(preq, PBSE_ATTRTYPE, log_buffer);
 
       return;
       }
 
+    pthread_mutex_unlock(pque->qu_mutex);
+
     if (allques == FALSE)
       break;
-
-    pque = (pbs_queue *)GET_NEXT(pque->qu_link);
     }  /* END while (pque != NULL) */
+      
 
   reply_ack(preq);
 
@@ -1532,6 +1534,7 @@ void mgr_queue_unset(
   pbs_queue *pque;
   char      *qname;
   int    rc;
+  int    iter = -1;
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
@@ -1539,7 +1542,9 @@ void mgr_queue_unset(
     qname   = all_quename;
     allques = TRUE;
 
-    pque = (pbs_queue *)GET_NEXT(svr_queues);
+    pque = next_queue(&svr_queues,&iter);
+
+    pthread_mutex_lock(pque->qu_mutex);
     }
   else
     {
@@ -1582,6 +1587,8 @@ void mgr_queue_unset(
 
     if (rc != 0)
       {
+      pthread_mutex_unlock(pque->qu_mutex);
+
       reply_badattr(rc, bad_attr, plist, preq);
 
       return;
@@ -1596,14 +1603,14 @@ void mgr_queue_unset(
 
     if (allques == FALSE)
       break;
-
-    pque = GET_NEXT(pque->qu_link);
+    
+    pque = next_queue(&svr_queues,&iter);
     }
 
   reply_ack(preq);
 
   return;
-  }
+  } /* END mgr_queue_unset() */
 
 
 

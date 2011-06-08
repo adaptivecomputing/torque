@@ -1083,9 +1083,9 @@ int delete_whole_array(
     if (pa->jobs[i] == NULL)
       continue;
 
-    pthread_mutex_lock(pjob->ji_mutex);
-
     pjob = (job *)pa->jobs[i];
+
+    pthread_mutex_lock(pjob->ji_mutex);
 
     if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
       {

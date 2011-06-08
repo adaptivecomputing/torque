@@ -111,6 +111,7 @@
 #include "rpp.h"
 #include "mcom.h"
 #include "array.h"
+#include "threadpool.h"
 
 #if __STDC__ != 1
 #include <memory.h>
@@ -127,6 +128,8 @@ extern void stat_mom_job(job *);
 extern void remove_stagein(job *);
 extern void remove_checkpoint(job *);
 extern int  job_route(job *);
+void finish_sendmom(job *,struct batch_request *,long,char *,int);
+int PBSD_commit_get_sid(int ,long *,char *);
 
 extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 
@@ -135,7 +138,6 @@ extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 /* Private Functions local to this file */
 
 static int  local_move(job *, struct batch_request *);
-static void net_move_die(int sig);
 static void post_movejob(struct work_task *);
 static void post_routejob(struct work_task *);
 static int should_retry_route(int err);
@@ -299,9 +301,12 @@ static int local_move(
                      get_variable(jobp, pbs_o_host), mtype, NULL)))
     {
     /* should this queue be retried? */
+    pthread_mutex_unlock(qp->qu_mutex);
 
     return(should_retry_route(pbs_errno));
     }
+    
+  pthread_mutex_unlock(qp->qu_mutex);
 
   /* dequeue job from present queue, update destination and */
   /* queue_rank for new queue and enqueue into destination  */
@@ -346,12 +351,13 @@ static void post_routejob(
   struct work_task *pwt)
 
   {
-  int  newstate;
-  int  newsub;
-  int  r;
-  int  stat = pwt->wt_aux;
-  char *id = "post_routejob";
-  job *jobp = (job *)pwt->wt_parm1;
+  char      *id = "post_routejob";
+  int        newstate;
+  int        newsub;
+  int        r;
+  int        stat = pwt->wt_aux;
+  job       *jobp = (job *)pwt->wt_parm1;
+  pbs_queue *pque;
 
   pthread_mutex_lock(jobp->ji_mutex);
 
@@ -415,12 +421,17 @@ static void post_routejob(
       svr_evaljobstate(jobp, &newstate, &newsub, 1);
       svr_setjobstate(jobp, newstate, newsub);
 
+      pque = jobp->ji_qhdr;
+      pthread_mutex_lock(pque->qu_mutex);
+
       if ((r = job_route(jobp)) == PBSE_ROUTEREJ)
         job_abt(&jobp, pbse_to_txt(PBSE_ROUTEREJ));
       else if (r != 0)
         job_abt(&jobp, msg_routexceed);
       else
         pthread_mutex_unlock(jobp->ji_mutex);
+      
+      pthread_mutex_unlock(pque->qu_mutex);
 
       break;
     }  /* END switch (r) */
@@ -433,13 +444,13 @@ static void post_routejob(
 
 void finish_routing_processing(
 
-  job *pjob)
+  job *pjob,
+  int  status)
 
   {
-  static char *id = "finishing_routing_processing";
-  int  newstate;
-  int  newsub;
-  int  status;
+  pbs_queue   *pque;
+  int          newstate;
+  int          newsub;
 
   switch (status)
     {
@@ -477,6 +488,9 @@ void finish_routing_processing(
 
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
       svr_setjobstate(pjob, newstate, newsub);
+      
+      pque = pjob->ji_qhdr;
+      pthread_mutex_lock(pque->qu_mutex);
 
       if ((status = job_route(pjob)) == PBSE_ROUTEREJ)
         job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
@@ -484,6 +498,8 @@ void finish_routing_processing(
         job_abt(&pjob, msg_routexceed);
       else
         pthread_mutex_unlock(pjob->ji_mutex);
+
+      pthread_mutex_unlock(pque->qu_mutex);
 
       break;
     }  /* END switch (status) */
@@ -707,7 +723,7 @@ void finish_move_process(
 
     case MOVE_TYPE_Route:
         
-      finish_routing_processing(pjob);
+      finish_routing_processing(pjob,status);
 
       break;
 
@@ -767,7 +783,6 @@ void *send_job(
 
   struct batch_request *preq = (struct batch_request *)args->data;
   struct attropl       *pqjatr;      /* list (single) of attropl for quejob */
-  struct work_task     *ptask;
   struct pbsnode       *np;
   attribute            *pattr;
   mbool_t               Timeout = FALSE;
@@ -1118,32 +1133,6 @@ void *send_job(
   return(NULL);
   }  /* END send_job() */
 
-
-
-
-
-/*
- * net_move_die - clean up child and report bad status to parent.
- *
- * Returns: exit with status of 1.
- */
-
-static void net_move_die(
-
-  int sig)
-
-  {
-  sprintf(log_buffer, "Routing child got signal %d\n",
-          sig);
-
-  log_event(
-    PBSEVENT_SYSTEM,
-    PBS_EVENTCLASS_SERVER,
-    "net_move_die",
-    log_buffer);
-
-  exit(1);
-  }
 
 
 
