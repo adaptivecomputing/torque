@@ -407,7 +407,7 @@ struct pbsnode *find_nodebyname(
 
     if (pnode->nd_state & INUSE_DELETED)
       {
-      pthread_mutex_lock(pnode->nd_mutex);
+      pthread_mutex_unlock(pnode->nd_mutex);
 
       continue;
       }

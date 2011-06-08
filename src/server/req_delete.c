@@ -764,7 +764,6 @@ void req_deletejob(
 
   {
   job              *pjob;
-
   int               rc = -1;
   int               iter = -1;
   char             *jobid;
@@ -774,10 +773,7 @@ void req_deletejob(
   if ((preq->rq_extend != NULL) && 
         !strncmp(preq->rq_extend,PURGECOMP,strlen(PURGECOMP)))
     {
-    /*
-     * purge_completed_jobs will respond with either an ack or reject
-     */
-
+    /* purge_completed_jobs will respond with either an ack or reject */
     purge_completed_jobs(preq);
 
     return;
