@@ -190,6 +190,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       --with-blcr-lib and --with-blcr-bin to override the search paths, if necessary.
       The last option, --with-blcr-bin is used to generate contrib/blcr/checkpoint_script
       and contrib/blcr/restart_script from the information supplied at configure time.
+  b - Fixed problem where calling qstat with a non-existent job id would hang the qstat
+      command. This was only a problem when configured with MUNGE.
+  b - fix a potential buffer overflow security issue in job names and host address names
 
 
 2.5.5

@@ -1495,7 +1495,7 @@ int svr_chkque(
 
   /*
    * 1. If the queue is an Execution queue ...
-   *    These is checked first because 1a - 1c are more damaging
+   *    This is checked first because 1a - 1c are more damaging
    *    (see local_move() in svr_movejob.c)
    */
 
@@ -1512,7 +1512,7 @@ int svr_chkque(
         }
       }
 
-    /* 1b. check site restrictions */
+    /* 1b. check site restrictions -- Currently site_acl_check is a stub */
 
     if (site_acl_check(pjob, pque))
       {
