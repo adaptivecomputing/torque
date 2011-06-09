@@ -4,6 +4,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Added new qsub argument -F. This argument takes a quoted string as
       an argument. The string is a list of space separated commandline
       arguments which are available to the job script.
+  e - Added an option to asynchronously delete jobs (currently cannot work 
+      for qdel -a all due to limitations of single threads) backported from 3.0.2
 
 2.5.6
   b - Made changes to record_jobinfo and supporting functions to be

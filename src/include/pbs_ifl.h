@@ -322,11 +322,12 @@
 #define MAIL_AT_ABORT "a"
 
 
-#define ARRAY_RANGE "array_range=" /* see qdel.c */
-#define DELDELAY  "deldelay=" /* see qdel.c */
-#define DELPURGE  "delpurge="   /* see qdel.c */
-#define PURGECOMP  "purgecomplete="   /* see req_delete.c */
-#define EXECQUEONLY  "exec_queue_only"   /* see req_stat.c */
+#define ARRAY_RANGE "array_range="      /* see qdel.c */
+#define DELDELAY  "deldelay="           /* see qdel.c */
+#define DELPURGE  "delpurge="           /* see qdel.c */
+#define DELASYNC  "delasync"            /* see qdel.c */
+#define PURGECOMP  "purgecomplete="     /* see req_delete.c */
+#define EXECQUEONLY  "exec_queue_only"  /* see req_stat.c */
 #define RERUNFORCE "force"
 
 #define USER_HOLD "u"

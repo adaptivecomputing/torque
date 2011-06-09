@@ -119,7 +119,7 @@ int main(
 
   char extend[1024];
 
-#define GETOPT_ARGS "cm:pW:t:"
+#define GETOPT_ARGS "acm:pW:t:"
 
   extend[0] = '\0';
 
@@ -127,6 +127,18 @@ int main(
     {
     switch (c)
       {
+      case 'a':
+
+        if (extend[0] != '\0')
+          {
+          errflg++;
+
+          break;
+          }
+
+        strcpy(extend,DELASYNC);
+
+        break;
 
       case 'c':
 
@@ -256,11 +268,11 @@ int main(
 
   if ((errflg != 0) || (optind >= argc))
     {
-    static char usage[] = "usage: qdel [{ -c | -p | -t | -W delay | -m message}] [<JOBID>[<JOBID>]|'all'|'ALL']...\n";
+    static char usage[] = "usage: qdel [{ -a | -c | -p | -t | -W delay | -m message}] [<JOBID>[<JOBID>]|'all'|'ALL']...\n";
 
     fprintf(stderr, "%s", usage);
 
-    fprintf(stderr, "       -c, -m, -p, -t, and -W are mutually exclusive\n");
+    fprintf(stderr, "       -a, -c, -m, -p, -t, and -W are mutually exclusive\n");
 
     exit(2);
     }
@@ -337,11 +349,16 @@ cnt:
   exit(any_failed);
   }  /* END main() */
 
+
+
+
+
 /* if a user requested deleting 'all' then this routine will get the list of
  * jobs from the server and try to delete all jobs that are not in a
  * 'C'omplete or 'E'xiting state
  */
 void qdel_all(
+
   char *extend)   /* I */
 
   {
@@ -360,6 +377,11 @@ void qdel_all(
   struct attrl *a;
 
   connect = cnt2server('\0');
+
+  /* qdel -a all must be treated as qdel all due to limitations of single
+   * threaded-ness --dbeer */
+  if (!strcmp(extend,DELASYNC))
+    extend[0] = '\0';
 
   if (connect <= 0)
     {
