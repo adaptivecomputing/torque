@@ -2798,7 +2798,7 @@ void *node_unreserve_work(
 
     if (np->nd_state & INUSE_DELETED)
       {
-      pthread_mutex_lock(np->nd_mutex);
+      pthread_mutex_unlock(np->nd_mutex);
 
       continue;
       }
@@ -2817,7 +2817,7 @@ void *node_unreserve_work(
         }
       }
     
-    pthread_mutex_lock(np->nd_mutex);
+    pthread_mutex_unlock(np->nd_mutex);
     }
 
   return(NULL);
