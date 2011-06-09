@@ -253,8 +253,9 @@ void ensure_deleted(
 
 int execute_job_delete(
 
-  job                  *pjob, /* M */
-  struct batch_request *preq) /* I */
+  job                  *pjob,            /* M */
+  char                 *Msg,             /* I */
+  struct batch_request *preq)            /* I */
 
   {
   struct work_task *pwtold;
@@ -265,8 +266,6 @@ int execute_job_delete(
   int               iter = -1;
   char             *sigt = "SIGTERM";
 
-  char             *Msg = NULL;
-
   int               has_mutex = TRUE;
 
   chk_job_req_permissions(&pjob,preq);
@@ -275,34 +274,6 @@ int execute_job_delete(
     {
     /* preq is rejected in chk_job_req_permissions here */
     return(-1);
-    }
-
-  if (preq->rq_extend != NULL)
-    {
-    if (strncmp(preq->rq_extend, deldelaystr, strlen(deldelaystr)) &&
-        strncmp(preq->rq_extend, delasyncstr, strlen(delasyncstr)) &&
-        strncmp(preq->rq_extend, delpurgestr, strlen(delpurgestr)))
-      {
-      /* have text message in request extension, add it */
-
-      Msg = preq->rq_extend;
-
-      /*
-       * Message capability is only for operators and managers.
-       * Check if request is authorized
-      */
-
-      if ((preq->rq_perm & (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR |
-                            ATR_DFLAG_MGRD | ATR_DFLAG_MGWR)) == 0)
-        {
-        pthread_mutex_unlock(pjob->ji_mutex);
-
-        req_reject(PBSE_PERM, 0, preq, NULL,
-          "must have operator or manager privilege to use -m parameter");
-
-        return(-1);
-        }
-      }
     }
 
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
@@ -424,7 +395,9 @@ int execute_job_delete(
     pwtnew = set_task(WORK_Timed,time_now + 1,post_delete_route,preq);
 
     if (pwtnew == 0)
+      {
       req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
+      }
 
     pthread_mutex_unlock(pwtnew->wt_mutex);
     pthread_mutex_unlock(pjob->ji_mutex);
@@ -507,53 +480,6 @@ jump:
       }
 
     apply_job_delete_nanny(pjob, time_now + 60);
-
-    /* check if we are getting a asynchronous delete */
-
-    if ((preq->rq_extend != NULL) &&
-          !strncmp(preq->rq_extend,DELASYNC,strlen(DELASYNC)))
-      {
-      struct batch_request *preq_tmp = NULL;
-      /*
-       * Respond with an ack now instead of after MOM processing
-       * Create a new batch request and fill it in. It will be freed by reply_ack
-       */
-
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
-
-      preq_tmp = alloc_br(PBS_BATCH_DeleteJob);
-      preq_tmp->rq_perm = preq->rq_perm;
-      preq_tmp->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
-      preq_tmp->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
-      preq_tmp->rq_fromsvr = preq->rq_fromsvr;
-      preq_tmp->rq_extsz = preq->rq_extsz;
-      preq_tmp->rq_conn = preq->rq_conn;
-      memcpy(preq_tmp->rq_ind.rq_manager.rq_objname,
-          preq->rq_ind.rq_manager.rq_objname, PBS_MAXSVRJOBID + 1);
-      memcpy(preq_tmp->rq_user, preq->rq_user, PBS_MAXUSER + 1);
-      memcpy(preq_tmp->rq_host, preq->rq_host, PBS_MAXHOSTNAME + 1);
-
-      reply_ack(preq_tmp);
-      preq->rq_noreply = TRUE; /* set for no more replies */
-      }
-  
-    /* make a cleanup task if set */
-    if ((server.sv_attr[SRV_ATR_JobForceCancelTime].at_flags & ATR_VFLAG_SET) &&
-        (server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long > 0))
-      {
-      pwtcheck = set_task(
-        WORK_Timed,
-        time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
-        ensure_deleted,
-        preq);
-    
-      if (pwtcheck != NULL)
-        {
-        insert_task(pjob->ji_svrtask,pwtcheck,TRUE);
-
-        pthread_mutex_unlock(pwtcheck->wt_mutex);
-        }
-      }
 
     /*
      * Send signal request to MOM.  The server will automagically
@@ -763,29 +689,85 @@ void req_deletejob(
   struct batch_request *preq)  /* I */
 
   {
-  job              *pjob;
-  int               rc = -1;
-  int               iter = -1;
-  char             *jobid;
-
+  job                  *pjob;
+  int                   rc = -1;
+  int                   iter = -1;
+  char                 *jobid;
+  char                 *Msg = NULL;
+  struct batch_request *preq_tmp = NULL;
 
   /* check if we are getting a purgecomplete from scheduler */
-  if ((preq->rq_extend != NULL) && 
-        !strncmp(preq->rq_extend,PURGECOMP,strlen(PURGECOMP)))
+  if (preq->rq_extend != NULL)  
     {
-    /* purge_completed_jobs will respond with either an ack or reject */
-    purge_completed_jobs(preq);
+    if (!strncmp(preq->rq_extend,PURGECOMP,strlen(PURGECOMP)))
+      {
+      /* purge_completed_jobs will respond with either an ack or reject */
+      purge_completed_jobs(preq);
+      
+      return;
+      }
+    else if (strncmp(preq->rq_extend, deldelaystr, strlen(deldelaystr)) &&
+        strncmp(preq->rq_extend, delasyncstr, strlen(delasyncstr)) &&
+        strncmp(preq->rq_extend, delpurgestr, strlen(delpurgestr)))
+      {
+      /* have text message in request extension, add it */
+      Msg = preq->rq_extend;
 
-    return;
+      /* Message capability is only for operators and managers.
+       * Check if request is authorized */
+      if ((preq->rq_perm & (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR |
+                            ATR_DFLAG_MGRD | ATR_DFLAG_MGWR)) == 0)
+        {
+        req_reject(PBSE_PERM, 0, preq, NULL,
+          "must have operator or manager privilege to use -m parameter");
+
+        return;
+        }
+      }
+    /* check if we are getting a asynchronous delete */
+    else if (!strncmp(preq->rq_extend,delasyncstr,strlen(delasyncstr)))
+      {
+      /*
+       * Respond with an ack now instead of after MOM processing
+       * Create a new batch request and fill it in. It will be freed by reply_ack
+       */
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+
+      preq_tmp = alloc_br(PBS_BATCH_DeleteJob);
+      preq_tmp->rq_perm = preq->rq_perm;
+      preq_tmp->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
+      preq_tmp->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
+      preq_tmp->rq_fromsvr = preq->rq_fromsvr;
+      preq_tmp->rq_extsz = preq->rq_extsz;
+      preq_tmp->rq_conn = preq->rq_conn;
+      memcpy(preq_tmp->rq_ind.rq_manager.rq_objname,
+          preq->rq_ind.rq_manager.rq_objname, PBS_MAXSVRJOBID + 1);
+      memcpy(preq_tmp->rq_user, preq->rq_user, PBS_MAXUSER + 1);
+      memcpy(preq_tmp->rq_host, preq->rq_host, PBS_MAXHOSTNAME + 1);
+
+      }
     }
 
   if (strcasecmp(preq->rq_ind.rq_delete.rq_objname,"all") == 0)
     {
+    if (preq_tmp != NULL)
+      {
+      reply_ack(preq_tmp);
+      preq->rq_noreply = TRUE; /* set for no more replies */
+      }
+
     while ((pjob = next_job(&alljobs,&iter)) != NULL)
       {
+      if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+        {
+        pthread_mutex_unlock(pjob->ji_mutex);
+
+        continue;
+        }
+
       /* mutex is freed below */
       if ((rc = forced_jobpurge(pjob,preq)) == PBSE_NONE)
-        rc = execute_job_delete(pjob,preq);
+        rc = execute_job_delete(pjob,Msg,preq);
       else if (rc != PURGE_SUCCESS)
         break;
       }
@@ -804,9 +786,15 @@ void req_deletejob(
       }
     else
       {
+      if (preq_tmp != NULL)
+        {
+        reply_ack(preq_tmp);
+        preq->rq_noreply = TRUE; /* set for no more replies */
+        }
+
       /* mutex is freed below */
       if ((rc = forced_jobpurge(pjob,preq)) == PBSE_NONE)
-        rc = execute_job_delete(pjob,preq);
+        rc = execute_job_delete(pjob,Msg,preq);
       }
     }
 
@@ -1091,7 +1079,6 @@ static int forced_jobpurge(
       else
         {
         /* FAILURE */
-
         req_reject(PBSE_PERM, 0, preq, NULL, NULL);
 
         pthread_mutex_unlock(pjob->ji_mutex);
