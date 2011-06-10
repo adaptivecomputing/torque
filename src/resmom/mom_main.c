@@ -201,6 +201,7 @@ int            numa_index;
 char           path_meminfo[MAX_LINE];
 #endif
 
+int thread_unlink_calls = FALSE;
 /* by default, enforce these policies */
 int    ignwalltime = 0; 
 int    ignmem = 0;
@@ -434,6 +435,7 @@ static unsigned long setmempressthr(char *);
 static unsigned long setmempressdur(char *);
 #endif
 static unsigned long setreduceprologchecks(char *);
+static unsigned long setthreadunlinkcalls(char *);
 unsigned long rppthrottle(char *value);
 
 static struct specials
@@ -502,6 +504,7 @@ static struct specials
 #endif
   { "reduce_prolog_checks",         setreduceprologchecks},
   { "rpp_throttle", rppthrottle },
+  { "thread_unlink_calls", setthreadunlinkcalls },
   { NULL,                  NULL }
   };
 
@@ -3229,6 +3232,28 @@ static u_long setvarattr(
 
   return(1);
   }  /* END setvarattr() */
+
+
+
+
+static unsigned long setthreadunlinkcalls(
+
+  char *value) /* I */
+
+  {
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "threadunlinkcalls",
+    value);
+
+  if (!strncasecmp(value,"t",1) || (value[0] == '1') || !strcasecmp(value,"on") )
+    thread_unlink_calls = TRUE;
+  else
+    thread_unlink_calls = FALSE;
+
+  return(1);
+  } /* END setthreadunlinkcalls() */
 
 
 

@@ -147,7 +147,7 @@ int conn_qsub(char *, long, char *);
 void job_purge(job *);
 
 /* External functions */
-extern void mom_checkpoint_delete_files(job *pjob);
+extern void mom_checkpoint_delete_files(job_file_delete_info *);
 
 #if IBM_SP2==2  /* IBM SP PSSP 3.1 */
 void unload_sp_switch(job *pjob);
@@ -162,12 +162,14 @@ static void job_init_wattr(job *);
 
 /* Global Data items */
 
+extern char tmpdir_basename[];	/* for TMPDIR */
 extern gid_t pbsgroup;
 extern uid_t pbsuser;
 extern char *msg_abt_err;
 extern char *path_jobs;
 extern char *path_spool;
 extern char *path_aux;
+extern char *msg_err_purgejob;
 extern char  server_name[];
 extern time_t time_now;
 extern int   LOGLEVEL;
@@ -177,7 +179,11 @@ extern tlist_head svr_alljobs;
 
 void nodes_free(job *);
 int TTmpDirName(job *, char *);
-void *purge_file(void *);
+extern int thread_unlink_calls;
+
+extern void MOMCheckRestart(void);
+extern int delete_cpuset(char *);
+
 
 extern int multi_mom;
 extern int pbs_rm_port;
@@ -251,8 +257,6 @@ int remtree(
   struct dirent *pdir;
   char           namebuf[MAXPATHLEN];
   char          *filnam;
-  char          *alloced_path;
-  char          *alloced_dir;
   int            i;
   int            rtnv = 0;
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
@@ -276,8 +280,6 @@ int remtree(
 
     return(-1);
     }
-
-  alloced_dir = strdup(dirname);
 
   if (S_ISDIR(sb.st_mode))
     {
@@ -318,15 +320,21 @@ int remtree(
         continue;
         }
 
-      alloced_path = strdup(namebuf);
-
       if (S_ISDIR(sb.st_mode))
         {
         rtnv = remtree(namebuf);
         }
-      else if ((alloced_path != NULL) &&
-               ((enqueue_threadpool_request(purge_file,alloced_path)) == PBSE_NONE) &&
-               (LOGLEVEL >= 7))
+      else if (unlink(namebuf) < 0)
+        {
+        if (errno != ENOENT)
+          {
+          sprintf(log_buffer, "unlink failed on %s", namebuf);
+          log_err(errno, id, log_buffer);
+          
+          rtnv = -1;
+          }
+        }
+      else if (LOGLEVEL >= 7)
         {
         sprintf(log_buffer, "unlink(1) succeeded on %s", namebuf);
 
@@ -355,9 +363,14 @@ int remtree(
       log_ext(-1, id, log_buffer, LOG_DEBUG);
       }
     }
-  else if ((alloced_dir != NULL) &&
-           (enqueue_threadpool_request(purge_file,alloced_dir) == PBSE_NONE) &&
-           (LOGLEVEL >= 7))
+  else if (unlink(dirname) < 0)
+    {
+    snprintf(log_buffer,sizeof(log_buffer),"unlink failed on %s",dirname);
+    log_err(errno,id,log_buffer);
+
+    rtnv = -1;
+    }
+  else if (LOGLEVEL >= 7)
     {
     sprintf(log_buffer, "unlink(2) succeeded on %s", dirname);
 
@@ -447,8 +460,7 @@ int conn_qsub(
  * Returns: pointer to structure or null is space not available.
  */
 
-job *
-job_alloc(void)
+job *job_alloc(void)
 
   {
   job *pj;
@@ -489,7 +501,6 @@ job_alloc(void)
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
 
   /* set the working attributes to "unspecified" */
-
   job_init_wattr(pj);
 
   return(pj);
@@ -561,10 +572,13 @@ void job_free(
  * doing this to avoid removing objects that aren't belong to the user.
  */
 int job_unlink_file(
-  job *pjob,		/* I */
-  const char *name)	/* I */
+
+  job        *pjob,  /* I */
+  const char *name)	 /* I */
+
   {
-  int saved_errno = 0, result = 0;
+  int saved_errno = 0;
+  int result = 0;
   uid_t uid = geteuid();
   gid_t gid = getegid();
 
@@ -591,10 +605,13 @@ int job_unlink_file(
   }  /* END job_unlink_file() */
 
 
+
+
 /*
  * job_init_wattr - initialize job working attribute array
  * set the types and the "unspecified value" flag
  */
+
 static void job_init_wattr(
 
   job *pj)
@@ -602,7 +619,7 @@ static void job_init_wattr(
   {
   int i;
 
-  for (i = 0;i < JOB_ATR_LAST;i++)
+  for (i = 0; i < JOB_ATR_LAST; i++)
     {
     clear_attr(&pj->ji_wattr[i], &job_attr_def[i]);
     }
@@ -613,70 +630,152 @@ static void job_init_wattr(
 
 
 
-void *purge_file(
+
+void *delete_job_files(
 
   void *vp)
 
   {
-  static char *id = "purge_file";
-  char  *path = (char *)vp;
+  static char          *id = "delete_job_files";
+  job_file_delete_info *jfdi = (job_file_delete_info *)vp;
+  char                  namebuf[MAXPATHLEN];
+  int                   rc = 0;
 
-  if (unlink(path) < 0)
+  if (jfdi->has_temp_dir == TRUE)
+    {
+    if (tmpdir_basename[0] == '/')
+      {
+      snprintf(namebuf, sizeof(namebuf), "%s/%s", tmpdir_basename, jfdi->jobid);
+      sprintf(log_buffer, "removing transient job directory %s",
+        namebuf);
+
+      log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jfdi->jobid,log_buffer);
+
+      if ((setegid(jfdi->gid) == -1) ||
+          (seteuid(jfdi->uid) == -1))
+        {
+        /* FAILURE */
+        rc = -1;;
+        }
+      else
+        {
+        rc = remtree(namebuf);
+        
+        seteuid(pbsuser);
+        setegid(pbsgroup);
+        }
+      
+      if ((rc != 0) && 
+          (LOGLEVEL >= 5))
+        {
+        sprintf(log_buffer,
+          "recursive remove of job transient tmpdir %s failed",
+          namebuf);
+        
+        log_err(errno, "recursive (r)rmdir", log_buffer);
+        }
+      }
+    } /* END code to remove temp dir */
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  if (use_cpusets(pjob) == TRUE)
+    {
+    /* Delete the cpuset for the job. */
+    delete_cpuset(jfdi->jobid);
+    }
+#endif /* PENABLE_LINUX26_CPUSETS */
+
+  /* delete the node file and gpu file */
+  if (jfdi->has_node_file == TRUE)
+    {
+    sprintf(namebuf,"%s/%s", path_aux, jfdi->jobid);
+    unlink(namebuf);
+
+    sprintf(namebuf, "%s/%sgpu", path_aux, jfdi->jobid);
+    unlink(namebuf);
+    } /* END code to delete node and gpu files */
+
+  /* delete script file */
+  if (multi_mom)
+    {
+    snprintf(namebuf, sizeof(namebuf), "%s%s%d%s",
+      path_jobs,
+      jfdi->prefix,
+      pbs_rm_port,
+      JOB_SCRIPT_SUFFIX);
+    }
+  else
+    {
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+      path_jobs,
+      jfdi->prefix,
+      JOB_SCRIPT_SUFFIX);
+    }
+
+  if (unlink(namebuf) < 0)
     {
     if (errno != ENOENT)
-      {
-      snprintf(log_buffer,sizeof(log_buffer),
-        "Counldn't remove %s",
-        path);
-      log_err(errno, id, log_buffer);
-      }
+      log_err(errno,id,msg_err_purgejob);
+    }
+  else
+    {
+    snprintf(log_buffer,sizeof(log_buffer),"removed job script");
+    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jfdi->jobid,log_buffer);
+    }
+
+  /* delete job task directory */
+  if (multi_mom)
+    {
+    snprintf(namebuf,sizeof(namebuf),"%s%s%d%s",
+      path_jobs,
+      jfdi->prefix,
+      pbs_rm_port,
+      JOB_TASKDIR_SUFFIX);
+    }
+  else
+    {
+    snprintf(namebuf,sizeof(namebuf),"%s%s%s",
+      path_jobs,
+      jfdi->prefix,
+      JOB_TASKDIR_SUFFIX);
+    }
+
+  remtree(namebuf);
+
+  mom_checkpoint_delete_files(jfdi);
+
+  /* delete job file */
+  if (multi_mom)
+    {
+    snprintf(namebuf,sizeof(namebuf),"%s%s%d%s",
+      path_jobs,
+      jfdi->prefix,
+      pbs_rm_port,
+      JOB_FILE_SUFFIX);
+    }
+  else
+    {
+    snprintf(namebuf,sizeof(namebuf),"%s%s%s",
+      path_jobs,
+      jfdi->prefix,
+      JOB_FILE_SUFFIX);
+    }
+
+  if (unlink(namebuf) < 0)
+    {
+    if (errno != ENOENT)
+      log_err(errno,id,msg_err_purgejob);
     }
   else if (LOGLEVEL >= 6)
     {
-    snprintf(log_buffer, sizeof(log_buffer),
-      "Successfully removed %s",
-      path);
-
-    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,"",log_buffer);
+    snprintf(log_buffer,sizeof(log_buffer),"remove job file");
+    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jfdi->jobid,log_buffer);
     }
 
-  free(path);
+  free(jfdi);
 
   return(NULL);
-  } /* END purge_file() */
-
-
-
-
-void *remove_dir(
-
-  void *vp)
-
-  {
-  static char *id = "remove_dir";
-  char        *path = (char *)vp;
-
-  if (rmdir(path) != 0)
-    {
-    if (errno != ENOENT)
-      {
-      snprintf(log_buffer,sizeof(log_buffer),
-        "Couldn't remove %s",
-        path);
-      log_err(errno,id,log_buffer);
-      }
-    else if (LOGLEVEL >= 6)
-      {
-      snprintf(log_buffer,sizeof(log_buffer),
-        "Successfully removed %s",
-        path);
-
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"",log_buffer);
-      }
-    }
-
-  return(NULL);
-  } /* END remove_dir() */
+  } /* END delete_job_files() */
 
 
 
@@ -688,183 +787,66 @@ void job_purge(
   job *pjob)  /* I (modified) */
 
   {
-  static char   id[] = "job_purge";
-  char          namebuf[MAXPATHLEN + 1];
-  char         *alloced_path;
-  char          portname[MAXPATHLEN + 1];
-  int           rc;
+  static char           id[] = "job_purge";
+  job_file_delete_info *jfdi;
 
-  extern void MOMCheckRestart(void);
+  jfdi = malloc(sizeof(job_file_delete_info));
 
+  if (jfdi == NULL)
+    {
+    log_err(ENOMEM,id,"No space to allocate info for job file deletion");
+    return;
+    }
+
+  /* initialize struct information */
   if (pjob->ji_flags & MOM_HAS_TMPDIR)
     {
-    if (TTmpDirName(pjob, namebuf))
-      {
-      sprintf(log_buffer, "removing transient job directory %s",
-        namebuf);
-
-      log_record(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
-
-      if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1) ||
-          (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
-        {
-        /* FAILURE */
-        return;
-        }
-
-      rc = remtree(namebuf);
-
-      seteuid(pbsuser);
-      setegid(pbsgroup);
-
-      if ((rc != 0) && 
-          (LOGLEVEL >= 5))
-        {
-        sprintf(log_buffer,
-          "recursive remove of job transient tmpdir %s failed",
-          namebuf);
-
-        log_err(errno, "recursive (r)rmdir",
-          log_buffer);
-        }
-
-      pjob->ji_flags &= ~MOM_HAS_TMPDIR;
-      }
+    jfdi->has_temp_dir = TRUE;
+    pjob->ji_flags &= ~MOM_HAS_TMPDIR;
     }
-
-#ifdef PENABLE_LINUX26_CPUSETS
-
-  if (use_cpusets(pjob) == TRUE)
-    {
-    extern void delete_cpuset(char *);
-
-    /* Delete the cpuset for the job. */
-    delete_cpuset(pjob->ji_qs.ji_jobid);
-    }
-
-#endif /* PENABLE_LINUX26_CPUSETS */
-
-  /* delete the nodefile if still hanging around */
-
+  else
+    jfdi->has_temp_dir = FALSE;
+  
   if (pjob->ji_flags & MOM_HAS_NODEFILE)
     {
-    char file[MAXPATHLEN + 1];
-
-    sprintf(file,"%s/%s",
-      path_aux,
-      pjob->ji_qs.ji_jobid);
-
-    alloced_path = strdup(file);
-    if (file != NULL)
-      {
-      enqueue_threadpool_request(purge_file,alloced_path);
-      }
-    else
-      {
-      log_err(ENOMEM,id,"Cannot allocate memory to purge file");
-      }
-
+    jfdi->has_node_file = TRUE;
     pjob->ji_flags &= ~MOM_HAS_NODEFILE;
-
-    /* delete the gpufile if still hanging around */
-
-    sprintf(file, "%s/%sgpu",
-      path_aux,
-      pjob->ji_qs.ji_jobid);
-
-    alloced_path = strdup(file);
-    if (file != NULL)
-      {
-      enqueue_threadpool_request(purge_file,alloced_path);
-      }
-    else
-      {
-      log_err(ENOMEM,id,"Cannot allocate memory to purge file");
-      }
     }
+  else
+    jfdi->has_node_file = FALSE;
 
+  strcpy(jfdi->jobid,pjob->ji_qs.ji_jobid);
+  strcpy(jfdi->prefix,pjob->ji_qs.ji_fileprefix);
+
+  if ((pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET))
+    jfdi->checkpoint_dir = strdup(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
+  else
+    jfdi->checkpoint_dir = NULL;
+
+  jfdi->gid = pjob->ji_qs.ji_un.ji_momt.ji_exgid;
+  jfdi->uid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
+
+  if (thread_unlink_calls == TRUE)
+    enqueue_threadpool_request(delete_job_files,jfdi);
+  else
+    delete_job_files(jfdi);
+
+  /* remove this job from the global queue */
   delete_link(&pjob->ji_jobque);
-
   delete_link(&pjob->ji_alljobs);
 
   if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer,"removing job");
 
-    log_record(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
-    }
-
-  strcpy(namebuf,path_jobs); /* delete script file */
-
-  strcat(namebuf,pjob->ji_qs.ji_fileprefix);
-
-  if(multi_mom)
-    {
-    sprintf(portname, "%d", pbs_rm_port);
-    strcat(namebuf, portname);
-    }
-
-  strcat(namebuf,JOB_SCRIPT_SUFFIX);
-
-  alloced_path = strdup(namebuf);
-  if (alloced_path == NULL)
-    {
-    log_err(ENOMEM,id,"Cannot allocate space to purge file");
-    }
-  else
-    {
-    enqueue_threadpool_request(purge_file,alloced_path);
+    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
     }
 
 #if IBM_SP2==2        /* IBM SP PSSP 3.1 */
   unload_sp_switch(pjob);
 
 #endif   /* IBM SP */
-  strcpy(namebuf, path_jobs);     /* job directory path */
-
-  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-
-  if(multi_mom)
-    {
-    sprintf(portname, "%d", pbs_rm_port);
-    strcat(namebuf, portname);
-    }
-
-  strcat(namebuf, JOB_TASKDIR_SUFFIX);
-
-  remtree(namebuf);
-
-  mom_checkpoint_delete_files(pjob);
-
-  strcpy(namebuf, path_jobs); /* delete job file */
-
-  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-
-  if(multi_mom)
-    {
-    sprintf(portname, "%d", pbs_rm_port);
-    strcat(namebuf, portname);
-    }
-
-  strcat(namebuf, JOB_FILE_SUFFIX);
-
-  alloced_path = strdup(namebuf);
-  if (alloced_path == NULL)
-    {
-    log_err(ENOMEM,id,"Cannot allocate space to purge file");
-    }
-  else
-    {
-    enqueue_threadpool_request(purge_file,alloced_path);
-    }
 
   job_free(pjob);
 

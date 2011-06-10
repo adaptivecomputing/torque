@@ -768,6 +768,21 @@ typedef struct infoent
 
 
 
+#ifdef PBS_MOM
+typedef struct job_file_delete_info
+  {
+  char           jobid[PBS_MAXSVRJOBID+1];
+  char           prefix[PBS_JOBBASE + 1];
+  char          *checkpoint_dir;
+  unsigned char  has_temp_dir;
+  unsigned char  has_node_file;
+  gid_t          gid;
+  uid_t          uid;
+  } job_file_delete_info;
+#endif
+
+
+
 
 #define TI_FLAGS_INIT           1  /* task has called tm_init */
 #define TI_FLAGS_CHECKPOINT     2  /* task has checkpointed */

@@ -404,14 +404,14 @@ mom_checkpoint_set_checkpoint_run_exe_name(char *value)  /* I */
  */
 
 void get_jobs_default_checkpoint_dir(
-
-        job *pjob,  /* I */
-        char *defaultpath) /* O */
+    
+  char *prefix,      /* I */
+  char *defaultpath) /* O */
 
   {
 
   strcpy(defaultpath, path_checkpoint);
-  strcat(defaultpath, pjob->ji_qs.ji_fileprefix);
+  strcat(defaultpath, prefix);
   strcat(defaultpath, JOB_CHECKPOINT_SUFFIX);
 
   return;
@@ -425,7 +425,7 @@ void get_jobs_default_checkpoint_dir(
 
 void get_chkpt_dir_to_use(
 
-  job *pjob,
+  job  *pjob,
   char *chkpt_dir)
 
   {
@@ -442,7 +442,7 @@ void get_chkpt_dir_to_use(
     /* No dir specified, use the default job checkpoint directory
        e.g.  /var/spool/torque/checkpoint/42.host.domain.CK */
 
-    get_jobs_default_checkpoint_dir(pjob, chkpt_dir);
+    get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, chkpt_dir);
     }
   else
     {
@@ -460,8 +460,8 @@ void get_chkpt_dir_to_use(
         {
         strcat(chkpt_dir, "/");
         }
-      strcat(chkpt_dir, job_dir);
 
+      strcat(chkpt_dir, job_dir);
       }
     }
 
@@ -592,6 +592,7 @@ void delete_blcr_checkpoint_files(
         "No checkpoint directory specified for %s\n", pjob->ji_qs.ji_jobid);
       log_ext(-1, id, log_buffer, LOG_DEBUG);
       }
+
     return;
     }
 
@@ -625,6 +626,77 @@ void delete_blcr_checkpoint_files(
 
 
 
+void get_blcr_chkpt(
+
+  job_file_delete_info *jfdi,      /* I */
+  char                 *chkpt_dir) /* O */
+
+  {
+  char job_dir[MAXPATHLEN+1];
+
+  sprintf(job_dir,"%s%s",
+    jfdi->prefix,
+    JOB_CHECKPOINT_SUFFIX);
+  
+  strcpy(chkpt_dir, jfdi->checkpoint_dir);
+  
+  if ((strlen(jfdi->checkpoint_dir) <= strlen(job_dir)) ||
+      (strcmp(job_dir, &jfdi->checkpoint_dir[strlen(jfdi->checkpoint_dir) - strlen(job_dir)])))
+    {
+    if (chkpt_dir[strlen(chkpt_dir) - 1] != '/')
+      {
+      strcat(chkpt_dir, "/");
+      }
+    
+    strcat(chkpt_dir, job_dir);
+    }
+  } /* END get_blcr_chkpt() */
+
+
+
+
+void delete_blcr_files(
+
+  job_file_delete_info *jfdi)
+
+  {
+  static char id[] = "delete_blcr_files";
+  char namebuf[MAXPATHLEN+1];
+
+  if (jfdi->checkpoint_dir == NULL)
+    {
+    if (LOGLEVEL > 7)
+      {
+      sprintf(log_buffer,
+        "No checkpoint directory specified for %s\n", jfdi->jobid);
+      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      }
+
+    return;
+    }
+
+  /* Get jobs checkpoint directory. */
+  get_blcr_chkpt(jfdi, namebuf);
+  
+  /*
+   * we need to clean up the checkpoint job directory
+   * but not if it is in a remotely mounted directory
+   */
+  if (!in_remote_checkpoint_dir(namebuf))
+    {
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "remtree for checkpoint %s\n", namebuf);
+      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      }
+    remtree(namebuf);
+    }
+
+  } /* END delete_blcr_files() */
+
+
+
+
 /**
  * mom_checkpoint_delete_files
  *
@@ -637,7 +709,7 @@ void delete_blcr_checkpoint_files(
 
 void mom_checkpoint_delete_files(
 
-  job *pjob)
+  job_file_delete_info *jfdi)
 
   {
   char namebuf[MAXPATHLEN+1];
@@ -646,13 +718,13 @@ void mom_checkpoint_delete_files(
     {
     /* delete any checkpoint file */
 
-    get_jobs_default_checkpoint_dir(pjob, namebuf);
+    get_jobs_default_checkpoint_dir(jfdi->prefix, namebuf);
 
     remtree(namebuf);
     }
   else if (checkpoint_system_type == CST_BLCR)
     {
-    delete_blcr_checkpoint_files(pjob);
+    delete_blcr_files(jfdi);
     }
   return;
   }  /* END mom_checkpoint_delete_files() */
@@ -695,7 +767,7 @@ void mom_checkpoint_recover(
     ** and rename the old to the regular name.
     */
 
-    get_jobs_default_checkpoint_dir(pjob, path);
+    get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, path);
     strcpy(oldp, path);
     strcat(oldp, ".old");
 
@@ -1143,7 +1215,7 @@ int mom_checkpoint_job(
 
   assert(pjob != NULL);
 
-  get_jobs_default_checkpoint_dir(pjob, path);
+  get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, path);
 
   if (stat(path, &statbuf) == 0)
     {
@@ -1461,7 +1533,7 @@ int start_checkpoint(
         /* No dir specified, use the default job checkpoint directory
            e.g.  /var/spool/torque/checkpoint/42.host.domain.CK */
 
-        get_jobs_default_checkpoint_dir(pjob, name_buffer);
+        get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, name_buffer);
 
         decode_str(&pjob->ji_wattr[JOB_ATR_checkpoint_dir],NULL,NULL,name_buffer,0);
         }
@@ -1568,7 +1640,7 @@ void checkpoint_partial(
 
   assert(pjob != NULL);
 
-  get_jobs_default_checkpoint_dir(pjob, namebuf);
+  get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, namebuf);
 
   for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
        ptask != NULL;
@@ -1853,7 +1925,7 @@ int mom_restart_job(job  *pjob)
   int  tcount = 0;
   long  mach_restart(task *, char *path);
 
-  get_jobs_default_checkpoint_dir(pjob, namebuf);
+  get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, namebuf);
 
   if ((dir = opendir(path)) == NULL)
     {
@@ -2035,7 +2107,7 @@ int mom_checkpoint_job_has_checkpoint(
           {
           /* Otherwise, use the default job checkpoint directory /var/spool/torque/checkpoint/42.host.domain.CK */
 
-          get_jobs_default_checkpoint_dir(pjob, buf);
+          get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, buf);
           }
 
         if (stat(buf, &sb) != 0) /* stat(buf) tests if the checkpoint directory exists */
