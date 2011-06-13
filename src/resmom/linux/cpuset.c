@@ -146,6 +146,10 @@ int cpuset_delete(
   if (rmdir(path) != 0)
     {
     /* FAILURE */
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Couldn't remove directory %s",
+      path);
+    log_err(errno,id,log_buffer);
 
     return(-1);
     }
