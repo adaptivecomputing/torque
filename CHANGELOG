@@ -21,6 +21,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it
   b - fix a potential buffer overflow security issue in job names and host address names
   b - restore += functionality for nodes when using qmgr. It was overwriting old properties
+  b - fix a problem with -= when setting attributes via qmgr.
 
 3.0.1
   e - updated qsub's man page to include ATTR_node_exclusive

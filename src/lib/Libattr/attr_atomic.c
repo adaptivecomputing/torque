@@ -192,7 +192,7 @@ int attr_atomic_set(
     if (((old + index)->at_flags & ATR_VFLAG_SET) &&
         !((new + index)->at_flags & ATR_VFLAG_SET))
       {
-      if ((rc = (pdef + index)->at_set(new + index, old + index, plist->al_atopl.op)) != 0)
+      if ((rc = (pdef + index)->at_set(new + index, old + index, SET)) != 0)
         break;
 
       /*

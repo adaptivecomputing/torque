@@ -1483,11 +1483,13 @@ void mgr_queue_set(
     }  /* END while (pque != NULL) */
 
   /* check the appropriateness of the attributes based on queue type */
+  iter = -1;
 
-  while ((pque = next_queue(&svr_queues,&iter)) != NULL)
+  if (allques == TRUE)
+    pque = next_queue(&svr_queues,&iter);
+
+  while (pque != NULL)
     {
-    pthread_mutex_lock(pque->qu_mutex);
-
     if ((badattr = check_que_attr(pque)) != NULL)
       {
       sprintf(log_buffer, msg_attrtype,
@@ -1505,8 +1507,9 @@ void mgr_queue_set(
 
     if (allques == FALSE)
       break;
+
+    pque = next_queue(&svr_queues,&iter);
     }  /* END while (pque != NULL) */
-      
 
   reply_ack(preq);
 
