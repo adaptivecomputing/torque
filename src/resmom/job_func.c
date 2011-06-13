@@ -679,7 +679,7 @@ void *delete_job_files(
   /* delete the node file and gpu file */
   if (jfdi->has_node_file == TRUE)
     {
-    char file[MAXPATHLEN + 1];
+    /*char file[MAXPATHLEN + 1];*/
     sprintf(namebuf,"%s/%s", path_aux, jfdi->jobid);
     unlink(namebuf);
     
