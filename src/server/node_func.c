@@ -1291,7 +1291,9 @@ static int process_host_name_part(
  *       the nodes file.
 */
 
-int update_nodes_file(void)
+int update_nodes_file(
+    
+  struct pbsnode *held)
 
   {
 #ifndef NDEBUG
@@ -1340,11 +1342,13 @@ int update_nodes_file(void)
     {
     np = pbsndmast[i];
 
-    pthread_mutex_lock(np->nd_mutex);
+    if (held != np)
+      pthread_mutex_lock(np->nd_mutex);
 
     if (np->nd_state & INUSE_DELETED)
       {
-      pthread_mutex_unlock(np->nd_mutex);
+      if (held != np)
+        pthread_mutex_unlock(np->nd_mutex);
 
       continue;
       }
@@ -1439,7 +1443,8 @@ int update_nodes_file(void)
       return(-1);
       }
     
-    pthread_mutex_unlock(np->nd_mutex);
+    if (held != np)
+      pthread_mutex_unlock(np->nd_mutex);
     }
 
   fclose(nin);
@@ -1455,7 +1460,7 @@ int update_nodes_file(void)
     return(-1);
     }
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END update_nodes_file() */
 
 

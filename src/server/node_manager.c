@@ -1462,26 +1462,25 @@ int is_stat_get(
       {
       int str_res;
 
-          str_res = strncmp(ret_info, "ncpus=", 6);
-          if (str_res == 0)
+      str_res = strncmp(ret_info, "ncpus=", 6);
+      if (str_res == 0)
+        {        
+        struct attribute nattr;
+        
+        /* first we decode ret_info into nattr... */
+        
+        if ((node_attr_def + ND_ATR_np)->at_decode(&nattr, ATTR_NODE_np, NULL, ret_info + 6, 0) == 0)
           {
-          
-          struct attribute nattr;
-          
-          /* first we decode ret_info into nattr... */
-          
-          if ((node_attr_def + ND_ATR_np)->at_decode(&nattr, ATTR_NODE_np, NULL, ret_info + 6, 0) == 0)
+          /* ... and if MOM's ncpus is different than our np... */
+          if (nattr.at_val.at_long != np->nd_nsn)
             {
-            /* ... and if MOM's ncpus is different than our np... */
-            if (nattr.at_val.at_long != np->nd_nsn)
-              {
-              /* ... then we do the defined magic to create new subnodes */
-              (node_attr_def + ND_ATR_np)->at_action(&nattr, (void *)np, ATR_ACTION_ALTER);
+            /* ... then we do the defined magic to create new subnodes */
+            (node_attr_def + ND_ATR_np)->at_action(&nattr, (void *)np, ATR_ACTION_ALTER);
             
-              update_nodes_file();
-              }
+            update_nodes_file(np);
             }
           }
+        }
       }
       
     else if (server.sv_attr[SRV_ATR_NPDefault].at_val.at_long)

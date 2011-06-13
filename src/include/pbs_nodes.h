@@ -346,7 +346,7 @@ extern int 	  MultiMomMode; /* moms configured for multiple moms per machine */
 
 /* extern struct tree_t  *streams; */
 
-extern int update_nodes_file(void);
+extern int update_nodes_file(struct pbsnode *);
 
 extern void bad_node_warning(pbs_net_t);
 extern int addr_ok(pbs_net_t);

@@ -137,7 +137,6 @@
 extern void job_log_roll(int max_depth);
 extern int  pbsd_init(int);
 extern void shutdown_ack();
-extern int  update_nodes_file(void);
 extern void tcp_settimeout(long);
 extern void poll_job_task(struct work_task *);
 extern int  schedule_jobs(void);
@@ -1339,9 +1338,9 @@ void main_loop(void)
     /*nodes created/deleted, or props changed and*/
     /*update in req_manager failed; try again    */
 
-    update_nodes_file();
+    update_nodes_file(NULL);
     }
-  }
+  } /* END main_loop() */
 
 
 /**

@@ -1854,7 +1854,7 @@ void mgr_node_set(
     {
     /*create/delete/prop/ntype change*/
 
-    if (!update_nodes_file())
+    if (!update_nodes_file(NULL))
 
       need_todo &= ~(WRITE_NEW_NODESFILE);  /*successful on update*/
     }
@@ -2105,7 +2105,7 @@ static void mgr_node_delete(
     {
     /* create/delete/prop/ntype change */
 
-    if (!update_nodes_file())
+    if (!update_nodes_file(NULL))
       need_todo &= ~(WRITE_NEW_NODESFILE);  /*successful on update*/
     }
 
@@ -2226,7 +2226,6 @@ void mgr_node_create(
     }
 
   mgr_log_attr(
-
     msg_man_set,
     plist,
     PBS_EVENTCLASS_NODE,
@@ -2235,7 +2234,7 @@ void mgr_node_create(
   setup_notification(preq->rq_ind.rq_manager.rq_objname);     /* set mechanism for notifying */
   /* other nodes of new member   */
 
-  if (update_nodes_file())
+  if (update_nodes_file(NULL))
     {
     /* if update fails now (odd) */
 
