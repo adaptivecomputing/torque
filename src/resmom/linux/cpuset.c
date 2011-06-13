@@ -445,6 +445,10 @@ initialize_root_cpuset(void)
     log_err(-1, id, log_buffer);
 
     /* FAILURE */
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Couldn't remove directory %s",
+      path);
+    log_err(errno,id,log_buffer);
 
     return;
     }
