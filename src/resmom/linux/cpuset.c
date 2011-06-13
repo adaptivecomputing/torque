@@ -14,6 +14,7 @@
 #include "server_limits.h"
 #include "pbs_job.h"
 #include "log.h"
+#include "threadpool.h"
 
 /* NOTE: move these three things to utils when lib is checked in */
 #ifndef MAXPATHLEN
@@ -38,6 +39,8 @@ extern char    mom_host[];
 extern char    mom_short_name[];
 
 
+void *remove_dir(void *);
+
 /* private functions */
 void remove_defunct_cpusets();
 int get_cpu_string(job *pjob,char *);
@@ -59,6 +62,7 @@ int cpuset_delete(
   {
   char   path[MAXPATHLEN + 1];
   char   childpath[MAXPATHLEN + 1];
+  char  *alloced_path;
   pid_t  killpids;
   FILE  *fd;
   DIR   *dir;

@@ -135,6 +135,7 @@
 #include "acct.h"
 #include "net_connect.h"
 #include "portability.h"
+#include "threadpool.h"
 
 
 #ifndef TRUE
@@ -177,6 +178,7 @@ extern tlist_head svr_alljobs;
 
 void nodes_free(job *);
 int TTmpDirName(job *, char *);
+void *purge_file(void *);
 
 
 void tasks_free(
@@ -246,9 +248,12 @@ int remtree(
   DIR  *dir;
 
   struct dirent *pdir;
-  char  namebuf[MAXPATHLEN], *filnam;
-  int  i;
-  int  rtnv = 0;
+  char           namebuf[MAXPATHLEN];
+  char          *filnam;
+  char          *alloced_path;
+  char          *alloced_dir;
+  int            i;
+  int            rtnv = 0;
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
 
   struct stat64 sb;
@@ -270,6 +275,8 @@ int remtree(
 
     return(-1);
     }
+
+  alloced_dir = strdup(dirname);
 
   if (S_ISDIR(sb.st_mode))
     {
@@ -310,23 +317,15 @@ int remtree(
         continue;
         }
 
+      alloced_path = strdup(namebuf);
+
       if (S_ISDIR(sb.st_mode))
         {
         rtnv = remtree(namebuf);
         }
-      else if (unlink(namebuf) < 0)
-        {
-        if (errno != ENOENT)
-          {
-          sprintf(log_buffer, "unlink failed on %s",
-                  namebuf);
-
-          log_err(errno, id, log_buffer);
-
-          rtnv = -1;
-          }
-        }
-      else if (LOGLEVEL >= 7)
+      else if ((alloced_path != NULL) &&
+               ((enqueue_threadpool_request(purge_file,alloced_path)) == PBSE_NONE) &&
+               (LOGLEVEL >= 7))
         {
         sprintf(log_buffer, "unlink(1) succeeded on %s", namebuf);
 
@@ -355,16 +354,9 @@ int remtree(
       log_ext(-1, id, log_buffer, LOG_DEBUG);
       }
     }
-  else if (unlink(dirname) < 0)
-    {
-    sprintf(log_buffer, "unlink failed on %s",
-            dirname);
-
-    log_err(errno, id, log_buffer);
-
-    rtnv = -1;
-    }
-  else if (LOGLEVEL >= 7)
+  else if ((alloced_dir != NULL) &&
+           (enqueue_threadpool_request(purge_file,alloced_dir) == PBSE_NONE) &&
+           (LOGLEVEL >= 7))
     {
     sprintf(log_buffer, "unlink(2) succeeded on %s", dirname);
 
@@ -454,8 +446,7 @@ int conn_qsub(
  * Returns: pointer to structure or null is space not available.
  */
 
-job *
-job_alloc(void)
+job *job_alloc(void)
 
   {
   job *pj;
@@ -559,8 +550,10 @@ void job_free(
  * doing this to avoid removing objects that aren't belong to the user.
  */
 int job_unlink_file(
+
   job *pjob,		/* I */
   const char *name)	/* I */
+
   {
   int saved_errno = 0, result = 0;
   uid_t uid = geteuid();
@@ -611,9 +604,75 @@ static void job_init_wattr(
 
 
 
+void *purge_file(
+ 
+  void *vp)
+
+  {
+  static char *id = "purge_file";
+  char  *path = (char *)vp;
+
+  if (unlink(path) < 0)
+    {
+    if (errno != ENOENT)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Counldn't remove %s",
+        path);
+      log_err(errno, id, log_buffer);
+      }
+    }
+  else if (LOGLEVEL >= 6)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Successfully removed %s",
+      path);
+
+    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,"",log_buffer);
+    }
+
+  free(path);
+
+  return(NULL);
+  } /* END purge_file() */
+
+
+
+
+void *remove_dir(
+
+  void *vp)
+
+  {
+  static char *id = "remove_dir";
+  char        *path = (char *)vp;
+
+  if (rmdir(path) != 0)
+    {
+    if (errno != ENOENT)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Couldn't remove %s",
+        path);
+      log_err(errno,id,log_buffer);
+      }
+    else if (LOGLEVEL >= 6)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Successfully removed %s",
+        path);
+
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"",log_buffer);
+      }
+    }
+  } /* END remove_dir() */
+
+
+
+
 
 /*
- * job_purge_thread - purge job from system
+ * job_purge - purge job from system
  *
  * The job is dequeued; the job control file, script file and any spooled
  * output files are unlinked, and the job structure is freed.
@@ -621,17 +680,18 @@ static void job_init_wattr(
  * removed.
  */
 
-void *job_purge_thread(void *jobtopurge)
+void job_purge(
+    
+  job *pjob)
+
   {
-  static char   id[] = "job_purge_thread";
-  job *pjob;
+  static char   id[] = "job_purge";
   char          namebuf[MAXPATHLEN + 1];
   extern char  *msg_err_purgejob;
+  char         *alloced_path;
   int           rc;
 
   extern void MOMCheckRestart(void);
-
-  pjob = (job *)jobtopurge;
 
   if (pjob->ji_flags & MOM_HAS_TMPDIR)
     {
@@ -650,8 +710,7 @@ void *job_purge_thread(void *jobtopurge)
           (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
         {
         /* FAILURE */
-
-        pthread_exit(NULL);
+        return;
         }
 
       rc = remtree(namebuf);
@@ -659,7 +718,8 @@ void *job_purge_thread(void *jobtopurge)
       seteuid(pbsuser);
       setegid(pbsgroup);
 
-      if ((rc != 0) && (LOGLEVEL >= 5))
+      if ((rc != 0) && 
+          (LOGLEVEL >= 5))
         {
         sprintf(log_buffer,
           "recursive remove of job transient tmpdir %s failed",
@@ -696,7 +756,15 @@ void *job_purge_thread(void *jobtopurge)
       path_aux,
       pjob->ji_qs.ji_jobid);
 
-    unlink(file);
+    alloced_path = strdup(file);
+    if (file != NULL)
+      {
+      enqueue_threadpool_request(purge_file,alloced_path);
+      }
+    else
+      {
+      log_err(ENOMEM,id,"Cannot allocate memory to purge file");
+      }
 
     pjob->ji_flags &= ~MOM_HAS_NODEFILE;
 
@@ -706,7 +774,15 @@ void *job_purge_thread(void *jobtopurge)
       path_aux,
       pjob->ji_qs.ji_jobid);
 
-    unlink(file);
+    alloced_path = strdup(file);
+    if (file != NULL)
+      {
+      enqueue_threadpool_request(purge_file,alloced_path);
+      }
+    else
+      {
+      log_err(ENOMEM,id,"Cannot allocate memory to purge file");
+      }
     }
 
   delete_link(&pjob->ji_jobque);
@@ -729,22 +805,15 @@ void *job_purge_thread(void *jobtopurge)
   strcat(namebuf,pjob->ji_qs.ji_fileprefix);
   strcat(namebuf,JOB_SCRIPT_SUFFIX);
 
-  if (unlink(namebuf) < 0)
+  alloced_path = strdup(namebuf);
+  if (alloced_path == NULL)
     {
-    if (errno != ENOENT)
-      log_err(errno, id, msg_err_purgejob);
+    log_err(ENOMEM,id,"Cannot allocate space to purge file");
     }
-  else if (LOGLEVEL >= 6)
+  else
     {
-    sprintf(log_buffer, "removed job script");
-
-    log_record(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    enqueue_threadpool_request(purge_file,alloced_path);
     }
-
 
 #if IBM_SP2==2        /* IBM SP PSSP 3.1 */
   unload_sp_switch(pjob);
@@ -766,20 +835,14 @@ void *job_purge_thread(void *jobtopurge)
 
   strcat(namebuf, JOB_FILE_SUFFIX);
 
-  if (unlink(namebuf) < 0)
+  alloced_path = strdup(namebuf);
+  if (alloced_path == NULL)
     {
-    if (errno != ENOENT)
-      log_err(errno, id, msg_err_purgejob);
+    log_err(ENOMEM,id,"Cannot allocate space to purge file");
     }
-  else if (LOGLEVEL >= 6)
+  else
     {
-    sprintf(log_buffer, "removed job file");
-
-    log_record(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    enqueue_threadpool_request(purge_file,alloced_path);
     }
 
   job_free(pjob);
@@ -788,11 +851,11 @@ void *job_purge_thread(void *jobtopurge)
 
   if (((job *)GET_NEXT(svr_alljobs)) == NULL)
     MOMCheckRestart();
-
-  pthread_exit(NULL);
   }
 
-void job_purge(
+
+
+void job_purge_a(
 
   job *pjob)  /* I (modified) */
 
@@ -836,13 +899,6 @@ void job_purge(
     sprintf(log_buffer, "Could not allocate memory for job_purge thread");
     log_err(errno, id, log_buffer);
     return;
-    }
-
-  rc = pthread_create(thread, &attr, &job_purge_thread, pjob);
-  if(rc)
-    {
-    sprintf(log_buffer, "pthread_create failed: %d", rc);
-    log_err(rc, id, log_buffer);
     }
 
   return;
