@@ -6,6 +6,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       arguments which are available to the job script.
   e - Added an option to asynchronously delete jobs (currently cannot work 
       for qdel -a all due to limitations of single threads) backported from 3.0.2
+  c - Fix an issue where job_purge didn't protect key variables that resulted in crashes
 
 2.5.6
   b - Made changes to record_jobinfo and supporting functions to be
