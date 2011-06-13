@@ -14,7 +14,6 @@
 #include "server_limits.h"
 #include "pbs_job.h"
 #include "log.h"
-#include "threadpool.h"
 
 /* NOTE: move these three things to utils when lib is checked in */
 #ifndef MAXPATHLEN
@@ -55,6 +54,7 @@ int init_jobset(char *,job *,mode_t,char *);
  * @param cpusetname - name of cpuset to be deleted
  * @return -1 on failure, 0 otherwise
  */
+
 int cpuset_delete(
 
   char *cpusetname)  /* I */
@@ -62,7 +62,6 @@ int cpuset_delete(
   {
   char   path[MAXPATHLEN + 1];
   char   childpath[MAXPATHLEN + 1];
-  char  *alloced_path;
   pid_t  killpids;
   FILE  *fd;
   DIR   *dir;
@@ -83,7 +82,7 @@ int cpuset_delete(
     {
     /* cpuset does not exist... no one cares! */
 
-    return(-1);
+    return(PBSE_NONE);
     }
 
   while ((pdirent = readdir(dir)) != NULL)
@@ -102,10 +101,9 @@ int cpuset_delete(
       continue;
 
     /* If a directory is found try to get cpuset info about it. */
-
-    if (statbuf.st_mode&S_IFDIR)
+    if (statbuf.st_mode & S_IFDIR)
       {
-      if (cpuset_delete(childpath) == 0)
+      if (cpuset_delete(childpath) == PBSE_NONE)
         {
         sprintf(log_buffer, "Unused cpuset '%s' deleted.",
                 childpath);
@@ -159,8 +157,7 @@ int cpuset_delete(
     }
 
   /* SUCCESS */
-
-  return(0);
+  return(PBSE_NONE);
   }  /* END cpuset_delete() */
 
 

@@ -330,8 +330,8 @@
 #define EXECQUEONLY  "exec_queue_only"  /* see req_stat.c */
 #define RERUNFORCE "force"
 
-#define USER_HOLD "u"
-#define OTHER_HOLD "o"
+#define USER_HOLD   "u"
+#define OTHER_HOLD  "o"
 #define SYSTEM_HOLD "s"
 
 /* node-attribute values (state,ntype) */

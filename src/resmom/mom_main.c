@@ -183,6 +183,7 @@ unsigned int default_server_port = 0;
 int    exiting_tasks = 0;
 float  ideal_load_val = -1.0;
 int    internal_state = 0;
+int    thread_unlink_calls = FALSE;
 /* by default, enforce these policies */
 int    ignwalltime = 0;
 int    ignmem = 0;
@@ -402,6 +403,7 @@ static unsigned long setremchkptdirlist(char *);
 static unsigned long setmaxconnecttimeout(char *);
 unsigned long aliasservername(char *);
 unsigned long jobstarter(char *value);
+static unsigned long setthreadunlinkcalls(char *);
 unsigned long rppthrottle(char *value);
 
 static struct specials
@@ -465,6 +467,7 @@ static struct specials
   { "alias_server_name", aliasservername },
   { "job_starter", jobstarter},
   { "rpp_throttle", rppthrottle },
+  { "thread_unlink_calls", setthreadunlinkcalls },
   { NULL,                  NULL }
   };
 
@@ -3150,6 +3153,28 @@ static u_long setvarattr(
 
   return(1);
   }  /* END setvarattr() */
+
+
+
+
+static unsigned long setthreadunlinkcalls(
+
+  char *value) /* I */
+
+  {
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "threadunlinkcalls",
+    value);
+
+  if (!strncasecmp(value,"t",1) || (value[0] == '1') || !strcasecmp(value,"on") )
+    thread_unlink_calls = TRUE;
+  else
+    thread_unlink_calls = FALSE;
+
+  return(1);
+  } /* END setthreadunlinkcalls() */
 
 
 
