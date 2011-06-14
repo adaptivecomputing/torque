@@ -1431,6 +1431,7 @@ const char *TJobAttr[] =
 #ifdef USEJOBCREATE
   "pagg_id",
 #endif /* USEJOBCREATE */
+  "job_id",
   NULL
   };
 

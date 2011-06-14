@@ -712,6 +712,7 @@ int open_demux(
  */
 
 static int open_pty(
+
   job *pjob)	 /* I */
 
   {
@@ -719,13 +720,12 @@ static int open_pty(
   int  pts;
   
   /* Open the slave pty as the controlling tty */
-  
   name = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
   
   if ((pts = open(name, O_RDWR, 0600)) < 0)
-      {
-      log_err(errno, "open_pty", "cannot open slave");
-      } 
+    {
+    log_err(errno, "open_pty", "cannot open slave");
+    } 
   else
     {
     FDMOVE(pts);
@@ -921,6 +921,7 @@ static int open_std_out_err(
 
 
 int mkdirtree(
+
   char   *dirpath,	/* I */
   mode_t  mode)		/* I */
 
@@ -6556,7 +6557,6 @@ char *std_file_name(
 
 #ifdef QSUB_KEEP_NO_OVERRIDE
 	  	/* don't do for checkpoint file names, only StdErr and StdOut */
-
   		if (strcmp(suffix, JOB_CHECKPOINT_SUFFIX) != 0)
 	  		{
   			pt = strstr(jobpath, "$HOME");
@@ -6687,7 +6687,6 @@ char *std_file_name(
 		  	if (wdir != NULL)
 			  	{
 				  /* check if job's work dir matches the no-spool directory list */
-
   				if (LOGLEVEL >= 10)
 	  				log_ext(-1, id, "inside wdir != NULL", LOG_DEBUG);
 

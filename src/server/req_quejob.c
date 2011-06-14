@@ -803,6 +803,39 @@ void *req_quejob(
         }
       }
 
+    /* check if a job id was supplied, and if so overwrite the job id */
+    if (pj->ji_wattr[JOB_ATR_job_id].at_flags & ATR_VFLAG_SET)
+      {
+      char  end[PBS_MAXSVRJOBID];
+      char *dot = strchr(pj->ji_qs.ji_jobid,'.');
+      job  *tmp;
+
+      end[0] = '\0';
+      if (dot != NULL)
+        {
+        strcpy(end,dot);
+        strcpy(pj->ji_qs.ji_jobid,pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
+        strcat(pj->ji_qs.ji_jobid,dot);
+        }
+      else
+        {
+        strcpy(pj->ji_qs.ji_jobid,pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
+        }
+
+      if ((tmp = find_job(pj->ji_qs.ji_jobid)) != NULL)
+        {
+        /* not unique, reject job */
+        job_purge(pj);
+
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Job with id %s already exists, cannot set job id\n",
+          pj->ji_qs.ji_jobid);
+        req_reject(PBSE_JOBEXIST,0,preq,NULL,log_buffer);
+
+        return(NULL);
+        }
+      }
+
     /* set job owner attribute to user@host */
 
     job_attr_def[JOB_ATR_job_owner].at_free(
@@ -889,13 +922,13 @@ void *req_quejob(
     else if ((pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) &&
         (((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] == '/'))))
       {
-        pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
-        
-        replace_attr_string(
-          &pj->ji_wattr[JOB_ATR_outpath],
-          (add_std_filename(pj,
-          pj->ji_wattr[JOB_ATR_outpath].at_val.at_str,
-          (int)'o')));
+      pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
+      
+      replace_attr_string(
+        &pj->ji_wattr[JOB_ATR_outpath],
+        (add_std_filename(pj,
+                          pj->ji_wattr[JOB_ATR_outpath].at_val.at_str,
+                          (int)'o')));
       }
     else if (pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET)
       {
@@ -904,7 +937,7 @@ void *req_quejob(
       char *ptr;
 
       ptr = strchr(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, ':');
-      if(ptr)
+      if (ptr)
         {
         ptr++;
         rc = stat(ptr, &stat_buf);
@@ -913,9 +946,9 @@ void *req_quejob(
         {
         rc = stat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, &stat_buf);
         }
-      if(rc == 0)
+      if (rc == 0)
         {
-        if(S_ISDIR(stat_buf.st_mode))
+        if (S_ISDIR(stat_buf.st_mode))
           {
 /*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
           replace_attr_string(

@@ -358,6 +358,7 @@ enum job_atr
 #ifdef USEJOBCREATE
   JOB_ATR_pagg_id,
 #endif /* USEJOBCREATE */
+  JOB_ATR_job_id,
   JOB_ATR_arguments,
 #include "site_job_attr_enum.h"
 
