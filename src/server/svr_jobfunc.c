@@ -2146,6 +2146,21 @@ static void default_std(
 
 #endif
 
+  if (*pd == '[')
+    {
+    pd++;
+
+    if (isdigit(*pd))
+      {
+      *(to + len++) = '-';
+
+      while (isdigit(*pd))
+        {
+        *(to + len++) = *pd++;
+        }
+      }
+    }
+
   *(to + len) = '\0';
 
   return;

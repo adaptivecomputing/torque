@@ -9,6 +9,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   c - Fix an issue where job_purge didn't protect key variables that resulted in crashes
   b - fix bugzilla #134, qmgr -= was deleting all entries (backported from 3.0.2)
   b - do not prepend ${HOME} with the current dir for -o and -e in qsub (backported from 3.0.2)
+  b - fix jobs named with -J not always having the server name appended correctly 
+      (backported from 3.0.2)
+  b - make it so that jobs named like arrays via -J have legal output and error file names
+      (backported from 3.0.2)
 
 2.5.6
   b - Made changes to record_jobinfo and supporting functions to be
