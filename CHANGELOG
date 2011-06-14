@@ -133,6 +133,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
         - Reduce the number of unnecessary subpackages by consolidating where
           it makes sense and using existing RPM features (e.g., --excludedocs).
 
+2.5.7
+  e - Added new qsub argument -F. This argument takes a quoted string as
+      an argument. The string is a list of space separated commandline
+      arguments which are available to the job script.
+
 2.5.6
   b - Made changes to record_jobinfo and supporting functions to be
       able to use dynamically allcated buffers for data. This fixed

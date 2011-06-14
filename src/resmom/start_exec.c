@@ -177,6 +177,9 @@ typedef enum
 #define EXTRA_VARIABLE_SPACE 2000
 #define EXTRA_ENV_PTRS        32
 
+#define MAX_JOB_ARGS          64
+
+
 /* Global Variables */
 
 
@@ -2145,6 +2148,8 @@ int TMomFinalizeJob2(
 				   log_buffer);
 		}
 
+
+
 	/*
 	** fork the child that will become the job.
 	*/
@@ -2153,7 +2158,7 @@ int TMomFinalizeJob2(
 		{
 		/* fork failed */
 
-		sprintf(log_buffer, "fork of job '%s' failed in (errno=%d, '%s')",
+		sprintf(log_buffer, "fork kf job '%s' failed in (errno=%d, '%s')",
 						pjob->ji_qs.ji_jobid,
 						errno,
 						strerror(errno));
@@ -2217,7 +2222,14 @@ int TMomFinalizeJob2(
 		/* will be stdin of shell  */
 
 		close(TJE->pipe_script[0]);
-		strcat(buf, "\n");			/* setup above */
+	    /* Did the user submit arguments with the -F option in qsub? */
+		if(pjob->ji_wattr[(int)JOB_ATR_arguments].at_flags & ATR_VFLAG_SET)
+			{
+      strcat(buf, " ");
+			strcat(buf, pjob->ji_wattr[(int)JOB_ATR_arguments].at_val.at_str);
+			}
+
+	  strcat(buf, "\n");			/* setup above */
 
 		i = strlen(buf);
 		j = 0;
@@ -2497,9 +2509,6 @@ int write_gpus_to_file(
 
 
 
-
-
-
 /* child portion of job launch executed as user - called by TMomFinalize2() */
 /* will execute run_pelog()
  * issues setuid to pjob->ji_qs.ji_un.ji_momt.ji_exuid */
@@ -2511,7 +2520,7 @@ int TMomFinalizeChild(
   {
 	static char           *id = "TMomFinalizeChild";
 	int                    aindex;
-	char                  *arg[32];
+	char                  *arg[MAX_JOB_ARGS];
 	char                   buf[MAXPATHLEN + 2];
 	pid_t                  cpid;
 	int                    i, j, vnodenum;
@@ -2526,6 +2535,7 @@ int TMomFinalizeChild(
 	char                  *termtype;
 	resource *presc;
 	char *path_prologuserjob;
+
 
 #ifdef USEJOBCREATE
 
@@ -3837,11 +3847,15 @@ int TMomFinalizeChild(
 
 				return(-1);
 				}
-
-			arg[aindex + 1] = NULL;
+																													
+			arg[aindex + 1] = NULL;			 
 
 			aindex++;
 			}	 /* END if (PRE_EXEC[0] != '\0') */
+
+			
+			
+    
 
 #if SHELL_USE_ARGV == 1
 		/* Put the script's arguments on the command line (see configure option --enable-shell-use-argv). */

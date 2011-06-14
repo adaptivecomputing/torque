@@ -107,6 +107,7 @@
 #define ATTR_u "User_List"
 #define ATTR_v "Variable_List"
 #define ATTR_A "Account_Name"
+#define ATTR_args "job_arguments"
 #define ATTR_M "Mail_Users"
 #define ATTR_N "Job_Name"
 #define ATTR_S "Shell_Path_List"
