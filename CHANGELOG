@@ -24,6 +24,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix bugzilla #134, qmgr -= was deleting all entries
   e - added the ability in qsub to submit jobs requesting total gpus for job instead of gpus per node:
       -l ncpus=X,gpus=Y
+  b - do not prepend ${HOME} with the current dir for -o and -e in qsub
 
 3.0.1
   e - updated qsub's man page to include ATTR_node_exclusive

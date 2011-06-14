@@ -3385,7 +3385,6 @@ int process_opts(
         if (Interact_opt == 1)
           {
           char  tmpLine[MAXLINE * 4];
-          char  tmpArg[MAXLINE * 4];
           char *gpu_str = "gpus=";
           char *ptr;
           char *arg_work = strdup(optarg);
