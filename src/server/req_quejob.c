@@ -806,16 +806,15 @@ void *req_quejob(
     /* check if a job id was supplied, and if so overwrite the job id */
     if (pj->ji_wattr[JOB_ATR_job_id].at_flags & ATR_VFLAG_SET)
       {
-      char  end[PBS_MAXSVRJOBID];
       char *dot = strchr(pj->ji_qs.ji_jobid,'.');
       job  *tmp;
 
-      end[0] = '\0';
       if (dot != NULL)
         {
-        strcpy(end,dot);
-        strcpy(pj->ji_qs.ji_jobid,pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
-        strcat(pj->ji_qs.ji_jobid,dot);
+        snprintf(pj->ji_qs.ji_jobid, sizeof(pj->ji_qs.ji_jobid),
+          "%s%s",
+          pj->ji_wattr[JOB_ATR_job_id].at_val.at_str,
+          dot);
         }
       else
         {

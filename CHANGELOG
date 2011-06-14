@@ -27,6 +27,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - do not prepend ${HOME} with the current dir for -o and -e in qsub
   e - allow an administator using the proxy user submission to also set the job id to be used 
       in TORQUE. This makes TORQUE easier to use in grid configurations.
+  b - fix jobs named with -J not always having the server name appended correctly 
+  b - make it so that jobs named like arrays via -J have legal output and error file names
 
 3.0.1
   e - updated qsub's man page to include ATTR_node_exclusive
