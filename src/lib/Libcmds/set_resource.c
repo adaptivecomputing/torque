@@ -103,6 +103,7 @@ int set_resources(
   int            add)       /* I */
 
   {
+  static char *gres_str = "gres";
   char *r, *eq, *v, *e = NULL;
   char *str;
 
@@ -243,40 +244,76 @@ int set_resources(
     attr->name = str;
 
     /* Allocate memory for the resource name and copy */
-
-    str = (char *)malloc(len + 1);
-
-    if (str == NULL)
+    if (!strncmp(r,"gpus",strlen("gpus")))
       {
-      fprintf(stderr, "Out of memory\n");
-
-      exit(2);
-      }
-
-    strncpy(str, r, len);
-
-    str[len] = '\0';
-
-    attr->resource = str;
-
-    /* Allocate memory for the value and copy */
-
-    if (v != NULL)
-      {
-      str = (char *)malloc(e - v + 1);
-
-      if (str == NULL)
+      /* handle gpus specially */
+      attr->resource = strdup(gres_str);
+      
+      if (attr->resource == NULL)
         {
         fprintf(stderr, "Out of memory\n");
 
         exit(2);
         }
+      }
+    else
+      {
+      str = (char *)malloc(len + 1);
+      
+      if (str == NULL)
+        {
+        fprintf(stderr, "Out of memory\n");
+        
+        exit(2);
+        }
+      
+      strncpy(str, r, len);
+      
+      str[len] = '\0';
+      
+      attr->resource = str;
+      }
 
-      strncpy(str, v, e - v);
+    /* Allocate memory for the value and copy */
 
-      str[e - v] = '\0';
+    if (v != NULL)
+      {
+      if (!strncmp(r,"gpus",strlen("gpus")))
+        {
+        /* handle gpus specially */
+        char *gpu_suffix = "gpus:";
+        int   gpu_len = strlen(gpu_suffix) + 1 + (e - v);
 
-      attr->value = str;
+        str = malloc(gpu_len);
+        
+        if (str == NULL)
+          {
+          fprintf(stderr, "Out of memory\n");
+          
+          exit(2);
+          }
+
+        strcpy(str,gpu_suffix);
+        strncat(str, v, e - v);
+        str[gpu_len - 1] = '\0';
+        }
+      else
+        {
+        str = (char *)malloc(e - v + 1);
+        
+        if (str == NULL)
+          {
+          fprintf(stderr, "Out of memory\n");
+          
+          exit(2);
+          }
+        
+        strncpy(str, v, e - v);
+        
+        str[e - v] = '\0';
+
+        attr->value = str;
+        }
       }
     else
       {
