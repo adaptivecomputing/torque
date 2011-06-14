@@ -2597,7 +2597,7 @@ static void correct_ct(
   char         *pc;
   job          *pjob;
   pbs_queue    *pque;
-  int           iter;
+  int           iter = -1;
 
   sprintf(log_buffer, "Job state counts incorrect, server %d: ",
           server.sv_qs.sv_numjobs);
@@ -2632,9 +2632,7 @@ static void correct_ct(
       }
     }
 
-  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname,
-
-            log_buffer);
+  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
 
   while ((pque = next_queue(&svr_queues,&iter)) != NULL)
     {
