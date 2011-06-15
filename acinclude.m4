@@ -6,6 +6,7 @@ m4_include([buildutils/ac_c_bigendian_cross.m4])
 m4_include([buildutils/t_add_rpath.m4])
 m4_include([buildutils/tac_tcltk.m4])
 m4_include([buildutils/ax_cflags_gcc_option.m4])
+m4_include([buildutils/pkg.m4])
 
 
 dnl

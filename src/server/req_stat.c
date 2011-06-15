@@ -1297,7 +1297,7 @@ int get_numa_statuses(
 
   struct pbsnode *pn;
 
-  if (pnode->num_numa_nodes == 0)
+  if (pnode->num_node_boards == 0)
     {
     /* no numa nodes, just return the status for this node */
     rc = status_node(pnode,preq,pstathd);
@@ -1305,9 +1305,9 @@ int get_numa_statuses(
     return(rc);
     }
 
-  for (i = 0; i < pnode->num_numa_nodes; i++)
+  for (i = 0; i < pnode->num_node_boards; i++)
     {
-    pn = AVL_find(i,pnode->nd_mom_port,pnode->numa_nodes);
+    pn = AVL_find(i,pnode->nd_mom_port,pnode->node_boards);
 
     if (pn == NULL)
       continue;

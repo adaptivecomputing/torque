@@ -131,23 +131,23 @@
 ** monitor for a Linux i386 machine.
 **
 ** Resources known by this code:
-**  cput  cpu time for a pid or session
-**  mem  memory size for a pid or session in KB
-**  resi  resident memory size for a pid or session in KB
-**  sessions list of sessions in the system
-**  pids  list of pids in a session
+**  cput      cpu time for a pid or session
+**  mem       memory size for a pid or session in KB
+**  resi      resident memory size for a pid or session in KB
+**  sessions  list of sessions in the system
+**  pids      list of pids in a session
 **  nsessions number of sessions in the system
-**  nusers  number of users in the system
-**  totmem  total memory size in KB
-**  availmem available memory size in KB
-**  ncpus  number of cpus
-**  physmem  physical memory size in KB
-**  size  size of a file or filesystem
-**  idletime seconds of idle time
-**  walltime wall clock time for a pid
-**  loadave  current load average
-**  quota  quota information (sizes in kb)
-**              netload         number of bytes transferred for all interfaces
+**  nusers    number of users in the system
+**  totmem    total memory size in KB
+**  availmem  available memory size in KB
+**  ncpus     number of cpus
+**  physmem   physical memory size in KB
+**  size      size of a file or filesystem
+**  idletime  seconds of idle time
+**  walltime  wall clock time for a pid
+**  loadave   current load average
+**  quota     quota information (sizes in kb)
+**  netload   number of bytes transferred for all interfaces
 */
 
 #ifndef MAX_LINE
@@ -197,9 +197,9 @@ extern int      memory_pressure_threshold;
 extern short    memory_pressure_duration;
 #endif
 #ifdef NUMA_SUPPORT
-extern int      num_numa_nodes;
-extern numanode numa_nodes[MAX_NUMA_NODES]; 
-extern int      numa_index;
+extern int       num_node_boards;
+extern nodeboard node_boards[]; 
+extern int       numa_index;
 #else
 extern char  path_meminfo[MAX_LINE];
 #endif /* NUMA_SUPPORT */
@@ -215,6 +215,9 @@ static char *ncpus    (struct rm_attribute *);
 static char *walltime (struct rm_attribute *);
 static char *quota    (struct rm_attribute *);
 static char *netload  (struct rm_attribute *);
+#ifdef NUMA_SUPPORT
+static char *cpuact   (struct rm_attribute *);
+#endif
 #ifdef USELIBMEMACCT
 static long get_memacct_resi(pid_t pid);
 extern long get_weighted_memory_size(pid_t);
@@ -241,25 +244,36 @@ typedef struct proc_mem
   unsigned long long swap_free;
   } proc_mem_t;
 
+#ifdef NUMA_SUPPORT
+typedef struct proc_cpu
+  {
+  unsigned long long idle_total;
+  unsigned long long busy_total;
+  } proc_cpu_t;
+static proc_cpu_t *cpu_array = NULL;
+#endif
+
 /*
 ** local resource array
 */
 
 struct config dependent_config[] =
   {
-    { "resi", {resi}
-    },
-
-  { "totmem", {totmem} },
-  { "availmem", {availmem} },
-  { "physmem", {physmem} },
-  { "ncpus", {ncpus} },
-  { "loadave", {loadave} },
-  { "walltime", {walltime} },
-  { "quota", {quota} },
-  { "netload",  {netload} },
-  { "size",     {size} },
-  { NULL, {nullproc} }
+    { "resi",     {resi}     },
+    { "totmem",   {totmem}   },
+    { "availmem", {availmem} },
+    { "physmem",  {physmem}  },
+    { "ncpus",    {ncpus}    },
+#ifdef NUMA_SUPPORT
+    { "loadave",  {cpuact}   },
+#else
+    { "loadave",  {loadave}  },
+#endif
+    { "walltime", {walltime} },
+    { "quota",    {quota}    },
+    { "netload",  {netload}  },
+    { "size",     {size}     },
+    { NULL,       {nullproc} }
   };
 
 unsigned linux_time = 0;
@@ -505,9 +519,9 @@ proc_mem_t *get_proc_mem(void)
   ret_mm.swap_used  = 0;
   ret_mm.swap_free  = 0;
 
-  for (i = 0; i < numa_nodes[numa_index].num_mems; i++)
+  for (i = 0; i < node_boards[numa_index].num_nodes; i++)
     {
-    if ((fp = fopen(numa_nodes[numa_index].path_meminfo[i],"r")) == NULL)
+    if ((fp = fopen(node_boards[numa_index].path_meminfo[i],"r")) == NULL)
 #else
     if ((fp = fopen(path_meminfo,"r")) == NULL)
 #endif
@@ -684,12 +698,12 @@ proc_mem_t *get_proc_mem(void)
       }
 
 #ifdef NUMA_SUPPORT
-    ret_mm.mem_total += mm.mem_total;
-    ret_mm.mem_used += mm.mem_used;
-    ret_mm.mem_free += mm.mem_free;
+    ret_mm.mem_total  += mm.mem_total;
+    ret_mm.mem_used   += mm.mem_used;
+    ret_mm.mem_free   += mm.mem_free;
     ret_mm.swap_total += mm.swap_total;
-    ret_mm.swap_used += mm.swap_used;
-    ret_mm.swap_free += mm.swap_free;
+    ret_mm.swap_used  += mm.swap_used;
+    ret_mm.swap_free  += mm.swap_free;
     }
 #else
     ret_mm.mem_total  = mm.mem_total;
@@ -2343,11 +2357,11 @@ int mom_set_use(
     inum = get_cpuset_mempressure(pjob->ji_qs.ji_jobid);
 
     /* Store if success */
-    if(inum != -1)
+    if (inum != -1)
       pjob->ji_mempressure_curr = inum;
 
     /* Alert if there is pressure */
-    if(inum > 0)
+    if (inum > 0)
       {
       sprintf(log_buffer, "job %s causes memory_pressure %d", pjob->ji_qs.ji_jobid, inum);
       log_ext(-1, id, log_buffer, LOG_ALERT);
@@ -3461,7 +3475,7 @@ char *sessions(
 
     sp = sp->next;
 
-    } /* END while(pp) */
+    } /* END while(sp) */
 
   /* Done */
 
@@ -3864,12 +3878,12 @@ static char *ncpus(
   {
 #ifdef NUMA_SUPPORT
   /* report the configured ncpus for this numa node */
-  sprintf(ret_string,"%d",numa_nodes[numa_index].num_cpus);
+  sprintf(ret_string,"%d",node_boards[numa_index].num_cpus);
 #else
   char  *id = "ncpus";
-  char           label[128];
+  char   label[128];
   FILE  *fp;
-  int   procs;
+  int    procs;
 
   if (attrib != NULL)
     {
@@ -3906,6 +3920,12 @@ static char *ncpus(
   fclose(fp);
 
 #endif /* NUMA_SUPPORT */
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer, "ncpus=%s", ret_string);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, "ncpus", log_buffer);
+    }
+
   return(ret_string);
   }  /* END ncpus() */
 
@@ -3945,11 +3965,11 @@ static char *physmem(
 
 #ifdef NUMA_SUPPORT
 
-  for (i = 0; i < numa_nodes[numa_index].num_mems; i++)
+  for (i = 0; i < node_boards[numa_index].num_nodes; i++)
 #endif /* NUMA_SUPPORT */
     {
 #ifdef NUMA_SUPPORT
-    if (!(fp = fopen(numa_nodes[numa_index].path_meminfo[i],"r")))
+    if (!(fp = fopen(node_boards[numa_index].path_meminfo[i],"r")))
 #else
     if (!(fp = fopen(path_meminfo, "r")))
 #endif
@@ -4548,6 +4568,170 @@ int get_la(
 
   return(0);
   }  /* END get_la() */
+
+
+
+
+#ifdef NUMA_SUPPORT
+
+/*
+ * Calculate cpu activities for numa nodeboards.
+ *
+ * This is a very preliminary attempt to provide useful load data for NUMA nodeboards.
+ * Instead of a load average, we report the cpu activities of all cpus of a NUMA board.
+ * Calculated numbers range from 0.0 (no CPU activity) to the number of
+ * CPUs of a NUMA board (all CPUs are busy to 100%).
+ *
+ * Note that this is NOT the load average. However, it almost looks the same.
+ *
+ * The activity of a cpu is calculated from the content of /proc/stat like done
+ * by top and related tools.
+ */
+ 
+void collect_cpuact(void)
+  {
+  char  *id = "collect_cpuact";
+  FILE  *fp;
+  char   label[128];
+  long   procs;
+  int    cpu_id;
+  int    i;
+  unsigned long long usr, nice, sys, idle, wait;
+  unsigned long long totidle, totbusy, prevtot;
+  unsigned long long dtot, dbusy;
+
+  /*
+   * Allocate cpu_array, if not already done.
+   * Need to figure out number of cpus in the system, first.
+   */
+
+  if (cpu_array == NULL)
+    {
+    if((fp = fopen("/proc/cpuinfo", "r")) == NULL)
+      /* Failure */
+      return;
+
+    procs = 0;
+    while (! feof(fp))
+      {
+      if (fscanf(fp, "%s %*[^\n]%*c", label) == 0)
+        getc(fp);
+      else if (strcmp("processor", label) == 0)
+        procs++;
+      }
+
+    fclose(fp);
+    system_ncpus = procs;
+
+    sprintf(log_buffer, "system contains %ld CPUs", system_ncpus);
+    log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+  
+    if (system_ncpus)
+      {
+      if ((cpu_array = (proc_cpu_t *)malloc(system_ncpus * sizeof(proc_cpu_t))) == NULL)
+        {
+        log_err(errno, id, "failed to allocate memory");
+        return;
+        }
+      }
+    }
+
+  /* Zero out cpu_array */
+  memset(cpu_array, 0, system_ncpus * sizeof(proc_cpu_t));
+
+  /* Parse CPU counters from /proc/stat */
+  if ((fp = fopen("/proc/stat", "r")) != NULL)
+    {
+    while (! feof(fp))
+      {
+      if (fscanf(fp, "%s", label) != 1)
+        /* Format error */
+        break;
+                  
+      if (sscanf(label, "cpu%d", &cpu_id) != 1)
+        /* Line does not report cpu activities */
+        continue; 
+
+      if (cpu_id >= system_ncpus)
+        /* Ups, more cpus than found in /proc/cpuinfo */
+        break;
+
+      if(fscanf(fp, " %llu %llu %llu %llu %llu", &usr, &nice, &sys, &idle, &wait) != 5)
+        /* Format error */
+        break;
+ 
+      cpu_array[cpu_id].idle_total = idle;
+      cpu_array[cpu_id].busy_total = usr + nice + sys + wait;
+
+      }
+    fclose(fp);
+    } /* END if(fp) */
+
+  /* Calculate cpu activity for each nodeboard */
+  for (i = 0; i < num_node_boards; i++)
+    {
+    
+    /* Sum up cpu counters of relevant CPUs */
+    totidle = totbusy = 0;
+    hwloc_bitmap_foreach_begin(cpu_id, node_boards[i].cpuset)
+      {
+      totidle += cpu_array[cpu_id].idle_total;
+      totbusy += cpu_array[cpu_id].busy_total;
+      }
+    hwloc_bitmap_foreach_end();
+    
+    /* If there are counters from a previous call, evaluate */
+    if ((prevtot = node_boards[i].pstat_idle + node_boards[i].pstat_busy) != 0)
+      {
+      dbusy = totbusy - node_boards[i].pstat_busy; /* diff busy  counter sum */
+      dtot  = totbusy + totidle - prevtot;        /* diff total counter sum */
+      node_boards[i].cpuact = (float)(node_boards[i].num_cpus * dbusy / (double)dtot);
+      }
+    else
+      {
+      node_boards[i].cpuact = 0;
+      }
+
+    /* Remember counter sums */
+    node_boards[i].pstat_idle = totidle;
+    node_boards[i].pstat_busy = totbusy;
+
+    } /* END for(i) */
+
+  return;
+  } /* END collect_cpuact() */
+
+
+
+
+
+char *cpuact(
+
+  struct rm_attribute *attrib)
+  
+  {
+  char *id = "cpuact";
+
+  if (attrib != NULL)
+    {
+    log_err(-1, id, extra_parm);
+    rm_errno = RM_ERR_BADPARAM;
+    return(NULL);
+    }
+
+  sprintf(ret_string, "%.2f", node_boards[numa_index].cpuact);
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer, "cpuact=%s", ret_string);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, id, log_buffer);
+    }
+
+  return(ret_string);
+  } /* END cpuact() */
+#endif
+
+
 
 
 

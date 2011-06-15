@@ -87,14 +87,29 @@
 
 /* NOTE:  requires server_limits.h */
 
-#define BM_ERROR           -20
-#define MAX_NUMA_NODES      2048
-#define NUMA_KEYWORD       "numa"
-#define TTORQUECPUSET_PATH "/dev/cpuset/torque"
-#define TROOTCPUSET_PATH   "/dev/cpuset"
-#ifdef USELIBCPUSET
-#define TTORQUECPUSET_BASE "/torque"
+#ifdef NUMA_SUPPORT
+/* NOTE: cpuset support needs hwloc */
+#  include <hwloc.h>
 #endif
+
+#define NUMA_KEYWORD           "numa"
+
+#ifdef NUMA_SUPPORT
+#  define MAX_NODE_BOARDS      2048
+#endif  /* NUMA_SUPPORT */
+#ifdef PENABLE_LINUX26_CPUSETS
+#  define TROOTCPUSET_PATH     "/dev/cpuset"
+#  define TBOOTCPUSET_PATH     "/dev/cpuset/boot"
+#  define TTORQUECPUSET_PATH   "/dev/cpuset/torque"
+#  ifdef USELIBCPUSET
+#    define TROOTCPUSET_BASE   "/"
+#    define TBOOTCPUSET_BASE   "/boot"
+#    define TTORQUECPUSET_BASE "/torque"
+#  endif
+#endif /* PENABLE_LINUX26_CPUSETS */
+
+#define BM_ERROR -20
+
 
 enum psit
   {
@@ -145,18 +160,19 @@ struct gpusubn
 
 
 #ifdef NUMA_SUPPORT
-typedef struct numanode_t
+typedef struct nodeboard_t
   {
-
-  int              num_cpus;     /* count of cpus */
-  int              cpu_offset;   /* real index of first cpu */
-  int              index;        /* the node's index */
-  int              num_mems;     /* count of memory nodes */
-  int              mem_offset;   /* real index of first memory node */
-  unsigned long    memsize;
-  char           **path_meminfo; /* path to meminfo file */
-
-  } numanode;
+  int                index;        /* the node's index */
+  int                num_cpus;     /* count of cpus */
+  int                num_nodes;    /* count of NUMA nodes */
+  hwloc_bitmap_t     cpuset;       /* bitmap containing CPU IDs of this nodeboard */
+  hwloc_bitmap_t     nodeset;      /* bitmap containing NUMA node IDs of this nodeboard */
+  unsigned long      memsize;
+  char             **path_meminfo; /* path to meminfo file for each NUMA node */
+  unsigned long long pstat_busy;
+  unsigned long long pstat_idle;
+  float              cpuact;
+  } nodeboard;
 #endif /* NUMA_SUPPORT */
 
 /* struct used for iterating numa nodes */
@@ -207,8 +223,8 @@ struct pbsnode
   short                 nd_ngpus_free;   /* number of free gpus */
   short                 nd_ngpus_needed; /* number of gpus needed */
 
-  unsigned short        num_numa_nodes; /* number of numa nodes */
-  struct AvlNode       *numa_nodes; /* private tree of numa nodes */
+  unsigned short        num_node_boards; /* number of numa nodes */
+  struct AvlNode       *node_boards; /* private tree of numa nodes */
   char                 *numa_str; /* comma-delimited string of processor values */
   char           *gpu_str; /* comma-delimited string of the number of gpus for each nodeboard */
 
@@ -325,7 +341,7 @@ enum nodeattr
   ND_ATR_note,
   ND_ATR_mom_port,
   ND_ATR_mom_rm_port,
-  ND_ATR_num_numa_nodes,
+  ND_ATR_num_node_boards,
   ND_ATR_numa_str,
   ND_ATR_gpus,
   ND_ATR_gpus_str,

@@ -2674,7 +2674,7 @@ void im_request(
 
         log_ext(-1, id, log_buffer, LOG_INFO);
 
-        if (create_jobset(pjob) == FAILURE)
+        if (create_job_cpuset(pjob) == FAILURE)
           {
           sprintf(log_buffer, "Could not create cpuset for job %s.\n",
             pjob->ji_qs.ji_jobid);
@@ -3047,7 +3047,7 @@ void im_request(
       
         log_ext(-1, id, log_buffer, LOG_INFO);
       
-        if (create_jobset(pjob) == FAILURE)
+        if (create_job_cpuset(pjob) == FAILURE)
           {
           sprintf(log_buffer, "Could not create cpuset for job %s.\n",
             pjob->ji_qs.ji_jobid);

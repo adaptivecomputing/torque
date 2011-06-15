@@ -234,8 +234,8 @@ attribute_def node_attr_def[] =
 	  ATR_TYPE_LONG,
 	  PARENT_TYPE_NODE,
 	},
-  /* ND_ATR_num_numa_nodes */
-  { ATTR_NODE_num_numa_nodes, /* "num_numa_nodes" */
+  /* ND_ATR_num_node_boards */
+  { ATTR_NODE_num_node_boards, /* "num_node_boards" */
     decode_l,
     encode_l,
     set_l,
@@ -247,7 +247,7 @@ attribute_def node_attr_def[] =
     PARENT_TYPE_NODE,
   },
   /* ND_ATR_numa_str */
-  { ATTR_NODE_numa_str, /* "numa_node_str" */
+  { ATTR_NODE_numa_str, /* "node_board_str" */
     decode_str,
     encode_str,
     set_str,

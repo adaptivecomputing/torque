@@ -16,6 +16,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       of every individual job 
   e - no longer fork to send mail, just use a thread
   e - make queues threadsafe
+  e - use hwloc as the backbone for cpuset support in TORQUE (contributed by Dr. Bernd Kallies)
+  e - allow SMT support, at least with large-scale NUMA systems - hasn't been tested yet with
+      small-scale NUMA. (contributed by Dr. Bernd Kallies)
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it

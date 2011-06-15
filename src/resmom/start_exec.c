@@ -2768,12 +2768,14 @@ int TMomFinalizeChild(
 
 	if (use_cpusets(pjob) == TRUE)
 		{
-		sprintf(log_buffer, "about to create cpuset for job %s.\n",
-						pjob->ji_qs.ji_jobid);
 
-		log_ext(-1, id, log_buffer, LOG_DEBUG);
+                if (LOGLEVEL >= 6)
+                  {
+		  sprintf(log_buffer, "about to create cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
+                  log_ext(-1, id, log_buffer, LOG_DEBUG);
+                  }
 
-		if (create_jobset(pjob) == FAILURE)
+		if (create_job_cpuset(pjob) == FAILURE)
 			{
 			/* FAILURE */
 
@@ -3471,7 +3473,12 @@ int TMomFinalizeChild(
 
 	if (use_cpusets(pjob) == TRUE)
 		{
-		move_to_jobset(getpid(), pjob);
+                if (LOGLEVEL >= 6)
+                  {
+                  sprintf(log_buffer, "about to move to cpuset of job %s", pjob->ji_qs.ji_jobid);
+		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+                  }
+		move_to_job_cpuset(getpid(), pjob);
 		}
 
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
@@ -4877,34 +4884,24 @@ int start_process(
 	if (use_cpusets(pjob) == TRUE)
 		{
 		int j;
-		char nodeidbuf[1024];
 
 		/* FIXME: vnodenum needs to be stored in the task struct so that we don't
-		 * have to fish it out here.  Then we just pass the int to move_to_taskset
-		 * (changing the type of arg3) */
+		 * have to fish it out here. */
 
 		for (j = 0;j < vtable.v_used;j++)
 			{
 			if (!strncmp(vtable.v_envp[j], "PBS_VNODENUM=", strlen("PBS_VNODENUM=")))
 				{
-				strcpy(nodeidbuf, vtable.v_envp[j] + strlen("PBS_VNODENUM="));
-
-				/* FIXME: temp debugging info */
-
         if (LOGLEVEL >= 6)
           {
-          sprintf(log_buffer, "about to move to taskset for job %s/%s.\n",
-            pjob->ji_qs.ji_jobid, nodeidbuf);
+          sprintf(log_buffer, "about to move to cpuset for job %s.\n",
+            pjob->ji_qs.ji_jobid);
           
           log_ext(-1, id, log_buffer, LOG_DEBUG);
           }
 
 				/* Move this mom process into the cpuset so the job will start in it. */
-
-				/* Changed to move_to_jobset for OpenMPI jobs - CS - 20080526 */
-
-				/* move_to_taskset(getpid(),pjob,nodeidbuf); */
-				move_to_jobset(getpid(), pjob);
+				move_to_job_cpuset(getpid(), pjob);
 				}
 			}
 		}

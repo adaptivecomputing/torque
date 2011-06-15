@@ -1238,8 +1238,8 @@ static int rpp_create_sp(void)
       stream_num++;
 
       stream_mutexes = (pthread_mutex_t *)realloc(
-          stream_mutexes,
-          (stream_num) * sizeof(pthread_mutex_t));
+        stream_mutexes,
+        (stream_num) * sizeof(pthread_mutex_t));
 
       if (stream_mutexes == NULL)
         return(-1);
@@ -1458,8 +1458,6 @@ static void dqueue(
   else
     pp->up->down = pp->down;
 
-  pthread_mutex_unlock(master_list_mutex);
-
   if (--pkts_sent < 0)
     pkts_sent = 0;
 
@@ -1467,8 +1465,10 @@ static void dqueue(
 
   free(pp);
 
+  pthread_mutex_unlock(master_list_mutex);
+
   return;
-  }
+  } /* END dqueue() */
 
 
 

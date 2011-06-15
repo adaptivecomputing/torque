@@ -510,7 +510,15 @@ status output.  The command should output data in the form of
 .Ty varattrname=va1ue1[+value2]...
 .IP
 .Ty "$varattr 3600 /path/to/script [<ARGS>]..."
-.IP
+.IP use_smt
+This option is only available, if pbs_mom is enabled to use cpusets.
+It has only effect, if there are more that one logical processor per physical
+core in the system (simultaneous multithreading or hyperthreading is enabled
+via BIOS settings).
+If set to true, all logical processors of allocated cores are added to the cpuset
+of a job. If set to false, only the first logical processor per allocated core
+is contained in the cpuset of a job.
+The default is true.
 .IP wallmult
 which sets a factor used to adjust wall time usage by to job to a common
 reference system.  The factor is used for walltime calculations and limits

@@ -23,6 +23,10 @@ dnl Expanded to allow --enable-high-availability in order to have improved
 dnl high availability features
 dnl by David Beer (dbeer@adaptivecomputing.com)
 dnl
+dnl Added --enable-libcpuset to use the cpuset API from libcpuset when --enable-cpuset
+dnl Added --enable-memacct to enable pbs_mom to get rss values that are more reliable
+dnl Added requirement for libhwloc when --enable-cpuset or --enable-numa-support
+dnl   Bernd Kallies (kallies@zib.de)
 
 AC_PREREQ(2.53)
 AC_INIT([torque], [4.0.0], [torqueusers@supercluster.org])
@@ -467,16 +471,19 @@ AC_DEFINE_UNQUOTED(IBM_SP2, ${IBM_SP2}, [defined if this is an SP2])
 AC_SUBST(PBSPOE)    
 AC_SUBST(PBSPOEO)
 
-AC_ARG_ENABLE(cpuset,[  --enable-cpuset         enable Linux 2.6 kernel cpusets (in development)])
+AC_ARG_ENABLE(cpuset,[  --enable-cpuset         enable Linux 2.6 kernel cpusets])
 build_l26_cpuset=no
-if test "x$enable_cpuset" = "xyes" ;then
+cpuset=0
+AC_MSG_CHECKING([whether to enable cpusets])
+if test "x$enable_cpuset" = "xyes" ; then
+  AC_MSG_RESULT([yes])
   build_l26_cpuset=yes
-  AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
   cpuset=1
+  AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
   dnl define geometry requests to allow these to be requested here
-dnl  CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS"  
+  dnl  CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS"  
 else
-  cpuset=0
+  AC_MSG_RESULT([no])
 fi
 AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
 
@@ -525,46 +532,81 @@ fi
 
 
 
+dnl For Linux 2.6 cpusets, libhwloc is needed for pbs_mom.
+dnl We are using pkg-config to figure out libs and cflags.
+dnl The used m4 macro is found in buildutils/pkg.m4.
+dnl In addition, we check libhwloc for hwloc_bitmap_alloc (present since v1.1).
+if test "${build_l26_cpuset}" = "yes" ; then
+  if test "${build_mom}" = "yes" ; then
+    PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.1],
+      [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CPPFLAGS="$CPPFLAGS $HWLOC_CFLAGS" ],
+      [ AC_MSG_ERROR([cpuset support requires the hwloc package
+
+$HWLOC_PKG_ERRORS
+
+Perhaps you should add the directory containing 'hwloc.pc'
+to the PKG_CONFIG_PATH environment variable.
+
+Alternatively, you may set the environment variables 
+HWLOC_CFLAGS and HWLOC_LIBS before running configure.
+
+Example:
+export HWLOC_CFLAGS='-I/usr/local/hwloc-1.1/include'
+export HWLOC_LIBS='-L/usr/local/hwloc-1.1/lib -lhwloc'
+])])
+    olibs=$LIBS
+    LIBS="$LIBS $HWLOC_LIBS";
+    AC_CHECK_LIB([hwloc], [hwloc_bitmap_alloc],,
+      [AC_MSG_ERROR([libhwloc does not look like >= 1.1])])
+    LIBS=$olibs
+  fi
+fi 
+
+
 dnl enable pbs_mom to use the cpuset API from libcpuset
-dnl makes only sense with --enable-numa-support
+dnl only makes sense with cpusets enabled 
 AC_ARG_ENABLE(libcpuset, [  --enable-libcpuset      Allows pbs_mom to use the cpuset API from libcpuset])
-if test "x$GCC" = "xyes"; then
-AC_MSG_CHECKING([whether to enable libcpuset support])
-  if test "${enable_libcpuset}" = "yes" ; then
-    if test "$build_l26_cpuset" = "yes" ;then
-      AC_DEFINE([USELIBCPUSET], 1, [Define to enable libcpuset support])
-      AC_CHECK_LIB([cpuset],[cpuset_version],
-          [MOMLIBS="$MOMLIBS -lcpuset"],
-          [AC_MSG_ERROR([--enable-libcpuset requires libcpuset support]) ])
-    else
-      AC_MSG_RESULT([no because we are not using cpusets])
+if test "${build_mom}" = "yes" ; then
+  if test "x$GCC" = "xyes" ; then
+    if test "${build_l26_cpuset}" = "yes" ; then
+      AC_MSG_CHECKING([whether to build libcpuset support])
+      if test "${enable_libcpuset}" = "yes" ; then
+        AC_MSG_RESULT([yes])
+        AC_CHECK_HEADERS([cpuset.h bitmask.h], ,
+          [AC_MSG_ERROR([header files missing to --enable-libcpuset]) ])
+        AC_CHECK_LIB([cpuset],[cpuset_version], ,
+          [AC_MSG_ERROR([--enable-libcpuset requires libcpuset to be installed]) ])
+        AC_DEFINE([USELIBCPUSET], 1, [Define to enable libcpuset support])
+        MOMLIBS="$MOMLIBS -lcpuset"
+      else
+        AC_MSG_RESULT([no])
+      fi
     fi
-  else
-    AC_MSG_RESULT([no])
   fi
 fi
 
 
 
 
-dnl enable pbs_mom to query SGI memacctd to get rss values that are more reliable
+dnl enable pbs_mom to query the SGI memory accounting utility to get rss values that are more reliable
 dnl
 dnl --enable-memacct
-AC_MSG_CHECKING([whether to enable memacct support])
-AC_ARG_ENABLE(memacct, [
-  --enable-memacct       Allows pbs_mom to query SGI memacctd in order to better monitor job memory consumption],
-    MEMACCT=$enableval,MEMACCT=no)
-AC_MSG_RESULT($MEMACCT)
+AC_ARG_ENABLE(memacct, [  --enable-memacct        Allows pbs_mom to query the SGI memory accounting utility])
+if test "${build_mom}" = "yes" ; then
+  if test "x$GCC" = "xyes"; then
+    AC_MSG_CHECKING([whether to build libmemacct support])
+    if test "${enable_memacct}" = "yes" ; then
+      AC_MSG_RESULT([yes])
+      AC_CHECK_LIB([memacct],[get_weighted_memory_size], ,
+        [AC_MSG_ERROR([--enable-memacct requires libmemacct to be installed]) ])
+      AC_DEFINE([USELIBMEMACCT], 1, [Define to enable libmemacct support])
+      MOMLIBS="$MOMLIBS -lmemacct"
+    else
+      AC_MSG_RESULT([no])
+    fi
+  fi
+fi
 
-case "$MEMACCT" in
-  yes) AC_DEFINE([USELIBMEMACCT], 1, [Define to enable memacct support])
-      AC_CHECK_LIB([memacct],[get_weighted_memory_size],
-        [MOMLIBS="$MOMLIBS -lmemacct"],
-        [AC_MSG_ERROR([--enable-memacct requires libmemacct support]) ])
-      ;;
-  no) : ;;
-  *) AC_MSG_ERROR([--enable-memacct should be yes or no]) ;;
-esac
 
 dnl fixes errors relating to unaligned memory accesses
 dnl some systems experience these errors
@@ -1730,13 +1772,15 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 echo
 echo "Building components: server=$build_server mom=$build_mom clients=$build_clients 
                      gui=$build_gui drmaa=$build_drmaa pam=`test "x$pammoddir" = "xdisabled" && echo no || echo yes`"
-echo "PBS Machine type: $PBS_MACH"
-echo "Remote copy: $RCP_PATH $RCP_ARGS"
-echo "PBS home: $PBS_SERVER_HOME"
-echo "Default server: $PBS_DEFAULT_SERVER"
-echo "Unix Domain sockets: $ENABLE_UNIX_SOCKETS"
-echo "Tcl: `test "$TCL" = "1" && echo $MY_TCL_INCS $MY_TCL_LIBS || echo disabled`"
-echo "Tk: `test "$TK" = "1" && echo $MY_TCLTK_INCS $MY_TCLTK_LIBS || echo disabled`"
+echo "PBS Machine type    : $PBS_MACH"
+echo "Remote copy         : $RCP_PATH $RCP_ARGS"
+echo "PBS home            : $PBS_SERVER_HOME"
+echo "Default server      : $PBS_DEFAULT_SERVER"
+echo
+echo "Unix Domain sockets : $ENABLE_UNIX_SOCKETS"
+echo "Linux cpusets       : $build_l26_cpuset"
+echo "Tcl                 : `test "$TCL" = "1" && echo $MY_TCL_INCS $MY_TCL_LIBS || echo disabled`"
+echo "Tk                  : `test "$TK" = "1" && echo $MY_TCLTK_INCS $MY_TCLTK_LIBS || echo disabled`"
 echo
 
 if test "x$gccwarnings" = "xyes" ;then
