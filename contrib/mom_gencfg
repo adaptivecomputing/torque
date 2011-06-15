@@ -1,0 +1,559 @@
+#!/usr/bin/perl
+# *****************************************************************************
+#
+#  Copyright 2011 Zuse Institute Berlin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+#  Please send comments to kallies@zib.de
+#
+# *****************************************************************************
+# Purpose: - called from /etc/init.d/pbs_mom during start actions.
+#          - creates /var/spool/torque/mom_priv/mom.layout
+#          - creates/modifies /dev/cpuset/torque
+# Prereq:  - hwloc >= 1.1, http://www.open-mpi.org/projects/hwloc/
+#          - Sys::Hwloc >= 0.09, http://search.cpan.org/~bka/
+# Install: Install this script on each UV rack
+#          /opt/torque/Scripts/mom_gencfg root:root -rwxr-xr-x
+# Config:  Set MOM_GENCFG=/opt/torque/Scripts/mom_gencfg
+#          in /etc/init.d/pbs_mom for UV, execute $MOM_GENCFG before
+#          starting the pbs_mom daemon.
+#          MOM_GENCFG can be overridden in /etc/sysconfig/pbs_mom.
+# *****************************************************************************
+# $Id: mom_gencfg,v 1.1.2.1 2011/01/17 10:12:46 acountin Exp $
+# *****************************************************************************
+
+# 
+# *** Instructions for use *** 
+#
+# 1. Install hwloc - see contrib/hwloc_install.sh. This should already be done since
+#    TORQUE needs hwloc for its cpuset implementation starting in 3.1
+# 2. Install Sys::Hwloc from CPAN 
+# 3. Set $PBS_HOME to the proper value if not already set
+# 4. Update the variables in the section 'Config Definitions' Especially update firstNodeId
+#    and nodesPerBoard if desired. 
+#      firstNodeId should be set above 0 if you have a root cpuset that you wish to exclude
+#      nodesPerBoard is the number of numa nodes per board. Each node is defined in the 
+#      directory /sys/devices/system/node, in a subdirectory node<node index>
+# 5. Backup your current file, just in case a variable is set incorrectly or neglected
+# 6. Run this script and enjoy the layout file
+#
+#
+
+
+use strict;
+
+use lib qw(
+           /usr/lib/perl5
+           /usr/lib/perl5/site_perl 
+          ); 
+
+use Sys::Hostname;
+use File::Basename;
+use Getopt::Long qw(:config no_ignore_case);
+use autouse 'Pod::Usage' => qw(pod2usage);
+use Sys::Hwloc 0.09;
+
+my $progName  = basename($0);
+my $hostName  = hostname();
+
+$SIG{__DIE__} = \&xDie;
+
+# ==============================================================================
+# Setup needed before init
+# ==============================================================================
+
+BEGIN: {
+  die "This script needs at least hwloc-1.1\n" unless HWLOC_XSAPI_VERSION() >= 0x00010100;
+}
+
+# ==============================================================================
+# Config definitions
+# ==============================================================================
+
+my $hostNames      = undef;                             # hostname pattern to be run on, undef to skip test
+my $cpusetFsName   = '/dev/cpuset';                     # the name of the cpuset file system
+my $cpusetBaseName = '/torque';                         # the name of the parent cpuset of a job's cpuset
+my $mkdirCmd       = '/bin/mkdir';                      # the path to the mkdir command
+my $catCmd         = '/bin/cat';                        # the path to the cat command
+my $echoCmd        = '/bin/echo';                       # the path to the echo command
+my $momCfgDir      = 'mom_priv';                        # the directory where MOM configs are stored
+my $momLayoutFile  = 'mom.layout';                      # the name of the MOM layout file
+my $firstNodeId    = 0;                                 # ID of 1st NUMA node to be used by Torque (start with 0)
+my $lastNodeId     = undef;                             # ID of last NUMA node to be used (undef means last available)
+my $nodesPerBoard  = 1;                                 # number of NUMA nodes per nodeboard
+my %cpusetConf     = (
+		      cpus               => undef,      # undef means auto-generate
+		      mems               => undef,      # undef means auto-generate
+		      cpu_exclusive      => 1,          #
+          mem_exclusive      => 1,          #
+		     );
+my %options        = (
+		      -doLayout => 1,                   # generate mom.layout
+		      -withCpus => 1,                   #   include cpus in mom.layout
+		      -withMems => 1,                   #   include mems in mom.layout
+		      -doCpuset => 1,                   # generate/modify /torque cpuset
+		      -withSmt  => 1,                   # include logical processors running on the same core
+		      -verbose  => undef,               # be verbose to STDERR
+		      -dryRun   => undef,               # no actions, just tell what would be done
+		     );
+
+# ==============================================================================
+# Command line options
+# ==============================================================================
+
+GetOptions(
+	   "layout!"   => \$options{-doLayout},
+	   "cpus!"     => \$options{-withCpus},
+	   "mems!"     => \$options{-withMems},
+	   "smt!"      => \$options{-withSmt},
+	   "cpuset!"   => \$options{-doCpuset},
+	   "dry-run!"  => \$options{-dryRun},
+	   "verbose!"  => \$options{-verbose},
+     "help|?"    => sub { usage(0)  },
+	   "man"       => sub { manPage() },
+	  ) or usage(2);
+
+if($options{-dryRun}) {
+  $options{-verbose} = 1 unless defined $options{-verbose};
+  xDebug(">>> DryRunDryRunDryRunDryRunDryRun <<<");
+}
+
+# ==============================================================================
+# Quick exit if not wanted on this host, or if no work to do
+# ==============================================================================
+
+#if(defined $hostNames) {
+#  unless($hostName =~ /$hostNames/) {
+#    xDebug("--- Don't run on $hostName ---");
+#    exit 0;
+#  }
+#}
+
+exit 0 unless ($options{-doLayout} || $options{-doCpuset});
+
+# ==============================================================================
+# See if PBS_HOME is set, and if $PBS_HOME/mom_priv exists.
+# If not, we are probably not called correctly, thus die.
+# See if cpusets are configured. If not, die.
+# ==============================================================================
+
+die "\$PBS_HOME not set\n" unless (exists $ENV{PBS_HOME} && $ENV{PBS_HOME});
+die "PBS_HOME=$ENV{PBS_HOME} does not exist\n" unless -d $ENV{PBS_HOME};
+$momCfgDir = "$ENV{PBS_HOME}/${momCfgDir}";
+die "MOM config dir $momCfgDir does not exist\n" unless -d $momCfgDir;
+$momLayoutFile = "${momCfgDir}/${momLayoutFile}";
+die "this system does not support cpusets\n" unless -d $cpusetFsName;
+
+# ==============================================================================
+# Figure out system topology, collect wanted node objects
+# ==============================================================================
+
+my $topology = Sys::Hwloc::Topology->init;
+die "Failed to init topology\n" unless defined $topology;
+$topology->set_flags(HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM);
+die("Failed to load topology\n") if $topology->load;
+
+# ==============================================================================
+# Collect nodesets of wanted NUMA nodes per nodeBoard
+# ==============================================================================
+
+my @nodeBoards = ();
+my $nodeObj    = undef;
+my $nNodes     = 0;
+while($nodeObj = $topology->get_next_obj_by_type(HWLOC_OBJ_NODE, $nodeObj)) {
+  my $nodeId = $nodeObj->logical_index;
+  next if $nodeId < $firstNodeId;
+  last if (defined $lastNodeId && $nodeId > $lastNodeId);
+  if($nNodes) {
+    $nodeBoards[$#nodeBoards]->{nodeset}->or($nodeObj->nodeset);
+  } else {
+    push @nodeBoards, {
+		       cpuset  => Sys::Hwloc::Bitmap->new,
+		       nodeset => $nodeObj->nodeset->dup,
+		      };
+  }
+  $nNodes++;
+  $nNodes = 0 if $nNodes >= $nodesPerBoard;
+}
+
+# ==============================================================================
+# Assemble cpusets per nodeBoard
+# ==============================================================================
+
+foreach my $nodeBoard (@nodeBoards) {
+  $topology->cpuset_from_nodeset_strict($nodeBoard->{cpuset}, $nodeBoard->{nodeset});
+  next if $options{-withSmt};
+  my $core = undef;
+  while($core = $topology->get_next_obj_inside_cpuset_by_type($nodeBoard->{cpuset}, HWLOC_OBJ_CORE, $core)) {
+    my $j = 1;
+    while (my $pu = $topology->get_obj_inside_cpuset_by_type($core->cpuset, HWLOC_OBJ_PU, $j++)) {
+      $nodeBoard->{cpuset}->andnot($pu->cpuset);
+    }
+  }
+}
+
+# ==============================================================================
+# Generate mom.layout
+# ==============================================================================
+
+if($options{-doLayout}) {
+
+  xDebug("--- Generating $momLayoutFile ---");
+  if(! $options{-dryRun}) {
+    open(FILE, "> $momLayoutFile") or die "failed to open $momLayoutFile: $!\n";
+  }
+  foreach my $nodeBoard (@nodeBoards) {
+    my $line = sprintf("nodes=%s", $nodeBoard->{nodeset}->sprintf_list);
+    $line   .= sprintf(" cpus=%s", $nodeBoard->{cpuset}->sprintf_list)  if $options{-withCpus};
+    $line   .= sprintf(" mems=%s", $nodeBoard->{nodeset}->sprintf_list) if $options{-withMems};
+    xDebug("    $line");
+    print FILE "$line\n" unless $options{-dryRun};
+  }
+  close(FILE) unless $options{-dryRun};
+
+}
+
+# ==============================================================================
+# Create/modify torque cpuset
+# ==============================================================================
+
+if($options{-doCpuset}) {
+
+  # Create it if it is not there
+  my $cpusetPath = "${cpusetFsName}${cpusetBaseName}";
+  if(! -d $cpusetPath) {
+    xDebug("--- Creating $cpusetPath ---");
+    my $rc = execCmd($mkdirCmd,1,$cpusetPath);
+    die "Failed to create $cpusetPath\n" unless defined $rc;
+  }
+
+  # Read content
+  xDebug("--- Reading $cpusetPath ---");
+  my $cpusetData = readCpuset($cpusetPath);
+  die "Failed to read $cpusetPath\n" unless defined $cpusetData;
+
+  # Assemble changes
+  my %cpusetMod = ();
+  foreach my $key (keys %cpusetConf) {
+    next unless exists $cpusetData->{$key};
+    my $val = $cpusetConf{$key};
+  CASE: {
+      $key eq 'cpus' && do {
+ 	if(! defined $val) {
+	  my $cpuset = Sys::Hwloc::Bitmap->new;
+	  foreach my $nodeBoard (@nodeBoards) {
+	    $cpuset->or($nodeBoard->{cpuset});
+	  }
+	  $val = $cpuset->sprintf_list;
+	  $cpuset->free;
+ 	}
+	last CASE;
+      };
+      $key eq 'mems' && do {
+ 	if(! defined $val) {
+	  my $nodeset = Sys::Hwloc::Bitmap->new;
+	  foreach my $nodeBoard (@nodeBoards) {
+	    $nodeset->or($nodeBoard->{nodeset});
+	  }
+	  $val = $nodeset->sprintf_list;
+	  $nodeset->free;
+ 	}
+	last CASE;
+      };
+    }
+    next unless defined $val;
+    if(
+       (! defined $cpusetData->{$key}) ||
+       (defined $cpusetData->{$key} && $cpusetData->{$key} ne $val)
+      ) {
+      $cpusetMod{$key} = $val;
+    }
+  }
+
+  # Write changes, if any. Don't abort on error, but warn if changes not done
+  if(%cpusetMod) {
+    xDebug("--- Modifying $cpusetPath ---");
+    if($options{-dryRun}) {
+      while(my ($key, $val) = each %cpusetMod) {
+	xDebug(sprintf("  = cpuset %s: %-25s %s", $cpusetPath, $key, $val));
+      }
+    } else {
+      while(my ($key, $val) = each %cpusetMod) {
+	my $out = execCmd($echoCmd, 0, "$val > ${cpusetPath}/$key");
+      }
+      if($options{-verbose}) {
+	$cpusetData = readCpuset($cpusetPath);
+	die "Failed to read $cpusetPath\n" unless defined $cpusetData;
+	while(my ($key, $val) = each %cpusetMod) {
+	  xDebug(sprintf("  %s cpuset %s: %-25s %s", $val eq $cpusetData->{$key} ? '=' : '-', $cpusetPath, $key, $val));
+	}
+      }
+    }
+  }
+}
+
+# ==============================================================================
+# All done
+# ==============================================================================
+
+$topology->destroy;
+
+exit 0;
+
+# #############################################################################
+
+# ==============================================================================
+# Read cpuset data into a hash, return 0 on error, 1 on success
+# ==============================================================================
+
+sub readCpuset {
+  my $cpusetPath = shift;
+  my $cpusetData = {};
+
+  # Check if cpuset exists
+  unless(-d $cpusetPath) {
+    xDebug("ERROR: Cpuset $cpusetPath does not exist.");
+    return undef;
+  }
+
+  # Read content of cpuset
+  foreach my $key (qw(
+		      cpu_exclusive
+		      cpus
+		      mem_exclusive
+		      mem_hardwall
+		      memory_migrate
+		      memory_pressure
+		      memory_spread_page
+		      memory_spread_slab
+		      mems
+		      notify_on_release
+		      sched_load_balance
+		      sched_relax_domain_level
+		     )) {
+    my $f = "${cpusetPath}/$key";
+    next unless -e $f;
+    my $rc  = execCmd($catCmd,0,$f);
+    return undef unless defined $rc;      # Command failed
+    my $val = undef;
+    if(@{$rc}) {
+    CASE: {
+        $key eq 'tasks' && do { $val = join(",", @{$rc}); last CASE };
+        $val = $rc->[0];
+      }
+    }
+    xDebug(sprintf("    cpuset %s: %-25s %s", $cpusetPath, $key, defined $val ? $val : "NO DATA"));
+    $cpusetData->{$key} = $val;
+  }
+
+  return $cpusetData;
+
+}
+
+# ==============================================================================
+# Execute a command with args.
+# Returns arrayref with chomped output on success.
+# On command failure, print error msg and return undef.
+# ==============================================================================
+
+sub execCmd {
+  my $cmdBase = shift;
+  my $verbose = shift;
+  my @cmdArgs = @_;
+
+  if(! $cmdBase) {
+    xDebug("ERROR execCmd: need \$cmdBase.");
+    return undef;
+  }
+
+  # --
+  # Check if cmdBase is executable
+  # --
+
+  if(! -x $cmdBase) {
+    xDebug("ERROR: File \"$cmdBase\" does not exist or is not executable.");
+    return undef;
+  }
+
+  # --
+  # Execute
+  # --
+
+  my $cmd = $cmdBase;
+  $cmd   .= (" " . join(" ", @cmdArgs)) if @cmdArgs;
+  xDebug("    About to execute \"$cmd\"") if $verbose;
+  open(CMD, "$cmd 2>&1 |") or do {
+    xDebug("ERROR: Failed to execute \"$cmd\": $!");
+    return undef;
+  };
+
+  my @cmdOut = (<CMD>);
+  chomp @cmdOut;
+
+  close(CMD);
+  my $rc = $? >> 8;
+  if($rc) {
+    xDebug("ERROR: Command \"$cmd\" returned rc = $rc");
+    if(@cmdOut) {
+      xDebug(join("\n", map { "    $_" } grep { /\S/ } $#cmdOut < 3 ? @cmdOut : (@cmdOut[0..2], "...")));
+    }
+    return undef;
+  }
+
+  # --
+  # Return output
+  # --
+
+  return \@cmdOut;
+
+}
+
+# ==============================================================================
+# Usage message
+# ==============================================================================
+
+sub usage {
+  my $code = shift || 0;
+  pod2usage(
+            -verbose => 0,
+            -exitval => "NOEXIT",
+           );
+  exit $code;
+}
+
+# ==============================================================================
+# Man page
+# ==============================================================================
+
+sub manPage {
+  if ($< == 0) { # Cannot invoke perldoc as root
+    my $id = eval { getpwnam("nobody") };
+    $id    = eval { getpwnam("nouser") } unless defined $id;
+    $id    = -2 unless defined $id;
+    $< = $id;
+  }
+  $> = $<; # Disengage setuid
+  $ENV{PATH} = "/bin:/usr/bin"; # Untaint PATH
+  delete @ENV{ 'IFS', 'CDPATH', 'ENV', 'BASH_ENV' };
+  if ($0 =~ /^([-\/\w\.]+)$/) {
+    $0 = $1; # Untaint $0
+  } else {
+    die "Illegal characters were found in \$0 ($0)\n";
+  }
+  pod2usage(
+            -verbose => 2,
+            -exitval => 0,
+           );
+}
+
+# ==============================================================================
+# Verbose printing
+# ==============================================================================
+
+sub xDebug {
+  return unless $options{-verbose};
+  my $msg = join("", @_);
+  if($msg) {
+    foreach(split("\n", $msg)) {
+      print STDERR "$progName - $_\n"
+    }
+  } else {
+    print STDERR "$progName - something to debug\n";
+  }
+}
+
+sub xDie {
+  die "$progName - ", @_;
+}
+
+__END__
+
+=head1 NAME
+
+mom_gencfg - Create mom.layout and /dev/cpuset/torque, designed to be called from /etc/init.d/pbs_mom
+
+=head1 SYNOPSIS
+
+mom_gencfg --help|-?|--man
+
+mom_gencfg -(no)layout -(no)cpus -(no)mems -(no)cpuset -(no)smt -(no)dry-run -(no)verbose
+
+=head1 DESCRIPTION
+
+This script creates /var/spool/torque/mom_priv/mom.layout and creates/modifies /dev/cpuset/torque
+for a pbs_mom that is compiled with --enable-numa-support.
+
+The basic configuration like number and offset of NUMA node IDs per nodeboard,
+cpuset settings, and defaults of command line options is hardcoded in the script.
+
+The script checks if I<PBS_HOME> is set in the environment. Usually this should point to
+/var/spool/torque.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-(no)layout>
+
+Create the mom.layout file or not.
+
+=item B<-(no)cpus>
+
+mom.layout contains cpu IDs per nodeboard or not.
+
+=item B<-(no)mems>
+
+mom.layout contains memory node IDs per nodeboard or not.
+
+=item B<-(no)cpuset>
+
+Create/modify /dev/cpuset/torque or not.
+
+=item B<-(no)smt>
+
+The I<cpus> entry in mom.layout and in /dev/cpuset/torque contain additional
+logical processors running on the same core or not.
+
+=item B<-(no)dry-run>
+
+If B<-dry-run> is given, show what would have been done. Switches B<-verbose> on, unless B<-noverbose> was given.
+
+=item B<-(no)verbose>
+
+Verbose printing to STDERR.
+
+=item B<-man>
+
+Prints this man page.
+
+=item B<-help|-?>
+
+Prints synopsis.
+
+=back
+
+=head1 AUTHOR
+
+Bernd Kallies, E<lt>kallies@zib.deE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2011 Zuse Institute Berlin
+
+This library is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation.
+
+=cut
