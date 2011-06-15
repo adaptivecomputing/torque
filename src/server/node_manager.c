@@ -188,6 +188,7 @@ int reserve_node(struct pbsnode *,short,job *,char *,struct howl **);
 int build_host_list(struct howl **,struct pbssubn *,struct pbsnode *);
 int procs_available(int proc_ct);
 void check_nodes(struct work_task *);
+job *get_job_from_jobinfo(struct jobinfo *,struct pbsnode *);
 
 /* marks a stream as finished being serviced */
 extern void done_servicing(int);
@@ -664,6 +665,50 @@ void update_node_state(
 
 
 
+job *check_node_for_job(
+
+  struct pbsnode *pnode,
+  char           *jobid)
+
+  {
+  struct pbssubn *np;
+  struct jobinfo *jp;
+  job            *pjob = NULL;
+  job            *tmpjob;
+
+  /* just check each subnode for the job */
+  for (np = pnode->nd_psn;np != NULL;np = np->next)
+    {
+    /* for each jobinfo on subnode on node ... */
+    for (jp = np->jobs;jp != NULL;jp = jp->next)
+      {
+      if (jp->job != NULL)
+        {
+        tmpjob = get_job_from_jobinfo(jp,pnode);
+        
+        if (tmpjob->ji_qs.ji_jobid != NULL)
+          {
+          if (strcmp(jobid, tmpjob->ji_qs.ji_jobid) == 0)
+            {
+            /* found the job */
+            return(pjob);
+            }
+          }
+        
+        pthread_mutex_unlock(tmpjob->ji_mutex);
+        }
+      } /* END for each job on the subnode */
+    
+    /* return job */
+    return(pjob);
+    } /* END for each subnode */
+
+  return(pjob);
+  } /* END check_node_for_job() */
+
+
+
+
 /*
  * find_job_by_node - return a job structure by looking for a jobid in a
  * specific node struct
@@ -678,21 +723,14 @@ job *find_job_by_node(
   char           *jobid) /* I */
 
   {
-
-  struct pbssubn *np;
-
-  struct jobinfo *jp;
-
   struct job     *pjob = NULL;
-
-  char *at;
-
   struct pbsnode *numa;
 
+  char *at;
   int i;
 
   if ((at = strchr(jobid, (int)'@')) != NULL)
-    * at = '\0'; /* strip off @server_name */
+    *at = '\0'; /* strip off @server_name */
 
   if (pnode->num_node_boards > 0)
     {
@@ -701,37 +739,7 @@ job *find_job_by_node(
       {
       numa = AVL_find(i,pnode->nd_mom_port,pnode->node_boards);
 
-      for (np = numa->nd_psn; np != NULL; np = np->next)
-        {
-        for (jp = np->jobs; jp != NULL; jp = jp->next)
-          {
-          if ((jp->job != NULL) &&
-              (jp->job->ji_qs.ji_jobid != NULL))
-            {
-            if (pthread_mutex_trylock(jp->job->ji_mutex) != 0)
-              {
-              pthread_mutex_unlock(pnode->nd_mutex);
-              pthread_mutex_lock(jp->job->ji_mutex);
-              pthread_mutex_lock(pnode->nd_mutex);
-              }
-
-            if (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0)
-              {
-              /* desired job located on node */
-              
-              pjob = jp->job;
-              
-              break;
-              }
-            }
-
-          pthread_mutex_unlock(jp->job->ji_mutex);
-          } /* END for each job on subnode */
-
-        /* leave loop if we found a job */
-        if (pjob != NULL)
-          break;
-        } /* END for each subnode */
+      pjob = check_node_for_job(pnode,jobid);
 
       /* leave loop if we found the job */
       if (pjob != NULL)
@@ -740,40 +748,7 @@ job *find_job_by_node(
     }
   else
     {
-    /* just check each subnode for the job */
-    for (np = pnode->nd_psn;np != NULL;np = np->next)
-      {
-      /* for each jobinfo on subnode on node ... */
-
-      for (jp = np->jobs;jp != NULL;jp = jp->next)
-        {
-        if ((jp->job != NULL) &&
-            (jp->job->ji_qs.ji_jobid != NULL))
-          {
-          if (pthread_mutex_trylock(jp->job->ji_mutex) != 0)
-            {
-            pthread_mutex_unlock(pnode->nd_mutex);
-            pthread_mutex_lock(jp->job->ji_mutex);
-            pthread_mutex_lock(pnode->nd_mutex);
-            }
-          
-          if (strcmp(jobid, jp->job->ji_qs.ji_jobid) == 0)
-            {
-            /* desired job located on node */
-            
-            pjob = jp->job;
-            
-            break;
-            }
-          }
-
-        pthread_mutex_unlock(jp->job->ji_mutex);
-        } /* END for each job on the subnode */
-
-      /* leave loop if we found a job */
-      if (pjob != NULL)
-        break;
-      } /* END for each subnode */
+    pjob = check_node_for_job(pnode,jobid);
     }
 
   if (at != NULL)
@@ -5941,6 +5916,24 @@ void set_old_nodes(
   return;
   }  /* END set_old_nodes() */
 
+  
+job *get_job_from_jobinfo(
+    
+  struct jobinfo *jp,
+  struct pbsnode *pnode)
+  
+  {
+  job *pjob = jp->job;
+
+  if (pthread_mutex_trylock(pjob->ji_mutex) != 0)
+    {
+    pthread_mutex_unlock(pnode->nd_mutex);
+    pthread_mutex_lock(pjob->ji_mutex);
+    pthread_mutex_lock(pnode->nd_mutex);
+    }
+
+  return(pjob);
+  } /* END get_job_from_jobinfo() */
 
 
 /* END node_manager.c */
