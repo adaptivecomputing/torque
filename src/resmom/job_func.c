@@ -183,7 +183,7 @@ int TTmpDirName(job *, char *);
 extern int thread_unlink_calls;
 
 extern void MOMCheckRestart(void);
-extern int delete_cpuset(char *);
+extern int cpuset_delete(char *);
 
 
 void tasks_free(
@@ -666,14 +666,7 @@ void *delete_job_files(
     } /* END code to remove temp dir */
 
 #ifdef PENABLE_LINUX26_CPUSETS
-  if (use_cpusets(pjob) == TRUE)
-    {
-    extern void delete_cpuset(char *);
-
-    /* Delete the cpuset for the job. */
-    delete_cpuset(pjob->ji_qs.ji_jobid);
-    delete_cpuset(jfdi->jobid);
-    }
+  cpuset_delete(jfdi->jobid);
 #endif /* PENABLE_LINUX26_CPUSETS */
 
   /* delete the node file and gpu file */

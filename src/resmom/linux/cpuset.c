@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/param.h>
+#include <errno.h>
 
 #include "libpbs.h"
 #include "attribute.h"
