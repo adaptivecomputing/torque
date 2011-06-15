@@ -648,6 +648,9 @@ void process_request(
 
           }
         
+        }
+      if (pjob != NULL)
+        {
         pthread_mutex_unlock(pjob->ji_mutex);
         }
       if (!skip)
