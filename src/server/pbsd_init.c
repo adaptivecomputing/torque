@@ -1706,15 +1706,7 @@ static int pbsd_init_job(
       if ((pjob->ji_arraystruct != NULL) &&
           (pjob->ji_is_array_template == FALSE))
         {
-        job_array *pa = pjob->ji_arraystruct;
-
-        if (pthread_mutex_trylock(pa->ai_mutex) != 0)
-          {
-          /* always get mutexes in order to avoid deadlock - array and then job */
-          pthread_mutex_unlock(pjob->ji_mutex);
-          pthread_mutex_lock(pa->ai_mutex);
-          pthread_mutex_lock(pjob->ji_mutex);
-          }
+        job_array *pa = get_jobs_array(pjob);
 
         update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
 

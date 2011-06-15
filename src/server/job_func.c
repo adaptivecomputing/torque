@@ -161,6 +161,7 @@ extern int job_log_open(char *, char *);
 extern int log_job_record(char *buf);
 extern void check_job_log(struct work_task *ptask);
 int attr_to_str(char *out, int size, attribute_def *at_def, struct attribute  attr, int  XML);
+job_array *get_jobs_array(job *);
 
 /* Local Private Functions */
 
@@ -469,15 +470,7 @@ int job_abt(
       if ((pjob->ji_arraystruct != NULL) &&
           (pjob->ji_is_array_template == FALSE))
         {
-        job_array *pa = pjob->ji_arraystruct;
-
-        if (pthread_mutex_trylock(pa->ai_mutex) != 0)
-          {
-          /* always get mutexes in order to avoid deadlock - array and then job */
-          pthread_mutex_unlock(pjob->ji_mutex);
-          pthread_mutex_lock(pa->ai_mutex);
-          pthread_mutex_lock(pjob->ji_mutex);
-          }
+        job_array *pa = get_jobs_array(pjob);
 
         update_array_values(pa,pjob,old_state,aeTerminate);
 
@@ -520,15 +513,7 @@ int job_abt(
     if ((pjob->ji_arraystruct != NULL) &&
         (pjob->ji_is_array_template == FALSE))
       {
-      job_array *pa = pjob->ji_arraystruct;
-
-      if (pthread_mutex_trylock(pa->ai_mutex) != 0)
-        {
-        /* always get mutexes in order to avoid deadlock - array and then job */
-        pthread_mutex_unlock(pjob->ji_mutex);
-        pthread_mutex_lock(pa->ai_mutex);
-        pthread_mutex_lock(pjob->ji_mutex);
-        }
+      job_array *pa = get_jobs_array(pjob);
 
       update_array_values(pa,pjob,old_state,aeTerminate);
 
@@ -1752,15 +1737,7 @@ void job_purge(
   if ((pjob->ji_arraystruct) != NULL &&
       (pjob->ji_is_array_template == FALSE))
     {
-    job_array *pa = pjob->ji_arraystruct;
-
-    if (pthread_mutex_trylock(pa->ai_mutex) != 0)
-      {
-      /* always get mutexes in order to avoid deadlock - array and then job */
-      pthread_mutex_unlock(pjob->ji_mutex);
-      pthread_mutex_lock(pa->ai_mutex);
-      pthread_mutex_lock(pjob->ji_mutex);
-      }
+    job_array *pa = get_jobs_array(pjob);
 
     /* erase the pointer to this job in the job array */
     pa->jobs[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = NULL;
@@ -2494,6 +2471,34 @@ int swap_jobs(
   
   return(rc);
   } /* END swap_jobs() */
+
+
+
+
+/* 
+ * Always access the array in this way in order to avoid deadlock 
+ *
+ * @return this job's array struct with it's mutex locked 
+ */
+
+job_array *get_jobs_array(
+
+  job *pjob)
+
+  {
+  job_array *pa = pjob->ji_arraystruct;
+
+  if (pthread_mutex_trylock(pa->ai_mutex))
+    {
+    pthread_mutex_unlock(pjob->ji_mutex);
+    pthread_mutex_lock(pa->ai_mutex);
+    pthread_mutex_lock(pjob->ji_mutex);
+    }
+
+  return(pa);
+  } /* END get_jobs_array() */
+
+
 
 /* END job_func.c */
 
