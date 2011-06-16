@@ -803,10 +803,13 @@ int is_joined(
  */
 
 static int open_std_out_err(
+
   job *pjob,		 /* I */
-  int  timeout) /* I (optional,>0 to set) */
+  int  timeout)  /* I (optional,>0 to set) */
 
   {
+  static char *id = "open_std_out_err";
+
   int i;
   int file_out = -2;
   int file_err = -2;
@@ -872,17 +875,11 @@ static int open_std_out_err(
   					  (path != NULL) ? path : "???",
   					  timeout);
 
-  	  log_err(
-  				   errno,
-  				   "open_std_out_err",
-  				   log_buffer);
+  	  log_err(errno, id, log_buffer);
   	  }
 	  else
       {
-  	  log_err(
-  	  			   errno,
-  	  			   "open_std_out_err",
-  	  			   "unable to open standard output/error");
+  	  log_err(errno, id, "unable to open standard output/error");
   	  }
 
     return(-1);
@@ -4913,7 +4910,8 @@ int start_process(
 		** Open sockets to demux proc for stdout and stderr.
 		*/
 	
-		if ((fd1 < 0) && ((fd1 = open_demux(ipaddr, pjob->ji_portout)) == -1))
+		if ((fd1 < 0) && 
+        ((fd1 = open_demux(ipaddr, pjob->ji_portout)) == -1))
 			{
 			log_err(errno, id, "cannot open mux stdout port");
 
@@ -7019,7 +7017,7 @@ reset_ids_timeout:
     seteuid(pbsuser);
     setegid(pbsgroup);
     return(-2);
-}	 /* END open_std_file() */
+  }	 /* END open_std_file() */
 
 
 

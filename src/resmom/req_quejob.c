@@ -745,14 +745,24 @@ void req_mvjobfile(
     return;
     }
 
-  if (((pwd = getpwnam(pj->ji_wattr[JOB_ATR_euser].at_val.at_str)) == NULL) ||
-      ((fds = open_std_file(pj, jft, oflag, pwd->pw_gid)) < 0))
+  if ((pwd = getpwnam(pj->ji_wattr[JOB_ATR_euser].at_val.at_str)) == NULL)
     {
     /* FAILURE */
-
     req_reject(PBSE_MOMREJECT, 0, preq, NULL, "password lookup failed");
 
     return;
+    }
+
+  if ((fds = open_std_file(pj, jft, oflag, pwd->pw_gid)) < 0)
+    {
+    int keeping = 1;
+    char *path = std_file_name(pj, jft, &keeping);
+    
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Cannot create file %s",
+      path);
+
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, log_buffer);
     }
 
   if (write(
