@@ -763,6 +763,8 @@ void req_mvjobfile(
       path);
 
     req_reject(PBSE_SYSTEM, 0, preq, NULL, log_buffer);
+
+    return;
     }
 
   if (write(
