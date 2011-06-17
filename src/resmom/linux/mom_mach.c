@@ -219,7 +219,7 @@ static char *netload  (struct rm_attribute *);
 static char *cpuact   (struct rm_attribute *);
 #endif
 #ifdef USELIBMEMACCT
-static long get_memacct_resi(pid_t pid);
+static long long get_memacct_resi(pid_t pid);
 extern long get_weighted_memory_size(pid_t);
 #endif
 
@@ -484,10 +484,10 @@ proc_stat_t *get_proc_stat(
  * Returns the value in bytes on success, returns -1 on failure.
  */
 
-long get_memacct_resi(pid_t pid)
+long long get_memacct_resi(pid_t pid)
   {
   char *id = "get_memacct_resi";
-  long  w_rss;
+  long long  w_rss;
 
   if ((w_rss = get_weighted_memory_size(pid)) == -1)
     {
@@ -1166,7 +1166,7 @@ static unsigned long long resi_sum(
   unsigned long long  resisize;
   proc_stat_t        *ps;
 #ifdef USELIBMEMACCT
-  long                w_rss;
+  long long                w_rss;
 #endif
 
   resisize = 0;
@@ -3153,7 +3153,7 @@ static char *resi_job(
   unsigned long long  resisize;
   proc_stat_t        *ps;
 #ifdef USELIBMEMACCT
-  long                w_rss;
+  long long           w_rss;
 #endif
 
   resisize = 0;
@@ -3223,7 +3223,7 @@ static char *resi_proc(
   proc_stat_t *ps;
 
 #ifdef USELIBMEMACCT
-  long          w_rss;
+  long long     w_rss;
 #endif
 
   if ((ps = get_proc_stat(pid)) == NULL)
