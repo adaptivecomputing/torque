@@ -674,7 +674,6 @@ job *check_node_for_job(
   struct pbssubn *np;
   struct jobinfo *jp;
   job            *pjob = NULL;
-  job            *tmpjob;
 
   /* just check each subnode for the job */
   for (np = pnode->nd_psn;np != NULL;np = np->next)
@@ -684,26 +683,25 @@ job *check_node_for_job(
       {
       if (jp->job != NULL)
         {
-        tmpjob = get_job_from_jobinfo(jp,pnode);
+        pjob = get_job_from_jobinfo(jp,pnode);
         
-        if (tmpjob->ji_qs.ji_jobid != NULL)
+        if (pjob->ji_qs.ji_jobid != NULL)
           {
-          if (strcmp(jobid, tmpjob->ji_qs.ji_jobid) == 0)
+          if (strcmp(jobid, pjob->ji_qs.ji_jobid) == 0)
             {
             /* found the job */
             return(pjob);
             }
           }
         
-        pthread_mutex_unlock(tmpjob->ji_mutex);
+        /* not a match, unlock the mutex */
+        pthread_mutex_unlock(pjob->ji_mutex);
         }
       } /* END for each job on the subnode */
-    
-    /* return job */
-    return(pjob);
     } /* END for each subnode */
 
-  return(pjob);
+  /* not found */
+  return(NULL);
   } /* END check_node_for_job() */
 
 
