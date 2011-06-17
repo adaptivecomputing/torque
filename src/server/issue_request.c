@@ -108,6 +108,7 @@
 
 /* Global Data Items: */
 
+extern char *server_name;
 extern struct connect_handle connection[];
 extern char     *msg_daemonname;
 extern tlist_head task_list_event;
@@ -264,7 +265,7 @@ int issue_to_svr(
   preq->rq_fromsvr = 1;
   preq->rq_perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_SvWR;
 
-  svrname = parse_servername(servern, &port);
+  svrname = parse_servername(servern, &port); 
   svraddr = get_hostaddr(svrname);
 
   if (svraddr == (pbs_net_t)0)

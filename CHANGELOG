@@ -13,6 +13,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (backported from 3.0.2)
   b - make it so that jobs named like arrays via -J have legal output and error file names
       (backported from 3.0.2)
+  b - Fixed a bug for high availability. The -l listener option for pbs_server was not
+      complete and did not allow pbs_server to properly communicate with the scheduler.
+      Also fixed a bug with job dependencies where the second server or later in the
+      $TORQUE_HOME/server_name directory was not added as part of the job dependecny
+      so dependent jobs would get stuck on hold if the current server was not the first 
+      server in the server_name file.
 
 2.5.6
   b - Made changes to record_jobinfo and supporting functions to be
