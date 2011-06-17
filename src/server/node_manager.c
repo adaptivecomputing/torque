@@ -890,9 +890,7 @@ void sync_node_jobs(
 
           DIS_rpp_reset();
           }
-        else
-          pthread_mutex_unlock(pjob->ji_mutex);
-        }
+        } /* END find_job_by_node != NULL */
       else
         pthread_mutex_unlock(pjob->ji_mutex);
       }
@@ -901,7 +899,6 @@ void sync_node_jobs(
     }  /* END while ((jobidstr != NULL) && ...) */
 
   /* SUCCESS */
-
   free(joblist);
 
   return;
@@ -959,6 +956,7 @@ void update_job_data(
     if (strstr(jobidstr, server_name) != NULL)
       {
       pjob = find_job_by_node(np, jobidstr);
+
       if (pjob == NULL)
         {
         pjob = find_job(jobidstr);
