@@ -2102,7 +2102,6 @@ char *get_correct_jobname(
     }
 
   return(correct);
-
   } /* END get_correct_jobname() */
 
 
@@ -2138,7 +2137,7 @@ job *find_job(
     different = TRUE;
 
     if (comp == NULL)
-      return NULL;
+      return(NULL);
     }
   else
     {
@@ -2152,13 +2151,11 @@ job *find_job(
     i = get_value_hash(alljobs.ht,comp);
 
     if (i >= 0)
-      {
       pj = (job *)alljobs.ra->slots[i].item;
-
-      pthread_mutex_lock(pj->ji_mutex);
-      }
     
     pthread_mutex_unlock(alljobs.alljobs_mutex);
+    
+    pthread_mutex_lock(pj->ji_mutex);
     } /* END if (not an array template job) */
   else
     {
@@ -2168,13 +2165,11 @@ job *find_job(
     i = get_value_hash(array_summary.ht,comp);
 
     if (i >= 0)
-      {
       pj = (job *)array_summary.ra->slots[i].item;
 
-      pthread_mutex_lock(pj->ji_mutex);
-      }
-
     pthread_mutex_unlock(array_summary.alljobs_mutex);
+
+    pthread_mutex_lock(pj->ji_mutex);
     } /* END if (job is array template) */
 
   if (at)
