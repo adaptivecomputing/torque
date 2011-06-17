@@ -2155,7 +2155,8 @@ job *find_job(
     
     pthread_mutex_unlock(alljobs.alljobs_mutex);
     
-    pthread_mutex_lock(pj->ji_mutex);
+    if (pj != NULL)
+      pthread_mutex_lock(pj->ji_mutex);
     } /* END if (not an array template job) */
   else
     {
@@ -2169,7 +2170,8 @@ job *find_job(
 
     pthread_mutex_unlock(array_summary.alljobs_mutex);
 
-    pthread_mutex_lock(pj->ji_mutex);
+    if (i >= 0)
+      pthread_mutex_lock(pj->ji_mutex);
     } /* END if (job is array template) */
 
   if (at)
