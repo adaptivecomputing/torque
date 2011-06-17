@@ -724,7 +724,7 @@ void req_deletejob(
        * Create a new batch request and fill it in. It will be freed by reply_ack
        */
       snprintf(log_buffer,sizeof(log_buffer), "Deleting job asynchronously");
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buffer);
 
       preq_tmp = alloc_br(PBS_BATCH_DeleteJob);
       preq_tmp->rq_perm = preq->rq_perm;
