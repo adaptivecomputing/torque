@@ -109,7 +109,7 @@ extern struct listener_connection listener_conns[];
 
 int scheduler_sock = -1;
 int scheduler_jobct = 0;
-int listener_command = 0;
+int listener_command = SCH_SCHEDULE_NULL;
 
 
 /* Functions private to this file */
@@ -266,7 +266,7 @@ schedule_jobs(void)
   else
     cmd = svr_do_schedule;
 
-  listener_command = cmd;
+  /*listener_command = cmd;*/
 
   svr_do_schedule = SCH_SCHEDULE_NULL;
 
@@ -304,9 +304,12 @@ static int contact_listener(
 
   char *id = "contact_listener";
 
+  /* If this is the first time contacting the scheduler for
+   * this listener set the cmd */
+  if(listener_conns[l_idx].first_time)
+    listener_command = SCH_SCHEDULE_FIRST;
+ 
   /* connect to the Listener */
-
-
   sock = client_to_svr(listener_conns[l_idx].address,
                        listener_conns[l_idx].port, 1, EMsg);
 
@@ -322,10 +325,14 @@ static int contact_listener(
             listener_conns[l_idx].port,
             EMsg);
 
+    /* we lost contact with the scheduler. reset*/
+    listener_conns[l_idx].first_time = 1;
     log_err(errno, id, tmpLine);
 
     return(-1);
     }
+
+  listener_conns[l_idx].first_time = 0;
 
   add_conn(
 
@@ -435,6 +442,7 @@ static void scheduler_close(
     /* recycle the scheduler */
 
     svr_do_schedule = SCH_SCHEDULE_RECYC;
+    listener_command = SCH_SCHEDULE_RECYC;
     }
 
   return;

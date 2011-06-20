@@ -254,6 +254,7 @@ char         server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int  svr_delay_entry = 0;
 int  svr_do_schedule = SCH_SCHEDULE_NULL;
 extern all_queues svr_queues;
+extern int  listener_command;
 tlist_head svr_newnodes;          /* list of newly created nodes      */
 all_tasks task_list_immed;
 all_tasks task_list_timed;
@@ -510,6 +511,7 @@ clear_listeners(void)   /* I */
     listener_conns[i].address = 0;
     listener_conns[i].port = 0;
     listener_conns[i].sock = -1;
+    listener_conns[i].first_time = 1;
     }
 
   return;
@@ -797,6 +799,8 @@ void parse_command_line(
 
       case 'l':
 
+        clear_listeners();
+
         if (get_port(
               optarg,
               &listener_port,
@@ -1030,7 +1034,10 @@ static time_t check_tasks()
   /* should the scheduler be run?  If so, adjust the delay time  */
 
   if ((delay = server.sv_next_schedule - time_now) <= 0)
+    {
     svr_do_schedule = SCH_SCHEDULE_TIME;
+    listener_command = SCH_SCHEDULE_TIME;
+    }
   else if (delay < tilwhen)
     tilwhen = delay;
 

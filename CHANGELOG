@@ -150,6 +150,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed a potential buffer overflow problem in src/resmom/checkpoint.c function
       mom_checkpoint_recover. I modified the code to change strcpy and strcat to strncpy
       and strncpy.
+  b - Fixed a bug for high availability. The -l listener option for pbs_server was not
+      complete and did not allow pbs_server to properly communicate with the scheduler.
+      Also fixed a bug with job dependencies where the second server or later in the
+      $TORQUE_HOME/server_name directory was not added as part of the job dependecny
+      so dependent jobs would get stuck on hold if the current server was not the first 
+      server in the server_name file.
 
 2.5.6
   b - Made changes to record_jobinfo and supporting functions to be

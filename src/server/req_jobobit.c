@@ -134,6 +134,7 @@ extern char *msg_obitnocpy;
 extern char *msg_obitnodel;
 extern char  server_host[];
 extern int   svr_do_schedule;
+extern int   listener_command;
 extern time_t time_now;
 
 extern int   LOGLEVEL;
@@ -710,6 +711,7 @@ void rel_resc(
   /* mark that scheduler should be called */
 
   svr_do_schedule = SCH_SCHEDULE_TERM;
+  listener_command = SCH_SCHEDULE_TERM;
 
   return;
   }  /* END rel_resc() */
