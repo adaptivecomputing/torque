@@ -765,8 +765,8 @@ void mom_checkpoint_recover(
     */
 
     get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, path);
-    strcpy(oldp, path);
-    strcat(oldp, ".old");
+    strncpy(oldp, path, MAXPATHLEN);
+    strncat(oldp, ".old", MAXPATHLEN);
 
     if (stat(oldp, &statbuf) == 0)
       {

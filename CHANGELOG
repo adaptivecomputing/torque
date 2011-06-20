@@ -19,6 +19,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       $TORQUE_HOME/server_name directory was not added as part of the job dependecny
       so dependent jobs would get stuck on hold if the current server was not the first 
       server in the server_name file.
+  b - Fixed a potential buffer overflow problem in src/resmom/checkpoint.c function
+      mom_checkpoint_recover. I modified the code to change strcpy and strcat to strncpy
+      and strncpy.
 
 2.5.6
   b - Made changes to record_jobinfo and supporting functions to be
