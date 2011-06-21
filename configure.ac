@@ -29,7 +29,7 @@ dnl Added requirement for libhwloc when --enable-cpuset or --enable-numa-support
 dnl   Bernd Kallies (kallies@zib.de)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [4.0.0], [torqueusers@supercluster.org])
+AC_INIT([torque], [3.1.0], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
