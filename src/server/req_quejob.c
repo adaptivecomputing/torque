@@ -630,21 +630,24 @@ void req_quejob(
     if (pj->ji_wattr[JOB_ATR_job_id].at_flags & ATR_VFLAG_SET)
       {
       char *dot = strchr(pj->ji_qs.ji_jobid,'.');
-      job  *tmp;
+      char  tmp_extension[PBS_MAXSVRJOBID + 1];
+      job  *tmpjob;
 
       if (dot != NULL)
         {
+        strcpy(tmp_extension,dot);
+
         snprintf(pj->ji_qs.ji_jobid, sizeof(pj->ji_qs.ji_jobid),
           "%s%s",
           pj->ji_wattr[JOB_ATR_job_id].at_val.at_str,
-          dot);
+          tmp_extension);
         }
       else
         {
         strcpy(pj->ji_qs.ji_jobid,pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
         }
 
-      if ((tmp = find_job(pj->ji_qs.ji_jobid)) != NULL)
+      if ((tmpjob = find_job(pj->ji_qs.ji_jobid)) != NULL)
         {
         /* not unique, reject job */
         job_purge(pj);
