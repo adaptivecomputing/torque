@@ -86,6 +86,8 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 
 static char *ulmax;
 static unsigned ulmaxdigs = 0;
@@ -93,6 +95,7 @@ static unsigned ulmaxdigs = 0;
 int disrsl_(
 
   int   stream,
+  int   rpp,
   int  *negate,
   unsigned long *value,
   unsigned long  count)
@@ -103,13 +106,24 @@ int disrsl_(
   unsigned long ndigs;
   char  *cp;
   char  scratch[DIS_BUFSIZ+1];
+  int (*dis_getc)(int);
+  int (*dis_gets)(int, char *, size_t);
 
   assert(negate != NULL);
   assert(value != NULL);
   assert(count);
   assert(stream >= 0);
-  assert(dis_getc != NULL);
-  assert(dis_gets != NULL);
+
+  if (rpp)
+    {
+    dis_getc = rpp_getc;
+    dis_gets = (int (*)(int, char *, size_t))rpp_read;
+    }
+  else
+    {
+    dis_getc = tcp_getc;
+    dis_gets = tcp_gets;
+    }
 
   memset(scratch, 0, DIS_BUFSIZ+1);
 
@@ -243,7 +257,7 @@ int disrsl_(
           }
         }
 
-      return(disrsl_(stream, negate, value, ndigs));
+      return(disrsl_(stream, rpp, negate, value, ndigs));
 
       /*NOTREACHED*/
 

@@ -89,9 +89,12 @@
 #include "pbs_error.h"
 #include "dis.h"
 
-int
-encode_DIS_ShutDown(int sock, int manner)
+int encode_DIS_ShutDown(
+
+  int sock, 
+  int manner)
+
   {
-  return (diswui(sock, manner));
+  return (diswui(sock, TCP_FUNC, manner));
   }
 

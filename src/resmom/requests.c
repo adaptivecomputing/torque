@@ -1822,21 +1822,21 @@ int sigalltasks_sisters(
       return ret;
       }
 
-    ret = diswui(np->hn_stream, pjob->ji_nodeid); /* XXX */
+    ret = diswui(np->hn_stream, RPP_FUNC, pjob->ji_nodeid); /* XXX */
 
     if (ret != DIS_SUCCESS)
       {
       return ret;
       }
 
-    ret = diswsi(np->hn_stream, TM_NULL_TASK);
+    ret = diswsi(np->hn_stream, RPP_FUNC, TM_NULL_TASK);
 
     if (ret != DIS_SUCCESS)
       {
       return ret;
       }
 
-    ret = diswsi(np->hn_stream, signum);
+    ret = diswsi(np->hn_stream, RPP_FUNC, signum);
 
     if (ret != DIS_SUCCESS)
       {

@@ -112,15 +112,15 @@ int encode_DIS_reply(
 
   /* first encode "header" consisting of protocol type and version */
 
-  if ((rc = diswui(sock, PBS_BATCH_PROT_TYPE))   ||
-      (rc = diswui(sock, PBS_BATCH_PROT_VER)))
+  if ((rc = diswui(sock, TCP_FUNC, PBS_BATCH_PROT_TYPE))   ||
+      (rc = diswui(sock, TCP_FUNC, PBS_BATCH_PROT_VER)))
     return rc;
 
   /* next encode code, auxcode and choice (union type identifier) */
 
-  if ((rc = diswsi(sock, reply->brp_code))  ||
-      (rc = diswsi(sock, reply->brp_auxcode)) ||
-      (rc = diswui(sock, reply->brp_choice)))
+  if ((rc = diswsi(sock, TCP_FUNC, reply->brp_code))  ||
+      (rc = diswsi(sock, TCP_FUNC, reply->brp_auxcode)) ||
+      (rc = diswui(sock, TCP_FUNC, reply->brp_choice)))
     return rc;
 
   switch (reply->brp_choice)
@@ -135,7 +135,7 @@ int encode_DIS_reply(
 
     case BATCH_REPLY_CHOICE_Commit:
 
-      if ((rc = diswst(sock, reply->brp_un.brp_jid)))
+      if ((rc = diswst(sock, TCP_FUNC, reply->brp_un.brp_jid)))
         return (rc);
 
       break;
@@ -154,7 +154,7 @@ int encode_DIS_reply(
         psel = psel->brp_next;
         }
 
-      if ((rc = diswui(sock, ct)))
+      if ((rc = diswui(sock, TCP_FUNC, ct)))
         return rc;
 
       psel = reply->brp_un.brp_select;
@@ -162,7 +162,7 @@ int encode_DIS_reply(
       while (psel)
         {
         /* now encode each string */
-        if ((rc = diswst(sock, psel->brp_jobid)))
+        if ((rc = diswst(sock, TCP_FUNC, psel->brp_jobid)))
           return rc;
 
         psel = psel->brp_next;
@@ -190,15 +190,15 @@ int encode_DIS_reply(
         pstat = (struct brp_status *)GET_NEXT(pstat->brp_stlink);
         }
 
-      if ((rc = diswui(sock, ct)))
+      if ((rc = diswui(sock, TCP_FUNC, ct)))
         return rc;
 
       pstat = (struct brp_status *)GET_NEXT(reply->brp_un.brp_status);
 
       while (pstat)
         {
-        if ((rc = diswui(sock, pstat->brp_objtype)) ||
-            (rc = diswst(sock, pstat->brp_objname)))
+        if ((rc = diswui(sock, TCP_FUNC, pstat->brp_objtype)) ||
+            (rc = diswst(sock, TCP_FUNC, pstat->brp_objname)))
           return rc;
 
         psvrl = (svrattrl *)GET_NEXT(pstat->brp_attr);
@@ -215,7 +215,7 @@ int encode_DIS_reply(
 
       /* text reply */
 
-      if ((rc = diswcs(sock, reply->brp_un.brp_txt.brp_str,
+      if ((rc = diswcs(sock, TCP_FUNC, reply->brp_un.brp_txt.brp_str,
                        reply->brp_un.brp_txt.brp_txtlen)))
         return rc;
 
@@ -225,7 +225,7 @@ int encode_DIS_reply(
 
       /* Locate Job Reply */
 
-      if ((rc = diswst(sock, reply->brp_un.brp_locate)))
+      if ((rc = diswst(sock, TCP_FUNC, reply->brp_un.brp_locate)))
         return rc;
 
       break;
@@ -236,33 +236,33 @@ int encode_DIS_reply(
 
       ct = reply->brp_un.brp_rescq.brq_number;
 
-      if ((rc = diswui(sock, ct)))
+      if ((rc = diswui(sock, TCP_FUNC, ct)))
         return rc;
 
       for (i = 0; (i < ct) && (rc == 0); ++i)
         {
-        rc = diswui(sock, *(reply->brp_un.brp_rescq.brq_avail + i));
+        rc = diswui(sock, TCP_FUNC, *(reply->brp_un.brp_rescq.brq_avail + i));
         }
 
       if (rc) return rc;
 
       for (i = 0; (i < ct) && (rc == 0); ++i)
         {
-        rc = diswui(sock, *(reply->brp_un.brp_rescq.brq_alloc + i));
+        rc = diswui(sock, TCP_FUNC, *(reply->brp_un.brp_rescq.brq_alloc + i));
         }
 
       if (rc) return rc;
 
       for (i = 0; (i < ct) && (rc == 0); ++i)
         {
-        rc = diswui(sock, *(reply->brp_un.brp_rescq.brq_resvd + i));
+        rc = diswui(sock, TCP_FUNC, *(reply->brp_un.brp_rescq.brq_resvd + i));
         }
 
       if (rc) return rc;
 
       for (i = 0; (i < ct) && (rc == 0); ++i)
         {
-        rc = diswui(sock, *(reply->brp_un.brp_rescq.brq_down + i));
+        rc = diswui(sock, TCP_FUNC, *(reply->brp_un.brp_rescq.brq_down + i));
         }
 
       if (rc) return rc;

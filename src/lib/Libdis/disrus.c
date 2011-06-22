@@ -111,20 +111,30 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 #undef disrus
 
-unsigned short disrus(stream, retval)
-int   stream;
-int   *retval;
+unsigned short disrus(
+    
+  int  stream,
+  int  rpp,
+  int *retval)
+  
   {
   int  locret;
   int  negate;
   unsigned value;
+  int (*disr_commit)(int stream, int commit);
 
   assert(retval != NULL);
-  assert(disr_commit != NULL);
 
-  locret = disrsi_(stream, &negate, &value, 1);
+  if (rpp)
+    disr_commit = rpp_rcommit;
+  else
+    disr_commit = tcp_rcommit;
+
+  locret = disrsi_(stream, rpp, &negate, &value, 1);
 
   if (locret != DIS_SUCCESS)
     {

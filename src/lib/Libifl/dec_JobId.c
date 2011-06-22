@@ -99,10 +99,13 @@
 #include "pbs_ifl.h"
 #include "dis.h"
 
-int
-decode_DIS_JobId(int sock, char *jobid)
+int decode_DIS_JobId(
+    
+  int   sock,
+  char *jobid)
+
   {
-  return (disrfst(sock, PBS_MAXSVRJOBID + 1, jobid));
+  return (disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, jobid));
   }
 
 

@@ -103,11 +103,16 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 #undef disrd
 
-double disrd(stream, retval)
-int   stream;
-int   *retval;
+double disrd(
+    
+  int  stream,
+  int  rpp,
+  int *retval)
+  
   {
   int  expon;
   unsigned uexpon;
@@ -116,16 +121,21 @@ int   *retval;
   unsigned ndigs;
   unsigned nskips;
   dis_long_double_t ldval;
+  int (*disr_commit)(int stream, int commit);
 
   assert(retval != NULL);
-  assert(disr_commit != NULL);
+
+  if (rpp)
+    disr_commit = rpp_rcommit;
+  else
+    disr_commit = tcp_rcommit;
 
   ldval = 0.0L;
-  locret = disrl_(stream, &ldval, &ndigs, &nskips, DBL_DIG, 1);
+  locret = disrl_(stream, rpp, &ldval, &ndigs, &nskips, DBL_DIG, 1);
 
   if (locret == DIS_SUCCESS)
     {
-    locret = disrsi_(stream, &negate, &uexpon, 1);
+    locret = disrsi_(stream, rpp, &negate, &uexpon, 1);
 
     if (locret == DIS_SUCCESS)
       {

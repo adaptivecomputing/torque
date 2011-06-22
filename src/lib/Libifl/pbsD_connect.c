@@ -362,7 +362,9 @@ static char *PBS_get_server(
  */
 #ifdef MUNGE_AUTH
 int PBSD_munge_authenticate(
-  int psock, /* I */
+
+  int psock,  /* I */
+  int rpp,    /* I */
   int handle) /* I */
 
   {
@@ -452,8 +454,8 @@ int PBSD_munge_authenticate(
     DIS_tcp_setup(psock);
     
     rc = encode_DIS_ReqHdr(psock, PBS_BATCH_AltAuthenUser, pwent->pw_name);
-    rc = diswui(psock, user_port);
-    rc = diswst(psock, munge_buf);
+    rc = diswui(psock, rpp, user_port);
+    rc = diswst(psock, rpp, munge_buf);
     rc = encode_DIS_ReqExtend(psock, NULL);
     rc = DIS_tcp_wflush(psock);
     

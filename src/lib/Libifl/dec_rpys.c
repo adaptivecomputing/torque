@@ -116,13 +116,13 @@ int decode_DIS_replySvr(
 
   /* first decode "header" consisting of protocol type and version */
 
-  i = disrui(sock, &rc);
+  i = disrui(sock, TCP_FUNC, &rc);
 
   if (rc != 0) return rc;
 
   if (i != PBS_BATCH_PROT_TYPE) return DIS_PROTO;
 
-  i = disrui(sock, &rc);
+  i = disrui(sock, TCP_FUNC, &rc);
 
   if (rc != 0) return rc;
 
@@ -130,15 +130,15 @@ int decode_DIS_replySvr(
 
   /* next decode code, auxcode and choice (union type identifier) */
 
-  reply->brp_code    = disrsi(sock, &rc);
+  reply->brp_code    = disrsi(sock, TCP_FUNC, &rc);
 
   if (rc) return rc;
 
-  reply->brp_auxcode = disrsi(sock, &rc);
+  reply->brp_auxcode = disrsi(sock, TCP_FUNC, &rc);
 
   if (rc) return rc;
 
-  reply->brp_choice  = disrui(sock, &rc);
+  reply->brp_choice  = disrui(sock, TCP_FUNC, &rc);
 
   if (rc) return rc;
 
@@ -155,7 +155,7 @@ int decode_DIS_replySvr(
 
     case BATCH_REPLY_CHOICE_Commit:
 
-      if ((rc = disrfst(sock, PBS_MAXSVRJOBID + 1, reply->brp_un.brp_jid)))
+      if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, reply->brp_un.brp_jid)))
         return (rc);
 
       break;
@@ -168,7 +168,7 @@ int decode_DIS_replySvr(
 
       pselx = &reply->brp_un.brp_select;
 
-      ct = disrui(sock, &rc);
+      ct = disrui(sock, TCP_FUNC, &rc);
 
       if (rc) return rc;
 
@@ -182,7 +182,7 @@ int decode_DIS_replySvr(
 
         psel->brp_jobid[0] = '\0';
 
-        rc = disrfst(sock, PBS_MAXSVRJOBID + 1, psel->brp_jobid);
+        rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, psel->brp_jobid);
 
         if (rc)
           {
@@ -202,7 +202,7 @@ int decode_DIS_replySvr(
       /* have to get count of number of status objects first */
 
       CLEAR_HEAD(reply->brp_un.brp_status);
-      ct = disrui(sock, &rc);
+      ct = disrui(sock, TCP_FUNC, &rc);
 
       if (rc) return rc;
 
@@ -218,11 +218,11 @@ int decode_DIS_replySvr(
 
         CLEAR_HEAD(pstsvr->brp_attr);
 
-        pstsvr->brp_objtype = disrui(sock, &rc);
+        pstsvr->brp_objtype = disrui(sock, TCP_FUNC, &rc);
 
         if (rc == 0)
           {
-          rc = disrfst(sock, PBS_MAXSVRJOBID + 1,
+          rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1,
                        pstsvr->brp_objname);
           }
 
@@ -245,6 +245,7 @@ int decode_DIS_replySvr(
       /* text reply */
 
       reply->brp_un.brp_txt.brp_str = disrcs(sock,
+                                             TCP_FUNC,
                                              &reply->brp_un.brp_txt.brp_txtlen,
                                              &rc);
       break;
@@ -253,7 +254,7 @@ int decode_DIS_replySvr(
 
       /* Locate Job Reply */
 
-      rc = disrfst(sock, PBS_MAXDEST + 1, reply->brp_un.brp_locate);
+      rc = disrfst(sock, TCP_FUNC, PBS_MAXDEST + 1, reply->brp_un.brp_locate);
       break;
 
     default:

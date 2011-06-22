@@ -103,29 +103,32 @@
 #include "batch_request.h"
 #include "dis.h"
 
-int
-decode_DIS_Register(int sock, struct batch_request *preq)
+int decode_DIS_Register(
+    
+  int                   sock,
+  struct batch_request *preq)
+
   {
   int   rc;
 
-  if ((rc = disrfst(sock, PBS_MAXUSER, preq->rq_ind.rq_register.rq_owner)))
+  if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXUSER, preq->rq_ind.rq_register.rq_owner)))
     return rc;
 
-  if ((rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_register.rq_parent)))
+  if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID, preq->rq_ind.rq_register.rq_parent)))
     return rc;
 
-  if ((rc = disrfst(sock, PBS_MAXCLTJOBID, preq->rq_ind.rq_register.rq_child)))
+  if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXCLTJOBID, preq->rq_ind.rq_register.rq_child)))
     return rc;
 
-  preq->rq_ind.rq_register.rq_dependtype = disrui(sock, &rc);
+  preq->rq_ind.rq_register.rq_dependtype = disrui(sock, TCP_FUNC, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_register.rq_op = disrui(sock, &rc);
+  preq->rq_ind.rq_register.rq_op = disrui(sock, TCP_FUNC, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_register.rq_cost = disrsl(sock, &rc);
+  preq->rq_ind.rq_register.rq_cost = disrsl(sock, TCP_FUNC, &rc);
 
   return rc;
   }

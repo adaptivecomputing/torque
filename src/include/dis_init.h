@@ -81,11 +81,11 @@
  * @(#) $Id$
  */
 
-
+/*
 extern int (*dis_getc) (int stream);
 extern int (*dis_puts) (int stream, const char *string, size_t count);
 extern int (*dis_gets) (int stream, char *string, size_t count);
 extern int (*disr_skip) (int stream, size_t nskips);
 extern int (*disw_commit) (int stream, int commit);
 extern int (*disr_commit) (int stream, int commit);
-
+*/

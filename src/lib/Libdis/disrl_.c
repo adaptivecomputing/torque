@@ -84,10 +84,13 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 
 int disrl_(
 
   int                stream,
+  int                rpp,
   dis_long_double_t *ldval,
   unsigned          *ndigs,
   unsigned          *nskips,
@@ -101,10 +104,20 @@ int disrl_(
   char  *cp;
   dis_long_double_t fpnum;
   char  scratch[DIS_BUFSIZ+1];
+  int (*dis_getc)(int);
+  int (*disr_skip)(int, size_t);
+  int (*dis_gets)(int, char *, size_t);
 
   assert(stream >= 0);
-  assert(dis_getc != NULL);
-  assert(disr_skip != NULL);
+
+  if (rpp)
+    dis_getc = rpp_getc;
+  else
+    {
+    disr_skip = tcp_rskip;
+    dis_getc = tcp_getc;
+    dis_gets = tcp_gets;
+    }
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   if (dis_umaxd == 0)
@@ -272,7 +285,7 @@ int disrl_(
           }
         }    /* END if (count > 1) */
 
-      return(disrl_(stream, ldval, ndigs, nskips, sigd, unum));
+      return(disrl_(stream, rpp, ldval, ndigs, nskips, sigd, unum));
 
       /*NOTREACHED*/
 

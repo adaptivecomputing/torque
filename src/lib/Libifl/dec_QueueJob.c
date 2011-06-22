@@ -106,14 +106,14 @@ int decode_DIS_QueueJob(
 
   CLEAR_HEAD(preq->rq_ind.rq_queuejob.rq_attr);
 
-  rc = disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_queuejob.rq_jid);
+  rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_queuejob.rq_jid);
 
   if (rc != 0)
     {
     return(rc);
     }
 
-  rc = disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_queuejob.rq_destin);
+  rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_queuejob.rq_destin);
 
   if (rc != 0)
     {

@@ -699,7 +699,6 @@ extern int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
 extern int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
 extern void exec_bail(job *, int);
 extern void check_state(int);
-extern void DIS_tcp_funcs();
 
 
 /* Local public functions */
@@ -1460,35 +1459,11 @@ char *dependent(
 
 
 
-
-void
-DIS_rpp_reset(void)
-
-  {
-  if (dis_getc != rpp_getc)
-    {
-    dis_getc = rpp_getc;
-    dis_puts = (int (*)(int, const char *, size_t))rpp_write;
-    dis_gets = (int (*)(int, char *, size_t))rpp_read;
-    disr_skip   = (int (*)(int, size_t))rpp_skip;
-
-    disr_commit = rpp_rcommit;
-    disw_commit = rpp_wcommit;
-    }
-
-  return;
-  }  /* END DIS_rpp_reset() */
-
-
-
-
-
 /*
 ** Initialize standard resource array
 */
 
-void
-initialize(void)
+void initialize(void)
 
   {
   char *id = "initialize";
@@ -1503,8 +1478,7 @@ initialize(void)
 
 
 
-void
-cleanup(void)
+void cleanup(void)
 
   {
   dep_cleanup();
@@ -4421,7 +4395,7 @@ int rm_request(
 
   /* looks okay, find out what command it is */
 
-  command = disrsi(iochan, &ret);
+  command = disrsi(iochan, !tcp, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -4450,7 +4424,7 @@ int rm_request(
       reqnum++;
 
 
-      ret = diswsi(iochan, RM_RSP_OK);
+      ret = diswsi(iochan, !tcp, RM_RSP_OK);
 
       if (ret != DIS_SUCCESS)
         {
@@ -4462,7 +4436,7 @@ int rm_request(
 
       for (;;)
         {
-        cp = disrst(iochan, &ret);
+        cp = disrst(iochan, !tcp, &ret);
 
         if (ret == DIS_EOD)
           {
@@ -5163,7 +5137,7 @@ int rm_request(
 
         free(cp);
 
-        ret = diswst(iochan, output);
+        ret = diswst(iochan, !tcp, output);
 
 
         if (ret != DIS_SUCCESS)
@@ -5199,7 +5173,7 @@ int rm_request(
 
       log_record(PBSEVENT_SYSTEM, 0, id, "configure");
 
-      body = disrst(iochan, &ret);
+      body = disrst(iochan, !tcp, &ret);
 
       /* FORMAT:  FILE:<FILENAME> or <FILEDATA> (NYI) */
 
@@ -5252,7 +5226,7 @@ int rm_request(
 
       len = read_config(body);
 
-      ret = diswsi(iochan, len ? RM_RSP_ERROR : RM_RSP_OK);
+      ret = diswsi(iochan, !tcp, len ? RM_RSP_ERROR : RM_RSP_OK);
 
       if (ret != DIS_SUCCESS)
         {
@@ -5276,7 +5250,7 @@ int rm_request(
 
       log_record(PBSEVENT_SYSTEM, 0, id, "shutdown");
 
-      ret = diswsi(iochan, RM_RSP_OK);
+      ret = diswsi(iochan, !tcp, RM_RSP_OK);
 
       if (ret != DIS_SUCCESS)
         {
@@ -5312,7 +5286,7 @@ int rm_request(
 
       log_err(-1, id, log_buffer);
 
-      ret = diswsi(iochan, RM_RSP_ERROR);
+      ret = diswsi(iochan, !tcp, RM_RSP_ERROR);
 
       if (ret != DIS_SUCCESS)
         {
@@ -5322,7 +5296,7 @@ int rm_request(
         goto bad;
         }
 
-      ret = diswst(iochan, log_buffer);
+      ret = diswst(iochan, !tcp, log_buffer);
 
       if (ret != DIS_SUCCESS)
         {
@@ -5388,8 +5362,7 @@ void do_rpp(
   void is_request(int, int, int *);
   void im_eof(int, int);
 
-  DIS_rpp_reset();
-  proto = disrsi(stream, &ret);
+  proto = disrsi(stream, RPP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -5410,7 +5383,7 @@ void do_rpp(
     return;
     }
 
-  version = disrsi(stream, &ret);
+  version = disrsi(stream, RPP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -5555,7 +5528,7 @@ int do_tcp(
 
   pbs_tcp_timeout = 0;
 
-  proto = disrsi(fd, &ret);
+  proto = disrsi(fd, TCP_FUNC, &ret);
 
   if (tmpT > 0)
     {
@@ -5602,7 +5575,7 @@ int do_tcp(
       break;
     }  /* END switch (ret) */
 
-  version = disrsi(fd, &ret);
+  version = disrsi(fd, RPP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -5736,8 +5709,6 @@ void tcp_request(
 
   for (c = 0;;c++)
     {
-    DIS_tcp_funcs();
-
     if (do_tcp(fd))
       break;
     }  /* END for (c = 0) */

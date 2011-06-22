@@ -108,6 +108,8 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 #include "log.h"
 
 
@@ -117,6 +119,7 @@
 int diswul(
 
   int           stream,  /* I */
+  int           rpp,     /* I */
   unsigned long value)   /* I */
 
   {
@@ -126,10 +129,21 @@ int diswul(
 
   int           rc;
   char  scratch[DIS_BUFSIZ+1];
+  int (*dis_puts)(int stream, const char *string, size_t count);
+  int (*disw_commit)(int stream, int commit);
 
   assert(stream >= 0);
-  assert(dis_puts != NULL);
-  assert(disw_commit != NULL);
+
+  if (rpp)
+    {
+    dis_puts = (int (*)(int, const char *, size_t))rpp_write;
+    disw_commit = rpp_wcommit;
+    }
+  else
+    {
+    dis_puts = tcp_puts;
+    disw_commit = tcp_wcommit;
+    }
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   cp = discul_(&scratch[DIS_BUFSIZ], value, &ndigs);

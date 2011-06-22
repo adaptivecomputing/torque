@@ -568,7 +568,7 @@ scan_for_exiting(void)
             {
             tm_reply(tp->ti_fd, IM_ALL_OKAY, pobit->oe_info.fe_event);
 
-            diswsi(tp->ti_fd, ptask->ti_qs.ti_exitstat);
+            diswsi(tp->ti_fd, TCP_FUNC, ptask->ti_qs.ti_exitstat);
 
             DIS_tcp_wflush(tp->ti_fd);
             }
@@ -589,7 +589,7 @@ scan_for_exiting(void)
             pobit->oe_info.fe_event,
             pobit->oe_info.fe_taskid);
 
-          diswsi(pnode->hn_stream, ptask->ti_qs.ti_exitstat);
+          diswsi(pnode->hn_stream, RPP_FUNC, ptask->ti_qs.ti_exitstat);
 
           rpp_flush(pnode->hn_stream);
           }
@@ -2209,15 +2209,15 @@ void exit_mom_job( job *pjob, task *ptask, int mom_radix )
       TM_NULL_TASK);
     }
   
-  diswul(stream, resc_used(pjob, "cput", gettime));
+  diswul(stream, RPP_FUNC, resc_used(pjob, "cput", gettime));
   
-  diswul(stream, resc_used(pjob, "mem", getsize));
+  diswul(stream, RPP_FUNC, resc_used(pjob, "mem", getsize));
   
-  diswul(stream, resc_used(pjob, "vmem", getsize));
+  diswul(stream, RPP_FUNC, resc_used(pjob, "vmem", getsize));
 
   if(mom_radix >= 2)
     {
-    diswsi(stream, pjob->ji_nodeid);		
+    diswsi(stream, RPP_FUNC, pjob->ji_nodeid);		
     }
   
   rpp_flush(stream);

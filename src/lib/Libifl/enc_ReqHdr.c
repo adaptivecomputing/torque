@@ -91,15 +91,18 @@
 #include "dis.h"
 
 
-int
-encode_DIS_ReqHdr(int sock, int reqt, char *user)
+int encode_DIS_ReqHdr(
+    
+  int   sock,
+  int   reqt,
+  char *user)
   {
   int rc;
 
-  if ((rc = diswui(sock, PBS_BATCH_PROT_TYPE)) ||
-      (rc = diswui(sock, PBS_BATCH_PROT_VER)) ||
-      (rc = diswui(sock, reqt))   ||
-      (rc = diswst(sock, user)))
+  if ((rc = diswui(sock, TCP_FUNC, PBS_BATCH_PROT_TYPE)) ||
+      (rc = diswui(sock, TCP_FUNC, PBS_BATCH_PROT_VER)) ||
+      (rc = diswui(sock, TCP_FUNC, reqt))   ||
+      (rc = diswst(sock, TCP_FUNC, user)))
     {
     return rc;
     }

@@ -107,11 +107,14 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 #undef diswsi
 
 int diswsi(
 
   int stream,
+  int rpp,
   int value)
 
   {
@@ -123,10 +126,21 @@ int diswsi(
 
   int       rc;
   char		scratch[DIS_BUFSIZ+1];
+  int (*dis_puts)(int stream, const char *string, size_t count);
+  int (*disw_commit)(int stream, int commit);
 
   assert(stream >= 0);
-  assert(dis_puts != NULL);
-  assert(disw_commit != NULL);
+  
+  if (rpp)
+    {
+    dis_puts = (int (*)(int, const char *, size_t))rpp_write;
+    disw_commit = rpp_wcommit;
+    }
+  else
+    {
+    dis_puts = tcp_puts;
+    disw_commit = tcp_wcommit;
+    }
 
   memset(scratch, 0, DIS_BUFSIZ+1);
 
@@ -154,8 +168,6 @@ int diswsi(
              stream,
              cp,
              strlen(cp)) < 0 ?  DIS_PROTO : DIS_SUCCESS;
-
-  /* disw_commit -> rpp_wcommit */
 
   rc = ((*disw_commit)(stream, retval == DIS_SUCCESS) < 0) ?
        DIS_NOCOMMIT : retval;

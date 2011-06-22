@@ -280,22 +280,6 @@ int             min_threads;
 int             max_threads;
 int             thread_idle_time;
 
-void DIS_rpp_reset(void)
-
-  {
-  if (dis_getc != rpp_getc)
-    {
-    dis_getc    = rpp_getc;
-    dis_puts    = (int (*)(int, const char *, size_t))rpp_write;
-    dis_gets    = (int (*)(int, char *, size_t))rpp_read;
-    disr_skip   = (int (*)(int, size_t))rpp_skip;
-    disr_commit = rpp_rcommit;
-    disw_commit = rpp_wcommit;
-    }
-
-  return;
-  }  /* END DIS_rpp_reset() */
-
 
 
 
@@ -335,9 +319,7 @@ void do_rpp(
       log_buffer);
     }
 
-  DIS_rpp_reset();
-
-  proto = disrsi(stream, &ret);
+  proto = disrsi(stream, RPP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -396,7 +378,7 @@ void do_rpp(
     return;
     }  /* END if (ret != DIS_SUCCESS) */
 
-  version = disrsi(stream, &ret);
+  version = disrsi(stream, RPP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {

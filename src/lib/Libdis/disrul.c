@@ -108,20 +108,27 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 
 unsigned long disrul(
 
   int  stream,  /* I */
+  int  rpp,     /* I */
   int *retval)  /* O */
 
   {
   int  locret;
   int  negate;
   unsigned long value;
+  int (*disr_commit)(int stream, int commit);
 
-  assert(disr_commit != NULL);
+  if (rpp)
+    disr_commit = rpp_rcommit;
+  else
+    disr_commit = tcp_rcommit;
 
-  locret = disrsl_(stream, &negate, &value, 1);
+  locret = disrsl_(stream, rpp, &negate, &value, 1);
 
   if (locret != DIS_SUCCESS)
     {

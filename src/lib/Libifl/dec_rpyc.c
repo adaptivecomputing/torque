@@ -121,7 +121,7 @@ int decode_DIS_replyCmd(
 
   /* first decode "header" consisting of protocol type and version */
 
-  i = disrui(sock, &rc);
+  i = disrui(sock, TCP_FUNC, &rc);
 
   if (rc != 0)
     {
@@ -133,7 +133,7 @@ int decode_DIS_replyCmd(
     return(DIS_PROTO);
     }
 
-  i = disrui(sock, &rc);
+  i = disrui(sock, TCP_FUNC, &rc);
 
   if (rc != 0)
     {
@@ -147,21 +147,21 @@ int decode_DIS_replyCmd(
 
   /* next decode code, auxcode and choice (union type identifier) */
 
-  reply->brp_code = disrsi(sock, &rc);
+  reply->brp_code = disrsi(sock, TCP_FUNC, &rc);
 
   if (rc != 0)
     {
     return(rc);
     }
 
-  reply->brp_auxcode = disrsi(sock, &rc);
+  reply->brp_auxcode = disrsi(sock, TCP_FUNC, &rc);
 
   if (rc != 0)
     {
     return(rc);
     }
 
-  reply->brp_choice = disrui(sock, &rc);
+  reply->brp_choice = disrui(sock, TCP_FUNC, &rc);
 
   if (rc != 0)
     {
@@ -181,7 +181,7 @@ int decode_DIS_replyCmd(
 
     case BATCH_REPLY_CHOICE_Commit:
 
-      if ((rc = disrfst(sock, PBS_MAXSVRJOBID + 1, reply->brp_un.brp_jid)))
+      if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, reply->brp_un.brp_jid)))
         {
         return(rc);
         }
@@ -196,7 +196,7 @@ int decode_DIS_replyCmd(
 
       pselx = &reply->brp_un.brp_select;
 
-      ct = disrui(sock, &rc);
+      ct = disrui(sock, TCP_FUNC, &rc);
 
       if (rc)
         {
@@ -216,7 +216,7 @@ int decode_DIS_replyCmd(
 
         psel->brp_jobid[0] = '\0';
 
-        rc = disrfst(sock, PBS_MAXSVRJOBID + 1, psel->brp_jobid);
+        rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, psel->brp_jobid);
 
         if (rc)
           {
@@ -240,7 +240,7 @@ int decode_DIS_replyCmd(
 
       pstcx = &reply->brp_un.brp_statc;
 
-      ct = disrui(sock, &rc);
+      ct = disrui(sock, TCP_FUNC, &rc);
 
       if (rc)
         {
@@ -262,11 +262,11 @@ int decode_DIS_replyCmd(
 
         pstcmd->brp_attrl = NULL;
 
-        pstcmd->brp_objtype = disrui(sock, &rc);
+        pstcmd->brp_objtype = disrui(sock, TCP_FUNC, &rc);
 
         if (rc == 0)
           {
-          rc = disrfst(sock, PBS_MAXSVRJOBID + 1, pstcmd->brp_objname);
+          rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, pstcmd->brp_objname);
           }
 
         if (rc)
@@ -298,6 +298,7 @@ int decode_DIS_replyCmd(
 
       reply->brp_un.brp_txt.brp_str = disrcs(
                                         sock,
+                                        TCP_FUNC,
                                         &reply->brp_un.brp_txt.brp_txtlen,
                                         &rc);
 
@@ -307,7 +308,7 @@ int decode_DIS_replyCmd(
 
       /* Locate Job Reply */
 
-      rc = disrfst(sock, PBS_MAXDEST + 1, reply->brp_un.brp_locate);
+      rc = disrfst(sock, TCP_FUNC, PBS_MAXDEST + 1, reply->brp_un.brp_locate);
 
       break;
 
@@ -320,7 +321,7 @@ int decode_DIS_replyCmd(
       reply->brp_un.brp_rescq.brq_resvd = NULL;
       reply->brp_un.brp_rescq.brq_down  = NULL;
 
-      ct = disrui(sock, &rc);
+      ct = disrui(sock, TCP_FUNC, &rc);
 
       if (rc)
         break;
@@ -344,16 +345,16 @@ int decode_DIS_replyCmd(
         }
 
       for (i = 0;(i < ct) && (rc == 0);++i)
-        *(reply->brp_un.brp_rescq.brq_avail + i) = disrui(sock, &rc);
+        *(reply->brp_un.brp_rescq.brq_avail + i) = disrui(sock, TCP_FUNC, &rc);
 
       for (i = 0;(i < ct) && (rc == 0);++i)
-        *(reply->brp_un.brp_rescq.brq_alloc + i) = disrui(sock, &rc);
+        *(reply->brp_un.brp_rescq.brq_alloc + i) = disrui(sock, TCP_FUNC, &rc);
 
       for (i = 0;(i < ct) && (rc == 0);++i)
-        *(reply->brp_un.brp_rescq.brq_resvd + i) = disrui(sock, &rc);
+        *(reply->brp_un.brp_rescq.brq_resvd + i) = disrui(sock, TCP_FUNC, &rc);
 
       for (i = 0;(i < ct) && (rc == 0);++i)
-        *(reply->brp_un.brp_rescq.brq_down + i)  = disrui(sock, &rc);
+        *(reply->brp_un.brp_rescq.brq_down + i)  = disrui(sock, TCP_FUNC, &rc);
 
       break;
 

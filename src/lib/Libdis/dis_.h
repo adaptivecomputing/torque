@@ -91,12 +91,12 @@ void disi10l_();
 void disiui_(void);
 double disp10d_(int expon);
 dis_long_double_t disp10l_(int expon);
-int disrl_(int stream, dis_long_double_t *ldval, unsigned *ndigs,
+int disrl_(int stream, int rpp, dis_long_double_t *ldval, unsigned *ndigs,
                unsigned *nskips, unsigned sigd, unsigned count);
-int disrsi_(int stream, int *negate, unsigned *value, unsigned count);
-int disrsl_(int stream, int *negate, unsigned long *value,
+int disrsi_(int stream, int rpp, int *negate, unsigned *value, unsigned count);
+int disrsl_(int stream, int rpp, int *negate, unsigned long *value,
                 unsigned long count);
-int diswui_(int stream, unsigned value);
+int diswui_(int stream, int rpp, unsigned value);
 
 extern unsigned dis_dmx10;
 extern double *dis_dp10;

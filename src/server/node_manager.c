@@ -121,8 +121,6 @@
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
-extern void DIS_rpp_reset(void);
-
 extern int LOGLEVEL;
 
 extern int allow_any_mom;
@@ -181,7 +179,7 @@ extern int multi_mom;
 int hasprop(struct pbsnode *, struct prop *);
 void send_cluster_addrs(struct work_task *);
 int add_cluster_addrs(int);
-int is_compose(int, int);
+int is_compose(int, int, int);
 int add_job_to_node(struct pbsnode *,struct pbssubn *,short,job *,int);
 int node_satisfies_request(struct pbsnode *,char *);
 int reserve_node(struct pbsnode *,short,job *,char *,struct howl **);
@@ -203,22 +201,6 @@ pthread_mutex_t *node_state_mutex = NULL;
 
 */
 
-static void funcs_dis(void)  /* The equivalent of DIS_tcp_funcs() */
-
-  {
-  if (dis_getc != rpp_getc)
-    {
-    dis_getc = (int (*)(int))rpp_getc;
-    dis_puts = (int (*)(int, const char *, size_t))rpp_write;
-    dis_gets = (int (*)(int, char *, size_t))rpp_read;
-    disr_commit = (int (*)(int, int))rpp_rcommit;
-    disw_commit = (int (*)(int, int))rpp_wcommit;
-    }
-
-  return;
-  }
-
-/*#define      setup_dis(x)    funcs_dis()  */    /* RPP doesn't need reset */
 /*#define      close_dis(x)    rpp_close(x) */
 /*#define      flush_dis(x)    rpp_flush(x) */
 
@@ -611,7 +593,7 @@ void update_node_state(
     {
     /* send the cluster addrs */
 
-    ret = is_compose(np->nd_stream, IS_CLUSTER_ADDRS);
+    ret = is_compose(np->nd_stream, RPP_FUNC, IS_CLUSTER_ADDRS);
 
     if (ret == DIS_SUCCESS)
       {
@@ -885,8 +867,6 @@ void sync_node_jobs(
                 }
               }
             }
-
-          DIS_rpp_reset();
           }
         } /* END find_job_by_node != NULL */
       else
@@ -1084,7 +1064,7 @@ void send_cluster_addrs(
     if ((np == NULL) || (np->nd_state & INUSE_DELETED) || (np->nd_stream < 0))
       continue;
 
-    ret = is_compose(np->nd_stream, IS_CLUSTER_ADDRS);
+    ret = is_compose(np->nd_stream, RPP_FUNC, IS_CLUSTER_ADDRS);
 
     if (ret == DIS_SUCCESS)
       {
@@ -1289,9 +1269,7 @@ int is_stat_get(
     return(DIS_NOCOMMIT);
     }
 
-  funcs_dis();
-
-  while (((ret_info = disrst(stream, &rc)) != NULL) && (rc == DIS_SUCCESS))
+  while (((ret_info = disrst(stream, RPP_FUNC, &rc)) != NULL) && (rc == DIS_SUCCESS))
     {
     /* check if this is the update on a numa node */
     if (!strncmp(ret_info,NUMA_KEYWORD,strlen(NUMA_KEYWORD)))
@@ -1539,6 +1517,7 @@ int is_stat_get(
 int is_compose(
 
   int stream,  /* I */
+  int rpp,     /* I */
   int command) /* I */
 
   {
@@ -1549,19 +1528,17 @@ int is_compose(
     return(DIS_EOF);
     }
 
-  DIS_rpp_reset();
-
-  ret = diswsi(stream, IS_PROTOCOL);
+  ret = diswsi(stream, rpp, IS_PROTOCOL);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(stream, IS_PROTOCOL_VER);
+  ret = diswsi(stream, rpp, IS_PROTOCOL_VER);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(stream, command);
+  ret = diswsi(stream, rpp, command);
 
   if (ret != DIS_SUCCESS)
     goto done;
@@ -1775,7 +1752,7 @@ void ping_nodes(
 
     com = IS_HELLO;
 
-    ret = is_compose(np->nd_stream, com);
+    ret = is_compose(np->nd_stream, RPP_FUNC, com);
 
     if (ret == DIS_SUCCESS)
       {
@@ -1888,7 +1865,7 @@ int add_cluster_addrs(
         free(tmp);
         }
 
-      ret = diswul(stream, ipaddr);
+      ret = diswul(stream, RPP_FUNC, ipaddr);
 
       if (ret != DIS_SUCCESS)
         {
@@ -2061,7 +2038,7 @@ void *is_request_work(
   stream = args[0];
   version = args[1];
 
-  command = disrsi(stream, &ret);
+  command = disrsi(stream, RPP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
@@ -2081,8 +2058,8 @@ void *is_request_work(
 
   addr = rpp_getaddr(stream);
 
-  mom_port = disrsi(stream, &ret);
-  rm_port = disrsi(stream, &ret);
+  mom_port = disrsi(stream, RPP_FUNC, &ret);
+  rm_port = disrsi(stream, RPP_FUNC, &ret);
 
   if (version != IS_PROTOCOL_VER)
     {
@@ -2263,7 +2240,7 @@ void *is_request_work(
         }
 
 #ifndef ALT_CLSTR_ADDR
-      ret = is_compose(stream, IS_CLUSTER_ADDRS);
+      ret = is_compose(stream, RPP_FUNC, IS_CLUSTER_ADDRS);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -2306,7 +2283,7 @@ void *is_request_work(
       DBPRT(("%s: IS_UPDATE\n",
              id))
 
-      i = disrui(stream, &ret);
+      i = disrui(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         {

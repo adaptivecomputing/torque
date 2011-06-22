@@ -104,10 +104,13 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 
 int disrfst(
 
   int     stream,
+  int     rpp,
   size_t  achars,
   char   *value)
 
@@ -117,12 +120,23 @@ int disrfst(
 
   int  negate;
   unsigned count;
+  int (*disr_commit)(int stream, int commit);
+  int (*dis_gets)(int, char *, size_t);
 
   assert(value != NULL);
-  assert(dis_gets != NULL);
-  assert(disr_commit != NULL);
+  
+  if (rpp)
+    {
+    disr_commit = rpp_rcommit;
+    dis_gets = (int (*)(int, char *, size_t))rpp_read;
+    }
+  else
+    {
+    disr_commit = tcp_rcommit;
+    dis_gets = tcp_gets;
+    }
 
-  locret = disrsi_(stream, &negate, &count, 1);
+  locret = disrsi_(stream, rpp, &negate, &count, 1);
 
   if (locret == DIS_SUCCESS)
     {

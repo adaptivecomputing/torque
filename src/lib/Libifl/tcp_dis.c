@@ -203,7 +203,7 @@ static void tcp_pack_buff(
  *  -2 if EOF (stream closed)
  */
 
-static int tcp_read(
+int tcp_read(
 
   int fd)          /* I */
 
@@ -488,7 +488,7 @@ void DIS_tcp_reset(
  * Returns: 0 on success, -1 on error
  */
 
-static int tcp_rskip(
+int tcp_rskip(
 
   int    fd,
   size_t ct)
@@ -528,7 +528,7 @@ static int tcp_rskip(
  *  -2 if EOF (stream closed)
  */
 
-static int tcp_getc(
+int tcp_getc(
 
   int fd)
 
@@ -578,7 +578,7 @@ static int tcp_getc(
  *  -2 if EOF (stream closed)
  */
 
-static int tcp_gets(
+int tcp_gets(
 
   int     fd,
   char   *str,
@@ -704,7 +704,7 @@ int TConnGetSelectErrno(
  *   -1 if error
  */
 
-static int tcp_puts(
+int tcp_puts(
 
   int         fd,  /* I */
   const char *str, /* I */
@@ -780,7 +780,7 @@ static int tcp_puts(
  * tcp_rcommit - tcp/dis support routine to commit/uncommit read data
  */
 
-static int tcp_rcommit(
+int tcp_rcommit(
 
   int fd,
   int commit_flag)
@@ -822,7 +822,7 @@ static int tcp_rcommit(
  * tcp_wcommit - tcp/dis support routine to commit/uncommit write data
  */
 
-static int tcp_wcommit(
+int tcp_wcommit(
 
   int fd,
   int commit_flag)
@@ -854,29 +854,6 @@ static int tcp_wcommit(
   pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
 
   return(0);
-  }
-
-
-
-
-void
-DIS_tcp_funcs(void)
-
-  {
-  if (dis_getc == tcp_getc)
-    {
-    return;
-    }
-
-  dis_getc = tcp_getc;
-
-  dis_puts = tcp_puts;
-  dis_gets = tcp_gets;
-  disr_skip = tcp_rskip;
-  disr_commit = tcp_rcommit;
-  disw_commit = tcp_wcommit;
-
-  return;
   }
 
 
@@ -1072,9 +1049,6 @@ void DIS_tcp_setup(
     {
     return;
     }
-
-  /* set DIS function pointers to tcp routines */
-  DIS_tcp_funcs();
 
   resize_tcp_array_if_needed(fd);
 

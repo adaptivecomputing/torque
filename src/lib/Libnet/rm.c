@@ -107,8 +107,9 @@
 #include "rm.h"
 #if RPP
 #include "rpp.h"
+int       rpp = RPP_FUNC;
 #else
-extern void DIS_tcp_funcs();
+int       rpp = TCP_FUNC;
 #endif
 
 
@@ -166,27 +167,12 @@ static int addrm(
 
 
 #if RPP
-static void
-funcs_dis(void)   /* The equivalent of DIS_tcp_funcs() */
-  {
-  if (dis_getc != rpp_getc)
-    {
-    dis_getc = (int (*)(int))rpp_getc;
-    dis_puts = (int (*)(int, const char *, size_t))rpp_write;
-    dis_gets = (int (*)(int, char *, size_t))rpp_read;
-    disr_commit = (int (*)(int, int))rpp_rcommit;
-    disw_commit = (int (*)(int, int))rpp_wcommit;
-    }
-  }
 
-#define setup_dis(x) funcs_dis() /* RPP doesn't need reset */
 #define close_dis(x) rpp_close(x)
 #define flush_dis(x) rpp_flush(x)
 
 #else
 
-#define funcs_dis() DIS_tcp_funcs()
-#define setup_dis(x) DIS_tcp_setup(x)
 #define close_dis(x) close(x)
 #define flush_dis(x) DIS_tcp_wflush(x)
 
@@ -408,17 +394,15 @@ static int startcom(
   {
   int ret;
 
-  setup_dis(stream);
-
-  ret = diswsi(stream, RM_PROTOCOL);
+  ret = diswsi(stream, rpp, RM_PROTOCOL);
 
   if (ret == DIS_SUCCESS)
     {
-    ret = diswsi(stream, RM_PROTOCOL_VER);
+    ret = diswsi(stream, rpp, RM_PROTOCOL_VER);
 
     if (ret == DIS_SUCCESS)
       {
-      ret = diswsi(stream, com);
+      ret = diswsi(stream, rpp, com);
       }
     }
 
@@ -503,7 +487,7 @@ static int simpleget(
   int ret, num;
 
 
-  num = disrsi(stream, &ret);
+  num = disrsi(stream, rpp, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -635,7 +619,7 @@ int configrm(
     return(-1);
     }
 
-    ret = diswcs(stream, file, len);
+    ret = diswcs(stream, rpp, file, len);
 
 
   if (ret != DIS_SUCCESS)
@@ -703,7 +687,7 @@ static int doreq(
     op->len = 1;
     }
 
-  ret = diswcs(op->stream, line, strlen(line));
+  ret = diswcs(op->stream, rpp, line, strlen(line));
 
 
   if (ret != DIS_SUCCESS)
@@ -749,8 +733,6 @@ int addreq(
     return(-1);
     }
 
-  funcs_dis();
-
   if (doreq(op, line) == -1)
     {
     delrm(stream);
@@ -778,8 +760,6 @@ int allreq(
 
   struct out *op, *prev;
   int         i, num;
-
-  funcs_dis();
 
   pbs_errno = 0;
 
@@ -871,8 +851,6 @@ char *getreq(
 #endif
     }
 
-  funcs_dis();
-
   if (op->len == -2)
     {
     if (simpleget(stream) == -1)
@@ -884,7 +862,7 @@ char *getreq(
     }
 
 
-  startline = disrst(stream, &ret);
+  startline = disrst(stream, rpp, &ret);
 
   if (ret == DIS_EOF)
     {

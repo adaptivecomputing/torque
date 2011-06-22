@@ -93,10 +93,13 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int
-encode_DIS_JobId(int sock, char *jobid)
+int encode_DIS_JobId(
+    
+  int   sock,
+  char *jobid)
+
   {
-  return (diswst(sock, jobid));
+  return (diswst(sock, TCP_FUNC, jobid));
   }
 
 

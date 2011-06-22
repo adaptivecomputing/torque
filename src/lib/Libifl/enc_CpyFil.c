@@ -107,8 +107,11 @@
 #include "dis.h"
 
 
-int
-encode_DIS_CopyFiles(int sock, struct batch_request *preq)
+int encode_DIS_CopyFiles(
+    
+  int                   sock,
+  struct batch_request *preq)
+
   {
   int   pair_ct = 0;
   char *nullstr = "";
@@ -124,14 +127,14 @@ encode_DIS_CopyFiles(int sock, struct batch_request *preq)
     ppair = (struct rqfpair *)GET_NEXT(ppair->fp_link);
     }
 
-  if ((rc = diswst(sock, preq->rq_ind.rq_cpyfile.rq_jobid) != 0) ||
-      (rc = diswst(sock, preq->rq_ind.rq_cpyfile.rq_owner) != 0) ||
-      (rc = diswst(sock, preq->rq_ind.rq_cpyfile.rq_user) != 0) ||
-      (rc = diswst(sock, preq->rq_ind.rq_cpyfile.rq_group) != 0) ||
-      (rc = diswui(sock, preq->rq_ind.rq_cpyfile.rq_dir) != 0))
+  if ((rc = diswst(sock, TCP_FUNC, preq->rq_ind.rq_cpyfile.rq_jobid) != 0) ||
+      (rc = diswst(sock, TCP_FUNC, preq->rq_ind.rq_cpyfile.rq_owner) != 0) ||
+      (rc = diswst(sock, TCP_FUNC, preq->rq_ind.rq_cpyfile.rq_user) != 0) ||
+      (rc = diswst(sock, TCP_FUNC, preq->rq_ind.rq_cpyfile.rq_group) != 0) ||
+      (rc = diswui(sock, TCP_FUNC, preq->rq_ind.rq_cpyfile.rq_dir) != 0))
     return rc;
 
-  if ((rc = diswui(sock, pair_ct) != 0))
+  if ((rc = diswui(sock, TCP_FUNC, pair_ct) != 0))
     return rc;
 
   ppair = (struct rqfpair *)GET_NEXT(preq->rq_ind.rq_cpyfile.rq_pair);
@@ -141,9 +144,9 @@ encode_DIS_CopyFiles(int sock, struct batch_request *preq)
     if (ppair->fp_rmt == NULL)
       ppair->fp_rmt = strdup(nullstr);
 
-    if ((rc = diswui(sock, ppair->fp_flag) != 0) ||
-        (rc = diswst(sock, ppair->fp_local) != 0) ||
-        (rc = diswst(sock, ppair->fp_rmt) != 0))
+    if ((rc = diswui(sock, TCP_FUNC, ppair->fp_flag) != 0) ||
+        (rc = diswst(sock, TCP_FUNC, ppair->fp_local) != 0) ||
+        (rc = diswst(sock, TCP_FUNC, ppair->fp_rmt) != 0))
       return  rc;
 
     ppair = (struct rqfpair *)GET_NEXT(ppair->fp_link);

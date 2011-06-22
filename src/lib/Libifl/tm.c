@@ -144,8 +144,6 @@ static int  local_conn = -1;
 static int  init_done = 0;
 int *tm_conn = &local_conn;
 
-void DIS_tcp_funcs();
-
 /*
 ** Events are the central focus of this library.  They are tracked
 ** in a hash table.  Many of the library calls return events.  They
@@ -579,37 +577,37 @@ static int startcom(
     return(-1);
     }
 
-  ret = diswsi(local_conn, TM_PROTOCOL);
+  ret = diswsi(local_conn, TCP_FUNC, TM_PROTOCOL);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(local_conn, TM_PROTOCOL_VER);
+  ret = diswsi(local_conn, TCP_FUNC, TM_PROTOCOL_VER);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswcs(local_conn, tm_jobid, tm_jobid_len);
+  ret = diswcs(local_conn, TCP_FUNC, tm_jobid, tm_jobid_len);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswcs(local_conn, tm_jobcookie, tm_jobcookie_len);
+  ret = diswcs(local_conn, TCP_FUNC, tm_jobcookie, tm_jobcookie_len);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(local_conn, com);
+  ret = diswsi(local_conn, TCP_FUNC, com);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(local_conn, event);
+  ret = diswsi(local_conn, TCP_FUNC, event);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswui(local_conn, tm_jobtid);
+  ret = diswui(local_conn, TCP_FUNC, tm_jobtid);
 
   if (ret != DIS_SUCCESS)
     goto done;
@@ -795,12 +793,12 @@ int tm_spawn(
     return(TM_ENOTCONNECTED);
     }
 
-  if (diswsi(local_conn, where) != DIS_SUCCESS) /* send where */
+  if (diswsi(local_conn, TCP_FUNC, where) != DIS_SUCCESS) /* send where */
     {
     return(TM_ENOTCONNECTED);
     }
 
-  if (diswsi(local_conn, argc) != DIS_SUCCESS) /* send argc */
+  if (diswsi(local_conn, TCP_FUNC, argc) != DIS_SUCCESS) /* send argc */
     {
     return(TM_ENOTCONNECTED);
     }
@@ -811,7 +809,7 @@ int tm_spawn(
     {
     cp = argv[i];
 
-    if (diswcs(local_conn, cp, strlen(cp)) != DIS_SUCCESS)
+    if (diswcs(local_conn, TCP_FUNC, cp, strlen(cp)) != DIS_SUCCESS)
       {
       return(TM_ENOTCONNECTED);
       }
@@ -821,7 +819,7 @@ int tm_spawn(
 
   if (getenv("PBSDEBUG") != NULL)
     {
-    if (diswcs(local_conn, "PBSDEBUG=1", strlen("PBSDEBUG=1")) != DIS_SUCCESS)
+    if (diswcs(local_conn, TCP_FUNC, "PBSDEBUG=1", strlen("PBSDEBUG=1")) != DIS_SUCCESS)
       {
       return(TM_ENOTCONNECTED);
       }
@@ -831,14 +829,14 @@ int tm_spawn(
     {
     for (i = 0;(cp = envp[i]) != NULL;i++)
       {
-      if (diswcs(local_conn, cp, strlen(cp)) != DIS_SUCCESS)
+      if (diswcs(local_conn, TCP_FUNC, cp, strlen(cp)) != DIS_SUCCESS)
         {
         return(TM_ENOTCONNECTED);
         }
       }
     }
 
-  if (diswcs(local_conn, "", 0) != DIS_SUCCESS)
+  if (diswcs(local_conn, TCP_FUNC, "", 0) != DIS_SUCCESS)
     {
     return(TM_ENOTCONNECTED);
     }
@@ -877,13 +875,13 @@ tm_kill(
   if (startcom(TM_SIGNAL, *event) != DIS_SUCCESS)
     return TM_ENOTCONNECTED;
 
-  if (diswsi(local_conn, tp->t_node) != DIS_SUCCESS)
+  if (diswsi(local_conn, TCP_FUNC, tp->t_node) != DIS_SUCCESS)
     return TM_ENOTCONNECTED;
 
-  if (diswsi(local_conn, tid) != DIS_SUCCESS)
+  if (diswsi(local_conn, TCP_FUNC, tid) != DIS_SUCCESS)
     return TM_ENOTCONNECTED;
 
-  if (diswsi(local_conn, sig) != DIS_SUCCESS)
+  if (diswsi(local_conn, TCP_FUNC, sig) != DIS_SUCCESS)
     return TM_ENOTCONNECTED;
 
   DIS_tcp_wflush(local_conn);
@@ -917,10 +915,10 @@ tm_obit(
   if (startcom(TM_OBIT, *event) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
-  if (diswsi(local_conn, tp->t_node) != DIS_SUCCESS)
+  if (diswsi(local_conn, TCP_FUNC, tp->t_node) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
-  if (diswsi(local_conn, tid) != DIS_SUCCESS)
+  if (diswsi(local_conn, TCP_FUNC, tid) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
   DIS_tcp_wflush(local_conn);
@@ -965,7 +963,7 @@ tm_taskinfo(
   if (startcom(TM_TASKS, *event) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
-  if (diswsi(local_conn, node) != DIS_SUCCESS)
+  if (diswsi(local_conn, TCP_FUNC, node) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
   DIS_tcp_wflush(local_conn);
@@ -1042,7 +1040,7 @@ tm_rescinfo(
   if (startcom(TM_RESOURCES, *event) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
-  if (diswsi(local_conn, node) != DIS_SUCCESS)
+  if (diswsi(local_conn, TCP_FUNC, node) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
   DIS_tcp_wflush(local_conn);
@@ -1083,10 +1081,10 @@ tm_publish(
   if (startcom(TM_POSTINFO, *event) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
-  if (diswst(local_conn, name) != DIS_SUCCESS)
+  if (diswst(local_conn, TCP_FUNC, name) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
-  if (diswcs(local_conn, info, len) != DIS_SUCCESS)
+  if (diswcs(local_conn, TCP_FUNC, info, len) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
   DIS_tcp_wflush(local_conn);
@@ -1133,13 +1131,13 @@ tm_subscribe(
   if (startcom(TM_GETINFO, *event) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
-  if (diswsi(local_conn, tp->t_node) != DIS_SUCCESS)
+  if (diswsi(local_conn, TCP_FUNC, tp->t_node) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
-  if (diswsi(local_conn, tid) != DIS_SUCCESS)
+  if (diswsi(local_conn, TCP_FUNC, tid) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
-  if (diswst(local_conn, name) != DIS_SUCCESS)
+  if (diswst(local_conn, TCP_FUNC, name) != DIS_SUCCESS)
     return TM_ESYSTEM;
 
   DIS_tcp_wflush(local_conn);
@@ -1348,9 +1346,7 @@ int tm_poll(
   */
   pbs_tcp_timeout = wait ? FOREVER : 0;
 
-  DIS_tcp_funcs();
-
-  prot = disrsi(local_conn, &ret);
+  prot = disrsi(local_conn, TCP_FUNC, &ret);
 
   if (ret == DIS_EOD)
     {
@@ -1375,7 +1371,7 @@ int tm_poll(
   */
   pbs_tcp_timeout = FOREVER;
 
-  protver = disrsi(local_conn, &ret);
+  protver = disrsi(local_conn, TCP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -1389,7 +1385,7 @@ int tm_poll(
     goto err;
     }
 
-  mtype = disrsi(local_conn, &ret);
+  mtype = disrsi(local_conn, TCP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -1397,7 +1393,7 @@ int tm_poll(
     goto err;
     }
 
-  nevent = disrsi(local_conn, &ret);
+  nevent = disrsi(local_conn, TCP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -1419,7 +1415,7 @@ int tm_poll(
 
   if (mtype == TM_ERROR)   /* problem, read error num */
     {
-    *tm_errno = disrsi(local_conn, &ret);
+    *tm_errno = disrsi(local_conn, TCP_FUNC, &ret);
     DBPRT(("%s: event %d error %d\n", id, nevent, *tm_errno));
     goto done;
     }
@@ -1442,7 +1438,7 @@ int tm_poll(
       */
 
     case TM_INIT:
-      nnodes = disrsi(local_conn, &ret);
+      nnodes = disrsi(local_conn, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -1464,7 +1460,7 @@ int tm_poll(
 
       for (i = 0; i < nnodes; i++)
         {
-        node_table[i] = disrsi(local_conn, &ret);
+        node_table[i] = disrsi(local_conn, TCP_FUNC, &ret);
 
         if (ret != DIS_SUCCESS)
           {
@@ -1475,7 +1471,7 @@ int tm_poll(
 
       node_table[nnodes] = TM_ERROR_NODE;
 
-      jobid = disrst(local_conn, &ret);
+      jobid = disrst(local_conn, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -1485,7 +1481,7 @@ int tm_poll(
 
       DBPRT(("%s: INIT daddy jobid %s\n", id, jobid))
 
-      node = disrsi(local_conn, &ret);
+      node = disrsi(local_conn, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -1495,7 +1491,7 @@ int tm_poll(
 
       DBPRT(("%s: INIT daddy node %d\n", id, node))
 
-      tid = disrsi(local_conn, &ret);
+      tid = disrsi(local_conn, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -1524,7 +1520,7 @@ int tm_poll(
 
       for (i = 0;; i++)
         {
-        tid = disrsi(local_conn, &ret);
+        tid = disrsi(local_conn, TCP_FUNC, &ret);
 
         if (tid == TM_NULL_TASK)
           break;
@@ -1547,7 +1543,7 @@ int tm_poll(
       break;
 
     case TM_SPAWN:
-      tid = disrsi(local_conn, &ret);
+      tid = disrsi(local_conn, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -1565,7 +1561,7 @@ int tm_poll(
 
     case TM_OBIT:
       obitvalp = (int *)ep->e_info;
-      *obitvalp = disrsi(local_conn, &ret);
+      *obitvalp = disrsi(local_conn, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -1580,7 +1576,7 @@ int tm_poll(
 
     case TM_GETINFO:
       ihold = (struct infohold *)ep->e_info;
-      info = disrcs(local_conn, (size_t *)ihold->info_len, &ret);
+      info = disrcs(local_conn, TCP_FUNC, (size_t *)ihold->info_len, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -1595,7 +1591,7 @@ int tm_poll(
 
     case TM_RESOURCES:
       rhold = (struct reschold *)ep->e_info;
-      info = disrst(local_conn, &ret);
+      info = disrst(local_conn, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         break;
@@ -1735,16 +1731,16 @@ int tm_adopt(char *id, int adoptCmd, pid_t pid)
     return TM_ESYSTEM;
 
   /* send session id */
-  if (diswsi(local_conn, sid) != DIS_SUCCESS)
+  if (diswsi(local_conn, TCP_FUNC, sid) != DIS_SUCCESS)
     return TM_ENOTCONNECTED;
 
   /* write the pid so the adopted process can be part of the cpuset if needed */
 
-  if (diswsi(local_conn,sid) != DIS_SUCCESS)
+  if (diswsi(local_conn,TCP_FUNC,sid) != DIS_SUCCESS)
     return TM_ENOTCONNECTED;
 
   /* send job or alternative id */
-  if (diswcs(local_conn, id, strlen(id)) != DIS_SUCCESS)
+  if (diswcs(local_conn, TCP_FUNC, id, strlen(id)) != DIS_SUCCESS)
     return TM_ENOTCONNECTED;
 
   DIS_tcp_wflush(local_conn);
@@ -1752,7 +1748,7 @@ int tm_adopt(char *id, int adoptCmd, pid_t pid)
   /* The mom should now attempt to adopt the task and will send back a
      status flag to indicate whether it was successful or not. */
 
-  status = disrsi(local_conn, &ret);
+  status = disrsi(local_conn, TCP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     return TM_ENOTCONNECTED;

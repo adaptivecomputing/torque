@@ -90,15 +90,20 @@
 #include "pbs_error.h"
 #include "dis.h"
 
-int
-encode_DIS_JobCred(int sock, int type, char *cred, int len)
+int encode_DIS_JobCred(
+    
+  int   sock,
+  int   type, 
+  char *cred,
+  int   len)
+
   {
   int   rc;
 
-  if ((rc = diswui(sock, type)))
+  if ((rc = diswui(sock, TCP_FUNC, type)))
     return rc;
 
-  rc = diswcs(sock, cred, (size_t)len);
+  rc = diswcs(sock, TCP_FUNC, cred, (size_t)len);
 
   return rc;
   }

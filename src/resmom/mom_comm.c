@@ -216,7 +216,6 @@ extern int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
 extern void job_nodes(job *);
 extern void sister_job_nodes( job *pjob, char *radix_hosts, char *radix_ports );
 extern int tlist(tree *, char *, int);
-extern void DIS_tcp_funcs();
 extern int TTmpDirName(job *, char *);
 extern int TMakeTmpDir(job *, char *);
 extern void mom_server_close_stream(int stream);
@@ -672,24 +671,22 @@ int tm_reply(
   {
   int     ret;
 
-  DIS_tcp_funcs();
-
-  ret = diswsi(stream, TM_PROTOCOL);
+  ret = diswsi(stream, TCP_FUNC, TM_PROTOCOL);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(stream, TM_PROTOCOL_VER);
+  ret = diswsi(stream, TCP_FUNC, TM_PROTOCOL_VER);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(stream, com);
+  ret = diswsi(stream, TCP_FUNC, com);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(stream, event);
+  ret = diswsi(stream, TCP_FUNC, event);
 
   if (ret != DIS_SUCCESS)
     goto done;
@@ -728,39 +725,37 @@ int im_compose(
     return(DIS_EOF);
     }
 
-  DIS_rpp_reset();
-
-  ret = diswsi(stream, IM_PROTOCOL);
+  ret = diswsi(stream, RPP_FUNC, IM_PROTOCOL);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  ret = diswsi(stream, IM_PROTOCOL_VER);
+  ret = diswsi(stream, RPP_FUNC, IM_PROTOCOL_VER);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  ret = diswst(stream, jobid);
+  ret = diswst(stream, RPP_FUNC, jobid);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  ret = diswst(stream, cookie);
+  ret = diswst(stream, RPP_FUNC, cookie);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  ret = diswsi(stream, command);
+  ret = diswsi(stream, RPP_FUNC, command);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  ret = diswsi(stream, event);
+  ret = diswsi(stream, RPP_FUNC, event);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  ret = diswsi(stream, taskid);
+  ret = diswsi(stream, RPP_FUNC, taskid);
 
   if (ret != DIS_SUCCESS)
     goto err;
@@ -1193,7 +1188,7 @@ int send_sisters_radix(
 #define SEND_ERR(err) \
   if (reply) { \
     im_compose(stream,jobid,cookie,IM_ERROR,event,fromtask); \
-    diswsi(stream,err); \
+    diswsi(stream,RPP_FUNC,err); \
     }
 
 
@@ -1571,7 +1566,7 @@ void node_bailout(
 
         tm_reply(ptask->ti_fd, TM_ERROR, ep->ee_event);
 
-        diswsi(ptask->ti_fd, TM_ESYSTEM);
+        diswsi(ptask->ti_fd, TCP_FUNC, TM_ESYSTEM);
 
         DIS_tcp_wflush(ptask->ti_fd);
 
@@ -1647,7 +1642,7 @@ void node_bailout(
           TM_ERROR,
           ep->ee_forward.fe_event);
 
-        diswsi(ptask->ti_fd, TM_ESYSTEM);
+        diswsi(ptask->ti_fd, TCP_FUNC, TM_ESYSTEM);
 
         DIS_tcp_wflush(ptask->ti_fd);
 
@@ -2340,7 +2335,7 @@ void im_request(
     return;
     }
 
-  jobid = disrst(stream, &ret);
+  jobid = disrst(stream, RPP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -2352,7 +2347,7 @@ void im_request(
     goto err;
     }
 
-  cookie = disrst(stream, &ret);
+  cookie = disrst(stream, RPP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -2365,7 +2360,7 @@ void im_request(
     goto err;
     }
 
-  command = disrsi(stream, &ret);
+  command = disrsi(stream, RPP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -2378,7 +2373,7 @@ void im_request(
     goto err;
     }
 
-  event = disrsi(stream, &ret);
+  event = disrsi(stream, RPP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -2392,7 +2387,7 @@ void im_request(
     goto err;
     }
 
-  fromtask = disrsi(stream, &ret);
+  fromtask = disrsi(stream, RPP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -2449,7 +2444,7 @@ void im_request(
       if (check_ms(stream, NULL))
         goto fini;
 
-      nodeid = disrsi(stream, &ret);
+      nodeid = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -2462,7 +2457,7 @@ void im_request(
         goto err;
         }
 
-      nodenum = disrsi(stream, &ret);
+      nodenum = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -2778,7 +2773,7 @@ void im_request(
       if (check_ms(stream, NULL))
         goto fini;
       
-      nodeid = disrsi(stream, &ret);
+      nodeid = disrsi(stream, RPP_FUNC, &ret);
       
       if (ret != DIS_SUCCESS)
         {
@@ -2791,7 +2786,7 @@ void im_request(
         goto err;
         }
       
-      nodenum = disrsi(stream, &ret);
+      nodenum = disrsi(stream, RPP_FUNC, &ret);
       
       if (ret != DIS_SUCCESS)
         {
@@ -2837,7 +2832,7 @@ void im_request(
       pjob->ji_numnodes = nodenum;  /* XXX */
       
       /* Get the nodes for this radix */
-      radix_hosts = disrst(stream, &ret);
+      radix_hosts = disrst(stream, RPP_FUNC, &ret);
       if (ret != DIS_SUCCESS)
         {
         sprintf(log_buffer, "%s: join_job_radix request to node %d for job %s failed - %s (radix_hosts)",
@@ -2851,7 +2846,7 @@ void im_request(
         goto err;
         }
       
-      radix_ports = disrst(stream, &ret);
+      radix_ports = disrst(stream, RPP_FUNC, &ret);
       if (ret != DIS_SUCCESS)
         {
         sprintf(log_buffer, "%s: join_job_radix request to node %d for job %s failed - %s (radix_ports)",
@@ -2865,7 +2860,7 @@ void im_request(
         goto err;
         }
       
-      sister_count = disrsi(stream, &ret);
+      sister_count = disrsi(stream, RPP_FUNC, &ret);
       if (ret != DIS_SUCCESS)
         {
         sprintf(log_buffer, "%s: join_job_radix request to node %d for job %s failed - %s (radix_ports)",
@@ -3444,7 +3439,7 @@ void im_request(
       ** )
       */
 
-      nodeid = disrsi(stream, &ret);
+      nodeid = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -3456,12 +3451,12 @@ void im_request(
         break;
         }
 
-      taskid = disrsi(stream, &ret);
+      taskid = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
 
-      globid = disrst(stream, &ret);
+      globid = disrst(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -3511,7 +3506,7 @@ void im_request(
 
       for (i = 0;;i++)
         {
-        if ((cp = disrst(stream, &ret)) == NULL)
+        if ((cp = disrst(stream, RPP_FUNC, &ret)) == NULL)
           break;
 
         if (ret != DIS_SUCCESS)
@@ -3558,7 +3553,7 @@ void im_request(
 
       for (i = 0;;i++)
         {
-        if ((cp = disrst(stream, &ret)) == NULL)
+        if ((cp = disrst(stream, RPP_FUNC, &ret)) == NULL)
           break;
 
         if (ret != DIS_SUCCESS)
@@ -3721,7 +3716,7 @@ void im_request(
 
       /* SUCCESS */
 
-      ret = diswsi(stream, ptask->ti_qs.ti_task);
+      ret = diswsi(stream, RPP_FUNC, ptask->ti_qs.ti_task);
 
       arrayfree(argv);
 
@@ -3741,7 +3736,7 @@ void im_request(
       ** )
       */
 
-      nodeid = disrsi(stream, &ret);
+      nodeid = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -3772,7 +3767,7 @@ void im_request(
 
       for (ptask = (task *)GET_NEXT(pjob->ji_tasks);ptask != NULL;ptask = (task *)GET_NEXT(ptask->ti_jobtask))
         {
-        ret = diswsi(stream, ptask->ti_qs.ti_task);
+        ret = diswsi(stream, RPP_FUNC, ptask->ti_qs.ti_task);
 
         if (ret != DIS_SUCCESS)
           break;
@@ -3793,7 +3788,7 @@ void im_request(
       ** )
       */
 
-      nodeid = disrsi(stream, &ret);
+      nodeid = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -3805,12 +3800,12 @@ void im_request(
         break;
         }
 
-      taskid = disrsi(stream, &ret);
+      taskid = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
 
-      sig = disrsi(stream, &ret);
+      sig = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -3894,7 +3889,7 @@ void im_request(
       ** )
       */
 
-      nodeid = disrsi(stream, &ret);
+      nodeid = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -3906,7 +3901,7 @@ void im_request(
         break;
         }
 
-      taskid = disrsi(stream, &ret);
+      taskid = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -3934,7 +3929,7 @@ void im_request(
         if (ret != DIS_SUCCESS)
           break;
 
-        ret = diswsi(stream, ptask->ti_qs.ti_exitstat);
+        ret = diswsi(stream, RPP_FUNC, ptask->ti_qs.ti_exitstat);
         }
       else
         {
@@ -3971,7 +3966,7 @@ void im_request(
       ** )
       */
 
-      nodeid = disrsi(stream, &ret);
+      nodeid = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -3983,7 +3978,7 @@ void im_request(
         break;
         }
 
-      taskid = disrsi(stream, &ret);
+      taskid = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -3997,7 +3992,7 @@ void im_request(
         break;
         }
 
-      name = disrst(stream, &ret);
+      name = disrst(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -4024,7 +4019,7 @@ void im_request(
       if (ret != DIS_SUCCESS)
         break;
 
-      ret = diswcs(stream, ip->ie_info, ip->ie_len);
+      ret = diswcs(stream, RPP_FUNC, ip->ie_info, ip->ie_len);
 
       break;
       }
@@ -4040,7 +4035,7 @@ void im_request(
       ** )
       */
 
-      nodeid = disrsi(stream, &ret);
+      nodeid = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -4071,7 +4066,7 @@ void im_request(
       if (ret != DIS_SUCCESS)
         break;
 
-      ret = diswst(stream, info);
+      ret = diswst(stream, RPP_FUNC, info);
 
       free(info);
 
@@ -4125,7 +4120,7 @@ void im_request(
       exitval = (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_OVERLMT1 | JOB_SVFLG_OVERLMT2)) ?
                 1 : 0;
 
-      ret = diswsi(stream, exitval);
+      ret = diswsi(stream, RPP_FUNC, exitval);
 
       if (ret != DIS_SUCCESS)
         break;
@@ -4135,17 +4130,17 @@ void im_request(
 
       /* ** Send the information tallied for the job.  */
 
-      ret = diswul(stream, resc_used(pjob, "cput", gettime));
+      ret = diswul(stream, RPP_FUNC, resc_used(pjob, "cput", gettime));
 
       if (ret != DIS_SUCCESS)
         break;
 
-      ret = diswul(stream, resc_used(pjob, "mem", getsize));
+      ret = diswul(stream, RPP_FUNC, resc_used(pjob, "mem", getsize));
 
       if (ret != DIS_SUCCESS)
         break;
 
-      ret = diswul(stream, resc_used(pjob, "vmem", getsize));
+      ret = diswul(stream, RPP_FUNC, resc_used(pjob, "vmem", getsize));
 
       break;
       }
@@ -4237,7 +4232,7 @@ void im_request(
       if (ret != DIS_SUCCESS)
         break;
 
-      ret = diswsi(stream, pjob->ji_taskid++);
+      ret = diswsi(stream, RPP_FUNC, pjob->ji_taskid++);
 
       break;
       }
@@ -4371,17 +4366,17 @@ void im_request(
 
           if (pjob->ji_resources != NULL)
             {
-            pjob->ji_resources[nodeidx - 1].nr_cput = disrul(stream, &ret);
+            pjob->ji_resources[nodeidx - 1].nr_cput = disrul(stream, RPP_FUNC, &ret);
 
             if (ret != DIS_SUCCESS)
               goto err;
 
-            pjob->ji_resources[nodeidx - 1].nr_mem = disrul(stream, &ret);
+            pjob->ji_resources[nodeidx - 1].nr_mem = disrul(stream, RPP_FUNC, &ret);
 
             if (ret != DIS_SUCCESS)
               goto err;
 
-            pjob->ji_resources[nodeidx - 1].nr_vmem = disrul(stream, &ret);
+            pjob->ji_resources[nodeidx - 1].nr_vmem = disrul(stream, RPP_FUNC, &ret);
 
             if (ret != DIS_SUCCESS)
               goto err;
@@ -4443,7 +4438,7 @@ void im_request(
           ** )
           */
 
-          taskid = disrsi(stream, &ret);
+          taskid = disrsi(stream, RPP_FUNC, &ret);
 
           if (ret != DIS_SUCCESS)
             goto err;
@@ -4471,7 +4466,7 @@ void im_request(
 
           tm_reply(ptask->ti_fd, TM_OKAY, event);
 
-          diswsi(ptask->ti_fd, taskid);
+          diswsi(ptask->ti_fd, FALSE, taskid);
 
           DIS_tcp_wflush(ptask->ti_fd);
 
@@ -4513,9 +4508,7 @@ void im_request(
           
           for (;;)
             {
-            DIS_rpp_reset();
-
-            taskid = disrsi(stream, &ret);
+            taskid = disrsi(stream, RPP_FUNC, &ret);
 
             if (ret != DIS_SUCCESS)
               {
@@ -4525,14 +4518,10 @@ void im_request(
               goto err;
               }
 
-            DIS_tcp_funcs();
-
-            diswsi(ptask->ti_fd, taskid);
+            diswsi(ptask->ti_fd, FALSE, taskid);
             }
 
-          DIS_tcp_funcs();
-
-          diswsi(ptask->ti_fd, TM_NULL_TASK);
+          diswsi(ptask->ti_fd, FALSE, TM_NULL_TASK);
 
           DIS_tcp_wflush(ptask->ti_fd);
 
@@ -4583,7 +4572,7 @@ void im_request(
           ** )
           */
 
-          exitval = disrsi(stream, &ret);
+          exitval = disrsi(stream, RPP_FUNC, &ret);
 
           if (ret != DIS_SUCCESS)
             goto err;
@@ -4612,7 +4601,7 @@ void im_request(
 
           tm_reply(ptask->ti_fd, TM_OKAY, event);
 
-          diswsi(ptask->ti_fd, exitval);
+          diswsi(ptask->ti_fd, FALSE, exitval);
 
           DIS_tcp_wflush(ptask->ti_fd);
 
@@ -4628,7 +4617,7 @@ void im_request(
           ** )
           */
 
-          info = disrcs(stream, &len, &ret);
+          info = disrcs(stream, RPP_FUNC, &len, &ret);
 
           if (ret != DIS_SUCCESS)
             goto err;
@@ -4649,7 +4638,7 @@ void im_request(
 
           tm_reply(ptask->ti_fd, TM_OKAY, event);
 
-          diswcs(ptask->ti_fd, info, len);
+          diswcs(ptask->ti_fd, FALSE, info, len);
 
           DIS_tcp_wflush(ptask->ti_fd);
 
@@ -4665,7 +4654,7 @@ void im_request(
           ** )
           */
 
-          info = disrst(stream, &ret);
+          info = disrst(stream, RPP_FUNC, &ret);
 
           if (ret != DIS_SUCCESS)
             goto err;
@@ -4684,7 +4673,7 @@ void im_request(
 
           tm_reply(ptask->ti_fd, TM_OKAY, event);
 
-          diswst(ptask->ti_fd, info);
+          diswst(ptask->ti_fd, FALSE, info);
 
           DIS_tcp_wflush(ptask->ti_fd);
 
@@ -4712,22 +4701,22 @@ void im_request(
             goto err;
             }
 
-          exitval = disrsi(stream, &ret);
+          exitval = disrsi(stream, RPP_FUNC, &ret);
 
           if (ret != DIS_SUCCESS)
             goto err;
 
-          pjob->ji_resources[nodeidx - 1].nr_cput = disrul(stream, &ret);
+          pjob->ji_resources[nodeidx - 1].nr_cput = disrul(stream, RPP_FUNC, &ret);
 
           if (ret != DIS_SUCCESS)
             goto err;
 
-          pjob->ji_resources[nodeidx - 1].nr_mem = disrul(stream, &ret);
+          pjob->ji_resources[nodeidx - 1].nr_mem = disrul(stream, RPP_FUNC, &ret);
 
           if (ret != DIS_SUCCESS)
             goto err;
 
-          pjob->ji_resources[nodeidx - 1].nr_vmem = disrul(stream, &ret);
+          pjob->ji_resources[nodeidx - 1].nr_vmem = disrul(stream, RPP_FUNC, &ret);
 
           if (ret != DIS_SUCCESS)
             goto err;
@@ -4774,7 +4763,7 @@ void im_request(
           if (check_ms(stream, pjob))
             goto fini;
 
-          taskid = disrsi(stream, &ret);
+          taskid = disrsi(stream, RPP_FUNC, &ret);
 
           if (ret != DIS_SUCCESS)
             goto err;
@@ -4819,37 +4808,37 @@ void im_request(
             if (ret != DIS_SUCCESS)
               goto done;
             
-            ret = diswsi(np->hn_stream, pjob->ji_nodeid);
+            ret = diswsi(np->hn_stream, RPP_FUNC, pjob->ji_nodeid);
             
             if (ret != DIS_SUCCESS)
               goto done;
             
-            ret = diswsi(np->hn_stream, taskid);
+            ret = diswsi(np->hn_stream, RPP_FUNC, taskid);
             
             if (ret != DIS_SUCCESS)
               goto done;
             
-            ret = diswst(np->hn_stream, pjob->ji_globid);
+            ret = diswst(np->hn_stream, RPP_FUNC, pjob->ji_globid);
             
             if (ret != DIS_SUCCESS)
               goto done;
             
             for (i = 0;argv[i];i++)
               {
-              ret = diswst(np->hn_stream, argv[i]);
+              ret = diswst(np->hn_stream, RPP_FUNC, argv[i]);
               
               if (ret != DIS_SUCCESS)
                 goto done;
               }
 
-            ret = diswst(np->hn_stream, "");
+            ret = diswst(np->hn_stream, RPP_FUNC, "");
 
             if (ret != DIS_SUCCESS)
               goto done;
 
             for (i = 0;envp[i];i++)
               {
-              ret = diswst(np->hn_stream, envp[i]);
+              ret = diswst(np->hn_stream, RPP_FUNC, envp[i]);
 
               if (ret != DIS_SUCCESS)
                 goto done;
@@ -4907,6 +4896,7 @@ void im_request(
 
           diswsi(
             ptask->ti_fd,
+            FALSE,
             (int)(ret == -1 ?  TM_ESYSTEM : taskid));
 
           DIS_tcp_wflush(ptask->ti_fd);
@@ -5170,19 +5160,19 @@ void im_request(
                 log_buffer);
               }
             
-            cput = disrul(stream, &ret);
+            cput = disrul(stream, RPP_FUNC, &ret);
             if (ret != DIS_SUCCESS)
               goto err;
             
-            mem  = disrul(stream, &ret);
+            mem  = disrul(stream, RPP_FUNC, &ret);
             if (ret != DIS_SUCCESS)
               goto err;
             
-            vmem  = disrul(stream, &ret);
+            vmem  = disrul(stream, RPP_FUNC, &ret);
             if (ret != DIS_SUCCESS)
               goto err;
             
-            nodeid = disrsi(stream, &ret);
+            nodeid = disrsi(stream, RPP_FUNC, &ret);
             if (ret != DIS_SUCCESS)
               goto err;
 
@@ -5247,19 +5237,19 @@ void im_request(
                 log_buffer);
               }
             
-            cput = disrul(stream, &ret);
+            cput = disrul(stream, RPP_FUNC, &ret);
             if (ret != DIS_SUCCESS)
               goto err;
 
-            mem  = disrul(stream, &ret);
+            mem  = disrul(stream, RPP_FUNC, &ret);
             if (ret != DIS_SUCCESS)
               goto err;
                       
-            vmem  = disrul(stream, &ret);           
+            vmem  = disrul(stream, RPP_FUNC, &ret);           
             if (ret != DIS_SUCCESS)
               goto err;
             
-            nodeid = disrsi(stream, &ret);
+            nodeid = disrsi(stream, RPP_FUNC, &ret);
             if (ret != DIS_SUCCESS)
               goto err;
             
@@ -5338,7 +5328,7 @@ void im_request(
       ** )
       */
 
-      errcode = disrsi(stream, &ret);
+      errcode = disrsi(stream, RPP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -5449,7 +5439,7 @@ void im_request(
 
           tm_reply(ptask->ti_fd, TM_ERROR, event);
 
-          diswsi(ptask->ti_fd, errcode);
+          diswsi(ptask->ti_fd, FALSE, errcode);
 
           DIS_tcp_wflush(ptask->ti_fd);
 
@@ -5506,7 +5496,7 @@ void im_request(
 
           tm_reply(ptask->ti_fd, TM_ERROR, efwd.fe_event);
 
-          diswsi(ptask->ti_fd, errcode);
+          diswsi(ptask->ti_fd, FALSE, errcode);
 
           DIS_tcp_wflush(ptask->ti_fd);
 
@@ -5734,27 +5724,27 @@ int tm_request(
     goto err;
     }
 
-  jobid = disrst(fd, &ret);
+  jobid = disrst(fd, TCP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  cookie = disrst(fd, &ret);
+  cookie = disrst(fd, TCP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  command = disrsi(fd, &ret);
+  command = disrsi(fd, TCP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  event = disrsi(fd, &ret);
+  event = disrsi(fd, TCP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
 
-  fromtask = disrui(fd, &ret);
+  fromtask = disrui(fd, TCP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
@@ -5780,15 +5770,15 @@ int tm_request(
     reply = TRUE;
 
     /* Read the session id and alt/job id from tm_adopt() */
-    sid = disrsi(fd, &ret);
+    sid = disrsi(fd, TCP_FUNC, &ret);
 
     if (ret != DIS_SUCCESS) goto err;
 
-    pid = disrsi(fd, &ret);
+    pid = disrsi(fd, TCP_FUNC, &ret);
 
     if (ret != DIS_SUCCESS) goto err;
 
-    id = disrst(fd, &ret);
+    id = disrst(fd, TCP_FUNC, &ret);
 
     if (ret != DIS_SUCCESS)
       {
@@ -5806,9 +5796,8 @@ int tm_request(
 
     /* Let the tm_adopt() call know if it was adopted or
        not. This is synchronous - doesn't use the event stuff.*/
-    DIS_tcp_funcs();    /* do I really need this? */
 
-    ret = diswsi(fd, adoptStatus);
+    ret = diswsi(fd, TCP_FUNC, adoptStatus);
 
     if (ret != DIS_SUCCESS) goto err;
 
@@ -5874,7 +5863,7 @@ int tm_request(
     if (ret != DIS_SUCCESS)
       goto done;
 
-    ret = diswsi(fd, TM_ENOTFOUND);
+    ret = diswsi(fd, TCP_FUNC, TM_ENOTFOUND);
 
     if (ret != DIS_SUCCESS)
       goto done;
@@ -5955,7 +5944,7 @@ int tm_request(
 
       vnodenum = pjob->ji_numvnod;
 
-      ret = diswui(fd, vnodenum); /* num nodes */
+      ret = diswui(fd, TCP_FUNC, vnodenum); /* num nodes */
 
       if (ret != DIS_SUCCESS)
         goto done;
@@ -5964,23 +5953,23 @@ int tm_request(
 
       for (i = 0;i < vnodenum;i++)
         {
-        ret = diswsi(fd, pnode[i].vn_node);
+        ret = diswsi(fd, TCP_FUNC, pnode[i].vn_node);
 
         if (ret != DIS_SUCCESS)
           goto done;
         }
 
-      ret = diswst(fd, ptask->ti_qs.ti_parentjobid); /* dad job */
+      ret = diswst(fd, TCP_FUNC, ptask->ti_qs.ti_parentjobid); /* dad job */
 
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswsi(fd, ptask->ti_qs.ti_parentnode); /* dad node */
+      ret = diswsi(fd, TCP_FUNC, ptask->ti_qs.ti_parentnode); /* dad node */
 
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswsi(fd, ptask->ti_qs.ti_parenttask); /* dad task */
+      ret = diswsi(fd, TCP_FUNC, ptask->ti_qs.ti_parenttask); /* dad task */
 
       if (ret != DIS_SUCCESS)
         goto done;
@@ -6004,12 +5993,12 @@ int tm_request(
       ** )
       */
 
-      name = disrst(fd, &ret);
+      name = disrst(fd, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
 
-      info = disrcs(fd, &len, &ret);
+      info = disrcs(fd, TCP_FUNC, &len, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -6056,7 +6045,7 @@ int tm_request(
 
       tm_reply(fd, TM_ERROR, event);
 
-      diswsi(fd, TM_ENOTIMPLEMENTED);
+      diswsi(fd, TCP_FUNC, TM_ENOTIMPLEMENTED);
 
       DIS_tcp_wflush(fd);
 
@@ -6083,7 +6072,7 @@ int tm_request(
   ** )
   */
 
-  nodeid = disrui(fd, &ret);
+  nodeid = disrui(fd, TCP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
@@ -6108,7 +6097,7 @@ int tm_request(
     if (ret != DIS_SUCCESS)
       goto done;
 
-    ret = diswsi(fd, TM_ENOTFOUND);
+    ret = diswsi(fd, TCP_FUNC, TM_ENOTFOUND);
 
     if (ret != DIS_SUCCESS)
       goto done;
@@ -6161,7 +6150,7 @@ int tm_request(
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswui(phost->hn_stream, pjob->ji_nodeid); /* XXX */
+        ret = diswui(phost->hn_stream, RPP_FUNC, pjob->ji_nodeid); /* XXX */
 
         if (ret != DIS_SUCCESS)
           goto done;
@@ -6187,13 +6176,13 @@ int tm_request(
            ptask;
            ptask = (task *)GET_NEXT(ptask->ti_jobtask))
         {
-        ret = diswui(fd, ptask->ti_qs.ti_task);
+        ret = diswui(fd, TCP_FUNC, ptask->ti_qs.ti_task);
 
         if (ret != DIS_SUCCESS)
           goto done;
         }
 
-      ret = diswui(fd, TM_NULL_TASK);
+      ret = diswui(fd, TCP_FUNC, TM_NULL_TASK);
 
       break;
 
@@ -6218,7 +6207,7 @@ int tm_request(
         jobid,
         nodeid))
 
-      numele = disrui(fd, &ret);
+      numele = disrui(fd, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto done;
@@ -6229,7 +6218,7 @@ int tm_request(
 
       for (i = 0;i < numele;i++)
         {
-        argv[i] = disrst(fd, &ret);
+        argv[i] = disrst(fd, TCP_FUNC, &ret);
 
         if (ret != DIS_SUCCESS)
           {
@@ -6251,7 +6240,7 @@ int tm_request(
         {
         char *env;
 
-        env = disrst(fd, &ret);
+        env = disrst(fd, TCP_FUNC, &ret);
 
         if ((ret != DIS_SUCCESS) && (ret != DIS_EOD))
           {
@@ -6376,6 +6365,7 @@ int tm_request(
 
         ret = diswsi(
                 fd,
+                TCP_FUNC,
                 ((i == TM_ERROR) ?  TM_ESYSTEM : ptask->ti_qs.ti_task));
 
         goto done;
@@ -6462,37 +6452,37 @@ int tm_request(
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswui(phost->hn_stream, pjob->ji_nodeid);
+      ret = diswui(phost->hn_stream, RPP_FUNC, pjob->ji_nodeid);
 
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswui(phost->hn_stream, taskid);
+      ret = diswui(phost->hn_stream, RPP_FUNC, taskid);
 
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswst(phost->hn_stream, pjob->ji_globid);
+      ret = diswst(phost->hn_stream, RPP_FUNC, pjob->ji_globid);
 
       if (ret != DIS_SUCCESS)
         goto done;
 
       for (i = 0;argv[i];i++)
         {
-        ret = diswst(phost->hn_stream, argv[i]);
+        ret = diswst(phost->hn_stream, RPP_FUNC, argv[i]);
 
         if (ret != DIS_SUCCESS)
           goto done;
         }
 
-      ret = diswst(phost->hn_stream, "");
+      ret = diswst(phost->hn_stream, RPP_FUNC, "");
 
       if (ret != DIS_SUCCESS)
         goto done;
 
       for (i = 0;envp[i];i++)
         {
-        ret = diswst(phost->hn_stream, envp[i]);
+        ret = diswst(phost->hn_stream, RPP_FUNC, envp[i]);
 
         if (ret != DIS_SUCCESS)
           goto done;
@@ -6524,12 +6514,12 @@ int tm_request(
       ** )
       */
 
-      taskid = disrui(fd, &ret);
+      taskid = disrui(fd, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
 
-      signum = disrui(fd, &ret);
+      signum = disrui(fd, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -6557,17 +6547,17 @@ int tm_request(
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswui(phost->hn_stream, pjob->ji_nodeid); /* XXX */
+        ret = diswui(phost->hn_stream, RPP_FUNC, pjob->ji_nodeid); /* XXX */
 
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswsi(phost->hn_stream, taskid);
+        ret = diswsi(phost->hn_stream, RPP_FUNC, taskid);
 
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswsi(phost->hn_stream, signum);
+        ret = diswsi(phost->hn_stream, RPP_FUNC, signum);
 
         if (ret != DIS_SUCCESS)
           goto done;
@@ -6594,7 +6584,7 @@ int tm_request(
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswsi(fd, TM_ENOTFOUND);
+        ret = diswsi(fd, TCP_FUNC, TM_ENOTFOUND);
 
         break;
         }
@@ -6627,7 +6617,7 @@ int tm_request(
       ** )
       */
 
-      taskid = disrui(fd, &ret);
+      taskid = disrui(fd, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -6662,12 +6652,12 @@ int tm_request(
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswui(phost->hn_stream, pjob->ji_nodeid);
+        ret = diswui(phost->hn_stream, RPP_FUNC, pjob->ji_nodeid);
 
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswsi(phost->hn_stream, taskid);
+        ret = diswsi(phost->hn_stream, RPP_FUNC, taskid);
 
         if (ret != DIS_SUCCESS)
           goto done;
@@ -6695,7 +6685,7 @@ int tm_request(
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswsi(fd, TM_ENOTFOUND);
+        ret = diswsi(fd, TCP_FUNC, TM_ENOTFOUND);
 
         break;
         }
@@ -6707,7 +6697,7 @@ int tm_request(
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswsi(fd, ptask->ti_qs.ti_exitstat);
+        ret = diswsi(fd, TCP_FUNC, ptask->ti_qs.ti_exitstat);
         }
       else
         {
@@ -6739,12 +6729,12 @@ int tm_request(
       ** )
       */
 
-      taskid = disrui(fd, &ret);
+      taskid = disrui(fd, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
 
-      name = disrst(fd, &ret);
+      name = disrst(fd, TCP_FUNC, &ret);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -6781,15 +6771,15 @@ int tm_request(
 
         if (ret == DIS_SUCCESS)
           {
-          ret = diswui(phost->hn_stream, pjob->ji_nodeid);
+          ret = diswui(phost->hn_stream, RPP_FUNC, pjob->ji_nodeid);
 
           if (ret == DIS_SUCCESS)
             {
-            ret = diswsi(phost->hn_stream, taskid);
+            ret = diswsi(phost->hn_stream, RPP_FUNC, taskid);
 
             if (ret == DIS_SUCCESS)
               {
-              ret = diswst(phost->hn_stream, name);
+              ret = diswst(phost->hn_stream, RPP_FUNC, name);
               }
             }
           }
@@ -6823,7 +6813,7 @@ int tm_request(
           if (ret != DIS_SUCCESS)
             goto done;
 
-          ret = diswcs(fd, ip->ie_info, ip->ie_len);
+          ret = diswcs(fd, TCP_FUNC, ip->ie_info, ip->ie_len);
 
           break;
           }
@@ -6834,7 +6824,7 @@ int tm_request(
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswsi(fd, TM_ENOTFOUND);
+      ret = diswsi(fd, TCP_FUNC, TM_ENOTFOUND);
 
       break;
 
@@ -6872,7 +6862,7 @@ int tm_request(
         if (ret != DIS_SUCCESS)
           goto done;
 
-        ret = diswui(phost->hn_stream, pjob->ji_nodeid);
+        ret = diswui(phost->hn_stream, RPP_FUNC, pjob->ji_nodeid);
 
         if (ret != DIS_SUCCESS)
           goto done;
@@ -6895,7 +6885,7 @@ int tm_request(
       if (ret != DIS_SUCCESS)
         goto done;
 
-      ret = diswst(fd, info);
+      ret = diswst(fd, TCP_FUNC, info);
 
       free(info);
 
@@ -6908,7 +6898,7 @@ int tm_request(
 
       tm_reply(fd, TM_ERROR, event);
 
-      diswsi(fd, TM_EUNKNOWNCMD);
+      diswsi(fd, TCP_FUNC, TM_EUNKNOWNCMD);
 
       DIS_tcp_wflush(fd);
 
@@ -7273,12 +7263,14 @@ char *get_local_script_path(job *pjob, char *base)
 
 /* Get the job info. If the job exists get it. If not make a new one */
 int get_job_struct(
+
   job **pjob, 
   char *jobid, 
   int command, 
   int stream, 
   struct sockaddr_in *addr,
   tm_node_id nodeid)
+
   {
   char *id = "get_job_struct";
   int ret;
@@ -7345,7 +7337,7 @@ int get_job_struct(
     goto done;
     }
   
-  new_job->ji_portout = disrsi(stream, &ret);
+  new_job->ji_portout = disrsi(stream, RPP_FUNC, &ret);
   
   if (ret != DIS_SUCCESS)
     {
@@ -7361,7 +7353,7 @@ int get_job_struct(
     goto done;
     }
   
-  new_job->ji_porterr = disrsi(stream, &ret);
+  new_job->ji_porterr = disrsi(stream, RPP_FUNC, &ret);
   
   if (ret != DIS_SUCCESS)
     {

@@ -83,6 +83,8 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 
 
 
@@ -90,6 +92,7 @@
 int disrsi_(
 
   int       stream,
+  int       rpp,
   int      *negate,
   unsigned *value,
   unsigned  count)
@@ -100,13 +103,24 @@ int disrsi_(
   unsigned ndigs;
   char  *cp;
   char  scratch[DIS_BUFSIZ+1];
+  int (*dis_getc)(int);
+  int (*dis_gets)(int, char *, size_t);
 
   assert(negate != NULL);
   assert(value != NULL);
   assert(count);
   assert(stream >= 0);
-  assert(dis_getc != NULL);
-  assert(dis_gets != NULL);
+
+  if (rpp)
+    {
+    dis_getc = rpp_getc;
+    dis_gets = (int (*)(int, char *, size_t))rpp_read;
+    }
+  else
+    {
+    dis_getc = tcp_getc;
+    dis_gets = tcp_gets;
+    }
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   if (dis_umaxd == 0)
@@ -213,7 +227,7 @@ int disrsi_(
           }
         }    /* END if (count > 1) */
 
-      return(disrsi_(stream, negate, value, ndigs));
+      return(disrsi_(stream, rpp, negate, value, ndigs));
 
       /*NOTREACHED*/
 

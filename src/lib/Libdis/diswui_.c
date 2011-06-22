@@ -84,23 +84,34 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 
-int
-diswui_(int stream, unsigned value)
+int diswui_(
+    
+  int      stream,
+  int      rpp,
+  unsigned value)
+
   {
   unsigned ndigs;
   char  *cp = NULL;
   char  scratch[DIS_BUFSIZ+1];
+  
+  int (*dis_puts)(int stream, const char *, size_t);
 
-  assert(stream >= 0);
-  assert(dis_puts != NULL);
+  if (rpp)
+    dis_puts = (int (*)(int, const char *, size_t))rpp_write;
+  else
+    dis_puts = tcp_puts;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   cp = discui_(&scratch[DIS_BUFSIZ], value, &ndigs);
-  if(cp == NULL)
-  {
-	return(DIS_PROTO);
-  }
+  if  (cp == NULL)
+    {
+    return(DIS_PROTO);
+    }
+
   *--cp = '+';
 
   while (ndigs > 1)

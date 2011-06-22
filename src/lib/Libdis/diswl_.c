@@ -101,6 +101,8 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 
 /* to work around a problem in a compiler */
 #if SIZEOF_LONG_DOUBLE == SIZEOF_DOUBLE
@@ -130,8 +132,13 @@
 #endif
 
 
-int
-diswl_(int stream, dis_long_double_t value, unsigned ndigs)
+int diswl_(
+    
+  int               stream,
+  int               rpp,
+  dis_long_double_t value,
+  unsigned          ndigs)
+
   {
   int  c;
   int  expon;
@@ -142,11 +149,22 @@ diswl_(int stream, dis_long_double_t value, unsigned ndigs)
   char  *ocp;
   dis_long_double_t ldval;
   char  scratch[DIS_BUFSIZ+1];
+  int (*dis_puts)(int stream, const char *string, size_t count);
+  int (*disw_commit)(int stream, int commit);
 
   assert(ndigs > 0 && ndigs <= LDBL_DIG);
   assert(stream >= 0);
-  assert(dis_puts != NULL);
-  assert(disw_commit != NULL);
+  
+  if (rpp)
+    {
+    dis_puts = (int (*)(int, const char *, size_t))rpp_write;
+    disw_commit = rpp_wcommit;
+    }
+  else
+    {
+    dis_puts = tcp_puts;
+    disw_commit = tcp_wcommit;
+    }
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   /* Make zero a special case.  If we don't it will blow exponent  */
@@ -250,7 +268,7 @@ diswl_(int stream, dis_long_double_t value, unsigned ndigs)
 
   /* If that worked, follow with the exponent, commit, and return. */
   if (retval == DIS_SUCCESS)
-    return (diswsi(stream, expon));
+    return (diswsi(stream, rpp, expon));
 
   /* If coefficient didn't work, negative commit and return the error. */
   return (((*disw_commit)(stream, FALSE) < 0)  ? DIS_NOCOMMIT : retval);

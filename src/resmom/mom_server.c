@@ -309,8 +309,6 @@ char TORQUE_JData[MMAX_LINE];
 
 void state_to_server(int, int);
 
-extern void DIS_rpp_reset(void);
-
 /**
  * mom_server_init
  *
@@ -809,21 +807,19 @@ int is_compose(
     return(DIS_EOF);
     }
 
-  DIS_rpp_reset();
-
-  if ((ret = diswsi(pms->SStream, IS_PROTOCOL)) != DIS_SUCCESS)
+  if ((ret = diswsi(pms->SStream, RPP_FUNC, IS_PROTOCOL)) != DIS_SUCCESS)
     {
     mom_server_stream_error(pms, "is_compose", "writing protocol");
 
     return(ret);
     }
-  else if ((ret = diswsi(pms->SStream, IS_PROTOCOL_VER)) != DIS_SUCCESS)
+  else if ((ret = diswsi(pms->SStream, RPP_FUNC, IS_PROTOCOL_VER)) != DIS_SUCCESS)
     {
     mom_server_stream_error(pms, "is_compose", "writing protocol version");
 
     return(ret);
     }
-  else if ((ret = diswsi(pms->SStream, command)) != DIS_SUCCESS)
+  else if ((ret = diswsi(pms->SStream, RPP_FUNC, command)) != DIS_SUCCESS)
     {
     mom_server_stream_error(pms, "is_compose", "writing protocol version");
 
@@ -1216,13 +1212,13 @@ void mom_server_update_stat(
     return;
     }
 
-  ret = diswus(pms->SStream, pbs_mom_port);
+  ret = diswus(pms->SStream, RPP_FUNC, pbs_mom_port);
   if (ret)
     {
     return;
     }
   
-  ret = diswus(pms->SStream, pbs_rm_port);
+  ret = diswus(pms->SStream, RPP_FUNC, pbs_rm_port);
   if (ret)
     {
     return;
@@ -1241,7 +1237,7 @@ void mom_server_update_stat(
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
 
-    if (diswst(pms->SStream,cp) != DIS_SUCCESS)
+    if (diswst(pms->SStream,RPP_FUNC,cp) != DIS_SUCCESS)
       {
       mom_server_stream_error(pms, id, "writing status string");
 
@@ -1415,13 +1411,13 @@ int mom_server_send_hello(
     return(-1);
     }
 
-  ret = diswus(pms->SStream, pbs_mom_port);
+  ret = diswus(pms->SStream, RPP_FUNC, pbs_mom_port);
   if (ret)
     {
     return(-1);
     }
   
-  ret = diswus(pms->SStream, pbs_rm_port);
+  ret = diswus(pms->SStream, RPP_FUNC, pbs_rm_port);
   if (ret)
     {
     return(-1);
@@ -2005,7 +2001,7 @@ void is_request(
   if ((pms = mom_server_valid_message_source(stream)) == NULL)
     return;
 
-  command = disrsi(stream, &ret);
+  command = disrsi(stream, RPP_FUNC, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
@@ -2056,9 +2052,9 @@ void is_request(
         break;
         }
 
-      diswus(pms->SStream, pbs_mom_port);
+      diswus(pms->SStream, RPP_FUNC, pbs_mom_port);
       
-      diswus(pms->SStream, pbs_rm_port);
+      diswus(pms->SStream, RPP_FUNC, pbs_rm_port);
 
       if (mom_server_flush_io(pms, id, "flush") != DIS_SUCCESS)
         break;
@@ -2074,7 +2070,7 @@ void is_request(
     case IS_CLUSTER_ADDRS:
       for (;;)
         {
-        ipaddr = disrul(stream, &ret);
+        ipaddr = disrul(stream, RPP_FUNC, &ret);
 
         if (ret != DIS_SUCCESS)
           break;
@@ -2533,19 +2529,19 @@ void state_to_server(
     return;
     }
 
-  ret = diswus(pms->SStream, pbs_mom_port);
+  ret = diswus(pms->SStream, RPP_FUNC, pbs_mom_port);
   if (ret)
     {
     return;
     }
   
-  ret = diswus(pms->SStream, pbs_rm_port);
+  ret = diswus(pms->SStream, RPP_FUNC, pbs_rm_port);
   if (ret)
     {
     return;
     }
 
-  if (diswui(pms->SStream, internal_state) != DIS_SUCCESS)
+  if (diswui(pms->SStream, RPP_FUNC, internal_state) != DIS_SUCCESS)
     {
     mom_server_stream_error(pms, id, "writing internal state");
 

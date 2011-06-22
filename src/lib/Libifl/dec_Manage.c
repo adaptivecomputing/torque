@@ -116,14 +116,14 @@ int decode_DIS_Manage(
 
   /* parse request */
 
-  preq->rq_ind.rq_manager.rq_cmd = disrui(sock, &rc);
+  preq->rq_ind.rq_manager.rq_cmd = disrui(sock, TCP_FUNC, &rc);
 
   if (rc)
     {
     return(rc);
     }
 
-  preq->rq_ind.rq_manager.rq_objtype = disrui(sock, &rc);
+  preq->rq_ind.rq_manager.rq_objtype = disrui(sock, TCP_FUNC, &rc);
 
   if (rc)
     {
@@ -133,6 +133,7 @@ int decode_DIS_Manage(
   rc = disrfst(
 
          sock,
+         TCP_FUNC,
          PBS_MAXSVRJOBID + 1,
          preq->rq_ind.rq_manager.rq_objname);
 

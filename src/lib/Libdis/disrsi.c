@@ -107,11 +107,14 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 #undef disrsi
 
 int disrsi(
 
   int  stream,
+  int  rpp,
   int *retval)
 
   {
@@ -119,13 +122,18 @@ int disrsi(
   int  negate;
   int  value;
   unsigned uvalue;
+  int (*disr_commit)(int stream, int commit);
 
   assert(retval != NULL);
-  assert(disr_commit != NULL);
+
+  if (rpp)
+    disr_commit = rpp_rcommit;
+  else
+    disr_commit = tcp_rcommit;
 
   value = 0;
 
-  switch (locret = disrsi_(stream, &negate, &uvalue, 1))
+  switch (locret = disrsi_(stream, rpp, &negate, &uvalue, 1))
     {
 
     case DIS_SUCCESS:
@@ -147,7 +155,6 @@ int disrsi(
     }
 
   *retval = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?
-
             DIS_NOCOMMIT : locret;
 
   return(value);

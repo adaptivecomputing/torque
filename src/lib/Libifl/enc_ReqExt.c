@@ -88,20 +88,23 @@
 
 #include "dis.h"
 
-int
-encode_DIS_ReqExtend(int sock, char *extend)
+int encode_DIS_ReqExtend(
+    
+  int   sock,
+  char *extend)
+
   {
   int rc;
 
   if ((extend == (char *)0) || (*extend == '\0'))
     {
-    rc = diswui(sock, 0);
+    rc = diswui(sock, TCP_FUNC, 0);
     }
   else
     {
-    if ((rc = diswui(sock, 1)) == 0)
+    if ((rc = diswui(sock, TCP_FUNC, 1)) == 0)
       {
-      rc = diswst(sock, extend);
+      rc = diswst(sock, TCP_FUNC, extend);
       }
     }
 

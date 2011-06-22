@@ -1553,21 +1553,21 @@ int open_rpp_stream_to_sisters(
 	  				ep->ee_event,
 	  				TM_NULL_TASK);
 	  
-	  diswsi(stream, i);		/* nodeid of receiver */
-	  diswsi(stream, pjob->ji_numnodes);  /* number of nodes */
+	  diswsi(stream, RPP_FUNC, i);  /* nodeid of receiver */
+	  diswsi(stream, RPP_FUNC, pjob->ji_numnodes);  /* number of nodes */
     if (flag == MOTHER_SUPERIOR)
       {
-      diswsi(stream, pjob->ji_portout);	/* out port number */
-      diswsi(stream, pjob->ji_porterr);	/* err port number */
+      diswsi(stream, RPP_FUNC, pjob->ji_portout);  /* out port number */
+      diswsi(stream, RPP_FUNC, pjob->ji_porterr);  /* err port number */
       }
     else
       {
-      diswsi(stream, pjob->ji_im_portout);	/* out port number */
-      diswsi(stream, pjob->ji_im_porterr);	/* err port number */
+      diswsi(stream, RPP_FUNC, pjob->ji_im_portout); /* out port number */
+      diswsi(stream, RPP_FUNC, pjob->ji_im_porterr); /* err port number */
       }
-	  diswst(stream, sister_list[i-1]->host_list ); /* sisters for this intermediate mom */
-	  diswst(stream, sister_list[i-1]->port_list ); /* sisters for this intermediate mom */
-	  diswsi(stream, sister_list[i-1]->count ); /* how many sisters in this radix group */
+	  diswst(stream, RPP_FUNC, sister_list[i-1]->host_list ); /* sisters for this intermediate mom */
+	  diswst(stream, RPP_FUNC, sister_list[i-1]->port_list ); /* sisters for this intermediate mom */
+	  diswsi(stream, RPP_FUNC, sister_list[i-1]->count );     /* how many sisters in this radix group */
 	  
 	  /* write jobattrs */
 	  
@@ -6132,10 +6132,10 @@ void start_exec(
 								ep->ee_event,
 								TM_NULL_TASK);
 
-			diswsi(stream, i);				/* nodeid of receiver */
-			diswsi(stream, nodenum); /* number of nodes */
-			diswsi(stream, pjob->ji_portout);	/* out port number */
-			diswsi(stream, pjob->ji_porterr);	/* err port number */
+			diswsi(stream, RPP_FUNC, i);                /* nodeid of receiver */
+			diswsi(stream, RPP_FUNC, nodenum);          /* number of nodes */
+			diswsi(stream, RPP_FUNC, pjob->ji_portout); /* out port number */
+			diswsi(stream, RPP_FUNC, pjob->ji_porterr); /* err port number */
 
 			/* write jobattrs */
 

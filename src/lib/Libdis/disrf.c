@@ -102,6 +102,8 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 #undef disrf
 
 static unsigned ndigs;
@@ -111,6 +113,7 @@ static double dval;
 static int disrd_(
 
   int          stream,
+  int          rpp,
   unsigned int count)
 
   {
@@ -119,11 +122,26 @@ static int disrd_(
   unsigned int  unum;
   char  *cp;
   char scratch[DIS_BUFSIZ+1];
+  int (*dis_getc)(int);
+  int (*disr_skip)(int,size_t);
+  int (*dis_gets)(int, char *, size_t);
 
   if (dis_umaxd == 0)
     disiui_();
 
   memset(scratch, 0, DIS_BUFSIZ+1);
+
+  if (rpp)
+    {
+    dis_getc = rpp_getc;
+    dis_gets = (int (*)(int, char *, size_t))rpp_read;
+    }
+  else
+    {
+    dis_getc = tcp_getc;
+    dis_gets = tcp_gets;
+    disr_skip = tcp_rskip;
+    }
 
   c = (*dis_getc)(stream);
 
@@ -287,7 +305,7 @@ static int disrd_(
           }
         }
 
-      return(disrd_(stream, unum));
+      return(disrd_(stream, rpp, unum));
 
       /*NOTREACHED*/
 
@@ -329,6 +347,7 @@ static int disrd_(
 float disrf(
 
   int  stream,
+  int  rpp,
   int *retval)
 
   {
@@ -336,19 +355,33 @@ float disrf(
   unsigned uexpon;
   int  locret;
   int  negate;
+  int (*dis_getc)(int);
+  int (*dis_gets)(int, char *, size_t);
+  int (*disr_skip)(int,size_t);
+  int (*disr_commit)(int, int);
 
   assert(retval != NULL);
   assert(stream >= 0);
-  assert(dis_getc != NULL);
-  assert(dis_gets != NULL);
-  assert(disr_skip != NULL);
-  assert(disr_commit != NULL);
+
+  if (rpp)
+    {
+    dis_getc = rpp_getc;
+    dis_gets = (int (*)(int, char *, size_t))rpp_read;
+    disr_commit = rpp_rcommit;
+    }
+  else
+    {
+    dis_getc = tcp_getc;
+    dis_gets = tcp_gets;
+    disr_skip = tcp_rskip;
+    disr_commit = tcp_rcommit;
+    }
 
   dval = 0.0;
 
-  if ((locret = disrd_(stream, 1)) == DIS_SUCCESS)
+  if ((locret = disrd_(stream, rpp, 1)) == DIS_SUCCESS)
     {
-    locret = disrsi_(stream, &negate, &uexpon, 1);
+    locret = disrsi_(stream, rpp, &negate, &uexpon, 1);
 
     if (locret == DIS_SUCCESS)
       {

@@ -108,8 +108,11 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int
-decode_DIS_attropl(int sock, struct attropl **ppatt)
+int decode_DIS_attropl(
+    
+  int              sock,
+  struct attropl **ppatt)
+
   {
   int   hasresc;
   unsigned int  i;
@@ -122,14 +125,14 @@ decode_DIS_attropl(int sock, struct attropl **ppatt)
   int   rc;
 
 
-  numpat = disrui(sock, &rc);
+  numpat = disrui(sock, TCP_FUNC, &rc);
 
   if (rc) return rc;
 
   for (i = 0; i < numpat; ++i)
     {
 
-    name_len = disrui(sock, &rc); /* name_len is unused here */
+    name_len = disrui(sock, TCP_FUNC, &rc); /* name_len is unused here */
 
     if (rc) break;
 
@@ -146,26 +149,26 @@ decode_DIS_attropl(int sock, struct attropl **ppatt)
 
     pat->value    = (char *)0;
 
-    pat->name = disrst(sock, &rc);
+    pat->name = disrst(sock, TCP_FUNC, &rc);
 
     if (rc) break;
 
-    hasresc = disrui(sock, &rc);
+    hasresc = disrui(sock, TCP_FUNC, &rc);
 
     if (rc) break;
 
     if (hasresc)
       {
-      pat->resource = disrst(sock, &rc);
+      pat->resource = disrst(sock, TCP_FUNC, &rc);
 
       if (rc) break;
       }
 
-    pat->value = disrst(sock, &rc);
+    pat->value = disrst(sock, TCP_FUNC, &rc);
 
     if (rc) break;
 
-    pat->op = (enum batch_op)disrui(sock, &rc);
+    pat->op = (enum batch_op)disrui(sock, TCP_FUNC, &rc);
 
     if (rc) break;
 

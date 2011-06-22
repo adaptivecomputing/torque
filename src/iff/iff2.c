@@ -346,7 +346,7 @@ int main(
   /* send authentication information */
 
   if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_AuthenUser, pwent->pw_name)) ||
-      (rc = diswui(sock, parentport)) ||
+      (rc = diswui(sock, TCP_FUNC, parentport)) ||
       (rc = encode_DIS_ReqExtend(sock, NULL)))
     {
     /* FAILURE */

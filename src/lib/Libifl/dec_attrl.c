@@ -108,8 +108,11 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int
-decode_DIS_attrl(int sock, struct attrl **ppatt)
+int decode_DIS_attrl(
+    
+  int            sock,
+  struct attrl **ppatt)
+
   {
   int   hasresc;
   unsigned int  i;
@@ -122,14 +125,14 @@ decode_DIS_attrl(int sock, struct attrl **ppatt)
   int   rc;
 
 
-  numpat = disrui(sock, &rc);
+  numpat = disrui(sock, TCP_FUNC, &rc);
 
   if (rc) return rc;
 
   for (i = 0; i < numpat; ++i)
     {
 
-    name_len = disrui(sock, &rc); /* name_len is unusued here */
+    name_len = disrui(sock, TCP_FUNC, &rc); /* name_len is unusued here */
 
     if (rc) break;
 
@@ -146,27 +149,27 @@ decode_DIS_attrl(int sock, struct attrl **ppatt)
 
     pat->value    = (char *)0;
 
-    pat->name = disrst(sock, &rc);
+    pat->name = disrst(sock, TCP_FUNC, &rc);
 
     if (rc) break;
 
-    hasresc = disrui(sock, &rc);
+    hasresc = disrui(sock, TCP_FUNC, &rc);
 
     if (rc) break;
 
     if (hasresc)
       {
-      pat->resource = disrst(sock, &rc);
+      pat->resource = disrst(sock, TCP_FUNC, &rc);
 
       if (rc) break;
       }
 
-    pat->value = disrst(sock, &rc);
+    pat->value = disrst(sock, TCP_FUNC, &rc);
 
     if (rc) break;
 
     /* discard the op field */
-    (void)disrui(sock, &rc);
+    (void)disrui(sock, TCP_FUNC, &rc);
 
     if (rc) break;
 

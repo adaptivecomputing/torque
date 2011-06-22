@@ -98,11 +98,16 @@
 
 #include "dis.h"
 #include "dis_.h"
+#include "rpp.h"
+#include "tcp.h"
 #undef diswf
 
-int diswf(stream, value)
-int   stream;
-double  value;
+int diswf(
+    
+  int    stream,
+  int    rpp,
+  double value)
+  
   {
   int  c;
   int  expon;
@@ -114,10 +119,21 @@ double  value;
   char  *ocp;
   double  dval;
   char  scratch[DIS_BUFSIZ+1];
+  int (*dis_puts)(int stream, const char *string, size_t count);
+  int (*disw_commit)(int stream, int commit);
 
   assert(stream >= 0);
-  assert(dis_puts != NULL);
-  assert(disw_commit != NULL);
+
+  if (rpp)
+    {
+    dis_puts = (int (*)(int, const char *, size_t))rpp_write;
+    disw_commit = rpp_wcommit;
+    }
+  else
+    {
+    dis_puts = tcp_puts;
+    disw_commit = tcp_wcommit;
+    }
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   /* Make zero a special case.  If we don't it will blow exponent  */
@@ -223,7 +239,7 @@ double  value;
 
   /* If that worked, follow with the exponent, commit, and return. */
   if (retval == DIS_SUCCESS)
-    return (diswsi(stream, expon));
+    return (diswsi(stream, rpp, expon));
 
   /* If coefficient didn't work, negative commit and return the error. */
   return (((*disw_commit)(stream, FALSE) < 0)  ? DIS_NOCOMMIT : retval);

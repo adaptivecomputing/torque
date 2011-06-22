@@ -99,22 +99,25 @@
 #include "batch_request.h"
 #include "dis.h"
 
-int
-decode_DIS_MessageJob(int sock, struct batch_request *preq)
+int decode_DIS_MessageJob(
+    
+  int                   sock,
+  struct batch_request *preq)
+
   {
   int rc;
 
   preq->rq_ind.rq_message.rq_text = 0;
 
-  rc = disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_message.rq_jid);
+  rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_message.rq_jid);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_message.rq_file = disrui(sock, &rc);
+  preq->rq_ind.rq_message.rq_file = disrui(sock, TCP_FUNC, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_message.rq_text = disrst(sock, &rc);
+  preq->rq_ind.rq_message.rq_text = disrst(sock, TCP_FUNC, &rc);
 
   return rc;
   }

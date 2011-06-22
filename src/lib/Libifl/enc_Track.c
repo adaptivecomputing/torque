@@ -101,15 +101,18 @@
 #include "dis.h"
 
 
-int
-encode_DIS_TrackJob(int sock, struct batch_request *preq)
+int encode_DIS_TrackJob(
+    
+  int                   sock,
+  struct batch_request *preq)
+
   {
   int   rc;
 
-  if ((rc = diswst(sock, preq->rq_ind.rq_track.rq_jid) != 0) ||
-      (rc = diswui(sock, preq->rq_ind.rq_track.rq_hopcount) != 0) ||
-      (rc = diswst(sock, preq->rq_ind.rq_track.rq_location) != 0) ||
-      (rc = diswuc(sock, preq->rq_ind.rq_track.rq_state[0]) != 0))
+  if ((rc = diswst(sock, TCP_FUNC, preq->rq_ind.rq_track.rq_jid) != 0) ||
+      (rc = diswui(sock, TCP_FUNC, preq->rq_ind.rq_track.rq_hopcount) != 0) ||
+      (rc = diswst(sock, TCP_FUNC, preq->rq_ind.rq_track.rq_location) != 0) ||
+      (rc = diswuc(sock, TCP_FUNC, preq->rq_ind.rq_track.rq_state[0]) != 0))
     return rc;
 
   return 0;

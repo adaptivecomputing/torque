@@ -112,7 +112,7 @@ int decode_DIS_ReqHdr(
   {
   int rc;
 
-  *proto_type = disrui(sock, &rc);
+  *proto_type = disrui(sock, TCP_FUNC, &rc);
 
   if (rc != 0)
     {
@@ -124,21 +124,21 @@ int decode_DIS_ReqHdr(
     return(DIS_PROTO);
     }
 
-  *proto_ver = disrui(sock, &rc);
+  *proto_ver = disrui(sock, TCP_FUNC, &rc);
 
   if (rc)
     {
     return(rc);
     }
 
-  preq->rq_type = disrui(sock, &rc);
+  preq->rq_type = disrui(sock, TCP_FUNC, &rc);
 
   if (rc != 0)
     {
     return(rc);
     }
 
-  return(disrfst(sock, PBS_MAXUSER + 1, preq->rq_user));
+  return(disrfst(sock, TCP_FUNC, PBS_MAXUSER + 1, preq->rq_user));
   }  /* END decode_DIS_ReqHdr() */
 
 
