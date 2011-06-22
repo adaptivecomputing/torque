@@ -110,6 +110,8 @@
 #include "array.h"
 
 #define PURGE_SUCCESS 1
+#define MOM_DELETE    2
+#define ROUTE_DELETE  3
 
 /* Global Data Items: */
 
@@ -217,14 +219,16 @@ void ensure_deleted(
   struct work_task *ptask)  /* I */
 
   {
-  struct batch_request *preq;
-  job *pjob;
+  job                  *pjob;
+  char                 *jobid;
 
-  preq = ptask->wt_parm1;
+  jobid = ptask->wt_parm1;
 
-  if ((pjob = find_job(preq->rq_ind.rq_delete.rq_objname)) == NULL)
+  if ((pjob = find_job(jobid)) == NULL)
     {
     /* job doesn't exist, we're done */
+    free(jobid);
+
     return;
     }
 
@@ -245,6 +249,7 @@ void ensure_deleted(
   
   job_purge(pjob);
 
+  free(jobid);
   } /* END ensure_deleted() */
 
 
@@ -324,7 +329,7 @@ int execute_job_delete(
 
           req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 
-          return(-1);
+          return(MOM_DELETE);
           }
         }
 
@@ -393,16 +398,21 @@ int execute_job_delete(
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 
     pwtnew = set_task(WORK_Timed,time_now + 1,post_delete_route,preq);
-
-    if (pwtnew == 0)
-      {
-      req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
-      }
-
-    pthread_mutex_unlock(pwtnew->wt_mutex);
+    
     pthread_mutex_unlock(pjob->ji_mutex);
 
-    return(-1);
+    if (pwtnew == NULL)
+      {
+      req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
+
+      return(-1);
+      }
+    else
+      {
+      pthread_mutex_unlock(pwtnew->wt_mutex);
+      
+      return(ROUTE_DELETE);
+      }
     }  /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) */
 
 jump:
@@ -509,11 +519,13 @@ jump:
   if ((server.sv_attr[SRV_ATR_JobForceCancelTime].at_flags & ATR_VFLAG_SET) &&
       (server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long > 0))
     {
+    char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
+
     pwtcheck = set_task(
         WORK_Timed,
         time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
         ensure_deleted,
-        preq);
+        dup_jobid);
     
     if (pwtcheck != NULL)
       {
@@ -635,6 +647,30 @@ jump:
 
 
 
+struct batch_request *duplicate_request(
+
+  struct batch_request *preq)
+
+  {
+  struct batch_request *preq_tmp = alloc_br(PBS_BATCH_DeleteJob);
+  preq_tmp->rq_perm = preq->rq_perm;
+  preq_tmp->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
+  preq_tmp->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
+  preq_tmp->rq_fromsvr = preq->rq_fromsvr;
+  preq_tmp->rq_extsz = preq->rq_extsz;
+  preq_tmp->rq_conn = preq->rq_conn;
+  memcpy(preq_tmp->rq_ind.rq_manager.rq_objname,
+    preq->rq_ind.rq_manager.rq_objname, PBS_MAXSVRJOBID + 1);
+  memcpy(preq_tmp->rq_user, preq->rq_user, PBS_MAXUSER + 1);
+  memcpy(preq_tmp->rq_host, preq->rq_host, PBS_MAXHOSTNAME + 1);
+
+  return(preq_tmp);
+  } /* END duplicate_request() */
+
+
+
+
+
 /*
  * req_deletejob - service the Delete Job Request
  *
@@ -684,9 +720,12 @@ void req_deletejob(
   job                  *pjob;
   int                   rc = -1;
   int                   iter = -1;
+  int                   failed_deletes = 0;
+  int                   total_jobs = 0;
   char                 *jobid;
   char                 *Msg = NULL;
   struct batch_request *preq_tmp = NULL;
+  char                  tmpLine[MAXPATHLEN];
 
   /* check if we are getting a purgecomplete from scheduler */
   if (preq->rq_extend != NULL)  
@@ -726,23 +765,16 @@ void req_deletejob(
       snprintf(log_buffer,sizeof(log_buffer), "Deleting job asynchronously");
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buffer);
 
-      preq_tmp = alloc_br(PBS_BATCH_DeleteJob);
-      preq_tmp->rq_perm = preq->rq_perm;
-      preq_tmp->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
-      preq_tmp->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
-      preq_tmp->rq_fromsvr = preq->rq_fromsvr;
-      preq_tmp->rq_extsz = preq->rq_extsz;
-      preq_tmp->rq_conn = preq->rq_conn;
-      memcpy(preq_tmp->rq_ind.rq_manager.rq_objname,
-          preq->rq_ind.rq_manager.rq_objname, PBS_MAXSVRJOBID + 1);
-      memcpy(preq_tmp->rq_user, preq->rq_user, PBS_MAXUSER + 1);
-      memcpy(preq_tmp->rq_host, preq->rq_host, PBS_MAXHOSTNAME + 1);
-
+      preq_tmp = duplicate_request(preq);
       }
     }
 
   if (strcasecmp(preq->rq_ind.rq_delete.rq_objname,"all") == 0)
     {
+    /* don't use the actual request so we can reply about all of the jobs */
+    struct batch_request *preq_dup = duplicate_request(preq);
+    preq_dup->rq_noreply = TRUE;
+
     if (preq_tmp != NULL)
       {
       reply_ack(preq_tmp);
@@ -758,11 +790,33 @@ void req_deletejob(
         continue;
         }
 
+      total_jobs++;
+
       /* mutex is freed below */
-      if ((rc = forced_jobpurge(pjob,preq)) == PBSE_NONE)
-        rc = execute_job_delete(pjob,Msg,preq);
-      else if (rc != PURGE_SUCCESS)
-        break;
+      if ((rc = forced_jobpurge(pjob,preq_dup)) == PBSE_NONE)
+        rc = execute_job_delete(pjob,Msg,preq_dup);
+      
+      if (rc != PURGE_SUCCESS)
+        {
+        /* duplicate the preq so we don't have a problem with double frees */
+        preq_dup = duplicate_request(preq);
+        preq_dup->rq_noreply = TRUE;
+
+        if ((rc == MOM_DELETE) ||
+            (rc == ROUTE_DELETE))
+          failed_deletes++;
+        }
+      }
+
+    if (failed_deletes == 0)
+      reply_ack(preq);
+    else
+      {
+      snprintf(tmpLine,sizeof(tmpLine),"Deletes failed for %d of %d jobs",
+        failed_deletes,
+        total_jobs);
+
+      req_reject(PBSE_SYSTEM, 0, preq, NULL, tmpLine);
       }
     }
   else
@@ -789,11 +843,11 @@ void req_deletejob(
       if ((rc = forced_jobpurge(pjob,preq)) == PBSE_NONE)
         rc = execute_job_delete(pjob,Msg,preq);
       }
-    }
 
-  if ((rc == PBSE_NONE) ||
-      (rc == PURGE_SUCCESS))
-    reply_ack(preq);
+    if ((rc == PBSE_NONE) ||
+        (rc == PURGE_SUCCESS))
+      reply_ack(preq);
+    }
 
   return;
   }  /* END req_deletejob() */
