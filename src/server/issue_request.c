@@ -498,6 +498,19 @@ int issue_Drequest(
 
       break;
 
+    case PBS_BATCH_GpuCtrl:
+
+      rc = PBSD_gpu_put(
+             conn,
+             request->rq_ind.rq_gpuctrl.rq_momnode,
+             request->rq_ind.rq_gpuctrl.rq_gpuid,
+             request->rq_ind.rq_gpuctrl.rq_gpumode,
+             request->rq_ind.rq_gpuctrl.rq_reset_perm,
+             request->rq_ind.rq_gpuctrl.rq_reset_vol,
+             NULL);
+
+      break;
+
     case PBS_BATCH_MessJob:
 
       rc = PBSD_msg_put(

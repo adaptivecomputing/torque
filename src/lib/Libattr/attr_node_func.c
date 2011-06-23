@@ -1105,6 +1105,93 @@ int node_status_list(
   return(rc);
   }  /* END node_status_list() */
 
+
+/*
+ * node_gpustatus_list - Either derive a "gpu status list" attribute from the node
+ *                 or update node's status list from attribute's status list.
+ */
+
+int node_gpustatus_list(
+
+  attribute *new,           /*derive status into this attribute*/
+  void      *pnode,         /*pointer to a pbsnode struct     */
+  int        actmode)       /*action mode; "NEW" or "ALTER"   */
+
+  {
+  int              rc = 0;
+
+  struct pbsnode  *np;
+  attribute        temp;
+
+  np = (struct pbsnode *)pnode;    /* because of at_action arg type */
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+
+      /* if node has a status list, then copy array_strings    */
+      /* into temp to use to setup a copy, otherwise setup empty */
+
+      if (np->nd_gpustatus != NULL)
+        {
+        /* setup temporary attribute with the array_strings */
+        /* from the node                                    */
+
+        temp.at_val.at_arst = np->nd_gpustatus;
+        temp.at_flags = ATR_VFLAG_SET;
+        temp.at_type  = ATR_TYPE_ARST;
+
+        rc = set_arst(new, &temp, SET);
+        }
+      else
+        {
+        /* node has no properties, setup empty attribute */
+
+        new->at_val.at_arst = NULL;
+        new->at_flags       = 0;
+        new->at_type        = ATR_TYPE_ARST;
+        }
+
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      if (np->nd_gpustatus != NULL)
+        {
+        free(np->nd_gpustatus->as_buf);
+        free(np->nd_gpustatus);
+
+        np->nd_gpustatus = NULL;
+        }
+
+      /* update node with new attr_strings */
+
+      np->nd_gpustatus = new->at_val.at_arst;
+
+      new->at_val.at_arst = NULL;
+
+      /* update number of status items listed in node */
+      /* does not include name and subnode property */
+
+      if (np->nd_gpustatus != NULL)
+        np->nd_ngpustatus = np->nd_gpustatus->as_usedptr;
+      else
+        np->nd_ngpustatus = 0;
+
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+
+      break;
+    }  /* END switch(actmode) */
+
+  return(rc);
+  }  /* END node_status_list() */
+
+
 /*
  * node_note - Either derive a note attribute from the node
  *             or update node's note from attribute's list.

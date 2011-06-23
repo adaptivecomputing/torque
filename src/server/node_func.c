@@ -693,6 +693,8 @@ int status_nodeattrib(
       continue;
     else if (!strcmp((padef + i)->at_name, ATTR_NODE_gpus_str))
       continue;
+    else if (!strcmp((padef + i)->at_name, ATTR_NODE_gpustatus))
+      atemp[i].at_val.at_arst = pnode->nd_gpustatus;
     else if (!strcmp((padef + i)->at_name, ATTR_NODE_gpus))
       {
       atemp[i].at_val.at_long  = pnode->nd_ngpus;
@@ -835,6 +837,9 @@ static int initialize_pbsnode(
   pnode->nd_nprops      = 0;
   pnode->nd_nstatus     = 0;
   pnode->nd_warnbad     = 0;
+  pnode->nd_ngpus       = 0;
+  pnode->nd_gpustatus   = NULL;
+  pnode->nd_ngpustatus  = 0;
 
   pnode->nd_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
@@ -1616,10 +1621,14 @@ int create_a_gpusubnode(
   pnode->nd_gpusn = tmp;
 
   /* initialize the node */
+  pnode->nd_gpus_real = FALSE;
   pnode->nd_gpusn[pnode->nd_ngpus].pjob = NULL;
   pnode->nd_gpusn[pnode->nd_ngpus].inuse = FALSE;
+  pnode->nd_gpusn[pnode->nd_ngpus].mode = gpu_normal;
+  pnode->nd_gpusn[pnode->nd_ngpus].state = gpu_unallocated;
   pnode->nd_gpusn[pnode->nd_ngpus].flag = 0;
   pnode->nd_gpusn[pnode->nd_ngpus].index = pnode->nd_ngpus;
+  pnode->nd_gpusn[pnode->nd_ngpus].gpuid = NULL;
 
   /* increment the number of gpu subnodes and gpus free */
   pnode->nd_ngpus++;
@@ -1871,9 +1880,9 @@ int setup_node_boards(
 
 /* recheck_for_node :
  * This function is called whenever an entry in the nodes file does
- * not resolve on server initialization. This function is called 
- * periodically to see if the node is now resolvable and if so 
- * add it to the list of available MOM nodes. */ 
+ * not resolve on server initialization. This function is called
+ * periodically to see if the node is now resolvable and if so
+ * add it to the list of available MOM nodes. */
 void recheck_for_node( struct work_task *ptask)
   {
   node_info *host_info;
@@ -1963,7 +1972,7 @@ int create_pbs_node(
       if(pattrl == NULL)
         {
         log_err(-1, "cannot create node attribute", log_buffer);
-        return(PBSE_SYSTEM);                    
+        return(PBSE_SYSTEM);
         }
 
       strcpy(pattrl->al_value, pal->al_atopl.value);
@@ -2485,7 +2494,7 @@ int setup_nodes(void)
       int num_digits;
 
       start = atoi(open_bracket+1);
-      
+
       dash = strchr(open_bracket,'-');
       close_bracket = strchr(open_bracket,']');
 
@@ -2517,7 +2526,7 @@ int setup_nodes(void)
         int tmp = 10;
 
         strcpy(tmp_node_name,nodename);
-       
+
         /* determine the length of the number */
         while (start / tmp > 0)
           {
@@ -2740,9 +2749,9 @@ static void delete_a_subnode(
 
 
 
-/* 
+/*
  * deletes the last gpu subnode
- * frees the node and decrements the number to adjust 
+ * frees the node and decrements the number to adjust
  */
 static void delete_a_gpusubnode(
 
@@ -3092,8 +3101,8 @@ int gpu_str_action(
    only be a name for the new node and no attributes or properties */
 
 int create_partial_pbs_node(
-  char *nodename, 
-  unsigned long addr, 
+  char *nodename,
+  unsigned long addr,
   int perms)
 
   {

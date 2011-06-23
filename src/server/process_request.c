@@ -225,6 +225,7 @@ void req_signaljob(struct batch_request *preq);
 void req_mvjobfile(struct batch_request *preq);
 void req_checkpointjob(struct batch_request *preq);
 void req_messagejob(struct batch_request *preq);
+void req_gpuctrl(struct batch_request *preq);
 
 /* END request processing prototypes */
 
@@ -1017,6 +1018,12 @@ void dispatch_request(
     case PBS_BATCH_AsySignalJob:
 
       req_signaljob(request);
+
+      break;
+
+    case PBS_BATCH_GpuCtrl:
+
+      req_gpuctrl(request);
 
       break;
 

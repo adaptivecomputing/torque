@@ -232,6 +232,17 @@ struct rq_track
   char  rq_state[2];
   };
 
+/* GPU Control */
+
+struct rq_gpuctrl
+  {
+  char  rq_momnode[PBS_MAXHOSTNAME + 1];
+  char  rq_gpuid[PBS_MAXGPUID + 1];
+  int   rq_gpumode;
+  int   rq_reset_perm;
+  int   rq_reset_vol;
+  };
+
 /* RegisterDependentJob */
 
 struct rq_register
@@ -367,6 +378,8 @@ struct batch_request
 
     struct rq_track  rq_track;
 
+    struct rq_gpuctrl  rq_gpuctrl;
+
     struct rq_cpyfile rq_cpyfile;
 
     struct rq_returnfiles rq_returnfiles;
@@ -408,6 +421,7 @@ extern void  req_stat_que (struct batch_request *req);
 extern void  req_stat_svr (struct batch_request *req);
 /* DIAGTODO: declr req_stat_diag() */
 extern void  req_trackjob (struct batch_request *req);
+extern void  req_gpuctrl (struct batch_request *req);
 extern void *req_stat_job (void *batch_req);
 #else
 extern void  req_stat_job (struct batch_request *req);
@@ -446,6 +460,7 @@ extern int decode_DIS_Status (int socket, struct batch_request *);
 extern int decode_DIS_TrackJob (int socket, struct batch_request *);
 extern int decode_DIS_replySvr (int socket, struct batch_reply *);
 extern int decode_DIS_svrattrl (int socket, tlist_head *);
+extern int decode_DIS_GpuCtrl (int socket, struct batch_request *);
 
 extern int encode_DIS_CopyFiles (int socket, struct batch_request *);
 extern int encode_DIS_JobObit (int socket, struct batch_request *);

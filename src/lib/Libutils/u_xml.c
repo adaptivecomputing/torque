@@ -93,9 +93,7 @@
  *
  * @param start - the start of the string to examine
  * @param parent - where to store the parent's name (without '<>')
- * @param parent_size - the max size of parent
  * @param child - where to store the child data, trims whitespace
- * @param child_size - the max size of child
  * @param end - pointer to the first character after the closing tag
  */
 int get_parent_and_child(
@@ -298,6 +296,31 @@ int escape_xml(
 
 
 
+char *find_next_tag(char *buffer, char **tag)
+  {
+  char *ptr;
+
+  ptr = buffer;
+
+  if(ptr == NULL || ptr == (char *)0)
+    {
+    return(NULL);
+    }
+  /* We want the next tag. If we are currently
+     pointing to a tag increment ptr*/
+  if(*ptr == '<')
+    {
+    ptr++;
+    }
+
+  while(*ptr != '<' && ptr[1] != '/' && ptr != (char *)0)
+    {
+    ptr++;
+    }
+
+  *tag = ptr;
+  return(*tag);
+  }
 
 
 

@@ -189,7 +189,7 @@ enum srv_atr
   SRV_ATR_RecordJobScript,
   SRV_ATR_JobLogFileMaxSize,
   SRV_ATR_JobLogFileRollDepth,
-  SRV_ATR_JobLogKeepDays,
+  SRV_ATR_JobLogKeepDays,        /* 80 */
 #ifdef MUNGE_AUTH
   SRV_ATR_authusers,
 #endif

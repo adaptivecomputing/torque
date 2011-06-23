@@ -120,6 +120,7 @@ extern int  svr_chkque(job *, pbs_queue *, char *, int, char *);
 extern int  job_route(job *);
 extern void check_state(int);
 extern void mom_server_all_update_stat();
+extern void mom_server_all_update_gpustat(void);
 extern int  multi_mom;
 extern unsigned int pbs_rm_port;
 
@@ -455,7 +456,7 @@ void req_quejob(
       pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock,FALSE);
       pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
 
-      /* Per Eric R., req_mvjobfile was giving error in open_std_file, 
+      /* Per Eric R., req_mvjobfile was giving error in open_std_file,
          showed up as fishy error message */
 
       if (pj->ji_grpcache != NULL)
@@ -757,7 +758,7 @@ void req_mvjobfile(
     {
     int keeping = 1;
     char *path = std_file_name(pj, jft, &keeping);
-    
+
     snprintf(log_buffer,sizeof(log_buffer),
       "Cannot create file %s",
       path);
@@ -950,7 +951,7 @@ void reply_sid(
     }
 
   sprintf(sid_text,"%lu",sid);
-    
+
   preq->rq_reply.brp_choice                = which;
   preq->rq_reply.brp_un.brp_txt.brp_str    = strdup(sid_text);
   preq->rq_reply.brp_un.brp_txt.brp_txtlen = strlen(sid_text);
@@ -1089,6 +1090,19 @@ void req_commit(
     }
 
   job_save(pj, SAVEJOB_FULL, momport);
+
+#ifdef NVIDIA_GPUS
+  /*
+   * Does this job have a gpuid assigned?
+   * if so, then update gpu status
+   */
+  if (((pj->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0) &&
+      (pj->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL))
+    {
+    mom_server_all_update_gpustat();
+    }
+#endif  /* NVIDIA_GPUS */
+
 
   /* NOTE: we used to flag JOB_ATR_errpath, JOB_ATR_outpath,
    * JOB_ATR_session_id, and JOB_ATR_altid as modified at this point to make sure

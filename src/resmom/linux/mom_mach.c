@@ -3930,6 +3930,71 @@ static char *ncpus(
   }  /* END ncpus() */
 
 
+/* find_file checks for the existence of filename
+ * in the ':' delimited path string
+ * Return TRUE if file exists 
+ *        FALSE if file not found
+ */ 
+
+int find_file(char *path, char *filename)
+  {
+  char *ptr1, *ptr2;
+  char buf[RETURN_STRING_SIZE];
+
+  int rc;
+  struct stat statBuf;
+
+  if(path == NULL)
+    {
+    return(FALSE);
+    }
+
+  if(filename == NULL)
+    {
+    return(FALSE);
+    }
+
+  memset(buf, 0, RETURN_STRING_SIZE);
+  ptr1 = path;
+  ptr2 = buf;
+
+  do
+    {
+    *ptr2 = *ptr1;
+    ptr1++;
+
+    if(*ptr1 == ':' || *ptr1 == '\0')
+      {
+      /* check for the forward slash at the end of the path variable */
+      if(*ptr2 != '/')
+        {
+        ptr2++;
+        *ptr2 = '/';
+        }
+      strcat(buf, filename);
+
+      rc = stat(buf, &statBuf);
+      if(rc == 0)
+        {
+        return(TRUE);
+        }
+
+      /* Advance the pointer in the path */
+      ptr1++;
+      /* reset ptr2 to the beginning of buf and get the
+         next directory */
+      memset(buf, 0, RETURN_STRING_SIZE);
+      ptr2 = buf;
+      }
+    else
+      ptr2++; /* advance ptr2 to the next element in buf */
+
+    }while(*ptr1 != '\0');
+
+  return(FALSE);
+
+  }
+
 
 
 

@@ -727,6 +727,41 @@ esac
 
 
 dnl
+dnl enable Nvidia gpu support
+dnl
+AC_MSG_CHECKING([whether to build Nvidia gpu support])
+AC_ARG_ENABLE(nvidia-gpus,
+    [  --enable-nvidia-gpus    enable Nvidia gpu support],
+    NVIDIA=$enableval,NVIDIA=no)
+AC_MSG_RESULT($NVIDIA)
+case "$NVIDIA" in
+  yes) AC_DEFINE([NVIDIA_GPUS], 1, [Define to enable Nvidia gpu support]) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-nvidia-gpus should be yes or no]) ;;
+esac
+
+AC_ARG_WITH(nvml_include,
+    [  --with-nvml-include=DIR include path for nvml.h],
+    nvmlinclude=$withval,nvmlinclude=none)   
+AC_ARG_WITH(nvml_lib,
+    [  --with-nvml-lib=DIR     lib path for libnvidia-ml],
+    nvmllib=$withval,nvmllib=none)   
+
+if test "x$nvmlinclude" != "xnone" && test "x$nvmllib" != "xnone" ;then
+  CPPFLAGS="$CPPFLAGS -I$nvmlinclude"
+  MOMLIBS="$MOMLIBS -L$nvmllib -lnvidia-ml"
+  AC_DEFINE([NVML_API], 1, [Define to enable Nvidia NVML api support])
+fi
+
+if test "x$nvmlinclude" != "xnone" && test "x$nvmllib" == "xnone" ;then
+  AC_MSG_ERROR([--with-nvml-lib needs to be specified])
+fi
+
+if test "x$nvmllib" != "xnone" && test "x$nvmlinclude" == "xnone" ;then
+  AC_MSG_ERROR([--with-nvml-include needs to be specified])
+fi
+
+dnl
 dnl enable logging of x attributes for accounting
 dnl
 AC_MSG_CHECKING([whether to add x attributes to accounting])

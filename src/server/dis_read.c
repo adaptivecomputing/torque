@@ -272,6 +272,12 @@ int dis_request_read(
 
       break;
 
+    case PBS_BATCH_GpuCtrl:
+
+      rc = decode_DIS_GpuCtrl(sfds, request);
+
+      break;
+
 #ifndef PBS_MOM
 
     case PBS_BATCH_LocateJob:

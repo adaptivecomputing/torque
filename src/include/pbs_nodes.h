@@ -119,6 +119,23 @@ enum psit
   ignore
   };
 
+enum gpmodeit
+  {
+  gpu_normal,
+  gpu_exclusive_thread,
+  gpu_prohibited,
+  gpu_exclusive_process,
+  gpu_unknown
+  };
+
+enum gpstatit
+  {
+  gpu_unallocated,
+  gpu_shared,
+  gpu_exclusive,
+  gpu_unavailable
+  };
+
 struct prop
   {
   char *name;
@@ -154,8 +171,12 @@ struct gpusubn
   {
   struct job     *pjob;   /* job on this gpu subnode */
   unsigned short  inuse;  /* 1 if this node is in use, 0 otherwise */
+  enum gpstatit	  state;  /* gpu state determined by server */
+  enum gpmodeit   mode;   /* gpu mode from hardware */
+  int             driver_ver;  /* Driver version reported from hardware */
   enum psit       flag;   /* same as for pbssubn */
   short           index;  /* gpu index */
+  char           *gpuid;  /* gpu id */
   };
 
 
@@ -219,9 +240,12 @@ struct pbsnode
   time_t                nd_lastupdate; /* time of last update. */
 
   short                 nd_ngpus;        /* number of gpus */ 
+  short                 nd_gpus_real;    /* gpus are real not virtual */ 
   struct gpusubn       *nd_gpusn;        /* gpu subnodes */
   short                 nd_ngpus_free;   /* number of free gpus */
   short                 nd_ngpus_needed; /* number of gpus needed */
+  struct array_strings *nd_gpustatus;    /* string array of GPU status */
+  short                 nd_ngpustatus;    /* number of gpu status items */
 
   unsigned short        num_node_boards; /* number of numa nodes */
   struct AvlNode       *node_boards; /* private tree of numa nodes */
@@ -344,6 +368,7 @@ enum nodeattr
   ND_ATR_num_node_boards,
   ND_ATR_numa_str,
   ND_ATR_gpus,
+  ND_ATR_gpustatus,
   ND_ATR_gpus_str,
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */

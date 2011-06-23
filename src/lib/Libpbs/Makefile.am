@@ -36,6 +36,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/dec_RunJob.c ../Libifl/dec_Shut.c \
 		    ../Libifl/dec_Sig.c ../Libifl/dec_Status.c \
 		    ../Libifl/dec_svrattrl.c ../Libifl/dec_Track.c \
+		    ../Libifl/dec_Gpu.c \
 		    ../Libifl/enc_attrl.c ../Libifl/enc_attropl.c \
 		    ../Libifl/enc_CpyFil.c ../Libifl/enc_JobCred.c \
 		    ../Libifl/enc_JobFile.c ../Libifl/enc_JobId.c \
@@ -43,7 +44,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/enc_MoveJob.c ../Libifl/enc_MsgJob.c \
 		    ../Libifl/enc_QueueJob.c ../Libifl/enc_Reg.c \
 		    ../Libifl/enc_reply.c ../Libifl/enc_ReturnFile.c \
-		    ../Libifl/enc_ReqExt.c \
+		    ../Libifl/enc_ReqExt.c ../Libifl/enc_Gpu.c \
 		    ../Libifl/enc_ReqHdr.c ../Libifl/enc_RunJob.c \
 		    ../Libifl/enc_Shut.c ../Libifl/enc_Sig.c \
 		    ../Libifl/enc_Status.c ../Libifl/enc_svrattrl.c \
@@ -53,6 +54,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/PBS_data.c ../Libifl/pbsD_connect.c \
 		    ../Libifl/pbsD_deljob.c ../Libifl/pbsD_holdjob.c  \
 		    ../Libifl/pbsD_chkptjob.c  ../Libifl/pbsD_locjob.c \
+		    ../Libifl/pbsD_gpuctrl.c ../Libifl/PBSD_gpuctrl2.c \
 		    ../Libifl/PBSD_manage2.c ../Libifl/pbsD_manager.c \
 		    ../Libifl/pbsD_movejob.c ../Libifl/PBSD_manager_caps.c \
 		    ../Libifl/PBSD_msg2.c ../Libifl/pbsD_msgjob.c \
