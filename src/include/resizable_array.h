@@ -121,5 +121,6 @@ void            *next_thing_from_back(resizable_array *,int *);
 void             initialize_ra_iterator(resizable_array *,int *);
 void             free_resizable_array(resizable_array *);
 void            *pop_thing(resizable_array *);
+void            *get_thing_from_index(resizable_array *,int);
 
 #endif /* RESIZABLE_ARRAY_H */

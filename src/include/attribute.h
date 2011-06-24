@@ -412,6 +412,7 @@ extern int set_unkn(attribute *attr, attribute *new, enum batch_op);
 extern int set_depend(attribute *attr, attribute *new, enum batch_op);
 extern int set_tv(struct attribute *attr, struct attribute *new, enum batch_op op);
 
+enum compare_types { LESS, EQUAL, GREATER, NOT_COMPARED };
 
 extern int comp_b(attribute *, attribute *);
 extern int comp_c(attribute *, attribute *);
@@ -421,7 +422,7 @@ extern int comp_size(attribute *, attribute *);
 extern int comp_str(attribute *, attribute *);
 extern int comp_arst(attribute *, attribute *);
 extern int comp_resc(attribute *, attribute *);
-extern int comp_resc2(attribute *, attribute *, int, char *);
+extern int comp_resc2(attribute *, attribute *, int, char *, enum compare_types);
 extern int comp_unkn(attribute *, attribute *);
 extern int comp_depend(attribute *, attribute *);
 extern int comp_hold(attribute *, attribute *);

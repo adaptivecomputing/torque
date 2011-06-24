@@ -622,3 +622,21 @@ int get_index(
 
 
 
+void *get_thing_from_index(
+
+  resizable_array *ra,
+  int              index)
+
+  {
+  if (index == -1)
+    index = ra->slots[ALWAYS_EMPTY_INDEX].next;
+
+  if (index >= ra->max)
+    return(NULL);
+  else
+    return(ra->slots[index].item);
+  } /* END get_thing_from_index() */
+
+
+
+

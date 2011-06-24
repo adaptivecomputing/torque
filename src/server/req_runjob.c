@@ -1522,9 +1522,11 @@ static job *chk_job_torun(
 
 
 
-/* set_mother_superior_ports - The first host in list is the host
-   of Mother Superior. Find the mom manager and service ports
-   from the pbsndlist and then set the pjob mom ports accordingly */
+/* 
+ * set_mother_superior_ports - The first host in list is the host
+ * of Mother Superior. Find the mom manager and service ports
+ * from allnodes and then set the pjob mom ports accordingly 
+ */
 
 int set_mother_superior_ports(
     
@@ -1556,20 +1558,25 @@ int set_mother_superior_ports(
 
   iter = get_node_iterator();
 
-  while ((pnode = next_node(iter)) != NULL)
+  while ((pnode = next_node(&allnodes,iter)) != NULL)
     {
     if (!strcasecmp(pnode->nd_name, ms))
       {
       pjob->ji_qs.ji_un.ji_exect.ji_momport = pnode->nd_mom_port;
       pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport = pnode->nd_mom_rm_port;
+
+      pthread_mutex_unlock(pnode->nd_mutex);
+
       return(PBSE_NONE);
       }
+
+    pthread_mutex_unlock(pnode->nd_mutex);
     }
 
   free(iter);
 
   return(PBSE_UNKNODEATR);
-  }
+  } /* END set_mother_superior_ports() */
 
 
 /*
@@ -1705,7 +1712,7 @@ static int assign_hosts(
 
   if (svr_totnodes != 0)
     {
-    if ((rc = is_ts_node(hosttoalloc)) != 0)
+    if ((rc = is_ts_node(hosttoalloc)) != FALSE)
       {
       rc = set_nodes(pjob, hosttoalloc, procs, &list, &portlist, FailHost, EMsg);
 
@@ -1774,11 +1781,7 @@ static int assign_hosts(
         sprintf(log_buffer, "ALERT:  job cannot allocate node '%s' (could not determine IP address for node)",
                 pjob->ji_qs.ji_destin);
 
-        log_event(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 
         return(PBSE_BADHOST);
         }

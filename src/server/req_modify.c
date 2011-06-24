@@ -119,7 +119,6 @@ extern attribute_def     job_attr_def[];
 extern char *msg_jobmod;
 extern char *msg_manager;
 extern char *msg_mombadmodify;
-extern int   comp_resc_gt;
 extern int   comp_resc_lt;
 extern int   LOGLEVEL;
 extern char *path_checkpoint;
@@ -1150,12 +1149,13 @@ int modify_job_attr(
 
       if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
         {
-        if ((comp_resc2(
-               &pjob->ji_wattr[JOB_ATR_resource],
-               &newattr[JOB_ATR_resource],
-               server.sv_attr[SRV_ATR_QCQLimits].at_val.at_long,
-               NULL) == -1) ||
-            (comp_resc_lt != 0))
+        int comp_resc_lt = comp_resc2(&pjob->ji_wattr[JOB_ATR_resource],
+                                      &newattr[JOB_ATR_resource],
+                                      server.sv_attr[SRV_ATR_QCQLimits].at_val.at_long,
+                                      NULL,
+                                      LESS);
+
+        if (comp_resc_lt != 0)
           {
           rc = PBSE_PERM;
           }

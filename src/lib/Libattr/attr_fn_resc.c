@@ -501,16 +501,18 @@ int comp_resc(
 
 int comp_resc2(
 
-  struct attribute *attr,           /* I queue's min/max attributes */
-  struct attribute *with,           /* I job's current requirements/attributes */
-  int               IsQueueCentric, /* I */
-  char             *EMsg)           /* O (optional,minsize=1024) */
+  struct attribute   *attr,           /* I queue's min/max attributes */
+  struct attribute   *with,           /* I job's current requirements/attributes */
+  int                 IsQueueCentric, /* I */
+  char               *EMsg,           /* O (optional,minsize=1024) */
+  enum compare_types  type)           /* I type of comparison to detect */
 
   {
   resource *atresc;
   resource *wiresc;
-  int rc;
-  char *LimitName;
+  int       rc;
+  int       comp_ret = 0;
+  char     *LimitName;
 
   comp_resc_gt = 0;
   comp_resc_eq = 0;
@@ -555,21 +557,33 @@ int comp_resc2(
                 sprintf(EMsg, "cannot satisfy queue min %s requirement",
                         (LimitName != NULL) ? LimitName : "resource");
                 }
+              
+              if (type == GREATER)
+                comp_ret++;
 
               comp_resc_gt++;
               }
             else if (rc < 0)
               {
+              if (type == LESS)
+                comp_ret++;
+
               comp_resc_lt++;
               }
             else
               {
+              if (type == EQUAL)
+                comp_ret++;
+
               comp_resc_eq++;
               }
             }
           }
         else
           {
+          if (type == NOT_COMPARED)
+            comp_ret++;
+
           comp_resc_nc++;
           }
         }
@@ -610,21 +624,33 @@ int comp_resc2(
                 sprintf(EMsg, "cannot satisfy queue min %s requirement",
                         (LimitName != NULL) ? LimitName : "resource");
                 }
+              
+              if (type == GREATER)
+                comp_ret++;
 
               comp_resc_gt++;
               }
             else if (rc < 0)
               {
+              if (type == LESS)
+                comp_ret++;
+
               comp_resc_lt++;
               }
             else
               {
+              if (type == EQUAL)
+                comp_ret++;
+
               comp_resc_eq++;
               }
             }
           }
         else
           {
+          if (type == NOT_COMPARED)
+            comp_ret++;
+
           comp_resc_nc++;
           }
         }
@@ -633,7 +659,7 @@ int comp_resc2(
       }  /* END while() */
     }
 
-  return(0);
+  return(comp_ret);
   }  /* END comp_resc2() */
 
 

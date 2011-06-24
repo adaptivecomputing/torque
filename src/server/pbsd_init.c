@@ -363,23 +363,21 @@ void  update_default_np()
   
   {
   struct pbsnode *pnode;
-  int i;
-  long default_np;
-  long npfreediff;
+  int             iter = -1;
+  long            default_np;
+  long            npfreediff;
 
   default_np = server.sv_attr[SRV_ATR_NPDefault].at_val.at_long;
 
-
   if (default_np > 0)
     {
-    for(i = 0; i < svr_totnodes; i++)
+    while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {
-      pnode = pbsndlist[i];
+      npfreediff = pnode->nd_nsn - pnode->nd_nsnfree;
+      pnode->nd_nsn = default_np;
+      pnode->nd_nsnfree = default_np - npfreediff;
 
-       npfreediff = pnode->nd_nsn - pnode->nd_nsnfree;
-       pnode->nd_nsn = default_np;
-       pnode->nd_nsnfree = default_np - npfreediff;
-
+      pthread_mutex_unlock(pnode->nd_mutex);
       }
     }
 
@@ -923,6 +921,7 @@ int pbsd_init(
     }
 
   /* Open and read in node list if one exists */
+  initialize_all_nodes_array(&allnodes);
 
   if ((rc = setup_nodes()) == -1)
     {

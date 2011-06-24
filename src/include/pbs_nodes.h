@@ -84,6 +84,8 @@
 */
 
 #include <pthread.h>
+#include "resizable_array.h"
+#include "hash_table.h"
 
 /* NOTE:  requires server_limits.h */
 
@@ -200,6 +202,7 @@ typedef struct nodeboard_t
 typedef struct node_iterator 
   {
   int node_index;
+  int prev_index;
   int numa_index;
   } node_iterator;
 
@@ -254,6 +257,31 @@ struct pbsnode
 
   pthread_mutex_t      *nd_mutex; /* semaphore for accessing this node's data */
   };
+
+
+
+
+typedef struct all_nodes
+  {
+  resizable_array *ra;
+  hash_table_t    *ht;
+
+  pthread_mutex_t *allnodes_mutex;
+  } all_nodes;
+
+
+
+#define INITIAL_NODE_SIZE  20
+
+
+
+void            initialize_all_nodes_array(all_nodes *);
+int             insert_node(all_nodes *,struct pbsnode *);
+int             remove_node(all_nodes *,struct pbsnode *);
+struct pbsnode *next_node(all_nodes *,node_iterator *);
+struct pbsnode *next_host(all_nodes *,int *,struct pbsnode *);
+
+
 
 struct howl
   {
@@ -374,9 +402,8 @@ enum nodeattr
   }; /* WARNING: Must be the highest valued enum */
 
 
-extern struct pbsnode **pbsndmast;  /* array of ptr to nodes  */
+extern all_nodes allnodes; 
 
-extern struct pbsnode **pbsndlist;  /* array of ptr to nodes  */
 extern int    svr_totnodes;  /* number of nodes (hosts) */
 extern int    svr_tsnodes;  /* number of timeshared nodes */
 extern int    svr_clnodes;  /* number of cluster nodes */
@@ -408,7 +435,6 @@ extern  int create_pbs_node(char *, svrattrl *, int, int *);
 extern  int create_partial_pbs_node(char *, unsigned long, int);
 extern  int mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);
 
-extern struct pbsnode *next_node(node_iterator *);
 extern node_iterator  *get_node_iterator();
 extern void            reinitialize_node_iterator(node_iterator *);
 

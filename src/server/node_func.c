@@ -155,7 +155,7 @@ extern AvlTree streams;
 
 
 /* Functions in this file
- * find_nodebyname()   -     given a node host name, search pbsndlist
+ * find_nodebyname()   -     given a node host name, search allnodes
  * find_subnodebyname() -     given a subnode name
  * save_characteristic() - save the the characteristics of the node along with
  *  the address of the node
@@ -182,7 +182,6 @@ extern AvlTree streams;
 
 #include "work_task.h"
 
-extern void ping_nodes(struct work_task *);
 
 
 
@@ -193,26 +192,32 @@ struct pbsnode *PGetNodeFromAddr(
         pbs_net_t addr)  /* I */
 
   {
-  int nindex;
-  int aindex;
+  struct pbsnode *pnode;
+  int             iter = -1;
+  int             aindex;
 
-  for (nindex = 0; nindex < svr_totnodes; nindex++)
+  while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
     {
-    if ((pbsndlist[nindex] == NULL) || 
-        (pbsndlist[nindex]->nd_state & INUSE_DELETED))
-      continue;
-
-    for (aindex = 0;aindex < 10;aindex++)
+    if (pnode->nd_state & INUSE_DELETED)
       {
-      if (pbsndlist[nindex]->nd_addrs[aindex] == 0)
+      pthread_mutex_unlock(pnode->nd_mutex);
+
+      continue;
+      }
+
+    for (aindex = 0; aindex < 10; aindex++)
+      {
+      if (pnode->nd_addrs[aindex] == 0)
         break;
 
-      if (pbsndlist[nindex]->nd_addrs[aindex] == addr)
+      if (pnode->nd_addrs[aindex] == addr)
         {
-        return(pbsndlist[nindex]);
+        return(pnode);
         }
       }    /* END for (aindex) */
-    }      /* END for (nindex) */
+
+    pthread_mutex_unlock(pnode->nd_mutex);
+    } /* END for each node */
 
   return(NULL);
   }  /* END PGetNodeFromAddr() */
@@ -225,7 +230,6 @@ void bad_node_warning(
   pbs_net_t addr)  /* I */
 
   {
-  int i = 0;
   time_t now, last;
 
   node_iterator iter;
@@ -233,32 +237,25 @@ void bad_node_warning(
 
   reinitialize_node_iterator(&iter);
 
-  while ((pnode = next_node(&iter)) != NULL)
+  while ((pnode = next_node(&allnodes,&iter)) != NULL)
     {
     if (pnode->nd_addrs == NULL)
       {
-      sprintf(log_buffer, "ALERT:  node table is corrupt at index %d",
-              i);
+      sprintf(log_buffer, "ALERT:  node table is corrupt for node %s",
+        pnode->nd_name);
 
-      log_event(
-        PBSEVENT_ADMIN,
-        PBS_EVENTCLASS_SERVER,
-        "WARNING",
-        log_buffer);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buffer);
+
+      pthread_mutex_unlock(pnode->nd_mutex);
 
       continue;
       }
 
-    if (pnode->nd_state & INUSE_DELETED)
+    if ((pnode->nd_state & INUSE_DELETED) ||
+        (pnode->nd_addrs[0] != addr))
       {
-      /* node was deleted */
-
-      continue;
-      }
-
-    if (pnode->nd_addrs[0] != addr)
-      {
-      /* node does not match */
+      /* node was deleted  or doesn't match */
+      pthread_mutex_unlock(pnode->nd_mutex);
 
       continue;
       }
@@ -272,31 +269,18 @@ void bad_node_warning(
     if (last && (now - last < 3600))
       {
       /* bad node warning already sent within the last hour */
+      pthread_mutex_unlock(pnode->nd_mutex);
 
       return;
       }
 
-    /*
-    ** once per hour, log a warning that we can't reach the node, and
-    ** ping_nodes to check and reset the node's state.
-    */
-
-    sprintf(log_buffer, "ALERT: unable to contact node %s",
-            pnode->nd_name);
-
-    log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_SERVER,
-      "WARNING",
-      log_buffer);
-
-    /*
-     *  (void)set_task(WORK_Timed,now + 5,ping_nodes,NULL);
-     */
+    /* once per hour, log a warning that we can't reach the node */
+    sprintf(log_buffer, "ALERT: unable to contact node %s", pnode->nd_name);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buffer);
 
     pnode->nd_warnbad = now;
-
-    i++;
+      
+    pthread_mutex_unlock(pnode->nd_mutex);
 
     break;
     }    /* END for (i = 0) */
@@ -324,56 +308,60 @@ int addr_ok(
 
   reinitialize_node_iterator(&iter);
 
-  if (pbsndlist != NULL)
+  while ((pnode = next_node(&allnodes,&iter)) != NULL)
     {
-    while ((pnode = next_node(&iter)) != NULL)
+    /* NOTE:  should walk thru all nd_addrs for multi-homed hosts */
+    if (pnode->nd_state & INUSE_DELETED)
       {
-      /* NOTE:  should walk thru all nd_addrs for multi-homed hosts */
+      pthread_mutex_unlock(pnode->nd_mutex);
 
-      if (pnode->nd_state & INUSE_DELETED)
-        continue;
+      continue;
+      }
+    
+    /* NOTE:  deleted node may have already freed nd_addrs - check should be redundant */
+    if ((pnode->nd_addrs == NULL) || 
+        (pnode->nd_addrs[0] != addr))
+      {
+      pthread_mutex_unlock(pnode->nd_mutex);
 
-      /* NOTE:  deleted node may have already freed nd_addrs -
-                check should be redundant */
-
-      if ((pnode->nd_addrs == NULL) || (pnode->nd_addrs[0] != addr))
-        continue;
-
-      /* node matches addr */
-
-      if (pnode->nd_state & (INUSE_DELETED | INUSE_UNKNOWN))
+      continue;
+      }
+    
+    /* node matches addr */
+    if (pnode->nd_state & (INUSE_DELETED | INUSE_UNKNOWN))
+      {
+      /* definitely not ok */
+      status = 0;
+      }
+    else if (pnode->nd_state & INUSE_DOWN)
+      {
+      /* the node is ok if it is still talking to us */
+      int chk_len;
+      
+      chk_len = server.sv_attr[SRV_ATR_check_rate].at_val.at_long;
+      
+      if (pnode->nd_lastupdate == 0)
         {
-        /* definitely not ok */
+        pthread_mutex_unlock(pnode->nd_mutex);
 
+        continue;
+        }
+      
+      if (pnode->nd_lastupdate <= (time_now - chk_len))
+        {
         status = 0;
         }
-      else if (pnode->nd_state & INUSE_DOWN)
+      
+      if (pnode->nd_stream < 0)
         {
-        /* the node is ok if it is still talking to us */
-
-        int chk_len;
-
-        chk_len = server.sv_attr[SRV_ATR_check_rate].at_val.at_long;
-
-        if (pnode->nd_lastupdate == 0)
-          {
-          continue;
-          }
-
-        if (pnode->nd_lastupdate <= (time_now - chk_len))
-          {
-          status = 0;
-          }
-
-        if (pnode->nd_stream < 0)
-          {
-          status = 0;
-          }
+        status = 0;
         }
-
-      break;
       }
-    }    /* END if (pbsndlist != NULL) */
+
+    pthread_mutex_unlock(pnode->nd_mutex);
+    
+    break;
+    }
 
   return(status);
   }  /* END addr_ok() */
@@ -387,41 +375,32 @@ int addr_ok(
 
 struct pbsnode *find_nodebyname(
 
-        char *nodename) /* I */
+  char *nodename) /* I */
 
   {
-  char  *pslash;
+  char           *pslash;
 
-  struct pbsnode *pnode;
+  struct pbsnode *pnode = NULL;
 
-  node_iterator iter;
+  int             i;
 
   if ((pslash = strchr(nodename, (int)'/')) != NULL)
     *pslash = '\0';
 
-  reinitialize_node_iterator(&iter);
+  pthread_mutex_lock(allnodes.allnodes_mutex);
 
-  while ((pnode = next_node(&iter)) != NULL)
-    {
-    pthread_mutex_lock(pnode->nd_mutex);
+  i = get_value_hash(allnodes.ht,nodename);
 
-    if (pnode->nd_state & INUSE_DELETED)
-      {
-      pthread_mutex_unlock(pnode->nd_mutex);
+  if (i >= 0)
+    pnode = (struct pbsnode *)allnodes.ra->slots[i].item;
 
-      continue;
-      }
-
-    if (strcasecmp(nodename, pnode->nd_name) == 0)
-      {
-      break;
-      }
-
-    pthread_mutex_unlock(pnode->nd_mutex);
-    }
+  pthread_mutex_unlock(allnodes.allnodes_mutex);
 
   if (pslash != NULL)
     *pslash = '/'; /* restore the slash */
+
+  if (pnode != NULL)
+    pthread_mutex_lock(pnode->nd_mutex);
 
   return(pnode);
   }  /* END find_nodebyname() */
@@ -1306,8 +1285,9 @@ int update_nodes_file(
 #endif
 
   struct pbsnode  *np;
-  int i, j;
-  FILE *nin;
+  int              j;
+  int              iter = -1;
+  FILE            *nin;
 
   if (LOGLEVEL >= 2)
     {
@@ -1326,7 +1306,7 @@ int update_nodes_file(
     return(-1);
     }
 
-  if ((svr_totnodes == 0) || (pbsndmast == NULL))
+  if ((svr_totnodes == 0))
     {
     log_event(
       PBSEVENT_ADMIN,
@@ -1343,13 +1323,8 @@ int update_nodes_file(
   /* NOTE: DO NOT change this loop to iterate over numa nodes. Since they
    * aren't real hosts they should NOT appear in the nodes file */
 
-  for (i = 0;i < svr_totnodes;++i)
+  while ((np = next_host(&allnodes,&iter,held)) != NULL)
     {
-    np = pbsndmast[i];
-
-    if (held != np)
-      pthread_mutex_lock(np->nd_mutex);
-
     if (np->nd_state & INUSE_DELETED)
       {
       if (held != np)
@@ -1359,28 +1334,20 @@ int update_nodes_file(
       }
 
     /* ... write its name, and if time-shared, append :ts */
-
-    fprintf(nin, "%s",
-            np->nd_name); /* write name */
+    fprintf(nin, "%s", np->nd_name); /* write name */
 
     if (np->nd_ntype == NTYPE_TIMESHARED)
       fprintf(nin, ":ts");
 
     /* if number of subnodes is gt 1, write that; if only one,   */
     /* don't write to maintain compatability with old style file */
-
     if (np->nd_nsn > 1)
-      fprintf(nin, " %s=%d",
-              ATTR_NODE_np,
-              np->nd_nsn);
+      fprintf(nin, " %s=%d", ATTR_NODE_np, np->nd_nsn);
 
     /* if number of gpus is gt 0, write that; if none,   */
     /* don't write to maintain compatability with old style file */
-
     if (np->nd_ngpus > 0)
-      fprintf(nin, " %s=%d",
-              ATTR_NODE_gpus,
-              np->nd_ngpus);
+      fprintf(nin, " %s=%d", ATTR_NODE_gpus, np->nd_ngpus);
 
     /* write out the numa attributes if needed */
     if (np->num_node_boards > 0)
@@ -1392,45 +1359,24 @@ int update_nodes_file(
 
     if ((np->numa_str != NULL) &&
         (np->numa_str[0] != '\0'))
-      {
-      fprintf(nin, " %s=%s",
-        ATTR_NODE_numa_str,
-        np->numa_str);
-      }
+      fprintf(nin, " %s=%s", ATTR_NODE_numa_str, np->numa_str);
 
     /* write out the ports if needed */
     if (np->nd_mom_port != PBS_MOM_SERVICE_PORT)
-      {
-      fprintf(nin, " %s=%d",
-        ATTR_NODE_mom_port,
-        np->nd_mom_port);
-      }
+      fprintf(nin, " %s=%d", ATTR_NODE_mom_port, np->nd_mom_port);
 
     if (np->nd_mom_rm_port != PBS_MANAGER_SERVICE_PORT)
-      {
-      fprintf(nin, " %s=%d",
-        ATTR_NODE_mom_rm_port,
-        np->nd_mom_rm_port);
-      }
+      fprintf(nin, " %s=%d", ATTR_NODE_mom_rm_port, np->nd_mom_rm_port);
 
     if ((np->gpu_str != NULL) &&
         (np->gpu_str[0] != '\0'))
-      {
-      fprintf(nin, " %s=%s",
-        ATTR_NODE_gpus_str,
-        np->gpu_str);
-      }
+      fprintf(nin, " %s=%s", ATTR_NODE_gpus_str, np->gpu_str);
 
     /* write out properties */
-
     for (j = 0;j < np->nd_nprops - 1;++j)
-      {
-      fprintf(nin, " %s",
-              np->nd_prop->as_string[j]);
-      }
+      fprintf(nin, " %s", np->nd_prop->as_string[j]);
 
     /* finish off line with new-line */
-
     fprintf(nin, "\n");
 
     fflush(nin);
@@ -1444,13 +1390,16 @@ int update_nodes_file(
         "Node description file update failed");
 
       fclose(nin);
+    
+      if (held != np)
+        pthread_mutex_unlock(np->nd_mutex);
 
       return(-1);
       }
     
     if (held != np)
       pthread_mutex_unlock(np->nd_mutex);
-    }
+    } /* for each node */
 
   fclose(nin);
 
@@ -1476,8 +1425,8 @@ int update_nodes_file(
  * recompute_ntype_cnts - Recomputes the current number of cluster
  *          nodes and current number of time-shared nodes
  */
-void
-recompute_ntype_cnts(void)
+void recompute_ntype_cnts(void)
+
   {
   int   svr_loc_clnodes = 0;
   int   svr_loc_tsnodes = 0;
@@ -1490,23 +1439,25 @@ recompute_ntype_cnts(void)
 
   if (svr_totnodes)
     {
-    while ((pnode = next_node(&iter)) != NULL)
+    while ((pnode = next_node(&allnodes,&iter)) != NULL)
       {
-      if (pnode->nd_state & INUSE_DELETED)
-        continue;
+      if (!(pnode->nd_state & INUSE_DELETED))
+        {
+        /* count normally */
+        if (pnode->nd_ntype == NTYPE_CLUSTER)
+          svr_loc_clnodes += pnode->nd_nsn;
+        else if (pnode->nd_ntype == NTYPE_TIMESHARED)
+          svr_loc_tsnodes++;
+        }
 
-      /* count normally */
-      if (pnode->nd_ntype == NTYPE_CLUSTER)
-        svr_loc_clnodes += pnode->nd_nsn;
-      else if (pnode->nd_ntype == NTYPE_TIMESHARED)
-        svr_loc_tsnodes++;
+      pthread_mutex_unlock(pnode->nd_mutex);
       }
 
     svr_clnodes = svr_loc_clnodes;
 
     svr_tsnodes = svr_loc_tsnodes;
     }
-  }
+  } /* END recompute_ntype_cnts() */
 
 
 
@@ -1883,21 +1834,24 @@ int setup_node_boards(
  * not resolve on server initialization. This function is called
  * periodically to see if the node is now resolvable and if so
  * add it to the list of available MOM nodes. */
-void recheck_for_node( struct work_task *ptask)
+
+void recheck_for_node(
+   
+  struct work_task *ptask)
+
   {
   node_info *host_info;
-  int rc;
-  int bad;
+  int        rc;
+  int        bad;
 
   host_info = ptask->wt_parm1;
-  if(host_info == NULL)
+  if (host_info == NULL)
     {
     return;
     }
 
-
   rc = create_pbs_node( host_info->nodename, host_info->plist, host_info->perms, &bad);
-  if(rc)
+  if (rc)
     {
     /* we created a new host_info in create_pbs_node. We
        need to free this one */
@@ -1911,8 +1865,10 @@ void recheck_for_node( struct work_task *ptask)
     }
 
   return;
+  } /* END recheck_for_node() */
 
-  }
+
+
 
 
 /*
@@ -1927,20 +1883,16 @@ int create_pbs_node(
   int      *bad)
 
   {
-
-  char *id = "create_pbs_node"; 
+  static char     *id = "create_pbs_node"; 
   struct pbsnode  *pnode = NULL;
 
-  struct pbsnode **tmpndlist;
   work_task       *wt;
   int              ntype; /* node type; time-shared, not */
   char            *pname; /* node name w/o any :ts       */
   u_long          *pul;  /* 0 terminated host adrs array*/
   int              rc;
-  int              iht;
   node_info        *host_info;
   int              i;
-  int              reused_entry = 0;
   u_long           addr;
 
   if ((rc = process_host_name_part(objname, &pul, &pname, &ntype)) != 0)
@@ -1952,9 +1904,9 @@ int create_pbs_node(
     /* the host name in the nodes file did not resolve.
        We will set up a process to check periodically
        to see if the node will resolve later */
-
     host_info = (node_info *)calloc(1, sizeof(node_info));
-    if(host_info == NULL)
+
+    if (host_info == NULL)
       {
       log_err(-1, "create_pbs_node calloc failed", log_buffer);
       return(PBSE_SYSTEM);
@@ -1966,10 +1918,10 @@ int create_pbs_node(
     host_info->perms = perms;
     pal = plist;
 
-    while(pal != NULL)
+    while (pal != NULL)
       {
       pattrl = attrlist_create(pal->al_atopl.name, 0, strlen(pal->al_atopl.value) + 1);
-      if(pattrl == NULL)
+      if (pattrl == NULL)
         {
         log_err(-1, "cannot create node attribute", log_buffer);
         return(PBSE_SYSTEM);
@@ -1985,18 +1937,19 @@ int create_pbs_node(
     pattrl = GET_NEXT(host_info->atrlist);
     host_info->plist = pattrl;
 
-    if(objname != NULL)
+    if (objname != NULL)
       {
       host_info->nodename = (char *)calloc(1, strlen(objname)+1);
-      if(host_info->nodename == NULL)
+      
+      if (host_info->nodename == NULL)
         {
         free(host_info);
         log_err(-1, "create_pbs_node calloc failed", log_buffer);
         return(PBSE_SYSTEM);
         }
+
       strcpy(host_info->nodename, objname);
       }
-
 
     wt = set_task(WORK_Timed, time_now + 30 /*PBS_LOG_CHECK_RATE  five minutes */, recheck_for_node, host_info);
 
@@ -2026,84 +1979,19 @@ int create_pbs_node(
 
     return(PBSE_NODEEXIST);
     }
-
-  for (iht = 0; iht < svr_totnodes; iht++)
+    
+  if ((pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode))) == NULL)
     {
-    if (pbsndmast[iht]->nd_state & INUSE_DELETED)
-      {
-      /*available, use*/
-
-      pnode = pbsndmast[iht];
-      reused_entry = 1;
-
-      break;
-      }
-    }
-
-  if (iht == svr_totnodes)
-    {
-    /*no unused entry, make an entry*/
-
-    pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
-
-    if (pnode == NULL)
-      {
-      free(pul);
-      free(pname);
-
-      return(PBSE_SYSTEM);
-      }
-
-    pnode->nd_state = INUSE_DELETED;
-
-    /* expand pbsndmast array exactly svr_totnodes long*/
-
-/*    tmpndlist = (struct pbsnode **)realloc(
-                  pbsndmast,
-                  sizeof(struct pbsnode *) * (svr_totnodes + 1));
-
-    if (tmpndlist == NULL)
-      {
-      free(pnode);
-      free(pul);
-      free(pname);
-
-      return(PBSE_SYSTEM);
-      }*/
-
-    /*add in the new entry etc*/
-
-/*    pbsndmast = tmpndlist;
-
-    pbsndmast[svr_totnodes++] = pnode;
-
-    tmpndlist = (struct pbsnode **)realloc(
-                  pbsndlist,
-                  sizeof(struct pbsnode *) * (svr_totnodes + 1));
-
-    if (tmpndlist == NULL)
-      {
-      free(pnode);
-      free(pul);
-      free(pname);
-
-      return(PBSE_SYSTEM);
-      }
-
-    memcpy(
-
-      tmpndlist,
-      pbsndmast,
-      svr_totnodes * sizeof(struct pbsnode *));
-
-    pbsndlist = tmpndlist;*/
+    free(pul);
+    free(pname);
+    
+    return(PBSE_SYSTEM);
     }
 
   if ((rc = initialize_pbsnode(pnode, pname, pul, ntype)) != PBSE_NONE)
     return(rc);
 
   /* create and initialize the first subnode to go with the parent node */
-
   if (create_subnode(pnode) == NULL)
     {
     pnode->nd_state = INUSE_DELETED;
@@ -2115,7 +2003,6 @@ int create_pbs_node(
     }
 
   rc = mgr_set_node_attr(
-
          pnode,
          node_attr_def,
          ND_ATR_LAST,
@@ -2128,86 +2015,38 @@ int create_pbs_node(
   if (rc != 0)
     {
     effective_node_delete(pnode);
-
+    
     return(rc);
     }
 
-    /* expand pbsndmast array exactly svr_totnodes long*/
-
-  tmpndlist = (struct pbsnode **)realloc(
-                pbsndmast,
-                sizeof(struct pbsnode *) * (svr_totnodes + 1));
-
-  if (tmpndlist == NULL)
-    {
-    free(pnode);
-    free(pul);
-    free(pname);
-
-    return(PBSE_SYSTEM);
-    }
-
-  if (!reused_entry)
-    {
-    /*add in the new entry etc*/
-  
-    pbsndmast = tmpndlist;
-  
-    pbsndmast[svr_totnodes++] = pnode;
-  
-    tmpndlist = (struct pbsnode **)realloc(
-                  pbsndlist,
-                  sizeof(struct pbsnode *) * (svr_totnodes + 1));
-  
-    if (tmpndlist == NULL)
-      {
-      free(pnode);
-      free(pul);
-      free(pname);
-  
-      return(PBSE_SYSTEM);
-      }
-  
-    memcpy(
-  
-      tmpndlist,
-      pbsndmast,
-      svr_totnodes * sizeof(struct pbsnode *));
-  
-    pbsndlist = tmpndlist;
-    }
-
-
-  for (i = 0;pul[i];i++)
+  for (i = 0; pul[i]; i++)
     {
     if (LOGLEVEL >= 6)
       {
       sprintf(log_buffer, "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
-              pnode->nd_name,
-              (pul[i] & 0xff000000) >> 24,
-              (pul[i] & 0x00ff0000) >> 16,
-              (pul[i] & 0x0000ff00) >> 8,
-              (pul[i] & 0x000000ff));
+        pnode->nd_name,
+        (pul[i] & 0xff000000) >> 24,
+        (pul[i] & 0x00ff0000) >> 16,
+        (pul[i] & 0x0000ff00) >> 8,
+        (pul[i] & 0x000000ff));
 
-      log_record(
-        PBSEVENT_SCHED,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buffer);
       }
     
-/*    addr = pul[i] + pnode->nd_mom_port + pnode->nd_mom_rm_port; */
     addr = pul[i];
-/*    tinsert(addr, pnode, &ipaddrs);*/
     ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
-      
     }  /* END for (i) */
 
   setup_node_boards(pnode,pul);
 
+  insert_node(&allnodes,pnode);
+
+  svr_totnodes++;
+
   recompute_ntype_cnts();
 
-  return(PBSE_NONE);     /*create completely successful*/
+  /* SUCCESS */
+  return(PBSE_NONE);
   } /* End create_pbs_node */
 
 
@@ -2293,7 +2132,7 @@ static char *parse_node_token(
 
 /*
  * Read the file, "nodes", containing the list of properties for each node.
- * The list of nodes is formed with pbsndmast (also pbsndlist) as the head.
+ * The list of nodes is formed and stored in allnodes.
  * Return -1 on error, 0 otherwise.
  *
  * Read the node state file, "node_state", for any "offline"
@@ -2318,7 +2157,9 @@ int setup_nodes(void)
   char  *close_bracket;
   char  *dash;
   char   tmp_node_name[MAX_LINE];
-  int    bad, i, num, linenum;
+  int    bad;
+  int    num;
+  int    linenum;
   int    err;
   int    start = -1;
   int    end = -1;
@@ -2615,10 +2456,10 @@ int setup_nodes(void)
                   line,
                   &num) == 2)
       {
-      for (i = 0;i < svr_totnodes;i++)
-        {
-        np = pbsndmast[i];
+      int iter = -1;
 
+      while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+        {
         if (strcmp(np->nd_name, line) == 0)
           {
           np->nd_state = num | INUSE_NEEDS_HELLO_PING;
@@ -2626,8 +2467,12 @@ int setup_nodes(void)
           /* exclusive bits are calculated later in set_old_nodes() */
           np->nd_state &= ~(INUSE_JOB | INUSE_JOBSHARE);
 
+          pthread_mutex_unlock(np->nd_mutex);
+
           break;
           }
+
+        pthread_mutex_unlock(np->nd_mutex);
         }
       }
 
@@ -2644,12 +2489,16 @@ int setup_nodes(void)
                   line,
                   note) == 2)
       {
-      for (i = 0;i < svr_totnodes;i++)
-        {
-        np = pbsndmast[i];
+      int iter = -1;
 
+      while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+        {
         if (np->nd_state & INUSE_DELETED)
+          {
+          pthread_mutex_unlock(np->nd_mutex);
+
           continue;
+          }
 
         if (strcmp(np->nd_name, line) == 0)
           {
@@ -2660,15 +2509,15 @@ int setup_nodes(void)
             sprintf(log_buffer, "couldn't allocate space for note (node = %s)",
                     np->nd_name);
 
-            log_record(
-              PBSEVENT_SCHED,
-              PBS_EVENTCLASS_REQUEST,
-              id,
-              log_buffer);
+            log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buffer);
             }
+        
+          pthread_mutex_unlock(np->nd_mutex);
 
           break;
           }
+
+        pthread_mutex_unlock(np->nd_mutex);
         }
       }
 
@@ -3101,83 +2950,29 @@ int gpu_str_action(
    only be a name for the new node and no attributes or properties */
 
 int create_partial_pbs_node(
+
   char *nodename,
   unsigned long addr,
   int perms)
 
   {
-  int iht;
   int              ntype; /* node type; time-shared, not */
-  int rc, bad = 0;
-  svrattrl *plist = NULL;
-  struct pbsnode **tmpndlist;
-  struct pbsnode  *pnode = NULL;
-  u_long *pul;
-  char *pname;
+  int              rc;
+  int              bad = 0;
+  svrattrl        *plist = NULL;
+  struct pbsnode  *pnode;
+  u_long          *pul;
+  char            *pname;
 
-  for(iht = 0; iht < svr_totnodes; iht++)
+  pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
+  
+  if (pnode == NULL)
     {
-    if (pbsndmast[iht]->nd_state & INUSE_DELETED)
-      {
-      /* there is a slot available */
-      pnode = pbsndmast[iht];
-      break;
-      }
-    }
-
-  if (iht == svr_totnodes)
-    {
-    /*no unused entry, make an entry*/
-
-    pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
-
-    if (pnode == NULL)
-      {
-      return(PBSE_SYSTEM);
-      }
-
-    pnode->nd_state = INUSE_DELETED;
-
-    /* expand pbsndmast array exactly svr_totnodes long*/
-
-    tmpndlist = (struct pbsnode **)realloc(
-                  pbsndmast,
-                  sizeof(struct pbsnode *) * (svr_totnodes + 1));
-
-    if (tmpndlist == NULL)
-      {
-      free(pnode);
-
-      return(PBSE_SYSTEM);
-      }
-
-    /*add in the new entry etc*/
-
-    pbsndmast = tmpndlist;
-
-    pbsndmast[svr_totnodes++] = pnode;
-
-    tmpndlist = (struct pbsnode **)realloc(
-                  pbsndlist,
-                  sizeof(struct pbsnode *) * (svr_totnodes + 1));
-
-    if (tmpndlist == NULL)
-      {
-      free(pnode);
-
-      return(PBSE_SYSTEM);
-      }
-
-    memcpy(
-      tmpndlist,
-      pbsndmast,
-      svr_totnodes * sizeof(struct pbsnode *));
-
-    pbsndlist = tmpndlist;
+    return(PBSE_SYSTEM);
     }
 
   ntype = NTYPE_CLUSTER;
-  pul = (u_long *)malloc(sizeof(u_long) * 2);
+  pul = malloc(sizeof(u_long) * 2);
   if (!pul)
     {
     free(pnode);
@@ -3197,7 +2992,7 @@ int create_partial_pbs_node(
     {
     pnode->nd_state = INUSE_DELETED;
 
-    return (PBSE_SYSTEM);
+    return(PBSE_SYSTEM);
     }
 
   rc = mgr_set_node_attr(
@@ -3218,9 +3013,13 @@ int create_partial_pbs_node(
     return(rc);
     }
 
-  recompute_ntype_cnts();
+  insert_node(&allnodes,pnode);
+  
+  svr_totnodes++;
 
   AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
+
+  recompute_ntype_cnts();
 
   return(PBSE_NONE);     /*create completely successful*/
   } /* END create_partial_pbs_node */
@@ -3273,45 +3072,168 @@ void reinitialize_node_iterator(
  */
 struct pbsnode *next_node(
 
+  all_nodes     *an,
   node_iterator *iter)
 
   {
-  struct pbsnode *next = NULL;
+  struct pbsnode *next;
+  struct pbsnode *numa_tmp;
 
-  if (iter == NULL)
+  pthread_mutex_lock(an->allnodes_mutex);
+
+  if (iter->node_index == -1)
     {
-    return(NULL);
+    /* the first call to next_node */
+    next = next_thing(an->ra,&iter->node_index);
+
+    /* the first possible index */
+    iter->prev_index = an->ra->slots[ALWAYS_EMPTY_INDEX].next;
+    }
+  else 
+    {
+    next = (struct pbsnode *)get_thing_from_index(an->ra,iter->prev_index);
+
+    if (next != NULL)
+      {
+      if (pthread_mutex_trylock(next->nd_mutex))
+        {
+        pthread_mutex_unlock(an->allnodes_mutex);
+        pthread_mutex_lock(next->nd_mutex);
+        pthread_mutex_lock(an->allnodes_mutex);
+        }
+      
+      if (iter->numa_index + 1 >= next->num_node_boards)
+        {
+        /* save this index before advancing */
+        iter->prev_index = iter->node_index;
+        
+        /* go to the next node in all nodes */
+        pthread_mutex_unlock(next->nd_mutex);
+        next = next_thing(an->ra,&iter->node_index);
+        }
+      else
+        {        
+        /* go to the next numa node */
+        iter->numa_index++;
+        numa_tmp = AVL_find(iter->numa_index,next->nd_mom_port,next->node_boards);
+        pthread_mutex_unlock(next->nd_mutex);
+        next = numa_tmp;
+        }
+      }
     }
 
-  /* conditionally advance the node index pointer */
-  if ((iter->node_index == -1) ||
-      (iter->numa_index+1 >= pbsndlist[iter->node_index]->num_node_boards))
-    {
-    iter->node_index++;
-    iter->numa_index = 0;
-    }
-  else
-    {
-    iter->numa_index++;
-    }
+  pthread_mutex_unlock(an->allnodes_mutex);
 
-  /* conditionally return the correct node */
-  if (iter->node_index < svr_totnodes)
-    {
-    next = pbsndlist[iter->node_index];
-    
-    if (next->num_node_boards > 0)
-      next = AVL_find(iter->numa_index,next->nd_mom_port,next->node_boards);
+  if (next != NULL)
+    pthread_mutex_lock(next->nd_mutex);
 
-    return(next);
-    }
-  else
-    {
-    /* end of list, no more nodes */
-    return(NULL);
-    }
+  return(next);
   } /* END next_node() */
 
+
+
+
+void initialize_all_nodes_array(
+
+  all_nodes *an)
+
+  {
+  an->ra = initialize_resizable_array(INITIAL_NODE_SIZE);
+  an->ht = create_hash(INITIAL_HASH_SIZE);
+
+  an->allnodes_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(an->allnodes_mutex,NULL);
+  } /* END initialize_all_nodes_array() */
+
+
+
+
+/*
+ * insert a node into the array 
+ *
+ * @param pnode - the node to be inserted
+ * @return PBSE_NONE on success 
+ */
+
+int insert_node(
+
+  all_nodes      *an,    /* M */
+  struct pbsnode *pnode) /* I */
+
+  {
+  static char *id = "insert_node";
+  int          rc;
+
+  pthread_mutex_lock(an->allnodes_mutex);
+
+  if ((rc = insert_thing(an->ra,pnode)) == -1)
+    {
+    rc = ENOMEM;
+    log_err(rc,id,"No memory to resize the array...SYSTEM FAILURE");
+    }
+  else
+    {
+    add_hash(an->ht,rc,pnode->nd_name);
+
+    rc = PBSE_NONE;
+    }
+
+  pthread_mutex_unlock(an->allnodes_mutex);
+
+  return(rc);
+  } /* END insert_node() */
+
+
+
+
+/* 
+ * remove a node from the array
+ *
+ * @param pnode - the node to remove
+ * @return PBSE_NONE if the node is removed 
+ */
+
+int remove_node(
+
+  all_nodes      *an,
+  struct pbsnode *pnode)
+
+  {
+  int rc = PBSE_NONE;
+
+  pthread_mutex_lock(an->allnodes_mutex);
+
+  rc = remove_thing(an->ra,pnode);
+
+  pthread_mutex_unlock(an->allnodes_mutex);
+
+  return(rc);
+  } /* END remove_node() */
+
+
+
+
+struct pbsnode *next_host(
+
+  all_nodes      *an,    /* I */
+  int            *iter,  /* M */
+  struct pbsnode *held)  /* I */
+
+  {
+  struct pbsnode *pnode;
+
+  pthread_mutex_lock(an->allnodes_mutex);
+
+  pnode = next_thing(an->ra,iter);
+
+  pthread_mutex_unlock(an->allnodes_mutex);
+
+  if ((pnode != NULL) &&
+      (pnode != held))
+    pthread_mutex_lock(pnode->nd_mutex);
+
+  return(pnode);
+  } /* END next_host() */
 
 
 

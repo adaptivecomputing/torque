@@ -1087,7 +1087,6 @@ void main_loop(void)
 
   extern char  *msg_startup2; /* log message   */
 
-  void ping_nodes(struct work_task *);
   void check_nodes(struct work_task *);
   void check_log(struct work_task *);
   void check_job_log(struct work_task *);
@@ -1136,8 +1135,6 @@ void main_loop(void)
     }
 
   /* Just check the nodes with check_nodes above and don't ping anymore. */
-
-/*  set_task(WORK_Timed, time_now + 5, ping_nodes, NULL); */
 
   pwt = set_task(WORK_Timed, time_now + 5, check_log, NULL);
 

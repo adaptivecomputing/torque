@@ -159,7 +159,7 @@ extern int PNodeStateToString(int, char *, int);
 /* private data */
 
 static char *all_quename = "_All_";
-static char *all_nodes = "_All_";
+static char *all_nodes_str = "_All_";
 
 /*
  * check_que_attr - check if attributes in request are consistant with
@@ -1633,7 +1633,7 @@ void mgr_node_set(
   {
   static int need_todo = 0;
 
-  int  allnodes = 0;
+  int  check_all = 0;
   int  propnodes = 0;
   int  bad = 0;
   svrattrl *plist;
@@ -1660,9 +1660,9 @@ void mgr_node_set(
     /*In this instance the set node req is to apply to all */
     /*nodes at the local ('\0')  or specified ('@') server */
 
-    if ((pbsndlist != NULL) && svr_totnodes)
+    if (svr_totnodes)
       {
-      pnode = *pbsndlist;
+      pnode = (struct pbsnode *)1;
 
       if ((*preq->rq_ind.rq_manager.rq_objname == ':') &&
           (strcmp(preq->rq_ind.rq_manager.rq_objname + 1, "ALL") != 0))
@@ -1675,15 +1675,9 @@ void mgr_node_set(
         }
       else
         {
-        allnodes = 1;
-        nodename = all_nodes;
+        check_all = 1;
+        nodename = all_nodes_str;
         }
-      }
-    else
-      {
-      /* specified server has no nodes in its node table */
-
-      pnode = NULL;
       }
     }
   else
@@ -1699,7 +1693,7 @@ void mgr_node_set(
     return;
     }
 
-  /*set "state", "properties", or type of node (nodes if allnodes == 1)*/
+  /*set "state", "properties", or type of node (nodes if check_all == 1)*/
 
   sprintf(log_buffer, msg_manager,
           msg_man_set,
@@ -1710,23 +1704,23 @@ void mgr_node_set(
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
-  if (allnodes || propnodes)
+  if (check_all || propnodes)
     {
     /* handle scrolling over all nodes */
-    pthread_mutex_unlock(pnode->nd_mutex);
-
     problem_nodes = (struct pbsnode **)malloc(svr_totnodes * sizeof(struct pbsnode *));
 
     problem_cnt = 0;
   
     reinitialize_node_iterator(&iter);
 
-    while ((pnode = next_node(&iter)) != NULL)
+    while ((pnode = next_node(&allnodes,&iter)) != NULL)
       {
-      pthread_mutex_lock(pnode->nd_mutex);
-
       if (propnodes && !hasprop(pnode, &props))
+        {
+        pthread_mutex_unlock(pnode->nd_mutex);
+
         continue;
+        }
 
       save_characteristic(pnode);
 
@@ -1835,7 +1829,6 @@ void mgr_node_set(
   if (need_todo & WRITENODE_STATE)
     {
     /*some nodes set to "offline"*/
-
     write_node_state();
 
     need_todo &= ~(WRITENODE_STATE);
@@ -1844,7 +1837,6 @@ void mgr_node_set(
   if (need_todo & WRITENODE_NOTE)
     {
     /*some nodes have new "note"s*/
-
     write_node_note();
 
     need_todo &= ~(WRITENODE_NOTE);
@@ -1853,16 +1845,13 @@ void mgr_node_set(
   if (need_todo & WRITE_NEW_NODESFILE)
     {
     /*create/delete/prop/ntype change*/
-
     if (!update_nodes_file(NULL))
-
       need_todo &= ~(WRITE_NEW_NODESFILE);  /*successful on update*/
     }
 
-  if (allnodes || propnodes)
+  if (check_all || propnodes)
     {
     /* modification was for all nodes */
-
     if (problem_cnt)
       {
       /* one or more problems encountered */
@@ -1905,7 +1894,7 @@ void mgr_node_set(
 
       return;
       }
-    }    /* END if (allnodes || propnodes) */
+    }    /* END if (check_all || propnodes) */
 
   recompute_ntype_cnts();
 
@@ -1934,7 +1923,7 @@ static void mgr_node_delete(
   {
   static int need_todo = 0;
 
-  int  allnodes = 0;
+  int  check_all = 0;
 
   struct pbsnode *pnode;
   char  *nodename = NULL;
@@ -1955,16 +1944,15 @@ static void mgr_node_delete(
     /* In this instance the set node req is to apply to all */
     /* nodes at the local ('\0')  or specified ('@') server */
 
-    if ((pbsndlist != NULL) && svr_totnodes)
+    if (svr_totnodes)
       {
-      nodename = all_nodes;
-      pnode = *pbsndlist;
-      allnodes = 1;
+      nodename = all_nodes_str;
+      pnode = (struct pbsnode *)1;
+      check_all = 1;
       }
     else
       {
       /* specified server has no nodes in its node table */
-
       pnode = NULL;
       }
     }
@@ -1983,10 +1971,9 @@ static void mgr_node_delete(
     }
 
   sprintf(log_buffer, msg_manager,
-
-          msg_man_del,
-          preq->rq_user,
-          preq->rq_host);
+    msg_man_del,
+    preq->rq_user,
+    preq->rq_host);
 
   log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_NODE, nodename, log_buffer);
 
@@ -1995,22 +1982,18 @@ static void mgr_node_delete(
   /*if doing many and problem arises with some, record them for report*/
   /*the array of "problem nodes" sees no use now and may never see use*/
 
-  if (allnodes)
+  if (check_all)
     {
-    pthread_mutex_unlock(pnode->nd_mutex);
-    
     /* handle all nodes */
     problem_nodes = (struct pbsnode **)malloc(
-                      svr_totnodes * sizeof(struct pbsnode *));
+        svr_totnodes * sizeof(struct pbsnode *));
 
     problem_cnt = 0;
 
     reinitialize_node_iterator(&iter);
 
-    while ((pnode = next_node(&iter)) != NULL)
+    while ((pnode = next_node(&allnodes,&iter)) != NULL)
       {
-      pthread_mutex_lock(pnode->nd_mutex);
-
       save_characteristic(pnode);
 
       nodename = strdup(pnode->nd_name);
@@ -2028,8 +2011,7 @@ static void mgr_node_delete(
         }
       else
         {
-        /*modifications succeed for this node*/
-
+        /* modifications succeed for this node */
         chk_characteristic(pnode, &need_todo);
 
         if (nodename)
@@ -2087,7 +2069,7 @@ static void mgr_node_delete(
     pthread_mutex_unlock(pnode->nd_mutex);
     }
 
-  /*set "deleted" bit in node's (nodes, allnodes == 1) "inuse" field*/
+  /*set "deleted" bit in node's (nodes, check_all == 1) "inuse" field*/
   /*remove entire prop list, including the node name, from the node */
   /*remove the IP address array hanging from the node               */
 
@@ -2109,7 +2091,7 @@ static void mgr_node_delete(
       need_todo &= ~(WRITE_NEW_NODESFILE);  /*successful on update*/
     }
 
-  if (allnodes)
+  if (check_all)
     {
     /*modification was for all nodes  */
 

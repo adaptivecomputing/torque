@@ -876,7 +876,7 @@ resource *get_resource(
  * does not make use of comp_resc_eq or comp_resc_nc
  */
 
-static void chk_svr_resc_limit(
+static int chk_svr_resc_limit(
 
   attribute *jobatr, /* I */
   pbs_queue *pque,   /* I */
@@ -902,6 +902,7 @@ static void chk_svr_resc_limit(
 
   int       MPPWidth = 0;
   int       PPN = 0;
+  int       comp_resc_lt = 0;
 
   long      mpp_nppn = 0;
   long      mpp_width = 0;
@@ -971,7 +972,6 @@ static void chk_svr_resc_limit(
 
   comp_resc_gt = 0;
 
-  comp_resc_lt = 0;
 
   jbrc = (resource *)GET_NEXT(jobatr->at_val.at_list);
 
@@ -994,12 +994,13 @@ static void chk_svr_resc_limit(
         {
         mpp_nppn = jbrc->rs_value.at_val.at_long;
         }
-      if (strcmp(LimitName,"mppwidth") == 0)
+      else if (strcmp(LimitName,"mppwidth") == 0)
         {
         mpp_width = jbrc->rs_value.at_val.at_long;
         }
 
-      if ((jbrc->rs_defin == noderesc) && (qtype == QTYPE_Execution))
+      if ((jbrc->rs_defin == noderesc) && 
+          (qtype == QTYPE_Execution))
         {
         /* NOTE:  process after loop so SvrNodeCt is loaded */
         /* can check pure nodes violation right here */
@@ -1023,7 +1024,7 @@ static void chk_svr_resc_limit(
         }
 
       /* Added 6/14/2010 Ken Nielson for ability to parse the procs resource */
-      if((jbrc->rs_defin == procresc) && (qtype == QTYPE_Execution))
+      if ((jbrc->rs_defin == procresc) && (qtype == QTYPE_Execution))
         {
         proc_ct = jbrc->rs_value.at_val.at_long;
         }
@@ -1038,8 +1039,8 @@ static void chk_svr_resc_limit(
         }
 
 #endif /* NERSCDEV */
-      else if ((strcmp(LimitName,"mppnodect") == 0)
-          && (jbrc->rs_value.at_val.at_long == -1))
+      else if ((strcmp(LimitName,"mppnodect") == 0) &&
+               (jbrc->rs_value.at_val.at_long == -1))
         {
         /*
          * mppnodect is a special attrtibute,  It gets set based upon the
@@ -1050,7 +1051,8 @@ static void chk_svr_resc_limit(
          
         mppnodect_resource = jbrc;
         }
-      else if ((cmpwith != NULL) && (jbrc->rs_defin != needresc))
+      else if ((cmpwith != NULL) && 
+               (jbrc->rs_defin != needresc))
         {
         /* don't check neednodes */
 
@@ -1163,14 +1165,13 @@ static void chk_svr_resc_limit(
       if (LOGLEVEL >= 7)
         {
         sprintf(log_buffer,
-            "chk_svr_resc_limit: comparing calculated mppnodect %ld, %s limit %s %ld\n",
-            mpp_nodect,
-            (LimitIsFromQueue == 1) ? "queue" : "server",
-            LimitName,
-            cmpwith->rs_value.at_val.at_long);
-
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, msg_daemonname,
-                  log_buffer);
+          "chk_svr_resc_limit: comparing calculated mppnodect %ld, %s limit %s %ld\n",
+          mpp_nodect,
+          (LimitIsFromQueue == 1) ? "queue" : "server",
+          LimitName,
+          cmpwith->rs_value.at_val.at_long);
+        
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
         }
 
       nodect_orig = mppnodect_resource->rs_value.at_val.at_long;
@@ -1266,33 +1267,33 @@ static void chk_svr_resc_limit(
       }
     }    /* END if (jbrc_nodes != NULL) */
 
-  if(proc_ct > 0)
+  if (proc_ct > 0)
     {
-      if(procs_available(proc_ct) == -1)
+    if (procs_available(proc_ct) == -1)
+      {
+      /* only record if:
+       * is_transit flag is not set
+       * or  is_transit is set, but not to true
+       */
+      if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+          (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
         {
-          /* only record if:
-           *     is_transit flag is not set
-           * or  is_transit is set, but not to true
-           */
-          if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
-              (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
-            {
-            if ((EMsg != NULL) && (EMsg[0] == '\0'))
-              strcpy(EMsg, "cannot locate feasible nodes");
-      
-            comp_resc_lt++;
-            }
-        }    
+        if ((EMsg != NULL) && (EMsg[0] == '\0'))
+          strcpy(EMsg, "cannot locate feasible nodes");
+        
+        comp_resc_lt++;
+        }
+      }    
     }
 
-  if((proc_ct + req_procs) > svr_clnodes) 
+  if ((proc_ct + req_procs) > svr_clnodes) 
     {
     if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
         (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
       {
       if ((EMsg != NULL) && (EMsg[0] == '\0'))
         strcpy(EMsg, "cannot locate feasible nodes");
-    
+      
       comp_resc_lt++;
       }
     }
@@ -1308,7 +1309,7 @@ static void chk_svr_resc_limit(
       }
     }
 
-  return;
+  return(comp_resc_lt);
   }  /* END chk_svr_resc_limit() */
 
 
@@ -1420,19 +1421,20 @@ int chk_resc_limits(
   char      *EMsg)   /* O (optional,minsize=1024) */
 
   {
-  /* NOTE:  comp_resc_gt and comp_resc_lt are global ints */
+  int resc_lt;
+  int resc_gt;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
 
   /* first check against queue minimum */
-
-  if ((comp_resc2(
-         &pque->qu_attr[QA_ATR_ResourceMin],
+  resc_gt = comp_resc2(&pque->qu_attr[QA_ATR_ResourceMin],
          pattr,
          server.sv_attr[SRV_ATR_QCQLimits].at_val.at_long,
-         EMsg) == -1) ||
-      (comp_resc_gt > 0))
+         EMsg,
+         GREATER);
+
+  if (resc_gt != PBSE_NONE)
     {
     if ((EMsg != NULL) && (EMsg[0] == '\0'))
       strcpy(EMsg, "job violates queue min resource limits");
@@ -1441,14 +1443,9 @@ int chk_resc_limits(
     }
 
   /* now check against queue or server maximum */
+  resc_lt = chk_svr_resc_limit(pattr,pque,pque->qu_qs.qu_type,EMsg);
 
-  chk_svr_resc_limit(
-    pattr,
-    pque,
-    pque->qu_qs.qu_type,
-    EMsg);
-
-  if (comp_resc_lt > 0)
+  if (resc_lt > 0)
     {
     if ((EMsg != NULL) && (EMsg[0] == '\0'))
       strcpy(EMsg, "job violates queue/server max resource limits");
@@ -1457,8 +1454,7 @@ int chk_resc_limits(
     }
 
   /* SUCCESS */
-
-  return(0);
+  return(PBSE_NONE);
   }  /* END chk_resc_limits() */
 
 

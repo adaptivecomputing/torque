@@ -1342,21 +1342,17 @@ void *req_stat_node(
   void *vp) /* ptr to the decoded request   */
 
   {
-  char    *name;
+  static char          *id = "req_stat_node";
+  char                 *name;
 
-  struct pbsnode *pnode = NULL;
+  int                   rc   = 0;
+  int                   type = 0;
 
-  struct batch_reply *preply;
-  svrattrl *pal;
-  int     rc   = 0;
-  int     type = 0;
-  int     i;
+  struct pbsnode       *pnode = NULL;
+  struct batch_reply   *preply;
   struct batch_request *preq = (struct batch_request *)vp;
-
   struct prop props;
-
-
-  char     *id = "req_stat_node";
+  svrattrl             *pal;
 
   /*
    * first, check that the server indeed has a list of nodes
@@ -1374,7 +1370,7 @@ void *req_stat_node(
       "entered");
     }
 
-  if ((pbsndmast == NULL) || (svr_totnodes <= 0))
+  if (svr_totnodes <= 0)
     {
     req_reject(PBSE_NONODES, 0, preq, NULL, "node list is empty - check 'server_priv/nodes' file");
 
@@ -1431,16 +1427,15 @@ void *req_stat_node(
   else
     {
     /* get status of all or several nodes */
+    int iter = -1;
+
     if (pnode != NULL)
       pthread_mutex_unlock(pnode->nd_mutex);
 
-    for (i = 0;i < svr_totnodes;i++)
+    while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {
-      pnode = pbsndmast[i];
-
-      pthread_mutex_lock(pnode->nd_mutex);
-
-      if ((type == 2) && !hasprop(pnode, &props))
+      if ((type == 2) && 
+          (!hasprop(pnode, &props)))
         {
         pthread_mutex_unlock(pnode->nd_mutex);
 
