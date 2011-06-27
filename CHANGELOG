@@ -1,5 +1,7 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+2.5.8
+
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as
       an argument. The string is a list of space separated commandline
