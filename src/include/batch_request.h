@@ -415,7 +415,7 @@ extern void *req_releasearray (void *req);
 extern void *req_releasejob (void *req);
 extern void  req_rescq (struct batch_request *req);
 extern void  req_rerunjob (struct batch_request *req);
-extern void  req_runjob (struct batch_request *req);
+extern void *req_runjob (void *req);
 extern void  req_selectjobs (struct batch_request *req);
 extern void  req_stat_que (struct batch_request *req);
 extern void  req_stat_svr (struct batch_request *req);

@@ -738,35 +738,15 @@ void finish_move_process(
 
 
 
+int send_job_work(
 
-/*
- * send_job - send a job over the network to some other server or MOM
- *
- * Start a child to do the work.  Connect to the destination host and port,
- * and go through the protocol to transfer the job.
- *
- * @see svr_strtjob2() - parent
- *
- * Child exit status:
- *  0 success, job sent
- *  1 permanent failure or rejection
- *  2 failed but try again
- */
-
-void *send_job(
-
-  void *vp) /* I: jobid, hostaddr, port, move_type, and data */
+  job                  *pjob,      /* M */
+  char                 *node_name, /* I */
+  int                   type,      /* I */
+  struct batch_request *preq)      /* M */
 
   {
-  static char          *id = "send_job";
-
-  send_job_request     *args = (send_job_request *)vp;
-  char                 *jobid = args->jobid;
-  job                  *pjob;
-  pbs_net_t             hostaddr = args->addr;       /* host address, host byte order */
-  int                   port = args->port;           /* service port, host byte order */
-  int                   type = args->move_type; /* move, route, or execute */
-
+  static char          *id = "send_job_work";
   tlist_head            attrl;
   enum conn_type        cntype = ToServerDIS;
   int                   con;
@@ -774,36 +754,18 @@ void *send_job(
   int                   i;
   int                   NumRetries;
   int                   resc_access_perm;
-  char                 *destin;
+  char                 *destin = pjob->ji_qs.ji_destin;
   char                  script_name[MAXPATHLEN + 1];
   char                 *pc;
-  char                 *node_name = NULL;
   long                  time = time_now;
   long                  sid;
 
-  struct batch_request *preq = (struct batch_request *)args->data;
   struct attropl       *pqjatr;      /* list (single) of attropl for quejob */
-  struct pbsnode       *np;
   attribute            *pattr;
   mbool_t               Timeout = FALSE;
-
-  pjob = find_job(jobid);
-  destin = pjob->ji_qs.ji_destin;
-
-  if (LOGLEVEL >= 6)
-    {
-    sprintf(log_buffer,"about to send job - type=%d",
-      type);
- 
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-    }
-
-  if ((np = PGetNodeFromAddr(hostaddr)) != NULL)
-    {
-    node_name = np->nd_name;
-
-    pthread_mutex_unlock(np->nd_mutex);
-    }
+  
+  pbs_net_t             hostaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
+  int                   port = pjob->ji_qs.ji_un.ji_exect.ji_momport;
 
   /* encode job attributes to be moved */
   CLEAR_HEAD(attrl);
@@ -897,7 +859,7 @@ void *send_job(
 
         finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
 
-        return(NULL);
+        return(LOCUTION_FAIL);
         }
 
       sleep(1 << NumRetries);
@@ -915,7 +877,7 @@ void *send_job(
   
       finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
 
-      return(NULL);
+      return(LOCUTION_FAIL);
       }
 
     pthread_mutex_lock(connection[con].ch_mutex);
@@ -965,7 +927,6 @@ void *send_job(
         if ((pbs_errno == PBSE_JOBEXIST) && (type == MOVE_TYPE_Exec))
           {
           /* already running, mark it so */
-
           log_event(
             PBSEVENT_ERROR,
             PBS_EVENTCLASS_JOB,
@@ -974,18 +935,14 @@ void *send_job(
 
           finish_move_process(pjob,preq,time,node_name,LOCUTION_SUCCESS,type);
 
-          return(NULL);
+          return(PBSE_NONE);
           }
 
         sprintf(log_buffer, "send of job to %s failed error = %d",
           destin,
           pbs_errno);
 
-        log_event(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          jobid,
-          log_buffer);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 
         continue;
         }  /* END if ((pc = PBSD_queuejob() == NULL) */
@@ -994,7 +951,7 @@ void *send_job(
 
       if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT)
         {
-        if (PBSD_jscript(con, script_name, jobid) != 0)
+        if (PBSD_jscript(con, script_name, pjob->ji_qs.ji_jobid) != 0)
           continue;
         }
 
@@ -1021,13 +978,13 @@ void *send_job(
       job_save(pjob, SAVEJOB_QUICK, 0);
       }
 
-    if (PBSD_rdytocmt(con, jobid) != 0)
+    if (PBSD_rdytocmt(con, pjob->ji_qs.ji_jobid) != 0)
       {
       continue;
       }
 
 
-    if ((rc = PBSD_commit_get_sid(con, &sid, jobid)) != PBSE_NONE)
+    if ((rc = PBSD_commit_get_sid(con, &sid, pjob->ji_qs.ji_jobid)) != PBSE_NONE)
       {
       int   errno2;
       char *err_text;
@@ -1062,7 +1019,7 @@ void *send_job(
         /* do we need a continue here? */
 
         sprintf(log_buffer, "child commit request timed-out for job %s, increase tcp_timeout?",
-          jobid);
+          pjob->ji_qs.ji_jobid);
 
         log_ext(errno2, id, log_buffer, LOG_WARNING);
 
@@ -1072,14 +1029,14 @@ void *send_job(
         }
       else
         {
-        sprintf(log_buffer, "child failed in commit request for job %s", jobid);
+        sprintf(log_buffer, "child failed in commit request for job %s", pjob->ji_qs.ji_jobid);
 
         log_ext(errno2, id, log_buffer, LOG_CRIT);
 
         /* FAILURE */
         finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
 
-        return(NULL);
+        return(LOCUTION_FAIL);
         }
       } /* END if ((rc = PBSD_commit(con,jobid)) != 0) */
     else if (sid != -1)
@@ -1097,7 +1054,7 @@ void *send_job(
     /* SUCCESS */
     finish_move_process(pjob,preq,time,node_name,LOCUTION_SUCCESS,type);
 
-    return(NULL);
+    return(PBSE_NONE);
     }  /* END for (NumRetries) */
 
   if (con >= 0)
@@ -1108,27 +1065,83 @@ void *send_job(
     /* 10 indicates that job migrate timed out, server will mark node down *
           and abort the job - see post_sendmom() */
 
-    sprintf(log_buffer, "child timed-out attempting to start job %s", jobid);
+    sprintf(log_buffer, "child timed-out attempting to start job %s", pjob->ji_qs.ji_jobid);
 
     log_ext(pbs_errno, id, log_buffer, LOG_WARNING);
 
     finish_move_process(pjob,preq,time,node_name,LOCUTION_REQUEUE,type);
     
-    return(NULL);
+    return(LOCUTION_REQUEUE);
     }
 
   if (should_retry_route(pbs_errno) == -1)
     {
-    sprintf(log_buffer, "child failed and will not retry job %s", jobid);
+    sprintf(log_buffer, "child failed and will not retry job %s", pjob->ji_qs.ji_jobid);
 
     log_err(pbs_errno, id, log_buffer);
 
     finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
     
-    return(NULL);
+    return(LOCUTION_FAIL);
     }
 
   finish_move_process(pjob,preq,time,node_name,LOCUTION_REQUEUE,type);
+    
+  return(LOCUTION_REQUEUE);
+  } /* END send_job_work() */
+
+
+
+
+/*
+ * send_job - send a job over the network to some other server or MOM
+ *
+ * Start a child to do the work.  Connect to the destination host and port,
+ * and go through the protocol to transfer the job.
+ *
+ * @see svr_strtjob2() - parent
+ *
+ * Child exit status:
+ *  0 success, job sent
+ *  1 permanent failure or rejection
+ *  2 failed but try again
+ */
+
+void *send_job(
+
+  void *vp) /* I: jobid, hostaddr, port, move_type, and data */
+
+  {
+  send_job_request     *args = (send_job_request *)vp;
+  char                 *jobid = args->jobid;
+  job                  *pjob;
+  int                   type = args->move_type; /* move, route, or execute */
+  pbs_net_t             hostaddr;
+
+  char                 *node_name = NULL;
+
+  struct batch_request *preq = (struct batch_request *)args->data;
+  struct pbsnode       *np;
+
+  pjob = find_job(jobid);
+  hostaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer,"about to send job - type=%d",
+      type);
+ 
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
+    }
+
+  if ((np = PGetNodeFromAddr(hostaddr)) != NULL)
+    {
+    node_name = np->nd_name;
+
+    pthread_mutex_unlock(np->nd_mutex);
+    }
+
+  send_job_work(pjob,node_name,type,preq);
 
   return(NULL);
   }  /* END send_job() */
@@ -1208,8 +1221,6 @@ int net_move(
   if (args != NULL)
     {
     args->jobid = jobp->ji_qs.ji_jobid;
-    args->addr = jobp->ji_qs.ji_un.ji_exect.ji_momaddr;
-    args->addr = jobp->ji_qs.ji_un.ji_exect.ji_momport;
     args->move_type = move_type;
     args->data = data;
     }

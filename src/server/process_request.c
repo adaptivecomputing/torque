@@ -988,7 +988,7 @@ void dispatch_request(
 
     case PBS_BATCH_AsyrunJob:
 
-      req_runjob(request);
+      enqueue_threadpool_request(req_runjob,request);
 
       break;
 

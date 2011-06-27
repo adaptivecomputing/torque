@@ -850,8 +850,6 @@ task *task_find( job *pjob,
 typedef struct send_job_request
   {
   char      *jobid;
-  pbs_net_t  addr;
-  int        port;
   int        move_type;
   void      *data;
   } send_job_request;

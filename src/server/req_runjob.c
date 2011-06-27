@@ -120,7 +120,7 @@
 
 /* External Functions Called: */
 
-extern void *send_job(void *);
+extern int   send_job_work(job *,char *,int,struct batch_request *);
 extern void  set_resc_assigned(job *, enum batch_op);
 
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
@@ -178,19 +178,20 @@ extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum 
  * This request forces a job into execution.  Client must be privileged.
  */
 
-void req_runjob(
+void *req_runjob(
 
-  struct batch_request *preq)  /* I (modified) */
+  void *vp)  /* I (modified) */
 
   {
-  job  *pjob;
-  int   rc;
-  void *bp;
+  struct batch_request *preq = (struct batch_request *)vp;
+  job                  *pjob;
+  int                   rc;
+  void                 *bp;
 
-  int   setneednodes;
+  int                   setneednodes;
 
-  char  failhost[1024];
-  char  emsg[1024];
+  char                  failhost[1024];
+  char                  emsg[1024];
 
   /* chk_job_torun will extract job id and assign hostlist if specified */
 
@@ -203,22 +204,18 @@ void req_runjob(
     {
     /* FAILURE - chk_job_torun performs req_reject internally */
 
-    return;
+    return(NULL);
     }
 
   if (preq->rq_conn == scheduler_sock)
     ++scheduler_jobct; /* see scheduler_close() */
 
   sprintf(log_buffer, msg_manager,
-          msg_jobrun,
-          preq->rq_user,
-          preq->rq_host);
+    msg_jobrun,
+    preq->rq_user,
+    preq->rq_host);
 
-  log_event(
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 
   /* If async run, reply now; otherwise reply is handled in */
   /* post_sendmom or post_stagein */
@@ -256,7 +253,7 @@ void req_runjob(
       pthread_mutex_unlock(pjob->ji_mutex);
       pthread_mutex_unlock(pa->ai_mutex);
 
-      return;
+      return(NULL);
       }
     
     pthread_mutex_unlock(pa->ai_mutex);
@@ -284,7 +281,7 @@ void req_runjob(
 
   pthread_mutex_unlock(pjob->ji_mutex);
 
-  return;
+  return(NULL);
   }  /* END req_runjob() */
 
 
@@ -887,11 +884,7 @@ int svr_startjob(
       if (EMsg != NULL)
         strncpy(EMsg, log_buffer, 1024);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 
       /* Add this host to the reject destination list for the job */
 
@@ -942,11 +935,7 @@ int svr_startjob(
       if (EMsg != NULL)
         strncpy(EMsg, log_buffer, 1024);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 
       /* Add this host to the reject list for the job */
 
@@ -1049,8 +1038,6 @@ static int svr_strtjob2(
   struct timeval start_time;
   struct timezone tz;
 
-  send_job_request *send_mom_args;
-
   old_state = pjob->ji_qs.ji_state;
   old_subst = pjob->ji_qs.ji_substate;
 
@@ -1069,7 +1056,7 @@ static int svr_strtjob2(
 
   /* This marks the start of total run time from the server's perspective */
   pattr = &pjob->ji_wattr[JOB_ATR_total_runtime];
-  if(gettimeofday(&start_time, &tz) == 0)
+  if (gettimeofday(&start_time, &tz) == 0)
     {
     pattr->at_val.at_timeval.tv_sec = start_time.tv_sec;
     pattr->at_val.at_timeval.tv_usec = start_time.tv_usec;
@@ -1095,53 +1082,29 @@ static int svr_strtjob2(
     {
     DIS_tcp_settimeout(server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long);
     }
-  
-  send_mom_args = malloc(sizeof(send_job_request));
-  if (send_mom_args != NULL)
-    {
-    send_mom_args->jobid = pjob->ji_qs.ji_jobid;
-    send_mom_args->addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
-    send_mom_args->port = pjob->ji_qs.ji_un.ji_exect.ji_momport;
-    send_mom_args->move_type = MOVE_TYPE_Exec;
-    send_mom_args->data = preq;
-    }
-  else
-    {
-    /* FAILURE */
-    log_err(ENOMEM,"req_runjob","Cannot allocate space for arguments");
 
-    return(ENOMEM);
-    }
-
-  if (enqueue_threadpool_request(send_job,send_mom_args) == PBSE_NONE)
+  if (send_job_work(pjob,NULL,MOVE_TYPE_Exec,preq) == PBSE_NONE)
     {
     /* SUCCESS */
-
     DIS_tcp_settimeout(server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long);
 
     return(PBSE_NONE);
     }
-
-  DIS_tcp_settimeout(server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long);
-
-  sprintf(tmpLine, "unable to run job, send to MOM '%s' failed",
-
-          PAddrToString(&pjob->ji_qs.ji_un.ji_exect.ji_momaddr));
-
-  log_event(
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    tmpLine);
-
-  pjob->ji_qs.ji_destin[0] = '\0';
-
-  svr_setjobstate(
-    pjob,
-    old_state,
-    old_subst);
-
-  return(pbs_errno);
+  else
+    {
+    DIS_tcp_settimeout(server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long);
+    
+    sprintf(tmpLine, "unable to run job, send to MOM '%s' failed",
+      PAddrToString(&pjob->ji_qs.ji_un.ji_exect.ji_momaddr));
+    
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,tmpLine);
+    
+    pjob->ji_qs.ji_destin[0] = '\0';
+    
+    svr_setjobstate(pjob,old_state,old_subst);
+    
+    return(pbs_errno);
+    }
   }    /* END svr_strtjob2() */
 
 
