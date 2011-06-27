@@ -458,7 +458,7 @@ void process_request(
             pbse_to_txt(PBSE_BADHOST),
             get_connectaddr(sfds,FALSE));
 
-    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buffer);
 
     snprintf(tmpLine, sizeof(tmpLine), "cannot determine hostname for connection from %lu",
              get_connectaddr(sfds,FALSE));
@@ -482,7 +482,7 @@ void process_request(
       request->rq_host,
       sfds);
 
-    LOG_EVENT(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", log_buffer);
+    log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", log_buffer);
     }
 
   /* is the request from a host acceptable to the server */
@@ -638,22 +638,18 @@ void process_request(
         {
 
         if ((pjob->ji_wattr[JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET) &&
-          ((csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "s") != NULL) ||
-          (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "c") != NULL) ||
-          (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "enabled") != NULL)) &&
-          (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, short_host) != NULL))
+            ((csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "s") != NULL) ||
+             (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "c") != NULL) ||
+             (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "enabled") != NULL)) &&
+            (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, short_host) != NULL))
           {
-
           request->rq_perm = svr_get_privilege(request->rq_user, server_host);
           skip = TRUE;
-
           }
         
-        }
-      if (pjob != NULL)
-        {
         pthread_mutex_unlock(pjob->ji_mutex);
         }
+      
       if (!skip)
         {
         request->rq_perm = svr_get_privilege(request->rq_user, request->rq_host);
@@ -696,8 +692,6 @@ void process_request(
 #else /* THIS CODE FOR MOM ONLY */
 
     {
-    /*extern tree *okclients; */
-
     extern void mom_server_update_receive_time_by_ip(u_long ipaddr, const char *cmd);
 
     /* check connecting host against allowed list of ok clients */
@@ -708,15 +702,8 @@ void process_request(
         reqtype_to_txt(request->rq_type),
         request->rq_host);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buffer);
       }
-
-/*    if (!tfind(svr_conn[sfds].cn_addr, &okclients)) */
-    pthread_mutex_lock(svr_conn[sfds].cn_mutex);
 
     if (!AVL_is_in_tree(svr_conn[sfds].cn_addr, 0, okclients))
       {
@@ -724,17 +711,11 @@ void process_request(
         reqtype_to_txt(request->rq_type),
         request->rq_host);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buffer);
 
       req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
 
       close_client(sfds);
-
-      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
       return;
       }
@@ -745,16 +726,10 @@ void process_request(
         reqtype_to_txt(request->rq_type),
         request->rq_host);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buffer);
       }
 
     mom_server_update_receive_time_by_ip(svr_conn[sfds].cn_addr, reqtype_to_txt(request->rq_type));
-
-    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
     }    /* END BLOCK */
 
   request->rq_fromsvr = 1;
@@ -1238,7 +1213,7 @@ struct batch_request *alloc_br(
 #endif
 
   return(req);
-  }
+  } /* END alloc_br() */
 
 
 

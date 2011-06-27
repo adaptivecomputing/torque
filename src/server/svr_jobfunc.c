@@ -503,7 +503,7 @@ int svr_enquejob(
         
   pthread_mutex_unlock(pque->qu_mutex);
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END svr_enquejob() */
 
 
@@ -2040,7 +2040,7 @@ int job_set_wait(
 
   if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
     {
-    return(0);
+    return(PBSE_NONE);
     }
 
   when  = pattr->at_val.at_long;
@@ -2059,7 +2059,7 @@ int job_set_wait(
 
         pthread_mutex_unlock(ptask->wt_mutex);
 
-        return(0);
+        return(PBSE_NONE);
         }
 
       pthread_mutex_unlock(ptask->wt_mutex);
@@ -2080,7 +2080,7 @@ int job_set_wait(
   /* set JOB_SVFLG_HASWAIT to show job has work task entry */
   ((job *)pjob)->ji_qs.ji_svrflags |= JOB_SVFLG_HASWAIT;
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END job_set_wait() */
 
 

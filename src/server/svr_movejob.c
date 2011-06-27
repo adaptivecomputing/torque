@@ -138,8 +138,6 @@ extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 /* Private Functions local to this file */
 
 static int  local_move(job *, struct batch_request *);
-static void post_movejob(struct work_task *);
-static void post_routejob(struct work_task *);
 static int should_retry_route(int err);
 static int move_job_file(int con, job *pjob, enum job_file which);
 
@@ -328,116 +326,8 @@ static int local_move(
 
   job_save(jobp, SAVEJOB_FULL, 0);
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END local_move() */
-
-
-
-
-/*
- * post_routejob - clean up action for child started in net_move/send_job
- *     to "route" a job to another server
- *
- * If route was successfull, delete job.
- *
- * If route didn't work, mark destination not to be tried again for this
- * job and call route again.
- *
- * Returns: none.
- */
-
-static void post_routejob(
-
-  struct work_task *pwt)
-
-  {
-  char      *id = "post_routejob";
-  int        newstate;
-  int        newsub;
-  int        r;
-  int        stat = pwt->wt_aux;
-  job       *jobp = (job *)pwt->wt_parm1;
-  pbs_queue *pque;
-
-  pthread_mutex_lock(jobp->ji_mutex);
-
-  if (WIFEXITED(stat))
-    {
-    r = WEXITSTATUS(stat);
-    }
-  else
-    {
-    r = 2;
-
-    sprintf(log_buffer, msg_badexit,
-            stat);
-
-    strcat(log_buffer, id);
-
-    log_event(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_JOB,
-      jobp->ji_qs.ji_jobid,
-      log_buffer);
-    }
-
-  switch (r)
-    {
-    case 0:  /* normal return, job was routed */
-
-      if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
-        remove_stagein(jobp);
-
-      if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
-        remove_checkpoint(jobp);
-
-      job_purge(jobp); /* need to remove server job struct */
-
-      return;
-
-      /*NOTREACHED*/
-
-      break;
-
-    case 1:  /* permanent rejection (or signal) */
-
-      if (jobp->ji_qs.ji_substate == JOB_SUBSTATE_ABORT)
-        {
-        /* job delete in progress, just set to queued status */
-
-        svr_setjobstate(jobp, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT);
-
-        return;
-        }
-
-      add_dest(jobp);  /* else mark destination as bad */
-
-      /* fall through */
-
-    default : /* try routing again */
-
-      /* force re-eval of job state out of Transit */
-
-      svr_evaljobstate(jobp, &newstate, &newsub, 1);
-      svr_setjobstate(jobp, newstate, newsub);
-
-      pque = jobp->ji_qhdr;
-      pthread_mutex_lock(pque->qu_mutex);
-
-      if ((r = job_route(jobp)) == PBSE_ROUTEREJ)
-        job_abt(&jobp, pbse_to_txt(PBSE_ROUTEREJ));
-      else if (r != 0)
-        job_abt(&jobp, msg_routexceed);
-      else
-        pthread_mutex_unlock(jobp->ji_mutex);
-      
-      pthread_mutex_unlock(pque->qu_mutex);
-
-      break;
-    }  /* END switch (r) */
-
-  return;
-  }  /* END post_routejob() */
 
 
 
@@ -574,131 +464,6 @@ void finish_moving_processing(
   
   } /* END finish_moving_processing() */
 
-
-
-
-
-/*
- * post_movejob - clean up action for child started in net_move/send_job
- *     to "move" a job to another server
- *
- * If move was successfull, delete server's copy of thejob structure,
- * and reply to request.
- *
- * If route didn't work, reject the request.
- *
- * Returns: none.
- */
-
-static void post_movejob(
-
-  struct work_task *pwt)
-
-  {
-  char *id = "post_movejob";
-
-  struct batch_request *req;
-  int newstate;
-  int newsub;
-  int stat;
-  int r;
-  job *jobp;
-
-  int  has_mutex = TRUE;
-
-  req  = (struct batch_request *)pwt->wt_parm2;
-
-  stat = pwt->wt_aux;
-
-  pbs_errno = PBSE_NONE;
-
-  if (req->rq_type != PBS_BATCH_MoveJob)
-    {
-    sprintf(log_buffer, "bad request type %d\n",
-            req->rq_type);
-
-    log_err(-1, id, log_buffer);
-
-    return;
-    }
-
-  jobp = find_job(req->rq_ind.rq_move.rq_jid);
-
-  if ((jobp == NULL) || (jobp != (job *)pwt->wt_parm1))
-    {
-    sprintf(log_buffer, "job %s not found\n",
-            req->rq_ind.rq_move.rq_jid);
-
-    log_err(-1, id, log_buffer);
-    }
-
-  if (WIFEXITED(stat))
-    {
-    r = WEXITSTATUS(stat);
-
-    if (r == 0)
-      {
-      /* purge server's job structure */
-
-      if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
-        remove_stagein(jobp);
-
-      if (jobp->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
-        remove_checkpoint(jobp);
-
-      strcpy(log_buffer, msg_movejob);
-
-      sprintf(log_buffer + strlen(log_buffer), msg_manager,
-              req->rq_ind.rq_move.rq_destin,
-              req->rq_user,
-              req->rq_host);
-
-      job_purge(jobp);
-
-      has_mutex = FALSE;
-      }
-    else
-      {
-      r = PBSE_ROUTEREJ;
-      }
-    }
-  else
-    {
-    r = PBSE_SYSTEM;
-
-    sprintf(log_buffer, msg_badexit, stat);
-
-    strcat(log_buffer, id);
-
-    log_event(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_JOB,
-      jobp->ji_qs.ji_jobid,
-      log_buffer);
-    }
-
-  if (r)
-    {
-    if (jobp != NULL)
-      {
-      /* force re-eval of job state out of Transit */
-
-      svr_evaljobstate(jobp, &newstate, &newsub, 1);
-      svr_setjobstate(jobp, newstate, newsub);
-      }
-
-    req_reject(r, 0, req, NULL, NULL);
-    }
-  else
-    {
-    reply_ack(req);
-    }
-
-  if (has_mutex == TRUE)
-    pthread_mutex_unlock(jobp->ji_mutex);
-
-  return;
-  }  /* END post_movejob() */
 
 
 
@@ -1170,7 +935,6 @@ int net_move(
   char  *hostname;
   int   move_type;
   unsigned int  port = pbs_server_port_dis;
-  void (*post_func)(struct work_task *);
   char  *toserver;
   char  *id = "net_move";
   char  *tmp;
@@ -1201,7 +965,6 @@ int net_move(
     {
     /* note, in this case, req is the orginal Move Request */
     move_type = MOVE_TYPE_Move;
-    post_func = post_movejob;
 
     data      = req;
     }
@@ -1209,7 +972,6 @@ int net_move(
     {
     /* note, in this case req is NULL */
     move_type = MOVE_TYPE_Route;
-    post_func = post_routejob;
 
     data      = NULL;
     }

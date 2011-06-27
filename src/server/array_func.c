@@ -1173,7 +1173,7 @@ int hold_array_range(
       }
     }
 
-  return(0);
+  return(PBSE_NONE);
   } /* END hold_array_range() */
 
 
@@ -1240,8 +1240,7 @@ int release_array_range(
     free(to_free);
     }
 
-  return(0);
-
+  return(PBSE_NONE);
   } /* END release_array_range() */
 
 

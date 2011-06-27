@@ -1100,11 +1100,7 @@ void main_loop(void)
 
   sprintf(log_buffer, msg_startup2, sid, LOGLEVEL);
 
-  log_event(
-    PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-    PBS_EVENTCLASS_SERVER,
-    msg_daemonname,
-    log_buffer);
+  log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buffer);
 
 #ifdef NO_SIGCHLD
   log_record(
@@ -1327,6 +1323,8 @@ void main_loop(void)
     update_nodes_file(NULL);
     }
   } /* END main_loop() */
+
+
 
 
 /**
@@ -1941,6 +1939,8 @@ void check_log(
 
   return;
   } /* END check_log */
+
+
 
 
 

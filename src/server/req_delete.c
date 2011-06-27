@@ -1040,8 +1040,6 @@ static void post_delete_mom1(
   apply_job_delete_nanny(pjob, time_now + delay + 60);
 
   pthread_mutex_unlock(pjob->ji_mutex);
-
-  return;
   }  /* END post_delete_mom1() */
 
 
@@ -1066,16 +1064,10 @@ static void post_delete_mom2(
 
     sprintf(log_buffer, msg_delrunjobsig, sigk);
 
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
     }
 
   pthread_mutex_unlock(pjob->ji_mutex);
-
-  return;
   }  /* END post_delete_mom2() */
 
 
@@ -1199,8 +1191,6 @@ void remove_job_delete_nanny(
 
     pthread_mutex_unlock(pwtiter->wt_mutex);
     }
-
-  return;
   }  /* END has_job_delete_nanny() */
 
 
@@ -1314,7 +1304,7 @@ static void job_delete_nanny(
   pthread_mutex_lock(pjob->ji_mutex);
 
   sprintf(log_buffer, "exiting job '%s' still exists, sending a SIGKILL",
-          pjob->ji_qs.ji_jobid);
+    pjob->ji_qs.ji_jobid);
 
   log_err(-1, "job nanny", log_buffer);
 
@@ -1331,8 +1321,6 @@ static void job_delete_nanny(
   apply_job_delete_nanny(pjob, time_now + 60);
 
   pthread_mutex_unlock(pjob->ji_mutex);
-
-  return;
   } /* END job_delete_nanny() */
 
 
@@ -1456,11 +1444,7 @@ void purge_completed_jobs(
     sprintf(log_buffer,"Received purge completed jobs command, purge time is %ld (%s)",
       (long)purge_time, preq->rq_extend);
 
-    LOG_EVENT(
-      PBSEVENT_SYSTEM, 
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_REQUEST,id,log_buffer);
     }
 
   iter = -1;
@@ -1477,11 +1461,7 @@ void purge_completed_jobs(
         sprintf(log_buffer,"Reported job is COMPLETED (%ld), setting reported to TRUE",
           pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long);
         
-        log_event(
-          PBSEVENT_JOB, 
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
         }
       
       pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 1;

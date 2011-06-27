@@ -850,11 +850,7 @@ void sync_node_jobs(
           /* NOTE:  node is actively reporting so should not be deleted and
                     np->nd_addrs[] should not be NULL */
 
-          conn = svr_connect(
-                   np->nd_addrs[0],
-                   pbs_mom_port,
-                   process_Dreply,
-                   ToServerDIS);
+          conn = svr_connect(np->nd_addrs[0],pbs_mom_port,process_Dreply,ToServerDIS);
 
           if (conn >= 0)
             {
@@ -1165,10 +1161,11 @@ void send_cluster_addrs(
  *                            time later through the send_cluster_addrs mechanism
  */
 
-void setup_notification(char *pname)
+void setup_notification(
+    
+  char *pname) /* I */
 
   {
-
   struct pbsnode *pnode;
   new_node       *nnew;
   work_task      *wt;
@@ -3430,12 +3427,12 @@ int can_reshuffle(
 
 static int search(
 
-  struct prop  *glorf,  /* properties */
-  int    vpreq,  /* VPs needed */
-  int    gpureq, /* GPUs needed */
-  int    skip,
-  int    order,
-  int    depth)
+  struct prop *glorf,  /* properties */
+  int          vpreq,  /* VPs needed */
+  int          gpureq, /* GPUs needed */
+  int          skip,
+  int          order,
+  int          depth)
 
   {
   static int pass = INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_UNKNOWN | INUSE_DELETED;
@@ -3509,7 +3506,6 @@ static int search(
       pthread_mutex_unlock(pnode->nd_mutex);
 
       /* Ben Webb patch (CRI 10/06/03) */
-
       found = search(
                 pnode->nd_first,
                 pnode->nd_needed,

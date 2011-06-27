@@ -235,16 +235,17 @@ void *req_stat_job(
 
     if (is_array(name))
       {
-      
       if (type != tjstSummarizeArraysServer)
         {
         type = tjstArray;
         }
+      
       pjob = find_array_template(name);
       }
     else
       {
       type = tjstJob;
+
       if ((pjob = find_job(name)) == NULL)
         {
         rc = PBSE_UNKJOBID;
