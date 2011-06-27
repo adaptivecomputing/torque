@@ -234,7 +234,7 @@ void *send_the_mail(
     mailfrom,
     mi->mailto);
 
-  outmail = (FILE *)popen(cmdbuf, "w");
+  outmail = popen(cmdbuf, "w");
 
   if (outmail == NULL)
     {

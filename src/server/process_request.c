@@ -1059,7 +1059,8 @@ void dispatch_request(
     case PBS_BATCH_AltAuthenUser:
       /* Use given authentication method to determine
          if user is valid */
-       req_altauthenuser(request); 
+
+      enqueue_threadpool_request(req_altauthenuser,request); 
 
       break;
 
