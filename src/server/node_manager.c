@@ -5370,8 +5370,10 @@ int set_nodes(
         log_buffer);
       }
 
+    pthread_mutex_unlock(pnode->nd_mutex);
+
     return(PBSE_RESCUNAV);
-      }
+    }
 
     /* place the subnodes (nps) in the hostlist */
     for (snp = pnode->nd_psn;snp && pnode->nd_needed;snp = snp->next)
