@@ -174,14 +174,14 @@ int get_encode_host(
    	 between the : and the first letter of the host name */
   ptr = strchr(ptr, ':');
   ptr++;
-  while(*ptr == SPACE)
+  while (*ptr == SPACE)
     {
     ptr++;
     }
 
   memset(host_name, 0, PBS_MAXHOSTNAME);
   i = 0;
-  while(*ptr != SPACE && !isspace(*ptr))
+  while (*ptr != SPACE && !isspace(*ptr))
     {
     host_name[i++] = *ptr;
     ptr++;
@@ -217,14 +217,14 @@ int get_UID(
 
 	ptr = strchr(ptr, ':');
 	ptr++;
-	while(*ptr == SPACE)
+	while (*ptr == SPACE)
 	  {
 	  ptr++;
 	  }
 
 	memset(user_name, 0, PBS_MAXHOSTNAME);
 	i = 0;
-	while(*ptr != SPACE && !isspace(*ptr))
+	while (*ptr != SPACE && !isspace(*ptr))
 	  {
 	  user_name[i++] = *ptr;
 	  ptr++;
@@ -293,7 +293,7 @@ int pipe_and_read_unmunge(
 
   {
   static char *id = "pipe_and_read_unmunge";
-  char  munge_buf[MUNGE_SIZE];
+  char  munge_buf[MUNGE_SIZE << 4];
 
   FILE *munge_pipe;
   char *ptr; /* pointer to the current place to copy data into munge_buf */
@@ -359,8 +359,8 @@ int pipe_and_read_unmunge(
 
 int unmunge_request(
     
-  int sock,
-  struct batch_request *preq)
+  int sock,                   /* I */
+  struct batch_request *preq) /* M */
  
   {
   time_t myTime;
@@ -370,7 +370,7 @@ int unmunge_request(
   char mungeFileName[MAXPATHLEN + MAXNAMLEN+1];
   int rc = PBSE_NONE;
 
-  /* create a sudo randome file name */
+  /* create a sudo random file name */
   gettimeofday(&tv, NULL);
   myTime = tv.tv_sec;
   timeinfo = localtime(&myTime);
@@ -385,11 +385,12 @@ int unmunge_request(
     /* open the munge command as a pipe and read the result */
     rc = pipe_and_read_unmunge(mungeFileName,preq,sock);
     }
-    
+  
+  /* delete the old file */
   unlink(mungeFileName);
 
   return(rc);
-  }
+  } /* END unmunge_request */
 
 
 

@@ -364,127 +364,88 @@ static char *PBS_get_server(
 int PBSD_munge_authenticate(
 
   int psock,  /* I */
-  int rpp,    /* I */
   int handle) /* I */
 
   {
-  int fd_pipe[2];
+  int                 rc;
 
-  char execname[20]; /* for execvp. will be "munge" */
-  char *options[3];  /* argument list for execvp */
-  char com1[20];     /* first argument to execvp */
-  char com2[5];      /* second argument to execvp */
-  int  rc;
-
-  /* These variables are used to create a pseudo-random file name
-     to store the munge certificate */
-  int newfd;
-  pid_t pid;
-  char buf[MUNGE_SIZE];
-  char munge_buf[MUNGE_SIZE];
-  char *ptr; /* pointer to the current place to copy data into munge_buf */
-  int bytes_read;
-  int total_bytes_read = 0;        
+  int                 fd;
+  FILE               *munge_pipe;
+  char                munge_buf[MUNGE_SIZE];
+  char                munge_command[MUNGE_SIZE << 3];
+  char               *ptr; /* pointer to the current place to copy data into munge_buf */
+  int                 bytes_read;
+  int                 total_bytes_read = 0;        
   
   /* user id and name stuff */
-  struct passwd *pwent;
-  uid_t   myrealuid;
-  struct batch_reply   *reply;
-  unsigned short user_port = 0;
-  struct sockaddr_in sockname;
-  socklen_t socknamelen = sizeof(sockname);
-       
+  struct passwd      *pwent;
+  uid_t               myrealuid;
+  struct batch_reply *reply;
+  unsigned short      user_port = 0;
+  struct sockaddr_in  sockname;
+  socklen_t           socknamelen = sizeof(sockname);
 
-  memset(buf, 0, MUNGE_SIZE);
+  /* NYI: have Ken check this to make sure its right */
+  snprintf(munge_command,sizeof(munge_command),
+    "munge -n");
+
   memset(munge_buf, 0, MUNGE_SIZE);
   ptr = munge_buf; 
 
-  rc = pipe(fd_pipe);
-  if(rc == -1)
+  if ((munge_pipe = popen(munge_command,"r")) == NULL)
     {
-    fprintf(stderr, "error opening pipe in PBSD_munge_authenticate: errno = %d\n", errno);
+    /* FAILURE */
     return(-1);
     }
- 
-  /* Time to Fork. The child will call munge and write the certificate to the file
-     just created for mungeFileName. The parent will wait for the file to be written
-     and then copy the certificate to the batch request and send it to the server */
-  pid = fork();
-  if (pid != 0)
+
+  fd = fileno(munge_pipe);
+
+  while ((bytes_read = read(fd, ptr, MUNGE_SIZE)) > 0)
     {
-    /* This is the parent*/
-    /* set up the pipe to be able to read from the child */
-    close(fd_pipe[1]);
+    total_bytes_read += bytes_read;
+    ptr += bytes_read;
+    }
 
-    do
-      {
-      bytes_read = read(fd_pipe[0], buf, MUNGE_SIZE);
-      if (bytes_read > 0)
-        {
-        total_bytes_read += bytes_read;
-        memcpy(ptr, buf, bytes_read);
-        ptr += bytes_read;
-        }
-      } while(bytes_read > 0);
+  if (bytes_read == -1)
+    {
+    /* read failed */
+    fprintf(stderr, "error reading pipe in PBSD_munge_authenticate: errno = %d\n", errno);
+    return(-1);
+    }
+  
+  /* We got the certificate. Now make the PBS_BATCH_AltAuthenUser request */
+  myrealuid = getuid();  
+  pwent = getpwuid(myrealuid);
+  
+  rc = getsockname(psock, (struct sockaddr *)&sockname, &socknamelen);
+  
+  if (rc == -1)
+    {
+    fprintf(stderr, "getsockname failed: %d\n", errno);
+    return(-1);
+    }
+  
+  user_port = ntohs(sockname.sin_port);
+  
+  DIS_tcp_setup(psock);
 
-    if (bytes_read == -1)
-      {
-      /* read failed */
-      fprintf(stderr, "error reading pipe in PBSD_munge_authenticate: errno = %d\n", errno);
-      return(-1);
-      }
-    
-    /* We got the certificate. Now make the PBS_BATCH_AltAuthenUser request */
-    myrealuid = getuid();
-    
-    pwent = getpwuid(myrealuid);
-    
-    rc = getsockname(psock,
-        (struct sockaddr *)&sockname,
-        &socknamelen);
-    
-    if (rc == -1)
-      {
-      fprintf(stderr, "getsockname failed: %d\n", errno);
-      return(-1);
-      }
-    
-    user_port = ntohs(sockname.sin_port);
-    
-    DIS_tcp_setup(psock);
-    
-    rc = encode_DIS_ReqHdr(psock, PBS_BATCH_AltAuthenUser, pwent->pw_name);
-    rc = diswui(psock, rpp, user_port);
-    rc = diswst(psock, rpp, munge_buf);
-    rc = encode_DIS_ReqExtend(psock, NULL);
-    rc = DIS_tcp_wflush(psock);
-    
-    pthread_mutex_lock(connection[1].ch_mutex);
-    
-    /* read the reply */
-    reply = PBSD_rdrpy(handle);
-
-    pthread_mutex_unlock(connection[1].ch_mutex);
-
+  if ((rc = encode_DIS_ReqHdr(psock, PBS_BATCH_AltAuthenUser, pwent->pw_name)) ||
+      (rc = diswui(psock, TCP_FUNC, user_port)) ||
+      (rc = diswst(psock, TCP_FUNC, munge_buf)) ||
+      (rc = encode_DIS_ReqExtend(psock, NULL)) ||
+      (rc = DIS_tcp_wflush(psock)))
+    {
+    /* ERROR */
+    return(rc);
     }
   else
     {
-    close(fd_pipe[0]);
-    newfd = dup2(fd_pipe[1], 1);
-    strcpy(execname, "munge");
-    strcpy(com1, "munge");
-    strcpy(com2, "-n");
-    options[0] = com1;
-    options[1] = com2;
-    options[2] = NULL;
-
-    rc = execvp(execname, options);
-
-    exit(0);
+    /* read the reply */
+    reply = PBSD_rdrpy(handle);
+  
+    return(PBSE_NONE);
     }
-
-  return(0);  
-  }
+  } /* END PBSD_munge_authenticate() */
 #endif /* ifdef MUNGE_AUTH */
 
 
@@ -972,7 +933,7 @@ int pbs_original_connect(
 
 #ifdef MUNGE_AUTH
     auth = PBSD_munge_authenticate(connection[out].ch_socket, out);
-    if(auth != 0)
+    if (auth != 0)
       {
       close(connection[out].ch_socket);
 
