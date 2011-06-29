@@ -2,6 +2,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
+      (backported from 3.0.3)
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as
