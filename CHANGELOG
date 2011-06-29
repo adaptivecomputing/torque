@@ -20,6 +20,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - allow SMT support, at least with large-scale NUMA systems - hasn't been tested yet with
       small-scale NUMA. (contributed by Dr. Bernd Kallies)
 
+3.0.3
+  b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
+
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it
   b - fix a potential buffer overflow security issue in job names and host address names

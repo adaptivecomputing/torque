@@ -465,6 +465,8 @@ int PBSD_authenticate(
   int    j;
   FILE *piff;
   char  *ptr;
+  char  *path_copy;
+  char  *token;
 
   struct stat buf;
 
@@ -496,18 +498,26 @@ int PBSD_authenticate(
         {
         ptr = strtok(ptr, ":");
 
-        while (ptr != NULL)
+        if ((path_copy = strdup(ptr)) == NULL)
           {
-          snprintf(iffpath, sizeof(iffpath), "%s/pbs_iff",
-                   ptr);
+          fprintf(stderr,"Cannot allocate memory, FAILURE");
+
+          return(-1);
+          }
+
+        token = strtok(path_copy, ":");
+
+        while (token != NULL)
+          {
+          snprintf(iffpath, sizeof(iffpath), "%s/pbs_iff", token);
 
           rc = stat(iffpath, &buf);
 
           if (rc != -1)
             break;
 
-          ptr = strtok(NULL, ":");
-          }  /* END while (ptr != NULL) */
+          token = strtok(NULL, ":");
+          }  /* END while (token != NULL) */
         }    /* END if ((ptr = getenv("PATH")) != NULL) */
 
       if (rc == -1)
