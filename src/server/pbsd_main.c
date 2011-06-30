@@ -152,6 +152,7 @@ extern void done_servicing(int);
 #ifdef NO_SIGCHLD
 extern void check_children();
 #endif
+void stream_eof(int, u_long, uint16_t, int);
 
 #ifndef MAX_PATH_LEN
 #define MAX_PATH_LEN 256
@@ -301,7 +302,6 @@ void do_rpp(
   int  ret, proto, version;
 
   void is_request(int, int, int *);
-  void stream_eof(int, u_long, uint16_t, int);
 
   int  stream_done = TRUE;
 
@@ -333,10 +333,9 @@ void do_rpp(
       {
       struct pbsnode *node;
 
-      /* extern tree *streams; */        /* tree of stream numbers */
-
-/*      node = tfind((u_long)stream, &streams); */
       node = AVL_find((u_long)stream, 0, streams);
+
+      pthread_mutex_lock(node->nd_mutex);
 
       if (ret == DIS_EOF)
         {
@@ -347,28 +346,22 @@ void do_rpp(
           ret,
           dis_emsg[ret]);
         
-        log_record(
-          PBSEVENT_SCHED,
-          PBS_EVENTCLASS_REQUEST,
-          id,
-          log_buffer);
-
+        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buffer);
         }
       else
         {
-        sprintf(log_buffer, "corrupt rpp request received on stream %d (node: \"%s\", %s) - invalid protocol - rc=%d (%s)",
+        sprintf(log_buffer,
+          "corrupt rpp request received on stream %d (node: \"%s\", %s) - invalid protocol - rc=%d (%s)",
           stream,
           (node != NULL) ? node->nd_name : "NULL",
           netaddr(rpp_getaddr(stream)),
           ret,
           dis_emsg[ret]);
         
-        log_record(
-          PBSEVENT_SCHED,
-          PBS_EVENTCLASS_REQUEST,
-          id,
-          log_buffer);
+        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buffer);
         }
+    
+      pthread_mutex_unlock(node->nd_mutex);
       }
     
     stream_eof(stream, 0, 0, ret);
@@ -385,15 +378,11 @@ void do_rpp(
     if (LOGLEVEL >= 1)
       {
       sprintf(log_buffer, "corrupt rpp request received on stream %d - invalid version - rc=%d (%s)",
-              stream,
-              ret,
-              dis_emsg[ret]);
+        stream,
+        ret,
+        dis_emsg[ret]);
 
-      log_record(
-        PBSEVENT_SCHED,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buffer);
       }
 
     stream_eof(stream, 0, 0, ret);

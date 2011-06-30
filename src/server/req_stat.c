@@ -832,13 +832,12 @@ nextjob:
 int stat_to_mom(
 
   job              *pjob,  /* I */
-  struct stat_cntl *cntl)  /* I/O */
+  struct stat_cntl *cntl)  /* M */
 
   {
-
   struct batch_request *newrq;
-  int      rc;
-  unsigned long    addr;
+  int                   rc;
+  unsigned long         addr;
 
   struct work_task     *pwt = 0;
 
@@ -850,7 +849,6 @@ int stat_to_mom(
     }
 
   /* set up status request, save address of cntl in request for later */
-
   newrq->rq_extra = (void *)cntl;
 
   if (cntl->sc_type == 1)
@@ -861,7 +859,6 @@ int stat_to_mom(
   CLEAR_HEAD(newrq->rq_ind.rq_status.rq_attr);
 
   /* if MOM is down just return stale information */
-
   addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
 
   node = tfind_addr(addr,pjob->ji_qs.ji_un.ji_exect.ji_momport,pjob);
@@ -875,15 +872,15 @@ int stat_to_mom(
         node->nd_name,
         (node->nd_state & INUSE_DELETED) ? "deleted" : "down");
 
-      log_event(
-        PBSEVENT_SYSTEM,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
       }
+
+    pthread_mutex_unlock(node->nd_mutex);
 
     return(PBSE_NORELYMOM);
     }
+  else
+    pthread_mutex_unlock(node->nd_mutex);
 
   /* get connection to MOM */
 
@@ -899,7 +896,6 @@ int stat_to_mom(
   if (rc != 0)
     {
     /* request failed */
-
     if (pwt)
       delete_task(pwt);
 

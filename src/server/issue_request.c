@@ -148,16 +148,15 @@ int relay_to_mom(
   void (*func)(struct work_task *))
 
   {
-  char *id = "relay_to_mom";
+  static char    *id = "relay_to_mom";
 
-  int conn; /* a client style connection handle */
-  int   rc;
-  pbs_net_t addr;
+  int             conn; /* a client style connection handle */
+  int             rc;
+  pbs_net_t       addr;
 
   struct pbsnode *node;
 
   /* if MOM is down don't try to connect */
-
   addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
 
   node = tfind_addr(addr,pjob->ji_qs.ji_un.ji_exect.ji_momport,pjob);
@@ -165,25 +164,23 @@ int relay_to_mom(
   if ((node != NULL) &&
       (node->nd_state & (INUSE_DELETED|INUSE_DOWN)))
     {
+    pthread_mutex_unlock(node->nd_mutex);
     return(PBSE_NORELYMOM);
     }
+  else
+    pthread_mutex_unlock(node->nd_mutex);
 
   if (LOGLEVEL >= 7)
     {
     char *tmp = netaddr_pbs_net_t(pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
     sprintf(log_buffer, "momaddr=%s",tmp);
 
-    log_record(
-      PBSEVENT_SCHED,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buffer);
 
     free(tmp);
     }
 
   conn = svr_connect(
-
            pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
            pjob->ji_qs.ji_un.ji_exect.ji_momport,
            process_Dreply,
@@ -191,11 +188,7 @@ int relay_to_mom(
 
   if (conn < 0)
     {
-    LOG_EVENT(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_REQUEST,
-      "",
-      msg_norelytomom);
+    LOG_EVENT(PBSEVENT_ERROR,PBS_EVENTCLASS_REQUEST,"",msg_norelytomom);
 
     return(PBSE_NORELYMOM);
     }

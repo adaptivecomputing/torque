@@ -129,7 +129,7 @@ extern int allow_any_mom;
 extern int h_errno;
 #endif
 
-int    svr_totnodes = 0; /* total number nodes defined       */
+int   svr_totnodes = 0; /* total number nodes defined       */
 int   svr_clnodes  = 0; /* number of cluster nodes     */
 int   svr_tsnodes  = 0; /* number of time shared nodes     */
 int   svr_chngNodesfile = 0; /* 1 signals want nodes file update */
@@ -242,6 +242,8 @@ struct pbsnode *tfind_addr(
   if (pn == NULL)
     return(NULL);
 
+  pthread_mutex_lock(pn->nd_mutex);
+
   if (pn->num_node_boards == 0)
     return(pn);
   else
@@ -277,12 +279,15 @@ struct pbsnode *tfind_addr(
 
     numa = AVL_find(index,pn->nd_mom_port,pn->node_boards);
 
+    pthread_mutex_unlock(pn->nd_mutex);
+    pthread_mutex_lock(numa->nd_mutex);
+
     if (plus != NULL)
       *plus = '+';
 
     return(numa);
     }
-  }
+  } /* END tfind_addr() */
 
 
 
@@ -468,16 +473,11 @@ void update_node_state(
             if ((jpprev != NULL) && (jpprev->job == jp->job))
               {
               /* duplicate job entry detected */
-
               sprintf(tmpLine, "ALERT:  duplicate entry for job '%s' detected on node %s (clearing entry)",
-                      (jp->job != NULL) ? jp->job->ji_qs.ji_jobid : "???",
-                      np->nd_name);
+                (jp->job != NULL) ? jp->job->ji_qs.ji_jobid : "???",
+                np->nd_name);
 
-              log_record(
-                PBSEVENT_SCHED,
-                PBS_EVENTCLASS_REQUEST,
-                id,
-                tmpLine);
+              log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, tmpLine);
 
               jpprev->next = jp->next;
 
@@ -729,7 +729,11 @@ job *find_job_by_node(
       {
       numa = AVL_find(i,pnode->nd_mom_port,pnode->node_boards);
 
+      pthread_mutex_lock(numa->nd_mutex);
+
       pjob = check_node_for_job(pnode,jobid);
+
+      pthread_mutex_unlock(numa->nd_mutex);
 
       /* leave loop if we found the job */
       if (pjob != NULL)
@@ -1226,14 +1230,15 @@ int is_stat_get(
   struct pbsnode *np)  /* I (modified) */
 
   {
-  char      *id = "is_stat_get";
+  char           *id = "is_stat_get";
 
-  int stream = np->nd_stream;
-  int        rc;
-  char      *ret_info;
-  attribute  temp;
-  char       date_attrib[100];
-  int        msg_error = 0;
+  struct pbsnode *orig_np = np;
+  int             stream = np->nd_stream;
+  int             rc;
+  char           *ret_info;
+  attribute       temp;
+  char            date_attrib[100];
+  int             msg_error = 0;
 
   extern int TConnGetSelectErrno();
   extern int TConnGetReadErrno();
@@ -1243,11 +1248,7 @@ int is_stat_get(
     sprintf(log_buffer, "received status from node %s",
             (np != NULL) ? np->nd_name : "NULL");
 
-    log_record(
-      PBSEVENT_SCHED,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buffer);
     }
 
   if (stream < 0)
@@ -1298,7 +1299,7 @@ int is_stat_get(
       numa_id = ret_info + strlen(NUMA_KEYWORD);
       numa_index = atoi(numa_id);
 
-      tmp = AVL_find(numa_index,np->nd_mom_port,np->node_boards);
+      tmp = AVL_find(numa_index,orig_np->nd_mom_port,orig_np->node_boards);
 
       if (tmp == NULL)
         {
@@ -1311,8 +1312,12 @@ int is_stat_get(
 
         return(DIS_NOCOMMIT);
         }
+      
+      pthread_mutex_unlock(np->nd_mutex);
+      pthread_mutex_lock(tmp->nd_mutex);
 
       np = tmp;
+
 
       np->nd_lastupdate = time_now;
 
@@ -1331,6 +1336,12 @@ int is_stat_get(
       free(ret_info);
 
       rpp_eom(stream);
+
+      if (orig_np != np)
+        {
+        pthread_mutex_unlock(np->nd_mutex);
+        pthread_mutex_lock(orig_np->nd_mutex);
+        }
 
       return(DIS_NOCOMMIT);
       }
@@ -1364,33 +1375,33 @@ int is_stat_get(
       }
     else if (!strncmp(ret_info, "uname", 5) && allow_any_mom)
       {
-        /* for any mom mode if an address did not succeed at gethostbyaddr it was
-           given the hex value of its ip address */
-        if (!strncmp(np->nd_name, "0x", 2))
+      /* for any mom mode if an address did not succeed at gethostbyaddr it was
+       * given the hex value of its ip address */
+      if (!strncmp(np->nd_name, "0x", 2))
+        {
+        char *cp;
+        char node_name[PBS_MAXHOSTNAME + 1];
+        int count;
+        
+        cp = strchr(ret_info, ' ');
+        count = 0;
+        
+        do
           {
-            char *cp;
-            char node_name[PBS_MAXHOSTNAME + 1];
-            int count;
+          cp++;
+          node_name[count] = *cp;
+          count++;
+          } while(*cp != ' ' && count < PBS_MAXHOSTNAME);
 
-            cp = strchr(ret_info, ' ');
-            count = 0;
-
-            do
-              {
-              cp++;
-              node_name[count] = *cp;
-              count++;
-              }while(*cp != ' ' && count < PBS_MAXHOSTNAME);
-
-              node_name[count-1] = 0;
-              cp = strdup(node_name);
-              free(np->nd_name);
-              np->nd_name = cp;
-              np->nd_first = init_prop(np->nd_name);
-              np->nd_last = np->nd_first;
-              np->nd_f_st = init_prop(np->nd_name);
-              np->nd_l_st = np->nd_f_st;
-          }
+        node_name[count-1] = 0;
+        cp = strdup(node_name);
+        free(np->nd_name);
+        np->nd_name = cp;
+        np->nd_first = init_prop(np->nd_name);
+        np->nd_last = np->nd_first;
+        np->nd_f_st = init_prop(np->nd_name);
+        np->nd_l_st = np->nd_f_st;
+        }
       }
     else if (!strncmp(ret_info, "me", 2))  /* shorter str compare than "message" */
       {
@@ -1402,15 +1413,13 @@ int is_stat_get(
     else if (server.sv_attr[SRV_ATR_MomJobSync].at_val.at_long &&
              !strncmp(ret_info, "jobdata=", 8))
       {
-      /* update job attributes based on what the MOM gives us */
-      
+      /* update job attributes based on what the MOM gives us */      
       update_job_data(np, ret_info + strlen("jobdata="));
       }
     else if (server.sv_attr[SRV_ATR_MomJobSync].at_val.at_long &&
              !strncmp(ret_info, "jobs=", 5))
       {
       /* walk job list reported by mom */
-
       sync_node_jobs(np, ret_info + strlen("jobs="));
       }
     else if (server.sv_attr[SRV_ATR_AutoNodeNP].at_val.at_long)
@@ -1437,7 +1446,6 @@ int is_stat_get(
           }
         }
       }
-      
     else if (server.sv_attr[SRV_ATR_NPDefault].at_val.at_long)
       {
       struct pbsnode *pnode;
@@ -1461,16 +1469,20 @@ int is_stat_get(
     }    /* END while (rc != DIS_EOD) */
 
   /* clear the transmission */
-
   rpp_eom(stream);
 
   /* DIS_EOD is the only valid final value of rc, check it */
-
   if (rc != DIS_EOD)
     {
     update_node_state(np, INUSE_UNKNOWN);
 
     free_arst(&temp);
+      
+    if (orig_np != np)
+      {
+      pthread_mutex_unlock(np->nd_mutex);
+      pthread_mutex_lock(orig_np->nd_mutex);
+      }
 
     return(rc);
     }
@@ -1492,6 +1504,12 @@ int is_stat_get(
     update_node_state(np, INUSE_UNKNOWN);
 
     free_arst(&temp);
+      
+    if (orig_np != np)
+      {
+      pthread_mutex_unlock(np->nd_mutex);
+      pthread_mutex_lock(orig_np->nd_mutex);
+      }
 
     return(DIS_NOCOMMIT);
     }
@@ -1504,11 +1522,22 @@ int is_stat_get(
     DBPRT(("is_stat_get: cannot set node status list\n"));
 
     update_node_state(np, INUSE_UNKNOWN);
+      
+    if (orig_np != np)
+      {
+      pthread_mutex_unlock(np->nd_mutex);
+      pthread_mutex_lock(orig_np->nd_mutex);
+      }
 
     return(DIS_NOCOMMIT);
     }
 
   /* NOTE:  node state adjusted in update_node_state() */
+  if (orig_np != np)
+    {
+    pthread_mutex_unlock(np->nd_mutex);
+    pthread_mutex_lock(orig_np->nd_mutex);
+    }
 
   return(DIS_SUCCESS);
   }  /* END is_stat_get() */
@@ -1521,10 +1550,11 @@ int is_stat_get(
  */
 
 int count_gpu_jobs(
-  char *mom_node,
-  int  gpuid)
-  {
 
+  char *mom_node,
+  int   gpuid)
+
+  {
   job   *pjob;
   extern struct all_jobs alljobs;
   char  *gpu_str;
@@ -1954,14 +1984,11 @@ void stream_eof(
   if (stream >= 0)
     {
     /* find who the stream belongs to and mark down */
-
-/*    np = tfind((u_long)stream, &streams); */
     np = AVL_find(stream, 0, streams);
     }
 
   if ((np == NULL) && (addr != 0))
     {
-/*    np = tfind((u_long)addr, &ipaddrs); */
     np = AVL_find(addr, port, ipaddrs);
     }
 
@@ -1972,10 +1999,12 @@ void stream_eof(
     return;
     }
 
-  sprintf(log_buffer, "connection to %s is no longer valid, connection may have been closed remotely, remote service may be down, or message may be corrupt (%s).  setting node state to down",
+  pthread_mutex_lock(np->nd_mutex);
 
-          np->nd_name,
-          dis_emsg[ret]);
+  sprintf(log_buffer,
+    "connection to %s is no longer valid, connection may have been closed remotely, remote service may be down, or message may be corrupt (%s).  setting node state to down",
+    np->nd_name,
+    dis_emsg[ret]);
 
   log_err(-1, id, log_buffer);
 
@@ -1983,14 +2012,18 @@ void stream_eof(
 
   if (np->num_node_boards > 0)
     {
-    int i;
+    int             i;
     struct pbsnode *pnode;
 
     for (i = 0; i < np->num_node_boards; i++)
       {
       pnode = AVL_find(i,np->nd_mom_port,np->node_boards);
 
+      pthread_mutex_lock(pnode->nd_mutex);
+
       update_node_state(pnode,INUSE_DOWN);
+      
+      pthread_mutex_unlock(pnode->nd_mutex);
       }
     }
   else
@@ -2000,11 +2033,12 @@ void stream_eof(
 
   if (np->nd_stream >= 0)
     {
-/*    tdelete((u_long)np->nd_stream, &streams); */
     streams = AVL_delete_node(np->nd_stream, 0, streams);
 
     np->nd_stream = -1;
     }
+
+  pthread_mutex_unlock(np->nd_mutex);
 
   return;
   }  /* END stream_eof() */
@@ -2368,11 +2402,7 @@ void *is_request_work(
 
       if (LOGLEVEL >= 2)
         {
-        log_record(
-          PBSEVENT_SCHED,
-          PBS_EVENTCLASS_REQUEST,
-          id,
-          log_buffer);
+        log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buffer);
         }
 
       log_err(-1, id, log_buffer);
@@ -2826,6 +2856,7 @@ void write_node_state(void)
  *      (# of nodes) * (2 + MAX_NODE_NAME + MAX_NOTE)  bytes in size
  */
 int write_node_note(void)
+
   {
 #ifndef NDEBUG
   static char id[] = "write_node_note";
@@ -4988,11 +5019,7 @@ int add_job_to_node(
       pjob->ji_qs.ji_jobid,
       pnode->nd_nsnfree);
 
-    log_record(
-      PBSEVENT_SCHED,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buffer);
     DBPRT(("%s\n", log_buffer));
     }
 
@@ -5005,15 +5032,17 @@ int add_job_to_node(
   if (jp == NULL)
     {
     /* add job to front of subnode job array */
-
     jp = (struct jobinfo *)malloc(sizeof(struct jobinfo));
+
     jp->next = snp->jobs;
     snp->jobs = jp;
     jp->job = pjob;
-    pnode->nd_nsnfree--;            /* reduce free count */
+
+    /* reduce free count */
+    pnode->nd_nsnfree--;
 
     /* if no free VPs, set node state */
-    if (pnode->nd_nsnfree <= 0)     
+    if (pnode->nd_nsnfree <= 0)
       pnode->nd_state = newstate;
 
     if (snp->inuse == INUSE_FREE)
@@ -5029,7 +5058,7 @@ int add_job_to_node(
   --pnode->nd_needed;
 
   return(SUCCESS);
-  }
+  } /* END add_job_to_node() */
 
 
     
@@ -5058,6 +5087,10 @@ int add_job_to_gpu_subnode(
 
   return(PBSE_NONE);
   } /* END add_job_to_gpu_subnode() */
+
+
+
+
 
 /**
  * builds the host list (hlist)
@@ -6162,11 +6195,7 @@ void free_nodes(
     sprintf(log_buffer, "freeing nodes for job %s",
             pjob->ji_qs.ji_jobid);
 
-    log_record(
-      PBSEVENT_SCHED,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buffer);
     }
 
   if ((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
@@ -6220,15 +6249,11 @@ void free_nodes(
               if (LOGLEVEL >= 7)
                 {
                 sprintf(log_buffer, "freeing node %s gpu %d for job %s",
-                        pnode->nd_name,
-                        i,
-                        pjob->ji_qs.ji_jobid);
+                  pnode->nd_name,
+                  i,
+                  pjob->ji_qs.ji_jobid);
 
-                log_record(
-                  PBSEVENT_SCHED,
-                  PBS_EVENTCLASS_REQUEST,
-                  id,
-                  log_buffer);
+                log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buffer);
                 }
 
               }
@@ -6281,14 +6306,10 @@ void free_nodes(
         if (LOGLEVEL >= 6)
           {
           sprintf(log_buffer, "increased sub-node free count to %d of %d\n",
-                  pnode->nd_nsnfree,
-                  pnode->nd_nsn);
+            pnode->nd_nsnfree,
+            pnode->nd_nsn);
 
-          log_record(
-            PBSEVENT_SCHED,
-            PBS_EVENTCLASS_REQUEST,
-            id,
-            log_buffer);
+          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buffer);
           }
 
         pnode->nd_state &= ~(INUSE_JOB | INUSE_JOBSHARE);

@@ -861,7 +861,9 @@ static int initialize_pbsnode(
  */
 
 static void subnode_delete(
+
   struct pbssubn *psubn)
+
   {
 
   struct jobinfo *jip, *jipt;
