@@ -633,20 +633,22 @@ void process_request(
         *dptr = '\0';
         }
       
-      if (((pjob = find_job(request->rq_ind.rq_modify.rq_objname)) != (job *)0) &&
-          (pjob->ji_qs.ji_state == JOB_STATE_RUNNING))
+      if ((pjob = find_job(request->rq_ind.rq_modify.rq_objname)) != (job *)0)
         {
-
-        if ((pjob->ji_wattr[JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET) &&
-            ((csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "s") != NULL) ||
-             (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "c") != NULL) ||
-             (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "enabled") != NULL)) &&
-            (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, short_host) != NULL))
+        if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
           {
-          request->rq_perm = svr_get_privilege(request->rq_user, server_host);
-          skip = TRUE;
+
+          if ((pjob->ji_wattr[JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET) &&
+              ((csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "s") != NULL) ||
+               (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "c") != NULL) ||
+               (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "enabled") != NULL)) &&
+              (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, short_host) != NULL))
+            {
+            request->rq_perm = svr_get_privilege(request->rq_user, server_host);
+            skip = TRUE;
+            }
+
           }
-        
         pthread_mutex_unlock(pjob->ji_mutex);
         }
       
