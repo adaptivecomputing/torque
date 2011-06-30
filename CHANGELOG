@@ -5,7 +5,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (backported from 3.0.3)
   b - Reversed the order of $(MOMLIBS) and $(PBS_LIBS) in src/resmom/Makefile.in for 
       LDADD = @PBS_MACH@/libmommach.a $(PBS_LIBS) $(MOMLIBS). This fixes a link 
-      problem on Suse Linux.
+      problem on Suse Linux. This fixes bugzilla bug 143.
 
 
 2.5.7
