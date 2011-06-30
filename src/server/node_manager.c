@@ -854,7 +854,7 @@ void sync_node_jobs(
           /* NOTE:  node is actively reporting so should not be deleted and
                     np->nd_addrs[] should not be NULL */
 
-          conn = svr_connect(np->nd_addrs[0],pbs_mom_port,process_Dreply,ToServerDIS);
+          conn = svr_connect(np->nd_addrs[0],pbs_mom_port,np,process_Dreply,ToServerDIS);
 
           if (conn >= 0)
             {
@@ -2132,7 +2132,7 @@ void *check_nodes_work(
   work_task *ptask = (struct work_task *)vp;
   work_task *wt;
 
-  struct pbsnode   *np;
+  struct pbsnode   *np = NULL;
   int               chk_len;
 
   node_iterator     iter;
@@ -2156,7 +2156,7 @@ void *check_nodes_work(
   /* evaluate all nodes */
   reinitialize_node_iterator(&iter);
 
-  while ((np = next_node(&allnodes,&iter)) != NULL)
+  while ((np = next_node(&allnodes,np,&iter)) != NULL)
     {
     if (!(np->nd_state & (INUSE_DELETED | INUSE_DOWN)))
       {
@@ -2174,8 +2174,6 @@ void *check_nodes_work(
         update_node_state(np, (INUSE_DOWN));    
         }
       }
-      
-    pthread_mutex_unlock(np->nd_mutex);
     } /* END for each node */
 
   if (ptask->wt_parm1 == NULL)
@@ -3468,7 +3466,7 @@ static int search(
   {
   static int pass = INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_UNKNOWN | INUSE_DELETED;
 
-  struct pbsnode *pnode;
+  struct pbsnode *pnode = NULL;
   int found;
 
   node_iterator iter;
@@ -3481,7 +3479,7 @@ static int search(
   reinitialize_node_iterator(&iter);
 
   /* look for nodes we haven't picked already */
-  while ((pnode = next_node(&allnodes,&iter)) != NULL)
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
     if (search_acceptable(pnode,glorf,skip,vpreq,gpureq) == TRUE)
       {
@@ -3508,12 +3506,11 @@ static int search(
          DBPRT(("%s\n",
            log_buffer));
          }
+
       pthread_mutex_unlock(pnode->nd_mutex);
 
       return(1);
       }
-    
-    pthread_mutex_unlock(pnode->nd_mutex);
     }
 
   if (glorf == NULL)  /* no property */
@@ -3525,8 +3522,9 @@ static int search(
 
   /* try re-shuffling the nodes to get what we want */
   reinitialize_node_iterator(&iter);
+  pnode = NULL;
 
-  while ((pnode = next_node(&allnodes,&iter)) != NULL)
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
     /* all paths through here treat the mutex correctly. convoluted, but 
      * correct. This has to happen because of the potential recursion */
@@ -3580,8 +3578,6 @@ static int search(
         return(1);
         }
       }  
-
-    pthread_mutex_unlock(pnode->nd_mutex);
     }  /* END for (each node) */
 
   /* FAILURE */
@@ -3885,8 +3881,9 @@ static int listelem(
   hit = 0;
 
   reinitialize_node_iterator(&iter);
+  pnode = NULL;
 
-  while ((pnode = next_node(&allnodes,&iter)) != NULL)
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
     if (!(pnode->nd_state & INUSE_DELETED))
       {
@@ -3905,8 +3902,6 @@ static int listelem(
           }
         }
       }
-          
-    pthread_mutex_unlock(pnode->nd_mutex);
     } /* END for each node */
 
   if (hit < num)
@@ -4488,15 +4483,14 @@ static int node_spec(
   svr_numcfgnodes = 0;
   
   reinitialize_node_iterator(&iter);
+  pnode = NULL;
 
-  while ((pnode = next_node(&allnodes,&iter)) != NULL)
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
     if (!(pnode->nd_state & INUSE_DELETED))
       {
       node_avail_check(pnode,ProcBMStr);
       }
-
-    pthread_mutex_unlock(pnode->nd_mutex);
     }    /* END for (i = 0) */
 
   /*
@@ -4593,16 +4587,15 @@ static int node_spec(
    * that are already inuse.
    */
   reinitialize_node_iterator(&iter);
+  pnode = NULL;
 
-  while ((pnode = next_node(&allnodes,&iter)) != NULL)
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
     if ((pnode->nd_state & INUSE_DELETED) ||
         (pnode->nd_ntype != NTYPE_CLUSTER) ||
         (pnode->nd_flag != thinking))  /* thinking is global */
       {
       /* node is ok */
-      pthread_mutex_unlock(pnode->nd_mutex);
-      
       continue;
       }
 
@@ -4625,8 +4618,6 @@ static int node_spec(
 
           DBPRT(("%s\n",
                  log_buffer));
-
-          pthread_mutex_unlock(pnode->nd_mutex);
           
           continue;
           }
@@ -4638,8 +4629,6 @@ static int node_spec(
         if (pnode->nd_ngpus_needed <= gpu_count(pnode, TRUE))
           {
           /* shared node - node is ok */
-          pthread_mutex_unlock(pnode->nd_mutex);
-          
           continue;
           }
         }
@@ -4652,8 +4641,6 @@ static int node_spec(
         if (pnode->nd_ngpus_needed <= pnode->nd_ngpus_free)
           {
           /* shared node - node is ok */
-          pthread_mutex_unlock(pnode->nd_mutex);
-          
           continue;
           }
         }
@@ -4676,9 +4663,12 @@ static int node_spec(
           0))
       {
       /* node is ok */
+      pthread_mutex_lock(pnode->nd_mutex);
 
       continue;
       }
+    else
+      pthread_mutex_lock(pnode->nd_mutex);
 
     if (early != 0)
       {
@@ -4687,9 +4677,6 @@ static int node_spec(
 
       DBPRT(("%s\n",
              log_buffer));
-
-
-      pthread_mutex_lock(pnode->nd_mutex);
 
       /* specified node not available and replacement cannot be located */
 
@@ -4784,7 +4771,7 @@ static int node_spec(
       }  /* END if (early != 0) */
 
     num = 0;
-    }  /* END for (i) */
+    }  /* END for each node */
 
   /* SUCCESS - spec is ok */
 
@@ -5300,15 +5287,14 @@ int set_nodes(
   /* initialize the mom port values to unset so that they're only
    * set once */
   iter = get_node_iterator();
+  pnode = NULL;
 
-  while ((pnode = next_node(&allnodes,iter)) != NULL)
+  while ((pnode = next_node(&allnodes,pnode,iter)) != NULL)
     {
     if ((pnode->nd_state & INUSE_DELETED) ||
         (pnode->nd_flag != thinking))
       {
       /* node is not considered/eligible for job - see search() */
-      pthread_mutex_unlock(pnode->nd_mutex);
-
       continue;
       }
 
@@ -5321,8 +5307,6 @@ int set_nodes(
         {
         reserve_node(pnode,newstate,pjob,ProcBMStr,&hlist);
         }
-
-      pthread_mutex_unlock(pnode->nd_mutex);
 
       continue;
       }
@@ -5381,28 +5365,22 @@ int set_nodes(
       }
 
     /* make sure we found gpus to use, if job needed them */
-
     if (pnode->nd_ngpus_needed > 0)
-    {
-    /* no resources located, request failed */
-
-    if (EMsg != NULL)
       {
-      sprintf(log_buffer, "could not locate requested gpu resources '%.4000s' (node_spec failed) %s",
-        spec,
-        EMsg);
-
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      /* no resources located, request failed */      
+      if (EMsg != NULL)
+        {
+        sprintf(log_buffer, "could not locate requested gpu resources '%.4000s' (node_spec failed) %s",
+          spec,
+          EMsg);
+        
+        log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+        }
+      
+      pthread_mutex_unlock(pnode->nd_mutex);
+      
+      return(PBSE_RESCUNAV);
       }
-
-    pthread_mutex_unlock(pnode->nd_mutex);
-
-    return(PBSE_RESCUNAV);
-    }
 
     /* place the subnodes (nps) in the hostlist */
     for (snp = pnode->nd_psn;snp && pnode->nd_needed;snp = snp->next)
@@ -5425,9 +5403,7 @@ int set_nodes(
   
       build_host_list(&hlist,snp,pnode);
       }  /* END for (snp) */
-
-    pthread_mutex_unlock(pnode->nd_mutex);
-    }    /* END for (i) */
+    }    /* END for each node */
 
   /* did we have a request for procs? Do those now */
   if (procs > 0)
@@ -5453,13 +5429,12 @@ int set_nodes(
       }
 
     reinitialize_node_iterator(iter);
+    pnode = NULL;
 
-    while ((pnode = next_node(&allnodes,iter)) != NULL)
+    while ((pnode = next_node(&allnodes,pnode,iter)) != NULL)
       {
       if (pnode->nd_state & INUSE_DELETED)
         {
-        pthread_mutex_unlock(pnode->nd_mutex);
-       
         continue;
         }
 
@@ -5489,10 +5464,7 @@ int set_nodes(
 
         build_host_list(&hlist,snp,pnode);
         procs_needed--;
-
         } /* END for (snp) */
-
-      pthread_mutex_unlock(pnode->nd_mutex);
       } /* END for each node */
     }
 
@@ -5924,8 +5896,9 @@ int node_avail(
       }
 
     reinitialize_node_iterator(&iter);
+    pn = NULL;
 
-    while ((pn = next_node(&allnodes,&iter)) != NULL)
+    while ((pn = next_node(&allnodes,pn,&iter)) != NULL)
       {
       if (!(pn->nd_state & INUSE_DELETED))
         {
@@ -5952,9 +5925,7 @@ int node_avail(
               ++xalloc;
             }
           }
-        }
-
-      pthread_mutex_unlock(pn->nd_mutex);
+        } /* END node not deleted */
       } /* END for each node */
 
     free_prop(prop);
@@ -6036,14 +6007,13 @@ int node_reserve(
     ** reserved.
     */
     reinitialize_node_iterator(&iter);
+    pnode = NULL;
 
-    while ((pnode = next_node(&allnodes,&iter)) != NULL)
+    while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
       {
       if ((pnode->nd_state & INUSE_DELETED) ||
           (pnode->nd_flag != thinking))
         {
-        pthread_mutex_unlock(pnode->nd_mutex);
-
         continue;   /* skip this one */
         }
 
@@ -6070,9 +6040,7 @@ int node_reserve(
 
       if (nrd == pnode->nd_nsn)
         pnode->nd_state = INUSE_RESERVE;
-
-      pthread_mutex_unlock(pnode->nd_mutex);
-      }
+      } /* END for each node */
     }
   else
     {
@@ -6137,12 +6105,12 @@ int is_ts_node(
 char *find_ts_node(void)
 
   {
-  struct pbsnode *np;
+  struct pbsnode *np = NULL;
   node_iterator   iter;
 
   reinitialize_node_iterator(&iter);
 
-  while ((np = next_node(&allnodes,&iter)) != NULL)
+  while ((np = next_node(&allnodes,np,&iter)) != NULL)
     {
     if ((np->nd_ntype == NTYPE_TIMESHARED) &&
         ((np->nd_state & (INUSE_DOWN | INUSE_DELETED | INUSE_OFFLINE)) == 0))
@@ -6153,9 +6121,7 @@ char *find_ts_node(void)
 
       return(name);
       }
-      
-    pthread_mutex_unlock(np->nd_mutex);
-    }
+    } /* END for each node */
 
   return(NULL);
   }  /* END find_ts_node() */
@@ -6205,13 +6171,12 @@ void free_nodes(
 
   /* examine all nodes in cluster */
   reinitialize_node_iterator(&iter);
+  pnode = NULL;
 
-  while ((pnode = next_node(&allnodes,&iter)) != NULL)
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
     if (pnode->nd_state & INUSE_DELETED)
       {
-      pthread_mutex_unlock(pnode->nd_mutex);
-
       continue;
       }
 
@@ -6329,8 +6294,6 @@ void free_nodes(
         break;
         }  /* END for (prev) */
       }    /* END for (np) */
-
-    pthread_mutex_unlock(pnode->nd_mutex);
     } /* END for each node */
 
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HasNodes;
@@ -6376,8 +6339,9 @@ static void set_one_old(
     }
 
   reinitialize_node_iterator(&iter);
+  pnode = NULL;
 
-  while ((pnode = next_node(&allnodes,&iter)) != NULL)
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
     if (strcmp(name, pnode->nd_name) == 0)
       {
@@ -6413,9 +6377,11 @@ static void set_one_old(
             }
           }    /* END for (snp) */
         }
-      }
-            
-    pthread_mutex_unlock(pnode->nd_mutex);
+
+      pthread_mutex_unlock(pnode->nd_mutex);
+
+      break;
+      } /* END name matched */
     } /* END for each node */
 
   return;

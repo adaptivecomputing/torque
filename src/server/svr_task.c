@@ -121,10 +121,10 @@ extern all_tasks task_list_event;
 
 struct work_task *set_task(
 
-  enum work_type  type,
-  long          event_id,  /* I - based on type can be time of event */
-  void (*func)(),
-  void         *parm)
+  enum work_type   type,
+  long             event_id,  /* I - based on type can be time of event */
+  void           (*func)(),
+  void            *parm)
 
   {
   work_task *pnew;

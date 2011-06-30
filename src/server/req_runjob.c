@@ -1520,8 +1520,9 @@ int set_mother_superior_ports(
     }
 
   iter = get_node_iterator();
+  pnode = NULL;
 
-  while ((pnode = next_node(&allnodes,iter)) != NULL)
+  while ((pnode = next_node(&allnodes,pnode,iter)) != NULL)
     {
     if (!strcasecmp(pnode->nd_name, ms))
       {
@@ -1532,8 +1533,6 @@ int set_mother_superior_ports(
 
       return(PBSE_NONE);
       }
-
-    pthread_mutex_unlock(pnode->nd_mutex);
     }
 
   free(iter);

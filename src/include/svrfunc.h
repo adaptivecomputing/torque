@@ -122,7 +122,8 @@ extern int   chk_resc_limits(attribute *, pbs_queue *, char *);
 #endif /* ATTRIBUTE_H */
 
 #ifdef PBS_NET_H
-extern int   svr_connect(pbs_net_t, unsigned int, void (*)(int), enum conn_type);
+struct pbsnode;
+extern int   svr_connect(pbs_net_t, unsigned int, struct pbsnode *, void (*)(int), enum conn_type);
 #endif /* PBS_NET_H */
 
 #ifdef WORK_TASK_H

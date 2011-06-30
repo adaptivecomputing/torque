@@ -164,17 +164,6 @@ static int contact_sched(
   char *id = "contact_sched";
 
   /* connect to the Scheduler */
-
-#if 0   /* don't check if scheduler runs on same node as server */
-
-  if (!addr_ok(pbs_scheduler_addr))
-    {
-    pbs_errno = EHOSTDOWN;
-    return -1;
-    }
-
-#endif
-
   sock = client_to_svr(pbs_scheduler_addr, pbs_scheduler_port, 1, EMsg);
 
   if (sock < 0)

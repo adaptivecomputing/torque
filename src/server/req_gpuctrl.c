@@ -233,6 +233,7 @@ void req_gpuctrl(
   conn = svr_connect(
            pnode->nd_addrs[0],
            pbs_mom_port,
+           pnode,
            process_Dreply,
            ToServerDIS);
 

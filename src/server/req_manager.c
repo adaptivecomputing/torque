@@ -1712,13 +1712,12 @@ void mgr_node_set(
     problem_cnt = 0;
   
     reinitialize_node_iterator(&iter);
+    pnode = NULL;
 
-    while ((pnode = next_node(&allnodes,&iter)) != NULL)
+    while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
       {
       if (propnodes && !hasprop(pnode, &props))
         {
-        pthread_mutex_unlock(pnode->nd_mutex);
-
         continue;
         }
 
@@ -1753,8 +1752,6 @@ void mgr_node_set(
           PBS_EVENTCLASS_NODE,
           pnode->nd_name);
         }
-
-      pthread_mutex_unlock(pnode->nd_mutex);
       }  /* END for each node */
 
     } /* END multiple node case */
@@ -1991,8 +1988,9 @@ static void mgr_node_delete(
     problem_cnt = 0;
 
     reinitialize_node_iterator(&iter);
+    pnode = NULL;
 
-    while ((pnode = next_node(&allnodes,&iter)) != NULL)
+    while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
       {
       save_characteristic(pnode);
 
@@ -2021,8 +2019,6 @@ static void mgr_node_delete(
           free(nodename);
           }
         }
-
-      pthread_mutex_unlock(pnode->nd_mutex);
       } /* end loop ( all nodes ) */
     }
   else

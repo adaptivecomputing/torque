@@ -91,6 +91,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <errno.h>
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -637,6 +638,7 @@ int mom_comm(
   unsigned int dummy;
 
   struct work_task *pwt;
+  char             *jobid_copy;
 
   if (pjob->ji_momhandle < 0)
     {
@@ -649,9 +651,9 @@ int mom_comm(
       }
 
     pjob->ji_momhandle = svr_connect(
-
                            pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
                            pjob->ji_qs.ji_un.ji_exect.ji_momport,
+                           NULL,
                            process_Dreply,
                            ToServerDIS);
 
@@ -668,12 +670,13 @@ int mom_comm(
           "cannot establish connection with mom for clean-up - will retry later");
         }
 
-      pwt = set_task(
+      jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
+      pwt = set_task(
               WORK_Timed,
               (long)(time_now + PBS_NET_RETRY_TIME),
               func,
-              (void *)pjob);
+              jobid_copy);
 
       if (pwt != NULL)
         {
@@ -682,6 +685,8 @@ int mom_comm(
 
         pthread_mutex_unlock(pwt->wt_mutex);
         }
+      else if (jobid_copy != NULL)
+        free(jobid_copy);
 
       return(-1);
       }
@@ -740,23 +745,22 @@ void on_job_exit(
   struct work_task *ptask)  /* I */
 
   {
-  int    handle = -1;
-  job   *pjob;
-  job   *pj;
-  int    iter = -1;
+  static char          *id = "on_job_exit";
+  int                   handle = -1;
+  job                  *pjob;
 
   struct batch_request *preq;
 
-  int    IsFaked = 0;
-  int  KeepSeconds = 0;
-  int  PurgeIt = FALSE;
-  int MustReport = FALSE;
-  pbs_queue *pque;
-  char namebuf[MAXPATHLEN + 1];
-  char *namebuf2;
-  int spool_file_exists;
-  int rc = 0;
-
+  int                   IsFaked = 0;
+  int                   KeepSeconds = 0;
+  int                   PurgeIt = FALSE;
+  int                   MustReport = FALSE;
+  pbs_queue            *pque;
+  char                  namebuf[MAXPATHLEN + 1];
+  char                 *namebuf2;
+  char                 *jobid;
+  int                   spool_file_exists;
+  int                   rc = 0;
 
   extern void remove_job_delete_nanny(struct job *);
 
@@ -764,44 +768,44 @@ void on_job_exit(
     {
     preq = NULL;
 
-    pjob = (job *)ptask->wt_parm1;
+    jobid = (char *)ptask->wt_parm1;
     }
   else
     {
     preq = (struct batch_request *)ptask->wt_parm1;
 
-    pjob = (job *)preq->rq_extra;
+    jobid = (char *)preq->rq_extra;
+    }
+
+  /* check for malloc errors */
+  if (jobid == NULL)
+    {
+    log_err(ENOMEM,id,"Cannot allocate memory!");
+    return;
     }
 
   /* make sure the job is actually still there */
-
-  /* the mutex is obtained in the next_job method */
-  while ((pj = next_job(&alljobs,&iter)) != NULL)
-    {
-    if (pjob == pj)
-      break;
-
-    pthread_mutex_unlock(pj->ji_mutex);
-    }
+  pjob = find_job(jobid);
 
   /* if the job doesn't exist, just exit */
-  if (pj == NULL)
+  if (pjob == NULL)
     {
-    sprintf(log_buffer, "on_job_exit called with INVALID pjob: %p",
-        (void *)pjob);
-  
+    sprintf(log_buffer, "%s called with INVALID jobid: %s", id, jobid);
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"NULL",log_buffer);
 
     return;
     }
   else
     {
-    sprintf(log_buffer, "on_job_exit valid pjob: %p (substate=%d)",
-        (void *)pjob,
-        pjob->ji_qs.ji_substate);
+    sprintf(log_buffer, "%s valid pjob: %p (substate=%d)",
+      id,
+      (void *)pjob,
+      pjob->ji_qs.ji_substate);
     
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"NULL",log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
+
+  free(jobid);
 
   /*
    * we don't need a handle if we are complete. On starting up we will NOT have
@@ -943,7 +947,7 @@ void on_job_exit(
 
         if (preq != NULL)
           {
-          preq->rq_extra = (void *)pjob;
+          preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
           if (issue_Drequest(handle, preq, on_job_exit, 0) == 0)
             {
@@ -984,7 +988,9 @@ void on_job_exit(
               "no spool files to return");
             }
 
-          ptask = set_task(WORK_Immed, 0, on_job_exit, pjob);
+          jobid = strdup(pjob->ji_qs.ji_jobid);
+
+          ptask = set_task(WORK_Immed, 0, on_job_exit, jobid);
 
           if (ptask != NULL)
             {
@@ -1073,7 +1079,7 @@ void on_job_exit(
               "about to copy stdout/stderr/stageout files");
             }
 
-          preq->rq_extra = (void *)pjob;
+          preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
           if (issue_Drequest(handle, preq, on_job_exit, 0) == 0)
             {
@@ -1125,7 +1131,9 @@ void on_job_exit(
               "no files to copy");
             }
 
-          ptask = set_task(WORK_Immed, 0, on_job_exit, pjob);
+          jobid = strdup(pjob->ji_qs.ji_jobid);
+
+          ptask = set_task(WORK_Immed, 0, on_job_exit, jobid);
 
           if (ptask != NULL)
             {
@@ -1133,6 +1141,8 @@ void on_job_exit(
 
             pthread_mutex_unlock(ptask->wt_mutex);
             }
+          else if (jobid != NULL)
+            free(jobid);
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -1304,7 +1314,7 @@ void on_job_exit(
 
           preq->rq_type = PBS_BATCH_DelFiles;
 
-          preq->rq_extra = (void *)pjob;
+          preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
           if (issue_Drequest(handle, preq, on_job_exit, 0) == 0)
             {
@@ -1339,7 +1349,9 @@ void on_job_exit(
 
           svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITED);
 
-          ptask = set_task(WORK_Immed, 0, on_job_exit, pjob);
+          jobid = strdup(pjob->ji_qs.ji_jobid);
+
+          ptask = set_task(WORK_Immed, 0, on_job_exit, jobid);
 
           if (ptask)
             {
@@ -1441,7 +1453,6 @@ void on_job_exit(
         }
 
       /* NOTE: we never check if MOM actually deleted the job */
-
       rel_resc(pjob); /* free any resc assigned to the job */
 
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
@@ -1606,9 +1617,11 @@ void on_job_exit(
            * better be restarting.
            * use the comp_time to determine task invocation time
            */
+          jobid = strdup(pjob->ji_qs.ji_jobid);
+
           ptask = set_task(WORK_Timed,
             pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
-            on_job_exit, pjob);
+            on_job_exit, jobid);
           }
         else
           {
@@ -1620,7 +1633,9 @@ void on_job_exit(
           pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long = (long)time(NULL);
           pjob->ji_wattr[JOB_ATR_comp_time].at_flags |= ATR_VFLAG_SET;
 
-          ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, pjob);
+          jobid = strdup(pjob->ji_qs.ji_jobid);
+
+          ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid);
 
           if (gettimeofday(&tv, &tz) == 0)
             {
@@ -1671,8 +1686,10 @@ void on_job_exit(
               log_buffer);
             }
 
+          jobid = strdup(pjob->ji_qs.ji_jobid);
+
           ptask = set_task(WORK_Timed,time_now +
-                JOBMUSTREPORTDEFAULTKEEP,on_job_exit,pjob);
+                JOBMUSTREPORTDEFAULTKEEP,on_job_exit,jobid);
 
           if (ptask != NULL)
             {
@@ -2299,26 +2316,27 @@ void *req_jobobit(
 
   {
 #ifdef USESAVEDRESOURCES
-  char   id[] = "req_jobobit";
+  char                  id[] = "req_jobobit";
 #endif    /* USESAVEDRESOURCES */
-  int    alreadymailed = 0;
-  int    bad;
-  char   acctbuf[RESC_USED_BUF];
-  int    accttail;
-  int    exitstatus;
-  int    have_resc_used = FALSE;
-  char   mailbuf[RESC_USED_BUF];
-  int    newstate;
-  int    newsubst;
-  char   *pc;
-  char   *tmp;
-  job    *pjob;
-  char   jobid[PBS_MAXSVRJOBID+1];
+  int                   alreadymailed = 0;
+  int                   bad;
+  char                  acctbuf[RESC_USED_BUF];
+  int                   accttail;
+  int                   exitstatus;
+  int                   have_resc_used = FALSE;
+  char                  mailbuf[RESC_USED_BUF];
+  int                   newstate;
+  int                   newsubst;
+  char                 *pc;
+  char                 *tmp;
+  char                 *jobid_copy;
+  job                  *pjob;
+  char                  jobid[PBS_MAXSVRJOBID+1];
   struct batch_request *preq = (struct batch_request *)vp;  
 
-  struct work_task *ptask;
-  svrattrl  *patlist;
-  unsigned int    dummy;
+  struct work_task     *ptask;
+  svrattrl             *patlist;
+  unsigned int          dummy;
 
   strcpy(jobid, preq->rq_ind.rq_jobobit.rq_jid);  /* This will be needed later for logging after preq is freed. */
   pjob = find_job(preq->rq_ind.rq_jobobit.rq_jid);
@@ -2732,7 +2750,9 @@ void *req_jobobit(
         acctbuf);
       }
 
-    ptask = set_task(WORK_Immed, 0, on_job_exit, (void *)pjob);
+    jobid_copy = strdup(pjob->ji_qs.ji_jobid);
+
+    ptask = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
 
     /* decrease array running job count */
     if ((pjob->ji_arraystruct != NULL) &&

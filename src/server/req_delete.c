@@ -270,6 +270,7 @@ int execute_job_delete(
   int               rc;
   int               iter = -1;
   char             *sigt = "SIGTERM";
+  char             *jobid_copy;
 
   int               has_mutex = TRUE;
 
@@ -586,8 +587,9 @@ jump:
     pjob->ji_momhandle = -1;
 
     /* force new connection */
+    jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-    pwtnew = set_task(WORK_Immed, 0, on_job_exit, (void *)pjob);
+    pwtnew = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
 
     if (pwtnew)
       {
@@ -628,7 +630,10 @@ jump:
                     &pque->qu_attr[QE_ATR_KeepCompleted],
                     &server.sv_attr[SRV_ATR_KeepCompleted],
                     0);
-    ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, pjob);
+
+    jobid_copy = strdup(pjob->ji_qs.ji_jobid);
+
+    ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy);
 
     if (ptask != NULL)
       {

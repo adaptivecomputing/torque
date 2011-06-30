@@ -167,8 +167,6 @@ int relay_to_mom(
     pthread_mutex_unlock(node->nd_mutex);
     return(PBSE_NORELYMOM);
     }
-  else
-    pthread_mutex_unlock(node->nd_mutex);
 
   if (LOGLEVEL >= 7)
     {
@@ -183,8 +181,11 @@ int relay_to_mom(
   conn = svr_connect(
            pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
            pjob->ji_qs.ji_un.ji_exect.ji_momport,
+           node,
            process_Dreply,
            ToServerDIS);
+    
+  pthread_mutex_unlock(node->nd_mutex);
 
   if (conn < 0)
     {
@@ -254,11 +255,11 @@ int issue_to_svr(
   void (*replyfunc)    (struct work_task *))      /* I */
 
   {
-  int   do_retry = 0;
-  int   handle;
-  pbs_net_t svraddr;
-  char  *svrname;
-  unsigned int  port = pbs_server_port_dis;
+  int               do_retry = 0;
+  int               handle;
+  pbs_net_t         svraddr;
+  char             *svrname;
+  unsigned int      port = pbs_server_port_dis;
 
   struct work_task *pwt;
 
@@ -283,7 +284,7 @@ int issue_to_svr(
     }
   else
     {
-    handle = svr_connect(svraddr, port, process_Dreply, ToServerDIS);
+    handle = svr_connect(svraddr, port, NULL, process_Dreply, ToServerDIS);
 
     if (handle >= 0)
       {

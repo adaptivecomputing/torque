@@ -632,7 +632,7 @@ int send_job_work(
 
     /* NOTE:  on node hangs, svr_connect is successful */
 
-    if ((con = svr_connect(hostaddr, port, 0, cntype)) == PBS_NET_RC_FATAL)
+    if ((con = svr_connect(hostaddr, port, NULL, 0, cntype)) == PBS_NET_RC_FATAL)
       {
       sprintf(log_buffer, "send_job failed to %lx port %d",
         hostaddr,

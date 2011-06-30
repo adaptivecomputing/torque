@@ -126,51 +126,46 @@ extern struct connection svr_conn[];
 extern pbs_net_t  pbs_server_addr;
 extern int               LOGLEVEL;
 
-extern int     addr_ok(pbs_net_t);
 extern void    bad_node_warning(pbs_net_t);
 extern ssize_t read_blocking_socket(int, void *, ssize_t);
 extern int get_num_connections();
+int            addr_ok(pbs_net_t,struct pbsnode *);
 
 
 
 int svr_connect(
 
-  pbs_net_t      hostaddr,  /* host order */
-  unsigned int   port,   /* I */
-  void (*func)(int),
-  enum conn_type cntype)
+  pbs_net_t        hostaddr,  /* host order */
+  unsigned int     port,   /* I */
+  struct pbsnode  *pnode,
+  void           (*func)(int),
+  enum conn_type   cntype)
 
   {
-  char         EMsg[1024];
-
   static char *id = "svr_connect";
 
-  int handle;
-  int sock;
-
-  time_t STime;
-  time_t ETime;
+  char         EMsg[1024];
+  int          handle;
+  int          sock;
+  time_t       STime;
+  time_t       ETime;
 
   if (LOGLEVEL >= 4)
     {
     char *tmp = netaddr_pbs_net_t(hostaddr);
     sprintf(log_buffer, "attempting connect to %s %s port %d",
-            (hostaddr == pbs_server_addr) ? "server" : "host",
-            ((int)hostaddr != 0) ? tmp : "localhost",
-            port);
+      (hostaddr == pbs_server_addr) ? "server" : "host",
+      ((int)hostaddr != 0) ? tmp : "localhost",
+      port);
 
-    log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      log_buffer);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
 
     free(tmp);
     }
 
   /* First, determine if the request is to another server or ourselves */
-
-  if ((hostaddr == pbs_server_addr) && (port == pbs_server_port_dis))
+  if ((hostaddr == pbs_server_addr) && 
+      (port == pbs_server_port_dis))
     {
     return(PBS_LOCAL_CONNECTION); /* special value for local */
     }
@@ -178,8 +173,7 @@ int svr_connect(
   time(&STime);
 
   /* obtain the connection to the other server */
-
-  if (!addr_ok(hostaddr))
+  if (!addr_ok(hostaddr,pnode))
     {
     if (LOGLEVEL >= 4)
       {
@@ -187,11 +181,7 @@ int svr_connect(
               (hostaddr == pbs_server_addr) ? "server" : "host",
               port);
 
-      log_event(
-        PBSEVENT_ADMIN,
-        PBS_EVENTCLASS_SERVER,
-        id,
-        log_buffer);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
       }
 
     pbs_errno = EHOSTDOWN;
@@ -223,11 +213,7 @@ int svr_connect(
               EMsg,
               (long)(ETime - STime));
 
-      log_event(
-        PBSEVENT_ADMIN,
-        PBS_EVENTCLASS_SERVER,
-        id,
-        log_buffer);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
       }
 
     bad_node_warning(hostaddr);
@@ -237,18 +223,15 @@ int svr_connect(
     return(sock);  /* PBS_NET_RC_RETRY or PBS_NET_RC_FATAL */
     }  /* END if (sock < 0) */
 
-  if ((LOGLEVEL >= 2) && (ETime > STime))
+  if ((LOGLEVEL >= 2) && 
+      (ETime > STime))
     {
     sprintf(log_buffer, "successful connect to %s port %d - time=%ld seconds",
             (hostaddr == pbs_server_addr) ? "server" : "host",
             port,
             (long)(ETime - STime));
 
-    log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      log_buffer);
+    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
     }
 
   /* add the connection to the server connection table and select list */
@@ -256,7 +239,6 @@ int svr_connect(
   if (func != NULL)
     {
     /* connect attempt to XXX? */
-
     add_conn(sock, ToServerDIS, hostaddr, port, PBS_SOCK_INET, func);
     }
 

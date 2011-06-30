@@ -233,11 +233,11 @@ void bad_node_warning(
   time_t now, last;
 
   node_iterator iter;
-  struct pbsnode *pnode;
+  struct pbsnode *pnode = NULL;
 
   reinitialize_node_iterator(&iter);
 
-  while ((pnode = next_node(&allnodes,&iter)) != NULL)
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
     if (pnode->nd_addrs == NULL)
       {
@@ -246,8 +246,6 @@ void bad_node_warning(
 
       log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buffer);
 
-      pthread_mutex_unlock(pnode->nd_mutex);
-
       continue;
       }
 
@@ -255,7 +253,6 @@ void bad_node_warning(
         (pnode->nd_addrs[0] != addr))
       {
       /* node was deleted  or doesn't match */
-      pthread_mutex_unlock(pnode->nd_mutex);
 
       continue;
       }
@@ -298,55 +295,57 @@ void bad_node_warning(
 
 int addr_ok(
 
-  pbs_net_t addr)  /* I */
+  pbs_net_t       addr,  /* I */
+  struct pbsnode *pnode) /* I */
 
   {
-  int status = 1;  /* assume destination host is healthy */
+  int           status = 1;  /* assume destination host is healthy */
+  int           release_mutex = FALSE;
 
   node_iterator iter;
-  struct pbsnode *pnode;
 
-  reinitialize_node_iterator(&iter);
-
-  while ((pnode = next_node(&allnodes,&iter)) != NULL)
+  /* if a node wasn't passed in, then find the node */
+  if (pnode == NULL)
     {
-    /* NOTE:  should walk thru all nd_addrs for multi-homed hosts */
-    if (pnode->nd_state & INUSE_DELETED)
-      {
-      pthread_mutex_unlock(pnode->nd_mutex);
-
-      continue;
-      }
+    reinitialize_node_iterator(&iter);
     
-    /* NOTE:  deleted node may have already freed nd_addrs - check should be redundant */
-    if ((pnode->nd_addrs == NULL) || 
-        (pnode->nd_addrs[0] != addr))
+    while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
       {
-      pthread_mutex_unlock(pnode->nd_mutex);
-
-      continue;
-      }
-    
-    /* node matches addr */
-    if (pnode->nd_state & (INUSE_DELETED | INUSE_UNKNOWN))
-      {
-      /* definitely not ok */
-      status = 0;
-      }
-    else if (pnode->nd_state & INUSE_DOWN)
-      {
-      /* the node is ok if it is still talking to us */
-      int chk_len;
-      
-      chk_len = server.sv_attr[SRV_ATR_check_rate].at_val.at_long;
-      
-      if (pnode->nd_lastupdate == 0)
+      /* NOTE:  should walk thru all nd_addrs for multi-homed hosts */
+      if (pnode->nd_state & INUSE_DELETED)
         {
-        pthread_mutex_unlock(pnode->nd_mutex);
-
         continue;
         }
       
+      /* NOTE:  deleted node may have already freed nd_addrs - check should be redundant */
+      if ((pnode->nd_addrs == NULL) || 
+          (pnode->nd_addrs[0] != addr))
+        {
+        continue;
+        }
+
+      /* node matches addr */
+      break;
+      }
+
+    if (pnode == NULL)
+      return(status);
+    else
+      release_mutex = TRUE;
+    }
+
+  if (pnode->nd_state & (INUSE_DELETED | INUSE_UNKNOWN))
+    {
+    /* definitely not ok */
+    status = 0;
+    }
+  else if (pnode->nd_state & INUSE_DOWN)
+    {
+    /* the node is ok if it is still talking to us */
+    long chk_len = server.sv_attr[SRV_ATR_check_rate].at_val.at_long;
+    
+    if (pnode->nd_lastupdate != 0)
+      {
       if (pnode->nd_lastupdate <= (time_now - chk_len))
         {
         status = 0;
@@ -357,11 +356,10 @@ int addr_ok(
         status = 0;
         }
       }
-
-    pthread_mutex_unlock(pnode->nd_mutex);
-    
-    break;
     }
+
+  if (release_mutex == TRUE)
+    pthread_mutex_unlock(pnode->nd_mutex);
 
   return(status);
   }  /* END addr_ok() */
@@ -1433,7 +1431,7 @@ void recompute_ntype_cnts(void)
   int   svr_loc_clnodes = 0;
   int   svr_loc_tsnodes = 0;
 
-  struct pbsnode  *pnode;
+  struct pbsnode  *pnode = NULL;
 
   node_iterator iter;
 
@@ -1441,7 +1439,7 @@ void recompute_ntype_cnts(void)
 
   if (svr_totnodes)
     {
-    while ((pnode = next_node(&allnodes,&iter)) != NULL)
+    while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
       {
       if (!(pnode->nd_state & INUSE_DELETED))
         {
@@ -1451,8 +1449,6 @@ void recompute_ntype_cnts(void)
         else if (pnode->nd_ntype == NTYPE_TIMESHARED)
           svr_loc_tsnodes++;
         }
-
-      pthread_mutex_unlock(pnode->nd_mutex);
       }
 
     svr_clnodes = svr_loc_clnodes;
@@ -1721,6 +1717,8 @@ int setup_node_boards(
   if (pnode == NULL)
     return(-1);
 
+  pnode->numa_parent = NULL;
+
   /* if this isn't a numa node, return no error */
   if ((pnode->num_node_boards == 0) &&
       (pnode->numa_str == NULL))
@@ -1811,6 +1809,9 @@ int setup_node_boards(
         pn->nd_mom_port,
         pn,
         pnode->node_boards);
+
+    /* set my parent node pointer */
+    pn->numa_parent = pnode;
     } /* END for each node_board */
 
   if (LOGLEVEL >= 3)
@@ -3069,65 +3070,89 @@ void reinitialize_node_iterator(
 
 
 
+struct pbsnode *get_my_next_node_board(
+
+  node_iterator  *iter,
+  struct pbsnode *np)
+
+  {
+  struct pbsnode *numa;
+  
+  iter->numa_index++;
+  numa = AVL_find(iter->numa_index,np->nd_mom_port,np->node_boards);
+  
+  pthread_mutex_unlock(np->nd_mutex);
+  pthread_mutex_lock(numa->nd_mutex);
+
+  return(numa);
+  } /* END get_my_next_node_board() */
+
+
+
+
 /* 
  * @return the next node, from 0->end, accounting for numa nodes
  */
 struct pbsnode *next_node(
 
-  all_nodes     *an,
-  node_iterator *iter)
+  all_nodes      *an,
+  struct pbsnode *current,
+  node_iterator  *iter)
 
   {
   struct pbsnode *next;
-  struct pbsnode *numa_tmp;
+  struct pbsnode *tmp;
 
-  pthread_mutex_lock(an->allnodes_mutex);
-
-  if (iter->node_index == -1)
+  if (current == NULL)
     {
+    pthread_mutex_lock(an->allnodes_mutex);
+
     /* the first call to next_node */
     next = next_thing(an->ra,&iter->node_index);
 
-    /* the first possible index */
-    iter->prev_index = an->ra->slots[ALWAYS_EMPTY_INDEX].next;
-    }
-  else 
-    {
-    next = (struct pbsnode *)get_thing_from_index(an->ra,iter->prev_index);
+    pthread_mutex_unlock(an->allnodes_mutex);
 
     if (next != NULL)
       {
-      if (pthread_mutex_trylock(next->nd_mutex))
-        {
-        pthread_mutex_unlock(an->allnodes_mutex);
-        pthread_mutex_lock(next->nd_mutex);
-        pthread_mutex_lock(an->allnodes_mutex);
-        }
+      pthread_mutex_lock(next->nd_mutex);
       
-      if (iter->numa_index + 1 >= next->num_node_boards)
+      /* if I have node_boards, look at those and not me */
+      if (next->num_node_boards > 0)
         {
-        /* save this index before advancing */
-        iter->prev_index = iter->node_index;
-        
-        /* go to the next node in all nodes */
-        pthread_mutex_unlock(next->nd_mutex);
-        next = next_thing(an->ra,&iter->node_index);
-        }
-      else
-        {        
-        /* go to the next numa node */
-        iter->numa_index++;
-        numa_tmp = AVL_find(iter->numa_index,next->nd_mom_port,next->node_boards);
-        pthread_mutex_unlock(next->nd_mutex);
-        next = numa_tmp;
+        next = get_my_next_node_board(iter,next);
         }
       }
-    }
+    } /* END first iteration */
+  else
+    {
+    /* if current is a numa subnode, go back to the parent */
+    if (iter->numa_index > 0)
+      {
+      tmp = current->numa_parent;
+      pthread_mutex_unlock(current->nd_mutex);
+      pthread_mutex_lock(tmp->nd_mutex);
+      current = tmp;
+      }
 
-  pthread_mutex_unlock(an->allnodes_mutex);
+    /* move to the next host or get my next node board? */
+    if (iter->numa_index + 1 >= current->num_node_boards)
+      {
+      /* go to the next node in all nodes */
+      pthread_mutex_unlock(current->nd_mutex);
+      pthread_mutex_lock(an->allnodes_mutex);
 
-  if (next != NULL)
-    pthread_mutex_lock(next->nd_mutex);
+      next = next_thing(an->ra,&iter->node_index);
+
+      pthread_mutex_unlock(an->allnodes_mutex);
+
+      if (next != NULL)
+        pthread_mutex_lock(next->nd_mutex);
+      }
+    else
+      {
+      next = get_my_next_node_board(iter,current);
+      }
+    } /* END all other iterations */
 
   return(next);
   } /* END next_node() */

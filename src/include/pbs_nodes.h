@@ -202,7 +202,6 @@ typedef struct nodeboard_t
 typedef struct node_iterator 
   {
   int node_index;
-  int prev_index;
   int numa_index;
   } node_iterator;
 
@@ -250,10 +249,11 @@ struct pbsnode
   struct array_strings *nd_gpustatus;    /* string array of GPU status */
   short                 nd_ngpustatus;    /* number of gpu status items */
 
+  struct pbsnode       *numa_parent;     /* pointer to the node holding this node, or NULL */
   unsigned short        num_node_boards; /* number of numa nodes */
   struct AvlNode       *node_boards; /* private tree of numa nodes */
   char                 *numa_str; /* comma-delimited string of processor values */
-  char           *gpu_str; /* comma-delimited string of the number of gpus for each nodeboard */
+  char                 *gpu_str; /* comma-delimited string of the number of gpus for each nodeboard */
 
   pthread_mutex_t      *nd_mutex; /* semaphore for accessing this node's data */
   };
@@ -278,7 +278,7 @@ typedef struct all_nodes
 void            initialize_all_nodes_array(all_nodes *);
 int             insert_node(all_nodes *,struct pbsnode *);
 int             remove_node(all_nodes *,struct pbsnode *);
-struct pbsnode *next_node(all_nodes *,node_iterator *);
+struct pbsnode *next_node(all_nodes *,struct pbsnode *,node_iterator *);
 struct pbsnode *next_host(all_nodes *,int *,struct pbsnode *);
 
 
@@ -417,7 +417,7 @@ extern int 	  MultiMomMode; /* moms configured for multiple moms per machine */
 extern int update_nodes_file(struct pbsnode *);
 
 extern void bad_node_warning(pbs_net_t);
-extern int addr_ok(pbs_net_t);
+extern int addr_ok(pbs_net_t,struct pbsnode *);
 
 #ifdef BATCH_REQUEST_H
 extern void initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);

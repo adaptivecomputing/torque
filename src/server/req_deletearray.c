@@ -54,6 +54,7 @@ int attempt_delete(
   int        skipped = FALSE;
   int        iter = -1;
 
+  char      *jobid_copy;
   work_task *pwtold;
   work_task *pwtnew;
   job       *pjob;
@@ -129,7 +130,8 @@ int attempt_delete(
     pjob->ji_momhandle = -1;
     
     /* force new connection */
-    pwtnew = set_task(WORK_Immed, 0, on_job_exit, (void *)pjob);
+    jobid_copy = strdup(pjob->ji_qs.ji_jobid);
+    pwtnew = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
     
     if (pwtnew)
       {
@@ -169,7 +171,10 @@ int attempt_delete(
         &pque->qu_attr[QE_ATR_KeepCompleted],
         &server.sv_attr[SRV_ATR_KeepCompleted],
         0);
-    ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, pjob);
+
+    jobid_copy = strdup(pjob->ji_qs.ji_jobid);
+
+    ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy);
     
     if (ptask != NULL)
       {
@@ -304,15 +309,16 @@ void array_delete_wt(
   {
 
   struct batch_request *preq;
-  job_array *pa;
+  job_array            *pa;
   /*struct work_task *pnew_task;*/
 
-  struct work_task *pwtnew;
+  struct work_task     *pwtnew;
 
-  int i;
+  int                   i;
 
-  static int last_check = 0;
-  static char *last_id = NULL;
+  static int            last_check = 0;
+  static char          *last_id = NULL;
+  char                 *jobid_copy;
 
   preq = ptask->wt_parm1;
 
@@ -375,8 +381,9 @@ void array_delete_wt(
           pjob->ji_momhandle = -1;
 
           /* force new connection */
+          jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-          pwtnew = set_task(WORK_Immed, 0, on_job_exit, (void *)pjob);
+          pwtnew = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
 
           if (pwtnew)
             {

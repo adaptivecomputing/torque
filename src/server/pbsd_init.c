@@ -1496,9 +1496,10 @@ static int pbsd_init_job(
   int  type)  /* I */
 
   {
-  unsigned int d;
+  unsigned int      d;
 
   struct work_task *pwt;
+  char             *jobid_copy;
 
   pjob->ji_momhandle = -1;
 
@@ -1673,7 +1674,9 @@ static int pbsd_init_job(
 
       apply_job_delete_nanny(pjob, time_now + 60);
 
-      pwt = set_task(WORK_Immed, 0, on_job_exit, (void *)pjob);
+      jobid_copy = strdup(pjob->ji_qs.ji_jobid);
+
+      pwt = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
 
       if (pwt)
         {
@@ -1689,8 +1692,9 @@ static int pbsd_init_job(
     case JOB_SUBSTATE_COMPLETE:
 
       /* Completed jobs are no longer purged on startup */
+      jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-      pwt = set_task(WORK_Immed, 0, on_job_exit, (void *)pjob);
+      pwt = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
 
       if (pwt)
         {
