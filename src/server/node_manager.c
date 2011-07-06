@@ -1808,7 +1808,7 @@ int is_gpustat_get(
       if ((!memcmp(ret_info+9, "Normal", 6)) || (!memcmp(ret_info+9, "Default", 7)))
         {
         np->nd_gpusn[gpuidx].mode = gpu_normal;
-        if (gpu_has_job(np->nd_name, gpuidx))
+        if (gpu_has_job(np, gpuidx))
           {
           np->nd_gpusn[gpuidx].state = gpu_shared;
           }
@@ -1822,7 +1822,7 @@ int is_gpustat_get(
               (!memcmp(ret_info+9, "Exclusive_Thread", 16)))
         {
         np->nd_gpusn[gpuidx].mode = gpu_exclusive_thread;
-        if (gpu_has_job(np->nd_name, gpuidx))
+        if (gpu_has_job(np, gpuidx))
           {
           np->nd_gpusn[gpuidx].state = gpu_exclusive;
           }
@@ -1835,7 +1835,7 @@ int is_gpustat_get(
       else if (!memcmp(ret_info+9, "Exclusive_Process", 17))
         {
         np->nd_gpusn[gpuidx].mode = gpu_exclusive_process;
-        if (gpu_has_job(np->nd_name, gpuidx))
+        if (gpu_has_job(np, gpuidx))
           {
           np->nd_gpusn[gpuidx].state = gpu_exclusive;
           }
