@@ -1549,56 +1549,68 @@ int is_stat_get(
  * Function to check if there is a job assigned to this gpu
  */
 
-int count_gpu_jobs(
-
-  char *mom_node,
-  int   gpuid)
-
+int gpu_has_job(
+  struct pbsnode *pnode,
+  int  gpuid)
   {
+
   job   *pjob;
-  extern struct all_jobs alljobs;
   char  *gpu_str;
   char  *found_str;
   char   tmp_str[PBS_MAXHOSTNAME + 5];
   char   num_str[6];
-  int    job_count = 0;
-  int    iter = -1;
+  struct pbssubn *np;
+  struct jobinfo *jp;
 
-  while ((pjob = next_job(&alljobs,&iter)) != NULL)
+  /* check each subnode for a job using a gpuid */
+  for (np = pnode->nd_psn;np != NULL;np = np->next)
     {
-    /*
-     * Does this job have this gpuid assigned? skip non running jobs
-     * if so, return TRUE
-     */
-    if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-        (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
+    /* for each jobinfo on subnode on node ... */
+    for (jp = np->jobs;jp != NULL;jp = jp->next)
       {
-      gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
-
-      if (gpu_str != NULL)
+      if (jp->job != NULL)
         {
-        strcpy (tmp_str, mom_node);
-        strcat (tmp_str, "-gpu/");
-        sprintf (num_str, "%d", gpuid);
-        strcat (tmp_str, num_str);
-
-        /* look thru the string and see if it has this host and gpuid.
-         * exec_gpus string should be in format of 
-         * <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
-         */
-
-        found_str = strstr (gpu_str, tmp_str);
-        if (found_str != NULL)
+        pjob = get_job_from_jobinfo(jp,pnode);
+        
+        if (pjob->ji_qs.ji_jobid != NULL)
           {
-          job_count++;
+          /*
+           * Does this job have this gpuid assigned?
+           */
+          if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+              (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
+            {
+            gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+
+            if (gpu_str != NULL)
+              {
+              strcpy (tmp_str, pnode->nd_name);
+              strcat (tmp_str, "-gpu/");
+              sprintf (num_str, "%d", gpuid);
+              strcat (tmp_str, num_str);
+
+              /* look thru the string and see if it has this host and gpuid.
+               * exec_gpus string should be in format of 
+               * <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
+               */
+
+              found_str = strstr (gpu_str, tmp_str);
+              if (found_str != NULL)
+                {
+                pthread_mutex_unlock(pjob->ji_mutex);
+                return(TRUE);
+                }
+              }
+            }
           }
+        
+        /* done with job, unlock the mutex */
+        pthread_mutex_unlock(pjob->ji_mutex);
         }
-      }
+      } /* END for each job on the subnode */
+    } /* END for each subnode */
 
-    pthread_mutex_unlock(pjob->ji_mutex);
-    }  /* END for (pjob) */
-
-  return(job_count);
+  return(FALSE);
   }
 #endif  /* NVIDIA_GPUS */
 
@@ -1796,7 +1808,7 @@ int is_gpustat_get(
       if ((!memcmp(ret_info+9, "Normal", 6)) || (!memcmp(ret_info+9, "Default", 7)))
         {
         np->nd_gpusn[gpuidx].mode = gpu_normal;
-        if (count_gpu_jobs(np->nd_name, gpuidx) > 0)
+        if (gpu_has_job(np->nd_name, gpuidx))
           {
           np->nd_gpusn[gpuidx].state = gpu_shared;
           }
@@ -1810,7 +1822,7 @@ int is_gpustat_get(
               (!memcmp(ret_info+9, "Exclusive_Thread", 16)))
         {
         np->nd_gpusn[gpuidx].mode = gpu_exclusive_thread;
-        if (count_gpu_jobs(np->nd_name, gpuidx) > 0)
+        if (gpu_has_job(np->nd_name, gpuidx))
           {
           np->nd_gpusn[gpuidx].state = gpu_exclusive;
           }
@@ -1823,7 +1835,7 @@ int is_gpustat_get(
       else if (!memcmp(ret_info+9, "Exclusive_Process", 17))
         {
         np->nd_gpusn[gpuidx].mode = gpu_exclusive_process;
-        if (count_gpu_jobs(np->nd_name, gpuidx) > 0)
+        if (gpu_has_job(np->nd_name, gpuidx))
           {
           np->nd_gpusn[gpuidx].state = gpu_exclusive;
           }
