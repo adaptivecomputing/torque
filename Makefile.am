@@ -46,7 +46,8 @@ EXTRA_DIST = CHANGELOG \
 	contrib/README.pbs_weblite \
 	contrib/README.pestat \
 	contrib/README.qpeek \
-	contrib/showjobs
+	contrib/showjobs \
+	contrib/diag/tdiag.sh
 
 bin_SCRIPTS = pbs-config
 
