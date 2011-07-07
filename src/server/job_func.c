@@ -1848,10 +1848,7 @@ void job_purge(
       {
       sprintf(log_buffer, "removed job checkpoint");
 
-      log_record(PBSEVENT_DEBUG,
-                 PBS_EVENTCLASS_JOB,
-                 pjob->ji_qs.ji_jobid,
-                 log_buffer);
+      log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
       }
     }
 
@@ -1877,10 +1874,7 @@ void job_purge(
     {
     sprintf(log_buffer, "removed job file");
 
-    log_record(PBSEVENT_DEBUG,
-               PBS_EVENTCLASS_JOB,
-               pjob->ji_qs.ji_jobid,
-               log_buffer);
+    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
     }
 
   job_free(pjob);
@@ -2363,7 +2357,12 @@ int  remove_job(
   int rc = PBSE_NONE;
   int index;
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  if (pthread_mutex_trylock(aj->alljobs_mutex))
+    {
+    pthread_mutex_unlock(pjob->ji_mutex);
+    pthread_mutex_lock(aj->alljobs_mutex);
+    pthread_mutex_lock(pjob->ji_mutex);
+    }
 
   if ((index = get_value_hash(aj->ht,pjob->ji_qs.ji_jobid)) < 0)
     rc = THING_NOT_FOUND;

@@ -1645,7 +1645,12 @@ int remove_array(
   {
   int rc;
 
-  pthread_mutex_lock(allarrays.allarrays_mutex);
+  if (pthread_mutex_trylock(allarrays.allarrays_mutex))
+    {
+    pthread_mutex_unlock(pa->ai_mutex);
+    pthread_mutex_lock(allarrays.allarrays_mutex);
+    pthread_mutex_lock(pa->ai_mutex);
+    }
 
   rc = remove_thing(allarrays.ra,pa);
 

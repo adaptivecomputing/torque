@@ -392,7 +392,12 @@ int remove_queue(
   int rc = PBSE_NONE;
   int index;
 
-  pthread_mutex_lock(aq->allques_mutex);
+  if (pthread_mutex_trylock(aq->allques_mutex))
+    {
+    pthread_mutex_unlock(pque->qu_mutex);
+    pthread_mutex_lock(aq->allques_mutex);
+    pthread_mutex_lock(pque->qu_mutex);
+    }
 
   if ((index = get_value_hash(aq->ht,pque->qu_qs.qu_name)) < 0)
     rc = THING_NOT_FOUND;

@@ -480,7 +480,12 @@ int remove_task(
   {
   int rc;
 
-  pthread_mutex_lock(at->alltasks_mutex);
+  if (pthread_mutex_trylock(at->alltasks_mutex))
+    {
+    pthread_mutex_unlock(wt->wt_mutex);
+    pthread_mutex_lock(at->alltasks_mutex);
+    pthread_mutex_lock(wt->wt_mutex);
+    }
 
   rc = remove_thing(at->ra,wt);
 

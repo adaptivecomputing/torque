@@ -3228,7 +3228,12 @@ int remove_node(
   {
   int rc = PBSE_NONE;
 
-  pthread_mutex_lock(an->allnodes_mutex);
+  if (pthread_mutex_trylock(an->allnodes_mutex))
+    {
+    pthread_mutex_unlock(pnode->nd_mutex);
+    pthread_mutex_lock(an->allnodes_mutex);
+    pthread_mutex_lock(pnode->nd_mutex);
+    }
 
   rc = remove_thing(an->ra,pnode);
 
