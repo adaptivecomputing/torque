@@ -990,14 +990,7 @@ void on_job_exit(
 
           jobid = strdup(pjob->ji_qs.ji_jobid);
 
-          ptask = set_task(WORK_Immed, 0, on_job_exit, jobid);
-
-          if (ptask != NULL)
-            {
-            insert_task(pjob->ji_svrtask,ptask,TRUE);
-
-            pthread_mutex_unlock(ptask->wt_mutex);
-            }
+          set_task(WORK_Immed, 0, on_job_exit, jobid);
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -1133,16 +1126,7 @@ void on_job_exit(
 
           jobid = strdup(pjob->ji_qs.ji_jobid);
 
-          ptask = set_task(WORK_Immed, 0, on_job_exit, jobid);
-
-          if (ptask != NULL)
-            {
-            insert_task(pjob->ji_svrtask,ptask,TRUE);
-
-            pthread_mutex_unlock(ptask->wt_mutex);
-            }
-          else if (jobid != NULL)
-            free(jobid);
+          set_task(WORK_Immed, 0, on_job_exit, jobid);
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -1351,14 +1335,7 @@ void on_job_exit(
 
           jobid = strdup(pjob->ji_qs.ji_jobid);
 
-          ptask = set_task(WORK_Immed, 0, on_job_exit, jobid);
-
-          if (ptask)
-            {
-            insert_task(pjob->ji_svrtask,ptask,TRUE);
-
-            pthread_mutex_unlock(ptask->wt_mutex);
-            }
+          set_task(WORK_Immed, 0, on_job_exit, jobid);
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -1373,14 +1350,10 @@ void on_job_exit(
         /* an error occurred */
 
         snprintf(log_buffer, LOG_BUF_SIZE, msg_obitnodel,
-                 pjob->ji_qs.ji_jobid,
-                 pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-
-        log_event(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
-          log_buffer);
+          pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 
         if (LOGLEVEL >= 3)
           {
@@ -1547,7 +1520,8 @@ void on_job_exit(
 
     case JOB_SUBSTATE_COMPLETE:
 
-      if ((LOGLEVEL >= 4) && (ptask->wt_type == WORK_Immed))
+      if ((LOGLEVEL >= 4) && 
+          (ptask->wt_type == WORK_Immed))
         {
         log_event(
           PBSEVENT_JOB,
@@ -1781,14 +1755,7 @@ void on_job_rerun(
 
           svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN1);
 
-          ptask = set_task(WORK_Immed, 0, on_job_rerun, pjob);
-
-          if (ptask)
-            {
-            insert_task(pjob->ji_svrtask,ptask,TRUE);
-
-            pthread_mutex_unlock(ptask->wt_mutex);
-            }
+          set_task(WORK_Immed, 0, on_job_rerun, pjob);
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -1915,14 +1882,7 @@ void on_job_rerun(
 
           svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN2);
 
-          ptask = set_task(WORK_Immed, 0, on_job_rerun, pjob);
-
-          if (ptask)
-            {
-            insert_task(pjob->ji_svrtask,ptask,TRUE);
-
-            pthread_mutex_unlock(ptask->wt_mutex);
-            }
+          set_task(WORK_Immed, 0, on_job_rerun, pjob);
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -2022,14 +1982,7 @@ void on_job_rerun(
           {
           svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3);
 
-          ptask = set_task(WORK_Immed, 0, on_job_rerun, pjob);
-
-          if (ptask)
-            {
-            insert_task(pjob->ji_svrtask,ptask,TRUE);
-
-            pthread_mutex_unlock(ptask->wt_mutex);
-            }
+          set_task(WORK_Immed, 0, on_job_rerun, pjob);
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -2752,7 +2705,7 @@ void *req_jobobit(
 
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-    ptask = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
+    set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
 
     /* decrease array running job count */
     if ((pjob->ji_arraystruct != NULL) &&
@@ -2765,20 +2718,13 @@ void *req_jobobit(
       pthread_mutex_unlock(pa->ai_mutex);
       }
 
-    if (ptask != NULL)
+    if (LOGLEVEL >= 4)
       {
-      insert_task(pjob->ji_svrtask,ptask,TRUE);
-
-      pthread_mutex_unlock(ptask->wt_mutex);
-
-      if (LOGLEVEL >= 4)
-        {
-        log_event(
-          PBSEVENT_ERROR | PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          jobid,
-          "on_job_exit task assigned to job");
-        }
+      log_event(
+        PBSEVENT_ERROR | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        jobid,
+        "on_job_exit task assigned to job");
       }
 
     /* remove checkpoint restart file if there is one */
@@ -2824,22 +2770,15 @@ void *req_jobobit(
       JOB_STATE_EXITING,
       pjob->ji_qs.ji_substate);
 
-    ptask = set_task(WORK_Immed, 0, on_job_rerun, (void *)pjob);
+    set_task(WORK_Immed, 0, on_job_rerun, (void *)pjob);
 
-    if (ptask != NULL)
+    if (LOGLEVEL >= 4)
       {
-      insert_task(pjob->ji_svrtask,ptask,TRUE);
-
-      pthread_mutex_unlock(ptask->wt_mutex);
-
-      if (LOGLEVEL >= 4)
-        {
-        log_event(
-          PBSEVENT_ERROR | PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          jobid,
-          "on_job_rerun task assigned to job");
-        }
+      log_event(
+        PBSEVENT_ERROR | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        jobid,
+        "on_job_rerun task assigned to job");
       }
 
 #ifdef RERUNUSAGE

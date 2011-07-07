@@ -2552,21 +2552,11 @@ int extra_resc_chk(
   int      actmode) /* I */
 
   {
-
-  struct work_task *ptask;
-
   /* Is there anything to validate?  Maybe check for all alphanum? */
   /* the new resource is at pattr->at_val.at_str */
-  ptask = set_task(WORK_Immed, 0, on_extra_resc, NULL);
+  set_task(WORK_Immed, 0, on_extra_resc, NULL);
 
-  if (ptask != NULL)
-    {
-    pthread_mutex_unlock(ptask->wt_mutex);
-
-    return(TRUE);
-    }
-  else
-    return(FALSE);
+  return(TRUE);
   }
 
 /*
@@ -2578,9 +2568,7 @@ void free_extraresc(
   struct attribute *attr)
 
   {
-  work_task *wt = set_task(WORK_Immed, 0, on_extra_resc, NULL);
-
-  pthread_mutex_unlock(wt->wt_mutex);
+  set_task(WORK_Immed, 0, on_extra_resc, NULL);
 
   free_arst(attr);
   }

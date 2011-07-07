@@ -132,14 +132,6 @@ int attempt_delete(
     /* force new connection */
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
     pwtnew = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
-    
-    if (pwtnew)
-      {
-      insert_task(pjob->ji_svrtask,pwtnew,TRUE);
-
-      pthread_mutex_unlock(pwtnew->wt_mutex);
-      }
-   
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
@@ -384,13 +376,6 @@ void array_delete_wt(
           jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
           pwtnew = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
-
-          if (pwtnew)
-            {
-            insert_task(pjob->ji_svrtask, pwtnew, TRUE);
-
-            pthread_mutex_unlock(pwtnew->wt_mutex);
-            }
 
           pthread_mutex_unlock(pjob->ji_mutex);
           }

@@ -115,7 +115,6 @@ extern struct connection svr_conn[];
 
 #ifndef PBS_MOM
 extern all_tasks task_list_event;
-extern all_tasks task_list_immed;
 extern int LOGLEVEL;
 #endif /* PBS_MOM */
 
@@ -255,8 +254,8 @@ int reply_send(
       if ((ptask->wt_type == WORK_Deferred_Local) &&
           (ptask->wt_parm1 == (void *)request))
         {
-        remove_task(&task_list_event,ptask);
-        insert_task(&task_list_immed,ptask,FALSE);
+        set_task(WORK_Immed,0,ptask->wt_func,ptask->wt_parm1);
+        delete_task(ptask);
 
         return(0);
         }

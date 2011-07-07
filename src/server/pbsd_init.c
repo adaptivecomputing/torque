@@ -180,7 +180,6 @@ extern char  server_name[];
 extern int  svr_delay_entry;
 extern tlist_head svr_requests;
 extern tlist_head svr_newnodes;
-extern all_tasks  task_list_immed;
 extern all_tasks  task_list_timed;
 extern all_tasks  task_list_event;
 extern struct all_jobs alljobs;
@@ -772,7 +771,6 @@ int pbsd_init(
 
   CLEAR_HEAD(svr_requests);
 
-  initialize_all_tasks_array(&task_list_immed);
   initialize_all_tasks_array(&task_list_timed);
   initialize_all_tasks_array(&task_list_event);
 
@@ -1588,13 +1586,6 @@ static int pbsd_init_job(
 
       pwt = set_task(WORK_Immed, 0, resume_net_move, (void *)pjob);
 
-      if (pwt)
-        {
-        insert_task(pjob->ji_svrtask,pwt,TRUE);
-
-        pthread_mutex_unlock(pwt->wt_mutex);
-        }
-
       break;
 
     case JOB_SUBSTATE_QUEUED:
@@ -1678,13 +1669,6 @@ static int pbsd_init_job(
 
       pwt = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
 
-      if (pwt)
-        {
-        insert_task(pjob->ji_svrtask,pwt,TRUE);
-
-        pthread_mutex_unlock(pwt->wt_mutex);
-        }
-
       pbsd_init_reque(pjob, KEEP_STATE);
 
       break;
@@ -1695,13 +1679,6 @@ static int pbsd_init_job(
       jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
       pwt = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
-
-      if (pwt)
-        {
-        insert_task(pjob->ji_svrtask,pwt,TRUE);
-
-        pthread_mutex_unlock(pwt->wt_mutex);
-        }
 
       pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -1721,16 +1698,7 @@ static int pbsd_init_job(
     case JOB_SUBSTATE_RERUN:
 
       if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
-        {
         pwt = set_task(WORK_Immed, 0, on_job_rerun, (void *)pjob);
-
-        if (pwt)
-          {
-          insert_task(pjob->ji_svrtask,pwt,TRUE);
-
-          pthread_mutex_unlock(pwt->wt_mutex);
-          }
-        }
 
       pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -1741,13 +1709,6 @@ static int pbsd_init_job(
     case JOB_SUBSTATE_RERUN2:
 
       pwt = set_task(WORK_Immed, 0, on_job_rerun, (void *)pjob);
-
-      if (pwt)
-        {
-        insert_task(pjob->ji_svrtask,pwt,TRUE);
-
-        pthread_mutex_unlock(pwt->wt_mutex);
-        }
 
       pbsd_init_reque(pjob, KEEP_STATE);
 

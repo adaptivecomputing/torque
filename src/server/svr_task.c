@@ -100,13 +100,13 @@
 #include "list_link.h"
 #include "work_task.h"
 #include "utils.h"
+#include "threadpool.h"
 
 
 extern void check_nodes(struct work_task *);
 
 /* Global Data Items: */
 
-extern all_tasks task_list_immed;
 extern all_tasks task_list_timed;
 extern all_tasks task_list_event;
 
@@ -145,47 +145,50 @@ struct work_task *set_task(
   pnew->wt_func     = func;
   pnew->wt_parm1    = parm;
 
-  pnew->wt_mutex = malloc(sizeof(pthread_mutex_t));
-
-  if (pnew->wt_mutex == NULL)
-    {
-    free(pnew);
-    return(NULL);
-    }
-
-  pthread_mutex_init(pnew->wt_mutex,NULL);
-  pthread_mutex_lock(pnew->wt_mutex);
-
-
   if (type == WORK_Immed)
     {
-    insert_task(&task_list_immed,pnew,FALSE);
-    }
-  else if (type == WORK_Timed)
-    {
-    while ((pold = next_task(&task_list_timed,&iter)) != NULL)
-      {
-      if (pold->wt_event > pnew->wt_event)
-        break;
-
-      pthread_mutex_unlock(pold->wt_mutex);
-      }
-
-    if (pold != NULL)
-      {
-      insert_task_before(&task_list_timed,pnew,pold);
-
-      pthread_mutex_unlock(pold->wt_mutex);
-      }
-    else
-      {
-      insert_task_first(&task_list_timed,pnew);
-      }
-
+    /* FIXME: this creates a memory leak sizeof(work_task) */
+    enqueue_threadpool_request((void *(*)(void *))func,pnew);
     }
   else
     {
-    insert_task(&task_list_event,pnew,FALSE);
+    pnew->wt_mutex = malloc(sizeof(pthread_mutex_t));
+    
+    if (pnew->wt_mutex == NULL)
+      {
+      free(pnew);
+      return(NULL);
+      }
+    
+    pthread_mutex_init(pnew->wt_mutex,NULL);
+    pthread_mutex_lock(pnew->wt_mutex);
+   
+    if (type == WORK_Timed)
+      {
+      while ((pold = next_task(&task_list_timed,&iter)) != NULL)
+        {
+        if (pold->wt_event > pnew->wt_event)
+          break;
+        
+        pthread_mutex_unlock(pold->wt_mutex);
+        }
+      
+      if (pold != NULL)
+        {
+        insert_task_before(&task_list_timed,pnew,pold);
+        
+        pthread_mutex_unlock(pold->wt_mutex);
+        }
+      else
+        {
+        insert_task_first(&task_list_timed,pnew);
+        }
+      
+      }
+    else
+      {
+      insert_task(&task_list_event,pnew,FALSE);
+      }
     }
 
   return(pnew);

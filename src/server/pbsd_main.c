@@ -257,7 +257,6 @@ int  svr_do_schedule = SCH_SCHEDULE_NULL;
 extern all_queues svr_queues;
 extern int  listener_command;
 tlist_head svr_newnodes;          /* list of newly created nodes      */
-all_tasks task_list_immed;
 all_tasks task_list_timed;
 all_tasks task_list_event;
 pid_t    sid;
@@ -974,13 +973,6 @@ static time_t check_tasks()
       }
 
     svr_delay_entry = 0;
-  
-    iter = -1;
-    }
-
-  while ((ptask = next_task(&task_list_immed,&iter)) != NULL)
-    {
-    dispatch_task(ptask);
     }
 
   iter = -1;

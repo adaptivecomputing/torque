@@ -307,7 +307,6 @@ void chkpt_xfr_hold(
 
   {
   job       *pjob;
-  struct work_task *ptasknew;
 
   struct batch_request *preq;
 
@@ -331,9 +330,8 @@ void chkpt_xfr_hold(
   
   release_req(ptask);
 
-  ptasknew = set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, (void*)pjob);
+  set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, (void*)pjob);
 
-  pthread_mutex_unlock(ptasknew->wt_mutex);
   pthread_mutex_unlock(pjob->ji_mutex);
 
   return;
