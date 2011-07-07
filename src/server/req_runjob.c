@@ -1502,8 +1502,6 @@ int set_mother_superior_ports(
   int  i;
   struct pbsnode *pnode;
 
-  node_iterator *iter;
-
   if (list == NULL)
     {
     return(PBSE_UNKNODEATR);
@@ -1519,23 +1517,17 @@ int set_mother_superior_ports(
     ptr++;
     }
 
-  iter = get_node_iterator();
-  pnode = NULL;
+  pnode = find_nodebyname(ms);
 
-  while ((pnode = next_node(&allnodes,pnode,iter)) != NULL)
+  if (pnode != NULL)
     {
-    if (!strcasecmp(pnode->nd_name, ms))
-      {
-      pjob->ji_qs.ji_un.ji_exect.ji_momport = pnode->nd_mom_port;
-      pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport = pnode->nd_mom_rm_port;
-
-      pthread_mutex_unlock(pnode->nd_mutex);
-
-      return(PBSE_NONE);
-      }
+    pjob->ji_qs.ji_un.ji_exect.ji_momport = pnode->nd_mom_port;
+    pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport = pnode->nd_mom_rm_port;
+    
+    pthread_mutex_unlock(pnode->nd_mutex);
+    
+    return(PBSE_NONE);
     }
-
-  free(iter);
 
   return(PBSE_UNKNODEATR);
   } /* END set_mother_superior_ports() */

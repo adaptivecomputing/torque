@@ -6337,8 +6337,6 @@ static void set_one_old(
   struct jobinfo *jp;
   char           *pc;
 
-  node_iterator   iter;
-
   if ((pc = strchr(name, (int)'/')))
     {
     index = atoi(pc + 1);
@@ -6350,51 +6348,41 @@ static void set_one_old(
     index = 0;
     }
 
-  reinitialize_node_iterator(&iter);
-  pnode = NULL;
+  pnode = find_nodebyname(name);
 
-  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+  if (pnode != NULL)
     {
-    if (strcmp(name, pnode->nd_name) == 0)
+    /* Mark node as being IN USE ...  */
+    if (pnode->nd_ntype == NTYPE_CLUSTER)
       {
-      /* Mark node as being IN USE ...  */
-
-      if (pnode->nd_ntype == NTYPE_CLUSTER)
+      for (snp = pnode->nd_psn;snp;snp = snp->next)
         {
-        for (snp = pnode->nd_psn;snp;snp = snp->next)
+        if (snp->index == index)
           {
-          if (snp->index == index)
+          snp->inuse = shared;
+          
+          jp = (struct jobinfo *)malloc(sizeof(struct jobinfo));
+          
+          /* NOTE:  should report failure if jp == NULL (NYI) */
+          if (jp != NULL)
             {
-            snp->inuse = shared;
-
-            jp = (struct jobinfo *)malloc(sizeof(struct jobinfo));
-
-            /* NOTE:  should report failure if jp == NULL (NYI) */
-
-            if (jp != NULL)
-              {
-              jp->next = snp->jobs;
-
-              snp->jobs = jp;
-
-              jp->job = pjob;
-              }
-
-            if (--pnode->nd_nsnfree <= 0)
-              pnode->nd_state |= shared;
-
-            pthread_mutex_unlock(pnode->nd_mutex);
-
-            return;
+            jp->next = snp->jobs;
+            
+            snp->jobs = jp;
+            
+            jp->job = pjob;
             }
-          }    /* END for (snp) */
-        }
+          
+          if (--pnode->nd_nsnfree <= 0)
+            pnode->nd_state |= shared;
+         
+          break;
+          }
+        }    /* END for (snp) */
 
       pthread_mutex_unlock(pnode->nd_mutex);
-
-      break;
-      } /* END name matched */
-    } /* END for each node */
+      }
+    }
 
   return;
   }  /* END set_one_old() */
