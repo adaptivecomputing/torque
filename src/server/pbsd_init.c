@@ -2078,7 +2078,7 @@ static void resume_net_move(
 
   pthread_mutex_unlock(pjob->ji_mutex);
 
-  return;
+  free(ptask);
   }
 
 

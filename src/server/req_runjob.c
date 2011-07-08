@@ -397,6 +397,8 @@ static void post_checkpointsend(
 
   release_req(pwt); /* close connection and release request */
 
+  free(pwt);
+
   return;
   }  /* END post_checkpointsend() */
 
@@ -621,6 +623,7 @@ static void post_stagein(
     }    /* END if (pjob != NULL) */
 
   release_req(pwt); /* close connection and release request */
+  free(pwt);
 
   return;
   }  /* END post_stagein() */

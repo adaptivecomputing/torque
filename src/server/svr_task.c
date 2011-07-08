@@ -147,7 +147,6 @@ struct work_task *set_task(
 
   if (type == WORK_Immed)
     {
-    /* FIXME: this creates a memory leak sizeof(work_task) */
     enqueue_threadpool_request((void *(*)(void *))func,pnew);
     }
   else
@@ -243,10 +242,6 @@ void dispatch_task(
   if (ptask->wt_func != NULL)
     enqueue_threadpool_request((void *(*)(void *))ptask->wt_func,ptask);
 
-  /* some tasks are executed as threads and these will be freed there */
-/*  if (free_task == TRUE)
-    free(ptask);
-*/
   return;
   }  /* END dispatch_task() */
 

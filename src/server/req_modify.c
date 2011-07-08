@@ -180,6 +180,7 @@ static void post_modify_req(
       if ((pjob = find_job(preq->rq_ind.rq_modify.rq_objname)) == NULL)
         {
         req_reject(preq->rq_reply.brp_code, 0, preq, NULL, NULL);
+        free(pwt);
         return;
         }
       else
@@ -201,6 +202,8 @@ static void post_modify_req(
 
     reply_ack(preq);
     }
+
+  free(pwt);
 
   return;
   }  /* END post_modify_req() */
@@ -266,6 +269,7 @@ void mom_cleanup_checkpoint_hold(
         free_br(preq);
 
         pthread_mutex_lock(pjob->ji_mutex);
+        free(ptask);
 
         return;
         }
@@ -288,6 +292,8 @@ void mom_cleanup_checkpoint_hold(
     }
 
   pthread_mutex_lock(pjob->ji_mutex);
+
+  free(ptask);
   } /* END mom_cleanup_checkpoint_hold() */
 
 
@@ -328,6 +334,8 @@ void chkpt_xfr_hold(
 
   pthread_mutex_unlock(pjob->ji_mutex);
 
+  free(ptask);
+
   return;
   }  /* END chkpt_xfr_hold() */
 
@@ -356,6 +364,8 @@ void chkpt_xfr_done(
    * If implemented later, thread protection must be added */
   
   release_req(ptask);
+
+  free(ptask);
 
   return;
   }  /* END chkpt_xfr_done() */
@@ -1346,6 +1356,9 @@ void post_modify_arrayreq(
       if ((pjob = find_job(preq->rq_ind.rq_modify.rq_objname)) == NULL)
         {
         parent_req->rq_refcount--;
+
+        free(pwt);
+
         if (parent_req->rq_refcount == 0)
           {
           free_br(preq);
@@ -1385,6 +1398,8 @@ void post_modify_arrayreq(
     else
       free_br(preq);
     }
+
+  free(pwt);
 
   return;
   }  /* END post_modify_arrayreq() */

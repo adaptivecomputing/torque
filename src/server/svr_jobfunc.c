@@ -1959,6 +1959,7 @@ static void job_wait_over(
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
   pjob = (job *)pwt->wt_parm1;
+  free(pwt);
 
   pthread_mutex_lock(pjob->ji_mutex);
 

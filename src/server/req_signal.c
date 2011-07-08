@@ -341,6 +341,8 @@ static void post_signal_req(
     reply_ack(preq);
     }
 
+  free(pwt);
+
   return;
   }  /* END post_signal_req() */
 

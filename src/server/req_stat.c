@@ -914,7 +914,6 @@ static void stat_update(
   struct work_task *pwt)
 
   {
-
   struct stat_cntl     *cntl;
   job                  *pjob;
 
@@ -1005,6 +1004,7 @@ static void stat_update(
     }
 
   release_req(pwt);
+  free(pwt);
 
   cntl->sc_conn = -1;
 
@@ -1076,6 +1076,8 @@ void poll_job_task(
   job *pjob;
 
   pjob = (job *)ptask->wt_parm1;
+
+  free(ptask);
 
   if (pjob == NULL)
     {

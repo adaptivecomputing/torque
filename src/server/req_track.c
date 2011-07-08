@@ -275,6 +275,8 @@ void track_save(
 
   if (pwt)    /* set up another work task for next time period */
     {
+    free(pwt);
+
     wt = set_task(WORK_Timed, (long)time_now + PBS_SAVE_TRACK_TM, track_save, 0);
 
     if (wt == NULL)

@@ -1773,8 +1773,7 @@ void check_job_log(
 
  /* remove logs older than LogKeepDays */
 
- if ((server.sv_attr[SRV_ATR_JobLogKeepDays].at_flags 
-     & ATR_VFLAG_SET) != 0)
+ if ((server.sv_attr[SRV_ATR_JobLogKeepDays].at_flags & ATR_VFLAG_SET) != 0)
    {
    snprintf(log_buf,sizeof(log_buf),"checking for old job logs in dir '%s' (older than %ld days)",
      path_svrlog,
@@ -1792,11 +1791,10 @@ void check_job_log(
      }
    }
 
-  if ((server.sv_attr[SRV_ATR_JobLogFileMaxSize].at_flags
-       & ATR_VFLAG_SET) != 0)
+  if ((server.sv_attr[SRV_ATR_JobLogFileMaxSize].at_flags & ATR_VFLAG_SET) != 0)
     {
-    if ((job_log_size() >= server.sv_attr[SRV_ATR_JobLogFileMaxSize].at_val.at_long)
-       && (server.sv_attr[SRV_ATR_JobLogFileMaxSize].at_val.at_long > 0))
+    if ((job_log_size() >= server.sv_attr[SRV_ATR_JobLogFileMaxSize].at_val.at_long) &&
+        (server.sv_attr[SRV_ATR_JobLogFileMaxSize].at_val.at_long > 0))
       {
       log_event(
         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
@@ -1831,11 +1829,11 @@ void check_job_log(
     msg_daemonname,
     log_buf);
 
+  free(ptask);
+
   ptask = set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_job_log, NULL);
 
   pthread_mutex_unlock(ptask->wt_mutex);
-
-  return;
   } /* END check_job_log */
 
 
@@ -1904,6 +1902,8 @@ void check_log(
     msg_daemonname,
     log_buf);
 
+  free(ptask);
+
   ptask = set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_log, NULL);
 
   pthread_mutex_unlock(ptask->wt_mutex);
@@ -1936,6 +1936,8 @@ void check_acct_log(
      
     acct_cleanup(server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long);
     }
+
+  free(ptask);
 
   ptask = set_task(WORK_Timed,time_now + PBS_ACCT_CHECK_RATE,check_acct_log,NULL);
 

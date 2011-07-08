@@ -174,5 +174,7 @@ static void post_message_req(
     req_reject(preq->rq_reply.brp_code, 0, preq, NULL, NULL);
   else
     reply_ack(preq);
+
+  free(pwt);
   } /* END post_message_req() */
 

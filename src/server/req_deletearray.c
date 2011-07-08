@@ -286,6 +286,9 @@ static void post_delete(
 
   {
   /* no op - do not reply to client */
+
+  if (pwt)
+    free(pwt);
   }
 
 
@@ -300,10 +303,8 @@ void array_delete_wt(
   struct work_task *ptask)
 
   {
-
   struct batch_request *preq;
   job_array            *pa;
-  /*struct work_task *pnew_task;*/
 
   struct work_task     *pwtnew;
 
@@ -324,6 +325,8 @@ void array_delete_wt(
     last_check = 0;
     free(last_id);
     last_id = NULL;
+
+    free(ptask);
     return;
     }
 
@@ -403,6 +406,8 @@ void array_delete_wt(
 
       pthread_mutex_unlock(pa->ai_mutex);
 
+      free(ptask);
+
       return;
       }
     }
@@ -410,6 +415,8 @@ void array_delete_wt(
   pthread_mutex_unlock(pa->ai_mutex);
 
   req_deletearray(preq);
+
+  free(ptask);
   } /* END array_delete_wt() */
 
 

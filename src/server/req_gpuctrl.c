@@ -282,6 +282,7 @@ void req_gpuctrl(
 static void process_gpu_request_reply(
 
   struct work_task *pwt)
+
   {
   char                 *id = "process_gpu_request_reply";
 
@@ -321,5 +322,7 @@ static void process_gpu_request_reply(
 
     reply_ack(preq);
     }
+
+  free(pwt);
   }
 #endif  /* NVIDIA_GPUS */

@@ -992,6 +992,7 @@ void update_job_data(
 void send_cluster_addrs(
 
   struct work_task *ptask)
+
   {
   static char     id[] = "send_cluster_addrs";
   static int      iter = -1;
@@ -1016,6 +1017,8 @@ void send_cluster_addrs(
            num_addrnote_tasks));
 
     pthread_mutex_unlock(addrnote_mutex);
+
+    free(ptask);
 
     return;
     }
@@ -1115,6 +1118,8 @@ void send_cluster_addrs(
     }
 
   pthread_mutex_unlock(addrnote_mutex);
+    
+  free(ptask);
   } /* END send_cluster_addrs() */
 
 

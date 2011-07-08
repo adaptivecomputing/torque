@@ -990,7 +990,11 @@ void job_clone_wt(
   pa = get_array(pjob->ji_qs.ji_jobid);
 
   if (pa == NULL)
+    {
+    free(ptask);
+
     return;
+    }
 
   rn = (array_request_node*)GET_NEXT(pa->request_tokens);
 
@@ -1140,6 +1144,8 @@ void job_clone_wt(
     }
 
   pthread_mutex_unlock(pa->ai_mutex);
+
+  free(ptask);
 
   return;
   }  /* END job_clone_wt */

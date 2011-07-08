@@ -229,6 +229,7 @@ void ensure_deleted(
     {
     /* job doesn't exist, we're done */
     free(jobid);
+    free(ptask);
 
     return;
     }
@@ -247,6 +248,7 @@ void ensure_deleted(
   job_purge(pjob);
 
   free(jobid);
+  free(ptask);
   } /* END ensure_deleted() */
 
 
@@ -903,9 +905,9 @@ static void post_delete_route(
   struct work_task *pwt)
 
   {
-  req_deletejob(
-    (struct batch_request *)pwt->wt_parm1);
+  req_deletejob((struct batch_request *)pwt->wt_parm1);
 
+  free(pwt);
   return;
   }
 
@@ -947,8 +949,9 @@ static void post_delete_mom1(
   if (pjob == NULL)
     {
     /* job has gone away */
-
     req_reject(PBSE_UNKJOBID, 0, preq_clt, NULL, NULL);
+
+    free(pwt);
 
     return;
     }
@@ -960,7 +963,6 @@ static void post_delete_mom1(
     if (rc == PBSE_UNKJOBID)
       {
       /* MOM claims no knowledge, so just purge it */
-
       log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
@@ -984,6 +986,8 @@ static void post_delete_mom1(
       pthread_mutex_unlock(pjob->ji_mutex);
       }
 
+    free(pwt);
+
     return;
     }
 
@@ -1001,7 +1005,6 @@ static void post_delete_mom1(
    * if no delay specified in original request, see if kill_delay
    * queue attribute is set.
    */
-
   if (delay == 0)
     {
     pque = pjob->ji_qhdr;
@@ -1025,10 +1028,11 @@ static void post_delete_mom1(
    * Since the first signal has succeeded, let's reschedule the
    * nanny to be 1 minute after the second phase.
    */
-
   apply_job_delete_nanny(pjob, time_now + delay + 60);
 
   pthread_mutex_unlock(pjob->ji_mutex);
+
+  free(pwt);
   }  /* END post_delete_mom1() */
 
 
@@ -1058,6 +1062,8 @@ static void post_delete_mom2(
     }
 
   pthread_mutex_unlock(pjob->ji_mutex);
+
+  free(pwt);
   }  /* END post_delete_mom2() */
 
 
@@ -1283,6 +1289,7 @@ static void job_delete_nanny(
   if (!server.sv_attr[SRV_ATR_JobNanny].at_val.at_long)
     {
     release_req(pwt);
+    free(pwt);
 
     return;
     }
@@ -1308,6 +1315,8 @@ static void job_delete_nanny(
   apply_job_delete_nanny(pjob, time_now + 60);
 
   pthread_mutex_unlock(pjob->ji_mutex);
+
+  free(pwt);
   } /* END job_delete_nanny() */
 
 
@@ -1340,8 +1349,8 @@ static void post_job_delete_nanny(
   if (!server.sv_attr[SRV_ATR_JobNanny].at_val.at_long)
     {
     /* the admin disabled nanny within the last minute or so */
-
     release_req(pwt);
+    free(pwt);
 
     return;
     }
@@ -1367,17 +1376,18 @@ static void post_job_delete_nanny(
     set_resc_assigned(pjob, DECR);
   
     release_req(pwt);
+    free(pwt);
 
     job_purge(pjob);
 
     return;
     }
+  
+  pthread_mutex_unlock(pjob->ji_mutex);
 
   /* free task */
-
   release_req(pwt);
-
-  pthread_mutex_unlock(pjob->ji_mutex);
+  free(pwt);
 
   return;
   } /* END post_job_delete_nanny() */

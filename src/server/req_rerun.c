@@ -149,6 +149,8 @@ static void post_rerun(
 
   release_req(pwt);
 
+  free(pwt);
+
   return;
   }  /* END post_rerun() */
 

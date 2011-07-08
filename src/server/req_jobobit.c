@@ -750,6 +750,7 @@ void on_job_exit(
   job                  *pjob;
 
   struct batch_request *preq;
+  struct work_task     *pwt;
 
   int                   IsFaked = 0;
   int                   KeepSeconds = 0;
@@ -782,6 +783,7 @@ void on_job_exit(
   if (jobid == NULL)
     {
     log_err(ENOMEM,id,"Cannot allocate memory!");
+    free(ptask);
     return;
     }
 
@@ -793,6 +795,8 @@ void on_job_exit(
     {
     sprintf(log_buf, "%s called with INVALID jobid: %s", id, jobid);
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"NULL",log_buf);
+
+    free(ptask);
 
     return;
     }
@@ -818,6 +822,7 @@ void on_job_exit(
     {
     /* FAILURE - cannot connect to mom */
     pthread_mutex_unlock(pjob->ji_mutex);
+    free(ptask);
 
     return;
     }
@@ -890,8 +895,6 @@ void on_job_exit(
 
         if (KeepSeconds > 0)
           {
-
-
           strcpy(namebuf, path_spool);
           strcat(namebuf, pjob->ji_qs.ji_fileprefix);
           strcat(namebuf, JOB_STDOUT_SUFFIX);
@@ -917,11 +920,9 @@ void on_job_exit(
               }
             }
 
-
           namebuf[strlen(namebuf) - strlen(JOB_STDOUT_SUFFIX)] = '\0';
 
           strcat(namebuf, JOB_STDERR_SUFFIX);
-
 
           if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != pbs_server_addr)
             {
@@ -953,6 +954,7 @@ void on_job_exit(
           if (issue_Drequest(handle, preq, on_job_exit, 0) == 0)
             {
             /* success, we'll come back after mom replies */
+            free(ptask);
             return;
             }
 
@@ -994,6 +996,8 @@ void on_job_exit(
           set_task(WORK_Immed, 0, on_job_exit, jobid);
 
           pthread_mutex_unlock(pjob->ji_mutex);
+
+          free(ptask);
 
           return;
           }
@@ -1080,6 +1084,7 @@ void on_job_exit(
             /* request sucessfully sent, we'll come back to this function
                when mom replies */
             pthread_mutex_unlock(pjob->ji_mutex);
+            free(ptask);
 
             return;
             }
@@ -1130,6 +1135,7 @@ void on_job_exit(
           set_task(WORK_Immed, 0, on_job_exit, jobid);
 
           pthread_mutex_unlock(pjob->ji_mutex);
+          free(ptask);
 
           return;
           }
@@ -1304,6 +1310,7 @@ void on_job_exit(
             {
             /* request issued,  we'll come back when mom replies */
             pthread_mutex_unlock(pjob->ji_mutex);
+            free(ptask);
 
             return;
             }
@@ -1338,6 +1345,8 @@ void on_job_exit(
           set_task(WORK_Immed, 0, on_job_exit, jobid);
 
           pthread_mutex_unlock(pjob->ji_mutex);
+
+          free(ptask);
 
           return;
           }
@@ -1465,6 +1474,8 @@ void on_job_exit(
 
               pthread_mutex_unlock(pjob->ji_mutex);
 
+              free(ptask);
+
               return;
               }
             /* 
@@ -1490,6 +1501,8 @@ void on_job_exit(
                 }
 
               pthread_mutex_unlock(pjob->ji_mutex);
+
+              free(ptask);
 
               return;
               }
@@ -1572,6 +1585,7 @@ void on_job_exit(
       if (ptask->wt_type == WORK_Immed)
         {
         /* is it first time in or server restart recovery */
+        pwt = NULL;
         
         if ((handle == -1) &&
             (pjob->ji_wattr[JOB_ATR_comp_time].at_flags & ATR_VFLAG_SET))
@@ -1583,7 +1597,7 @@ void on_job_exit(
            */
           jobid = strdup(pjob->ji_qs.ji_jobid);
 
-          ptask = set_task(WORK_Timed,
+          pwt = set_task(WORK_Timed,
             pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
             on_job_exit, jobid);
           }
@@ -1599,7 +1613,7 @@ void on_job_exit(
 
           jobid = strdup(pjob->ji_qs.ji_jobid);
 
-          ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid);
+          pwt = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid);
 
           if (gettimeofday(&tv, &tz) == 0)
             {
@@ -1618,12 +1632,12 @@ void on_job_exit(
           job_save(pjob, SAVEJOB_FULL, 0);
           }
 
-        if (ptask != NULL)
+        if (pwt != NULL)
           {
           /* ensure that work task will be removed if job goes away */
-          insert_task(pjob->ji_svrtask,ptask,TRUE);
+          insert_task(pjob->ji_svrtask,pwt,TRUE);
 
-          pthread_mutex_unlock(ptask->wt_mutex);
+          pthread_mutex_unlock(pwt->wt_mutex);
           }
         }
       else
@@ -1636,8 +1650,8 @@ void on_job_exit(
          */
         
         PurgeIt = TRUE;
-        if (((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0)
-          && (pjob->ji_wattr[JOB_ATR_reported].at_val.at_long == 0))
+        if (((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
+            (pjob->ji_wattr[JOB_ATR_reported].at_val.at_long == 0))
           {
           if (LOGLEVEL >= 7)
             {
@@ -1649,18 +1663,17 @@ void on_job_exit(
 
           jobid = strdup(pjob->ji_qs.ji_jobid);
 
-          ptask = set_task(WORK_Timed,time_now +
-                JOBMUSTREPORTDEFAULTKEEP,on_job_exit,jobid);
+          pwt = set_task(WORK_Timed,time_now + JOBMUSTREPORTDEFAULTKEEP,on_job_exit,jobid);
 
-          if (ptask != NULL)
+          if (pwt != NULL)
             {
             /* ensure that work task will be removed if job goes away */
-            insert_task(pjob->ji_svrtask,ptask,TRUE);
+            insert_task(pjob->ji_svrtask,pwt,TRUE);
 
-            pthread_mutex_unlock(ptask->wt_mutex);
+            pthread_mutex_unlock(pwt->wt_mutex);
             }
-            
-            PurgeIt = FALSE;
+          
+          PurgeIt = FALSE;
           }
 
         if (PurgeIt)
@@ -1674,6 +1687,8 @@ void on_job_exit(
 
   if (!PurgeIt)
     pthread_mutex_unlock(pjob->ji_mutex);
+
+  free(ptask);
 
   return;
   }  /* END on_job_exit() */
@@ -1724,6 +1739,7 @@ void on_job_rerun(
   if ((handle = mom_comm(pjob, on_job_rerun)) < 0)
     {
     pthread_mutex_unlock(pjob->ji_mutex);
+    free(ptask);
 
     return;
     }
@@ -1747,6 +1763,8 @@ void on_job_rerun(
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
+          free(ptask);
+
           return;
           }
 
@@ -1759,6 +1777,7 @@ void on_job_rerun(
         if (preq == NULL)
           {
           pthread_mutex_unlock(pjob->ji_mutex);
+          free(ptask);
           
           return;
           }
@@ -1771,6 +1790,7 @@ void on_job_rerun(
           {
           /* request ok, will come back when its done */
           pthread_mutex_unlock(pjob->ji_mutex);
+          free(ptask);
 
           return;
           }
@@ -1849,6 +1869,7 @@ void on_job_rerun(
           if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
             {
             pthread_mutex_unlock(pjob->ji_mutex);
+            free(ptask);
             
             return;  /* come back when mom replies */
             }
@@ -1875,6 +1896,8 @@ void on_job_rerun(
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
+          free(ptask);
+
           return;
           }
         }
@@ -1884,7 +1907,6 @@ void on_job_rerun(
       if (preq->rq_reply.brp_code != 0)
         {
         /* error from MOM */
-
         if (LOGLEVEL >= 3)
           {
           snprintf(log_buf, LOG_BUF_SIZE, "request to save stageout files failed on node '%s' for job %s%s",
@@ -1954,6 +1976,7 @@ void on_job_rerun(
           if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
             {
             pthread_mutex_unlock(pjob->ji_mutex);
+            free(ptask);
             
             return;
             }
@@ -1973,6 +1996,8 @@ void on_job_rerun(
           set_task(WORK_Immed, 0, on_job_rerun, pjob);
 
           pthread_mutex_unlock(pjob->ji_mutex);
+            
+          free(ptask);
 
           return;
           }
@@ -2078,6 +2103,8 @@ void on_job_rerun(
     }  /* END switch (pjob->ji_qs.ji_substate) */
 
   pthread_mutex_unlock(pjob->ji_mutex);
+            
+  free(ptask);
 
   return;
   }  /* END on_job_rerun() */
@@ -2098,6 +2125,8 @@ static void wait_for_send(
 
   {
   req_jobobit((struct batch_request *)ptask->wt_parm1);
+
+  free(ptask);
 
   return;
   }

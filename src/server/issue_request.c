@@ -232,8 +232,8 @@ static void reissue_to_svr(
     ((void (*)())pwt->wt_parmfunc)(pwt);
     }
 
-  return;
-  }  /* END resissue_to_svr() */
+  free(pwt);
+  }  /* END reissue_to_svr() */
 
 
 
@@ -344,8 +344,7 @@ void release_req(
   if (pwt->wt_event != -1)
     svr_disconnect(pwt->wt_event);
 
-  return;
-  }
+  } /* END release_req() */
 
 
 

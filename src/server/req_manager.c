@@ -2384,6 +2384,8 @@ void on_extra_resc(
 
   {
   init_resc_defs();
+
+  free(ptask);
   }
 
 int extra_resc_chk(

@@ -1675,19 +1675,20 @@ void recheck_for_node(
   int        rc;
   int        bad;
 
-  host_info = ptask->wt_parm1;
-  if (host_info == NULL)
+  if ((host_info = ptask->wt_parm1) == NULL)
     {
+    free(ptask);
+
     return;
     }
 
-  rc = create_pbs_node( host_info->nodename, host_info->plist, host_info->perms, &bad);
-  if (rc)
+  if ((rc = create_pbs_node( host_info->nodename, host_info->plist, host_info->perms, &bad)))
     {
     /* we created a new host_info in create_pbs_node. We
        need to free this one */
     free_attrlist(&host_info->atrlist);
-    if(host_info->nodename)
+
+    if (host_info->nodename)
       {
       free(host_info->nodename);
       }
@@ -1695,6 +1696,7 @@ void recheck_for_node(
     free(host_info);
     }
 
+  free(ptask);
   return;
   } /* END recheck_for_node() */
 
