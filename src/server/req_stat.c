@@ -858,13 +858,12 @@ int stat_to_mom(
   node = tfind_addr(addr,pjob->ji_qs.ji_un.ji_exect.ji_momport,pjob);
 
   if ((node  != NULL) &&
-      (node->nd_state & (INUSE_DELETED | INUSE_DOWN)))
+      (node->nd_state & INUSE_DOWN))
     {
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buf,"node '%s' is allocated to job but in state '%s'",
-        node->nd_name,
-        (node->nd_state & INUSE_DELETED) ? "deleted" : "down");
+      sprintf(log_buf,"node '%s' is allocated to job but in state 'down'",
+        node->nd_name);
 
       log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
@@ -1487,11 +1486,6 @@ static int status_node(
 
   struct brp_status *pstat;
   svrattrl          *pal;
-
-  if (pnode->nd_state & INUSE_DELETED)  /*node no longer valid*/
-    {
-    return(0);
-    }
 
   if ((preq->rq_perm & ATR_DFLAG_RDACC) == 0)
     {

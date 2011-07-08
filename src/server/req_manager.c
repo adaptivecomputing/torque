@@ -1893,23 +1893,16 @@ static void mgr_node_delete(
   struct batch_request *preq)
 
   {
-  static int need_todo = 0;
-
-  int  check_all = 0;
+  int             check_all = 0;
+  int             iter;
 
   struct pbsnode *pnode;
-  char  *nodename = NULL;
-  int  rc;
+  char           *nodename = NULL;
 
-  int  i, len;
-  int  problem_cnt = 0;
-  char  *problem_names;
 
-  struct pbsnode  **problem_nodes = NULL;
-  svrattrl *plist;
+  svrattrl       *plist;
 
-  char              log_buf[LOCAL_LOG_BUF_SIZE];
-  node_iterator iter;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
@@ -1955,155 +1948,36 @@ static void mgr_node_delete(
   if (check_all)
     {
     /* handle all nodes */
-    problem_nodes = (struct pbsnode **)malloc(
-        svr_totnodes * sizeof(struct pbsnode *));
+    iter = -1;
 
-    problem_cnt = 0;
-
-    reinitialize_node_iterator(&iter);
-    pnode = NULL;
-
-    while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+    while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {
-      save_characteristic(pnode);
-
-      nodename = strdup(pnode->nd_name);
+      snprintf(log_buf,sizeof(log_buf),"%s",pnode->nd_name);
 
       effective_node_delete(pnode);
 
-      rc = 0;   /*currently, failure not possible so set rc=0   */
-
-      if (rc != 0)
-        {
-        if (problem_nodes)     /*we have an array in which to save*/
-          problem_nodes[problem_cnt] = pnode;
-
-        ++problem_cnt;
-        }
-      else
-        {
-        /* modifications succeed for this node */
-        chk_characteristic(pnode, &need_todo);
-
-        if (nodename)
-          {
-          mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, nodename);
-
-          free(nodename);
-          }
-        }
+      mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, log_buf);
       } /* end loop ( all nodes ) */
     }
   else
     {
     /* handle single nodes */
-    save_characteristic(pnode);
-
+    snprintf(log_buf,sizeof(log_buf),"%s",pnode->nd_name);
+    
     nodename = strdup(pnode->nd_name);
 
     effective_node_delete(pnode);
 
-    rc = 0;   /*currently, failure not possible so set rc=0   */
-        
-    if (rc != 0)
-      {
-      /*In the specific node case, reply w/ error and return*/
-      
-      switch (rc)
-        {
-        
-        default:
-          
-          req_reject(rc, 0, preq, NULL, NULL);
-          
-          break;
-        }
-
-      return;
-      }
-    else
-      {
-      /*modifications succeed for this node*/
-
-      chk_characteristic(pnode, &need_todo);
-
-      if (nodename)
-        {
-        mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, nodename);
-
-        free(nodename);
-        }
-      }
-    
-    pthread_mutex_unlock(pnode->nd_mutex);
+    mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, log_buf);
     }
 
   /*set "deleted" bit in node's (nodes, check_all == 1) "inuse" field*/
   /*remove entire prop list, including the node name, from the node */
   /*remove the IP address array hanging from the node               */
 
-
-  if (need_todo & WRITENODE_STATE)
-    {
-    /*some nodes set to "offline"*/
-
-    write_node_state();
-
-    need_todo &= ~(WRITENODE_STATE);
-    }
-
-  if (need_todo & WRITE_NEW_NODESFILE)
-    {
-    /* create/delete/prop/ntype change */
-
-    if (!update_nodes_file(NULL))
-      need_todo &= ~(WRITE_NEW_NODESFILE);  /*successful on update*/
-    }
-
-  if (check_all)
-    {
-    /*modification was for all nodes  */
-
-    if (problem_cnt)      /*one or more problems encountered*/
-      {
-
-      for (len = 0, i = 0; i < problem_cnt; i++)
-        len += strlen(problem_nodes[i]->nd_name) + 3;
-
-      len += strlen(pbse_to_txt(PBSE_GMODERR));
-
-      if ((problem_names = malloc(len)))
-        {
-
-        strcpy(problem_names, pbse_to_txt(PBSE_GMODERR));
-
-        for (i = 0; i < problem_cnt; i++)
-          {
-          if (i)
-            strcat(problem_names, ", ");
-
-          strcat(problem_names, problem_nodes[i]->nd_name);
-          }
-
-        reply_text(preq, PBSE_GMODERR, problem_names);
-
-        free(problem_names);
-        }
-      else
-        {
-        reply_text(preq, PBSE_GMODERR, pbse_to_txt(PBSE_GMODERR));
-        }
-      }
-
-    if (problem_nodes)  /*maybe problem  malloc failed */
-      free(problem_nodes);
-
-    if (problem_cnt)    /*reply has already been sent  */
-      {
-      recompute_ntype_cnts();
-      return ;
-      }
-    }
+  /* update the nodes file and node state since we deleted node(s) */
+  write_node_state();
+  update_nodes_file(NULL);
 
   recompute_ntype_cnts();
 

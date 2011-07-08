@@ -163,7 +163,7 @@ int relay_to_mom(
   node = tfind_addr(addr,pjob->ji_qs.ji_un.ji_exect.ji_momport,pjob);
 
   if ((node != NULL) &&
-      (node->nd_state & (INUSE_DELETED|INUSE_DOWN)))
+      (node->nd_state & INUSE_DOWN))
     {
     pthread_mutex_unlock(node->nd_mutex);
     return(PBSE_NORELYMOM);

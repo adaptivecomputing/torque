@@ -184,7 +184,7 @@ void req_gpuctrl(
 
   /* validate that the node is up */
 
-  if (pnode->nd_state & (INUSE_DELETED | INUSE_DOWN | INUSE_OFFLINE | INUSE_UNKNOWN))
+  if (pnode->nd_state & (INUSE_DOWN | INUSE_OFFLINE | INUSE_UNKNOWN))
     {
     sprintf(log_buf,"Node %s is not available",pnode->nd_name);
 

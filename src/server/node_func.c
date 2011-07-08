@@ -198,13 +198,6 @@ struct pbsnode *PGetNodeFromAddr(
 
   while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
     {
-    if (pnode->nd_state & INUSE_DELETED)
-      {
-      pthread_mutex_unlock(pnode->nd_mutex);
-
-      continue;
-      }
-
     for (aindex = 0; aindex < 10; aindex++)
       {
       if (pnode->nd_addrs[aindex] == 0)
@@ -251,8 +244,7 @@ void bad_node_warning(
       continue;
       }
 
-    if ((pnode->nd_state & INUSE_DELETED) ||
-        (pnode->nd_addrs[0] != addr))
+    if (pnode->nd_addrs[0] != addr)
       {
       /* node was deleted  or doesn't match */
 
@@ -314,10 +306,6 @@ int addr_ok(
     while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
       {
       /* NOTE:  should walk thru all nd_addrs for multi-homed hosts */
-      if (pnode->nd_state & INUSE_DELETED)
-        {
-        continue;
-        }
       
       /* NOTE:  deleted node may have already freed nd_addrs - check should be redundant */
       if ((pnode->nd_addrs == NULL) || 
@@ -336,7 +324,7 @@ int addr_ok(
       release_mutex = TRUE;
     }
 
-  if (pnode->nd_state & (INUSE_DELETED | INUSE_UNKNOWN))
+  if (pnode->nd_state & INUSE_UNKNOWN)
     {
     /* definitely not ok */
     status = 0;
@@ -556,12 +544,6 @@ int chk_characteristic(
 
       strcat(tmpLine, "offline cleared");
       }
-
-    if ((tmp & INUSE_DELETED) && (old_state & INUSE_OFFLINE))
-      *pneed_todo |= WRITENODE_STATE;        /*offline & now deleted*/
-
-    if ((tmp & INUSE_DELETED) && !(old_state & INUSE_DELETED))
-      *pneed_todo |= WRITE_NEW_NODESFILE; /*node being deleted*/
     }
 
   if (tmpLine[0] != '\0')
@@ -872,6 +854,10 @@ void effective_node_delete(
   struct pbssubn  *pnxt;
   u_long          *up;
 
+  remove_node(&allnodes,pnode);
+  pthread_mutex_unlock(pnode->nd_mutex);
+  free(pnode->nd_mutex);
+
   psubn = pnode->nd_psn;
 
   while (psubn != NULL)
@@ -885,8 +871,6 @@ void effective_node_delete(
 
   pnode->nd_last->next = NULL;      /* just in case */
 
-  pnode->nd_last       = NULL;
-
   free_prop_list(pnode->nd_first);
 
   pnode->nd_first = NULL;
@@ -897,7 +881,6 @@ void effective_node_delete(
       {
       /* del node's IP addresses from tree  */
 
-       /* tdelete(*up, &ipaddrs);  */
       ipaddrs = AVL_delete_node( *up, pnode->nd_mom_port, ipaddrs);
       } 
 
@@ -911,78 +894,19 @@ void effective_node_delete(
       }
     }
 
-  /* tdelete((u_long)pnode->nd_stream, &streams); */ /*take stream out of tree*/
   streams = AVL_delete_node((u_long)pnode->nd_stream, 0, streams);
 
   rpp_close(pnode->nd_stream);
   free(pnode->nd_name);
 
-  pnode->nd_name    = NULL;
-  pnode->nd_stream  = -1;
-  pnode->nd_state   = INUSE_DELETED;
-  pnode->nd_nsn     = 0;
-  pnode->nd_nsnfree = 0;
+  free(pnode);
 
   return;
   }  /* END effective_node_delete() */
 
 
-/* free_node() - clean up and free all elements of a pbsnode that has not been
-   entered into any tables. called from create_pbs_node() */
-void free_node(
 
-  struct pbsnode *pnode)
 
-  {
-
-  struct pbssubn  *psubn;
-
-  struct pbssubn  *pnxt;
-
-  psubn = pnode->nd_psn;
-
-  while (psubn != NULL)
-    {
-    pnxt = psubn->next;
-
-    subnode_delete(psubn);
-
-    psubn = pnxt;
-    }
-
-  pnode->nd_last->next = NULL;      /* just in case */
-
-  pnode->nd_last       = NULL;
-
-  free_prop_list(pnode->nd_first);
-
-  pnode->nd_first = NULL;
-
-  if (pnode->nd_addrs != NULL)
-    {
-
-    if (pnode->nd_addrs != NULL)
-      {
-      /* remove array of IP addresses */
-
-      free(pnode->nd_addrs);
-
-      pnode->nd_addrs = NULL;
-      }
-    }
-
-  free(pnode->nd_name);
-
-  pnode->nd_name    = NULL;
-  pnode->nd_stream  = -1;
-  pnode->nd_state   = INUSE_DELETED;
-  pnode->nd_nsn     = 0;
-  pnode->nd_nsnfree = 0;
-
-  /* NYI - free numa nodes if they exist */
-
-  return;
-  }  /* END free_node() */
 
 /**
  *  NOTE:  pul can return NULL even on SUCCESS of routine
@@ -1303,14 +1227,6 @@ int update_nodes_file(
 
   while ((np = next_host(&allnodes,&iter,held)) != NULL)
     {
-    if (np->nd_state & INUSE_DELETED)
-      {
-      if (held != np)
-        pthread_mutex_unlock(np->nd_mutex);
-
-      continue;
-      }
-
     /* ... write its name, and if time-shared, append :ts */
     fprintf(nin, "%s", np->nd_name); /* write name */
 
@@ -1419,14 +1335,11 @@ void recompute_ntype_cnts(void)
     {
     while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
       {
-      if (!(pnode->nd_state & INUSE_DELETED))
-        {
-        /* count normally */
-        if (pnode->nd_ntype == NTYPE_CLUSTER)
-          svr_loc_clnodes += pnode->nd_nsn;
-        else if (pnode->nd_ntype == NTYPE_TIMESHARED)
-          svr_loc_tsnodes++;
-        }
+      /* count normally */
+      if (pnode->nd_ntype == NTYPE_CLUSTER)
+        svr_loc_clnodes += pnode->nd_nsn;
+      else if (pnode->nd_ntype == NTYPE_TIMESHARED)
+        svr_loc_tsnodes++;
       }
 
     svr_clnodes = svr_loc_clnodes;
@@ -1759,8 +1672,6 @@ int setup_node_boards(
       if (create_subnode(pn) == NULL)
         {
         /* ERROR */
-        pn->nd_state = INUSE_DELETED;
-
         return(PBSE_SYSTEM);
         }
       }
@@ -1771,8 +1682,6 @@ int setup_node_boards(
       if (create_a_gpusubnode(pn) != PBSE_NONE)
         {
         /* ERROR */
-        pn->nd_state = INUSE_DELETED;
-
         return(PBSE_SYSTEM);
         }
       }
@@ -1972,12 +1881,10 @@ int create_pbs_node(
   /* create and initialize the first subnode to go with the parent node */
   if (create_subnode(pnode) == NULL)
     {
-    pnode->nd_state = INUSE_DELETED;
-
     free(pul);
     free(pname);
 
-    return (PBSE_SYSTEM);
+    return(PBSE_SYSTEM);
     }
 
   rc = mgr_set_node_attr(
@@ -2015,7 +1922,10 @@ int create_pbs_node(
     ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
     }  /* END for (i) */
 
-  setup_node_boards(pnode,pul);
+  if ((rc = setup_node_boards(pnode,pul)) != PBSE_NONE)
+    {
+    return(rc);
+    }
 
   insert_node(&allnodes,pnode);
 
@@ -2025,7 +1935,7 @@ int create_pbs_node(
 
   /* SUCCESS */
   return(PBSE_NONE);
-  } /* End create_pbs_node */
+  } /* End create_pbs_node() */
 
 
 
@@ -2435,13 +2345,6 @@ int setup_nodes(void)
 
       while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
         {
-        if (np->nd_state & INUSE_DELETED)
-          {
-          pthread_mutex_unlock(np->nd_mutex);
-
-          continue;
-          }
-
         if (strcmp(np->nd_name, line) == 0)
           {
           np->nd_note = strdup(note);
@@ -2921,13 +2824,22 @@ int create_partial_pbs_node(
   pname = strdup(nodename);
 
   if ((rc = initialize_pbsnode(pnode, pname, pul, ntype)) != PBSE_NONE)
+    {
+    free(pul);
+    free(pname);
+    free(pnode);
+
     return(rc);
+    }
 
   /* create and initialize the first subnode to go with the parent node */
 
   if (create_subnode(pnode) == NULL)
     {
-    pnode->nd_state = INUSE_DELETED;
+    free(pul);
+    free(pname);
+    free(pnode->nd_mutex);
+    free(pnode);
 
     return(PBSE_SYSTEM);
     }
@@ -2944,8 +2856,8 @@ int create_partial_pbs_node(
 
   if (rc != 0)
     {
+    pthread_mutex_lock(pnode->nd_mutex);
     effective_node_delete(pnode);
-    free(pul);
 
     return(rc);
     }

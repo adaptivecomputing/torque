@@ -776,15 +776,7 @@ void sync_node_jobs(
     return;
     }
 
-  if (np->nd_state & INUSE_DELETED)
-    {
-    /* should never happen */
-
-    return;
-    }
-
   /* FORMAT <JOBID>[ <JOBID>]... */
-
   joblist = strdup(jobstring_in);
 
   if (joblist == NULL)
@@ -913,13 +905,6 @@ void update_job_data(
     return;
     }
 
-  if (np->nd_state & INUSE_DELETED)
-    {
-    /* should never happen */
-
-    return;
-    }
-
   /* FORMAT <JOBID>:<atrtributename=value>,<atrtributename=value>... */
 
   jobdata = strdup(jobstring_in);
@@ -1043,8 +1028,7 @@ void send_cluster_addrs(
      * otherwise we'll get bogged down.  The skipped nodes will get the
      * updated info when they reconnect.
      */
-    if ((np->nd_state & INUSE_DELETED) || 
-        (np->nd_stream < 0))
+    if (np->nd_stream < 0)
       {
       pthread_mutex_unlock(np->nd_mutex);
 
@@ -2061,14 +2045,6 @@ int add_cluster_addrs(
   /* should we cache this response and send it as a single string? */
   while ((np = next_host(&allnodes,&iter,held)) != NULL)
     {
-    if (np->nd_state & INUSE_DELETED)
-      {
-      if (np != held)
-        pthread_mutex_unlock(np->nd_mutex);
-
-      continue;
-      }
-
     if (LOGLEVEL == 7)  /* higher loglevel gets more info below */
       {
       sprintf(log_buf, "adding node %s to hello response", np->nd_name);
@@ -2150,7 +2126,7 @@ void *check_nodes_work(
 
   while ((np = next_node(&allnodes,np,&iter)) != NULL)
     {
-    if (!(np->nd_state & (INUSE_DELETED | INUSE_DOWN)))
+    if (!(np->nd_state & INUSE_DOWN))
       {
       if (np->nd_lastupdate < (time_now - chk_len)) 
         {
@@ -2797,8 +2773,7 @@ void *write_node_state_work(
 
   while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
     {
-    if ((!(np->nd_state & INUSE_DELETED)) &&
-        (np->nd_state & INUSE_OFFLINE))
+    if (!(np->nd_state & INUSE_OFFLINE))
       {
       fprintf(nstatef, fmt, np->nd_name, np->nd_state & savemask);
       }
@@ -2877,13 +2852,10 @@ int write_node_note(void)
   /* for each node ... */
   while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
     {
-    if (!(np->nd_state & INUSE_DELETED))
+    /* write node name followed by its note string */
+    if (np->nd_note != NULL && np->nd_note != '\0')
       {
-      /* write node name followed by its note string */
-      if (np->nd_note != NULL && np->nd_note != '\0')
-        {
-        fprintf(nin, "%s %s\n", np->nd_name, np->nd_note);
-        }
+      fprintf(nin, "%s %s\n", np->nd_name, np->nd_note);
       }
     
     pthread_mutex_unlock(np->nd_mutex);
@@ -2965,23 +2937,20 @@ void *node_unreserve_work(
   /* clear old reserve */
   while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
     {
-    if (!(np->nd_state & INUSE_DELETED))
+    for (sp = np->nd_psn;sp;sp = sp->next)
       {
-      for (sp = np->nd_psn;sp;sp = sp->next)
+      if (sp->inuse & INUSE_RESERVE)
         {
-        if (sp->inuse & INUSE_RESERVE)
+        if ((handle == RESOURCE_T_ALL) || (handle == sp->allocto))
           {
-          if ((handle == RESOURCE_T_ALL) || (handle == sp->allocto))
-            {
-            np->nd_nsnfree++;
-            
-            sp->inuse    &= ~INUSE_RESERVE;
-            np->nd_state &= ~INUSE_RESERVE;
-            }
+          np->nd_nsnfree++;
+          
+          sp->inuse    &= ~INUSE_RESERVE;
+          np->nd_state &= ~INUSE_RESERVE;
           }
         }
       }
-    
+
     pthread_mutex_unlock(np->nd_mutex);
     }
 
@@ -3144,8 +3113,7 @@ static int gpu_count(
   int  count = 0;
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if ((pnode->nd_state & INUSE_DELETED) ||
-      (pnode->nd_state & INUSE_OFFLINE) ||
+  if ((pnode->nd_state & INUSE_OFFLINE) ||
       (pnode->nd_state & INUSE_UNKNOWN) ||
       (pnode->nd_state & INUSE_DOWN))
     {
@@ -3290,9 +3258,6 @@ int search_acceptable(
   {
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if (pnode->nd_state & INUSE_DELETED)
-    return(FALSE);
-
   if (pnode->nd_ntype == NTYPE_CLUSTER)
     {
     if (pnode->nd_flag != okay)
@@ -3381,9 +3346,6 @@ int can_reshuffle(
   {
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if (pnode->nd_state & INUSE_DELETED)
-    return(FALSE);
-
   if (pnode->nd_ntype == NTYPE_CLUSTER)
     {
     if (pnode->nd_flag != thinking)
@@ -3457,7 +3419,7 @@ static int search(
   int          depth)
 
   {
-  static int      pass = INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_UNKNOWN | INUSE_DELETED;
+  static int      pass = INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_UNKNOWN;
 
   struct pbsnode *pnode = NULL;
   int             found;
@@ -3876,21 +3838,18 @@ static int listelem(
 
   while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
-    if (!(pnode->nd_state & INUSE_DELETED))
+    if (pnode->nd_ntype == NTYPE_CLUSTER)
       {
-      if (pnode->nd_ntype == NTYPE_CLUSTER)
+      if ((hasprop(pnode, prop)) && 
+          (hasppn(pnode, node_req, SKIP_NONE)) &&
+          (gpu_count(pnode, FALSE) >= gpu_req))
+        hit++;
+      
+      if (hit == num)
         {
-        if ((hasprop(pnode, prop)) && 
-            (hasppn(pnode, node_req, SKIP_NONE)) &&
-            (gpu_count(pnode, FALSE) >= gpu_req))
-          hit++;
+        pthread_mutex_unlock(pnode->nd_mutex);
         
-        if (hit == num)
-          {
-          pthread_mutex_unlock(pnode->nd_mutex);
-
-          break;  /* found enough  */
-          }
+        break;  /* found enough  */
         }
       }
     } /* END for each node */
@@ -4195,8 +4154,7 @@ int procs_available(
 
   while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
     {
-    if (!(pnode->nd_state & INUSE_DELETED))
-      procs_avail += pnode->nd_nsnfree;
+    procs_avail += pnode->nd_nsnfree;
 
     pthread_mutex_unlock(pnode->nd_mutex);
     }
@@ -4460,10 +4418,7 @@ static int node_spec(
 
   while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
-    if (!(pnode->nd_state & INUSE_DELETED))
-      {
-      node_avail_check(pnode,ProcBMStr);
-      }
+    node_avail_check(pnode,ProcBMStr);
     }    /* END for (i = 0) */
 
   /*
@@ -4553,8 +4508,7 @@ static int node_spec(
 
   while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
-    if ((pnode->nd_state & INUSE_DELETED) ||
-        (pnode->nd_ntype != NTYPE_CLUSTER) ||
+    if ((pnode->nd_ntype != NTYPE_CLUSTER) ||
         (pnode->nd_flag != thinking))  /* thinking is global */
       {
       /* node is ok */
@@ -5241,8 +5195,7 @@ int set_nodes(
 
   while ((pnode = next_node(&allnodes,pnode,iter)) != NULL)
     {
-    if ((pnode->nd_state & INUSE_DELETED) ||
-        (pnode->nd_flag != thinking))
+    if (pnode->nd_flag != thinking)
       {
       /* node is not considered/eligible for job - see search() */
       continue;
@@ -5382,11 +5335,6 @@ int set_nodes(
 
     while ((pnode = next_node(&allnodes,pnode,iter)) != NULL)
       {
-      if (pnode->nd_state & INUSE_DELETED)
-        {
-        continue;
-        }
-
       for (snp = pnode->nd_psn;snp && procs_needed > 0;snp = snp->next)
         {
         if (exclusive)
@@ -5415,7 +5363,7 @@ int set_nodes(
         procs_needed--;
         } /* END for (snp) */
       } /* END for each node */
-    }
+    } /* if (procs > 0) */
 
   free(iter);
 
@@ -5828,32 +5776,29 @@ int node_avail(
 
     while ((pn = next_node(&allnodes,pn,&iter)) != NULL)
       {
-      if (!(pn->nd_state & INUSE_DELETED))
+      if ((pn->nd_ntype == NTYPE_CLUSTER) && hasprop(pn, prop))
         {
-        if ((pn->nd_ntype == NTYPE_CLUSTER) && hasprop(pn, prop))
+        if (pn->nd_state & (INUSE_OFFLINE | INUSE_DOWN))
+          ++xdown;
+        else if (hasppn(pn, node_req, SKIP_ANYINUSE))
+          ++xavail;
+        else if (hasppn(pn, node_req, SKIP_NONE))
           {
-          if (pn->nd_state & (INUSE_OFFLINE | INUSE_DOWN))
-            ++xdown;
-          else if (hasppn(pn, node_req, SKIP_ANYINUSE))
-            ++xavail;
-          else if (hasppn(pn, node_req, SKIP_NONE))
+          /* node has enough processors, are they busy or reserved? */
+          j = 0;
+          
+          for (psn = pn->nd_psn;psn;psn = psn->next)
             {
-            /* node has enough processors, are they busy or reserved? */
-            j = 0;
-            
-            for (psn = pn->nd_psn;psn;psn = psn->next)
-              {
-              if (psn->inuse & INUSE_RESERVE)
-                j++;
-              }
-            
-            if (j >= node_req)
-              ++xresvd;
-            else
-              ++xalloc;
+            if (psn->inuse & INUSE_RESERVE)
+              j++;
             }
+          
+          if (j >= node_req)
+            ++xresvd;
+          else
+            ++xalloc;
           }
-        } /* END node not deleted */
+        }
       } /* END for each node */
 
     free_prop(prop);
@@ -5940,8 +5885,7 @@ int node_reserve(
 
     while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
       {
-      if ((pnode->nd_state & INUSE_DELETED) ||
-          (pnode->nd_flag != thinking))
+      if (pnode->nd_flag != thinking)
         {
         continue;   /* skip this one */
         }
@@ -6004,8 +5948,7 @@ int is_ts_node(
 
   if (np != NULL)
     {
-    if (((np->nd_state & INUSE_DELETED) == 0) &&
-        (np->nd_ntype == NTYPE_TIMESHARED))
+    if (np->nd_ntype == NTYPE_TIMESHARED)
       {
       rc = 0;
       }
@@ -6037,7 +5980,7 @@ char *find_ts_node(void)
   while ((np = next_node(&allnodes,np,&iter)) != NULL)
     {
     if ((np->nd_ntype == NTYPE_TIMESHARED) &&
-        ((np->nd_state & (INUSE_DOWN | INUSE_DELETED | INUSE_OFFLINE)) == 0))
+        ((np->nd_state & (INUSE_DOWN | INUSE_OFFLINE)) == 0))
       {
       char *name = np->nd_name;
 
@@ -6100,11 +6043,6 @@ void free_nodes(
 
   while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
-    if (pnode->nd_state & INUSE_DELETED)
-      {
-      continue;
-      }
-
     if (gpu_str != NULL)
       {
       /* reset gpu nodes */
