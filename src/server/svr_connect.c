@@ -149,16 +149,17 @@ int svr_connect(
   int          sock;
   time_t       STime;
   time_t       ETime;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 4)
     {
     char *tmp = netaddr_pbs_net_t(hostaddr);
-    sprintf(log_buffer, "attempting connect to %s %s port %d",
+    sprintf(log_buf, "attempting connect to %s %s port %d",
       (hostaddr == pbs_server_addr) ? "server" : "host",
       ((int)hostaddr != 0) ? tmp : "localhost",
       port);
 
-    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
 
     free(tmp);
     }
@@ -177,11 +178,11 @@ int svr_connect(
     {
     if (LOGLEVEL >= 4)
       {
-      sprintf(log_buffer, "cannot connect to %s port %d - target is down",
-              (hostaddr == pbs_server_addr) ? "server" : "host",
-              port);
+      sprintf(log_buf, "cannot connect to %s port %d - target is down",
+        (hostaddr == pbs_server_addr) ? "server" : "host",
+        port);
 
-      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
       }
 
     pbs_errno = EHOSTDOWN;
@@ -207,13 +208,14 @@ int svr_connect(
     {
     if (LOGLEVEL >= 4)
       {
-      sprintf(log_buffer, "cannot connect to %s port %d - cannot establish connection (%s) - time=%ld seconds",
-              (hostaddr == pbs_server_addr) ? "server" : "host",
-              port,
-              EMsg,
-              (long)(ETime - STime));
+      sprintf(log_buf,
+        "cannot connect to %s port %d - cannot establish connection (%s) - time=%ld seconds",
+        (hostaddr == pbs_server_addr) ? "server" : "host",
+        port,
+        EMsg,
+        (long)(ETime - STime));
 
-      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
       }
 
     bad_node_warning(hostaddr);
@@ -226,12 +228,13 @@ int svr_connect(
   if ((LOGLEVEL >= 2) && 
       (ETime > STime))
     {
-    sprintf(log_buffer, "successful connect to %s port %d - time=%ld seconds",
-            (hostaddr == pbs_server_addr) ? "server" : "host",
-            port,
-            (long)(ETime - STime));
+    sprintf(log_buf,
+      "successful connect to %s port %d - time=%ld seconds",
+      (hostaddr == pbs_server_addr) ? "server" : "host",
+      port,
+      (long)(ETime - STime));
 
-    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buffer);
+    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
     }
 
   /* add the connection to the server connection table and select list */
@@ -255,15 +258,12 @@ int svr_connect(
     {
     if (LOGLEVEL >= 4)
       {
-      sprintf(log_buffer, "cannot connect to %s port %d - cannot get handle",
-              (hostaddr == pbs_server_addr) ? "server" : "host",
-              port);
+      sprintf(log_buf,
+        "cannot connect to %s port %d - cannot get handle",
+        (hostaddr == pbs_server_addr) ? "server" : "host",
+        port);
 
-      log_event(
-        PBSEVENT_ADMIN,
-        PBS_EVENTCLASS_SERVER,
-        id,
-        log_buffer);
+      log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
       }
 
     close_conn(sock);
@@ -353,6 +353,7 @@ int socket_to_handle(
 
   {
   char *id = "socket_to_handle";
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   int i;
 
@@ -389,11 +390,11 @@ int socket_to_handle(
       
       if (i >= (PBS_NET_MAX_CONNECTIONS/2))
         {
-        sprintf(log_buffer,"internal socket table is half-full at %d (expected num_connections is %d)!",
+        sprintf(log_buf,"internal socket table is half-full at %d (expected num_connections is %d)!",
           i,
           get_num_connections());
         
-        log_ext(-1,id,log_buffer,LOG_CRIT);
+        log_ext(-1,id,log_buf,LOG_CRIT);
         }
       
       return(i);
@@ -402,11 +403,11 @@ int socket_to_handle(
     pthread_mutex_unlock(connection[i].ch_mutex);
     }  /* END for (i) */
 
-  sprintf(log_buffer,"internal socket table full (%d) - num_connections is %d",
+  sprintf(log_buf,"internal socket table full (%d) - num_connections is %d",
     i,
     get_num_connections());
 
-  log_ext(-1,id,log_buffer,LOG_ALERT);
+  log_ext(-1,id,log_buf,LOG_ALERT);
 
   pbs_errno = PBSE_NOCONNECTS;
 

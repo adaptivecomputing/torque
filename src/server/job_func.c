@@ -245,19 +245,20 @@ int remtree(
   char *dirname)
 
   {
-  static char id[] = "remtree";
-  DIR  *dir;
+  static char    id[] = "remtree";
+  DIR           *dir;
 
   struct dirent *pdir;
-  char  namebuf[MAXPATHLEN], *filnam;
-  int  i;
-  int  rtnv = 0;
+  char           namebuf[MAXPATHLEN];
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  char          *filnam;
+  int            i;
+  int            rtnv = 0;
+
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
-
-  struct stat64 sb;
+  struct stat64  sb;
 #else
-
-  struct stat sb;
+  struct stat    sb;
 #endif
 
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
@@ -321,19 +322,18 @@ int remtree(
         {
         if (errno != ENOENT)
           {
-          sprintf(log_buffer, "unlink failed on %s",
-                  namebuf);
+          sprintf(log_buf, "unlink failed on %s", namebuf);
 
-          log_err(errno, id, log_buffer);
+          log_err(errno, id, log_buf);
 
           rtnv = -1;
           }
         }
       else if (LOGLEVEL >= 7)
         {
-        sprintf(log_buffer, "unlink(1) succeeded on %s", namebuf);
+        sprintf(log_buf, "unlink(1) succeeded on %s", namebuf);
 
-        log_ext(-1, id, log_buffer, LOG_DEBUG);
+        log_ext(-1, id, log_buf, LOG_DEBUG);
         }
       }    /* END while ((pdir = readdir(dir)) != NULL) */
 
@@ -343,35 +343,33 @@ int remtree(
       {
       if ((errno != ENOENT) && (errno != EINVAL))
         {
-        sprintf(log_buffer, "rmdir failed on %s",
-                dirname);
+        sprintf(log_buf, "rmdir failed on %s", dirname);
 
-        log_err(errno, id, log_buffer);
+        log_err(errno, id, log_buf);
 
         rtnv = -1;
         }
       }
     else if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer, "rmdir succeeded on %s", dirname);
+      sprintf(log_buf, "rmdir succeeded on %s", dirname);
 
-      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      log_ext(-1, id, log_buf, LOG_DEBUG);
       }
     }
   else if (unlink(dirname) < 0)
     {
-    sprintf(log_buffer, "unlink failed on %s",
-            dirname);
+    sprintf(log_buf, "unlink failed on %s", dirname);
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, id, log_buf);
 
     rtnv = -1;
     }
   else if (LOGLEVEL >= 7)
     {
-    sprintf(log_buffer, "unlink(2) succeeded on %s", dirname);
+    sprintf(log_buf, "unlink(2) succeeded on %s", dirname);
 
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    log_ext(-1, id, log_buf, LOG_DEBUG);
     }
 
   return(rtnv);
@@ -411,11 +409,12 @@ int job_abt(
 
   {
   char *myid = "job_abt";
-  int old_state;
-  int old_substate;
-  int rc = 0;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  int   old_state;
+  int   old_substate;
+  int   rc = 0;
 
-  job *pjob = *pjobp;
+  job  *pjob = *pjobp;
 
   /* save old state and update state to Exiting */
 
@@ -447,10 +446,9 @@ int job_abt(
 
     if ((rc = issue_signal(pjob, "SIGKILL", release_req, 0)) != 0)
       {
-      sprintf(log_buffer, msg_abt_err,
-              pjob->ji_qs.ji_jobid, old_substate);
+      sprintf(log_buf, msg_abt_err, pjob->ji_qs.ji_jobid, old_substate);
 
-      log_err(-1, myid, log_buffer);
+      log_err(-1, myid, log_buf);
 
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
         {
@@ -487,11 +485,11 @@ int job_abt(
     {
     /* I don't know of a case where this could happen */
 
-    sprintf(log_buffer, msg_abt_err,
-            pjob->ji_qs.ji_jobid,
-            old_substate);
+    sprintf(log_buf, msg_abt_err,
+      pjob->ji_qs.ji_jobid,
+      old_substate);
 
-    log_err(-1, myid, log_buffer);
+    log_err(-1, myid, log_buf);
     }
   else
     {
@@ -656,19 +654,17 @@ void job_free(
   job *pj)  /* I (modified) */
 
   {
-  int    i;
+  int               i;
 
   struct work_task *pwt;
-  badplace  *bp;
+  badplace         *bp;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 8)
     {
-    sprintf(log_buffer, "freeing job");
+    sprintf(log_buf, "freeing job");
 
-    log_record(PBSEVENT_DEBUG,
-               PBS_EVENTCLASS_JOB,
-               pj->ji_qs.ji_jobid,
-               log_buffer);
+    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
     }
 
   /* remove any malloc working attribute space */
@@ -1179,18 +1175,19 @@ static void job_init_wattr(
 
 struct batch_request *cpy_checkpoint(
 
-        struct batch_request *preq,
-        job       *pjob,
-        enum job_atr       ati,  /* JOB_ATR_checkpoint_name or JOB_ATR_restart_name */
-        int        direction)
+  struct batch_request *preq,
+  job       *pjob,
+  enum job_atr       ati,  /* JOB_ATR_checkpoint_name or JOB_ATR_restart_name */
+  int        direction)
 
   {
-  char       momfile[MAXPATHLEN+1];
-  char       serverfile[MAXPATHLEN+1];
+  char        momfile[MAXPATHLEN+1];
+  char        serverfile[MAXPATHLEN+1];
   char       *from = NULL;
   char       *to = NULL;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
   attribute  *pattr;
-  mode_t     saveumask = 0;
+  mode_t      saveumask = 0;
   
   pattr = &pjob->ji_wattr[ati];
 
@@ -1245,41 +1242,34 @@ struct batch_request *cpy_checkpoint(
     strcat(momfile, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer, "Job has NO checkpoint dir specified, using file %s",
-          momfile);
-      LOG_EVENT(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      sprintf(log_buf, "Job has NO checkpoint dir specified, using file %s", momfile);
+
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
     }
+
   if (direction == CKPT_DIR_OUT)
-  {
+    {
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer,"Requesting checkpoint copy from MOM (%s) to SERVER (%s)",
-          momfile, serverfile);
-      LOG_EVENT(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      sprintf(log_buf,"Requesting checkpoint copy from MOM (%s) to SERVER (%s)",
+        momfile,
+        serverfile);
+
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
-   }
+    }
   else
-  {
+    {
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer,"Requesting checkpoint copy from SERVER (%s) to MOM (%s)",
-          serverfile, momfile);
-      LOG_EVENT(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      sprintf(log_buf,"Requesting checkpoint copy from SERVER (%s) to MOM (%s)",
+        serverfile,
+        momfile);
+
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
-   }
+    }
 
   to = (char *)malloc(strlen(serverfile) + strlen(server_name) + 2);
 
@@ -1323,12 +1313,9 @@ struct batch_request *cpy_checkpoint(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buffer,"Checkpoint copy from (%s) to (%s)", from, to);
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    sprintf(log_buf,"Checkpoint copy from (%s) to (%s)", from, to);
+
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
     }
 
   preq = setup_cpyfiles(preq, pjob, from, to, direction, JOBCKPFILE);
@@ -1349,20 +1336,21 @@ void remove_checkpoint(
   job *pjob)  /* I */
 
   {
-  static char *id = "remove_checkpoint";
+  static char          *id = "remove_checkpoint";
 
-  struct batch_request *preq = 0;
+  struct batch_request *preq = NULL;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   preq = cpy_checkpoint(preq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN);
 
   if (preq != NULL)
     {
     /* have files to delete  */
-
-    sprintf(log_buffer,"Removing checkpoint file (%s/%s)",
+    sprintf(log_buf,"Removing checkpoint file (%s/%s)",
       pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str,
       pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+
+    log_ext(-1, id, log_buf, LOG_DEBUG);
 
     /* change the request type from copy to delete  */
 
@@ -1708,6 +1696,7 @@ void job_purge(
   {
   static char   id[] = "job_purge";
 
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
   char          namebuf[MAXPATHLEN + 1];
   extern char  *msg_err_purgejob;
 
@@ -1775,12 +1764,9 @@ void job_purge(
       }
     else if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer, "removed job script");
+      sprintf(log_buf, "removed job script");
 
-      log_record(PBSEVENT_DEBUG,
-                 PBS_EVENTCLASS_JOB,
-                 pjob->ji_qs.ji_jobid,
-                 log_buffer);
+      log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
     }
 
@@ -1796,12 +1782,9 @@ void job_purge(
     }
   else if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "removed job stdout");
+    sprintf(log_buf, "removed job stdout");
 
-    log_record(PBSEVENT_DEBUG,
-               PBS_EVENTCLASS_JOB,
-               pjob->ji_qs.ji_jobid,
-               log_buffer);
+    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
     }
 
   strcpy(namebuf, path_spool); /* delete any spooled stderr */
@@ -1816,12 +1799,9 @@ void job_purge(
     }
   else if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "removed job stderr");
+    sprintf(log_buf, "removed job stderr");
 
-    log_record(PBSEVENT_DEBUG,
-               PBS_EVENTCLASS_JOB,
-               pjob->ji_qs.ji_jobid,
-               log_buffer);
+    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
     }
 
   /* remove checkpoint restart file if there is one */
@@ -1846,9 +1826,9 @@ void job_purge(
       }
     else if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer, "removed job checkpoint");
+      sprintf(log_buf, "removed job checkpoint");
 
-      log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
     }
 
@@ -1872,9 +1852,9 @@ void job_purge(
     }
   else if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "removed job file");
+    sprintf(log_buf, "removed job file");
 
-    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
     }
 
   job_free(pjob);

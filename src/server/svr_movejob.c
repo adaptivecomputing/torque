@@ -187,18 +187,19 @@ int svr_movejob(
   struct batch_request *req)
 
   {
-  pbs_net_t destaddr;
-  int local;
-  unsigned int port;
-  char *toserver;
+  pbs_net_t     destaddr;
+  int           local;
+  unsigned int  port;
+  char         *toserver;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (strlen(destination) >= (size_t)PBS_MAXROUTEDEST)
     {
-    sprintf(log_buffer, "name %s over maximum length of %d\n",
-            destination,
-            PBS_MAXROUTEDEST);
+    sprintf(log_buf, "name %s over maximum length of %d\n",
+      destination,
+      PBS_MAXROUTEDEST);
 
-    log_err(-1, "svr_movejob", log_buffer);
+    log_err(-1, "svr_movejob", log_buf);
 
     pbs_errno = PBSE_QUENBIG;
 
@@ -255,19 +256,19 @@ static int local_move(
   struct batch_request *req)
 
   {
-  char   *id = "local_move";
+  char      *id = "local_move";
   pbs_queue *qp;
-  char   *destination = jobp->ji_qs.ji_destin;
-  int    mtype;
+  char      *destination = jobp->ji_qs.ji_destin;
+  int        mtype;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* search for destination queue */
 
   if ((qp = find_queuebyname(destination)) == NULL)
     {
-    sprintf(log_buffer, "queue %s does not exist\n",
-            destination);
+    sprintf(log_buf, "queue %s does not exist\n", destination);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, id, log_buf);
 
     pbs_errno = PBSE_UNKQUE;
 
@@ -409,15 +410,16 @@ void finish_moving_processing(
 
   {
   static char *id = "finish_moving_processing";
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
-  int newstate;
-  int newsub;
+  int          newstate;
+  int          newsub;
 
   if (req->rq_type != PBS_BATCH_MoveJob)
     {
-    sprintf(log_buffer, "bad request type %d\n", req->rq_type);
+    sprintf(log_buf, "bad request type %d\n", req->rq_type);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, id, log_buf);
 
     return;
     }
@@ -433,12 +435,12 @@ void finish_moving_processing(
       if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
         remove_checkpoint(pjob);
 
-      strcpy(log_buffer, msg_movejob);
+      strcpy(log_buf, msg_movejob);
 
-      sprintf(log_buffer + strlen(log_buffer), msg_manager,
-              req->rq_ind.rq_move.rq_destin,
-              req->rq_user,
-              req->rq_host);
+      sprintf(log_buf + strlen(log_buf), msg_manager,
+        req->rq_ind.rq_move.rq_destin,
+        req->rq_user,
+        req->rq_host);
 
       job_purge(pjob);
     
@@ -522,6 +524,7 @@ int send_job_work(
   char                 *destin = pjob->ji_qs.ji_destin;
   char                  script_name[MAXPATHLEN + 1];
   char                 *pc;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
   long                  time = time_now;
   long                  sid;
 
@@ -616,10 +619,10 @@ int send_job_work(
 
       if (should_retry_route(pbs_errno) == -1)
         {
-        sprintf(log_buffer, "child failed in previous commit request for job %s",
-                pjob->ji_qs.ji_jobid);
+        sprintf(log_buf, "child failed in previous commit request for job %s",
+          pjob->ji_qs.ji_jobid);
 
-        log_err(pbs_errno, id, log_buffer);
+        log_err(pbs_errno, id, log_buf);
 
 
         finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
@@ -634,11 +637,11 @@ int send_job_work(
 
     if ((con = svr_connect(hostaddr, port, NULL, 0, cntype)) == PBS_NET_RC_FATAL)
       {
-      sprintf(log_buffer, "send_job failed to %lx port %d",
+      sprintf(log_buf, "send_job failed to %lx port %d",
         hostaddr,
         port);
 
-      log_err(pbs_errno, id, log_buffer);
+      log_err(pbs_errno, id, log_buf);
   
       finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
 
@@ -703,11 +706,11 @@ int send_job_work(
           return(PBSE_NONE);
           }
 
-        sprintf(log_buffer, "send of job to %s failed error = %d",
+        sprintf(log_buf, "send of job to %s failed error = %d",
           destin,
           pbs_errno);
 
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
         continue;
         }  /* END if ((pc = PBSD_queuejob() == NULL) */
@@ -764,11 +767,11 @@ int send_job_work(
 
       errno2 = errno;
 
-      sprintf(log_buffer, "send_job commit failed, rc=%d (%s)",
+      sprintf(log_buf, "send_job commit failed, rc=%d (%s)",
         rc,
         (err_text != NULL) ? err_text : "N/A");
 
-      log_ext(errno2, id, log_buffer, LOG_WARNING);
+      log_ext(errno2, id, log_buf, LOG_WARNING);
 
       /* if failure occurs, pbs_mom should purge job and pbs_server should set *
          job state to idle w/error msg */
@@ -783,10 +786,10 @@ int send_job_work(
 
         /* do we need a continue here? */
 
-        sprintf(log_buffer, "child commit request timed-out for job %s, increase tcp_timeout?",
+        sprintf(log_buf, "child commit request timed-out for job %s, increase tcp_timeout?",
           pjob->ji_qs.ji_jobid);
 
-        log_ext(errno2, id, log_buffer, LOG_WARNING);
+        log_ext(errno2, id, log_buf, LOG_WARNING);
 
         /* don't retry on timeout--break out and report error! */
 
@@ -794,9 +797,9 @@ int send_job_work(
         }
       else
         {
-        sprintf(log_buffer, "child failed in commit request for job %s", pjob->ji_qs.ji_jobid);
+        sprintf(log_buf, "child failed in commit request for job %s", pjob->ji_qs.ji_jobid);
 
-        log_ext(errno2, id, log_buffer, LOG_CRIT);
+        log_ext(errno2, id, log_buf, LOG_CRIT);
 
         /* FAILURE */
         finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
@@ -830,9 +833,9 @@ int send_job_work(
     /* 10 indicates that job migrate timed out, server will mark node down *
           and abort the job - see post_sendmom() */
 
-    sprintf(log_buffer, "child timed-out attempting to start job %s", pjob->ji_qs.ji_jobid);
+    sprintf(log_buf, "child timed-out attempting to start job %s", pjob->ji_qs.ji_jobid);
 
-    log_ext(pbs_errno, id, log_buffer, LOG_WARNING);
+    log_ext(pbs_errno, id, log_buf, LOG_WARNING);
 
     finish_move_process(pjob,preq,time,node_name,LOCUTION_REQUEUE,type);
     
@@ -841,9 +844,9 @@ int send_job_work(
 
   if (should_retry_route(pbs_errno) == -1)
     {
-    sprintf(log_buffer, "child failed and will not retry job %s", pjob->ji_qs.ji_jobid);
+    sprintf(log_buf, "child failed and will not retry job %s", pjob->ji_qs.ji_jobid);
 
-    log_err(pbs_errno, id, log_buffer);
+    log_err(pbs_errno, id, log_buf);
 
     finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
     
@@ -882,6 +885,7 @@ void *send_job(
   job                  *pjob;
   int                   type = args->move_type; /* move, route, or execute */
   pbs_net_t             hostaddr;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   char                 *node_name = NULL;
 
@@ -893,10 +897,9 @@ void *send_job(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"about to send job - type=%d",
-      type);
+    sprintf(log_buf,"about to send job - type=%d",type);
  
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buf);
     }
 
   if ((np = PGetNodeFromAddr(hostaddr)) != NULL)
@@ -929,25 +932,25 @@ int net_move(
   struct batch_request *req)
 
   {
-  void  *data;
-  char  *destination = jobp->ji_qs.ji_destin;
-  pbs_net_t  hostaddr;
-  char  *hostname;
-  int   move_type;
-  unsigned int  port = pbs_server_port_dis;
-  char  *toserver;
-  char  *id = "net_move";
-  char  *tmp;
+  void             *data;
+  char             *destination = jobp->ji_qs.ji_destin;
+  pbs_net_t         hostaddr;
+  char             *hostname;
+  int               move_type;
+  unsigned int      port = pbs_server_port_dis;
+  char             *toserver;
+  static char      *id = "net_move";
+  char             *tmp;
   send_job_request *args;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* Determine to whom are we sending the job */
 
   if ((toserver = strchr(destination, '@')) == NULL)
     {
-    sprintf(log_buffer, "no server specified in %s\n",
-            destination);
+    sprintf(log_buf, "no server specified in %s\n", destination);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, id, log_buf);
 
     return(-1);
     }

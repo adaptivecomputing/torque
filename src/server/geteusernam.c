@@ -313,6 +313,7 @@ int set_jobexid(
 #endif
 
   char            tmpLine[1024 + 1];
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   int             CheckID;  /* boolean */
 
@@ -410,14 +411,14 @@ int set_jobexid(
 
     if (pwent == NULL)
       {
-      snprintf(log_buffer,sizeof(log_buffer),
+      snprintf(log_buf,sizeof(log_buf),
         "User %s does not exist in server password file\n",
         puser);
 
-      log_err(errno, id, log_buffer);
+      log_err(errno, id, log_buf);
 
       if (EMsg != NULL)
-        snprintf(EMsg,1024,"%s",log_buffer);
+        snprintf(EMsg,1024,"%s",log_buf);
 
       free(puser);
 
@@ -438,14 +439,14 @@ int set_jobexid(
 
         if (pwent == NULL)
           {
-          snprintf(log_buffer,sizeof(log_buffer),
+          snprintf(log_buf,sizeof(log_buf),
             "User %s does not exist in server password file\n",
             puser);
 
-          log_err(errno, id, log_buffer);
+          log_err(errno, id, log_buf);
 
           if (EMsg != NULL)
-            snprintf(EMsg,1024,"%s",log_buffer);
+            snprintf(EMsg,1024,"%s",log_buf);
 
           return(PBSE_BADUSER);
           }
@@ -675,15 +676,15 @@ int set_jobexid(
       if (*pmem == NULL)
         {
         /* requested group not allowed */
-        snprintf(log_buffer,sizeof(log_buffer),
+        snprintf(log_buf,sizeof(log_buf),
           "user %s is not a member of group %s in server password file",
           puser,
           pgrpn);
 
-        log_err(-1,id,log_buffer);
+        log_err(-1,id,log_buf);
 
         if (EMsg != NULL)
-          snprintf(EMsg, 1024, "%s",log_buffer);
+          snprintf(EMsg, 1024, "%s",log_buf);
 
         if (free_puser == TRUE)
           free(puser);

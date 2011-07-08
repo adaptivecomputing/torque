@@ -298,24 +298,22 @@ void do_rpp(
   {
   static char id[] = "do_rpp";
 
-  int  ret, proto, version;
+  int         ret;
+  int         proto;
+  int         version;
 
   void is_request(int, int, int *);
 
-  int  stream_done = TRUE;
+  int         stream_done = TRUE;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
 
   started_servicing(stream);
 
   if (LOGLEVEL >= 4)
     {
-    sprintf(log_buffer, "rpp request received on stream %d",
-            stream);
+    sprintf(log_buf, "rpp request received on stream %d", stream);
 
-    log_record(
-      PBSEVENT_SCHED,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
     }
 
   proto = disrsi(stream, RPP_FUNC, &ret);
@@ -338,18 +336,18 @@ void do_rpp(
 
       if (ret == DIS_EOF)
         {
-        sprintf(log_buffer, "stream %d closed.(node: \"%s\", %s) rc=%d (%s)",
+        sprintf(log_buf, "stream %d closed.(node: \"%s\", %s) rc=%d (%s)",
           stream,
           (node != NULL) ? node->nd_name : "NULL",
           netaddr(rpp_getaddr(stream)),
           ret,
           dis_emsg[ret]);
         
-        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buffer);
+        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
         }
       else
         {
-        sprintf(log_buffer,
+        sprintf(log_buf,
           "corrupt rpp request received on stream %d (node: \"%s\", %s) - invalid protocol - rc=%d (%s)",
           stream,
           (node != NULL) ? node->nd_name : "NULL",
@@ -357,7 +355,7 @@ void do_rpp(
           ret,
           dis_emsg[ret]);
         
-        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buffer);
+        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
         }
     
       pthread_mutex_unlock(node->nd_mutex);
@@ -376,12 +374,12 @@ void do_rpp(
     {
     if (LOGLEVEL >= 1)
       {
-      sprintf(log_buffer, "corrupt rpp request received on stream %d - invalid version - rc=%d (%s)",
+      sprintf(log_buf, "corrupt rpp request received on stream %d - invalid version - rc=%d (%s)",
         stream,
         ret,
         dis_emsg[ret]);
 
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buffer);
+      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
       }
 
     stream_eof(stream, 0, 0, ret);
@@ -398,13 +396,9 @@ void do_rpp(
 
       if (LOGLEVEL >= 6)
         {
-        sprintf(log_buffer, "inter-server request received");
+        sprintf(log_buf, "inter-server request received");
 
-        log_record(
-          PBSEVENT_SCHED,
-          PBS_EVENTCLASS_REQUEST,
-          id,
-          log_buffer);
+        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
         }
 
       is_request(stream, version, NULL);
@@ -417,10 +411,9 @@ void do_rpp(
 
       if (LOGLEVEL >= 6)
         {
-        sprintf(log_buffer, "unknown request protocol received (%d)\n",
-                proto);
+        sprintf(log_buf, "unknown request protocol received (%d)\n", proto);
 
-        log_err(errno, id, log_buffer);
+        log_err(errno, id, log_buf);
         }
 
       rpp_close(stream);
@@ -1067,6 +1060,7 @@ void main_loop(void)
   work_task    *pwt = NULL;
 
   extern char  *msg_startup2; /* log message   */
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   void check_nodes(struct work_task *);
   void check_log(struct work_task *);
@@ -1079,9 +1073,9 @@ void main_loop(void)
 
   /* record the fact that we are up and running */
 
-  sprintf(log_buffer, msg_startup2, sid, LOGLEVEL);
+  sprintf(log_buf, msg_startup2, sid, LOGLEVEL);
 
-  log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buffer);
+  log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
 
 #ifdef NO_SIGCHLD
   log_record(
@@ -1387,16 +1381,17 @@ int main(
   char *argv[])  /* I */
 
   {
-  int  i;
-  int  lockfds = -1;
-  int  rppfd;   /* fd to receive is HELLO's */
-  int  privfd;  /* fd to send is messages */
-  uint  tryport;
-  char  lockfile[MAXPATHLEN + 1];
-  char *pc = NULL;
-  char *pathPtr = NULL;
-  char   EMsg[MAX_LINE];
-  char tmpLine[MAX_LINE];
+  int          i;
+  int          lockfds = -1;
+  int          rppfd;   /* fd to receive is HELLO's */
+  int          privfd;  /* fd to send is messages */
+  uint         tryport;
+  char         lockfile[MAXPATHLEN + 1];
+  char        *pc = NULL;
+  char        *pathPtr = NULL;
+  char         EMsg[MAX_LINE];
+  char         tmpLine[MAX_LINE];
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   extern char *msg_svrdown; /* log message   */
   extern char *msg_startup1; /* log message   */
@@ -1571,13 +1566,13 @@ int main(
     {
     if ((lockfds = open(lockfile,O_CREAT|O_TRUNC|O_WRONLY,0600)) < 0)
       {
-      sprintf(log_buffer,"%s: unable to open lock file '%s'",
+      sprintf(log_buf,"%s: unable to open lock file '%s'",
         msg_daemonname,
         lockfile);
 
-      fprintf(stderr,"%s\n",log_buffer);
+      fprintf(stderr,"%s\n",log_buf);
 
-      log_err(errno,msg_daemonname,log_buffer);
+      log_err(errno,msg_daemonname,log_buf);
 
       exit(2);
       }
@@ -1610,12 +1605,12 @@ int main(
       
   initialize_threadpool(&request_pool,min_threads,max_threads,thread_idle_time);
 
-  sprintf(log_buffer, "%ld\n", (long)sid);
+  sprintf(log_buf, "%ld\n", (long)sid);
 
   if (!high_availability_mode)
     {
-    if (write(lockfds, log_buffer, strlen(log_buffer)) !=
-        (ssize_t)strlen(log_buffer))
+    if (write(lockfds, log_buf, strlen(log_buf)) !=
+        (ssize_t)strlen(log_buf))
       {
       log_err(errno, msg_daemonname, "failed to write pid to lockfile");
 
@@ -1638,13 +1633,13 @@ int main(
 
   log_open(log_file, path_log);
 
-  sprintf(log_buffer, msg_startup1, server_name, server_init_type);
+  sprintf(log_buf, msg_startup1, server_name, server_init_type);
 
   log_event(
     PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_FORCE,
     PBS_EVENTCLASS_SERVER,
     msg_daemonname,
-    log_buffer);
+    log_buf);
 
   /* initialize the server objects and perform specified recovery */
   /* will be left in the server's private directory  */
@@ -1659,7 +1654,7 @@ int main(
 
   /* initialize the network interface */
 
-  sprintf(log_buffer, "Using ports Server:%d  Scheduler:%d  MOM:%d (server: '%s')",
+  sprintf(log_buf, "Using ports Server:%d  Scheduler:%d  MOM:%d (server: '%s')",
           pbs_server_port_dis,
           pbs_scheduler_port,
           pbs_mom_port,
@@ -1669,7 +1664,7 @@ int main(
     PBSEVENT_SYSTEM | PBSEVENT_ADMIN,
     PBS_EVENTCLASS_SERVER,
     msg_daemonname,
-    log_buffer);
+    log_buf);
 
   if (init_network(pbs_server_port_dis, process_request) != 0)
     {
@@ -1774,13 +1769,14 @@ void check_job_log(
 
   {
   long depth = 1;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
  /* remove logs older than LogKeepDays */
 
  if ((server.sv_attr[SRV_ATR_JobLogKeepDays].at_flags 
      & ATR_VFLAG_SET) != 0)
    {
-   snprintf(log_buffer,sizeof(log_buffer),"checking for old job logs in dir '%s' (older than %ld days)",
+   snprintf(log_buf,sizeof(log_buf),"checking for old job logs in dir '%s' (older than %ld days)",
      path_svrlog,
      server.sv_attr[SRV_ATR_JobLogKeepDays].at_val.at_long);
  
@@ -1788,7 +1784,7 @@ void check_job_log(
      PBSEVENT_SYSTEM | PBSEVENT_FORCE,
      PBS_EVENTCLASS_SERVER,
      msg_daemonname,
-     log_buffer);
+     log_buf);
 
    if (log_remove_old(path_jobinfo_log,server.sv_attr[SRV_ATR_JobLogKeepDays].at_val.at_long * SECS_PER_DAY) != 0)
      {
@@ -1827,14 +1823,13 @@ void check_job_log(
 
   /* periodically record the version and loglevel */
 
-  sprintf(log_buffer, msg_info_server,
-    server.sv_attr[SRV_ATR_version].at_val.at_str, LOGLEVEL);
+  sprintf(log_buf, msg_info_server, server.sv_attr[SRV_ATR_version].at_val.at_str, LOGLEVEL);
 
   log_event(
     PBSEVENT_SYSTEM | PBSEVENT_FORCE,
     PBS_EVENTCLASS_SERVER,
     msg_daemonname,
-    log_buffer);
+    log_buf);
 
   ptask = set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_job_log, NULL);
 
@@ -1852,42 +1847,39 @@ void check_log(
 
   {
   long depth = 1;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
- /* remove logs older than LogKeepDays */
-
- if ((server.sv_attr[SRV_ATR_LogKeepDays].at_flags 
-     & ATR_VFLAG_SET) != 0)
-   {
-   snprintf(log_buffer,sizeof(log_buffer),"checking for old pbs_server logs in dir '%s' (older than %ld days)",
-     path_svrlog,
-     server.sv_attr[SRV_ATR_LogKeepDays].at_val.at_long);
- 
-   log_event(
-     PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-     PBS_EVENTCLASS_SERVER,
-     msg_daemonname,
-     log_buffer);
-
-   if (log_remove_old(path_svrlog,server.sv_attr[SRV_ATR_LogKeepDays].at_val.at_long * SECS_PER_DAY) != 0)
-     {
-     log_err(-1,"check_log","failure occurred when checking for old pbs_server logs");
-     }
-   }
-
-  if ((server.sv_attr[SRV_ATR_LogFileMaxSize].at_flags
-       & ATR_VFLAG_SET) != 0)
+  /* remove logs older than LogKeepDays */
+  if ((server.sv_attr[SRV_ATR_LogKeepDays].at_flags & ATR_VFLAG_SET) != 0)
     {
-    if ((log_size() >= server.sv_attr[SRV_ATR_LogFileMaxSize].at_val.at_long)
-       && (server.sv_attr[SRV_ATR_LogFileMaxSize].at_val.at_long > 0))
+    snprintf(log_buf,sizeof(log_buf),"checking for old pbs_server logs in dir '%s' (older than %ld days)",
+      path_svrlog,
+      server.sv_attr[SRV_ATR_LogKeepDays].at_val.at_long);
+    
+    log_event(
+      PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+      PBS_EVENTCLASS_SERVER,
+      msg_daemonname,
+      log_buf);
+    
+    if (log_remove_old(path_svrlog,server.sv_attr[SRV_ATR_LogKeepDays].at_val.at_long * SECS_PER_DAY) != 0)
+      {
+      log_err(-1,"check_log","failure occurred when checking for old pbs_server logs");
+      }
+    }
+  
+  if ((server.sv_attr[SRV_ATR_LogFileMaxSize].at_flags & ATR_VFLAG_SET) != 0)
+    {
+    if ((log_size() >= server.sv_attr[SRV_ATR_LogFileMaxSize].at_val.at_long) && 
+        (server.sv_attr[SRV_ATR_LogFileMaxSize].at_val.at_long > 0))
       {
       log_event(
         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
         PBS_EVENTCLASS_SERVER,
         msg_daemonname,
         "Rolling log file");
-
-      if ((server.sv_attr[SRV_ATR_LogFileRollDepth].at_flags
-           & ATR_VFLAG_SET) != 0)
+      
+      if ((server.sv_attr[SRV_ATR_LogFileRollDepth].at_flags & ATR_VFLAG_SET) != 0)
         {
         depth = server.sv_attr[SRV_ATR_LogFileRollDepth].at_val.at_long;
         }
@@ -1902,17 +1894,15 @@ void check_log(
         }
       }
     }
-
+  
   /* periodically record the version and loglevel */
-
-  sprintf(log_buffer, msg_info_server,
-    server.sv_attr[SRV_ATR_version].at_val.at_str, LOGLEVEL);
-
+  sprintf(log_buf, msg_info_server, server.sv_attr[SRV_ATR_version].at_val.at_str, LOGLEVEL);
+  
   log_event(
     PBSEVENT_SYSTEM | PBSEVENT_FORCE,
     PBS_EVENTCLASS_SERVER,
     msg_daemonname,
-    log_buffer);
+    log_buf);
 
   ptask = set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_log, NULL);
 
@@ -1929,21 +1919,22 @@ void check_acct_log(
 
  struct work_task *ptask) /* I */
 
- {
-  if (((server.sv_attr[SRV_ATR_AcctKeepDays].at_flags & ATR_VFLAG_SET) != 0)
-       && (server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long >= 0))
-    {
-    sprintf(log_buffer,"Checking accounting files - keep days = %ld",
-      server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long);
+  {
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
+  if (((server.sv_attr[SRV_ATR_AcctKeepDays].at_flags & ATR_VFLAG_SET) != 0) &&
+      (server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long >= 0))
+    {
+    sprintf(log_buf,"Checking accounting files - keep days = %ld",
+      server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long);
+    
     log_event(
       PBSEVENT_SYSTEM | PBSEVENT_FORCE,
       PBS_EVENTCLASS_SERVER,
       msg_daemonname,
-      log_buffer);
+      log_buf);
      
     acct_cleanup(server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long);
-    
     }
 
   ptask = set_task(WORK_Timed,time_now + PBS_ACCT_CHECK_RATE,check_acct_log,NULL);
@@ -2206,6 +2197,7 @@ int acquire_file_lock(
   struct flock flock;
   int          fds;
   char         id[] = "acquire_file_lock";
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((LockFile == NULL) ||
       (LockFD == NULL) || 
@@ -2216,9 +2208,9 @@ int acquire_file_lock(
 
   if (LockFile[0] == '\0')
     {
-    sprintf(log_buffer,"ALERT:   empty %s lock filename\n",
+    sprintf(log_buf,"ALERT:   empty %s lock filename\n",
       FileType);
-    log_err(-1,id,log_buffer);
+    log_err(-1,id,log_buf);
 
     return(FAILURE);
     }
@@ -2229,12 +2221,12 @@ int acquire_file_lock(
     {
     /* could not open lock file */
 
-    sprintf(log_buffer,"ALERT:   could not open %s lock file '%s' (errno: %d:%s)\n",
+    sprintf(log_buf,"ALERT:   could not open %s lock file '%s' (errno: %d:%s)\n",
       FileType,
       LockFile,
       errno,
       strerror(errno));
-    log_err(errno,id,log_buffer);
+    log_err(errno,id,log_buf);
 
     return(FAILURE);
     }
@@ -2249,12 +2241,12 @@ int acquire_file_lock(
     {
     close(fds);
 
-    sprintf(log_buffer,"ALERT   could not create lock on file '%s' (errno: %d:%s)\n",
+    sprintf(log_buf,"ALERT   could not create lock on file '%s' (errno: %d:%s)\n",
       LockFile,
       errno,
       strerror(errno));
 
-    log_err(errno,id,log_buffer);
+    log_err(errno,id,log_buf);
 
     return(FAILURE);
     }
@@ -2284,14 +2276,15 @@ void *update_ha_lock_thread(
   void *Arg) /* I */
 
   {
-  char EMsg[MAX_LINE];
+  char           EMsg[MAX_LINE];
 
-  int LocalErrno = 0;
-  int rc = 0;
-  struct stat statbuf;
+  int            LocalErrno = 0;
+  int            rc = 0;
+  struct stat    statbuf;
   struct utimbuf timebuf;
-  static long LastModifyTime = 0;
-  char  id[] = "update_ha_lock_thread";
+  static long    LastModifyTime = 0;
+  char           id[] = "update_ha_lock_thread";
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (ISEMPTYSTR(HALockFile))
     {
@@ -2358,21 +2351,21 @@ void *update_ha_lock_thread(
         {
         ErrorString = strerror(LocalErrno);
 
-        sprintf(log_buffer,"could not update HA lock file '%s' in heartbeat thread (%s - errno %d:%s)",
+        sprintf(log_buf,"could not update HA lock file '%s' in heartbeat thread (%s - errno %d:%s)",
           HALockFile,
           EMsg,
           LocalErrno,
           ErrorString);
         
-        log_err(LocalErrno,id,log_buffer);
+        log_err(LocalErrno,id,log_buf);
         }
       else
         {
-        sprintf(log_buffer,"could not update HA lock file '%s' in heartbeat thread (%s)",
+        sprintf(log_buf,"could not update HA lock file '%s' in heartbeat thread (%s)",
           HALockFile,
           EMsg);
         
-        log_err(-1,id,log_buffer);
+        log_err(-1,id,log_buf);
         }
 
       /* restart pbs_server */
@@ -2499,6 +2492,7 @@ static void lock_out_ha()
 
   int         MutexLockFD = -1;
   int         NumChecks = 0;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
 
   struct stat StatBuf;
 
@@ -2530,7 +2524,7 @@ static void lock_out_ha()
 
       while (acquire_file_lock(MutexLockFile,&MutexLockFD,"HA") == FAILURE)
         {
-        strcpy(log_buffer,"Could not acquire HA flock--trying again in 1 second\n");
+        strcpy(log_buf,"Could not acquire HA flock--trying again in 1 second\n");
         
         usleep(DEF_USPERSECOND);
         }
@@ -2580,7 +2574,7 @@ static void lock_out_ha()
       
       if (HALockFD < 0)
         {
-        sprintf(log_buffer,"could not create HA lock file '%s'--errno %d:%s",
+        sprintf(log_buf,"could not create HA lock file '%s'--errno %d:%s",
           HALockFile,
           errno,
           strerror(errno));
@@ -2744,18 +2738,19 @@ static int daemonize_server(
 
 int get_file_info(
 
-    char          *FileName,    /* I */
-    unsigned long *ModifyTime,  /* O (optional */
-    long          *FileSize,    /* O (optional */
-    bool_t        *IsExe,       /* O (optional */
-    bool_t        *IsDir)       /* O (optional */
+  char          *FileName,    /* I */
+  unsigned long *ModifyTime,  /* O (optional */
+  long          *FileSize,    /* O (optional */
+  bool_t        *IsExe,       /* O (optional */
+  bool_t        *IsDir)       /* O (optional */
     
   {
-  int   rc;
-  char *ptr;
-  char *id = "get_file_info";
+  int          rc;
+  char        *ptr;
+  char        *id = "get_file_info";
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
   
-  struct stat sbuf;
+  struct stat  sbuf;
   
   if (IsExe != NULL)
     *IsExe = FALSE;
@@ -2786,12 +2781,12 @@ int get_file_info(
 
   if (rc == -1)
     {
-    sprintf(log_buffer,"INFO:      cannot stat file '%s', errno: %d (%s)\n",
+    sprintf(log_buf,"INFO:      cannot stat file '%s', errno: %d (%s)\n",
       FileName,
       errno,
       strerror(errno));
     
-    log_err(errno,id,log_buffer);
+    log_err(errno,id,log_buf);
     
     return(FAILURE);
     }
@@ -2927,16 +2922,16 @@ int svr_restart()
   
   char  FullCmd[MAX_LINE];
   char *id = "svr_restart";
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
   
   if (get_full_path(
         ArgV[0],
         FullCmd,
         sizeof(FullCmd)) == FAILURE)
     {
-    sprintf(log_buffer,"ALERT:      cannot locate full path for '%s'\n",
-      ArgV[0]);
+    sprintf(log_buf, "ALERT:      cannot locate full path for '%s'\n", ArgV[0]);
     
-    log_err(-1,id,log_buffer);
+    log_err(-1,id,log_buf);
 
     exit(-10);
     }
@@ -2969,13 +2964,9 @@ int svr_restart()
     strcpy(ArgV[0],FullCmd);
     }
 
-  sprintf(log_buffer,"INFO:     about to exec '%s'\n",ArgV[0]);
+  sprintf(log_buf, "INFO:     about to exec '%s'\n", ArgV[0]);
 
-  log_event(
-    PBSEVENT_SYSTEM,
-    PBS_EVENTCLASS_SERVER,
-    id,
-    log_buffer);
+  log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buf);
   
   log_close(1);
   

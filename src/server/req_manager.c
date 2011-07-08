@@ -334,16 +334,17 @@ static void mgr_log_attr(
 
   {
   char *pstr;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   while (plist)
     {
-    (void)strcpy(log_buffer, msg);
-    (void)strcat(log_buffer, plist->al_name);
+    (void)strcpy(log_buf, msg);
+    (void)strcat(log_buf, plist->al_name);
 
     if (plist->al_rescln)
       {
-      (void)strcat(log_buffer, ".");
-      (void)strcat(log_buffer, plist->al_resc);
+      (void)strcat(log_buf, ".");
+      (void)strcat(log_buf, plist->al_resc);
       }
 
     if (plist->al_op == INCR)
@@ -353,15 +354,14 @@ static void mgr_log_attr(
     else
       pstr = " = ";
 
-    (void)strcat(log_buffer, pstr);
+    (void)strcat(log_buf, pstr);
 
     if (plist->al_valln)
-      (void)strncat(log_buffer, plist->al_value,
-                    LOG_BUF_SIZE - strlen(log_buffer) - 1);
+      (void)strncat(log_buf, plist->al_value, LOG_BUF_SIZE - strlen(log_buf) - 1);
 
-    log_buffer[LOG_BUF_SIZE-1] = '\0';
+    log_buf[LOG_BUF_SIZE-1] = '\0';
 
-    log_event(PBSEVENT_ADMIN, logclass, objname, log_buffer);
+    log_event(PBSEVENT_ADMIN, logclass, objname, log_buf);
 
     plist = (struct svrattrl *)GET_NEXT(plist->al_link);
     }
@@ -701,6 +701,7 @@ int mgr_set_node_attr(
   struct prop     *pdest;
 
   struct prop    **plink;
+  char             log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (plist == NULL)
     {
@@ -829,16 +830,12 @@ int mgr_set_node_attr(
     PNodeStateToString(pnode->nd_state, OrigState, sizeof(OrigState));
     PNodeStateToString(tnode.nd_state, FinalState, sizeof(FinalState));
 
-    sprintf(log_buffer, "node %s state changed from %s to %s",
-            pnode->nd_name,
-            OrigState,
-            FinalState);
-
-    log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_NODE,
+    sprintf(log_buf, "node %s state changed from %s to %s",
       pnode->nd_name,
-      log_buffer);
+      OrigState,
+      FinalState);
+
+    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_NODE,pnode->nd_name,log_buf);
     }
 
   /* NOTE:  nd_status properly freed during attribute alter */
@@ -948,11 +945,12 @@ void mgr_queue_create(
   struct batch_request *preq)
 
   {
-  int   bad;
-  char  *badattr;
-  svrattrl *plist;
+  int        bad;
+  char      *badattr;
+  svrattrl  *plist;
   pbs_queue *pque;
-  int   rc;
+  int        rc;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   rc = strlen(preq->rq_ind.rq_manager.rq_objname);
 
@@ -999,12 +997,12 @@ void mgr_queue_create(
     que_save(pque);
     svr_save(&server, SVR_SAVE_QUICK);
 
-    sprintf(log_buffer, msg_manager,
+    sprintf(log_buf, msg_manager,
             msg_man_cre,
             preq->rq_user,
             preq->rq_host);
 
-    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_QUEUE,pque->qu_qs.qu_name,log_buffer);
+    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_QUEUE,pque->qu_qs.qu_name,log_buf);
 
     mgr_log_attr(
       msg_man_set,
@@ -1016,11 +1014,9 @@ void mgr_queue_create(
     if ((badattr = check_que_attr(pque)) != NULL)
       {
       /* mismatch, issue warning */
-      sprintf(log_buffer, msg_attrtype,
-              pque->qu_qs.qu_name,
-              badattr);
+      sprintf(log_buf, msg_attrtype, pque->qu_qs.qu_name, badattr);
 
-      reply_text(preq, PBSE_ATTRTYPE, log_buffer);
+      reply_text(preq, PBSE_ATTRTYPE, log_buf);
       }
     else
       {
@@ -1050,7 +1046,8 @@ void mgr_queue_delete(
 
   {
   pbs_queue *pque;
-  int    rc;
+  int        rc;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   pque = find_queuebyname(preq->rq_ind.rq_manager.rq_objname);
 
@@ -1074,16 +1071,13 @@ void mgr_queue_delete(
 
   svr_save(&server, SVR_SAVE_QUICK);
 
-  sprintf(log_buffer, msg_manager,
-          msg_man_del,
-          preq->rq_user,
-          preq->rq_host);
+  sprintf(log_buf, msg_manager, msg_man_del, preq->rq_user, preq->rq_host);
 
   log_event(
     PBSEVENT_ADMIN,
     PBS_EVENTCLASS_QUEUE,
     preq->rq_ind.rq_manager.rq_objname,
-    log_buffer);
+    log_buf);
 
   reply_ack(preq);
 
@@ -1190,8 +1184,8 @@ void mgr_server_set(
   {
   int       bad_attr = 0;
   svrattrl *plist;
-  int     rc;
-
+  int       rc;
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
@@ -1316,15 +1310,13 @@ void mgr_server_set(
 
   svr_save(&server, SVR_SAVE_FULL);
 
-  sprintf(log_buffer, msg_manager, msg_man_set,
-          preq->rq_user,
-          preq->rq_host);
+  sprintf(log_buf, msg_manager, msg_man_set, preq->rq_user, preq->rq_host);
 
   log_event(
     PBSEVENT_ADMIN,
     PBS_EVENTCLASS_SERVER,
     msg_daemonname,
-    log_buffer);
+    log_buf);
 
   mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_SERVER, msg_daemonname);
 
@@ -1349,9 +1341,10 @@ void mgr_server_unset(
   struct batch_request *preq)
 
   {
-  int   bad_attr = 0;
+  int       bad_attr = 0;
   svrattrl *plist;
-  int   rc;
+  int       rc;
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
@@ -1371,16 +1364,9 @@ void mgr_server_unset(
     {
     svr_save(&server, SVR_SAVE_FULL);
 
-    sprintf(log_buffer, msg_manager,
-            msg_man_uns,
-            preq->rq_user,
-            preq->rq_host);
+    sprintf(log_buf, msg_manager, msg_man_uns, preq->rq_user, preq->rq_host);
 
-    log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_SERVER,
-      msg_daemonname,
-      log_buffer);
+    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
 
     mgr_log_attr(msg_man_uns, plist, PBS_EVENTCLASS_SERVER, msg_daemonname);
 
@@ -1413,6 +1399,7 @@ void mgr_queue_set(
   char      *qname;
   int    rc;
   int    iter = -1;
+  char     log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
@@ -1440,12 +1427,9 @@ void mgr_queue_set(
     }
 
   /* set the attributes */
-  sprintf(log_buffer, msg_manager,
-          msg_man_set,
-          preq->rq_user,
-          preq->rq_host);
+  sprintf(log_buf, msg_manager, msg_man_set, preq->rq_user, preq->rq_host);
 
-  log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_QUEUE, qname, log_buffer);
+  log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_QUEUE, qname, log_buf);
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
@@ -1492,13 +1476,13 @@ void mgr_queue_set(
     {
     if ((badattr = check_que_attr(pque)) != NULL)
       {
-      sprintf(log_buffer, msg_attrtype,
+      sprintf(log_buf, msg_attrtype,
               pque->qu_qs.qu_name,
               badattr);
 
       pthread_mutex_unlock(pque->qu_mutex);
 
-      reply_text(preq, PBSE_ATTRTYPE, log_buffer);
+      reply_text(preq, PBSE_ATTRTYPE, log_buf);
 
       return;
       }
@@ -1538,6 +1522,7 @@ void mgr_queue_unset(
   char      *qname;
   int    rc;
   int    iter = -1;
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
@@ -1564,17 +1549,9 @@ void mgr_queue_unset(
     return;
     }
 
-  sprintf(log_buffer, msg_manager,
+  sprintf(log_buf, msg_manager, msg_man_uns, preq->rq_user, preq->rq_host);
 
-          msg_man_uns,
-          preq->rq_user,
-          preq->rq_host);
-
-  log_event(
-    PBSEVENT_ADMIN,
-    PBS_EVENTCLASS_QUEUE,
-    qname,
-    log_buffer);
+  log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_QUEUE,qname,log_buf);
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
@@ -1647,6 +1624,7 @@ void mgr_node_set(
   char  *problem_names;
 
   node_iterator iter;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   struct pbsnode  **problem_nodes = NULL;
 
@@ -1695,12 +1673,9 @@ void mgr_node_set(
 
   /*set "state", "properties", or type of node (nodes if check_all == 1)*/
 
-  sprintf(log_buffer, msg_manager,
-          msg_man_set,
-          preq->rq_user,
-          preq->rq_host);
+  sprintf(log_buf, msg_manager, msg_man_set, preq->rq_user, preq->rq_host);
 
-  log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_NODE, nodename, log_buffer);
+  log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_NODE, nodename, log_buf);
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
@@ -1933,6 +1908,7 @@ static void mgr_node_delete(
   struct pbsnode  **problem_nodes = NULL;
   svrattrl *plist;
 
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
   node_iterator iter;
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
@@ -1967,12 +1943,9 @@ static void mgr_node_delete(
     return;
     }
 
-  sprintf(log_buffer, msg_manager,
-    msg_man_del,
-    preq->rq_user,
-    preq->rq_host);
+  sprintf(log_buf, msg_manager, msg_man_del, preq->rq_user, preq->rq_host);
 
-  log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_NODE, nodename, log_buffer);
+  log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_NODE, nodename, log_buf);
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
@@ -2409,6 +2382,7 @@ int manager_oper_chk(
   int      i;
 
   struct array_strings *pstr;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (actmode == ATR_ACTION_FREE)
     {
@@ -2439,21 +2413,16 @@ int manager_oper_chk(
       {
       if (actmode == ATR_ACTION_RECOV)
         {
-        sprintf(log_buffer, "bad entry in acl: %s",
+        sprintf(log_buf, "bad entry in acl: %s",
           pstr->as_string[i]);
 
-        log_err(PBSE_BADACLHOST,
-          "manager_oper_chk",
-          log_buffer);
+        log_err(PBSE_BADACLHOST, "manager_oper_chk", log_buf);
         }
       else
         {
-        sprintf(log_buffer, "bad entry in acl: %s",
-          pstr->as_string[i]);
+        sprintf(log_buf, "bad entry in acl: %s", pstr->as_string[i]);
 
-        log_err(PBSE_BADACLHOST,
-          "manager_oper_chk",
-          log_buffer);
+        log_err(PBSE_BADACLHOST, "manager_oper_chk", log_buf);
 
         err = PBSE_BADACLHOST;
         }
@@ -2481,6 +2450,7 @@ int servername_chk(
   char *pstr;
 
   extern char              server_name[];
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (actmode == ATR_ACTION_FREE)
     {
@@ -2509,12 +2479,9 @@ int servername_chk(
     {
     if (actmode == ATR_ACTION_RECOV)
       {
-      sprintf(log_buffer, "bad servername: %s",
-              pstr);
+      sprintf(log_buf, "bad servername: %s", pstr);
 
-      log_err(PBSE_BADHOST,
-              "servername_chk",
-              log_buffer);
+      log_err(PBSE_BADHOST,"servername_chk",log_buf);
       }
     else
       {

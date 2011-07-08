@@ -315,9 +315,10 @@ int job_route(
   job *jobp)      /* job to route */
 
   {
-  int      bad_state = 0;
-  char     *id = "job_route";
-  time_t     life;
+  char             *id = "job_route";
+  int               bad_state = 0;
+  time_t            life;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   struct pbs_queue *qp;
   long              retry_time;
@@ -359,18 +360,13 @@ int job_route(
 
     default:
 
-      sprintf(log_buffer, "%s %d", pbse_to_txt(PBSE_BADSTATE),
-              jobp->ji_qs.ji_state);
+      sprintf(log_buf, "%s %d", pbse_to_txt(PBSE_BADSTATE), jobp->ji_qs.ji_state);
 
-      strcat(log_buffer, id);
+      strcat(log_buf, id);
 
-      log_event(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_JOB,
-        jobp->ji_qs.ji_jobid,
-        log_buffer);
+      log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jobp->ji_qs.ji_jobid,log_buf);
 
-      return(0);
+      return(PBSE_NONE);
 
       /*NOTREACHED*/
 

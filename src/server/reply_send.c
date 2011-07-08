@@ -176,7 +176,8 @@ static int dis_reply_write(
   struct batch_reply *preply)  /* I */
 
   {
-  int rc;
+  int  rc;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* setup for DIS over tcp */
 
@@ -187,19 +188,13 @@ static int dis_reply_write(
   if ((rc = encode_DIS_reply(sfds, preply)) ||
       (rc = DIS_tcp_wflush(sfds)))
     {
-    sprintf(log_buffer, "DIS reply failure, %d",
-            rc);
+    sprintf(log_buf, "DIS reply failure, %d", rc);
 
-    LOG_EVENT(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_REQUEST,
-      "dis_reply_write",
-      log_buffer);
+    LOG_EVENT(PBSEVENT_SYSTEM,PBS_EVENTCLASS_REQUEST,"dis_reply_write",log_buf);
 
     /* don't need to get the lock here because we already have it from process request */
     close_conn(sfds);
     }
-
 
   return(rc);
   }  /* END dis_reply_write() */
@@ -227,6 +222,7 @@ int reply_send(
   {
   int      rc = 0;
 #ifndef PBS_MOM
+  char     log_buf[LOCAL_LOG_BUF_SIZE];
   int      iter = -1;
 #endif
   int      sfds = request->rq_conn;  /* socket */
@@ -283,15 +279,11 @@ int reply_send(
 #ifndef PBS_MOM
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buffer, "Reply sent for request type %s on socket %d",
+        sprintf(log_buf, "Reply sent for request type %s on socket %d",
           reqtype_to_txt(request->rq_type),
           sfds);
 
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          id,
-          log_buffer);
+        log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buf);
         }
 #ifndef PBS_MOM
       }
@@ -419,6 +411,7 @@ void req_reject(
   {
   char msgbuf[ERR_MSG_SIZE + 256 + 1];
   char msgbuf2[ERR_MSG_SIZE + 256 + 1];
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   set_err_msg(code, msgbuf);
 
@@ -442,20 +435,15 @@ void req_reject(
     /* NOTE: Don't need this last snprintf() unless another message is concatenated. */
     }
 
-  sprintf(log_buffer, "Reject reply code=%d(%s), aux=%d, type=%s, from %s@%s",
+  sprintf(log_buf, "Reject reply code=%d(%s), aux=%d, type=%s, from %s@%s",
+    code,
+    msgbuf,
+    aux,
+    reqtype_to_txt(preq->rq_type),
+    preq->rq_user,
+    preq->rq_host);
 
-          code,
-          msgbuf,
-          aux,
-          reqtype_to_txt(preq->rq_type),
-          preq->rq_user,
-          preq->rq_host);
-
-  LOG_EVENT(
-    PBSEVENT_DEBUG,
-    PBS_EVENTCLASS_REQUEST,
-    "req_reject",
-    log_buffer);
+  log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"req_reject",log_buf);
 
   preq->rq_reply.brp_auxcode = aux;
 

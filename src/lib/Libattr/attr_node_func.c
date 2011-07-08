@@ -1281,36 +1281,29 @@ int set_note_str(
 
   {
   static char id[] = "set_note_str";
-  size_t nsize;
-  int rc = 0;
+  size_t      nsize;
+  int         rc = 0;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
 
   assert(attr && new && new->at_val.at_str && (new->at_flags & ATR_VFLAG_SET));
   nsize = strlen(new->at_val.at_str);    /* length of new note */
 
   if (nsize > MAX_NOTE)
     {
-    sprintf(log_buffer, "Warning: Client attempted to set note with len (%d) > MAX_NOTE (%d)",
-            (int)nsize,
-            MAX_NOTE);
+    sprintf(log_buf, "Warning: Client attempted to set note with len (%d) > MAX_NOTE (%d)",
+      (int)nsize,
+      MAX_NOTE);
 
-    log_record(
-      PBSEVENT_SECURITY,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_SECURITY,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
     rc = PBSE_BADNDATVAL;
     }
 
   if (strchr(new->at_val.at_str, '\n') != NULL)
     {
-    sprintf(log_buffer, "Warning: Client attempted to set note with a newline char");
+    sprintf(log_buf, "Warning: Client attempted to set note with a newline char");
 
-    log_record(
-      PBSEVENT_SECURITY,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_SECURITY,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
     rc = PBSE_BADNDATVAL;
     }

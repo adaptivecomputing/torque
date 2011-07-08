@@ -126,9 +126,10 @@ int dis_request_read(
   {
   char *id = "dis_request_read";
 
-  int  proto_type;
-  int  proto_ver;
-  int  rc;  /* return code */
+  int   proto_type;
+  int   proto_ver;
+  int   rc;  /* return code */
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   DIS_tcp_setup(sfds); /* setup for DIS over tcp */
 
@@ -141,37 +142,33 @@ int dis_request_read(
       return(EOF);
       }
 
-    sprintf(log_buffer, "req header bad, dis error %d (%s), type=%s",
+    sprintf(log_buf, "req header bad, dis error %d (%s), type=%s",
 
             rc,
             dis_emsg[rc],
             reqtype_to_txt(request->rq_type));
 
-    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id,
-              log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buf);
 
     return(PBSE_DISPROTO);
     }
 
   if (proto_ver != PBS_BATCH_PROT_VER)
     {
-    sprintf(log_buffer, "conflicting version numbers, %d detected, %d expected",
+    sprintf(log_buf, "conflicting version numbers, %d detected, %d expected",
             proto_ver,
             PBS_BATCH_PROT_VER);
 
-    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id,
-              log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buf);
 
     return(PBSE_DISPROTO);
     }
 
   if ((request->rq_type < 0) || (request->rq_type >= PBS_BATCH_CEILING))
     {
-    sprintf(log_buffer, "invalid request type: %d",
-            request->rq_type);
+    sprintf(log_buf, "invalid request type: %d", request->rq_type);
 
-    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id,
-              log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buf);
 
     return(PBSE_DISPROTO);
     }
@@ -180,15 +177,11 @@ int dis_request_read(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "decoding command %s from %s",
-            reqtype_to_txt(request->rq_type),
-            request->rq_user);
+    sprintf(log_buf, "decoding command %s from %s",
+      reqtype_to_txt(request->rq_type),
+      request->rq_user);
 
-    LOG_EVENT(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buf);
     }
 
   switch (request->rq_type)
@@ -392,16 +385,12 @@ int dis_request_read(
 
     default:
 
-      sprintf(log_buffer, "%s: %d from %s",
-              pbse_to_txt(PBSE_NOSUP),
-              request->rq_type,
-              request->rq_user);
+      sprintf(log_buf, "%s: %d from %s",
+        pbse_to_txt(PBSE_NOSUP),
+        request->rq_type,
+        request->rq_user);
 
-      LOG_EVENT(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
+      log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
       rc = PBSE_UNKREQ;
 
@@ -411,39 +400,34 @@ int dis_request_read(
   if (rc == 0)
     {
     /* Decode the Request Extension, if present */
+    rc = decode_DIS_ReqExtend(sfds, request);
 
-	rc = decode_DIS_ReqExtend(sfds, request);
-    if (rc != 0 )
+    if (rc != 0)
       {
-      sprintf(log_buffer, "req extension bad, dis error %d (%s), type=%s",
-              rc,
-              dis_emsg[rc],
-              reqtype_to_txt(request->rq_type));
+      sprintf(log_buf, "req extension bad, dis error %d (%s), type=%s",
+        rc,
+        dis_emsg[rc],
+        reqtype_to_txt(request->rq_type));
 
-      LOG_EVENT(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_REQUEST,
-        "?",
-        log_buffer);
+      log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,"?",log_buf);
 
       rc = PBSE_DISPROTO;
       }
     }
   else if (rc != PBSE_UNKREQ)
     {
-    sprintf(log_buffer, "req body bad, dis error %d (%s), type=%s",
-            rc,
-            dis_emsg[rc],
-            reqtype_to_txt(request->rq_type));
+    sprintf(log_buf, "req body bad, dis error %d (%s), type=%s",
+      rc,
+      dis_emsg[rc],
+      reqtype_to_txt(request->rq_type));
 
-    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "?", log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "?", log_buf);
 
     rc = PBSE_DISPROTO;
     }
 
   return(rc);
   }  /* END dis_request_read() */
-
 
 
 

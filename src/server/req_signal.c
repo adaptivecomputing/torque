@@ -130,6 +130,7 @@ void req_signaljob(
   {
   job *pjob;
   int  rc;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((pjob = chk_job_request(preq->rq_ind.rq_signal.rq_jid, preq)) == 0)
     {
@@ -185,14 +186,9 @@ void req_signaljob(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "relaying signal request to mom %lu",
-            pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
+    sprintf(log_buf, "relaying signal request to mom %lu", pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
 
-    log_record(
-      PBSEVENT_SCHED,
-      PBS_EVENTCLASS_REQUEST,
-      "req_signaljob",
-      log_buffer);
+    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,"req_signaljob",log_buf);
     }
 
   /* send reply for asynchronous suspend */

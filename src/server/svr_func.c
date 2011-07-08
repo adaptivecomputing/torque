@@ -210,6 +210,7 @@ void set_resc_assigned(
   resource_def *rscdef;
   attribute    *sysru;
   char         *id = "set_resc_assigned";
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((pjob == NULL) || (pjob->ji_qhdr == NULL))
     {
@@ -229,11 +230,11 @@ void set_resc_assigned(
     }
   else
     {
-    snprintf(log_buffer,sizeof(log_buffer),
+    snprintf(log_buf,sizeof(log_buf),
       "job %s isn't in an execution queue, can't modify resources\njob is in queue %s",
       pjob->ji_qs.ji_jobid,
       pjob->ji_qhdr->qu_qs.qu_name);
-    log_err(-1,id,log_buffer);
+    log_err(-1,id,log_buf);
 
     return;
     }

@@ -174,6 +174,7 @@ void *req_holdjob(
   attribute temphold;
   attribute *pattr;
   struct batch_request *preq = (struct batch_request *)vp;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   pjob = chk_job_request(preq->rq_ind.rq_hold.rq_orig.rq_objname, preq);
 
@@ -210,8 +211,7 @@ void *req_holdjob(
   old_hold = *hold_val;
   *hold_val |= temphold.at_val.at_long;
   pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
-  sprintf(log_buffer, msg_jobholdset, pset, preq->rq_user,
-          preq->rq_host);
+  sprintf(log_buf, msg_jobholdset, pset, preq->rq_user, preq->rq_host);
 
   pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
 
@@ -237,13 +237,10 @@ void *req_holdjob(
 
       job_save(pjob, SAVEJOB_QUICK, 0);
       
-      /* fill in log_buffer again, since relay_to_mom changed it */
-      
-      sprintf(log_buffer, msg_jobholdset, pset, preq->rq_user,
-          preq->rq_host);
+      /* fill in log_buf again, since relay_to_mom changed it */
+      sprintf(log_buf, msg_jobholdset, pset, preq->rq_user, preq->rq_host);
           
-      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid, log_buffer);
+      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
     }
 #ifdef ENABLE_BLCR
@@ -255,11 +252,7 @@ void *req_holdjob(
      * so we reject the request
      */
 
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    LOG_EVENT(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL,
         "job not held since checkpointing is expected but not enabled for job");
@@ -269,11 +262,7 @@ void *req_holdjob(
     {
     /* everything went well, may need to update the job state */
 
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    LOG_EVENT(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     if (old_hold != *hold_val)
       {
@@ -307,9 +296,10 @@ void req_checkpointjob(
   struct batch_request *preq)
 
   {
-  job    *pjob;
-  int     rc;
+  job       *pjob;
+  int        rc;
   attribute *pattr;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((pjob = chk_job_request(preq->rq_ind.rq_manager.rq_objname, preq)) == NULL)
     {
@@ -337,18 +327,14 @@ void req_checkpointjob(
 
       job_save(pjob, SAVEJOB_QUICK, 0);
       LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid, log_buffer);
+                pjob->ji_qs.ji_jobid, log_buf);
       }
     }
   else
     {
     /* Job does not have checkpointing enabled, so reject the request */
 
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    LOG_EVENT(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "job is not checkpointable");
     }
@@ -374,6 +360,7 @@ int release_job(
   int    newsub;
   char  *pset;
   job   *pjob = (job *)j;
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
 
   attribute      temphold;
 
@@ -411,13 +398,12 @@ int release_job(
     svr_setjobstate(pjob, newstate, newsub); /* saves job */
     }
 
-  sprintf(log_buffer, msg_jobholdrel,
+  sprintf(log_buf, msg_jobholdrel,
     pset,
     preq->rq_user,
     preq->rq_host);
 
-  LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
-            log_buffer);
+  LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
 
   return(rc);
   } /* END release_job() */
@@ -640,6 +626,7 @@ static void process_hold_reply(
   attribute temphold;
   char *pset;
   int rc;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   svr_disconnect(pwt->wt_event); /* close connection to MOM */
 
@@ -674,10 +661,9 @@ static void process_hold_reply(
 
     if (preq->rq_reply.brp_code != PBSE_NOSUP)
       {
-      sprintf(log_buffer, msg_mombadhold, preq->rq_reply.brp_code);
-      LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid, log_buffer);
-      req_reject(preq->rq_reply.brp_code, 0, preq, NULL, log_buffer);
+      sprintf(log_buf, msg_mombadhold, preq->rq_reply.brp_code);
+      LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      req_reject(preq->rq_reply.brp_code, 0, preq, NULL, log_buf);
       }
     else
       {

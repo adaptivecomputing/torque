@@ -715,11 +715,13 @@ int tcp_puts(
   char *id = "tcp_puts";
 #endif
 
-  struct tcp_chan *tcp = NULL;
+  struct tcp_chan  *tcp = NULL;
   struct tcpdisbuf *tp = NULL;
-  char *temp = NULL;
-  int leadpct, trailpct; 
-  size_t newbufsize;
+  char             *temp = NULL;
+  int               leadpct;
+  int               trailpct; 
+  size_t            newbufsize;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   tcp = tcparray[fd];
 
@@ -743,12 +745,12 @@ int tcp_puts(
     if (!temp)
       {
       /* FAILURE */
-      snprintf(log_buffer,sizeof(log_buffer),
+      snprintf(log_buf,sizeof(log_buf),
         "out of space in buffer and cannot realloc message buffer (bufsize=%ld, buflen=%d, ct=%d)\n",
         tp->tdis_bufsize,
         (int)(tp->tdis_leadp - tp->tdis_thebuf),
         (int)ct);
-      log_err(ENOMEM,id,log_buffer);
+      log_err(ENOMEM,id,log_buf);
 
       pthread_mutex_unlock(&tcp->tcp_mutex);
 
@@ -928,9 +930,10 @@ int resize_tcp_array_if_needed(
   int fd)
 
   {
-  int rc = 0;
-  int hold;
-  int flags;
+  int  rc = 0;
+  int  hold;
+  int  flags;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (tcparraymax_mutex == NULL)
     {
@@ -963,9 +966,8 @@ int resize_tcp_array_if_needed(
     if ((errno == EBADF) &&
         (flags == -1))
       {
-      sprintf(log_buffer, "invalid file descriptor (%d) for socket",
-        fd);
-      log_err(errno, "DIS_tcp_setup", log_buffer);
+      sprintf(log_buf, "invalid file descriptor (%d) for socket", fd);
+      log_err(errno, "DIS_tcp_setup", log_buf);
 
       rc = -1;
       }

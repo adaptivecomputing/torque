@@ -326,12 +326,14 @@ job_array *array_recov(
   char *path)
 
   {
-  job_array *pa;
+  job_array          *pa;
   array_request_node *rn;
-  int fd;
-  int old_version;
-  int num_tokens;
-  int i;
+  int                 fd;
+  int                 old_version;
+  int                 num_tokens;
+  int                 i;
+
+  char                log_buf[LOCAL_LOG_BUF_SIZE];
 
   old_version = ARRAY_QS_STRUCT_VERSION;
 
@@ -358,9 +360,9 @@ job_array *array_recov(
       (pa->ai_qs.struct_version != ARRAY_QS_STRUCT_VERSION &&
        array_upgrade(pa, fd, pa->ai_qs.struct_version, &old_version) != 0))
     {
-    sprintf(log_buffer, "unable to read %s", path);
+    sprintf(log_buf, "unable to read %s", path);
 
-    log_err(errno, "pbsd_init", log_buffer);
+    log_err(errno, "pbsd_init", log_buf);
 
     free(pa);
     close(fd);
@@ -378,8 +380,8 @@ job_array *array_recov(
     {
     if (read(fd, &num_tokens, sizeof(int)) != sizeof(int))
       {
-      sprintf(log_buffer, "error reading token count from %s", path);
-      log_err(errno, "pbsd_init", log_buffer);
+      sprintf(log_buf, "error reading token count from %s", path);
+      log_err(errno, "pbsd_init", log_buf);
 
       free(pa);
       close(fd);
@@ -393,8 +395,8 @@ job_array *array_recov(
       if (read(fd, rn, sizeof(array_request_node)) != sizeof(array_request_node))
         {
 
-        sprintf(log_buffer, "error reading array_request_node from %s", path);
-        log_err(errno, "pbsd_init", log_buffer);
+        sprintf(log_buf, "error reading array_request_node from %s", path);
+        log_err(errno, "pbsd_init", log_buf);
 
         free(rn);
 
@@ -451,7 +453,8 @@ int array_delete(
   job_array *pa)
 
   {
-  char path[MAXPATHLEN + 1];
+  char                path[MAXPATHLEN + 1];
+  char                log_buf[LOCAL_LOG_BUF_SIZE];
   array_request_node *rn;
 
   /* first thing to do is take this out of the servers list of all arrays */
@@ -469,8 +472,8 @@ int array_delete(
 
   if (unlink(path))
     {
-    sprintf(log_buffer, "unable to delete %s", path);
-    log_err(errno, "array_delete", log_buffer);
+    sprintf(log_buf, "unable to delete %s", path);
+    log_err(errno, "array_delete", log_buf);
     }
 
   /* clear array request linked list */
@@ -566,13 +569,13 @@ int setup_array_struct(
   job *pjob)
 
   {
-  job_array *pa;
-
-  /* struct work_task *wt; */
+  job_array          *pa;
   array_request_node *rn;
-  int bad_token_count;
-  int array_size;
-  int rc;
+
+  int                 bad_token_count;
+  int                 array_size;
+  int                 rc;
+  char                log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* setup a link to this job array in the servers all_arrays list */
   pa = (job_array *)calloc(1,sizeof(job_array));
@@ -617,14 +620,12 @@ int setup_array_struct(
     {
     array_delete(pa);
 
-    snprintf(log_buffer,sizeof(log_buffer),
+    snprintf(log_buf,sizeof(log_buf),
       "Array %s requested a slot limit above the max limit %ld, rejecting\n",
       pa->ai_qs.parent_id,
       server.sv_attr[SRV_ATR_MaxSlotLimit].at_val.at_long);
-    log_event(PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_JOB,
-      pa->ai_qs.parent_id,
-      log_buffer);
+
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pa->ai_qs.parent_id,log_buf);
 
     return(INVALID_SLOT_LIMIT);
     }
@@ -1255,10 +1256,12 @@ int modify_array_range(
   int        checkpoint_req)  /* I */
 
   {
-  char id[] = "modify_array_range";
-  tlist_head tl;
-  int i, rc;
-  int mom_relay = 0;
+  char                id[] = "modify_array_range";
+  char                log_buf[LOCAL_LOG_BUF_SIZE];
+  tlist_head          tl;
+  int                 i;
+  int                 rc;
+  int                 mom_relay = 0;
 
   array_request_node *rn;
   array_request_node *to_free;
@@ -1310,10 +1313,10 @@ int modify_array_range(
                       array_req,
                       post_modify_arrayreq)))
             {  
-            snprintf(log_buffer,sizeof(log_buffer),
+            snprintf(log_buf,sizeof(log_buf),
               "Unable to relay information to mom for job '%s'\n",
               pa->jobs[i]->ji_qs.ji_jobid);
-            log_err(rc,id,log_buffer);
+            log_err(rc,id,log_buf);
           
             pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
 

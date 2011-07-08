@@ -127,19 +127,15 @@ static void post_rerun(
   job *pjob;
 
   struct batch_request *preq;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   preq = (struct batch_request *)pwt->wt_parm1;
 
   if (preq->rq_reply.brp_code != 0)
     {
-    sprintf(log_buffer, "rerun signal reject by mom: %d",
-            preq->rq_reply.brp_code);
+    sprintf(log_buf, "rerun signal reject by mom: %d", preq->rq_reply.brp_code);
 
-    log_event(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      preq->rq_ind.rq_signal.rq_jid,
-      log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_signal.rq_jid,log_buf);
 
     if ((pjob = find_job(preq->rq_ind.rq_signal.rq_jid)))
       {
@@ -182,6 +178,7 @@ void req_rerunjob(
   int        rc;
   int        iter = -1;
   int        MgrRequired = TRUE;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check if requestor is admin, job owner, etc */
 
@@ -339,21 +336,21 @@ void req_rerunjob(
         /* Cannot communicate with MOM, forcibly requeue job.
            This is a relatively disgusting thing to do */
 
-        sprintf(log_buffer, "rerun req to %s failed (rc=%d), forcibly requeueing job",
-                tmp,
-                rc);
+        sprintf(log_buf, "rerun req to %s failed (rc=%d), forcibly requeueing job",
+          tmp,
+          rc);
 
         log_event(
           PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
-          log_buffer);
+          log_buf);
 
-        log_err(-1, "req_rerunjob", log_buffer);
+        log_err(-1, "req_rerunjob", log_buf);
 
-        strcat(log_buffer, ", previous output files may be lost");
+        strcat(log_buf, ", previous output files may be lost");
 
-        svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buffer);
+        svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
 
         svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3);
 
@@ -390,16 +387,9 @@ void req_rerunjob(
       ~(JOB_SVFLG_CHECKPOINT_FILE |JOB_SVFLG_CHECKPOINT_MIGRATEABLE |
        JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN;
 
-  sprintf(log_buffer, msg_manager,
-          msg_jobrerun,
-          preq->rq_user,
-          preq->rq_host);
+  sprintf(log_buf, msg_manager, msg_jobrerun, preq->rq_user, preq->rq_host);
 
-  log_event(
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
   reply_ack(preq);
 

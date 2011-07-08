@@ -262,6 +262,7 @@ pbs_queue *que_recov_xml(
   char        *current;
   char        *begin;
   char        *end;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   static char *id = "que_recov_xml";
 
@@ -292,10 +293,10 @@ pbs_queue *que_recov_xml(
   /* read in queue save sub-structure */
   if (read(fds,buf,sizeof(buf)) < 0)
     {
-    snprintf(log_buffer,sizeof(log_buffer),
+    snprintf(log_buf,sizeof(log_buf),
       "Unable to read from queue file %s",
       filename);
-    log_err(errno,id,log_buffer);
+    log_err(errno,id,log_buf);
     
     close(fds);
 
@@ -339,10 +340,10 @@ pbs_queue *que_recov_xml(
     if (get_parent_and_child(current,&parent,&child,&current))
       {
       /* ERROR */
-      snprintf(log_buffer,sizeof(log_buffer),
+      snprintf(log_buf,sizeof(log_buf),
         "Bad XML in the queue file at: %s",
         current);
-      log_err(-1,id,log_buffer);
+      log_err(-1,id,log_buf);
 
       que_free(pq);
       close(fds);
@@ -370,10 +371,10 @@ pbs_queue *que_recov_xml(
         if (get_parent_and_child(attr_ptr,&child_parent,&child_attr,&attr_ptr))
           {
           /* ERROR */
-          snprintf(log_buffer,sizeof(log_buffer),
+          snprintf(log_buf,sizeof(log_buf),
             "Bad XML in the queue file at: %s",
             current);
-          log_err(-1,id,log_buffer);
+          log_err(-1,id,log_buf);
           
           que_free(pq);
           close(fds);
@@ -383,10 +384,10 @@ pbs_queue *que_recov_xml(
         if ((rc = str_to_attr(child_parent,child_attr,pq->qu_attr,que_attr_def)))
           {
           /* ERROR */
-          snprintf(log_buffer,sizeof(log_buffer),
+          snprintf(log_buf,sizeof(log_buf),
             "Error creating attribute %s",
             child_parent);
-          log_err(rc,id,log_buffer);
+          log_err(rc,id,log_buf);
 
           que_free(pq);
           close(fds);

@@ -584,6 +584,7 @@ int str_to_attr(
   int   index;
   char *id = "str_to_attr";
   char  buf[MAXLINE<<5];
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((name == NULL) ||
       (val  == NULL) ||
@@ -599,10 +600,10 @@ int str_to_attr(
   if (index < 0)
     {
     /* couldn't find attribute */
-    snprintf(log_buffer,sizeof(log_buffer),
+    snprintf(log_buf,sizeof(log_buf),
       "Couldn't find attribute %s\n",
       name);
-    log_err(-1,id,log_buffer);
+    log_err(-1,id,log_buf);
 
     return(ATTR_NOT_FOUND);
     }
@@ -733,7 +734,7 @@ int str_to_attr(
         
         if ((rc = decode_resc(&(attr[index]),name,resc_parent,resc_child,ATR_DFLAG_ACCESS)))
           {
-          snprintf(log_buffer,sizeof(log_buffer),
+          snprintf(log_buf,sizeof(log_buf),
             "Error decoding resource %s, %s = %s\n",
             name,
             resc_parent,
@@ -741,7 +742,7 @@ int str_to_attr(
           
           errFlg = TRUE;
 
-          log_err(rc,id,log_buffer);
+          log_err(rc,id,log_buf);
           }
         }
 
@@ -787,6 +788,7 @@ int svr_recov_xml(
   char *current;
   char *begin;
   char *end;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   char *id = "svr_recov_xml";
 
@@ -796,11 +798,11 @@ int svr_recov_xml(
     {
     if (errno == ENOENT)
       {
-      snprintf(log_buffer,sizeof(log_buffer),
+      snprintf(log_buf,sizeof(log_buf),
         "cannot locate server database '%s' - use 'pbs_server -t create' to create new database if database has not been initialized.",
         svrfile);
 
-      log_err(errno, id, log_buffer);
+      log_err(errno, id, log_buf);
       }
     else
       {
@@ -814,11 +816,11 @@ int svr_recov_xml(
 
   if (bytes_read < 0)
     {
-    snprintf(log_buffer,sizeof(log_buffer),
+    snprintf(log_buf,sizeof(log_buf),
       "Unable to read from serverdb file - %s",
       strerror(errno));
 
-    log_err(errno,id,log_buffer);
+    log_err(errno,id,log_buf);
 
     return(-1);
     }
@@ -904,11 +906,11 @@ int svr_recov_xml(
           {
           /* ERROR */
           errorCount++;
-          snprintf(log_buffer,sizeof(log_buffer),
+          snprintf(log_buf,sizeof(log_buf),
             "Error creating attribute %s",
             child_parent);
 
-          log_err(rc,id,log_buffer);
+          log_err(rc,id,log_buf);
 
           break;
           }
@@ -931,7 +933,7 @@ int svr_recov_xml(
       ATR_VFLAG_SET| ATR_VFLAG_MODIFY;
     }
 
-  return(0);
+  return(PBSE_NONE);
   } /* END svr_recov_xml() */
 
 
@@ -1029,12 +1031,13 @@ int save_acl(
 
   {
   static char *this_function_name = "save_acl";
-  int  fds;
-  char filename1[MAXPATHLEN];
-  char filename2[MAXPATHLEN];
-  tlist_head    head;
-  int      i;
+  int          fds;
+  char         filename1[MAXPATHLEN];
+  char         filename2[MAXPATHLEN];
+  tlist_head   head;
+  int          i;
   svrattrl    *pentry;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((attr->at_flags & ATR_VFLAG_MODIFY) == 0)
     {
@@ -1065,10 +1068,9 @@ int save_acl(
 
   if (fds < 0)
     {
-    snprintf(log_buffer, 1024, "unable to open acl file '%s'",
-             filename2);
+    snprintf(log_buf, sizeof(log_buf), "unable to open acl file '%s'", filename2);
 
-    log_err(errno, this_function_name, log_buffer);
+    log_err(errno, this_function_name, log_buf);
 
     return(-1);
     }
@@ -1151,12 +1153,13 @@ void recov_acl(
 
   {
   static char *this_function_name = "recov_acl";
-  char *buf;
-  int   fds;
-  char  filename1[MAXPATHLEN];
+  char        *buf;
+  int          fds;
+  char         filename1[MAXPATHLEN];
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
-  struct stat sb;
-  attribute tempat;
+  struct stat  sb;
+  attribute    tempat;
 
   errno = 0;
 
@@ -1176,10 +1179,9 @@ void recov_acl(
     {
     if (errno != ENOENT)
       {
-      sprintf(log_buffer, "unable to open acl file %s",
-              filename1);
+      sprintf(log_buf, "unable to open acl file %s", filename1);
 
-      log_err(errno, this_function_name, log_buffer);
+      log_err(errno, this_function_name, log_buf);
       }
 
     return;
@@ -1226,17 +1228,15 @@ void recov_acl(
 
   if (pdef->at_decode(&tempat, pdef->at_name, NULL, buf, ATR_DFLAG_ACCESS) < 0)
     {
-    sprintf(log_buffer, "decode of acl %s failed",
-            pdef->at_name);
+    sprintf(log_buf, "decode of acl %s failed", pdef->at_name);
 
-    log_err(errno, this_function_name, log_buffer);
+    log_err(errno, this_function_name, log_buf);
     }
   else if (pdef->at_set(pattr, &tempat, SET) != 0)
     {
-    sprintf(log_buffer, "set of acl %s failed",
-            pdef->at_name);
+    sprintf(log_buf, "set of acl %s failed", pdef->at_name);
 
-    log_err(errno, this_function_name, log_buffer);
+    log_err(errno, this_function_name, log_buf);
     }
 
   pdef->at_free(&tempat);

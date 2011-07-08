@@ -474,7 +474,8 @@ int pbsd_init(
   struct sigaction oact;
 
   struct work_task *wt;
-  job_array *pa;
+  job_array        *pa;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char   EMsg[1024];
@@ -494,13 +495,13 @@ int pbsd_init(
   /* secure suppl. groups */
   if (setgroups(1,(gid_t *)&i) != 0)
     {
-    snprintf(log_buffer, sizeof(log_buffer),
+    snprintf(log_buf, sizeof(log_buf),
       "Unable to drop secondary groups. Some MAC framework is active?\n");
-    log_err(errno, id, log_buffer);
-    snprintf(log_buffer, sizeof(log_buffer),
+    log_err(errno, id, log_buf);
+    snprintf(log_buf, sizeof(log_buf),
       "setgroups(group = %lu) failed: %s\n",
       (unsigned long)i, strerror(errno));
-    log_err(errno, id, log_buffer);
+    log_err(errno, id, log_buf);
 
     return(-1);
     }
@@ -702,22 +703,20 @@ int pbsd_init(
 
   if (stat(path_checkpoint, &statbuf) < 0)
     {
-    sprintf(log_buffer,
-            "unable to stat checkpoint directory %s, errno %d (%s)",
-            path_checkpoint,
-            errno,
-            strerror(errno));
-    log_err(errno, "pbs_init", log_buffer);
+    sprintf(log_buf,
+      "unable to stat checkpoint directory %s, errno %d (%s)",
+      path_checkpoint,
+      errno,
+      strerror(errno));
+    log_err(errno, "pbs_init", log_buf);
 
     return(-1);
     }
 
   if (!S_ISDIR(statbuf.st_mode))
     {
-    sprintf(log_buffer,
-            "checkpoint directory path %s is not a directory",
-            path_checkpoint);
-    log_err(errno, "pbs_init", log_buffer);
+    sprintf(log_buf, "checkpoint directory path %s is not a directory", path_checkpoint);
+    log_err(errno, "pbs_init", log_buf);
 
     return(-1);
     }
@@ -923,10 +922,6 @@ int pbsd_init(
 
   if ((rc = setup_nodes()) == -1)
     {
-    /* log_buffer set in setup_nodes */
-
-    log_err(-1, id, log_buffer);
-
     return(-1);
     }
 
@@ -940,9 +935,9 @@ int pbsd_init(
 
   if (chdir(path_queues) != 0)
     {
-    sprintf(log_buffer, msg_init_chdir, path_queues);
+    sprintf(log_buf, msg_init_chdir, path_queues);
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, id, log_buf);
 
     return(-1);
     }
@@ -977,14 +972,13 @@ int pbsd_init(
         {
         /* que_recov increments sv_numque */
 
-        sprintf(log_buffer, msg_init_recovque,
-                pque->qu_qs.qu_name);
+        sprintf(log_buf, msg_init_recovque, pque->qu_qs.qu_name);
 
         log_event(
           PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_DEBUG,
           PBS_EVENTCLASS_SERVER,
           msg_daemonname,
-          log_buffer);
+          log_buf);
 
         if (pque->qu_attr[QE_ATR_ResourceAssn].at_flags & ATR_VFLAG_SET)
           {
@@ -1004,10 +998,9 @@ int pbsd_init(
   else
     logtype = PBSEVENT_SYSTEM;
 
-  sprintf(log_buffer, msg_init_expctq,
-          had, server.sv_qs.sv_numque);
+  sprintf(log_buf, msg_init_expctq, had, server.sv_qs.sv_numque);
 
-  log_event(logtype, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
+  log_event(logtype, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
 
   /*
    * 9. If not "create" or "clean" recovery, recover the jobs.
@@ -1018,10 +1011,9 @@ int pbsd_init(
 
   if (chdir(path_arrays) != 0)
     {
-    sprintf(log_buffer, msg_init_chdir,
-            path_arrays);
+    sprintf(log_buf, msg_init_chdir, path_arrays);
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, id, log_buf);
 
     return(-1);
     }
@@ -1051,13 +1043,12 @@ int pbsd_init(
 
         if (pa == NULL)
           {
+          sprintf(log_buf,
+            "could not recover array-struct from file %s--skipping. "
+            "job array can not be recovered.",
+            pdirent->d_name);
 
-          sprintf(log_buffer,
-                  "could not recover array-struct from file %s--skipping. "
-                  "job array can not be recovered.",
-                  pdirent->d_name);
-
-          log_err(errno, id, log_buffer);
+          log_err(errno, id, log_buf);
 
           continue;
           }
@@ -1081,10 +1072,9 @@ int pbsd_init(
 
   if (chdir(path_jobs) != 0)
     {
-    sprintf(log_buffer, msg_init_chdir,
-            path_jobs);
+    sprintf(log_buf, msg_init_chdir, path_jobs);
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, id, log_buf);
 
     return(-1);
     }
@@ -1109,10 +1099,9 @@ int pbsd_init(
         }
       else
         {
-        sprintf(log_buffer, msg_init_exptjobs,
-                had, 0);
+        sprintf(log_buf, msg_init_exptjobs, had, 0);
 
-        log_err(-1, id, log_buffer);
+        log_err(-1, id, log_buf);
         }
       }
     }
@@ -1168,10 +1157,9 @@ int pbsd_init(
           }
         else
           {
-          sprintf(log_buffer, msg_init_badjob,
-                  pdirent->d_name);
+          sprintf(log_buf, msg_init_badjob, pdirent->d_name);
 
-          log_err(-1, id, log_buffer);
+          log_err(-1, id, log_buf);
 
           /* remove corrupt job */
 
@@ -1256,18 +1244,12 @@ int pbsd_init(
       logtype = PBSEVENT_SYSTEM;
       }
 
-    sprintf(log_buffer, msg_init_exptjobs,
-            had, server.sv_qs.sv_numjobs);
+    sprintf(log_buf, msg_init_exptjobs, had, server.sv_qs.sv_numjobs);
 
-    log_event(
-      logtype,
-      PBS_EVENTCLASS_SERVER,
-      msg_daemonname,
-      log_buffer);
+    log_event(logtype,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
     }  /* END else */
 
   /* If queue_rank has gone negative, renumber all jobs and reset rank */
-
   if (queue_rank < 0)
     {
     iter = -1;
@@ -1346,9 +1328,9 @@ int pbsd_init(
 
   if (chdir(path_priv) != 0)
     {
-    sprintf(log_buffer, msg_init_chdir, path_priv);
+    sprintf(log_buf, msg_init_chdir, path_priv);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, id, log_buf);
 
     return(3);
     }
@@ -1498,6 +1480,7 @@ static int pbsd_init_job(
 
   struct work_task *pwt;
   char             *jobid_copy;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   pjob->ji_momhandle = -1;
 
@@ -1716,16 +1699,11 @@ static int pbsd_init_job(
 
     default:
 
-      sprintf(log_buffer, msg_init_unkstate,
-              pjob->ji_qs.ji_substate);
+      sprintf(log_buf, msg_init_unkstate, pjob->ji_qs.ji_substate);
 
-      log_event(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-      job_abt(&pjob, log_buffer); /* pjob is not freed */
+      job_abt(&pjob, log_buf); /* pjob is not freed */
 
       if (pjob == NULL)
         {
@@ -1883,8 +1861,9 @@ static void catch_child(
 
   {
   static char *id = "catch_child";
-  pid_t    pid;
-  int    statloc;
+  pid_t        pid;
+  int          statloc;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   while (1)
     {
@@ -1906,14 +1885,13 @@ static void catch_child(
 
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer, "caught SIGCHLD for pid %d",
-              pid);
+      sprintf(log_buf, "caught SIGCHLD for pid %d", pid);
 
       log_record(
         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
         PBS_EVENTCLASS_SERVER,
         msg_daemonname,
-        log_buffer);
+        log_buf);
       }
     }    /* END while (1) */
 
@@ -1981,6 +1959,8 @@ static void change_log_level(
   int sig)
 
   {
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+
   if (sig == SIGUSR1)
     {
     /* increase log level */
@@ -2011,16 +1991,13 @@ static void change_log_level(
       }
     }
 
-  sprintf(log_buffer, "received signal %d: adjusting loglevel to %d",
-
-          sig,
-          LOGLEVEL);
+  sprintf(log_buf, "received signal %d: adjusting loglevel to %d", sig, LOGLEVEL);
 
   log_record(
     PBSEVENT_SYSTEM | PBSEVENT_FORCE,
     PBS_EVENTCLASS_SERVER,
     msg_daemonname,
-    log_buffer);
+    log_buf);
 
   return;
   }  /* END change_log_level() */
@@ -2192,13 +2169,14 @@ static void rm_files(
   char *dirname)
 
   {
-  DIR *dir;
-  int  i;
+  DIR           *dir;
+  int            i;
 
   struct stat    stb;
 
   struct dirent *pdirt;
-  char path[1024];
+  char           path[1024];
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* list of directories in which files are removed */
 
@@ -2237,10 +2215,10 @@ static void rm_files(
           }
         else if (unlink(path) == -1)
           {
-          strcpy(log_buffer, "cannot unlink");
-          strcat(log_buffer, path);
+          strcpy(log_buf, "cannot unlink");
+          strcat(log_buf, path);
 
-          log_err(errno, "pbsd_init", log_buffer);
+          log_err(errno, "pbsd_init", log_buf);
           }
         }
       }

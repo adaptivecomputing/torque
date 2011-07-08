@@ -394,6 +394,7 @@ int save_attr_xml(
   int  rc;
   char buf[MAXLINE<<8];
   char valbuf[MAXLINE<<7];
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* write the opening tag for attributes */
   snprintf(buf,sizeof(buf),"<attributes>\n");
@@ -412,7 +413,7 @@ int save_attr_xml(
         if (rc != NO_ATTR_DATA)
           {
           /* ERROR */
-          snprintf(log_buffer,sizeof(log_buffer),
+          snprintf(log_buf,sizeof(log_buf),
             "Not enough space to print attribute %s",
             padef[i].at_name);
 

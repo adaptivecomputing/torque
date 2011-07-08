@@ -209,6 +209,7 @@ void sum_select_mem_request(
 
   int   mem_str_len = strlen(mem_str);
   int   multiplier = 1;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   unsigned long mem_total = 0;
 
@@ -305,10 +306,10 @@ void sum_select_mem_request(
           
         default:
           
-          snprintf(log_buffer,sizeof(log_buffer),
+          snprintf(log_buf,sizeof(log_buf),
             "WARNING:   Unknown unit %cb used in memory request\n",
             *current);
-          log_err(-1,id,log_buffer);
+          log_err(-1,id,log_buf);
           
           break;
         }
@@ -381,6 +382,7 @@ void *req_quejob(
   char                  namebuf[MAXPATHLEN + 1];
   char                  buf[256];
   char                  EMsg[MAXPATHLEN];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   job                  *pj;
   attribute_def        *pdef;
@@ -829,10 +831,10 @@ void *req_quejob(
         /* not unique, reject job */
         job_purge(pj);
 
-        snprintf(log_buffer,sizeof(log_buffer),
+        snprintf(log_buf,sizeof(log_buf),
           "Job with id %s already exists, cannot set job id\n",
           pj->ji_qs.ji_jobid);
-        req_reject(PBSE_JOBEXIST,0,preq,NULL,log_buffer);
+        req_reject(PBSE_JOBEXIST,0,preq,NULL,log_buf);
 
         return(NULL);
         }
@@ -1327,10 +1329,11 @@ void req_jobscript(
   {
   char *id = "req_jobscript";
 
-  int  fds;
+  int   fds;
   char  namebuf[MAXPATHLEN];
-  job *pj;
-  int  filemode = 0600;
+  job  *pj;
+  int   filemode = 0600;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   errno = 0;
 
@@ -1351,14 +1354,14 @@ void req_jobscript(
     {
     if (errno == 0)
       {
-      snprintf(log_buffer, sizeof(log_buffer),
+      snprintf(log_buf, sizeof(log_buf),
         "job %s in unexpected state '%s'",
         pj->ji_qs.ji_jobid,
         PJobSubState[pj->ji_qs.ji_substate]);
       }
     else
       {
-      snprintf(log_buffer, sizeof(log_buffer),
+      snprintf(log_buf, sizeof(log_buf),
         "job %s in unexpected state '%s' (errno=%d - %s)",
         pj->ji_qs.ji_jobid,
         PJobSubState[pj->ji_qs.ji_substate],
@@ -1366,9 +1369,9 @@ void req_jobscript(
         strerror(errno));
       }
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, id, log_buf);
 
-    req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buffer);
+    req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buf);
 
     pthread_mutex_unlock(pj->ji_mutex);
 
@@ -1479,9 +1482,10 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
   struct batch_request *preq) /* ptr to the decoded request   */
 
   {
-  int  fds;
+  int   fds;
   char  namebuf[MAXPATHLEN];
-  job *pj;
+  job  *pj;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   pj = locate_new_job(preq->rq_conn, NULL);
 
@@ -1490,10 +1494,10 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
 
   if ((preq->rq_fromsvr == 0) || (pj == NULL))
     {
-    snprintf(log_buffer, 1024, "cannot find job %s",
+    snprintf(log_buf, sizeof(log_buf), "cannot find job %s",
              preq->rq_ind.rq_jobfile.rq_jobid);
 
-    log_err(errno, "req_mvjobfile", log_buffer);
+    log_err(errno, "req_mvjobfile", log_buf);
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
@@ -1582,7 +1586,7 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
 
   if (LOGLEVEL >= 6)
     {
-    snprintf(log_buffer, sizeof(log_buffer),
+    snprintf(log_buf, sizeof(log_buf),
       "successfully moved file '%s' for job '%s'",
       namebuf,
       preq->rq_ind.rq_jobfile.rq_jobid);
@@ -1591,7 +1595,7 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
-      log_buffer);
+      log_buf);
     }
 
   reply_ack(preq);
@@ -1628,6 +1632,7 @@ void req_rdytocommit(
   char *id = "req_rdytocommit";
   char  namebuf[MAXPATHLEN+1];
   char *jobid = NULL;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   pj = locate_new_job(sock, preq->rq_ind.rq_rdytocommit);
 
@@ -1738,12 +1743,12 @@ void req_rdytocommit(
     {
     /* reply failed, purge the job and close the connection */
 
-    snprintf(log_buffer, sizeof(log_buffer),
+    snprintf(log_buf, sizeof(log_buf),
       "cannot report jobid - errno=%d - %s",
       errno,
       strerror(errno));
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, id, log_buf);
 
     close_conn(sock);
 
@@ -1783,13 +1788,14 @@ void req_commit(
   struct batch_request *preq)  /* I */
 
   {
-  job   *pj;
+  job       *pj;
 
-  int    newstate;
-  int    newsub;
+  int        newstate;
+  int        newsub;
   pbs_queue *pque;
-  int    rc;
+  int        rc;
   work_task *wt;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
 #ifdef AUTORUN_JOBS
 
@@ -1905,19 +1911,19 @@ void req_commit(
       {
       if (rc == ARRAY_TOO_LARGE)
         {
-        snprintf(log_buffer,sizeof(log_buffer),
+        snprintf(log_buf,sizeof(log_buf),
           "Requested array size too large, limit is %ld",
           server.sv_attr[SRV_ATR_MaxArraySize].at_val.at_long);
 
-        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buffer);
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buf);
         }
       else if (rc == INVALID_SLOT_LIMIT)
         {
-        snprintf(log_buffer,sizeof(log_buffer),
+        snprintf(log_buf,sizeof(log_buf),
           "Requested slot limit too large, limit is %ld",
           server.sv_attr[SRV_ATR_MaxSlotLimit].at_val.at_long);
 
-        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buffer);
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buf);
         }
       else
         {
@@ -2051,7 +2057,7 @@ void req_commit(
 
   /* need to format message first, before request goes away */
 
-  snprintf(log_buffer, sizeof(log_buffer),
+  snprintf(log_buf, sizeof(log_buf),
     msg_jobnew,
     preq->rq_user, preq->rq_host,
     pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
@@ -2070,11 +2076,7 @@ void req_commit(
     pthread_mutex_unlock(wt->wt_mutex);
     }
     
-  LOG_EVENT(
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pj->ji_qs.ji_jobid,
-    log_buffer);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
 
   if ((pj->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {
@@ -2095,7 +2097,7 @@ void req_commit(
     {
     if (LOGLEVEL >= 7)
       {
-      snprintf(log_buffer, sizeof(log_buffer),
+      snprintf(log_buf, sizeof(log_buf),
         "Trying to AUTORUN job %s",
         pj->ji_qs.ji_jobid);
 
@@ -2103,7 +2105,7 @@ void req_commit(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
-        log_buffer);
+        log_buf);
       }
 
     req_runjob(preq_run);
@@ -2215,12 +2217,13 @@ int user_account_verify(
   {
   int  i;
   int  rc = 0; /* 0 = failure, 1 = success */
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (!user_account_read_user(arguser))
     {
-    sprintf(log_buffer, "user_account_verify(%s, %s) -> USER NOT FOUND",
-            arguser,
-            argaccount);
+    sprintf(log_buf, "user_account_verify(%s, %s) -> USER NOT FOUND",
+      arguser,
+      argaccount);
 
     goto user_account_verify_done;
     }
@@ -2229,9 +2232,9 @@ int user_account_verify(
     {
     if (strcmp(argaccount, UserAcct.ActAdr[i]) == 0)
       {
-      sprintf(log_buffer, "user_account_verify(%s, %s) -> SUCCESS",
-              arguser,
-              argaccount);
+      sprintf(log_buf, "user_account_verify(%s, %s) -> SUCCESS",
+        arguser,
+        argaccount);
 
       rc = 1;
 
@@ -2239,9 +2242,9 @@ int user_account_verify(
       }
     }    /* END for (i) */
 
-  sprintf(log_buffer, "user_account_verify(%s, %s) -> FAILED",
-          arguser,
-          argaccount);
+  sprintf(log_buf, "user_account_verify(%s, %s) -> FAILED",
+    arguser,
+    argaccount);
 
 user_account_verify_done:
 
@@ -2249,7 +2252,7 @@ user_account_verify_done:
     PBSEVENT_JOB | PBSEVENT_SECURITY,
     PBS_EVENTCLASS_SERVER,
     msg_daemonname,
-    log_buffer);
+    log_buf);
 
   return(rc);
   }
@@ -2263,28 +2266,27 @@ char *user_account_default(
 
   {
   char *rc = 0; /* 0 = failure, <address> = success */
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (!user_account_read_user(arguser))
     {
-    sprintf(log_buffer, "user_account_default(%s) = USER NOT FOUND",
-            arguser);
+    sprintf(log_buf, "user_account_default(%s) = USER NOT FOUND", arguser);
 
     goto user_account_default_done;
     }
 
   if (UserAcct.ActCnt < 1)
     {
-    sprintf(log_buffer, "user_account_default(%s) = NO PROJECT FOUND",
-            arguser);
+    sprintf(log_buf, "user_account_default(%s) = NO PROJECT FOUND", arguser);
 
     goto user_account_default_done;
     }
 
   rc = UserAcct.ActAdr[0];
 
-  sprintf(log_buffer, "user_account_default(%s) = %s",
-          arguser,
-          rc);
+  sprintf(log_buf, "user_account_default(%s) = %s",
+    arguser,
+    rc);
 
 user_account_default_done:
 
@@ -2292,7 +2294,7 @@ user_account_default_done:
     PBSEVENT_JOB | PBSEVENT_SECURITY,
     PBS_EVENTCLASS_SERVER,
     msg_daemonname,
-    log_buffer);
+    log_buf);
 
   return(rc);
   }  /* END user_account_default() */

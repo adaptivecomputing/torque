@@ -144,12 +144,13 @@ void svr_shutdown(
   job          *pjob;
   long         *state;
   int           iter;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* Lets start by logging shutdown and saving everything */
 
   state = &server.sv_attr[SRV_ATR_State].at_val.at_long;
 
-  strcpy(log_buffer, msg_shutdown_start);
+  strcpy(log_buf, msg_shutdown_start);
 
   if (*state == SV_STATE_SHUTIMM)
     {
@@ -159,13 +160,13 @@ void svr_shutdown(
       {
       *state = SV_STATE_DOWN;
 
-      strcat(log_buffer, "Forced");
+      strcat(log_buf, "Forced");
 
       log_event(
         PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_DEBUG,
         PBS_EVENTCLASS_SERVER,
         msg_daemonname,
-        log_buffer);
+        log_buf);
 
       return;
       }
@@ -175,33 +176,32 @@ void svr_shutdown(
     {
     *state = SV_STATE_SHUTIMM;
 
-    strcat(log_buffer, "Immediate");
+    strcat(log_buf, "Immediate");
     }
   else if (type == SHUT_DELAY)
     {
     *state = SV_STATE_SHUTDEL;
 
-    strcat(log_buffer, "Delayed");
+    strcat(log_buf, "Delayed");
     }
   else if (type == SHUT_QUICK)
     {
     *state = SV_STATE_DOWN; /* set to down to brk pbsd_main loop */
 
-    strcat(log_buffer, "Quick");
+    strcat(log_buf, "Quick");
     }
   else
     {
     *state = SV_STATE_SHUTIMM;
 
-    strcat(log_buffer, "By Signal");
+    strcat(log_buf, "By Signal");
     }
 
   log_event(
-
     PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_DEBUG,
     PBS_EVENTCLASS_SERVER,
     msg_daemonname,
-    log_buffer);
+    log_buf);
 
   /* shutdown the threads */
   destroy_request_pool();
@@ -288,6 +288,8 @@ void req_shutdown(
   struct batch_request *preq)
 
   {
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+
   if ((preq->rq_perm &
        (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR)) == 0)
     {
@@ -296,16 +298,13 @@ void req_shutdown(
     return;
     }
 
-  sprintf(log_buffer, msg_shutdown_op,
-
-          preq->rq_user,
-          preq->rq_host);
+  sprintf(log_buf, msg_shutdown_op, preq->rq_user, preq->rq_host);
 
   log_event(
     PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_DEBUG,
     PBS_EVENTCLASS_SERVER,
     msg_daemonname,
-    log_buffer);
+    log_buf);
 
   pshutdown_request = preq;    /* save for reply from main() when done */
 
@@ -452,6 +451,7 @@ static void rerun_or_kill(
 
   {
   long server_state = server.sv_attr[SRV_ATR_State].at_val.at_long;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long)
     {
@@ -461,16 +461,16 @@ static void rerun_or_kill(
 
     pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
 
-    strcpy(log_buffer, msg_init_queued);
-    strcat(log_buffer, pjob->ji_qhdr->qu_qs.qu_name);
-    strcat(log_buffer, text);
+    strcpy(log_buf, msg_init_queued);
+    strcat(log_buf, pjob->ji_qhdr->qu_qs.qu_name);
+    strcat(log_buf, text);
     }
   else if (server_state != SV_STATE_SHUTDEL)
     {
     /* job not rerunable, immediate shutdown - kill it off */
 
-    strcpy(log_buffer, msg_job_abort);
-    strcat(log_buffer, text);
+    strcpy(log_buf, msg_job_abort);
+    strcat(log_buf, text);
 
     /* need to record log message before purging job */
 
@@ -478,9 +478,9 @@ static void rerun_or_kill(
       PBSEVENT_SYSTEM | PBSEVENT_JOB | PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      log_buffer);
+      log_buf);
 
-    job_abt(&pjob, log_buffer);
+    job_abt(&pjob, log_buf);
 
     return;
     }
@@ -488,14 +488,15 @@ static void rerun_or_kill(
     {
     /* delayed shutdown, leave job running */
 
-    strcpy(log_buffer, msg_leftrunning);
-    strcat(log_buffer, text);
+    strcpy(log_buf, msg_leftrunning);
+    strcat(log_buf, text);
     }
 
-  log_event(PBSEVENT_SYSTEM | PBSEVENT_JOB | PBSEVENT_DEBUG,
-
-            PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
-            log_buffer);
+  log_event(
+    PBSEVENT_SYSTEM | PBSEVENT_JOB | PBSEVENT_DEBUG,
+    PBS_EVENTCLASS_JOB,
+    pjob->ji_qs.ji_jobid,
+    log_buf);
 
   return;
   }  /* END rerun_or_kill() */

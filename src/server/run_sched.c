@@ -162,6 +162,7 @@ static int contact_sched(
   char  EMsg[1024];
 
   char *id = "contact_sched";
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* connect to the Scheduler */
   sock = client_to_svr(pbs_scheduler_addr, pbs_scheduler_port, 1, EMsg);
@@ -185,7 +186,6 @@ static int contact_sched(
     }
 
   add_conn(
-
     sock,
     FromClientDIS,
     pbs_scheduler_addr,
@@ -216,15 +216,9 @@ static int contact_sched(
     return(-1);
     }
 
-  sprintf(log_buffer, msg_sched_called,
+  sprintf(log_buf, msg_sched_called, (cmd != SCH_ERROR) ? PSchedCmdType[cmd] : "ERROR");
 
-          (cmd != SCH_ERROR) ? PSchedCmdType[cmd] : "ERROR");
-
-  log_event(
-    PBSEVENT_SCHED,
-    PBS_EVENTCLASS_SERVER,
-    server_name,
-    log_buffer);
+  log_event(PBSEVENT_SCHED,PBS_EVENTCLASS_SERVER,server_name,log_buf);
 
   return (sock);
   }  /* END contact_sched() */
@@ -242,8 +236,7 @@ static int contact_sched(
  *   +1 = scheduler busy
  */
 
-int
-schedule_jobs(void)
+int schedule_jobs(void)
 
   {
   int cmd;
@@ -292,6 +285,7 @@ static int contact_listener(
   char  EMsg[1024];
 
   char *id = "contact_listener";
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* If this is the first time contacting the scheduler for
    * this listener set the cmd */
@@ -356,15 +350,10 @@ static int contact_listener(
     return(-1);
     }
 
-  sprintf(log_buffer, msg_listnr_called, l_idx + 1,
+  sprintf(log_buf, msg_listnr_called, l_idx + 1,
+    (listener_command != SCH_ERROR) ? PSchedCmdType[listener_command] : "ERROR");
 
-          (listener_command != SCH_ERROR) ? PSchedCmdType[listener_command] : "ERROR");
-
-  log_event(
-    PBSEVENT_SCHED,
-    PBS_EVENTCLASS_SERVER,
-    server_name,
-    log_buffer);
+  log_event(PBSEVENT_SCHED,PBS_EVENTCLASS_SERVER,server_name,log_buf);
 
   return (sock);
   }  /* END contact_listener() */
@@ -375,8 +364,7 @@ static int contact_listener(
  *
  */
 
-void
-notify_listeners(void)
+void notify_listeners(void)
 
   {
   int  i;

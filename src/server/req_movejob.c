@@ -127,6 +127,7 @@ void *req_movejob(
 #endif
   job *jobp;
   struct batch_request *req = (struct batch_request *)vp;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   jobp = chk_job_request(req->rq_ind.rq_move.rq_jid, req);
 
@@ -140,17 +141,9 @@ void *req_movejob(
       (jobp->ji_qs.ji_state != JOB_STATE_WAITING))
     {
 #ifndef NDEBUG
-    sprintf(log_buffer, "%s %d",
-            pbse_to_txt(PBSE_BADSTATE),
-            jobp->ji_qs.ji_state);
+    sprintf(log_buf, "%s %d %s", pbse_to_txt(PBSE_BADSTATE), jobp->ji_qs.ji_state, id);
 
-    strcat(log_buffer, id);
-
-    log_event(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      jobp->ji_qs.ji_jobid,
-      log_buffer);
+    log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jobp->ji_qs.ji_jobid,log_buf);
 #endif /* NDEBUG */
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);
@@ -172,18 +165,14 @@ void *req_movejob(
 
       /* success */
 
-      strcpy(log_buffer, msg_movejob);
+      strcpy(log_buf, msg_movejob);
 
-      sprintf(log_buffer + strlen(log_buffer), msg_manager,
-              req->rq_ind.rq_move.rq_destin,
-              req->rq_user,
-              req->rq_host);
+      sprintf(log_buf + strlen(log_buf), msg_manager,
+        req->rq_ind.rq_move.rq_destin,
+        req->rq_user,
+        req->rq_host);
 
-      log_event(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        jobp->ji_qs.ji_jobid,
-        log_buffer);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobp->ji_qs.ji_jobid,log_buf);
 
       reply_ack(req);
 
@@ -240,6 +229,7 @@ void *req_orderjob(
   int  rc;
   char  tmpqn[PBS_MAXQUEUENAME+1];
   struct batch_request *req = (struct batch_request *)vp;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((pjob1 = chk_job_request(req->rq_ind.rq_move.rq_jid, req)) == NULL)
     {
@@ -255,17 +245,17 @@ void *req_orderjob(
       ((pjob = pjob2)->ji_qs.ji_state == JOB_STATE_RUNNING))
     {
 #ifndef NDEBUG
-    sprintf(log_buffer, "%s %d",
+    sprintf(log_buf, "%s %d",
             pbse_to_txt(PBSE_BADSTATE),
             pjob->ji_qs.ji_state);
 
-    strcat(log_buffer, id);
+    strcat(log_buf, id);
 
     log_event(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      log_buffer);
+      log_buf);
 #endif /* NDEBUG */
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);

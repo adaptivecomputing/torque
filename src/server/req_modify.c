@@ -153,6 +153,7 @@ static void post_modify_req(
 
   struct batch_request *preq;
   job  *pjob;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   svr_disconnect(pwt->wt_event);  /* close connection to MOM */
 
@@ -162,13 +163,13 @@ static void post_modify_req(
 
   if ((preq->rq_reply.brp_code) && (preq->rq_reply.brp_code != PBSE_UNKJOBID))
     {
-    sprintf(log_buffer, msg_mombadmodify, preq->rq_reply.brp_code);
+    sprintf(log_buf, msg_mombadmodify, preq->rq_reply.brp_code);
 
     log_event(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       preq->rq_ind.rq_modify.rq_objname,
-      log_buffer);
+      log_buf);
 
     req_reject(preq->rq_reply.brp_code, 0, preq, NULL, NULL);
     }
@@ -185,17 +186,13 @@ static void post_modify_req(
         {
         if (LOGLEVEL >= 0)
           {
-          sprintf(log_buffer, "post_modify_req: PBSE_UNKJOBID for job %s in state %s-%s, dest = %s",
-                  (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
-                  PJobState[pjob->ji_qs.ji_state],
-                  PJobSubState[pjob->ji_qs.ji_substate],
-                  pjob->ji_qs.ji_destin);
+          sprintf(log_buf, "post_modify_req: PBSE_UNKJOBID for job %s in state %s-%s, dest = %s",
+            (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
+            PJobState[pjob->ji_qs.ji_state],
+            PJobSubState[pjob->ji_qs.ji_substate],
+            pjob->ji_qs.ji_destin);
 
-          LOG_EVENT(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buffer);
+          log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
           }
         
         pthread_mutex_unlock(pjob->ji_mutex);
@@ -228,6 +225,7 @@ void mom_cleanup_checkpoint_hold(
   job       *pjob;
 
   struct batch_request *preq;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   pjob = (job *)ptask->wt_parm1;
 
@@ -235,15 +233,12 @@ void mom_cleanup_checkpoint_hold(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buffer,
+    sprintf(log_buf,
       "checking mom cleanup job state is %s-%s\n",
       PJobState[pjob->ji_qs.ji_state],
       PJobSubState[pjob->ji_qs.ji_substate]);
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
     }
 
   /* 
@@ -263,10 +258,11 @@ void mom_cleanup_checkpoint_hold(
 
       if ((rc = relay_to_mom(pjob, preq, release_req)) != 0)
         {
-        snprintf(log_buffer,sizeof(log_buffer),
+        snprintf(log_buf,sizeof(log_buf),
           "Unable to relay information to mom for job '%s'\n",
           pjob->ji_qs.ji_jobid);
-        log_err(rc,id,log_buffer);
+
+        log_err(rc,id,log_buf);
         free_br(preq);
 
         pthread_mutex_lock(pjob->ji_mutex);
@@ -309,6 +305,7 @@ void chkpt_xfr_hold(
   job       *pjob;
 
   struct batch_request *preq;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   preq = (struct batch_request *)ptask->wt_parm1;
   pjob = (job *)preq->rq_extra;
@@ -317,15 +314,12 @@ void chkpt_xfr_hold(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buffer,
+    sprintf(log_buf,
       "BLCR copy completed (state is %s-%s)",
       PJobState[pjob->ji_qs.ji_state],
       PJobSubState[pjob->ji_qs.ji_substate]);
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
     }
   
   release_req(ptask);
@@ -398,6 +392,7 @@ int modify_job(
   int   copy_checkpoint_files = FALSE;
 
   char *id = "modify_job";
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   job *pjob = (job *)j;
   
@@ -406,11 +401,11 @@ int modify_job(
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
     {
     /* FAILURE */
-    snprintf(log_buffer,sizeof(log_buffer),
+    snprintf(log_buf,sizeof(log_buf),
       "Cannot modify job '%s' in transit\n",
       pjob->ji_qs.ji_jobid);
 
-    log_err(PBSE_BADSTATE,id,log_buffer);
+    log_err(PBSE_BADSTATE,id,log_buf);
 
     return(PBSE_BADSTATE);
     }
@@ -425,14 +420,13 @@ int modify_job(
     if (checkpoint_req == CHK_HOLD)
       {
 
-      sprintf(log_buffer,"setting jobsubstate for %s to RERUN\n", pjob->ji_qs.ji_jobid);
+      sprintf(log_buf,"setting jobsubstate for %s to RERUN\n", pjob->ji_qs.ji_jobid);
 
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
 
       job_save(pjob, SAVEJOB_QUICK, 0);
 
-      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid, log_buffer);
+      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
 
       /* remove checkpoint restart file if there is one */
       
@@ -472,10 +466,10 @@ int modify_job(
           ((job_attr_def[i].at_flags & ATR_DFLAG_ALTRUN) == 0))
         {
         /* FAILURE */
-        snprintf(log_buffer,sizeof(log_buffer),
+        snprintf(log_buf,sizeof(log_buf),
           "Cannot modify attribute '%s' while running\n",
           plist->al_name);
-        log_err(PBSE_MODATRRUN,id,log_buffer);
+        log_err(PBSE_MODATRRUN,id,log_buf);
 
         return PBSE_MODATRRUN;
         }
@@ -495,10 +489,11 @@ int modify_job(
         if (prsd == NULL)
           {
           /* FAILURE */
-          snprintf(log_buffer,sizeof(log_buffer),
+          snprintf(log_buf,sizeof(log_buf),
             "Unknown attribute '%s'\n",
             plist->al_name);
-          log_err(PBSE_UNKRESC,id,log_buffer);
+
+          log_err(PBSE_UNKRESC,id,log_buf);
 
           return(PBSE_UNKRESC);
           }
@@ -506,10 +501,10 @@ int modify_job(
         if ((prsd->rs_flags & ATR_DFLAG_ALTRUN) == 0)
           {
           /* FAILURE */
-          snprintf(log_buffer,sizeof(log_buffer),
+          snprintf(log_buf,sizeof(log_buf),
             "Cannot modify attribute '%s' while running\n",
             plist->al_name);
-          log_err(PBSE_MODATRRUN,id,log_buffer);
+          log_err(PBSE_MODATRRUN,id,log_buf);
 
           return(PBSE_MODATRRUN);
           }
@@ -538,10 +533,10 @@ int modify_job(
   if (rc)
     {
     /* FAILURE */
-    snprintf(log_buffer,sizeof(log_buffer),
+    snprintf(log_buf,sizeof(log_buf),
       "Cannot set attributes for job '%s'\n",
       pjob->ji_qs.ji_jobid);
-    log_err(rc,id,log_buffer);
+    log_err(rc,id,log_buf);
 
     return(rc);
     }
@@ -563,17 +558,9 @@ int modify_job(
     job_save(pjob, SAVEJOB_FULL, 0);
     }
 
-  sprintf(log_buffer, msg_manager,
+  sprintf(log_buf, msg_manager, msg_jobmod, preq->rq_user, preq->rq_host);
 
-          msg_jobmod,
-          preq->rq_user,
-          preq->rq_host);
-
-  LOG_EVENT(
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
   /* if a resource limit changed for a running job, send to MOM */
 
@@ -588,10 +575,11 @@ int modify_job(
                   preq,
                   post_modify_req)))
         {  
-        snprintf(log_buffer,sizeof(log_buffer),
+        snprintf(log_buf,sizeof(log_buf),
           "Unable to relay information to mom for job '%s'\n",
           pjob->ji_qs.ji_jobid);
-        log_err(rc,id,log_buffer);
+
+        log_err(rc,id,log_buf);
   
         return(rc); /* unable to get to MOM */
         }
@@ -622,10 +610,11 @@ int modify_job(
 
       if (rc != 0)
         {
-        snprintf(log_buffer,sizeof(log_buffer),
+        snprintf(log_buf,sizeof(log_buf),
           "Unable to relay information to mom for job '%s'\n",
           pjob->ji_qs.ji_jobid);
-        log_err(rc,id,log_buffer);
+
+        log_err(rc,id,log_buf);
 
         return(0);  /* come back when mom replies */
         }
@@ -785,9 +774,10 @@ int modify_whole_array(
 
   {
   char id[] = "modify_whole_array";
-  int i;
-  int rc = 0;
-  int mom_relay = 0;
+  int  i;
+  int  rc = 0;
+  int  mom_relay = 0;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   for (i = 0; i < pa->ai_qs.array_size; i++)
     {
@@ -823,10 +813,11 @@ int modify_whole_array(
                   array_req,
                   post_modify_arrayreq)))
         {  
-        snprintf(log_buffer,sizeof(log_buffer),
+        snprintf(log_buf,sizeof(log_buf),
           "Unable to relay information to mom for job '%s'\n",
           pa->jobs[i]->ji_qs.ji_jobid);
-        log_err(rc,id,log_buffer);
+
+        log_err(rc,id,log_buf);
 
         pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
         
@@ -1111,11 +1102,12 @@ int modify_job_attr(
   int    *bad)   /* O */
 
   {
-  int      allow_unkn;
-  long      i;
+  int        allow_unkn;
+  long       i;
   attribute  newattr[JOB_ATR_LAST];
   attribute *pattr;
-  int      rc;
+  int        rc;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
     allow_unkn = -1;
@@ -1280,14 +1272,9 @@ int modify_job_attr(
       {
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buffer, "attr %s modified",
-                job_attr_def[i].at_name);
+        sprintf(log_buf, "attr %s modified", job_attr_def[i].at_name);
 
-        LOG_EVENT(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
         }
 
       job_attr_def[i].at_free(pattr + i);
@@ -1327,7 +1314,8 @@ void post_modify_arrayreq(
 
   struct batch_request *preq;
   struct batch_request *parent_req;
-  job  *pjob;
+  job                  *pjob;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   svr_disconnect(pwt->wt_event);  /* close connection to MOM */
 
@@ -1338,13 +1326,9 @@ void post_modify_arrayreq(
 
   if ((preq->rq_reply.brp_code) && (preq->rq_reply.brp_code != PBSE_UNKJOBID))
     {
-    sprintf(log_buffer, msg_mombadmodify, preq->rq_reply.brp_code);
+    sprintf(log_buf, msg_mombadmodify, preq->rq_reply.brp_code);
 
-    log_event(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      preq->rq_ind.rq_modify.rq_objname,
-      log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_modify.rq_objname,log_buf);
 
     parent_req->rq_refcount--;
     if (parent_req->rq_refcount == 0)
@@ -1378,13 +1362,13 @@ void post_modify_arrayreq(
         {
         if (LOGLEVEL >= 0)
           {
-          sprintf(log_buffer, "post_modify_req: PBSE_UNKJOBID for job %s in state %s-%s, dest = %s",
-                  (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
-                  PJobState[pjob->ji_qs.ji_state],
-                  PJobSubState[pjob->ji_qs.ji_substate],
-                  pjob->ji_qs.ji_destin);
+          sprintf(log_buf, "post_modify_req: PBSE_UNKJOBID for job %s in state %s-%s, dest = %s",
+            (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
+            PJobState[pjob->ji_qs.ji_state],
+            PJobSubState[pjob->ji_qs.ji_substate],
+            pjob->ji_qs.ji_destin);
 
-          log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+          log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
           }
         
         pthread_mutex_unlock(pjob->ji_mutex);

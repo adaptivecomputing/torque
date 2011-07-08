@@ -147,7 +147,6 @@ extern char *msg_illregister;
 extern char *msg_registerdel;
 extern char *msg_registerrel;
 extern char *msg_regrej;
-extern char  log_buffer[];
 extern int   LOGLEVEL;
 extern char *PJobState[];
 
@@ -172,17 +171,18 @@ void req_register(
   struct batch_request *preq)  /* I */
 
   {
-  int     made;
-  attribute   *pattr;
+  int                made;
+  attribute         *pattr;
 
-  struct depend   *pdep;
+  struct depend     *pdep;
 
   struct depend_job *pdj;
-  job    *pjob;
-  char    *ps;
-  int     rc = 0;
-  int     revtype;
-  int     type;
+  job               *pjob;
+  char              *ps;
+  int                rc = 0;
+  int                revtype;
+  int                type;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
 
   /*  make sure request is from a server */
 
@@ -231,16 +231,12 @@ void req_register(
     {
     if (LOGLEVEL >= 8)
       {
-      sprintf(log_buffer,"Dependency requested for %s job, parent job %s, child job %s",
+      sprintf(log_buf,"Dependency requested for %s job, parent job %s, child job %s",
         PJobState[pjob->ji_qs.ji_state],
         preq->rq_ind.rq_register.rq_parent,
         preq->rq_ind.rq_register.rq_child);
       
-      log_event(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
     
     log_event(
@@ -258,16 +254,12 @@ void req_register(
 
   if (LOGLEVEL >= 8)
     {
-    sprintf(log_buffer,"Dependency requested parent job %s state (%s), child job %s",
+    sprintf(log_buf,"Dependency requested parent job %s state (%s), child job %s",
       preq->rq_ind.rq_register.rq_parent,
       PJobState[pjob->ji_qs.ji_state],
       preq->rq_ind.rq_register.rq_child);
 
-    log_event(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
     }
 
   pattr = &pjob->ji_wattr[JOB_ATR_depend];
@@ -449,14 +441,9 @@ void req_register(
               {
               del_depend_job(pdj);
 
-              sprintf(log_buffer, msg_registerrel,
-                      preq->rq_ind.rq_register.rq_child);
+              sprintf(log_buf, msg_registerrel, preq->rq_ind.rq_register.rq_child);
 
-              log_event(
-                PBSEVENT_JOB,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
+              log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
               if (GET_NEXT(pdep->dp_jobs) == 0)
                 {
@@ -544,17 +531,11 @@ void req_register(
         break;
         }
 
-      sprintf(log_buffer, msg_registerdel,
+      sprintf(log_buf, msg_registerdel, preq->rq_ind.rq_register.rq_child);
 
-              preq->rq_ind.rq_register.rq_child);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-      log_event(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
-
-      job_abt(&pjob, log_buffer);
+      job_abt(&pjob, log_buf);
 
       /* pjob freed and set to NULL */
 
@@ -584,14 +565,13 @@ void req_register(
 
     default:
 
-      sprintf(log_buffer, msg_illregister,
-              preq->rq_ind.rq_register.rq_parent);
+      sprintf(log_buf, msg_illregister, preq->rq_ind.rq_register.rq_parent);
 
       log_event(
         PBSEVENT_DEBUG | PBSEVENT_SYSTEM | PBSEVENT_ERROR,
         PBS_EVENTCLASS_REQUEST,
         preq->rq_host,
-        log_buffer);
+        log_buf);
 
       rc = PBSE_IVALREQ;
 
@@ -994,6 +974,7 @@ static void post_doq(
   {
 
   struct batch_request *preq = (struct batch_request *)pwt->wt_parm1;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   char *jobid = preq->rq_ind.rq_register.rq_child;
 
@@ -1008,28 +989,27 @@ static void post_doq(
   if (preq->rq_reply.brp_code)
     {
     /* request was rejected */
+    strcpy(log_buf, msg_regrej);
+    strcat(log_buf, preq->rq_ind.rq_register.rq_parent);
 
-    strcpy(log_buffer, msg_regrej);
-    strcat(log_buffer, preq->rq_ind.rq_register.rq_parent);
-
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);
 
     pjob = find_job(jobid);
 
     if ((msg = pbse_to_txt(preq->rq_reply.brp_code)) != NULL)
       {
-      strcat(log_buffer, "\n");
-      strcat(log_buffer, msg);
+      strcat(log_buf, "\n");
+      strcat(log_buf, msg);
       }
 
     if (pjob != NULL)
       {
-      strcat(log_buffer, "\n");
-      strcat(log_buffer, "Job held for unknown job dep, use 'qrls' to release");
+      strcat(log_buf, "\n");
+      strcat(log_buf, "Job held for unknown job dep, use 'qrls' to release");
 
       if (preq->rq_reply.brp_code != PBSE_BADSTATE)
         {
-        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, log_buffer);
+        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, log_buf);
         }
 
       pattr = &pjob->ji_wattr[JOB_ATR_depend];
@@ -2069,6 +2049,7 @@ static int send_depend_req(
   char        *myid = "send_depend_req";
 
   struct batch_request *preq;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   preq = alloc_br(PBS_BATCH_RegistDep);
 
@@ -2127,13 +2108,12 @@ static int send_depend_req(
 
   if (issue_to_svr(pparent->dc_svr, preq, postfunc) == -1)
     {
-    sprintf(log_buffer, "Unable to perform dependency with job %s\n",
-            pparent->dc_child);
+    sprintf(log_buf, "Unable to perform dependency with job %s\n", pparent->dc_child);
 
     return(PBSE_BADHOST);
     }
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END send_depend_req() */
 
 

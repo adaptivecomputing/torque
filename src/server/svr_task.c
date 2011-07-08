@@ -230,21 +230,23 @@ void dispatch_task(
   struct work_task *ptask) /* M */
 
   {
-  int free_task = !task_is_in_threadpool(ptask);
-
   if (ptask->wt_tasklist)
     remove_task(ptask->wt_tasklist,ptask);
 
   if (ptask->wt_obj_tasklist)
     remove_task(ptask->wt_obj_tasklist,ptask);
 
+  /* unlock and free the mutex */
+  pthread_mutex_unlock(ptask->wt_mutex);
+  free(ptask->wt_mutex);
+
   if (ptask->wt_func != NULL)
-    ptask->wt_func(ptask);  /* dispatch process function */
+    enqueue_threadpool_request((void *(*)(void *))ptask->wt_func,ptask);
 
   /* some tasks are executed as threads and these will be freed there */
-  if (free_task == TRUE)
+/*  if (free_task == TRUE)
     free(ptask);
-
+*/
   return;
   }  /* END dispatch_task() */
 

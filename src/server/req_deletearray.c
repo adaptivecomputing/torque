@@ -195,6 +195,7 @@ void req_deletearray(
   char *range;
 
   struct work_task *ptask;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   int num_skipped;
   char  owner[PBS_MAXUSER + 1];
@@ -212,14 +213,14 @@ void req_deletearray(
 
   if (svr_authorize_req(preq, owner, pa->ai_qs.submit_host) == -1)
     {
-    sprintf(log_buffer, msg_permlog,
+    sprintf(log_buf, msg_permlog,
       preq->rq_type,
       "Array",
       preq->rq_ind.rq_delete.rq_objname,
       preq->rq_user,
       preq->rq_host);
 
-    log_event(PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buffer);
+    log_event(PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buf);
 
     pthread_mutex_unlock(pa->ai_mutex);
 

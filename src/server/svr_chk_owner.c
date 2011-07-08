@@ -261,18 +261,13 @@ int svr_get_privilege(
   char  uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
   char  host_no_port[PBS_MAXHOSTNAME+1];
   char *colon_loc = NULL;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (!user)
     {
+    sprintf(log_buf, "Invalid user: %s", "null");
 
-    sprintf(log_buffer, "Invalid user: %s", "null");
-
-    log_record(
-      PBSEVENT_SECURITY,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      log_buffer);
-
+    log_record(PBSEVENT_SECURITY,PBS_EVENTCLASS_SERVER,id,log_buf);
 
     return(0);
     }
@@ -280,13 +275,9 @@ int svr_get_privilege(
   /* user name cannot be longer than PBS_MAXUSER*/
   if (strlen(user) > PBS_MAXUSER)
     {
-    sprintf(log_buffer, "Invalid user: %s", user);
+    sprintf(log_buf, "Invalid user: %s", user);
 
-    log_record(
-      PBSEVENT_SECURITY,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_SECURITY,PBS_EVENTCLASS_SERVER,id,log_buf);
      
     return(0);
     }
@@ -318,17 +309,9 @@ int svr_get_privilege(
   /* num_host_chars cannot be more than PBS_MAXHOSTNAME */
   if (num_host_chars > PBS_MAXHOSTNAME)
     {
-    snprintf(log_buffer, LOG_BUF_SIZE, "Invalid host: %s", host);
-    /* log_buffer is big but just in case host was really long we need to
-       null terminate the last byte. strncpy will copy LOG_BUF_SIZE but
-       not null terminate the array if host is larger. */
-    log_buffer[LOG_BUF_SIZE - 1] = 0;
+    snprintf(log_buf, sizeof(log_buf), "Invalid host: %s", host);
 
-    log_record(
-      PBSEVENT_SECURITY,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_SECURITY,PBS_EVENTCLASS_SERVER,id,log_buf);
 
     return(0);
     }
@@ -488,17 +471,18 @@ void chk_job_req_permissions(
   {
   job  *pjob = *pjob_ptr;
   char  tmpLine[MAXLINE];
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (svr_authorize_jobreq(preq, pjob) == -1)
     {
-    sprintf(log_buffer, msg_permlog,
-            preq->rq_type,
-            "Job",
-            pjob->ji_qs.ji_jobid,
-            preq->rq_user,
-            preq->rq_host);
+    sprintf(log_buf, msg_permlog,
+      preq->rq_type,
+      "Job",
+      pjob->ji_qs.ji_jobid,
+      preq->rq_user,
+      preq->rq_host);
 
-    log_event(PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_event(PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
 
@@ -523,11 +507,11 @@ void chk_job_req_permissions(
 
       default:
 
-        sprintf(log_buffer, "%s %s",
+        sprintf(log_buf, "%s %s",
           pbse_to_txt(PBSE_BADSTATE),
           PJobState[pjob->ji_qs.ji_state]);
 
-        log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+        log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
         snprintf(tmpLine, sizeof(tmpLine), 
           "invalid state for job - %s",

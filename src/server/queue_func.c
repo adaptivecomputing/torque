@@ -245,6 +245,7 @@ int que_purge(
 
   {
   char     namebuf[MAXPATHLEN];
+  char     log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pque->qu_numjobs != 0)
     {
@@ -257,9 +258,9 @@ int que_purge(
 
   if (unlink(namebuf) < 0)
     {
-    sprintf(log_buffer, msg_err_unlink, "Queue", namebuf);
+    sprintf(log_buf, msg_err_unlink, "Queue", namebuf);
 
-    log_err(errno, "queue_purge", log_buffer);
+    log_err(errno, "queue_purge", log_buf);
     }
 
   que_free(pque);

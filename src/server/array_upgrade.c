@@ -42,12 +42,13 @@ int array_upgrade(
   int       *old_version)
 
   {
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* reset the file descriptor */
   if (lseek(fds, 0, SEEK_SET) != 0)
     {
-    sprintf(log_buffer, "unable to reset fds\n");
-    log_err(-1, "array_upgrade", log_buffer);
+    sprintf(log_buf, "unable to reset fds\n");
+    log_err(-1, "array_upgrade", log_buf);
 
     return -1;
     }
@@ -70,10 +71,10 @@ int array_upgrade(
        about the incompatibility and inability to upgrade, print a quick and 
        dirty error message and exit */
        
-    sprintf(log_buffer, "WARNING, unable to upgrade job array\n"
+    sprintf(log_buf, "WARNING, unable to upgrade job array\n"
             "structs from versions prior to 2.5.0.\n"
             "Please downgrade TORQUE and upgrade once no job arrays are queued\n");
-    log_err(-1, "array_upgrade", log_buffer);
+    log_err(-1, "array_upgrade", log_buf);
     exit(1);
     }
   else

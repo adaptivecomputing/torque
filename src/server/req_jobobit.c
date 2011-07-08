@@ -400,6 +400,7 @@ static struct batch_request *cpy_stdfile(
 
   char *suffix;
   char *to = NULL;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags) &&
       (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long))
@@ -426,14 +427,13 @@ static struct batch_request *cpy_stdfile(
     {
     /* FAILURE:  This shouldn't be */
 
-    sprintf(log_buffer, "%c file missing",
-            key);
+    sprintf(log_buf, "%c file missing", key);
 
     log_event(
       PBSEVENT_ERROR | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      log_buffer);
+      log_buf);
 
     return(NULL);
     }
@@ -539,6 +539,7 @@ struct batch_request *cpy_stage(
   char        *plocal;
   char       *prmt;
   char       *to;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
 
   pattr = &pjob->ji_wattr[ati];
 
@@ -552,14 +553,13 @@ struct batch_request *cpy_stage(
       {
       /* FAILURE */
 
-      snprintf(log_buffer, LOG_BUF_SIZE, "cannot copy stage file for job %s",
-               pjob->ji_qs.ji_jobid);
+      snprintf(log_buf, LOG_BUF_SIZE, "cannot copy stage file for job %s", pjob->ji_qs.ji_jobid);
 
       log_event(
         PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        log_buffer);
+        log_buf);
 
       return(preq);
       }
@@ -761,6 +761,7 @@ void on_job_exit(
   char                 *jobid;
   int                   spool_file_exists;
   int                   rc = 0;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   extern void remove_job_delete_nanny(struct job *);
 
@@ -790,19 +791,19 @@ void on_job_exit(
   /* if the job doesn't exist, just exit */
   if (pjob == NULL)
     {
-    sprintf(log_buffer, "%s called with INVALID jobid: %s", id, jobid);
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"NULL",log_buffer);
+    sprintf(log_buf, "%s called with INVALID jobid: %s", id, jobid);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"NULL",log_buf);
 
     return;
     }
   else
     {
-    sprintf(log_buffer, "%s valid pjob: %p (substate=%d)",
+    sprintf(log_buf, "%s valid pjob: %p (substate=%d)",
       id,
       (void *)pjob,
       pjob->ji_qs.ji_substate);
     
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buf);
     }
 
   free(jobid);
@@ -1004,8 +1005,8 @@ void on_job_exit(
         {
         if (LOGLEVEL >= 3)
           {
-          snprintf(log_buffer, LOG_BUF_SIZE, "request to return spool files failed on node '%s' for job %s%s",
-                   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
+          snprintf(log_buf, sizeof(log_buf), "request to return spool files failed on node '%s' for job %s%s",
+            pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
                    pjob->ji_qs.ji_jobid,
                    (IsFaked == 1) ? "*" : "");
 
@@ -1013,7 +1014,7 @@ void on_job_exit(
             PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            log_buffer);
+            log_buf);
           }
         } /* end if (preq->rq_reply.brp_code != 0) */
 
@@ -1144,19 +1145,18 @@ void on_job_exit(
 
         /* error from MOM */
 
-        snprintf(log_buffer, LOG_BUF_SIZE, msg_obitnocpy,
-                 pjob->ji_qs.ji_jobid,
-                 pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+        snprintf(log_buf, LOG_BUF_SIZE, msg_obitnocpy, pjob->ji_qs.ji_jobid,
+          pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
         log_event(
           PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
-          log_buffer);
+          log_buf);
 
         if (LOGLEVEL >= 3)
           {
-          snprintf(log_buffer, LOG_BUF_SIZE, "request to copy stageout files failed on node '%s' for job %s%s",
+          snprintf(log_buf, sizeof(log_buf), "request to copy stageout files failed on node '%s' for job %s%s",
                    pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
                    pjob->ji_qs.ji_jobid,
                    (IsFaked == 1) ? "*" : "");
@@ -1165,24 +1165,24 @@ void on_job_exit(
             PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            log_buffer);
+            log_buf);
           }
 
         if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
           {
           strncat(
-            log_buffer,
+            log_buf,
             preq->rq_reply.brp_un.brp_txt.brp_str,
-            LOG_BUF_SIZE - strlen(log_buffer) - 1);
+            LOG_BUF_SIZE - strlen(log_buf) - 1);
           }
 
-        svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buffer);
+        svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
 
         memset(&tA, 0, sizeof(tA));
 
         tA.al_name  = "sched_hint";
         tA.al_resc  = "";
-        tA.al_value = log_buffer;
+        tA.al_value = log_buf;
         tA.al_op    = SET;
 
         modify_job_attr(
@@ -1348,35 +1348,34 @@ void on_job_exit(
       if (preq->rq_reply.brp_code != 0)
         {
         /* an error occurred */
-
-        snprintf(log_buffer, LOG_BUF_SIZE, msg_obitnodel,
+        snprintf(log_buf, LOG_BUF_SIZE, msg_obitnodel,
           pjob->ji_qs.ji_jobid,
           pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
         if (LOGLEVEL >= 3)
           {
-          snprintf(log_buffer, LOG_BUF_SIZE, "request to remove stage-in files failed on node '%s' for job %s%s",
-                   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
-                   pjob->ji_qs.ji_jobid,
-                   (IsFaked == 1) ? "*" : "");
+          snprintf(log_buf, LOG_BUF_SIZE,
+            "request to remove stage-in files failed on node '%s' for job %s%s",
+            pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
+            pjob->ji_qs.ji_jobid,
+            (IsFaked == 1) ? "*" : "");
 
           log_event(
             PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            log_buffer);
+            log_buf);
           }
 
         if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
           {
-          strncat(log_buffer,
-                  preq->rq_reply.brp_un.brp_txt.brp_str,
-                  LOG_BUF_SIZE - strlen(log_buffer) - 1);
+          strncat(log_buf, preq->rq_reply.brp_un.brp_txt.brp_str,
+            LOG_BUF_SIZE - strlen(log_buf) - 1);
           }
 
-        svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buffer);
+        svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
         }
 
       free_br(preq);
@@ -1412,14 +1411,13 @@ void on_job_exit(
 
         if (rc != 0)
           {
-          snprintf(log_buffer, LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d",
-                    rc);
+          snprintf(log_buf, LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d", rc);
 
           log_event(
             PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            log_buffer);
+            log_buf);
           }
 
         /* release_req will free preq and close connection */
@@ -1458,15 +1456,11 @@ void on_job_exit(
               svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED);
               if (LOGLEVEL >= 4)
                 {
-                sprintf(log_buffer,
+                sprintf(log_buf,
                   "Requeueing job after checkpoint restart failure: %s",
                   pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str);
 
-                log_event(
-                  PBSEVENT_JOB,
-                  PBS_EVENTCLASS_JOB,
-                  pjob->ji_qs.ji_jobid,
-                  log_buffer);
+                log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
                 }
 
               pthread_mutex_unlock(pjob->ji_mutex);
@@ -1488,15 +1482,11 @@ void on_job_exit(
               svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_HELD);
               if (LOGLEVEL >= 4)
                 {
-                sprintf(log_buffer,
+                sprintf(log_buf,
                   "Placing job on hold after checkpoint restart failure: %s",
                   pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str);
 
-                log_event(
-                  PBSEVENT_JOB,
-                  PBS_EVENTCLASS_JOB,
-                  pjob->ji_qs.ji_jobid,
-                  log_buffer);
+                log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
                 }
 
               pthread_mutex_unlock(pjob->ji_mutex);
@@ -1651,13 +1641,10 @@ void on_job_exit(
           {
           if (LOGLEVEL >= 7)
             {
-            sprintf(log_buffer, "Bypassing job %s waiting for purge completed command",
+            sprintf(log_buf, "Bypassing job %s waiting for purge completed command",
               pjob->ji_qs.ji_jobid);
-            log_record(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
+
+            log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
             }
 
           jobid = strdup(pjob->ji_qs.ji_jobid);
@@ -1719,6 +1706,7 @@ void on_job_rerun(
   struct batch_request *preq;
 
   int                 IsFaked;
+  char                log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (ptask->wt_type != WORK_Deferred_Reply)
     {
@@ -1805,29 +1793,30 @@ void on_job_rerun(
 
         if (LOGLEVEL >= 3)
           {
-          snprintf(log_buffer, LOG_BUF_SIZE, "request to save output files failed on node '%s' for job %s%s",
-                   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
-                   pjob->ji_qs.ji_jobid,
-                   (IsFaked == 1) ? "*" : "");
+          snprintf(log_buf, LOG_BUF_SIZE,
+            "request to save output files failed on node '%s' for job %s%s",
+            pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
+            pjob->ji_qs.ji_jobid,
+            (IsFaked == 1) ? "*" : "");
 
           log_event(
             PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            log_buffer);
+            log_buf);
           }
 
         /* for now, just log it */
 
-        snprintf(log_buffer, LOG_BUF_SIZE, msg_obitnocpy,
-                 pjob->ji_qs.ji_jobid,
-                 pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+        snprintf(log_buf, sizeof(log_buf), msg_obitnocpy,
+          pjob->ji_qs.ji_jobid,
+          pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
         log_event(
           PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
-          log_buffer);
+          log_buf);
         }
 
       svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN1);
@@ -1898,38 +1887,37 @@ void on_job_rerun(
 
         if (LOGLEVEL >= 3)
           {
-          snprintf(log_buffer, LOG_BUF_SIZE, "request to save stageout files failed on node '%s' for job %s%s",
-                   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
-                   pjob->ji_qs.ji_jobid,
-                   (IsFaked == TRUE) ? "*" : "");
+          snprintf(log_buf, LOG_BUF_SIZE, "request to save stageout files failed on node '%s' for job %s%s",
+            pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
+            pjob->ji_qs.ji_jobid,
+            (IsFaked == TRUE) ? "*" : "");
 
           log_event(
             PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            log_buffer);
+            log_buf);
           }
 
-        snprintf(log_buffer, LOG_BUF_SIZE, msg_obitnocpy,
-
-                 pjob->ji_qs.ji_jobid,
-                 pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+        snprintf(log_buf, LOG_BUF_SIZE, msg_obitnocpy,
+          pjob->ji_qs.ji_jobid,
+          pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
         log_event(
           PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
-          log_buffer);
+          log_buf);
 
         if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
           {
           strncat(
-            log_buffer,
+            log_buf,
             preq->rq_reply.brp_un.brp_txt.brp_str,
-            LOG_BUF_SIZE - strlen(log_buffer) - 1);
+            LOG_BUF_SIZE - strlen(log_buf) - 1);
           }
 
-        svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buffer);
+        svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
         }
 
       /*
@@ -1998,28 +1986,28 @@ void on_job_rerun(
 
         if (LOGLEVEL >= 3)
           {
-          snprintf(log_buffer, LOG_BUF_SIZE, "request to delete stagein files failed on node '%s' for job %s%s",
-                   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
-                   pjob->ji_qs.ji_jobid,
-                   (IsFaked == TRUE) ? "*" : "");
+          snprintf(log_buf, LOG_BUF_SIZE, "request to delete stagein files failed on node '%s' for job %s%s",
+            pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
+            pjob->ji_qs.ji_jobid,
+            (IsFaked == TRUE) ? "*" : "");
 
           log_event(
             PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            log_buffer);
+            log_buf);
           }
 
         /* for now, just log it */
 
-        snprintf(log_buffer, LOG_BUF_SIZE, msg_obitnocpy,
-                 pjob->ji_qs.ji_jobid,
-                 pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+        snprintf(log_buf, LOG_BUF_SIZE, msg_obitnocpy,
+          pjob->ji_qs.ji_jobid,
+          pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
         log_event(
           PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
-          log_buffer);
+          log_buf);
         }
 
       free_br(preq);
@@ -2048,14 +2036,14 @@ void on_job_rerun(
 
         if (rc != 0)
           {
-          snprintf(log_buffer, LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d",
+          snprintf(log_buf, LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d",
                     rc);
 
           log_event(
             PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            log_buffer);
+            log_buf);
           }
 
         /* release_req will free preq and close connection */
@@ -2290,6 +2278,7 @@ void *req_jobobit(
   struct work_task     *ptask;
   svrattrl             *patlist;
   unsigned int          dummy;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   strcpy(jobid, preq->rq_ind.rq_jobobit.rq_jid);  /* This will be needed later for logging after preq is freed. */
   pjob = find_job(preq->rq_ind.rq_jobobit.rq_jid);
@@ -2306,17 +2295,13 @@ void *req_jobobit(
       {
       /* tell MOM the job was blown away */
 
-      sprintf(log_buffer, msg_obitnojob,
-              preq->rq_host,
-              PBSE_CLEANEDOUT);
+      sprintf(log_buf, msg_obitnojob, preq->rq_host, PBSE_CLEANEDOUT);
 
       req_reject(PBSE_CLEANEDOUT, 0, preq, NULL, NULL);
       }
     else
       {
-      sprintf(log_buffer, msg_obitnojob,
-              preq->rq_host,
-              PBSE_UNKJOBID);
+      sprintf(log_buf, msg_obitnojob, preq->rq_host, PBSE_UNKJOBID);
 
       req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
       }
@@ -2325,7 +2310,7 @@ void *req_jobobit(
       PBSEVENT_ERROR | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       jobid,
-      log_buffer);
+      log_buf);
 
     if (pjob != NULL)
       pthread_mutex_unlock(pjob->ji_mutex);
@@ -2351,16 +2336,16 @@ void *req_jobobit(
 
       /* NOTE:  was logged w/msg_obitnojob */
 
-      sprintf(log_buffer, "obit received for job %s from host %s with bad state (state: %s)",
-              jobid,
-              preq->rq_host,
-              PJobState[pjob->ji_qs.ji_state]);
+      sprintf(log_buf, "obit received for job %s from host %s with bad state (state: %s)",
+        jobid,
+        preq->rq_host,
+        PJobState[pjob->ji_qs.ji_state]);
 
       log_event(
         PBSEVENT_ERROR | PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         jobid,
-        log_buffer);
+        log_buf);
 
       bad = PBSE_BADSTATE;
       }
@@ -2463,14 +2448,9 @@ void *req_jobobit(
     if (tmppreq == NULL)
       {
       /* FAILURE */
+      sprintf(log_buf, "cannot allocate memory for temp obit message");
 
-      sprintf(log_buffer, "cannot allocate memory for temp obit message");
-
-      LOG_EVENT(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
+      log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
       pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -2645,14 +2625,13 @@ void *req_jobobit(
 
   if (LOGLEVEL >= 2)
     {
-    sprintf(log_buffer, "job exit status %d handled",
-            exitstatus);
+    sprintf(log_buf, "job exit status %d handled", exitstatus);
 
     log_event(
       PBSEVENT_ERROR | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       jobid,
-      log_buffer);
+      log_buf);
     }
 
   /* What do we now do with the job... */
@@ -2809,8 +2788,7 @@ void *req_jobobit(
 
   if (LOGLEVEL >= 4)
     {
-    sprintf(log_buffer, "job exit status %d handled",
-            exitstatus);
+    sprintf(log_buf, "job exit status %d handled", exitstatus);
 
     log_event(
       PBSEVENT_ERROR | PBSEVENT_JOB,

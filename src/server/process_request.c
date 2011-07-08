@@ -345,6 +345,7 @@ void process_request(
   int                   rc;
 
   struct batch_request *request = NULL;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   time_now = time(NULL);
 
@@ -454,11 +455,11 @@ void process_request(
     {
     char tmpLine[1024];
 
-    sprintf(log_buffer, "%s: %lu",
-            pbse_to_txt(PBSE_BADHOST),
-            get_connectaddr(sfds,FALSE));
+    sprintf(log_buf, "%s: %lu",
+      pbse_to_txt(PBSE_BADHOST),
+      get_connectaddr(sfds,FALSE));
 
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buf);
 
     snprintf(tmpLine, sizeof(tmpLine), "cannot determine hostname for connection from %lu",
              get_connectaddr(sfds,FALSE));
@@ -474,15 +475,14 @@ void process_request(
 
   if (LOGLEVEL >= 1)
     {
-    sprintf(
-      log_buffer,
+    sprintf(log_buf,
       msg_request,
       reqtype_to_txt(request->rq_type),
       request->rq_user,
       request->rq_host,
       sfds);
 
-    log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", log_buffer);
+    log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", log_buf);
     }
 
   /* is the request from a host acceptable to the server */
@@ -700,20 +700,20 @@ void process_request(
 
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer, "request type %s from host %s received",
+      sprintf(log_buf, "request type %s from host %s received",
         reqtype_to_txt(request->rq_type),
         request->rq_host);
 
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buffer);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buf);
       }
 
     if (!AVL_is_in_tree(svr_conn[sfds].cn_addr, 0, okclients))
       {
-      sprintf(log_buffer, "request type %s from host %s rejected (host not authorized)",
+      sprintf(log_buf, "request type %s from host %s rejected (host not authorized)",
         reqtype_to_txt(request->rq_type),
         request->rq_host);
 
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buffer);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buf);
 
       req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
 
@@ -724,11 +724,11 @@ void process_request(
 
     if (LOGLEVEL >= 3)
       {
-      sprintf(log_buffer, "request type %s from host %s allowed",
+      sprintf(log_buf, "request type %s from host %s allowed",
         reqtype_to_txt(request->rq_type),
         request->rq_host);
 
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buffer);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buf);
       }
 
     mom_server_update_receive_time_by_ip(svr_conn[sfds].cn_addr, reqtype_to_txt(request->rq_type));
@@ -772,18 +772,15 @@ void dispatch_request(
 
   {
   char *id = "dispatch_request";
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer,"dispatching request %s on sd=%d",
+    sprintf(log_buf,"dispatching request %s on sd=%d",
       reqtype_to_txt(request->rq_type),
       sfds);
 
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buf);
     }
 
   switch (request->rq_type)

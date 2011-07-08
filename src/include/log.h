@@ -84,7 +84,8 @@
 #ifndef LOG_H
 #define LOG_H
 
-#define LOG_BUF_SIZE  16384
+#define LOG_BUF_SIZE        16384
+#define LOCAL_LOG_BUF_SIZE  5096
 
 /* The following macro assist in sharing code between the Server and Mom */
 #define LOG_EVENT log_event

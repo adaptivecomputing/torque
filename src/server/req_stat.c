@@ -350,29 +350,30 @@ static void req_stat_job_step2(
   struct stat_cntl *cntl)  /* I/O (freed on return) */
 
   {
-  svrattrl        *pal;
-  job         *pjob = NULL;
+  svrattrl              *pal;
+  job                   *pjob = NULL;
 
-  struct batch_request *preq;
+  struct batch_request  *preq;
 
-  struct batch_reply   *preply;
-  int          rc = 0;
+  struct batch_reply    *preply;
+  int                    rc = 0;
 
-  enum TJobStatTypeEnum type;
+  enum TJobStatTypeEnum  type;
 
-  pbs_queue            *pque = NULL;
-  int                   exec_only = 0;
+  pbs_queue             *pque = NULL;
+  int                    exec_only = 0;
 
-  int                   IsTruncated = 0;
+  int                    IsTruncated = 0;
 
-  long                  DTime;  /* delta time - only report full attribute list if J->MTime > DTime */
+  long                   DTime;  /* delta time - only report full attribute list if J->MTime > DTime */
 
-  static svrattrl      *dpal = NULL;
+  static svrattrl       *dpal = NULL;
   
-  int        job_array_index = 0;
-  job_array *pa = NULL;
+  int                    job_array_index = 0;
+  job_array             *pa = NULL;
+  char                   log_buf[LOCAL_LOG_BUF_SIZE];
 
-  int        iter;
+  int                    iter;
   
 
   preq   = cntl->sc_origrq;
@@ -637,15 +638,11 @@ static void req_stat_job_step2(
 
       if (LOGLEVEL >= 5)
         {
-        sprintf(log_buffer,"giving scheduler up to %ld idle jobs in queue %s\n",
+        sprintf(log_buf,"giving scheduler up to %ld idle jobs in queue %s\n",
           qmaxreport,
           pque->qu_qs.qu_name);
 
-        log_event(
-          PBSEVENT_SYSTEM,
-          PBS_EVENTCLASS_QUEUE,
-          pque->qu_qs.qu_name,
-          log_buffer);
+        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_QUEUE,pque->qu_qs.qu_name,log_buf);
         }
 
       sentJobCounter = 0;
@@ -698,15 +695,11 @@ static void req_stat_job_step2(
 
       if (LOGLEVEL >= 5)
         {
-        sprintf(log_buffer,"sent scheduler %ld total jobs for queue %s\n",
+        sprintf(log_buf,"sent scheduler %ld total jobs for queue %s\n",
           sentJobCounter,
           pque->qu_qs.qu_name);
 
-        log_event(
-          PBSEVENT_SYSTEM,
-          PBS_EVENTCLASS_QUEUE,
-          pque->qu_qs.qu_name,
-          log_buffer);
+        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_QUEUE,pque->qu_qs.qu_name,log_buf);
         }
     
       pthread_mutex_unlock(pque->qu_mutex);
@@ -838,6 +831,7 @@ int stat_to_mom(
   struct batch_request *newrq;
   int                   rc;
   unsigned long         addr;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   struct work_task     *pwt = 0;
 
@@ -868,11 +862,11 @@ int stat_to_mom(
     {
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer,"node '%s' is allocated to job but in state '%s'",
+      sprintf(log_buf,"node '%s' is allocated to job but in state '%s'",
         node->nd_name,
         (node->nd_state & INUSE_DELETED) ? "deleted" : "down");
 
-      log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
 
     pthread_mutex_unlock(node->nd_mutex);

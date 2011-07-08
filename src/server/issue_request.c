@@ -155,6 +155,7 @@ int relay_to_mom(
   pbs_net_t       addr;
 
   struct pbsnode *node;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* if MOM is down don't try to connect */
   addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
@@ -171,9 +172,9 @@ int relay_to_mom(
   if (LOGLEVEL >= 7)
     {
     char *tmp = netaddr_pbs_net_t(pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
-    sprintf(log_buffer, "momaddr=%s",tmp);
+    sprintf(log_buf, "momaddr=%s",tmp);
 
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buffer);
+    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
     free(tmp);
     }
@@ -189,7 +190,7 @@ int relay_to_mom(
 
   if (conn < 0)
     {
-    LOG_EVENT(PBSEVENT_ERROR,PBS_EVENTCLASS_REQUEST,"",msg_norelytomom);
+    log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_REQUEST,"",msg_norelytomom);
 
     return(PBSE_NORELYMOM);
     }
@@ -392,10 +393,11 @@ int issue_Drequest(
   struct work_task *ptask;
 
   struct svrattrl  *psvratl;
-  int    rc;
-  int    sock = 0;
-  enum work_type  wt;
-  char   *id = "issue_Drequest";
+  int               rc;
+  int               sock = 0;
+  enum work_type    wt;
+  char             *id = "issue_Drequest";
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (conn == PBS_LOCAL_CONNECTION)
     {
@@ -671,10 +673,10 @@ int issue_Drequest(
 
     default:
 
-      sprintf(log_buffer, msg_issuebad,
+      sprintf(log_buf, msg_issuebad,
               request->rq_type);
 
-      log_err(-1, id, log_buffer);
+      log_err(-1, id, log_buf);
 
       pthread_mutex_lock(ptask->wt_mutex);
 

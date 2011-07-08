@@ -133,6 +133,7 @@ void req_gpuctrl(
   int    gpumode = -1;
   int    reset_perm = -1;
   int    reset_vol = -1;
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
 #ifdef NVIDIA_GPUS
   struct pbsnode *pnode = NULL;
   int    gpuidx = -1;
@@ -158,7 +159,7 @@ void req_gpuctrl(
   if (LOGLEVEL >= 7)
     {
     sprintf(
-      log_buffer,
+      log_buf,
       "GPU control request for node %s gpuid %s mode %d reset_perm %d reset_vol %d",
       nodename,
       gpuid,
@@ -166,7 +167,7 @@ void req_gpuctrl(
       reset_perm,
       reset_vol);
 
-    log_ext(-1, id, log_buffer, LOG_INFO);
+    log_ext(-1, id, log_buf, LOG_INFO);
     }
 
   /* validate mom node exists */
@@ -185,11 +186,10 @@ void req_gpuctrl(
 
   if (pnode->nd_state & (INUSE_DELETED | INUSE_DOWN | INUSE_OFFLINE | INUSE_UNKNOWN))
     {
-    sprintf(
-      log_buffer,
-      "Node %s is not available",
-      pnode->nd_name);
-    req_reject(PBSE_UNKREQ, 0, preq, NULL, log_buffer);
+    sprintf(log_buf,"Node %s is not available",pnode->nd_name);
+
+    req_reject(PBSE_UNKREQ, 0, preq, NULL, log_buf);
+
     return;
     }
 
@@ -251,8 +251,7 @@ void req_gpuctrl(
 
 #else
 
-    sprintf(
-      log_buffer,
+    sprintf(log_buf,
       "GPU control request not supported: node %s gpuid %s mode %d reset_perm %d reset_vol %d",
       nodename,
       gpuid,
@@ -262,7 +261,7 @@ void req_gpuctrl(
 
   if (LOGLEVEL >= 3)
     {
-      log_ext(-1, id, log_buffer, LOG_INFO);
+    log_ext(-1, id, log_buf, LOG_INFO);
     }
 
   req_reject(PBSE_NOSUP, 0, preq, NULL, NULL);
@@ -284,9 +283,10 @@ static void process_gpu_request_reply(
 
   struct work_task *pwt)
   {
-  char   *id = "process_gpu_request_reply";
+  char                 *id = "process_gpu_request_reply";
 
   struct batch_request *preq;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   svr_disconnect(pwt->wt_event); /* close connection to MOM */
 
@@ -295,12 +295,12 @@ static void process_gpu_request_reply(
 
   if (preq->rq_reply.brp_code != 0)
     {
-    sprintf(log_buffer,
+    sprintf(log_buf,
       "MOM failed on GPU request, rc = %d",
       preq->rq_reply.brp_code);
-    log_err(errno, id, log_buffer);
+    log_err(errno, id, log_buf);
 
-    req_reject(preq->rq_reply.brp_code, 0, preq, NULL, log_buffer);
+    req_reject(preq->rq_reply.brp_code, 0, preq, NULL, log_buf);
     }
   else
     {
@@ -308,7 +308,7 @@ static void process_gpu_request_reply(
     if (LOGLEVEL >= 7)
       {
       sprintf(
-        log_buffer,
+        log_buf,
         "GPU control request completed for node %s gpuid %s mode %d reset_perm %d reset_vol %d",
         preq->rq_ind.rq_gpuctrl.rq_momnode,
         preq->rq_ind.rq_gpuctrl.rq_gpuid,
@@ -316,7 +316,7 @@ static void process_gpu_request_reply(
         preq->rq_ind.rq_gpuctrl.rq_reset_perm,
         preq->rq_ind.rq_gpuctrl.rq_reset_vol);
 
-      log_ext(-1, id, log_buffer, LOG_INFO);
+      log_ext(-1, id, log_buf, LOG_INFO);
       }
 
     reply_ack(preq);

@@ -295,6 +295,7 @@ int svr_enquejob(
   pbs_queue     *pque;
   int            rc;
   int            iter;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* make sure queue is still there, there exists a small window ... */
 
@@ -308,16 +309,12 @@ int svr_enquejob(
   /* add job to server's 'all job' list and update server counts */
 
 #ifndef NDEBUG
-  sprintf(log_buffer, "enqueuing into %s, state %x hop %ld",
+  sprintf(log_buf, "enqueuing into %s, state %x hop %ld",
     pque->qu_qs.qu_name,
     pjob->ji_qs.ji_state,
     pjob->ji_wattr[JOB_ATR_hopcount].at_val.at_long);
 
-  log_event(
-    PBSEVENT_DEBUG2,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
+  log_event(PBSEVENT_DEBUG2,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
 #endif /* NDEBUG */
 
@@ -426,10 +423,9 @@ int svr_enquejob(
 
     /* issue enqueued accounting record */
 
-    sprintf(log_buffer, "queue=%s",
-      pque->qu_qs.qu_name);
+    sprintf(log_buf, "queue=%s", pque->qu_qs.qu_name);
 
-    account_record(PBS_ACCT_QUEUE, pjob, log_buffer);
+    account_record(PBS_ACCT_QUEUE, pjob, log_buf);
     }
 
   /*
@@ -519,10 +515,11 @@ void svr_dequejob(
   job *pjob)
 
   {
-  int    bad_ct = 0;
+  int        bad_ct = 0;
   attribute *pattr;
   pbs_queue *pque;
   resource  *presc;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* remove job from server's all job list and reduce server counts */
 
@@ -564,15 +561,11 @@ void svr_dequejob(
 
 #ifndef NDEBUG
 
-  sprintf(log_buffer, "dequeuing from %s, state %s",
-          pque ? pque->qu_qs.qu_name : "unknown queue",
-          PJobState[pjob->ji_qs.ji_state]);
+  sprintf(log_buf, "dequeuing from %s, state %s",
+    pque ? pque->qu_qs.qu_name : "unknown queue",
+    PJobState[pjob->ji_qs.ji_state]);
 
-  log_event(
-    PBSEVENT_DEBUG2,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
+  log_event(PBSEVENT_DEBUG2,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
   if (bad_ct)   /* state counts are all messed up */
     correct_ct(pque);
@@ -622,24 +615,24 @@ int svr_setjobstate(
   int  newsubstate) /* I */
 
   {
-  int    changed = 0;
-  int    oldstate;
+  int        changed = 0;
+  int        oldstate;
 
   pbs_queue *pque = pjob->ji_qhdr;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 2)
     {
-    sprintf(log_buffer, "svr_setjobstate: setting job %s state from %s-%s to %s-%s (%d-%d)\n",
-            (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
-            PJobState[pjob->ji_qs.ji_state],
-            PJobSubState[pjob->ji_qs.ji_substate],
-            PJobState[newstate],
-            PJobSubState[newsubstate],
-            newstate,
-            newsubstate);
+    sprintf(log_buf, "svr_setjobstate: setting job %s state from %s-%s to %s-%s (%d-%d)\n",
+      (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
+      PJobState[pjob->ji_qs.ji_state],
+      PJobSubState[pjob->ji_qs.ji_substate],
+      PJobState[newstate],
+      PJobSubState[newsubstate],
+      newstate,
+      newsubstate);
 
-    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname,
-              log_buffer);
+    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
     }
 
   /*
@@ -917,6 +910,7 @@ static int chk_svr_resc_limit(
   static resource_def *mppnppn      = NULL;
   static resource_def *procresc     = NULL;
   static resource_def *gpuresc      = NULL;
+  char                 log_buf[LOCAL_LOG_BUF_SIZE];
 
   static time_t UpdateTime = 0;
   static time_t now;
@@ -1164,14 +1158,14 @@ static int chk_svr_resc_limit(
 
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buffer,
+        sprintf(log_buf,
           "chk_svr_resc_limit: comparing calculated mppnodect %ld, %s limit %s %ld\n",
           mpp_nodect,
           (LimitIsFromQueue == 1) ? "queue" : "server",
           LimitName,
           cmpwith->rs_value.at_val.at_long);
         
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
         }
 
       nodect_orig = mppnodect_resource->rs_value.at_val.at_long;
@@ -1962,6 +1956,7 @@ static void job_wait_over(
   int  newstate;
   int  newsub;
   job *pjob;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   pjob = (job *)pwt->wt_parm1;
 
@@ -1976,9 +1971,9 @@ static void job_wait_over(
 
     if (when > now)
       {
-      sprintf(log_buffer, msg_badwait, ((job *)pjob)->ji_qs.ji_jobid);
+      sprintf(log_buf, msg_badwait, ((job *)pjob)->ji_qs.ji_jobid);
 
-      log_err(-1, "job_wait_over", log_buffer);
+      log_err(-1, "job_wait_over", log_buf);
 
       /* recreate the work task entry */
 
@@ -2465,6 +2460,7 @@ void set_chkpt_deflt(
   pbs_queue *pque)     /* Input */
 
   {
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* If execution queue has checkpoint defaults specified, but job does not have
    * checkpoint values, then set defaults on the job.
@@ -2484,19 +2480,14 @@ void set_chkpt_deflt(
 
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buffer,"Applying queue (%s) checkpoint defaults (%s) to job",
+        sprintf(log_buf,"Applying queue (%s) checkpoint defaults (%s) to job",
           pque->qu_qs.qu_name,
           pque->qu_attr[QE_ATR_checkpoint_defaults].at_val.at_str);
 
-        LOG_EVENT(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
+        LOG_EVENT(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
         }
       }
     }
-
 
   return;
   }  /* END set_chkpt_deflt() */
@@ -2613,41 +2604,39 @@ static void correct_ct(
   job          *pjob;
   pbs_queue    *pque;
   int           iter = -1;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
-  sprintf(log_buffer, "Job state counts incorrect, server %d: ",
-          server.sv_qs.sv_numjobs);
+  sprintf(log_buf, "Job state counts incorrect, server %d: ", server.sv_qs.sv_numjobs);
 
   server.sv_qs.sv_numjobs = 0;
 
   for (i = 0;i < PBS_NUMJOBSTATE;++i)
     {
-    pc = log_buffer + strlen(log_buffer);
+    pc = log_buf + strlen(log_buf);
 
-    sprintf(pc, "%d ",
-            server.sv_jobstates[i]);
+    sprintf(pc, "%d ", server.sv_jobstates[i]);
 
     server.sv_jobstates[i] = 0;
     }
 
   if (pqj != NULL)
     {
-    pc = log_buffer + strlen(log_buffer);
+    pc = log_buf + strlen(log_buf);
 
     sprintf(pc, "; queue %s %d (completed: %d): ",
-            pqj->qu_qs.qu_name,
-            pqj->qu_numjobs,
-            pqj->qu_numcompleted);
+      pqj->qu_qs.qu_name,
+      pqj->qu_numjobs,
+      pqj->qu_numcompleted);
 
     for (i = 0;i < PBS_NUMJOBSTATE;++i)
       {
-      pc = log_buffer + strlen(log_buffer);
+      pc = log_buf + strlen(log_buf);
 
-      sprintf(pc, "%d ",
-              pqj->qu_njstate[i]);
+      sprintf(pc, "%d ", pqj->qu_njstate[i]);
       }
     }
 
-  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
+  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
 
   while ((pque = next_queue(&svr_queues,&iter)) != NULL)
     {

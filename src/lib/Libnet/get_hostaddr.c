@@ -142,7 +142,8 @@ pbs_net_t get_hostaddr(
 
   struct hostent        *hp;
 
-  extern int pbs_errno;
+  extern int             pbs_errno;
+  char                   log_buf[LOCAL_LOG_BUF_SIZE];
 
 #ifdef NUMA_SUPPORT
   /* if this is a numa host, just get the parent node's address */
@@ -183,17 +184,13 @@ pbs_net_t get_hostaddr(
 
   if (hp == NULL)
     {
-    snprintf(log_buffer, sizeof(log_buffer),
+    snprintf(log_buf, sizeof(log_buf),
       "cannot resolve IP address for host '%s' herror=%d: %s",
       hostname,
       h_errno,
       hstrerror(h_errno));
 
-    log_event(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_SERVER,
-      "get_hostaddr",
-      log_buffer);
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,"get_hostaddr",log_buf);
 
     if (h_errno == TRY_AGAIN)
       pbs_errno = PBS_NET_RC_RETRY;

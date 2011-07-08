@@ -230,9 +230,11 @@ void bad_node_warning(
   pbs_net_t addr)  /* I */
 
   {
-  time_t now, last;
+  time_t          now;
+  time_t          last;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
 
-  node_iterator iter;
+  node_iterator   iter;
   struct pbsnode *pnode = NULL;
 
   reinitialize_node_iterator(&iter);
@@ -241,10 +243,10 @@ void bad_node_warning(
     {
     if (pnode->nd_addrs == NULL)
       {
-      sprintf(log_buffer, "ALERT:  node table is corrupt for node %s",
+      sprintf(log_buf, "ALERT:  node table is corrupt for node %s",
         pnode->nd_name);
 
-      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buffer);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buf);
 
       continue;
       }
@@ -272,8 +274,8 @@ void bad_node_warning(
       }
 
     /* once per hour, log a warning that we can't reach the node */
-    sprintf(log_buffer, "ALERT: unable to contact node %s", pnode->nd_name);
-    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buffer);
+    sprintf(log_buf, "ALERT: unable to contact node %s", pnode->nd_name);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buf);
 
     pnode->nd_warnbad = now;
       
@@ -522,6 +524,7 @@ int chk_characteristic(
   {
   short tmp;
   char  tmpLine[1024];
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((pnode != old_address) || (pnode == NULL))
     {
@@ -565,15 +568,11 @@ int chk_characteristic(
     {
     if (LOGLEVEL >= 3)
       {
-      sprintf(log_buffer, "node %s state modified (%s)\n",
-              pnode->nd_name,
-              tmpLine);
+      sprintf(log_buf, "node %s state modified (%s)\n",
+        pnode->nd_name,
+        tmpLine);
 
-      log_event(
-        PBSEVENT_ADMIN,
-        PBS_EVENTCLASS_SERVER,
-        "chk_characteristic",
-        log_buffer);
+      log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,"chk_characteristic",log_buf);
       }
     }
 
@@ -601,7 +600,7 @@ int chk_characteristic(
   
   pthread_mutex_unlock(node_char_mutex);
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END chk_characteristic() */
 
 
@@ -828,27 +827,6 @@ static int initialize_pbsnode(
 
   pthread_mutex_init(pnode->nd_mutex,NULL);
 
-  /*for (i = 0;pul[i];i++)
-    {
-    if (LOGLEVEL >= 6)
-      {
-      sprintf(log_buffer, "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
-              pnode->nd_name,
-              (pul[i] & 0xff000000) >> 24,
-              (pul[i] & 0x00ff0000) >> 16,
-              (pul[i] & 0x0000ff00) >> 8,
-              (pul[i] & 0x000000ff));
-
-      log_record(
-        PBSEVENT_SCHED,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
-      }
-
-    tinsert(pul[i], pnode, &ipaddrs);
-    }*/  /* END for (i) */
-
   return(PBSE_NONE);
   }  /* END initialize_pbsnode() */
 
@@ -1009,7 +987,6 @@ void free_node(
 /**
  *  NOTE:  pul can return NULL even on SUCCESS of routine
  *
- *  NOTE:  this routine sets log_buffer[] which is used externally
  */
 
 static int process_host_name_part(
@@ -1020,8 +997,9 @@ static int process_host_name_part(
   int   *ntype) /* node type; time-shared, not   */
 
   {
-
   char id[] = "process_host_name_part";
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+
   struct hostent *hp;
 
   struct in_addr  addr;
@@ -1065,10 +1043,9 @@ static int process_host_name_part(
 
   if ((hp = gethostbyname(phostname)) == NULL)
     {
-    sprintf(log_buffer, "host %s not found",
-            objname);
+    sprintf(log_buf, "host %s not found", objname);
 
-    log_err(PBSE_UNKNODE, id, log_buffer);
+    log_err(PBSE_UNKNODE, id, log_buf);
 
     free(phostname);
     phostname = NULL;
@@ -1104,13 +1081,14 @@ static int process_host_name_part(
                 sizeof(struct in_addr),
                 hp->h_addrtype)) == NULL)
       {
-      sprintf(log_buffer, "cannot perform reverse name lookup for '%s' h_errno=%d errno=%d (%s) (check name server)",
-              objname,
-              h_errno,
-              errno,
-              pbs_strerror(errno));
+      sprintf(log_buf,
+        "cannot perform reverse name lookup for '%s' h_errno=%d errno=%d (%s) (check name server)",
+        objname,
+        h_errno,
+        errno,
+        pbs_strerror(errno));
 
-      log_err(PBSE_UNKNODE, id, log_buffer);
+      log_err(PBSE_UNKNODE, id, log_buf);
 
       free(phostname);
       phostname = NULL;
@@ -1185,13 +1163,13 @@ static int process_host_name_part(
 
       if ((hp = gethostbyname(hptr)) == NULL)
         {
-        sprintf(log_buffer, "bad cname %s, h_errno=%d errno=%d (%s)",
-                hptr,
-                h_errno,
-                errno,
-                pbs_strerror(errno));
+        sprintf(log_buf, "bad cname %s, h_errno=%d errno=%d (%s)",
+          hptr,
+          h_errno,
+          errno,
+          pbs_strerror(errno));
 
-        log_err(PBSE_UNKNODE, id, log_buffer);
+        log_err(PBSE_UNKNODE, id, log_buf);
 
         if (hname != NULL)
           {
@@ -1713,6 +1691,7 @@ int setup_node_boards(
   int             rc;
 
   char           *id = "setup_node_boards";
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pnode == NULL)
     return(-1);
@@ -1816,16 +1795,12 @@ int setup_node_boards(
 
   if (LOGLEVEL >= 3)
     {
-    snprintf(log_buffer,sizeof(log_buffer),
+    snprintf(log_buf,sizeof(log_buf),
       "Successfully created %d numa nodes for node %s\n",
       pnode->num_node_boards,
       pnode->nd_name);
 
-    log_event(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_NODE,
-      id,
-      log_buffer);
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buf);
     }
 
   return(PBSE_NONE);
@@ -1888,6 +1863,7 @@ int create_pbs_node(
   {
   static char     *id = "create_pbs_node"; 
   struct pbsnode  *pnode = NULL;
+  char             log_buf[LOCAL_LOG_BUF_SIZE];
 
   work_task       *wt;
   int              ntype; /* node type; time-shared, not */
@@ -1902,8 +1878,6 @@ int create_pbs_node(
     {
     svrattrl *pal, *pattrl;
 
-    log_err(-1, "process_host_name_part", log_buffer);
-
     /* the host name in the nodes file did not resolve.
        We will set up a process to check periodically
        to see if the node will resolve later */
@@ -1911,7 +1885,7 @@ int create_pbs_node(
 
     if (host_info == NULL)
       {
-      log_err(-1, "create_pbs_node calloc failed", log_buffer);
+      log_err(-1, id, "create_pbs_node calloc failed");
       return(PBSE_SYSTEM);
       }
 
@@ -1926,7 +1900,7 @@ int create_pbs_node(
       pattrl = attrlist_create(pal->al_atopl.name, 0, strlen(pal->al_atopl.value) + 1);
       if (pattrl == NULL)
         {
-        log_err(-1, "cannot create node attribute", log_buffer);
+        log_err(-1, id, "cannot create node attribute");
         return(PBSE_SYSTEM);
         }
 
@@ -1947,7 +1921,7 @@ int create_pbs_node(
       if (host_info->nodename == NULL)
         {
         free(host_info);
-        log_err(-1, "create_pbs_node calloc failed", log_buffer);
+        log_err(-1, id, "create_pbs_node calloc failed");
         return(PBSE_SYSTEM);
         }
 
@@ -1965,10 +1939,11 @@ int create_pbs_node(
     {
     free(pname);
 
-    snprintf(log_buffer, 1024, "no valid IP addresses found for '%s' - check name service",
-             objname);
+    snprintf(log_buf, sizeof(log_buf),
+      "no valid IP addresses found for '%s' - check name service",
+      objname);
 
-    log_err(-1, "process_host_name_part", log_buffer);
+    log_err(-1, "process_host_name_part", log_buf);
 
     return(PBSE_SYSTEM);
     }
@@ -2026,14 +2001,14 @@ int create_pbs_node(
     {
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buffer, "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
+      sprintf(log_buf, "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
         pnode->nd_name,
         (pul[i] & 0xff000000) >> 24,
         (pul[i] & 0x00ff0000) >> 16,
         (pul[i] & 0x0000ff00) >> 8,
         (pul[i] & 0x000000ff));
 
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buffer);
+      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
       }
     
     addr = pul[i];
@@ -2140,9 +2115,6 @@ static char *parse_node_token(
  *
  * Read the node state file, "node_state", for any "offline"
  * conditions which should be set in the nodes.
- *
- * If routine returns -1, then "log_buffer" contains a message to
- * be logged.
 */
 
 int setup_nodes(void)
@@ -2160,6 +2132,7 @@ int setup_nodes(void)
   char  *close_bracket;
   char  *dash;
   char   tmp_node_name[MAX_LINE];
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
   int    bad;
   int    num;
   int    linenum;
@@ -2177,27 +2150,18 @@ int setup_nodes(void)
   extern char server_name[];
   extern resource_t next_resource_tag;
 
-  sprintf(log_buffer, "%s()",
-          id);
+  sprintf(log_buf, "%s()", id);
 
-  log_record(
-    PBSEVENT_SCHED,
-    PBS_EVENTCLASS_REQUEST,
-    id,
-    log_buffer);
+  log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
   CLEAR_HEAD(atrlist);
 
   if ((nin = fopen(path_nodes, "r")) == NULL)
     {
-    sprintf(log_buffer, "cannot open node description file '%s' in setup_nodes()\n",
+    sprintf(log_buf, "cannot open node description file '%s' in setup_nodes()\n",
             path_nodes);
 
-    log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_SERVER,
-      server_name,
-      log_buffer);
+    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,server_name,log_buf);
 
     return(0);
     }
@@ -2229,18 +2193,14 @@ int setup_nodes(void)
 
     if (err != 0)
       {
-      sprintf(log_buffer, "invalid character in token \"%s\" on line %d",
-              token,
-              linenum);
+      sprintf(log_buf, "invalid character in token \"%s\" on line %d", token, linenum);
 
       goto errtoken2;
       }
 
     if (!isalpha((int)*token))
       {
-      sprintf(log_buffer, "token \"%s\" doesn't start with alpha on line %d",
-              token,
-              linenum);
+      sprintf(log_buf, "token \"%s\" doesn't start with alpha on line %d", token, linenum);
 
       goto errtoken2;
       }
@@ -2273,13 +2233,9 @@ int setup_nodes(void)
 
         if (pal == NULL)
           {
-          strcpy(log_buffer, "cannot create node attribute");
+          strcpy(log_buf, "cannot create node attribute");
 
-          log_record(
-            PBSEVENT_SCHED,
-            PBS_EVENTCLASS_REQUEST,
-            id,
-            log_buffer);
+          log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
           goto errtoken2;
           }
@@ -2309,13 +2265,9 @@ int setup_nodes(void)
 
       if (pal == NULL)
         {
-        strcpy(log_buffer, "cannot create node attribute");
+        strcpy(log_buf, "cannot create node attribute");
 
-        log_record(
-          PBSEVENT_SCHED,
-          PBS_EVENTCLASS_REQUEST,
-          id,
-          log_buffer);
+        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
         /* FAILURE */
 
@@ -2345,11 +2297,11 @@ int setup_nodes(void)
       if ((dash == NULL) ||
           (close_bracket == NULL))
         {
-        sprintf(log_buffer,
+        sprintf(log_buf,
           "malformed nodename with range: %s, must be of form [x-y]\n",
           nodename);
 
-        log_err(-1,id,log_buffer);
+        log_err(-1,id,log_buf);
 
         goto errtoken2;
         }
@@ -2405,30 +2357,22 @@ int setup_nodes(void)
 
     if (err == PBSE_NODEEXIST)
       {
-      sprintf(log_buffer, "duplicate node \"%s\"on line %d",
-              nodename,
-              linenum);
-
-      log_record(
-        PBSEVENT_SCHED,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
+      sprintf(log_buf, "duplicate node \"%s\"on line %d",
+        nodename,
+        linenum);
+      
+      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
       goto errtoken2;
       }
 
     if (err != 0)
       {
-      sprintf(log_buffer, "could not create node \"%s\", error = %d",
-              nodename,
-              err);
+      sprintf(log_buf, "could not create node \"%s\", error = %d",
+        nodename,
+        err);
 
-      log_record(
-        PBSEVENT_SCHED,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
       free_attrlist(&atrlist);
       continue;
@@ -2436,14 +2380,9 @@ int setup_nodes(void)
 
     if (LOGLEVEL >= 3)
       {
-      sprintf(log_buffer, "node '%s' successfully loaded from nodes file",
-              nodename);
+      sprintf(log_buf, "node '%s' successfully loaded from nodes file", nodename);
 
-      log_record(
-        PBSEVENT_SCHED,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
       }
 
     free_attrlist(&atrlist);
@@ -2509,10 +2448,9 @@ int setup_nodes(void)
 
           if (np->nd_note == NULL)
             {
-            sprintf(log_buffer, "couldn't allocate space for note (node = %s)",
-                    np->nd_name);
+            sprintf(log_buf, "couldn't allocate space for note (node = %s)", np->nd_name);
 
-            log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buffer);
+            log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
             }
         
           pthread_mutex_unlock(np->nd_mutex);
@@ -2533,17 +2471,13 @@ int setup_nodes(void)
 
 errtoken1:
 
-  sprintf(log_buffer, "token \"%s\" in error on line %d of file nodes",
+  sprintf(log_buf, "token \"%s\" in error on line %d of file nodes",
           token,
           linenum);
 
-  log_record(
-    PBSEVENT_SCHED,
-    PBS_EVENTCLASS_REQUEST,
-    id,
-    log_buffer);
-
 errtoken2:
+
+  log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
   free_attrlist(&atrlist);
 

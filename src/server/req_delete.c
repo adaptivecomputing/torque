@@ -221,6 +221,7 @@ void ensure_deleted(
   {
   job                  *pjob;
   char                 *jobid;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   jobid = ptask->wt_parm1;
 
@@ -232,13 +233,9 @@ void ensure_deleted(
     return;
     }
 
-  sprintf(log_buffer, "purging job without checking MOM");
+  sprintf(log_buf, "purging job without checking MOM");
   
-  log_event(
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
   
   free_nodes(pjob);
   
@@ -273,6 +270,7 @@ int execute_job_delete(
   char             *jobid_copy;
 
   int               has_mutex = TRUE;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   chk_job_req_permissions(&pjob,preq);
 
@@ -394,9 +392,9 @@ int execute_job_delete(
       strcpy(cycle_check_jid, pjob->ji_qs.ji_jobid);
       }
 
-    sprintf(log_buffer, "job cannot be deleted, state=PRERUN, requeuing delete request");
+    sprintf(log_buf, "job cannot be deleted, state=PRERUN, requeuing delete request");
 
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     pwtnew = set_task(WORK_Timed,time_now + 1,post_delete_route,preq);
     
@@ -422,30 +420,23 @@ jump:
    * Log delete and if requesting client is not job owner, send mail.
    */
 
-  sprintf(log_buffer, "requestor=%s@%s",
-          preq->rq_user,
-          preq->rq_host);
+  sprintf(log_buf, "requestor=%s@%s", preq->rq_user, preq->rq_host);
 
 
   /* NOTE:  should annotate accounting record with extend message (NYI) */
+  account_record(PBS_ACCT_DEL, pjob, log_buf);
 
-  account_record(PBS_ACCT_DEL, pjob, log_buffer);
+  sprintf(log_buf, msg_manager, msg_deletejob, preq->rq_user, preq->rq_host);
 
-  sprintf(log_buffer, msg_manager,
-          msg_deletejob,
-          preq->rq_user,
-          preq->rq_host);
-
-  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
   /* NOTE:  should incorporate job delete message */
 
   if (Msg != NULL)
     {
     /* have text message in request extension, add it */
-
-    strcat(log_buffer, "\n");
-    strcat(log_buffer, Msg);
+    strcat(log_buf, "\n");
+    strcat(log_buf, Msg);
     }
 
   if ((svr_chk_owner(preq, pjob) != 0) &&
@@ -454,7 +445,7 @@ jump:
     /* only send email if owner did not delete job and job deleted
        has not been previously attempted */
 
-    svr_mailowner(pjob, MAIL_DEL, MAIL_FORCE, log_buffer);
+    svr_mailowner(pjob, MAIL_DEL, MAIL_FORCE, log_buf);
     /*
      * If we sent mail and already sent the extra message
      * then reset message so we don't trigger a redundant email
@@ -506,10 +497,9 @@ jump:
 
     /* normally will ack reply when mom responds */
 
-    sprintf(log_buffer, msg_delrunjobsig,
-            sigt);
+    sprintf(log_buf, msg_delrunjobsig, sigt);
 
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -724,6 +714,7 @@ void req_deletejob(
   char                 *Msg = NULL;
   struct batch_request *preq_tmp = NULL;
   char                  tmpLine[MAXPATHLEN];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check if we are getting a purgecomplete from scheduler */
   if (preq->rq_extend != NULL)  
@@ -760,8 +751,8 @@ void req_deletejob(
        * Respond with an ack now instead of after MOM processing
        * Create a new batch request and fill it in. It will be freed by reply_ack
        */
-      snprintf(log_buffer,sizeof(log_buffer), "Deleting job asynchronously");
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buffer);
+      snprintf(log_buf,sizeof(log_buf), "Deleting job asynchronously");
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buf);
 
       preq_tmp = duplicate_request(preq);
       }
@@ -1051,6 +1042,7 @@ static void post_delete_mom2(
   {
   job  *pjob;
   char *sigk = "SIGKILL";
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   pjob = (job *)pwt->wt_parm1;
 
@@ -1060,9 +1052,9 @@ static void post_delete_mom2(
     {
     issue_signal(pjob, sigk, release_req, 0);
 
-    sprintf(log_buffer, msg_delrunjobsig, sigk);
+    sprintf(log_buf, msg_delrunjobsig, sigk);
 
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
     }
 
   pthread_mutex_unlock(pjob->ji_mutex);
@@ -1085,6 +1077,7 @@ static int forced_jobpurge(
   struct batch_request *preq)
 
   {
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
   /* check about possibly purging the job */
 
   if (preq->rq_extend != NULL)
@@ -1094,13 +1087,9 @@ static int forced_jobpurge(
       if (((preq->rq_perm & (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR)) != 0) ||
           ((svr_chk_owner(preq, pjob) == 0) && (server.sv_attr[SRV_ATR_OwnerPurge].at_val.at_long)))
         {
-        sprintf(log_buffer, "purging job without checking MOM");
+        sprintf(log_buf, "purging job without checking MOM");
 
-        log_event(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
         free_nodes(pjob);
 
@@ -1287,6 +1276,7 @@ static void job_delete_nanny(
   char *sigk = "SIGKILL";
 
   struct batch_request *newreq;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* short-circuit if nanny isn't enabled */
 
@@ -1301,10 +1291,9 @@ static void job_delete_nanny(
 
   pthread_mutex_lock(pjob->ji_mutex);
 
-  sprintf(log_buffer, "exiting job '%s' still exists, sending a SIGKILL",
-    pjob->ji_qs.ji_jobid);
+  sprintf(log_buf, "exiting job '%s' still exists, sending a SIGKILL", pjob->ji_qs.ji_jobid);
 
-  log_err(-1, "job nanny", log_buffer);
+  log_err(-1, "job nanny", log_buf);
 
   /* build up a Signal Job batch request */
 
@@ -1342,6 +1331,7 @@ static void post_job_delete_nanny(
 
   int   rc;
   job  *pjob;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   preq_sig = pwt->wt_parm1;
   rc       = preq_sig->rq_reply.brp_code;
@@ -1362,23 +1352,15 @@ static void post_job_delete_nanny(
 
   if (pjob == NULL)
     {
-    sprintf(log_buffer, "job delete nanny: the job disappeared (this is a BUG!)");
+    sprintf(log_buf, "job delete nanny: the job disappeared (this is a BUG!)");
 
-    LOG_EVENT(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_JOB,
-      preq_sig->rq_ind.rq_signal.rq_jid,
-      log_buffer);
+    LOG_EVENT(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,preq_sig->rq_ind.rq_signal.rq_jid,log_buf);
     }
   else if (rc == PBSE_UNKJOBID)
     {
-    sprintf(log_buffer, "job delete nanny returned, but does not exist on mom");
+    sprintf(log_buf, "job delete nanny returned, but does not exist on mom");
 
-    LOG_EVENT(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_JOB,
-      preq_sig->rq_ind.rq_signal.rq_jid,
-      log_buffer);
+    LOG_EVENT(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,preq_sig->rq_ind.rq_signal.rq_jid,log_buf);
 
     free_nodes(pjob);
 
@@ -1418,6 +1400,7 @@ void purge_completed_jobs(
   char         *time_str;
   time_t        purge_time = 0;
   int           iter;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* get the time to purge the jobs that completed before */
   time_str = preq->rq_extend;
@@ -1439,10 +1422,10 @@ void purge_completed_jobs(
     
   if (LOGLEVEL >= 4)
     {
-    sprintf(log_buffer,"Received purge completed jobs command, purge time is %ld (%s)",
+    sprintf(log_buf,"Received purge completed jobs command, purge time is %ld (%s)",
       (long)purge_time, preq->rq_extend);
 
-    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_REQUEST,id,log_buffer);
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_REQUEST,id,log_buf);
     }
 
   iter = -1;
@@ -1456,10 +1439,10 @@ void purge_completed_jobs(
       {
       if (LOGLEVEL >= 4)
         {
-        sprintf(log_buffer,"Reported job is COMPLETED (%ld), setting reported to TRUE",
+        sprintf(log_buf,"Reported job is COMPLETED (%ld), setting reported to TRUE",
           pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long);
         
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
         }
       
       pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 1;

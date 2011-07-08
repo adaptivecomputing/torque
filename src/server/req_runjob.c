@@ -192,6 +192,7 @@ void *req_runjob(
 
   char                  failhost[1024];
   char                  emsg[1024];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* chk_job_torun will extract job id and assign hostlist if specified */
 
@@ -210,12 +211,9 @@ void *req_runjob(
   if (preq->rq_conn == scheduler_sock)
     ++scheduler_jobct; /* see scheduler_close() */
 
-  sprintf(log_buffer, msg_manager,
-    msg_jobrun,
-    preq->rq_user,
-    preq->rq_host);
+  sprintf(log_buf, msg_manager, msg_jobrun, preq->rq_user, preq->rq_host);
 
-  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
   /* If async run, reply now; otherwise reply is handled in */
   /* post_sendmom or post_stagein */
@@ -243,12 +241,12 @@ void *req_runjob(
       }
     else
       {
-      snprintf(log_buffer,sizeof(log_buffer),
+      snprintf(log_buf,sizeof(log_buf),
         "Cannot run job. Array slot limit is %d and there are already %d jobs running\n",
         pa->ai_qs.slot_limit,
         pa->ai_qs.jobs_running);
       
-      req_reject(PBSE_IVALREQ,0,preq,NULL,log_buffer);
+      req_reject(PBSE_IVALREQ,0,preq,NULL,log_buf);
 
       pthread_mutex_unlock(pjob->ji_mutex);
       pthread_mutex_unlock(pa->ai_mutex);
@@ -322,11 +320,12 @@ static void post_checkpointsend(
   struct work_task *pwt)
 
   {
-  int        code;
-  job       *pjob;
+  int                   code;
+  job                  *pjob;
 
   struct batch_request *preq;
-  attribute      *pwait;
+  attribute            *pwait;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   preq = pwt->wt_parm1;
   code = preq->rq_reply.brp_code;
@@ -357,15 +356,10 @@ static void post_checkpointsend(
 
       if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
         {
-
-        sprintf(log_buffer, "Failed to copy checkpoint file to mom - %s",
+        sprintf(log_buf, "Failed to copy checkpoint file to mom - %s",
                 preq->rq_reply.brp_un.brp_txt.brp_str);
 
-        log_event(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
         /* NYI */
 
@@ -803,8 +797,8 @@ int svr_startjob(
 
   if (hostlist == NULL)
     {
-    sprintf(log_buffer, "could not allocate temporary buffer (malloc failed) -- skipping TCP connect check");
-    log_err(errno, id, log_buffer);
+    sprintf(log_buf, "could not allocate temporary buffer (malloc failed) -- skipping TCP connect check");
+    log_err(errno, id, log_buf);
     }
   else
     {
@@ -828,22 +822,18 @@ int svr_startjob(
 
     if ((hp = gethostbyname(nodestr)) == NULL)
       {
-      sprintf(log_buffer, "could not contact %s (gethostbyname failed, errno: %d (%s))",
-              nodestr,
-              errno,
-              pbs_strerror(errno));
+      sprintf(log_buf, "could not contact %s (gethostbyname failed, errno: %d (%s))",
+        nodestr,
+        errno,
+        pbs_strerror(errno));
 
       if (FailHost != NULL)
         strncpy(FailHost, nodestr, 1024);
 
       if (EMsg != NULL)
-        strncpy(EMsg, log_buffer, 1024);
+        strncpy(EMsg, log_buf, 1024);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
       /* Add this host to the reject destination list for the job */
 
@@ -873,18 +863,18 @@ int svr_startjob(
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
       {
-      sprintf(log_buffer, "could not contact %s (cannot create socket, errno: %d (%s))",
-              nodestr,
-              errno,
-              pbs_strerror(errno));
+      sprintf(log_buf, "could not contact %s (cannot create socket, errno: %d (%s))",
+        nodestr,
+        errno,
+        pbs_strerror(errno));
 
       if (FailHost != NULL)
         strncpy(FailHost, nodestr, 1024);
 
       if (EMsg != NULL)
-        strncpy(EMsg, log_buffer, 1024);
+        strncpy(EMsg, log_buf, 1024);
 
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
       /* Add this host to the reject destination list for the job */
 
@@ -924,18 +914,18 @@ int svr_startjob(
 
     if (connect(sock, (struct sockaddr *)&saddr, sizeof(saddr)) < 0)
       {
-      sprintf(log_buffer, "could not contact %s (connect failed, errno: %d (%s))",
-              nodestr,
-              errno,
-              pbs_strerror(errno));
+      sprintf(log_buf, "could not contact %s (connect failed, errno: %d (%s))",
+        nodestr,
+        errno,
+        pbs_strerror(errno));
 
       if (FailHost != NULL)
         strncpy(FailHost, nodestr, 1024);
 
       if (EMsg != NULL)
-        strncpy(EMsg, log_buffer, 1024);
+        strncpy(EMsg, log_buf, 1024);
 
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
       /* Add this host to the reject list for the job */
 
@@ -1123,6 +1113,7 @@ void finish_sendmom(
   pbs_net_t addr;
   int       newstate;
   int       newsub;
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 6)
     {
@@ -1131,13 +1122,13 @@ void finish_sendmom(
 
   if (LOGLEVEL >= 1)
     {
-    sprintf(log_buffer, "child reported %s for job after %ld seconds (dest=%s), rc=%d",
+    sprintf(log_buf, "child reported %s for job after %ld seconds (dest=%s), rc=%d",
       (status == 0) ? "success" : "failure",
       time_now - time,
       (node_name != NULL) ? node_name : "???",
       status);
 
-    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
     }
 
   switch (status)
@@ -1213,9 +1204,9 @@ void finish_sendmom(
       int JobOK = FALSE;
       
       /* send failed, requeue the job */
-      sprintf(log_buffer, "unable to run job, MOM rejected/rc=%d", status);
+      sprintf(log_buf, "unable to run job, MOM rejected/rc=%d", status);
       
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       
       free_nodes(pjob);
       
@@ -1558,6 +1549,7 @@ static int assign_hosts(
   resource *pres;
   int   rc = 0, procs=0;
   extern char  *mom_host;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
 
   if (EMsg != NULL)
@@ -1732,10 +1724,10 @@ static int assign_hosts(
         if (list != NULL)
           free(list);
 
-        sprintf(log_buffer, "ALERT:  job cannot allocate node '%s' (could not determine IP address for node)",
-                pjob->ji_qs.ji_destin);
+        sprintf(log_buf, "ALERT:  job cannot allocate node '%s' (could not determine IP address for node)",
+          pjob->ji_qs.ji_destin);
 
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
         return(PBSE_BADHOST);
         }

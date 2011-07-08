@@ -416,12 +416,14 @@ job *job_recov(
   static char *id = "job_recov";
 
   int  fds;
-  job *pj;
+  job  *pj;
   char *pn;
   char  namebuf[MAXPATHLEN];
-  int    qs_upgrade;
+  int   qs_upgrade;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+
 #ifndef PBS_MOM
-  char   parent_id[PBS_MAXSVRJOBID + 1];
+  char       parent_id[PBS_MAXSVRJOBID + 1];
   job_array *pa;
 #endif
 
@@ -448,10 +450,9 @@ job *job_recov(
 
   if (fds < 0)
     {
-    sprintf(log_buffer, "unable to open %s",
-            namebuf);
+    sprintf(log_buf, "unable to open %s", namebuf);
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, id, log_buf);
 
 #ifndef PBS_MOM
     pthread_mutex_unlock(pj->ji_mutex);
@@ -470,10 +471,9 @@ job *job_recov(
   if (read(fds, (char *)&pj->ji_qs, quicksize) != (ssize_t)quicksize &&
       pj->ji_qs.qs_version == PBS_QS_VERSION)
     {
-    sprintf(log_buffer, "Unable to read %s",
-            namebuf);
+    sprintf(log_buf, "Unable to read %s", namebuf);
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, id, log_buf);
 
 #ifndef PBS_MOM
     pthread_mutex_unlock(pj->ji_mutex);
@@ -492,16 +492,17 @@ job *job_recov(
   if (pj->ji_qs.qs_version != PBS_QS_VERSION)
     {
     /* ji_qs is older version */
-    sprintf(log_buffer,
-            "%s appears to be from an old version. Attempting to convert.\n",
-            namebuf);
-    log_err(-1, id, log_buffer);
+    sprintf(log_buf,
+      "%s appears to be from an old version. Attempting to convert.\n",
+      namebuf);
+
+    log_err(-1, id, log_buf);
 
     if (job_qs_upgrade(pj, fds, namebuf, pj->ji_qs.qs_version) != 0)
       {
-      sprintf(log_buffer, "unable to upgrade %s\n", namebuf);
+      sprintf(log_buf, "unable to upgrade %s\n", namebuf);
 
-      log_err(-1, id, log_buffer);
+      log_err(-1, id, log_buf);
 
 #ifndef PBS_MOM
       pthread_mutex_unlock(pj->ji_mutex);
@@ -527,11 +528,11 @@ job *job_recov(
     {
     /* mismatch, discard job */
 
-    sprintf(log_buffer, "Job Id %s does not match file name for %s",
-            pj->ji_qs.ji_jobid,
-            namebuf);
+    sprintf(log_buf, "Job Id %s does not match file name for %s",
+      pj->ji_qs.ji_jobid,
+      namebuf);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, id, log_buf);
 
 #ifndef PBS_MOM
     pthread_mutex_unlock(pj->ji_mutex);
@@ -556,10 +557,10 @@ job *job_recov(
         JOB_ATR_UNKN,
         TRUE) != 0) 
     {
-    sprintf(log_buffer, "unable to recover %s (file is likely corrupted)",
+    sprintf(log_buf, "unable to recover %s (file is likely corrupted)",
             namebuf);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, id, log_buf);
 
 #ifndef PBS_MOM
     pthread_mutex_unlock(pj->ji_mutex);
@@ -577,10 +578,10 @@ job *job_recov(
 
   if (recov_tmsock(fds, pj) != 0)
     {
-    sprintf(log_buffer, "warning: tmsockets not recovered from %s (written by an older pbs_mom?)",
+    sprintf(log_buf, "warning: tmsockets not recovered from %s (written by an older pbs_mom?)",
             namebuf);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, id, log_buf);
     }
 
 #else /* PBS_MOM */

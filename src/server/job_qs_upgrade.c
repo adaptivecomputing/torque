@@ -233,26 +233,28 @@ int job_qs_upgrade(
 
   {
   char *id = "job_qs_upgrade";
-  char namebuf[MAXPATHLEN];
+  char  namebuf[MAXPATHLEN];
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
   FILE *source; 
   FILE *backup;
-  int c;
+  int   c;
 
   /* reset the file descriptor */
   if (lseek(fds, 0, SEEK_SET) != 0)
     {
-    sprintf(log_buffer, "unable to reset fds\n");
-    log_err(-1, id, log_buffer);
+    sprintf(log_buf, "unable to reset fds\n");
+    log_err(-1, id, log_buf);
 
     return (-1);
     }
+
   strcpy(namebuf, path); /* .JB path */
   namebuf[strlen(path) - strlen(JOB_FILE_SUFFIX)] = '\0'; /* cut off the .JB by replacing the '.' with a NULL */
   
   if (strlen(namebuf) + strlen(JOB_FILE_BACKUP) > MAXPATHLEN - 1)
     {
-    sprintf(log_buffer, "ERROR: path too long for buffer, unable to backup!\n");
-    log_err(-1, id, log_buffer);
+    sprintf(log_buf, "ERROR: path too long for buffer, unable to backup!\n");
+    log_err(-1, id, log_buf);
     return (-1);
     }
 
@@ -262,8 +264,8 @@ int job_qs_upgrade(
 
   if ((backup = fopen(namebuf, "wb")) == NULL)
     {
-    sprintf(log_buffer, "Cannot open backup file.\n");
-    log_err(errno, id, log_buffer);
+    sprintf(log_buf, "Cannot open backup file.\n");
+    log_err(errno, id, log_buf);
     return -1;
     }
 
@@ -275,23 +277,23 @@ int job_qs_upgrade(
   fclose(backup);
   fclose(source);
 
-  sprintf(log_buffer, "backed up to %s\n", namebuf);
-  log_err(-1, id, log_buffer); 
+  sprintf(log_buf, "backed up to %s\n", namebuf);
+  log_err(-1, id, log_buf); 
 
   /* reset the file descriptor */
   if (lseek(fds, 0, SEEK_SET) != 0)
     {
-    sprintf(log_buffer, "unable to reset fds\n");
-    log_err(-1, id, log_buffer);
+    sprintf(log_buf, "unable to reset fds\n");
+    log_err(-1, id, log_buf);
 
     return (-1);
     }
 
   if (version > PBS_QS_VERSION)
     {
-    sprintf(log_buffer, "job struct appears to be from an unknown "
+    sprintf(log_buf, "job struct appears to be from an unknown "
             "version of TORQUE and can not be converted");
-    log_err(-1, "job_qs_upgrade", log_buffer);
+    log_err(-1, "job_qs_upgrade", log_buf);
     return (-1);
     }
   else if (version - PBS_QS_VERSION_BASE == 1)

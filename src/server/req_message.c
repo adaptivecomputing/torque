@@ -161,14 +161,14 @@ static void post_message_req(
 
   {
   struct batch_request *preq;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   svr_disconnect(pwt->wt_event); /* close connection to MOM */
   preq = pwt->wt_parm1;
   preq->rq_conn = preq->rq_orgconn;  /* restore socket to client */
 
-  (void)sprintf(log_buffer, msg_messagejob, preq->rq_reply.brp_code);
-  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-            preq->rq_ind.rq_message.rq_jid, log_buffer);
+  sprintf(log_buf, msg_messagejob, preq->rq_reply.brp_code);
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, preq->rq_ind.rq_message.rq_jid, log_buf);
 
   if (preq->rq_reply.brp_code)
     req_reject(preq->rq_reply.brp_code, 0, preq, NULL, NULL);
