@@ -402,6 +402,22 @@ enum nodeattr
   }; /* WARNING: Must be the highest valued enum */
 
 
+
+
+typedef struct node_check_info
+  {
+  struct prop *first;
+  struct prop *first_status;
+  short        state;
+  short        ntype;
+  int          nprops;
+  int          nstatus;
+  char        *note;
+  } node_check_info;
+
+
+
+
 extern all_nodes allnodes; 
 
 extern int    svr_totnodes;  /* number of nodes (hosts) */

@@ -149,8 +149,8 @@ extern char *msg_man_uns;
 
 
 extern int que_purge(pbs_queue *);
-extern void save_characteristic(struct pbsnode *);
-extern int chk_characteristic(struct pbsnode *, int *);
+extern void save_characteristic(struct pbsnode *, node_check_info *);
+extern int chk_characteristic(struct pbsnode *, node_check_info *, int *);
 extern int hasprop(struct pbsnode *, struct prop *);
 extern int PNodeStateToString(int, char *, int);
 
@@ -1608,26 +1608,26 @@ void mgr_node_set(
   struct batch_request *preq)  /* I */
 
   {
-  static int need_todo = 0;
+  static int       need_todo = 0;
 
-  int  check_all = 0;
-  int  propnodes = 0;
-  int  bad = 0;
-  svrattrl *plist;
+  int               check_all = 0;
+  int               propnodes = 0;
+  int               rc;
+  int               bad = 0;
+  int               i;
+  int               len;
+  int               problem_cnt = 0;
 
-  struct pbsnode  *pnode = NULL;
-  char  *nodename = NULL;
-  int  rc;
-
-  int  i, len;
-  int  problem_cnt = 0;
-  char  *problem_names;
-
-  node_iterator iter;
+  char             *nodename = NULL;
+  char             *problem_names;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
-  struct pbsnode  **problem_nodes = NULL;
+  svrattrl         *plist;
+  node_check_info   nci;
+  node_iterator     iter;
 
+  struct pbsnode   *pnode = NULL;
+  struct pbsnode  **problem_nodes = NULL;
   struct prop props;
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
@@ -1696,7 +1696,7 @@ void mgr_node_set(
         continue;
         }
 
-      save_characteristic(pnode);
+      save_characteristic(pnode,&nci);
 
       rc = mgr_set_node_attr(
              pnode,
@@ -1719,7 +1719,7 @@ void mgr_node_set(
         {
         /* modifications succeeded for this node */
 
-        chk_characteristic(pnode, &need_todo);
+        chk_characteristic(pnode, &nci, &need_todo);
 
         mgr_log_attr(
           msg_man_set,
@@ -1733,7 +1733,7 @@ void mgr_node_set(
   else
     {
     /* handle single node case */
-    save_characteristic(pnode);
+    save_characteristic(pnode,&nci);
 
     rc = mgr_set_node_attr(
            pnode,
@@ -1786,7 +1786,7 @@ void mgr_node_set(
       {
       /* modifications succeeded for this node */
       
-      chk_characteristic(pnode, &need_todo);
+      chk_characteristic(pnode, &nci, &need_todo);
       
       mgr_log_attr(
         msg_man_set,

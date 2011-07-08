@@ -426,20 +426,6 @@ struct pbssubn *find_subnodebyname(
 
 
 
-pthread_mutex_t *node_char_mutex = NULL;
-static struct pbsnode *old_address = 0;   /*node in question */
-
-static struct prop *old_first = (struct prop *)0xdead; /*node's first prop*/
-
-static struct prop      *old_f_st = (struct prop *)0xdead;      /*node's first status*/
-static short  old_state = (short)0xdead; /*node's   state   */
-static short  old_ntype = (short)0xdead; /*node's   ntype   */
-static int  old_nprops = 0xdead;  /*node's   nprops  */
-static int             old_nstatus = 0xdead;            /*node's   nstatus */
-static char           *old_note    = NULL;              /*node's   note    */
-
-
-
 
 /*
  * save_characteristic() -  save the characteristic values of the node along
@@ -448,45 +434,21 @@ static char           *old_note    = NULL;              /*node's   note    */
 
 void save_characteristic(
 
-  struct pbsnode *pnode)
+  struct pbsnode  *pnode,
+  node_check_info *nci)
 
   {
-  if (pnode == (struct pbsnode *)0)
-    {
-    return;
-    }
-
-  if (node_char_mutex == NULL)
-    {
-    node_char_mutex = malloc(sizeof(pthread_mutex_t));
-    pthread_mutex_init(node_char_mutex,NULL);
-    }
-
-  pthread_mutex_lock(node_char_mutex);
-
-  old_address = pnode;
-
-  old_state =   pnode->nd_state;
-  old_ntype =   pnode->nd_ntype;
-  old_nprops =  pnode->nd_nprops;
-  old_nstatus = pnode->nd_nstatus;
-  old_first =   pnode->nd_first;
-  old_f_st =    pnode->nd_f_st;
-
-  /* if there was a previous note stored here, free it first */
-
-  if (old_note != NULL)
-    {
-    free(old_note);
-    old_note = NULL;
-    }
-
+  nci->state        = pnode->nd_state;
+  nci->ntype        = pnode->nd_ntype;
+  nci->nprops       = pnode->nd_nprops;
+  nci->nstatus      = pnode->nd_nstatus;
+  nci->first        = pnode->nd_first;
+  nci->first_status = pnode->nd_f_st;
+  
   if (pnode->nd_note != NULL)
-    {
-    old_note = strdup(pnode->nd_note);
-    }
-
-  return;
+    nci->note = strdup(pnode->nd_note);
+  else
+    nci->note = NULL;
   }  /* END save_characteristic() */
 
 
@@ -506,81 +468,63 @@ void save_characteristic(
 
 int chk_characteristic(
 
-  struct pbsnode *pnode,      /* I */
-  int            *pneed_todo) /* O */
+  struct pbsnode  *pnode,      /* I */
+  node_check_info *nci,        /* I */
+  int             *pneed_todo) /* O */
 
   {
-  short tmp;
   char  tmpLine[1024];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if ((pnode != old_address) || (pnode == NULL))
-    {
-    /* didn't do save_characteristic() before issuing chk_characteristic() */
-
-    old_address = NULL;
-
-    /* FAILURE */
-
-    return(-1);
-    }
-
-  tmp = pnode->nd_state;
-
   tmpLine[0] = '\0';
 
-  if (tmp != old_state)
+  if (pnode->nd_state != nci->state)
     {
-    if ((tmp & INUSE_OFFLINE) && !(old_state & INUSE_OFFLINE))
+    if ((pnode->nd_state & INUSE_OFFLINE) && 
+        !(nci->state & INUSE_OFFLINE))
       {
       *pneed_todo |= WRITENODE_STATE;  /*marked offline */
 
       strcat(tmpLine, "offline set");
       }
-
-    if (!(tmp & INUSE_OFFLINE) && old_state & INUSE_OFFLINE)
+    else if (!(pnode->nd_state & INUSE_OFFLINE) &&
+        (nci->state & INUSE_OFFLINE))
       {
       *pneed_todo |= WRITENODE_STATE;  /*removed offline*/
 
       strcat(tmpLine, "offline cleared");
       }
-    }
-
-  if (tmpLine[0] != '\0')
-    {
-    if (LOGLEVEL >= 3)
-      {
-      sprintf(log_buf, "node %s state modified (%s)\n",
-        pnode->nd_name,
-        tmpLine);
-
-      log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,"chk_characteristic",log_buf);
-      }
-    }
-
-  tmp = pnode->nd_ntype;
-
-  if (tmp != old_ntype)
-    *pneed_todo |= WRITE_NEW_NODESFILE;
-
-  if ((old_nprops != pnode->nd_nprops) || (old_first != pnode->nd_first))
-    *pneed_todo |= WRITE_NEW_NODESFILE;
-
-  if (pnode->nd_note != old_note)    /* not both NULL or with the same address */
-    {
-    if (pnode->nd_note == NULL || old_note == NULL)
-      {
-      *pneed_todo |= WRITENODE_NOTE;        /*node's note changed*/
-      }
-    else if (strcmp(pnode->nd_note, old_note))
-      {
-      *pneed_todo |= WRITENODE_NOTE;        /*node's note changed*/
-      }
-    }
-
-  old_address = NULL;
   
-  pthread_mutex_unlock(node_char_mutex);
+    if (tmpLine[0] != '\0')
+      {
+      if (LOGLEVEL >= 3)
+        {
+        sprintf(log_buf, "node %s state modified (%s)\n",
+          pnode->nd_name,
+          tmpLine);
+        
+        log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,"chk_characteristic",log_buf);
+        }
+      }
+    }
+
+  if (pnode->nd_ntype != nci->ntype)
+    *pneed_todo |= WRITE_NEW_NODESFILE;
+
+  if ((nci->nprops != pnode->nd_nprops) || 
+      (nci->first != pnode->nd_first))
+    *pneed_todo |= WRITE_NEW_NODESFILE;
+
+  if (pnode->nd_note != nci->note)    /* not both NULL or with the same address */
+    {
+    if (pnode->nd_note == NULL || nci->note == NULL)
+      *pneed_todo |= WRITENODE_NOTE;        /*node's note changed*/
+    else if (strcmp(pnode->nd_note, nci->note))
+      *pneed_todo |= WRITENODE_NOTE;        /*node's note changed*/
+    }
+
+  if (nci->note != NULL)
+    free(nci->note);
 
   return(PBSE_NONE);
   }  /* END chk_characteristic() */
