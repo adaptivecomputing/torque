@@ -3665,6 +3665,7 @@ static int proplist(
   char  *pequal;
 #ifdef NVIDIA_GPUS
   int    have_gpus = FALSE;
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
 #endif  /* NVIDIA_GPUS */
 
   *node_req = 1; /* default to 1 processor per node */
