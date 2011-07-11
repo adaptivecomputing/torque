@@ -131,7 +131,6 @@
 
 /* global Data Items */
 
-extern char *msg_startup3;
 extern char *msg_daemonname;
 extern char *msg_init_abt;
 extern char *msg_init_queued;
@@ -867,10 +866,10 @@ int pbsd_init(
 
       /* will exit on (n)o response */
 
-      if (TForceUpdate == 0)
+/*      if (TForceUpdate == 0)
         {
         need_y_response(type);
-        }
+        }*/
 
       /* (y)es response received */
 
@@ -1505,7 +1504,7 @@ static int pbsd_init_job(
 
   if ((type == RECOV_COLD) || (type == RECOV_CREATE))
     {
-    need_y_response(type);
+/*    need_y_response(type);*/
 
     init_abt_job(pjob);
 
@@ -2080,83 +2079,6 @@ static void resume_net_move(
 
   free(ptask);
   }
-
-
-
-
-/*
- * need_y_response - on create/clean initialization that would delete
- * information, obtain the operator approval first.
- */
-
-static void need_y_response(
-
-  int type)  /* I */
-
-  {
-  static int answ = -2;
-  int c;
-
-  if (answ > 0)
-    {
-    return;  /* already received a response */
-    }
-
-  fflush(stdin);
-
-  if (type == RECOV_CREATE)
-    printf(msg_startup3, msg_daemonname, server_name, "Create", "server database");
-  else
-    printf(msg_startup3, msg_daemonname, server_name, "Cold", "jobs");
-
-  while (1)
-    {
-    answ = getchar();
-
-    c = answ;
-
-    while ((c != '\n') && (c != EOF))
-      c = getchar();
-
-    switch (answ)
-      {
-
-      case 'y':
-
-      case 'Y':
-
-        return;
-
-        /*NOTREACHED*/
-
-        break;
-
-      case  EOF:
-
-      case '\n':
-
-      case 'n':
-
-      case 'N':
-
-        printf("PBS server %s initialization aborted\n",
-               server_name);
-
-        exit(0);
-
-        /*NOTREACHED*/
-
-        break;
-      }
-
-    printf("y(es) or n(o) please:\n");
-    }
-
-  return;
-  }  /* END need_y_response() */
-
-
-
 
 
 /*

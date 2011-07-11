@@ -134,6 +134,7 @@
 
 /* external functions called */
 
+extern char *msg_startup3;
 extern void job_log_roll(int max_depth);
 extern int  pbsd_init(int);
 extern void shutdown_ack();
@@ -281,6 +282,80 @@ int             max_threads;
 int             thread_idle_time;
 
 
+/*
+ * need_y_response - on create/clean initialization that would delete
+ * information, obtain the operator approval first.
+ */
+
+static void need_y_response(
+
+  int type)  /* I */
+
+  {
+  static int answ = -2;
+  int c;
+
+  if (answ > 0)
+    {
+    return;  /* already received a response */
+    }
+
+  fflush(stdin);
+
+  if (type == RECOV_CREATE)
+    {
+      printf("\nYou have selected to start pbs_server in create mode.");
+      printf("\nIf the server database exists it will be overwritten.");
+      printf("\ndo you wish to continue y/(n)?");
+    }
+  else
+    printf(msg_startup3, msg_daemonname, server_name, "Cold", "jobs may");
+
+  while (1)
+    {
+    answ = getchar();
+
+    c = answ;
+
+    while ((c != '\n') && (c != EOF))
+      c = getchar();
+
+    switch (answ)
+      {
+
+      case 'y':
+
+      case 'Y':
+
+        return;
+
+        /*NOTREACHED*/
+
+        break;
+
+      case  EOF:
+
+      case '\n':
+
+      case 'n':
+
+      case 'N':
+
+        printf("PBS server %s initialization aborted\n",
+               server_name);
+
+        exit(0);
+
+        /*NOTREACHED*/
+
+        break;
+      }
+
+    printf("y(es) or n(o) please:\n");
+    }
+
+  return;
+  }  /* END need_y_response() */
 
 
 /**
@@ -1478,6 +1553,15 @@ int main(
   if (IamRoot() == 0)
     {
     return(1);
+    }
+
+  /* With multi-threaded TORQUE we need to ask confirmation for
+     RECOV_CREATE and RECOV_COLD before we daemonize the server */
+  if(server_init_type == RECOV_CREATE || server_init_type == RECOV_COLD)
+    {
+    need_y_response(server_init_type);
+    /* If we made it to here the response from user was yes. Otherwise
+       we abort in need_y_response */
     }
 
   /*

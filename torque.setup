@@ -29,6 +29,10 @@ if [ "$?" -eq "0" ] ; then
 fi
 
 pbs_server -t create
+# Starting in TORQUE 3.1 the server is multi-threaded.
+# We need to pause a second to allow the server to finish coming
+# up. If we go to qmgr right away it will fail.
+sleep 2
 
 echo set server operators += $USER | qmgr
 

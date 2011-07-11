@@ -1,6 +1,6 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
-4.0.0
+3.1.0
   e - make a threadpool for TORQUE server. The number of threads is 
       customizable using min_threads and max_threads, and idle time before
       exiting can be set using thread_idle_seconds.
@@ -19,6 +19,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - use hwloc as the backbone for cpuset support in TORQUE (contributed by Dr. Bernd Kallies)
   e - allow SMT support, at least with large-scale NUMA systems - hasn't been tested yet with
       small-scale NUMA. (contributed by Dr. Bernd Kallies)
+  b - With the multi-threading the pbs_server -t create and -t cold commands could no longer
+      ask for user input from the command line. The call to ask if the user wants to continue
+      was moved higher in the initialization process and some of the wording changed to 
+      reflect what is now happening.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
