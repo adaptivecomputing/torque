@@ -729,7 +729,7 @@ void process_Dreply(
 
   if (ptask == NULL)
     {
-    log_err(-1, id, msg_err_malloc);
+    log_err(-1, id, "Unable to find work task for connection");
 
     close_conn(sock);
 
