@@ -219,7 +219,6 @@ static void  catch_abort(int);
 static void  change_logs(int);
 static void  change_log_level(int);
 static int   chk_save_file(char *);
-static void  need_y_response(int);
 static int   pbsd_init_job(job *, int);
 static void  pbsd_init_reque(job *, int);
 static void  resume_net_move(struct work_task *);
@@ -479,8 +478,6 @@ int pbsd_init(
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char   EMsg[1024];
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
-
-  extern int TForceUpdate;
 
   /* The following is code to reduce security risks */
 
