@@ -1296,40 +1296,6 @@ void main_loop(void)
     if (plogenv == NULL) /* If no specification of loglevel from env */
       LOGLEVEL = server.sv_attr[SRV_ATR_LogLevel].at_val.at_long;
 
-    /* any running jobs need a status update? */
-
-    if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long &&
-        (last_jobstat_time + JobStatRate <= time_now))
-      {
-      struct work_task *ptask;
-      iter = -1;
-
-      while ((pjob = next_job(&alljobs,&iter)) != NULL)
-        {
-
-        if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
-          {
-          /* spread these out over the next JobStatRate seconds */
-
-          when = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long %
-                 JobStatRate;
-
-          ptask = set_task(WORK_Timed, when + time_now, poll_job_task, strdup(pjob->ji_qs.ji_jobid));
-
-          if (ptask != NULL)
-            {
-            insert_task(pjob->ji_svrtask,ptask,TRUE);
-
-            pthread_mutex_unlock(ptask->wt_mutex);
-            }
-          }
-
-        pthread_mutex_unlock(pjob->ji_mutex);
-        }
-
-      last_jobstat_time = time_now;
-      }  /* END if (should poll jobs now) */
-
     if (*state == SV_STATE_SHUTSIG)
       svr_shutdown(SHUT_SIG); /* caught sig */
 

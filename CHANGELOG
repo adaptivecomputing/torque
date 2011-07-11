@@ -23,6 +23,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       ask for user input from the command line. The call to ask if the user wants to continue
       was moved higher in the initialization process and some of the wording changed to 
       reflect what is now happening.
+  e - Change poll jobs to just poll a job once it is run for 45 seconds after it is run, instead
+      of inspecting all jobs and polling them every 45 seconds. Done for optimization
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

@@ -1072,8 +1072,9 @@ void poll_job_task(
   struct work_task *ptask)
 
   {
-  char *jobid = (char *)ptask->wt_parm1;
-  job  *pjob;
+  char      *jobid = (char *)ptask->wt_parm1;
+  job       *pjob;
+  work_task *pwt;
 
   if (jobid != NULL)
     {
@@ -1085,11 +1086,20 @@ void poll_job_task(
           (pjob->ji_qs.ji_state == JOB_STATE_RUNNING))
         {
         stat_mom_job(pjob);
+        
+        /* add another task */
+        pwt = set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(jobid));
+        
+        if (pwt != NULL)
+          {
+          insert_task(pjob->ji_svrtask,pwt,TRUE);
+          pthread_mutex_unlock(pwt->wt_mutex);
+          }
         }
       
       pthread_mutex_unlock(pjob->ji_mutex);
       }
-    
+      
     free(jobid);
     }
 

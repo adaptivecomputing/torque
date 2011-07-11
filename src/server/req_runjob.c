@@ -170,6 +170,7 @@ char *DispatchNode[20];
 
 extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
+void poll_job_task(work_task *);
 
 
 /*
@@ -1113,10 +1114,11 @@ void finish_sendmom(
   int                   status)
 
   {
-  pbs_net_t addr;
-  int       newstate;
-  int       newsub;
-  char      log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_net_t  addr;
+  int        newstate;
+  int        newsub;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  work_task *ptask;
 
   if (LOGLEVEL >= 6)
     {
@@ -1166,6 +1168,15 @@ void finish_sendmom(
       /* if any dependencies, see if action required */
       if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
         depend_on_exec(pjob);
+
+      /* set up the poll task */
+      ptask = set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(pjob->ji_qs.ji_jobid));
+
+      if (ptask != NULL)
+        {
+        insert_task(pjob->ji_svrtask,ptask,TRUE);
+        pthread_mutex_unlock(ptask->wt_mutex);
+        }
       
       break;
 

@@ -618,14 +618,14 @@ static void process_hold_reply(
   struct work_task *pwt)
 
   {
-  job       *pjob;
+  job                  *pjob;
+  attribute             temphold;
 
   struct batch_request *preq;
-  int   newstate;
-  int   newsub;
-  attribute temphold;
-  char *pset;
-  int rc;
+  int                   newstate;
+  int                   newsub;
+  int                   rc;
+  char                 *pset;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   svr_disconnect(pwt->wt_event); /* close connection to MOM */
