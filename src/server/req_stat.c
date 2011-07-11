@@ -1072,27 +1072,28 @@ void poll_job_task(
   struct work_task *ptask)
 
   {
+  char *jobid = (char *)ptask->wt_parm1;
+  job  *pjob;
 
-  job *pjob;
-
-  pjob = (job *)ptask->wt_parm1;
+  if (jobid != NULL)
+    {
+    pjob  = find_job(jobid);
+    
+    if (pjob != NULL)
+      {
+      if ((server.sv_attr[SRV_ATR_PollJobs].at_val.at_long) &&
+          (pjob->ji_qs.ji_state == JOB_STATE_RUNNING))
+        {
+        stat_mom_job(pjob);
+        }
+      
+      pthread_mutex_unlock(pjob->ji_mutex);
+      }
+    
+    free(jobid);
+    }
 
   free(ptask);
-
-  if (pjob == NULL)
-    {
-    /* FAILURE */
-
-    return;
-    }
-
-  if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long &&
-      (pjob->ji_qs.ji_state == JOB_STATE_RUNNING))
-    {
-    stat_mom_job(pjob);
-    }
-
-  return;
   }  /* END poll_job_task() */
 
 

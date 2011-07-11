@@ -1314,7 +1314,7 @@ void main_loop(void)
           when = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long %
                  JobStatRate;
 
-          ptask = set_task(WORK_Timed, when + time_now, poll_job_task, pjob);
+          ptask = set_task(WORK_Timed, when + time_now, poll_job_task, strdup(pjob->ji_qs.ji_jobid));
 
           if (ptask != NULL)
             {

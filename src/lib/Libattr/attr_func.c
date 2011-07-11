@@ -688,10 +688,10 @@ count_substrings(
  * within a svrattrl list.
  */
 
-void
-attrl_fixlink(
-  tlist_head *phead /* pointer to head of svrattrl list */
-)
+void attrl_fixlink(
+
+  tlist_head *phead) /* pointer to head of svrattrl list */
+
   {
   svrattrl *pal;
   svrattrl *pnxt;

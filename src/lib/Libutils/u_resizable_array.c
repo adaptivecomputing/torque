@@ -509,10 +509,10 @@ resizable_array *initialize_resizable_array(
   resizable_array *ra = malloc(sizeof(resizable_array));
   size_t           amount = sizeof(slot) * size;
 
-  ra->max = size;
-  ra->num = 0;
+  ra->max       = size;
+  ra->num       = 0;
   ra->next_slot = 1;
-  ra->last = 0;
+  ra->last      = 0;
 
   ra->slots = malloc(amount);
   memset(ra->slots,0,amount);
