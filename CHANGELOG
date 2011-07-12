@@ -6,6 +6,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Reversed the order of $(MOMLIBS) and $(PBS_LIBS) in src/resmom/Makefile.in for 
       LDADD = @PBS_MACH@/libmommach.a $(PBS_LIBS) $(MOMLIBS). This fixes a link 
       problem on Suse Linux. This fixes bugzilla bug 143.
+  e - automatically create and mount /dev/cpuset when TORQUE is configured but the cpuset
+      directory isn't there (backported from 3.0.3)
 
 
 2.5.7

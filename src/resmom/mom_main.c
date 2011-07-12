@@ -7155,6 +7155,13 @@ int setup_program_environment(void)
     return(3);
     }
 
+#if defined(PENABLE_LINUX26_CPUSETS)
+  /* NOTE: moved to before we go into background so that we can print an error
+   * message if we can't mount the cpuset directory and it isn't mounted */
+  /* Create the top level torque cpuset if it doesn't already exist. */
+  initialize_root_cpuset();
+#endif
+
   /* go into the background and become own session/process group */
 
 #if !defined(DEBUG) && !defined(DISABLE_DAEMONS)
@@ -7227,9 +7234,7 @@ int setup_program_environment(void)
     return(2);
     }
 
-  sprintf(log_buffer, "%ld\n",
-
-          (long)getpid());
+  sprintf(log_buffer, "%ld\n", (long)getpid());
 
   if (write(lockfds, log_buffer, strlen(log_buffer) + 1) !=
       (ssize_t)(strlen(log_buffer) + 1))
