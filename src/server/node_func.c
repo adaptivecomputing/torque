@@ -1979,7 +1979,7 @@ int setup_nodes(void)
   static char id[] = "setup_nodes";
 
   FILE  *nin;
-  char   line[256];
+  char   line[MAXLINE << 4];
   char   note[MAX_NOTE+1];
   char  *nodename;
   char   propstr[256];
