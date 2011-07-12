@@ -7163,6 +7163,48 @@ int setup_program_environment(void)
     return(3);
     }
 
+#ifdef PENABLE_LINUX26_CPUSETS
+  /* load system topology */
+  if ((hwloc_topology_init(&topology) == -1))
+    {
+    log_err(-1, msg_daemonname, "Unable to init machine topology");
+    return(-1);
+    }
+
+  if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) != 0))
+    {
+    log_err(-1, msg_daemonname, "Unable to configure machine topology");
+    return(-1);
+    }
+
+  if ((hwloc_topology_load(topology) == -1))
+    {
+    log_err(-1, msg_daemonname, "Unable to load machine topology");
+    return(-1);
+    }
+
+  sprintf(log_buffer, "machine topology contains %d memory nodes, %d cpus",
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+
+#endif
+
+#ifdef NUMA_SUPPORT
+  if ((rc = setup_nodeboards()) != 0)
+    return(rc);
+#else
+  snprintf(path_meminfo,sizeof(path_meminfo),"%s", "/proc/meminfo");
+#endif /* END NUMA_SUPPORT */
+
+#if defined(PENABLE_LINUX26_CPUSETS)
+  /* NOTE: moved to before we go into background so that we can print an error
+   * message if we can't mount the cpuset directory and it isn't mounted */
+  /* Create the top level torque cpuset if it doesn't already exist. */
+  if ((rc = init_torque_cpuset()) != 0)
+    return(rc);
+#endif
+
   /* go into the background and become own session/process group */
 
 #if !defined(DEBUG) && !defined(DISABLE_DAEMONS)
@@ -7235,9 +7277,7 @@ int setup_program_environment(void)
     return(2);
     }
 
-  sprintf(log_buffer, "%ld\n",
-
-          (long)getpid());
+  sprintf(log_buffer, "%ld\n", (long)getpid());
 
   if (write(lockfds, log_buffer, strlen(log_buffer) + 1) !=
       (ssize_t)(strlen(log_buffer) + 1))
@@ -7499,45 +7539,6 @@ int setup_program_environment(void)
 
   add_conn(rppfd, Primary, (pbs_net_t)0, 0, PBS_SOCK_INET, rpp_request);
   add_conn(privfd, Primary, (pbs_net_t)0, 0, PBS_SOCK_INET, rpp_request);
-
-#ifdef PENABLE_LINUX26_CPUSETS
-  /* load system topology */
-  if ((hwloc_topology_init(&topology) == -1))
-    {
-    log_err(-1, msg_daemonname, "Unable to init machine topology");
-    return(-1);
-    }
-
-  if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) != 0))
-    {
-    log_err(-1, msg_daemonname, "Unable to configure machine topology");
-    return(-1);
-    }
-
-  if ((hwloc_topology_load(topology) == -1))
-    {
-    log_err(-1, msg_daemonname, "Unable to load machine topology");
-    return(-1);
-    }
-
-  sprintf(log_buffer, "machine topology contains %d memory nodes, %d cpus",
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
-
-#endif
-
-#ifdef NUMA_SUPPORT
-  if ((rc = setup_nodeboards()) != 0)
-    return(rc);
-#else
-  snprintf(path_meminfo,sizeof(path_meminfo),"%s", "/proc/meminfo");
-#endif /* END NUMA_SUPPORT */
-
-#ifdef PENABLE_LINUX26_CPUSETS
-  if ((rc = init_torque_cpuset()) != 0)
-    return(rc);
-#endif /* END PENABLE_LINUX26_CPUSETS */
 
   /* initialize machine-dependent polling routines */
   if ((c = mom_open_poll()) != PBSE_NONE)

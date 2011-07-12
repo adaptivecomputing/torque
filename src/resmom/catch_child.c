@@ -1689,17 +1689,16 @@ void init_abort_jobs(
 #ifndef NUMA_SUPPORT
   int            j;
   int            sisters;
+  int            mom_radix = 0;
+  int            index;
 #endif /* ndef NUMA_SUPPORT */
 
   struct dirent *pdirent;
-  job  *pj;
-  char  *job_suffix = JOB_FILE_SUFFIX;
-  int   job_suf_len = strlen(job_suffix);
-  char  *psuffix;
-  unsigned int momport = 0;
-  int mom_radix = 0;
-  int index;
-
+  job           *pj;
+  char          *job_suffix = JOB_FILE_SUFFIX;
+  int            job_suf_len = strlen(job_suffix);
+  char          *psuffix;
+  unsigned int   momport = 0;
 
   if (LOGLEVEL >= 6)
     {

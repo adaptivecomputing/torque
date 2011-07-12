@@ -198,12 +198,14 @@ int hwloc_bitmap_displaylist(
 int init_cpusets(void)
   
   {
-  static char   id[] = "init_cpusets";
   int           rc   = -1;
 #ifdef USELIBCPUSET
+  static char   id[] = "init_cpusets";
   struct cpuset *cp  = NULL;
 #else
   char           path[MAXPATHLEN + 1];
+  char           cmd[MAXPATHLEN + 1];
+  FILE          *pipe;
   struct stat    statbuf;
 #endif
   
@@ -235,8 +237,24 @@ int init_cpusets(void)
   sprintf(path, "%s/cpus", TROOTCPUSET_PATH);
   if ((rc = lstat(path, &statbuf)) == -1)
     {
-    sprintf(log_buffer, "cannot locate %s - cpusets not supported/enabled on this system", path);
-    log_err(errno, id, log_buffer);
+    /* create cpuset base directory */
+    mkdir(TROOTCPUSET_PATH,0755);
+ 
+    /* now mount it */
+    sprintf(cmd,"mount -t cpuset none %s", TROOTCPUSET_PATH);
+    
+    pipe = popen(cmd,"r");
+    
+    if (pipe == NULL)
+      {
+      fprintf(stderr,"Cannot mount directory '%s'\n",TROOTCPUSET_PATH);
+      }
+    else
+      {
+      /* successfully created/mounted cpusets */
+      rc = 0;
+      pclose(pipe);
+      }
     }
  
   return(rc);
@@ -1189,8 +1207,10 @@ int init_torque_cpuset(void)
   if ((rc = create_cpuset(TTORQUECPUSET_PATH, cpus, mems, O_CREAT)) == -1)
 #endif
     log_err(errno, id, log_buffer);
- 
+
+#ifndef NUMA_SUPPORT
 finish:
+#endif
  
   if (cpus != NULL)
     hwloc_bitmap_free(cpus);
