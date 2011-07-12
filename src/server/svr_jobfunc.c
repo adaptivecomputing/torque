@@ -2658,9 +2658,6 @@ static void correct_ct(
 
     server.sv_jobstates[pjob->ji_qs.ji_state]++;
 
-    (pjob->ji_qhdr)->qu_numjobs++;
-    (pjob->ji_qhdr)->qu_njstate[pjob->ji_qs.ji_state]++;
-
     if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
       {
       pque = pjob->ji_qhdr;
@@ -2673,6 +2670,8 @@ static void correct_ct(
       if (pque != NULL)
         {
         pque->qu_numcompleted++;
+        pque->qu_numjobs++;
+        pque->qu_njstate[pjob->ji_qs.ji_state]++;
 
         pthread_mutex_unlock(pque->qu_mutex);
         }
