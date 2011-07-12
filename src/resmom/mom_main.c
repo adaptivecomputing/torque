@@ -150,6 +150,10 @@
 
 #include "mcom.h"
 
+#ifdef PENABLE_LINUX26_CPUSETS
+void initialize_root_cpuset();
+#endif
+
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
 #endif /* NOPOSIXMEMLOCK */

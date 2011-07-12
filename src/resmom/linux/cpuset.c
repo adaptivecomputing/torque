@@ -255,7 +255,6 @@ initialize_root_cpuset(void)
   FILE          *fp;
   char           cmd[MAXPATHLEN];
   FILE          *pipe;
-  mode_t         mode;
 
   sprintf(log_buffer, "Init TORQUE cpuset %s.",
           TTORQUECPUSET_PATH);
