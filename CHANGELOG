@@ -34,6 +34,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       directory isn't there 
   b - fix a bug where node lines past 256 characters were rejected. This buffer has been
       made much larger (8192 characters)
+  b - clear out exec_gpus as needed
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it

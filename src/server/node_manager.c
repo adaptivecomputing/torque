@@ -3106,6 +3106,7 @@ static int gpu_count(
   int    freeonly)        /* I */
 
   {
+  static char id[] = "gpu_count";
   int  count = 0;
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -3113,14 +3114,16 @@ static int gpu_count(
       (pnode->nd_state & INUSE_UNKNOWN) ||
       (pnode->nd_state & INUSE_DOWN))
     {
-    sprintf(log_buf,
-      "Counted %d gpus %s on node %s that was skipped",
-      count,
-      (freeonly? "free":"available"),
-      pnode->nd_name);
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer,
+        "Counted %d gpus %s on node %s that was skipped",
+        count,
+        (freeonly? "free":"available"),
+        pnode->nd_name);
 
-    DBPRT(("%s\n",
-           log_buf));
+		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+      }
     return (count);
     }
 
@@ -3162,14 +3165,16 @@ static int gpu_count(
       }
     }
 
-  sprintf(log_buf,
-    "Counted %d gpus %s on node %s",
-    count,
-    (freeonly? "free":"available"),
-    pnode->nd_name);
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,
+      "Counted %d gpus %s on node %s",
+      count,
+      (freeonly? "free":"available"),
+      pnode->nd_name);
 
-  DBPRT(("%s\n",
-         log_buf));
+	  log_ext(-1, id, log_buffer, LOG_DEBUG);
+    }
 
   return(count);
   }  /* END gpu_count() */
@@ -3252,6 +3257,8 @@ int search_acceptable(
   int             gpureq)
 
   {
+  static char id[] = "search_acceptable";
+
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pnode->nd_ntype == NTYPE_CLUSTER)
@@ -3286,8 +3293,7 @@ int search_acceptable(
         gpu_count(pnode, TRUE),
         skip);
 
-       DBPRT(("%s\n",
-         log_buf));
+       log_ext(-1, id, log_buffer, LOG_DEBUG);
        }
 
     if ((skip == SKIP_NONE) || (skip == SKIP_NONE_REUSE))
@@ -3340,6 +3346,8 @@ int can_reshuffle(
   int             pass)
 
   {
+  static char id[] = "can_reshuffle";
+
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pnode->nd_ntype == NTYPE_CLUSTER)
@@ -3366,8 +3374,7 @@ int can_reshuffle(
         gpu_count(pnode, TRUE),
         skip);
 
-       DBPRT(("%s\n",
-         log_buf));
+       log_ext(-1, id, log_buffer, LOG_DEBUG);
        }
 
     if ((skip == SKIP_EXCLUSIVE) && 
@@ -3417,6 +3424,7 @@ static int search(
   {
   static int      pass = INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_UNKNOWN;
 
+  static char id[] = "search";
   struct pbsnode *pnode = NULL;
   int             found;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
@@ -3455,8 +3463,7 @@ static int search(
           skip,
           depth);
 
-         DBPRT(("%s\n",
-           log_buf));
+         log_ext(-1, id, log_buffer, LOG_DEBUG);
          }
 
       pthread_mutex_unlock(pnode->nd_mutex);
@@ -3521,8 +3528,7 @@ static int search(
             skip,
             depth);
 
-           DBPRT(("%s\n",
-             log_buf));
+           log_ext(-1, id, log_buffer, LOG_DEBUG);
            }
     
         pthread_mutex_unlock(pnode->nd_mutex);
@@ -3655,6 +3661,7 @@ static int proplist(
   char  *pname;
   char  *pequal;
 #ifdef NVIDIA_GPUS
+  static char id[] = "proplist";
   int    have_gpus = FALSE;
   char   log_buf[LOCAL_LOG_BUF_SIZE];
 #endif  /* NVIDIA_GPUS */
@@ -3745,11 +3752,13 @@ static int proplist(
       }
 
 #ifdef NVIDIA_GPUS
-    if (have_gpus)
+    if ((have_gpus) && (LOGLEVEL >= 7))
       {
-      sprintf(log_buf, "proplist: set needed gpu mode to %d", gpu_mode_rqstd);
+      sprintf(log_buffer,
+        "proplist: set needed gpu mode to %d",
+        gpu_mode_rqstd);
 
-      DBPRT(("%s\n", log_buf));
+       log_ext(-1, id, log_buffer, LOG_DEBUG);
       }
 #endif  /* NVIDIA_GPUS */
 
@@ -4512,13 +4521,15 @@ static int node_spec(
       continue;
       }
 
-    sprintf(log_buf,
-      "starting eval gpus on node %s need %d free %d",
-      pnode->nd_name,
-      pnode->nd_ngpus_needed,
-      gpu_count(pnode, TRUE));
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "starting eval gpus on node %s need %d free %d",
+        pnode->nd_name,
+        pnode->nd_ngpus_needed,
+        gpu_count(pnode, TRUE));
 
-    DBPRT(("%s\n", log_buf));
+       log_ext(-1, id, log_buffer, LOG_DEBUG);
+       }
 
     if (pnode->nd_state == INUSE_FREE)
       {
@@ -4527,9 +4538,11 @@ static int node_spec(
         if (pnode->nd_ngpus_needed <= gpu_count(pnode, TRUE))
           {
           /* adequate virtual nodes and gpus available - node is ok */
-          sprintf(log_buf, "adequate virtual nodes and gpus available - node is ok");
-
-          DBPRT(("%s\n", log_buf));
+          if (LOGLEVEL >= 7)
+            {
+            sprintf(log_buffer, "adequate virtual nodes and gpus available - node is ok");
+             log_ext(-1, id, log_buffer, LOG_DEBUG);
+             }
           
           continue;
           }
@@ -4585,9 +4598,12 @@ static int node_spec(
     if (early != 0)
       {
       /* FAILURE */
-      sprintf(log_buf, "failure early");
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer, "failure early");
 
-      DBPRT(("%s\n", log_buf));
+        log_ext(-1, id, log_buffer, LOG_DEBUG);
+        }
 
       /* specified node not available and replacement cannot be located */
 
@@ -4664,7 +4680,7 @@ static int node_spec(
           NodeState);
         }
 
-      if (LOGLEVEL >= 6)
+      if (LOGLEVEL >= 7)
         {
         log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
         }
@@ -5222,6 +5238,10 @@ int set_nodes(
         pnode->nd_ngpus,
         pnode->nd_ngpus_needed);
 
+	    if (LOGLEVEL >= 7)
+	      {
+  		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+	      }
       DBPRT(("%s\n", log_buf));
 
       gn = pnode->nd_gpusn + j;
@@ -5244,6 +5264,10 @@ int set_nodes(
         j,
         pnode->nd_ngpus_needed);
 
+	    if (LOGLEVEL >= 7)
+	      {
+  		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+	      }
       DBPRT(("%s\n", log_buf));
 
       add_gpu_to_hostlist(&gpu_list,gn,pnode);

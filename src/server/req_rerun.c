@@ -368,6 +368,10 @@ void req_rerunjob(
 
           job_attr_def[JOB_ATR_session_id].at_free(
             &pjob->ji_wattr[JOB_ATR_session_id]);
+
+          job_attr_def[JOB_ATR_exec_gpus].at_free(
+            &pjob->ji_wattr[JOB_ATR_exec_gpus]);
+
           }
 
         pjob->ji_modified = 1;    /* force full job save */
