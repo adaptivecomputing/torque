@@ -184,7 +184,7 @@ struct work_task *set_task(
         }
       else
         {
-        insert_task_first(&task_list_timed,pnew);
+        insert_task(&task_list_timed,pnew,FALSE);
         }
       
       }
