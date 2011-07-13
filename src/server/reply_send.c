@@ -250,8 +250,16 @@ int reply_send(
       if ((ptask->wt_type == WORK_Deferred_Local) &&
           (ptask->wt_parm1 == (void *)request))
         {
-        set_task(WORK_Immed,0,ptask->wt_func,ptask->wt_parm1);
-        delete_task(ptask);
+        if (ptask->wt_tasklist)
+          remove_task(ptask->wt_tasklist,ptask);
+        
+        if (ptask->wt_obj_tasklist)
+          remove_task(ptask->wt_obj_tasklist,ptask);
+        
+        pthread_mutex_unlock(ptask->wt_mutex);
+        free(ptask->wt_mutex);
+
+        ptask->wt_func(ptask);
 
         return(0);
         }
