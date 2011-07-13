@@ -1495,6 +1495,14 @@ static job *chk_job_torun(
     }    /* END if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE|JOB_SVFLG_StagedIn)) */
   else
     {
+    /* make sure exec gpus is clear */
+    if (((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0) &&
+      (pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL))
+      {
+      job_attr_def[(int)JOB_ATR_exec_gpus].at_free(
+        &pjob->ji_wattr[JOB_ATR_exec_gpus]);
+      }
+
     /* job has not run before or need not run there again */
     /* reserve nodes and set new exec_host */
     if ((prun->rq_destin == NULL) || (prun->rq_destin[0] == '\0'))

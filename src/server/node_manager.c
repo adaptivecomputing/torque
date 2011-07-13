@@ -2997,6 +2997,7 @@ static int gpu_count(
   int    freeonly)        /* I */
 
   {
+  static char id[] = "gpu_count";
   int count = 0;
 
   if ((pnode->nd_state & INUSE_DELETED) ||
@@ -3004,14 +3005,16 @@ static int gpu_count(
       (pnode->nd_state & INUSE_UNKNOWN) ||
       (pnode->nd_state & INUSE_DOWN))
     {
-    sprintf(log_buffer,
-      "Counted %d gpus %s on node %s that was skipped",
-      count,
-      (freeonly? "free":"available"),
-      pnode->nd_name);
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer,
+        "Counted %d gpus %s on node %s that was skipped",
+        count,
+        (freeonly? "free":"available"),
+        pnode->nd_name);
 
-    DBPRT(("%s\n",
-           log_buffer));
+		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+      }
     return (count);
     }
 
@@ -3053,14 +3056,16 @@ static int gpu_count(
       }
     }
 
-  sprintf(log_buffer,
-    "Counted %d gpus %s on node %s",
-    count,
-    (freeonly? "free":"available"),
-    pnode->nd_name);
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,
+      "Counted %d gpus %s on node %s",
+      count,
+      (freeonly? "free":"available"),
+      pnode->nd_name);
 
-  DBPRT(("%s\n",
-         log_buffer));
+	  log_ext(-1, id, log_buffer, LOG_DEBUG);
+    }
 
   return (count);
   }  /* END gpu_count() */
@@ -3147,6 +3152,7 @@ static int search(
   {
   static int pass = INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_UNKNOWN | INUSE_DELETED;
 
+  static char id[] = "search";
   struct pbsnode *pnode;
   int found;
   int i;
@@ -3185,7 +3191,7 @@ static int search(
       if (!hasprop(pnode, glorf))
         continue;
 
-      if (LOGLEVEL >= 6)
+      if (LOGLEVEL >= 7)
         {
         sprintf(log_buffer,
           "search: starting eval gpus on node %s need %d(%d) mode %d has %d free %d skip %d depth %d",
@@ -3198,8 +3204,7 @@ static int search(
           skip,
           depth);
 
-         DBPRT(("%s\n",
-           log_buffer));
+         log_ext(-1, id, log_buffer, LOG_DEBUG);
          }
 
       if ((skip == SKIP_NONE) || (skip == SKIP_NONE_REUSE))
@@ -3236,7 +3241,7 @@ static int search(
       pnode->nd_order  = order;
 
       /* SUCCESS */
-      if (LOGLEVEL >= 6)
+      if (LOGLEVEL >= 7)
         {
         sprintf(log_buffer,
           "search: successful gpus on node %s need %d(%d) mode %d has %d free %d skip %d depth %d",
@@ -3249,8 +3254,7 @@ static int search(
           skip,
           depth);
 
-         DBPRT(("%s\n",
-           log_buffer));
+         log_ext(-1, id, log_buffer, LOG_DEBUG);
          }
 
       return(1);
@@ -3285,7 +3289,7 @@ static int search(
       if (pnode->nd_state & pass)
         continue;
 
-      if (LOGLEVEL >= 6)
+      if (LOGLEVEL >= 7)
         {
         sprintf(log_buffer,
           "search(2): starting eval gpus on node %s need %d(%d) mode %d has %d free %d skip %d depth %d",
@@ -3298,8 +3302,7 @@ static int search(
           skip,
           depth);
 
-         DBPRT(("%s\n",
-           log_buffer));
+  		   log_ext(-1, id, log_buffer, LOG_DEBUG);
          }
 
       if ((skip == SKIP_EXCLUSIVE) && 
@@ -3338,7 +3341,7 @@ static int search(
         pnode->nd_order  = order;
 
         /* SUCCESS */
-      if (LOGLEVEL >= 6)
+      if (LOGLEVEL >= 7)
         {
         sprintf(log_buffer,
           "search(2): successful gpus on node %s need %d(%d) mode %d has %d free %d skip %d depth %d",
@@ -3351,8 +3354,7 @@ static int search(
           skip,
           depth);
 
-         DBPRT(("%s\n",
-           log_buffer));
+  		   log_ext(-1, id, log_buffer, LOG_DEBUG);
          }
 
         return(1);
@@ -3484,6 +3486,7 @@ static int proplist(
   char  *pname;
   char  *pequal;
 #ifdef NVIDIA_GPUS
+  static char id[] = "proplist";
   int    have_gpus = FALSE;
 #endif  /* NVIDIA_GPUS */
 
@@ -3581,14 +3584,13 @@ static int proplist(
       }
 
 #ifdef NVIDIA_GPUS
-    if (have_gpus)
+    if ((have_gpus) && (LOGLEVEL >= 7))
       {
       sprintf(log_buffer,
         "proplist: set needed gpu mode to %d",
         gpu_mode_rqstd);
 
-      DBPRT(("%s\n",
-             log_buffer));
+		  log_ext(-1, id, log_buffer, LOG_DEBUG);
       }
 #endif  /* NVIDIA_GPUS */
 
@@ -4366,13 +4368,15 @@ static int node_spec(
       continue;
       }
 
-    sprintf(log_buffer, "starting eval gpus on node %s need %d free %d",
-      pnode->nd_name,
-      pnode->nd_ngpus_needed,
-      gpu_count(pnode, TRUE));
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "starting eval gpus on node %s need %d free %d",
+        pnode->nd_name,
+        pnode->nd_ngpus_needed,
+        gpu_count(pnode, TRUE));
 
-    DBPRT(("%s\n",
-           log_buffer));
+		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+      }
 
     if (pnode->nd_state == INUSE_FREE)
       {
@@ -4381,10 +4385,13 @@ static int node_spec(
         if (pnode->nd_ngpus_needed <= gpu_count(pnode, TRUE))
           {
           /* adequate virtual nodes and gpus available - node is ok */
-          sprintf(log_buffer, "adequate virtual nodes and gpus available - node is ok");
+	        if (LOGLEVEL >= 7)
+	          {
+            sprintf(log_buffer,
+              "adequate virtual nodes and gpus available - node is ok");
 
-          DBPRT(("%s\n",
-                 log_buffer));
+      		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+	          }
           
           continue;
           }
@@ -4434,10 +4441,14 @@ static int node_spec(
     if (early != 0)
       {
       /* FAILURE */
-      sprintf(log_buffer, "failure early");
+	    if (LOGLEVEL >= 7)
+	      {
+        sprintf(log_buffer, "failure early");
 
-      DBPRT(("%s\n",
-             log_buffer));
+  		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+        DBPRT(("%s\n",
+               log_buffer));
+	      }
 
       /* specified node not available and replacement cannot be located */
 
@@ -5072,6 +5083,10 @@ int set_nodes(
         pnode->nd_ngpus,
         pnode->nd_ngpus_needed);
 
+	    if (LOGLEVEL >= 7)
+	      {
+  		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+	      }
       DBPRT(("%s\n",
              log_buffer));
 
@@ -5095,6 +5110,10 @@ int set_nodes(
         j,
         pnode->nd_ngpus_needed);
 
+	    if (LOGLEVEL >= 7)
+	      {
+  		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+	      }
       DBPRT(("%s\n",
              log_buffer));
 

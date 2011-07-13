@@ -8,6 +8,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       problem on Suse Linux. This fixes bugzilla bug 143.
   e - automatically create and mount /dev/cpuset when TORQUE is configured but the cpuset
       directory isn't there (backported from 3.0.3)
+  b - clear out exec_gpus as needed
 
 
 2.5.7
