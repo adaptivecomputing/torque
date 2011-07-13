@@ -2654,6 +2654,7 @@ static void correct_ct(
 
   while ((pjob = next_job(&alljobs,&iter)) != NULL)
     {
+    pthread_mutex_lock(pjob->ji_mutex);
     server.sv_qs.sv_numjobs++;
 
     server.sv_jobstates[pjob->ji_qs.ji_state]++;
