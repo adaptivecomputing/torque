@@ -153,7 +153,7 @@ work_task *next_task(all_tasks *,int *);
 
 
 
-extern struct work_task *set_task(enum work_type, long event, void (*func)(), void *param);
+extern struct work_task *set_task(enum work_type, long event, void (*func)(), void *param, int);
 extern void clear_task(struct work_task *ptask);
 extern void dispatch_task(struct work_task *);
 extern void delete_task(struct work_task *ptask);

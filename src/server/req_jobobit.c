@@ -677,7 +677,8 @@ int mom_comm(
               WORK_Timed,
               (long)(time_now + PBS_NET_RETRY_TIME),
               func,
-              jobid_copy);
+              jobid_copy,
+              TRUE);
 
       if (pwt != NULL)
         {
@@ -1409,7 +1410,7 @@ int handle_complete_first_time(
     
     pwt = set_task(WORK_Timed,
         pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
-        on_job_exit, jobid);
+        on_job_exit, jobid, TRUE);
     }
   else
     {
@@ -1423,7 +1424,7 @@ int handle_complete_first_time(
     
     jobid = strdup(pjob->ji_qs.ji_jobid);
     
-    pwt = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid);
+    pwt = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid, TRUE);
     
     if (gettimeofday(&tv, &tz) == 0)
       {
@@ -1480,7 +1481,7 @@ int handle_complete_second_time(
       }
     
     jobid = strdup(pjob->ji_qs.ji_jobid);
-    pwt = set_task(WORK_Timed,time_now + JOBMUSTREPORTDEFAULTKEEP,on_job_exit,jobid);
+    pwt = set_task(WORK_Timed,time_now + JOBMUSTREPORTDEFAULTKEEP,on_job_exit,jobid,TRUE);
     
     if (pwt != NULL)
       {
@@ -1729,7 +1730,7 @@ void on_job_rerun(
 
           svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN1);
 
-          set_task(WORK_Immed, 0, on_job_rerun, pjob);
+          set_task(WORK_Immed, 0, on_job_rerun, pjob, FALSE);
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -1862,7 +1863,7 @@ void on_job_rerun(
 
           svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN2);
 
-          set_task(WORK_Immed, 0, on_job_rerun, pjob);
+          set_task(WORK_Immed, 0, on_job_rerun, pjob, FALSE);
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -1963,7 +1964,7 @@ void on_job_rerun(
           {
           svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3);
 
-          set_task(WORK_Immed, 0, on_job_rerun, pjob);
+          set_task(WORK_Immed, 0, on_job_rerun, pjob, FALSE);
 
           pthread_mutex_unlock(pjob->ji_mutex);
             
@@ -2361,14 +2362,13 @@ void *req_jobobit(
     /* have hit a race condition, the send_job child's SIGCHLD */
     /* has not yet been reaped.  Must wait for it.     */
 
-    ptask = set_task(WORK_Timed, time_now + 1, wait_for_send, (void *)preq);
+    ptask = set_task(WORK_Timed, time_now + 1, wait_for_send, (void *)preq, FALSE);
 
     if (ptask == NULL)
       {
       req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
       }
 
-    pthread_mutex_unlock(ptask->wt_mutex);
     pthread_mutex_unlock(pjob->ji_mutex);
 
     return(NULL);
@@ -2683,7 +2683,7 @@ void *req_jobobit(
 
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-    set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
+    set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
 
     /* decrease array running job count */
     if ((pjob->ji_arraystruct != NULL) &&
@@ -2748,7 +2748,7 @@ void *req_jobobit(
       JOB_STATE_EXITING,
       pjob->ji_qs.ji_substate);
 
-    set_task(WORK_Immed, 0, on_job_rerun, (void *)pjob);
+    set_task(WORK_Immed, 0, on_job_rerun, (void *)pjob, FALSE);
 
     if (LOGLEVEL >= 4)
       {

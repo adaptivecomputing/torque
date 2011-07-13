@@ -1720,7 +1720,6 @@ int create_pbs_node(
   struct pbsnode  *pnode = NULL;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
 
-  work_task       *wt;
   int              ntype; /* node type; time-shared, not */
   char            *pname; /* node name w/o any :ts       */
   u_long          *pul;  /* 0 terminated host adrs array*/
@@ -1783,9 +1782,8 @@ int create_pbs_node(
       strcpy(host_info->nodename, objname);
       }
 
-    wt = set_task(WORK_Timed, time_now + 30 /*PBS_LOG_CHECK_RATE  five minutes */, recheck_for_node, host_info);
-
-    pthread_mutex_unlock(wt->wt_mutex);
+    /* does anyone know why that comment is there? --dbeer */
+    set_task(WORK_Timed, time_now + 30 /*PBS_LOG_CHECK_RATE  five minutes */, recheck_for_node, host_info, FALSE);
 
     return(rc);
     }

@@ -277,14 +277,10 @@ void track_save(
     {
     free(pwt);
 
-    wt = set_task(WORK_Timed, (long)time_now + PBS_SAVE_TRACK_TM, track_save, 0);
+    wt = set_task(WORK_Timed, (long)time_now + PBS_SAVE_TRACK_TM, track_save, NULL, FALSE);
 
     if (wt == NULL)
       log_err(errno, myid, "Unable to set task for save");
-    else
-      {
-      pthread_mutex_unlock(wt->wt_mutex);
-      }
     }
 
   if (server.sv_trackmodifed == 0)

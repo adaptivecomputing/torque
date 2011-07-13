@@ -1088,7 +1088,7 @@ void poll_job_task(
         stat_mom_job(pjob);
         
         /* add another task */
-        pwt = set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(jobid));
+        pwt = set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(jobid), TRUE);
         
         if (pwt != NULL)
           {

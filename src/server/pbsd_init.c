@@ -471,7 +471,6 @@ int pbsd_init(
 
   struct sigaction oact;
 
-  struct work_task *wt;
   job_array        *pa;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -1299,9 +1298,7 @@ int pbsd_init(
         /* TODO Someone must have been naughty and did a kill -9 on pbs_server,
            we might need to validate that the last job was fully initialized
            before continuing the cloning process. */
-        wt = set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pa->template_job);
-
-        pthread_mutex_unlock(wt->wt_mutex);
+        set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pa->template_job,FALSE);
         }
 
       }
@@ -1392,9 +1389,7 @@ int pbsd_init(
   server.sv_trackmodifed = 0;
 
   /* set work task to periodically save the tracking records */
-  wt = set_task(WORK_Timed, (long)(time_now + PBS_SAVE_TRACK_TM), track_save, 0);
-
-  pthread_mutex_unlock(wt->wt_mutex);
+  set_task(WORK_Timed, (long)(time_now + PBS_SAVE_TRACK_TM), track_save, NULL, FALSE);
 
   /* SUCCESS */
   return(0);
@@ -1474,7 +1469,6 @@ static int pbsd_init_job(
   {
   unsigned int      d;
 
-  struct work_task *pwt;
   char             *jobid_copy;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -1563,7 +1557,7 @@ static int pbsd_init_job(
 
       /* resend rtc */
 
-      pwt = set_task(WORK_Immed, 0, resume_net_move, (void *)pjob);
+      set_task(WORK_Immed, 0, resume_net_move, pjob, FALSE);
 
       break;
 
@@ -1646,7 +1640,7 @@ static int pbsd_init_job(
 
       jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-      pwt = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
+      set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
 
       pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -1657,7 +1651,7 @@ static int pbsd_init_job(
       /* Completed jobs are no longer purged on startup */
       jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-      pwt = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
+      set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
 
       pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -1677,7 +1671,7 @@ static int pbsd_init_job(
     case JOB_SUBSTATE_RERUN:
 
       if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
-        pwt = set_task(WORK_Immed, 0, on_job_rerun, (void *)pjob);
+        set_task(WORK_Immed, 0, on_job_rerun, pjob, FALSE);
 
       pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -1687,7 +1681,7 @@ static int pbsd_init_job(
 
     case JOB_SUBSTATE_RERUN2:
 
-      pwt = set_task(WORK_Immed, 0, on_job_rerun, (void *)pjob);
+      set_task(WORK_Immed, 0, on_job_rerun, pjob, FALSE);
 
       pbsd_init_reque(pjob, KEEP_STATE);
 

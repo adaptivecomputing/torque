@@ -1170,7 +1170,7 @@ void finish_sendmom(
         depend_on_exec(pjob);
 
       /* set up the poll task */
-      ptask = set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(pjob->ji_qs.ji_jobid));
+      ptask = set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(pjob->ji_qs.ji_jobid), TRUE);
 
       if (ptask != NULL)
         {

@@ -56,7 +56,6 @@ int attempt_delete(
 
   char      *jobid_copy;
   work_task *pwtold;
-  work_task *pwtnew;
   job       *pjob;
 
   /* job considered deleted if null */
@@ -131,7 +130,7 @@ int attempt_delete(
     
     /* force new connection */
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
-    pwtnew = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
+    set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
@@ -166,7 +165,7 @@ int attempt_delete(
 
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-    ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy);
+    ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, TRUE);
     
     if (ptask != NULL)
       {
@@ -261,11 +260,10 @@ void req_deletearray(
        JOB_SUBSTATE_TRANSIT */
     if (num_skipped != 0)
       {
-      ptask = set_task(WORK_Timed, time_now + 2, array_delete_wt, preq);
+      ptask = set_task(WORK_Timed, time_now + 2, array_delete_wt, preq, FALSE);
+
       if (ptask)
         {
-        pthread_mutex_unlock(ptask->wt_mutex);
-
         return;
         }
       }
@@ -305,8 +303,6 @@ void array_delete_wt(
   {
   struct batch_request *preq;
   job_array            *pa;
-
-  struct work_task     *pwtnew;
 
   int                   i;
 
@@ -379,7 +375,7 @@ void array_delete_wt(
           /* force new connection */
           jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-          pwtnew = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
+          set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
 
           pthread_mutex_unlock(pjob->ji_mutex);
           }

@@ -124,7 +124,8 @@ struct work_task *set_task(
   enum work_type   type,
   long             event_id,  /* I - based on type can be time of event */
   void           (*func)(),
-  void            *parm)
+  void            *parm,
+  int              get_lock)
 
   {
   work_task *pnew;
@@ -160,7 +161,10 @@ struct work_task *set_task(
       }
     
     pthread_mutex_init(pnew->wt_mutex,NULL);
-    pthread_mutex_lock(pnew->wt_mutex);
+
+    /* only acquire the lock if they want it */
+    if (get_lock == TRUE)
+      pthread_mutex_lock(pnew->wt_mutex);
    
     if (type == WORK_Timed)
       {

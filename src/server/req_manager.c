@@ -2397,7 +2397,7 @@ int extra_resc_chk(
   {
   /* Is there anything to validate?  Maybe check for all alphanum? */
   /* the new resource is at pattr->at_val.at_str */
-  set_task(WORK_Immed, 0, on_extra_resc, NULL);
+  set_task(WORK_Immed, 0, on_extra_resc, NULL, FALSE);
 
   return(TRUE);
   }
@@ -2411,7 +2411,7 @@ void free_extraresc(
   struct attribute *attr)
 
   {
-  set_task(WORK_Immed, 0, on_extra_resc, NULL);
+  set_task(WORK_Immed, 0, on_extra_resc, NULL, FALSE);
 
   free_arst(attr);
   }

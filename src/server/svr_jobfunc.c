@@ -1978,7 +1978,7 @@ static void job_wait_over(
 
       /* recreate the work task entry */
 
-      ptask = set_task(WORK_Timed, when, job_wait_over, pjob);
+      ptask = set_task(WORK_Timed, when, job_wait_over, pjob, TRUE);
 
       if (ptask != NULL)
         {
@@ -2062,7 +2062,7 @@ int job_set_wait(
       } /* END for each task */
     }
 
-  ptask = set_task(WORK_Timed, when, job_wait_over, pjob);
+  ptask = set_task(WORK_Timed, when, job_wait_over, pjob, TRUE);
 
   if (ptask == NULL)
     {

@@ -999,7 +999,6 @@ void send_cluster_addrs(
 
   struct pbsnode *np;
   new_node       *nnew;
-  work_task      *wt;
   int             count = 0;
   int             ret;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1092,9 +1091,7 @@ void send_cluster_addrs(
   if (np != NULL)
     {
     /* continue outstanding pings after checking for other requests */
-    wt = set_task(WORK_Timed, time_now, send_cluster_addrs, NULL);
-
-    pthread_mutex_unlock(wt->wt_mutex);
+    set_task(WORK_Timed, time_now, send_cluster_addrs, NULL, FALSE);
     }
   else
     {
@@ -1142,7 +1139,6 @@ void setup_notification(
   {
   struct pbsnode *pnode;
   new_node       *nnew;
-  work_task      *wt;
 
   if (pname != NULL)
     {
@@ -1171,9 +1167,7 @@ void setup_notification(
     pthread_mutex_unlock(pnode->nd_mutex);
     }
 
-  wt = set_task(WORK_Timed,time_now + 5,send_cluster_addrs,NULL);
-
-  pthread_mutex_unlock(wt->wt_mutex);
+  set_task(WORK_Timed,time_now + 5,send_cluster_addrs,NULL,FALSE);
 
   if (addrnote_mutex == NULL)
     {
@@ -2106,7 +2100,6 @@ void *check_nodes_work(
   static char       id[] = "check_nodes_work";
 
   work_task *ptask = (struct work_task *)vp;
-  work_task *wt;
 
   struct pbsnode   *np = NULL;
   int               chk_len;
@@ -2151,9 +2144,7 @@ void *check_nodes_work(
 
   if (ptask->wt_parm1 == NULL)
     {
-    wt = set_task(WORK_Timed,time_now + chk_len,check_nodes,NULL);
-
-    pthread_mutex_unlock(wt->wt_mutex);
+    set_task(WORK_Timed,time_now + chk_len,check_nodes,NULL,FALSE);
     }
 
   /* since this is done via threading, we now free the task here */

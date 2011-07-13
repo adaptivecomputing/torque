@@ -286,9 +286,7 @@ void mom_cleanup_checkpoint_hold(
     }
   else
     {
-    ptask = set_task(WORK_Timed, time_now + 1, mom_cleanup_checkpoint_hold, (void*)pjob);
-
-    pthread_mutex_unlock(ptask->wt_mutex);
+    set_task(WORK_Timed, time_now + 1, mom_cleanup_checkpoint_hold, (void*)pjob, FALSE);
     }
 
   pthread_mutex_lock(pjob->ji_mutex);
@@ -330,7 +328,7 @@ void chkpt_xfr_hold(
   
   release_req(ptask);
 
-  set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, (void*)pjob);
+  set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, (void*)pjob, FALSE);
 
   pthread_mutex_unlock(pjob->ji_mutex);
 

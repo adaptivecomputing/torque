@@ -299,7 +299,8 @@ int execute_job_delete(
                    pwtold->wt_type,
                    pwtold->wt_event,
                    post_delete_route,
-                   preq);
+                   preq,
+                   TRUE);
 
         if (pwtnew != NULL)
           {
@@ -398,7 +399,7 @@ int execute_job_delete(
 
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-    pwtnew = set_task(WORK_Timed,time_now + 1,post_delete_route,preq);
+    pwtnew = set_task(WORK_Timed,time_now + 1,post_delete_route,preq,FALSE);
     
     pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -410,8 +411,6 @@ int execute_job_delete(
       }
     else
       {
-      pthread_mutex_unlock(pwtnew->wt_mutex);
-      
       return(ROUTE_DELETE);
       }
     }  /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) */
@@ -518,7 +517,8 @@ jump:
         WORK_Timed,
         time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
         ensure_deleted,
-        dup_jobid);
+        dup_jobid,
+        TRUE);
     
     if (pwtcheck != NULL)
       {
@@ -581,7 +581,7 @@ jump:
     /* force new connection */
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-    pwtnew = set_task(WORK_Immed, 0, on_job_exit, jobid_copy);
+    set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
@@ -618,7 +618,7 @@ jump:
 
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-    ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy);
+    ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, TRUE);
 
     if (ptask != NULL)
       {
@@ -1014,7 +1014,7 @@ static void post_delete_mom1(
                              2);
     }
 
-  pwtnew = set_task(WORK_Timed, delay + time_now, post_delete_mom2, pjob);
+  pwtnew = set_task(WORK_Timed, delay + time_now, post_delete_mom2, pjob, TRUE);
 
   if (pwtnew)
     {
@@ -1236,7 +1236,7 @@ struct work_task *apply_job_delete_nanny(
 
   /* second, add a nanny task at the requested time */
 
-  pwtnew = set_task(tasktype, delay, job_delete_nanny, (void *)pjob);
+  pwtnew = set_task(tasktype, delay, job_delete_nanny, (void *)pjob, TRUE);
 
   if (pwtnew)
     {

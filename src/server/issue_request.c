@@ -301,11 +301,7 @@ int issue_to_svr(
 
   if (do_retry)
     {
-    pwt = set_task(
-            WORK_Timed,
-            (long)(time_now + PBS_NET_RETRY_TIME),
-            reissue_to_svr,
-            (void *)preq);
+    pwt = set_task(WORK_Timed,(long)(time_now + PBS_NET_RETRY_TIME),reissue_to_svr,preq,TRUE);
 
     pwt->wt_parmfunc = replyfunc;
 
@@ -419,12 +415,10 @@ int issue_Drequest(
     DIS_tcp_setup(sock);
     }
 
-  ptask = set_task(wt, (long)conn, func, (void *)request);
+  ptask = set_task(wt, (long)conn, func, (void *)request,FALSE);
 
   if (ppwt != NULL)
     *ppwt = ptask;
-
-  pthread_mutex_unlock(ptask->wt_mutex);
 
   if (ptask == NULL)
     {

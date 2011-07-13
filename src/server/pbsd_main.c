@@ -1132,7 +1132,6 @@ void main_loop(void)
   int           iter;
   time_t        last_jobstat_time;
   int           when;
-  work_task    *pwt = NULL;
 
   extern char  *msg_startup2; /* log message   */
   char          log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1169,26 +1168,18 @@ void main_loop(void)
     /* for large systems, give newly reported nodes more time before
        being marked down while pbs_moms are initialy reporting in */
 
-    pwt = set_task(WORK_Timed, when + svr_totnodes / 12, check_nodes, NULL);
-
-    pthread_mutex_unlock(pwt->wt_mutex);
+    set_task(WORK_Timed, when + svr_totnodes / 12, check_nodes, NULL, FALSE);
     }
   else
     {
-    pwt = set_task(WORK_Timed, when, check_nodes, NULL);
-
-    pthread_mutex_unlock(pwt->wt_mutex);
+    set_task(WORK_Timed, when, check_nodes, NULL, FALSE);
     }
 
   /* Just check the nodes with check_nodes above and don't ping anymore. */
 
-  pwt = set_task(WORK_Timed, time_now + 5, check_log, NULL);
+  set_task(WORK_Timed, time_now + 5, check_log, NULL, FALSE);
 
-  pthread_mutex_unlock(pwt->wt_mutex);
-
-  pwt = set_task(WORK_Timed,time_now + 10,check_acct_log,NULL);
-
-  pthread_mutex_unlock(pwt->wt_mutex);
+  set_task(WORK_Timed,time_now + 10,check_acct_log, NULL, FALSE);
 
   /*
    * Now at last, we are ready to do some batch work.  The
@@ -1881,9 +1872,7 @@ void check_job_log(
 
   free(ptask);
 
-  ptask = set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_job_log, NULL);
-
-  pthread_mutex_unlock(ptask->wt_mutex);
+  set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_job_log, NULL, FALSE);
   } /* END check_job_log */
 
 
@@ -1954,9 +1943,7 @@ void check_log(
 
   free(ptask);
 
-  ptask = set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_log, NULL);
-
-  pthread_mutex_unlock(ptask->wt_mutex);
+  set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_log, NULL, FALSE);
 
   return;
   } /* END check_log */
@@ -1989,9 +1976,7 @@ void check_acct_log(
 
   free(ptask);
 
-  ptask = set_task(WORK_Timed,time_now + PBS_ACCT_CHECK_RATE,check_acct_log,NULL);
-
-  pthread_mutex_unlock(ptask->wt_mutex);
+  set_task(WORK_Timed,time_now + PBS_ACCT_CHECK_RATE,check_acct_log,NULL,FALSE);
 
   return;
   } /* END check_acct_log */
