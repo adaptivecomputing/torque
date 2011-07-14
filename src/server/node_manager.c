@@ -3116,13 +3116,13 @@ static int gpu_count(
     {
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer,
+      sprintf(log_buf,
         "Counted %d gpus %s on node %s that was skipped",
         count,
         (freeonly? "free":"available"),
         pnode->nd_name);
 
-		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+		  log_ext(-1, id, log_buf, LOG_DEBUG);
       }
     return (count);
     }
@@ -3167,13 +3167,13 @@ static int gpu_count(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buffer,
+    sprintf(log_buf,
       "Counted %d gpus %s on node %s",
       count,
       (freeonly? "free":"available"),
       pnode->nd_name);
 
-	  log_ext(-1, id, log_buffer, LOG_DEBUG);
+	  log_ext(-1, id, log_buf, LOG_DEBUG);
     }
 
   return(count);
