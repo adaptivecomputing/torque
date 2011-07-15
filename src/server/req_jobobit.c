@@ -1683,29 +1683,40 @@ void on_job_rerun(
   struct work_task *ptask)
 
   {
-  int        handle;
-  int        newstate;
-  int        newsubst;
-  int        rc = 0;
-  job       *pjob;
+  static char          *id = "on_job_rerun";
+  int                   handle;
+  int                   newstate;
+  int                   newsubst;
+  int                   rc = 0;
+  job                  *pjob;
+  char                 *jobid;
 
   struct batch_request *preq;
 
-  int                 IsFaked;
-  char                log_buf[LOCAL_LOG_BUF_SIZE];
+  int                   IsFaked;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (ptask->wt_type != WORK_Deferred_Reply)
     {
     preq = NULL;
-    pjob = (job *)ptask->wt_parm1;
+    jobid = (char *)ptask->wt_parm1;
     }
   else
     {
     preq = (struct batch_request *)ptask->wt_parm1;
-    pjob = (job *)preq->rq_extra;
+    jobid = (char *)preq->rq_extra;
     }
 
-  pthread_mutex_lock(pjob->ji_mutex);
+  /* check for memory allocation */
+  if (jobid == NULL)
+    {
+    log_err(ENOMEM,id,"Cannot allocate memory");
+    free(ptask);
+    return;
+    }
+
+  pjob = find_job(jobid);
+  free(jobid);
 
   if ((handle = mom_comm(pjob, on_job_rerun)) < 0)
     {
@@ -1730,7 +1741,7 @@ void on_job_rerun(
 
           svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN1);
 
-          set_task(WORK_Immed, 0, on_job_rerun, pjob, FALSE);
+          set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -1755,7 +1766,7 @@ void on_job_rerun(
 
         strcpy(preq->rq_ind.rq_rerun, pjob->ji_qs.ji_jobid);
 
-        preq->rq_extra = (void *)pjob;
+        preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
         if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
           {
@@ -1835,7 +1846,7 @@ void on_job_rerun(
           {
           /* have files to copy */
 
-          preq->rq_extra = (void *)pjob;
+          preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
           if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
             {
@@ -1863,7 +1874,7 @@ void on_job_rerun(
 
           svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN2);
 
-          set_task(WORK_Immed, 0, on_job_rerun, pjob, FALSE);
+          set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -1942,7 +1953,7 @@ void on_job_rerun(
           {
           preq->rq_type = PBS_BATCH_DelFiles;
 
-          preq->rq_extra = (void *)pjob;
+          preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
           if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
             {
@@ -1964,7 +1975,7 @@ void on_job_rerun(
           {
           svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3);
 
-          set_task(WORK_Immed, 0, on_job_rerun, pjob, FALSE);
+          set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
           pthread_mutex_unlock(pjob->ji_mutex);
             
@@ -2751,7 +2762,7 @@ void *req_jobobit(
       JOB_STATE_EXITING,
       pjob->ji_qs.ji_substate);
 
-    set_task(WORK_Immed, 0, on_job_rerun, (void *)pjob, FALSE);
+    set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
     if (LOGLEVEL >= 4)
       {

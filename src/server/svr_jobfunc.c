@@ -1953,64 +1953,73 @@ static void job_wait_over(
   struct work_task *pwt)
 
   {
-  int  newstate;
-  int  newsub;
-  job *pjob;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
-
-  pjob = (job *)pwt->wt_parm1;
+  static char *id = "job_wait_over";
+  int   newstate;
+  int   newsub;
+  job  *pjob;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char *jobid = (char *)pwt->wt_parm1;
+  
   free(pwt);
 
-  pthread_mutex_lock(pjob->ji_mutex);
-
-#ifndef NDEBUG
+  if (jobid == NULL)
     {
-    time_t now = time((time_t *)0);
-    time_t when = ((job *)pjob)->ji_wattr[JOB_ATR_exectime].at_val.at_long;
-
-    struct work_task *ptask;
-
-    if (when > now)
-      {
-      sprintf(log_buf, msg_badwait, ((job *)pjob)->ji_qs.ji_jobid);
-
-      log_err(-1, "job_wait_over", log_buf);
-
-      /* recreate the work task entry */
-
-      ptask = set_task(WORK_Timed, when, job_wait_over, pjob, TRUE);
-
-      if (ptask != NULL)
-        {
-        insert_task(pjob->ji_svrtask,ptask,TRUE);
-
-        pthread_mutex_unlock(ptask->wt_mutex);
-        }
-
-      pthread_mutex_unlock(pjob->ji_mutex);
-
-      return;
-      }
+    log_err(ENOMEM,id,"Cannot allocate memory");
+    return;
     }
+
+  pjob = find_job(jobid);
+  free(jobid);
+
+  if (pjob != NULL)
+    {
+#ifndef NDEBUG
+      {
+      time_t now = time((time_t *)0);
+      time_t when = ((job *)pjob)->ji_wattr[JOB_ATR_exectime].at_val.at_long;
+      
+      struct work_task *ptask;
+      
+      if (when > now)
+        {
+        sprintf(log_buf, msg_badwait, ((job *)pjob)->ji_qs.ji_jobid);
+        
+        log_err(-1, id, log_buf);
+        
+        /* recreate the work task entry */
+        
+        ptask = set_task(WORK_Timed, when, job_wait_over, strdup(pjob->ji_qs.ji_jobid), TRUE);
+        
+        if (ptask != NULL)
+          {
+          insert_task(pjob->ji_svrtask,ptask,TRUE);
+          
+          pthread_mutex_unlock(ptask->wt_mutex);
+          }
+        
+        pthread_mutex_unlock(pjob->ji_mutex);
+        
+        return;
+        }
+      }
 #endif  /* !NDEBUG */
 
-  pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HASWAIT;
-
-  /* clear the exectime attribute */
-
-  job_attr_def[JOB_ATR_exectime].at_free(
-    &pjob->ji_wattr[JOB_ATR_exectime]);
-
-  pjob->ji_modified = 1;
-
-  svr_evaljobstate(pjob, &newstate, &newsub, 0);
-
-  svr_setjobstate(pjob, newstate, newsub);
-
-  pthread_mutex_unlock(pjob->ji_mutex);
+    pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HASWAIT;
+    
+    /* clear the exectime attribute */
+    job_attr_def[JOB_ATR_exectime].at_free(
+        &pjob->ji_wattr[JOB_ATR_exectime]);
+    
+    pjob->ji_modified = 1;
+    
+    svr_evaljobstate(pjob, &newstate, &newsub, 0);
+    svr_setjobstate(pjob, newstate, newsub);
+    
+    pthread_mutex_unlock(pjob->ji_mutex);
+    }
 
   return;
-  }
+  } /* END job_wait_over() */
 
 
 
@@ -2062,7 +2071,7 @@ int job_set_wait(
       } /* END for each task */
     }
 
-  ptask = set_task(WORK_Timed, when, job_wait_over, pjob, TRUE);
+  ptask = set_task(WORK_Timed, when, job_wait_over, strdup(((job *)pjob)->ji_qs.ji_jobid), TRUE);
 
   if (ptask == NULL)
     {

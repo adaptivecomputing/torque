@@ -222,17 +222,26 @@ void mom_cleanup_checkpoint_hold(
   struct work_task *ptask)
 
   {
-  static char *id = "mom_cleanup_checkpoint_hold";
+  static char          *id = "mom_cleanup_checkpoint_hold";
 
-  int        rc = 0;
-  job       *pjob;
+  int                   rc = 0;
+  job                  *pjob;
+  char                 *jobid;
 
   struct batch_request *preq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  pjob = (job *)ptask->wt_parm1;
+  jobid = (char *)ptask->wt_parm1;
+  free(ptask);
 
-  pthread_mutex_lock(pjob->ji_mutex);
+  if (jobid == NULL)
+    {
+    log_err(ENOMEM,id,"Cannot allocate memory");
+    return;
+    }
+
+  pjob = find_job(jobid);
+  free(jobid);
 
   if (LOGLEVEL >= 7)
     {
@@ -269,7 +278,6 @@ void mom_cleanup_checkpoint_hold(
         free_br(preq);
 
         pthread_mutex_lock(pjob->ji_mutex);
-        free(ptask);
 
         return;
         }
@@ -286,12 +294,10 @@ void mom_cleanup_checkpoint_hold(
     }
   else
     {
-    set_task(WORK_Timed, time_now + 1, mom_cleanup_checkpoint_hold, (void*)pjob, FALSE);
+    set_task(WORK_Timed, time_now + 1, mom_cleanup_checkpoint_hold, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
 
   pthread_mutex_lock(pjob->ji_mutex);
-
-  free(ptask);
   } /* END mom_cleanup_checkpoint_hold() */
 
 
@@ -328,7 +334,7 @@ void chkpt_xfr_hold(
   
   release_req(ptask);
 
-  set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, (void*)pjob, FALSE);
+  set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
   pthread_mutex_unlock(pjob->ji_mutex);
 

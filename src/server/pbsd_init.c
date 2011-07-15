@@ -1557,7 +1557,7 @@ static int pbsd_init_job(
 
       /* resend rtc */
 
-      set_task(WORK_Immed, 0, resume_net_move, pjob, FALSE);
+      set_task(WORK_Immed, 0, resume_net_move, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
       break;
 
@@ -1671,7 +1671,7 @@ static int pbsd_init_job(
     case JOB_SUBSTATE_RERUN:
 
       if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
-        set_task(WORK_Immed, 0, on_job_rerun, pjob, FALSE);
+        set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
       pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -1681,7 +1681,7 @@ static int pbsd_init_job(
 
     case JOB_SUBSTATE_RERUN2:
 
-      set_task(WORK_Immed, 0, on_job_rerun, pjob, FALSE);
+      set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
       pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -2060,16 +2060,22 @@ static void resume_net_move(
   struct work_task *ptask)
 
   {
-  job *pjob = (job *)ptask->wt_parm1;
+  char *jobid = ptask->wt_parm1;
+  job  *pjob;
 
-  pthread_mutex_lock(pjob->ji_mutex);
+  if (jobid != NULL)
+    {
+    pjob = find_job(jobid);
+  
+    net_move(pjob, 0);
+    
+    pthread_mutex_unlock(pjob->ji_mutex);
 
-  net_move((job *)ptask->wt_parm1, 0);
-
-  pthread_mutex_unlock(pjob->ji_mutex);
+    free(jobid);
+    }
 
   free(ptask);
-  }
+  } /* END resume_net_move() */
 
 
 /*
