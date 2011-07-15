@@ -332,8 +332,6 @@ void chkpt_xfr_hold(
 
   pthread_mutex_unlock(pjob->ji_mutex);
 
-  free(ptask);
-
   return;
   }  /* END chkpt_xfr_hold() */
 
@@ -362,8 +360,6 @@ void chkpt_xfr_done(
    * If implemented later, thread protection must be added */
   
   release_req(ptask);
-
-  free(ptask);
 
   return;
   }  /* END chkpt_xfr_done() */

@@ -951,8 +951,6 @@ static void post_delete_mom1(
     /* job has gone away */
     req_reject(PBSE_UNKJOBID, 0, preq_clt, NULL, NULL);
 
-    free(pwt);
-
     return;
     }
 
@@ -985,8 +983,6 @@ static void post_delete_mom1(
 
       pthread_mutex_unlock(pjob->ji_mutex);
       }
-
-    free(pwt);
 
     return;
     }
@@ -1031,8 +1027,6 @@ static void post_delete_mom1(
   apply_job_delete_nanny(pjob, time_now + delay + 60);
 
   pthread_mutex_unlock(pjob->ji_mutex);
-
-  free(pwt);
   }  /* END post_delete_mom1() */
 
 
@@ -1285,16 +1279,14 @@ static void job_delete_nanny(
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* short-circuit if nanny isn't enabled */
+  pjob = (job *)pwt->wt_parm1;
 
   if (!server.sv_attr[SRV_ATR_JobNanny].at_val.at_long)
     {
     release_req(pwt);
-    free(pwt);
 
     return;
     }
-
-  pjob = (job *)pwt->wt_parm1;
 
   pthread_mutex_lock(pjob->ji_mutex);
 
@@ -1315,8 +1307,6 @@ static void job_delete_nanny(
   apply_job_delete_nanny(pjob, time_now + 60);
 
   pthread_mutex_unlock(pjob->ji_mutex);
-
-  free(pwt);
   } /* END job_delete_nanny() */
 
 
@@ -1350,7 +1340,6 @@ static void post_job_delete_nanny(
     {
     /* the admin disabled nanny within the last minute or so */
     release_req(pwt);
-    free(pwt);
 
     return;
     }
@@ -1376,7 +1365,6 @@ static void post_job_delete_nanny(
     set_resc_assigned(pjob, DECR);
   
     release_req(pwt);
-    free(pwt);
 
     job_purge(pjob);
 
@@ -1387,7 +1375,6 @@ static void post_job_delete_nanny(
 
   /* free task */
   release_req(pwt);
-  free(pwt);
 
   return;
   } /* END post_job_delete_nanny() */

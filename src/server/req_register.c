@@ -1034,8 +1034,6 @@ static void post_doq(
 
   release_req(pwt);
 
-  free(pwt);
-
   return;
   }  /* END post_doq() */
 
@@ -1222,7 +1220,6 @@ static void post_doe(
     }
 
   release_req(pwt);
-  free(pwt);
 
   return;
   }  /* END post_doe() */

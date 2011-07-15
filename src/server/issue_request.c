@@ -340,6 +340,7 @@ void release_req(
   if (pwt->wt_event != -1)
     svr_disconnect(pwt->wt_event);
 
+  free(pwt);
   } /* END release_req() */
 
 

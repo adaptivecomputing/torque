@@ -1004,7 +1004,6 @@ static void stat_update(
     }
 
   release_req(pwt);
-  free(pwt);
 
   cntl->sc_conn = -1;
 
