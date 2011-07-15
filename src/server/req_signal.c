@@ -161,9 +161,11 @@ void req_signaljob(
 
       return;
       }
-
-    preq->rq_extra = pjob;  /* save job ptr for post_signal_req() */
+  
     }
+
+  /* save job ptr for post_signal_req() */
+  preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
   /* FIXME: need a race-free check for available free subnodes before
    * resuming a suspended job */
@@ -277,13 +279,18 @@ static void post_signal_req(
   struct work_task *pwt)
 
   {
+  static char          *id = "post_signal_req";
+  char                 *jobid;
   job                  *pjob;
 
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
   struct batch_request *preq;
 
   svr_disconnect(pwt->wt_event); /* disconnect from MOM */
 
   preq = pwt->wt_parm1;
+  
+  free(pwt);
 
   preq->rq_conn = preq->rq_orgconn;  /* restore client socket */
 
@@ -301,47 +308,61 @@ static void post_signal_req(
     }
   else
     {
-    pjob = preq->rq_extra;
-
-    pthread_mutex_lock(pjob->ji_mutex);
-
-    if (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_SUSPEND) == 0)
+    if ((jobid = preq->rq_extra) == NULL)
       {
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
-        {
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_Suspend;
-
-        set_statechar(pjob);
-
-        job_save(pjob, SAVEJOB_QUICK, 0);
-
-        /* release resources allocated to suspended job - NORWAY */
-
-        free_nodes(pjob);
-        }
+      log_err(ENOMEM,id,"Cannot allocate memory! FAILURE");
+      return;
       }
-    else if (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_RESUME) == 0)
+
+    if ((pjob = find_job(jobid)) != NULL)
       {
-      if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend)
-        {
-        /* re-allocate assigned node to resumed job - NORWAY */
-
-        set_old_nodes(pjob);
-
-        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
-
-        set_statechar(pjob);
-
-        job_save(pjob, SAVEJOB_QUICK, 0);
-        }
-      }
   
-    pthread_mutex_unlock(pjob->ji_mutex);
+      if (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_SUSPEND) == 0)
+        {
+        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
+          {
+          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_Suspend;
+          
+          set_statechar(pjob);
+          
+          job_save(pjob, SAVEJOB_QUICK, 0);
+          
+          /* release resources allocated to suspended job - NORWAY */
+          
+          free_nodes(pjob);
+          }
+        }
+      else if (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_RESUME) == 0)
+        {
+        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend)
+          {
+          /* re-allocate assigned node to resumed job - NORWAY */
+          
+          set_old_nodes(pjob);
+          
+          pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
+          
+          set_statechar(pjob);
+          
+          job_save(pjob, SAVEJOB_QUICK, 0);
+          }
+        }
+    
+      pthread_mutex_unlock(pjob->ji_mutex);
+      }
+    else
+      {
+      /* job is gone */
+      snprintf(log_buf,sizeof(log_buf),
+        "Cannot find job '%s', assuming success",
+        jobid);
+      log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,id,log_buf);
+      }
+
+    free(jobid);
 
     reply_ack(preq);
     }
-
-  free(pwt);
 
   return;
   }  /* END post_signal_req() */
