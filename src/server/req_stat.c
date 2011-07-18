@@ -705,7 +705,7 @@ static void req_stat_job_step2(
       pthread_mutex_unlock(pque->qu_mutex);
       }      /* END for (pque) */
 
-    if (pa == NULL)
+    if (pa != NULL)
       pthread_mutex_unlock(pa->ai_mutex);
 
     reply_send(preq);
