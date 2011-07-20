@@ -35,6 +35,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix a bug where node lines past 256 characters were rejected. This buffer has been
       made much larger (8192 characters)
   b - clear out exec_gpus as needed
+  b - fix for bugzilla #147 - recreate $PBS_NODESFILE file when restarting a blcr
+      checkpointed job
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it
