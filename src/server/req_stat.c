@@ -893,13 +893,6 @@ static void stat_update(
           }
 #endif    /* USESAVEDRESOURCES */
 
-#ifdef USESAVEDRESOURCES
-        else
-          {
-          /* save so we can recover resources used */
-          job_save(pjob, SAVEJOB_FULL);
-          }
-#endif    /* USESAVEDRESOURCES */
 
         pjob->ji_momstat = time_now;
         }
