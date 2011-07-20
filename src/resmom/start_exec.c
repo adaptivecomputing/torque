@@ -8246,7 +8246,7 @@ int exec_job_on_ms(
 	    log_buffer);
 	  }
 
-  return(0);
+  return(SUCCESS);
   } /* END exec_job_on_ms() */
 
 
