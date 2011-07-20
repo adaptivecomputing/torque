@@ -116,6 +116,7 @@ int        default_checkpoint_interval = 10; /* minutes */
 extern char *mk_dirs(char *);
 extern int mom_open_socket_to_jobs_server(job *, char *, void (*)(int));
 extern void set_attr(struct attrl **, char *, char *);
+extern int write_nodes_to_file(job *);
 
 int create_missing_files(job *pjob);
 
@@ -2180,6 +2181,14 @@ int mom_checkpoint_start_restart(
     case CST_BLCR:
 
       /* NOTE:  partition creation handled in blcr_restart_job() */
+
+      /* make sure we recreate the nodes file, if needed */
+
+	    if ((pjob->ji_flags & MOM_HAS_NODEFILE) &&
+	        (write_nodes_to_file(pjob) == -1))
+        {
+        return(FAILURE);
+        }
 
       /* perform any site required setup before restart, normally empty and does nothing */
 

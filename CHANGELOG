@@ -9,7 +9,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - automatically create and mount /dev/cpuset when TORQUE is configured but the cpuset
       directory isn't there (backported from 3.0.3)
   b - clear out exec_gpus as needed
-
+  b - fix for bugzilla #147 - recreate $PBS_NODESFILE file when restarting a blcr
+      checkpointed job (backported from 3.0.3)
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as

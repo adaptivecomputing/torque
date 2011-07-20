@@ -2258,6 +2258,122 @@ int write_gpus_to_file(
 
 
 
+/*
+ * writes the exec_host str to a file
+ * receives strings in the format: <hostname>/<index>[+<hostname>/<index>...]
+ * and prints them out to the file
+ *
+ * @param file - the file to print to
+ * @param pjob - the job whose host string will be printed
+ * @return PBSE_NONE if success, error code otherwise
+ */
+int write_nodes_to_file(
+    
+  job  *pjob) /* I */
+
+  {
+  static char *id = "write_nodes_to_file";
+  char         filename[MAXPATHLEN];
+	int          j, vnodenum;
+	FILE *file;
+
+	char *BPtr;
+
+	sprintf(filename, "%s/%s",
+					path_aux,
+					pjob->ji_qs.ji_jobid);
+
+	if ((file = fopen(filename, "w")) == NULL)
+		{
+		sprintf(log_buffer, "cannot open %s",
+						filename);
+
+		log_err(errno, id, log_buffer);
+
+		exit(1);
+		}
+
+	/*
+	** The file must be owned by root and readable by
+	** the user.  We take the easy way out and make
+	** it readable by anyone.
+	*/
+
+	if (fchmod(fileno(file), 0644) == -1)
+		{
+		sprintf(log_buffer, "cannot chmod %s",
+						filename);
+
+		log_err(errno, id, log_buffer);
+
+		fclose(file);
+
+		exit(1);
+		}
+
+	/* NOTE:  if BEOWULF_JOB_MAP is set, populate node file with this info */
+
+	BPtr = get_job_envvar(pjob, "BEOWULF_JOB_MAP");
+
+	if (BPtr != NULL)
+		{
+		char tmpBuffer[1000000];
+
+		char *ptr;
+
+		/* FORMAT:  <HOST>[:<HOST>]... */
+
+		strncpy(tmpBuffer, BPtr, sizeof(tmpBuffer));
+
+		ptr = strtok(tmpBuffer, ":");
+
+		while (ptr != NULL)
+			{
+			if (nodefile_suffix != NULL)
+				{
+				fprintf(file, "%s%s\n",
+								ptr,
+								nodefile_suffix);
+				} 
+			else
+				{
+				fprintf(file, "%s\n",
+								ptr);
+				}
+
+			ptr = strtok(NULL, ":");
+			}
+		} 
+	else
+		{
+  	vnodenum = pjob->ji_numvnod;
+
+		for (j = 0;j < vnodenum;j++)
+			{
+			vnodent *vp = &pjob->ji_vnods[j];
+
+			if (nodefile_suffix != NULL)
+				{
+				fprintf(file, "%s%s\n",
+								vp->vn_host->hn_host,
+								nodefile_suffix);
+				} 
+			else
+				{
+				fprintf(file, "%s\n",
+								vp->vn_host->hn_host);
+				}
+			}		/* END for (j) */
+		}
+
+	fclose(file);
+
+  return(PBSE_NONE);
+  } /* END write_nodes_to_file() */
+
+
+
+
 /* child portion of job launch executed as user - called by TMomFinalize2() */
 /* will execute run_pelog()
  * issues setuid to pjob->ji_qs.ji_un.ji_momt.ji_exuid */
@@ -2358,104 +2474,15 @@ int TMomFinalizeChild(
 
 	if (pjob->ji_flags & MOM_HAS_NODEFILE)
 		{
-		FILE *nhow;
 
-		char *BPtr;
-
-		sprintf(buf, "%s/%s",
-						path_aux,
-						pjob->ji_qs.ji_jobid);
-
-		if ((nhow = fopen(buf, "w")) == NULL)
-			{
-			sprintf(log_buffer, "cannot open %s",
-							buf);
-
-			log_err(errno, id, log_buffer);
-
+    if (write_nodes_to_file(pjob) == -1)
+      {
 			starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
 
 			/*NOTREACHED*/
 
 			exit(1);
-			}
-
-		/*
-		** The file must be owned by root and readable by
-		** the user.  We take the easy way out and make
-		** it readable by anyone.
-		*/
-
-		if (fchmod(fileno(nhow), 0644) == -1)
-			{
-			sprintf(log_buffer, "cannot chmod %s",
-							buf);
-
-			log_err(errno, id, log_buffer);
-
-			fclose(nhow);
-
-			starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
-
-			/*NOTREACHED*/
-
-			exit(1);
-			}
-
-		/* NOTE:  if BEOWULF_JOB_MAP is set, populate node file with this info */
-
-		BPtr = get_job_envvar(pjob, "BEOWULF_JOB_MAP");
-
-		if (BPtr != NULL)
-			{
-			char tmpBuffer[1000000];
-
-			char *ptr;
-
-			/* FORMAT:  <HOST>[:<HOST>]... */
-
-			strncpy(tmpBuffer, BPtr, sizeof(tmpBuffer));
-
-			ptr = strtok(tmpBuffer, ":");
-
-			while (ptr != NULL)
-				{
-				if (nodefile_suffix != NULL)
-					{
-					fprintf(nhow, "%s%s\n",
-									ptr,
-									nodefile_suffix);
-					} 
-				else
-					{
-					fprintf(nhow, "%s\n",
-									ptr);
-					}
-
-				ptr = strtok(NULL, ":");
-				}
-			} 
-		else
-			{
-			for (j = 0;j < vnodenum;j++)
-				{
-				vnodent *vp = &pjob->ji_vnods[j];
-
-				if (nodefile_suffix != NULL)
-					{
-					fprintf(nhow, "%s%s\n",
-									vp->vn_host->hn_host,
-									nodefile_suffix);
-					} 
-				else
-					{
-					fprintf(nhow, "%s\n",
-									vp->vn_host->hn_host);
-					}
-				}		/* END for (j) */
-			}
-
-		fclose(nhow);
+      }
 
     if (write_gpus_to_file(pjob) == -1)
       {
