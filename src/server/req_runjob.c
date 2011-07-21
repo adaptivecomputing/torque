@@ -1148,7 +1148,8 @@ void finish_sendmom(
       /* update resource usage attributes */        
       set_resc_assigned(pjob, INCR);
       
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
+      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) ||
+          (pjob->ji_qs.ji_substate == JOB_SUBSTATE_TRNOUTCM))
         {
         /* may be EXITING if job finished first */
         svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_RUNNING);

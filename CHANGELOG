@@ -27,6 +27,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       of inspecting all jobs and polling them every 45 seconds. Done for optimization
   e - If cpusets are configured but aren't found and cannot be mounted, pbs_mom will now fail to
       start instead of failing silently.
+  b - fix so job substate gets set to RUNNING after job start instead of being
+      left as TRNOUTCM.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
