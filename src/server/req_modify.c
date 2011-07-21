@@ -277,7 +277,7 @@ void mom_cleanup_checkpoint_hold(
         log_err(rc,id,log_buf);
         free_br(preq);
 
-        pthread_mutex_lock(pjob->ji_mutex);
+        pthread_mutex_unlock(pjob->ji_mutex);
 
         return;
         }
@@ -297,7 +297,7 @@ void mom_cleanup_checkpoint_hold(
     set_task(WORK_Timed, time_now + 1, mom_cleanup_checkpoint_hold, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
 
-  pthread_mutex_lock(pjob->ji_mutex);
+  pthread_mutex_unlock(pjob->ji_mutex);
   } /* END mom_cleanup_checkpoint_hold() */
 
 
