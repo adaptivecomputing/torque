@@ -120,6 +120,7 @@ extern char *mk_dirs(char *);
 extern int mom_open_socket_to_jobs_server(job *, char *, void (*)(int));
 extern void set_attr(struct attrl **, char *, char *);
 extern int write_nodes_to_file(job *);
+extern int write_gpus_to_file(job *);
 
 int create_missing_files(job *pjob);
 
@@ -2197,10 +2198,17 @@ int mom_checkpoint_start_restart(
 
       /* make sure we recreate the nodes file, if needed */
 
-	    if ((pjob->ji_flags & MOM_HAS_NODEFILE) &&
-	        (write_nodes_to_file(pjob) == -1))
+	    if (pjob->ji_flags & MOM_HAS_NODEFILE)
         {
-        return(FAILURE);
+	      if (write_nodes_to_file(pjob) == -1)
+          {
+          return(FAILURE);
+          }
+
+	      if (write_gpus_to_file(pjob) == -1)
+          {
+          return(FAILURE);
+          }
         }
 
       /* perform any site required setup before restart, normally empty and does nothing */
