@@ -76,6 +76,8 @@
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
+#ifndef _TM__H
+#define _TM__H
 
 
 /*
@@ -84,7 +86,7 @@
 
 /*
 ** Header file defineing the datatypes and library visiable
-** variables for paralell awareness.
+** variables for parallel awareness.
 */
 
 #include <sys/types.h>
@@ -120,6 +122,7 @@ typedef unsigned int tm_task_id;
 
 
 #define TM_ERROR 999
+#define TM_DONE  0
 
 /*
 ** Error numbers returned from library
@@ -171,3 +174,4 @@ typedef unsigned int tm_task_id;
 #define TM_ADOPT_ALTID    113    /* tm_adopt request with alternative management system task id */
 #define TM_ADOPT_JOBID    114     /* tm_adopt with jobid */
 
+#endif /* _TM__H */

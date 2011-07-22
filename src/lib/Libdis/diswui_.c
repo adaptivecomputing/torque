@@ -84,13 +84,11 @@
 
 #include "dis.h"
 #include "dis_.h"
-#include "rpp.h"
 #include "tcp.h"
 
 int diswui_(
     
   int      stream,
-  int      rpp,
   unsigned value)
 
   {
@@ -100,10 +98,7 @@ int diswui_(
   
   int (*dis_puts)(int stream, const char *, size_t);
 
-  if (rpp)
-    dis_puts = (int (*)(int, const char *, size_t))rpp_write;
-  else
-    dis_puts = tcp_puts;
+  dis_puts = tcp_puts;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   cp = discui_(&scratch[DIS_BUFSIZ], value, &ndigs);

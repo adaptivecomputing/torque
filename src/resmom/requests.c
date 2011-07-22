@@ -106,6 +106,7 @@
 #include "batch_request.h"
 #include "mom_mach.h"
 #include "mom_func.h"
+#include "mom_hierarchy.h"
 #include "log.h"
 #include "rpp.h"
 #include "resmon.h"
@@ -1906,53 +1907,36 @@ int sigalltasks_sisters(
 
     DBPRT(("%s: sending sig%d to all tasks on sister %s\n", id, signum, np->hn_host));
 
-    if (np->hn_stream == -1)
-      np->hn_stream = rpp_open(np->hn_host, np->hn_port, NULL);
-
     ep = event_alloc(IM_SIGNAL_TASK, np, TM_NULL_EVENT, TM_NULL_TASK);
 
-    if (np->hn_stream == -1)
-      {
-      np->hn_stream = rpp_open(np->hn_host, np->hn_port, NULL);
-      }
+    if ((np->hn_stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr))) < 0)
+        return(-1);
 
     ret = im_compose(np->hn_stream, pjob->ji_qs.ji_jobid, cookie, IM_SIGNAL_TASK, ep->ee_event, TM_NULL_TASK);
 
-    if (ret != DIS_SUCCESS)
+    if (ret == DIS_SUCCESS)
       {
-      return ret;
+      if ((ret = diswui(np->hn_stream, pjob->ji_nodeid)) == DIS_SUCCESS)
+        {
+        if ((ret = diswsi(np->hn_stream, TM_NULL_TASK)) == DIS_SUCCESS)
+          {
+          if ((ret = diswsi(np->hn_stream, signum)) == DIS_SUCCESS)
+            {
+            ret = DIS_tcp_wflush(np->hn_stream);
+
+            /* NYI: add code to read reply from sister */
+            }
+          }
+        }
       }
 
-    ret = diswui(np->hn_stream, RPP_FUNC, pjob->ji_nodeid); /* XXX */
+    close(np->hn_stream);
 
     if (ret != DIS_SUCCESS)
-      {
       return ret;
-      }
+    } /* END for each node in ji_hosts */
 
-    ret = diswsi(np->hn_stream, RPP_FUNC, TM_NULL_TASK);
-
-    if (ret != DIS_SUCCESS)
-      {
-      return ret;
-      }
-
-    ret = diswsi(np->hn_stream, RPP_FUNC, signum);
-
-    if (ret != DIS_SUCCESS)
-      {
-      return ret;
-      }
-
-    ret = rpp_flush(np->hn_stream);
-
-    if (ret != DIS_SUCCESS)
-      {
-      return ret;
-      }
-    }
-
-  return(0);
+  return(PBSE_NONE);
   }  /* END sigalltasks_sisters() */
 
 

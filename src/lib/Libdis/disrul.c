@@ -114,7 +114,6 @@
 unsigned long disrul(
 
   int  stream,  /* I */
-  int  rpp,     /* I */
   int *retval)  /* O */
 
   {
@@ -123,12 +122,9 @@ unsigned long disrul(
   unsigned long value;
   int (*disr_commit)(int stream, int commit);
 
-  if (rpp)
-    disr_commit = rpp_rcommit;
-  else
-    disr_commit = tcp_rcommit;
+  disr_commit = tcp_rcommit;
 
-  locret = disrsl_(stream, rpp, &negate, &value, 1);
+  locret = disrsl_(stream, &negate, &value, 1);
 
   if (locret != DIS_SUCCESS)
     {

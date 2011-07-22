@@ -131,7 +131,13 @@ int dis_request_read(
   int   rc;  /* return code */
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  DIS_tcp_setup(sfds); /* setup for DIS over tcp */
+/*  DIS_tcp_setup(sfds);*/ /* setup for DIS over tcp */
+
+#ifdef PBS_MOM
+  /* NYI: talk to Ken about this. This is necessary due to the changes to 
+   * decode_DIS_ReqHdr */
+  proto_type = disrui(sfds, &rc);
+#endif
 
   /* Decode the Request Header, that will tell the request type */
 

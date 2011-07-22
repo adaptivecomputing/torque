@@ -125,14 +125,14 @@ int decode_DIS_attropl(
   int   rc;
 
 
-  numpat = disrui(sock, TCP_FUNC, &rc);
+  numpat = disrui(sock, &rc);
 
   if (rc) return rc;
 
   for (i = 0; i < numpat; ++i)
     {
 
-    name_len = disrui(sock, TCP_FUNC, &rc); /* name_len is unused here */
+    name_len = disrui(sock, &rc); /* name_len is unused here */
 
     if (rc) break;
 
@@ -149,26 +149,26 @@ int decode_DIS_attropl(
 
     pat->value    = (char *)0;
 
-    pat->name = disrst(sock, TCP_FUNC, &rc);
+    pat->name = disrst(sock, &rc);
 
     if (rc) break;
 
-    hasresc = disrui(sock, TCP_FUNC, &rc);
+    hasresc = disrui(sock, &rc);
 
     if (rc) break;
 
     if (hasresc)
       {
-      pat->resource = disrst(sock, TCP_FUNC, &rc);
+      pat->resource = disrst(sock, &rc);
 
       if (rc) break;
       }
 
-    pat->value = disrst(sock, TCP_FUNC, &rc);
+    pat->value = disrst(sock, &rc);
 
     if (rc) break;
 
-    pat->op = (enum batch_op)disrui(sock, TCP_FUNC, &rc);
+    pat->op = (enum batch_op)disrui(sock, &rc);
 
     if (rc) break;
 

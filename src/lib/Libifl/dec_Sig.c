@@ -107,11 +107,11 @@ int decode_DIS_SignalJob(
   {
   int rc;
 
-  rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_signal.rq_jid);
+  rc = disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_signal.rq_jid);
 
   if (rc) return rc;
 
-  rc = disrfst(sock, TCP_FUNC, PBS_SIGNAMESZ + 1, preq->rq_ind.rq_signal.rq_signame);
+  rc = disrfst(sock, PBS_SIGNAMESZ + 1, preq->rq_ind.rq_signal.rq_signame);
 
   return rc;
   }

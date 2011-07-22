@@ -107,14 +107,12 @@
 
 #include "dis.h"
 #include "dis_.h"
-#include "rpp.h"
 #include "tcp.h"
 #undef diswui
 
 int diswui(
     
   int      stream,
-  int      rpp,
   unsigned value)
 
   {
@@ -122,12 +120,9 @@ int diswui(
 
   int (*disw_commit)(int stream, int commit);
 
-  if (rpp)
-    disw_commit = rpp_wcommit;
-  else
-    disw_commit = tcp_wcommit;
+  disw_commit = tcp_wcommit;
 
-  retval = diswui_(stream, rpp, value);
+  retval = diswui_(stream, value);
   return (((*disw_commit)(stream, retval == DIS_SUCCESS) < 0) ?
           DIS_NOCOMMIT : retval);
   }

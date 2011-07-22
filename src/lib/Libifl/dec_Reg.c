@@ -111,24 +111,24 @@ int decode_DIS_Register(
   {
   int   rc;
 
-  if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXUSER, preq->rq_ind.rq_register.rq_owner)))
+  if ((rc = disrfst(sock, PBS_MAXUSER, preq->rq_ind.rq_register.rq_owner)))
     return rc;
 
-  if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID, preq->rq_ind.rq_register.rq_parent)))
+  if ((rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_register.rq_parent)))
     return rc;
 
-  if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXCLTJOBID, preq->rq_ind.rq_register.rq_child)))
+  if ((rc = disrfst(sock, PBS_MAXCLTJOBID, preq->rq_ind.rq_register.rq_child)))
     return rc;
 
-  preq->rq_ind.rq_register.rq_dependtype = disrui(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_register.rq_dependtype = disrui(sock, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_register.rq_op = disrui(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_register.rq_op = disrui(sock, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_register.rq_cost = disrsl(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_register.rq_cost = disrsl(sock, &rc);
 
   return rc;
   }

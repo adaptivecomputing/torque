@@ -112,14 +112,14 @@ int decode_DIS_JobObit(
 
   CLEAR_HEAD(preq->rq_ind.rq_jobobit.rq_attr);
 
-  rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID, preq->rq_ind.rq_jobobit.rq_jid);
+  rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_jobobit.rq_jid);
 
   if (rc != 0)
     {
     return(rc);
     }
 
-  preq->rq_ind.rq_jobobit.rq_status = disrsi(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_jobobit.rq_status = disrsi(sock, &rc);
 
   if (rc != 0)
     {

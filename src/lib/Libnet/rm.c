@@ -105,12 +105,6 @@
 #include "dis.h"
 #include "dis_init.h"
 #include "rm.h"
-#if RPP
-#include "rpp.h"
-int       rpp = RPP_FUNC;
-#else
-int       rpp = TCP_FUNC;
-#endif
 
 
 static int full = 1;
@@ -166,17 +160,8 @@ static int addrm(
 
 
 
-#if RPP
-
-#define close_dis(x) rpp_close(x)
-#define flush_dis(x) rpp_flush(x)
-
-#else
-
 #define close_dis(x) close(x)
 #define flush_dis(x) DIS_tcp_wflush(x)
-
-#endif
 
 char TRMEMsg[1024];  /* global rm error message */
 
@@ -194,10 +179,6 @@ int openrm(
   {
   int                   stream;
 
-#if RPP
-  static int  first = 1;
-#endif /* RPP */
-
   static unsigned int gotport = 0;
 
   pbs_errno = 0;
@@ -212,33 +193,6 @@ int openrm(
 
     port = gotport;
     }
-
-#if RPP
-
-  if (first)
-    {
-    int tryport = IPPORT_RESERVED;
-
-    first = 0;
-
-    while (--tryport > 0)
-      {
-      if (rpp_bind(tryport) != -1)
-        break;
-
-      if ((errno != EADDRINUSE) && (errno != EADDRNOTAVAIL))
-        break;
-      }
-    }
-
-  if ((stream = rpp_open(host, port, TRMEMsg)) == -1)
-    {
-    pbs_errno = errno;
-
-    return(-1);
-    }
-
-#else /* RPP */
 
   if ((stream = socket(AF_INET, SOCK_STREAM, 0)) != -1)
     {
@@ -290,8 +244,6 @@ int openrm(
       return(-1);
       }
     }    /* END if ((stream = socket(AF_INET,SOCK_STREAM,0)) != -1) */
-
-#endif /* RPP */
 
   pbs_errno = errno;
 
@@ -394,15 +346,15 @@ static int startcom(
   {
   int ret;
 
-  ret = diswsi(stream, rpp, RM_PROTOCOL);
+  ret = diswsi(stream, RM_PROTOCOL);
 
   if (ret == DIS_SUCCESS)
     {
-    ret = diswsi(stream, rpp, RM_PROTOCOL_VER);
+    ret = diswsi(stream, RM_PROTOCOL_VER);
 
     if (ret == DIS_SUCCESS)
       {
-      ret = diswsi(stream, rpp, com);
+      ret = diswsi(stream, com);
       }
     }
 
@@ -463,11 +415,6 @@ static int simplecom(
     return(-1);
     }
 
-#if RPP
-  rpp_eom(stream);
-
-#endif
-
   return(0);
   }  /* END simplecom() */
 
@@ -487,7 +434,7 @@ static int simpleget(
   int ret, num;
 
 
-  num = disrsi(stream, rpp, &ret);
+  num = disrsi(stream, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -619,7 +566,7 @@ int configrm(
     return(-1);
     }
 
-    ret = diswcs(stream, rpp, file, len);
+    ret = diswcs(stream, file, len);
 
 
   if (ret != DIS_SUCCESS)
@@ -687,7 +634,7 @@ static int doreq(
     op->len = 1;
     }
 
-  ret = diswcs(op->stream, rpp, line, strlen(line));
+  ret = diswcs(op->stream, line, strlen(line));
 
 
   if (ret != DIS_SUCCESS)
@@ -846,9 +793,6 @@ char *getreq(
 
     op->len = -2;
 
-#if RPP
-    rpp_eom(stream);
-#endif
     }
 
   if (op->len == -2)
@@ -862,7 +806,7 @@ char *getreq(
     }
 
 
-  startline = disrst(stream, rpp, &ret);
+  startline = disrst(stream, &ret);
 
   if (ret == DIS_EOF)
     {
@@ -950,12 +894,6 @@ flushreq(void)
 
       op->len = -2;
 
-#if RPP
-
-      rpp_eom(op->stream);
-
-#endif /* RPP */
-
       did++;
       }  /* END for (op) */
 
@@ -1015,16 +953,6 @@ int activereq(void)
   static char id[] = "activereq";
 #endif
 
-#if RPP
-
-  struct out *op;
-
-  int       try;
-
-  int         bucket;
-
-#endif /* RPP */
-
   int            i, num;
 
   struct timeval tv;
@@ -1040,71 +968,6 @@ int activereq(void)
   MaxNumDescriptors = get_max_num_descriptors();
   FDSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
 
-#if RPP
-  for (try = 0;try < 3;)
-    {
-    if ((i = rpp_poll()) >= 0)
-      {
-      if ((op = findout(i)) != NULL)
-        {
-        free(FDSet);
-        return(i);
-        }
-
-      op = (struct out *)malloc(sizeof(struct out));
-
-      if (op == NULL)
-        {
-        pbs_errno = errno;
-
-        free(FDSet);
-        return(-1);
-        }
-
-      bucket = i % HASHOUT;
-
-      op->stream = i;
-      op->len = -2;
-      op->next = outs[bucket];
-
-      outs[bucket] = op;
-      }
-    else if (i == -1)
-      {
-      pbs_errno = errno;
-
-      free(FDSet);
-      return(-1);
-      }
-    else
-      {
-
-			FD_SET(rpp_fd, FDSet);
-      tv.tv_sec = 5;
-      tv.tv_usec = 0;
-			num = select(FD_SETSIZE, FDSet, NULL, NULL, &tv);
-
-      if (num == -1)
-        {
-        pbs_errno = errno;
-        DBPRT(("%s: select %d %s\n", id, pbs_errno, pbs_strerror(pbs_errno)))
-        free(FDSet);
-        return -1;
-        }
-
-      if (num == 0)
-        {
-        try++;
-
-        DBPRT(("%s: timeout %d\n", id, try))
-          }
-      }
-    }
-
-  free(FDSet);
-  return i;
-
-#else
   pbs_errno = 0;
 
   for (i = 0; i < HASHOUT; i++)
@@ -1160,9 +1023,8 @@ int activereq(void)
     }
 
   free(FDSet);
-  return(-2);
 
-#endif
+  return(-2);
   }  /* END activereq() */
 
 
@@ -1178,12 +1040,6 @@ int activereq(void)
 void
 fullresp(int flag)
   {
-#if RPP
-
-  if (flag)
-    rpp_dbprt = 1 - rpp_dbprt; /* toggle RPP debug */
-
-#endif
   pbs_errno = 0;
 
   full = flag;

@@ -100,9 +100,9 @@ int encode_DIS_RunJob(
   {
   int   rc;
 
-  if ((rc = diswst(sock, TCP_FUNC, jobid) != 0) ||
-      (rc = diswst(sock, TCP_FUNC, where) != 0) ||
-      (rc = diswui(sock, TCP_FUNC, resch) != 0))
+  if ((rc = diswst(sock, jobid) != 0) ||
+      (rc = diswst(sock, where) != 0) ||
+      (rc = diswui(sock, resch) != 0))
     return rc;
 
   return 0;

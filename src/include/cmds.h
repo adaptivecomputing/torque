@@ -132,7 +132,6 @@ int parse_at_list(char *, int, int);
 int parse_depend_list(char *, char *, int);
 int parse_stage_list(char *);
 int cnt2server_conf(long);
-int TShowAbout(void);
 
 #endif
 

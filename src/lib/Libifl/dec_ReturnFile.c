@@ -23,15 +23,15 @@ int decode_DIS_ReturnFiles(
 
   prfs = &preq->rq_ind.rq_returnfiles;
 
-  if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID, prfs->rq_jobid)) != 0)
+  if ((rc = disrfst(sock, PBS_MAXSVRJOBID, prfs->rq_jobid)) != 0)
     return rc;
 
-  prfs->rq_return_stdout = disrsi(sock, TCP_FUNC, &rc);
+  prfs->rq_return_stdout = disrsi(sock, &rc);
 
   if (rc != 0)
     return rc;
 
-  prfs->rq_return_stderr = disrsi(sock, TCP_FUNC, &rc);
+  prfs->rq_return_stderr = disrsi(sock, &rc);
 
   if (rc != 0)
     return rc;

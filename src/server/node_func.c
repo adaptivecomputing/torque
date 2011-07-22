@@ -119,7 +119,6 @@
 #include "pbs_nodes.h"
 #include "pbs_error.h"
 #include "log.h"
-#include "rpp.h"
 #include "pbs_proto.h"
 #include "net_connect.h"
 #include "utils.h"
@@ -136,7 +135,7 @@ typedef struct _node_info_
   svrattrl *plist;
   int      perms;
   tlist_head atrlist;
-  }node_info;
+  } node_info;
 
 
 /* Global Data */
@@ -337,11 +336,6 @@ int addr_ok(
     if (pnode->nd_lastupdate != 0)
       {
       if (pnode->nd_lastupdate <= (time_now - chk_len))
-        {
-        status = 0;
-        }
-      
-      if (pnode->nd_stream < 0)
         {
         status = 0;
         }
@@ -718,7 +712,6 @@ static int initialize_pbsnode(
   memset(pnode, 0, sizeof(struct pbsnode));
 
   pnode->nd_name        = pname;
-  pnode->nd_stream      = -1;
   pnode->nd_mom_port    = PBS_MOM_SERVICE_PORT;
   pnode->nd_mom_rm_port = PBS_MANAGER_SERVICE_PORT;
   pnode->nd_addrs       = pul;       /* list of host byte order */
@@ -838,9 +831,6 @@ void effective_node_delete(
       }
     }
 
-  streams = AVL_delete_node((u_long)pnode->nd_stream, 0, streams);
-
-  rpp_close(pnode->nd_stream);
   free(pnode->nd_name);
 
   free(pnode);

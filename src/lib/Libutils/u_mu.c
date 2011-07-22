@@ -1,3 +1,8 @@
+
+
+#include <unistd.h>
+#include <sys/types.h>
+
 #include "utils.h"
 
 
@@ -283,6 +288,32 @@ int MUReadPipe(
   return(0);
   }  /* END MUReadPipe() */
 
+
+
+
+int write_buffer(
+
+  char *buf,
+  int   len,
+  int   fds)
+
+  {
+  char *id = "write_buffer";
+  int   written;
+
+  while ((written = write(fds,buf,len)) != len)
+    {
+    if ((errno == EINTR) &&
+        (written == -1))
+      continue;
+
+    log_err(errno,id,"Unable to write to file or socket");
+
+    return(-1);
+    }
+
+  return(0);
+  } /* END write_buffer */
 
 
 

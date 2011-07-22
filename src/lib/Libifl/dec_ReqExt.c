@@ -109,13 +109,13 @@ int decode_DIS_ReqExtend(
   int i;
   int rc;
 
-  i = disrui(sock, TCP_FUNC, &rc); /* indicates if an extension exists */
+  i = disrui(sock, &rc); /* indicates if an extension exists */
 
   if (rc == 0)
     {
     if (i != 0)
       {
-      preq->rq_extend = disrst(sock, TCP_FUNC, &rc);
+      preq->rq_extend = disrst(sock, &rc);
       }
     }
 

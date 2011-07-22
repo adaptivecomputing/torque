@@ -123,23 +123,23 @@ int decode_DIS_CopyFiles(
   pcf = &preq->rq_ind.rq_cpyfile;
   CLEAR_HEAD(pcf->rq_pair);
 
-  if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID, pcf->rq_jobid)) != 0)
+  if ((rc = disrfst(sock, PBS_MAXSVRJOBID, pcf->rq_jobid)) != 0)
     return rc;
 
-  if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXUSER, pcf->rq_owner)) != 0)
+  if ((rc = disrfst(sock, PBS_MAXUSER, pcf->rq_owner)) != 0)
     return rc;
 
-  if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXUSER, pcf->rq_user))  != 0)
+  if ((rc = disrfst(sock, PBS_MAXUSER, pcf->rq_user))  != 0)
     return rc;
 
-  if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXGRPN, pcf->rq_group)) != 0)
+  if ((rc = disrfst(sock, PBS_MAXGRPN, pcf->rq_group)) != 0)
     return rc;
 
-  pcf->rq_dir = disrui(sock, TCP_FUNC, &rc);
+  pcf->rq_dir = disrui(sock, &rc);
 
   if (rc) return rc;
 
-  pair_ct = disrui(sock, TCP_FUNC, &rc);
+  pair_ct = disrui(sock, &rc);
 
   if (rc) return rc;
 
@@ -157,7 +157,7 @@ int decode_DIS_CopyFiles(
 
     ppair->fp_rmt   = 0;
 
-    ppair->fp_flag = disrui(sock, TCP_FUNC, &rc);
+    ppair->fp_flag = disrui(sock, &rc);
 
     if (rc)
       {
@@ -165,7 +165,7 @@ int decode_DIS_CopyFiles(
       return rc;
       }
 
-    ppair->fp_local = disrst(sock, TCP_FUNC, &rc);
+    ppair->fp_local = disrst(sock, &rc);
 
     if (rc)
       {
@@ -173,7 +173,7 @@ int decode_DIS_CopyFiles(
       return rc;
       }
 
-    ppair->fp_rmt = disrst(sock, TCP_FUNC, &rc);
+    ppair->fp_rmt = disrst(sock, &rc);
 
     if (rc)
       {

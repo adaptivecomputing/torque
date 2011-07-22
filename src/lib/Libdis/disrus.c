@@ -118,7 +118,6 @@
 unsigned short disrus(
     
   int  stream,
-  int  rpp,
   int *retval)
   
   {
@@ -129,12 +128,9 @@ unsigned short disrus(
 
   assert(retval != NULL);
 
-  if (rpp)
-    disr_commit = rpp_rcommit;
-  else
-    disr_commit = tcp_rcommit;
+  disr_commit = tcp_rcommit;
 
-  locret = disrsi_(stream, rpp, &negate, &value, 1);
+  locret = disrsi_(stream, &negate, &value, 1);
 
   if (locret != DIS_SUCCESS)
     {

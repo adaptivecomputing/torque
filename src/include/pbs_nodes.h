@@ -89,6 +89,8 @@
 
 /* NOTE:  requires server_limits.h */
 
+#include "dynamic_string.h"
+
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
 #  include <hwloc.h>
@@ -110,6 +112,7 @@
 #  endif
 #endif /* PENABLE_LINUX26_CPUSETS */
 
+#define PBS_MAXNODENAME 80 /* upper bound on the node name size    */
 #define BM_ERROR -20
 
 
@@ -197,6 +200,22 @@ typedef struct nodeboard_t
   float              cpuact;
   } nodeboard;
 #endif /* NUMA_SUPPORT */
+
+
+
+
+
+/* container for holding communication information */
+typedef struct received_node
+  {
+  char            hostname[PBS_MAXNODENAME];
+  dynamic_string *statuses;
+  int             hellos_sent;
+  } received_node;
+
+
+
+
 
 /* struct used for iterating numa nodes */
 typedef struct node_iterator 

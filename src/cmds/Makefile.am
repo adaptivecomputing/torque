@@ -1,5 +1,9 @@
 include $(top_srcdir)/buildutils/config.mk
 
+if HAVE_CHECK
+SUBDIRS = test
+endif
+
 PBS_LIBS = ../lib/Libpbs/libtorque.la \
 					 ../lib/Libutils/libutils.a
 
@@ -46,7 +50,8 @@ qsig_SOURCES = qsig.c
 qstart_SOURCES = qstart.c
 qstat_SOURCES = qstat.c MXML.c
 qstop_SOURCES = qstop.c
-qsub_SOURCES = qsub.c
+qsub_SOURCES = qsub.c qsub_functions.c common_cmds.c
+#qsub_LDFLAGS = -all-static
 qterm_SOURCES = qterm.c
 qchkpt_SOURCES = qchkpt.c
 qgpumode_SOURCES = qgpumode.c

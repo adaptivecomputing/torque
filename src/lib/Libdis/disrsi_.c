@@ -92,7 +92,6 @@
 int disrsi_(
 
   int       stream,
-  int       rpp,
   int      *negate,
   unsigned *value,
   unsigned  count)
@@ -111,16 +110,8 @@ int disrsi_(
   assert(count);
   assert(stream >= 0);
 
-  if (rpp)
-    {
-    dis_getc = rpp_getc;
-    dis_gets = (int (*)(int, char *, size_t))rpp_read;
-    }
-  else
-    {
-    dis_getc = tcp_getc;
-    dis_gets = tcp_gets;
-    }
+  dis_getc = tcp_getc;
+  dis_gets = tcp_gets;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   if (dis_umaxd == 0)
@@ -227,7 +218,7 @@ int disrsi_(
           }
         }    /* END if (count > 1) */
 
-      return(disrsi_(stream, rpp, negate, value, ndigs));
+      return(disrsi_(stream, negate, value, ndigs));
 
       /*NOTREACHED*/
 

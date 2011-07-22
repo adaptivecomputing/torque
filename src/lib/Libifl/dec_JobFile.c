@@ -110,33 +110,33 @@ int decode_DIS_JobFile(
 
   preq->rq_ind.rq_jobfile.rq_data = 0;
 
-  preq->rq_ind.rq_jobfile.rq_sequence = disrui(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_jobfile.rq_sequence = disrui(sock, &rc);
 
   if (rc)
     {
     return(rc);
     }
 
-  preq->rq_ind.rq_jobfile.rq_type = disrui(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_jobfile.rq_type = disrui(sock, &rc);
 
   if (rc)
     {
     return(rc);
     }
 
-  preq->rq_ind.rq_jobfile.rq_size = disrui(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_jobfile.rq_size = disrui(sock, &rc);
 
   if (rc)
     {
     return(rc);
     }
 
-  if ((rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_jobfile.rq_jobid)) != 0)
+  if ((rc = disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_jobfile.rq_jobid)) != 0)
     {
     return(rc);
     }
 
-  preq->rq_ind.rq_jobfile.rq_data = disrcs(sock, TCP_FUNC, &amt, &rc);
+  preq->rq_ind.rq_jobfile.rq_data = disrcs(sock, &amt, &rc);
 
   if (((long)amt != preq->rq_ind.rq_jobfile.rq_size) && (rc == 0))
     rc = DIS_EOD;

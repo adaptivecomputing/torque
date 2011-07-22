@@ -127,14 +127,14 @@ int decode_DIS_svrattrl(
   size_t  tsize;
 
 
-  numattr = disrui(sock, TCP_FUNC, &rc); /* number of attributes in set */
+  numattr = disrui(sock, &rc); /* number of attributes in set */
 
   if (rc) return rc;
 
   for (i = 0; i < numattr; ++i)
     {
 
-    data_len = disrui(sock, TCP_FUNC, &rc); /* here it is used */
+    data_len = disrui(sock, &rc); /* here it is used */
 
     if (rc) return rc;
 
@@ -163,7 +163,7 @@ int decode_DIS_svrattrl(
 
     psvrat->al_flags  = 0;
 
-    if ((rc = disrfcs(sock, TCP_FUNC, &ls, data_len, psvrat->al_name)))
+    if ((rc = disrfcs(sock, &ls, data_len, psvrat->al_name)))
       break;
 
     *(psvrat->al_name + ls++) = '\0';
@@ -172,7 +172,7 @@ int decode_DIS_svrattrl(
 
     data_len -= ls;
 
-    hasresc = disrui(sock, TCP_FUNC, &rc);
+    hasresc = disrui(sock, &rc);
 
     if (rc) 
 	  break;
@@ -181,7 +181,7 @@ int decode_DIS_svrattrl(
       {
       psvrat->al_resc = psvrat->al_name + ls;
 
-      if ((rc = disrfcs(sock, TCP_FUNC, &ls, data_len, psvrat->al_resc)))
+      if ((rc = disrfcs(sock, &ls, data_len, psvrat->al_resc)))
         break;
 
       *(psvrat->al_resc + ls++) = '\0';
@@ -195,14 +195,14 @@ int decode_DIS_svrattrl(
 
                         psvrat->al_rescln;
 
-    if ((rc = disrfcs(sock, TCP_FUNC, &ls, data_len, psvrat->al_value)))
+    if ((rc = disrfcs(sock, &ls, data_len, psvrat->al_value)))
       break;
 
     *(psvrat->al_value + ls++) = '\0';
 
     psvrat->al_valln = (int)ls;
 
-    psvrat->al_op = (enum batch_op)disrui(sock, TCP_FUNC, &rc);
+    psvrat->al_op = (enum batch_op)disrui(sock, &rc);
 
     if (rc) break;
 

@@ -109,16 +109,16 @@ int decode_DIS_RunJob(
 
   preq->rq_ind.rq_run.rq_destin = 0;
 
-  rc = disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_run.rq_jid);
+  rc = disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_run.rq_jid);
 
   if (rc) return rc;
 
   /* This will need to be changed for nodes for FPA */
-  preq->rq_ind.rq_run.rq_destin = disrst(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_run.rq_destin = disrst(sock, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_run.rq_resch = disrui(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_run.rq_resch = disrui(sock, &rc);
 
   return rc;
   }

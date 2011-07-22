@@ -115,7 +115,6 @@
 unsigned disrui(
 
   int  stream,  /* I */
-  int  rpp,     /* I */
   int *retval)  /* O */
 
   {
@@ -124,12 +123,9 @@ unsigned disrui(
   unsigned  value;
   int (*disr_commit)(int stream, int commit);
 
-  if (rpp)
-    disr_commit = rpp_rcommit;
-  else
-    disr_commit = tcp_rcommit;
+  disr_commit = tcp_rcommit;
 
-  locret = disrsi_(stream, rpp, &negate, &value, 1);
+  locret = disrsi_(stream, &negate, &value, 1);
 
   if (locret != DIS_SUCCESS)
     {
@@ -147,5 +143,38 @@ unsigned disrui(
             DIS_NOCOMMIT : locret;
 
   return(value);
-  }
+  } /* END disrui() */
+
+
+
+
+unsigned disrui_peek(
+    
+  int  stream,  /* I */
+  int *retval)  /* O */
+
+  {
+  int       locret;
+  int       negate;
+  unsigned  value;
+  
+  locret = disrsi_(stream, &negate, &value, 1);
+  
+  *retval = locret;
+  
+  if (locret != DIS_SUCCESS)
+    {
+    value = 0;
+    }
+  else if (negate)
+    {
+    value = 0;
+    
+    *retval = DIS_BADSIGN;
+    }
+  
+  return(value);
+  } /* END disrui_peek() */
+
+
 

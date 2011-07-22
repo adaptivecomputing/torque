@@ -85,6 +85,8 @@
 #include "portability.h"
 #include "libpbs.h"
 #include "dis.h"
+#include "u_hash_map_structs.h"
+#include "u_memmgr.h"
 
 /* PBSD_submit.c
 
@@ -481,6 +483,7 @@ char *PBSD_queuejob(
   pthread_mutex_lock(connection[connect].ch_mutex);
 
   sock = connection[connect].ch_socket;
+  connection[connect].ch_errno = 0;
 
   DIS_tcp_setup(sock);
 
@@ -540,6 +543,84 @@ char *PBSD_queuejob(
 
   return(return_jobid);
   }  /* END PBSD_queuejob() */
+
+
+
+
+char *PBSD_QueueJob_hash(
+
+  int             connect,  /* I */
+  char           *jobid,    /* I */
+  char           *destin,
+  memmgr         **mm,
+  job_data       *job_attr,
+  job_data       *res_attr,
+  char           *extend)
+
+  {
+
+  struct batch_reply *reply;
+  char  *return_jobid = (char *)NULL;
+  int    rc;
+  int    sock;
+
+  sock = connection[connect].ch_socket;
+
+  DIS_tcp_setup(sock);
+
+  /* first, set up the body of the Queue Job request */
+
+  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_QueueJob, pbs_current_user)) ||
+      (rc = encode_DIS_QueueJob_hash(sock, jobid, destin, mm, job_attr, res_attr))||
+      (rc = encode_DIS_ReqExtend(sock, extend)))
+    {
+    connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
+
+    pbs_errno = PBSE_PROTOCOL;
+
+    return(return_jobid);
+    }
+
+  if (DIS_tcp_wflush(sock))
+    {
+    pbs_errno = PBSE_PROTOCOL;
+
+    return(return_jobid);
+    }
+
+  /* read reply from stream into presentation element */
+
+  reply = PBSD_rdrpy(connect);
+
+  if (reply == NULL)
+    {
+    if (PConnTimeout(sock) == 1)
+      {
+      pbs_errno = PBSE_EXPIRED;
+      }
+    else
+      {
+      pbs_errno = PBSE_PROTOCOL;
+      }
+    }
+  else if (reply->brp_choice &&
+           reply->brp_choice != BATCH_REPLY_CHOICE_Text &&
+           reply->brp_choice != BATCH_REPLY_CHOICE_Queue)
+    {
+    pbs_errno = PBSE_PROTOCOL;
+    }
+  else if (connection[connect].ch_errno == 0)
+    {
+    return_jobid = strdup(reply->brp_un.brp_jid);
+    }
+
+  PBSD_FreeReply(reply);
+
+  return(return_jobid);
+  }  /* END PBSD_queuejob() */
+
+
+
 
 /* END PBSD_submit.c */
 

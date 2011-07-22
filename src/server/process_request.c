@@ -115,6 +115,7 @@
 #include "csv.h"
 #include "u_tree.h"
 #include "threadpool.h"
+#include "dis.h"
 
 #ifndef PBS_MOM
 #include "array.h"
@@ -391,6 +392,8 @@ void process_request(
     }
 
 #else /* PBS_MOM */
+
+  DIS_tcp_setup(sfds);
   rc = dis_request_read(sfds, request);
 
 #endif /* PBS_MOM */
@@ -707,7 +710,7 @@ void process_request(
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buf);
       }
 
-    if (!AVL_is_in_tree(svr_conn[sfds].cn_addr, 0, okclients))
+    if (!AVL_is_in_tree_no_port_compare(svr_conn[sfds].cn_addr, 0, okclients))
       {
       sprintf(log_buf, "request type %s from host %s rejected (host not authorized)",
         reqtype_to_txt(request->rq_type),

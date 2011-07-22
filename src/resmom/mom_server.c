@@ -210,7 +210,6 @@
 #include <sys/param.h>
 #include <sys/times.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/time.h>
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
@@ -237,14 +236,19 @@
 #include "pbs_job.h"
 #include "utils.h"
 #include "u_tree.h"
+#include "mom_hierarchy.h"
+#include "mom_server.h"
+#include "mcom.h"
 
-#include        "mcom.h"
 
 /* Global Data Items */
 #include "Long.h"
 
-#define MAX_RETRY_TIME_IN_SECS  (5 * 60)
-#define STARTING_RETRY_INTERVAL_IN_SECS  2
+#define MAX_RETRY_TIME_IN_SECS           (5 * 60)
+#define STARTING_RETRY_INTERVAL_IN_SECS   2
+#define UPDATE_TO_SERVER                  0
+#define UPDATE_TO_MOM                     1
+#define MIN_SERVER_UDPATE_SPACING         3
 
 #ifdef NUMA_SUPPORT
 extern int numa_index;
@@ -252,22 +256,6 @@ extern int num_node_boards;
 extern void collect_cpuact(void);
 #endif /* NUMA_SUPPORT */
 
-
-typedef struct mom_server
-  {
-  int             SStream;                  /* streams to pbs_server daemons */
-  char            pbs_servername[PBS_MAXSERVERNAME + 1];
-  time_t          next_connect_time;
-  int             connect_failure_count;
-  int             sent_hello_count;
-  char            ReportMomState;
-  time_t          MOMLastSendToServerTime;
-  time_t          MOMLastRecvFromServerTime;
-  char            MOMLastRecvFromServerCmd[MMAX_LINE];
-  int             received_hello_count;
-  int             received_cluster_address_count;
-  char            MOMSendStatFailure[MMAX_LINE];
-  } mom_server;
 
 mom_server     mom_servers[PBS_MAXSERVER];
 int            mom_server_count = 0;
@@ -287,6 +275,7 @@ extern int             internal_state;
 extern int             LOGLEVEL;
 extern char            PBSNodeCheckPath[1024];
 extern int             PBSNodeCheckInterval;
+char                   TORQUE_JData[MMAX_LINE];
 extern char            PBSNodeMsgBuf[1024];
 extern int             received_hello_count[];
 extern char            TMOMRejectConn[];
@@ -297,13 +286,21 @@ extern int             alarm_time; /* time before alarm */
 extern int             rm_errno;
 extern time_t          time_now;
 extern int             verbositylevel;
-/* extern tree           *okclients; */  /* accept connections from */
 extern AvlTree         okclients;
 extern tlist_head      svr_alljobs;
 extern tlist_head      mom_polljobs;
+extern char                mom_alias[];
+extern int                 updates_waiting_to_send;
+time_t                     LastUpdateAttempt;
+extern int                 UpdateFailCount;
+extern mom_hierarchy_t    *mh;
+extern char               *stat_string_aggregate;
+extern unsigned int        ssa_index;
+extern resizable_array    *received_statuses;
 
 extern struct config *rm_search(struct config *where, char *what);
 
+extern int read_status_strings(int,int);
 extern struct rm_attribute *momgetattr(char *str);
 extern char *conf_res(char *resline, struct rm_attribute *attr);
 extern char *dependent(char *res, struct rm_attribute *attr);
@@ -316,9 +313,10 @@ extern char  mom_host[];
 extern int             MOMNvidiaDriverVersion;
 #endif  /* NVIDIA_GPUS */
 
-char TORQUE_JData[MMAX_LINE];
 
+void check_state(int);
 void state_to_server(int, int);
+void node_comm_error(node_comm_t *, char *);
 #ifdef NVIDIA_GPUS
 void mom_server_all_update_gpustat(void);
 int    nvidia_gpu_modes[50];
@@ -411,39 +409,6 @@ mom_server *mom_server_find_by_name(
 
 
 
-/*--------------------------------------------------------------------
- * mom_server_find_by_stream
- *--------------------------------------------------------------------
- * Find an instance of a mom server structure given a stream number.
- *
- * @param stream number to find
- * @see mom_server_find_by_ip
- */
-
-mom_server *mom_server_find_by_stream(
-
-  int stream)
-
-  {
-  mom_server *pms;
-  int sindex;
-
-  for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
-    {
-    pms = &mom_servers[sindex];
-
-    if (pms->SStream == stream)
-      {
-      return(pms);
-      }
-    }
-
-  return(NULL);
-  }
-
-
-
-
 
 /*--------------------------------------------------------------------
  * mom_server_find_by_ip
@@ -451,7 +416,6 @@ mom_server *mom_server_find_by_stream(
  * Find an instance of a mom server structure given an ip address.
  *
  * @param ipaddr IP address to find
- * @see mom_server_find_by_stream
  */
 
 mom_server *mom_server_find_by_ip(
@@ -462,30 +426,17 @@ mom_server *mom_server_find_by_ip(
   mom_server         *pms;
   int                 sindex;
 
-  struct sockaddr_in *addr;
   u_long              ipaddr;
 
   for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
     {
     pms = &mom_servers[sindex];
 
-    if (pms->SStream != -1)
+    ipaddr = ntohl(pms->sock_addr.sin_addr.s_addr);
+    
+    if (ipaddr == search_ipaddr)
       {
-      addr = rpp_getaddr(pms->SStream);
-
-      if (addr == NULL)
-        {
-        /* FAILURE */
-
-        return(NULL);
-        }
-
-      ipaddr = ntohl(addr->sin_addr.s_addr);
-
-      if (ipaddr == search_ipaddr)
-        {
-        return(pms);
-        }
+      return(pms);
       }
     }  /* END for (sindex) */
 
@@ -543,9 +494,12 @@ int mom_server_add(
   char *value)
 
   {
-  static char *id = "mom_server_add";
-  mom_server *pms;
-
+  static char    *id = "mom_server_add";
+  mom_server     *pms;
+  struct hostent *hp;
+  char            tmp_server_name[PBS_MAXSERVERNAME];
+  unsigned short  port;
+  char           *colon;
 
   if ((pms = mom_server_find_by_name(value)))
     {
@@ -560,7 +514,23 @@ int mom_server_add(
     {
     /* Fill in the new server instance */
 
-    strncpy(pms->pbs_servername, value, PBS_MAXSERVERNAME);
+    strncpy(tmp_server_name, value, PBS_MAXSERVERNAME);
+    colon = strchr(tmp_server_name,':');
+    if (colon != NULL)
+      {
+      *colon = '\0';
+      port = (short)atoi(colon+1);
+      }
+    else
+      port = default_server_port;
+
+    /* copy the server name and set up the sock address */
+    strncpy(pms->pbs_servername,tmp_server_name,PBS_MAXSERVERNAME);
+    hp = gethostbyname(tmp_server_name);
+    pms->sock_addr.sin_family = AF_INET;
+    memcpy(&(pms->sock_addr.sin_addr),hp->h_addr_list[0],hp->h_length);
+    pms->sock_addr.sin_port = htons(port);
+
     mom_server_count++;
 
     sprintf(log_buffer, "server %s added", pms->pbs_servername);
@@ -610,9 +580,7 @@ int mom_server_add(
 
       if (ipaddr != 0)
         {
-  /*        tinsert(ipaddr, NULL, &okclients); */
         okclients = AVL_insert(ipaddr, 0, NULL, okclients);
-        
         }
 
       }
@@ -625,138 +593,19 @@ int mom_server_add(
 
 
 
-
-/**
- * mom_server_open_stream
- *
- * Open a connection to a pbs_server.
- *
- * @param pms pointer to mom_server instance
- *
- * @see mom_server_check_connection() - parent
- */
-
-int mom_server_open_stream(
-
-  mom_server *pms)
-
-  {
-  static char id[] = "mom_server_open_stream";
-
-  static int PassCount = 0;
-  char server_name[PBS_MAXSERVERNAME + 1];
-  int port = default_server_port;
-  char *portstr;
-
-  /* Make a copy of the server name because it might have a port number. */
-
-  strcpy(server_name, pms->pbs_servername);
-
-  if ((portstr = strchr(server_name, ':')) != NULL)
-    {
-    *(portstr) = '\0';
-
-    if (*(portstr + 1) != '\0')
-      port = atoi(portstr + 1);
-    }
-
-  if (LOGLEVEL >= 5)
-    {
-    sprintf(log_buffer, "%s: trying to open RPP conn to %s port %d",
-      id,
-      server_name,
-      port);
-
-    log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
-    }
-
-  if ((pms->SStream = rpp_open(
-                        server_name,
-                        port,
-                        pms->MOMSendStatFailure)) < 0)
-    {
-    /* FAILURE */
-
-    if ((PassCount == 0) || (LOGLEVEL >= 6))
-      {
-      if (errno == ENOENT)
-        {
-        sprintf(log_buffer, "%s: cannot open rpp connection to %s, errno=%d, %s (check /etc/hosts file?)",
-          id,
-          server_name,
-          errno,
-          pms->MOMSendStatFailure);
-        }
-      else
-        {
-        sprintf(log_buffer, "%s: cannot open rpp connection to %s, errno=%d, %s",
-          id,
-          server_name,
-          errno,
-          pms->MOMSendStatFailure);
-        }
-
-      log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
-      }
-
-    PassCount = 1;
-
-    pms->SStream = -1;
-
-    return(DIS_EOF);
-    }  /* END if ((pms->SStream = rpp_open()) < 0) */
-
-  if (LOGLEVEL >= 3)
-    {
-    sprintf(log_buffer, "%s: added connection to %s port %d",
-      id,
-      server_name,
-      port);
-
-    log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
-    }
-
-  return(DIS_SUCCESS);
-  }  /* END mom_server_open_stream() */
-
-
-
-
-
-void mom_server_close_stream(
-
-  int stream)
-
-  {
-  mom_server *pms;
-
-  if ((pms = mom_server_find_by_stream(stream)) != NULL)
-    {
-    pms->SStream = -1;  /* Force new connection to server next time mom_server_check_connections is called. */
-    }
-
-  return;
-  }
-
-
-
-
-
 void mom_server_stream_error(
 
-  mom_server *pms,
-  char       *id,
-  char       *message)
+  int   stream,
+  char *name,
+  char *id,
+  char *message)
+
   {
-  sprintf(log_buffer, "error %s to server %s",
-    message,
-    pms->pbs_servername);
+  sprintf(log_buffer, "error %s to server %s", message, name);
 
   log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
 
-  rpp_close(pms->SStream);
-
-  pms->SStream = -1;  /* Force new connection to server next time mom_server_check_connections is called. */
+  close(stream);
 
   return;
   }  /* END mom_server_stream_error() */
@@ -777,24 +626,22 @@ void mom_server_stream_error(
 
 int mom_server_flush_io(
 
-  mom_server *pms,
-  char       *id,
-  char       *message)
+  int   stream,
+  char *id,
+  char *message)
 
   {
-  if (rpp_flush(pms->SStream) == -1)
+  if (DIS_tcp_wflush(stream) == -1)
     {
     log_err(errno, id, message);
 
-    rpp_close(pms->SStream);
-
-    pms->SStream = -1;  /* Force new connection to server next time mom_server_check_connections is called. */
+    close(stream);
 
     return(DIS_PROTO);
     }
 
   return(DIS_SUCCESS);
-  }
+  } /* END mom_server_flush_io() */
 
 
 
@@ -810,32 +657,34 @@ int mom_server_flush_io(
 
 int is_compose(
 
-  mom_server *pms,
-  int         command)
+  int   stream,
+  char *server_name,
+  int   command)
 
   {
+  static char *id = "is_compose";
   int ret;
 
-  if (pms->SStream < 0)
+  if (stream < 0)
     {
     return(DIS_EOF);
     }
 
-  if ((ret = diswsi(pms->SStream, RPP_FUNC, IS_PROTOCOL)) != DIS_SUCCESS)
+  if ((ret = diswsi(stream, IS_PROTOCOL)) != DIS_SUCCESS)
     {
-    mom_server_stream_error(pms, "is_compose", "writing protocol");
+    mom_server_stream_error(stream, server_name, id, "writing protocol");
 
     return(ret);
     }
-  else if ((ret = diswsi(pms->SStream, RPP_FUNC, IS_PROTOCOL_VER)) != DIS_SUCCESS)
+  else if ((ret = diswsi(stream, IS_PROTOCOL_VER)) != DIS_SUCCESS)
     {
-    mom_server_stream_error(pms, "is_compose", "writing protocol version");
+    mom_server_stream_error(stream, server_name, id, "writing protocol version");
 
     return(ret);
     }
-  else if ((ret = diswsi(pms->SStream, RPP_FUNC, command)) != DIS_SUCCESS)
+  else if ((ret = diswsi(stream, command)) != DIS_SUCCESS)
     {
-    mom_server_stream_error(pms, "is_compose", "writing protocol version");
+    mom_server_stream_error(stream, server_name, id, "writing command");
 
     return(ret);
     }
@@ -2828,6 +2677,176 @@ void generate_server_gpustatus_smi(
 #endif  /* NVIDIA_GPUS */
 
 
+
+
+/* 
+ * writes the header for a server status update
+ */
+int write_update_header(
+    
+  int   stream,
+  char *id,
+  char *name)
+
+  {
+  int  ret;
+  char buf[MAXLINE];
+  
+  if ((ret = is_compose(stream,name,IS_STATUS)) == DIS_SUCCESS)
+    {
+    if ((ret = diswus(stream, pbs_mom_port)) == DIS_SUCCESS)
+      {
+      if ((ret = diswus(stream, pbs_rm_port)) == DIS_SUCCESS)
+        {
+        /* write this node's name first */
+        snprintf(buf,sizeof(buf),"node=%s",mom_alias);
+        
+        if ((ret = diswst(stream,buf)) != DIS_SUCCESS)
+          mom_server_stream_error(stream, name, id, "writing status string");
+        }
+      }
+    }
+  
+  return(ret);
+  } /* END write_update_header() */
+
+
+
+
+int write_my_server_status(
+ 
+  int   stream,
+  char *id,
+  char *status_strings,
+  void *dest,
+  int   mode)
+ 
+  {
+  int          ret = DIS_SUCCESS;
+  char        *cp;
+
+  mom_server  *pms;
+  node_comm_t *nc;
+ 
+  /* put each string into the message. */
+  for (cp = status_strings;cp && *cp;cp += strlen(cp) + 1)
+    {
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer,"%s: sending to server \"%s\"",
+        id,
+        cp);
+      
+      log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+      }
+    
+    if ((ret = diswst(stream,cp)) != DIS_SUCCESS)
+      {
+      switch (mode)
+        {
+        case UPDATE_TO_SERVER:
+          
+          pms = (mom_server *)dest;
+          
+          mom_server_stream_error(stream, pms->pbs_servername, id, "writing status string");
+          
+          break;
+          
+        case UPDATE_TO_MOM:
+          
+          nc = (node_comm_t *)dest;
+          nc->stream = stream;
+          
+          node_comm_error(nc,"Error writing strings to");
+          
+          break;
+        } /* END switch (mode) */
+      
+      break;
+      }
+    }
+
+  return(ret);
+  } /* END write_my_server_status() */
+
+
+
+
+
+int write_cached_statuses(
+ 
+  int   stream,
+  char *id,
+  void *dest,
+  int   mode)
+ 
+  {
+  int            ret = DIS_SUCCESS;
+  int            iter = -1;
+  char          *cp;
+  received_node *rn;
+  mom_server    *pms;
+  node_comm_t   *nc;
+  
+  /* traverse the received_nodes array and send/clear the updates */
+  while ((rn = (received_node *)next_thing(received_statuses,&iter)) != NULL)
+    {
+    cp = rn->statuses->str;
+    
+    while ((cp != NULL) &&
+           (cp - rn->statuses->str < (int)rn->statuses->used))
+      {
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer,"%s: sending to server \"%s\"",
+          id,
+          cp);
+        
+        log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+        }
+      
+      if ((ret = diswst(stream,cp)) != DIS_SUCCESS)
+        {
+        /* FAILURE */
+        switch (mode)
+          {
+          case UPDATE_TO_SERVER:
+            
+            pms = (mom_server *)dest;
+            
+            mom_server_stream_error(stream, pms->pbs_servername, id, "writing status string");
+            
+            break;
+            
+          case UPDATE_TO_MOM:
+            
+            nc = (node_comm_t *)dest;
+            nc->stream = stream;
+            
+            node_comm_error(nc,"Error writing strings to");
+            
+            break;
+          } /* END switch (mode) */
+        
+        break;
+        }
+      
+      cp += strlen(cp) + 1;
+      } /* END write each string */
+    
+    clear_dynamic_string(rn->statuses);
+    } /* END iterate over received statuses */
+  
+  if (ret == DIS_SUCCESS)
+    updates_waiting_to_send = 0;
+  
+  return(ret);
+  } /* END write_cached_statuses() */
+
+
+
+
+
 /**
  * mom_server_update_stat
  *
@@ -2838,101 +2857,269 @@ void generate_server_gpustatus_smi(
  * @param mom_server_all_update_stat() - parent
  * @param pms pointer to mom_server instance
  */
-
+ 
 void mom_server_update_stat(
-
+ 
   mom_server *pms,
   char       *status_strings)
-
+ 
   {
-  static char *id = "mom_server_update_stat";
-  char *cp;
-  int ret;
-
-  if (pms->pbs_servername[0] == 0)
+  static char   *id = "mom_server_update_stat";
+  int            stream;
+  int            ret = -1;
+ 
+  if ((pms->pbs_servername[0] == 0) ||
+      (time_now < (pms->MOMLastSendToServerTime + ServerStatUpdateInterval)))
     {
     /* No server is defined for this slot */
-
+    
     return;
     }
 
-  if (pms->SStream == -1)
+  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr,sizeof(pms->sock_addr));
+ 
+  if (stream >= 0)
     {
-    sprintf(log_buffer, "server \"%s\" has no active stream",
-      pms->pbs_servername);
-
-    log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
-
-    return;
-    }
-
-  pms->MOMLastSendToServerTime = time(0);
-
-  /* Generate the message header. */
-
-  if (is_compose(pms,IS_STATUS) != DIS_SUCCESS)
-    {
-    return;
-    }
-
-  ret = diswus(pms->SStream, RPP_FUNC, pbs_mom_port);
-  if (ret)
-    {
-    return;
-    }
-  
-  ret = diswus(pms->SStream, RPP_FUNC, pbs_rm_port);
-  if (ret)
-    {
-    return;
-    }
-  
-  /* For each string, put it into the message. */
-
-  for (cp = status_strings;cp && *cp;cp += strlen(cp) + 1)
-    {
-    if (LOGLEVEL >= 7)
+    if ((ret = write_update_header(stream,pms->pbs_servername,id)) == DIS_SUCCESS)
       {
-      sprintf(log_buffer,"%s: sending to server \"%s\"",
-        id,
-        cp);
-
-      log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+      if ((ret = write_my_server_status(stream,id,status_strings,pms,UPDATE_TO_SERVER)) == DIS_SUCCESS)
+        {
+        if ((ret = write_cached_statuses(stream,id,pms,UPDATE_TO_SERVER)) == DIS_SUCCESS)
+          {
+          if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
+            read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&ret);
+          }
+        }
       }
-
-    if (diswst(pms->SStream,RPP_FUNC,cp) != DIS_SUCCESS)
+  
+    close(stream);
+    
+    if (ret != DIS_SUCCESS)
       {
-      mom_server_stream_error(pms, id, "writing status string");
-
       /* FAILURE */
+      if (ret == UNREAD_STATUS)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),"Couldn't read a reply from the server");
+        }
+      else
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Couldn't send update to server: %s",
+          dis_emsg[ret]);
+        }
+      
+      log_err(-1,id,log_buffer);
+      
+      /* force another update to the server so we get this out there */
+      UpdateFailCount++;
+      }
+    else
+      {
+      /* SUCCESS */
+      if (LOGLEVEL >= 3)
+        {
+        sprintf(log_buffer, "status update successfully sent to %s", pms->pbs_servername);
+        
+        log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+        }
+      
+      /* It would be redundant to send state since it is already in status */  
+      pms->ReportMomState = 0;
+      
+      pms->MOMLastSendToServerTime = time_now;
+      
+      UpdateFailCount = 0;
+      }
+    } /* END if valid stream */
+  
+  }  /* END mom_server_update_stat() */
 
-      return;
+
+
+
+
+void node_comm_error(
+ 
+  node_comm_t *nc,
+  char        *message)
+ 
+  {
+  snprintf(log_buffer,sizeof(log_buffer), "%s %s", message, nc->name);
+  log_err(-1,"Node communication process",log_buffer);
+  
+  close(nc->stream);
+  nc->stream = -1;
+  nc->bad = TRUE;
+  } /* END node_comm_error() */
+
+
+
+
+
+int write_status_strings(
+ 
+  char        *stat_str,
+  int          len,
+  node_comm_t *nc)
+ 
+  {
+  char          *id = "write_status_strings";
+  
+  int            fds = nc->stream;
+  int            rc;
+ 
+  DIS_tcp_setup(fds);
+ 
+  /* write protocol */
+  if ((rc = write_update_header(fds,nc->name,id)) == DIS_SUCCESS)
+    {
+    if ((rc = write_my_server_status(fds,id,stat_str,nc,UPDATE_TO_SERVER)) == DIS_SUCCESS)
+      {
+      if ((rc = write_cached_statuses(fds,id,nc,UPDATE_TO_SERVER)) == DIS_SUCCESS)
+        {
+        rc = DIS_tcp_wflush(fds);
+
+        /*if (rc == DIS_SUCCESS)*/
+          /*read_tcp_reply(fds,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&rc);*/
+        }
       }
     }
 
-  /* Launch the message */
+  close(fds);
+  nc->stream = -1;
+ 
+  return(rc);
+  } /* END write_status_strings() */
 
-  if (mom_server_flush_io(pms, id, "flush") != DIS_SUCCESS)
+
+
+
+
+/* send_update() 
+ *
+ * decides whether or not a status update should be sent, including using a 
+ * back-off algorithm for continuously failures
+ */
+
+int send_update()
+  
+  {
+  int mod_value;
+  
+  if (time_now < (LastServerUpdateTime + ServerStatUpdateInterval))
+    return(FALSE);
+  
+  /* this is the minimum condition for updating */
+  if (time_now >= (LastServerUpdateTime + ServerStatUpdateInterval))
     {
-    /* FAILURE */
+    if (UpdateFailCount == 0)
+      return(TRUE);
+    
+    /* the following conditions are to continually back off if we're experiencing
+     * several failures in a row */
+ 
+    /* never send updates in a rapid-fire fashion */
+    if ((LastServerUpdateTime - LastUpdateAttempt > MIN_SERVER_UDPATE_SPACING) ||
+        (LastServerUpdateTime == 0))
+      { 
+      /* try to introduce some random delay here */
+      srand(time_now + UpdateFailCount);
+      
+      /* wait progressively more as */
+      mod_value = MAX(2,UpdateFailCount);
+      
+      if (rand() % mod_value == 0)
+        return(TRUE);
+      }
+    }
+  
+  /* conditions not met, no update is needed */ 
+  return(FALSE);
+  } /* END send_update() */
 
+
+
+
+/**
++ * mom_server_all_update_stat
+  *
++ * This is the former is_update_stat.  It has been reworked to
++ * first generate the strings and then walk the server list sending
++ * the strings to each server.
+  */
+
+void mom_server_all_update_stat(void)
+ 
+  {
+  static char *id = "mom_server_all_update_stat";
+ 
+  static char  status_strings[16 * 1024];  /* Big but smaller than before in is_update_stat */
+  node_comm_t *nc = NULL;
+  int          sindex;
+
+  if (send_update() == FALSE)
+    {
+    /* no update is needed */
     return;
     }
-
-  if (LOGLEVEL >= 3)
+ 
+  if (PBSNodeCheckInterval > 0)
+    check_state((LastServerUpdateTime == 0));
+ 
+  LastUpdateAttempt = time_now;
+ 
+  /* We generate the status once, because this might be costly.
+   * The buffer status_strings will contain NULL terminated strings.
+   * The end of the buffer is marked with an empty string i.e. NULL NULL.
+   */
+ 
+  if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "status update successfully sent to %s",
-      pms->pbs_servername);
-
-    log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+    log_record(PBSEVENT_SYSTEM, 0, id, "composing status update for server");
     }
+ 
+#ifdef NUMA_SUPPORT
+  for (numa_index = 0; numa_index < num_numa_nodes; numa_index++)
+#endif /* NUMA_SUPPORT */
+    {
+    memset(status_strings, 0, sizeof(status_strings));
 
-  /* It would be redundant to send state since it is already in status */
+    generate_server_status(status_strings, sizeof(status_strings));
+ 
+    if ((nc = update_current_path(nc)) != NULL)
+      {
+      /* write to the socket */
+      while (nc != NULL)
+        {
+        if (write_status_strings(status_strings,strlen(status_strings),nc) < 0)
+          {
+          nc->bad = TRUE;
+          nc->mtime = time_now;
+          nc = force_path_update(mh);
+          }
+        else 
+          {
+          LastServerUpdateTime = time_now;
+          UpdateFailCount = 0;
 
-  pms->ReportMomState = 0;
-
+          break;
+          }
+        }
+      }
+    
+    if (nc == NULL)
+      {
+      for (sindex = 0; sindex < PBS_MAXSERVER; sindex++)
+        {
+        mom_server_update_stat(&mom_servers[sindex],status_strings);
+        }
+      }
+    }
+ 
   return;
-  }  /* END mom_server_update_stat() */
+  }  /* END mom_server_all_update_stat() */
+
+
 
 
 
@@ -2985,13 +3172,13 @@ void mom_server_update_gpustat(
     return;
     }
 
-  ret = diswus(pms->SStream, RPP_FUNC, pbs_mom_port);
+  ret = diswus(pms->SStream, pbs_mom_port);
   if (ret)
     {
     return;
     }
   
-  ret = diswus(pms->SStream, RPP_FUNC, pbs_rm_port);
+  ret = diswus(pms->SStream, pbs_rm_port);
   if (ret)
     {
     return;
@@ -3010,7 +3197,7 @@ void mom_server_update_gpustat(
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
 
-    if (diswst(pms->SStream, RPP_FUNC, cp) != DIS_SUCCESS)
+    if (diswst(pms->SStream, cp) != DIS_SUCCESS)
       {
       mom_server_stream_error(pms, id, "writing status string");
 
@@ -3043,110 +3230,6 @@ void mom_server_update_gpustat(
 
   return;
   }  /* END mom_server_update_gpustat() */
-#endif  /* NVIDIA_GPUS */
-
-
-
-
-/**
- * mom_server_all_update_stat
- *
- * This is the former is_update_stat.  It has been reworked to
- * first generate the strings and then walk the server list sending
- * the strings to each server.
- */
-
-void mom_server_all_update_stat(void)
-
-  {
-  static char *id = "mom_server_all_update_stat";
-
-  static char status_strings[16 * 1024];  /* Big but smaller than before in is_update_stat */
-  int sindex;
-
-  /* We generate the status once, because this might be costly.
-   * The buffer status_strings will contain NULL terminated strings.
-   * The end of the buffer is marked with an empty string i.e. NULL NULL.
-   */
-
-  if (LOGLEVEL >= 6)
-    log_record(PBSEVENT_SYSTEM, 0, id, "composing status update for server");
-
-#ifdef NUMA_SUPPORT
-  /* Precalculate cpu activities. */
-
-  collect_cpuact();
-
-  /* Generate and send status strings for each node board */
-  for (numa_index = 0; numa_index < num_node_boards; numa_index++)
-#endif /* NUMA_SUPPORT */
-    {
-    memset(status_strings, 0, sizeof(status_strings));
-
-    generate_server_status(status_strings, sizeof(status_strings));
-
-    for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
-      {
-      mom_server_update_stat(&mom_servers[sindex],status_strings);
-      }
-    }
-
-  return;
-  }  /* END mom_server_all_update_stat() */
-
-
-
-
-
-/**
- * mom_server_all_update_gpustat
- *
- * This is the former is_update_stat.  It has been reworked to
- * first generate the strings and then walk the server list sending
- * the strings to each server.
- */
-
-#ifdef NVIDIA_GPUS
-void mom_server_all_update_gpustat(void)
-
-  {
-  static char *id = "mom_server_all_update_gpustat";
-
-  static char gpu_status_strings[16 * 1024];  /* Big but smaller than before in is_update_stat */
-  int sindex;
-
-  /* We generate the status once, because this might be costly.
-   * The buffer status_strings will contain NULL terminated strings.
-   * The end of the buffer is marked with an empty string i.e. NULL NULL.
-   */
-
-  if (LOGLEVEL >= 6)
-    {
-    log_record(PBSEVENT_SYSTEM, 0, id, "composing gpu status update for server");
-    }
-
-  memset(gpu_status_strings, 0, sizeof(gpu_status_strings));
-
-#ifdef NVIDIA_GPUS
-#ifdef NVML_API
-
-  generate_server_gpustatus_nvml(gpu_status_strings, sizeof(gpu_status_strings));
-#else
-
-  generate_server_gpustatus_smi(gpu_status_strings, sizeof(gpu_status_strings));
-#endif /* NVML_API */
-#endif /* NVIDIA_GPUS */
-
-  for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
-    {
-    if(gpu_status_strings[0] != 0)
-      {
-      mom_server_update_gpustat(&mom_servers[sindex], gpu_status_strings);
-      }
-    }
-
-  return;
-  }  /* END mom_server_all_update_gpustat() */
 #endif  /* NVIDIA_GPUS */
 
 
@@ -3234,24 +3317,24 @@ int mom_server_send_hello(
 
 
 
-  if (is_compose(pms, IS_HELLO) == -1)
+  if (is_compose(pms->SStream, pms->pbs_servername, IS_HELLO) == -1)
     {
     return(-1);
     }
 
-  ret = diswus(pms->SStream, RPP_FUNC, pbs_mom_port);
+  ret = diswus(pms->SStream, pbs_mom_port);
   if (ret)
     {
     return(-1);
     }
   
-  ret = diswus(pms->SStream, RPP_FUNC, pbs_rm_port);
+  ret = diswus(pms->SStream, pbs_rm_port);
   if (ret)
     {
     return(-1);
     }
 
-  if (mom_server_flush_io(pms, id, "flush") != DIS_SUCCESS)
+  if (mom_server_flush_io(pms->SStream, id, "flush") != DIS_SUCCESS)
     {
     return(-1);
     }
@@ -3272,133 +3355,6 @@ int mom_server_send_hello(
 
   return(0);
   }  /* END mom_server_send_hello() */
-
-
-
-
-/**
- * mom_server_check_connection
- *
- * This checks the status of one server.
- *
- * @param pms pointer to mom_server instance
- * @return count 0 or 1
- *
- * @see mom_server_all_check_connection() - parent
- * @see mom_server_open_stream() - child
- * @see calculate_retry_seconds() - child
- *
- * NOTE:  time_now updated in main_loop()
- */
-
-int mom_server_check_connection(
-
-  mom_server *pms)
-
-  {
-  static char id[] = "mom_server_check_connection";
-
-  if (pms->pbs_servername[0] == '\0')
-    {
-    return(0);
-    }
-
-  if (pms->SStream != -1) 
-    {
-    if (time_now >= (pms->MOMLastSendToServerTime + (ServerStatUpdateInterval*2)))
-      {
-      sprintf(log_buffer,"connection to server %s timeout", 
-        pms->pbs_servername);
-
-      log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
-
-      rpp_close(pms->SStream);
-
-      pms->SStream = -1;
-      }
-    }
-
-  if (pms->SStream == -1)
-    {
-    /* No connection to server */
-
-    if ((pms->next_connect_time == 0) || (pms->next_connect_time <= time_now))
-      {
-      if (mom_server_open_stream(pms) == DIS_SUCCESS)
-        {
-        pms->connect_failure_count = 0;
-        pms->received_cluster_address_count = 0;
-        }
-      else
-        {
-        pms->connect_failure_count++;
-
-        pms->next_connect_time = time_now + calculate_retry_seconds(pms->connect_failure_count);
-
-        sprintf(log_buffer, "unable to establish/restore connection to server %s (failcount=%d, retry in %ld seconds)",
-                pms->pbs_servername,
-                pms->connect_failure_count,
-                pms->next_connect_time - (long)time_now);
-
-        log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
-
-        return(0);        /* attempt to restore connection to pbs_server failed */
-        }
-
-      sprintf(log_buffer, "sending hello to server %s",
-              pms->pbs_servername);
-
-      log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
-
-      pms->MOMLastSendToServerTime = time_now;
-
-      if (mom_server_send_hello(pms) == -1)
-        {
-        return(0);
-        }
-
-      }
-
-    }    /* END if (pms->SStream == -1) */
-
-  return(pms->received_cluster_address_count);
-  }  /* END mom_server_check_connection() */
-
-
-
-
-
-/**
- * mom_server_all_check_connection
- *
- * This routine checks all of the servers to see
- * if they are active and up.
- *
- * @return count of active servers
- *
- * @see mom_server_check_connection() - child
- */
-
-int
-mom_server_all_check_connection(void)
-
-  {
-  int sindex;  /* server index */
-  int TotalClusterAddrsCount;
-
-  TotalClusterAddrsCount = 0;
-
-  for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
-    {
-    if (mom_servers[sindex].pbs_servername[0] == '\0')
-      continue;
-
-    TotalClusterAddrsCount += mom_server_check_connection(&mom_servers[sindex]);
-    }  /* END for (sindex) */
-
-  return(TotalClusterAddrsCount);
-  }  /* END mom_server_all_check_connection() */
-
 
 
 
@@ -3437,11 +3393,11 @@ void mom_server_diag(
   sprintf(tmpLine, "Server[%d]: %s (%s)\n",
           sindex,
           pms->pbs_servername,
-          netaddr(rpp_getaddr(pms->SStream)));
+          netaddr(&(pms->sock_addr)));
 
   MUStrNCat(BPtr, BSpace, tmpLine);
 
-  if ((pms->received_hello_count > 0) ||
+/*  if ((pms->received_hello_count > 0) ||
       (pms->received_cluster_address_count > 0))
     {
     if (verbositylevel >= 1)
@@ -3468,7 +3424,7 @@ void mom_server_diag(
             pms->sent_hello_count);
 
     MUStrNCat(BPtr, BSpace, tmpLine);
-    }
+    }*/
 
   if (pms->MOMSendStatFailure[0] != '\0')
     {
@@ -3566,17 +3522,28 @@ void mom_server_all_diag(
  * @param stream The stream number to update.
  * @param command_name The name of the command that was received.
  */
-void
-mom_server_update_receive_time(int stream, char *command_name)
-  {
-  mom_server *pms;
+void mom_server_update_receive_time(
+    
+  int stream,
+  char *command_name)
 
-  if ((pms = mom_server_find_by_stream(stream)) != NULL)
+  {
+  mom_server      *pms;
+  unsigned long    ipaddr;
+  struct sockaddr  addr;
+  unsigned int     len = sizeof(addr);
+
+  time_now = time(NULL);
+
+  getpeername(stream,&addr,&len);
+  ipaddr = ntohl(((struct sockaddr_in *)&addr)->sin_addr.s_addr);
+   
+  if ((pms = mom_server_find_by_ip(ipaddr)) != NULL)
     {
-    pms->MOMLastRecvFromServerTime = time(0);
+    pms->MOMLastRecvFromServerTime = time_now;
     strcpy(pms->MOMLastRecvFromServerCmd, command_name);
     }
-  }
+  } /* END mom_server_update_receive_time() */
 
 
 
@@ -3602,10 +3569,11 @@ void mom_server_update_receive_time_by_ip(
 
   {
   mom_server *pms;
+  time_now = time(NULL);
 
   if ((pms = mom_server_find_by_ip(ipaddr)) != NULL)
     {
-    pms->MOMLastRecvFromServerTime = time(0);
+    pms->MOMLastRecvFromServerTime = time_now;
 
     strcpy(pms->MOMLastRecvFromServerCmd, command_name);
     }
@@ -3643,25 +3611,23 @@ mom_server *mom_server_valid_message_source(
   int stream)
 
   {
-  static char *id = "mom_server_valid_message_source";
+  static char     *id = "mom_server_valid_message_source";
+ 
+  struct sockaddr  addr;
+  unsigned int     len = sizeof(addr);
+  u_long           ipaddr;
+  mom_server      *pms;
 
-  struct sockaddr_in *addr = NULL;
-  u_long ipaddr;
-  mom_server *pms;
 
   /* Check for the normal case, where some server has an open,
    * establish stream connection to the place where this
    * message came from.
    */
 
-  if ((pms = mom_server_find_by_stream(stream)))
-    {
-    return(pms);
-    }
-
-  addr = rpp_getaddr(stream);  /* Get pointer to sockaddr_in for message source address */
-
-  ipaddr = ntohl(addr->sin_addr.s_addr);  /* Extract IP address of source of the message. */
+  if (getpeername(stream,&addr,&len) < 0)
+    return(NULL);
+ 
+  ipaddr = ntohl(((struct sockaddr_in *)&addr)->sin_addr.s_addr);  /* Extract IP address of source of the message. */
 
   /* So the stream number did not match any server but maybe
    * the server has another stream connection open to the IP address.
@@ -3669,31 +3635,11 @@ mom_server *mom_server_valid_message_source(
 
   if ((pms = mom_server_find_by_ip(ipaddr)))
     {
-    /* This case can happen when both the pbs_mom and the pbs_server initiate
-     * a communication session with the HELLO protocol on startup.
-     * We then have a stream open from both sides.  In this case, the pbs_mom
-     * defers and closes the existing stream, replacing it with the new one
-     * from the server.
-     */
-    if (pms->SStream != -1)
-      {
-      sprintf(log_buffer, "duplicate connection from %s - closing original connection",
-              netaddr(addr));
-
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_SERVER,
-        id,
-        log_buffer);
-
-      rpp_close(pms->SStream);
-      }
-
     /* Now this is the current stream number for this server */
 
     pms->SStream = stream;
 
-    mom_server_send_hello(pms);
+    mom_server_all_update_stat();
 
     return(pms);
     }
@@ -3736,7 +3682,6 @@ mom_server *mom_server_valid_message_source(
 
             if (ipaddr == server_ip)
               {
-/*              tinsert(ipaddr, NULL, &okclients); */
               okclients = AVL_insert(ipaddr, 0, NULL, okclients);
 
               pms->SStream = stream;
@@ -3749,16 +3694,15 @@ mom_server *mom_server_valid_message_source(
 
 #endif
 
-    sprintf(log_buffer, "bad connect from %s - unauthorized server",
-            netaddr(addr));
+    if (LOGLEVEL >= 3)
+      sprintf(log_buffer, "bad connect from %s - unauthorized server. Will check if its a valid mom",
+        netaddr(((struct sockaddr_in *)&addr)));
 
     sprintf(TMOMRejectConn, "%s  %s",
-            netaddr(addr),
+            netaddr(((struct sockaddr_in *)&addr)),
             "(server not authorized)");
 
     log_ext(-1,id,log_buffer,LOG_ALERT);
-
-    rpp_close(stream);
     }
 
   return(NULL);
@@ -3767,9 +3711,65 @@ mom_server *mom_server_valid_message_source(
 
 
 
+void pass_along_hellos(
+  
+  int hello_count) /* I */
+
+  {
+  int                 iter = -1;
+  int                 ret;
+  received_node      *rn;
+  struct hostent     *hp;
+  struct sockaddr_in  sa;
+  unsigned long       ipaddr;
+  int                 stream;
+
+  while ((rn = next_thing(received_statuses,&iter)) != NULL)
+    {
+    if (rn->hellos_sent < hello_count)
+      {
+      hp = gethostbyname(rn->hostname);
+
+      if (hp != NULL)
+        {
+        /* get socket information */
+        sa.sin_family = AF_INET;
+        memcpy(&(sa.sin_addr),hp->h_addr_list[0],hp->h_length);
+        ipaddr = ntohl(sa.sin_addr.s_addr);
+        sa.sin_port = htons(AVL_get_port_by_ipaddr(ipaddr,okclients));
+
+        stream = tcp_connect_sockaddr((struct sockaddr *)&sa,sizeof(sa));
+
+        if (stream >= 0)
+          {
+          DIS_tcp_setup(stream);
+          
+          if ((ret = diswsi(stream,IS_PROTOCOL)) == DIS_SUCCESS)
+            {
+            if ((ret = diswsi(stream,IS_PROTOCOL_VER)) == DIS_SUCCESS)
+              {
+              diswsi(stream,IS_HELLO);
+              }
+            }
+          
+          /*read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_HELLO,&ret);*/
+          
+          close(stream);
+          
+          rn->hellos_sent++;
+          }
+        }
+      }
+    } /* END looking at each received node */
+
+  } /* END pass_along_hellos() */
+
+
+
+
 
 /**
- * Request is coming from another server (i.e., pbs_server) over a DIS rpp
+ * Request is coming from another server (i.e., pbs_server) over a DIS 
  * stream (process 'hello' and 'cluster_addrs' request).
  *
  * @see is_compose() - peer - generate message to send to pbs_server.
@@ -3785,15 +3785,19 @@ void is_request(
   int *cmdp)     /* O (optional) */
 
   {
-  static char id[] = "is_request";
-
-  int  command = 0;
-  int  ret = DIS_SUCCESS;
-  mom_server *pms;
-
+  static char        id[] = "is_request";
+ 
+  static int          hello_count = 0;
+  int                 command = 0;
+  int                 ret = DIS_SUCCESS;
+  mom_server         *pms;
+ 
+  char                hostname[MAXLINE];
+  struct sockaddr     s_addr;
+  unsigned int        len = sizeof(s_addr);
   struct sockaddr_in *addr = NULL;
-  u_long ipaddr;
-  extern char *PBSServerCmds[];
+  u_long              ipaddr;
+  extern char        *PBSServerCmds[];
 
   if (cmdp != NULL)
     *cmdp = 0;
@@ -3804,11 +3808,7 @@ void is_request(
       stream,
       version);
 
-    log_record(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_JOB,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, id, log_buffer);
     }
 
   if (version != IS_PROTOCOL_VER)
@@ -3827,31 +3827,44 @@ void is_request(
   /* If the stream is the SStream we already opened, then it's fine  */
 
   if ((pms = mom_server_valid_message_source(stream)) == NULL)
-    return;
-
-  command = disrsi(stream, RPP_FUNC, &ret);
-
-  if (ret != DIS_SUCCESS)
-    goto err;
-
-  if (cmdp != NULL)
-    *cmdp = command;
-
-
-  if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer, "command %d, \"%s\", received",
-      command,
-      PBSServerCmds[command]);
+    getpeername(stream,&s_addr,&len);
+    addr = (struct sockaddr_in *)&s_addr;
+    ipaddr = ntohl(addr->sin_addr.s_addr);
+    if (AVL_is_in_tree_no_port_compare(ipaddr,0,okclients) == 0)
+      {
+      /* unauthorized */
+      /* NYI - log something here */
+      return;
+      }
 
-    log_record(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_JOB,
-      id,
-      log_buffer);
+    getnameinfo(&s_addr,sizeof(s_addr),hostname,sizeof(hostname),NULL,0,0);
     }
 
-  mom_server_update_receive_time(stream, PBSServerCmds[command]);
+  command = disrsi(stream, &ret);
+
+  if (ret != DIS_SUCCESS)
+    command = -1;
+  else
+    {
+    if (cmdp != NULL)
+      *cmdp = command;
+    
+    if (LOGLEVEL >= 3)
+      {
+      sprintf(log_buffer, "command %d, \"%s\", received",
+        command,
+        PBSServerCmds[command]);
+      
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        id,
+        log_buffer);
+      }
+    
+    mom_server_update_receive_time(stream, PBSServerCmds[command]);
+    }
 
   switch (command)
 
@@ -3875,66 +3888,19 @@ void is_request(
 
     case IS_HELLO:  /* server wants a return ping */
 
-      if (is_compose(pms, IS_HELLO) != DIS_SUCCESS)
-        {
-        break;
-        }
-
-      diswus(pms->SStream, RPP_FUNC, pbs_mom_port);
-      
-      diswus(pms->SStream, RPP_FUNC, pbs_rm_port);
-
-      if (mom_server_flush_io(pms, id, "flush") != DIS_SUCCESS)
-        break;
-
-      pms->received_hello_count++;
-
+      hello_count++;
+ 
       /* FORCE immediate server update */
-
-      LastServerUpdateTime = 0;
-
-      break;
-
-    case IS_CLUSTER_ADDRS:
-      for (;;)
-        {
-        ipaddr = disrul(stream, RPP_FUNC, &ret);
-
-        if (ret != DIS_SUCCESS)
-          break;
-
-/*        tinsert(ipaddr, NULL, &okclients); */
-        okclients = AVL_insert(ipaddr, 0, NULL, okclients);
-
-        if (LOGLEVEL >= 4)
-          {
-          char  tmpLine[1024];
-          char *tmp = netaddr_pbs_net_t(ipaddr);
-
-          sprintf(tmpLine, "%s:\t%s added to okclients",
-                  id,
-                  tmp);
-
-          log_record(
-            PBSEVENT_ERROR,
-            PBS_EVENTCLASS_SERVER,
-            id,
-            tmpLine);
-
-          free(tmp);
-          }
-        }  /* END for (;;) */
-
-      if (ret != DIS_EOD)
-        goto err;
-
-      pms->received_cluster_address_count++;
-
-      /* FORCE immediate update server */
-
-      LastServerUpdateTime = 0;
+      send_update_within_ten();
+ 
+      pass_along_hellos(hello_count);
 
       break;
+
+    case IS_STATUS:
+
+      if (read_status_strings(stream,version) < 0)
+        ret = -1;
 
     default:
 
@@ -3943,29 +3909,25 @@ void is_request(
 
       log_ext(-1,id,log_buffer,LOG_ALERT);
 
-      goto err;
+      ret = -1;
     }  /* END switch(command) */
 
-  rpp_eom(stream);
+  if (ret != DIS_SUCCESS)
+    {
+    /* We come here if we got a DIS read error or a protocol element is missing.  */
+ 
+    if (ret > 0)
+      {
+      sprintf(log_buffer, "%s from %s",
+        dis_emsg[ret],
+        (addr != NULL) ? netaddr(addr) : "???");
+      
+      log_ext(-1,id,log_buffer,LOG_ALERT);
+      }
+    }
 
-  return;
-
-err:
-
-  /* We come here if we got a DIS read error or a protocol
-  ** element is missing.  */
-
-  sprintf(log_buffer, "%s from %s",
-          dis_emsg[ret],
-          (addr != NULL) ? netaddr(addr) : "???");
-
-  log_ext(-1,id,log_buffer,LOG_ALERT);
-
-  rpp_close(stream);
-
-  if (pms)
-    pms->SStream = -1;  /* Force new connection to server next time mom_server_check_connections is called. */
-
+  /* NYI: should this stream be closed? */
+  close_conn(stream);
   }  /* END is_request() */
 
 
@@ -4112,7 +4074,6 @@ void check_busy(
   extern float max_load_val;
   extern char *auto_ideal_load;
   extern char *auto_max_load;
-  extern tlist_head  svr_alljobs;
 
   if ((auto_max_load != NULL) || (auto_ideal_load != NULL))
     {
@@ -4347,36 +4308,37 @@ void state_to_server(
   mom_server *pms = &mom_servers[ServerIndex];
   int ret;
 
-  if ((force == 0) && (pms->ReportMomState == 0))
+  if ((force == 0) &&
+      (pms->ReportMomState == 0))
     {
     return;    /* Do nothing, just return */
     }
 
-  if (is_compose(pms, IS_UPDATE) != DIS_SUCCESS)
+  if (is_compose(pms->SStream, pms->pbs_servername, IS_UPDATE) != DIS_SUCCESS)
     {
     return;
     }
 
-  ret = diswus(pms->SStream, RPP_FUNC, pbs_mom_port);
+  ret = diswus(pms->SStream, pbs_mom_port);
   if (ret)
     {
     return;
     }
   
-  ret = diswus(pms->SStream, RPP_FUNC, pbs_rm_port);
+  ret = diswus(pms->SStream, pbs_rm_port);
   if (ret)
     {
     return;
     }
 
-  if (diswui(pms->SStream, RPP_FUNC, internal_state) != DIS_SUCCESS)
+  if (diswui(pms->SStream, internal_state) != DIS_SUCCESS)
     {
-    mom_server_stream_error(pms, id, "writing internal state");
+    mom_server_stream_error(pms->SStream, pms->pbs_servername, id, "writing internal state");
 
     return;
     }
 
-  if (mom_server_flush_io(pms, id, "flush") == DIS_SUCCESS)
+  if (mom_server_flush_io(pms->SStream, id, "flush") == DIS_SUCCESS)
     {
     /* send successful, unset ReportMomState */
 
@@ -4503,28 +4465,19 @@ int mom_open_socket_to_jobs_server(
 
     for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
       {
-
-      struct sockaddr_in *addr;
       u_long              ipaddr;
-      u_short             ipport;
 
       pms = &mom_servers[sindex];
 
       if (pms->SStream != -1)
         {
-        addr = rpp_getaddr(pms->SStream);
-        if (addr == NULL)
-        {
-          continue;
-        }
-        ipaddr = ntohl(addr->sin_addr.s_addr);
-        ipport = ntohs(addr->sin_port);
+        ipaddr = ntohl(pms->sock_addr.sin_addr.s_addr);
 
         if (ipaddr != pjob->ji_qs.ji_un.ji_momt.ji_svraddr)
           {
           sock = client_to_svr(
                    ipaddr,
-                   ipport,
+                   ntohs(pms->sock_addr.sin_port),
                    1,  /* use local socket */
                    error_buffer);  /* O */
 

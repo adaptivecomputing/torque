@@ -101,9 +101,9 @@ int encode_DIS_Manage(
   {
   int   rc;
 
-  if ((rc = diswui(sock, TCP_FUNC, command) != 0) ||
-      (rc = diswui(sock, TCP_FUNC, objtype) != 0) ||
-      (rc = diswst(sock, TCP_FUNC, objname) != 0))
+  if ((rc = diswui(sock, command) != 0) ||
+      (rc = diswui(sock, objtype) != 0) ||
+      (rc = diswst(sock, objname) != 0))
     return rc;
 
   return (encode_DIS_attropl(sock, aoplp));

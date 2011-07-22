@@ -100,10 +100,10 @@ int encode_DIS_JobCred(
   {
   int   rc;
 
-  if ((rc = diswui(sock, TCP_FUNC, type)))
+  if ((rc = diswui(sock, type)))
     return rc;
 
-  rc = diswcs(sock, TCP_FUNC, cred, (size_t)len);
+  rc = diswcs(sock, cred, (size_t)len);
 
   return rc;
   }

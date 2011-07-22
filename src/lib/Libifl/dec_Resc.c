@@ -117,7 +117,7 @@ int decode_DIS_Rescl(
 
   /* first, the resource handle (even if not used in request) */
 
-  preq->rq_ind.rq_rescq.rq_rhandle = disrsi(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_rescq.rq_rhandle = disrsi(sock, &rc);
 
   if (rc)
     {
@@ -126,7 +126,7 @@ int decode_DIS_Rescl(
 
   /* next need to know how many query strings */
 
-  ct = disrui(sock, TCP_FUNC, &rc);
+  ct = disrui(sock, &rc);
 
   if (rc)
     {
@@ -149,7 +149,7 @@ int decode_DIS_Rescl(
 
     for (i = 0;i < ct;i++)
       {
-      *(ppc + i) = disrst(sock, TCP_FUNC, &rc);
+      *(ppc + i) = disrst(sock, &rc);
 
       if (rc)
         break;

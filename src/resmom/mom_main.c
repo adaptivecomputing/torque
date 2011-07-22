@@ -133,6 +133,7 @@
 #include "pbs_job.h"
 #include "mom_mach.h"
 #include "mom_func.h"
+#include "mom_comm.h"
 #include "svrfunc.h"
 #include "pbs_error.h"
 #include "log.h"
@@ -151,6 +152,7 @@
 #endif
 #include "rpp.h"
 #include "threadpool.h"
+#include "mom_hierarchy.h"
 
 #include "mcom.h"
 
@@ -219,10 +221,8 @@ time_t loopcnt;  /* used for MD5 calc */
 float  max_load_val = -1.0;
 int    hostname_specified = 0;
 char   mom_host[PBS_MAXHOSTNAME + 1];
-#ifdef NUMA_SUPPORT
-char   mom_name[PBS_MAXHOSTNAME + 1];
-#endif /* NUMA_SUPPORT */
-char   TMOMRejectConn[1024];   /* most recent rejected connection */
+char   mom_alias[PBS_MAXHOSTNAME + 1];
+char   TMOMRejectConn[MAXLINE];   /* most recent rejected connection */
 char   mom_short_name[PBS_MAXHOSTNAME + 1];
 int    num_var_env;
 char        *path_epilog;
@@ -235,6 +235,7 @@ char        *path_prolog;
 char        *path_prologp;
 char        *path_prologuser;
 char        *path_prologuserp;
+char        *path_mom_hierarchy;
 char        *path_spool;
 char        *path_undeliv;
 char        *path_aux;
@@ -279,6 +280,8 @@ char           *AllocParCmd = NULL;  /* (alloc) */
 int      src_login_batch = TRUE;
 int      src_login_interactive = TRUE;
 
+mom_hierarchy_t *mh;
+
 char    jobstarter_exe_name[MAXPATHLEN + 1];
 int     jobstarter_set = 0;
 
@@ -297,6 +300,9 @@ extern unsigned int pe_alarm_time;
 extern time_t   pbs_tcp_timeout;
 extern long     MaxConnectTimeout;
 
+extern resizable_array *received_statuses;
+extern hash_table_t    *received_table;
+
 char            tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
 
 char            rcp_path[MAXPATHLEN];
@@ -304,6 +310,7 @@ char            rcp_args[MAXPATHLEN];
 char            xauth_path[MAXPATHLEN];
 
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
+int             UpdateFailCount = 0;
 
 time_t          MOMStartTime         = 0;
 int             MOMPrologTimeoutCount;
@@ -329,6 +336,7 @@ pjobexec_t      TMOMStartInfo[TMAX_JE];
 
 /* prototypes */
 
+void            im_request(int, int);
 extern void     add_resc_def(char *, char *);
 extern void     mom_server_all_diag(char **BPtr, int *BSpace);
 extern void     mom_server_update_receive_time(int stream, const char *command_name);
@@ -336,7 +344,6 @@ extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
 extern void     mom_server_all_update_gpustat(void);
 extern int      mark_for_resend(job *);
-extern int      mom_server_all_check_connection(void);
 extern int      mom_server_all_send_state(void);
 extern int      mom_server_add(char *name);
 extern int      mom_server_count;
@@ -344,6 +351,7 @@ extern int      post_epilogue(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
 extern void     mom_checkpoint_set_directory_path(char *str);
+extern int      is_request(int, int, int *);
 
 #if defined(NVIDIA_GPUS) && defined(NVML_API)
 extern int      init_nvidia_nvml();
@@ -352,6 +360,7 @@ extern int      shut_nvidia_nvml();
 
 void prepare_child_tasks_for_delete();
 static void mom_lock(int fds, int op);
+int parse_mom_hierarchy_file(char *,mom_hierarchy_t *);
 
 #ifdef NUMA_SUPPORT
 int setup_nodeboards();
@@ -576,7 +585,6 @@ int   port_care = TRUE; /* secure connecting ports */
 uid_t   uid = 0;  /* uid we are running with */
 unsigned int   alarm_time = 10; /* time before alarm */
 
-/*extern tree            *okclients;*/  /* accept connections from */
 extern AvlTree            okclients;  /* accept connections from */
 char                  **maskclient = NULL; /* wildcard connections */
 int   mask_num = 0;
@@ -1742,7 +1750,6 @@ u_long addclient(
 
   ipaddr = ntohl(saddr.s_addr);
 
-/*  tinsert(ipaddr, NULL, &okclients); */
   okclients = AVL_insert(ipaddr, 0, NULL, okclients);
   
   return(ipaddr);
@@ -4331,8 +4338,7 @@ static void mom_lock(
 int rm_request(
 
   int iochan,
-  int version,
-  int tcp)     /* I */
+  int version)
 
   {
   static char id[] = "rm_request";
@@ -4347,7 +4353,6 @@ int rm_request(
 
   struct rm_attribute *attr;
 
-  struct sockaddr_in *addr;
   unsigned long ipadd;
   u_short port;
   void (*close_io)(int);
@@ -4364,23 +4369,11 @@ int rm_request(
   errno = 0;
   log_buffer[0] = '\0';
 
-  if (tcp)
-    {
-    ipadd = svr_conn[iochan].cn_addr;
-    port = svr_conn[iochan].cn_port;
+  ipadd = svr_conn[iochan].cn_addr;
+  port = svr_conn[iochan].cn_port;
 
-    close_io = close_conn;
-    flush_io = DIS_tcp_wflush;
-    }
-  else
-    {
-    addr = rpp_getaddr(iochan);
-    ipadd = ntohl(addr->sin_addr.s_addr);
-    port = ntohs((unsigned short)addr->sin_port);
-
-    close_io = (void(*)(int))rpp_close;
-    flush_io = rpp_flush;
-    }
+  close_io = close_conn;
+  flush_io = DIS_tcp_wflush;
 
   if (version != RM_PROTOCOL_VER)
     {
@@ -4391,8 +4384,7 @@ int rm_request(
     }
 
   if (((port_care != FALSE) && (port >= IPPORT_RESERVED)) ||
-      /*(tfind(ipadd, &okclients) == NULL))*/
-      (AVL_is_in_tree(ipadd, 0, okclients) == 0 ))
+      (AVL_is_in_tree_no_port_compare(ipadd, 0, okclients) == 0 ))
     {
     if (bad_restrict(ipadd))
       {
@@ -4409,7 +4401,7 @@ int rm_request(
 
   /* looks okay, find out what command it is */
 
-  command = disrsi(iochan, !tcp, &ret);
+  command = disrsi(iochan, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -4438,7 +4430,7 @@ int rm_request(
       reqnum++;
 
 
-      ret = diswsi(iochan, !tcp, RM_RSP_OK);
+      ret = diswsi(iochan, RM_RSP_OK);
 
       if (ret != DIS_SUCCESS)
         {
@@ -4450,7 +4442,7 @@ int rm_request(
 
       for (;;)
         {
-        cp = disrst(iochan, !tcp, &ret);
+        cp = disrst(iochan, &ret);
 
         if (ret == DIS_EOD)
           {
@@ -4837,11 +4829,7 @@ int rm_request(
 
             if (verbositylevel >= 1)
               {
-#if RPP
-              sprintf(tmpLine, "Communication Model:    %s\n", "RPP");
-#else  /* RPP */
               sprintf(tmpLine, "Communication Model:    %s\n", "TCP");
-#endif /* RPP */
 
               MUStrNCat(&BPtr, &BSpace, tmpLine);
 
@@ -4928,7 +4916,6 @@ int rm_request(
 
               tmpLine[0] = '\0';
 
-              /* tlist(okclients, tmpLine, sizeof(tmpLine)); */
               ret = AVL_list(okclients, tmpLine, sizeof(tmpLine));
 
               MUSNPrintF(&BPtr, &BSpace, "Trusted Client List:  %s:  %d\n",
@@ -5151,7 +5138,7 @@ int rm_request(
 
         free(cp);
 
-        ret = diswst(iochan, !tcp, output);
+        ret = diswst(iochan, output);
 
 
         if (ret != DIS_SUCCESS)
@@ -5187,7 +5174,7 @@ int rm_request(
 
       log_record(PBSEVENT_SYSTEM, 0, id, "configure");
 
-      body = disrst(iochan, !tcp, &ret);
+      body = disrst(iochan, &ret);
 
       /* FORMAT:  FILE:<FILENAME> or <FILEDATA> (NYI) */
 
@@ -5240,7 +5227,7 @@ int rm_request(
 
       len = read_config(body);
 
-      ret = diswsi(iochan, !tcp, len ? RM_RSP_ERROR : RM_RSP_OK);
+      ret = diswsi(iochan, len ? RM_RSP_ERROR : RM_RSP_OK);
 
       if (ret != DIS_SUCCESS)
         {
@@ -5264,7 +5251,7 @@ int rm_request(
 
       log_record(PBSEVENT_SYSTEM, 0, id, "shutdown");
 
-      ret = diswsi(iochan, !tcp, RM_RSP_OK);
+      ret = diswsi(iochan, RM_RSP_OK);
 
       if (ret != DIS_SUCCESS)
         {
@@ -5304,7 +5291,7 @@ int rm_request(
 
       log_err(-1, id, log_buffer);
 
-      ret = diswsi(iochan, !tcp, RM_RSP_ERROR);
+      ret = diswsi(iochan, RM_RSP_ERROR);
 
       if (ret != DIS_SUCCESS)
         {
@@ -5314,7 +5301,7 @@ int rm_request(
         goto bad;
         }
 
-      ret = diswst(iochan, !tcp, log_buffer);
+      ret = diswst(iochan, log_buffer);
 
       if (ret != DIS_SUCCESS)
         {
@@ -5363,171 +5350,6 @@ bad:
 
 
 
-/*
- * Read a RPP message from a stream, figure out if it is a
- * Resource Monitor request or an InterMom message.
- */
-
-void do_rpp(
-
-  int stream)  /* I */
-
-  {
-  static char  id[] = "do_rpp";
-
-  int             ret, proto, version;
-  void im_request(int, int);
-  void is_request(int, int, int *);
-  void im_eof(int, int);
-
-  proto = disrsi(stream, RPP_FUNC, &ret);
-
-  if (ret != DIS_SUCCESS)
-    {
-    DBPRT(("%s: cannot get protocol %s\n",
-           id,
-           dis_emsg[ret]))
-
-    if (LOGLEVEL >= 6)
-      {
-      sprintf(log_buffer, "cannot get protocol %s",
-              dis_emsg[ret]);
-
-      log_err(errno, id, log_buffer);
-      }
-
-    im_eof(stream, ret);
-
-    return;
-    }
-
-  version = disrsi(stream, RPP_FUNC, &ret);
-
-  if (ret != DIS_SUCCESS)
-    {
-    DBPRT(("%s: no protocol version number %s\n",
-           id,
-           dis_emsg[ret]))
-
-    sprintf(log_buffer, "no protocol version number %s",
-            dis_emsg[ret]);
-
-    log_err(errno, id, log_buffer);
-
-    im_eof(stream, ret);
-
-    return;
-    }
-
-  switch (proto)
-    {
-
-    case RM_PROTOCOL:
-
-      DBPRT(("%s: got a resource monitor request\n",
-             id))
-
-      if (rm_request(stream, version, 0) == 0)
-        rpp_eom(stream);
-
-      break;
-
-    case IM_PROTOCOL:
-
-      if (LOGLEVEL >= 6)
-        {
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          id,
-          "got an internal task manager request in do_rpp");
-        }
-
-      im_request(stream, version);
-
-      break;
-
-    case IS_PROTOCOL:
-
-      {
-      int tmpI;
-
-      if (LOGLEVEL >= 3)
-        {
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          id,
-          "got an inter-server request");
-        }
-
-      is_request(stream, version, &tmpI);
-
-      mom_server_update_receive_time(stream, PBSServerCmds[tmpI]);
-      }
-
-    break;
-
-    default:
-
-      if (LOGLEVEL >= 1)
-        {
-        sprintf(log_buffer, "unexpected request protocol type %d received",
-                proto);
-
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          id,
-          log_buffer);
-        }
-
-      rpp_close(stream);
-
-      break;
-    }  /* END switch (proto) */
-
-  return;
-  }  /* END do_rpp() */
-
-
-
-
-
-void rpp_request(
-
-  int fd) /* not used */
-
-  {
-  static char id[] = "rpp_request";
-  int         stream;
-
-  for (;;)
-    {
-    if ((stream = rpp_poll()) == -1)
-      {
-      log_err(errno, id, "rpp_poll");
-
-      break;
-      }
-
-    if (stream == -2)
-      {
-      /* unknown stream identifier */
-
-      break;
-      }
-
-    do_rpp(stream);
-    }  /* END for () */
-
-  return;
-  }  /* END rpp_request() */
-
-
-
-
-
 int do_tcp(
 
   int fd)
@@ -5546,7 +5368,7 @@ int do_tcp(
 
   pbs_tcp_timeout = 0;
 
-  proto = disrsi(fd, TCP_FUNC, &ret);
+  proto = disrsi(fd, &ret);
 
   if (tmpT > 0)
     {
@@ -5593,7 +5415,7 @@ int do_tcp(
       break;
     }  /* END switch (ret) */
 
-  version = disrsi(fd, RPP_FUNC, &ret);
+  version = disrsi(fd, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -5618,7 +5440,7 @@ int do_tcp(
 
       pbs_tcp_timeout = 0;
 
-      ret = rm_request(fd, version, 1);
+      ret = rm_request(fd, version);
 
       if (tmpT > 0)
         {
@@ -5644,6 +5466,16 @@ int do_tcp(
       ret = tm_request(fd, version);
 
       break;
+
+    case IS_PROTOCOL:
+
+      is_request(fd,version,NULL);
+
+      break;
+
+    case IM_PROTOCOL:
+
+      im_request(fd,version);
 
     default:
 
@@ -5701,20 +5533,14 @@ void tcp_request(
             fd,
             address);
 
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      "tcp_request",
-      log_buffer);
+    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"tcp_request",log_buffer);
     }
 
   DIS_tcp_setup(fd);
 
-/*  if (tfind(ipadd, &okclients) == NULL) */
-  if (AVL_is_in_tree(ipadd, 0, okclients) == 0)
+  if (AVL_is_in_tree_no_port_compare(ipadd, 0, okclients) == 0)
     {
-    sprintf(log_buffer, "bad connect from %s",
-            address);
+    sprintf(log_buffer, "bad connect from %s", address);
 
     log_err(errno, id, log_buffer);
 
@@ -6500,6 +6326,8 @@ void initialize_globals(void)
 
   memset(JobsToResend,0,sizeof(JobsToResend));
 
+  /* set the mom alias name to nothing */
+  mom_alias[0] = '\0';
   }  /* END initialize_globals() */
 
 
@@ -6626,7 +6454,7 @@ void parse_command_line(
 
   errflg = 0;
 
-  while ((c = getopt(argc, argv, "a:c:C:d:DhH:l:L:mM:pPqrR:s:S:vx-:")) != -1)
+  while ((c = getopt(argc, argv, "a:A:c:C:d:DhH:l:L:mM:pPqrR:s:S:vx-:")) != -1)
     {
     switch (c)
       {
@@ -6686,6 +6514,14 @@ void parse_command_line(
 
         break;
 
+      case 'A':
+
+        /* mom's alias name - used for multi-mom */
+
+        strncpy(mom_alias, optarg, PBS_MAXHOSTNAME); /* remember name */
+
+        break;
+
       case 'c': /* config file */
 
         config_file_specified = 1;
@@ -6707,9 +6543,6 @@ void parse_command_line(
         hostname_specified = 1;
 
         strncpy(mom_host, optarg, PBS_MAXHOSTNAME); /* remember name */
-#ifdef NUMA_SUPPORT
-        strncpy(mom_name, optarg, PBS_MAXHOSTNAME);
-#endif /* ifdef NUMA_SUPPORT */
 
         break;
 
@@ -6906,8 +6739,6 @@ int setup_program_environment(void)
   char logSuffix[MAX_PORT_STRING_LEN];
   char momLock[MAX_LOCK_FILE_NAME_LEN];
   int  tryport;
-  int  rppfd;  /* fd for rm and im comm */
-  int  privfd = 0; /* fd for sending job info */
 #ifdef PENABLE_LINUX26_CPUSETS
   int  rc;
 #endif
@@ -7000,18 +6831,19 @@ int setup_program_environment(void)
 
   c = 0;
 
-  mom_home         = mk_dirs("mom_priv");
-  path_jobs        = mk_dirs("mom_priv/jobs/");
-  path_epilog      = mk_dirs("mom_priv/epilogue");
-  path_prolog      = mk_dirs("mom_priv/prologue");
-  path_epiloguser  = mk_dirs("mom_priv/epilogue.user");
-  path_prologuser  = mk_dirs("mom_priv/prologue.user");
-  path_epilogp     = mk_dirs("mom_priv/epilogue.parallel");
-  path_prologp     = mk_dirs("mom_priv/prologue.parallel");
-  path_epiloguserp = mk_dirs("mom_priv/epilogue.user.parallel");
-  path_prologuserp = mk_dirs("mom_priv/prologue.user.parallel");
-  path_epilogpdel  = mk_dirs("mom_priv/epilogue.precancel");
-  path_layout      = mk_dirs("mom_priv/mom.layout");
+  mom_home              = mk_dirs("mom_priv");
+  path_jobs             = mk_dirs("mom_priv/jobs/");
+  path_epilog           = mk_dirs("mom_priv/epilogue");
+  path_prolog           = mk_dirs("mom_priv/prologue");
+  path_epiloguser       = mk_dirs("mom_priv/epilogue.user");
+  path_prologuser       = mk_dirs("mom_priv/prologue.user");
+  path_epilogp          = mk_dirs("mom_priv/epilogue.parallel");
+  path_prologp          = mk_dirs("mom_priv/prologue.parallel");
+  path_epiloguserp      = mk_dirs("mom_priv/epilogue.user.parallel");
+  path_prologuserp      = mk_dirs("mom_priv/prologue.user.parallel");
+  path_epilogpdel       = mk_dirs("mom_priv/epilogue.precancel");
+  path_layout           = mk_dirs("mom_priv/mom.layout");
+  path_mom_hierarchy    = mk_dirs("mom_priv/mom_hierarchy");
 
 #ifndef DEFAULT_MOMLOGDIR
 
@@ -7490,32 +7322,7 @@ int setup_program_environment(void)
     exit(1);
     }
 
-  if ((rppfd = rpp_bind(pbs_rm_port)) == -1)
-    {
-    log_err(errno, id, "rpp_bind");
-
-    exit(1);
-    }
-
-  rpp_fd = -1;  /* force rpp_bind() to get another socket */
-
   tryport = (port_care != FALSE) ? IPPORT_RESERVED : PMAX_PORT;
-
-  while (--tryport > 0)
-    {
-    if ((privfd = rpp_bind(tryport)) != -1)
-      break;
-
-    if ((errno != EADDRINUSE) && (errno != EADDRNOTAVAIL))
-      break;
-    }
-
-  if (privfd == -1)
-    {
-    log_err(errno, id, "no privileged ports");
-
-    exit(1);
-    }
 
   localaddr = addclient("localhost");
 
@@ -7535,10 +7342,15 @@ int setup_program_environment(void)
     exit(1);
     }
 
-  initialize();  /* init RM code */
+  /* if no alias is specified, make mom_alias the same as mom_host */
+  if (mom_alias[0] == '\0')
+    strcpy(mom_alias,mom_host);
 
-  add_conn(rppfd, Primary, (pbs_net_t)0, 0, PBS_SOCK_INET, rpp_request);
-  add_conn(privfd, Primary, (pbs_net_t)0, 0, PBS_SOCK_INET, rpp_request);
+  mh = initialize_mom_hierarchy();
+
+  parse_mom_hierarchy_file(path_mom_hierarchy,mh);
+
+  initialize();  /* init RM code */
 
   /* initialize machine-dependent polling routines */
   if ((c = mom_open_poll()) != PBSE_NONE)
@@ -7619,6 +7431,17 @@ int setup_program_environment(void)
     }  /* END if (ptr != NULL) */
 
   initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
+
+  /* allocate status strings if needed */
+  received_statuses = initialize_resizable_array(2);
+  received_table = create_hash(101);
+
+  if ((received_statuses == NULL) ||
+      (received_table == NULL))
+    {
+    log_err(ENOMEM,id,"No memory!!!");
+    return(-1);
+    }
 
   return(PBSE_NONE);
   }  /* END setup_program_environment() */
@@ -8149,10 +7972,10 @@ int mark_for_resend(
  * and at the server
  */
 void prepare_child_tasks_for_delete()
+
   {
   char *id = "prepare_child_tasks_for_delete";
   job *job;
-  extern tlist_head svr_alljobs;
 
 
   for (job = GET_NEXT(svr_alljobs);job != NULL;job = GET_NEXT(job->ji_alljobs))
@@ -8213,8 +8036,6 @@ void main_loop(void)
 
   while (mom_run_state == MOM_RUN_STATE_RUNNING)
     {
-    rpp_io();
-
     if (call_hup)
       {
       process_hup();  /* Do a restart of resmom */
@@ -8242,79 +8063,48 @@ void main_loop(void)
       check_log();  /* Possibly do a log_roll */
       }
 
-#if 1
-    if (mom_server_all_check_connection() == 0)  /* Are we connected to any server? */
-      {
-      /* Don't do any other processing until we've re-established
-       * contact with at least one server */
+    /* check for what needs to be sent is now done within */
+    mom_server_all_update_stat();
 
-      sleep(1);  /* sleep to prevent too many messages sent to server under certain failure conditions */
-      }
-    else
-#else
-    mom_server_all_check_connection();
-
-#endif
-      {
-      if ((time_now >= (LastServerUpdateTime + ServerStatUpdateInterval)) ||
-          (ForceServerUpdate == TRUE))
-        {
-        ForceServerUpdate = FALSE;
-
-        /* Update the server on the status of this mom. */
-
-        if (PBSNodeCheckInterval > 0)
-          check_state((LastServerUpdateTime == 0));
-
-        mom_server_all_update_stat();
+    /* if needed, update server with my state change */
+    /* can be changed in check_busy(), query_adp(), and update_stat() */
+    mom_server_all_send_state();
 
 #ifdef NVIDIA_GPUS
-        mom_server_all_update_gpustat();
+    /* FIXME: make it so this is called only at appropriate intervals */
+    mom_server_all_update_gpustat();
 #endif  /* NVIDIA_GPUS */
 
-        LastServerUpdateTime = time_now;
-        }
-
-      /* if needed, update server with my state change */
-      /* can be changed in check_busy(), query_adp(), and is_update_stat() */
-
-      mom_server_all_send_state();
-
 #ifdef USESAVEDRESOURCES
+    /* if -p, must poll tasks inside jobs to look for completion */
+    if ((check_dead) &&
+        (recover == JOB_RECOV_RUNNING))
+      scan_non_child_tasks();
+#endif
 
-      /* if -p, must poll tasks inside jobs to look for completion */
-
-      if ((check_dead) && (recover == JOB_RECOV_RUNNING))
+    if (time_now >= (last_poll_time + CheckPollTime))
+      {
+      last_poll_time = time_now;
+      
+      if (GET_NEXT(svr_alljobs))
         {
-        scan_non_child_tasks();
-        }
-
-#endif    /* USESAVEDRESOURCES */
-
-      if (time_now >= (last_poll_time + CheckPollTime))
-        {
-        last_poll_time = time_now;
-
-        if (GET_NEXT(svr_alljobs))
+        /* There are jobs, update process status from the OS */
+        
+        if (mom_get_sample() == PBSE_NONE)
           {
-          /* There are jobs, update process status from the OS */
-
-          if (mom_get_sample() == PBSE_NONE)
-            {
-            /* no errors in getting process status information */
-
-            examine_all_running_jobs();
-
-            examine_all_polled_jobs();
-
-            examine_all_jobs_to_resend();
-            }
+          /* no errors in getting process status information */
+          
+          examine_all_running_jobs();
+          
+          examine_all_polled_jobs();
+          
+          examine_all_jobs_to_resend();
           }
         }
-      }  /* END BLOCK */
+      }
 
 #ifdef USESAVEDRESOURCES
-      check_dead = FALSE;
+    check_dead = FALSE;
 #endif    /* USESAVEDRESOURCES */
 
 #ifndef NOSIGCHLDMOM
@@ -8339,8 +8129,6 @@ void main_loop(void)
       scan_for_exiting();
 
     TMOMScanForStarting();
-
-    rpp_request(42);  /* cycle the rpp messaging system */
 
     /* unblock signals */
 
@@ -8409,7 +8197,7 @@ void restart_mom(
              (strlen("PATH") + strlen(orig_path) + 2) * sizeof(char));
 
   if (!envstr)
-  {
+    {
     sprintf(log_buffer, "malloc failed prior to execing myself: %s (%d)",
             strerror(errno),
             errno);
@@ -8417,10 +8205,10 @@ void restart_mom(
     log_err(errno, id, log_buffer);
 
     return;
-  }
+    }
 
   if (!envstr)
-  {
+    {
     sprintf(log_buffer, "malloc failed prior to execing myself: %s (%d)",
             strerror(errno),
             errno);
@@ -8428,7 +8216,7 @@ void restart_mom(
     log_err(errno, id, log_buffer);
 
     return;
-  }
+    }
 
   strcpy(envstr, "PATH=");
   strcat(envstr, orig_path);
@@ -8485,7 +8273,6 @@ int read_layout_file()
    * extra key=value pairs are ignored by TORQUE but don't cause a failure */
   while (fgets(line, sizeof(line), layout) != NULL)
     {
-
     empty_line = TRUE;
 
     /* Strip off comments */
@@ -8513,9 +8300,8 @@ int read_layout_file()
 
       if (strcmp(tok,"nodes") == 0)
         {
-
         /* Allocate temp nodeset */
-	if ((nodeset = hwloc_bitmap_alloc()) == NULL)
+        if ((nodeset = hwloc_bitmap_alloc()) == NULL)
           {
           log_err(errno,id,"failed to allocate nodeset");
           return(-1);
@@ -8833,6 +8619,203 @@ int main(
 
   return(0);
   }  /* END main() */
+
+
+
+
+/*
+ * parses a layout file for the network. file is in this format:
+ * <path>
+ *   <level> node0,node1,...
+ *   </level>
+ * </path>
+ *
+ * whitespace doesn't matter, opening and closing tags do
+ */
+int parse_mom_hierarchy_file(
+
+  char            *path,
+  mom_hierarchy_t *nt)
+
+  {
+  int   fds;
+  int   bytes_read;
+  int   path_index = 0;
+  int   level_index = 0;
+  int   shortest_path;
+  int   i;
+  int   j;
+
+  /* 
+   * the following two are control variables for how to parse the path.
+   * path complete means for network purposes, we have all the path we need
+   * irrelevant_path means this path doesn't have this node in it and doesn't need
+   * to be stored here.
+   * Either way, we still want to parse the file 
+   */
+  int   path_complete = FALSE;
+  int   irrelevant_path;
+
+  char  buffer[MAXLINE<<10];
+  char *id = "parse_mom_hierarchy_file";
+  char *current;
+  char *parent;
+  char *child;
+  char *delims = ",";
+
+  fds = open(path,O_RDONLY,0);
+
+  if (fds < 0)
+    {
+    if (errno == ENOENT)
+      {
+      /* not an error */
+      return(PBSE_NONE);
+      }
+
+    log_err(errno,id,"Unable to open the network topology file");
+
+    return(-1);
+    }
+
+  bytes_read = read(fds,buffer,sizeof(buffer));
+
+  if (bytes_read < 0)
+    {
+    log_err(errno,id,"Unable to read from the network topology file");
+    return(-1);
+    }
+
+  current = buffer;
+
+  while (get_parent_and_child(current,&parent,&child,&current) == PBSE_NONE)
+    {
+    if (!strncmp(parent,"path",strlen("path")))
+      {
+      char *path_iter = child;
+      char *level_parent;
+      char *level_child;
+
+      /* check if this node is in this path. If not, then just move on */
+      if (strstr(path_iter,mom_alias) == NULL)
+        irrelevant_path = TRUE;
+      else
+        irrelevant_path = FALSE;
+
+      level_index = 0;
+
+      /* iterate over each level in the path */
+      while (get_parent_and_child(path_iter,&level_parent,&level_child,&path_iter) == PBSE_NONE)
+        {
+        if (!strncmp(level_parent,"level",strlen("level")))
+          {
+          char *ptr;
+
+          /* if this node is on the first level, then it reports directly to the server,
+           * meaning the tree should be empty */
+          if ((level_index == 0) &&
+              (strstr(level_child,mom_alias) != NULL))
+            {
+            irrelevant_path = TRUE;
+            path_complete = TRUE;
+            }
+             
+          ptr = strtok(level_child,delims);
+
+          /* find each hostname */
+          while (ptr != NULL)
+            {
+            unsigned short      rm_port;
+            unsigned short      service_port;
+            unsigned long       ipaddr;
+
+            struct hostent     *hp;
+            char               *colon = strchr(ptr,':');
+
+            struct sockaddr_in  sa;
+
+            if (colon == NULL)
+              {
+              service_port = PBS_MOM_SERVICE_PORT;
+              rm_port = PBS_MANAGER_SERVICE_PORT;
+              }
+            else
+              {
+              *colon = '\0';
+              service_port = atoi(colon+1);
+
+              if ((colon = strchr(colon+1,':')) != NULL)
+                rm_port = atoi(colon+1);
+              else
+                rm_port = PBS_MANAGER_SERVICE_PORT;
+              }
+
+            hp = gethostbyname(ptr);
+            memcpy(&(sa.sin_addr), hp->h_addr_list[0], hp->h_length);
+            ipaddr = ntohl(sa.sin_addr.s_addr);
+
+            if (!strcmp(mom_alias,ptr))
+              {
+              /* stop at the node, we don't want anything below it */
+              path_complete = TRUE;
+              }
+
+            if (path_complete == FALSE)
+              add_network_entry(nt,ptr,hp,rm_port,service_port,path_index,level_index);
+
+            /* add the ip addresses here because cluster addrs aren't going to be sent anymore */
+            okclients = AVL_insert(ipaddr,rm_port,NULL,okclients);
+
+            ptr = strtok(NULL,delims);
+            } /* END parsing each hostname */
+
+          level_index++;
+          } /* END parsing a level */
+        else
+          {
+          /* this should never happen */
+          snprintf(log_buffer,sizeof(log_buffer),
+            "Found noise in the network topology file. Ignoring <%s>%s</%s>",
+            level_parent,
+            level_child,
+            level_parent);
+          }
+        } /* END parsing a path */
+
+      if (irrelevant_path == FALSE)
+        path_index++;
+      }
+    else
+      {
+      /* this should never happen */
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Found noise in the network topology file. Ignoring <%s>%s</%s>",
+        parent,
+        child,
+        parent);
+      }
+    } /* END parsing the file (potentially several paths) */
+
+  /* now re-order the paths, the shallowest being first */
+  for (i = 0; i < path_index - 1; i++)
+    {
+    resizable_array *path = nt->paths->slots[i].item;
+    resizable_array *other;
+    shortest_path = i;
+
+    for (j = i + 1; j < path_index; j++)
+      {
+      other = nt->paths->slots[j].item;
+      if (other->num < path->num)
+        {
+        /* swap positions */
+        swap_things(nt->paths,path,other);
+        }
+      }
+    }
+
+  return(PBSE_NONE);
+  } /* END parse_mom_hierarchy_file() */
 
 
 

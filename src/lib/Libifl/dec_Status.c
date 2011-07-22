@@ -108,7 +108,7 @@ int decode_DIS_Status(
   int rc;
 
   CLEAR_HEAD(preq->rq_ind.rq_status.rq_attr);
-  rc = disrfst(sock, TCP_FUNC,
+  rc = disrfst(sock,
         (PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID : PBS_MAXDEST) + 1,
         preq->rq_ind.rq_status.rq_id);
 

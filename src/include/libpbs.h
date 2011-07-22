@@ -101,6 +101,7 @@
 #include "pbs_ifl.h"
 #include "list_link.h"
 #include "pbs_error.h"
+#include "u_memmgr.h"
 
 #ifndef LIBPBS_H
 #define LIBPBS_H
@@ -311,6 +312,7 @@ struct batch_status *PBSD_status (int c, int function, char *id, struct attrl *a
 struct batch_status *PBSD_status_get (int c);
 
 char * PBSD_queuejob (int c, char *j, char *d, struct attropl *a, char *ex);
+char *PBSD_QueueJob_hash(int c, char *j, char *d, memmgr **mm, job_data *ja, job_data *ra, char *ex);
 
 
 extern int decode_DIS_JobId (int socket, char *jobid);
@@ -324,6 +326,7 @@ extern int encode_DIS_Manage (int socket, int cmd, int objt, char *, struct attr
 extern int encode_DIS_MoveJob (int socket, char *jid, char *dest);
 extern int encode_DIS_MessageJob (int socket, char *jid, int fopt, char *m);
 extern int encode_DIS_QueueJob (int socket, char *jid, char *dest, struct attropl *);
+int encode_DIS_QueueJob_hash(int socket, char *jid, char *destin, memmgr **mm, job_data *job_attr, job_data *res_attr);
 extern int encode_DIS_ReqExtend (int socket, char *extend);
 extern int encode_DIS_ReqHdr (int socket, int reqt, char *user);
 extern int encode_DIS_Rescq (int socket, char **rlist, int num);
@@ -333,6 +336,7 @@ extern int encode_DIS_SignalJob (int socket, char *jid, char *sig);
 extern int encode_DIS_Status (int socket, char *objid, struct attrl *);
 extern int encode_DIS_attrl (int socket, struct attrl *);
 extern int encode_DIS_attropl (int socket, struct attropl *);
+int encode_DIS_attropl_hash(int socket, memmgr **mm, job_data *job_attr, job_data *res_attr);
 
 extern int DIS_reply_read (int socket, struct batch_reply *preply);
 #endif /* LIBPBS_H */

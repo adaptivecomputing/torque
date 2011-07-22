@@ -524,19 +524,23 @@ int wait_request(
         }    /* END for (i) */
 
       free(SelectSet);
+
+      log_err(errno,id,"Unable to select sockets to read requests");
+
       return(-1);
       }  /* END else (errno == EINTR) */
     }    /* END if (n == -1) */
 
   for (i = 0;(i < max_connection) && (n != 0);i++)
     {
+    pthread_mutex_lock(svr_conn[i].cn_mutex);
+
     if (FD_ISSET(i, SelectSet))
       {
       /* this socket has data */
 
       n--;
 
-      pthread_mutex_lock(svr_conn[i].cn_mutex);
 
       svr_conn[i].cn_lasttime = time((time_t *)0);
 
@@ -569,6 +573,8 @@ int wait_request(
         log_err(-1,id,tmpLine);
         }
       }
+    else
+      pthread_mutex_unlock(svr_conn[i].cn_mutex);
     }    /* END for (i) */
 
   /* NOTE:  break out if shutdown request received */

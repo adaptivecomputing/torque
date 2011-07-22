@@ -9,7 +9,7 @@ lib_LTLIBRARIES = libtorque.la
 libtorque_la_LDFLAGS = -version-info 2:0:0
 
 libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
-            ../Libdis/discui_.c ../Libdis/discul_.c \
+        ../Libdis/discui_.c ../Libdis/discul_.c \
 		    ../Libdis/disi10d_.c ../Libdis/disi10l_.c \
 		    ../Libdis/disiui_.c ../Libdis/disp10d_.c \
 		    ../Libdis/disp10l_.c ../Libdis/disrcs.c \
@@ -38,11 +38,13 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/dec_svrattrl.c ../Libifl/dec_Track.c \
 		    ../Libifl/dec_Gpu.c \
 		    ../Libifl/enc_attrl.c ../Libifl/enc_attropl.c \
+				../Libifl/enc_attropl_hash.c \
 		    ../Libifl/enc_CpyFil.c ../Libifl/enc_JobCred.c \
 		    ../Libifl/enc_JobFile.c ../Libifl/enc_JobId.c \
 		    ../Libifl/enc_JobObit.c ../Libifl/enc_Manage.c \
 		    ../Libifl/enc_MoveJob.c ../Libifl/enc_MsgJob.c \
 		    ../Libifl/enc_QueueJob.c ../Libifl/enc_Reg.c \
+				../Libifl/enc_QueueJob_hash.c \
 		    ../Libifl/enc_reply.c ../Libifl/enc_ReturnFile.c \
 		    ../Libifl/enc_ReqExt.c ../Libifl/enc_Gpu.c \
 		    ../Libifl/enc_ReqHdr.c ../Libifl/enc_RunJob.c \
@@ -67,23 +69,27 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/pbsD_statque.c ../Libifl/pbsD_statsrv.c \
 		    ../Libifl/PBSD_status2.c ../Libifl/PBSD_status.c \
 		    ../Libifl/pbsD_submit.c  ../Libifl/PBSD_submit_caps.c \
+		    ../Libifl/pbsD_submit_hash.c  \
 		    ../Libifl/pbsD_termin.c ../Libifl/pbs_geterrmg.c \
 		    ../Libifl/pbs_statfree.c ../Libifl/rpp.c \
 		    ../Libifl/tcp_dis.c ../Libifl/tm.c ../Libifl/list_link.c \
 		    ../Libcmds/ck_job_name.c ../Libcmds/cnt2server.c \
 		    ../Libcmds/cvtdate.c ../Libcmds/get_server.c \
-                    ../Libcmds/locate_job.c ../Libcmds/parse_at.c \
+        ../Libcmds/locate_job.c ../Libcmds/parse_at.c \
 		    ../Libcmds/parse_depend.c ../Libcmds/parse_destid.c \
-                    ../Libcmds/parse_equal.c ../Libcmds/parse_jobid.c \
+        ../Libcmds/parse_equal.c ../Libcmds/parse_jobid.c \
 		    ../Libcmds/parse_stage.c \
-                    ../Libcmds/prepare_path.c ../Libcmds/prt_job_err.c \
+        ../Libcmds/prepare_path.c ../Libcmds/prt_job_err.c \
 		    ../Libcmds/set_attr.c ../Libcmds/set_resource.c \
+				../Libcmds/add_verify_resources.c \
 		    ../Liblog/chk_file_sec.c ../Liblog/log_event.c \
 		    ../Liblog/pbs_log.c ../Liblog/pbs_messages.c \
-                    ../Liblog/setup_env.c \
+        ../Liblog/setup_env.c \
 		    ../Libnet/get_hostaddr.c ../Libnet/get_hostname.c \
 		    ../Libnet/md5.c ../Libnet/net_client.c \
-                    ../Libnet/net_server.c ../Libnet/net_set_clse.c \
-		    ../Libnet/rm.c ../Libnet/port_forwarding.c
+        ../Libnet/net_server.c ../Libnet/net_set_clse.c \
+		    ../Libnet/rm.c ../Libnet/port_forwarding.c \
+				../Libutils/u_hash_map_structs.c ../Libutils/u_memmgr.c
+
 
 

@@ -24,6 +24,8 @@ struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree);
 AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tree );
 int AVL_list( AvlTree tree, char *Buf, long BufSize );
 int AVL_is_in_tree(u_long key, uint16_t port, AvlTree tree);
+int AVL_is_in_tree_no_port_compare(u_long key, uint16_t port, AvlTree tree);
+uint16_t AVL_get_port_by_ipaddr(u_long key, AvlTree tree);
 
 
 #endif /* __U_TREE_H__*/

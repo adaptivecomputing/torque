@@ -108,7 +108,6 @@
 #include "batch_request.h"
 #include "net_connect.h"
 #include "svrfunc.h"
-#include "rpp.h"
 #include "mcom.h"
 #include "array.h"
 #include "threadpool.h"

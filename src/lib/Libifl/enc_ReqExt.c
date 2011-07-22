@@ -98,13 +98,13 @@ int encode_DIS_ReqExtend(
 
   if ((extend == (char *)0) || (*extend == '\0'))
     {
-    rc = diswui(sock, TCP_FUNC, 0);
+    rc = diswui(sock, 0);
     }
   else
     {
-    if ((rc = diswui(sock, TCP_FUNC, 1)) == 0)
+    if ((rc = diswui(sock, 1)) == 0)
       {
-      rc = diswst(sock, TCP_FUNC, extend);
+      rc = diswst(sock, extend);
       }
     }
 

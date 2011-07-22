@@ -108,11 +108,11 @@ int encode_DIS_JobFile(
   if (jobid == (char *)0)
     jobid = "";
 
-  if ((rc = diswui(sock, TCP_FUNC, seq) != 0) ||
-      (rc = diswui(sock, TCP_FUNC, which) != 0) ||
-      (rc = diswui(sock, TCP_FUNC, len) != 0) ||
-      (rc = diswst(sock, TCP_FUNC, jobid) != 0) ||
-      (rc = diswcs(sock, TCP_FUNC, buf, len) != 0))
+  if ((rc = diswui(sock, seq) != 0) ||
+      (rc = diswui(sock, which) != 0) ||
+      (rc = diswui(sock, len) != 0) ||
+      (rc = diswst(sock, jobid) != 0) ||
+      (rc = diswcs(sock, buf, len) != 0))
     return rc;
 
   return 0;

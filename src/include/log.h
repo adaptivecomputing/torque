@@ -144,6 +144,8 @@
 #endif
 #endif /* SYSLOG */
 
+#define MAXLINE 1024
+
 extern long *log_event_mask;
 
 /* set this to non-zero in calling app if errors go to stderr */

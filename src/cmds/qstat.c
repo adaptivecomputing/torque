@@ -2278,9 +2278,7 @@ int main(
 
         if ((optarg != NULL) && !strcmp(optarg, "about"))
           {
-          TShowAbout();
-
-          exit(0);
+          TShowAbout_exit();
           }
 
         /* unexpected '--' option received */

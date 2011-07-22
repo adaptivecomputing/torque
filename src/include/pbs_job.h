@@ -97,6 +97,7 @@
 #include "attribute.h"
 #include "resizable_array.h"
 #include "hash_table.h"
+#include "mom_hierarchy.h"
 
 #ifndef MAX_LINE
 #define MAX_LINE 1024
@@ -386,12 +387,13 @@ extern attribute_def job_attr_def[];
 
 typedef struct hnodent
   {
-  int  hn_node; /* host (node) identifier (index) */
-  char *hn_host; /* hostname of node */
-  int  hn_stream; /* stream to MOM on node */
-  int  hn_sister; /* save error for KILL_JOB event */
-  unsigned short hn_port; /*  resmom port default 15003 */
-  tlist_head hn_events; /* pointer to list of events */
+  int                 hn_node; /* host (node) identifier (index) */
+  char               *hn_host; /* hostname of node */
+  int                 hn_stream; /* stream to MOM on node */
+  int                 hn_sister; /* save error for KILL_JOB event */
+  unsigned short      hn_port; /*  resmom port default 15003 */
+  tlist_head          hn_events; /* pointer to list of events */
+  struct sockaddr_in  sock_addr;
   } hnodent;
 
 

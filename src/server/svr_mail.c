@@ -97,7 +97,6 @@
 #include "pbs_job.h"
 #include "log.h"
 #include "server.h"
-#include "rpp.h"
 #include "utils.h"
 #include "threadpool.h"
 

@@ -102,14 +102,14 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 #define RM_PROTOCOL 1 /* resource monitor protocol number */
 #define RM_PROTOCOL_VER 2 /* resmon protocol version number */
 
-#define TM_PROTOCOL 2 /* task manager protocol number */
+#define TM_PROTOCOL 5 /* task manager protocol number */
 #define TM_PROTOCOL_VER 2 /* task manager protocol version number */
 
 #define IM_PROTOCOL 3 /* inter-manager protocol number */
 #define IM_PROTOCOL_VER 2 /* inter-manager protocol version number */
 
 #define IS_PROTOCOL 4 /* inter-server protocol number */
-#define IS_PROTOCOL_VER 2 /* inter-server protocol version number */
+#define IS_PROTOCOL_VER 3 /* inter-server protocol version number */
 
 
 /*
@@ -124,6 +124,11 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 #define IS_UPDATE  		  3
 #define IS_STATUS         4
 #define IS_GPU_STATUS		5
+
+
+/* tell pbs_mom the direction of the hello */
+#define TO_SERVER         0
+#define FROM_SERVER       1
 
 
 /* return codes for client_to_svr() */

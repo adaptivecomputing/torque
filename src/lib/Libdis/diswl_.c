@@ -101,7 +101,6 @@
 
 #include "dis.h"
 #include "dis_.h"
-#include "rpp.h"
 #include "tcp.h"
 
 /* to work around a problem in a compiler */
@@ -135,7 +134,6 @@
 int diswl_(
     
   int               stream,
-  int               rpp,
   dis_long_double_t value,
   unsigned          ndigs)
 
@@ -155,16 +153,8 @@ int diswl_(
   assert(ndigs > 0 && ndigs <= LDBL_DIG);
   assert(stream >= 0);
   
-  if (rpp)
-    {
-    dis_puts = (int (*)(int, const char *, size_t))rpp_write;
-    disw_commit = rpp_wcommit;
-    }
-  else
-    {
-    dis_puts = tcp_puts;
-    disw_commit = tcp_wcommit;
-    }
+  dis_puts = tcp_puts;
+  disw_commit = tcp_wcommit;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   /* Make zero a special case.  If we don't it will blow exponent  */
@@ -268,7 +258,7 @@ int diswl_(
 
   /* If that worked, follow with the exponent, commit, and return. */
   if (retval == DIS_SUCCESS)
-    return (diswsi(stream, rpp, expon));
+    return (diswsi(stream, expon));
 
   /* If coefficient didn't work, negative commit and return the error. */
   return (((*disw_commit)(stream, FALSE) < 0)  ? DIS_NOCOMMIT : retval);

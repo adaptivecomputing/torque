@@ -95,7 +95,6 @@ static unsigned ulmaxdigs = 0;
 int disrsl_(
 
   int   stream,
-  int   rpp,
   int  *negate,
   unsigned long *value,
   unsigned long  count)
@@ -114,16 +113,8 @@ int disrsl_(
   assert(count);
   assert(stream >= 0);
 
-  if (rpp)
-    {
-    dis_getc = rpp_getc;
-    dis_gets = (int (*)(int, char *, size_t))rpp_read;
-    }
-  else
-    {
-    dis_getc = tcp_getc;
-    dis_gets = tcp_gets;
-    }
+  dis_getc = tcp_getc;
+  dis_gets = tcp_gets;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
 
@@ -257,7 +248,7 @@ int disrsl_(
           }
         }
 
-      return(disrsl_(stream, rpp, negate, value, ndigs));
+      return(disrsl_(stream, negate, value, ndigs));
 
       /*NOTREACHED*/
 

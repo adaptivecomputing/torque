@@ -114,7 +114,6 @@
 int disrsi(
 
   int  stream,
-  int  rpp,
   int *retval)
 
   {
@@ -126,14 +125,11 @@ int disrsi(
 
   assert(retval != NULL);
 
-  if (rpp)
-    disr_commit = rpp_rcommit;
-  else
-    disr_commit = tcp_rcommit;
+  disr_commit = tcp_rcommit;
 
   value = 0;
 
-  switch (locret = disrsi_(stream, rpp, &negate, &uvalue, 1))
+  switch (locret = disrsi_(stream, &negate, &uvalue, 1))
     {
 
     case DIS_SUCCESS:

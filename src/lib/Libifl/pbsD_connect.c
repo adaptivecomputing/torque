@@ -430,8 +430,8 @@ int PBSD_munge_authenticate(
   DIS_tcp_setup(psock);
 
   if ((rc = encode_DIS_ReqHdr(psock, PBS_BATCH_AltAuthenUser, pwent->pw_name)) ||
-      (rc = diswui(psock, TCP_FUNC, user_port)) ||
-      (rc = diswst(psock, TCP_FUNC, munge_buf)) ||
+      (rc = diswui(psock, user_port)) ||
+      (rc = diswst(psock, munge_buf)) ||
       (rc = encode_DIS_ReqExtend(psock, NULL)) ||
       (rc = DIS_tcp_wflush(psock)))
     {

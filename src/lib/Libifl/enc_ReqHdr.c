@@ -99,10 +99,10 @@ int encode_DIS_ReqHdr(
   {
   int rc;
 
-  if ((rc = diswui(sock, TCP_FUNC, PBS_BATCH_PROT_TYPE)) ||
-      (rc = diswui(sock, TCP_FUNC, PBS_BATCH_PROT_VER)) ||
-      (rc = diswui(sock, TCP_FUNC, reqt))   ||
-      (rc = diswst(sock, TCP_FUNC, user)))
+  if ((rc = diswui(sock, PBS_BATCH_PROT_TYPE)) ||
+      (rc = diswui(sock, PBS_BATCH_PROT_VER)) ||
+      (rc = diswui(sock, reqt))   ||
+      (rc = diswst(sock, user)))
     {
     return rc;
     }

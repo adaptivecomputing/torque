@@ -107,13 +107,11 @@
 
 #include "dis.h"
 #include "dis_.h"
-#include "rpp.h"
 #include "tcp.h"
 
 int diswsl(
 
   int  stream,
-  int  rpp,
   long value)
 
   {
@@ -128,16 +126,8 @@ int diswsl(
 
   assert(stream >= 0);
 
-  if (rpp)
-    {
-    dis_puts = (int (*)(int, const char *, size_t))rpp_write;
-    disw_commit = rpp_wcommit;
-    }
-  else
-    {
-    dis_puts = tcp_puts;
-    disw_commit = tcp_wcommit;
-    }
+  dis_puts = tcp_puts;
+  disw_commit = tcp_wcommit;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
 

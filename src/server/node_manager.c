@@ -184,9 +184,8 @@ extern int multi_mom;
 #endif
 
 int hasprop(struct pbsnode *, struct prop *);
-void send_cluster_addrs(struct work_task *);
 int add_cluster_addrs(int,struct pbsnode *);
-int is_compose(int, int, int);
+int is_compose(int, int);
 int add_job_to_node(struct pbsnode *,struct pbssubn *,short,job *,int);
 int node_satisfies_request(struct pbsnode *,char *);
 int reserve_node(struct pbsnode *,short,job *,char *,struct howl **);
@@ -199,20 +198,9 @@ int gpu_entry_by_id(struct pbsnode *,char *, int);
 job *get_job_from_jobinfo(struct jobinfo *,struct pbsnode *);
 
 /* marks a stream as finished being serviced */
-extern void done_servicing(int);
 pthread_mutex_t *node_state_mutex = NULL;
 
-/*
 
- GBS - I put this in since it's used in the server to mom
- communication for resource manager information.  The server
- opens rpp sockets for pinging.  I just used those for the
- resource manager queries.
-
-*/
-
-/*#define      close_dis(x)    rpp_close(x) */
-/*#define      flush_dis(x)    rpp_flush(x) */
 
 /**
 **      Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
@@ -593,53 +581,6 @@ void update_node_state(
     log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
     }
 
-#ifdef ALT_CLSTR_ADDR
-  if (send_addrs)
-    {
-    /* send the cluster addrs */
-
-    ret = is_compose(np->nd_stream, RPP_FUNC, IS_CLUSTER_ADDRS);
-
-    if (ret == DIS_SUCCESS)
-      {
-      ret = add_cluster_addrs(np->nd_stream,np);
-      }
-
-    if (ret == DIS_SUCCESS)
-      {
-      ret = rpp_flush(np->nd_stream);
-      }
-
-    if ((ret == DIS_SUCCESS) && (LOGLEVEL >= 3))
-      {
-      sprintf(log_buf, "sent cluster-addrs to node %s\n", np->nd_name);
-
-      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buf);
-      }
-
-    if (ret != DIS_SUCCESS)
-      {
-      /* a DIS write error has occurred */
-
-      if (LOGLEVEL >= 1)
-        {
-        DBPRT(("%s: error processing node %s\n",
-               id,
-               np->nd_name))
-        }
-
-      sprintf(log_buf, "%s %d to %s", dis_emsg[ret], errno, np->nd_name);
-
-      log_err(-1, id, log_buf);
-
-      rpp_close(np->nd_stream);
-
-      update_node_state(np, INUSE_DOWN);
-      }
-    } /* END send_addrs */
-
-#endif
-
   return;
   }  /* END update_node_state() */
 
@@ -982,148 +923,6 @@ void update_job_data(
 
 
 
-
-/*
- * send_cluster_addrs - sends IS_CLUSTER_ADDRS messages to a set of nodes
- *                      called from a work task, all nodes will eventually
- *                      be sent the current list of IPs.
- */
-
-void send_cluster_addrs(
-
-  struct work_task *ptask)
-
-  {
-  static char     id[] = "send_cluster_addrs";
-  static int      iter = -1;
-
-  struct pbsnode *np;
-  new_node       *nnew;
-  int             count = 0;
-  int             ret;
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
-
-  pthread_mutex_lock(addrnote_mutex);
-
-  num_addrnote_tasks--;
-
-  if (num_addrnote_tasks > 0)
-    {
-    /* new nodes are still being added... don't bother yet or start over */
-
-    DBPRT(("%s: not sending addrs yet, %d tasks exist\n",
-           id,
-           num_addrnote_tasks));
-
-    pthread_mutex_unlock(addrnote_mutex);
-
-    free(ptask);
-
-    return;
-    }
-
-  while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
-    {
-    count++;
-
-    /* Don't bother with nodes that we don't currently have a connection,
-     * otherwise we'll get bogged down.  The skipped nodes will get the
-     * updated info when they reconnect.
-     */
-    if (np->nd_stream < 0)
-      {
-      pthread_mutex_unlock(np->nd_mutex);
-
-      continue;
-      }
-
-    ret = is_compose(np->nd_stream, RPP_FUNC, IS_CLUSTER_ADDRS);
-
-    if (ret == DIS_SUCCESS)
-      {
-      if (add_cluster_addrs(np->nd_stream,np) == DIS_SUCCESS)
-        {
-        if (rpp_flush(np->nd_stream) == DIS_SUCCESS)
-          {
-          sprintf(log_buf, "successful addr to node %s\n", np->nd_name);
-
-          log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buf);
-
-          pthread_mutex_unlock(np->nd_mutex);
-
-          continue;
-          }
-        }
-
-      ret = DIS_NOCOMMIT;
-      }
-
-    /* ping unsuccessful, mark node down, clear stream */
-    update_node_state(np, INUSE_DOWN);
-
-    sprintf(log_buf, "%s %d to %s",
-      dis_emsg[ret],
-      errno,
-      np->nd_name);
-
-    log_err(-1, id, log_buf);
-
-    rpp_close(np->nd_stream);
-
-    /* tdelete((u_long)np->nd_stream, &streams);*/
-    streams = AVL_delete_node((u_long)np->nd_stream, 0, streams);
-
-    np->nd_stream = -1;
-
-    if (count >= 50)
-      {
-      /* only ping 50 nodes at a time, ping next batch later */
-      pthread_mutex_unlock(np->nd_mutex);
-
-      break;
-      }
-      
-    pthread_mutex_unlock(np->nd_mutex);
-    }  /* END for (i) */
-
-  /* only ping nodes once (disable new task) */
-
-  if (np != NULL)
-    {
-    /* continue outstanding pings after checking for other requests */
-    set_task(WORK_Timed, time_now, send_cluster_addrs, NULL, FALSE);
-    }
-  else
-    {
-    /* all nodes have new addr list, so clear the new nodes */
-    while ((nnew = (new_node *)GET_NEXT(svr_newnodes)) != NULL)
-      {
-      np = find_nodebyname(nnew->nn_name);
-
-      if (np != NULL)
-        {
-        np->nd_state &= ~INUSE_OFFLINE;
-
-        pthread_mutex_unlock(np->nd_mutex);
-        }
-
-      delete_link(&nnew->nn_link);
-      }
-
-    /* reset iter, as we've sent the updates for all servers */
-    iter = -1;
-    }
-
-  pthread_mutex_unlock(addrnote_mutex);
-    
-  free(ptask);
-  } /* END send_cluster_addrs() */
-
-
-
-
-
-
 /*
  *      setup_notification -  Sets up the  mechanism for notifying
  *                            other members of the server's node
@@ -1167,7 +966,7 @@ void setup_notification(
     pthread_mutex_unlock(pnode->nd_mutex);
     }
 
-  set_task(WORK_Timed,time_now + 5,send_cluster_addrs,NULL,FALSE);
+  /*set_task(WORK_Timed,time_now + 5,send_cluster_addrs,NULL,FALSE);*/
 
   if (addrnote_mutex == NULL)
     {
@@ -1188,7 +987,6 @@ void setup_notification(
 
 
 
-
 int is_stat_get(
 
   struct pbsnode *np)  /* I (modified) */
@@ -1204,6 +1002,7 @@ int is_stat_get(
   attribute       temp;
   char            date_attrib[100];
   int             msg_error = 0;
+  struct pbssubn *sp = NULL;
 
   extern int TConnGetSelectErrno();
   extern int TConnGetReadErrno();
@@ -1236,12 +1035,12 @@ int is_stat_get(
     {
     DBPRT(("is_stat_get:  cannot initialize attribute\n"));
 
-    rpp_eom(stream);
+    /*rpp_eom(stream);*/
 
     return(DIS_NOCOMMIT);
     }
 
-  while (((ret_info = disrst(stream, RPP_FUNC, &rc)) != NULL) && (rc == DIS_SUCCESS))
+  while (((ret_info = disrst(stream, &rc)) != NULL) && (rc == DIS_SUCCESS))
     {
     /* check if this is the update on a numa node */
     if (!strncmp(ret_info,NUMA_KEYWORD,strlen(NUMA_KEYWORD)))
@@ -1283,10 +1082,47 @@ int is_stat_get(
 
       np = tmp;
 
-
       np->nd_lastupdate = time_now;
 
       /* resume normal processing on the next line */
+      continue;
+      }
+    else if (!strncmp(ret_info,"node=",strlen("node=")))
+      {
+      /* this is a node reporting on another node as well */
+      char           *node_id = ret_info + strlen("node=");
+      struct pbsnode *tmp;
+
+      pthread_mutex_unlock(np->nd_mutex);
+     
+      tmp = find_nodebyname(node_id);
+
+      if (tmp == NULL)
+        {
+        /* ERROR */
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Node %s is reporting on node %s, which pbs_server doesn't know about\n",
+          orig_np->nd_name,
+          node_id);
+        log_err(-1,id,log_buffer);
+
+        return(DIS_NOCOMMIT);
+        }
+
+      if (LOGLEVEL >= 7)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Node %s is reporting for node %s\n",
+          orig_np->nd_name,
+          node_id);
+        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
+        }
+
+      np = tmp;
+
+      np->nd_lastupdate = time_now;
+
+      /* resume normal processing on the next time */
       continue;
       }
 
@@ -1300,7 +1136,7 @@ int is_stat_get(
 
       free(ret_info);
 
-      rpp_eom(stream);
+      /*rpp_eom(stream);*/
 
       if (orig_np != np)
         {
@@ -1337,6 +1173,37 @@ int is_stat_get(
 
         update_node_state(np, INUSE_UNKNOWN);
         }
+
+      if (LOGLEVEL >= 9)
+        {
+        sprintf(log_buffer, "node '%s' is at state '0x%x'\n",
+                np->nd_name,
+                np->nd_state);
+
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
+        }
+
+      for (sp = np->nd_psn;sp != NULL;sp = sp->next)
+        {
+        if (!(np->nd_state & INUSE_OFFLINE) &&
+            (sp->inuse & INUSE_OFFLINE))
+          {
+          /* this doesn't seem to ever happen */
+
+          if (LOGLEVEL >= 2)
+            {
+            sprintf(log_buffer, "sync'ing subnode state '%s' with node state on node %s\n",
+                    "offline",
+                    np->nd_name);
+ 
+            log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
+            }
+ 
+          sp->inuse &= ~INUSE_OFFLINE;
+          }
+
+        sp->inuse &= ~INUSE_DOWN;
+        }
       }
     else if (!strncmp(ret_info, "uname", 5) && allow_any_mom)
       {
@@ -1356,7 +1223,7 @@ int is_stat_get(
           cp++;
           node_name[count] = *cp;
           count++;
-          } while(*cp != ' ' && count < PBS_MAXHOSTNAME);
+          } while (*cp != ' ' && count < PBS_MAXHOSTNAME);
 
         node_name[count-1] = 0;
         cp = strdup(node_name);
@@ -1389,10 +1256,7 @@ int is_stat_get(
       }
     else if (server.sv_attr[SRV_ATR_AutoNodeNP].at_val.at_long)
       {
-      int str_res;
-
-      str_res = strncmp(ret_info, "ncpus=", 6);
-      if (str_res == 0)
+      if (!(strncmp(ret_info, "ncpus=", 6)))
         {        
         struct attribute nattr;
         
@@ -1434,10 +1298,11 @@ int is_stat_get(
     }    /* END while (rc != DIS_EOD) */
 
   /* clear the transmission */
-  rpp_eom(stream);
+  DIS_tcp_reset(stream,0);
 
-  /* DIS_EOD is the only valid final value of rc, check it */
-  if (rc != DIS_EOD)
+  /* DIS_EOD and DIS_EOF are the only valid final values of rc, check it */
+  if ((rc != DIS_EOD) &&
+      (rc != DIS_EOF))
     {
     update_node_state(np, INUSE_UNKNOWN);
 
@@ -1515,10 +1380,11 @@ int is_stat_get(
  */
 
 int gpu_has_job(
+
   struct pbsnode *pnode,
   int  gpuid)
-  {
 
+  {
   job   *pjob;
   char  *gpu_str;
   char  *found_str;
@@ -1641,7 +1507,7 @@ int is_gpustat_get(
     return(DIS_NOCOMMIT);
     }
 
-  while (((ret_info = disrst(stream, RPP_FUNC, &rc)) != NULL) && (rc == DIS_SUCCESS))
+  while (((ret_info = disrst(stream, &rc)) != NULL) && (rc == DIS_SUCCESS))
     {
     /* add the info to the "temp" attribute */
 
@@ -1898,7 +1764,6 @@ int is_gpustat_get(
 int is_compose(
 
   int stream,  /* I */
-  int rpp,     /* I */
   int command) /* I */
 
   {
@@ -1909,17 +1774,17 @@ int is_compose(
     return(DIS_EOF);
     }
 
-  ret = diswsi(stream, rpp, IS_PROTOCOL);
+  ret = diswsi(stream, IS_PROTOCOL);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(stream, rpp, IS_PROTOCOL_VER);
+  ret = diswsi(stream, IS_PROTOCOL_VER);
 
   if (ret != DIS_SUCCESS)
     goto done;
 
-  ret = diswsi(stream, rpp, command);
+  ret = diswsi(stream, command);
 
   if (ret != DIS_SUCCESS)
     goto done;
@@ -1954,7 +1819,7 @@ void stream_eof(
 
   struct pbsnode *np;
 
-  rpp_close(stream);
+  close(stream);
 
   np = NULL;
 
@@ -2067,7 +1932,7 @@ int add_cluster_addrs(
         free(tmp);
         }
 
-      ret = diswul(stream, RPP_FUNC, ipaddr);
+      ret = diswul(stream, ipaddr);
 
       if (ret != DIS_SUCCESS)
         {
@@ -2194,6 +2059,15 @@ const char *PBSServerCmds2[] =
 
 
 
+/* 
+ * is_request_work
+ * the function that performs the processing of the is_request. This function is 
+ * passed to the threadpool to be started from there.
+ *
+ * vp is an array of int pointers. 
+ * The first slot is the stream 
+ * The second slot is the version
+ */
 
 void *is_request_work(
 
@@ -2215,11 +2089,12 @@ void *is_request_work(
   unsigned long tmpaddr;
 
   struct sockaddr_in *addr = NULL;
+  struct sockaddr     s_addr;
+  unsigned int        len = sizeof(s_addr);
 
-  struct pbsnode *node = NULL;
+  struct pbsnode     *node = NULL;
 
-  struct pbssubn *sp = NULL;
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  char                log_buf[LOCAL_LOG_BUF_SIZE];
 
   int  stream;
   int  version;
@@ -2228,7 +2103,7 @@ void *is_request_work(
   stream = args[0];
   version = args[1];
 
-  command = disrsi(stream, RPP_FUNC, &ret);
+  command = disrsi(stream, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
@@ -2243,10 +2118,21 @@ void *is_request_work(
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
     }
 
-  addr = rpp_getaddr(stream);
+  if (getpeername(stream,&s_addr,&len) != 0)
+    {
+    close(stream);
 
-  mom_port = disrsi(stream, RPP_FUNC, &ret);
-  rm_port = disrsi(stream, RPP_FUNC, &ret);
+    free(vp);
+
+    log_err(errno,id,"Cannot get socket name using getpeername\n");
+
+    return(NULL);
+    }
+
+  addr = (struct sockaddr_in *)&s_addr;
+
+  mom_port = disrsi(stream, &ret);
+  rm_port = disrsi(stream, &ret);
 
   if (version != IS_PROTOCOL_VER)
     {
@@ -2257,11 +2143,9 @@ void *is_request_work(
 
     log_err(-1, id, log_buf);
 
-    rpp_close(stream);
+    close(stream);
 
     free(vp);
-  
-    done_servicing(stream);
   
     return(NULL);
     }
@@ -2279,111 +2163,56 @@ void *is_request_work(
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
     }
 
-  if ((node = AVL_find((u_long)stream, 0, streams)) != NULL)
+  ipaddr = ntohl(addr->sin_addr.s_addr);
+  
+  if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
     {
     pthread_mutex_lock(node->nd_mutex);
-    }
-  else
-    {
-    ipaddr = ntohl(addr->sin_addr.s_addr);
-
-    if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
+    } /* END if AVL_find != NULL) */
+  else if (allow_any_mom)                                           
+    { 
+    hp = gethostbyaddr(&ipaddr, sizeof(ipaddr), AF_INET);       
+    if (hp != NULL)                                              
+      {                                                         
+      strncpy(nodename, hp->h_name, PBS_MAXHOSTNAME);           
+      err = create_partial_pbs_node(nodename, ipaddr, perm);    
+      }                                                         
+    else                                                        
       {
+      tmpaddr = ntohl(addr->sin_addr.s_addr);
+      
+      sprintf(nodename, "0x%lX", tmpaddr);
+      err = create_partial_pbs_node(nodename, ipaddr, perm);
+      } 
+
+    if (err == PBSE_NONE)
+      {
+      node = AVL_find(ipaddr, 0, ipaddrs);
+       
       pthread_mutex_lock(node->nd_mutex);
-
-      if (node->nd_stream >= 0)
-        {
-        if (LOGLEVEL >= 3)
-          {
-          sprintf(log_buf,
-            "stream %d from node %s already open on %d (marking node state 'unknown', current state: %d)",
-            stream,
-            node->nd_name,
-            node->nd_stream,
-            node->nd_state);
-
-          log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
-          }
-
-        rpp_close(stream);
-
-        rpp_close(node->nd_stream);
-
-        streams = AVL_delete_node((u_long)node->nd_stream, 0, streams);
-
-        if (node->nd_state & INUSE_OFFLINE)
-          {
-          node->nd_state = (INUSE_UNKNOWN | INUSE_OFFLINE);
-          }
-        else
-          {
-          node->nd_state = INUSE_UNKNOWN;
-          }
-
-        node->nd_stream = -1;
-
-        pthread_mutex_unlock(node->nd_mutex);
-
-        free(vp);
-  
-        done_servicing(stream);
-
-        return(NULL);
-        }  /* END if (node->nd_stream >= 0) */
-
-      node->nd_stream = stream;
-
-      /* tinsert((u_long)stream, node, &streams); */
-      streams = AVL_insert((u_long)stream, 0, node, streams);
-        
-      }  /* END if ((node = tfind(ipaddr,&ipaddrs)) != NULL) */
-    else if (allow_any_mom)                                           
-      { 
-      hp = gethostbyaddr(&ipaddr, sizeof(ipaddr), AF_INET);       
-      if (hp != NULL)                                              
-        {                                                         
-        strncpy(nodename, hp->h_name, PBS_MAXHOSTNAME);           
-        err = create_partial_pbs_node(nodename, ipaddr, perm);    
-        }                                                         
-      else                                                        
-        {
-        tmpaddr = ntohl(addr->sin_addr.s_addr);
-
-        sprintf(nodename, "0x%lX", tmpaddr);
-        err = create_partial_pbs_node(nodename, ipaddr, perm);
-        } 
-      
-      if (err == PBSE_NONE)
-        {
-        node = AVL_find(ipaddr, 0, ipaddrs);
-        
-        pthread_mutex_lock(node->nd_mutex);
-        }                                                         
-      }
-      
-    if (node == NULL)
+      }                                                         
+    }
+    
+  if (node == NULL)
+    {
+    /* node not listed in trusted ipaddrs list */
+    
+    sprintf(log_buf,
+      "bad attempt to connect from %s (address not trusted - check entry in server_priv/nodes)",
+      netaddr(addr));
+    
+    if (LOGLEVEL >= 2)
       {
-      /* node not listed in trusted ipaddrs list */
-
-      sprintf(log_buf,
-        "bad attempt to connect from %s (address not trusted - check entry in server_priv/nodes)",
-        netaddr(addr));
-
-      if (LOGLEVEL >= 2)
-        {
-        log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
-        }
-
-      log_err(-1, id, log_buf);
-
-      rpp_close(stream);
-
-      free(vp);
-  
-      done_servicing(stream);
-  
-      return(NULL);
+      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
       }
+    
+    log_err(-1, id, log_buf);
+    
+    close(stream);
+    
+    free(vp);
+ 
+    return(NULL);
     }
 
   if (LOGLEVEL >= 3)
@@ -2419,7 +2248,7 @@ void *is_request_work(
         }
 
 #ifndef ALT_CLSTR_ADDR
-      ret = is_compose(stream, RPP_FUNC, IS_CLUSTER_ADDRS);
+      ret = is_compose(stream, IS_CLUSTER_ADDRS);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -2434,9 +2263,7 @@ void *is_request_work(
       if (add_cluster_addrs(stream,node) != DIS_SUCCESS)
         goto err;
 
-      /* NOTE:  re-enabled rpp_flush/disabled rpp_eom (CRI) */
-
-      ret = rpp_flush(stream);
+      ret = DIS_tcp_wflush(stream);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -2461,7 +2288,7 @@ void *is_request_work(
       DBPRT(("%s: IS_UPDATE\n",
              id))
 
-      i = disrui(stream, RPP_FUNC, &ret);
+      i = disrui(stream, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -2501,7 +2328,13 @@ void *is_request_work(
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
         }
 
+      node->nd_stream = stream;
+
       ret = is_stat_get(node);
+
+      write_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
+
+      node->nd_stream = -1;
 
       if (ret != DIS_SUCCESS)
         {
@@ -2515,39 +2348,6 @@ void *is_request_work(
           }
 
         goto err;
-        }
-
-      node->nd_lastupdate = time_now;
-
-      if (LOGLEVEL >= 9)
-        {
-        sprintf(log_buf, "node '%s' is at state '0x%x'\n",
-          node->nd_name,
-          node->nd_state);
-
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
-        }
-
-      for (sp = node->nd_psn;sp != NULL;sp = sp->next)
-        {
-        if (!(node->nd_state & INUSE_OFFLINE) &&
-            (sp->inuse & INUSE_OFFLINE))
-          {
-          /* this doesn't seem to ever happen */
-
-          if (LOGLEVEL >= 2)
-            {
-            sprintf(log_buf, "sync'ing subnode state '%s' with node state on node %s\n",
-              "offline",
-              node->nd_name);
-
-            log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
-            }
-
-          sp->inuse &= ~INUSE_OFFLINE;
-          }
-
-        sp->inuse &= ~INUSE_DOWN;
         }
 
       break;
@@ -2614,13 +2414,13 @@ void *is_request_work(
       break;
     }  /* END switch (command) */
 
-  rpp_eom(stream);
+  /*rpp_eom(stream);*/
+  /* change to close for tcp? */
+  close(stream);
 
   pthread_mutex_unlock(node->nd_mutex);
   
   free(vp);
-  
-  done_servicing(stream);
 
   return(NULL);
 
@@ -2656,11 +2456,9 @@ err:
     
   log_err(-1, id, log_buf);
     
-  rpp_close(stream);
+  close(stream);
     
   free(vp);
-
-  done_servicing(stream);
 
   return(NULL);
   } /* END is_request_work */
@@ -2671,7 +2469,7 @@ err:
 
 
 /*
- * Input is coming from the pbs_mom over a DIS rpp stream.
+ * Input is coming from the pbs_mom over a DIS tcp stream.
  * Read the stream to get a Inter-Server request.
  */
 

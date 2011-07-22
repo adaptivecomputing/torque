@@ -112,33 +112,23 @@ int decode_DIS_ReqHdr(
   {
   int rc;
 
-  *proto_type = disrui(sock, TCP_FUNC, &rc);
+  /* We got the protocol type in process_pbs_server_port
+   	 We are just hard coding it here */
+  *proto_type = PBS_BATCH_PROT_TYPE;
+
+  *proto_ver = disrui(sock, &rc);
+
+  if (rc == 0)
+    {
+    preq->rq_type = disrui(sock, &rc);
+    }
 
   if (rc != 0)
     {
     return(rc);
     }
 
-  if (*proto_type != PBS_BATCH_PROT_TYPE)
-    {
-    return(DIS_PROTO);
-    }
-
-  *proto_ver = disrui(sock, TCP_FUNC, &rc);
-
-  if (rc)
-    {
-    return(rc);
-    }
-
-  preq->rq_type = disrui(sock, TCP_FUNC, &rc);
-
-  if (rc != 0)
-    {
-    return(rc);
-    }
-
-  return(disrfst(sock, TCP_FUNC, PBS_MAXUSER + 1, preq->rq_user));
+  return(disrfst(sock, PBS_MAXUSER + 1, preq->rq_user));
   }  /* END decode_DIS_ReqHdr() */
 
 

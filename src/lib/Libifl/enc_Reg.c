@@ -110,12 +110,12 @@ int encode_DIS_Register(
   {
   int   rc;
 
-  if ((rc = diswst(sock, TCP_FUNC, preq->rq_ind.rq_register.rq_owner) != 0) ||
-      (rc = diswst(sock, TCP_FUNC, preq->rq_ind.rq_register.rq_parent) != 0) ||
-      (rc = diswst(sock, TCP_FUNC, preq->rq_ind.rq_register.rq_child) != 0) ||
-      (rc = diswui(sock, TCP_FUNC, preq->rq_ind.rq_register.rq_dependtype) != 0) ||
-      (rc = diswui(sock, TCP_FUNC, preq->rq_ind.rq_register.rq_op) != 0) ||
-      (rc = diswsl(sock, TCP_FUNC, preq->rq_ind.rq_register.rq_cost) != 0))
+  if ((rc = diswst(sock, preq->rq_ind.rq_register.rq_owner) != 0) ||
+      (rc = diswst(sock, preq->rq_ind.rq_register.rq_parent) != 0) ||
+      (rc = diswst(sock, preq->rq_ind.rq_register.rq_child) != 0) ||
+      (rc = diswui(sock, preq->rq_ind.rq_register.rq_dependtype) != 0) ||
+      (rc = diswui(sock, preq->rq_ind.rq_register.rq_op) != 0) ||
+      (rc = diswsl(sock, preq->rq_ind.rq_register.rq_cost) != 0))
     return rc;
 
   return 0;

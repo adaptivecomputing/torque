@@ -148,8 +148,7 @@ extern void acct_close(void);
 extern int  svr_startjob(job *, struct batch_request *, char *, char *);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
-extern void started_servicing(int);
-extern void done_servicing(int);
+extern void is_request(int,int,int *);
 #ifdef NO_SIGCHLD
 extern void check_children();
 #endif
@@ -358,188 +357,53 @@ static void need_y_response(
   }  /* END need_y_response() */
 
 
-/**
- * Read a RPP message from a stream.
- *
- * NOTE: Only one kind of message is expected -- Inter Server requests from MOM's.
- *
- * @param stream (I)
-*/
 
-void do_rpp(
-
-  int stream)  /* I */
-
+void process_pbs_server_port(
+     
+  int sock)
+ 
   {
-  static char id[] = "do_rpp";
-
-  int         ret;
-  int         proto;
-  int         version;
-
-  void is_request(int, int, int *);
-
-  int         stream_done = TRUE;
-  char        log_buf[LOCAL_LOG_BUF_SIZE];
-
-  started_servicing(stream);
-
-  if (LOGLEVEL >= 4)
+  static char *id = "process_pbs_server_port";
+  int          proto_type;
+  int          rc;
+  int          version;
+  
+  DIS_tcp_setup(sock);
+  
+  proto_type = disrui_peek(sock,&rc);
+  
+  switch(proto_type)
     {
-    sprintf(log_buf, "rpp request received on stream %d", stream);
-
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
-    }
-
-  proto = disrsi(stream, RPP_FUNC, &ret);
-
-  if (ret != DIS_SUCCESS)
-    {
-    /* FAILURE */
-
-    /* This error case may be associated with IP communication
-     * problems such as may happen with multi-homed servers.
-     */
-
-    if (LOGLEVEL >= 1)
-      {
-      struct pbsnode *node;
-
-      node = AVL_find((u_long)stream, 0, streams);
-
-      pthread_mutex_lock(node->nd_mutex);
-
-      if (ret == DIS_EOF)
-        {
-        sprintf(log_buf, "stream %d closed.(node: \"%s\", %s) rc=%d (%s)",
-          stream,
-          (node != NULL) ? node->nd_name : "NULL",
-          netaddr(rpp_getaddr(stream)),
-          ret,
-          dis_emsg[ret]);
-        
-        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
-        }
-      else
-        {
-        sprintf(log_buf,
-          "corrupt rpp request received on stream %d (node: \"%s\", %s) - invalid protocol - rc=%d (%s)",
-          stream,
-          (node != NULL) ? node->nd_name : "NULL",
-          netaddr(rpp_getaddr(stream)),
-          ret,
-          dis_emsg[ret]);
-        
-        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
-        }
-    
-      pthread_mutex_unlock(node->nd_mutex);
-      }
-    
-    stream_eof(stream, 0, 0, ret);
-
-    done_servicing(stream);
-
-    return;
-    }  /* END if (ret != DIS_SUCCESS) */
-
-  version = disrsi(stream, RPP_FUNC, &ret);
-
-  if (ret != DIS_SUCCESS)
-    {
-    if (LOGLEVEL >= 1)
-      {
-      sprintf(log_buf, "corrupt rpp request received on stream %d - invalid version - rc=%d (%s)",
-        stream,
-        ret,
-        dis_emsg[ret]);
-
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
-      }
-
-    stream_eof(stream, 0, 0, ret);
-    
-    done_servicing(stream);
-
-    return;
-    }
-
-  switch (proto)
-    {
-
+    case PBS_BATCH_PROT_TYPE:
+      
+      process_request(sock);
+      
+      break;
+      
     case IS_PROTOCOL:
-
-      if (LOGLEVEL >= 6)
+      
+      version = disrsi(sock,&rc);
+      
+      if (rc != DIS_SUCCESS)
         {
-        sprintf(log_buf, "inter-server request received");
-
-        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+        log_err(-1,id,"Cannot read version - skipping this request.\n");
+        break;
         }
-
-      is_request(stream, version, NULL);
-
-      stream_done = FALSE;
-
+      
+      is_request(sock,version,NULL);
+      
       break;
-
-    default:
-
-      if (LOGLEVEL >= 6)
-        {
-        sprintf(log_buf, "unknown request protocol received (%d)\n", proto);
-
-        log_err(errno, id, log_buf);
-        }
-
-      rpp_close(stream);
-
-      break;
-    }  /* END switch(proto) */
-    
-  if (stream_done == TRUE)
-    done_servicing(stream);
-   
-  return;
-  }  /* END do_rpp() */
-
-
-
-
-
-void rpp_request(
-
-  int fd) /* not used */
-
-  {
-  static char id[] = "rpp_request";
-  int         stream;
-  struct      sockaddr name;
-  socklen_t   len;
-  int ret;
-
-  len = (socklen_t)sizeof(struct sockaddr);
-  ret = getsockname(fd, &name, &len);
-
-  for (;;)
-    {
-    if ((stream = rpp_poll()) == -1)
-      {
-      log_err(errno, id, "rpp_poll");
-
-      break;
-      }
-
-    if (stream == -2)
-      break;
-
-    do_rpp(stream);
+      
     }
-
+  
   return;
-  }  /* END rpp_request() */
+  }  /* END process_pbs_server_port() */
 
-void
-clear_listeners(void)   /* I */
+
+
+
+
+void clear_listeners(void)   /* I */
 
   {
   int  i;
@@ -557,6 +421,7 @@ clear_listeners(void)   /* I */
 
 
 int add_listener(
+
   pbs_net_t l_addr,  /* I */
   unsigned int l_port)  /* I */
 
@@ -1269,10 +1134,6 @@ void main_loop(void)
       }
 #endif
 
-    /* touch the rpp streams that need to send */
-
-    rpp_request(0);
-
     /* wait for a request and process it */
 
     if (wait_request(waittime, state) != 0)
@@ -1415,9 +1276,6 @@ int main(
   {
   int          i;
   int          lockfds = -1;
-  int          rppfd;   /* fd to receive is HELLO's */
-  int          privfd;  /* fd to send is messages */
-  uint         tryport;
   char         lockfile[MAXPATHLEN + 1];
   char        *pc = NULL;
   char        *pathPtr = NULL;
@@ -1707,7 +1565,7 @@ int main(
     msg_daemonname,
     log_buf);
 
-  if (init_network(pbs_server_port_dis, process_request) != 0)
+  if (init_network(pbs_server_port_dis, process_pbs_server_port) != 0)
     {
     perror("pbs_server: network");
 
@@ -1716,7 +1574,7 @@ int main(
     exit(3);
     }
 
-  if (init_network(0, process_request) != 0)
+  if (init_network(0, process_pbs_server_port) != 0)
     {
     perror("pbs_server: unix domain socket");
 
@@ -1730,54 +1588,9 @@ int main(
 
 #endif
 
-  if ((rppfd = rpp_bind(pbs_server_port_dis)) == -1)
-    {
-    log_err(errno, msg_daemonname, "rpp_bind");
-
-    exit(1);
-    }
-
-  rpp_fd = -1;  /* force rpp_bind() to get another socket */
-
-  tryport = IPPORT_RESERVED;
-
-  privfd = -1;
-
-  while (--tryport > 0)
-    {
-    if ((privfd = rpp_bind(tryport)) != -1)
-      break;
-
-    if ((errno != EADDRINUSE) && (errno != EADDRNOTAVAIL))
-      break;
-    }
-
-  if (privfd == -1)
-    {
-    log_err(errno, msg_daemonname, "no privileged ports");
-
-    exit(1);
-    }
-
-  if (LOGLEVEL >= 5)
-    {
-    log_event(
-      PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-      PBS_EVENTCLASS_SERVER,
-      msg_daemonname,
-      "creating rpp and private interfaces");
-    }
-
-  add_conn(rppfd, Primary, (pbs_net_t)0, 0, PBS_SOCK_INET, rpp_request);
-
-  add_conn(privfd, Primary, (pbs_net_t)0, 0, PBS_SOCK_INET, rpp_request);
-
   /*==========*/
   main_loop();
   /*==========*/
-
-  RPPConfigure(1, 0); /* help rpp_shutdown go a bit faster */
-  rpp_shutdown();
 
   shutdown_ack();
 
@@ -2973,11 +2786,7 @@ int svr_restart()
     exit(-10);
     }
   
-  /* shut down network connections and rpp */
-
-  RPPConfigure(1,0);  /* help rpp_shutdown go a bit faster */
-  rpp_shutdown();
-  
+  /* shut down network connections */
   net_close(-1);   /* close all network connections */
   
   /* copying FullCmd to ArV[0] is necessary for multiple restarts because 

@@ -95,6 +95,6 @@ int encode_DIS_ShutDown(
   int manner)
 
   {
-  return (diswui(sock, TCP_FUNC, manner));
+  return (diswui(sock, manner));
   }
 

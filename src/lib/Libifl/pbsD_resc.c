@@ -116,19 +116,19 @@ static int encode_DIS_Resc(
   int    i;
   int    rc;
 
-  if ((rc = diswsi(sock,TCP_FUNC,rh)) == 0)     /* resource reservation handle */
+  if ((rc = diswsi(sock,rh)) == 0)     /* resource reservation handle */
     {
 
     /* next send the number of resource strings */
 
-    if ((rc = diswui(sock, TCP_FUNC, ct)) == 0)
+    if ((rc = diswui(sock, ct)) == 0)
       {
 
       /* now send each string (if any) */
 
       for (i = 0; i < ct; ++i)
         {
-        if ((rc = diswst(sock, TCP_FUNC, *(rlist + i))) != 0)
+        if ((rc = diswst(sock, *(rlist + i))) != 0)
           break;
         }
       }

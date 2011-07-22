@@ -109,11 +109,11 @@ int decode_DIS_JobCred(
   size_t rqsize;
 
   preq->rq_ind.rq_jobcred.rq_data = 0;
-  preq->rq_ind.rq_jobcred.rq_type = disrui(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_jobcred.rq_type = disrui(sock, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_jobcred.rq_data = disrcs(sock, TCP_FUNC, &rqsize, &rc);
+  preq->rq_ind.rq_jobcred.rq_data = disrcs(sock, &rqsize, &rc);
 
   preq->rq_ind.rq_jobcred.rq_size = rqsize;
 

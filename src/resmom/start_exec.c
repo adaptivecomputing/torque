@@ -214,6 +214,7 @@ extern unsigned int pbs_rm_port;
 
 extern char path_checkpoint[];
 extern char jobstarter_exe_name[];
+extern char mom_host[];
 extern int  jobstarter_set;
 
 int              mom_reader_go;	 /* see catchinter() & mom_writer() */
@@ -1489,17 +1490,18 @@ int mom_jobstarter_execute_job(
  * and send an IM_JOIN_JOB_RADIX request with all the sister
  * and radix host information
  */
-int open_rpp_stream_to_sisters(
-  job *pjob,
-  int com,
-  int mom_radix,
-  hnodent *hosts, /* This is really an array of hnodent */
+int open_tcp_stream_to_sisters(
+
+  job               *pjob, 
+  int                com,
+  int                mom_radix, 
+  hnodent           *hosts, /* This is really an array of hnodent */
   struct radix_buf **sister_list,
-  tlist_head    *phead,
-  int flag)
+  tlist_head        *phead,
+  int                flag)
 
   {
-  char id[] = "open_rpp_stream_to_sisters";
+  char id[] = "open_tcp_stream_to_sisters";
   int i;
   hnodent *np;
   int           stream;
@@ -1508,69 +1510,63 @@ int open_rpp_stream_to_sisters(
 
   np = hosts;
   pjob->ji_outstanding = 0;
-
+  
   /* the sister lists have been made. Now contact the intermediate moms as designated by mom_radix */
-  for(i = 1; i <= mom_radix; i++)
-	  {
-	  np++;
-
-	  log_buffer[0] = '\0';
-
+  for (i = 1; i <= mom_radix; i++)
+    {
+    np++;
+    
+    log_buffer[0] = '\0';
+    
     if (sister_list[i-1]->count < 2)
       {
       continue;
       }
-
+    
     pjob->ji_outstanding++;
-
-	  /* rpp_open() will succeed even if MOM is down */
-
-	  np->hn_stream = rpp_open(np->hn_host, np->hn_port, log_buffer);
-
-	  if (np->hn_stream < 0)
-	    {
-	    pjob->ji_nodekill = i;
-
-	    if (log_buffer[0] != '\0')
-	  	  {
-	  	  sprintf(log_buffer, "rpp_open failed on %s",
-	  					  np->hn_host);
-	  	  }
-
-	    log_err(errno, id, log_buffer);
-
-	    exec_bail(pjob, JOB_EXEC_FAIL1);
-
-	    return(PBSE_SISCOMM);
-	    }
-
-	  stream = np->hn_stream;
-	  ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);
-
-	  /* im_compose() will succeed even if mom is down */
-
-	  im_compose( stream,
-	  				pjob->ji_qs.ji_jobid,
-	  				pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
-	  				com,
-	  				ep->ee_event,
-	  				TM_NULL_TASK);
-
-	  diswsi(stream, RPP_FUNC, i);  /* nodeid of receiver */
-	  diswsi(stream, RPP_FUNC, pjob->ji_numnodes);  /* number of nodes */
+    
+    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    
+    if (stream < 0)
+      {
+      pjob->ji_nodekill = i;
+      
+      if (log_buffer[0] != '\0')
+        {
+        sprintf(log_buffer, "tcp_connect_sockaddr failed on %s", np->hn_host);
+        }
+      
+      log_err(errno, id, log_buffer);
+      
+      exec_bail(pjob, JOB_EXEC_FAIL1);
+      
+      return(PBSE_SISCOMM);
+      }
+    
+    ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);
+    
+	  im_compose(stream,
+        pjob->ji_qs.ji_jobid,
+        pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
+        com,
+        ep->ee_event,
+        TM_NULL_TASK);
+    
+    diswsi(stream, i);  /* nodeid of receiver */
+    diswsi(stream, pjob->ji_numnodes);  /* number of nodes */
     if (flag == MOTHER_SUPERIOR)
       {
-      diswsi(stream, RPP_FUNC, pjob->ji_portout);  /* out port number */
-      diswsi(stream, RPP_FUNC, pjob->ji_porterr);  /* err port number */
+      diswsi(stream, pjob->ji_portout);  /* out port number */
+      diswsi(stream, pjob->ji_porterr);  /* err port number */
       }
     else
       {
-      diswsi(stream, RPP_FUNC, pjob->ji_im_portout); /* out port number */
-      diswsi(stream, RPP_FUNC, pjob->ji_im_porterr); /* err port number */
+      diswsi(stream, pjob->ji_im_portout); /* out port number */
+      diswsi(stream, pjob->ji_im_porterr); /* err port number */
       }
-	  diswst(stream, RPP_FUNC, sister_list[i-1]->host_list ); /* sisters for this intermediate mom */
-	  diswst(stream, RPP_FUNC, sister_list[i-1]->port_list ); /* sisters for this intermediate mom */
-	  diswsi(stream, RPP_FUNC, sister_list[i-1]->count );     /* how many sisters in this radix group */
+	  diswst(stream, sister_list[i-1]->host_list ); /* sisters for this intermediate mom */
+	  diswst(stream, sister_list[i-1]->port_list ); /* sisters for this intermediate mom */
+	  diswsi(stream, sister_list[i-1]->count );     /* how many sisters in this radix group */
 
 	  /* write jobattrs */
 
@@ -1578,20 +1574,16 @@ int open_rpp_stream_to_sisters(
 
 	  encode_DIS_svrattrl(stream, psatl);
 
-	  /* NOTE:  rpp_flush() will succeed even if MOM is down */
+    DIS_tcp_wflush(stream);
 
-	  if (rpp_flush(stream) != 0)
-	    {
-	    sprintf(log_buffer, "ALERT:  unable to send join_job message to %s",
-	  				  np->hn_host);
-
-	    log_err(errno, id, log_buffer);
-	    return(PBSE_SISCOMM);
-	    }
+    close(stream);
 	  }
 
-  return(0);
+  return(PBSE_NONE);
   } /* end open_rpp_stream_to_sisters */
+
+
+
 
 void free_sisterlist(
 
@@ -4130,25 +4122,24 @@ int TMomFinalizeChild(
 
 	if (strlen(shell) == 0)
 		{
-#ifndef NDEBUG
-		extern char mom_host[];
-#endif
-		DBPRT(("user \"%s\" may not have a shell defined on node \"%s\"\n",
-					 pwdp->pw_name,
-					 mom_host));
+    snprintf(log_buffer,sizeof(log_buffer),
+      "user \"%s\" may not have a shell defined on node \"%s\"\n",
+      pwdp->pw_name,
+      mom_host);
+
+    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 		}
   else if (strstr(shell, "/bin/false") != NULL)
 		{
-#ifndef NDEBUG
-		extern char mom_host[];
-#endif
-		DBPRT(("user \"%s\" has shell \"/bin/false\" on node \"%s\"\n",
-					 pwdp->pw_name,
-					 mom_host));
+    snprintf(log_buffer,sizeof(log_buffer),
+      "user \"%s\" has shell \"/bin/false\" on node \"%s\"\n",
+      pwdp->pw_name,
+      mom_host);
+
+    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 		}
   else
 		{
-
 		struct stat buf;
 
 		if (stat(shell, &buf) != 0)
@@ -4528,26 +4519,7 @@ int start_process(
 		}
   else
 		{
-
-		struct sockaddr_in *ap;
-
-		/*
-		** We always have a stream open to MS at node 0.
-		*/
-
-		i = pjob->ji_hosts[0].hn_stream;
-
-		if ((ap = rpp_getaddr(i)) == NULL)
-			{
-			sprintf(log_buffer, "job %s has no stream to MS",
-							pjob->ji_qs.ji_jobid);
-
-			log_err(-1, id, log_buffer);
-
-			return(-1);
-			}
-
-		ipaddr = ap->sin_addr.s_addr;
+    ipaddr = pjob->ji_hosts[0].sock_addr.sin_addr.s_addr;
 		}	 /* END else (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) */
 
 	/* A restarted mom will not have called this yet, but it is needed
@@ -5464,7 +5436,6 @@ void job_nodes(
   char  *portstr = NULL;
 	hnodent *hp = NULL;
 	vnodent *np = NULL;
-	extern char    mom_host[];
 
 	nodes_free(pjob);
 
@@ -5494,8 +5465,12 @@ void job_nodes(
 
 	pjob->ji_vnods = (vnodent *)calloc(nodenum + 1, sizeof(vnodent));
 
-	assert(pjob->ji_hosts);
-	assert(pjob->ji_vnods);
+  if ((pjob->ji_hosts == NULL) ||
+      (pjob->ji_vnods == NULL))
+    {
+    log_err(-1,id,"Out of memory, system failure!\n");
+    return;
+    }
 
 	pjob->ji_numvnod = nodenum;
 
@@ -5511,6 +5486,7 @@ void job_nodes(
     char *portptr;
     char  portnumber[MAXPORTLEN+1];
     int   portcount;
+    struct hostent *hostent_ptr;
 
 		ix = 0;
 
@@ -5573,12 +5549,17 @@ void job_nodes(
 			/* need to add host to tn_host */
 
 			hp->hn_node = nhosts++;
-			hp->hn_stream = -1;
 			hp->hn_sister = SISTER_OKAY;
 			hp->hn_host = strdup(nodename);
       hp->hn_port = atoi(portnumber);
 
 			CLEAR_HEAD(hp->hn_events);
+
+      /* set up the socket address information */
+      hostent_ptr = gethostbyname(nodename);
+      hp->sock_addr.sin_family = AF_INET;
+      memcpy(&(hp->sock_addr.sin_addr), hostent_ptr->h_addr_list[0], hostent_ptr->h_length);
+      hp->sock_addr.sin_port = htons(hp->hn_port);
 			}
 
 		np->vn_node  = i;	/* make up node id */
@@ -5659,7 +5640,6 @@ void sister_job_nodes(
   char  *cp = NULL, *nodestr = NULL, *portstr = NULL;
   hnodent *hp = NULL;
   vnodent *np = NULL;
-  extern char    mom_host[];
 
   /*  nodes_free(pjob); We may need to do a sister_nodes_free later */
 
@@ -5776,7 +5756,6 @@ void sister_job_nodes(
 	    /* need to add host to tn_host */
 
 	    hp->hn_node = nhosts++;
-	    hp->hn_stream = -1;
 	    hp->hn_sister = SISTER_OKAY;
 	    hp->hn_host = strdup(nodename);
 	    hp->hn_port = atoi(portnumber);
@@ -6085,7 +6064,13 @@ void start_exec(
 			} while (i < nodenum);
 
 		/* the sister lists have been made. Now contact the intermediate moms as designated by mom_radix */
-		open_rpp_stream_to_sisters(pjob, IM_JOIN_JOB_RADIX, mom_radix, pjob->ji_hosts, sister_list, &phead, MOTHER_SUPERIOR);
+		open_tcp_stream_to_sisters(pjob,
+        IM_JOIN_JOB_RADIX,
+        mom_radix,
+        pjob->ji_hosts,
+        sister_list,
+        &phead,
+        MOTHER_SUPERIOR);
 
 		free_attrlist(&phead);
 		free_sisterlist(sister_list, mom_radix);
@@ -6130,17 +6115,15 @@ void start_exec(
 
 			log_buffer[0] = '\0';
 
-			/* rpp_open() will succeed even if MOM is down */
+      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
 
-	    np->hn_stream = rpp_open(np->hn_host, np->hn_port, log_buffer);
-
-			if (np->hn_stream < 0)
+      if (stream < 0)
 				{
 				pjob->ji_nodekill = i;
 
 				if (log_buffer[0] != '\0')
 					{
-					sprintf(log_buffer, "rpp_open failed on %s",
+					sprintf(log_buffer, "tcp_connect_sockaddr failed on %s",
 									np->hn_host);
 					}
 
@@ -6150,34 +6133,26 @@ void start_exec(
 
 				return;
 				}
-			}		 /* END for (i) */
+			
+      ep = event_alloc(IM_JOIN_JOB, np, TM_NULL_EVENT, TM_NULL_TASK);
 
-
-		/* Send out a JOIN_JOB message to all the MOM's in the sisterhood. */
-
-		/* NOTE:  does not check success of join request */
-
-		for (i = 1;i < nodenum;i++)
-			{
-			np = &pjob->ji_hosts[i];
-			stream = np->hn_stream;
-
-			ep = event_alloc(IM_JOIN_JOB, np, TM_NULL_EVENT, TM_NULL_TASK);
-
-			/* im_compose() will succeed even if mom is down */
-
-			im_compose(
-								stream,
-								pjob->ji_qs.ji_jobid,
-								pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
+      /* Send out a JOIN_JOB message to all the MOM's in the sisterhood. */
+      /* NOTE:  does not check success of join request */
+ 
+      DIS_tcp_setup(stream);
+			
+      im_compose(
+ 								stream,
+ 								pjob->ji_qs.ji_jobid,
+ 								pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
 								IM_JOIN_JOB,
 								ep->ee_event,
 								TM_NULL_TASK);
 
-			diswsi(stream, RPP_FUNC, i);                /* nodeid of receiver */
-			diswsi(stream, RPP_FUNC, nodenum);          /* number of nodes */
-			diswsi(stream, RPP_FUNC, pjob->ji_portout); /* out port number */
-			diswsi(stream, RPP_FUNC, pjob->ji_porterr); /* err port number */
+			diswsi(stream, i);                /* nodeid of receiver */
+			diswsi(stream, nodenum);          /* number of nodes */
+			diswsi(stream, pjob->ji_portout); /* out port number */
+			diswsi(stream, pjob->ji_porterr); /* err port number */
 
 			/* write jobattrs */
 
@@ -6185,16 +6160,25 @@ void start_exec(
 
 			encode_DIS_svrattrl(stream, psatl);
 
-			/* NOTE:  rpp_flush() will succeed even if MOM is down */
+      DIS_tcp_wflush(stream);
 
-			if (rpp_flush(stream) != 0)
-				{
-				sprintf(log_buffer, "ALERT:  unable to send join_job message to %s",
-								np->hn_host);
+      read_tcp_reply(stream,IM_PROTOCOL,IM_PROTOCOL_VER,IM_JOIN_JOB,&ret);
+      
+      close(stream);
+     
+      if (ret != DIS_SUCCESS)
+        {
+        /* FAILURE */
+        snprintf(log_buffer,sizeof(log_buffer),
+          "Couldn't send join job request to %s for job %s",
+          np->hn_host,
+          pjob->ji_qs.ji_jobid);
 
-				log_err(errno, id, log_buffer);
-				}
-			}	 /* END for (i) */
+        log_err(-1,id,log_buffer);
+
+        exec_bail(pjob,JOB_EXEC_FAIL1);
+        }
+			}		 /* END for (i) */
 
 		free_attrlist(&phead);
 		}	 /* END if (nodenum > 1) */

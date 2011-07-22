@@ -18,6 +18,8 @@
 
 extern char *optarg;
 
+#include "net_connect.h"
+#include "dis.h"
 #include "mcom.h"
 
 #include "pbs_error.h"
@@ -440,6 +442,119 @@ int main(
 
 
 
+int send_command(
+
+  int stream,
+  int cmd)
+
+  {
+  int rc;
+
+  DIS_tcp_setup(stream);
+
+  rc = diswsi(stream,RM_PROTOCOL);
+
+  if (rc != DIS_SUCCESS)
+    return(rc);
+
+  rc = diswsi(stream,RM_PROTOCOL_VER);
+
+  if (rc != DIS_SUCCESS)
+    return(rc);
+
+  rc = diswsi(stream,cmd);
+
+  DIS_tcp_wflush(stream);
+
+  return(rc);
+  } /* END send_command() */
+
+
+
+
+
+/*
+ * send_command_str
+ *
+ * @param stream - the stream we're writing to
+ * @param cmd - the command we're writing
+ */
+
+int send_command_str(
+
+  int   stream,  /* I */
+  int   cmd,
+  char *query)     /* I */
+
+  {
+  int rc = send_command(stream,cmd);
+
+  if (rc != DIS_SUCCESS)
+    return(rc);
+
+  rc = diswcs(stream,query,strlen(query));
+
+  DIS_tcp_wflush(stream);
+
+  return(rc);
+  } /* END send_command_str() */
+
+
+
+
+
+int check_success(
+
+  int stream)
+
+  {
+  int rc;
+  int status = disrsi(stream,&rc);
+
+  if (rc != DIS_SUCCESS)
+    return(rc);
+  else if (status != RM_RSP_OK)
+    {
+#ifdef ENOMSG
+    pbs_errno = ENOMSG;
+#else
+    pbs_errno = EINVAL;
+#endif
+
+    return(-1);
+    }
+  else
+    return(PBSE_NONE);
+  } /* END check_success() */
+
+
+
+
+char *read_mom_reply(
+
+  int stream) /* I */
+
+  {
+  int   rc;
+  char *value;
+
+  if (check_success(stream))
+    return(NULL);
+
+  value = disrst(stream,&rc);
+
+  if (rc != DIS_SUCCESS)
+    {
+    pbs_errno = pbs_errno ? pbs_errno : EIO;
+
+    return(NULL);
+    }
+
+  return(value);
+  } /* END read_mom_reply() */
+
+
+
 
 int do_mom(
 
@@ -489,7 +604,7 @@ int do_mom(
       snprintf(tmpLine, 1024, "clearjob=%s",
                (JPtr != NULL) ? JPtr : "all");
 
-      if (addreq(sd, tmpLine) != 0)
+      if (send_command_str(sd, RM_CMD_REQUEST, tmpLine) != 0)
         {
         /* FAILURE */
 
@@ -500,12 +615,12 @@ int do_mom(
           pbs_errno,
           pbs_strerror(pbs_errno));
 
-        closerm(sd);
+        send_command(sd,RM_CMD_CLOSE);
 
         return(-1);
         }
 
-      if ((Value = (char *)getreq(sd)) == NULL)
+      if ((Value = (char *)read_mom_reply(sd)) == NULL)
         {
         /* FAILURE */
 
@@ -516,7 +631,7 @@ int do_mom(
           pbs_errno,
           pbs_strerror(pbs_errno));
 
-        closerm(sd);
+        send_command(sd,RM_CMD_CLOSE);
 
         return(-1);
         }
@@ -532,11 +647,8 @@ int do_mom(
     case momShutdown:
 
       {
-      int rc;
-
-      rc = downrm(sd);
-
-      if (rc != 0)
+      if ((send_command(sd,RM_CMD_SHUTDOWN) != PBSE_NONE) ||
+          (check_success(sd) != PBSE_NONE))
         {
         /* FAILURE */
 
@@ -547,7 +659,7 @@ int do_mom(
           pbs_errno,
           pbs_strerror(pbs_errno));
 
-        closerm(sd);
+        send_command(sd,RM_CMD_CLOSE);
 
         exit(EXIT_FAILURE);
         }
@@ -561,11 +673,8 @@ int do_mom(
     case momReconfig:
 
       {
-      int rc;
-
-      rc = configrm(sd, ConfigBuf);
-
-      if (rc != 0)
+      if ((send_command(sd,RM_CMD_CONFIG) != PBSE_NONE) ||
+          (check_success(sd) != PBSE_NONE))
         {
         /* FAILURE */
 
@@ -576,7 +685,7 @@ int do_mom(
           pbs_errno,
           pbs_strerror(pbs_errno));
 
-        closerm(sd);
+        send_command(sd,RM_CMD_CLOSE);
 
         return(-1);
         }
@@ -600,7 +709,7 @@ int do_mom(
 
       for (rindex = 0;rindex < QueryI;rindex++)
         {
-        if (addreq(sd, Query[rindex]) != 0)
+        if (send_command_str(sd, RM_CMD_REQUEST, Query[rindex]) != 0)
           {
           fprintf(stderr,"ERROR:    cannot add query for '%s' on %s (errno=%d-%s: %d-%s)\n",
             Query[rindex],
@@ -620,7 +729,7 @@ int do_mom(
           *ptr = '\0';
           }
 
-        if ((Value = (char *)getreq(sd)) == NULL)
+        if ((Value = (char *)read_mom_reply(sd)) == NULL)
           {
           fprintf(stderr, "ERROR:    query[%d] '%s' failed on %s (errno=%d-%s: %d-%s)\n",
             rindex,
@@ -663,7 +772,7 @@ int do_mom(
     break;
     }  /* END switch(CmdIndex) */
 
-  closerm(sd);
+  send_command(sd,RM_CMD_CLOSE);
 
   return(0);
   } /* END do_mom() */

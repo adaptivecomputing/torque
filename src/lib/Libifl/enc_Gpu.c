@@ -100,17 +100,23 @@
 #include "dis.h"
 
 
-int
-encode_DIS_GpuCtrl(int sock, char *node, char *gpuid, int gpumode,
-  int reset_perm, int reset_vol)
+int encode_DIS_GpuCtrl(
+    
+  int sock,
+  char *node,
+  char *gpuid,
+  int gpumode,
+  int reset_perm,
+  int reset_vol)
+
   {
   int   rc;
 
-  if ((rc = diswst(sock, TCP_FUNC, node) != 0) ||
-      (rc = diswst(sock, TCP_FUNC, gpuid) != 0) ||
-      (rc = diswui(sock, TCP_FUNC, gpumode) != 0) ||
-      (rc = diswui(sock, TCP_FUNC, reset_perm) != 0) ||
-      (rc = diswui(sock, TCP_FUNC, reset_vol) != 0) ||
+  if ((rc = diswst(sock, node) != 0) ||
+      (rc = diswst(sock, gpuid) != 0) ||
+      (rc = diswui(sock, gpumode) != 0) ||
+      (rc = diswui(sock, reset_perm) != 0) ||
+      (rc = diswui(sock, reset_vol) != 0) ||
       (rc = encode_DIS_ReqExtend(sock, NULL)))
     return rc;
 

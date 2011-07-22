@@ -1,6 +1,11 @@
 include $(top_srcdir)/buildutils/config.mk
 
+if HAVE_CHECK
+SUBDIRS = @PBS_MACH@ test
+else
 SUBDIRS = @PBS_MACH@
+endif
+
 DIST_SUBDIRS = aix4 aix5 cygwin darwin digitalunix freebsd freebsd5 fujitsu hpux10 hpux11 \
 	irix5 irix6 irix6array linux netbsd solaris5 solaris7 sunos4 unicos8 unicosmk2
 

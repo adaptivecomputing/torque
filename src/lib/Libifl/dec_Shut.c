@@ -106,7 +106,7 @@ int decode_DIS_ShutDown(
   {
   int rc;
 
-  preq->rq_ind.rq_shutdown = disrui(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_shutdown = disrui(sock, &rc);
 
   return rc;
   }

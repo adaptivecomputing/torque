@@ -100,8 +100,8 @@ int encode_DIS_MoveJob(
   {
   int   rc;
 
-  if ((rc = diswst(sock, TCP_FUNC, jobid) != 0) ||
-      (rc = diswst(sock, TCP_FUNC, destin) != 0))
+  if ((rc = diswst(sock, jobid) != 0) ||
+      (rc = diswst(sock, destin) != 0))
     {
     /* FAILURE */
 

@@ -215,6 +215,50 @@ int AVL_is_in_tree(u_long key, uint16_t port, AvlTree tree)
   } /* end AVL_is_in_tree */
 
 
+
+
+int AVL_is_in_tree_no_port_compare(
+
+  u_long   key,
+  uint16_t port,
+  AvlTree  tree)
+
+  {
+  if (tree == NULL)
+    return(0);
+
+  if (key < tree->key)
+    return(AVL_is_in_tree_no_port_compare(key,port,tree->left));
+  else if (key > tree->key)
+    return(AVL_is_in_tree_no_port_compare(key,port,tree->right));
+  else
+    return(1);
+  } /* END AVL_is_in_tree_no_port_compare() */
+
+
+
+
+uint16_t AVL_get_port_by_ipaddr(
+    
+  u_long key,
+  AvlTree tree)
+
+  {
+  if (tree == NULL)
+    return(0);
+
+  if (key < tree->key)
+    return(AVL_get_port_by_ipaddr(key,tree->left));
+  else if (key > tree->key)
+    return(AVL_get_port_by_ipaddr(key,tree->right));
+  else
+    return(tree->port);
+  } /* END AVL_get_port_by_ipaddr() */
+
+
+
+
+
 AvlTree AVL_delete_node( 
 
   u_long   key, 

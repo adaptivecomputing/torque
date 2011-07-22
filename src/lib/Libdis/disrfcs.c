@@ -105,7 +105,6 @@
 int disrfcs(
     
   int     stream,
-  int     rpp,
   size_t *nchars,
   size_t  achars,
   char   *value)
@@ -120,18 +119,10 @@ int disrfcs(
   assert(nchars != NULL);
   assert(value != NULL);
 
-  if (rpp)
-    {
-    disr_commit = rpp_rcommit;
-    dis_gets = (int (*)(int, char *, size_t))rpp_read;
-    }
-  else
-    {
-    disr_commit = tcp_rcommit;
-    dis_gets = tcp_gets;
-    }
+  disr_commit = tcp_rcommit;
+  dis_gets = tcp_gets;
 
-  locret = disrsi_(stream, rpp, &negate, &count, 1);
+  locret = disrsi_(stream, &negate, &count, 1);
 
   if (locret == DIS_SUCCESS)
     {

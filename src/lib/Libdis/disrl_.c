@@ -90,7 +90,6 @@
 int disrl_(
 
   int                stream,
-  int                rpp,
   dis_long_double_t *ldval,
   unsigned          *ndigs,
   unsigned          *nskips,
@@ -110,14 +109,9 @@ int disrl_(
 
   assert(stream >= 0);
 
-  if (rpp)
-    dis_getc = rpp_getc;
-  else
-    {
-    disr_skip = tcp_rskip;
-    dis_getc = tcp_getc;
-    dis_gets = tcp_gets;
-    }
+  disr_skip = tcp_rskip;
+  dis_getc = tcp_getc;
+  dis_gets = tcp_gets;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   if (dis_umaxd == 0)
@@ -285,7 +279,7 @@ int disrl_(
           }
         }    /* END if (count > 1) */
 
-      return(disrl_(stream, rpp, ldval, ndigs, nskips, sigd, unum));
+      return(disrl_(stream, ldval, ndigs, nskips, sigd, unum));
 
       /*NOTREACHED*/
 

@@ -166,6 +166,7 @@ static int     pagesize;
 extern char *ret_string;
 extern char extra_parm[];
 extern char no_parm[];
+extern char mom_host[];
 
 extern time_t   time_now;
 
@@ -182,6 +183,7 @@ static int            max_proc = 0;
 /*
 ** external functions and data
 */
+extern tlist_head               svr_alljobs;
 extern struct  config          *search(struct config *,char *);
 extern struct  rm_attribute    *momgetattr(char *);
 extern int                      rm_errno;
@@ -3327,8 +3329,6 @@ char *sessions(
   pid_t              sid;
   char              *s;
 #ifdef NUMA_SUPPORT
-  extern char        mom_host[];
-  extern tlist_head  svr_alljobs;
   char               mom_check_name[PBS_MAXSERVERNAME];
   job               *pjob;
   task              *ptask;
@@ -3632,8 +3632,6 @@ char *nusers(
   static int         maxuid = 200;
   register uid_t     uid;
 #ifdef NUMA_SUPPORT
-  extern char        mom_host[];
-  extern tlist_head  svr_alljobs;
   char               mom_check_name[PBS_MAXSERVERNAME], *s;
   job               *pjob;
 #else
@@ -4255,7 +4253,6 @@ void scan_non_child_tasks(void)
   char *id = "scan_non_child_tasks";
 
   job *job;
-  extern tlist_head svr_alljobs;
   static int first_time = TRUE;
 
   DIR *pdir;  /* use local pdir to prevent race conditions associated w/global pdir (VPAC) */

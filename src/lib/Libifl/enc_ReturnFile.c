@@ -20,9 +20,9 @@ int encode_DIS_ReturnFiles(
   int   rc;
 
 
-  if ((rc = diswst(sock, TCP_FUNC, preq->rq_ind.rq_returnfiles.rq_jobid) != 0)         ||
-      (rc = diswsi(sock, TCP_FUNC, preq->rq_ind.rq_returnfiles.rq_return_stdout) != 0) ||
-      (rc = diswsi(sock, TCP_FUNC, preq->rq_ind.rq_returnfiles.rq_return_stderr) != 0))
+  if ((rc = diswst(sock, preq->rq_ind.rq_returnfiles.rq_jobid) != 0)         ||
+      (rc = diswsi(sock, preq->rq_ind.rq_returnfiles.rq_return_stdout) != 0) ||
+      (rc = diswsi(sock, preq->rq_ind.rq_returnfiles.rq_return_stderr) != 0))
     return rc;
 
   return 0;

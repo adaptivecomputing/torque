@@ -19,7 +19,6 @@
 
 
 extern int LOGLEVEL;
-extern char mom_host[];
 
 /* NOTE:  may use CPA_MAX_NODES at some point */
 

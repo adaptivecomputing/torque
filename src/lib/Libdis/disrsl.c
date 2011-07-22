@@ -114,7 +114,6 @@
 long disrsl(
 
   int  stream,
-  int  rpp,
   int *retval)
 
   {
@@ -126,14 +125,11 @@ long disrsl(
 
   assert(retval != NULL);
 
-  if (rpp)
-    disr_commit = rpp_rcommit;
-  else
-    disr_commit = tcp_rcommit;
+  disr_commit = tcp_rcommit;
 
   value = 0;
 
-  switch (locret = disrsl_(stream, rpp, &negate, &uvalue, 1))
+  switch (locret = disrsl_(stream, &negate, &uvalue, 1))
     {
 
     case DIS_SUCCESS:

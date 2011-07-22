@@ -27,6 +27,11 @@ dnl Added --enable-libcpuset to use the cpuset API from libcpuset when --enable-
 dnl Added --enable-memacct to enable pbs_mom to get rss values that are more reliable
 dnl Added requirement for libhwloc when --enable-cpuset or --enable-numa-support
 dnl   Bernd Kallies (kallies@zib.de)
+dnl
+dnl Expanded to allow unit testing via Check
+dnl Updated to use m4
+dnl added library functionality to testing
+dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 
 AC_PREREQ(2.53)
 AC_INIT([torque], [3.1.0], [torqueusers@supercluster.org])
@@ -34,6 +39,8 @@ AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
 AC_CANONICAL_HOST
+AC_CONFIG_MACRO_DIR([m4])
+LT_INIT
 
 
 AC_CHECK_PROGS(MAKE,$MAKE make gmake,error)
@@ -41,7 +48,7 @@ if test "x$MAKE" = "xerror" ;then
   AC_MSG_ERROR([cannot find a make command])
 fi
 
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 color-tests])
 AM_MAINTAINER_MODE
 
 if test "$program_prefix" = "NONE";then
@@ -80,6 +87,21 @@ AC_DEFINE_UNQUOTED(PBS_MACH, "${PBS_MACH}",
 #  another resc_def_all.c
 AC_DEFINE_UNQUOTED(MACH_RESC_DEFS, "resc_def_${PBS_MACH}.c",
 		   [the machine specific resc_def_* file name])
+
+
+dnl
+dnl  ######################################################################
+dnl  add unit testing if check is installed
+AC_ARG_WITH(check,
+   [AS_HELP_STRING([--with-check], [Enable unit testing (check package default=no)])], [have_check=yes], [have_check=no])
+ 
+AS_IF([test x"$have_check" = "xyes"], [
+  PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [check_installed="yes"], [check_installed="no"])
+  AS_IF([test x"$check_installed" = "xno"], [
+    AC_MSG_ERROR([Check not found; cannot run unit tests!!])
+  ])
+])
+AM_CONDITIONAL(HAVE_CHECK, test x"$have_check" = "xyes")
 
 
 

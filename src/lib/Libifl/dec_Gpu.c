@@ -105,23 +105,23 @@ decode_DIS_GpuCtrl(int sock, struct batch_request *preq)
   {
   int rc;
 
-  rc = disrfst(sock, TCP_FUNC, PBS_MAXHOSTNAME + 1, preq->rq_ind.rq_gpuctrl.rq_momnode);
+  rc = disrfst(sock, PBS_MAXHOSTNAME + 1, preq->rq_ind.rq_gpuctrl.rq_momnode);
 
   if (rc) return rc;
 
-  rc = disrfst(sock, TCP_FUNC, PBS_MAXGPUID + 1, preq->rq_ind.rq_gpuctrl.rq_gpuid);
+  rc = disrfst(sock, PBS_MAXGPUID + 1, preq->rq_ind.rq_gpuctrl.rq_gpuid);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_gpuctrl.rq_gpumode = disrui(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_gpuctrl.rq_gpumode = disrui(sock, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_gpuctrl.rq_reset_perm = disrui(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_gpuctrl.rq_reset_perm = disrui(sock, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_gpuctrl.rq_reset_vol = disrui(sock, TCP_FUNC, &rc);
+  preq->rq_ind.rq_gpuctrl.rq_reset_vol = disrui(sock, &rc);
 
   return rc;
   }

@@ -100,7 +100,7 @@ int encode_DIS_Status(
   {
   int rc;
 
-  if ((rc = diswst(sock, TCP_FUNC, objid) != 0) ||
+  if ((rc = diswst(sock, objid) != 0) ||
       (rc = encode_DIS_attrl(sock, pattrl) != 0))
     {
     return(rc);

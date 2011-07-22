@@ -109,6 +109,7 @@ pthread_mutex_t *tcparraymax_mutex = NULL;
 static struct tcp_chan **tcparray = NULL;
 static int    tcparraymax = 0;
 
+/* John wants to change this to 300 - we need a reason before this is done */
 time_t pbs_tcp_timeout = 20;  /* reduced from 60 to 20 (CRI - Nov/03/2004) */
 
 

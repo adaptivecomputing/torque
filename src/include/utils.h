@@ -112,9 +112,7 @@
 #include "log.h"
 #include "mcom.h"
 
-#ifndef MAXLINE 
 #define MAXLINE 1024
-#endif
 #ifndef NULL
 #define NULL 0
 #endif
@@ -122,29 +120,6 @@
 #define TRUE 1
 #define FALSE 0
 #endif
-
-#define BUFFER_OVERFLOW -5
-#define LT_ESCAPED       "&lt;"
-#define LT_ESCAPED_LEN   4
-#define GT_ESCAPED       "&gt;"
-#define GT_ESCAPED_LEN   4
-#define AMP_ESCAPED      "&amp;"
-#define AMP_ESCAPED_LEN  5
-#define QUOT_ESCAPED     "&quot;"
-#define QUOT_ESCAPED_LEN 6
-#define APOS_ESCAPED     "&apos;"
-#define APOS_ESCAPED_LEN 6
-
-#ifndef MAXLINE 
-#define MAXLINE 1024
-#endif
-#ifndef NULL
-#define NULL 0
-#endif
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif 
 
 #define BUFFER_OVERFLOW -5
 #define LT_ESCAPED       "&lt;"
@@ -170,6 +145,7 @@ extern struct pbsnode *tfind (const u_long, tree **);
 extern int tlist (tree *, char *, int);
 extern void tfree (tree **);
 extern int is_whitespace (char);
+extern int write_buffer (char *,int,int);
 
 /* moab-like utility functions in u_mu.c */
 extern int MUSNPrintF (char **, int *, char *, ...);

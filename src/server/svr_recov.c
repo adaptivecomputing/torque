@@ -244,32 +244,6 @@ int svr_recov(
 
 
 
-int write_buffer(
-
-  char *buf,
-  int   len,
-  int   fds)
-
-  {
-  char *id = "write_buffer";
-  int   written;
-
-  while ((written = write(fds,buf,len)) != len)
-    {
-    if ((errno == EINTR) &&
-        (written == -1))
-      continue;
-
-    log_err(errno,id,msg_svdbnosv);
-
-    return(-1);
-    }
-
-  return(0);
-  } /* END write_buffer */
-
-
-
 
 
 int size_to_str(

@@ -144,8 +144,7 @@ extern int parse_jobid(char *, char **, char **, char **);
 
 
 
-int
-TShowAbout(void)
+int TShowAbout_exit(void)
 
   {
   char *dserver;
@@ -167,23 +166,18 @@ TShowAbout(void)
           dserver,
           (servervar != NULL) ? " (PBS_DEFAULT is set)" : "");
 
-  fprintf(stderr, "BuildDir:  %s\n",
-          PBS_SOURCE_DIR);
+  fprintf(stderr, "BuildDir:  %s\n", PBS_SOURCE_DIR);
 
-  fprintf(stderr, "BuildUser: %s\n",
-          PBS_BUILD_USER);
+  fprintf(stderr, "BuildUser: %s\n", PBS_BUILD_USER);
 
-  fprintf(stderr, "BuildHost: %s\n",
-          PBS_BUILD_HOST);
+  fprintf(stderr, "BuildHost: %s\n", PBS_BUILD_HOST);
 
-  fprintf(stderr, "BuildDate: %s\n",
-          PBS_BUILD_DATE);
+  fprintf(stderr, "BuildDate: %s\n", PBS_BUILD_DATE);
 
-  fprintf(stderr, "Version:   %s\n",
-          PACKAGE_VERSION);
+  fprintf(stderr, "Version:   %s\n", PACKAGE_VERSION);
 
-  return(0);
-  }  /* END TShowAbout() */
+  exit(0);
+  }  /* END TShowAbout_exit() */
 
 
 /**

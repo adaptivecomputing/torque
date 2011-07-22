@@ -85,32 +85,34 @@
 
 #ifndef _PBS_IFL_DEF
 #define _PBS_IFL_DEF
+#include "u_hash_map_structs.h"
+#include "u_memmgr.h"
 
 /* Attribute Names used by user commands */
 
-#define ATTR_a "Execution_Time"
-#define ATTR_c "Checkpoint"
-#define ATTR_e "Error_Path"
+#define ATTR_a "execution_time"
+#define ATTR_c "checkpoint"
+#define ATTR_e "error_path"
 #define ATTR_f "fault_tolerant"
 #define ATTR_g "group_list"
-#define ATTR_h "Hold_Types"
-#define ATTR_j "Join_Path"
-#define ATTR_k "Keep_Files"
-#define ATTR_l "Resource_List"
-#define ATTR_m "Mail_Points"
-#define ATTR_o "Output_Path"
-#define ATTR_p "Priority"
+#define ATTR_h "hold_types"
+#define ATTR_j "join_path"
+#define ATTR_k "keep_files"
+#define ATTR_l "resource_list"
+#define ATTR_m "mail_points"
+#define ATTR_o "output_path"
+#define ATTR_p "priority"
 #define ATTR_q "destination"
-#define ATTR_r "Rerunable"
+#define ATTR_r "rerunable"
 #define ATTR_t "job_array_request"
 #define ATTR_array_id "job_array_id"
-#define ATTR_u "User_List"
-#define ATTR_v "Variable_List"
-#define ATTR_A "Account_Name"
+#define ATTR_u "user_list"
+#define ATTR_v "variable_list"
+#define ATTR_A "account_name"
 #define ATTR_args "job_arguments"
-#define ATTR_M "Mail_Users"
-#define ATTR_N "Job_Name"
-#define ATTR_S "Shell_Path_List"
+#define ATTR_M "mail_users"
+#define ATTR_N "job_name"
+#define ATTR_S "shell_path_list"
 #define ATTR_depend   "depend"
 #define ATTR_inter    "interactive"
 #define ATTR_stagein  "stagein"
@@ -118,6 +120,21 @@
 #define ATTR_jobtype  "jobtype"
 #define ATTR_submit_host "submit_host"
 #define ATTR_init_work_dir "init_work_dir"
+/* The following were part of the variable_list */
+#define ATTR_pbs_o_initdir          "pbs_o_initdir"
+#define ATTR_pbs_o_rootdir          "pbs_o_rootdir"
+#define ATTR_pbs_o_workdir          "pbs_o_workdir" /* same as init_work_dir */
+#define ATTR_pbs_o_host             "pbs_o_host" /* same as submit_host */
+#define ATTR_pbs_o_server           "pbs_o_server"
+#define ATTR_pbs_o_home             "pbs_o_home"
+#define ATTR_pbs_o_logname          "pbs_o_logname"
+#define ATTR_pbs_o_path             "pbs_o_path"
+#define ATTR_pbs_o_mail             "pbs_o_mail"
+#define ATTR_pbs_o_shell            "pbs_o_shell"
+#define ATTR_pbs_o_tz               "pbs_o_tz"
+#define ATTR_pbs_o_lang             "pbs_o_lang"
+#define ATTR_pbs_o_uid              "pbs_o_uid"
+#define ATTR_pbs_o_submit_filter    "pbs_o_submit_filter"
 
 /* additional job and general attribute names */
 
@@ -134,8 +151,8 @@
 #define ATTR_security   "security"
 #define ATTR_sched_hint "sched_hint"
 #define ATTR_substate   "substate"
-#define ATTR_name       "Job_Name"
-#define ATTR_owner      "Job_Owner"
+#define ATTR_name       "job_name"
+#define ATTR_owner      "job_owner"
 #define ATTR_used       "resources_used"
 #define ATTR_state      "job_state"
 #define ATTR_queue      "queue"
@@ -318,7 +335,7 @@
 #define ATTR_NODE_num_node_boards  "num_node_boards"
 #define ATTR_NODE_numa_str         "numa_board_str"
 #define ATTR_NODE_gpus             "gpus"
-#define ATTR_NODE_gpustatus      "gpu_status"
+#define ATTR_NODE_gpustatus        "gpu_status"
 #define ATTR_NODE_gpus_str         "numa_gpu_node_str"
 
 /* notification email formating */
@@ -333,6 +350,8 @@
 #define NO_JOIN "n"
 #define NO_KEEP "n"
 #define MAIL_AT_ABORT "a"
+#define DEFAULT_PRIORITY "0"
+
 
 
 #define ARRAY_RANGE  "array_range=" /* see qdel.c */
@@ -625,6 +644,8 @@ extern struct batch_status *
 extern char *
   pbs_submit(int connect, struct attropl *attrib, char *script,
                  char *destination, char *extend);
+
+char * pbs_submit_hash(int connect, memmgr **mm, job_data *job_attr, job_data *res_attr, char *script, char *destination, char *extend);
 
 extern int
   pbs_terminate(int connect, int manner, char *extend);

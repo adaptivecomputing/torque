@@ -105,7 +105,7 @@ int decode_DIS_JobId(
   char *jobid)
 
   {
-  return (disrfst(sock, TCP_FUNC, PBS_MAXSVRJOBID + 1, jobid));
+  return (disrfst(sock, PBS_MAXSVRJOBID + 1, jobid));
   }
 
 

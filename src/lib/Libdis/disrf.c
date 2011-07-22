@@ -113,7 +113,6 @@ static double dval;
 static int disrd_(
 
   int          stream,
-  int          rpp,
   unsigned int count)
 
   {
@@ -131,17 +130,9 @@ static int disrd_(
 
   memset(scratch, 0, DIS_BUFSIZ+1);
 
-  if (rpp)
-    {
-    dis_getc = rpp_getc;
-    dis_gets = (int (*)(int, char *, size_t))rpp_read;
-    }
-  else
-    {
-    dis_getc = tcp_getc;
-    dis_gets = tcp_gets;
-    disr_skip = tcp_rskip;
-    }
+  dis_getc = tcp_getc;
+  dis_gets = tcp_gets;
+  disr_skip = tcp_rskip;
 
   c = (*dis_getc)(stream);
 
@@ -305,7 +296,7 @@ static int disrd_(
           }
         }
 
-      return(disrd_(stream, rpp, unum));
+      return(disrd_(stream, unum));
 
       /*NOTREACHED*/
 
@@ -347,7 +338,6 @@ static int disrd_(
 float disrf(
 
   int  stream,
-  int  rpp,
   int *retval)
 
   {
@@ -363,25 +353,16 @@ float disrf(
   assert(retval != NULL);
   assert(stream >= 0);
 
-  if (rpp)
-    {
-    dis_getc = rpp_getc;
-    dis_gets = (int (*)(int, char *, size_t))rpp_read;
-    disr_commit = rpp_rcommit;
-    }
-  else
-    {
-    dis_getc = tcp_getc;
-    dis_gets = tcp_gets;
-    disr_skip = tcp_rskip;
-    disr_commit = tcp_rcommit;
-    }
+  dis_getc = tcp_getc;
+  dis_gets = tcp_gets;
+  disr_skip = tcp_rskip;
+  disr_commit = tcp_rcommit;
 
   dval = 0.0;
 
-  if ((locret = disrd_(stream, rpp, 1)) == DIS_SUCCESS)
+  if ((locret = disrd_(stream, 1)) == DIS_SUCCESS)
     {
-    locret = disrsi_(stream, rpp, &negate, &uexpon, 1);
+    locret = disrsi_(stream, &negate, &uexpon, 1);
 
     if (locret == DIS_SUCCESS)
       {

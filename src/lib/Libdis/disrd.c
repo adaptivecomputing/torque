@@ -110,7 +110,6 @@
 double disrd(
     
   int  stream,
-  int  rpp,
   int *retval)
   
   {
@@ -125,17 +124,14 @@ double disrd(
 
   assert(retval != NULL);
 
-  if (rpp)
-    disr_commit = rpp_rcommit;
-  else
-    disr_commit = tcp_rcommit;
+  disr_commit = tcp_rcommit;
 
   ldval = 0.0L;
-  locret = disrl_(stream, rpp, &ldval, &ndigs, &nskips, DBL_DIG, 1);
+  locret = disrl_(stream, &ldval, &ndigs, &nskips, DBL_DIG, 1);
 
   if (locret == DIS_SUCCESS)
     {
-    locret = disrsi_(stream, rpp, &negate, &uexpon, 1);
+    locret = disrsi_(stream, &negate, &uexpon, 1);
 
     if (locret == DIS_SUCCESS)
       {

@@ -111,8 +111,8 @@ int encode_DIS_JobObit(
 
   psvrl = (struct svrattrl *)GET_NEXT(preq->rq_ind.rq_jobobit.rq_attr);
 
-  if ((rc = diswst(sock, TCP_FUNC, preq->rq_ind.rq_jobobit.rq_jid) != 0) ||
-      (rc = diswsi(sock, TCP_FUNC, preq->rq_ind.rq_jobobit.rq_status) != 0) ||
+  if ((rc = diswst(sock, preq->rq_ind.rq_jobobit.rq_jid) != 0) ||
+      (rc = diswsi(sock, preq->rq_ind.rq_jobobit.rq_status) != 0) ||
       (rc = encode_DIS_svrattrl(sock, psvrl) != 0))
     {
     /* FAILURE */
