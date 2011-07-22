@@ -3,14 +3,14 @@ package Torque::Ctrl;
 use strict;
 use warnings;
 
-use FindBin;
-use lib "$FindBin::Bin/../../lib/";
+use TestLibFinder;
+use lib test_lib_loc();
 
 use CRI::Test;
 use Expect;
 use Carp;
 
-use Torque::Util qw(
+use Torque::Test::Utils qw(
                             is_running
                             is_running_remote
                           );
@@ -77,18 +77,6 @@ sub startTorque #($)#
                           };
 
   ##########################
-  # Clean Start Required
-  ##########################
-  if( exists $cfg->{clean_start} )
-  {
-      runCommand(
-	  "rm $torque_home/*_logs/* $torque_home/server_priv/accounting/*",
-	  'test_success' => 1,
-	  'msg' => 'Cleaning up Torque Files'
-      );
-  }
-
-  ##########################
   # Pbs_mom Section
   ##########################
   
@@ -147,7 +135,7 @@ sub syncServerMom
     my $check_cmd = 'pbsnodes -l all';
     my $mom_hosts = $params->{mom_hosts} || [ $props->get_property('Test.Host') ];
 
-    my $wait = 30;
+    my $wait = 120;
     diag "Waiting for All Torque Components to Sync (${wait}s Timeout)";
 
     my $ready = sub{ 
@@ -296,7 +284,7 @@ sub stopPbsmom
 	foreach my $n (@$nodes)
 	{
 	    diag "Attempting to Shutdown Remote PBS_Mom on Host $n...";
-	    my $ps_info = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
+	    my $ps_info   = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
 
 	    unless( &$ps_info eq '')
 	    { 
@@ -307,7 +295,7 @@ sub stopPbsmom
 		    my $kill_cmd = 'kill -9 '.&$ps_info;
 		    
 		    diag "Normal Shutdown Failed! Attempting to SIGKILL Remote PBS_Mom";
-		    runCommandSsh($n, $kill_cmd, 'logging_off' => 1);
+		    runCommandSsh($n, $kill_cmd);
 		}
 	    
 		my $wait = 30;
@@ -406,33 +394,69 @@ sub startPbsserverClean #($)
 {
   my ($cfg) = @_;
 
+  my $localhost = $props->get_property('Test.Host');
+  my $hosts = $cfg->{hosts} || [$localhost];
+  my $mom_hosts = $cfg->{mom_hosts} || $hosts;
+  my $add_queues = $cfg->{add_queues} || [];
+
   # Variables
+  my $default_queue = 'batch';
+  my @queues_cfgs = (
+    {
+      $default_queue => {
+        queue_type => 'execution',
+        started    => 'true',
+        enabled    => 'true',
+        'resources_default.walltime' => '1:00:00',
+        'resources_default.nodes' => 1,
+      },
+    },
+    @$add_queues,
+  );
+
   my $qmgr_cmd          = "$torque_home/bin/qmgr";
   my $pbs_server_cmd    = "${torque_sbin}pbs_server";
   my $operator          = 'root';
   my $manager           = 'root';
-  my $hostname          = $props->get_property('Test.Host');
-  
-  my $default_setup_str =<<DEFAULT;
-echo set server operators += $operator\@$hostname | $qmgr_cmd
-echo set server managers += $manager\@$hostname | $qmgr_cmd
-$qmgr_cmd -c 'set server scheduling = true'
-$qmgr_cmd -c 'set server keep_completed = 300'
-$qmgr_cmd -c 'set server mom_job_sync = true'
-$qmgr_cmd -c 'create queue batch'
-$qmgr_cmd -c 'set queue batch queue_type = execution'
-$qmgr_cmd -c 'set queue batch started = true'
-$qmgr_cmd -c 'set queue batch enabled = true'
-$qmgr_cmd -c 'set queue batch resources_default.walltime = 1:00:00'
-$qmgr_cmd -c 'set queue batch resources_default.nodes = 1'
-$qmgr_cmd -c 'set server default_queue = batch'
-DEFAULT
+  my $setup_str         = '';
+
+  # Set access to pbs_server
+  foreach( @$hosts )
+  {
+    $setup_str .= <<SETUP;
+$qmgr_cmd -c 'set server operators += $operator\@$_'
+$qmgr_cmd -c 'set server managers += $manager\@$_'
+$qmgr_cmd -c 'set server acl_hosts += $_'
+SETUP
+  }
+
+  # Set pbs_server settings
+  $setup_str .= <<SETUP;
+  $qmgr_cmd -c 'set server scheduling = true'
+  $qmgr_cmd -c 'set server keep_completed = 300'
+  $qmgr_cmd -c 'set server mom_job_sync = true'
+SETUP
+
+  # Setup various specified queues
+  foreach my $qref (@queues_cfgs)
+  {
+    my ($name) = keys %$qref;
+    $qref = $qref->{$name};
+
+    $setup_str .= "$qmgr_cmd -c 'create queue $name'\n";
+
+    while( my ($key, $val) = each(%$qref) )
+    {
+      $setup_str .= "$qmgr_cmd -c 'set queue $name $key = $val'\n";
+    }
+  }
+
+  $setup_str .= "$qmgr_cmd -c 'set server default_queue = $default_queue'\n";
 
   # Configuration Variables
   my %server_nodes = ();
-  $server_nodes{hosts} = $cfg->{mom_hosts} if exists $cfg->{mom_hosts};
-  my $setup_str        = $cfg->{ 'setup_str' } || $default_setup_str;
-  my @setup_lines      = split(/\n/, $setup_str);
+  $server_nodes{hosts} = $mom_hosts;
+  my @setup_lines      = split /\n/, ($cfg->{setup_lines} || $setup_str);
 
   # pbs_server command
   my $pbs_cmd  = "$pbs_server_cmd -t create";

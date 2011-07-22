@@ -1,22 +1,31 @@
 package Torque::Job::Ctrl;
 
+########################################################################
+# 
+# File   :  Torque/Job/Ctrl.pm
+# History:  26-aug-2009 (jdayley) Added this header, updated comments,
+#                       and added qsub subroutine.
+#
+########################################################################
+#
+# Contains subroutine related to the submiting and destroying of torque
+# jobs.
+# 
+########################################################################
+
 use strict;
 use warnings;
-
-use FindBin;
-use lib "$FindBin::Bin/../../../lib/";
-
 
 use CRI::Test;
 use Carp;
 
-use Torque::Util::Qstat qw(
-                             parse_qstat_fx
-                          );
-use Torque::Job::Utils  qw(
-                             cleanupJobId
-                             detaintJobId
-                          );
+use Torque::Test::Qstat::Utils qw(
+                                    parse_qstat_fx
+                                 );
+use Torque::Job::Utils         qw(
+                                    cleanupJobId
+                                    detaintJobId
+                                 );
 
 use base 'Exporter';
 
@@ -65,8 +74,8 @@ sub qsub #($)
   my $cmd          = $params->{ 'cmd'          } || 'sleep 300' unless exists $params->{script};
   my $user         = $params->{ 'user'         } || $props->get_property("User.1");
   my $runcmd_flags = $params->{ 'runcmd_flags' } || { 'test_success_die' => 1 };
-  my $full_jobid   = $params->{ 'full_jobid'   } || 1;
-  my $script 	     = $params->{ 'script'       } if exists $params->{script};
+  my $full_jobid   = $params->{ 'full_jobid'   } || 0;
+  my $script 	   = $params->{ 'script'       } if exists $params->{script};
 
   # Create the command
   my $qsub     = $qsub_loc;
@@ -87,7 +96,7 @@ sub qsub #($)
   else
     {
 
-    $job_regex = qr/(\d+(\[\])?)/;
+    $job_regex = qr/(\d+)/;
 
     } # END else
 
@@ -113,9 +122,33 @@ sub qsub #($)
 
   } # END qsub #($) 
 
-###############################################################################
-# submitSleepJob 
-###############################################################################
+#------------------------------------------------------------------------------
+# my $job_id = submitSleepJob({
+#                              'user'       => 'user1',
+#                              'torque_bin' => '/usr/test/torque/bin'
+#                            });
+# my $job_id = submitSleepJob({
+#                              'user'       => 'user1',
+#                              'torque_bin' => '/usr/test/torque/bin'
+#                              'sleep_time' => 200,
+#                              'add_args'   => '-l walltime=30:00'
+#                            });
+#
+#------------------------------------------------------------------------------
+#
+# NOTE: Deprecated.  Use qsub().
+#
+# Takes a hashref of parameters and submits a job.  It return the job_id.  The 
+# following hash illustrates the possible values:
+#
+# my $params = {
+#                'user'       => 'user1',
+#                'torque_bin' => '/var/spool/torque/bin',
+#                'sleep_time' => 200,
+#                'add_args'   => '-l walltime=30:00'
+#              };
+#
+#------------------------------------------------------------------------------
 sub submitSleepJob #($) 
   {
   
@@ -159,9 +192,36 @@ sub submitSleepJob #($)
 
   } # END submitSleepJob #($) 
 
-###############################################################################
-# submitCheckpointJob 
-###############################################################################
+#------------------------------------------------------------------------------
+# my $job_id = submitCheckpointJob({
+#                                   'user'       => 'user1',
+#                                   'torque_bin' => '/usr/test/torque/bin',
+#                                   'app'        => '/tmp/checkpoint.pl',
+#                                 });
+# my $job_id = submitCheckpointJob({
+#                                   'user'       => 'user1',
+#                                   'torque_bin' => '/usr/test/torque/bin',
+#                                   'app'        => '/tmp/checkpoint.pl',
+#                                   'add_args'   => '-l walltime=30:00',
+#                                   'c_value'    => 'shutdown'
+#                                 });
+#
+#------------------------------------------------------------------------------
+#
+# NOTE: Deprecated.  Use qsub().
+#
+# Takes a hashref of parameters and submits a job with checkpointing enabled.  
+# It returns the job_id.  The following hash illustrates the possible values:
+#
+# my $params = {
+#               'user'       => 'user1',
+#               'torque_bin' => '/var/spool/torque/bin',
+#               'app'        => '/tmp/app.pl',
+#               'add_args'   => '-l walltime=30:00',
+#               'c_value'    => 'shutdown'
+#             };
+# 
+#------------------------------------------------------------------------------
 sub submitCheckpointJob #($) 
   {
   
@@ -208,9 +268,34 @@ sub submitCheckpointJob #($)
 
   } # END submitSleepJob #($) 
 
-###############################################################################
-# submitJob 
-###############################################################################
+#------------------------------------------------------------------------------
+# my $job_id = submitJob({
+#                         'user'       => 'user1',
+#                         'torque_bin' => '/usr/test/torque/bin'
+#                         'app'        => '/tmp/app.pl'
+#                       });
+# my $job_id = submitJob({
+#                         'user'       => 'user1',
+#                         'torque_bin' => '/usr/test/torque/bin'
+#                         'app'        => '/tmp/app.pl'
+#                         'add_args'   => '-l walltime=30:00'
+#                       });
+#
+#------------------------------------------------------------------------------
+#
+# NOTE: Deprecated.  Use qsub().
+#
+# Takes a hashref of parameters and submits a job.  It return the job_id.  The 
+# following hash illustrates the possible values:
+#
+# my $params = {
+#                'user'       => 'user1',
+#                'torque_bin' => '/var/spool/torque/bin',
+#                'app'        => '/tmp/app.pl'
+#                'add_args'   => '-l walltime=30:00'
+#              };
+#
+#------------------------------------------------------------------------------
 sub submitJob #($) 
   {
   
@@ -253,49 +338,40 @@ sub submitJob #($)
 
   } # END submitJob #($) 
 
-###############################################################################
-# runJobs - Run TORQUE jobs
-###############################################################################
+#------------------------------------------------------------------------------
+# runJobs('job.1', 'job.2', 'job.3');
+#------------------------------------------------------------------------------
+#
+# Takes a list of job ids and attempts to run the jobs with the qrun command.
+#
+#------------------------------------------------------------------------------
 sub runJobs #(@)
   {
 
-  # Gather Parameters
   my @job_ids = @_;
-  my $params  = {};
 
-  if (ref $job_ids[0] eq 'HASH')
-    {
-
-    $params  = $job_ids[0];
-    @job_ids = @{ $params->{ 'job_ids' } }
-
-    } # END if (ref $job_ids[0] eq 'HASH')
-
-  # Variables
-  my $run_cmd_flags = $params->{ 'run_cmd_flags' } || { 'test_success' => 1 };
-
-  my @qruns        = ();
-
-  # Run the jobs
   foreach my $job_id (@job_ids)
     {
   
     $job_id = cleanupJobId($job_id);
 
     my $cmd  = "qrun $job_id";
-    my %qrun = runCommand($cmd, %$run_cmd_flags);
-
-    push(@qruns, \%qrun);
+    my %qrun = runCommand($cmd);
+    ok($qrun{ 'EXIT_CODE' } == 0, "Checking that '$cmd' ran successfully")
+      or diag ("STDERR: $qrun{ 'STDERR' }");
 
     } # END foreach my $job_id (@job_ids)
 
-  return \@qruns;
-
   } # END runJobs #(@)
 
-###############################################################################
-# delJobs - Delete jobs
-###############################################################################
+#------------------------------------------------------------------------------
+# delJobs('job.1', 'job.2', 'job.3');
+#------------------------------------------------------------------------------
+#
+# Takes a list of job ids and attempts to delete the jobs with the qdel 
+# command.
+#
+#------------------------------------------------------------------------------
 sub delJobs #(@)
   {
 
@@ -329,121 +405,5 @@ sub delJobs #(@)
   } # END sub delJobs #(@)
 
 1;
-
-=head1 NAME
-
-Torque::Job::Ctrl - A module to control torque jobs
-
-=head1 SYNOPSIS
-
- use Torque::Job::Ctrl qw (
-                           submitJob
-                           submitSleepJob
-                           submitCheckpointJob
-                           runJobs
-                           delJobs
-                          );
- # Submit a job
- my $params = {
-               'user'       => $user1,
-               'torque_bin' => $torque_bin,
-               'app'        => '/tmp/app.pl',
-               'add_args'   => '-l walltime=30:00'
-             };
- my $job_id = submitJob($params);
-
- # Submit a sleep job
- my $params = {
-               'user'       => $user1,
-               'torque_bin' => $torque_bin,
-               'sleep_time' => 200,
-               'add_args'   => '-l walltime=30:00'
-             };
- my $job_id = submitSleepJob($params);
-
- # Submit a checkpoint job
- my $params = {
-               'user'       => $user1,
-               'torque_bin' => $torque_bin,
-               'app'        => '/tmp/app.pl',
-               'add_args'   => '-l walltime=30:00'
-             };
- my $job_id = submitCheckpointJob($params);
-
-
- # delJobs
- my @job_ids = qw(1.host 2.host);
- delJobs(@job_ids);
-
- # runJobs
- my @job_ids = qw(1.host 2.host);
- runJobs(@job_ids);
-
-=head1 DESCRIPTION
-
-Utility methods to control torque jobs
-
-=head1 SUBROUTINES/METHODS
-
-=over 4
-
-=item submitCheckpointJob
-
-Takes a hashref of parameters and submits a job.  It returns the job_id.  The following hash illustrates the possible values:
-
-my $params = {
-               'user'       => 'user1',
-               'torque_bin' => '/var/spool/torque/bin',
-               'app'        => '/tmp/app.pl',
-               'add_args'   => '-l walltime=30:00',
-               'c_value'    => 'shutdown'
-             };
-
-=item submitSleepJob
-
-Takes a hashref of parameters and submits a job.  It return the job_id.  The following hash illustrates the possible values:
-
-my $params = {
-               'user'       => 'user1',
-               'torque_bin' => '/var/spool/torque/bin',
-               'sleep_time' => 200,
-               'add_args'   => '-l walltime=30:00'
-             };
-
-=item submitCheckpointJob
-
-Takes a hashref of parameters and submits a job with checkpointing enabled.  It returns the job_id.  The following hash illustrates the possible values:
-
-my $params = {
-               'user'       => 'user1',
-               'torque_bin' => '/var/spool/torque/bin',
-               'app'        => '/tmp/app.pl',
-               'add_args'   => '-l walltime=30:00'
-             };
-
-
-=item delJobs
-
-Takes a list of jobs and attempts to delete them.  Uses the 'qdel -p' command to do so.
-
-=item runJobs
-
-Takes a list of jobs and attempts to run them using hte 'qrun' command.
-
-=back
-
-=head1 DEPENDENDCIES
-
-Moab::Test
-
-=head1 AUTHOR(S)
-
-Jeff Dayley <jdayley at clusterresources dot com>
-
-=head1 COPYRIGHT
-
-Copyright (c) 2008 Cluster Resources Inc.
-
-=cut
 
 __END__

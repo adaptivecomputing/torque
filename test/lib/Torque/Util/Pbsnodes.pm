@@ -3,18 +3,14 @@ package Torque::Util::Pbsnodes;
 use strict;
 use warnings;
 
-use FindBin;
-use lib "$FindBin::Bin/../..";
-
-
 use CRI::Test;
 use Carp;
 
 use XML::Simple;
-use Torque::Util  qw(
+use Torque::Test::Utils  qw(
                              list2array
                            );
-use Torque::Util::Regexp qw( 
+use Torque::Test::Regexp qw( 
                              HOST_STATES
                              NTYPES
                            );
@@ -26,7 +22,10 @@ our @EXPORT_OK = qw(
                    parse_xml
                    parse_list_output
                    parse_list_n_output
+                   pbsnodes
                    );
+
+my $pbs_nodes = $props->get_property('Torque.Home.Dir') . "/bin/pbsnodes";
 
 ###############################################################################
 # parse_output - parse the output of pbsnodes or pbsnodes -a
@@ -87,7 +86,7 @@ sub parse_output #($)
       if ($key eq 'properties')
         {
 
-        my @properties = Torque::Util::list2array($value);
+        my @properties = Torque::Test::Utils::list2array($value);
         $rtn_values{ $host }{ $key } = \@properties;
         next;
 
@@ -157,7 +156,7 @@ sub parse_xml #($)
         {
     
         my $value                           = $rtn_val->{ $host }{ 'properties' };
-        my @properties                      = Torque::Util::list2array($value);
+        my @properties                      = Torque::Test::Utils::list2array($value);
         $rtn_val->{ $host }{ 'properties' } = \@properties;
 
         } # END if (defined $rtn_val->{ $host }{ 'properties' })
@@ -215,85 +214,29 @@ sub parse_list_n_output #($)
 
   } # END sub parse_list_output #($)
 
+#------------------------------------------------------------------------------
+#
+#------------------------------------------------------------------------------
+#
+#
+#
+#------------------------------------------------------------------------------
+sub pbsnodes #($)
+  {
+
+  my ($params)    = @_;
+
+  my $user        = $params->{ 'user'   } || 'root';
+
+  my $cmd         = "$pbs_nodes -x";
+  my %pbsnodes   = runCommandAs($user, $cmd);
+
+  cmp_ok($pbsnodes{ 'EXIT_CODE' }, '==', 0, "Checking exit code of '$cmd' for user $user")
+    or return undef;
+
+  return parse_xml($pbsnodes{ 'STDOUT' });
+
+  } # END sub pbsnodes #($)
 
 1;
-
-=head1 NAME
-
-Torque::Util::Pbsnodes - Some useful Torque test utilities for the pbsnodes command
-
-=head1 SYNOPSIS
-
- use Torque::Util::Pbsnodes qw( parse_output 
-                                parse_list_output
-                                parse_list_n_output
-                                parse_xml_output);
- use CRI::Test;
-
- # Run test_output
- my $output     = $pbs_nodes{ 'STDOUT' };
- my @nodes      = qw(node1 node2)
- my @properties = qw(property1 property2)
-
- $test_params = {
-                'output'     => $output,
-                'hosts'      => \@nodes,
-                'properties' => \@properties
-                };
-
- test_output($test_params);
-
-$test_params = {
-                'xml'        => 1,
-                'output'     => $output,
-                'hosts'      => \@nodes,
-                'properties' => \@properties
-                };
-
- test_output($test_params);
-
- # Test q output
- my %pbsnodes = runCommand('pbsnodes -q');
- test_q_output($pbsnodes{ 'STDERR' });
-
- # Test s q output
- my %pbsnodes = runCommand('pbsnodes -s server1 -q');
- test_s_q_output($pbsnodes{ 'STDERR' });
-
-=head1 DESCRIPTION
-
-Some useful methods to use when running the pbsnodes command.
-
-=head1 SUBROUTINES/METHODS
-
-=over 4
-
-=item test_output
-
-Performs a series of tests on the output of pbsnodes.
-
-=item test_q_output
-
-Performs a series of tests on the output of pbsnodes -q.
-
-=item test_q_output
-
-Performs a series of tests on the output of pbsnodes -s server1 -q.
-
-=back
-
-=head1 DEPENDENDCIES
-
-Moab::Test, Torque::Util, Carp, XML::Simple
-
-=head1 AUTHOR(S)
-
-Jeff Dayley <jdayley at clusterresources dot com>
-
-=head1 COPYRIGHT
-
-Copyright (c) 2008 Cluster Resources Inc.
-
-=cut
-
 __END__

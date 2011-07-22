@@ -1,116 +1,63 @@
 package Torque::Util::Qmgr;
 
+########################################################################
+# 
+# File   :  Qmgr.pm
+# History:  19-aug-2009 (jdayley) Created and added qmgr_c subroutine
+#
+########################################################################
+#
+# Provides subroutines for the qmgr command and its flags
+# 
+########################################################################
+
 use strict;
 use warnings;
 
-use FindBin;
-use lib "$FindBin::Bin/../..";
-
 use CRI::Test;
+use Carp;
 
 use base 'Exporter';
 
 our @EXPORT_OK = qw(
-                   list_server_info
+                     qmgr_c
                    );
 
-###############################################################################
-# list_server_info
-###############################################################################
-sub list_server_info #($)
+my $qmgr = $props->get_property('Torque.Home.Dir') . "/bin/qmgr";
+
+#------------------------------------------------------------------------
+# my %result = qmgr_c('p s');
+# my %result = qmgr_c(
+#                     'p s',
+#                     {
+#                      'user'         => 'testuser1',
+#                      'runcmd_flags' => { 'test_fail_die' => 1 }
+#                     }
+#                    )
+#------------------------------------------------------------------------
+#
+# Runs the qmgr -c command with the given command.  Return a hash that is 
+# return by the CRI::Test::runCommandAs() method.
+#
+#------------------------------------------------------------------------
+sub qmgr_c #($$)
   {
 
-  my ($server) = @_;
+  my ($qmgr_c_cmd, $params) = @_;
 
-  $server = '' 
-    unless defined $server;
+  croak ("Please provide a command for qmgr -c '<cmd>'")
+    unless defined $qmgr_c_cmd;
 
-  # Variables
-  my $cmd;
-  my %qmgr;
-  my $output;
-  my @lines;
-  my $line;
-  my %info   = ();
+  my $runcmd_flags = $params->{ 'runcmd_flags' } || { 'test_success' => 1 };
+  my $user         = $params->{ 'user'         } || 'root';
 
+  my $cmd          = "$qmgr -c '$qmgr_c_cmd'"; 
 
-  # Get the server info
-  $cmd    = "qmgr -c 'list server' $server";
-  %qmgr   = runCommand($cmd);
-  ok($qmgr{ 'EXIT_CODE' } == 0, "Checking exit code of '$cmd'")
-    or return %info;
+  my %result = runCommandAs($user, $cmd, %$runcmd_flags);
+  return %result;
 
-  # Parse the information
-  $output = $qmgr{ 'STDOUT' };
-  @lines  = split(/\n/, $output);
-  $line   = shift @lines;
- 
-  # Make sure the output what we expect
-  return %info
-     if $line !~ /Server\s(${server})?/i;
-
-  foreach $line (@lines)
-    {
-
-    # Cleanup leading and trailing spaces
-    $line =~ s/^\s+//;
-    $line =~ s/\s+$//;
-
-    my ($key,$value) = split(/\s=\s/, $line);
-    $info{ $key }    = $value;
-
-    } # END foreach $line (@lines)
-
-  return %info;
-
-  } # END sub list_server_info #($)
+  } # END qmgr_c #($$)
 
 1;
-
-=head1 NAME
-
-Torque::Util::Qmgr - Some useful Torque test utilities for the qmgr command
-
-=head1 SYNOPSIS
-
- use Torque::Util::Qmgr qw( 
-                                   list_server_info
-                                 );
- use CRI::Test;
-
- # list_server_info
- my $server = 'localhost';
- my %server_info;
-
- %server_info = list_server_info();
- %server_info = list_server_info($server);
-
-=head1 DESCRIPTION
-
-Some useful methods to use when running the qmgr command.
-
-=head1 SUBROUTINES/METHODS
-
-=over 4
-
-=item list_server_info([$server])
-
-Returns a hash of the list of attributes returned by "qmgr -c 'list server' [SERVER]".  Takes an optional server argument
-
-=back
-
-=head1 DEPENDENDCIES
-
-Moab::Test
-
-=head1 AUTHOR(S)
-
-Jeff Dayley <jdayley at clusterresources dot com>
-
-=head1 COPYRIGHT
-
-Copyright (c) 2008 Cluster Resources Inc.
-
-=cut
 
 __END__
