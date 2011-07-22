@@ -1,33 +1,29 @@
-#!/usr/bin/perl 
+#!/usr/bin/perl
 use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../../lib/";
+use TestLibFinder;
+use lib test_lib_loc();
 
 use CRI::Test;
 plan('no_plan');
-setDesc('Install TORQUE');
+setDesc('Install Latest Torque from Source');
 
-my $testbase = $FindBin::Bin;
+my $testbase = "$FindBin::Bin";
 
 my @testList = (
-"$testbase/kill_moab.t",
-"$testbase/autogen.t",
-"$testbase/configure.t",
-"$testbase/make_clean.t",
-"$testbase/make.t",
-"$testbase/make_install.t",
-"$testbase/setup.t",
-"$testbase/config_mom.t",
-"$testbase/remote_install_torque.t",
-"$testbase/config_server.t",
-"$testbase/create_torque_conf.t",
-"$testbase/startup.t",
+    "$testbase/get_latest_rcs.t",
+    "$testbase/configure.t",
+    "$testbase/make_clean.t",
+    "$testbase/make.t",
+    "$testbase/make_install.t",
+    "$testbase/config_mom.t",
+    "$testbase/startup.t",
 );
 
-foreach( @testList )
+foreach (@testList)
 {
     execute_tests($_)
-	or die "Torque installation Failed on $_";
+	or die "Torque Install failed on $_";
 }

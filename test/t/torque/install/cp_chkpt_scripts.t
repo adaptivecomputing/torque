@@ -7,10 +7,6 @@ use FindBin;
 use lib "$FindBin::Bin/../../../lib/";
 
 use CRI::Test;
-use CRI::Utils qw(
-                   run_and_check_cmd
-                 );
-
 plan('no_plan');
 setDesc('Copy Checkpoint scripts');
 
@@ -26,8 +22,8 @@ my $cp_cmd;
 
 # Copy the checkpoint script
 $cp_cmd = "cp -f $from_checkpoint_script $to_checkpoint_script";
-run_and_check_cmd($cp_cmd);
+runCommand($cp_cmd, test_success => 1);
 
 # Copy the restart script
 $cp_cmd = "cp -f $from_restart_script $to_restart_script";
-run_and_check_cmd($cp_cmd);
+runCommand($cp_cmd, test_success => 1);

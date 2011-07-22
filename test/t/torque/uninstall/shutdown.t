@@ -1,16 +1,12 @@
-#! /usr/bin/perl 
-#  This test stops both pbs_server and pbs_mom
-
+#!/usr/bin/perl
 use strict;
 use warnings;
 
-use FindBin;
-use lib "$FindBin::Bin/../../../lib/";
-
+use TestLibFinder;
+use lib test_lib_loc();
+ 
 use CRI::Test;
-
-use Torque::Ctrl qw( stopTorque );
-
+use Torque::Ctrl;
 plan('no_plan');
 setDesc('Shutdown Torque');
 

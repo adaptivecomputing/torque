@@ -8,7 +8,7 @@ use lib "$FindBin::Bin/../../../../../lib/";
 
 
 use CRI::Test;
-use CRI::Utils          qw(
+use CRI::Util          qw(
                              resolve_path
                           );
 use Torque::Util qw(

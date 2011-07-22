@@ -392,14 +392,6 @@ This module is collection of methods that are useful when writing tests for Torq
 
 Takes a comma or space delimited file and returns an array.
 
-=item list2array (DEPRECATED: use CRI::Utils::list2array)
-
-Takes a comma or space delimited string and returns an array.
-
-=item run_and_check_cmd (DEPRECATED: use CRI::Utils::run_and_check_cmd)
-
-Runs a command using the Moab::Test::runCommand and checks that the command ran successfully
-
 =item job_info
 
 Takes a list job ids and returns a hash of the job information

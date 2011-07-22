@@ -8,7 +8,7 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 # Test Modules
 use CRI::Test;
-use CRI::Utils                 qw(
+use CRI::Util                 qw(
                                     resolve_path
                                  );
 use Torque::Job::Ctrl          qw( 

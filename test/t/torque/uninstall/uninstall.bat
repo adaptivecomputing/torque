@@ -1,21 +1,18 @@
-#!/usr/bin/perl 
+#!/usr/bin/perl
 
+use FindBin;
+use TestLibFinder;
+use lib test_lib_loc();
+ 
+use CRI::Test;
+plan('no_plan');
+setDesc('Batch: shutdown and remove torque');
 use strict;
 use warnings;
 
-use FindBin;
-use lib "$FindBin::Bin/../../../lib/";
-
-use CRI::Test;
-
-plan('no_plan');
-setDesc('Uninstall Torque');
-
-my $testbase = $FindBin::Bin;
-
+my $testbase = "$FindBin::Bin";
 
 execute_tests(
-              "$testbase/shutdown.t",
-              "$testbase/make_uninstall.t",
-              "$testbase/rm_home.t",
-             );
+    "$testbase/shutdown.t",
+    "$testbase/remove.t"
+    );

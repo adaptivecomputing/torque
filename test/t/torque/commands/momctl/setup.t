@@ -8,7 +8,7 @@ use lib "$FindBin::Bin/../../../../lib/";
 
 
 use CRI::Test;
-use CRI::Utils          qw( scp                    );
+use CRI::Util          qw( scp                    );
 
 use Torque::Util qw( run_and_check_cmd      );
 
