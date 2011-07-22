@@ -33,12 +33,12 @@ my @job_ids;
 my $user_list;
 
 # Users and host
-my $user1 = $props->get_property('torque.user.one');
+my $user1 = $props->get_property('User.1');
 my $host  = $props->get_property('Test.Host'       );
 
 # Submit the jobs
 my $job_params = {
-                   'user'       => $props->get_property('torque.user.one'),
+                   'user'       => $props->get_property('User.1'),
                    'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/'
                  };
 

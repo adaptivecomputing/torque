@@ -37,7 +37,7 @@ my %qrls;
 my %job_info;
 
 my $root  = 'root';
-my $user1 = $props->get_property('torque.user.one');
+my $user1 = $props->get_property('User.1');
 
 my $hld_type = 'o';
 my $rls_type = 'n';

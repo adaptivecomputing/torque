@@ -18,14 +18,14 @@ plan('no_plan');
 setDesc('tracejob');
 
 my $queue = $props->get_property( 'torque.queue.one' );
-my $user  = $props->get_property( 'torque.user.one'  );
+my $user  = $props->get_property( 'User.1'  );
 my $host  = $props->get_property( 'Test.Host'         );
 my $home_dir = $props->get_property('Torque.Home.Dir');
 my $date_regex = '\d+/\d+/\d+ \d+:\d+:\d+';
 
 # Submit a job
 my $job_params = {
-                'user'       => $props->get_property( 'torque.user.one' ),
+                'user'       => $props->get_property( 'User.1' ),
                 'torque_bin' => "$home_dir/bin",
                 'sleep_time' => 60
               };

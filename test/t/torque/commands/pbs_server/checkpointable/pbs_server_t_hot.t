@@ -44,13 +44,13 @@ my %job_info;
 # Params
 my $chkpt_params     = {
                          'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
-                         'user'       => $props->get_property('torque.user.one'),
+                         'user'       => $props->get_property('User.1'),
                          'c_value'    => 'enabled,shutdown',
                          'app'        => resolve_path("$FindBin::Bin/../../../test_programs/test.pl")
                        };
 my $non_chkpt_params = {
                          'torque_bin'  => $props->get_property('Torque.Home.Dir') . "/bin/",
-                         'user'        => $props->get_property('torque.user.one'),
+                         'user'        => $props->get_property('User.1'),
                        };
 my $mom_params       = {
                          'nodes'      => \@remote_moms,

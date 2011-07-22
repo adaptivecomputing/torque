@@ -38,7 +38,7 @@ my $delay;
 
 # Submit a job
 $params = {
-            'user'       => $props->get_property('torque.user.one'),
+            'user'       => $props->get_property('User.1'),
             'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/',
             'sleep_time' => 200
           };

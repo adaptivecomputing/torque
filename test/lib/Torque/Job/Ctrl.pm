@@ -63,7 +63,7 @@ sub qsub #($)
   my $qsub_loc     = $params->{ 'qsub_loc'     } || $props->get_property("Torque.Home.Dir") . "/bin/qsub";
   my $flags        = $params->{ 'flags'        } || '';
   my $cmd          = $params->{ 'cmd'          } || 'sleep 300' unless exists $params->{script};
-  my $user         = $params->{ 'user'         } || $props->get_property("moab.user.one");
+  my $user         = $params->{ 'user'         } || $props->get_property("User.1");
   my $runcmd_flags = $params->{ 'runcmd_flags' } || { 'test_success_die' => 1 };
   my $full_jobid   = $params->{ 'full_jobid'   } || 1;
   my $script 	     = $params->{ 'script'       } if exists $params->{script};

@@ -40,7 +40,7 @@ my %job_info;
 my $job_params;
 
 my $queue      = $props->get_property( 'torque.queue.one' );
-my $user       = $props->get_property( 'torque.user.one' );
+my $user       = $props->get_property( 'User.1' );
 my $torque_bin = $props->get_property( 'Torque.Home.Dir' ) . '/bin/';
 
 my @attributes = qw(

@@ -50,13 +50,13 @@ my %ps;
 # Params
 my $chkpt_params     = {
                          'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
-                         'user'       => $props->get_property('torque.user.one'),
+                         'user'       => $props->get_property('User.1'),
                          'app'        => resolve_path("$FindBin::Bin/../../../test_programs/test.pl"),
                          'c_value'    => 'enabled,shutdown'
                        };
 my $non_chkpt_params = {
                          'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
-                         'user'       => $props->get_property('torque.user.one'),
+                         'user'       => $props->get_property('User.1'),
                        };
 my $mom_params       = {
                          'nodes'      => \@remote_moms,

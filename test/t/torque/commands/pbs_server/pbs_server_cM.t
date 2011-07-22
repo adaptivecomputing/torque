@@ -33,7 +33,7 @@ my $mom_params = {
     'local_node' => 1,
 };
 my $job_params        = {
-                          'user'       => $props->get_property('torque.user.one'),
+                          'user'       => $props->get_property('User.1'),
                           'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/'
                         };
 my $job_state_params  = {

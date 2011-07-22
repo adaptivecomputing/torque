@@ -21,7 +21,7 @@ setDesc('qsub -C');
 my $directive_script = resolve_path("$FindBin::Bin/../../test_programs/directive_test.pl");
 
 # Run the command
-my $user = $props->get_property('moab.user.one');
+my $user = $props->get_property('User.1');
 my $cmd  = "qsub -C '#TEST' $directive_script";
 my %qsub = runCommandAs($user, $cmd);
 

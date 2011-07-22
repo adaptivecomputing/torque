@@ -33,14 +33,14 @@ my $depend;
 
 my ($remote_host) = list2array('Torque.Remote.Nodes');
 
-my $group1 = $props->get_property('torque.user.one.group');
-my $group2 = $props->get_property('torque.user.two.group');
+my $group1 = $props->get_property('Group.1');
+my $group2 = $props->get_property('Group.2');
 
 my $group_list = "$group1,$group2\@$remote_host";
 
 # Submit the jobs
 my $job_params = {
-                   'user'       => $props->get_property('torque.user.one'),
+                   'user'       => $props->get_property('User.1'),
                    'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/'
                  };
 

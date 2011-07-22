@@ -51,7 +51,7 @@ my @remote_nodes = list2array($props->get_property('Torque.Remote.Nodes'));
 
 # Submit checkpoint job params
 my $params = {
-              'user'       => $props->get_property('torque.user.one'),
+              'user'       => $props->get_property('User.1'),
               'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/',
               'app'        => resolve_path("$FindBin::Bin/../../test_programs/test.pl")
              };

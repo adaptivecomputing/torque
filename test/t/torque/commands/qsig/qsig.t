@@ -42,7 +42,7 @@ my $job_id;
 my %job_info;
 my %signals;
 
-my $user       = $props->get_property('torque.user.one');
+my $user       = $props->get_property('User.1');
 my $app        = resolve_path("$FindBin::Bin/../../test_programs/sig_trap.pl");
 my $torque_bin = $props->get_property('Torque.Home.Dir') . "/bin/";
 

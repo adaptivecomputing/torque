@@ -28,7 +28,7 @@ setDesc('pbs_mom -p');
 my $sleep_time = 299;
 my $job_id;
 my $job_params = {
-                   'user'       => $props->get_property('torque.user.one'),
+                   'user'       => $props->get_property('User.1'),
                    'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
                    'sleep_time' => $sleep_time
                  };

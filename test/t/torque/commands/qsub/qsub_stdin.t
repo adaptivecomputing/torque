@@ -12,7 +12,7 @@ plan('no_plan');
 setDesc('Qsub stdin Test');
 
 # Submit a job with qsub and get its job id
-my $user  = $props->get_property('moab.user.one');
+my $user  = $props->get_property('User.1');
 my %jobId = runCommandAs($user,'echo /bin/hostname | qsub');
 ok($jobId{'EXIT_CODE'} == 0,'Checking if qsub submission worked') or die("qsub failed with rc=$jobId{'EXIT_CODE'}");
 

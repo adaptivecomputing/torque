@@ -27,7 +27,7 @@ $command{'STDOUT'}  =~ /Completed Jobs:\s+(\d+)/is;
 
 my $initial_completed_jobs = $1;
 
-my $user = $props->get_property('moab.user.one');
+my $user = $props->get_property('User.1');
 my $num_jobs = 5;
 my $num_fails = 3;
 

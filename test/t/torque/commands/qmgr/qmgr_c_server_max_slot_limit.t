@@ -20,7 +20,7 @@ setDesc("qmgr -c server max_slot_limit");
 
 # Variables
 my $torque_home = $props->get_property("Torque.Home.Dir");
-my $user        = $props->get_property("moab.user.one");
+my $user        = $props->get_property("User.1");
 my $qmgr        = "$torque_home/bin/qmgr";
 my $qsub        = "$torque_home/bin/qsub";
 my $cmd         = undef;

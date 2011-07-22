@@ -39,7 +39,7 @@ my $stageout = "$out_file\@$host:$in_file";
 
 # Submit the jobs
 my $job_params = {
-                   'user'       => $props->get_property('torque.user.one'),
+                   'user'       => $props->get_property('User.1'),
                    'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/'
                  };
 

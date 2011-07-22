@@ -45,12 +45,12 @@ my %ps;
 # Params
 my $rerun_params     = {
                          'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
-                         'user'       => $props->get_property('torque.user.one'),
+                         'user'       => $props->get_property('User.1'),
                          'add_args'   => '-r y'
                        };
 my $non_rerun_params = {
                          'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
-                         'user'       => $props->get_property('torque.user.one'),
+                         'user'       => $props->get_property('User.1'),
                          'add_args'   => '-r n'
                        };
 my $mom_params       = {

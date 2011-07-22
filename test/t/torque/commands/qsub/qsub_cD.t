@@ -16,7 +16,7 @@ setDesc('qsub -D');
 
 # Run the qsub -D command
 my $dir  = '/tmp';
-my $user = $props->get_property('torque.user.one');
+my $user = $props->get_property('User.1');
 my $cmd  = "echo sleep 30 | qsub -D $dir";
 my %qsub = runCommandAs($user, $cmd);
 

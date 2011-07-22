@@ -23,7 +23,7 @@ stopPbsserver();
 # Perform the test
 my $sec  = 3;
 
-my $user = $props->get_property('moab.user.one');
+my $user = $props->get_property('User.1');
 my $cmd  = "echo sleep 30 | qsub -b $sec";
 my %qsub = runCommandAs($user, $cmd);
 

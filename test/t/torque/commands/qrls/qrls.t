@@ -36,8 +36,8 @@ my %qhold;
 my %qrls;
 my %job_info;
 
-my $user1 = $props->get_property('torque.user.one');
-my $user2 = $props->get_property('torque.user.two');
+my $user1 = $props->get_property('User.1');
+my $user2 = $props->get_property('User.2');
 
 my $hld_type = 'u';
 my $rls_type = 'n';

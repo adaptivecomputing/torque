@@ -24,7 +24,7 @@ use Torque::Util qw(
 plan('no_plan');
 setDesc('qsub -I');
 
-my $user1 = $props->get_property('moab.user.one');
+my $user1 = $props->get_property('User.1');
 my %command;
 
 my $cmd = "su $user1 -p -c 'qsub -I'";
