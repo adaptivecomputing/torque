@@ -4,10 +4,6 @@ $VERSION = 0.01;
 use strict;
 use warnings;
 
-use FindBin;
-use lib "$FindBin::Bin/../../../lib/";
-
-
 use base 'Exporter';
 use CRI::Test::Reader qw();
 use Data::Properties;
@@ -66,7 +62,7 @@ sub new
 sub loadLog
 {
     my $self = shift;
-    $self->{'FILE'} = $self->{'PROPS'}->get_property('Log.Dir') . $_[0] . "/Summary.log";
+    $self->{'FILE'} = $self->{'PROPS'}->get_property('Outdir') . $_[0] . "/Summary.log";
     unless(-e $self->{'FILE'}){
 	print "<html><body><h1>The specified file $self->{'FILE'} did not exist on the server</h1></body></html>";
 	exit(-1);
@@ -122,7 +118,7 @@ sub testSummary
 sub listRuns
 {
     my $self = shift;
-    my $dir = $self->{'PROPS'}->get_property('Log.Dir');
+    my $dir = $self->{'PROPS'}->get_property('Outdir');
     chdir($dir);
     my @runs = <*>;
     return @runs;

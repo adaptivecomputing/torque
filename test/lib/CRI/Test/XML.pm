@@ -4,10 +4,6 @@ $VERSION = 0.01;
 use strict;
 use warnings;
 
-use FindBin;
-use lib "$FindBin::Bin/../../../lib/";
-
-
 use base 'Exporter';
 use CRI::Test::Reader qw();
 use XML::Simple qw(:strict);
