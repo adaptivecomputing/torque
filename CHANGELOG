@@ -11,6 +11,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - clear out exec_gpus as needed
   b - fix for bugzilla #147 - recreate $PBS_NODESFILE file when restarting a blcr
       checkpointed job (backported from 3.0.3)
+  b - Fixed kill_job so it will only run epilogue.precancel when a job is canceled
+      and not on normal job exit.
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as
