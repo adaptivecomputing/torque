@@ -5,7 +5,8 @@ use warnings;
 
 use Test::More qw(no_plan);
 use FindBin;
-use lib "$FindBin::Bin/../../";
+use TestLibFinder;
+use lib test_lib_loc();
 
 BEGIN{ use_ok( 'Torque::Ctrl' ) };
 

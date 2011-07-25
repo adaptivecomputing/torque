@@ -4,7 +4,8 @@ use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::RealBin/../..";
+use TestLibFinder;
+use lib test_lib_loc();
 
 use CRI::Test;
 use Carp;

@@ -6,7 +6,8 @@ use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/../../lib/";
+use TestLibFinder;
+use lib test_lib_loc();
 
 
 my $testbase = $FindBin::Bin;
