@@ -382,7 +382,8 @@ EXTRA_DIST = CHANGELOG \
 	contrib/README.pbs_weblite \
 	contrib/README.pestat \
 	contrib/README.qpeek \
-	contrib/showjobs
+	contrib/showjobs \
+	contrib/diag/tdiag.sh
 
 bin_SCRIPTS = pbs-config
 DISTCLEANFILES = pbs-config
@@ -607,7 +608,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/buildutils $(distdir)/contrib $(distdir)/contrib/init.d $(distdir)/contrib/pestat-1.0 $(distdir)/src/drmaa
+	$(mkdir_p) $(distdir)/buildutils $(distdir)/contrib $(distdir)/contrib/diag $(distdir)/contrib/init.d $(distdir)/contrib/pestat-1.0 $(distdir)/src/drmaa
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
