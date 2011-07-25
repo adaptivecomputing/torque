@@ -670,6 +670,8 @@ int is_compose(
     return(DIS_EOF);
     }
 
+  DIS_tcp_setup(stream);
+
   if ((ret = diswsi(stream, IS_PROTOCOL)) != DIS_SUCCESS)
     {
     mom_server_stream_error(stream, server_name, id, "writing protocol");
@@ -3086,7 +3088,7 @@ void mom_server_all_update_stat(void)
 
     generate_server_status(status_strings, sizeof(status_strings));
  
-    if ((nc = update_current_path(nc)) != NULL)
+    if ((nc = update_current_path(mh)) != NULL)
       {
       /* write to the socket */
       while (nc != NULL)
@@ -3305,17 +3307,10 @@ int mom_server_send_hello(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "%s",
-            id);
+    sprintf(log_buffer, "%s", id);
 
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, id, log_buffer);
     }
-
-
 
   if (is_compose(pms->SStream, pms->pbs_servername, IS_HELLO) == -1)
     {
