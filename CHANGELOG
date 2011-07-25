@@ -39,7 +39,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - clear out exec_gpus as needed
   b - fix for bugzilla #147 - recreate $PBS_NODESFILE file when restarting a blcr
       checkpointed job
-
+  b - Applied patch submitted by Eric Roman for resmom/Makefile.am (Bugzilla #147)
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it
   b - fix a potential buffer overflow security issue in job names and host address names
