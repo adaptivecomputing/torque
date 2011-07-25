@@ -81,6 +81,8 @@ Distribution: %{?_distribution:%{_distribution}}%{!?_distribution:%{_vendor}}
 #BuildSuggests: openssh-clients tcl-devel tclx tk-devel
 BuildRequires: %{breq_gui} %{breq_munge} %{breq_pam} %{breq_scp} make
 Conflicts: pbspro, openpbs, openpbs-oscar
+Conflicts: %{name}-server < 2.5
+Conflicts: %{name}-client < 2.5
 Obsoletes: scatorque <= %{version}-%{release}, %{!?with_gui:%{name}-gui < %{version}-%{release}}
 Provides: pbs, pbs-docs, pbs-pam, %{!?with_gui:%{name}-gui = %{version}-%{release}}
 Provides: %{name}-docs = %{version}-%{release}
@@ -100,6 +102,8 @@ other leading edge HPC organizations.
 Summary: TORQUE Server
 Group: Applications/System
 Provides: pbs-server = %{version}-%{release}
+Conflicts: %{name} < 2.5
+Conflicts: %{name}-client < 2.5
 
 %description server
 Package for TORQUE server systems.
@@ -134,6 +138,7 @@ Obsoletes: %{name}-mom < %{version}-%{release}
 Provides: %{name}-pam = %{version}-%{release}
 Obsoletes: %{name}-pam < %{version}-%{release}
 %endif
+Conflicts: %{name}-server < 2.5
 
 %description client
 Package for TORQUE client systems.
@@ -155,7 +160,7 @@ Summary: DRMAA 1.0 Implementation for TORQUE
 Group: Applications/System
 Provides: pbs-drmaa = %{version}-%{release}
 
-%description
+%description drmaa
 This package contains a DRMAA 1.0 implementation for use with TORQUE.
 %endif
 
