@@ -711,7 +711,7 @@ case "$BLCR" in
     AS_IF([test "x$blcrlib" != xnone], [
       BLCR_LDFLAGS="-L$blcrlib -lcr"
     ],[
-      BLCR_LDFLAGS=""
+      BLCR_LDFLAGS="-lcr"
     ])
     SAVE_LDFLAGS="$LDFLAGS"
     LDFLAGS="$BLCR_LDFLAGS $LDFLAGS"
