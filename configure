@@ -22367,7 +22367,7 @@ _ACEOF
 
 else
 
-      BLCR_LDFLAGS=""
+      BLCR_LDFLAGS="-lcr"
 
 fi
 

@@ -15,6 +15,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       and not on normal job exit.
   b - Applied patch submitted by Eric Roman for resmom/Makefile.am (Bugzilla #147)
       (backported from 3.0.3)
+  b - Fix for adding -lcr for BLCR makefiles (Bugzilla #146 backported from 3.0.3)
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as
