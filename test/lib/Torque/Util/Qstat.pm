@@ -42,32 +42,32 @@ my $qstat = $props->get_property("Torque.Home.Dir") . "/bin/qstat";
 #
 #------------------------------------------------------------------------------
 sub qstat_fx #($)
-  {
-
+{
   my ($params) = @_;
 
   my $job_id   = exists $params->{job_id} ? $params->{job_id} : '';
-  my $user     = $params->{ 'user'   } || 'root';
+  my $runcmd_flags = $params->{user} || { test_success => 1 };
 
-  my %qstat_fx = runCommandAs($user, "$qstat -f -x $job_id", ('test_success_die' => 1));
+  $runcmd_flags->{user} = $params->{user} || $runcmd_flags->{user};
 
-  my $key = 'Job';
-  my $xref     = parseXML({
-      xml          => $qstat_fx{STDOUT},
-      options => {
-        KeyAttr => {
-          $key => 'Job_Id',
+  my %qstat_fx = runCommand("$qstat -f -x $job_id", %$runcmd_flags);
+
+  my $xref = {};
+  unless($qstat_fx{EXIT_CODE})
+  {
+    my $xref     = parseXML({
+        xml          => $qstat_fx{STDOUT},
+        options => {
+          KeyAttr => {
+            Job => 'Job_Id',
+          },
         },
-      },
-    });
+      });
 
-  $xref->{$_} = $xref->{$key}{$_} foreach keys %{$xref->{$key}};
-  delete $xref->{$key};
+    $xref = $xref->{Job};
+  }
 
   return $xref;
-
-  } # END sub qstat_fx #($)
+}
 
 1;
-
-__END__

@@ -19,9 +19,6 @@ use warnings;
 use CRI::Test;
 use Carp;
 
-use Torque::Test::Qstat::Utils qw(
-                                    parse_qstat_fx
-                                 );
 use Torque::Job::Utils         qw(
                                     cleanupJobId
                                     detaintJobId

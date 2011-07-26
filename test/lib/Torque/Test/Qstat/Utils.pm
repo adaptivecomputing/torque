@@ -14,7 +14,6 @@ our @EXPORT_OK = qw(
                    parse_qstat
                    parse_qstat_f
                    parse_qstat_f1
-                   parse_qstat_fx
                    parse_qstat_a
                    parse_qstat_a_n
                    parse_qstat_a_n_1
@@ -180,62 +179,6 @@ sub parse_qstat_f1 #($)
   return %rtn_jobs;
 
   } # END sub parse_qstat_f1
-
-###############################################################################
-# parse_qstat_fx - parse the output of qstat -f -x
-###############################################################################
-sub parse_qstat_fx #($)
-  {
-
-  # The given xml output
-  my ($xml) = @_
-     or carp "No xml string provided";
-
-  # Return value hash
-  my $xml_ref;
-  my %rtn_jobs;
-  my @jobs;
-
-  $xml_ref = XMLin($xml);
-
-  # When a single job is returned $xml_ref->{ 'Job' } is not an array.  We need
-  # to handle this case
-  if (ref $xml_ref->{ 'Job' } ne "ARRAY")
-    {
-    push @jobs, $xml_ref->{ 'Job' };
-    }
-  else
-    {
-    @jobs = @{ $xml_ref->{ 'Job' } };
-    }
-
-  # Format the jobs for the hash
-  foreach my $job (@jobs)
-    {
-
-    # Add the job_id value, job_id makes more sense than content
-    my $job_id = $job->{ 'content' };
-    delete $job->{ 'content' };
-
-    # Create a hash for the variable list
-    my $variable_list = $job->{ 'Variable_List' };
-    delete $job->{ 'Variable_List' };
-  
-    foreach my $variable (split(/,/, $variable_list))
-      {
-
-      my ($name, $value) = split (/=/, $variable);
-      $job->{ 'Variable_List' }->{ $name } = $value;
-
-      } # END foreach my $variable (split(/,/, $variable_list))
-
-    $rtn_jobs{ $job_id } = $job;
-
-    } # END foreach my $job (@{ $xml_ref->{ 'Job' } })
-
-  return %rtn_jobs;
-
-  } # END sub parse_qstat_fx #($)
 
 ###############################################################################
 # parse_qstat_a - parse the output of qstat -a 
@@ -813,7 +756,6 @@ Torque::Test::Qstat::Utils - Some useful Torque test utilities for the qstat com
                                      parse_qstat
                                      parse_qstat_f
                                      parse_qstat_f1
-                                     parse_qstat_fx
                                      parse_qstat_a
                                      parse_qstat_a_n
                                      parse_qstat_a_n_1
@@ -836,10 +778,6 @@ Torque::Test::Qstat::Utils - Some useful Torque test utilities for the qstat com
  # parse_qstat_f1
  my %qstat    = runCommand('qstat -f -1');
  my %job_info = parse_qstat($qstat{ 'STDOUT' });
-
- # parse_qstat_fx
- my %qstat    = runCommand('qstat -f -x');
- my %job_info = parse_qstat_fx($qstat{ 'STDOUT' });
 
  # parse_qstat_a
  my %qstat    = runCommand('qstat -a');
@@ -902,10 +840,6 @@ Takes the qstat -f output and returns a hash of the jobs and their attributes.
 
 Takes the qstat -f -1 output and returns a hash of the jobs and their attributes.
 
-=item parse_qstat_fx
-
-Takes the qstat -f -x output and returns a hash of the jobs and their attributes.
-
 =item parse_qstat_a
 
 Takes the qstat -a output and returns a hash of the jobs and their attributes.
@@ -950,7 +884,7 @@ Returns the results of 'qstat -Q -f -1' in a hash.  Takes an option queue name.
 
 =head1 DEPENDENDCIES
 
-Moab::Test, Torque::Test::Utils, XML::Simple
+Moab::Test, CRI::Util, XML::Simple
 
 =head1 AUTHOR(S)
 

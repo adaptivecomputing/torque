@@ -6,9 +6,7 @@ use warnings;
 use CRI::Test;
 use Carp;
 
-use Torque::Test::Qstat::Utils qw(
-                                    parse_qstat_fx
-                                 );
+use Torque::Util::Qstat qw( qstat_fx );
 
 use base 'Exporter';
 
@@ -22,8 +20,7 @@ our @EXPORT = qw(
 # checkForJob - Checks for a job in the qstat list
 ###############################################################################
 sub checkForJob #($)
-  {
-
+{
   my ($job_id) = @_;
 
   $job_id = cleanupJobId($job_id);
@@ -32,24 +29,14 @@ sub checkForJob #($)
   my $found = 0; 
 
   # Get the list of job_ids in the queue
-  my $fx_cmd = 'qstat -f -x';
-  my %qstat  = runCommand($fx_cmd);
-  ok($qstat{ 'EXIT_CODE' } == 0, 'Verifying that the list of jobs in the queue was retrieved')
-    or carp 'Unable to retrieved list of jobs';
-
-  # If an empty string then no job_ids
-  return $found
-    if $qstat{ 'STDOUT' } eq '';
-
-  my %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
+  my $qstat  = qstat_fx();
 
   # Look for the job_id in the list
   $found = 1 
-    if defined $qstat_fx{ $job_id };
+    if defined $qstat->{$job_id};
 
   return $found;
-
-  } # checkForJob #($)
+}
 
 ###############################################################################
 # detaint_job_id - Launders tainted job_ids

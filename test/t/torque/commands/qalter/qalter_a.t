@@ -18,7 +18,7 @@ use Torque::Job::Ctrl           qw(
                                   );
 use Torque::Util         qw( run_and_check_cmd 
                                     list2array        );
-use Torque::Util::Qstat  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( qstat_fx    );
 use Torque::Util::Qalter qw( gen_a_time        );
 
 # Test Description
@@ -27,8 +27,8 @@ setDesc("qalter -a");
 
 # Variables
 my $cmd;
-my %qstat;
-my %qstat_fx;
+my $qstat;
+my $qstat_fx;
 my %qalter;
 my @job_ids;
 
@@ -54,8 +54,8 @@ foreach my $job_id (@job_ids)
 
   # Check that the command ran
   $cmd      = "qstat -f -x";
-  %qstat    = run_and_check_cmd($cmd);
-  %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
+
+  $qstat_fx = qstat_fx({job_id => $job_id});
 
   } # END foreach my $job_id (@job_ids)
 

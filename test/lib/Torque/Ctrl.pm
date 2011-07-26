@@ -10,7 +10,7 @@ use CRI::Test;
 use Expect;
 use Carp;
 
-use Torque::Test::Utils qw(
+use CRI::Util qw(
                             is_running
                             is_running_remote
                           );

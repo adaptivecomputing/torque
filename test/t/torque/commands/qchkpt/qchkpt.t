@@ -22,7 +22,7 @@ use Torque::Util        qw(
                                     run_and_check_cmd
                                  );
 use Torque::Util::Qstat qw(
-                                    parse_qstat_fx
+                                    qstat_fx
                                  );
 use Torque::Util::Regexp       qw(
                                     CHECKPOINT_FILE_NAME
@@ -36,7 +36,7 @@ setDesc("qchkpt");
 # Variables
 my $cmd;
 my %qchkpt;
-my %job_info;
+my $job_info;
 my $checkpoint_name;
 my $checkpoint_path;
 
@@ -66,12 +66,12 @@ while ($count < 120 and ! defined $checkpoint_name)
 
   sleep 1;
 
-  my %qstat = runCommand("qstat -fx $job_id");
-  %job_info = parse_qstat_fx($qstat{ 'STDOUT' });
 
-  if (defined $job_info{ $job_id }{ 'checkpoint_name' })
+  $job_info = qstat_fx({job_id => $job_id});
+
+  if (defined $job_info->{ $job_id }{ 'checkpoint_name' })
     {
-    $checkpoint_name = $job_info{ $job_id }{ 'checkpoint_name' }; 
+    $checkpoint_name = $job_info->{ $job_id }{ 'checkpoint_name' }; 
     }
 
   $count++;
@@ -92,7 +92,7 @@ if (! defined $checkpoint_name)
 
 # Perform the basic tests
 ok($checkpoint_name  =~ /${\CHECKPOINT_FILE_NAME}/,  "Checking the 'checkpoint_name' attribute of the job");
-ok(exists $job_info{ $job_id }{ 'checkpoint_time' }, "Checking for the existence of the job attribute 'checkpoint_time'");
+ok(exists $job_info->{ $job_id }{ 'checkpoint_time' }, "Checking for the existence of the job attribute 'checkpoint_time'");
 
 # Check for the actual file 
 $checkpoint_path = $props->get_property('Torque.Home.Dir') . "/checkpoint/${job_id}.CK/$checkpoint_name";

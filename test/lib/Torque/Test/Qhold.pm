@@ -12,7 +12,7 @@ use CRI::Test;
 
 use Torque::Util        qw( run_and_check_cmd    );
 use Torque::Util::Regexp       qw( CHECKPOINT_FILE_NAME );
-use Torque::Util::Qstat qw( parse_qstat_fx       );
+use Torque::Util::Qstat qw( qstat_fx       );
 
 use base 'Exporter';
 
@@ -36,7 +36,7 @@ sub verify_qhold_chkpt #($)
   my $job_state        = '';
   my $cmd;
   my %qstat;
-  my %job_info;
+  my $job_info;
 
   # Check every second for two minutes for the checkpoint to be created
   $count = 0;
@@ -47,19 +47,16 @@ sub verify_qhold_chkpt #($)
 
     sleep 1;
 
-    # We parse the job information manually so we don't spam the test output
-    $cmd      = "qstat -fx $job_id";
-    %qstat    = runCommand($cmd);
-    %job_info = parse_qstat_fx($qstat{ 'STDOUT' });
+    $job_info = qstat_fx({job_id => $job_id, runcmd_flags => {logging_off => 1}});
 
-    if (defined $job_info{ $job_id }{ 'checkpoint_name' })
+    if (defined $job_info->{ $job_id }{ 'checkpoint_name' })
       {
 
-      $checkpoint_name = $job_info{ $job_id }{ 'checkpoint_name' }; 
+      $checkpoint_name = $job_info->{ $job_id }{ 'checkpoint_name' }; 
 
       }
 
-    $job_state = $job_info{ $job_id }{ 'job_state' };
+    $job_state = $job_info->{ $job_id }{ 'job_state' };
 
     $count++;
 
@@ -107,7 +104,7 @@ sub verify_qhold #($)
   my $cmd;
   my %qstat;
   my %qrerun;
-  my %job_info;
+  my $job_info;
 
   # We need to qrerun to make it take effect
   $cmd     = "qrerun $job_id";
@@ -122,12 +119,9 @@ sub verify_qhold #($)
 
     sleep 1;
 
-    # We parse the job information manually so we don't spam the test output
-    $cmd      = "qstat -fx $job_id";
-    %qstat    = runCommand($cmd);
-    %job_info = parse_qstat_fx($qstat{ 'STDOUT' });
+    $job_info = qstat_fx({job_id => $job_id, runcmd_flags => {logging_off => 1}});
 
-    $job_state = $job_info{ $job_id }{ 'job_state' };
+    $job_state = $job_info->{ $job_id }{ 'job_state' };
 
     $count++;
 

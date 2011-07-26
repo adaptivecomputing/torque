@@ -7,7 +7,7 @@ use CRI::Test;
 use Carp;
 
 use XML::Simple;
-use Torque::Test::Utils  qw(
+use CRI::Util  qw(
                              list2array
                            );
 use Torque::Test::Regexp qw( 
@@ -86,7 +86,7 @@ sub parse_output #($)
       if ($key eq 'properties')
         {
 
-        my @properties = Torque::Test::Utils::list2array($value);
+        my @properties = CRI::Util::list2array($value);
         $rtn_values{ $host }{ $key } = \@properties;
         next;
 
@@ -156,7 +156,7 @@ sub parse_xml #($)
         {
     
         my $value                           = $rtn_val->{ $host }{ 'properties' };
-        my @properties                      = Torque::Test::Utils::list2array($value);
+        my @properties                      = CRI::Util::list2array($value);
         $rtn_val->{ $host }{ 'properties' } = \@properties;
 
         } # END if (defined $rtn_val->{ $host }{ 'properties' })
@@ -224,8 +224,8 @@ sub test_output #($)
   my ($input) = @_;
 
   my $stdout         = $input->{ 'output'     } or die "Argument 'output' required";
-  my $hosts          = $input->{ 'hosts'      } or Torque::Test::Utils::list2array($props->get_property('Test.Host'));    
-  my $properties     = $input->{ 'properties' } or Torque::Test::Utils::list2array($props->get_property('torque.node.properties'));
+  my $hosts          = $input->{ 'hosts'      } or CRI::Util::list2array($props->get_property('Test.Host'));    
+  my $properties     = $input->{ 'properties' } or CRI::Util::list2array($props->get_property('torque.node.properties'));
   my $xml            = $input->{ 'xml'        } or 0;
 
   # Parse the output
@@ -456,7 +456,7 @@ Performs a series of tests on the output of pbsnodes -s server1 -q.
 
 =head1 DEPENDENDCIES
 
-Moab::Test, Torque::Test::Utils, Carp, XML::Simple
+Moab::Test, CRI::Util, Carp, XML::Simple
 
 =head1 AUTHOR(S)
 

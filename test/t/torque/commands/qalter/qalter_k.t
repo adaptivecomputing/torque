@@ -18,7 +18,7 @@ use Torque::Job::Ctrl           qw(
                                   );
 use Torque::Util         qw( run_and_check_cmd 
                                     list2array        );
-use Torque::Util::Qstat  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( qstat_fx    );
 
 # Test Description
 plan('no_plan');
@@ -27,8 +27,8 @@ setDesc("qalter -k");
 # Variables
 my $k_cmd;
 my $fx_cmd;
-my %qstat;
-my %qstat_fx;
+my $qstat;
+my $qstat_fx;
 my %qalter;
 my @job_ids;
 my $join_path;
@@ -53,10 +53,10 @@ foreach my $job_id (@job_ids)
 
     # Check if we can test the command
     $fx_cmd   = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($fx_cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
+
+    $qstat_fx = qstat_fx({job_id => $job_id});
     skip("'$job_id' not in the queued state.  Unable to perform 'qalter -k' tests", 15)
-      if $qstat_fx{ $job_id }{ 'job_state' } ne 'Q';
+      if $qstat_fx->{ $job_id }{ 'job_state' } ne 'Q';
 
     # Check qalter -k e
     $join_path = 'e';
@@ -64,9 +64,9 @@ foreach my $job_id (@job_ids)
     %qalter    = run_and_check_cmd($k_cmd);
 
     $fx_cmd      = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($fx_cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-    ok($qstat_fx{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
+
+    $qstat_fx = qstat_fx({job_id => $job_id});
+    ok($qstat_fx->{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
 
     # Check qalter -k o
     $join_path = 'o';
@@ -74,9 +74,9 @@ foreach my $job_id (@job_ids)
     %qalter    = run_and_check_cmd($k_cmd);
 
     $fx_cmd      = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($fx_cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-    ok($qstat_fx{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
+
+    $qstat_fx = qstat_fx({job_id => $job_id});
+    ok($qstat_fx->{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
 
     # Check qalter -k oe
     $join_path = 'oe';
@@ -84,9 +84,9 @@ foreach my $job_id (@job_ids)
     %qalter    = run_and_check_cmd($k_cmd);
 
     $fx_cmd      = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($fx_cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-    ok($qstat_fx{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
+
+    $qstat_fx = qstat_fx({job_id => $job_id});
+    ok($qstat_fx->{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
 
     # Check qalter -k eo
     $join_path = 'eo';
@@ -94,9 +94,9 @@ foreach my $job_id (@job_ids)
     %qalter    = run_and_check_cmd($k_cmd);
 
     $fx_cmd      = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($fx_cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-    ok($qstat_fx{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
+
+    $qstat_fx = qstat_fx({job_id => $job_id});
+    ok($qstat_fx->{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
 
     # Check qalter -k n
     $join_path = 'n';
@@ -104,9 +104,9 @@ foreach my $job_id (@job_ids)
     %qalter    = run_and_check_cmd($k_cmd);
 
     $fx_cmd      = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($fx_cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-    ok($qstat_fx{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
+
+    $qstat_fx = qstat_fx({job_id => $job_id});
+    ok($qstat_fx->{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
 
     }; # END SKIP:
 

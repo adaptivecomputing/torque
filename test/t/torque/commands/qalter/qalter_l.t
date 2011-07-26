@@ -18,7 +18,7 @@ use Torque::Job::Ctrl           qw(
                                   );
 use Torque::Util         qw( run_and_check_cmd 
                                     list2array        );
-use Torque::Util::Qstat  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( qstat_fx    );
 
 # Test Description
 plan('no_plan');
@@ -27,8 +27,8 @@ setDesc("qalter -l");
 # Variables
 my $l_cmd;
 my $fx_cmd;
-my %qstat;
-my %qstat_fx;
+my $qstat;
+my $qstat_fx;
 my %qalter;
 my @job_ids;
 my $resouce_list;
@@ -55,10 +55,10 @@ foreach my $job_id (@job_ids)
 
     # Check if we can test the command
     $fx_cmd   = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($fx_cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
+
+    $qstat_fx = qstat_fx({job_id => $job_id});
     skip("'$job_id' not in the queued state.  Unable to perform 'qalter -l' tests", 8)
-      if $qstat_fx{ $job_id }{ 'job_state' } ne 'Q';
+      if $qstat_fx->{ $job_id }{ 'job_state' } ne 'Q';
 
     # Check qalter -l with the tmp variables
     $walltime     = $props->get_property( 'tmp.job.walltime' );
@@ -68,10 +68,10 @@ foreach my $job_id (@job_ids)
     %qalter       = run_and_check_cmd($l_cmd);
 
     $fx_cmd       = "qstat -f -x $job_id";
-    %qstat        = run_and_check_cmd($fx_cmd);
-    %qstat_fx     = parse_qstat_fx($qstat{ 'STDOUT' });
-    ok($qstat_fx{ $job_id }{ 'Resource_List' }{ 'walltime' } eq $walltime, "Checking if '$l_cmd' was successful in setting the walltime");
-    ok($qstat_fx{ $job_id }{ 'Resource_List' }{ 'nodes'    } eq $nodes,    "Checking if '$l_cmd' was successful in setting the nodes");
+
+    $qstat_fx     = qstat_fx({job_id => $job_id});
+    ok($qstat_fx->{ $job_id }{ 'Resource_List' }{ 'walltime' } eq $walltime, "Checking if '$l_cmd' was successful in setting the walltime");
+    ok($qstat_fx->{ $job_id }{ 'Resource_List' }{ 'nodes'    } eq $nodes,    "Checking if '$l_cmd' was successful in setting the nodes");
 
     # Check qalter -l with the original variables (Reset the variables)
     $walltime     = $props->get_property( 'job.walltime' );
@@ -81,10 +81,10 @@ foreach my $job_id (@job_ids)
     %qalter       = run_and_check_cmd($l_cmd);
 
     $fx_cmd       = "qstat -f -x $job_id";
-    %qstat        = run_and_check_cmd($fx_cmd);
-    %qstat_fx     = parse_qstat_fx($qstat{ 'STDOUT' });
-    ok($qstat_fx{ $job_id }{ 'Resource_List' }{ 'walltime' } eq $walltime, "Checking if '$l_cmd' was successful in setting the walltime");
-    ok($qstat_fx{ $job_id }{ 'Resource_List' }{ 'nodes'    } eq $nodes,    "Checking if '$l_cmd' was successful in setting the nodes");
+
+    $qstat_fx     = qstat_fx({job_id => $job_id});
+    ok($qstat_fx->{ $job_id }{ 'Resource_List' }{ 'walltime' } eq $walltime, "Checking if '$l_cmd' was successful in setting the walltime");
+    ok($qstat_fx->{ $job_id }{ 'Resource_List' }{ 'nodes'    } eq $nodes,    "Checking if '$l_cmd' was successful in setting the nodes");
 
     }; # END SKIP:
 

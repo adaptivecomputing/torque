@@ -21,7 +21,6 @@ use Torque::Util         qw(
                                     list2array
                                     job_info
                                   );
-use Torque::Util::Qstat  qw( parse_qstat_fx    );
 
 # Test Description
 plan('no_plan');

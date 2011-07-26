@@ -16,9 +16,7 @@ use Torque::Job::Ctrl           qw(
                                     runJobs
                                     delJobs
                                   );
-use Torque::Util         qw( run_and_check_cmd 
-                                    list2array        );
-use Torque::Util::Qstat  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( qstat_fx    );
 
 # Test Description
 plan('no_plan');
@@ -27,7 +25,7 @@ setDesc("qalter -A");
 # Variables
 my $cmd;
 my %qstat;
-my %qstat_fx;
+my $qstat_fx;
 my %qalter;
 my @job_ids;
 my $acct_name = "Account_" . time();
@@ -48,14 +46,12 @@ foreach my $job_id (@job_ids)
   {
 
   # Get the job information
-  $cmd      = "qstat -f -x $job_id";
-  %qstat    = run_and_check_cmd($cmd);
-  %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
+  $qstat_fx = qstat_fx({job_id => $job_id});
 
   SKIP: 
     {
 
-    if ($qstat_fx{ $job_id }{ 'job_state' } ne 'Q')
+    if ($qstat_fx->{ $job_id }{ 'job_state' } ne 'Q')
       {
       
       skip("'$job_id' not in the 'Q' state.  Unable to perform test.", 3);
@@ -64,15 +60,12 @@ foreach my $job_id (@job_ids)
 
     # Alter the job
     $cmd         = "qalter -A $acct_name $job_id";
-    %qalter      = run_and_check_cmd($cmd); 
+    %qalter      = runCommand($cmd, test_success => 1); 
 
     # Check that the command ran
-    $cmd      = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
+    $qstat_fx = qstat_fx({job_id => $job_id});
 
-    ok( (   exists $qstat_fx{ $job_id }{ 'Account_Name' }
-         and $qstat_fx{ $job_id }{ 'Account_Name' } eq $acct_name ),
+    is( $qstat_fx->{ $job_id }{ 'Account_Name' }, $acct_name ,
          "Checking for account '$acct_name' for job '$job_id'");
 
     }; # END SKIP:

@@ -11,7 +11,7 @@ use lib test_lib_loc();
 use CRI::Test;
 use Carp;
 
-use Torque::Util::Qstat    qw( parse_qstat_fx );
+use Torque::Util::Qstat    qw( qstat_fx );
 use Torque::Util::Pbsnodes qw( parse_xml      );
 
 use base 'Exporter';
@@ -89,14 +89,13 @@ sub job_info #($)
      # Variables
      my $cmd      = "qstat -fx $job_ids_str";
      my %qstat    = ();
-     my %job_info = ();
+     my $job_info;
 
      # Get the job info
      %qstat    = run_and_check_cmd($cmd);
-     %job_info = parse_qstat_fx($qstat{ 'STDOUT' })
-        unless $qstat{ 'STDOUT' } eq '';
+     $job_info = qstat_fx($qstat{ 'STDOUT' });
 
-     return %job_info;
+     return %$job_info;
   }
 
 ###############################################################################
@@ -130,7 +129,7 @@ sub verify_job_state #($)
   my $act_job_state = '';
   my $cmd;
   my %qstat;
-  my %job_info;
+  my $job_info;
 
   # Check every second for $wait_time for the state to take effect
   diag("Waiting $wait_time seconds for job:$job_id to go to state '$exp_job_state'...");
@@ -142,9 +141,9 @@ sub verify_job_state #($)
     # We parse the job information manually so we don't spam the test output
     $cmd      = "qstat -fx $job_id";
     %qstat    = runCommand($cmd);
-    %job_info = parse_qstat_fx($qstat{ 'STDOUT' });
+    $job_info = qstat_fx($qstat{ 'STDOUT' });
 
-    $act_job_state = $job_info{ $job_id }{ 'job_state' };
+    $act_job_state = $job_info->{ $job_id }{ 'job_state' };
 
     sleep 1;
     $count++;

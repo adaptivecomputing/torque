@@ -18,7 +18,7 @@ use Torque::Job::Ctrl           qw(
                                   );
 use Torque::Util         qw( run_and_check_cmd 
                                     list2array        );
-use Torque::Util::Qstat  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( qstat_fx    );
 
 # Test Description
 plan('no_plan');
@@ -27,8 +27,8 @@ setDesc("qalter -p");
 # Variables
 my $p_cmd;
 my $fx_cmd;
-my %qstat;
-my %qstat_fx;
+my $qstat;
+my $qstat_fx;
 my %qalter;
 my $job_id;
 my $priority;
@@ -50,9 +50,9 @@ $p_cmd     = "qalter -p $priority $job_id";
 %qalter    = run_and_check_cmd($p_cmd);
 
 $fx_cmd   = "qstat -f -x $job_id";
-%qstat    = run_and_check_cmd($fx_cmd);
-%qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job_id }{ 'Priority' } eq $priority, "Checking if '$p_cmd' was successful");
+
+$qstat_fx = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job_id }{ 'Priority' } eq $priority, "Checking if '$p_cmd' was successful");
 
 $priority  = 1024; # This should fail
 $p_cmd     = "qalter -p $priority $job_id";
@@ -67,9 +67,9 @@ $p_cmd     = "qalter -p $priority $job_id";
 %qalter    = run_and_check_cmd($p_cmd);
 
 $fx_cmd   = "qstat -f -x $job_id";
-%qstat    = run_and_check_cmd($fx_cmd);
-%qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job_id }{ 'Priority' } eq $priority, "Checking if '$p_cmd' was successful");
+
+$qstat_fx = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job_id }{ 'Priority' } eq $priority, "Checking if '$p_cmd' was successful");
 
 $priority  = -1025; # This should fail
 $p_cmd     = "qalter -p $priority $job_id";

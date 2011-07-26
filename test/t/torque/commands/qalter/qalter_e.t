@@ -18,7 +18,7 @@ use Torque::Job::Ctrl           qw(
                                   );
 use Torque::Util         qw( run_and_check_cmd 
                                     list2array        );
-use Torque::Util::Qstat  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( qstat_fx    );
 
 # Other modules
 use Sys::Hostname;
@@ -29,8 +29,8 @@ setDesc("qalter -e");
 
 # Variables
 my $cmd;
-my %qstat;
-my %qstat_fx;
+my $qstat;
+my $qstat_fx;
 my %qalter;
 my $job_id;
 my $err_path;
@@ -60,20 +60,20 @@ $cmd         = "qalter -e $err_path $job_id";
 
 $cwd      = $qalter{ 'CWD' };
 $cmd      = "qstat -f -x $job_id";
-%qstat    = run_and_check_cmd($cmd);
-%qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job_id }{ 'Error_Path' } eq "$host:$cwd/$err_path", 
+
+$qstat_fx = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job_id }{ 'Error_Path' } eq "$host:$cwd/$err_path", 
    "Checking for the new error file when specified without a host and with an relative path")
-   or diag("Expected: '$host:$cwd/$err_path\nGot: $qstat_fx{ $job_id }{ 'Error_Path' }'");
+   or diag("Expected: '$host:$cwd/$err_path\nGot: $qstat_fx->{ $job_id }{ 'Error_Path' }'");
 
 # Alter the job error path with a relative path and a host
 $cmd         = "qalter -e $err_host_path $job_id";
 %qalter      = run_and_check_cmd($cmd); 
 
 $cmd      = "qstat -f -x $job_id";
-%qstat    = run_and_check_cmd($cmd);
-%qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job_id }{ 'Error_Path' } eq "$err_host_path", 
+
+$qstat_fx = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job_id }{ 'Error_Path' } eq "$err_host_path", 
    "Checking for the new error file when specified with a host and with a relative path");
 
 # Set variables to a absolute path
@@ -85,9 +85,9 @@ $cmd         = "qalter -e $err_path $job_id";
 %qalter      = run_and_check_cmd($cmd); 
 
 $cmd      = "qstat -f -x $job_id";
-%qstat    = run_and_check_cmd($cmd);
-%qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job_id }{ 'Error_Path' } eq "$host:$err_path", 
+
+$qstat_fx = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job_id }{ 'Error_Path' } eq "$host:$err_path", 
    "Checking for the new error file when specified without a host and with an abosolute path");
 
 # Alter the job error path with a relative path and a host
@@ -95,9 +95,9 @@ $cmd         = "qalter -e $err_host_path $job_id";
 %qalter      = run_and_check_cmd($cmd); 
 
 $cmd      = "qstat -f -x $job_id";
-  %qstat    = run_and_check_cmd($cmd);
-  %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-  ok($qstat_fx{ $job_id }{ 'Error_Path' } eq "$err_host_path", 
+
+  $qstat_fx = qstat_fx({job_id => $job_id});
+  ok($qstat_fx->{ $job_id }{ 'Error_Path' } eq "$err_host_path", 
      "Checking for the new error file when specified with a host and with an abosolute path");
 
 # Delete the job

@@ -16,9 +16,7 @@ use Torque::Job::Ctrl           qw(
                                     runJobs
                                     delJobs
                                   );
-use Torque::Util         qw( run_and_check_cmd 
-                                    list2array        );
-use Torque::Util::Qstat  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( qstat_fx    );
 
 # Test Description
 plan('no_plan');
@@ -28,10 +26,9 @@ setDesc("qalter -W (after paramaters)");
 my $w_cmd;
 my $fx_cmd;
 my %qstat;
-my %qstat_fx;
+my $qstat_fx;
 my %qalter;
 my $group_list;
-my $depend;
 
 my $host   = $props->get_property('Test.Host');
 
@@ -44,93 +41,29 @@ my $job_params = {
 my $job1 = submitSleepJob($job_params);
 my $job2 = submitSleepJob($job_params);
 
-# Test after
-diag("Test after");
-$depend  = "after:$job1";
-$w_cmd   = "qalter -W depend=$depend $job2";
-%qalter  = run_and_check_cmd($w_cmd);
+my @dep_cases = (
+  'after',
+  'afterok',
+  'afternotok',
+  'afteranyok',
+);
 
-$fx_cmd     = "qstat -f -x $job2";
-%qstat      = run_and_check_cmd($fx_cmd);
-%qstat_fx   = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job2 }{ 'depend' } =~ /${depend}/, "Checking if '$w_cmd' was successful");
+foreach my $depend (@dep_cases)
+{
+  diag("Test $depend");
+  my $full_depend  = "$depend:$job1";
+  runCommand("qalter -W depend=$full_depend $job2", test_success => 1);
 
-# Reset after
-diag("Reset after");
-$depend  = "after";
-$w_cmd   = "qalter -W depend=$depend $job2";
-%qalter  = run_and_check_cmd($w_cmd);
+  $qstat_fx   = qstat_fx({job_id => $job2});
+  like($qstat_fx->{ $job2 }{ 'depend' }, qr/$full_depend/, "Job $job2 Dependency Successfully Altered");
 
-$fx_cmd     = "qstat -f -x $job2";
-%qstat      = run_and_check_cmd($fx_cmd);
-%qstat_fx   = parse_qstat_fx($qstat{ 'STDOUT' });
-ok(! defined $qstat_fx{ $job2 }{ 'depend' }, "Checking if '$w_cmd' was successful");
+  diag("Reset $depend");
+  $full_depend  = $depend;
+  runCommand("qalter -W depend=$full_depend $job2", test_success => 1);
 
-# Test afterok
-diag("Test afterok");
-$depend  = "afterok:$job1";
-$w_cmd   = "qalter -W depend=$depend $job2";
-%qalter  = run_and_check_cmd($w_cmd);
-
-$fx_cmd     = "qstat -f -x $job2";
-%qstat      = run_and_check_cmd($fx_cmd);
-%qstat_fx   = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job2 }{ 'depend' } =~ /${depend}/, "Checking if '$w_cmd' was successful");
-
-# Reset afterok
-diag("Reset afterok");
-$depend  = "afterok";
-$w_cmd   = "qalter -W depend=$depend $job2";
-%qalter  = run_and_check_cmd($w_cmd);
-
-$fx_cmd     = "qstat -f -x $job2";
-%qstat      = run_and_check_cmd($fx_cmd);
-%qstat_fx   = parse_qstat_fx($qstat{ 'STDOUT' });
-ok(! defined $qstat_fx{ $job2 }{ 'depend' }, "Checking if '$w_cmd' was successful");
-
-# Test afternotok
-diag("Test afternotok");
-$depend  = "afternotok:$job1";
-$w_cmd   = "qalter -W depend=$depend $job2";
-%qalter  = run_and_check_cmd($w_cmd);
-
-$fx_cmd     = "qstat -f -x $job2";
-%qstat      = run_and_check_cmd($fx_cmd);
-%qstat_fx   = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job2 }{ 'depend' } =~ /${depend}/, "Checking if '$w_cmd' was successful");
-
-# Reset afternotok
-diag("Reset afternotok");
-$depend  = "afternotok";
-$w_cmd   = "qalter -W depend=$depend $job2";
-%qalter  = run_and_check_cmd($w_cmd);
-
-$fx_cmd     = "qstat -f -x $job2";
-%qstat      = run_and_check_cmd($fx_cmd);
-%qstat_fx   = parse_qstat_fx($qstat{ 'STDOUT' });
-ok(! defined $qstat_fx{ $job2 }{ 'depend' }, "Checking if '$w_cmd' was successful");
-
-# Test afteranyok
-diag("Test afteranyok");
-$depend  = "afterany:$job1";
-$w_cmd   = "qalter -W depend=$depend $job2";
-%qalter  = run_and_check_cmd($w_cmd);
-
-$fx_cmd     = "qstat -f -x $job2";
-%qstat      = run_and_check_cmd($fx_cmd);
-%qstat_fx   = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job2 }{ 'depend' } =~ /${depend}/, "Checking if '$w_cmd' was successful");
-
-# Reset afteranyok
-diag("Reset afteranyok");
-$depend  = "afterany";
-$w_cmd   = "qalter -W depend=$depend $job2";
-%qalter  = run_and_check_cmd($w_cmd);
-
-$fx_cmd     = "qstat -f -x $job2";
-%qstat      = run_and_check_cmd($fx_cmd);
-%qstat_fx   = parse_qstat_fx($qstat{ 'STDOUT' });
-ok(! defined $qstat_fx{ $job2 }{ 'depend' }, "Checking if '$w_cmd' was successful");
+  $qstat_fx   = qstat_fx({job_id => $job2});
+  ok(! defined $qstat_fx->{ $job2 }{ 'depend' }, "Job $job2 Dependency Successfully Reset");
+}
 
 # Delete the jobs
 delJobs($job1, $job2);

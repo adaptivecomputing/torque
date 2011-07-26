@@ -7,7 +7,7 @@ use CRI::Test;
 use Carp;
 
 use XML::Simple;
-use Torque::Test::Utils  qw(
+use CRI::Util  qw(
                              list2array
                            );
 use Torque::Test::Regexp qw( 
@@ -86,7 +86,7 @@ sub parse_output #($)
       if ($key eq 'properties')
         {
 
-        my @properties = Torque::Test::Utils::list2array($value);
+        my @properties = CRI::Util::list2array($value);
         $rtn_values{ $host }{ $key } = \@properties;
         next;
 
@@ -156,7 +156,7 @@ sub parse_xml #($)
         {
     
         my $value                           = $rtn_val->{ $host }{ 'properties' };
-        my @properties                      = Torque::Test::Utils::list2array($value);
+        my @properties                      = CRI::Util::list2array($value);
         $rtn_val->{ $host }{ 'properties' } = \@properties;
 
         } # END if (defined $rtn_val->{ $host }{ 'properties' })

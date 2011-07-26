@@ -18,7 +18,7 @@ use Torque::Job::Ctrl           qw(
                                   );
 use Torque::Util         qw( run_and_check_cmd 
                                     list2array        );
-use Torque::Util::Qstat  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( qstat_fx    );
 
 # Test Description
 plan('no_plan');
@@ -27,8 +27,8 @@ setDesc("qalter -W (sync paramaters)");
 # Variables
 my $w_cmd;
 my $fx_cmd;
-my %qstat;
-my %qstat_fx;
+my $qstat;
+my $qstat_fx;
 my %qalter;
 my $group_list;
 my $depend;
@@ -51,9 +51,9 @@ $w_cmd   = "qalter -W depend=$depend $job1";
 %qalter     = run_and_check_cmd($w_cmd);
 
 $fx_cmd     = "qstat -f -x $job1";
-%qstat      = run_and_check_cmd($fx_cmd);
-%qstat_fx   = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job1 }{ 'depend' } eq $depend, "Checking if '$w_cmd' was successful");
+
+$qstat_fx   = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job1 }{ 'depend' } eq $depend, "Checking if '$w_cmd' was successful");
 
 # Test syncwith
 diag("Test syncwith");
@@ -62,9 +62,9 @@ $w_cmd   = "qalter -W depend=$depend $job2";
 %qalter  = run_and_check_cmd($w_cmd);
 
 $fx_cmd     = "qstat -f -x $job2";
-%qstat      = run_and_check_cmd($fx_cmd);
-%qstat_fx   = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job2 }{ 'depend' } =~ /${depend}/, "Checking if '$w_cmd' was successful");
+
+$qstat_fx   = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job2 }{ 'depend' } =~ /${depend}/, "Checking if '$w_cmd' was successful");
 
 # Reset synccount
 diag("Reset synccount");
@@ -73,9 +73,9 @@ $w_cmd   = "qalter -W depend=$depend $job1";
 %qalter  = run_and_check_cmd($w_cmd);
 
 $fx_cmd     = "qstat -f -x $job1";
-%qstat      = run_and_check_cmd($fx_cmd);
-%qstat_fx   = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job1 }{ 'depend' } eq 'synccount:0', "Checking if '$w_cmd' was successful");
+
+$qstat_fx   = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job1 }{ 'depend' } eq 'synccount:0', "Checking if '$w_cmd' was successful");
 
 # Reset syncwith
 diag("Reset syncwith");
@@ -84,9 +84,9 @@ $w_cmd   = "qalter -W depend=$depend $job2";
 %qalter  = run_and_check_cmd($w_cmd);
 
 $fx_cmd     = "qstat -f -x $job2";
-%qstat      = run_and_check_cmd($fx_cmd);
-%qstat_fx   = parse_qstat_fx($qstat{ 'STDOUT' });
-ok(! defined $qstat_fx{ $job2 }{ 'depend' }, "Checking if '$w_cmd' was successful");
+
+$qstat_fx   = qstat_fx({job_id => $job_id});
+ok(! defined $qstat_fx->{ $job2 }{ 'depend' }, "Checking if '$w_cmd' was successful");
 
 # Delete the jobs
 delJobs($job1, $job2);

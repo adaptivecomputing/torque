@@ -18,7 +18,7 @@ use Torque::Job::Ctrl           qw(
                                   );
 use Torque::Util         qw( run_and_check_cmd 
                                     list2array        );
-use Torque::Util::Qstat  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( qstat_fx    );
 
 # Test Description
 plan('no_plan');
@@ -28,7 +28,7 @@ setDesc("qalter -j");
 my $j_cmd;
 my $fx_cmd;
 my %qstat;
-my %qstat_fx;
+my $qstat_fx;
 my %qalter;
 my @job_ids;
 my $join_path;
@@ -46,51 +46,31 @@ $job_ids[1] = submitSleepJob($job_params);
 runJobs($job_ids[0]);
 
 foreach my $job_id (@job_ids)
-  {
-
+{
   SKIP:
-    {
-
+  {
     # Check if we can test the command
-    $fx_cmd   = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($fx_cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
+    $qstat_fx = qstat_fx({job_id => $job_id});
     skip("'$job_id' not in the queued state.  Unable to perform 'qalter -j' tests", 9)
-      if $qstat_fx{ $job_id }{ 'job_state' } ne 'Q';
+      if $qstat_fx->{ $job_id }{ 'job_state' } ne 'Q';
 
-    # Check qalter -j oe
-    $join_path = 'oe';
-    $j_cmd     = "qalter -j $join_path $job_id";
-    %qalter    = run_and_check_cmd($j_cmd);
+    my @cases = (
+      'oe',
+      'eo',
+      'n',
+    );
 
-    $fx_cmd      = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($fx_cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-    ok($qstat_fx{ $job_id }{ 'Join_Path' } eq $join_path, "Checking if '$j_cmd' was successful");
+    foreach my $join_path (@cases)
+    {
+      %qalter = runCommand("qalter -j $join_path $job_id", test_success => 1);
+      next if $qalter{EXIT_CODE};
 
-    # Check qalter -j eo
-    $join_path = 'eo';
-    $j_cmd     = "qalter -j $join_path $job_id";
-    %qalter    = run_and_check_cmd($j_cmd);
-
-    $fx_cmd      = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($fx_cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-    ok($qstat_fx{ $job_id }{ 'Join_Path' } eq $join_path, "Checking if '$j_cmd' was successful");
-
-    # Check qalter -j n
-    $join_path = 'n';
-    $j_cmd     = "qalter -j $join_path $job_id";
-    %qalter    = run_and_check_cmd($j_cmd);
-
-    $fx_cmd      = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($fx_cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-    ok($qstat_fx{ $job_id }{ 'Join_Path' } eq $join_path, "Checking if '$j_cmd' was successful");
-
-    }; # END SKIP:
-
-  } # END foreach my $job_id (@job_ids)
+      $qstat_fx = qstat_fx({job_id => $job_id});
+      
+      is($qstat_fx->{ $job_id }{ 'Join_Path' }, $join_path, "Job $job_id Join Path was Successfully Altered");
+    }
+  };
+}
 
 # Delete the jobs
 delJobs(@job_ids);

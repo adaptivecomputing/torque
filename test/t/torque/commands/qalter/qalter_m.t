@@ -18,7 +18,7 @@ use Torque::Job::Ctrl           qw(
                                   );
 use Torque::Util         qw( run_and_check_cmd 
                                     list2array        );
-use Torque::Util::Qstat  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( qstat_fx    );
 
 # Test Description
 plan('no_plan');
@@ -27,8 +27,8 @@ setDesc("qalter -m");
 # Variables
 my $m_cmd;
 my $fx_cmd;
-my %qstat;
-my %qstat_fx;
+my $qstat;
+my $qstat_fx;
 my %qalter;
 my $job_id;
 my $mail_points;
@@ -50,9 +50,9 @@ $m_cmd       = "qalter -m $mail_points $job_id";
 %qalter      = run_and_check_cmd($m_cmd);
  
 $fx_cmd      = "qstat -f -x $job_id";
-%qstat       = run_and_check_cmd($fx_cmd);
-%qstat_fx    = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
+
+$qstat_fx    = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
 
 # Check qalter -m b
 $mail_points = 'b';
@@ -60,9 +60,9 @@ $m_cmd       = "qalter -m $mail_points $job_id";
 %qalter      = run_and_check_cmd($m_cmd);
 
 $fx_cmd      = "qstat -f -x $job_id";
-%qstat       = run_and_check_cmd($fx_cmd);
-%qstat_fx    = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
+
+$qstat_fx    = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
 
 # Check qalter -m e
 $mail_points = 'e';
@@ -70,9 +70,9 @@ $m_cmd       = "qalter -m $mail_points $job_id";
 %qalter      = run_and_check_cmd($m_cmd);
 
 $fx_cmd      = "qstat -f -x $job_id";
-%qstat       = run_and_check_cmd($fx_cmd);
-%qstat_fx    = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
+
+$qstat_fx    = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
 
 # Check qalter -m abe
 $mail_points = 'abe';
@@ -80,9 +80,9 @@ $m_cmd       = "qalter -m $mail_points $job_id";
 %qalter      = run_and_check_cmd($m_cmd);
 
 $fx_cmd      = "qstat -f -x $job_id";
-%qstat       = run_and_check_cmd($fx_cmd);
-%qstat_fx    = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
+
+$qstat_fx    = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
 
 
 # Check qalter -m n
@@ -91,8 +91,8 @@ $m_cmd     = "qalter -m $mail_points $job_id";
 %qalter    = run_and_check_cmd($m_cmd);
 
 $fx_cmd   = "qstat -f -x $job_id";
-%qstat    = run_and_check_cmd($fx_cmd);
-%qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
-ok($qstat_fx{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
+
+$qstat_fx = qstat_fx({job_id => $job_id});
+ok($qstat_fx->{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
 # Delete the jobs
 delJobs($job_id);

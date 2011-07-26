@@ -18,7 +18,7 @@ use Torque::Job::Ctrl           qw(
                                   );
 use Torque::Util         qw( run_and_check_cmd 
                                     list2array        );
-use Torque::Util::Qstat  qw( parse_qstat_fx    );
+use Torque::Util::Qstat  qw( qstat_fx    );
 
 # Test Description
 plan('no_plan');
@@ -28,7 +28,7 @@ setDesc("qalter -u");
 my $m_cmd;
 my $fx_cmd;
 my %qstat;
-my %qstat_fx;
+my $qstat_fx;
 my %qalter;
 my @job_ids;
 my $user_list;
@@ -56,22 +56,19 @@ foreach my $job_id (@job_ids)
     {
 
     # Check if we can test the command
-    $fx_cmd   = "qstat -f -x $job_id";
-    %qstat    = run_and_check_cmd($fx_cmd);
-    %qstat_fx = parse_qstat_fx($qstat{ 'STDOUT' });
+    $qstat_fx = qstat_fx({job_id => $job_id });
     skip("'$job_id' not in the queued state.  Unable to perform 'qalter -u' tests", 3)
-      if $qstat_fx{ $job_id }{ 'job_state' } ne 'Q';
+      if $qstat_fx->{ $job_id }{ 'job_state' } ne 'Q';
 
 
     # Check qalter -u user1@host,user1@host
     $user_list = "$user1,$user1\@$host";
     $m_cmd     = "qalter -u $user_list $job_id";
-    %qalter    = run_and_check_cmd($m_cmd);
+    %qalter    = runCommand($m_cmd, test_success => 1);
  
     $fx_cmd    = "qstat -f -x $job_id";
-    %qstat     = run_and_check_cmd($fx_cmd);
-    %qstat_fx  = parse_qstat_fx($qstat{ 'STDOUT' });
-    ok($qstat_fx{ $job_id }{ 'User_List' } eq $user_list, "Checking if '$m_cmd' was successful");
+    $qstat_fx  = qstat_fx({job_id => $job_id});
+    is($qstat_fx->{ $job_id }{ 'User_List' }, $user_list, "Checking if '$m_cmd' was successful");
 
     }; # END SKIP:
 
