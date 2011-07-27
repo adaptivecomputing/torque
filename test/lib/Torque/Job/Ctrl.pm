@@ -1,28 +1,15 @@
 package Torque::Job::Ctrl;
-
-########################################################################
-# 
-# File   :  Torque/Job/Ctrl.pm
-# History:  26-aug-2009 (jdayley) Added this header, updated comments,
-#                       and added qsub subroutine.
-#
 ########################################################################
 #
 # Contains subroutine related to the submiting and destroying of torque
 # jobs.
 # 
 ########################################################################
-
 use strict;
 use warnings;
 
 use CRI::Test;
-use Carp;
-
-use Torque::Job::Utils         qw(
-                                    cleanupJobId
-                                    detaintJobId
-                                 );
+use Torque::Job::Utils         qw( cleanupJobId );
 
 use base 'Exporter';
 
@@ -67,7 +54,7 @@ sub qsub #($)
 
   # Variables
   my $qsub_loc     = $params->{ 'qsub_loc'     } || $props->get_property("Torque.Home.Dir") . "/bin/qsub";
-  my $flags        = $params->{ 'flags'        } || '';
+  my $flags        = $params->{ 'flags'        } || undef;
   my $cmd          = $params->{ 'cmd'          } || 'sleep 300' unless exists $params->{script};
   my $user         = $params->{ 'user'         } || $props->get_property("User.1");
   my $runcmd_flags = $params->{ 'runcmd_flags' } || { 'test_success_die' => 1 };
@@ -122,11 +109,9 @@ sub qsub #($)
 #------------------------------------------------------------------------------
 # my $job_id = submitSleepJob({
 #                              'user'       => 'user1',
-#                              'torque_bin' => '/usr/test/torque/bin'
 #                            });
 # my $job_id = submitSleepJob({
 #                              'user'       => 'user1',
-#                              'torque_bin' => '/usr/test/torque/bin'
 #                              'sleep_time' => 200,
 #                              'add_args'   => '-l walltime=30:00'
 #                            });
@@ -140,54 +125,28 @@ sub qsub #($)
 #
 # my $params = {
 #                'user'       => 'user1',
-#                'torque_bin' => '/var/spool/torque/bin',
 #                'sleep_time' => 200,
 #                'add_args'   => '-l walltime=30:00'
 #              };
 #
 #------------------------------------------------------------------------------
 sub submitSleepJob #($) 
-  {
-  
+{
   my ($params) = @_; 
 
   # Variables
-  my $user       = $params->{ 'user'       } || carp '"user" not given';
-  my $torque_bin = $params->{ 'torque_bin' } || carp '"torque_bin" not given';
-  my $sleep_time = $params->{ 'sleep_time' } || '300';
-  my $add_args   = $params->{ 'add_args'   } || '';
+  my $user       = $params->{ 'user'       };
+  my $sleep_time = $params->{ 'sleep_time' };
+  my $add_args   = $params->{ 'add_args'   };
 
-  # Make sure torque_bin ends in a / 
-  $torque_bin .= '/';
+  my $qsub_params = {};
 
-  # Return value
-  my $job_id;  
-  
-  # Submit a job
-  my $qsub_cmd = "echo sleep $sleep_time | ${torque_bin}qsub $add_args";
-  diag("Submitting a sleep job as '$user' with the command: '$qsub_cmd'");
-  my %qsub     = runCommandAs($user, $qsub_cmd);
+  $qsub_params->{user} = $user if defined $user;
+  $qsub_params->{cmd} = "sleep $sleep_time" if defined $sleep_time;
+  $qsub_params->{flags} = $add_args if defined $add_args;
 
-  if ($qsub{ 'EXIT_CODE' } == 0)
-    {
-
-    $job_id = $qsub{ 'STDOUT' };
-    $job_id = cleanupJobId($job_id);
-
-    pass("Successfully submitted sleep job '$job_id'");
-
-    } # END if ($qsub{ 'EXIT_CODE' } == 0)
-  else
-    {
-
-    $job_id = -1;
-    fail('Unable to submit a sleep job: ' . $qsub{ 'STDERR' });
-
-    } # END else
-
-  return $job_id;
-
-  } # END submitSleepJob #($) 
+  return qsub($qsub_params);
+}
 
 #------------------------------------------------------------------------------
 # my $job_id = submitCheckpointJob({
@@ -220,60 +179,35 @@ sub submitSleepJob #($)
 # 
 #------------------------------------------------------------------------------
 sub submitCheckpointJob #($) 
-  {
-  
+{
   my ($params) = @_; 
 
   # Parameters
-  my $user       = $params->{ 'user'       } || carp '"user" not given';
-  my $torque_bin = $params->{ 'torque_bin' } || carp '"torque_bin" not given';
-  my $app        = $params->{ 'app'        } || carp '"app" not give';
-  my $add_args   = $params->{ 'add_args'   } || '';
+  my $user       = $params->{ 'user'       };
+  my $app        = $params->{ 'app'        } || die '"app" not given';
+  my $add_args   = $params->{ 'add_args'   }
   my $c_value    = $params->{ 'c_value'    } || 'enabled';
  
   # Variables
   my $ld_library_path = $props->get_property( 'LD_LIBRARY_PATH' );
 
-  # Make sure torque_bin ends in a / 
-  $torque_bin .= '/';
+  my $qsub_params = {};
 
-  # Return value
-  my $job_id;  
-  
-  # Submit a job
-  my $qsub_cmd = "${torque_bin}qsub -c $c_value -v LD_LIBRARY_PATH=$ld_library_path $add_args $app";
-  my %qsub     = runCommandAs($user, $qsub_cmd);
+  $qsub_params->{user} = $user if defined $user;
+  $qsub_params->{script} = $app;
+  $qsub_params->{flags} = "-c $c_value -v LD_LIBRARY_PATH=$ld_library_path";
+  $qsub_params->{flags} .= " $add_args" if defined $add_args;
 
-  if ($qsub{ 'EXIT_CODE' } == 0)
-    {
-
-    $job_id = $qsub{ 'STDOUT' };
-    $job_id = cleanupJobId($job_id);
-
-    pass("Successfully submitted a checkpoint job '$job_id'");
-
-    } # END if ($qsub{ 'EXIT_CODE' } == 0)
-  else
-    {
-
-    $job_id = -1;
-    fail('Unable to submit a checkpoint job: ' . $qsub{ 'STDERR' });
-
-    } # END else
-
-  return $job_id;
-
-  } # END submitSleepJob #($) 
+  return qsub($qsub_params);
+}
 
 #------------------------------------------------------------------------------
 # my $job_id = submitJob({
 #                         'user'       => 'user1',
-#                         'torque_bin' => '/usr/test/torque/bin'
 #                         'app'        => '/tmp/app.pl'
 #                       });
 # my $job_id = submitJob({
 #                         'user'       => 'user1',
-#                         'torque_bin' => '/usr/test/torque/bin'
 #                         'app'        => '/tmp/app.pl'
 #                         'add_args'   => '-l walltime=30:00'
 #                       });
@@ -287,53 +221,28 @@ sub submitCheckpointJob #($)
 #
 # my $params = {
 #                'user'       => 'user1',
-#                'torque_bin' => '/var/spool/torque/bin',
 #                'app'        => '/tmp/app.pl'
 #                'add_args'   => '-l walltime=30:00'
 #              };
 #
 #------------------------------------------------------------------------------
 sub submitJob #($) 
-  {
-  
+{
   my ($params) = @_; 
 
   # Parameters
-  my $user       = $params->{ 'user'       } || carp '"user" not given';
-  my $torque_bin = $params->{ 'torque_bin' } || carp '"torque_bin" not given';
-  my $app        = $params->{ 'app'        } || carp '"app" not give';
-  my $add_args   = $params->{ 'add_args'   } || '';
+  my $user       = $params->{ 'user'       };
+  my $app        = $params->{ 'app'        };
+  my $add_args   = $params->{ 'add_args'   };
 
-  # Make sure torque_bin ends in a / 
-  $torque_bin .= '/';
+  my $qsub_params = {};
 
-  # Return value
-  my $job_id;  
-  
-  # Submit a job
-  my $qsub_cmd = "${torque_bin}qsub $add_args $app";
-  my %qsub     = runCommandAs($user, $qsub_cmd);
+  $qsub_params->{user} = $user if defined $user;
+  $qsub_params->{script} = $app if defined $app;
+  $qsub_params->{flags} = $add_args if defined $add_args;
 
-  if ($qsub{ 'EXIT_CODE' } == 0)
-    {
-
-    $job_id = $qsub{ 'STDOUT' };
-    $job_id = cleanupJobId($job_id);
-
-    pass("Successfully submitted a job '$job_id'");
-
-    } # END if ($qsub{ 'EXIT_CODE' } == 0)
-  else
-    {
-
-    $job_id = -1;
-    fail('Unable to submit a checkpoint job: ' . $qsub{ 'STDERR' });
-
-    } # END else
-
-  return $job_id;
-
-  } # END submitJob #($) 
+  return qsub($qsub_params);
+}
 
 #------------------------------------------------------------------------------
 # runJobs('job.1', 'job.2', 'job.3');
@@ -343,23 +252,17 @@ sub submitJob #($)
 #
 #------------------------------------------------------------------------------
 sub runJobs #(@)
-  {
-
+{
   my @job_ids = @_;
 
   foreach my $job_id (@job_ids)
-    {
-  
+  {
     $job_id = cleanupJobId($job_id);
 
     my $cmd  = "qrun $job_id";
-    my %qrun = runCommand($cmd);
-    ok($qrun{ 'EXIT_CODE' } == 0, "Checking that '$cmd' ran successfully")
-      or diag ("STDERR: $qrun{ 'STDERR' }");
-
-    } # END foreach my $job_id (@job_ids)
-
-  } # END runJobs #(@)
+    my %qrun = runCommand($cmd, test_success => 1);
+  }
+}
 
 #------------------------------------------------------------------------------
 # delJobs('job.1', 'job.2', 'job.3');

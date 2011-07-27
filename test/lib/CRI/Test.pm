@@ -2235,7 +2235,7 @@ sub haveCoreDump    #($)
           if (defined $runcmd_flags{host})
           {
             runCommand(
-              "scp -o BatchMode=yes $runcmd_flags{host}:$_ $outdir/. ",
+              "scp -B -r $runcmd_flags{host}:$_ $outdir/. ",
               %runcmd_flags,
               logging_off => 1,
               host        => undef
@@ -2243,7 +2243,47 @@ sub haveCoreDump    #($)
           }
           else
           {
-            runCommand("cp $_ $outdir/. ", %runcmd_flags, logging_off => 1);
+            runCommand("cp -r $_ $outdir/. ", %runcmd_flags, logging_off => 1);
+          }
+
+          my @path = split '/', $_;
+          push @files, $path[-1];
+        }
+
+        push @files, $filename;
+      }
+      if ($process_name =~ /^pbs_(\w+)$/)
+      {
+        my $pbs_type = $1;
+        my $home = $props->get_property('Torque.Home.Dir');
+
+        my %torque_files = (
+          mom => [
+            "$home/sbin/pbs_mom",
+            "$home/mom_logs",
+            "$home/mom_priv/config",
+          ],
+          server => [
+            "$home/sbin/pbs_server",
+            "$home/server_logs",
+            "$home/server_priv",
+          ],
+        );
+
+        foreach(@{$torque_files{$pbs_type}})
+        {
+          if (defined $runcmd_flags{host})
+          {
+            runCommand(
+              "scp -B -r $runcmd_flags{host}:$_ $outdir/. ",
+              %runcmd_flags,
+              logging_off => 1,
+              host        => undef
+            );
+          }
+          else
+          {
+            runCommand("cp -r $_ $outdir/. ", %runcmd_flags, logging_off => 1);
           }
 
           my @path = split '/', $_;

@@ -55,7 +55,7 @@ $cmd  = "qdel $job_id";
 %qdel = run_and_check_cmd($cmd);
 
 # Check that job is deleted
-my %job_info = qstat_fx();
+my $job_info = qstat_fx();
 
-cmp_ok($job_info{ $job_id }{ 'job_state' }, 'eq', 'C', "Checking job state of job:$job_id");
+cmp_ok($job_info->{ $job_id }{ 'job_state' }, 'eq', 'C', "Checking job state of job:$job_id");
 delJobs($job_id); # Make sure the job gets deleted

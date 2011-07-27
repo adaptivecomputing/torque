@@ -7,25 +7,21 @@ use FindBin;
 use TestLibFinder;
 use lib test_lib_loc();
 
-
 use CRI::Test;
-use Carp;
-
+use CRI::Util qw( list2array );
 use Torque::Util::Qstat    qw( qstat_fx );
 use Torque::Util::Pbsnodes qw( parse_xml      );
 
 use base 'Exporter';
 
 our @EXPORT_OK = qw(
-                     hostlist2array
                      list2array
+                     hostlist2array
                      run_and_check_cmd
                      job_info
                      node_info
                      verify_job_state
                      query_mom_cfg
-                     is_running
-                     is_running_remote
                    );
 
 ###############################################################################
@@ -37,21 +33,7 @@ sub hostlist2array #($)
   my ($file) = @_;
 
   my @rtn_values = split(/,|\s+/, `cat $file`)
-     or croak "Unable to get array from provided file: $file";
-
-  return @rtn_values;
-
-  } # END sub hostlist2array
-
-###############################################################################
-# list2array
-###############################################################################
-sub list2array #($)
-  {
-
-  my ($list) = @_;
-
-  my @rtn_values = split(/,|\s+/, $list);
+     or die "Unable to get array from provided file: $file";
 
   return @rtn_values;
 
@@ -121,8 +103,8 @@ sub verify_job_state #($)
   my ($params)  = @_;
 
   # Parameters
-  my $job_id        =    $params->{ 'job_id'        } || carp 'No job_id given';
-  my $exp_job_state = uc $params->{ 'exp_job_state' } || carp 'No job_state given';
+  my $job_id        =    $params->{ 'job_id'        } || die 'No job_id given';
+  my $exp_job_state = uc $params->{ 'exp_job_state' } || die 'No job_state given';
   my $wait_time     =    $params->{ 'wait_time'     } || 120;
 
   # Variables
@@ -330,22 +312,15 @@ Torque::Util - Some useful Torque test utilities
 
  use Torque::Util qw(
                              hostlist2array
-                             list2array
                              run_and_check_cmd
                              node_info
                              job_info
                              verify_job_state
                              query_mom_cfg
-                             is_running
-                             is_running_remote
                            );
 
  # hostlist2array
  my @array1 = hostlist2array('/tmp/hostlist');
-
- # list2array
- my @array2 = list2array('host1,host2');
- my @array3 = list2array('host1 host2');
 
  # run_and_check_cmd
  my %result = run_and_check_cmd('sleep 30');
@@ -367,18 +342,6 @@ Torque::Util - Some useful Torque test utilities
 
  # query_mom_cfg
  my $mom_value = query_mom_cfg('scheduling');
-
- # is_running
- if(is_running('pbs_server'))
-   {
-   # Do Something
-   }
-
- # is_running_remote
- if(is_running_remote('pbs_server', 'node1'))
-   {
-   # Do Something
-   }
 
 =head1 DESCRIPTION
 
@@ -408,19 +371,11 @@ Takes a hashref of the parmeters: job_id, exp_job_state, and the optional wait_t
 
 Takes a possible mom server attribute and uses qmgr to query for that value (ie qmgr -c 'list server scheduling').  It will return the value for that attribute.
 
-=item is_running
-
-Makes sure that a given process is running and not just a zombie (defunct process). pgrep -x will return zombie processes.  Returns 1 if a non-zombie process is running and 0 if not.
-
-=item is_running_remote
-
-Checks that a given process is running on a remote node and is not just a zombie (defunct process). pgrep -x will return zombie processes.  Returns 1 if a non-zombie process is running and 0 if not.
-
 =back
 
 =head1 DEPENDENDCIES
 
-Moab::Test, Torque::Util::Qstat, Carp
+Moab::Test, Torque::Util::Qstat
 
 =head1 AUTHOR(S)
 

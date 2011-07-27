@@ -13,7 +13,7 @@ use CRI::Test;
 use Torque::Ctrl              qw(
                                    stopPbsserver
                                 );
-use Torque::Util::Qmgr qw(
+use Torque::Test::Qmgr::Util qw(
                                    list_server_info
                                 );
 
