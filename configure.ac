@@ -313,8 +313,8 @@ fi
 
 dnl if using gcc, we can be very strict
 AC_ARG_ENABLE(gcc_warnings, [
-  --disable-gcc-warnings  Disable gcc strictness and warnings.  If using
-                          gcc, default is to error on any warning])
+  --enable-gcc-warnings  Enable gcc strictness and warnings.  If using
+                          gcc, default is to only display on any warning])
 if test "x$GCC" = "xyes" ;then
   AC_MSG_CHECKING([whether to use strict gcc warnings])
   if test "${enable_gcc_warnings}" == "yes" ; then
@@ -1844,7 +1844,7 @@ if test "x$gccwarnings" = "xyes" ;then
    AC_MSG_WARN([This compilation has strict compiler options enabled that cause
 the build to fail if any compiler warnings are emitted.  If this build fails
 because of a harmless warning, please report the problem to $PACKAGE_BUGREPORT
-and run configure again with --disable-gcc-warnings.])
+and run configure again without --enable-gcc-warnings.])
    echo
 fi
 echo "Ready for '${MAKE-make}'."

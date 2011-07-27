@@ -523,14 +523,11 @@ static struct batch_request *cpy_stdfile(
  * If such exists, the files are listed one per string as
  * "local_name@remote_host:remote_name".
  */
-
 struct batch_request *cpy_stage(
-
   struct batch_request *preq,
   job       *pjob,
   enum job_atr       ati,  /* JOB_ATR_stageout */
   int        direction) /* 1 = , 2 = */
-
   {
   int        i;
   char       *from;
@@ -554,7 +551,7 @@ struct batch_request *cpy_stage(
       {
       /* FAILURE */
 
-      snprintf(log_buf, LOG_BUF_SIZE, "cannot copy stage file for job %s", pjob->ji_qs.ji_jobid);
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot copy stage file for job %s", pjob->ji_qs.ji_jobid);
 
       log_event(
         PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
@@ -1064,7 +1061,7 @@ int handle_stageout(
       svrattrl tA;
       
       /* error from MOM */
-      snprintf(log_buf, LOG_BUF_SIZE, msg_obitnocpy, pjob->ji_qs.ji_jobid,
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, msg_obitnocpy, pjob->ji_qs.ji_jobid,
         pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
       
       log_event(
@@ -1091,7 +1088,7 @@ int handle_stageout(
         {
         strncat(log_buf,
           preq->rq_reply.brp_un.brp_txt.brp_str,
-          LOG_BUF_SIZE - strlen(log_buf) - 1);
+          LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
         }
       
       svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
@@ -1247,7 +1244,7 @@ int handle_stagedel(
     if (preq->rq_reply.brp_code != 0)
       {
       /* an error occurred */
-      snprintf(log_buf, LOG_BUF_SIZE, msg_obitnodel,
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, msg_obitnodel,
         pjob->ji_qs.ji_jobid,
         pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
       
@@ -1255,7 +1252,7 @@ int handle_stagedel(
       
       if (LOGLEVEL >= 3)
         {
-        snprintf(log_buf, LOG_BUF_SIZE,
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
           "request to remove stage-in files failed on node '%s' for job %s%s",
           pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
           pjob->ji_qs.ji_jobid,
@@ -1271,7 +1268,7 @@ int handle_stagedel(
       if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
         {
         strncat(log_buf, preq->rq_reply.brp_un.brp_txt.brp_str,
-          LOG_BUF_SIZE - strlen(log_buf) - 1);
+          LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
         }
       
       svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
@@ -1313,7 +1310,7 @@ int handle_exited(
     
     if (rc != 0)
       {
-      snprintf(log_buf, LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d", rc);
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d", rc);
       
       log_event(
         PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
@@ -1795,7 +1792,7 @@ void on_job_rerun(
 
         if (LOGLEVEL >= 3)
           {
-          snprintf(log_buf, LOG_BUF_SIZE,
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
             "request to save output files failed on node '%s' for job %s%s",
             pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
             pjob->ji_qs.ji_jobid,
@@ -1891,7 +1888,7 @@ void on_job_rerun(
         /* error from MOM */
         if (LOGLEVEL >= 3)
           {
-          snprintf(log_buf, LOG_BUF_SIZE, "request to save stageout files failed on node '%s' for job %s%s",
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "request to save stageout files failed on node '%s' for job %s%s",
             pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
             pjob->ji_qs.ji_jobid,
             (IsFaked == TRUE) ? "*" : "");
@@ -1903,7 +1900,7 @@ void on_job_rerun(
             log_buf);
           }
 
-        snprintf(log_buf, LOG_BUF_SIZE, msg_obitnocpy,
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, msg_obitnocpy,
           pjob->ji_qs.ji_jobid,
           pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
@@ -1918,7 +1915,7 @@ void on_job_rerun(
           strncat(
             log_buf,
             preq->rq_reply.brp_un.brp_txt.brp_str,
-            LOG_BUF_SIZE - strlen(log_buf) - 1);
+            LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
           }
 
         svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
@@ -1993,7 +1990,7 @@ void on_job_rerun(
 
         if (LOGLEVEL >= 3)
           {
-          snprintf(log_buf, LOG_BUF_SIZE, "request to delete stagein files failed on node '%s' for job %s%s",
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "request to delete stagein files failed on node '%s' for job %s%s",
             pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
             pjob->ji_qs.ji_jobid,
             (IsFaked == TRUE) ? "*" : "");
@@ -2007,7 +2004,7 @@ void on_job_rerun(
 
         /* for now, just log it */
 
-        snprintf(log_buf, LOG_BUF_SIZE, msg_obitnocpy,
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, msg_obitnocpy,
           pjob->ji_qs.ji_jobid,
           pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
@@ -2043,7 +2040,7 @@ void on_job_rerun(
 
         if (rc != 0)
           {
-          snprintf(log_buf, LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d",
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d",
                     rc);
 
           log_event(

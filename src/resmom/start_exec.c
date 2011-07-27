@@ -547,7 +547,7 @@ void exec_bail(
   int nodecount;
   unsigned short momport = 0;
 
-  nodecount = send_sisters(pjob, IM_ABORT_JOB);
+  nodecount = send_sisters(pjob, IM_ABORT_JOB, FALSE);
 
   if (nodecount != pjob->ji_numnodes - 1)
     {
@@ -1527,7 +1527,7 @@ int open_tcp_stream_to_sisters(
     
     stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
     
-    if (stream < 0)
+    if (IS_VALID_STREAM(stream) == FALSE)
       {
       pjob->ji_nodekill = i;
       
@@ -1544,6 +1544,8 @@ int open_tcp_stream_to_sisters(
       }
     
     ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);
+
+    DIS_tcp_setup(stream);
     
 	  im_compose(stream,
         pjob->ji_qs.ji_jobid,
@@ -6117,7 +6119,7 @@ void start_exec(
 
       stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
 
-      if (stream < 0)
+      if (IS_VALID_STREAM(stream) == FALSE)
 				{
 				pjob->ji_nodekill = i;
 
@@ -6196,7 +6198,7 @@ void start_exec(
 		pjob->ji_stdout = -1;
 		pjob->ji_stderr = -1;
 
-    if (exec_job_on_ms(pjob) == SUCCESS)
+    if (exec_job_on_ms(pjob) == PBSE_NONE)
       {
       /* SUCCESS */
 
@@ -8160,7 +8162,7 @@ int exec_job_on_ms(
 	    exec_bail(pjob, SC);
 	    }
 
-	  return(FAILURE);
+	  return(SC);
 	  }
 
   /* TMomFinalizeJob2() blocks until job is fully launched */
@@ -8174,7 +8176,7 @@ int exec_job_on_ms(
 	    exec_bail(pjob, SC);
 	    }
 
-	  return(FAILURE);
+	  return(SC);
 	  }
 
   /* block, wait for child to complete indicating success/failure of job launch */
@@ -8193,7 +8195,7 @@ int exec_job_on_ms(
         log_buffer);
       }
 
-	  return(FAILURE);
+	  return(SC);
 	  }
 
   /* NOTE:  TMomFinalizeJob3() populates SC */
@@ -8212,7 +8214,7 @@ int exec_job_on_ms(
 
 	  exec_bail(pjob, SC);
 
-	  return(FAILURE);
+	  return(SC);
 	  }
 
   /* SUCCESS:  MOM returns */
@@ -8230,7 +8232,7 @@ int exec_job_on_ms(
 	    log_buffer);
 	  }
 
-  return(SUCCESS);
+  return(PBSE_NONE);
   } /* END exec_job_on_ms() */
 
 

@@ -464,7 +464,7 @@ void scan_for_exiting(void)
 
         if (mom_radix < 2)
           {
-          NumSisters = send_sisters(pjob, IM_KILL_JOB);
+          NumSisters = send_sisters(pjob, IM_KILL_JOB, FALSE);
           }
         else
           {
@@ -474,10 +474,10 @@ void scan_for_exiting(void)
             pjob->ji_sampletim = time(NULL);
             if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
               {
-              /* only call send_sisters_radix if this is mother superior
+              /* only call send_sisters with radix == TRUE if this is mother superior
                  intermediate moms already called this in im_request
                  IM_KILL_JOB_RADIX */
-              NumSisters = send_sisters_radix(pjob, IM_KILL_JOB_RADIX);
+              NumSisters = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
               pjob->ji_outstanding = NumSisters;
               }
             }
@@ -491,10 +491,10 @@ void scan_for_exiting(void)
                
                if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
                  {
-                 /* only call send_sisters_radix if this is mother superior
-                    intermediate moms already called this in im_request
-                    IM_KILL_JOB_RADIX */
-                 NumSisters = send_sisters_radix(pjob, IM_KILL_JOB_RADIX);
+                 /* only call send_sisters with radix == TRUE if this is
+                  * mother superior intermediate moms already called this
+                  * in im_request IM_KILL_JOB_RADIX */
+                 NumSisters = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
                  pjob->ji_outstanding = NumSisters;
                  }
                }
@@ -580,7 +580,7 @@ void scan_for_exiting(void)
           */
           int stream = tcp_connect_sockaddr((struct sockaddr *)&pnode->sock_addr,sizeof(pnode->sock_addr));
  
-          if (stream != -1)
+          if (IS_VALID_STREAM(stream) == FALSE)
             {
             DIS_tcp_setup(stream);
   
@@ -1914,11 +1914,11 @@ void init_abort_jobs(
 
         if(mom_radix)
           {
-          send_sisters_radix(pj, IM_KILL_JOB_RADIX);
+          send_sisters(pj, IM_KILL_JOB_RADIX, TRUE);
           }
         else
           {
-          send_sisters(pj, IM_KILL_JOB);
+          send_sisters(pj, IM_KILL_JOB, FALSE);
           }
 
         continue;
@@ -2035,7 +2035,7 @@ void exit_mom_job(
 
   {
   char   *id = "exit_mom_job";
-  int     stream;
+  int     stream = -1;
   char   *cookie;
   task   *ptask;
   u_long  gettime(resource *);
@@ -2059,7 +2059,7 @@ void exit_mom_job(
   
   /* Check to see if I can contact the mother superior.  If not, kill this job. */
   
-  if (stream == -1)
+  if (IS_VALID_STREAM(stream) == FALSE)
     {
     if (LOGLEVEL >= 3)
       {
@@ -2183,23 +2183,11 @@ void exit_mom_job(
   
   if (mom_radix < 2)
     {
-    im_compose(
-      stream,
-      pjob->ji_qs.ji_jobid,
-      cookie,
-      IM_ALL_OKAY,
-      pjob->ji_obit,
-      TM_NULL_TASK);
+    im_compose(stream,pjob->ji_qs.ji_jobid,cookie,IM_ALL_OKAY,pjob->ji_obit,TM_NULL_TASK);
     }
   else
     {
-    im_compose(
-      stream,
-      pjob->ji_qs.ji_jobid,
-      cookie,
-      IM_RADIX_ALL_OK,
-      IM_KILL_JOB_RADIX,
-      TM_NULL_TASK);
+    im_compose(stream,pjob->ji_qs.ji_jobid,cookie,IM_RADIX_ALL_OK,IM_KILL_JOB_RADIX,TM_NULL_TASK);
     }
   
   /* write the resources used for this job */

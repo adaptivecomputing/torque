@@ -86,6 +86,7 @@ extern void  get_jobowner(char *from, char *to);
 extern char *parse_servername(char *, unsigned int *);
 extern void  process_Areply(int);
 extern void  process_Dreply(int);
+extern void  mom_process_request(int);
 extern void  process_request(int);
 extern void  process_dis_request(int);
 extern int   save_flush();

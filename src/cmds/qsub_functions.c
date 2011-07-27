@@ -2336,7 +2336,7 @@ int validate_group_list(
  * NOTE:  only run submitfilter if pass < 10 
  */ 
 
-int process_opts(
+void process_opts(
 
   int    argc,             /* I */
   char **argv,             /* I */

@@ -273,7 +273,8 @@ int tcp_connect_sockaddr(
     }
 
   /* FAILURE */
-  close(stream);
+  if (IS_VALID_STREAM(stream))
+    close(stream);
 
   return(-1);
   } /* END tcp_connect_sockaddr() */

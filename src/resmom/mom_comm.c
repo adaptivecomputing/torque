@@ -801,8 +801,9 @@ int im_compose(
 
 int send_sisters(
 
-  job *pjob,  /* I */
-  int  com)   /* I (command to send to all sisters) */
+  job *pjob,         /* I */
+  int  com,          /* I (command to send to all sisters) */
+  int  using_radix)  /* I (TRUE if this job has a job radix, false otherwise */
 
   {
   static char *id = "send_sisters";
@@ -810,6 +811,9 @@ int send_sisters(
   int          i;
   int          num;
   int          ret;
+  int       stream;
+  int       job_radix;
+  int       loop_limit;
   eventent    *ep;
   char        *cookie;
 
@@ -850,14 +854,41 @@ int send_sisters(
       log_buffer);
     }
 
+  if (using_radix == TRUE)
+    {
+    job_radix = 0;
+    loop_limit = pjob->ji_numsisternodes;
+    }
+  else
+    {
+    /* set so that loop doesn't fail on this condition */
+    job_radix = -1;
+    loop_limit = pjob->ji_numnodes;
+    }
+
   /* walk thru node list, contact each mom */
 
-  for (i = 0;i < pjob->ji_numnodes;i++)
+  for (i = 0; i < loop_limit && job_radix < pjob->ji_radix; i++)
     {
-    hnodent *np = &pjob->ji_hosts[i];
+    hnodent *np;
 
-    if (np->hn_node == pjob->ji_nodeid) /* this is me*/
-      continue;
+    if (using_radix == TRUE)
+      {
+      np = &pjob->ji_sisters[i];
+
+      if ((pjob->ji_nodeid == 0 && np->hn_node == 0) || 
+          (pjob->ji_im_nodeid == 1 && np->hn_node == 1))
+        continue;  /* this is me */
+      
+      job_radix++;
+      }
+    else
+      {
+      np = &pjob->ji_hosts[i];
+
+      if (np->hn_node == pjob->ji_nodeid) /* this is me*/
+        continue;
+      }
 
     if (np->hn_sister != SISTER_OKAY) /* sister is gone? */
       {
@@ -878,9 +909,9 @@ int send_sisters(
       /* continue; */
       }
 	    
-    np->hn_stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
     
-    if (np->hn_stream == -1)
+    if (IS_VALID_STREAM(stream) == FALSE)
       {
       snprintf(log_buffer, sizeof(log_buffer), "%s:  cannot open tcp connection to sister #%d (%s)",
         id,
@@ -902,227 +933,40 @@ int send_sisters(
         pjob->ji_qs.ji_jobid,
         "cannot alloc event object in send_sisters");
 
+      close(stream);
       continue;
       }
 
-    ret = im_compose(np->hn_stream,pjob->ji_qs.ji_jobid,cookie,com,ep->ee_event,TM_NULL_TASK);
-    close(np->hn_stream);
+    DIS_tcp_setup(stream);
+
+    ret = im_compose(stream,pjob->ji_qs.ji_jobid,cookie,com,ep->ee_event,TM_NULL_TASK);
 
     if (ret == DIS_SUCCESS)
-      {
-      np->hn_sister = SISTER_OKAY;
-    
-      num++;
-      }
-    else
-      {
-      snprintf(log_buffer, sizeof(log_buffer), "%s:  cannot compose message to sister #%d (%s) - %d",
-               id,
-               i,
-               (np->hn_host != NULL) ? np->hn_host : "NULL",
-               ret);
-
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
-
-      np->hn_stream = -1;
-      np->hn_sister = SISTER_EOF;
-
-      continue;
-      }
-
-    np->hn_sister = SISTER_OKAY;
-
-    num++;
-    }  /* END for (i) */
-
-  return(num);
-  }  /* END send_sisters() */
-
-
-
-
-/**
- * Send a message (command = com) to all the other MOMs in the
- * job -> pjob->ji_sisters.
- *
- * @see scan_for_exiting() - parent - report to sisters upon job completion
- * @see examine_all_polled_jobs() - parent - poll job status info
- * @see exec_bail() - parent - abort parallel job
- *
- * @see start_exec() - peer - opens connections to sisters at parallel job start
- *
- * @return 0 on FAILURE or number of sister mom's successfully contacted on SUCCESS
- */
-
-int send_sisters_radix(
-
-  job *pjob,  /* I */
-  int  com)   /* I (command to send to all sisters) */
-
-  {
-  char *id = "send_sisters_radix";
-
-  int     i, num, ret, job_radix;
-  eventent *ep;
-  char     *cookie;
-  char EMsg[MAXLINE];
-
-  if (LOGLEVEL >= 4)
-    {
-    sprintf(log_buffer, "sending command %s for job %s (%d)",
-            PMOMCommand[com],
-            pjob->ji_qs.ji_jobid,
-            com);
-
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
-    }
-
-  if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
-    {
-    /* cookie not set - return FAILURE */
-
-    return(0);
-    }
-
-  cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
-
-  num = 0;
-
-  if (com == IM_ABORT_JOB)
-    {
-    snprintf(log_buffer, 1024, "sending ABORT to sisters for job %s",
-             pjob->ji_qs.ji_jobid);
-
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
-    }
-
-  /* walk thru sister node list, contact each mom in the radix */
-  job_radix = 0;
-  for (i = 1; (i < pjob->ji_numsisternodes) && (job_radix < pjob->ji_radix); i++)
-    {
-    hnodent *np = &pjob->ji_sisters[i];
-
-    if ((pjob->ji_nodeid == 0 && np->hn_node == 0) || (pjob->ji_im_nodeid == 1 && np->hn_node == 1))
-      continue;	 /* this is me */
-
-    job_radix++;
-    if (np->hn_sister != SISTER_OKAY) /* sister is gone? */
-      {
-      snprintf(log_buffer, 1024, "%s:  sister #%d (%s) is not ok (%d)",
-               id,
-               i,
-               (np->hn_host != NULL) ? np->hn_host : "NULL",
-               np->hn_sister);
-
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
-
-      /* garrick commented out continue statement below */
-
-      /* continue; */
-      }
-
-    EMsg[0] = 0;
-    np->hn_stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
-
-    if (np->hn_stream == -1)
-      {
-      snprintf(log_buffer, sizeof(log_buffer), "%s:  cannot open tcp connection to sister #%d (%s) - %s",
-               id,
-               i,
-               (np->hn_host != NULL) ? np->hn_host : "NULL",
-               EMsg);
-
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
-
-      continue;
-      }
-
-    ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);
-
-    if (ep == NULL)
-      {
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "cannot alloc event object in send_sisters");
-
-      close(np->hn_stream);
-
-      continue;
-      }
-
-    ret = im_compose(
-            np->hn_stream,
-            pjob->ji_qs.ji_jobid,
-            cookie,
-            com,
-            ep->ee_event,
-            TM_NULL_TASK);
-
-    close(np->hn_stream);
+      ret = DIS_tcp_wflush(stream);
+    close(stream);
 
     if (ret != DIS_SUCCESS)
       {
-      snprintf(log_buffer, sizeof(log_buffer), "%s:  cannot compose message to sister #%d (%s) - %d",
-               id,
-               i,
-               (np->hn_host != NULL) ? np->hn_host : "NULL",
-               ret);
+      snprintf(log_buffer, sizeof(log_buffer),
+          "%s:  cannot compose message to sister #%d (%s) - %d",
+          id, i, (np->hn_host != NULL) ? np->hn_host : "NULL", ret);
 
-      log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buffer);
 
-      np->hn_stream = -1;
       np->hn_sister = SISTER_EOF;
-
-      continue;
       }
-
-    np->hn_sister = SISTER_OKAY;
-
-    num++;
+    else
+      {
+      np->hn_sister = SISTER_OKAY;
+      num++;
+      }
     }  /* END for (i) */
-
-  /* ji_sisters[0] is the MOM who called me and ji_sisters[1] is me.
-     set these sisters to SISTER_KILLDONE */
-  if (pjob->ji_sisters)
-    {
-    pjob->ji_sisters[0].hn_sister = SISTER_KILLDONE;
-    pjob->ji_sisters[1].hn_sister = SISTER_KILLDONE;
-    }
-
   return(num);
-  }  /* END send_sisters_radix() */
-
-
-#define SEND_ERR(err) \
-  if (reply) { \
-    im_compose(stream,jobid,cookie,IM_ERROR,event,fromtask); \
-    diswsi(stream,RPP_FUNC,err); \
-    }
-
-
-
+  }  /* END send_sisters() */
 
 
 /**
@@ -1130,13 +974,10 @@ int send_sisters_radix(
  * if it is not assigned to this job.  Return a nodeent pointer if
  * it is.
  */
-
 hnodent *find_node(
-
   job         *pjob,
   int        stream,
   tm_node_id   nodeid)
-
   {
   static char id[] = "find_node";
 
@@ -1198,22 +1039,16 @@ hnodent *find_node(
   }  /* END find_node() */
 
 
-
-
-
 /**
  * An error has been encountered starting a job.
  *
  * Format a message to all the sisterhood to get rid of their copy
  * of the job.  There should be no processes running at this point.
 */
-
 void job_start_error(
-
   job *pjob,     /* I */
   int    code,     /* I */
   char  *nodename) /* I */
-
   {
   static  char  id[] = "job_start_error";
 
@@ -1293,9 +1128,6 @@ void job_start_error(
 
   return;
   }  /* END job_start_error() */
-
-
-
 
 
 /*
@@ -2590,7 +2422,7 @@ void im_kill_job_as_sister(
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) &&
       (radix == TRUE))
     {
-    pjob->ji_outstanding = send_sisters(pjob, IM_KILL_JOB_RADIX);
+    pjob->ji_outstanding = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
     }
 
   /*
@@ -2941,9 +2773,7 @@ int im_spawn_task(
               {
               sprintf(log_buffer,
                 "ALERT:    received request '%s' from %s for job '%s' (task successfully started but reply failed)",
-                PMOMCommand[IM_SPAWN_TASK],
-                netaddr(addr),
-                jobid);
+                PMOMCommand[IM_SPAWN_TASK], netaddr(addr), jobid);
               
               log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
               }
@@ -3168,13 +2998,8 @@ int handle_im_replies(
             tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
             timeval_subtract(&result, &tv, tv_attr);
             sprintf(log_buffer, "%s: total wire-up time for job %ld.%ld", 
-              id,
-              result.tv_sec, 
-              result.tv_usec);
-            LOG_EVENT(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
+              id, result.tv_sec, result.tv_usec);
+            LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
               log_buffer);
             }          
           }
@@ -3183,10 +3008,7 @@ int handle_im_replies(
         
         if (LOGLEVEL >= 2)
           {
-          LOG_EVENT(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+          LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
             "im_request: all sisters have reported in, launching job locally");
           }
         
@@ -3198,14 +3020,9 @@ int handle_im_replies(
         if (LOGLEVEL >= 4)
           {
           sprintf(log_buffer, "%s:joinjob response received from node %s, (still waiting for %s)",
-            id,
-            netaddr(addr),
-            np->hn_host);
+            id, netaddr(addr), np->hn_host);
           
-          LOG_EVENT(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+          LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
             log_buffer);
           }
         }
@@ -4267,11 +4084,7 @@ int im_abort_job(
         netaddr(addr),
         jobid);
       
-      LOG_EVENT(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        jobid,
-        log_buffer);
+      LOG_EVENT( PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
       }
     
     return(IM_FINISHED);
@@ -5151,6 +4964,12 @@ int handle_im_get_tid_response(
 
 
 
+
+
+
+
+
+
 /**
  * Input is coming from another MOM over a DIS rpp stream.
  * Read the stream to get a Inter-MOM request.
@@ -5196,15 +5015,11 @@ void im_request(
   int                  errcode;
   int                  nodeidx = 0;
   int                  reply;
-  int                  exitval;
   tm_node_id           nodeid;
   tm_task_id           fromtask;
   int                  event_task = 0;
-  int                  taskid;
   char               **argv = NULL;
   char               **envp = NULL;
-  void                *info;
-  size_t               len;
   tm_event_t           event;
   fwdevent             efwd;
   unsigned short       sender_port;
@@ -5330,7 +5145,9 @@ void im_request(
       ret = im_join_job_as_sister(stream,jobid,addr,cookie,event,fromtask,command,&reply,FALSE);
  
       close_stream = TRUE;
- 
+
+      reply = 0;
+
       if (ret == IM_FAILURE)
         goto err;
       else if (ret == IM_DONE)
@@ -5348,7 +5165,9 @@ void im_request(
       ret = im_join_job_as_sister(stream,jobid,addr,cookie,event,fromtask,command,&reply,TRUE);
  
       close_stream = TRUE;
- 
+
+      reply = 0;
+
       if (ret == IM_FAILURE)
         goto err;
       else if (ret == IM_DONE)
@@ -5538,6 +5357,7 @@ void im_request(
       close_stream = TRUE;
       
       ret = im_spawn_task(stream,reply,cookie,event,addr,fromtask,pjob);
+      reply = 0;
 
       if (ret == IM_FAILURE)
         {
@@ -5552,6 +5372,7 @@ void im_request(
       close_stream = TRUE;
       
       ret = im_signal_task(stream,pjob,cookie,event,fromtask,reply);
+      reply = 0;
       
       if (ret == IM_FAILURE)
         goto err;
@@ -5564,6 +5385,7 @@ void im_request(
       close_stream = TRUE;
       
       ret = im_obit_task(stream,pjob,cookie,event,fromtask,reply);
+      reply = 0;
       
       if (ret == IM_FAILURE)
         goto err;
@@ -5576,6 +5398,7 @@ void im_request(
       close_stream = TRUE;
       
       ret = im_get_info(stream,pjob,cookie,event,fromtask,reply);
+      reply = 0;
       
       if (ret == IM_FAILURE)
         goto err;
@@ -5588,6 +5411,7 @@ void im_request(
       close_stream = TRUE;
       
       ret = im_get_resc_as_sister(stream,pjob,cookie,event,fromtask,reply);
+      reply = 0;
       
       if (ret == IM_FAILURE)
         goto err;
@@ -5599,7 +5423,9 @@ void im_request(
       {
       close_stream = TRUE;
       
-      if ((ret = im_poll_job_as_sister(stream,pjob,cookie,event,fromtask)) == IM_FINISHED)
+      ret = im_poll_job_as_sister(stream,pjob,cookie,event,fromtask);
+      reply = 0;
+      if (ret == IM_FINISHED)
         goto fini;
       
        break;
@@ -5618,7 +5444,8 @@ void im_request(
     case IM_GET_TID:
       {
       close_stream = TRUE;
-      
+
+      reply = 0; 
       if ((ret = im_get_tid(pjob,cookie,event,fromtask)) == IM_FAILURE)
         goto err;
       
@@ -6548,7 +6375,6 @@ void tm_request_init(
 int tm_postinfo(
   
   int     fd,         /* I */
-  char   *id,         /* I */
   char   *name,       /* O */
   char   *info,       /* O */
   char   *jobid,      /* I */
@@ -6557,13 +6383,14 @@ int tm_postinfo(
   int     event,      /* I */
   int    *ret,        /* O */
   task   *ptask,      /* M */
-  size_t  len)        /* I */
+  size_t  *len)        /* I */
 
   {
+  static char *id = "tm_postinfo";
   name = disrst(fd, ret);
 
   if (*ret == DIS_SUCCESS)
-    info = disrcs(fd, &len, ret);
+    info = disrcs(fd, len, ret);
 
   if (*ret != DIS_SUCCESS)
     {
@@ -6582,7 +6409,7 @@ int tm_postinfo(
       fromtask,
       name,
       info,
-      (int)len);
+      (int)*len);
 
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
@@ -6590,7 +6417,7 @@ int tm_postinfo(
   if (prev_error)
     return(TM_DONE);
   
-  task_saveinfo(ptask, name, info, len);
+  task_saveinfo(ptask, name, info, *len);
   
   *ret = tm_reply(fd, TM_OKAY, event);
 
@@ -6619,7 +6446,6 @@ int tm_postinfo(
  
 int tm_spawn_request(
     
-  char      *id,          /* I */
   int        fd,          /* I */
   job       *pjob,        /* I */
   int        prev_error,  /* I */
@@ -6632,6 +6458,7 @@ int tm_spawn_request(
   int         nodeid)     /* I */
  
   {
+  static char   *id = "tm_spawn_request";
   char         **argv = NULL;
   char         **envp = NULL;
   char          *jobid = pjob->ji_qs.ji_jobid;
@@ -6781,7 +6608,8 @@ int tm_spawn_request(
    * me, just do it.
    */
 #ifndef NUMA_SUPPORT
-  if ((pjob->ji_nodeid == 0) && (pjob->ji_nodeid == nodeid))
+  if ((pjob->ji_nodeid == 0) && 
+      (pjob->ji_nodeid == nodeid))
 #endif /* ndef NUMA_SUPPORT */
     {
     /* XXX */
@@ -6885,10 +6713,10 @@ int tm_spawn_request(
   
   stream = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
   
-  if (stream < 0)
+  if (IS_VALID_STREAM(stream) == FALSE)
     return(TM_DONE);
   
-  /*DIS_tcp_setup(stream);*/
+  DIS_tcp_setup(stream);
   
   *ret = im_compose(stream,jobid,cookie,IM_SPAWN_TASK,event,fromtask);
   
@@ -6930,6 +6758,18 @@ int tm_spawn_request(
         }
       }
     }
+
+  if (*ret != DIS_SUCCESS)
+    {
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Unable to send IM_SPAWN_TASK request to node %s for job %s",
+      phost->hn_host,
+      pjob->ji_qs.ji_jobid);
+
+    log_err(-1,id,log_buffer);
+
+    /* NYI: shouldn't we kill the job here instead of letting it run forever?? */
+    }
   
   close(stream);
   
@@ -6952,10 +6792,7 @@ int tm_spawn_request(
  * A request to read the list of tasks that a
  * particular node has charge of.
  */
- 
 int tm_tasks_request(
- 
-  char       *id,         /* I */
   int         fd,         /* I */
   job        *pjob,       /* I */
   int         prev_error, /* I */
@@ -6966,8 +6803,8 @@ int tm_tasks_request(
   tm_task_id  fromtask,   /* I */
   hnodent    *phost,      /* M */
   int         nodeid)     /* I */
- 
   {
+  static char *id = "tm_tasks_request";
   int       stream;
  
   char     *jobid = pjob->ji_qs.ji_jobid;
@@ -6997,8 +6834,10 @@ int tm_tasks_request(
     
     stream = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
     
-    if (stream < 0)
+    if (IS_VALID_STREAM(stream) ==  FALSE)
       return(TM_DONE);
+
+    DIS_tcp_setup(stream);
     
     *ret = im_compose(stream,jobid,cookie,IM_GET_TASKS,event,fromtask);
     
@@ -7055,7 +6894,6 @@ int tm_tasks_request(
  
 int tm_signal_request(
   
-  char       *id,         /* I */
   int         fd,         /* I */
   job        *pjob,       /* I */
   int         prev_error, /* I */
@@ -7068,6 +6906,7 @@ int tm_signal_request(
   int         nodeid)     /* I */
  
   {
+  static char *id = "tm_signal_request";
   int       taskid;
   int       stream;
   int       signum;
@@ -7111,9 +6950,11 @@ int tm_signal_request(
     
     stream = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
     
-    if (stream < 0)
+    if (IS_VALID_STREAM(stream) == FALSE)
       return(TM_DONE);
     
+    DIS_tcp_setup(stream);
+
     *ret = im_compose(stream, jobid, cookie, IM_SIGNAL_TASK, event, fromtask);
     
     if (*ret == DIS_SUCCESS)
@@ -7179,7 +7020,6 @@ int tm_signal_request(
  
 int tm_obit_request(
   
-  char       *id,         /* I */
   int         fd,         /* I */
   job        *pjob,       /* I */
   int         prev_error, /* I */
@@ -7192,6 +7032,7 @@ int tm_obit_request(
   int         nodeid)     /* I */
  
   {
+  static char *id = "tm_obit_request";
   int       taskid;
   int       stream;
   char     *jobid = pjob->ji_qs.ji_jobid;
@@ -7228,7 +7069,7 @@ int tm_obit_request(
     
     stream = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
     
-    if (stream < 0)
+    if (IS_VALID_STREAM(stream) == FALSE)
       return(TM_DONE);
     
     *ret = im_compose(stream,jobid,cookie,IM_OBIT_TASK,event,fromtask);
@@ -7244,9 +7085,17 @@ int tm_obit_request(
           *reply_ptr = FALSE;
           }
         }
+
+      close(stream);
       }
-    
-    close(stream);
+    else 
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Could not pass along obit for job %s to host %s",
+        pjob->ji_qs.ji_jobid,
+        phost->hn_host);
+      log_err(-1,id,log_buffer);
+      }
     
     return(TM_DONE);
     }
@@ -7314,7 +7163,6 @@ int tm_obit_request(
  
 int tm_getinfo_request(
  
-  char       *id,         /* I */
   int         fd,         /* I */
   job        *pjob,       /* I */
   int         prev_error, /* I */
@@ -7327,6 +7175,7 @@ int tm_getinfo_request(
   int         nodeid)     /* I */
  
   {
+  static char *id = "tm_getinfo_request";
   int       taskid;
   int       stream;
   char     *jobid = pjob->ji_qs.ji_jobid;
@@ -7360,7 +7209,10 @@ int tm_getinfo_request(
     }
   
   if (prev_error)
+    {
+    free(name);
     return(TM_DONE);
+    }
   
 #ifndef NUMA_SUPPORT
   if (pjob->ji_nodeid != nodeid)
@@ -7370,8 +7222,12 @@ int tm_getinfo_request(
     
     stream = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
     
-    if (stream == -1)
+    if (IS_VALID_STREAM(stream) == FALSE)
+      {
+      free(name);
+
       return(TM_ERROR);
+      }
     
     *ret = im_compose(stream,jobid,cookie,IM_GET_INFO,event,fromtask);
     
@@ -7430,10 +7286,7 @@ int tm_getinfo_request(
  *
  * get resource string for a node 
  */
- 
 int tm_resources_request(
- 
-  char       *id,         /* I */
   int         fd,         /* I */
   job        *pjob,       /* I */
   int         prev_error, /* I */
@@ -7444,15 +7297,13 @@ int tm_resources_request(
   tm_task_id  fromtask,   /* I */
   hnodent    *phost,      /* M */
   int         nodeid)     /* I */
- 
   {
-  int      taskid;
+  static char *id = "tm_resources_request";
   int      stream;
   char    *jobid = pjob->ji_qs.ji_jobid;
   char    *info = NULL;
  
   eventent *ep;
-  task     *ptask;
  
   if (LOGLEVEL >= 7)
     {
@@ -7461,7 +7312,7 @@ int tm_resources_request(
       id,
       jobid,
       nodeid, 
-      taskid);
+      fromtask);
     
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
@@ -7477,8 +7328,10 @@ int tm_resources_request(
     ep = event_alloc(IM_GET_RESC, phost, event, fromtask);
     
     stream = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
+
+    DIS_tcp_setup(stream);
     
-    if (stream == -1)
+    if (IS_VALID_STREAM(stream) == FALSE)
       return(TM_DONE);
  
     DIS_tcp_setup(stream);
@@ -7558,22 +7411,14 @@ int tm_request(
   hnodent *phost;
   int      i;
   int      event;
-  int      numele;
-  size_t   len;
+  size_t   len = -1;
   long     ipadd;
-  char  **argv;
-  char  **envp;
   char  *name = NULL;
   char  *info = NULL;
-  eventent *ep;
-  infoent *ip;
-  int  signum;
-  int  vnodenum;
   int  prev_error = 0;
   tm_node_id nodeid;
-  tm_task_id taskid = 0, fromtask;
+  tm_task_id fromtask;
   attribute *at;
-  unsigned int momport = 0;
  
   pid_t pid;
  
@@ -7818,8 +7663,7 @@ int tm_request(
        break;
  
     case TM_POSTINFO:
- 
-      rc = tm_postinfo(fd,id,name,info,jobid,fromtask,prev_error,event,&ret,ptask,len);
+      rc = tm_postinfo(fd,name,info,jobid,fromtask,prev_error,event,&ret,ptask,&len);
  
       goto done;
  
@@ -7910,39 +7754,27 @@ int tm_request(
     {
  
     case TM_TASKS:
- 
-      rc = tm_tasks_request(id,fd,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
- 
+      rc = tm_tasks_request(fd,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
       break;
  
     case TM_SPAWN:
- 
-      rc = tm_spawn_request(id,fd,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
- 
+      rc = tm_spawn_request(fd,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
       break;
  
     case TM_SIGNAL:
- 
-      rc = tm_signal_request(id,fd,pjob,prev_error,event,cookie,fromtask,&ret,&reply,phost,nodeid);
- 
+      rc = tm_signal_request(fd,pjob,prev_error,event,cookie,fromtask,&ret,&reply,phost,nodeid);
       break;
  
     case TM_OBIT:
- 
-      rc = tm_obit_request(id,fd,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
- 
+      rc = tm_obit_request(fd,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
       break;
  
     case TM_GETINFO:
- 
-      rc = tm_getinfo_request(id,fd,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
- 
+      rc = tm_getinfo_request(fd,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
       break;
  
     case TM_RESOURCES:
- 
-      rc = tm_resources_request(id,fd,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
-      
+      rc = tm_resources_request(fd,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
       break;
 
    default:

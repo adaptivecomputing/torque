@@ -1893,7 +1893,8 @@ int sigalltasks_sisters(
 #endif
   char     *cookie;
   eventent *ep;
-  int i;
+  int       i;
+  int       stream;
 
   cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
 
@@ -1909,20 +1910,22 @@ int sigalltasks_sisters(
 
     ep = event_alloc(IM_SIGNAL_TASK, np, TM_NULL_EVENT, TM_NULL_TASK);
 
-    if ((np->hn_stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr))) < 0)
+    if ((stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr))) < 0)
         return(-1);
 
-    ret = im_compose(np->hn_stream, pjob->ji_qs.ji_jobid, cookie, IM_SIGNAL_TASK, ep->ee_event, TM_NULL_TASK);
+    DIS_tcp_setup(stream);
+
+    ret = im_compose(stream, pjob->ji_qs.ji_jobid, cookie, IM_SIGNAL_TASK, ep->ee_event, TM_NULL_TASK);
 
     if (ret == DIS_SUCCESS)
       {
-      if ((ret = diswui(np->hn_stream, pjob->ji_nodeid)) == DIS_SUCCESS)
+      if ((ret = diswui(stream, pjob->ji_nodeid)) == DIS_SUCCESS)
         {
-        if ((ret = diswsi(np->hn_stream, TM_NULL_TASK)) == DIS_SUCCESS)
+        if ((ret = diswsi(stream, TM_NULL_TASK)) == DIS_SUCCESS)
           {
-          if ((ret = diswsi(np->hn_stream, signum)) == DIS_SUCCESS)
+          if ((ret = diswsi(stream, signum)) == DIS_SUCCESS)
             {
-            ret = DIS_tcp_wflush(np->hn_stream);
+            ret = DIS_tcp_wflush(stream);
 
             /* NYI: add code to read reply from sister */
             }
@@ -1930,7 +1933,7 @@ int sigalltasks_sisters(
         }
       }
 
-    close(np->hn_stream);
+    close(stream);
 
     if (ret != DIS_SUCCESS)
       return ret;
@@ -2152,9 +2155,10 @@ static void resume_suspend(
  * Signal may be either a numeric string or a signal name
  * with or without the "SIG" prefix.
  *
- * NOTE:  process_request() set up as request handler via accept_conn()
+ * NOTE:  mom_process_request() set up as request handler via 
+ * accept_conn() 
  *
- * @see process_request->dispatch_request() - parent
+ * @see mom_process_request->dispatch_request() - parent
  * @see req_signaljob() in server/req_signal.c - peer
  */
 

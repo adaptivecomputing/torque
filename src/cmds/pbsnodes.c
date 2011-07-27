@@ -113,6 +113,8 @@
 #include "pbs_ifl.h"
 #include        "mcom.h"
 #include        "cmds.h"
+#include "libcmds.h" /* TShowAbout_exit */
+
 
 #define LIST 1
 #define CLEAR 2

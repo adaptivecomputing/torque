@@ -763,11 +763,11 @@ int tm_nodeinfo(
 
 int tm_spawn(
 
-  int          argc, /* in  */
-  char       **argv, /* in  */
-  char       **envp, /* in  */
+  int          argc,  /* in  */
+  char       **argv,  /* in  */
+  char       **envp,  /* in  */
   tm_node_id   where, /* in  */
-  tm_task_id  *tid, /* out */
+  tm_task_id  *tid,   /* out */
   tm_event_t  *event) /* out */
 
   {

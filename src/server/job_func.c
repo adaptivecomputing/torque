@@ -606,9 +606,7 @@ int conn_qsub(
  *
  * @see job_init_wattr() - child
  */
-
 job *job_alloc(void)
-
   {
   job *pj;
 

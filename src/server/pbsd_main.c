@@ -393,7 +393,18 @@ void process_pbs_server_port(
       is_request(sock,version,NULL);
       
       break;
-      
+    default:
+        {
+        struct sockaddr     s_addr;
+        struct sockaddr_in addr;
+        if (getpeername(sock,&s_addr,(socklen_t *)sizeof(s_addr)) != 0)
+          {
+          snprintf(log_buffer,sizeof(log_buffer),
+              "Unknown protocol %d from %s", proto_type, netaddr(&addr));
+          }
+        close_conn(sock);
+        break;
+        }
     }
   
   return;

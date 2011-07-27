@@ -6953,7 +6953,7 @@ int setup_program_environment(void)
 
   /* initialize the network interface */
 
-  if (init_network(pbs_mom_port, process_request) != 0)
+  if (init_network(pbs_mom_port, mom_process_request) != 0)
     {
     c = errno;
 
@@ -7668,7 +7668,7 @@ examine_all_polled_jobs(void)
       ** time has come to die.
       */
 
-      if (send_sisters(pjob, IM_POLL_JOB) != pjob->ji_numnodes - 1)
+      if (send_sisters(pjob, IM_POLL_JOB, FALSE) != pjob->ji_numnodes - 1)
         {
         sprintf(log_buffer, "cannot contact all sisters");
 
@@ -8152,7 +8152,7 @@ void main_loop(void)
       {
       if (errno == EBADF)
         {
-        init_network(pbs_mom_port, process_request);
+        init_network(pbs_mom_port, mom_process_request);
 
         init_network(pbs_rm_port, tcp_request);
         }

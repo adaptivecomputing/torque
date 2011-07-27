@@ -305,6 +305,8 @@ extern struct rm_attribute *momgetattr(char *str);
 extern char *conf_res(char *resline, struct rm_attribute *attr);
 extern char *dependent(char *res, struct rm_attribute *attr);
 extern char *reqgres(struct rm_attribute *);
+extern void send_update_within_ten();
+
 
 #ifdef NVIDIA_GPUS
 extern int find_file(char *, char *);
@@ -2880,8 +2882,9 @@ void mom_server_update_stat(
 
   stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr,sizeof(pms->sock_addr));
  
-  if (stream >= 0)
+  if (IS_VALID_STREAM(stream))
     {
+    DIS_tcp_setup(stream);
     if ((ret = write_update_header(stream,pms->pbs_servername,id)) == DIS_SUCCESS)
       {
       if ((ret = write_my_server_status(stream,id,status_strings,pms,UPDATE_TO_SERVER)) == DIS_SUCCESS)
@@ -3548,10 +3551,9 @@ void mom_server_update_receive_time(
  * mom_server_update_receive_time_by_ip
  *
  * This is a little weird as this is called from code
- * in the server directory, process_request.  There is
- * no stream number there but instead there is an IP
- * address and so we use that to look up the server
- * and update the info.
+ * in the server directory, mom_process_request.  There is no 
+ * stream number there but instead there is an IP address and so 
+ * we use that to look up the server and update the info. 
  *
  * @param ipaddr The IP address from which the command was received.
  * @param command_name The name of the command that was received.
@@ -3735,7 +3737,7 @@ void pass_along_hellos(
 
         stream = tcp_connect_sockaddr((struct sockaddr *)&sa,sizeof(sa));
 
-        if (stream >= 0)
+        if (IS_VALID_STREAM(stream))
           {
           DIS_tcp_setup(stream);
           
@@ -3744,6 +3746,8 @@ void pass_along_hellos(
             if ((ret = diswsi(stream,IS_PROTOCOL_VER)) == DIS_SUCCESS)
               {
               diswsi(stream,IS_HELLO);
+
+              DIS_tcp_wflush(stream);
               }
             }
           
@@ -3768,7 +3772,8 @@ void pass_along_hellos(
  * stream (process 'hello' and 'cluster_addrs' request).
  *
  * @see is_compose() - peer - generate message to send to pbs_server.
- * @see process_request() - peer - handle jobstart, jobcancel, etc messages.
+ * @see mom_process_request() - peer - handle jobstart, 
+ *      jobcancel, etc messages.
  *
  * Read the stream to get a Inter-Server request.
  */

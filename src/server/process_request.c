@@ -116,10 +116,8 @@
 #include "u_tree.h"
 #include "threadpool.h"
 #include "dis.h"
-
-#ifndef PBS_MOM
 #include "array.h"
-#endif
+
 
 /*
  * process_request - this function gets, checks, and invokes the proper
@@ -136,9 +134,7 @@
 /* global data items */
 
 tlist_head svr_requests;
-#ifndef PBS_MOM
 pthread_mutex_t *svr_requests_mutex = NULL;
-#endif
 
 extern struct    connection svr_conn[];
 
@@ -146,23 +142,17 @@ extern struct    credential conn_credent[PBS_NET_MAX_CONNECTIONS];
 
 extern struct server server;
 extern char      server_host[];
-#ifndef PBS_MOM
 struct all_jobs newjobs;
-#else
-extern tlist_head svr_newjobs;
-#endif
 
 extern time_t    time_now;
-extern char  *msg_err_noqueue;
-extern char  *msg_err_malloc;
-extern char  *msg_request;
-#ifndef PBS_MOM
-extern char            server_name[];
-#endif
+extern char     *msg_err_noqueue;
+extern char     *msg_err_malloc;
+extern char     *msg_request;
+extern char      server_name[];
 
-extern AvlTree okclients;
+extern AvlTree   okclients;
 
-extern int LOGLEVEL;
+extern int       LOGLEVEL;
 
 /* private functions local to this file */
 
@@ -176,29 +166,14 @@ static void close_client(int sfds);
 static void freebr_manage(struct rq_manage *);
 static void freebr_cpyfile(struct rq_cpyfile *);
 static void close_quejob(int sfds);
-#ifndef PBS_MOM
 static void free_rescrq(struct rq_rescq *);
-#endif /* PBS_MOM */
 
 /* END private prototypes */
 
-#ifndef PBS_MOM
 
 extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
-#endif
 
 /* request processing prototypes */
-#ifdef PBS_MOM
-void req_quejob(struct batch_request *preq);
-void req_jobcredential(struct batch_request *preq);
-void req_jobscript(struct batch_request *preq);
-void req_rdytocommit(struct batch_request *preq);
-void req_commit(struct batch_request *preq);
-void req_holdjob(struct batch_request *preq);
-void req_deletejob(struct batch_request *preq);
-void req_rerunjob(struct batch_request *preq);
-void req_modifyjob(struct batch_request *preq);
-#else
 void *req_jobcredential(void *preq);
 void *req_quejob(void *preq);
 void *req_rdytocommit(void *preq);
@@ -219,7 +194,6 @@ void req_track(struct batch_request *preq);
 void req_rescreserve(struct batch_request *preq);
 void req_rescfree(struct batch_request *preq);
 
-#endif
 
 void req_shutdown(struct batch_request *preq);
 void req_signaljob(struct batch_request *preq);
@@ -232,8 +206,12 @@ void req_gpuctrl(struct batch_request *preq);
 
 
 #ifdef ENABLE_UNIX_SOCKETS
-#ifndef PBS_MOM
-int get_creds(int sd, char *username, char *hostname)
+int get_creds(
+    
+  int   sd,
+  char *username,
+  char *hostname)
+
   {
   int             nb/*, sync*/;
   char            ctrl[CMSG_SPACE(sizeof(struct ucred))];
@@ -269,7 +247,6 @@ int get_creds(int sd, char *username, char *hostname)
   if (setsockopt(sd, SOL_SOCKET, SO_PASSCRED, &nb, sizeof(nb)) == -1)
     return 0;
 
-#endif
 #endif
 
   dummy = '\0';
@@ -339,12 +316,8 @@ void process_request(
   int sfds) /* file descriptor (socket) to get request */
 
   {
-#ifdef PBS_MOM
-  char *id = "process_request";
-#endif
-
   int                   rc;
-
+  
   struct batch_request *request = NULL;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -358,7 +331,6 @@ void process_request(
    * Read in the request and decode it to the internal request structure.
    */
 
-#ifndef PBS_MOM
   pthread_mutex_lock(svr_conn[sfds].cn_mutex);
 
   if (svr_conn[sfds].cn_active == FromClientDIS)
@@ -391,13 +363,6 @@ void process_request(
     return;
     }
 
-#else /* PBS_MOM */
-
-  DIS_tcp_setup(sfds);
-  rc = dis_request_read(sfds, request);
-
-#endif /* PBS_MOM */
-
   if (rc == -1)
     {
     /* FAILURE */
@@ -406,9 +371,7 @@ void process_request(
 
     close_client(sfds);
 
-#ifndef PBS_MOM
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 
     free_br(request);
 
@@ -425,9 +388,7 @@ void process_request(
 
     close_client(sfds);
 
-#ifndef PBS_MOM
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 
     free_br(request);
 
@@ -447,9 +408,7 @@ void process_request(
 
     close_client(sfds);
 
-#ifndef PBS_MOM
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 
     return;
     }
@@ -469,9 +428,7 @@ void process_request(
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
 
-#ifndef PBS_MOM
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-#endif
 
     return;
     }
@@ -489,8 +446,6 @@ void process_request(
     }
 
   /* is the request from a host acceptable to the server */
-
-#ifndef PBS_MOM
 
   if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
     {
@@ -694,59 +649,6 @@ void process_request(
 
   pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
-#else /* THIS CODE FOR MOM ONLY */
-
-    {
-    extern void mom_server_update_receive_time_by_ip(u_long ipaddr, const char *cmd);
-
-    /* check connecting host against allowed list of ok clients */
-
-    if (LOGLEVEL >= 6)
-      {
-      sprintf(log_buf, "request type %s from host %s received",
-        reqtype_to_txt(request->rq_type),
-        request->rq_host);
-
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buf);
-      }
-
-    if (!AVL_is_in_tree_no_port_compare(svr_conn[sfds].cn_addr, 0, okclients))
-      {
-      sprintf(log_buf, "request type %s from host %s rejected (host not authorized)",
-        reqtype_to_txt(request->rq_type),
-        request->rq_host);
-
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buf);
-
-      req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
-
-      close_client(sfds);
-
-      return;
-      }
-
-    if (LOGLEVEL >= 3)
-      {
-      sprintf(log_buf, "request type %s from host %s allowed",
-        reqtype_to_txt(request->rq_type),
-        request->rq_host);
-
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buf);
-      }
-
-    mom_server_update_receive_time_by_ip(svr_conn[sfds].cn_addr, reqtype_to_txt(request->rq_type));
-    }    /* END BLOCK */
-
-  request->rq_fromsvr = 1;
-
-  request->rq_perm =
-    ATR_DFLAG_USRD | ATR_DFLAG_USWR |
-    ATR_DFLAG_OPRD | ATR_DFLAG_OPWR |
-    ATR_DFLAG_MGRD | ATR_DFLAG_MGWR |
-    ATR_DFLAG_SvWR | ATR_DFLAG_MOM;
-
-#endif /* END else !PBS_MOM */
-
   /*
    * dispatch the request to the correct processing function.
    * The processing function must call reply_send() to free
@@ -792,48 +694,28 @@ void dispatch_request(
 
       net_add_close_func(sfds, close_quejob);
 
-#ifdef PBS_MOM
-      req_quejob(request);
-#else
       enqueue_threadpool_request(req_quejob,request);
-#endif
       break;
 
     case PBS_BATCH_JobCred:
 
-#ifdef PBS_MOM
-      req_jobcredential(request);
-#else
       enqueue_threadpool_request(req_jobcredential,request);
-#endif
 
       break;
 
     case PBS_BATCH_jobscript:
 
-#ifdef PBS_MOM
-      req_jobscript(request);
-#else
       enqueue_threadpool_request(req_jobscript,request);
-#endif
       break;
 
     case PBS_BATCH_RdytoCommit:
 
-#ifdef PBS_MOM
-      req_rdytocommit(request);
-#else
       enqueue_threadpool_request(req_rdytocommit,request);
-#endif
       break;
 
     case PBS_BATCH_Commit:
 
-#ifdef PBS_MOM
-      req_commit(request);
-#else
       enqueue_threadpool_request(req_commit,request);
-#endif
 
       net_add_close_func(sfds, (void (*)())0);
 
@@ -841,9 +723,6 @@ void dispatch_request(
 
     case PBS_BATCH_DeleteJob:
 
-#ifdef PBS_MOM
-      req_deletejob(request);
-#else
       /* if this is a server size job delete request, then the request could also be
       * for an entire array.  we check to see if the request object name is an array id.
       * if so we hand off the the req_deletearray() function.  If not we pass along to the
@@ -855,20 +734,14 @@ void dispatch_request(
       else
         enqueue_threadpool_request(req_deletejob,request);
 
-#endif
       break;
 
     case PBS_BATCH_HoldJob:
-#ifdef PBS_MOM
-      req_holdjob(request);
-
-#else
       if (is_array(request->rq_ind.rq_hold.rq_orig.rq_objname))
         enqueue_threadpool_request(req_holdarray,request);
       else
         enqueue_threadpool_request(req_holdjob,request);
 
-#endif
       break;
 
     case PBS_BATCH_CheckpointJob:
@@ -876,8 +749,6 @@ void dispatch_request(
       req_checkpointjob(request);
 
       break;
-
-#ifndef PBS_MOM
 
     case PBS_BATCH_LocateJob:
 
@@ -891,8 +762,6 @@ void dispatch_request(
 
       break;
 
-#endif  /* END !PBS_MOM */
-
     case PBS_BATCH_MessJob:
 
       req_messagejob(request);
@@ -902,15 +771,10 @@ void dispatch_request(
     case PBS_BATCH_AsyModifyJob:
 
     case PBS_BATCH_ModifyJob:
-#ifndef PBS_MOM
       if (is_array(request->rq_ind.rq_delete.rq_objname))
         enqueue_threadpool_request(req_modifyarray,request);
       else
         enqueue_threadpool_request(req_modifyjob,request);
-
-#else /* END ifndef PBS_MOM */
-      req_modifyjob(request);
-#endif /* PBS_MOM */
 
       break;
 
@@ -919,8 +783,6 @@ void dispatch_request(
       req_rerunjob(request);
 
       break;
-
-#ifndef PBS_MOM
 
     case PBS_BATCH_MoveJob:
 
@@ -982,8 +844,6 @@ void dispatch_request(
 
       break;
 
-#endif  /* !PBS_MOM */
-
     case PBS_BATCH_Shutdown:
 
       req_shutdown(request);
@@ -1009,8 +869,6 @@ void dispatch_request(
       req_mvjobfile(request);
 
       break;
-
-#ifndef PBS_MOM  /* server only functions */
 
     case PBS_BATCH_StatusQue:
 
@@ -1084,34 +942,6 @@ void dispatch_request(
       
       break;
 
-#else /* MOM only functions */
-
-    case PBS_BATCH_StatusJob:
-
-      req_stat_job(request);
-
-      break;
-
-    case PBS_BATCH_ReturnFiles:
-
-      req_returnfiles(request);
-
-      break;
-
-    case PBS_BATCH_CopyFiles:
-
-      req_cpyfile(request);
-
-      break;
-
-    case PBS_BATCH_DelFiles:
-
-      req_delfile(request);
-
-      break;
-
-#endif /* !PBS_MOM */
-
     default:
 
       req_reject(PBSE_UNKREQ, 0, request, NULL, NULL);
@@ -1143,9 +973,7 @@ static void close_client(
 
   close_conn(sfds); /* close the connection */
 
-#ifndef PBS_MOM
   pthread_mutex_lock(svr_requests_mutex);
-#endif
 
   preq = (struct batch_request *)GET_NEXT(svr_requests);
 
@@ -1162,9 +990,7 @@ static void close_client(
     preq = (struct batch_request *)GET_NEXT(preq->rq_link);
     }
 
-#ifndef PBS_MOM
   pthread_mutex_unlock(svr_requests_mutex);
-#endif
 
   return;
   }  /* END close_client() */
@@ -1203,17 +1029,13 @@ struct batch_request *alloc_br(
   req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
   req->rq_noreply = FALSE;  /* indicate reply is needed */
 
-#ifndef PBS_MOM
   pthread_mutex_lock(svr_requests_mutex);
-#endif
 
   CLEAR_LINK(req->rq_link);
 
   append_link(&svr_requests, &req->rq_link, req);
 
-#ifndef PBS_MOM
   pthread_mutex_unlock(svr_requests_mutex);
-#endif
 
   return(req);
   } /* END alloc_br() */
@@ -1234,36 +1056,6 @@ static void close_quejob(
   {
   job *pjob;
 
-#ifdef PBS_MOM
-  /* version for PBS_MOM */
-  job *npjob;
-
-  pjob = (job *)GET_NEXT(svr_newjobs);
-
-  while (pjob != NULL)
-    {
-    npjob = GET_NEXT(pjob->ji_alljobs);
-
-    if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds)
-      {
-      if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
-        {
-        /* delete the job */
-        delete_link(&pjob->ji_alljobs);
-
-        job_purge(pjob);
-
-        pjob = NULL;
-        }
-      
-      break;
-      }  /* END if (..) */
-
-    pjob = npjob;
-    }
-
-#else
-  /* version for PBS_SERVER */
   int iter = -1;
 
   while ((pjob = next_job(&newjobs,&iter)) != NULL)
@@ -1308,7 +1100,6 @@ static void close_quejob(
 
   if (pjob != NULL)
     pthread_mutex_unlock(pjob->ji_mutex);
-#endif /* PBS_MOM or not */
 
   return;
   }  /* END close_quejob() */
@@ -1327,15 +1118,11 @@ void free_br(
   struct batch_request *preq)
 
   {
-#ifndef PBS_MOM
   pthread_mutex_lock(svr_requests_mutex);
-#endif
 
   delete_link(&preq->rq_link);
 
-#ifndef PBS_MOM
   pthread_mutex_unlock(svr_requests_mutex);
-#endif
 
   reply_free(&preq->rq_reply);
 
@@ -1420,8 +1207,6 @@ void free_br(
 
       break;
 
-#ifndef PBS_MOM /* Server Only */
-
     case PBS_BATCH_Manager:
 
       freebr_manage(&preq->rq_ind.rq_manager);
@@ -1456,8 +1241,6 @@ void free_br(
         free(preq->rq_ind.rq_run.rq_destin);
 
       break;
-
-#endif /* !PBS_MOM */
 
     default:
 
@@ -1516,7 +1299,6 @@ static void freebr_cpyfile(
 
 
 
-#ifndef PBS_MOM
 static void free_rescrq(
 
   struct rq_rescq *pq)
@@ -1537,8 +1319,6 @@ static void free_rescrq(
 
   return;
   }  /* END free_rescrq() */
-
-#endif /* PBS_MOM */
 
 /* END process_requests.c */
 

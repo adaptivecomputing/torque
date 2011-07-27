@@ -221,7 +221,7 @@ void interactive(memmgr **mm, job_data *client_attr);
 int validate_group_list(
     char *glist);
 
-int process_opts(
+void process_opts(
     int    argc,                  /* I */
     char **argv,                  /* I */
     job_info *ji,                 /* I */

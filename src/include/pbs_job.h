@@ -512,7 +512,6 @@ struct job
   list_link       ji_jobque_array_sum;
 #else
   list_link       ji_jobque;  /* used for polling in mom */
-  list_link       ji_alljobs; /* link to next job in mom's global job list */
 #endif
   /* MOM: links to polled jobs */
   time_t  ji_momstat; /* SVR: time of last status from MOM */
@@ -522,6 +521,7 @@ struct job
   int  ji_radix;    /* number of nodes in a job radix. used for qsub -W job_radix option  */
 #ifdef PBS_MOM    /* MOM ONLY */
 
+  list_link       ji_alljobs; /* link to next job in server job list */
   struct grpcache *ji_grpcache; /* cache of user's groups */
   time_t  ji_checkpoint_time; /* periodic checkpoint time */
   time_t  ji_checkpoint_next; /* next checkpoint time */
@@ -597,9 +597,9 @@ struct job
     int     ji_state;    /* internal copy of state */
     int     ji_substate; /* job sub-state */
     int     ji_svrflags; /* server flags */
-    int     ji_numattr;  /* number of attributes in list */
-    int     ji_ordering; /* special scheduling ordering */
-    int     ji_priority; /* internal priority */
+    int     ji_numattr;  /* number of attributes in list - never used, delete me */
+    int     ji_ordering; /* special scheduling ordering - also never used */
+    int     ji_priority; /* internal priority  - also never used */
     time_t  ji_stime;    /* time job started execution */
     char    ji_jobid[PBS_MAXSVRJOBID + 1];   /* job identifier */
     char    ji_fileprefix[PBS_JOBBASE + 1];  /* job file prefix */
@@ -698,7 +698,7 @@ typedef struct task
   list_link ti_jobtask; /* links to tasks for this job */
   int  ti_fd;  /* DIS file descriptor to task */
   int  ti_flags; /* task internal flags */
-  tm_event_t ti_register; /* event if task registers */
+  tm_event_t ti_register; /* event if task registers - never used*/
   tlist_head ti_obits; /* list of obit events */
   tlist_head ti_info; /* list of named info */
 

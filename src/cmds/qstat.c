@@ -96,6 +96,8 @@
 #include "cmds.h"
 #include "mcom.h"
 #include "utils.h"
+#include "libcmds.h" /* TShowAbout_exit */
+
 
 static void states();
 

@@ -357,9 +357,9 @@ static void mgr_log_attr(
     (void)strcat(log_buf, pstr);
 
     if (plist->al_valln)
-      (void)strncat(log_buf, plist->al_value, LOG_BUF_SIZE - strlen(log_buf) - 1);
+      (void)strncat(log_buf, plist->al_value, LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
 
-    log_buf[LOG_BUF_SIZE-1] = '\0';
+    log_buf[LOCAL_LOG_BUF_SIZE-1] = '\0';
 
     log_event(PBSEVENT_ADMIN, logclass, objname, log_buf);
 
