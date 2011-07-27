@@ -10,11 +10,11 @@ use CRI::Test;
 plan('no_plan');
 setDesc("Reinstall Torque");
 
-my $testbase = "$FindBin::Bin/..";
+my $testbase = "$FindBin::Bin";
 
 my @testList = (
-    "$testbase/torque/uninstall/uninstall.bat",
-    "$testbase/torque/install/install.bat",
+    "$testbase/uninstall/uninstall.bat",
+    "$testbase/install/install.bat",
 );
 
 foreach( @testList )
