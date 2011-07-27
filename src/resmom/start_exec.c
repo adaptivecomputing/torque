@@ -1582,7 +1582,7 @@ int open_tcp_stream_to_sisters(
 	  }
 
   return(PBSE_NONE);
-  } /* end open_rpp_stream_to_sisters */
+  } /* end open_tcp_stream_to_sisters */
 
 
 
@@ -6264,8 +6264,6 @@ pid_t fork_me(
 		/* Turn off alarm if it should happen to be on */
 
 		alarm(0);
-
-		rpp_terminate();
 
 		/* Reset signal actions for most to SIG_DFL */
 
