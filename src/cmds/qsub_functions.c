@@ -4503,9 +4503,9 @@ void main_func(
   /* NOTE:  load config before processing opts since config may modify how opts are handled */
 
 #ifdef linux
-    optind = 0;  /* prime getopt's starting point */
+  optind = 0;  /* prime getopt's starting point */
 #else
-    optind = 1;  /* prime getopt's starting point */
+  optind = 1;  /* prime getopt's starting point */
 #endif
   /* (3) cmdline options */
   process_opts(argc, argv, &ji, CMDLINE_DATA);

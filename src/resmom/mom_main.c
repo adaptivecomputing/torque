@@ -5276,8 +5276,6 @@ int rm_request(
 
       log_close(1);
 
-      rpp_shutdown();
-
       exit(0);
 
       /*NOTREACHED*/
@@ -8590,8 +8588,6 @@ int main(
 #endif  /* NVIDIA_GPUS and NVML_API */
 
   mom_close_poll();
-
-  rpp_shutdown();
 
   net_close(-1);  /* close all network connections */
 
