@@ -2885,6 +2885,7 @@ void mom_server_update_stat(
   if (IS_VALID_STREAM(stream))
     {
     DIS_tcp_setup(stream);
+
     if ((ret = write_update_header(stream,pms->pbs_servername,id)) == DIS_SUCCESS)
       {
       if ((ret = write_my_server_status(stream,id,status_strings,pms,UPDATE_TO_SERVER)) == DIS_SUCCESS)

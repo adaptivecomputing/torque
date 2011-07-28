@@ -8676,9 +8676,21 @@ int read_status_strings(
   received_node  *rn;
   
   mom_port = disrsi(fds,&rc);
-  rm_port = disrsi(fds,&rc);
-  node_str = disrst(fds,&rc);
-  hostname = node_str + strlen("node=");
+
+  if (rc == DIS_SUCCESS)
+    {
+    rm_port = disrsi(fds,&rc);
+
+    if (rc == DIS_SUCCESS)
+      {
+      node_str = disrst(fds,&rc);
+      }
+  
+    hostname = node_str + strlen("node=");
+    }
+
+  if (rc != DIS_SUCCESS)
+    return(rc);
   
   /* get the old node for this table if present. If not, create a new one */
   index = get_value_hash(received_table,hostname);
@@ -8704,6 +8716,15 @@ int read_status_strings(
       }
     
     rn->hellos_sent = 0;
+
+    if (LOGLEVEL >= 7)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Received first status from mom %s",
+        hostname);
+
+      log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
+      }
     
     is_new = TRUE;
     }
@@ -8713,6 +8734,15 @@ int read_status_strings(
     
     /* make sure we aren't hold 2 statuses for the same node */
     clear_dynamic_string(rn->statuses);
+
+    if (LOGLEVEL >= 10)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Received status update from mom %s",
+        hostname);
+      
+      log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
+      }
     }
   
   /* append the node name string to the front first */
@@ -8745,17 +8775,17 @@ int read_status_strings(
       {
       log_err(ENOMEM,id,"No memory to resize the received_statuses array...SYSTEM FAILURE\n");
       }
-    
-    add_hash(received_table,index,rn->hostname);
-    
-    send_update_within_ten();
+    else
+      {
+      add_hash(received_table,index,rn->hostname);
+      
+      send_update_within_ten();
+      }
     }
   else if (updates_waiting_to_send >= MAX_UPDATES_BEFORE_SENDING)
     {
     send_update_within_ten();
     }
-  
-  send_update_within_ten();
   
   return(PBSE_NONE);
   } /* END read_status_strings() */
