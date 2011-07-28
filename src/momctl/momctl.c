@@ -85,6 +85,7 @@ int main(
 
 
   int c;
+  int rc = PBSE_NONE;
 
   int HostCount;
   int FailCount;
@@ -96,7 +97,7 @@ int main(
 
   if (IamRoot() == 0)
     {
-	exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
     }
 
   while ((c = getopt(ArgC, ArgV, OptString)) != EOF)
@@ -391,7 +392,7 @@ int main(
               {
               if (!strstr(nodeattrs->value, ND_down))
                 {
-                do_mom(pbstat->name, MOMPort, CmdIndex) >= 0 ? HostCount++ : FailCount++;
+                rc = do_mom(pbstat->name, MOMPort, CmdIndex) >= 0 ? HostCount++ : FailCount++;
                 }
               else
                 {
@@ -420,7 +421,7 @@ int main(
       }
     else
       {
-      do_mom(HPtr, MOMPort, CmdIndex) >= 0 ? HostCount++ : FailCount++;
+      rc = do_mom(HPtr, MOMPort, CmdIndex) >= 0 ? HostCount++ : FailCount++;
       } /* END if (*HPtr == ':') */
 
     HPtr = strtok(NULL, ", \t\n");
@@ -434,6 +435,10 @@ int main(
             FailCount);
     }
 
+  /* test success of do_mom before returning success */
+  if (rc != PBSE_NONE)
+    exit(EXIT_FAILURE);
+    
   /* SUCCESS */
 
   exit(EXIT_SUCCESS);

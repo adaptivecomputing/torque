@@ -2,6 +2,27 @@
 
 TORQUE Resource Manager
 
+Software Version 4.0.0
+
+		                   	-------- WARNING! --------
+
+#rough outline for what should go into 4.0's release notes when it is released.
+
+TORQUE 4.0.0 is not backwards compatible in any way. When you upgrade to 4.0.0, 
+everything has to be upgraded at once.
+
+TORQUE is now multi-threaded so that it will respond to user commands much faster.
+
+TORQUE no longer uses rpp to communicate - tcp is used in all cases.
+
+TORQUE now needs to be set up with a mom hierarchy file (located in 
+mom_priv/mom_hierarchy) specifying in what order each mom should report to 
+pbs_server instead of each mom speaking directly to pbs_server.
+
+TORQUE now includes a job_radix option (-W job_radix=X) to specify how
+many moms each mom should communicate with for that job. Moms are then an 
+n-branch tree communications-wise
+
 Software Version 2.5.0
 
 This file contains a few notes on building and installing TORQUE and 
