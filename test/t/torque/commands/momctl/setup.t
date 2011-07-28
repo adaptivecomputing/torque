@@ -9,11 +9,7 @@ use lib test_lib_loc();
 
 
 use CRI::Test;
-use CRI::Util          qw( scp                    );
-
-use Torque::Util qw( run_and_check_cmd      );
-
-use Torque::Ctrl        qw( startTorque stopTorque );
+use Torque::Ctrl qw( startTorque stopTorque );
 
 # Describe Test
 plan('no_plan');
@@ -142,18 +138,10 @@ foreach my $node (@remote_nodes)
 
   # Backup the original configuration file
   my $ssh_cp_cmd = "cp -f $mom_cfg_file $mom_cfg_file_bak";
-  my %ssh = runCommandSsh($node, $ssh_cp_cmd);
-  ok($ssh{ 'EXIT_CODE' } == 0, "Checking exit code of '$ssh_cp_cmd'");
+  runCommandSsh($node, $ssh_cp_cmd, test_success => 1);
 
   # Copy the new file
-  my $scp_params = {
-                     "src"  => $mom_cfg_file,
-                     "dest" => "$node:$mom_cfg_file"
-                   };
-  my %scp        = scp($scp_params);
-  cmp_ok($scp{ 'EXIT_CODE' }, '==', 0, "Checking exit code of the scp command")
-    or diag("$scp{ 'STDERR' }");
-
+  runCommand("scp -B $mom_cfg_file $node:$mom_cfg_file", test_success_die => 1);
 
   } # END foreach my $node (@nodes)
 
@@ -196,14 +184,7 @@ foreach my $node (@remote_nodes)
   {
 
   # Copy the new file
-  my $scp_params = {
-                     "src"  => $mom_recfg_file,
-                     "dest" => "$node:$mom_recfg_file"
-                   };
-  my %scp        = scp($scp_params);
-  cmp_ok($scp{ 'EXIT_CODE' }, '==', 0, "Checking exit code of the scp command for mom reconfig file")
-    or diag("$scp{ 'STDERR' }");
-
+  runCommand("scp -B $mom_recfg_file $node:$mom_recfg_file", test_success => 1);
 
   } # END foreach my $node (@nodes)
 

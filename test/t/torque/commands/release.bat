@@ -14,7 +14,7 @@ my $testbase = "$FindBin::Bin";
 
 execute_tests(
   "$testbase/momctl/release.bat",
-  "$testbase/qalter/release.bat",
+# JR-TRQ-362  "$testbase/qalter/release.bat",
   "$testbase/qchkpt/release.bat",
   "$testbase/qdel/release.bat",
   "$testbase/qhold/release.bat",
@@ -24,7 +24,7 @@ execute_tests(
   "$testbase/qrun/release.bat",
   "$testbase/qsig/release.bat",
   "$testbase/qstat/release.bat",
-  "$testbase/qsub/release.bat",
+# JR-TRQ-362  "$testbase/qsub/release.bat",
   "$testbase/qterm/release.bat",
   "$testbase/tracejob/release.bat",
 

@@ -185,7 +185,7 @@ sub submitCheckpointJob #($)
   # Parameters
   my $user       = $params->{ 'user'       };
   my $app        = $params->{ 'app'        } || die '"app" not given';
-  my $add_args   = $params->{ 'add_args'   }
+  my $add_args   = $params->{ 'add_args'   };
   my $c_value    = $params->{ 'c_value'    } || 'enabled';
  
   # Variables
