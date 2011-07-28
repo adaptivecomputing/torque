@@ -804,14 +804,6 @@ int pbsd_init(
     PBS_DEFAULT_MAIL,
     0);
 
-  /* disable ping_rate.  no longer used */
-
-  /*
-    server.sv_attr[(int)SRV_ATR_ping_rate].at_val.at_long =
-      PBS_NORMAL_PING_RATE;
-    server.sv_attr[(int)SRV_ATR_ping_rate].at_flags = ATR_VFLAG_SET;
-  */
-
   server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long =
     PBS_TCPTIMEOUT;
 

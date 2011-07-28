@@ -277,7 +277,7 @@ extern int svr_save(struct server *, int);
 #endif /* END MAX */
 
 #ifndef JobStatRate
-#define JobStatRate MAX(PBS_JOBSTAT_MIN,server.sv_attr[(int)SRV_ATR_JobStatRate].at_val.at_long)
+#define JobStatRate MAX(PBS_JOBSTAT_MIN,server.sv_attr[SRV_ATR_JobStatRate].at_val.at_long)
 #endif
 
 

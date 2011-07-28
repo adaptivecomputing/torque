@@ -1417,9 +1417,9 @@ static job *chk_job_torun(
     {
     /* make sure exec gpus is clear */
     if (((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0) &&
-      (pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL))
+        (pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL))
       {
-      job_attr_def[(int)JOB_ATR_exec_gpus].at_free(
+      job_attr_def[JOB_ATR_exec_gpus].at_free(
         &pjob->ji_wattr[JOB_ATR_exec_gpus]);
       }
 
@@ -1427,8 +1427,8 @@ static job *chk_job_torun(
     /* reserve nodes and set new exec_host */
     if ((prun->rq_destin == NULL) || (prun->rq_destin[0] == '\0'))
       {
-      /* it is possible for the scheduler to pass a hostlist using the rq_extend field--we should use it as the given list
-       * as an alternative to rq_destin */
+      /* it is possible for the scheduler to pass a hostlist using the rq_extend 
+       * field--we should use it as the given list as an alternative to rq_destin */
 
       rc = assign_hosts(pjob, preq->rq_extend, 1, FailHost, EMsg);  /* inside chk_job_torun() */
       }

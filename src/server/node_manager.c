@@ -5324,16 +5324,15 @@ int set_nodes(
         gpu_flags += 1000;
     if (gpu_flags >= 0)
       {
-      pjob->ji_wattr[(int)JOB_ATR_gpu_flags].at_val.at_long = gpu_flags;
-      pjob->ji_wattr[(int)JOB_ATR_gpu_flags].at_flags =
-        ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+      pjob->ji_wattr[JOB_ATR_gpu_flags].at_val.at_long = gpu_flags;
+      pjob->ji_wattr[JOB_ATR_gpu_flags].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
 	    if (LOGLEVEL >= 7)
 	      {
         sprintf(log_buf, "setting gpu_flags for job %s to %d %ld",
-                pjob->ji_qs.ji_jobid,
-                gpu_flags,
-                pjob->ji_wattr[(int)JOB_ATR_gpu_flags].at_val.at_long);
+          pjob->ji_qs.ji_jobid,
+          gpu_flags,
+          pjob->ji_wattr[JOB_ATR_gpu_flags].at_val.at_long);
 
   		  log_ext(-1, id, log_buf, LOG_DEBUG);
 	      }
