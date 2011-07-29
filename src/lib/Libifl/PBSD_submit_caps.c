@@ -558,11 +558,12 @@ char *PBSD_QueueJob_hash(
   char           *extend)
 
   {
-
   struct batch_reply *reply;
-  char  *return_jobid = (char *)NULL;
-  int    rc;
-  int    sock;
+  char               *return_jobid = (char *)NULL;
+  int                 rc;
+  int                 sock;
+
+  pthread_mutex_lock(connection[connect].ch_mutex);
 
   sock = connection[connect].ch_socket;
 
@@ -578,12 +579,16 @@ char *PBSD_QueueJob_hash(
 
     pbs_errno = PBSE_PROTOCOL;
 
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+
     return(return_jobid);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pbs_errno = PBSE_PROTOCOL;
+    
+    pthread_mutex_unlock(connection[connect].ch_mutex);
 
     return(return_jobid);
     }
@@ -613,6 +618,8 @@ char *PBSD_QueueJob_hash(
     {
     return_jobid = strdup(reply->brp_un.brp_jid);
     }
+    
+  pthread_mutex_unlock(connection[connect].ch_mutex);
 
   PBSD_FreeReply(reply);
 
