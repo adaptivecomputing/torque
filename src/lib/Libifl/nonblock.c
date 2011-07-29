@@ -8,19 +8,65 @@
 #include <fcntl.h>
 #include <time.h>
 
-/*
- * Assumes full-block read/write.  No accounting for partial blocks,
- * this would have had to be handled by the main pbs code anyway.
- */
+
 
 ssize_t write_nonblocking_socket(
 
-  int         fd,    /* I */
-  const void *buf,   /* I */
-  ssize_t     count) /* I */
+  int     fd,
+  void   *buf,
+  ssize_t count)
 
   {
+  int     flags, newflags;
   ssize_t i;
+  time_t  start, now;
+
+  /* verify socket is non-blocking */
+
+  /* NOTE:  under some circumstances, a blocking fd will be passed */
+
+  if ((flags = fcntl(fd, F_GETFL)) == -1)
+    {
+    return(-1);
+    }
+
+#if defined(FNDELAY) && !defined(__hpux)
+  if (flags & FNDELAY)
+#else
+  if (flags & O_NONBLOCK)
+#endif
+    {
+    /* flag already set */
+
+    /* NO-OP */
+    }
+  else
+    {
+    /* set no delay */
+
+#if defined(FNDELAY) && !defined(__hpux)
+	  newflags = flags;
+    newflags |= FNDELAY;
+#else
+    newflags = flags;
+    newflags |= O_NONBLOCK;
+#endif
+
+    /* NOTE:  the pbs scheduling API passes in a blocking socket which
+              should be a non-blocking socket in pbs_disconnect.  Also,
+              qsub passes in a blocking socket which must remain
+              non-blocking */
+
+    if (fcntl(fd,F_SETFL,newflags) == -1)
+      {
+      return(-1);
+      }
+    
+    }    /* END else (flags & BLOCK) */
+
+  /* Set a timer to prevent an infinite loop here. */
+  time(&now);
+  start = now;
 
   for (;;)
     {
@@ -28,26 +74,47 @@ ssize_t write_nonblocking_socket(
 
     if (i >= 0)
       {
-      /* successfully wrote 'i' bytes */
-
+			/* if we came in a blocking socket we need to go out a blocking socket */
+      if (fcntl(fd,F_SETFL,flags) == -1)
+        {
+        return(-1);
+        }
       return(i);
       }
 
     if (errno != EAGAIN)
       {
-      /* write failed */
+      /* if we came in a blocking socket we need to go out a blocking socket */
+      if (fcntl(fd,F_SETFL,flags) == -1)
+        {
+        return(-1);
+        }
 
       return(i);
       }
+
+
+    if ((now - start) > 30)
+      {
+      /* if we came in a blocking socket we need to go out a blocking socket */
+      if (fcntl(fd,F_SETFL,flags) == -1)
+        {
+        return(-1);
+        }
+      return(i);
+      }
+    }    /* END for () */
+
+  /*NOTREACHED*/
+
+  /* if we came in a blocking socket we need to go out a blocking socket */
+  if (fcntl(fd,F_SETFL,flags) == -1)
+    {
+    return(-1);
     }
-
-  /* NOTE:  what is current SIGPIPE handling behavior? */
-
-  /* non-blocking socket not ready.  no bytes written */
 
   return(0);
   }  /* END write_nonblocking_socket() */
-
 
 
 

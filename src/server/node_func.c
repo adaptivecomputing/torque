@@ -1003,13 +1003,12 @@ static int process_host_name_part(
 
   memcpy((char *)&addr, hp->h_addr, hp->h_length);
 
-  if (hp->h_addr_list[1] == NULL)
+  if (hp->h_addr_list[0] != NULL)
     {
-    /* weren't given canonical name */
 
     char *hname;
 
-    if ((hp = gethostbyaddr(
+/*    if ((hp = gethostbyaddr(
                 (void *) & addr,
                 sizeof(struct in_addr),
                 hp->h_addrtype)) == NULL)
@@ -1026,7 +1025,7 @@ static int process_host_name_part(
       phostname = NULL;
 
       return(PBSE_UNKNODE);
-      }
+      }*/
 
     hname = (char *)strdup(hp->h_name); /* canonical name in theory */
 

@@ -16,6 +16,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Applied patch submitted by Eric Roman for resmom/Makefile.am (Bugzilla #147)
       (backported from 3.0.3)
   b - Fix for adding -lcr for BLCR makefiles (Bugzilla #146 backported from 3.0.3)
+  e - Modified pbs_disconnect so it no longer does a read to wait for the server
+      side to disconnect first. Also modified write_nonblocking_socket to ensure 
+      socket is non-blocking and exit if stuck on EAGAIN return from write.
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as

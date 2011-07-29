@@ -1050,7 +1050,7 @@ int pbs_disconnect(
 
   {
   int  sock;
-  static char x[THE_BUF_SIZE / 4];
+  int  rc;
 
   /* send close-connection message */
 
@@ -1058,42 +1058,18 @@ int pbs_disconnect(
 
   DIS_tcp_setup(sock);
 
-  if ((encode_DIS_ReqHdr(sock, PBS_BATCH_Disconnect, pbs_current_user) == 0) &&
-      (DIS_tcp_wflush(sock) == 0))
+  rc = encode_DIS_ReqHdr(sock, PBS_BATCH_Disconnect, pbs_current_user);
+  if(rc)
     {
-    int atime;
-
-    struct sigaction act;
-
-    struct sigaction oldact;
-
-    /* set alarm to break out of potentially infinite read */
-
-/*    act.sa_handler = SIG_IGN; */
-    act.sa_handler = empty_alarm_handler;  /* need SOME handler or blocking read never gets interrupted */
-
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = 0;
-    sigaction(SIGALRM, &act, &oldact);
-
-    atime = alarm(pbs_tcp_timeout);
-
-    while (1)
-      {
-      /* wait for server to close connection */
-
-      /* NOTE:  if read of 'sock' is blocking, request below may hang forever
-         -- hence the signal handler above */
-
-      if (read(sock, &x, sizeof(x)) < 1)
-        break;
-      }
-
-    alarm(atime);
-
-    sigaction(SIGALRM, &oldact, NULL);
+    return(rc);
     }
 
+   rc = DIS_tcp_wflush(sock);
+   if(rc)
+     {
+     return(rc);
+     }
+    
   close(sock);
 
   if (connection[connect].ch_errtxt != (char *)NULL)
