@@ -975,9 +975,11 @@ int send_sisters(
  * it is.
  */
 hnodent *find_node(
+
   job         *pjob,
   int        stream,
   tm_node_id   nodeid)
+
   {
   static char id[] = "find_node";
 

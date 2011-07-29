@@ -367,6 +367,7 @@ void process_pbs_server_port(
   int          proto_type;
   int          rc;
   int          version;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
   
   DIS_tcp_setup(sock);
   
@@ -393,18 +394,28 @@ void process_pbs_server_port(
       is_request(sock,version,NULL);
       
       break;
+
     default:
+      {
+      struct sockaddr     s_addr;
+      struct sockaddr_in *addr;
+      socklen_t           len = sizeof(s_addr);
+
+      if (getpeername(sock, &s_addr, &len) == 0)
         {
-        struct sockaddr     s_addr;
-        struct sockaddr_in addr;
-        if (getpeername(sock,&s_addr,(socklen_t *)sizeof(s_addr)) != 0)
-          {
-          snprintf(log_buffer,sizeof(log_buffer),
-              "Unknown protocol %d from %s", proto_type, netaddr(&addr));
-          }
-        close_conn(sock);
-        break;
+        addr = (struct sockaddr_in *)&s_addr;
+
+        snprintf(log_buf,sizeof(log_buf),
+          "Unknown protocol %d from %s", proto_type, 
+          netaddr(addr));
+
+        log_err(-1,id,log_buf);
         }
+
+      close_conn(sock);
+
+      break;
+      }
     }
   
   return;

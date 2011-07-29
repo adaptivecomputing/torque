@@ -1100,22 +1100,23 @@ int is_stat_get(
       if (tmp == NULL)
         {
         /* ERROR */
-        snprintf(log_buffer,sizeof(log_buffer),
+        snprintf(log_buf,sizeof(log_buf),
           "Node %s is reporting on node %s, which pbs_server doesn't know about\n",
           orig_np->nd_name,
           node_id);
-        log_err(-1,id,log_buffer);
+        log_err(-1,id,log_buf);
 
         return(DIS_NOCOMMIT);
         }
 
       if (LOGLEVEL >= 7)
         {
-        snprintf(log_buffer,sizeof(log_buffer),
+        snprintf(log_buf,sizeof(log_buf),
           "Node %s is reporting for node %s\n",
           orig_np->nd_name,
           node_id);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
+
+        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buf);
         }
 
       np = tmp;
@@ -1176,11 +1177,11 @@ int is_stat_get(
 
       if (LOGLEVEL >= 9)
         {
-        sprintf(log_buffer, "node '%s' is at state '0x%x'\n",
-                np->nd_name,
-                np->nd_state);
+        sprintf(log_buf, "node '%s' is at state '0x%x'\n",
+          np->nd_name,
+          np->nd_state);
 
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
         }
 
       for (sp = np->nd_psn;sp != NULL;sp = sp->next)
@@ -1192,11 +1193,11 @@ int is_stat_get(
 
           if (LOGLEVEL >= 2)
             {
-            sprintf(log_buffer, "sync'ing subnode state '%s' with node state on node %s\n",
-                    "offline",
-                    np->nd_name);
+            sprintf(log_buf, "sync'ing subnode state '%s' with node state on node %s\n",
+              "offline",
+              np->nd_name);
  
-            log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
+            log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
             }
  
           sp->inuse &= ~INUSE_OFFLINE;
@@ -3091,7 +3092,7 @@ int search_acceptable(
         gpu_count(pnode, TRUE),
         skip);
 
-       log_ext(-1, id, log_buffer, LOG_DEBUG);
+       log_ext(-1, id, log_buf, LOG_DEBUG);
        }
 
     if ((skip == SKIP_NONE) || (skip == SKIP_NONE_REUSE))
@@ -3172,7 +3173,7 @@ int can_reshuffle(
         gpu_count(pnode, TRUE),
         skip);
 
-       log_ext(-1, id, log_buffer, LOG_DEBUG);
+       log_ext(-1, id, log_buf, LOG_DEBUG);
        }
 
     if ((skip == SKIP_EXCLUSIVE) && 
@@ -3261,7 +3262,7 @@ static int search(
           skip,
           depth);
 
-         log_ext(-1, id, log_buffer, LOG_DEBUG);
+         log_ext(-1, id, log_buf, LOG_DEBUG);
          }
 
       pthread_mutex_unlock(pnode->nd_mutex);
@@ -3326,7 +3327,7 @@ static int search(
             skip,
             depth);
 
-           log_ext(-1, id, log_buffer, LOG_DEBUG);
+           log_ext(-1, id, log_buf, LOG_DEBUG);
            }
     
         pthread_mutex_unlock(pnode->nd_mutex);
@@ -3552,11 +3553,11 @@ static int proplist(
 #ifdef NVIDIA_GPUS
     if ((have_gpus) && (LOGLEVEL >= 7))
       {
-      sprintf(log_buffer,
+      sprintf(log_buf,
         "proplist: set needed gpu mode to %d",
         gpu_mode_rqstd);
 
-       log_ext(-1, id, log_buffer, LOG_DEBUG);
+       log_ext(-1, id, log_buf, LOG_DEBUG);
       }
 #endif  /* NVIDIA_GPUS */
 
@@ -4321,12 +4322,12 @@ static int node_spec(
 
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer, "starting eval gpus on node %s need %d free %d",
+      sprintf(log_buf, "starting eval gpus on node %s need %d free %d",
         pnode->nd_name,
         pnode->nd_ngpus_needed,
         gpu_count(pnode, TRUE));
 
-       log_ext(-1, id, log_buffer, LOG_DEBUG);
+       log_ext(-1, id, log_buf, LOG_DEBUG);
        }
 
     if (pnode->nd_state == INUSE_FREE)
@@ -4338,9 +4339,9 @@ static int node_spec(
           /* adequate virtual nodes and gpus available - node is ok */
           if (LOGLEVEL >= 7)
             {
-            sprintf(log_buffer, "adequate virtual nodes and gpus available - node is ok");
-             log_ext(-1, id, log_buffer, LOG_DEBUG);
-             }
+            sprintf(log_buf, "adequate virtual nodes and gpus available - node is ok");
+            log_ext(-1, id, log_buf, LOG_DEBUG);
+            }
           
           continue;
           }
@@ -4398,16 +4399,16 @@ static int node_spec(
       /* FAILURE */
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buffer, "failure early");
+        sprintf(log_buf, "failure early");
 
-        log_ext(-1, id, log_buffer, LOG_DEBUG);
+        log_ext(-1, id, log_buf, LOG_DEBUG);
         }
 
       /* specified node not available and replacement cannot be located */
 
       if (pnode->nd_needed > pnode->nd_nsnfree)
         {
-        char JobList[1024];
+        char JobList[MAXLINE];
 
         struct pbssubn *np;
 
@@ -5038,7 +5039,7 @@ int set_nodes(
 
 	    if (LOGLEVEL >= 7)
 	      {
-  		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+  		  log_ext(-1, id, log_buf, LOG_DEBUG);
 	      }
       DBPRT(("%s\n", log_buf));
 
@@ -5064,7 +5065,7 @@ int set_nodes(
 
 	    if (LOGLEVEL >= 7)
 	      {
-  		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+  		  log_ext(-1, id, log_buf, LOG_DEBUG);
 	      }
       DBPRT(("%s\n", log_buf));
 
