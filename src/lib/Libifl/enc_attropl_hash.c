@@ -238,7 +238,7 @@ int encode_DIS_attropl_hash(
   char *var_list = NULL;
   int rc;
   memmgr *var_mm;
-  if ((rc = memmgr_init(&var_mm, 0)) == TRUE)
+  if ((rc = memmgr_init(&var_mm, 0)) == PBSE_NONE)
     {
     var_list_count = build_var_list(&var_mm, &var_list, job_attr);
     ct = hash_count(job_attr) - var_list_count;
@@ -256,7 +256,7 @@ int encode_DIS_attropl_hash(
     }
     */
 
-  if (rc == FALSE)
+  if (rc != PBSE_NONE)
     {}
   else if ((rc = diswui(sock, ct)))
     {}

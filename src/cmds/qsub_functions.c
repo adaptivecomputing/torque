@@ -4382,7 +4382,11 @@ void main_func(
   int debug = FALSE;
   job_info ji;
   memset(&ji, 0, sizeof(job_info));
-  memmgr_init(&ji.mm, 8192);
+  if (memmgr_init(&ji.mm, 8192) != PBSE_NONE)
+    {
+    printf("Error allocating memory for job submission\n");
+    exit(1);
+    }
 /*   job_data *job_attr = NULL; */
 /*   job_data *res_attr = NULL; */
 /*   job_data *user_attr = NULL; */
@@ -4713,7 +4717,6 @@ void main_func(
                   script_tmp,
                   destination,
                   NULL);
-  memmgr_free(&ji.mm, destination);
 
   if (new_jobname == NULL)
     {
