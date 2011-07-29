@@ -239,10 +239,7 @@
 #include "mom_hierarchy.h"
 #include "mom_server.h"
 #include "mcom.h"
-
-
-/* Global Data Items */
-#include "Long.h"
+#include "pbs_constants.h" /* Long */
 
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
@@ -4194,7 +4191,7 @@ void check_state(
     /* size_fs() is arch-specific method in mom_mach.c */
     sizestr = size_fs(path_spool);  /* returns "free:total" */
 
-    freespace = strTouL(sizestr, NULL, 10);
+    freespace = atoL(sizestr);
 
     if (freespace < TMINSPOOLBLOCKS)
       {

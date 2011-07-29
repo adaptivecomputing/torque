@@ -103,6 +103,9 @@
 #define FILTER_DATA   6
 #define SCRIPT_DATA   7
 
+/* Actually 32 (inc -) but this allows for the NULL at the end */
+#define MAXLONGLEN  33
+
 /* qsub */
 #define X11_CHAR_SIZE 512
 #define MMAX_VERIFY_BYTES 50
@@ -110,6 +113,51 @@
 #define TMPLINE_LEN 4096
 #define TCONST_CFGFILE "torque.cfg"
 
+/* long long is not defined on some systems. */
+#if defined(__hpux)         /* HP-UX */
+typedef long long  Long;
+typedef unsigned long long u_Long;
+#define atoL(nptr)  atol((nptr))
+#define LLD "%lld"
+
+#elif defined(__GNUC__) ||      /* SunOS, FreeBSD, NetBSD, BSDI */\
+          defined(_AIX) && defined(__EXTENDED__)        /* AIX */
+typedef long long  Long;
+typedef unsigned long long u_Long;
+#define atoL(nptr)  atol((nptr))
+#define LLD "%lld"
+
+#elif defined(__sgi) && defined(_LONGLONG) && _MIPS_SZLONG == 32    /* Irix */
+typedef long long  Long;
+typedef unsigned long long u_Long;
+#define atoL(nptr)  atoll((nptr))
+#define LLD "%lld"
+
+#elif defined(sun) && defined(sparc) && defined(LLONG_MAX)  /* Solaris */
+typedef long long  Long;
+typedef unsigned long long u_Long;
+#define atoL(nptr)  atoll((nptr))
+#define LLD "%lld"
+
+#else
+typedef long   Long;
+typedef unsigned long  u_Long;
+#define atoL(nptr)  atol((nptr))
+#define LLD "%ld"
+#endif
+
+/* These should only be used where the only options are TRUE/FALSE
+ * for all other cases use PBSE_NONE and the associated error codes */
+/* 
+#ifdef FALSE
+#  undef FALSE
+#endif
+
+#ifdef TRUE
+#  undef TRUE
+#endif 
+
+enum { FALSE, TRUE };
+*/
 
 #endif /* _PBS_CONSTANTS_H */
-

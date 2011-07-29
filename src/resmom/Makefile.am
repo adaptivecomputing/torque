@@ -1,7 +1,7 @@
 include $(top_srcdir)/buildutils/config.mk
 
 if HAVE_CHECK
-SUBDIRS = @PBS_MACH@ test
+SUBDIRS = test @PBS_MACH@
 else
 SUBDIRS = @PBS_MACH@
 endif

@@ -87,6 +87,7 @@
  */
 
 #include <sys/types.h>
+#include <limits.h>
 
 #ifndef PBS_JOB_H
 #define PBS_JOB_H 1

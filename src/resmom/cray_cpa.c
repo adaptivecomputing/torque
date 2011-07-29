@@ -384,7 +384,7 @@ int CPADestroyPartition(
     return(PBSE_SYSTEM);  /* is this a real error? */
     }
 
-  ParID = strTouL(presc->rs_value.at_val.at_str, NULL, 10);
+  ParID = atoL(presc->rs_value.at_val.at_str);
 
   prd = find_resc_def(svr_resc_def, "cpaadmincookie", svr_resc_size);
 
@@ -398,7 +398,7 @@ int CPADestroyPartition(
     return(PBSE_SYSTEM);  /* is this a real error? */
     }
 
-  AdminCookie = strTouL(presc->rs_value.at_val.at_str, NULL, 10);
+  AdminCookie = atoL(presc->rs_value.at_val.at_str);
 
   if (LOGLEVEL >= 2)
     {

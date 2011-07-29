@@ -1,5 +1,9 @@
 include $(top_srcdir)/buildutils/config.mk
 
+if HAVE_CHECK
+SUBDIRS = test
+endif
+
 AM_CPPFLAGS += -I$(top_srcdir)/src/resmom/@PBS_MACH@
 
 noinst_LIBRARIES = libsite.a

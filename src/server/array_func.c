@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <limits.h> /* INT_MAX */
 
 /* this macro is for systems like BSD4 that do not have O_SYNC in fcntl.h,
  * but do have O_FSYNC! */

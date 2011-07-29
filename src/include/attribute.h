@@ -70,7 +70,7 @@
 #include "pbs_ifl.h"
 #endif
 #ifndef lONG_H
-#include "Long.h"
+#include "pbs_constants.h" /* Long */
 #endif
 /*
  * This header file contains the definitions for attributes

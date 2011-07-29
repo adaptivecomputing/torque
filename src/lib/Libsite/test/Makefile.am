@@ -1,0 +1,1 @@
+SUBDIRS = site_allow_u site_alt_rte site_check_u site_map_usr site_mom_chu site_mom_ckp site_mom_jst

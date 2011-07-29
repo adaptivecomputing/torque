@@ -1,3 +1,4 @@
+#include "license_pbs.h" /* See here for the software license */
 /*
  * Copyright ClusterResources 2008
  *

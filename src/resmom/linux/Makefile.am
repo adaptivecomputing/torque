@@ -1,6 +1,10 @@
 include $(top_srcdir)/buildutils/config.mk
 
 
+if HAVE_CHECK
+SUBDIRS = test
+endif
+
 AM_CPPFLAGS += -DPBS_MOM -DDEMUX=\"$(DEMUX_PATH)\" 
 
 noinst_LIBRARIES = libmommach.a
