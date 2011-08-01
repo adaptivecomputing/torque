@@ -130,15 +130,19 @@ struct threadpool
   int              tp_idle_threads; /* number of currently idle threads */
   int              tp_max_idle_secs; /* number of seconds before a thread terminates */
   int              tp_flags; /* pool state flags */
+  unsigned char    tp_started; /* once this is TRUE begin processing */
   };
 
 
 
 
 extern threadpool_t *request_pool;
-extern int enqueue_threadpool_request(void *(*func)(void *),void *arg);
-extern int initialize_threadpool(threadpool_t **,int,int,int);
-extern void destroy_request_pool();
+
+int  enqueue_threadpool_request(void *(*func)(void *),void *arg);
+int  initialize_threadpool(threadpool_t **,int,int,int);
+void destroy_request_pool();
+void start_request_pool();
+
 
 #endif /* ndef THREADPOOL_H */ 
 

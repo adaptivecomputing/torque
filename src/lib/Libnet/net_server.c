@@ -137,15 +137,17 @@ struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
  * The following data is private to this set of network interface routines.
  */
 
-static int max_connection = PBS_NET_MAX_CONNECTIONS;
-static int num_connections = 0;
-static fd_set *GlobalSocketReadSet = NULL;
+static int       max_connection = PBS_NET_MAX_CONNECTIONS;
+static int       num_connections = 0;
+static fd_set   *GlobalSocketReadSet = NULL;
+pthread_mutex_t *global_sock_read_mutex = NULL;
+
 static void (*read_func[2])(int);
 
-pthread_mutex_t *netrates_mutex= NULL;
-pthread_mutex_t *nc_list_mutex= NULL;
+pthread_mutex_t *netrates_mutex = NULL;
+pthread_mutex_t *nc_list_mutex  = NULL;
 
-pbs_net_t pbs_server_addr;
+pbs_net_t        pbs_server_addr;
 
 /* Private function within this file */
 
@@ -302,6 +304,9 @@ int init_network(
     
     /* initialize global "read" socket FD bitmap */
     GlobalSocketReadSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
+
+    global_sock_read_mutex = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(global_sock_read_mutex,NULL);
     
     type = Primary;
     }
@@ -487,6 +492,8 @@ int wait_request(
   SelectSetSize = sizeof(char) * get_fdset_size();
   SelectSet = (fd_set *)calloc(1,SelectSetSize);
 
+  pthread_mutex_lock(global_sock_read_mutex);
+
   memcpy(SelectSet,GlobalSocketReadSet,SelectSetSize);
  
   /* selset = readset;*/  /* readset is global */
@@ -527,9 +534,13 @@ int wait_request(
 
       log_err(errno,id,"Unable to select sockets to read requests");
 
+      pthread_mutex_unlock(global_sock_read_mutex);
+
       return(-1);
       }  /* END else (errno == EINTR) */
     }    /* END if (n == -1) */
+
+  pthread_mutex_unlock(global_sock_read_mutex);
 
   for (i = 0;(i < max_connection) && (n != 0);i++)
     {
@@ -540,7 +551,6 @@ int wait_request(
       /* this socket has data */
 
       n--;
-
 
       svr_conn[i].cn_lasttime = time((time_t *)0);
 
@@ -561,7 +571,12 @@ int wait_request(
         }
       else
         {
+        pthread_mutex_lock(global_sock_read_mutex);
+
         FD_CLR(i, GlobalSocketReadSet);
+        
+        pthread_mutex_unlock(global_sock_read_mutex);
+
         close_conn(i);
 
         pthread_mutex_unlock(svr_conn[i].cn_mutex);
@@ -576,6 +591,8 @@ int wait_request(
     else
       pthread_mutex_unlock(svr_conn[i].cn_mutex);
     }    /* END for (i) */
+      
+  pthread_mutex_unlock(global_sock_read_mutex);
 
   /* NOTE:  break out if shutdown request received */
 
@@ -741,7 +758,11 @@ void add_conn(
   {
   num_connections++;
 
+  pthread_mutex_lock(global_sock_read_mutex);
+
   FD_SET(sock, GlobalSocketReadSet);
+    
+  pthread_mutex_unlock(global_sock_read_mutex);
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
 
@@ -823,7 +844,9 @@ void close_conn(
 
   if (GlobalSocketReadSet != NULL)
     {
+    pthread_mutex_lock(global_sock_read_mutex);
     FD_CLR(sd, GlobalSocketReadSet);
+    pthread_mutex_unlock(global_sock_read_mutex);
     }
 
   svr_conn[sd].cn_addr = 0;

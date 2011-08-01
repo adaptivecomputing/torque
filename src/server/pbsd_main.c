@@ -276,9 +276,6 @@ int MultiMomMode = 0;
 
 int allow_any_mom = FALSE;
 
-int             min_threads;
-int             max_threads;
-int             thread_idle_time;
 
 
 /*
@@ -1507,24 +1504,6 @@ int main(
       exit(2);
       }
     }
-
-  /* setup the threadpool for use */
-  if (server.sv_attr[SRV_ATR_minthreads].at_flags & ATR_VFLAG_SET) 
-    min_threads = server.sv_attr[SRV_ATR_minthreads].at_val.at_long;
-  else
-    min_threads = DEFAULT_MIN_THREADS;
-
-  if (server.sv_attr[SRV_ATR_maxthreads].at_flags & ATR_VFLAG_SET)
-    max_threads = server.sv_attr[SRV_ATR_maxthreads].at_val.at_long;
-  else
-    max_threads = DEFAULT_MAX_THREADS;
-
-  if (server.sv_attr[SRV_ATR_threadidleseconds].at_flags & ATR_VFLAG_SET)
-    thread_idle_time = server.sv_attr[SRV_ATR_threadidleseconds].at_val.at_long;
-  else
-    thread_idle_time = DEFAULT_THREAD_IDLE;
-      
-  initialize_threadpool(&request_pool,min_threads,max_threads,thread_idle_time);
 
   sprintf(log_buf, "%ld\n", (long)sid);
 

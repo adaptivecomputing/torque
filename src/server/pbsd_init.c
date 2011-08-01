@@ -443,26 +443,29 @@ int pbsd_init(
   int type)  /* type of initialization   */
 
   {
-  int baselen = 0;
-  char basen[MAXPATHLEN+1];
+  static char    id[] = "pbsd_init";
+  int            baselen = 0;
+  char           basen[MAXPATHLEN+1];
 
   struct dirent *pdirent;
-  DIR *dir;
-  int  fd;
-  int  had;
-  int  i;
-  static char id[] = "pbsd_init";
-  char *job_suffix = JOB_FILE_SUFFIX;
-  int  job_suf_len = strlen(job_suffix);
-  int    array_suf_len = strlen(ARRAY_FILE_SUFFIX);
-  int  logtype;
-  char *new_tag = ".new";
-  job *pjob;
-  pbs_queue *pque;
-  char *psuffix;
-  int  rc;
-  int  Index;
-  int  iter;
+  DIR           *dir;
+  int            fd;
+  int            had;
+  int            i;
+  char          *job_suffix = JOB_FILE_SUFFIX;
+  int            job_suf_len = strlen(job_suffix);
+  int            array_suf_len = strlen(ARRAY_FILE_SUFFIX);
+  int            logtype;
+  char          *new_tag = ".new";
+  job           *pjob;
+  pbs_queue     *pque;
+  char          *psuffix;
+  int            rc;
+  int            Index;
+  int            iter;
+  int            min_threads;
+  int            max_threads;
+  int            thread_idle_time;
 
   struct stat statbuf;
   char *suffix_slash = "/";
@@ -531,6 +534,24 @@ int pbsd_init(
     }
 #endif /* not _CRAY */
 #endif /* DEBUG */
+  
+  /* setup the threadpool for use */
+  if (server.sv_attr[SRV_ATR_minthreads].at_flags & ATR_VFLAG_SET) 
+    min_threads = server.sv_attr[SRV_ATR_minthreads].at_val.at_long;
+  else
+    min_threads = DEFAULT_MIN_THREADS;
+
+  if (server.sv_attr[SRV_ATR_maxthreads].at_flags & ATR_VFLAG_SET)
+    max_threads = server.sv_attr[SRV_ATR_maxthreads].at_val.at_long;
+  else
+    max_threads = DEFAULT_MAX_THREADS;
+
+  if (server.sv_attr[SRV_ATR_threadidleseconds].at_flags & ATR_VFLAG_SET)
+    thread_idle_time = server.sv_attr[SRV_ATR_threadidleseconds].at_val.at_long;
+  else
+    thread_idle_time = DEFAULT_THREAD_IDLE;
+      
+  initialize_threadpool(&request_pool,min_threads,max_threads,thread_idle_time);
 
   /* 1. set up to catch or ignore various signals */
 
@@ -1379,9 +1400,12 @@ int pbsd_init(
   close(fd);
 
   server.sv_trackmodifed = 0;
-
+  
   /* set work task to periodically save the tracking records */
   set_task(WORK_Timed, (long)(time_now + PBS_SAVE_TRACK_TM), track_save, NULL, FALSE);
+
+  /* allow the threadpool to start processing */
+  start_request_pool();
 
   /* SUCCESS */
   return(0);

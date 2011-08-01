@@ -81,6 +81,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <time.h>
+#include <unistd.h>
 #include "threadpool.h"
 #include "utils.h"
 #include "log.h"
@@ -237,6 +238,17 @@ static void *work_thread(
 
     expired = FALSE;
     request_pool->tp_idle_threads++;
+  
+    /* stay asleep until the pool is started */
+    while (request_pool->tp_started == FALSE)
+      {
+      pthread_mutex_unlock(&request_pool->tp_mutex);
+      
+      sleep(1);
+      
+      pthread_mutex_lock(&request_pool->tp_mutex);
+      }
+
 
     while ((request_pool->tp_first == NULL) &&
            (!(request_pool->tp_flags & POOL_DESTROY)))
@@ -346,6 +358,7 @@ int initialize_threadpool(
   (*pool)->tp_min_threads = min_threads;
   (*pool)->tp_max_threads = max_threads;
   (*pool)->tp_max_idle_secs = max_idle_time;
+  (*pool)->tp_started = FALSE;
   
   /* initialize attributes */
   pthread_attr_init(&(*pool)->tp_attr);
@@ -445,7 +458,22 @@ void destroy_request_pool(void)
     request_pool->tp_first = work->next;
     free(work);
     }
-  }
+  } /* END destroy_request_pool() */
 
 
+
+
+void start_request_pool()
+
+  {
+  pthread_mutex_lock(&request_pool->tp_mutex);
+
+  request_pool->tp_started = TRUE;
+
+  pthread_mutex_unlock(&request_pool->tp_mutex);
+  } /* END start_request_pool() */
+
+
+
+/* END u_threadpool.c */
 
