@@ -1,7 +1,7 @@
 
 PROG_ROOT = ../..
 
-AM_CFLAGS = -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libu_memmgr.la
 

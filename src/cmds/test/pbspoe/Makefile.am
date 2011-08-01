@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage -DPBSPD=\"$(bindir)/pbspd\"
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage -DPBSPD=\"$(bindir)/pbspd\"
 
 lib_LTLIBRARIES = libpbspoe.la
 
