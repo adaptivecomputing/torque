@@ -246,7 +246,8 @@ void req_runjob(
         pa->ai_qs.slot_limit,
         pa->ai_qs.jobs_running);
       
-      req_reject(PBSE_IVALREQ,0,preq,NULL,log_buffer);
+      if (preq != NULL)
+        req_reject(PBSE_IVALREQ,0,preq,NULL,log_buffer);
 
       return;
       }
