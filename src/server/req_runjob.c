@@ -247,7 +247,8 @@ void *req_runjob(
         pa->ai_qs.slot_limit,
         pa->ai_qs.jobs_running);
       
-      req_reject(PBSE_IVALREQ,0,preq,NULL,log_buf);
+      if (preq != NULL)
+        req_reject(PBSE_IVALREQ,0,preq,NULL,log_buf);
 
       pthread_mutex_unlock(pjob->ji_mutex);
       pthread_mutex_unlock(pa->ai_mutex);

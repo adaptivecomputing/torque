@@ -1,6 +1,6 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
-3.1.0
+4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 
       customizable using min_threads and max_threads, and idle time before
       exiting can be set using thread_idle_seconds.
@@ -41,6 +41,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       checkpointed job
   b - Applied patch submitted by Eric Roman for resmom/Makefile.am (Bugzilla #147)
   b - Fix for adding -lcr for BLCR makefiles (Bugzilla #146)
+  c - fix a potential segfault when using asynchronous runjob with an array slot limit
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it
