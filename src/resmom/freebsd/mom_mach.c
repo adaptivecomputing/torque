@@ -141,6 +141,7 @@
 #include "pbs_job.h"
 #include "mom_mach.h"
 #include "resmon.h"
+#include "utils.h"
 #include "../rm_dep.h"
 
 #ifndef TRUE
@@ -2511,7 +2512,7 @@ quota(struct rm_attribute *attrib)
 
   if ((uid = (uid_t)atoi(attrib->a_value)) == 0)
     {
-    if ((pw = getpwnam(attrib->a_value)) == NULL)
+    if ((pw = getpwnam_ext(attrib->a_value)) == NULL)
       {
       sprintf(log_buffer,
               "user not found: %s", attrib->a_value);

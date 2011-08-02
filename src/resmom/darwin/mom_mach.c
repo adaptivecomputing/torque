@@ -157,6 +157,7 @@
 #include "mom_mach.h"
 #include "resmon.h"
 #include "mom_func.h"
+#include "utils.h"
 #include "../rm_dep.h"
 
 #ifndef TRUE
@@ -262,8 +263,8 @@ static  int  nncpus = 0;
 static  int  gpagesize;
 static  int  cputype;
 #if defined HAVE_MACH_SHARED_REGION_H
-static  unsigned long  sharedregionbase; 
-static  unsigned int  sharedregionsize; 
+static  unsigned long  sharedregionbase;
+static  unsigned int  sharedregionsize;
 #endif
 
 
@@ -311,7 +312,7 @@ dep_initialize(void)
     default:
       sharedregionbase = SHARED_REGION_BASE_I386; /* i386 is current standard */
       sharedregionsize = SHARED_REGION_SIZE_I386; /* i386 is current standard */
-    } 
+    }
 #endif
 
   return;
@@ -821,7 +822,7 @@ mom_set_limits(
         if (set_mode == SET_LIMIT_SET)
           {
           retval = getsize(pres, &value);
-  
+
           if (retval != PBSE_NONE)
             return (error(pname, retval));
 
@@ -829,7 +830,7 @@ mom_set_limits(
             return (error(pname, PBSE_BADATVAL));
 
           if ((mem_limit == 0) || (value < mem_limit))
-            mem_limit = value;  
+            mem_limit = value;
           }
         }
       }
@@ -3152,7 +3153,7 @@ static char *quota(
 
   if ((uid = (uid_t)atoi(attrib->a_value)) == 0)
     {
-    if ((pw = getpwnam(attrib->a_value)) == NULL)
+    if ((pw = getpwnam_ext(attrib->a_value)) == NULL)
       {
       sprintf(log_buffer, "user not found: %s", attrib->a_value);
       log_err(-1, id, log_buffer);

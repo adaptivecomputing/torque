@@ -112,6 +112,7 @@
 #include "log.h"
 #include "mom_mach.h"
 #include "resmon.h"
+#include "utils.h"
 #include "../rm_dep.h"
 
 /*
@@ -667,7 +668,7 @@ mom_set_limits(
         if (set_mode == SET_LIMIT_SET)
           {
           retval = getsize(pres, &value);
-  
+
           if (retval != PBSE_NONE)
             return (error(pname, retval));
 
@@ -2435,7 +2436,7 @@ valid_user(struct rm_attribute *attrib)
     return NULL;
     }
 
-  p = getpwnam(attrib -> a_value);
+  p = getpwnam_ext(attrib -> a_value);
 
   if (p)
     {

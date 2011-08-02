@@ -287,7 +287,7 @@ static pid_t fork_to_user(
     }
   else
     {
-    if ((pwdp = getpwnam(preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
+    if ((pwdp = getpwnam_ext(preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
       {
       if (MOMUNameMissing[0] == '\0')
         strncpy(MOMUNameMissing, preq->rq_ind.rq_cpyfile.rq_user, 64);
@@ -1275,8 +1275,8 @@ void req_gpuctrl(
   if (rc)
     {
     reply_ack(preq);
-    
-    /* 
+
+    /*
      * if we were successful changing the mode then we need to update the gpu
      * statuses
      */

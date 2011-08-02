@@ -141,6 +141,7 @@
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "resmon.h"
+#include "utils.h"
 #include "../rm_dep.h"
 
 #ifndef TRUE
@@ -404,7 +405,7 @@ cput_sum(job *pjob)
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buffer,"proc_array loop start - jobid = %s", 
+    sprintf(log_buffer,"proc_array loop start - jobid = %s",
       pjob->ji_qs.ji_jobid);
 
     log_record(PBSEVENT_DEBUG,0,id,log_buffer);
@@ -421,13 +422,13 @@ cput_sum(job *pjob)
     nps++;
 
     cputime += pp->ki_runtime / 1000000;
-    
+
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buffer,"%s: session=%d pid=%d cputime=%llu",
-        id, 
-        sess_tbl[i], 
-        pp->ki_pid, 
+        id,
+        sess_tbl[i],
+        pp->ki_pid,
         (long long unsigned)pp->ki_runtime / 1000000);
 
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
@@ -1152,9 +1153,9 @@ kill_task(task *ptask, int sig, int pg)
     if (LOGLEVEL >= 5)
       {
       sprintf(log_buffer,"%s: killing pid %d task %d with sig %d",
-        id, 
-        pp->ki_pid, 
-        ptask->ti_qs.ti_task, 
+        id,
+        pp->ki_pid,
+        ptask->ti_qs.ti_task,
         sig);
 
       log_record(
@@ -1163,7 +1164,7 @@ kill_task(task *ptask, int sig, int pg)
         ptask->ti_job->ji_qs.ji_jobid,
         log_buffer);
       }
-      
+
     (void)kill(pp->ki_pid, sig);
 
     ++ct;
@@ -1277,7 +1278,7 @@ pid_t jobid;
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"proc_array loop start - jobid = %d", 
+    sprintf(log_buffer,"proc_array loop start - jobid = %d",
       jobid);
 
     log_record(PBSEVENT_DEBUG,0,id,log_buffer);
@@ -1505,7 +1506,7 @@ pid_t jobid;
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer,"proc_array loop start - jobid = %d", 
+    sprintf(log_buffer,"proc_array loop start - jobid = %d",
       jobid);
 
     log_record(PBSEVENT_DEBUG,0,id,log_buffer);
@@ -2361,7 +2362,7 @@ quota(struct rm_attribute *attrib)
 
   if ((uid = (uid_t)atoi(attrib->a_value)) == 0)
     {
-    if ((pw = getpwnam(attrib->a_value)) == NULL)
+    if ((pw = getpwnam_ext(attrib->a_value)) == NULL)
       {
       sprintf(log_buffer,
               "user not found: %s", attrib->a_value);

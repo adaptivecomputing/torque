@@ -193,6 +193,7 @@ int    ForceServerUpdate = 0;
 int    verbositylevel = 0;
 double cputfactor = 1.00;
 unsigned int default_server_port = 0;
+
 int    exiting_tasks = 0;
 float  ideal_load_val = -1.0;
 int    internal_state = 0;
@@ -1347,7 +1348,7 @@ static char *validuser(
     return(NULL);
     }
 
-  p = getpwnam(attrib->a_value);
+  p = getpwnam_ext(attrib->a_value);
 
   if (p != NULL)
     {
@@ -3222,7 +3223,7 @@ static unsigned long setspoolasfinalname(
   }  /* END setspoolasfinalname() */
 
 
-/******************************************************** 
+/********************************************************
  *  jobstarter - set the name of the job starter program
  *  to the value given in the mom config file
  *
@@ -5264,7 +5265,7 @@ int rm_request(
       flush_io(iochan);
 
       close_io(iochan);
-      
+
       mom_lock(lockfds, F_UNLCK);
       close(lockfds);
 

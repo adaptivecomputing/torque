@@ -22,6 +22,7 @@
 #include "attribute.h"
 #include "server_limits.h"
 #include "pbs_job.h"
+#include "utils.h"
 
 #define MODNAME "pam_pbssimpleauth"
 
@@ -121,7 +122,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     return PAM_SERVICE_ERR;
     }
 
-  user_pwd = getpwnam(username);
+  user_pwd = getpwnam_ext(username);
 
   /* no early returns from this point on because we need to free ubuf */
 

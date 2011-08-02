@@ -108,6 +108,7 @@
 
 #include <pwd.h>
 #include "mom_func.h"
+#include "utils.h"
 #include "pbs_nodes.h"
 #include "utils.h"
 
@@ -746,7 +747,7 @@ void req_mvjobfile(
     return;
     }
 
-  if ((pwd = getpwnam(pj->ji_wattr[JOB_ATR_euser].at_val.at_str)) == NULL)
+  if ((pwd = getpwnam_ext(pj->ji_wattr[JOB_ATR_euser].at_val.at_str)) == NULL)
     {
     /* FAILURE */
     req_reject(PBSE_MOMREJECT, 0, preq, NULL, "password lookup failed");
