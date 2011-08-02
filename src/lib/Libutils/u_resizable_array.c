@@ -219,6 +219,9 @@ int insert_thing(
   ra->slots[ra->last].next = rc;
   ra->last = rc;
 
+  /* update the new item's next index */
+  ra->slots[rc].next = ALWAYS_EMPTY_INDEX;
+
   /* increase the count */
   ra->num++;
 
@@ -516,6 +519,8 @@ resizable_array *initialize_resizable_array(
 
   ra->slots = malloc(amount);
   memset(ra->slots,0,amount);
+
+  ra->slots[ALWAYS_EMPTY_INDEX].next = ra->next_slot;
 
   return(ra);
   } /* END initialize_resizable_array() */

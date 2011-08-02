@@ -191,8 +191,8 @@ void *req_runjob(
 
   int                   setneednodes;
 
-  char                  failhost[1024];
-  char                  emsg[1024];
+  char                  failhost[MAXLINE];
+  char                  emsg[MAXLINE];
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* chk_job_torun will extract job id and assign hostlist if specified */
@@ -263,7 +263,8 @@ void *req_runjob(
 
   rc = svr_startjob(pjob, preq, failhost, emsg);
 
-  if ((rc != 0) && (preq != NULL))
+  if ((rc != 0) && 
+      (preq != NULL))
     {
     free_nodes(pjob);
 
@@ -1227,7 +1228,7 @@ void finish_sendmom(
         {
         if (preq != NULL)
           {
-          char tmpLine[1024];
+          char tmpLine[MAXLINE];
           
           if (preq->rq_reply.brp_code == PBSE_JOBEXIST)
             {

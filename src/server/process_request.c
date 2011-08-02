@@ -348,7 +348,7 @@ void process_request(
     }
   else
     {
-    LOG_EVENT(
+    log_event(
       PBSEVENT_SYSTEM,
       PBS_EVENTCLASS_REQUEST,
       "process_req",
@@ -1004,7 +1004,7 @@ static void close_client(
 
 struct batch_request *alloc_br(
 
-        int type)
+  int type)
 
   {
 

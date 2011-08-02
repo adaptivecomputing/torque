@@ -7,10 +7,43 @@
 
 #include "pbs_error.h"
 #include "scaffolding.h"
-START_TEST(test_one)
+  
+char *a[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i" };
+
+/* check that arrays are initialized and resized correctly */
+START_TEST(initialize_and_resize)
   {
   int rc = 0;
-  return rc;
+  int start_size = 2;
+
+  /* check initial values */
+  resizable_array *ra = intitialize_resizable_array(start_size);
+
+  fail_unless(ra->num == 0, "initial number for resizable array should be 0");
+  fail_unless(ra->max == start_size, "max initialized incorrectly");
+  fail_unless(ra->last == ALWAYS_EMPTY_INDEX, "last used index initialized incorrectly");
+  fail_unless(ra->next_slot == 1, "next slot should be set to 1 initially");
+  fail_unless(ra->slots[ALWAYS_EMPTY_INDEX].next != ra->next_slot, "initial next_slot is wrong");
+
+  /* should not resize here */
+  rc = insert_thing(ra, a[1]);
+
+  fail_unless(rc >= 0, "insert_thing failed");
+  fail_unless(ra->num == 1, "number of elements is incorrect");
+  fail_unless(ra->max == start_size, "prematurely resized the array");
+  fail_unless(ra->last == 1, "last index incorrect after first insert");
+  fail_unless(ra->next_slot == 2, "next_slot updated incorrectly");
+  fail_unless(ra->slots[rc].next == ALWAYS_EMPTY_INDEX, "new slot not pointing to the empty index");
+
+  /* should resize here */
+  rc = insert_thing(ra, a[2]);
+
+  fail_unless(rc == 0, "insert_thing failed");
+  fail_unless(ra->max == start_size * 2, "array should have resized but didn't");
+  fail_unless(ra->num == 2, "number of elements is incorrect");
+  fail_unless(ra->last == 2, "last index incorrect after two inserts");
+  fail_unless(ra->next_slot == 3, "next_slot updated incorrectly");
+  fail_unless(ra->slots[rc].next == ALWAYS_EMPTY_INDEX, "new slot not pointing to the empty index");
   }
 END_TEST
 

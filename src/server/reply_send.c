@@ -176,8 +176,9 @@ static int dis_reply_write(
   struct batch_reply *preply)  /* I */
 
   {
-  int  rc;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
+  static char *id = "dis_reply_write";
+  int          rc;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* setup for DIS over tcp */
 
@@ -190,7 +191,7 @@ static int dis_reply_write(
     {
     sprintf(log_buf, "DIS reply failure, %d", rc);
 
-    LOG_EVENT(PBSEVENT_SYSTEM,PBS_EVENTCLASS_REQUEST,"dis_reply_write",log_buf);
+    LOG_EVENT(PBSEVENT_SYSTEM,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
     /* don't need to get the lock here because we already have it from process request */
     close_conn(sfds);
@@ -356,7 +357,7 @@ void reply_free(
     if (prep->brp_un.brp_txt.brp_str)
       {
       (void)free(prep->brp_un.brp_txt.brp_str);
-      prep->brp_un.brp_txt.brp_str = (char *)0;
+      prep->brp_un.brp_txt.brp_str = NULL;
       prep->brp_un.brp_txt.brp_txtlen = 0;
       }
 
@@ -428,17 +429,17 @@ void req_reject(
   if ((HostName != NULL) && (*HostName != '\0'))
     {
     snprintf(msgbuf, sizeof(msgbuf), "%s REJHOST=%s",
-             msgbuf2,
-             HostName);
-
+      msgbuf2,
+      HostName);
+    
     snprintf(msgbuf2, sizeof(msgbuf2), "%s", msgbuf);
     }
 
   if ((Msg != NULL) && (*Msg != '\0'))
     {
     snprintf(msgbuf, sizeof(msgbuf), "%s MSG=%s",
-             msgbuf2,
-             Msg);
+      msgbuf2,
+      Msg);
 
     /* NOTE: Don't need this last snprintf() unless another message is concatenated. */
     }
