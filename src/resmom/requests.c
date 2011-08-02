@@ -1752,11 +1752,7 @@ void req_modifyjob(
           preq->rq_user,
           preq->rq_host);
 
-  LOG_EVENT(
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
   /* SUCCESS */
 
@@ -2223,7 +2219,7 @@ void req_signaljob(
     {
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_SUSPEND)
       {
-      LOG_EVENT(
+      log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
@@ -2298,11 +2294,7 @@ void req_signaljob(
     sprintf(log_buffer, "job recycled into exiting on SIGNULL/KILL from substate %d",
       pjob->ji_qs.ji_substate);
 
-    LOG_EVENT(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
@@ -2437,11 +2429,7 @@ void encode_flagged_attrs(
         sprintf(log_buffer, "encoding \"send flagged\" attr: %s",
                 ad->at_name);
 
-        LOG_EVENT(
-          PBSEVENT_DEBUG,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
         }
 
       ad->at_encode(
@@ -2826,11 +2814,7 @@ static int del_files(
       sprintf(log_buffer, "cannot stat %s",
               path);
 
-      LOG_EVENT(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_REQUEST,
-        id,
-        log_buffer);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, id, log_buffer);
       }
 
     /*
@@ -2857,16 +2841,12 @@ static int del_files(
         if (errno != ENOENT)
           {
           sprintf(log_buffer, "Unable to delete file %s for user %s, error = %d %s",
-                  path,
-                  preq->rq_ind.rq_cpyfile.rq_user,
-                  errno,
-                  pbs_strerror(errno));
+            path,
+            preq->rq_ind.rq_cpyfile.rq_user,
+            errno,
+            pbs_strerror(errno));
 
-          LOG_EVENT(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_REQUEST,
-            id,
-            log_buffer);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, id, log_buffer);
 
           add_bad_list(pbadfile, log_buffer, 2);
 
@@ -2879,14 +2859,10 @@ static int del_files(
       else
         {
         sprintf(log_buffer, "Deleted file %s for user %s",
-                path,
-                preq->rq_ind.rq_cpyfile.rq_user);
+          path,
+          preq->rq_ind.rq_cpyfile.rq_user);
 
-        LOG_EVENT(
-          PBSEVENT_DEBUG,
-          PBS_EVENTCLASS_FILE,
-          id,
-          log_buffer);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_FILE, id, log_buffer);
 
 #endif  /* DEBUG */
         }
@@ -2974,7 +2950,7 @@ retry:
     {
     /* FAILURE - cannot report file to server */
 
-    LOG_EVENT(
+    log_event(
       PBSEVENT_ERROR,
       PBS_EVENTCLASS_REQUEST,
       id,
@@ -3309,12 +3285,7 @@ void req_cpyfile(
       sprintf(log_buffer, "copy file request is corrupt");
       }
 
-    LOG_EVENT(
-
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      preq->rq_ind.rq_cpyfile.rq_jobid,
-      log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, preq->rq_ind.rq_cpyfile.rq_jobid, log_buffer);
     }
 
   rc = (int)fork_to_user(preq, TRUE, HDir, EMsg);

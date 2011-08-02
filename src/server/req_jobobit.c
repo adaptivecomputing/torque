@@ -870,7 +870,7 @@ int handle_returnstd(
         strcat(namebuf2, ".SAV");
         if (link(namebuf, namebuf2) == -1)
           {
-          LOG_EVENT(
+          log_event(
             PBSEVENT_ERROR | PBSEVENT_SECURITY,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
@@ -892,7 +892,7 @@ int handle_returnstd(
         strcat(namebuf2, ".SAV");
         if (link(namebuf, namebuf2) == -1)
           {
-          LOG_EVENT(
+          log_event(
             PBSEVENT_ERROR | PBSEVENT_SECURITY,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
@@ -1134,7 +1134,7 @@ int handle_stageout(
       {
       if (link(namebuf2, namebuf) == -1)
         {
-        LOG_EVENT(
+        log_event(
           PBSEVENT_ERROR | PBSEVENT_SECURITY,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
@@ -1155,7 +1155,7 @@ int handle_stageout(
       {    
       if (link(namebuf2, namebuf) == -1)
         {
-        LOG_EVENT(
+        log_event(
           PBSEVENT_ERROR | PBSEVENT_SECURITY,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,

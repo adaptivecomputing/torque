@@ -191,7 +191,7 @@ static int dis_reply_write(
     {
     sprintf(log_buf, "DIS reply failure, %d", rc);
 
-    LOG_EVENT(PBSEVENT_SYSTEM,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
     /* don't need to get the lock here because we already have it from process request */
     close_conn(sfds);

@@ -284,7 +284,7 @@ void mom_cleanup_checkpoint_hold(
 
       if (LOGLEVEL >= 7)
         {
-        LOG_EVENT(
+        log_event(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
@@ -436,7 +436,7 @@ int modify_job(
 
       job_save(pjob, SAVEJOB_QUICK, 0);
 
-      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
 
       /* remove checkpoint restart file if there is one */
       

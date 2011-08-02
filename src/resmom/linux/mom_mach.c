@@ -172,7 +172,7 @@ extern char mom_host[];
 extern time_t   time_now;
 
 extern  int     LOGLEVEL;
-extern  char    PBSNodeMsgBuf[1024];
+extern  char    PBSNodeMsgBuf[MAXLINE];
 
 #define TBL_INC 200            /* initial proc table */
 #define PMEMBUF_SIZE  2048
@@ -360,8 +360,8 @@ proc_stat_t *get_proc_stat(
 
   {
   static proc_stat_t ps;
-  static char  path[1024];
-  static char  readbuf[4096];
+  static char  path[MAXLINE];
+  static char  readbuf[MAXLINE << 2];
   static char          *lastbracket;
   FILE                 *fd;
   unsigned long         jstarttime;  /* number of jiffies since OS start time when process started */
@@ -2696,17 +2696,14 @@ int kill_task(
 
     task_save(ptask);
 
-    sprintf(log_buffer, "%s: job %s adopted task %d was marked as terminated because task's PID was no longer found, sid=%d",
-            id,
-            ptask->ti_job->ji_qs.ji_jobid,
-            ptask->ti_qs.ti_task,
-            ptask->ti_qs.ti_sid);
-
-    LOG_EVENT(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
+    sprintf(log_buffer, 
+      "%s: job %s adopted task %d was marked as terminated because task's PID was no longer found, sid=%d",
+      id,
       ptask->ti_job->ji_qs.ji_jobid,
-      log_buffer);
+      ptask->ti_qs.ti_task,
+      ptask->ti_qs.ti_sid);
+
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, ptask->ti_job->ji_qs.ji_jobid, log_buffer);
     }
 
   if ((NumProcessesFound == 0) && (ct <= 0))
@@ -2725,17 +2722,14 @@ int kill_task(
 
     if (LOGLEVEL >= 5)
       {
-      sprintf(log_buffer, "%s: could not send signal %d to task %d (session %d)--no process was found with this session ID (marking task as killed)!",
-              id,
-              sig,
-              ptask->ti_qs.ti_task,
-              sesid);
+      sprintf(log_buffer,
+        "%s: could not send signal %d to task %d (session %d)--no process was found with this session ID (marking task as killed)!",
+        id,
+        sig,
+        ptask->ti_qs.ti_task,
+        sesid);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        ptask->ti_job->ji_qs.ji_jobid,
-        log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_job->ji_qs.ji_jobid, log_buffer);
       }
     }
 
@@ -2752,8 +2746,7 @@ int kill_task(
  * Clean up everything related to polling.
  */
 
-int
-mom_close_poll(void)
+int mom_close_poll(void)
 
   {
   char *id = "mom_close_poll";
@@ -2796,8 +2789,7 @@ mom_close_poll(void)
  * @returns CST values as described in resmon.h.
  */
 
-int
-mom_does_checkpoint(void)
+int mom_does_checkpoint(void)
   {
   return(CST_BLCR); /* Use the BLCR checkpointing system. */
   }
@@ -4288,14 +4280,10 @@ void scan_non_child_tasks(void)
         if (LOGLEVEL >= 7)
           {
           sprintf(log_buffer, "marking task %d as TI_STATE_RUNNING was %d",
-              task->ti_qs.ti_task,
-              task->ti_qs.ti_status);
+            task->ti_qs.ti_task,
+            task->ti_qs.ti_status);
 
-          LOG_EVENT(
-            PBSEVENT_DEBUG,
-            PBS_EVENTCLASS_JOB,
-            job->ji_qs.ji_jobid,
-            log_buffer);
+          log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job->ji_qs.ji_jobid, log_buffer);
           }
         task->ti_qs.ti_status = TI_STATE_RUNNING;
         }
@@ -4353,20 +4341,16 @@ void scan_non_child_tasks(void)
 
       if (!found)
         {
-        char buf[1024];
+        char buf[MAXLINE];
 
         extern int exiting_tasks;
 
         sprintf(buf, "found exited session %d for task %d in job %s",
-                task->ti_qs.ti_sid,
-                task->ti_qs.ti_task,
-                job->ji_qs.ji_jobid);
+          task->ti_qs.ti_sid,
+          task->ti_qs.ti_task,
+          job->ji_qs.ji_jobid);
 
-        log_event(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          id,
-          buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, buf);
 
         task->ti_qs.ti_exitstat = 0;  /* actually unknown */
         task->ti_qs.ti_status = TI_STATE_EXITED;
@@ -4377,16 +4361,13 @@ void scan_non_child_tasks(void)
         if (first_time)
           {
           job->ji_flags |= MOM_JOB_RECOVERY;
+
           if (LOGLEVEL >= 7)
             {
             sprintf(buf, "marking job as MOM_JOB_RECOVERY for task %d",
-                task->ti_qs.ti_task);
+              task->ti_qs.ti_task);
 
-            LOG_EVENT(
-              PBSEVENT_DEBUG,
-              PBS_EVENTCLASS_JOB,
-              job->ji_qs.ji_jobid,
-              buf);
+            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job->ji_qs.ji_jobid, buf);
             }
           }
 #endif    /* USESAVEDRESOURCES */

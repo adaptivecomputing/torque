@@ -274,7 +274,7 @@ void mom_process_request(
             pbse_to_txt(PBSE_BADHOST),
             get_connectaddr(sfds,FALSE));
 
-    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buffer);
 
     snprintf(tmpLine, sizeof(tmpLine), "cannot determine hostname for connection from %lu",
              get_connectaddr(sfds,FALSE));
@@ -294,7 +294,7 @@ void mom_process_request(
       request->rq_host,
       sfds);
 
-    LOG_EVENT(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", log_buffer);
+    log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", log_buffer);
     }
 
   /* is the request from a host acceptable to the server */

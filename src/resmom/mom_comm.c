@@ -824,11 +824,7 @@ int send_sisters(
             pjob->ji_qs.ji_jobid,
             com);
 
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, id, log_buffer);
     }
 
   if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
@@ -844,14 +840,11 @@ int send_sisters(
 
   if (com == IM_ABORT_JOB)
     {
-    snprintf(log_buffer, 1024, "sending ABORT to sisters for job %s",
-             pjob->ji_qs.ji_jobid);
+    snprintf(log_buffer, sizeof(log_buffer),
+      "sending ABORT to sisters for job %s",
+      pjob->ji_qs.ji_jobid);
 
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, id, log_buffer);
     }
 
   if (using_radix == TRUE)
@@ -2229,11 +2222,7 @@ int im_join_job_as_sister(
     {
     /* log_buffer populated in check_pwd() */
     
-    LOG_EVENT(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
     
     job_purge(pjob);
     
@@ -2248,7 +2237,7 @@ int im_join_job_as_sister(
     {
     if (!TMakeTmpDir(pjob, namebuf))
       {
-      LOG_EVENT(
+      log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
@@ -3001,7 +2990,7 @@ int handle_im_replies(
             timeval_subtract(&result, &tv, tv_attr);
             sprintf(log_buffer, "%s: total wire-up time for job %ld.%ld", 
               id, result.tv_sec, result.tv_usec);
-            LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
               log_buffer);
             }          
           }
@@ -3010,7 +2999,7 @@ int handle_im_replies(
         
         if (LOGLEVEL >= 2)
           {
-          LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
             "im_request: all sisters have reported in, launching job locally");
           }
         
@@ -3024,7 +3013,7 @@ int handle_im_replies(
           sprintf(log_buffer, "%s:joinjob response received from node %s, (still waiting for %s)",
             id, netaddr(addr), np->hn_host);
           
-          LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
             log_buffer);
           }
         }
@@ -4086,7 +4075,7 @@ int im_abort_job(
         netaddr(addr),
         jobid);
       
-      LOG_EVENT( PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
+      log_event( PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
       }
     
     return(IM_FINISHED);
@@ -8181,7 +8170,7 @@ int get_job_struct(
                 PMOMCommand[MIN(command,IM_MAX)],
                 netaddr(addr));
 
-        LOG_EVENT(
+        log_event(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
           jobid,
@@ -8198,11 +8187,7 @@ int get_job_struct(
                 PMOMCommand[MIN(command,IM_MAX)],
                 netaddr(addr));
 
-        LOG_EVENT(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          jobid,
-          log_buffer);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
         }
 
       /* should local job be purged, ie 'job_purge(pjob);' ? */

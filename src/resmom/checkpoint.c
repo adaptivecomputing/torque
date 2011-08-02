@@ -1269,11 +1269,7 @@ int mom_checkpoint_job(
                 errno,
                 sesid);
 
-        LOG_EVENT(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
         return(errno);
         }
@@ -1329,11 +1325,7 @@ fail:
           errno,
           sesid);
 
-  LOG_EVENT(
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
   /*
   ** See if any checkpoints worked and abort is set.
@@ -2003,11 +1995,7 @@ int mom_restart_job(job  *pjob)
   sprintf(log_buffer, "Restarted %d tasks",
           tcount);
 
-  LOG_EVENT(
-    PBSEVENT_JOB,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buffer);
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
   return(PBSE_NONE);
 

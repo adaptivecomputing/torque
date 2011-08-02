@@ -2494,7 +2494,7 @@ void set_chkpt_deflt(
           pque->qu_qs.qu_name,
           pque->qu_attr[QE_ATR_checkpoint_defaults].at_val.at_str);
 
-        LOG_EVENT(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
         }
       }
     }

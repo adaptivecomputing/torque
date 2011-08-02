@@ -454,7 +454,7 @@ void scan_for_exiting(void)
 
         pjob->ji_qs.ji_un.ji_momt.ji_exitstat = ptask->ti_qs.ti_exitstat;
 
-        LOG_EVENT(
+        log_event(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
@@ -507,7 +507,7 @@ void scan_for_exiting(void)
 
           if (LOGLEVEL >= 3)
             {
-            LOG_EVENT(
+            log_event(
               PBSEVENT_JOB,
               PBS_EVENTCLASS_JOB,
               pjob->ji_qs.ji_jobid,
@@ -524,14 +524,11 @@ void scan_for_exiting(void)
           }
         else if (LOGLEVEL >= 3)
           {
-          snprintf(log_buffer, 1024, "%s: master task has exited - sent kill job request to %d sisters",
-                   id, NumSisters);
+          snprintf(log_buffer, sizeof(log_buffer),
+            "%s: master task has exited - sent kill job request to %d sisters",
+            id, NumSisters);
 
-          LOG_EVENT(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buffer);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
           }
         }    /* END if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK) */
 
@@ -612,11 +609,7 @@ void scan_for_exiting(void)
 
       if (LOGLEVEL >= 3)
         {
-        LOG_EVENT(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "task is dead");
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "task is dead");
         }
 
       task_save(ptask);
@@ -649,14 +642,11 @@ void scan_for_exiting(void)
       {
       if (LOGLEVEL >= 3)
         {
-        snprintf(log_buffer, 1024, "%s:job is in non-exiting substate %s, no obit sent at this time",
-                 id, PJobSubState[pjob->ji_qs.ji_substate]);
+        snprintf(log_buffer, sizeof(log_buffer),
+          "%s:job is in non-exiting substate %s, no obit sent at this time",
+          id, PJobSubState[pjob->ji_qs.ji_substate]);
     
-        LOG_EVENT(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
         }
 
       continue;
@@ -879,11 +869,7 @@ int post_epilogue(
     sprintf(log_buffer, "preparing obit message for job %s",
             pjob->ji_qs.ji_jobid);
 
-    LOG_EVENT(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buffer);
     }
 
   /* open new connection - register obit_reply as handler */
@@ -935,11 +921,7 @@ int post_epilogue(
 
     sprintf(log_buffer, "cannot allocate memory for obit message");
 
-    LOG_EVENT(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buffer);
 
     return(1);
     }
@@ -965,14 +947,11 @@ int post_epilogue(
     {
     /* FAILURE */
 
-    sprintf(log_buffer, "cannot create obit message for job %s",
-            pjob->ji_qs.ji_jobid);
+    sprintf(log_buffer, 
+      "cannot create obit message for job %s",
+      pjob->ji_qs.ji_jobid);
 
-    LOG_EVENT(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buffer);
 
     close(sock);
 
@@ -1501,7 +1480,7 @@ void obit_reply(
 
           if (LOGLEVEL >= 4)
             {
-            LOG_EVENT(
+            log_event(
               PBSEVENT_ERROR,
               PBS_EVENTCLASS_JOB,
               pjob->ji_qs.ji_jobid,
@@ -1595,11 +1574,7 @@ void obit_reply(
 
           log_ext(-1,"obit_reply",tmpLine,LOG_ALERT);
 
-          LOG_EVENT(
-            PBSEVENT_ERROR,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            tmpLine);
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmpLine);
           }  /* END BLOCK */
 
         mom_deljob(pjob);
@@ -1615,7 +1590,7 @@ void obit_reply(
 
   if (pjob == NULL)
     {
-    LOG_EVENT(
+    log_event(
       PBSEVENT_ERROR,
       PBS_EVENTCLASS_REQUEST,
       "obit reply",
@@ -2091,7 +2066,7 @@ void exit_mom_job(
     {
     if (LOGLEVEL >= 3)
       {
-      LOG_EVENT(
+      log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
@@ -2122,7 +2097,7 @@ void exit_mom_job(
     {
     if (LOGLEVEL >= 3)
       {
-      LOG_EVENT(
+      log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,

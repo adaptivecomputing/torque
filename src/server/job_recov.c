@@ -373,7 +373,7 @@ int job_save(
 
       if (link(namebuf2, namebuf1) == -1)
         {
-        LOG_EVENT(
+        log_event(
           PBSEVENT_ERROR | PBSEVENT_SECURITY,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,

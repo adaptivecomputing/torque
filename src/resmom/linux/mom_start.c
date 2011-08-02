@@ -160,7 +160,7 @@ int set_job(
       ((CPtr = get_job_envvar(pjob, "BATCH_ALLOC_COOKIE")) != NULL) &&
       !strcmp(CPtr, "0"))
     {
-    char  tmpLine[1024];
+    char  tmpLine[MAXLINE];
 
     if (AllocParCmd == NULL)
       AllocParCmd = strdup("/opt/moab/default/tools/partition.create.xt4.pl");
@@ -197,7 +197,7 @@ int set_job(
 
     if (WEXITSTATUS(rc) != 0)
       {
-      snprintf(log_buffer, 1024, "cannot create alloc partition");
+      snprintf(log_buffer, sizeof(log_buffer), "cannot create alloc partition");
 
       sid = -3;
 
@@ -372,14 +372,10 @@ void scan_for_terminated(void)
           {
           if (LOGLEVEL >= 7)
             {
-            snprintf(log_buffer, 1024, "found match for recovering job task for sid=%d",
+            snprintf(log_buffer, sizeof(log_buffer), "found match for recovering job task for sid=%d",
               ptask->ti_qs.ti_sid);
 
-            LOG_EVENT(
-              PBSEVENT_DEBUG,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
+            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
             }
           
           update_stats = FALSE;
@@ -421,29 +417,23 @@ void scan_for_terminated(void)
 
       if (LOGLEVEL >= 7)
         {
-        snprintf(log_buffer, 1024, "checking job w/subtask pid=%d (child pid=%d)",
+        snprintf(log_buffer, sizeof(log_buffer),
+          "checking job w/subtask pid=%d (child pid=%d)",
           pjob->ji_momsubt,
           pid);
 
-        LOG_EVENT(
-          PBSEVENT_DEBUG,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
         }
 
       if (pid == pjob->ji_momsubt)
         {
         if (LOGLEVEL >= 7)
           {
-          snprintf(log_buffer, 1024, "found match with job subtask for pid=%d",
+          snprintf(log_buffer, sizeof(log_buffer),
+            "found match with job subtask for pid=%d",
             pid);
 
-          LOG_EVENT(
-            PBSEVENT_DEBUG,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buffer);
+          log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
           }
 
         break;
@@ -464,15 +454,12 @@ void scan_for_terminated(void)
           {
           if (LOGLEVEL >= 7)
             {
-            snprintf(log_buffer, 1024, "found match with job task %d for pid=%d",
+            snprintf(log_buffer, sizeof(log_buffer),
+              "found match with job task %d for pid=%d",
               tcount,
               pid);
 
-            LOG_EVENT(
-              PBSEVENT_DEBUG,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
+            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
             }
 
           break;
@@ -569,11 +556,7 @@ void scan_for_terminated(void)
               ptask->ti_qs.ti_task,
               exiteval);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
       }
 
     /* where is job purged?  How do we keep job from progressing in state until the obit is sent? */
@@ -592,11 +575,7 @@ void scan_for_terminated(void)
             ptask->ti_qs.ti_task,
             ptask->ti_qs.ti_sid);
 
-    LOG_EVENT(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
     exiting_tasks = 1;
     }  /* END while ((pid = waitpid(-1,&statloc,WNOHANG)) > 0) */

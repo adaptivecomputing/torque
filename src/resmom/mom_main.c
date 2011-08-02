@@ -3307,8 +3307,7 @@ static unsigned long setremchkptdirlist(
 
 
 
-void
-check_log(void)
+void check_log(void)
 
   {
   last_log_check = time_now;
@@ -7609,14 +7608,10 @@ int TMOMScanForStarting(void)
           if (LOGLEVEL >= 3)
             {
             sprintf(log_buffer, "%s:job %s reported successful start",
-                    id,
-                    pjob->ji_qs.ji_jobid);
+              id,
+              pjob->ji_qs.ji_jobid);
 
-            LOG_EVENT(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
+            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
             }
           }
         }    /* END else (TMomCheckJobChild() == FAILURE) */
@@ -7638,8 +7633,7 @@ int TMOMScanForStarting(void)
  * check on over limit condition for polled jobs
  */
 
-void
-examine_all_polled_jobs(void)
+void examine_all_polled_jobs(void)
 
   {
   static char id[] = "examine_all_polled_jobs";
@@ -7790,7 +7784,7 @@ examine_all_running_jobs(void)
           {
           if (LOGLEVEL >= 3)
             {
-            LOG_EVENT(
+            log_event(
               PBSEVENT_JOB,
               PBS_EVENTCLASS_JOB,
               pjob->ji_qs.ji_jobid,
@@ -7993,11 +7987,7 @@ void prepare_child_tasks_for_delete()
               task->ti_qs.ti_task,
               job->ji_qs.ji_jobid);
 
-      log_event(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        id,
-        buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, buf);
 
       task->ti_qs.ti_exitstat = 0;  /* actually unknown */
       task->ti_qs.ti_status = TI_STATE_EXITED;

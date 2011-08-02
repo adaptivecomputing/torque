@@ -240,7 +240,7 @@ void *req_holdjob(
       /* fill in log_buf again, since relay_to_mom changed it */
       sprintf(log_buf, msg_jobholdset, pset, preq->rq_user, preq->rq_host);
           
-      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
     }
 #ifdef ENABLE_BLCR
@@ -252,7 +252,7 @@ void *req_holdjob(
      * so we reject the request
      */
 
-    LOG_EVENT(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL,
         "job not held since checkpointing is expected but not enabled for job");
@@ -262,7 +262,7 @@ void *req_holdjob(
     {
     /* everything went well, may need to update the job state */
 
-    LOG_EVENT(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     if (old_hold != *hold_val)
       {
@@ -326,7 +326,7 @@ void req_checkpointjob(
       pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
 
       job_save(pjob, SAVEJOB_QUICK, 0);
-      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
                 pjob->ji_qs.ji_jobid, log_buf);
       }
     }
@@ -334,7 +334,7 @@ void req_checkpointjob(
     {
     /* Job does not have checkpointing enabled, so reject the request */
 
-    LOG_EVENT(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "job is not checkpointable");
     }
@@ -403,7 +403,7 @@ int release_job(
     preq->rq_user,
     preq->rq_host);
 
-  LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
 
   return(rc);
   } /* END release_job() */
@@ -635,7 +635,7 @@ static void process_hold_reply(
 
   if ((pjob = find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname)) == (job *)0)
     {
-    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB,
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB,
               preq->rq_ind.rq_hold.rq_orig.rq_objname,
               msg_postmomnojob);
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, msg_postmomnojob);
@@ -664,7 +664,7 @@ static void process_hold_reply(
     if (preq->rq_reply.brp_code != PBSE_NOSUP)
       {
       sprintf(log_buf, msg_mombadhold, preq->rq_reply.brp_code);
-      LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       req_reject(preq->rq_reply.brp_code, 0, preq, NULL, log_buf);
       }
     else
@@ -725,7 +725,7 @@ static void process_checkpoint_reply(
 
   if ((pjob = find_job(preq->rq_ind.rq_manager.rq_objname)) == (job *)0)
     {
-    LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB,
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB,
               preq->rq_ind.rq_manager.rq_objname,
               msg_postmomnojob);
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, msg_postmomnojob);

@@ -1375,13 +1375,13 @@ static void post_job_delete_nanny(
     {
     sprintf(log_buf, "job delete nanny: the job disappeared (this is a BUG!)");
 
-    LOG_EVENT(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,preq_sig->rq_ind.rq_signal.rq_jid,log_buf);
+    log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,preq_sig->rq_ind.rq_signal.rq_jid,log_buf);
     }
   else if (rc == PBSE_UNKJOBID)
     {
     sprintf(log_buf, "job delete nanny returned, but does not exist on mom");
 
-    LOG_EVENT(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,preq_sig->rq_ind.rq_signal.rq_jid,log_buf);
+    log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,preq_sig->rq_ind.rq_signal.rq_jid,log_buf);
 
     free_nodes(pjob);
 
