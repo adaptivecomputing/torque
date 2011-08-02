@@ -108,6 +108,7 @@
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "resmon.h"
+#include "utils.h"
 #include "../rm_dep.h"
 
 #include <windows.h>
@@ -3157,7 +3158,7 @@ static char *totmem(
  * Has been used Win API.
  * Cygwin's /proc/meminfo also takes information from here
  * but does it incorrectly till now
-*/ 
+*/
 static char *availmem(
 
   struct rm_attribute *attrib)
@@ -3612,7 +3613,7 @@ char *idletime(
     return(NULL);
     }
 
-  sprintf(ret_string, "%ld", GetTickCount()/1000); 
+  sprintf(ret_string, "%ld", GetTickCount()/1000);
 
   return(ret_string);
   }  /* END idletime() */
@@ -3975,7 +3976,7 @@ static char *quota(
 
   if ((uid = (uid_t)atoi(attrib->a_value)) == 0)
     {
-    if ((pw = getpwnam(attrib->a_value)) == NULL)
+    if ((pw = getpwnam_ext(attrib->a_value)) == NULL)
       {
       sprintf(log_buffer,
               "user not found: %s", attrib->a_value);
@@ -3988,7 +3989,7 @@ static char *quota(
     }
 
   /* Cygwin doesn't yet support quota
-   * It is stub */ 
+   * It is stub */
   if (quotactl(
         QCMD(Q_GETQUOTA, USRQUOTA),
         me->mnt_fsname,

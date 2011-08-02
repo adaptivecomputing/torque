@@ -19,6 +19,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Modified pbs_disconnect so it no longer does a read to wait for the server
       side to disconnect first. Also modified write_nonblocking_socket to ensure 
       socket is non-blocking and exit if stuck on EAGAIN return from write.
+  e - added util function getpwnam_ext() that has retry and errno logging
+      capability for calls to getpwnam().
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as

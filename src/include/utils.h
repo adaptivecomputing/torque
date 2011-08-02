@@ -136,6 +136,9 @@
 /* group functions in u_groups.c */
 extern struct group *getgrnam_ext (char *);
 
+/* user functions in u_users.c */
+extern struct passwd *getpwnam_ext (char *);
+
 /* tree functions in u_tree.c */
 extern void tinsert (const u_long, struct pbsnode *, tree **);
 extern void *tdelete (const u_long, tree **);

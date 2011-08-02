@@ -392,7 +392,7 @@ int set_jobexid(
       return(PBSE_BADUSER);
       }
 
-    pwent = getpwnam(puser);
+    pwent = getpwnam_ext(puser);
 
     if (pwent == NULL)
       {
@@ -415,7 +415,7 @@ int set_jobexid(
         {
         puser = pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str;
 
-        pwent = getpwnam(puser);
+        pwent = getpwnam_ext(puser);
 
         if (pwent == NULL)
           {
@@ -551,7 +551,7 @@ int set_jobexid(
 
   if (pgrpn == NULL)
     {
-    if ((pwent != NULL) || ((pwent = getpwnam(puser)) != NULL))
+    if ((pwent != NULL) || ((pwent = getpwnam_ext(puser)) != NULL))
       {
       /* egroup not specified - use user login group */
 

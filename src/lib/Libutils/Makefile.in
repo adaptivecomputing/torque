@@ -63,7 +63,7 @@ libutils_a_AR = $(AR) $(ARFLAGS)
 libutils_a_LIBADD =
 am_libutils_a_OBJECTS = u_groups.$(OBJEXT) u_tree.$(OBJEXT) \
 	u_mu.$(OBJEXT) u_MXML.$(OBJEXT) u_xml.$(OBJEXT) \
-	u_threadpool.$(OBJEXT)
+	u_threadpool.$(OBJEXT) u_users.$(OBJEXT)
 libutils_a_OBJECTS = $(am_libutils_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
 depcomp = $(SHELL) $(top_srcdir)/buildutils/depcomp
@@ -326,7 +326,9 @@ XPBS_DIR = $(libdir)/xpbs
 XPBSMON_DIR = $(libdir)/xpbsmon
 SUBMIT_FILTER_PATH = $(libexecdir)/qsub_filter
 noinst_LIBRARIES = libutils.a
-libutils_a_SOURCES = u_groups.c u_tree.c u_mu.c u_MXML.c u_xml.c u_threadpool.c
+libutils_a_SOURCES = u_groups.c u_tree.c u_mu.c u_MXML.c u_xml.c u_threadpool.c \
+      u_users.c
+
 all: all-am
 
 .SUFFIXES:
@@ -379,6 +381,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/u_mu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/u_threadpool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/u_tree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/u_users.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/u_xml.Po@am__quote@
 
 .c.o:

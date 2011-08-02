@@ -105,6 +105,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "svrfunc.h"
+#include "utils.h"
 
 #include <pwd.h>
 #include "mom_func.h"
@@ -454,7 +455,7 @@ void req_quejob(
       pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock);
       pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
 
-      /* Per Eric R., req_mvjobfile was giving error in open_std_file, 
+      /* Per Eric R., req_mvjobfile was giving error in open_std_file,
          showed up as fishy error message */
 
       if (pj->ji_grpcache != NULL)
@@ -737,7 +738,7 @@ void req_mvjobfile(
     return;
     }
 
-  if ((pwd = getpwnam(pj->ji_wattr[(int)JOB_ATR_euser].at_val.at_str)) == NULL)
+  if ((pwd = getpwnam_ext(pj->ji_wattr[(int)JOB_ATR_euser].at_val.at_str)) == NULL)
     {
     /* FAILURE */
     req_reject(PBSE_MOMREJECT, 0, preq, NULL, "password lookup failed");
@@ -749,7 +750,7 @@ void req_mvjobfile(
     {
     int keeping = 1;
     char *path = std_file_name(pj, jft, &keeping);
-    
+
     snprintf(log_buffer,sizeof(log_buffer),
       "Cannot create file %s",
       path);
@@ -1038,7 +1039,7 @@ void req_commit(
     }
 
   job_save(pj, SAVEJOB_FULL);
-  
+
 #ifdef NVIDIA_GPUS
   /*
    * Does this job have a gpuid assigned?

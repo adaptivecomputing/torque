@@ -120,6 +120,7 @@
 #include "md5.h"
 #include "mcom.h"
 #include "resource.h"
+#include "utils.h"
 
 #ifdef ENABLE_CPA
 	#include "pbs_cpa.h"
@@ -393,7 +394,7 @@ struct passwd *check_pwd(
   	return(NULL);
   	}
 
-  pwdp = getpwnam(ptr);
+  pwdp = getpwnam_ext(ptr);
 
   if (pwdp == NULL)
   	{
@@ -6685,7 +6686,7 @@ int init_groups(
 		/* Emulate the original init_groups() behaviour which treated
 			 gid==0 as a special case */
 
-		struct passwd *pwe = getpwnam(pwname);
+		struct passwd *pwe = getpwnam_ext(pwname);
 
 		if (pwe == NULL)
 			{
