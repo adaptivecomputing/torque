@@ -21,6 +21,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       socket is non-blocking and exit if stuck on EAGAIN return from write.
   e - added util function getpwnam_ext() that has retry and errno logging
       capability for calls to getpwnam().
+  c - fix a potential segfault when using asynchronous runjob with an array slot limit
+      (backported from 3.0.3)
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as
