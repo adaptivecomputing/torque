@@ -1498,7 +1498,7 @@ int record_jobinfo(
         tmpPtr = realloc(buf, buf_size << 2);
         buf_size = buf_size << 2;
         
-        if(tmpPtr == NULL)
+        if (tmpPtr == NULL)
           {
           log_err(ENOMEM,id,"failed realloc in recored_jobinfo");
           return(ENOMEM);
@@ -1578,7 +1578,7 @@ int record_jobinfo(
         tmpPtr = realloc(buf, buf_size << 2);
         buf_size = buf_size << 2;
         
-        if(buf == NULL)
+        if (buf == NULL)
           {
           log_err(ENOMEM,id,"failed realloc in recored_jobinfo");
           return(ENOMEM);
@@ -1611,7 +1611,7 @@ int record_jobinfo(
       tmpPtr = realloc(buf, buf_size << 2);
       buf_size = buf_size << 2;
       
-      if(buf == NULL)
+      if (buf == NULL)
         {
         free(valbuf);
         log_err(ENOMEM,id,"failed realloc in recored_jobinfo");
@@ -1638,7 +1638,7 @@ int record_jobinfo(
             {
             /* we need a bigger valbuf */
             tmpPtr = realloc(buf, buf_size << 2);
-            if(buf == NULL)
+            if (buf == NULL)
               {
               free(valbuf);
               log_err(ENOMEM,id,"failed realloc in recored_jobinfo");
@@ -1662,7 +1662,7 @@ int record_jobinfo(
     
     strcat(buf, "\t</job_script>\n");
     rc = log_job_record(buf);
-    if(rc)
+    if (rc)
       {
       free(buf);
       free(valbuf);

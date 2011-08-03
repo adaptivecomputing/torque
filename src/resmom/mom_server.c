@@ -1268,31 +1268,28 @@ static char *gpus(
     do
       {
       bytes_read = fread(buf, sizeof(char), MUNGE_SIZE, fd);
-      if(bytes_read > 0)
+      if (bytes_read > 0)
         {
         total_bytes_read += bytes_read;
         memcpy(ptr, buf, bytes_read);
         ptr += bytes_read;
         }
-      }while(bytes_read > 0);
+      } while(bytes_read > 0);
 
-      pclose(fd);
-
-      if(bytes_read == -1)
+    pclose(fd);
+    
+    if (bytes_read == -1)
+      {
+      /* read failed */
+      if (LOGLEVEL >= 0)
         {
-        /* read failed */
-        if (LOGLEVEL >= 0)
-          {
-          sprintf(log_buffer, "error reading popen pipe");
-
-          log_err(
-            PBSE_RMSYSTEM,
-            id,
-            log_buffer);
-          }
-        return(NULL);
+        sprintf(log_buffer, "error reading popen pipe");
+        
+        log_err(PBSE_RMSYSTEM, id, log_buffer);
         }
-		}
+      return(NULL);
+      }
+    }
   else
     {
     if (LOGLEVEL >= 0)
@@ -1877,8 +1874,10 @@ void generate_server_status(
 #ifdef NVML_API
 
 void generate_server_gpustatus_nvml(
+
   char *buffer,
   int  buffer_size)
+
   {
   static char id[] = "generate_server_gpustatus_nvml";
 
@@ -1897,7 +1896,7 @@ void generate_server_gpustatus_nvml(
   char              *outptr;
   int               len;
 
-  if(buffer == NULL)
+  if (buffer == NULL)
     {
     return;
     }
@@ -2189,7 +2188,7 @@ void generate_server_gpustatus_smi(
   char *Tail;
   char Emsg[256];
 
-  if(buffer == NULL)
+  if (buffer == NULL)
     {
     return;
     }
@@ -2198,14 +2197,14 @@ void generate_server_gpustatus_smi(
 
   dataptr = gpus(gpu_string, sizeof(gpu_string));
 
-  if(dataptr == NULL)
+  if (dataptr == NULL)
     {
     return;
     }
 
   /* move past the php code*/
   dataptr = strstr(gpu_string, "<timestamp>");
-  if(dataptr)
+  if (dataptr)
     {
     MXMLFromString(&EP, dataptr, &Tail, Emsg);
     strcpy(buffer, "timestamp=");
@@ -2220,7 +2219,7 @@ void generate_server_gpustatus_smi(
     }
 
   dataptr = strstr(gpu_string, "<driver_version>");
-  if(dataptr)
+  if (dataptr)
     {
     MXMLFromString(&EP, dataptr, &Tail, Emsg);
     strcat(outptr, "driver_ver=");
@@ -2238,439 +2237,451 @@ void generate_server_gpustatus_smi(
 
   while ((dataptr = strstr(dataptr, "<gpu id=")) != NULL)
     {
-      if(dataptr)
+    if (dataptr)
+      {
+      MXMLFromString(&EP, dataptr, &Tail, Emsg);
+      strcat(outptr, "gpuid=");
+      strcat(outptr, EP->AVal[0]);
+      outptr += strlen(outptr) + 1;
+      if (MOMNvidiaDriverVersion == 260)
         {
-        MXMLFromString(&EP, dataptr, &Tail, Emsg);
-        strcat(outptr, "gpuid=");
-        strcat(outptr, EP->AVal[0]);
-        outptr += strlen(outptr) + 1;
-        if (MOMNvidiaDriverVersion == 260)
+        gpuid = atoi(EP->AVal[0]);
+        }
+      else
+        {
+        gpuid++;
+        }
+      
+      if (MOMNvidiaDriverVersion == 260)
+        {
+        gpuid = atoi(EP->AVal[0]);
+        /* Get and add mode rules information for driver 260 */
+        
+        if (!have_modes)
           {
-          gpuid = atoi(EP->AVal[0]);
+          have_modes = gpumodes(gpu_modes, 32);
+          }
+        
+        strcat(outptr, "gpu_mode=");
+        switch (gpu_modes[gpuid])
+          {
+          case 0:
+
+            strcat(outptr, "Normal");
+            nvidia_gpu_modes[gpuid] = gpu_normal;
+
+            break;
+
+          case 1:
+
+            strcat(outptr, "Exclusive");
+            nvidia_gpu_modes[gpuid] = gpu_exclusive_thread;
+
+            break;
+
+          case 2:
+
+            strcat(outptr, "Prohibited");
+            nvidia_gpu_modes[gpuid] = gpu_prohibited;
+
+            break;
+
+          default:
+
+            strcat(outptr, "None");
+            nvidia_gpu_modes[gpuid] = -1;
+
+            break;
+          }
+        
+        outptr += strlen(outptr) + 1;
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<prod_name>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_product_name=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
           }
         else
           {
-          gpuid++;
+          dataptr = savptr;
           }
-
-        if (MOMNvidiaDriverVersion == 260)
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<pci_device_id>");
+        if (dataptr)
           {
-          gpuid = atoi(EP->AVal[0]);
-          /* Get and add mode rules information for driver 260 */
-
-          if (!have_modes)
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_pci_device_id=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<pci_location_id>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_pci_location_id=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<display>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_display=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<temp>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_temperature=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<fan_speed>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_fan_speed=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<gpu_util>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_utilization=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        dataptr = strstr(dataptr, "<memory_util>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_memory_utilization=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        dataptr = strstr(dataptr, "<aggregate_ecc_errors>");
+        if (dataptr)
+          {
+          tmpptr1 = strstr(dataptr, "<single_bit>");
+          if (tmpptr1)
             {
-            have_modes = gpumodes(gpu_modes, 32);
+            tmpptr1 = strstr(tmpptr1, "<total>");
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            strcat(outptr, "gpu_single_bit_ecc_errors=");
+            strcat(outptr, EP->Val);
+            outptr += strlen(outptr) + 1;
             }
-
+          
+          tmpptr1 = strstr(dataptr, "<double_bit>");
+          if (tmpptr1)
+            {
+            tmpptr1 = strstr(tmpptr1, "<total>");
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            strcat(outptr, "gpu_double_bit_ecc_errors=");
+            strcat(outptr, EP->Val);
+            outptr += strlen(outptr) + 1;
+            }
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        } /* end (MOMNvidiaDriverVersion == 260) */
+      
+      else if (MOMNvidiaDriverVersion == 270)
+        {
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<product_name>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_product_name=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<display_mode>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_display=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<pci_device_id>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_pci_device_id=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<pci_bus_id>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_pci_location_id=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<fan_speed>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          strcat(outptr, "gpu_fan_speed=");
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        dataptr = strstr(dataptr, "<memory_usage>");
+        if (dataptr)
+          {
+          tmpptr1 = strstr(dataptr, "<total>");
+          if (tmpptr1)
+            {
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            strcat(outptr, "gpu_memory_total=");
+            strcat(outptr, EP->Val);
+            outptr += strlen(outptr) + 1;
+            }
+          
+          tmpptr1 = strstr(dataptr, "<used>");
+          if (tmpptr1)
+            {
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            strcat(outptr, "gpu_memory_used=");
+            strcat(outptr, EP->Val);
+            outptr += strlen(outptr) + 1;
+            }
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<compute_mode>");
+        if (dataptr)
+          {
+          MXMLFromString(&EP, dataptr, &Tail, Emsg);
           strcat(outptr, "gpu_mode=");
-          switch (gpu_modes[gpuid])
+          strcat(outptr, EP->Val);
+          outptr += strlen(outptr) + 1;
+          if (EP->Val[0] == 'D') /* Default */
             {
-              case 0:
-                strcat(outptr, "Normal");
-                nvidia_gpu_modes[gpuid] = gpu_normal;
-                break;
-              case 1:
-                strcat(outptr, "Exclusive");
-                nvidia_gpu_modes[gpuid] = gpu_exclusive_thread;
-                break;
-              case 2:
-                strcat(outptr, "Prohibited");
-                nvidia_gpu_modes[gpuid] = gpu_prohibited;
-                break;
-              default:
-                strcat(outptr, "None");
-                nvidia_gpu_modes[gpuid] = -1;
-                break;
+            nvidia_gpu_modes[gpuid] = gpu_normal;
             }
-            outptr += strlen(outptr) + 1;
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<prod_name>");
-          if(dataptr)
+          else if (EP->Val[0] == 'P') /* Prohibited */
             {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
-            strcat(outptr, "gpu_product_name=");
-            strcat(outptr, EP->Val);
-            outptr += strlen(outptr) + 1;
+            nvidia_gpu_modes[gpuid] = gpu_prohibited;
             }
-          else
+          else if (EP->Val[10] == 'T') /* Exclusive_Thread */
             {
-            dataptr = savptr;
+            nvidia_gpu_modes[gpuid] = gpu_exclusive_thread;
             }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<pci_device_id>");
-          if(dataptr)
+          else if (EP->Val[10] == 'P') /* Exclusive_Process */
             {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
-            strcat(outptr, "gpu_pci_device_id=");
-            strcat(outptr, EP->Val);
-            outptr += strlen(outptr) + 1;
+            nvidia_gpu_modes[gpuid] = gpu_exclusive_process;
             }
-          else
+          else /* unknown */
             {
-            dataptr = savptr;
+            nvidia_gpu_modes[gpuid] = -1;
             }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<pci_location_id>");
-          if(dataptr)
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<utilization>");
+        if (dataptr)
+          {
+          tmpptr1 = strstr(dataptr, "<gpu_util>");
+          if (tmpptr1)
             {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
-            strcat(outptr, "gpu_pci_location_id=");
-            strcat(outptr, EP->Val);
-            outptr += strlen(outptr) + 1;
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<display>");
-          if(dataptr)
-            {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
-            strcat(outptr, "gpu_display=");
-            strcat(outptr, EP->Val);
-            outptr += strlen(outptr) + 1;
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<temp>");
-          if(dataptr)
-            {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
-            strcat(outptr, "gpu_temperature=");
-            strcat(outptr, EP->Val);
-            outptr += strlen(outptr) + 1;
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<fan_speed>");
-          if(dataptr)
-            {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
-            strcat(outptr, "gpu_fan_speed=");
-            strcat(outptr, EP->Val);
-            outptr += strlen(outptr) + 1;
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<gpu_util>");
-          if(dataptr)
-            {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
             strcat(outptr, "gpu_utilization=");
             strcat(outptr, EP->Val);
             outptr += strlen(outptr) + 1;
             }
-          else
+          
+          tmpptr1 = strstr(dataptr, "<memory_util>");
+          if (tmpptr1)
             {
-            dataptr = savptr;
-            }
-
-          dataptr = strstr(dataptr, "<memory_util>");
-          if(dataptr)
-            {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
             strcat(outptr, "gpu_memory_utilization=");
             strcat(outptr, EP->Val);
             outptr += strlen(outptr) + 1;
             }
-          else
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        dataptr = strstr(dataptr, "<ecc_mode>");
+        if (dataptr)
+          {
+          tmpptr1 = strstr(dataptr, "<current_ecc>");
+          if (tmpptr1)
             {
-            dataptr = savptr;
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            strcat(outptr, "gpu_ecc_mode=");
+            strcat(outptr, EP->Val);
+            outptr += strlen(outptr) + 1;
             }
-
-          dataptr = strstr(dataptr, "<aggregate_ecc_errors>");
-          if(dataptr)
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        dataptr = strstr(dataptr, "<ecc_errors>");
+        if (dataptr)
+          {
+          tmpptr1 = strstr(dataptr, "<aggregate>");
+          if (tmpptr1)
             {
-            tmpptr1 = strstr(dataptr, "<single_bit>");
-            if (tmpptr1)
+            tmpptr2 = strstr(tmpptr1, "<single_bit>");
+            if (tmpptr2)
               {
-              tmpptr1 = strstr(tmpptr1, "<total>");
-              MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+              tmpptr2 = strstr(tmpptr1, "<total>");
+              MXMLFromString(&EP, tmpptr2, &Tail, Emsg);
               strcat(outptr, "gpu_single_bit_ecc_errors=");
               strcat(outptr, EP->Val);
               outptr += strlen(outptr) + 1;
               }
-
-            tmpptr1 = strstr(dataptr, "<double_bit>");
-            if (tmpptr1)
+            
+            tmpptr2 = strstr(tmpptr1, "<double_bit>");
+            if (tmpptr2)
               {
-              tmpptr1 = strstr(tmpptr1, "<total>");
-              MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+              tmpptr2 = strstr(tmpptr1, "<total>");
+              MXMLFromString(&EP, tmpptr2, &Tail, Emsg);
               strcat(outptr, "gpu_double_bit_ecc_errors=");
               strcat(outptr, EP->Val);
               outptr += strlen(outptr) + 1;
               }
             }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          } /* end (MOMNvidiaDriverVersion == 260) */
-
-        else if (MOMNvidiaDriverVersion == 270)
-          {
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<product_name>");
-          if(dataptr)
-            {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
-            strcat(outptr, "gpu_product_name=");
-            strcat(outptr, EP->Val);
-            outptr += strlen(outptr) + 1;
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<display_mode>");
-          if(dataptr)
-            {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
-            strcat(outptr, "gpu_display=");
-            strcat(outptr, EP->Val);
-            outptr += strlen(outptr) + 1;
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<pci_device_id>");
-          if(dataptr)
-            {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
-            strcat(outptr, "gpu_pci_device_id=");
-            strcat(outptr, EP->Val);
-            outptr += strlen(outptr) + 1;
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<pci_bus_id>");
-          if(dataptr)
-            {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
-            strcat(outptr, "gpu_pci_location_id=");
-            strcat(outptr, EP->Val);
-            outptr += strlen(outptr) + 1;
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<fan_speed>");
-          if(dataptr)
-            {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
-            strcat(outptr, "gpu_fan_speed=");
-            strcat(outptr, EP->Val);
-            outptr += strlen(outptr) + 1;
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          dataptr = strstr(dataptr, "<memory_usage>");
-          if(dataptr)
-            {
-            tmpptr1 = strstr(dataptr, "<total>");
-            if (tmpptr1)
-              {
-              MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
-              strcat(outptr, "gpu_memory_total=");
-              strcat(outptr, EP->Val);
-              outptr += strlen(outptr) + 1;
-              }
-
-            tmpptr1 = strstr(dataptr, "<used>");
-            if (tmpptr1)
-              {
-              MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
-              strcat(outptr, "gpu_memory_used=");
-              strcat(outptr, EP->Val);
-              outptr += strlen(outptr) + 1;
-              }
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<compute_mode>");
-          if(dataptr)
-            {
-            MXMLFromString(&EP, dataptr, &Tail, Emsg);
-            strcat(outptr, "gpu_mode=");
-            strcat(outptr, EP->Val);
-            outptr += strlen(outptr) + 1;
-            if (EP->Val[0] == 'D') /* Default */
-              {
-              nvidia_gpu_modes[gpuid] = gpu_normal;
-              }
-            else if (EP->Val[0] == 'P') /* Prohibited */
-              {
-              nvidia_gpu_modes[gpuid] = gpu_prohibited;
-              }
-            else if (EP->Val[10] == 'T') /* Exclusive_Thread */
-              {
-              nvidia_gpu_modes[gpuid] = gpu_exclusive_thread;
-              }
-            else if (EP->Val[10] == 'P') /* Exclusive_Process */
-              {
-              nvidia_gpu_modes[gpuid] = gpu_exclusive_process;
-              }
-            else /* unknown */
-              {
-              nvidia_gpu_modes[gpuid] = -1;
-              }
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<utilization>");
-          if(dataptr)
-            {
-            tmpptr1 = strstr(dataptr, "<gpu_util>");
-            if (tmpptr1)
-              {
-              MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
-              strcat(outptr, "gpu_utilization=");
-              strcat(outptr, EP->Val);
-              outptr += strlen(outptr) + 1;
-              }
-
-            tmpptr1 = strstr(dataptr, "<memory_util>");
-            if(tmpptr1)
-              {
-              MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
-              strcat(outptr, "gpu_memory_utilization=");
-              strcat(outptr, EP->Val);
-              outptr += strlen(outptr) + 1;
-              }
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          dataptr = strstr(dataptr, "<ecc_mode>");
-          if(dataptr)
-            {
-            tmpptr1 = strstr(dataptr, "<current_ecc>");
-            if (tmpptr1)
-              {
-              MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
-              strcat(outptr, "gpu_ecc_mode=");
-              strcat(outptr, EP->Val);
-              outptr += strlen(outptr) + 1;
-              }
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          dataptr = strstr(dataptr, "<ecc_errors>");
-          if(dataptr)
-            {
-            tmpptr1 = strstr(dataptr, "<aggregate>");
-            if (tmpptr1)
-              {
-              tmpptr2 = strstr(tmpptr1, "<single_bit>");
-              if (tmpptr2)
-                {
-                tmpptr2 = strstr(tmpptr1, "<total>");
-                MXMLFromString(&EP, tmpptr2, &Tail, Emsg);
-                strcat(outptr, "gpu_single_bit_ecc_errors=");
-                strcat(outptr, EP->Val);
-                outptr += strlen(outptr) + 1;
-                }
-
-              tmpptr2 = strstr(tmpptr1, "<double_bit>");
-              if (tmpptr2)
-                {
-                tmpptr2 = strstr(tmpptr1, "<total>");
-                MXMLFromString(&EP, tmpptr2, &Tail, Emsg);
-                strcat(outptr, "gpu_double_bit_ecc_errors=");
-                strcat(outptr, EP->Val);
-                outptr += strlen(outptr) + 1;
-                }
-              }
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          savptr = dataptr;
-          dataptr = strstr(dataptr, "<temperature>");
-          if(dataptr)
-            {
-            tmpptr1 = strstr(dataptr, "<gpu_temp>");
-            if (tmpptr1)
-              {
-              MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
-              strcat(outptr, "gpu_temperature=");
-              strcat(outptr, EP->Val);
-              outptr += strlen(outptr) + 1;
-              }
-            }
-          else
-            {
-            dataptr = savptr;
-            }
-
-          } /* end (MOMNvidiaDriverVersion == 270) */
-
+          }
         else
           {
-          /* unknown driver version */
-          if (LOGLEVEL >= 3)
-            {
-            log_err(
-              PBSE_RMSYSTEM,
-              id,
-              "Unknown Nvidia driver version");
-            }
-
-          /* need to advance dataptr so we don't recycle through same gpu */
-          
-          dataptr++;
+          dataptr = savptr;
           }
+        
+        savptr = dataptr;
+        dataptr = strstr(dataptr, "<temperature>");
+        if (dataptr)
+          {
+          tmpptr1 = strstr(dataptr, "<gpu_temp>");
+          if (tmpptr1)
+            {
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            strcat(outptr, "gpu_temperature=");
+            strcat(outptr, EP->Val);
+            outptr += strlen(outptr) + 1;
+            }
+          }
+        else
+          {
+          dataptr = savptr;
+          }
+        
+        } /* end (MOMNvidiaDriverVersion == 270) */
+      
+      else
+        {
+        /* unknown driver version */
+        if (LOGLEVEL >= 3)
+          {
+          log_err(
+            PBSE_RMSYSTEM,
+            id,
+            "Unknown Nvidia driver version");
+          }
+        
+        /* need to advance dataptr so we don't recycle through same gpu */
+        
+        dataptr++;
         }
-
+      }
+    
     }
 
   return;

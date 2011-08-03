@@ -536,7 +536,7 @@ void scan_for_terminated(void)
 
       pjob->ji_momsubt = 0;
 
-      if(multi_mom)
+      if (multi_mom)
         {
         momport = pbs_rm_port;
         }

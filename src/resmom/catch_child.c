@@ -1887,7 +1887,7 @@ void init_abort_jobs(
 
         mom_radix = pj->ji_wattr[index].at_val.at_long;
 
-        if(mom_radix)
+        if (mom_radix)
           {
           send_sisters(pj, IM_KILL_JOB_RADIX, TRUE);
           }

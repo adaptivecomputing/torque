@@ -1401,7 +1401,7 @@ int main(
 
   /* With multi-threaded TORQUE we need to ask confirmation for
      RECOV_CREATE and RECOV_COLD before we daemonize the server */
-  if(server_init_type == RECOV_CREATE || server_init_type == RECOV_COLD)
+  if (server_init_type == RECOV_CREATE || server_init_type == RECOV_COLD)
     {
     need_y_response(server_init_type);
     /* If we made it to here the response from user was yes. Otherwise

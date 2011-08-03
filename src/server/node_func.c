@@ -1940,7 +1940,7 @@ static char *parse_node_token(
 
   *term = *pt;
 
-  if(*pt != '\0')
+  if (*pt != '\0')
     {
     *pt++ = '\0';
     }

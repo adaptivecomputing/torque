@@ -420,8 +420,11 @@ void *get_prior(
  * list_move - move an entire list from one head to another
  */
 
-void
-list_move(tlist_head *from, tlist_head *to)
+void list_move(
+    
+  tlist_head *from,
+  tlist_head *to)
+
   {
   if (from->ll_next == from)
     {
@@ -449,9 +452,9 @@ void free_pidlist(
   struct pidl *pl)
 
   {
-  if(pl != NULL)
+  if (pl != NULL)
     {
-    if(pl->next != NULL)
+    if (pl->next != NULL)
       free_pidlist(pl->next);
     free(pl);
     }

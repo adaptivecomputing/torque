@@ -105,7 +105,7 @@ int hwloc_bitmap_parselist(
       c++;
       }
     
-    if(*buf == ',')
+    if (*buf == ',')
       buf++;
     
     } while(*buf != '\0' && *buf != '\n');
@@ -220,9 +220,9 @@ int init_cpusets(void)
   /* Check if cpusets are available by querying the root cpuset */
   if ((rc = cpuset_query(cp, TROOTCPUSET_BASE)) == -1)
     {
-    if(errno == ENOSYS)
+    if (errno == ENOSYS)
       log_err(errno, id, "failed to query root cpuset, cpusets not supported on this system");
-    else if(errno == ENODEV)
+    else if (errno == ENODEV)
       log_err(errno, id, "failed to query root cpuset, cpusets not enabled on this system");
     else
       log_err(errno, id, "failed to query root cpuset");
@@ -350,7 +350,7 @@ int create_cpuset(
     
     flags &= ~O_CREAT;
     }
-  else if(errno == ENOENT)
+  else if (errno == ENOENT)
     {
     if ((flags & O_CREAT) != O_CREAT)
       {
@@ -469,7 +469,7 @@ int create_cpuset(
     
     flags &= ~O_CREAT;
     }
-  else if(errno == ENOENT)
+  else if (errno == ENOENT)
     {
     if ((flags & O_CREAT) != O_CREAT)
       {
@@ -1879,7 +1879,7 @@ struct pidl *get_cpuset_pidlist(
     pid = cpuset_get_pidlist(plist, i);
     
     /* Do not store IDs of individual threads */
-    if((PidIsPid(pid)) != 1)
+    if ((PidIsPid(pid)) != 1)
       continue;
     
     if ((pp = (struct pidl *)malloc(sizeof(struct pidl))) == NULL)
@@ -1996,7 +1996,7 @@ struct pidl *get_cpuset_pidlist(
       } /* END while(readdir) */
 
     closedir(dir);
-    }  /* END if(opendir) */
+    }  /* END if (opendir) */
 
 #endif
 

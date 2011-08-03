@@ -2184,7 +2184,7 @@ int TMomFinalizeJob2(
 
     close(TJE->pipe_script[0]);
     /* Did the user submit arguments with the -F option in qsub? */
-    if(pjob->ji_wattr[JOB_ATR_arguments].at_flags & ATR_VFLAG_SET)
+    if (pjob->ji_wattr[JOB_ATR_arguments].at_flags & ATR_VFLAG_SET)
       {
       strcat(buf, " ");
       strcat(buf, pjob->ji_wattr[JOB_ATR_arguments].at_val.at_str);

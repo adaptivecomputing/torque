@@ -3927,7 +3927,11 @@ static char *ncpus(
  *        FALSE if file not found
  */
 
-int find_file(char *path, char *filename)
+int find_file(
+    
+  char *path,
+  char *filename)
+
   {
   char *ptr1, *ptr2;
   char buf[RETURN_STRING_SIZE];
@@ -3935,12 +3939,12 @@ int find_file(char *path, char *filename)
   int rc;
   struct stat statBuf;
 
-  if(path == NULL)
+  if (path == NULL)
     {
     return(FALSE);
     }
 
-  if(filename == NULL)
+  if (filename == NULL)
     {
     return(FALSE);
     }
@@ -3954,10 +3958,10 @@ int find_file(char *path, char *filename)
     *ptr2 = *ptr1;
     ptr1++;
 
-    if(*ptr1 == ':' || *ptr1 == '\0')
+    if (*ptr1 == ':' || *ptr1 == '\0')
       {
       /* check for the forward slash at the end of the path variable */
-      if(*ptr2 != '/')
+      if (*ptr2 != '/')
         {
         ptr2++;
         *ptr2 = '/';
@@ -3965,7 +3969,7 @@ int find_file(char *path, char *filename)
       strcat(buf, filename);
 
       rc = stat(buf, &statBuf);
-      if(rc == 0)
+      if (rc == 0)
         {
         return(TRUE);
         }
@@ -4651,7 +4655,7 @@ void collect_cpuact(void)
 
   if (cpu_array == NULL)
     {
-    if((fp = fopen("/proc/cpuinfo", "r")) == NULL)
+    if ((fp = fopen("/proc/cpuinfo", "r")) == NULL)
       /* Failure */
       return;
 
@@ -4700,7 +4704,7 @@ void collect_cpuact(void)
         /* Ups, more cpus than found in /proc/cpuinfo */
         break;
 
-      if(fscanf(fp, " %llu %llu %llu %llu %llu", &usr, &nice, &sys, &idle, &wait) != 5)
+      if (fscanf(fp, " %llu %llu %llu %llu %llu", &usr, &nice, &sys, &idle, &wait) != 5)
         /* Format error */
         break;
  
@@ -4709,7 +4713,7 @@ void collect_cpuact(void)
 
       }
     fclose(fp);
-    } /* END if(fp) */
+    } /* END if (fp) */
 
   /* Calculate cpu activity for each nodeboard */
   for (i = 0; i < num_node_boards; i++)

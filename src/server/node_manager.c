@@ -1513,7 +1513,7 @@ int is_gpustat_get(
     /* add the info to the "temp" attribute */
 
     /* get timestamp */
-    if(!strncmp(ret_info, "timestamp=", 10))
+    if (!strncmp(ret_info, "timestamp=", 10))
       {
       if (decode_arst(&temp, NULL, NULL, ret_info, 0))
         {
@@ -1531,7 +1531,7 @@ int is_gpustat_get(
       }
 
     /* get driver version, if there is one */
-    if(!strncmp(ret_info, "driver_ver=", 11))
+    if (!strncmp(ret_info, "driver_ver=", 11))
       {
       if (decode_arst(&temp, NULL, NULL, ret_info, 0))
         {
@@ -1551,7 +1551,7 @@ int is_gpustat_get(
 
     /* gpuid must come before the rest or we will be in trouble */
 
-    if(!strncmp(ret_info, "gpuid=", 6))
+    if (!strncmp(ret_info, "gpuid=", 6))
       {
       if (strlen(gpuinfo) > 0)
         {

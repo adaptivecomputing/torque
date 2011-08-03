@@ -1708,9 +1708,9 @@ static int setbool(
 
       case 'o':
       case 'O':
-        if((strcasecmp(value,"on") == 0))
+        if ((strcasecmp(value,"on") == 0))
           enable = 1;
-        else if((strcasecmp(value,"off") == 0))
+        else if ((strcasecmp(value,"off") == 0))
           enable = 0;
         break;
 
@@ -2604,7 +2604,7 @@ static unsigned long setignwalltime(
 
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "ignwalltime", value);
 
-  if((enable = setbool(value)) != -1)
+  if ((enable = setbool(value)) != -1)
     ignwalltime = enable;
 
   return(1);
@@ -2621,7 +2621,7 @@ static unsigned long setignmem(
 
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "ignmem", value);
 
-  if((enable = setbool(value)) != -1)
+  if ((enable = setbool(value)) != -1)
     ignmem = enable;
 
   return(1);
@@ -2638,7 +2638,7 @@ static unsigned long setigncput(
 
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "igncput", value);
 
-  if((enable = setbool(value)) != -1)
+  if ((enable = setbool(value)) != -1)
     igncput = enable;
 
   return(1);
@@ -2654,7 +2654,7 @@ static unsigned long setignvmem(
 
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "ignvmem", value);
 
-  if((enable = setbool(value)) != -1)
+  if ((enable = setbool(value)) != -1)
     ignvmem = enable;
 
   return(1);
@@ -8265,7 +8265,7 @@ int read_layout_file()
     empty_line = TRUE;
 
     /* Strip off comments */
-    if((tok = strchr(line, '#')) != NULL)
+    if ((tok = strchr(line, '#')) != NULL)
       *tok = '\0';
 
     tok = strtok(line,delims);
@@ -8483,7 +8483,7 @@ int setup_nodeboards()
       k = 0;
       hwloc_bitmap_foreach_begin(j, node_boards[i].nodeset)
         {
-        if((node_boards[i].path_meminfo[k] = (char *)malloc(mempath_len)) == NULL)
+        if ((node_boards[i].path_meminfo[k] = (char *)malloc(mempath_len)) == NULL)
           {
           log_err(errno,id,"failed to allocate memory");   
           exit(-1);

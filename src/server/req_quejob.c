@@ -995,7 +995,7 @@ void *req_quejob(
       char *ptr;
 
       ptr = strchr(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, ':');
-      if(ptr)
+      if (ptr)
         {
         ptr++;
         rc = stat(ptr, &stat_buf);
@@ -1004,9 +1004,9 @@ void *req_quejob(
         {
         rc = stat(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, &stat_buf);
         }
-      if(rc == 0)
+      if (rc == 0)
         {
-        if(S_ISDIR(stat_buf.st_mode))
+        if (S_ISDIR(stat_buf.st_mode))
           {
 /*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
           replace_attr_string(

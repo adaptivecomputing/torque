@@ -937,7 +937,7 @@ int blcr_checkpoint_job(
   /* Checkpoint successful (assumed) */
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
 
-  if(multi_mom)
+  if (multi_mom)
     {
     momport = pbs_rm_port;
     }
@@ -1295,7 +1295,7 @@ int mom_checkpoint_job(
 
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
 
-  if(multi_mom)
+  if (multi_mom)
     {
     momport = pbs_rm_port;
     }

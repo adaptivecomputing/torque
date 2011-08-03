@@ -289,7 +289,7 @@ static int contact_listener(
 
   /* If this is the first time contacting the scheduler for
    * this listener set the cmd */
-  if(listener_conns[l_idx].first_time)
+  if (listener_conns[l_idx].first_time)
     listener_command = SCH_SCHEDULE_FIRST;
  
   /* connect to the Listener */

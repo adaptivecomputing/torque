@@ -170,6 +170,7 @@ void empty_alarm_handler(int signo)
  */
 
 char *pbs_get_server_list(void)
+
   {
   FILE *fd;
   char *pn;
@@ -212,7 +213,7 @@ char *pbs_get_server_list(void)
         strcat(server_list, ",");
         strcat(server_list, tmp);
         len = strlen(server_list);
-        if(server_list[len-1] == '\n')
+        if (server_list[len-1] == '\n')
           {
           server_list[len-1] = '\0';
           }
@@ -229,7 +230,7 @@ char *pbs_get_server_list(void)
     }  /* END if (got_dflt != TRUE) */
 
   return(server_list);
-  }
+  } /* END pbs_get_server_list() */
 
 
 

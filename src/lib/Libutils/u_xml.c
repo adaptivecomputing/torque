@@ -204,12 +204,12 @@ int escape_xml(
   int final_len = 0;
   int len;
 
-  if(in == NULL)
+  if (in == NULL)
     {
     return(BUFFER_OVERFLOW);
     }
 
-  if(out == NULL)
+  if (out == NULL)
     {
     return(BUFFER_OVERFLOW);
     }
@@ -302,13 +302,13 @@ char *find_next_tag(char *buffer, char **tag)
 
   ptr = buffer;
 
-  if(ptr == NULL || ptr == (char *)0)
+  if (ptr == NULL || ptr == (char *)0)
     {
     return(NULL);
     }
   /* We want the next tag. If we are currently
      pointing to a tag increment ptr*/
-  if(*ptr == '<')
+  if (*ptr == '<')
     {
     ptr++;
     }

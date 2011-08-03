@@ -356,7 +356,7 @@ int attr_to_str(
       if (XML)
         {
         rc = escape_xml(attr.at_val.at_str,out,size);
-        if(rc == BUFFER_OVERFLOW)
+        if (rc == BUFFER_OVERFLOW)
           {
           return(NO_BUFFER_SPACE);
           }
@@ -392,7 +392,7 @@ int attr_to_str(
             {
             len = strlen(out);
             rc = escape_xml(arst->as_string[j],out+len,size-len);
-            if(rc == BUFFER_OVERFLOW)
+            if (rc == BUFFER_OVERFLOW)
               {
               return(NO_BUFFER_SPACE);
               }
@@ -406,7 +406,7 @@ int attr_to_str(
             {
             int len = strlen(out);
             rc = escape_xml(arst->as_string[j],out+len,size-len);
-            if(rc == BUFFER_OVERFLOW)
+            if (rc == BUFFER_OVERFLOW)
               {
               return(NO_BUFFER_SPACE);
               }
@@ -468,10 +468,10 @@ int attr_to_str(
              * Bugzilla bug 101 
              */
 
-            if(current->rs_value.at_val.at_str == NULL)
+            if (current->rs_value.at_val.at_str == NULL)
               break;
 
-            if(strlen(current->rs_value.at_val.at_str) == 0)
+            if (strlen(current->rs_value.at_val.at_str) == 0)
               break;
 
             snprintf(ptr,lspace,"\t\t<%s>",
@@ -482,7 +482,7 @@ int attr_to_str(
 
             if (XML)
               rc = escape_xml(current->rs_value.at_val.at_str,ptr,lspace);
-            if(rc == BUFFER_OVERFLOW)
+            if (rc == BUFFER_OVERFLOW)
               {
               return(NO_BUFFER_SPACE);
               }

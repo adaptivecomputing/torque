@@ -156,9 +156,9 @@ int decode_tv(
 
   for(pc = workval; *pc; ++pc)
 		{
-		if(*pc == ':')
+		if (*pc == ':')
 			{
-			if(++ncolon > 1)
+			if (++ncolon > 1)
 				goto badval;
 			
 			/* At this point we should have the seconds
@@ -171,7 +171,7 @@ int decode_tv(
 			}
 		else
 			{
-			if(!isdigit((int)*pc))
+			if (!isdigit((int)*pc))
 				 goto badval;
 			}
 		}
@@ -242,11 +242,11 @@ int encode_tv(
 
   ct = strlen(cvnbuf) + 1;
 
-  if(phead != NULL)
+  if (phead != NULL)
 		{
 		pal = attrlist_create(atname, rsname, ct);
 	
-		if(pal == NULL)
+		if (pal == NULL)
 		  {
 			/* FAILURE */
 			return(-1);
@@ -274,11 +274,12 @@ int encode_tv(
  *  >0 if error
  */
 
-int
-set_tv(
+int set_tv(
+
 	struct attribute *attr, 
 	struct attribute *new, 
 	enum batch_op op)
+
   {
   assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
 
@@ -317,13 +318,17 @@ set_tv(
  *   -1 if 1st < 2nd
  */
 
-int comp_tv(struct attribute *attr, struct attribute *with)
+int comp_tv(
+    
+  struct attribute *attr,
+  struct attribute *with)
+
   {
 
   if (!attr || !with)
   	return (-1);
     
-  if(attr->at_val.at_timeval.tv_sec < with->at_val.at_timeval.tv_sec)
+  if (attr->at_val.at_timeval.tv_sec < with->at_val.at_timeval.tv_sec)
   	{
   	return(-1);
   	}
@@ -333,11 +338,11 @@ int comp_tv(struct attribute *attr, struct attribute *with)
   	}
   else
     {
-  	if(attr->at_val.at_timeval.tv_usec < with->at_val.at_timeval.tv_usec)
+  	if (attr->at_val.at_timeval.tv_usec < with->at_val.at_timeval.tv_usec)
   	  {
   		return(-1);
   	  }
-  	else if(attr->at_val.at_timeval.tv_usec < with->at_val.at_timeval.tv_usec)
+  	else if (attr->at_val.at_timeval.tv_usec < with->at_val.at_timeval.tv_usec)
   		{
   		return(1);
   		}
@@ -347,34 +352,39 @@ int comp_tv(struct attribute *attr, struct attribute *with)
   }
 
 int job_radix_action (
+
   attribute *new,
   void      *pobj,
-  int       actmode
-  )
+  int       actmode)
+
   {
-    job *pjob;
-    int rc = PBSE_NONE;
+  job *pjob;
+  int rc = PBSE_NONE;
+  
+  pjob = (job *)pobj;
+  
+  switch (actmode)
+    {
+    
+    case ATR_ACTION_NEW:
 
-    pjob = (job *)pobj;
+      pjob->ji_radix = new->at_val.at_long;
+      
+      break;
+      
+    case ATR_ACTION_ALTER:
+  
+      pjob->ji_radix = new->at_val.at_long;
 
-    switch (actmode)
-      {
-
-      case ATR_ACTION_NEW:
-		pjob->ji_radix = new->at_val.at_long;
-        break;
-
-	  case ATR_ACTION_ALTER:
-		pjob->ji_radix = new->at_val.at_long;
-        break;
-
-      default:
-
-        rc = PBSE_INTERNAL;
-      }
-
-    return rc;
-
+      break;
+      
+    default:
+      
+      rc = PBSE_INTERNAL;
+    }
+  
+  return rc;
+  
   }
 
 /* timeval_subtract - subtract timeval y from timeval x and
@@ -395,14 +405,14 @@ int timeval_subtract(
   suseconds_t nsec;
 
   /* perform the carry for the later subtraction by updating y */
-  if(x->tv_usec < y->tv_usec)
+  if (x->tv_usec < y->tv_usec)
     {
     nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
     y->tv_usec -= 1000000 * nsec;
     y->tv_sec += nsec;
     }
   
-  if(x->tv_usec - y->tv_usec > 1000000)
+  if (x->tv_usec - y->tv_usec > 1000000)
     {
     nsec = (x->tv_usec - y->tv_usec) / 1000000;
     y->tv_usec += 1000000 * nsec;

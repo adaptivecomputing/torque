@@ -108,7 +108,7 @@ int decode_DIS_Authen(
 
   preq->rq_ind.rq_authen.rq_port = disrui(sock, &rc);
   return rc;
-  }
+  } /* END decode_DIS_Authen() */
 
 
 int decode_DIS_AltAuthen(
@@ -120,14 +120,14 @@ int decode_DIS_AltAuthen(
   int rc;
 
   preq->rq_ind.rq_authen.rq_port = disrui(sock, &rc);
-  if(rc != 0)
-  {
-	return(rc);
-  }
+  if (rc != 0)
+    {
+    return(rc);
+    }
 
-  rc = 	disrfst(sock, PBS_MAXCREDENTIAL_LEN + 1, preq->rq_ind.rq_authen.rq_cred);
+  rc = disrfst(sock, PBS_MAXCREDENTIAL_LEN + 1, preq->rq_ind.rq_authen.rq_cred);
 
   return rc;
-  }
+  } /* END decode_DIS_AltAuthen() */
 
 
