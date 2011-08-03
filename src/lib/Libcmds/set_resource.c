@@ -296,6 +296,7 @@ int set_resources(
         strcpy(str,gpu_suffix);
         strncat(str, v, e - v);
         str[gpu_len - 1] = '\0';
+        attr->value = str;
         }
       else
         {
