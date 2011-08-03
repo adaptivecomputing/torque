@@ -1714,6 +1714,7 @@ void job_purge(
       check_job_log_started = 1;
       }
     }
+    
 
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN) &&
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM))

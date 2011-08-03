@@ -1145,12 +1145,16 @@ void main_loop(void)
       }
 
 #ifdef NO_SIGCHLD
+    pthread_mutex_lock(server.sv_qs_mutex);
+
     /* if we have any jobs, check if any child jobs have completed */
 
     if (server.sv_qs.sv_numjobs > 0)
       {
       check_children();
       }
+    
+    pthread_mutex_unlock(server.sv_qs_mutex);
 #endif
 
     /* wait for a request and process it */
@@ -1226,6 +1230,12 @@ void initialize_globals(void)
   strcpy(pbs_current_user, "PBS_Server");
 
   msg_daemonname = strdup(pbs_current_user);
+
+  server.sv_qs_mutex = malloc(sizeof(pthread_mutex_t));
+  server.sv_attr_mutex = malloc(sizeof(pthread_mutex_t));
+
+  pthread_mutex_init(server.sv_qs_mutex,NULL);
+  pthread_mutex_init(server.sv_attr_mutex,NULL);
   }
 
 

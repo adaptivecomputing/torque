@@ -322,7 +322,11 @@ int svr_enquejob(
     {
     insert_job(&alljobs,pjob);
 
+    pthread_mutex_lock(server.sv_qs_mutex);
+
     server.sv_qs.sv_numjobs++;
+    
+    pthread_mutex_unlock(server.sv_qs_mutex);
 
     server.sv_jobstates[pjob->ji_qs.ji_state]++;
     }
@@ -528,8 +532,12 @@ void svr_dequejob(
     {
     if (!pjob->ji_is_array_template)
       {
+      pthread_mutex_lock(server.sv_qs_mutex);
+
       if (--server.sv_qs.sv_numjobs < 0)
         bad_ct = 1;
+      
+      pthread_mutex_unlock(server.sv_qs_mutex);
 
       if (--server.sv_jobstates[pjob->ji_qs.ji_state] < 0)
         bad_ct = 1;
@@ -2614,11 +2622,16 @@ static void correct_ct(
   job          *pjob;
   pbs_queue    *pque;
   int           iter = -1;
+  int           num_jobs = 0;
   char          log_buf[LOCAL_LOG_BUF_SIZE];
+
+  pthread_mutex_lock(server.sv_qs_mutex);
 
   sprintf(log_buf, "Job state counts incorrect, server %d: ", server.sv_qs.sv_numjobs);
 
   server.sv_qs.sv_numjobs = 0;
+  
+  pthread_mutex_unlock(server.sv_qs_mutex);
 
   for (i = 0;i < PBS_NUMJOBSTATE;++i)
     {
@@ -2663,7 +2676,7 @@ static void correct_ct(
 
   while ((pjob = next_job(&alljobs,&iter)) != NULL)
     {
-    server.sv_qs.sv_numjobs++;
+    num_jobs++;
 
     server.sv_jobstates[pjob->ji_qs.ji_state]++;
 
@@ -2688,6 +2701,10 @@ static void correct_ct(
 
     pthread_mutex_unlock(pjob->ji_mutex);
     }  /* END for (pjob) */
+
+  pthread_mutex_lock(server.sv_qs_mutex);
+  server.sv_qs.sv_numjobs = num_jobs;
+  pthread_mutex_unlock(server.sv_qs_mutex);
 
   return;
   }  /* END correct_ct() */

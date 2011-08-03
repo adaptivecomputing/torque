@@ -950,6 +950,8 @@ int pbsd_init(
     return(-1);
     }
 
+  pthread_mutex_lock(server.sv_qs_mutex);
+
   had = server.sv_qs.sv_numque;
 
   server.sv_qs.sv_numque = 0;
@@ -959,6 +961,8 @@ int pbsd_init(
   if (dir == NULL)
     {
     log_err(-1, id, msg_init_noqueues);
+
+    pthread_mutex_unlock(server.sv_qs_mutex);
 
     return(-1);
     }
@@ -1023,6 +1027,8 @@ int pbsd_init(
 
     log_err(errno, id, log_buf);
 
+    pthread_mutex_unlock(server.sv_qs_mutex);
+
     return(-1);
     }
 
@@ -1045,7 +1051,6 @@ int pbsd_init(
 
         if (strcmp(psuffix, ARRAY_FILE_SUFFIX))
           continue;
-
 
         pa = array_recov(pdirent->d_name);
 
@@ -1084,6 +1089,8 @@ int pbsd_init(
 
     log_err(errno, id, log_buf);
 
+    pthread_mutex_unlock(server.sv_qs_mutex);
+
     return(-1);
     }
 
@@ -1099,11 +1106,7 @@ int pbsd_init(
       {
       if (had == 0)
         {
-        log_event(
-          PBSEVENT_DEBUG,
-          PBS_EVENTCLASS_SERVER,
-          msg_daemonname,
-          msg_init_nojobs);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, msg_daemonname, msg_init_nojobs);
         }
       else
         {
@@ -1256,6 +1259,8 @@ int pbsd_init(
 
     log_event(logtype,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
     }  /* END else */
+
+  pthread_mutex_unlock(server.sv_qs_mutex);
 
   /* If queue_rank has gone negative, renumber all jobs and reset rank */
   if (queue_rank < 0)

@@ -1575,8 +1575,12 @@ void req_stat_svr(
   static char nc_buf[128];
 
   /* update count and state counts from sv_numjobs and sv_jobstates */
+  pthread_mutex_lock(server.sv_qs_mutex);
 
   server.sv_attr[SRV_ATR_TotalJobs].at_val.at_long = server.sv_qs.sv_numjobs;
+  
+  pthread_mutex_unlock(server.sv_qs_mutex);
+  
   server.sv_attr[SRV_ATR_TotalJobs].at_flags |= ATR_VFLAG_SET;
 
   update_state_ct(

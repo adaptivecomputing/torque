@@ -170,7 +170,7 @@ pbs_queue *que_alloc(
   strncpy(pq->qu_qs.qu_name, name, PBS_MAXQUEUENAME);
 
   insert_queue(&svr_queues,pq);
-
+    
   server.sv_qs.sv_numque++;
 
   /* set the working attributes to "unspecified" */
@@ -219,8 +219,11 @@ void que_free(
     }
 
   /* now free the main structure */
+  pthread_mutex_lock(server.sv_qs_mutex);
 
   server.sv_qs.sv_numque--;
+  
+  pthread_mutex_unlock(server.sv_qs_mutex);
 
   remove_queue(&svr_queues,pq);
 

@@ -2533,6 +2533,8 @@ int schiter_chk(
   return(mgr_long_action_helper(pattr, actmode, 1, PBS_SCHEDULE_CYCLE));
   }  /* END schiter_chk() */
 
+
+
 /* nextjobnum_action - makes sure value is sane (>=0)
    Note that there must be special code in svr_recov
    to prevent the attribute value from clobbering
@@ -2543,6 +2545,7 @@ int nextjobnum_chk(
   attribute *pattr,
   void      *pobject,
   int        actmode)
+
   {
   if (pattr->at_val.at_long > PBS_SEQNUMTOP)
     {
@@ -2578,30 +2581,44 @@ int set_nextjobnum(
     {
 
     case SET:
+    
       attr->at_val.at_long = new->at_val.at_long;
+    
       break;
 
       /* Code in Moab depends on this, do not change until the Moab code is fixed. */
 
     case INCR:
+
+      pthread_mutex_lock(server.sv_qs_mutex);
+
       attr->at_val.at_long = MAX(server.sv_qs.sv_jobidnumber, new->at_val.at_long);
-      /*case INCR:  attr->at_val.at_long += new->at_val.at_long;*/
+      
       break;
 
     case DECR:
+      
       attr->at_val.at_long -= new->at_val.at_long;
+      
       break;
 
     default:
+     
       return(PBSE_SYSTEM);
     }
 
   attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
+  if (op != INCR)
+    pthread_mutex_lock(server.sv_qs_mutex);
+
   server.sv_qs.sv_jobidnumber = attr->at_val.at_long;
+
+  pthread_mutex_unlock(server.sv_qs_mutex);
+
   svr_save(&server, SVR_SAVE_QUICK);
 
-  return 0;
+  return(PBSE_NONE);
   }
 
 /* END req_manager.c */

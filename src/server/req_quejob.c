@@ -431,6 +431,8 @@ void *req_quejob(
         (server.sv_attr[SRV_ATR_display_job_server_suffix].at_val.at_long == FALSE))
       server_suffix = FALSE;
 
+    pthread_mutex_lock(server.sv_qs_mutex);
+
     if ((server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET) &&
         (server_suffix == TRUE))
       {
@@ -469,14 +471,11 @@ void *req_quejob(
         svrnm = server_name;
         }
 
-      snprintf(jidbuf,sizeof(jidbuf),"%d.%s",
-        server.sv_qs.sv_jobidnumber,
-        svrnm);
+      snprintf(jidbuf, sizeof(jidbuf), "%d.%s", server.sv_qs.sv_jobidnumber, svrnm);
       }
     else
       {
-      snprintf(jidbuf,sizeof(jidbuf),"%d",
-        server.sv_qs.sv_jobidnumber);
+      snprintf(jidbuf, sizeof(jidbuf), "%d", server.sv_qs.sv_jobidnumber);
       }
 
     jid = jidbuf;
@@ -491,6 +490,7 @@ void *req_quejob(
 
     server.sv_attr[SRV_ATR_NextJobNumber].at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
+    pthread_mutex_unlock(server.sv_qs_mutex);
 
     if (svr_save(&server, SVR_SAVE_QUICK))
       {

@@ -168,6 +168,7 @@ int svr_recov(
     }
 
   /* read in server structure */
+  pthread_mutex_lock(server.sv_qs_mutex);
 
   i = read(sdb, (char *) & server.sv_qs, sizeof(struct server_qs));
 
@@ -214,6 +215,8 @@ int svr_recov(
 
     server.sv_attr[SRV_ATR_NextJobNumber].at_flags |= ATR_VFLAG_SET| ATR_VFLAG_MODIFY;
     }
+
+  pthread_mutex_unlock(server.sv_qs_mutex);
 
   close(sdb);
 
@@ -833,6 +836,8 @@ int svr_recov_xml(
   /* adjust end for the newline character preceeding the close server tag */
   end--;
 
+  pthread_mutex_lock(server.sv_qs_mutex);
+
   while (current < end)
     {
     if (get_parent_and_child(current,&parent,&child,&current))
@@ -907,6 +912,8 @@ int svr_recov_xml(
       ATR_VFLAG_SET| ATR_VFLAG_MODIFY;
     }
 
+  pthread_mutex_unlock(server.sv_qs_mutex);
+
   return(PBSE_NONE);
   } /* END svr_recov_xml() */
 
@@ -938,12 +945,17 @@ int svr_save_xml(
     }
 
   /* write the sv_qs info */
+  pthread_mutex_lock(server.sv_qs_mutex);
+
   snprintf(buf,sizeof(buf),
     "<server_db>\n<numjobs>%d</numjobs>\n<numque>%d</numque>\n<nextjobid>%d</nextjobid>\n<savetime>%ld</savetime>\n",
     ps->sv_qs.sv_numjobs,
     ps->sv_qs.sv_numque,
     ps->sv_qs.sv_jobidnumber,
     time_now);
+  
+  pthread_mutex_unlock(server.sv_qs_mutex);
+  
   len = strlen(buf);
 
   if ((rc = write_buffer(buf,len,fds)))
