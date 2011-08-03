@@ -110,6 +110,7 @@
 #include "rpp.h"
 #include "mcom.h"
 #include "array.h"
+#include "resource.h"
 
 #if __STDC__ != 1
 #include <memory.h>
