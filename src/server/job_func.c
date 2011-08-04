@@ -1052,7 +1052,7 @@ void job_clone_wt(
       pjobclone->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       pjobclone->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
-      if ((rc = svr_enquejob(pjobclone)))
+      if ((rc = svr_enquejob(pjobclone, FALSE)))
         {
         /* XXX need more robust error handling */
         job_purge(pjobclone);

@@ -1037,7 +1037,7 @@ extern char *add_std_filename(job *, char *, int);
 extern int   set_jobexid(job *, attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *);
 extern void  svr_dequejob(job *);
-extern int   svr_enquejob(job *);
+extern int   svr_enquejob(job *, int);
 extern void  svr_evaljobstate(job *, int *, int *, int);
 extern void  svr_mailowner(job *, int, int, char *);
 extern void  set_resc_deflt(job *, attribute *);

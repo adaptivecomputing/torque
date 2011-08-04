@@ -1078,7 +1078,7 @@ static void close_quejob(
           pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
 
-          if (svr_enquejob(pjob))
+          if (svr_enquejob(pjob, FALSE))
             job_abt(&pjob, msg_err_noqueue);
           }
         }

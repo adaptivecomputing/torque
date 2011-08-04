@@ -286,7 +286,8 @@ const char *PJobSubState[] =
 
 int svr_enquejob(
 
-  job *pjob)  /* I */
+  job *pjob,            /* I */
+  int  has_sv_qs_mutex) /* I */
 
   {
   attribute     *pattrjb;
@@ -322,11 +323,13 @@ int svr_enquejob(
     {
     insert_job(&alljobs,pjob);
 
-    pthread_mutex_lock(server.sv_qs_mutex);
+    if (has_sv_qs_mutex == FALSE)
+      pthread_mutex_lock(server.sv_qs_mutex);
 
     server.sv_qs.sv_numjobs++;
     
-    pthread_mutex_unlock(server.sv_qs_mutex);
+    if (has_sv_qs_mutex == FALSE)
+      pthread_mutex_unlock(server.sv_qs_mutex);
 
     server.sv_jobstates[pjob->ji_qs.ji_state]++;
     }

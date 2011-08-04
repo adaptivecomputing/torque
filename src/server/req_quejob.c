@@ -980,13 +980,13 @@ void *req_quejob(
     else if ((pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) &&
         (((pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] == '/'))))
       {
-        pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
-        
-        replace_attr_string(
-          &pj->ji_wattr[JOB_ATR_errpath],
-          (add_std_filename(pj,
-          pj->ji_wattr[JOB_ATR_errpath].at_val.at_str,
-          (int)'e')));
+      pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
+      
+      replace_attr_string(
+        &pj->ji_wattr[JOB_ATR_errpath],
+        (add_std_filename(pj,
+                          pj->ji_wattr[JOB_ATR_errpath].at_val.at_str,
+                          (int)'e')));
       }
     else if (pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET)
       {
@@ -1945,7 +1945,7 @@ void req_commit(
 
   pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
-  if ((rc = svr_enquejob(pj)))
+  if ((rc = svr_enquejob(pj, FALSE)))
     {
     job_purge(pj);
 

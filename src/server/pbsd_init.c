@@ -1777,7 +1777,7 @@ static void pbsd_init_reque(
     set_statechar(pjob);
     }
 
-  if (svr_enquejob(pjob) == 0)
+  if (svr_enquejob(pjob, TRUE) == 0)
     {
     strcat(logbuf, msg_init_queued);
     strcat(logbuf, pjob->ji_qs.ji_queue);
