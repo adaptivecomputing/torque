@@ -2671,39 +2671,34 @@ static void correct_ct(
 
     for (i = 0;i < PBS_NUMJOBSTATE;++i)
       pque->qu_njstate[i] = 0;
+ 
+    /* iterate over each job in the queue and count it.
+     * This code used to iterate over each job, find the queue, and then count the job.
+     * This had to be changed because the mutex order needs to lock the queue before the 
+     * job, so in order to acquire a queue's mutex the job's mutex had to be released on 
+     * occasion, meaning the job could be deleted by the time that thread had the job's 
+     * lock again, since the mutex is released before being destroyed. This caused crashes 
+     * along with other mayhem. Thus, keep the code here and only get jobs that really 
+     * exist */
+    iter = -1;
 
-    pthread_mutex_unlock(pque->qu_mutex);
-    }
-
-  iter = -1;
-
-  while ((pjob = next_job(&alljobs,&iter)) != NULL)
-    {
-    num_jobs++;
-
-    server.sv_jobstates[pjob->ji_qs.ji_state]++;
-
-    if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+    while ((pjob = next_job(pque->qu_jobs, &iter)) != NULL)
       {
-      pque = pjob->ji_qhdr;
+      num_jobs++;
+      
+      server.sv_jobstates[pjob->ji_qs.ji_state]++;
 
-      if (pque == NULL)
-        pque = find_queuebyname(pjob->ji_qs.ji_queue);
-      else
-        pthread_mutex_lock(pque->qu_mutex);
+      pque->qu_numjobs++;
+      pque->qu_njstate[pjob->ji_qs.ji_state]++;
 
-      if (pque != NULL)
-        {
+      if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
         pque->qu_numcompleted++;
-        pque->qu_numjobs++;
-        pque->qu_njstate[pjob->ji_qs.ji_state]++;
 
-        pthread_mutex_unlock(pque->qu_mutex);
-        }
+      pthread_mutex_unlock(pjob->ji_mutex);
       }
 
-    pthread_mutex_unlock(pjob->ji_mutex);
-    }  /* END for (pjob) */
+    pthread_mutex_unlock(pque->qu_mutex);
+    } /* END for each queue */
 
   pthread_mutex_lock(server.sv_qs_mutex);
   server.sv_qs.sv_numjobs = num_jobs;
