@@ -6,6 +6,7 @@
 
 #include "pbs_error.h"
   
+char  buf[4096];
 char *a[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i" };
 
 /* check that arrays are initialized and resized correctly */
@@ -21,7 +22,10 @@ START_TEST(initialize_and_resize)
   fail_unless(ra->max == start_size, "max initialized incorrectly");
   fail_unless(ra->last == ALWAYS_EMPTY_INDEX, "last used index initialized incorrectly");
   fail_unless(ra->next_slot == 1, "next slot should be set to 1 initially");
-  fail_unless(ra->slots[ALWAYS_EMPTY_INDEX].next != ra->next_slot, "initial next_slot is wrong");
+  sprintf(buf, "initialize next slot is wrong, should be %d but is %d",
+    ALWAYS_EMPTY_INDEX,
+    ra->slots[ALWAYS_EMPTY_INDEX].next);
+  fail_unless(ra->slots[ALWAYS_EMPTY_INDEX].next == ALWAYS_EMPTY_INDEX, buf);
 
   /* should not resize here */
   rc = insert_thing(ra, a[1]);
@@ -91,6 +95,7 @@ START_TEST(iteration_tests)
   {
   int              var_index = 0;
   int              ra_index = -1;
+  int              iter_count = 0;
   int              start_size = 2;
   void            *thing;
   resizable_array *ra = initialize_resizable_array(start_size);
@@ -109,16 +114,20 @@ START_TEST(iteration_tests)
   /* make sure iterations work */
   while ((thing = next_thing(ra,&ra_index)) != NULL)
     {
-    fail_unless(thing == a[var_index], "not iterating in order");
+    sprintf(buf, "not iterating in order, should be %s but %s -- test 1", a[var_index], (char *)thing);
+    fail_unless(thing == a[var_index], buf);
     var_index++;
+    iter_count++;
     }
 
-  fail_unless(var_index == 9, "incorrect number of iterations");
+  sprintf(buf, "incorrect number of iterations, should be 9 but %d", iter_count);
+  fail_unless(iter_count == 9, buf);
 
   /* remove something and check iterations again */
   fail_unless(remove_thing(ra, a[4]) == PBSE_NONE, "remove_thing failed");
 
   var_index = 0;
+  iter_count = 0;
   ra_index = -1;
 
   while ((thing = next_thing(ra,&ra_index)) != NULL)
@@ -126,38 +135,46 @@ START_TEST(iteration_tests)
     if (var_index == 4)
       var_index++;
 
-    fail_unless(thing == a[var_index], "not iterating in order");
+    sprintf(buf, "not iterating in order, should be %s but %s -- test 2", a[var_index], (char *)thing);
+    fail_unless(thing == a[var_index], buf);
     var_index++;
+    iter_count++;
     }
 
-  fail_unless(var_index == 8, "incorrect number of iterations");
+  sprintf(buf, "incorrect number of iterations, should be 8 but %d", iter_count);
+  fail_unless(iter_count == 8, buf);
 
   /* remove something and check iterations again */
   fail_unless(remove_thing(ra, a[0]) == PBSE_NONE, "remove_thing failed");
 
   var_index = 1;
   ra_index = -1;
+  iter_count = 0;
 
   while ((thing = next_thing(ra, &ra_index)) != NULL)
     {
     if (var_index == 4)
       var_index++;
 
-    fail_unless(thing == a[var_index], "not iterating in order");
+    sprintf(buf, "not iterating in order, should be %s but %s -- test 3", a[var_index], (char *)thing);
+    fail_unless(thing == a[var_index], buf);
     var_index++;
+    iter_count++;
     }
 
-  fail_unless(var_index == 7, "incorrect number of iterations");
+  sprintf(buf, "incorrect number of iterations, should be 7 but %d", iter_count);
+  fail_unless(iter_count == 7, buf);
 
   /* add something and check iterations again */
   fail_unless(insert_thing(ra, a[4]) >= 0, "insert_thing failed");
 
-  var_index = 0;
+  var_index = 1;
   ra_index = -1;
+  iter_count = 0;
 
   while ((thing = next_thing(ra, &ra_index)) != NULL)
     {
-    if (var_index == 7)
+    if (iter_count == 7)
       {
       fail_unless(thing == a[4], "iteration is out of order after re-insert");
       }
@@ -166,12 +183,16 @@ START_TEST(iteration_tests)
       if (var_index == 4)
         var_index++;
       
-      fail_unless(thing == a[var_index], "not iterating in order");
-      var_index++;
+      sprintf(buf, "not iterating in order, should be %s but %s -- test 4", a[var_index], (char *)thing);
+      fail_unless(thing == a[var_index], buf);
       }
+      
+    var_index++;
+    iter_count++;
     }
 
-  fail_unless(var_index == 8, "incorrect number of iterations");
+  sprintf(buf, "incorrect number of iterations, should be 8 again but %d", iter_count);
+  fail_unless(iter_count == 8, buf);
 
   }
 END_TEST
@@ -198,6 +219,15 @@ Suite *u_resizable_array_suite(void)
 
 void rundebug()
   {
+  int start_size = 2;
+
+  /* check initial values */
+  resizable_array *ra = initialize_resizable_array(start_size);
+
+  if (ra->slots[ALWAYS_EMPTY_INDEX].next != ALWAYS_EMPTY_INDEX)
+    printf("always empty's next is %d, should be %d",
+      ra->slots[ALWAYS_EMPTY_INDEX].next,
+      ALWAYS_EMPTY_INDEX);
   }
 
 int main(void)

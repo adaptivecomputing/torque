@@ -520,8 +520,6 @@ resizable_array *initialize_resizable_array(
   ra->slots = malloc(amount);
   memset(ra->slots,0,amount);
 
-  ra->slots[ALWAYS_EMPTY_INDEX].next = ra->next_slot;
-
   return(ra);
   } /* END initialize_resizable_array() */
 
