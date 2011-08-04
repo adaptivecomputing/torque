@@ -591,8 +591,6 @@ int wait_request(
     else
       pthread_mutex_unlock(svr_conn[i].cn_mutex);
     }    /* END for (i) */
-      
-  pthread_mutex_unlock(global_sock_read_mutex);
 
   /* NOTE:  break out if shutdown request received */
 
