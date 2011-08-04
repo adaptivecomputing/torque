@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _CRAY_CPA_CT_H
 #define _CRAY_CPA_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define CRAY_CPA_SUITE 1
 Suite *cray_cpa_suite();

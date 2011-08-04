@@ -2,6 +2,7 @@
 
 #include "attribute.h" /* attribute, attribute_def, svrattrl */
 #include "list_link.h" /* tlist_head */
+#include "pbs_nodes.h" /* struct prop */
 
 /* static struct node_state */
 

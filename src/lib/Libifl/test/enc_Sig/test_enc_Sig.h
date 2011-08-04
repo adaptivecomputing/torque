@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _ENC_SIG_CT_H
 #define _ENC_SIG_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define ENC_SIG_SUITE 1
 Suite *enc_Sig_suite();

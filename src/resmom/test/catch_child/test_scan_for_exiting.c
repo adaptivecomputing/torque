@@ -1,10 +1,11 @@
 #include "test_catch_child.h"
 #include "catch_child.h"
+#include <stdlib.h>
 
 extern int tc;
 extern int func_num;
 extern int ran_one;
-//extern char *getenv(char *);
+/*extern char *getenv(char *); */
 extern int multi_mom;
 extern int LOGLEVEL;
 extern void *calloc(size_t __nmemb, size_t __size);
@@ -53,18 +54,19 @@ Suite *scan_for_exiting_suite(void)
 void rundebug()
   {
   func_num = SCAN_FOR_EXITING;
-  tc = 2;
+  tc = 1;
   LOGLEVEL = 6;
   multi_mom = 1;
-  setenv("TORQUEFORCESEND", "2", 1);
   scan_for_exiting();
   }
 
 int main(void)
   {
   int number_failed = 0;
-/*  rundebug(); */
-  SRunner *sr = srunner_create(scan_for_exiting_suite());
+  SRunner *sr = NULL;
+  SRunner *sr = NULL;
+  rundebug();
+  sr = srunner_create(scan_for_exiting_suite());
   srunner_set_log(sr, "scan_for_exiting_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

@@ -1,12 +1,10 @@
-#include "license_pbs.h"
-#include "u_resizable_array.h"
+#include "license_pbs.h" /* See here for the software license */
+#include "lib_utils.h"
 #include "test_u_resizable_array.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <check.h>
 
 #include "pbs_error.h"
-#include "scaffolding.h"
   
 char *a[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i" };
 
@@ -17,7 +15,7 @@ START_TEST(initialize_and_resize)
   int start_size = 2;
 
   /* check initial values */
-  resizable_array *ra = intitialize_resizable_array(start_size);
+  resizable_array *ra = initialize_resizable_array(start_size);
 
   fail_unless(ra->num == 0, "initial number for resizable array should be 0");
   fail_unless(ra->max == start_size, "max initialized incorrectly");
@@ -205,8 +203,9 @@ void rundebug()
 int main(void)
   {
   int number_failed = 0;
+  SRunner *sr = NULL;
   rundebug();
-  SRunner *sr = srunner_create(u_resizable_array_suite());
+  sr = srunner_create(u_resizable_array_suite());
   srunner_set_log(sr, "u_resizable_array_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

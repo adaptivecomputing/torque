@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _CNT2SERVER_CT_H
 #define _CNT2SERVER_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define CNT2SERVER_SUITE 1
 Suite *cnt2server_suite();

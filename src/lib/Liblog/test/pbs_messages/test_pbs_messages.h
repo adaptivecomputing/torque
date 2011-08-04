@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _PBS_MESSAGES_CT_H
 #define _PBS_MESSAGES_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define PBS_MESSAGES_SUITE 1
 Suite *pbs_messages_suite();

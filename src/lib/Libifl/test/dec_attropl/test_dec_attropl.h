@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _DEC_ATTROPL_CT_H
 #define _DEC_ATTROPL_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define DEC_ATTROPL_SUITE 1
 Suite *dec_attropl_suite();

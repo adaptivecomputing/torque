@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _MXML_CT_H
 #define _MXML_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define MXML_SUITE 1
 Suite *MXML_suite();

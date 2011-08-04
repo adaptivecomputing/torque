@@ -94,7 +94,7 @@
 #endif
 
 #include "dis.h"
-#include "dis_.h"
+#include "lib_dis.h"
 #include "dis_init.h"
 #include "log.h"
 

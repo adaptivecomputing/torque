@@ -1,5 +1,6 @@
-#include <stdio.h>
+#include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
+#include <stdio.h>
 /* declarations/includes for Global Vars */
 #define PBS_MOM
 #include "list_link.h"
@@ -35,6 +36,7 @@ tlist_head mom_polljobs; /* mom_main.c */
 char        *path_epiloguserp; /* mom_main.c */
 char        *path_epilogp; /* mom_main.c */
 extern int errno;
+attribute_def job_attr_def[10]; /* src/server/job_attr_def.c */
 
 int tc = 0; /* Used for test routining */
 int func_num = 0;
@@ -1268,4 +1270,9 @@ unsigned long getsize(resource *pres)
   {
   fprintf(stderr, "The call to getsize needs to be mocked!!\n");
   exit(1);
+  }
+
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
+  {
+  return 1;
   }

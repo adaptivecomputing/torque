@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _U_MOM_HIERARCHY_CT_H
 #define _U_MOM_HIERARCHY_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define U_MOM_HIERARCHY_SUITE 1
 Suite *u_mom_hierarchy_suite();

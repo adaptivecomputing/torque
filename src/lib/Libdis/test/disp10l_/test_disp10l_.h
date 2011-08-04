@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _DISP10L__CT_H
 #define _DISP10L__CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define DISP10L__SUITE 1
 Suite *disp10l__suite();

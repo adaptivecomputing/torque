@@ -22,7 +22,7 @@ Suite *catch_child_suite(void)
 int main(void)
   {
   int number_failed = 0;
-  SRunner *sr = srunner_create(catch_child_suite());
+  sr = srunner_create(catch_child_suite());
   srunner_set_log(sr, "catch_child_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

@@ -13,7 +13,7 @@ extern int tc_num;
 
 START_TEST(test_parse_env_line_nospace)
   {
-  int rc = 0;
+
   char env_var[] = "ONE_VAR=THE_VAL";
   char *name = NULL, *val = NULL;
   rc = parse_env_line(env_var, &name, &val);
@@ -26,7 +26,7 @@ END_TEST
 
 START_TEST(test_parse_env_line_space)
   {
-  int rc = 0;
+
   char env_var[] = "ONE_VAR=  THE_VAL";
   char *name = NULL, *val = NULL;
   rc = parse_env_line(env_var, &name, &val);
@@ -39,7 +39,7 @@ END_TEST
 
 START_TEST(test_parse_env_line_allspace)
   {
-  int rc = 0;
+
   char env_var[] = "ONE_VAR=   ";
   char *name = NULL, *val = NULL;
   rc = parse_env_line(env_var, &name, &val);
@@ -52,7 +52,7 @@ END_TEST
 
 START_TEST(test_set_env_opts)
   {
-  int rc = 0;
+
   char *env_var[4];
   char *name = NULL, *val = NULL;
   job_data *env_hash = NULL;
@@ -137,7 +137,7 @@ Suite *common_cmds_suite(void)
 
 void rundebug()
   {
-/*   int rc = 0; */
+/*  */
 /*   char *env_var[4]; */
 /*   char *name = NULL, *val = NULL; */
 /*   job_data *env_hash = NULL; */
@@ -170,8 +170,9 @@ void rundebug()
 int main(void)
   {
   int number_failed = 0;
+  SRunner *sr = NULL;
   rundebug();
-  SRunner *sr = srunner_create(common_cmds_suite());
+  sr = srunner_create(common_cmds_suite());
   srunner_set_log(sr, "common_cmds_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

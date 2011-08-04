@@ -102,7 +102,7 @@
 #endif
 
 #include "dis.h"
-#include "dis_.h"
+#include "lib_dis.h"
 #include "rpp.h"
 #include "tcp.h"
 

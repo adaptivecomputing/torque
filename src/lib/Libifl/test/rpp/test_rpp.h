@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _RPP_CT_H
 #define _RPP_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define RPP_SUITE 1
 Suite *rpp_suite();

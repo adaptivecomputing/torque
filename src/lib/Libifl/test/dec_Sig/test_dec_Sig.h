@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _DEC_SIG_CT_H
 #define _DEC_SIG_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define DEC_SIG_SUITE 1
 Suite *dec_Sig_suite();

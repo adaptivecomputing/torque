@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _SITE_MOM_CKP_CT_H
 #define _SITE_MOM_CKP_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define SITE_MOM_CKP_SUITE 1
 Suite *site_mom_ckp_suite();

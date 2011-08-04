@@ -1,4 +1,4 @@
-
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _U_HASH_MAP_STRUCTS_CT_H
 #define _U_HASH_MAP_STRUCTS_CT_H
 #include <check.h>

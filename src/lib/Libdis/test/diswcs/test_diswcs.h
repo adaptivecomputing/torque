@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _DISWCS_CT_H
 #define _DISWCS_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define DISWCS_SUITE 1
 Suite *diswcs_suite();

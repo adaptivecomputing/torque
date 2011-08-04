@@ -37,8 +37,8 @@ START_TEST(test_get_node_1)
   {
   job pjob;
   tm_node_id nodeid = 1;
-  init_job(&pjob);
   hnodent *res;
+  init_job(&pjob);
   pjob.ji_numvnod = 0;
   res = get_node(&pjob, nodeid);
   fail_unless(res == NULL, "No data passed in, nothing should be found");
@@ -48,10 +48,10 @@ END_TEST
 
 START_TEST(test_get_node_2)
   {
+  hnodent *res;
   job pjob;
   tm_node_id nodeid = 3;
   init_job(&pjob);
-  hnodent *res;
   res = get_node(&pjob, nodeid);
   fail_unless(res == NULL, "Node should not have been found");
   cleanup_job(&pjob);
@@ -62,9 +62,8 @@ START_TEST(test_get_node_3)
   {
   job pjob;
   tm_node_id nodeid = 2;
-  int res_int = 0;
-  init_job(&pjob);
   hnodent *res;
+  init_job(&pjob);
   res = get_node(&pjob, nodeid);
   fail_if(res == NULL, "A valid node should have been returned");
   fail_unless(res->hn_node == 2, "Incorrect node was returned");
@@ -86,7 +85,7 @@ Suite *get_node_suite(void)
 int main(void)
   {
   int number_failed = 0;
-  SRunner *sr = srunner_create(get_node_suite());
+  sr = srunner_create(get_node_suite());
   srunner_set_log(sr, "get_node_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

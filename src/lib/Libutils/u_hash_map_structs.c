@@ -108,6 +108,7 @@ int hash_add_item(
   int rc = TRUE;
   int name_len = 0;
   int value_len = 0;
+  job_data *je = NULL;
   job_data *item = (job_data *)memmgr_calloc(mm, 1, sizeof(job_data));
   if (item == NULL)
     rc = -1;
@@ -146,8 +147,8 @@ int hash_add_item(
       strcpy(item->value, value);
     /* As all memory is allocated in memmgr, and references will be removed
      * when that is freed */
-/*    if (hash_find(*head, item->name, &je))
-      hash_del_item(mm, head, item->name); */
+    if (hash_find(*head, item->name, &je) == TRUE)
+      hash_del_item(mm, head, item->name);
     HASH_ADD_KEYPTR(hh, *head, item->name, name_len, item);
     }
   else

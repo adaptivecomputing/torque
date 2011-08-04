@@ -97,7 +97,7 @@
 #include <stdio.h>
 
 #include "dis.h"
-#include "dis_.h"
+#include "lib_dis.h"
 #include "tcp.h"
 #undef diswf
 

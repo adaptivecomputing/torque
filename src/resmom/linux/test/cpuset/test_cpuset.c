@@ -1,4 +1,4 @@
-#include "license_pbs.h"
+#include "license_pbs.h" /* See here for the software license */
 #include "cpuset.h"
 #include "test_cpuset.h"
 #include <stdlib.h>

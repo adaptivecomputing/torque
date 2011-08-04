@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _PBSD_MSG2_CT_H
 #define _PBSD_MSG2_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define PBSD_MSG2_SUITE 1
 Suite *PBSD_msg2_suite();

@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _PBSD_SELECTJ_CT_H
 #define _PBSD_SELECTJ_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define PBSD_SELECTJ_SUITE 1
 Suite *pbsD_selectj_suite();

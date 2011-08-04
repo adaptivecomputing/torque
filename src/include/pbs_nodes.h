@@ -86,6 +86,8 @@
 #include <pthread.h>
 #include "resizable_array.h"
 #include "hash_table.h"
+#include "net_connect.h" /* pbs_net_t */
+#include "pbs_ifl.h" /* resource_t */
 
 /* NOTE:  requires server_limits.h */
 

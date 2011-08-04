@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _LOCATE_JOB_CT_H
 #define _LOCATE_JOB_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define LOCATE_JOB_SUITE 1
 Suite *locate_job_suite();

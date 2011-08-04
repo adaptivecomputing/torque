@@ -4,7 +4,7 @@ extern int tc;
 extern int func_num;
 extern int socket_ref;
 
-extern exiting_tasks;
+extern int exiting_tasks;
 extern job *obitReplyJob;
 
 START_TEST(test_obit_reply_pjobnull)
@@ -116,7 +116,7 @@ Suite *obit_reply_suite(void)
   return s;
   }
 
-int rundebug()
+void rundebug()
   {
   socket_ref = 1;
   func_num = OBIT_REPLY;
@@ -131,8 +131,10 @@ void mom_deljob(job *pjob)
 int main(void)
   {
   int number_failed = 0;
+  SRunner *sr = NULL;
+  SRunner *sr = NULL;
   rundebug();
-  SRunner *sr = srunner_create(obit_reply_suite());
+  sr = srunner_create(obit_reply_suite());
   srunner_set_log(sr, "obit_reply_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _ENC_JOBID_CT_H
 #define _ENC_JOBID_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define ENC_JOBID_SUITE 1
 Suite *enc_JobId_suite();

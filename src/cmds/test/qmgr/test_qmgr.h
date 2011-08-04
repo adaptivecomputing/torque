@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _QMGR_CT_H
 #define _QMGR_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define QMGR_SUITE 1
 Suite *qmgr_suite();

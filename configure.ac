@@ -1967,6 +1967,8 @@ AC_OUTPUT(buildutils/pbs_mkdirs
     src/lib/Libutils/test/u_threadpool/Makefile
     src/lib/Libutils/test/u_tree/Makefile
     src/lib/Libutils/test/u_xml/Makefile
+    src/momctl/test/Makefile
+    src/momctl/test/momctl/Makefile
     src/resmom/test/Makefile
     src/resmom/test/catch_child/Makefile
     src/resmom/test/checkpoint/Makefile
@@ -1988,6 +1990,75 @@ AC_OUTPUT(buildutils/pbs_mkdirs
     src/resmom/linux/test/mom_mach/Makefile
     src/resmom/linux/test/mom_start/Makefile
     src/resmom/linux/test/pe_input/Makefile
+    src/server/test/Makefile
+    src/server/test/accounting/Makefile
+    src/server/test/array_func/Makefile
+    src/server/test/array_upgrade/Makefile
+    src/server/test/attr_recov/Makefile
+    src/server/test/dis_read/Makefile
+    src/server/test/geteusernam/Makefile
+    src/server/test/issue_request/Makefile
+    src/server/test/job_attr_def/Makefile
+    src/server/test/job_func/Makefile
+    src/server/test/job_qs_upgrade/Makefile
+    src/server/test/job_recov/Makefile
+    src/server/test/job_route/Makefile
+    src/server/test/node_attr_def/Makefile
+    src/server/test/node_func/Makefile
+    src/server/test/node_manager/Makefile
+    src/server/test/pbsd_init/Makefile
+    src/server/test/pbsd_main/Makefile
+    src/server/test/process_request/Makefile
+    src/server/test/queue_attr_def/Makefile
+    src/server/test/queue_func/Makefile
+    src/server/test/queue_recov/Makefile
+    src/server/test/reply_send/Makefile
+    src/server/test/req_delete/Makefile
+    src/server/test/req_deletearray/Makefile
+    src/server/test/req_getcred/Makefile
+    src/server/test/req_gpuctrl/Makefile
+    src/server/test/req_holdarray/Makefile
+    src/server/test/req_holdjob/Makefile
+    src/server/test/req_jobobit/Makefile
+    src/server/test/req_locate/Makefile
+    src/server/test/req_manager/Makefile
+    src/server/test/req_message/Makefile
+    src/server/test/req_modify/Makefile
+    src/server/test/req_movejob/Makefile
+    src/server/test/req_quejob/Makefile
+    src/server/test/req_register/Makefile
+    src/server/test/req_rerun/Makefile
+    src/server/test/req_rescq/Makefile
+    src/server/test/req_runjob/Makefile
+    src/server/test/req_select/Makefile
+    src/server/test/req_shutdown/Makefile
+    src/server/test/req_signal/Makefile
+    src/server/test/req_stat/Makefile
+    src/server/test/req_tokens/Makefile
+    src/server/test/req_track/Makefile
+    src/server/test/resc_def_all/Makefile
+    src/server/test/run_sched/Makefile
+    src/server/test/stat_job/Makefile
+    src/server/test/svr_attr_def/Makefile
+    src/server/test/svr_chk_owner/Makefile
+    src/server/test/svr_connect/Makefile
+    src/server/test/svr_format_job/Makefile
+    src/server/test/svr_func/Makefile
+    src/server/test/svr_jobfunc/Makefile
+    src/server/test/svr_mail/Makefile
+    src/server/test/svr_movejob/Makefile
+    src/server/test/svr_recov/Makefile
+    src/server/test/svr_resccost/Makefile
+    src/server/test/svr_task/Makefile
+    src/tools/test/Makefile
+    src/tools/test/chk_tree/Makefile
+    src/tools/test/hostn/Makefile
+    src/tools/test/pbsTclInit/Makefile
+    src/tools/test/pbsTkInit/Makefile
+    src/tools/test/printjob/Makefile
+    src/tools/test/printserverdb/Makefile
+    src/tools/test/printtracking/Makefile
+    src/tools/test/tracejob/Makefile
 )
 
 echo

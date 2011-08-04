@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _QENABLE_CT_H
 #define _QENABLE_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define QENABLE_SUITE 1
 Suite *qenable_suite();

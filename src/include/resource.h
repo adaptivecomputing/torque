@@ -1,6 +1,8 @@
 #ifndef RESOURCE_H
 #define RESOURCE_H
 
+#include "attribute.h" /* attribute */
+
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *

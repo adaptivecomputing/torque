@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _QDEL_CT_H
 #define _QDEL_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define QDEL_SUITE 1
 Suite *qdel_suite();

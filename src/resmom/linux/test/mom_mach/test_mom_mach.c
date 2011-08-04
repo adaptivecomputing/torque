@@ -1,4 +1,4 @@
-#include "license_pbs.h"
+#include "license_pbs.h" /* See here for the software license */
 #include "mom_mach.h"
 #include "test_mom_mach.h"
 #include <stdlib.h>

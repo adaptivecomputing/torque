@@ -1,9 +1,10 @@
-
-#include "u_memmgr.h"
+#include "license_pbs.h" /* See here for the software license */
+#include "lib_utils.h"
+#include "test_u_memmgr.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <pbs_error.h>
-#include <check.h>
+#include "pbs_error.h"
+
 
 #define calloc_fail 1
 #define malloc_fail 2
@@ -51,7 +52,7 @@ START_TEST(test_memmgr_init_destroy_one)
   memmgr *mm = NULL;
   init_globals();
   rc = memmgr_init(&mm, 16);
-  fail_unless(rc == TRUE, "memmgr_init failed. Code %d", rc);
+  fail_unless(rc == PBSE_NONE, "memmgr_init failed. Code %d", rc);
   fail_unless(calloc_count == 1, "calloc should have been called once %d", calloc_count);
   fail_unless(malloc_count == 1, "malloc should have been called once %d", malloc_count);
   fail_if(mm == NULL, "No memory for mgr was allocated");
@@ -59,7 +60,7 @@ START_TEST(test_memmgr_init_destroy_one)
   fail_unless(mm->alloc_size == 16, "Allocated size set wrong %d", mm->alloc_size);
   fail_unless(mm->remaining == 16, "Remaining size is set wrong %d", mm->remaining);
   fail_unless(mm->ref_count == 0, "ref count should be 0 %d", mm->ref_count);
-  fail_unless(mm->current_pos == (char *)mm->the_mem, "the start of memory is NOT set correctly");
+  fail_unless(mm->current_pos == mm->the_mem, "the start of memory is NOT set correctly");
   fail_unless(mm->prev_mgr == NULL, "prev_mgr should be NULL");
   fail_unless(mm->prev_mgr == NULL, "next_mgr should be NULL");
   fail_unless(mm->current_mgr == mm, "current_mgr should be set to self");
@@ -75,8 +76,8 @@ END_TEST
 START_TEST(test_memmgr_init_fail)
   {
   int rc = 0;
-  init_globals();
   memmgr *mm = NULL;
+  init_globals();
   rc = memmgr_init(NULL, 16);
   fail_unless(rc == -3, "mgr null error should have been returned, but code was %d", rc);
 
@@ -102,8 +103,8 @@ START_TEST(test_memmgr_calloc_shuffle_shuffle_extend)
   char *data_ptr2 = NULL;
   char *data_ptr3 = NULL;
   int size = 0;
-  init_globals();
   memmgr *mm = NULL;
+  init_globals();
   ptr = (char *)memmgr_calloc(NULL, 1, 5);
   fail_unless(ptr == NULL, "Invalid memmgr should generate NULL ptr response");
   ptr = (char *)memmgr_calloc(&mm, 1, 5);
@@ -121,10 +122,10 @@ START_TEST(test_memmgr_calloc_shuffle_shuffle_extend)
   fail_unless(mm->ref_count == 3, "ref_count should be three but is:%d", mm->ref_count);
   fail_unless(mm->remaining == 15, "remaining should be 15 but is:%d", mm->remaining);
 
-  ptr = mm->the_mem;
+  ptr = (char *)mm->the_mem;
   memcpy(&size, ptr, sizeof(int));
   fail_unless(size == 5, "allocated size should have been 5 but was %d", size);
-  ptr = mm->the_mem + sizeof(int);
+  ptr = (char *)mm->the_mem + sizeof(int);
   fail_unless(strncmp(ptr, "11111\0", 6) == 0, "value should be [11111]but is:[%s]", ptr);
   ptr += 6;
 
@@ -150,7 +151,7 @@ START_TEST(test_memmgr_calloc_shuffle_shuffle_extend)
   fail_unless(mm->current_mgr->remaining == 15, "This should still be the same amount as shuffle was called and this mgr was unaffected");
   fail_unless(mm->next_mgr->current_mgr == NULL, "Only the root mgr should have current_mgr populated, not the next_mgr");
   fail_unless(mm->next_mgr->prev_mgr == mm, "The next_mgr->prev_mgr value should be mm");
-  ptr = mm->the_mem;
+  ptr = (char *)mm->the_mem;
   memcpy(&size, ptr, sizeof(int));
   fail_unless(size == MEMMGR_DEFAULT_SIZE+1, "The size indicated in the block should be MEMMGR_DEFAULT_SIZE+1, but is:%d", size);
   fail_unless(ptr+sizeof(int) == data_ptr1, "The block allocated should be offset 4 from the start of the array but %x != %x", ptr+sizeof(int), data_ptr1);
@@ -165,7 +166,7 @@ START_TEST(test_memmgr_calloc_shuffle_shuffle_extend)
 
   data_ptr1 = (char *)memmgr_calloc(&mm, 1, 24);
   memset(data_ptr1, 7, 24);
-  ptr = mm->current_mgr->the_mem;
+  ptr = (char *)mm->current_mgr->the_mem;
   memcpy(&size, ptr, sizeof(int));
   fail_unless(size == 24, "The size indicated in the block should be 24+1, but is:%d", size);
   fail_unless(mm->current_mgr->prev_mgr == mm->next_mgr->next_mgr, "Error in link list after extend");
@@ -187,10 +188,9 @@ START_TEST(test_memmgr_free_remove)
   memmgr *mptr2 = NULL;
   memmgr *mptr3 = NULL;
   memmgr *mptr4 = NULL;
-  memmgr *mptr5 = NULL;
   int size = 0;
-  init_globals();
   memmgr *mm = NULL;
+  init_globals();
   rc = memmgr_init(&mm, 48);
   data_ptr1 = (char *)memmgr_calloc(&mm, 1, 5);
   strcpy(data_ptr1, "11111");
@@ -213,7 +213,7 @@ START_TEST(test_memmgr_free_remove)
   fail_unless(mptr3->ref_count == 2, "ref_count after free should be 2 but is:%d", mm->ref_count);
   memcpy(&size, mptr3->the_mem, sizeof(int));
   fail_unless(size == 0, "size indicator should have been cleared but still exists (%d)", size);
-  ptr = mptr3->the_mem+sizeof(int);
+  ptr = (char *)mptr3->the_mem+sizeof(int);
   fail_unless(memcmp(ptr, "\0\0\0\0\0", 5) == 0, "Memory should have been cleared after free but wasn't");
   memmgr_free(&mm, data_ptr5);
   fail_unless(mptr1->next_mgr == mptr3, "Linked list not updated correctly (removed mptr1->next_mgr) %x != %x", mptr1->next_mgr, mptr3);
@@ -233,9 +233,8 @@ END_TEST
 
 START_TEST(test_memmgr_find_fail)
   {
-  char *ptr = NULL;
-  init_globals();
   memmgr *mm = NULL;
+  init_globals();
   mm = (memmgr *)memmgr_find(NULL, NULL);
   fail_unless(mm == NULL, "Invalid memmgr should generate NULL memmgr response");
   mm = (memmgr *)memmgr_find(&mm, NULL);
@@ -258,9 +257,8 @@ START_TEST(test_memmgr_realloc)
   char *data_ptr4 = NULL;
   char *data_ptr5 = NULL;
   char *data_ptr6 = NULL;
-  int size = 0;
-  init_globals();
   memmgr *mm = NULL;
+  init_globals();
   fail_unless(memmgr_realloc(NULL, NULL, 5) == NULL, "NULL memmgr should result in NULL ptr");
   fail_unless(memmgr_realloc(&mm, NULL, 5) == NULL, "NULL memmgr should result in NULL ptr");
   rc = memmgr_init(&mm, 48);
@@ -270,11 +268,11 @@ START_TEST(test_memmgr_realloc)
   rc = memmgr_init(&mm, 48);
   data_ptr1 = (char *)memmgr_calloc(&mm, 1, 11);
   strcpy(data_ptr1, "11111111111");
-  ptr = mm->current_pos;
+  ptr = (char *)mm->current_pos;
   data_ptr2 = (char *)memmgr_realloc(&mm, data_ptr1, 4);
   fail_unless(data_ptr1 == data_ptr2, "The same ptr should have returned");
   fail_unless(strcmp(data_ptr1, "1111") == 0, "contents not correct for realloc to smaller '1111' != '%s'", data_ptr1);
-  fail_unless(ptr - mm->current_pos == 7, "This should have adjusted the current_pos ptr");
+  fail_unless(ptr - (char *)mm->current_pos == 7, "This should have adjusted the current_pos ptr");
   data_ptr2 = (char *)memmgr_realloc(&mm, data_ptr1, 10);
   fail_unless(data_ptr1 == data_ptr2, "The same ptr should have returned");
   fail_unless(memcmp(data_ptr1, "1111\0\0\0\0\0\0", 10) == 0, "Memory should have been cleared after free but wasn't");
@@ -335,16 +333,14 @@ Suite *u_memmgr_suite(void)
 void rundebug()
   {
   int rc = 0;
-  char *ptr = NULL;
   char *data_ptr1 = NULL;
   char *data_ptr2 = NULL;
   char *data_ptr3 = NULL;
   char *data_ptr4 = NULL;
   char *data_ptr5 = NULL;
   char *data_ptr6 = NULL;
-  int size = 0;
-  init_globals();
   memmgr *mm = NULL;
+  init_globals();
   rc = memmgr_init(&mm, 48);
   data_ptr1 = (char *)memmgr_calloc(&mm, 1, 11);
   strcpy(data_ptr1, "11111111111");
@@ -365,8 +361,9 @@ void rundebug()
 int main(void)
   {
   int number_failed = 0;
-  rundebug();
-  SRunner *sr = srunner_create(u_memmgr_suite());
+  SRunner *sr = NULL;
+/*  rundebug(); */
+  sr = srunner_create(u_memmgr_suite());
   srunner_set_log(sr, "u_memmgr_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _DISCUI__CT_H
 #define _DISCUI__CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define DISCUI__SUITE 1
 Suite *discui__suite();

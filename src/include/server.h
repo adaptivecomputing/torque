@@ -96,6 +96,7 @@
 #define SERVER_H
 
 #include "server_limits.h"
+#include "attribute.h" /* attribute_def */
 
 #define NO_BUFFER_SPACE -2
 #define NO_ATTR_DATA    1

@@ -61,4 +61,11 @@ void init_abort_jobs(
 void mom_deljob(
   job *pjob);            /* */
 
+/* Functionality
+ *
+ */
+void exit_mom_job(
+    job *pjob,
+    int mom_radix);
+
 #endif /* _CATCH_CHILD_H */

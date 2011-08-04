@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _DISCUL__CT_H
 #define _DISCUL__CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define DISCUL__SUITE 1
 Suite *discul__suite();

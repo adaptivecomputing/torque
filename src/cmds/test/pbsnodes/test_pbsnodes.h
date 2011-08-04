@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _PBSNODES_CT_H
 #define _PBSNODES_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define PBSNODES_SUITE 1
 Suite *pbsnodes_suite();

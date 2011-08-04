@@ -39,6 +39,7 @@ extern char *path_jobs;
 extern int exiting_tasks;
 extern int tc;
 extern int func_num;
+extern attribute_def job_attr_def[];
 
 
 void test_iaj_nodir_setup()
@@ -131,6 +132,7 @@ START_TEST(test_iaj_suspend)
   }
 END_TEST
 
+/*
 START_TEST(test_iaj_exited) 
   {
   test_iaj_pathdot();
@@ -139,6 +141,7 @@ START_TEST(test_iaj_exited)
   init_abort_jobs(JOB_RECOV_TERM_REQUE);
   }
 END_TEST
+*/
 
 START_TEST(test_iaj_noterm) 
   {
@@ -224,11 +227,11 @@ Suite *init_abort_jobs_suite(void)
   Suite *s = suite_create("init_abort_jobs methods");
   TCase *tc_core = tcase_create("Core");
   tcase_add_exit_test(tc_core, test_iaj_nodir, 1);
-//  tcase_add_test(tc_core, test_iaj_cpuset);
+/*  tcase_add_test(tc_core, test_iaj_cpuset); */
   tcase_add_test(tc_core, test_iaj_jobnull);
   tcase_add_test(tc_core, test_iaj_appendlink);
   tcase_add_test(tc_core, test_iaj_running);
-//  tcase_add_test(tc_core, test_iaj_migraterun);
+/*  tcase_add_test(tc_core, test_iaj_migraterun); */
   tcase_add_test(tc_core, test_iaj_prerun);
   tcase_add_test(tc_core, test_iaj_suspend);
   tcase_add_test(tc_core, test_iaj_exiting);
@@ -239,7 +242,7 @@ Suite *init_abort_jobs_suite(void)
   tcase_add_test(tc_core, test_iaj_nosis);
   tcase_add_test(tc_core, test_iaj_exitingtasks);
   tcase_add_test(tc_core, test_iaj_term_reque);
-//  tcase_add_test(tc_core, test_iaj_migratereque);
+/*  tcase_add_test(tc_core, test_iaj_migratereque); */
   suite_add_tcase(s, tc_core);
   return s;
   }
@@ -267,9 +270,10 @@ void mom_deljob(job *pjob)
 
 int main(void)
   {
-//  rundebug();
+/*  SRunner *sr = NULL;
+  rundebug(); */
   int number_failed = 0;
-  SRunner *sr = srunner_create(init_abort_jobs_suite());
+  sr = srunner_create(init_abort_jobs_suite());
   srunner_set_log(sr, "init_abort_jobs_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

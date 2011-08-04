@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _PBS_LOG_CT_H
 #define _PBS_LOG_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define PBS_LOG_SUITE 1
 Suite *pbs_log_suite();

@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _U_DYNAMIC_STRING_CT_H
 #define _U_DYNAMIC_STRING_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define U_DYNAMIC_STRING_SUITE 1
 Suite *u_dynamic_string_suite();

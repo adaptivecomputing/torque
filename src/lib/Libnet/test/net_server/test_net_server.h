@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _NET_SERVER_CT_H
 #define _NET_SERVER_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define NET_SERVER_SUITE 1
 Suite *net_server_suite();

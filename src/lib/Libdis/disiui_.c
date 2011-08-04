@@ -83,7 +83,7 @@
 #include <stdlib.h>
 
 #include "dis.h"
-#include "dis_.h"
+#include "lib_dis.h"
 
 char *dis_umax = NULL;
 unsigned dis_umaxd = 0;

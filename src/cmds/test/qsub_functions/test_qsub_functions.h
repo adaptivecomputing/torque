@@ -1,4 +1,5 @@
 
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _QSUB_CT_H
 #define _QSUB_CT_H
 

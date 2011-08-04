@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _DEC_MANAGE_CT_H
 #define _DEC_MANAGE_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define DEC_MANAGE_SUITE 1
 Suite *dec_Manage_suite();

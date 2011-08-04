@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _GET_SERVER_CT_H
 #define _GET_SERVER_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define PBS_DEFAULT_FILE "test_dir"
 

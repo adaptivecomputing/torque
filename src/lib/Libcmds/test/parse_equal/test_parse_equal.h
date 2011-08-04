@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _PARSE_EQUAL_CT_H
 #define _PARSE_EQUAL_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define PARSE_EQUAL_SUITE 1
 Suite *parse_equal_suite();

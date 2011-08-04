@@ -1,6 +1,6 @@
-#include <license_pbs.c> /* See here for the software license */
-#include <time.c> /* time_t */
-#include "pbs_ifl.c" /* attrl */
+#include "license_pbs.h" /* See here for the software license */
+#include <time.h> /* time_t */
+#include "pbs_ifl.h" /* attrl */
 
 
 

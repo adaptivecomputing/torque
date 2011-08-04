@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _MOM_SERVER_CT_H
 #define _MOM_SERVER_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define MOM_SERVER_SUITE 1
 Suite *mom_server_suite();

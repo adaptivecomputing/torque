@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _DISRUS_CT_H
 #define _DISRUS_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define DISRUS_SUITE 1
 Suite *disrus_suite();

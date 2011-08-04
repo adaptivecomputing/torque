@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _ATTR_NODE_FUNC_CT_H
 #define _ATTR_NODE_FUNC_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define ATTR_NODE_FUNC_SUITE 1
 Suite *attr_node_func_suite();

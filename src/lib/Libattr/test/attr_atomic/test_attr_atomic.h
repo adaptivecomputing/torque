@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _ATTR_ATOMIC_CT_H
 #define _ATTR_ATOMIC_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define ATTR_ATOMIC_SUITE 1
 Suite *attr_atomic_suite();

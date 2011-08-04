@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _PBSD_RUNJOB_CT_H
 #define _PBSD_RUNJOB_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define PBSD_RUNJOB_SUITE 1
 Suite *pbsD_runjob_suite();

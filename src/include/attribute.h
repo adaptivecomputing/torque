@@ -72,6 +72,8 @@
 #ifndef lONG_H
 #include "pbs_constants.h" /* Long */
 #endif
+#include "list_link.h"
+
 /*
  * This header file contains the definitions for attributes
  *

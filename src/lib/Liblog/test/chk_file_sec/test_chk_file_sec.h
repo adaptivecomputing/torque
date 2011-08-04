@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _CHK_FILE_SEC_CT_H
 #define _CHK_FILE_SEC_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define CHK_FILE_SEC_SUITE 1
 Suite *chk_file_sec_suite();

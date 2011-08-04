@@ -11,9 +11,9 @@ extern int LOGLEVEL;
 START_TEST(test_pe_negsock)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
-  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   int ev = 0;
   int res = 0;
+  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   func_num = POST_EPILOGUE;
   tc = 1;
   errno = EINTR;
@@ -27,9 +27,9 @@ END_TEST
 START_TEST(test_pe_negpostsock)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
-  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   int ev = 0;
   int res = 0;
+  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   func_num = POST_EPILOGUE;
   tc = 2;
   errno = ETIMEDOUT;
@@ -42,9 +42,9 @@ END_TEST
 START_TEST(test_pe_prnull)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
-  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   int ev = 0;
   int res = 0;
+  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   func_num = POST_EPILOGUE;
   tc = 3;
   errno = EINPROGRESS;
@@ -56,9 +56,9 @@ END_TEST
 START_TEST(test_pe_disreqhdr)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
-  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   int ev = 0;
   int res = 0;
+  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   func_num = POST_EPILOGUE;
   tc = 4;
   res = post_epilogue(pjob, ev);
@@ -70,9 +70,9 @@ END_TEST
 START_TEST(test_pe_disjobobit)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
-  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   int ev = 0;
   int res = 0;
+  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   func_num = POST_EPILOGUE;
   tc = 5;
   res = post_epilogue(pjob, ev);
@@ -84,9 +84,9 @@ END_TEST
 START_TEST(test_pe_disreqextend)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
-  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   int ev = 0;
   int res = 0;
+  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   func_num = POST_EPILOGUE;
   tc = 6;
   res = post_epilogue(pjob, ev);
@@ -98,9 +98,9 @@ END_TEST
 START_TEST(test_pe_disfail)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
-  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   int ev = 0;
   int res = 0;
+  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   func_num = POST_EPILOGUE;
   tc = 7;
   res = post_epilogue(pjob, ev);
@@ -127,9 +127,9 @@ Suite *post_epilogue_suite(void)
 void rundebug()
   {
   job *pjob = (job *)calloc(1, sizeof(job));
-  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   int ev = 0;
   int res = 0;
+  strcpy(pjob->ji_qs.ji_jobid, "hithere");
   func_num = POST_EPILOGUE;
   tc = 1;
   errno = EINTR;
@@ -140,8 +140,10 @@ void rundebug()
 int main(void)
   {
   int number_failed = 0;
+  SRunner *sr = NULL;
+  SRunner *sr = NULL;
   rundebug();
-  SRunner *sr = srunner_create(post_epilogue_suite());
+  sr = srunner_create(post_epilogue_suite());
   srunner_set_log(sr, "post_epilogue_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

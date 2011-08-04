@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _GET_HOSTADDR_CT_H
 #define _GET_HOSTADDR_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define GET_HOSTADDR_SUITE 1
 Suite *get_hostaddr_suite();

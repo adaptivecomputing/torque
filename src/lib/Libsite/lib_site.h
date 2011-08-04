@@ -1,4 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
+#include "pbs_job.h" /* job */
+#include "queue.h" /* queue */
 
 /* from file site_allow_u.c */
 int site_allow_u(char *user, char *host);

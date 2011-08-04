@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _RM_CT_H
 #define _RM_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define RM_SUITE 1
 Suite *rm_suite();

@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _NONBLOCK_CT_H
 #define _NONBLOCK_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define NONBLOCK_SUITE 1
 Suite *nonblock_suite();

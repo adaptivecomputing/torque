@@ -1,3 +1,10 @@
+#ifndef _NET_CONNECT_H
+#define _NET_CONNECT_H
+#include <stdlib.h>
+#include <malloc.h>
+#include <pthread.h> /* pthread_mutex_t */
+
+
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -194,7 +201,7 @@ unsigned int  get_svrport(char *, char *, unsigned int);
 int  init_network(unsigned int, void (*readfunc)());
 void net_close(int);
 int  wait_request(time_t waittime, long *);
-void net_add_close_func(int, void(*)());
+void net_add_close_func(int, void(*func)(int));
 int get_max_num_descriptors(void);
 int get_fdset_size(void);
 char * netaddr_pbs_net_t(pbs_net_t);
@@ -231,3 +238,4 @@ typedef struct listener_connection
   int first_time;
   } listener_connection;
 
+#endif /* _NET_CONNECT_H */

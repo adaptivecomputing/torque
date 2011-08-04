@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _PBS_ATTR_CT_H
 #define _PBS_ATTR_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define PBS_ATTR_SUITE 1
 Suite *PBS_attr_suite();

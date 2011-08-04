@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _PBS_STATFREE_CT_H
 #define _PBS_STATFREE_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define PBS_STATFREE_SUITE 1
 Suite *pbs_statfree_suite();

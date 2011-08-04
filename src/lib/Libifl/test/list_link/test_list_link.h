@@ -1,6 +1,7 @@
+#include "license_pbs.h" /* See here for the software license */
 #ifndef _LIST_LINK_CT_H
 #define _LIST_LINK_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define LIST_LINK_SUITE 1
 Suite *list_link_suite();

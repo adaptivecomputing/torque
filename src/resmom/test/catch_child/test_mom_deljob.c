@@ -4,7 +4,7 @@
 
 START_TEST(test_mom_deljob_1)
   {
-  job *pjob;
+  job *pjob = NULL;
   mom_deljob(pjob);
   }
 END_TEST
@@ -21,7 +21,7 @@ Suite *mom_deljob_suite(void)
 int main(void)
   {
   int number_failed = 0;
-  SRunner *sr = srunner_create(mom_deljob_suite());
+  sr = srunner_create(mom_deljob_suite());
   srunner_set_log(sr, "mom_deljob_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

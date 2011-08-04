@@ -3,8 +3,8 @@
 
 extern int tc;
 extern int func_num;
-extern LOGLEVEL;
-extern socket_ref;
+extern int LOGLEVEL;
+extern int socket_ref;
 
 START_TEST(test_preobit_reply_first)
   {
@@ -180,8 +180,10 @@ void rundebug()
 int main(void)
   {
   int number_failed = 0;
+  SRunner *sr = NULL;
+  SRunner *sr = NULL;
   rundebug();
-  SRunner *sr = srunner_create(preobit_reply_suite());
+  sr = srunner_create(preobit_reply_suite());
   srunner_set_log(sr, "preobit_reply_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

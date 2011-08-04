@@ -1,4 +1,4 @@
-#include "license_pbs.h"
+#include "license_pbs.h" /* See here for the software license */
 #include "pe_input.h"
 #include "test_pe_input.h"
 #include <stdlib.h>
