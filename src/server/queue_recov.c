@@ -111,8 +111,6 @@ extern pthread_mutex_t *setup_save_mutex;
 /* data global to this file */
 
 extern char   *path_queues;
-extern time_t  time_now;
- 
 
 
 
@@ -142,7 +140,7 @@ int que_save(
   char namebuf2[MAXPATHLEN];
   char buf[MAXLINE<<8];
 
-  pque->qu_attr[QA_ATR_MTime].at_val.at_long = time_now;
+  pque->qu_attr[QA_ATR_MTime].at_val.at_long = time(NULL);
   pque->qu_attr[QA_ATR_MTime].at_flags = ATR_VFLAG_SET;
 
   snprintf(namebuf1,sizeof(namebuf1),
@@ -263,6 +261,7 @@ pbs_queue *que_recov_xml(
   char        *begin;
   char        *end;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t       time_now = time(NULL);
 
   static char *id = "que_recov_xml";
 
@@ -435,10 +434,11 @@ pbs_queue *que_recov(
   char *filename) /* pathname to queue save file */
 
   {
-  int    fds;
-  int    i;
+  int        fds;
+  int        i;
   pbs_queue *pq;
-  char    namebuf[MAXPATHLEN];
+  char       namebuf[MAXPATHLEN];
+  time_t     time_now = time(NULL);
 
   pq = que_alloc(filename);  /* allocate & init queue structure space */
 

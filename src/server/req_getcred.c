@@ -110,7 +110,6 @@
 
 /* External Global Data Items Referenced */
 
-extern time_t time_now;
 
 extern struct connection svr_conn[];
 extern char *path_credentials;
@@ -434,7 +433,7 @@ void req_authenuser(
 
       /* time stamp just for the record */
 
-      conn_credent[s].timestamp = time_now;
+      conn_credent[s].timestamp = time(NULL);
 
       svr_conn[s].cn_authen = PBS_NET_CONN_AUTHENTICATED;
       }
@@ -508,7 +507,7 @@ void *req_altauthenuser(
 
   /* time stamp just for the record */
 
-  conn_credent[s].timestamp = time_now;
+  conn_credent[s].timestamp = time(NULL);
 
   svr_conn[s].cn_authen = PBS_NET_CONN_AUTHENTICATED;
 

@@ -114,7 +114,6 @@ int status_attrib(svrattrl *, attribute_def *, attribute *, int, int, tlist_head
 extern attribute_def job_attr_def[];
 
 extern struct server server;
-extern time_t time_now;
 
 
 
@@ -223,9 +222,10 @@ int status_attrib(
   int            IsOwner)  /* 0 == FALSE, 1 == TRUE */
 
   {
-  int   index;
-  int   nth = 0;
-  int   resc_access_perm;
+  int    index;
+  int    nth = 0;
+  int    resc_access_perm;
+  time_t time_now = time(NULL);
 
   priv &= ATR_DFLAG_RDACC;  /* user-client privilege  */
   resc_access_perm = priv; 

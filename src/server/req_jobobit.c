@@ -136,7 +136,6 @@ extern char *msg_obitnodel;
 extern char  server_host[];
 extern int   svr_do_schedule;
 extern int   listener_command;
-extern time_t time_now;
 
 extern int   LOGLEVEL;
 
@@ -633,7 +632,8 @@ int mom_comm(
   void (*func)(struct work_task *))
 
   {
-  unsigned int dummy;
+  unsigned int      dummy;
+  time_t            time_now = time(NULL);
 
   struct work_task *pwt;
   char             *jobid_copy;
@@ -1364,6 +1364,7 @@ int handle_complete_first_time(
   work_task   *pwt = NULL;
   char        *jobid;
   int          KeepSeconds = 0;
+  time_t       time_now = time(NULL);
 
   /* first time in */
   if (LOGLEVEL >= 4)
@@ -1469,6 +1470,7 @@ int handle_complete_second_time(
   work_task   *pwt;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   char        *jobid;
+  time_t       time_now = time(NULL);
   
   if (((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
       (pjob->ji_wattr[JOB_ATR_reported].at_val.at_long == 0))
@@ -2296,6 +2298,7 @@ void *req_jobobit(
   svrattrl             *patlist;
   unsigned int          dummy;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t                time_now = time(NULL);
 
   strcpy(jobid, preq->rq_ind.rq_jobobit.rq_jid);  /* This will be needed later for logging after preq is freed. */
   pjob = find_job(preq->rq_ind.rq_jobobit.rq_jid);

@@ -118,7 +118,6 @@ extern char *msg_jobholdset;
 extern char *msg_jobholdrel;
 extern char *msg_mombadhold;
 extern char *msg_postmomnojob;
-extern time_t  time_now;
 
 int chk_hold_priv(long val, int perm);
 int get_hold(tlist_head *, char **, attribute *);

@@ -96,7 +96,11 @@
 
 
 /* external global vars */
+#ifndef PBS_MOM
+time_t        time_now;
+#else
 extern time_t time_now;
+#endif
 
 
 

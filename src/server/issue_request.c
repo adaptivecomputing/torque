@@ -114,7 +114,6 @@ extern char *server_name;
 extern struct connect_handle connection[];
 extern char     *msg_daemonname;
 extern all_tasks task_list_event;
-extern time_t time_now;
 extern char *msg_daemonname;
 extern char *msg_issuebad;
 extern char     *msg_norelytomom;
@@ -216,7 +215,7 @@ static void reissue_to_svr(
   struct work_task *pwt)
 
   {
-
+  time_t                time_now = time(NULL);
   struct batch_request *preq = pwt->wt_parm1;
 
   /* if not timed-out, retry send to remote server */
@@ -263,6 +262,7 @@ int issue_to_svr(
   unsigned int      port = pbs_server_port_dis;
 
   struct work_task *pwt;
+  time_t            time_now = time(NULL);
 
   strcpy(preq->rq_host, servern);
 

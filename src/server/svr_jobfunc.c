@@ -157,7 +157,6 @@ extern int    svr_do_schedule;
 extern int    listener_command;
 extern int    LOGLEVEL;
 
-extern time_t time_now;
 extern int    DEBUGMODE;
 
 int           SvrNodeCt = 0;  /* cfg nodes or num nodes specified via resources_available */
@@ -297,6 +296,7 @@ int svr_enquejob(
   int            rc;
   int            iter;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t         time_now = time(NULL);
 
   /* make sure queue is still there, there exists a small window ... */
 
@@ -638,6 +638,7 @@ int svr_setjobstate(
 
   pbs_queue *pque;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t     time_now = time(NULL);
 
   if (LOGLEVEL >= 2)
     {
@@ -775,7 +776,7 @@ void svr_evaljobstate(
     else
       *newsub = JOB_SUBSTATE_HELD;
     }
-  else if (pjob->ji_wattr[JOB_ATR_exectime].at_val.at_long > (long)time_now)
+  else if (pjob->ji_wattr[JOB_ATR_exectime].at_val.at_long > (long)time(NULL))
     {
     *newstate = JOB_STATE_WAITING;
     *newsub   = JOB_SUBSTATE_WAITING;

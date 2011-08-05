@@ -123,7 +123,6 @@ extern int   comp_resc_lt;
 extern int   LOGLEVEL;
 extern char *path_checkpoint;
 extern char server_name[];
-extern time_t time_now;
 
 extern const char *PJobSubState[];
 extern char *PJobState[];
@@ -230,6 +229,7 @@ void mom_cleanup_checkpoint_hold(
 
   struct batch_request *preq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t                time_now = time(NULL);
 
   jobid = (char *)ptask->wt_parm1;
   free(ptask);

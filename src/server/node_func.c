@@ -127,7 +127,6 @@
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 extern int h_errno;
 #endif
-extern time_t  time_now;
 
 typedef struct _node_info_
   {
@@ -294,6 +293,7 @@ int addr_ok(
   {
   int           status = 1;  /* assume destination host is healthy */
   int           release_mutex = FALSE;
+  time_t        time_now = time(NULL);
 
   node_iterator iter;
 
@@ -1717,6 +1717,7 @@ int create_pbs_node(
   node_info        *host_info;
   int              i;
   u_long           addr;
+  time_t           time_now = time(NULL);
 
   if ((rc = process_host_name_part(objname, &pul, &pname, &ntype)) != 0)
     {

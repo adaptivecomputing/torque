@@ -112,7 +112,6 @@ extern int issue_to_svr(char *svr, struct batch_request *, void (*func)(struct w
 extern char         *path_track;
 
 extern struct server server;
-extern time_t        time_now;
 extern char          server_name[];
 extern int           LOGLEVEL;
 
@@ -127,8 +126,9 @@ void req_track(
   {
 
   struct tracking *empty = (struct tracking *)0;
-  int   i;
-  int   need;
+  int    i;
+  int    need;
+  time_t time_now = time(NULL);
 
   struct tracking *new;
 
@@ -267,8 +267,9 @@ void track_save(
   struct work_task *pwt)  /* unused */
 
   {
-  int fd;
-  char *myid = "save_track";
+  int        fd;
+  char      *myid = "save_track";
+  time_t     time_now = time(NULL);
   work_task *wt;
 
   /* set task for next round trip */

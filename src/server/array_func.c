@@ -63,7 +63,6 @@ static struct all_arrays allarrays;
 
 extern char *path_arrays;
 extern char *path_jobs;
-extern time_t time_now;
 extern int    LOGLEVEL;
 extern char *pbs_o_host;
 

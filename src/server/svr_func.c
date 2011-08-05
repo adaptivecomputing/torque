@@ -105,7 +105,6 @@
 extern int    scheduler_sock;
 extern int    svr_do_schedule;
 extern int    listener_command;
-extern time_t time_now;
 
 /*
  * the following array of strings is used in decoding/encoding the server state

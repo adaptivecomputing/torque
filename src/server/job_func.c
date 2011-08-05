@@ -181,7 +181,6 @@ extern char *path_jobs;
 extern char *path_spool;
 extern char *path_aux;
 extern char  server_name[];
-extern time_t time_now;
 extern int   LOGLEVEL;
 
 extern char *path_checkpoint;
@@ -963,24 +962,25 @@ void job_clone_wt(
   struct work_task *ptask)
 
   {
-  static char id[] = "job_clone_wt";
-  job *pjob;
-  job *pjobclone;
+  static char         id[] = "job_clone_wt";
+  job                *pjob;
+  job                *pjobclone;
 
-  int i;
-  int num_cloned;
-  int clone_size;
-  int clone_delay;
-  int newstate;
-  int newsub;
-  int rc;
-  char namebuf[MAXPATHLEN];
-  job_array *pa;
+  int                 i;
+  int                 num_cloned;
+  int                 clone_size;
+  int                 clone_delay;
+  int                 newstate;
+  int                 newsub;
+  int                 rc;
+  char                namebuf[MAXPATHLEN];
+  job_array          *pa;
 
   array_request_node *rn;
-  int start;
-  int end;
-  int loop;
+  time_t              time_now = time(NULL);
+  int                 start;
+  int                 end;
+  int                 loop;
 
   pjob = (job*)(ptask->wt_parm1);
 
@@ -1700,6 +1700,7 @@ void job_purge(
   char          log_buf[LOCAL_LOG_BUF_SIZE];
   char          namebuf[MAXPATHLEN + 1];
   extern char  *msg_err_purgejob;
+  time_t        time_now = time(NULL);
 
   /* check to see if we are keeping a log of all jobs completed */
   if (server.sv_attr[SRV_ATR_RecordJobInfo].at_val.at_long)

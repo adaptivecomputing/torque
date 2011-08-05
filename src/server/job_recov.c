@@ -137,8 +137,6 @@ extern int job_qs_upgrade(job *, int, char *, int);
 extern char  *path_jobs;
 extern const char *PJobSubState[];
 
-extern time_t time_now;
-
 /* data global only to this file */
 
 static const unsigned int quicksize = sizeof(struct jobfix);
@@ -173,13 +171,14 @@ int job_save(
   int  mom_port)   /* if 0 ignore otherwise append to end of job name. this is for multi-mom mode */
 
   {
-  int fds;
-  int i;
-  char namebuf1[MAXPATHLEN];
-  char namebuf2[MAXPATHLEN];
-  char portname[MAXPATHLEN];
-  int openflags;
-  int redo;
+  int    fds;
+  int    i;
+  char   namebuf1[MAXPATHLEN];
+  char   namebuf2[MAXPATHLEN];
+  char   portname[MAXPATHLEN];
+  int    openflags;
+  int    redo;
+  time_t time_now = time(NULL);
 
   strcpy(namebuf1, path_jobs); /* job directory path */
   strcat(namebuf1, pjob->ji_qs.ji_fileprefix);
@@ -388,7 +387,7 @@ int job_save(
     pjob->ji_modified = 0;
     }  /* END (updatetype == SAVEJOB_QUICK) */
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END job_save() */
 
 

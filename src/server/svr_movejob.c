@@ -142,7 +142,6 @@ static int move_job_file(int con, job *pjob, enum job_file which);
 
 /* Global Data */
 
-extern time_t            time_now;
 extern char             *path_jobs;
 extern char             *path_spool;
 extern attribute_def     job_attr_def[];
@@ -524,7 +523,7 @@ int send_job_work(
   char                  script_name[MAXPATHLEN + 1];
   char                 *pc;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  long                  time = time_now;
+  long                  start_time = time(NULL);
   long                  sid;
 
   struct attropl       *pqjatr;      /* list (single) of attropl for quejob */
@@ -624,7 +623,7 @@ int send_job_work(
         log_err(pbs_errno, id, log_buf);
 
 
-        finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
+        finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
 
         return(LOCUTION_FAIL);
         }
@@ -642,7 +641,7 @@ int send_job_work(
 
       log_err(pbs_errno, id, log_buf);
   
-      finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
+      finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
 
       return(LOCUTION_FAIL);
       }
@@ -700,7 +699,7 @@ int send_job_work(
             pjob->ji_qs.ji_jobid,
             "MOM reports job already running");
 
-          finish_move_process(pjob,preq,time,node_name,LOCUTION_SUCCESS,type);
+          finish_move_process(pjob,preq,start_time,node_name,LOCUTION_SUCCESS,type);
 
           return(PBSE_NONE);
           }
@@ -801,7 +800,7 @@ int send_job_work(
         log_ext(errno2, id, log_buf, LOG_CRIT);
 
         /* FAILURE */
-        finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
+        finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
 
         return(LOCUTION_FAIL);
         }
@@ -819,7 +818,7 @@ int send_job_work(
     close(sock);
 
     /* SUCCESS */
-    finish_move_process(pjob,preq,time,node_name,LOCUTION_SUCCESS,type);
+    finish_move_process(pjob,preq,start_time,node_name,LOCUTION_SUCCESS,type);
 
     return(PBSE_NONE);
     }  /* END for (NumRetries) */
@@ -836,7 +835,7 @@ int send_job_work(
 
     log_ext(pbs_errno, id, log_buf, LOG_WARNING);
 
-    finish_move_process(pjob,preq,time,node_name,LOCUTION_REQUEUE,type);
+    finish_move_process(pjob,preq,start_time,node_name,LOCUTION_REQUEUE,type);
     
     return(LOCUTION_REQUEUE);
     }
@@ -847,12 +846,12 @@ int send_job_work(
 
     log_err(pbs_errno, id, log_buf);
 
-    finish_move_process(pjob,preq,time,node_name,LOCUTION_FAIL,type);
+    finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
     
     return(LOCUTION_FAIL);
     }
 
-  finish_move_process(pjob,preq,time,node_name,LOCUTION_REQUEUE,type);
+  finish_move_process(pjob,preq,start_time,node_name,LOCUTION_REQUEUE,type);
     
   return(LOCUTION_REQUEUE);
   } /* END send_job_work() */

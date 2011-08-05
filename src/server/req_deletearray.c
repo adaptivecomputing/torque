@@ -32,7 +32,6 @@ extern void change_restart_comment_if_needed(struct job *);
 
 extern char *msg_unkarrayid;
 extern char *msg_permlog;
-extern time_t time_now;
 
 static void post_delete(struct work_task *pwt);
 
@@ -57,6 +56,7 @@ int attempt_delete(
   char      *jobid_copy;
   work_task *pwtold;
   job       *pjob;
+  time_t     time_now = time(NULL);
 
   /* job considered deleted if null */
   if (j == NULL)
@@ -191,15 +191,16 @@ void req_deletearray(
   struct batch_request *preq)
 
   {
-  job_array *pa;
+  job_array        *pa;
 
-  char *range;
+  char             *range;
 
   struct work_task *ptask;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
-  int num_skipped;
-  char  owner[PBS_MAXUSER + 1];
+  int               num_skipped;
+  char              owner[PBS_MAXUSER + 1];
+  time_t            time_now = time(NULL);
 
   pa = get_array(preq->rq_ind.rq_delete.rq_objname);
 
@@ -311,6 +312,7 @@ void array_delete_wt(
   static int            last_check = 0;
   static char          *last_id = NULL;
   char                 *jobid_copy;
+  time_t                time_now = time(NULL);
 
   preq = ptask->wt_parm1;
 

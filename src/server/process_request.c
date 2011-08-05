@@ -144,7 +144,6 @@ extern struct server server;
 extern char      server_host[];
 struct all_jobs newjobs;
 
-extern time_t    time_now;
 extern char     *msg_err_noqueue;
 extern char     *msg_err_malloc;
 extern char     *msg_request;
@@ -321,7 +320,7 @@ void process_request(
   struct batch_request *request = NULL;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  time_now = time(NULL);
+  time_t                time_now = time(NULL);
 
   request = alloc_br(0);
 
@@ -1025,7 +1024,7 @@ struct batch_request *alloc_br(
 
   req->rq_conn = -1;  /* indicate not connected */
   req->rq_orgconn = -1;  /* indicate not connected */
-  req->rq_time = time_now;
+  req->rq_time = time(NULL);
   req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
   req->rq_noreply = FALSE;  /* indicate reply is needed */
 

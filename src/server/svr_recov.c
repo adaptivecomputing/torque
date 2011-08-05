@@ -121,7 +121,6 @@ extern attribute_def svr_attr_def[];
 extern char     *path_svrdb;
 extern char     *path_svrdb_new;
 extern char     *path_priv;
-extern time_t    time_now;
 extern char     *msg_svdbopen;
 extern char     *msg_svdbnosv;
 
@@ -928,12 +927,13 @@ int svr_save_xml(
   int            mode)
 
   {
-  char *id = "svr_save_xml";
-  char  buf[MAXLINE<<8];
+  char   *id = "svr_save_xml";
+  char    buf[MAXLINE<<8];
 
-  int   fds;
-  int   rc;
-  int   len;
+  int     fds;
+  int     rc;
+  int     len;
+  time_t  time_now = time(NULL);
 
   fds = open(path_svrdb, O_WRONLY | O_CREAT | O_Sync | O_TRUNC, 0600);
 

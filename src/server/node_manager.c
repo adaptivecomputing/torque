@@ -151,8 +151,6 @@ pthread_mutex_t *addrnote_mutex = NULL;
 extern int  server_init_type;
 extern int  has_nodes;
 
-extern time_t    time_now;
-
 #ifdef NVIDIA_GPUS
 extern int create_a_gpusubnode(struct pbsnode *);
 #endif  /* NVIDIA_GPUS */
@@ -966,8 +964,6 @@ void setup_notification(
     pthread_mutex_unlock(pnode->nd_mutex);
     }
 
-  /*set_task(WORK_Timed,time_now + 5,send_cluster_addrs,NULL,FALSE);*/
-
   if (addrnote_mutex == NULL)
     {
     addrnote_mutex = malloc(sizeof(pthread_mutex_t));
@@ -1003,6 +999,7 @@ int is_stat_get(
   char            date_attrib[100];
   int             msg_error = 0;
   struct pbssubn *sp = NULL;
+  time_t          time_now = time(NULL);
 
   extern int TConnGetSelectErrno();
   extern int TConnGetReadErrno();
@@ -1970,6 +1967,7 @@ void *check_nodes_work(
   struct pbsnode   *np = NULL;
   int               chk_len;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t            time_now = time(NULL);
 
   node_iterator     iter;
   
@@ -2075,19 +2073,20 @@ void *is_request_work(
   void *vp)
 
   {
-  static char   id[] = "is_request_work";
+  static char         id[] = "is_request_work";
 
-  int  command = 0;
-  int  ret = DIS_SUCCESS;
-  int  i, err;
-  char nodename[PBS_MAXHOSTNAME];
-  int   perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
-  struct hostent *hp;      
+  int                 command = 0;
+  int                 ret = DIS_SUCCESS;
+  int                 i;
+  int                 err;
+  char                nodename[PBS_MAXHOSTNAME];
+  int                 perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
+  struct hostent     *hp;      
 
-  unsigned long ipaddr;
-  unsigned short  mom_port;
-  unsigned short  rm_port;
-  unsigned long tmpaddr;
+  unsigned long       ipaddr;
+  unsigned short      mom_port;
+  unsigned short      rm_port;
+  unsigned long       tmpaddr;
 
   struct sockaddr_in *addr = NULL;
   struct sockaddr     s_addr;
@@ -2096,10 +2095,13 @@ void *is_request_work(
   struct pbsnode     *node = NULL;
 
   char                log_buf[LOCAL_LOG_BUF_SIZE];
+#ifdef NVIDIA_GPUS
+  time_t              time_now = time(NULL);
+#endif
 
-  int  stream;
-  int  version;
-  int *args = (int *)vp;
+  int                 stream;
+  int                 version;
+  int                *args = (int *)vp;
 
   stream = args[0];
   version = args[1];

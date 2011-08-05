@@ -166,7 +166,6 @@ extern char *msg_script_write;
 extern char *msg_init_abt;
 
 extern char *msg_jobnew;
-extern time_t time_now;
 extern int    LOGLEVEL;
 
 extern  char *msg_daemonname;
@@ -383,6 +382,8 @@ void *req_quejob(
   char                  buf[256];
   char                  EMsg[MAXPATHLEN];
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+
+  time_t                time_now = time(NULL);
 
   job                  *pj;
   attribute_def        *pdef;
@@ -1795,6 +1796,7 @@ void req_commit(
   pbs_queue *pque;
   int        rc;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t     time_now = time(NULL);
 
 #ifdef AUTORUN_JOBS
 

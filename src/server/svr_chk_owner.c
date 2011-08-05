@@ -103,7 +103,6 @@ extern struct credential conn_credent[PBS_NET_MAX_CONNECTIONS];
 extern char *pbs_o_host;
 extern char  server_host[];
 extern char *msg_permlog;
-extern time_t time_now;
 
 extern char *PJobState[];
 
@@ -379,8 +378,9 @@ int authenticate_user(
   struct credential    *pcred) /* I */
 
   {
-  int  rc;
-  char uath[PBS_MAXUSER + PBS_MAXHOSTNAME + 1];
+  int    rc;
+  char   uath[PBS_MAXUSER + PBS_MAXHOSTNAME + 1];
+  time_t time_now = time(NULL);
 
   if (strncmp(preq->rq_user, pcred->username, PBS_MAXUSER))
     {

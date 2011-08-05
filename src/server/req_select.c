@@ -114,7 +114,6 @@ extern int   svr_authorize_jobreq(struct batch_request *, job *);
 /* Global Data Items  */
 
 extern struct server server;
-extern time_t  time_now;
 extern struct all_jobs alljobs;
 extern struct all_jobs array_summary;
 
@@ -377,6 +376,7 @@ static void sel_step2(
   int           summarize_arrays = 0;
   pbs_queue    *pque = NULL;
   int           iter;
+  time_t        time_now = time(NULL);
 
   /* do first pass of finding jobs that match the selection criteria */
 

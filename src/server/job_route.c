@@ -123,7 +123,6 @@ void queue_route(pbs_queue *);
 extern char *msg_routexceed;
 extern char *msg_err_malloc;
 extern char *msg_routexceed;
-extern time_t  time_now;
 
 /*
  * Add an entry to the list of bad destinations for a job.
@@ -318,6 +317,7 @@ int job_route(
   char             *id = "job_route";
   int               bad_state = 0;
   time_t            life;
+  time_t            time_now = time(NULL);
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   struct pbs_queue *qp = jobp->ji_qhdr;
@@ -455,10 +455,11 @@ void queue_route(
   pbs_queue *pque)
 
   {
-  job *pjob = NULL;
+  job    *pjob = NULL;
 
-  int  rc;
-  int  iter = -1;
+  int     rc;
+  int     iter = -1;
+  time_t  time_now = time(NULL);
 
   while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
     {

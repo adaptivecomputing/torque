@@ -118,7 +118,6 @@ static int      acct_auto_switch = 0;
 
 extern attribute_def job_attr_def[];
 extern char     *path_acct;
-extern time_t      time_now;
 extern int       LOGLEVEL;
 
 
@@ -507,9 +506,9 @@ void account_record(
   char *text)  /* text to log, may be null */
 
   {
-
+  time_t     time_now = time(NULL);
   struct tm *ptm;
-  struct tm tmpPtm;
+  struct tm  tmpPtm;
 
   if (acct_opened == 0)
     {
@@ -598,13 +597,13 @@ void account_jobend(
   char *used) /* job usage information, see req_jobobit() */
 
   {
-  /*char   buf[PBS_ACCT_MAX_RCD + 1];*/
-  char  *buf;
+  time_t         time_now = time(NULL);
+  char          *buf;
   unsigned int   bufSize = PBS_ACCT_MAX_RCD + 1;
-  char  *pb;
+  char          *pb;
 #ifdef USESAVEDRESOURCES
-  attribute *pattr;
-  long walltime_val = 0;
+  attribute     *pattr;
+  long           walltime_val = 0;
 #endif
 
   /* pack in general information about the job */
@@ -703,30 +702,38 @@ void acct_cleanup(
 /* AdjustAcctBufSize - Increase the size of the current size plus
    newStringLen + EXTRA_PAD. Return newStringLen on success or 0 if the
    realloc fails */
- int AdjustAcctBufSize(char **Buf, unsigned int *BufSize, int newStringLen, job *pjob)
- {
-	 char *newBuf;
+int AdjustAcctBufSize(
+    
+  char         **Buf,
+  unsigned int  *BufSize,
+  int            newStringLen,
+  job           *pjob)
+  
+  {
+  char *newBuf;
 
-   newBuf = (char *)realloc(*Buf, *BufSize+newStringLen+EXTRA_PAD); /* add 1000 so we don't have to realloc for the small strings */
-   if (newBuf == NULL)
-     {
-     char tmpLine[1024];
+  /* add 1000 so we don't have to realloc for the small strings */
+  newBuf = (char *)realloc(*Buf, *BufSize+newStringLen+EXTRA_PAD); 
 
-     sprintf(tmpLine, "account record for job %s too long and realloc failed. The job is not fully recorded.",
-                     pjob->ji_qs.ji_jobid);
-
-     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", tmpLine);
-
-     return(0);
-
-     }
-
-   *BufSize += newStringLen+EXTRA_PAD;
-
-	 *Buf = newBuf;
-
-   return(newStringLen);
- }
+  if (newBuf == NULL)
+    {
+    char tmpLine[MAXLINE];
+    
+    sprintf(tmpLine, "account record for job %s too long and realloc failed. The job is not fully recorded.",
+      pjob->ji_qs.ji_jobid);
+    
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", tmpLine);
+    
+    return(0);
+    
+    }
+  
+  *BufSize += newStringLen+EXTRA_PAD;
+  
+  *Buf = newBuf;
+  
+  return(newStringLen);
+  }
 
 
 /* END accounting.c */

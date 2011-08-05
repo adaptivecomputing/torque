@@ -123,7 +123,6 @@ extern char *msg_permlog;
 extern char *msg_badstate;
 
 extern struct server server;
-extern time_t time_now;
 extern int   LOGLEVEL;
 extern struct all_jobs alljobs;
 
@@ -274,6 +273,7 @@ int execute_job_delete(
 
   int               has_mutex = TRUE;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t            time_now = time(NULL);
 
   chk_job_req_permissions(&pjob,preq);
 
@@ -929,17 +929,18 @@ static void post_delete_mom1(
   struct work_task *pwt)
 
   {
-  int         delay = 0;
-  int        dellen = strlen(deldelaystr);
-  job       *pjob;
+  int                   delay = 0;
+  int                   dellen = strlen(deldelaystr);
+  job                  *pjob;
 
-  struct work_task   *pwtnew;
-  pbs_queue      *pque;
+  struct work_task     *pwtnew;
+  pbs_queue            *pque;
 
   struct batch_request *preq_sig;  /* signal request to MOM */
 
   struct batch_request *preq_clt;  /* original client request */
-  int        rc;
+  int                   rc;
+  time_t                time_now = time(NULL);
 
   preq_sig = pwt->wt_parm1;
   rc       = preq_sig->rq_reply.brp_code;
@@ -1295,6 +1296,7 @@ static void job_delete_nanny(
 
   struct batch_request *newreq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t                time_now = time(NULL);
 
   /* short-circuit if nanny isn't enabled */
   if (!server.sv_attr[SRV_ATR_JobNanny].at_val.at_long)

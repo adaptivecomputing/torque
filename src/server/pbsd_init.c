@@ -189,8 +189,6 @@ all_queues svr_queues;
 extern pthread_mutex_t *svr_requests_mutex;
 extern pthread_mutex_t *node_state_mutex;
 
-extern time_t  time_now;
-
 extern int a_opt_init;
 
 extern int LOGLEVEL;
@@ -443,39 +441,40 @@ int pbsd_init(
   int type)  /* type of initialization   */
 
   {
-  static char    id[] = "pbsd_init";
-  int            baselen = 0;
-  char           basen[MAXPATHLEN+1];
+  static char       id[] = "pbsd_init";
+  int               baselen = 0;
+  char              basen[MAXPATHLEN+1];
 
-  struct dirent *pdirent;
-  DIR           *dir;
-  int            fd;
-  int            had;
-  int            i;
-  char          *job_suffix = JOB_FILE_SUFFIX;
-  int            job_suf_len = strlen(job_suffix);
-  int            array_suf_len = strlen(ARRAY_FILE_SUFFIX);
-  int            logtype;
-  char          *new_tag = ".new";
-  job           *pjob;
-  pbs_queue     *pque;
-  char          *psuffix;
-  int            rc;
-  int            Index;
-  int            iter;
-  int            min_threads;
-  int            max_threads;
-  int            thread_idle_time;
+  struct dirent    *pdirent;
+  DIR              *dir;
+  int               fd;
+  int               had;
+  int               i;
+  char             *job_suffix = JOB_FILE_SUFFIX;
+  int               job_suf_len = strlen(job_suffix);
+  int               array_suf_len = strlen(ARRAY_FILE_SUFFIX);
+  int               logtype;
+  char             *new_tag = ".new";
+  job              *pjob;
+  pbs_queue        *pque;
+  char             *psuffix;
+  int               rc;
+  int               Index;
+  int               iter;
+  int               min_threads;
+  int               max_threads;
+  int               thread_idle_time;
 
-  struct stat statbuf;
-  char *suffix_slash = "/";
+  struct stat       statbuf;
+  char             *suffix_slash = "/";
 
-  struct sigaction act;
+  struct sigaction  act;
 
-  struct sigaction oact;
+  struct sigaction  oact;
 
   job_array        *pa;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t            time_now = time(NULL);
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char   EMsg[1024];
@@ -1490,6 +1489,7 @@ static int pbsd_init_job(
   {
   unsigned int      d;
 
+  time_t            time_now = time(NULL);
   char             *jobid_copy;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 

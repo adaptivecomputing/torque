@@ -139,6 +139,7 @@ struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 
 static int       max_connection = PBS_NET_MAX_CONNECTIONS;
 static int       num_connections = 0;
+pthread_mutex_t *num_connections_mutex = NULL;
 static fd_set   *GlobalSocketReadSet = NULL;
 pthread_mutex_t *global_sock_read_mutex = NULL;
 
@@ -194,7 +195,13 @@ void netcounter_incr(void)
 
 int get_num_connections()
   {
-  return(num_connections);
+  int ret_num_connections;
+
+  pthread_mutex_lock(num_connections_mutex);
+  ret_num_connections = num_connections;
+  pthread_mutex_unlock(num_connections_mutex);
+
+  return(ret_num_connections);
   }
 
 
@@ -307,6 +314,9 @@ int init_network(
 
     global_sock_read_mutex = malloc(sizeof(pthread_mutex_t));
     pthread_mutex_init(global_sock_read_mutex,NULL);
+
+    num_connections_mutex = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(num_connections_mutex,NULL);
     
     type = Primary;
     }
@@ -580,11 +590,13 @@ int wait_request(
         close_conn(i);
 
         pthread_mutex_unlock(svr_conn[i].cn_mutex);
+        pthread_mutex_lock(num_connections_mutex);
 
         sprintf(tmpLine,"closed connection to fd %d - num_connections=%d (select bad socket)",
           i,
           num_connections);
 
+        pthread_mutex_unlock(num_connections_mutex);
         log_err(-1,id,tmpLine);
         }
       }
@@ -686,6 +698,11 @@ static void accept_conn(
   from.sin_addr.s_addr = 0;
   from.sin_port = 0;
 
+  pthread_mutex_lock(num_connections_mutex);
+  if (num_connections >= max_connection)
+    return;
+  pthread_mutex_unlock(num_connections_mutex);
+
   /* update lasttime of main socket */
   pthread_mutex_lock(svr_conn[sd].cn_mutex);
 
@@ -709,8 +726,7 @@ static void accept_conn(
     return;
     }
 
-  if ((num_connections >= max_connection) ||
-      (newsock >= PBS_NET_MAX_CONNECTIONS))
+  if (newsock >= PBS_NET_MAX_CONNECTIONS)
     {
     pthread_mutex_unlock(svr_conn[sd].cn_mutex);
 
@@ -754,7 +770,9 @@ void add_conn(
   void (*func)(int))  /* function to invoke on data rdy to read */
 
   {
+  pthread_mutex_lock(num_connections_mutex);
   num_connections++;
+  pthread_mutex_unlock(num_connections_mutex);
 
   pthread_mutex_lock(global_sock_read_mutex);
 
@@ -857,7 +875,9 @@ void close_conn(
 
   svr_conn[sd].cn_authen = 0;
 
+  pthread_mutex_lock(num_connections_mutex);
   num_connections--;
+  pthread_mutex_unlock(num_connections_mutex);
 
   return;
   }  /* END close_conn() */

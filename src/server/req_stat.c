@@ -123,7 +123,6 @@ extern attribute_def   que_attr_def[];
 extern attribute_def   job_attr_def[];
 extern attribute_def   node_attr_def[];   /* node attributes defs */
 extern int        pbs_mom_port;
-extern time_t        time_now;
 extern char       *msg_init_norerun;
 
 extern struct pbsnode *tfind_addr(const u_long, uint16_t, job *);
@@ -374,6 +373,7 @@ static void req_stat_job_step2(
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
 
   int                    iter;
+  time_t                 time_now = time(NULL);
   
 
   preq   = cntl->sc_origrq;
@@ -922,8 +922,9 @@ static void stat_update(
   struct batch_reply   *preply;
 
   struct brp_status    *pstatus;
-  svrattrl        *sattrl;
-  int    oldsid;
+  svrattrl             *sattrl;
+  int                   oldsid;
+  time_t                time_now = time(NULL);
 
   preq = pwt->wt_parm1;
   preply = &preq->rq_reply;
@@ -1074,6 +1075,7 @@ void poll_job_task(
   char      *jobid = (char *)ptask->wt_parm1;
   job       *pjob;
   work_task *pwt;
+  time_t     time_now = time(NULL);
 
   if (jobid != NULL)
     {

@@ -155,7 +155,6 @@ extern char *msg_manager;
 extern char *msg_stageinfail;
 extern int   scheduler_jobct;
 extern int   scheduler_sock;
-extern time_t time_now;
 extern int   svr_totnodes; /* non-zero if using nodes */
 extern int   svr_tsnodes; /* non-zero if time-shared nodes */
 
@@ -329,6 +328,7 @@ static void post_checkpointsend(
   struct batch_request *preq;
   attribute            *pwait;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t                time_now = time(NULL);
 
   preq = pwt->wt_parm1;
   code = preq->rq_reply.brp_code;
@@ -540,13 +540,14 @@ static void post_stagein(
   struct work_task *pwt)
 
   {
-  int        code;
-  int        newstate;
-  int        newsub;
-  job       *pjob;
+  int                   code;
+  int                   newstate;
+  int                   newsub;
+  job                  *pjob;
 
   struct batch_request *preq;
-  attribute      *pwait;
+  attribute            *pwait;
+  time_t                time_now = time(NULL);
 
   preq = pwt->wt_parm1;
   code = preq->rq_reply.brp_code;
@@ -1108,7 +1109,7 @@ void finish_sendmom(
 
   job                  *pjob,
   struct batch_request *preq,
-  long                  time,
+  long                  start_time,
   char                 *node_name,
   int                   status)
 
@@ -1118,6 +1119,7 @@ void finish_sendmom(
   int        newsub;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   work_task *ptask;
+  time_t     time_now = time(NULL);
 
   if (LOGLEVEL >= 6)
     {
@@ -1128,7 +1130,7 @@ void finish_sendmom(
     {
     sprintf(log_buf, "child reported %s for job after %ld seconds (dest=%s), rc=%d",
       (status == 0) ? "success" : "failure",
-      time_now - time,
+      time_now - start_time,
       (node_name != NULL) ? node_name : "???",
       status);
 

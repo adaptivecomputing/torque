@@ -261,8 +261,6 @@ all_tasks task_list_timed;
 all_tasks task_list_event;
 pid_t    sid;
 
-time_t  time_now = 0;
-
 char           *plogenv = NULL;
 int             LOGLEVEL = 0;
 int             DEBUGMODE = 0;
@@ -912,8 +910,9 @@ static time_t check_tasks()
   time_t     tilwhen = server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long;
   int        iter = -1;
 
-  time_now = time(NULL);
+  time_t     time_now = time(NULL);
 
+  /* NYI: remove me */
   if (svr_delay_entry)
     {
     while ((ptask = next_task(&task_list_event,&iter)) != NULL)
@@ -1016,6 +1015,7 @@ void main_loop(void)
   int           iter;
   time_t        last_jobstat_time;
   int           when;
+  time_t        time_now = time(NULL);
 
   extern char  *msg_startup2; /* log message   */
   char          log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1026,7 +1026,7 @@ void main_loop(void)
   void check_acct_log(struct work_task *);
 
   last_jobstat_time = time_now;
-  server.sv_started = time(&time_now); /* time server started */
+  server.sv_started = time_now; /* time server started */
 
 
   /* record the fact that we are up and running */
@@ -1084,6 +1084,7 @@ void main_loop(void)
   while (*state != SV_STATE_DOWN)
     {
     /* first process any task whose time delay has expired */
+    time_now = time(NULL);
 
     if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
       waittime = MIN(check_tasks(), JobStatRate - (time_now - last_jobstat_time));
@@ -1324,7 +1325,6 @@ int main(
   ProgName = argv[0];
 
   initialize_globals();
-  time_now = time((time_t *)0);
   set_globals_from_environment();
 
   /* set standard umask */
@@ -1639,8 +1639,9 @@ void check_job_log(
   struct work_task *ptask) /* I */
 
   {
-  long depth = 1;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
+  long   depth = 1;
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t time_now = time(NULL);
 
  /* remove logs older than LogKeepDays */
 
@@ -1713,8 +1714,9 @@ void check_log(
   struct work_task *ptask) /* I */
 
   {
-  long depth = 1;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
+  long   depth = 1;
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t time_now = time(NULL);
 
   /* remove logs older than LogKeepDays */
   if ((server.sv_attr[SRV_ATR_LogKeepDays].at_flags & ATR_VFLAG_SET) != 0)
@@ -1787,7 +1789,8 @@ void check_acct_log(
  struct work_task *ptask) /* I */
 
   {
-  char log_buf[LOCAL_LOG_BUF_SIZE];
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t time_now = time(NULL);
 
   if (((server.sv_attr[SRV_ATR_AcctKeepDays].at_flags & ATR_VFLAG_SET) != 0) &&
       (server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long >= 0))
@@ -2360,13 +2363,13 @@ static void lock_out_ha()
   int         MutexLockFD = -1;
   int         NumChecks = 0;
   char        log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t      time_now = time(NULL);
 
   struct stat StatBuf;
 
   snprintf(MutexLockFile,sizeof(MutexLockFile),"%s.mutex",
     HALockFile);
 
-  time_now = time(NULL);
 
   while (!FilePossession)
     {

@@ -174,12 +174,10 @@ static char *mk_log_name(
   char *pbuf)     /* O (minsize=1024) */
 
   {
-
   struct tm *ptm;
   struct tm  tmpPtm;
-  time_t time_now;
+  time_t     time_now = time(NULL);
 
-  time_now = time((time_t *)0);
   ptm = localtime_r(&time_now,&tmpPtm);
 
   if (log_suffix[0] != '\0')
@@ -229,12 +227,10 @@ static char *mk_job_log_name(
   char *pbuf)     /* O (minsize=1024) */
 
   {
-
   struct tm *ptm;
   struct tm  tmpPtm;
-  time_t time_now;
+  time_t time_now = time(NULL);
 
-  time_now = time((time_t *)0);
   ptm = localtime_r(&time_now,&tmpPtm);
 
   if (log_suffix[0] != '\0')
