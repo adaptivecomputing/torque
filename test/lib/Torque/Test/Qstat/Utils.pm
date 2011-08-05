@@ -700,13 +700,13 @@ sub list_queue_info #($)
   my %queue_info = ();
   
   # Get the information
-  $cmd   = "qstat -Q -f -1 $queue";
+  $cmd   = "qstat -Q -fx -1 $queue";
   %qstat = runCommand($cmd);
   ok($qstat{ 'EXIT_CODE' } == 0, "Checking exit code of '$cmd'")
     or return %queue_info;
 
   # Parse out the information
-  %queue_info = parse_qstat_Q_f1($output);
+  %queue_info = parse_qstat_Q_f_1($output);
 
   return %queue_info;
 

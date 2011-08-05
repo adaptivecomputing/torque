@@ -53,7 +53,7 @@ foreach my $jaid (@jaids)
 $cmd = "$qhold $jid -t $id_exp";
 runCommand($cmd, ("test_success" => 1));
 
-%qhash = qstat_fx({flags => '-t'});
+$qhash = qstat_fx({flags => '-t'});
 foreach my $jaid (@jaids)
   {
 
@@ -65,7 +65,7 @@ foreach my $jaid (@jaids)
 $cmd = "$qrls $jid -t $id_exp";
 runCommand($cmd, ("test_success" => 1));
 
-%qhash = qstat_fx({flags => '-t'});
+$qhash = qstat_fx({flags => '-t'});
 foreach my $jaid (@jaids)
   {
 

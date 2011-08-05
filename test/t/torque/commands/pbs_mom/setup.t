@@ -54,7 +54,7 @@ my $mom_recfg_file      = $props->get_property('mom.reconfig.file');
 
 diag("Creating the mom reconfig file '$mom_recfg_file'");
 
-my $mom_recfg =<<RECFG;
+createMomCfg({ mom_cfg_loc => $mom_recfg_file, body => <<RECFG });
 # Reconfig file for momctl tests
 \$pbsserver            $pbsserver
 \$pbsclient            $pbsclient
@@ -65,18 +65,6 @@ my $mom_recfg =<<RECFG;
 
 \$check_poll_time      $tmp_check_poll_time
 RECFG
-
-eval
-  {
-
-  open(MOMRECFG, ">$mom_recfg_file")
-    or die "Unable to write to '$mom_recfg_file'";
-  print MOMRECFG $mom_recfg;
-  close(MOMRECFG);
-
-  }; # END eval
-
-ok(! $@, "Writing out mom reconfiguration to '$mom_recfg_file'");
 
 ###############################################################################
 # Restart Torque
