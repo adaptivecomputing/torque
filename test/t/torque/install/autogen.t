@@ -27,18 +27,21 @@ MAIN:
   plan('no_plan'); 
   setDesc('Torque autogen.sh');
 
-  my $build_dir   = "$FindBin::Bin/../../../../";
+  my $build_dir   = test_lib_loc()."/../..";
 
-  ok(-d ($build_dir), "Checking if torque build dir exists") 
+  ok(-d $build_dir, "Checking if torque build dir exists") 
     or die("Torque build dir doesn't exist");
 
-  # Change directory to build dir
-  ok(chdir $build_dir, "Changing directory to " . $build_dir) 
-    or die("Couldn't change to torque build directory");
-
   # Run autogen
-  my $autogen_cmd = "./autogen.sh";
+  my $autogen_cmd = "cd $build_dir; ./autogen.sh";
+  my $ec = 0;
+  my $max_tries = 3;
+  my $total_tries = 0;
+  
+  do
+  {
+    $ec = runCommand($autogen_cmd);
 
-  runCommand($autogen_cmd, ("test_success_die" => 1));
+  }until($max_tries == ++$total_tries || $ec == 0);
 
 } # END MAIN
