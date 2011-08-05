@@ -9,12 +9,11 @@ use lib test_lib_loc();
 
 
 use CRI::Test;
-use Torque::Ctrl        qw( startTorque 
+use Torque::Ctrl        qw( startTorqueClean
                             stopTorque 
                             stopPbssched
                           );
 use Torque::Util qw( 
-                            run_and_check_cmd
                             list2array             
                           );
 
@@ -43,5 +42,5 @@ stopPbssched()
 ###############################################################################
 # Restart Torque
 ###############################################################################
-startTorque($torque_params)
+startTorqueClean($torque_params)
   or die 'Unable to start Torque';

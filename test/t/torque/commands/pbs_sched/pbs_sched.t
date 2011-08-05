@@ -12,8 +12,10 @@ use Torque::Job::Ctrl   qw(
                             submitSleepJob
                             delJobs
                           );
-use Torque::Util qw(
+use CRI::Util qw(
                             is_running
+                            );
+use Torque::Util qw(
                             verify_job_state
                           );
 plan('no_plan');

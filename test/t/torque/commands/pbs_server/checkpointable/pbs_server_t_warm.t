@@ -9,10 +9,6 @@ use lib test_lib_loc();
 
 
 use CRI::Test;
-use CRI::Util          qw(
-                             resolve_path
-                          );
-
 use Torque::Util qw(
                              job_info
                              list2array
@@ -48,7 +44,7 @@ my $chkpt_params     = {
                          'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/",
                          'user'       => $props->get_property('User.1'),
                          'c_value'    => 'enabled,shutdown',
-                         'app'        => resolve_path("$FindBin::Bin/../../../test_programs/test.pl")
+                         'app'        => "$FindBin::Bin/../../../test_programs/test.pl"
                        };
 my $non_chkpt_params = {
                          'torque_bin'  => $props->get_property('Torque.Home.Dir') . "/bin/",

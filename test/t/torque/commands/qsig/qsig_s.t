@@ -10,10 +10,6 @@ use lib test_lib_loc();
 
 # Test Modules
 use CRI::Test;
-use CRI::Util                qw(
-                                  resolve_path
-                                );
-
 use Torque::Job::Ctrl         qw(
                                  submitJob
                                  runJobs
@@ -44,7 +40,7 @@ my @signals;
 my %rcvd_signals;
 
 my $user       = $props->get_property('User.1');
-my $app        = resolve_path("$FindBin::Bin/../../test_programs/sig_trap.pl");
+my $app        = "$FindBin::Bin/../../test_programs/sig_trap.pl";
 my $torque_bin = $props->get_property('Torque.Home.Dir') . "/bin/";
 
 # Test qsig -s

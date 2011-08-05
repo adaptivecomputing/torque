@@ -36,7 +36,7 @@ my $delay;
 $job_id = qsub({full_jobid => 1});
 
 # Delete the job
-$delay = 2;
+$delay = 8;
 $cmd   = "qdel -W $delay $job_id";
 %qdel  = run_and_check_cmd($cmd);
 
@@ -44,7 +44,7 @@ my $job_info = qstat_fx();
 
 is($job_info->{ $job_id }{ 'job_state' }, 'Q', "Checking that job:$job_id has not been canceled yet");
 
-sleep_diag 2 * $delay;
+sleep_diag 8 * $delay;
 
 # Check that job is deleted
 $job_info = qstat_fx();

@@ -9,7 +9,7 @@ use lib test_lib_loc();
 
 
 use CRI::Test;
-use Torque::Ctrl        qw( startTorqueClean stopTorque );
+use Torque::Ctrl        qw( startTorqueClean stopTorque  createMomCfg );
 use Torque::Util qw( list2array             );
 
 # Describe Test

@@ -10,7 +10,6 @@ use lib test_lib_loc();
 
 use CRI::Test;
 use Torque::Util qw(
-                           run_and_check_cmd
                            list2array
                           );
 use Torque::Ctrl        qw(
@@ -29,11 +28,6 @@ my @remote_moms    = list2array($props->get_property('Torque.Remote.Nodes'));
 my $torque_params  = {
                      'remote_moms' => \@remote_moms
                      };
-
-###############################################################################
-# Stop all jobs
-###############################################################################
-run_and_check_cmd('qdel -p all');
 
 ###############################################################################
 # Stop Torque

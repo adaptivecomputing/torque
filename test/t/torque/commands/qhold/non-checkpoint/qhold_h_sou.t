@@ -57,7 +57,7 @@ $cmd   = "qhold -h $arg $job_id";
 %qhold = run_and_check_cmd($cmd);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Hold_Types' } eq $arg, "Checking for the Hold_Types of '$arg' for '$job_id'");
+is($job_info{ $job_id }{ 'hold_types' }, $arg, "Checking Hold_Types for '$job_id'");
 
 # Verify that the hold was properly set
 verify_qhold($job_id);

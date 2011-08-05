@@ -80,7 +80,10 @@ sub startTorque #($)#
   ##########################
   # Pbs_mom Section
   ##########################
-  
+
+  $mom_params->{clean} = 1 if exists $cfg->{clean_start};
+  $remote_mom_params->{clean} = 1 if exists $cfg->{clean_start};
+
   $torque_rtn = startPbsmom($mom_params);
 
   push @mom_hosts, $props->get_property('Test.Host');
@@ -198,6 +201,7 @@ sub startPbsmom #($)#
     my $node       = $cfg->{ 'node'       } || undef;
     my $nodes      = $cfg->{ 'nodes'      } || [];
     my $local_node = $cfg->{ 'local_node' } || 0;
+    my $do_clean   = $cfg->{clean}          || 0;
 
     push(@$nodes, $node) 
     if $node;
@@ -210,42 +214,56 @@ sub startPbsmom #($)#
     my $pbs_mom_cmd  = "${torque_sbin}pbs_mom";
     $pbs_mom_cmd    .= " $args";
 
+    my $clean_cmd = "rm -f $torque_home/mom_priv/jobs/*";
+
     # Start any Remote mom's
     if (scalar @$nodes)
     {
-	foreach my $n (@$nodes)
-	{
-	    my %ssh = runCommandSsh($n, $pbs_mom_cmd, 'test_success_die' => 1, 'msg' => "Starting New Remote PBS_Mom Process on Host $n...");
-	    
-	    my $ps_info = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
-	    
-	    my $wait = 30;
-	    diag "Waiting for Remote PBS_Mom to Start on Host $n... (${wait}s Timeout)";
-	    
-	    sleep 1 while $wait-- > 0 && &$ps_info eq '';
+      foreach my $n (@$nodes)
+      {
+        if( $do_clean )
+        {
+          runCommand($clean_cmd, test_success => 1, msg => "Cleaning Torque MOM Files on Host $n...", host => $n);
+        }
 
-	    if( $wait > 0 )
-	    {
-		pass "Remote PBS_Mom is now Running on Host $n";
-	    }
-	    else
-	    {
-		die "Remote PBS_Mom Failed to Start on Host $n!";
-	    }
-	}
+        my %ssh = runCommandSsh($n, $pbs_mom_cmd, 'test_success_die' => 1, 'msg' => "Starting New Remote PBS_Mom Process on Host $n...");
+
+        my $ps_info = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
+
+        my $wait = 30;
+        my $endtime = time() + $wait;
+        diag "Waiting for Remote PBS_Mom to Start on Host $n... (${wait}s Timeout)";
+
+        sleep 1 while time() <= $endtime && &$ps_info eq '';
+
+        if( $wait > 0 )
+        {
+          pass "Remote PBS_Mom is now Running on Host $n";
+        }
+        else
+        {
+          die "Remote PBS_Mom Failed to Start on Host $n!";
+        }
+      }
     }
     
     # Start local mom
     if ($local_node)
     {
-	runCommand($pbs_mom_cmd, 'test_success_die' => 1, 'msg' => 'Starting New Local PBS_Mom Process..');
+      if( $do_clean )
+      {
+        runCommand($clean_cmd, test_success => 1, msg => 'Cleaning Torque MOM Files...');
+      }
+      
+      runCommand($pbs_mom_cmd, 'test_success_die' => 1, 'msg' => 'Starting New Local PBS_Mom Process..');
 
 	my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_mom'); };
 
 	my $wait = 30;
+        my $endtime = time() + $wait;
 	diag "Waiting for Local PBS_Mom to Start... (${wait}s Timeout)";
 
-	sleep 1 while $wait-- > 0 && &$ps_info eq '';
+	sleep 1 while time() <= $endtime && &$ps_info eq '';
 
 	if( $wait > 0 )
 	{
@@ -462,7 +480,10 @@ SETUP
 
   # pbs_server command
   my $pbs_cmd  = "$pbs_server_cmd -t create";
-  
+ 
+  # Clean server files
+  runCommand("rm -f $torque_home/server_priv/jobs/*", test_success => 1, msg => 'Cleaning Torque Server Files...');
+
   # Start the pbs server
   diag 'Attempting to Start PBS_Server Clean';
   my $exp     = Expect->spawn($pbs_cmd)
@@ -487,9 +508,10 @@ SETUP
   my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
   
   my $wait = 30;
+  my $endtime = time() + $wait;
   diag "Waiting for PBS_Server to Start Clean... (${wait}s Timeout)";
 
-  sleep 1 while $wait-- > 0 && &$ps_info eq '';
+  sleep 1 while time() <= $endtime && &$ps_info eq '';
 
   if( $wait > 0 )
   {

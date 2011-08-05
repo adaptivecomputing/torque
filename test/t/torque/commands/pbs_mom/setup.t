@@ -12,6 +12,7 @@ use CRI::Test;
 use Torque::Ctrl        qw( startTorqueClean
                             stopTorque 
                             stopPbssched
+                            createMomCfg
                           );
 use Torque::Util qw( 
                             run_and_check_cmd

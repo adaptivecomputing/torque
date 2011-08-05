@@ -51,7 +51,7 @@ foreach my $jaid (@jaids)
 $cmd = "$qdel $jid -t $id_exp";
 runCommand($cmd, ("test_success" => 1));
 
-%qhash = qstat_fx({flags => '-t'});
+$qhash = qstat_fx({flags => '-t'});
 foreach my $jaid (@jaids)
   {
 

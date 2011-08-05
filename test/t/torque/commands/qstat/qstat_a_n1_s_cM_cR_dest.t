@@ -24,7 +24,7 @@ use Torque::Util        qw(
                                    run_and_check_cmd
                                    job_info
                                  );
-use Torque::Util::Qstat qw(
+use Torque::Test::Qstat::Utils qw(
                                    parse_qstat_a_e_i_r
                                  );
 

@@ -9,10 +9,6 @@ use lib test_lib_loc();
 
 # Test Modules
 use CRI::Test;
-use CRI::Util qw(
-                   resolve_path
-                 );
-
 use Torque::Job::Ctrl          qw( 
                                     submitCheckpointJob
                                     runJobs 
@@ -37,7 +33,7 @@ my %job_info;
 my $params = {
               'user'       => $props->get_property('User.1'),
               'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/',
-              'app'        => resolve_path("$FindBin::Bin/../../test_programs/test.pl")
+              'app'        => "$FindBin::Bin/../../test_programs/test.pl"
              };
 
 my $job_id = submitCheckpointJob($params);

@@ -113,25 +113,22 @@ sub verify_job_state #($)
   my $job_info;
 
   # Check every second for $wait_time for the state to take effect
+  my $endtime = time() + $wait_time;
   diag("Waiting $wait_time seconds for job:$job_id to go to state '$exp_job_state'...");
-  my $count = 0;
-  while (    $count < $wait_time 
-         and $act_job_state ne $exp_job_state)
-    {
-
+  while ( time() <= $endtime && $act_job_state ne $exp_job_state )
+  {
     # We parse the job information manually so we don't spam the test output
     $job_info = qstat_fx({job_id => $job_id, runcmd_flags => {logging_off => 1}});
 
     $act_job_state = $job_info->{ $job_id }{ 'job_state' };
 
     sleep 1;
-    $count++;
-
-    } # END while ($count < 120 and $checkpoint_name)
+  }
 
   # Test for the hold state
   cmp_ok($act_job_state, 'eq', $exp_job_state, 
-     "Checking for a job_state of '$exp_job_state' for job '$job_id'");
+     "Checking for a job_state of '$exp_job_state' for job '$job_id'")
+   or qstat_fx({job_id => $job_id});
 
   } # END sub verify_job_state #($)
 

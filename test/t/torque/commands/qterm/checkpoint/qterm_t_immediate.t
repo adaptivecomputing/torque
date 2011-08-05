@@ -7,9 +7,6 @@ use TestLibFinder;
 use lib test_lib_loc();
 
 use CRI::Test;
-use CRI::Util          qw(
-                            resolve_path
-                          );
 use Torque::Ctrl;
 use Torque::Job::Ctrl   qw(
                             submitCheckpointJob
@@ -38,7 +35,7 @@ syncServerMom($sync_href);
 my $job_params = {
                    'user'       => $props->get_property( 'User.1' ),
                    'torque_bin' => $props->get_property( 'Torque.Home.Dir' ) . '/bin',
-                   'app'        => resolve_path("$FindBin::Bin/../../../test_programs/test.pl"),
+                   'app'        => "$FindBin::Bin/../../../test_programs/test.pl",
                    'c_value'    => 'shutdown'
                  };
 

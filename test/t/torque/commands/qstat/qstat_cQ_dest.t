@@ -17,7 +17,7 @@ use Torque::Util::Regexp       qw(
 use Torque::Util        qw(
                                    run_and_check_cmd
                                  );
-use Torque::Util::Qstat qw(
+use Torque::Test::Qstat::Utils qw(
                                    parse_qstat_Q
                                  );
 

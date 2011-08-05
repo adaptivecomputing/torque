@@ -47,7 +47,7 @@ sub qstat_fx #($)
 
   my $job_id   = exists $params->{job_id} ? $params->{job_id} : '';
   my $flags    = $params->{flags};
-  my $runcmd_flags = $params->{user} || { test_success => 1 };
+  my $runcmd_flags = $params->{runcmd_flags} || { test_success => 1 };
 
   $runcmd_flags->{user} = $params->{user} || $runcmd_flags->{user};
 
@@ -58,7 +58,7 @@ sub qstat_fx #($)
   my %qstat_fx = runCommand($cmd, %$runcmd_flags);
 
   my $xref = {};
-  unless($qstat_fx{EXIT_CODE})
+  unless($qstat_fx{EXIT_CODE} || $qstat_fx{STDOUT} )
   {
     $xref     = parseXML({
         xml          => $qstat_fx{STDOUT},

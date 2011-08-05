@@ -10,9 +10,6 @@ use lib test_lib_loc();
 
 # Test Modules
 use CRI::Test;
-use CRI::Util                 qw(
-                                    resolve_path
-                                 );
 use Torque::Job::Ctrl          qw( 
                                     submitSleepJob
                                     delJobs
@@ -49,7 +46,7 @@ my $rls_type = 'n';
 $job_params = {
                'user'       => $user1,
                'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/',
-               'app'        => resolve_path("$FindBin::Bin/../../test_programs/test.pl")
+               'app'        => "$FindBin::Bin/../../test_programs/test.pl"
               };
 
 $job_id = submitSleepJob($job_params);
