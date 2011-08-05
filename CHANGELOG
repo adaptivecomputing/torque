@@ -23,6 +23,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       capability for calls to getpwnam().
   c - fix a potential segfault when using asynchronous runjob with an array slot limit
       (backported from 3.0.3)
+  b - In pbs_original_connect() only the first NCONNECT entries of the connection table 
+      were checked for availability. NCONNECT is defined as 10. However, the connection
+      table is PBS_NET_MAX_CONNECTIONS in size. PBS_NET_MAX_CONNECTIONS is 10240. 
+      NCONNECT is now defined as PBS_NET_MAX_CONNECTIONS.
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as
