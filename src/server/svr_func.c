@@ -88,6 +88,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -209,6 +210,7 @@ void set_resc_assigned(
   attribute    *queru;
   resource_def *rscdef;
   attribute    *sysru;
+  pbs_queue    *pque;
   char         *id = "set_resc_assigned";
   char          log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -264,7 +266,8 @@ void set_resc_assigned(
 
   sysru = &server.sv_attr[SRV_ATR_resource_assn];
 
-  queru = &pjob->ji_qhdr->qu_attr[QE_ATR_ResourceAssn];
+  pque = get_jobs_queue(pjob);
+  queru = &pque->qu_attr[QE_ATR_ResourceAssn];
   jobrsc = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
 
   while (jobrsc != NULL)
@@ -286,6 +289,8 @@ void set_resc_assigned(
 
         if (pr == NULL)
           {
+          pthread_mutex_unlock(pque->qu_mutex);
+         
           return;
           }
         }
@@ -302,6 +307,8 @@ void set_resc_assigned(
 
         if (pr == NULL)
           {
+          pthread_mutex_unlock(pque->qu_mutex);
+
           return;
           }
         }
@@ -311,6 +318,8 @@ void set_resc_assigned(
 
     jobrsc = (resource *)GET_NEXT(jobrsc->rs_link);
     }  /* END while (jobrsc != NULL) */
+
+  pthread_mutex_unlock(pque->qu_mutex);
 
   return;
   }  /* END set_resc_assigned() */

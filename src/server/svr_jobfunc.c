@@ -174,7 +174,7 @@ extern int procs_requested(char *spec);
 /* Private Functions */
 
 #ifndef NDEBUG
-static void correct_ct(pbs_queue *);
+static void correct_ct();
 #endif  /* NDEBUG */
 
 /* sync w/#define JOB_STATE_XXX */
@@ -331,7 +331,11 @@ int svr_enquejob(
     if (has_sv_qs_mutex == FALSE)
       pthread_mutex_unlock(server.sv_qs_mutex);
 
+    pthread_mutex_lock(server.sv_jobstates_mutex);
+
     server.sv_jobstates[pjob->ji_qs.ji_state]++;
+
+    pthread_mutex_unlock(server.sv_jobstates_mutex);
     }
   
   /* place into array_summary if necessary */
@@ -440,7 +444,7 @@ int svr_enquejob(
    * first with queue defaults, then with server defaults
    */
 
-  set_resc_deflt(pjob, NULL);
+  set_resc_deflt(pjob, NULL, TRUE);
 
   /*
    * set any "unspecified" checkpoint with queue default values, if any
@@ -541,18 +545,19 @@ void svr_dequejob(
         bad_ct = 1;
       
       pthread_mutex_unlock(server.sv_qs_mutex);
+      pthread_mutex_lock(server.sv_jobstates_mutex);
 
       if (--server.sv_jobstates[pjob->ji_qs.ji_state] < 0)
         bad_ct = 1;
+      
+      pthread_mutex_unlock(server.sv_jobstates_mutex);
       }
     }
 
-  if ((pque = pjob->ji_qhdr) != (pbs_queue *)0)
+  if ((pque = get_jobs_queue(pjob)) != NULL)
     {
-    if (has_job(pque->qu_jobs,pjob) == TRUE)
+    if (remove_job(pque->qu_jobs,pjob) == PBSE_NONE)
       {
-      remove_job(pque->qu_jobs,pjob);
-
       if (--pque->qu_numjobs < 0)
         bad_ct = 1;
 
@@ -567,7 +572,9 @@ void svr_dequejob(
     /* just call remove job because nothing happens if it isn't there */
     remove_job(pque->qu_jobs_array_sum,pjob);
 
-    pjob->ji_qhdr = (pbs_queue *)0;
+    pjob->ji_qhdr = NULL;
+
+    pthread_mutex_unlock(pque->qu_mutex);
     }
 
 #ifndef NDEBUG
@@ -579,7 +586,7 @@ void svr_dequejob(
   log_event(PBSEVENT_DEBUG2,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
   if (bad_ct)   /* state counts are all messed up */
-    correct_ct(pque);
+    correct_ct();
 
 #endif /* NDEBUG */
 
@@ -629,7 +636,7 @@ int svr_setjobstate(
   int        changed = 0;
   int        oldstate;
 
-  pbs_queue *pque = pjob->ji_qhdr;
+  pbs_queue *pque;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 2)
@@ -666,10 +673,12 @@ int svr_setjobstate(
       {
       changed = 1;
 
+      pthread_mutex_lock(server.sv_jobstates_mutex);
       server.sv_jobstates[oldstate]--;
       server.sv_jobstates[newstate]++;
+      pthread_mutex_unlock(server.sv_jobstates_mutex);
 
-      if (pque != (pbs_queue *)0)
+      if ((pque = get_jobs_queue(pjob)) != NULL)
         {
         pque->qu_njstate[oldstate]--;
         pque->qu_njstate[newstate]++;
@@ -697,6 +706,8 @@ int svr_setjobstate(
           job_attr_def[JOB_ATR_etime].at_free(
             &pjob->ji_wattr[JOB_ATR_etime]);
           }
+
+        pthread_mutex_unlock(pque->qu_mutex);
         }
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
@@ -2394,8 +2405,9 @@ static void set_deflt_resc(
 
 void set_resc_deflt(
 
-  job       *pjob,     /* I (modified) */
-  attribute *ji_wattr) /* I (optional) decoded attributes  */
+  job       *pjob,            /* I (modified) */
+  attribute *ji_wattr,        /* I (optional) decoded attributes  */
+  int        has_queue_mutex) /* I */
 
   {
   resource_def  *pctdef;
@@ -2407,35 +2419,39 @@ void set_resc_deflt(
   int            i;
   int            rc;
 
-  pque = pjob->ji_qhdr;
-
-  assert(pque != NULL);
-
   if (ji_wattr != NULL)
     ja = &ji_wattr[JOB_ATR_resource];
   else
     ja = &pjob->ji_wattr[JOB_ATR_resource];
 
+  if (has_queue_mutex == FALSE)
+    pque = get_jobs_queue(pjob);
+  else
+    pque = pjob->ji_qhdr;
+
   /* apply queue defaults first since they take precedence */
-
-  set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
-
-  /* server defaults will only be applied to attributes which have
-     not yet been set */
-
-  set_deflt_resc(ja, &server.sv_attr[SRV_ATR_resource_deflt]);
-
-  /* apply queue max limits first since they take precedence */
-
+  if (pque != NULL)
+    {
+    set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
+    
+    /* server defaults will only be applied to attributes which have
+       not yet been set */
+    
+    set_deflt_resc(ja, &server.sv_attr[SRV_ATR_resource_deflt]);
+    
+    /* apply queue max limits first since they take precedence */
+    
 #ifdef RESOURCEMAXDEFAULT
-  set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
-
-  /* server max limits will only be applied to attributes which have
-     not yet been set */
-
-  set_deflt_resc(ja, &server.sv_attr[SRV_ATR_ResourceMax]);
-
+    set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
+    
+    /* server max limits will only be applied to attributes which have
+       not yet been set */
+    
+    set_deflt_resc(ja, &server.sv_attr[SRV_ATR_ResourceMax]);
 #endif
+
+    pthread_mutex_unlock(pque->qu_mutex);
+    }
 
   for (i = 0;i < JOB_ATR_LAST;++i)
     {
@@ -2615,9 +2631,7 @@ static void eval_checkpoint(
  * all of the counts and log a message.
  */
 
-static void correct_ct(
-
-  pbs_queue *pqj)
+static void correct_ct()
 
   {
   int           i;
@@ -2626,15 +2640,19 @@ static void correct_ct(
   pbs_queue    *pque;
   int           iter = -1;
   int           num_jobs = 0;
+  int           job_counts[PBS_NUMJOBSTATE];
   char          log_buf[LOCAL_LOG_BUF_SIZE];
 
-  pthread_mutex_lock(server.sv_qs_mutex);
 
+  pthread_mutex_lock(server.sv_qs_mutex);
   sprintf(log_buf, "Job state counts incorrect, server %d: ", server.sv_qs.sv_numjobs);
 
   server.sv_qs.sv_numjobs = 0;
-  
   pthread_mutex_unlock(server.sv_qs_mutex);
+  
+  pthread_mutex_lock(server.sv_jobstates_mutex);
+
+  log_buf[0] = '\0';
 
   for (i = 0;i < PBS_NUMJOBSTATE;++i)
     {
@@ -2642,25 +2660,10 @@ static void correct_ct(
 
     sprintf(pc, "%d ", server.sv_jobstates[i]);
 
-    server.sv_jobstates[i] = 0;
+    job_counts[i] = 0;
     }
 
-  if (pqj != NULL)
-    {
-    pc = log_buf + strlen(log_buf);
-
-    sprintf(pc, "; queue %s %d (completed: %d): ",
-      pqj->qu_qs.qu_name,
-      pqj->qu_numjobs,
-      pqj->qu_numcompleted);
-
-    for (i = 0;i < PBS_NUMJOBSTATE;++i)
-      {
-      pc = log_buf + strlen(log_buf);
-
-      sprintf(pc, "%d ", pqj->qu_njstate[i]);
-      }
-    }
+  pthread_mutex_unlock(server.sv_jobstates_mutex);
 
   log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
 
@@ -2686,7 +2689,7 @@ static void correct_ct(
       {
       num_jobs++;
       
-      server.sv_jobstates[pjob->ji_qs.ji_state]++;
+      job_counts[pjob->ji_qs.ji_state]++;
 
       pque->qu_numjobs++;
       pque->qu_njstate[pjob->ji_qs.ji_state]++;
@@ -2703,6 +2706,11 @@ static void correct_ct(
   pthread_mutex_lock(server.sv_qs_mutex);
   server.sv_qs.sv_numjobs = num_jobs;
   pthread_mutex_unlock(server.sv_qs_mutex);
+
+  pthread_mutex_lock(server.sv_jobstates_mutex);
+  for (i = 0; i < PBS_NUMJOBSTATE; i++)
+    server.sv_jobstates[i] = job_counts[i];
+  pthread_mutex_unlock(server.sv_jobstates_mutex);
 
   return;
   }  /* END correct_ct() */

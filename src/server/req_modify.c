@@ -553,7 +553,7 @@ int modify_job(
 
   /* Reset any defaults resource limit which might have been unset */
 
-  set_resc_deflt(pjob, NULL);
+  set_resc_deflt(pjob, NULL, FALSE);
 
   /* if job is not running, may need to change its state */
 
@@ -1118,6 +1118,7 @@ int modify_job_attr(
   attribute *pattr;
   int        rc;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_queue *pque;
 
   if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
     allow_unkn = -1;
@@ -1165,10 +1166,14 @@ int modify_job_attr(
 
       if (rc == 0)
         {
+        pque = get_jobs_queue(pjob);
+
         rc = chk_resc_limits(
                &newattr[JOB_ATR_resource],
-               pjob->ji_qhdr,
+               pque,
                NULL);
+
+        pthread_mutex_unlock(pque->qu_mutex);
         }
       }
     }    /* END if ((rc == 0) && ...) */

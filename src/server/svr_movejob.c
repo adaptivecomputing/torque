@@ -378,10 +378,10 @@ void finish_routing_processing(
 
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
       svr_setjobstate(pjob, newstate, newsub);
-      
-      pque = pjob->ji_qhdr;
-      pthread_mutex_lock(pque->qu_mutex);
 
+      /* need to have queue's mutex when entering job_route */
+      pque = get_jobs_queue(pjob);
+      
       if ((status = job_route(pjob)) == PBSE_ROUTEREJ)
         job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
       else if (status != 0)

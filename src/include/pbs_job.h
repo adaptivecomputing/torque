@@ -679,6 +679,7 @@ int  insert_job_first(struct all_jobs *,job *);
 int  remove_job(struct all_jobs *,job *);
 int  has_job(struct all_jobs *,job *);
 int  swap_jobs(struct all_jobs *,job *,job *);
+struct pbs_queue *get_jobs_queue(job *);
 
 job *next_job(struct all_jobs *,int *);
 job *next_job_from_back(struct all_jobs *,int *);
@@ -1040,7 +1041,7 @@ extern void  svr_dequejob(job *);
 extern int   svr_enquejob(job *, int);
 extern void  svr_evaljobstate(job *, int *, int *, int);
 extern void  svr_mailowner(job *, int, int, char *);
-extern void  set_resc_deflt(job *, attribute *);
+extern void  set_resc_deflt(job *, attribute *, int);
 extern void  set_statechar(job *);
 extern int   svr_setjobstate(job *, int, int);
 

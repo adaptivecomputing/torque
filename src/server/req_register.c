@@ -1121,7 +1121,7 @@ int depend_on_que(
   int        type;
 
   if (((mode != ATR_ACTION_ALTER) && (mode != ATR_ACTION_NOOP)) ||
-      (((job *)pjob)->ji_qhdr == 0) ||
+      (((job *)pjob)->ji_qhdr == NULL) ||
       (((job *)pjob)->ji_qhdr->qu_qs.qu_type != QTYPE_Execution))
     {
     return(0);

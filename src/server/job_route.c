@@ -320,11 +320,10 @@ int job_route(
   time_t            life;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
-  struct pbs_queue *qp;
+  struct pbs_queue *qp = jobp->ji_qhdr;
   long              retry_time;
 
   /* see if the job is able to be routed */
-
   switch (jobp->ji_qs.ji_state)
     {
 
@@ -346,7 +345,7 @@ int job_route(
 
       /* job may be acceptable */
 
-      bad_state = !jobp->ji_qhdr->qu_attr[QR_ATR_RouteHeld].at_val.at_long;
+      bad_state = !qp->qu_attr[QR_ATR_RouteHeld].at_val.at_long;
 
       break;
 
@@ -354,7 +353,7 @@ int job_route(
 
       /* job may be acceptable */
 
-      bad_state = !jobp->ji_qhdr->qu_attr[QR_ATR_RouteWaiting].at_val.at_long;
+      bad_state = !qp->qu_attr[QR_ATR_RouteWaiting].at_val.at_long;
 
       break;
 
@@ -365,7 +364,7 @@ int job_route(
       strcat(log_buf, id);
 
       log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jobp->ji_qs.ji_jobid,log_buf);
-
+      
       return(PBSE_NONE);
 
       /*NOTREACHED*/
@@ -374,9 +373,6 @@ int job_route(
     }
 
   /* check the queue limits, can we route any (more) */
-
-  qp = jobp->ji_qhdr;
-
   if (qp->qu_attr[QA_ATR_Started].at_val.at_long == 0)
     {
     /* queue not started - no routing */

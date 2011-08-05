@@ -153,9 +153,11 @@ int attempt_delete(
 
     svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE);
     
-    if ((pque = pjob->ji_qhdr) && (pque != NULL))
+    if ((pque = get_jobs_queue(pjob)) != NULL)
       {
       pque->qu_numcompleted++;
+
+      pthread_mutex_unlock(pque->qu_mutex);
       }
     
     KeepSeconds = attr_ifelse_long(

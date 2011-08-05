@@ -220,6 +220,7 @@ struct server
 
   pthread_mutex_t *sv_qs_mutex;
   pthread_mutex_t *sv_attr_mutex;
+  pthread_mutex_t *sv_jobstates_mutex;
   time_t           sv_started;  /* time server started */
   time_t           sv_hotcycle;  /* if RECOV_HOT,time of last restart */
   time_t           sv_next_schedule; /* when to next run scheduler cycle */

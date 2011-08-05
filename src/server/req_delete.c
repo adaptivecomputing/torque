@@ -607,9 +607,11 @@ jump:
 
     svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE);
 
-    if ((pque = pjob->ji_qhdr) && (pque != NULL))
+    if ((pque = get_jobs_queue(pjob)) != NULL)
       {
       pque->qu_numcompleted++;
+
+      pthread_mutex_unlock(pque->qu_mutex);
       }
 
     KeepSeconds = attr_ifelse_long(
@@ -1004,11 +1006,13 @@ static void post_delete_mom1(
    */
   if (delay == 0)
     {
-    pque = pjob->ji_qhdr;
+    pque = get_jobs_queue(pjob);
 
     delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
                              &server.sv_attr[SRV_ATR_KillDelay],
                              2);
+
+    pthread_mutex_unlock(pque->qu_mutex);
     }
 
   pwtnew = set_task(WORK_Timed, delay + time_now, post_delete_mom2, strdup(pjob->ji_qs.ji_jobid), TRUE);

@@ -1181,6 +1181,8 @@ void main_loop(void)
 
     iter = -1;
 
+    pthread_mutex_lock(server.sv_jobstates_mutex);
+
     if ((*state > SV_STATE_RUN) &&
         (server.sv_jobstates[JOB_STATE_RUNNING] == 0) &&
         (server.sv_jobstates[JOB_STATE_EXITING] == 0) &&
@@ -1188,6 +1190,8 @@ void main_loop(void)
       {
       *state = SV_STATE_DOWN;
       }
+    
+    pthread_mutex_unlock(server.sv_jobstates_mutex);
 
     }    /* END while (*state != SV_STATE_DOWN) */
 
@@ -1233,9 +1237,11 @@ void initialize_globals(void)
 
   server.sv_qs_mutex = malloc(sizeof(pthread_mutex_t));
   server.sv_attr_mutex = malloc(sizeof(pthread_mutex_t));
+  server.sv_jobstates_mutex = malloc(sizeof(pthread_mutex_t));
 
   pthread_mutex_init(server.sv_qs_mutex,NULL);
   pthread_mutex_init(server.sv_attr_mutex,NULL);
+  pthread_mutex_init(server.sv_jobstates_mutex,NULL);
   }
 
 

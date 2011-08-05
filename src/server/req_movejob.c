@@ -230,6 +230,8 @@ void *req_orderjob(
   char  tmpqn[PBS_MAXQUEUENAME+1];
   struct batch_request *req = (struct batch_request *)vp;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_queue *pque1;
+  pbs_queue *pque2;
 
   if ((pjob1 = chk_job_request(req->rq_ind.rq_move.rq_jid, req)) == NULL)
     {
@@ -268,19 +270,25 @@ void *req_orderjob(
   else if (pjob1->ji_qhdr != pjob2->ji_qhdr)
     {
     /* jobs are in different queues */
+    int ok = FALSE;
+    pque2 = get_jobs_queue(pjob2);
 
-    if ((rc = svr_chkque(
-                pjob1,
-                pjob2->ji_qhdr,
-                get_variable(pjob1, pbs_o_host),
-                MOVE_TYPE_Order,
-                NULL)) ||
-        (rc = svr_chkque(
-                pjob2,
-                pjob1->ji_qhdr,
-                get_variable(pjob2, pbs_o_host),
-                MOVE_TYPE_Order,
-                NULL)))
+    if ((rc = svr_chkque(pjob1, pque2, get_variable(pjob1, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
+      {
+      pthread_mutex_unlock(pque2->qu_mutex);
+      pque1 = get_jobs_queue(pjob1);
+
+      if ((rc = svr_chkque(pjob2, pque1, get_variable(pjob2, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
+        {
+        ok = TRUE;
+        }
+
+      pthread_mutex_unlock(pque1->qu_mutex);
+      }
+    else
+      pthread_mutex_unlock(pque2->qu_mutex);
+
+    if (ok == FALSE)
       {
       req_reject(rc, 0, req, NULL, NULL);
 
@@ -313,8 +321,12 @@ void *req_orderjob(
     }
   else
     {
-    swap_jobs(pjob1->ji_qhdr->qu_jobs,pjob1,pjob2);
+    pque1 = get_jobs_queue(pjob1);
+
+    swap_jobs(pque1->qu_jobs,pjob1,pjob2);
     swap_jobs(NULL,pjob1,pjob2);
+
+    pthread_mutex_unlock(pque1->qu_mutex);
     }
 
   /* need to update disk copy of both jobs to save new order */

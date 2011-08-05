@@ -1583,10 +1583,14 @@ void req_stat_svr(
   
   server.sv_attr[SRV_ATR_TotalJobs].at_flags |= ATR_VFLAG_SET;
 
+  pthread_mutex_lock(server.sv_jobstates_mutex);
+
   update_state_ct(
     &server.sv_attr[SRV_ATR_JobsByState],
     server.sv_jobstates,
     server.sv_jobstbuf);
+  
+  pthread_mutex_unlock(server.sv_jobstates_mutex);
 
   nc = netcounter_get();
   sprintf(nc_buf, "%d %d %d", *nc, *(nc + 1), *(nc + 2));

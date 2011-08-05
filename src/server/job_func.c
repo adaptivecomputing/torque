@@ -2476,5 +2476,24 @@ job_array *get_jobs_array(
 
 
 
+pbs_queue *get_jobs_queue(
+
+  job *pjob)
+
+  {
+  pbs_queue *pque = pjob->ji_qhdr;
+
+  if (pthread_mutex_trylock(pque->qu_mutex))
+    {
+    pthread_mutex_unlock(pjob->ji_mutex);
+    pthread_mutex_lock(pque->qu_mutex);
+    pthread_mutex_lock(pjob->ji_mutex);
+    }
+
+  return(pque);
+  } /* END get_jobs_queue() */
+
+
+
 /* END job_func.c */
 

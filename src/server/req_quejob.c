@@ -1987,15 +1987,7 @@ void req_commit(
    * to the user.
    */
 
-  pque = pj->ji_qhdr;
-
-  if (pthread_mutex_trylock(pque->qu_mutex) != 0)
-    {
-    pthread_mutex_unlock(pj->ji_mutex);
-    pque = pj->ji_qhdr;
-    pthread_mutex_lock(pque->qu_mutex);
-    pthread_mutex_lock(pj->ji_mutex);
-    }
+  pque = get_jobs_queue(pj);
 
   if ((preq->rq_fromsvr == 0) &&
       (pque->qu_qs.qu_type == QTYPE_RoutePush) &&

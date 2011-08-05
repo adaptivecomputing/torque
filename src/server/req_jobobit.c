@@ -190,17 +190,15 @@ static char *setup_from(
 
 struct batch_request *setup_cpyfiles(
 
-        struct batch_request *preq,
-        job  *pjob,
-        char *from,  /* local (to mom) name */
-        char *to,  /* remote (destination) name */
-        int   direction, /* copy direction */
-        int   tflag)  /* 1 if stdout or stderr , 2 if stage out or in*/
+  struct batch_request *preq,
+  job                  *pjob,
+  char                 *from,  /* local (to mom) name */
+  char                 *to,  /* remote (destination) name */
+  int                   direction, /* copy direction */
+  int                   tflag)  /* 1 if stdout or stderr , 2 if stage out or in*/
 
   {
-
   struct rq_cpyfile *pcf;
-
   struct rqfpair    *pair;
 
   if (preq == NULL)
@@ -524,20 +522,22 @@ static struct batch_request *cpy_stdfile(
  * "local_name@remote_host:remote_name".
  */
 struct batch_request *cpy_stage(
+
   struct batch_request *preq,
-  job       *pjob,
-  enum job_atr       ati,  /* JOB_ATR_stageout */
-  int        direction) /* 1 = , 2 = */
+  job                  *pjob,
+  enum job_atr          ati,  /* JOB_ATR_stageout */
+  int                   direction) /* 1 = , 2 = */
+
   {
-  int        i;
-  char       *from;
-  attribute       *pattr;
+  int                   i;
+  char                 *from;
+  attribute            *pattr;
 
   struct array_strings *parst;
-  char        *plocal;
-  char       *prmt;
-  char       *to;
-  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  char                 *plocal;
+  char                 *prmt;
+  char                 *to;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   pattr = &pjob->ji_wattr[ati];
 
@@ -841,14 +841,16 @@ int handle_returnstd(
      * checkpointed job return_stdfile will only setup this request if
      * the job has a checkpoint file and the file is not joined to another
      *  file */
-   
-    if ((pque = pjob->ji_qhdr) && 
-        (pque->qu_attr != NULL))
+
+    if ((pque = get_jobs_queue(pjob)) != NULL)
       {
-      KeepSeconds = attr_ifelse_long(
-          &pque->qu_attr[QE_ATR_KeepCompleted],
-          &server.sv_attr[SRV_ATR_KeepCompleted],
-          0);
+      if (pque->qu_attr != NULL)
+        KeepSeconds = attr_ifelse_long(
+            &pque->qu_attr[QE_ATR_KeepCompleted],
+            &server.sv_attr[SRV_ATR_KeepCompleted],
+            0);
+
+      pthread_mutex_unlock(pque->qu_mutex);
       }
     
     if (KeepSeconds > 0)
@@ -1339,9 +1341,11 @@ int handle_exited(
 
   svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE);
   
-  if ((pque = pjob->ji_qhdr) && (pque != NULL))
+  if ((pque = get_jobs_queue(pjob)) != NULL)
     {
     pque->qu_numcompleted++;
+
+    pthread_mutex_unlock(pque->qu_mutex);
     }
   
   return(WORK_Immed);
@@ -1365,13 +1369,15 @@ int handle_complete_first_time(
   if (LOGLEVEL >= 4)
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"JOB_SUBSTATE_COMPLETE");
   
-  if ((pque = pjob->ji_qhdr) &&
-      (pque->qu_attr != NULL))
+  if ((pque = get_jobs_queue(pjob)) != NULL)
     {
-    KeepSeconds = attr_ifelse_long(
-      &pque->qu_attr[QE_ATR_KeepCompleted],
-      &server.sv_attr[SRV_ATR_KeepCompleted],
-      0);
+    if (pque->qu_attr != NULL)
+      KeepSeconds = attr_ifelse_long(
+        &pque->qu_attr[QE_ATR_KeepCompleted],
+        &server.sv_attr[SRV_ATR_KeepCompleted],
+        0);
+
+    pthread_mutex_unlock(pque->qu_mutex);
     }
   
   if (((server.sv_attr[SRV_ATR_JobMustReport].at_flags & ATR_VFLAG_SET) != 0) &&
