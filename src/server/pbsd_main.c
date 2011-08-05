@@ -252,7 +252,6 @@ char         server_host[PBS_MAXHOSTNAME + 1]; /* host_name */
 char        *mom_host = server_host;
 int   server_init_type = RECOV_WARM;
 char         server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
-int  svr_delay_entry = 0;
 int  svr_do_schedule = SCH_SCHEDULE_NULL;
 extern all_queues svr_queues;
 extern int  listener_command;
@@ -893,10 +892,8 @@ void parse_command_line(
 
 /*
  * check_tasks - look for the next work task to perform:
- * 1. If svr_delay_entry is set, then a delayed task is ready so
- *    find and process it.
- * 2. All items on the immediate list, then
- * 3. All items on the timed task list which have expired times
+ * 1. All items on the immediate list, then
+ * 2. All items on the timed task list which have expired times
  *
  * Returns: amount of time till next task
  */
@@ -911,20 +908,6 @@ static time_t check_tasks()
   int        iter = -1;
 
   time_t     time_now = time(NULL);
-
-  /* NYI: remove me */
-  if (svr_delay_entry)
-    {
-    while ((ptask = next_task(&task_list_event,&iter)) != NULL)
-      {
-      if (ptask->wt_type == WORK_Deferred_Cmp)
-        dispatch_task(ptask);
-      else
-        pthread_mutex_unlock(ptask->wt_mutex);
-      }
-
-    svr_delay_entry = 0;
-    }
 
   iter = -1;
 

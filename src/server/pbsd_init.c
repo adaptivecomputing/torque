@@ -176,7 +176,6 @@ extern char *path_jobinfo_log;
 
 extern int  queue_rank;
 extern char  server_name[];
-extern int  svr_delay_entry;
 extern tlist_head svr_requests;
 extern tlist_head svr_newnodes;
 extern all_tasks  task_list_timed;
@@ -1863,7 +1862,6 @@ static void catch_abort(
  *
  * Collect child status and add to work list entry for that child.
  * The list entry is marked as immediate to show the child is gone and
- * svr_delay_entry is incremented to indicate to check_tasks() to check for it.
  */
 
 static void catch_child(
