@@ -30,10 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = join("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Resource_List.file = (.*)/)
+   if ($line =~ /resource_list.file = (.*)/)
    {
       $file = $1;
    }
 }
 
-die("Expected Resource_List.file [300mb] but found [$file]") unless cmp_ok($file,'eq',"300mb",'Checking Resource_List.file');
+cmp_ok($file,'eq',"300mb",'Checking Resource_List.file');

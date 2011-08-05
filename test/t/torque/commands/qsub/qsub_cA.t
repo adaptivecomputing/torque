@@ -32,11 +32,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran')
 my @lines = split("\n",$qstat{'STDOUT'});
 foreach my $line (@lines)
 {
-   if ($line =~ /Account_Name = (.*)/)
+   if ($line =~ /account_name = (.*)/)
    {
       $accountName = $1;
    }
 }
 
-die "Expected Account_Name [myAccount] but found [$accountName]\n" 
-  unless cmp_ok($accountName,'eq',"myAccount",'Checking that account name is correct');
+cmp_ok($accountName,'eq',"myAccount",'Checking that account name is correct');

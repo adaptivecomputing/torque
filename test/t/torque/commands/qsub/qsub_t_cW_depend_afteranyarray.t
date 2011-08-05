@@ -9,7 +9,7 @@ use lib test_lib_loc();
 
 use CRI::Test;
 
-use Torque::Util::Qstat qw( qstat_tfx                );
+use Torque::Util::Qstat qw( qstat_fx                );
 use Torque::Job::Ctrl   qw( qsub             delJobs );
 use Torque::Job::Utils  qw( generateArrayIds         );
 
@@ -17,14 +17,13 @@ plan('no_plan');
 setDesc('Qsub -t -W (afteranyarray)');
 
 # Variables
-my %qhash       = ();
+my $qhash       = ();
 my $qref        = {};
 my $id_exp      = '0-1';
 my $jid1        = undef;
 my $jid2        = undef;
 my @jaids       = ();
-my $test_host   = `hostname -f`;
-chomp $test_host;
+my $test_host   = $props->get_property('Test.Host');
 
 # Perform the test
 $qref = {
@@ -49,19 +48,19 @@ $jid2 = qsub($qref);
 sleep_diag(1, "Allow time for the job to queue");
 
 
-%qhash = qstat_tfx();
+$qhash = qstat_fx({flags => "-t"});
 
 foreach my $jaid (@jaids)
   {
 
-  ok(defined $qhash{ $jaid }, "Checking job:$jid1 for subjob:$jaid");
-  cmp_ok($qhash{ $jaid }{ 'job_array_request' }, 'eq', $id_exp, "Verifying 'job_array_request' for subjob:$jaid");
+  ok(defined $qhash->{ $jaid }, "Checking job:$jid1 for subjob:$jaid");
+  cmp_ok($qhash->{ $jaid }{ 'job_array_request' }, 'eq', $id_exp, "Verifying 'job_array_request' for subjob:$jaid");
 
   } # END foreach my $jaid (@jaids)
 
-cmp_ok($qhash{ $jid2 }{ 'job_state'  }, 'eq', "H",                               "Verifying the dependent job:$jid2 'job_state'");
-cmp_ok($qhash{ $jid2 }{ 'Hold_Types' }, 'eq', "s",                               "Verifying the dependent job:$jid2 'Hold_Types'"); 
-cmp_ok($qhash{ $jid2 }{ 'depend'     }, 'eq', "afteranyarray:$jid1\@$test_host", "Verifying the dependent job:$jid2 'depend'");
+cmp_ok($qhash->{ $jid2 }{ 'job_state'  }, 'eq', "H",                               "Verifying the dependent job:$jid2 'job_state'");
+cmp_ok($qhash->{ $jid2 }{ 'Hold_Types' }, 'eq', "s",                               "Verifying the dependent job:$jid2 'Hold_Types'"); 
+cmp_ok($qhash->{ $jid2 }{ 'depend'     }, 'eq', "afteranyarray:$jid1\@$test_host", "Verifying the dependent job:$jid2 'depend'");
 
 # Cleanup
 delJobs();

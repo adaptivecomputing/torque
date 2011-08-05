@@ -30,11 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = split("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Output_Path = (.*)/)
+   if ($line =~ /output_path = (.*)/)
    {
       $outputPath = $1;
    }
 }
 
-die("Expected Output_Path [" . $props->get_property('Test.Host') . ":/home/".$props->get_property('User.1')."/myOutputFile] but found [$outputPath]") unless cmp_ok($outputPath,'eq',$props->get_property('Test.Host') . ":/home/".$props->get_property('User.1')."/myOutputFile",'Checking for expected output file');
-
+cmp_ok($outputPath,'eq',$props->get_property('Test.Host') . ":/home/".$props->get_property('User.1')."/myOutputFile",'Checking for expected output file');

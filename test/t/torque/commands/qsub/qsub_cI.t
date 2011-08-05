@@ -34,7 +34,8 @@ my $timeout = 15;
 
 # Delete all jobs
 diag("Delete all jobs");
-delJobs( 'all' );
+delJobs();
+sleep_diag 2;
 
 # create an Expect object by spawning another process
 my $exp = new Expect;
@@ -51,7 +52,7 @@ sleep 1;
 
 # Run the job - This assumes there is only one job in the queue
 my %job_info = job_info();
-my ($job_id) = keys %job_info;
+my ($job_id) = grep {$job_info{$_}{job_state} ne 'C'} keys %job_info;
 runJobs($job_id);
 
 unless (ok(defined $exp->expect($timeout,'-re',$mPattern),"Checking that Interactive Job started"))
@@ -66,7 +67,7 @@ my $pbsJobId = $1 if $exp->exp_match =~ /(\d+\S+)/;
 %command = runCommand("qstat -f $pbsJobId");
 
 my $interactive = $1 if $command{STDOUT} =~ /interactive = (\w+)/;
-my $rerunable = $1 if $command{STDOUT} =~ /Rerunable = (\w+)/;
+my $rerunable = $1 if $command{STDOUT} =~ /rerunable = (\w+)/;
 
 # Clean up the child process and the job script
 $exp->soft_close;
@@ -76,7 +77,7 @@ cmp_ok($rerunable,'eq','False',"Checking that Rerunable is NOT Set for Job $pbsJ
 
 # Delete all jobs
 diag("Delete all jobs");
-delJobs( 'all' );
+delJobs( );
 
 ###############################################################################
 # logIt

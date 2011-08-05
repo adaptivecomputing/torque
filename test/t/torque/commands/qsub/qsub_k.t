@@ -30,10 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die("Couldn't run qs
 my @stdout = join("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Keep_Files = (.*)/)
+   if ($line =~ /keep_files = (.*)/)
    {
       $keepFiles = $1;
    }
 }
 
-die("Expected Keep_Files [oe] but found [$keepFiles]") unless cmp_ok($keepFiles,'eq',"oe",'Checking for Keep_Files [oe]');
+cmp_ok($keepFiles,'eq',"oe",'Checking for Keep_Files [oe]');

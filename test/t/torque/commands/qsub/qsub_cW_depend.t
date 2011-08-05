@@ -36,7 +36,7 @@ foreach my $line (@stdout)
    {
       $jobState = $1;
    }
-   elsif ($line =~ /Hold_Types = (.*)/)
+   elsif ($line =~ /hold_types = (.*)/)
    {
       $holdTypes = $1;
    }
@@ -46,6 +46,6 @@ foreach my $line (@stdout)
    }
 }
 
-die("Expected job_state [H] but found [$jobState]") unless cmp_ok($jobState,'eq',"H",'Checking job state');
-die("Expected Hold_Types [u] but found [$holdTypes]") unless cmp_ok($holdTypes,'eq',"u",'Checking hold types');
-die("Expected etime to be undefined but found [$etime]") unless ok(!defined($etime),'Verifying that etime is not defined');
+cmp_ok($jobState,'eq',"H",'Checking job state');
+cmp_ok($holdTypes,'eq',"u",'Checking hold types');
+ok(!defined($etime),'Verifying that etime is not defined');

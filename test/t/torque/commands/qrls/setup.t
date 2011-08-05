@@ -14,10 +14,8 @@ use Torque::Ctrl        qw( startTorque
                             stopPbssched
                           );
 use Torque::Util qw( 
-                            run_and_check_cmd
                             list2array             
                           );
-
 # Describe Test
 plan('no_plan');
 setDesc('Qrls Setup');

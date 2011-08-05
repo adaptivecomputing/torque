@@ -8,18 +8,14 @@ use TestLibFinder;
 use lib test_lib_loc();
 
 use CRI::Test;
-use CRI::Util qw(
-                   resolve_path
-                 );
 
 use Torque::Job::Ctrl   qw( delJobs   );
 use Torque::Util qw( job_info  );
-
 plan('no_plan');
 setDesc('qsub -C');
 
 # Variables
-my $directive_script = resolve_path("$FindBin::Bin/../../test_programs/directive_test.pl");
+my $directive_script = test_lib_loc().'/../t/torque/test_programs/directive_test.pl';
 
 # Run the command
 my $user = $props->get_property('User.1');
@@ -48,9 +44,8 @@ else
  }
 my %job_info = job_info($job_id);
 
-my $mem = $job_info{ $job_id }{ 'Resource_List' }{ 'walltime' } 
-  || '';
-cmp_ok($mem, 'eq', '00:00:30', "Checking that the directive worked correctly");
+my $wcl = $job_info{$job_id}{resource_list}{walltime};
+is($wcl, '00:00:30', "Checking that the directive worked correctly (Walltime set as specified)");
 
 # Stop the job
 delJobs($job_id);

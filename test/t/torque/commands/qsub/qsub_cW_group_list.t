@@ -36,4 +36,4 @@ foreach my $line (@stdout)
    }
 }
 
-die("Expected group_list [".$props->get_property('Group.1')."] but found [$groupList]") unless cmp_ok($groupList,'eq',$props->get_property('Group.1'),'Checking group list');
+cmp_ok($groupList,'eq',$props->get_property('Group.1'),'Checking group list');

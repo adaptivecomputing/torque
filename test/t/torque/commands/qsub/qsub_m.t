@@ -30,11 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = join("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Mail_Points = (.*)/)
+   if ($line =~ /mail_points = (.*)/)
    {
       $mailPoints = $1;
    }
 }
 
-die("Expected Mail_Points [ae] but found [$mailPoints]") unless cmp_ok($mailPoints,'eq',"ae",'Checking for Mail_Points [ae]');
-
+cmp_ok($mailPoints,'eq',"ae",'Checking for Mail_Points [ae]');

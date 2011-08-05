@@ -30,12 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = join("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Resource_List.vmem = (.*)/)
+   if ($line =~ /resource_list.vmem = (.*)/)
    {
       $vmem = $1;
    }
 }
 
-die("Expected Resource_List.vmem [400mb] but found [$vmem]") unless cmp_ok($vmem,'eq',"400mb",'Checking for Resource_List.vmem [400mb]');
-
-
+cmp_ok($vmem,'eq',"400mb",'Checking for Resource_List.vmem [400mb]');

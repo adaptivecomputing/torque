@@ -30,10 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die("Couldn't run qs
 my @stdout = join("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Resource_List.host = (.*)/)
+   if ($line =~ /resource_list.host = (.*)/)
    {
       $host = $1;
    }
 }
 
-die("Expected Resource_List.host [myHost] but found [$host]") unless cmp_ok($host,'eq',"myHost",'Checking for Resource_List.host [myHost]');
+cmp_ok($host,'eq',"myHost",'Checking for Resource_List.host [myHost]');

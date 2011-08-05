@@ -11,7 +11,7 @@ use lib test_lib_loc();
 use CRI::Test;
 
 use Torque::Util        qw( run_and_check_cmd );
-use Torque::Util::Qstat qw( list_queue_info   );
+use Torque::Test::Qstat::Utils qw( list_queue_info   );
 
 plan('no_plan');
 setDesc("qmgr -c create and delete a queue");

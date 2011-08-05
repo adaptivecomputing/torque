@@ -30,12 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = join("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Mail_Users = (.*)/)
+   if ($line =~ /mail_users = (.*)/)
    {
       $mailUsers = $1;
    }
 }
 
-die("Expected Mail_Users [apitest\@clusterresources.com] but found [$mailUsers]") unless cmp_ok($mailUsers,'eq',"apitest\@clusterresources.com",'Checking for expected Mail_Users');
-
-
+cmp_ok($mailUsers,'eq',"apitest\@clusterresources.com",'Checking for expected Mail_Users');

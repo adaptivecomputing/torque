@@ -30,10 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = split("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Priority = (.*)/)
+   if ($line =~ /priority = (.*)/)
    {
       $priority = $1;
    }
 }
 
-die("Expected Priority [120] but found [$priority]") unless cmp_ok($priority,'eq',"120",'Checking Priority');
+cmp_ok($priority,'eq',"120",'Checking Priority');

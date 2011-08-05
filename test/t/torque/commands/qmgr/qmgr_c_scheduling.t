@@ -11,7 +11,7 @@ use lib test_lib_loc();
 use CRI::Test;
 
 use Torque::Util       qw( run_and_check_cmd );
-use Torque::Test::Qmgr::Util qw( list_server_info  );
+use Torque::Test::Qmgr::Utils qw( list_server_info  );
 
 plan('no_plan');
 setDesc("qmgr -c 'set server scheduling=true' test");

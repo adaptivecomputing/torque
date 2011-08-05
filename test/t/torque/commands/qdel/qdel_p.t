@@ -11,8 +11,7 @@ use lib test_lib_loc();
 # Test Modules
 use CRI::Test;
 
-use Torque::Job::Ctrl           qw( 
-                                    submitSleepJob
+use Torque::Job::Ctrl           qw( qsub
                                     delJobs
                                   );
 use Torque::Job::Utils          qw(                                  
@@ -20,7 +19,6 @@ use Torque::Job::Utils          qw(
                                   );
 use Torque::Util         qw( 
                                     run_and_check_cmd 
-                                    list2array        
                                   );
 
 # Test Description
@@ -34,18 +32,7 @@ my $job_id;
 my $params;
 
 # Submit a job
-$params = {
-            'user'       => $props->get_property('User.1'),
-            'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/',
-            'sleep_time' => 200
-          };
-$job_id = submitSleepJob($params);
-
-# Check for an error
-if ($job_id eq '-1')
-  {
-  die 'Unable to submit a sleep job';
-  }
+$job_id = qsub({full_jobid => 1});
 
 # Delete the job
 $cmd  = "qdel -p $job_id";

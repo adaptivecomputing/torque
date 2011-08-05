@@ -71,7 +71,7 @@ sub qsub #($)
     if defined $script;
 
   my $job_regex = undef;
-  if ($full_jobid)
+  if($full_jobid || (defined $flags && $flags =~ /-t /) )
     {
 
     $job_regex = qr/(\S+)/;
@@ -144,6 +144,7 @@ sub submitSleepJob #($)
   $qsub_params->{user} = $user if defined $user;
   $qsub_params->{cmd} = "sleep $sleep_time" if defined $sleep_time;
   $qsub_params->{flags} = $add_args if defined $add_args;
+  $qsub_params->{full_jobid} = 1;
 
   return qsub($qsub_params);
 }
@@ -156,7 +157,6 @@ sub submitSleepJob #($)
 #                                 });
 # my $job_id = submitCheckpointJob({
 #                                   'user'       => 'user1',
-#                                   'torque_bin' => '/usr/test/torque/bin',
 #                                   'app'        => '/tmp/checkpoint.pl',
 #                                   'add_args'   => '-l walltime=30:00',
 #                                   'c_value'    => 'shutdown'
@@ -171,7 +171,6 @@ sub submitSleepJob #($)
 #
 # my $params = {
 #               'user'       => 'user1',
-#               'torque_bin' => '/var/spool/torque/bin',
 #               'app'        => '/tmp/app.pl',
 #               'add_args'   => '-l walltime=30:00',
 #               'c_value'    => 'shutdown'
@@ -197,6 +196,7 @@ sub submitCheckpointJob #($)
   $qsub_params->{script} = $app;
   $qsub_params->{flags} = "-c $c_value -v LD_LIBRARY_PATH=$ld_library_path";
   $qsub_params->{flags} .= " $add_args" if defined $add_args;
+  $qsub_params->{full_jobid} = 1;
 
   return qsub($qsub_params);
 }
@@ -240,6 +240,7 @@ sub submitJob #($)
   $qsub_params->{user} = $user if defined $user;
   $qsub_params->{script} = $app if defined $app;
   $qsub_params->{flags} = $add_args if defined $add_args;
+  $qsub_params->{full_jobid} = 1;
 
   return qsub($qsub_params);
 }

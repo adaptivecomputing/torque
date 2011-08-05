@@ -31,10 +31,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = split("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Job_Name = (.*)/)
-   {
+  if ($line =~ /job_name = (.*)/)
+  {
       $jobName = $1;
    }
 }
 
-die("Expected Job_Name [STDIN] but found [$jobName]") unless cmp_ok($jobName,'eq',"STDIN",'Checking job name');
+cmp_ok($jobName,'eq',"STDIN",'Checking job name');

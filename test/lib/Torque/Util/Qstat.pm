@@ -46,16 +46,21 @@ sub qstat_fx #($)
   my ($params) = @_;
 
   my $job_id   = exists $params->{job_id} ? $params->{job_id} : '';
+  my $flags    = $params->{flags};
   my $runcmd_flags = $params->{user} || { test_success => 1 };
 
   $runcmd_flags->{user} = $params->{user} || $runcmd_flags->{user};
 
-  my %qstat_fx = runCommand("$qstat -f -x $job_id", %$runcmd_flags);
+  my $cmd = "$qstat -fx";
+  $cmd   .= " $flags" if defined $flags;
+  $cmd   .= " $job_id";
+
+  my %qstat_fx = runCommand($cmd, %$runcmd_flags);
 
   my $xref = {};
   unless($qstat_fx{EXIT_CODE})
   {
-    my $xref     = parseXML({
+    $xref     = parseXML({
         xml          => $qstat_fx{STDOUT},
         options => {
           KeyAttr => {
@@ -65,6 +70,17 @@ sub qstat_fx #($)
       });
 
     $xref = $xref->{Job};
+
+    # Convert variable_list into more useful data structure
+    foreach my $job (keys %$xref)
+    {
+      if( exists $xref->{$job}{variable_list} )
+      {
+        my @tmp = split ',', $xref->{$job}{variable_list};
+        my %tmp = map { split '=', $_ } @tmp;
+        $xref->{$job}{variable_list} = \%tmp;
+      }
+    }
   }
 
   return $xref;

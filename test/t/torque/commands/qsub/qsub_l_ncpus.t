@@ -30,12 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = join("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Resource_List.ncpus = (.*)/)
+   if ($line =~ /resource_list.ncpus = (.*)/)
    {
       $ncpus = $1;
    }
 }
 
-die("Expected Resource_List.ncpus [1] but found [$ncpus]") unless cmp_ok($ncpus,'eq',"1",'Checking for Resource_List.ncpus [1]');
-
-
+cmp_ok($ncpus,'eq',"1",'Checking for Resource_List.ncpus [1]');

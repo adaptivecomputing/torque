@@ -18,6 +18,7 @@ my @testList = (
     "$testbase/make.t",
     "$testbase/make_install.t",
     "$testbase/config_mom.t",
+    "$testbase/remote_install_torque.t",
     "$testbase/startup.t",
 );
 

@@ -30,10 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die("Couldn't run qs
 my @stdout = split("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Error_Path = (.*)/)
+   if ($line =~ /error_path = (.*)/)
    {
       $errorPath = $1;
    }
 }
 
-die("Expected Error_Path [mauna:/home/" . $props->get_property('User.1') . "/myErrorFile] but found [$errorPath]") unless cmp_ok($errorPath,'eq', $props->get_property('Test.Host') . ":/home/" . $props->get_property('User.1') . "/myErrorFile",'Looking for expected error file');
+cmp_ok($errorPath,'eq', $props->get_property('Test.Host') . ":/home/" . $props->get_property('User.1') . "/myErrorFile",'Looking for expected error file');

@@ -30,10 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die("Couldn't run qs
 my @stdout = split("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Checkpoint = (.*)/)
+   if ($line =~ /checkpoint = (.*)/)
    {
       $checkPoint = $1;
    }
 }
 
-die("Expected Checkpoint [c=10] but found [$checkPoint]") unless cmp_ok($checkPoint,'eq',"c=10",'Looking for checkpoint c=10');
+cmp_ok($checkPoint,'eq',"c=10",'Looking for checkpoint c=10');

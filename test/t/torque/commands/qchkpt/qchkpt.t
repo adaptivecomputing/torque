@@ -15,9 +15,6 @@ use Torque::Job::Ctrl          qw(
                                     runJobs 
                                     delJobs
                                  );
-use Torque::Util        qw( 
-                                    run_and_check_cmd
-                                 );
 use Torque::Util::Qstat qw(
                                     qstat_fx
                                  );
@@ -40,7 +37,6 @@ my $checkpoint_path;
 # Submit a job
 my $params = {
               'user'       => $props->get_property('User.1'),
-              'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/',
               'app'        => "$FindBin::Bin/../../test_programs/test.pl"
              };
 
@@ -50,11 +46,11 @@ my $job_id = submitCheckpointJob($params);
 runJobs($job_id);
 
 # Wait a few seconds
-sleep 2;
+sleep_diag 2;
 
 # Test qchkpt
 $cmd      = "qchkpt $job_id";
-%qchkpt   = run_and_check_cmd($cmd);
+%qchkpt   = runCommand($cmd, test_success => 1);
 
 # Check every second for two minutes for the checkpoint to be created
 my $count = 0;

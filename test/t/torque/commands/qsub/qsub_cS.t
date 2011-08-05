@@ -30,10 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = split("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Shell_Path_List = (.*)/)
+   if ($line =~ /shell_path_list = (.*)/)
    {
       $shellPathList = $1;
    }
 }
 
-die("Expected Shell_Path_List [/bin/bash] but found [$shellPathList]") unless cmp_ok($shellPathList,'eq',"/bin/bash",'Checking shell path list');
+cmp_ok($shellPathList,'eq',"/bin/bash",'Checking shell path list');

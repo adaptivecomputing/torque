@@ -78,9 +78,9 @@ sub verify_qhold_chkpt #($)
     or diag("Job '$job_id' state: $job_state");
 
   # Perform the basic tests
-  ok($checkpoint_name  =~ /${\CHECKPOINT_FILE_NAME}/,  "Checking the 'checkpoint_name' attribute of the job")
+  like($checkpoint_name, qr/${\CHECKPOINT_FILE_NAME}/,  "Checking the 'checkpoint_name' attribute of the job")
     or diag("checkpoint name: $checkpoint_name");
-  ok(exists $job_info{ $job_id }{ 'checkpoint_time' }, "Checking for the existence of the job attribute 'checkpoint_time'");
+  ok(exists $job_info->{ $job_id }{ 'checkpoint_time' }, "Checking for the existence of the job attribute 'checkpoint_time'");
 
   # Check for the actual file 
   $checkpoint_path = $props->get_property('Torque.Home.Dir') . "/checkpoint/${job_id}.CK/$checkpoint_name";

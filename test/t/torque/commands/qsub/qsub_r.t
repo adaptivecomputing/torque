@@ -30,10 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = split("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Rerunable = (.*)/)
+   if ($line =~ /rerunable = (.*)/)
    {
       $rerunable = $1;
    }
 }
 
-die("Expected Rerunable [False] but found [$rerunable]") unless cmp_ok($rerunable,'eq',"False",'Checking that it is not re-runable');
+cmp_ok($rerunable,'eq',"False",'Checking that it is not re-runable');

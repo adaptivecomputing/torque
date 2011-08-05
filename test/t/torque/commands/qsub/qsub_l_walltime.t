@@ -30,12 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = join("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Resource_List.walltime = (.*)/)
+   if ($line =~ /resource_list.walltime = (.*)/)
    {
       $walltime = $1;
    }
 }
 
-die("Expected Resource_List.walltime [04:00:00] but found [$walltime]") unless cmp_ok($walltime,'eq',"04:00:00",'Checking for Resource_List.walltime [04:00:00]');
-
-
+cmp_ok($walltime,'eq',"04:00:00",'Checking for Resource_List.walltime [04:00:00]');

@@ -13,7 +13,6 @@ use Torque::Ctrl        qw( startTorqueClean
                             stopPbssched
                           );
 use Torque::Util qw( 
-                            run_and_check_cmd
                             list2array             
                           );
 

@@ -41,8 +41,9 @@ our $mom_lock_file    = "$torque_home/mom_priv/mom.lock";
 our $server_lock_file = "$torque_home/server_priv/server.lock";
 
 our $ps_list        = sub{
-    my @matches = (qx/$_[0]/ =~ /^\w+\s+(\d+).+$_[1](?:\s+.*)?$/gm);
-    return join(" ",@matches);
+  my %cmd = runCommand($_[0], logging_off => 1);
+  my @matches = ($cmd{STDOUT} =~ /^\w+\s+(\d+).+$_[1](?:\s+.*)?$/gm);
+  return join(" ",@matches);
 };
 our $remote_ps_list = sub{
     my %cmd     = runCommandSsh($_[0], $_[1], 'logging_off' => 1);
@@ -136,6 +137,7 @@ sub syncServerMom
     my $mom_hosts = $params->{mom_hosts} || [ $props->get_property('Test.Host') ];
 
     my $wait = 120;
+    my $endtime = time() + 120;
     diag "Waiting for All Torque Components to Sync (${wait}s Timeout)";
 
     my $ready = sub{ 
@@ -147,7 +149,7 @@ sub syncServerMom
 	return $result;
     };
 
-    sleep 1 while $wait-- > 0 && !&$ready( @$mom_hosts );
+    sleep 1 while time <= $endtime && !&$ready( @$mom_hosts );
 
     die "Torque Components Failed to Sync!\n".qx/$check_cmd 2>&1/ unless $wait > 0;
 

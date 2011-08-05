@@ -10,11 +10,7 @@ use lib test_lib_loc();
 
 # Test Modules
 use CRI::Test;
-use CRI::Util                 qw(
-                                    resolve_path
-                                 );
-use Torque::Job::Ctrl          qw( 
-                                    submitSleepJob
+use Torque::Job::Ctrl          qw( qsub
                                     runJobs 
                                     delJobs
                                  );
@@ -42,12 +38,11 @@ my %qhold;
 
 # Submit a job
 $params = {
-            'user'       => $props->get_property('User.1'),
-            'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/',
-            'app'        => resolve_path("$FindBin::Bin/../../../test_programs/test.pl")
-          };
+  script => test_lib_loc()."/../t/torque/test_programs/test.pl",
+  full_jobid => 1,
+};
 
-$job_id = submitSleepJob($params);
+$job_id = qsub($params);
 
 # Run the job
 runJobs($job_id);

@@ -30,10 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die("Couldn't run qs
 my @stdout = split("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Join_Path = (.*)/)
+   if ($line =~ /join_path = (.*)/)
    {
       $joinPath = $1;
    }
 }
 
-die("Expected Join_Path [oe] but found [$joinPath]") unless cmp_ok($joinPath,'eq',"oe",'Checking for Join_Path [oe]');
+cmp_ok($joinPath,'eq',"oe",'Checking for Join_Path [oe]');

@@ -34,11 +34,11 @@ foreach my $line (@stdout)
    {
       $jobState = $1;
    }
-   elsif ($line =~ /Execution_Time = (.*)/)
+   elsif ($line =~ /execution_time = (.*)/)
    {
       $executionTime = $1;
    }
 }
 
-die("Expected job_state [W] but found [$jobState]") unless cmp_ok($jobState,'eq',"W",'Checking that job state is [W]');
-die("Expected Execution_Time [Thu Oct 22 07:00:00 2015] but found [$executionTime]") unless cmp_ok($executionTime,'eq',"Thu Oct 22 07:00:00 2015",'Checking that Execution time is [Thu Oct 22 07:00:00 2015]'); 
+cmp_ok($jobState,'eq',"W",'Checking that job state is [W]');
+cmp_ok($executionTime,'eq',"Thu Oct 22 07:00:00 2015",'Checking that Execution time is [Thu Oct 22 07:00:00 2015]'); 

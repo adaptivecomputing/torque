@@ -74,8 +74,7 @@ sub job_info #($)
      my $job_info;
 
      # Get the job info
-     %qstat    = run_and_check_cmd($cmd);
-     $job_info = qstat_fx($qstat{ 'STDOUT' });
+     $job_info = qstat_fx({job_id => $job_ids_str});
 
      return %$job_info;
   }
@@ -121,9 +120,7 @@ sub verify_job_state #($)
     {
 
     # We parse the job information manually so we don't spam the test output
-    $cmd      = "qstat -fx $job_id";
-    %qstat    = runCommand($cmd);
-    $job_info = qstat_fx($qstat{ 'STDOUT' });
+    $job_info = qstat_fx({job_id => $job_id, runcmd_flags => {logging_off => 1}});
 
     $act_job_state = $job_info->{ $job_id }{ 'job_state' };
 

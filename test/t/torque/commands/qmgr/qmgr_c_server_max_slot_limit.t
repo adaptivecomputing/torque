@@ -11,7 +11,7 @@ use lib test_lib_loc();
 use CRI::Test;
 
 use Torque::Util        qw( run_and_check_cmd );
-use Torque::Util::Qstat qw( list_queue_info   );
+use Torque::Test::Qstat::Utils qw( list_queue_info   );
 
 use Torque::Job::Ctrl   qw( qsub             delJobs runJobs );
 use Torque::Job::Utils  qw( generateArrayIds                 );
@@ -40,6 +40,7 @@ $cmd         = "$qmgr -a -c 'set server max_slot_limit=1'";
 diag("Verify the default slot limit");
 $qref = { 
           'flags' => "-t $id_exp",
+          full_jobid => 1,
         };  
 $jid = qsub($qref);
 sleep_diag(1, "Allow time for the job to queue");
@@ -67,6 +68,7 @@ delJobs();
 diag("Verify meeting the default slot limit");
 $qref = { 
           'flags' => "-t $id_exp%1",
+          full_jobid => 1,
         };  
 $jid = qsub($qref);
 sleep_diag(1, "Allow time for the job to queue");

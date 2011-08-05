@@ -36,4 +36,4 @@ foreach my $line (@stdout)
    }
 }
 
-die("Expected queue [batch] but found [$queue]") unless cmp_ok($queue,'eq',"batch",'Checking for batch queue');
+cmp_ok($queue,'eq',"batch",'Checking for batch queue');

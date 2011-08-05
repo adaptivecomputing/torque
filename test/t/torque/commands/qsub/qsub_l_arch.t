@@ -29,12 +29,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = join("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Resource_List.arch = (.*)/)
+   if ($line =~ /resource_list.arch = (.*)/)
    {
       $arch = $1;
    }
 }
 
-die("Expected Resource_List.arch [linux] but found [$arch]") unless cmp_ok($arch,'eq',"linux",'Found Linux architecture');
-
-
+cmp_ok($arch,'eq',"linux",'Found Linux architecture');

@@ -38,4 +38,4 @@ foreach my $line (@stdout)
    }
 }
 
-die("Expected Variable_List /MYVAR=MyValue/ but found [$found]") unless like($found,qr/MYVAR=MyValue/,'Checking Variable List');
+like($found,qr/MYVAR=MyValue/,'Checking Variable List');

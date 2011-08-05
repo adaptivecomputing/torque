@@ -9,7 +9,7 @@ use lib test_lib_loc();
 
 use CRI::Test;
 
-use Torque::Util::Qstat qw( qstat_tfx                        );
+use Torque::Util::Qstat qw( qstat_fx                        );
 use Torque::Job::Ctrl   qw( qsub             delJobs runJobs );
 use Torque::Job::Utils  qw( generateArrayIds                 );
 
@@ -17,7 +17,7 @@ plan('no_plan');
 setDesc('Qsub -t Slot Limits');
 
 # Variables
-my %qhash       = ();
+my $qhash       = ();
 my $qref        = {};
 my $id_exp      = '2-3%1';
 my $jid         = undef;
@@ -49,11 +49,11 @@ cmp_ok($j2_results->[0]->{ 'STDERR' },
        "qrun: Invalid request MSG=Cannot run job. Array slot limit is 1 and there are already 1 jobs running\n $jaids[1]\n", 
        "Checking stderr of qrun for subjob:$jaids[1]");
 
-%qhash = qstat_tfx();
+$qhash = qstat_fx({flags => "-t"});
 sleep_diag(1, "Allow time for the job to run");
 
-cmp_ok($qhash{ $jaids[0] }{ 'job_state' }, 'eq', 'R', "Verifying job state of subjob:$jaids[0]");
-cmp_ok($qhash{ $jaids[1] }{ 'job_state' }, 'eq', 'Q', "Verifying job state of subjob:$jaids[1]");
+cmp_ok($qhash->{ $jaids[0] }{ 'job_state' }, 'eq', 'R', "Verifying job state of subjob:$jaids[0]");
+cmp_ok($qhash->{ $jaids[1] }{ 'job_state' }, 'eq', 'Q', "Verifying job state of subjob:$jaids[1]");
 
 # Cleanup
 delJobs();

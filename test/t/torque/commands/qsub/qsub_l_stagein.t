@@ -30,12 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = join("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Resource_List.stagein = (.*)/)
+   if ($line =~ /resource_list.stagein = (.*)/)
    {
       $stagein = $1;
    }
 }
 
-die("Expected Resource_List.stagein [myFile] but found [$stagein]") unless cmp_ok($stagein,'eq',"myFile",'Checking for Resource_List.stagein [myFile]');
-
-
+cmp_ok($stagein,'eq',"myFile",'Checking for Resource_List.stagein [myFile]');

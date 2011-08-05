@@ -30,10 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die("Couldn't run qs
 my @stdout = split("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /Hold_Types = (.*)/)
+   if ($line =~ /hold_types = (.*)/)
    {
       $holdTypes = $1;
    }
 }
 
-die("Expected Hold_Types [u] but found [$holdTypes]") unless cmp_ok($holdTypes,'eq',"u",'Checking that Hold Types are as expected');
+cmp_ok($holdTypes,'eq',"u",'Checking that Hold Types are as expected');

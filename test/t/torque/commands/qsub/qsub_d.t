@@ -44,5 +44,5 @@ else
 
 my %job_info = job_info($job_id);
 
-ok($job_info{ $job_id }{ 'Variable_List' }{ 'PBS_O_INITDIR' } eq $dir, "Checking the environment variable 'PBS_O_INITDIR' for the directory: '$dir'")
-  or diag("\$job_info{ '$job_id' }{ 'Variable_List' }{ 'PBS_O_INITDIR' } = $job_info{ $job_id }{ 'Variable_List' }{ 'PBS_O_INITDIR' }");
+is($job_info{ $job_id }{ 'variable_list' }{ 'pbs_o_initdir' }, $dir, "Checking the environment variable 'pbs_o_initdir'");
+is($job_info{$job_id}{init_work_dir}, $dir, 'Checking init_work_dir value');

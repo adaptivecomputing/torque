@@ -30,10 +30,10 @@ ok($qstat{'EXIT_CODE'} != 999,'Checking that qstat ran') or die('Couldn\'t run q
 my @stdout = split("\n",$qstat{'STDOUT'});
 foreach my $line (@stdout)
 {
-   if ($line =~ /User_List = (.*)/)
+   if ($line =~ /user_list = (.*)/)
    {
       $userList = $1;
    }
 }
 
-die("Expected User_List [".$props->get_property('User.1')."] but found [$userList]") unless cmp_ok($userList,'eq',$props->get_property('User.1'),'Checking User_List');
+cmp_ok($userList,'eq',$props->get_property('User.1'),'Checking User_List');
