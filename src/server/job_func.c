@@ -2483,11 +2483,14 @@ pbs_queue *get_jobs_queue(
   {
   pbs_queue *pque = pjob->ji_qhdr;
 
-  if (pthread_mutex_trylock(pque->qu_mutex))
+  if (pque != NULL)
     {
-    pthread_mutex_unlock(pjob->ji_mutex);
-    pthread_mutex_lock(pque->qu_mutex);
-    pthread_mutex_lock(pjob->ji_mutex);
+    if (pthread_mutex_trylock(pque->qu_mutex))
+      {
+      pthread_mutex_unlock(pjob->ji_mutex);
+      pthread_mutex_lock(pque->qu_mutex);
+      pthread_mutex_lock(pjob->ji_mutex);
+      }
     }
 
   return(pque);
