@@ -468,7 +468,7 @@ void req_quejob(
       }
     else
       {
-      close_conn(sock);
+      close_conn(sock, FALSE);
       }
 
     /* SUCCESS */
@@ -500,7 +500,7 @@ void req_quejob(
     {
     /* reply failed, purge the job and close the connection */
 
-    close_conn(sock);
+    close_conn(sock, FALSE);
 
     job_purge(pj);
 
@@ -910,7 +910,7 @@ void req_rdytocommit(
 
     log_err(errno, "req_rdytocommit", log_buffer);
 
-    close_conn(sock);
+    close_conn(sock, FALSE);
 
     job_purge(pj);
 

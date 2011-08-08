@@ -709,8 +709,12 @@ void process_Dreply(
 
   struct batch_request *request;
 
+  pthread_mutex_lock(svr_conn[sock].cn_mutex);
+
   /* find the work task for the socket, it will point us to the request */
   handle = svr_conn[sock].cn_handle;
+
+  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
   while ((ptask = next_task(&task_list_event,&iter)) != NULL)
     {
@@ -726,7 +730,7 @@ void process_Dreply(
     {
     log_err(-1, id, "Unable to find work task for connection");
 
-    close_conn(sock);
+    close_conn(sock, FALSE);
 
     return;
     }
@@ -737,7 +741,7 @@ void process_Dreply(
 
   if ((rc = DIS_reply_read(sock, &request->rq_reply)) != 0)
     {
-    close_conn(sock);
+    close_conn(sock, FALSE);
 
     request->rq_reply.brp_code = rc;
     request->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;

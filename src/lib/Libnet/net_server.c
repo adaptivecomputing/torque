@@ -473,7 +473,6 @@ int wait_request(
 
   {
   extern char *PAddrToString(pbs_net_t *);
-  void close_conn();
 
   int i;
   int n;
@@ -587,7 +586,7 @@ int wait_request(
         
         pthread_mutex_unlock(global_sock_read_mutex);
 
-        close_conn(i);
+        close_conn(i, TRUE);
 
         pthread_mutex_unlock(svr_conn[i].cn_mutex);
         pthread_mutex_lock(num_connections_mutex);
@@ -658,7 +657,7 @@ int wait_request(
 
     /* NYI */
 
-    close_conn(i);
+    close_conn(i, TRUE);
 
     pthread_mutex_unlock(svr_conn[i].cn_mutex);
     }  /* END for (i) */
@@ -833,7 +832,8 @@ void add_conn(
 
 void close_conn(
 
-  int sd) /* I */
+  int sd,        /* I */
+  int has_mutex) /* I */
 
   {
   if ((sd < 0) || (max_connection <= sd))
@@ -841,8 +841,14 @@ void close_conn(
     return;
     }
 
+  if (has_mutex == FALSE)
+    pthread_mutex_lock(svr_conn[sd].cn_mutex);
+
   if (svr_conn[sd].cn_active == Idle)
     {
+    if (has_mutex == FALSE)
+      pthread_mutex_unlock(svr_conn[sd].cn_mutex);
+
     return;
     }
 
@@ -874,6 +880,9 @@ void close_conn(
   svr_conn[sd].cn_func = (void (*)())0;
 
   svr_conn[sd].cn_authen = 0;
+    
+  if (has_mutex == FALSE)
+    pthread_mutex_unlock(svr_conn[sd].cn_mutex);
 
   pthread_mutex_lock(num_connections_mutex);
   num_connections--;
@@ -910,7 +919,7 @@ void net_close(
 
       svr_conn[i].cn_oncl = 0;
 
-      close_conn(i);
+      close_conn(i,TRUE);
 
       pthread_mutex_unlock(svr_conn[i].cn_mutex);
       }

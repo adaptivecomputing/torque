@@ -354,7 +354,6 @@ int svr_enquejob(
   if (!pjob->ji_is_array_template)
     {
     iter = -1;
-    pjob->ji_qhdr = pque;
 
     while ((pjcur = next_job_from_back(pque->qu_jobs,&iter)) != NULL)
       {
@@ -2451,7 +2450,8 @@ void set_resc_deflt(
     set_deflt_resc(ja, &server.sv_attr[SRV_ATR_ResourceMax]);
 #endif
 
-    pthread_mutex_unlock(pque->qu_mutex);
+    if (has_queue_mutex == FALSE)
+      pthread_mutex_unlock(pque->qu_mutex);
     }
 
   for (i = 0;i < JOB_ATR_LAST;++i)

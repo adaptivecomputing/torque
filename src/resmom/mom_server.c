@@ -3936,7 +3936,7 @@ void is_request(
     }
 
   /* NYI: should this stream be closed? */
-  close_conn(stream);
+  close_conn(stream, FALSE);
   }  /* END is_request() */
 
 

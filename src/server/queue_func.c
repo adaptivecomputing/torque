@@ -306,10 +306,12 @@ pbs_queue *find_queuebyname(
     {
     pque = svr_queues.ra->slots[i].item;
 
-    pthread_mutex_lock(pque->qu_mutex);
     }
 
   pthread_mutex_unlock(svr_queues.allques_mutex);
+  
+  if (pque != NULL)
+    pthread_mutex_lock(pque->qu_mutex);
 
   if (pc != NULL)
     *pc = '@'; /* restore '@' server portion */

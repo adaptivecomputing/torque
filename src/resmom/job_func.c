@@ -224,7 +224,7 @@ void tasks_free(
       ip = (infoent *)GET_NEXT(tp->ti_info);
       }
 
-    close_conn(tp->ti_fd);
+    close_conn(tp->ti_fd, FALSE);
 
     delete_link(&tp->ti_jobtask);
 

@@ -406,7 +406,7 @@ void process_pbs_server_port(
         log_err(-1,id,log_buf);
         }
 
-      close_conn(sock);
+      close_conn(sock, FALSE);
 
       break;
       }

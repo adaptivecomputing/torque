@@ -197,9 +197,7 @@ static int contact_sched(
 
   svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
 
-  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-
-  net_add_close_func(sock, scheduler_close);
+  net_add_close_func(sock, scheduler_close, TRUE);
 
   /* send command to Scheduler */
 
@@ -211,10 +209,14 @@ static int contact_sched(
 
     log_ext(errno,id,tmpLine,LOG_ALERT);
 
-    close_conn(sock);
+    close_conn(sock, TRUE);
+
+    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
     return(-1);
     }
+    
+  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
   sprintf(log_buf, msg_sched_called, (cmd != SCH_ERROR) ? PSchedCmdType[cmd] : "ERROR");
 
@@ -330,9 +332,8 @@ static int contact_listener(
 
   svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
 
-  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
-  net_add_close_func(sock, listener_close);
+  net_add_close_func(sock, listener_close, TRUE);
 
   /* send command to Listener */
 
@@ -345,10 +346,14 @@ static int contact_listener(
 
     log_err(errno, id, tmpLine);
 
-    close_conn(sock);
+    close_conn(sock, TRUE);
+  
+    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
     return(-1);
     }
+
+  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
   sprintf(log_buf, msg_listnr_called, l_idx + 1,
     (listener_command != SCH_ERROR) ? PSchedCmdType[listener_command] : "ERROR");

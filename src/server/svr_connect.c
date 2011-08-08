@@ -266,7 +266,7 @@ int svr_connect(
       log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
       }
 
-    close_conn(sock);
+    close_conn(sock, FALSE);
 
     return(PBS_NET_RC_RETRY);
     }
@@ -318,7 +318,7 @@ void svr_disconnect(
 
     shutdown(connection[handle].ch_socket, 2);
 
-    close_conn(connection[handle].ch_socket);
+    close_conn(connection[handle].ch_socket, FALSE);
 
     if (connection[handle].ch_errtxt != NULL)
       {

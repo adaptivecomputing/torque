@@ -353,7 +353,7 @@ void process_request(
       "process_req",
       "request on invalid type of connection");
 
-    close_conn(sfds);
+    close_conn(sfds, TRUE);
 
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
@@ -691,9 +691,10 @@ void dispatch_request(
     {
     case PBS_BATCH_QueueJob:
 
-      net_add_close_func(sfds, close_quejob);
+      net_add_close_func(sfds, close_quejob, FALSE);
 
       enqueue_threadpool_request(req_quejob,request);
+
       break;
 
     case PBS_BATCH_JobCred:
@@ -716,7 +717,7 @@ void dispatch_request(
 
       enqueue_threadpool_request(req_commit,request);
 
-      net_add_close_func(sfds, (void (*)())0);
+      net_add_close_func(sfds, (void (*)())0, FALSE);
 
       break;
 
@@ -945,7 +946,11 @@ void dispatch_request(
 
       req_reject(PBSE_UNKREQ, 0, request, NULL, NULL);
 
+      pthread_mutex_lock(svr_conn[sfds].cn_mutex);
+
       close_client(sfds);
+      
+      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
       break;
     }  /* END switch (request->rq_type) */
@@ -970,7 +975,7 @@ static void close_client(
 
   struct batch_request *preq;
 
-  close_conn(sfds); /* close the connection */
+  close_conn(sfds, TRUE); /* close the connection */
 
   pthread_mutex_lock(svr_requests_mutex);
 

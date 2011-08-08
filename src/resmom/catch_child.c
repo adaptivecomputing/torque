@@ -1092,7 +1092,7 @@ void preobit_reply(
 
     shutdown(sock, SHUT_RDWR);
 
-    close_conn(sock);
+    close_conn(sock, FALSE);
 
     return;
     }  /* END if (pjob != NULL) */
@@ -1221,15 +1221,11 @@ void preobit_reply(
 
   shutdown(sock, SHUT_RDWR);
 
-  close_conn(sock);
+  close_conn(sock, FALSE);
 
   if (deletejob == 1)
     {
-    log_record(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
     if (!(pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) ||
         (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long == 0))
@@ -1601,7 +1597,7 @@ void obit_reply(
 
   shutdown(sock, 2);
 
-  close_conn(sock);
+  close_conn(sock, FALSE);
 
   if (PBSNodeCheckEpilog)
     {

@@ -4355,7 +4355,6 @@ int rm_request(
 
   unsigned long ipadd;
   u_short port;
-  void (*close_io)(int);
   int (*flush_io)(int);
 
   extern struct connection svr_conn[];
@@ -4372,7 +4371,6 @@ int rm_request(
   ipadd = svr_conn[iochan].cn_addr;
   port = svr_conn[iochan].cn_port;
 
-  close_io = close_conn;
   flush_io = DIS_tcp_wflush;
 
   if (version != RM_PROTOCOL_VER)
@@ -4415,7 +4413,7 @@ int rm_request(
     {
     case RM_CMD_CLOSE:  /* no response to this */
 
-      close_io(iochan);
+      close_conn(iochan, FALSE);
 
       return(1);
 
@@ -5263,7 +5261,7 @@ int rm_request(
 
       flush_io(iochan);
 
-      close_io(iochan);
+      close_conn(iochan, FALSE);
 
       mom_lock(lockfds, F_UNLCK);
       close(lockfds);
@@ -5339,7 +5337,7 @@ bad:
 
   log_err(errno, id, log_buffer);
 
-  close_io(iochan);
+  close_conn(iochan, FALSE);
 
   return(-1);
   }  /* END rm_request() */
@@ -5389,7 +5387,7 @@ int do_tcp(
 
     case DIS_EOF:   /* closed */
 
-      close_conn(fd);
+      close_conn(fd,FALSE);
 
       /* continue to next case */
 
@@ -5492,7 +5490,7 @@ int do_tcp(
 
 bad:
 
-  close_conn(fd);
+  close_conn(fd, FALSE);
 
   return(-1);
   }  /* END do_tcp() */
@@ -5542,7 +5540,7 @@ void tcp_request(
 
     log_err(errno, id, log_buffer);
 
-    close_conn(fd);
+    close_conn(fd, FALSE);
 
     return;
     }

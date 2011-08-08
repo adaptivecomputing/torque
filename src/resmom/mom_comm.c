@@ -6190,7 +6190,7 @@ done:
       {
       log_err(errno, id, "DIS_tcp_wflush");
       
-      close_conn(stream);
+      close_conn(stream, FALSE);
       close_stream = FALSE;
       }
     }
@@ -6211,7 +6211,7 @@ err:
   
   log_err(-1, id, log_buffer);
   
-  close_conn(stream);
+  close_conn(stream, FALSE);
   close_stream = FALSE;
   /*im_eof(stream, ret);*/
   
@@ -6225,7 +6225,7 @@ fini:
   
   if (close_stream == TRUE)
     {
-    close_conn(stream);
+    close_conn(stream, FALSE);
     }
   
   return;
@@ -7801,7 +7801,7 @@ done:
       
       log_err(errno, id, log_buffer);
       
-      close_conn(fd);
+      close_conn(fd, FALSE);
       }
     }
   
@@ -7827,7 +7827,7 @@ err:
     (ipadd & 0x0000ff00) >> 8,
     (ipadd & 0x000000ff));
   
-  close_conn(fd);
+  close_conn(fd, FALSE);
   
   if (jobid)
     free(jobid);

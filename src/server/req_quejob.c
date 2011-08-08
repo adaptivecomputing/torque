@@ -1254,7 +1254,7 @@ void *req_quejob(
     /* reply failed, purge the job and close the connection */
     pthread_mutex_unlock(pque->qu_mutex);
 
-    close_conn(sock);
+    close_conn(sock,FALSE);
 
     job_purge(pj);
 
@@ -1751,7 +1751,7 @@ void req_rdytocommit(
 
     log_err(errno, id, log_buf);
 
-    close_conn(sock);
+    close_conn(sock,FALSE);
 
     pthread_mutex_lock(pj->ji_mutex);
 

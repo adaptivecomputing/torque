@@ -408,7 +408,7 @@ void dispatch_request(
     {
     case PBS_BATCH_QueueJob:
 
-      net_add_close_func(sfds, close_quejob);
+      net_add_close_func(sfds, close_quejob, FALSE);
 
       req_quejob(request);
       
@@ -436,7 +436,7 @@ void dispatch_request(
 
       req_commit(request);
 
-      net_add_close_func(sfds, (void (*)())0);
+      net_add_close_func(sfds, (void (*)())0, FALSE);
 
       break;
 
@@ -551,7 +551,7 @@ static void close_client(
 
   struct batch_request *preq;
 
-  close_conn(sfds); /* close the connection */
+  close_conn(sfds, FALSE); /* close the connection */
 
   preq = (struct batch_request *)GET_NEXT(svr_requests);
 
