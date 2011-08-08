@@ -1270,7 +1270,6 @@ void finish_sendmom(
       }
     }  /* END switch (status) */
 
-  pthread_mutex_unlock(pjob->ji_mutex);
   } /* END finish_sendmom() */
 
 

@@ -891,23 +891,31 @@ void *send_job(
   struct pbsnode       *np;
 
   pjob = find_job(jobid);
-  hostaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
 
-  if (LOGLEVEL >= 6)
+  if (pjob != NULL)
     {
-    sprintf(log_buf,"about to send job - type=%d",type);
- 
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buf);
+    hostaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
+    
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buf,"about to send job - type=%d",type);
+      
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buf);
+      }
+    
+    if ((np = PGetNodeFromAddr(hostaddr)) != NULL)
+      {
+      node_name = np->nd_name;
+      
+      pthread_mutex_unlock(np->nd_mutex);
+      }
+    
+    send_job_work(pjob,node_name,type,preq);
+
+    /* the other kinds unlock the mutex inside finish_move_process */
+    if (type == MOVE_TYPE_Exec)
+      pthread_mutex_unlock(pjob->ji_mutex);
     }
-
-  if ((np = PGetNodeFromAddr(hostaddr)) != NULL)
-    {
-    node_name = np->nd_name;
-
-    pthread_mutex_unlock(np->nd_mutex);
-    }
-
-  send_job_work(pjob,node_name,type,preq);
 
   return(NULL);
   }  /* END send_job() */
