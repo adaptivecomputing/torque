@@ -471,6 +471,7 @@ int svr_enquejob(
       &pque->qu_attr[QE_ATR_checkpoint_min]);
 
     /* do anything needed doing regarding job dependencies */
+    pthread_mutex_unlock(pque->qu_mutex);
 
     if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
       {
@@ -479,8 +480,6 @@ int svr_enquejob(
                               pjob,
                               ATR_ACTION_NOOP)) != 0)
         {
-        pthread_mutex_unlock(pque->qu_mutex);
-
         return(rc);
         }
       }
@@ -501,13 +500,12 @@ int svr_enquejob(
   else if (pque->qu_qs.qu_type == QTYPE_RoutePush)
     {
     /* start attempts to route job */
-
     pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_ROUTE;
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
     pjob->ji_qs.ji_un.ji_routet.ji_rteretry = 0;
+    
+    pthread_mutex_unlock(pque->qu_mutex);
     }
-        
-  pthread_mutex_unlock(pque->qu_mutex);
 
   return(PBSE_NONE);
   }  /* END svr_enquejob() */
