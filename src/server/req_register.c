@@ -1055,9 +1055,9 @@ static void alter_unreg(
 
   {
 
-  struct depend *poldd;
+  struct depend     *poldd;
 
-  struct depend *pnewd;
+  struct depend     *pnewd;
 
   struct depend_job *oldjd;
   int                type;
@@ -2035,16 +2035,17 @@ static struct depend_job *make_dependjob(
 
 static int send_depend_req(
 
-  job *pjob,
-  struct depend_job *pparent,
-  int  type,
-  int  op,
-  int  schedhint,
-  void (*postfunc)(struct work_task *))
+  job                *pjob,
+  struct depend_job  *pparent,
+  int                 type,
+  int                 op,
+  int                 schedhint,
+  void               (*postfunc)(struct work_task *))
 
   {
-  int        i;
-  char        *myid = "send_depend_req";
+  int                   i;
+  char                 *myid = "send_depend_req";
+  char                  job_id[PBS_MAXSVRJOBID];
 
   struct batch_request *preq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -2104,12 +2105,23 @@ static int send_depend_req(
     preq->rq_ind.rq_register.rq_cost = 0;
     }
 
+  /* save jobid and unlock mutex */
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  pthread_mutex_unlock(pjob->ji_mutex);
+
   if (issue_to_svr(pparent->dc_svr, preq, postfunc) == -1)
     {
     sprintf(log_buf, "Unable to perform dependency with job %s\n", pparent->dc_child);
 
+    find_job(job_id);
+
     return(PBSE_BADHOST);
     }
+
+  pjob = find_job(job_id);
+
+  if (pjob == NULL)
+    return(-1);
 
   return(PBSE_NONE);
   }  /* END send_depend_req() */
