@@ -27,6 +27,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       were checked for availability. NCONNECT is defined as 10. However, the connection
       table is PBS_NET_MAX_CONNECTIONS in size. PBS_NET_MAX_CONNECTIONS is 10240. 
       NCONNECT is now defined as PBS_NET_MAX_CONNECTIONS.
+  b - fix bugzilla #135, stagein was deleting directory instead of file (backported
+      from 3.0.3)
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as
