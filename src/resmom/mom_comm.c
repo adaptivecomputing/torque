@@ -2261,7 +2261,7 @@ int im_join_job_as_sister(
     
     log_ext(-1, id, log_buffer, LOG_INFO);
 
-    if (create_jobset(pjob) == FAILURE)
+    if (create_job_cpuset(pjob) == FAILURE)
       {
       sprintf(log_buffer, "Could not create cpuset for job %s.\n",
         pjob->ji_qs.ji_jobid);
