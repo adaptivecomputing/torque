@@ -22,16 +22,13 @@ my $host          = 'localhost';
 my $reconfig_file = $props->get_property( 'mom.reconfig.file' );
 my $cmd           = "momctl -s";
 
-%momctl = runCommand($cmd);
-ok($momctl{ 'EXIT_CODE' } == 0,
-   "Checking that '$cmd' ran")
-  or die "Couldn't run '$cmd'";
+%momctl = runCommand($cmd, test_success => 1);
 
 # Perform the tests
 my $stdout = $momctl{ 'STDOUT' };
-ok($stdout =~ /shutdown request successful on ${host}/i, "Checking output of '$cmd'"                    );
+like($stdout, /shutdown request successful on ${host}/i, "Checking output of '$cmd'");
 
-sleep 15;
+sleep_diag 10;
 my $pgrep = `pgrep -x pbs_mom`;
 ok($pgrep !~ /\d+/, "Checking that the pbs_mom pid does not exists");
 

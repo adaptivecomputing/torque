@@ -31,12 +31,9 @@ $stdout = $momctl{ 'STDOUT' };
 ok($stdout =~ /reconfig successful on ${host}/i, "Checking output of 'momctl -r $reconfig_file'");
 
 # Check that mom was really reconfigured
-%momctl = runCommand($check_cmd);
-ok($momctl{ 'EXIT_CODE' } == 0,
-   "Checking that '$check_cmd' ran")
-  or die "Couldn't run '$check_cmd'";
+%momctl = runCommand($check_cmd, test_success_die => 1);
 $stdout = $momctl{ 'STDOUT' };
-ok($stdout =~ /${host}:\s+check_poll_time\s=\s\'check_poll_time=${reconfig_check_poll_time}\'/,
+like($stdout, qr/${host}:\s+check_poll_time\s=\s\'check_poll_time=${reconfig_check_poll_time}\'/,
   "Verifying that check_poll_time was changed to '$reconfig_check_poll_time'");
 
 # Reconfigure mom to old configuration
@@ -45,12 +42,9 @@ $stdout = $momctl{ 'STDOUT' };
 ok($stdout =~ /reconfig successful on ${host}/i, "Checking output of 'momctl -r $config_file'");
 
 # Check that mom was really reconfigured
-%momctl = runCommand($check_cmd);
-ok($momctl{ 'EXIT_CODE' } == 0,
-   "Checking that '$check_cmd' ran")
-  or die "Couldn't run '$check_cmd'";
+%momctl = runCommand($check_cmd, test_success => 1);
 $stdout = $momctl{ 'STDOUT' };
-ok($stdout =~ /${host}:\s+check_poll_time\s=\s\'check_poll_time=${config_check_poll_time}\'/,
+like($stdout, qr/${host}:\s+check_poll_time\s=\s\'check_poll_time=${config_check_poll_time}\'/,
   "Verifying that check_poll_time was changed to '$config_check_poll_time'");
 
 
@@ -64,10 +58,7 @@ sub reconfig #($)
   my %result;
   my $cmd = "momctl -r $cfg_file";
 
-  %result = runCommand($cmd);
-  ok($result{ 'EXIT_CODE' } == 0,
-    "Checking that '$cmd' ran")
-   or die "Couldn't run '$cmd'";
+  %result = runCommand($cmd, test_success_die => 1);
 
   return %result;
 

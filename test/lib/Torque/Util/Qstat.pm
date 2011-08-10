@@ -58,7 +58,7 @@ sub qstat_fx #($)
   my %qstat_fx = runCommand($cmd, %$runcmd_flags);
 
   my $xref = {};
-  unless($qstat_fx{EXIT_CODE} || $qstat_fx{STDOUT} )
+  unless($qstat_fx{EXIT_CODE} || !defined $qstat_fx{STDOUT} || $qstat_fx{STDOUT} eq '' )
   {
     $xref     = parseXML({
         xml          => $qstat_fx{STDOUT},
