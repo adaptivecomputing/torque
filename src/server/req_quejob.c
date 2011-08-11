@@ -348,6 +348,58 @@ void sum_select_mem_request(
   } /* END sum_select_mem_request() */
 
 
+/****************************************************************** 
+ * set_node_attr - Check to see is the node resource was requested
+ *                 on the qsub line. If not add the node attribute
+ *                 to the Resource_List and set the value to 1. This
+ *                 makes it so that if  procct is set on a queue
+ *                 jobs without a node resource request will still
+ *                 be properly routed.
+ * Returns: 0 if OK 
+ *          Non-Zero on failure 
+ */
+
+int set_node_attr(job *pjob)
+  {
+  resource *pres;
+	int  nodect_set = 0;
+  int  rc = 0;
+  char *pname;
+
+  if(pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
+    {
+    pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    while(pres != NULL)
+      {
+      if(pres->rs_defin != NULL)
+        {
+        pname = pres->rs_defin->rs_name;
+        if(pname == NULL || *pname == 0)
+          {
+          pres = (resource *)GET_NEXT(pres->rs_link);
+          continue;
+          }
+        
+        if(strncmp(pname, "nodes", 5) == 0 
+          || strncmp(pname, "procs", 5) == 0)
+          {
+          nodect_set = 1;
+          break;
+          }
+        }
+        pres = (resource *)GET_NEXT(pres->rs_link);
+      }
+    }                                                                         
+
+    if(nodect_set == 0)
+      {
+      /* neither procs nor nodes were requested. set nodes to 1
+         so the procct will process correctly. */
+      rc = decode_resc(&pjob->ji_wattr[JOB_ATR_resource], ATTR_l, "nodes", "1", ATR_DFLAG_ACCESS);
+     }
+
+  return(rc);
+  }
 
 
 /*
@@ -739,6 +791,18 @@ void *req_quejob(
 
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
     } /* END while (psatl != NULL) */
+
+  rc = set_node_attr(pj);
+  if(rc)
+    {
+    /* just record that we could not set node count */
+    sprintf(log_buffer, "Could not set default node count. Error not fatal. Will continue submitting job: %d",
+            rc);
+    LOG_EVENT(PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              id,
+              log_buffer);
+    }
 
   /* perform any at_action routine declared for the attributes */
   for (i = 0; i < JOB_ATR_LAST; ++i)
