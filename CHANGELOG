@@ -29,6 +29,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       NCONNECT is now defined as PBS_NET_MAX_CONNECTIONS.
   b - fix bugzilla #135, stagein was deleting directory instead of file (backported
       from 3.0.3)
+	b - If the resources nodes or procs are not submitted on the qsub command line then
+	    the nodes attribute does not get set. This causes a problem if procct is set on
+			queues because there is no proc count available to evaluate. This fix sets
+			a default nodes value of 1 if the nodes or procs resources are not requested.
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as
