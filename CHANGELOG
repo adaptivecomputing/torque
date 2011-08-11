@@ -43,6 +43,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix for adding -lcr for BLCR makefiles (Bugzilla #146)
   c - fix a potential segfault when using asynchronous runjob with an array slot limit
   b - fix bugzilla #135, stagein was deleting directory instead of file
+  b - fix bugzilla #133, qsub submit filter, the -W arguments are not all there
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it
