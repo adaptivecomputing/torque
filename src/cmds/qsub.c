@@ -579,13 +579,17 @@ char **value;
   static char *tok_ptr;
   char *curr_ptr;
   char *equals;
+  static char tmpLine[65536];
 
   /* we've reached the end */
   if ((start == NULL) &&
       (*tok_ptr == '\0'))
     return(0);
 
-  curr_ptr = smart_strtok(start,",",&tok_ptr,FALSE);
+  if (start != NULL)
+    strcpy(tmpLine, start);
+
+  curr_ptr = smart_strtok(tmpLine,",",&tok_ptr,FALSE);
 
   if ((curr_ptr == NULL))
     return(0);
