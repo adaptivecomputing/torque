@@ -220,11 +220,7 @@ void que_free(
     }
 
   /* now free the main structure */
-  pthread_mutex_lock(server.sv_qs_mutex);
-
   server.sv_qs.sv_numque--;
-  
-  pthread_mutex_unlock(server.sv_qs_mutex);
 
   remove_queue(&svr_queues,pq);
 
