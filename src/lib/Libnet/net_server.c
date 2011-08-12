@@ -700,7 +700,11 @@ static void accept_conn(
 
   pthread_mutex_lock(num_connections_mutex);
   if (num_connections >= max_connection)
+    {
+    pthread_mutex_unlock(num_connections_mutex);
+
     return;
+    }
   pthread_mutex_unlock(num_connections_mutex);
 
   /* update lasttime of main socket */
