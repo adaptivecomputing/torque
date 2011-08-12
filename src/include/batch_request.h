@@ -96,13 +96,14 @@
  * request structure.
  */
 
+#ifndef _BATCH_REQUEST_H
+#define _BATCH_REQUEST_H 1
+
 #include "libpbs.h"
 #include "attribute.h"
 #include "credential.h"
 #include "pbs_job.h"
 
-#ifndef BATCH_REQUEST_H
-#define BATCH_REQUEST_H 1
 
 /*
  * The rest of this stuff is for the Batch Request Structure

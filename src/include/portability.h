@@ -1,3 +1,5 @@
+#ifndef _PORTABILITY_H
+#define _PORTABILITY_H
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -90,4 +92,4 @@
 #  define setegid(e) (setresgid(-1,e,-1))
 # endif
 #endif
-
+#endif /* _PORTABILITY_H */

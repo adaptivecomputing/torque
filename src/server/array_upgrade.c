@@ -8,6 +8,7 @@
 
 
 #include "array.h"
+#include "../lib/Liblog/pbs_log.h"
 
 
 extern char *path_arrays;

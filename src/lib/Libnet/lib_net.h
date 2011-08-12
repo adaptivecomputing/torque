@@ -40,7 +40,7 @@ int init_network(unsigned int port, void (*readfunc)());
 int wait_request(time_t waittime, long *SState); 
 /* static void accept_conn(int sd); */
 void add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void (*func)(int));
-void close_conn(int sd); 
+void close_conn(int sd, int has_mutex); 
 void net_close(int but); 
 pbs_net_t get_connectaddr(int sock, int mutex); 
 int find_conn(pbs_net_t addr); 

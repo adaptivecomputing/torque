@@ -33,6 +33,8 @@
 
 #include "pbs_ifl.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"

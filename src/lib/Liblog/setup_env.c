@@ -84,6 +84,7 @@
 #include <string.h>
 #include "portability.h"
 #include "log.h"
+#include "pbs_log.h"
 
 extern char **environ;
 

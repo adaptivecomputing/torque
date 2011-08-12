@@ -110,6 +110,8 @@
 #include "batch_request.h"
 #include "net_connect.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 #include "pbs_proto.h"
 #include "csv.h"

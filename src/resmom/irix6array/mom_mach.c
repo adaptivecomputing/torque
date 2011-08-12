@@ -330,9 +330,7 @@ dep_main_loop_cycle(void)
  *  sizeof(word) = sizeof(int)
  */
 
-static int getsize(pres, ret)
-resource  *pres;
-rlim64_t  *ret;
+static int mm_getsize(resource *pres, rlim64_t *ret)
   {
   rlim64_t value;
 
@@ -825,7 +823,7 @@ mom_set_limits(
       {
       if (set_mode == SET_LIMIT_SET)
         {
-        retval = getsize(pres, &sizeval);
+        retval = mm_getsize(pres, &sizeval);
 
         if (retval != PBSE_NONE)
           return (error(pname, retval));
@@ -840,7 +838,7 @@ mom_set_limits(
       {
       if (ignvmem == FALSE)
         {
-        retval = getsize(pres, &sizeval);
+        retval = mm_getsize(pres, &sizeval);
 
         if (retval != PBSE_NONE)
           return (error(pname, retval));
@@ -853,7 +851,7 @@ mom_set_limits(
       {
       if (ignvmem == FALSE)
         {
-        retval = getsize(pres, &sizeval);
+        retval = mm_getsize(pres, &sizeval);
 
         if (retval != PBSE_NONE)
           return (error(pname, retval));
@@ -871,7 +869,7 @@ mom_set_limits(
         {
         if (set_mode == SET_LIMIT_SET)
           {
-          retval = getsize(pres, &sizeval);
+          retval = mm_getsize(pres, &sizeval);
 
           if (retval != PBSE_NONE)
             return (error(pname, retval));
@@ -1271,7 +1269,7 @@ mom_over_limit(job *pjob)
       }
     else if (strcmp(pname, "vmem") == 0)
       {
-      retval = getsize(pres, &sizeval);
+      retval = mm_getsize(pres, &sizeval);
 
       if (retval != PBSE_NONE)
         continue;
@@ -1286,7 +1284,7 @@ mom_over_limit(job *pjob)
       }
     else if (strcmp(pname, "pvmem") == 0)
       {
-      retval = getsize(pres, &sizeval);
+      retval = mm_getsize(pres, &sizeval);
 
       if (retval != PBSE_NONE)
         continue;
@@ -1300,7 +1298,7 @@ mom_over_limit(job *pjob)
       }
     else if (strcmp(pname, "mem") == 0)
       {
-      retval = getsize(pres, &sizeval);
+      retval = mm_getsize(pres, &sizeval);
 
       if (retval != PBSE_NONE)
         continue;

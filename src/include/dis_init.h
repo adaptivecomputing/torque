@@ -1,3 +1,5 @@
+#ifndef _DIS_INIT_H
+#define _DIS_INIT_H
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -89,3 +91,4 @@ extern int (*disr_skip) (int stream, size_t nskips);
 extern int (*disw_commit) (int stream, int commit);
 extern int (*disr_commit) (int stream, int commit);
 */
+#endif /* _DIS_INIT_H */

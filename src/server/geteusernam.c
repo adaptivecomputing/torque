@@ -95,6 +95,7 @@
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 #include "utils.h"
 #ifdef _CRAY
 #include <udb.h>

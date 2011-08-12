@@ -181,7 +181,6 @@ int main(void)
   {
   int number_failed = 0;
   SRunner *sr = NULL;
-  SRunner *sr = NULL;
   rundebug();
   sr = srunner_create(preobit_reply_suite());
   srunner_set_log(sr, "preobit_reply_suite.log");

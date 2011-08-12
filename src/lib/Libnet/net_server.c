@@ -114,6 +114,7 @@
 #include "server_limits.h"
 #include "net_connect.h"
 #include "log.h"
+#include "../Liblog/pbs_log.h"
 
 extern int  LOGLEVEL;
 

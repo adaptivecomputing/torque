@@ -99,6 +99,8 @@
 #include "work_task.h"
 #include "pbs_error.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 
 /* Private Function local to this file */

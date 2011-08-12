@@ -1,3 +1,5 @@
+#ifndef _RESMOM_H
+#define _RESMOM_H
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -133,3 +135,5 @@ struct config
 #ifndef MAX
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #endif
+
+#endif /* _RESMOM_H */

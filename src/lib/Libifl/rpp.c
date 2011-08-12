@@ -114,6 +114,7 @@
 
 #include "rpp.h"
 #include "log.h"
+#include "../Liblog/pbs_log.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 extern int h_errno;

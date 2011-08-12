@@ -91,6 +91,7 @@
 #include "pbs_error.h"
 #include "resizable_array.h"
 #include "utils.h"
+#include "../Liblog/pbs_log.h"
 
 
 

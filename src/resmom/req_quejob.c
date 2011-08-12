@@ -104,6 +104,7 @@
 #include "net_connect.h"
 #include "pbs_error.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 #include "svrfunc.h"
 
 #include <pwd.h>

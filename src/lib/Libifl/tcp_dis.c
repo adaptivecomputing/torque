@@ -97,6 +97,7 @@
 #include "lib_dis.h"
 #include "dis_init.h"
 #include "log.h"
+#include "../Liblog/pbs_log.h"
 
 #ifdef HAVE_SYS_POLL_H
 #include <sys/poll.h>

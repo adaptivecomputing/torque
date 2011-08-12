@@ -151,31 +151,30 @@ extern long *log_event_mask;
 /* set this to non-zero in calling app if errors go to stderr */
 extern int   chk_file_sec_stderr;
 
-
-extern void log_close (int);
-extern void job_log_close (int);
-extern void log_err (int, char *, char *);
-extern void log_ext (int,char *,char *,int);
-extern void log_event (int, int, char *, char *);
-extern int  log_open (char *, char *);
-extern int  job_log_open (char *, char *);
-extern void log_record (int, int, char *, char *);
-extern void log_roll (int);
-extern long log_size (void);
-extern long job_log_size (void);
-extern int  log_remove_old (char *,unsigned long);
+/* extern void log_close (int); */
+/* extern void job_log_close (int); */
+/* extern void log_err (int, char *, char *); */
+/* extern void log_ext (int,char *,char *,int); */
+/* extern void log_event (int, int, char *, char *); */
+/* extern int  log_open (char *, char *); */
+/* extern int  job_log_open (char *, char *); */
+/* extern void log_record (int, int, char *, char *); */
+/* extern void log_roll (int); */
+/* extern long log_size (void); */
+/* extern long job_log_size (void); */
+/* extern int  log_remove_old (char *,unsigned long); */
 extern char log_buffer[LOG_BUF_SIZE];
-int log_init (char *, char *);
+/* int log_init (char *, char *); */
 
-extern int  IamRoot (void);
-#ifdef __CYGWIN__
-extern int  IamAdminByName (char *);
-extern int  IamUser (void);
-extern int  IamUserByName (char *);
-#endif  /* __CYGWIN__ */
+/* extern int  IamRoot (void); */
+/* #ifdef __CYGWIN__ */
+/* extern int  IamAdminByName (char *); */
+/* extern int  IamUser (void); */
+/* extern int  IamUserByName (char *); */
+/* #endif  __CYGWIN__ */
 
-extern int  chk_file_sec (char *, int, int, int, int, char *);
-extern int  setup_env (char *);
+/* extern int  chk_file_sec (char *, int, int, int, int, char *); */
+/* extern int  setup_env (char *); */
 
 
 /* Event types */

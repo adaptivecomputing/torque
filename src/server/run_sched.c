@@ -86,6 +86,8 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "pbs_ifl.h"
 #include "net_connect.h"
 #include "svrfunc.h"

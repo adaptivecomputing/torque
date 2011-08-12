@@ -108,6 +108,9 @@
 #include "mom_func.h"
 #include "mom_hierarchy.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
+#include "checkpoint.h" /* start_checkpoint */
 #include "rpp.h"
 #include "resmon.h"
 #include "net_connect.h"
@@ -1147,7 +1150,7 @@ void req_deletejob(
  * req_holdjob - checkpoint and terminate job
  */
 
-void req_holdjob(
+void mom_req_holdjob(
 
   struct batch_request *preq)
 

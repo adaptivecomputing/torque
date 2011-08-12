@@ -76,13 +76,17 @@
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
-
+#ifndef _MOM_FUNC_H
+#define _MOM_FUNC_H
 
 #include "libpbs.h"
 
 #ifndef MOM_MACH
 #include "mom_mach.h"
 #endif /* MOM_MACH */
+
+#include "pwd.h" /* passwd */
+#include "../resmom/mom_main.h"
 
 /* struct var_table = used to hold environment variables for the job */
 
@@ -155,7 +159,7 @@ extern pid_t fork_me(int sock);
 extern int   get_la(double *);
 extern void  init_abort_jobs(int);
 extern int   init_groups(char *, int, int, int *);
-extern int   kill_job(job *, int sig, char *killer_id_name, char *why_killed_reason);
+/* extern int   kill_job(job *, int sig, char *killer_id_name, char *why_killed_reason); */
 extern void  mom_deljob(job *);
 extern void  mom_freenodes(job *);
 extern void  scan_for_exiting();
@@ -221,4 +225,4 @@ extern char *std_file_name(job *, enum job_file, int *);
 extern int   start_checkpoint(job *, int, struct batch_request *);
 #endif /* BATCH_REQUEST_H */
 
-
+#endif /* _MOM_FUNC_H */

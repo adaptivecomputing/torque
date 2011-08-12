@@ -92,7 +92,6 @@ int main(void)
   {
   int number_failed = 0;
   SRunner *sr = NULL;
-  SRunner *sr = NULL;
   rundebug();
   sr = srunner_create(exit_mom_job_suite());
   srunner_set_log(sr, "exit_mom_job_suite.log");

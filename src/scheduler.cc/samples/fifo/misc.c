@@ -84,6 +84,7 @@
 #include <string.h>
 #include "pbs_ifl.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 #include "config.h"
 #include "constant.h"
 #include "misc.h"

@@ -96,6 +96,8 @@
 #include "server_limits.h"
 #include "pbs_job.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "server.h"
 #include "utils.h"
 #include "threadpool.h"

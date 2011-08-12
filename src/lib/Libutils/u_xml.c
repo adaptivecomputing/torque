@@ -82,6 +82,7 @@
 
 #include <string.h>
 #include "utils.h"
+#include "../Liblog/pbs_log.h"
 
 
 

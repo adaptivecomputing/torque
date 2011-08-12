@@ -112,6 +112,8 @@
 #include "batch_request.h"
 #include "net_connect.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 #include "pbs_proto.h"
 #include "csv.h"
@@ -173,7 +175,7 @@ void req_jobcredential(struct batch_request *preq);
 void req_jobscript(struct batch_request *preq);
 void req_rdytocommit(struct batch_request *preq);
 void req_commit(struct batch_request *preq);
-void req_holdjob(struct batch_request *preq);
+void mom_req_holdjob(struct batch_request *preq);
 void req_deletejob(struct batch_request *preq);
 void req_rerunjob(struct batch_request *preq);
 void req_modifyjob(struct batch_request *preq);
@@ -448,7 +450,7 @@ void dispatch_request(
 
     case PBS_BATCH_HoldJob:
       
-      req_holdjob(request);
+      mom_req_holdjob(request);
 
       break;
 

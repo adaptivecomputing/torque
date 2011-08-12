@@ -81,8 +81,9 @@
 */
 
 
-#include <sys/socket.h>
-#include "pbs_ifl.h"
+#include <netinet/in.h> /* sockaddr_in */
+#include "mcom.h" /* MMAX_LINE */
+#include "pbs_ifl.h" /* PBS_MAXSERVERNAME */
 
 
 

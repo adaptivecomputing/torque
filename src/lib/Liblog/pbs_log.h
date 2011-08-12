@@ -1,3 +1,5 @@
+#ifndef _PBS_LOG_H
+#define _PBS_LOG_H
 #include "license_pbs.h" /* See here for the software license */
 
 int log_init(char *suffix, char *hostname); 
@@ -26,3 +28,4 @@ long log_size(void);
 
 long job_log_size(void);
 
+#endif /* _PBS_LOG_H */

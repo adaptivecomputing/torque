@@ -3,17 +3,17 @@
 #include <stdio.h>
 /* declarations/includes for Global Vars */
 #define PBS_MOM
-#include "list_link.h"
+#include "list_link.h" /* tlist_head, list_link */
 #include "net_connect.h"
-#include "log.h"
-#include "pbs_job.h"
+#include "log.h" /* LOG_BUF_SIZE */
+#include "pbs_job.h" /* job */
 #include "tm_.h"
 #include "dis.h"
 #include "libpbs.h"
 #include "resource.h"
 #include "mom_mach.h"
 #include "test_catch_child.h"
-#include "batch_request.h"
+#include "batch_request.h" /* batch_request */
 #include "errno.h"
 
 int termin_child = 0; /* mom_main.c */
@@ -753,7 +753,7 @@ const char *PJobSubState[] =
   NULL
   };
 
-void kill_job(job *pjob, int sig, char *killer_id_name, char *why_killed_reason)
+int kill_job(job *pjob, int sig, char *killer_id_name, char *why_killed_reason)
   {
   if (func_num == INIT_ABORT_JOBS)
     {
@@ -763,6 +763,7 @@ void kill_job(job *pjob, int sig, char *killer_id_name, char *why_killed_reason)
       pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_MIGRATEABLE | JOB_SVFLG_HERE;
       }
     }
+  return 0;
   }
 
 int mom_open_socket_to_jobs_server(job *pjob, char *caller_id, void (*message_handler)(int))
@@ -1041,7 +1042,7 @@ void log_err(int errnum, char *routine, char *text)
   {
   }
 
-void close_conn(int sd)
+void close_conn(int sd, int has_mutex)
   {
   }
 

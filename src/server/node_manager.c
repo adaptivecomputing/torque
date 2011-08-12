@@ -109,6 +109,8 @@
 #include "svrfunc.h"
 #include "pbs_job.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "pbs_nodes.h"
 #include "rpp.h"
 #include "dis.h"
@@ -118,6 +120,8 @@
 #include "utils.h"
 #include "u_tree.h"
 #include "threadpool.h"
+#include "issue_request.h" /* issue_Drequest */
+#include "node_func.h" /* find_nodebyname */
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 

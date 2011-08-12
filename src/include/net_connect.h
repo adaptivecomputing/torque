@@ -1,7 +1,6 @@
 #ifndef _NET_CONNECT_H
 #define _NET_CONNECT_H
 #include <stdlib.h>
-#include <malloc.h>
 #include <pthread.h> /* pthread_mutex_t */
 
 

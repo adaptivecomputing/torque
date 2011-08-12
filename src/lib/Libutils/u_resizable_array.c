@@ -84,6 +84,7 @@
 #include "utils.h"
 #include "resizable_array.h"
 #include "pbs_error.h"
+#include "../Liblog/pbs_log.h"
 
 
 int swap_things(

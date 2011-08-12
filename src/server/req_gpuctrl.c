@@ -100,6 +100,7 @@
 #include "work_task.h"
 #include "svrfunc.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 
 /* External Functions */
 

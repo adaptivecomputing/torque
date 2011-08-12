@@ -1,3 +1,5 @@
+#ifndef _PBS_BATCHREQTYPE_DB_H
+#define _PBS_BATCHREQTYPE_DB_H
 /** @file This file contains the database of PBS Batch request type ids and
  *        their text representations
  *
@@ -78,3 +80,4 @@ PbsBatchReqType(PBS_BATCH_AsySignalJob,         "AsyncSignalJob")     /* = 60 */
 PbsBatchReqType(PBS_BATCH_AltAuthenUser,        "AlternateUserAuthentication") 
 PbsBatchReqType(PBS_BATCH_GpuCtrl,              "GPUControl") 
 #endif
+#endif /* _PBS_BATCHREQTYPE_DB_H */

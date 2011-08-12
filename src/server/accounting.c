@@ -102,6 +102,7 @@
 #include "pbs_job.h"
 #include "queue.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 #include "acct.h"
 #ifdef USESAVEDRESOURCES
 #include "resource.h"

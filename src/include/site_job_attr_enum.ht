@@ -1,3 +1,5 @@
+#ifndef _SITE_JOB_ATTR_ENUM_HT
+#define _SITE_JOB_ATTR_ENUM_HT
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 * 
@@ -92,3 +94,5 @@
  */
 
 JOB_SITE_ATR_x,
+
+#endif /* _SITE_JOB_ATTR_ENUM_HT */

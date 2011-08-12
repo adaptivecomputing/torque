@@ -105,6 +105,7 @@
 #include "net_connect.h"
 #include "batch_request.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 
 #define SPACE 32 /* ASCII space character */
 

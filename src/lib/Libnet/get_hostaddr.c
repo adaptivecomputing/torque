@@ -93,6 +93,7 @@
 #include "net_connect.h"
 #include "pbs_error.h"
 #include "log.h"
+#include "../Liblog/log_event.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 extern int h_errno;

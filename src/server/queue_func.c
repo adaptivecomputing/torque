@@ -100,6 +100,7 @@
 #include <stdio.h>
 #include "list_link.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 #include "attribute.h"
 #include "server_limits.h"
 #include "server.h"

@@ -97,6 +97,8 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "pbs_error.h"
 #include "server_limits.h"
 #include "list_link.h"

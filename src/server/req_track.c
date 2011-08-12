@@ -102,6 +102,8 @@
 #include "tracking.h"
 #include "svrfunc.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 
 /* External functions */
 

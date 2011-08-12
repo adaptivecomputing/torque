@@ -23,6 +23,7 @@
 #include "server_limits.h"
 #include "pbs_job.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 #include "queue.h"
 #include "token_acct.h"
 

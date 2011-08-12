@@ -1,6 +1,4 @@
-
-/* Copyright 2008 Cluster Resources */
-
+#include "license_pbs.h" /* See here for the software license */
 /**
  * checkpoint.c
  *
@@ -78,6 +76,9 @@
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
+#include "../lib/Liblog/chk_file_sec.h"
 #include "mcom.h"
 #include "net_connect.h"
 #include "resource.h"

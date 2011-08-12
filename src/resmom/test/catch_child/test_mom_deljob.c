@@ -21,6 +21,7 @@ Suite *mom_deljob_suite(void)
 int main(void)
   {
   int number_failed = 0;
+  SRunner *sr = NULL;
   sr = srunner_create(mom_deljob_suite());
   srunner_set_log(sr, "mom_deljob_suite.log");
   srunner_run_all(sr, CK_NORMAL);

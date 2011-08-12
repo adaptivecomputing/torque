@@ -1,5 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "req_quejob.h"
+#include "mom_req_quejob.h"
 #include "test_req_quejob.h"
 #include <stdlib.h>
 #include <stdio.h>

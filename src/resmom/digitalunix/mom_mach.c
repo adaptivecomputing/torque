@@ -280,7 +280,7 @@ dep_cleanup(void)
  */
 
 static int
-getsize(resource *pres, unsigned long *ret)
+mm_getsize(resource *pres, unsigned long *ret)
   {
   unsigned long value;
 
@@ -316,7 +316,7 @@ getsize(resource *pres, unsigned long *ret)
  */
 
 static int
-gettime(resource *pres, unsigned long *ret)
+mm_gettime(resource *pres, unsigned long *ret)
   {
 
   if (pres->rs_value.at_type != ATR_TYPE_LONG)
@@ -586,7 +586,7 @@ mom_set_limits(
       if (igncput == FALSE)
         {
         /* cpu time - check, if less than pcput use it */
-        retval = gettime(pres, &value);
+        retval = mm_gettime(pres, &value);
 
         if (retval != PBSE_NONE)
           return (error(pname, retval));
@@ -597,7 +597,7 @@ mom_set_limits(
       if (igncput == FALSE)
         {
         /* process cpu time - set */
-        retval = gettime(pres, &value);
+        retval = mm_gettime(pres, &value);
 
         if (retval != PBSE_NONE)
           return (error(pname, retval));
@@ -615,7 +615,7 @@ mom_set_limits(
 
       if (set_mode == SET_LIMIT_SET)
         {
-        retval = getsize(pres, &value);
+        retval = mm_getsize(pres, &value);
 
         if (retval != PBSE_NONE)
           {
@@ -639,7 +639,7 @@ mom_set_limits(
       {
       if (ignvmem == FALSE)
         {
-        retval = getsize(pres, &value);
+        retval = mm_getsize(pres, &value);
 
         if (retval != PBSE_NONE)
           return (error(pname, retval));
@@ -654,7 +654,7 @@ mom_set_limits(
         {
         if (set_mode == SET_LIMIT_SET)
           {
-          retval = getsize(pres, &value);
+          retval = mm_getsize(pres, &value);
 
           if (retval != PBSE_NONE)
             return (error(pname, retval));
@@ -672,7 +672,7 @@ mom_set_limits(
       }
     else if (strcmp(pname, "walltime") == 0)   /* Check */
       {
-      retval = gettime(pres, &value);
+      retval = mm_gettime(pres, &value);
 
       if (retval != PBSE_NONE)
         return (error(pname, retval));
@@ -887,7 +887,7 @@ mom_over_limit(job *pjob)
 
     if ((igncput == FALSE) && (strcmp(pname, "cput") == 0))
       {
-      retval = gettime(pres, &value);
+      retval = mm_gettime(pres, &value);
 
       if (retval != PBSE_NONE)
         continue;
@@ -902,7 +902,7 @@ mom_over_limit(job *pjob)
       }
     else if ((igncput == FALSE) && (strcmp(pname, "pcput") == 0))
       {
-      retval = gettime(pres, &value);
+      retval = mm_gettime(pres, &value);
 
       if (retval != PBSE_NONE)
         continue;
@@ -917,7 +917,7 @@ mom_over_limit(job *pjob)
       }
     else if (strcmp(pname, "vmem") == 0)
       {
-      retval = getsize(pres, &value);
+      retval = mm_getsize(pres, &value);
 
       if (retval != PBSE_NONE)
         continue;
@@ -935,7 +935,7 @@ mom_over_limit(job *pjob)
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
         continue;
 
-      retval = gettime(pres, &value);
+      retval = mm_gettime(pres, &value);
 
       if (retval != PBSE_NONE)
         continue;

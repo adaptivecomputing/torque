@@ -101,6 +101,7 @@
 #include "sched_cmds.h"
 #include "csv.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 
 extern int    scheduler_sock;
 extern int    svr_do_schedule;

@@ -95,6 +95,7 @@
 #include "pbs_nodes.h"
 #include "pbs_error.h"
 #include "log.h"
+#include "../Liblog/pbs_log.h"
 #if SYSLOG
 #include <syslog.h>
 #endif

@@ -95,6 +95,8 @@
 #include "server_limits.h"
 #include "attribute.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "pbs_error.h"
 #include "credential.h"
 #include "batch_request.h"

@@ -101,6 +101,7 @@
 #include "work_task.h"
 #include "utils.h"
 #include "threadpool.h"
+#include "../lib/Liblog/pbs_log.h"
 
 
 extern void check_nodes(struct work_task *);

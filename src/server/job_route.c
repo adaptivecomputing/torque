@@ -103,6 +103,8 @@
 #include "work_task.h"
 #include "server.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "queue.h"
 #include "pbs_job.h"
 #include "credential.h"

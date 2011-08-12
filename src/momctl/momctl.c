@@ -27,6 +27,7 @@ extern char *optarg;
 #include "resmon.h"
 #include "rm.h"
 #include "log.h"
+#include "../lib/Liblog/chk_file_sec.h"
 
 #define MAX_QUERY  128
 

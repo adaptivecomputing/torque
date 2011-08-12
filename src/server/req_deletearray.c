@@ -18,6 +18,7 @@
 #include "pbs_error.h"
 #include "acct.h"
 #include "log.h"
+#include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 
 #include "array.h"

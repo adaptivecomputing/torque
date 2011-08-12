@@ -577,7 +577,7 @@ dep_main_loop_cycle(void)
 
 
 
-static int getsize(
+static int mm_getsize(
 
   resource *pres,  /* I */
   unsigned long *ret)   /* O */
@@ -610,7 +610,7 @@ static int getsize(
   *ret = (value << pres->rs_value.at_val.at_size.atsv_shift);
 
   return(PBSE_NONE);
-  }  /* END getsize() */
+  }  /* END mm_getsize() */
 
 
 
@@ -624,7 +624,7 @@ static int getsize(
  * decoded value of time in seconds in the unsigned long integer.
  */
 
-static int gettime(
+static int mm_gettime(
 
   resource      *pres,
   unsigned long *ret)
@@ -1071,11 +1071,11 @@ int mom_set_limits(
         {
         /* cpu time - check, if less than pcput use it */
 
-        retval = gettime(pres, &value);
+        retval = mm_gettime(pres, &value);
 
         if (retval != PBSE_NONE)
           {
-          sprintf(log_buffer, "cput gettime failed in %s",id);
+          sprintf(log_buffer, "cput mm_gettime failed in %s",id);
 
           return(error(pname, retval));
           }
@@ -1089,11 +1089,11 @@ int mom_set_limits(
           {
           /* process cpu time - set */
 
-          retval = gettime(pres, &value);
+          retval = mm_gettime(pres, &value);
 
           if (retval != PBSE_NONE)
             {
-            sprintf(log_buffer, "pcput gettime failed in %s",id);
+            sprintf(log_buffer, "pcput mm_gettime failed in %s",id);
 
             return(error(pname, retval));
             }
@@ -1132,11 +1132,11 @@ int mom_set_limits(
 
       if (set_mode == SET_LIMIT_SET)
         {
-        retval = getsize(pres, &value);
+        retval = mm_getsize(pres, &value);
 
         if (retval != PBSE_NONE)
           {
-          sprintf(log_buffer, "getsize() failed for file in %s",
+          sprintf(log_buffer, "mm_getsize() failed for file in %s",
                   id);
 
           return(error(pname, retval));
@@ -1182,11 +1182,11 @@ int mom_set_limits(
         {
         /* check */
 
-        retval = getsize(pres, &value);
+        retval = mm_getsize(pres, &value);
 
         if (retval != PBSE_NONE)
           {
-          sprintf(log_buffer, "getsize() failed for vmem in %s",id);
+          sprintf(log_buffer, "mm_getsize() failed for vmem in %s",id);
 
           return(error(pname, retval));
           }
@@ -1203,11 +1203,11 @@ int mom_set_limits(
 
         if (set_mode == SET_LIMIT_SET)
           {
-          retval = getsize(pres, &value);
+          retval = mm_getsize(pres, &value);
 
           if (retval != PBSE_NONE)
             {
-            sprintf(log_buffer, "getsize() failed for pvmem in %s",
+            sprintf(log_buffer, "mm_getsize() failed for pvmem in %s",
               id);
 
             return(error(pname, retval));
@@ -1217,7 +1217,7 @@ int mom_set_limits(
             {
             log_buffer[0] = '\0';
 
-            sprintf(log_buffer, "invalid value returned by getsize() for pvmem in %s",
+            sprintf(log_buffer, "invalid value returned by mm_getsize() for pvmem in %s",
               id);
 
             return(error(pname, PBSE_BADATVAL));
@@ -1243,11 +1243,11 @@ int mom_set_limits(
 
         if (set_mode == SET_LIMIT_SET)
           {
-          retval = getsize(pres, &value);
+          retval = mm_getsize(pres, &value);
 
           if (retval != PBSE_NONE)
             {
-            sprintf(log_buffer, "getsize() failed for mem/pmem in %s",
+            sprintf(log_buffer, "mm_getsize() failed for mem/pmem in %s",
               id);
 
             return(error(pname, retval));
@@ -1294,11 +1294,11 @@ int mom_set_limits(
       {
       /* check */
 
-      retval = gettime(pres, &value);
+      retval = mm_gettime(pres, &value);
 
       if (retval != PBSE_NONE)
         {
-        sprintf(log_buffer, "gettime() failed for walltime in %s\n",
+        sprintf(log_buffer, "mm_gettime() failed for walltime in %s\n",
                 id);
 
         return(error(pname, retval));
@@ -1644,7 +1644,7 @@ int mom_over_limit(
 
     if ((igncput == FALSE) && (strcmp(pname, "cput") == 0))
       {
-      retval = gettime(pres, &value);
+      retval = mm_gettime(pres, &value);
 
       if (retval != PBSE_NONE)
         continue;
@@ -1660,7 +1660,7 @@ int mom_over_limit(
       }
     else if ((igncput == FALSE) && (strcmp(pname, "pcput") == 0))
       {
-      retval = gettime(pres, &value);
+      retval = mm_gettime(pres, &value);
 
       if (retval != PBSE_NONE)
         continue;
@@ -1675,7 +1675,7 @@ int mom_over_limit(
       }
     else if (strcmp(pname, "vmem") == 0)
       {
-      retval = getsize(pres, &value);
+      retval = mm_getsize(pres, &value);
 
       if (retval != PBSE_NONE)
         continue;
@@ -1693,7 +1693,7 @@ int mom_over_limit(
       {
       unsigned long long valuell;
 
-      retval = getsize(pres, &value);
+      retval = mm_getsize(pres, &value);
 
       if (retval != PBSE_NONE)
         continue;
@@ -1715,7 +1715,7 @@ int mom_over_limit(
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
         continue;
 
-      retval = gettime(pres, &value);
+      retval = mm_gettime(pres, &value);
 
       if (retval != PBSE_NONE)
         continue;

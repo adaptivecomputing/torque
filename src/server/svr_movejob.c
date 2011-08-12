@@ -101,6 +101,8 @@
 #include "server_limits.h"
 #include "work_task.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "queue.h"
 #include "pbs_job.h"
 #include "pbs_nodes.h"

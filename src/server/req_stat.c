@@ -107,9 +107,13 @@
 #include "net_connect.h"
 #include "pbs_nodes.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "u_tree.h"
 #include "array.h"
 #include "queue.h"
+#include "node_func.h" /* find_nodebyname */
+#include "issue_request.h" /* issue_Drequest */
 
 /* Global Data Items: */
 

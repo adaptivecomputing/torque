@@ -85,6 +85,7 @@ Suite *get_node_suite(void)
 int main(void)
   {
   int number_failed = 0;
+  SRunner *sr = NULL;
   sr = srunner_create(get_node_suite());
   srunner_set_log(sr, "get_node_suite.log");
   srunner_run_all(sr, CK_NORMAL);

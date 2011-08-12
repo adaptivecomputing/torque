@@ -103,6 +103,8 @@
 #include "queue.h"
 #include "svrfunc.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "utils.h"
 #include <pthread.h>
 

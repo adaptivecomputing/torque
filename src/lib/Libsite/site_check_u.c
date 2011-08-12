@@ -95,6 +95,8 @@
 #include "queue.h"
 #include "pbs_job.h"
 #include "log.h"
+#include "../Liblog/pbs_log.h"
+#include "../Liblog/log_event.h"
 #include "batch_request.h"
 #include "pbs_nodes.h"
 
@@ -107,6 +109,9 @@
 extern char *pbs_o_host;
 extern char  server_host[];
 extern char *msg_orighost; /* error message: no PBS_O_HOST */
+
+/* This is in the server code? */
+extern struct pbsnode *find_nodebyname(char *);
 
 /*
  * site_check_u - site_check_user_map()

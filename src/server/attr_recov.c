@@ -102,6 +102,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 #include "svrfunc.h"
 #include "utils.h"
 #include "server.h"

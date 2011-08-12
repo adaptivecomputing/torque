@@ -103,6 +103,7 @@
 #include "tracking.h"
 #include "pbs_error.h"
 #include "log.h"
+#include "../lib/Liblog/log_event.h"
 
 /* Global Data Items: */
 

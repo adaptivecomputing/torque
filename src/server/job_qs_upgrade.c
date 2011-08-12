@@ -22,6 +22,7 @@
 #include "server_limits.h"
 #include "pbs_job.h"
 #include "array.h"
+#include "../lib/Liblog/pbs_log.h"
 
 extern char *path_jobs;
 extern char *path_arrays;

@@ -22,6 +22,7 @@ Suite *catch_child_suite(void)
 int main(void)
   {
   int number_failed = 0;
+  SRunner *sr = NULL;
   sr = srunner_create(catch_child_suite());
   srunner_set_log(sr, "catch_child_suite.log");
   srunner_run_all(sr, CK_NORMAL);

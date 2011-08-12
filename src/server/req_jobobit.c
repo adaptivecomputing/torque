@@ -104,12 +104,15 @@
 #include "work_task.h"
 #include "pbs_error.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
+#include "../lib/Liblog/log_event.h"
 #include "acct.h"
 #include "net_connect.h"
 #include "svrfunc.h"
 #include "sched_cmds.h"
 #include "queue.h"
 #include "array.h"
+#include "issue_request.h" /* issue_request */
 
 
 #define RESC_USED_BUF 2048

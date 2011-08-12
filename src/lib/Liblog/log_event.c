@@ -95,6 +95,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "log.h"
+#include "pbs_log.h"
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"

@@ -270,9 +270,9 @@ void mom_deljob(job *pjob)
 
 int main(void)
   {
-/*  SRunner *sr = NULL;
-  rundebug(); */
+/*  rundebug(); */
   int number_failed = 0;
+  SRunner *sr = NULL;
   sr = srunner_create(init_abort_jobs_suite());
   srunner_set_log(sr, "init_abort_jobs_suite.log");
   srunner_run_all(sr, CK_NORMAL);

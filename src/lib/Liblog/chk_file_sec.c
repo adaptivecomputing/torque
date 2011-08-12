@@ -88,6 +88,7 @@
 #include <limits.h>
 #include "portability.h"
 #include "log.h"
+#include "pbs_log.h"
 #include <pwd.h>
 #include <grp.h>
 #include <unistd.h>

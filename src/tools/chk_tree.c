@@ -94,6 +94,7 @@
 #include <stdlib.h>
 #include "portability.h"
 #include "log.h"
+#include "../lib/Liblog/chk_file_sec.h"
 
 
 int main(

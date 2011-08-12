@@ -607,7 +607,7 @@ dep_cleanup(void)
  */
 
 static int
-getsize(resource *pres, unsigned long *ret)
+mm_getsize(resource *pres, unsigned long *ret)
   {
   unsigned long value;
 
@@ -643,7 +643,7 @@ getsize(resource *pres, unsigned long *ret)
  */
 
 static int
-gettime(resource *pres, unsigned long *ret)
+mm_gettime(resource *pres, unsigned long *ret)
   {
 
   if (pres->rs_value.at_type != ATR_TYPE_LONG)
@@ -1323,7 +1323,7 @@ mom_set_limits(
       {
       if (igncput == FALSE)
         {
-        retval = gettime(pres, &value);
+        retval = mm_gettime(pres, &value);
         value = (unsigned long)((double)value / cputfactor);
 
         if (retval != PBSE_NONE)
@@ -1343,7 +1343,7 @@ mom_set_limits(
       {
       if (igncput == FALSE) 
         {
-        retval = gettime(pres, &value);
+        retval = mm_gettime(pres, &value);
         value = (unsigned long)((double)value / cputfactor);
 
         if (retval != PBSE_NONE)
@@ -1362,7 +1362,7 @@ mom_set_limits(
       {
       if (ignmem == FALSE) 
         {
-        retval = getsize(pres, &value);
+        retval = mm_getsize(pres, &value);
 
         if (retval != PBSE_NONE)
           return (error(pname, retval));
@@ -1381,7 +1381,7 @@ mom_set_limits(
       {
       if (ignmem == FALSE) 
         {
-        retval = getsize(pres, &value);
+        retval = mm_getsize(pres, &value);
 
         if (retval != PBSE_NONE)
           return (error(pname, retval));
@@ -1427,7 +1427,7 @@ mom_set_limits(
       }
     else if (strcmp(pname, "pf") == 0)
       {
-      retval = getsize(pres, &value);
+      retval = mm_getsize(pres, &value);
 
       if (retval != PBSE_NONE)
         return (error(pname, retval));
@@ -1445,7 +1445,7 @@ mom_set_limits(
       }
     else if (strcmp(pname, "ppf") == 0)
       {
-      retval = getsize(pres, &value);
+      retval = mm_getsize(pres, &value);
 
       if (retval != PBSE_NONE)
         return (error(pname, retval));
@@ -1463,7 +1463,7 @@ mom_set_limits(
       }
     else if (strcmp(pname, "sds") == 0)
       {
-      retval = getsize(pres, &value);
+      retval = mm_getsize(pres, &value);
 
       if (retval != PBSE_NONE)
         return (error(pname, retval));
@@ -1479,7 +1479,7 @@ mom_set_limits(
       }
     else if (strcmp(pname, "psds") == 0)
       {
-      retval = getsize(pres, &value);
+      retval = mm_getsize(pres, &value);
 
       if (retval != PBSE_NONE)
         return (error(pname, retval));
@@ -1527,7 +1527,7 @@ mom_set_limits(
       }
     else if (strcmp(pname, "mppt") == 0)
       {
-      retval = gettime(pres, &value);
+      retval = mm_gettime(pres, &value);
 
       if (retval != PBSE_NONE)
         return (error(pname, retval));
@@ -1543,7 +1543,7 @@ mom_set_limits(
       }
     else if (strcmp(pname, "pmppt") == 0)
       {
-      retval = gettime(pres, &value);
+      retval = mm_gettime(pres, &value);
 
       if (retval != PBSE_NONE)
         return (error(pname, retval));
@@ -1561,7 +1561,7 @@ mom_set_limits(
       }
     else if (strcmp(pname, "srfs_tmp") == 0)
       {
-      retval = getsize(pres, &value);
+      retval = mm_getsize(pres, &value);
 
       if (retval != PBSE_NONE)
         return (error(pname, retval));
@@ -1575,7 +1575,7 @@ mom_set_limits(
       }
     else if (strcmp(pname, "srfs_big") == 0)
       {
-      retval = getsize(pres, &value);
+      retval = mm_getsize(pres, &value);
 
       if (retval != PBSE_NONE)
         return (error(pname, retval));
@@ -1589,7 +1589,7 @@ mom_set_limits(
       }
     else if (strcmp(pname, "srfs_fast") == 0)
       {
-      retval = getsize(pres, &value);
+      retval = mm_getsize(pres, &value);
 
       if (retval != PBSE_NONE)
         return (error(pname, retval));
@@ -1614,7 +1614,7 @@ mom_set_limits(
       }
     else if (strcmp(pname, "walltime") == 0)
       {
-      retval = gettime(pres, &value);
+      retval = mm_gettime(pres, &value);
 
       if (retval != PBSE_NONE)
         return (error(pname, retval));
@@ -2026,7 +2026,7 @@ mom_over_limit(job *pjob)
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
         continue;
 
-      retval = gettime(pres, &value);
+      retval = mm_gettime(pres, &value);
 
       if (retval != PBSE_NONE)
         continue;

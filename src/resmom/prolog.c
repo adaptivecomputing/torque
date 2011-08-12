@@ -95,6 +95,7 @@
 #include "attribute.h"
 #include "pbs_job.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "resource.h"

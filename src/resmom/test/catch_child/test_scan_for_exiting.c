@@ -64,7 +64,6 @@ int main(void)
   {
   int number_failed = 0;
   SRunner *sr = NULL;
-  SRunner *sr = NULL;
   rundebug();
   sr = srunner_create(scan_for_exiting_suite());
   srunner_set_log(sr, "scan_for_exiting_suite.log");
