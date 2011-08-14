@@ -35,6 +35,14 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the nodes attribute does not get set. This causes a problem if procct is set on
       queues because there is no proc count available to evaluate. This fix sets
       a default nodes value of 1 if the nodes or procs resources are not requested.
+  b - There is a bug where the procct resource would be passed up to the scheduler
+      if a job were delayed in a routing queue. The procct resource is interpreted
+      as a generic resource in the scheduler. This would cause the job to never be
+      able to run because it had a generic resource that did not exist (procct).
+      It is important for procct to be removed from the Resource_List before it is 
+      queried by the scheduler. Code was added to allow the procct resource be removed 
+      from the Resource_List while queued and then re-added before the queue evaluation 
+      was done when the jobs were re-evaluated.
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as

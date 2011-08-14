@@ -2456,12 +2456,9 @@ void set_resc_deflt(
   if (pque->qu_qs.qu_type == QTYPE_Execution)
     {
     /* unset the procct resource if it has been set */
-    pctdef = find_resc_def(svr_resc_def, "procct", svr_resc_size);
- 
-    if ((pctresc = find_resc_entry(ja, pctdef)) != NULL)
-      pctdef->rs_free(&pctresc->rs_value);
+    remove_procct(pjob);
     }
- 
+
   return;
   }  /* END set_resc_deflt() */
 

@@ -1069,7 +1069,7 @@ static int svr_strtjob2(
         pbs_mom_port,
         MOVE_TYPE_Exec,
         post_sendmom,
-        (void *)preq) == 2)
+        (void *)preq) == ROUTE_DEFERRED)
     {
     /* SUCCESS */
 

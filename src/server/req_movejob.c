@@ -163,7 +163,7 @@ void req_movejob(
   switch (svr_movejob(jobp, req->rq_ind.rq_move.rq_destin, req))
     {
 
-    case 0:
+    case ROUTE_SUCCESS:
 
       /* success */
 
@@ -184,9 +184,9 @@ void req_movejob(
 
       break;
 
-    case - 1:
+    case ROUTE_PERM_FAILURE:
 
-    case 1:
+    case ROUTE_RETRY:
 
       /* fail */
 
@@ -196,7 +196,7 @@ void req_movejob(
 
       break;
 
-    case 2:
+    case ROUTE_DEFERRED:
 
       /* deferred, will be handled by    */
       /* post_movejob() when the child completes */

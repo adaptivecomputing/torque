@@ -200,7 +200,7 @@ int svr_movejob(
 
     pbs_errno = PBSE_QUENBIG;
 
-    return(-1);
+    return(ROUTE_PERM_FAILURE);
     }
 
   strncpy(jobp->ji_qs.ji_destin, destination, PBS_MAXROUTEDEST);
@@ -266,7 +266,7 @@ static int local_move(
 
     pbs_errno = PBSE_UNKQUE;
 
-    return(-1);
+    return(ROUTE_PERM_FAILURE);
     }
 
   /*
@@ -311,14 +311,14 @@ static int local_move(
 
   if (pbs_errno != 0)
     {
-    return(-1); /* should never ever get here */
+    return(ROUTE_PERM_FAILURE); /* should never ever get here */
     }
 
   jobp->ji_lastdest = 0; /* reset in case of another route */
 
   job_save(jobp, SAVEJOB_FULL);
 
-  return(0);
+  return(ROUTE_SUCCESS);
   }  /* END local_move() */
 
 
@@ -616,7 +616,7 @@ int send_job(
       jobp->ji_qs.ji_jobid,
       "cannot set signal mask");
 
-    return(-1);
+    return(ROUTE_PERM_FAILURE);
     }
 
   if (LOGLEVEL >= 6)
@@ -644,7 +644,7 @@ int send_job(
 
     pbs_errno = PBSE_SYSTEM;
 
-    return(-1);
+    return(ROUTE_PERM_FAILURE);
     }
 
   if (pid != 0)
@@ -661,7 +661,7 @@ int send_job(
       {
       log_err(errno, id, msg_err_malloc);
 
-      return(-1);
+      return(ROUTE_PERM_FAILURE);
       }
 
     ptask->wt_parm2 = data;
@@ -710,7 +710,7 @@ int send_job(
 
     /* SUCCESS */
 
-    return(2);
+    return(ROUTE_DEFERRED);
     }  /* END if (pid != 0) */
 
   /*
@@ -1055,7 +1055,7 @@ int send_job(
 
   /*NOTREACHED*/
 
-  return(0);
+  return(ROUTE_SUCCESS);
   }  /* END send_job() */
 
 
@@ -1202,7 +1202,7 @@ static int should_retry_route(
 
       /* retry destination */
 
-      return(1);
+      return(ROUTE_RETRY);
 
       /*NOTREACHED*/
 
@@ -1215,7 +1215,7 @@ static int should_retry_route(
       break;
     }
 
-  return(-1);
+  return(ROUTE_PERM_FAILURE);
   }  /* END should_retry_route() */
 
 

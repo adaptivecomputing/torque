@@ -188,7 +188,7 @@ static int user_account_read_user(char *);
 static char *pbs_o_que = "PBS_O_QUEUE=";
 
 /****************************************************************** 
- * set_node_attr - Check to see is the node resource was requested
+ * set_nodes_attr - Check to see is the node resource was requested
  *                 on the qsub line. If not add the node attribute
  *                 to the Resource_List and set the value to 1. This
  *                 makes it so that if  procct is set on a queue
@@ -196,9 +196,9 @@ static char *pbs_o_que = "PBS_O_QUEUE=";
  *                 be properly routed.
  * Returns: 0 if OK 
  *          Non-Zero on failure 
- */
+ *****************************************************************/
 
-int set_node_attr(job *pjob)
+int set_nodes_attr(job *pjob)
   {
   resource *pres;
 	int  nodect_set = 0;
@@ -238,7 +238,7 @@ int set_node_attr(job *pjob)
      }
 
   return(rc);
-  }  
+  }   /* END set_nodes_attr() */
 
 
 /*
@@ -619,7 +619,7 @@ void req_quejob(
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
     } /* END while (psatl != NULL) */
 
-  rc = set_node_attr(pj);
+  rc = set_nodes_attr(pj);
   if(rc)
     {
     /* just record that we could not set node count */
@@ -630,7 +630,6 @@ void req_quejob(
               id,
               log_buffer);
     }
-  
   
   /* perform any at_action routine declared for the attributes */
   for (i = 0; i < JOB_ATR_LAST; ++i)
