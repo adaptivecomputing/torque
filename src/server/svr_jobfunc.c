@@ -165,6 +165,7 @@ extern int  svr_clnodes;
 extern int node_avail_complex(char *, int *, int *, int *, int *);
 extern int procs_available(int proc_ct);
 extern int procs_requested(char *spec);
+extern int remove_procct(job *);
 
 
 /* Private Functions */
@@ -2399,8 +2400,6 @@ void set_resc_deflt(
   attribute *ji_wattr) /* I (optional) decoded attributes  */
 
   {
-  resource_def  *pctdef;
-  resource      *pctresc;
   attribute     *ja;
 
   pbs_queue     *pque;

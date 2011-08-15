@@ -106,12 +106,16 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "resource.h"
+#include "sched_cmds.h"
 #if __STDC__ != 1
 #include <memory.h>
 #endif
 
 /* External functions called */
 extern int svr_movejob(job *, char *, struct batch_request *);
+extern long count_proc(char *);
+extern int svr_do_schedule;
+extern int listener_command;
 
 /* Local Functions */
 
@@ -208,10 +212,6 @@ int initialize_procct(job *pjob)
   resource     *procctp;
   resource_def *procct_def;
   attribute    *pattr;
-  char         *pname;
-  int  nodect_set = 0;
-  int  rc = 0;
-  char procct_str[20];
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
   if(pattr == NULL)
@@ -243,16 +243,6 @@ int initialize_procct(job *pjob)
       return(ROUTE_PERM_FAILURE);
       }
     pnodesp = find_resc_entry(pattr, pnodes_def);
-    if(pnodesp == NULL)
-      {
-      sprintf(log_buffer, "%s: Could not get nodes entry from Resource_List. Cannot proceed", id);
-      log_event(PBSEVENT_JOB,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
-      pbs_errno = PBSE_INTERNAL;
-      return(ROUTE_PERM_FAILURE);
-      }
 
     /* Get the procs count if the procs resource attribute is set */
     pprocs_def = find_resc_def(svr_resc_def, "procs", svr_resc_size);
@@ -263,7 +253,19 @@ int initialize_procct(job *pjob)
       /* We will evaluate pprocsp later. If it is null we do not care */
       }
 
-    /* we now set pjob->procct and we also set the resoruce attribute procct */
+    /* if neither pnodesp nor pprocsp are set, terminate */
+    if(pnodesp == NULL && pprocsp == NULL)
+      {
+      sprintf(log_buffer, "%s: Could not get nodes nor procs entry from Resource_List. Cannot proceed", id);
+      log_event(PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+      pbs_errno = PBSE_INTERNAL;
+      return(ROUTE_PERM_FAILURE);
+      }
+
+    /* we now set pjob->procct and we also set the resource attribute procct */
     procct_def = find_resc_def(svr_resc_def, "procct", svr_resc_size);
     if(procct_def == NULL)
       {
@@ -293,7 +295,12 @@ int initialize_procct(job *pjob)
 
     /* Finally the moment of truth. We have the nodes and procs resources. Add them
        to the procct resoruce*/
-    procctp->rs_value.at_val.at_long = count_proc(pnodesp->rs_value.at_val.at_str);
+    procctp->rs_value.at_val.at_long = 0;
+    if(pnodesp != NULL)
+      {
+      procctp->rs_value.at_val.at_long = count_proc(pnodesp->rs_value.at_val.at_str);
+      }
+
     if(pprocsp != NULL)
       {
       procctp->rs_value.at_val.at_long += pprocsp->rs_value.at_val.at_long;
@@ -492,6 +499,7 @@ int job_route(
 
   {
   int      bad_state = 0;
+  int      rc;
   char     *id = "job_route";
   time_t     life;
 
@@ -618,10 +626,23 @@ int job_route(
 
   if (qp->qu_attr[(int)QR_ATR_AltRouter].at_val.at_long == 0)
     {
-    return(default_router(jobp, qp, retry_time));
+    rc = default_router(jobp, qp, retry_time);
+    if(rc == ROUTE_SUCCESS)
+      {
+      svr_do_schedule = SCH_SCHEDULE_NEW;
+      listener_command = SCH_SCHEDULE_NEW;
+      }
+    return(rc);
     }
 
-  return(site_alt_router(jobp, qp, retry_time));
+  rc = site_alt_router(jobp, qp, retry_time);
+  if(rc == ROUTE_SUCCESS)
+    {
+    svr_do_schedule = SCH_SCHEDULE_NEW;
+    listener_command = SCH_SCHEDULE_NEW;
+    }
+
+  return(rc);
   }  /* END job_route() */
 
 

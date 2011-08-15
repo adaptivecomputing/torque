@@ -43,6 +43,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       queried by the scheduler. Code was added to allow the procct resource be removed 
       from the Resource_List while queued and then re-added before the queue evaluation 
       was done when the jobs were re-evaluated.
+  b - Made a fix with procct where initialize_procct was not properly accounting for 
+      a "procs" resources.
+  e - Modified default_router() to set the svr_do_schedule flag to SCH_SCHEDULE_NEW if
+      a job was successfully routed to a queue. This helps reduce delays in running
+      jobs when they are promoted from a routing queue to an execution queue.
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as
