@@ -105,7 +105,7 @@ PbsErrClient(PBSE_QUENODFLT,         "No default queue specified")
 /* Job Not Rerunnable */
 PbsErrClient(PBSE_NORERUN,           "job is not rerunnable")
 /* Route rejected by all destinations */
-PbsErrClient(PBSE_ROUTEREJ,          "Job rejected by all possible destinations")
+PbsErrClient(PBSE_ROUTEREJ,          "Job rejected by all possible destinations (check syntax, queue resources, ...)")
 /* Time in Route Queue Expired */
 PbsErrClient(PBSE_ROUTEEXPD,         "Time in Route Queue Expired")                /* = 15040 */
 /* Request to MOM failed */
