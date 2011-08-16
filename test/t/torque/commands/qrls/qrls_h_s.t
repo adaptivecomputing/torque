@@ -69,7 +69,7 @@ $verify_params = {
 verify_job_state($verify_params);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Hold_Types' } eq $hld_type, 
+ok($job_info{ $job_id }{ 'hold_types' } eq $hld_type, 
    "Checking Hold_Types attribute of '$job_id' for '$hld_type'");
 
 # Release the job
@@ -86,7 +86,7 @@ $verify_params = {
 verify_job_state($verify_params);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Hold_Types' } eq $rls_type, 
+ok($job_info{ $job_id }{ 'hold_types' } eq $rls_type, 
    "Checking Hold_Types attribute of '$job_id' for '$rls_type'");
 
 ##############################################################################
@@ -107,7 +107,7 @@ $verify_params = {
 verify_job_state($verify_params);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Hold_Types' } eq $hld_type, 
+ok($job_info{ $job_id }{ 'hold_types' } eq $hld_type, 
    "Checking Hold_Types attribute of '$job_id' for '$hld_type'");
 
 
@@ -126,7 +126,7 @@ $verify_params = {
 verify_job_state($verify_params);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Hold_Types' } eq $hld_type, 
+ok($job_info{ $job_id }{ 'hold_types' } eq $hld_type, 
    "Checking Hold_Types attribute of '$job_id' for '$hld_type'");
 
 ###############################################################################

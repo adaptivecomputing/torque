@@ -30,14 +30,14 @@ use constant CHECKPOINT_FILE_NAME => '^ckpt\.\d+(\.\S+)+\.\d+';
 
 # QSTAT regular expressions
 use constant QSTAT_REGEXP         => {
-                                       'name'     => '^\w+$',
+                                       'name'     => '^[\w\-]+$',
                                        'user'     => '^\w+$',
                                        'time_use' => '^(0|\d{2}(:\d{2})+)$',
                                        'state'    => '^(Q|R|W|H|T|C)$',
                                        'queue'    => '^\w+$'
                                      };
 use constant QSTAT_A_REGEXP       => {
-                                       'job_id'    => '^\d+\.[\w-]+$',
+                                       'job_id'    => '^\d+\.[\w\-]+$',
                                        'username'  => '^\w+$',
                                        'queue'     => '^\w+$',
                                        'jobname'   => '^\w+$',
@@ -51,11 +51,11 @@ use constant QSTAT_A_REGEXP       => {
                                        'fast'      => '^(--|\w+)$',
                                        'pfs'       => '^(--|\w+)$',
                                        'elap_time' => '^(--|\d{2}(:\d{2})+)$',
-                                       'node'      => '(--|[\w-]+\/\d+)',
+                                       'node'      => '(--|[\w\-]+\/\d+)',
                                        'comment'   => '(--|\w+)'
                                      };
 use constant QSTAT_B_REGEXP       => {
-                                       'server' => '^[\w-]+$',
+                                       'server' => '^[\w\-]+$',
                                        'max'    => '^\d+$',
                                        'tot'    => '^\d+$',
                                        'que'    => '^\d+$',
@@ -67,12 +67,12 @@ use constant QSTAT_B_REGEXP       => {
                                        'status' => '^(Hot_Start|Active|Terminating_Delay|Terminating)$'
                                      };
 use constant QSTAT_BF1_REGEXP     => {
-                                       'server'              => '^[\w-]+$',
+                                       'server'              => '^[\w\-]+$',
                                        'server_state'        => '^(Hot_Start|Active|Terminating_Delay|Terminating)$',
                                        'scheduling'          => '^(True|False)$',
                                        'total_jobs'          => '^\d+$',
                                        'state_count'         => '^Transit:\d+\s+Queued:\d+\s+Held:\d+\s+Waiting:\d+\s+Running:\d+\s+Exiting:\d+$',
-                                       'acl_hosts'           => '[\w-]+(,[\w-]./+)*',
+                                       'acl_hosts'           => '[\w\-]+(,[\w\-]./+)*',
                                        'managers'            => '\w+\@\w+(,w+\@\w+)*',
                                        'operators'           => '\w+\@\w+(,w+\@\w+)*',
                                        'default_queue'       => '^\w+$',
@@ -92,7 +92,7 @@ use constant QSTAT_F_REGEXP       => {
                                        'Job_Owner'               => '\w+\@\w+',
                                        'job_state'               => '^(Q|R|W|H|T|C)$', # May be incomplete list of states
                                        'queue'                   => '^\w+$',
-                                       'server'                  => '^[\w-]+$',
+                                       'server'                  => '^[\w\-]+$',
                                        'Checkpoint'              => '^\w+$',
                                        'ctime'                   => '^\w\w\w\s+\w\w\w\s+\d{1,2}\s+\d\d:\d\d:\d\d\s+\d\d\d\d$',
                                        'Error_Path'              => '\w+\:(\/[\w\.]+)+',
@@ -118,7 +118,7 @@ use constant QSTAT_F_REGEXP       => {
                                        'etime'                   => '^\w\w\w\s+\w\w\w\s+\d{1,2}\s+\d\d:\d\d:\d\d\s+\d\d\d\d$'
                                      };
 use constant QSTAT_q_REGEXP       => {
-                                       'queue'    => '^[\w-]+$',
+                                       'queue'    => '^[\w\-]+$',
                                        'memory'   => '^(--|\d+(b|w|kb|kw|mb|mw|gb|gw|tb|tw)?)$',
                                        'cpu_time' => '^(--|\d\d:\d\d:\d\d)$',
                                        'walltime' => '^(--|\d\d:\d\d:\d\d)$',

@@ -45,29 +45,29 @@ my $user       = $props->get_property( 'User.1'    );
 my $torque_bin = $props->get_property( 'Torque.Home.Dir' ) . '/bin/';
 
 my @attributes = qw(
-                     Job_Name
-                     Job_Owner
+                     job_name
+                     job_owner
                      job_state
                      queue
                      server
-                     Checkpoint
+                     checkpoint
                      ctime
-                     Error_Path
-                     Hold_Types
-                     Join_Path
-                     Keep_Files
-                     Mail_Points
+                     error_path
+                     hold_types
+                     join_path
+                     keep_files
+                     mail_points
                      mtime
-                     Output_Path
-                     Priority
+                     output_path
+                     priority
                      qtime
-                     Rerunable
-                     Resource_List.neednodes
-                     Resource_List.nodect
-                     Resource_List.nodes
-                     Resource_List.walltime
+                     rerunable
+                     resource_list.neednodes
+                     resource_list.nodect
+                     resource_list.nodes
+                     resource_list.walltime
                      substate
-                     Variable_List
+                     variable_list
                      euser
                      egroup
                      queue_rank

@@ -68,7 +68,7 @@ foreach my $queue (@queues)
     {
 
     my $reg_exp = &QSTAT_Q_REGEXP->{ $attribute };
-    ok($queue_info{ $queue }{ $attribute } =~ /${reg_exp}/, "Checking '$queue' $attribute attribute");
+    like($queue_info{ $queue }{ $attribute }, qr/${reg_exp}/, "Checking '$queue' $attribute attribute");
 
     } # END foreach my $attribue (@attributes)
 

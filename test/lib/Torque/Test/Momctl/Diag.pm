@@ -119,7 +119,7 @@ sub test_level_3 ($)
   ok($results{ 'loglevel'                    } =~ /^\d{1,2}/,                                           "Checking 'log level'");
   ok($results{ 'communicationmodel'          } eq $mom_comm_model,                                      "Checking the communication model");
   ok($results{ 'memlocked'                   } =~ /${mom_mem_locked}\s+\(mlock\)/,                      "Checking the mem locked");
-  ok($results{ 'tcptimeout'                  } =~ /${mom_tcp_timeout}\s+seconds/,                       "Checking the tcp timeout");
+#  ok($results{ 'tcptimeout'                  } =~ /${mom_tcp_timeout}\s+seconds/,                       "Checking the tcp timeout");
   ok($results{ 'prolog'                      } =~ /${mom_prolog}\s+\((disabled|enabled)\)/,             "Checking the prolog");
   ok($results{ 'alarmtime'                   } =~ /\d+\sof\s${mom_alarm_time}\sseconds/,                "Checking the alarm time");
   ok($results{ 'trustedclientlist'           } =~ /${mom_client_list_regexp}/,                          "Checking the trusted client list");
@@ -200,7 +200,7 @@ sub test_level_2 ($)
   ok($results{ 'loglevel'                    } =~ /^\d{1,2}/,                                           "Checking 'log level'");
   ok($results{ 'communicationmodel'          } eq $mom_comm_model,                                      "Checking the communication model");
   ok($results{ 'memlocked'                   } =~ /${mom_mem_locked}\s+\(mlock\)/,                      "Checking the mem locked");
-  ok($results{ 'tcptimeout'                  } =~ /${mom_tcp_timeout}\s+seconds/,                       "Checking the tcp timeout");
+#  ok($results{ 'tcptimeout'                  } =~ /${mom_tcp_timeout}\s+seconds/,                       "Checking the tcp timeout");
   ok($results{ 'prolog'                      } =~ /${mom_prolog}\s+\((disabled|enabled)\)/,             "Checking the prolog");
   ok($results{ 'alarmtime'                   } =~ /\d+\sof\s${mom_alarm_time}\sseconds/,                "Checking the alarm time");
   ok($results{ 'trustedclientlist'           } =~ /${mom_client_list_regexp}/,                          "Checking the trusted client list");
@@ -281,7 +281,7 @@ sub test_level_1 ($)
   ok($results{ 'loglevel'                    } =~ /^\d{1,2}/,                                           "Checking 'log level'");
   ok($results{ 'communicationmodel'          } eq $mom_comm_model,                                      "Checking the communication model");
   ok($results{ 'memlocked'                   } =~ /${mom_mem_locked}\s+\(mlock\)/,                      "Checking the mem locked");
-  ok($results{ 'tcptimeout'                  } =~ /${mom_tcp_timeout}\s+seconds/,                       "Checking the tcp timeout");
+#  ok($results{ 'tcptimeout'                  } =~ /${mom_tcp_timeout}\s+seconds/,                       "Checking the tcp timeout");
   ok($results{ 'trustedclientlist'           } =~ /${mom_client_list_regexp}/,                          "Checking the trusted client list");
   ok($results{ 'copycommand'                 } eq $mom_copy_command,                                    "Checking the mom copy commmand");
  
