@@ -88,6 +88,7 @@
 #define MOM_MACH "linux"
 #include "../../lib/Liblog/pbs_log.h"
 #include "../../lib/Liblog/log_event.h"
+#include "pbs_job.h" /* job */
 
 #define SET_LIMIT_SET   1
 #define SET_LIMIT_ALTER 0

@@ -8,7 +8,8 @@
 #include "port_forwarding.h" /* pfwdsock */
 
 
-
+/* from file conn_table.c */
+int get_connection_entry(int *conn_pos);
 
 /* from file get_hostaddr.c */
 char *PAddrToString(pbs_net_t *Addr);
@@ -43,12 +44,11 @@ void add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void (
 void close_conn(int sd, int has_mutex); 
 void net_close(int but); 
 pbs_net_t get_connectaddr(int sock, int mutex); 
-int find_conn(pbs_net_t addr); 
 int get_connecthost(int sock, char *namebuf, int size); 
 char *netaddr_pbs_net_t(pbs_net_t ipadd);
 
 /* from file net_set_clse.c */
-void net_add_close_func(int, void (*func)(int));
+void net_add_close_func(int, void (*func)(int), int);
  
 /* from file port_forwarding.c */
 void port_forwarder(struct pfwdsock *socks, int (*connfunc)(char *, int, char *), char *phost, int pport, char *EMsg);

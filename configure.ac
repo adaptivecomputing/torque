@@ -1938,6 +1938,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
     src/lib/Liblog/test/pbs_messages/Makefile
     src/lib/Liblog/test/setup_env/Makefile
     src/lib/Libnet/test/Makefile
+    src/lib/Libnet/test/conn_table/Makefile
     src/lib/Libnet/test/get_hostaddr/Makefile
     src/lib/Libnet/test/get_hostname/Makefile
     src/lib/Libnet/test/md5/Makefile

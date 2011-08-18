@@ -181,10 +181,10 @@ socket_to_conn(
 
   for (i = 0; i < NCONNECTS; i++)
     {
-    if (connection[i].ch_inuse == 0)
+    if (connection[i].ch_inuse == FALSE)
       {
 
-      connection[i].ch_inuse = 1;
+      connection[i].ch_inuse = TRUE;
       connection[i].ch_errno = 0;
       connection[i].ch_socket = sock;
       connection[i].ch_errtxt = NULL;
@@ -1232,7 +1232,7 @@ server_disconnect(int connect)
 
   connection[connect].ch_errno = 0;
 
-  connection[connect].ch_inuse = 0;
+  connection[connect].ch_inuse = FALSE;
 
   return 0;
   }

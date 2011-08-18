@@ -597,7 +597,7 @@ void log_event(int eventtype, int objclass, char *objname, char *text)
   {
   }
 
-int send_sisters(job *pjob, int com)
+int send_sisters(job *pjob, int com, int using_radix)
   {
   int rc = 1;
   if (func_num == SCAN_FOR_EXITING)

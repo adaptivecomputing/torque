@@ -942,12 +942,9 @@ void net_close(
  *
  * mutex is TRUE if the mutex should be obtained, false otherwise
  */
-
 pbs_net_t get_connectaddr(
-
   int sock,   /* I */
   int mutex)  /* I */
-
   {
   pbs_net_t tmp;
 
@@ -963,49 +960,13 @@ pbs_net_t get_connectaddr(
   }
 
 
-
-
-
-int find_conn(
-
-  pbs_net_t addr)  /* I */
-
-  {
-  int index;
-
-  /* NOTE:  there may be multiple connections per addr (not handled) */
-
-  for (index = 0;index < PBS_NET_MAX_CONNECTIONS;index++)
-    {
-    pthread_mutex_lock(svr_conn[index].cn_mutex);
-
-    if (addr == svr_conn[index].cn_addr)
-      {
-      pthread_mutex_unlock(svr_conn[index].cn_mutex);
-
-      return(index);
-      }
-
-    pthread_mutex_unlock(svr_conn[index].cn_mutex);
-    } /* END for (index) */
-
-  return(-1);
-  }  /* END find_conn() */
-
-
-
-
-
 /*
  * get_connecthost - return name of host connected via the socket
  */
-
 int get_connecthost(
-
   int   sock,     /* I */
   char *namebuf,  /* O (minsize=size) */
   int   size)     /* I */
-
   {
 
   struct hostent *phe;
@@ -1091,16 +1052,12 @@ int get_connecthost(
   }  /* END get_connecthost() */
 
 
-
-
 /*
 ** Put a human readable representation of a network address into
 ** a staticly allocated string.
 */
 char *netaddr_pbs_net_t(
-
   pbs_net_t ipadd)
-
   {
   char  out[80];
   char *return_value;
@@ -1119,9 +1076,6 @@ char *netaddr_pbs_net_t(
 
   return(return_value);
   }
-
-
-
 
 /* END net_server.c */
 

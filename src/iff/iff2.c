@@ -20,6 +20,8 @@
 #include "server_limits.h"
 #include "net_connect.h"
 #include "credential.h"
+#include "../server/svr_connect.h" /* get_connection_entry */
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
 
 /*
  * pbs_iff - authenticates the user to the PBS server.
@@ -143,15 +145,17 @@ int main(
   int   rc;
 
   struct batch_reply   *reply;
-  char *parse_servername(char *, short *);
   extern int   optind;
   extern char *optarg;
+  int conn_pos = -1;
 
   char  EMsg[1024];
 
   char *ptr;
 
   int PBSLOGLEVEL = 0;
+  lock_init();
+ 
 
   strcpy(pbs_current_user, "PBS_Server");
 
@@ -258,6 +262,7 @@ int main(
     sleep(1);
     }  /* END for (i) */
 
+/*  sleep(15); */
   if (sock < 0)
     {
     /* FAILURE */
@@ -272,14 +277,25 @@ int main(
 
     return(4);
     }
+  else if ((rc = get_connection_entry(&conn_pos)) != PBSE_NONE)
+    {
+    /* FAILURE */
 
-  connection[1].ch_mutex = malloc(sizeof(pthread_mutex_t));
-  pthread_mutex_init(connection[1].ch_mutex,NULL);
-  connection[1].ch_inuse = 1;
+    fprintf(stderr, "pbs_iff: cannot get connection table entry for %s:%d - %s, errno=%d (%s) %s\n",
+            argv[optind - 1],
+            servport,
+            (sock == PBS_NET_RC_FATAL) ? "fatal error" : "timeout",
+            errno,
+            strerror(errno),
+            EMsg);
 
-  connection[1].ch_errno = 0;
-  connection[1].ch_socket = sock;
-  connection[1].ch_errtxt = NULL;
+    return(4);
+    }
+  connection[conn_pos].ch_inuse = TRUE;
+
+  connection[conn_pos].ch_errno = 0;
+  connection[conn_pos].ch_socket = sock;
+  connection[conn_pos].ch_errtxt = NULL;
 
   DIS_tcp_setup(sock);
 
@@ -371,7 +387,7 @@ int main(
 
   /* read back the response */
 
-  reply = PBSD_rdrpy(1);
+  reply = PBSD_rdrpy(conn_pos);
 
   if (reply == NULL)
     {
@@ -402,7 +418,7 @@ int main(
 
   /* SUCCESS */
 
-  pbs_disconnect(1);
+  pbs_disconnect(conn_pos);
 
   /* send back "type none" credential */
 

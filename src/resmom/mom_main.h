@@ -7,6 +7,23 @@
 #include "resource.h" /* resource */
 #include "mom_hierarchy.h" /* mom_hierarchy_t */
 
+#define NO_LAYOUT_FILE      -10
+#define BAD_LAYOUT_FILE     -505
+#define CHECK_POLL_TIME     45
+#define DEFAULT_SERVER_STAT_UPDATES 45
+
+#define PMAX_PORT                 32000
+#define MAX_PORT_STRING_LEN       6
+#define MAX_LOCK_FILE_NAME_LEN    15
+#define MAX_RESEND_JOBS           512
+#define DUMMY_JOB_PTR             1
+#define MOM_THREADS               2
+#define THREAD_INFINITE          -1
+
+#ifndef MAX_LINE
+#define MAX_LINE 1024
+#endif
+
 char *nullproc(struct rm_attribute *attrib);
 
 /* static char *arch(struct rm_attribute *attrib); */

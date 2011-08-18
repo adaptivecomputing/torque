@@ -189,7 +189,6 @@ enum conn_type
 /* functions available in libnet.a */
 
 void add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void (*func)(int));
-int  find_conn(pbs_net_t);
 int  client_to_svr(pbs_net_t, unsigned int, int, char *);
 void close_conn(int,int);
 pbs_net_t get_connectaddr(int,int);

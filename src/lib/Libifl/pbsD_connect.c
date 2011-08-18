@@ -705,7 +705,7 @@ int pbs_original_connect(
       {
       out = i;
       
-      connection[out].ch_inuse  = 1;
+      connection[out].ch_inuse  = TRUE;
       connection[out].ch_errno  = 0;
       connection[out].ch_socket = -1;
       connection[out].ch_errtxt = NULL;
@@ -735,7 +735,7 @@ int pbs_original_connect(
 
   if (server == NULL)
     {
-    connection[out].ch_inuse = 0;
+    connection[out].ch_inuse = FALSE;
 
     pthread_mutex_unlock(connection[out].ch_mutex);
 
@@ -797,7 +797,7 @@ int pbs_original_connect(
                 strerror(errno));
         }
 
-      connection[out].ch_inuse = 0;
+      connection[out].ch_inuse = FALSE;
 
       pbs_errno = PBSE_PROTOCOL;
 
@@ -819,7 +819,7 @@ int pbs_original_connect(
       {
       close(connection[out].ch_socket);
 
-      connection[out].ch_inuse = 0;
+      connection[out].ch_inuse = FALSE;
       pbs_errno = errno;
 
       if (getenv("PBSDEBUG"))
@@ -846,7 +846,7 @@ int pbs_original_connect(
 
       close(connection[out].ch_socket);
 
-      connection[out].ch_inuse = 0;
+      connection[out].ch_inuse = FALSE;
       pbs_errno = PBSE_PROTOCOL;
 
       use_unixsock = 0;  /* will try again with inet socket */
@@ -873,7 +873,7 @@ int pbs_original_connect(
                 strerror(errno));
         }
 
-      connection[out].ch_inuse = 0;
+      connection[out].ch_inuse = FALSE;
 
       pthread_mutex_unlock(connection[out].ch_mutex);
 
@@ -890,7 +890,7 @@ int pbs_original_connect(
     if (hp == NULL)
       {
       close(connection[out].ch_socket);
-      connection[out].ch_inuse = 0;
+      connection[out].ch_inuse = FALSE;
       pbs_errno = PBSE_BADHOST;
 
       if (getenv("PBSDEBUG"))
@@ -917,7 +917,7 @@ int pbs_original_connect(
       {
       close(connection[out].ch_socket);
 
-      connection[out].ch_inuse = 0;
+      connection[out].ch_inuse = FALSE;
       pbs_errno = errno;
 
       if (getenv("PBSDEBUG"))
@@ -948,7 +948,7 @@ int pbs_original_connect(
       {
       close(connection[out].ch_socket);
 
-      connection[out].ch_inuse = 0;
+      connection[out].ch_inuse = FALSE;
 
       if (auth == PBSE_MUNGE_NOT_FOUND)
       {
@@ -984,7 +984,7 @@ int pbs_original_connect(
       {
       close(connection[out].ch_socket);
 
-      connection[out].ch_inuse = 0;
+      connection[out].ch_inuse = FALSE;
 
       if (auth == PBSE_IFF_NOT_FOUND)
         {
@@ -1101,7 +1101,7 @@ int pbs_disconnect(
 
   connection[connect].ch_errno = 0;
 
-  connection[connect].ch_inuse = 0;
+  connection[connect].ch_inuse = FALSE;
 
   pthread_mutex_unlock(connection[connect].ch_mutex);
 

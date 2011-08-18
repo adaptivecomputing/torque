@@ -84,11 +84,12 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 				../Libcmds/add_verify_resources.c \
 		    ../Liblog/chk_file_sec.c ../Liblog/log_event.c \
 		    ../Liblog/pbs_log.c ../Liblog/pbs_messages.c \
-        ../Liblog/setup_env.c \
+        ../Liblog/setup_env.c ../Libnet/conn_table.c \
 		    ../Libnet/get_hostaddr.c ../Libnet/get_hostname.c \
 		    ../Libnet/md5.c ../Libnet/net_client.c \
         ../Libnet/net_server.c ../Libnet/net_set_clse.c \
 		    ../Libnet/rm.c ../Libnet/port_forwarding.c \
+				../Libutils/u_lock_ctl.c \
 				../Libutils/u_hash_map_structs.c ../Libutils/u_memmgr.c
 
 

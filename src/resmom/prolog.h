@@ -5,6 +5,8 @@
 
 #include "pbs_job.h" /* job */
 
+#define PBS_PROLOG_TIME 300
+
 /* static char *resc_to_string(job *pjob, int aindex, char *buf, int buflen); */
 
 /* static int pelog_err(job *pjob, char *file, int n, char *text); */

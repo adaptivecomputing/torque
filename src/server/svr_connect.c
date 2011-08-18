@@ -114,6 +114,7 @@
 #include "net_connect.h"
 #include "svrfunc.h"
 #include "dis.h"
+#include "../lib/Libnet/lib_net.h" /* get_connection_entry */
 
 
 /* global data */
@@ -136,13 +137,11 @@ int            addr_ok(pbs_net_t,struct pbsnode *);
 
 
 int svr_connect(
-
   pbs_net_t        hostaddr,  /* host order */
   unsigned int     port,   /* I */
   struct pbsnode  *pnode,
   void           (*func)(int),
   enum conn_type   cntype)
-
   {
   static char *id = "svr_connect";
 
@@ -287,11 +286,8 @@ int svr_connect(
  * server's connection table and the handle table used by
  * the API routines must be cleaned-up.
  */
-
 void svr_disconnect(
-
   int handle)  /* I */
-
   {
   int sock;
   int x;
@@ -330,15 +326,13 @@ void svr_disconnect(
 
     connection[handle].ch_errno = 0;
 
-    connection[handle].ch_inuse = 0;
+    connection[handle].ch_inuse = FALSE;
 
     pthread_mutex_unlock(connection[handle].ch_mutex);
     }
 
   return;
   }  /* END svr_disconnect() */
-
-
 
 
 /*
@@ -348,76 +342,54 @@ void svr_disconnect(
  * Returns: >=0 connection handle if successful, or
  *    -1 if error, error number set in pbs_errno.
  */
-
 int socket_to_handle(
-
   int sock)  /* opened socket */
-
   {
   char *id = "socket_to_handle";
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  int i;
-
-  for (i = 0;i < PBS_NET_MAX_CONNECTIONS;i++)
+  int conn_pos = 0;
+  int rc = PBSE_NONE;
+  if ((rc = get_connection_entry(&conn_pos)) != PBSE_NONE)
     {
-    if (connection[i].ch_mutex == NULL)
-      {
-      connection[i].ch_mutex = malloc(sizeof(pthread_mutex_t));
-      pthread_mutex_init(connection[i].ch_mutex,NULL);
-      }
+    rc = -1;
+    sprintf(log_buf,"internal socket table full (%d) - num_connections is %d",
+      conn_pos,
+      get_num_connections());
 
-    if (pthread_mutex_trylock(connection[i].ch_mutex) != PBSE_NONE)
-      {
-      /* if we can't lock the mutex, it is busy*/
-      continue;
-      }
+    log_ext(-1,id,log_buf,LOG_ALERT);
 
-    if (connection[i].ch_inuse == FALSE)
-      {
-      
-      connection[i].ch_stream = 0;
-      connection[i].ch_inuse  = 1;
-      connection[i].ch_errno  = 0;
-      connection[i].ch_socket = sock;
-      connection[i].ch_errtxt = 0;
+    pbs_errno = PBSE_NOCONNECTS;
+    }
+  else
+    {
+    connection[conn_pos].ch_stream = 0;
+    connection[conn_pos].ch_inuse  = TRUE;
+    connection[conn_pos].ch_errno  = 0;
+    connection[conn_pos].ch_socket = sock;
+    connection[conn_pos].ch_errtxt = 0;
 
-      /* SUCCESS - save handle for later close */
-      pthread_mutex_unlock(connection[i].ch_mutex);
-      pthread_mutex_lock(svr_conn[sock].cn_mutex);
+    /* SUCCESS - save handle for later close */
+    pthread_mutex_unlock(connection[conn_pos].ch_mutex);
+    pthread_mutex_lock(svr_conn[sock].cn_mutex);
       
-      svr_conn[sock].cn_handle = i;
+    svr_conn[sock].cn_handle = conn_pos;
       
-      pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
       
-      if (i >= (PBS_NET_MAX_CONNECTIONS/2))
-        {
-        sprintf(log_buf,"internal socket table is half-full at %d (expected num_connections is %d)!",
-          i,
-          get_num_connections());
+    if (conn_pos >= (PBS_NET_MAX_CONNECTIONS/2))
+      {
+      sprintf(log_buf,"internal socket table is half-full at %d (expected num_connections is %d)!",
+        conn_pos,
+        get_num_connections());
         
-        log_ext(-1,id,log_buf,LOG_CRIT);
-        }
-      
-      return(i);
+      log_ext(-1,id,log_buf,LOG_CRIT);
       }
-
-    pthread_mutex_unlock(connection[i].ch_mutex);
-    }  /* END for (i) */
-
-  sprintf(log_buf,"internal socket table full (%d) - num_connections is %d",
-    i,
-    get_num_connections());
-
-  log_ext(-1,id,log_buf,LOG_ALERT);
-
-  pbs_errno = PBSE_NOCONNECTS;
-
-  return(-1);
+    rc = conn_pos;
+    pthread_mutex_unlock(connection[conn_pos].ch_mutex);
+    }
+  return rc;
   }  /* END socket_to_handle() */
-
-
-
 
 
 /*
@@ -430,12 +402,9 @@ int socket_to_handle(
  *
  * Warning: as written, Not reentrient/thread safe
  */
-
 char *parse_servername(
-
   char         *name,   /* server name in form name[:port] */
   unsigned int *service)  /* RETURN: service_port if :port */
-
   {
   char  buf[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
   char *val;
@@ -480,7 +449,6 @@ char *parse_servername(
 
   return(val);
   }  /* END parse_servername() */
-
 
 /* END svr_connect.c */
 

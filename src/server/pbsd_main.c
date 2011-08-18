@@ -131,6 +131,7 @@
 #include "u_tree.h"
 #include <pthread.h>
 #include "threadpool.h"
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
 
 
 #define TSERVER_HA_CHECK_TIME  1  /* 1 second sleep time between checks on the lock file for high availability */
@@ -1229,6 +1230,7 @@ void initialize_globals(void)
   pthread_mutex_init(server.sv_qs_mutex,NULL);
   pthread_mutex_init(server.sv_attr_mutex,NULL);
   pthread_mutex_init(server.sv_jobstates_mutex,NULL);
+  lock_init();
   }
 
 

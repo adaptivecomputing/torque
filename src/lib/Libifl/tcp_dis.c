@@ -98,14 +98,13 @@
 #include "dis_init.h"
 #include "log.h"
 #include "../Liblog/pbs_log.h"
+#include "../Libutils/u_lock_ctl.h"
 
 #ifdef HAVE_SYS_POLL_H
 #include <sys/poll.h>
 #endif
 
 #define MAX_INT_LEN 256;
-
-pthread_mutex_t *tcparraymax_mutex = NULL;
 
 static struct tcp_chan **tcparray = NULL;
 static int    tcparraymax = 0;
@@ -446,6 +445,7 @@ static void DIS_tcp_clear(
   struct tcpdisbuf *tp)
 
   {
+  memset(tp->tdis_thebuf, 0, 10);
   tp->tdis_leadp  = tp->tdis_thebuf;
   tp->tdis_trailp = tp->tdis_thebuf;
   tp->tdis_eod    = tp->tdis_thebuf;
@@ -937,13 +937,7 @@ int resize_tcp_array_if_needed(
   int  flags;
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if (tcparraymax_mutex == NULL)
-    {
-    tcparraymax_mutex = malloc(sizeof(pthread_mutex_t));
-    pthread_mutex_init(tcparraymax_mutex,NULL);
-    }
-
-  pthread_mutex_lock(tcparraymax_mutex);
+  lock_tcp_table();
 
   if (fd >= tcparraymax)
     {
@@ -1020,7 +1014,7 @@ int resize_tcp_array_if_needed(
     unlock_all_channels();
     }
 
-  pthread_mutex_unlock(tcparraymax_mutex);
+  unlock_tcp_table();
 
   return(rc);
   } /* END resize_tcp_array() */
@@ -1046,6 +1040,7 @@ void DIS_tcp_setup(
   {
   struct tcp_chan  *tcp = NULL;
   struct tcpdisbuf *tp = NULL;
+  int tcp_setup = FALSE;
 
   /* check for bad file descriptor */
 
@@ -1056,22 +1051,28 @@ void DIS_tcp_setup(
 
   resize_tcp_array_if_needed(fd);
 
-  tcp = tcparray[fd];
-
-  if (tcp == NULL)
+  lock_tcp_table();
+  if (tcparray[fd] == NULL)
     {
-    tcparray[fd] = (struct tcp_chan *)malloc(sizeof(struct tcp_chan));
-
-    memset(tcparray[fd], 0, sizeof(struct tcp_chan));
-
-    tcp = tcparray[fd];
-
-    if (tcp == NULL)
+    if ((tcparray[fd] = (struct tcp_chan *)malloc(sizeof(struct tcp_chan))) == NULL)
       {
       log_err(ENOMEM, "DIS_tcp_setup", "malloc failure");
-
-      goto error;
       }
+    else
+      {
+      memset(tcparray[fd], 0, sizeof(struct tcp_chan));
+      tcp_setup = TRUE;
+      }
+    }
+  unlock_tcp_table();
+  if (tcparray[fd] == NULL)
+    {
+    goto error;
+    }
+
+  tcp = tcparray[fd];
+  if (tcp_setup == TRUE)
+    {
 
     pthread_mutex_init(&tcp->tcp_mutex,NULL);
     pthread_mutex_lock(&tcp->tcp_mutex);
