@@ -205,13 +205,13 @@ badplace *is_bad_dest(
 int initialize_procct(job *pjob)
   {                \
   char id[] = "initialize_procct";
-  resource     *pnodesp;
-  resource_def *pnodes_def;
-  resource     *pprocsp;
-  resource_def *pprocs_def;
-  resource     *procctp;
-  resource_def *procct_def;
-  attribute    *pattr;
+  resource     *pnodesp = NULL;
+  resource_def *pnodes_def = NULL;
+  resource     *pprocsp = NULL;
+  resource_def *pprocs_def = NULL;
+  resource     *procctp = NULL;
+  resource_def *procct_def = NULL;
+  attribute    *pattr = NULL;
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
   if(pattr == NULL)
@@ -322,6 +322,7 @@ int initialize_procct(job *pjob)
 
   return(PBSE_NONE);
   } /* END initialize_procct */
+
 
 int remove_procct(job *pjob)
   {
