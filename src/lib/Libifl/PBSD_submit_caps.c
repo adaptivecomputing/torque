@@ -401,7 +401,7 @@ char *PBSD_queuejob(
     {
     if (PConnTimeout(sock) == 1)
       {
-      pbs_errno = PBSE_EXPIRED;
+      pbs_errno = PBSE_READ_REPLY_TIMEOUT;
       }
     else
       {

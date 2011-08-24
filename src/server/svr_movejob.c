@@ -882,7 +882,7 @@ int send_job(
                   pqjatr,
                   NULL)) == NULL)
         {
-        if (pbs_errno == PBSE_EXPIRED)
+        if ((pbs_errno == PBSE_EXPIRED) || (pbs_errno == PBSE_READ_REPLY_TIMEOUT))
           {
           /* queue job timeout based on pbs_tcp_timeout */
 

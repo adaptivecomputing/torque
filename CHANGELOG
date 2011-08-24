@@ -48,6 +48,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Modified default_router() to set the svr_do_schedule flag to SCH_SCHEDULE_NEW if
       a job was successfully routed to a queue. This helps reduce delays in running
       jobs when they are promoted from a routing queue to an execution queue.
+  e - I added a new PBSE_ error code PBSE_READ_REPLY_TIMEOUT. This new error code
+      replaces PBSE_EXPIRED in the function PBSD_queuejob. PBSE_EXPIRED is intended
+      to be used for an expired credential and the error in PBSD_queuejob occurs
+      because the select waiting for a read on a tcp socket has timed out.
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as
