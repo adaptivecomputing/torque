@@ -186,6 +186,7 @@ typedef enum
 /* Global Variables */
 
 
+extern int  attempttomakedir;
 extern int  spoolasfinalname;
 extern int  num_var_env;
 extern char       **environ;
@@ -6668,10 +6669,10 @@ char *std_file_name(
 
 int open_std_file(
 
-  job  *pjob,    /* I */
-  enum job_file  which,   /* which file */
-  int   mode,   /* file mode */
-  gid_t   exgid)    /* gid for file */
+  job           *pjob,   /* I */
+  enum job_file  which,  /* which file */
+  int            mode,   /* file mode */
+  gid_t          exgid)  /* gid for file */
 
   {
   int   fds;
@@ -6833,47 +6834,77 @@ int open_std_file(
 
   if (fds == -1)
     {
+    /* errno can change in functions called between here and the if check below */
+    int local_errno = errno;
+
     sprintf(log_buffer, 
       "cannot open/create stdout/stderr file '%s' (mode: %o, keeping: %s)",
       path,
       mode,
       (keeping == 0) ? "FALSE" : "TRUE");
 
-    log_err(errno, id, log_buffer);
+    log_err(local_errno, id, log_buffer);
 
-    if (errno == ENOENT)
+    if (local_errno == ENOENT)
       {
       char *ptr;
       char  tmpLine[MAXLINE];
+      int   still_failed = TRUE;
 
-      /* parent directory does not exist - find out what part of subtree exists */
-
-      strncpy(tmpLine, path, sizeof(tmpLine));
-
-      while ((ptr = strrchr(tmpLine, '/')) != NULL)
+      /* attempt to make the directory if it doesn't exist */
+      if (attempttomakedir == TRUE)
         {
-        *ptr = '\0';
+        /* don't make the file a directory - make the last slash empty */
+        char *slash = path;
+        while (strchr(slash + 1, '/') != NULL)
+          slash = strchr(slash + 1, '/');
 
-        if (lstat(tmpLine, &statbuf) == 0)
+        if (slash != NULL)
+          *slash = '\0';
+
+        mkdirtree(path,0755);
+ 
+        /* undo the marking of the end of path as NULL */
+        *slash = '/';
+        
+        if ((fds = open(path, mode, 0666)) != -1)
           {
-          /* lstat succeeded */
-
-          sprintf(log_buffer, "'%s' exists\n", tmpLine);
-
-          break;
-          }   /* END if (lstat(tmpLine,&statbuf) == 0) */
-        else
-          {
-          /* lstat failed - should we return failure in all cases? */
-
-          if (errno == EINTR)
-            sprintf(log_buffer, "cannot stat stdout/stderr file '%s' (timeout)\n",
-                    tmpLine);
-          else
-            sprintf(log_buffer, "cannot stat stdout/stderr file '%s' - file does not exist\n",
-                    tmpLine);
+          /* SUCCESS */
+          still_failed = FALSE;
           }
-        }    /* END while ((ptr = strrchr(tmpLine,'/')) != NULL) */
+        }
+
+      if (still_failed == TRUE)
+        {
+        /* parent directory does not exist - find out what part of subtree exists */
+        
+        strncpy(tmpLine, path, sizeof(tmpLine));
+        
+        while ((ptr = strrchr(tmpLine, '/')) != NULL)
+          {
+          *ptr = '\0';
+          
+          if (lstat(tmpLine, &statbuf) == 0)
+            {
+            /* lstat succeeded */
+            
+            sprintf(log_buffer, "'%s' exists\n", tmpLine);
+            
+            break;
+            }   /* END if (lstat(tmpLine,&statbuf) == 0) */
+          else
+            {
+            /* lstat failed - should we return failure in all cases? */
+
+            if (errno == EINTR)
+              sprintf(log_buffer, "cannot stat stdout/stderr file '%s' (timeout)\n",
+                  tmpLine);
+            else
+              sprintf(log_buffer, "cannot stat stdout/stderr file '%s' - file does not exist\n",
+                  tmpLine);
+            }
+          }    /* END while ((ptr = strrchr(tmpLine,'/')) != NULL) */
+        } /* END if (still_failed == TRUE) */
       }      /* END if (errno == ENOENT) */
     }        /* END if (fds == -1) */
 
