@@ -52,6 +52,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       replaces PBSE_EXPIRED in the function PBSD_queuejob. PBSE_EXPIRED is intended
       to be used for an expired credential and the error in PBSD_queuejob occurs
       because the select waiting for a read on a tcp socket has timed out.
+  e - add a mom config option - $attempt_to_make_dir - to give the user the option to 
+      have TORQUE attempt to create the directories for their output file if they don't exist
+      (backported from 3.0.3
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as

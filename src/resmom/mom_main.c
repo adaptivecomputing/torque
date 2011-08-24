@@ -195,6 +195,7 @@ int    ignmem = 0;
 int    igncput = 0;
 int    ignvmem = 0;
 int    spoolasfinalname = 0;
+int    attempttomakedir = 0;
 /* end policies */
 int    lockfds = -1;
 time_t loopcnt;  /* used for MD5 calc */
@@ -404,6 +405,7 @@ static unsigned long setrreconfig(char *);
 static unsigned long setsourceloginbatch(char *);
 static unsigned long setsourcelogininteractive(char *);
 static unsigned long setspoolasfinalname(char *);
+static unsigned long setattempttomakedir(char *);
 static unsigned long setremchkptdirlist(char *);
 static unsigned long setmaxconnecttimeout(char *);
 unsigned long aliasservername(char *);
@@ -473,6 +475,7 @@ static struct specials
   { "job_starter", jobstarter},
   { "rpp_throttle", rppthrottle },
   { "thread_unlink_calls", setthreadunlinkcalls },
+  { "attempt_to_make_dir", setattempttomakedir },
   { NULL,                  NULL }
   };
 
@@ -3368,6 +3371,28 @@ static unsigned long setspoolasfinalname(
 
   return(1);
   }  /* END setspoolasfinalname() */
+
+
+
+
+static unsigned long setattempttomakedir(
+
+  char *value)
+
+  {
+  log_record(
+    PBSEVENT_SYSTEM,
+    PBS_EVENTCLASS_SERVER,
+    "attempttomakedir",
+    value);
+
+  if (!strncasecmp(value,"t",1) || (value[0] == '1') || !strcasecmp(value,"on") )
+    attempttomakedir = TRUE;
+  else
+    attempttomakedir = 0;
+
+  return(1);
+  } /* END setattempttomakedir() */
 
 
 /********************************************************
