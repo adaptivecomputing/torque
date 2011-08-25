@@ -55,6 +55,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - add a mom config option - $attempt_to_make_dir - to give the user the option to 
       have TORQUE attempt to create the directories for their output file if they don't exist
       (backported from 3.0.3
+  b - Changed configure to show --enable-gcc-warnings as an option as opposed to --disable-gcc-warnings.
+      --disable-gcc-warnings is currently the default configuration.
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as

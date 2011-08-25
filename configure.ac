@@ -49,6 +49,8 @@ fi
 AC_SUBST(program_prefix)
 AC_SUBST(program_suffix)
 
+m4_pattern_allow([RPM_AC_OPTS])
+
 RPM_AC_OPTS=""
 
 dnl  Instead of putting a long list of defines on the command line
