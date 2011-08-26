@@ -500,6 +500,7 @@ void finish_move_process(
 
       break;
     } /* END switch (type) */
+
   } /* END finish_move_process() */
 
 

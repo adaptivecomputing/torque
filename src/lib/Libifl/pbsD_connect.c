@@ -1189,7 +1189,7 @@ int pbs_connect(
     }
 
   return(connect);
-  }
+  } /* END pbs_connect() */
 
 
 /**
@@ -1220,6 +1220,8 @@ int pbs_connect_with_retry(
 
   return(connect);
   }
+
+
 
 
 int pbs_query_max_connections(void)

@@ -135,11 +135,11 @@ extern int LOGLEVEL;
 
 /* Public Functions in this file */
 
-int  svr_startjob(job *, struct batch_request *, char *, char *);
+int  svr_startjob(job *, struct batch_request **, char *, char *);
 
 /* Private Functions local to this file */
 
-static int  svr_stagein(job *, struct batch_request *, int, int);
+static int  svr_stagein(job *, struct batch_request **, int, int);
 static int  svr_strtjob2(job *, struct batch_request *);
 static job *chk_job_torun(struct batch_request *, int);
 static int  assign_hosts(job *, char *, int, char *, char *);
@@ -263,7 +263,7 @@ void *req_runjob(
 
   /* NOTE:  nodes assigned to job in svr_startjob() */
 
-  rc = svr_startjob(pjob, preq, failhost, emsg);
+  rc = svr_startjob(pjob, &preq, failhost, emsg);
 
   if ((rc != 0) && 
       (preq != NULL))
@@ -415,10 +415,10 @@ static void post_checkpointsend(
 
 static int svr_send_checkpoint(
 
-  job                  *pjob,     /* I */
-  struct batch_request *preq,     /* I */
-  int                   state,    /* I */
-  int                   substate) /* I */
+  job                   *pjob,     /* I */
+  struct batch_request **preq,     /* I */
+  int                    state,    /* I */
+  int                    substate) /* I */
 
   {
 
@@ -430,8 +430,11 @@ static int svr_send_checkpoint(
   if (momreq == NULL)
     {
     /* no files to send, go directly to sending job to mom */
+    rc = svr_strtjob2(pjob, *preq);
 
-    return(svr_strtjob2(pjob, preq));
+    *preq = NULL;
+
+    return(rc);
     }
 
   /* save job id for post_checkpointsend */
@@ -459,8 +462,8 @@ static int svr_send_checkpoint(
      * take too long to wait.
      */
 
-    if (preq != NULL)
-      reply_ack(preq);
+    if (*preq != NULL)
+      reply_ack(*preq);
     }
   else
     {
@@ -516,7 +519,7 @@ void *req_stagein(
 
   if ((rc = svr_stagein(
               pjob,
-              preq,
+              &preq,
               JOB_STATE_QUEUED,
               JOB_SUBSTATE_STAGEIN)))
     {
@@ -605,7 +608,7 @@ static void post_stagein(
           /* need to copy checkpoint file to mom before running */
           svr_send_checkpoint(
               pjob,
-              preq,
+              &preq,
               JOB_STATE_RUNNING,
               JOB_SUBSTATE_CHKPTGO);
           }
@@ -642,10 +645,10 @@ static void post_stagein(
 
 static int svr_stagein(
 
-  job                  *pjob,     /* I */
-  struct batch_request *preq,     /* I */
-  int                   state,    /* I */
-  int                   substate) /* I */
+  job                   *pjob,     /* I */
+  struct batch_request **preq,     /* I */
+  int                    state,    /* I */
+  int                    substate) /* I */
 
   {
 
@@ -657,8 +660,11 @@ static int svr_stagein(
   if (momreq == NULL)
     {
     /* no files to stage, go directly to sending job to mom */
+    rc = svr_strtjob2(pjob, *preq);
 
-    return(svr_strtjob2(pjob, preq));
+    *preq = NULL;
+
+    return(rc);
     }
 
   /* have files to stage in */
@@ -688,8 +694,8 @@ static int svr_stagein(
      * take too long to wait.
      */
 
-    if (preq != NULL)
-      reply_ack(preq);
+    if (*preq != NULL)
+      reply_ack(*preq);
     }
   else
     {
@@ -710,10 +716,10 @@ static int svr_stagein(
 
 int svr_startjob(
 
-  job                  *pjob,     /* I job to run (modified) */
-  struct batch_request *preq,     /* I Run Job batch request (optional) */
-  char                 *FailHost, /* O (optional,minsize=1024) */
-  char                 *EMsg)     /* O (optional,minsize=1024) */
+  job                   *pjob,     /* I job to run (modified) */
+  struct batch_request **preq,     /* I Run Job batch request (optional) */
+  char                  *FailHost, /* O (optional,minsize=1024) */
+  char                  *EMsg)     /* O (optional,minsize=1024) */
 
   {
   int     f;
@@ -1001,7 +1007,9 @@ int svr_startjob(
     {
     /* No stage-in or already done, start job executing */
 
-    rc = svr_strtjob2(pjob, preq);
+    rc = svr_strtjob2(pjob, *preq);
+
+    *preq = NULL;
     }
 
   return(rc);
