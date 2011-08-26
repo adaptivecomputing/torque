@@ -549,6 +549,9 @@
    `char[]'. */
 #undef YYTEXT_POINTER
 
+/* Define _GNU_SOURCE for unix socket messages */
+#undef _GNU_SOURCE
+
 /* Define to 1 if type `char' is unsigned and you are not using gcc.  */
 #ifndef __CHAR_UNSIGNED__
 # undef __CHAR_UNSIGNED__
