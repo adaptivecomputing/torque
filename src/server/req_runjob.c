@@ -1508,7 +1508,8 @@ static job *chk_job_torun(
     /* reserve nodes and set new exec_host */
     if ((prun->rq_destin == NULL) || (prun->rq_destin[0] == '\0'))
       {
-      /* it is possible for the scheduler to pass a hostlist using the rq_extend field--we should use it as the given list
+      /* it is possible for the scheduler to pass a hostlist using the 
+       * rq_extend field--we should use it as the given list
        * as an alternative to rq_destin */
 
       rc = assign_hosts(pjob, preq->rq_extend, 1, FailHost, EMsg);  /* inside chk_job_torun() */
@@ -1520,7 +1521,7 @@ static job *chk_job_torun(
 
     if (rc != 0)
       {
-      /* FAILURE - cannot assign correct hosts */
+      /* FAILURE - cannot essign correct hosts */
 
       req_reject(rc, 0, preq, FailHost, EMsg);
 
@@ -1621,9 +1622,39 @@ static int assign_hosts(
 
   if ((given != NULL) && (given[0] != '\0'))
     {
+#ifdef NVIDIA_GPUS
+    char *mode_string;
+    char *request;
+#endif
     /* assign what was specified in run request */
 
     hosttoalloc = given;
+
+    /* check to see if there is a gpus request. If so moab
+     * sripted the mode request if it existed. We need to
+     * put it back */
+#ifdef NVIDIA_GPUS
+    mode_string = strstr(hosttoalloc, ":gpus=");
+    if(mode_string != NULL)
+      {
+      /* Build our host list from what is in the job attrs */
+      pres = find_resc_entry(
+               &pjob->ji_wattr[(int)JOB_ATR_resource],
+               find_resc_def(svr_resc_def, "neednodes", svr_resc_size));
+
+      if (pres != NULL)
+        {
+        /* assign what was in "neednodes" */
+
+        request = pres->rs_value.at_val.at_str;
+
+        if(request != NULL && request[0] != 0)
+          {
+          hosttoalloc = request;
+          }
+        }
+      }
+#endif
     }
   else
     {

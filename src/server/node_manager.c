@@ -3563,7 +3563,7 @@ static int proplist(
       {
       gpu_mode_rqstd = gpu_exclusive_process;
       }
-    else if (have_gpus && (!strcasecmp(pname, "shared")))
+    else if (have_gpus && (!strcasecmp(pname, "default")))
       {
       gpu_mode_rqstd = gpu_normal;
       }
