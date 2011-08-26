@@ -57,6 +57,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (backported from 3.0.3
   b - Changed configure to show --enable-gcc-warnings as an option as opposed to 
       --disable-gcc-warnings. --disable-gcc-warnings is currently the default configuration.
+      This fixes bug 154 of Bugzilla
   eb- NVIDIA gpu mode settings were getting lost when using Moab. Made a change to 
       assign_hosts() to use the neednodes resource if gpus are present in the given spec.
       Also changed shared mode for gpus to default to reflect NVIDIA's naming scheme.
