@@ -1090,6 +1090,10 @@ AC_ARG_ENABLE(unixsockets, [
 esac])dnl
 if test "x$ENABLE_UNIX_SOCKETS" = "xyes" ;then
    AC_DEFINE(ENABLE_UNIX_SOCKETS, 1, [Define to enable unix domain sockets])
+dnl
+dnl add _GNU_SOURCE 
+dnl
+AC_DEFINE([_GNU_SOURCE], 1, [Define _GNU_SOURCE for unix socket messages]) 
 fi
 AC_MSG_RESULT([$ENABLE_UNIX_SOCKETS])
 
