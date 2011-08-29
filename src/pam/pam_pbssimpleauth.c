@@ -122,7 +122,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     return PAM_SERVICE_ERR;
     }
 
-  user_pwd = getpwnam_ext(username);
+  user_pwd = getpwnam_ext((char *)username);
 
   /* no early returns from this point on because we need to free ubuf */
 
