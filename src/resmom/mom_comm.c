@@ -3524,7 +3524,7 @@ void im_request(
 
           if (ep == NULL)
             {
-            pjobexec_t *TJE;
+            pjobexec_t *TJE = NULL;
             int         SC;
             int         RC;
 

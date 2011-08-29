@@ -1349,7 +1349,7 @@ static int check_nvidia_path()
     rc = find_file(pathEnv, "nvidia-smi");
     if (rc == FALSE)
       {
-      if (LOGLEVEL >= 3)
+      if (LOGLEVEL >= 7)
         {
         log_err(
           PBSE_RMSYSTEM,
