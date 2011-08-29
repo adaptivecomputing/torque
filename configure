@@ -1053,7 +1053,7 @@ Optional Features:
   --enable-debug          turn on the compilation of DEBUG code
 
   --enable-gcc-warnings  Enable gcc strictness and warnings.  If using
-                          gcc, default is to error on any warning
+                          gcc, default is to not error on any warning
 
   --enable-high-availability  Enables advanced high availability mode (multi-threaded)
 
