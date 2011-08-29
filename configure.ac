@@ -314,7 +314,7 @@ fi
 dnl if using gcc, we can be very strict
 AC_ARG_ENABLE(gcc_warnings, [
   --enable-gcc-warnings  Enable gcc strictness and warnings.  If using
-                          gcc, default is to only display on any warning])
+                          gcc, default is to not error on any warnings])
 if test "x$GCC" = "xyes" ;then
   AC_MSG_CHECKING([whether to use strict gcc warnings])
   if test "${enable_gcc_warnings}" == "yes" ; then
