@@ -10,7 +10,7 @@
 
 struct pbsnode *PGetNodeFromAddr(pbs_net_t addr);
 
-void bad_node_warning(pbs_net_t addr);
+void bad_node_warning(pbs_net_t addr, struct pbsnode *);
 
 int addr_ok(pbs_net_t addr, struct pbsnode *pnode);
 

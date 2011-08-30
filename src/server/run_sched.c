@@ -121,7 +121,7 @@ static void scheduler_close(int);
 static void listener_close(int);
 
 
-extern void bad_node_warning(pbs_net_t);
+extern void bad_node_warning(pbs_net_t, struct pbsnode *);
 extern ssize_t write_nonblocking_socket(int, const void *, ssize_t);
 
 
@@ -173,7 +173,7 @@ static int contact_sched(
     {
     /* FAILURE */
 
-    bad_node_warning(pbs_scheduler_addr);
+    bad_node_warning(pbs_scheduler_addr, NULL);
 
 #if 0
     sprintf(tmpLine, "%s - port %d %s",
@@ -304,7 +304,7 @@ static int contact_listener(
     {
     /* FAILURE */
 
-    bad_node_warning(listener_conns[l_idx].address);
+    bad_node_warning(listener_conns[l_idx].address, NULL);
 
     sprintf(tmpLine, "%s %d - port %d %s",
             msg_listnr_nocall,

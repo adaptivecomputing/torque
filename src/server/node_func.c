@@ -192,7 +192,7 @@ extern AvlTree streams;
 
 struct pbsnode *PGetNodeFromAddr(
 
-        pbs_net_t addr)  /* I */
+  pbs_net_t addr)  /* I */
 
   {
   struct pbsnode *pnode;
@@ -223,7 +223,8 @@ struct pbsnode *PGetNodeFromAddr(
 
 void bad_node_warning(
 
-  pbs_net_t addr)  /* I */
+  pbs_net_t       addr,  /* I */
+  struct pbsnode *the_node) /* I */
 
   {
   time_t          now;
@@ -233,54 +234,59 @@ void bad_node_warning(
   node_iterator   iter;
   struct pbsnode *pnode = NULL;
 
-  reinitialize_node_iterator(&iter);
-
-  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+  if (the_node == NULL)
     {
-    if (pnode->nd_addrs == NULL)
+    /* search for the node if it wasn't passed in */
+    reinitialize_node_iterator(&iter);
+    
+    while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
       {
-      sprintf(log_buf, "ALERT:  node table is corrupt for node %s",
-        pnode->nd_name);
-
-      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buf);
-
-      continue;
-      }
-
-    if (pnode->nd_addrs[0] != addr)
-      {
-      /* node was deleted  or doesn't match */
-
-      continue;
-      }
-
-    /* matching node located */
-
-    now = time(0);
-
-    last = pnode->nd_warnbad;
-
-    if (last && (now - last < 3600))
-      {
-      /* bad node warning already sent within the last hour */
-      pthread_mutex_unlock(pnode->nd_mutex);
-
-      return;
-      }
-
-    /* once per hour, log a warning that we can't reach the node */
-    sprintf(log_buf, "ALERT: unable to contact node %s", pnode->nd_name);
-    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buf);
-
-    pnode->nd_warnbad = now;
+      if (pnode->nd_addrs == NULL)
+        {
+        sprintf(log_buf, "ALERT:  node table is corrupt for node %s",
+          pnode->nd_name);
+        
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buf);
+        
+        continue;
+        }
       
-    pthread_mutex_unlock(pnode->nd_mutex);
+      if (pnode->nd_addrs[0] != addr)
+        {
+        /* node was deleted  or doesn't match */
+        pthread_mutex_unlock(pnode->nd_mutex);
+        
+        continue;
+        }
+      
+      the_node = pnode;
+      
+      break;
+      }    /* END for (i = 0) */
+    }
 
-    break;
-    }    /* END for (i = 0) */
+  if (the_node != NULL)
+    {
+    /* matching node located */
+    now = time(NULL);
+    
+    last = the_node->nd_warnbad;
+    
+    if (!last && (now - last >= 3600))
+      {
+      /* once per hour, log a warning that we can't reach the node */
+      sprintf(log_buf, "ALERT: unable to contact node %s", the_node->nd_name);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buf);
+      
+      the_node->nd_warnbad = now;
+      }
+   
+    /* only release the mutex if we obtained it in this function */
+    if (pnode != NULL)
+      pthread_mutex_unlock(the_node->nd_mutex);
+    }
 
-  return;
-  }      /* END bad_node_warning() */
+  } /* END bad_node_warning() */
 
 
 
