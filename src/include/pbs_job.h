@@ -576,6 +576,7 @@ struct job
 #endif/* PBS_MOM */   /* END SERVER ONLY */
 
   pthread_mutex_t *ji_mutex;
+  char    ji_being_recycled;
 
   /*
    * fixed size internal data - maintained via "quick save"
@@ -660,8 +661,11 @@ typedef struct job job;
 
 
 #ifndef PBS_MOM
-#define INITIAL_JOB_SIZE 5000
-#define JOB_NOT_FOUND   -1
+#define INITIAL_JOB_SIZE           5000
+#define JOB_NOT_FOUND             -1
+#define MAX_RECYCLE_JOBS           5000
+#define TOO_MANY_JOBS_IN_RECYCLER -1
+#define JOBS_TO_REMOVE             100
 
 /* on the server this array will replace many of the doubly linked-lists */
 struct all_jobs
@@ -683,6 +687,23 @@ struct pbs_queue *get_jobs_queue(job *);
 
 job *next_job(struct all_jobs *,int *);
 job *next_job_from_back(struct all_jobs *,int *);
+
+
+typedef struct job_recycler
+  {
+  unsigned int     rc_next_id;
+  struct all_jobs  rc_jobs;
+  int              rc_iter;
+  unsigned int     rc_max_id;
+  pthread_mutex_t *rc_mutex;
+  } job_recycler;
+
+
+int   insert_into_recycler(job *);
+job  *get_recycled_job();
+void  update_recycler_next_id();
+void  initialize_recycler();
+void  garbage_collect_recycling();
 
 #endif
 

@@ -360,6 +360,13 @@ void array_delete_wt(
 
       pthread_mutex_lock(pjob->ji_mutex);
 
+      if (pjob->ji_being_recycled == TRUE)
+        {
+        pa->jobs[i] = NULL;
+        pthread_mutex_unlock(pjob->ji_mutex);
+        continue;
+        }
+
       num_jobs++;
 
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)

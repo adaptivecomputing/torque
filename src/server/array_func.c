@@ -47,8 +47,6 @@
 
 #include "array.h"
 
-
-extern void  job_clone_wt(struct work_task *);
 extern int array_upgrade(job_array *, int, int, int *);
 extern char *get_correct_jobname(const char *jobid);
 extern int count_user_queued_jobs(pbs_queue *,char *);
@@ -954,8 +952,6 @@ static int parse_array_request(
 
 
 
-
-
 /*
  * delete_array_range()
  *
@@ -1009,6 +1005,15 @@ int delete_array_range(
       pjob = pa->jobs[i];
 
       pthread_mutex_lock(pjob->ji_mutex);
+
+      if (pjob->ji_being_recycled == TRUE)
+        {
+        pa->jobs[i] = NULL;
+
+        pthread_mutex_unlock(pjob->ji_mutex);
+
+        continue;
+        }
 
       if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
         {
@@ -1090,6 +1095,15 @@ int delete_whole_array(
 
     pthread_mutex_lock(pjob->ji_mutex);
 
+    if (pjob->ji_being_recycled == TRUE)
+      {
+      pa->jobs[i] = NULL;
+
+      pthread_mutex_unlock(pjob->ji_mutex);
+
+      continue;
+      }
+
     if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
       {
       /* invalid state for request,  skip */
@@ -1126,8 +1140,9 @@ int hold_array_range(
   attribute *temphold)   /* I */
 
   {
-  tlist_head tl;
-  int i;
+  tlist_head          tl;
+  int                 i;
+  job                *pjob;
 
   array_request_node *rn;
   array_request_node *to_free;
@@ -1155,14 +1170,25 @@ int hold_array_range(
       {
       for (i = rn->start; i <= rn->end; i++)
         {
-        if (pa->jobs[i] == NULL)
-          continue;
-        
         /* don't stomp on other memory */
         if (i >= pa->ai_qs.array_size)
           continue;
+        
+        if (pa->jobs[i] == NULL)
+          continue;
 
         pthread_mutex_lock(pa->jobs[i]->ji_mutex);
+
+        pjob = pa->jobs[i];
+
+        if (pjob->ji_being_recycled == TRUE)
+          {
+          pa->jobs[i] = NULL;
+
+          pthread_mutex_unlock(pjob->ji_mutex);
+
+          continue;
+          }
         
         hold_job(temphold,pa->jobs[i]);
 
@@ -1192,6 +1218,7 @@ int release_array_range(
   tlist_head tl;
   int i;
   int rc;
+  job                *pjob;
 
   array_request_node *rn;
   array_request_node *to_free;
@@ -1226,6 +1253,17 @@ int release_array_range(
         continue;
 
       pthread_mutex_lock(pa->jobs[i]->ji_mutex);
+
+      pjob = pa->jobs[i];
+
+      if (pjob->ji_being_recycled == TRUE)
+        {
+        pa->jobs[i] = NULL;
+
+        pthread_mutex_unlock(pjob->ji_mutex);
+
+        continue;
+        }
       
       if ((rc = release_job(preq,pa->jobs[i])))
         {
@@ -1264,6 +1302,7 @@ int modify_array_range(
   int                 i;
   int                 rc;
   int                 mom_relay = 0;
+  job                *pjob;
 
   array_request_node *rn;
   array_request_node *to_free;
@@ -1290,6 +1329,17 @@ int modify_array_range(
           continue;
   
         pthread_mutex_lock(pa->jobs[i]->ji_mutex);
+
+        pjob = pa->jobs[i];
+
+        if (pjob->ji_being_recycled == TRUE)
+          {
+          pa->jobs[i] = NULL;
+
+          pthread_mutex_unlock(pjob->ji_mutex);
+
+          continue;
+          }
 
         rc = modify_job(pa->jobs[i],plist,preq,checkpoint_req, NO_MOM_RELAY);
 
@@ -1494,6 +1544,15 @@ void update_array_statuses(job_array *owned)
       if (pj != NULL)
         {
         pthread_mutex_lock(pj->ji_mutex);
+
+        if (pj->ji_being_recycled == TRUE)
+          {
+          pa->jobs[i] = NULL;
+
+          pthread_mutex_lock(pj->ji_mutex);
+
+          continue;
+          }
 
         if (pj->ji_qs.ji_state == JOB_STATE_RUNNING)
           {

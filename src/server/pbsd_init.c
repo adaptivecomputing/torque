@@ -189,6 +189,7 @@ extern struct all_jobs alljobs;
 extern struct all_jobs array_summary;
 extern struct all_jobs newjobs;
 all_queues svr_queues;
+job_recycler recycler;
 
 extern pthread_mutex_t *svr_requests_mutex;
 extern pthread_mutex_t *node_state_mutex;
@@ -774,6 +775,7 @@ int pbsd_init(
   /* make the task list child and events mutexes recursive because 
    * they can be called by a signal handler */
 
+  initialize_recycler();
   CLEAR_HEAD(svr_requests);
 
   initialize_all_tasks_array(&task_list_timed);

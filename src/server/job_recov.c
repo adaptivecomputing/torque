@@ -439,10 +439,6 @@ job *job_recov(
     return(NULL);
     }
 
-#ifndef PBS_MOM
-  pthread_mutex_lock(pj->ji_mutex);
-#endif
-
   strcpy(namebuf, path_jobs); /* job directory path */
 
   strcat(namebuf, filename);

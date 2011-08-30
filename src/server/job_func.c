@@ -607,17 +607,26 @@ int conn_qsub(
  *
  * @see job_init_wattr() - child
  */
-job *job_alloc(void)
-  {
-  job *pj;
 
-  pj = (job *)calloc(1, sizeof(job));
+job *job_alloc(void)
+
+  {
+  job *pj = get_recycled_job();
 
   if (pj == NULL)
     {
-    log_err(errno, "job_alloc", "no memory");
+    pj = (job *)calloc(1, sizeof(job));
+    
+    if (pj == NULL)
+      {
+      log_err(errno, "job_alloc", "no memory");
+      
+      return(NULL);
+      }
 
-    return(NULL);
+    pj->ji_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(pj->ji_mutex,NULL);
+    pthread_mutex_lock(pj->ji_mutex);
     }
 
   pj->ji_qs.qs_version = PBS_QS_VERSION;
@@ -630,16 +639,12 @@ job *job_alloc(void)
 
   /* set the working attributes to "unspecified" */
   job_init_wattr(pj);
-
-  pj->ji_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
-  pthread_mutex_init(pj->ji_mutex,NULL);
   
   pj->ji_svrtask = malloc(sizeof(all_tasks));
   initialize_all_tasks_array(pj->ji_svrtask);
 
   return(pj);
   }  /* END job_alloc() */
-
 
 
 
@@ -694,12 +699,14 @@ void job_free(
     bp = (badplace *)GET_NEXT(pj->ji_rejectdest);
     }
 
-  pthread_mutex_unlock(pj->ji_mutex);
-  free(pj->ji_mutex);
-  pj->ji_mutex = NULL;
+  /* move to the recycling structure - deleting right away can cause a race
+   * condition where two threads are pending on the same job. Thread 1 gets 
+   * the lock and then deletes the job, but thread 2 gets the job's lock as
+   * the job is freed, causing segfaults. We use the recycler and the 
+   * ji_being_recycled flag to solve this problem --dbeer */
+  insert_into_recycler(pj);
 
-  /* now free the main structure */
-  free((char *)pj);
+  pthread_mutex_unlock(pj->ji_mutex);
 
   return;
   }  /* END job_free() */
@@ -1071,6 +1078,8 @@ void job_clone_wt(
       rn->start++;
 
       pa->jobs[i] = (void *)pjobclone;
+
+      pthread_mutex_unlock(pjobclone->ji_mutex);
 
       array_save(pa);
       num_cloned++;
@@ -2151,6 +2160,13 @@ job *find_job(
       pthread_mutex_lock(pj->ji_mutex);
     } /* END if (job is array template) */
 
+  if ((pj != NULL) &&
+      (pj->ji_being_recycled == TRUE))
+    {
+    pthread_mutex_unlock(pj->ji_mutex);
+    pj = NULL;
+    }
+
   if (at)
     *at = '@'; /* restore @server_name */
 
@@ -2379,7 +2395,16 @@ job *next_job(
   pthread_mutex_unlock(aj->alljobs_mutex);
 
   if (pjob != NULL)
+    {
     pthread_mutex_lock(pjob->ji_mutex);
+
+    if (pjob->ji_being_recycled == TRUE)
+      {
+      pthread_mutex_unlock(pjob->ji_mutex);
+
+      pjob = next_job(aj,iter);
+      }
+    }
 
   return(pjob);
   } /* END next_job() */
@@ -2403,7 +2428,16 @@ job *next_job_from_back(
   pthread_mutex_unlock(aj->alljobs_mutex);
 
   if (pjob != NULL)
+    {
     pthread_mutex_lock(pjob->ji_mutex);
+
+    if (pjob->ji_being_recycled == TRUE)
+      {
+      pthread_mutex_unlock(pjob->ji_mutex);
+
+      pjob = next_job_from_back(aj,iter);
+      }
+    }
 
   return(pjob);
   } /* END next_job_from_back() */

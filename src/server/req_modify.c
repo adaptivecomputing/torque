@@ -798,6 +798,15 @@ int modify_whole_array(
 
     pthread_mutex_lock(pa->jobs[i]->ji_mutex);
 
+    if (pa->jobs[i]->ji_being_recycled == TRUE)
+      {
+      pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+
+      pa->jobs[i] = NULL;
+
+      continue;
+      }
+
     /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
     rc = modify_job(pa->jobs[i],plist,preq,checkpoint_req, NO_MOM_RELAY);
 

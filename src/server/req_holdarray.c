@@ -167,6 +167,15 @@ void *req_holdarray(
 
       pthread_mutex_lock(pa->jobs[i]->ji_mutex);
 
+      if (pa->jobs[i]->ji_being_recycled == TRUE)
+        {
+        pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+
+        pa->jobs[i] = NULL;
+
+        continue;
+        }
+
       hold_job(&temphold,pa->jobs[i]);
 
       pthread_mutex_unlock(pa->jobs[i]->ji_mutex);

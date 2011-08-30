@@ -691,8 +691,6 @@ void *req_quejob(
     return(NULL);
     }
 
-  pthread_mutex_lock(pj->ji_mutex);
-
   strcpy(pj->ji_qs.ji_jobid, jid);
 
   strcpy(pj->ji_qs.ji_fileprefix, basename);
@@ -1698,7 +1696,7 @@ void req_rdytocommit(
 
   char *id = "req_rdytocommit";
   char  namebuf[MAXPATHLEN+1];
-  char *jobid = NULL;
+  char  jobid[PBS_MAXSVRJOBID + 1];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   pj = locate_new_job(sock, preq->rq_ind.rq_rdytocommit);
@@ -1801,12 +1799,12 @@ void req_rdytocommit(
     }
 
   /* acknowledge the request with the job id */
-  jobid = pj->ji_qs.ji_jobid;
+  strcpy(jobid, pj->ji_qs.ji_jobid);
 
   /* unlock now to prevent a potential deadlock */
   pthread_mutex_unlock(pj->ji_mutex);
 
-  if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_RdytoCom) != 0)
+  if (reply_jobid(preq, jobid, BATCH_REPLY_CHOICE_RdytoCom) != 0)
     {
     /* reply failed, purge the job and close the connection */
 
@@ -1819,7 +1817,7 @@ void req_rdytocommit(
 
     close_conn(sock,FALSE);
 
-    pthread_mutex_lock(pj->ji_mutex);
+    pj = find_job(jobid);
 
     job_purge(pj);
 

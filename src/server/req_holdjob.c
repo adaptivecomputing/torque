@@ -466,6 +466,15 @@ int release_whole_array(
 
     pthread_mutex_lock(pa->jobs[i]->ji_mutex);
 
+    if (pa->jobs[i]->ji_being_recycled == TRUE)
+      {
+      pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+
+      pa->jobs[i] = NULL;
+
+      continue;
+      }
+
     if ((rc = release_job(preq,pa->jobs[i])) != 0)
       {
       return(rc);
@@ -476,7 +485,7 @@ int release_whole_array(
 
   /* SUCCESS */
 
-  return(0);
+  return(PBSE_NONE);
   } /* END release_whole_array */
 
 
@@ -490,12 +499,29 @@ void *req_releasearray(
   job_array *pa;
   char      *range;
   int        rc;
+  int        index;
   struct batch_request *preq = (struct batch_request *)vp;
 
   pa = get_array(preq->rq_ind.rq_release.rq_objname);
-  pjob = (job *)pa->jobs[first_job_index(pa)];
 
-  pthread_mutex_lock(pjob->ji_mutex);
+  while (TRUE)
+    {
+    index = first_job_index(pa);
+    pjob = (job *)pa->jobs[index];
+
+    if (pjob == NULL)
+      return(NULL);
+
+    pthread_mutex_lock(pjob->ji_mutex);
+
+    if (pjob->ji_being_recycled == TRUE)
+      {
+      pa->jobs[index] = NULL;
+      pthread_mutex_unlock(pjob->ji_mutex);
+      }
+    else
+      break;
+    }
 
   if (svr_authorize_jobreq(preq, pjob) == -1)
     {
