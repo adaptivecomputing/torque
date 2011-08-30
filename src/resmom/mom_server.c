@@ -242,6 +242,7 @@
 #include "mom_server.h"
 #include "mcom.h"
 #include "pbs_constants.h" /* Long */
+#include "mom_server_lib.h"
 
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
@@ -3136,7 +3137,56 @@ void mom_server_all_update_stat(void)
   }  /* END mom_server_all_update_stat() */
 
 
+/**
+ * mom_server_all_update_gpustat
+ *
+ * This is the former is_update_stat.  It has been reworked to
+ * first generate the strings and then walk the server list sending
+ * the strings to each server.
+ */
 
+#ifdef NVIDIA_GPUS
+void mom_server_all_update_gpustat(void)
+
+  {
+  static char *id = "mom_server_all_update_gpustat";
+
+  static char gpu_status_strings[16 * 1024];  /* Big but smaller than before in is_update_stat */
+  int sindex;
+
+  /* We generate the status once, because this might be costly.
+   * The buffer status_strings will contain NULL terminated strings.
+   * The end of the buffer is marked with an empty string i.e. NULL NULL.
+   */
+
+  if (LOGLEVEL >= 6)
+    {
+    log_record(PBSEVENT_SYSTEM, 0, id, "composing gpu status update for server");
+    }
+
+  memset(gpu_status_strings, 0, sizeof(gpu_status_strings));
+
+#ifdef NVIDIA_GPUS
+#ifdef NVML_API
+
+  generate_server_gpustatus_nvml(gpu_status_strings, sizeof(gpu_status_strings));
+#else
+
+  generate_server_gpustatus_smi(gpu_status_strings, sizeof(gpu_status_strings));
+#endif /* NVML_API */
+#endif /* NVIDIA_GPUS */
+
+  for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
+    {
+    if(gpu_status_strings[0] != 0)
+      {
+      mom_server_update_gpustat(&mom_servers[sindex], gpu_status_strings);
+      }
+    }
+
+  return;
+  }  /* END mom_server_all_update_gpustat() */
+#endif
 
 
 /**
@@ -3183,7 +3233,7 @@ void mom_server_update_gpustat(
 
   /* Generate the message header. */
 
-  if (is_compose(pms,IS_GPU_STATUS) != DIS_SUCCESS)
+  if (is_compose(pms->SStream, pms->pbs_servername, IS_GPU_STATUS) != DIS_SUCCESS)
     {
     return;
     }
@@ -3215,7 +3265,7 @@ void mom_server_update_gpustat(
 
     if (diswst(pms->SStream, cp) != DIS_SUCCESS)
       {
-      mom_server_stream_error(pms, id, "writing status string");
+      mom_server_stream_error(pms->SStream, pms->pbs_servername, id, "writing status string");
 
       /* FAILURE */
 
@@ -3225,7 +3275,7 @@ void mom_server_update_gpustat(
 
   /* Launch the message */
 
-  if (mom_server_flush_io(pms, id, "flush") != DIS_SUCCESS)
+  if (mom_server_flush_io(pms->SStream, id, "flush") != DIS_SUCCESS)
     {
     /* FAILURE */
 

@@ -56,9 +56,9 @@ extern int   svr_connect(pbs_net_t, unsigned int, struct pbsnode *, void (*)(int
 
 #ifdef WORK_TASK_H
 extern void  release_req(struct work_task *);
-#ifdef BATCH_REQUEST_H
+/*#ifdef BATCH_REQUEST_H*/
 extern int   issue_Drequest(int, struct batch_request *, void (*)(), struct work_task **);
-#endif /* BATCH_REQUEST_H */
+/*#endif*/ /* BATCH_REQUEST_H */
 #endif /* WORK_TASK_H */
 
 

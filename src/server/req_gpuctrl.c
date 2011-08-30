@@ -101,6 +101,7 @@
 #include "svrfunc.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
+#include "pbs_nodes.h"
 
 /* External Functions */
 

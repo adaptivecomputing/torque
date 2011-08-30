@@ -456,14 +456,15 @@ extern int update_nodes_file(struct pbsnode *);
 extern void bad_node_warning(pbs_net_t);
 extern int addr_ok(pbs_net_t,struct pbsnode *);
 
-#ifdef BATCH_REQUEST_H
+struct pbsnode  *find_nodebyname(char *);
+
+#ifdef BATCH_REQUEST_H 
 extern void initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
 extern void effective_node_delete(struct pbsnode *);
 extern void setup_notification(char *);
 
 extern struct pbssubn  *find_subnodebyname(char *);
 
-extern struct pbsnode  *find_nodebyname(char *);
 extern struct pbsnode  *find_nodebynameandaltname(char *, char *);
 extern void free_prop_list(struct prop*);
 extern void free_prop_attr(attribute*);
