@@ -115,18 +115,19 @@ int PBSD_sig_put(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (PBSE_PROTOCOL);
+    return (pbs_errno = PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
-    rc = PBSE_PROTOCOL;
+    pbs_errno = PBSE_PROTOCOL;
+    rc = pbs_errno;
     }
 
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   return rc;
-  } /* END PBSD_sig_put() */
+  }
 
 
 int PBSD_async_sig_put(
@@ -153,16 +154,17 @@ int PBSD_async_sig_put(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (PBSE_PROTOCOL);
+    return (pbs_errno = PBSE_PROTOCOL);
     }
 
   pthread_mutex_unlock(connection[c].ch_mutex);
     
   if (DIS_tcp_wflush(sock))
     {
-    rc = PBSE_PROTOCOL;
+    pbs_errno = PBSE_PROTOCOL;
+    rc = pbs_errno;
     }
 
   return(rc);
-  } /* END PBSD_async_sig_put() */
+  }
 

@@ -135,8 +135,7 @@ char *PAddrToString(
 
 pbs_net_t get_hostaddr(
 
-  int  *local_errno, /* O */
-  char *hostname)    /* I */
+  char *hostname) /* I */
 
   {
 
@@ -144,6 +143,7 @@ pbs_net_t get_hostaddr(
 
   struct hostent        *hp;
 
+  extern int             pbs_errno;
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
 
 #ifdef NUMA_SUPPORT
@@ -194,9 +194,9 @@ pbs_net_t get_hostaddr(
     log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,"get_hostaddr",log_buf);
 
     if (h_errno == TRY_AGAIN)
-      *local_errno = PBS_NET_RC_RETRY;
+      pbs_errno = PBS_NET_RC_RETRY;
     else
-      *local_errno = PBS_NET_RC_FATAL;
+      pbs_errno = PBS_NET_RC_FATAL;
 
     return((pbs_net_t)0);
     }

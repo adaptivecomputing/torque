@@ -676,7 +676,6 @@ int pbs_original_connect(
   int out;
   int i;
   int auth;
-  int local_errno;
 
   struct passwd *pw;
   int use_unixsock = 0;
@@ -719,13 +718,15 @@ int pbs_original_connect(
 
   if (out < 0)
     {
+    pbs_errno = PBSE_NOCONNECTS;
+
     if (getenv("PBSDEBUG"))
       fprintf(stderr, "ALERT:  cannot locate free channel\n");
 
     /* FAILURE */
     /* no need to unlock mutex here - in this case no connection was found */
 
-    return(PBSE_NOCONNECTS * -1);
+    return(-1);
     }
 
   /* get server host and port */
@@ -738,10 +739,12 @@ int pbs_original_connect(
 
     pthread_mutex_unlock(connection[out].ch_mutex);
 
+    pbs_errno = PBSE_NOSERVER;
+
     if (getenv("PBSDEBUG"))
       fprintf(stderr, "ALERT:  PBS_get_server() failed\n");
 
-    return(PBSE_NOSERVER * -1);
+    return(-1);
     }
 
   /* determine who we are */
@@ -750,6 +753,8 @@ int pbs_original_connect(
 
   if ((pw = getpwuid(pbs_current_uid)) == NULL)
     {
+    pbs_errno = PBSE_SYSTEM;
+
     if (getenv("PBSDEBUG"))
       {
       fprintf(stderr, "ALERT:  cannot get password info for uid %ld\n",
@@ -758,7 +763,7 @@ int pbs_original_connect(
 
     pthread_mutex_unlock(connection[out].ch_mutex);
 
-    return(PBSE_SYSTEM * -1);
+    return(-1);
     }
 
   strcpy(pbs_current_user, pw->pw_name);
@@ -794,7 +799,7 @@ int pbs_original_connect(
 
       connection[out].ch_inuse = FALSE;
 
-      local_errno = PBSE_PROTOCOL;
+      pbs_errno = PBSE_PROTOCOL;
 
       use_unixsock = 0;
       }
@@ -815,7 +820,7 @@ int pbs_original_connect(
       close(connection[out].ch_socket);
 
       connection[out].ch_inuse = FALSE;
-      local_errno = errno;
+      pbs_errno = errno;
 
       if (getenv("PBSDEBUG"))
         {
@@ -842,7 +847,7 @@ int pbs_original_connect(
       close(connection[out].ch_socket);
 
       connection[out].ch_inuse = FALSE;
-      local_errno = PBSE_PROTOCOL;
+      pbs_errno = PBSE_PROTOCOL;
 
       use_unixsock = 0;  /* will try again with inet socket */
       }
@@ -872,7 +877,9 @@ int pbs_original_connect(
 
       pthread_mutex_unlock(connection[out].ch_mutex);
 
-      return(PBSE_PROTOCOL * -1);
+      pbs_errno = PBSE_PROTOCOL;
+
+      return(-1);
       }
 
     server_addr.sin_family = AF_INET;
@@ -884,6 +891,7 @@ int pbs_original_connect(
       {
       close(connection[out].ch_socket);
       connection[out].ch_inuse = FALSE;
+      pbs_errno = PBSE_BADHOST;
 
       if (getenv("PBSDEBUG"))
         {
@@ -895,7 +903,7 @@ int pbs_original_connect(
 
       pthread_mutex_unlock(connection[out].ch_mutex);
 
-      return(PBSE_BADHOST * -1);
+      return(-1);
       }
 
     memcpy((char *)&server_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
@@ -910,6 +918,7 @@ int pbs_original_connect(
       close(connection[out].ch_socket);
 
       connection[out].ch_inuse = FALSE;
+      pbs_errno = errno;
 
       if (getenv("PBSDEBUG"))
         {
@@ -920,7 +929,7 @@ int pbs_original_connect(
 
       pthread_mutex_unlock(connection[out].ch_mutex);
 
-      return(errno * -1);
+      return(-1);
       }
 
     /* FIXME: is this necessary?  Contributed by one user that fixes a problem,
@@ -935,7 +944,6 @@ int pbs_original_connect(
 
 #ifdef MUNGE_AUTH
     auth = PBSD_munge_authenticate(connection[out].ch_socket, out);
-
     if (auth != 0)
       {
       close(connection[out].ch_socket);
@@ -943,15 +951,17 @@ int pbs_original_connect(
       connection[out].ch_inuse = FALSE;
 
       if (auth == PBSE_MUNGE_NOT_FOUND)
+      {
+      pbs_errno = PBSE_MUNGE_NOT_FOUND;
+      
+      if (getenv("PBSDEBUG"))
         {
-        if (getenv("PBSDEBUG"))
-          {
-          fprintf(stderr, "ERROR:  cannot find munge executable\n");
-          }
+        fprintf(stderr, "ERROR:  cannot find munge executable\n");
         }
+      }
       else
         {
-        local_errno = PBSE_PERM;
+        pbs_errno = PBSE_PERM;
         
         if (getenv("PBSDEBUG"))
           {
@@ -964,7 +974,7 @@ int pbs_original_connect(
 
       pthread_mutex_unlock(connection[out].ch_mutex);
 
-      return(-1 * local_errno);
+      return(-1);
       }
     
     
@@ -972,14 +982,13 @@ int pbs_original_connect(
     /* Have pbs_iff authenticate connection */
     if ((ENABLE_TRUSTED_AUTH == FALSE) && ((auth = PBSD_authenticate(connection[out].ch_socket)) != 0))
       {
-      int local_errno;
       close(connection[out].ch_socket);
 
       connection[out].ch_inuse = FALSE;
 
       if (auth == PBSE_IFF_NOT_FOUND)
         {
-        local_errno = PBSE_IFF_NOT_FOUND;
+        pbs_errno = PBSE_IFF_NOT_FOUND;
         
         if (getenv("PBSDEBUG"))
           {
@@ -988,7 +997,7 @@ int pbs_original_connect(
         }
       else
         {
-        local_errno = PBSE_PERM;
+        pbs_errno = PBSE_PERM;
 
         if (getenv("PBSDEBUG"))
           {
@@ -1001,7 +1010,7 @@ int pbs_original_connect(
 
       pthread_mutex_unlock(connection[out].ch_mutex);
 
-      return(-1 * local_errno);
+      return(-1);
       }
 #endif /* ifdef MUNGE_AUTH */
 

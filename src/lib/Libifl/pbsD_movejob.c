@@ -100,7 +100,7 @@ int pbs_movejob(
 
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
-    return (PBSE_IVALREQ);
+    return (pbs_errno = PBSE_IVALREQ);
 
   if (destin == (char *)0)
     destin = "";
@@ -121,14 +121,14 @@ int pbs_movejob(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return(PBSE_PROTOCOL);
+    return (pbs_errno = PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return(PBSE_PROTOCOL);
+    return (pbs_errno = PBSE_PROTOCOL);
     }
 
   /* read reply */

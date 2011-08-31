@@ -116,14 +116,18 @@ int PBSD_mgr_put(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return(PBSE_PROTOCOL);
+    pbs_errno = PBSE_PROTOCOL;
+
+    return(pbs_errno);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return(PBSE_PROTOCOL);
+    pbs_errno = PBSE_PROTOCOL;
+
+    return(pbs_errno);
     }
 
   pthread_mutex_unlock(connection[c].ch_mutex);

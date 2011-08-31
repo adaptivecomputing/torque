@@ -100,7 +100,7 @@ int pbs_sigjob(
 
   if ((jobid == (char *)0) || (*jobid == '\0') ||
       (signal == (char *)0) || (*jobid == '\0'))
-    return (PBSE_IVALREQ);
+    return (pbs_errno = PBSE_IVALREQ);
 
   /* send request */
 
@@ -136,7 +136,7 @@ int pbs_sigjobasync(
 
   if ((jobid == (char *)0) || (*jobid == '\0') ||
       (signal == (char *)0) || (*jobid == '\0'))
-    return (PBSE_IVALREQ);
+    return (pbs_errno = PBSE_IVALREQ);
 
   /* send request */
 

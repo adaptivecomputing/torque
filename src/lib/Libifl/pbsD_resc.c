@@ -164,14 +164,14 @@ static int PBS_resc(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (PBSE_PROTOCOL);
+    return (pbs_errno = PBSE_PROTOCOL);
     }
 
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   if (DIS_tcp_wflush(sock))
     {
-    return (PBSE_PROTOCOL);
+    return (pbs_errno = PBSE_PROTOCOL);
     }
 
   return (0);
@@ -208,7 +208,9 @@ int pbs_rescquery(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return(PBSE_RMNOPARAM);
+    pbs_errno = PBSE_RMNOPARAM;
+
+    return(pbs_errno);
     }
 
   /* send request */
@@ -269,7 +271,7 @@ int pbs_rescreserve(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (PBSE_RMNOPARAM);
+    return (pbs_errno = PBSE_RMNOPARAM);
     }
 
   if (prh == NULL)
@@ -278,7 +280,7 @@ int pbs_rescreserve(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (PBSE_RMBADPARAM);
+    return (pbs_errno = PBSE_RMBADPARAM);
     }
 
   /* send request */

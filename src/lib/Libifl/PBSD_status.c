@@ -92,12 +92,11 @@ static struct batch_status *alloc_bs();
 
 struct batch_status *PBSD_status(
 
-        int           c,           /* I - socket descriptor */
-        int           function,    /* I - ??? */
-        int          *local_errno, /* O */
-        char         *id,          /* I - object id (optional) */
-        struct attrl *attrib,      /* I */
-        char         *extend)      /* I/O */
+        int           c,        /* I - socket descriptor */
+        int           function, /* I - ??? */
+        char         *id,       /* I - object id (optional) */
+        struct attrl *attrib,   /* I */
+        char         *extend)   /* I/O */
 
   {
   int rc;
@@ -111,7 +110,8 @@ struct batch_status *PBSD_status(
 
   if (rc != 0)
     {
-    *local_errno = PBSE_PROTOCOL;
+    if (pbs_errno == 0)
+      pbs_errno = PBSE_PROTOCOL;
 
     if (extend != NULL)
       strcpy(extend, "timeout");
@@ -121,7 +121,7 @@ struct batch_status *PBSD_status(
 
   /* get the status reply */
 
-  *local_errno = 0;
+  pbs_errno = 0;
 
   return(PBSD_status_get(c));
   }  /* END PBSD_status() */
@@ -131,8 +131,7 @@ struct batch_status *PBSD_status(
 
 struct batch_status *PBSD_status_get(
 
-  int *local_errno, /* O */
-  int  c)           /* I */
+        int c)  /* I */
 
   {
 
@@ -147,27 +146,27 @@ struct batch_status *PBSD_status_get(
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
-  *local_errno = 0;
+  pbs_errno = 0;
 
   /* read reply from stream into presentation element */
   reply = PBSD_rdrpy(c);
 
   if (reply == NULL)
     {
-    *local_errno = PBSE_PROTOCOL;
+    pbs_errno = PBSE_PROTOCOL;
     }
   else if ((reply->brp_choice != BATCH_REPLY_CHOICE_NULL) &&
            (reply->brp_choice != BATCH_REPLY_CHOICE_Text) &&
            (reply->brp_choice != BATCH_REPLY_CHOICE_Status))
     {
-    *local_errno = PBSE_PROTOCOL;
+    pbs_errno = PBSE_PROTOCOL;
     }
   else if (connection[c].ch_errno != 0)
     {
     char tmpLine[1024];
 
-    if (*local_errno == 0)
-      *local_errno = PBSE_PROTOCOL;
+    if (pbs_errno == 0)
+      pbs_errno = PBSE_PROTOCOL;
 
     sprintf(tmpLine, "PBS API connection failed with pbserrno=%d\n",
             connection[c].ch_errno);
@@ -182,7 +181,7 @@ struct batch_status *PBSD_status_get(
 
     i = 0;
 
-    *local_errno = 0;
+    pbs_errno = 0;
 
     while (stp != NULL)
       {
@@ -194,7 +193,7 @@ struct batch_status *PBSD_status_get(
 
         if (bsp == (struct batch_status *)NULL)
           {
-          *local_errno = PBSE_SYSTEM;
+          pbs_errno = PBSE_SYSTEM;
 
           break;
           }
@@ -207,7 +206,7 @@ struct batch_status *PBSD_status_get(
 
         if (bsp == (struct batch_status *)NULL)
           {
-          *local_errno = PBSE_SYSTEM;
+          pbs_errno = PBSE_SYSTEM;
 
           break;
           }
@@ -225,7 +224,7 @@ struct batch_status *PBSD_status_get(
       stp = stp->brp_stlink;
       }  /* END while (stp != NULL) */
 
-    if (*local_errno != 0)
+    if (pbs_errno != 0)
       {
       /* destroy corrupt results */
 

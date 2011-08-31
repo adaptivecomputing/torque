@@ -103,7 +103,7 @@ int pbs_orderjob(
 
   if ((job1 == (char *)0) || (*job1 == '\0') ||
       (job2 == (char *)0) || (*job2 == '\0'))
-    return (PBSE_IVALREQ);
+    return (pbs_errno = PBSE_IVALREQ);
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -121,14 +121,14 @@ int pbs_orderjob(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (PBSE_PROTOCOL);
+    return (pbs_errno = PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (PBSE_PROTOCOL);
+    return (pbs_errno = PBSE_PROTOCOL);
     }
 
   /* read reply */

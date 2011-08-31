@@ -102,7 +102,7 @@ int pbs_stagein(
 
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
-    return (PBSE_IVALREQ);
+    return (pbs_errno = PBSE_IVALREQ);
 
   if (location == (char *)0)
     location = "";
@@ -125,14 +125,14 @@ int pbs_stagein(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (PBSE_PROTOCOL);
+    return (pbs_errno = PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (PBSE_PROTOCOL);
+    return (pbs_errno = PBSE_PROTOCOL);
     }
 
   /* get reply */

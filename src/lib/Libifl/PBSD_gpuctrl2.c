@@ -91,16 +91,14 @@
  * Send the GPU Control Batch Request
 */
 
-int PBSD_gpu_put(
-    
-  int   c,
-  char *node,
-  char *gpuid,
-  int   gpumode,
-  int   reset_perm,
-  int   reset_vol,
-  char *extend)
-  
+int PBSD_gpu_put(c, node, gpuid, gpumode, reset_perm, reset_vol, extend)
+int   c;
+char *node;
+char *gpuid;
+int   gpumode;
+int  reset_perm;
+int  reset_vol;
+char *extend;
   {
   int sock;
   int rc = 0;
@@ -113,14 +111,15 @@ int PBSD_gpu_put(
       (rc = encode_DIS_ReqExtend(sock, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
-    return(PBSE_PROTOCOL);
+    return (pbs_errno = PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
-    rc = PBSE_PROTOCOL;
+    pbs_errno = PBSE_PROTOCOL;
+    rc = pbs_errno;
     }
 
-  return(rc);
+  return rc;
   }
 

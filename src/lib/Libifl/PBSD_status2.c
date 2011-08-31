@@ -115,19 +115,23 @@ int PBSD_status_put(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return(PBSE_PROTOCOL);
+    pbs_errno = PBSE_PROTOCOL;
+
+    return(pbs_errno);
     }
 
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   if (DIS_tcp_wflush(sock))
     {
-    return(PBSE_PROTOCOL);
+    pbs_errno = PBSE_PROTOCOL;
+
+    return(pbs_errno);
     }
 
   /* success */
 
-  return(PBSE_NONE);
+  return(0);
   }  /* END PBSD_status_put() */
 
 

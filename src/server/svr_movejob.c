@@ -182,9 +182,8 @@ int net_move(job *, struct batch_request *);
 
 int svr_movejob(
 
-  job                  *jobp,
+  job                 *jobp,
   char                 *destination,
-  int                  *my_err,
   struct batch_request *req)
 
   {
@@ -202,7 +201,7 @@ int svr_movejob(
 
     log_err(-1, "svr_movejob", log_buf);
 
-    *my_err = PBSE_QUENBIG;
+    pbs_errno = PBSE_QUENBIG;
 
     return(-1);
     }
@@ -247,14 +246,13 @@ int svr_movejob(
  *
  * Returns:
  *  0 success
- * -1 permanent failure or rejection
+ *        -1 permanent failure or rejection, see pbs_errno
  *  1 failed but try again
  */
 
 static int local_move(
 
   job                  *jobp,
-  int                  *my_err,
   struct batch_request *req)
 
   {
@@ -262,7 +260,6 @@ static int local_move(
   pbs_queue *qp;
   char      *destination = jobp->ji_qs.ji_destin;
   int        mtype;
-  int        my_err;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* search for destination queue */
@@ -273,7 +270,7 @@ static int local_move(
 
     log_err(-1, id, log_buf);
 
-    *my_err = PBSE_UNKQUE;
+    pbs_errno = PBSE_UNKQUE;
 
     return(-1);
     }
@@ -297,7 +294,7 @@ static int local_move(
     mtype = MOVE_TYPE_Move; /* non-privileged move */
     }
 
-  if ((my_err = svr_chkque(
+  if ((pbs_errno = svr_chkque(
                      jobp,
                      qp,
                      get_variable(jobp, pbs_o_host), mtype, NULL)))
@@ -305,7 +302,7 @@ static int local_move(
     /* should this queue be retried? */
     pthread_mutex_unlock(qp->qu_mutex);
 
-    return(should_retry_route(my_err));
+    return(should_retry_route(pbs_errno));
     }
     
   pthread_mutex_unlock(qp->qu_mutex);
@@ -319,9 +316,9 @@ static int local_move(
 
   jobp->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
 
-  my_err = svr_enquejob(jobp, FALSE);
+  pbs_errno = svr_enquejob(jobp, FALSE);
 
-  if (my_err != 0)
+  if (pbs_errno != 0)
     {
     return(-1); /* should never ever get here */
     }
@@ -523,7 +520,6 @@ int send_job_work(
   int                   con;
   int                   encode_type;
   int                   i;
-  int                   my_err;
   int                   NumRetries;
   int                   resc_access_perm;
   char                 *destin = pjob->ji_qs.ji_destin;
@@ -602,6 +598,8 @@ int send_job_work(
 
   strcat(script_name, JOB_SCRIPT_SUFFIX);
 
+
+  pbs_errno = 0;
   con = -1;
 
   for (NumRetries = 0;NumRetries < RETRY;NumRetries++)
@@ -618,14 +616,14 @@ int send_job_work(
       if (con >= 0)
         svr_disconnect(con);
 
-      /* check my_err from previous attempt */
+      /* check pbs_errno from previous attempt */
 
-      if (should_retry_route(my_err) == -1)
+      if (should_retry_route(pbs_errno) == -1)
         {
         sprintf(log_buf, "child failed in previous commit request for job %s",
           pjob->ji_qs.ji_jobid);
 
-        log_err(my_err, id, log_buf);
+        log_err(pbs_errno, id, log_buf);
 
 
         finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);

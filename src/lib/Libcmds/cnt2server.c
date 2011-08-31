@@ -156,10 +156,9 @@ start:
 
   if (connect <= 0)
     {
-    /* pbs_errno * -1 is returned if applicable */
-    if ((connect * -1) > PBSE_)
+    if (pbs_errno > PBSE_)
       {
-      switch (connect * -1)
+      switch (pbs_errno)
         {
         case PBSE_BADHOST:
 

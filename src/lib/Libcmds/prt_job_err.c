@@ -104,7 +104,11 @@ void prt_job_err(
   if (errmsg != NULL)
     {
     fprintf(stderr, "%s: %s ", cmd, errmsg);
-    fprintf(stderr, "%s\n", id);
+    }
+  else
+    {
+    fprintf(stderr, "%s: Server returned error %d for job ", cmd, pbs_errno);
     }
 
+  fprintf(stderr, "%s\n", id);
   }
