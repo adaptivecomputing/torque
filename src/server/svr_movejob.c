@@ -649,18 +649,18 @@ int send_job_work(
       return(LOCUTION_FAIL);
       }
 
-    pthread_mutex_lock(connection[con].ch_mutex);
-      
-    sock = connection[con].ch_socket;
-
-    pthread_mutex_unlock(connection[con].ch_mutex);
-
     if (con == PBS_NET_RC_RETRY)
       {
       pbs_errno = 0; /* should retry */
 
       continue;
       }
+
+    pthread_mutex_lock(connection[con].ch_mutex);
+      
+    sock = connection[con].ch_socket;
+
+    pthread_mutex_unlock(connection[con].ch_mutex);
 
     /*
      * if the job is substate JOB_SUBSTATE_TRNOUTCM which means
