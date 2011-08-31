@@ -43,7 +43,6 @@ AC_CONFIG_MACRO_DIR([m4])
 dnl
 dnl AC_USE_SYSTEM_EXTENSIONS allows the compiler to use PTHREAD_MUTEX_ERRORCHECK
 dnl
-AC_USE_SYSTEM_EXTENSIONS
 LT_INIT
 
 
@@ -270,6 +269,10 @@ dnl  ######################################################################
 dnl  Check how to compile
 dnl
 
+dnl
+dnl add _GNU_SOURCE
+dnl 
+AC_DEFINE([_GNU_SOURCE], 1, [Define _GNU_SOURCE for portability])
 
 dnl
 dnl  ######################################################################
