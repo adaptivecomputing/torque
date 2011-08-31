@@ -99,7 +99,8 @@
 
 struct batch_reply *PBSD_rdrpy(
 
-  int c)  /* I */
+  int *local_errno, /* O */
+  int  c)           /* I */
 
   {
   int      rc;
@@ -120,7 +121,7 @@ struct batch_reply *PBSD_rdrpy(
     {
     connection[c].ch_errno = PBSE_SYSTEM;
 
-    pbs_errno = PBSE_SYSTEM;
+    *local_errno = PBSE_SYSTEM;
 
     return(NULL);
     }
@@ -135,14 +136,14 @@ struct batch_reply *PBSD_rdrpy(
 
     if (DIS_tcp_istimeout(sock) == TRUE)
       {
-      pbs_errno = PBSE_TIMEOUT;
+      *local_errno = PBSE_TIMEOUT;
       }
     else
       {
-      pbs_errno = PBSE_PROTOCOL;
+      *local_errno = PBSE_PROTOCOL;
       }
 
-    connection[c].ch_errno = pbs_errno;
+    connection[c].ch_errno = *local_errno;
 
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
@@ -153,7 +154,7 @@ struct batch_reply *PBSD_rdrpy(
 
   connection[c].ch_errno = reply->brp_code;
 
-  pbs_errno = reply->brp_code;
+  *local_errno = reply->brp_code;
 
   if (reply->brp_choice == BATCH_REPLY_CHOICE_Text)
     {

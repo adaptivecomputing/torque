@@ -149,9 +149,7 @@ int pbs_deljob(
     {
     if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
       {
-      pbs_errno = PBSE_IVALREQ;
-
-      return(pbs_errno);
+      return(PBSE_IVALREQ);
       }
     }
 

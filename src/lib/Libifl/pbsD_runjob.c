@@ -146,9 +146,7 @@ int pbs_runjob(
 
   if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
     {
-    pbs_errno = PBSE_IVALREQ;
-
-    return(pbs_errno);
+    return(PBSE_IVALREQ);
     }
 
   if (location == NULL)
@@ -174,18 +172,14 @@ int pbs_runjob(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
-    pbs_errno = PBSE_PROTOCOL;
-
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   /* get reply */

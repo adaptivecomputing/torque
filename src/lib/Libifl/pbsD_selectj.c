@@ -152,7 +152,7 @@ static int PBSD_select_put(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_PROTOCOL);
+    return (PBSE_PROTOCOL);
     }
 
   pthread_mutex_unlock(connection[c].ch_mutex);
@@ -161,16 +161,17 @@ static int PBSD_select_put(
 
   if (DIS_tcp_wflush(sock))
     {
-    return (pbs_errno = PBSE_PROTOCOL);
+    return (PBSE_PROTOCOL);
     }
 
-  return 0;
+  return(PBSE_NONE);
   }
 
 
 static char **PBSD_select_get(
-    
-  int c)
+
+  int *local_errno,    
+  int  c)
 
   {
   int   i;
@@ -192,13 +193,13 @@ static char **PBSD_select_get(
 
   if (reply == NULL)
     {
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
     }
   else if (reply->brp_choice != 0  &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Text &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Select)
     {
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
     }
   else if (connection[c].ch_errno == 0)
     {
@@ -227,7 +228,7 @@ static char **PBSD_select_get(
 
     if (retval == (char **)NULL)
       {
-      pbs_errno = PBSE_SYSTEM;
+      *local_errno = PBSE_SYSTEM;
 
       pthread_mutex_unlock(connection[c].ch_mutex);
 

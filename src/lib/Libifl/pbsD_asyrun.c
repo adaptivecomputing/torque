@@ -104,9 +104,7 @@ int pbs_asyrunjob(
 
   if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
     {
-    pbs_errno = PBSE_IVALREQ;
-
-    return(pbs_errno);
+    return(PBSE_IVALREQ);
     }
 
   if (location == NULL)
@@ -130,18 +128,14 @@ int pbs_asyrunjob(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   /* get reply */

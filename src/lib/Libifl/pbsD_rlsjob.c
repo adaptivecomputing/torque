@@ -87,15 +87,19 @@
 #include <stdio.h>
 #include "libpbs.h"
 
-int
-pbs_rlsjob(int c, char *jobid, char *holdtype, char *extend)
+int pbs_rlsjob(
+    
+  int   c,
+  char *jobid,
+  char *holdtype,
+  char *extend)
   {
 
   struct attropl aopl;
 
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
-    return (pbs_errno = PBSE_IVALREQ);
+    return (PBSE_IVALREQ);
 
   aopl.name = ATTR_h;
 

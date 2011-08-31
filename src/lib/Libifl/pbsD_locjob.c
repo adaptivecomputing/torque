@@ -89,9 +89,10 @@
 #include "dis.h"
 #include "log.h"
 
-char * pbs_locjob(
+char *pbs_locjob(
     
   int   c,
+  int  *local_errno,
   char *jobid,
   char *extend)
 
@@ -105,8 +106,8 @@ char * pbs_locjob(
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
     {
-    pbs_errno = PBSE_IVALREQ;
-    return (ploc);
+    *local_errno = PBSE_IVALREQ;
+    return(NULL);
     }
 
   pthread_mutex_lock(connection[c].ch_mutex);
@@ -125,7 +126,7 @@ char * pbs_locjob(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
     return(NULL);
     }
 
@@ -135,7 +136,7 @@ char * pbs_locjob(
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
     return(NULL);
     }
 
@@ -145,7 +146,7 @@ char * pbs_locjob(
 
   if (reply == NULL)
     {
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
     }
   else if (reply->brp_choice != BATCH_REPLY_CHOICE_NULL &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Text &&
@@ -154,7 +155,7 @@ char * pbs_locjob(
 #ifndef NDEBUG
     fprintf(stderr, "advise: pbs_locjob\tUnexpected reply choice\n\n");
 #endif /* NDEBUG */
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
     }
   else if (connection[c].ch_errno == 0)
     {

@@ -228,7 +228,6 @@ char        *path_jobinfo_log;
 char        *ArgV[MAX_CMD_ARGS];
 extern char    *msg_daemonname;
 extern char *msg_info_server; /* Server information message   */
-extern int pbs_errno;
 char        *pbs_o_host = "PBS_O_HOST";
 pbs_net_t pbs_mom_addr;
 unsigned int pbs_mom_port = 0;

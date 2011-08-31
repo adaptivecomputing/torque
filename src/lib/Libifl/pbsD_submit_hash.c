@@ -98,7 +98,8 @@
 char *pbs_submit_hash(
 
   int             c,
-  memmgr         **mm,
+  int            *local_errno,
+  memmgr        **mm,
   job_data       *job_attr,
   job_data       *res_attr,
   char           *script,
@@ -116,7 +117,7 @@ char *pbs_submit_hash(
     {
     if (access(script, R_OK) != 0)
       {
-      pbs_errno = PBSE_BADSCRIPT;
+      *local_errno = PBSE_BADSCRIPT;
 
       return(NULL);
       }
@@ -142,7 +143,7 @@ char *pbs_submit_hash(
     {
     if (PBSD_jscript(c, script, NULL) != 0)
       {
-      pbs_errno = PBSE_BADSCRIPT;
+      *local_errno = PBSE_BADSCRIPT;
 
       return(NULL);
       }

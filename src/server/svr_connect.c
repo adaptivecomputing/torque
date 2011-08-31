@@ -122,7 +122,6 @@
 
 extern int   errno;
 
-extern int   pbs_errno;
 extern unsigned int  pbs_server_port_dis;
 
 extern struct connection svr_conn[];
@@ -140,6 +139,7 @@ int svr_connect(
 
   pbs_net_t        hostaddr,  /* host order */
   unsigned int     port,   /* I */
+  int             *my_err,
   struct pbsnode  *pnode,
   void           (*func)(int),
   enum conn_type   cntype)
@@ -188,7 +188,7 @@ int svr_connect(
       log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
       }
 
-    pbs_errno = EHOSTDOWN;
+    *my_err = EHOSTDOWN;
 
     return(PBS_NET_RC_RETRY);
     }
@@ -223,7 +223,7 @@ int svr_connect(
 
     bad_node_warning(hostaddr,pnode);
 
-    pbs_errno = errno;
+    *my_err = errno;
 
     return(sock);  /* PBS_NET_RC_RETRY or PBS_NET_RC_FATAL */
     }  /* END if (sock < 0) */
@@ -337,6 +337,8 @@ void svr_disconnect(
   }  /* END svr_disconnect() */
 
 
+
+
 /*
  * socket_to_handle() - turn a socket into a connection handle
  * as used by the libpbs.a routines.
@@ -344,8 +346,11 @@ void svr_disconnect(
  * Returns: >=0 connection handle if successful, or
  *    -1 if error, error number set in pbs_errno.
  */
+
 int socket_to_handle(
+
   int sock)  /* opened socket */
+
   {
   char *id = "socket_to_handle";
   char  log_buf[LOCAL_LOG_BUF_SIZE];

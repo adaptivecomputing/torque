@@ -88,7 +88,7 @@
 #include <stdlib.h>
 #include "libpbs.h"
 
-/* returns pbs_errno */
+/* returns pbs_error codes */
 
 int pbs_alterjob_asyncflag(
 
@@ -108,9 +108,7 @@ int pbs_alterjob_asyncflag(
 
   if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
     {
-    pbs_errno = PBSE_IVALREQ;
-
-    return(pbs_errno);
+    return(PBSE_IVALREQ);
     }
 
   /* copy the attrl to an attropl */
@@ -131,9 +129,7 @@ int pbs_alterjob_asyncflag(
       {
       /* FAILURE */
 
-      pbs_errno = PBSE_SYSTEM;
-
-      return(-1);
+      return(PBSE_SYSTEM);
       }
 
     ap->name = attrib->name;

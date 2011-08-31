@@ -124,18 +124,14 @@ int PBSD_rdytocmt(
 
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[connect].ch_mutex);
   
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   /* read reply */
@@ -179,18 +175,14 @@ int PBSD_commit_get_sid(
 
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[connect].ch_mutex);
   
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   /* PBSD_rdrpy sets connection[connect].ch_errno */
@@ -247,18 +239,14 @@ int PBSD_commit(
 
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[connect].ch_mutex);
   
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   /* PBSD_rdrpy sets connection[connect].ch_errno */
@@ -317,18 +305,14 @@ static int PBSD_scbuf(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   /* read reply */
@@ -467,8 +451,9 @@ int PBSD_jobfile(
 
 char *PBSD_queuejob(
 
-  int             connect,  /* I */
-  char           *jobid,    /* I */
+  int             connect,     /* I */
+  int            *local_errno, /* O */
+  char           *jobid,       /* I */
   char           *destin,
   struct attropl *attrib,
   char           *extend)
@@ -497,7 +482,7 @@ char *PBSD_queuejob(
 
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
 
     return(return_jobid);
     }
@@ -506,7 +491,7 @@ char *PBSD_queuejob(
     {
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
 
     return(return_jobid);
     }
@@ -519,18 +504,18 @@ char *PBSD_queuejob(
     {
     if (PConnTimeout(sock) == 1)
       {
-      pbs_errno = PBSE_EXPIRED;
+      *local_errno = PBSE_EXPIRED;
       }
     else
       {
-      pbs_errno = PBSE_PROTOCOL;
+      *local_errno = PBSE_PROTOCOL;
       }
     }
   else if (reply->brp_choice &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Text &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Queue)
     {
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
     }
   else if (connection[connect].ch_errno == 0)
     {
@@ -549,8 +534,9 @@ char *PBSD_queuejob(
 
 char *PBSD_QueueJob_hash(
 
-  int             connect,  /* I */
-  char           *jobid,    /* I */
+  int             connect,     /* I */
+  int            *local_errno, /* O */
+  char           *jobid,       /* I */
   char           *destin,
   memmgr         **mm,
   job_data       *job_attr,
@@ -577,7 +563,7 @@ char *PBSD_QueueJob_hash(
     {
     connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
 
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
 
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
@@ -586,7 +572,7 @@ char *PBSD_QueueJob_hash(
 
   if (DIS_tcp_wflush(sock))
     {
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
     
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
@@ -601,18 +587,18 @@ char *PBSD_QueueJob_hash(
     {
     if (PConnTimeout(sock) == 1)
       {
-      pbs_errno = PBSE_EXPIRED;
+      *local_errno = PBSE_EXPIRED;
       }
     else
       {
-      pbs_errno = PBSE_PROTOCOL;
+      *local_errno = PBSE_PROTOCOL;
       }
     }
   else if (reply->brp_choice &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Text &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Queue)
     {
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
     }
   else if (connection[connect].ch_errno == 0)
     {

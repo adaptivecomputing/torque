@@ -91,6 +91,7 @@
 char *pbs_submit(
 
   int             c,
+  int            *local_errno,
   struct attropl *attrib,
   char           *script,
   char           *destination,
@@ -107,7 +108,7 @@ char *pbs_submit(
     {
     if (access(script, R_OK) != 0)
       {
-      pbs_errno = PBSE_BADSCRIPT;
+      *local_errno = PBSE_BADSCRIPT;
 
       return(NULL);
       }
@@ -133,7 +134,7 @@ char *pbs_submit(
     {
     if (PBSD_jscript(c, script, NULL) != 0)
       {
-      pbs_errno = PBSE_BADSCRIPT;
+      *local_errno = PBSE_BADSCRIPT;
 
       return(NULL);
       }
