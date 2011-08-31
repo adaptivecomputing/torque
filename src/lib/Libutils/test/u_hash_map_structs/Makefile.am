@@ -3,8 +3,6 @@ PROG_ROOT = ../..
 
 AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
-CFLAGS = -g -fprofile-arcs -ftest-coverage
-
 TPROGS = ct_u_hash_map_structs
 
 check_PROGRAMS = ${TPROGS}
