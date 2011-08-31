@@ -1,4 +1,5 @@
 #include <license_pbs.h> /* See here for the software license */
+#include <pbs_config.h> /* needed for PTHREAD_MUTEX_ERRORCHECK */
 
 #include <pthread.h> /* pthread_mutex_* */
 #include "lib_net.h"

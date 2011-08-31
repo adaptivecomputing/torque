@@ -1,4 +1,5 @@
 #include <license_pbs.h> /* See here for the software license */
+#include <pbs_config.h> /* Needed for PTHREAD_MUTEX_ERRORCHECK */
 #include "u_lock_ctl.h"
 
 #include <stdlib.h>
