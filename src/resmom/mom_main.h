@@ -210,7 +210,7 @@ int rm_request(int iochan, int version);
 
 int do_tcp(int fd);
 
-void tcp_request(int fd);
+void *tcp_request(void *sock_num);
 
 char *find_signal_name(int sig);
 

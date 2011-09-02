@@ -3,21 +3,15 @@
 #include "test_cpuset.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <check.h>
 
 #include "pbs_error.h"
-#include "scaffolding.h"
 START_TEST(test_one)
   {
-  int rc = 0;
-  return rc;
   }
 END_TEST
 
 START_TEST(test_two)
   {
-  int rc = 0;
-  return rc;
   }
 END_TEST
 
@@ -42,8 +36,9 @@ void rundebug()
 int main(void)
   {
   int number_failed = 0;
+  SRunner *sr = NULL;
   rundebug();
-  SRunner *sr = srunner_create(cpuset_suite());
+  sr = srunner_create(cpuset_suite());
   srunner_set_log(sr, "cpuset_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

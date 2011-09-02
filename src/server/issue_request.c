@@ -698,9 +698,8 @@ int issue_Drequest(
  * should be called when the relevant svr_conn mutex is already held
  */
 
-void process_Dreply(
-
-  int sock)
+void *process_Dreply(
+  void *new_sock)
 
   {
   static char *id = "process_Dreply";
@@ -711,6 +710,8 @@ void process_Dreply(
   int    iter = -1;
 
   struct batch_request *request;
+  int sock = *(int *)new_sock;
+  free(new_sock);
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
 
@@ -735,7 +736,7 @@ void process_Dreply(
 
     close_conn(sock, FALSE);
 
-    return;
+    return NULL;
     }
 
   request = ptask->wt_parm1;
@@ -753,7 +754,7 @@ void process_Dreply(
   /* now dispatch the reply to the routine in the work task */
   dispatch_task(ptask);
 
-  return;
+  return NULL;
   }  /* END process_Dreply() */
 
 /* END issue_request.c */

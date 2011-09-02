@@ -106,7 +106,11 @@ struct batch_reply *PBSD_rdrpy(
 
   struct batch_reply *reply;
   int      sock;
+  FILE *fp;
+  fp = fopen("/tmp/iff.output", "a");
 
+  sock = connection[c].ch_socket;
+  fprintf(fp, "PBSD_rdrpys start %d\n", sock);
   /* clear any prior error message */
 
   if (connection[c].ch_errtxt != NULL)
@@ -125,14 +129,15 @@ struct batch_reply *PBSD_rdrpy(
     return(NULL);
     }
 
-  sock = connection[c].ch_socket;
-
+  fprintf(fp, "dis_tcp_setup %d\n", sock);
   DIS_tcp_setup(sock);
 
+  fprintf(fp, "decode_DIS_replyCmd %d\n", sock);
   if ((rc = decode_DIS_replyCmd(sock, reply)))
     {
     free(reply);
 
+    fprintf(fp, "DIS_tcp_istimeout %d\n", sock);
     if (DIS_tcp_istimeout(sock) == TRUE)
       {
       pbs_errno = PBSE_TIMEOUT;
@@ -149,6 +154,7 @@ struct batch_reply *PBSD_rdrpy(
     return(NULL);
     }
 
+  fprintf(fp, "DIS_tcp_reset %d\n", sock);
   DIS_tcp_reset(sock, 0); /* reset DIS read buffer */
 
   connection[c].ch_errno = reply->brp_code;
@@ -160,6 +166,8 @@ struct batch_reply *PBSD_rdrpy(
     connection[c].ch_errtxt = strdup(reply->brp_un.brp_txt.brp_str);
     }
 
+  fprintf(fp, "PBSD_rdrpy return %d\n", sock);
+  fclose(fp);
   return(reply);
   }  /* END PBSD_rdrpy() */
 

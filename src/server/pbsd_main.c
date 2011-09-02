@@ -132,6 +132,7 @@
 #include <pthread.h>
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
+#include "../lib/Libnet/lib_net.h" /* global_sock_add */
 
 
 #define TSERVER_HA_CHECK_TIME  1  /* 1 second sleep time between checks on the lock file for high availability */
@@ -356,9 +357,9 @@ static void need_y_response(
 
 
 
-void process_pbs_server_port(
+void *process_pbs_server_port(
      
-  int sock)
+  void *new_sock)
  
   {
   static char *id = "process_pbs_server_port";
@@ -366,6 +367,8 @@ void process_pbs_server_port(
   int          rc;
   int          version;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
+  int sock = *(int *)new_sock;
+  fprintf(stdout, "process_pbs_server_port start %d\n", sock);
   
   DIS_tcp_setup(sock);
   
@@ -375,11 +378,12 @@ void process_pbs_server_port(
     {
     case PBS_BATCH_PROT_TYPE:
       
-      process_request(sock);
+      process_request(new_sock);
       
       break;
       
     case IS_PROTOCOL:
+      free(new_sock);
       
       version = disrsi(sock,&rc);
       
@@ -398,6 +402,7 @@ void process_pbs_server_port(
       struct sockaddr     s_addr;
       struct sockaddr_in *addr;
       socklen_t           len = sizeof(s_addr);
+      free(new_sock);
 
       if (getpeername(sock, &s_addr, &len) == 0)
         {
@@ -415,8 +420,9 @@ void process_pbs_server_port(
       break;
       }
     }
-  
-  return;
+  fprintf(stdout, "process_pbs_server_port complete %d\n", sock);
+  global_sock_add(sock);
+  return NULL;
   }  /* END process_pbs_server_port() */
 
 
@@ -1066,6 +1072,9 @@ void main_loop(void)
   else
     *state = SV_STATE_RUN;
 
+  if (plogenv == NULL) /* If no specification of loglevel from env */
+    LOGLEVEL = server.sv_attr[SRV_ATR_LogLevel].at_val.at_long;
+
   DBPRT(("pbs_server is up\n"));
 
   while (*state != SV_STATE_DOWN)
@@ -1155,9 +1164,6 @@ void main_loop(void)
     /* qmgr can dynamically set the loglevel specification
      * we use the new value if PBSLOGLEVEL was not specified
      */
-
-    if (plogenv == NULL) /* If no specification of loglevel from env */
-      LOGLEVEL = server.sv_attr[SRV_ATR_LogLevel].at_val.at_long;
 
     if (*state == SV_STATE_SHUTSIG)
       svr_shutdown(SHUT_SIG); /* caught sig */

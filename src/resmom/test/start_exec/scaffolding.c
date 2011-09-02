@@ -1,2 +1,458 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
+#include <stdio.h> /* fprintf */
+#include <time.h> /* time_t */
+#include <pwd.h> /* struct passwd, gid_t, uid_t */
+#include <signal.h> /* sigset_t */
+#include <md5.h> /* MD5_CTX */
+#include <sys/socket.h> /* sockaddr_in, sockaddr */
+
+#include "attribute.h" /* attribute_def, attribute, svrattrl */
+#include "resource.h" /* resource_def */
+#include "pbs_ifl.h" /* PBS_MAXHOSTNAME, MAXPATHLEN */
+#include "list_link.h" /* tlist_head, list_link */
+#include "resmon.h" /* TMAX_NSDCOUNT */
+#include "log.h" /* LOG_BUF_SIZE */
+#include "pbs_job.h" /* job, hnodent, pjobexec_t */
+#include "tm_.h" /* tm_task_id, tm_event_t */
+#include "mom_mach.h" /* startjob_rtn */
+#include "mom_func.h" /* var_table */
+
+int lockfds = -1;
+char *path_jobs;
+int multi_mom = 1;
+int svr_resc_size = 0;
+int jobstarter_set = 0;
+int src_login_interactive = TRUE;
+u_long localaddr = 0;
+time_t time_now;
+char *path_prolog;
+char *nodefile_suffix = NULL;
+attribute_def job_attr_def[10];
+int src_login_batch = TRUE;
+int exiting_tasks = 0;
+char *path_prologuser;
+char *path_aux;
+gid_t pbsgroup;
+time_t loopcnt;
+char PRE_EXEC[1024];
+resource_def *svr_resc_def;
+sigset_t allsigs;
+char mom_host[PBS_MAXHOSTNAME + 1];
+uid_t pbsuser;
+int spoolasfinalname = 0;
+char *path_spool;
+char tmpdir_basename[MAXPATHLEN];
+unsigned int pbs_rm_port = 0;
+char DEFAULT_UMASK[1024];
+tlist_head mom_polljobs;
+long TJobStartBlockTime = 5;
+char *TNoSpoolDirList[TMAX_NSDCOUNT];
+int LOGLEVEL = 0;
+char *submithost_suffix = NULL;
+char log_buffer[LOG_BUF_SIZE];
+int num_var_env;
+char jobstarter_exe_name[MAXPATHLEN + 1];
+int    attempttomakedir = 0;
+
+int mom_close_poll(void)
+  {
+  fprintf(stderr, "The call to mom_close_poll needs to be mocked!!\n");
+  exit(1);
+  }
+
+void MD5Init(MD5_CTX *mdContext)
+  {
+  fprintf(stderr, "The call to MD5_CTX needs to be mocked!!\n");
+  exit(1);
+  }
+
+int rcvwinsize(int sock)
+  {
+  fprintf(stderr, "The call to rcvwinsize needs to be mocked!!\n");
+  exit(1);
+  }
+
+int mom_checkpoint_start_restart(job *pjob)
+  {
+  fprintf(stderr, "The call to mom_checkpoint_start_restart needs to be mocked!!\n");
+  exit(1);
+  }
+
+char *arst_string(char *str, attribute *pattr)
+  {
+  fprintf(stderr, "The call to arst_string needs to be mocked!!\n");
+  exit(1);
+  }
+
+int job_save(job *pjob, int updatetype, int mom_port)
+  {
+  fprintf(stderr, "The call to job_save needs to be mocked!!\n");
+  exit(1);
+  }
+
+int setwinsize(int pty)
+  {
+  fprintf(stderr, "The call to setwinsize needs to be mocked!!\n");
+  exit(1);
+  }
+
+ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
+  {
+  fprintf(stderr, "The call to read_nonblocking_socket needs to be mocked!!\n");
+  exit(1);
+  }
+
+char * netaddr(struct sockaddr_in *ap)
+  {
+  fprintf(stderr, "The call to netaddr needs to be mocked!!\n");
+  exit(1);
+  }
+
+task *pbs_task_create(job *pjob, tm_task_id taskid)
+  {
+  fprintf(stderr, "The call to pbs_task_create needs to be mocked!!\n");
+  exit(1);
+  }
+
+char *get_local_script_path(job *pjob, char *base)
+  {
+  fprintf(stderr, "The call to get_local_script_path needs to be mocked!!\n");
+  exit(1);
+  }
+
+int read_tcp_reply(int sock, int protocol, int version, int command, int *exit_status)
+  {
+  fprintf(stderr, "The call to read_tcp_reply needs to be mocked!!\n");
+  exit(1);
+  }
+
+int open_master(char **rtn_name)
+  {
+  fprintf(stderr, "The call to open_master needs to be mocked!!\n");
+  exit(1);
+  }
+
+int mom_writer(int s, int ptc)
+  {
+  fprintf(stderr, "The call to mom_writer needs to be mocked!!\n");
+  exit(1);
+  }
+
+int mom_do_poll(job *pjob)
+  {
+  fprintf(stderr, "The call to mom_do_poll needs to be mocked!!\n");
+  exit(1);
+  }
+
+void set_globid(job *pjob, struct startjob_rtn *sjr)
+  {
+  fprintf(stderr, "The call to set_globid needs to be mocked!!\n");
+  exit(1);
+  }
+
+void delete_link(struct list_link *old)
+  {
+  fprintf(stderr, "The call to delete_link needs to be mocked!!\n");
+  exit(1);
+  }
+
+char *get_job_envvar(job *pjob, char *variable)
+  {
+  fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
+  exit(1);
+  }
+
+void log_record(int eventtype, int objclass, char *objname, char *text)
+  {
+  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
+  exit(1);
+  }
+
+int x11_create_display(int x11_use_localhost, char *display, char *phost, int pport, char *homedir, char *x11authstr)
+  {
+  fprintf(stderr, "The call to x11_create_display needs to be mocked!!\n");
+  exit(1);
+  }
+
+eventent *event_alloc(int command, hnodent *pnode, tm_event_t event, tm_task_id taskid)
+  {
+  fprintf(stderr, "The call to event_alloc needs to be mocked!!\n");
+  exit(1);
+  }
+
+int mom_checkpoint_job_has_checkpoint(job *pjob)
+  {
+  fprintf(stderr, "The call to mom_checkpoint_job_has_checkpoint needs to be mocked!!\n");
+  exit(1);
+  }
+
+int mom_get_sample(void)
+  {
+  fprintf(stderr, "The call to mom_get_sample needs to be mocked!!\n");
+  exit(1);
+  }
+
+void MD5Update(MD5_CTX *mdContext, unsigned char *inBuf, unsigned int inLen)
+  {
+  fprintf(stderr, "The call to MD5Update needs to be mocked!!\n");
+  exit(1);
+  }
+
+int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type)
+  {
+  fprintf(stderr, "The call to run_pelog needs to be mocked!!\n");
+  exit(1);
+  }
+
+ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
+  {
+  fprintf(stderr, "The call to write_nonblocking_socket needs to be mocked!!\n");
+  exit(1);
+  }
+
+int conn_qsub(char *hostname, long port, char *EMsg)
+  {
+  fprintf(stderr, "The call to conn_qsub needs to be mocked!!\n");
+  exit(1);
+  }
+
+void DIS_tcp_setup(int fd)
+  {
+  fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
+  exit(1);
+  }
+
+int find_attr(struct attribute_def *attr_def, char *name, int limit)
+  {
+  fprintf(stderr, "The call to find_attr needs to be mocked!!\n");
+  exit(1);
+  }
+
+void MD5Final(MD5_CTX *mdContext)
+  {
+  fprintf(stderr, "The call to MD5Final needs to be mocked!!\n");
+  exit(1);
+  }
+
+int set_job(job *pjob, struct startjob_rtn *sjr)
+  {
+  fprintf(stderr, "The call to set_job needs to be mocked!!\n");
+  exit(1);
+  }
+
+int mom_reader(int s, int ptc)
+  {
+  fprintf(stderr, "The call to mom_reader needs to be mocked!!\n");
+  exit(1);
+  }
+
+void net_close(int but)
+  {
+  fprintf(stderr, "The call to net_close needs to be mocked!!\n");
+  exit(1);
+  }
+
+void log_ext(int errnum, char *routine, char *text, int severity)
+  {
+  fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
+  exit(1);
+  }
+
+int DIS_tcp_wflush(int fd)
+  {
+  fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
+  exit(1);
+  }
+
+int diswcs(int stream, const char *value, size_t nchars)
+  {
+  fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
+  exit(1);
+  }
+
+void arrayfree(char **array)
+  {
+  fprintf(stderr, "The call to arrayfree needs to be mocked!!\n");
+  exit(1);
+  }
+
+int mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table *vtable)
+  {
+  fprintf(stderr, "The call to mom_checkpoint_execute_job needs to be mocked!!\n");
+  exit(1);
+  }
+
+void log_close(int msg)
+  {
+  fprintf(stderr, "The call to log_close needs to be mocked!!\n");
+  exit(1);
+  }
+
+void *get_next(list_link pl, char *file, int line)
+  {
+  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
+  exit(1);
+  }
+
+int send_sisters(job *pjob, int com, int using_radix)
+  {
+  fprintf(stderr, "The call to send_sisters needs to be mocked!!\n");
+  exit(1);
+  }
+
+int mom_set_use(job *pjob)
+  {
+  fprintf(stderr, "The call to mom_set_use needs to be mocked!!\n");
+  exit(1);
+  }
+
+int mom_set_limits(job *pjob, int set_mode)
+  {
+  fprintf(stderr, "The call to mom_set_limits needs to be mocked!!\n");
+  exit(1);
+  }
+
+void free_attrlist(tlist_head *pattrlisthead)
+  {
+  fprintf(stderr, "The call to free_attrlist needs to be mocked!!\n");
+  exit(1);
+  }
+
+void attrl_fixlink(tlist_head *phead)
+  {
+  fprintf(stderr, "The call to attrl_fixlink needs to be mocked!!\n");
+  exit(1);
+  }
+
+int site_mom_chkuser(job *pjob)
+  {
+  fprintf(stderr, "The call to site_mom_chkuser needs to be mocked!!\n");
+  exit(1);
+  }
+
+resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+  {
+  fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
+  exit(1);
+  }
+
+int mom_checkpoint_job_is_checkpointable(job *pjob)
+  {
+  fprintf(stderr, "The call to mom_checkpoint_job_is_checkpointable needs to be mocked!!\n");
+  exit(1);
+  }
+
+struct passwd * getpwnam_ext(char * user_name)
+  {
+  fprintf(stderr, "The call to getpwnam_ext needs to be mocked!!\n");
+  exit(1);
+  }
+
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
+  {
+  fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
+  exit(1);
+  }
+
+void append_link(tlist_head *head, list_link *new, void *pobj)
+  {
+  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
+  exit(1);
+  }
+
+int encode_DIS_svrattrl(int sock, svrattrl *psattl)
+  {
+  fprintf(stderr, "The call to encode_DIS_svrattrl needs to be mocked!!\n");
+  exit(1);
+  }
+
+int site_job_setup(job *pjob)
+  {
+  fprintf(stderr, "The call to site_job_setup needs to be mocked!!\n");
+  exit(1);
+  }
+
+int set_mach_vars(job *pjob, struct var_table *vtab)
+  {
+  fprintf(stderr, "The call to set_mach_vars needs to be mocked!!\n");
+  exit(1);
+  }
+
+int TMOMJobGetStartInfo(job *pjob, pjobexec_t **TJEP)
+  {
+  fprintf(stderr, "The call to TMOMJobGetStartInfo needs to be mocked!!\n");
+  exit(1);
+  }
+
+void set_termcc(int fd)
+  {
+  fprintf(stderr, "The call to set_termcc needs to be mocked!!\n");
+  exit(1);
+  }
+
+char *rcvttype(int sock)
+  {
+  fprintf(stderr, "The call to rcvttype needs to be mocked!!\n");
+  exit(1);
+  }
+
+int task_save(task *ptask)
+  {
+  fprintf(stderr, "The call to task_save needs to be mocked!!\n");
+  exit(1);
+  }
+
+void log_event(int eventtype, int objclass, char *objname, char *text)
+  {
+  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
+  exit(1);
+  }
+
+void log_err(int errnum, char *routine, char *text)
+  {
+  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
+  exit(1);
+  }
+
+char * set_shell(job *pjob, struct passwd *pwdp)
+  {
+  fprintf(stderr, "The call to set_shell needs to be mocked!!\n");
+  exit(1);
+  }
+
+char *pbs_strerror(int err)
+  {
+  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
+  exit(1);
+  }
+
+resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+  {
+  fprintf(stderr, "The call to find_resc_entry needs to be mocked!!\n");
+  exit(1);
+  }
+
+int im_compose(int stream, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
+  {
+  fprintf(stderr, "The call to im_compose needs to be mocked!!\n");
+  exit(1);
+  }
+
+int diswsi(int stream, int value)
+  {
+  fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
+  exit(1);
+  }
+
+void get_chkpt_dir_to_use(job *pjob, char *chkpt_dir)
+  {
+  fprintf(stderr, "The call to get_chkpt_dir_to_use needs to be mocked!!\n");
+  exit(1);
+  }
+
+void mom_checkpoint_init_job_periodic_timer(job *pjob)
+  {
+  fprintf(stderr, "The call to mom_checkpoint_init_job_periodic_timer needs to be mocked!!\n");
+  exit(1);
+  }

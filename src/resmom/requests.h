@@ -59,4 +59,4 @@ void req_stat_job(struct batch_request *preq);
 
 /* static int del_files(struct batch_request *preq, char *HDir, int setuserenv, char **pbadfile); */
 
-#endif /* _REQUESTS_H
+#endif /* _REQUESTS_H */

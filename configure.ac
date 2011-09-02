@@ -1777,7 +1777,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  doc/man8/Makefile
 	  src/Makefile
 	  src/cmds/Makefile
-	  src/iff/Makefile
+    src/daemon_client/Makefile
 	  src/gui/Makefile
 	  src/gui/Ccode/Makefile
 	  src/include/Makefile
@@ -1863,8 +1863,8 @@ AC_OUTPUT(buildutils/pbs_mkdirs
     src/cmds/test/qstop/Makefile
     src/cmds/test/qsub_functions/Makefile
     src/cmds/test/qterm/Makefile
-    src/iff/test/Makefile
-    src/iff/test/iff2/Makefile
+    src/daemon_client/test/Makefile
+    src/daemon_client/test/trq_auth_daemon/Makefile
     src/lib/Libattr/test/Makefile
     src/lib/Libattr/test/attr_atomic/Makefile
     src/lib/Libattr/test/attr_fn_acl/Makefile

@@ -162,7 +162,7 @@ static const int munge_on = 1;
 static const int munge_on = 0;
 #endif 
 
-static void close_client(int sfds);
+static void mom_close_client(int sfds);
 static void freebr_manage(struct rq_manage *);
 static void freebr_cpyfile(struct rq_cpyfile *);
 static void close_quejob(int sfds);
@@ -200,16 +200,16 @@ void req_messagejob(struct batch_request *preq);
  * NOTE: the caller functions hold the mutex for the connection
  */
 
-void mom_process_request(
+void *mom_process_request(
 
-  int sfds) /* file descriptor (socket) to get request */
+  void *sock_num) /* file descriptor (socket) to get request */
 
   {
   char                 *id = "mom_process_request";
-
   int                   rc;
-
   struct batch_request *request = NULL;
+  int sfds = *(int *)sock_num;
+  free(sock_num);
 
   time_now = time(NULL);
 
@@ -230,11 +230,11 @@ void mom_process_request(
 
     /* premature end of file */
 
-    close_client(sfds);
+    mom_close_client(sfds);
 
     free_br(request);
 
-    return;
+    return NULL;
     }
 
   if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL))
@@ -245,11 +245,11 @@ void mom_process_request(
 
     /* ??? not sure about this ??? */
 
-    close_client(sfds);
+    mom_close_client(sfds);
 
     free_br(request);
 
-    return;
+    return NULL;
     }
 
   if (rc > 0)
@@ -263,9 +263,9 @@ void mom_process_request(
 
     req_reject(rc, 0, request, NULL, "cannot decode message");
 
-    close_client(sfds);
+    mom_close_client(sfds);
 
-    return;
+    return NULL;
     }
 
   if (get_connecthost(sfds, request->rq_host, PBS_MAXHOSTNAME) != 0)
@@ -283,7 +283,7 @@ void mom_process_request(
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
 
-    return;
+    return NULL;
     }
 
   if (LOGLEVEL >= 1)
@@ -335,9 +335,9 @@ void mom_process_request(
 
       req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
 
-      close_client(sfds);
+      mom_close_client(sfds);
 
-      return;
+      return NULL;
       }
 
     if (LOGLEVEL >= 3)
@@ -372,7 +372,7 @@ void mom_process_request(
 
   dispatch_request(sfds, request);
 
-  return;
+  return NULL;
   }  /* END mom_process_request() */
 
 
@@ -528,7 +528,7 @@ void dispatch_request(
 
       req_reject(PBSE_UNKREQ, 0, request, NULL, NULL);
 
-      close_client(sfds);
+      mom_close_client(sfds);
 
       break;
     }  /* END switch (request->rq_type) */
@@ -541,11 +541,11 @@ void dispatch_request(
 
 
 /*
- * close_client - close a connection to a client, also "inactivate"
+ * mom_close_client - close a connection to a client, also "inactivate"
  *    any outstanding batch requests on that connection.
  */
 
-static void close_client(
+static void mom_close_client(
 
   int sfds)  /* connection socket */
 
@@ -571,7 +571,7 @@ static void close_client(
     }
 
   return;
-  }  /* END close_client() */
+  }  /* END mom_close_client() */
 
 
 

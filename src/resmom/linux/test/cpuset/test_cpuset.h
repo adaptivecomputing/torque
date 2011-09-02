@@ -1,6 +1,6 @@
 #ifndef _CPUSET_CT_H
 #define _CPUSET_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define CPUSET_SUITE 1
 Suite *cpuset_suite();

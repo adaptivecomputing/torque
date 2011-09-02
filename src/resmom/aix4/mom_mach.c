@@ -821,11 +821,9 @@ error(char *string, int value)
  * existing limits.  Cannot alter those set by setrlimit (kernel)
  * because we are the wrong process.
  */
-int
-mom_set_limits(
+int mom_set_limits(
   job *pjob,
-  int set_mode /* SET_LIMIT_SET or SET_LIMIT_ALTER */
-)
+  int set_mode) /* SET_LIMIT_SET or SET_LIMIT_ALTER */
   {
   char  *id = "mom_set_limits";
   char  *pname;
@@ -1520,8 +1518,8 @@ mom_over_limit(job *pjob)
  *
  * Assumes that the session ID attribute has already been set.
  */
-int
-mom_set_use(job *pjob)
+int mom_set_use(
+    job *pjob)
   {
   char   *id = "mom_set_use";
   resource  *pres;

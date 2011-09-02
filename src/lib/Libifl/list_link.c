@@ -265,10 +265,8 @@ void append_link(
  * are cleared.
  */
 
-void
-delete_link(
-  struct list_link *old  /* ptr to link to delete */
-)
+void delete_link(
+  struct list_link *old) /* ptr to link to delete */
   {
 
   if ((old->ll_prior != (list_link *)0) &&

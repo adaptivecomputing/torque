@@ -141,7 +141,7 @@ int svr_connect(
   pbs_net_t        hostaddr,  /* host order */
   unsigned int     port,   /* I */
   struct pbsnode  *pnode,
-  void           (*func)(int),
+  void           *(*func)(void *),
   enum conn_type   cntype)
 
   {

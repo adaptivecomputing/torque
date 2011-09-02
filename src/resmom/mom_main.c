@@ -5435,10 +5435,8 @@ bad:
 
 
 
-void tcp_request(
-
-  int fd)
-
+void *tcp_request(
+  void *new_sock)
   {
   static char id[] = "tcp_request";
   int  c;
@@ -5447,6 +5445,7 @@ void tcp_request(
   char *tmp;
 
   extern struct connection svr_conn[];
+  int fd = *(int *)new_sock;
 
   ipadd = svr_conn[fd].cn_addr;
 
@@ -5478,7 +5477,7 @@ void tcp_request(
 
     close_conn(fd, FALSE);
 
-    return;
+    return NULL;
     }
 
   log_buffer[0] = '\0';
@@ -5493,7 +5492,7 @@ void tcp_request(
          id,
          c))
 
-  return;
+  return NULL;
   }  /* END tcp_request() */
 
 

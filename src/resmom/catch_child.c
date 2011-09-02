@@ -75,8 +75,8 @@ extern int   PBSNodeCheckEpilog;
 /* external prototypes */
 
 u_long resc_used(job *, char *, u_long(*f) (resource *));
-void preobit_reply (int);
-void obit_reply (int);
+void *preobit_reply (void *);
+void *obit_reply (void *);
 extern int tm_reply (int, int, tm_event_t);
 extern u_long addclient (char *);
 extern void encode_used (job *, int, tlist_head *);
@@ -85,7 +85,7 @@ extern void job_nodes (job *);
 extern int task_recov (job *);
 extern void mom_server_all_update_stat(void);
 extern void check_state(int);
-extern int mom_open_socket_to_jobs_server (job *, char *, void (*) (int));
+extern int mom_open_socket_to_jobs_server (job *, char *, void *(*) (void *));
 extern int mark_for_resend (job *);
 extern void checkpoint_partial(job *pjob);
 extern void mom_checkpoint_recover(job *pjob);
@@ -924,9 +924,9 @@ int post_epilogue(
  * What is the correct response if an EOF is detected?
  */
 
-void preobit_reply(
+void *preobit_reply(
 
-  int sock)  /* I */
+  void *new_sock)  /* I */
 
   {
   char id[] = "preobit_reply";
@@ -945,6 +945,8 @@ void preobit_reply(
 
   char *path_epiloguserjob;
   resource *presc;
+  int sock = *(int *)new_sock;
+  free(new_sock);
 
   /* struct batch_status *bsp = NULL; */
 
@@ -1019,7 +1021,7 @@ void preobit_reply(
 
     close_conn(sock, FALSE);
 
-    return;
+    return NULL;
     }  /* END if (pjob != NULL) */
 
   /* we've got a job in PREOBIT and matches the socket, now
@@ -1165,7 +1167,7 @@ void preobit_reply(
 
     mom_deljob(pjob);
 
-    return;
+    return NULL;
     }
 
   if (!runepilogue)
@@ -1180,7 +1182,7 @@ void preobit_reply(
     pjob->ji_momhandle = -1;
     exiting_tasks = 1;  /* job exit will be picked up again */
 
-    return;
+    return NULL;
     }
 
   /* at this point, server gave us a valid response so we can run epilogue */
@@ -1206,7 +1208,7 @@ void preobit_reply(
       pjob->ji_qs.ji_jobid,
       "fork failed in preobit_reply");
 
-    return;
+    return NULL;
     }
 
   if (cpid > 0)
@@ -1229,7 +1231,7 @@ void preobit_reply(
       log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
       }
 
-    return;
+    return NULL;
     }
 
   /* child */
@@ -1331,9 +1333,9 @@ void preobit_reply(
  */
 
 
-void obit_reply(
+void *obit_reply(
 
-  int sock)  /* I */
+  void *new_sock)  /* I */
 
   {
   int    irtn;
@@ -1344,6 +1346,8 @@ void obit_reply(
 
   struct batch_request *preq;
   int    x; /* dummy */
+  int sock = *(int *)new_sock;
+  free(new_sock);
 
   /* read and decode the reply */
 
@@ -1531,7 +1535,7 @@ void obit_reply(
     mom_server_all_update_stat();
     }
 
-  return;
+  return NULL;
   }  /* END obit_reply() */
 
 

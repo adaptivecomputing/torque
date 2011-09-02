@@ -188,7 +188,7 @@ enum conn_type
 
 /* functions available in libnet.a */
 
-void add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void (*func)(int));
+void add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
 int  client_to_svr(pbs_net_t, unsigned int, int, char *);
 void close_conn(int,int);
 pbs_net_t get_connectaddr(int,int);
@@ -196,7 +196,7 @@ int  get_connecthost(int sock, char *, int);
 pbs_net_t get_hostaddr(char *);
 int  get_fullhostname(char *, char *, int, char *);
 unsigned int  get_svrport(char *, char *, unsigned int);
-int  init_network(unsigned int, void (*readfunc)());
+int  init_network(unsigned int, void *(*readfunc)(void *));
 void net_close(int);
 int  wait_request(time_t waittime, long *);
 void net_add_close_func(int, void(*func)(int), int);
@@ -214,7 +214,7 @@ struct connection
   unsigned short cn_socktype; /* authentication flags */
   enum conn_type cn_active;     /* idle or type if active */
   time_t cn_lasttime;    /* time last active */
-  void (*cn_func)(int);  /* read function when data rdy */
+  void *(*cn_func)(void *);  /* read function when data rdy */
   void (*cn_oncl)(int);  /* func to call on close */
   pthread_mutex_t *cn_mutex;
   };

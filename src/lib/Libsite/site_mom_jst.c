@@ -104,8 +104,8 @@
  * once the session has been created and before the job run.
  * Return non-zero to abort the job.
  */
-int
-site_job_setup(job *pjob)
+int site_job_setup(
+    job *pjob)
   {
   return (0);
   }

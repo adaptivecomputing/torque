@@ -1,5 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 
+#include "tm_.h" /* tm_node_id */
+
 char *get_ecname(int rc);
 
 void bailout(int sig);

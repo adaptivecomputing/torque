@@ -15,9 +15,16 @@ lock_ctl *locks = NULL;
 int lock_init()
   {
   int rc = PBSE_NONE;
-  pthread_mutexattr_t t_attr;
-  pthread_mutexattr_settype(&t_attr, PTHREAD_MUTEX_ERRORCHECK);
-  memset(&t_attr, 0, sizeof(pthread_mutexattr_t));
+  pthread_mutexattr_t startup_attr;
+  pthread_mutexattr_t conn_attr;
+  pthread_mutexattr_t tcp_attr;
+  fprintf(stdout, "lock_init\n");
+  pthread_mutexattr_init(&startup_attr);
+  pthread_mutexattr_settype(&startup_attr, PTHREAD_MUTEX_ERRORCHECK);
+  pthread_mutexattr_init(&conn_attr);
+  pthread_mutexattr_settype(&conn_attr, PTHREAD_MUTEX_ERRORCHECK);
+  pthread_mutexattr_init(&tcp_attr);
+  pthread_mutexattr_settype(&tcp_attr, PTHREAD_MUTEX_ERRORCHECK);
   if ((locks = (lock_ctl *)calloc(1, sizeof(lock_ctl))) == NULL)
     rc = PBSE_MEM_MALLOC;
   else if ((locks->startup = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
@@ -29,13 +36,13 @@ int lock_init()
   else
     {
     memset(locks->startup, 0, sizeof(pthread_mutex_t));
-    pthread_mutex_init(locks->startup, &t_attr);
+    pthread_mutex_init(locks->startup, &startup_attr);
 
     memset(locks->conn_table, 0, sizeof(pthread_mutex_t));
-    pthread_mutex_init(locks->conn_table, &t_attr);
+    pthread_mutex_init(locks->conn_table, &conn_attr);
 
     memset(locks->tcp_table, 0, sizeof(pthread_mutex_t));
-    pthread_mutex_init(locks->tcp_table, &t_attr);
+    pthread_mutex_init(locks->tcp_table, &tcp_attr);
     }
   return rc;
   }
@@ -56,6 +63,7 @@ int lock_startup()
   {
   if (locks == NULL)
     lock_init();
+  /* fprintf(stdout, "startup lock\n"); */
   if (pthread_mutex_lock(locks->startup) != 0)
     {
     log_err(-1,"mutex_lock","ALERT:   cannot lock startup mutex!\n");
@@ -66,6 +74,7 @@ int lock_startup()
 
 int unlock_startup()
   {
+  /* fprintf(stdout, "startup unlock\n"); */
   if (pthread_mutex_unlock(locks->startup) != 0)
     {
     log_err(-1,"mutex_unlock","ALERT:   cannot unlock startup mutex!\n");
@@ -78,6 +87,7 @@ int lock_conn_table()
   {
   if (locks == NULL)
     lock_init();
+  /* fprintf(stdout, "conn lock\n"); */
   if (pthread_mutex_lock(locks->conn_table) != 0)
     {
     log_err(-1,"mutex_lock","ALERT:   cannot lock conn_table mutex!\n");
@@ -88,6 +98,7 @@ int lock_conn_table()
 
 int unlock_conn_table()
   {
+  /* fprintf(stdout, "conn unlock\n"); */
   if (pthread_mutex_unlock(locks->conn_table) != 0)
     {
     log_err(-1,"mutex_unlock","ALERT:   cannot unlock conn_table mutex!\n");
@@ -100,6 +111,7 @@ int lock_tcp_table()
   {
   if (locks == NULL)
     lock_init();
+  /* fprintf(stdout, "tcp lock\n"); */
   if (pthread_mutex_lock(locks->tcp_table) != 0)
     {
     log_err(-1,"mutex_lock","ALERT:   cannot lock tcp_table mutex!\n");
@@ -110,6 +122,7 @@ int lock_tcp_table()
 
 int unlock_tcp_table()
   {
+  /* fprintf(stdout, "tcp unlock\n"); */
   if (pthread_mutex_unlock(locks->tcp_table) != 0)
     {
     log_err(-1,"mutex_unlock","ALERT:   cannot unlock tcp_table mutex!\n");

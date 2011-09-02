@@ -119,7 +119,7 @@
 #include "threadpool.h"
 #include "dis.h"
 #include "array.h"
-
+#include "../lib/Libnet/lib_net.h" /* global_sock_add */
 
 /*
  * process_request - this function gets, checks, and invokes the proper
@@ -163,7 +163,7 @@ static const int munge_on = 1;
 static const int munge_on = 0;
 #endif 
 
-static void close_client(int sfds);
+static void svr_close_client(int sfds);
 static void freebr_manage(struct rq_manage *);
 static void freebr_cpyfile(struct rq_cpyfile *);
 static void close_quejob(int sfds);
@@ -312,9 +312,9 @@ int get_creds(
  * NOTE: the caller functions hold the mutex for the connection
  */
 
-void process_request(
+void *process_request(
 
-  int sfds) /* file descriptor (socket) to get request */
+  void *new_sock) /* file descriptor (socket) to get request */
 
   {
   int                   rc;
@@ -323,6 +323,9 @@ void process_request(
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   time_t                time_now = time(NULL);
+  int sfds = *(int *)new_sock;
+  free(new_sock);
+  fprintf(stdout, "process_request for sock#%d\n", sfds);
 
   request = alloc_br(0);
 
@@ -346,6 +349,7 @@ void process_request(
 
 #endif /* END ENABLE_UNIX_SOCKETS */
     rc = dis_request_read(sfds, request);
+    global_sock_add(sfds);
     }
   else
     {
@@ -356,44 +360,25 @@ void process_request(
       "request on invalid type of connection");
 
     close_conn(sfds, TRUE);
-
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-
     free_br(request);
-    
-    return;
+    global_sock_add(sfds);
+    return NULL;
     }
 
   if (rc == -1)
     {
     /* FAILURE */
-
     /* premature end of file */
-
-    close_client(sfds);
-
-    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-
-    free_br(request);
-
-    return;
+    goto process_request_cleanup;
     }
 
   if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL))
     {
     /* FAILURE */
-
     /* read error, likely cannot send reply so just disconnect */
-
     /* ??? not sure about this ??? */
-
-    close_client(sfds);
-
-    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-
-    free_br(request);
-
-    return;
+    goto process_request_cleanup;
     }
 
   if (rc > 0)
@@ -406,12 +391,7 @@ void process_request(
      */
 
     req_reject(rc, 0, request, NULL, "cannot decode message");
-
-    close_client(sfds);
-
-    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-
-    return;
+    goto process_request_cleanup;
     }
 
   if (get_connecthost(sfds, request->rq_host, PBS_MAXHOSTNAME) != 0)
@@ -429,9 +409,7 @@ void process_request(
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
 
-    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-
-    return;
+    goto process_request_cleanup;
     }
 
   if (LOGLEVEL >= 1)
@@ -463,23 +441,15 @@ void process_request(
 
     if ((isanode == NULL) &&
         (strcmp(server_host, request->rq_host) != 0) &&
-        (acl_check(
-           &server.sv_attr[SRV_ATR_acl_hosts],
-           request->rq_host,
+        (acl_check(&server.sv_attr[SRV_ATR_acl_hosts], request->rq_host,
            ACL_Host) == 0))
       {
       char tmpLine[1024];
-
       snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
                request->rq_host);
 
       req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-
-      close_client(sfds);
-
-      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-
-      return;
+      goto process_request_cleanup;
       }
 
     pthread_mutex_unlock(isanode->nd_mutex);
@@ -505,6 +475,7 @@ void process_request(
   else
     {
     /* request not from another server */
+    conn_credent[sfds].timestamp = time_now;
 
     request->rq_fromsvr = 0;
 
@@ -531,15 +502,13 @@ void process_request(
       if (svr_conn[sfds].cn_socktype == PBS_SOCK_INET)
         {
         pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-
-        return;
+        return NULL;
         }
 
       }
 
     if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
       {
-      conn_credent[sfds].timestamp = time_now;
       svr_conn[sfds].cn_authen = PBS_NET_CONN_AUTHENTICATED;
       }
 
@@ -549,7 +518,6 @@ void process_request(
     else if (munge_on)
       {
       /* If munge_on is true we will validate the connection later */
-      conn_credent[sfds].timestamp = time_now;
       svr_conn[sfds].cn_authen = PBS_NET_CONN_AUTHENTICATED;
       rc = 0;
       }
@@ -561,12 +529,7 @@ void process_request(
     if (rc != 0)
       {
       req_reject(rc, 0, request, NULL, NULL);
-
-      close_client(sfds);
-
-      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-
-      return;
+      goto process_request_cleanup;
       }
 
     /*
@@ -636,12 +599,9 @@ void process_request(
       case PBS_BATCH_StageIn:
       case PBS_BATCH_jobscript:
 
-        pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
         req_reject(PBSE_SVRDOWN, 0, request, NULL, NULL);
-
-        return;
-
+        goto process_request_cleanup;
         /*NOTREACHED*/
 
         break;
@@ -657,8 +617,15 @@ void process_request(
    */
 
   dispatch_request(sfds, request);
+  fprintf(stdout, "process_request complete sock#[%d]\n", sfds);
 
-  return;
+  return NULL;
+process_request_cleanup:
+  svr_close_client(sfds);
+  pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+  free_br(request);
+  fprintf(stdout, "process_request fail sock#[%d]\n", sfds);
+  return NULL;
   }  /* END process_request() */
 
 
@@ -950,7 +917,7 @@ void dispatch_request(
 
       pthread_mutex_lock(svr_conn[sfds].cn_mutex);
 
-      close_client(sfds);
+      svr_close_client(sfds);
       
       pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
@@ -965,11 +932,11 @@ void dispatch_request(
 
 
 /*
- * close_client - close a connection to a client, also "inactivate"
+ * svr_close_client - close a connection to a client, also "inactivate"
  *    any outstanding batch requests on that connection.
  */
 
-static void close_client(
+static void svr_close_client(
 
   int sfds)  /* connection socket */
 
@@ -999,7 +966,7 @@ static void close_client(
   pthread_mutex_unlock(svr_requests_mutex);
 
   return;
-  }  /* END close_client() */
+  }  /* END svr_close_client() */
 
 
 

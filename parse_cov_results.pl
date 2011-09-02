@@ -61,7 +61,7 @@ def report_file(report):
     # Print info for each reported file and then give a summary total for all the files mentioned
     # item[0] is the name, item[1] is percentage, item[2] is line count
     for item in list:
-        print "%20s  %10s%%  of %7s" % tuple(item)
+        print "%24s  %10s%%  of %7s" % tuple(item)
         actual_lines += (float(item[1]) / 100) * float(item[2])
         total_lines += int(item[2])
 

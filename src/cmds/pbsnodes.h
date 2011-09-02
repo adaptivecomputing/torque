@@ -1,5 +1,22 @@
 #include "license_pbs.h" /* See here for the software license */
 
+#include "batch_request.h" /* batch_request */
+#include "mcom.h" /* mxml_t */
+
+enum NStateEnum
+  {
+  tnsNONE = 0, /* default behavior - show down, offline, and unknown nodes */
+  tnsActive,   /* one or more jobs running on node */
+  tnsAll,      /* list all nodes */
+  tnsBusy,     /* node cannot accept additional workload */
+  tnsDown,     /* node is down */
+  tnsFree,     /* node is idle/free */
+  tnsOffline,  /* node is offline */
+  tnsUnknown,  /* node is unknown - no contact recieved */
+  tnsUp,       /* node is healthy */
+  tnsLAST             
+  };
+
 /* static int set_note(int con, char *name, char *msg); */
 
 /* static void prt_node_attr(struct batch_status *pbs, int IsVerbose);  */

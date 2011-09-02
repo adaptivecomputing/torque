@@ -4727,7 +4727,7 @@ void main_func(
     errmsg = pbs_strerror(pbs_errno);
 
     if (errmsg != NULL)
-      fprintf(stderr, "qsub: %s\n", errmsg);
+      fprintf(stderr, "qsub: submit error (%s)\n", errmsg);
     else
       fprintf(stderr, "qsub: Error (%d - %s) submitting job\n",
               pbs_errno, pbs_strerror(pbs_errno));

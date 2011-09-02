@@ -4,11 +4,11 @@
 
 #include "batch_request.h" /* batch_request */
 
-void mom_process_request(int sfds);
+void *mom_process_request(void *sock_num);
 
 void dispatch_request(int  sfds, struct batch_request *request);
 
-/* static void close_client(int sfds); */
+/* static void mom_close_client(int sfds); */
 
 struct batch_request *alloc_br(int type);
 

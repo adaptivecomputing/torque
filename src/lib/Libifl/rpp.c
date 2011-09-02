@@ -2919,8 +2919,7 @@ struct sockaddr_in *rpp_getaddr(
 ** Free all memory and close the socket.
 */
 
-void
-rpp_terminate(void)
+void rpp_terminate(void)
 
   {
 

@@ -183,7 +183,7 @@ extern int   site_mom_postchk(job *, int);
 extern int   site_mom_prerst(job *);
 extern int   reader(int, int);
 extern int   writer(int, int);
-extern int   conn_qsub(char *, unsigned int, char *);  /* NOTE:  should be moved out of here to job_func proto header */
+extern int   conn_qsub(char *, long, char *);  /* NOTE:  should be moved out of here to job_func proto header */
 extern int   run_pelog(int, char *, job *, int);
 extern int   is_joined(job *);
 extern void  check_busy(double);
@@ -198,7 +198,7 @@ extern int   task_save(task *) ;
 extern void  DIS_rpp_reset(void);
 extern void  checkret(char **, long);
 extern char *get_job_envvar(job *, char *);
-extern int   mom_open_socket_to_jobs_server(job* pjob, char *id, void (*message_hander)(int));
+extern int   mom_open_socket_to_jobs_server(job* pjob, char *id, void *(*message_hander)(void *));
 
 /* defined in mach-dependant mom_mach.c */
 extern int kill_task(struct task *, int, int);

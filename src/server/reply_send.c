@@ -325,7 +325,8 @@ int reply_send(
  * Always frees the request structure.
  */
 
-void reply_ack(struct batch_request *preq)
+void reply_ack(
+    struct batch_request *preq)
   {
 
   preq->rq_reply.brp_code    = PBSE_NONE;

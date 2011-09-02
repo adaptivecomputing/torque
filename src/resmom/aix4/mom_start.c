@@ -152,11 +152,9 @@ set_globid(job *pjob, struct startjob_rtn *sjr)
  * set_mach_vars - setup machine dependent environment variables
  */
 
-int
-set_mach_vars(
+int set_mach_vars(
   job *pjob,    /* pointer to the job */
-  struct var_table *vtab    /* pointer to variable table */
-)
+  struct var_table *vtab)    /* pointer to variable table */
   {
 #if IBM_SP2==1 || IBM_SP2==2 /* IBM SP2 with PSSP 2.x or 3.x*/
   char  buf[256];
@@ -190,8 +188,9 @@ set_mach_vars(
   return 0;
   }
 
-char *
-set_shell(job *pjob, struct passwd *pwdp)
+char * set_shell(
+    job *pjob,
+    struct passwd *pwdp)
   {
   char *cp;
   int   i;

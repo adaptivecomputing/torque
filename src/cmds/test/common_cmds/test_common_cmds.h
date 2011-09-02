@@ -1,4 +1,3 @@
-
 #include "license_pbs.h" /* See here for the software license */
 #ifndef _TEST_COMMON_CMDS_H
 #define _TEST_COMMON_CMDS_H

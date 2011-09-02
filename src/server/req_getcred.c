@@ -106,6 +106,7 @@
 #include "batch_request.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
+#include "../lib/Libnet/lib_net.h" /* global_sock_add */
 
 #define SPACE 32 /* ASCII space character */
 
@@ -132,7 +133,8 @@ void req_connect(
   {
   int  sock = preq->rq_conn;
 
-  pthread_mutex_lock(svr_conn[sock].cn_mutex);
+  /* Called from one location inside a lock */
+/*   pthread_mutex_lock(svr_conn[sock].cn_mutex); */
 
   if (svr_conn[sock].cn_authen == 0)
     {
@@ -142,8 +144,10 @@ void req_connect(
     {
     req_reject(PBSE_BADCRED, 0, preq, NULL, NULL);
     }
+  /* This socket will have addition data after the response */
+  global_sock_add(preq->rq_conn);
 
-  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+/*   pthread_mutex_unlock(svr_conn[sock].cn_mutex); */
 
   return;
   }  /* END req_connect() */
@@ -408,45 +412,57 @@ void req_authenuser(
 
   {
   int s;
+  int debug = 0;
+  int delay_cntr = 0;
 
   /*
    * find the socket whose client side is bound to the port named
    * in the request
    */
 
-  for (s = 0;s < PBS_NET_MAX_CONNECTIONS;++s)
+  if (getenv(PBSDEBUG))
+    debug = 1;
+  for (delay_cntr = 0; delay_cntr < 5;delay_cntr++)
     {
-    pthread_mutex_lock(svr_conn[s].cn_mutex);
-
-    if (preq->rq_ind.rq_authen.rq_port != svr_conn[s].cn_port)
+    for (s = 0;s < PBS_NET_MAX_CONNECTIONS;++s)
       {
-      pthread_mutex_unlock(svr_conn[s].cn_mutex);
-
-      continue;
-      }
+      pthread_mutex_lock(svr_conn[s].cn_mutex);
+  
+      if (preq->rq_ind.rq_authen.rq_port != svr_conn[s].cn_port)
+        {
+        pthread_mutex_unlock(svr_conn[s].cn_mutex);
+        continue;
+        }
 
 #ifndef NOPRIVPORTS
-    if (svr_conn[s].cn_authen == 0)
+      if (svr_conn[s].cn_authen == 0)
 #endif
-      {
-      strcpy(conn_credent[s].username, preq->rq_user);
-      strcpy(conn_credent[s].hostname, preq->rq_host);
+        {
+        strcpy(conn_credent[s].username, preq->rq_user);
+        strcpy(conn_credent[s].hostname, preq->rq_host);
 
-      /* time stamp just for the record */
+        /* time stamp just for the record */
 
-      conn_credent[s].timestamp = time(NULL);
+        conn_credent[s].timestamp = time(NULL);
 
-      svr_conn[s].cn_authen = PBS_NET_CONN_AUTHENTICATED;
-      }
+        svr_conn[s].cn_authen = PBS_NET_CONN_AUTHENTICATED;
+        }
 
-    reply_ack(preq);
+      reply_ack(preq);
 
-    /* SUCCESS */
-    pthread_mutex_unlock(svr_conn[s].cn_mutex);
+      /* SUCCESS */
+      pthread_mutex_unlock(svr_conn[s].cn_mutex);
+      if (debug) printf("(FOUND_PROCESSED) unlock %d\n", s);
 
-    return;
-    }  /* END for (s) */
+      return;
+      }  /* END for (s) */
+    if (debug) fprintf(stderr, "sock not found, sleeping (%d)\n", delay_cntr);
+    usleep(10);
+    }
 
+  if (debug) fprintf(stderr, "(FOUND_FAILED) unlock %d\n", s);
+  pthread_mutex_unlock(svr_conn[s].cn_mutex);
+  if (debug) fprintf(stderr, "pbs_iff fail %d\n", preq->rq_ind.rq_authen.rq_port);
   req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user");
 
   /* FAILURE */
@@ -492,6 +508,7 @@ void *req_altauthenuser(
   /* If s is less than PBS_NET_MAX_CONNECTIONS we have our port */
   if (s >= PBS_NET_MAX_CONNECTIONS)
     {
+    pthread_mutex_unlock(svr_conn[s].cn_mutex);
     req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user");
     return(NULL);
     }
@@ -501,6 +518,7 @@ void *req_altauthenuser(
   if (rc)
     {
     /* FAILED */
+    pthread_mutex_unlock(svr_conn[s].cn_mutex);
     return(NULL);
     }
 

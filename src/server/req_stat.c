@@ -139,7 +139,7 @@ extern pthread_mutex_t *netrates_mutex;
 
 int status_job(job *, struct batch_request *, svrattrl *, tlist_head *, int *);
 int status_attrib(svrattrl *, attribute_def *, attribute *, int, int, tlist_head *, int *, int);
-extern int  svr_connect(pbs_net_t, unsigned int, struct pbsnode *, void (*)(int), enum conn_type);
+extern int  svr_connect(pbs_net_t, unsigned int, struct pbsnode *, void *(*)(void *), enum conn_type);
 extern int  status_nodeattrib(svrattrl *, attribute_def *, struct pbsnode *, int, int, tlist_head *, int*);
 extern int  hasprop(struct pbsnode *, struct prop *);
 extern void rel_resc(job*);

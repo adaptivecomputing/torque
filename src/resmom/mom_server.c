@@ -4481,7 +4481,7 @@ int mom_open_socket_to_jobs_server(
 
   job  *pjob,
   char *caller_id,
-  void (*message_handler)(int))
+  void *(*message_handler)(void *))
 
   {
   char *svrport = NULL;

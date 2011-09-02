@@ -1,6 +1,6 @@
 #ifndef _MOM_MACH_CT_H
 #define _MOM_MACH_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define MOM_MACH_SUITE 1
 Suite *mom_mach_suite();

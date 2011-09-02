@@ -158,7 +158,7 @@ int diswcs(int stream, const char *value, size_t nchars)
   exit(1);
   }
 
-void add_conn(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void (*func)(int))
+void add_conn(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void *(*func)(void *))
   {
   fprintf(stderr, "The call to add_conn needs to be mocked!!\n");
   exit(1);

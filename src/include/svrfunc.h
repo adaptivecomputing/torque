@@ -12,9 +12,9 @@
 /* extern void  get_jobowner(char *from, char *to); */
 extern char *parse_servername(char *, unsigned int *);
 extern void  process_Areply(int);
-extern void  process_Dreply(int);
-extern void  mom_process_request(int);
-extern void  process_request(int);
+extern void  *process_Dreply(void *);
+extern void  *mom_process_request(void *);
+extern void  *process_request(void *);
 extern void  process_dis_request(int);
 extern int   save_flush();
 extern void  save_setup(int);
@@ -51,7 +51,7 @@ extern int   chk_resc_limits(attribute *, pbs_queue *, char *);
 
 #ifdef PBS_NET_H
 struct pbsnode;
-extern int   svr_connect(pbs_net_t, unsigned int, struct pbsnode *, void (*)(int), enum conn_type);
+extern int   svr_connect(pbs_net_t, unsigned int, struct pbsnode *, void *(*)(void *), enum conn_type);
 #endif /* PBS_NET_H */
 
 #ifdef WORK_TASK_H

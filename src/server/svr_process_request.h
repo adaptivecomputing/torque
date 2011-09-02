@@ -8,11 +8,11 @@
 int get_creds(int sd, char *username, char *hostname);
 #endif /* END ENABLE_UNIX_SOCKETS */
 
-void process_request(int sfds);
+void *process_request(void *new_sock);
 
 void dispatch_request(int sfds, struct batch_request *request);
  
-static void close_client(int sfds);
+static void svr_close_client(int sfds);
 
 struct batch_request *alloc_br(int type);
 

@@ -4,6 +4,8 @@
 
 #include "net_connect.h"
 
+char *msg_daemonname = "unset";
+
 void log_event(int eventtype, int objclass, char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
@@ -35,6 +37,12 @@ int get_fdset_size(void)
   }
 
 void log_err(int errnum, char *routine, char *text)
+  {
+  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
+  exit(1);
+  }
+
+void log_record(int eventtype, int objclass, char *objname, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);

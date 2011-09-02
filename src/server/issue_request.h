@@ -16,6 +16,6 @@ void release_req(struct work_task *pwt);
 
 int issue_Drequest(int conn, struct batch_request *request, void (*func)(struct work_task *), struct work_task **ppwt);
 
-void process_Dreply(int sock);
+void *process_Dreply(void *new_sock);
 
 #endif /* _ISSUE_REQUEST_H */

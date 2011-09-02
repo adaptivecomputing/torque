@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h> /* time_t */
 #include <netinet/in.h> /* sockaddr_in */
+#include <sys/select.h> /* fd_set */
 
 #include "net_connect.h" /* pbs_net_t,conn_type */
 #include "md5.h" /* MD5_CTX */
@@ -14,6 +15,7 @@ int get_connection_entry(int *conn_pos);
 /* from file get_hostaddr.c */
 char *PAddrToString(pbs_net_t *Addr);
 pbs_net_t get_hostaddr(char *hostname);
+int get_hostaddr_hostent(char *hostname, char **host_addr, int *host_addr_len);
 
 /* from file get_hostname.c */
 int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg); 
@@ -23,6 +25,26 @@ void MD5Init(MD5_CTX *mdContext);
 void MD5Update(MD5_CTX *mdContext, unsigned char *inBuf, unsigned int inLen);
 void MD5Final(MD5_CTX *mdContext);
 /* static void Transform(UINT4 *buf, UINT4 *in); */
+
+/* from file net_common.c */
+unsigned availBytesOnDescriptor(int pLocalSocket);
+int socket_avail_bytes_on_descriptor(int socket);
+int socket_get_tcp();
+int get_random_reserved_port();
+int socket_get_tcp_priv();
+int socket_connect(int local_socket, char *dest_addr, int dest_addr_len, int dest_port, int family, int is_privileged, char **err_msg);
+int socket_wait_for_write(int socket);
+int socket_wait_for_xbytes(int socket, int len);
+int socket_wait_for_read(int socket);
+void socket_read_flush(int socket);
+int socket_write(int socket, char *data, int data_len);
+int socket_read_one_byte(int socket, char *one_char);
+int socket_read_num(int socket, long long *the_num);
+int socket_read_str(int socket, char **the_str, long long *str_len);
+int socket_close(int socket);
+
+/* from file server_core.c */
+int start_listener(char *server_ip, int server_port, void *(*process_meth)(void *));
 
 /* from file net_client.c */
 #ifdef __APPLE__
@@ -34,13 +56,18 @@ int get_fdset_size(void);
 int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *EMsg);
 
 /* from file net_server.c */
+void global_sock_add(int new_sock);
+void global_sock_rem(int new_sock);
+fd_set *global_sock_getlist();
+int global_sock_verify();
 void netcounter_incr(void);
 int get_num_connections();
 int *netcounter_get(void);
-int init_network(unsigned int port, void (*readfunc)());
+int init_network(unsigned int port, void *(*readfunc)(void *));
+int thread_func(int active_sockets);
 int wait_request(time_t waittime, long *SState); 
-/* static void accept_conn(int sd); */
-void add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void (*func)(int));
+/* static void accept_conn(void *new_conn); */
+void add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
 void close_conn(int sd, int has_mutex); 
 void net_close(int but); 
 pbs_net_t get_connectaddr(int sock, int mutex); 

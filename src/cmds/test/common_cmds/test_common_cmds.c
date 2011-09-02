@@ -1,4 +1,4 @@
-
+#include "license_pbs.h" /* See here for the software license */
 #include "test_common_cmds.h"
 #include "common_cmds.h"
 #include <stdlib.h>
@@ -13,10 +13,11 @@ extern int tc_num;
 
 START_TEST(test_parse_env_line_nospace)
   {
-
+  int rc = PBSE_NONE;
   char env_var[] = "ONE_VAR=THE_VAL";
   char *name = NULL, *val = NULL;
-  rc = parse_env_line(env_var, &name, &val);
+  memmgr *mm;
+  rc = parse_env_line(&mm, env_var, &name, &val);
   fail_unless(name != NULL, "name should have a value");
   fail_unless(val != NULL, "val should have a value");
   fail_unless(strcmp("ONE_VAR", name) == 0, "[ONE_VAR] != [%s]", name);
@@ -26,10 +27,11 @@ END_TEST
 
 START_TEST(test_parse_env_line_space)
   {
-
+  int rc = PBSE_NONE;
   char env_var[] = "ONE_VAR=  THE_VAL";
   char *name = NULL, *val = NULL;
-  rc = parse_env_line(env_var, &name, &val);
+  memmgr *mm;
+  rc = parse_env_line(&mm, env_var, &name, &val);
   fail_unless(name != NULL, "name should have a value");
   fail_unless(val != NULL, "val should have a value");
   fail_unless(strcmp("ONE_VAR", name) == 0, "[ONE_VAR] != [%s]", name);
@@ -39,10 +41,11 @@ END_TEST
 
 START_TEST(test_parse_env_line_allspace)
   {
-
+  int rc = PBSE_NONE;
   char env_var[] = "ONE_VAR=   ";
   char *name = NULL, *val = NULL;
-  rc = parse_env_line(env_var, &name, &val);
+  memmgr *mm;
+  rc = parse_env_line(&mm, env_var, &name, &val);
   fail_unless(name != NULL, "name should have a value");
   fail_unless(val != NULL, "val should have a value");
   fail_unless(strcmp("ONE_VAR", name) == 0, "[ONE_VAR] != [%s]", name);
@@ -52,10 +55,9 @@ END_TEST
 
 START_TEST(test_set_env_opts)
   {
-
   char *env_var[4];
-  char *name = NULL, *val = NULL;
   job_data *env_hash = NULL;
+  memmgr *mm;
   tc_num = 1;
   env_var[0] = (char *)calloc(1, 20);
   env_var[1] = (char *)calloc(1, 20);
@@ -65,12 +67,11 @@ START_TEST(test_set_env_opts)
   strcpy(env_var[0], "ONE_VAR=ONE_VAL");
   strcpy(env_var[1], "TWO_VAR=TWO_VAL");
   strcpy(env_var[2], "THREE_VAR=   ");
-  strcpy(env_var[2], "FOUR_VAR=");
   strcpy(env_var[3], "_=CMD");
-  set_env_opts(&env_hash, env_var);
-  fail_unless(env_add_call == 4, "This should have been called 4 times (%d)", env_add_call);
-  fail_unless(env_del_call == 0, "This should have been called 1 times (%d)", env_del_call);
-  fail_unless(env_find_call == 1, "This should have been called 1 times (%d)", env_find_call);
+  set_env_opts(&mm, &env_hash, env_var);
+  fail_unless(env_add_call == 4, "Add should have been called 4 times (%d)", env_add_call);
+  fail_unless(env_del_call == 0, "Del should have been called 1 times (%d)", env_del_call);
+/*  fail_unless(env_find_call == 1, "Find should have been called 1 times (%d)", env_find_call); */
   }
 END_TEST
 
@@ -85,7 +86,7 @@ START_TEST(test_parse_variable_list)
   char list[] = "hi=there,help=me,me=";
   tc_num = 2;
   hash_add_or_exit(&mm, &src_map, "me", "notme", var_type);
-  parse_variable_list(&dest_map, src_map, var_type, op_type, list);
+  parse_variable_list(&mm, &dest_map, src_map, var_type, op_type, list);
   hash_find(dest_map, "hi", &item);
   fail_unless(item != NULL, "hi was not found in the map");
   hash_find(dest_map, "help", &item);
@@ -100,11 +101,12 @@ START_TEST(test_parse_variable_list_equalfirst)
   {
   job_data *dest_map = NULL;
   job_data *src_map = NULL;
+  memmgr *mm;
   int var_type = ENV_DATA;
   int op_type = SET;
   char list[] = "hi=there,=me";
   tc_num = 0;
-  parse_variable_list(&dest_map, src_map, var_type, op_type, list);
+  parse_variable_list(&mm, &dest_map, src_map, var_type, op_type, list);
   }
 END_TEST
 
@@ -112,11 +114,12 @@ START_TEST(test_parse_variable_list_noequal)
   {
   job_data *dest_map = NULL;
   job_data *src_map = NULL;
+  memmgr *mm;
   int var_type = ENV_DATA;
   int op_type = SET;
   char list[] = "hi=there,helpme";
   tc_num = 0;
-  parse_variable_list(&dest_map, src_map, var_type, op_type, list);
+  parse_variable_list(&mm, &dest_map, src_map, var_type, op_type, list);
   }
 END_TEST
 
@@ -152,7 +155,22 @@ void rundebug()
 /*   strcpy(env_var[2], "FOUR_VAR="); */
 /*   strcpy(env_var[3], "_=CMD"); */
 /*   set_env_opts(&env_hash, env_var); */
+  char *env_var[4];
+  job_data *env_hash = NULL;
   memmgr *mm;
+  tc_num = 1;
+  env_var[0] = (char *)calloc(1, 20);
+  env_var[1] = (char *)calloc(1, 20);
+  env_var[2] = (char *)calloc(1, 20);
+  env_var[3] = (char *)calloc(1, 20);
+  env_var[4] = NULL;
+  strcpy(env_var[0], "ONE_VAR=ONE_VAL");
+  strcpy(env_var[1], "TWO_VAR=TWO_VAL");
+  strcpy(env_var[2], "THREE_VAR=   ");
+  strcpy(env_var[3], "_=CMD");
+  set_env_opts(&mm, &env_hash, env_var);
+  
+/*  memmgr *mm;
   job_data *dest_map = NULL;
   job_data *src_map = NULL;
   job_data *item = NULL;
@@ -161,17 +179,18 @@ void rundebug()
   char list[] = "hi=there,help=me,me=";
   tc_num = 2;
   hash_add_or_exit(&mm, &src_map, "me", "notme", var_type);
-  parse_variable_list(&dest_map, src_map, var_type, op_type, list);
+  parse_variable_list(&mm, &dest_map, src_map, var_type, op_type, list);
   hash_find(dest_map, "hi", &item);
   hash_find(dest_map, "help", &item);
   hash_find(dest_map, "me", &item);
+  */
   }
 
 int main(void)
   {
   int number_failed = 0;
   SRunner *sr = NULL;
-  rundebug();
+/*  rundebug(); */
   sr = srunner_create(common_cmds_suite());
   srunner_set_log(sr, "common_cmds_suite.log");
   srunner_run_all(sr, CK_NORMAL);

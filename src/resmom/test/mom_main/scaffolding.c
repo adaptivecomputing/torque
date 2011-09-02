@@ -445,7 +445,7 @@ void dep_main_loop_cycle(void)
   exit(1);
   }
 
-int init_network(unsigned int socket, void (*readfunc)())
+int init_network(unsigned int socket, void *(*readfunc)(void *))
   {
   fprintf(stderr, "The call to init_network needs to be mocked!!\n");
   exit(1);
@@ -517,7 +517,7 @@ void log_event(int eventtype, int objclass, char *objname, char *text)
   exit(1);
   }
 
-void mom_process_request(int sfds)
+void *mom_process_request(void *sock_num)
   {
   fprintf(stderr, "The call to mom_process_request needs to be mocked!!\n");
   exit(1);
@@ -604,6 +604,12 @@ unsigned long mom_checkpoint_set_checkpoint_run_exe_name(char *value)
 void im_request(int stream, int version)
   {
   fprintf(stderr, "The call to im_request needs to be mocked!!\n");
+  exit(1);
+  }
+
+int lock_init()
+  {
+  fprintf(stderr, "The call to lock_init needs to be mocked!!\n");
   exit(1);
   }
 

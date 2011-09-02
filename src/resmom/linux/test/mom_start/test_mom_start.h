@@ -1,6 +1,6 @@
 #ifndef _MOM_START_CT_H
 #define _MOM_START_CT_H
-#include "<check.h>"
+#include <check.h>
 
 #define MOM_START_SUITE 1
 Suite *mom_start_suite();

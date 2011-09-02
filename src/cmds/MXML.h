@@ -1,6 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
 
-#include "src/include/mcom.h" /* mxml_t, enum MDataFormatEnum, mbool_t */
+#include "mcom.h" /* mxml_t, enum MDataFormatEnum, mbool_t */
 
 int MXMLExtractE(mxml_t *E, mxml_t *C, mxml_t **CP); 
 

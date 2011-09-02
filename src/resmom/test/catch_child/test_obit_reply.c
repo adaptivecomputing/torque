@@ -1,15 +1,19 @@
 #include "test_catch_child.h"
 #include "catch_child.h"
+#include <stdlib.h> /* malloc */
+
 extern int tc;
 extern int func_num;
-extern int socket_ref;
+extern int the_sock;
 
 extern int exiting_tasks;
 extern job *obitReplyJob;
 
 START_TEST(test_obit_reply_pjobnull)
   {
-  socket_ref = 1;
+  int *socket_ref = malloc(sizeof(int));
+  *socket_ref = 1;
+  the_sock = 1;
   func_num = OBIT_REPLY;
   tc = 1;
   obit_reply(socket_ref);
@@ -17,85 +21,103 @@ START_TEST(test_obit_reply_pjobnull)
 END_TEST
 
 START_TEST(test_obit_reply_pbsenone)
- {
- socket_ref = 1;
- func_num = OBIT_REPLY;
- tc = 2;
- obit_reply(socket_ref);
- }
+  {
+  int *socket_ref = malloc(sizeof(int));
+  *socket_ref = 1;
+  the_sock = 1;
+  func_num = OBIT_REPLY;
+  tc = 2;
+  obit_reply(socket_ref);
+  }
 END_TEST
 
 START_TEST(test_obit_reply_pbsealrdy)
- {
- socket_ref = 1;
- func_num = OBIT_REPLY;
- tc = 3;
- obit_reply(socket_ref);
- }
+  {
+  int *socket_ref = malloc(sizeof(int));
+  *socket_ref = 1;
+  the_sock = 1;
+  func_num = OBIT_REPLY;
+  tc = 3;
+  obit_reply(socket_ref);
+  }
 END_TEST
 
 START_TEST(test_obit_reply_pbsecleaned)
- {
- socket_ref = 1;
- func_num = OBIT_REPLY;
- tc = 4;
- obit_reply(socket_ref);
- }
+  {
+  int *socket_ref = malloc(sizeof(int));
+  *socket_ref = 1;
+  the_sock = 1;
+  func_num = OBIT_REPLY;
+  tc = 4;
+  obit_reply(socket_ref);
+  }
 END_TEST
 
 START_TEST(test_obit_reply_pbsecleanedvflag)
- {
- socket_ref = 1;
- func_num = OBIT_REPLY;
- tc = 9;
- obit_reply(socket_ref);
- }
+  {
+  int *socket_ref = malloc(sizeof(int));
+  *socket_ref = 1;
+  the_sock = 1;
+  func_num = OBIT_REPLY;
+  tc = 9;
+  obit_reply(socket_ref);
+  }
 END_TEST
 
 START_TEST(test_obit_reply_pbseneg)
- {
- socket_ref = 1;
- func_num = OBIT_REPLY;
- tc = 5;
- obit_reply(socket_ref);
- fail_unless(exiting_tasks == 1, "exiting_tasks should be set");
- }
+  {
+  int *socket_ref = malloc(sizeof(int));
+  *socket_ref = 1;
+  the_sock = 1;
+  func_num = OBIT_REPLY;
+  tc = 5;
+  obit_reply(socket_ref);
+  fail_unless(exiting_tasks == 1, "exiting_tasks should be set");
+  }
 END_TEST
 
 START_TEST(test_obit_reply_pbsebad)
- {
- socket_ref = 1;
- func_num = OBIT_REPLY;
- tc = 6;
- obit_reply(socket_ref);
- }
+  {
+  int *socket_ref = malloc(sizeof(int));
+  *socket_ref = 1;
+  the_sock = 1;
+  func_num = OBIT_REPLY;
+  tc = 6;
+  obit_reply(socket_ref);
+  }
 END_TEST
 
 START_TEST(test_obit_reply_pbsesystem)
- {
- socket_ref = 1;
- func_num = OBIT_REPLY;
- tc = 7;
- obit_reply(socket_ref);
- }
+  {
+  int *socket_ref = malloc(sizeof(int));
+  *socket_ref = 1;
+  the_sock = 1;
+  func_num = OBIT_REPLY;
+  tc = 7;
+  obit_reply(socket_ref);
+  }
 END_TEST
 
 START_TEST(test_obit_reply_pbsereject)
- {
- socket_ref = 1;
- func_num = OBIT_REPLY;
- tc = 8;
- obit_reply(socket_ref);
- }
+  {
+  int *socket_ref = malloc(sizeof(int));
+  *socket_ref = 1;
+  the_sock = 1;
+  func_num = OBIT_REPLY;
+  tc = 8;
+  obit_reply(socket_ref);
+  }
 END_TEST
 
 START_TEST(test_obit_reply_failif)
- {
- socket_ref = 1;
- func_num = OBIT_REPLY;
- tc = 10;
- obit_reply(socket_ref);
- }
+  {
+  int *socket_ref = malloc(sizeof(int));
+  *socket_ref = 1;
+  the_sock = 1;
+  func_num = OBIT_REPLY;
+  tc = 10;
+  obit_reply(socket_ref);
+  }
 END_TEST
 
 Suite *obit_reply_suite(void)
@@ -118,7 +140,9 @@ Suite *obit_reply_suite(void)
 
 void rundebug()
   {
-  socket_ref = 1;
+  int *socket_ref = malloc(sizeof(int));
+  *socket_ref = 1;
+  the_sock = 1;
   func_num = OBIT_REPLY;
   tc = 5;
   obit_reply(socket_ref);

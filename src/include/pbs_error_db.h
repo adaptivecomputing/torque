@@ -201,6 +201,16 @@ PbsErrClient(PBSE_NOJOBARRAYS, "Queue does not allow job arrays")
 PbsErrClient(PBSE_RELAYED_TO_MOM, "request was relayed to a MOM") /* */
 PbsErrClient(PBSE_MEM_MALLOC, "Error allocating memory for memmgr")
 PbsErrClient(PBSE_MUTEX, "Error allocating controling mutex (lock/unlock)")
+PbsErrClient(PBSE_THREADATTR, "Error setting thread attributes")
+PbsErrClient(PBSE_THREAD, "Error creating thread")
+PbsErrClient(PBSE_SELECT, "Error in socket select")
+PbsErrClient(PBSE_SOCKET_FAULT, "Error getting connection to socket")
+PbsErrClient(PBSE_SOCKET_WRITE, "Error writing data to socket")
+PbsErrClient(PBSE_SOCKET_READ, "Error reading data from socket")
+PbsErrClient(PBSE_SOCKET_CLOSE, "Socket close detected")
+PbsErrClient(PBSE_SOCKET_LISTEN, "Error listening on socket")
+PbsErrClient(PBSE_AUTH_INVALID, "Invalid auth type in request")
+PbsErrClient(PBSE_NOT_IMPLEMENTED, "This functionality is not yet implemented")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

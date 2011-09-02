@@ -1,23 +1,17 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "pe_input.h"
+#include "mom_mach.h"
 #include "test_pe_input.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <check.h>
 
 #include "pbs_error.h"
-#include "scaffolding.h"
 START_TEST(test_one)
   {
-  int rc = 0;
-  return rc;
   }
 END_TEST
 
 START_TEST(test_two)
   {
-  int rc = 0;
-  return rc;
   }
 END_TEST
 
@@ -42,8 +36,9 @@ void rundebug()
 int main(void)
   {
   int number_failed = 0;
+  SRunner *sr = NULL;
   rundebug();
-  SRunner *sr = srunner_create(pe_input_suite());
+  sr = srunner_create(pe_input_suite());
   srunner_set_log(sr, "pe_input_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);

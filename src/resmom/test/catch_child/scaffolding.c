@@ -42,7 +42,7 @@ int tc = 0; /* Used for test routining */
 int func_num = 0;
 int exit_called = 0;
 int ran_one = 0;
-int socket_ref = 0;
+int the_sock = 0;
 job *lastpjob = NULL;
 
 
@@ -78,7 +78,7 @@ void *get_next(list_link  pl, char     *file, int      line)
       case 1:
         pjob = (job *)calloc(1, sizeof(job));
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
-        pjob->ji_momhandle = socket_ref;
+        pjob->ji_momhandle = the_sock;
         if (tc == 4)
           {
           pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long = 0;
@@ -138,7 +138,7 @@ void *get_next(list_link  pl, char     *file, int      line)
           {
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
           }
-        pjob->ji_momhandle = socket_ref;
+        pjob->ji_momhandle = the_sock;
         break;
       case 4:
         if (tc == 8)
@@ -157,7 +157,7 @@ void *get_next(list_link  pl, char     *file, int      line)
           {
           pjob = (job *)calloc(1, sizeof(job));
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
-          pjob->ji_momhandle = socket_ref;
+          pjob->ji_momhandle = the_sock;
           }
         break;
       case 5:
@@ -766,7 +766,7 @@ int kill_job(job *pjob, int sig, char *killer_id_name, char *why_killed_reason)
   return 0;
   }
 
-int mom_open_socket_to_jobs_server(job *pjob, char *caller_id, void (*message_handler)(int))
+int mom_open_socket_to_jobs_server(job *pjob, char *caller_id, void *(*message_handler)(void *))
   {
   int sock = 1;
   if (func_num == POST_EPILOGUE)

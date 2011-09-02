@@ -1,5 +1,22 @@
 #include "license_pbs.h" /* See here for the software license */
 
+#include <netinet/in.h> /* in_addr_t */
+#include "attribute.h" /* attropl, attrl */
+#include "libpbs.h" /* job_file */
+#include "batch_request.h" /* batch_request */
+#include "tm_.h" /* tm_task_id, tm_node_id, tm_event_t */
+#include "tm.h" /* tm_roots */
+
+/* trq_auth.c */
+#define AUTH_TYPE_IFF 1
+#define AUTH_TYPE_KEY 2
+int parse_request_client(int sock, char **server_name, int *server_port, int *auth_type, char **user, int *user_sock);
+int build_request_svr(int auth_type, char *user, int sock, char **send_message);
+int parse_response_svr(int sock, char **msg);
+int build_response_client(int code, char *msg, char **send_message);
+int get_trq_server_addr(char *server_name, char **server_addr, int *server_addr_len);
+void *process_svr_conn(void *sock);
+
 /* PBSD_gpuctrl2.c */
 int PBSD_gpu_put(int c, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol, char *extend);
 
@@ -30,16 +47,6 @@ struct batch_status *PBSD_status_get(int c);
 
 /* PBSD_status2.c */
 int PBSD_status_put(int c, int function, char *id, struct attrl *attrib, char *extend);
-
-/* PBSD_submit_caps.c */
-int PBSD_rdytocmt(int connect, char *jobid);
-int PBSD_commit_get_sid(int connect, long *sid, char *jobid); 
-int PBSD_commit(int connect, char *jobid); 
-/* static int PBSD_scbuf(int c, int reqtype, int seq, char *buf, int len, char *jobid, enum job_file which);  */
-int PBSD_jscript(int c, char *script_file, char *jobid);
-int PBSD_jobfile(int c, int req_type, char *path, char *jobid, enum job_file which);
-char *PBSD_queuejob(int connect, char *jobid, char *destin, struct attropl *attrib, char *extend);
-char *PBSD_QueueJob_hash(int connect, char *jobid, char *destin, memmgr **mm, job_data *job_attr, job_data *res_attr, char *extend);
 
 /* PBSD_submit_caps.c */
 int PBSD_rdytocmt(int connect, char *jobid);
@@ -225,8 +232,8 @@ void list_move(tlist_head *from, tlist_head *to);
 void free_pidlist(struct pidl *pl);
 
 /* nonblock.c */
-ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count); 
-ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count);
+/* ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count);  */
+/* ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count); */
 ssize_t read_blocking_socket(int fd, void *buf, ssize_t count);
 
 /* pbsD_alterjo.c */
@@ -250,6 +257,8 @@ char *pbs_fbserver(void);
 int PBSD_munge_authenticate(int psock, int handle); 
 #endif 
 #ifndef MUNGE_AUTH
+int parse_svr_response(long long code, long long len, char *buf);
+int validate_socket(int psock);
 int PBSD_authenticate(int psock); 
 #endif 
 #ifdef ENABLE_UNIX_SOCKETS

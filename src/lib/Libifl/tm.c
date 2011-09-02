@@ -855,12 +855,10 @@ int tm_spawn(
 ** Sends a <sig> signal to all the process groups in the task
 ** signified by the handle, <tid>.
 */
-int
-tm_kill(
+int tm_kill(
   tm_task_id tid,  /* in  */
   int sig,  /* in  */
-  tm_event_t *event  /* out */
-)
+  tm_event_t *event)  /* out */
   {
   task_info *tp;
 
@@ -895,12 +893,10 @@ tm_kill(
 ** Returns an event that can be used to learn when a task
 ** dies.
 */
-int
-tm_obit(
+int tm_obit(
   tm_task_id tid,  /* in  */
   int *obitval, /* out */
-  tm_event_t *event  /* out */
-)
+  tm_event_t *event)  /* out */
   {
   task_info *tp;
 
@@ -1018,13 +1014,11 @@ struct reschold
 ** returns the event that the string specifying the resources on
 ** <node> is available.  It returns ERROR_EVENT otherwise.
 */
-int
-tm_rescinfo(
+int tm_rescinfo(
   tm_node_id node,  /* in  */
   char *resource, /* out */
   int len,  /* in  */
-  tm_event_t *event  /* out */
-)
+  tm_event_t *event)  /* out */
   {
 
   struct reschold *rhold;
@@ -1165,8 +1159,7 @@ tm_subscribe(
 ** freed and any connection to the task manager (pbs_mom) is closed.
 ** This call is synchronous.
 */
-int
-tm_finalize(void)
+int tm_finalize(void)
   {
   event_info *e;
   int   i = 0;
@@ -1192,8 +1185,7 @@ tm_finalize(void)
 /*
 ** tm_notify() - set the signal to be sent on event arrival.
 */
-int
-tm_notify(int tm_signal)
+int tm_notify(int tm_signal)
   {
   if (!init_done)
     return TM_BADINIT;

@@ -14,9 +14,9 @@ void scan_for_exiting(void);
 
 int post_epilogue(job *pjob, int ev);
 
-void preobit_reply(int sock);
+void *preobit_reply(void *new_sock);
 
-void obit_reply(int sock);
+void *obit_reply(void *new_sock);
 
 void init_abort_jobs(int recover);
 

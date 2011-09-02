@@ -118,7 +118,7 @@ char       checkpoint_run_exe_name[MAXPATHLEN + 1];
 int        default_checkpoint_interval = 10; /* minutes */
 
 extern char *mk_dirs(char *);
-extern int mom_open_socket_to_jobs_server(job *, char *, void (*)(int));
+extern int mom_open_socket_to_jobs_server(job *, char *, void *(*)(void *));
 extern void set_attr(struct attrl **, char *, char *);
 extern int write_nodes_to_file(job *);
 extern int write_gpus_to_file(job *);
@@ -141,8 +141,8 @@ int create_missing_files(job *pjob);
  */
 
 
-int
-mom_checkpoint_job_is_checkpointable(job *pjob)
+int mom_checkpoint_job_is_checkpointable(
+    job *pjob)
   {
   attribute    *pattr;
   int           rc;
@@ -172,8 +172,11 @@ mom_checkpoint_job_is_checkpointable(job *pjob)
  * @param pjob Pointer to job structure.
  * @see TMomFinalizeChild
  */
-int
-mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table *vtable)
+int mom_checkpoint_execute_job(
+    job *pjob,
+    char *shell,
+    char *arg[],
+    struct var_table *vtable)
   {
   static char          *id = "mom_checkpoint_execute_job";
 
@@ -2023,8 +2026,8 @@ fail:
  * @param pjob Pointer to job structure
  * @see TMomFinalizeJob1
  */
-void
-mom_checkpoint_init_job_periodic_timer(job *pjob)
+void mom_checkpoint_init_job_periodic_timer(
+    job *pjob)
   {
   attribute    *pattr;
   char         *vp;

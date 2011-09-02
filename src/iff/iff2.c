@@ -262,7 +262,7 @@ int main(
     sleep(1);
     }  /* END for (i) */
 
-/*  sleep(15); */
+/*  sleep(25); */
   if (sock < 0)
     {
     /* FAILURE */

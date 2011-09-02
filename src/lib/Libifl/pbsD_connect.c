@@ -100,6 +100,8 @@
 #include <sys/un.h>
 #include <netinet/in.h>
 #include <sys/param.h>
+#include <netinet/in.h> /* in_addr_t */
+#include <arpa/inet.h> /* inet_addr */
 #if HAVE_SYS_UCRED_H
 #include <sys/ucred.h>
 #endif
@@ -116,9 +118,13 @@
 #include "csv.h"
 #include "dis.h"
 #include "net_connect.h"
+#include "log.h" /* log */
+#include "../Liblog/log_event.h" /* log_event */
+#include "../Libnet/lib_net.h" /* socket_* */
+#include "../Libifl/lib_ifl.h" /* AUTH_TYPE_IFF */
+#include "pbs_constants.h" /* LOCAL_IP */
 
-
-
+#define LOCAL_LOG_BUF 1024
 #define CNTRETRYDELAY 5
 #define MUNGE_SIZE 256 /* I do not know what the proper size of this should be. My 
                           testing with munge shows it creates a string of 128 bytes */
@@ -455,6 +461,114 @@ int PBSD_munge_authenticate(
  */
 
 #ifndef MUNGE_AUTH
+
+int parse_daemon_response(long long code, long long len, char *buf)
+  {
+  int rc = PBSE_NONE;
+  if (code == 0)
+    {
+    /* Success */
+    }
+  else
+    {
+    fprintf(stderr, "Error code - %lld : message [%s]\n", code, buf);
+    rc = code;
+    }
+  return rc;
+  }
+
+int get_parent_client_socket(int psock, int *pcsock)
+  {
+  int rc = PBSE_NONE;
+  struct sockaddr_in sockname;
+  socklen_t socknamelen = sizeof(sockname);
+  if (getsockname(psock, (struct sockaddr *)&sockname, &socknamelen) < 0)
+    {
+    rc = PBSE_SOCKET_FAULT;
+    fprintf(stderr, "pbs_iff: cannot get sockname for socket %d, errno=%d (%s)\n", psock, errno, strerror(errno));
+    }
+  else
+    {
+    *pcsock = ntohs(sockname.sin_port);
+    }
+  return rc;
+  }
+
+int validate_socket(
+    int psock)
+  {
+  int rc = PBSE_NONE;
+  static char id[] = "validate_socket";
+  char tmp_buf[LOCAL_LOG_BUF];
+  char write_buf[1024], *read_buf = NULL;
+  long long read_buf_len = 0;
+  uid_t   myrealuid;
+  int local_socket = 0;
+  int parent_client_socket = 0;
+  struct passwd *pwent;
+  char *err_msg = NULL;
+  char *l_server = NULL;
+  int l_server_len = 0;
+  long long code = -1;
+  int write_buf_len = 0;
+  myrealuid = getuid();
+  if ((pwent = getpwuid(myrealuid)) == NULL)
+    {
+    snprintf(tmp_buf, LOCAL_LOG_BUF, "cannot get account info: uid %d, errno %d (%s)\n", (int)myrealuid, errno, strerror(errno));
+    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,tmp_buf);
+    }
+  else if ((rc = get_hostaddr_hostent(AUTH_IP, &l_server, &l_server_len)) != PBSE_NONE)
+    {
+    }
+  else if ((rc = get_parent_client_socket(psock, &parent_client_socket)) != PBSE_NONE)
+    {
+    }
+  else
+    {
+    /* format is:
+     * trq_system|trq_port|Validation_type|user|psock|
+     */
+    sprintf(write_buf, "%d|%s|%d|%d|%d|%s|%d|", (int)strlen(server_name), server_name, server_port, AUTH_TYPE_IFF, (int)strlen(pwent->pw_name), pwent->pw_name, parent_client_socket);
+    /*
+     * total_length|val
+     */
+    write_buf_len = strlen(write_buf);
+    if ((local_socket = socket_get_tcp()) <= 0)
+      {
+      rc = PBSE_SOCKET_FAULT;
+      }
+    else if ((rc = socket_connect(local_socket, l_server, l_server_len, AUTH_PORT, AF_INET, 0, &err_msg)) != PBSE_NONE)
+      {
+      fprintf(stderr, "Error with socket_connect - %d-%s\n", rc, err_msg);
+      }
+    else if ((rc = socket_write(local_socket, write_buf, write_buf_len)) != write_buf_len)
+      {
+      rc = PBSE_SOCKET_WRITE;
+      }
+    else if ((rc = socket_read_num(local_socket, &code)) != PBSE_NONE)
+      {
+      }
+    else if ((rc = socket_read_str(local_socket, &read_buf, &read_buf_len)) != PBSE_NONE)
+      {
+      }
+    else if ((rc = parse_daemon_response(code, read_buf_len, read_buf)) != PBSE_NONE)
+      {
+      }
+    else
+      {
+      if (getenv("PBSDEBUG"))
+        {
+        fprintf(stderr, "%s : Connection authorized (server socket %d)\n", id, parent_client_socket);
+        }
+      }
+    }
+  if (err_msg != NULL)
+    free(err_msg);
+  if (read_buf != NULL)
+    free(read_buf);
+  return rc;
+  }
+
 int PBSD_authenticate(
 
   int psock)  /* I */
@@ -675,7 +789,7 @@ int pbs_original_connect(
   struct hostent *hp;
   int out;
   int i;
-  int auth;
+  int rc;
 
   struct passwd *pw;
   int use_unixsock = 0;
@@ -943,14 +1057,14 @@ int pbs_original_connect(
 #endif
 
 #ifdef MUNGE_AUTH
-    auth = PBSD_munge_authenticate(connection[out].ch_socket, out);
-    if (auth != 0)
+    rc = PBSD_munge_authenticate(connection[out].ch_socket, out);
+    if (rc != 0)
       {
       close(connection[out].ch_socket);
 
       connection[out].ch_inuse = FALSE;
 
-      if (auth == PBSE_MUNGE_NOT_FOUND)
+      if (rc == PBSE_MUNGE_NOT_FOUND)
       {
       pbs_errno = PBSE_MUNGE_NOT_FOUND;
       
@@ -980,36 +1094,20 @@ int pbs_original_connect(
     
 #else  
     /* Have pbs_iff authenticate connection */
-    if ((ENABLE_TRUSTED_AUTH == FALSE) && ((auth = PBSD_authenticate(connection[out].ch_socket)) != 0))
+/*    if ((ENABLE_TRUSTED_AUTH == FALSE) && ((auth = PBSD_authenticate(connection[out].ch_socket)) != 0)) */
+    /* new version of iff using daemon */
+    if ((ENABLE_TRUSTED_AUTH == FALSE) && ((rc = validate_socket(connection[out].ch_socket)) != PBSE_NONE))
       {
       close(connection[out].ch_socket);
 
       connection[out].ch_inuse = FALSE;
 
-      if (auth == PBSE_IFF_NOT_FOUND)
+      if (getenv("PBSDEBUG"))
         {
-        pbs_errno = PBSE_IFF_NOT_FOUND;
-        
-        if (getenv("PBSDEBUG"))
-          {
-          fprintf(stderr, "ERROR:  cannot find pbs_iif executable\n");
-          }
+        fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
+                server, rc, pbs_strerror(rc));
         }
-      else
-        {
-        pbs_errno = PBSE_PERM;
-
-        if (getenv("PBSDEBUG"))
-          {
-          fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
-                  server,
-                  errno,
-                  strerror(errno));
-          }
-        }
-
       pthread_mutex_unlock(connection[out].ch_mutex);
-
       return(-1);
       }
 #endif /* ifdef MUNGE_AUTH */
@@ -1179,8 +1277,7 @@ int pbs_connect(
         {
         if (getenv("PBSDEBUG"))
           {
-          fprintf(stderr, "pbs_connect: Successful connection to server \"%s\", fd = %d\n",
-                  current_name, connect);
+          fprintf(stderr, "pbs_connect: Successful connection to server \"%s\", fd = %d\n", current_name, connect);
           }
 
         return(connect);  /* Success, we have a connection, return it. */
