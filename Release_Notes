@@ -34,6 +34,26 @@ OVERVIEW
 ---------------------------------------------------------------------------
 WHAT'S NEW
 
+New in 2.5.8
+    There were no new features added to 2.5.8. Notable bug fixes included a fix
+    for the queue resource procct where the procct value would be passed to
+    the scheduler if a job was placed in a routing queue. This would make the
+    value of procct show up as a generic resource in Moab and Maui and the job
+    could not be scheduled.
+    
+    There is a known compiler problem if TORQUE is configured with --enable-unixsockets
+    and --enable-gcc-warnings. In the module src/server/process_request.c the following 
+    message will be generated: 
+
+    cc1: warnings being treated as errors
+    process_request.c: In function ‘get_creds’:
+    process_request.c:288:3: error: dereferencing type-punned pointer will break 
+    strict-aliasing rules
+    make[2]: *** [process_request.o] Error 1
+   
+
+    For a complete list of changes see the CHANGELOG.
+
 New in 2.5.6
     The most visible new feature added in 2.5.6 was the auto detection of GPUs 
     when using the NVIDIA GPU devices. Also added is the ablility to report
