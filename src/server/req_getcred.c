@@ -420,7 +420,7 @@ void req_authenuser(
    * in the request
    */
 
-  if (getenv(PBSDEBUG))
+  if (getenv("PBSDEBUG"))
     debug = 1;
   for (delay_cntr = 0; delay_cntr < 5;delay_cntr++)
     {

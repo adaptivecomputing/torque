@@ -19,6 +19,7 @@ void *memmgr_calloc(memmgr **mgr, int qty, int size)
 int memmgr_free(memmgr **mgr, void *ptr)
   {
   free(ptr);
+  return 0;
   }
 
 void memmgr_destroy(memmgr **mgr)

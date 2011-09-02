@@ -7,7 +7,7 @@
 #include "pbs_ifl.h"
 #include "u_memmgr.h"
 
-extern calloc_fail;
+extern int calloc_fail;
 
 void initVars()
   {
@@ -24,12 +24,12 @@ void callocVal(char **dest, char *src)
 
 START_TEST(test_hash_add_item_new_count_clear)
   {
-  initVars();
   int rc = FALSE;
   job_data *the_map = NULL;
   char *name;
   char *value;
   memmgr *mm = NULL;
+  initVars();
   memmgr_init(&mm, 0);
   callocVal(&name, "pos2");
   callocVal(&value, "val2");
@@ -45,13 +45,13 @@ END_TEST
 
 START_TEST(test_hash_add_item_null)
   {
-  initVars();
   int rc = 0;
   job_data *the_map = NULL;
   job_data *tmp_item = NULL;
   memmgr *mm = NULL;
-  memmgr_init(&mm, 0);
   char *name;
+  initVars();
+  memmgr_init(&mm, 0);
   callocVal(&name, "pos1");
   rc = hash_add_item(&mm, &the_map, name, NULL, ENV_DATA, SET);
   fail_unless(rc == TRUE, "The result should have been 0, but was %d", rc);
@@ -71,14 +71,14 @@ END_TEST
 
 START_TEST(test_hash_add_item_add_find_add_find_del_cnt_del_find)
   {
-  initVars();
   int rc = FALSE;
   job_data *the_map = NULL;
   job_data *one_item = NULL;
   memmgr *mm = NULL;
-  memmgr_init(&mm, 0);
   char *name;
   char *value;
+  initVars();
+  memmgr_init(&mm, 0);
   callocVal(&name, "pos1");
   callocVal(&value, "val1");
   rc = hash_add_item(&mm, &the_map, name, value, ENV_DATA, SET);
@@ -121,13 +121,13 @@ END_TEST
 
 START_TEST(test_hash_print)
   {
-  initVars();
   int rc = FALSE;
   job_data *the_map = NULL;
   memmgr *mm = NULL;
-  memmgr_init(&mm, 0);
   char *name;
   char *value;
+  initVars();
+  memmgr_init(&mm, 0);
   callocVal(&name, "pos1");
   callocVal(&value, "val1");
   rc = hash_add_item(&mm, &the_map, name, value, ENV_DATA, SET);
@@ -143,13 +143,12 @@ END_TEST
 
 START_TEST(test_add_or_exit)
   {
-  initVars();
-  int rc = FALSE;
   job_data *the_map = NULL;
   memmgr *mm = NULL;
   char *name = "simple_val";
   char value[] = "should fail";
   int var_type = 4;
+  initVars();
   calloc_fail = 1;
   hash_add_or_exit(&mm, &the_map, name, value, var_type);
   }
@@ -157,15 +156,15 @@ END_TEST
 
 START_TEST(test_hash_add_hash)
   {
-  initVars();
   int rc = FALSE;
   job_data *map1 = NULL;
   job_data *map2 = NULL;
   job_data *tmp_item = NULL;
   memmgr *mm = NULL;
-  memmgr_init(&mm, 0);
   char *name;
   char *value;
+  initVars();
+  memmgr_init(&mm, 0);
   callocVal(&name, "name1");
   callocVal(&value, "value1");
   hash_add_item(&mm, &map1, name, value, ENV_DATA, SET);
@@ -217,13 +216,12 @@ Suite *u_hash_map_structs_suite(void)
 
 void rundebug()
   {
-  int rc = FALSE;
   job_data *the_map = NULL;
   memmgr *mm = NULL;
-  memmgr_init(&mm, 0);
   char *name = "simple_val";
   char value[] = "should fail";
   int var_type = 4;
+  memmgr_init(&mm, 0);
   calloc_fail = 1;
   hash_add_or_exit(&mm, &the_map, name, value, var_type);
   memmgr_destroy(&mm);
