@@ -144,15 +144,11 @@ extern int  status_nodeattrib(svrattrl *, attribute_def *, struct pbsnode *, int
 extern int  hasprop(struct pbsnode *, struct prop *);
 extern void rel_resc(job*);
 
-/* Private Data Definitions */
-
-static int bad;
-
 /* The following private support functions are included */
 
 static void update_state_ct(attribute *, int *, char *);
 static int  status_que(pbs_queue *, struct batch_request *, tlist_head *);
-static int  status_node(struct pbsnode *, struct batch_request *, tlist_head *);
+static int  status_node(struct pbsnode *, struct batch_request *, int *, tlist_head *);
 static void req_stat_job_step2(struct stat_cntl *);
 static void stat_update(struct work_task *);
 
@@ -367,6 +363,7 @@ static void req_stat_job_step2(
   int                    exec_only = 0;
 
   int                    IsTruncated = 0;
+  int                    bad = 0;
 
   long                   DTime;  /* delta time - only report full attribute list if J->MTime > DTime */
 
@@ -928,6 +925,7 @@ static void stat_update(
   struct brp_status    *pstatus;
   svrattrl             *sattrl;
   int                   oldsid;
+  int                   bad = 0;
   time_t                time_now = time(NULL);
 
   preq = pwt->wt_parm1;
@@ -1191,11 +1189,11 @@ void req_stat_que(
       }
     }
 
-  if (rc != 0)
+  if (rc != PBSE_NONE)
     {
     reply_free(preply);
 
-    req_reject(rc, bad, preq, NULL, "status_queue failed");
+    req_reject(PBSE_NOATTR, rc, preq, NULL, "status_queue failed");
     }
   else
     {
@@ -1220,9 +1218,9 @@ static int status_que(
   tlist_head           *pstathd)  /* head of list to append status to */
 
   {
-
   struct brp_status *pstat;
   svrattrl          *pal;
+  int                bad = 0;
 
   if ((preq->rq_perm & ATR_DFLAG_RDACC) == 0)
     {
@@ -1261,8 +1259,6 @@ static int status_que(
 
   /* add attributes to the status reply */
 
-  bad = 0;
-
   pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
 
   if (status_attrib(
@@ -1275,11 +1271,11 @@ static int status_que(
         &bad,
         1) != 0)   /* IsOwner == TRUE */
     {
-    return(PBSE_NOATTR);
+    return(bad);
     }
 
-  return(0);
-  }  /* END stat_que() */
+  return(PBSE_NONE);
+  }  /* END status_que() */
 
 
 
@@ -1297,7 +1293,8 @@ int get_numa_statuses(
 
   struct pbsnode       *pnode,    /* ptr to node receiving status query */
   struct batch_request *preq,
-  tlist_head            *pstathd)  /* head of list to append status to  */
+  int                  *bad,      /* O */
+  tlist_head           *pstathd)  /* head of list to append status to  */
 
   {
   int i;
@@ -1308,7 +1305,7 @@ int get_numa_statuses(
   if (pnode->num_node_boards == 0)
     {
     /* no numa nodes, just return the status for this node */
-    rc = status_node(pnode,preq,pstathd);
+    rc = status_node(pnode, preq, bad, pstathd);
 
     return(rc);
     }
@@ -1322,7 +1319,7 @@ int get_numa_statuses(
 
     pthread_mutex_lock(pn->nd_mutex);
 
-    rc = status_node(pn, preq, pstathd);
+    rc = status_node(pn, preq, bad, pstathd);
 
     pthread_mutex_unlock(pn->nd_mutex);
 
@@ -1355,6 +1352,7 @@ void *req_stat_node(
 
   int                   rc   = 0;
   int                   type = 0;
+  int                   bad  = 0;
 
   struct pbsnode       *pnode = NULL;
   struct batch_reply   *preply;
@@ -1428,7 +1426,7 @@ void *req_stat_node(
     /* get status of the named node */
 
     /* get the status on all of the numa nodes */
-    rc = get_numa_statuses(pnode,preq,&preply->brp_un.brp_status);
+    rc = get_numa_statuses(pnode,preq,&bad,&preply->brp_un.brp_status);
 
     pthread_mutex_unlock(pnode->nd_mutex);
     }
@@ -1451,7 +1449,7 @@ void *req_stat_node(
         }
 
       /* get the status on all of the numa nodes */
-      if ((rc = get_numa_statuses(pnode,preq,&preply->brp_un.brp_status)) != 0)
+      if ((rc = get_numa_statuses(pnode,preq,&bad,&preply->brp_un.brp_status)) != 0)
         {
         pthread_mutex_unlock(pnode->nd_mutex);
 
@@ -1497,10 +1495,11 @@ static int status_node(
 
   struct pbsnode       *pnode,    /* ptr to node receiving status query */
   struct batch_request *preq,
-  tlist_head            *pstathd)  /* head of list to append status to  */
+  int                  *bad,      /* O */
+  tlist_head           *pstathd)  /* head of list to append status to  */
 
   {
-  int       rc = 0;
+  int                rc = 0;
 
   struct brp_status *pstat;
   svrattrl          *pal;
@@ -1521,7 +1520,6 @@ static int status_node(
 
   memset(pstat, 0, sizeof(struct brp_status));
 
-
   pstat->brp_objtype = MGR_OBJ_NODE;
 
   strcpy(pstat->brp_objname, pnode->nd_name);
@@ -1538,7 +1536,7 @@ static int status_node(
   /*hang that status information from the brp_attr field for this  */
   /*brp_status structure                                           */
 
-  bad = 0;                                    /*global variable*/
+  *bad = 0;                                    /*global variable*/
 
   if (preq->rq_ind.rq_status.rq_attr.ll_struct != NULL)
     pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
@@ -1552,7 +1550,7 @@ static int status_node(
          ND_ATR_LAST,
          preq->rq_perm,
          &pstat->brp_attr,
-         &bad);
+         bad);
 
   return(rc);
   }  /* END status_node() */
@@ -1572,13 +1570,14 @@ void req_stat_svr(
   struct batch_request *preq) /* ptr to the decoded request */
 
   {
-  svrattrl    *pal;
+  svrattrl           *pal;
 
   struct batch_reply *preply;
 
   struct brp_status  *pstat;
-  int *nc;
-  static char nc_buf[128];
+  int                *nc;
+  int                 bad = 0;
+  static char         nc_buf[128];
 
   /* update count and state counts from sv_numjobs and sv_jobstates */
   pthread_mutex_lock(server.sv_qs_mutex);
@@ -1635,8 +1634,6 @@ void req_stat_svr(
   append_link(&preply->brp_un.brp_status, &pstat->brp_stlink, pstat);
 
   /* add attributes to the status reply */
-
-  bad = 0;
 
   pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
 
