@@ -3567,6 +3567,10 @@ static int proplist(
       {
       gpu_mode_rqstd = gpu_normal;
       }
+    else if (have_gpus && (!strcasecmp(pname, "shared")))
+      {
+      gpu_mode_rqstd = gpu_normal;
+      }
     else if (have_gpus && (!strcasecmp(pname, "reseterr")))
       {
       gpu_err_reset = TRUE;

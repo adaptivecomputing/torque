@@ -63,6 +63,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       Also changed shared mode for gpus to default to reflect NVIDIA's naming scheme.
   b - Added _GNU_SOURCE as a definition in configure.ac  when compiling with 
       --enable-unixsockets to enable the CMSG macros to work.
+  e - Change so Nvidia drivers 260, 270 and above are recognized.
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as
