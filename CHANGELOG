@@ -189,6 +189,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 	    the nodes attribute does not get set. This causes a problem if procct is set on
 			queues because there is no proc count available to evaluate. This fix sets
 			a default nodes value of 1 if the nodes or procs resources are not requested.
+  e - Change so Nvidia drivers 260, 270 and above are recognized.
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as
