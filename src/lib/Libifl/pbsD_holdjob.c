@@ -87,8 +87,11 @@
 #include <stdio.h>
 #include "libpbs.h"
 
-int
-pbs_holdjob(int c, char *jobid, char *holdtype, char *extend)
+int pbs_holdjob(
+    int c,
+    char *jobid,
+    char *holdtype,
+    char *extend)
   {
 
   struct attropl aopl;

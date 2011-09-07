@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */ 
 
-#include "pbs_ifl.h" /* attropl */
-
 int pbs_errno = 0;
 
 char *pbs_geterrmsg(int connect)

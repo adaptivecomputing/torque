@@ -1094,11 +1094,16 @@ int get_connecthost(
     }
   else
     {
-    namesize = strlen(phe->h_name);
-
-    strncpy(namebuf, phe->h_name, size);
-
-    *(namebuf + size) = '\0';
+    if (strcmp(phe->h_name, "localhost") == 0)
+      {
+      strcpy(namebuf, server_name);
+      }
+    else
+      {
+      namesize = strlen(phe->h_name);
+      strncpy(namebuf, phe->h_name, size);
+      *(namebuf + size) = '\0';
+      }
     }
 
   if (namesize > size)

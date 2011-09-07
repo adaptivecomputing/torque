@@ -18,7 +18,6 @@ int lock_init()
   pthread_mutexattr_t startup_attr;
   pthread_mutexattr_t conn_attr;
   pthread_mutexattr_t tcp_attr;
-  fprintf(stdout, "lock_init\n");
   pthread_mutexattr_init(&startup_attr);
   pthread_mutexattr_settype(&startup_attr, PTHREAD_MUTEX_ERRORCHECK);
   pthread_mutexattr_init(&conn_attr);

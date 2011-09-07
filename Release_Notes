@@ -23,6 +23,8 @@ TORQUE now includes a job_radix option (-W job_radix=X) to specify how
 many moms each mom should communicate with for that job. Moms are then an 
 n-branch tree communications-wise
 
+TORQUE no longer has unix sockets as the default on configure. The pbs_iff replacement (trqauthd) is now the default.
+
 Software Version 2.5.0
 
 This file contains a few notes on building and installing TORQUE and 
@@ -54,6 +56,10 @@ OVERVIEW
     
 ---------------------------------------------------------------------------
 WHAT'S NEW
+
+    pbs_iff has been replaced with a daemon that needs to be running on any
+    submit host (under the condition that you are using iff, not munge or unix
+    sockets) To start the iff replacement, run trqauthd as root.
 
     Completed job information can now be logged. A new Boolean server parameter 
     record_job_info can be set to TRUE and a log file will be created

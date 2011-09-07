@@ -1,5 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
 
+#include "qmgr.h" /* objname */
 #include "pbs_ifl.h" /* attropl */
 
 /* main */

@@ -1219,26 +1219,7 @@ esac],[MOM_FORCENODEFILE=0])dnl
 AC_DEFINE_UNQUOTED(MOM_FORCENODEFILE, ${MOM_FORCENODEFILE}, [force creation of nodefile])
 
 
-
-AC_MSG_CHECKING([for CMSG_SPACE])
-torque_cv_have_cmsg="no"
-  AC_TRY_COMPILE([
-  #ifdef HAVE_SYS_UCRED_H
-  #include <sys/ucred.h>
-  #endif
-  #ifdef HAVE_SYS_SOCKET_H
-  #include <sys/socket.h>
-  #endif
-  #ifdef HAVE_SYS_UN_H
-  #include <sys/un.h>
-  #endif
-  #include <stdlib.h>
-  ],[exit(CMSG_SPACE(sizeof(struct ucred)));],
-    [torque_cv_have_cmsg="yes"])
-AC_MSG_RESULT([$torque_cv_have_cmsg])
-
 AC_MSG_CHECKING([if enabling Unix Domain socket support])
-ENABLE_UNIX_SOCKETS=$torque_cv_have_cmsg
 AC_ARG_ENABLE(unixsockets, [
   --enable-unixsockets    enable the use of Unix Domain sockets for authentication.],
 [case "${enableval}" in

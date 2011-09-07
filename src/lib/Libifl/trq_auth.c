@@ -8,9 +8,9 @@
 #include "../Libnet/lib_net.h" /* get_hostaddr, socket_* */
 
 
-static char *trq_addr = NULL;
-static int trq_addr_len;
-static char *trq_server_name = NULL;
+char *trq_addr = NULL;
+int trq_addr_len;
+char *trq_server_name = NULL;
 
 int parse_request_client(
     int sock,
@@ -137,15 +137,6 @@ int parse_response_svr(
   return rc;
   }
 
-int build_response_client(
-    int code,
-    char *msg,
-    char **send_message)
-  {
-  int rc = PBSE_NONE;
-  return rc;
-  }
-
 int get_trq_server_addr(
     char *server_name,
     char **server_addr,
@@ -170,7 +161,7 @@ int get_trq_server_addr(
        * get here simultaniously...
        */
       trq_addr = (char *)calloc(1, *server_addr_len + 1);
-      trq_addr = *server_addr;
+      memcpy(trq_addr, *server_addr, *server_addr_len);
       trq_addr_len = *server_addr_len;
       trq_server_name = strdup(server_name);
       }
@@ -258,7 +249,7 @@ void *process_svr_conn(
     /* Success case */
     if (send_message != NULL)
       free(send_message);
-    send_message = (char *)calloc(1, 7);
+    send_message = (char *)calloc(1, 6);
     strcat(send_message, "0|0||");
     if (getenv("PBSDEBUG"))
       {

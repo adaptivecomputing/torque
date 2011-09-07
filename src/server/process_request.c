@@ -323,6 +323,7 @@ void *process_request(
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   time_t                time_now = time(NULL);
+  int free_request = TRUE;
   int sfds = *(int *)new_sock;
   free(new_sock);
   fprintf(stdout, "process_request for sock#%d\n", sfds);
@@ -391,6 +392,7 @@ void *process_request(
      */
 
     req_reject(rc, 0, request, NULL, "cannot decode message");
+    free_request = FALSE;
     goto process_request_cleanup;
     }
 
@@ -408,7 +410,7 @@ void *process_request(
              get_connectaddr(sfds,FALSE));
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-
+    free_request = FALSE;
     goto process_request_cleanup;
     }
 
@@ -449,6 +451,7 @@ void *process_request(
                request->rq_host);
 
       req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
+      free_request = FALSE;
       goto process_request_cleanup;
       }
 
@@ -502,7 +505,7 @@ void *process_request(
       if (svr_conn[sfds].cn_socktype == PBS_SOCK_INET)
         {
         pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-        return NULL;
+        goto process_request_cleanup;
         }
 
       }
@@ -529,6 +532,7 @@ void *process_request(
     if (rc != 0)
       {
       req_reject(rc, 0, request, NULL, NULL);
+      free_request = FALSE;
       goto process_request_cleanup;
       }
 
@@ -601,6 +605,7 @@ void *process_request(
 
 
         req_reject(PBSE_SVRDOWN, 0, request, NULL, NULL);
+        free_request = FALSE;
         goto process_request_cleanup;
         /*NOTREACHED*/
 
@@ -623,7 +628,7 @@ void *process_request(
 process_request_cleanup:
   svr_close_client(sfds);
   pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-  free_br(request);
+  if (free_request) free_br(request);
   fprintf(stdout, "process_request fail sock#[%d]\n", sfds);
   return NULL;
   }  /* END process_request() */
