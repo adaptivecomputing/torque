@@ -190,6 +190,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 			queues because there is no proc count available to evaluate. This fix sets
 			a default nodes value of 1 if the nodes or procs resources are not requested.
   e - Change so Nvidia drivers 260, 270 and above are recognized.
+  e - Added server attribute no_mail_force which when set True eliminates all
+      e-mail when job mail_points is set to "n"
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as

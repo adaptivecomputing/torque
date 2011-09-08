@@ -354,9 +354,13 @@ void svr_mailowner(
       tmpBuf);
     }
 
-  /* if force is true, force the mail out regardless of mailpoint */
+  /*
+   * if force is true, force the mail out regardless of mailpoint
+   * unless server no_mail_force attribute is set to true
+   */
 
-  if (force != MAIL_FORCE)
+  if ((force != MAIL_FORCE) ||
+    (server.sv_attr[(int)SRV_ATR_NoMailForce].at_val.at_long == TRUE))
     {
 
     if (pjob->ji_wattr[JOB_ATR_mailpnts].at_flags & ATR_VFLAG_SET)

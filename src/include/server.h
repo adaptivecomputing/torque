@@ -198,6 +198,7 @@ enum srv_atr
   SRV_ATR_maxthreads,
   SRV_ATR_threadidleseconds,
   SRV_ATR_MoabArrayCompatible,
+  SRV_ATR_NoMailForce,
 
 #include "site_svr_attr_enum.h"
   /* This must be last */

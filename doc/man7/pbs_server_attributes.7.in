@@ -386,7 +386,8 @@ Format: a printf-like format string; Default value:
 .Al mail_domain
 Override the default domain for outgoing mail messages.  If set, emails will be
 addressed to "euser@mail_domain".  If unset, the job's Job_Owner attribute will
-be used.  Format: a domain name; Default value: none.
+be used.  If set to "never", TORQUE will never send emails.  Format: a domain
+name; Default value: none.
 .if !\n(Pb .ig Ig
 [internal type: string]
 .Ig
@@ -517,6 +518,14 @@ seconds, 30 seconds, and 60 seconds.  This is a read-only attribute.
 Format: string; default value: none.
 .if !\n(Pb .ig Ig
 [internal type: string]
+.Ig
+.Al no_mail_force
+This attribute can be set by a manager via qmgr. When set true, Torque will not
+force mail to be sent to the user when the jobs mail_points is set to "\fBn\fP".
+User will not receive notice of job failures or deletions. Format: boolean;
+default value: false.
+.if !\n(Pb .ig Ig
+[internal type: boolean]
 .Ig
 .Al node_check_rate
 In OpenPBS, this was the rate at which pbs_server would poll each node.  In
