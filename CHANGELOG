@@ -64,6 +64,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Added _GNU_SOURCE as a definition in configure.ac  when compiling with 
       --enable-unixsockets to enable the CMSG macros to work.
   e - Change so Nvidia drivers 260, 270 and above are recognized.
+  e - Added server attribute no_mail_force which when set True eliminates all
+      e-mail when job mail_points is set to "n"
 
 2.5.7
   e - Added new qsub argument -F. This argument takes a quoted string as

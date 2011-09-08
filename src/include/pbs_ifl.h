@@ -296,6 +296,7 @@
   #define ATTR_authusers       "authorized_users"
 #endif
 #define ATTR_moabarraycompatible "moab_array_compatible"
+#define ATTR_nomailforce       "no_mail_force"
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state         "state"
