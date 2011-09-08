@@ -17,7 +17,7 @@ int start_listener(
   int rc = PBSE_NONE;
   int len_inet;
   char *ptr = NULL;
-  int debug = 1;
+  int debug = 0;
   int *new_conn_port = NULL;
   int listen_socket = 0;
   pthread_t tid;

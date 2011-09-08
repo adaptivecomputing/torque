@@ -2,7 +2,7 @@
 #include "lib_net.h"
 
 #include <stdio.h> /* perror */
-#include <unistd.h> /* getpid */
+#include <unistd.h> /* close, usleep, read, write */
 
 #include <string.h> /* memset */
 #include <sys/ioctl.h> /* ioctl, FIONREAD */
@@ -75,7 +75,6 @@ int socket_get_tcp()
 int get_random_reserved_port()
   {
   int res_port = 0;
-  srand((unsigned int)getpid() + (unsigned int)time(NULL));
   res_port = (rand() % RES_PORT_RANGE) + RES_PORT_START;
   return res_port;
   }
@@ -180,7 +179,8 @@ int socket_get_tcp_priv()
   return local_socket;
   }
 
-int socket_connect(int local_socket, char *dest_addr, int dest_addr_len, int dest_port, int family, int is_privileged, char **error_msg)
+
+int socket_connect(int *local_socket, char *dest_addr, int dest_addr_len, int dest_port, int family, int is_privileged, char **error_msg)
   {
   int rc = PBSE_NONE;
   int cntr = 0;
@@ -191,16 +191,17 @@ int socket_connect(int local_socket, char *dest_addr, int dest_addr_len, int des
   remote.sin_family = family;
   memcpy(&remote.sin_addr, dest_addr, dest_addr_len);
   remote.sin_port = htons((unsigned short)dest_port);
-  while ((rc = connect(local_socket, (struct sockaddr *)&remote, sizeof(struct sockaddr_in))) != 0)
+  while ((rc = connect(*local_socket, (struct sockaddr *)&remote, sizeof(struct sockaddr_in))) != 0)
     {
+/*    fprintf(stdout, "rc != 0 (%d)-(%d) (port_number=%d)\n", rc, errno, *local_socket); */
     switch (errno)
       {
       case ECONNREFUSED:    /* Connection refused */
-        snprintf(tmp_buf, LOCAL_LOG_BUF, "cannot connect to port %d in %s - connection refused", local_socket, id);
+        snprintf(tmp_buf, LOCAL_LOG_BUF, "cannot connect to port %d in %s - connection refused", *local_socket, id);
         *error_msg = strdup(tmp_buf);
         rc = PBS_NET_RC_RETRY;
-        close(local_socket);
-        local_socket = -1;
+        close(*local_socket);
+        *local_socket = -1;
         break;
 
       case EINPROGRESS:   /* Operation now in progress */
@@ -209,7 +210,7 @@ int socket_connect(int local_socket, char *dest_addr, int dest_addr_len, int des
       case ETIMEDOUT:   /* Connection timed out */
       case EAGAIN:    /* Operation would block */
       case EINTR:     /* Interrupted system call */
-        if ((rc = socket_wait_for_write(local_socket)) == PBSE_NONE)
+        if ((rc = socket_wait_for_write(*local_socket)) == PBSE_NONE)
           {
           /* no network failures detected, socket available */
           break;
@@ -221,29 +222,29 @@ int socket_connect(int local_socket, char *dest_addr, int dest_addr_len, int des
         if (is_privileged)
           {
           rc = PBSE_SOCKET_FAULT;
-          if (cntr < RES_PORT_RETRY)
+          /* Fail on RES_PORT_RETRY */
+          if (cntr++ < RES_PORT_RETRY)
             {
-            if ((local_socket = socket_get_tcp_priv()) < 0)
-              if ((local_socket = socket_get_tcp_priv()) < 0)
-                {
-                /* That's 3. Fail now. */
-                rc = PBSE_SOCKET_FAULT;
-                break;
-                }
-            cntr++;
+            if ((*local_socket = socket_get_tcp_priv()) < 0)
+              rc = PBSE_SOCKET_FAULT;
+            else
+              rc = PBSE_NONE;
             }
           else
             {
-            local_socket = -1;
+            /* Hit RES_PORT_RETRY, exit */
+            cntr = 0;
             }
           }
+        break;
+
       default:
-        snprintf(tmp_buf, LOCAL_LOG_BUF, "cannot connect to port %d in %s - errno:%d %s", local_socket, id, errno, strerror(errno));
+        snprintf(tmp_buf, LOCAL_LOG_BUF, "cannot connect to port %d in %s - errno:%d %s", *local_socket, id, errno, strerror(errno));
         *error_msg = strdup(tmp_buf);
         rc = PBSE_SOCKET_FAULT;
         break;
       }
-    if (rc != PBSE_NONE)
+    if (cntr == 0)
       break;
     }
   return rc;
@@ -284,7 +285,7 @@ int socket_wait_for_xbytes(int socket, int len)
       {
       avail_bytes = socket_avail_bytes_on_descriptor(socket);
       if (avail_bytes < len)
-        usleep(10);
+        usleep(1);
       }
     else
       {
@@ -348,7 +349,7 @@ int socket_write(int socket, char *data, int data_len)
     {
     data_len_actual = write(socket, (const char *)data, data_len);
     if (data_len_actual == -1)
-      printf("Error (%d-%s) writing %d bytes to socket (write_socket)\n", errno, strerror(errno), data_len);
+      printf("Error (%d-%s) writing %d bytes to socket (write_socket) data [%s]\n", errno, strerror(errno), data_len, data);
     else if (data_len_actual != data_len)
       {
       printf("Error (%d-%s)writing data to socket (tried to send %d chars, actual %d)\n", errno, strerror(errno), data_len, data_len_actual);

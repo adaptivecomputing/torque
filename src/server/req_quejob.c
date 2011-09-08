@@ -118,7 +118,6 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "../lib/Libnet/lib_net.h" /* global_sock_add */
 #include "svrfunc.h"
 #include "csv.h"
 #include "array.h"
@@ -1331,8 +1330,6 @@ void *req_quejob(
 
   pthread_mutex_unlock(pque->qu_mutex);
   pthread_mutex_unlock(pj->ji_mutex);
-  /* This socket will have addition data after the response */
-  global_sock_add(preq->rq_conn);
 
   return(NULL);
   }  /* END req_quejob() */
@@ -1377,8 +1374,6 @@ void *req_jobcredential(
   reply_ack(preq);
 
   pthread_mutex_unlock(pj->ji_mutex);
-  /* This socket will have addition data after the response */
-  global_sock_add(preq->rq_conn);
 
   return(NULL);
   }  /* END req_jobcredential() */
@@ -1530,8 +1525,6 @@ void req_jobscript(
   pthread_mutex_unlock(pj->ji_mutex);
 
   reply_ack(preq);
-  /* This socket will have addition data after the response */
-  global_sock_add(preq->rq_conn);
 
   return;
   }  /* END req_jobscript() */
@@ -1841,8 +1834,6 @@ void req_rdytocommit(
       (jobid != NULL) ? jobid : "NULL",
       "ready to commit job completed");
     }
-  /* This socket will have addition data after the response */
-  global_sock_add(preq->rq_conn);
   return;
   }  /* END req_rdytocommit() */
 

@@ -175,8 +175,32 @@ int get_trq_server_addr(
   return rc;
   }
 
-void send_svr_disconnect(int sock)
+void send_svr_disconnect(int sock, char *user_name)
   {
+  /*
+   * Disconnect message to svr:
+   * +2+22+592+{user_len}{user}
+   */
+  int rc = PBSE_NONE;
+  int len = 0, user_len = 0, user_ll = 0, resp_msg_len = 0;
+  char tmp_buf[8];
+  char *resp_msg = NULL;
+  user_len = strlen(user_name);
+  sprintf(tmp_buf, "%d", user_len);
+  user_ll = strlen(tmp_buf);
+  len += 8;
+  len += user_ll;
+  len += 1;
+  len += user_len;
+  len += LOGIN_NAME_MAX + 1;
+  resp_msg = (char *)calloc(1, len);
+  sprintf(resp_msg, "+2+22+59%d+%d%s", user_ll, user_len, user_name);
+  resp_msg_len = strlen(resp_msg);
+  if ((rc = socket_write(sock, resp_msg, resp_msg_len)) != resp_msg_len)
+    {
+    if (getenv("PBSDEBUG"))
+      fprintf(stderr, "Can not close socket to pbs_server!! (socket #%d)\n", sock);
+    }
   }
 
 void *process_svr_conn(
@@ -193,7 +217,7 @@ void *process_svr_conn(
   int send_len = 0;
   char *trq_server_addr = NULL;
   int trq_server_addr_len = 0;
-  int disconnect_svr = FALSE;
+  int disconnect_svr = TRUE;
   int svr_sock = 0;
   int msg_len = 0;
   int local_socket = *(int *)sock;
@@ -208,7 +232,7 @@ void *process_svr_conn(
    * #|msg_len|message|
    * Send response to client here!!
    * Disconnect message to svr:
-   * +2+22+592+10PBS_Server
+   * +2+22+592+{user_len}{user}
    *
    * msg to client in the case of success:
    * 0|0||
@@ -226,7 +250,7 @@ void *process_svr_conn(
     rc = PBSE_SOCKET_FAULT;
     disconnect_svr = FALSE;
     }
-  else if ((rc = socket_connect(svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, &error_msg)) != PBSE_NONE)
+  else if ((rc = socket_connect(&svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, &error_msg)) != PBSE_NONE)
     {
     disconnect_svr = FALSE;
     }
@@ -271,7 +295,8 @@ void *process_svr_conn(
   rc = socket_write(local_socket, send_message, strlen(send_message));
   if (TRUE == disconnect_svr)
     {
-    send_svr_disconnect(svr_sock);
+    send_svr_disconnect(svr_sock, user_name);
+    socket_close(svr_sock);
     }
   if (trq_server_addr != NULL)
     free(trq_server_addr);

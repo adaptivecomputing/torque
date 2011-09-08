@@ -144,8 +144,6 @@ void req_connect(
     {
     req_reject(PBSE_BADCRED, 0, preq, NULL, NULL);
     }
-  /* This socket will have addition data after the response */
-  global_sock_add(preq->rq_conn);
 
 /*   pthread_mutex_unlock(svr_conn[sock].cn_mutex); */
 
@@ -452,12 +450,13 @@ void req_authenuser(
 
       /* SUCCESS */
       pthread_mutex_unlock(svr_conn[s].cn_mutex);
-      if (debug) printf("(FOUND_PROCESSED) unlock %d\n", s);
+      if (debug) printf("(FOUND_PROCESSED) unlock %d (port %d)\n", s, svr_conn[s].cn_port);
 
       return;
       }  /* END for (s) */
-    if (debug) fprintf(stderr, "sock not found, sleeping (%d)\n", delay_cntr);
+/*    if (debug) fprintf(stderr, "sock not found, sleeping (%d)\n", delay_cntr);
     usleep(10);
+    */
     }
 
   if (debug) fprintf(stderr, "(FOUND_FAILED) unlock %d\n", s);

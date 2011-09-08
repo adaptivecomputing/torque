@@ -537,7 +537,7 @@ int validate_socket(
       {
       rc = PBSE_SOCKET_FAULT;
       }
-    else if ((rc = socket_connect(local_socket, l_server, l_server_len, AUTH_PORT, AF_INET, 0, &err_msg)) != PBSE_NONE)
+    else if ((rc = socket_connect(&local_socket, l_server, l_server_len, AUTH_PORT, AF_INET, 0, &err_msg)) != PBSE_NONE)
       {
       fprintf(stderr, "Error with socket_connect - %d-%s\n", rc, err_msg);
       }
@@ -1107,6 +1107,7 @@ int pbs_original_connect(
         fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
                 server, rc, pbs_strerror(rc));
         }
+      pbs_errno = PBSE_SOCKET_FAULT;
       pthread_mutex_unlock(connection[out].ch_mutex);
       return(-1);
       }

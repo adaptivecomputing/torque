@@ -180,9 +180,9 @@ fd_set *global_sock_getlist()
   {
   fd_set *select_set = NULL;
   int select_set_size = 0;
+  pthread_mutex_lock(global_sock_read_mutex);
   select_set_size = sizeof(char) * get_fdset_size();
   select_set = (fd_set *)calloc(1,select_set_size);
-  pthread_mutex_lock(global_sock_read_mutex);
   memcpy(select_set,GlobalSocketReadSet,select_set_size);
   pthread_mutex_unlock(global_sock_read_mutex);
   return select_set;
@@ -209,7 +209,7 @@ int global_sock_verify()
       continue;
 
     /* clean up SdList and bad sd... */
-    global_sock_rem(i);
+    FD_CLR(i, GlobalSocketReadSet);
     rc = PBSE_SELECT;
     }    /* END for (i) */
   pthread_mutex_unlock(global_sock_read_mutex);
@@ -529,19 +529,17 @@ int init_network(
  * the socket is invoked.
  */
 
-int thread_func(int active_sockets)
+int thread_func(int active_sockets, fd_set *select_set)
   {
   int rc = PBSE_NONE;
   int i = 0;
-  int n = active_sockets;
+  int remaining_count = active_sockets;
   char id[] = "thread_func";
-  pthread_t tid;
+/*  pthread_t tid; */
   pthread_attr_t t_attr;
   char msg[120];
   int *sock_num = NULL;
-  fd_set *select_set = NULL;
 
-  select_set = global_sock_getlist();
   if ((rc = pthread_attr_init(&t_attr)) != 0)
     {
     sprintf(msg, "Can not init attributes for threading select sockets");
@@ -558,7 +556,7 @@ int thread_func(int active_sockets)
     }
   else
     {
-    for (i = 0;(i < max_connection) && (n != 0);i++)
+    for (i = 0;(i < max_connection) && (remaining_count != 0);i++)
       {
       /* connection already in use, try the next */
       if (pthread_mutex_trylock(svr_conn[i].cn_mutex) != 0)
@@ -568,7 +566,7 @@ int thread_func(int active_sockets)
         {
         /* this socket has data */
 
-        n--;
+        remaining_count--;
 
         svr_conn[i].cn_lasttime = time((time_t *)0);
 
@@ -584,15 +582,15 @@ int thread_func(int active_sockets)
 /*          func(i); */
           sock_num = malloc(sizeof(int));
           *sock_num = i;
-          global_sock_rem(i);
-          fprintf(stdout, "creating thread for sock [%d]\n", *sock_num);
-          if ((rc = pthread_create(&tid, &t_attr, func, sock_num)) != 0)
+          func(sock_num);
+/*          if ((rc = pthread_create(&tid, &t_attr, func, sock_num)) != 0)
             {
             sprintf(msg, "Can not start thread for select socket %d", i);
             log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER,
                       msg_daemonname, msg);
             rc = PBSE_THREAD;
             }
+            */
           }
         else
           {
@@ -613,7 +611,6 @@ int thread_func(int active_sockets)
         pthread_mutex_unlock(svr_conn[i].cn_mutex);
       }    /* END for (i) */
     }
-  free(select_set);
   return rc;
   }
 
@@ -674,16 +671,17 @@ int wait_request(
     }    /* END if (n == -1) */
 
   if (n != 0)
-    if ((rc = thread_func(n)) != PBSE_NONE)
+    if ((rc = thread_func(n, SelectSet)) != PBSE_NONE)
+      {
+      free(SelectSet);
       return rc;
+      }
+  free(SelectSet);
 
   /* NOTE:  break out if shutdown request received */
 
   if ((SState != NULL) && (OrigState != *SState))
-    {
-    free(SelectSet);
     return(0);
-    }
 
   /* have any connections timed out ?? */
 
@@ -736,7 +734,6 @@ int wait_request(
     pthread_mutex_unlock(svr_conn[i].cn_mutex);
     }  /* END for (i) */
 
-  free(SelectSet);
   return(0);
   }  /* END wait_request() */
 
@@ -769,7 +766,6 @@ static void *accept_conn(
   torque_socklen_t fromsize;
   int sd = *(int *)new_conn;
   free(new_conn);
-  fprintf(stdout, "accept_conn start %d\n", sd);
 
   from.sin_addr.s_addr = 0;
   from.sin_port = 0;
@@ -816,10 +812,8 @@ static void *accept_conn(
       (unsigned int)ntohs(from.sin_port),
       svr_conn[sd].cn_socktype,
       read_func[(int)svr_conn[sd].cn_active]);
-    global_sock_add(sd);
     }
 
-  fprintf(stdout, "accept_conn complete %d\n", sd);
   return NULL;
   }  /* END accept_conn() */
 
@@ -937,7 +931,6 @@ void close_conn(
   if (GlobalSocketReadSet != NULL)
     {
     global_sock_rem(sd);
-    global_sock_add(sd);
     }
 
   svr_conn[sd].cn_addr = 0;

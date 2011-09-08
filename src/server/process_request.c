@@ -119,7 +119,6 @@
 #include "threadpool.h"
 #include "dis.h"
 #include "array.h"
-#include "../lib/Libnet/lib_net.h" /* global_sock_add */
 
 /*
  * process_request - this function gets, checks, and invokes the proper
@@ -326,7 +325,6 @@ void *process_request(
   int free_request = TRUE;
   int sfds = *(int *)new_sock;
   free(new_sock);
-  fprintf(stdout, "process_request for sock#%d\n", sfds);
 
   request = alloc_br(0);
 
@@ -350,7 +348,6 @@ void *process_request(
 
 #endif /* END ENABLE_UNIX_SOCKETS */
     rc = dis_request_read(sfds, request);
-    global_sock_add(sfds);
     }
   else
     {
@@ -363,7 +360,6 @@ void *process_request(
     close_conn(sfds, TRUE);
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
     free_br(request);
-    global_sock_add(sfds);
     return NULL;
     }
 
@@ -622,14 +618,12 @@ void *process_request(
    */
 
   dispatch_request(sfds, request);
-  fprintf(stdout, "process_request complete sock#[%d]\n", sfds);
 
   return NULL;
 process_request_cleanup:
   svr_close_client(sfds);
   pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
   if (free_request) free_br(request);
-  fprintf(stdout, "process_request fail sock#[%d]\n", sfds);
   return NULL;
   }  /* END process_request() */
 

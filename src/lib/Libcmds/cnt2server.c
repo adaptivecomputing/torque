@@ -256,7 +256,7 @@ start:
               goto start;
               }
 
-            fprintf(stderr, "Cannot connect to default server host '%s' - check pbs_server daemon.\n",
+            fprintf(stderr, "Cannot connect to default server host '%s' - check pbs_server daemon and/or trqauthd.\n",
               pbs_default());
             }
           else

@@ -32,7 +32,7 @@ int socket_avail_bytes_on_descriptor(int socket);
 int socket_get_tcp();
 int get_random_reserved_port();
 int socket_get_tcp_priv();
-int socket_connect(int local_socket, char *dest_addr, int dest_addr_len, int dest_port, int family, int is_privileged, char **err_msg);
+int socket_connect(int *local_socket, char *dest_addr, int dest_addr_len, int dest_port, int family, int is_privileged, char **err_msg);
 int socket_wait_for_write(int socket);
 int socket_wait_for_xbytes(int socket, int len);
 int socket_wait_for_read(int socket);
@@ -64,7 +64,7 @@ void netcounter_incr(void);
 int get_num_connections();
 int *netcounter_get(void);
 int init_network(unsigned int port, void *(*readfunc)(void *));
-int thread_func(int active_sockets);
+int thread_func(int active_sockets, fd_set *select_set);
 int wait_request(time_t waittime, long *SState); 
 /* static void accept_conn(void *new_conn); */
 void add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));

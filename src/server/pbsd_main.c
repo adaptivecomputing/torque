@@ -103,7 +103,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
+#include <unistd.h> /* getpid */
 #include <stdlib.h>
 #include "list_link.h"
 #include "work_task.h"
@@ -132,7 +132,6 @@
 #include <pthread.h>
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
-#include "../lib/Libnet/lib_net.h" /* global_sock_add */
 
 
 #define TSERVER_HA_CHECK_TIME  1  /* 1 second sleep time between checks on the lock file for high availability */
@@ -368,7 +367,6 @@ void *process_pbs_server_port(
   int          version;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   int sock = *(int *)new_sock;
-  fprintf(stdout, "process_pbs_server_port start %d\n", sock);
   
   DIS_tcp_setup(sock);
   
@@ -420,8 +418,6 @@ void *process_pbs_server_port(
       break;
       }
     }
-  fprintf(stdout, "process_pbs_server_port complete %d\n", sock);
-  global_sock_add(sock);
   return NULL;
   }  /* END process_pbs_server_port() */
 
@@ -1317,6 +1313,7 @@ int main(
   extern char *msg_startup1; /* log message   */
 
   ProgName = argv[0];
+  srand((unsigned int)getpid() + (unsigned int)time(NULL));
 
   initialize_globals();
   set_globals_from_environment();
