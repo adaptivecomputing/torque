@@ -133,6 +133,7 @@ int parse_response_svr(
       {
       *err_msg = strdup(reply->brp_un.brp_txt.brp_str);
       }
+    free(reply);
     }
   return rc;
   }
