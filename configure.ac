@@ -40,9 +40,7 @@ AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([m4])
-dnl
-dnl AC_USE_SYSTEM_EXTENSIONS allows the compiler to use PTHREAD_MUTEX_ERRORCHECK
-dnl
+
 LT_INIT
 
 
