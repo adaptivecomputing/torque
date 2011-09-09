@@ -2,6 +2,8 @@
 #include "lib_net.h"
 #include <arpa/inet.h> /* inet_addr */
 #include <unistd.h> /* close */
+#include <errno.h> /* errno, strerror */
+#include <stdio.h> /* printf */
 
 #include "pbs_error.h" /* PBSE_NONE */
 #include "log.h" /* log_event, PBSEVENT_JOB, PBS_EVENTCLASS_JOB */
@@ -63,7 +65,18 @@ int start_listener(
       new_conn_port = (int *)malloc(sizeof(int));
       if ((*new_conn_port = accept(listen_socket, (struct sockaddr *)&adr_client, (socklen_t *)&len_inet)) == -1)
         {
-        break;
+        if (errno == EMFILE)
+          {
+          usleep(10);
+          printf("Temporary pause\n");
+          }
+        else
+          {
+          printf("error in accept %s\n", strerror(errno));
+          break;
+          }
+        free(new_conn_port);
+        new_conn_port = NULL;
         }
       else
         {

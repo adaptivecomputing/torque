@@ -404,7 +404,7 @@ extern void  free_br (struct batch_request *);
 extern int   isode_request_read (int, struct batch_request *);
 
 #ifndef PBS_MOM
-extern void  req_authenuser (struct batch_request *req);
+extern void *req_authenuser (void *req);
 extern void *req_altauthenuser (void *req);
 extern void  req_connect (struct batch_request *req);
 extern void *req_locatejob (void *req);

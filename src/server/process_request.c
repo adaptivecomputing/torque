@@ -880,7 +880,8 @@ void dispatch_request(
 
       /* determine if user is valid */
 
-      req_authenuser(request);
+/*       req_authenuser(request); */
+      enqueue_threadpool_request(req_authenuser,request); 
 
       break;
 

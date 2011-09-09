@@ -201,6 +201,7 @@ void send_svr_disconnect(int sock, char *user_name)
     if (getenv("PBSDEBUG"))
       fprintf(stderr, "Can not close socket to pbs_server!! (socket #%d)\n", sock);
     }
+  free(resp_msg);
   }
 
 void *process_svr_conn(

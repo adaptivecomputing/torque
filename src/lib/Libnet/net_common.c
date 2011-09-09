@@ -158,7 +158,7 @@ int socket_get_tcp_priv()
         if (++priv_port >= RES_PORT_RANGE)
           priv_port = RES_PORT_START;
         local.sin_port = htons(priv_port);
-        if (((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0) && ((rc == EADDRINUSE) || (errno == EINVAL)))
+        if (((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0) && ((rc == EADDRINUSE) || (errno = EADDRNOTAVAIL) || (errno == EINVAL)))
           {
           cntr++;
           rc = PBSE_SOCKET_FAULT;

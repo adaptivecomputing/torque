@@ -404,14 +404,15 @@ int unmunge_request(
  * non-privileged connection.  This connection is marked as authenticated.
  */
 
-void req_authenuser(
+void *req_authenuser(
 
-  struct batch_request *preq)  /* I */
+  void *vp)  /* I */
 
   {
   int s;
   int debug = 0;
   int delay_cntr = 0;
+  struct batch_request *preq = (struct batch_request *)vp;
 
   /*
    * find the socket whose client side is bound to the port named
@@ -419,7 +420,9 @@ void req_authenuser(
    */
 
   if (getenv("PBSDEBUG"))
+    {
     debug = 1;
+    }
   for (delay_cntr = 0; delay_cntr < 5;delay_cntr++)
     {
     for (s = 0;s < PBS_NET_MAX_CONNECTIONS;++s)
@@ -452,21 +455,20 @@ void req_authenuser(
       pthread_mutex_unlock(svr_conn[s].cn_mutex);
       if (debug) printf("(FOUND_PROCESSED) unlock %d (port %d)\n", s, svr_conn[s].cn_port);
 
-      return;
+      return NULL;
       }  /* END for (s) */
-/*    if (debug) fprintf(stderr, "sock not found, sleeping (%d)\n", delay_cntr);
+    if (debug) fprintf(stderr, "sock not found, sleeping (%d)\n", delay_cntr);
     usleep(10);
-    */
     }
 
-  if (debug) fprintf(stderr, "(FOUND_FAILED) unlock %d\n", s);
+  if (debug) printf("(FOUND_FAILED) unlock %d\n", s);
   pthread_mutex_unlock(svr_conn[s].cn_mutex);
-  if (debug) fprintf(stderr, "pbs_iff fail %d\n", preq->rq_ind.rq_authen.rq_port);
+  if (debug) printf("pbs_iff fail %d\n", preq->rq_ind.rq_authen.rq_port);
   req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user");
 
   /* FAILURE */
 
-  return;
+  return NULL;
   }  /* END req_authenuser() */
 
 

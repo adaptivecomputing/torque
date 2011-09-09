@@ -16,7 +16,7 @@ int pipe_and_read_unmunge(char *mungeFileName, struct batch_request *preq, int s
 
 int unmunge_request(int sock, struct batch_request *preq);
 
-void req_authenuser(struct batch_request *preq);
+void *req_authenuser(void *vp);
 
 void *req_altauthenuser(void *vp);
 
