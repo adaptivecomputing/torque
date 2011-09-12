@@ -10,6 +10,8 @@
 #include "../Liblog/log_event.h" /* log_event */
 #include "../Libifl/lib_ifl.h" /* process_svr_conn */
 
+
+/* Note, in extremely high load cases, the alloc value in /proc/net/sockstat can exceed the max value. This will substantially slow down throughput and generate connection failures (accept gets a EMFILE error). As the client is designed to run on each submit host, that issue shouldn't occur. The client must be restarted to clear out this issue. */
 int start_listener(
     char *server_ip,
     int server_port,
@@ -17,7 +19,7 @@ int start_listener(
   {
   struct sockaddr_in adr_svr, adr_client;
   int rc = PBSE_NONE;
-  int len_inet;
+  int len_inet = sizeof(struct sockaddr_in);
   char *ptr = NULL;
   int debug = 0;
   int *new_conn_port = NULL;
@@ -43,7 +45,7 @@ int start_listener(
     /* Can not bind local socket */
     rc = PBSE_SOCKET_FAULT;
     }
-  else if (listen(listen_socket, 512) == -1)
+  else if (listen(listen_socket, 128) == -1)
     {
     /* Can not listener on local socket */
     rc = PBSE_SOCKET_LISTEN;
@@ -67,7 +69,7 @@ int start_listener(
         {
         if (errno == EMFILE)
           {
-          usleep(10);
+          sleep(1);
           printf("Temporary pause\n");
           }
         else
@@ -75,6 +77,8 @@ int start_listener(
           printf("error in accept %s\n", strerror(errno));
           break;
           }
+        errno = 0;
+        close(*new_conn_port);
         free(new_conn_port);
         new_conn_port = NULL;
         }

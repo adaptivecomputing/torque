@@ -424,6 +424,7 @@ int lock_all_channels();
 int unlock_all_channels(); 
 int resize_tcp_array_if_needed(int fd);
 void DIS_tcp_setup(int fd);
+void DIS_tcp_shutdown(int fd);
 
 /* tm.c */
 /* static event_info * find_event(tm_event_t x); */

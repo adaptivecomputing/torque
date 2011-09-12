@@ -135,6 +135,7 @@ int parse_response_svr(
       }
     free(reply);
     }
+  DIS_tcp_shutdown(sock);
   return rc;
   }
 

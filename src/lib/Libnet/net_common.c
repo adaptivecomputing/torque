@@ -213,6 +213,7 @@ int socket_connect(
         rc = PBS_NET_RC_RETRY;
         close(*local_socket);
         *local_socket = -1;
+        cntr = 0;
         break;
 
       case EINPROGRESS:   /* Operation now in progress */
@@ -253,6 +254,7 @@ int socket_connect(
         snprintf(tmp_buf, LOCAL_LOG_BUF, "cannot connect to port %d in %s - errno:%d %s", *local_socket, id, errno, strerror(errno));
         *error_msg = strdup(tmp_buf);
         rc = PBSE_SOCKET_FAULT;
+        cntr = 0;
         break;
       }
     if (cntr == 0)

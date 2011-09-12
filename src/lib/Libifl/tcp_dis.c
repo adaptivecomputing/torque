@@ -109,7 +109,6 @@
 static struct tcp_chan **tcparray = NULL;
 static int    tcparraymax = 0;
 
-/* John wants to change this to 300 - we need a reason before this is done */
 time_t pbs_tcp_timeout = 20;  /* reduced from 60 to 20 (CRI - Nov/03/2004) */
 
 
@@ -1127,5 +1126,19 @@ error:
   return;
   }  /* END DIS_tcp_setup() */
 
-
+void DIS_tcp_shutdown(int fd)
+  {
+  struct tcp_chan  *tcp = NULL;
+  struct tcpdisbuf *tp = NULL;
+  lock_tcp_table();
+  tcp = tcparray[fd];
+  tcparray[fd] = NULL;
+  unlock_tcp_table();
+  tp = &tcp->readbuf;
+  free(tp->tdis_thebuf);
+  tp = &tcp->writebuf;
+  free(tp->tdis_thebuf);
+  pthread_mutex_destroy(&tcp->tcp_mutex);
+  free(tcp);
+  }
 /* END tcp_dis.c */
