@@ -1642,16 +1642,15 @@ u_long addclient(
   char *name)  /* I */
 
   {
-  static char   id[] = "addclient";
+  static char      id[] = "addclient";
 
-  struct hostent *host;
-
-  struct in_addr  saddr;
-  u_long   ipaddr;
+  struct addrinfo *addr_info;
+  struct in_addr   saddr;
+  u_long           ipaddr;
 
   /* FIXME: must be able to retry failed lookups later */
 
-  if ((host = gethostbyname(name)) == NULL)
+  if (getaddrinfo(name, NULL, NULL, &addr_info) != 0)
     {
     sprintf(log_buffer, "host %s not found",
             name);
@@ -1661,7 +1660,8 @@ u_long addclient(
     return(0);
     }
 
-  memcpy(&saddr, host->h_addr, host->h_length);
+  saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+  freeaddrinfo(addr_info);
 
   ipaddr = ntohl(saddr.s_addr);
 
@@ -8553,6 +8553,7 @@ int main(
  *
  * whitespace doesn't matter, opening and closing tags do
  */
+
 int parse_mom_hierarchy_file(
 
   char            *path,
@@ -8650,9 +8651,9 @@ int parse_mom_hierarchy_file(
             unsigned short      service_port;
             unsigned long       ipaddr;
 
-            struct hostent     *hp;
             char               *colon = strchr(ptr,':');
 
+            struct addrinfo    *addr_info;
             struct sockaddr_in  sa;
 
             if (colon == NULL)
@@ -8671,21 +8672,32 @@ int parse_mom_hierarchy_file(
                 rm_port = PBS_MANAGER_SERVICE_PORT;
               }
 
-            hp = gethostbyname(ptr);
-            memcpy(&(sa.sin_addr), hp->h_addr_list[0], hp->h_length);
-            ipaddr = ntohl(sa.sin_addr.s_addr);
-
-            if (!strcmp(mom_alias,ptr))
+            if (getaddrinfo(ptr, NULL, NULL, &addr_info) == 0)
               {
-              /* stop at the node, we don't want anything below it */
-              path_complete = TRUE;
+              sa.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+              ipaddr = ntohl(sa.sin_addr.s_addr);
+
+              if (!strcmp(mom_alias,ptr))
+                {
+                /* stop at the node, we don't want anything below it */
+                path_complete = TRUE;
+                }
+              
+              if (path_complete == FALSE)
+                add_network_entry(nt,ptr,addr_info,rm_port,service_port,path_index,level_index);
+              
+              freeaddrinfo(addr_info);
+              
+              /* add the ip addresses here because cluster addrs aren't going to be sent anymore */
+              okclients = AVL_insert(ipaddr,rm_port,NULL,okclients);
               }
-
-            if (path_complete == FALSE)
-              add_network_entry(nt,ptr,hp,rm_port,service_port,path_index,level_index);
-
-            /* add the ip addresses here because cluster addrs aren't going to be sent anymore */
-            okclients = AVL_insert(ipaddr,rm_port,NULL,okclients);
+            else
+              {
+              snprintf(log_buffer, sizeof(log_buffer),
+                "Bad entry in mom_hierarchy file, could not resolve host %s",
+                ptr);
+              log_err(PBSE_BADHOST, id, log_buffer);
+              }
 
             ptr = strtok(NULL,delims);
             } /* END parsing each hostname */

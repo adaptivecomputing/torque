@@ -144,17 +144,18 @@ typedef struct _node_info_
 
 /* Global Data */
 
-extern int  svr_totnodes;
-extern int  svr_tsnodes;
-extern int  svr_clnodes;
-extern char *path_nodes_new;
-extern char *path_nodes;
-extern char *path_nodestate;
-extern char *path_nodenote;
-extern int       LOGLEVEL;
-extern attribute_def  node_attr_def[];   /* node attributes defs */
-extern AvlTree ipaddrs;
-extern AvlTree streams;
+extern struct addrinfo  hints;
+extern int              svr_totnodes;
+extern int              svr_tsnodes;
+extern int              svr_clnodes;
+extern char            *path_nodes_new;
+extern char            *path_nodes;
+extern char            *path_nodestate;
+extern char            *path_nodenote;
+extern int              LOGLEVEL;
+extern attribute_def    node_attr_def[];   /* node attributes defs */
+extern AvlTree          ipaddrs;
+extern AvlTree          streams;
 
 
 /* Functions in this file
@@ -866,25 +867,28 @@ static int process_host_name_part(
   int   *ntype) /* node type; time-shared, not   */
 
   {
-  char id[] = "process_host_name_part";
-  char log_buf[LOCAL_LOG_BUF_SIZE];
+  static char     id[] = "process_host_name_part";
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
 
-  struct hostent *hp;
+  struct addrinfo *addr_info;
+  struct addrinfo *addr_iter;
 
-  struct in_addr  addr;
-  char   *phostname;     /* caller supplied hostname   */
-  int             ipcount;
-  int    len, totalipcount;
+  struct in_addr   addr;
+  char            *phostname;  /* caller supplied hostname   */
+  int              ipcount;
+  int              len;
+  int              totalipcount;
 
-  char            tmpHName[1024];
-  char           *hptr;
+  char             hname[MAXLINE];
+  char             tmpHName[MAXLINE];
+  char            *hptr;
 
-  static int      NodeSuffixIsSet = 0;
+  static int       NodeSuffixIsSet = 0;
 
-  static char    *NodeSuffix;
+  static char     *NodeSuffix;
 
-  int             hindex;
-  int             size = 0;
+  int              hindex;
+  int              size = 0;
 
   len = strlen(objname);
 
@@ -910,7 +914,7 @@ static int process_host_name_part(
     *ntype = NTYPE_TIMESHARED;
     }
 
-  if ((hp = gethostbyname(phostname)) == NULL)
+  if (getaddrinfo(phostname, NULL, &hints, &addr_info) != 0)
     {
     sprintf(log_buf, "host %s not found", objname);
 
@@ -924,187 +928,145 @@ static int process_host_name_part(
 
   if (LOGLEVEL >= 6)
     {
-    char tmpLine[1024];
+    char tmpLine[MAXLINE];
 
-    snprintf(tmpLine, sizeof(tmpLine), "successfully loaded host structure for '%s'->'%s'",
-             phostname,
-             hp->h_name);
+    snprintf(tmpLine, sizeof(tmpLine),
+      "successfully loaded host structure for '%s'->'%s'",
+      phostname,
+      addr_info->ai_canonname);
 
-    log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_SERVER,
-      "process_host_name_part",
-      tmpLine);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, tmpLine);
     }
 
-  memcpy((char *)&addr, hp->h_addr, hp->h_length);
+  addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
 
-  if (hp->h_addr_list[1] == NULL)
+  if (addr_info->ai_canonname == NULL)
     {
-    /* weren't given canonical name */
+    free(phostname);
+    
+    return(PBSE_SYSTEM);
+    }
 
-    char *hname;
-
-    if ((hp = gethostbyaddr(
-                (void *) & addr,
-                sizeof(struct in_addr),
-                hp->h_addrtype)) == NULL)
+  snprintf(hname, sizeof(hname), "%s", addr_info->ai_canonname);
+  
+  totalipcount = 0;
+  
+  if (NodeSuffixIsSet == 0)
+    {
+    if (((server.sv_attr[SRV_ATR_NodeSuffix].at_flags & ATR_VFLAG_SET) != 0) &&
+        (server.sv_attr[SRV_ATR_NodeSuffix].at_val.at_str != NULL))
       {
-      sprintf(log_buf,
-        "cannot perform reverse name lookup for '%s' h_errno=%d errno=%d (%s) (check name server)",
-        objname,
+      NodeSuffix = strdup(server.sv_attr[SRV_ATR_NodeSuffix].at_val.at_str);
+      }
+    
+    NodeSuffixIsSet = 1;
+    }
+  
+  if (NodeSuffix != NULL)
+    {
+    char *ptr;
+    
+    /* NOTE:  extract outside of loop because hname will be freed */
+    ptr = strchr(hname, '.');
+    
+    if (ptr != NULL)
+      {
+      *ptr = '\0';
+      
+      snprintf(tmpHName, sizeof(tmpHName), "%s%s.%s",
+        hname,
+        NodeSuffix,
+        ptr + 1);
+      
+      *ptr = '.';
+      }
+    else
+      {
+      snprintf(tmpHName, sizeof(tmpHName), "%s%s", hname, NodeSuffix);
+      }
+    }
+  
+  for (hindex = 0;hindex < 2;hindex++)
+    {
+    if (hindex == 0)
+      {
+      hptr = hname;
+      }
+    else if (NodeSuffix != NULL)
+      {
+      hptr = tmpHName;
+      }
+    else
+      {
+      continue;
+      }
+    
+    if (getaddrinfo(hptr, NULL, NULL, &addr_iter) != 0)
+      {
+      sprintf(log_buf, "bad cname %s, h_errno=%d errno=%d (%s)",
+        hptr,
         h_errno,
         errno,
         pbs_strerror(errno));
-
+      
       log_err(PBSE_UNKNODE, id, log_buf);
-
-      free(phostname);
-      phostname = NULL;
-
+      
+      if (phostname != NULL)
+        {
+        free(phostname);
+        phostname = NULL;
+        }
+      
       return(PBSE_UNKNODE);
       }
-
-    hname = (char *)strdup(hp->h_name); /* canonical name in theory */
-
-    if (hname == NULL)
+    
+    freeaddrinfo(addr_iter);
+    
+    /* count host ipaddrs */
+    for (addr_iter = addr_info; addr_iter != NULL; addr_iter = addr_iter->ai_next)
+      ipcount++;
+    
+    if (*pul == NULL)
       {
-      free(phostname);
-      phostname = NULL;
-
-      return(PBSE_SYSTEM);
+      size = sizeof(u_long) * (ipcount + 1);
+      
+      *pul = (u_long *)malloc(size);  /* zero-terminate list */
       }
-
-    totalipcount = 0;
-
-    if (NodeSuffixIsSet == 0)
+    else
       {
-      if (((server.sv_attr[SRV_ATR_NodeSuffix].at_flags & ATR_VFLAG_SET) != 0) &&
-          (server.sv_attr[SRV_ATR_NodeSuffix].at_val.at_str != NULL))
-        {
-        NodeSuffix = strdup(server.sv_attr[SRV_ATR_NodeSuffix].at_val.at_str);
-        }
-
-      NodeSuffixIsSet = 1;
+      size += sizeof(u_long) * ipcount;
+      
+      *pul = (u_long *)realloc(*pul, size);
       }
-
-    if (NodeSuffix != NULL)
+    
+    if (*pul == NULL)
       {
-      char *ptr;
-
-      /* NOTE:  extract outside of loop because hname will be freed */
-
-      ptr = strchr(hname, '.');
-
-      if (ptr != NULL)
+      if (phostname != NULL)
         {
-        *ptr = '\0';
-
-        snprintf(tmpHName, sizeof(tmpHName), "%s%s.%s",
-                 hname,
-                 NodeSuffix,
-                 ptr + 1);
-
-        *ptr = '.';
-        }
-      else
-        {
-        snprintf(tmpHName, sizeof(tmpHName), "%s%s",
-                 hname,
-                 NodeSuffix);
+        free(phostname);
+        phostname = NULL;
         }
       }
-
-    for (hindex = 0;hindex < 2;hindex++)
+    
+    for (addr_iter = addr_info; addr_iter != NULL; addr_iter = addr_iter->ai_next)
       {
-      if (hindex == 0)
-        {
-        hptr = hname;
-        }
-      else if (NodeSuffix != NULL)
-        {
-        hptr = tmpHName;
-        }
-      else
-        {
-        continue;
-        }
-
-      if ((hp = gethostbyname(hptr)) == NULL)
-        {
-        sprintf(log_buf, "bad cname %s, h_errno=%d errno=%d (%s)",
-          hptr,
-          h_errno,
-          errno,
-          pbs_strerror(errno));
-
-        log_err(PBSE_UNKNODE, id, log_buf);
-
-        if (hname != NULL)
-          {
-          free(hname);
-          hname = NULL;
-          }
-
-        if (phostname != NULL)
-          {
-          free(phostname);
-          phostname = NULL;
-          }
-
-        return(PBSE_UNKNODE);
-        }
-
-      if (hname != NULL)
-        {
-        free(hname);
-        hname = NULL;
-        }
-
-      /* count host ipaddrs */
-
-      for (ipcount = 0;hp->h_addr_list[ipcount];ipcount++);
-
-      if (*pul == NULL)
-        {
-        size = sizeof(u_long) * (ipcount + 1);
-
-        *pul = (u_long *)malloc(size);  /* zero-terminate list */
-        }
-      else
-        {
-        size += sizeof(u_long) * ipcount;
-
-        *pul = (u_long *)realloc(*pul, size);
-        }
-
-      if (*pul == NULL)
-        {
-        if (phostname != NULL)
-          {
-          free(phostname);
-          phostname = NULL;
-          }
-        }
-
-      for (ipcount = 0;hp->h_addr_list[ipcount];ipcount++, totalipcount++)
-        {
-        u_long ipaddr;
-
-        memcpy((char *)&addr, hp->h_addr_list[ipcount], hp->h_length);
-
-        ipaddr = ntohl(addr.s_addr);
-
-        (*pul)[totalipcount] = ipaddr;
-        }
-
-      (*pul)[totalipcount] = 0;  /* zero-term array ip addrs */
-      }  /* END for (hindex) */
-    }    /* END if (hp->h_addr_list[1] == NULL) */
-
+      u_long ipaddr;
+      
+      addr = ((struct sockaddr_in *)addr_iter->ai_addr)->sin_addr;
+      
+      ipaddr = ntohl(addr.s_addr);
+      
+      (*pul)[totalipcount++] = ipaddr;
+      }
+    
+    (*pul)[totalipcount] = 0;  /* zero-term array ip addrs */
+    }  /* END for (hindex) */
+  
+  freeaddrinfo(addr_info);
+  
   *pname = phostname;   /* return node name     */
 
-  return(0);    /* function successful      */
+  return(PBSE_NONE);    /* function successful      */
   }  /* END process_host_name_part() */
 
 

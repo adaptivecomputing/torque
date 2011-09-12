@@ -139,9 +139,11 @@ int parse_response_svr(
   }
 
 int get_trq_server_addr(
-    char *server_name,
-    char **server_addr,
-    int *server_addr_len)
+   
+  char  *server_name,
+  char **server_addr,
+  int   *server_addr_len)
+
   {
   int rc = PBSE_NONE;
   char *host_addr = NULL;

@@ -432,19 +432,16 @@ static tm_node_id *node_table = NULL;
 #define PBS_NET_RC_FATAL -1
 #define PBS_NET_RC_RETRY -2
 
-static int
-localmom(void)
+static int localmom(void)
 
   {
-  static int            have_addr = 0;
+  static int             have_addr = 0;
+  static struct in_addr  hostaddr;
+  struct addrinfo       *addr_info;
 
-  static struct in_addr hostaddr;
-
-  struct hostent       *hp;
-  int          i;
-
-  struct sockaddr_in    remote;
-  int                   sock;
+  int                    i;
+  int                    sock;
+  struct sockaddr_in     remote;
 
   struct linger         ltime;
 
@@ -457,18 +454,20 @@ localmom(void)
     {
     /* lookup "localhost" and save address */
 
-    if ((hp = gethostbyname("localhost")) == NULL)
+    if (getaddrinfo("localhost", NULL, NULL, &addr_info) != 0)
       {
       DBPRT(("tm_init: localhost not found\n"))
 
       return(-1);
       }
 
-    assert((int)hp->h_length <= (int)sizeof(hostaddr));
+    assert((int)addr_info->ai_addrlen <= (int)sizeof(hostaddr));
 
-    memcpy(&hostaddr, hp->h_addr_list[0], hp->h_length);
+    hostaddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
 
     have_addr = 1;
+
+    freeaddrinfo(addr_info);
     }
 
   for (i = 0;i < 5;i++)

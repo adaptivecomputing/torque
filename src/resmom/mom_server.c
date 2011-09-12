@@ -496,12 +496,12 @@ int mom_server_add(
   char *value)
 
   {
-  static char    *id = "mom_server_add";
-  mom_server     *pms;
-  struct hostent *hp;
-  char            tmp_server_name[PBS_MAXSERVERNAME];
-  unsigned short  port;
-  char           *colon;
+  static char     *id = "mom_server_add";
+  mom_server      *pms;
+  struct addrinfo *addr_info;
+  char             tmp_server_name[PBS_MAXSERVERNAME];
+  unsigned short   port;
+  char            *colon;
 
   if ((pms = mom_server_find_by_name(value)))
     {
@@ -528,10 +528,16 @@ int mom_server_add(
 
     /* copy the server name and set up the sock address */
     strncpy(pms->pbs_servername,tmp_server_name,PBS_MAXSERVERNAME);
-    hp = gethostbyname(tmp_server_name);
+
+    if (getaddrinfo(tmp_server_name, NULL, NULL, &addr_info) != 0)
+      {
+      /* NYI handle this failure case */
+      }
+
+    pms->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
     pms->sock_addr.sin_family = AF_INET;
-    memcpy(&(pms->sock_addr.sin_addr),hp->h_addr_list[0],hp->h_length);
     pms->sock_addr.sin_port = htons(port);
+    freeaddrinfo(addr_info);
 
     mom_server_count++;
 
@@ -541,42 +547,38 @@ int mom_server_add(
   else
     {
     sprintf(log_buffer, "server table overflow (max=%d) - server host %s not added",
-            PBS_MAXSERVER,
-            value);
+      PBS_MAXSERVER,
+      value);
 
     log_err(-1, id, log_buffer);
 
     return(0); /* FAILURE */
     }
 
-  /* Leaving this out breaks things but seems bad because if gethostbyname fails,
+  /* Leaving this out breaks things but seems bad because if getaddrinfo fails,
    * there is no retry except for the old way reinserting the name over and over again.
    * And what happens if the server connect via a different interface than the
-   * one that gethostbyname returns?  It really seems better to not deal with
+   * one that getaddrinfo returns?  It really seems better to not deal with
    * the IP address here but rather do what needs to be done when a connection
    * is established.  Anyway, this should fix things for now.
    */
 
     {
-
-    struct hostent *host;
-
     struct in_addr  saddr;
     u_long          ipaddr;
 
     /* FIXME: must be able to retry failed lookups later */
 
-    if ((host = gethostbyname(pms->pbs_servername)) == NULL)
+    if (getaddrinfo(pms->pbs_servername, NULL, NULL, &addr_info) != 0)
       {
-      sprintf(log_buffer, "host %s not found",
-              pms->pbs_servername);
+      sprintf(log_buffer, "host %s not found", pms->pbs_servername);
 
       log_err(-1, id, log_buffer);
-
       }
     else
       {
-      memcpy(&saddr, host->h_addr, host->h_length);
+      saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+      freeaddrinfo(addr_info);
 
       ipaddr = ntohl(saddr.s_addr);
 
@@ -3707,12 +3709,12 @@ mom_server *mom_server_valid_message_source(
 
     /* Maybe the right thing to do now is to iterate over all defined
      * servers. If there are servers defined with no open stream
-     * and a gethostbyname result matches the message source IP address,
+     * and a getaddrinfo result matches the message source IP address,
      * then accept the stream and put the stream number into the
      * server struct.  Then in the future, the normal case above
      * will match.  This approach doesn't have the mom's madly
-     * attempting to clobber the network with gethostbyname if
-     * the DNS server is dead.  We only do gethostbyname if we
+     * attempting to clobber the network with getaddrinfo if
+     * the DNS server is dead.  We only do getaddrinfo if we
      * get a message from the pbs_server.
      */
 #if 1
@@ -3726,15 +3728,15 @@ mom_server *mom_server_valid_message_source(
         if (pms->pbs_servername[0] &&
             pms->SStream != -1)
           {
+          struct addrinfo *addr_info;
 
-          struct hostent *host;
+          struct in_addr   saddr;
+          u_long           server_ip;
 
-          struct in_addr  saddr;
-          u_long          server_ip;
-
-          if ((host = gethostbyname(pms->pbs_servername)) != NULL)
+          if (getaddrinfo(pms->pbs_servername, NULL, NULL, &addr_info) == 0)
             {
-            memcpy(&saddr, host->h_addr, host->h_length);
+            saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+            freeaddrinfo(addr_info);
 
             server_ip = ntohl(saddr.s_addr);
 
@@ -3777,7 +3779,7 @@ void pass_along_hellos(
   int                 iter = -1;
   int                 ret;
   received_node      *rn;
-  struct hostent     *hp;
+  struct addrinfo    *addr_info;
   struct sockaddr_in  sa;
   unsigned long       ipaddr;
   int                 stream;
@@ -3786,13 +3788,12 @@ void pass_along_hellos(
     {
     if (rn->hellos_sent < hello_count)
       {
-      hp = gethostbyname(rn->hostname);
-
-      if (hp != NULL)
+      if (getaddrinfo(rn->hostname, NULL, NULL, &addr_info) == 0)
         {
         /* get socket information */
+        sa.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
         sa.sin_family = AF_INET;
-        memcpy(&(sa.sin_addr),hp->h_addr_list[0],hp->h_length);
+        freeaddrinfo(addr_info);
         ipaddr = ntohl(sa.sin_addr.s_addr);
         sa.sin_port = htons(AVL_get_port_by_ipaddr(ipaddr,okclients));
 

@@ -495,23 +495,28 @@ int get_parent_client_socket(int psock, int *pcsock)
   }
 
 int validate_socket(
-    int psock)
+    
+  int psock)
+
   {
-  int rc = PBSE_NONE;
-  static char id[] = "validate_socket";
-  char tmp_buf[LOCAL_LOG_BUF];
-  char write_buf[1024], *read_buf = NULL;
-  long long read_buf_len = 0;
-  uid_t   myrealuid;
-  int local_socket = 0;
-  int parent_client_socket = 0;
+  int            rc = PBSE_NONE;
+  static char    id[] = "validate_socket";
+  char           tmp_buf[LOCAL_LOG_BUF];
+  char           write_buf[1024];
+  char          *read_buf = NULL;
+  long long      read_buf_len = 0;
+  uid_t          myrealuid;
+  int            local_socket = 0;
+  int            parent_client_socket = 0;
   struct passwd *pwent;
-  char *err_msg = NULL;
-  char *l_server = NULL;
-  int l_server_len = 0;
-  long long code = -1;
-  int write_buf_len = 0;
+  char          *err_msg = NULL;
+  char          *l_server = NULL;
+  int            l_server_len = 0;
+  long long      code = -1;
+  int            write_buf_len = 0;
+
   myrealuid = getuid();
+
   if ((pwent = getpwuid(myrealuid)) == NULL)
     {
     snprintf(tmp_buf, LOCAL_LOG_BUF, "cannot get account info: uid %d, errno %d (%s)\n", (int)myrealuid, errno, strerror(errno));
@@ -786,7 +791,7 @@ int pbs_original_connect(
   {
   struct sockaddr_in server_addr;
 
-  struct hostent *hp;
+  struct addrinfo *addr_info;
   int out;
   int i;
   int rc;
@@ -998,10 +1003,7 @@ int pbs_original_connect(
 
     server_addr.sin_family = AF_INET;
 
-    hp = NULL;
-    hp = gethostbyname(server);
-
-    if (hp == NULL)
+    if (getaddrinfo(server, NULL, NULL, &addr_info) != 0)
       {
       close(connection[out].ch_socket);
       connection[out].ch_inuse = FALSE;
@@ -1020,7 +1022,8 @@ int pbs_original_connect(
       return(-1);
       }
 
-    memcpy((char *)&server_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
+    server_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+    freeaddrinfo(addr_info);
 
     server_addr.sin_port = htons(server_port);
 

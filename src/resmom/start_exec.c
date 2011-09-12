@@ -5386,13 +5386,13 @@ void job_nodes(
 
   for (i = 0;i < nodenum;i++, np++)
     {
-    char *dp;
-    char  nodename[MAXPATHLEN + 1];
+    char            *dp;
+    char             nodename[MAXPATHLEN + 1];
 
-    char *portptr;
-    char  portnumber[MAXPORTLEN+1];
-    int   portcount;
-    struct hostent *hostent_ptr;
+    char            *portptr;
+    char             portnumber[MAXPORTLEN+1];
+    int              portcount;
+    struct addrinfo *addr_info;
 
     ix = 0;
 
@@ -5462,10 +5462,13 @@ void job_nodes(
       CLEAR_HEAD(hp->hn_events);
 
       /* set up the socket address information */
-      hostent_ptr = gethostbyname(nodename);
-      hp->sock_addr.sin_family = AF_INET;
-      memcpy(&(hp->sock_addr.sin_addr), hostent_ptr->h_addr_list[0], hostent_ptr->h_length);
-      hp->sock_addr.sin_port = htons(hp->hn_port);
+      if (getaddrinfo(nodename, NULL, NULL, &addr_info) == 0)
+        {
+        hp->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+        hp->sock_addr.sin_family = AF_INET;
+        hp->sock_addr.sin_port = htons(hp->hn_port);
+        freeaddrinfo(addr_info);
+        }
       }
 
     np->vn_node  = i;  /* make up node id */

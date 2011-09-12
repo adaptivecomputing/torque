@@ -1821,12 +1821,13 @@ void stream_eof(
 
   struct pbsnode *np;
 
-  close(stream);
 
   np = NULL;
 
   if (stream >= 0)
     {
+    close(stream);
+
     /* find who the stream belongs to and mark down */
     np = AVL_find(stream, 0, streams);
     }

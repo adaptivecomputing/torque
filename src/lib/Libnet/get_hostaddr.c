@@ -133,32 +133,40 @@ char *PAddrToString(
 
 
 pbs_net_t get_hostaddr(
-    char *hostname)
+    
+  char *hostname)
+
   {
-  pbs_net_t rval = 0;
-  char *tmp_addr = NULL;
+  pbs_net_t              rval = 0;
+  char                  *tmp_addr = NULL;
   static struct in_addr  hostaddr;
-  int tmp_addr_len = 0;
+  int                    tmp_addr_len = 0;
+
   if ((rval = get_hostaddr_hostent(hostname, &tmp_addr, &tmp_addr_len)) == PBSE_NONE)
     {
     memcpy((void *)&hostaddr, (void *)tmp_addr, tmp_addr_len);
     rval = (pbs_net_t)ntohl(hostaddr.s_addr);
-  }
+    }
+
   if (tmp_addr != NULL)
     free(tmp_addr);
-  return rval;
+
+  return(rval);
   }
 
 int  get_hostaddr_hostent(
-  char *hostname,
+
+  char  *hostname,
   char **host_addr,
-  int *host_addr_len)
+  int   *host_addr_len)
+
   {
-  int rc = PBSE_NONE;
-  struct hostent        *hp;
+  int                    rc = PBSE_NONE;
+  int                    addr_rc;
+  struct addrinfo       *addr_info;
   extern int             pbs_errno;
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
-  char *tmp_ip = NULL;
+  char                  *tmp_ip = NULL;
 
 #ifdef NUMA_SUPPORT
   /* if this is a numa host, just get the parent node's address */
@@ -178,26 +186,26 @@ int  get_hostaddr_hostent(
       *dash = '\0';
 
       /* check if this resolves to a hostname without the dash */
-      if (!(hp = gethostbyname(hostname)))
+      if ((addr_rc = getaddrinfo(hostname, NULL, NULL, &addr_info)) != 0)
         {
         /* not a numa-owned node, act normal */
         *dash = '-';
-        hp = gethostbyname(hostname);
+      
+        addr_rc = getaddrinfo(hostname, NULL, NULL, &addr_info);
         }
       }
     /* otherwise proceed with just the parent hostname so 
      * it can be resolved */
     else
-      hp = gethostbyname(hostname);
+      addr_rc = getaddrinfo(hostname, NULL, NULL, &addr_info);
     }
   else
-    hp = gethostbyname(hostname);
+    addr_rc = getaddrinfo(hostname, NULL, NULL, &addr_info);
 #else
-  hp = gethostbyname(hostname);
+  addr_rc = getaddrinfo(hostname, NULL, NULL, &addr_info);
 #endif /* NUMA_SUPPORT */
 
-
-  if (hp == NULL)
+  if (addr_rc != 0)
     {
     snprintf(log_buf, sizeof(log_buf),
       "cannot resolve IP address for host '%s' herror=%d: %s",
@@ -212,20 +220,24 @@ int  get_hostaddr_hostent(
     else
       pbs_errno = rc = PBS_NET_RC_FATAL;
 
-    return rc;
+    return(rc);
     }
-  if ((tmp_ip = (char *)calloc(1, hp->h_length + 1)) == NULL)
+
+  if ((tmp_ip = (char *)calloc(1, sizeof(struct in_addr) + 1)) == NULL)
     {
     pbs_errno = rc = PBS_NET_RC_FATAL;
     }
   else
     {
-    memcpy((void *)tmp_ip, (void *)hp->h_addr_list[0], hp->h_length);
+    memcpy(tmp_ip, &((struct sockaddr_in *)addr_info->ai_addr)->sin_addr, sizeof(struct in_addr));
     *host_addr = tmp_ip;
-    *host_addr_len = hp->h_length;
+    *host_addr_len = sizeof(struct in_addr);
     }
-  return rc;
-  }  /* END get_hostaddr() */
+
+  freeaddrinfo(addr_info);
+
+  return(rc);
+  }  /* END get_hostaddr_hostent() */
 
 /* END get_hostaddr.c */
 

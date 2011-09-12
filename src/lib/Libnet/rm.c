@@ -198,14 +198,12 @@ int openrm(
     {
     int tryport = IPPORT_RESERVED;
 
-    struct sockaddr_in addr;
+    struct sockaddr_in  addr;
+    struct addrinfo    *addr_info;
 
-    struct hostent  *hp;
-
-    if ((hp = gethostbyname(host)) == NULL)
+    if (getaddrinfo(host, NULL, NULL, &addr_info) != 0)
       {
-      DBPRT(("host %s not found\n",
-             host))
+      DBPRT(("host %s not found\n", host))
 
       pbs_errno = ENOENT;
 
@@ -230,10 +228,11 @@ int openrm(
 
     memset(&addr, '\0', sizeof(addr));
 
-    addr.sin_family = hp->h_addrtype;
+    addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+    addr.sin_family = addr_info->ai_family;
     addr.sin_port = htons((unsigned short)port);
 
-    memcpy(&addr.sin_addr, hp->h_addr, hp->h_length);
+    freeaddrinfo(addr_info);
 
     if (connect(stream, (struct sockaddr *)&addr, sizeof(addr)) == -1)
       {

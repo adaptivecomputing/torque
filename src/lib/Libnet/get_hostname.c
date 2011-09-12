@@ -81,12 +81,14 @@
 
 #include <sys/types.h>
 #include <netinet/in.h>
-#include "portability.h"
 #include <netdb.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <errno.h>
+#include "portability.h"
+#include "utils.h"
+
 /*
  * get_fullhostname - get the fully qualified name of a host
  *
@@ -102,17 +104,17 @@ int get_fullhostname(
   char *shortname,  /* I */
   char *namebuf,    /* O */
   int   bufsize,    /* I */
-  char *EMsg)       /* O (optional,minsize=1024) */
+  char *EMsg)       /* O (optional,minsize=MAXLINE - 1024) */
 
   {
-  char *pbkslh = NULL;
-  char *pcolon = NULL;
+  char            *pbkslh = NULL;
+  char            *pcolon = NULL;
 
-  struct hostent *phe;
+  char             hostname[MAXLINE];
+  struct addrinfo *addr_info;
+  struct addrinfo  hints;
 
-  struct in_addr  ina;
-
-  int   index;
+  int              index;
 
   if ((shortname == NULL) || (shortname[0] == '\0'))
     {
@@ -136,8 +138,6 @@ int get_fullhostname(
       }
     }
 
-  phe = gethostbyname(shortname);
-
   if (pcolon != NULL)
     {
     *pcolon = ':'; /* replace the colon */
@@ -146,53 +146,56 @@ int get_fullhostname(
       *pbkslh = '\\';
     }
 
-  if (phe == NULL)
+  memset(&hints,0,sizeof(hints));
+  hints.ai_flags = AI_CANONNAME;
+
+  if (getaddrinfo(shortname, NULL, &hints, &addr_info) != 0)
     {
-    /* FAILURE - cannot gethostbyname() */
+    /* FAILURE - cannot getaddrinfo() */
 
     if (EMsg != NULL)
-      snprintf(EMsg, 1024, "gethostbyname(%s) failed, h_errno=%d",
+      snprintf(EMsg, MAXLINE, "getaddrinfo(%s) failed, h_errno=%d",
                shortname,
                h_errno);
 
     return(-1);
     }
 
-  memcpy((char *)&ina, *phe->h_addr_list, phe->h_length);
-
-  phe = gethostbyaddr((char *) & ina, phe->h_length, phe->h_addrtype);
-
-  if (phe == NULL)
+  if (getnameinfo(addr_info->ai_addr, addr_info->ai_addrlen, hostname, MAXLINE, NULL, 0, 0) != 0)
     {
     if (h_errno == HOST_NOT_FOUND)
       {
-      fprintf(stderr, "Unable to lookup host '%s' by address (check /etc/hosts or DNS reverse name lookup)\n",
-              shortname);
+      fprintf(stderr, 
+        "Unable to lookup host '%s' by address (check /etc/hosts or DNS reverse name lookup)\n",
+        shortname);
       }
 
     if (EMsg != NULL)
-      snprintf(EMsg, 1024, "gethostbyname(%s) failed, h_errno=%d",
-               shortname,
-               h_errno);
+      snprintf(EMsg, MAXLINE, 
+        "getnameinfo(%s) failed, h_errno=%d",
+        shortname,
+        h_errno);
 
     /* FAILURE - cannot get host by address */
 
     return(-1);
     }
 
-  if ((size_t)bufsize < strlen(phe->h_name))
+  if ((size_t)bufsize <= strlen(addr_info->ai_canonname))
     {
     /* FAILURE - name too long */
 
     if (EMsg != NULL)
-      snprintf(EMsg, 1024, "hostname (%.32s...) is too long (> %d chars)",
-               phe->h_name,
-               bufsize);
+      snprintf(EMsg, MAXLINE, 
+        "hostname (%.32s...) is too long (> %d chars)",
+        addr_info->ai_canonname,
+        bufsize);
 
     return(-1);
     }
 
-  strncpy(namebuf, phe->h_name, bufsize);
+  strncpy(namebuf, addr_info->ai_canonname, bufsize);
+  freeaddrinfo(addr_info);
 
   namebuf[bufsize - 1] = '\0'; /* ensure null terminated */
 
@@ -205,8 +208,7 @@ int get_fullhostname(
     }  /* END for (index) */
 
   /* SUCCESS */
-
-  return(0);
+  return(PBSE_NONE);
   }  /* END get_fullhostname() */
 
 /* END get_hostname.c */

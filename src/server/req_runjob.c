@@ -727,7 +727,7 @@ int svr_startjob(
 #ifdef BOEING
   int     sock, nodenum;
 
-  struct  hostent *hp;
+  struct  addrinfo *addr_info;
   char   *nodestr, *cp, *hostlist;
   int     size;
 
@@ -833,9 +833,9 @@ int svr_startjob(
 
     /* Lookup IP address of host. */
 
-    if ((hp = gethostbyname(nodestr)) == NULL)
+    if (getaddrinfo(nodestr, NULL, NULL, &addr_info) != 0)
       {
-      sprintf(log_buf, "could not contact %s (gethostbyname failed, errno: %d (%s))",
+      sprintf(log_buf, "could not contact %s (getaddrinfo() failed, errno: %d (%s))",
         nodestr,
         errno,
         pbs_strerror(errno));
@@ -919,7 +919,8 @@ int svr_startjob(
 
     saddr.sin_family = AF_INET;
 
-    memcpy(&saddr.sin_addr, hp->h_addr, hp->h_length);
+    saddr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+    freeaddrinfo(addr_info);
 
     saddr.sin_port = htons(pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport);
 

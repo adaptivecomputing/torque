@@ -136,6 +136,7 @@
 
 /* global Data Items */
 
+struct addrinfo hints;
 extern char *msg_daemonname;
 extern char *msg_init_abt;
 extern char *msg_init_queued;
@@ -471,6 +472,9 @@ int pbsd_init(
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char   EMsg[1024];
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_flags = AI_CANONNAME;
 
   /* The following is code to reduce security risks */
 

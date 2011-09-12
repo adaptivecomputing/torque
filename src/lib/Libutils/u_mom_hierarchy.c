@@ -134,7 +134,7 @@ int add_network_entry(
 
   mom_hierarchy_t *nt,
   char               *name,
-  struct hostent     *hp,
+  struct addrinfo    *addr_info,
   unsigned short      rm_port,
   unsigned short      service_port,
   int                 path,
@@ -182,8 +182,8 @@ int add_network_entry(
 
   /* finally, insert the entry into the node_comm_entries */
   /* initialize the node comm entry */
+  nc->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
   nc->sock_addr.sin_family = AF_INET;
-  memcpy(&(nc->sock_addr.sin_addr), hp->h_addr_list[0], hp->h_length);
   nc->sock_addr.sin_port = htons(rm_port);
 
 

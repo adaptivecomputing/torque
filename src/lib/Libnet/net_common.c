@@ -180,17 +180,28 @@ int socket_get_tcp_priv()
   }
 
 
-int socket_connect(int *local_socket, char *dest_addr, int dest_addr_len, int dest_port, int family, int is_privileged, char **error_msg)
+int socket_connect(
+    
+  int   *local_socket,
+  char  *dest_addr,
+  int    dest_addr_len,
+  int    dest_port,
+  int    family,
+  int    is_privileged,
+  char **error_msg)
+
   {
   int rc = PBSE_NONE;
   int cntr = 0;
   struct sockaddr_in remote;
   const char id[] = "socket_connect";
   char tmp_buf[LOCAL_LOG_BUF];
+
   memset(&remote, 0, sizeof(struct sockaddr_in));
   remote.sin_family = family;
   memcpy(&remote.sin_addr, dest_addr, dest_addr_len);
   remote.sin_port = htons((unsigned short)dest_port);
+
   while ((rc = connect(*local_socket, (struct sockaddr *)&remote, sizeof(struct sockaddr_in))) != 0)
     {
 /*    fprintf(stdout, "rc != 0 (%d)-(%d) (port_number=%d)\n", rc, errno, *local_socket); */
@@ -248,7 +259,7 @@ int socket_connect(int *local_socket, char *dest_addr, int dest_addr_len, int de
       break;
     }
   return rc;
-  }
+  } /* END socket_connect() */
 
 int socket_wait_for_write(int socket)
   {
