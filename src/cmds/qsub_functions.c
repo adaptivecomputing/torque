@@ -4285,7 +4285,7 @@ void print_qsub_usage_exit(char *error_msg)
   /* need secondary usage since there appears to be a 512 byte size limit */
 
   static char usage2[] =
-    "      [-W otherattributes=value...] [-v variable_list] [-V ] [-x] [-X] [-z] [script]\n";
+    "      [-W additional_attributes] [-v variable_list] [-V ] [-x] [-X] [-z] [script]\n";
     
   fprintf(stderr,"[%s]\n\n%s%s\n", error_msg, usage, usage2);
 

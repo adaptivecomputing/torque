@@ -619,7 +619,7 @@ int main(
                           [-h hold_list] [-j y|n] [-k keep] [-l resource_list] [-m mail_options] \n\
                           [-M user_list] [-N jobname] [-o path] [-p priority] [-q] [-r y|n] [-S path] \n\
                           [t [array range]%slot limit] [-u user_list] [-v variable_list] \n\
-                          [-W dependency_list] [-x exec_host] job_identifier...\n";
+                          [-W additional_attributes] [-x exec_host] job_identifier...\n";
 
     fprintf(stderr, "%s", usage);
 
