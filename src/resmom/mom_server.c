@@ -1330,7 +1330,7 @@ static int check_nvidia_path()
     {
     char *pathEnv;
 
-/*    check_path = FALSE; */
+    check_path = FALSE;
     pathEnv = getenv("PATH");
 
     if (pathEnv == NULL)

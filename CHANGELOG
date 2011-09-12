@@ -1,6 +1,9 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 2.5.9
+  e - change mom to only log "cannot find nvidia-smi in PATH" once when built
+      with --enable-nvidia-gpus and running on a node that does not have Nvidia
+      drivers installed.
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
