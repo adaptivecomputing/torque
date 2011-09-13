@@ -23,6 +23,7 @@ Suite *x11_get_proto_suite(void)
 int main(void)
   {
   int number_failed = 0;
+  SRunner *sr = NULL;
   sr = srunner_create(x11_get_proto_suite());
   srunner_set_log(sr, "x11_get_proto_suite.log");
   srunner_run_all(sr, CK_NORMAL);

@@ -1,10 +1,12 @@
+include $(top_srcdir)/buildutils/config.mk
+
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage $(MY_TCL_INCS)
 
 lib_LTLIBRARIES = libpbsTclInit.la
 
-AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
+AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} $(MY_TCL_LIBS)
 
 check_PROGRAMS = test_pbsTclInit
 

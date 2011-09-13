@@ -2,6 +2,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+char *pbs_default(void)
+  {
+  fprintf(stderr, "The call to pbs_default needs to be mocked!!\n");
+  exit(1);
+  }
+
 void *process_svr_conn(void *sock)
   {
   fprintf(stderr, "The call to process_svr_conn needs to be mocked!!\n");

@@ -87,7 +87,7 @@ void change_value_hash(hash_table_t *ht, char *key, int new_value);
 /* u_mom_hierarchy.c */
 mom_hierarchy_t *initialize_mom_hierarchy(void);
 
-int add_network_entry(mom_hierarchy_t *nt, char *name, struct hostent *hp, unsigned short rm_port, unsigned short service_port, int path, int level);
+int add_network_entry(mom_hierarchy_t *nt, char *name, struct addrinfo *ai, unsigned short rm_port, unsigned short service_port, int path, int level);
 
 int rm_establish_connection(node_comm_t *nc);
 

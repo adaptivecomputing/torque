@@ -208,3 +208,22 @@ char *pbs_default(void)
   printf("Error, stub must be completed");
   exit(1);
   }
+
+void memmgr_destroy(memmgr **mgr)
+  {
+  printf("Error, stub must be completed");
+  exit(1);
+  }
+
+int memmgr_free(memmgr **mgr, void *ptr)
+  {
+  printf("Error, stub must be completed");
+  exit(1);
+  }
+
+int memmgr_init(memmgr **mgr, int mgr_size)
+  {
+  printf("Error, stub must be completed");
+  exit(1);
+  }
+

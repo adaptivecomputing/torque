@@ -97,8 +97,10 @@
 static int PBSD_select_put(int, int, struct attropl *, char *);
 static char **PBSD_select_get(int);
 
-char **
-pbs_selectjob(int c, struct attropl *attrib, char *extend)
+char ** pbs_selectjob(
+    int c,
+    struct attropl *attrib,
+    char *extend)
   {
 
   if (PBSD_select_put(c, PBS_BATCH_SelectJobs, attrib, extend) == 0)
@@ -107,15 +109,17 @@ pbs_selectjob(int c, struct attropl *attrib, char *extend)
     return ((char **)0);
   }
 
+
 /*
  *  pbs_selstat() - Selectable status
  *  Return status information for jobs that meet certain selection
  *  criteria.  This is a short-cut combination of pbs_selecljob()
  *  and repeated pbs_statjob().
  */
-
-struct batch_status *
-      pbs_selstat(int c, struct attropl *attrib, char *extend)
+struct batch_status * pbs_selstat(
+    int c,
+    struct attropl *attrib,
+    char *extend)
   {
 
   if (PBSD_select_put(c, PBS_BATCH_SelStat, attrib, extend) == 0)
@@ -126,12 +130,10 @@ struct batch_status *
 
 
 static int PBSD_select_put(
-    
   int             c,
   int             type,
   struct attropl *attrib,
   char           *extend)
-
   {
   int rc;
   int sock;
@@ -169,9 +171,7 @@ static int PBSD_select_put(
 
 
 static char **PBSD_select_get(
-    
   int c)
-
   {
   int   i;
 

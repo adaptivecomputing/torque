@@ -1,5 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 
+#include "pbs_ifl.h" /* batch_status */
+
 int isjobid(char *string);
 
 int istrue(char *string); 

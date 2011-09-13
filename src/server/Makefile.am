@@ -1,5 +1,9 @@
 include $(top_srcdir)/buildutils/config.mk
 
+if HAVE_CHECK
+SUBDIRS = test
+endif
+
 PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libsite/libsite.a \
 		 ../lib/Libutils/libutils.a \
