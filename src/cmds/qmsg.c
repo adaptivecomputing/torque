@@ -88,20 +88,19 @@ cnt:
 
     if (connect <= 0)
       {
+      any_failed = -1 * connect;
       fprintf(stderr, "qmsg: cannot connect to server %s (errno=%d) %s\n",
-              pbs_server, pbs_errno, pbs_strerror(pbs_errno));
-      any_failed = pbs_errno;
+              pbs_server, any_failed, pbs_strerror(any_failed));
       continue;
       }
 
-    stat = pbs_msgjob(connect, job_id_out, to_file, msg_string, NULL);
+    stat = pbs_msgjob(connect, job_id_out, to_file, msg_string, NULL, &any_failed);
 
-    if (stat && (pbs_errno != PBSE_UNKJOBID))
+    if (stat && (any_failed != PBSE_UNKJOBID))
       {
       prt_job_err("qmsg", connect, job_id_out);
-      any_failed = pbs_errno;
       }
-    else if (stat && (pbs_errno == PBSE_UNKJOBID) && !located)
+    else if (stat && (any_failed == PBSE_UNKJOBID) && !located)
       {
       located = TRUE;
 
@@ -113,8 +112,6 @@ cnt:
         }
 
       prt_job_err("qmsg", connect, job_id_out);
-
-      any_failed = pbs_errno;
       }
 
     pbs_disconnect(connect);

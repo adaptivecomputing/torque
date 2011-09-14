@@ -557,41 +557,38 @@ typedef int resource_t;  /* resource reservation handle */
 #define RESOURCE_T_NULL  (resource_t)0
 #define RESOURCE_T_ALL  (resource_t)-1
 
-extern int pbs_errno;  /* error number */
-
 extern char *pbs_server; /* server attempted to connect | connected to */
 /* see pbs_connect(3B)         */
 
 extern char *avail(int connect, char *resc);
-extern int pbs_asyrunjob(int c, char *jobid, char *location, char *extend);
-extern int pbs_alterjob_async(int connect, char *job_id, struct attrl *attrib, char *extend);
-extern int pbs_alterjob(int connect, char *job_id, struct attrl *attrib, char *extend);
+extern int pbs_asyrunjob(int c, char *jobid, char *location, char *extend, int *);
+extern int pbs_alterjob_async(int connect, char *job_id, struct attrl *attrib, char *extend, int *);
+extern int pbs_alterjob(int connect, char *job_id, struct attrl *attrib, char *extend, int *);
 extern int pbs_connect(char *server);
 extern int pbs_query_max_connections();
 extern char *pbs_default(void);
 extern char *pbs_fbserver(void);
 extern char *pbs_get_server_list(void);
 
-extern int pbs_deljob(int connect, char *job_id, char *extend);
+extern int pbs_deljob(int connect, char *job_id, char *extend, int *);
 extern int pbs_disconnect(int connect);
 extern char *pbs_geterrmsg(int connect);
-extern int pbs_holdjob(int connect, char *job_id, char *hold_type, char *extend);
-extern int pbs_checkpointjob(int connect, char *job_id, char *extend);
-extern char *pbs_locjob(int connect, char *job_id, char *extend);
+extern int pbs_holdjob(int connect, char *job_id, char *hold_type, char *extend, int *);
+extern int pbs_checkpointjob(int connect, char *job_id, char *extend, int *);
+extern char *pbs_locjob(int connect, int *, char *job_id, char *extend);
+
+extern int pbs_manager(int connect, int command, int obj_type, char *obj_name,
+                  struct attropl *attrib, char *extend, int *);
 
 extern int
-  pbs_manager(int connect, int command, int obj_type, char *obj_name,
-                  struct attropl *attrib, char *extend);
-
-extern int
-  pbs_movejob(int connect, char *job_id, char *destination, char *extend);
+  pbs_movejob(int connect, char *job_id, char *destination, char *extend, int *);
 
 extern int
   pbs_msgjob(int connect, char *job_id, int file, char *message,
-                 char *extend);
+                 char *extend, int *);
 
 extern int
-  pbs_orderjob(int connect, char *job1, char *job2, char *extend);
+  pbs_orderjob(int connect, char *job1, char *job2, char *extend, int *);
 
 extern int
   pbs_rescquery(int connect, char **rlist, int nresc, int *avail,
@@ -603,23 +600,20 @@ extern int
 extern int
   pbs_rescrelease(int connect, resource_t rhandle);
 
-extern int
-  pbs_rerunjob(int connect, char *job_id, char *extend);
+extern int pbs_rerunjob(int connect, char *job_id, char *extend, int *);
 
-extern int
-  pbs_rlsjob(int connect, char *job_id, char *hold_type, char *extend);
+extern int pbs_rlsjob(int connect, char *job_id, char *hold_type, char *extend, int *);
 
-extern int
-  pbs_runjob(int connect, char *jobid, char *loc, char *extend);
+extern int pbs_runjob(int connect, char *jobid, char *loc, char *extend, int *);
 
 extern char **
-  pbs_selectjob(int connect, struct attropl *select_list, char *extend);
+  pbs_selectjob(int connect, struct attropl *select_list, char *extend, int *);
 
 extern int
-  pbs_sigjob(int connect, char *job_id, char *signal, char *extend);
+  pbs_sigjob(int connect, char *job_id, char *signal, char *extend, int *);
 
 extern int
-  pbs_sigjobasync (int connect, char *job_id, char *signal, char *extend);
+  pbs_sigjobasync (int connect, char *job_id, char *signal, char *extend, int *);
 
 extern void
   pbs_statfree(struct batch_status *stat);
@@ -631,25 +625,25 @@ extern struct batch_status *
         pbs_statjob(int connect, char *id, struct attrl *attrib, char *extend);
 
 extern struct batch_status *
-        pbs_selstat(int connect, struct attropl *select_list, char *extend);
+        pbs_selstat(int connect, struct attropl *select_list, char *extend, int *);
 
 extern struct batch_status *
-        pbs_statque(int connect, char *id, struct attrl *attrib, char *extend);
+        pbs_statque(int connect, char *id, struct attrl *attrib, char *extend, int *);
 
 extern struct batch_status *
-        pbs_statserver(int connect, struct attrl *attrib, char *extend);
+        pbs_statserver(int connect, struct attrl *attrib, char *extend, int *);
 
 extern struct batch_status *
-        pbs_statnode(int connect, char *id, struct attrl *attrib, char *extend);
+        pbs_statnode(int connect, char *id, struct attrl *attrib, char *extend, int *);
 
 extern char *
-  pbs_submit(int connect, struct attropl *attrib, char *script,
+  pbs_submit(int connect, int *, struct attropl *attrib, char *script,
                  char *destination, char *extend);
 
-char * pbs_submit_hash(int connect, memmgr **mm, job_data *job_attr, job_data *res_attr, char *script, char *destination, char *extend);
+char * pbs_submit_hash(int connect, int *, memmgr **mm, job_data *job_attr, job_data *res_attr, char *script, char *destination, char *extend);
 
 extern int
-  pbs_terminate(int connect, int manner, char *extend);
+  pbs_terminate(int connect, int manner, char *extend, int *);
 
 extern int
   totpool(int connect, int update);
@@ -657,7 +651,7 @@ extern int
 extern int
   usepool(int connect, int update);
 
-extern int pbs_gpumode(int connect, char *node, char *gpuid, int gpumode);
+extern int pbs_gpumode(int connect, char *node, char *gpuid, int gpumode, int *);
 
 #endif /* _PBS_IFL_DEF */
 

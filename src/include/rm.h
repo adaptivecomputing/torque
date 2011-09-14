@@ -83,12 +83,12 @@
 */
 
 int openrm(char *, unsigned int);
-int closerm(int);
-int downrm(int);
-int configrm(int, char *);
-int addreq(int, char *);
+int closerm(int *, int);
+int downrm(int *, int);
+int configrm(int, int *, char *);
+int addreq(int, int *, char *);
 int allreq(char *);
-char* getreq(int);
+char* getreq(int *, int);
 int flushreq(void);
 int activereq(void);
 void fullresp(int);

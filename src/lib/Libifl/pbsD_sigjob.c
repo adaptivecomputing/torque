@@ -91,16 +91,17 @@ int pbs_sigjob(
   int   c,
   char *jobid,
   char *signal,
-  char *extend)
+  char *extend,
+  int  *local_errno)
   
   {
-  int rc = 0;
+  int                 rc = 0;
 
   struct batch_reply *reply;
 
   if ((jobid == (char *)0) || (*jobid == '\0') ||
       (signal == (char *)0) || (*jobid == '\0'))
-    return (pbs_errno = PBSE_IVALREQ);
+    return (PBSE_IVALREQ);
 
   /* send request */
 
@@ -110,7 +111,7 @@ int pbs_sigjob(
   pthread_mutex_lock(connection[c].ch_mutex);
 
   /* read reply */
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   PBSD_FreeReply(reply);
 
@@ -127,16 +128,17 @@ int pbs_sigjobasync(
   int c,
   char *jobid,
   char *signal,
-  char *extend)
+  char *extend,
+  int  *local_errno)
 
   {
-  int rc = 0;
+  int                 rc = 0;
 
   struct batch_reply *reply;
 
   if ((jobid == (char *)0) || (*jobid == '\0') ||
       (signal == (char *)0) || (*jobid == '\0'))
-    return (pbs_errno = PBSE_IVALREQ);
+    return (PBSE_IVALREQ);
 
   /* send request */
 
@@ -146,7 +148,7 @@ int pbs_sigjobasync(
   pthread_mutex_lock(connection[c].ch_mutex);
 
   /* read reply */
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   PBSD_FreeReply(reply);
 

@@ -92,16 +92,17 @@ int pbs_rerunjob(
     
   int   c,
   char *jobid,
-  char *extend)
+  char *extend,
+  int  *local_errno)
 
   {
-  int rc;
+  int                 rc;
 
   struct batch_reply *reply;
-  int sock;
+  int                 sock;
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
-    return (pbs_errno = PBSE_IVALREQ);
+    return (PBSE_IVALREQ);
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -119,7 +120,7 @@ int pbs_rerunjob(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_PROTOCOL);
+    return (PBSE_PROTOCOL);
     }
 
   /* write data */
@@ -128,12 +129,12 @@ int pbs_rerunjob(
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_PROTOCOL);
+    return (PBSE_PROTOCOL);
     }
 
   /* read reply from stream into presentation element */
 
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   PBSD_FreeReply(reply);
 

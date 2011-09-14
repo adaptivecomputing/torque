@@ -709,6 +709,7 @@ void sync_node_jobs(
 
   struct batch_request *preq;
   int                   conn;
+  int                   local_errno = 0;
 
   job                  *pjob;
 
@@ -776,7 +777,7 @@ void sync_node_jobs(
           /* NOTE:  node is actively reporting so should not be deleted and
                     np->nd_addrs[] should not be NULL */
 
-          conn = svr_connect(np->nd_addrs[0],pbs_mom_port,np,process_Dreply,ToServerDIS);
+          conn = svr_connect(np->nd_addrs[0],pbs_mom_port,&local_errno,np,process_Dreply,ToServerDIS);
 
           if (conn >= 0)
             {

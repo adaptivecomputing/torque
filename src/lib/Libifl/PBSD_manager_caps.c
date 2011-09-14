@@ -90,16 +90,17 @@
 
 int PBSD_manager(
 
-  int c,
-  int function,
-  int command,
-  int objtype,
-  char *objname,
+  int             c,
+  int             function,
+  int             command,
+  int             objtype,
+  char           *objname,
   struct attropl *aoplp,
-  char *extend)
+  char           *extend,
+  int            *local_errno)
 
   {
-  int rc;
+  int                 rc;
 
   struct batch_reply *reply;
 
@@ -122,7 +123,7 @@ int PBSD_manager(
   pthread_mutex_lock(connection[c].ch_mutex);
 
   /* read reply from stream into presentation element */
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   PBSD_FreeReply(reply);
 

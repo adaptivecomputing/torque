@@ -98,7 +98,8 @@ int pbs_manager(
   int             objtype,
   char           *objname,
   struct attropl *attrib,
-  char           *extend)
+  char           *extend,
+  int            *local_errno)
 
   {
   int rc;
@@ -110,7 +111,8 @@ int pbs_manager(
          objtype,
          objname,
          attrib,
-         extend);
+         extend,
+         local_errno);
 
   return(rc);
   }  /* END pbs_manager() */

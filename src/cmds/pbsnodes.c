@@ -155,6 +155,7 @@ static int set_note(
 
   struct attropl  new;
   int             rc;
+  int             local_errno = 0;
 
   new.name     = ATTR_NODE_note;
   new.resource = NULL;
@@ -168,7 +169,8 @@ static int set_note(
          MGR_OBJ_NODE,
          name,
          &new,
-         NULL);
+         NULL,
+         &local_errno);
 
   if (rc && !quiet)
     {
@@ -179,12 +181,6 @@ static int set_note(
       {
       fprintf(stderr, "%s\n",
         errmsg);
-      }
-    else
-      {
-      fprintf(stderr, "(error %d) %s\n",
-        pbs_errno,
-        pbs_strerror(pbs_errno));
       }
     }
 
@@ -280,6 +276,7 @@ static int marknode(
 
   struct attropl  new[2];
   int             rc;
+  int             local_errno = 0;
 
   new[0].name     = ATTR_NODE_state;
   new[0].resource = NULL;
@@ -301,13 +298,13 @@ static int marknode(
     }
 
   rc = pbs_manager(
-
          con,
          MGR_CMD_SET,
          MGR_OBJ_NODE,
          name,
          new,
-         NULL);
+         NULL,
+         &local_errno);
 
   if (rc && !quiet)
     {
@@ -317,10 +314,6 @@ static int marknode(
     if ((errmsg = pbs_geterrmsg(con)) != NULL)
       fprintf(stderr, "%s\n",
               errmsg);
-    else
-      fprintf(stderr, "error: %d (%s)\n",
-              pbs_errno,
-              pbs_strerror(pbs_errno));
     }
 
   return(rc);
@@ -331,19 +324,20 @@ static int marknode(
 
 struct batch_status *statnode(
 
-        int   con,
-        char *nodearg)
+  int   con,
+  char *nodearg)
 
   {
 
   struct batch_status *bstatus;
-  char               *errmsg;
+  char                *errmsg;
+  int                  local_errno = 0;
 
-  bstatus = pbs_statnode(con, nodearg, NULL, NULL);
+  bstatus = pbs_statnode(con, nodearg, NULL, NULL, &local_errno);
 
   if (bstatus == NULL)
     {
-    if (pbs_errno)
+    if (local_errno)
       {
       if (!quiet)
         {
@@ -357,8 +351,8 @@ struct batch_status *statnode(
           {
           fprintf(stderr, "%s: Error %d (%s)\n",
                   progname,
-                  pbs_errno,
-                  pbs_strerror(pbs_errno));
+                  local_errno,
+                  pbs_strerror(local_errno));
           }
         }
 
@@ -738,8 +732,8 @@ int main(
       fprintf(stderr, "%s: cannot connect to server %s, error=%d (%s)\n",
         progname,
         (specified_server) ? specified_server : pbs_default(),
-        pbs_errno,
-        pbs_strerror(pbs_errno));
+        con * -1,
+        pbs_strerror(con * -1));
       }
 
     exit(1);

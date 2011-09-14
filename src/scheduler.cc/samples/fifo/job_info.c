@@ -132,13 +132,14 @@ job_info **query_jobs(int pbs_sd, queue_info *qinfo)
   /* number of jobs in jinfo_arr */
   int num_jobs = 0;
   int i;
+  int local_errno = 0;
 
   opl.value = qinfo -> name;
 
-  if ((jobs = pbs_selstat(pbs_sd, &opl, NULL)) == NULL)
+  if ((jobs = pbs_selstat(pbs_sd, &opl, NULL, &local_errno)) == NULL)
     {
-    if (pbs_errno > 0)
-      fprintf(stderr, "pbs_selstat failed: %d\n", pbs_errno);
+    if (local_errno > 0)
+      fprintf(stderr, "pbs_selstat failed: %d\n", local_errno);
 
     return NULL;
     }
@@ -686,6 +687,7 @@ int update_job_comment(int pbs_sd, job_info *jinfo, char *comment)
     NULL, ATTR_comment, NULL, NULL, 0
     };
 
+  int         local_errno = 0;
   static char clone[UDC_CLONEBUFSIZ];
   
   if (jinfo == NULL)
@@ -708,7 +710,7 @@ int update_job_comment(int pbs_sd, job_info *jinfo, char *comment)
 
     attr.value = clone;
 
-    pbs_alterjob(pbs_sd, jinfo -> name, &attr, NULL);
+    pbs_alterjob(pbs_sd, jinfo -> name, &attr, NULL, &local_errno);
 
     return 0;
     }

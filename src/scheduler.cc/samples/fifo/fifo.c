@@ -444,6 +444,7 @@ int scheduling_cycle(
   server_info *sinfo;  /* ptr to the server/queue/job/node info */
   job_info *jinfo;  /* ptr to the job to see if it can run */
   int ret = SUCCESS;  /* return code from is_ok_to_run_job() */
+  int local_errno = 0;
   char log_msg[MAX_LOG_SIZE]; /* used to log an message about job */
   char comment[MAX_COMMENT_SIZE]; /* used to update comment of job */
 
@@ -497,7 +498,7 @@ int scheduling_cycle(
           jinfo->name,
           "Job Deleted because it would never run");
 
-        pbs_deljob(sd, jinfo->name, "Job could never run");
+        pbs_deljob(sd, jinfo->name, "Job could never run", &local_errno);
         }
 
       jinfo->can_not_run = 1;
@@ -635,6 +636,7 @@ int run_update_job(int pbs_sd, server_info *sinfo, queue_info *qinfo,
   char timebuf[128];   /* buffer to hold the time and date */
   resource_req *res;   /* ptr to the resource of ncpus */
   int ncpus;    /* numeric amount of resource ncpus */
+  int  local_errno = 0;
   char *errmsg;    /* used for pbs_geterrmsg() */
 
   strftime(timebuf, 128, "started on %a %b %d at %H:%M", localtime(&cstat.current_time));
@@ -657,7 +659,7 @@ int run_update_job(int pbs_sd, server_info *sinfo, queue_info *qinfo,
 
   buf[0] = '\0';
 
-  ret = pbs_runjob(pbs_sd, jinfo -> name, best_node_name, NULL);
+  ret = pbs_runjob(pbs_sd, jinfo -> name, best_node_name, NULL, &local_errno);
 
   if (ret == 0)
     {

@@ -90,17 +90,17 @@ int pbs_movejob(
   int   c,
   char *jobid,
   char *destin,
-  char *extend)
+  char *extend,
+  int  *local_errno)
 
   {
-  int      rc;
+  int                 rc;
 
   struct batch_reply *reply;
-  int      sock;
-
+  int                 sock;
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
-    return (pbs_errno = PBSE_IVALREQ);
+    return (PBSE_IVALREQ);
 
   if (destin == (char *)0)
     destin = "";
@@ -121,19 +121,19 @@ int pbs_movejob(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_PROTOCOL);
+    return(PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_PROTOCOL);
+    return(PBSE_PROTOCOL);
     }
 
   /* read reply */
 
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   PBSD_FreeReply(reply);
 

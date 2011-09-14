@@ -547,11 +547,12 @@ int conn_qsub(
   int s;
 
   int flags;
+  int local_errno = 0;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
 
-  if ((hostaddr = get_hostaddr(hostname)) == (pbs_net_t)0)
+  if ((hostaddr = get_hostaddr(&local_errno, hostname)) == (pbs_net_t)0)
     {
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
     extern int h_errno;

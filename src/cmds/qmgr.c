@@ -659,7 +659,7 @@ struct server *make_connection(
     {
     if (! zopt)
       fprintf(stderr, "qmgr: cannot connect to server %s (errno=%d) %s\n",
-              name, pbs_errno, pbs_strerror(pbs_errno));
+              name, connection * -1, pbs_strerror(connection * -1));
     }
 
   return(svr);
@@ -1323,6 +1323,7 @@ int execute(
   int len;   /* Used for length of an err msg*/
   int error;   /* Error value returned */
   int perr;   /* Value returned from pbs_manager */
+  int local_errno;
   char *errmsg;   /* Error message from pbs_errmsg */
   char errnomsg[256];  /* Error message with pbs_errno */
 
@@ -1415,15 +1416,15 @@ int execute(
           {
 
           case MGR_OBJ_SERVER:
-            ss = pbs_statserver(sp -> s_connect, sa, NULL);
+            ss = pbs_statserver(sp -> s_connect, sa, NULL, &local_errno);
             break;
 
           case MGR_OBJ_QUEUE:
-            ss = pbs_statque(sp -> s_connect, pname -> obj_name, sa, NULL);
+            ss = pbs_statque(sp -> s_connect, pname -> obj_name, sa, NULL, &local_errno);
             break;
 
           case MGR_OBJ_NODE:
-            ss = pbs_statnode(sp -> s_connect, pname -> obj_name, sa, NULL);
+            ss = pbs_statnode(sp -> s_connect, pname -> obj_name, sa, NULL, &local_errno);
             break;
             /* DIAGTODO: handle new diag type for list */
             /* DIAGTODO: create a pbs_statdiag() */
@@ -1449,22 +1450,26 @@ int execute(
 
             if (sa == NULL)
               {
-              ss = pbs_statque(sp -> s_connect, NULL, NULL, NULL);
+              ss = pbs_statque(sp -> s_connect, NULL, NULL, NULL, &local_errno);
 
               if (ss != NULL)
                 display(MGR_OBJ_QUEUE, NULL, ss, TRUE);
               }
 
-            ss = pbs_statserver(sp -> s_connect, sa, NULL);
+            ss = pbs_statserver(sp -> s_connect, sa, NULL, &local_errno);
 
             break;
 
           case MGR_OBJ_QUEUE:
-            ss = pbs_statque(sp->s_connect, pname->obj_name, sa, NULL);
+
+            ss = pbs_statque(sp->s_connect, pname->obj_name, sa, NULL, &local_errno);
+
             break;
 
           case MGR_OBJ_NODE:
-            ss = pbs_statnode(sp->s_connect, pname->obj_name, sa, NULL);
+
+            ss = pbs_statnode(sp->s_connect, pname->obj_name, sa, NULL, &local_errno);
+
             break;
             /* DIAGTODO: handle new diag type for print */
           }
@@ -1486,7 +1491,8 @@ int execute(
                  type,
                  pname->obj_name,
                  attribs,
-                 NULL);
+                 NULL,
+                 &local_errno);
         }
 
       if (perr)
@@ -1511,16 +1517,9 @@ int execute(
             pstderr_big(pname -> obj_name, Svrname(sp), errmsg);
             }
           }
-        else if (pbs_errno == PBSE_PROTOCOL)
-          {
-          if (! zopt) fprintf(stderr, "qmgr: Protocol error, server disconnected\n");
-
-          exit(1);
-          }
         else
-          if (! zopt) fprintf(stderr, "qmgr: Error (%d - %s) returned from server\n",
-                                pbs_errno,
-                                pbs_strerror(pbs_errno));
+          if (! zopt)
+            fprintf(stderr, "qmgr: Error from server\n");
 
         if (aopt)
           return perr;
@@ -2655,7 +2654,8 @@ int is_valid_object(
     NULL, ATTR_NODE_state, "", "", 0
     };
 
-  int valid = 1;
+  int   local_errno = 0;
+  int   valid = 1;
   char *errmsg;
 
   if ((obj != NULL) && (obj->svr != NULL))
@@ -2665,13 +2665,13 @@ int is_valid_object(
 
       case MGR_OBJ_QUEUE:
 
-        batch_obj = pbs_statque(obj->svr->s_connect, obj->obj_name, &attrq, NULL);
+        batch_obj = pbs_statque(obj->svr->s_connect, obj->obj_name, &attrq, NULL, &local_errno);
 
         break;
 
       case MGR_OBJ_NODE:
 
-        batch_obj = pbs_statnode(obj->svr->s_connect, obj->obj_name, &attrn, NULL);
+        batch_obj = pbs_statnode(obj->svr->s_connect, obj->obj_name, &attrn, NULL, &local_errno);
 
         break;
 

@@ -154,6 +154,7 @@ int relay_to_mom(
 
   int             conn; /* a client style connection handle */
   int             rc;
+  int             local_errno = 0;
   pbs_net_t       addr;
 
   struct pbsnode *node;
@@ -184,6 +185,7 @@ int relay_to_mom(
   conn = svr_connect(
            pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
            pjob->ji_qs.ji_un.ji_exect.ji_momport,
+           &local_errno,
            node,
            process_Dreply,
            ToServerDIS);
@@ -260,6 +262,7 @@ int issue_to_svr(
   {
   int               do_retry = 0;
   int               handle;
+  int               my_err = 0;
   pbs_net_t         svraddr;
   char             *svrname;
   unsigned int      port = pbs_server_port_dis;
@@ -273,13 +276,13 @@ int issue_to_svr(
   preq->rq_perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_SvWR;
 
   svrname = parse_servername(servern, &port); 
-  svraddr = get_hostaddr(svrname);
+  svraddr = get_hostaddr(&my_err,svrname);
 
   free(svrname);
 
   if (svraddr == (pbs_net_t)0)
     {
-    if (pbs_errno == PBS_NET_RC_RETRY)
+    if (my_err == PBS_NET_RC_RETRY)
       {
       /* Non fatal error - retry */
 
@@ -288,7 +291,7 @@ int issue_to_svr(
     }
   else
     {
-    handle = svr_connect(svraddr, port, NULL, process_Dreply, ToServerDIS);
+    handle = svr_connect(svraddr, port, &my_err, NULL, process_Dreply, ToServerDIS);
 
     if (handle >= 0)
       {

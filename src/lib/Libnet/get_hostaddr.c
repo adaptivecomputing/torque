@@ -133,8 +133,9 @@ char *PAddrToString(
 
 
 pbs_net_t get_hostaddr(
-    
-  char *hostname)
+
+  int  *local_errno, /* O */    
+  char *hostname)    /* I */
 
   {
   pbs_net_t              rval = 0;
@@ -142,7 +143,7 @@ pbs_net_t get_hostaddr(
   static struct in_addr  hostaddr;
   int                    tmp_addr_len = 0;
 
-  if ((rval = get_hostaddr_hostent(hostname, &tmp_addr, &tmp_addr_len)) == PBSE_NONE)
+  if ((rval = get_hostaddr_hostent(local_errno, hostname, &tmp_addr, &tmp_addr_len)) == PBSE_NONE)
     {
     memcpy((void *)&hostaddr, (void *)tmp_addr, tmp_addr_len);
     rval = (pbs_net_t)ntohl(hostaddr.s_addr);
@@ -156,6 +157,7 @@ pbs_net_t get_hostaddr(
 
 int  get_hostaddr_hostent(
 
+  int   *local_errno,
   char  *hostname,
   char **host_addr,
   int   *host_addr_len)
@@ -164,7 +166,6 @@ int  get_hostaddr_hostent(
   int                    rc = PBSE_NONE;
   int                    addr_rc;
   struct addrinfo       *addr_info;
-  extern int             pbs_errno;
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
   char                  *tmp_ip = NULL;
 
@@ -216,16 +217,16 @@ int  get_hostaddr_hostent(
     log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,"get_hostaddr_hostent",log_buf);
 
     if (h_errno == TRY_AGAIN)
-      pbs_errno = rc = PBS_NET_RC_RETRY;
+      *local_errno = rc = PBS_NET_RC_RETRY;
     else
-      pbs_errno = rc = PBS_NET_RC_FATAL;
+      *local_errno = rc = PBS_NET_RC_FATAL;
 
     return(rc);
     }
 
   if ((tmp_ip = (char *)calloc(1, sizeof(struct in_addr) + 1)) == NULL)
     {
-    pbs_errno = rc = PBS_NET_RC_FATAL;
+    *local_errno = rc = PBS_NET_RC_FATAL;
     }
   else
     {

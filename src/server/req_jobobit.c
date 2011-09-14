@@ -640,6 +640,7 @@ int mom_comm(
 
   struct work_task *pwt;
   char             *jobid_copy;
+  int               local_errno = 0;
 
   if (pjob->ji_momhandle < 0)
     {
@@ -648,12 +649,13 @@ int mom_comm(
     if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0)
       {
       char *tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
-      pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(tmp);
+      pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(&local_errno, tmp);
       }
 
     pjob->ji_momhandle = svr_connect(
                            pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
                            pjob->ji_qs.ji_un.ji_exect.ji_momport,
+                           &local_errno,
                            NULL,
                            process_Dreply,
                            ToServerDIS);
@@ -2290,6 +2292,7 @@ void *req_jobobit(
   char                  mailbuf[RESC_USED_BUF];
   int                   newstate;
   int                   newsubst;
+  int                   local_errno = 0;
   char                 *pc;
   char                 *tmp;
   char                 *jobid_copy;
@@ -2309,7 +2312,7 @@ void *req_jobobit(
   tmp = parse_servername(preq->rq_host, &dummy);
 
   if ((pjob == NULL) ||
-      (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != get_hostaddr(tmp)))
+      (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != get_hostaddr(&local_errno, tmp)))
     {
     /* not found or from wrong node */
 

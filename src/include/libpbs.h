@@ -277,7 +277,7 @@ int
 PBSD_mgr_put (int connect, int func, int cmd, int objtype, char *objname, struct attropl *al, char *extend);
 
 int
-PBSD_manager  (int connect, int func, int cmd, int objtype, char *objname, struct attropl *al, char *extend);
+PBSD_manager  (int connect, int func, int cmd, int objtype, char *objname, struct attropl *al, char *extend, int *);
 
 int
 PBSD_msg_put (int connect, char *jobid, int fileopt, char *msg, char *extend);
@@ -303,16 +303,16 @@ PBSD_jobfile (int connect, int req_type, char *path, char *jobid, enum job_file 
 int
 PBSD_status_put (int c, int func, char *id, struct attrl *attrib, char *extend);
 
-struct batch_reply *PBSD_rdrpy (int connect);
+struct batch_reply *PBSD_rdrpy (int *local_errno, int connect);
 
 void PBSD_FreeReply (struct batch_reply *);
 
-struct batch_status *PBSD_status (int c, int function, char *id, struct attrl *attrib, char *extend);
+struct batch_status *PBSD_status (int c, int function, int *, char *id, struct attrl *attrib, char *extend);
 
-struct batch_status *PBSD_status_get (int c);
+struct batch_status *PBSD_status_get (int *local_errno, int c);
 
-char * PBSD_queuejob (int c, char *j, char *d, struct attropl *a, char *ex);
-char *PBSD_QueueJob_hash(int c, char *j, char *d, memmgr **mm, job_data *ja, job_data *ra, char *ex);
+char * PBSD_queuejob (int c, int *, char *j, char *d, struct attropl *a, char *ex);
+char *PBSD_QueueJob_hash(int c, int *, char *j, char *d, memmgr **mm, job_data *ja, job_data *ra, char *ex);
 
 
 extern int decode_DIS_JobId (int socket, char *jobid);

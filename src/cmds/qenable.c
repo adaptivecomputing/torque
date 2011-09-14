@@ -97,6 +97,7 @@ static void execute(
 
   {
   int ct;         /* Connection to the server */
+  int local_errno = 0;
   int merr;       /* Error return from pbs_manager */
   char *errmsg;   /* Error message from pbs_manager */
   /* The disable request */
@@ -108,7 +109,7 @@ static void execute(
 
   if ((ct = cnt2server(server)) > 0)
     {
-    merr = pbs_manager(ct, MGR_CMD_SET, MGR_OBJ_QUEUE, queue, &attr, NULL);
+    merr = pbs_manager(ct, MGR_CMD_SET, MGR_OBJ_QUEUE, queue, &attr, NULL, &local_errno);
 
     if (merr != 0)
       {
@@ -120,7 +121,9 @@ static void execute(
         }
       else
         {
-        fprintf(stderr, "qenable: Error (%d) enabling queue ", pbs_errno);
+        fprintf(stderr, "qenable: Error enabling queue: %d - %s ",
+          local_errno,
+          pbs_strerror(local_errno));
         }
 
       if (notNULL(queue))
@@ -138,7 +141,7 @@ static void execute(
     }
   else
     {
-    fprintf(stderr, "qenable: could not connect to server %s (%d)\n", server, pbs_errno);
+    fprintf(stderr, "qenable: could not connect to server %s (%d)\n", server, ct * -1);
     exitstatus = 2;
     }
   }

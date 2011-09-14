@@ -123,7 +123,7 @@
 
 /* External Functions Called: */
 
-extern int   send_job_work(job *,char *,int,struct batch_request *);
+extern int   send_job_work(job *,char *,int,int *,struct batch_request *);
 extern void  set_resc_assigned(job *, enum batch_op);
 
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
@@ -1039,6 +1039,7 @@ static int svr_strtjob2(
 
   int old_state;
   int old_subst;
+  int my_err;
   attribute *pattr;
   char tmpLine[1024];
   struct timeval start_time;
@@ -1089,7 +1090,7 @@ static int svr_strtjob2(
     DIS_tcp_settimeout(server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long);
     }
 
-  if (send_job_work(pjob,NULL,MOVE_TYPE_Exec,preq) == PBSE_NONE)
+  if (send_job_work(pjob,NULL,MOVE_TYPE_Exec,&my_err,preq) == PBSE_NONE)
     {
     /* SUCCESS */
     DIS_tcp_settimeout(server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long);
@@ -1109,7 +1110,7 @@ static int svr_strtjob2(
     
     svr_setjobstate(pjob,old_state,old_subst);
     
-    return(pbs_errno);
+    return(my_err);
     }
   }    /* END svr_strtjob2() */
 
@@ -1577,15 +1578,16 @@ static int assign_hosts(
 
   {
   unsigned int  dummy;
-  char  *list = NULL;
-  char  *portlist = NULL;
-  char  *hosttoalloc = NULL;
-  pbs_net_t  momaddr = 0;
-  resource *pres;
-  int   rc = 0, procs=0;
+  char         *list = NULL;
+  char         *portlist = NULL;
+  char         *hosttoalloc = NULL;
+  pbs_net_t     momaddr = 0;
+  resource     *pres;
+  int           rc = 0;
+  int           procs=0;
   extern char  *mom_host;
   char          log_buf[LOCAL_LOG_BUF_SIZE];
-
+  int           local_errno = 0;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -1750,7 +1752,7 @@ static int assign_hosts(
 
     if (momaddr == 0)
       {
-      momaddr = get_hostaddr(pjob->ji_qs.ji_destin);
+      momaddr = get_hostaddr(&local_errno, pjob->ji_qs.ji_destin);
 
       if (momaddr == 0)
         {

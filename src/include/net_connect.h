@@ -193,7 +193,7 @@ int  client_to_svr(pbs_net_t, unsigned int, int, char *);
 void close_conn(int,int);
 pbs_net_t get_connectaddr(int,int);
 int  get_connecthost(int sock, char *, int);
-pbs_net_t get_hostaddr(char *);
+pbs_net_t get_hostaddr(int *, char *);
 int  get_fullhostname(char *, char *, int, char *);
 unsigned int  get_svrport(char *, char *, unsigned int);
 int  init_network(unsigned int, void *(*readfunc)(void *));

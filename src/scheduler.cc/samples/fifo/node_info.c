@@ -115,8 +115,9 @@ node_info **query_nodes(int pbs_sd, server_info *sinfo)
   char *err;    /* used with pbs_geterrmsg() */
   int num_nodes = 0;   /* the number of nodes */
   int i;
+  int local_errno;
 
-  if ((nodes = pbs_statnode(pbs_sd, NULL, NULL, NULL)) == NULL)
+  if ((nodes = pbs_statnode(pbs_sd, NULL, NULL, NULL, &local_errno)) == NULL)
     {
     err = pbs_geterrmsg(pbs_sd);
     sprintf(errbuf, "Error getting nodes: %s", err);
@@ -420,6 +421,7 @@ int talk_with_mom(
   int testi;   /* used to convert string -> int */
   char errbuf[256];
   int i;
+  int local_errno = 0;
 
   if ((ninfo != NULL) && !ninfo->is_down && !ninfo->is_offline)
     {
@@ -430,9 +432,9 @@ int talk_with_mom(
       }
 
     for (i = 0; i < num_resget; i++)
-      addreq(mom_sd, (char *) res_to_get[i]);
+      addreq(mom_sd, &local_errno, (char *) res_to_get[i]);
 
-    for (i = 0; i < num_resget && (mom_ans = getreq(mom_sd)) != NULL; i++)
+    for (i = 0; i < num_resget && (mom_ans = getreq(&local_errno, (mom_sd))) != NULL; i++)
       {
       if (!strcmp(res_to_get[i], "max_load"))
         {
@@ -492,7 +494,7 @@ int talk_with_mom(
         }
       }
 
-    closerm(mom_sd);
+    closerm(&local_errno, mom_sd);
     }
 
   return 0;

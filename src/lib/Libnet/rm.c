@@ -144,8 +144,7 @@ static int addrm(
 
   if ((op = (struct out *)malloc(sizeof(struct out))) == NULL)
     {
-    pbs_errno = errno;
-    return -1;
+    return(errno);
     }
 
   head = &outs[stream % HASHOUT];
@@ -181,8 +180,6 @@ int openrm(
 
   static unsigned int gotport = 0;
 
-  pbs_errno = 0;
-
   if (port == 0)
     {
     if (gotport == 0)
@@ -205,9 +202,7 @@ int openrm(
       {
       DBPRT(("host %s not found\n", host))
 
-      pbs_errno = ENOENT;
-
-      return(-1);
+      return(ENOENT * -1);
       }
 
     memset(&addr, '\0', sizeof(addr));
@@ -236,28 +231,22 @@ int openrm(
 
     if (connect(stream, (struct sockaddr *)&addr, sizeof(addr)) == -1)
       {
-      pbs_errno = errno;
-
       close(stream);
 
-      return(-1);
+      return(-1 * errno);
       }
     }    /* END if ((stream = socket(AF_INET,SOCK_STREAM,0)) != -1) */
 
-  pbs_errno = errno;
-
   if (stream < 0)
     {
-    return(-1);
+    return(-1 * errno);
     }
 
   if (addrm(stream) == -1)
     {
-    pbs_errno = errno;
-
     close_dis(stream);
 
-    return(-1);
+    return(-1 * errno);
     }
 
   return(stream);
@@ -316,7 +305,8 @@ static int delrm(
 
 static struct out *findout(
 
-        int stream)
+  int *local_errno,
+  int  stream)
 
   {
 
@@ -329,7 +319,7 @@ static struct out *findout(
     }
 
   if (op == NULL)
-    pbs_errno = ENOTTY;
+    *local_errno = ENOTTY;
 
   return(op);
   }
@@ -339,8 +329,9 @@ static struct out *findout(
 
 static int startcom(
 
-  int stream,  /* I */
-  int com)     /* I */
+  int  stream,      /* I */
+  int *local_errno, /* O */
+  int  com)         /* I */
 
   {
   int ret;
@@ -363,7 +354,7 @@ static int startcom(
 
     /* log_err(ret,"startcom - diswsi error",(char *)dis_emsg[ret]); */
 
-    pbs_errno = errno;
+    *local_errno = errno;
     }
 
   return(ret);
@@ -381,21 +372,21 @@ static int startcom(
 
 static int simplecom(
 
-  int stream,
-  int com)
+  int  stream,
+  int *local_errno,
+  int  com)
 
   {
-
   struct out *op;
 
-  if ((op = findout(stream)) == NULL)
+  if ((op = findout(local_errno, stream)) == NULL)
     {
     return(-1);
     }
 
   op->len = -1;
 
-  if (startcom(stream, com) != DIS_SUCCESS)
+  if (startcom(stream, local_errno, com) != DIS_SUCCESS)
     {
     close_dis(stream);
 
@@ -404,10 +395,10 @@ static int simplecom(
 
   if (flush_dis(stream) == -1)
     {
-    pbs_errno = errno;
+    *local_errno = errno;
 
     DBPRT(("simplecom: flush error %d (%s)\n",
-           pbs_errno, pbs_strerror(pbs_errno)))
+           *local_errno, pbs_strerror(*local_errno)))
 
     close_dis(stream);
 
@@ -427,7 +418,8 @@ static int simplecom(
 
 static int simpleget(
 
-  int stream)
+  int *local_errno,
+  int  stream)
 
   {
   int ret, num;
@@ -441,7 +433,7 @@ static int simpleget(
 
     /* log_err(ret,"simpleget",(char *)dis_emsg[ret]); */
 
-    pbs_errno = errno ? errno : EIO;
+    *local_errno = errno ? errno : EIO;
 
     close_dis(stream);
 
@@ -451,9 +443,9 @@ static int simpleget(
   if (num != RM_RSP_OK)
     {
 #ifdef ENOMSG
-    pbs_errno = ENOMSG;
+    *local_errno = ENOMSG;
 #else
-    pbs_errno = EINVAL;
+    *local_errno = EINVAL;
 #endif
 
     return(-1);
@@ -468,23 +460,20 @@ static int simpleget(
 
 /*
 ** Close connection to resource monitor.  Return result 0 if
-** all is ok or -1 if not (set pbs_errno).
+** all is ok or -1 if not (return errno).
 */
 
 int closerm(
 
-  int stream)
+  int *local_errno,
+  int  stream)
 
   {
-  pbs_errno = 0;
-
-  simplecom(stream, RM_CMD_CLOSE);
+  simplecom(stream, local_errno, RM_CMD_CLOSE);
 
   if (delrm(stream) == -1)
     {
-    pbs_errno = ENOTTY;
-
-    return(-1);
+    return(ENOTTY);
     }
 
   return(0);
@@ -496,22 +485,21 @@ int closerm(
 
 /*
 ** Shutdown the resource monitor.  Return result 0 if
-** all is ok or -1 if not (set pbs_errno).
+** all is ok or -1 if not.
 */
 
 int downrm(
 
-  int stream)  /* I */
+  int *local_errno,
+  int  stream)  /* I */
 
   {
-  pbs_errno = 0;
-
-  if (simplecom(stream, RM_CMD_SHUTDOWN))
+  if (simplecom(stream, local_errno, RM_CMD_SHUTDOWN))
     {
     return(-1);
     }
 
-  if (simpleget(stream))
+  if (simpleget(local_errno, stream))
     {
     return(-1);
     }
@@ -526,13 +514,14 @@ int downrm(
 
 /*
 ** Cause the resource monitor to read the file named.
-** Return the result 0 if all is ok or -1 if not (set pbs_errno).
+** Return the result 0 if all is ok or -1 if not.
 */
 
 int configrm(
 
-  int   stream,  /* I */
-  char *file)    /* I */
+  int   stream,      /* I */
+  int  *local_errno, /* O */
+  char *file)        /* I */
 
   {
   int         ret;
@@ -540,9 +529,7 @@ int configrm(
 
   struct out *op;
 
-  pbs_errno = 0;
-
-  if ((op = findout(stream)) == NULL)
+  if ((op = findout(local_errno, stream)) == NULL)
     {
     return(-1);
     }
@@ -555,12 +542,10 @@ int configrm(
 
   if ((len = strlen(file)) > (size_t)65536)
     {
-    pbs_errno = EINVAL;
-
-    return(-1);
+    return(-1 * EINVAL);
     }
 
-  if (startcom(stream, RM_CMD_CONFIG) != DIS_SUCCESS)
+  if (startcom(stream, local_errno, RM_CMD_CONFIG) != DIS_SUCCESS)
     {
     return(-1);
     }
@@ -571,11 +556,11 @@ int configrm(
   if (ret != DIS_SUCCESS)
     {
 #if defined(ECOMM)
-    pbs_errno = ECOMM;
+    *local_errno = ECOMM;
 #elif defined(ENOCONNECT)
-    pbs_errno = ENOCONNECT;
+    *local_errno = ENOCONNECT;
 #else
-    pbs_errno = ETXTBSY;
+    *local_errno = ETXTBSY;
 #endif
 
     DBPRT(("configrm: diswcs %s\n",
@@ -586,15 +571,13 @@ int configrm(
 
   if (flush_dis(stream) == -1)
     {
-    pbs_errno = errno;
-
     DBPRT(("configrm: flush error %d (%s)\n",
-           pbs_errno, pbs_strerror(pbs_errno)))
+           errno, pbs_strerror(errno)))
 
-    return(-1);
+    return(-1 * errno);
     }
 
-  if (simpleget(stream))
+  if (simpleget(local_errno, stream))
     {
     return(-1);
     }
@@ -610,7 +593,7 @@ int configrm(
 ** Begin a new message to the resource monitor if necessary.
 ** Add a line to the body of an outstanding command to the resource
 ** monitor.
-** Return the result 0 if all is ok or -1 if not (set pbs_errno).
+** Return the result 0 if all is ok or -1 if not.
 */
 
 static int doreq(
@@ -620,14 +603,18 @@ static int doreq(
 
   {
   int ret;
+  int local_errno = 0;
 
   if (op->len == -1)
     {
     /* start new message */
 
-    if (startcom(op->stream, RM_CMD_REQUEST) != DIS_SUCCESS)
+    if (startcom(op->stream, &local_errno, RM_CMD_REQUEST) != DIS_SUCCESS)
       {
-      return(-1);
+      if (local_errno != 0)
+        return(-1 * local_errno);
+      else
+        return(-1);
       }
 
     op->len = 1;
@@ -639,17 +626,17 @@ static int doreq(
   if (ret != DIS_SUCCESS)
     {
 #if defined(ECOMM)
-    pbs_errno = ECOMM;
+    local_errno = ECOMM;
 #elif defined(ENOCONNECT)
-    pbs_errno = ENOCONNECT;
+    local_errno = ENOCONNECT;
 #else
-    pbs_errno = ETXTBSY;
+    local_errno = ETXTBSY;
 #endif
 
     DBPRT(("doreq: diswcs %s\n",
            dis_emsg[ret]))
 
-    return(-1);
+    return(-1 * local_errno);
     }
 
   return(0);
@@ -666,15 +653,13 @@ static int doreq(
 int addreq(
 
   int   stream,
+  int  *local_errno, 
   char *line)
 
   {
-
   struct out *op;
 
-  pbs_errno = 0;
-
-  if ((op = findout(stream)) == NULL)
+  if ((op = findout(local_errno, stream)) == NULL)
     {
     return(-1);
     }
@@ -706,8 +691,6 @@ int allreq(
 
   struct out *op, *prev;
   int         i, num;
-
-  pbs_errno = 0;
 
   num = 0;
 
@@ -754,12 +737,13 @@ int allreq(
 /*
 ** Finish (and send) any outstanding message to the resource monitor.
 ** Return a pointer to the next response line or a NULL if
-** there are no more or an error occured.  Set pbs_errno on error.
+** there are no more or an error occured. 
 */
 
 char *getreq(
 
-  int stream)  /* I */
+  int *local_errno,
+  int  stream)  /* I */
 
   {
   char *startline;
@@ -767,9 +751,7 @@ char *getreq(
   struct out *op;
   int ret;
 
-  pbs_errno = 0;
-
-  if ((op = findout(stream)) == NULL)
+  if ((op = findout(local_errno, stream)) == NULL)
     {
     return(NULL);
     }
@@ -780,10 +762,8 @@ char *getreq(
 
     if (flush_dis(stream) == -1)
       {
-      pbs_errno = errno;
-
       DBPRT(("getreq: flush error %d (%s)\n",
-             pbs_errno, pbs_strerror(pbs_errno)))
+             errno, pbs_strerror(errno)))
 
       delrm(stream);
 
@@ -796,7 +776,7 @@ char *getreq(
 
   if (op->len == -2)
     {
-    if (simpleget(stream) == -1)
+    if (simpleget(local_errno, stream) == -1)
       {
       return(NULL);
       }
@@ -814,7 +794,8 @@ char *getreq(
 
   if (ret != DIS_SUCCESS)
     {
-    pbs_errno = errno ? errno : EIO;
+    if (!errno)
+      errno = EIO;
 
     DBPRT(("getreq: cannot read string %s\n",
            dis_emsg[ret]))
@@ -858,15 +839,12 @@ char *getreq(
 ** Return the number of messages flushed.
 */
 
-int
-flushreq(void)
+int flushreq(void)
 
   {
 
   struct out *op, *prev;
   int         did, i;
-
-  pbs_errno = 0;
 
   did = 0;
 
@@ -879,10 +857,8 @@ flushreq(void)
 
       if (flush_dis(op->stream) == -1)
         {
-        pbs_errno = errno;
-
         DBPRT(("flushreq: flush error %d (%s)\n",
-               pbs_errno, pbs_strerror(pbs_errno)))
+               errno, pbs_strerror(errno)))
 
         close_dis(op->stream);
 
@@ -960,14 +936,10 @@ int activereq(void)
 
   int MaxNumDescriptors = 0;
 
-  pbs_errno = 0;
-
   flushreq();
 
   MaxNumDescriptors = get_max_num_descriptors();
   FDSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
-
-  pbs_errno = 0;
 
   for (i = 0; i < HASHOUT; i++)
     {
@@ -991,8 +963,7 @@ int activereq(void)
 
   if (num == -1)
     {
-    pbs_errno = errno;
-    DBPRT(("%s: select %d %s\n", id, pbs_errno, pbs_strerror(pbs_errno)))
+    DBPRT(("%s: select %d %s\n", id, errno, pbs_strerror(errno)))
     free(FDSet);
     return -1;
     }
@@ -1036,11 +1007,11 @@ int activereq(void)
 ** This makes it possible to examine the entire line rather
 ** than just the answer following the equal sign.
 */
-void
-fullresp(int flag)
-  {
-  pbs_errno = 0;
+void fullresp(
+    
+  int flag)
 
+  {
   full = flag;
 
   return;

@@ -122,7 +122,6 @@
 
 extern int   errno;
 
-extern int   pbs_errno;
 extern unsigned int  pbs_server_port_dis;
 
 extern struct connection svr_conn[];
@@ -140,6 +139,7 @@ int svr_connect(
 
   pbs_net_t        hostaddr,  /* host order */
   unsigned int     port,   /* I */
+  int             *my_err,
   struct pbsnode  *pnode,
   void           *(*func)(void *),
   enum conn_type   cntype)
@@ -188,7 +188,7 @@ int svr_connect(
       log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
       }
 
-    pbs_errno = EHOSTDOWN;
+    *my_err = EHOSTDOWN;
 
     return(PBS_NET_RC_RETRY);
     }
@@ -223,7 +223,7 @@ int svr_connect(
 
     bad_node_warning(hostaddr,pnode);
 
-    pbs_errno = errno;
+    *my_err = errno;
 
     return(sock);  /* PBS_NET_RC_RETRY or PBS_NET_RC_FATAL */
     }  /* END if (sock < 0) */
@@ -255,7 +255,7 @@ int svr_connect(
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
   /* find a connect_handle entry we can use and pass to the PBS_*() */
-  handle = socket_to_handle(sock);
+  handle = socket_to_handle(sock, my_err);
 
   if (handle == -1)
     {
@@ -289,7 +289,9 @@ int svr_connect(
  * the API routines must be cleaned-up.
  */
 void svr_disconnect(
+
   int handle)  /* I */
+
   {
   int sock;
   int x;
@@ -337,21 +339,28 @@ void svr_disconnect(
   }  /* END svr_disconnect() */
 
 
+
+
 /*
  * socket_to_handle() - turn a socket into a connection handle
  * as used by the libpbs.a routines.
  *
  * Returns: >=0 connection handle if successful, or
- *    -1 if error, error number set in pbs_errno.
+ *    -1 if error, error number set in local_errno.
  */
+
 int socket_to_handle(
-  int sock)  /* opened socket */
+
+  int  sock,        /* opened socket */
+  int *local_errno) /* O */
+
   {
   char *id = "socket_to_handle";
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  int conn_pos = 0;
-  int rc = PBSE_NONE;
+  int   conn_pos = 0;
+  int   rc = PBSE_NONE;
+
   if ((rc = get_connection_entry(&conn_pos)) != PBSE_NONE)
     {
     rc = -1;
@@ -361,7 +370,7 @@ int socket_to_handle(
 
     log_ext(-1,id,log_buf,LOG_ALERT);
 
-    pbs_errno = PBSE_NOCONNECTS;
+    *local_errno = PBSE_NOCONNECTS;
     }
   else
     {
@@ -387,10 +396,12 @@ int socket_to_handle(
         
       log_ext(-1,id,log_buf,LOG_CRIT);
       }
+
     rc = conn_pos;
     pthread_mutex_unlock(connection[conn_pos].ch_mutex);
     }
-  return rc;
+
+  return(rc);
   }  /* END socket_to_handle() */
 
 
@@ -405,8 +416,10 @@ int socket_to_handle(
  * Warning: as written, Not reentrient/thread safe
  */
 char *parse_servername(
+
   char         *name,   /* server name in form name[:port] */
   unsigned int *service)  /* RETURN: service_port if :port */
+
   {
   char  buf[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
   char *val;

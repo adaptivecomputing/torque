@@ -2533,10 +2533,12 @@ job_no_args:
 
         if (connect <= 0)
           {
+          any_failed = -1 * connect;
+
           fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
                   pbs_server,
-                  pbs_errno,
-                  pbs_strerror(pbs_errno));
+                  any_failed,
+                  pbs_strerror(any_failed));
 
           ret = tcl_stat(error, NULL, f_opt);
 
@@ -2549,7 +2551,7 @@ job_no_args:
           {
           /* changing to a different server */
 
-          p_server = pbs_statserver(connect, NULL, NULL);
+          p_server = pbs_statserver(connect, NULL, NULL, &any_failed);
 
           strcpy(server_old, pbs_server);
           }
@@ -2570,17 +2572,17 @@ job_no_args:
           {
           if (t_opt)
             {
-            p_status = pbs_selstat(connect, p_atropl, exec_only ? EXECQUEONLY : NULL);
+            p_status = pbs_selstat(connect, p_atropl, exec_only ? EXECQUEONLY : NULL, &any_failed);
             }
           else
             {
-            p_status = pbs_selstat(connect, p_atropl, exec_only ? EXECQUEONLY : summarize_arrays_extend_opt);
+            p_status = pbs_selstat(connect, p_atropl, exec_only ? EXECQUEONLY : summarize_arrays_extend_opt, &any_failed);
             }
           }
 
         if (p_status == NULL)
           {
-          if ((pbs_errno == PBSE_UNKJOBID) && !located)
+          if ((any_failed == PBSE_UNKJOBID) && !located)
             {
             located = TRUE;
 
@@ -2596,18 +2598,14 @@ job_no_args:
             ret = tcl_stat("job", NULL, f_opt);
 
             prt_job_err("qstat", connect, job_id_out);
-
-            any_failed = pbs_errno;
             }
           else
             {
             ret = tcl_stat("job", NULL, f_opt);
 
-            if (pbs_errno != PBSE_NONE)
+            if (any_failed != PBSE_NONE)
               {
               prt_job_err("qstat", connect, job_id_out);
-
-              any_failed = pbs_errno;
               }
             }
           }
@@ -2660,18 +2658,18 @@ que_no_args:
 
         if (connect <= 0)
           {
+          any_failed = -1 * connect;
           fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
-                  pbs_server, pbs_errno, pbs_strerror(pbs_errno));
+                  pbs_server, any_failed, pbs_strerror(any_failed));
           ret = tcl_stat(error, NULL, f_opt);
-          any_failed = connect;
           break;
           }
 
-        p_status = pbs_statque(connect, queue_name_out, NULL, NULL);
+        p_status = pbs_statque(connect, queue_name_out, NULL, NULL, &any_failed);
 
         if (p_status == NULL)
           {
-          if (pbs_errno)
+          if (any_failed)
             {
             errmsg = pbs_geterrmsg(connect);
 
@@ -2681,13 +2679,11 @@ que_no_args:
               }
             else
               fprintf(stderr, "qstat: Error (%d - %s) getting status of queue ",
-                      pbs_errno, pbs_strerror(pbs_errno));
+                      any_failed, pbs_strerror(any_failed));
 
             fprintf(stderr, "%s\n", queue_name_out);
 
             ret = tcl_stat(error, NULL, f_opt);
-
-            any_failed = pbs_errno;
             }
           }
         else
@@ -2718,18 +2714,20 @@ svr_no_args:
 
         if (connect <= 0)
           {
+          any_failed = -1 * connect;
+
           fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
-                  pbs_server, pbs_errno, pbs_strerror(pbs_errno));
+                  pbs_server, any_failed, pbs_strerror(any_failed));
           ret = tcl_stat(error, NULL, f_opt);
           any_failed = connect;
           break;
           }
 
-        p_status = pbs_statserver(connect, NULL, NULL);
+        p_status = pbs_statserver(connect, NULL, NULL, &any_failed);
 
         if (p_status == NULL)
           {
-          if (pbs_errno)
+          if (any_failed)
             {
             errmsg = pbs_geterrmsg(connect);
 
@@ -2739,13 +2737,11 @@ svr_no_args:
               }
             else
               fprintf(stderr, "qstat: Error (%d - %s) getting status of server ",
-                      pbs_errno, pbs_strerror(pbs_errno));
+                      any_failed, pbs_strerror(any_failed));
 
             fprintf(stderr, "%s\n", server_out);
 
             ret = tcl_stat(error, NULL, f_opt);
-
-            any_failed = pbs_errno;
             }
           }
         else

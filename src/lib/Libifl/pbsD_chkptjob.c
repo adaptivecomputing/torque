@@ -11,16 +11,23 @@
 #include <stdio.h>
 #include "libpbs.h"
 
-int
-pbs_checkpointjob(int c, char *jobid, char *extend)
+int pbs_checkpointjob(
+    
+  int   c,
+  char *jobid,
+  char *extend,
+  int  *local_errno)
+
   {
   if ((jobid == (char *)0) || (*jobid == '\0'))
-    return (pbs_errno = PBSE_IVALREQ);
+    return (PBSE_IVALREQ);
 
   return PBSD_manager(c, PBS_BATCH_CheckpointJob,
                       MGR_CMD_SET,
                       MGR_OBJ_JOB,
                       jobid,
                       NULL,
-                      extend);
-  }
+                      extend,
+                      local_errno);
+  } /* END pbs_checkpointjob() */
+

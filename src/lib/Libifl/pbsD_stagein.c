@@ -95,14 +95,15 @@ int pbs_stagein(
   char *extend)
 
   {
-  int rc;
+  int                   rc;
+  int                   local_errno = 0;
 
   struct batch_reply   *reply;
-  int sock;
+  int                   sock;
 
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
-    return (pbs_errno = PBSE_IVALREQ);
+    return (PBSE_IVALREQ);
 
   if (location == (char *)0)
     location = "";
@@ -125,19 +126,19 @@ int pbs_stagein(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_PROTOCOL);
+    return (PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_PROTOCOL);
+    return (PBSE_PROTOCOL);
     }
 
   /* get reply */
 
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(&local_errno, c);
 
   rc = connection[c].ch_errno;
 

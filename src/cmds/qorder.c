@@ -28,6 +28,7 @@ int main(
   int connect;
   int stat = 0;
   int rc = 0;
+  int local_errno = 0;
 
   if (argc != 3)
     {
@@ -137,21 +138,23 @@ int main(
 
   if (connect <= 0)
     {
+    local_errno = -1 * connect;
+
     fprintf(stderr, "qorder: cannot connect to server %s (errno=%d) %s\n",
             pbs_server,
-            pbs_errno,
-            pbs_strerror(pbs_errno));
+            local_errno,
+            pbs_strerror(local_errno));
 
     exit(1);
     }
 
-  stat = pbs_orderjob(connect, job_id1_out, job_id2_out, NULL);
+  stat = pbs_orderjob(connect, job_id1_out, job_id2_out, NULL, &local_errno);
 
   if (stat != 0)
     {
     prt_job_err("qorder", connect, "");
 
-    rc = pbs_errno;
+    rc = local_errno;
     }
 
   pbs_disconnect(connect);

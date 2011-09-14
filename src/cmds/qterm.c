@@ -170,10 +170,11 @@ static void execute(
   int ct;         /* Connection to the server */
   int err;        /* Error return from pbs_terminate */
   char *errmsg;   /* Error message from pbs_terminate */
+  int   local_errno = 0;
 
   if ((ct = cnt2server(server)) > 0)
     {
-    err = pbs_terminate(ct, manner, NULL);
+    err = pbs_terminate(ct, manner, NULL, &local_errno);
 
     if (err != 0)
       {
@@ -187,7 +188,7 @@ static void execute(
       else
         {
         fprintf(stderr, "qterm: Error (%d - %s) terminating server ",
-                pbs_errno, pbs_strerror(pbs_errno));
+                local_errno, pbs_strerror(local_errno));
         }
 
       fprintf(stderr, "%s\n",
@@ -202,11 +203,12 @@ static void execute(
   else
     {
     /* FAILURE */
+    local_errno = -1 * ct;
 
     fprintf(stderr, "qterm: could not connect to server '%s' (%d) %s\n",
             server,
-            pbs_errno,
-            pbs_strerror(pbs_errno));
+            local_errno,
+            pbs_strerror(local_errno));
 
     exitstatus = 2;
     }

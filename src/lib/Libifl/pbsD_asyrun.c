@@ -93,20 +93,19 @@ int pbs_asyrunjob(
   int   c,
   char *jobid,    /* I */
   char *location,
-  char *extend)
+  char *extend,
+  int  *local_errno)
 
   {
   int                 rc;
 
   struct batch_reply *reply;
   unsigned int        resch = 0;
-  int               sock;
+  int                 sock;
 
   if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
     {
-    pbs_errno = PBSE_IVALREQ;
-
-    return(pbs_errno);
+    return(PBSE_IVALREQ);
     }
 
   if (location == NULL)
@@ -130,23 +129,19 @@ int pbs_asyrunjob(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   /* get reply */
 
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   rc = connection[c].ch_errno;
 

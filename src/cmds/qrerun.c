@@ -129,28 +129,26 @@ cnt:
 
     if (connect <= 0)
       {
+      any_failed = -1 * connect;
+
       fprintf(stderr, "qrerun: cannot connect to server %s (errno=%d) %s\n",
               pbs_server,
-              pbs_errno,
-              pbs_strerror(pbs_errno));
-
-      any_failed = pbs_errno;
+              any_failed,
+              pbs_strerror(any_failed));
 
       continue;
       }
 
     if (extend[0] != '\0')
-      stat = pbs_rerunjob(connect, job_id_out, extend);
+      stat = pbs_rerunjob(connect, job_id_out, extend, &any_failed);
     else
-      stat = pbs_rerunjob(connect, job_id_out, NULL);
+      stat = pbs_rerunjob(connect, job_id_out, NULL, &any_failed);
 
-    if (stat && (pbs_errno != PBSE_UNKJOBID))
+    if (stat && (any_failed != PBSE_UNKJOBID))
       {
       prt_job_err("qrerun", connect, job_id_out);
-
-      any_failed = pbs_errno;
       }
-    else if (stat && (pbs_errno == PBSE_UNKJOBID) && !located)
+    else if (stat && (any_failed == PBSE_UNKJOBID) && !located)
       {
       located = TRUE;
 
@@ -164,8 +162,6 @@ cnt:
         }
 
       prt_job_err("qrerun", connect, job_id_out);
-
-      any_failed = pbs_errno;
       }
 
     pbs_disconnect(connect);

@@ -88,16 +88,19 @@
 #include "libpbs.h"
 
 int pbs_holdjob(
-    int c,
-    char *jobid,
-    char *holdtype,
-    char *extend)
+
+  int c,
+  char *jobid,
+  char *holdtype,
+  char *extend,
+  int  *local_errno)
+
   {
 
   struct attropl aopl;
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
-    return (pbs_errno = PBSE_IVALREQ);
+    return(PBSE_IVALREQ);
 
   aopl.name = ATTR_h;
 
@@ -117,5 +120,6 @@ int pbs_holdjob(
                       MGR_OBJ_JOB,
                       jobid,
                       &aopl,
-                      extend);
-  }
+                      extend,
+                      local_errno);
+  } /* END pbs_holdjob() */

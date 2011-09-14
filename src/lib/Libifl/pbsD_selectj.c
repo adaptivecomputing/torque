@@ -95,16 +95,18 @@
 #include "dis.h"
 
 static int PBSD_select_put(int, int, struct attropl *, char *);
-static char **PBSD_select_get(int);
+static char **PBSD_select_get(int *, int);
 
-char ** pbs_selectjob(
-    int c,
-    struct attropl *attrib,
-    char *extend)
+char **pbs_selectjob(
+    
+  int             c,
+  struct attropl *attrib,
+  char           *extend,
+  int            *local_errno)
+
   {
-
   if (PBSD_select_put(c, PBS_BATCH_SelectJobs, attrib, extend) == 0)
-    return (PBSD_select_get(c));
+    return (PBSD_select_get(local_errno, c));
   else
     return ((char **)0);
   }
@@ -117,13 +119,15 @@ char ** pbs_selectjob(
  *  and repeated pbs_statjob().
  */
 struct batch_status * pbs_selstat(
-    int c,
-    struct attropl *attrib,
-    char *extend)
-  {
 
+  int             c,
+  struct attropl *attrib,
+  char           *extend,
+  int            *local_errno)
+
+  {
   if (PBSD_select_put(c, PBS_BATCH_SelStat, attrib, extend) == 0)
-    return (PBSD_status_get(c));
+    return (PBSD_status_get(local_errno, c));
   else
     return ((struct batch_status *)0);
   }
@@ -154,7 +158,7 @@ static int PBSD_select_put(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_PROTOCOL);
+    return (PBSE_PROTOCOL);
     }
 
   pthread_mutex_unlock(connection[c].ch_mutex);
@@ -163,42 +167,45 @@ static int PBSD_select_put(
 
   if (DIS_tcp_wflush(sock))
     {
-    return (pbs_errno = PBSE_PROTOCOL);
+    return(PBSE_PROTOCOL);
     }
 
-  return 0;
-  }
+  return(PBSE_NONE);
+  } /* END pbs_selstat() */
 
 
 static char **PBSD_select_get(
-  int c)
+
+  int *local_errno,
+  int  c)
+
   {
-  int   i;
+  int                  i;
 
-  struct batch_reply *reply;
-  int   njobs;
-  char *sp;
-  int   stringtot;
-  size_t totsize;
+  struct batch_reply  *reply;
+  int                  njobs;
+  char                *sp;
+  int                  stringtot;
+  size_t               totsize;
 
-  struct brp_select *sr;
-  char **retval = (char **)NULL;
+  struct brp_select   *sr;
+  char               **retval = (char **)NULL;
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
   /* read reply from stream */
 
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   if (reply == NULL)
     {
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
     }
   else if (reply->brp_choice != 0  &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Text &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Select)
     {
-    pbs_errno = PBSE_PROTOCOL;
+    *local_errno = PBSE_PROTOCOL;
     }
   else if (connection[c].ch_errno == 0)
     {
@@ -227,7 +234,7 @@ static char **PBSD_select_get(
 
     if (retval == (char **)NULL)
       {
-      pbs_errno = PBSE_SYSTEM;
+      *local_errno = PBSE_SYSTEM;
 
       pthread_mutex_unlock(connection[c].ch_mutex);
 
@@ -254,4 +261,5 @@ static char **PBSD_select_get(
   PBSD_FreeReply(reply);
 
   return(retval);
-  }
+  } /* END PBSD_select_get() */
+

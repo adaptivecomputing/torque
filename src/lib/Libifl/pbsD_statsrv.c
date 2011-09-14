@@ -87,12 +87,13 @@
 
 struct batch_status *pbs_statserver(
 
-        int           c,
-        struct attrl *attrib,
-        char         *extend)
+  int           c,
+  struct attrl *attrib,
+  char         *extend,
+  int          *local_errno)
 
   {
-  return(PBSD_status(c, PBS_BATCH_StatusSvr, "", attrib, extend));
+  return(PBSD_status(c, PBS_BATCH_StatusSvr, local_errno, "", attrib, extend));
   }
 
 /* END pbsD_statsrv.c */

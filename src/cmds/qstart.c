@@ -88,9 +88,13 @@ int main(
  * File Variables:
  *  exitstatus  Set to two if an error occurs.
  */
-static void
-execute(char *queue, char *server)
+static void execute(
+    
+  char *queue,
+  char *server)
+
   {
+  int local_errno = 0;
   int ct;         /* Connection to the server */
   int merr;       /* Error return from pbs_manager */
   char *errmsg;   /* Error message from pbs_manager */
@@ -103,7 +107,7 @@ execute(char *queue, char *server)
 
   if ((ct = cnt2server(server)) > 0)
     {
-    merr = pbs_manager(ct, MGR_CMD_SET, MGR_OBJ_QUEUE, queue, &attr, NULL);
+    merr = pbs_manager(ct, MGR_CMD_SET, MGR_OBJ_QUEUE, queue, &attr, NULL, &local_errno);
 
     if (merr != 0)
       {
@@ -115,9 +119,9 @@ execute(char *queue, char *server)
         }
       else
         {
-        fprintf(stderr, "qstart: Error (%d - %s) starting queue ",
-                pbs_errno,
-                pbs_strerror(pbs_errno));
+        fprintf(stderr, "qstart: Error starting queue: %d - %s",
+          local_errno,
+          pbs_strerror(local_errno));
         }
 
       if (notNULL(queue))
@@ -137,8 +141,8 @@ execute(char *queue, char *server)
     {
     fprintf(stderr, "qstart: could not connect to server %s (%d) %s\n",
             server,
-            pbs_errno,
-            pbs_strerror(pbs_errno));
+            ct * -1,
+            pbs_strerror(ct * -1));
     exitstatus = 2;
     }
   }

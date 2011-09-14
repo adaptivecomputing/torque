@@ -87,22 +87,8 @@
 #include "libpbs.h"
 #include "dis.h"
 
-
-int pbs_runjob(
-
-  int   c,
-  char *jobid,
-  char *location,
-  char *extend)
-
-  {
-  int rc;
-
-  struct batch_reply   *reply;
-  unsigned int resch = 0;
-  int sock;
-
-  /* NOTE:  routes over to req_runjob() on server side
+  
+/* NOTE:  routes over to req_runjob() on server side
        DIS_tcp_wflush  -----> wait_request()                       (net_server.c)
                                 process_request()                  (server/process_request.c)
                                   dis_request_read()               (server/dis_read.c)
@@ -142,13 +128,27 @@ int pbs_runjob(
    *   PBSD_rdrpy      <-----
    */
 
+
+int pbs_runjob(
+
+  int   c,
+  char *jobid,
+  char *location,
+  char *extend,
+  int  *local_errno)
+
+  {
+  int                   rc;
+
+  struct batch_reply   *reply;
+  unsigned int          resch = 0;
+  int                   sock;
+
   /* NOTE:  set_task sets WORK_Deferred_Child : request remains until child terminates */
 
   if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
     {
-    pbs_errno = PBSE_IVALREQ;
-
-    return(pbs_errno);
+    return(PBSE_IVALREQ);
     }
 
   if (location == NULL)
@@ -174,23 +174,19 @@ int pbs_runjob(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
-    pbs_errno = PBSE_PROTOCOL;
-
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   /* get reply */
 
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   rc = connection[c].ch_errno;
 

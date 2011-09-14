@@ -85,15 +85,21 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int
-pbs_gpumode(int c, char *node, char *gpuid, int gpumode)
+int pbs_gpumode(
+    
+  int   c,
+  char *node,
+  char *gpuid,
+  int   gpumode,
+  int  *local_errno)
+
   {
-  int      rc;
+  int                 rc;
 
   struct batch_reply *reply;
 
   if ((node == (char *)0) || (gpumode < 0 || gpumode > 3) || (gpuid == (char *)0))
-    return (pbs_errno = PBSE_IVALREQ);
+    return (PBSE_IVALREQ);
 
   /* send request */
 
@@ -102,27 +108,34 @@ pbs_gpumode(int c, char *node, char *gpuid, int gpumode)
 
   /* read reply */
 
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   PBSD_FreeReply(reply);
 
   return connection[c].ch_errno;
-  }
+  } /* END pbs_gpumode() */
 
 
 
 
-int
-pbs_gpureset(int c, char *node, char *gpuid, int permanent, int vol)
+int pbs_gpureset(
+    
+  int   c,
+  char *node,
+  char *gpuid,
+  int   permanent,
+  int   vol,
+  int  *local_errno)
+
   {
-  int      rc;
+  int                 rc;
 
   struct batch_reply *reply;
 
   if ((node == (char *)0) || ((permanent != 1) && (permanent != 0)) ||
       ((vol != 1) && (vol != 0)) || (gpuid == (char *)0) ||
       ((permanent == 1) && (vol == 1)))
-    return (pbs_errno = PBSE_IVALREQ);
+    return (PBSE_IVALREQ);
 
   /* send request */
 
@@ -131,10 +144,10 @@ pbs_gpureset(int c, char *node, char *gpuid, int permanent, int vol)
 
   /* read reply */
 
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   PBSD_FreeReply(reply);
 
   return connection[c].ch_errno;
-  }
+  } /* END pbs_gpureset() */
 

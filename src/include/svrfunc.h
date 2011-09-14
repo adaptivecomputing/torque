@@ -21,7 +21,7 @@ extern void  save_setup(int);
 extern int   save_struct(char *, unsigned int);
 extern void  schedule_job(void);
 extern char *site_map_user(char *, char *);
-extern int   socket_to_handle(int);
+extern int   socket_to_handle(int, int *);
 extern void  svr_disconnect(int);
 extern int   svr_get_privilege(char *, char *);
 extern int   srv_shutdown(int);
@@ -51,7 +51,7 @@ extern int   chk_resc_limits(attribute *, pbs_queue *, char *);
 
 #ifdef PBS_NET_H
 struct pbsnode;
-extern int   svr_connect(pbs_net_t, unsigned int, struct pbsnode *, void *(*)(void *), enum conn_type);
+extern int   svr_connect(pbs_net_t, unsigned int, int *, struct pbsnode *, void *(*)(void *), enum conn_type);
 #endif /* PBS_NET_H */
 
 #ifdef WORK_TASK_H

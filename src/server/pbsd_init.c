@@ -1489,6 +1489,7 @@ static int pbsd_init_job(
   time_t            time_now = time(NULL);
   char             *jobid_copy;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
+  int               local_errno = 0;
 
   pjob->ji_momhandle = -1;
 
@@ -1730,7 +1731,7 @@ static int pbsd_init_job(
     if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
       {
       char *tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &d);
-      pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(tmp);
+      pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(&local_errno, tmp);
       free(tmp);
       }
     else

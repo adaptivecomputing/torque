@@ -88,18 +88,18 @@
 #include <stdlib.h>
 #include "libpbs.h"
 
-/* returns pbs_errno */
+/* returns pbs_error codes */
 
 int pbs_alterjob_asyncflag(
 
-  int           c,       /* I */
-  char         *jobid,   /* I */
-  struct attrl *attrib,  /* I */
-  char         *extend,  /* I */
-  int           asyncFlag)  /* I */
+  int           c,           /* I */
+  char         *jobid,       /* I */
+  struct attrl *attrib,      /* I */
+  char         *extend,      /* I */
+  int           asyncFlag,   /* I */
+  int          *local_errno) /* O */
 
   {
-
   struct attropl *ap = (struct attropl *)NULL;
 
   struct attropl *ap1 = (struct attropl *)NULL;
@@ -108,9 +108,7 @@ int pbs_alterjob_asyncflag(
 
   if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
     {
-    pbs_errno = PBSE_IVALREQ;
-
-    return(pbs_errno);
+    return(PBSE_IVALREQ);
     }
 
   /* copy the attrl to an attropl */
@@ -131,9 +129,7 @@ int pbs_alterjob_asyncflag(
       {
       /* FAILURE */
 
-      pbs_errno = PBSE_SYSTEM;
-
-      return(-1);
+      return(PBSE_SYSTEM);
       }
 
     ap->name = attrib->name;
@@ -156,7 +152,8 @@ int pbs_alterjob_asyncflag(
         MGR_OBJ_JOB,
         jobid,
         ap1,
-        extend);
+        extend,
+        local_errno);
 
   /* free up the attropl we just created */
 
@@ -174,24 +171,26 @@ int pbs_alterjob_asyncflag(
 
 int pbs_alterjob_async(
 
-  int           c,       /* I */
-  char         *jobid,   /* I */
-  struct attrl *attrib,  /* I */
-  char         *extend)  /* I */
+  int           c,           /* I */
+  char         *jobid,       /* I */
+  struct attrl *attrib,      /* I */
+  char         *extend,      /* I */
+  int          *local_errno) /* O */
 
   {
-  return(pbs_alterjob_asyncflag(c, jobid, attrib, extend, TRUE));
+  return(pbs_alterjob_asyncflag(c, jobid, attrib, extend, TRUE, local_errno));
   }  /* END pbs_alterjob_async() */
 
 int pbs_alterjob(
 
-  int           c,       /* I */
-  char         *jobid,   /* I */
-  struct attrl *attrib,  /* I */
-  char         *extend)  /* I */
+  int           c,           /* I */
+  char         *jobid,       /* I */
+  struct attrl *attrib,      /* I */
+  char         *extend,      /* I */
+  int          *local_errno) /* O */
 
   {
-  return(pbs_alterjob_asyncflag(c, jobid, attrib, extend, FALSE));
+  return(pbs_alterjob_asyncflag(c, jobid, attrib, extend, FALSE, local_errno));
   }  /* END pbs_alterjob() */
 
 /* END pbsD_alterjo.c */

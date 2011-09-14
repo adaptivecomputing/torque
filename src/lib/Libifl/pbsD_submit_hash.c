@@ -98,7 +98,8 @@
 char *pbs_submit_hash(
 
   int             c,
-  memmgr         **mm,
+  int            *local_errno,
+  memmgr        **mm,
   job_data       *job_attr,
   job_data       *res_attr,
   char           *script,
@@ -116,7 +117,7 @@ char *pbs_submit_hash(
     {
     if (access(script, R_OK) != 0)
       {
-      pbs_errno = PBSE_BADSCRIPT;
+      *local_errno = PBSE_BADSCRIPT;
 
       return(NULL);
       }
@@ -129,7 +130,7 @@ char *pbs_submit_hash(
 
   /* Queue job with null string for job id */
 
-  return_jobid = PBSD_QueueJob_hash(c, "", destination, mm, job_attr, res_attr, extend);
+  return_jobid = PBSD_QueueJob_hash(c, local_errno, "", destination, mm, job_attr, res_attr, extend);
 
   if (return_jobid == NULL)
     {
@@ -142,7 +143,7 @@ char *pbs_submit_hash(
     {
     if (PBSD_jscript(c, script, NULL) != 0)
       {
-      pbs_errno = PBSE_BADSCRIPT;
+      *local_errno = PBSE_BADSCRIPT;
 
       return(NULL);
       }

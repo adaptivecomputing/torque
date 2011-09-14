@@ -145,6 +145,7 @@ static void execute(
   int err;        /* Error return from pbs_run */
   int located = FALSE;
   char rmt_server[MAXSERVERNAME];
+  int  local_errno = 0;
 
 cnt:
 
@@ -152,14 +153,14 @@ cnt:
     {
     if (async == TRUE)
       {
-      err = pbs_asyrunjob(ct, job, location, NULL);  /* see lib/Libifl/pbsD_runjob.c */
+      err = pbs_asyrunjob(ct, job, location, NULL, &local_errno);  /* see lib/Libifl/pbsD_runjob.c */
       }
     else
       {
-      err = pbs_runjob(ct, job, location, NULL);  /* see lib/Libifl/pbsD_runjob.c */
+      err = pbs_runjob(ct, job, location, NULL, &local_errno);  /* see lib/Libifl/pbsD_runjob.c */
       }
 
-    if (err && (pbs_errno == PBSE_UNKNODE))
+    if (err && (local_errno == PBSE_UNKNODE))
       {
       fprintf(stderr, "qrun: Unknown node in hostlist '%.16s...' for job %s\n",
               location,
@@ -167,13 +168,13 @@ cnt:
 
       exitstatus = 2;
       }
-    else if (err && (pbs_errno != PBSE_UNKJOBID))
+    else if (err && (local_errno != PBSE_UNKJOBID))
       {
       prt_job_err("qrun", ct, job);
 
       exitstatus = 2;
       }
-    else if (err && (pbs_errno == PBSE_UNKJOBID) && !located)
+    else if (err && (local_errno == PBSE_UNKJOBID) && !located)
       {
       located = TRUE;
 
@@ -197,8 +198,8 @@ cnt:
     {
     fprintf(stderr, "qrun: could not connect to server %s (%d) %s\n",
             server,
-            pbs_errno,
-            pbs_strerror(pbs_errno));
+            local_errno,
+            pbs_strerror(local_errno));
 
     exitstatus = 2;
     }

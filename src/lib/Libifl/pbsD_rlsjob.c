@@ -87,15 +87,21 @@
 #include <stdio.h>
 #include "libpbs.h"
 
-int
-pbs_rlsjob(int c, char *jobid, char *holdtype, char *extend)
+int pbs_rlsjob(
+    
+  int   c,
+  char *jobid,
+  char *holdtype,
+  char *extend,
+  int  *local_errno)
+
   {
 
   struct attropl aopl;
 
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
-    return (pbs_errno = PBSE_IVALREQ);
+    return (PBSE_IVALREQ);
 
   aopl.name = ATTR_h;
 
@@ -110,6 +116,6 @@ pbs_rlsjob(int c, char *jobid, char *holdtype, char *extend)
 
   aopl.next = (struct attropl *)NULL;
 
-  return PBSD_manager(c, PBS_BATCH_ReleaseJob, MGR_CMD_SET,
-                      MGR_OBJ_JOB, jobid, &aopl, extend);
-  }
+  return PBSD_manager(c, PBS_BATCH_ReleaseJob, MGR_CMD_SET, MGR_OBJ_JOB, jobid, &aopl, extend, local_errno);
+  } /* pbs_rlsjob() */
+

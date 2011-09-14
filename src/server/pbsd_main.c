@@ -228,7 +228,6 @@ char        *path_jobinfo_log;
 char        *ArgV[MAX_CMD_ARGS];
 extern char    *msg_daemonname;
 extern char *msg_info_server; /* Server information message   */
-extern int pbs_errno;
 char        *pbs_o_host = "PBS_O_HOST";
 pbs_net_t pbs_mom_addr;
 unsigned int pbs_mom_port = 0;
@@ -519,6 +518,7 @@ void parse_command_line(
   char *pc = NULL;
   int  c;
   int  i;
+  int  local_errno = 0;
 
   char   EMsg[1024];
   char *servicename = NULL;
@@ -683,7 +683,7 @@ void parse_command_line(
 
         def_pbs_server_addr = pbs_server_addr;
 
-        pbs_server_addr = get_hostaddr(server_host);
+        pbs_server_addr = get_hostaddr(&local_errno, server_host);
 
         if (pbs_mom_addr == def_pbs_server_addr)
           pbs_mom_addr = pbs_server_addr;
@@ -1301,6 +1301,7 @@ int main(
 
   {
   int          i;
+  int          local_errno = 0;
   int          lockfds = -1;
   char         lockfile[MAXPATHLEN + 1];
   char        *pc = NULL;
@@ -1369,7 +1370,7 @@ int main(
 
   strcpy(server_name, server_host); /* by default server = host */
 
-  pbs_server_addr    = get_hostaddr(server_host);
+  pbs_server_addr    = get_hostaddr(&local_errno, server_host);
   pbs_mom_addr       = pbs_server_addr;   /* assume on same host */
   pbs_scheduler_addr = pbs_server_addr;   /* assume on same host */
 
@@ -1824,6 +1825,7 @@ static int get_port(
 
   {
   char *name;
+  int   local_errno = 0;
 
   if (*arg == ':')
     ++arg;
@@ -1845,7 +1847,7 @@ static int get_port(
       return(-1);
       }
 
-    *addr = get_hostaddr(name);
+    *addr = get_hostaddr(&local_errno, name);
 
     free(name);
     }

@@ -101,8 +101,9 @@ int locate_job(
   char *located_server)
 
   {
-  int connect;
-  char jid_server[PBS_MAXCLTJOBID + 1];
+  int   connect;
+  int   local_errno = 0;
+  char  jid_server[PBS_MAXCLTJOBID + 1];
   char *location;
 
   if ((connect = pbs_connect(parent_server)) >= 0)
@@ -117,7 +118,7 @@ int locate_job(
       strcat(jid_server, parent_server);
       }
 
-    location = pbs_locjob(connect, jid_server, NULL);
+    location = pbs_locjob(connect, &local_errno, jid_server, NULL);
 
     if (location == NULL)
       {

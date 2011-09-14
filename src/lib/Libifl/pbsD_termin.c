@@ -89,16 +89,17 @@
 
 int pbs_terminate(
 
-  int   c,      /* I */
-  int   manner, /* I */
-  char *extend) /* I */
+  int   c,           /* I */
+  int   manner,      /* I */
+  char *extend,      /* I */
+  int  *local_errno) /* O */
 
   {
 
   struct batch_reply *reply;
 
-  int rc = 0;
-  int sock;
+  int                 rc = 0;
+  int                 sock;
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -117,22 +118,18 @@ int pbs_terminate(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_PROTOCOL;
-
-    return(pbs_errno);
+    return(PBSE_PROTOCOL);
     }
 
   /* read in reply */
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   rc = connection[c].ch_errno;
 

@@ -454,7 +454,7 @@ int write_tcp_reply(
     }
 
   /* ERROR */
-  return(pbs_errno);
+  return(ret);
   } /* END write_tcp_reply() */
 
 

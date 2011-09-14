@@ -87,6 +87,7 @@ int main(
 
   int c;
   int rc = PBSE_NONE;
+  int local_errno = 0;
 
   int HostCount;
   int FailCount;
@@ -379,7 +380,7 @@ int main(
 
       /* get a batch_status entry for each node in ":property" */
 
-      bstatus = pbs_statnode(con,HPtr,NULL,NULL);
+      bstatus = pbs_statnode(con,HPtr,NULL,NULL, &local_errno);
 
       if (bstatus != NULL)
         {
@@ -515,6 +516,7 @@ int check_success(
 
   {
   int rc;
+  int local_errno;
   int status = disrsi(stream,&rc);
 
   if (rc != DIS_SUCCESS)
@@ -522,12 +524,12 @@ int check_success(
   else if (status != RM_RSP_OK)
     {
 #ifdef ENOMSG
-    pbs_errno = ENOMSG;
+    local_errno = ENOMSG;
 #else
-    pbs_errno = EINVAL;
+    local_errno = EINVAL;
 #endif
 
-    return(-1);
+    return(-1 * local_errno);
     }
   else
     return(PBSE_NONE);
@@ -538,7 +540,8 @@ int check_success(
 
 char *read_mom_reply(
 
-  int stream) /* I */
+  int *local_errno, /* O */
+  int  stream)      /* I */
 
   {
   int   rc;
@@ -551,7 +554,7 @@ char *read_mom_reply(
 
   if (rc != DIS_SUCCESS)
     {
-    pbs_errno = pbs_errno ? pbs_errno : EIO;
+    *local_errno = EIO;
 
     return(NULL);
     }
@@ -570,6 +573,7 @@ int do_mom(
 
   {
   int sd;
+  int local_errno = 0;
 
   if ((sd = openrm(HPtr, MOMPort)) < 0)
     {
@@ -578,9 +582,9 @@ int do_mom(
     extern char TRMEMsg[];
 
     fprintf(stderr, "cannot connect to MOM on node '%s', errno=%d (%s)\n",
-            HPtr,
-            pbs_errno,
-            strerror(pbs_errno));
+      HPtr,
+      errno,
+      strerror(errno));
 
     if (TRMEMsg[0] != '\0')
       {
@@ -614,28 +618,26 @@ int do_mom(
         {
         /* FAILURE */
 
-        fprintf(stderr,"ERROR:    cannot request job clear on %s (errno=%d-%s: %d-%s)\n",
+        fprintf(stderr,"ERROR:    cannot request job clear on %s (errno=%d-%s)\n",
           HPtr,
           errno,
-          pbs_strerror(errno),
-          pbs_errno,
-          pbs_strerror(pbs_errno));
+          strerror(errno));
 
         send_command(sd,RM_CMD_CLOSE);
 
         return(-1);
         }
 
-      if ((Value = (char *)read_mom_reply(sd)) == NULL)
+      if ((Value = (char *)read_mom_reply(&local_errno, sd)) == NULL)
         {
         /* FAILURE */
 
-        fprintf(stderr,"ERROR:    job clear failed on %s (errno=%d-%s: %d-%s)\n",
+        fprintf(stderr,"ERROR:    job clear failed on %s (errno=%d - %s: %d - %s)\n",
           HPtr,
           errno,
           pbs_strerror(errno),
-          pbs_errno,
-          pbs_strerror(pbs_errno));
+          local_errno,
+          pbs_strerror(local_errno));
 
         send_command(sd,RM_CMD_CLOSE);
 
@@ -658,12 +660,10 @@ int do_mom(
         {
         /* FAILURE */
 
-        fprintf(stderr,"ERROR:    cannot shutdown mom daemon on %s (errno=%d-%s: %d-%s)\n",
+        fprintf(stderr,"ERROR:    cannot shutdown mom daemon on %s (errno=%d-%s)\n",
           HPtr,
           errno,
-          pbs_strerror(errno),
-          pbs_errno,
-          pbs_strerror(pbs_errno));
+          pbs_strerror(errno));
 
         send_command(sd,RM_CMD_CLOSE);
 
@@ -684,12 +684,10 @@ int do_mom(
         {
         /* FAILURE */
 
-        fprintf(stderr,"ERROR:    cannot reconfigure mom on %s (errno=%d-%s: %d-%s)\n",
+        fprintf(stderr,"ERROR:    cannot reconfigure mom on %s (errno=%d-%s)\n",
           HPtr,
           errno,
-          pbs_strerror(errno),
-          pbs_errno,
-          pbs_strerror(pbs_errno));
+          pbs_strerror(errno));
 
         send_command(sd,RM_CMD_CLOSE);
 
@@ -717,14 +715,11 @@ int do_mom(
         {
         if (send_command_str(sd, RM_CMD_REQUEST, Query[rindex]) != 0)
           {
-          fprintf(stderr,"ERROR:    cannot add query for '%s' on %s (errno=%d-%s: %d-%s)\n",
+          fprintf(stderr,"ERROR:    cannot add query for '%s' on %s (errno=%d-%s)\n",
             Query[rindex],
             HPtr,
             errno,
-
-          pbs_strerror(errno),
-          pbs_errno,
-          pbs_strerror(pbs_errno));
+            pbs_strerror(errno));
           }
         }
 
@@ -735,16 +730,16 @@ int do_mom(
           *ptr = '\0';
           }
 
-        if ((Value = (char *)read_mom_reply(sd)) == NULL)
+        if ((Value = (char *)read_mom_reply(&local_errno, sd)) == NULL)
           {
-          fprintf(stderr, "ERROR:    query[%d] '%s' failed on %s (errno=%d-%s: %d-%s)\n",
+          fprintf(stderr, "ERROR:    query[%d] '%s' failed on %s (errno=%d - %s : %d - %s)\n",
             rindex,
             Query[rindex],
             HPtr,
             errno,
             pbs_strerror(errno),
-            pbs_errno,
-            pbs_strerror(pbs_errno));
+            local_errno,
+            pbs_strerror(local_errno));
           }
         else
           {

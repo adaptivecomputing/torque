@@ -164,14 +164,14 @@ static int PBS_resc(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_PROTOCOL);
+    return (PBSE_PROTOCOL);
     }
 
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   if (DIS_tcp_wflush(sock))
     {
-    return (pbs_errno = PBSE_PROTOCOL);
+    return (PBSE_PROTOCOL);
     }
 
   return (0);
@@ -199,6 +199,7 @@ int pbs_rescquery(
 
   struct batch_reply *reply;
   int                 rc = 0;
+  int                 local_errno = 0;
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -208,9 +209,7 @@ int pbs_rescquery(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    pbs_errno = PBSE_RMNOPARAM;
-
-    return(pbs_errno);
+    return(PBSE_RMNOPARAM);
     }
 
   /* send request */
@@ -224,7 +223,7 @@ int pbs_rescquery(
 
   /* read in reply */
 
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(&local_errno, c);
 
   if (((rc = connection[c].ch_errno) == PBSE_NONE))
     {
@@ -259,7 +258,8 @@ int pbs_rescreserve(
   resource_t  *prh)      /* ptr to resource reservation handle */
 
   {
-  int rc;
+  int                 rc;
+  int                 local_errno = 0;
 
   struct batch_reply *reply;
 
@@ -271,7 +271,7 @@ int pbs_rescreserve(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_RMNOPARAM);
+    return (PBSE_RMNOPARAM);
     }
 
   if (prh == NULL)
@@ -280,7 +280,7 @@ int pbs_rescreserve(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_RMBADPARAM);
+    return (PBSE_RMBADPARAM);
     }
 
   /* send request */
@@ -297,7 +297,7 @@ int pbs_rescreserve(
    * resource_t, is in the  aux field
    */
 
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(&local_errno, c);
 
   if (((rc = connection[c].ch_errno) == PBSE_NONE) ||
       (rc == PBSE_RMPART))
@@ -310,7 +310,7 @@ int pbs_rescreserve(
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   return (rc);
-  }
+  } /* END pbs_rescreserve() */
 
 /*
  * pbs_release() - release a resource reservation
@@ -327,7 +327,8 @@ int pbs_rescrelease(
   {
 
   struct batch_reply *reply;
-  int rc;
+  int                 rc;
+  int                 local_errno = 0;
 
   if ((rc = PBS_resc(c, PBS_BATCH_ReleaseResc, (char **)0, 0, rh)) != 0)
     return (rc);
@@ -335,7 +336,7 @@ int pbs_rescrelease(
   pthread_mutex_lock(connection[c].ch_mutex);
 
   /* now get reply */
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(&local_errno, c);
 
   PBSD_FreeReply(reply);
 

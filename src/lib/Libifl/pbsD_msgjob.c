@@ -94,16 +94,17 @@ int pbs_msgjob(
   char *jobid,
   int   fileopt,
   char *msg,
-  char *extend)
+  char *extend,
+  int  *local_errno)
 
   {
 
   struct batch_reply *reply;
-  int rc;
+  int                 rc;
 
   if ((jobid == (char *)0) || (*jobid == '\0') ||
       (msg == (char *)0) || (*msg == '\0'))
-    return (pbs_errno = PBSE_IVALREQ);
+    return(PBSE_IVALREQ);
 
   /* setup DIS support routines for following DIS calls */
 
@@ -117,12 +118,12 @@ int pbs_msgjob(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_PROTOCOL);
+    return(PBSE_PROTOCOL);
     }
 
   /* read reply */
 
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   rc = connection[c].ch_errno;
 

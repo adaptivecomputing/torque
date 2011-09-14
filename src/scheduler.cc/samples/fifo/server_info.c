@@ -108,12 +108,13 @@ server_info *query_server(int pbs_sd)
   server_info *sinfo;  /* scheduler internal form of server info */
   queue_info **qinfo;  /* array of queues on the server */
   resource *res;  /* ptr to cycle through sources on server */
+  int       local_errno = 0;
 
   /* get server information from pbs server */
 
-  if ((server = pbs_statserver(pbs_sd, NULL, NULL)) == NULL)
+  if ((server = pbs_statserver(pbs_sd, NULL, NULL, &local_errno)) == NULL)
     {
-    fprintf(stderr, "pbs_statserver failed: %d\n", pbs_errno);
+    fprintf(stderr, "pbs_statserver failed: %d\n", local_errno);
     return NULL;
     }
 

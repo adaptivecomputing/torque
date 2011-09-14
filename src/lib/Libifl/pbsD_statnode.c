@@ -87,15 +87,17 @@
 
 struct batch_status *pbs_statnode(
 
-        int           c,      /* I */
-        char         *id,     /* I (nodes to list) */
-        struct attrl *attrib, /* I */
-        char         *extend) /* I */
+  int           c,           /* I */
+  char         *id,          /* I (nodes to list) */
+  struct attrl *attrib,      /* I */
+  char         *extend,      /* I */
+  int          *local_errno) /* O */
 
   {
   return(PBSD_status(
            c,
            PBS_BATCH_StatusNode,
+           local_errno,
            id,
            attrib,
            extend));

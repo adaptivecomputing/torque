@@ -137,7 +137,8 @@ int pbs_deljob(
 
   int   c,
   char *jobid,
-  char *extend)
+  char *extend,
+  int  *local_errno)
 
   {
   int             rc;
@@ -145,25 +146,23 @@ int pbs_deljob(
   struct attropl *aoplp = NULL;
 
   if ((extend == NULL) ||
-        strncmp(extend,PURGECOMP,strlen(PURGECOMP)))
+      (strncmp(extend,PURGECOMP,strlen(PURGECOMP))))
     {
     if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
       {
-      pbs_errno = PBSE_IVALREQ;
-
-      return(pbs_errno);
+      return(PBSE_IVALREQ);
       }
     }
 
   rc = PBSD_manager(
-
          c,
          PBS_BATCH_DeleteJob,
          MGR_CMD_DELETE,
          MGR_OBJ_JOB,
          jobid,
          aoplp,
-         extend);
+         extend,
+         local_errno);
 
   return(rc);
   }  /* END pbs_deljob() */

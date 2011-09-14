@@ -878,8 +878,8 @@ void mom_checkpoint_check_periodic_timer(
 
 int blcr_checkpoint_job(
 
-  job *pjob,  /* I */
-  int  abort, /* I */
+  job                  *pjob,  /* I */
+  int                   abort, /* I */
   struct batch_request *preq)  /* may be null */
 
   {
@@ -899,6 +899,7 @@ int blcr_checkpoint_job(
   int conn = -1;
   int err;
   int conn_fail = 0;
+  int local_errno = 0;
   struct attrl *attrib = NULL;
   time_t epoch;
   unsigned short momport = 0;
@@ -1069,7 +1070,7 @@ int blcr_checkpoint_job(
 
     set_attr(&attrib, ATTR_comment, err_buf);
 
-    err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, attrib, NULL);
+    err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, attrib, NULL, &local_errno);
 
     if (err != 0)
       {
@@ -1098,7 +1099,7 @@ int blcr_checkpoint_job(
        * so it shouldn't have any holds set so we will send "uos"
        * to clear all holds
        */
-      pbs_rlsjob(conn, pjob->ji_qs.ji_jobid, "uos", NULL);
+      pbs_rlsjob(conn, pjob->ji_qs.ji_jobid, "uos", NULL, &local_errno);
 
       } /* END if (abort != 0) */
 
@@ -1149,8 +1150,10 @@ int blcr_checkpoint_job(
         pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
     set_attr(&attrib, ATTR_checkpoint_time, timestr);
 
-    err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, attrib,
-        (request_type == PBS_BATCH_HoldJob) ? CHECKPOINTHOLD : CHECKPOINTCONT);
+    err = pbs_alterjob(conn, 
+        pjob->ji_qs.ji_jobid, attrib,
+        (request_type == PBS_BATCH_HoldJob) ? CHECKPOINTHOLD : CHECKPOINTCONT, 
+        &local_errno);
 
     if (err != 0)
       {

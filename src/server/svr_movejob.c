@@ -138,7 +138,7 @@ extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 
 /* Private Functions local to this file */
 
-static int  local_move(job *, struct batch_request *);
+static int  local_move(job *, int *, struct batch_request *);
 static int should_retry_route(int err);
 static int move_job_file(int con, job *pjob, enum job_file which);
 
@@ -158,7 +158,6 @@ extern char             *msg_err_malloc;
 extern int               comp_resc_gt;
 extern int               comp_resc_eq;
 extern int               comp_resc_lt;
-extern int               pbs_errno;
 extern char             *pbs_o_host;
 extern pbs_net_t         pbs_server_addr;
 extern unsigned int      pbs_server_port_dis;
@@ -182,8 +181,9 @@ int net_move(job *, struct batch_request *);
 
 int svr_movejob(
 
-  job                 *jobp,
+  job                  *jobp,
   char                 *destination,
+  int                  *my_err,
   struct batch_request *req)
 
   {
@@ -201,7 +201,7 @@ int svr_movejob(
 
     log_err(-1, "svr_movejob", log_buf);
 
-    pbs_errno = PBSE_QUENBIG;
+    *my_err = PBSE_QUENBIG;
 
     return(-1);
     }
@@ -217,7 +217,7 @@ int svr_movejob(
     /* check to see if the part after '@' is this server */
     char *tmp = parse_servername(++toserver, &port);
 
-    destaddr = get_hostaddr(tmp);
+    destaddr = get_hostaddr(my_err, tmp);
 
     if (destaddr != pbs_server_addr)
       {
@@ -229,7 +229,7 @@ int svr_movejob(
 
   if (local != 0)
     {
-    return(local_move(jobp, req));
+    return(local_move(jobp, my_err, req));
     }
 
   return(net_move(jobp, req));
@@ -246,13 +246,14 @@ int svr_movejob(
  *
  * Returns:
  *  0 success
- *        -1 permanent failure or rejection, see pbs_errno
+ * -1 permanent failure or rejection
  *  1 failed but try again
  */
 
 static int local_move(
 
   job                  *jobp,
+  int                  *my_err,
   struct batch_request *req)
 
   {
@@ -270,7 +271,7 @@ static int local_move(
 
     log_err(-1, id, log_buf);
 
-    pbs_errno = PBSE_UNKQUE;
+    *my_err = PBSE_UNKQUE;
 
     return(-1);
     }
@@ -294,7 +295,7 @@ static int local_move(
     mtype = MOVE_TYPE_Move; /* non-privileged move */
     }
 
-  if ((pbs_errno = svr_chkque(
+  if ((*my_err = svr_chkque(
                      jobp,
                      qp,
                      get_variable(jobp, pbs_o_host), mtype, NULL)))
@@ -302,7 +303,7 @@ static int local_move(
     /* should this queue be retried? */
     pthread_mutex_unlock(qp->qu_mutex);
 
-    return(should_retry_route(pbs_errno));
+    return(should_retry_route(*my_err));
     }
     
   pthread_mutex_unlock(qp->qu_mutex);
@@ -316,9 +317,9 @@ static int local_move(
 
   jobp->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
 
-  pbs_errno = svr_enquejob(jobp, FALSE);
+  *my_err = svr_enquejob(jobp, FALSE);
 
-  if (pbs_errno != 0)
+  if (*my_err != 0)
     {
     return(-1); /* should never ever get here */
     }
@@ -511,6 +512,7 @@ int send_job_work(
   job                  *pjob,      /* M */
   char                 *node_name, /* I */
   int                   type,      /* I */
+  int                  *my_err,    /* O */
   struct batch_request *preq)      /* M */
 
   {
@@ -598,8 +600,6 @@ int send_job_work(
 
   strcat(script_name, JOB_SCRIPT_SUFFIX);
 
-
-  pbs_errno = 0;
   con = -1;
 
   for (NumRetries = 0;NumRetries < RETRY;NumRetries++)
@@ -616,14 +616,14 @@ int send_job_work(
       if (con >= 0)
         svr_disconnect(con);
 
-      /* check pbs_errno from previous attempt */
+      /* check my_err from previous attempt */
 
-      if (should_retry_route(pbs_errno) == -1)
+      if (should_retry_route(*my_err) == -1)
         {
         sprintf(log_buf, "child failed in previous commit request for job %s",
           pjob->ji_qs.ji_jobid);
 
-        log_err(pbs_errno, id, log_buf);
+        log_err(*my_err, id, log_buf);
 
 
         finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
@@ -636,13 +636,13 @@ int send_job_work(
 
     /* NOTE:  on node hangs, svr_connect is successful */
 
-    if ((con = svr_connect(hostaddr, port, NULL, 0, cntype)) == PBS_NET_RC_FATAL)
+    if ((con = svr_connect(hostaddr, port, my_err, NULL, 0, cntype)) == PBS_NET_RC_FATAL)
       {
       sprintf(log_buf, "send_job failed to %lx port %d",
         hostaddr,
         port);
 
-      log_err(pbs_errno, id, log_buf);
+      log_err(*my_err, id, log_buf);
   
       finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
 
@@ -651,7 +651,7 @@ int send_job_work(
 
     if (con == PBS_NET_RC_RETRY)
       {
-      pbs_errno = 0; /* should retry */
+      *my_err = 0; /* should retry */
 
       continue;
       }
@@ -681,19 +681,20 @@ int send_job_work(
 
       if ((pc = PBSD_queuejob(
                   con,
+                  my_err,
                   pjob->ji_qs.ji_jobid,
                   destin,
                   pqjatr,
                   NULL)) == NULL)
         {
-        if (pbs_errno == PBSE_EXPIRED)
+        if (*my_err == PBSE_EXPIRED)
           {
           /* queue job timeout based on pbs_tcp_timeout */
 
           Timeout = TRUE;
           }
 
-        if ((pbs_errno == PBSE_JOBEXIST) && (type == MOVE_TYPE_Exec))
+        if ((*my_err == PBSE_JOBEXIST) && (type == MOVE_TYPE_Exec))
           {
           /* already running, mark it so */
           log_event(
@@ -709,7 +710,7 @@ int send_job_work(
 
         sprintf(log_buf, "send of job to %s failed error = %d",
           destin,
-          pbs_errno);
+          *my_err);
 
         log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
@@ -836,18 +837,18 @@ int send_job_work(
 
     sprintf(log_buf, "child timed-out attempting to start job %s", pjob->ji_qs.ji_jobid);
 
-    log_ext(pbs_errno, id, log_buf, LOG_WARNING);
+    log_ext(*my_err, id, log_buf, LOG_WARNING);
 
     finish_move_process(pjob,preq,start_time,node_name,LOCUTION_REQUEUE,type);
     
     return(LOCUTION_REQUEUE);
     }
 
-  if (should_retry_route(pbs_errno) == -1)
+  if (should_retry_route(*my_err) == -1)
     {
     sprintf(log_buf, "child failed and will not retry job %s", pjob->ji_qs.ji_jobid);
 
-    log_err(pbs_errno, id, log_buf);
+    log_err(*my_err, id, log_buf);
 
     finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
     
@@ -885,6 +886,7 @@ void *send_job(
   char                 *jobid = args->jobid;
   job                  *pjob;
   int                   type = args->move_type; /* move, route, or execute */
+  int                   local_errno = 0;
   pbs_net_t             hostaddr;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -913,7 +915,7 @@ void *send_job(
       pthread_mutex_unlock(np->nd_mutex);
       }
     
-    send_job_work(pjob,node_name,type,preq);
+    send_job_work(pjob,node_name,type,&local_errno,preq);
 
     /* the other kinds unlock the mutex inside finish_move_process */
     if (type == MOVE_TYPE_Exec)
@@ -946,6 +948,7 @@ int net_move(
   pbs_net_t         hostaddr;
   char             *hostname;
   int               move_type;
+  int               local_errno = 0;
   unsigned int      port = pbs_server_port_dis;
   char             *toserver;
   static char      *id = "net_move";
@@ -969,7 +972,7 @@ int net_move(
   tmp = parse_servername(toserver, &port);
 
   hostname = tmp;
-  hostaddr = get_hostaddr(hostname);
+  hostaddr = get_hostaddr(&local_errno, hostname);
 
   free(tmp);
 

@@ -28,6 +28,7 @@ int main(
   int any_failed = 0;
   char *pc;
   int i;
+  int local_errno;
   int u_cnt, o_cnt, s_cnt, n_cnt;
   int asynch = FALSE;
   int rc = 0;
@@ -650,32 +651,35 @@ cnt:
 
     if (connect <= 0)
       {
+      local_errno = -1 * connect;
+
       fprintf(stderr, "qalter: cannot connect to server %s (errno=%d) %s\n",
               pbs_server,
-              pbs_errno,
-              pbs_strerror(pbs_errno));
+              local_errno,
+              pbs_strerror(local_errno));
 
-      any_failed = pbs_errno;
+      any_failed = local_errno;
 
       continue;
       }
 
     if (asynch)
       {
-      stat = pbs_alterjob_async(connect, job_id_out, attrib, extend_ptr);
+      stat = pbs_alterjob_async(connect, job_id_out, attrib, extend_ptr, &any_failed);
       }
     else
       {
-      stat = pbs_alterjob(connect, job_id_out, attrib, extend_ptr);
+      stat = pbs_alterjob(connect, job_id_out, attrib, extend_ptr, &any_failed);
       }
 
-    if ((stat != 0) && (pbs_errno != PBSE_UNKJOBID))
+    if ((stat != 0) &&
+        (any_failed != PBSE_UNKJOBID))
       {
       prt_job_err("qalter", connect, job_id_out);
-
-      any_failed = pbs_errno;
       }
-    else if ((stat != 0) && (pbs_errno == PBSE_UNKJOBID) && !located)
+    else if ((stat != 0) && 
+             (any_failed != PBSE_UNKJOBID) &&
+             !located)
       {
       located = TRUE;
 
@@ -689,8 +693,6 @@ cnt:
         }
 
       prt_job_err("qalter", connect, job_id_out);
-
-      any_failed = pbs_errno;
       }  /* END else if (stat && ...) */
 
     pbs_disconnect(connect);

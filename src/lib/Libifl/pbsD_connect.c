@@ -382,7 +382,8 @@ int PBSD_munge_authenticate(
   char                munge_command[MUNGE_SIZE << 3];
   char               *ptr; /* pointer to the current place to copy data into munge_buf */
   int                 bytes_read;
-  int                 total_bytes_read = 0;        
+  int                 total_bytes_read = 0;
+  int                 local_errno = 0;
   
   /* user id and name stuff */
   struct passwd      *pwent;
@@ -448,7 +449,7 @@ int PBSD_munge_authenticate(
   else
     {
     /* read the reply */
-    reply = PBSD_rdrpy(handle);
+    reply = PBSD_rdrpy(&local_errno, handle);
   
     return(PBSE_NONE);
     }
@@ -514,6 +515,7 @@ int validate_socket(
   int            l_server_len = 0;
   long long      code = -1;
   int            write_buf_len = 0;
+  int            local_errno;
 
   myrealuid = getuid();
 
@@ -522,7 +524,7 @@ int validate_socket(
     snprintf(tmp_buf, LOCAL_LOG_BUF, "cannot get account info: uid %d, errno %d (%s)\n", (int)myrealuid, errno, strerror(errno));
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,tmp_buf);
     }
-  else if ((rc = get_hostaddr_hostent(AUTH_IP, &l_server, &l_server_len)) != PBSE_NONE)
+  else if ((rc = get_hostaddr_hostent(&local_errno, AUTH_IP, &l_server, &l_server_len)) != PBSE_NONE)
     {
     }
   else if ((rc = get_parent_client_socket(psock, &parent_client_socket)) != PBSE_NONE)
@@ -795,6 +797,7 @@ int pbs_original_connect(
   int out;
   int i;
   int rc;
+  int local_errno;
 
   struct passwd *pw;
   int use_unixsock = 0;
@@ -837,15 +840,13 @@ int pbs_original_connect(
 
   if (out < 0)
     {
-    pbs_errno = PBSE_NOCONNECTS;
-
     if (getenv("PBSDEBUG"))
       fprintf(stderr, "ALERT:  cannot locate free channel\n");
 
     /* FAILURE */
     /* no need to unlock mutex here - in this case no connection was found */
 
-    return(-1);
+    return(PBSE_NOCONNECTS * -1);
     }
 
   /* get server host and port */
@@ -858,12 +859,10 @@ int pbs_original_connect(
 
     pthread_mutex_unlock(connection[out].ch_mutex);
 
-    pbs_errno = PBSE_NOSERVER;
-
     if (getenv("PBSDEBUG"))
       fprintf(stderr, "ALERT:  PBS_get_server() failed\n");
 
-    return(-1);
+    return(PBSE_NOSERVER * -1);
     }
 
   /* determine who we are */
@@ -872,8 +871,6 @@ int pbs_original_connect(
 
   if ((pw = getpwuid(pbs_current_uid)) == NULL)
     {
-    pbs_errno = PBSE_SYSTEM;
-
     if (getenv("PBSDEBUG"))
       {
       fprintf(stderr, "ALERT:  cannot get password info for uid %ld\n",
@@ -882,7 +879,7 @@ int pbs_original_connect(
 
     pthread_mutex_unlock(connection[out].ch_mutex);
 
-    return(-1);
+    return(PBSE_SYSTEM * -1);
     }
 
   strcpy(pbs_current_user, pw->pw_name);
@@ -918,7 +915,7 @@ int pbs_original_connect(
 
       connection[out].ch_inuse = FALSE;
 
-      pbs_errno = PBSE_PROTOCOL;
+      local_errno = PBSE_PROTOCOL;
 
       use_unixsock = 0;
       }
@@ -939,7 +936,7 @@ int pbs_original_connect(
       close(connection[out].ch_socket);
 
       connection[out].ch_inuse = FALSE;
-      pbs_errno = errno;
+      local_errno = errno;
 
       if (getenv("PBSDEBUG"))
         {
@@ -966,7 +963,7 @@ int pbs_original_connect(
       close(connection[out].ch_socket);
 
       connection[out].ch_inuse = FALSE;
-      pbs_errno = PBSE_PROTOCOL;
+      local_errno = PBSE_PROTOCOL;
 
       use_unixsock = 0;  /* will try again with inet socket */
       }
@@ -996,9 +993,7 @@ int pbs_original_connect(
 
       pthread_mutex_unlock(connection[out].ch_mutex);
 
-      pbs_errno = PBSE_PROTOCOL;
-
-      return(-1);
+      return(PBSE_PROTOCOL * -1);
       }
 
     server_addr.sin_family = AF_INET;
@@ -1007,7 +1002,6 @@ int pbs_original_connect(
       {
       close(connection[out].ch_socket);
       connection[out].ch_inuse = FALSE;
-      pbs_errno = PBSE_BADHOST;
 
       if (getenv("PBSDEBUG"))
         {
@@ -1019,7 +1013,7 @@ int pbs_original_connect(
 
       pthread_mutex_unlock(connection[out].ch_mutex);
 
-      return(-1);
+      return(PBSE_BADHOST * -1);
       }
 
     server_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
@@ -1035,7 +1029,6 @@ int pbs_original_connect(
       close(connection[out].ch_socket);
 
       connection[out].ch_inuse = FALSE;
-      pbs_errno = errno;
 
       if (getenv("PBSDEBUG"))
         {
@@ -1046,7 +1039,7 @@ int pbs_original_connect(
 
       pthread_mutex_unlock(connection[out].ch_mutex);
 
-      return(-1);
+      return(errno * -1);
       }
 
     /* FIXME: is this necessary?  Contributed by one user that fixes a problem,
@@ -1061,6 +1054,7 @@ int pbs_original_connect(
 
 #ifdef MUNGE_AUTH
     rc = PBSD_munge_authenticate(connection[out].ch_socket, out);
+
     if (rc != 0)
       {
       close(connection[out].ch_socket);
@@ -1068,30 +1062,30 @@ int pbs_original_connect(
       connection[out].ch_inuse = FALSE;
 
       if (rc == PBSE_MUNGE_NOT_FOUND)
-      {
-      pbs_errno = PBSE_MUNGE_NOT_FOUND;
-      
-      if (getenv("PBSDEBUG"))
         {
-        fprintf(stderr, "ERROR:  cannot find munge executable\n");
+        local_errno = PBSE_MUNGE_NOT_FOUND;
+        
+        if (getenv("PBSDEBUG"))
+          {
+          fprintf(stderr, "ERROR:  cannot find munge executable\n");
+          }
         }
-      }
       else
         {
-        pbs_errno = PBSE_PERM;
+        local_errno = PBSE_PERM;
         
         if (getenv("PBSDEBUG"))
           {
           fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
-                  server,
-                  errno,
-                  strerror(errno));
+            server,
+            errno,
+            strerror(errno));
           }
         }
 
       pthread_mutex_unlock(connection[out].ch_mutex);
 
-      return(-1);
+      return(-1 * local_errno);
       }
     
     
@@ -1110,9 +1104,12 @@ int pbs_original_connect(
         fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
                 server, rc, pbs_strerror(rc));
         }
-      pbs_errno = PBSE_SOCKET_FAULT;
+      
+      local_errno = PBSE_SOCKET_FAULT;
+
       pthread_mutex_unlock(connection[out].ch_mutex);
-      return(-1);
+
+      return(-1 * local_errno);
       }
 #endif /* ifdef MUNGE_AUTH */
 

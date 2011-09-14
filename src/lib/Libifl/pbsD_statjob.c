@@ -85,15 +85,7 @@
 
 #include "libpbs.h"
 
-struct batch_status *pbs_statjob(
-
-        int           c,       /* I - socket descriptor */
-        char         *id,      /* I - job id (optional) */
-        struct attrl *attrib,  /* ??? */
-        char         *extend)  /* I - ??? */
-
-  {
-  /* NOTE:
+/* NOTE:
 
     tcp_read(fd=10)
   #0  tcp_getc (fd=10) at ../Libifl/tcp_dis.c:399
@@ -105,9 +97,19 @@ struct batch_status *pbs_statjob(
   #6  0x081e5c66 in PBSD_status (c=1, function=19, id=0x8242b48 "", attrib=0x0, extend=0x0)
     at ../Libifl/PBSD_status.c:125
   #7  0x081e3df8 in pbs_statjob (c=1, id=0x0, attrib=0x0, extend=0x0) at ../Libifl/pbsD_statjob.c:96
-  */
+*/
 
-  return(PBSD_status(c, PBS_BATCH_StatusJob, id, attrib, extend));
+struct batch_status *pbs_statjob(
+
+  int           c,       /* I - socket descriptor */
+  char         *id,      /* I - job id (optional) */
+  struct attrl *attrib,  /* ??? */
+  char         *extend)  /* I - ??? */
+
+  {
+  int local_errno = 0;
+
+  return(PBSD_status(c, PBS_BATCH_StatusJob, &local_errno, id, attrib, extend));
   }  /* END pbs_statjob() */
 
 

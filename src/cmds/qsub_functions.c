@@ -1754,11 +1754,11 @@ void no_suspend(
 
 /* does not return */
 
-void
-bailout(void)
+void bailout(void)
 
   {
   int c;
+  int local_errno = 0;
 
   shutdown(inter_sock, 2);
 
@@ -1773,15 +1773,15 @@ bailout(void)
     {
     fprintf(stderr, "qsub: cannot connect to server %s (errno=%d) %s\n",
             pbs_server,
-            pbs_errno,
-            pbs_strerror(pbs_errno));
+            c * -1,
+            pbs_strerror(c * -1));
 
     fprintf(stderr, "qsub: pbs_server daemon may not be running on host %s or hostname in file '$TORQUEHOME/server_name' may be incorrect)\n", pbs_server);
 
     exit(1);
     }
 
-  pbs_deljob(c, new_jobname, NULL);
+  pbs_deljob(c, new_jobname, NULL, &local_errno);
 
   pbs_disconnect(c);
 
@@ -4370,6 +4370,7 @@ void main_func(
   /* server:port to send request to */
   int   sock_num;                     /* return from pbs_connect */
   char *errmsg;                       /* return from pbs_geterrmsg */
+  int   local_errno = 0;
 
   struct stat statbuf;
 
@@ -4663,10 +4664,12 @@ void main_func(
 
   if (sock_num <= 0)
     {
+    local_errno = -1 * sock_num;
+
     fprintf(stderr, "qsub: cannot connect to server %s (errno=%d) %s\n",
       pbs_server,
-      pbs_errno,
-      pbs_strerror(pbs_errno));
+      local_errno,
+      pbs_strerror(local_errno));
 
     if (debug)
       {
@@ -4676,7 +4679,7 @@ void main_func(
 
     unlink(script_tmp);
     memmgr_destroy(&ji.mm);
-    exit(pbs_errno);
+    exit(local_errno);
     }
 
   /* Get required environment variables to be sent to the server.
@@ -4711,10 +4714,9 @@ void main_func(
 
   /* Send submit request to the server. */
 
-  pbs_errno = 0;
-
   new_jobname = pbs_submit_hash(
                   sock_num,
+                  &local_errno,
                   &ji.mm,
                   ji.job_attr,
                   ji.res_attr,
@@ -4724,18 +4726,18 @@ void main_func(
 
   if (new_jobname == NULL)
     {
-    errmsg = pbs_strerror(pbs_errno);
+    errmsg = pbs_strerror(local_errno);
 
     if (errmsg != NULL)
       fprintf(stderr, "qsub: submit error (%s)\n", errmsg);
     else
       fprintf(stderr, "qsub: Error (%d - %s) submitting job\n",
-              pbs_errno, pbs_strerror(pbs_errno));
+              local_errno, pbs_strerror(local_errno));
 
     unlink(script_tmp);
 
     memmgr_destroy(&ji.mm);
-    exit(pbs_errno);
+    exit(local_errno);
     }
   else
     {

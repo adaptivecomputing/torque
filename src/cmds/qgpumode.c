@@ -115,18 +115,24 @@ int main(
  * File Variables:
  *  exitstatus  Set to two if an error occurs.
  */
-static void
-execute(char *node, char *gpuid, int mode, char *server)
+static void execute(
+    
+  char *node,
+  char *gpuid,
+  int   mode,
+  char *server)
+
   {
   int ct;         /* Connection to the server */
   int merr;       /* Error return from pbs_manager */
+  int local_errno = 0;
   char *errmsg;   /* Error message from pbs_manager */
 
   /* The request to change mode */
 
   if ((ct = cnt2server(server)) > 0)
     {
-    merr = pbs_gpumode(ct, node, gpuid, mode);
+    merr = pbs_gpumode(ct, node, gpuid, mode, &local_errno);
 
     if (merr != 0)
       {
@@ -139,8 +145,8 @@ execute(char *node, char *gpuid, int mode, char *server)
       else
         {
         fprintf(stderr, "qgpumode: Error (%d - %s) changing GPU mode",
-                pbs_errno,
-                pbs_strerror(pbs_errno));
+                local_errno,
+                pbs_strerror(local_errno));
         }
 
       if (notNULL(server))
@@ -155,10 +161,12 @@ execute(char *node, char *gpuid, int mode, char *server)
     }
   else
     {
+    local_errno = -1 * ct;
+
     fprintf(stderr, "qgpumode: could not connect to server %s (%d) %s\n",
             server,
-            pbs_errno,
-            pbs_strerror(pbs_errno));
+            local_errno,
+            pbs_strerror(local_errno));
     exitstatus = 2;
     }
   }

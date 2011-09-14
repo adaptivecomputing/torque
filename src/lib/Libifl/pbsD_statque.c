@@ -87,13 +87,14 @@
 
 struct batch_status *pbs_statque(
 
-        int           c,
-        char         *id,
-        struct attrl *attrib,
-        char         *extend)
+  int           c,
+  char         *id,
+  struct attrl *attrib,
+  char         *extend,
+  int          *local_errno)
 
   {
-  return(PBSD_status(c, PBS_BATCH_StatusQue, id, attrib, extend));
+  return(PBSD_status(c, PBS_BATCH_StatusQue, local_errno, id, attrib, extend));
   }   /* END pbs_statque() */
 
 /* END pbsD_statque.c */

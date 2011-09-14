@@ -215,6 +215,7 @@ int main(
   {
   int c;
   int errflg = 0;
+  int any_failed = 0;
   char *errmsg;
 
 #define MAX_OPTARG_LEN 256
@@ -515,16 +516,18 @@ int main(
 
   if (connect <= 0)
     {
+    any_failed = -1 * connect;
+
     fprintf(stderr, "qselect: cannot connect to server %s (errno=%d) %s\n",
-            pbs_server, pbs_errno, pbs_strerror(pbs_errno));
-    exit(pbs_errno);
+            pbs_server, any_failed, pbs_strerror(any_failed));
+    exit(any_failed);
     }
 
-  selectjob_list = pbs_selectjob(connect, select_list, exec_only ? EXECQUEONLY : NULL);
+  selectjob_list = pbs_selectjob(connect, select_list, exec_only ? EXECQUEONLY : NULL, &any_failed);
 
   if (selectjob_list == NULL)
     {
-    if (pbs_errno != PBSE_NONE)
+    if (any_failed != PBSE_NONE)
       {
       errmsg = pbs_geterrmsg(connect);
 
@@ -535,11 +538,11 @@ int main(
       else
         {
         fprintf(stderr, "qselect: Error (%d - %s) selecting jobs\n",
-                pbs_errno,
-                pbs_strerror(pbs_errno));
+                any_failed,
+                pbs_strerror(any_failed));
         }
 
-      exit(pbs_errno);
+      exit(any_failed);
       }
     }
   else     /* got some jobs ids */

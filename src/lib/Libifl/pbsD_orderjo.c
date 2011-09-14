@@ -92,18 +92,18 @@ int pbs_orderjob(
   int   c,
   char *job1,
   char *job2,
-  char *extend)
+  char *extend,
+  int  *local_errno)
 
   {
-
   struct batch_reply *reply;
-  int rc;
-  int sock;
+  int                 rc;
+  int                 sock;
 
 
   if ((job1 == (char *)0) || (*job1 == '\0') ||
       (job2 == (char *)0) || (*job2 == '\0'))
-    return (pbs_errno = PBSE_IVALREQ);
+    return (PBSE_IVALREQ);
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -121,19 +121,19 @@ int pbs_orderjob(
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_PROTOCOL);
+    return (PBSE_PROTOCOL);
     }
 
   if (DIS_tcp_wflush(sock))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (pbs_errno = PBSE_PROTOCOL);
+    return (PBSE_PROTOCOL);
     }
 
   /* read reply */
 
-  reply = PBSD_rdrpy(c);
+  reply = PBSD_rdrpy(local_errno, c);
 
   PBSD_FreeReply(reply);
 

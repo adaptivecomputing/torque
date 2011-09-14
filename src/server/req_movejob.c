@@ -107,10 +107,9 @@
 extern char *msg_unkjobid;
 extern char *msg_manager;
 extern char *msg_movejob;
-extern int  pbs_errno;
 extern char *pbs_o_host;
 
-extern int svr_movejob(job *, char *, struct batch_request *);
+extern int svr_movejob(job *, char *, int *, struct batch_request *);
 extern int svr_chkque(job *, pbs_queue *, char *, int, char *);
 extern job  *chk_job_request(char *, struct batch_request *);
 
@@ -129,6 +128,7 @@ void *req_movejob(
   job *jobp;
   struct batch_request *req = (struct batch_request *)vp;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  int                   local_errno = 0;
 
   jobp = chk_job_request(req->rq_ind.rq_move.rq_jid, req);
 
@@ -159,7 +159,7 @@ void *req_movejob(
    * network moves
    */
 
-  switch (svr_movejob(jobp, req->rq_ind.rq_move.rq_destin, req))
+  switch (svr_movejob(jobp, req->rq_ind.rq_move.rq_destin, &local_errno, req))
     {
 
     case 0:
@@ -187,7 +187,7 @@ void *req_movejob(
 
       /* NOTE:  can pass detailed response to requestor (NYI) */
 
-      req_reject(pbs_errno, 0, req, NULL, NULL);
+      req_reject(local_errno, 0, req, NULL, NULL);
 
       break;
 
