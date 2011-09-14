@@ -5085,14 +5085,51 @@ int set_nodes(
       
 #ifdef NVIDIA_GPUS
       /*
-       * If this a real gpu in exclusive/single job mode, then we change state
+       * If this a real gpu in exclusive/single job mode, or a gpu in default
+       * mode and the job requested an exclusive mode then we change state
        * to exclusive so we cannot assign another job to it
        */
        
       if ((pnode->nd_gpus_real) && ((gn->mode == gpu_exclusive_thread) ||
-         (gn->mode == gpu_exclusive_process)))
+         (gn->mode == gpu_exclusive_process) ||
+         ((gn->mode == gpu_normal) && ((gpu_mode_rqstd == gpu_exclusive_thread) ||
+         (gpu_mode_rqstd == gpu_exclusive_process)))))
         {
         gn->state = gpu_exclusive;
+
+        sprintf(log_buffer,
+          "Setting gpu %s/%d to state EXCLUSIVE for job %s",
+          pnode->nd_name,
+          j,
+          pjob->ji_qs.ji_jobid);
+
+	      if (LOGLEVEL >= 7)
+	        {
+    		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+	        }
+        }
+
+      /*
+       * If this a real gpu in shared/default job mode and the state is
+       * unallocated then we change state to shared so only other shared jobs
+       * can use it
+       */
+       
+      if ((pnode->nd_gpus_real) && (gn->mode == gpu_normal) && 
+          (gpu_mode_rqstd == gpu_normal) && (gn->state == gpu_unallocated))
+        {
+        gn->state = gpu_shared;
+
+        sprintf(log_buffer,
+          "Setting gpu %s/%d to state SHARED for job %s",
+          pnode->nd_name,
+          j,
+          pjob->ji_qs.ji_jobid);
+
+	      if (LOGLEVEL >= 7)
+	        {
+    		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+	        }
         }
 #endif  /* NVIDIA_GPUS */
       }
@@ -5893,7 +5930,8 @@ void free_nodes(
            * exec_gpus string should be in format of 
            * <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
            *
-           * if we are using the gpu node exclusively, then set it's state
+           * if we are using the gpu node exclusively or if shared mode and
+           * this is last job assigned to this gpu then set it's state
            * unallocated so its available for a new job. Takes time to get the
            * gpu status report from the moms.
            */
@@ -5901,7 +5939,9 @@ void free_nodes(
           if (strstr (gpu_str, tmp_str) != NULL)
             {
             if ((gn->mode == gpu_exclusive_thread) ||
-                 (gn->mode == gpu_exclusive_process))
+                 (gn->mode == gpu_exclusive_process) ||
+                 ((gn->mode == gpu_normal) && 
+                 (count_gpu_jobs(pnode->nd_name, i) == 0)))
               {
               gn->state = gpu_unallocated;
 

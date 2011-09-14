@@ -178,6 +178,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - change mom to only log "cannot find nvidia-smi in PATH" once when built
       with --enable-nvidia-gpus and running on a node that does not have Nvidia
       drivers installed.
+  b - Change so gpu states get set/unset correctly. Fixes problems with multiple
+      exclusive jobs being assigned to same gpu and where next job gets rejected
+      because gpu state was not reset after last shared gpu job finished.
 
 2.5.8
   e - added util function getpwnam_ext() that has retry and errno logging
