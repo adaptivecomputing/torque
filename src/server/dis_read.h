@@ -3,7 +3,7 @@
 #include "license_pbs.h" /* See here for the software license */
 
 #include "batch_request.h" /* batch_request */
-#include "batch_reply.h" /* batch_reply */
+#include "libpbs.h" /* batch_reply */
 
 int dis_request_read(int sfds, struct batch_request *request);
 

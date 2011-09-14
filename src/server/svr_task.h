@@ -4,7 +4,7 @@
 
 #include "work_task.h" /* work_type, work_task, all_tasks */
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock);
 
 int task_is_in_threadpool(struct work_task *ptask);
 

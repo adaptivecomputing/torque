@@ -1985,12 +1985,10 @@ AC_OUTPUT(buildutils/pbs_mkdirs
     src/server/test/dis_read/Makefile
     src/server/test/geteusernam/Makefile
     src/server/test/issue_request/Makefile
-    src/server/test/job_attr_def/Makefile
     src/server/test/job_func/Makefile
     src/server/test/job_qs_upgrade/Makefile
     src/server/test/job_recov/Makefile
     src/server/test/job_route/Makefile
-    src/server/test/node_attr_def/Makefile
     src/server/test/node_func/Makefile
     src/server/test/node_manager/Makefile
     src/server/test/pbsd_init/Makefile
