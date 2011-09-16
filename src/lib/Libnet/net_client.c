@@ -277,10 +277,9 @@ int client_to_svr(
   int                errorsock;
   int                flags;
 #endif
-
   int                one = 1;
-
   int         	     trycount = 0;
+  struct timespec    rem;
 
 #define STARTPORT 144
 #define ENDPORT (IPPORT_RESERVED - 1)
@@ -291,6 +290,10 @@ int client_to_svr(
     EMsg[0] = '\0';
 
   errno = 0;
+
+  /* In case we can't connect go to sleep for 1 millisecond and try again */
+  rem.tv_sec = 0;
+  rem.tv_nsec = 1000000;
 
   memset(&local, 0, sizeof(local));
   memset(&remote, 0, sizeof(remote));
@@ -415,7 +418,7 @@ jump_to_check:
 #endif /* NDEBUG2 */
 
 	    /* Terminate on errors, except "address already in use" */
-	    if ((errno == EADDRINUSE) || (errno == EINVAL))
+	    if ((errno == EADDRINUSE) || (errno == EINVAL) || (errno == EADDRNOTAVAIL))
 	    {
 		if (tryport++ <  ENDPORT)	
 		    goto retry_bind;
@@ -511,6 +514,10 @@ jump_to_check:
     case EADDRINUSE:		/* Address already in use */
 
     case EADDRNOTAVAIL:		/* Cannot assign requested address */
+
+        /* TCP is not ready for us. Sleep for a millisecond and see if
+           that will change anything before the next retry */
+        nanosleep(&rem);
 
         if (local_port != FALSE)
           {
