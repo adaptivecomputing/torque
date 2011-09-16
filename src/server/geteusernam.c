@@ -104,6 +104,7 @@
 /* External Data */
 
 extern char server_host[];
+extern int LOGLEVEL;
 
 /*
  * geteusernam - get effective user name
@@ -498,7 +499,7 @@ int set_jobexid(
         }
       }    /* END if (pwent->pw_uid == 0) */
 
-    if (site_check_user_map(pjob, puser, EMsg) == -1)
+    if (site_check_user_map(pjob, puser, EMsg, LOGLEVEL) == -1)
       {
       return(PBSE_BADUSER);
       }

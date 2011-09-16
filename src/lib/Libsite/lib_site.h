@@ -9,7 +9,7 @@ int site_allow_u(char *user, char *host);
 int site_alt_router(job *jobp, pbs_queue *qp, long retry_time);
 
 /* from file site_check_u.c */
-int site_check_user_map(job *pjob, char *luser, char *EMsg); 
+int site_check_user_map(job *pjob, char *luser, char *EMsg, int logging); 
 int site_acl_check(job *pjob, pbs_queue *pque);
 
 /* from file site_map_usr.c */

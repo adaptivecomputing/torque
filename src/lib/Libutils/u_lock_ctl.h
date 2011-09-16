@@ -2,6 +2,7 @@
 #ifndef _U_LOCK_CTL_H
 #define _U_LOCK_CTL_H
 #include <pthread.h> /* pthread_mutex_t */
+#include "pbs_nodes.h" /* pbsnode */
 
 typedef struct lock_ctl
   {
@@ -29,4 +30,7 @@ int lock_tcp_table();
 
 int unlock_tcp_table();
 
+int lock_node(struct pbsnode *the_node, char *method_name, char *msg, int logging);
+
+int unlock_node(struct pbsnode *the_node, char *method_name, char *msg, int logging);
 #endif /* _U_LOCK_CTL_H */

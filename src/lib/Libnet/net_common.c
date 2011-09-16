@@ -163,6 +163,7 @@ int socket_get_tcp_priv()
           cntr++;
           rc = PBSE_SOCKET_FAULT;
           errno = PBSE_SOCKET_FAULT;
+          local_socket = -1;
           }
         else
           {

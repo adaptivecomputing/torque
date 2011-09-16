@@ -132,6 +132,7 @@
 #include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
 #include "node_func.h" /* init_prop, find_nodebyname, reinitialize_node_iterator, recompute_ntype_cnts, effective_node_delete, create_pbs_node */
 #include "node_manager.h" /* setup_notification */
+#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
@@ -139,6 +140,7 @@
 
 /* Global Data Items: */
 
+extern int LOGLEVEL;
 extern struct server server;
 extern all_queues     svr_queues;
 extern attribute_def que_attr_def[];
@@ -1784,7 +1786,7 @@ void mgr_node_set(
           break;
         }
 
-      pthread_mutex_unlock(pnode->nd_mutex);
+      unlock_node(pnode, "mgr_node_set", "error", LOGLEVEL);
       
       return;
       } /* END if (rc != 0) */ 
@@ -1801,7 +1803,7 @@ void mgr_node_set(
         pnode->nd_name);
       }
 
-    pthread_mutex_unlock(pnode->nd_mutex);
+    unlock_node(pnode, "mgr_node_set", "single_node", LOGLEVEL);
     } /* END single node case */
 
   if (need_todo & WRITENODE_STATE)

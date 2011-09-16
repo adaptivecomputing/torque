@@ -119,6 +119,7 @@
 #include "threadpool.h"
 #include "dis.h"
 #include "array.h"
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 
 /*
  * process_request - this function gets, checks, and invokes the proper
@@ -451,7 +452,7 @@ void *process_request(
       goto process_request_cleanup;
       }
 
-    pthread_mutex_unlock(isanode->nd_mutex);
+    unlock_node(isanode, "process_request", NULL, LOGLEVEL);
     }
 
   /*

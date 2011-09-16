@@ -122,6 +122,7 @@
 #include "threadpool.h"
 #include "issue_request.h" /* issue_Drequest */
 #include "node_func.h" /* find_nodebyname */
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -232,7 +233,7 @@ struct pbsnode *tfind_addr(
   if (pn == NULL)
     return(NULL);
 
-  pthread_mutex_lock(pn->nd_mutex);
+  lock_node(pn, "tfind_addr", "pn", LOGLEVEL);
 
   if (pn->num_node_boards == 0)
     return(pn);
@@ -269,8 +270,8 @@ struct pbsnode *tfind_addr(
 
     numa = AVL_find(index,pn->nd_mom_port,pn->node_boards);
 
-    pthread_mutex_unlock(pn->nd_mutex);
-    pthread_mutex_lock(numa->nd_mutex);
+    unlock_node(pn, "tfind_addr", "pn->numa", LOGLEVEL);
+    lock_node(numa, "tfind_addr", "numa", LOGLEVEL);
 
     if (plus != NULL)
       *plus = '+';
@@ -662,11 +663,9 @@ job *find_job_by_node(
       {
       numa = AVL_find(i,pnode->nd_mom_port,pnode->node_boards);
 
-      pthread_mutex_lock(numa->nd_mutex);
-
+      lock_node(numa, "find_job_by_node", "before check_node_for_job", LOGLEVEL);
       pjob = check_node_for_job(pnode,jobid);
-
-      pthread_mutex_unlock(numa->nd_mutex);
+      unlock_node(numa, "find_job_by_node", "after check_node_for_job", LOGLEVEL);
 
       /* leave loop if we found the job */
       if (pjob != NULL)
@@ -955,8 +954,7 @@ void setup_notification(
 
     if (nnew == NULL)
       {
-      pthread_mutex_unlock(pnode->nd_mutex);
-
+      unlock_node(pnode, "setup_notification", "nnew == NULL", LOGLEVEL);
       return;
       }
 
@@ -966,7 +964,7 @@ void setup_notification(
 
     append_link(&svr_newnodes, &nnew->nn_link, nnew);
 
-    pthread_mutex_unlock(pnode->nd_mutex);
+    unlock_node(pnode, "setup_notification", "nnew != NULL", LOGLEVEL);
     }
 
   if (addrnote_mutex == NULL)
@@ -1035,10 +1033,8 @@ int is_stat_get(
 
   if (decode_arst(&temp, NULL, NULL, NULL, 0))
     {
-    DBPRT(("is_stat_get:  cannot initialize attribute\n"));
-
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, "is_stat_get", "cannot initialize attribute");
     /*rpp_eom(stream);*/
-
     return(DIS_NOCOMMIT);
     }
 
@@ -1079,8 +1075,8 @@ int is_stat_get(
         return(DIS_NOCOMMIT);
         }
       
-      pthread_mutex_unlock(np->nd_mutex);
-      pthread_mutex_lock(tmp->nd_mutex);
+      unlock_node(np, "is_stat_get", "np numa update", LOGLEVEL);
+      lock_node(tmp, "is_stat_get", "tmp numa update", LOGLEVEL);
 
       np = tmp;
 
@@ -1095,7 +1091,7 @@ int is_stat_get(
       char           *node_id = ret_info + strlen("node=");
       struct pbsnode *tmp;
 
-      pthread_mutex_unlock(np->nd_mutex);
+      unlock_node(np, "is_stat_get", "np not numa update", LOGLEVEL);
      
       tmp = find_nodebyname(node_id);
 
@@ -1143,8 +1139,8 @@ int is_stat_get(
 
       if (orig_np != np)
         {
-        pthread_mutex_unlock(np->nd_mutex);
-        pthread_mutex_lock(orig_np->nd_mutex);
+        unlock_node(np, "is_stat_get", "np->orig_np", LOGLEVEL);
+        lock_node(orig_np, "is_stat_get", "orig_np", LOGLEVEL);
         }
 
       return(DIS_NOCOMMIT);
@@ -1292,9 +1288,22 @@ int is_stat_get(
         nsnfreediff = pnode->nd_nsn - pnode->nd_nsnfree;
         pnode->nd_nsn = max_np;
         pnode->nd_nsnfree = max_np - nsnfreediff;
-        
-        pthread_mutex_unlock(pnode->nd_mutex);
+       
+        unlock_node(pnode, "is_stat_get", "SRV_ATR_NPDefault", LOGLEVEL);
         }
+      }
+    else if (!strncmp(ret_info, IS_EOL_MESSAGE, strlen(IS_EOL_MESSAGE)))
+      {
+      if (LOGLEVEL >= 6)
+        {
+        snprintf(log_buf, sizeof(log_buf),
+            "End of message detected for communication from node %s",
+            orig_np->nd_name);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, "is_stat_get", log_buf);
+        }
+      rc = DIS_EOD;
+      free(ret_info);
+      break;
       }
 
     free(ret_info);
@@ -1313,8 +1322,8 @@ int is_stat_get(
       
     if (orig_np != np)
       {
-      pthread_mutex_unlock(np->nd_mutex);
-      pthread_mutex_lock(orig_np->nd_mutex);
+      unlock_node(np, "is_stat_get", "!DIS_EOD/F np->orig_np", LOGLEVEL);
+      lock_node(orig_np, "is_stat_get", "!DIS_EOD/F orig_np", LOGLEVEL);
       }
 
     return(rc);
@@ -1340,8 +1349,8 @@ int is_stat_get(
       
     if (orig_np != np)
       {
-      pthread_mutex_unlock(np->nd_mutex);
-      pthread_mutex_lock(orig_np->nd_mutex);
+      unlock_node(np, "is_stat_get", "decode_arst np->orig_np", LOGLEVEL);
+      lock_node(orig_np, "is_stat_get", "decode_arst orig_np", LOGLEVEL);
       }
 
     return(DIS_NOCOMMIT);
@@ -1358,8 +1367,8 @@ int is_stat_get(
       
     if (orig_np != np)
       {
-      pthread_mutex_unlock(np->nd_mutex);
-      pthread_mutex_lock(orig_np->nd_mutex);
+      unlock_node(np, "is_stat_get", "node_status_list np->orig_np", LOGLEVEL);
+      lock_node(orig_np, "is_stat_get", "node_status_list orig_np", LOGLEVEL);
       }
 
     return(DIS_NOCOMMIT);
@@ -1368,8 +1377,8 @@ int is_stat_get(
   /* NOTE:  node state adjusted in update_node_state() */
   if (orig_np != np)
     {
-    pthread_mutex_unlock(np->nd_mutex);
-    pthread_mutex_lock(orig_np->nd_mutex);
+    unlock_node(np, "is_stat_get", "final np->orig_np", LOGLEVEL);
+    lock_node(orig_np, "is_stat_get", "final orig_np", LOGLEVEL);
     }
 
   return(DIS_SUCCESS);
@@ -1845,7 +1854,7 @@ void stream_eof(
     return;
     }
 
-  pthread_mutex_lock(np->nd_mutex);
+  lock_node(np, id, "parent", LOGLEVEL);
 
   sprintf(log_buf,
     "connection to %s is no longer valid, connection may have been closed remotely, remote service may be down, or message may be corrupt (%s).  setting node state to down",
@@ -1865,11 +1874,9 @@ void stream_eof(
       {
       pnode = AVL_find(i,np->nd_mom_port,np->node_boards);
 
-      pthread_mutex_lock(pnode->nd_mutex);
-
+      lock_node(pnode, id, "subs", LOGLEVEL);
       update_node_state(pnode,INUSE_DOWN);
-      
-      pthread_mutex_unlock(pnode->nd_mutex);
+      unlock_node(pnode, id, "subs", LOGLEVEL);
       }
     }
   else
@@ -1884,7 +1891,7 @@ void stream_eof(
     np->nd_stream = -1;
     }
 
-  pthread_mutex_unlock(np->nd_mutex);
+  unlock_node(np, id, "parent", LOGLEVEL);
 
   return;
   }  /* END stream_eof() */
@@ -1942,14 +1949,14 @@ int add_cluster_addrs(
         {
         /* FAILURE */
         if (np != held)
-          pthread_mutex_unlock(np->nd_mutex);
+          unlock_node(np, id, "failure", LOGLEVEL);
 
         return(ret);
         }
       }  /* END for (j) */
 
     if (np != held)
-      pthread_mutex_unlock(np->nd_mutex);
+      unlock_node(np, id, "success", LOGLEVEL);
     }    /* END for (i) */
 
   return(DIS_SUCCESS);
@@ -2176,7 +2183,7 @@ void *is_request_work(
   
   if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
     {
-    pthread_mutex_lock(node->nd_mutex);
+    lock_node(node, "is_request_work", "AVL_find", LOGLEVEL);
     } /* END if AVL_find != NULL) */
   else if (allow_any_mom)                                           
     { 
@@ -2198,7 +2205,7 @@ void *is_request_work(
       {
       node = AVL_find(ipaddr, 0, ipaddrs);
        
-      pthread_mutex_lock(node->nd_mutex);
+      lock_node(node, "is_request_work", "no error", LOGLEVEL);
       }                                                         
     }
     
@@ -2427,7 +2434,7 @@ void *is_request_work(
   /* change to close for tcp? */
   close(stream);
 
-  pthread_mutex_unlock(node->nd_mutex);
+  unlock_node(node, "is_request_work", "close", LOGLEVEL);
   
   free(vp);
 
@@ -2454,7 +2461,7 @@ err:
     
     update_node_state(node, INUSE_DOWN);
     
-    pthread_mutex_unlock(node->nd_mutex);
+    unlock_node(node, "is_request_work", "err", LOGLEVEL);
     }
   else
     {
@@ -2521,6 +2528,7 @@ void *write_node_state_work(
   void *vp)
 
   {
+  char id[] = "write_node_state_work";
   struct pbsnode *np;
   static char    *fmt = "%s %d\n";
   static FILE    *nstatef = NULL;
@@ -2532,7 +2540,7 @@ void *write_node_state_work(
 
   if (LOGLEVEL >= 5)
     {
-    DBPRT(("write_node_state: entered\n"))
+    DBPRT(("write_node_state_work: entered\n"))
     }
 
   /* don't store volatile states like down and unknown */
@@ -2545,7 +2553,7 @@ void *write_node_state_work(
 
     if (ftruncate(fileno(nstatef), (off_t)0) != 0)
       {
-      log_err(errno, "write_node_state", "could not truncate file");
+      log_err(errno, id, "could not truncate file");
 
       pthread_mutex_unlock(node_state_mutex);
       
@@ -2558,10 +2566,7 @@ void *write_node_state_work(
 
     if ((nstatef = fopen(path_nodestate, "w+")) == NULL)
       {
-      log_err(
-        errno,
-        "write_node_state",
-        "could not open file");
+      log_err( errno, id, "could not open file");
 
       pthread_mutex_unlock(node_state_mutex);
       
@@ -2581,12 +2586,12 @@ void *write_node_state_work(
       fprintf(nstatef, fmt, np->nd_name, np->nd_state & savemask);
       }
 
-    pthread_mutex_unlock(np->nd_mutex);
+    unlock_node(np, id, NULL, LOGLEVEL);
     } /* END for each node */
 
   if (fflush(nstatef) != 0)
     {
-    log_err(errno, "write_node_state", "failed saving node state to disk");
+    log_err(errno, id, "failed saving node state to disk");
     }
 
   fclose(nstatef);
@@ -2622,9 +2627,7 @@ void write_node_state(void)
 int write_node_note(void)
 
   {
-#ifndef NDEBUG
   static char id[] = "write_node_note";
-#endif
 
   struct pbsnode *np;
   int             iter = -1;
@@ -2642,10 +2645,7 @@ int write_node_note(void)
   if ((svr_totnodes == 0))
     {
     log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_SERVER,
-      "node_note",
-      "Server has empty nodes list");
+      PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, "Server has empty nodes list");
 
     fclose(nin);
 
@@ -2661,7 +2661,7 @@ int write_node_note(void)
       fprintf(nin, "%s %s\n", np->nd_name, np->nd_note);
       }
     
-    pthread_mutex_unlock(np->nd_mutex);
+    unlock_node(np, id, NULL, LOGLEVEL);
     }
 
   fflush(nin);
@@ -2677,9 +2677,7 @@ int write_node_note(void)
   if (rename(path_nodenote_new, path_nodenote) != 0)
     {
     log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_SERVER,
-      "node_note",
+      PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id,
       "replacing old node note file failed");
 
     return(-1);
@@ -2689,10 +2687,7 @@ int write_node_note(void)
 
 err1:
   log_event(
-    PBSEVENT_ADMIN,
-    PBS_EVENTCLASS_SERVER,
-    "node_note",
-    "Node note file update failed");
+    PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, "Node note file update failed");
 
   return(-1);
   }  /* END write_node_note() */
@@ -2754,7 +2749,7 @@ void *node_unreserve_work(
         }
       }
 
-    pthread_mutex_unlock(np->nd_mutex);
+    unlock_node(np, "node_unreserve_work", NULL, LOGLEVEL);
     }
 
   return(NULL);
@@ -3273,7 +3268,7 @@ static int search(
          log_ext(-1, id, log_buf, LOG_DEBUG);
          }
 
-      pthread_mutex_unlock(pnode->nd_mutex);
+      unlock_node(pnode, id, "search_acceptable == TRUE", LOGLEVEL);
 
       return(1);
       }
@@ -3298,7 +3293,7 @@ static int search(
       {
       pnode->nd_flag = conflict;
 
-      pthread_mutex_unlock(pnode->nd_mutex);
+      unlock_node(pnode, id, "search in search", LOGLEVEL);
 
       /* Ben Webb patch (CRI 10/06/03) */
       found = search(
@@ -3309,7 +3304,7 @@ static int search(
                 pnode->nd_order,
                 depth);
       
-      pthread_mutex_lock(pnode->nd_mutex);
+      lock_node(pnode, id, "search in search", LOGLEVEL);
 
       pnode->nd_flag = thinking;
 
@@ -3338,7 +3333,7 @@ static int search(
            log_ext(-1, id, log_buf, LOG_DEBUG);
            }
     
-        pthread_mutex_unlock(pnode->nd_mutex);
+        unlock_node(pnode, id, "found", LOGLEVEL);
         
         return(1);
         }
@@ -3664,8 +3659,7 @@ static int listelem(
       
       if (hit == num)
         {
-        pthread_mutex_unlock(pnode->nd_mutex);
-        
+        unlock_node(pnode, "listelem", NULL, LOGLEVEL);
         break;  /* found enough  */
         }
       }
@@ -3973,7 +3967,7 @@ int procs_available(
     {
     procs_avail += pnode->nd_nsnfree;
 
-    pthread_mutex_unlock(pnode->nd_mutex);
+    unlock_node(pnode, "procs_available", NULL, LOGLEVEL);
     }
 
   if (proc_ct > procs_avail)
@@ -4388,7 +4382,7 @@ static int node_spec(
 
     pnode->nd_flag = okay;
 
-    pthread_mutex_unlock(pnode->nd_mutex);
+    unlock_node(pnode, "node_spec", "before search", LOGLEVEL);
 
     if (search(
           pnode->nd_first,
@@ -4399,12 +4393,11 @@ static int node_spec(
           0))
       {
       /* node is ok */
-      pthread_mutex_lock(pnode->nd_mutex);
-
+      lock_node(pnode, "node_spec", "node ok", LOGLEVEL);
       continue;
       }
     else
-      pthread_mutex_lock(pnode->nd_mutex);
+      lock_node(pnode, "node_spec", "search fail", LOGLEVEL);
 
     if (early != 0)
       {
@@ -4504,7 +4497,7 @@ static int node_spec(
       if (FailNode != NULL)
         strncpy(FailNode, pnode->nd_name, 1024);
 
-      pthread_mutex_unlock(pnode->nd_mutex);
+      unlock_node(pnode, "node_spec", NULL, LOGLEVEL);
 
       return(0);
       }  /* END if (early != 0) */
@@ -5147,8 +5140,8 @@ int set_nodes(
         
         log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
         }
-      
-      pthread_mutex_unlock(pnode->nd_mutex);
+
+      unlock_node(pnode, "set_nodes", NULL, LOGLEVEL);
       
       return(PBSE_RESCUNAV);
       }
@@ -5821,7 +5814,7 @@ int is_ts_node(
       rc = 0;
       }
 
-    pthread_mutex_unlock(np->nd_mutex);
+    unlock_node(np, "is_ts_node", NULL, LOGLEVEL);
     }
 
   return(rc);
@@ -5852,7 +5845,7 @@ char *find_ts_node(void)
       {
       char *name = np->nd_name;
 
-      pthread_mutex_unlock(np->nd_mutex);
+      unlock_node(np, "find_ts_node", NULL, LOGLEVEL);
 
       return(name);
       }
@@ -6102,7 +6095,7 @@ static void set_one_old(
           }
         }    /* END for (snp) */
 
-      pthread_mutex_unlock(pnode->nd_mutex);
+      unlock_node(pnode, "set_one_old", NULL, LOGLEVEL);
       }
     }
 
@@ -6180,9 +6173,9 @@ job *get_job_from_jobinfo(
 
   if (pthread_mutex_trylock(pjob->ji_mutex) != 0)
     {
-    pthread_mutex_unlock(pnode->nd_mutex);
+    unlock_node(pnode, "jobinfo", NULL, LOGLEVEL);
     pthread_mutex_lock(pjob->ji_mutex);
-    pthread_mutex_lock(pnode->nd_mutex);
+    lock_node(pnode, "jobinfo", NULL, LOGLEVEL);
     }
 
   return(pjob);

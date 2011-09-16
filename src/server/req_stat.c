@@ -114,6 +114,7 @@
 #include "queue.h"
 #include "node_func.h" /* find_nodebyname */
 #include "issue_request.h" /* issue_Drequest */
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 
 /* Global Data Items: */
 
@@ -869,7 +870,7 @@ int stat_to_mom(
       log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
 
-    pthread_mutex_unlock(node->nd_mutex);
+    unlock_node(node, "stat_to_mom", "no rely mom", LOGLEVEL);
 
     return(PBSE_NORELYMOM);
     }
@@ -882,7 +883,7 @@ int stat_to_mom(
                     process_Dreply,
                     ToServerDIS);
 
-  pthread_mutex_unlock(node->nd_mutex);
+  unlock_node(node, "stat_to_mom", "after svr_connect", LOGLEVEL);
 
   if ((rc = cntl->sc_conn) >= 0)
     rc = issue_Drequest(cntl->sc_conn, newrq, stat_update, &pwt);
@@ -1317,11 +1318,9 @@ int get_numa_statuses(
     if (pn == NULL)
       continue;
 
-    pthread_mutex_lock(pn->nd_mutex);
-
+    lock_node(pn, "get_numa_statuses", NULL, LOGLEVEL);
     rc = status_node(pn, preq, bad, pstathd);
-
-    pthread_mutex_unlock(pn->nd_mutex);
+    unlock_node(pn, "get_numa_statuses", NULL, LOGLEVEL);
 
     if (rc != PBSE_NONE)
       {
@@ -1428,7 +1427,7 @@ void *req_stat_node(
     /* get the status on all of the numa nodes */
     rc = get_numa_statuses(pnode,preq,&bad,&preply->brp_un.brp_status);
 
-    pthread_mutex_unlock(pnode->nd_mutex);
+    unlock_node(pnode, "req_stat_node", "type == 0", LOGLEVEL);
     }
   else
     {
@@ -1436,27 +1435,25 @@ void *req_stat_node(
     int iter = -1;
 
     if (pnode != NULL)
-      pthread_mutex_unlock(pnode->nd_mutex);
+      unlock_node(pnode, "req_stat_node", "type != 0", LOGLEVEL);
 
     while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {
       if ((type == 2) && 
           (!hasprop(pnode, &props)))
         {
-        pthread_mutex_unlock(pnode->nd_mutex);
-
+        unlock_node(pnode, "req_stat_node", "type != 0, next_host", LOGLEVEL);
         continue;
         }
 
       /* get the status on all of the numa nodes */
       if ((rc = get_numa_statuses(pnode,preq,&bad,&preply->brp_un.brp_status)) != 0)
         {
-        pthread_mutex_unlock(pnode->nd_mutex);
-
+        unlock_node(pnode, "req_stat_node", "type != 0, rc != 0, get_numa_statuses", LOGLEVEL);
         break;
         }
 
-      pthread_mutex_unlock(pnode->nd_mutex);
+      unlock_node(pnode, "req_stat_node", "type != 0, rc == 0, get_numa_statuses", LOGLEVEL);
       }
     }
 

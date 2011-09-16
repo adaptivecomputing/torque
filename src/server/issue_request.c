@@ -109,6 +109,7 @@
 #include "pbs_job.h"
 #include "server.h"
 #include <stdint.h>
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 
 /* Global Data Items: */
 
@@ -168,7 +169,7 @@ int relay_to_mom(
   if ((node != NULL) &&
       (node->nd_state & INUSE_DOWN))
     {
-    pthread_mutex_unlock(node->nd_mutex);
+    unlock_node(node, id, "no rely mom", LOGLEVEL);
     return(PBSE_NORELYMOM);
     }
 
@@ -190,7 +191,7 @@ int relay_to_mom(
            process_Dreply,
            ToServerDIS);
     
-  pthread_mutex_unlock(node->nd_mutex);
+  unlock_node(node, id, "after svr_connect", LOGLEVEL);
 
   if (conn < 0)
     {

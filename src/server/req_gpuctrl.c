@@ -102,6 +102,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "pbs_nodes.h"
+#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 
 /* External Functions */
 
@@ -182,7 +183,7 @@ void req_gpuctrl(
     return;
     }
 
-  pthread_mutex_unlock(pnode->nd_mutex);
+  unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
 
   /* validate that the node is up */
 

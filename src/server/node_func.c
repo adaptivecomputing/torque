@@ -128,6 +128,7 @@
 #include "u_tree.h"
 #include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
 #include "req_manager.h" /* mgr_set_node_attr */
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 extern int h_errno;
@@ -213,7 +214,7 @@ struct pbsnode *PGetNodeFromAddr(
         }
       }    /* END for (aindex) */
 
-    pthread_mutex_unlock(pnode->nd_mutex);
+    unlock_node(pnode, "PGetNodeFromAddr", NULL, LOGLEVEL);
     } /* END for each node */
 
   return(NULL);
@@ -255,7 +256,7 @@ void bad_node_warning(
       if (pnode->nd_addrs[0] != addr)
         {
         /* node was deleted  or doesn't match */
-        pthread_mutex_unlock(pnode->nd_mutex);
+        unlock_node(pnode, "bad_node_warning", "deleted or doesn't match", LOGLEVEL);
         
         continue;
         }
@@ -284,7 +285,7 @@ void bad_node_warning(
    
     /* only release the mutex if we obtained it in this function */
     if (pnode != NULL)
-      pthread_mutex_unlock(the_node->nd_mutex);
+      unlock_node(the_node, "bad_node_warning", "attained in function", LOGLEVEL);
     }
 
   } /* END bad_node_warning() */
@@ -355,7 +356,7 @@ int addr_ok(
     }
 
   if (release_mutex == TRUE)
-    pthread_mutex_unlock(pnode->nd_mutex);
+    unlock_node(pnode, "addr_ok", "release_mutex = TRUE", LOGLEVEL);
 
   return(status);
   }  /* END addr_ok() */
@@ -394,7 +395,7 @@ struct pbsnode *find_nodebyname(
     *pslash = '/'; /* restore the slash */
 
   if (pnode != NULL)
-    pthread_mutex_lock(pnode->nd_mutex);
+    lock_node(pnode, "find_nodebyname", NULL, LOGLEVEL);
 
   return(pnode);
   }  /* END find_nodebyname() */
@@ -425,7 +426,7 @@ struct pbssubn *find_subnodebyname(
 
   tmp = pnode->nd_psn;
 
-  pthread_mutex_unlock(pnode->nd_mutex);
+  unlock_node(pnode, "find_subnodebyname", NULL, LOGLEVEL);
 
   return(tmp);
   }  /* END find_subnodebyname() */
@@ -804,7 +805,7 @@ void effective_node_delete(
   u_long          *up;
 
   remove_node(&allnodes,pnode);
-  pthread_mutex_unlock(pnode->nd_mutex);
+  unlock_node(pnode, "effective_node_delete", NULL, LOGLEVEL);
   free(pnode->nd_mutex);
 
   psubn = pnode->nd_psn;
@@ -1193,13 +1194,13 @@ int update_nodes_file(
       fclose(nin);
     
       if (held != np)
-        pthread_mutex_unlock(np->nd_mutex);
+        unlock_node(np, "update_nodes_file", "error", LOGLEVEL);
 
       return(-1);
       }
     
     if (held != np)
-      pthread_mutex_unlock(np->nd_mutex);
+      unlock_node(np, "update_nodes_file", "loop", LOGLEVEL);
     } /* for each node */
 
   fclose(nin);
@@ -1770,7 +1771,7 @@ int create_pbs_node(
     free(pname);
     free(pul);
 
-    pthread_mutex_unlock(pnode->nd_mutex);
+    unlock_node(pnode, "create_pbs_node", NULL, LOGLEVEL);
 
     return(PBSE_NODEEXIST);
     }
@@ -2227,12 +2228,12 @@ int setup_nodes(void)
           /* exclusive bits are calculated later in set_old_nodes() */
           np->nd_state &= ~(INUSE_JOB | INUSE_JOBSHARE);
 
-          pthread_mutex_unlock(np->nd_mutex);
+          unlock_node(np, "setup_nodes", "match", LOGLEVEL);
 
           break;
           }
 
-        pthread_mutex_unlock(np->nd_mutex);
+        unlock_node(np, "setup_nodes", "no match", LOGLEVEL);
         }
       }
 
@@ -2264,12 +2265,12 @@ int setup_nodes(void)
             log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
             }
         
-          pthread_mutex_unlock(np->nd_mutex);
+          unlock_node(np, "setup_nodes", "init - no note", LOGLEVEL);
 
           break;
           }
 
-        pthread_mutex_unlock(np->nd_mutex);
+        unlock_node(np, "setup_nodes", "init - has note", LOGLEVEL);
         }
       }
 
@@ -2764,7 +2765,7 @@ int create_partial_pbs_node(
 
   if (rc != 0)
     {
-    pthread_mutex_lock(pnode->nd_mutex);
+    lock_node(pnode, "create_partial_pbs_node", NULL, LOGLEVEL);
     effective_node_delete(pnode);
 
     return(rc);
@@ -2827,16 +2828,16 @@ void reinitialize_node_iterator(
 struct pbsnode *get_my_next_node_board(
 
   node_iterator  *iter,
-  struct pbsnode *np)
+  struct pbsnode *pnode)
 
   {
   struct pbsnode *numa;
   
   iter->numa_index++;
-  numa = AVL_find(iter->numa_index,np->nd_mom_port,np->node_boards);
+  numa = AVL_find(iter->numa_index,pnode->nd_mom_port,pnode->node_boards);
   
-  pthread_mutex_unlock(np->nd_mutex);
-  pthread_mutex_lock(numa->nd_mutex);
+  unlock_node(pnode, "get_my_next_node_board", "pnode", LOGLEVEL);
+  lock_node(numa, "get_my_next_node_board", "numa", LOGLEVEL);
 
   return(numa);
   } /* END get_my_next_node_board() */
@@ -2868,7 +2869,7 @@ struct pbsnode *next_node(
 
     if (next != NULL)
       {
-      pthread_mutex_lock(next->nd_mutex);
+      lock_node(next, "next_node", "next != NULL", LOGLEVEL);
       
       /* if I have node_boards, look at those and not me */
       if (next->num_node_boards > 0)
@@ -2883,8 +2884,8 @@ struct pbsnode *next_node(
     if (iter->numa_index > 0)
       {
       tmp = current->numa_parent;
-      pthread_mutex_unlock(current->nd_mutex);
-      pthread_mutex_lock(tmp->nd_mutex);
+      unlock_node(current, "next_node", "current == NULL && numa_index > 0", LOGLEVEL);
+      lock_node(tmp, "next_node", "tmp && numa_index > 0", LOGLEVEL);
       current = tmp;
       }
 
@@ -2892,7 +2893,7 @@ struct pbsnode *next_node(
     if (iter->numa_index + 1 >= current->num_node_boards)
       {
       /* go to the next node in all nodes */
-      pthread_mutex_unlock(current->nd_mutex);
+      unlock_node(current, "next_node", "next == NULL && numa_index+1", LOGLEVEL);
       pthread_mutex_lock(an->allnodes_mutex);
 
       next = next_thing(an->ra,&iter->node_index);
@@ -2900,7 +2901,7 @@ struct pbsnode *next_node(
       pthread_mutex_unlock(an->allnodes_mutex);
 
       if (next != NULL)
-        pthread_mutex_lock(next->nd_mutex);
+        lock_node(next, "next_node", "next != NULL && numa_index+1", LOGLEVEL);
       }
     else
       {
@@ -2984,9 +2985,9 @@ int remove_node(
 
   if (pthread_mutex_trylock(an->allnodes_mutex))
     {
-    pthread_mutex_unlock(pnode->nd_mutex);
+    unlock_node(pnode, "remove_node", NULL, LOGLEVEL);
     pthread_mutex_lock(an->allnodes_mutex);
-    pthread_mutex_lock(pnode->nd_mutex);
+    lock_node(pnode, "remove_node", NULL, LOGLEVEL);
     }
 
   rc = remove_thing(an->ra,pnode);
@@ -3014,9 +3015,8 @@ struct pbsnode *next_host(
 
   pthread_mutex_unlock(an->allnodes_mutex);
 
-  if ((pnode != NULL) &&
-      (pnode != held))
-    pthread_mutex_lock(pnode->nd_mutex);
+  if ((pnode != NULL) && (pnode != held))
+    lock_node(pnode, "next_host", NULL, LOGLEVEL);
 
   return(pnode);
   } /* END next_host() */

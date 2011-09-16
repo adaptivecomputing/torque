@@ -113,6 +113,7 @@
 #include "mcom.h"
 #include "array.h"
 #include "threadpool.h"
+#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 
 #if __STDC__ != 1
 #include <memory.h>
@@ -912,7 +913,7 @@ void *send_job(
       {
       node_name = np->nd_name;
       
-      pthread_mutex_unlock(np->nd_mutex);
+      unlock_node(np, "send_job", NULL, LOGLEVEL);
       }
     
     send_job_work(pjob,node_name,type,&local_errno,preq);

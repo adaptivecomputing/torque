@@ -1057,7 +1057,7 @@ extern int   modify_job_attr(job *, svrattrl *, int, int *);
 extern char *prefix_std_file(job *, int);
 extern char *add_std_filename(job *, char *, int);
 extern int   set_jobexid(job *, attribute *, char *);
-extern int   site_check_user_map(job *, char *, char *);
+extern int   site_check_user_map(job *, char *, char *, int);
 extern void  svr_dequejob(job *);
 extern int   svr_enquejob(job *, int);
 extern void  svr_evaljobstate(job *, int *, int *, int);

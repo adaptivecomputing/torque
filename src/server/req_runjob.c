@@ -116,6 +116,7 @@
 #include "array.h"
 #include "threadpool.h"
 #include "node_func.h" /* find_nodebyname */
+#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -1550,8 +1551,8 @@ int set_mother_superior_ports(
     {
     pjob->ji_qs.ji_un.ji_exect.ji_momport = pnode->nd_mom_port;
     pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport = pnode->nd_mom_rm_port;
-    
-    pthread_mutex_unlock(pnode->nd_mutex);
+
+    unlock_node(pnode, "set_mother_superior_ports", NULL, LOGLEVEL);
     
     return(PBSE_NONE);
     }

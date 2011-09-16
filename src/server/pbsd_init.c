@@ -119,6 +119,7 @@
 #include "csv.h"
 #include "pbs_nodes.h"
 #include "threadpool.h"
+#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 
 
 /*#ifndef SIGKILL*/
@@ -364,8 +365,7 @@ void  update_default_np()
       npfreediff = pnode->nd_nsn - pnode->nd_nsnfree;
       pnode->nd_nsn = default_np;
       pnode->nd_nsnfree = default_np - npfreediff;
-
-      pthread_mutex_unlock(pnode->nd_mutex);
+      unlock_node(pnode, "update_default_np", NULL, LOGLEVEL);
       }
     }
 

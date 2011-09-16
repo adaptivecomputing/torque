@@ -148,6 +148,9 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 #define TSOCK_PATH "/tmp/.torque-unix"
 #endif
 
+/* End of message delineator for IS protocol */
+#define IS_EOL_MESSAGE "END_OF_LINE"
+
 #ifndef SCM_CREDS
 #define SCM_CREDS SCM_CREDENTIALS
 #endif

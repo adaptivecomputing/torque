@@ -2899,16 +2899,24 @@ void mom_server_update_stat(
     {
     DIS_tcp_setup(stream);
 
-    if ((ret = write_update_header(stream,pms->pbs_servername,id)) == DIS_SUCCESS)
+    if ((ret = write_update_header(stream,pms->pbs_servername,id)) != DIS_SUCCESS)
       {
-      if ((ret = write_my_server_status(stream,id,status_strings,pms,UPDATE_TO_SERVER)) == DIS_SUCCESS)
-        {
-        if ((ret = write_cached_statuses(stream,id,pms,UPDATE_TO_SERVER)) == DIS_SUCCESS)
-          {
-          if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
-            read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&ret);
-          }
-        }
+      }
+    else if ((ret = write_my_server_status(stream,id,status_strings,pms,UPDATE_TO_SERVER)) != DIS_SUCCESS)
+      {
+      }
+    else if ((ret = write_cached_statuses(stream,id,pms,UPDATE_TO_SERVER)) != DIS_SUCCESS)
+      {
+      }
+    else if ((ret = diswst(stream, IS_EOL_MESSAGE)) != DIS_SUCCESS)
+      {
+      }
+    else if ((ret = DIS_tcp_wflush(stream)) != DIS_SUCCESS)
+      {
+      }
+    else
+      {
+      read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&ret);
       }
   
     close(stream);

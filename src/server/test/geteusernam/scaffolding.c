@@ -30,7 +30,7 @@ struct passwd * getpwnam_ext(char * user_name)
   exit(1);
   }
 
-int site_check_user_map(job *pjob, char *luser, char *EMsg)
+int site_check_user_map(job *pjob, char *luser, char *EMsg, int logging)
   {
   fprintf(stderr, "The call to site_check_user_map needs to be mocked!!\n");
   exit(1);

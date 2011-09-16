@@ -130,3 +130,56 @@ int unlock_tcp_table()
   return(PBSE_NONE);
   }
 
+
+int lock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
+  {
+  int rc = PBSE_NONE;
+  char *err_msg;
+  if (logging >= 6)
+    {
+    err_msg = (char *)calloc(1, 160);
+    snprintf(err_msg, 160, "locking %s in method %s", the_node->nd_name, id);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    }
+  if (pthread_mutex_lock(the_node->nd_mutex) != 0)
+    {
+    if (logging >= 6)
+      {
+      snprintf(err_msg, 160, "ALERT: cannot lock node %s mutex in method %s",
+          the_node->nd_name, id);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      }
+    rc = PBSE_MUTEX;
+    }
+  if (logging >= 6)
+    free(err_msg);
+  return rc;
+  }
+
+int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
+  {
+  int rc = PBSE_NONE;
+  char *err_msg;
+  char stub_msg[] = "no pos";
+  if (logging >= 6)
+    {
+    err_msg = (char *)calloc(1, 160);
+    if (msg == NULL)
+      msg = stub_msg;
+    snprintf(err_msg, 160, "unlocking %s in method %s-%s", the_node->nd_name, id, msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    }
+  if (pthread_mutex_unlock(the_node->nd_mutex) != 0)
+    {
+    if (logging >= 6)
+      {
+      snprintf(err_msg, 160, "ALERT: cannot unlock node %s mutex in method %s",
+          the_node->nd_name, id);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      }
+    rc = PBSE_MUTEX;
+    }
+  if (logging >= 6)
+    free(err_msg);
+  return rc;
+  }
