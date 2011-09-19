@@ -76,8 +76,6 @@ int trq_main(
     {
     printf("Daemon exit requested\n");
     }
-  if (trq_server_ip != NULL)
-    free(trq_server_ip);
   if (the_key != NULL)
     free(the_key);
   return rc;
