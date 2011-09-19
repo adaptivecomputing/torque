@@ -60,6 +60,12 @@ int trq_main(
   char *trq_server_ip = NULL, *the_key = NULL, *sign_key = NULL;
   int trq_server_port = 0, daemon_port = 0;
   void *(*process_method)(void *) = process_svr_conn;
+
+  if(IamRoot() == 0)
+    return(PBSE_IVALREQ);
+
+  umask(022);
+
   if ((rc = load_config(&trq_server_ip, &trq_server_port, &daemon_port)) != PBSE_NONE)
     {
     }
