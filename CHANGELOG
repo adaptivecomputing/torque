@@ -181,6 +181,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Change so gpu states get set/unset correctly. Fixes problems with multiple
       exclusive jobs being assigned to same gpu and where next job gets rejected
       because gpu state was not reset after last shared gpu job finished.
+  e - Added a 1 millisecond sleep to src/lib/Libnet/net_client.c client_to_svr() 
+      if connect fails with EADDRINTUSE EINVAL or EADDRNOTAVAIL case. For these cases
+      TORQUE will retry the connect again. This fix increases the chance of success
+      on the next iteration.
 
 2.5.8
   e - added util function getpwnam_ext() that has retry and errno logging
