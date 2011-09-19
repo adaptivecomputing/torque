@@ -49,7 +49,10 @@ if test "x$MAKE" = "xerror" ;then
   AC_MSG_ERROR([cannot find a make command])
 fi
 
-AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 color-tests])
+m4_ifdef([AM_SILENT_RULES],
+  [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 color-tests])],
+  [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6])])
+
 AM_MAINTAINER_MODE
 
 if test "$program_prefix" = "NONE";then
@@ -104,6 +107,13 @@ AS_IF([test x"$have_check" = "xyes"], [
 ])
 AM_CONDITIONAL(HAVE_CHECK, test x"$have_check" = "xyes")
 
+m4_ifdef([AM_SILENT_RULES],[
+  if test "x$have_check" = "xyes"; then
+    AM_SILENT_RULES(yes)
+  else
+    AM_SILENT_RULES(no)
+  fi
+])
 
 
 dnl

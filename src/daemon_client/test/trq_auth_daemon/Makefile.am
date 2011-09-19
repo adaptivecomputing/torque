@@ -4,7 +4,7 @@ AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --cove
 
 lib_LTLIBRARIES = libtrq_auth_daemon.la
 
-AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
+AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} -L${PROG_ROOT}/../lib/Libpbs/.libs/libtorque.la
 
 check_PROGRAMS = test_trq_auth_daemon
 
