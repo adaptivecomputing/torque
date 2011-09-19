@@ -37,7 +37,7 @@ time_t cvtdate(char *datestr)
   exit(1);
   }
 
-char **pbs_selectjob(int c, struct attropl *attrib, char *extend)
+char **pbs_selectjob(int c, struct attropl *attrib, char *extend, int *any_failed)
   {
   fprintf(stderr, "The call to pbs_selectjob needs to be mocked!!\n");
   exit(1);

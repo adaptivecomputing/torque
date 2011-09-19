@@ -6,6 +6,7 @@
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "work_task.h" /* work_task */
 #include "attribute.h" /* attribute */
+#include "server.h" /* mutex_t */
 
 /* static void need_y_response(int type); */
 
@@ -29,7 +30,7 @@ void initialize_globals(void);
 
 void set_globals_from_environment(void);
 
-int main(int argc, char *argv[]);
+/* int main(int argc, char *argv[]); */
 
 void check_job_log(struct work_task *ptask);
 

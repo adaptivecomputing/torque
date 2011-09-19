@@ -161,3 +161,16 @@ AvlTree AVL_insert(u_long key, uint16_t port, struct pbsnode *node, AvlTree tree
   fprintf(stderr, "The call to AVL_insert needs to be mocked!!\n");
   exit(1);
   }
+
+int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
+  { 
+  fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
+  exit(1);                    
+  }                           
+
+int lock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
+  { 
+  fprintf(stderr, "The call to lock_node needs to be mocked!!\n");
+  exit(1);                    
+  }                           
+

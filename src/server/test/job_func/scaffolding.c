@@ -83,7 +83,7 @@ void clear_attr(attribute *pattr, attribute_def *pdef)
   exit(1);
   }
 
-pbs_net_t get_hostaddr(char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   {
   fprintf(stderr, "The call to get_hostaddr needs to be mocked!!\n");
   exit(1);

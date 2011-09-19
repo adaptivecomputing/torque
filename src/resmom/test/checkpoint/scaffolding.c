@@ -107,7 +107,7 @@ void log_record(int eventtype, int objclass, char *objname, char *text)
   exit(1);
   }
 
-int pbs_rlsjob(int c, char *jobid, char *holdtype, char *extend)
+int pbs_rlsjob(int c, char *jobid, char *holdtype, char *extend, int *any_failed)
   {
   fprintf(stderr, "The call to job_save needs to be mocked!!\n");
   exit(1);
@@ -119,7 +119,7 @@ void free_br(struct batch_request *preq)
   exit(1);
   }
 
-int pbs_alterjob(int c, char *jobid, struct attrl *attrib, char *extend)
+int pbs_alterjob(int c, char *jobid, struct attrl *attrib, char *extend, int *any_failed)
   {
   fprintf(stderr, "The call to job_save needs to be mocked!!\n");
   exit(1);

@@ -36,7 +36,7 @@ int cnt2server(char *SpecServer)
   exit(1);
   }
 
-int pbs_manager(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend)
+int pbs_manager(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *local_errno)
   {
   fprintf(stderr, "The call to pbs_manager needs to be mocked!!\n");
   exit(1);

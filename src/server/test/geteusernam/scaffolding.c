@@ -10,6 +10,7 @@
 attribute_def job_attr_def[10];
 struct server server;
 char *server_host;
+int LOGLEVEL;
 
 
 char *site_map_user(char *uname,  char *host) 

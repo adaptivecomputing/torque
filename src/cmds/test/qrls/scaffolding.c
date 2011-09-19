@@ -17,7 +17,7 @@ int locate_job(char *job_id, char *parent_server, char *located_server)
   exit(1);
   }
 
-int pbs_rlsjob(int c, char *jobid, char *holdtype, char *extend)
+int pbs_rlsjob(int c, char *jobid, char *holdtype, char *extend, int *any_failed)
   { 
   fprintf(stderr, "The call to pbs_rlsjob needs to be mocked!!\n");
   exit(1);

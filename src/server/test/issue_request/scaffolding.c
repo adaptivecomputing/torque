@@ -50,7 +50,7 @@ int encode_DIS_JobId(int sock, char *jobid)
   exit(1);
   }
 
-pbs_net_t get_hostaddr(char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   {
   fprintf(stderr, "The call to get_hostaddr needs to be mocked!!\n");
   exit(1);
@@ -217,3 +217,9 @@ int PBSD_sig_put(int c, char *jobid, char *signal, char *extend)
   fprintf(stderr, "The call to PBSD_sig_put needs to be mocked!!\n");
   exit(1);
   }
+
+int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
+  { 
+  fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
+  exit(1);                    
+  }                           

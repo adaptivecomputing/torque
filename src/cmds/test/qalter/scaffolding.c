@@ -43,7 +43,7 @@ int cnt2server(char *SpecServer)
   exit(1);
   }
 
-int pbs_alterjob(int c, char *jobid, struct attrl *attrib, char *extend)
+int pbs_alterjob(int c, char *jobid, struct attrl *attrib, char *extend, int *any_failed)
   { 
   fprintf(stderr, "The call to pbs_alterjob needs to be mocked!!\n");
   exit(1);
@@ -91,7 +91,7 @@ char *pbs_strerror(int err)
   exit(1);
   }
 
-int pbs_alterjob_async(int c, char *jobid, struct attrl *attrib, char *extend)
+int pbs_alterjob_async(int c, char *jobid, struct attrl *attrib, char *extend, int *any_failed)
   { 
   fprintf(stderr, "The call to pbs_alterjob_async needs to be mocked!!\n");
   exit(1);

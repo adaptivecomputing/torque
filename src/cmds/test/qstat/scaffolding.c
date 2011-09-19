@@ -13,7 +13,7 @@ char *pbs_geterrmsg(int connect)
   exit(1);
   }
 
-struct batch_status * pbs_selstat(int c, struct attropl *attrib, char *extend)
+struct batch_status * pbs_selstat(int c, struct attropl *attrib, char *extend, int *any_failed)
   { 
   fprintf(stderr, "The call to pbs_selstat needs to be mocked!!\n");
   exit(1);
@@ -25,7 +25,7 @@ int TShowAbout_exit(void)
   exit(1);
   }
 
-struct batch_status *pbs_statserver(int c, struct attrl *attrib, char *extend)
+struct batch_status *pbs_statserver(int c, struct attrl *attrib, char *extend, int *local_errno)
   { 
   fprintf(stderr, "The call to pbs_statserver needs to be mocked!!\n");
   exit(1);
@@ -115,7 +115,7 @@ char *pbs_strerror(int err)
   exit(1);
   }
 
-struct batch_status *pbs_statque(int c, char *id, struct attrl *attrib, char *extend)
+struct batch_status *pbs_statque(int c, char *id, struct attrl *attrib, char *extend, int *local_errno)
   { 
   fprintf(stderr, "The call to pbs_statque needs to be mocked!!\n");
   exit(1);

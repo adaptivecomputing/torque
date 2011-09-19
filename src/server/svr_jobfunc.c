@@ -541,13 +541,19 @@ void svr_dequejob(
       pthread_mutex_lock(server.sv_qs_mutex);
 
       if (--server.sv_qs.sv_numjobs < 0)
+        {
         bad_ct = 1;
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, "svr_dequejob", "sv_numjobs < 0. Recount required.");
+        }
       
       pthread_mutex_unlock(server.sv_qs_mutex);
       pthread_mutex_lock(server.sv_jobstates_mutex);
 
       if (--server.sv_jobstates[pjob->ji_qs.ji_state] < 0)
+        {
         bad_ct = 1;
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, "svr_dequejob", "sv_jobstates < 0. Recount required.");
+        }
       
       pthread_mutex_unlock(server.sv_jobstates_mutex);
       }
@@ -558,14 +564,23 @@ void svr_dequejob(
     if (remove_job(pque->qu_jobs,pjob) == PBSE_NONE)
       {
       if (--pque->qu_numjobs < 0)
+        {
         bad_ct = 1;
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, "svr_dequejob", "qu_numjobs < 0. Recount required.");
+        }
 
       if (--pque->qu_njstate[pjob->ji_qs.ji_state] < 0)
+        {
         bad_ct = 1;
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, "svr_dequejob", "qu_njstate < 0. Recount required.");
+        }
 
       if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
         if (--pque->qu_numcompleted < 0)
+          {
+          log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, "svr_dequejob", "qu_numcompleted < 0. Recount required.");
           bad_ct = 1;
+          }
       }
 
     /* just call remove job because nothing happens if it isn't there */
@@ -2653,8 +2668,6 @@ static void correct_ct()
   
   pthread_mutex_lock(server.sv_jobstates_mutex);
 
-  log_buf[0] = '\0';
-
   for (i = 0;i < PBS_NUMJOBSTATE;++i)
     {
     pc = log_buf + strlen(log_buf);
@@ -2670,6 +2683,8 @@ static void correct_ct()
 
   while ((pque = next_queue(&svr_queues,&iter)) != NULL)
     {
+    sprintf(log_buf, "checking queue %s", pque->qu_qs.qu_name);
+    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
     pque->qu_numjobs = 0;
     pque->qu_numcompleted = 0;
 

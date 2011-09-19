@@ -1336,7 +1336,7 @@ void initialize_connections_table()
   {
   int i;
 
-  for (i = 1;i < NCONNECTS;i++)
+  for (i = 1;i < PBS_NET_MAX_CONNECTIONS;i++)
     {
     connection[i].ch_mutex = malloc(sizeof(pthread_mutex_t));
     pthread_mutex_init(connection[i].ch_mutex,NULL);
