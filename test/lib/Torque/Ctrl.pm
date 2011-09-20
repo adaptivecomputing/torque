@@ -78,6 +78,11 @@ sub startTorque #($)#
                           };
 
   ##########################
+  # trqauthd Section
+  ##########################
+  runCommand('trqauthd &', test_success => 1);
+  
+  ##########################
   # Pbs_mom Section
   ##########################
 
