@@ -7,6 +7,8 @@
 #include <stdio.h> /* printf */
 #include <string.h> /* strcat */
 #include <pthread.h> /* threading functions */
+#include <errno.h> /* errno */
+#include <syslog.h> /* openlog and syslog */
 #include "pbs_error.h" /* PBSE_NONE */
 #include "pbs_constants.h" /* AUTH_IP */
 #include "pbs_ifl.h" /* pbs_default */
@@ -53,6 +55,64 @@ int validate_server(
   return rc;
   }
 
+int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(void *))
+  {
+  int gid;
+  pid_t pid;
+  FILE *fd;
+  int   rc;
+  char  error_buf[1024];
+
+  umask(022);
+
+  gid = getgid();
+  /* secure supplemental groups */
+  if(setgroups(1, (gid_t *)&gid) != 0)
+    {
+    fprintf(stderr, "Unable to drop secondary groups. Some MAC framework is active?\n");
+    snprintf(error_buf, sizeof(error_buf),
+                     "setgroups(group = %lu) failed: %s\n",
+                     (unsigned long)gid, strerror(errno));
+    fprintf(stderr, "%s\n", error_buf);
+    return(1);
+    }
+
+  pid = fork();
+  if(pid)
+    {
+    /* parent. We are done */
+    return(0);
+    }
+
+  if(pid < 0)
+    {
+    /* something went wrong */
+    fprintf(stderr, "fork failed. errno = %d\n", errno);
+    return(PBSE_RMSYSTEM);
+    }
+
+    /* If I made it here I am the child */
+    fclose(stdin);
+    fclose(stdout);
+    fclose(stderr);
+    /* We closed 0 (stdin), 1 (stdout), and 2 (stderr). fopen should give us
+       0, 1 and 2 in that order. this is a UNIX practice */
+    fd = fopen("/dev/null", "r");
+    fd = fopen("/dev/null", "r");
+    fd = fopen("/dev/null", "r");
+
+    /* start the listener */
+    rc = start_listener(server_ip, server_port, process_meth);
+    if(rc != PBSE_NONE)
+      {
+      openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
+      syslog(LOG_ALERT, "trqauthd could not start: %d\n", rc);
+      exit(-1);
+      }
+
+    exit(0);
+  }
+
 int trq_main(
     int argc,
     char **argv,
@@ -61,6 +121,7 @@ int trq_main(
   int rc = PBSE_NONE;
   char *trq_server_ip = NULL, *the_key = NULL, *sign_key = NULL;
   int trq_server_port = 0, daemon_port = 0;
+  int gid;
   void *(*process_method)(void *) = process_svr_conn;
 
   if(IamRoot() == 0)
@@ -69,7 +130,6 @@ int trq_main(
     return(PBSE_IVALREQ);
     }
 
-  umask(022);
 
   if ((rc = load_config(&trq_server_ip, &trq_server_port, &daemon_port)) != PBSE_NONE)
     {
@@ -80,7 +140,7 @@ int trq_main(
   else if ((validate_server(trq_server_ip, trq_server_port, the_key, &sign_key)) != PBSE_NONE)
     {
     }
-  else if ((rc = start_listener(AUTH_IP, daemon_port, process_method)) != PBSE_NONE)
+  else if ((rc = daemonize_trqauthd(AUTH_IP, daemon_port, process_method)) == PBSE_NONE)
     {
     }
   else

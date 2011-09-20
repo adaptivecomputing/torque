@@ -32,6 +32,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 	b - Manually merged revision 4970 from 2.5-fixes. This patch allows for a nodes attribute
 	    to be created in the Resource_List if no nodes or procs spec is given at the 
 			qsub command line.
+  b - Enabled trqauthd to daemonize from the commandline.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
