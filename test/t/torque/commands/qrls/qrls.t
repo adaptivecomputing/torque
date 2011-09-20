@@ -15,7 +15,6 @@ use Torque::Job::Ctrl          qw(
                                     delJobs
                                  );
 use Torque::Util        qw( 
-                                    run_and_check_cmd
                                     verify_job_state
                                     job_info
                                  );
@@ -69,7 +68,7 @@ $verify_params = {
 verify_job_state($verify_params);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Hold_Types' } eq $hld_type, 
+ok($job_info{ $job_id }{ 'hold_types' } eq $hld_type, 
    "Checking Hold_Types attribute of '$job_id' for '$hld_type'");
 
 # Release the job
@@ -77,7 +76,7 @@ $cmd  = "qrls $job_id";
 %qrls = runCommandAs($user1, $cmd);
 ok($qrls{ 'EXIT_CODE' } == 0, "Checking exit code of '$cmd'");
 
-# Check the job_state and Hold_Types (Should change)
+# Check the job_state and hold_types (Should change)
 $verify_params = {
                   'job_id' => $job_id,
                   'exp_job_state' => 'Q'
@@ -86,7 +85,7 @@ $verify_params = {
 verify_job_state($verify_params);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Hold_Types' } eq $rls_type, 
+ok($job_info{ $job_id }{ 'hold_types' } eq $rls_type, 
    "Checking Hold_Types attribute of '$job_id' for '$rls_type'");
 
 ##############################################################################
@@ -107,7 +106,7 @@ $verify_params = {
 verify_job_state($verify_params);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Hold_Types' } eq $hld_type, 
+ok($job_info{ $job_id }{ 'hold_types' } eq $hld_type, 
    "Checking Hold_Types attribute of '$job_id' for '$hld_type'");
 
 
@@ -126,7 +125,7 @@ $verify_params = {
 verify_job_state($verify_params);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Hold_Types' } eq $hld_type, 
+ok($job_info{ $job_id }{ 'hold_types' } eq $hld_type, 
    "Checking Hold_Types attribute of '$job_id' for '$hld_type'");
 
 ###############################################################################

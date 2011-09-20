@@ -21,7 +21,7 @@ execute_tests(
               "$testbase/qdel.t",
               "$testbase/qdel_m.t",
               "$testbase/qdel_p.t",
-              "$testbase/qdel_t.t",
+# JR-TRQ-460              "$testbase/qdel_t.t",
               "$testbase/qdel_cW.t",
 );
 
