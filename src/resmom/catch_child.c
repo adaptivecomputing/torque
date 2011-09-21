@@ -1587,29 +1587,18 @@ void init_abort_jobs(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "%s: recover=%d",
-            id,
-            recover);
+    sprintf(log_buffer, "%s: recover=%d", id, recover);
 
-    log_record(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_SERVER,
-      msg_daemonname,
-      log_buffer);
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
     }
 
   dir = opendir(path_jobs);
 
   if (dir == NULL)
     {
-    sprintf(log_buffer, "cannot open job directory '%s'",
-            path_jobs);
+    sprintf(log_buffer, "cannot open job directory '%s'", path_jobs);
 
-    log_record(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_SERVER,
-      msg_daemonname,
-      log_buffer);
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
 
     exit(1);
     }
@@ -1628,14 +1617,9 @@ void init_abort_jobs(
 
     if (pj == NULL)
       {
-      sprintf(log_buffer, "%s: NULL job pointer",
-              id);
+      sprintf(log_buffer, "%s: NULL job pointer", id);
 
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_SERVER,
-        msg_daemonname,
-        log_buffer);
+      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
 
       continue;
       }
@@ -1653,17 +1637,12 @@ void init_abort_jobs(
     if (LOGLEVEL >= 2)
       {
       sprintf(log_buffer, "task recovery %s for job %s, rc=%d",
-              (rc == 0) ? "succeeded" : "failed",
-              pj->ji_qs.ji_jobid,
-              rc);
+        (rc == 0) ? "succeeded" : "failed",
+        pj->ji_qs.ji_jobid,
+        rc);
 
-      log_record(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, log_buffer);
       }
-
 
     mom_checkpoint_recover(pj);
 
@@ -1679,14 +1658,10 @@ void init_abort_jobs(
       if (LOGLEVEL >= 6)
         {
         sprintf(log_buffer, "%s: adding client %s",
-                id,
-                pj->ji_hosts[j].hn_host);
+          id,
+          pj->ji_hosts[j].hn_host);
 
-        log_record(
-          PBSEVENT_ERROR,
-          PBS_EVENTCLASS_SERVER,
-          msg_daemonname,
-          log_buffer);
+        log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
         }
 
       addclient(pj->ji_hosts[j].hn_host);
@@ -1698,14 +1673,11 @@ void init_abort_jobs(
       sprintf(log_buffer, "successfully recovered job %s",
               pj->ji_qs.ji_jobid);
 
-      log_record(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, log_buffer);
       }
 
-    if ((recover != JOB_RECOV_RUNNING) && (recover != JOB_RECOV_DELETE) &&
+    if ((recover != JOB_RECOV_RUNNING) && 
+        (recover != JOB_RECOV_DELETE) &&
         ((pj->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) ||
          (pj->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) ||
          (pj->ji_qs.ji_substate == JOB_SUBSTATE_SUSPEND) ||
@@ -1716,14 +1688,10 @@ void init_abort_jobs(
       if (LOGLEVEL >= 2)
         {
         sprintf(log_buffer, "job %s recovered in active state %s (full recover not enabled)",
-                pj->ji_qs.ji_jobid,
-                PJobSubState[pj->ji_qs.ji_substate]);
+          pj->ji_qs.ji_jobid,
+          PJobSubState[pj->ji_qs.ji_substate]);
 
-        log_record(
-          PBSEVENT_DEBUG,
-          PBS_EVENTCLASS_JOB,
-          id,
-          log_buffer);
+        log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, log_buffer);
         }
 
       if (recover == JOB_RECOV_TERM_REQUE) /* -r option was used to start mom */
@@ -1745,13 +1713,9 @@ void init_abort_jobs(
         if (LOGLEVEL >= 2)
           {
           sprintf(log_buffer, "local host is not mother-superior, deleting job %s",
-                  pj->ji_qs.ji_jobid);
+            pj->ji_qs.ji_jobid);
 
-          log_record(
-            PBSEVENT_DEBUG,
-            PBS_EVENTCLASS_JOB,
-            id,
-            log_buffer);
+          log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, log_buffer);
           }
 
         mom_deljob(pj);
@@ -1762,14 +1726,10 @@ void init_abort_jobs(
       if (LOGLEVEL >= 2)
         {
         sprintf(log_buffer, "setting job state to exiting for job %s in state %s",
-                pj->ji_qs.ji_jobid,
-                PJobSubState[pj->ji_qs.ji_substate]);
+          pj->ji_qs.ji_jobid,
+          PJobSubState[pj->ji_qs.ji_substate]);
 
-        log_record(
-          PBSEVENT_DEBUG,
-          PBS_EVENTCLASS_JOB,
-          id,
-          log_buffer);
+        log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, log_buffer);
         }
 
       /* set exit status to:
@@ -1856,11 +1816,7 @@ void init_abort_jobs(
                 pj->ji_qs.ji_jobid,
                 PJobSubState[pj->ji_qs.ji_substate]);
 
-        log_record(
-          PBSEVENT_DEBUG,
-          PBS_EVENTCLASS_JOB,
-          id,
-          log_buffer);
+        log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, log_buffer);
         }
 
 #ifndef NUMA_SUPPORT 
@@ -1877,7 +1833,19 @@ void init_abort_jobs(
         {
         DBPRT(("init_abort_jobs: setting grpcache for job %s\n",
                pj->ji_qs.ji_jobid));
-        check_pwd(pj);
+        
+        if (check_pwd(pj) == NULL)
+          {
+          /* somehow a job that was legally executing (had a password entry)
+           * no longer has a password entry?? */
+          snprintf(log_buffer, sizeof(log_buffer),
+            "job %s no longer has valid password entry - deleting",
+            pj->ji_qs.ji_jobid);
+
+          log_err(-1, id, log_buffer);
+
+          mom_deljob(pj);
+          }
         }
       }
     }    /* while ((pdirent = readdir(dir)) != NULL) */
@@ -1909,14 +1877,10 @@ void mom_deljob(
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buffer, "deleting job %s in state %s",
-            pjob->ji_qs.ji_jobid,
-            PJobSubState[pjob->ji_qs.ji_substate]);
-
-    log_record(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      log_buffer);
+      PJobSubState[pjob->ji_qs.ji_substate]);
+
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
     }
 
   job_purge(pjob);
