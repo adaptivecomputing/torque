@@ -517,7 +517,7 @@ jump_to_check:
 
         /* TCP is not ready for us. Sleep for a millisecond and see if
            that will change anything before the next retry */
-        nanosleep(&rem);
+        nanosleep(&rem, &rem);
 
         if (local_port != FALSE)
           {

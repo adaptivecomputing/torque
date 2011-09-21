@@ -418,7 +418,11 @@ int main(
       }
     else
       {
-      do_mom(HPtr, MOMPort, CmdIndex) >= 0 ? HostCount++ : FailCount++;
+      rc = do_mom(HPtr, MOMPort, CmdIndex);
+      if(rc >= 0)
+        HostCount++;
+      else
+        FailCount++;
       } /* END if (*HPtr == ':') */
 
     HPtr = strtok(NULL, ", \t\n");
