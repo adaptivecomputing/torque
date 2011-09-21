@@ -11,6 +11,9 @@
 
 /* This is only used in this file. All access is through the methods */
 lock_ctl *locks = NULL;
+lock_cntr *cntr = NULL;
+#define MSG_LEN_SHORT 60
+#define MSG_LEN_LONG 160
 
 int lock_init()
   {
@@ -137,15 +140,15 @@ int lock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
   char *err_msg;
   if (logging >= 6)
     {
-    err_msg = (char *)calloc(1, 160);
-    snprintf(err_msg, 160, "locking %s in method %s", the_node->nd_name, id);
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s", the_node->nd_name, id);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
   if (pthread_mutex_lock(the_node->nd_mutex) != 0)
     {
     if (logging >= 6)
       {
-      snprintf(err_msg, 160, "ALERT: cannot lock node %s mutex in method %s",
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock node %s mutex in method %s",
           the_node->nd_name, id);
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
       }
@@ -163,17 +166,17 @@ int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
   char stub_msg[] = "no pos";
   if (logging >= 6)
     {
-    err_msg = (char *)calloc(1, 160);
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)
       msg = stub_msg;
-    snprintf(err_msg, 160, "unlocking %s in method %s-%s", the_node->nd_name, id, msg);
+    snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", the_node->nd_name, id, msg);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
   if (pthread_mutex_unlock(the_node->nd_mutex) != 0)
     {
     if (logging >= 6)
       {
-      snprintf(err_msg, 160, "ALERT: cannot unlock node %s mutex in method %s",
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock node %s mutex in method %s",
           the_node->nd_name, id);
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
       }
@@ -182,4 +185,88 @@ int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
   if (logging >= 6)
     free(err_msg);
   return rc;
+  }
+
+int lock_cntr_init()
+  {
+  int rc = PBSE_NONE;
+  pthread_mutexattr_t cntr_attr;
+  pthread_mutexattr_init(&cntr_attr);
+  pthread_mutexattr_settype(&cntr_attr, PTHREAD_MUTEX_ERRORCHECK);
+  if ((cntr = (lock_cntr *)calloc(1, sizeof(lock_cntr))) == NULL)
+    rc = PBSE_MEM_MALLOC;
+  else if ((cntr->the_lock = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
+    rc = PBSE_MEM_MALLOC;
+  else
+    {
+    memset(cntr->the_lock, 0, sizeof(pthread_mutex_t));
+    pthread_mutex_init(cntr->the_lock, &cntr_attr);
+    }
+  return rc;
+  }
+
+int lock_cntr_incr()
+  {
+  int rc = PBSE_NONE;
+  char err_msg[MSG_LEN_SHORT];
+  if (pthread_mutex_lock(cntr->the_lock) != 0)
+    {
+    snprintf(err_msg, MSG_LEN_SHORT, "ALERT: cannot lock mutex for lock_cntr_incr");
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, "lock_cntr_incr", err_msg);
+    rc = PBSE_MUTEX;
+    }
+  else
+    {
+    cntr->the_num++;
+    }
+  if (rc != PBSE_NONE)
+    {
+    }
+  else if (pthread_mutex_unlock(cntr->the_lock) != 0)
+    {
+    snprintf(err_msg, MSG_LEN_SHORT, "ALERT: cannot unlock mutex for cntr_llock_cntr_incr");
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, "lock_cntr_incr", err_msg);
+    rc = PBSE_MUTEX;
+    }
+  return rc;
+  }
+
+int lock_cntr_decr()
+  {
+  int rc = PBSE_NONE;
+  char err_msg[MSG_LEN_SHORT];
+  if (pthread_mutex_lock(cntr->the_lock) != 0)
+    {
+    snprintf(err_msg, MSG_LEN_SHORT, "ALERT: cannot lock mutex for lock_cntr_decr");
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, "lock_cntr_decr", err_msg);
+    rc = PBSE_MUTEX;
+    }
+  else
+    {
+    cntr->the_num--;
+    }
+  if (rc != PBSE_NONE)
+    {
+    }
+  else if (pthread_mutex_unlock(cntr->the_lock) != 0)
+    {
+    snprintf(err_msg, MSG_LEN_SHORT, "ALERT: cannot unlock mutex for lock_cntr_decr");
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, "lock_cntr_decr", err_msg);
+    rc = PBSE_MUTEX;
+    }
+  return rc;
+  }
+
+void lock_cntr_display()
+  {
+  char err_msg[MSG_LEN_SHORT];
+  snprintf(err_msg, MSG_LEN_SHORT, "Total cntr value:[%d]", cntr->the_num);
+  log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, "lock_cntr_display", err_msg);
+  }
+
+void lock_cntr_destroy()
+  {
+  pthread_mutex_destroy(cntr->the_lock);
+  free(cntr->the_lock);
+  free(cntr);
   }

@@ -2654,7 +2654,8 @@ static void correct_ct()
   char         *pc;
   job          *pjob;
   pbs_queue    *pque;
-  int           iter = -1;
+  int           queue_iter = -1;
+  int           job_iter = -1;
   int           num_jobs = 0;
   int           job_counts[PBS_NUMJOBSTATE];
   char          log_buf[LOCAL_LOG_BUF_SIZE];
@@ -2681,7 +2682,7 @@ static void correct_ct()
 
   log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
 
-  while ((pque = next_queue(&svr_queues,&iter)) != NULL)
+  while ((pque = next_queue(&svr_queues,&queue_iter)) != NULL)
     {
     sprintf(log_buf, "checking queue %s", pque->qu_qs.qu_name);
     log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
@@ -2699,9 +2700,9 @@ static void correct_ct()
      * lock again, since the mutex is released before being destroyed. This caused crashes 
      * along with other mayhem. Thus, keep the code here and only get jobs that really 
      * exist */
-    iter = -1;
+    job_iter = -1;
 
-    while ((pjob = next_job(pque->qu_jobs, &iter)) != NULL)
+    while ((pjob = next_job(pque->qu_jobs, &job_iter)) != NULL)
       {
       num_jobs++;
       

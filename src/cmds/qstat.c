@@ -128,12 +128,13 @@ int istrue(
 static void states(
 
   char *string, /* I */
-  char *q,      /* O */
-  char *r,      /* O */
-  char *h,      /* O */
-  char *w,      /* O */
-  char *t,      /* O */
-  char *e,      /* O */
+  char *queued,      /* O */
+  char *running,      /* O */
+  char *held,      /* O */
+  char *waiting,      /* O */
+  char *transit,      /* O */
+  char *exiting,      /* O */
+  char *complete,      /* O */
   int   len)    /* I */
 
   {
@@ -158,17 +159,19 @@ static void states(
     d = NULL;
 
     if (strcmp(s, "Queued") == 0)
-      d = q;
+      d = queued;
     else if (strcmp(s, "Running") == 0)
-      d = r;
+      d = running;
     else if (strcmp(s, "Held")    == 0)
-      d = h;
+      d = held;
     else if (strcmp(s, "Waiting") == 0)
-      d = w;
+      d = waiting;
     else if (strcmp(s, "Transit") == 0)
-      d = t;
+      d = transit;
     else if (strcmp(s, "Exiting") == 0)
-      d = e;
+      d = exiting;
+    else if (strcmp(s, "Complete") == 0)
+      d = complete;
 
     c++;
 
@@ -1362,7 +1365,7 @@ void display_statjob(
 
 #define MINNUML    3
 #define MAXNUML    5
-#define TYPEL     10
+#define TYPEL      1
 
 void display_statque(
 
@@ -1388,13 +1391,14 @@ void display_statque(
   char wat[MAXNUML + 1];
   char trn[MAXNUML + 1];
   char ext[MAXNUML + 1];
+  char dne[MAXNUML + 1];
   char *type;
   char format[80];
 
   int  NUML = 5;
 
 
-  sprintf(format, "%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds\n",
+  sprintf(format, "%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds %%%ds\n",
           PBS_MINNAMELEN,
           NUML,
           NUML,
@@ -1406,12 +1410,13 @@ void display_statque(
           NUML,
           NUML,
           NUML,
-          TYPEL);
+          TYPEL,
+          NUML);
 
   if (!full && prtheader)
     {
-    printf(format, "Queue", "Max", "Tot", "Ena", "Str", "Que", "Run", "Hld", "Wat", "Trn", "Ext", "T");
-    printf(format, "----------------", "---", "---", "---", "---", "---", "---", "---", "---", "---", "---", "-");
+    printf(format, "Queue", "Max", "Tot", "Ena", "Str", "Que", "Run", "Hld", "Wat", "Trn", "Ext", "T", "Cpt");
+    printf(format, "----------------", "---", "---", "---", "---", "---", "---", "---", "---", "---", "---", "-", "---");
     }
 
   p = status;
@@ -1429,6 +1434,7 @@ void display_statque(
     strcpy(wat, "0");
     strcpy(trn, "0");
     strcpy(ext, "0");
+    strcpy(dne, "0");
     type = "not defined";
 
     if (full)
@@ -1514,7 +1520,7 @@ void display_statque(
             }
           else if (strcmp(a->name, ATTR_count) == 0)
             {
-            states(a->value, que, run, hld, wat, trn, ext, NUML);
+            states(a->value, que, run, hld, wat, trn, ext, dne, NUML);
             }
           else if (strcmp(a->name, ATTR_qtype) == 0)
             {
@@ -1528,7 +1534,6 @@ void display_statque(
         }
 
       printf(format,
-
              name,
              max,
              tot,
@@ -1540,7 +1545,8 @@ void display_statque(
              wat,
              trn,
              ext,
-             type);
+             type,
+             dne);
       }
 
     if (full)
@@ -1578,6 +1584,7 @@ void display_statserver(
   char wat[MAXNUML + 1];
   char trn[MAXNUML + 1];
   char ext[MAXNUML + 1];
+  char dne[MAXNUML + 1];
   char *stats;
   char format[80];
 
@@ -1616,6 +1623,7 @@ void display_statserver(
     strcpy(wat, "0");
     strcpy(trn, "0");
     strcpy(ext, "0");
+    strcpy(dne, "0");
     stats = "";
 
     if (full)
@@ -1681,7 +1689,7 @@ void display_statserver(
             }
           else if (strcmp(a->name, ATTR_count) == 0)
             {
-            states(a->value, que, run, hld, wat, trn, ext, NUML);
+            states(a->value, que, run, hld, wat, trn, ext, dne, NUML);
             }
           else if (strcmp(a->name, ATTR_status) == 0)
             {
@@ -1700,7 +1708,7 @@ void display_statserver(
         a = a->next;
         }
 
-      printf(format, name, max, tot, que, run, hld, wat, trn, ext, stats);
+      printf(format, name, max, tot, que, run, hld, wat, trn, ext, dne, stats);
       }
 
     if (full) printf("\n");

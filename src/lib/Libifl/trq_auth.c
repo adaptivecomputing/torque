@@ -298,6 +298,10 @@ void *process_svr_conn(
     msg_len += strlen(error_msg);
     send_message = (char *)calloc(1, msg_len);
     snprintf(send_message, msg_len, "%d|%d|%s|", rc, (int)strlen(error_msg), error_msg);
+    if (getenv("PBSDEBUG"))
+      {
+      fprintf(stderr, "Connection to %s port %d Failed. Server connection %d not authorized\n", server_name, server_port, user_sock);
+      }
     }
   rc = socket_write(local_socket, send_message, strlen(send_message));
   if (TRUE == disconnect_svr)

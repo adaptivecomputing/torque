@@ -24,8 +24,10 @@ int start_listener(
   int debug = 0;
   int *new_conn_port = NULL;
   int listen_socket = 0;
+  int total_cntr = 0;
   pthread_t tid;
   pthread_attr_t t_attr;
+
   if ((ptr = getenv("PBSDEBUG")) != NULL)
     debug = 1;
   if (!(adr_svr.sin_port = htons(server_port)))
@@ -92,6 +94,14 @@ int start_listener(
           {
           pthread_create(&tid, &t_attr, process_meth, (void *)new_conn_port);
           }
+        }
+      if (debug == 1)
+        {
+        if (total_cntr % 1000 == 0)
+          {
+          printf("Total requests: %d\n", total_cntr);
+          }
+        total_cntr++;
         }
       }
     if (new_conn_port != NULL)

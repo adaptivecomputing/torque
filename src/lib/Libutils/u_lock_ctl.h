@@ -14,6 +14,12 @@ typedef struct lock_ctl
   pthread_mutex_t *tcp_table;
   } lock_ctl;
 
+typedef struct lock_cntr
+  {
+  int the_num;
+  pthread_mutex_t *the_lock;
+  } lock_cntr;
+
 int lock_init();
 
 void lock_destroy();
@@ -33,4 +39,14 @@ int unlock_tcp_table();
 int lock_node(struct pbsnode *the_node, char *method_name, char *msg, int logging);
 
 int unlock_node(struct pbsnode *the_node, char *method_name, char *msg, int logging);
+
+int lock_cntr_init();
+
+int lock_cntr_incr();
+
+int lock_cntr_decr();
+
+void lock_cntr_display();
+
+void lock_cntr_destroy();
 #endif /* _U_LOCK_CTL_H */

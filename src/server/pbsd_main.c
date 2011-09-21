@@ -405,9 +405,12 @@ void *process_pbs_server_port(
         {
         addr = (struct sockaddr_in *)&s_addr;
 
-        snprintf(log_buf,sizeof(log_buf),
-          "Unknown protocol %d from %s", proto_type, 
-          netaddr(addr));
+        if (proto_type == 0)
+          snprintf(log_buf, sizeof(log_buf),
+              "Socket close detected on %s", netaddr(addr));
+        else 
+          snprintf(log_buf,sizeof(log_buf),
+              "Unknown protocol %d from %s", proto_type, netaddr(addr));
 
         log_err(-1,id,log_buf);
         }

@@ -1671,7 +1671,7 @@ static void update_state_ct(
 
   {
   static char *statename[] = { "Transit", "Queued", "Held",
-                               "Waiting", "Running", "Exiting"
+                               "Waiting", "Running", "Exiting", "Complete"
                              };
   int  index;
 

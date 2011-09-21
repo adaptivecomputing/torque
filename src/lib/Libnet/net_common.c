@@ -163,6 +163,7 @@ int socket_get_tcp_priv()
           cntr++;
           rc = PBSE_SOCKET_FAULT;
           errno = PBSE_SOCKET_FAULT;
+          close(local_socket);
           local_socket = -1;
           }
         else
@@ -238,6 +239,7 @@ int socket_connect(
           /* Fail on RES_PORT_RETRY */
           if (cntr++ < RES_PORT_RETRY)
             {
+            close(*local_socket);
             if ((*local_socket = socket_get_tcp_priv()) < 0)
               rc = PBSE_SOCKET_FAULT;
             else
