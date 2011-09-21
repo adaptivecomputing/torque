@@ -53,6 +53,7 @@ int attempt_delete(
   {
   int        skipped = FALSE;
   int        iter = -1;
+  int        release_mutex = TRUE;
 
   char      *jobid_copy;
   work_task *pwtold;
@@ -140,6 +141,8 @@ int attempt_delete(
     remove_stagein(pjob);
     
     job_abt(&pjob, NULL);
+
+    release_mutex = FALSE;
     }
   else
     {
@@ -177,6 +180,9 @@ int attempt_delete(
       pthread_mutex_unlock(ptask->wt_mutex);
       }
     }
+
+  if (release_mutex == TRUE)
+    pthread_mutex_unlock(pjob->ji_mutex);
 
   return(!skipped);
   } /* END attempt_delete() */
