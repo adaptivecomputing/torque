@@ -23,10 +23,7 @@ my @hosts        = split(/,|\s/, `cat $hostlistfile`);
 # Create some stale jobs
 my $job_id = 'all'; # stubed out
 
-%momctl = runCommand("momctl -f $hostlistfile -c $job_id");
-ok($momctl{ 'EXIT_CODE' } == 0,
-   "Checking that 'momctl -f $hostlistfile -c $job_id' ran")
-  or die "Couldn't run momctl -f $hostlistfile -c $job_id";
+%momctl = runCommand("momctl -f $hostlistfile -c $job_id", test_success => 1);
 
 # Check the stdout
 my $stdout = $momctl{ 'STDOUT' };

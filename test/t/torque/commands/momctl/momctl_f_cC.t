@@ -20,17 +20,14 @@ my %momctl;
 my $hostlistfile = $props->get_property('mom.host.list.file');
 my @hosts        = split(/,|\s/, `cat $hostlistfile`);
 
-%momctl = runCommand("momctl -f $hostlistfile -C");
-ok($momctl{ 'EXIT_CODE' } == 0,
-   "Checking that 'momctl -f $hostlistfile -C' ran")
-  or die "Couldn't run momctl -f $hostlistfile -C";
+%momctl = runCommand("momctl -f $hostlistfile -C", test_success => 1);
 
 # Check the stdout
 my $stdout = $momctl{ 'STDOUT' };
 foreach my $host (@hosts)
   {
 
-  ok($stdout =~ /mom ${host} successfully cycled cycle forced/i, "Checking output of 'momctl -f $hostlistfile -C' for $host");
+  ok($stdout =~ /^mom $host successfully cycled cycle forced$/m, "Checking output of 'momctl -f $hostlistfile -C' for $host");
 
   }
 

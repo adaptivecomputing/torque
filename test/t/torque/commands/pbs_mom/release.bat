@@ -30,7 +30,7 @@ execute_tests(
               "$testbase/pbs_mom_default_p.t",
               "$testbase/pbs_mom_p.t",
               "$testbase/pbs_mom_q.t",
-# RT5530              "$testbase/pbs_mom_r.t",
+              "$testbase/pbs_mom_r.t",
               "$testbase/pbs_mom_x.t",
              ); 
 

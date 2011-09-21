@@ -80,7 +80,8 @@ sub startTorque #($)#
   ##########################
   # trqauthd Section
   ##########################
-  runCommand('trqauthd &', test_success => 1);
+  runCommand('trqauthd', test_success => 1);
+  runCommandSsh($_, 'trqauthd', test_success => 1) foreach @$remote_moms;
   
   ##########################
   # Pbs_mom Section
@@ -159,7 +160,7 @@ sub syncServerMom
 
     sleep 1 while time <= $endtime && !&$ready( @$mom_hosts );
 
-    die "Torque Components Failed to Sync!\n".qx/$check_cmd 2>&1/ unless $wait > 0;
+    die "Torque Components Failed to Sync!\n".qx/$check_cmd 2>&1/ unless time <= $endtime;
 
     return 1;
 }
@@ -172,14 +173,15 @@ sub stopTorque
     my ($cfg) = @_;
 
     my $remote_moms = $cfg->{ 'remote_moms' } || [];
+    my $mom_cfg     = $cfg->{pbs_mom} || {};
     my $torque_rtn  = 1;
 
     ##########################
     # Pbs_mom Section
     ##########################
-    my $remote_mom_params = { 'nodes' => $remote_moms };
+    my $remote_mom_params = { 'nodes' => $remote_moms, %$mom_cfg };
 
-    $torque_rtn = $torque_rtn && stopPbsmom();
+    $torque_rtn = $torque_rtn && stopPbsmom($mom_cfg);
 
     if( scalar @$remote_moms )
     {
@@ -199,88 +201,80 @@ sub stopTorque
 ###############################################################################
 sub startPbsmom #($)# 
 {
-    my ($cfg) = @_;
+  my ($cfg) = @_;
 
-    # Config variables
-    my $args       = $cfg->{ 'args'       } || '';
-    my $node       = $cfg->{ 'node'       } || undef;
-    my $nodes      = $cfg->{ 'nodes'      } || [];
-    my $local_node = $cfg->{ 'local_node' } || 0;
-    my $do_clean   = $cfg->{clean}          || 0;
+  # Config variables
+  my $args       = $cfg->{ 'args'       } || '';
+  my $node       = $cfg->{ 'node'       } || undef;
+  my $nodes      = $cfg->{ 'nodes'      } || [];
+  my $local_node = $cfg->{ 'local_node' } || 0;
+  my $do_clean   = $cfg->{clean}          || 0;
 
-    push(@$nodes, $node) 
-    if $node;
+  push(@$nodes, $node) 
+  if $node;
 
-    # Assume that we want to start the local node if no remote nodes are passed
-    $local_node = 1 if scalar @$nodes == 0;
+  # Assume that we want to start the local node if no remote nodes are passed
+  $local_node = 1 if scalar @$nodes == 0;
 
-    my $check_cmd = "ps aux | grep pbs_mom | grep -v grep";
+  my $check_cmd = "ps aux | grep pbs_mom | grep -v grep";
 
-    my $pbs_mom_cmd  = "${torque_sbin}pbs_mom";
-    $pbs_mom_cmd    .= " $args";
+  my $pbs_mom_cmd  = "${torque_sbin}pbs_mom";
+  $pbs_mom_cmd    .= " $args";
 
-    my $clean_cmd = "rm -f $torque_home/mom_priv/jobs/*";
+  my $clean_cmd = "rm -f $torque_home/mom_priv/jobs/*";
 
-    # Start any Remote mom's
-    if (scalar @$nodes)
-    {
-      foreach my $n (@$nodes)
-      {
-        if( $do_clean )
-        {
-          runCommand($clean_cmd, test_success => 1, msg => "Cleaning Torque MOM Files on Host $n...", host => $n);
-        }
-
-        my %ssh = runCommandSsh($n, $pbs_mom_cmd, 'test_success_die' => 1, 'msg' => "Starting New Remote PBS_Mom Process on Host $n...");
-
-        my $ps_info = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
-
-        my $wait = 30;
-        my $endtime = time() + $wait;
-        diag "Waiting for Remote PBS_Mom to Start on Host $n... (${wait}s Timeout)";
-
-        sleep 1 while time() <= $endtime && &$ps_info eq '';
-
-        if( $wait > 0 )
-        {
-          pass "Remote PBS_Mom is now Running on Host $n";
-        }
-        else
-        {
-          die "Remote PBS_Mom Failed to Start on Host $n!";
-        }
-      }
-    }
-    
-    # Start local mom
-    if ($local_node)
+  # Start any Remote mom's
+  if (scalar @$nodes)
+  {
+    foreach my $n (@$nodes)
     {
       if( $do_clean )
       {
-        runCommand($clean_cmd, test_success => 1, msg => 'Cleaning Torque MOM Files...');
+        runCommand($clean_cmd, test_success => 1, msg => "Cleaning Torque MOM Files on Host $n...", host => $n);
       }
-      
-      runCommand($pbs_mom_cmd, 'test_success_die' => 1, 'msg' => 'Starting New Local PBS_Mom Process..');
 
-	my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_mom'); };
+      my %ssh = runCommandSsh($n, $pbs_mom_cmd, 'test_success_die' => 1, 'msg' => "Starting New Remote PBS_Mom Process on Host $n...");
 
-	my $wait = 30;
-        my $endtime = time() + $wait;
-	diag "Waiting for Local PBS_Mom to Start... (${wait}s Timeout)";
+      my $ps_info = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
 
-	sleep 1 while time() <= $endtime && &$ps_info eq '';
+      my $wait = 30;
+      my $endtime = time() + $wait;
+      diag "Waiting for Remote PBS_Mom to Start on Host $n... (${wait}s Timeout)";
 
-	if( $wait > 0 )
-	{
-	    pass "Local PBS_Mom is now Running";
-	}
-	else
-	{
-	    die "Local PBS_Mom Failed to Start!";
-	}
+      sleep 1 while time() <= $endtime && &$ps_info eq '';
+
+      if( time > $endtime )
+      {
+        die "Remote PBS_Mom Failed to Start on Host $n!";
+      }
+    }
+  }
+
+  # Start local mom
+  if ($local_node)
+  {
+    if( $do_clean )
+    {
+      runCommand($clean_cmd, test_success => 1, msg => 'Cleaning Torque MOM Files...');
     }
 
-    return 1;
+    runCommand($pbs_mom_cmd, 'test_success_die' => 1, 'msg' => 'Starting New Local PBS_Mom Process..');
+
+    my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_mom'); };
+
+    my $wait = 30;
+    my $endtime = time() + $wait;
+    diag "Waiting for Local PBS_Mom to Start... (${wait}s Timeout)";
+
+    sleep 1 while time() <= $endtime && &$ps_info eq '';
+
+    if( time > $endtime )
+    {
+      die "Local PBS_Mom Failed to Start!";
+    }
+  }
+
+  return 1;
 }
 
 ###############################################################################
@@ -294,6 +288,7 @@ sub stopPbsmom
     my $node       = $cfg->{ 'node'       } || undef;
     my $nodes      = $cfg->{ 'nodes'      } || [];
     my $local_node = $cfg->{ 'local_node' } || 0;
+    my $flags      = $cfg->{flags}          || undef;
 
     my $check_cmd = 'ps aux | grep pbs_mom | grep -v grep';
 
@@ -302,18 +297,21 @@ sub stopPbsmom
     $local_node = 1 if scalar @$nodes == 0;
 
     my $momctl_cmd = "${torque_sbin}momctl -s";
+    $momctl_cmd   .= " $flags" if defined $flags;
 
     # Stop any remote pbs_mom's
     if (scalar @$nodes)
     {
 	foreach my $n (@$nodes)
 	{
-	    diag "Attempting to Shutdown Remote PBS_Mom on Host $n...";
 	    my $ps_info   = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
 
 	    unless( &$ps_info eq '')
 	    { 
-		my %momctl = runCommandSsh($n, $momctl_cmd);
+		my $wait = 30;
+		diag "Stopping Remote Torque MOM on Host $n... (${wait}s Timeout)";
+		
+                my %momctl = runCommandSsh($n, $momctl_cmd);
 
 		if( $momctl{EXIT_CODE} != 0 && &$ps_info ne '' )
 		{
@@ -322,9 +320,6 @@ sub stopPbsmom
 		    diag "Normal Shutdown Failed! Attempting to SIGKILL Remote PBS_Mom";
 		    runCommandSsh($n, $kill_cmd);
 		}
-	    
-		my $wait = 30;
-		diag "Waiting for Remote PBS_Mom to Stop on Host $n... (${wait}s Timeout)";
 
 		sleep 1 while $wait-- > 0 && &$ps_info ne '';
 
@@ -334,20 +329,20 @@ sub stopPbsmom
 		}
 
 	    }
-
-	    pass "Remote PBS_Mom is now Stopped on Host $n";
 	}
     }
     
     # Stop local pbs_mom
     if ($local_node)
     {
-	diag "Attempting to Shutdown Local PBS_Mom...";
 	my $ps_info   = sub{ return &$ps_list($check_cmd, 'pbs_mom'); };
 
 	unless( &$ps_info eq '' )
 	{ 
-	    my %momctl = runCommand($momctl_cmd);
+	    my $wait = 30;
+	    diag "Stopping Local Torque MOM... (${wait}s Timeout)";
+	    
+            my %momctl = runCommand($momctl_cmd);
 
 	    if( $momctl{EXIT_CODE} != 0 )
 	    {
@@ -357,9 +352,6 @@ sub stopPbsmom
 		system $kill;
 	    }
 
-	    my $wait = 30;
-	    diag "Waiting for Local PBS_Mom to Stop... (${wait}s Timeout)";
-
 	    sleep 1 while $wait-- > 0 && &$ps_info ne '';
 
 	    if( $wait <= 0 )
@@ -367,8 +359,6 @@ sub stopPbsmom
 		die "Unable to Stop Local PBS_Mom!";
 	    }
 	}
-	
-	pass "Local PBS_Mom is now Stopped";
     }
 
     return 1;
@@ -395,15 +385,12 @@ sub startPbsserver #($)
     my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
 
     my $wait = 30;
+    my $endtime = time + 30;
     diag "Waiting for PBS_Server to Start... (${wait}s Timeout)";
 
-    sleep 1 while $wait-- > 0 && &$ps_info eq '';
+    sleep 1 while time <= $endtime && &$ps_info eq '';
 
-    if( $wait > 0 )
-    {
-	pass "PBS_Server is now Running!";
-    }
-    else
+    if( time > $endtime )
     {
 	fail "PBS_Server Failed to Start";
 	return 0;
@@ -451,8 +438,8 @@ sub startPbsserverClean #($)
     $setup_str .= <<SETUP;
 $qmgr_cmd -c 'set server operators += $operator\@$_'
 $qmgr_cmd -c 'set server managers += $manager\@$_'
-$qmgr_cmd -c 'set server acl_hosts += $_'
 SETUP
+#$qmgr_cmd -c 'set server acl_hosts += $_'
   }
 
   # Set pbs_server settings
@@ -546,17 +533,26 @@ SETUP
 ###############################################################################
 sub stopPbsserver 
 {
-    my $return = 1;
+  my ($params) = @_;
+
+  my $flags = $params->{flags} || undef;
+
+  my $return = 1;
 
     # Commands  
     my $qterm_cmd = "qterm -t quick";
+    $qterm_cmd .= " $flags" if defined $flags;
     my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
   
     my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
     
     unless( $ps_info eq '' )
     { 
-	my %qterm = runCommand($qterm_cmd);
+	my $wait = 30;
+        my $endtime = time + $wait;
+	diag "Stopping Torque Server... (${wait}s Timeout)";
+	
+        my %qterm = runCommand($qterm_cmd);
 
 	if( $qterm{EXIT_CODE} != 0 && &$ps_info ne '' )
 	{
@@ -565,19 +561,15 @@ sub stopPbsserver
 	    qx/$kill/;
 	}
 
-	my $wait = 30;
-	diag "Waiting for PBS_Server to Stop... (${wait}s Timeout)";
+        
+	sleep 1 while time <= $endtime && &$ps_info ne '';
 
-	sleep 1 while $wait-- > 0 && &$ps_info ne '';
-
-	if( $wait == 0 )
+	if( time > $endtime )
 	{
 	    fail "Unable to Stop PBS_Server!\n".qx/$check_cmd 2>&1/;
 	    return 0;
 	}
     }
-
-    pass "PBS_Server is now Stopped";
 
     return $return;
 }
@@ -634,21 +626,21 @@ sub stopPbssched
 #------------------------------------------------------------------------------
 # createMomCfg();
 # createMomCfg(
-#               'clienthost'  => 'host1',
-#               'logevent'    => '255',
-#               'restricted'  => 'host1',
-#               'no_backup'   => 1,
-#               'mom_cfg_loc' => '/tmp/'
-#             );
+#    attr_vals => {
+#      'pbsserver'   => 'host1',
+#      'clienthost'  => 'host1',
+#      'logevent'    => '255',
+#      'restricted'  => 'host1',
+#    },
+#    'no_backup'   => 1,
+# );
 # createMomCfg(
-#               'body'        => $mom_cfg_body,
-#               'no_backup'   => 1,
-#               'mom_cfg_loc' => '/tmp/'
-#             );
+#   'body'        => $mom_cfg_body,
+#   'no_backup'   => 1,
+# );
 #------------------------------------------------------------------------------
 #
-# Creates a mom_priv/config file while backing up the old file.  Returns 1 on 
-# success.
+# Creates a mom_priv/config file while backing up the old file.
 #
 #------------------------------------------------------------------------------
 sub createMomCfg #($)
@@ -658,45 +650,58 @@ sub createMomCfg #($)
 
   my $test_host   = $props->get_property("Test.Host");
 
-  my $clienthost  = $params->{ 'clienthost'  } || $test_host;
-  my $logevent    = $params->{ 'logevent'    } || 255;
-  my $restricted  = $params->{ 'restricted'  } || $test_host;
-  my $mom_cfg_loc = $params->{ 'mom_cfg_loc' } || $props->get_property('Torque.Home.Dir') . "/mom_priv/config"; 
+  my %default_attr_vals = (
+    pbsserver => $test_host,
+    logevent  => 255,
+  );
+
+  my $host        = $params->{host}        || undef;
+  my $attr_vals   = $params->{attr_vals}   || \%default_attr_vals;
+  my $mom_cfg_loc = $params->{mom_cfg_loc} || $props->get_property('Torque.Home.Dir') . "/mom_priv/config"; 
+  my $no_backup   = $params->{no_backup}   || 0;
+  my $mom_cfg     = $params->{body}        || undef;
   my $mom_cfg_sav = $mom_cfg_loc . ".sav";
-  my $no_backup   = $params->{ 'no_backup'   } || 0;
 
-  my $mom_cfg     = $params->{ 'body'        } || undef;
+  my $tmp_loc = defined $host ? '/tmp/config' : $mom_cfg_loc;
 
-  diag("Creating new '$mom_cfg_loc'");
+  my $no_log_runcmd = sub{ return runCommand($_[0], host => $host, logging_off => 1); };
+  my $runcmd        = sub{ return runCommand(shift, host => $host, @_); };
 
-  $mom_cfg =<<CFG
-\$clienthost $clienthost
-\$logevent $logevent
+  unless( defined $mom_cfg )
+  {
+    # Make sure defaults are present
+    $attr_vals = { %default_attr_vals, %$attr_vals };
+    
+    # We want some attrs to be at the top of the config, for readability's sake
+    my @print_order = qw( pbsserver clienthost restricted logevent );
+    @print_order = grep { exists $attr_vals->{$_} } @print_order;
 
-\$restricted $restricted
-CFG
-    unless defined $mom_cfg;
+    $mom_cfg = join("\n", map { "\$$_    ".$attr_vals->{$_}."\n" }  @print_order)."\n";
+
+    delete $attr_vals->{$_} foreach @print_order;
+
+    $mom_cfg .= join("\n", map { "\$$_    ".$attr_vals->{$_}."\n" }  sort keys %$attr_vals);
+  }
  
   # Backup moab.cfg if it hasn't been yet
-  if (     ! -e $mom_cfg_sav 
-        &&   -e $mom_cfg_loc
-        && !    $no_backup)
-    {
-	ok(rename($mom_cfg_loc, $mom_cfg_sav), "Backing-up $mom_cfg_loc to $mom_cfg_sav")
-	    or croak "Unable to back-up $mom_cfg_loc: $!";
-    } # END if (     ! -e $mom_cfg_sav 
-      #           &&   -e $mom_cfg_loc
-      #           && !    $no_backup)
+  if ( ! $no_backup &&  &$no_log_runcmd("ls $mom_cfg_sav") != 0 && &$no_log_runcmd("ls $mom_cfg_loc") == 1 )
+  {
+    &$runcmd("mv $mom_cfg_loc $mom_cfg_sav", test_success => 1, msg => 'Backing-up Existing Torque MOM config');
+  }
 
-  # Open moan.cfg for creation
-  ok(open(MOM_CFG, ">$mom_cfg_loc"), "Creating new mom_priv/config")
-    or croak "Unable to open $mom_cfg_loc: $!";
+  open MOM_CFG, ">$tmp_loc"
+    or die "Unable to open $tmp_loc: $!";
 
   print MOM_CFG $mom_cfg;
 
   close MOM_CFG;
 
-  } # END sub createMomCfg #($)
+  if( defined $host )
+  {
+    runCommand("scp -B $tmp_loc $host:$mom_cfg_loc", test_success => 1, msg => "Copying Torque MOM config to Remote Client $host");
+    runCommandSsh($host, "chmod 0644 $mom_cfg_loc", test_success => 1, msg => "Setting File Permissions on Remote Client $host");
+  }
+}
 
 #------------------------------------------------------------------------------
 # restoreMomCfg()

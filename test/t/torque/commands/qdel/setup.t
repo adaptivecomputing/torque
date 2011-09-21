@@ -9,15 +9,8 @@ use lib test_lib_loc();
 
 
 use CRI::Test;
-use Torque::Ctrl        qw( startTorqueClean
-                            stopTorque 
-                            stopPbssched
-                          );
-use Torque::Util qw( 
-                            list2array             
-                          );
-
-# Describe Test
+use Torque::Ctrl;
+use Torque::Util qw( list2array );
 plan('no_plan');
 setDesc('Qdel Setup');
 
@@ -27,20 +20,14 @@ my $torque_params  = {
                      'remote_moms' => \@remote_moms
                      };
 
-###############################################################################
-# Stop Torque
-###############################################################################
 stopTorque($torque_params) 
   or die 'Unable to stop Torque';
 
-###############################################################################
-# Stop pbs_sched
-###############################################################################
 stopPbssched() 
   or die 'Unable to stop pbs_sched';
 
-###############################################################################
-# Restart Torque
-###############################################################################
+createMomCfg();
+createMomCfg({host => $_}) foreach @remote_moms;
+
 startTorqueClean($torque_params)
   or die 'Unable to start Torque';

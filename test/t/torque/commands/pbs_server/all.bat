@@ -36,5 +36,3 @@ execute_tests(
               "$testbase/checkpointable/pbs_server_t_warm.t",
               "$testbase/checkpointable/pbs_server_t_cold.t",
              ); 
-
-execute_tests("$testbase/cleanup.t"); 

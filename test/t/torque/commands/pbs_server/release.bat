@@ -24,7 +24,7 @@ execute_tests(
               "$testbase/pbs_server_d.t",
 #              "$testbase/pbs_server_h.t", # Currently just spits out a usage message
               "$testbase/pbs_server_cL.t",
-              "$testbase/pbs_server_cM.t",
+# JR-TRQ-470              "$testbase/pbs_server_cM.t",
               "$testbase/pbs_server_p.t",
               "$testbase/pbs_server_cR.t",
               "$testbase/pbs_server_cS.t",
@@ -36,6 +36,3 @@ execute_tests(
 #              "$testbase/checkpointable/pbs_server_t_warm.t",
               "$testbase/checkpointable/pbs_server_t_cold.t",
              ); 
-
-execute_tests("$testbase/cleanup.t"); 
-

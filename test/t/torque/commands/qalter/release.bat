@@ -17,7 +17,7 @@ execute_tests("$testbase/setup.t")
   or die("Couldn't setup for qalter tests!");
 
 execute_tests(
-# RT8017              "$testbase/qalter_a.t",
+              "$testbase/qalter_a.t",
               "$testbase/qalter_cA.t",
               "$testbase/qalter_c.t",
               "$testbase/qalter_e.t",

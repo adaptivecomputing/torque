@@ -70,6 +70,3 @@ execute_tests(
               "$testbase/qsub_cW_group_list.t",
               "$testbase/qsub_z.t",
              ); 
-
-execute_tests("$testbase/cleanup.t") 
-

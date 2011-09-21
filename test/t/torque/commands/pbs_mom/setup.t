@@ -53,8 +53,6 @@ stopPbssched()
 my $tmp_check_poll_time = $props->get_property('tmp.mom.config.check_poll_time');
 my $mom_recfg_file      = $props->get_property('mom.reconfig.file');
 
-diag("Creating the mom reconfig file '$mom_recfg_file'");
-
 createMomCfg({ mom_cfg_loc => $mom_recfg_file, body => <<RECFG });
 # Reconfig file for momctl tests
 \$pbsserver            $pbsserver
@@ -70,4 +68,6 @@ RECFG
 ###############################################################################
 # Restart Torque
 ###############################################################################
+
+createMomCfg();
 startTorqueClean($torque_params);

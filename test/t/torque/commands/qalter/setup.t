@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-
 use strict;
 use warnings;
 
@@ -7,19 +6,9 @@ use FindBin;
 use TestLibFinder;
 use lib test_lib_loc();
 
-
 use CRI::Test;
-use Torque::Ctrl        qw( startTorque 
-                            stopTorque 
-                            startPbssched
-                            stopPbssched
-                          );
-use Torque::Util qw( 
-                            run_and_check_cmd
-                            list2array             
-                          );
-
-# Describe Test
+use Torque::Ctrl;
+use Torque::Util qw( list2array );
 plan('no_plan');
 setDesc('Qalter Setup');
 
@@ -28,19 +17,13 @@ my $torque_params  = {
                      'remote_moms' => \@remote_moms
                      };
 
-###############################################################################
-# Stop Torque
-###############################################################################
 stopTorque($torque_params) 
   or die 'Unable to stop Torque';
 
-###############################################################################
-# Stop pbs_sched
-###############################################################################
 stopPbssched();
 
-###############################################################################
-# Restart Torque
-###############################################################################
-startTorque($torque_params)
+createMomCfg();
+createMomCfg({ host => $_ }) foreach @remote_moms;
+
+startTorqueClean($torque_params)
   or die 'Unable to start Torque';

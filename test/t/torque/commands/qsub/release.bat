@@ -50,7 +50,7 @@ execute_tests(
               "$testbase/qsub_p.t",
               "$testbase/qsub_q.t",
               "$testbase/qsub_r.t",
-# JR-TRQ-378              "$testbase/qsub_cS.t",
+              "$testbase/qsub_cS.t",
               "$testbase/qsub_stdin.t",
               "$testbase/qsub_t.t",
               "$testbase/qsub_t_slotlimit.t",
@@ -70,6 +70,3 @@ execute_tests(
               "$testbase/qsub_z.t",
               "$testbase/qsub_b.t",
              ); 
-
-execute_tests("$testbase/cleanup.t"); 
-

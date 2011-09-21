@@ -136,10 +136,6 @@ ok(! $@, "Writing out mom configuration to '$mom_cfg_file'");
 foreach my $node (@remote_nodes)
   {
 
-  # Backup the original configuration file
-  my $ssh_cp_cmd = "cp -f $mom_cfg_file $mom_cfg_file_bak";
-  runCommandSsh($node, $ssh_cp_cmd, test_success => 1);
-
   # Copy the new file
   runCommand("scp -B $mom_cfg_file $node:$mom_cfg_file", test_success_die => 1);
 

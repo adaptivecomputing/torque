@@ -57,10 +57,14 @@ my @tests = (
     "$host:$port",
 );
 
-testM( $_ ) foreach @tests;
+foreach( @tests )
+{
+  eval{ testM( $_ ); };
+  fail("Torque Server flag -M $_ failed: $@") if $@;
+}
 
 diag("Restarting pbs_moms to listen on the default port");
-stopTorque({ 'remote_moms' => \@remote_moms });
+stopTorque({ 'remote_moms' => \@remote_moms, pbs_mom => $mom_params });
 
 delete $mom_params->{ 'args' };
 startPbsmom($mom_params);

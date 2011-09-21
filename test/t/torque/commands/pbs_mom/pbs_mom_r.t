@@ -20,7 +20,6 @@ use Torque::Job::Ctrl   qw(
                             delJobs
                           );
 use Torque::Util qw(
-                            run_and_check_cmd
                             verify_job_state
                           );
 
