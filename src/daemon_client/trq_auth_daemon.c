@@ -79,29 +79,34 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
     return(1);
     }
 
-  pid = fork();
-  if(pid)
+  if (getenv("PBSDEBUG") == NULL)
     {
-    /* parent. We are done */
-    return(0);
+    pid = fork();
+    if(pid > 0)
+      {
+      /* parent. We are done */
+      return(0);
+      }
+    else if (pid < 0)
+      {
+      /* something went wrong */
+      fprintf(stderr, "fork failed. errno = %d\n", errno);
+      return(PBSE_RMSYSTEM);
+      }
+    else
+      {
+      fprintf(stdout, "trqauthd daemonized\n");
+      /* If I made it here I am the child */
+      fclose(stdin);
+      fclose(stdout);
+      fclose(stderr);
+      /* We closed 0 (stdin), 1 (stdout), and 2 (stderr). fopen should give us
+         0, 1 and 2 in that order. this is a UNIX practice */
+      fd = fopen("/dev/null", "r");
+      fd = fopen("/dev/null", "r");
+      fd = fopen("/dev/null", "r");
+      }
     }
-
-  if(pid < 0)
-    {
-    /* something went wrong */
-    fprintf(stderr, "fork failed. errno = %d\n", errno);
-    return(PBSE_RMSYSTEM);
-    }
-
-    /* If I made it here I am the child */
-    fclose(stdin);
-    fclose(stdout);
-    fclose(stderr);
-    /* We closed 0 (stdin), 1 (stdout), and 2 (stderr). fopen should give us
-       0, 1 and 2 in that order. this is a UNIX practice */
-    fd = fopen("/dev/null", "r");
-    fd = fopen("/dev/null", "r");
-    fd = fopen("/dev/null", "r");
 
     /* start the listener */
     rc = start_listener(server_ip, server_port, process_meth);
