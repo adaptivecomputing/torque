@@ -50,6 +50,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix bugzilla #133, qsub submit filter, the -W arguments are not all there
   e - add a mom config option - $attempt_to_make_dir - to give the user the option to 
       have TORQUE attempt to create the directories for their output file if they don't exist
+  b - Fixed momctl to return an error on failure. Prior to this fix momctl always returned 0
+      regardless of success or failure.
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it

@@ -168,6 +168,8 @@ char TRMEMsg[1024];  /* global rm error message */
 /*
 ** Connects to a resource monitor and returns a file descriptor to
 ** talk to it.  If port is zero, use default port.
+** Returns the stream handle (>i= 0) on success.
+** Returns value < 0 on error.
 */
 
 int openrm(
@@ -177,6 +179,7 @@ int openrm(
 
   {
   int                   stream;
+  int                   rc;
 
   static unsigned int gotport = 0;
 
@@ -214,11 +217,21 @@ int openrm(
       {
       addr.sin_port = htons((u_short)tryport);
 
-      if (bind(stream, (struct sockaddr *)&addr, sizeof(addr)) != -1)
+      rc = bind(stream, (struct sockaddr *)&addr, sizeof(addr));
+      if(rc == 0)
         break;
 
-      if ((errno != EADDRINUSE) && (errno != EADDRNOTAVAIL))
-        break;
+      if ((errno == EADDRINUSE) || (errno == EADDRNOTAVAIL))
+        {
+        struct timespec rem;
+        /* We can't get the port we want. Wait a bit and try again */
+        rem.tv_sec = 0;
+        rem.tv_nsec = 1000000;
+        nanosleep(&rem, &rem);
+        continue;
+        }
+
+      return(-1*errno);
       }
 
     memset(&addr, '\0', sizeof(addr));
