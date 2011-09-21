@@ -26,9 +26,9 @@ my $cmd           = "momctl -s";
 
 # Perform the tests
 my $stdout = $momctl{ 'STDOUT' };
-like($stdout, /shutdown request successful on $host/i, "Checking output of '$cmd'");
+like($stdout, qr/shutdown request successful on $host/, "Checking output of '$cmd'");
 
-sleep_diag 10;
+sleep_diag 5;
 my $pgrep = `pgrep -x pbs_mom`;
 ok($pgrep !~ /\d+/, "Checking that the pbs_mom pid does not exists");
 

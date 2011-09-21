@@ -9,7 +9,7 @@ use lib test_lib_loc();
 
 
 use CRI::Test;
-use Torque::Ctrl qw( startTorque stopTorque );
+use Torque::Ctrl;
 
 # Describe Test
 plan('no_plan');
@@ -68,121 +68,65 @@ my $tape8mm              = $props->get_property('mom.config.tape8mm'            
 my $enable_mom_restart   = $props->{ '_props' }{ 'mom.config.enablemomrestart' };
 my $down_on_error        = $props->{ '_props' }{ 'mom.config.down_on_error'    };
 
-my $mom_cfg_file         = $props->get_property('mom.config.file');
-my $mom_cfg_file_bak     = $props->get_property('mom.config.file') . ".bak";
-
-my $mom_cfg              =<<CFG;
-# Config file for momctl tests
-\$pbsserver            $pbsserver
-\$pbsclient            $pbsclient
-
-\$logevent             $logevent
-
-\$restricted           $restricted  
-
-\$cputmult             $cputmult
-\$usecp                $usecp
-\$wallmult             $wallmult
-\$configversion        $configversion
-\$ideal_load           $ideal_load
-\$auto_ideal_load      $auto_ideal_load
-\$log_file_max_size    $log_file_max_size
-\$log_file_roll_depth  $log_file_roll_depth
-\$max_load             $max_load
-\$auto_max_load        $auto_max_load
-\$node_check_script    $node_check_script
-\$node_check_interval  $node_check_interval
-\$prologalarm          $prologalarm
-\$remote_reconfig      $remote_reconfig
-\$timeout              $timeout
-\$tmpdir               $tmpdir
-\$varattr              $varattr
-\$xauthpath            $xauthpath
-\$ignwalltime          $ignwalltime
-\$mom_host             $mom_host
-\$status_update_time   $status_update_time
-\$check_poll_time      $check_poll_time
-\$jobstartblocktime    $job_start_block_time
-\$enablemomrestart     $enable_mom_restart
-\$down_on_error        $down_on_error
-\$loglevel             $loglevel
-\$rcpcmd               $rcpcmd
+my %mom_attr_vals = (
+  pbsclient           => $pbsclient,
+  restricted          => $restricted  ,
+  cputmult            => $cputmult,
+  usecp               => $usecp,
+  wallmult            => $wallmult,
+  configversion       => $configversion,
+  ideal_load          => $ideal_load,
+  auto_ideal_load     => $auto_ideal_load,
+  log_file_max_size   => $log_file_max_size,
+  log_file_roll_depth => $log_file_roll_depth,
+  max_load            => $max_load,
+  auto_max_load       => $auto_max_load,
+  node_check_script   => $node_check_script,
+  node_check_interval => $node_check_interval,
+  prologalarm         => $prologalarm,
+  remote_reconfig     => $remote_reconfig,
+  timeout             => $timeout,
+  tmpdir              => $tmpdir,
+  varattr             => $varattr,
+  xauthpath           => $xauthpath,
+  ignwalltime         => $ignwalltime,
+  mom_host            => $mom_host,
+  status_update_time  => $status_update_time,
+  check_poll_time     => $check_poll_time,
+  jobstartblocktime   => $job_start_block_time,
+  enablemomrestart    => $enable_mom_restart,
+  down_on_error       => $down_on_error,
+  loglevel            => $loglevel,
+  rcpcmd              => $rcpcmd,
+);
 
 # Static Values
-tape8mm               $tape8mm
-CFG
+#tape8mm               $tape8mm
 
-eval
-  {
-
-  # Backup the old configuration file
-  if (-e $mom_cfg_file)
-    {
-
-    `cp -f $mom_cfg_file $mom_cfg_file_bak`
-
-    }
-
-  open(MOMCFG, ">$mom_cfg_file")
-   or die "Unable to write to '$mom_cfg_file'";
-  print MOMCFG $mom_cfg;
-  close(MOMCFG);
-
-  }; # END eval
-
-ok(! $@, "Writing out mom configuration to '$mom_cfg_file'");
-
-# Copy the mom_cfg_file to the remotenodes
+createMomCfg({ attr_vals => \%mom_attr_vals});
 foreach my $node (@remote_nodes)
-  {
-
-  # Copy the new file
-  runCommand("scp -B $mom_cfg_file $node:$mom_cfg_file", test_success_die => 1);
-
-  } # END foreach my $node (@nodes)
+{
+  $mom_attr_vals{mom_host} = $node;
+  createMomCfg({ host => $node, attr_vals => \%mom_attr_vals });
+}
 
 ###############################################################################
 # Create the alternate reconfig file
 ###############################################################################
-
 # Generate a reconfig file
 my $tmp_check_poll_time = $props->get_property('tmp.mom.config.check_poll_time');
-
 my $mom_recfg_file      = $props->get_property('mom.reconfig.file');
-
 my $mom_recfg =<<RECFG;
 # Reconfig file for momctl tests
 \$pbsserver            $pbsserver
-\$pbsclient            $pbsclient
-
 \$logevent             $logevent
-
-\$restricted           $restricted  
 
 \$check_poll_time      $tmp_check_poll_time
 \$remote_reconfig      $remote_reconfig
 RECFG
 
-eval
-  {
-
-  open(MOMRECFG, ">$mom_recfg_file")
-    or die "Unable to write to '$mom_recfg_file'";
-  print MOMRECFG $mom_recfg;
-  close(MOMRECFG);
-
-  }; # END eval
-
-ok(! $@, "Writing out mom reconfiguration to '$mom_recfg_file'");
-
-# Copy the mom_recfg_file to the remotenodes
-foreach my $node (@remote_nodes)
-  {
-
-  # Copy the new file
-  runCommand("scp -B $mom_recfg_file $node:$mom_recfg_file", test_success => 1);
-
-  } # END foreach my $node (@nodes)
+createMomCfg({ body => $mom_recfg, mom_cfg_loc => $mom_recfg_file });
+createMomCfg({ body => $mom_recfg, mom_cfg_loc => $mom_recfg_file, host => $_ }) foreach @remote_nodes;
 
 ###############################################################################
 # Create a hosts list file
@@ -226,5 +170,5 @@ ok(! $@, "Writing out host list with a single host to '$host_list_file'");
 my $port = $props->get_property('mom.host.port');  
 
 # Restart Torque
-startTorque($torque_params) 
+startTorqueClean($torque_params) 
   or die 'Unable to start Torque';
