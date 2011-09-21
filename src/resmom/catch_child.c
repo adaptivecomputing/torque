@@ -1675,6 +1675,28 @@ void init_abort_jobs(
 
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, log_buffer);
       }
+     
+    /* code moved to here because even when we're canceling jobs, if there is a 
+     * user epilogue we'll attempt to become the user, so if ji_grpcache is 
+     * NULL then we'll get a crash */
+    if (pj->ji_grpcache == NULL)
+      {
+      DBPRT(("init_abort_jobs: setting grpcache for job %s\n",
+        pj->ji_qs.ji_jobid));
+      
+      if (check_pwd(pj) == NULL)
+        {
+        /* somehow a job that was legally executing (had a password entry)
+         * no longer has a password entry?? */
+        snprintf(log_buffer, sizeof(log_buffer),
+          "job %s no longer has valid password entry - deleting",
+          pj->ji_qs.ji_jobid);
+        
+        log_err(-1, id, log_buffer);
+        
+        mom_deljob(pj);
+        }
+      }
 
     if ((recover != JOB_RECOV_RUNNING) && 
         (recover != JOB_RECOV_DELETE) &&
@@ -1828,25 +1850,6 @@ void init_abort_jobs(
 
       if (mom_do_poll(pj) && (recover == JOB_RECOV_RUNNING))
         append_link(&mom_polljobs, &pj->ji_jobque, pj);
-
-      if (pj->ji_grpcache == NULL)
-        {
-        DBPRT(("init_abort_jobs: setting grpcache for job %s\n",
-               pj->ji_qs.ji_jobid));
-        
-        if (check_pwd(pj) == NULL)
-          {
-          /* somehow a job that was legally executing (had a password entry)
-           * no longer has a password entry?? */
-          snprintf(log_buffer, sizeof(log_buffer),
-            "job %s no longer has valid password entry - deleting",
-            pj->ji_qs.ji_jobid);
-
-          log_err(-1, id, log_buffer);
-
-          mom_deljob(pj);
-          }
-        }
       }
     }    /* while ((pdirent = readdir(dir)) != NULL) */
 

@@ -1729,11 +1729,7 @@ void mgr_node_set(
 
         chk_characteristic(pnode, &nci, &need_todo);
 
-        mgr_log_attr(
-          msg_man_set,
-          plist,
-          PBS_EVENTCLASS_NODE,
-          pnode->nd_name);
+        mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, pnode->nd_name);
         }
       }  /* END for each node */
 
@@ -1796,11 +1792,7 @@ void mgr_node_set(
       
       chk_characteristic(pnode, &nci, &need_todo);
       
-      mgr_log_attr(
-        msg_man_set,
-        plist,
-        PBS_EVENTCLASS_NODE,
-        pnode->nd_name);
+      mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, pnode->nd_name);
       }
 
     unlock_node(pnode, "mgr_node_set", "single_node", LOGLEVEL);

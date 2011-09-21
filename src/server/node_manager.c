@@ -910,9 +910,7 @@ void update_job_data(
       else if (pjob == NULL)
         {
         /* job is reported by mom but server has no record of job */
-        sprintf(log_buf, "stray job %s reported on %s",
-          jobidstr,
-          np->nd_name);
+        sprintf(log_buf, "stray job %s reported on %s", jobidstr, np->nd_name);
 
         log_err(-1, id, log_buf);
         }
@@ -1297,8 +1295,9 @@ int is_stat_get(
       if (LOGLEVEL >= 6)
         {
         snprintf(log_buf, sizeof(log_buf),
-            "End of message detected for communication from node %s",
-            orig_np->nd_name);
+          "End of message detected for communication from node %s",
+          orig_np->nd_name);
+
         log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, "is_stat_get", log_buf);
         }
       rc = DIS_EOD;
@@ -2454,7 +2453,6 @@ err:
       }
 
     sprintf(log_buf, "%s from %s(%s)",
-
       dis_emsg[ret],
       node->nd_name,
       netaddr(addr));
