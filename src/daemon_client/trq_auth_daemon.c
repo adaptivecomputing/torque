@@ -9,6 +9,8 @@
 #include <pthread.h> /* threading functions */
 #include <errno.h> /* errno */
 #include <syslog.h> /* openlog and syslog */
+#include <unistd.h> /* getgid, fork */
+#include <grp.h> /* setgroups */
 #include "pbs_error.h" /* PBSE_NONE */
 #include "pbs_constants.h" /* AUTH_IP */
 #include "pbs_ifl.h" /* pbs_default */
@@ -121,7 +123,6 @@ int trq_main(
   int rc = PBSE_NONE;
   char *trq_server_ip = NULL, *the_key = NULL, *sign_key = NULL;
   int trq_server_port = 0, daemon_port = 0;
-  int gid;
   void *(*process_method)(void *) = process_svr_conn;
 
   if(IamRoot() == 0)
