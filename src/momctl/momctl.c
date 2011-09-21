@@ -83,6 +83,7 @@ int main(
 
 
   int c;
+  int rc;
 
   int HostCount;
   int FailCount;
@@ -157,8 +158,6 @@ int main(
       case 'f':
 
         {
-        int   rc;
-
         FILE *fp;
 
         long   size;
@@ -255,8 +254,6 @@ int main(
           FILE *fp;
 
           int   size;
-
-          int   rc;
 
           char *ptr;
           char *cptr;
