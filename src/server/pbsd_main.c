@@ -380,8 +380,7 @@ void *process_pbs_server_port(
       break;
       
     case IS_PROTOCOL:
-      free(new_sock);
-      
+
       version = disrsi(sock,&rc);
       
       if (rc != DIS_SUCCESS)
@@ -399,7 +398,6 @@ void *process_pbs_server_port(
       struct sockaddr     s_addr;
       struct sockaddr_in *addr;
       socklen_t           len = sizeof(s_addr);
-      free(new_sock);
 
       if (getpeername(sock, &s_addr, &len) == 0)
         {
@@ -420,7 +418,8 @@ void *process_pbs_server_port(
       break;
       }
     }
-  return NULL;
+
+  return(NULL);
   }  /* END process_pbs_server_port() */
 
 

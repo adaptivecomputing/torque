@@ -946,7 +946,6 @@ void *preobit_reply(
   char *path_epiloguserjob;
   resource *presc;
   int sock = *(int *)new_sock;
-  free(new_sock);
 
   /* struct batch_status *bsp = NULL; */
 
@@ -1347,7 +1346,6 @@ void *obit_reply(
   struct batch_request *preq;
   int    x; /* dummy */
   int sock = *(int *)new_sock;
-  free(new_sock);
 
   /* read and decode the reply */
 

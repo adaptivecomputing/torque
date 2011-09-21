@@ -208,8 +208,7 @@ void *mom_process_request(
   char                 *id = "mom_process_request";
   int                   rc;
   struct batch_request *request = NULL;
-  int sfds = *(int *)sock_num;
-  free(sock_num);
+  int                   sfds = *(int *)sock_num;
 
   time_now = time(NULL);
 

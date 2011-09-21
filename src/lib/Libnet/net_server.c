@@ -162,60 +162,6 @@ static void *accept_conn(void *);
 
 static struct netcounter nc_list[60];
 
-void global_sock_add(int new_sock)
-  {
-  pthread_mutex_lock(global_sock_read_mutex);
-  FD_SET(new_sock, GlobalSocketReadSet);
-  pthread_mutex_unlock(global_sock_read_mutex);
-  }
-
-void global_sock_rem(int new_sock)
-  {
-  pthread_mutex_lock(global_sock_read_mutex);
-  FD_CLR(new_sock, GlobalSocketReadSet);
-  pthread_mutex_unlock(global_sock_read_mutex);
-  }
-
-fd_set *global_sock_getlist()
-  {
-  fd_set *select_set = NULL;
-  int select_set_size = 0;
-  pthread_mutex_lock(global_sock_read_mutex);
-  select_set_size = sizeof(char) * get_fdset_size();
-  select_set = (fd_set *)calloc(1,select_set_size);
-  memcpy(select_set,GlobalSocketReadSet,select_set_size);
-  pthread_mutex_unlock(global_sock_read_mutex);
-  return select_set;
-  }
-
-int global_sock_verify()
-  {
-  int rc = PBSE_NONE;
-  int i;
-  struct stat fbuf;
-  int MaxNumDescriptors = 0;
-
-  /* check all file descriptors to verify they are valid */
-  /* NOTE:  selset may be modified by failed select() */
-
-  MaxNumDescriptors = get_max_num_descriptors();
-  pthread_mutex_lock(global_sock_read_mutex);
-  for (i = 0;i < MaxNumDescriptors;i++)
-    {
-    if (FD_ISSET(i, GlobalSocketReadSet) == 0)
-      continue;
-
-    if (fstat(i, &fbuf) == 0)
-      continue;
-
-    /* clean up SdList and bad sd... */
-    FD_CLR(i, GlobalSocketReadSet);
-    rc = PBSE_SELECT;
-    }    /* END for (i) */
-  pthread_mutex_unlock(global_sock_read_mutex);
-  return rc;
-  }
-
 void netcounter_incr(void)
 
   {
@@ -529,91 +475,6 @@ int init_network(
  * the socket is invoked.
  */
 
-int thread_func(int active_sockets, fd_set *select_set)
-  {
-  int rc = PBSE_NONE;
-  int i = 0;
-  int remaining_count = active_sockets;
-  char id[] = "thread_func";
-/*  pthread_t tid; */
-  pthread_attr_t t_attr;
-  char msg[120];
-  int *sock_num = NULL;
-
-  if ((rc = pthread_attr_init(&t_attr)) != 0)
-    {
-    sprintf(msg, "Can not init attributes for threading select sockets");
-    log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER,
-              msg_daemonname, msg);
-    rc = PBSE_THREADATTR;
-    }
-  else if ((rc = pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED)) != 0)
-    {
-    sprintf(msg, "Can not set detached state for threading select sockets");
-    log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER,
-              msg_daemonname, msg);
-    rc = PBSE_THREADATTR;
-    }
-  else
-    {
-    for (i = 0;(i < max_connection) && (remaining_count != 0);i++)
-      {
-      /* connection already in use, try the next */
-      if (pthread_mutex_trylock(svr_conn[i].cn_mutex) != 0)
-        {
-        } 
-      else if (FD_ISSET(i, select_set))
-        {
-        /* this socket has data */
-
-        remaining_count--;
-
-        svr_conn[i].cn_lasttime = time((time_t *)0);
-
-        if (svr_conn[i].cn_active != Idle)
-          {
-          void *(*func)(void *) = svr_conn[i].cn_func;
-          
-          netcounter_incr();
-
-          pthread_mutex_unlock(svr_conn[i].cn_mutex);
-
-
-/*          func(i); */
-          sock_num = malloc(sizeof(int));
-          *sock_num = i;
-          func(sock_num);
-/*          if ((rc = pthread_create(&tid, &t_attr, func, sock_num)) != 0)
-            {
-            sprintf(msg, "Can not start thread for select socket %d", i);
-            log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER,
-                      msg_daemonname, msg);
-            rc = PBSE_THREAD;
-            }
-            */
-          }
-        else
-          {
-          global_sock_rem(i);
-
-          close_conn(i, TRUE);
-
-          pthread_mutex_unlock(svr_conn[i].cn_mutex);
-          pthread_mutex_lock(num_connections_mutex);
-
-          sprintf(msg,"closed connection to fd %d - num_connections=%d (select bad socket)", i, num_connections);
-
-          pthread_mutex_unlock(num_connections_mutex);
-          log_err(-1,id,msg);
-          }
-        }
-      else
-        pthread_mutex_unlock(svr_conn[i].cn_mutex);
-      }    /* END for (i) */
-    }
-  return rc;
-  }
-
 int wait_request(
 
   time_t  waittime,   /* I (seconds) */
@@ -621,7 +482,6 @@ int wait_request(
 
   {
   extern char *PAddrToString(pbs_net_t *);
-  int rc = 0; /* Adjust this to PBSE_NONE later */
 
   int i;
   int n;
@@ -629,6 +489,7 @@ int wait_request(
   time_t now;
 
   fd_set *SelectSet = NULL;
+  int SelectSetSize = 0;
 
   int MaxNumDescriptors = 0;
 
@@ -646,7 +507,12 @@ int wait_request(
 
   timeout.tv_sec  = waittime;
 
-  SelectSet = global_sock_getlist();
+  SelectSetSize = sizeof(char) * get_fdset_size();
+  SelectSet = (fd_set *)calloc(1,SelectSetSize);
+  
+  pthread_mutex_lock(global_sock_read_mutex);
+  
+  memcpy(SelectSet,GlobalSocketReadSet,SelectSetSize);
 
   /* selset = readset;*/  /* readset is global */
   MaxNumDescriptors = get_max_num_descriptors();
@@ -661,22 +527,88 @@ int wait_request(
       }
     else
       {
-      if (global_sock_verify() != PBSE_NONE)
+      int i;
+
+      struct stat fbuf;
+
+      /* check all file descriptors to verify they are valid */
+
+      /* NOTE: selset may be modified by failed select() */
+
+      for (i = 0; i < MaxNumDescriptors; i++)
         {
-        log_err(errno,id,"Unable to select sockets to read requests");
-        free(SelectSet);
-        return PBSE_SELECT;
-        }
+        if (FD_ISSET(i, GlobalSocketReadSet) == 0)
+          continue;
+
+        if (fstat(i, &fbuf) == 0)
+          continue;
+
+        /* clean up SdList and bad sd... */
+
+        FD_CLR(i, GlobalSocketReadSet);
+        } /* END for each socket in global read set */
+
+      free(SelectSet);
+
+      log_err(errno, id, "Unable to select sockets to read requests");
+
+      pthread_mutex_unlock(global_sock_read_mutex);
+
+      return(-1);
       }  /* END else (errno == EINTR) */
     }    /* END if (n == -1) */
 
-  if (n != 0)
-    if ((rc = thread_func(n, SelectSet)) != PBSE_NONE)
+  pthread_mutex_unlock(global_sock_read_mutex);
+
+  for (i = 0; (i < max_connection) && (n != 0); i++)
+    {
+    pthread_mutex_lock(svr_conn[i].cn_mutex);
+
+    if (FD_ISSET(i, SelectSet))
       {
-      free(SelectSet);
-      return rc;
+      /* this socket has data */
+      n--;
+
+      svr_conn[i].cn_lasttime = time(NULL);
+
+      if (svr_conn[i].cn_active != Idle)
+        {
+        void *(*func)(void *) = svr_conn[i].cn_func;
+
+        netcounter_incr();
+
+        pthread_mutex_unlock(svr_conn[i].cn_mutex);
+
+        func((void *)&i);
+
+        /* NOTE:  breakout if state changed (probably received shutdown request) */
+
+        if ((SState != NULL) && 
+            (OrigState != *SState))
+          break;
+        }
+      else
+        {
+        pthread_mutex_lock(global_sock_read_mutex);
+        FD_CLR(i, GlobalSocketReadSet);
+        pthread_mutex_unlock(global_sock_read_mutex);
+
+        close_conn(i, TRUE);
+
+        pthread_mutex_unlock(svr_conn[i].cn_mutex);
+        pthread_mutex_lock(num_connections_mutex);
+
+        sprintf(tmpLine, "closed connections to fd %d - num_connections=%d (select bad socket)",
+          i,
+          num_connections);
+
+        pthread_mutex_unlock(num_connections_mutex);
+        log_err(-1, id, tmpLine);
+        }
       }
-  free(SelectSet);
+    else
+      pthread_mutex_unlock(svr_conn[i].cn_mutex);
+    } /* END for i */
 
   /* NOTE:  break out if shutdown request received */
 
@@ -765,7 +697,6 @@ static void *accept_conn(
 
   torque_socklen_t fromsize;
   int sd = *(int *)new_conn;
-  free(new_conn);
 
   from.sin_addr.s_addr = 0;
   from.sin_port = 0;
@@ -775,14 +706,13 @@ static void *accept_conn(
     {
     pthread_mutex_unlock(num_connections_mutex);
 
-    return NULL;
+    return(NULL);
     }
   pthread_mutex_unlock(num_connections_mutex);
 
   /* update lasttime of main socket */
   pthread_mutex_lock(svr_conn[sd].cn_mutex);
   svr_conn[sd].cn_lasttime = time((time_t *)0);
-  pthread_mutex_unlock(svr_conn[sd].cn_mutex);
 
   if (svr_conn[sd].cn_socktype == PBS_SOCK_INET)
     {
@@ -814,7 +744,9 @@ static void *accept_conn(
       read_func[(int)svr_conn[sd].cn_active]);
     }
 
-  return NULL;
+  pthread_mutex_unlock(svr_conn[sd].cn_mutex);
+
+  return(NULL);
   }  /* END accept_conn() */
 
 
@@ -841,6 +773,9 @@ void add_conn(
   num_connections++;
   pthread_mutex_unlock(num_connections_mutex);
 
+  pthread_mutex_lock(global_sock_read_mutex);
+  FD_SET(sock, GlobalSocketReadSet);
+  pthread_mutex_unlock(global_sock_read_mutex);
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
 
@@ -880,7 +815,6 @@ void add_conn(
 #endif /* !NOPRIVPORTS */
 
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-  global_sock_add(sock);
 
   return;
   }  /* END add_conn() */
@@ -930,7 +864,9 @@ void close_conn(
 
   if (GlobalSocketReadSet != NULL)
     {
-    global_sock_rem(sd);
+    pthread_mutex_lock(global_sock_read_mutex);
+    FD_CLR(sd, GlobalSocketReadSet);
+    pthread_mutex_unlock(global_sock_read_mutex);
     }
 
   svr_conn[sd].cn_addr = 0;

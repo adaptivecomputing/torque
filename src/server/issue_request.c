@@ -703,6 +703,7 @@ int issue_Drequest(
  */
 
 void *process_Dreply(
+
   void *new_sock)
 
   {
@@ -715,7 +716,6 @@ void *process_Dreply(
 
   struct batch_request *request;
   int sock = *(int *)new_sock;
-  free(new_sock);
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
 

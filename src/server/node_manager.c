@@ -2183,7 +2183,7 @@ void *is_request_work(
   
   if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
     {
-    lock_node(node, "is_request_work", "AVL_find", LOGLEVEL);
+    lock_node(node, id, "AVL_find", LOGLEVEL);
     } /* END if AVL_find != NULL) */
   else if (allow_any_mom)                                           
     { 
@@ -2205,7 +2205,7 @@ void *is_request_work(
       {
       node = AVL_find(ipaddr, 0, ipaddrs);
        
-      lock_node(node, "is_request_work", "no error", LOGLEVEL);
+      lock_node(node, id, "no error", LOGLEVEL);
       }                                                         
     }
     
@@ -2434,7 +2434,7 @@ void *is_request_work(
   /* change to close for tcp? */
   close(stream);
 
-  unlock_node(node, "is_request_work", "close", LOGLEVEL);
+  unlock_node(node, id, "close", LOGLEVEL);
   
   free(vp);
 
@@ -2461,7 +2461,7 @@ err:
     
     update_node_state(node, INUSE_DOWN);
     
-    unlock_node(node, "is_request_work", "err", LOGLEVEL);
+    unlock_node(node, id, "err", LOGLEVEL);
     }
   else
     {

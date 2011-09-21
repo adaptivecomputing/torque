@@ -325,7 +325,6 @@ void *process_request(
   time_t                time_now = time(NULL);
   int free_request = TRUE;
   int sfds = *(int *)new_sock;
-  free(new_sock);
 
   request = alloc_br(0);
 
