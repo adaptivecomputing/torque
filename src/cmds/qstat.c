@@ -1401,7 +1401,7 @@ void display_statque(
   sprintf(format, "%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds %%%ds\n",
           PBS_MINNAMELEN,
           NUML,
-          NUML,
+          NUML+1,
           NUML,
           NUML,
           NUML,
@@ -1416,7 +1416,7 @@ void display_statque(
   if (!full && prtheader)
     {
     printf(format, "Queue", "Max", "Tot", "Ena", "Str", "Que", "Run", "Hld", "Wat", "Trn", "Ext", "T", "Cpt");
-    printf(format, "----------------", "---", "---", "---", "---", "---", "---", "---", "---", "---", "---", "-", "---");
+    printf(format, "----------------", "---", "----", "--", "--", "---", "---", "---", "---", "---", "---", "-", "---");
     }
 
   p = status;
@@ -1495,9 +1495,9 @@ void display_statque(
             {
             l = strlen(a->value);
 
-            if (l > NUML)
+            if (l > (NUML+1))
               {
-              c = a->value + NUML;
+              c = a->value + (NUML+1);
 
               *c = '\0';
               }

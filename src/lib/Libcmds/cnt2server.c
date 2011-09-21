@@ -219,6 +219,9 @@ start:
 
         case PBSE_PROTOCOL:
 
+          fprintf(stderr, "protocol failure.\n");
+          break;
+
         default:
 
           if (thistime == 0)

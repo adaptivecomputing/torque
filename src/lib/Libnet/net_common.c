@@ -247,6 +247,7 @@ int socket_connect(
             }
           else
             {
+            close(*local_socket);
             /* Hit RES_PORT_RETRY, exit */
             cntr = 0;
             }
@@ -256,6 +257,7 @@ int socket_connect(
       default:
         snprintf(tmp_buf, LOCAL_LOG_BUF, "cannot connect to port %d in %s - errno:%d %s", *local_socket, id, errno, strerror(errno));
         *error_msg = strdup(tmp_buf);
+        close(*local_socket);
         rc = PBSE_SOCKET_FAULT;
         cntr = 0;
         break;
