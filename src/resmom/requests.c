@@ -3117,8 +3117,6 @@ static int sys_copy(
 
       /* child - exec the copy command */
 
-      rpp_terminate();
-
       close(conn);
 
       /* redirect stderr to make error from rcp available to MOM */
