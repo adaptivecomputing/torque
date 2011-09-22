@@ -1626,22 +1626,23 @@ static int gpumodes(
 		{
     while (!feof(fd))
       {
-      fgets(buf, 200, fd);
-
-      ptr = buf;
-      ptr = strstr(ptr, "GPU");
-      if (ptr)
+      if (fgets(buf, 200, fd))
         {
-        ptr += 4;
-        gpuid = atoi(ptr);
-
-        ptr = strchr(ptr, ':');
+        ptr = buf;
+        ptr = strstr(ptr, "GPU");
         if (ptr)
           {
-          ptr++;
-          gpumode = atoi(ptr);
+          ptr += 4;
+          gpuid = atoi(ptr);
+
+          ptr = strchr(ptr, ':');
+          if (ptr)
+            {
+            ptr++;
+            gpumode = atoi(ptr);
+            }
+          buffer[gpuid] = gpumode;
           }
-        buffer[gpuid] = gpumode;
         }
       }
     pclose(fd);
