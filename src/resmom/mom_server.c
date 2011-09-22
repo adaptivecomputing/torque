@@ -1309,28 +1309,159 @@ nvmlDevice_t get_nvml_device_handle(
 #endif  /* NVIDIA_GPUS and NVML_API */
 
 
+#ifdef NVIDIA_GPUS
+/*
+ * Function to determine if the nvidia kernel module is loaded
+ */
+static int check_nvidia_module_loaded()
+  {
+  static char id[] = "check_nvidia_module_loaded";
+  char line[4096];
+  FILE *file;
+
+  file = fopen("/proc/modules", "r");
+  if (!file)
+    {
+    if (LOGLEVEL >= 3)
+      {
+      log_err(
+        errno,
+        id,
+        "Failed to read /proc/modules");
+      }
+    return(FALSE);
+    }
+
+  while (fgets(line, sizeof(line), file))
+    {
+    char *tok = strtok(line, " \t");
+
+    if (tok)
+      {
+      if (strcmp(tok, "nvidia") == 0)
+        {
+        fclose(file);
+        return(TRUE);
+        }
+      }
+    }
+
+  if (LOGLEVEL >= 3)
+    {
+    log_err(
+      PBSE_RMSYSTEM,
+      id,
+      "No Nvidia driver loaded");
+    }
+
+  fclose(file);
+  return(FALSE);
+  }
+
+#endif  /* NVIDIA_GPUS */
+
+
+
+#ifdef NVIDIA_GPUS
+/*
+ * Function to get the nvidia driver version
+ */
+static int check_nvidia_version_file()
+  {
+  static char id[] = "check_nvidia_version_file";
+  char line[4096];
+  FILE *file;
+
+  /* if file does not exist then version is too old */
+  file = fopen("/proc/driver/nvidia/version", "r");
+  if (!file)
+    {
+    if (LOGLEVEL >= 3)
+      {
+      log_err(
+        PBSE_RMSYSTEM,
+        id,
+        "No Nvidia driver info available. Driver not supported?");
+      }
+    return(FALSE);
+    }
+
+  while (fgets(line, sizeof(line), file))
+    {
+    char *tok;
+
+    if (strncmp(line, "NVRM", 4) == 0)
+      {
+      if (LOGLEVEL >= 3)
+        {
+        sprintf(log_buffer,"Nvidia driver info: %s\n", tok);
+        log_ext(-1, id, log_buffer, LOG_DEBUG);
+        }
+      tok = strstr(line, "Kernel Module");
+      if (tok)
+        {
+        tok += 13;
+        MOMNvidiaDriverVersion = atoi(tok);
+        if (MOMNvidiaDriverVersion >= 260)
+          {
+          fclose(file);
+          return(TRUE);
+          }
+        break;
+        }
+      }
+    }
+
+  fclose(file);
+  return(FALSE);
+  }
+
+#endif  /* NVIDIA_GPUS */
+
+
 
 /*
- * Function to determine if nvidia-smi is in the path
+ * Function to determine if nvidia-smi is setup correctly
  */
 #ifdef NVIDIA_GPUS
-static int check_nvidia_path()
+static int check_nvidia_setup()
   {
-  static char id[] = "check_nvidia_path";
+  static char id[] = "check_nvidia_setup";
 
   int  rc;
-  static int check_path = TRUE;
-  static int path_good = FALSE;
+  static int check_setup = TRUE;
+  static int nvidia_setup_is_ok = FALSE;
 
-  /* Get the PATH environment variable so we can see
-     if the nvidia-smi executable is in the execution
-     path */
+  /* Check the setup for the nvidia gpus */
 
-  if (check_path)
+  if (check_setup)
     {
     char *pathEnv;
 
-    check_path = FALSE;
+    /* only check the setup once */
+    check_setup = FALSE;
+
+    /* check if the nvidia module is loaded in */
+
+    if (!check_nvidia_module_loaded())
+      {
+      return (FALSE);
+      }
+
+    /* see if we can get the nvidia driver version */
+
+    if (!check_nvidia_version_file())
+      {
+      return (FALSE);
+      }
+
+#ifdef NVML_API
+    nvidia_setup_is_ok = TRUE;
+#else
+    /* Get the PATH environment variable so we can see
+     * if the nvidia-smi executable is in the execution path
+     */
+
     pathEnv = getenv("PATH");
 
     if (pathEnv == NULL)
@@ -1349,7 +1480,7 @@ static int check_nvidia_path()
     rc = find_file(pathEnv, "nvidia-smi");
     if (rc == FALSE)
       {
-      if (LOGLEVEL >= 7)
+      if (LOGLEVEL >= 3)
         {
         log_err(
           PBSE_RMSYSTEM,
@@ -1358,9 +1489,10 @@ static int check_nvidia_path()
         }
       return(FALSE);
       }
-      path_good = TRUE;
+    nvidia_setup_is_ok = TRUE;
+#endif  /* NVML_API */
     }
-  return (path_good);
+  return (nvidia_setup_is_ok);
   }
 #endif  /* NVIDIA_GPUS */
 
@@ -1383,7 +1515,7 @@ static char *gpus(
   char buf[RETURN_STRING_SIZE];
   char cmdbuf[101];
 
-  if (!check_nvidia_path())
+  if (!check_nvidia_setup())
     {
     return (FALSE);
     }
@@ -1472,7 +1604,7 @@ static int gpumodes(
   int  gpuid;
   int  gpumode;
 
-  if (!check_nvidia_path())
+  if (!check_nvidia_setup())
     {
     return (FALSE);
     }
@@ -1548,6 +1680,11 @@ int setgpumode(
   nvmlComputeMode_t compute_mode;
   nvmlDevice_t      device_hndl;
 
+  if (!check_nvidia_setup())
+    {
+    return (FALSE);
+    }
+
   switch (gpumode)
     {
     case gpu_normal:
@@ -1604,7 +1741,7 @@ int setgpumode(
   FILE *fd;
   char buf[301];
 
-  if (!check_nvidia_path())
+  if (!check_nvidia_setup())
     {
     return (FALSE);
     }
@@ -1703,6 +1840,11 @@ int resetgpuecc(
   nvmlEccBitType_t  counter_type;
   nvmlDevice_t      device_hndl;
 
+  if (!check_nvidia_setup())
+    {
+    return (FALSE);
+    }
+
   if (reset_perm == 1)
     {
     /* reset ecc counts */
@@ -1744,7 +1886,7 @@ int resetgpuecc(
   FILE *fd;
   char buf[301];
 
-  if (!check_nvidia_path())
+  if (!check_nvidia_setup())
     {
     return (FALSE);
     }
@@ -2036,6 +2178,11 @@ void generate_server_gpustatus_nvml(
     return;
     }
 
+  if (!check_nvidia_setup())
+    {
+    return;
+    }
+
   memset(buffer, 0, buffer_size);
 
    /* get timestamp to report */
@@ -2054,7 +2201,6 @@ void generate_server_gpustatus_nvml(
     strcat(outptr, "driver_ver=");
     strcat(outptr, tmpbuf);
     outptr += strlen(outptr) + 1;
-    MOMNvidiaDriverVersion = atoi(tmpbuf);
     }
   else
     {
@@ -2360,7 +2506,6 @@ void generate_server_gpustatus_smi(
     strcat(outptr, "driver_ver=");
     strcat(outptr, EP->Val);
     outptr += strlen(outptr) + 1;
-    MOMNvidiaDriverVersion = atoi(EP->Val);
     }
   else
     {
@@ -3070,7 +3215,7 @@ void mom_server_all_update_gpustat(void)
    * The end of the buffer is marked with an empty string i.e. NULL NULL.
    */
 
-  if (LOGLEVEL >= 6)
+  if ((LOGLEVEL >= 6) && (MOMNvidiaDriverVersion >= 260))
     {
     log_record(PBSEVENT_SYSTEM, 0, id, "composing gpu status update for server");
     }
