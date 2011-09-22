@@ -188,6 +188,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       if connect fails with EADDRINTUSE EINVAL or EADDRNOTAVAIL case. For these cases
       TORQUE will retry the connect again. This fix increases the chance of success
       on the next iteration.
+  b - Changes to decrease some gpu error messages and to detect unusual gpu
+      drivers and configurations.
 
 2.5.8
   e - added util function getpwnam_ext() that has retry and errno logging
