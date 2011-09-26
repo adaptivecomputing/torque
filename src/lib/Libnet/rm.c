@@ -209,7 +209,6 @@ int openrm(
 
   {
   int                   stream;
-  int                   rc;
 
 #if RPP
   static int  first = 1;
@@ -259,6 +258,7 @@ int openrm(
 
   if ((stream = socket(AF_INET, SOCK_STREAM, 0)) != -1)
     {
+    int rc;
     int tryport = IPPORT_RESERVED;
 
     struct sockaddr_in addr;

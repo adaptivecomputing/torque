@@ -87,6 +87,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "portability.h"
 #include "server_limits.h"
 #include "net_connect.h"
