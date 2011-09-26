@@ -27,6 +27,7 @@ int start_listener(
   int total_cntr = 0;
   pthread_t tid;
   pthread_attr_t t_attr;
+  adr_svr.sin_family = AF_INET;
 
   if ((ptr = getenv("PBSDEBUG")) != NULL)
     debug = 1;

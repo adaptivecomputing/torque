@@ -243,6 +243,7 @@
 #include "mcom.h"
 #include "pbs_constants.h" /* Long */
 #include "mom_server_lib.h"
+#include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
 
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
@@ -3063,6 +3064,7 @@ void mom_server_update_stat(
     else
       {
       read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&ret);
+      pbs_disconnect_socket(stream);
       }
   
     close(stream);

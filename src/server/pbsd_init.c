@@ -821,20 +821,20 @@ int pbsd_init(
     PBS_DEFAULT_MAIL,
     0);
 
-  server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long =
-    PBS_TCPTIMEOUT;
+  server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long = PBS_TCPTIMEOUT;
 
   server.sv_attr[SRV_ATR_tcp_timeout].at_flags = ATR_VFLAG_SET;
 
-  server.sv_attr[SRV_ATR_check_rate].at_val.at_long =
-    PBS_NORMAL_PING_RATE / 2;
+  server.sv_attr[SRV_ATR_check_rate].at_val.at_long = PBS_NORMAL_PING_RATE / 2;
 
   server.sv_attr[SRV_ATR_check_rate].at_flags = ATR_VFLAG_SET;
 
-  server.sv_attr[SRV_ATR_JobStatRate].at_val.at_long =
-    PBS_RESTAT_JOB;
+  server.sv_attr[SRV_ATR_JobStatRate].at_val.at_long = PBS_RESTAT_JOB;
 
   server.sv_attr[SRV_ATR_PollJobs].at_val.at_long = PBS_POLLJOBS;
+
+  server.sv_attr[SRV_ATR_MomJobSync].at_flags = ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_MomJobSync].at_val.at_long = 1;
 
   /* 4. force logging of all types */
 

@@ -35,6 +35,7 @@
 #include "mom_func.h"
 #include "pbs_error.h"
 #include "pbs_proto.h"
+#include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
 #ifdef ENABLE_CPA
 #include "pbs_cpa.h"
 #endif
@@ -743,6 +744,7 @@ void scan_for_exiting(void)
       }
 
     DIS_tcp_wflush(sock);
+    pbs_disconnect_socket(sock);
 
     if (found_one++ >= ObitsAllowed)
       {

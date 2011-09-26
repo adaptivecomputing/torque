@@ -116,7 +116,7 @@
 #include "server_limits.h"
 #include "net_connect.h"
 #include "log.h"
-#include "../Liblog/pbs_log.h"
+#include "../Liblog/pbs_log.h" /* log_err, log_record */
 #include "pbs_error.h" /* PBSE_NONE */
 
 extern int  LOGLEVEL;
@@ -125,7 +125,6 @@ extern int  LOGLEVEL;
 
 void initialize_connections_table();
 extern void process_request(int);
-extern char    *msg_daemonname;
 
 extern time_t time(time_t *);
 
@@ -690,11 +689,8 @@ static void *accept_conn(
 
   {
   int newsock;
-
   struct sockaddr_in from;
-
   struct sockaddr_un unixfrom;
-
   torque_socklen_t fromsize;
   int sd = *(int *)new_conn;
 

@@ -186,7 +186,6 @@ static int contact_sched(
 
     return(-1);
     }
-
   add_conn(
     sock,
     FromClientDIS,

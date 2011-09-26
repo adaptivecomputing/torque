@@ -115,6 +115,7 @@
 #include "node_func.h" /* find_nodebyname */
 #include "issue_request.h" /* issue_Drequest */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
+#include "svr_connect.h" /* svr_connect */
 
 /* Global Data Items: */
 
@@ -831,8 +832,7 @@ int stat_to_mom(
 
   {
   struct batch_request *newrq;
-  int                   rc;
-  int                   my_err = 0;
+  int                   rc = 0;
   unsigned long         addr;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -880,7 +880,7 @@ int stat_to_mom(
   cntl->sc_conn = svr_connect(
                     pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
                     pjob->ji_qs.ji_un.ji_exect.ji_momport,
-                    &my_err,
+                    &rc,
                     node,
                     process_Dreply,
                     ToServerDIS);

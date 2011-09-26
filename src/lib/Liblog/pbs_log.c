@@ -114,6 +114,8 @@
 #include <syslog.h>
 #endif
 
+#include <execinfo.h> /* backtrace information */
+
 void job_log_close(int msg);
 
 /* Global Data */
@@ -1301,4 +1303,23 @@ long job_log_size(void)
   }
 
 
+void print_trace(int socknum)
+  {
+  void *array[10];
+  int size;
+  char **meth_names;
+  int cntr;
+  char msg[120];
+  char meth_name[20];
+  size = backtrace(array, 10);
+  meth_names = backtrace_symbols(array, size);
+  snprintf(meth_name, sizeof(meth_name), "pt - pos %d", socknum);
+  snprintf(msg, sizeof(msg), "Obtained %d stack frames.\n", size);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, meth_name, msg); 
+  for (cntr = 0; cntr < size; cntr++)
+    {
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, meth_name, meth_names[cntr]);
+    }
+  free(meth_names);
+  }
 /* END pbs_log.c */

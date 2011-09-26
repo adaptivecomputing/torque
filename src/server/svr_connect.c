@@ -115,6 +115,7 @@
 #include "svrfunc.h"
 #include "dis.h"
 #include "../lib/Libnet/lib_net.h" /* get_connection_entry */
+#include "../lib/Liblog/pbs_log.h" /* print_trace */
 
 
 /* global data */

@@ -1146,20 +1146,12 @@ int pbs_original_connect(
 
 
 
+int pbs_disconnect_socket(
 
-
-int pbs_disconnect(
-
-  int connect)  /* I (socket descriptor) */
+  int sock)  /* I (socket descriptor) */
 
   {
-  int  sock;
-  static char x[THE_BUF_SIZE / 4];
-
-  pthread_mutex_lock(connection[connect].ch_mutex);
-
-  /* send close-connection message */
-  sock = connection[connect].ch_socket;
+  static char tmp_buf[THE_BUF_SIZE / 4];
 
   DIS_tcp_setup(sock);
 
@@ -1167,47 +1159,55 @@ int pbs_disconnect(
       (DIS_tcp_wflush(sock) == 0))
     {
     int atime;
-
     struct sigaction act;
-
     struct sigaction oldact;
 
     /* set alarm to break out of potentially infinite read */
-
 /*    act.sa_handler = SIG_IGN; */
     act.sa_handler = empty_alarm_handler;  /* need SOME handler or blocking read never gets interrupted */
 
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
     sigaction(SIGALRM, &act, &oldact);
-
     atime = alarm(pbs_tcp_timeout);
 
     while (1)
       {
       /* wait for server to close connection */
-
       /* NOTE:  if read of 'sock' is blocking, request below may hang forever
          -- hence the signal handler above */
-
-      if (read(sock, &x, sizeof(x)) < 1)
+      if (read(sock, &tmp_buf, sizeof(tmp_buf)) < 1)
         break;
       }
 
     alarm(atime);
-
     sigaction(SIGALRM, &oldact, NULL);
     }
 
   close(sock);
+  return(0);
+  }  /* END pbs_disconnect() */
+
+
+int pbs_disconnect(
+
+  int connect)  /* I (location in connection array) */
+
+  {
+  int  sock;
+
+  pthread_mutex_lock(connection[connect].ch_mutex);
+
+  /* send close-connection message */
+  sock = connection[connect].ch_socket;
+
+  pbs_disconnect_socket(sock);
 
   if (connection[connect].ch_errtxt != (char *)NULL)
     free(connection[connect].ch_errtxt);
 
   connection[connect].ch_errno = 0;
-
   connection[connect].ch_inuse = FALSE;
-
   pthread_mutex_unlock(connection[connect].ch_mutex);
 
   return(0);

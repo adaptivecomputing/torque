@@ -28,4 +28,6 @@ long log_size(void);
 
 long job_log_size(void);
 
+void print_trace(int socknum);
+
 #endif /* _PBS_LOG_H */

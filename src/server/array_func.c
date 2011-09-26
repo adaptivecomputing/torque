@@ -603,6 +603,7 @@ int setup_array_struct(
     {
     /* the array is deleted in job_purge */
     job_purge(pjob);
+    /* Does job array need to be removed? */
 
     if (LOGLEVEL >= 6)
       {
@@ -684,6 +685,7 @@ int setup_array_struct(
     return 2;
     }
 
+  pjob->ji_arraystruct = pa;
   pthread_mutex_unlock(pa->ai_mutex);
 
   return(PBSE_NONE);

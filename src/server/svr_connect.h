@@ -6,13 +6,13 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "net_connect.h" /* conn_type */
 
-int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, void (*func)(int), enum conn_type cntype);
+int svr_connect(pbs_net_t hostaddr, unsigned int port, int *local_errno, struct pbsnode *pnode, void *(*func)(void *), enum conn_type cntype);
 
 void svr_disconnect(int handle);
 
 int get_connection_entry(int *conn_pos);
 
-int socket_to_handle(int sock);
+int socket_to_handle(int sock, int *errno);
 
 char *parse_servername(char *name, unsigned int *service);
 

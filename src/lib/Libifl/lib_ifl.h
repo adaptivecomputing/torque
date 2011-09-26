@@ -266,6 +266,7 @@ ssize_t send_unix_creds(int sd);
 #endif 
 int pbs_original_connect(char *server); 
 int pbs_disconnect(int connect); 
+int pbs_disconnect_socket(int sock); 
 int pbs_connect(char *server_name_ptr); 
 int pbs_connect_with_retry(char *server_name_ptr, int retry_seconds); 
 int pbs_query_max_connections(void);

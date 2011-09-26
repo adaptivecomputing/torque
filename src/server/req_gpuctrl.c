@@ -136,9 +136,9 @@ void req_gpuctrl(
   int    gpumode = -1;
   int    reset_perm = -1;
   int    reset_vol = -1;
-  int    local_errno = 0;
   char   log_buf[LOCAL_LOG_BUF_SIZE];
 #ifdef NVIDIA_GPUS
+  int    local_errno = 0;
   struct pbsnode *pnode = NULL;
   int    gpuidx = -1;
   int    rc = 0;
