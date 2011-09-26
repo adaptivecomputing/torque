@@ -427,6 +427,12 @@ int PBSD_munge_authenticate(
         return(-1);
         }
 
+      /* if we got no bytes back then Munge may not be installed etc. */
+      if(total_bytes_read == 0)
+        {
+        return(PBSE_MUNGE_NOT_FOUND);
+        }
+
       /* We got the certificate. Now make the PBS_BATCH_AltAuthenUser request */
       myrealuid = getuid();
 
