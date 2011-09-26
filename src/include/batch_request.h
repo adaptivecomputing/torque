@@ -404,7 +404,7 @@ extern void  req_stat_job (struct batch_request *);
 
 #ifndef PBS_MOM
 extern void  req_authenuser (struct batch_request *req);
-extern void  req_altauthenuser (struct batch_request *req);
+extern int   req_altauthenuser (struct batch_request *req);
 extern void  req_connect (struct batch_request *req);
 extern void  req_locatejob (struct batch_request *req);
 extern void  req_manager (struct batch_request *req);
