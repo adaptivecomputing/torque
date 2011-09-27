@@ -520,7 +520,7 @@ void *process_request(
       if ( request->rq_type == PBS_BATCH_AltAuthenUser)
         {
         enqueue_threadpool_request(req_altauthenuser,request); 
-        return;
+        goto process_request_cleanup;
         }
       else
         {
