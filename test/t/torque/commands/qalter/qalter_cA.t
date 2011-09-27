@@ -65,7 +65,7 @@ foreach my $job_id (@job_ids)
     # Check that the command ran
     $qstat_fx = qstat_fx({job_id => $job_id});
 
-    is( $qstat_fx->{ $job_id }{ 'Account_Name' }, $acct_name ,
+    is( $qstat_fx->{ $job_id }{ 'account_name' }, $acct_name ,
          "Checking for account '$acct_name' for job '$job_id'");
 
     }; # END SKIP:

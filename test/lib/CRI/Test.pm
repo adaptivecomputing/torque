@@ -167,7 +167,6 @@ $SIG{__DIE__} = sub {
 
     _writeLog(COMPILATION_ERROR => $message);
     Test::More::fail('');
-    _finalizeReport();
   }
   else
   {
@@ -179,7 +178,6 @@ $SIG{__DIE__} = sub {
     _setTestStatus(-1);
     _writeLog(FATAL_ERROR => "$message\n$stack");
     Test::More::fail('');
-    _finalizeReport();
   }
 
 };
@@ -1856,17 +1854,16 @@ sub setProps    #(%)
 }    # END sub setProps #(%)
 
 #------------------------------------------------------------------------------
-# %data = readSpool()
+# %data = readSpool($tid)
 #------------------------------------------------------------------------------
 #
-# Reads in the data found in the Summary.log.  Return a hash of the data.
+# Reads in the data found in the Summary.log. Takes an optional test id for filtering.
+# Returns a hash of the data.
 #
 #------------------------------------------------------------------------------
 sub readSpool    #()
 {
-
-  require 'shellwords.pl';
-
+  my $tid = $_[0] || undef;
   my $spoolFile = "$ENV{CRILogDir}/Summary.log";
   my %data      = ();
 
@@ -1881,98 +1878,89 @@ sub readSpool    #()
 
   }    # END unless (-e $spoolFile)
 
-  if (open(SPOOL, "+<$spoolFile"))
+  # Decide how to parse the summary file
+  my @lines;
+  if( defined $tid )
   {
-
-    flock(SPOOL, LOCK_EX)
-      or die("Bad stuff happened with the file lock on '$spoolFile': $!");
-
-    foreach my $line (<SPOOL>)
+    # Parse out one line for a specific test
+    my %grep = runCommand("grep '^$tid ' $spoolFile", logging_off => 1);
+    unless( $grep{EXIT_CODE} )
     {
-
-      my @words;
-      eval "
-	    no warnings;
-	    \@words = shellwords(\$line)
-	    ";
-
-      next if $@;
-      next unless scalar @words;
-
-      my $rowId = shift @words;
-      $data{$rowId} = ();
-
-      foreach my $word (@words)
-      {
-
-        my ($key, $value) = split(/=/, $word, 2);
-        $data{$rowId}->{$key} = $value;
-
-      }    # END foreach my $word (@words)
-
-    }    # END foreach my $line (<SPOOL>)
-
-    close(SPOOL);
-
-  }    # END if (open(SPOOL, "+<$spoolFile"))
+      chomp $grep{STDOUT};
+      @lines = $grep{STDOUT};
+    }
+  }
   else
   {
+    # Grab everything (not ideal)
+    if(open(SPOOL, "+<$spoolFile"))
+    {
+      flock(SPOOL, LOCK_EX)
+        or die("Bad stuff happened with the file lock on '$spoolFile': $!");
+      @lines = <SPOOL>;
+      close SPOOL;
+    }
+    else
+    {
+      die "Couldn't open spool file: $!";
+    }
+  }
 
-    die "Couldn't open spool file";
+  foreach my $line (@lines)
+  {
+    if( $line =~ /^(\d+)\s(.+)$/ )
+    {
+      my $rowId = $1;
+      my $row_data = $2;
 
-  }    # END else
+      my %tmp = ($row_data =~ /(\S+?)="(.+?)"/g);
+      $data{$rowId} = \%tmp;
+    }
+  }
 
   return %data;
-
-}    # END sub readSpool #(%)
+}
 
 #------------------------------------------------------------------------------
-# _writeSpool($tid, $logInfo);
+# _writeSpool($tid, %logInfo);
 #------------------------------------------------------------------------------
 #
 # Updates the Summary.log file or adds new values to it as needed.
 #
 #------------------------------------------------------------------------------
-sub _writeSpool    #($$)
+sub _writeSpool
 {
-
   my ($tid, %logInfo) = @_;
   my %currentLog;
 
-  my %wholeLog = readSpool();
+  my $summary_loc = "$ENV{CRILogDir}/Summary.log";
+  my %wholeLog = readSpool($tid);
+  my $main_test = $wholeLog{$tid} || {};
 
-  foreach my $key (sort keys %logInfo)
+  foreach my $key (keys %logInfo)
   {
+    $main_test->{$key} = $logInfo{$key};
+  }
 
-    $wholeLog{$tid}->{$key} = $logInfo{$key};
+  my $attr_line = join ' ', map { qq/$_="$main_test->{$_}"/ } sort keys %$main_test;
 
-  }    # END foreach my $key (sort keys %logInfo)
-
-  open(SPOOL, ">$ENV{'CRILogDir'}/Summary.log")
-    or die "Couldn't open Summary.log!\n";
-  flock(SPOOL, LOCK_EX)
-    or die("Bad stuff happened with the file lock on Summary.log: $!");
-
-  foreach my $rowID (sort keys %wholeLog)
+  if( exists $wholeLog{$tid} )
   {
+    # If there is already a line, then search and replace
+    $attr_line =~ s/(?<!\\)"/\\"/g;
+    $attr_line =~ s/(?<!\\)%/\\%/g;
+    my %cmd = runCommand(qq{perl -pi -e "s%^$tid .+\$%$tid $attr_line%m" $summary_loc}, logging_off => 1);
 
-    print SPOOL $rowID;
-
-    foreach my $key (sort keys %{$wholeLog{$rowID}})
-    {
-
-      print SPOOL qq| $key="$wholeLog{$rowID}->{$key}"|;
-
-    }    # END foreach my $key (sort keys %{ $wholeLog{ $rowID } })
-
-    print SPOOL "\n";
-
-  }    # END foreach my $rowID (sort keys %wholeLog)
-
-  close(SPOOL)
-    or die("Couldn't close spools file");
-
-}    # END _writeSpool #($$)
+    die "Summary.log update '$cmd{PROGRAM_RUN}' failed!\n $cmd{STDERR}" if $cmd{EXIT_CODE};
+  }
+  else
+  {
+    # Otherwise, we need to append to the file
+    my %cmd = runCommand("echo '$tid $attr_line' >> $summary_loc", logging_off => 1);
+    
+    die "Summary.log update failed: $cmd{STDERR}" if $cmd{EXIT_CODE};
+  }
+}
 
 #------------------------------------------------------------------------------
 # $result = setDesc('Test Description');
@@ -2077,7 +2065,7 @@ sub _finalizeReport    #()
   # Set the state on the parent if set and is non-passing
   if (defined $parent_test_id && $testStatus < 1)
   {
-    my %logs         = readSpool();
+    my %logs         = readSpool($parent_test_id);
     my $parent_state = $logs{$parent_test_id}{TEST_RESULT};
 
     my $curr_status_id =

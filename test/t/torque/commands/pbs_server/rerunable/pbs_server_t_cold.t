@@ -92,6 +92,7 @@ else
   fail("Expect did not see '$pPattern'");
   }
 
+sleep_diag 3;
 # Verify that the pbs_server is running
 %ps = runCommand($ps_cmd);
 die("pbs_server not running.  Unable to continue test")

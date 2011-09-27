@@ -57,7 +57,7 @@ $m_cmd       = "qalter -M $mail_users $job_id";
 $fx_cmd      = "qstat -f -x $job_id";
 
 $qstat_fx    = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Mail_Users' } eq $mail_users, "Checking if '$m_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'mail_users' } eq $mail_users, "Checking if '$m_cmd' was successful");
 
 # Check qalter -M user1@host,user2@host
 $mail_users  = "$user1\@$host,$user2\@$host";
@@ -67,7 +67,7 @@ $m_cmd       = "qalter -M $mail_users $job_id";
 $fx_cmd      = "qstat -f -x $job_id";
 
 $qstat_fx    = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Mail_Users' } eq $mail_users, "Checking if '$m_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'mail_users' } eq $mail_users, "Checking if '$m_cmd' was successful");
 
 # Delete the jobs
 delJobs($job_id);

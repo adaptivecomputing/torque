@@ -67,7 +67,7 @@ foreach my $job_id (@job_ids)
 
       $qstat_fx = qstat_fx({job_id => $job_id});
       
-      is($qstat_fx->{ $job_id }{ 'Join_Path' }, $join_path, "Job $job_id Join Path was Successfully Altered");
+      is($qstat_fx->{ $job_id }{ 'join_path' }, $join_path, "Job $job_id Join Path was Successfully Altered");
     }
   };
 }

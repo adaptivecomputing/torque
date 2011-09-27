@@ -7,10 +7,7 @@ use TestLibFinder;
 use lib test_lib_loc();
 
 use CRI::Test;
-use Torque::Ctrl        qw( startTorqueClean
-                            stopTorque 
-                            stopPbssched
-                          );
+use Torque::Ctrl;
 use Torque::Util qw( list2array );
 plan('no_plan');
 setDesc('Qstat Setup');
@@ -49,6 +46,9 @@ stopTorque($torque_params);
 # Stop pbs_sched
 ###############################################################################
 stopPbssched();
+
+createMomCfg();
+createMomCfg({ host => $_ }) foreach @remote_moms;
 
 ###############################################################################
 # Restart Torque

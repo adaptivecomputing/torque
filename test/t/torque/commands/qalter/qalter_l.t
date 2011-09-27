@@ -70,8 +70,8 @@ foreach my $job_id (@job_ids)
     $fx_cmd       = "qstat -f -x $job_id";
 
     $qstat_fx     = qstat_fx({job_id => $job_id});
-    ok($qstat_fx->{ $job_id }{ 'Resource_List' }{ 'walltime' } eq $walltime, "Checking if '$l_cmd' was successful in setting the walltime");
-    ok($qstat_fx->{ $job_id }{ 'Resource_List' }{ 'nodes'    } eq $nodes,    "Checking if '$l_cmd' was successful in setting the nodes");
+    ok($qstat_fx->{ $job_id }{ 'resource_list' }{ 'walltime' } eq $walltime, "Checking if '$l_cmd' was successful in setting the walltime");
+    ok($qstat_fx->{ $job_id }{ 'resource_list' }{ 'nodes'    } eq $nodes,    "Checking if '$l_cmd' was successful in setting the nodes");
 
     # Check qalter -l with the original variables (Reset the variables)
     $walltime     = $props->get_property( 'job.walltime' );
@@ -83,8 +83,8 @@ foreach my $job_id (@job_ids)
     $fx_cmd       = "qstat -f -x $job_id";
 
     $qstat_fx     = qstat_fx({job_id => $job_id});
-    ok($qstat_fx->{ $job_id }{ 'Resource_List' }{ 'walltime' } eq $walltime, "Checking if '$l_cmd' was successful in setting the walltime");
-    ok($qstat_fx->{ $job_id }{ 'Resource_List' }{ 'nodes'    } eq $nodes,    "Checking if '$l_cmd' was successful in setting the nodes");
+    ok($qstat_fx->{ $job_id }{ 'resource_list' }{ 'walltime' } eq $walltime, "Checking if '$l_cmd' was successful in setting the walltime");
+    ok($qstat_fx->{ $job_id }{ 'resource_list' }{ 'nodes'    } eq $nodes,    "Checking if '$l_cmd' was successful in setting the nodes");
 
     }; # END SKIP:
 

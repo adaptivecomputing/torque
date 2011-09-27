@@ -68,7 +68,7 @@ foreach my $job_id (@job_ids)
  
     $fx_cmd    = "qstat -f -x $job_id";
     $qstat_fx  = qstat_fx({job_id => $job_id});
-    is($qstat_fx->{ $job_id }{ 'User_List' }, $user_list, "Checking if '$m_cmd' was successful");
+    is($qstat_fx->{ $job_id }{ 'user_list' }, $user_list, "Checking if '$m_cmd' was successful");
 
     }; # END SKIP:
 

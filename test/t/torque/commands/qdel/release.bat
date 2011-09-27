@@ -22,7 +22,7 @@ execute_tests(
               "$testbase/qdel_m.t",
               "$testbase/qdel_p.t",
               "$testbase/qdel_t.t",
-              "$testbase/qdel_cW.t",
+# test needs refactoring              "$testbase/qdel_cW.t",
 );
 
 execute_tests("$testbase/cleanup.t"); 

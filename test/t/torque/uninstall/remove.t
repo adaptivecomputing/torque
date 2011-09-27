@@ -7,17 +7,18 @@ use lib test_lib_loc();
 
 use CRI::Test;
 plan('no_plan');
-setDesc('Remove Torque');
+setDesc('Remove Torque Directories');
 
-my $build_dir  = $props->get_property('torque.build.dir');
-$build_dir =~ s%/$%%;    # Remove trailing /
+my $torque_home = $props->get_property('Torque.Home.Dir');
 
-# Remove Torque install directory
-runCommand("rm -rf " . $props->get_property('Torque.Home.Dir'));
-ok(!-d $props->get_property('Torque.Home.Dir'),"Removing " . $props->get_property('Torque.Home.Dir'))
-    or die("Torque install directory still exists but shouldn't");
+my $ec;
+my $endtime = time + 10;
 
-# Remove Torque build directory
-runCommand("rm -rf $build_dir");
-ok(!-d $build_dir, "Removing  $build_dir")
-    or die("Torque build directory still exists but shouldn't");
+do
+{
+  $ec = runCommand("rm -rf $torque_home");
+
+}until( $ec == 0) || time > $endtime );
+
+ok(!-d $torque_home, "Removing $torque_home")
+  or die("Torque install directory still exists but shouldn't");

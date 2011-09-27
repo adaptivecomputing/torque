@@ -52,7 +52,7 @@ $p_cmd     = "qalter -p $priority $job_id";
 $fx_cmd   = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Priority' } eq $priority, "Checking if '$p_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'priority' } eq $priority, "Checking if '$p_cmd' was successful");
 
 $priority  = 1024; # This should fail
 $p_cmd     = "qalter -p $priority $job_id";
@@ -69,7 +69,7 @@ $p_cmd     = "qalter -p $priority $job_id";
 $fx_cmd   = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Priority' } eq $priority, "Checking if '$p_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'priority' } eq $priority, "Checking if '$p_cmd' was successful");
 
 $priority  = -1025; # This should fail
 $p_cmd     = "qalter -p $priority $job_id";

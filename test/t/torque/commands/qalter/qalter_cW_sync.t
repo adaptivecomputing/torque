@@ -16,7 +16,7 @@ use Torque::Job::Ctrl           qw(
                                     runJobs
                                     delJobs
                                   );
-use Torque::Util         qw( run_and_check_cmd 
+use Torque::Util         qw( 
                                     list2array        );
 use Torque::Util::Qstat  qw( qstat_fx    );
 
@@ -48,44 +48,44 @@ my $job2 = submitSleepJob($job_params);
 diag("Test synccount");
 $depend  = "synccount:1";
 $w_cmd   = "qalter -W depend=$depend $job1";
-%qalter     = run_and_check_cmd($w_cmd);
+%qalter     = runCommand($w_cmd, test_success => 1);
 
 $fx_cmd     = "qstat -f -x $job1";
 
-$qstat_fx   = qstat_fx({job_id => $job_id});
+$qstat_fx   = qstat_fx({job_id => $job1});
 ok($qstat_fx->{ $job1 }{ 'depend' } eq $depend, "Checking if '$w_cmd' was successful");
 
 # Test syncwith
 diag("Test syncwith");
 $depend  = "syncwith:$job1";
 $w_cmd   = "qalter -W depend=$depend $job2";
-%qalter  = run_and_check_cmd($w_cmd);
+%qalter  = runCommand($w_cmd, test_success => 1);
 
 $fx_cmd     = "qstat -f -x $job2";
 
-$qstat_fx   = qstat_fx({job_id => $job_id});
+$qstat_fx   = qstat_fx({job_id => $job2});
 ok($qstat_fx->{ $job2 }{ 'depend' } =~ /${depend}/, "Checking if '$w_cmd' was successful");
 
 # Reset synccount
 diag("Reset synccount");
 $depend  = "synccount";
 $w_cmd   = "qalter -W depend=$depend $job1";
-%qalter  = run_and_check_cmd($w_cmd);
+%qalter  = runCommand($w_cmd, test_success => 1);
 
 $fx_cmd     = "qstat -f -x $job1";
 
-$qstat_fx   = qstat_fx({job_id => $job_id});
+$qstat_fx   = qstat_fx({job_id => $job1});
 ok($qstat_fx->{ $job1 }{ 'depend' } eq 'synccount:0', "Checking if '$w_cmd' was successful");
 
 # Reset syncwith
 diag("Reset syncwith");
 $depend  = "syncwith";
 $w_cmd   = "qalter -W depend=$depend $job2";
-%qalter  = run_and_check_cmd($w_cmd);
+%qalter  = runCommand($w_cmd, test_success => 1);
 
 $fx_cmd     = "qstat -f -x $job2";
 
-$qstat_fx   = qstat_fx({job_id => $job_id});
+$qstat_fx   = qstat_fx({job_id => $job2});
 ok(! defined $qstat_fx->{ $job2 }{ 'depend' }, "Checking if '$w_cmd' was successful");
 
 # Delete the jobs

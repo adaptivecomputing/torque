@@ -52,7 +52,7 @@ $h_cmd     = "qalter -r $rerunable $job_id";
 $fx_cmd   = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Rerunable' } =~ /false/i, "Checking if '$h_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'rerunable' } =~ /false/i, "Checking if '$h_cmd' was successful");
 
 # Check qalter -r s
 $rerunable = 'y';
@@ -62,7 +62,7 @@ $h_cmd     = "qalter -r $rerunable $job_id";
 $fx_cmd   = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Rerunable' } =~ /true/i, "Checking if '$h_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'rerunable' } =~ /true/i, "Checking if '$h_cmd' was successful");
 
 # Delete the jobs
 delJobs($job_id);

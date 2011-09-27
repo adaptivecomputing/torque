@@ -62,7 +62,7 @@ $cwd      = $qalter{ 'CWD' };
 $cmd      = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Error_Path' } eq "$host:$cwd/$err_path", 
+ok($qstat_fx->{ $job_id }{ 'error_path' } eq "$host:$cwd/$err_path", 
    "Checking for the new error file when specified without a host and with an relative path")
    or diag("Expected: '$host:$cwd/$err_path\nGot: $qstat_fx->{ $job_id }{ 'Error_Path' }'");
 
@@ -73,7 +73,7 @@ $cmd         = "qalter -e $err_host_path $job_id";
 $cmd      = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Error_Path' } eq "$err_host_path", 
+ok($qstat_fx->{ $job_id }{ 'error_path' } eq "$err_host_path", 
    "Checking for the new error file when specified with a host and with a relative path");
 
 # Set variables to a absolute path
@@ -87,7 +87,7 @@ $cmd         = "qalter -e $err_path $job_id";
 $cmd      = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Error_Path' } eq "$host:$err_path", 
+ok($qstat_fx->{ $job_id }{ 'error_path' } eq "$host:$err_path", 
    "Checking for the new error file when specified without a host and with an abosolute path");
 
 # Alter the job error path with a relative path and a host
@@ -97,7 +97,7 @@ $cmd         = "qalter -e $err_host_path $job_id";
 $cmd      = "qstat -f -x $job_id";
 
   $qstat_fx = qstat_fx({job_id => $job_id});
-  ok($qstat_fx->{ $job_id }{ 'Error_Path' } eq "$err_host_path", 
+  ok($qstat_fx->{ $job_id }{ 'error_path' } eq "$err_host_path", 
      "Checking for the new error file when specified with a host and with an abosolute path");
 
 # Delete the job

@@ -55,7 +55,7 @@ $s_cmd     = "qalter -S $path_list $job_id";
 $fx_cmd   = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Shell_Path_List' } eq $path_list, "Checking if '$s_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'shell_path_list' } eq $path_list, "Checking if '$s_cmd' was successful");
 
 # Delete the jobs
 delJobs($job_id);

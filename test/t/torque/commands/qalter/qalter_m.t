@@ -52,7 +52,7 @@ $m_cmd       = "qalter -m $mail_points $job_id";
 $fx_cmd      = "qstat -f -x $job_id";
 
 $qstat_fx    = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'mail_points' } eq $mail_points, "Checking if '$m_cmd' was successful");
 
 # Check qalter -m b
 $mail_points = 'b';
@@ -62,7 +62,7 @@ $m_cmd       = "qalter -m $mail_points $job_id";
 $fx_cmd      = "qstat -f -x $job_id";
 
 $qstat_fx    = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'mail_points' } eq $mail_points, "Checking if '$m_cmd' was successful");
 
 # Check qalter -m e
 $mail_points = 'e';
@@ -72,7 +72,7 @@ $m_cmd       = "qalter -m $mail_points $job_id";
 $fx_cmd      = "qstat -f -x $job_id";
 
 $qstat_fx    = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'mail_points' } eq $mail_points, "Checking if '$m_cmd' was successful");
 
 # Check qalter -m abe
 $mail_points = 'abe';
@@ -82,7 +82,7 @@ $m_cmd       = "qalter -m $mail_points $job_id";
 $fx_cmd      = "qstat -f -x $job_id";
 
 $qstat_fx    = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'mail_points' } eq $mail_points, "Checking if '$m_cmd' was successful");
 
 
 # Check qalter -m n
@@ -93,6 +93,6 @@ $m_cmd     = "qalter -m $mail_points $job_id";
 $fx_cmd   = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Mail_Points' } eq $mail_points, "Checking if '$m_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'mail_points' } eq $mail_points, "Checking if '$m_cmd' was successful");
 # Delete the jobs
 delJobs($job_id);

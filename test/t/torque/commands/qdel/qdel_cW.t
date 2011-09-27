@@ -1,5 +1,14 @@
-#!/usr//bin/perl
-
+#!/usr/bin/perl
+###############################################################
+#  NEEDS REFACTORING
+#  The way this test is attempting to test this functionality is
+#  incorrect/incomplete. -W is the delay between a SIGTERM and
+#  a SIGKILL. Besides, to adequately test it, the shell in which
+#  the job script is run needs to be able to handle signals
+#  correctly and redirect them to the job. The default shell (bash)
+#  does not and so the solution to testing this parameter is more
+#  complicated than this test currently handles.
+###############################################################
 use strict;
 use warnings;
 

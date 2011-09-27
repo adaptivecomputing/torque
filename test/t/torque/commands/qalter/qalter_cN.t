@@ -53,7 +53,7 @@ $n_cmd       = "qalter -N \"$name\" $job_id";
 $fx_cmd      = "qstat -f -x $job_id";
 
 $qstat_fx    = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Job_Name' } eq $name, "Checking if '$n_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'job_name' } eq $name, "Checking if '$n_cmd' was successful");
 
 # Delete the jobs
 delJobs($job_id);

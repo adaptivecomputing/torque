@@ -19,7 +19,7 @@ execute_tests("$testbase/setup.t")
 execute_tests(
               "$testbase/qalter_a.t",
               "$testbase/qalter_cA.t",
-              "$testbase/qalter_c.t",
+# JR-TRQ-380              "$testbase/qalter_c.t",
               "$testbase/qalter_e.t",
               "$testbase/qalter_h.t",
               "$testbase/qalter_j.t",

@@ -66,7 +66,7 @@ foreach my $job_id (@job_ids)
     $fx_cmd      = "qstat -f -x $job_id";
 
     $qstat_fx = qstat_fx({job_id => $job_id});
-    ok($qstat_fx->{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
+    ok($qstat_fx->{ $job_id }{ 'keep_files' } eq $join_path, "Checking if '$k_cmd' was successful");
 
     # Check qalter -k o
     $join_path = 'o';
@@ -76,7 +76,7 @@ foreach my $job_id (@job_ids)
     $fx_cmd      = "qstat -f -x $job_id";
 
     $qstat_fx = qstat_fx({job_id => $job_id});
-    ok($qstat_fx->{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
+    ok($qstat_fx->{ $job_id }{ 'keep_files' } eq $join_path, "Checking if '$k_cmd' was successful");
 
     # Check qalter -k oe
     $join_path = 'oe';
@@ -86,7 +86,7 @@ foreach my $job_id (@job_ids)
     $fx_cmd      = "qstat -f -x $job_id";
 
     $qstat_fx = qstat_fx({job_id => $job_id});
-    ok($qstat_fx->{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
+    ok($qstat_fx->{ $job_id }{ 'keep_files' } eq $join_path, "Checking if '$k_cmd' was successful");
 
     # Check qalter -k eo
     $join_path = 'eo';
@@ -96,7 +96,7 @@ foreach my $job_id (@job_ids)
     $fx_cmd      = "qstat -f -x $job_id";
 
     $qstat_fx = qstat_fx({job_id => $job_id});
-    ok($qstat_fx->{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
+    ok($qstat_fx->{ $job_id }{ 'keep_files' } eq $join_path, "Checking if '$k_cmd' was successful");
 
     # Check qalter -k n
     $join_path = 'n';
@@ -106,7 +106,7 @@ foreach my $job_id (@job_ids)
     $fx_cmd      = "qstat -f -x $job_id";
 
     $qstat_fx = qstat_fx({job_id => $job_id});
-    ok($qstat_fx->{ $job_id }{ 'Keep_Files' } eq $join_path, "Checking if '$k_cmd' was successful");
+    ok($qstat_fx->{ $job_id }{ 'keep_files' } eq $join_path, "Checking if '$k_cmd' was successful");
 
     }; # END SKIP:
 

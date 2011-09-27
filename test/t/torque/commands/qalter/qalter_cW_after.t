@@ -45,7 +45,7 @@ my @dep_cases = (
   'after',
   'afterok',
   'afternotok',
-  'afteranyok',
+  'afterany',
 );
 
 foreach my $depend (@dep_cases)

@@ -34,7 +34,6 @@ syncServerMom($sync_href);
 # Submit a job
 my $job_params = {
                    'user'       => $props->get_property( 'User.1' ),
-                   'torque_bin' => $props->get_property( 'Torque.Home.Dir' ) . '/bin',
                    'sleep_time' => 15
                  };
 
@@ -56,14 +55,14 @@ die("Unable to submit jobs")
 runJobs($job_id2, $job_id3);
 
 # sleep for a few seconds
-sleep 2;
+sleep_diag 2;
 
 # Test qterm -t delay
 my $qterm_cmd = "qterm -t delay";
-my %qterm     = run_and_check_cmd($qterm_cmd);
+my %qterm     = runCommand($qterm_cmd, test_success_die => 1);
 
 # sleep for a few seconds
-sleep 2;
+sleep_diag 2;
 
 # Restart pbs_server
 diag("Restarting the pbs_server");

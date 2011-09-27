@@ -52,7 +52,7 @@ $h_cmd     = "qalter -h $hold_type $job_id";
 $fx_cmd   = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Hold_Types' } eq $hold_type, "Checking if '$h_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'hold_types' } eq $hold_type, "Checking if '$h_cmd' was successful");
 
 # Check qalter -h s
 $hold_type = 's';
@@ -62,7 +62,7 @@ $h_cmd     = "qalter -h $hold_type $job_id";
 $fx_cmd   = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Hold_Types' } eq $hold_type, "Checking if '$h_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'hold_types' } eq $hold_type, "Checking if '$h_cmd' was successful");
 
 # Check qalter -h o
 $hold_type = 'o';
@@ -72,7 +72,7 @@ $h_cmd     = "qalter -h $hold_type $job_id";
 $fx_cmd   = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Hold_Types' } eq $hold_type, "Checking if '$h_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'hold_types' } eq $hold_type, "Checking if '$h_cmd' was successful");
 
 # Check qalter -h sou
 $hold_type = 'sou';
@@ -82,7 +82,7 @@ $h_cmd     = "qalter -h $hold_type $job_id";
 $fx_cmd   = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Hold_Types' } eq $hold_type, "Checking if '$h_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'hold_types' } eq $hold_type, "Checking if '$h_cmd' was successful");
 
 # Check qalter -h n
 $hold_type = 'n';
@@ -92,7 +92,7 @@ $h_cmd     = "qalter -h $hold_type $job_id";
 $fx_cmd   = "qstat -f -x $job_id";
 
 $qstat_fx = qstat_fx({job_id => $job_id});
-ok($qstat_fx->{ $job_id }{ 'Hold_Types' } eq $hold_type, "Checking if '$h_cmd' was successful");
+ok($qstat_fx->{ $job_id }{ 'hold_types' } eq $hold_type, "Checking if '$h_cmd' was successful");
 
 # Delete the jobs
 delJobs($job_id);

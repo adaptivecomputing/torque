@@ -21,7 +21,7 @@ execute_tests(
     "$testbase/pbsnodes_a.t",
 # JR-TRQ-404    "$testbase/pbsnodes_c.t",
 #    "$testbase/pbsnodes_d.t", # Not implemented yet
-    "$testbase/pbsnodes_l.t",
+# JR-TRQ-404    "$testbase/pbsnodes_l.t",
     "$testbase/pbsnodes_o.t",
 #    "$testbase/pbsnodes_p.t", # Not implemented yet
     "$testbase/pbsnodes_q.t",

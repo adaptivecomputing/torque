@@ -34,5 +34,5 @@ execute_tests(
               "$testbase/rerunable/pbs_server_t_cold.t",
 #              "$testbase/checkpointable/pbs_server_t_hot.t",
 #              "$testbase/checkpointable/pbs_server_t_warm.t",
-              "$testbase/checkpointable/pbs_server_t_cold.t",
+# JR-TRQ-380              "$testbase/checkpointable/pbs_server_t_cold.t",
              ); 

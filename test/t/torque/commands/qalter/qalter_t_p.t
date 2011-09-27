@@ -16,7 +16,7 @@ use Torque::Job::Ctrl    qw(
                              runJobs
                              delJobs
                            );
-use Torque::Util::Qstat  qw( qstat_tfx );
+use Torque::Util::Qstat  qw( qstat_fx );
 use Torque::Job::Utils   qw( generateArrayIds );
 
 # Test Description
@@ -27,7 +27,7 @@ setDesc("qalter -p -t");
 my $torque_home = $props->get_property("Torque.Home.Dir");
 my $qalter      = "$torque_home/bin/qalter";
 
-my %qhash  = ();
+my $qhash  = {};
 my $qref   = {};
 my $id_exp = '1-2';
 my $jid    = undef;
@@ -47,12 +47,12 @@ sleep_diag(1, "Allow time for the job to queue");
 
 runCommand("$qalter -t $id_exp -p -256 $jid", ("test_success" => 1));
 
-%qhash = qstat_tfx();
+$qhash = qstat_fx({flags => '-t'});
 
 foreach my $jaid (@jaids)
   {
 
-  cmp_ok($qhash{ $jaid }{ 'Priority' }, 'eq', -256, "Verify Priority of subjob:$jaid");
+  cmp_ok($qhash->{ $jaid }{ 'priority' }, 'eq', -256, "Verify Priority of subjob:$jaid");
 
   } # END foreach my $jaid (@jaids)
 
