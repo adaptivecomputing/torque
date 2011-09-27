@@ -1,6 +1,6 @@
 include $(top_srcdir)/buildutils/config.mk
 
-AM_CPPFLAGS += -I$(top_srcdir)/src/lib/Libdis -DIFF_PATH=\"$(IFF_PATH)\" -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\"
+AM_CPPFLAGS += -I$(top_srcdir)/src/lib/Libdis -DIFF_PATH=\"$(IFF_PATH)\" -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\" -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
 EXTRA_DIST = ../Libdis/dis_.h
 
@@ -73,7 +73,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/pbsD_termin.c ../Libifl/pbs_geterrmg.c \
 		    ../Libifl/pbs_statfree.c ../Libifl/rpp.c \
 		    ../Libifl/tcp_dis.c ../Libifl/tm.c ../Libifl/list_link.c \
-				../Libifl/trq_auth.c \
+				../Libifl/trq_auth.c  ../Libifl/torquecfg.c \
 		    ../Libcmds/ck_job_name.c ../Libcmds/cnt2server.c \
 		    ../Libcmds/cvtdate.c ../Libcmds/get_server.c \
         ../Libcmds/locate_job.c ../Libcmds/parse_at.c \

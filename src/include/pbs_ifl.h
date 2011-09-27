@@ -88,6 +88,8 @@
 #include "u_hash_map_structs.h"
 #include "u_memmgr.h"
 
+#include <sys/socket.h>
+
 /* Attribute Names used by user commands */
 
 #define ATTR_a "execution_time"
@@ -652,6 +654,9 @@ extern int
   usepool(int connect, int update);
 
 extern int pbs_gpumode(int connect, char *node, char *gpuid, int gpumode, int *);
+
+extern int trq_set_preferred_network_interface(char *if_name, struct sockaddr *preferred_addr);
+extern char *trq_get_if_name(void);
 
 #endif /* _PBS_IFL_DEF */
 
