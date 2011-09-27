@@ -98,13 +98,14 @@ am_libtorque_la_OBJECTS = csv.lo dis.lo discui_.lo discul_.lo \
 	PBSD_status2.lo PBSD_status.lo pbsD_submit.lo \
 	PBSD_submit_caps.lo pbsD_termin.lo pbs_geterrmg.lo \
 	pbs_statfree.lo rpp.lo tcp_dis.lo tm.lo list_link.lo \
-	ck_job_name.lo cnt2server.lo cvtdate.lo get_server.lo \
-	locate_job.lo parse_at.lo parse_depend.lo parse_destid.lo \
-	parse_equal.lo parse_jobid.lo parse_stage.lo prepare_path.lo \
-	prt_job_err.lo set_attr.lo set_resource.lo chk_file_sec.lo \
-	log_event.lo pbs_log.lo pbs_messages.lo setup_env.lo \
-	get_hostaddr.lo get_hostname.lo md5.lo net_client.lo \
-	net_server.lo net_set_clse.lo rm.lo port_forwarding.lo
+	torquecfg.lo ck_job_name.lo cnt2server.lo cvtdate.lo \
+	get_server.lo locate_job.lo parse_at.lo parse_depend.lo \
+	parse_destid.lo parse_equal.lo parse_jobid.lo parse_stage.lo \
+	prepare_path.lo prt_job_err.lo set_attr.lo set_resource.lo \
+	chk_file_sec.lo log_event.lo pbs_log.lo pbs_messages.lo \
+	setup_env.lo get_hostaddr.lo get_hostname.lo md5.lo \
+	net_client.lo net_server.lo net_set_clse.lo rm.lo \
+	port_forwarding.lo
 libtorque_la_OBJECTS = $(am_libtorque_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
 depcomp = $(SHELL) $(top_srcdir)/buildutils/depcomp
@@ -362,7 +363,8 @@ AUTOMAKE_OPTIONS = foreign
 PBS_MKDIRS = $(SHELL) $(top_builddir)/buildutils/pbs_mkdirs
 AM_CPPFLAGS = -I$(top_srcdir)/src/include \
 	-I$(top_srcdir)/src/lib/Libdis -DIFF_PATH=\"$(IFF_PATH)\" \
-	-DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\"
+	-DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\" \
+	-DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 IFF_PATH = $(sbindir)/$(program_prefix)pbs_iff$(program_suffix)
 DEMUX_PATH = $(sbindir)/$(program_prefix)pbs_demux$(program_suffix)
 XPBS_DIR = $(libdir)/xpbs
@@ -433,6 +435,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/pbsD_termin.c ../Libifl/pbs_geterrmg.c \
 		    ../Libifl/pbs_statfree.c ../Libifl/rpp.c \
 		    ../Libifl/tcp_dis.c ../Libifl/tm.c ../Libifl/list_link.c \
+                    ../Libifl/torquecfg.c \
 		    ../Libcmds/ck_job_name.c ../Libcmds/cnt2server.c \
 		    ../Libcmds/cvtdate.c ../Libcmds/get_server.c \
                     ../Libcmds/locate_job.c ../Libcmds/parse_at.c \
@@ -674,6 +677,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/setup_env.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcp_dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/torquecfg.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -1591,6 +1595,13 @@ list_link.lo: ../Libifl/list_link.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../Libifl/list_link.c' object='list_link.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o list_link.lo `test -f '../Libifl/list_link.c' || echo '$(srcdir)/'`../Libifl/list_link.c
+
+torquecfg.lo: ../Libifl/torquecfg.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT torquecfg.lo -MD -MP -MF "$(DEPDIR)/torquecfg.Tpo" -c -o torquecfg.lo `test -f '../Libifl/torquecfg.c' || echo '$(srcdir)/'`../Libifl/torquecfg.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/torquecfg.Tpo" "$(DEPDIR)/torquecfg.Plo"; else rm -f "$(DEPDIR)/torquecfg.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../Libifl/torquecfg.c' object='torquecfg.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o torquecfg.lo `test -f '../Libifl/torquecfg.c' || echo '$(srcdir)/'`../Libifl/torquecfg.c
 
 ck_job_name.lo: ../Libcmds/ck_job_name.c
 @am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ck_job_name.lo -MD -MP -MF "$(DEPDIR)/ck_job_name.Tpo" -c -o ck_job_name.lo `test -f '../Libcmds/ck_job_name.c' || echo '$(srcdir)/'`../Libcmds/ck_job_name.c; \
