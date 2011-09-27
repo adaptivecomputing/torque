@@ -880,28 +880,23 @@ int post_epilogue(
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buffer);
 
-    close(sock);
+    shutdown(sock, 2);
+    close_conn(sock, FALSE);
 
     free_br(preq);
 
     return(1);
     }
 
-  DIS_tcp_wflush(sock);  /* does flush close sock? */
+  DIS_tcp_wflush(sock);
 
   free_br(preq);
 
   /* SUCCESS */
 
-  /* Who closes sock and unsets pjob->ji_momhandle?
-   * Answer: This gets done in the message reply handler, obit_reply.
-   */
+  /* FYI: socket gets closed and pjob->ji_momhandle is unset in obit_reply, the reply handler */
 
-  log_record(
-    PBSEVENT_DEBUG,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    "obit sent to server");
+  log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "obit sent to server");
 
   return(0);
   }  /* END post_epilog() */
@@ -1339,6 +1334,7 @@ void *obit_reply(
   void *new_sock)  /* I */
 
   {
+  static char *id = "obit_reply";
   int    irtn;
   job   *nxjob;
   job   *pjob;
@@ -1366,7 +1362,7 @@ void *obit_reply(
             irtn,
             sock);
 
-    log_err(errno, "obit_reply", log_buffer);
+    log_err(errno, id, log_buffer);
 
     preq->rq_reply.brp_code = -1;
     }
@@ -1497,7 +1493,7 @@ void *obit_reply(
               break;
             }  /* END switch (preq->rq_reply.brp_code) */
 
-          log_ext(-1,"obit_reply",tmpLine,LOG_ALERT);
+          log_ext(-1,id,tmpLine,LOG_ALERT);
 
           log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmpLine);
           }  /* END BLOCK */
@@ -1515,11 +1511,7 @@ void *obit_reply(
 
   if (pjob == NULL)
     {
-    log_event(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_REQUEST,
-      "obit reply",
-      "Job not found for obit reply");
+    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_REQUEST, id, "Job not found for obit reply");
     }
 
   free_br(preq);
@@ -1535,7 +1527,7 @@ void *obit_reply(
     mom_server_all_update_stat();
     }
 
-  return NULL;
+  return(NULL);
   }  /* END obit_reply() */
 
 

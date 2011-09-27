@@ -250,6 +250,7 @@
 #define UPDATE_TO_SERVER                  0
 #define UPDATE_TO_MOM                     1
 #define MIN_SERVER_UDPATE_SPACING         3
+#define MAX_SERVER_UPDATE_SPACING         20
 
 #ifdef NUMA_SUPPORT
 extern int numa_index;
@@ -3102,10 +3103,20 @@ void mom_server_update_stat(
       pms->ReportMomState = 0;
       
       pms->MOMLastSendToServerTime = time_now;
+      LastServerUpdateTime = time_now;
       
       UpdateFailCount = 0;
       }
     } /* END if valid stream */
+  else
+    {
+    UpdateFailCount++;
+
+    sprintf(log_buffer,
+      "Cannot get a valid stream to send update to server '%s'",
+      pms->pbs_servername);
+    log_err(-1, id, log_buffer);
+    }
   
   }  /* END mom_server_update_stat() */
 
@@ -3187,16 +3198,23 @@ int send_update()
   /* this is the minimum condition for updating */
   if (time_now >= (LastServerUpdateTime + ServerStatUpdateInterval))
     {
+    long attempt_diff;
+
     if (UpdateFailCount == 0)
       return(TRUE);
     
     /* the following conditions are to continually back off if we're experiencing
      * several failures in a row */
+    attempt_diff = time_now - LastUpdateAttempt;
  
     /* never send updates in a rapid-fire fashion */
-    if ((LastServerUpdateTime - LastUpdateAttempt > MIN_SERVER_UDPATE_SPACING) ||
-        (LastServerUpdateTime == 0))
-      { 
+    if (attempt_diff > MIN_SERVER_UDPATE_SPACING)
+      {
+      /* cap the longest time between updates */
+      if ((LastServerUpdateTime == 0) ||
+          (attempt_diff > MAX_SERVER_UPDATE_SPACING))
+        return(TRUE);
+      
       /* try to introduce some random delay here */
       srand(time_now + UpdateFailCount);
       
@@ -3216,12 +3234,12 @@ int send_update()
 
 
 /**
-+ * mom_server_all_update_stat
-  *
-+ * This is the former is_update_stat.  It has been reworked to
-+ * first generate the strings and then walk the server list sending
-+ * the strings to each server.
-  */
+ * mom_server_all_update_stat
+ *
+ * This is the former is_update_stat.  It has been reworked to
+ * first generate the strings and then walk the server list sending
+ * the strings to each server.
+ */
 
 void mom_server_all_update_stat(void)
  
@@ -4641,13 +4659,13 @@ int mom_open_socket_to_jobs_server(
   void *(*message_handler)(void *))
 
   {
-  char *svrport = NULL;
-  char *serverAddr = NULL;
-  char error_buffer[1024];
-  int sock;
-  int sock3;
-  int port;
-  int sindex;
+  char       *svrport = NULL;
+  char       *serverAddr = NULL;
+  char        error_buffer[1024];
+  int         sock;
+  int         sock3;
+  int         port;
+  int         sindex;
   mom_server *pms;
 
   /* See if the server address string has a ':' implying a port number. */
@@ -4707,33 +4725,33 @@ int mom_open_socket_to_jobs_server(
     }
 
   /* The epilogue code needs the socket number at 3 or above. */
-
-  if ((sock >= 0) && (sock < 3))
+  if (sock >= 0)
     {
-    sock3 = fcntl(sock, F_DUPFD, 3);
-    close(sock);
-    sock = sock3;
+    if (sock < 3)
+      {
+      sock3 = fcntl(sock, F_DUPFD, 3);
+      close(sock);
+      sock = sock3;
+      }
+   
+    /* Associate a message handler with the connection */
+    if (message_handler != NULL)
+      {
+      add_conn(
+        sock,
+        ToServerDIS,
+        pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
+        port,
+        PBS_SOCK_INET,
+        message_handler);
+      }
     }
 
   /*
    * ji_momhandle is used to match reply messages to their job.
    * Why not use the job number to find the job when we receive a reply message?
    */
-
   pjob->ji_momhandle = sock;
-
-  /* Associate a message handler with the connection */
-
-  if ((sock >= 0) && (message_handler != NULL))
-    {
-    add_conn(
-      sock,
-      ToServerDIS,
-      pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
-      port,
-      PBS_SOCK_INET,
-      message_handler);
-    }
 
   return(sock);
   }  /* END mom_open_socket_to_jobs_server() */
