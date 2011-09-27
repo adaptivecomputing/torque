@@ -148,7 +148,6 @@ static const char *pbs_destn_file = PBS_DEFAULT_FILE;
 
 char *pbs_server = NULL;
 
-struct sockaddr preferred_addr;
 
 /* empty_alarm_handler -- this routine was added to help fix bug 76.
    blocking reads would not timeout on a SIG_IGN so this routine
@@ -705,7 +704,7 @@ ssize_t    send_unix_creds(int sd)
  */
 #define MAX_IFS 64
 
-int trq_set_preferred_network_interface(char *if_name)
+int trq_set_preferred_network_interface(char *if_name, struct sockaddr *preferred_addr)
   {
 	struct ifreq *ifr, *ifend;
 	struct ifreq ifreqx;
@@ -717,40 +716,47 @@ int trq_set_preferred_network_interface(char *if_name)
   if(if_name == NULL)
 		return(PBSE_IVALREQ);	
 
+  if(preferred_addr == NULL)
+    {
+    return(PBSE_IVALREQ);
+    }
+    
+  memset(preferred_addr, 0, sizeof(struct sockaddr));
+
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if(sockfd < 0)
-		{
-		/* We can't do this without a socket */
-		return(PBSE_SYSTEM);
-		}
+    {
+    /* We can't do this without a socket */
+    return(PBSE_SYSTEM);
+    }
 
 	ifc.ifc_len = sizeof(ifs);
 	ifc.ifc_req = ifs;
 	if (ioctl(sockfd, SIOCGIFCONF, &ifc) < 0)
-	{
-			return(PBSE_SYSTEM);
-	}
+    {
+    return(PBSE_SYSTEM);
+    }
 
 	/* We will walk through all the interfaces until we find the one we are looking for */
   ifend = ifs + (ifc.ifc_len / sizeof(struct ifreq));
   for (ifr = ifc.ifc_req; ifr < ifend; ifr++)
     {
-      if (ifr->ifr_addr.sa_family == AF_INET)
+    if (ifr->ifr_addr.sa_family == AF_INET)
+      {
+      if(!strncmp(if_name, ifr->ifr_name, IF_NAMESIZE))
         {
-				if(!strncmp(if_name, ifr->ifr_name, IF_NAMESIZE))
-					{
-					strncpy(ifreqx.ifr_name, ifr->ifr_name,sizeof(ifreqx.ifr_name));
+        strncpy(ifreqx.ifr_name, ifr->ifr_name,sizeof(ifreqx.ifr_name));
 
-					if(ioctl(sockfd, SIOCGIFADDR, &ifreqx) < 0)
-						{
-	   				close(sockfd);
-		   			return(PBSE_SYSTEM);
-            }
-          /* get the address */
-          memcpy(&preferred_addr, &ifreqx.ifr_ifru.ifru_addr, sizeof(struct sockaddr));
+        if(ioctl(sockfd, SIOCGIFADDR, &ifreqx) < 0)
+        	{
+        	close(sockfd);
+        	return(PBSE_SYSTEM);
           }
+        /* get the address */
+        memcpy(preferred_addr, &ifreqx.ifr_ifru.ifru_addr, sizeof(struct sockaddr));
         }
       }
+    }
     return(PBSE_NONE);
   }
 
@@ -776,6 +782,7 @@ int pbs_original_connect(
   int auth;
   int rc;
 
+  struct sockaddr preferred_addr; /* set if TRQ_IFNAME set in torque.cfg */
   struct passwd *pw;
   int use_unixsock = 0;
 #ifdef ENABLE_UNIX_SOCKETS
@@ -985,15 +992,37 @@ int pbs_original_connect(
                 strerror(errno));
         }
 
-      return(-1);
+      return(PBSE_SYSTEM);
       }
 
-    if_name = getenv("TRQ_IFNAME");
+    if_name = trq_get_if_name();
     if(if_name)
       {
-      trq_set_preferred_network_interface(if_name);
+      rc = trq_set_preferred_network_interface(if_name, &preferred_addr);
+      if(rc != PBSE_NONE)
+        {
+        fprintf(stderr, "could not set preferred network interface (%s): %d\n",
+                if_name, rc);
+        if(if_name)
+          free(if_name);
+        return(rc);
+        }
+
       rc = bind(connection[out].ch_socket, &preferred_addr, sizeof(struct sockaddr));
+      if(rc < 0)
+        {
+        fprintf(stderr, "ERROR: could not bind preferred network interface (%s): errno: %d",
+                if_name, errno);
+        if(if_name)
+          free(if_name);
+        return(PBSE_SYSTEM);
+        }
       }
+
+    /* we are done with if_name at this point. trq_get_if_name allocated
+       space for it. We need to free it */
+    if(if_name)
+      free(if_name);
 
     memcpy((char *)&server_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
 

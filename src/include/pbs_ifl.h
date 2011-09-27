@@ -86,6 +86,8 @@
 #ifndef _PBS_IFL_DEF
 #define _PBS_IFL_DEF
 
+#include <sys/socket.h>
+
 /* Attribute Names used by user commands */
 
 #define ATTR_a "Execution_Time"
@@ -620,7 +622,8 @@ extern int
 
 extern int pbs_gpumode(int connect, char *node, char *gpuid, int gpumode);
 
-extern int trq_set_preferred_network_interface(char *if_name);
+extern int trq_set_preferred_network_interface(char *if_name, struct sockaddr *preferred_addr);
+extern char *trq_get_if_name(void);
 
 #endif /* _PBS_IFL_DEF */
 

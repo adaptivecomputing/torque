@@ -14,6 +14,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Changes to decrease some gpu error messages and to detect unusual gpu
       drivers and configurations.
   b - Change so user cannot impersonate a different user when using munge.
+  e - Added new option to torque.cfg name TRQ_IFNAME. This allows the user to designate
+      a preferred outbound interface for TORQUE requests. The interface is the name 
+      of the NIC interface, for example eth0.
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
