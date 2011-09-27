@@ -620,6 +620,8 @@ extern int
 
 extern int pbs_gpumode(int connect, char *node, char *gpuid, int gpumode);
 
+extern int trq_set_preferred_network_interface(char *if_name);
+
 #endif /* _PBS_IFL_DEF */
 
 /*  end of pbs_ifl.h  */
