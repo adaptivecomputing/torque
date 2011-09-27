@@ -516,9 +516,16 @@ void *process_request(
       rc = 0;  /* bypass the authentication of the user--trust the client completely */
     else if (munge_on)
       {
-      /* If munge_on is true we will validate the connection later */
-      svr_conn[sfds].cn_authen = PBS_NET_CONN_AUTHENTICATED;
-      rc = 0;
+      /* If munge_on is true we will validate the connection now */
+      if ( request->rq_type == PBS_BATCH_AltAuthenUser)
+        {
+        enqueue_threadpool_request(req_altauthenuser,request); 
+        return;
+        }
+      else
+        {
+        rc = authenticate_user(request, &conn_credent[sfds]);
+        }
       }
     else if (svr_conn[sfds].cn_authen != PBS_NET_CONN_AUTHENTICATED)
       rc = PBSE_BADCRED;
@@ -886,10 +893,6 @@ void dispatch_request(
       break;
 
     case PBS_BATCH_AltAuthenUser:
-      /* Use given authentication method to determine
-         if user is valid */
-
-      enqueue_threadpool_request(req_altauthenuser,request); 
 
       break;
 

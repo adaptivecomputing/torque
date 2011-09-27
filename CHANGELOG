@@ -190,6 +190,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       on the next iteration.
   b - Changes to decrease some gpu error messages and to detect unusual gpu
       drivers and configurations.
+  b - Change so user cannot impersonate a different user when using munge.
 
 2.5.8
   e - added util function getpwnam_ext() that has retry and errno logging
