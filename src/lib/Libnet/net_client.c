@@ -477,7 +477,7 @@ jump_to_check:
     case ECONNREFUSED:		/* Connection refused */
 
         if (EMsg != NULL)
-          sprintf(EMsg, "cannot connect to port %d in %s - connection refused",
+          sprintf(EMsg, "cannot connect to port %d in %s - connection refused.\n Check if trqauthd should be running\n",
                 tryport,
                 id);
 
