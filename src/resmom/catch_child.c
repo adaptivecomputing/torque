@@ -740,6 +740,9 @@ void scan_for_exiting(void)
         pjob->ji_qs.ji_jobid,
         "failed creating preobit message");
 
+      shutdown(sock, SHUT_RDWR);
+      close_conn(sock, FALSE);
+
       return;
       }
 
@@ -754,12 +757,15 @@ void scan_for_exiting(void)
       }
     }  /* END for (pjob) */
 
-  if ((pjob == NULL) && (no_mom_servers_down()))
+  if ((pjob == NULL) &&
+      (no_mom_servers_down()))
     {
     /* search finished */
 
     exiting_tasks = 0; /* went through all jobs */
     }
+
+  /* FYI: this socket is closed in preobit_reply, the callback function */
 
   return;
   }  /* END scan_for_exiting() */
@@ -850,6 +856,9 @@ int post_epilogue(
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buffer);
 
+    shutdown(sock, SHUT_RDWR);
+    close_conn(sock, FALSE);
+
     return(1);
     }
 
@@ -880,7 +889,7 @@ int post_epilogue(
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buffer);
 
-    shutdown(sock, 2);
+    shutdown(sock, SHUT_RDWR);
     close_conn(sock, FALSE);
 
     free_br(preq);

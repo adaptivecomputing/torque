@@ -4769,8 +4769,7 @@ int mom_open_socket_to_jobs_server(
  * @see scan_for_exiting
  */
 
-void
-clear_down_mom_servers(void)
+void clear_down_mom_servers(void)
   {
   int sindex;
 
@@ -4780,7 +4779,7 @@ clear_down_mom_servers(void)
     }
 
   return;
-  }
+  } /* END clear_down_mom_servers() */
 
 /**
  * is_mom_server_down

@@ -2984,6 +2984,7 @@ void req_returnfiles(
 
   struct job  *pjob;
   int          sock;
+  int          retry_attempts = 0;
   static char *id = "req_returnfiles";
 
   pjob = find_job(preq->rq_ind.rq_returnfiles.rq_jobid);
@@ -2992,8 +2993,13 @@ void req_returnfiles(
     {
     while ((sock = mom_open_socket_to_jobs_server(pjob, id, NULL)) < 0)
       {
-      /* NYI: this shouldn't retry forever, and should probably be on the other side of a fork */
-      /* XXX TODO */
+      if (retry_attempts++ >= 10)
+        {
+        req_reject(PBSE_NOSERVER, 0, preq, NULL, "Unable to open socket to pbs_server");
+
+        break;
+        }
+
       sprintf(log_buffer, "mom_open_socket_to_jobs_server FAILED to get socket: %d for job %s",
         sock,
         pjob->ji_qs.ji_jobid);
@@ -3002,19 +3008,22 @@ void req_returnfiles(
       sleep(1);
       }
 
-    if (preq->rq_ind.rq_returnfiles.rq_return_stdout)
+    if (sock >= 0)
       {
-      rc = return_file(pjob, StdOut, sock, FALSE);
+      if (preq->rq_ind.rq_returnfiles.rq_return_stdout)
+        {
+        rc = return_file(pjob, StdOut, sock, FALSE);
+        }
+      
+      if (preq->rq_ind.rq_returnfiles.rq_return_stderr)
+        {
+        rc = return_file(pjob, StdErr, sock, FALSE);
+        }
+      
+      reply_ack(preq);
+      
+      close(sock);
       }
-
-    if (preq->rq_ind.rq_returnfiles.rq_return_stderr)
-      {
-      rc = return_file(pjob, StdErr, sock, FALSE);
-      }
-
-    reply_ack(preq);
-
-    close(sock);
     }
   else
     {
