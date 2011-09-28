@@ -112,13 +112,71 @@
 #endif
 #include <pthread.h>
 
+#define MSG_LEN_LONG 160
+
 /* Global Data */
+
+extern int LOGLEVEL;
 
 extern char     *msg_err_unlink;
 extern char *path_queues;
 
 extern struct    server server;
 extern all_queues svr_queues;
+
+int lock_queue(struct pbs_queue *the_queue, char *id, char *msg, int logging)
+  {
+  int rc = PBSE_NONE;
+  char *err_msg;
+  if (logging >= 6)
+    { 
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s", the_queue->qu_qs.qu_name, id);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    }
+  if (pthread_mutex_lock(the_queue->qu_mutex) != 0)
+    { 
+    if (logging >= 6) 
+      {
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock queue %s mutex in method %s",
+          the_queue->qu_qs.qu_name, id);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      }
+    rc = PBSE_MUTEX;
+    } 
+  if (logging >= 6)
+    free(err_msg);
+  return rc;
+  }
+
+int unlock_queue(struct pbs_queue *the_queue, char *id, char *msg, int logging)
+  {
+  int rc = PBSE_NONE;
+  char *err_msg;
+  char stub_msg[] = "no pos";
+  if (logging >= 6)
+    {
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    if (msg == NULL)
+      msg = stub_msg;
+    snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", the_queue->qu_qs.qu_name, id, msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    }
+  if (pthread_mutex_unlock(the_queue->qu_mutex) != 0)
+    {
+    if (logging >= 6)
+      {
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock queue %s mutex in method %s",
+          the_queue->qu_qs.qu_name, id);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      }
+    rc = PBSE_MUTEX;
+    }
+  if (logging >= 6)
+    free(err_msg);
+  return rc;
+  }
+
 
 /*
  * que_alloc - allocate space for a queue structure and initialize
@@ -166,7 +224,7 @@ pbs_queue *que_alloc(
   initialize_all_jobs_array(pq->qu_jobs);
   initialize_all_jobs_array(pq->qu_jobs_array_sum);
   pthread_mutex_init(pq->qu_mutex,NULL);
-  pthread_mutex_lock(pq->qu_mutex);
+  lock_queue(pq, "que_alloc", NULL, LOGLEVEL);
 
   strncpy(pq->qu_qs.qu_name, name, PBS_MAXQUEUENAME);
 
@@ -223,6 +281,11 @@ void que_free(
   server.sv_qs.sv_numque--;
 
   remove_queue(&svr_queues,pq);
+  unlock_queue(pq, "que_free", NULL, LOGLEVEL);
+  free(pq->qu_mutex);
+  /* Should the following two be freed? */
+/*  free(pq->qu_jobs); */
+/*  free(pq->qu_jobs_array_sum); */
 
   free((char *)pq);
 
@@ -308,7 +371,7 @@ pbs_queue *find_queuebyname(
   pthread_mutex_unlock(svr_queues.allques_mutex);
   
   if (pque != NULL)
-    pthread_mutex_lock(pque->qu_mutex);
+    lock_queue(pque, "find_queuebyname", NULL, LOGLEVEL);
 
   if (pc != NULL)
     *pc = '@'; /* restore '@' server portion */
@@ -397,9 +460,9 @@ int remove_queue(
 
   if (pthread_mutex_trylock(aq->allques_mutex))
     {
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "remove_queue", NULL, LOGLEVEL);
     pthread_mutex_lock(aq->allques_mutex);
-    pthread_mutex_lock(pque->qu_mutex);
+    lock_queue(pque, "remove_queue", NULL, LOGLEVEL);
     }
 
   if ((index = get_value_hash(aq->ht,pque->qu_qs.qu_name)) < 0)
@@ -434,7 +497,7 @@ pbs_queue *next_queue(
   pthread_mutex_unlock(aq->allques_mutex);
 
   if (pque != NULL)
-    pthread_mutex_lock(pque->qu_mutex);
+    lock_queue(pque, "next_queue", NULL, LOGLEVEL);
 
   return(pque);
   } /* END next_queue() */

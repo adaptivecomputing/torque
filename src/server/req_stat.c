@@ -116,6 +116,7 @@
 #include "issue_request.h" /* issue_Drequest */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "svr_connect.h" /* svr_connect */
+#include "queue_func.h" /* find_queuebyname */
 
 /* Global Data Items: */
 
@@ -286,9 +287,8 @@ void *req_stat_job(
   if (rc != 0)
     {
     /* is invalid - an error */
-
+    if (pque != NULL) unlock_queue(pque, "req_stat_job", "invalid", LOGLEVEL);
     req_reject(rc, 0, preq, NULL, NULL);
-
     return(NULL);
     }
 
@@ -300,6 +300,7 @@ void *req_stat_job(
 
   if (cntl == NULL)
     {
+    if (pque != NULL) unlock_queue(pque, "req_stat_job", "no memory cntl", LOGLEVEL);
     req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 
     return(NULL);
@@ -319,7 +320,7 @@ void *req_stat_job(
   req_stat_job_step2(cntl); /* go to step 2, see if running is current */
 
   if (pque != NULL)
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "req_stat_job", "success", LOGLEVEL);
 
   return(NULL);
   }  /* END req_stat_job() */
@@ -624,8 +625,7 @@ static void req_stat_job_step2(
           (pque->qu_qs.qu_type != QTYPE_Execution))
         {
         /* ignore routing queues */
-        pthread_mutex_unlock(pque->qu_mutex);
-
+        unlock_queue(pque, "req_stat_job_step2", "ignore queue", LOGLEVEL);
         continue;
         }
 
@@ -683,8 +683,7 @@ static void req_stat_job_step2(
           if (pa != NULL)
             pthread_mutex_unlock(pa->ai_mutex);
           pthread_mutex_unlock(pjob->ji_mutex);
-          pthread_mutex_unlock(pque->qu_mutex);
-
+          unlock_queue(pque, "req_stat_job_step2", "perm", LOGLEVEL);
           return;
           }
 
@@ -705,7 +704,7 @@ static void req_stat_job_step2(
         log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_QUEUE,pque->qu_qs.qu_name,log_buf);
         }
     
-      pthread_mutex_unlock(pque->qu_mutex);
+      unlock_queue(pque, "req_stat_job_step2", "end while", LOGLEVEL);
       }      /* END for (pque) */
 
     if (pa != NULL)
@@ -733,12 +732,12 @@ static void req_stat_job_step2(
         
         if (pque->qu_qs.qu_type != QTYPE_Execution)
           {
-          pthread_mutex_unlock(pque->qu_mutex);
+          unlock_queue(pque, "req_stat_job_step2", "not exec", LOGLEVEL);
         
           goto nextjob;
           }
 
-        pthread_mutex_unlock(pque->qu_mutex);
+        unlock_queue(pque, "req_stat_job_step2", "exec", LOGLEVEL);
         }
       }
 
@@ -1168,11 +1167,11 @@ void req_stat_que(
     /* get status of the named queue */
 
     rc = status_que(pque, preq, &preply->brp_un.brp_status);
-
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "req_stat_que", "type == 0", LOGLEVEL);
     }
   else
     {
+    /* pque == NULL before next_queue */
     int iter = -1;
 
     /* get status of all queues */
@@ -1183,12 +1182,15 @@ void req_stat_que(
       if (rc != 0)
         {
         if (rc != PBSE_PERM)
+          {
+          unlock_queue(pque, "req_stat_que", "break", LOGLEVEL);
           break;
+          }
 
         rc = 0;
         }
 
-      pthread_mutex_unlock(pque->qu_mutex);
+      unlock_queue(pque, "req_stat_que", "end while", LOGLEVEL);
       }
     }
 

@@ -104,6 +104,7 @@
 
 /* Global Data Items: */
 
+extern int LOGLEVEL;
 extern char *msg_unkjobid;
 extern char *msg_manager;
 extern char *msg_movejob;
@@ -268,26 +269,37 @@ void *req_orderjob(
 
     return(NULL);
     }
+  else if ((pjob1->ji_qhdr == NULL) || (pjob2->ji_qhdr == NULL))
+    {
+    req_reject(PBSE_BADSTATE, 0, req, NULL, "One of the jobs does not have a queue");     
+    }
   else if (pjob1->ji_qhdr != pjob2->ji_qhdr)
     {
     /* jobs are in different queues */
     int ok = FALSE;
-    pque2 = get_jobs_queue(pjob2);
-
-    if ((rc = svr_chkque(pjob1, pque2, get_variable(pjob1, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
-      {
-      pthread_mutex_unlock(pque2->qu_mutex);
-      pque1 = get_jobs_queue(pjob1);
-
-      if ((rc = svr_chkque(pjob2, pque1, get_variable(pjob2, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
-        {
-        ok = TRUE;
-        }
-
-      pthread_mutex_unlock(pque1->qu_mutex);
-      }
+    if ((pque2 = get_jobs_queue(pjob2)) == NULL)
+      req_reject(PBSE_BADSTATE, 0, req, NULL, "job2 queue is unavailable");
     else
-      pthread_mutex_unlock(pque2->qu_mutex);
+      {
+      if ((rc = svr_chkque(pjob1, pque2, get_variable(pjob1, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
+        {
+        unlock_queue(pque2, "req_orderjob", "pque2 svr_chkque pass", LOGLEVEL);
+        if ((pque1 = get_jobs_queue(pjob1)) == NULL)
+          {
+          req_reject(PBSE_BADSTATE, 0, req, NULL, "job1 queue is unavailable");
+          }
+        else
+          {
+          if ((rc = svr_chkque(pjob2, pque1, get_variable(pjob2, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
+            {
+            ok = TRUE;
+            }
+          unlock_queue(pque1, "req_orderjob", "pque1", LOGLEVEL);
+          }
+        }
+      else
+        unlock_queue(pque2, "req_orderjob", "pque2 svr_chkque fail", LOGLEVEL);
+      }
 
     if (ok == FALSE)
       {
@@ -322,12 +334,12 @@ void *req_orderjob(
     }
   else
     {
-    pque1 = get_jobs_queue(pjob1);
-
-    swap_jobs(pque1->qu_jobs,pjob1,pjob2);
-    swap_jobs(NULL,pjob1,pjob2);
-
-    pthread_mutex_unlock(pque1->qu_mutex);
+    if ((pque1 = get_jobs_queue(pjob1)) != NULL)
+      {
+      swap_jobs(pque1->qu_jobs,pjob1,pjob2);
+      swap_jobs(NULL,pjob1,pjob2);
+      unlock_queue(pque1, "req_orderjob", "pque1 after swap", LOGLEVEL);
+      }
     }
 
   /* need to update disk copy of both jobs to save new order */

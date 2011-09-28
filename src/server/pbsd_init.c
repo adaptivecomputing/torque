@@ -104,7 +104,6 @@
 #include "attribute.h"
 #include "server_limits.h"
 #include "server.h"
-#include "queue.h"
 #include "pbs_job.h"
 #include "resource.h"
 #include "work_task.h"
@@ -120,6 +119,7 @@
 #include "pbs_nodes.h"
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
+#include "queue_recov.h" /* que_recov_xml */
 
 
 /*#ifndef SIGKILL*/
@@ -994,7 +994,7 @@ int pbsd_init(
             &pque->qu_attr[QE_ATR_ResourceAssn]);
           }
 
-        pthread_mutex_unlock(pque->qu_mutex);
+        unlock_queue(pque, id, NULL, LOGLEVEL);
         }
       }
     }

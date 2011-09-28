@@ -104,6 +104,8 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
+#include "queue_func.h" /* find_queuebyname */
+
 
 /* Private Data */
 
@@ -115,6 +117,7 @@ extern int   svr_authorize_jobreq(struct batch_request *, job *);
 
 /* Global Data Items  */
 
+extern int LOGLEVEL;
 extern struct server server;
 extern struct all_jobs alljobs;
 extern struct all_jobs array_summary;
@@ -292,7 +295,7 @@ void req_selectjobs(
 
   struct stat_cntl *cntl;
   svrattrl    *plist;
-  pbs_queue    *pque;
+  pbs_queue    *pque = NULL;
   int      rc;
 
   struct select_list *selistp;
@@ -354,7 +357,7 @@ void req_selectjobs(
     }
 
   if (pque != NULL)
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "req_selectjobs", NULL, LOGLEVEL);
 
   return;
   }  /* END req_selectjobs() */
@@ -468,12 +471,10 @@ static void sel_step2(
         
         if (pque->qu_qs.qu_type != QTYPE_Execution)
           {
-          pthread_mutex_unlock(pque->qu_mutex);
-          
+          unlock_queue(pque, "sel_step2", "not exec queue", LOGLEVEL);
           continue;
           }
-        
-        pthread_mutex_unlock(pque->qu_mutex);
+        unlock_queue(pque, "sel_step2", "exec queue", LOGLEVEL);
         }
       }
 
@@ -611,12 +612,10 @@ static void sel_step3(
           
           if (pque->qu_qs.qu_type != QTYPE_Execution)
             {
-            pthread_mutex_unlock(pque->qu_mutex);
-            
+            unlock_queue(pque, "sel_step3", "not exec queue", LOGLEVEL);
             goto nextjob;
             }
-          
-          pthread_mutex_unlock(pque->qu_mutex);
+          unlock_queue(pque, "sel_step3", "exec queue", LOGLEVEL);
           }
         }
 

@@ -613,13 +613,15 @@ jump:
       {
       pque->qu_numcompleted++;
 
-      pthread_mutex_unlock(pque->qu_mutex);
-      }
+      unlock_queue(pque, "execute_job_delete", NULL, LOGLEVEL);
 
-    KeepSeconds = attr_ifelse_long(
+      KeepSeconds = attr_ifelse_long(
                     &pque->qu_attr[QE_ATR_KeepCompleted],
                     &server.sv_attr[SRV_ATR_KeepCompleted],
                     0);
+      }
+    else
+      KeepSeconds = 0;
 
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
@@ -1009,13 +1011,13 @@ static void post_delete_mom1(
    */
   if (delay == 0)
     {
-    pque = get_jobs_queue(pjob);
-
-    delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
+    if ((pque = get_jobs_queue(pjob)) != NULL)
+      {
+      delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
                              &server.sv_attr[SRV_ATR_KillDelay],
                              2);
-
-    pthread_mutex_unlock(pque->qu_mutex);
+      unlock_queue(pque, "post_delete_mom1", NULL, LOGLEVEL);
+      }
     }
 
   pwtnew = set_task(WORK_Timed, delay + time_now, post_delete_mom2, strdup(pjob->ji_qs.ji_jobid), TRUE);

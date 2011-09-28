@@ -151,6 +151,8 @@
 #endif
 
 #define MAXLINE 1024
+extern int LOGLEVEL;
+
 
 int conn_qsub(char *, long, char *);
 void job_purge(job *);
@@ -2525,8 +2527,10 @@ pbs_queue *get_jobs_queue(
     {
     if (pthread_mutex_trylock(pque->qu_mutex))
       {
+      /* if fail */
+      log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_QUEUE,"get_jobs_queue in trylock",pque->qu_qs.qu_name);
       pthread_mutex_unlock(pjob->ji_mutex);
-      pthread_mutex_lock(pque->qu_mutex);
+      lock_queue(pque, "get_jobs_queue", NULL, LOGLEVEL);
       pthread_mutex_lock(pjob->ji_mutex);
       }
     }

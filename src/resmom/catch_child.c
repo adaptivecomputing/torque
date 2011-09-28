@@ -747,7 +747,6 @@ void scan_for_exiting(void)
       }
 
     DIS_tcp_wflush(sock);
-    pbs_disconnect_socket(sock);
 
     if (found_one++ >= ObitsAllowed)
       {

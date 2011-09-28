@@ -341,3 +341,9 @@ void change_value_hash(hash_table_t *ht, char *key, int new_value)
   exit(1);
   }
 
+int lock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging)
+  {
+  fprintf(stderr, "The call to lock_queue needs to be mocked!!\n");
+  exit(1);
+  }
+

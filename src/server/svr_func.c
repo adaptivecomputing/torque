@@ -103,6 +103,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 
+extern int    LOGLEVEL;
 extern int    scheduler_sock;
 extern int    svr_do_schedule;
 extern int    listener_command;
@@ -266,60 +267,60 @@ void set_resc_assigned(
 
   sysru = &server.sv_attr[SRV_ATR_resource_assn];
 
-  pque = get_jobs_queue(pjob);
-  queru = &pque->qu_attr[QE_ATR_ResourceAssn];
-  jobrsc = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
-
-  while (jobrsc != NULL)
+  if ((pque = get_jobs_queue(pjob)) != NULL)
     {
-    rscdef = jobrsc->rs_defin;
+    queru = &pque->qu_attr[QE_ATR_ResourceAssn];
+    jobrsc = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
 
-    /* if resource usage is to be tracked */
-
-    if ((rscdef->rs_flags & ATR_DFLAG_RASSN) &&
-        (jobrsc->rs_value.at_flags & ATR_VFLAG_SET))
+    while (jobrsc != NULL)
       {
-      /* update system attribute of resources assigned */
+      rscdef = jobrsc->rs_defin;
 
-      pr = find_resc_entry(sysru, rscdef);
+      /* if resource usage is to be tracked */
 
-      if (pr == NULL)
+      if ((rscdef->rs_flags & ATR_DFLAG_RASSN) &&
+          (jobrsc->rs_value.at_flags & ATR_VFLAG_SET))
         {
-        pr = add_resource_entry(sysru, rscdef);
+        /* update system attribute of resources assigned */
+
+        pr = find_resc_entry(sysru, rscdef);
 
         if (pr == NULL)
           {
-          pthread_mutex_unlock(pque->qu_mutex);
-         
-          return;
+          pr = add_resource_entry(sysru, rscdef);
+
+          if (pr == NULL)
+            {
+            unlock_queue(pque, "set_resc_assigned", "sysru", LOGLEVEL);
+            return;
+            }
           }
-        }
 
-      rscdef->rs_set(&pr->rs_value, &jobrsc->rs_value, op);
+        rscdef->rs_set(&pr->rs_value, &jobrsc->rs_value, op);
 
-      /* update queue attribute of resources assigned */
+        /* update queue attribute of resources assigned */
 
-      pr = find_resc_entry(queru, rscdef);
-
-      if (pr == NULL)
-        {
-        pr = add_resource_entry(queru, rscdef);
+        pr = find_resc_entry(queru, rscdef);
 
         if (pr == NULL)
           {
-          pthread_mutex_unlock(pque->qu_mutex);
+          pr = add_resource_entry(queru, rscdef);
 
-          return;
+          if (pr == NULL)
+            {
+            unlock_queue(pque, "set_resc_assigned", "queru", LOGLEVEL);
+            return;
+            }
           }
+
+        rscdef->rs_set(&pr->rs_value, &jobrsc->rs_value, op);
         }
 
-      rscdef->rs_set(&pr->rs_value, &jobrsc->rs_value, op);
-      }
+      jobrsc = (resource *)GET_NEXT(jobrsc->rs_link);
+      }  /* END while (jobrsc != NULL) */
 
-    jobrsc = (resource *)GET_NEXT(jobrsc->rs_link);
-    }  /* END while (jobrsc != NULL) */
-
-  pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "set_resc_assigned", "success", LOGLEVEL);
+    }
 
   return;
   }  /* END set_resc_assigned() */

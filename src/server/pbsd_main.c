@@ -1136,7 +1136,7 @@ void main_loop(void)
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
         queue_route(pque);
 
-      pthread_mutex_unlock(pque->qu_mutex);
+      unlock_queue(pque, "main_loop", NULL, LOGLEVEL);
       }
 
 #ifdef NO_SIGCHLD

@@ -83,7 +83,10 @@
 #define QUEUE_H
 
 #include "resizable_array.h"
-#include "hash_table.h"
+#include "hash_table.h" /* hash_table_t */
+#include "pbs_ifl.h" /* PBS_MAXQUEUENAME */
+#include "server_limits.h" /* PBS_NUMJOBSTATE */
+#include "attribute.h" /* attribute_def, attribute */
 
 #define INITIAL_QUEUE_SIZE 5
 
@@ -209,14 +212,8 @@ typedef struct all_queues
   } all_queues;
 
 
-extern pbs_queue *find_queuebyname(char *);
-extern pbs_queue *get_dfltque();
-extern pbs_queue *que_alloc(char *name);
-extern void   que_free(pbs_queue *);
-extern pbs_queue *que_recov_xml(char *);
-extern pbs_queue *que_recov(char *);
-extern int    que_save(pbs_queue *);
-
+int lock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging);
+int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging);
 pbs_queue *next_queue(all_queues *,int *);
 int        insert_queue(all_queues *,pbs_queue *);
 int        remove_queue(all_queues *,pbs_queue *);

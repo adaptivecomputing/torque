@@ -133,6 +133,8 @@
 #include "node_func.h" /* init_prop, find_nodebyname, reinitialize_node_iterator, recompute_ntype_cnts, effective_node_delete, create_pbs_node */
 #include "node_manager.h" /* setup_notification */
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
+#include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
+#include "queue_recov.h" /* que_save */
 
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
@@ -971,10 +973,8 @@ void mgr_queue_create(
 
   if ((pque = find_queuebyname(preq->rq_ind.rq_manager.rq_objname)))
     {
-    pthread_mutex_unlock(pque->qu_mutex);
-
+    unlock_queue(pque, "mgr_queue_create", "fail", LOGLEVEL);
     req_reject(PBSE_QUEEXIST, 0, preq, NULL, NULL);
-
     return;
     }
 
@@ -1031,7 +1031,7 @@ void mgr_queue_create(
       reply_ack(preq);
       }
 
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "mgr_queue_create", "success", LOGLEVEL);
     }
 
   return;
@@ -1414,10 +1414,7 @@ void mgr_queue_set(
     {
     qname   = all_quename;
     allques = TRUE;
-
     pque = next_queue(&svr_queues,&iter);
-
-    pthread_mutex_lock(pque->qu_mutex);
     }
   else
     {
@@ -1455,10 +1452,8 @@ void mgr_queue_set(
 
     if (rc != 0)
       {
-      pthread_mutex_unlock(pque->qu_mutex);
-    
+      unlock_queue(pque, "mgr_queue_set", "fail badattr", LOGLEVEL);
       reply_badattr(rc, bad, plist, preq);
-
       return;
       }
 
@@ -1469,7 +1464,7 @@ void mgr_queue_set(
     if (allques == FALSE)
       break;
     
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "mgr_queue_set", "before next_queue call", LOGLEVEL);
 
     pque = next_queue(&svr_queues,&iter);
     }  /* END while (pque != NULL) */
@@ -1484,18 +1479,13 @@ void mgr_queue_set(
     {
     if ((badattr = check_que_attr(pque)) != NULL)
       {
-      sprintf(log_buf, msg_attrtype,
-              pque->qu_qs.qu_name,
-              badattr);
-
-      pthread_mutex_unlock(pque->qu_mutex);
-
+      sprintf(log_buf, msg_attrtype, pque->qu_qs.qu_name, badattr);
+      unlock_queue(pque, "mgr_queue_set", "attrtype", LOGLEVEL);
       reply_text(preq, PBSE_ATTRTYPE, log_buf);
-
       return;
       }
 
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "mgr_queue_set", "last loop before next_queue", LOGLEVEL);
 
     if (allques == FALSE)
       break;
@@ -1537,10 +1527,7 @@ void mgr_queue_unset(
     {
     qname   = all_quename;
     allques = TRUE;
-
     pque = next_queue(&svr_queues,&iter);
-
-    pthread_mutex_lock(pque->qu_mutex);
     }
   else
     {
@@ -1575,10 +1562,8 @@ void mgr_queue_unset(
 
     if (rc != 0)
       {
-      pthread_mutex_unlock(pque->qu_mutex);
-
+      unlock_queue(pque, "mgr_queue_unset", "badattr", LOGLEVEL);
       reply_badattr(rc, bad_attr, plist, preq);
-
       return;
       }
 
@@ -1589,6 +1574,7 @@ void mgr_queue_unset(
     if ((pque->qu_attr[QA_ATR_QType].at_flags & ATR_VFLAG_SET) == 0)
       pque->qu_qs.qu_type = QTYPE_Unset;
 
+    unlock_queue(pque, "mgr_queue_unset", "success", LOGLEVEL);
     if (allques == FALSE)
       break;
     

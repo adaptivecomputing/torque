@@ -1177,14 +1177,13 @@ int modify_job_attr(
 
       if (rc == 0)
         {
-        pque = get_jobs_queue(pjob);
-
-        rc = chk_resc_limits(
-               &newattr[JOB_ATR_resource],
-               pque,
-               NULL);
-
-        pthread_mutex_unlock(pque->qu_mutex);
+        if ((pque = get_jobs_queue(pjob)) != NULL)
+          {
+          rc = chk_resc_limits( &newattr[JOB_ATR_resource], pque, NULL);
+          unlock_queue(pque, "modify_job_attr", NULL, LOGLEVEL);
+          }
+        else
+          rc = PBSE_QUENOTAVAILABLE;
         }
       }
     }    /* END if ((rc == 0) && ...) */

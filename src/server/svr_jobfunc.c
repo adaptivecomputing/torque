@@ -135,6 +135,7 @@
 #include "pbs_proto.h"
 #include "csv.h"
 #include "array.h"
+#include "queue_func.h" /* find_queuebyname */
 
 
 /* Private Functions */
@@ -473,7 +474,7 @@ int svr_enquejob(
       &pque->qu_attr[QE_ATR_checkpoint_min]);
 
     /* do anything needed doing regarding job dependencies */
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "svr_enquejob", "anything", LOGLEVEL);
 
     if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
       {
@@ -506,7 +507,7 @@ int svr_enquejob(
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
     pjob->ji_qs.ji_un.ji_routet.ji_rteretry = 0;
     
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "svr_enquejob", "route job", LOGLEVEL);
     }
 
   return(PBSE_NONE);
@@ -588,7 +589,7 @@ void svr_dequejob(
 
     pjob->ji_qhdr = NULL;
 
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "svr_dequejob", NULL, LOGLEVEL);
     }
 
 #ifndef NDEBUG
@@ -722,7 +723,7 @@ int svr_setjobstate(
             &pjob->ji_wattr[JOB_ATR_etime]);
           }
 
-        pthread_mutex_unlock(pque->qu_mutex);
+        unlock_queue(pque, "svr_setjobstate", NULL, LOGLEVEL);
         }
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
@@ -2466,7 +2467,7 @@ void set_resc_deflt(
 #endif
 
     if (has_queue_mutex == FALSE)
-      pthread_mutex_unlock(pque->qu_mutex);
+      unlock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
     }
 
   for (i = 0;i < JOB_ATR_LAST;++i)
@@ -2717,7 +2718,7 @@ static void correct_ct()
       pthread_mutex_unlock(pjob->ji_mutex);
       }
 
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "correct_ct", NULL, LOGLEVEL);
     } /* END for each queue */
 
   pthread_mutex_lock(server.sv_qs_mutex);

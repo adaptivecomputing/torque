@@ -23,6 +23,7 @@
 
 #include "array.h"
 
+extern int LOGLEVEL;
 extern int  svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host);
 extern void job_purge(job *pjob);
 
@@ -161,7 +162,7 @@ int attempt_delete(
       {
       pque->qu_numcompleted++;
 
-      pthread_mutex_unlock(pque->qu_mutex);
+      unlock_queue(pque, "attempt_delete", NULL, LOGLEVEL);
       }
     
     KeepSeconds = attr_ifelse_long(

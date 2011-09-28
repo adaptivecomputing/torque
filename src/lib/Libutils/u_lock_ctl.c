@@ -15,6 +15,7 @@ lock_cntr *cntr = NULL;
 #define MSG_LEN_SHORT 60
 #define MSG_LEN_LONG 160
 
+/* additional lock, unlock method exist in queue_func.*, node_func.* */
 int lock_init()
   {
   int rc = PBSE_NONE;
@@ -132,7 +133,6 @@ int unlock_tcp_table()
     }
   return(PBSE_NONE);
   }
-
 
 int lock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
   {

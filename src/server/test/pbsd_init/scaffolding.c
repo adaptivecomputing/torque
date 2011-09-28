@@ -466,3 +466,10 @@ void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
   fprintf(stderr, "The call to svr_evaljobstate needs to be mocked!!\n");
   exit(1);
   }
+
+int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging)
+  {
+  fprintf(stderr, "The call to unlock_queue needs to be mocked!!\n");
+  exit(1);
+  }
+

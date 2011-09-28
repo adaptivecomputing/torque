@@ -211,6 +211,7 @@ PbsErrClient(PBSE_SOCKET_CLOSE, "Socket close detected")
 PbsErrClient(PBSE_SOCKET_LISTEN, "Error listening on socket")
 PbsErrClient(PBSE_AUTH_INVALID, "Invalid auth type in request")
 PbsErrClient(PBSE_NOT_IMPLEMENTED, "This functionality is not yet implemented")
+PbsErrClient(PBSE_QUENOTAVAILABLE, "Queue is currently not available")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

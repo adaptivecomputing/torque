@@ -855,7 +855,7 @@ int handle_returnstd(
             &server.sv_attr[SRV_ATR_KeepCompleted],
             0);
 
-      pthread_mutex_unlock(pque->qu_mutex);
+      unlock_queue(pque, "handle_returnstd", NULL, LOGLEVEL);
       }
     
     if (KeepSeconds > 0)
@@ -1350,7 +1350,7 @@ int handle_exited(
     {
     pque->qu_numcompleted++;
 
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "handle_exited", NULL, LOGLEVEL);
     }
   
   return(WORK_Immed);
@@ -1383,7 +1383,7 @@ int handle_complete_first_time(
         &server.sv_attr[SRV_ATR_KeepCompleted],
         0);
 
-    pthread_mutex_unlock(pque->qu_mutex);
+    unlock_queue(pque, "handle_complete_first_time", NULL, LOGLEVEL);
     }
   
   if (((server.sv_attr[SRV_ATR_JobMustReport].at_flags & ATR_VFLAG_SET) != 0) &&

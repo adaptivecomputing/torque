@@ -360,7 +360,7 @@ int init_network(
 
     i = 1;
 
-    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&i, sizeof(i));
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(i));
 
     /* name that socket "in three notes" */
 

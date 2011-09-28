@@ -80,6 +80,8 @@
 #ifndef HASH_TABLE_H
 #define HASH_TABLE_H
 
+#include "endian.h" /* LITTLE_ENDIAN */
+
 #ifdef __BYTE_ORDER
 # if __BYTE_ORDER == __LITTLE_ENDIAN
 #  define LITTLEENDIAN

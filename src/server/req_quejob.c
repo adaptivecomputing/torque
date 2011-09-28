@@ -121,6 +121,8 @@
 #include "svrfunc.h"
 #include "csv.h"
 #include "array.h"
+#include "queue_func.h" /* get_dfltque, find_queuebyname */
+
 
 #include "work_task.h"
 extern void  job_clone_wt(struct work_task *);
@@ -646,12 +648,9 @@ void *req_quejob(
           if (pc <= basename)
             {
             /* FAILURE */
-            pthread_mutex_unlock(pque->qu_mutex);
-
+            unlock_queue(pque, "req_quejob", "job file corrupt", LOGLEVEL);
             log_err(errno, id, "job file is corrupt");
-
             req_reject(PBSE_INTERNAL, 0, preq, NULL, "job file is corrupt");
-
             return(NULL);
             }
           }
@@ -661,12 +660,9 @@ void *req_quejob(
       else
         {
         /* FAILURE */
-        pthread_mutex_unlock(pque->qu_mutex);
-
+        unlock_queue(pque, "req_quejob", "cannot create job file", LOGLEVEL);
         log_err(errno, id, "cannot create job file");
-
         req_reject(PBSE_SYSTEM, 0, preq, NULL, "cannot open new job file");
-
         return(NULL);
         }
       }
@@ -680,14 +676,10 @@ void *req_quejob(
   if ((pj = job_alloc()) == NULL)
     {
     /* FAILURE */
-    pthread_mutex_unlock(pque->qu_mutex);
-
+    unlock_queue(pque, "req_quejob", "cannot alloc new job", LOGLEVEL);
     log_err(errno, id, "cannot alloc new job");
-
     unlink(namebuf);
-
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "cannot alloc new job structure");
-
     return(NULL);
     }
 
@@ -734,12 +726,9 @@ void *req_quejob(
     if ((pdef->at_flags & resc_access_perm) == 0)
       {
       /* FAILURE */
-      pthread_mutex_unlock(pque->qu_mutex);
-
+      unlock_queue(pque, "req_quejob", "attr ro", LOGLEVEL);
       job_purge(pj);
-
       reply_badattr(PBSE_ATTRRO, 1, psatl, preq);
-
       return(NULL);
       }
 
@@ -765,26 +754,19 @@ void *req_quejob(
         if (pque->qu_qs.qu_type == QTYPE_Execution)
           {
           /* FAILURE */
-          pthread_mutex_unlock(pque->qu_mutex);
-
+          unlock_queue(pque, "req_quejob", "bad attr", LOGLEVEL);
           job_purge(pj);
-
           reply_badattr(rc, 1, psatl, preq);
-
           return(NULL);
           }
         }
       else
         {
         /* FAILURE */
-        pthread_mutex_unlock(pque->qu_mutex);
-
+        unlock_queue(pque, "req_quejob", "random error", LOGLEVEL);
         /* any other error is fatal */
-
         job_purge(pj);
-
         reply_badattr(rc, 1, psatl, preq);
-
         return(NULL);
         }
       }    /* END if (rc != 0) */
@@ -816,12 +798,9 @@ void *req_quejob(
 
       if (rc)
         {
-        pthread_mutex_unlock(pque->qu_mutex);
-
+        unlock_queue(pque, "req_quejob", "attr exec fail", LOGLEVEL);
         job_purge(pj);
-
         req_reject(rc, i, preq, NULL, "cannot execute attribute action");
-
         return(NULL);
         }
       }
@@ -860,12 +839,9 @@ void *req_quejob(
       if ((pj->ji_wattr[JOB_ATR_priority].at_val.at_long < -1024) ||
           (pj->ji_wattr[JOB_ATR_priority].at_val.at_long > 1024))
         {
-        pthread_mutex_unlock(pque->qu_mutex);
-
+        unlock_queue(pque, "req_quejob", "invalid job priority", LOGLEVEL);
         job_purge(pj);
-
         req_reject(PBSE_BADATVAL, 0, preq, NULL, "invalid job priority");
-
         return(NULL);
         }
       }
@@ -893,14 +869,13 @@ void *req_quejob(
 
       if ((tmpjob = find_job(pj->ji_qs.ji_jobid)) != NULL)
         {
+        unlock_queue(pque, "req_quejob", "job duplication", LOGLEVEL);
         /* not unique, reject job */
         job_purge(pj);
-
         snprintf(log_buf,sizeof(log_buf),
           "Job with id %s already exists, cannot set job id\n",
           pj->ji_qs.ji_jobid);
         req_reject(PBSE_JOBEXIST,0,preq,NULL,log_buf);
-
         return(NULL);
         }
       }
@@ -1087,12 +1062,9 @@ void *req_quejob(
     if ((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str == NULL) ||
         (pj->ji_wattr[JOB_ATR_errpath].at_val.at_str == NULL))
       {
-      pthread_mutex_unlock(pque->qu_mutex);
-
+      unlock_queue(pque, "req_quejob", "no output/error file", LOGLEVEL);
       job_purge(pj);
-
       req_reject(PBSE_NOATTR, 0, preq, NULL, "no output/error file specified");
-
       return(NULL);
       }
 
@@ -1160,12 +1132,9 @@ void *req_quejob(
             preq->rq_user,
             pj->ji_wattr[JOB_ATR_account].at_val.at_str) == 0)
         {
-        pthread_mutex_unlock(pque->qu_mutex);
-
+        unlock_queue(pque, "req_quejob", "invalid account", LOGLEVEL);
         job_purge(pj);
-
         req_reject(PBSE_BADACCT, 0, preq, NULL, "invalid account");
-
         return(NULL);
         }
       }
@@ -1183,12 +1152,9 @@ void *req_quejob(
       if (pj->ji_wattr[JOB_ATR_account].at_val.at_str == 0)
         {
         /* no default found */
-        pthread_mutex_unlock(pque->qu_mutex);
-
+        unlock_queue(pque, "req_quejob", "no default account", LOGLEVEL);
         job_purge(pj);
-
         req_reject(PBSE_BADACCT, 0, preq, NULL, "no default account available");
-
         return(NULL);
         }
       }
@@ -1203,14 +1169,10 @@ void *req_quejob(
 
     if (!(pj->ji_wattr[JOB_ATR_job_owner].at_flags & ATR_VFLAG_SET))
       {
-      pthread_mutex_unlock(pque->qu_mutex);
-
+      unlock_queue(pque, "req_quejob", "job owner not set", LOGLEVEL);
       job_purge(pj);
-
       log_err(errno, id, "job owner not set");
-
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "no job owner specified");
-
       return(NULL);
       }
 
@@ -1218,12 +1180,9 @@ void *req_quejob(
 
     if (++pj->ji_wattr[JOB_ATR_hopcount].at_val.at_long > PBS_MAX_HOPCOUNT)
       {
-      pthread_mutex_unlock(pque->qu_mutex);
-
+      unlock_queue(pque, "req_quejob", "max job hop", LOGLEVEL);
       job_purge(pj);
-
       req_reject(PBSE_HOPCOUNT, 0, preq, NULL, "max job hop reached");
-
       return(NULL);
       }
     }
@@ -1276,12 +1235,9 @@ void *req_quejob(
 
   if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
     {
-    pthread_mutex_unlock(pque->qu_mutex);
-
+    unlock_queue(pque, "req_quejob", "can not move", LOGLEVEL);
     job_purge(pj);
-
     req_reject(rc, 0, preq, NULL, EMsg);
-
     return(NULL);
     }
 
@@ -1316,19 +1272,16 @@ void *req_quejob(
   if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) != 0)
     {
     /* reply failed, purge the job and close the connection */
-    pthread_mutex_unlock(pque->qu_mutex);
-
+    unlock_queue(pque, "req_quejob", "reply fail", LOGLEVEL);
     close_conn(sock,FALSE);
-
     job_purge(pj);
-
     return(NULL);
     }
 
   /* link job into server's new jobs list request  */
   insert_job(&newjobs,pj);
 
-  pthread_mutex_unlock(pque->qu_mutex);
+  unlock_queue(pque, "req_quejob", "success", LOGLEVEL);
   pthread_mutex_unlock(pj->ji_mutex);
 
   return(NULL);
@@ -2052,36 +2005,36 @@ void req_commit(
    * to the user.
    */
 
-  pque = get_jobs_queue(pj);
-
-  if ((preq->rq_fromsvr == 0) &&
-      (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
-      (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
+  if ((pque = get_jobs_queue(pj)) != NULL)
     {
-    if ((rc = job_route(pj)))
+    if ((preq->rq_fromsvr == 0) &&
+        (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
+        (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
       {
-      pthread_mutex_unlock(pque->qu_mutex);
-
-      job_purge(pj);
-
-      req_reject(rc, 0, preq, NULL, NULL);
-
-      if (LOGLEVEL >= 6)
+      if ((rc = job_route(pj)))
         {
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
-          "job route job");
+        unlock_queue(pque, "req_commit", "can't route job", LOGLEVEL);
+
+        job_purge(pj);
+
+        req_reject(rc, 0, preq, NULL, NULL);
+
+        if (LOGLEVEL >= 6)
+          {
+          log_record(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+            "job route job");
+          }
+
+        /* FAILURE */
+
+        return;
         }
-
-      /* FAILURE */
-
-      return;
       }
+    unlock_queue(pque, "req_commit", "route success", LOGLEVEL);
     }
-      
-  pthread_mutex_unlock(pque->qu_mutex);
 
 #ifdef AUTORUN_JOBS
   /* If we are auto running jobs with start_count = 0 then the

@@ -114,6 +114,8 @@
 #include "array.h"
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
+#include "queue_func.h" /* find_queuebyname */
+
 
 #if __STDC__ != 1
 #include <memory.h>
@@ -145,6 +147,7 @@ static int move_job_file(int con, job *pjob, enum job_file which);
 
 /* Global Data */
 
+extern int              LOGLEVEL;
 extern char             *path_jobs;
 extern char             *path_spool;
 extern attribute_def     job_attr_def[];
@@ -259,14 +262,14 @@ static int local_move(
 
   {
   char      *id = "local_move";
-  pbs_queue *qp;
+  pbs_queue *pque;
   char      *destination = jobp->ji_qs.ji_destin;
   int        mtype;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* search for destination queue */
 
-  if ((qp = find_queuebyname(destination)) == NULL)
+  if ((pque = find_queuebyname(destination)) == NULL)
     {
     sprintf(log_buf, "queue %s does not exist\n", destination);
 
@@ -298,16 +301,15 @@ static int local_move(
 
   if ((*my_err = svr_chkque(
                      jobp,
-                     qp,
+                     pque,
                      get_variable(jobp, pbs_o_host), mtype, NULL)))
     {
     /* should this queue be retried? */
-    pthread_mutex_unlock(qp->qu_mutex);
-
+    unlock_queue(pque, "local_move", "retry", LOGLEVEL);
     return(should_retry_route(*my_err));
     }
     
-  pthread_mutex_unlock(qp->qu_mutex);
+  unlock_queue(pque, "local_move", "success", LOGLEVEL);
 
   /* dequeue job from present queue, update destination and */
   /* queue_rank for new queue and enqueue into destination  */
@@ -383,16 +385,23 @@ void finish_routing_processing(
       svr_setjobstate(pjob, newstate, newsub);
 
       /* need to have queue's mutex when entering job_route */
-      pque = get_jobs_queue(pjob);
-      
-      if ((status = job_route(pjob)) == PBSE_ROUTEREJ)
-        job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
-      else if (status != 0)
-        job_abt(&pjob, msg_routexceed);
-      else
-        pthread_mutex_unlock(pjob->ji_mutex);
+      if ((pque = get_jobs_queue(pjob)) != NULL)
+        {
+        if ((status = job_route(pjob)) == PBSE_ROUTEREJ)
+          job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
+        else if (status != 0)
+          job_abt(&pjob, msg_routexceed);
+        else
+          pthread_mutex_unlock(pjob->ji_mutex);
 
-      pthread_mutex_unlock(pque->qu_mutex);
+        unlock_queue(pque, "finish_routing_processing", NULL, LOGLEVEL);
+        }
+      else
+        {
+        /* Currently, abort if the job has no queue.
+         * Should a queue be assigned in this case? */
+        job_abt(&pjob, msg_routexceed);
+        }
 
       break;
     }  /* END switch (status) */
