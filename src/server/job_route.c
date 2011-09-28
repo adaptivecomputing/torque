@@ -114,7 +114,7 @@
 #endif
 
 /* External functions called */
-extern int svr_movejob(job *, char *, struct batch_request *);
+int svr_movejob(job *, char *, int *, struct batch_request *);
 
 /* Local Functions */
 
@@ -211,10 +211,10 @@ int default_router(
   long              retry_time)
 
   {
-
   struct array_strings *dest_attr = NULL;
-  char       *destination;
-  int        last;
+  char                 *destination;
+  int                   last;
+  int                   local_errno = 0;
 
   if (qp->qu_attr[QR_ATR_RouteDestin].at_flags & ATR_VFLAG_SET)
     {
@@ -262,7 +262,7 @@ int default_router(
     if (is_bad_dest(jobp, destination))
       continue;
 
-    switch (svr_movejob(jobp, destination, NULL))
+    switch (svr_movejob(jobp, destination, &local_errno, NULL))
       {
 
       case - 1: /* permanent failure */

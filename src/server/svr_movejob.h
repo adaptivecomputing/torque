@@ -5,7 +5,7 @@
 #include "pbs_job.h" /* job */
 #include "batch_request.h" /* batch_request */
 
-int svr_movejob(job *jobp, char *destination, struct batch_request *req);
+int svr_movejob(job *jobp, char *destination, int *, struct batch_request *req);
 
 /* static int local_move(job *jobp, struct batch_request *req); */
 
