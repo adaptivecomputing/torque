@@ -65,7 +65,7 @@ int load_config(
   return(0);
   }  /* END load_config() */
 
-char *get_param(
+char *get_trq_param(
 
   char *param,      /* I */
   char *config_buf) /* I */
@@ -99,7 +99,7 @@ char *get_param(
     }
 
   return(new_val);
-  }  /* END get_param() */
+  }  /* END get_trq_param() */
 
 
 /* trq_get_if_name:  This function parses the torque.cfg file
@@ -149,7 +149,7 @@ char *trq_get_if_name()
     return(NULL);
 	}
 
-  ptr = get_param(TRQ_IFNAME, torque_cfg_buf);
+  ptr = get_trq_param(TRQ_IFNAME, torque_cfg_buf);
   if(ptr == NULL)
     {
     fprintf(stderr, "failed to get TRQ_IFNAME. possible syntax error\n");
