@@ -152,9 +152,8 @@ char *trq_get_if_name()
   ptr = get_trq_param(TRQ_IFNAME, torque_cfg_buf);
   if(ptr == NULL)
     {
-    fprintf(stderr, "failed to get TRQ_IFNAME. possible syntax error\n");
-	if(torque_cfg_buf)
-	  free(torque_cfg_buf);
+    if(torque_cfg_buf)
+	    free(torque_cfg_buf);
     return(NULL);
     }
 
