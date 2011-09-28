@@ -18,7 +18,7 @@ do
 {
   $ec = runCommand("rm -rf $torque_home");
 
-}until( $ec == 0) || time > $endtime );
+}until( $ec == 0 || time > $endtime );
 
 ok(!-d $torque_home, "Removing $torque_home")
   or die("Torque install directory still exists but shouldn't");
