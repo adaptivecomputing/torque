@@ -398,11 +398,7 @@ void dispatch_request(
       reqtype_to_txt(request->rq_type),
       sfds);
 
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
     }
 
   switch (request->rq_type)

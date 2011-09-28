@@ -606,20 +606,20 @@ static void add_bad_list(
 
 static int return_file(
 
-  job         *pjob,
+  job           *pjob,
   enum job_file  which,
-  int          sock,
-  int          remove_file)
+  int            sock,
+  int            remove_file)
 
   {
-  int        amt;
-  char        buf[RT_BLK_SZ];
-  int        fds;
-  char       *filename;
+  int                   amt;
+  char                  buf[RT_BLK_SZ];
+  int                   fds;
+  char                 *filename;
 
   struct batch_request *prq;
-  int        rc = 0;
-  int        seq = 0;
+  int                   rc = 0;
+  int                   seq = 0;
 
   filename = std_file_name(pjob, which, &amt); /* amt is place holder */
 
@@ -2979,37 +2979,35 @@ retry:
 
 
 void req_returnfiles(
-  struct batch_request *preq)
-  {
-  int rc;
 
-  struct job *pjob;
-  int sock;
+  struct batch_request *preq)
+
+  {
+  int          rc;
+
+  struct job  *pjob;
+  int          sock;
   static char *id = "req_returnfiles";
 
   pjob = find_job(preq->rq_ind.rq_returnfiles.rq_jobid);
 
   if (pjob != NULL)
     {
-retry:
-    sock = mom_open_socket_to_jobs_server(pjob, id, NULL);
-
-    if (sock < 0)
+    while ((sock = mom_open_socket_to_jobs_server(pjob, id, NULL)) < 0)
       {
+      /* NYI: this shouldn't retry forever, and should probably be on the other side of a fork */
       /* XXX TODO */
       sprintf(log_buffer, "mom_open_socket_to_jobs_server FAILED to get socket: %d for job %s",
-              sock,
-              pjob->ji_qs.ji_jobid);
-
+        sock,
+        pjob->ji_qs.ji_jobid);
+      
       log_err(-1, id, log_buffer);
       sleep(1);
-      goto retry;
       }
 
     if (preq->rq_ind.rq_returnfiles.rq_return_stdout)
       {
       rc = return_file(pjob, StdOut, sock, FALSE);
-
       }
 
     if (preq->rq_ind.rq_returnfiles.rq_return_stderr)
@@ -3027,7 +3025,7 @@ retry:
     }
 
   return;
-  }
+  } /* END req_returnfiles() */
 
 
 /*
