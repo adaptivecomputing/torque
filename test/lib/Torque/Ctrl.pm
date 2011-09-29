@@ -282,86 +282,86 @@ sub startPbsmom #($)#
 ###############################################################################
 sub stopPbsmom
 {
-    my ($cfg) = @_;
+  my ($cfg) = @_;
 
-    # Parameters
-    my $node       = $cfg->{ 'node'       } || undef;
-    my $nodes      = $cfg->{ 'nodes'      } || [];
-    my $local_node = $cfg->{ 'local_node' } || 0;
-    my $flags      = $cfg->{flags}          || undef;
+  # Parameters
+  my $node       = $cfg->{ 'node'       } || undef;
+  my $nodes      = $cfg->{ 'nodes'      } || [];
+  my $local_node = $cfg->{ 'local_node' } || 0;
+  my $flags      = $cfg->{flags}          || undef;
 
-    my $check_cmd = 'ps aux | grep pbs_mom | grep -v grep';
+  my $check_cmd = 'ps aux | grep pbs_mom | grep -v grep';
 
-    push(@$nodes, $node) if $node;
+  push(@$nodes, $node) if $node;
 
-    $local_node = 1 if scalar @$nodes == 0;
+  $local_node = 1 if scalar @$nodes == 0;
 
-    my $momctl_cmd = "${torque_sbin}momctl -s";
-    $momctl_cmd   .= " $flags" if defined $flags;
+  my $momctl_cmd = "${torque_sbin}momctl -s";
+  $momctl_cmd   .= " $flags" if defined $flags;
 
-    # Stop any remote pbs_mom's
-    if (scalar @$nodes)
+  # Stop any remote pbs_mom's
+  if (scalar @$nodes)
+  {
+    foreach my $n (@$nodes)
     {
-	foreach my $n (@$nodes)
-	{
-	    my $ps_info   = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
+      my $ps_info   = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
 
-	    unless( &$ps_info eq '')
-	    { 
-		my $wait = 30;
-		diag "Stopping Remote Torque MOM on Host $n... (${wait}s Timeout)";
-		
-                my %momctl = runCommandSsh($n, $momctl_cmd);
+      unless( &$ps_info eq '')
+      { 
+        my $wait = 30;
+        diag "Stopping Remote Torque MOM on Host $n... (${wait}s Timeout)";
 
-		if( $momctl{EXIT_CODE} != 0 && &$ps_info ne '' )
-		{
-		    my $kill_cmd = 'kill -9 '.&$ps_info;
-		    
-		    diag "Normal Shutdown Failed! Attempting to SIGKILL Remote PBS_Mom";
-		    runCommandSsh($n, $kill_cmd);
-		}
+        my %momctl = runCommandSsh($n, $momctl_cmd);
 
-		sleep 1 while $wait-- > 0 && &$ps_info ne '';
+        if( $momctl{EXIT_CODE} != 0 && &$ps_info ne '' )
+        {
+          my $kill_cmd = 'kill -9 '.&$ps_info;
 
-		if( $wait <= 0 )
-		{
-		    die "Unable to Stop Remote PBS_Mom on Host $n!";
-		}
+          diag "Normal Shutdown Failed! Attempting to SIGKILL Remote PBS_Mom";
+          runCommandSsh($n, $kill_cmd);
+        }
 
-	    }
-	}
+        sleep 1 while $wait-- > 0 && &$ps_info ne '';
+
+        if( $wait <= 0 )
+        {
+          die "Unable to Stop Remote PBS_Mom on Host $n!";
+        }
+
+      }
     }
-    
-    # Stop local pbs_mom
-    if ($local_node)
-    {
-	my $ps_info   = sub{ return &$ps_list($check_cmd, 'pbs_mom'); };
+  }
 
-	unless( &$ps_info eq '' )
-	{ 
-	    my $wait = 30;
-	    diag "Stopping Local Torque MOM... (${wait}s Timeout)";
-	    
-            my %momctl = runCommand($momctl_cmd);
+  # Stop local pbs_mom
+  if ($local_node)
+  {
+    my $ps_info   = sub{ return &$ps_list($check_cmd, 'pbs_mom'); };
 
-	    if( $momctl{EXIT_CODE} != 0 )
-	    {
-		my $kill = "kill -9 ".&$ps_info;
+    unless( &$ps_info eq '' )
+    { 
+      my $wait = 30;
+      diag "Stopping Local Torque MOM... (${wait}s Timeout)";
 
-		diag "Normal Shutdown Failed! Attempting to SIGKILL pbs_mom";
-		system $kill;
-	    }
+      my %momctl = runCommand($momctl_cmd);
 
-	    sleep 1 while $wait-- > 0 && &$ps_info ne '';
+      if( $momctl{EXIT_CODE} != 0 )
+      {
+        my $kill = "kill -9 ".&$ps_info;
 
-	    if( $wait <= 0 )
-	    {
-		die "Unable to Stop Local PBS_Mom!";
-	    }
-	}
+        diag "Normal Shutdown Failed! Attempting to SIGKILL pbs_mom";
+        system $kill;
+      }
+
+      sleep 1 while $wait-- > 0 && &$ps_info ne '';
+
+      if( $wait <= 0 )
+      {
+        die "Unable to Stop Local PBS_Mom!";
+      }
     }
+  }
 
-    return 1;
+  return 1;
 }
 
 ###############################################################################
@@ -369,34 +369,34 @@ sub stopPbsmom
 ##############################################################################
 sub startPbsserver #($)
 {
-    my ($cfg) = @_;
+  my ($cfg) = @_;
 
-    my $args  = $cfg->{ 'args' } || undef;
+  my $args  = $cfg->{ 'args' } || undef;
 
-    # pbs_server command
-    my $pbs_server_cmd  = "${torque_sbin}pbs_server";
-    $pbs_server_cmd    .= " $args" if defined $args;
+  # pbs_server command
+  my $pbs_server_cmd  = "${torque_sbin}pbs_server";
+  $pbs_server_cmd    .= " $args" if defined $args;
 
-    # Start the pbs server
-    runCommand($pbs_server_cmd, 'test_success_die' => 1, 'msg' => 'Starting New PBS_Server Process...');
+  # Start the pbs server
+  runCommand($pbs_server_cmd, 'test_success_die' => 1, 'msg' => 'Starting New PBS_Server Process...');
 
-    my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
+  my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
 
-    my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
+  my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
 
-    my $wait = 30;
-    my $endtime = time + 30;
-    diag "Waiting for PBS_Server to Start... (${wait}s Timeout)";
+  my $wait = 30;
+  my $endtime = time + 30;
+  diag "Waiting for PBS_Server to Start... (${wait}s Timeout)";
 
-    sleep 1 while time <= $endtime && &$ps_info eq '';
+  sleep 1 while time <= $endtime && &$ps_info eq '';
 
-    if( time > $endtime )
-    {
-	fail "PBS_Server Failed to Start";
-	return 0;
-    }
+  if( time > $endtime )
+  {
+    fail "PBS_Server Failed to Start";
+    return 0;
+  }
 
-    return 1;
+  return 1;
 }
 
 ##############################################################################
@@ -436,10 +436,10 @@ sub startPbsserverClean #($)
   foreach( @$hosts )
   {
     $setup_str .= <<SETUP;
-$qmgr_cmd -c 'set server operators += $operator\@$_'
-$qmgr_cmd -c 'set server managers += $manager\@$_'
+    $qmgr_cmd -c 'set server operators += $operator\@$_'
+    $qmgr_cmd -c 'set server managers += $manager\@$_'
+    $qmgr_cmd -c 'set server acl_hosts += $_'
 SETUP
-#$qmgr_cmd -c 'set server acl_hosts += $_'
   }
 
   # Set pbs_server settings
@@ -472,7 +472,7 @@ SETUP
 
   # pbs_server command
   my $pbs_cmd  = "$pbs_server_cmd -t create";
- 
+
   # Clean server files
   runCommand("rm -f $torque_home/server_priv/jobs/*", test_success => 1, msg => 'Cleaning Torque Server Files...');
 
@@ -482,37 +482,33 @@ SETUP
     or die "Cannot spawn '$pbs_cmd'";
 
   $exp->expect(5,
-               [
-                 qr/do you wish to continue/ => sub {
-                            
-                                                      my ($exp) = @_;
-                                                      $exp->send("y\n");
-                                                      exp_continue();
-                           
-                                                    } # END sub
-               ],
-	       [ qr/another server running/ => sub { die "Another pbs_server is Still Running! Stop that pbs_server First"; }
-	       ],
-              );
+    [
+    qr/do you wish to continue/ => sub {
+
+      my ($exp) = @_;
+      $exp->send("y\n");
+      exp_continue();
+
+    } # END sub
+    ],
+    [ qr/another server running/ => sub { die "Another pbs_server is Still Running! Stop that pbs_server First"; }
+    ],
+  );
 
   my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
 
   my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
-  
+
   my $wait = 30;
   my $endtime = time() + $wait;
   diag "Waiting for PBS_Server to Start Clean... (${wait}s Timeout)";
 
   sleep 1 while time() <= $endtime && &$ps_info eq '';
 
-  if( $wait > 0 )
+  if( time > $endtime )
   {
-      pass "Local pbs_server is now Running!";
-  }
-  else
-  {
-      fail "Local pbs_server Failed to Start\n".qx/$check_cmd 2>&1/;
-      return 0;
+    fail "Local pbs_server Failed to Start\n".qx/$check_cmd 2>&1/;
+    return 0;
   }
 
   # Resetup Moab
@@ -539,47 +535,47 @@ sub stopPbsserver
 
   my $return = 1;
 
-    # Commands  
-    my $qterm_cmd = "qterm -t quick";
-    $qterm_cmd .= " $flags" if defined $flags;
-    my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
-  
-    my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
-    
-    unless( $ps_info eq '' )
-    { 
-	my $wait = 30;
-        my $endtime = time + $wait;
-	diag "Stopping Torque Server... (${wait}s Timeout)";
-	
-        my %qterm = runCommand($qterm_cmd);
+  # Commands  
+  my $qterm_cmd = "qterm -t quick";
+  $qterm_cmd .= " $flags" if defined $flags;
+  my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
 
-	if( $qterm{EXIT_CODE} != 0 && &$ps_info ne '' )
-	{
-	    my $kill = 'kill -9 '.&$ps_info;
-	    diag "Normal Shutdown Failed! Attempting to SIGKILL pbs_server";
-	    qx/$kill/;
-	}
+  my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
 
-        
-	sleep 1 while time <= $endtime && &$ps_info ne '';
+  unless( $ps_info eq '' )
+  { 
+    my $wait = 30;
+    my $endtime = time + $wait;
+    diag "Stopping Torque Server... (${wait}s Timeout)";
 
-	if( time > $endtime )
-	{
-	    fail "Unable to Stop PBS_Server!\n".qx/$check_cmd 2>&1/;
-	    return 0;
-	}
+    my %qterm = runCommand($qterm_cmd);
+
+    if( $qterm{EXIT_CODE} != 0 && &$ps_info ne '' )
+    {
+      my $kill = 'kill -9 '.&$ps_info;
+      diag "Normal Shutdown Failed! Attempting to SIGKILL pbs_server";
+      qx/$kill/;
     }
 
-    return $return;
+
+    sleep 1 while time <= $endtime && &$ps_info ne '';
+
+    if( time > $endtime )
+    {
+      fail "Unable to Stop PBS_Server!\n".qx/$check_cmd 2>&1/;
+      return 0;
+    }
+  }
+
+  return $return;
 }
 
 ###############################################################################
 # startPbssched ($)
 ###############################################################################
 sub startPbssched #($)# 
-  {
-  
+{
+
   my ($cfg) = @_;
 
   # Return value
@@ -588,7 +584,7 @@ sub startPbssched #($)#
   # Set up the command
   my $pbs_sched_cmd  = 'pbs_sched ';
   $pbs_sched_cmd    .= $cfg->{ 'args' }
-    if defined $cfg->{ 'args' };
+  if defined $cfg->{ 'args' };
 
   # Start the pbs mom on all compute nodes
   runCommand($pbs_sched_cmd);
@@ -599,29 +595,29 @@ sub startPbssched #($)#
   pass("pbs_sched started");
   return $return;
 
-  } # END sub startPbsmom #($)#
+} # END sub startPbsmom #($)#
 
 ###############################################################################
 # stopPbssched
 ###############################################################################
 sub stopPbssched
-  {
+{
 
-    if (is_running('pbs_sched'))
-      { 
+  if (is_running('pbs_sched'))
+  { 
 
-    	runCommand("pkill -9 -x pbs_sched");
-    	sleep 2;
+    runCommand("pkill -9 -x pbs_sched");
+    sleep 2;
 
-	    ok(! is_running('pbs_sched'), "Checking that pbs_sched is not running") 
-        or return 0; 
+    ok(! is_running('pbs_sched'), "Checking that pbs_sched is not running") 
+      or return 0; 
 
-      }
+  }
 
-    pass('pbs_sched stopped');
-    return 1;
+  pass('pbs_sched stopped');
+  return 1;
 
-  } # END sub stopPbssched
+} # END sub stopPbssched
 
 #------------------------------------------------------------------------------
 # createMomCfg();
@@ -644,7 +640,7 @@ sub stopPbssched
 #
 #------------------------------------------------------------------------------
 sub createMomCfg #($)
-  {
+{
 
   my ($params)    = @_;
 
@@ -671,7 +667,7 @@ sub createMomCfg #($)
   {
     # Make sure defaults are present
     $attr_vals = { %default_attr_vals, %$attr_vals };
-    
+
     # We want some attrs to be at the top of the config, for readability's sake
     my @print_order = qw( pbsserver clienthost restricted logevent );
     @print_order = grep { exists $attr_vals->{$_} } @print_order;
@@ -682,7 +678,7 @@ sub createMomCfg #($)
 
     $mom_cfg .= join("\n", map { "\$$_    ".$attr_vals->{$_}."\n" }  sort keys %$attr_vals);
   }
- 
+
   # Backup moab.cfg if it hasn't been yet
   if ( ! $no_backup &&  &$no_log_runcmd("ls $mom_cfg_sav") != 0 && &$no_log_runcmd("ls $mom_cfg_loc") == 1 )
   {
@@ -717,30 +713,30 @@ sub createMomCfg #($)
 sub restoreMomCfg #($)
 { 
 
-   my ($params)         = @_;
+  my ($params)         = @_;
 
-   my $torque_dir      = $props->get_property('Torque.Home.Dir');
+  my $torque_dir      = $props->get_property('Torque.Home.Dir');
 
-   my $mom_cfg_loc     = $params->{ 'mom_cfg_loc'     } || $torque_dir . "/mom_priv/config";
-   my $mom_cfg_sav_loc = "$mom_cfg_loc.sav";
- 
-   diag("Attempting to restore '$mom_cfg_sav_loc' to '$mom_cfg_loc'");
+  my $mom_cfg_loc     = $params->{ 'mom_cfg_loc'     } || $torque_dir . "/mom_priv/config";
+  my $mom_cfg_sav_loc = "$mom_cfg_loc.sav";
 
-   if(-e $mom_cfg_sav_loc)
-     {
-  
-     ok(rename($mom_cfg_sav_loc, $mom_cfg_loc), "Restoring mom.cfg.sav to mom_priv/config in directory $torque_dir")
-       or croak "Unable to restore mom.cfg.sav: $!";  
-  
-     } # END if(-e $mom_cfg_sav_loc)
-   else
-     {
- 
-     pass("'$mom_cfg_sav_loc' doesn't exists.  Unable to restore '$mom_cfg_loc'.");
+  diag("Attempting to restore '$mom_cfg_sav_loc' to '$mom_cfg_loc'");
 
-     } # END else
+  if(-e $mom_cfg_sav_loc)
+  {
 
-   return 1;
+    ok(rename($mom_cfg_sav_loc, $mom_cfg_loc), "Restoring mom.cfg.sav to mom_priv/config in directory $torque_dir")
+      or croak "Unable to restore mom.cfg.sav: $!";  
+
+  } # END if(-e $mom_cfg_sav_loc)
+  else
+  {
+
+    pass("'$mom_cfg_sav_loc' doesn't exists.  Unable to restore '$mom_cfg_loc'.");
+
+  } # END else
+
+  return 1;
 
 } # END sub restoreMomCfg #($)
 
@@ -754,24 +750,24 @@ sub restoreMomCfg #($)
 #--------------------------------------------------------------
 sub createPbsserverNodes
 {
-    my ($params) = @_;
+  my ($params) = @_;
 
-    my $nodes     = $params->{hosts} || [$props->get_property('Test.Host')];
-    my $node_file = "$torque_home/server_priv/nodes";
-    my $node_args = $props->get_property('torque.node.args');
+  my $nodes     = $params->{hosts} || [$props->get_property('Test.Host')];
+  my $node_file = "$torque_home/server_priv/nodes";
+  my $node_args = $props->get_property('torque.node.args');
 
-    open NODES, ">$node_file"
-	or die "Cannot open $node_file: $!";
+  open NODES, ">$node_file"
+    or die "Cannot open $node_file: $!";
 
-    print NODES "$_ $node_args\n" foreach @$nodes;
+  print NODES "$_ $node_args\n" foreach @$nodes;
 
-    close NODES;
+  close NODES;
 
-    foreach (@$nodes)
-    {
-	ok(!runCommand("grep $_ $node_file"), "PBS Node File $node_file Contains Node $_")
-	    or die "PBS_Server Node file $node_file was NOT setup correctly!";
-    }
+  foreach (@$nodes)
+  {
+    ok(!runCommand("grep $_ $node_file"), "PBS Node File $node_file Contains Node $_")
+      or die "PBS_Server Node file $node_file was NOT setup correctly!";
+  }
 }
 
 1;
