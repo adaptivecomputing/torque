@@ -96,6 +96,7 @@ schd_get_jobs(char *qname, char *state)
   {
   char   *id = "schd_get_jobs";
   int     idx, ret;
+  int     local_errno = 0;
   Job    *joblist = NULL, *jobtail = NULL, *new;
   Batch_Status *pbs_head, *pbs_ptr;
   AttrOpList *attr;
@@ -152,16 +153,16 @@ schd_get_jobs(char *qname, char *state)
     }
 
   /* Ask PBS for the list of jobs requested */
-  pbs_head = pbs_selstat(connector, attr, NULL);
+  pbs_head = pbs_selstat(connector, attr, NULL, &local_errno);
 
   /*
   pbs_statfree(pbs_head);
   return(NULL);
   */
 
-  if ((pbs_head == NULL) && (pbs_errno))
+  if ((pbs_head == NULL) && (local_errno))
     {
-    (void)sprintf(log_buffer, "pbs_selstat failed, %d", pbs_errno);
+    (void)sprintf(log_buffer, "pbs_selstat failed, %d", local_errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     return (NULL);
     }

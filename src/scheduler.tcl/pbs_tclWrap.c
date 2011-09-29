@@ -135,10 +135,8 @@ Tcl_Obj *CONST objv[];
   if ((fd = openrm(host, port)) < 0)
     {
     Tcl_PosixError(interp);
-    log_err(pbs_errno, Tcl_GetStringFromObj(objv[0], NULL), host);
+    log_err(-1, Tcl_GetStringFromObj(objv[0], NULL), host);
     }
-
-  SET_PBSERR(pbs_errno);
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(fd));
   return TCL_OK;
@@ -153,6 +151,7 @@ Tcl_Obj *CONST objv[];
   {
   int fd, ret;
   char *cmd;
+  int   local_errno = 0;
 
   cmd = Tcl_GetStringFromObj(objv[0], NULL);
 
@@ -166,13 +165,11 @@ Tcl_Obj *CONST objv[];
   if (Tcl_GetIntFromObj(interp, objv[1], &fd) != TCL_OK)
     return TCL_ERROR;
 
-  if ((ret = closerm(fd)) == -1)
+  if ((ret = closerm(&local_errno, fd)) == -1)
     {
     Tcl_PosixError(interp);
-    log_err(pbs_errno, cmd, Tcl_GetStringFromObj(objv[1], NULL));
+    log_err(local_errno, cmd, Tcl_GetStringFromObj(objv[1], NULL));
     }
-
-  SET_PBSERR(pbs_errno);
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(ret));
   return TCL_OK;
@@ -187,6 +184,7 @@ Tcl_Obj *CONST objv[];
   {
   int fd, ret;
   char *cmd;
+  int   local_errno = 0;
 
   cmd = Tcl_GetStringFromObj(objv[0], NULL);
 
@@ -200,13 +198,11 @@ Tcl_Obj *CONST objv[];
   if (Tcl_GetIntFromObj(interp, objv[1], &fd) != TCL_OK)
     return TCL_ERROR;
 
-  if ((ret = downrm(fd)) == -1)
+  if ((ret = downrm(&local_errno, fd)) == -1)
     {
     Tcl_PosixError(interp);
-    log_err(pbs_errno, cmd, Tcl_GetStringFromObj(objv[1], NULL));
+    log_err(-1, cmd, Tcl_GetStringFromObj(objv[1], NULL));
     }
-
-  SET_PBSERR(pbs_errno);
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(ret));
   return TCL_OK;
@@ -220,6 +216,7 @@ int  objc;
 Tcl_Obj *CONST objv[];
   {
   int fd, ret;
+  int local_errno = 0;
   char *cmd, *filename;
 
   cmd = Tcl_GetStringFromObj(objv[0], NULL);
@@ -237,15 +234,13 @@ Tcl_Obj *CONST objv[];
 
   filename = Tcl_GetStringFromObj(objv[2], NULL);
 
-  ret = configrm(fd, filename);
+  ret = configrm(fd, &local_errno, filename);
 
   if (ret == -1)
     {
     Tcl_PosixError(interp);
-    log_err(pbs_errno, cmd, filename);
+    log_err(local_errno, cmd, filename);
     }
-
-  SET_PBSERR(pbs_errno);
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(ret));
   return TCL_OK;
@@ -259,6 +254,7 @@ int  objc;
 Tcl_Obj *CONST objv[];
   {
   int fd, ret;
+  int local_errno = 0;
   char *cmd, *request;
 
   cmd = Tcl_GetStringFromObj(objv[0], NULL);
@@ -276,15 +272,13 @@ Tcl_Obj *CONST objv[];
 
   request = Tcl_GetStringFromObj(objv[2], NULL);
 
-  ret = addreq(fd, request);
+  ret = addreq(fd, &local_errno, request);
 
   if (ret == -1)
     {
     Tcl_PosixError(interp);
-    log_err(pbs_errno, cmd, request);
+    log_err(local_errno, cmd, request);
     }
-
-  SET_PBSERR(pbs_errno);
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(ret));
   return TCL_OK;
@@ -308,7 +302,6 @@ char *argv[];
 
   ret = allreq(argv[1]);
 
-  SET_PBSERR(pbs_errno);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(ret));
   return TCL_OK;
   }
@@ -321,6 +314,7 @@ int  objc;
 Tcl_Obj *CONST objv[];
   {
   int fd;
+  int local_errno = 0;
   char *ret, *getreq();
   char *cmd;
 
@@ -336,16 +330,14 @@ Tcl_Obj *CONST objv[];
   if (Tcl_GetIntFromObj(interp, objv[1], &fd) != TCL_OK)
     return TCL_ERROR;
 
-  if ((ret = getreq(fd)) == NULL)
+  if ((ret = getreq(&local_errno, fd)) == NULL)
     {
-    if (pbs_errno)
+    if (local_errno)
       {
       Tcl_PosixError(interp);
-      log_err(pbs_errno, cmd,
+      log_err(local_errno, cmd,
               Tcl_GetStringFromObj(objv[1], NULL));
       }
-
-    SET_PBSERR(pbs_errno);
     }
   else
     {
@@ -382,8 +374,7 @@ char *argv[];
     }
 
   flushreq();
-
-  SET_PBSERR(pbs_errno);
+  
   return TCL_OK;
   }
 
@@ -409,10 +400,8 @@ char *argv[];
     {
     Tcl_PosixError(interp);
     sprintf(log_buffer, "result %d", ret);
-    log_err(pbs_errno, argv[0], log_buffer);
+    log_err(-1, argv[0], log_buffer);
     }
-
-  SET_PBSERR(pbs_errno);
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(ret));
   return TCL_OK;
@@ -465,20 +454,16 @@ char *argv[];
   if (connector >= 0)
     pbs_disconnect(connector);
 
-  pbs_errno = PBSE_NONE;
-
   if ((connector = pbs_connect(server)) < 0)
     {
     Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     sprintf(log_buffer, "%s (%d)",
             server ? server : "DefaultServer",
-            pbs_errno);
+            connector * -1);
     log_err(-1, argv[0], log_buffer);
     }
   else
     Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-
-  SET_PBSERR(pbs_errno);
 
   return TCL_OK;
   }
@@ -499,13 +484,11 @@ char *argv[];
     return TCL_ERROR;
     }
 
-  pbs_errno = PBSE_NONE;
-
   if (connector >= 0 && pbs_disconnect(connector))
     {
     Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, pbs_errno);
+    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, -1);
     log_err(-1, argv[0], log_buffer);
     }
   else
@@ -513,8 +496,6 @@ char *argv[];
     Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
     connector = -1;
     }
-
-  SET_PBSERR(pbs_errno);
 
   return TCL_OK;
   }
@@ -589,6 +570,7 @@ int  argc;
 char *argv[];
   {
   char *msg;
+  int   local_errno = 0;
 
   struct batch_status *bs;
   Tcl_Obj *threel[3];
@@ -607,13 +589,13 @@ char *argv[];
     return TCL_OK;
     }
 
-  if ((bs = pbs_statserver(connector, NULL, NULL)) == NULL)
+  if ((bs = pbs_statserver(connector, NULL, NULL, &local_errno)) == NULL)
     {
-    if (pbs_errno != PBSE_NONE)
+    if (local_errno != PBSE_NONE)
       {
       msg = pbs_geterrmsg(connector);
       sprintf(log_buffer, "%s (%d)",
-              msg ? msg : fail, pbs_errno);
+              msg ? msg : fail, local_errno);
       log_err(-1, argv[0], log_buffer);
       }
     }
@@ -628,8 +610,6 @@ char *argv[];
     pbs_statfree(bs);
     }
 
-  SET_PBSERR(pbs_errno);
-
   return TCL_OK;
   }
 
@@ -641,6 +621,7 @@ int  argc;
 char *argv[];
   {
   char *msg;
+  int   local_errno = 0;
 
   struct batch_status *bs;
 
@@ -658,20 +639,18 @@ char *argv[];
     return TCL_OK;
     }
 
-  if ((bs = pbs_statjob(connector, NULL, NULL, NULL)) == NULL)
+  if ((bs = pbs_statjob(connector, NULL, NULL, NULL, &local_errno)) == NULL)
     {
-    if (pbs_errno != PBSE_NONE)
+    if (local_errno != PBSE_NONE)
       {
       msg = pbs_geterrmsg(connector);
       sprintf(log_buffer, "%s (%d)",
-              msg ? msg : fail, pbs_errno);
+              msg ? msg : fail, local_errno);
       log_err(-1, argv[0], log_buffer);
       }
     }
   else
     batresult(interp, bs);
-
-  SET_PBSERR(pbs_errno);
 
   return TCL_OK;
   }
@@ -686,6 +665,7 @@ char *argv[];
   char *msg;
 
   struct batch_status *bs;
+  int                  local_errno = 0;
 
   static struct attropl att1 =
     {
@@ -719,20 +699,18 @@ char *argv[];
     return TCL_OK;
     }
 
-  if ((bs = pbs_selstat(connector, &att2, NULL)) == NULL)
+  if ((bs = pbs_selstat(connector, &att2, NULL, &local_errno)) == NULL)
     {
-    if (pbs_errno != PBSE_NONE)
+    if (local_errno != PBSE_NONE)
       {
       msg = pbs_geterrmsg(connector);
       sprintf(log_buffer, "%s (%d)",
-              msg ? msg : fail, pbs_errno);
+              msg ? msg : fail, local_errno);
       log_err(-1, argv[0], log_buffer);
       }
     }
   else
     batresult(interp, bs);
-
-  SET_PBSERR(pbs_errno);
 
   return TCL_OK;
   }
@@ -745,6 +723,7 @@ int  argc;
 char *argv[];
   {
   char *msg;
+  int   local_errno = 0;
 
   struct batch_status *bs;
 
@@ -762,20 +741,18 @@ char *argv[];
     return TCL_OK;
     }
 
-  if ((bs = pbs_statque(connector, NULL, NULL, NULL)) == NULL)
+  if ((bs = pbs_statque(connector, NULL, NULL, NULL, &local_errno)) == NULL)
     {
-    if (pbs_errno != PBSE_NONE)
+    if (local_errno != PBSE_NONE)
       {
       msg = pbs_geterrmsg(connector);
       sprintf(log_buffer, "%s (%d)",
-              msg ? msg : fail, pbs_errno);
+              msg ? msg : fail, local_errno);
       log_err(-1, argv[0], log_buffer);
       }
     }
   else
     batresult(interp, bs);
-
-  SET_PBSERR(pbs_errno);
 
   return TCL_OK;
   }
@@ -789,6 +766,7 @@ Tcl_Obj *CONST objv[];
   {
   char *msg, *cmd;
   char *node = NULL;
+  int   local_errno = 0;
 
   struct batch_status *bs;
 
@@ -809,20 +787,18 @@ Tcl_Obj *CONST objv[];
     return TCL_OK;
     }
 
-  if ((bs = pbs_statnode(connector, node, NULL, NULL)) == NULL)
+  if ((bs = pbs_statnode(connector, node, NULL, NULL, &local_errno)) == NULL)
     {
-    if (pbs_errno != PBSE_NONE)
+    if (local_errno != PBSE_NONE)
       {
       msg = pbs_geterrmsg(connector);
       sprintf(log_buffer, "%s (%d)",
-              msg ? msg : fail, pbs_errno);
+              msg ? msg : fail, local_errno);
       log_err(-1, cmd, log_buffer);
       }
     }
   else
     batresult(interp, bs);
-
-  SET_PBSERR(pbs_errno);
 
   return TCL_OK;
   }
@@ -836,6 +812,7 @@ char *argv[];
   {
   char *msg;
   char *location = NULL;
+  int   local_errno = 0;
 
   if (argc == 3)
     location = argv[2];
@@ -856,15 +833,13 @@ char *argv[];
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
 
-  if (pbs_asyrunjob(connector, argv[1], location, NULL))
+  if (pbs_asyrunjob(connector, argv[1], location, NULL, &local_errno))
     {
     Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, pbs_errno);
+    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
     log_err(-1, argv[0], log_buffer);
     }
-
-  SET_PBSERR(pbs_errno);
 
   return TCL_OK;
   }
@@ -879,6 +854,7 @@ char *argv[];
   {
   char *msg;
   char *location = NULL;
+  int   local_errno = 0;
 
   if (argc == 3)
     location = argv[2];
@@ -897,17 +873,15 @@ char *argv[];
     return TCL_OK;
     }
 
-  if (pbs_runjob(connector, argv[1], location, NULL))
+  if (pbs_runjob(connector, argv[1], location, NULL, &local_errno))
     {
     msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, pbs_errno);
+    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
     log_err(-1, argv[0], log_buffer);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     }
   else
     Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-
-  SET_PBSERR(pbs_errno);
 
   return TCL_OK;
   }
@@ -921,6 +895,7 @@ char *argv[];
   {
   char *msg;
   char *extend = "0";
+  int   local_errno = 0;
 
   if (argc != 2)
     {
@@ -938,11 +913,11 @@ char *argv[];
 
   interp->result = "0";
 
-  if (pbs_rerunjob(connector, argv[1], extend))
+  if (pbs_rerunjob(connector, argv[1], extend, &local_errno))
     {
     interp->result = "-1";
     msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, pbs_errno);
+    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
     log_err(-1, argv[0], log_buffer);
     }
   else
@@ -950,9 +925,7 @@ char *argv[];
     Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
     }
 
-  sprintf(log_buffer, "%d", pbs_errno);
-
-  SET_PBSERR(pbs_errno);
+  sprintf(log_buffer, "%d", local_errno);
 
   return TCL_OK;
   }
@@ -969,6 +942,7 @@ char *argv[];
   char *location = NULL;
   char job_id_out[PBS_MAXCLTJOBID];
   char server_out[MAXSERVERNAME];
+  int   local_errno = 0;
 
   if (argc == 3)
     location = argv[2];
@@ -990,22 +964,20 @@ char *argv[];
   if (get_server(argv[1], job_id_out, server_out))
     {
     msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, pbs_errno);
+    sprintf(log_buffer, "%s", msg ? msg : fail);
     Tcl_SetResult(interp, log_buffer, TCL_VOLATILE);
     return TCL_ERROR;
     }
 
-  if (pbs_movejob(connector, job_id_out, location, NULL))
+  if (pbs_movejob(connector, job_id_out, location, NULL, &local_errno))
     {
     msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, pbs_errno);
+    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
     log_err(-1, argv[0], log_buffer);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     }
   else
     Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-
-  SET_PBSERR(pbs_errno);
 
   return TCL_OK;
   }
@@ -1019,6 +991,7 @@ char *argv[];
   {
   char *msg;
   char *message = NULL;
+  int   local_errno = 0;
 
   if (argc == 3)
     message = argv[2];
@@ -1037,17 +1010,15 @@ char *argv[];
     return TCL_OK;
     }
 
-  if (pbs_deljob(connector, argv[1], message))
+  if (pbs_deljob(connector, argv[1], message, &local_errno))
     {
     msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, pbs_errno);
+    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
     log_err(-1, argv[0], log_buffer);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     }
   else
     Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-
-  SET_PBSERR(pbs_errno);
 
   return TCL_OK;
   }
@@ -1061,6 +1032,7 @@ int  argc;
 char *argv[];
   {
   char *msg;
+  int   local_errno = 0;
 
   if (argc != 2)
     {
@@ -1077,17 +1049,15 @@ char *argv[];
     return TCL_OK;
     }
 
-  if (pbs_holdjob(connector, argv[1], SYSTEM_HOLD, NULL))
+  if (pbs_holdjob(connector, argv[1], SYSTEM_HOLD, NULL, &local_errno))
     {
     msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, pbs_errno);
+    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
     log_err(-1, argv[0], log_buffer);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     }
   else
     Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-
-  SET_PBSERR(pbs_errno);
 
   return TCL_OK;
   }
@@ -1102,6 +1072,7 @@ char  *argv[];
 struct attropl *attr;
   {
   int merr;
+  int   local_errno = 0;
 
   if (argc != 2)
     {
@@ -1120,7 +1091,7 @@ struct attropl *attr;
 
   merr = pbs_manager(connector, MGR_CMD_SET, MGR_OBJ_QUEUE,
 
-                     argv[1], attr, NULL);
+                     argv[1], attr, NULL, &local_errno);
 
   if (merr != 0)
     {
@@ -1131,8 +1102,6 @@ struct attropl *attr;
     }
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-
-  SET_PBSERR(pbs_errno);
   return TCL_OK;
   }
 
@@ -1210,6 +1179,7 @@ Tcl_Obj *CONST objv[];
   char *msg;
   int i, num, tre, ret;
   Tcl_Obj **listp, **indp;
+  int   local_errno = 0;
 
   struct attrl *attrs, *atp = NULL;
   char *cmd;
@@ -1262,11 +1232,11 @@ Tcl_Obj *CONST objv[];
 
   if (pbs_alterjob(connector,
                    Tcl_GetStringFromObj(objv[1], NULL),
-                   atp, NULL))
+                   atp, NULL, &local_errno))
     {
     Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, pbs_errno);
+    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
     log_err(-1, cmd, log_buffer);
     }
   else
@@ -1281,8 +1251,6 @@ done:
     free(atp->value);
     free(atp);
     }
-
-  SET_PBSERR(pbs_errno);
 
   return ret;
   }
@@ -1336,7 +1304,7 @@ Tcl_Obj *CONST objv[];
                     avail_array, alloc_array, reser_array, down_array))
     {
     msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, pbs_errno);
+    sprintf(log_buffer, "%s", msg ? msg : fail);
     log_err(-1, cmd, log_buffer);
     }
   else
@@ -1361,7 +1329,6 @@ Tcl_Obj *CONST objv[];
   free(reser_array);
   free(down_array);
 
-  SET_PBSERR(pbs_errno);
   return TCL_OK;
   }
 
@@ -1410,13 +1377,12 @@ Tcl_Obj *CONST objv[];
   if (pbs_rescreserve(connector, res_array, num, &resid))
     {
     msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, pbs_errno);
+    sprintf(log_buffer, "%s", msg ? msg : fail);
     log_err(-1, cmd, log_buffer);
     }
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(resid));
 
-  SET_PBSERR(pbs_errno);
   return TCL_OK;
   }
 
@@ -1453,13 +1419,12 @@ Tcl_Obj *CONST objv[];
   if ((ret = pbs_rescrelease(connector, resid)) != 0)
     {
     msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, pbs_errno);
+    sprintf(log_buffer, "%s", msg ? msg : fail);
     log_err(-1, cmd, log_buffer);
     }
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(ret));
 
-  SET_PBSERR(pbs_errno);
   return TCL_OK;
   }
 

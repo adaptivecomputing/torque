@@ -197,6 +197,7 @@ schd_alterjob(int sv_conn, Job *job, char *name, char *value, char *rsrc)
   {
   char   *id = "schd_alterjob";
   int     err = 0;
+  int     local_errno;
   AttrList atp;
 
   /* Fill the attribute structure with function parameters */
@@ -205,13 +206,13 @@ schd_alterjob(int sv_conn, Job *job, char *name, char *value, char *rsrc)
   atp.name     = name;
   atp.next     = NULL;
 
-  err = pbs_alterjob(sv_conn, job->jobid, &atp, NULL);
+  err = pbs_alterjob(sv_conn, job->jobid, &atp, NULL, &local_errno);
 
   if (err)
     {
     (void)sprintf(log_buffer,
                   "pbs_alterjob(%s, %s, %s, %s) failed: %d",
-                  job->jobid, name, value, rsrc, pbs_errno);
+                  job->jobid, name, value, rsrc, local_errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     }
 
@@ -223,6 +224,7 @@ schd_alterserver(int sv_conn, char *name, char *value)
   {
   char   *id = "schd_alterserver";
   int     err;
+  int     local_errno;
   AttrOpList alist;
 
   /* Fill in the attribute struct with appropriate parameters */
@@ -234,12 +236,12 @@ schd_alterserver(int sv_conn, char *name, char *value)
   alist.op       = SET;
 
   err = pbs_manager(sv_conn, MGR_CMD_SET, MGR_OBJ_SERVER, "", &alist,
-                    NULL);
+                    NULL, &local_errno);
 
   if (err)
     {
     (void)sprintf(log_buffer,
-                  "pbs_alterserver(%s, %s) failed: %d", name, value, pbs_errno);
+                  "pbs_alterserver(%s, %s) failed: %d", name, value, local_errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     }
 

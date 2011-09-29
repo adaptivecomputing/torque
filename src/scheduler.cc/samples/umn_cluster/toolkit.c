@@ -463,8 +463,8 @@ schd_val2byte(char *val)
 
   if (val[0] == '?')
     {
-    (void)sprintf(log_buffer, "error from getreq(physmem): %s: [%d, %d]",
-                  val, pbs_errno, errno);
+    (void)sprintf(log_buffer, "error from getreq(physmem): %s: [%d]",
+                  val, errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     return (0);
     }

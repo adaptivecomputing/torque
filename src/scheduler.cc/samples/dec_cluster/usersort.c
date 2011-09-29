@@ -286,6 +286,7 @@ malloc_failed:
 int get_queue_priority(char *qname)
   {
   int i;
+  int local_errno = 0;
   char *id = "queue_priority";
   QueueList *qptr;
   Batch_Status *bs;
@@ -332,10 +333,10 @@ int get_queue_priority(char *qname)
    * to the scheduler. So lets ask the PBS server about it.
    */
 
-  if ((bs = pbs_statque(connector, qname, alist, NULL)) == NULL)
+  if ((bs = pbs_statque(connector, qname, alist, NULL, &local_errno)) == NULL)
     {
     sprintf(log_buffer, "pbs_statque failed, \"%s\" %d",
-            qname, pbs_errno);
+            qname, local_errno);
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, id, log_buffer);
     DBPRT(("%s: %s\n", id, log_buffer));
     return (-1);

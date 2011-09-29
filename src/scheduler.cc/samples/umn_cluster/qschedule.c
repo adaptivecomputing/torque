@@ -429,6 +429,7 @@ void
 list_start_times(void)
   {
   int ret;
+  int local_errno = 0;
   Job    *joblist = NULL, *jobtail = NULL, *new, *this;
   Batch_Status *pbs_head, *pbs_ptr;
 
@@ -436,11 +437,11 @@ list_start_times(void)
   connector = pbs_connect(NULL);
 
   /* Ask PBS for the list of jobs requested */
-  pbs_head = pbs_selstat(connector, NULL, NULL);
+  pbs_head = pbs_selstat(connector, NULL, NULL, &local_errno);
 
-  if ((pbs_head == NULL) && (pbs_errno))
+  if ((pbs_head == NULL) && (local_errno))
     {
-    fprintf(stderr, "ERROR: pbs_selstat failed, %d\n", pbs_errno);
+    fprintf(stderr, "ERROR: pbs_selstat failed, %d\n", local_errno);
     exit(-1);
     }
 
@@ -455,8 +456,7 @@ list_start_times(void)
 
     if (new == NULL)
       {
-      fprintf(stderr, "ERROR: malloc of new job struct failed: %d\n",
-              pbs_errno);
+      fprintf(stderr, "ERROR: malloc of new job struct failed\n");
       joblist = NULL;
       break;
       }
@@ -864,8 +864,8 @@ schd_val2byte(char *val)
 
   if (val[0] == '?')
     {
-    fprintf(stderr, "error from getreq(physmem): %s: [%d, %d]",
-            val, pbs_errno, errno);
+    fprintf(stderr, "error from getreq(physmem): %s: [%d]",
+            val, errno);
     return (0);
     }
 

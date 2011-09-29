@@ -191,6 +191,7 @@ setup_hpm(Resources *rsrcs, int mode)
   char   *response, *value;
   char    hpm_ctl[64];
   int     rm;
+  int     local_errno = 0;
 
   switch (mode)
     {
@@ -246,7 +247,7 @@ setup_hpm(Resources *rsrcs, int mode)
   if ((rm = openrm(rsrcs->exechost, 0)) < 0)
     {
     (void)sprintf(log_buffer,
-                  "Unable to contact resmom@%s (%d)", rsrcs->exechost, pbs_errno);
+                  "Unable to contact resmom@%s", rsrcs->exechost);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     return (1);
     }
@@ -254,15 +255,15 @@ setup_hpm(Resources *rsrcs, int mode)
   /* Ask the resource monitor on the remote host to set the mode for us. */
   response = NULL;
 
-  if (addreq(rm, hpm_ctl) == 0)
-    response = getreq(rm);
+  if (addreq(rm, &local_errno, hpm_ctl) == 0)
+    response = getreq(&local_errno, rm);
 
   closerm(rm);
 
   if (response == NULL)
     {
     (void)sprintf(log_buffer, "bad return from getreq(%s) @%s, %d",
-                  hpm_ctl, rsrcs->exechost, pbs_errno);
+                  hpm_ctl, rsrcs->exechost, local_errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     DBPRT(("%s: %s\n", id, log_buffer));
     return (1);

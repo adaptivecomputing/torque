@@ -138,6 +138,7 @@ schd_get_resources(char *exechost)
 
   char   *response = NULL;
   int     badreply   = 0;
+  int     local_errno = 0;
 
   struct sigaction act, oact;
   unsigned int remain; /* Time remaining in any old alarm(). */
@@ -193,7 +194,7 @@ schd_get_resources(char *exechost)
   if ((rm = openrm(exechost, pbs_rm_port)) == -1)
     {
     (void)sprintf(log_buffer,
-                  "Unable to contact resmom@%s (%d)", exechost, pbs_errno);
+                  "Unable to contact resmom@%s", exechost);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
 
     badreply = 1;
@@ -219,7 +220,7 @@ schd_get_resources(char *exechost)
   /* Get the values back from the resource monitor, and round up. */
 
   /* Receive LOADAVE response from resource monitor. */
-  response = getreq(rm);
+  response = getreq(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -229,14 +230,14 @@ schd_get_resources(char *exechost)
   else
     {
     (void)sprintf(log_buffer, "bad return from getreq(loadave), %d, %d",
-                  pbs_errno, errno);
+                  local_errno, errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     badreply = 1;
     goto bail;
     }
 
   /* Receive PHYSMEM response from resource monitor. */
-  response = getreq(rm);
+  response = getreq(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -246,14 +247,14 @@ schd_get_resources(char *exechost)
   else
     {
     (void)sprintf(log_buffer, "bad return from getreq(realmem), %d, %d",
-                  pbs_errno, errno);
+                  local_errno, errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     badreply = 1;
     goto bail;
     }
 
   /* Receive NCPUS response from resource monitor. */
-  response = getreq(rm);
+  response = getreq(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -263,14 +264,14 @@ schd_get_resources(char *exechost)
   else
     {
     (void)sprintf(log_buffer, "bad return from getreq(ncpus), %d, %d",
-                  pbs_errno, errno);
+                  local_errno, errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     badreply = 1;
     goto bail;
     }
 
   /* Receive ARCH response from resource monitor. */
-  response = getreq(rm);
+  response = getreq(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -280,7 +281,7 @@ schd_get_resources(char *exechost)
   else
     {
     (void)sprintf(log_buffer, "bad return from getreq(arch), %d, %d",
-                  pbs_errno, errno);
+                  local_errno, errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     badreply = 1;
     goto bail;

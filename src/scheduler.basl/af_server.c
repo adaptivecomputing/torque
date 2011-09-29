@@ -135,16 +135,18 @@ static SetServer AllServers;
 /* External Functions */
 /* Functions */
 
-static char *
-pbserror(void)
+static char *pbserror(
+    
+  int local_errno)
+
   {
-  if (pbs_errno <= PBSE_)
+  if (local_errno <= PBSE_)
     {
     return("Unknown PBS Error\n");
     }
   else
     {
-    switch (pbs_errno)
+    switch (local_errno)
       {
 
       case PBSE_BADHOST:
@@ -172,10 +174,10 @@ pbserror(void)
     }
   }
 
-static int
-socket_to_conn(
-  int sock                   /* opened socket */
-)
+static int socket_to_conn(
+
+  int sock)                  /* opened socket */
+
   {
   int     i;
 
@@ -192,7 +194,7 @@ socket_to_conn(
       }
     }
 
-  pbs_errno = PBSE_NOCONNECTS;
+  /*pbs_errno = PBSE_NOCONNECTS;*/
 
   return (-1);
   }
@@ -1144,9 +1146,9 @@ Server *server;
 #endif
     if ((connect = pbs_connect(server_name)) < 0)
       {
-      if (pbs_errno != PBSE_NONE)
+      if (connect * -1 > PBSE_)
         {
-        (void)sprintf(log_buffer, "%d: %s", pbs_errno, pbserror());
+        (void)sprintf(log_buffer, "%d: %s", connect * -1, pbserror(connect * -1));
         log_err(-1, id, log_buffer);
         return(1);
         }
@@ -1262,7 +1264,7 @@ Server *server;
 
     if (ret != 0)
       {
-      (void)sprintf(log_buffer, "%d: %s\n", pbs_errno, pbserror());
+      (void)sprintf(log_buffer, "%d: %s\n", connect * -1, pbserror(connect * -1));
       log_err(-1, id, log_buffer);
       }
     }
@@ -1416,9 +1418,11 @@ int     numDown;
   server->nodes.numDown = numDown;
   }
 
-int ServerNodesQuery(server, spec)
-Server *server;
-char *spec;
+int ServerNodesQuery(
+    
+  Server *server,
+  char   *spec)
+
   {
   static char  id[] = "ServerNodesQuery";
   int avail, alloc, rsvd, down;
@@ -1426,11 +1430,11 @@ char *spec;
   if (pbs_rescquery(ServerFdTwoWayGet(server), &spec, 1, &avail,
                     &alloc, &rsvd, &down) != 0)
     {
-
+/*  No longer meaningful
     if (pbs_errno != PBSE_NONE)
       {
       log_err(pbs_errno, id, "ServerNodesQuery");
-      }
+      }*/
 
     return(FAIL);
     }
@@ -1456,11 +1460,11 @@ int resId;
 
   if (pbs_rescreserve(ServerFdTwoWayGet(server), &spec, 1, &rid) != 0)
     {
-
+/*  No longer meaningful 
     if (pbs_errno != PBSE_NONE)
       {
       log_err(pbs_errno, id, "ServerNodesReserve");
-      }
+      }*/
 
     return(FAIL);
     }
@@ -1479,11 +1483,11 @@ int resId;
 
   if (pbs_rescrelease(ServerFdTwoWayGet(server), rid) != 0)
     {
-
+/* no longer meaningful 
     if (pbs_errno != PBSE_NONE)
       {
       log_err(pbs_errno, id, "ServerNodesRelease");
-      }
+      } */
 
     return(FAIL);
     }
@@ -1508,10 +1512,11 @@ Server *server;
 
   if (nodes == NULL)
     {
+/* No longer meaningful 
     if (pbs_errno != PBSE_NONE)
       {
       log_err(pbs_errno, id, "ServerWriteRead");
-      }
+      } */
 
     return(1);
     }
@@ -1592,7 +1597,7 @@ Server *server;
 
   if (serv == NULL)
     {
-    log_err(pbs_errno, id, "ServerWriteRead");
+    /*log_err(pbs_errno, id, "ServerWriteRead");*/
     return(1);
     }
 
@@ -1741,10 +1746,11 @@ Server *server;
 
   if (ques == NULL)
     {
+/*  No longer meaningful
     if (pbs_errno != PBSE_NONE)
       {
       log_err(pbs_errno, id, "ServerWriteRead");
-      }
+      } */
 
     return(1);
     }
@@ -1905,10 +1911,11 @@ Server *server;
 
   if (jobs == NULL)
     {
+/*  No longer meaningful
     if (pbs_errno != PBSE_NONE)
       {
       log_err(pbs_errno, id, "ServerWriteRead");
-      }
+      } */
 
     return(1);
     }
@@ -2027,9 +2034,10 @@ Action  action;
 void *params;
   {
   static char  id[] = "JobAction";
-  int          connect;
+  int           connect;
   char         *job_id;
-  int   ret;
+  int           ret;
+  int           local_errno = 0;
   char   act[15];
   char   *bufstr;
   char   *tempstr = NULLSTR;
@@ -2054,7 +2062,7 @@ void *params;
       printf("%s: pbs_runjob(%d, %s, %s, NULL)\n", id, connect,
              job_id, params);
 #endif
-      ret = pbs_runjob(connect, job_id, (char *)params, NULL);
+      ret = pbs_runjob(connect, job_id, (char *)params, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2070,7 +2078,7 @@ void *params;
       printf("%s: pbs_asyrunjob(%d, %s, %s, NULL)\n", id, connect,
              job_id, params);
 #endif
-      ret = pbs_asyrunjob(connect, job_id, (char *)params, NULL);
+      ret = pbs_asyrunjob(connect, job_id, (char *)params, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2086,7 +2094,7 @@ void *params;
       printf("%s: pbs_deljob(%d, %s, %s, NULL)\n", id, connect,
              job_id, params);
 #endif
-      ret = pbs_deljob(connect, job_id, (char *)params);
+      ret = pbs_deljob(connect, job_id, (char *)params, &local_errno);
 
       if (ret == 0)
         {
@@ -2100,7 +2108,7 @@ void *params;
 #ifdef DEBUG
       printf("%s: pbs_rerunjob(%d, %s, NULL)\n", id, connect, job_id);
 #endif
-      ret = pbs_rerunjob(connect, job_id, NULL);
+      ret = pbs_rerunjob(connect, job_id, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2114,7 +2122,7 @@ void *params;
 #ifdef DEBUG
       printf("%s: pbs_rerunjob(%d, %s, NULL)\n", id, connect, job_id);
 #endif
-      ret = pbs_holdjob(connect, job_id, (char *)params, NULL);
+      ret = pbs_holdjob(connect, job_id, (char *)params, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2129,7 +2137,7 @@ void *params;
       printf("%s: pbs_rlsjob(%d, %s, %s, NULL)\n", id, connect,
              job_id, params);
 #endif
-      ret = pbs_rlsjob(connect, job_id, (char *)params, NULL);
+      ret = pbs_rlsjob(connect, job_id, (char *)params, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2144,7 +2152,7 @@ void *params;
       printf("%s: pbs_sigjob(%d, %s, %s, NULL)\n", id, connect,
              job_id, params);
 #endif
-      ret = pbs_sigjob(connect, job_id, (char *)params, NULL);
+      ret = pbs_sigjob(connect, job_id, (char *)params, NULL, &local_errno);
       (void)strcpy(act, "SIGNAL");
       break;
 
@@ -2162,7 +2170,7 @@ void *params;
              connect, job_id, attrib.name, attrib.resource, attrib.value);
 
 #endif
-      ret = pbs_alterjob(connect, job_id, &attrib, NULL);
+      ret = pbs_alterjob(connect, job_id, &attrib, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2190,7 +2198,7 @@ void *params;
              connect, job_id, attrib.name, attrib.resource, attrib.value);
 
 #endif
-      ret = pbs_alterjob(connect, job_id, &attrib, NULL);
+      ret = pbs_alterjob(connect, job_id, &attrib, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2213,8 +2221,8 @@ void *params;
   if (ret != 0)     /* returns 0 if successful */
     {
     (void)sprintf(log_buffer,
-                  "%s %s returned %d %s\n", act, job_id, pbs_errno,
-                  pbserror());
+                  "%s %s returned %d %s\n", act, job_id, local_errno,
+                  pbserror(local_errno));
     log_err(-1, id, log_buffer);
     return(FAIL);
     }

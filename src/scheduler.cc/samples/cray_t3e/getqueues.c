@@ -144,6 +144,7 @@ schd_get_queue_limits(Queue *queue)
   int     mppe_max     = UNSPECIFIED;
   int     mppe_min     = UNSPECIFIED;
   int     nodes_from_cpu, nodes_from_mem;
+  int     local_errno  = 0;
 
 
   queue->running = UNSPECIFIED;
@@ -184,10 +185,10 @@ schd_get_queue_limits(Queue *queue)
 
   /* Ask the server for information about the specified queue. */
 
-  if ((bs = pbs_statque(connector, queue->qname, alist, NULL)) == NULL)
+  if ((bs = pbs_statque(connector, queue->qname, alist, NULL, &local_errno)) == NULL)
     {
     sprintf(log_buffer, "pbs_statque failed, \"%s\" %d",
-            queue->qname, pbs_errno);
+            queue->qname, local_errno);
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, id, log_buffer);
     DBPRT(("%s: %s\n", id, log_buffer));
     return (-1);

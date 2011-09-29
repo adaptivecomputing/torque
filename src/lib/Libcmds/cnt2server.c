@@ -156,7 +156,7 @@ start:
 
   if (connect <= 0)
     {
-    /* pbs_errno * -1 is returned if applicable */
+    /* PBSE_ * -1 is returned if applicable */
     if ((connect * -1) > PBSE_)
       {
       switch (connect * -1)
@@ -232,7 +232,7 @@ start:
 
           break;
         }
-      }    /* END if (pbs_errno > PBSE_) */
+      }    /* END if (a PBSE_ was reported) */
     else
       {
       if (thistime == 0)

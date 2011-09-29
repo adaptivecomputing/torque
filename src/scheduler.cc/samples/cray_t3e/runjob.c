@@ -110,6 +110,7 @@ schd_run_job_on(Job *job, Queue *destq, char *exechost, int set_comment)
   Queue  *srcq = NULL;
   char   *date;
   char    reason[128];
+  int     local_errno = 0;
 
   /* Get the datestamp from 'ctime()'.  Remove the trailing '\n'. */
   date = ctime(&schd_TimeNow);
@@ -188,10 +189,10 @@ schd_run_job_on(Job *job, Queue *destq, char *exechost, int set_comment)
     }
   else
     {
-    if (pbs_runjob(connector, job->jobid, exechost, NULL))
+    if (pbs_runjob(connector, job->jobid, exechost, NULL, &local_errno))
       {
       (void)sprintf(log_buffer, "failed start job %s on queue %s@%s, %d",
-                    job->jobid, destq->qname, exechost, pbs_errno);
+                    job->jobid, destq->qname, exechost, local_errno);
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
       DBPRT(("%s: %s\n", id, log_buffer));
 

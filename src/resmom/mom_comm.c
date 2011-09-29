@@ -145,7 +145,6 @@
 extern int           exiting_tasks;
 extern char         *path_jobs;
 extern char         *path_home;
-extern int           pbs_errno;
 extern unsigned int  pbs_mom_port;
 extern unsigned int  pbs_rm_port;
 extern unsigned int  pbs_tm_port;

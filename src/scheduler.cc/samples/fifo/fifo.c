@@ -620,7 +620,7 @@ job_info *update_starvation(job_info **jobs)
  *   qinfo  - queue job resides in
  *   jinfo  - the job to run
  *
- * returns success/failure - see pbs_errno for more info
+ * returns success/failure
  *
  */
 

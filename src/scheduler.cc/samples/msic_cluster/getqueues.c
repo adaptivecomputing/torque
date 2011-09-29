@@ -146,6 +146,7 @@ schd_get_queue_limits(Queue *queue)
   {
   char   *id = "schd_get_queue_limits";
   int     istrue;
+  int     local_errno = 0;
   Batch_Status *bs;
   AttrList *attr;
   static AttrList alist[] =
@@ -208,10 +209,10 @@ schd_get_queue_limits(Queue *queue)
 
   /* Ask the server for information about the specified queue. */
 
-  if ((bs = pbs_statque(connector, queue->qname, alist, NULL)) == NULL)
+  if ((bs = pbs_statque(connector, queue->qname, alist, NULL, &local_errno)) == NULL)
     {
     sprintf(log_buffer, "pbs_statque failed, \"%s\" %d",
-            queue->qname, pbs_errno);
+            queue->qname, local_errno);
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, id, log_buffer);
     DBPRT(("%s: %s\n", id, log_buffer));
     return (-1);
@@ -799,6 +800,7 @@ get_node_status(void)
   {
   char *id = "get_node_status";
   QueueList *qptr;
+  int local_errno = 0;
   Batch_Status *bs, *bsp;
   AttrList *attr;
   static AttrList alist[] = {{NULL, ATTR_NODE_state, "", ""}};
@@ -807,9 +809,9 @@ get_node_status(void)
    * info in the appropraite queue struct.
    */
 
-  if ((bs = pbs_statnode(connector, NULL, alist, NULL)) == NULL)
+  if ((bs = pbs_statnode(connector, NULL, alist, NULL, &local_errno)) == NULL)
     {
-    sprintf(log_buffer, "pbs_statnode failed: %d", pbs_errno);
+    sprintf(log_buffer, "pbs_statnode failed: %d", local_errno);
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, id, log_buffer);
     DBPRT(("%s: %s\n", id, log_buffer));
     return (-1);
@@ -866,6 +868,7 @@ size_t schd_get_queue_memory(char *qName)
   char   *id = "schd_get_queue_limits";
   size_t  mem_max, mem_default;
   Batch_Status *bs;
+  int local_errno = 0;
   AttrList *attr;
   static AttrList alist[] =
     {   {&alist[1],  ATTR_rescdflt, "", ""},
@@ -877,10 +880,10 @@ size_t schd_get_queue_memory(char *qName)
 
   /* Ask the server for information about the specified queue. */
 
-  if ((bs = pbs_statque(connector, qName, alist, NULL)) == NULL)
+  if ((bs = pbs_statque(connector, qName, alist, NULL, &local_errno)) == NULL)
     {
     sprintf(log_buffer, "pbs_statque failed, \"%s\" %d",
-            qName, pbs_errno);
+            qName, local_errno);
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, id, log_buffer);
     DBPRT(("%s: %s\n", id, log_buffer));
     return (UNSPECIFIED);

@@ -126,7 +126,6 @@
 #include "rm.h"
 #include "libpbs.h"
 
-extern int pbs_errno;
 int  connector;
 int  server_sock;
 
@@ -352,8 +351,6 @@ socket_to_conn(int sock)
       return (i);
       }
     }
-
-  pbs_errno = PBSE_NOCONNECTS;
 
   return (-1);
   }

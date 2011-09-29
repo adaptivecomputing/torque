@@ -139,6 +139,7 @@ schd_get_resources(char *exechost)
   int     badreply   = 0;
   int     cpus_avail = 0;
   int     cpus_tot   = 0;
+  int     local_errno = 0;
 
   struct sigaction act, oact;
 
@@ -195,7 +196,7 @@ schd_get_resources(char *exechost)
   if ((rm = openrm(exechost, 0)) == -1)
     {
     (void)sprintf(log_buffer,
-                  "Unable to contact resmom@%s (%d)", exechost, pbs_errno);
+                  "Unable to contact resmom@%s ", exechost);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
 
     badreply = 1;
@@ -218,7 +219,7 @@ schd_get_resources(char *exechost)
 
   /* Receive MPPE_APP response from resource monitor. */
   /* returns the total number of Application PEs configured */
-  response = getreq(rm);
+  response = getreq(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -227,7 +228,7 @@ schd_get_resources(char *exechost)
   else
     {
     (void)sprintf(log_buffer, "bad return from getreq(ncpus), %d, %d",
-                  pbs_errno, errno);
+                  local_errno, errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     badreply = 1;
     goto bail;
@@ -235,7 +236,7 @@ schd_get_resources(char *exechost)
 
   /* Receive MPPE_AVAIL response from resource monitor. */
   /* returns the largest contiguous block of APP PEs */
-  response = getreq(rm);
+  response = getreq(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -244,7 +245,7 @@ schd_get_resources(char *exechost)
   else
     {
     (void)sprintf(log_buffer, "bad return from getreq(ncpus), %d, %d",
-                  pbs_errno, errno);
+                  local_errno, errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     badreply = 1;
     goto bail;

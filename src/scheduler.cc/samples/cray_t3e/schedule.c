@@ -883,6 +883,7 @@ schedule_restart(Job *joblist)
   Job    *job, *nextjob;
   QueueList *qptr;
   int     found, changed;
+  int     local_errno = 0;
 
   changed = found = 0;
 
@@ -941,11 +942,11 @@ schedule_restart(Job *joblist)
         {
         /* Move the job back to its originating queue. */
         if (pbs_movejob(connector, job->jobid,
-                        job->oqueue, NULL) != 0)
+                        job->oqueue, NULL, &local_errno) != 0)
           {
           (void)sprintf(log_buffer,
                         "failed to move %s to queue %s, %d", job->jobid,
-                        job->oqueue, pbs_errno);
+                        job->oqueue, local_errno);
           log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
                      log_buffer);
           DBPRT(("%s: %s\n", id, log_buffer));

@@ -269,7 +269,6 @@ extern char  mom_host[];
 extern char  *path_jobs;
 extern char  *path_home;
 extern  char            *path_spool;
-extern int  pbs_errno;
 extern unsigned int pbs_mom_port;
 extern unsigned int pbs_rm_port;
 extern unsigned int pbs_tm_port;

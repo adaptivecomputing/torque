@@ -139,6 +139,7 @@ schd_get_resources(char *exechost)
   char   *response = NULL;
   int     badreply   = 0;
   int     cpus_avail = 0;
+  int     local_errno = 0;
   size_t  pmem_avail = 0;
 
   char    hpm_ctl[64];
@@ -203,7 +204,7 @@ schd_get_resources(char *exechost)
   if ((rm = openrm(exechost, 0)) == -1)
     {
     (void)sprintf(log_buffer,
-                  "Unable to contact resmom@%s (%d)", exechost, pbs_errno);
+                  "Unable to contact resmom@%s", exechost);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
 
     badreply = 1;
@@ -240,7 +241,7 @@ schd_get_resources(char *exechost)
   /* Get the values back from the resource monitor, and round up. */
 
   /* Receive LOADAVE response from resource monitor. */
-  response = getreq(rm);
+  response = getreq(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -250,14 +251,14 @@ schd_get_resources(char *exechost)
   else
     {
     (void)sprintf(log_buffer, "bad return from getreq(loadave), %d, %d",
-                  pbs_errno, errno);
+                  local_errno, errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     badreply = 1;
     goto bail;
     }
 
   /* Receive AVAILMEM response from resource monitor. */
-  response = getreq(rm);
+  response = getreq(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -268,14 +269,14 @@ schd_get_resources(char *exechost)
   else
     {
     (void)sprintf(log_buffer, "bad return from getreq(freemem), %d, %d",
-                  pbs_errno, errno);
+                  local_errno, errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     badreply = 1;
     goto bail;
     }
 
   /* Receive PHYSMEM response from resource monitor. */
-  response = getreq(rm);
+  response = getreq(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -286,14 +287,14 @@ schd_get_resources(char *exechost)
   else
     {
     (void)sprintf(log_buffer, "bad return from getreq(realmem), %d, %d",
-                  pbs_errno, errno);
+                  local_errno, errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     badreply = 1;
     goto bail;
     }
 
   /* Receive NCPUS response from resource monitor. */
-  response = getreq(rm);
+  response = getreq(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -303,7 +304,7 @@ schd_get_resources(char *exechost)
   else
     {
     (void)sprintf(log_buffer, "bad return from getreq(ncpus), %d, %d",
-                  pbs_errno, errno);
+                  local_errno, errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     badreply = 1;
     goto bail;
@@ -311,12 +312,12 @@ schd_get_resources(char *exechost)
 
 #ifdef NODEMASK
   /* Receive available nodes from resource monitor. */
-  response = getreq(rm);
+  response = getreq(&local_errno, rm);
 
   if (response == NULL)
     {
     (void)sprintf(log_buffer, "bad return from getreq(availmask), %d, %d",
-                  pbs_errno, errno);
+                  local_errno, errno);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
     badreply = 1;
     goto bail;
@@ -342,7 +343,7 @@ schd_get_resources(char *exechost)
   if (schd_MANAGE_HPM)
     {
     /* Receive HPM_CTL response from resource monitor. */
-    response = getreq(rm);
+    response = getreq(&local_errno, rm);
 
     if (response != NULL)
       {
@@ -363,7 +364,7 @@ schd_get_resources(char *exechost)
     else
       {
       (void)sprintf(log_buffer, "bad return from getreq(%s), %d, %d",
-                    hpm_ctl, pbs_errno, errno);
+                    hpm_ctl, local_errno, errno);
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
       badreply = 1;
       goto bail;

@@ -161,7 +161,6 @@ extern unsigned int pbs_rm_port;
 char        *path_layout;
 extern char *msg_daemonname;          /* for logs     */
 extern char *msg_info_mom; /* Mom information message   */
-extern int pbs_errno;
 gid_t  pbsgroup;
 uid_t pbsuser;
 unsigned int pbs_mom_port = 0;

@@ -187,8 +187,8 @@ schd_get_queue_limits(Queue *queue)
 
   if ((bs = pbs_statque(connector, queue->qname, alist, NULL)) == NULL)
     {
-    sprintf(log_buffer, "pbs_statque failed, \"%s\" %d",
-            queue->qname, pbs_errno);
+    sprintf(log_buffer, "pbs_statque failed, \"%s\"",
+            queue->qname);
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, id, log_buffer);
     DBPRT(("%s: %s\n", id, log_buffer));
     return (-1);

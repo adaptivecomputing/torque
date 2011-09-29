@@ -1193,14 +1193,13 @@ display_statserver(struct batch_status *status, int prtheader, int full, int nod
   return;
   }
 
-static int
-getNumNodesInUse(int connect)
+static int getNumNodesInUse(
+    
+  int connect)
+
   {
-
   struct batch_status *j_status;
-
   struct batch_status *temp;
-
   struct attrl        *attr;
 
   struct attropl *run_list = 0;
@@ -1209,13 +1208,14 @@ getNumNodesInUse(int connect)
   int  nodect;
   int  cpuct;
   int  nodes;
+  int  local_errno = 0;
 
   set_attrop(&run_list, ATTR_state, (char *)NULL, "R", EQ);
-  j_status = pbs_selstat(connect, run_list, NULL);
+  j_status = pbs_selstat(connect, run_list, NULL, &local_errno);
 
   if (j_status == NULL)
     {
-    if (pbs_errno != PBSE_NONE)
+    if (local_errno != PBSE_NONE)
       {
       errmsg = pbs_geterrmsg(connect);
 
@@ -1225,7 +1225,7 @@ getNumNodesInUse(int connect)
         }
       else
         {
-        fprintf(stderr, "xpbs_datadump: Error (%d) selecting running jobs to obtain nodes in use value\n", pbs_errno);
+        fprintf(stderr, "xpbs_datadump: Error (%d) selecting running jobs to obtain nodes in use value\n", local_errno);
         }
 
       return(-1);
@@ -1274,11 +1274,11 @@ getNumNodesInUse(int connect)
   return(nodesInUse);
   }
 
-int
-main(  /* qstat */
-  int argc,
-  char **argv
-)
+int main(  /* qstat */
+
+  int    argc,
+  char **argv)
+
   {
   int c;
   int errflg = 0;
@@ -1621,19 +1621,19 @@ main(  /* qstat */
 
     if (connect <= 0)
       {
-      fprintf(stderr, "xpbs_datadump: Can not connect to server %s (%d)\n",
-              server_out, pbs_errno);
+      fprintf(stderr, "xpbs_datadump: Can not connect to server %s \n",
+        server_out);
       any_failed = connect;
       continue;
       }
 
     /* Get server information */
-    p_status = pbs_statserver(connect, NULL, NULL);
+    p_status = pbs_statserver(connect, NULL, NULL, &any_failed);
 
     if (p_status == NULL)
       {
 
-      if (pbs_errno)
+      if (any_failed)
         {
         errmsg = pbs_geterrmsg(connect);
 
@@ -1642,11 +1642,9 @@ main(  /* qstat */
           fprintf(stderr, "qstat: %s ", errmsg);
           }
         else
-          fprintf(stderr, "xpbs_datadump: Error (%d) getting status of server ", pbs_errno);
+          fprintf(stderr, "xpbs_datadump: Error (%d) getting status of server ", any_failed);
 
         fprintf(stderr, "%s\n", server_out);
-
-        any_failed = pbs_errno;
         }
       }
     else
@@ -1663,11 +1661,11 @@ main(  /* qstat */
       }
 
     /* Get the queue information */
-    p_status = pbs_statque(connect, queue_name_out, NULL, NULL);
+    p_status = pbs_statque(connect, queue_name_out, NULL, NULL, &any_failed);
 
     if (p_status == NULL)
       {
-      if (pbs_errno)
+      if (any_failed)
         {
         errmsg = pbs_geterrmsg(connect);
 
@@ -1676,11 +1674,9 @@ main(  /* qstat */
           fprintf(stderr, "qstat: %s ", errmsg);
           }
         else
-          fprintf(stderr, "xpbs_datadump: Error (%d) getting status of queue ", pbs_errno);
+          fprintf(stderr, "xpbs_datadump: Error (%d) getting status of queue ", any_failed);
 
         fprintf(stderr, "%s\n", queue_name_out);
-
-        any_failed = pbs_errno;
         }
       }
     else
@@ -1696,11 +1692,11 @@ main(  /* qstat */
     /*
     ### Get Jobs summary info information for each of the servers
     */
-    p_status = pbs_selstat(connect, select_list, NULL);
+    p_status = pbs_selstat(connect, select_list, NULL, &any_failed);
 
     if (p_status == NULL)
       {
-      if (pbs_errno != PBSE_NONE)
+      if (any_failed != PBSE_NONE)
         {
         errmsg = pbs_geterrmsg(connect);
 
@@ -1710,10 +1706,8 @@ main(  /* qstat */
           }
         else
           {
-          fprintf(stderr, "xpbs_datadump: Error (%d) selecting jobs\n", pbs_errno);
+          fprintf(stderr, "xpbs_datadump: Error (%d) selecting jobs\n", any_failed);
           }
-
-        any_failed = pbs_errno;
         }
       }
     else     /* got some output */
