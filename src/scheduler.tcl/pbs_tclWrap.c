@@ -90,6 +90,7 @@
 #include "pbs_error.h"
 #include "pbs_ifl.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 #include "resmon.h"
 #include "cmds.h"
 #include "rm.h"
