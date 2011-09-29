@@ -17,6 +17,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Added new option to torque.cfg name TRQ_IFNAME. This allows the user to designate
       a preferred outbound interface for TORQUE requests. The interface is the name 
       of the NIC interface, for example eth0.
+  e - Merged revision 4588 from 3.0-fixes. This enables TORQUE to work with root squash
+      enabled on nfs shares with prologue and epilogue scripts.
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
