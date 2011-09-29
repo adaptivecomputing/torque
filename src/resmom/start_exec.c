@@ -6032,13 +6032,12 @@ void start_exec(
  
       DIS_tcp_setup(stream);
       
-      im_compose(
-                 stream,
-                 pjob->ji_qs.ji_jobid,
-                 pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
-                IM_JOIN_JOB,
-                ep->ee_event,
-                TM_NULL_TASK);
+      im_compose(stream,
+          pjob->ji_qs.ji_jobid,
+          pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
+          IM_JOIN_JOB,
+          ep->ee_event,
+          TM_NULL_TASK);
 
       diswsi(stream, i);                /* nodeid of receiver */
       diswsi(stream, nodenum);          /* number of nodes */

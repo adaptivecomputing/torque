@@ -1943,8 +1943,6 @@ void exit_mom_job(
       }
   
     job_purge(pjob);
-
-    close(stream);
   
     return;
     }
@@ -1964,6 +1962,8 @@ void exit_mom_job(
         pjob->ji_qs.ji_jobid,
         "obit method not specified for job - no obit sent");
       }
+
+    close(stream);
   
     return;
     }

@@ -942,14 +942,10 @@ int send_sisters(
     if (ret != DIS_SUCCESS)
       {
       snprintf(log_buffer, sizeof(log_buffer),
-          "%s:  cannot compose message to sister #%d (%s) - %d",
-          id, i, (np->hn_host != NULL) ? np->hn_host : "NULL", ret);
+        "%s:  cannot compose message to sister #%d (%s) - %d",
+        id, i, (np->hn_host != NULL) ? np->hn_host : "NULL", ret);
 
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
       np->hn_sister = SISTER_EOF;
       }
@@ -959,6 +955,7 @@ int send_sisters(
       num++;
       }
     }  /* END for (i) */
+
   return(num);
   }  /* END send_sisters() */
 
@@ -2351,7 +2348,7 @@ int im_join_job_as_sister(
     /* establish a connection and write the reply back */
     reply_stream = get_reply_stream(pjob);
     
-    if (reply_stream >= 0)
+    if (IS_VALID_STREAM(reply_stream))
       {
       DIS_tcp_setup(reply_stream);
       
@@ -2748,9 +2745,9 @@ int im_spawn_task(
               ret = diswsi(reply_stream, ptask->ti_qs.ti_task);
               
               DIS_tcp_wflush(reply_stream);
-              
-              close(reply_stream);
               }
+
+            close(reply_stream);
             }
           else
             {
@@ -7077,8 +7074,6 @@ int tm_obit_request(
           *reply_ptr = FALSE;
           }
         }
-
-      close(stream);
       }
     else 
       {
@@ -7088,6 +7083,8 @@ int tm_obit_request(
         phost->hn_host);
       log_err(-1,id,log_buffer);
       }
+      
+    close(stream);
     
     return(TM_DONE);
     }
@@ -7239,7 +7236,6 @@ int tm_getinfo_request(
       }
  
     close(stream);
-
     free(name);
  
     return(TM_DONE);
@@ -7333,11 +7329,11 @@ int tm_resources_request(
     if (*ret == DIS_SUCCESS)
       {
       if ((*ret = diswui(stream, pjob->ji_nodeid)) == DIS_SUCCESS)
-         {
+        {
         DIS_tcp_wflush(stream);
         
         *reply_ptr = FALSE;
-         }
+        }
       }
     
     close(stream);

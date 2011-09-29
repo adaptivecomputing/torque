@@ -530,6 +530,7 @@ int send_job_work(
   tlist_head            attrl;
   enum conn_type        cntype = ToServerDIS;
   int                   con;
+  int                   sock = -1;
   int                   encode_type;
   int                   i;
   int                   NumRetries;
@@ -615,7 +616,6 @@ int send_job_work(
   for (NumRetries = 0;NumRetries < RETRY;NumRetries++)
     {
     int rc;
-    int sock;
 
     /* connect to receiving server with retries */
 
@@ -624,7 +624,11 @@ int send_job_work(
       /* recycle after an error */
 
       if (con >= 0)
+        {
         svr_disconnect(con);
+
+        close(sock);
+        }
 
       /* check my_err from previous attempt */
 
@@ -838,7 +842,11 @@ int send_job_work(
     }  /* END for (NumRetries) */
 
   if (con >= 0)
+    {
     svr_disconnect(con);
+
+    close(sock);
+    }
 
   if (Timeout == TRUE)
     {
