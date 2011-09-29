@@ -1183,6 +1183,7 @@ int    msg;
 void   *param;
   {
   static  char    id[] = "ServerWriteRead";
+  int             local_errno = 0;
 
   switch (msg)
     {
@@ -1213,7 +1214,7 @@ void   *param;
 #ifdef DEBUG
       printf("pbs_statjob(%d,..)\n", ServerFdTwoWayGet(server));
 #endif
-      return(pbs_statjob(ServerFdTwoWayGet(server), NULL, param, NULL));
+      return(pbs_statjob(ServerFdTwoWayGet(server), NULL, param, NULL, &local_errno));
 
     default:
       log_err(-1, id, "Unknown command sent!");

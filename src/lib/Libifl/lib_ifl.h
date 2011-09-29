@@ -330,7 +330,7 @@ int pbs_sigjobasync(int c, char *jobid, char *signal, char *extend, int *);
 int pbs_stagein(int c, char *jobid, char *location, char *extend);
 
 /* pbsD_statjob.c */
-struct batch_status *pbs_statjob(int c, char *id, struct attrl *attrib, char *extend); 
+struct batch_status *pbs_statjob(int c, char *id, struct attrl *attrib, char *extend, int *); 
 
 /* pbsD_statnode.c */
 struct batch_status *pbs_statnode(int c, char *id, struct attrl *attrib, char *extend, int *);

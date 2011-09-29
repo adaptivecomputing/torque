@@ -2574,7 +2574,8 @@ job_no_args:
                        connect,
                        job_id_out,
                        NULL,
-                       exec_only ? EXECQUEONLY : ExtendOpt);
+                       exec_only ? EXECQUEONLY : ExtendOpt,
+                       &any_failed);
           }
         else
           {

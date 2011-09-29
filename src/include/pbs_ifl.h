@@ -624,7 +624,7 @@ extern struct batch_status *
         pbs_statdest(int connect, char *id, char *extend);
 
 extern struct batch_status *
-        pbs_statjob(int connect, char *id, struct attrl *attrib, char *extend);
+        pbs_statjob(int connect, char *id, struct attrl *attrib, char *extend, int *);
 
 extern struct batch_status *
         pbs_selstat(int connect, struct attropl *select_list, char *extend, int *);

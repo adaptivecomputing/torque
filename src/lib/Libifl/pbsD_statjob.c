@@ -101,15 +101,14 @@
 
 struct batch_status *pbs_statjob(
 
-  int           c,       /* I - socket descriptor */
-  char         *id,      /* I - job id (optional) */
-  struct attrl *attrib,  /* ??? */
-  char         *extend)  /* I - ??? */
+  int           c,           /* I - socket descriptor */
+  char         *id,          /* I - job id (optional) */
+  struct attrl *attrib,      /* ??? */
+  char         *extend,      /* I - ??? */
+  int          *local_errno) /* O */
 
   {
-  int local_errno = 0;
-
-  return(PBSD_status(c, PBS_BATCH_StatusJob, &local_errno, id, attrib, extend));
+  return(PBSD_status(c, PBS_BATCH_StatusJob, local_errno, id, attrib, extend));
   }  /* END pbs_statjob() */
 
 

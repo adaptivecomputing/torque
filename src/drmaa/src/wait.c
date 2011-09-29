@@ -274,6 +274,7 @@ drmaa_get_job_rusage(
 )
   {
   int rc = DRMAA_ERRNO_SUCCESS;
+  int local_errno = 0;
 
   struct batch_status *pbs_status  = NULL;
   drmaa_attr_values_t *result = NULL;
@@ -302,7 +303,7 @@ drmaa_get_job_rusage(
 
   pthread_mutex_lock(&c->conn_mutex);
 
-  pbs_status = pbs_statjob(c->pbs_conn, (char*)jobid, NULL, NULL);
+  pbs_status = pbs_statjob(c->pbs_conn, (char*)jobid, NULL, NULL, &local_errno);
 
   if (pbs_status == NULL)
     rc = drmaa_get_pbs_error(errmsg, errlen);
@@ -379,6 +380,7 @@ drmaa_job_wait(
   struct attropl  *attribs = NULL;
   drmaa_session_t *c       = NULL;
   int rc                   = DRMAA_ERRNO_SUCCESS;
+  int              local_errno = 0;
   bool terminated          = false;
 
   DEBUG(("-> drmaa_job_wait(jobid=%s)", jobid));
@@ -415,7 +417,7 @@ drmaa_job_wait(
       pthread_mutex_lock(&c->conn_mutex);
       DEBUG(("** probing queue: pbs_statjob( %d, %s, %p, NULL )",
              c->pbs_conn, jobid, (void*)attribs));
-      pbs_status = pbs_statjob(c->pbs_conn, (char*)jobid, (struct attrl*)attribs, NULL);
+      pbs_status = pbs_statjob(c->pbs_conn, (char*)jobid, (struct attrl*)attribs, NULL, &local_errno);
       pthread_mutex_unlock(&c->conn_mutex);
       }
 
