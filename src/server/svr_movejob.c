@@ -641,7 +641,6 @@ int send_job_work(
 
         log_err(*my_err, id, log_buf);
 
-
         finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
 
         return(LOCUTION_FAIL);

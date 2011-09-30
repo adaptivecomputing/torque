@@ -2078,7 +2078,7 @@ const char *PBSServerCmds2[] =
  * passed to the threadpool to be started from there.
  *
  * vp is an array of int pointers. 
- * The first slot is the stream 
+ * The first slot is the socket number 
  * The second slot is the version
  */
 
@@ -2113,14 +2113,14 @@ void *is_request_work(
   time_t              time_now = time(NULL);
 #endif
 
-  int                 stream;
+  int                 sock;
   int                 version;
   int                *args = (int *)vp;
 
-  stream = args[0];
+  sock = args[0];
   version = args[1];
 
-  command = disrsi(stream, &ret);
+  command = disrsi(sock, &ret);
 
   if (ret != DIS_SUCCESS)
     goto err;
@@ -2128,16 +2128,16 @@ void *is_request_work(
   if (LOGLEVEL >= 4)
     {
     sprintf(log_buf,
-      "message received from stream %d (version %d)",
-      stream,
+      "message received from sock %d (version %d)",
+      sock,
       version);
 
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
     }
 
-  if (getpeername(stream,&s_addr,&len) != 0)
+  if (getpeername(sock, &s_addr, &len) != 0)
     {
-    close(stream);
+    close_conn(sock, FALSE);
 
     free(vp);
 
@@ -2148,8 +2148,8 @@ void *is_request_work(
 
   addr = (struct sockaddr_in *)&s_addr;
 
-  mom_port = disrsi(stream, &ret);
-  rm_port = disrsi(stream, &ret);
+  mom_port = disrsi(sock, &ret);
+  rm_port = disrsi(sock, &ret);
 
   if (version != IS_PROTOCOL_VER)
     {
@@ -2160,7 +2160,7 @@ void *is_request_work(
 
     log_err(-1, id, log_buf);
 
-    close(stream);
+    close_conn(sock, 2);
 
     free(vp);
   
@@ -2172,7 +2172,7 @@ void *is_request_work(
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buf,
-      "message received from stream %s: mom_port %d  - rm_port %d",
+      "message received from sock %s: mom_port %d  - rm_port %d",
       netaddr(addr),
       mom_port,
       rm_port);
@@ -2225,7 +2225,7 @@ void *is_request_work(
     
     log_err(-1, id, log_buf);
     
-    close(stream);
+    close_conn(sock, FALSE);
     
     free(vp);
  
@@ -2235,12 +2235,12 @@ void *is_request_work(
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buf,
-      "message %s (%d) received from mom on host %s (%s) (stream %d)",
+      "message %s (%d) received from mom on host %s (%s) (sock %d)",
       PBSServerCmds2[command],
       command,
       node->nd_name,
       netaddr(addr),
-      stream);
+      sock);
 
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
     }
@@ -2265,7 +2265,7 @@ void *is_request_work(
         }
 
 #ifndef ALT_CLSTR_ADDR
-      ret = is_compose(stream, IS_CLUSTER_ADDRS);
+      ret = is_compose(sock, IS_CLUSTER_ADDRS);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -2277,10 +2277,10 @@ void *is_request_work(
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
         }
 
-      if (add_cluster_addrs(stream,node) != DIS_SUCCESS)
+      if (add_cluster_addrs(sock,node) != DIS_SUCCESS)
         goto err;
 
-      ret = DIS_tcp_wflush(stream);
+      ret = DIS_tcp_wflush(sock);
 
       if (ret != DIS_SUCCESS)
         goto err;
@@ -2291,8 +2291,6 @@ void *is_request_work(
 
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
         }
-
-      /* rpp_eom(stream); */
 
       /* CLUSTER_ADDRS successful */
 #endif
@@ -2305,7 +2303,7 @@ void *is_request_work(
       DBPRT(("%s: IS_UPDATE\n",
              id))
 
-      i = disrui(stream, &ret);
+      i = disrui(sock, &ret);
 
       if (ret != DIS_SUCCESS)
         {
@@ -2345,11 +2343,11 @@ void *is_request_work(
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
         }
 
-      node->nd_stream = stream;
+      node->nd_stream = sock;
 
       ret = is_stat_get(node);
 
-      write_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
+      write_tcp_reply(sock,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
 
       node->nd_stream = -1;
 
@@ -2431,8 +2429,8 @@ void *is_request_work(
       break;
     }  /* END switch (command) */
 
-  /*rpp_eom(stream);*/
-  /* change to close for tcp? */
+  /* must be closed because mom opens and closes this connection each time */
+  close_conn(sock, FALSE);
 
   unlock_node(node, id, "close", LOGLEVEL);
   
@@ -2464,14 +2462,14 @@ err:
     }
   else
     {
-    sprintf(log_buf,"%s occurred when trying to read stream %d",
+    sprintf(log_buf,"%s occurred when trying to read sock %d",
       dis_emsg[ret],
-      stream);
+      sock);
     }
     
   log_err(-1, id, log_buf);
     
-  close(stream);
+  close_conn(sock, FALSE);
     
   free(vp);
 
