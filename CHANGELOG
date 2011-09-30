@@ -19,6 +19,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       of the NIC interface, for example eth0.
   e - Merged revision 4588 from 3.0-fixes. This enables TORQUE to work with root squash
       enabled on nfs shares with prologue and epilogue scripts.
+  b - Fixed a problem in Munge where file descriptors were getting left open after failure
+      cases and the munge process.
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

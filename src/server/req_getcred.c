@@ -241,31 +241,33 @@ int unmunge_request(int s, struct batch_request *preq)
   timeinfo = localtime(&myTime);
   millisecs = tv.tv_usec;
   sprintf(mungeFileName, "%smunge-%d-%d-%d-%d", 
-	  path_credentials, timeinfo->tm_hour, timeinfo->tm_min, 
-	  timeinfo->tm_sec, (int)millisecs);
+  path_credentials, timeinfo->tm_hour, timeinfo->tm_min, 
+  timeinfo->tm_sec, (int)millisecs);
 
   fd = open(mungeFileName, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
   if(fd == -1)
-	{
+    {
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not create temporary munge file");
 	  return(-1);
-	}
+    }
 
   /* Write the munge credential to the newly created file */
 
   cred_size = strlen(preq->rq_ind.rq_authen.rq_cred);
   if(cred_size == 0)
-	{
+    {
     req_reject(PBSE_BADCRED, 0, preq, NULL, NULL);
+		close(fd);
 		return(-1);
-	}
+    }
 
   bytes_written = write(fd, preq->rq_ind.rq_authen.rq_cred, cred_size);
   if(bytes_written == -1 || (bytes_written != cred_size))
-	{
-	req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not write credential to temporary munge file");
-	return(-1);
-	}
+	  {
+	  req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not write credential to temporary munge file");
+    close(fd);
+    return(-1);
+    }
 
 	rc = fsync(fd);
 	if(rc < 0)

@@ -427,12 +427,14 @@ int PBSD_munge_authenticate(
         {
         /* read failed */
         fprintf(stderr, "error reading pipe in PBSD_munge_authenticate: errno = %d\n", errno);
-        return(-1);
+        close(fd_pipe[0]);
+        return(PBSE_SYSTEM);
         }
 
       /* if we got no bytes back then Munge may not be installed etc. */
       if(total_bytes_read == 0)
         {
+        close(fd_pipe[0]);
         return(PBSE_MUNGE_NOT_FOUND);
         }
 
@@ -448,6 +450,7 @@ int PBSD_munge_authenticate(
       if(rc == -1)
         {
         fprintf(stderr, "getsockname failed: %d\n", errno);
+        close(fd_pipe[0]);
         return(-1);
         }
 
@@ -480,6 +483,7 @@ int PBSD_munge_authenticate(
     exit(0);
     }
 
+  close(fd_pipe[0]);
   return(0);  
   }
 #endif /* ifdef MUNGE_AUTH */
