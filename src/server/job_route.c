@@ -114,7 +114,7 @@
 #endif
 
 /* External functions called */
-int svr_movejob(job *, char *, int *, struct batch_request *);
+int svr_movejob(job *, char *, int *, struct batch_request *, int);
 
 /* Local Functions */
 
@@ -262,7 +262,7 @@ int default_router(
     if (is_bad_dest(jobp, destination))
       continue;
 
-    switch (svr_movejob(jobp, destination, &local_errno, NULL))
+    switch (svr_movejob(jobp, destination, &local_errno, NULL, TRUE))
       {
 
       case - 1: /* permanent failure */

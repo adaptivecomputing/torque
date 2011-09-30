@@ -1734,7 +1734,7 @@ void job_purge(
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN) &&
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM))
     {
-    svr_dequejob(pjob);
+    svr_dequejob(pjob, FALSE);
     }
 
   /* if part of job array then remove from array's job list */

@@ -141,7 +141,7 @@ extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 
 /* Private Functions local to this file */
 
-static int  local_move(job *, int *, struct batch_request *);
+static int  local_move(job *, int *, struct batch_request *, int);
 static int should_retry_route(int err);
 static int move_job_file(int con, job *pjob, enum job_file which);
 
@@ -188,7 +188,8 @@ int svr_movejob(
   job                  *jobp,
   char                 *destination,
   int                  *my_err,
-  struct batch_request *req)
+  struct batch_request *req,
+  int                   parent_queue_mutex_held)
 
   {
   pbs_net_t     destaddr;
@@ -233,7 +234,7 @@ int svr_movejob(
 
   if (local != 0)
     {
-    return(local_move(jobp, my_err, req));
+    return(local_move(jobp, my_err, req, parent_queue_mutex_held));
     }
 
   return(net_move(jobp, req));
@@ -258,7 +259,8 @@ static int local_move(
 
   job                  *jobp,
   int                  *my_err,
-  struct batch_request *req)
+  struct batch_request *req,
+  int                   parent_queue_mutex_held)
 
   {
   char      *id = "local_move";
@@ -305,16 +307,16 @@ static int local_move(
                      get_variable(jobp, pbs_o_host), mtype, NULL)))
     {
     /* should this queue be retried? */
-    unlock_queue(pque, "local_move", "retry", LOGLEVEL);
+    unlock_queue(pque, id, "retry", LOGLEVEL);
     return(should_retry_route(*my_err));
     }
     
-  unlock_queue(pque, "local_move", "success", LOGLEVEL);
+  unlock_queue(pque, id, "success", LOGLEVEL);
 
   /* dequeue job from present queue, update destination and */
   /* queue_rank for new queue and enqueue into destination  */
 
-  svr_dequejob(jobp);
+  svr_dequejob(jobp, parent_queue_mutex_held);
 
   strcpy(jobp->ji_qs.ji_queue, destination);
 
@@ -573,7 +575,7 @@ int send_job_work(
     encode_type = ATR_ENCODE_SVR;
 
     /* clear default resource settings */
-    svr_dequejob(pjob);
+    svr_dequejob(pjob, FALSE);
     }
 
   pattr = pjob->ji_wattr;

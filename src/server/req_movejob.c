@@ -110,7 +110,7 @@ extern char *msg_manager;
 extern char *msg_movejob;
 extern char *pbs_o_host;
 
-int   svr_movejob(job *, char *, int *, struct batch_request *);
+int   svr_movejob(job *, char *, int *, struct batch_request *, int);
 int   svr_chkque(job *, pbs_queue *, char *, int, char *);
 job  *chk_job_request(char *, struct batch_request *);
 
@@ -160,7 +160,7 @@ void *req_movejob(
    * network moves
    */
 
-  switch (svr_movejob(jobp, req->rq_ind.rq_move.rq_destin, &local_errno, req))
+  switch (svr_movejob(jobp, req->rq_ind.rq_move.rq_destin, &local_errno, req, FALSE))
     {
 
     case 0:
@@ -326,8 +326,8 @@ void *req_orderjob(
     (void)strcpy(tmpqn, pjob1->ji_qs.ji_queue);
     (void)strcpy(pjob1->ji_qs.ji_queue, pjob2->ji_qs.ji_queue);
     (void)strcpy(pjob2->ji_qs.ji_queue, tmpqn);
-    svr_dequejob(pjob1);
-    svr_dequejob(pjob2);
+    svr_dequejob(pjob1, FALSE);
+    svr_dequejob(pjob2, FALSE);
     (void)svr_enquejob(pjob1, FALSE);
     (void)svr_enquejob(pjob2, FALSE);
 

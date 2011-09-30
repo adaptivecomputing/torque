@@ -523,14 +523,16 @@ int svr_enquejob(
 
 void svr_dequejob(
 
-  job *pjob)
+  job *pjob,                    /* I, M */
+  int  parent_queue_mutex_held) /* I */
 
   {
-  int        bad_ct = 0;
-  attribute *pattr;
-  pbs_queue *pque;
-  resource  *presc;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  static char *id = "svr_dequejob";
+  int          bad_ct = 0;
+  attribute   *pattr;
+  pbs_queue   *pque;
+  resource    *presc;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* remove job from server's all job list and reduce server counts */
 
@@ -544,7 +546,7 @@ void svr_dequejob(
       if (--server.sv_qs.sv_numjobs < 0)
         {
         bad_ct = 1;
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, "svr_dequejob", "sv_numjobs < 0. Recount required.");
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "sv_numjobs < 0. Recount required.");
         }
       
       pthread_mutex_unlock(server.sv_qs_mutex);
@@ -553,33 +555,38 @@ void svr_dequejob(
       if (--server.sv_jobstates[pjob->ji_qs.ji_state] < 0)
         {
         bad_ct = 1;
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, "svr_dequejob", "sv_jobstates < 0. Recount required.");
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "sv_jobstates < 0. Recount required.");
         }
       
       pthread_mutex_unlock(server.sv_jobstates_mutex);
       }
     }
 
-  if ((pque = get_jobs_queue(pjob)) != NULL)
+  if (parent_queue_mutex_held == FALSE)
+    pque = get_jobs_queue(pjob);
+  else
+    pque = pjob->ji_qhdr;
+
+  if (pque != NULL)
     {
     if (remove_job(pque->qu_jobs,pjob) == PBSE_NONE)
       {
       if (--pque->qu_numjobs < 0)
         {
         bad_ct = 1;
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, "svr_dequejob", "qu_numjobs < 0. Recount required.");
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "qu_numjobs < 0. Recount required.");
         }
 
       if (--pque->qu_njstate[pjob->ji_qs.ji_state] < 0)
         {
         bad_ct = 1;
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, "svr_dequejob", "qu_njstate < 0. Recount required.");
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "qu_njstate < 0. Recount required.");
         }
 
       if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
         if (--pque->qu_numcompleted < 0)
           {
-          log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, "svr_dequejob", "qu_numcompleted < 0. Recount required.");
+          log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "qu_numcompleted < 0. Recount required.");
           bad_ct = 1;
           }
       }
@@ -589,7 +596,8 @@ void svr_dequejob(
 
     pjob->ji_qhdr = NULL;
 
-    unlock_queue(pque, "svr_dequejob", NULL, LOGLEVEL);
+    if (parent_queue_mutex_held == FALSE)
+      unlock_queue(pque, id, NULL, LOGLEVEL);
     }
 
 #ifndef NDEBUG
