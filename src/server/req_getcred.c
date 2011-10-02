@@ -135,7 +135,7 @@ void req_connect(
     }
   else
     {
-    req_reject(PBSE_BADCRED, 0, preq, NULL, NULL);
+    req_reject(PBSE_BADCRED, 0, preq, NULL, "Connection not authorized");
     }
 
   return;
@@ -256,7 +256,7 @@ int unmunge_request(int s, struct batch_request *preq)
   cred_size = strlen(preq->rq_ind.rq_authen.rq_cred);
   if(cred_size == 0)
     {
-    req_reject(PBSE_BADCRED, 0, preq, NULL, NULL);
+    req_reject(PBSE_BADCRED, 0, preq, NULL, "munge credential invalid");
 		close(fd);
 		return(-1);
     }
@@ -423,7 +423,7 @@ void req_authenuser(
     return;
     }  /* END for (s) */
 
-  req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user");
+  req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user. Client connection not found");
 
   /* FAILURE */
 
@@ -463,7 +463,7 @@ int req_altauthenuser(
   /* If s is less than PBS_NET_MAX_CONNECTIONS we have our port */
   if(s >= PBS_NET_MAX_CONNECTIONS)
 	{
-	req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user");
+	req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user. Client connection not found");
 	return (PBSE_BADCRED);
 	}
 
