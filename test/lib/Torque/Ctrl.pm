@@ -692,11 +692,16 @@ sub createMomCfg #($)
 
   close MOM_CFG;
 
+  # For logging purposes
+  runCommand("cat $tmp_loc");
+
   if( defined $host )
   {
     runCommand("scp -B $tmp_loc $host:$mom_cfg_loc", test_success => 1, msg => "Copying Torque MOM config to Remote Client $host");
     runCommandSsh($host, "chmod 0644 $mom_cfg_loc", test_success => 1, msg => "Setting File Permissions on Remote Client $host");
   }
+
+  return 1;
 }
 
 #------------------------------------------------------------------------------
