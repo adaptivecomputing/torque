@@ -708,6 +708,181 @@ static int svr_stagein(
 
 
 
+#ifdef BOEING
+/*
+ * contacts each mom and verifies that it is up by opening a tcp connection 
+ * to it.
+ *
+ * NOTE: this is only done for boeing.
+ */
+
+int verify_moms_up(
+    
+  job *pjob)
+
+  {
+  static char        *id = "svr_startjob";
+  int                 sock;
+  int                 nodenum;
+
+  struct  addrinfo   *addr_info;
+  char               *nodestr;
+  char               *cp;
+  char               *hostlist;
+  int                 size;
+
+  struct sockaddr_in  saddr;
+
+  badplace           *bp;
+  
+  /* NOTE: Copy the nodes into a temp string because strtok() is destructive. */
+  hostlist = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+
+  if (hostlist == NULL)
+    {
+    sprintf(log_buf, "could not allocate temporary buffer (malloc failed) -- skipping TCP connect check");
+    log_err(errno, id, log_buf);
+    }
+  else
+    {
+    /* Get the first host. */
+    strncpy(hostlist, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, size);
+    hostlist[size] = '\0';
+    nodestr = strtok(hostlist, "+");
+    }
+
+  while (nodestr != NULL)
+    {
+    /* truncate from trailing slash on (if one exists). */
+    if ((cp = strchr(nodestr, '/')) != NULL)
+      {
+      cp[0] = '\0';
+      }
+
+    /* Lookup IP address of host. */
+    if (getaddrinfo(nodestr, NULL, NULL, &addr_info) != 0)
+      {
+      sprintf(log_buf, "could not contact %s (getaddrinfo() failed, errno: %d (%s))",
+        nodestr,
+        errno,
+        pbs_strerror(errno));
+
+      if (FailHost != NULL)
+        strncpy(FailHost, nodestr, 1024);
+
+      if (EMsg != NULL)
+        strncpy(EMsg, log_buf, 1024);
+
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+
+      /* Add this host to the reject destination list for the job */
+      if ((bp = (badplace *)malloc(sizeof(badplace))) == NULL)
+        {
+        log_err(ENOMEM, id, msg_err_malloc);
+
+        return(PBSE_SYSTEM);
+        }
+
+      CLEAR_LINK(bp->bp_link);
+      strcpy(bp->bp_dest, nodestr);
+      append_link(&pjob->ji_rejectdest, &bp->bp_link, bp);
+
+      /* FAILURE - cannot lookup master compute host */
+      return(PBSE_RESCUNAV);
+      }
+
+    /* open a socket. */
+
+    /* NOTE:  should change to PF_* */
+
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+      {
+      sprintf(log_buf, "could not contact %s (cannot create socket, errno: %d (%s))",
+        nodestr,
+        errno,
+        pbs_strerror(errno));
+
+      if (FailHost != NULL)
+        strncpy(FailHost, nodestr, 1024);
+
+      if (EMsg != NULL)
+        strncpy(EMsg, log_buf, 1024);
+
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+
+      /* Add this host to the reject destination list for the job */
+      if ((bp = (badplace *)malloc(sizeof(badplace))) == NULL)
+        {
+        /* FAILURE - cannot allocate memory */
+
+        log_err(errno, id, msg_err_malloc);
+
+        return(PBSE_RESCUNAV);
+        }
+
+      CLEAR_LINK(bp->bp_link);
+      strcpy(bp->bp_dest, nodestr);
+      append_link(&pjob->ji_rejectdest, &bp->bp_link, bp);
+
+      /* FAILURE - cannot create socket for master compute host */
+      return(PBSE_RESCUNAV);
+      }
+
+    /* Set the host information. */
+    memset(&saddr, '\0', sizeof(saddr));
+    saddr.sin_family = AF_INET;
+    saddr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+    freeaddrinfo(addr_info);
+    saddr.sin_port = htons(pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport);
+
+    /* Connect to the host. */
+    if (connect(sock, (struct sockaddr *)&saddr, sizeof(saddr)) < 0)
+      {
+      sprintf(log_buf, "could not contact %s (connect failed, errno: %d (%s))",
+        nodestr,
+        errno,
+        pbs_strerror(errno));
+
+      if (FailHost != NULL)
+        strncpy(FailHost, nodestr, 1024);
+
+      if (EMsg != NULL)
+        strncpy(EMsg, log_buf, 1024);
+
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+
+      /* Add this host to the reject list for the job */
+      if ((bp = (badplace *)malloc(sizeof(badplace))) == NULL)
+        {
+        /* FAILURE - cannot allocate memory */
+        log_err(errno, id, msg_err_malloc);
+
+        return(PBSE_RESCUNAV);
+        }
+
+      CLEAR_LINK(bp->bp_link);
+      strcpy(bp->bp_dest, nodestr);
+      append_link(&pjob->ji_rejectdest, &bp->bp_link, bp);
+
+      /* FAILURE - cannot connect to master compute host */
+      return(PBSE_RESCUNAV);
+      }
+
+    /* clean up and get next host. */
+    close(sock);
+
+    nodestr = strtok(NULL, "+");
+    }  /* END while (nodestr != NULL) */
+
+  /* SUCCESS */
+  if (hostlist != NULL)
+    free(hostlist);
+
+  return(PBSE_NONE);
+  } /* END verify_moms_up() */
+#endif
+
+
 
 
 /*
@@ -725,18 +900,6 @@ int svr_startjob(
   {
   int     f;
   int     rc;
-#ifdef BOEING
-  int     sock, nodenum;
-
-  struct  addrinfo *addr_info;
-  char   *nodestr, *cp, *hostlist;
-  int     size;
-
-  struct  sockaddr_in saddr;
-
-  badplace *bp;
-  char     *id = "svr_startjob";
-#endif
 
   if (FailHost != NULL)
     FailHost[0] = '\0';
@@ -801,183 +964,8 @@ int svr_startjob(
     }
 
 #ifdef BOEING
-  /* Verify that all the nodes are alive via a TCP connect. */
-
-  /* NOTE: Copy the nodes into a temp string because strtok() is destructive. */
-
-  size = strlen(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-
-  hostlist = malloc(size + 1);
-
-  if (hostlist == NULL)
-    {
-    sprintf(log_buf, "could not allocate temporary buffer (malloc failed) -- skipping TCP connect check");
-    log_err(errno, id, log_buf);
-    }
-  else
-    {
-    /* Get the first host. */
-
-    strncpy(hostlist, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, size);
-    hostlist[size] = '\0';
-    nodestr = strtok(hostlist, "+");
-    }
-
-  while (nodestr != NULL)
-    {
-    /* truncate from trailing slash on (if one exists). */
-
-    if ((cp = strchr(nodestr, '/')) != NULL)
-      {
-      cp[0] = '\0';
-      }
-
-    /* Lookup IP address of host. */
-
-    if (getaddrinfo(nodestr, NULL, NULL, &addr_info) != 0)
-      {
-      sprintf(log_buf, "could not contact %s (getaddrinfo() failed, errno: %d (%s))",
-        nodestr,
-        errno,
-        pbs_strerror(errno));
-
-      if (FailHost != NULL)
-        strncpy(FailHost, nodestr, 1024);
-
-      if (EMsg != NULL)
-        strncpy(EMsg, log_buf, 1024);
-
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
-
-      /* Add this host to the reject destination list for the job */
-
-      bp = (badplace *)malloc(sizeof(badplace));
-
-      if (bp == NULL)
-        {
-        log_err(errno, id, msg_err_malloc);
-
-        return;
-        }
-
-      CLEAR_LINK(bp->bp_link);
-
-      strcpy(bp->bp_dest, nodestr);
-
-      append_link(&pjob->ji_rejectdest, &bp->bp_link, bp);
-
-      /* FAILURE - cannot lookup master compute host */
-
-      return(PBSE_RESCUNAV);
-      }
-
-    /* open a socket. */
-
-    /* NOTE:  should change to PF_* */
-
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-      {
-      sprintf(log_buf, "could not contact %s (cannot create socket, errno: %d (%s))",
-        nodestr,
-        errno,
-        pbs_strerror(errno));
-
-      if (FailHost != NULL)
-        strncpy(FailHost, nodestr, 1024);
-
-      if (EMsg != NULL)
-        strncpy(EMsg, log_buf, 1024);
-
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
-
-      /* Add this host to the reject destination list for the job */
-
-      bp = (badplace *)malloc(sizeof(badplace));
-
-      if (bp == NULL)
-        {
-        /* FAILURE - cannot allocate memory */
-
-        log_err(errno, id, msg_err_malloc);
-
-        return(PBSE_RESCUNAV);
-        }
-
-      CLEAR_LINK(bp->bp_link);
-
-      strcpy(bp->bp_dest, nodestr);
-
-      append_link(&pjob->ji_rejectdest, &bp->bp_link, bp);
-
-      /* FAILURE - cannot create socket for master compute host */
-
-      return(PBSE_RESCUNAV);
-      }
-
-    /* Set the host information. */
-
-    memset(&saddr, '\0', sizeof(saddr));
-
-    saddr.sin_family = AF_INET;
-
-    saddr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-    freeaddrinfo(addr_info);
-
-    saddr.sin_port = htons(pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport);
-
-    /* Connect to the host. */
-
-    if (connect(sock, (struct sockaddr *)&saddr, sizeof(saddr)) < 0)
-      {
-      sprintf(log_buf, "could not contact %s (connect failed, errno: %d (%s))",
-        nodestr,
-        errno,
-        pbs_strerror(errno));
-
-      if (FailHost != NULL)
-        strncpy(FailHost, nodestr, 1024);
-
-      if (EMsg != NULL)
-        strncpy(EMsg, log_buf, 1024);
-
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
-
-      /* Add this host to the reject list for the job */
-
-      bp = (badplace *)malloc(sizeof(badplace));
-
-      if (bp == NULL)
-        {
-        /* FAILURE - cannot allocate memory */
-
-        log_err(errno, id, msg_err_malloc);
-
-        return(PBSE_RESCUNAV);
-        }
-
-      CLEAR_LINK(bp->bp_link);
-
-      strcpy(bp->bp_dest, nodestr);
-
-      append_link(&pjob->ji_rejectdest, &bp->bp_link, bp);
-
-      /* FAILURE - cannot connect to master compute host */
-
-      return(PBSE_RESCUNAV);
-      }
-
-    /* clean up and get next host. */
-
-    close(sock);
-
-    nodestr = strtok(NULL, "+");
-    }  /* END while (nodestr != NULL) */
-
-  if (hostlist != NULL)
-    free(hostlist);
-
-  /* END MOM verification check via TCP. */
-
+  if ((rc = verify_moms_up(pjob)) != PBSE_NONE)
+    return(rc);
 #endif  /* END BOEING */
 
   /* Next, are there files to be staged-in? */

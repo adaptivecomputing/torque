@@ -384,13 +384,12 @@ void release_req(
 
 int issue_Drequest(
 
-  int          conn,
-  struct batch_request *request,
-  void (*func) (struct work_task *),
-  struct work_task    **ppwt)
+  int                    conn,
+  struct batch_request  *request,
+  void                 (*func) (struct work_task *),
+  struct work_task     **ppwt)
 
   {
-
   struct attropl   *patrl;
 
   struct work_task *ptask;

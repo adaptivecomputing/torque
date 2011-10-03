@@ -2500,8 +2500,12 @@ void *req_jobobit(
   mailbuf[RESC_USED_BUF - 1] = '\0';
 
   /* make sure ji_momhandle is -1 to force new connection to mom */
-
-  pjob->ji_momhandle = -1;
+  if (pjob->ji_momhandle >= 0)
+    {
+    svr_disconnect(pjob->ji_momhandle);
+  
+    pjob->ji_momhandle = -1;
+    }
 
   reply_ack(preq);
 
