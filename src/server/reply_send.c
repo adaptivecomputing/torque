@@ -326,7 +326,9 @@ int reply_send(
  */
 
 void reply_ack(
-    struct batch_request *preq)
+    
+  struct batch_request *preq)
+
   {
 
   preq->rq_reply.brp_code    = PBSE_NONE;

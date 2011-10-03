@@ -3288,6 +3288,7 @@ void mom_server_all_update_stat(void)
           nc->bad = TRUE;
           nc->mtime = time_now;
           nc = force_path_update(mh);
+          close(nc->stream);
           }
         else 
           {
@@ -3306,6 +3307,8 @@ void mom_server_all_update_stat(void)
         mom_server_update_stat(&mom_servers[sindex],status_strings);
         }
       }
+    else
+      close(nc->stream);
     }
  
   return;

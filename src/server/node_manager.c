@@ -691,17 +691,23 @@ job *find_job_by_node(
  *
  * This function is called every time we get a node stat from the pbs_mom.
  *
+ * NOTE: changed to be processed in a thread so that processing here doesn't hinder
+ * the server's ability to reply to the status
+ *
  * @see is_stat_get()
  */
 
-void sync_node_jobs(
+void *sync_node_jobs(
 
-  struct pbsnode *np,            /* I */
-  char           *jobstring_in)  /* I (space delimited list of jobs 'seen' by mom) */
+  void *vp)
 
   {
   char                 *id = "sync_node_jobs";
 
+  struct pbsnode       *np;
+  char                 *raw_input = (char *)vp;
+  char                 *node_id;
+  char                 *jobstring_in;
   char                 *joblist;
   char                 *jobidstr;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -712,28 +718,31 @@ void sync_node_jobs(
 
   job                  *pjob;
 
-  if ((jobstring_in == NULL) || (!isdigit(*jobstring_in)))
+  if (vp == NULL)
+    return(NULL);
+
+  /* raw_input's format is:
+   *   node name:<JOBID>[ <JOBID>]... */
+  if ((jobstring_in = strchr(raw_input, ':')) != NULL)
+    {
+    node_id = raw_input;
+    *jobstring_in = '\0';
+    jobstring_in++;
+    }
+
+  if (!isdigit(*jobstring_in))
     {
     /* NO-OP */
+    free(raw_input);
 
-    return;
+    return(NULL);
     }
 
   /* FORMAT <JOBID>[ <JOBID>]... */
-  joblist = strdup(jobstring_in);
-
-  if (joblist == NULL)
-    {
-    /* FAILURE - cannot alloc memory */
-
-    sprintf(log_buf,"cannot alloc memory for %s", jobstring_in);
-
-    log_err(-1,id,log_buf);
-
-    return;
-    }
-
+  joblist = jobstring_in;
   jobidstr = strtok(joblist, " ");
+
+  np = find_nodebyname(node_id);
 
   while ((jobidstr != NULL) && isdigit(*jobidstr))
     {
@@ -783,6 +792,8 @@ void sync_node_jobs(
             if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
               {
               log_err(-1, id, "unable to allocate DeleteJob request-trouble!");
+                
+              svr_disconnect(conn);
               }
             else
               {
@@ -791,9 +802,12 @@ void sync_node_jobs(
                 {
                 /* release_req will free preq and close connection if successful */
                 free_br(preq);
+            
+                /* NOTE: only disconnect if we're unsuccesful - the mom has to reply on 
+                 * this connection (see above comment for close connection */
+                svr_disconnect(conn);
                 }
               }
-              svr_disconnect(conn);
             }
           }
         } /* END find_job_by_node != NULL */
@@ -805,9 +819,9 @@ void sync_node_jobs(
     }  /* END while ((jobidstr != NULL) && ...) */
 
   /* SUCCESS */
-  free(joblist);
+  free(raw_input);
 
-  return;
+  return(NULL);
   }  /* END sync_node_jobs() */
 
 
@@ -1028,7 +1042,6 @@ int is_stat_get(
   if (decode_arst(&temp, NULL, NULL, NULL, 0))
     {
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, "cannot initialize attribute");
-    /*rpp_eom(stream);*/
     return(DIS_NOCOMMIT);
     }
 
@@ -1134,8 +1147,6 @@ int is_stat_get(
       free_arst(&temp);
 
       free(ret_info);
-
-      /*rpp_eom(stream);*/
 
       if (orig_np != np)
         {
@@ -1251,7 +1262,11 @@ int is_stat_get(
              !strncmp(ret_info, "jobs=", 5))
       {
       /* walk job list reported by mom */
-      sync_node_jobs(np, ret_info + strlen("jobs="));
+      size_t  len = strlen(ret_info) + PBS_MAXNODENAME + 2;
+      char   *str = malloc(len);
+
+      sprintf(str, "%s:%s", np->nd_name, ret_info);
+      enqueue_threadpool_request(sync_node_jobs, str);
       }
     else if (server.sv_attr[SRV_ATR_AutoNodeNP].at_val.at_long)
       {
