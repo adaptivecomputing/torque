@@ -21,6 +21,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       enabled on nfs shares with prologue and epilogue scripts.
   b - Fixed a problem in Munge where file descriptors were getting left open after failure
       cases and the munge process.
+  b - Fixed the display for physmem, availmem and totmem for the linux build. The available
+      memory was incorrectly calculated and displayed.
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

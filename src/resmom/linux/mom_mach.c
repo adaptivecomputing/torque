@@ -518,7 +518,7 @@ proc_mem_t *get_proc_mem(void)
           return(NULL);
           }
 
-        mm.mem_total *= 1024; /* the unit is kB */
+        /*mm.mem_total *= 1024;*/ /* the unit is kB */
         }
       else if (!strncmp(str, "MemFree:", sizeof(str)))
         {
@@ -528,7 +528,7 @@ proc_mem_t *get_proc_mem(void)
           return(NULL);
           }
 
-        mm.mem_free *= 1024;
+        /* mm.mem_free *= 1024;*/
         }
       else if (!strncmp(str, "Buffers:", sizeof(str)))
         {
@@ -538,7 +538,7 @@ proc_mem_t *get_proc_mem(void)
           return(NULL);
           }
 
-        mm.mem_free += bfsz * 1024;
+         mm.mem_free += bfsz/* * 1024*/;
         }
       else if (!strncmp(str, "Cached:", sizeof(str)))
         {
@@ -548,7 +548,7 @@ proc_mem_t *get_proc_mem(void)
           return(NULL);
           }
 
-        mm.mem_free += casz * 1024;
+        mm.mem_free += casz/* * 1024*/;
         }
       else if (!strncmp(str, "SwapTotal:", sizeof(str)))
         {
@@ -558,7 +558,7 @@ proc_mem_t *get_proc_mem(void)
           return(NULL);
           }
 
-        mm.swap_total *= 1024;
+        /* mm.swap_total *= 1024; */
         }
       else if (!strncmp(str, "SwapFree:", sizeof(str)))
         {
@@ -568,7 +568,7 @@ proc_mem_t *get_proc_mem(void)
           return(NULL);
           }
 
-        mm.swap_free *= 1024;
+        /* mm.swap_free *= 1024; */
         }
       }
     while (fscanf(fp, "%30s", str) == 1);
@@ -3325,9 +3325,8 @@ static char *totmem(
     log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
     }
 
-  sprintf(ret_string, "%lukb",
-
-          (ulong)((mm->mem_total >> 10) + (mm->swap_total >> 10))); /* KB */
+  sprintf(ret_string, "%llukb",
+          (mm->mem_total + mm->swap_total )); /* KB */
 
   return(ret_string);
   }  /* END totmem() */
@@ -3371,9 +3370,8 @@ static char *availmem(
     log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
     }
 
-  sprintf(ret_string, "%lukb",
-
-          (ulong)((mm->mem_free >> 10) + (mm->swap_free >> 10))); /* KB */
+  sprintf(ret_string, "%llukb",
+          (mm->mem_free + mm->swap_free)); /* KB */
 
   return(ret_string);
   }  /* END availmem() */
@@ -3580,12 +3578,10 @@ static char *physmem(
 
     /* value specified in bytes */
 
-    mem >>= 10;
+    /* mem >>= 10; */
     }
 
-  sprintf(ret_string, "%llukb",
-
-          mem);
+  sprintf(ret_string, "%llukb", mem);
 
   return(ret_string);
   }  /* END physmem() */
