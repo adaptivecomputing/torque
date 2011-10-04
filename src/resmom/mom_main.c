@@ -8074,6 +8074,7 @@ void main_loop(void)
       {
       if (errno == EBADF)
         {
+
         init_network(pbs_mom_port, mom_process_request);
 
         init_network(pbs_rm_port, tcp_request);

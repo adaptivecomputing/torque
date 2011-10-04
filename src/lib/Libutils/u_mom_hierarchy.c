@@ -92,6 +92,7 @@
 #include "resizable_array.h"
 #include "utils.h"
 #include "../Liblog/pbs_log.h"
+#include "../Libnet/lib_net.h" /* socket_get_tcp_priv, socket_connect_addr */
 
 
 
@@ -248,28 +249,39 @@ int tcp_connect_sockaddr(
 
   {
   char *id = "tcp_connect_sockaddr";
-  int   i = 1;
+  int stream = -1;
+  char *err_msg = NULL;
+  struct sockaddr_in *tmp_addr = (struct sockaddr_in *)sa;
+  /*
   int   stream = socket(AF_INET,SOCK_STREAM,0);
   
   if (stream < 0)
     {
-    /* FAILED */
     log_err(errno,id,"Failed when trying to open tcp connection - socket() failed");
     }
   else if (setsockopt(stream,SOL_SOCKET,SO_REUSEADDR,&i,sizeof(i)) < 0)
     {
-    /* FAILED */
     log_err(errno,id,"Failed when trying to open tcp connection - setsockopt() failed");
     }
   else if (bindresvport(stream,NULL) < 0)
     {
-    /* FAILED */
     log_err(errno,id,"Failed when trying to open tcp connection - bindresvport() failed");
     }
-  else if (connect(stream,sa,sa_size) < 0)
+    */
+  if ((stream = socket_get_tcp_priv(&tmp_addr->sin_addr.s_addr)) < 0)
+    {
+    /* FAILED */
+    log_err(errno,id,"Failed when trying to get privileged port - socket_get_tcp_priv() failed");
+    }
+  else if (socket_connect_addr(&stream, sa, sa_size, 1, &err_msg) != PBSE_NONE)
     {
     /* FAILED */
     log_err(errno,id,"Failed when trying to open tcp connection - connect() failed");
+    if (err_msg != NULL)
+      {
+      log_err(errno,id,err_msg);
+      free(err_msg);
+      }
     }
   else
     {

@@ -1450,6 +1450,8 @@ void purge_completed_jobs(
     return;
     }
     
+  reply_ack(preq);
+
   if (LOGLEVEL >= 4)
     {
     sprintf(log_buf,"Received purge completed jobs command, purge time is %ld (%s)",
@@ -1484,7 +1486,6 @@ void purge_completed_jobs(
     pthread_mutex_unlock(pjob->ji_mutex);
     }
 
-  reply_ack(preq);
 
   return;
   } /* END purge_completed_jobs() */

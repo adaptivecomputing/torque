@@ -122,7 +122,7 @@
 #include "log.h" /* log */
 #include "../Liblog/log_event.h" /* log_event */
 #include "../Libnet/lib_net.h" /* socket_* */
-#include "../Libifl/lib_ifl.h" /* AUTH_TYPE_IFF */
+#include "../Libifl/lib_ifl.h" /* AUTH_TYPE_IFF, DIS_* */
 #include "pbs_constants.h" /* LOCAL_IP */
 
 #define LOCAL_LOG_BUF 1024
@@ -986,6 +986,7 @@ int pbs_original_connect(
   if (use_unixsock)
     {
     connection[out].ch_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    DIS_tcp_init(connection[out].ch_socket);
 
     if (connection[out].ch_socket < 0)
       {
@@ -1061,6 +1062,7 @@ int pbs_original_connect(
      * try */
 
     connection[out].ch_socket = socket(AF_INET, SOCK_STREAM, 0);
+    DIS_tcp_init(connection[out].ch_socket);
 
     if (connection[out].ch_socket < 0)
       {

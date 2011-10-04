@@ -793,7 +793,6 @@ int post_epilogue(
 
   int sock;
   int resc_access_perm;
-
   struct batch_request *preq;
 
   if (LOGLEVEL >= 2)
@@ -954,11 +953,8 @@ void *preobit_reply(
 
   /* struct batch_status *bsp = NULL; */
 
-  log_record(
-    PBSEVENT_DEBUG,
-    PBS_EVENTCLASS_SERVER,
-    id,
-    "top of preobit_reply");
+  log_record( PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id,
+      "top of preobit_reply");
 
   /* read and decode the reply */
 
@@ -968,12 +964,14 @@ void *preobit_reply(
 
   while ((irtn = DIS_reply_read(sock, &preq->rq_reply)) &&
          (errno == EINTR));
+  pbs_disconnect_socket(sock);
+  close_conn(sock, FALSE);
 
   if (irtn != 0)
     {
-    sprintf(log_buffer, "DIS_reply_read/decode_DIS_replySvr failed, rc=%d sock=%d",
-            irtn,
-            sock);
+    sprintf(log_buffer, 
+        "DIS_reply_read/decode_DIS_replySvr failed, rc=%d sock=%d",
+        irtn, sock);
 
     /* NOTE:  irtn=11 indicates EOF */
 
@@ -985,11 +983,8 @@ void *preobit_reply(
     }
   else
     {
-    log_record(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      "DIS_reply_read/decode_DIS_replySvr worked, top of while loop");
+    log_record( PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id,
+        "DIS_reply_read/decode_DIS_replySvr worked, top of while loop");
     }
 
   /* find the job that triggered this req */
@@ -1013,17 +1008,10 @@ void *preobit_reply(
     {
     /* FAILURE - cannot locate job that triggered req */
 
-    log_record(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      "cannot locate job that triggered req");
+    log_record( PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id,
+        "cannot locate job that triggered req");
 
     free_br(preq);
-
-    shutdown(sock, SHUT_RDWR);
-
-    close_conn(sock, FALSE);
 
     return NULL;
     }  /* END if (pjob != NULL) */
@@ -1040,8 +1028,7 @@ void *preobit_reply(
 
       /* this is the simple case of the job being purged from the server */
 
-      sprintf(log_buffer,
-              "preobit_reply, unknown on server, deleting locally");
+      sprintf(log_buffer, "preobit_reply, unknown on server, deleting locally");
 
       deletejob = 1;
 
@@ -1103,8 +1090,7 @@ void *preobit_reply(
             /* the job was re-run elsewhere */
 
             sprintf(log_buffer, "first host DOES NOT match me: %s != %s",
-                    sattrl->al_value,
-                    pjob->ji_hosts[0].hn_host);
+                    sattrl->al_value, pjob->ji_hosts[0].hn_host);
 
             deletejob = 1;
             }
@@ -1130,8 +1116,7 @@ void *preobit_reply(
 
     case - 1:
 
-      sprintf(log_buffer,
-              "EOF? received attempting to process obit reply");
+      sprintf(log_buffer, "EOF? received attempting to process obit reply");
 
       break;
 
@@ -1150,9 +1135,6 @@ void *preobit_reply(
 
   free_br(preq);
 
-  shutdown(sock, SHUT_RDWR);
-
-  close_conn(sock, FALSE);
 
   if (deletejob == 1)
     {
@@ -1524,8 +1506,7 @@ void *obit_reply(
 
   free_br(preq);
 
-  shutdown(sock, 2);
-
+  pbs_disconnect_socket(sock);
   close_conn(sock, FALSE);
 
   if (PBSNodeCheckEpilog)
@@ -2001,8 +1982,6 @@ void exit_mom_job(
     return;
     }
 
-  DIS_tcp_setup(stream);
-  
   if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
       pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
     {
@@ -2048,6 +2027,8 @@ void exit_mom_job(
   
   cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
   
+  DIS_tcp_setup(stream);
+
   if (mom_radix < 2)
     {
     im_compose(stream,pjob->ji_qs.ji_jobid,cookie,IM_ALL_OKAY,pjob->ji_obit,TM_NULL_TASK);

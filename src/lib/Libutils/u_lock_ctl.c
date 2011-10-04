@@ -141,7 +141,7 @@ int lock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
   if (logging >= 6)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
-    snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s", the_node->nd_name, id);
+    snprintf(err_msg, MSG_LEN_LONG, "locking start %s in method %s", the_node->nd_name, id);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
   if (pthread_mutex_lock(the_node->nd_mutex) != 0)
@@ -153,6 +153,12 @@ int lock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
       }
     rc = PBSE_MUTEX;
+    }
+  if (logging >= 6)
+    {
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    snprintf(err_msg, MSG_LEN_LONG, "locking complete %s in method %s", the_node->nd_name, id);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
   if (logging >= 6)
     free(err_msg);

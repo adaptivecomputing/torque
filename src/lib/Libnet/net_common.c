@@ -79,7 +79,7 @@ int get_random_reserved_port()
   return res_port;
   }
 
-int socket_get_tcp_priv()
+int socket_get_tcp_priv(in_addr_t *s_addr)
   {
   int priv_port = 0, local_socket = 0;
   int cntr = 0;
@@ -92,8 +92,8 @@ int socket_get_tcp_priv()
   int flags;
   memset(&local, 0, sizeof(struct sockaddr_in));
   local.sin_family = AF_INET;
-  if (local_addr == 0)
-    local_addr = inet_addr("127.0.0.1");
+  if ((local_addr == 0) && (s_addr != NULL))
+    local_addr = *s_addr;
   local.sin_addr.s_addr = local_addr;
 
   /* If any of the following 2 succeed (negative conditions) jump to else below
@@ -158,7 +158,7 @@ int socket_get_tcp_priv()
         if (++priv_port >= RES_PORT_RANGE)
           priv_port = RES_PORT_START;
         local.sin_port = htons(priv_port);
-        if (((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0) && ((rc == EADDRINUSE) || (errno = EADDRNOTAVAIL) || (errno == EINVAL)))
+        if (((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0) && ((rc == EADDRINUSE) || (errno = EADDRNOTAVAIL) || (errno == EINVAL) || (rc == EINPROGRESS)))
           {
           cntr++;
           rc = PBSE_SOCKET_FAULT;
@@ -183,7 +183,6 @@ int socket_get_tcp_priv()
 
 
 int socket_connect(
-    
   int   *local_socket,
   char  *dest_addr,
   int    dest_addr_len,
@@ -191,20 +190,31 @@ int socket_connect(
   int    family,
   int    is_privileged,
   char **error_msg)
-
   {
-  int rc = PBSE_NONE;
-  int cntr = 0;
   struct sockaddr_in remote;
-  const char id[] = "socket_connect";
-  char tmp_buf[LOCAL_LOG_BUF];
+  size_t r_size = sizeof(struct sockaddr_in);
 
-  memset(&remote, 0, sizeof(struct sockaddr_in));
+  memset(&remote, 0, r_size);
   remote.sin_family = family;
   memcpy(&remote.sin_addr, dest_addr, dest_addr_len);
   remote.sin_port = htons((unsigned short)dest_port);
+  return socket_connect_addr(local_socket, (struct sockaddr *)&remote, r_size, is_privileged, error_msg);
+  }
 
-  while ((rc = connect(*local_socket, (struct sockaddr *)&remote, sizeof(struct sockaddr_in))) != 0)
+int socket_connect_addr(
+    int *local_socket,
+    struct sockaddr *remote,
+    size_t remote_size,
+    int is_privileged,
+    char **error_msg)
+  {
+  int cntr = 0;
+  int rc = PBSE_NONE;
+  char tmp_buf[LOCAL_LOG_BUF];
+  const char id[] = "socket_connect_addr";
+  struct sockaddr_in *tmp_addr;
+
+  while ((rc = connect(*local_socket, remote, remote_size)) != 0)
     {
 /*    fprintf(stdout, "rc != 0 (%d)-(%d) (port_number=%d)\n", rc, errno, *local_socket); */
     switch (errno)
@@ -240,7 +250,8 @@ int socket_connect(
           if (cntr++ < RES_PORT_RETRY)
             {
             close(*local_socket);
-            if ((*local_socket = socket_get_tcp_priv()) < 0)
+            tmp_addr = (struct sockaddr_in *)remote;
+            if ((*local_socket = socket_get_tcp_priv(&tmp_addr->sin_addr.s_addr)) < 0)
               rc = PBSE_SOCKET_FAULT;
             else
               rc = PBSE_NONE;

@@ -2391,9 +2391,9 @@ void *req_jobobit(
     ptask = set_task(WORK_Timed, time_now + 1, wait_for_send, (void *)preq, FALSE);
 
     if (ptask == NULL)
-      {
       req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
-      }
+    else
+      req_reject(PBSE_SYSTEM, 0, preq, NULL, "not sure what to do here");
 
     pthread_mutex_unlock(pjob->ji_mutex);
 

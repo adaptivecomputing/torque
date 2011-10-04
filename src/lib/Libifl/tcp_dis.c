@@ -104,16 +104,28 @@
 #include <sys/poll.h>
 #endif
 
-#define MAX_INT_LEN 256;
-
-static struct tcp_chan **tcparray = NULL;
-static int    tcparraymax = 0;
+#define MAX_SOCKETS 65536
+static struct tcp_chan *tcparray[MAX_SOCKETS] = {NULL};
 
 time_t pbs_tcp_timeout = 20;  /* reduced from 60 to 20 (CRI - Nov/03/2004) */
 
 
 
-
+void DIS_tcp_init(int sock)
+  {
+  int pos = 0;
+  if (sock > 0)
+    {
+    for (pos = 0; pos < MAX_SOCKETS; pos++)
+      {
+      tcparray[pos] = NULL;
+      }
+    }
+  else
+    {
+    tcparray[pos] = NULL;
+    }
+  }
 
 
 void DIS_tcp_settimeout(
@@ -125,8 +137,6 @@ void DIS_tcp_settimeout(
 
   return;
   }  /* END DIS_tcp_settimeout() */
-
-
 
 
 
@@ -860,168 +870,6 @@ int tcp_wcommit(
   }
 
 
-
-
-/**
- * locks the mutexes for all tcp channels
- */
-int lock_all_channels()
-
-  {
-  int rc = 0;
-  int last_locked = -1;
-  int i;
-  int max;
-
-  max = tcparraymax;
-
-  for (i = 0; i < tcparraymax; i++)
-    {
-    if (tcparray[i] != NULL)
-      {
-      rc = pthread_mutex_lock(&(tcparray[i]->tcp_mutex));
-      
-      if (rc)
-        {
-        last_locked = i - 1;
-        
-        break;
-        }
-      }
-    }
-
-  if (rc)
-    {
-    for (i = 0; i <= last_locked; i++)
-      {
-      if (tcparray[i] != NULL)
-        pthread_mutex_unlock(&(tcparray[i]->tcp_mutex));
-      }
-    }
-
-  return(rc);
-  } /* END lock_all_channels() */
-
-
-
-
-/**
- * unlocks the mutexes for all tcp channels
- */
-int unlock_all_channels()
-
-  {
-  int i;
-
-  for (i = 0; i < tcparraymax; i++)
-    {
-    if (tcparray[i] != NULL)
-      pthread_mutex_unlock(&(tcparray[i]->tcp_mutex));
-    }
-
-  return(0);
-  } /* END unlock_all_channels() */
-
-
-
-
-
-int resize_tcp_array_if_needed(
-
-  int fd)
-
-  {
-  int  rc = 0;
-  int  hold;
-  int  flags;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
-
-  lock_tcp_table();
-
-  if (fd >= tcparraymax)
-    {
-    hold = tcparraymax;
-
-    /* NYI: maybe remove the lock/unlock all functionality?? */
-    if (lock_all_channels())
-      {
-      /* FAILURE */
-      log_err(-1,"DIS_tcp_setup","Couln't lock mutexes for reallocating");
-      
-      return(-1);
-      }
-
-    /*
-    ** Check if this is a valid file descriptor, if not log an error and don't
-    ** do any memory allocations
-    */
-
-    flags = fcntl(fd, F_GETFL);
-
-    if ((errno == EBADF) &&
-        (flags == -1))
-      {
-      sprintf(log_buf, "invalid file descriptor (%d) for socket", fd);
-      log_err(errno, "DIS_tcp_setup", log_buf);
-
-      rc = -1;
-      }
-    else
-      {
-      /* grow by double */
-      if (tcparraymax * 2 <= fd)
-        tcparraymax = fd + 10;
-      else
-        tcparraymax *= 2;
-      
-      if (tcparray == NULL)
-        {
-        /* Remember calloc will initialize memory to 0 */
-        tcparray = calloc(tcparraymax,sizeof(struct tcp_chan *));
-        
-        if (tcparray == NULL)
-          {
-          /* FAILURE */
-          rc = ENOMEM;
-          log_err(rc,"DIS_tcp_setup","calloc failure");
-          }
-        /* SUCCESS if we didn't enter the above if */
-        }
-      else
-        {
-        struct tcp_chan **tmpTA;
-        
-        tmpTA = realloc(tcparray,tcparraymax * sizeof(struct tcp_chan *));
-        
-        if (tmpTA == NULL)
-          {
-          /* FAILURE */
-          log_err(ENOMEM,"DIS_tcp_setup","realloc failure");
-          
-          rc = ENOMEM;
-          }
-        else
-          {
-          /* SUCCESS */
-          tcparray = tmpTA;
-          
-          memset(&tcparray[hold], '\0', (tcparraymax - hold) * sizeof(struct tcp_chan *));
-          }
-        }
-      }
-    
-    unlock_all_channels();
-    }
-
-  unlock_tcp_table();
-
-  return(rc);
-  } /* END resize_tcp_array() */
-
-
-
-
-
 /*
  * DIS_tcp_setup - setup supports routines for dis, "data is strings", to
  * use tcp stream I/O.  Also initializes an array of pointers to
@@ -1047,8 +895,6 @@ void DIS_tcp_setup(
     {
     return;
     }
-
-  resize_tcp_array_if_needed(fd);
 
   lock_tcp_table();
   if (tcparray[fd] == NULL)

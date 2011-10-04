@@ -1079,7 +1079,7 @@ void main_loop(void)
   while (*state != SV_STATE_DOWN)
     {
     /* first process any task whose time delay has expired */
-    time_now = time(NULL);
+    last_jobstat_time = time_now = time(NULL);
 
     if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
       waittime = MIN(check_tasks(), JobStatRate - (time_now - last_jobstat_time));

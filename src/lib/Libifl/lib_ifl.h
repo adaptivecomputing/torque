@@ -402,6 +402,7 @@ int RPPReset(void);
 int rpp_get_stream_state(int index);
 
 /* tcp_dis.c */
+void DIS_tcp_init(int sock);
 void DIS_tcp_settimeout(long timeout); 
 int DIS_tcp_istimeout(int sock);
 /* static void tcp_pack_buff(struct tcpdisbuf *tp); */

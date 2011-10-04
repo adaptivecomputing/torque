@@ -1372,11 +1372,7 @@ void *req_stat_node(
 
   if (LOGLEVEL >= 6)
     {
-    log_record(
-      PBSEVENT_SCHED,
-      PBS_EVENTCLASS_REQUEST,
-      id,
-      "entered");
+    log_record( PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, "entered");
     }
 
   if (svr_totnodes <= 0)

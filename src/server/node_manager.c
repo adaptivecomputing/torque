@@ -663,9 +663,9 @@ job *find_job_by_node(
       {
       numa = AVL_find(i,pnode->nd_mom_port,pnode->node_boards);
 
-      lock_node(numa, "find_job_by_node", "before check_node_for_job", LOGLEVEL);
+      lock_node(numa, "find_job_by_node", "before check_node_for_job numa", LOGLEVEL);
       pjob = check_node_for_job(pnode,jobid);
-      unlock_node(numa, "find_job_by_node", "after check_node_for_job", LOGLEVEL);
+      unlock_node(numa, "find_job_by_node", "after check_node_for_job numa", LOGLEVEL);
 
       /* leave loop if we found the job */
       if (pjob != NULL)
@@ -6185,9 +6185,9 @@ job *get_job_from_jobinfo(
 
   if (pthread_mutex_trylock(pjob->ji_mutex) != 0)
     {
-    unlock_node(pnode, "jobinfo", NULL, LOGLEVEL);
+    unlock_node(pnode, "get_job_from_jobinfo", NULL, LOGLEVEL);
     pthread_mutex_lock(pjob->ji_mutex);
-    lock_node(pnode, "jobinfo", NULL, LOGLEVEL);
+    lock_node(pnode, "get_job_from_jobinfo", NULL, LOGLEVEL);
     }
 
   return(pjob);

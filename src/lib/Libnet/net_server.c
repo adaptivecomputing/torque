@@ -116,7 +116,9 @@
 #include "server_limits.h"
 #include "net_connect.h"
 #include "log.h"
-#include "../Liblog/pbs_log.h" /* log_err, log_record */
+#include "../Liblog/pbs_log.h" /* log_err */
+#include "../Liblog/log_event.h" /* log_event */
+#include "../Libifl/lib_ifl.h" /* DIS_* */
 #include "pbs_error.h" /* PBSE_NONE */
 
 extern int  LOGLEVEL;
@@ -304,6 +306,7 @@ int init_network(
 
   if (initialized == 0)
     {
+    DIS_tcp_init(-1);
     initialize_connections_table();
 
     for (i = 0;i < PBS_NET_MAX_CONNECTIONS;i++)
@@ -516,6 +519,7 @@ int wait_request(
   /* selset = readset;*/  /* readset is global */
   MaxNumDescriptors = get_max_num_descriptors();
 
+  pthread_mutex_unlock(global_sock_read_mutex);
   n = select(MaxNumDescriptors, SelectSet, (fd_set *)0, (fd_set *)0, &timeout);
 
   if (n == -1)
@@ -544,20 +548,19 @@ int wait_request(
 
         /* clean up SdList and bad sd... */
 
+        pthread_mutex_lock(global_sock_read_mutex);
         FD_CLR(i, GlobalSocketReadSet);
+        pthread_mutex_unlock(global_sock_read_mutex);
         } /* END for each socket in global read set */
 
       free(SelectSet);
 
       log_err(errno, id, "Unable to select sockets to read requests");
 
-      pthread_mutex_unlock(global_sock_read_mutex);
 
       return(-1);
       }  /* END else (errno == EINTR) */
     }    /* END if (n == -1) */
-
-  pthread_mutex_unlock(global_sock_read_mutex);
 
   for (i = 0; (i < max_connection) && (n != 0); i++)
     {
@@ -830,6 +833,7 @@ void close_conn(
   int has_mutex) /* I */
 
   {
+  char log_message[LOG_BUF_SIZE];
   if ((sd < 0) || (max_connection <= sd))
     {
     return;
@@ -851,7 +855,12 @@ void close_conn(
   /* if there is a function to call on close, do it */
 
   if (svr_conn[sd].cn_oncl != 0)
+    {
+    snprintf(log_message, LOG_BUF_SIZE, "Connection %d - func %lx",
+        sd, (unsigned long)svr_conn[sd].cn_oncl);
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,"close_conn",log_message);
     svr_conn[sd].cn_oncl(sd);
+    }
 
   /* 
    * In the case of a -t cold start, this will be called prior to
