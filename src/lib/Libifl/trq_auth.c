@@ -227,6 +227,7 @@ void *process_svr_conn(
   int disconnect_svr = TRUE;
   int svr_sock = 0;
   int msg_len = 0;
+  int debug_mark = 0;
   int local_socket = *(int *)sock;
   in_addr_t s_addr = inet_addr("127.0.0.1");
   free(sock);
@@ -248,33 +249,41 @@ void *process_svr_conn(
   if ((rc = parse_request_client(local_socket, &server_name, &server_port, &auth_type, &user_name, &user_sock)) != PBSE_NONE)
     {
     disconnect_svr = FALSE;
+    debug_mark = 1;
     }
   else if ((rc = get_trq_server_addr(server_name, &trq_server_addr, &trq_server_addr_len)) != PBSE_NONE)
     {
     disconnect_svr = FALSE;
+    debug_mark = 2;
     }
   else if ((svr_sock = socket_get_tcp_priv(&s_addr)) <= 0)
     {
     rc = PBSE_SOCKET_FAULT;
     disconnect_svr = FALSE;
+    debug_mark = 3;
     }
   else if ((rc = socket_connect(&svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, &error_msg)) != PBSE_NONE)
     {
     disconnect_svr = FALSE;
+    debug_mark = 4;
     }
   else if ((rc = build_request_svr(auth_type, user_name, user_sock, &send_message)) != PBSE_NONE)
     {
+    debug_mark = 5;
     }
   else if ((send_len = strlen(send_message)) <= 0)
     {
     rc = PBSE_INTERNAL;
+    debug_mark = 6;
     }
   else if ((rc = socket_write(svr_sock, send_message, send_len)) != send_len)
     {
     rc = PBSE_SOCKET_WRITE;
+    debug_mark = 7;
     }
   else if ((rc = parse_response_svr(svr_sock, &error_msg)) != PBSE_NONE)
     {
+    debug_mark = 8;
     }
   else
     {
@@ -285,7 +294,7 @@ void *process_svr_conn(
     strcat(send_message, "0|0||");
     if (getenv("PBSDEBUG"))
       {
-      fprintf(stderr, "Connection to %s port %d successful. Server connection %d authorized\n", server_name, server_port, user_sock);
+      fprintf(stderr, "Conn to %s port %d success. Conn %d authorized\n", server_name, server_port, user_sock);
       }
     }
   if (rc != PBSE_NONE)
@@ -301,7 +310,7 @@ void *process_svr_conn(
     snprintf(send_message, msg_len, "%d|%d|%s|", rc, (int)strlen(error_msg), error_msg);
     if (getenv("PBSDEBUG"))
       {
-      fprintf(stderr, "Connection to %s port %d Failed. Server connection %d not authorized\n", server_name, server_port, user_sock);
+      fprintf(stderr, "Conn to %s port %d Fail. Conn %d not authorized (dm = %d, Err Num %d)\n", server_name, server_port, user_sock, debug_mark, rc);
       }
     }
   rc = socket_write(local_socket, send_message, strlen(send_message));

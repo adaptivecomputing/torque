@@ -12,6 +12,8 @@
 #include <arpa/inet.h> /* in_addr_t */
 #include <errno.h> /* errno */
 #include <fcntl.h> /* fcntl, F_GETFL */
+#include "../lib/Liblog/pbs_log.h" /* log_err */
+
 
 
 
@@ -148,6 +150,7 @@ int socket_get_tcp_priv(in_addr_t *s_addr)
        * with EADDRINUSE or EADDRNOTAVAIL.
        * http://www.supercluster.org/pipermail/torqueusers/2006-June/003740.html
        */
+
       flags = fcntl(local_socket, F_GETFL);
       flags |= O_NONBLOCK;
       fcntl(local_socket, F_SETFL, flags);
@@ -161,16 +164,19 @@ int socket_get_tcp_priv(in_addr_t *s_addr)
         if (((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0) && ((rc == EADDRINUSE) || (errno = EADDRNOTAVAIL) || (errno == EINVAL) || (rc == EINPROGRESS)))
           {
           cntr++;
-          rc = PBSE_SOCKET_FAULT;
-          errno = PBSE_SOCKET_FAULT;
-          close(local_socket);
-          local_socket = -1;
           }
         else
           {
           rc = PBSE_NONE;
           break;
           }
+        }
+      if (cntr == RES_PORT_START)
+        {
+        close(local_socket);
+        rc = PBSE_SOCKET_FAULT;
+        errno = PBSE_SOCKET_FAULT;
+        local_socket = -1;
         }
       }
     else

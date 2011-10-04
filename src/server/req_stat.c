@@ -1121,15 +1121,14 @@ void poll_job_task(
  * the set of queues at a destinaion.
  */
 
-void req_stat_que(
-
-  struct batch_request *preq) /* ptr to the decoded request   */
-
+void *req_stat_que(
+  void *vp) /* ptr to the decoded request   */
   {
   char     *name;
   pbs_queue    *pque = NULL;
 
   struct batch_reply *preply;
+  struct batch_request *preq = (struct batch_request *)vp;
   int      rc   = 0;
   int      type = 0;
 
@@ -1152,7 +1151,7 @@ void req_stat_que(
       {
       req_reject(PBSE_UNKQUE, 0, preq, NULL, "cannot locate queue");
 
-      return;
+      return NULL;
       }
     }
 
@@ -1205,7 +1204,7 @@ void req_stat_que(
     reply_send(preq);
     }
 
-  return;
+  return NULL;
   }  /* END req_stat_que() */
 
 

@@ -21,7 +21,7 @@ void stat_mom_job(job *pjob);
 
 void poll_job_task(struct work_task *ptask);
 
-void req_stat_que(struct batch_request *preq);
+void *req_stat_que(void *vp);
 
 /* static int status_que(pbs_queue *pque, struct batch_request *preq, tlist_head *pstathd); */
 

@@ -847,7 +847,7 @@ void dispatch_request(
 
     case PBS_BATCH_StatusQue:
 
-      req_stat_que(request);
+      enqueue_threadpool_request(req_stat_que,request);
 
       break;
 

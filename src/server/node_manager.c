@@ -1141,7 +1141,12 @@ int is_stat_get(
 
     /* add the info to the "temp" attribute */
 
-    if (decode_arst(&temp, NULL, NULL, ret_info, 0))
+
+    if (!strncmp(ret_info, IS_EOL_MESSAGE, strlen(IS_EOL_MESSAGE)))
+      {
+      /* Skip this one */
+      }
+    else if (decode_arst(&temp, NULL, NULL, ret_info, 0))
       {
       DBPRT(("is_stat_get: cannot add attributes\n"));
 
