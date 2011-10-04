@@ -123,6 +123,7 @@
 #include "issue_request.h" /* issue_Drequest */
 #include "node_func.h" /* find_nodebyname */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
+#include "../lib/Libnet/lib_net.h" /* socket_read_flush */
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -2361,6 +2362,7 @@ void *is_request_work(
       node->nd_stream = sock;
 
       ret = is_stat_get(node);
+      socket_read_flush(sock);
 
       write_tcp_reply(sock,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
 
