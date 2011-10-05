@@ -2614,6 +2614,7 @@ void *write_node_state_work(
     }
 
   fclose(nstatef);
+  nstatef = NULL;
 
   pthread_mutex_unlock(node_state_mutex);
 
