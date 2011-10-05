@@ -1182,6 +1182,9 @@ void main_loop(void)
         (has_task(&task_list_event) == FALSE))
       {
       *state = SV_STATE_DOWN;
+
+      /* at this point kill the threadpool */
+      destroy_request_pool();
       }
     
     pthread_mutex_unlock(server.sv_jobstates_mutex);

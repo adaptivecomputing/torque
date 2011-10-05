@@ -205,9 +205,6 @@ void svr_shutdown(
     msg_daemonname,
     log_buf);
 
-  /* shutdown the threads */
-  destroy_request_pool();
-
   if ((type == SHUT_QUICK) || (type == SHUT_SIG)) /* quick, leave jobs as are */
     {
     return;
