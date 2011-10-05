@@ -422,7 +422,7 @@ int issue_Drequest(
     DIS_tcp_setup(sock);
     }
 
-  ptask = set_task(wt, (long)conn, func, (void *)request,FALSE);
+  ptask = set_task(wt, (long)conn, func, (void *)request, FALSE);
 
   if (ppwt != NULL)
     *ppwt = ptask;
@@ -607,6 +607,7 @@ int issue_Drequest(
       break;
 
     case PBS_BATCH_ReturnFiles:
+
       if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_ReturnFiles, msg_daemonname)))
         break;
 
@@ -732,14 +733,13 @@ void *process_Dreply(
     pthread_mutex_unlock(ptask->wt_mutex);
     }
 
-
   if (ptask == NULL)
     {
     log_err(-1, id, "Unable to find work task for connection");
 
     close_conn(sock, FALSE);
 
-    return NULL;
+    return(NULL);
     }
 
   request = ptask->wt_parm1;
@@ -757,7 +757,7 @@ void *process_Dreply(
   /* now dispatch the reply to the routine in the work task */
   dispatch_task(ptask);
 
-  return NULL;
+  return(NULL);
   }  /* END process_Dreply() */
 
 /* END issue_request.c */

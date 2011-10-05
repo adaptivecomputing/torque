@@ -358,8 +358,8 @@ int init_network(
       return(-1);
       }
 
-  if (MaxNumDescriptors < PBS_NET_MAX_CONNECTIONS)
-    max_connection = MaxNumDescriptors;
+    if (MaxNumDescriptors < PBS_NET_MAX_CONNECTIONS)
+      max_connection = MaxNumDescriptors;
 
     i = 1;
 

@@ -2121,8 +2121,6 @@ static void wait_for_send(
   {
   req_jobobit((struct batch_request *)ptask->wt_parm1);
 
-  free(ptask);
-
   return;
   }
 
@@ -2392,8 +2390,9 @@ void *req_jobobit(
 
     if (ptask == NULL)
       req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
-    else
-      req_reject(PBSE_SYSTEM, 0, preq, NULL, "not sure what to do here");
+
+    /* In else case, the request is after callback. Please don't change things 
+     * when you aren't sure what should happen. */
 
     pthread_mutex_unlock(pjob->ji_mutex);
 
