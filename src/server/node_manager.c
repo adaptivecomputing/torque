@@ -3426,8 +3426,8 @@ static int property(
   char **prop)
 
   {
-  static char  name[80];
   char        *str = *ptr;
+  char        *dest = *prop;
   int          i = 0;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -3439,11 +3439,9 @@ static int property(
     }
 
   while (isalnum(*str) || *str == '-' || *str == '.' || *str == '=' || *str == '_')
-    name[i++] = *str++;
+    dest[i++] = *str++;
 
-  name[i] = '\0';
-
-  *prop = (i == 0) ? NULL : name;
+  dest[i] = '\0';
 
   /* skip over "/vp_number" */
 
@@ -3480,15 +3478,19 @@ static int proplist(
   {
 
   struct prop *pp;
-  char  *pname;
-  char  *pequal;
+  char         name_storage[80];
+  char        *pname;
+  char        *pequal;
 #ifdef NVIDIA_GPUS
-  static char id[] = "proplist";
-  int    have_gpus = FALSE;
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  static char  id[] = "proplist";
+  int          have_gpus = FALSE;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 #endif  /* NVIDIA_GPUS */
 
   *node_req = 1; /* default to 1 processor per node */
+
+  pname  = name_storage;
+  *pname = '\0';
 
   for (;;)
     {
@@ -3497,7 +3499,7 @@ static int proplist(
       return(1);
       }
 
-    if (pname == NULL)
+    if (*pname == '\0')
       break;
 
     if ((pequal = strchr(pname, (int)'=')) != NULL)
