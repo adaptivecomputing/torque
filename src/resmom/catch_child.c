@@ -975,11 +975,6 @@ int post_epilogue(
     return(1);
     }
 
-  strcpy(preq->rq_ind.rq_jobobit.rq_jid, pjob->ji_qs.ji_jobid);
-
-  preq->rq_ind.rq_jobobit.rq_status =
-    pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
-
   CLEAR_HEAD(preq->rq_ind.rq_jobobit.rq_attr);
 
   resc_access_perm = ATR_DFLAG_RDACC;
@@ -987,6 +982,24 @@ int post_epilogue(
   encode_used(pjob, &preq->rq_ind.rq_jobobit.rq_attr);
 
   encode_flagged_attrs(pjob, &preq->rq_ind.rq_jobobit.rq_attr);
+
+  strcpy(preq->rq_ind.rq_jobobit.rq_jid, pjob->ji_qs.ji_jobid);
+
+  preq->rq_ind.rq_jobobit.rq_status =
+    pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
+
+  if (LOGLEVEL > 5)
+    {
+    sprintf(log_buffer, "job id %s exit status %d",
+                preq->rq_ind.rq_jobobit.rq_jid,
+                preq->rq_ind.rq_jobobit.rq_status);
+    LOG_EVENT(
+       PBSEVENT_DEBUG,
+       PBSEVENT_JOB,
+       id,
+       log_buffer);
+    }
+
 
   DIS_tcp_setup(sock);
 

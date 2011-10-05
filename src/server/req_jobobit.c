@@ -2349,6 +2349,15 @@ void req_jobobit(
    */
 
   exitstatus = preq->rq_ind.rq_jobobit.rq_status;
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer, "PBS_BATCH_JobObit exit status: %d", exitstatus);
+    log_event(
+      PBSEVENT_DEBUG,
+      PBSEVENT_JOB,
+      jobid,
+      log_buffer);
+    }
 
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = exitstatus;
 
