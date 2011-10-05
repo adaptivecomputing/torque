@@ -117,7 +117,7 @@
 int build_var_list(
     memmgr **mm,
     char **var_list,
-    job_data *attrs)
+    job_data **attrs)
   {
   job_data *atr, *tmp;
   int current_len = 0;
@@ -127,7 +127,7 @@ int build_var_list(
   int offset = 0;
   char *tmp_var_list = NULL;
   char *workdir_val = NULL;
-  HASH_ITER(hh, attrs, atr, tmp)
+  HASH_ITER(hh, *attrs, atr, tmp)
     {
     if (strncmp(atr->name, "pbs_o", 5) == 0)
       {
@@ -157,6 +157,27 @@ int build_var_list(
       if (strcmp(atr->name, ATTR_pbs_o_workdir) == 0)
         workdir_val = atr->value;
       item_count++;
+      }
+    else if (strncmp(atr->name, "pbs_var_", 8) == 0)
+      {
+      name_len = strlen(atr->name)-8; /* name= */
+      value_len = strlen(atr->value); /* value\0 */
+      *var_list = memmgr_realloc(mm, *var_list,
+          current_len + 1 + name_len + 1 + value_len + 1);
+      if (current_len != 0)
+        {
+        (*var_list)[current_len] = ',';
+        current_len++;
+        }
+      memcpy((*var_list) + current_len, (atr->name)+8, name_len);
+      current_len += name_len;
+      (*var_list)[current_len] = '=';
+      current_len++;
+      memcpy((*var_list) + current_len, atr->value, value_len);
+      current_len += value_len;
+      (*var_list)[current_len] = '\0';
+      item_count++;
+      hash_del_item(mm, attrs, atr->name);
       }
     }
   /* This a temporary work around until the server code has been changed */
@@ -240,7 +261,7 @@ int encode_DIS_attropl_hash(
   memmgr *var_mm;
   if ((rc = memmgr_init(&var_mm, 0)) == PBSE_NONE)
     {
-    var_list_count = build_var_list(&var_mm, &var_list, job_attr);
+    var_list_count = build_var_list(&var_mm, &var_list, &job_attr);
     ct = hash_count(job_attr) - var_list_count;
     ct += hash_count(res_attr);
     ct++; /* var_list */

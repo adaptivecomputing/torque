@@ -134,6 +134,7 @@ void parse_variable_list(
   char *e = NULL;
   char *delim = NULL;
   char *name = NULL;
+  char *tmp_name = NULL;
   char *val = NULL;
   job_data *hash_var = NULL;
   s = the_list;
@@ -152,20 +153,29 @@ void parse_variable_list(
     if (!e)
       e = strchr(delim+1, '\0');
 
+    /* Get the variable from the src hash */
+    /* Set the variable from the incoming data */
+    alloc_size = delim - s;
+    /* the +8 is for prepending the value of pbs_var_ to the value
+     * This is used and removed in build_var_list later */
+    calloc_or_fail(mm, &name, alloc_size+8, "parse_variable_list name");
+    memcpy(name, "pbs_var_", 8);
+    memcpy(name+8, s, alloc_size);
     if ((e - delim) == 1)
       {
-      /* Get the variable from the src hash */
-      alloc_size = delim - s;
-      calloc_or_fail(mm, &name, alloc_size, "parse_variable_list name");
-      if (hash_find(user_env, name, &hash_var))
+      calloc_or_fail(mm, &tmp_name, alloc_size, "parse_variable_list name");
+      memcpy(tmp_name, s, alloc_size);
+      if (hash_find(user_env, tmp_name, &hash_var))
+        {
         hash_add_or_exit(mm, dest_hash, name, hash_var->value, hash_var->var_type);
+        }
+      else
+        {
+        hash_add_or_exit(mm, dest_hash, name, "", CMDLINE_DATA);
+        }
       }
     else
       {
-      /* Set the variable from the incoming data */
-      alloc_size = delim - s;
-      calloc_or_fail(mm, &name, alloc_size, "parse_variable_list name");
-      strncpy(name, s, alloc_size);
       delim++; /* Move past the = */
       alloc_size = e - delim;
       calloc_or_fail(mm, &val, alloc_size, "parse_variable_list val");
