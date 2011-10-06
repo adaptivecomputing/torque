@@ -7275,7 +7275,7 @@ int setup_program_environment(void)
 
   /* if no alias is specified, make mom_alias the same as mom_host */
   if (mom_alias[0] == '\0')
-    strcpy(mom_alias,mom_host);
+    strcpy(mom_alias,mom_short_name);
 
   mh = initialize_mom_hierarchy();
 
