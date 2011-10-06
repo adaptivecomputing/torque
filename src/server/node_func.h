@@ -8,6 +8,14 @@
 #include "list_link.h" /* tlist_head */
 #include "work_task.h" /* work_task */
 
+typedef struct _node_info_
+  {
+  char     *nodename;
+  svrattrl *plist;
+  int      perms;
+  tlist_head atrlist;
+  } node_info;
+
 struct pbsnode *PGetNodeFromAddr(pbs_net_t addr);
 
 void bad_node_warning(pbs_net_t addr, struct pbsnode *);

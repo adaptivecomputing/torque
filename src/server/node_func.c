@@ -134,15 +134,6 @@
 extern int h_errno;
 #endif
 
-typedef struct _node_info_
-  {
-  char     *nodename;
-  svrattrl *plist;
-  int      perms;
-  tlist_head atrlist;
-  } node_info;
-
-
 /* Global Data */
 
 extern struct addrinfo  hints;

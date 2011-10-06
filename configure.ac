@@ -2005,7 +2005,6 @@ AC_OUTPUT(buildutils/pbs_mkdirs
     src/server/test/pbsd_init/Makefile
     src/server/test/pbsd_main/Makefile
     src/server/test/process_request/Makefile
-    src/server/test/queue_attr_def/Makefile
     src/server/test/queue_func/Makefile
     src/server/test/queue_recov/Makefile
     src/server/test/reply_send/Makefile

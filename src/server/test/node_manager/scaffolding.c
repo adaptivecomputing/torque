@@ -304,3 +304,14 @@ int lock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
   exit(1);                            
   }        
 
+void socket_read_flush(int socket)
+  { 
+  fprintf(stderr, "The call to socket_read_flush needs to be mocked!!\n");
+  exit(1);                            
+  }        
+
+void close_conn(int sock,int has_mut)
+  { 
+  fprintf(stderr, "The call to close_conn needs to be mocked!!\n");
+  exit(1);                            
+  }        

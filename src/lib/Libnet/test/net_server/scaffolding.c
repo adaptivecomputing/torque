@@ -47,3 +47,10 @@ void log_record(int eventtype, int objclass, char *objname, char *text)
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
+
+void DIS_tcp_init(int sock)
+  {
+  fprintf(stderr, "The call to DIS_tcp_init needs to be mocked!!\n");
+  exit(1);
+  }
+

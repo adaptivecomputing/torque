@@ -14,7 +14,7 @@
 /* the credential as decrypted by the server */
 
 #include <sys/time.h>
-
+#include "pbs_ifl.h" /* PBS_MAXUSER, PBS_MAXHOSTNAME */
 typedef struct credential
   {
   time_t timestamp;

@@ -3,7 +3,7 @@
 #include "license_pbs.h" /* See here for the software license */
 
 #include "batch_request.h" /* batch_request */
-#include "batch_reply.h" /* batch_reply */
+#include "libpbs.h" /* batch_reply */
 #include "attribute.h" /* svrattrl */
 
 /* static void set_err_msg(int code, char *msgbuf); */
