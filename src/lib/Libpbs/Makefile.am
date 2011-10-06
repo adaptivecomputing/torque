@@ -2,8 +2,6 @@ include $(top_srcdir)/buildutils/config.mk
 
 AM_CPPFLAGS += -I$(top_srcdir)/src/lib/Libdis -DIFF_PATH=\"$(IFF_PATH)\" -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\" -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
-EXTRA_DIST = ../Libdis/dis_.h
-
 lib_LTLIBRARIES = libtorque.la
 
 libtorque_la_LDFLAGS = -version-info 2:0:0
