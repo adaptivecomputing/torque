@@ -424,7 +424,7 @@ int main(
     else
       {
       rc = do_mom(HPtr, MOMPort, CmdIndex);
-      if(rc >= 0)
+      if (rc >= 0)
         HostCount++;
       else
         FailCount++;

@@ -237,7 +237,7 @@ int openrm(
     memset(&addr, '\0', sizeof(addr));
 
     addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-    addr.sin_family = addr_info->ai_family;
+    addr.sin_family = AF_INET;
     addr.sin_port = htons((unsigned short)port);
 
     freeaddrinfo(addr_info);

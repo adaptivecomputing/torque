@@ -208,11 +208,13 @@ int socket_connect(
   }
 
 int socket_connect_addr(
-    int *local_socket,
-    struct sockaddr *remote,
-    size_t remote_size,
-    int is_privileged,
-    char **error_msg)
+    
+  int *local_socket,
+  struct sockaddr *remote,
+  size_t remote_size,
+  int is_privileged,
+  char **error_msg)
+
   {
   int cntr = 0;
   int rc = PBSE_NONE;
