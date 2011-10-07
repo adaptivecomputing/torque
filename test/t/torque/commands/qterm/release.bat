@@ -23,7 +23,7 @@ execute_tests(
 # JR-TRQ-380              "$testbase/checkpoint/qterm_t_immediate.t",
 # JR-TRQ-380              "$testbase/checkpoint/qterm_t_delay.t",
               "$testbase/rerunable/qterm_t_immediate.t",
-# JR-TRQ-478              "$testbase/rerunable/qterm_t_delay.t",
+              "$testbase/rerunable/qterm_t_delay.t",
              ); 
 
 execute_tests("$testbase/cleanup.t"); 
