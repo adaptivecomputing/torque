@@ -17,9 +17,9 @@ my $testbase = $FindBin::Bin;
 execute_tests("$testbase/setup.t") 
   or die("Couldn't setup for qchkpt tests!");
 
-#execute_tests(
-# JR-TRQ-380              "$testbase/qchkpt.t",
+execute_tests(
+              "$testbase/qchkpt.t",
 #              "$testbase/mult_node_qchkpt.t",
-#);
+);
 
 execute_tests("$testbase/cleanup.t"); 
