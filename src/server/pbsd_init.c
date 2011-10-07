@@ -183,7 +183,6 @@ extern char *path_jobinfo_log;
 
 extern int  queue_rank;
 extern char  server_name[];
-extern tlist_head svr_requests;
 extern tlist_head svr_newnodes;
 extern all_tasks  task_list_timed;
 extern all_tasks  task_list_event;
@@ -193,7 +192,6 @@ extern struct all_jobs newjobs;
 all_queues svr_queues;
 job_recycler recycler;
 
-extern pthread_mutex_t *svr_requests_mutex;
 extern pthread_mutex_t *node_state_mutex;
 
 extern int a_opt_init;
@@ -768,11 +766,6 @@ int pbsd_init(
 
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
 
-  /* initialize the global list mutexes */
-  svr_requests_mutex = malloc(sizeof(pthread_mutex_t));
-  pthread_mutex_init(svr_requests_mutex,NULL);
-  pthread_mutex_lock(svr_requests_mutex);
-
   node_state_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(node_state_mutex,NULL);
 
@@ -780,7 +773,6 @@ int pbsd_init(
    * they can be called by a signal handler */
 
   initialize_recycler();
-  CLEAR_HEAD(svr_requests);
 
   initialize_all_tasks_array(&task_list_timed);
   initialize_all_tasks_array(&task_list_event);
@@ -792,8 +784,6 @@ int pbsd_init(
   CLEAR_HEAD(svr_newnodes);
 
   initialize_all_arrays_array();
-
-  pthread_mutex_unlock(svr_requests_mutex);
 
   initialize_allques_array(&svr_queues);
 

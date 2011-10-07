@@ -135,7 +135,6 @@
 
 /* global data items */
 
-tlist_head svr_requests;
 pthread_mutex_t *svr_requests_mutex = NULL;
 
 extern struct    connection svr_conn[];
@@ -163,7 +162,6 @@ static const int munge_on = 1;
 static const int munge_on = 0;
 #endif 
 
-static void svr_close_client(int sfds);
 static void freebr_manage(struct rq_manage *);
 static void freebr_cpyfile(struct rq_cpyfile *);
 static void close_quejob(int sfds);
@@ -626,12 +624,17 @@ void *process_request(
 
   dispatch_request(sfds, request);
 
-  return NULL;
+  return(NULL);
+
 process_request_cleanup:
-  svr_close_client(sfds);
+
+  close_conn(sfds, TRUE);
   pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-  if (free_request) free_br(request);
-  return NULL;
+
+  if (free_request)
+    free_br(request);
+
+  return(NULL);
   }  /* END process_request() */
 
 
@@ -920,7 +923,7 @@ void dispatch_request(
 
       pthread_mutex_lock(svr_conn[sfds].cn_mutex);
 
-      svr_close_client(sfds);
+      close_conn(sfds, FALSE);
       
       pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
@@ -929,47 +932,6 @@ void dispatch_request(
 
   return;
   }  /* END dispatch_request() */
-
-
-
-
-
-/*
- * svr_close_client - close a connection to a client, also "inactivate"
- *    any outstanding batch requests on that connection.
- */
-
-static void svr_close_client(
-
-  int sfds)  /* connection socket */
-
-  {
-
-  struct batch_request *preq;
-
-  close_conn(sfds, TRUE); /* close the connection */
-
-  pthread_mutex_lock(svr_requests_mutex);
-
-  preq = (struct batch_request *)GET_NEXT(svr_requests);
-
-  while (preq != NULL)
-    {
-    /* list of outstanding requests */
-
-    if (preq->rq_conn == sfds)
-      preq->rq_conn = -1;
-
-    if (preq->rq_orgconn == sfds)
-      preq->rq_orgconn = -1;
-
-    preq = (struct batch_request *)GET_NEXT(preq->rq_link);
-    }
-
-  pthread_mutex_unlock(svr_requests_mutex);
-
-  return;
-  }  /* END svr_close_client() */
 
 
 
@@ -1004,14 +966,6 @@ struct batch_request *alloc_br(
   req->rq_time = time(NULL);
   req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
   req->rq_noreply = FALSE;  /* indicate reply is needed */
-
-  pthread_mutex_lock(svr_requests_mutex);
-
-  CLEAR_LINK(req->rq_link);
-
-  append_link(&svr_requests, &req->rq_link, req);
-
-  pthread_mutex_unlock(svr_requests_mutex);
 
   return(req);
   } /* END alloc_br() */
@@ -1094,12 +1048,6 @@ void free_br(
   struct batch_request *preq)
 
   {
-  pthread_mutex_lock(svr_requests_mutex);
-
-  delete_link(&preq->rq_link);
-
-  pthread_mutex_unlock(svr_requests_mutex);
-
   reply_free(&preq->rq_reply);
 
   if (preq->rq_extend) 

@@ -104,9 +104,9 @@
 
 int decode_DIS_ReqHdr(
 
-  int                 sock,
+  int                   sock,
   struct batch_request *preq,
-  int                *proto_type,
+  int                  *proto_type,
   int                  *proto_ver)
 
   {
