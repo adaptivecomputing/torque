@@ -28,7 +28,7 @@ execute_tests(
               "$testbase/qsub_h.t",
               "$testbase/qsub_cI.t",
               "$testbase/qsub_j.t",
-# JR-TRQ-379              "$testbase/qsub_k.t",
+              "$testbase/qsub_k.t",
               "$testbase/qsub_l_arch.t",
               "$testbase/qsub_l_cput.t",
               "$testbase/qsub_l_file.t",
