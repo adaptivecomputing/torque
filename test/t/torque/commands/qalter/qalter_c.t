@@ -47,7 +47,7 @@ $cmd     = "qalter -c $arg $job_id";
 %qalter  = run_and_check_cmd($cmd);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Checkpoint' } eq $arg, "Checking for Checkpoint='$arg'");
+ok($job_info{ $job_id }{ 'checkpoint' } eq $arg, "Checking for Checkpoint='$arg'");
 
 # Test qalter -c s
 $arg     = "s"; 
@@ -55,7 +55,7 @@ $cmd     = "qalter -c $arg $job_id";
 %qalter  = run_and_check_cmd($cmd);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Checkpoint' } eq $arg, "Checking for Checkpoint='$arg'");
+ok($job_info{ $job_id }{ 'checkpoint' } eq $arg, "Checking for Checkpoint='$arg'");
 
 # Test qalter -c c
 $arg     = "c"; 
@@ -63,7 +63,7 @@ $cmd     = "qalter -c $arg $job_id";
 %qalter  = run_and_check_cmd($cmd);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Checkpoint' } eq $arg, "Checking for Checkpoint='$arg'");
+ok($job_info{ $job_id }{ 'checkpoint' } eq $arg, "Checking for Checkpoint='$arg'");
 
 # Test qalter -c c=60
 $arg     = "c=60"; 
@@ -71,7 +71,7 @@ $cmd     = "qalter -c $arg $job_id";
 %qalter  = run_and_check_cmd($cmd);
 
 %job_info = job_info($job_id);
-ok($job_info{ $job_id }{ 'Checkpoint' } eq $arg, "Checking for Checkpoint='$arg'");
+ok($job_info{ $job_id }{ 'checkpoint' } eq $arg, "Checking for Checkpoint='$arg'");
 
 # Delete the job
 delJobs($job_id);
