@@ -227,7 +227,7 @@ static void reissue_to_svr(
   /* if not timed-out, retry send to remote server */
 
   if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
-      (issue_to_svr(preq->rq_host, preq, pwt->wt_parmfunc) == -1))
+      (issue_to_svr(preq->rq_host, preq, pwt->wt_parmfunc) != PBSE_NONE))
     {
     /* either timed-out or got hard error, tell post-function  */
 
@@ -261,6 +261,7 @@ int issue_to_svr(
   void (*replyfunc)    (struct work_task *))      /* I */
 
   {
+  int               rc = PBSE_NONE;
   int               do_retry = 0;
   int               handle;
   int               my_err = 0;
@@ -296,7 +297,11 @@ int issue_to_svr(
 
     if (handle >= 0)
       {
-      return(issue_Drequest(handle, preq, replyfunc, NULL));
+      if ((rc = issue_Drequest(handle, preq, replyfunc, NULL)) == PBSE_NONE)
+        {
+        rc = preq->rq_reply.brp_code;
+        }
+      return rc;
       }
     else if (handle == PBS_NET_RC_RETRY)
       {
@@ -314,12 +319,12 @@ int issue_to_svr(
 
     pthread_mutex_unlock(pwt->wt_mutex);
 
-    return(0);
+    return PBSE_NONE;
     }
 
   /* FAILURE */
 
-  return(-1);
+  return PBSE_INTERNAL;
   }  /* END issue_to_svr() */
 
 

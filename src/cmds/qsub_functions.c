@@ -2784,7 +2784,7 @@ void process_opts(
             }
             */
 
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_j, optarg, data_type);
+          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_k, optarg, data_type);
 /*           set_attr(&attrib, ATTR_k, optarg); */
 /*           } */
 

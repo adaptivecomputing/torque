@@ -110,7 +110,6 @@ int PBSD_rdytocmt(
 
   struct batch_reply *reply;
   int                 sock;
-  int                 local_errno = 0;
 
   pthread_mutex_lock(connection[connect].ch_mutex);
 
@@ -137,11 +136,9 @@ int PBSD_rdytocmt(
 
   /* read reply */
 
-  reply = PBSD_rdrpy(&local_errno, connect);
+  reply = PBSD_rdrpy(&rc, connect);
 
   PBSD_FreeReply(reply);
-
-  rc = connection[connect].ch_errno;
 
   pthread_mutex_unlock(connection[connect].ch_mutex);
 
@@ -226,7 +223,6 @@ int PBSD_commit(
   struct batch_reply *reply;
   int                 rc;
   int                 sock;
-  int                 local_errno = 0;
 
   pthread_mutex_lock(connection[connect].ch_mutex);
 
@@ -253,11 +249,9 @@ int PBSD_commit(
     }
 
   /* PBSD_rdrpy sets connection[connect].ch_errno */
-  reply = PBSD_rdrpy(&local_errno, connect);
+  reply = PBSD_rdrpy(&rc, connect);
 
   PBSD_FreeReply(reply);
-
-  rc = connection[connect].ch_errno;
 
   pthread_mutex_unlock(connection[connect].ch_mutex);
 

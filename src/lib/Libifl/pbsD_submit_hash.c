@@ -154,7 +154,7 @@ char *pbs_submit_hash(
 
 #ifndef PBS_MOM
 #ifndef QUICKCOMMIT
-  if (PBSD_rdytocmt(c, return_jobid) != 0)
+  if ((*local_errno = PBSD_rdytocmt(c, return_jobid)) != 0)
     {
     return(NULL);
     }
@@ -162,7 +162,7 @@ char *pbs_submit_hash(
 #endif
 #endif
 
-  if (PBSD_commit(c, return_jobid) != 0)
+  if ((*local_errno = PBSD_commit(c, return_jobid)) != 0)
     {
     return(NULL);
     }

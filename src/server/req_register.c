@@ -2045,6 +2045,7 @@ static int send_depend_req(
   void               (*postfunc)(struct work_task *))
 
   {
+  int rc = 0;
   int                   i;
   char                 *myid = "send_depend_req";
   char                  job_id[PBS_MAXSVRJOBID];
@@ -2058,7 +2059,7 @@ static int send_depend_req(
     {
     log_err(errno, myid, msg_err_malloc);
 
-    return(PBSE_SYSTEM);
+    return PBSE_SYSTEM;
     }
 
   for (i = 0;i < PBS_MAXUSER;++i)
@@ -2111,21 +2112,21 @@ static int send_depend_req(
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   pthread_mutex_unlock(pjob->ji_mutex);
 
-  if (issue_to_svr(pparent->dc_svr, preq, postfunc) == -1)
+  if ((rc = issue_to_svr(pparent->dc_svr, preq, postfunc)) != PBSE_NONE)
     {
     sprintf(log_buf, "Unable to perform dependency with job %s\n", pparent->dc_child);
 
     find_job(job_id);
 
-    return(PBSE_BADHOST);
+    return rc;
     }
 
   pjob = find_job(job_id);
 
   if (pjob == NULL)
-    return(-1);
+    return PBSE_JOBNOTFOUND;
 
-  return(PBSE_NONE);
+  return PBSE_NONE;
   }  /* END send_depend_req() */
 
 
