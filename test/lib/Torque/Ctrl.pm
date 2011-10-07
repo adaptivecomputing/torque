@@ -313,7 +313,7 @@ sub stopPbsmom
 
         my %momctl = runCommandSsh($n, $momctl_cmd);
 
-        if( $momctl{EXIT_CODE} != 0 && &$ps_info ne '' )
+        if( ($momctl{EXIT_CODE} != 0 || $momctl{STDERR} =~ /^ERROR:/) && &$ps_info ne '' )
         {
           my $kill_cmd = 'kill -9 '.&$ps_info;
 
@@ -344,7 +344,7 @@ sub stopPbsmom
 
       my %momctl = runCommand($momctl_cmd);
 
-      if( $momctl{EXIT_CODE} != 0 )
+      if( ($momctl{EXIT_CODE} != 0 || $momctl{STDERR} =~ /^ERROR:/) && &$ps_info ne '' )
       {
         my $kill = "kill -9 ".&$ps_info;
 
