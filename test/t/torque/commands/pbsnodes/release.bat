@@ -19,9 +19,9 @@ execute_tests("$testbase/setup.t")
 execute_tests(
     "$testbase/pbsnodes.t",
     "$testbase/pbsnodes_a.t",
-# JR-TRQ-404    "$testbase/pbsnodes_c.t",
+    "$testbase/pbsnodes_c.t",
 #    "$testbase/pbsnodes_d.t", # Not implemented yet
-# JR-TRQ-404    "$testbase/pbsnodes_l.t",
+    "$testbase/pbsnodes_l.t",
     "$testbase/pbsnodes_o.t",
 #    "$testbase/pbsnodes_p.t", # Not implemented yet
     "$testbase/pbsnodes_q.t",
@@ -33,10 +33,10 @@ execute_tests(
     "$testbase/pbsnodes_s_q.t",
     "$testbase/pbsnodes_x_q.t",
     "$testbase/pbsnodes_l_n.t",
-# JR-TRQ-404    "$testbase/pbsnodes_o_cN.t",
+    "$testbase/pbsnodes_o_cN.t",
     "$testbase/pbsnodes_s_a.t",
-# JR-TRQ-404    "$testbase/pbsnodes_s_c.t",
-# JR-TRQ-404    "$testbase/pbsnodes_s_l.t",
+    "$testbase/pbsnodes_s_c.t",
+    "$testbase/pbsnodes_s_l.t",
     "$testbase/pbsnodes_s_x.t",
     "$testbase/pbsnodes_s_a_q.t",
     "$testbase/pbsnodes_s_c_q.t",
