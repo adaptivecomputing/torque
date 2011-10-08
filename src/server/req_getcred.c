@@ -178,7 +178,7 @@ int get_encode_host(int s, char *munge_buf, struct batch_request *preq)
 }
 
 int get_UID(int s, char *munge_buf, struct batch_request *preq)
-{
+  {
   char *ptr;
   char user_name[PBS_MAXHOSTNAME];
   int i;
@@ -209,7 +209,7 @@ int get_UID(int s, char *munge_buf, struct batch_request *preq)
 	strcpy(conn_credent[s].username, user_name);
 	return(0);
 
-}
+  }
 
 int unmunge_request(int s, struct batch_request *preq)
 {
@@ -462,19 +462,19 @@ int req_altauthenuser(
 
   /* If s is less than PBS_NET_MAX_CONNECTIONS we have our port */
   if(s >= PBS_NET_MAX_CONNECTIONS)
-	{
-	req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user. Client connection not found");
-	return (PBSE_BADCRED);
-	}
+	  {
+	  req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user. Client connection not found");
+	  return (PBSE_BADCRED);
+  	}
 
 
   rc = unmunge_request(s, preq);
   if(rc)
-	{
-	/* FAILED */
-	req_reject(PBSE_SYSTEM, 0, preq, NULL, "munge failure");
-	return (PBSE_SYSTEM);
-	}
+	  {
+	  /* FAILED */
+	  /*req_reject(PBSE_SYSTEM, 0, preq, NULL, "munge failure");*/
+	  return (PBSE_SYSTEM);
+  	}
 
   /* SUCCESS */
 

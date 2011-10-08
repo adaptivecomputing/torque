@@ -23,6 +23,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       cases and the munge process.
   b - Fixed the display for physmem, availmem and totmem for the linux build. The available
       memory was incorrectly calculated and displayed.
+  b - Fixed a problem where pbs_server would seg-fault if munged was not running. It would
+      also seg-fault if an invalid credential were sent from a client. The seg-fault was
+      occurred in the same place for both cases.
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
