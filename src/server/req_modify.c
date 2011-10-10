@@ -493,10 +493,7 @@ int modify_job(
         /* is the specified resource modifiable while */
         /* the job is running                         */
 
-        prsd = find_resc_def(
-                 svr_resc_def,
-                 plist->al_resc,
-                 svr_resc_size);
+        prsd = find_resc_def(svr_resc_def, plist->al_resc, svr_resc_size);
 
         if (prsd == NULL)
           {

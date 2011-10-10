@@ -192,6 +192,8 @@ extern struct all_jobs newjobs;
 all_queues svr_queues;
 job_recycler recycler;
 
+extern pthread_mutex_t *svr_do_schedule_mutex;
+extern pthread_mutex_t *listener_command_mutex;
 extern pthread_mutex_t *node_state_mutex;
 
 extern int a_opt_init;
@@ -765,6 +767,12 @@ int pbsd_init(
     }
 
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
+
+  svr_do_schedule_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(svr_do_schedule_mutex, NULL);
+
+  listener_command_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(listener_command_mutex, NULL);
 
   node_state_mutex = malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(node_state_mutex,NULL);

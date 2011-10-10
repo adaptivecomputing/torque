@@ -138,6 +138,8 @@ extern char *msg_obitnocpy;
 extern char *msg_obitnodel;
 extern char  server_host[];
 extern int   svr_do_schedule;
+extern pthread_mutex_t *svr_do_schedule_mutex;
+extern pthread_mutex_t *listener_command_mutex;
 extern int   listener_command;
 
 extern int   LOGLEVEL;
@@ -718,9 +720,13 @@ void rel_resc(
   set_resc_assigned(pjob, DECR);
 
   /* mark that scheduler should be called */
-
+  pthread_mutex_lock(svr_do_schedule_mutex);
   svr_do_schedule = SCH_SCHEDULE_TERM;
+  pthread_mutex_unlock(svr_do_schedule_mutex);
+
+  pthread_mutex_lock(listener_command_mutex);
   listener_command = SCH_SCHEDULE_TERM;
+  pthread_mutex_unlock(listener_command_mutex);
 
   return;
   }  /* END rel_resc() */

@@ -82,14 +82,20 @@
  */
 
 /* server to scheduler commands: */
-#define SCH_ERROR         -1
-#define SCH_SCHEDULE_NULL  0
-#define SCH_SCHEDULE_NEW   1  /* New job queued or eligible */
-#define SCH_SCHEDULE_TERM  2  /* Running job terminated */
-#define SCH_SCHEDULE_TIME  3  /* Scheduler interval reached */
-#define SCH_SCHEDULE_RECYC 4  /* Recycle scheduler after 1 run */
-#define SCH_SCHEDULE_CMD   5  /* Schedule on command   */
-#define SCH_CONFIGURE      7
-#define SCH_QUIT           8
-#define SCH_RULESET        9
-#define SCH_SCHEDULE_FIRST 10  /* First schedule after server starts */
+/* 
+ * I'm changing all of these to bitmaps so that more than one can be 
+ * recorded at once in the same variable. This is done in conjunction
+ * with making the variable threadsafe
+ * --dbeer */
+#define SCH_ERROR          -1   /* error code */
+#define SCH_SCHEDULE_NULL   0   /* used to clear */
+#define SCH_SCHEDULE_NEW    1   /* New job queued or eligible */
+#define SCH_SCHEDULE_TERM   2   /* Running job terminated */
+#define SCH_SCHEDULE_TIME   3   /* Scheduler interval reached */
+#define SCH_SCHEDULE_RECYC  4   /* Recycle scheduler after 1 run */
+#define SCH_SCHEDULE_CMD    5   /* Schedule on command   */
+#define SCH_CONFIGURE       7 
+#define SCH_QUIT            8 
+#define SCH_RULESET         9 
+#define SCH_SCHEDULE_FIRST  10  /* First schedule after server starts */
+

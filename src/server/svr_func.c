@@ -106,6 +106,8 @@
 extern int    LOGLEVEL;
 extern int    scheduler_sock;
 extern int    svr_do_schedule;
+extern pthread_mutex_t *svr_do_schedule_mutex;
+extern pthread_mutex_t *listener_command_mutex;
 extern int    listener_command;
 
 /*
@@ -452,8 +454,14 @@ int poke_scheduler(
   if (actmode == ATR_ACTION_ALTER)
     {
     if (pattr->at_val.at_long)
+      {
+      pthread_mutex_lock(svr_do_schedule_mutex);
       svr_do_schedule = SCH_SCHEDULE_CMD;
+      pthread_mutex_unlock(svr_do_schedule_mutex);
+      pthread_mutex_lock(listener_command_mutex);
       listener_command = SCH_SCHEDULE_CMD;
+      pthread_mutex_unlock(listener_command_mutex);
+      }
     }
 
   return(0);

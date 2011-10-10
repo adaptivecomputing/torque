@@ -101,7 +101,9 @@ extern unsigned int pbs_scheduler_port;
 extern char      server_name[];
 
 extern struct connection svr_conn[];
-extern int  svr_do_schedule;
+
+extern pthread_mutex_t *svr_do_schedule_mutex;
+extern int       svr_do_schedule;
 extern char     *msg_sched_called;
 extern char     *msg_sched_nocall;
 extern char     *msg_listnr_called;
@@ -112,6 +114,7 @@ extern struct listener_connection listener_conns[];
 int scheduler_sock = -1;
 int scheduler_jobct = 0;
 int listener_command = SCH_SCHEDULE_NULL;
+extern pthread_mutex_t *listener_command_mutex;
 
 
 /* Functions private to this file */
@@ -246,6 +249,8 @@ int schedule_jobs(void)
 
   static int first_time = 1;
 
+  pthread_mutex_lock(svr_do_schedule_mutex);
+
   if (first_time)
     cmd = SCH_SCHEDULE_FIRST;
   else
@@ -254,6 +259,7 @@ int schedule_jobs(void)
   /*listener_command = cmd;*/
 
   svr_do_schedule = SCH_SCHEDULE_NULL;
+  pthread_mutex_unlock(svr_do_schedule_mutex);
 
   if (scheduler_sock == -1)
     {
@@ -293,7 +299,11 @@ static int contact_listener(
   /* If this is the first time contacting the scheduler for
    * this listener set the cmd */
   if (listener_conns[l_idx].first_time)
+    {
+    pthread_mutex_lock(listener_command_mutex);
     listener_command = SCH_SCHEDULE_FIRST;
+    pthread_mutex_unlock(listener_command_mutex);
+    }
  
   /* connect to the Listener */
   sock = client_to_svr(listener_conns[l_idx].address,
@@ -337,9 +347,12 @@ static int contact_listener(
   net_add_close_func(sock, listener_close, TRUE);
 
   /* send command to Listener */
+  pthread_mutex_lock(listener_command_mutex);
 
   if (put_4byte(sock, listener_command) < 0)
     {
+    pthread_mutex_unlock(listener_command_mutex);
+    
     sprintf(tmpLine, "%s %d - port %d",
             msg_listnr_nocall,
             l_idx + 1,
@@ -353,6 +366,8 @@ static int contact_listener(
 
     return(-1);
     }
+
+  pthread_mutex_unlock(listener_command_mutex);
 
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
@@ -424,8 +439,13 @@ static void scheduler_close(
     {
     /* recycle the scheduler */
 
+    pthread_mutex_lock(svr_do_schedule_mutex);
     svr_do_schedule = SCH_SCHEDULE_RECYC;
+    pthread_mutex_unlock(svr_do_schedule_mutex);
+
+    pthread_mutex_lock(listener_command_mutex);
     listener_command = SCH_SCHEDULE_RECYC;
+    pthread_mutex_unlock(listener_command_mutex);
     }
 
   return;

@@ -157,6 +157,8 @@ extern all_queues svr_queues;
 extern int    comp_resc_lt;
 extern int    comp_resc_gt;
 extern int    svr_do_schedule;
+extern pthread_mutex_t *svr_do_schedule_mutex;
+extern pthread_mutex_t *listener_command_mutex;
 extern int    listener_command;
 extern int    LOGLEVEL;
 
@@ -497,8 +499,12 @@ int svr_enquejob(
       }
       
     /* notify the scheduler we have a new job */
+    pthread_mutex_lock(svr_do_schedule_mutex);
     svr_do_schedule = SCH_SCHEDULE_NEW;
+    pthread_mutex_unlock(svr_do_schedule_mutex);
+    pthread_mutex_lock(listener_command_mutex);
     listener_command = SCH_SCHEDULE_NEW;
+    pthread_mutex_unlock(listener_command_mutex);
     }
   else if (pque->qu_qs.qu_type == QTYPE_RoutePush)
     {
@@ -634,8 +640,12 @@ void svr_dequejob(
 
   /* notify scheduler a job has been removed */
 
+  pthread_mutex_lock(svr_do_schedule_mutex);
   svr_do_schedule = SCH_SCHEDULE_TERM;
+  pthread_mutex_unlock(svr_do_schedule_mutex);
+  pthread_mutex_lock(listener_command_mutex);
   listener_command = SCH_SCHEDULE_TERM;
+  pthread_mutex_unlock(listener_command_mutex);
 
   return;
   }  /* END svr_dequejob() */
@@ -713,8 +723,12 @@ int svr_setjobstate(
         if ((pque->qu_qs.qu_type == QTYPE_Execution) &&
             (newstate == JOB_STATE_QUEUED))
           {
+          pthread_mutex_lock(svr_do_schedule_mutex);
           svr_do_schedule = SCH_SCHEDULE_NEW;
+          pthread_mutex_unlock(svr_do_schedule_mutex);
+          pthread_mutex_lock(listener_command_mutex);
           listener_command = SCH_SCHEDULE_NEW;
+          pthread_mutex_unlock(listener_command_mutex);
 
           if ((pjob->ji_wattr[JOB_ATR_etime].at_flags & ATR_VFLAG_SET) == 0)
             {

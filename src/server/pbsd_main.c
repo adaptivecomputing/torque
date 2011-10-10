@@ -256,8 +256,10 @@ char        *mom_host = server_host;
 int   server_init_type = RECOV_WARM;
 char         server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int  svr_do_schedule = SCH_SCHEDULE_NULL;
+pthread_mutex_t *svr_do_schedule_mutex;
 extern all_queues svr_queues;
 extern int  listener_command;
+pthread_mutex_t *listener_command_mutex;
 tlist_head svr_newnodes;          /* list of newly created nodes      */
 all_tasks task_list_timed;
 all_tasks task_list_event;
@@ -941,8 +943,13 @@ static time_t check_tasks()
 
   if ((delay = server.sv_next_schedule - time_now) <= 0)
     {
+    pthread_mutex_lock(svr_do_schedule_mutex);
     svr_do_schedule = SCH_SCHEDULE_TIME;
+    pthread_mutex_unlock(svr_do_schedule_mutex);
+
+    pthread_mutex_lock(listener_command_mutex);
     listener_command = SCH_SCHEDULE_TIME;
+    pthread_mutex_unlock(listener_command_mutex);
     }
   else if (delay < tilwhen)
     tilwhen = delay;
