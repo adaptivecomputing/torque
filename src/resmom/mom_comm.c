@@ -754,17 +754,20 @@ int im_compose(
     {
     if ((ret = diswsi(stream, IM_PROTOCOL_VER)) == DIS_SUCCESS)
       {
-      if ((ret = diswst(stream, jobid)) == DIS_SUCCESS)
+      if ((ret = diswus(stream, pbs_rm_port)) == DIS_SUCCESS)
         {
-        if ((ret = diswst(stream, cookie)) == DIS_SUCCESS)
+        if ((ret = diswst(stream, jobid)) == DIS_SUCCESS)
           {
-          if ((ret = diswsi(stream, command)) == DIS_SUCCESS)
+          if ((ret = diswst(stream, cookie)) == DIS_SUCCESS)
             {
-            if ((ret = diswsi(stream, event)) == DIS_SUCCESS)
+            if ((ret = diswsi(stream, command)) == DIS_SUCCESS)
               {
-              ret = diswsi(stream, taskid);
-
-              DIS_tcp_wflush(stream);
+              if ((ret = diswsi(stream, event)) == DIS_SUCCESS)
+                {
+                ret = diswsi(stream, taskid);
+                
+                DIS_tcp_wflush(stream);
+                }
               }
             }
           }

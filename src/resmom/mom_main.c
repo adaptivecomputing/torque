@@ -5435,7 +5435,9 @@ bad:
 
 
 void *tcp_request(
+
   void *new_sock)
+
   {
   static char id[] = "tcp_request";
   int  c;
