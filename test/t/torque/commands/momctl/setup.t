@@ -16,7 +16,7 @@ plan('no_plan');
 setDesc('Momctl Setup');
 
 # Torque Params
-my @remote_nodes = $props->get_property( 'Torque.Remote.Nodes' );
+my @remote_nodes = split ',', $props->get_property( 'Torque.Remote.Nodes' );
 my $torque_params    = {
                           'remote_moms' => \@remote_nodes
                        };
