@@ -2194,9 +2194,9 @@ int im_join_job_as_sister(
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
       }
     
-    job_purge(pjob);
-   
     send_im_error(rc,*reply_ptr,pjob,cookie,event,fromtask);
+   
+    job_purge(pjob);
       
     return(IM_DONE);
     }
@@ -2225,9 +2225,9 @@ int im_join_job_as_sister(
     
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
     
-    job_purge(pjob);
-    
     send_im_error(PBSE_BADUSER,*reply_ptr,pjob,cookie,event,fromtask);
+    
+    job_purge(pjob);
       
     return(IM_DONE);
     }
@@ -2244,9 +2244,9 @@ int im_join_job_as_sister(
         pjob->ji_qs.ji_jobid,
         "cannot create tmp dir");
       
-      job_purge(pjob);
-      
       send_im_error(PBSE_BADUSER,*reply_ptr,pjob,cookie,event,fromtask);
+      
+      job_purge(pjob);
         
       return(IM_DONE);
       }
@@ -2285,11 +2285,11 @@ int im_join_job_as_sister(
   
   if (load_sp_switch(pjob) != 0)
     {
-    job_purge(pjob);
+    send_im_error(PBSE_SYSTEM,*reply_ptr,pjob,cookie,event,fromtask);
     
     log_err(-1, id, "cannot load sp switch table");
     
-    send_im_error(PBSE_SYSTEM,*reply_ptr,pjob,cookie,event,fromtask);
+    job_purge(pjob);
       
     return(IM_DONE);
     }
@@ -5210,8 +5210,6 @@ void im_request(
  
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
       }
-
-    send_im_error(PBSE_JOBEXIST,reply,pjob,cookie,event,fromtask);
       
     goto done;
     }
@@ -5745,8 +5743,6 @@ void im_request(
               
               log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
               }
-            
-            send_im_error(PBSE_JOBEXIST,reply,pjob,cookie,event,fromtask);
             }
           
           goto done;
