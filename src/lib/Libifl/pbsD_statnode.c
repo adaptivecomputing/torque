@@ -109,6 +109,8 @@ struct batch_status *pbs_statnode(
   char         *extend)      /* I */
 
   {
+  pbs_errno = 0;
+
   return(PBSD_status(c, PBS_BATCH_StatusNode, &pbs_errno, id, attrib, extend));
   } /* END pbs_statnode() */
 

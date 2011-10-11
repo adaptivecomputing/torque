@@ -107,6 +107,8 @@ struct batch_status *pbs_statque(
   char         *extend)
 
   {
+  pbs_errno = 0;
+
   return(PBSD_status(c, PBS_BATCH_StatusQue, &pbs_errno, id, attrib, extend));
   } /* END pbs_statque() */
 

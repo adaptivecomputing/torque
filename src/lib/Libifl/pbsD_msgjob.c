@@ -147,6 +147,8 @@ int pbs_msgjob(
   char *extend)
 
   {
+  pbs_errno = 0;
+
   return(pbs_msgjob_err(c, jobid, fileopt, msg, extend, &pbs_errno));
   } /* END pbs_msgjob() */
 

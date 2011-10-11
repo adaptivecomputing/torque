@@ -137,6 +137,8 @@ int pbs_holdjob(
   char *extend)
 
   {
+  pbs_errno = 0;
+
   return(pbs_holdjob_err(c, jobid, holdtype, extend, &pbs_errno));
   } /* END pbs_holdjob() */
 

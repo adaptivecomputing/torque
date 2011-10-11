@@ -156,6 +156,8 @@ int pbs_rerunjob(
   char *extend)
 
   {
+  pbs_errno = 0;
+
   return(pbs_rerunjob_err(c, jobid, extend, &pbs_errno));
   } /* END pbs_rerunjob_err() */
 

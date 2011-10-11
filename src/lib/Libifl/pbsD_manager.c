@@ -119,6 +119,8 @@ int pbs_manager(
   char           *extend)
 
   {
+  pbs_errno = 0;
+
   return(PBSD_manager(c, PBS_BATCH_Manager, command, objtype, objname, attrib, extend, &pbs_errno));
   }  /* END pbs_manager() */
 

@@ -133,9 +133,9 @@ int pbs_sigjob(
   char *extend)
   
   {
-  int local_errno = 0;
+  pbs_errno = 0;
 
-  return(pbs_sigjob_err(c, jobid, signal, extend, &local_errno));
+  return(pbs_sigjob_err(c, jobid, signal, extend, &pbs_errno));
   } /* END pbs_sigjob() */
 
 
@@ -189,6 +189,8 @@ int pbs_sigjobasync(
   char *extend)
 
   {
+  pbs_errno = 0;
+
   return(pbs_sigjobasync_err(c, jobid, signal, extend, &pbs_errno));
   } /* END pbs_sigjobasync() */
 

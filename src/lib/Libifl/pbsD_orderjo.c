@@ -156,6 +156,8 @@ int pbs_orderjob(
   char *extend)
 
   {
+  pbs_errno = 0;
+
   return(pbs_orderjob_err(c, job1, job2, extend, &pbs_errno));
   } /* END pbs_orderjob() */
 

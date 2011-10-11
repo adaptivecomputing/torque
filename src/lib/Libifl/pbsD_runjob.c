@@ -209,6 +209,8 @@ int pbs_runjob(
   char *extend)
 
   {
+  pbs_errno = 0;
+
   return(pbs_runjob_err(c, jobid, location, extend, &pbs_errno));
   } /* END pbs_runjob() */
 

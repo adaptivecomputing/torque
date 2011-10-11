@@ -156,6 +156,8 @@ int pbs_movejob(
   char *extend)
 
   {
+  pbs_errno = 0;
+
   return(pbs_movejob_err(c, jobid, destin, extend, &pbs_errno));
   } /* END pbs_movejob() */
 

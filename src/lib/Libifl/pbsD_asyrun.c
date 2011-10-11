@@ -163,6 +163,8 @@ int pbs_asyrunjob(
   char *extend)
 
   {
+  pbs_errno = 0;
+
   return(pbs_asyrunjob_err(c, jobid, location, extend, &pbs_errno));
   } /* END pbs_asyrunjob() */
 

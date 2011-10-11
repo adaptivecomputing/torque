@@ -178,6 +178,8 @@ int pbs_deljob(
   char *extend)
 
   {
+  pbs_errno = 0;
+
   return(pbs_deljob_err(c, jobid, extend, &pbs_errno));
   } /* END pbs_deljob() */
 

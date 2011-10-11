@@ -42,6 +42,8 @@ int pbs_checkpointjob(
   char *extend)
 
   {
+  pbs_errno = 0;
+
   return(pbs_checkpointjob_err(c, jobid, extend, &pbs_errno));
   } /* END pbs_checkpointjob() */
 

@@ -121,6 +121,8 @@ char **pbs_selectjob(
   char           *extend)
 
   {
+  pbs_errno = 0;
+
   if (PBSD_select_put(c, PBS_BATCH_SelectJobs, attrib, extend) == 0)
     return (PBSD_select_get(&pbs_errno, c));
   else
@@ -158,6 +160,8 @@ struct batch_status * pbs_selstat(
   char           *extend)
 
   {
+  pbs_errno = 0;
+
   if (PBSD_select_put(c, PBS_BATCH_SelStat, attrib, extend) == 0)
     return (PBSD_status_get(&pbs_errno, c));
   else

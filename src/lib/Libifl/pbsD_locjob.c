@@ -179,6 +179,8 @@ char *pbs_locjob(
   char *extend)
 
   {
+  pbs_errno = 0;
+
   return(pbs_locjob_err(c, jobid, extend, &pbs_errno));
   } /* END pbs_locjob() */
 

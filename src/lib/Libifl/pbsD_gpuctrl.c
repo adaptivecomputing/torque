@@ -127,6 +127,8 @@ int pbs_gpumode(
   int   gpumode)
 
   {
+  pbs_errno = 0;
+
   return(pbs_gpumode_err(c, node, gpuid, gpumode, &pbs_errno));
   } /* END pbs_gpumode() */
 
@@ -178,6 +180,8 @@ int pbs_gpureset(
   int   vol)
 
   {
+  pbs_errno = 0;
+
   return(pbs_gpureset_err(c, node, gpuid, permanent, vol, &pbs_errno));
   } /* END pbs_gpureset() */
 

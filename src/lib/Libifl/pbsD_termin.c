@@ -151,6 +151,8 @@ int pbs_terminate(
   char *extend)      /* I */
 
   {
+  pbs_errno = 0;
+
   return(pbs_terminate_err(c, manner, extend, &pbs_errno));
   } /* END pbs_terminate() */
 

@@ -124,6 +124,8 @@ struct batch_status *pbs_statjob(
   char         *extend)      /* I - ??? */
 
   {
+  pbs_errno = 0;
+
   return(PBSD_status(c, PBS_BATCH_StatusJob, &pbs_errno, id, attrib, extend));
   }  /* END pbs_statjob() */
 

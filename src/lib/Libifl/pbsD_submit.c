@@ -173,6 +173,8 @@ char *pbs_submit(
   char           *extend)       /* (optional) */
 
   {
+  pbs_errno = 0;
+
   return(pbs_submit_err(c, attrib, script, destination, extend, &pbs_errno));
   } /* END pbs_submit() */
 

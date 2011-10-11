@@ -131,6 +131,8 @@ int pbs_rlsjob(
   char *extend)
 
   {
+  pbs_errno = 0;
+
   return(pbs_rlsjob_err(c, jobid, holdtype, extend, &pbs_errno));
   } /* END pbs_rlsjob() */
 
