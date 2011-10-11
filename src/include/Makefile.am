@@ -1,6 +1,8 @@
 include $(top_srcdir)/buildutils/config.mk
 
-include_HEADERS = pbs_error.h pbs_error_db.h pbs_ifl.h tm.h tm_.h rpp.h rm.h
+include_HEADERS = pbs_error.h pbs_error_db.h pbs_ifl.h tm.h tm_.h rm.h \
+									pbs_constants.h license_pbs.h u_hash_map_structs.h u_memmgr.h \
+									uthash.h
 
 noinst_HEADERS = acct.h array.h assertions.h attribute.h batch_request.h \
 		 cmds.h credential.h csv.h \
