@@ -672,11 +672,11 @@ sub createMomCfg #($)
     my @print_order = qw( pbsserver clienthost restricted logevent );
     @print_order = grep { exists $attr_vals->{$_} } @print_order;
 
-    $mom_cfg = join("\n", map { "\$$_    ".$attr_vals->{$_}."\n" }  @print_order)."\n";
+    $mom_cfg = join("\n", map { "\$$_    ".$attr_vals->{$_} }  @print_order)."\n";
 
     delete $attr_vals->{$_} foreach @print_order;
 
-    $mom_cfg .= join("\n", map { "\$$_    ".$attr_vals->{$_}."\n" }  sort keys %$attr_vals);
+    $mom_cfg .= join("\n", map { "\$$_    ".$attr_vals->{$_} }  sort keys %$attr_vals);
   }
 
   # Backup moab.cfg if it hasn't been yet

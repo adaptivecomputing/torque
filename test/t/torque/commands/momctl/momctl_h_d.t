@@ -10,7 +10,7 @@ use lib test_lib_loc();
 
 # Test Module
 use CRI::Test;
-use Torque::Util::Momctl qw(
+use Torque::Test::Momctl::Diag qw(
                                  test_level_0
                                  test_level_1
                                  test_level_2

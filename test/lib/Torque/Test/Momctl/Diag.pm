@@ -32,7 +32,7 @@ my $mom_copy_command       = $props->get_property('mom.copy.command');
 my $mom_varattrs           = $props->get_property('mom.config.varattr');
 
 # Torque Variables
-my $torque_spool_dir = $props->get_property('torque.spool.dir');
+my $torque_spool_dir = $props->get_property('Torque.Home.Dir').'/spool/';
 
 ###############################################################################
 # test_mult_diag
@@ -112,7 +112,7 @@ sub test_level_3 ($)
   ok($results{ 'version'                     } =~ /^${mom_version}/,                                    "Checking the version");
   ok($results{ 'pid'                         } =~ /\d*/,                                                "Checking the pid");
   ok($results{ 'homedirectory'               } eq $mom_home_dir,                                        "Checking the homedirectory");
-  ok($results{ 'stdout/stderrspooldirectory' } =~ /\'${torque_spool_dir}\'\s+\(\d+ blocks available\)/, "Checking the 'stdout/stderr spool directory'");
+  like($results{ 'stdout/stderrspooldirectory' }, qr#'$torque_spool_dir'\s+\(\d+ blocks available\)#, "Checking the 'stdout/stderr spool directory'");
   ok($results{ 'momactive'                   } =~ /\d+ seconds/,                                        "Checking 'mom active'");
   ok($results{ 'checkpolltime'               } =~ /${mom_poll_time}\sseconds/,                          "Checking the 'check poll time'");
   ok($results{ 'serverupdateinterval'        } =~ /${mom_update_interval}\sseconds/,                    "Checking the 'server update interval'");
@@ -193,7 +193,7 @@ sub test_level_2 ($)
   ok($results{ 'version'                     } =~ /^${mom_version}/,                                    "Checking the version");
   ok($results{ 'pid'                         } =~ /\d*/,                                                "Checking the pid");
   ok($results{ 'homedirectory'               } eq $mom_home_dir,                                        "Checking the homedirectory");
-  ok($results{ 'stdout/stderrspooldirectory' } =~ /\'${torque_spool_dir}\'\s+\(\d+ blocks available\)/, "Checking the 'stdout/stderr spool directory'");
+  like($results{ 'stdout/stderrspooldirectory' }, qr#'$torque_spool_dir'\s+\(\d+ blocks available\)#, "Checking the 'stdout/stderr spool directory'");
   ok($results{ 'momactive'                   } =~ /\d+ seconds/,                                        "Checking 'mom active'");
   ok($results{ 'checkpolltime'               } =~ /${mom_poll_time}\sseconds/,                          "Checking the 'check poll time'");
   ok($results{ 'serverupdateinterval'        } =~ /${mom_update_interval}\sseconds/,                    "Checking the 'server update interval'");
@@ -274,7 +274,7 @@ sub test_level_1 ($)
   ok($results{ 'version'                     } =~ /^${mom_version}/,                                    "Checking the version");
   ok($results{ 'pid'                         } =~ /\d*/,                                                "Checking the pid");
   ok($results{ 'homedirectory'               } eq $mom_home_dir,                                        "Checking the homedirectory");
-  ok($results{ 'stdout/stderrspooldirectory' } =~ /\'${torque_spool_dir}\'\s+\(\d+ blocks available\)/, "Checking the 'stdout/stderr spool directory'");
+  like($results{ 'stdout/stderrspooldirectory' }, qr#'$torque_spool_dir'\s+\(\d+ blocks available\)#, "Checking the 'stdout/stderr spool directory'");
   ok($results{ 'momactive'                   } =~ /\d+ seconds/,                                        "Checking 'mom active'");
   ok($results{ 'checkpolltime'               } =~ /${mom_poll_time}\sseconds/,                          "Checking the 'check poll time'");
   ok($results{ 'serverupdateinterval'        } =~ /${mom_update_interval}\sseconds/,                    "Checking the 'server update interval'");

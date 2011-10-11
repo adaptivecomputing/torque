@@ -10,7 +10,7 @@ use lib test_lib_loc();
 
 # Test Module
 use CRI::Test;
-use Torque::Util::Momctl qw(test_mult_diag);
+use Torque::Test::Momctl::Diag qw(test_mult_diag);
 
 # Test Case Description
 plan('no_plan');
