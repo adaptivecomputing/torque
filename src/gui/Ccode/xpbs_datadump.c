@@ -105,13 +105,13 @@
 #include <ctype.h>
 #include <signal.h>
 
-static int connect;
+static int myconnection;
 static sigjmp_buf env_alrm;
 static void
 no_hang(int sig)
   {
   fprintf(stderr, "xpbs_datadump: alarm timed-out\n");
-  connect = 0; /* connection to server  has failed */
+  myconnection = 0; /* connection to server  has failed */
   siglongjmp(env_alrm, 1);
   }
 
@@ -355,7 +355,7 @@ istrue(char *string)
 
 
 void
-states(char *string, char *q, char *r, char *h, char *w, char *t, char *e, int len)
+states(char *string, char *q, char *r, char *h, char *w, char *t, char *e, char *comp, int len)
   {
   char *c, *d, *f, *s, l;
 
@@ -379,6 +379,7 @@ states(char *string, char *q, char *r, char *h, char *w, char *t, char *e, int l
     else if (strcmp(s, "Waiting") == 0) d = w;
     else if (strcmp(s, "Transit") == 0) d = t;
     else if (strcmp(s, "Exiting") == 0) d = e;
+    else if (strcmp(s, "Complete") == 0) d = comp;
 
     c++;
 
@@ -846,6 +847,7 @@ display_statque(struct batch_status *status, int prtheader, int full, char *serv
   char wat[NUML+1];
   char trn[NUML+1];
   char ext[NUML+1];
+  char comp[NUML+1];
   char type[TYPEL+1];
   char format[80];
 
@@ -874,6 +876,7 @@ display_statque(struct batch_status *status, int prtheader, int full, char *serv
     strcpy(wat, "0");
     strcpy(trn, "0");
     strcpy(ext, "0");
+    strcpy(comp, "0");
     type[0] = '\0';
 
     if (full)
@@ -975,7 +978,7 @@ display_statque(struct batch_status *status, int prtheader, int full, char *serv
             }
           else if (strcmp(a->name, ATTR_count) == 0)
             {
-            states(e, que, run, hld, wat, trn, ext, NUML);
+            states(e, que, run, hld, wat, trn, ext, comp, NUML);
             }
           else if (strcmp(a->name, ATTR_qtype) == 0)
             {
@@ -1029,6 +1032,7 @@ display_statserver(struct batch_status *status, int prtheader, int full, int nod
   char wat[NUML+1];
   char trn[NUML+1];
   char ext[NUML+1];
+  char comp[NUML+1];
   char nod[NODESL+1];
   char stats[STATUSL+1];
   char format[80];
@@ -1054,6 +1058,7 @@ display_statserver(struct batch_status *status, int prtheader, int full, int nod
     strcpy(wat, "0");
     strcpy(trn, "0");
     strcpy(ext, "0");
+    strcpy(comp, "0");
     strcpy(nod, "-/-");
     stats[0] = '\0';
 
@@ -1143,7 +1148,7 @@ display_statserver(struct batch_status *status, int prtheader, int full, int nod
             }
           else if (strcmp(a->name, ATTR_count) == 0)
             {
-            states(e, que, run, hld, wat, trn, ext, NUML);
+            states(e, que, run, hld, wat, trn, ext, comp, NUML);
             }
           else if (strcmp(a->name, ATTR_status) == 0)
             {
@@ -1195,7 +1200,7 @@ display_statserver(struct batch_status *status, int prtheader, int full, int nod
 
 static int getNumNodesInUse(
     
-  int connect)
+  int myconnection)
 
   {
   struct batch_status *j_status;
@@ -1211,13 +1216,13 @@ static int getNumNodesInUse(
   int  local_errno = 0;
 
   set_attrop(&run_list, ATTR_state, (char *)NULL, "R", EQ);
-  j_status = pbs_selstat(connect, run_list, NULL, &local_errno);
+  j_status = pbs_selstat(myconnection, run_list, NULL, &local_errno);
 
   if (j_status == NULL)
     {
     if (local_errno != PBSE_NONE)
       {
-      errmsg = pbs_geterrmsg(connect);
+      errmsg = pbs_geterrmsg(myconnection);
 
       if (errmsg != NULL)
         {
@@ -1282,7 +1287,7 @@ int main(  /* qstat */
   {
   int c;
   int errflg = 0;
-  volatile int any_failed = 0;
+  int any_failed = 0;
 
   char server_out[MAXSERVERNAME];
   char full_server_name[MAXSERVERNAME];
@@ -1614,28 +1619,28 @@ int main(  /* qstat */
     if (sigsetjmp(env_alrm, 1) == 0)
       {
       alarm(timeout_secs);
-      connect = cnt2server(server_out);
+      myconnection = cnt2server(server_out);
       }
 
     alarm(0);
 
-    if (connect <= 0)
+    if (myconnection <= 0)
       {
       fprintf(stderr, "xpbs_datadump: Can not connect to server %s \n",
         server_out);
-      any_failed = connect;
+      any_failed = myconnection;
       continue;
       }
 
     /* Get server information */
-    p_status = pbs_statserver(connect, NULL, NULL, &any_failed);
+    p_status = pbs_statserver(myconnection, NULL, NULL, &any_failed);
 
     if (p_status == NULL)
       {
 
       if (any_failed)
         {
-        errmsg = pbs_geterrmsg(connect);
+        errmsg = pbs_geterrmsg(myconnection);
 
         if (errmsg != NULL)
           {
@@ -1654,20 +1659,20 @@ int main(  /* qstat */
       if (!do_job_only && !do_trackjob_only)
         {
         display_statserver(p_status, TRUE, FALSE,
-                           getNumNodesInUse(connect));
+                           getNumNodesInUse(myconnection));
         }
 
       pbs_statfree(p_status);
       }
 
     /* Get the queue information */
-    p_status = pbs_statque(connect, queue_name_out, NULL, NULL, &any_failed);
+    p_status = pbs_statque(myconnection, queue_name_out, NULL, NULL, &any_failed);
 
     if (p_status == NULL)
       {
       if (any_failed)
         {
-        errmsg = pbs_geterrmsg(connect);
+        errmsg = pbs_geterrmsg(myconnection);
 
         if (errmsg != NULL)
           {
@@ -1692,13 +1697,13 @@ int main(  /* qstat */
     /*
     ### Get Jobs summary info information for each of the servers
     */
-    p_status = pbs_selstat(connect, select_list, NULL, &any_failed);
+    p_status = pbs_selstat(myconnection, select_list, NULL, &any_failed);
 
     if (p_status == NULL)
       {
       if (any_failed != PBSE_NONE)
         {
-        errmsg = pbs_geterrmsg(connect);
+        errmsg = pbs_geterrmsg(myconnection);
 
         if (errmsg != NULL)
           {
@@ -1724,7 +1729,7 @@ int main(  /* qstat */
       pbs_statfree(p_status);
       }
 
-    pbs_disconnect(connect);
+    pbs_disconnect(myconnection);
     }
 
   exit(any_failed);
