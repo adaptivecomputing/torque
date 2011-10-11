@@ -11,7 +11,7 @@ use lib test_lib_loc();
 # Test Modules
 use CRI::Test;
 
-use Torque::Util::Regexp       qw(
+use Torque::Test::Regexp       qw(
                                    QSTAT_QF1_REGEXP
                                  );
 use Torque::Util        qw(
@@ -64,7 +64,7 @@ foreach my $queue (@queues)
     {
 
     my $reg_exp = &QSTAT_QF1_REGEXP->{ $attribute };
-    like($queue_info{ $queue }{ $attribute }, qr/${reg_exp}/, "Checking '$queue' $attribute attribute");
+    like($queue_info{ $queue }{ $attribute }, qr/$reg_exp/, "Checking '$queue' $attribute attribute");
 
     } # END foreach my $attribue (@attributes)
 

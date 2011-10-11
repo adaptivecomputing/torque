@@ -17,7 +17,7 @@ use Torque::Job::Ctrl          qw(
                                    runJobs
                                    delJobs 
                                  );
-use Torque::Util::Regexp       qw(
+use Torque::Test::Regexp       qw(
                                    QSTAT_A_REGEXP
                                  );
 use Torque::Util        qw(
@@ -73,6 +73,8 @@ push(@job_ids, submitSleepJob($job_params));
 $cmd   = "qstat -e -n -1 -s -G -R";
 %qstat = run_and_check_cmd($cmd);
 
+sleep_diag 2, 'Let jobs get into queue';
+
 %job_info = parse_qstat_a_e_i_r( $qstat{ 'STDOUT' } );
 
 foreach my $job_id (@job_ids)
@@ -86,7 +88,7 @@ foreach my $job_id (@job_ids)
     {
 
     my $reg_exp = &QSTAT_A_REGEXP->{ $attribute };
-    ok($job_info{ $job_id }{ $attribute } =~ /${reg_exp}/, "Checking for '$job_id' $attribute attribute"); 
+    like($job_info{ $job_id }{ $attribute }, $reg_exp, "Checking for '$job_id' $attribute attribute"); 
 
     } # END foreach my $attribute (@attribues)
 

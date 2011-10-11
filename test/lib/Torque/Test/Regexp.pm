@@ -3,6 +3,11 @@ package Torque::Test::Regexp;
 use strict;
 use warnings;
 
+use FindBin;
+use TestLibFinder;
+use lib test_lib_loc();
+
+
 use CRI::Test;
 
 use base 'Exporter';
@@ -24,133 +29,133 @@ our @EXPORT_OK = qw(
 ###############################################################################
 # Regular Expressions
 ###############################################################################
-use constant HOST_STATES          => '(free|offline|down|reserve|job-exclusive|job-sharing|busy|state-unknown|time-shared|cluster)';
-use constant NTYPES               => '(cluster|time-shared)';
-use constant CHECKPOINT_FILE_NAME => '^ckpt\.\d+(\.\S+)+\.\d+';
+use constant HOST_STATES          => qr/(?:free|offline|down|reserve|job-exclusive|job-sharing|busy|state-unknown|time-shared|cluster)/;
+use constant NTYPES               => qr/(?:cluster|time-shared)/;
+use constant CHECKPOINT_FILE_NAME => qr/^ckpt\.\d+(\.\S+)+\.\d+/;
 
 # QSTAT regular expressions
 use constant QSTAT_REGEXP         => {
-                                       'name'     => '^[\w\-]+$',
-                                       'user'     => '^\w+$',
-                                       'time_use' => '^(0|\d{2}(:\d{2})+)$',
-                                       'state'    => '^(Q|R|W|H|T|C)$',
-                                       'queue'    => '^\w+$'
+                                       'name'     => qr/^[\w\-]+$/,
+                                       'user'     => qr/^\w+$/,
+                                       'time_use' => qr/^(0|\d{2}(:\d{2})+)$/,
+                                       'state'    => qr/^(?:Q|R|W|H|T|C)$/,
+                                       'queue'    => qr/^\w+$/,
                                      };
 use constant QSTAT_A_REGEXP       => {
-                                       'job_id'    => '^\d+\.[\w\-]+$',
-                                       'username'  => '^\w+$',
-                                       'queue'     => '^\w+$',
-                                       'jobname'   => '^\w+$',
-                                       'sessid'    => '^(--|\d+)$',
-                                       'nds'       => '^\d+$',
-                                       'tsk'       => '^(--|\d+)$',
-                                       'req_mem'   => '^(--|\d+(b|w|kb|kw|mb|mw|gb|gw|tb|tw)?)$',
-                                       'req_time'  => '^(--|\d{2}(:\d{2})+)$',
-                                       'state'     => '^(Q|R|W|H|T|C)$',
-                                       'big'       => '^(--|\w+)$',
-                                       'fast'      => '^(--|\w+)$',
-                                       'pfs'       => '^(--|\w+)$',
-                                       'elap_time' => '^(--|\d{2}(:\d{2})+)$',
-                                       'node'      => '(--|[\w\-]+\/\d+)',
-                                       'comment'   => '(--|\w+)'
+                                       'job_id'    => qr/^\d+\.[\w\-]+$/,
+                                       'username'  => qr/^\w+$/,
+                                       'queue'     => qr/^\w+$/,
+                                       'jobname'   => qr/^\w+$/,
+                                       'sessid'    => qr/^(--|\d+)$/,
+                                       'nds'       => qr/^\d+$/,
+                                       'tsk'       => qr/^(--|\d+)$/,
+                                       'req_mem'   => qr/^(--|\d+(b|w|kb|kw|mb|mw|gb|gw|tb|tw)?)$/,
+                                       'req_time'  => qr/^(--|\d{2}(:\d{2})+)$/,
+                                       'state'     => qr/^(Q|R|W|H|T|C)$/,
+                                       'big'       => qr/^(--|\w+)$/,
+                                       'fast'      => qr/^(--|\w+)$/,
+                                       'pfs'       => qr/^(--|\w+)$/,
+                                       'elap_time' => qr/^(--|\d{2}(:\d{2})+)$/,
+                                       'node'      => qr/(--|[\w\-]+\/\d+)/,
+                                       'comment'   => qr/(--|\w+)/,
                                      };
 use constant QSTAT_B_REGEXP       => {
-                                       'server' => '^[\w\-]+$',
-                                       'max'    => '^\d+$',
-                                       'tot'    => '^\d+$',
-                                       'que'    => '^\d+$',
-                                       'run'    => '^\d+$',
-                                       'hld'    => '^\d+$',
-                                       'wat'    => '^\d+$',
-                                       'trn'    => '^\d+$',
-                                       'ext'    => '^\d+$',
-                                       'status' => '^(Hot_Start|Active|Terminating_Delay|Terminating)$'
+                                       'server' => qr/^[\w\-]+$/,
+                                       'max'    => qr/^\d+$/,
+                                       'tot'    => qr/^\d+$/,
+                                       'que'    => qr/^\d+$/,
+                                       'run'    => qr/^\d+$/,
+                                       'hld'    => qr/^\d+$/,
+                                       'wat'    => qr/^\d+$/,
+                                       'trn'    => qr/^\d+$/,
+                                       'ext'    => qr/^\d+$/,
+                                       'status' => qr/^(Hot_Start|Active|Terminating_Delay|Terminating)$/,
                                      };
 use constant QSTAT_BF1_REGEXP     => {
-                                       'server'              => '^[\w\-]+$',
-                                       'server_state'        => '^(Hot_Start|Active|Terminating_Delay|Terminating)$',
-                                       'scheduling'          => '^(True|False)$',
-                                       'total_jobs'          => '^\d+$',
-                                       'state_count'         => '^Transit:\d+\s+Queued:\d+\s+Held:\d+\s+Waiting:\d+\s+Running:\d+\s+Exiting:\d+$',
-                                       'acl_hosts'           => '[\w\-]+(,[\w\-]./+)*',
-                                       'managers'            => '\w+\@\w+(,w+\@\w+)*',
-                                       'operators'           => '\w+\@\w+(,w+\@\w+)*',
-                                       'default_queue'       => '^\w+$',
-                                       'log_events'          => '^\d+$',
-                                       'mail_from'           => '^\w+$',
-                                       'scheduler_iteration' => '^\d+$',
-                                       'node_check_rate'     => '^\d+$',
-                                       'tcp_timeout'         => '^\d+$',
-                                       'mom_job_sync'        => '^(True|False)$',
-                                       'pbs_version'         => '^\d+(\.\d+)*$',
-                                       'keep_completed'      => '^\d+$',
-                                       'next_job_number'     => '^\d+$',
-                                       'net_counter'         => '^\d+\s+\d+\s+\d+$'
+                                       'server'              => qr/^[\w\-]+$/,
+                                       'server_state'        => qr/^(Hot_Start|Active|Terminating_Delay|Terminating)$/,
+                                       'scheduling'          => qr/^(True|False)$/,
+                                       'total_jobs'          => qr/^\d+$/,
+                                       'state_count'         => qr/^Transit:\d+\s+Queued:\d+\s+Held:\d+\s+Waiting:\d+\s+Running:\d+\s+Exiting:\d+$/,
+                                       'acl_hosts'           => qr/[\w\-]+(,[\w\-].\/+)*/,
+                                       'managers'            => qr/\w+\@\w+(,w+\@\w+)*/,
+                                       'operators'           => qr/\w+\@\w+(,w+\@\w+)*/,
+                                       'default_queue'       => qr/^\w+$/,
+                                       'log_events'          => qr/^\d+$/,
+                                       'mail_from'           => qr/^\w+$/,
+                                       'scheduler_iteration' => qr/^\d+$/,
+                                       'node_check_rate'     => qr/^\d+$/,
+                                       'tcp_timeout'         => qr/^\d+$/,
+                                       'mom_job_sync'        => qr/^(True|False)$/,
+                                       'pbs_version'         => qr/^\d+(\.\d+)*$/,
+                                       'keep_completed'      => qr/^\d+$/,
+                                       'next_job_number'     => qr/^\d+$/,
+                                       'net_counter'         => qr/^\d+\s+\d+\s+\d+$/,
                                      };
 use constant QSTAT_F_REGEXP       => {
-                                       'Job_Name'                => '\w+',
-                                       'Job_Owner'               => '\w+\@\w+',
-                                       'job_state'               => '^(Q|R|W|H|T|C)$', # May be incomplete list of states
-                                       'queue'                   => '^\w+$',
-                                       'server'                  => '^[\w\-]+$',
-                                       'Checkpoint'              => '^\w+$',
-                                       'ctime'                   => '^\w\w\w\s+\w\w\w\s+\d{1,2}\s+\d\d:\d\d:\d\d\s+\d\d\d\d$',
-                                       'Error_Path'              => '\w+\:(\/[\w\.]+)+',
-                                       'Hold_Types'              => '^\w$',
-                                       'Join_Path'               => '^\w$',
-                                       'Keep_Files'              => '^\w$',
-                                       'Mail_Points'             => '^\w$',
-                                       'mtime'                   => '^\w\w\w\s+\w\w\w\s+\d{1,2}\s+\d\d:\d\d:\d\d\s+\d\d\d\d$',
-                                       'Output_Path'             => '\w+\:(\/[\w\.]+)+',
-                                       'Priority'                => '^\d$',
-                                       'qtime'                   => '^\w\w\w\s+\w\w\w\s+\d{1,2}\s+\d\d:\d\d:\d\d\s+\d\d\d\d$',
-                                       'Rerunable'               => '^(True|False)$',
-                                       'Resource_List.neednodes' => '^\d+$',
-                                       'Resource_List.nodect'    => '^\d+$',
-                                       'Resource_List.nodes'     => '^\d+$',
-                                       'Resource_List.walltime'  => '^\d\d:\d\d:\d\d$',
-                                       'substate'                => '^\d+$',
-                                       'Variable_List'           => '^.+$',         # Need a stronger test
-                                       'euser'                   => '^\w+$',
-                                       'egroup'                  => '^\w+$',
-                                       'queue_rank'              => '^\d+$',
-                                       'queue_type'              => '^\w$',
-                                       'etime'                   => '^\w\w\w\s+\w\w\w\s+\d{1,2}\s+\d\d:\d\d:\d\d\s+\d\d\d\d$'
+                                       'job_name'                => qr/\w+/,
+                                       'job_owner'               => qr/\w+\@\w+/,
+                                       'job_state'               => qr/^(Q|R|W|H|T|C)$/, # May be incomplete list of states
+                                       'queue'                   => qr/^\w+$/,
+                                       'server'                  => qr/^[\w\-]+$/,
+                                       'checkpoint'              => qr/^\w+$/,
+                                       'ctime'                   => qr/^\w\w\w\s+\w\w\w\s+\d{1,2}\s+\d\d:\d\d:\d\d\s+\d\d\d\d$/,
+                                       'error_path'              => qr/\w+\:(\/[\w\.]+)+/,
+                                       'hold_types'              => qr/^\w$/,
+                                       'join_path'               => qr/^\w$/,
+                                       'keep_files'              => qr/^\w$/,
+                                       'mail_points'             => qr/^\w$/,
+                                       'mtime'                   => qr/^\w\w\w\s+\w\w\w\s+\d{1,2}\s+\d\d:\d\d:\d\d\s+\d\d\d\d$/,
+                                       'output_path'             => qr/\w+\:(\/[\w\.]+)+/,
+                                       'priority'                => qr/^\d$/,
+                                       'qtime'                   => qr/^\w\w\w\s+\w\w\w\s+\d{1,2}\s+\d\d:\d\d:\d\d\s+\d\d\d\d$/,
+                                       'rerunable'               => qr/^(True|False)$/,
+                                       'resource_list.neednodes' => qr/^\d+$/,
+                                       'resource_list.nodect'    => qr/^\d+$/,
+                                       'resource_list.nodes'     => qr/^\d+$/,
+                                       'resource_list.walltime'  => qr/^\d\d:\d\d:\d\d$/,
+                                       'substate'                => qr/^\d+$/,
+                                       'variable_list'           => qr/^.+$/,         # Need a stronger test
+                                       'euser'                   => qr/^\w+$/,
+                                       'egroup'                  => qr/^\w+$/,
+                                       'queue_rank'              => qr/^\d+$/,
+                                       'queue_type'              => qr/^\w$/,
+                                       'etime'                   => qr/^\w\w\w\s+\w\w\w\s+\d{1,2}\s+\d\d:\d\d:\d\d\s+\d\d\d\d$/,
                                      };
 use constant QSTAT_q_REGEXP       => {
-                                       'queue'    => '^[\w\-]+$',
-                                       'memory'   => '^(--|\d+(b|w|kb|kw|mb|mw|gb|gw|tb|tw)?)$',
-                                       'cpu_time' => '^(--|\d\d:\d\d:\d\d)$',
-                                       'walltime' => '^(--|\d\d:\d\d:\d\d)$',
-                                       'node'     => '^(--|\d+)$',
-                                       'run'      => '^\d+$',
-                                       'que'      => '^\d+$',
-                                       'lm'       => '^(--|\d+)$',
-                                       'state'    => '^(E|D)\s+(R|S)$'
+                                       'queue'    => qr/^[\w\-]+$/,
+                                       'memory'   => qr/^(--|\d+(b|w|kb|kw|mb|mw|gb|gw|tb|tw)?)$/,
+                                       'cpu_time' => qr/^(--|\d\d:\d\d:\d\d)$/,
+                                       'walltime' => qr/^(--|\d\d:\d\d:\d\d)$/,
+                                       'node'     => qr/^(--|\d+)$/,
+                                       'run'      => qr/^\d+$/,
+                                       'que'      => qr/^\d+$/,
+                                       'lm'       => qr/^(--|\d+)$/,
+                                       'state'    => qr/^(E|D)\s+(R|S)$/,
                                      };
 use constant QSTAT_Q_REGEXP       => {
-                                       'queue' => '^\w+$',
-                                       'max'   => '^\d+$',
-                                       'tot'   => '^\d+$',
-                                       'ena'   => '^(yes|no)$',
-                                       'str'   => '^(yes|no)$',
-                                       'que'   => '^\d+$',
-                                       'run'   => '^\d+$',
-                                       'hld'   => '^\d+$',
-                                       'wat'   => '^\d+$',
-                                       'trn'   => '^\d+$',
-                                       'ext'   => '^\d+$',
-                                       't'     => '^(E|R)$'
+                                       'queue' => qr/^\w+$/,
+                                       'max'   => qr/^\d+$/,
+                                       'tot'   => qr/^\d+$/,
+                                       'ena'   => qr/^(yes|no)$/,
+                                       'str'   => qr/^(yes|no)$/,
+                                       'que'   => qr/^\d+$/,
+                                       'run'   => qr/^\d+$/,
+                                       'hld'   => qr/^\d+$/,
+                                       'wat'   => qr/^\d+$/,
+                                       'trn'   => qr/^\d+$/,
+                                       'ext'   => qr/^\d+$/,
+                                       't'     => qr/^(E|R)$/,
                                      };
 use constant QSTAT_QF1_REGEXP     => {
-                                       'queue_type'                 => '^(Execution|Route)$',
-                                       'total_jobs'                 => '^\d+$',
-                                       'state_count'                => '^Transit:\d+\s+Queued:\d+\s+Held:\d+\s+Waiting:\d+\s+Running:\d+\s+Exiting:\d+$',
-                                       'resources_default.nodes'    => '^\d+$',
-                                       'resources_default.walltime' => '^\d\d:\d\d:\d\d$',
-                                       'mtime'                      => '^\d+$',
-                                       'enabled'                    => '^(True|False)$',
-                                       'started'                    => '^(True|False)$'
+                                       'queue_type'                 => qr/^(Execution|Route)$/,
+                                       'total_jobs'                 => qr/^\d+$/,
+                                       'state_count'                => qr/^Transit:\d+\s+Queued:\d+\s+Held:\d+\s+Waiting:\d+\s+Running:\d+\s+Exiting:\d+$/,
+                                       'resources_default.nodes'    => qr/^\d+$/,
+                                       'resources_default.walltime' => qr/^\d\d:\d\d:\d\d$/,
+                                       'mtime'                      => qr/^\d+$/,
+                                       'enabled'                    => qr/^(True|False)$/,
+                                       'started'                    => qr/^(True|False)$/,
                                      };
 
 1;

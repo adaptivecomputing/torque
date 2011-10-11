@@ -11,7 +11,7 @@ use lib test_lib_loc();
 # Test Modules
 use CRI::Test;
 
-use Torque::Util::Regexp       qw(
+use Torque::Test::Regexp       qw(
                                    QSTAT_BF1_REGEXP
                                  );
 use Torque::Util        qw(

@@ -101,7 +101,7 @@ sub parse_qstat_f #($)
 
       # Handle the multi-line Variable_list, the variable list has multiple lines
       # that are not consistent.  We are just going to state that found it.
-      if ($att_key eq 'Variable_List')
+      if ($att_key eq 'variable_list')
         {
 
         $rtn_jobs{ $job_id }{ $att_key } = 1;  
@@ -152,7 +152,7 @@ sub parse_qstat_f1 #($)
 
       my ($att_key, $att_value) = split(/\s=\s/, $line);
 
-      if ($att_key eq 'Variable_List')
+      if ($att_key eq 'variable_list')
         {
 
         my @pbs_attributes = split(/,/, $att_value);
@@ -733,11 +733,15 @@ sub _auto_complete_job_id #($)
 
   # Make sure that we do need to complete the job_id
   if ($job_id !~ /\.${server_name}$/)
-    {
-    
+  {
     $job_id =~ s/\..*$/\.${server_name}/;
+  }
 
-    } # END 
+  # remove domain if present
+  if( $job_id =~ /\.$server_name\.\w+$/ )
+  {
+    $job_id =~ s/\.\w+$//;
+  }
 
   return $job_id;
 

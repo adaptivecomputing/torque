@@ -17,7 +17,7 @@ use Torque::Job::Ctrl          qw(
                                    runJobs
                                    delJobs 
                                  );
-use Torque::Util::Regexp       qw(
+use Torque::Test::Regexp       qw(
                                    QSTAT_F_REGEXP
                                  );
 use Torque::Util        qw(
@@ -103,7 +103,7 @@ foreach my $job_id (@job_ids)
     {
 
     my $reg_exp = &QSTAT_F_REGEXP->{ $attribute };
-    ok($job_info{ $job_id }{ $attribute } =~ /${reg_exp}/, "Checking '$job_id' $attribute attribute");
+    like($job_info{ $job_id }{ $attribute }, $reg_exp, "Checking '$job_id' $attribute attribute");
 
     } # END foreach my $attribute (@attributes)
 

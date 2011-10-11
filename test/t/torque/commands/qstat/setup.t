@@ -22,6 +22,7 @@ my $torque_params  = {
     add_queues => [
     {
       $q2 => {
+        queue_type => 'execution',
         started => 'false',
         enabled => 'false',
         'resources_default.walltime' => '1:00:00',

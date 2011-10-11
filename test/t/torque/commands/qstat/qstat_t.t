@@ -17,7 +17,7 @@ use Torque::Job::Ctrl    qw(
                              runJobs
                              delJobs 
                            );
-use Torque::Util::Regexp qw(
+use Torque::Test::Regexp qw(
                              QSTAT_REGEXP
                            );
 use Torque::Util         qw(
