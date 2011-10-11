@@ -189,7 +189,7 @@ schd_run_job_on(Job *job, Queue *destq, char *exechost, int set_comment)
     }
   else
     {
-    if (pbs_runjob(connector, job->jobid, exechost, NULL, &local_errno))
+    if (pbs_runjob_err(connector, job->jobid, exechost, NULL, &local_errno))
       {
       (void)sprintf(log_buffer, "failed start job %s on queue %s@%s, %d",
                     job->jobid, destq->qname, exechost, local_errno);

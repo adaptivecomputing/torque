@@ -219,7 +219,7 @@ schd_alterjob(int sv_conn, Job *job, char *name, char *value, char *rsrc)
 
   atp.next     = NULL;
 
-  err = pbs_alterjob(sv_conn, job->jobid, &atp, NULL, &local_errno);
+  err = pbs_alterjob_err(sv_conn, job->jobid, &atp, NULL, &local_errno);
 
   if (err)
     {
@@ -261,7 +261,7 @@ schd_alterserver(int sv_conn, char *name, char *value)
 
   alist.op       = SET;
 
-  err = pbs_manager(sv_conn, MGR_CMD_SET, MGR_OBJ_SERVER, "", &alist,
+  err = pbs_manager_err(sv_conn, MGR_CMD_SET, MGR_OBJ_SERVER, "", &alist,
                     NULL, &local_errno);
 
   if (err)

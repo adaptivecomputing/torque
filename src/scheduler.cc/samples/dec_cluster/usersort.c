@@ -333,7 +333,7 @@ int get_queue_priority(char *qname)
    * to the scheduler. So lets ask the PBS server about it.
    */
 
-  if ((bs = pbs_statque(connector, qname, alist, NULL, &local_errno)) == NULL)
+  if ((bs = pbs_statque_err(connector, qname, alist, NULL, &local_errno)) == NULL)
     {
     sprintf(log_buffer, "pbs_statque failed, \"%s\" %d",
             qname, local_errno);

@@ -85,7 +85,7 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int pbs_movejob(
+int pbs_movejob_err(
     
   int   c,
   char *jobid,
@@ -142,4 +142,23 @@ int pbs_movejob(
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   return(rc);
+  } /* END pbs_movejob_err() */
+
+
+
+
+
+int pbs_movejob(
+    
+  int   c,
+  char *jobid,
+  char *destin,
+  char *extend)
+
+  {
+  return(pbs_movejob_err(c, jobid, destin, extend, &pbs_errno));
   } /* END pbs_movejob() */
+
+
+
+

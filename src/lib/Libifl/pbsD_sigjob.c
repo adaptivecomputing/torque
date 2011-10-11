@@ -86,7 +86,7 @@
 #include "libpbs.h"
 
 
-int pbs_sigjob(
+int pbs_sigjob_err(
     
   int   c,
   char *jobid,
@@ -120,10 +120,28 @@ int pbs_sigjob(
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   return(rc);
-  }
+  } /* END pbs_sigjob_err() */
 
 
-int pbs_sigjobasync(
+
+
+int pbs_sigjob(
+    
+  int   c,
+  char *jobid,
+  char *signal,
+  char *extend)
+  
+  {
+  int local_errno = 0;
+
+  return(pbs_sigjob_err(c, jobid, signal, extend, &local_errno));
+  } /* END pbs_sigjob() */
+
+
+
+
+int pbs_sigjobasync_err(
 
   int c,
   char *jobid,
@@ -157,6 +175,21 @@ int pbs_sigjobasync(
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   return(rc);
-  }
+  } /* END pbs_sigjobasync_err() */
+
+
+
+
+
+int pbs_sigjobasync(
+
+  int c,
+  char *jobid,
+  char *signal,
+  char *extend)
+
+  {
+  return(pbs_sigjobasync_err(c, jobid, signal, extend, &pbs_errno));
+  } /* END pbs_sigjobasync() */
 
 

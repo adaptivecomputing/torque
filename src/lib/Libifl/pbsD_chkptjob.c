@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 
-int pbs_checkpointjob(
+int pbs_checkpointjob_err(
     
   int   c,
   char *jobid,
@@ -29,5 +29,22 @@ int pbs_checkpointjob(
                       NULL,
                       extend,
                       local_errno);
+  } /* END pbs_checkpointjob_err() */
+
+
+
+
+
+int pbs_checkpointjob(
+    
+  int   c,
+  char *jobid,
+  char *extend)
+
+  {
+  return(pbs_checkpointjob_err(c, jobid, extend, &pbs_errno));
   } /* END pbs_checkpointjob() */
+
+
+
 

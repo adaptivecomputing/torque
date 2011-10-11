@@ -159,7 +159,7 @@ cnt:
       continue;
       }
 
-    stat = pbs_rlsjob(connect, job_id_out, hold_type, extend, &any_failed);
+    stat = pbs_rlsjob_err(connect, job_id_out, hold_type, extend, &any_failed);
 
     if (stat &&
         (any_failed != PBSE_UNKJOBID))

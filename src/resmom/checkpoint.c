@@ -1069,7 +1069,7 @@ int blcr_checkpoint_job(
 
     set_attr(&attrib, ATTR_comment, err_buf);
 
-    err = pbs_alterjob(conn, pjob->ji_qs.ji_jobid, attrib, NULL, &local_errno);
+    err = pbs_alterjob_err(conn, pjob->ji_qs.ji_jobid, attrib, NULL, &local_errno);
 
     if (err != 0)
       {
@@ -1098,7 +1098,7 @@ int blcr_checkpoint_job(
        * so it shouldn't have any holds set so we will send "uos"
        * to clear all holds
        */
-      pbs_rlsjob(conn, pjob->ji_qs.ji_jobid, "uos", NULL, &local_errno);
+      pbs_rlsjob_err(conn, pjob->ji_qs.ji_jobid, "uos", NULL, &local_errno);
 
       } /* END if (abort != 0) */
 
@@ -1149,7 +1149,7 @@ int blcr_checkpoint_job(
         pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
     set_attr(&attrib, ATTR_checkpoint_time, timestr);
 
-    err = pbs_alterjob(conn, 
+    err = pbs_alterjob_err(conn, 
         pjob->ji_qs.ji_jobid, attrib,
         (request_type == PBS_BATCH_HoldJob) ? CHECKPOINTHOLD : CHECKPOINTCONT, 
         &local_errno);

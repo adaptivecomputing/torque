@@ -58,7 +58,7 @@ cnt:
       continue;
       }
 
-    stat = pbs_checkpointjob(connect, job_id_out, NULL, &any_failed);
+    stat = pbs_checkpointjob_err(connect, job_id_out, NULL, &any_failed);
 
     if (stat && 
         (any_failed != PBSE_UNKJOBID))

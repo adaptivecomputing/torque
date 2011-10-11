@@ -437,7 +437,7 @@ list_start_times(void)
   connector = pbs_connect(NULL);
 
   /* Ask PBS for the list of jobs requested */
-  pbs_head = pbs_selstat(connector, NULL, NULL, &local_errno);
+  pbs_head = pbs_selstat_err(connector, NULL, NULL, &local_errno);
 
   if ((pbs_head == NULL) && (local_errno))
     {

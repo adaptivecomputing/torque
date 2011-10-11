@@ -1216,7 +1216,7 @@ static int getNumNodesInUse(
   int  local_errno = 0;
 
   set_attrop(&run_list, ATTR_state, (char *)NULL, "R", EQ);
-  j_status = pbs_selstat(myconnection, run_list, NULL, &local_errno);
+  j_status = pbs_selstat_err(myconnection, run_list, NULL, &local_errno);
 
   if (j_status == NULL)
     {
@@ -1633,7 +1633,7 @@ int main(  /* qstat */
       }
 
     /* Get server information */
-    p_status = pbs_statserver(myconnection, NULL, NULL, &any_failed);
+    p_status = pbs_statserver_err(myconnection, NULL, NULL, &any_failed);
 
     if (p_status == NULL)
       {
@@ -1666,7 +1666,7 @@ int main(  /* qstat */
       }
 
     /* Get the queue information */
-    p_status = pbs_statque(myconnection, queue_name_out, NULL, NULL, &any_failed);
+    p_status = pbs_statque_err(myconnection, queue_name_out, NULL, NULL, &any_failed);
 
     if (p_status == NULL)
       {
@@ -1697,7 +1697,7 @@ int main(  /* qstat */
     /*
     ### Get Jobs summary info information for each of the servers
     */
-    p_status = pbs_selstat(myconnection, select_list, NULL, &any_failed);
+    p_status = pbs_selstat_err(myconnection, select_list, NULL, &any_failed);
 
     if (p_status == NULL)
       {

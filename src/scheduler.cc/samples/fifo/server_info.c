@@ -112,7 +112,7 @@ server_info *query_server(int pbs_sd)
 
   /* get server information from pbs server */
 
-  if ((server = pbs_statserver(pbs_sd, NULL, NULL, &local_errno)) == NULL)
+  if ((server = pbs_statserver_err(pbs_sd, NULL, NULL, &local_errno)) == NULL)
     {
     fprintf(stderr, "pbs_statserver failed: %d\n", local_errno);
     return NULL;

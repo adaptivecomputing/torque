@@ -146,7 +146,7 @@ schd_run_job_on(Job *job, Queue *destq, char *exechost, int set_comment)
   if ((destq != NULL) && (strcmp(destq->qname, srcq->qname) != 0))
     {
     /* Move the job from its queue to the specified run queue. */
-    if (pbs_movejob(connector, job->jobid, destq->qname, NULL, &local_errno))
+    if (pbs_movejob_err(connector, job->jobid, destq->qname, NULL, &local_errno))
       {
       (void)sprintf(log_buffer, "move job %s to queue %s failed, %d",
                     job->jobid, destq->qname, local_errno);
@@ -160,7 +160,7 @@ schd_run_job_on(Job *job, Queue *destq, char *exechost, int set_comment)
     }
 
   /* Give the job handle (JOBID) to PBS to run. */
-  if (pbs_runjob(connector, job->jobid, exechost, NULL, &local_errno))
+  if (pbs_runjob_err(connector, job->jobid, exechost, NULL, &local_errno))
     {
     (void)sprintf(log_buffer, "failed start job %s on queue %s@%s, %d",
                   job->jobid, destq->qname, exechost, local_errno);
@@ -178,7 +178,7 @@ schd_run_job_on(Job *job, Queue *destq, char *exechost, int set_comment)
       DBPRT(("Attempting to move job %s back to queue %s\n",
              job->jobid, srcq->qname));
 
-      if (pbs_movejob(connector, job->jobid, srcq->qname, NULL, &local_errno))
+      if (pbs_movejob_err(connector, job->jobid, srcq->qname, NULL, &local_errno))
         {
         (void)sprintf(log_buffer,
                       "failed to move job %s back to queue %s, %d", job->jobid,

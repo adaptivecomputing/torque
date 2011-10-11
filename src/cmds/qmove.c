@@ -73,7 +73,7 @@ cnt:
       continue;
       }
 
-    stat = pbs_movejob(connect, job_id_out, destination, NULL, &any_failed);
+    stat = pbs_movejob_err(connect, job_id_out, destination, NULL, &any_failed);
 
     if (stat &&
         (any_failed != PBSE_UNKJOBID))

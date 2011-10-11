@@ -148,7 +148,7 @@ int main(
     exit(1);
     }
 
-  stat = pbs_orderjob(connect, job_id1_out, job_id2_out, NULL, &local_errno);
+  stat = pbs_orderjob_err(connect, job_id1_out, job_id2_out, NULL, &local_errno);
 
   if (stat != 0)
     {

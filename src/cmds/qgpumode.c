@@ -132,7 +132,7 @@ static void execute(
 
   if ((ct = cnt2server(server)) > 0)
     {
-    merr = pbs_gpumode(ct, node, gpuid, mode, &local_errno);
+    merr = pbs_gpumode_err(ct, node, gpuid, mode, &local_errno);
 
     if (merr != 0)
       {

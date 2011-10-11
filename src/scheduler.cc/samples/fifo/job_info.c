@@ -136,7 +136,7 @@ job_info **query_jobs(int pbs_sd, queue_info *qinfo)
 
   opl.value = qinfo -> name;
 
-  if ((jobs = pbs_selstat(pbs_sd, &opl, NULL, &local_errno)) == NULL)
+  if ((jobs = pbs_selstat_err(pbs_sd, &opl, NULL, &local_errno)) == NULL)
     {
     if (local_errno > 0)
       fprintf(stderr, "pbs_selstat failed: %d\n", local_errno);
@@ -710,7 +710,7 @@ int update_job_comment(int pbs_sd, job_info *jinfo, char *comment)
 
     attr.value = clone;
 
-    pbs_alterjob(pbs_sd, jinfo -> name, &attr, NULL, &local_errno);
+    pbs_alterjob_err(pbs_sd, jinfo -> name, &attr, NULL, &local_errno);
 
     return 0;
     }

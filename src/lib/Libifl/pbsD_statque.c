@@ -85,7 +85,7 @@
 
 #include "libpbs.h"
 
-struct batch_status *pbs_statque(
+struct batch_status *pbs_statque_err(
 
   int           c,
   char         *id,
@@ -95,7 +95,21 @@ struct batch_status *pbs_statque(
 
   {
   return(PBSD_status(c, PBS_BATCH_StatusQue, local_errno, id, attrib, extend));
-  }   /* END pbs_statque() */
+  }   /* END pbs_statque_err() */
+
+
+
+struct batch_status *pbs_statque(
+
+  int           c,
+  char         *id,
+  struct attrl *attrib,
+  char         *extend)
+
+  {
+  return(PBSD_status(c, PBS_BATCH_StatusQue, &pbs_errno, id, attrib, extend));
+  } /* END pbs_statque() */
+
 
 /* END pbsD_statque.c */
 

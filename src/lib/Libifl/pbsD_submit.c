@@ -88,17 +88,16 @@
 #include <unistd.h>
 #include "libpbs.h"
 
-char *pbs_submit(
+char *pbs_submit_err(
 
   int             c,
-  int            *local_errno,
   struct attropl *attrib,
   char           *script,
   char           *destination,
-  char           *extend)  /* (optional) */
+  char           *extend,       /* (optional) */
+  int            *local_errno)
 
   {
-
   struct attropl *pal;
   char * return_jobid = NULL;
 
@@ -159,7 +158,24 @@ char *pbs_submit(
     }
 
   return(return_jobid);
-  }  /* END pbs_submit() */
+  }  /* END pbs_submit_err() */
+
+
+
+
+
+char *pbs_submit(
+
+  int             c,
+  struct attropl *attrib,
+  char           *script,
+  char           *destination,
+  char           *extend)       /* (optional) */
+
+  {
+  return(pbs_submit_err(c, attrib, script, destination, extend, &pbs_errno));
+  } /* END pbs_submit() */
+
 
 
 /* END pbsD_submit.c */

@@ -88,7 +88,7 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int pbs_rerunjob(
+int pbs_rerunjob_err(
     
   int   c,
   char *jobid,
@@ -143,4 +143,22 @@ int pbs_rerunjob(
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   return(rc);
-  } /* END pbs_rerunjob() */
+  } /* END pbs_rerunjob_err() */
+
+
+
+
+
+int pbs_rerunjob(
+    
+  int   c,
+  char *jobid,
+  char *extend)
+
+  {
+  return(pbs_rerunjob_err(c, jobid, extend, &pbs_errno));
+  } /* END pbs_rerunjob_err() */
+
+
+
+

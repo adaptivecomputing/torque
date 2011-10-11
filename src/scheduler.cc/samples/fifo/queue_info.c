@@ -136,7 +136,7 @@ queue_info **query_queues(int pbs_sd, server_info *sinfo)
 
   /* get queue info from PBS server */
 
-  if ((queues = pbs_statque(pbs_sd, NULL, NULL, NULL, &local_errno)) == NULL)
+  if ((queues = pbs_statque_err(pbs_sd, NULL, NULL, NULL, &local_errno)) == NULL)
     {
     fprintf(stderr, "Statque failed: %d\n", local_errno);
     return NULL;

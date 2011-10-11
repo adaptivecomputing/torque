@@ -91,7 +91,7 @@
            mgr_node_set()
 */
 
-int pbs_manager(
+int pbs_manager_err(
 
   int             c,
   int             command,
@@ -102,19 +102,26 @@ int pbs_manager(
   int            *local_errno)
 
   {
-  int rc;
+  return(PBSD_manager(c, PBS_BATCH_Manager, command, objtype, objname, attrib, extend, local_errno));
+  }  /* END pbs_manager_err() */
 
-  rc = PBSD_manager(
-         c,
-         PBS_BATCH_Manager,
-         command,
-         objtype,
-         objname,
-         attrib,
-         extend,
-         local_errno);
 
-  return(rc);
+
+
+
+int pbs_manager(
+
+  int             c,
+  int             command,
+  int             objtype,
+  char           *objname,
+  struct attropl *attrib,
+  char           *extend)
+
+  {
+  return(PBSD_manager(c, PBS_BATCH_Manager, command, objtype, objname, attrib, extend, &pbs_errno));
   }  /* END pbs_manager() */
+
+
 
 

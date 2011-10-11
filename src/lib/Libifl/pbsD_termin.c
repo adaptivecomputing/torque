@@ -87,7 +87,7 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int pbs_terminate(
+int pbs_terminate_err(
 
   int   c,           /* I */
   int   manner,      /* I */
@@ -138,7 +138,21 @@ int pbs_terminate(
   PBSD_FreeReply(reply);
 
   return(rc);
-  }  /* END pbs_terminate() */
+  }  /* END pbs_terminate_err() */
+
+
+
+
+
+int pbs_terminate(
+
+  int   c,           /* I */
+  int   manner,      /* I */
+  char *extend)      /* I */
+
+  {
+  return(pbs_terminate_err(c, manner, extend, &pbs_errno));
+  } /* END pbs_terminate() */
 
 
 

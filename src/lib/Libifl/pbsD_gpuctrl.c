@@ -85,7 +85,7 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int pbs_gpumode(
+int pbs_gpumode_err(
     
   int   c,
   char *node,
@@ -113,12 +113,27 @@ int pbs_gpumode(
   PBSD_FreeReply(reply);
 
   return connection[c].ch_errno;
+  } /* END pbs_gpumode_err() */
+
+
+
+
+
+int pbs_gpumode(
+    
+  int   c,
+  char *node,
+  char *gpuid,
+  int   gpumode)
+
+  {
+  return(pbs_gpumode_err(c, node, gpuid, gpumode, &pbs_errno));
   } /* END pbs_gpumode() */
 
 
 
 
-int pbs_gpureset(
+int pbs_gpureset_err(
     
   int   c,
   char *node,
@@ -149,5 +164,23 @@ int pbs_gpureset(
   PBSD_FreeReply(reply);
 
   return connection[c].ch_errno;
+  } /* END pbs_gpureset_err() */
+
+
+
+
+int pbs_gpureset(
+    
+  int   c,
+  char *node,
+  char *gpuid,
+  int   permanent,
+  int   vol)
+
+  {
+  return(pbs_gpureset_err(c, node, gpuid, permanent, vol, &pbs_errno));
   } /* END pbs_gpureset() */
+
+
+
 

@@ -87,7 +87,7 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int pbs_orderjob(
+int pbs_orderjob_err(
     
   int   c,
   char *job1,
@@ -142,4 +142,23 @@ int pbs_orderjob(
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   return(rc);
+  } /* END pbs_orderjob_err() */
+
+
+
+
+
+int pbs_orderjob(
+    
+  int   c,
+  char *job1,
+  char *job2,
+  char *extend)
+
+  {
+  return(pbs_orderjob_err(c, job1, job2, extend, &pbs_errno));
   } /* END pbs_orderjob() */
+
+
+
+

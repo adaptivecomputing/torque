@@ -118,7 +118,7 @@ int locate_job(
       strcat(jid_server, parent_server);
       }
 
-    location = pbs_locjob(connect, &local_errno, jid_server, NULL);
+    location = pbs_locjob_err(connect, jid_server, NULL, &local_errno);
 
     if (location == NULL)
       {

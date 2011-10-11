@@ -303,7 +303,7 @@ drmaa_get_job_rusage(
 
   pthread_mutex_lock(&c->conn_mutex);
 
-  pbs_status = pbs_statjob(c->pbs_conn, (char*)jobid, NULL, NULL, &local_errno);
+  pbs_status = pbs_statjob_err(c->pbs_conn, (char*)jobid, NULL, NULL, &local_errno);
 
   if (pbs_status == NULL)
     rc = drmaa_get_pbs_error(errmsg, errlen);
@@ -417,7 +417,7 @@ drmaa_job_wait(
       pthread_mutex_lock(&c->conn_mutex);
       DEBUG(("** probing queue: pbs_statjob( %d, %s, %p, NULL )",
              c->pbs_conn, jobid, (void*)attribs));
-      pbs_status = pbs_statjob(c->pbs_conn, (char*)jobid, (struct attrl*)attribs, NULL, &local_errno);
+      pbs_status = pbs_statjob_err(c->pbs_conn, (char*)jobid, (struct attrl*)attribs, NULL, &local_errno);
       pthread_mutex_unlock(&c->conn_mutex);
       }
 

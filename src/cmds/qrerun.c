@@ -140,9 +140,9 @@ cnt:
       }
 
     if (extend[0] != '\0')
-      stat = pbs_rerunjob(connect, job_id_out, extend, &any_failed);
+      stat = pbs_rerunjob_err(connect, job_id_out, extend, &any_failed);
     else
-      stat = pbs_rerunjob(connect, job_id_out, NULL, &any_failed);
+      stat = pbs_rerunjob_err(connect, job_id_out, NULL, &any_failed);
 
     if (stat && (any_failed != PBSE_UNKJOBID))
       {

@@ -234,7 +234,7 @@ cnt:
       continue;
       }
 
-    stat = pbs_deljob(connect, job_id_out, extend, &any_failed);
+    stat = pbs_deljob_err(connect, job_id_out, extend, &any_failed);
 
     if (stat &&
         (any_failed != PBSE_UNKJOBID))

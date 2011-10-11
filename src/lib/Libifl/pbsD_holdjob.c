@@ -87,7 +87,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 
-int pbs_holdjob(
+int pbs_holdjob_err(
 
   int c,
   char *jobid,
@@ -122,4 +122,24 @@ int pbs_holdjob(
                       &aopl,
                       extend,
                       local_errno);
+  } /* END pbs_holdjob_err() */
+
+
+
+
+
+
+int pbs_holdjob(
+
+  int c,
+  char *jobid,
+  char *holdtype,
+  char *extend)
+
+  {
+  return(pbs_holdjob_err(c, jobid, holdtype, extend, &pbs_errno));
   } /* END pbs_holdjob() */
+
+
+
+

@@ -498,7 +498,7 @@ int scheduling_cycle(
           jinfo->name,
           "Job Deleted because it would never run");
 
-        pbs_deljob(sd, jinfo->name, "Job could never run", &local_errno);
+        pbs_deljob_err(sd, jinfo->name, "Job could never run", &local_errno);
         }
 
       jinfo->can_not_run = 1;
@@ -659,7 +659,7 @@ int run_update_job(int pbs_sd, server_info *sinfo, queue_info *qinfo,
 
   buf[0] = '\0';
 
-  ret = pbs_runjob(pbs_sd, jinfo -> name, best_node_name, NULL, &local_errno);
+  ret = pbs_runjob_err(pbs_sd, jinfo -> name, best_node_name, NULL, &local_errno);
 
   if (ret == 0)
     {

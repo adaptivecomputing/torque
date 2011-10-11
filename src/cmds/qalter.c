@@ -665,11 +665,11 @@ cnt:
 
     if (asynch)
       {
-      stat = pbs_alterjob_async(connect, job_id_out, attrib, extend_ptr, &any_failed);
+      stat = pbs_alterjob_async_err(connect, job_id_out, attrib, extend_ptr, &any_failed);
       }
     else
       {
-      stat = pbs_alterjob(connect, job_id_out, attrib, extend_ptr, &any_failed);
+      stat = pbs_alterjob_err(connect, job_id_out, attrib, extend_ptr, &any_failed);
       }
 
     if ((stat != 0) &&

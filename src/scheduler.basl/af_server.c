@@ -1214,7 +1214,7 @@ void   *param;
 #ifdef DEBUG
       printf("pbs_statjob(%d,..)\n", ServerFdTwoWayGet(server));
 #endif
-      return(pbs_statjob(ServerFdTwoWayGet(server), NULL, param, NULL, &local_errno));
+      return(pbs_statjob_err(ServerFdTwoWayGet(server), NULL, param, NULL, &local_errno));
 
     default:
       log_err(-1, id, "Unknown command sent!");
@@ -2063,7 +2063,7 @@ void *params;
       printf("%s: pbs_runjob(%d, %s, %s, NULL)\n", id, connect,
              job_id, params);
 #endif
-      ret = pbs_runjob(connect, job_id, (char *)params, NULL, &local_errno);
+      ret = pbs_runjob_err(connect, job_id, (char *)params, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2079,7 +2079,7 @@ void *params;
       printf("%s: pbs_asyrunjob(%d, %s, %s, NULL)\n", id, connect,
              job_id, params);
 #endif
-      ret = pbs_asyrunjob(connect, job_id, (char *)params, NULL, &local_errno);
+      ret = pbs_asyrunjob_err(connect, job_id, (char *)params, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2095,7 +2095,7 @@ void *params;
       printf("%s: pbs_deljob(%d, %s, %s, NULL)\n", id, connect,
              job_id, params);
 #endif
-      ret = pbs_deljob(connect, job_id, (char *)params, &local_errno);
+      ret = pbs_deljob_err(connect, job_id, (char *)params, &local_errno);
 
       if (ret == 0)
         {
@@ -2109,7 +2109,7 @@ void *params;
 #ifdef DEBUG
       printf("%s: pbs_rerunjob(%d, %s, NULL)\n", id, connect, job_id);
 #endif
-      ret = pbs_rerunjob(connect, job_id, NULL, &local_errno);
+      ret = pbs_rerunjob_err(connect, job_id, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2123,7 +2123,7 @@ void *params;
 #ifdef DEBUG
       printf("%s: pbs_rerunjob(%d, %s, NULL)\n", id, connect, job_id);
 #endif
-      ret = pbs_holdjob(connect, job_id, (char *)params, NULL, &local_errno);
+      ret = pbs_holdjob_err(connect, job_id, (char *)params, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2138,7 +2138,7 @@ void *params;
       printf("%s: pbs_rlsjob(%d, %s, %s, NULL)\n", id, connect,
              job_id, params);
 #endif
-      ret = pbs_rlsjob(connect, job_id, (char *)params, NULL, &local_errno);
+      ret = pbs_rlsjob_err(connect, job_id, (char *)params, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2153,7 +2153,7 @@ void *params;
       printf("%s: pbs_sigjob(%d, %s, %s, NULL)\n", id, connect,
              job_id, params);
 #endif
-      ret = pbs_sigjob(connect, job_id, (char *)params, NULL, &local_errno);
+      ret = pbs_sigjob_err(connect, job_id, (char *)params, NULL, &local_errno);
       (void)strcpy(act, "SIGNAL");
       break;
 
@@ -2171,7 +2171,7 @@ void *params;
              connect, job_id, attrib.name, attrib.resource, attrib.value);
 
 #endif
-      ret = pbs_alterjob(connect, job_id, &attrib, NULL, &local_errno);
+      ret = pbs_alterjob_err(connect, job_id, &attrib, NULL, &local_errno);
 
       if (ret == 0)
         {
@@ -2199,7 +2199,7 @@ void *params;
              connect, job_id, attrib.name, attrib.resource, attrib.value);
 
 #endif
-      ret = pbs_alterjob(connect, job_id, &attrib, NULL, &local_errno);
+      ret = pbs_alterjob_err(connect, job_id, &attrib, NULL, &local_errno);
 
       if (ret == 0)
         {

@@ -133,7 +133,7 @@
 
 
 
-int pbs_deljob(
+int pbs_deljob_err(
 
   int   c,
   char *jobid,
@@ -165,5 +165,21 @@ int pbs_deljob(
          local_errno);
 
   return(rc);
-  }  /* END pbs_deljob() */
+  }  /* END pbs_deljob_err() */
+
+
+
+
+
+int pbs_deljob(
+
+  int   c,
+  char *jobid,
+  char *extend)
+
+  {
+  return(pbs_deljob_err(c, jobid, extend, &pbs_errno));
+  } /* END pbs_deljob() */
+
+
 

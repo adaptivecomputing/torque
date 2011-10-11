@@ -2559,7 +2559,7 @@ job_no_args:
           {
           /* changing to a different server */
 
-          p_server = pbs_statserver(connect, NULL, NULL, &any_failed);
+          p_server = pbs_statserver_err(connect, NULL, NULL, &any_failed);
 
           strcpy(server_old, pbs_server);
           }
@@ -2570,7 +2570,7 @@ job_no_args:
 
         if ((stat_single_job == 1) || (p_atropl == 0))
           {
-          p_status = pbs_statjob(
+          p_status = pbs_statjob_err(
                        connect,
                        job_id_out,
                        NULL,
@@ -2581,11 +2581,11 @@ job_no_args:
           {
           if (t_opt)
             {
-            p_status = pbs_selstat(connect, p_atropl, exec_only ? EXECQUEONLY : NULL, &any_failed);
+            p_status = pbs_selstat_err(connect, p_atropl, exec_only ? EXECQUEONLY : NULL, &any_failed);
             }
           else
             {
-            p_status = pbs_selstat(connect, p_atropl, exec_only ? EXECQUEONLY : summarize_arrays_extend_opt, &any_failed);
+            p_status = pbs_selstat_err(connect, p_atropl, exec_only ? EXECQUEONLY : summarize_arrays_extend_opt, &any_failed);
             }
           }
 
@@ -2674,7 +2674,7 @@ que_no_args:
           break;
           }
 
-        p_status = pbs_statque(connect, queue_name_out, NULL, NULL, &any_failed);
+        p_status = pbs_statque_err(connect, queue_name_out, NULL, NULL, &any_failed);
 
         if (p_status == NULL)
           {
@@ -2732,7 +2732,7 @@ svr_no_args:
           break;
           }
 
-        p_status = pbs_statserver(connect, NULL, NULL, &any_failed);
+        p_status = pbs_statserver_err(connect, NULL, NULL, &any_failed);
 
         if (p_status == NULL)
           {

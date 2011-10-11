@@ -169,7 +169,7 @@ int pbs_alterjob_asyncflag(
   return(i);
   }  /* END pbs_alterjob_asyncflag() */
 
-int pbs_alterjob_async(
+int pbs_alterjob_async_err(
 
   int           c,           /* I */
   char         *jobid,       /* I */
@@ -179,9 +179,28 @@ int pbs_alterjob_async(
 
   {
   return(pbs_alterjob_asyncflag(c, jobid, attrib, extend, TRUE, local_errno));
+  }  /* END pbs_alterjob_async_err() */
+
+
+
+
+
+int pbs_alterjob_async(
+
+  int           c,           /* I */
+  char         *jobid,       /* I */
+  struct attrl *attrib,      /* I */
+  char         *extend)      /* I */
+
+  {
+  return(pbs_alterjob_asyncflag(c, jobid, attrib, extend, TRUE, &pbs_errno));
   }  /* END pbs_alterjob_async() */
 
-int pbs_alterjob(
+
+
+
+
+int pbs_alterjob_err(
 
   int           c,           /* I */
   char         *jobid,       /* I */
@@ -191,6 +210,20 @@ int pbs_alterjob(
 
   {
   return(pbs_alterjob_asyncflag(c, jobid, attrib, extend, FALSE, local_errno));
+  }  /* END pbs_alterjob_err() */
+
+
+
+
+int pbs_alterjob(
+
+  int           c,           /* I */
+  char         *jobid,       /* I */
+  struct attrl *attrib,      /* I */
+  char         *extend)      /* I */
+
+  {
+  return(pbs_alterjob_asyncflag(c, jobid, attrib, extend, FALSE, &pbs_errno));
   }  /* END pbs_alterjob() */
 
 /* END pbsD_alterjo.c */

@@ -99,7 +99,7 @@
   #7  0x081e3df8 in pbs_statjob (c=1, id=0x0, attrib=0x0, extend=0x0) at ../Libifl/pbsD_statjob.c:96
 */
 
-struct batch_status *pbs_statjob(
+struct batch_status *pbs_statjob_err(
 
   int           c,           /* I - socket descriptor */
   char         *id,          /* I - job id (optional) */
@@ -109,6 +109,21 @@ struct batch_status *pbs_statjob(
 
   {
   return(PBSD_status(c, PBS_BATCH_StatusJob, local_errno, id, attrib, extend));
-  }  /* END pbs_statjob() */
+  }  /* END pbs_statjob_err() */
 
+
+
+
+
+
+struct batch_status *pbs_statjob(
+
+  int           c,           /* I - socket descriptor */
+  char         *id,          /* I - job id (optional) */
+  struct attrl *attrib,      /* ??? */
+  char         *extend)      /* I - ??? */
+
+  {
+  return(PBSD_status(c, PBS_BATCH_StatusJob, &pbs_errno, id, attrib, extend));
+  }  /* END pbs_statjob() */
 

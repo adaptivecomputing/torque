@@ -174,7 +174,7 @@ static void execute(
 
   if ((ct = cnt2server(server)) > 0)
     {
-    err = pbs_terminate(ct, manner, NULL, &local_errno);
+    err = pbs_terminate_err(ct, manner, NULL, &local_errno);
 
     if (err != 0)
       {

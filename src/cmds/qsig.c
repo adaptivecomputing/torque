@@ -96,11 +96,11 @@ cnt:
 
     if (runAsync == TRUE)
       {
-      stat = pbs_sigjobasync(connect,job_id_out,sig_string,NULL, &any_failed);
+      stat = pbs_sigjobasync_err(connect,job_id_out,sig_string,NULL, &any_failed);
       }
     else
       {
-      stat = pbs_sigjob(connect, job_id_out, sig_string, NULL, &any_failed);
+      stat = pbs_sigjob_err(connect, job_id_out, sig_string, NULL, &any_failed);
       }
 
     if (stat && (any_failed != PBSE_UNKJOBID))

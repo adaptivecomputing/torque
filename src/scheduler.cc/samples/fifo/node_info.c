@@ -117,7 +117,7 @@ node_info **query_nodes(int pbs_sd, server_info *sinfo)
   int i;
   int local_errno;
 
-  if ((nodes = pbs_statnode(pbs_sd, NULL, NULL, NULL, &local_errno)) == NULL)
+  if ((nodes = pbs_statnode_err(pbs_sd, NULL, NULL, NULL, &local_errno)) == NULL)
     {
     err = pbs_geterrmsg(pbs_sd);
     sprintf(errbuf, "Error getting nodes: %s", err);

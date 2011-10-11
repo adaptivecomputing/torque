@@ -85,7 +85,7 @@
 
 #include "libpbs.h"
 
-struct batch_status *pbs_statnode(
+struct batch_status *pbs_statnode_err(
 
   int           c,           /* I */
   char         *id,          /* I (nodes to list) */
@@ -94,11 +94,24 @@ struct batch_status *pbs_statnode(
   int          *local_errno) /* O */
 
   {
-  return(PBSD_status(
-           c,
-           PBS_BATCH_StatusNode,
-           local_errno,
-           id,
-           attrib,
-           extend));
-  }
+  return(PBSD_status(c, PBS_BATCH_StatusNode, local_errno, id, attrib, extend));
+  } /* END pbs_statnode_err() */
+
+
+
+
+
+struct batch_status *pbs_statnode(
+
+  int           c,           /* I */
+  char         *id,          /* I (nodes to list) */
+  struct attrl *attrib,      /* I */
+  char         *extend)      /* I */
+
+  {
+  return(PBSD_status(c, PBS_BATCH_StatusNode, &pbs_errno, id, attrib, extend));
+  } /* END pbs_statnode() */
+
+
+
+

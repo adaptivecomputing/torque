@@ -97,7 +97,7 @@
 static int PBSD_select_put(int, int, struct attropl *, char *);
 static char **PBSD_select_get(int *, int);
 
-char **pbs_selectjob(
+char **pbs_selectjob_err(
     
   int             c,
   struct attropl *attrib,
@@ -109,7 +109,23 @@ char **pbs_selectjob(
     return (PBSD_select_get(local_errno, c));
   else
     return ((char **)0);
-  }
+  } /* END pbs_selectjob_err() */
+
+
+
+
+char **pbs_selectjob(
+    
+  int             c,
+  struct attropl *attrib,
+  char           *extend)
+
+  {
+  if (PBSD_select_put(c, PBS_BATCH_SelectJobs, attrib, extend) == 0)
+    return (PBSD_select_get(&pbs_errno, c));
+  else
+    return ((char **)0);
+  } /* END pbs_selectjob() */
 
 
 /*
@@ -118,7 +134,7 @@ char **pbs_selectjob(
  *  criteria.  This is a short-cut combination of pbs_selecljob()
  *  and repeated pbs_statjob().
  */
-struct batch_status * pbs_selstat(
+struct batch_status * pbs_selstat_err(
 
   int             c,
   struct attropl *attrib,
@@ -130,14 +146,33 @@ struct batch_status * pbs_selstat(
     return (PBSD_status_get(local_errno, c));
   else
     return ((struct batch_status *)0);
-  }
+  } /* END pbs_selstat_err() */
+
+
+
+
+struct batch_status * pbs_selstat(
+
+  int             c,
+  struct attropl *attrib,
+  char           *extend)
+
+  {
+  if (PBSD_select_put(c, PBS_BATCH_SelStat, attrib, extend) == 0)
+    return (PBSD_status_get(&pbs_errno, c));
+  else
+    return ((struct batch_status *)0);
+  } /* END pbs_selstat() */
+
 
 
 static int PBSD_select_put(
+
   int             c,
   int             type,
   struct attropl *attrib,
   char           *extend)
+
   {
   int rc;
   int sock;

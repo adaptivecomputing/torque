@@ -153,11 +153,11 @@ cnt:
     {
     if (async == TRUE)
       {
-      err = pbs_asyrunjob(ct, job, location, NULL, &local_errno);  /* see lib/Libifl/pbsD_runjob.c */
+      err = pbs_asyrunjob_err(ct, job, location, NULL, &local_errno);  /* see lib/Libifl/pbsD_runjob.c */
       }
     else
       {
-      err = pbs_runjob(ct, job, location, NULL, &local_errno);  /* see lib/Libifl/pbsD_runjob.c */
+      err = pbs_runjob_err(ct, job, location, NULL, &local_errno);  /* see lib/Libifl/pbsD_runjob.c */
       }
 
     if (err && (local_errno == PBSE_UNKNODE))

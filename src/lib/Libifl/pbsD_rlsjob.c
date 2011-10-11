@@ -87,7 +87,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 
-int pbs_rlsjob(
+int pbs_rlsjob_err(
     
   int   c,
   char *jobid,
@@ -117,5 +117,21 @@ int pbs_rlsjob(
   aopl.next = (struct attropl *)NULL;
 
   return PBSD_manager(c, PBS_BATCH_ReleaseJob, MGR_CMD_SET, MGR_OBJ_JOB, jobid, &aopl, extend, local_errno);
-  } /* pbs_rlsjob() */
+  } /* pbs_rlsjob_err() */
+
+
+
+
+
+int pbs_rlsjob(
+    
+  int   c,
+  char *jobid,
+  char *holdtype,
+  char *extend)
+
+  {
+  return(pbs_rlsjob_err(c, jobid, holdtype, extend, &pbs_errno));
+  } /* END pbs_rlsjob() */
+
 

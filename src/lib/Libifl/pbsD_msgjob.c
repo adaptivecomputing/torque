@@ -88,7 +88,7 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int pbs_msgjob(
+int pbs_msgjob_err(
     
   int   c,
   char *jobid,
@@ -132,4 +132,23 @@ int pbs_msgjob(
   PBSD_FreeReply(reply);
 
   return(rc);
+  } /* END pbs_msgjob_err() */
+
+
+
+
+
+int pbs_msgjob(
+    
+  int   c,
+  char *jobid,
+  int   fileopt,
+  char *msg,
+  char *extend)
+
+  {
+  return(pbs_msgjob_err(c, jobid, fileopt, msg, extend, &pbs_errno));
   } /* END pbs_msgjob() */
+
+
+

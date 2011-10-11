@@ -542,7 +542,7 @@ drmaa_job_ps(const char *job_id, int *remote_ps, char *errmsg, size_t errlen)
 
   pthread_mutex_lock(&c->conn_mutex);
 
-  status = pbs_statjob(c->pbs_conn, (char*)job_id, (struct attrl*)attribs, NULL, &local_errno);
+  status = pbs_statjob_err(c->pbs_conn, (char*)job_id, (struct attrl*)attribs, NULL, &local_errno);
 
   pthread_mutex_unlock(&c->conn_mutex);
 

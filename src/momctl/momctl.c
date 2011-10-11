@@ -380,7 +380,7 @@ int main(
 
       /* get a batch_status entry for each node in ":property" */
 
-      bstatus = pbs_statnode(con,HPtr,NULL,NULL, &local_errno);
+      bstatus = pbs_statnode_err(con,HPtr,NULL,NULL, &local_errno);
 
       if (bstatus != NULL)
         {

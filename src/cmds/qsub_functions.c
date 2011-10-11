@@ -1781,7 +1781,7 @@ void bailout(void)
     exit(1);
     }
 
-  pbs_deljob(c, new_jobname, NULL, &local_errno);
+  pbs_deljob_err(c, new_jobname, NULL, &local_errno);
 
   pbs_disconnect(c);
 

@@ -163,7 +163,7 @@ static int set_note(
   new.op       = SET;
   new.next     = NULL;
 
-  rc = pbs_manager(
+  rc = pbs_manager_err(
          con,
          MGR_CMD_SET,
          MGR_OBJ_NODE,
@@ -297,7 +297,7 @@ static int marknode(
     new[1].op     = op2;
     }
 
-  rc = pbs_manager(
+  rc = pbs_manager_err(
          con,
          MGR_CMD_SET,
          MGR_OBJ_NODE,
@@ -333,7 +333,7 @@ struct batch_status *statnode(
   char                *errmsg;
   int                  local_errno = 0;
 
-  bstatus = pbs_statnode(con, nodearg, NULL, NULL, &local_errno);
+  bstatus = pbs_statnode_err(con, nodearg, NULL, NULL, &local_errno);
 
   if (bstatus == NULL)
     {

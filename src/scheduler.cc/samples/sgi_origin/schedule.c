@@ -1153,8 +1153,7 @@ schedule_restart(Job *joblist)
       else
         {
         /* Move the job back to its originating queue. */
-        if (pbs_movejob(connector, job->jobid,
-                        job->oqueue, NULL, &local_errno) != 0)
+        if (pbs_movejob_err(connector, job->jobid, job->oqueue, NULL, &local_errno) != 0)
           {
           (void)sprintf(log_buffer,
                         "failed to move %s to queue %s, %d", job->jobid,

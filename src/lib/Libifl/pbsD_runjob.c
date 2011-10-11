@@ -129,7 +129,7 @@
    */
 
 
-int pbs_runjob(
+int pbs_runjob_err(
 
   int   c,
   char *jobid,
@@ -195,6 +195,24 @@ int pbs_runjob(
   PBSD_FreeReply(reply);
 
   return(rc);
-  }  /* END pbs_runjob() */
+  }  /* END pbs_runjob_err() */
+
+
+
+
+
+int pbs_runjob(
+
+  int   c,
+  char *jobid,
+  char *location,
+  char *extend)
+
+  {
+  return(pbs_runjob_err(c, jobid, location, extend, &pbs_errno));
+  } /* END pbs_runjob() */
+
+
+
 
 

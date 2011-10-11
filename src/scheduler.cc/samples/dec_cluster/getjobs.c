@@ -153,7 +153,7 @@ schd_get_jobs(char *qname, char *state)
     }
 
   /* Ask PBS for the list of jobs requested */
-  pbs_head = pbs_selstat(connector, attr, NULL, &local_errno);
+  pbs_head = pbs_selstat_err(connector, attr, NULL, &local_errno);
 
   /*
   pbs_statfree(pbs_head);

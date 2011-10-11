@@ -240,7 +240,7 @@ schd_get_queue_limits(Queue *queue)
 
   /* Ask the server for information about the specified queue. */
 
-  if ((bs = pbs_statque(connector, queue->qname, alist, NULL, &local_errno)) == NULL)
+  if ((bs = pbs_statque_err(connector, queue->qname, alist, NULL, &local_errno)) == NULL)
     {
     sprintf(log_buffer, "pbs_statque failed, \"%s\" %d",
             queue->qname, local_errno);
@@ -894,7 +894,7 @@ get_node_status(void)
    * info in the appropraite queue struct.
    */
 
-  if ((bs = pbs_statnode(connector, NULL, alist, NULL, &local_errno)) == NULL)
+  if ((bs = pbs_statnode_err(connector, NULL, alist, NULL, &local_errno)) == NULL)
     {
     sprintf(log_buffer, "pbs_statnode failed: %d", local_errno);
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, id, log_buffer);

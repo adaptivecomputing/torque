@@ -89,12 +89,12 @@
 #include "dis.h"
 #include "log.h"
 
-char *pbs_locjob(
+char *pbs_locjob_err(
     
   int   c,
-  int  *local_errno,
   char *jobid,
-  char *extend)
+  char *extend,
+  int  *local_errno)
 
   {
   int rc;
@@ -167,4 +167,21 @@ char *pbs_locjob(
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   return(ploc);
+  } /* END pbs_locjob_err() */
+
+
+
+
+char *pbs_locjob(
+    
+  int   c,
+  char *jobid,
+  char *extend)
+
+  {
+  return(pbs_locjob_err(c, jobid, extend, &pbs_errno));
   } /* END pbs_locjob() */
+
+
+
+

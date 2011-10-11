@@ -523,7 +523,7 @@ int main(
     exit(any_failed);
     }
 
-  selectjob_list = pbs_selectjob(connect, select_list, exec_only ? EXECQUEONLY : NULL, &any_failed);
+  selectjob_list = pbs_selectjob_err(connect, select_list, exec_only ? EXECQUEONLY : NULL, &any_failed);
 
   if (selectjob_list == NULL)
     {

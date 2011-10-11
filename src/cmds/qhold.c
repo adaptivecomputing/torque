@@ -146,9 +146,9 @@ cnt:
       }
 
     if (extend[0] == '\0')
-      stat = pbs_holdjob(connect, job_id_out, hold_type, NULL, &any_failed);
+      stat = pbs_holdjob_err(connect, job_id_out, hold_type, NULL, &any_failed);
     else
-      stat = pbs_holdjob(connect, job_id_out, hold_type, extend, &any_failed);
+      stat = pbs_holdjob_err(connect, job_id_out, hold_type, extend, &any_failed);
 
     if (stat &&
         (any_failed != PBSE_UNKJOBID))

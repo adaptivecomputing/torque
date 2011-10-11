@@ -88,7 +88,7 @@
 #include "libpbs.h"
 #include "dis.h"
 
-int pbs_asyrunjob(
+int pbs_asyrunjob_err(
 
   int   c,
   char *jobid,    /* I */
@@ -150,7 +150,24 @@ int pbs_asyrunjob(
   PBSD_FreeReply(reply);
 
   return(rc);
-  }  /* END pbs_asyrunjob() */
+  }  /* END pbs_asyrunjob_err() */
+
+
+
+
+int pbs_asyrunjob(
+
+  int   c,
+  char *jobid,    /* I */
+  char *location,
+  char *extend)
+
+  {
+  return(pbs_asyrunjob_err(c, jobid, location, extend, &pbs_errno));
+  } /* END pbs_asyrunjob() */
+
+
+
 
 /* END pbsD_asyrun.c */
 

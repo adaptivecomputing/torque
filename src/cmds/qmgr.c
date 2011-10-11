@@ -1416,15 +1416,15 @@ int execute(
           {
 
           case MGR_OBJ_SERVER:
-            ss = pbs_statserver(sp -> s_connect, sa, NULL, &local_errno);
+            ss = pbs_statserver_err(sp -> s_connect, sa, NULL, &local_errno);
             break;
 
           case MGR_OBJ_QUEUE:
-            ss = pbs_statque(sp -> s_connect, pname -> obj_name, sa, NULL, &local_errno);
+            ss = pbs_statque_err(sp -> s_connect, pname -> obj_name, sa, NULL, &local_errno);
             break;
 
           case MGR_OBJ_NODE:
-            ss = pbs_statnode(sp -> s_connect, pname -> obj_name, sa, NULL, &local_errno);
+            ss = pbs_statnode_err(sp -> s_connect, pname -> obj_name, sa, NULL, &local_errno);
             break;
             /* DIAGTODO: handle new diag type for list */
             /* DIAGTODO: create a pbs_statdiag() */
@@ -1450,25 +1450,25 @@ int execute(
 
             if (sa == NULL)
               {
-              ss = pbs_statque(sp -> s_connect, NULL, NULL, NULL, &local_errno);
+              ss = pbs_statque_err(sp -> s_connect, NULL, NULL, NULL, &local_errno);
 
               if (ss != NULL)
                 display(MGR_OBJ_QUEUE, NULL, ss, TRUE);
               }
 
-            ss = pbs_statserver(sp -> s_connect, sa, NULL, &local_errno);
+            ss = pbs_statserver_err(sp -> s_connect, sa, NULL, &local_errno);
 
             break;
 
           case MGR_OBJ_QUEUE:
 
-            ss = pbs_statque(sp->s_connect, pname->obj_name, sa, NULL, &local_errno);
+            ss = pbs_statque_err(sp->s_connect, pname->obj_name, sa, NULL, &local_errno);
 
             break;
 
           case MGR_OBJ_NODE:
 
-            ss = pbs_statnode(sp->s_connect, pname->obj_name, sa, NULL, &local_errno);
+            ss = pbs_statnode_err(sp->s_connect, pname->obj_name, sa, NULL, &local_errno);
 
             break;
             /* DIAGTODO: handle new diag type for print */
@@ -1485,7 +1485,7 @@ int execute(
         }
       else
         {
-        perr = pbs_manager(
+        perr = pbs_manager_err(
                  sp->s_connect,
                  oper,
                  type,
@@ -2665,13 +2665,13 @@ int is_valid_object(
 
       case MGR_OBJ_QUEUE:
 
-        batch_obj = pbs_statque(obj->svr->s_connect, obj->obj_name, &attrq, NULL, &local_errno);
+        batch_obj = pbs_statque_err(obj->svr->s_connect, obj->obj_name, &attrq, NULL, &local_errno);
 
         break;
 
       case MGR_OBJ_NODE:
 
-        batch_obj = pbs_statnode(obj->svr->s_connect, obj->obj_name, &attrn, NULL, &local_errno);
+        batch_obj = pbs_statnode_err(obj->svr->s_connect, obj->obj_name, &attrn, NULL, &local_errno);
 
         break;
 
