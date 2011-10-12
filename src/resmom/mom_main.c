@@ -4783,7 +4783,7 @@ int rm_request(
                 }
               }    /* END if (verbositylevel >= 1) */
 
-            if ((verbositylevel >= 1) && (pbs_tcp_timeout > 0))
+            if (verbositylevel >= 1)
               {
               sprintf(tmpLine, "TCP Timeout:            %d seconds\n",
                       (int)pbs_tcp_timeout);
