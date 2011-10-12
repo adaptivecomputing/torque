@@ -71,11 +71,10 @@ $cmd   = "qstat -t";
 %job_info = parse_qstat( $qstat{ 'STDOUT' } );
 
 foreach my $job_id (@job_ids)
-  {
-
-  my $msg = "Checking job '$job_id'";
-  diag($msg);
-  logMsg($msg);
+{
+  $job_id =~ s/(\d+\[\d+\]\.\w+)\.\w+$/$1/;
+  ok(exists $job_info{$job_id}, "Found Job $job_id in Output")
+    or next;
 
   foreach my $attribute (@attributes)
     {

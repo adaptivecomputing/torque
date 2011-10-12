@@ -216,8 +216,6 @@ sub parse_qstat_a #($)
         $state, 
         $elap_time) = split(/\s+/, $line);
 
-    $job_id = _auto_complete_job_id($job_id);
-
     $rtn_jobs{ $job_id }{ 'job_id'    } = $job_id;
     $rtn_jobs{ $job_id }{ 'username'  } = $username;
     $rtn_jobs{ $job_id }{ 'queue'     } = $queue;
@@ -275,8 +273,6 @@ sub parse_qstat_a_n #($)
 
     my $node = $lines[$x + 1];
 
-    $job_id = _auto_complete_job_id($job_id);
-   
     $rtn_jobs{ $job_id }{ 'job_id'    } = $job_id;
     $rtn_jobs{ $job_id }{ 'username'  } = $username;
     $rtn_jobs{ $job_id }{ 'queue'     } = $queue;
@@ -331,8 +327,6 @@ sub parse_qstat_a_n_1 #($)
         $elap_time,
         $node) = split(/\s+/, $line);
 
-    $job_id = _auto_complete_job_id($job_id);
-   
     $rtn_jobs{ $job_id }{ 'job_id'    } = $job_id;
     $rtn_jobs{ $job_id }{ 'username'  } = $username;
     $rtn_jobs{ $job_id }{ 'queue'     } = $queue;
@@ -370,6 +364,8 @@ sub parse_qstat_a_e_i_r #($)
   shift @lines;
   shift @lines;
   shift @lines;
+  shift @lines;
+  shift @lines;
 
   for (my $x = 0; $x < scalar @lines; $x += 2)
     {
@@ -390,8 +386,6 @@ sub parse_qstat_a_e_i_r #($)
         $pfs,
         $node) = split(/\s+/, $line);
 
-    $job_id = _auto_complete_job_id($job_id);
-   
     my $comment = $lines[$x + 1];
 
     $rtn_jobs{ $job_id }{ 'job_id'    } = $job_id;

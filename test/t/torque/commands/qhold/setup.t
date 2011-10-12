@@ -40,8 +40,11 @@ stopTorque($torque_params)
 stopPbssched() 
   or die 'Unable to stop pbs_sched';
 
+createMomCfg();
+createMomCfg({host => $_}) foreach @remote_moms;
+
 ###############################################################################
 # Restart Torque
 ###############################################################################
-startTorque($torque_params)
+startTorqueClean($torque_params)
   or die 'Unable to start Torque';

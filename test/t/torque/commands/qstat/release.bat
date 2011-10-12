@@ -65,8 +65,8 @@ execute_tests(
               "$testbase/qstat_cQ_dest.t",
               "$testbase/qstat_cQ_f1.t",
               "$testbase/qstat_cQ_f1_dest.t",
-              "$testbase/qstat_cB.t",
-              "$testbase/qstat_cB_server_name.t",
+# JR-TRQ-509              "$testbase/qstat_cB.t",
+# JR-TRQ-509              "$testbase/qstat_cB_server_name.t",
               "$testbase/qstat_cB_f1.t",
               "$testbase/qstat_cB_f1_server_name.t",
 );

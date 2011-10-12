@@ -14,7 +14,6 @@ use CRI::Test;
 
 use Torque::Job::Ctrl          qw(
                                    submitSleepJob
-                                   runJobs
                                    delJobs 
                                  );
 use Torque::Test::Regexp       qw(
@@ -40,9 +39,6 @@ my @job_ids;
 my %job_info;
 my $job_params;
 
-my $user       = $props->get_property( 'User.1' );
-my $torque_bin = $props->get_property( 'Torque.Home.Dir' ) . '/bin/';
-
 my @attributes = qw(
                      name
                      user
@@ -51,38 +47,27 @@ my @attributes = qw(
                      queue
                    );
 
-# Submit a job
-$job_params = {
-                'user'       => $user,
-                'torque_bin' => $torque_bin
-              };
-
 # submit a couple of jobs
-push(@job_ids, submitSleepJob($job_params));
-push(@job_ids, submitSleepJob($job_params));
+push(@job_ids, submitSleepJob());
+push(@job_ids, submitSleepJob());
 
 foreach my $job_id (@job_ids)
-  {
-
-  my $msg = "Checking job '$job_id'";
-  diag($msg);
-  logMsg($msg);
-
-  # Test qstat
+{
   $cmd   = "qstat $job_id";
   %qstat = run_and_check_cmd($cmd);
 
   %job_info = parse_qstat( $qstat{ 'STDOUT' } );
 
-  foreach my $attribute (@attributes)
-    {
+  $job_id =~ s/(\d+\.\w+)\.\w+$/$1/;
+  ok(exists $job_info{$job_id}, "Found Job $job_id in Output")
+    or next;
 
+  foreach my $attribute (@attributes)
+  {
     my $reg_exp = &QSTAT_REGEXP->{ $attribute };
     like($job_info{ $job_id }{ $attribute }, $reg_exp, "Checking the '$job_id' $attribute attribute"); 
-
-    } # END foreach my $attribute (@attributes)
-
-  } # END foreach my $job_id (@job_ids)
+  }
+}
 
 # Delete the job
 delJobs(@job_ids);

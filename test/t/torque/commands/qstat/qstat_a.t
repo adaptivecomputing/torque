@@ -73,22 +73,17 @@ $cmd   = "qstat -a";
 %job_info = parse_qstat_a( $qstat{ 'STDOUT' } );
 
 foreach my $job_id (@job_ids)
-  {
-
-  my $msg = "Checking job '$job_id'";
-  diag($msg);
-  logMsg($msg);
+{
+  ok( exists $job_info{$job_id}, "Found Job $job_id in Output")
+    or next;
 
   foreach my $attribute (@attributes)
-    {
-
+  {
     my $reg_exp = &QSTAT_A_REGEXP->{ $attribute };
     like($job_info{ $job_id }{ $attribute }, $reg_exp, "Checking for '$job_id' $attribute attribute") 
       or diag("\$job_info{ '$job_id' }{ '$attribute' } = $job_info{ $job_id }{ $attribute }\n");
-
-    } # END foreach my $attribute (@attribues)
-
-  } # END foreach my $job_id (@job_ids)
+  }
+}
 
 # Delete the job
 delJobs(@job_ids);

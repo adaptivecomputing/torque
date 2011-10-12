@@ -78,7 +78,7 @@ $qref = {
         };
 $jid3 = qsub($qref);
 
-$qhash = qstat_fx();
+$qhash = qstat_fx({job_id => $jid3});
 cmp_ok($qhash->{ $jid3 }{ 'job_state'  }, 'eq', "H",                                 "Verifying the dependent job:$jid3 'job_state'" );
 cmp_ok($qhash->{ $jid3 }{ 'hold_types' }, 'eq', "s",                                 "Verifying the dependent job:$jid3 'hold_types'"); 
 cmp_ok($qhash->{ $jid3 }{ 'depend'     }, 'eq', "afterstartarray:$jid1_mod\@$test_host", "Verifying the dependent job:$jid3 'depend'"    );
@@ -100,7 +100,7 @@ diag("Run second subjob:$jaids[1]");
 runJobs($jaids[1]);
 sleep_diag(1);
 
-$qhash = qstat_fx();
+$qhash = qstat_fx({job_id => $jid2});
 cmp_ok($qhash->{ $jid2 }{ 'job_state'  }, 'eq', "Q", "Verifying the dependent job:$jid2 'job_state' doesnt exist after a subjob:$jaids[1] is run" );
 cmp_ok($qhash->{ $jid2 }{ 'hold_types' }, 'eq', "n", "Verifying the dependent job:$jid2 'Hold_Types' doesnt exist after a subjob:$jaids[1] is run"); 
 cmp_ok($qhash->{ $jid2 }{ 'depend'     }, 'eq', "afterstartarray:$jid1\@$test_host", "Verifying the dependent job:$jid2 'depend' doesnt exist after a subjob:$jaids[0] is run"    );

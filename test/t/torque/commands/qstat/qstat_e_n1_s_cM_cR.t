@@ -78,9 +78,8 @@ $cmd   = "qstat -e -n -1 -s -M -R";
 foreach my $job_id (@job_ids)
   {
 
-  my $msg = "Checking job '$job_id'";
-  diag($msg);
-  logMsg($msg);
+  ok(exists $job_info{$job_id}, "Found Job $job_id in Output")
+    or next;
 
   foreach my $attribute (@attributes)
     {

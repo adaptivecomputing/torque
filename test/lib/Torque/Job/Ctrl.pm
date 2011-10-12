@@ -144,7 +144,14 @@ sub submitSleepJob #($)
   $qsub_params->{user} = $user if defined $user;
   $qsub_params->{cmd} = "sleep $sleep_time" if defined $sleep_time;
   $qsub_params->{flags} = $add_args if defined $add_args;
-  $qsub_params->{full_jobid} = 1;
+  if( exists $params->{full_jobid} )
+  {
+    $qsub_params->{full_jobid} = $params->{full_jobid};
+  }
+  else
+  {
+    $qsub_params->{full_jobid} = 1;
+  }
 
   return qsub($qsub_params);
 }

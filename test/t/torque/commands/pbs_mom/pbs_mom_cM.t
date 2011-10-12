@@ -22,4 +22,4 @@ startPbsmom({ 'args' => "-M $port" });
 my %cmd = runCommand($cmd, 'test_success' => 1);
 my @ports = ($cmd{STDOUT} =~ /^tcp\s+\d+\s+\d+\s+\S+:(\d+)/gm);
 
-is_deeply(\@ports, \@exp_ports, 'Torque MOM is listening on expected ports');
+cmp_deeply(\@ports, bag(@exp_ports), 'Torque MOM is listening on expected ports');
