@@ -117,7 +117,7 @@ extern long calc_job_cost(job *);
 
 /* Local Private Functions */
 
-static void set_depend_hold(job *, attribute *);
+void set_depend_hold(job *, attribute *);
 static int register_sync(struct depend *,  char *child, char *host, long);
 static int register_dep(attribute *, struct batch_request *, int, int *);
 static int unregister_dep(attribute *, struct batch_request *);
@@ -223,10 +223,10 @@ void req_register(
 
   if (((pjob->ji_qs.ji_state == JOB_STATE_COMPLETE) ||
     (pjob->ji_qs.ji_state == JOB_STATE_EXITING)) &&
-    ((type = JOB_DEPEND_TYPE_AFTERSTART) ||
-    (type = JOB_DEPEND_TYPE_AFTERANY) ||
-    ((type = JOB_DEPEND_TYPE_AFTEROK) && (pjob->ji_qs.ji_un.ji_exect.ji_exitstat == 0)) ||
-    ((type = JOB_DEPEND_TYPE_AFTERNOTOK) && (pjob->ji_qs.ji_un.ji_exect.ji_exitstat != 0))))
+    ((type == JOB_DEPEND_TYPE_AFTERSTART) ||
+    (type == JOB_DEPEND_TYPE_AFTERANY) ||
+    ((type == JOB_DEPEND_TYPE_AFTEROK) && (pjob->ji_qs.ji_un.ji_exect.ji_exitstat == 0)) ||
+    ((type == JOB_DEPEND_TYPE_AFTERNOTOK) && (pjob->ji_qs.ji_un.ji_exect.ji_exitstat != 0))))
     {
     if (LOGLEVEL >= 8)
       {
@@ -1530,7 +1530,7 @@ static void release_cheapest(
  * NOTE:  determine where dependency hold is cleared and comment
  */
 
-static void set_depend_hold(
+void set_depend_hold(
 
   job       *pjob,
   attribute *pattr)
