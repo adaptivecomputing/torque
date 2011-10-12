@@ -41,6 +41,7 @@ sleep_diag(1, "Allow time for the job to queue");
 
 $qref = {
           'flags' => "-W depend=afteranyarray:$jid1",
+          full_jobid => 1,
         };
 $jid2 = qsub($qref);
 
@@ -58,9 +59,12 @@ foreach my $jaid (@jaids)
 
   } # END foreach my $jaid (@jaids)
 
-cmp_ok($qhash->{ $jid2 }{ 'job_state'  }, 'eq', "H",                               "Verifying the dependent job:$jid2 'job_state'");
-cmp_ok($qhash->{ $jid2 }{ 'Hold_Types' }, 'eq', "s",                               "Verifying the dependent job:$jid2 'Hold_Types'"); 
-cmp_ok($qhash->{ $jid2 }{ 'depend'     }, 'eq', "afteranyarray:$jid1\@$test_host", "Verifying the dependent job:$jid2 'depend'");
+my $jhash = qstat_fx({job_id => $jid2});
+$jid1 =~ s/([\[\]\.])/\\$1/g; # get job array id ready for regex
+
+cmp_ok($jhash->{ $jid2 }{ 'job_state'  }, 'eq', "H",                               "Verifying the dependent job:$jid2 'job_state'");
+cmp_ok($jhash->{ $jid2 }{ 'hold_types' }, 'eq', "s",                               "Verifying the dependent job:$jid2 'hold_types'"); 
+like($jhash->{ $jid2 }{ 'depend'     }, qr/^afteranyarray:$jid1\@$test_host(?:\.\w+)?$/, "Verifying the dependent job:$jid2 'depend'");
 
 # Cleanup
 delJobs();

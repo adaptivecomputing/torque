@@ -12,10 +12,13 @@ use CRI::Test;
 plan('no_plan');
 setDesc('Qsub -W depend');
 
-# Submit a job with qsub and get its job id
-my %jobId = runCommandAs($props->get_property('User.1'),'echo /bin/sleep 60 | qsub -W depend=afterok:16397');
-ok($jobId{'EXIT_CODE'} == 0,'Chekcing if qsub submission worked') or die("qsub failed with rc=$jobId{'EXIT_CODE'}");
+# Test failure case
+my %jobId = runCommandAs($props->get_property('User.1'),'echo /bin/sleep 60 | qsub -W depend=afterok:16397', test_fail => 1);
 
+is($jobId{STDERR}, "qsub: submit error (Unknown Job Id)\n", 'Expected Error Message returned');
+
+#TODO: create a new case for a generic job dependency
+=head
 # Run qstat -f on the submitted job and look for job_state, Hold_Types and etime
 my $jobState = '';
 my $holdTypes = '';
