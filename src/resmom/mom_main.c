@@ -8717,6 +8717,11 @@ int parse_mom_hierarchy_file(
           }
         } /* END parsing a path */
 
+      if (level_index == 0)
+        {
+        log_err(-1, id, "No levels found in path - please check your mom_hierarchy file");
+        }
+
       if (irrelevant_path == FALSE)
         path_index++;
       }
