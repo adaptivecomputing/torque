@@ -108,24 +108,24 @@ sub test_level_3 ($)
   my %results = _parse_momctl($out);
 
   # Test the log level 3 results
-  ok($results{ 'host'                        } eq "$host/$mom_host",                                    "Checking the host");
-  ok($results{ 'version'                     } =~ /^${mom_version}/,                                    "Checking the version");
-  ok($results{ 'pid'                         } =~ /\d*/,                                                "Checking the pid");
-  ok($results{ 'homedirectory'               } eq $mom_home_dir,                                        "Checking the homedirectory");
+  is($results{ 'host'                        }, "$host/$mom_host",                                    "Checking the host");
+  like($results{ 'version'                     }, qr/^${mom_version}/,                                    "Checking the version");
+  like($results{ 'pid'                         }, qr/\d*/,                                                "Checking the pid");
+  is($results{ 'homedirectory'               }, $mom_home_dir,                                        "Checking the homedirectory");
   like($results{ 'stdout/stderrspooldirectory' }, qr#'$torque_spool_dir'\s+\(\d+ blocks available\)#, "Checking the 'stdout/stderr spool directory'");
-  ok($results{ 'momactive'                   } =~ /\d+ seconds/,                                        "Checking 'mom active'");
-  ok($results{ 'checkpolltime'               } =~ /${mom_poll_time}\sseconds/,                          "Checking the 'check poll time'");
-  ok($results{ 'serverupdateinterval'        } =~ /${mom_update_interval}\sseconds/,                    "Checking the 'server update interval'");
-  ok($results{ 'loglevel'                    } =~ /^\d{1,2}/,                                           "Checking 'log level'");
-  ok($results{ 'communicationmodel'          } eq $mom_comm_model,                                      "Checking the communication model");
-  ok($results{ 'memlocked'                   } =~ /${mom_mem_locked}\s+\(mlock\)/,                      "Checking the mem locked");
-# JR-TRQ-461  ok($results{ 'tcptimeout'                  } =~ /${mom_tcp_timeout}\s+seconds/,                       "Checking the tcp timeout");
-  ok($results{ 'prolog'                      } =~ /${mom_prolog}\s+\((disabled|enabled)\)/,             "Checking the prolog");
-  ok($results{ 'alarmtime'                   } =~ /\d+\sof\s${mom_alarm_time}\sseconds/,                "Checking the alarm time");
-  ok($results{ 'trustedclientlist'           } =~ /${mom_client_list_regexp}/,                          "Checking the trusted client list");
-  ok($results{ 'copycommand'                 } eq $mom_copy_command,                                    "Checking the mom copy commmand");
+  like($results{ 'momactive'                   }, qr/\d+ seconds/,                                        "Checking 'mom active'");
+  like($results{ 'checkpolltime'               }, qr/${mom_poll_time}\sseconds/,                          "Checking the 'check poll time'");
+  like($results{ 'serverupdateinterval'        }, qr/${mom_update_interval}\sseconds/,                    "Checking the 'server update interval'");
+  like($results{ 'loglevel'                    }, qr/^\d{1,2}/,                                           "Checking 'log level'");
+  is($results{ 'communicationmodel'          }, $mom_comm_model,                                      "Checking the communication model");
+  like($results{ 'memlocked'                   }, qr/${mom_mem_locked}\s+\(mlock\)/,                      "Checking the mem locked");
+  like($results{ 'tcptimeout'                  }, qr/$mom_tcp_timeout\s+seconds/,                       "Checking the tcp timeout");
+  like($results{ 'prolog'                      }, qr/${mom_prolog}\s+\((disabled|enabled)\)/,             "Checking the prolog");
+  like($results{ 'alarmtime'                   }, qr/\d+\sof\s${mom_alarm_time}\sseconds/,                "Checking the alarm time");
+  like($results{ 'trustedclientlist'           }, qr/${mom_client_list_regexp}/,                          "Checking the trusted client list");
+  is($results{ 'copycommand'                 }, $mom_copy_command,                                    "Checking the mom copy commmand");
 
-  ok($results{ 'server[0]' }{ 'host' } =~ /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/, "Checking the server");
+  like($results{ 'server[0]' }{ 'host' }, qr/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/, "Checking the server");
 
   TODO:
     {
@@ -133,7 +133,7 @@ sub test_level_3 ($)
     local $TODO = "Need to implement a check for varattrs"
        if (! defined $results{ 'varattrs'  }{ 'name' } );
 
-#    ok($results{ 'varattrs'  }{ 'name' } eq $mom_varattrs,                            "Checking varattrs"  );
+#    is($results{ 'varattrs'  }{ 'name' }, $mom_varattrs,                            "Checking varattrs"  );
 
     }; # END TODO:
 
@@ -189,31 +189,31 @@ sub test_level_2 ($)
 
   my %results = _parse_momctl($out);
 
-  ok($results{ 'host'                        } eq "$host/$mom_host",                                    "Checking the host");
-  ok($results{ 'version'                     } =~ /^${mom_version}/,                                    "Checking the version");
-  ok($results{ 'pid'                         } =~ /\d*/,                                                "Checking the pid");
-  ok($results{ 'homedirectory'               } eq $mom_home_dir,                                        "Checking the homedirectory");
+  is($results{ 'host'                        }, "$host/$mom_host",                                    "Checking the host");
+  like($results{ 'version'                     }, qr/^${mom_version}/,                                    "Checking the version");
+  like($results{ 'pid'                         }, qr/\d*/,                                                "Checking the pid");
+  is($results{ 'homedirectory'               }, $mom_home_dir,                                        "Checking the homedirectory");
   like($results{ 'stdout/stderrspooldirectory' }, qr#'$torque_spool_dir'\s+\(\d+ blocks available\)#, "Checking the 'stdout/stderr spool directory'");
-  ok($results{ 'momactive'                   } =~ /\d+ seconds/,                                        "Checking 'mom active'");
-  ok($results{ 'checkpolltime'               } =~ /${mom_poll_time}\sseconds/,                          "Checking the 'check poll time'");
-  ok($results{ 'serverupdateinterval'        } =~ /${mom_update_interval}\sseconds/,                    "Checking the 'server update interval'");
-  ok($results{ 'loglevel'                    } =~ /^\d{1,2}/,                                           "Checking 'log level'");
-  ok($results{ 'communicationmodel'          } eq $mom_comm_model,                                      "Checking the communication model");
-  ok($results{ 'memlocked'                   } =~ /${mom_mem_locked}\s+\(mlock\)/,                      "Checking the mem locked");
-# JR-TRQ-461  ok($results{ 'tcptimeout'                  } =~ /${mom_tcp_timeout}\s+seconds/,                       "Checking the tcp timeout");
-  ok($results{ 'prolog'                      } =~ /${mom_prolog}\s+\((disabled|enabled)\)/,             "Checking the prolog");
-  ok($results{ 'alarmtime'                   } =~ /\d+\sof\s${mom_alarm_time}\sseconds/,                "Checking the alarm time");
-  ok($results{ 'trustedclientlist'           } =~ /${mom_client_list_regexp}/,                          "Checking the trusted client list");
-  ok($results{ 'copycommand'                 } eq $mom_copy_command,                                    "Checking the mom copy commmand");
+  like($results{ 'momactive'                   }, qr/\d+ seconds/,                                        "Checking 'mom active'");
+  like($results{ 'checkpolltime'               }, qr/${mom_poll_time}\sseconds/,                          "Checking the 'check poll time'");
+  like($results{ 'serverupdateinterval'        }, qr/${mom_update_interval}\sseconds/,                    "Checking the 'server update interval'");
+  like($results{ 'loglevel'                    }, qr/^\d{1,2}/,                                           "Checking 'log level'");
+  is($results{ 'communicationmodel'          }, $mom_comm_model,                                      "Checking the communication model");
+  like($results{ 'memlocked'                   }, qr/${mom_mem_locked}\s+\(mlock\)/,                      "Checking the mem locked");
+  like($results{ 'tcptimeout'                  }, qr/${mom_tcp_timeout}\s+seconds/,                       "Checking the tcp timeout");
+  like($results{ 'prolog'                      }, qr/${mom_prolog}\s+\((disabled|enabled)\)/,             "Checking the prolog");
+  like($results{ 'alarmtime'                   }, qr/\d+\sof\s${mom_alarm_time}\sseconds/,                "Checking the alarm time");
+  like($results{ 'trustedclientlist'           }, qr/${mom_client_list_regexp}/,                          "Checking the trusted client list");
+  is($results{ 'copycommand'                 }, $mom_copy_command,                                    "Checking the mom copy commmand");
 
-  ok($results{ 'server[0]' }{ 'host' } =~ /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/, "Checking the server");
+  like($results{ 'server[0]' }{ 'host' }, qr/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/, "Checking the server");
   TODO:
     {
 
     local $TODO = "Need to implement a check for varattrs"
        if (! defined $results{ 'varattrs'  }{ 'name' } );
 
-#    ok($results{ 'varattrs'  }{ 'name' } eq $mom_varattrs,                            "Checking varattrs"  );
+#    is($results{ 'varattrs'  }{ 'name' }, $mom_varattrs,                            "Checking varattrs"  );
 
     }; # END TODO:
  
@@ -270,29 +270,29 @@ sub test_level_1 ($)
   my %results = _parse_momctl($out);
 
   # Test the log level 1 results
-  ok($results{ 'host'                        } eq "$host/$mom_host",                                    "Checking the host");
-  ok($results{ 'version'                     } =~ /^${mom_version}/,                                    "Checking the version");
-  ok($results{ 'pid'                         } =~ /\d*/,                                                "Checking the pid");
-  ok($results{ 'homedirectory'               } eq $mom_home_dir,                                        "Checking the homedirectory");
+  is($results{ 'host'                        }, "$host/$mom_host",                                    "Checking the host");
+  like($results{ 'version'                     }, qr/^${mom_version}/,                                    "Checking the version");
+  like($results{ 'pid'                         }, qr/\d*/,                                                "Checking the pid");
+  is($results{ 'homedirectory'               }, $mom_home_dir,                                        "Checking the homedirectory");
   like($results{ 'stdout/stderrspooldirectory' }, qr#'$torque_spool_dir'\s+\(\d+ blocks available\)#, "Checking the 'stdout/stderr spool directory'");
-  ok($results{ 'momactive'                   } =~ /\d+ seconds/,                                        "Checking 'mom active'");
-  ok($results{ 'checkpolltime'               } =~ /${mom_poll_time}\sseconds/,                          "Checking the 'check poll time'");
-  ok($results{ 'serverupdateinterval'        } =~ /${mom_update_interval}\sseconds/,                    "Checking the 'server update interval'");
-  ok($results{ 'loglevel'                    } =~ /^\d{1,2}/,                                           "Checking 'log level'");
-  ok($results{ 'communicationmodel'          } eq $mom_comm_model,                                      "Checking the communication model");
-  ok($results{ 'memlocked'                   } =~ /${mom_mem_locked}\s+\(mlock\)/,                      "Checking the mem locked");
-# JR-TRQ-461  ok($results{ 'tcptimeout'                  } =~ /${mom_tcp_timeout}\s+seconds/,                       "Checking the tcp timeout");
-  ok($results{ 'trustedclientlist'           } =~ /${mom_client_list_regexp}/,                          "Checking the trusted client list");
-  ok($results{ 'copycommand'                 } eq $mom_copy_command,                                    "Checking the mom copy commmand");
+  like($results{ 'momactive'                   }, qr/\d+ seconds/,                                        "Checking 'mom active'");
+  like($results{ 'checkpolltime'               }, qr/${mom_poll_time}\sseconds/,                          "Checking the 'check poll time'");
+  like($results{ 'serverupdateinterval'        }, qr/${mom_update_interval}\sseconds/,                    "Checking the 'server update interval'");
+  like($results{ 'loglevel'                    }, qr/^\d{1,2}/,                                           "Checking 'log level'");
+  is($results{ 'communicationmodel'          }, $mom_comm_model,                                      "Checking the communication model");
+  like($results{ 'memlocked'                   }, qr/${mom_mem_locked}\s+\(mlock\)/,                      "Checking the mem locked");
+  like($results{ 'tcptimeout'                  }, qr/${mom_tcp_timeout}\s+seconds/,                       "Checking the tcp timeout");
+  like($results{ 'trustedclientlist'           }, qr/${mom_client_list_regexp}/,                          "Checking the trusted client list");
+  is($results{ 'copycommand'                 }, $mom_copy_command,                                    "Checking the mom copy commmand");
  
-  ok($results{ 'server[0]' }{ 'host' } =~ /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/, "Checking the server");
+  like($results{ 'server[0]' }{ 'host' }, qr/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/, "Checking the server");
   TODO:
     {
 
     local $TODO = "Need to implement a check for varattrs"
        if (! defined $results{ 'varattrs'  }{ 'name' } );
 
-#    ok($results{ 'varattrs'  }{ 'name' } eq $mom_varattrs,                            "Checking varattrs"  );
+#    is($results{ 'varattrs'  }{ 'name' }, $mom_varattrs,                            "Checking varattrs"  );
 
     }; # END TODO:
 
@@ -353,21 +353,21 @@ sub test_level_0 ($)
 
   my %results = _parse_momctl($out);
 
-  ok($results{ 'host'                        } eq "$host/$mom_host", "Checking the host"         );
-  ok($results{ 'version'                     } =~ /^${mom_version}/, "Checking the version"      );
-  ok($results{ 'pid'                         } =~ /\d*/,             "Checking the pid"          );
-  ok($results{ 'momactive'                   } =~ /\d+ seconds/,     "Checking 'mom active'"     );
-  ok($results{ 'homedirectory'               } eq $mom_home_dir,     "Checking the homedirectory");
-  ok($results{ 'loglevel'                    } =~ /^\d{1,2}/,        "Checking 'log level'"      );
+  is($results{ 'host'                        }, "$host/$mom_host", "Checking the host"         );
+  like($results{ 'version'                     }, qr/^${mom_version}/, "Checking the version"      );
+  like($results{ 'pid'                         }, qr/\d*/,             "Checking the pid"          );
+  like($results{ 'momactive'                   }, qr/\d+ seconds/,     "Checking 'mom active'"     );
+  is($results{ 'homedirectory'               }, $mom_home_dir,     "Checking the homedirectory");
+  like($results{ 'loglevel'                    }, qr/^\d{1,2}/,        "Checking 'log level'"      );
 
-  ok($results{ 'server[0]' }{ 'host' } =~ /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/, "Checking the server");
+  like($results{ 'server[0]' }{ 'host' }, qr/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/, "Checking the server");
   TODO:
     {
 
     local $TODO = "Need to implement a check for varattrs"
        if (! defined $results{ 'varattrs'  }{ 'name' } );
 
-#    ok($results{ 'varattrs'  }{ 'name' } eq $mom_varattrs,                            "Checking varattrs"  );
+#    is($results{ 'varattrs'  }{ 'name' }, $mom_varattrs,                            "Checking varattrs"  );
 
     }; # END TODO:
 
@@ -416,7 +416,7 @@ sub test_level_0 ($)
   ok(! defined $results{ 'stdout/stderrspooldirectory' }, "Checking that the 'stdout/stderr spool directory' is not printed");
   ok(! defined $results{ 'communicationmodel'          }, "Checking that the 'communication model' is not printed" );
   ok(! defined $results{ 'memlocked'                   }, "Checking that the 'mem locked' is not printed");
-# JR-TRQ-461  ok(! defined $results{ 'tcptimeout'                  }, "Checking that the 'tcp timeout' is not printed");
+  ok(! defined $results{ 'tcptimeout'                  }, "Checking that the 'tcp timeout' is not printed");
   ok(! defined $results{ 'trustedclientlist'           }, "Checking that the 'trusted client list' is not printed");
   ok(! defined $results{ 'prolog'                      }, "Checking that 'prolog' is not printed");
   ok(! defined $results{ 'alarmtime'                   }, "Checking that the 'alarm time' is not printed");
