@@ -31,7 +31,7 @@ execute_tests(
 # Tests that can make the environment unstable if they fail.  We want to limit
 # their impact on the test suite
   "$testbase/pbsnodes/release.bat",
-# JR-TRQ-405  "$testbase/pbs_sched/release.bat",
+  "$testbase/pbs_sched/release.bat",
   "$testbase/pbs_mom/release.bat",
   "$testbase/pbs_server/release.bat",
 );
