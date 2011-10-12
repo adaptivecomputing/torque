@@ -461,8 +461,6 @@ static int localmom(void)
       return(-1);
       }
 
-    assert((int)addr_info->ai_addrlen <= (int)sizeof(hostaddr));
-
     hostaddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
 
     have_addr = 1;
