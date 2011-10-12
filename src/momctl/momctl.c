@@ -475,6 +475,11 @@ int send_command(
 
   rc = diswsi(stream,cmd);
 
+  if (cmd == RM_CMD_CONFIG)
+    {
+    diswst(stream,ConfigBuf);
+    }
+
   DIS_tcp_wflush(stream);
 
   return(rc);

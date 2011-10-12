@@ -4311,7 +4311,7 @@ int rm_request(
   if (version != RM_PROTOCOL_VER)
     {
     sprintf(log_buffer, "protocol version %d unknown",
-            version);
+      version);
 
     goto bad;
     }
@@ -4322,7 +4322,7 @@ int rm_request(
     if (bad_restrict(ipadd))
       {
       sprintf(log_buffer, "bad attempt to connect - unauthorized (port: %d)",
-              port);
+        port);
 
       NotTrusted = 1;
 
@@ -4359,9 +4359,7 @@ int rm_request(
     case RM_CMD_REQUEST:
 
       /* query resource data */
-
       reqnum++;
-
 
       ret = diswsi(iochan, RM_RSP_OK);
 
