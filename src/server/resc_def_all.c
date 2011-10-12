@@ -353,6 +353,16 @@ resource_def svr_resc_def_const[] =
     NO_USER_SET | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG,
     ATR_TYPE_LONG
   },
+  { "gpus",      /* number of gpus for job */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    READ_ONLY | ATR_DFLAG_SvRD | ATR_DFLAG_SvWR,
+    ATR_TYPE_LONG
+  },
 
   /* the following are found only on Cray systems */
 

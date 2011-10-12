@@ -52,6 +52,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       have TORQUE attempt to create the directories for their output file if they don't exist
   b - Fixed momctl to return an error on failure. Prior to this fix momctl always returned 0
       regardless of success or failure.
+  e - Change to allow qsub -l ncpus=x:gpus=x which adds a resource list entry for both
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it
