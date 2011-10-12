@@ -93,6 +93,8 @@
 #include "svrfunc.h"
 #include "sched_cmds.h"
 #include "pbs_error.h"
+#include "../lib/Libdis/lib_dis.h" /* DIS_tcp_setup */
+#include "pbsd_main.h" /* process_pbs_server_port */
 
 /* Global Data */
 
@@ -195,7 +197,7 @@ static int contact_sched(
     pbs_scheduler_addr,
     pbs_scheduler_port,
     PBS_SOCK_INET,
-    process_request);
+    process_pbs_server_port);
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
 
@@ -221,6 +223,8 @@ static int contact_sched(
     }
     
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+
+  DIS_tcp_setup(sock);
 
   sprintf(log_buf, msg_sched_called, (cmd != SCH_ERROR) ? PSchedCmdType[cmd] : "ERROR");
 

@@ -88,6 +88,8 @@
 #include "node_info.h"
 #include "misc.h"
 #include "globals.h"
+#include "dis.h" /* DIS_tcp_setup */
+
 
 
 /* Internal functions */
@@ -431,6 +433,7 @@ int talk_with_mom(
       return 1;
       }
 
+    DIS_tcp_setup(mom_sd);
     for (i = 0; i < num_resget; i++)
       addreq(mom_sd, &local_errno, (char *) res_to_get[i]);
 

@@ -22,7 +22,7 @@ struct batch_request *setup_cpyfiles(struct batch_request *preq, job *pjob, char
 
 struct batch_request *cpy_stage(struct batch_request *preq, job *pjob, enum job_atr ati, int direction);
 
-int mom_comm(job *pjob, void (*func)(struct work_task *))
+int mom_comm(job *pjob, void (*func)(struct work_task *));
 
 void rel_resc(job *pjob);
 

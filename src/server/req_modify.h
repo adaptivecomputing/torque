@@ -6,6 +6,7 @@
 #include "attribute.h" /* svrattrl */
 #include "batch_request.h" /* batch_request */
 #include "pbs_job.h" /* job */
+#include "array.h" /* job_array */
 
 /* static void post_modify_req(struct work_task *pwt); */
 

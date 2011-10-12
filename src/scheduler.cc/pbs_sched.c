@@ -338,16 +338,21 @@ int
 socket_to_conn(int sock)
   {
   int     i;
+  pthread_mutexattr_t t_attr;
+  memset(&t_attr, 0, sizeof(pthread_mutexattr_t));
+  pthread_mutexattr_settype(&t_attr, PTHREAD_MUTEX_ERRORCHECK);
 
   for (i = 0; i < NCONNECTS; i++)
     {
     if (connection[i].ch_inuse == FALSE)
       {
-
+      connection[i].ch_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+      pthread_mutex_init(connection[i].ch_mutex, &t_attr);
       connection[i].ch_inuse = TRUE;
       connection[i].ch_errno = 0;
       connection[i].ch_socket = sock;
       connection[i].ch_errtxt = NULL;
+
       return (i);
       }
     }

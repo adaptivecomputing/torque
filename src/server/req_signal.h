@@ -7,7 +7,7 @@
 
 void req_signaljob(struct batch_request *preq);
 
-int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), void *extra)
+int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), void *extra);
 
 /* static void post_signal_req(struct work_task *pwt); */
 

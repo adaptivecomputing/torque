@@ -343,3 +343,9 @@ int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int 
   exit(1);
   }
 
+void destroy_request_pool(void)
+  {
+  fprintf(stderr, "The call to destroy_request_pool needs to be mocked!!\n");
+  exit(1);
+  }
+
