@@ -27,7 +27,6 @@ my $date_regex = '\d+/\d+/\d+ \d+:\d+:\d+';
 # Submit a job
 my $job_params = {
                 'user'       => $props->get_property( 'User.1' ),
-                'torque_bin' => "$home_dir/bin",
                 'sleep_time' => 60
               };
 

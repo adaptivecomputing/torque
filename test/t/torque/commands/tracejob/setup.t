@@ -28,6 +28,8 @@ stopTorque($torque_params)
 stopPbssched() 
   or die 'Unable to stop pbs_sched';
 
+runCommand('rm -f '.$props->get_property('Torque.Home.Dir').'/sched_logs/*');
+
 createMomCfg();
 createMomCfg({ host => $_ }) foreach @remote_moms;
 

@@ -221,7 +221,7 @@ sub startPbsmom #($)#
   my $pbs_mom_cmd  = "${torque_sbin}pbs_mom";
   $pbs_mom_cmd    .= " $args";
 
-  my $clean_cmd = "rm -f $torque_home/mom_priv/jobs/*";
+  my $clean_cmd = "rm -f $torque_home/mom_priv/jobs/*; rm -f $torque_home/mom_logs/*";
 
   # Start any Remote mom's
   if (scalar @$nodes)
@@ -474,7 +474,13 @@ SETUP
   my $pbs_cmd  = "$pbs_server_cmd -t create";
 
   # Clean server files
-  runCommand("rm -f $torque_home/server_priv/jobs/*", test_success => 1, msg => 'Cleaning Torque Server Files...');
+  my $clean_cmd = <<CMD;
+rm -f $torque_home/server_priv/jobs/*;
+rm -f $torque_home/server_priv/queues/*;
+rm -f $torque_home/server_priv/accounting/*;
+rm -f $torque_home/server_logs/*
+CMD
+  runCommand($clean_cmd, test_success => 1, msg => 'Cleaning Torque Server Files...');
 
   # Start the pbs server
   diag 'Attempting to Start PBS_Server Clean';
