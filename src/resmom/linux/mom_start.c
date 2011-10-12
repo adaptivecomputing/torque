@@ -496,11 +496,7 @@ void scan_for_terminated(void)
           statloc,
           exiteval);
 
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          id,
-          log_buffer);
+        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
         }
 
       continue;

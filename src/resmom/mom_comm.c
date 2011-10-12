@@ -1529,13 +1529,16 @@ int check_ms(
   struct sockaddr_in *addr;
   struct sockaddr     s_addr;
   unsigned int        len = sizeof(s_addr);
-  unsigned long       ipaddr;
+  unsigned long       ipaddr_connect;
+  hnodent            *np;
+  unsigned long       ipaddr_ms;
  
   getpeername(stream,&s_addr,&len);
   addr = (struct sockaddr_in *)&s_addr;
-  ipaddr = ntohl(addr->sin_addr.s_addr);
+  ipaddr_connect = ntohl(addr->sin_addr.s_addr);
 
-  if ((port_care != 0) && (ntohs(addr->sin_port) >= IPPORT_RESERVED))
+  if ((port_care != 0) && 
+      (ntohs(addr->sin_port) >= IPPORT_RESERVED))
     {
     sprintf(log_buffer, "non-privileged connection from %s",
             netaddr(addr));
@@ -1551,6 +1554,13 @@ int check_ms(
     {
     return(FALSE);
     }
+  
+  np = pjob->ji_hosts;
+  ipaddr_ms = ntohl(((struct sockaddr_in *)(&np->sock_addr))->sin_addr.s_addr);
+
+  /* make sure the ip addresses match */
+  if (ipaddr_ms != ipaddr_connect)
+    return(TRUE);
 
   if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
     {

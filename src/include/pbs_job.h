@@ -1022,15 +1022,15 @@ dir so that job can be restarted */
 /* Special Job Exit Values,  Set by the job starter (child of MOM)   */
 /* see server/req_jobobit() & mom/start_exec.c        */
 
-#define JOB_EXEC_OK    0 /* job exec successful */
-#define JOB_EXEC_FAIL1   -1 /* job exec failed, before files, no retry */
-#define JOB_EXEC_FAIL2   -2 /* job exec failed, after files, no retry  */
-#define JOB_EXEC_RETRY   -3 /* job execution failed, do retry    */
-#define JOB_EXEC_INITABT  -4 /* job aborted on MOM initialization */
-#define JOB_EXEC_INITRST  -5 /* job aborted on MOM init, checkpoint, no migrate */
-#define JOB_EXEC_INITRMG  -6 /* job aborted on MOM init, checkpoint, ok migrate */
-#define JOB_EXEC_BADRESRT -7 /* job restart failed */
-#define JOB_EXEC_CMDFAIL  -8 /* exec() of user command failed */
+#define JOB_EXEC_OK          0 /* job exec successful */
+#define JOB_EXEC_FAIL1      -1 /* job exec failed, before files, no retry */
+#define JOB_EXEC_FAIL2      -2 /* job exec failed, after files, no retry  */
+#define JOB_EXEC_RETRY      -3 /* job execution failed, do retry    */
+#define JOB_EXEC_INITABT    -4 /* job aborted on MOM initialization */
+#define JOB_EXEC_INITRST    -5 /* job aborted on MOM init, checkpoint, no migrate */
+#define JOB_EXEC_INITRMG    -6 /* job aborted on MOM init, checkpoint, ok migrate */
+#define JOB_EXEC_BADRESRT   -7 /* job restart failed */
+#define JOB_EXEC_CMDFAIL    -8 /* exec() of user command failed */
 #define JOB_EXEC_STDOUTFAIL -9 /* could not create/open stdout stderr files */
 
 extern void  add_dest(job *);
