@@ -11,7 +11,7 @@ use lib test_lib_loc();
 use CRI::Test;
 
 use Torque::Util        qw( run_and_check_cmd    );
-use Torque::Util::Regexp       qw( CHECKPOINT_FILE_NAME );
+use Torque::Test::Regexp       qw( CHECKPOINT_FILE_NAME );
 use Torque::Util::Qstat qw( qstat_fx       );
 
 use base 'Exporter';
@@ -173,7 +173,7 @@ Runs a series of tests on a given job to determine if it has been placed in the 
 
 =head1 DEPENDENDCIES
 
-Moab::Test, Torque::Util::Regexp, Torque::Util::Qstat
+Moab::Test, Torque::Test::Regexp, Torque::Util::Qstat
 
 =head1 AUTHOR(S)
 

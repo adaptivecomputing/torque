@@ -10,7 +10,7 @@ use lib test_lib_loc();
 
 # Test Modules
 use CRI::Test;
-use Torque::Util::Regexp       qw(
+use Torque::Test::Regexp       qw(
                                   HOST_STATES
                                  );
 use Torque::Util::Momctl qw(

@@ -14,7 +14,7 @@ use XML::Simple;
 use Torque::Util  qw(
                              list2array
                            );
-use Torque::Util::Regexp qw( 
+use Torque::Test::Regexp qw( 
                              HOST_STATES
                              NTYPES
                            );

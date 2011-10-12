@@ -18,7 +18,7 @@ use Torque::Job::Ctrl          qw(
 use Torque::Util::Qstat qw(
                                     qstat_fx
                                  );
-use Torque::Util::Regexp       qw(
+use Torque::Test::Regexp       qw(
                                     CHECKPOINT_FILE_NAME
                                  );
 

@@ -14,7 +14,7 @@ use Torque::Util    qw(
                                list2array
                                run_and_check_cmd 
                              );
-use Torque::Util::Regexp   qw( 
+use Torque::Test::Regexp   qw( 
                                HOST_STATES
                                NTYPES
                              );
