@@ -115,6 +115,7 @@ int add_verify_resources(
   char *str;
   char *name;
   char *value = NULL;
+  int   gpugres;
 
   int len;
 
@@ -226,15 +227,35 @@ int add_verify_resources(
      * the logic of last added element remains. All others are dropped off.
      * Instead of posponing all of this logic, it will now occur here.
      */
-    name = (char *)memmgr_calloc(mm, 1, len + 1);
-    if (v)
-      value = (char *)memmgr_calloc(mm, 1, (e - v) + 1);
+
+    gpugres = !strncmp(r,"gpus",strlen("gpus"));
+    if (gpugres)
+      {
+      name = (char *)memmgr_calloc(mm, 1, 5);
+      if (v)
+        value = (char *)memmgr_calloc(mm, 1, strlen(r) + 1);
+      }
+    else
+      {
+      name = (char *)memmgr_calloc(mm, 1, len + 1);
+      if (v)
+        value = (char *)memmgr_calloc(mm, 1, (e - v) + 1);
+      }
+
     if ((name) && ((v) && (value)))
       {
-      strncpy(name, r, len);
+      if (gpugres)
+        strncpy(name, "gres", 4);
+      else
+        strncpy(name, r, len);
+
       if (v)
         {
-        strncpy(value, v, e - v);
+        if (gpugres)
+          strncpy(value, r, strlen(r) + 1);
+        else
+          strncpy(value, v, e - v);
+
         hash_add_or_exit(mm, res_attr, name, value, p_type);
         }
       else
