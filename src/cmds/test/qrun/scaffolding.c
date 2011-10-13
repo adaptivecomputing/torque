@@ -11,6 +11,12 @@ int pbs_runjob(int c, char *jobid, char *location, char *extend)
   exit(1);
   }
 
+int pbs_runjob_err(int c, char *jobid, char *location, char *extend, int *local_err)
+  { 
+  fprintf(stderr, "The call to pbs_runjob_err needs to be mocked!!\n");
+  exit(1);
+  }
+
 int pbs_disconnect(int connect)
   { 
   fprintf(stderr, "The call to pbs_disconnect needs to be mocked!!\n");
@@ -20,6 +26,12 @@ int pbs_disconnect(int connect)
 int pbs_asyrunjob(int c, char *jobid, char *location, char *extend)
   { 
   fprintf(stderr, "The call to pbs_asyrunjob needs to be mocked!!\n");
+  exit(1);
+  }
+
+int pbs_asyrunjob_err(int c, char *jobid, char *location, char *extend, int *local_err)
+  { 
+  fprintf(stderr, "The call to pbs_asyrunjob_err needs to be mocked!!\n");
   exit(1);
   }
 

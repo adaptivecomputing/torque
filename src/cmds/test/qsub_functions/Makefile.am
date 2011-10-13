@@ -27,8 +27,8 @@ coverage_run.sh:
 
 build_test_files.sh:
 	echo 'echo No test files needed yet.' > $@
-	echo 'mkdir pbshome' >> $@
-	echo 'mkdir submitFilter' >> $@
+	echo 'mkdir -p pbshome' >> $@
+	echo 'mkdir -p submitFilter' >> $@
 	chmod +x $@
 
 CLEANFILES = coverage_run.sh build_test_files.sh *.gcno *.gcda *.gcov core *.log

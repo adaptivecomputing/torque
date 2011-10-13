@@ -35,6 +35,12 @@ int pbs_deljob( int c, char *jobid, char *extend)
   exit(1);
   }
 
+int pbs_deljob_err( int c, char *jobid, char *extend, int *local_errno)
+  { 
+  fprintf(stderr, "The call to pbs_deljob_err needs to be mocked!!\n");
+  exit(1);
+  }
+
 void prt_job_err(char *cmd, int connect, char *id)
   { 
   fprintf(stderr, "The call to prt_job_err needs to be mocked!!\n");

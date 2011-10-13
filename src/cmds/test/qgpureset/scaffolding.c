@@ -28,6 +28,12 @@ int pbs_gpureset(int c, char *node, char *gpuid, int permanent, int vol)
   exit(1);
   }
 
+int pbs_gpureset_err(int c, char *node, char *gpuid, int permanent, int vol, int *local_errno)
+  {
+  fprintf(stderr, "The call to pbs_gpureset_err needs to be mocked!!\n");
+  exit(1);
+  }
+
 char *pbs_strerror(int err)
   { 
   fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");

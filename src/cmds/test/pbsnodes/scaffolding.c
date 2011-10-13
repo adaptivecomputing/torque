@@ -45,9 +45,15 @@ int cnt2server(char *SpecServer)
   exit(1);
   }
 
-struct batch_status *pbs_statnode(int c, char *id, struct attrl *attrib, char *extend, int *local_errno)
+struct batch_status *pbs_statnode(int c, char *id, struct attrl *attrib, char *extend)
   { 
   fprintf(stderr, "The call to pbs_statnode needs to be mocked!!\n");
+  exit(1);
+  }
+
+struct batch_status *pbs_statnode_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno)
+  { 
+  fprintf(stderr, "The call to pbs_statnode_err needs to be mocked!!\n");
   exit(1);
   }
 
@@ -69,9 +75,15 @@ int MXMLAddE(mxml_t *E, mxml_t *C)
   exit(1);
   }
 
-int pbs_manager(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *local_errno)
+int pbs_manager(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend)
   { 
   fprintf(stderr, "The call to pbs_manager needs to be mocked!!\n");
+  exit(1);
+  }
+
+int pbs_manager_err(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *local_errno)
+  { 
+  fprintf(stderr, "The call to pbs_manager_err needs to be mocked!!\n");
   exit(1);
   }
 

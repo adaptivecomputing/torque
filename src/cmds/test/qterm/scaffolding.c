@@ -28,6 +28,12 @@ int pbs_terminate(int c, int manner, char *extend)
   exit(1);
   }
 
+int pbs_terminate_err(int c, int manner, char *extend, int *local_errno) 
+  {
+  fprintf(stderr, "The call to pbs_terminate_err needs to be mocked!!\n");
+  exit(1);
+  }
+
 char *pbs_strerror(int err)
   {
   fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");

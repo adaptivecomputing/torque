@@ -29,6 +29,12 @@ int pbs_holdjob(int c, char *jobid, char *holdtype, char *extend)
   exit(1);
   }
 
+int pbs_holdjob_err(int c, char *jobid, char *holdtype, char *extend, int *local_errno)
+  { 
+  fprintf(stderr, "The call to pbs_holdjob_err needs to be mocked!!\n");
+  exit(1);
+  }
+
 int get_server(char *job_id_in, char *job_id_out, char *server_out)
   {
   fprintf(stderr, "The call to get_server needs to be mocked!!\n");

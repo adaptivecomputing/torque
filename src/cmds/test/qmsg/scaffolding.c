@@ -29,6 +29,12 @@ int pbs_msgjob(int   c, char *jobid, int   fileopt, char *msg, char *extend)
   exit(1);
   }
 
+int pbs_msgjob_err(int   c, char *jobid, int   fileopt, char *msg, char *extend, int *local_errno)
+  {
+  fprintf(stderr, "The call to pbs_msgjob_err needs to be mocked!!\n");
+  exit(1);
+  }
+
 int get_server(char *job_id_in, char *job_id_out, char *server_out)
   {
   fprintf(stderr, "The call to get_server needs to be mocked!!\n");

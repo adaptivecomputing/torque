@@ -52,3 +52,9 @@ int pbs_movejob(int c, char *jobid, char *destin, char *extend)
   fprintf(stderr, "The call to pbs_movejob needs to be mocked!!\n");
   exit(1);
   }
+
+int pbs_movejob_err(int c, char *jobid, char *destin, char *extend, int *local_errno)
+  {
+  fprintf(stderr, "The call to pbs_movejob_err needs to be mocked!!\n");
+  exit(1);
+  }

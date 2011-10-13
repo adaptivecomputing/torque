@@ -13,9 +13,15 @@ char *pbs_geterrmsg(int connect)
   exit(1);
   }
 
-struct batch_status * pbs_selstat(int c, struct attropl *attrib, char *extend, int *any_failed)
+struct batch_status * pbs_selstat(int c, struct attropl *attrib, char *extend)
   { 
   fprintf(stderr, "The call to pbs_selstat needs to be mocked!!\n");
+  exit(1);
+  }
+
+struct batch_status * pbs_selstat_err(int c, struct attropl *attrib, char *extend, int *any_failed)
+  { 
+  fprintf(stderr, "The call to pbs_selstat_err needs to be mocked!!\n");
   exit(1);
   }
 
@@ -25,9 +31,15 @@ int TShowAbout_exit(void)
   exit(1);
   }
 
-struct batch_status *pbs_statserver(int c, struct attrl *attrib, char *extend, int *local_errno)
+struct batch_status *pbs_statserver(int c, struct attrl *attrib, char *extend)
   { 
   fprintf(stderr, "The call to pbs_statserver needs to be mocked!!\n");
+  exit(1);
+  }
+
+struct batch_status *pbs_statserver_err(int c, struct attrl *attrib, char *extend, int *local_errno)
+  { 
+  fprintf(stderr, "The call to pbs_statserver_err needs to be mocked!!\n");
   exit(1);
   }
 
@@ -73,6 +85,12 @@ struct batch_status *pbs_statjob(int c, char *id, struct attrl *attrib, char *ex
   exit(1);
   }
 
+struct batch_status *pbs_statjob_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno)
+  { 
+  fprintf(stderr, "The call to pbs_statjob_err needs to be mocked!!\n");
+  exit(1);
+  }
+
 void pbs_statfree(struct batch_status *bsp)
   { 
   fprintf(stderr, "The call to pbs_statfree needs to be mocked!!\n");
@@ -115,9 +133,15 @@ char *pbs_strerror(int err)
   exit(1);
   }
 
-struct batch_status *pbs_statque(int c, char *id, struct attrl *attrib, char *extend, int *local_errno)
+struct batch_status *pbs_statque(int c, char *id, struct attrl *attrib, char *extend)
   { 
   fprintf(stderr, "The call to pbs_statque needs to be mocked!!\n");
+  exit(1);
+  }
+
+struct batch_status *pbs_statque_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno)
+  { 
+  fprintf(stderr, "The call to pbs_statque_err needs to be mocked!!\n");
   exit(1);
   }
 

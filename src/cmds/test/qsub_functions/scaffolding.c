@@ -161,6 +161,12 @@ int pbs_deljob( int c, char *jobid, char *extend)
   exit(1);
   }
 
+int pbs_deljob_err( int c, char *jobid, char *extend, int *local_errno)
+  {
+  printf("Error, stub must be completed");
+  exit(1);
+  }
+
 void calloc_or_fail( char **dest, int alloc_size, char *err_msg)
   {
   printf("Error, stub must be completed");

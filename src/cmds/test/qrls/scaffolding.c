@@ -23,6 +23,12 @@ int pbs_rlsjob(int c, char *jobid, char *holdtype, char *extend, int *any_failed
   exit(1);
   }
 
+int pbs_rlsjob_err(int c, char *jobid, char *holdtype, char *extend, int *any_failed)
+  { 
+  fprintf(stderr, "The call to pbs_rlsjob_err needs to be mocked!!\n");
+  exit(1);
+  }
+
 int cnt2server(char *SpecServer)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");

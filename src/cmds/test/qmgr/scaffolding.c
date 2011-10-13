@@ -12,9 +12,15 @@ char *pbs_geterrmsg(int connect)
   exit(1);
   }
 
-struct batch_status *pbs_statserver(int c, struct attrl *attrib, char *extend, int *local_errno)
+struct batch_status *pbs_statserver(int c, struct attrl *attrib, char *extend)
   { 
   fprintf(stderr, "The call to pbs_statserver needs to be mocked!!\n");
+  exit(1);
+  }
+
+struct batch_status *pbs_statserver_err(int c, struct attrl *attrib, char *extend, int *local_errno)
+  { 
+  fprintf(stderr, "The call to pbs_statserver_err needs to be mocked!!\n");
   exit(1);
   }
 
@@ -36,9 +42,15 @@ int pbs_query_max_connections(void)
   exit(1);
   }
 
-struct batch_status *pbs_statnode(int c, char *id, struct attrl *attrib, char *extend, int *local_errno)
+struct batch_status *pbs_statnode(int c, char *id, struct attrl *attrib, char *extend)
   { 
   fprintf(stderr, "The call to pbs_statnode needs to be mocked!!\n");
+  exit(1);
+  }
+
+struct batch_status *pbs_statnode_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno)
+  { 
+  fprintf(stderr, "The call to pbs_statnode_err needs to be mocked!!\n");
   exit(1);
   }
 
@@ -48,9 +60,15 @@ void pbs_statfree(struct batch_status *bsp)
   exit(1);
   }
 
-int pbs_manager(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *local_errno)
+int pbs_manager(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend)
   { 
   fprintf(stderr, "The call to pbs_manager needs to be mocked!!\n");
+  exit(1);
+  }
+
+int pbs_manager_err(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *local_errno)
+  { 
+  fprintf(stderr, "The call to pbs_manager_err needs to be mocked!!\n");
   exit(1);
   }
 
@@ -60,9 +78,15 @@ char *pbs_strerror(int err)
   exit(1);
   }
 
-struct batch_status *pbs_statque(int c, char *id, struct attrl *attrib, char *extend, int *local_errno)
+struct batch_status *pbs_statque(int c, char *id, struct attrl *attrib, char *extend)
   { 
   fprintf(stderr, "The call to pbs_statque needs to be mocked!!\n");
+  exit(1);
+  }
+
+struct batch_status *pbs_statque_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno)
+  { 
+  fprintf(stderr, "The call to pbs_statque_err needs to be mocked!!\n");
   exit(1);
   }
 
