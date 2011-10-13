@@ -266,3 +266,9 @@ int disrsi(int stream, int *retval)
   exit(1);
   }
 
+int pbs_disconnect_socket(int sock)
+  {
+  fprintf(stderr, "The call to pbs_disconnect_socket needs to be mocked!!\n");
+  exit(1);
+  }
+

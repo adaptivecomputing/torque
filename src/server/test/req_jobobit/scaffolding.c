@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <time.h> /* timeval */
+#include <pthread.h> /* pthread_mutex_t */
 
 #include "attribute.h" /* attribute_def, svrattrl, attribute */
 #include "net_connect.h" /* pbs_net_t, conn_type */
@@ -36,7 +37,8 @@ int LOGLEVEL = 0;
 char *msg_obitnodel = "Unable to delete files for job %s, on host %s";
 char *msg_momnoexec1 = "Job cannot be executed\nSee Administrator for help";
 char *msg_job_end_stat = "Exit_status=%d";
-
+pthread_mutex_t *svr_do_schedule_mutex;
+pthread_mutex_t *listener_command_mutex;
 
 
 

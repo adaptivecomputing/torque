@@ -3,11 +3,12 @@
 #include "license_pbs.h" /* See here for the software license */
 
 #include "pbs_job.h" /* job */
-#include "svrfuc.h" /* stat_cntl */
 #include "work_task.h" /* work_task */
 #include "batch_request.h" /* batch_request */
 #include "pbs_nodes.h" /* pbsnode */
 #include "list_link.h" /* tlist_head */
+#define STAT_CNTL
+#include "svrfunc.h" /* stat_cntl */
 
 void *req_stat_job(void *vp);
 

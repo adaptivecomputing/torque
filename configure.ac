@@ -2034,7 +2034,6 @@ AC_OUTPUT(buildutils/pbs_mkdirs
     src/server/test/resc_def_all/Makefile
     src/server/test/run_sched/Makefile
     src/server/test/stat_job/Makefile
-    src/server/test/svr_attr_def/Makefile
     src/server/test/svr_chk_owner/Makefile
     src/server/test/svr_connect/Makefile
     src/server/test/svr_format_job/Makefile

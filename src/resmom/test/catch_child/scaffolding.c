@@ -1277,3 +1277,10 @@ int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
   {
   return 1;
   }
+
+int pbs_disconnect_socket(int sock)
+  {                           
+  return 1;
+  }       
+
+

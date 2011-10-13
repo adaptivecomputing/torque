@@ -8,7 +8,7 @@ int token_chk(attribute *pattr, void *pobject, int actmode);
  
 int compare_tokens(char *token1, char *token2);
 
-static int chk_dup_token(struct array_strings *old, struct array_strings *new);
+/* static int chk_dup_token(struct array_strings *old, struct array_strings *new); */
 
 int set_tokens(struct attribute *attr, struct attribute *new, enum batch_op op);
 

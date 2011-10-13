@@ -6,7 +6,7 @@
 #include "array.h" /* job_array */
 #include "attribute.h" /* attribute, batch_op */
 #include "pbs_job.h" /* job */
-#include "link_list.h" /* tlist_head */
+#include "list_link.h" /* tlist_head */
 
 void req_register(struct batch_request *preq);
 

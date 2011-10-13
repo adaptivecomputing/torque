@@ -4,6 +4,7 @@
 
 #include "batch_request.h" /* batch_request */
 #include "pbs_job.h" /* job */
+#include "work_task.h" /* work_task */
 
 void req_signaljob(struct batch_request *preq);
 
