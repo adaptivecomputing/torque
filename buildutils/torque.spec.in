@@ -97,7 +97,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 %description
 TORQUE is an open source resource manager providing control over batch
 jobs and distributed compute nodes. It is a community effort based on
-the original *PBS project and, with more than 1,200 patches, has
+the original *PBS project and, with more than 5,200 patches, has
 incorporated significant advances in the areas of scalability, fault
 tolerance, and feature extensions contributed by NCSA, OSC, USC, the
 U.S. Dept of Energy, Sandia, PNNL, U of Buffalo, TeraGrid, and many
