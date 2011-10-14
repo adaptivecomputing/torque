@@ -10,10 +10,7 @@ use lib test_lib_loc();
 
 # Test Modules
 use CRI::Test;
-use Torque::Ctrl           qw(
-                              startTorque
-                              stopTorque
-                             );
+use Torque::Ctrl;
 use Torque::Util    qw( 
                               list2array
                              );
@@ -30,7 +27,7 @@ my $cmd;
 my $server         = $props->get_property('Test.Host');
 my $nodes_str      = $props->get_property('Test.Host');
 my @nodes          = list2array($nodes_str);
-my $properties_str = $props->get_property('torque.node.args');
+my $properties_str = $props->get_property('node.properties');
 my @properties     = list2array($properties_str);
 my $output;
 my %pbsnodes;
@@ -68,3 +65,4 @@ foreach my $property (@properties)
 
 # Restart Torque
 startTorque();
+syncServerMom();

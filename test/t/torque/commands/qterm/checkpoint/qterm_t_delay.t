@@ -34,7 +34,6 @@ syncServerMom($sync_href);
 # Submit a job
 my $job_params = {
                    'user'       => $props->get_property( 'User.1' ),
-                   'torque_bin' => $props->get_property( 'Torque.Home.Dir' ) . '/bin',
                    'app'        => "$FindBin::Bin/../../../test_programs/test.pl",
                    'c_value'    => 'shutdown'
                  };
@@ -52,12 +51,10 @@ runJobs($job_id2);
 my $qterm_cmd = "qterm -t delay";
 my %qterm     = run_and_check_cmd($qterm_cmd);
 
-# sleep for a few seconds
-sleep 5;
+sleep_diag 5;
 
 # Restart pbs_server
 diag("Restarting the pbs_server");
-stopPbsserver();
 startPbsserver();
 syncServerMom($sync_href);
 

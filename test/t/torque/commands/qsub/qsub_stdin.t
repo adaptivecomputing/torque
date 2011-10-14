@@ -8,6 +8,7 @@ use TestLibFinder;
 use lib test_lib_loc();
 
 use CRI::Test;
+use Torque::Job::Ctrl qw( delJobs );
 
 plan('no_plan');
 setDesc('Qsub stdin Test');
@@ -38,3 +39,5 @@ foreach my $line (@stdout)
 }
 
 cmp_ok($jobName,'eq',"STDIN",'Checking job name');
+
+delJobs();

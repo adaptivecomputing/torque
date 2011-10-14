@@ -26,7 +26,7 @@ setDesc("pbsnodes");
 my $cmd;
 my $nodes_str      = $props->get_property('Test.Host');
 my @nodes          = list2array($nodes_str);
-my $properties_str = $props->get_property('torque.node.args');
+my $properties_str = $props->get_property('node.properties');
 my @properties     = list2array($properties_str);
 my $output;
 my %pbsnodes;

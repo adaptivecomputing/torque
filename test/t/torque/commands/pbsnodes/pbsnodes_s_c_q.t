@@ -35,7 +35,7 @@ my $server   = $props->get_property('Test.Host');
 my $cmd      = "pbsnodes -s $server";
 my $c_cmd    = "pbsnodes -s $server -c $node";
 my $o_cmd    = "pbsnodes -s $server -o $node";
-my @properties = list2array($props->get_property('torque.node.args'));
+my @properties = list2array($props->get_property('node.properties'));
 my %pbsnodes;
 my %output;
 

@@ -50,3 +50,9 @@ CFG
 # Restart Torque
 startTorqueClean($torque_params)
   or die 'Unable to start Torque';
+
+my @node_properties = ($props->get_property('torque.node.args') =~ /\s(\w+)/g);
+
+setProps(
+  'node.properties' => join(' ', @node_properties),
+);

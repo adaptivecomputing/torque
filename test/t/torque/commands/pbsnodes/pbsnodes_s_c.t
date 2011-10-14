@@ -26,7 +26,7 @@ my $server     = $props->get_property('Test.Host');
 my $cmd        = "pbsnodes -s $server";
 my $c_cmd      = "pbsnodes -s $server -c $node";
 my $o_cmd      = "pbsnodes -s $server -o $node";
-my @properties = list2array($props->get_property('torque.node.args'));
+my @properties = list2array($props->get_property('node.properties'));
 my %pbsnodes;
 my %output;
 
@@ -34,13 +34,13 @@ my %output;
 run_and_check_cmd($o_cmd);
 %pbsnodes = run_and_check_cmd($cmd);
 %output   = parse_output($pbsnodes{ 'STDOUT' });
-ok($output{ $node }{ 'state' } eq 'offline', "Checking for the offline state");
+like($output{ $node }{ 'state' }, qr/\boffline\b/, "Checking for the offline state");
 
 # Run the clear command
 run_and_check_cmd($c_cmd);
 %pbsnodes = run_and_check_cmd($cmd);
 %output   = parse_output($pbsnodes{ 'STDOUT' });
-ok($output{ $node }{ 'state' } eq 'free', "Checking for the free state");
+unlike($output{ $node }{ 'state' }, qr/\boffline\b/, "Checking that nodes are on longer offline");
 
 # Check for a given property
 foreach my $property (@properties)
@@ -54,12 +54,12 @@ foreach my $property (@properties)
   run_and_check_cmd($o_cmd);
   %pbsnodes = run_and_check_cmd($cmd);
   %output   = parse_output($pbsnodes{ 'STDOUT' });
-  ok($output{ $node }{ 'state' } eq 'offline', "Checking for the offline state");
+  like($output{ $node }{ 'state' }, qr/\boffline\b/, "Checking for the offline state");
 
   # Run the clear command
   run_and_check_cmd($c_cmd);
   %pbsnodes = run_and_check_cmd($cmd);
   %output   = parse_output($pbsnodes{ 'STDOUT' });
-  ok($output{ $node }{ 'state' } eq 'free', "Checking for the free state");
+  unlike($output{ $node }{ 'state' }, qr/\boffline\b/, "Checking that nodes are on longer offline");
 
   } # END foreach my $node (@properties) 

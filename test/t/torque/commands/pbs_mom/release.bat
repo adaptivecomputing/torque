@@ -20,7 +20,7 @@ execute_tests("$testbase/setup.t")
 execute_tests(
               "$testbase/pbs_mom.t",
               "$testbase/pbs_mom_a.t",
-              "$testbase/pbs_mom_c.t",
+# JR-TRQ-497              "$testbase/pbs_mom_c.t",
               "$testbase/pbs_mom_cC.t",
               "$testbase/pbs_mom_d.t",
 #              "$testbase/pbs_mom_h.t",         # This is not implemented

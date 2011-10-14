@@ -26,7 +26,7 @@ my @jaids       = ();
 
 # Perform the test
 $qref = {
-          'flags' => "-t $id_exp",
+          'flags' => "-t $id_exp -l nodes=1:ppn=1",
         };
 $jid = qsub($qref);
 sleep_diag(1, "Allow time for the job to queue");
