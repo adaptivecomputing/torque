@@ -2,8 +2,8 @@ LD_LIBRARY_PATH = /usr/test/torque/lib:/usr/test/blcr/lib
 
 torque.queue.one           = batch
 torque.queue.two           = batch2
-torque.node.np             = 2
-torque.node.args           = fast terabyte
+torque.node.np             = 10
+torque.node.args           = np=10 fast terabyte
 torque.checkpoint_script   = /usr/test/torque/mom_priv/blcr_checkpoint_script
 torque.restart_script      = /usr/test/torque/mom_priv/blcr_restart_script
 torque.checkpoint_run_exe  = /usr/test/blcr/bin/cr_run
