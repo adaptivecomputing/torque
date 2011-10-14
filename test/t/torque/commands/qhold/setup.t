@@ -9,10 +9,7 @@ use lib test_lib_loc();
 
 
 use CRI::Test;
-use Torque::Ctrl        qw( startTorque 
-                            stopTorque 
-                            stopPbssched
-                          );
+use Torque::Ctrl;
 use Torque::Util qw( 
                             run_and_check_cmd
                             list2array             
