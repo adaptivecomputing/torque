@@ -478,34 +478,18 @@ void req_quejob(
     }
 
   /* set remaining job structure elements */
-
   pj->ji_qs.ji_state =    JOB_STATE_TRANSIT;
-
   pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSIN;
 
   pj->ji_wattr[JOB_ATR_mtime].at_val.at_long = (long)time_now;
-
   pj->ji_wattr[JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
 
   pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
-
   pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
-
   pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock,FALSE);
-
   pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
 
-  /* make sure the user exists */
-  if ((pj->ji_grpcache == NULL) && 
-      (check_pwd(pj) == NULL))
-    {
-    req_reject(PBSE_BADUSER, 0, preq, NULL, "User does not exist on this node");
-
-    return;
-    }
-
   /* acknowledge the request with the job id */
-
   if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) != 0)
     {
     /* reply failed, purge the job and close the connection */
@@ -518,7 +502,6 @@ void req_quejob(
     }
 
   /* link job into server's new jobs list request  */
-
   append_link(&svr_newjobs, &pj->ji_alljobs, pj);
 
   return;
