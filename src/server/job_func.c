@@ -1700,11 +1700,12 @@ void job_purge(
 
     /* if there are no more jobs in the arry,
      * then we can clean that up too */
+    pa->ai_qs.num_purged++;
     if (++pa->ai_qs.jobs_done == pa->ai_qs.num_jobs)
       {
-      array_delete(pjob->ji_arraystruct);
+      if (pa->ai_qs.num_purged == pa->ai_qs.num_jobs)
+        array_delete(pjob->ji_arraystruct);
       }
-    array_save(pa);
     }
 
   if ((pjob->ji_is_array_template == TRUE) ||
