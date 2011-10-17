@@ -4919,6 +4919,410 @@ int add_gpu_to_hostlist(
 
 
 
+/*
+ * checks the gpus of pnode and places them in gpu_list as necessary
+ */
+
+int place_gpus_in_hostlist(
+
+  struct pbsnode  *pnode,
+  job             *pjob,
+  struct howl    **gpu_list)
+
+  {
+  static char    *id = "place_gpus_in_hostlist";
+  int             j;
+  struct gpusubn *gn;
+
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+
+  /* place the gpus in the hostlist as well */
+  for (j = 0; j < pnode->nd_ngpus && pnode->nd_ngpus_needed > 0; j++)
+    {
+    sprintf(log_buf,
+      "node: %s j %d ngpus %d need %d",
+      pnode->nd_name,
+      j,
+      pnode->nd_ngpus,
+      pnode->nd_ngpus_needed);
+    
+    if (LOGLEVEL >= 7)
+      {
+      log_ext(-1, id, log_buf, LOG_DEBUG);
+      }
+    DBPRT(("%s\n", log_buf));
+    
+    gn = pnode->nd_gpusn + j;
+    if ((gn->state == gpu_unavailable) ||
+#ifdef NVIDIA_GPUS
+        ((gn->state == gpu_exclusive) && pnode->nd_gpus_real) ||
+        ((pnode->nd_gpus_real) &&
+         ((int)gn->mode == gpu_normal) &&
+         ((gpu_mode_rqstd != gpu_normal) && (gn->state != gpu_unallocated))) ||
+        ((!pnode->nd_gpus_real) && 
+         (gn->inuse == TRUE)))
+#else
+      (gn->inuse == TRUE))
+#endif  /* NVIDIA_GPUS */
+        continue;
+    
+    add_job_to_gpu_subnode(pnode,gn,pjob);
+    
+    sprintf(log_buf,
+      "ADDING gpu %s/%d to exec_gpus still need %d",
+      pnode->nd_name,
+      j,
+      pnode->nd_ngpus_needed);
+
+    if (LOGLEVEL >= 7)
+      {
+      log_ext(-1, id, log_buf, LOG_DEBUG);
+      }
+    DBPRT(("%s\n", log_buf));
+    
+    add_gpu_to_hostlist(gpu_list,gn,pnode);
+    
+#ifdef NVIDIA_GPUS
+    /*
+     * If this a real gpu in exclusive/single job mode, or a gpu in default
+     * mode and the job requested an exclusive mode then we change state
+     * to exclusive so we cannot assign another job to it
+     */
+    
+    if ((pnode->nd_gpus_real) && 
+        ((gn->mode == gpu_exclusive_thread) ||
+         (gn->mode == gpu_exclusive_process) ||
+         ((gn->mode == gpu_normal) && 
+          ((gpu_mode_rqstd == gpu_exclusive_thread) ||
+           (gpu_mode_rqstd == gpu_exclusive_process)))))
+      {
+      gn->state = gpu_exclusive;
+      
+      sprintf(log_buf,
+        "Setting gpu %s/%d to state EXCLUSIVE for job %s",
+        pnode->nd_name,
+        j,
+        pjob->ji_qs.ji_jobid);
+      
+      if (LOGLEVEL >= 7)
+        {
+        log_ext(-1, id, log_buf, LOG_DEBUG);
+        }
+      }
+    
+    /*
+     * If this a real gpu in shared/default job mode and the state is
+     * unallocated then we change state to shared so only other shared jobs
+     * can use it
+     */
+    
+    if ((pnode->nd_gpus_real) && (gn->mode == gpu_normal) && 
+        (gpu_mode_rqstd == gpu_normal) && (gn->state == gpu_unallocated))
+      {
+      gn->state = gpu_shared;
+      
+      sprintf(log_buf,
+        "Setting gpu %s/%d to state SHARED for job %s",
+        pnode->nd_name,
+        j,
+        pjob->ji_qs.ji_jobid);
+      
+      if (LOGLEVEL >= 7)
+        {
+        log_ext(-1, id, log_buf, LOG_DEBUG);
+        }
+      }
+#endif  /* NVIDIA_GPUS */
+    }
+
+  return(PBSE_NONE);
+  } /* END place_gpus_in_list() */
+
+
+
+/*
+ * checks the subnodes of pnode and places them in the host list
+ * as necessary
+ */
+
+int place_subnodes_in_hostlist(
+
+  struct howl    **hlist,
+  job             *pjob,
+  short            newstate,
+  struct pbsnode  *pnode)
+
+  {
+  struct pbssubn *snp;
+
+  /* place the subnodes (nps) in the hostlist */
+  for (snp = pnode->nd_psn;snp && pnode->nd_needed;snp = snp->next)
+    {
+    if (exclusive)
+      {
+      if (snp->inuse != INUSE_FREE)
+        continue;
+      }
+    else
+      {
+      if ((snp->inuse != INUSE_FREE) && (snp->inuse != INUSE_JOBSHARE))
+        {
+        continue;
+        }
+      }
+    
+    /* Mark subnode as being IN USE */
+    add_job_to_node(pnode,snp,newstate,pjob,exclusive);
+    
+    build_host_list(hlist,snp,pnode);
+    }  /* END for (snp) */
+
+  return(PBSE_NONE);
+  } /* END place_subnodes_in_hostlist() */
+
+
+
+/*
+ * takes a struct howl and translates it to a string that will
+ * become a job attribute (exec_hosts, exec_gpus, exec_ports)
+ * NOTE: frees list (the struct howl)
+ */
+
+int translate_howl_to_string(
+
+  struct howl  *list,
+  char         *EMsg,
+  int          *NCount,
+  char        **str_ptr,
+  char        **portstr_ptr,
+  int           port)
+
+  {
+  static char *id = "translate_howl_to_string";
+  struct howl *hp;
+  struct howl *next;
+  size_t       len = 1;
+  int          count = 1;
+  char        *str;
+  char        *portlist = NULL;
+
+  for (hp = list;hp != NULL;hp = hp->next)
+    {
+    len += (strlen(hp->name) + 6);
+    count++;
+    }
+
+  if ((str = malloc(len + 1)) == NULL)
+    {
+    log_err(ENOMEM, id, "Cannot allocate memory!");
+
+    if (EMsg != NULL)
+      sprintf(EMsg,"no nodes can be allocated to job");
+    
+    return(PBSE_RESCUNAV);
+    }
+
+  *str = '\0';
+
+  if (port == TRUE)
+    {
+    /* port list will have a string of sister port addresses */
+    if ((portlist = malloc((count * PBS_MAXPORTNUM) + count)) == NULL)
+      {
+      log_err(ENOMEM, id, "Cannot allocate memory!");
+      
+      if (EMsg != NULL)
+        sprintf(EMsg,"no nodes can be allocated to job");
+      
+      return(PBSE_RESCUNAV);
+      }
+  
+    *portlist = '\0';
+    }
+
+  /* now copy in name+name+... */
+  *NCount = 0;
+
+  for (hp = list; hp != NULL; hp = next)
+    {
+    (*NCount)++;
+
+    sprintf(str + strlen(str), "%s/%d+",
+      hp->name,
+      hp->index);
+
+    if (port == TRUE)
+      sprintf(portlist + strlen(portlist), "%d+", hp->port);
+
+    next = hp->next;
+
+    free(hp);
+    }
+
+  /* strip trailing '+' and assign pointers */
+  str[strlen(str) - 1] = '\0';
+  *str_ptr = str;
+
+  if (port == TRUE)
+    {
+    portlist[strlen(portlist) - 1] = '\0';
+    *portstr_ptr = portlist;
+    }
+
+  return(PBSE_NONE);
+  } /* END translate_howl_to_string() */
+
+
+
+
+/*
+ * builds the hostlist based on the nodes=... part of the request
+ */
+
+int build_hostlist_nodes_req(
+    
+  job          *pjob,     /* M */
+  char         *EMsg,     /* O */
+  char         *spec,     /* I */
+  short         newstate, /* I */
+  struct howl **hlist,    /* O */
+  struct howl **gpu_list) /* O */
+
+  {
+  struct pbsnode *pnode = NULL;
+
+  node_iterator   iter;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+
+  reinitialize_node_iterator(&iter);
+
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+    {
+    if (pnode->nd_flag != thinking)
+      {
+      /* node is not considered/eligible for job - see search() */
+      continue;
+      }
+
+    /* within the node, check each subnode */
+#ifdef GEOMETRY_REQUESTS
+    if (ProcBMStr[0] != '\0')
+      {
+      /* check node here, a request was given */
+      if (node_satisfies_request(pnode,ProcBMStr) == TRUE)
+        {
+        reserve_node(pnode, newstate, pjob, ProcBMStr, hlist);
+        }
+
+      continue;
+      }
+#endif /* GEOMETRY_REQUESTS */
+
+    place_gpus_in_hostlist(pnode, pjob, gpu_list);
+
+    /* make sure we found gpus to use, if job needed them */
+    if (pnode->nd_ngpus_needed > 0)
+      {
+      /* no resources located, request failed */      
+      if (EMsg != NULL)
+        {
+        sprintf(log_buf,
+          "could not locate requested gpu resources '%.4000s' (node_spec failed) %s",
+          spec,
+          EMsg);
+        
+        log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+        }
+
+      unlock_node(pnode, "set_nodes", NULL, LOGLEVEL);
+      
+      return(PBSE_RESCUNAV);
+      }
+
+    place_subnodes_in_hostlist(hlist, pjob, newstate, pnode);
+    } /* END for each node */
+
+  return(PBSE_NONE);
+  } /* END build_hostlist_nodes_req() */
+
+
+
+
+int build_hostlist_procs_req(
+
+  job          *pjob,     /* M */
+  int           procs,    /* I */
+  short         newstate, /* I */
+  struct howl **hlist)    /* O */
+
+  {
+  int             procs_needed;
+  node_iterator   iter;
+  struct pbsnode *pnode = NULL;
+  struct pbssubn *snp;
+
+  /* did we have a request for procs? Do those now */
+  if (procs > 0)
+    {
+    /* check to see if a -l nodes request was made */
+    if (pjob->ji_have_nodes_request)
+      {
+      procs_needed = procs;
+      }
+    else
+      {
+      /* the qsub request used -l procs only. No -l nodes=x
+         was given in the qsub request.
+         TORQUE allocates 1 node by default if a -l nodes specification
+         is not given.
+      */
+      if (procs > 1)
+        {
+        procs_needed = procs - 1;
+        }
+      else
+        procs_needed = 1;
+      }
+  
+    reinitialize_node_iterator(&iter);
+
+    while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+      {
+      for (snp = pnode->nd_psn;snp && procs_needed > 0;snp = snp->next)
+        {
+        if (exclusive)
+          {
+          if (snp->inuse != INUSE_FREE)
+            {
+            continue;
+            }
+          }
+        else
+          {
+          if ((snp->inuse != INUSE_FREE) && (snp->inuse != INUSE_JOBSHARE))
+            {
+            continue;
+            }
+          }
+
+        /* Mark subnode as being IN USE */
+        pnode->nd_needed++; /* we do this because add_job_to_node will decrement it */
+
+        /* We need to set the node to thinking. */
+        pnode->nd_flag = thinking;
+        add_job_to_node(pnode,snp,newstate,pjob,exclusive);
+
+        build_host_list(hlist,snp,pnode);
+        procs_needed--;
+        } /* END for (snp) */
+      } /* END for each node */
+    } /* if (procs > 0) */
+
+  return(PBSE_NONE);
+  } /* END build_hostlist_procs_req() */
+
+
+
 
 
 /*
@@ -4938,32 +5342,17 @@ int set_nodes(
   char  *EMsg)        /* O (optional,minsize=1024) */
 
   {
+  static char     id[] = "set_nodes";
 
-  struct howl *hp;
-  struct howl *hlist;
-  struct howl *gpu_list;
-  struct howl *nxt;
+  struct howl    *hlist;
+  struct howl    *gpu_list;
 
-  int     i;
-  int     j;
-  int     count;
-  int     procs_needed = 0;
-  short   newstate;
+  int             i;
+  int             rc;
+  int             NCount;
+  short           newstate;
 
-  int     NCount;
-
-  static char id[] = "set_nodes";
-
-  struct pbsnode *pnode;
-
-  struct pbssubn *snp;
-
-  node_iterator  *iter;
-  char           *nodelist;
-  char           *portlist;
   char           *gpu_str = NULL;
-  struct gpusubn *gn;
-
   char            ProcBMStr[MAX_BM];
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -4992,11 +5381,9 @@ int set_nodes(
 #endif /* GEOMETRY_REQUESTS */
 
   /* allocate nodes */
-
   if ((i = node_spec(spec, 1, 1, ProcBMStr, FailHost, EMsg)) == 0) /* check spec */
     {
     /* no resources located, request failed */
-
     if (EMsg != NULL)
       {
       sprintf(log_buf,
@@ -5009,8 +5396,7 @@ int set_nodes(
 
     return(PBSE_RESCUNAV);
     }
-
-  if (i < 0)
+  else if (i < 0)
     {
     /* request failed, corrupt request */
     log_err(PBSE_UNKNODE, id, "request failed, corrupt request");
@@ -5018,7 +5404,6 @@ int set_nodes(
     }
 
   /* i indicates number of matching nodes */
-
   if (exclusive)        /* exclusive is global */
     svr_numnodes -= i;
 
@@ -5027,229 +5412,15 @@ int set_nodes(
 
   newstate = exclusive ? INUSE_JOB : INUSE_JOBSHARE;
 
-  /* initialize the mom port values to unset so that they're only
-   * set once */
-  iter = get_node_iterator();
-  pnode = NULL;
-
-  while ((pnode = next_node(&allnodes,pnode,iter)) != NULL)
+  if ((rc = build_hostlist_nodes_req(pjob, EMsg, spec, newstate, &hlist, &gpu_list)) != PBSE_NONE)
     {
-    if (pnode->nd_flag != thinking)
-      {
-      /* node is not considered/eligible for job - see search() */
-      continue;
-      }
+    return(rc);
+    }
 
-    /* within the node, check each subnode */
-#ifdef GEOMETRY_REQUESTS
-    if (ProcBMStr[0] != '\0')
-      {
-      /* check node here, a request was given */
-      if (node_satisfies_request(pnode,ProcBMStr) == TRUE)
-        {
-        reserve_node(pnode,newstate,pjob,ProcBMStr,&hlist);
-        }
-
-      continue;
-      }
-#endif /* GEOMETRY_REQUESTS */
-
-    /* place the gpus in the hostlist as well */
-    for (j = 0; j < pnode->nd_ngpus && pnode->nd_ngpus_needed > 0; j++)
-      {
-      sprintf(log_buf,
-        "node: %s j %d ngpus %d need %d",
-        pnode->nd_name,
-        j,
-        pnode->nd_ngpus,
-        pnode->nd_ngpus_needed);
-
-	    if (LOGLEVEL >= 7)
-	      {
-  		  log_ext(-1, id, log_buf, LOG_DEBUG);
-	      }
-      DBPRT(("%s\n", log_buf));
-
-      gn = pnode->nd_gpusn + j;
-      if ((gn->state == gpu_unavailable) ||
-#ifdef NVIDIA_GPUS
-          ((gn->state == gpu_exclusive) && pnode->nd_gpus_real) ||
-          (pnode->nd_gpus_real && ((int)gn->mode == gpu_normal) &&
-          ((gpu_mode_rqstd != gpu_normal) && (gn->state != gpu_unallocated))) ||
-          ((!pnode->nd_gpus_real) && (gn->inuse == TRUE)))
-#else
-          (gn->inuse == TRUE))
-#endif  /* NVIDIA_GPUS */
-        continue;
-
-      add_job_to_gpu_subnode(pnode,gn,pjob);
-
-      sprintf(log_buf,
-        "ADDING gpu %s/%d to exec_gpus still need %d",
-        pnode->nd_name,
-        j,
-        pnode->nd_ngpus_needed);
-
-	    if (LOGLEVEL >= 7)
-	      {
-  		  log_ext(-1, id, log_buf, LOG_DEBUG);
-	      }
-      DBPRT(("%s\n", log_buf));
-
-      add_gpu_to_hostlist(&gpu_list,gn,pnode);
-      
-#ifdef NVIDIA_GPUS
-      /*
-       * If this a real gpu in exclusive/single job mode, or a gpu in default
-       * mode and the job requested an exclusive mode then we change state
-       * to exclusive so we cannot assign another job to it
-       */
-       
-      if ((pnode->nd_gpus_real) && ((gn->mode == gpu_exclusive_thread) ||
-         (gn->mode == gpu_exclusive_process) ||
-         ((gn->mode == gpu_normal) && ((gpu_mode_rqstd == gpu_exclusive_thread) ||
-         (gpu_mode_rqstd == gpu_exclusive_process)))))
-        {
-        gn->state = gpu_exclusive;
-
-        sprintf(log_buffer,
-          "Setting gpu %s/%d to state EXCLUSIVE for job %s",
-          pnode->nd_name,
-          j,
-          pjob->ji_qs.ji_jobid);
-
-	      if (LOGLEVEL >= 7)
-	        {
-    		  log_ext(-1, id, log_buffer, LOG_DEBUG);
-	        }
-        }
-
-      /*
-       * If this a real gpu in shared/default job mode and the state is
-       * unallocated then we change state to shared so only other shared jobs
-       * can use it
-       */
-       
-      if ((pnode->nd_gpus_real) && (gn->mode == gpu_normal) && 
-          (gpu_mode_rqstd == gpu_normal) && (gn->state == gpu_unallocated))
-        {
-        gn->state = gpu_shared;
-
-        sprintf(log_buffer,
-          "Setting gpu %s/%d to state SHARED for job %s",
-          pnode->nd_name,
-          j,
-          pjob->ji_qs.ji_jobid);
-
-	      if (LOGLEVEL >= 7)
-	        {
-    		  log_ext(-1, id, log_buffer, LOG_DEBUG);
-	        }
-        }
-#endif  /* NVIDIA_GPUS */
-      }
-
-    /* make sure we found gpus to use, if job needed them */
-    if (pnode->nd_ngpus_needed > 0)
-      {
-      /* no resources located, request failed */      
-      if (EMsg != NULL)
-        {
-        sprintf(log_buf,
-          "could not locate requested gpu resources '%.4000s' (node_spec failed) %s",
-          spec,
-          EMsg);
-        
-        log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
-        }
-
-      unlock_node(pnode, "set_nodes", NULL, LOGLEVEL);
-      
-      return(PBSE_RESCUNAV);
-      }
-
-    /* place the subnodes (nps) in the hostlist */
-    for (snp = pnode->nd_psn;snp && pnode->nd_needed;snp = snp->next)
-      {
-      if (exclusive)
-        {
-        if (snp->inuse != INUSE_FREE)
-          continue;
-        }
-      else
-        {
-        if ((snp->inuse != INUSE_FREE) && (snp->inuse != INUSE_JOBSHARE))
-          {
-          continue;
-          }
-        }
-
-      /* Mark subnode as being IN USE */
-      add_job_to_node(pnode,snp,newstate,pjob,exclusive);
-  
-      build_host_list(&hlist,snp,pnode);
-      }  /* END for (snp) */
-    }    /* END for each node */
-
-  /* did we have a request for procs? Do those now */
-  if (procs > 0)
+  if ((rc = build_hostlist_procs_req(pjob, procs, newstate, &hlist)) != PBSE_NONE)
     {
-    /* check to see if a -l nodes request was made */
-    if (pjob->ji_have_nodes_request)
-      {
-      procs_needed = procs;
-      }
-    else
-      {
-      /* the qsub request used -l procs only. No -l nodes=x
-         was given in the qsub request.
-         TORQUE allocates 1 node by default if a -l nodes specification
-         is not given.
-      */
-      if (procs > 1)
-        {
-        procs_needed = procs - 1;
-        }
-      else
-        procs_needed = 1;
-      }
-
-    reinitialize_node_iterator(iter);
-    pnode = NULL;
-
-    while ((pnode = next_node(&allnodes,pnode,iter)) != NULL)
-      {
-      for (snp = pnode->nd_psn;snp && procs_needed > 0;snp = snp->next)
-        {
-        if (exclusive)
-          {
-          if (snp->inuse != INUSE_FREE)
-            {
-            continue;
-            }
-          }
-        else
-          {
-          if ((snp->inuse != INUSE_FREE) && (snp->inuse != INUSE_JOBSHARE))
-            {
-            continue;
-            }
-          }
-
-        /* Mark subnode as being IN USE */
-
-        pnode->nd_needed++; /* we do this because add_job_to_node will decrement it */
-        /* We need to set the node to thinking. */
-        pnode->nd_flag = thinking;
-        add_job_to_node(pnode,snp,newstate,pjob,exclusive);
-
-        build_host_list(&hlist,snp,pnode);
-        procs_needed--;
-        } /* END for (snp) */
-      } /* END for each node */
-    } /* if (procs > 0) */
-
-  free(iter);
+    return(rc);
+    }
 
   if (hlist == NULL)
     {
@@ -5269,130 +5440,43 @@ int set_nodes(
 
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HasNodes;  /* indicate has nodes */
 
-  /* build list of allocated nodes */
-
-  i = 1;  /* first, size list */
-  count = 1; /* count the number of nodes to be used */
-
-  for (hp = hlist;hp != NULL;hp = hp->next)
+  /* build list of allocated nodes, gpus, and ports */
+  if ((rc = translate_howl_to_string(hlist, EMsg, &NCount, rtnlist, rtnportlist, TRUE)) != PBSE_NONE)
     {
-    i += (strlen(hp->name) + 6);
-    count++;
+    return(rc);
     }
 
-  nodelist = malloc(++i);
-
-  /* allocate the gpu list */
-  i = 1;
-  for (hp = gpu_list; hp != NULL; hp = hp->next)
-    i += strlen(hp->name) + 6;
-
-  if ( i > 1)
-    gpu_str = malloc(i+1);
-
-  if (nodelist == NULL)
+  if (gpu_list != NULL)
     {
-    sprintf(log_buf, "no nodes can be allocated to job %s - no memory", pjob->ji_qs.ji_jobid);
-
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
-
-    if (EMsg != NULL)
-      sprintf(EMsg,"no nodes can be allocated to job");
-
-    return(PBSE_RESCUNAV);
-    }
-
-  *nodelist = '\0';
-
-  /* port list will have a string of sister port addresses */
-  portlist = malloc((count * PBS_MAXPORTNUM) + count);
-  if (portlist == NULL)
-    {
-    sprintf(log_buf, "no nodes can be allocated to job %s - no memory", pjob->ji_qs.ji_jobid);
-
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
-
-    if (EMsg != NULL)
-      sprintf(EMsg,"no nodes can be allocated to job");
-
-    return(PBSE_RESCUNAV);
-    }
-
-  *portlist = '\0';
-
-
-  /* now copy in name+name+... */
-
-  NCount = 0;
-
-  for (hp = hlist;hp;hp = nxt)
-    {
-    NCount++;
-
-    sprintf(nodelist + strlen(nodelist), "%s/%d+",
-      hp->name,
-      hp->index);
-
-    sprintf(portlist + strlen(portlist), "%d+", hp->port);
-
-    nxt = hp->next;
-
-    free(hp);
-    }
-
-  /* now do the same for the gpu_str, if necessary
-   * add the gpu_str directly to the job */
-  if (gpu_str != NULL)
-    {
-    gpu_str[0] = '\0';
-
-    for (hp = gpu_list; hp != NULL; hp = nxt)
+    if ((rc = translate_howl_to_string(gpu_list, EMsg, &NCount, &gpu_str, NULL, FALSE)) != PBSE_NONE)
       {
-      sprintf(gpu_str + strlen(gpu_str), "%s/%d+",
-        hp->name,
-        hp->index);
-
-      nxt = hp->next;
-
-      free(hp);
+      return(rc);
       }
 
-    /* strip trailing '+' */
-    gpu_str[strlen(gpu_str) - 1] = '\0';
-      
-      job_attr_def[JOB_ATR_exec_gpus].at_free(
-        &pjob->ji_wattr[JOB_ATR_exec_gpus]);
-
-      job_attr_def[JOB_ATR_exec_gpus].at_decode(
-        &pjob->ji_wattr[JOB_ATR_exec_gpus],
-        NULL,
-        NULL,
-        gpu_str,
-        0);  /* O */
-
+    job_attr_def[JOB_ATR_exec_gpus].at_free(
+      &pjob->ji_wattr[JOB_ATR_exec_gpus]);
+    
+    job_attr_def[JOB_ATR_exec_gpus].at_decode(
+      &pjob->ji_wattr[JOB_ATR_exec_gpus],
+      NULL,
+      NULL,
+      gpu_str,
+      0);  /* O */
+    
     free(gpu_str);
-    }
-
-  *(nodelist + strlen(nodelist) - 1) = '\0'; /* strip trailing + */
-  *(portlist + strlen(portlist) - 1) = 0;
-
-  *rtnlist = nodelist;
-  *rtnportlist = portlist;
 
 #ifdef NVIDIA_GPUS
-  /* if we have exec_gpus then fill in the extra gpu_flags */
-  if ((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
-    {
     if (gpu_mode_rqstd != -1)
-        gpu_flags = gpu_mode_rqstd;
+      gpu_flags = gpu_mode_rqstd;
     if (gpu_err_reset)
-        gpu_flags += 1000;
+      gpu_flags += 1000;
+
     if (gpu_flags >= 0)
       {
       pjob->ji_wattr[JOB_ATR_gpu_flags].at_val.at_long = gpu_flags;
       pjob->ji_wattr[JOB_ATR_gpu_flags].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-
-	    if (LOGLEVEL >= 7)
+      
+      if (LOGLEVEL >= 7)
 	      {
         sprintf(log_buf, "setting gpu_flags for job %s to %d %ld",
           pjob->ji_qs.ji_jobid,
@@ -5403,15 +5487,15 @@ int set_nodes(
 	      }
 /*      job_save(pjob,SAVEJOB_FULL,0); */
       }
-    }
 #endif  /* NVIDIA_GPUS */
+    }
 
   if (LOGLEVEL >= 3)
     {
     snprintf(log_buf, sizeof(log_buf), "job %s allocated %d nodes (nodelist=%.4000s)",
       pjob->ji_qs.ji_jobid,
       NCount,
-      nodelist);
+      *rtnlist);
 
     log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
     }

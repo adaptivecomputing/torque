@@ -3356,7 +3356,7 @@ void mom_server_all_update_gpustat(void)
 
   for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
     {
-    if(gpu_status_strings[0] != 0)
+    if (gpu_status_strings[0] != 0)
       {
       mom_server_update_gpustat(&mom_servers[sindex], gpu_status_strings);
       }

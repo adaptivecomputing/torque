@@ -363,39 +363,43 @@ void sum_select_mem_request(
  *          Non-Zero on failure 
  */
 
-int set_node_attr(job *pjob)
+int set_node_attr(
+    
+  job *pjob)
+
   {
   resource *pres;
 	int  nodect_set = 0;
   int  rc = 0;
   char *pname;
 
-  if(pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
     {
     pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
     while(pres != NULL)
       {
-      if(pres->rs_defin != NULL)
+      if (pres->rs_defin != NULL)
         {
         pname = pres->rs_defin->rs_name;
-        if(pname == NULL || *pname == 0)
+        if (pname == NULL || *pname == 0)
           {
           pres = (resource *)GET_NEXT(pres->rs_link);
           continue;
           }
         
-        if(strncmp(pname, "nodes", 5) == 0 
-          || strncmp(pname, "procs", 5) == 0)
+        if ((strncmp(pname, "nodes", 5) == 0) || 
+            (strncmp(pname, "procs", 5) == 0))
           {
           nodect_set = 1;
           break;
           }
         }
-        pres = (resource *)GET_NEXT(pres->rs_link);
+
+      pres = (resource *)GET_NEXT(pres->rs_link);
       }
     }                                                                         
 
-    if(nodect_set == 0)
+    if (nodect_set == 0)
       {
       /* neither procs nor nodes were requested. set nodes to 1
          so the procct will process correctly. */
@@ -403,7 +407,7 @@ int set_node_attr(job *pjob)
      }
 
   return(rc);
-  }
+  } /* END set_node_attr() */
 
 
 /*
@@ -814,15 +818,12 @@ void *req_quejob(
     } /* END while (psatl != NULL) */
 
   rc = set_node_attr(pj);
-  if(rc)
+  if (rc)
     {
     /* just record that we could not set node count */
     sprintf(log_buffer, "Could not set default node count. Error not fatal. Will continue submitting job: %d",
             rc);
-    LOG_EVENT(PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              id,
-              log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
     }
 
   /* perform any at_action routine declared for the attributes */
