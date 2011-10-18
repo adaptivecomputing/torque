@@ -11,3 +11,4 @@ plan('no_plan');
 setDesc('Shutdown Torque');
 
 stopTorque();
+stopTorque({host => $_}) foreach split ',', $props->get_property('Torque.Remote.Nodes');

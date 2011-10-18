@@ -41,8 +41,9 @@ our $mom_lock_file    = "$torque_home/mom_priv/mom.lock";
 our $server_lock_file = "$torque_home/server_priv/server.lock";
 
 our $ps_list        = sub{
-  my %cmd = runCommand($_[0], logging_off => 1);
-  my @matches = ($cmd{STDOUT} =~ /^\w+\s+(\d+).+$_[1](?:\s+.*)?$/gm);
+  my $process = pop;
+  my %cmd = runCommand(@_, logging_off => 1);
+  my @matches = ($cmd{STDOUT} =~ /^\w+\s+(\d+).+$process(?:\s+.*)?$/gm);
   return join(" ",@matches);
 };
 our $remote_ps_list = sub{
@@ -172,9 +173,26 @@ sub stopTorque
 {
     my ($cfg) = @_;
 
-    my $remote_moms = $cfg->{ 'remote_moms' } || [];
-    my $mom_cfg     = $cfg->{pbs_mom} || {};
+    my $remote_moms = $cfg->{ 'remote_moms' } || undef;
+    my $mom_cfg     = $cfg->{pbs_mom}    || {};
+    my $server_cfg  = $cfg->{pbs_server} || {};
     my $torque_rtn  = 1;
+
+    if( defined $cfg->{host} )
+    {
+      $mom_cfg->{node} = $cfg->{host};
+      $server_cfg->{host} = $cfg->{host};
+    }
+
+    if( defined $remote_moms && ref $remote_moms ne 'ARRAY' )
+    {
+      $remote_moms = [split ',', $props->get_property('Torque.Remote.Nodes')];
+      $remote_moms = [grep {defined $_} @$remote_moms];
+    }
+    elsif( !defined $remote_moms )
+    {
+      $remote_moms = [];
+    }
 
     ##########################
     # Pbs_mom Section
@@ -191,7 +209,7 @@ sub stopTorque
     ##########################
     # Pbs_server Section
     ##########################
-    $torque_rtn = $torque_rtn && stopPbsserver();
+    $torque_rtn = $torque_rtn && stopPbsserver($server_cfg);
 
     return ok($torque_rtn, "All Torque Components Stopped");
 }
@@ -517,7 +535,6 @@ CMD
     return 0;
   }
 
-  # Resetup Moab
   diag("Re-Configure Torque");
   runCommand($_, 'test_success_die' => 1) foreach @setup_lines;
 
@@ -537,6 +554,7 @@ sub stopPbsserver
 {
   my ($params) = @_;
 
+  my $host  = $params->{host}  || undef;
   my $flags = $params->{flags} || undef;
 
   my $return = 1;
@@ -546,21 +564,21 @@ sub stopPbsserver
   $qterm_cmd .= " $flags" if defined $flags;
   my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
 
-  my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
+  my $ps_info = sub{ return &$ps_list($check_cmd, host => $host, 'pbs_server'); };
 
-  unless( $ps_info eq '' )
+  unless( &$ps_info eq '' )
   { 
     my $wait = 30;
     my $endtime = time + $wait;
     diag "Stopping Torque Server... (${wait}s Timeout)";
 
-    my %qterm = runCommand($qterm_cmd);
+    my %qterm = runCommand($qterm_cmd, host => $host);
 
     if( $qterm{EXIT_CODE} != 0 && &$ps_info ne '' )
     {
       my $kill = 'kill -9 '.&$ps_info;
       diag "Normal Shutdown Failed! Attempting to SIGKILL pbs_server";
-      qx/$kill/;
+      runCommand($kill, host => $host, logging_off => 1);
     }
 
 
@@ -568,7 +586,8 @@ sub stopPbsserver
 
     if( time > $endtime )
     {
-      fail "Unable to Stop PBS_Server!\n".qx/$check_cmd 2>&1/;
+      fail "Unable to Stop PBS_Server!";
+      runCommand("$check_cmd 2>&1", host => $host);
       return 0;
     }
   }
@@ -779,6 +798,29 @@ sub createPbsserverNodes
     ok(!runCommand("grep $_ $node_file"), "PBS Node File $node_file Contains Node $_")
       or die "PBS_Server Node file $node_file was NOT setup correctly!";
   }
+}
+
+#-------------------------------------------------------------------------------------
+# 
+#-------------------------------------------------------------------------------------
+# PARAMETERS:
+# x = mutually-exclusive
+#
+#  x total_moms => integer of the total number of MOMs desired. Function will look at 
+#     the hosts listed in Torque.Remote.Nodes and even distribute MOMs across them.
+#     (includes localhost, as well)
+#  x mom_struct => hashref of hosts with the value being the number of MOMs desired on
+#     that specific host.
+#  - host_list  => arrayref of hosts to use for distributing MOMs. (Optional)
+#     {DEFAULT: Torque.Remote.Nodes + localhost}
+#-------------------------------------------------------------------------------------
+sub setupMultiMOM
+{
+  # Handle passed in parameters
+  # If using total_moms, determine the mom_struct equivalent accounting for host_list
+  # Got through for each host and start specified number of MOMs
+  # Record number of MOMs per host with port numbers in hashref
+  # Return hashref
 }
 
 1;
