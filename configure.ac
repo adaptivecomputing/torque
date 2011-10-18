@@ -2053,7 +2053,6 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/drmaa/test/Makefile
 	  src/drmaa/Doxyfile
 	  src/pam/Makefile
-    "${test_files}"
 )
 
 echo
