@@ -111,7 +111,7 @@ AM_CONDITIONAL(HAVE_CHECK, test x"$have_check" = "xyes")
 m4_ifdef([AM_SILENT_RULES],[
   if test "x$have_check" = "xyes"; then
     AM_SILENT_RULES(yes)
-    test_files="src/cmds/test/Makefile
+    AC_CONFIG_FILES(src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
     src/cmds/test/common_cmds/Makefile
     src/cmds/test/pbs_track/Makefile
@@ -340,7 +340,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/tools/test/printjob/Makefile
     src/tools/test/printserverdb/Makefile
     src/tools/test/printtracking/Makefile
-    src/tools/test/tracejob/Makefile"
+    src/tools/test/tracejob/Makefile)
   else
     AM_SILENT_RULES(no)
   fi
