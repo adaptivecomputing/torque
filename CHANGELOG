@@ -29,6 +29,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed a problem where jobs dependent on an array using afteranyarray would not start
       when a job element of the array completed.
   b - Fixed a bug where array jobs .AZ file would not be deleted when the array job was done.
+  b - fix so user epilogues are run as user instead of root (backported from 3.0.3)
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
