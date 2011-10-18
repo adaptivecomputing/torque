@@ -53,6 +53,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed momctl to return an error on failure. Prior to this fix momctl always returned 0
       regardless of success or failure.
   e - Change to allow qsub -l ncpus=x:gpus=x which adds a resource list entry for both
+  b - fix so user epilogues are run as user instead of root
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it

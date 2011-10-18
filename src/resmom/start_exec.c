@@ -6683,6 +6683,8 @@ int open_std_file(
   int   old_umask = 0;
 
   char *id = "open_std_file";
+  int  changed_to_user = FALSE;
+  int rc;
 
   struct stat statbuf;
 
@@ -6698,10 +6700,22 @@ int open_std_file(
   /* become user to create file, if we aren't already the user. In
    * run_pelog setuid etc. are called and the this function is invoked,
    * so doing this again fails and is unnecessary */
+
+	if (LOGLEVEL > 7)
+	  {
+	  sprintf(log_buffer, "job %s which = %d getuid() = %d geteuid = %d to euid = %d",
+					pjob->ji_qs.ji_jobid,
+					which,
+					getuid(),
+					geteuid(),
+					pjob->ji_qs.ji_un.ji_momt.ji_exuid);
+
+		log_ext(-1, id, log_buffer, LOG_DEBUG);
+	  }
 #ifdef __CYGWIN__
   if (IamRoot() == 1)
 #else
-  if (getuid() == 0)
+  if ((getuid() == 0) && (geteuid() != pjob->ji_qs.ji_un.ji_momt.ji_exuid))
 #endif
     {
     if (setgroups(pjob->ji_grpcache->gc_ngroup,(gid_t *)pjob->ji_grpcache->gc_groups) != 0)
@@ -6739,6 +6753,7 @@ int open_std_file(
       setegid(pbsgroup);
       return(-1);
       }
+    changed_to_user = TRUE;
     }
 
   /* these checks are a bit complicated.  If keeping, we do what the user
@@ -6915,9 +6930,21 @@ int open_std_file(
     umask(old_umask);
     }
 
-  seteuid(pbsuser);
+  if (changed_to_user)
+    {
+	  rc = seteuid(pbsuser);
+	  if (rc != 0)
+	  {
+    snprintf(log_buffer,sizeof(log_buffer),
+      "seteuid(%lu) failed, error: %s\n",
+      (unsigned long)pbsuser,
+      strerror(errno));
 
-  setegid(pbsgroup);
+    log_err(errno,id,log_buffer);
+	  }
+
+	  setegid(pbsgroup);
+    }
 
   if (fds == -1)
     {
@@ -6945,13 +6972,19 @@ int open_std_file(
   return(fds);
 
 reset_ids_fail:
-    seteuid(pbsuser);
-    setegid(pbsgroup);
+    if (changed_to_user)
+      {
+      seteuid(pbsuser);
+      setegid(pbsgroup);
+      }
     return(-1);
 
 reset_ids_timeout:
-    seteuid(pbsuser);
-    setegid(pbsgroup);
+    if (changed_to_user)
+      {
+      seteuid(pbsuser);
+      setegid(pbsgroup);
+      }
     return(-2);
   }   /* END open_std_file() */
 
