@@ -229,10 +229,9 @@ sub pbsnodes #($)
   my $user        = $params->{ 'user'   } || 'root';
 
   my $cmd         = "$pbs_nodes -x";
-  my %pbsnodes   = runCommandAs($user, $cmd);
+  my %pbsnodes   = runCommandAs($user, $cmd, test_success => 1);
 
-  cmp_ok($pbsnodes{ 'EXIT_CODE' }, '==', 0, "Checking exit code of '$cmd' for user $user")
-    or return undef;
+  return () unless $pbsnodes{EXIT_CODE} == 0;
 
   return parse_xml($pbsnodes{ 'STDOUT' });
 

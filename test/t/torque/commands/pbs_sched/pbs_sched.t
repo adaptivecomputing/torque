@@ -8,6 +8,7 @@ use lib test_lib_loc();
 
 use CRI::Test;
 use Torque::Ctrl;
+use Torque::Util::Pbsnodes qw( pbsnodes );
 use Torque::Job::Ctrl   qw(
                             submitSleepJob
                             delJobs
@@ -25,21 +26,19 @@ my @job_ids;
 
 my $pbs_sched_cmd      = "pbs_sched";
 
-my $job_params         = {
-                           'user'       => $props->get_property('User.1'),
-                           'torque_bin' => $props->get_property('Torque.Home.Dir') . "/bin/"
-                         };
 my $job_state_params;
 
 my %pbs_sched;
-
 
 ###############################################################################
 # Setup for the test
 ###############################################################################
 stopTorque();
-startTorqueClean();
 stopPbssched();
+startTorqueClean();
+
+my %nref = pbsnodes();
+my $np   = (values %nref)[0]->{np};
 
 ###############################################################################
 # Test the pbs_sched command
@@ -50,7 +49,7 @@ ok($pbs_sched{ 'EXIT_CODE' } == 0, "Checking exit code of '$pbs_sched_cmd'")
 
 # Wait for pbs_sched to stabilize
 diag("Waiting for pbs_sched to stabilize...");
-sleep 5;
+sleep_diag 5;
 
 # Make sure that pbs_sched has started
 ok(is_running('pbs_sched'), "Verifying that pbs_sched is running");
@@ -58,6 +57,7 @@ ok(is_running('pbs_sched'), "Verifying that pbs_sched is running");
 ###############################################################################
 # Test pbs_sched's scheduling
 ###############################################################################
+my $job_params         = { add_args => "-l nodes=1:ppn=$np" };
 push(@job_ids, submitSleepJob($job_params));
 push(@job_ids, submitSleepJob($job_params));
 push(@job_ids, submitSleepJob($job_params));
@@ -89,6 +89,4 @@ verify_job_state($job_state_params);
 ###############################################################################
 # Cleanup after the test
 ###############################################################################
-delJobs(@job_ids);
-
 stopPbssched();
