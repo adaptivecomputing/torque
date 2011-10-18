@@ -127,6 +127,7 @@ int build_var_list(
   int offset = 0;
   char *tmp_var_list = NULL;
   char *workdir_val = NULL;
+  int preexisting_var_list = FALSE;
   HASH_ITER(hh, *attrs, atr, tmp)
     {
     if (strncmp(atr->name, "pbs_o", 5) == 0)
@@ -179,6 +180,32 @@ int build_var_list(
       item_count++;
       hash_del_item(mm, attrs, atr->name);
       }
+    else if (strcmp(atr->name, ATTR_v) == 0)
+      {
+/*       if (*var_list != NULL) */
+/*         len = strlen(*var_list); */
+/*      new_len = len + 1; *//* Existing string, */
+      name_len = 0;
+      value_len = strlen(atr->value); /* value\0 */
+      *var_list = memmgr_realloc(mm, *var_list,
+          current_len + 1 + value_len + 1);
+      if (current_len != 0)
+        {
+        (*var_list)[current_len] = ',';
+        current_len++;
+        }
+      memcpy((*var_list) + current_len, atr->value, value_len);
+      current_len += value_len;
+
+      (*var_list)[current_len] = '\0';
+      preexisting_var_list = TRUE;
+      /* In this case, do not add an item (this is taken care or OUTSIDE this call) */
+      /* item_count++; */
+      }
+    }
+  if (preexisting_var_list == TRUE)
+    {
+    hash_del_item(mm, attrs, ATTR_v);
     }
   /* This a temporary work around until the server code has been changed */
   if (workdir_val)

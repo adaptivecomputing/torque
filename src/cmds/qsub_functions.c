@@ -4349,6 +4349,40 @@ void set_minwclimit(
       }
     }
   }
+
+void add_variable_list(
+    job_info *ji,
+    char *var_name,
+    job_data *src_hash)
+  {
+    int total_len = 0;
+    int count = 0;
+    int pos = 0;
+    char *var_list = NULL;
+    job_data *en;
+
+    total_len = hash_strlen(ji->user_attr);
+    count = hash_count(ji->user_attr);
+    total_len += count*2;
+    var_list = memmgr_calloc(&ji->mm, 1, total_len);
+    for (en=src_hash; en != NULL; en=en->hh.next)
+      {
+      pos++;
+      strcat(var_list, en->name);
+      strcat(var_list, "=");
+      if (en->value != NULL)
+        {
+        strcat(var_list, en->value);
+        }
+      if (pos != count)
+        {
+        strcat(var_list, ",");
+        }
+      }
+    /* If the attribute ATTR_v already exists, this will overwrite it */
+    hash_add_or_exit(&ji->mm, &ji->job_attr, var_name, var_list, CMDLINE_DATA);
+  }
+
 /** 
  * qsub main 
  *
@@ -4686,7 +4720,7 @@ void main_func(
    * -V functionality */
 
   if (hash_find(ji.client_attr, "user_attr", &tmp_job_info))
-    hash_add_hash(&ji.mm, &ji.job_attr, ji.user_attr, 0);
+    add_variable_list(&ji, ATTR_v, ji.user_attr);
 /*  if (!set_job_env(envp))
     {
     fprintf(stderr, "qsub: cannot send environment with the job\n");
@@ -4707,6 +4741,7 @@ void main_func(
 
   if (sigaction(SIGTSTP, &act, (struct sigaction *)0) < 0)
     {
+    pbs_disconnect(sock_num);
     unlink(script_tmp);
     memmgr_destroy(&ji.mm);
     print_qsub_usage_exit("unable to catch signals");
@@ -4734,6 +4769,7 @@ void main_func(
       fprintf(stderr, "qsub: Error (%d - %s) submitting job\n",
               local_errno, pbs_strerror(local_errno));
 
+    pbs_disconnect(sock_num);
     unlink(script_tmp);
 
     memmgr_destroy(&ji.mm);

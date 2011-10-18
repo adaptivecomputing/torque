@@ -306,3 +306,18 @@ int hash_add_hash(
   return cntr;
   }
 
+int hash_strlen(
+    job_data *src)
+  {
+  int len = 0;
+  job_data *en;
+  for (en=src; en != NULL; en=en->hh.next)
+    {
+    len += strlen(en->name);
+    if (en->value != NULL)
+      {
+      len += strlen(en->value);
+      }
+    }
+  return len;
+  }

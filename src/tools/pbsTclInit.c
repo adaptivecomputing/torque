@@ -96,9 +96,8 @@ extern void add_cmds(Tcl_Interp *);
 extern void fullresp(int);
 
 
-int
-pbsTcl_Init(interp)
-Tcl_Interp *interp;  /* Interpreter for application. */
+int pbsTcl_Init(
+  Tcl_Interp *interp)  /* Interpreter for application. */
   {
   if (Tcl_Init(interp) == TCL_ERROR)
     return TCL_ERROR;

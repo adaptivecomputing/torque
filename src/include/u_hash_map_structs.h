@@ -128,4 +128,6 @@ int hash_print(job_data *head);
 
 int hash_add_hash(memmgr **mm, job_data **dest, job_data *src, int overwrite_existing);
 
+int hash_strlen(job_data *src);
+
 #endif /* _U_HASH_MAP_STRUCTS_H */
