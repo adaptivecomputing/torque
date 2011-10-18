@@ -3,6 +3,7 @@ include $(top_srcdir)/buildutils/config.mk
 if HAVE_CHECK
 SUBDIRS = test
 endif
+DIST_SUBDIRS =
 
 AM_CPPFLAGS += -I$(top_srcdir)/src/resmom/@PBS_MACH@
 
