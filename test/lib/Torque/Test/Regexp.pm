@@ -69,6 +69,7 @@ use constant QSTAT_B_REGEXP       => {
                                        'wat'    => qr/^\d+$/,
                                        'trn'    => qr/^\d+$/,
                                        'ext'    => qr/^\d+$/,
+                                       'com'    => qr/^\d+$/,
                                        'status' => qr/^(Hot_Start|Active|Terminating_Delay|Terminating)$/,
                                      };
 use constant QSTAT_BF1_REGEXP     => {

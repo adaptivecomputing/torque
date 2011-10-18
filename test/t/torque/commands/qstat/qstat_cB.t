@@ -48,6 +48,7 @@ my @attributes = qw(
                      wat
                      trn
                      ext
+                     com
                      status
                    );
 

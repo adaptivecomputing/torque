@@ -606,6 +606,7 @@ sub parse_qstat_B #($)
         $wat,
         $trn,
         $ext,
+        $com,
         $status
        ) = split(/\s+/, $line);
 
@@ -619,6 +620,7 @@ sub parse_qstat_B #($)
       $rtn_value{ $server }{ 'wat'    } = $wat;
       $rtn_value{ $server }{ 'trn'    } = $trn;
       $rtn_value{ $server }{ 'ext'    } = $ext;
+      $rtn_value{ $server }{ 'com'    } = $com;
       $rtn_value{ $server }{ 'status' } = $status;
 
     } # END foreach my $line (@lines)
