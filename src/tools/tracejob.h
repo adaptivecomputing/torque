@@ -81,6 +81,9 @@
 #ifndef TRACEJOB_H
 #define TRACEJOB_H
 
+#include <time.h> /* time_t, struct tm */
+#include <stdio.h> /* FILE */
+
 /* Symbolic constants */
 
 /* default number of columns on a terminal */

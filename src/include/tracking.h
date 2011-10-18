@@ -98,6 +98,10 @@
 #define PBS_TRACK_MINSIZE   100 /* mininum size of buffer in records */
 #define PBS_SAVE_TRACK_TM   300 /* time interval between saves of track data */
 
+#include <time.h> /* time_t */
+#include "pbs_ifl.h" /* PBS_MAXSVRJOBID, PBS_MAXDEST */
+#include "work_task.h" /* work_task */
+
 struct tracking
   {
   time_t  tk_mtime; /* time this entry modified */

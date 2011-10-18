@@ -233,3 +233,21 @@ int memmgr_init(memmgr **mgr, int mgr_size)
   exit(1);
   }
 
+int hash_count(job_data *head)
+  {
+  printf("Error, stub must be completed");
+  exit(1);
+  }
+
+void *memmgr_calloc(memmgr **mgr, int qty, int size)
+  {
+  printf("Error, stub must be completed");
+  exit(1);
+  }
+
+int hash_strlen(job_data *src)
+  {
+  printf("Error, stub must be completed");
+  exit(1);
+  }
+
