@@ -1592,8 +1592,9 @@ void display_statserver(
 
   NUML = MAXNUML;
 
-  sprintf(format, "%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds\n",
+  sprintf(format, "%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds\n",
           PBS_MINNAMELEN,
+          NUML,
           NUML,
           NUML,
           NUML,
@@ -1606,8 +1607,8 @@ void display_statserver(
 
   if (!full && prtheader)
     {
-    printf(format, "Server", "Max", "Tot", "Que", "Run", "Hld", "Wat", "Trn", "Ext", "Status");
-    printf(format, "----------------", "---", "---", "---", "---", "---", "---", "---", "---", "----------");
+    printf(format, "Server", "Max", "Tot", "Que", "Run", "Hld", "Wat", "Trn", "Ext", "Com", "Status");
+    printf(format, "----------------", "---", "---", "---", "---", "---", "---", "---", "---", "---", "----------");
     }
 
   p = status;
@@ -2119,6 +2120,7 @@ int main(
         alt_opt |= ALT_DISPLAY_s;
 
         break;
+
       case 't':
       
         t_opt = 1;
@@ -2157,7 +2159,7 @@ int main(
 
         if (alt_opt != 0)
           {
-	    fprintf(stderr, "%s", conflict);
+          fprintf(stderr, "%s", conflict);
 
           errflg++;
           }
@@ -2180,7 +2182,7 @@ int main(
 
         if (Q_opt || alt_opt)
           {
-	    fprintf(stderr, "%s", conflict);
+          fprintf(stderr, "%s", conflict);
 
           errflg++;
           }
@@ -2201,7 +2203,7 @@ int main(
 
         if (B_opt || alt_opt)
           {
-	    fprintf(stderr, "%s", conflict);
+          fprintf(stderr, "%s", conflict);
 
           errflg++;
           }
@@ -2348,21 +2350,21 @@ int main(
 
   if (c == (ALT_DISPLAY_Mw | ALT_DISPLAY_G))
     {
-      fprintf(stderr, "%s", conflict);
+    fprintf(stderr, "%s", conflict);
 
     errflg++;
     }
 
   if ((alt_opt & ALT_DISPLAY_q) && (f_opt == 1))
     {
-      fprintf(stderr, "%s", conflict);
+    fprintf(stderr, "%s", conflict);
 
     errflg++;
     }
 
   if ((alt_opt & ALT_DISPLAY_o) && !((alt_opt & ALT_DISPLAY_n) || (f_opt)))
     {
-      fprintf(stderr, "%s", conflict);
+    fprintf(stderr, "%s", conflict);
 
     errflg++;
     }
