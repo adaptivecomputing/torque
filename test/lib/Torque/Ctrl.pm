@@ -32,6 +32,7 @@ our @EXPORT = qw(
                  createMomCfg
                  restoreMomCfg
 		 createPbsserverNodes
+                 setupMultiMOM
                 );
 
 # Global Variables
@@ -801,7 +802,10 @@ sub createPbsserverNodes
 }
 
 #-------------------------------------------------------------------------------------
-# 
+# Ensures that the proper setup is in place (manipulates /etc/hosts) for multi-mom.
+# Returns a hashref of all moms and their relevant info, like IP address, ports, etc.
+#
+# NOTE: Please make sure to run teardownMultiMom once testing is complete.
 #-------------------------------------------------------------------------------------
 # PARAMETERS:
 # x = mutually-exclusive
@@ -813,14 +817,139 @@ sub createPbsserverNodes
 #     that specific host.
 #  - host_list  => arrayref of hosts to use for distributing MOMs. (Optional)
 #     {DEFAULT: Torque.Remote.Nodes + localhost}
+#
+#  NOTE: When neither total_moms nor mom_struct are supplied, the function will
+#    generate two MOMs on each host in 'host_list'
 #-------------------------------------------------------------------------------------
 sub setupMultiMOM
 {
+  my ($params) = @_;
+
   # Handle passed in parameters
+  die "The 'total_moms' and 'mom_struct' parameters are mutually-excuslive!" if exists $params->{total_moms} && exists $params->{mom_struct};
+
+  my $localhost  = $props->get_property('Test.Host');
+  my $hosts      = $params->{host_list}  || [$localhost, split ',', $props->get_property('Torque.Remote.Nodes')];
+  my $mom_struct = $params->{mom_struct} || undef;
+  my $total_moms = $params->{total_moms} || 2 * @$hosts;
+
+  my %node_data;
+
   # If using total_moms, determine the mom_struct equivalent accounting for host_list
-  # Got through for each host and start specified number of MOMs
-  # Record number of MOMs per host with port numbers in hashref
-  # Return hashref
+  if($total_moms && !defined $mom_struct)
+  {
+    my $moms_per_host = int($total_moms / @$hosts);
+
+    $mom_struct->{$_} = $moms_per_host foreach @$hosts;
+
+    # Handle when things don't divide evenly
+    my $remaining = $total_moms - $moms_per_host * @$hosts;
+    until( $remaining == 0 )
+    {
+      foreach( reverse @$hosts )
+      {
+        last if $remaining == 0;
+        $mom_struct->{$_}++;
+        $remaining--;
+      }
+    }
+  }
+
+  # Generate and "distribute" new /etc/hosts file
+  # Also, determine some node information
+  my $host_string;
+  my $marker = '#QA-DATA-MARKER';
+  foreach my $host ( @$hosts )
+  {
+    my %ping = runCommand("ping -c 1 $host", logging_off => 1);
+    $ping{STDOUT} =~ /^PING \S+ \((\S+)\) /m;
+
+    my $ip_address = $1;
+    $node_data{$host}{ip_address} = $ip_address;
+
+    my @moms = ($host);
+    my @alias_moms;
+    push @alias_moms, "$host-m".$_ for 2 .. $mom_struct->{$host} + 1;
+    push @moms, @alias_moms;
+
+    $node_data{$host}{mom_aliases} = \@moms;
+
+    $host_string .= "$ip_address  ".join(' ', @alias_moms)."\n";
+
+    # Select port numbers
+    my $start_port = 30001;
+    foreach( @moms )
+    {
+      $node_data{$host}{ports}{$_} = {
+        service_port => $start_port++,
+        manager_port => $start_port++,
+      };
+    }
+  }
+  $host_string = "$marker\n$host_string$marker";
+
+  foreach my $host (@$hosts)
+  {
+    my $tmp_loc = '/tmp/tmp_hosts';
+    if( $host eq $localhost )
+    {
+      $tmp_loc = '/etc/hosts';
+    }
+    else
+    {
+      runCommand("scp -B $host:/etc/hosts $tmp_loc");
+    }
+
+    open HOSTS, "<$tmp_loc"
+      or die "Unable to open $tmp_loc: $!";
+
+    my @lines = <HOSTS>;
+    close HOSTS;
+
+    # Erase previous QA data from file
+    my $remove_lines = 0;
+    my @filtered_lines;
+    foreach(@lines)
+    {
+      if($remove_lines && /^$marker/)
+      {
+        $remove_lines = 0;
+      }
+      elsif(/^$marker/)
+      {
+        $remove_lines = 1;
+      }
+      elsif( $remove_lines )
+      {
+        next;
+      }
+      else
+      {
+        push @filtered_lines, $_;
+      }
+    }
+
+    open HOSTS, ">$tmp_loc"
+      or die "Unable to write: $!";
+    print HOSTS join('', @filtered_lines)."\n$host_string";
+    close HOSTS;
+
+    unless($host eq $localhost)
+    {
+      runCommand("scp -B $tmp_loc $host:/etc/hosts");
+    }
+
+    runCommand("cat $tmp_loc", test_success => 1, msg => "Edited /etc/hosts file for Host $host");
+  }
+
+  return \%node_data;
+}
+
+#-------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------
+sub teardownMultiMom
+{
 }
 
 1;
