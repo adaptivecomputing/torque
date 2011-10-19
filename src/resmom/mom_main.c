@@ -4290,7 +4290,6 @@ int rm_request(
 
   unsigned long ipadd;
   u_short port;
-  int (*flush_io)(int);
 
   extern struct connection svr_conn[];
 
@@ -4305,8 +4304,6 @@ int rm_request(
 
   ipadd = svr_conn[iochan].cn_addr;
   port = svr_conn[iochan].cn_port;
-
-  flush_io = DIS_tcp_wflush;
 
   if (version != RM_PROTOCOL_VER)
     {
@@ -5192,7 +5189,7 @@ int rm_request(
         log_err(-1, id, log_buffer);
         }
 
-      flush_io(iochan);
+      DIS_tcp_wflush(iochan);
 
       close_conn(iochan, FALSE);
 
@@ -5243,14 +5240,14 @@ int rm_request(
       break;
     }  /* END switch(command) */
 
-  if (flush_io(iochan) == -1)
+  if (DIS_tcp_wflush(iochan) == -1)
     {
     log_err(errno, id, "flush");
 
     goto bad;
     }
 
-  return 0;
+  return(PBSE_NONE);
 
 bad:
   tmp = netaddr_pbs_net_t(ipadd);

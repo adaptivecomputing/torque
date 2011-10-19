@@ -178,8 +178,8 @@ int openrm(
   unsigned int  port)  /* I (optional,0=DEFAULT) */
 
   {
-  int                   stream;
-  int                   rc;
+  int                 stream;
+  int                 rc;
 
   static unsigned int gotport = 0;
 
@@ -218,7 +218,7 @@ int openrm(
       addr.sin_port = htons((u_short)tryport);
 
       rc = bind(stream, (struct sockaddr *)&addr, sizeof(addr));
-      if(rc == 0)
+      if (rc == 0)
         break;
 
       if ((errno == EADDRINUSE) || (errno == EADDRNOTAVAIL))
@@ -226,12 +226,12 @@ int openrm(
         struct timespec rem;
         /* We can't get the port we want. Wait a bit and try again */
         rem.tv_sec = 0;
-        rem.tv_nsec = 1000000;
+        rem.tv_nsec = 3000000;
         nanosleep(&rem, &rem);
         continue;
         }
 
-      return(-1*errno);
+      return(-1 * errno);
       }
 
     memset(&addr, '\0', sizeof(addr));
