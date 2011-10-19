@@ -534,7 +534,10 @@ int set_slot_limit(
   } /* END set_slot_limit() */
 
 
-int setup_array_struct(job *pjob)
+int setup_array_struct(
+    
+  job *pjob)
+
   {
   job_array *pa;
 

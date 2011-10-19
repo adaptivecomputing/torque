@@ -396,10 +396,10 @@ int run_pelog(
   char   buf[MAXPATHLEN + 1024];
   char   pelog[MAXPATHLEN + 1024];
 
-  uid_t  real_uid;
+  uid_t  real_uid = 0;
   gid_t *real_gids = NULL;
-  gid_t  real_gid;
-  int    num_gids;
+  gid_t  real_gid = 0;
+  int    num_gids = 0;
 
   int    jobtypespecified = 0;
 
