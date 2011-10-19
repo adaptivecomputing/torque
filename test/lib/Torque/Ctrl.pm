@@ -40,6 +40,7 @@ our $torque_home      = $props->get_property('Torque.Home.Dir');
 our $torque_sbin      = "$torque_home/sbin/";
 our $mom_lock_file    = "$torque_home/mom_priv/mom.lock";
 our $server_lock_file = "$torque_home/server_priv/server.lock";
+our $localhost        = $props->get_property('Test.Host');
 
 our $ps_list        = sub{
   my $process = pop;
@@ -53,24 +54,42 @@ our $remote_ps_list = sub{
     return join(" ",@matches);
 };
 
-###############################################################################
-# startTorque ($)
-###############################################################################
-sub startTorque #($)# 
+#--------------------------------------------------------------------------------------
+# Starts all necessary components of Torque and performs some configuration generation
+#  in certain cases.
+#
+# Currently, a local Torque MOM and local Torque server are always started, with remote MOMs
+#  being optional.
+#
+# Returns a boolean indicating pass or fail.
+#--------------------------------------------------------------------------------------
+# PARAMETERS:
+# - pbs_mom    => hashref to be passed to startPbsmom()
+# - pbs_server => hashref to be passed to startPbsserver() or startPbsserverClean()
+# - multi_mom  => hashref to be passed to setupMultiMOM()
+# - remote_moms => arrayref of remote nodes to be used for MOMs
+# - clean_start => boolean that indicates to start all components in a clean environment.
+#    Also generates some necessary setup, like node files and server setup. {DEFAULT: 0}
+#--------------------------------------------------------------------------------------
+sub startTorque
   {
   
   my ($cfg) = @_;
-  my @mom_hosts;
 
   # Config variables
   my $pbs_mom_cfg    = $cfg->{ 'pbs_mom'     } || {};
   my $pbs_server_cfg = $cfg->{ 'pbs_server'  } || {};
   my $remote_moms    = $cfg->{ 'remote_moms' } || [];
+  my $multi_mom      = $cfg->{multi_mom}       || undef;
+  my $start_clean    = $cfg->{clean_start}     || 0;
 
   # Return value
   my $torque_rtn = 1;
 
   # pbs_mom params
+  my @mom_hosts = ($props->get_property('Test.Host'));
+  push @mom_hosts, @$remote_moms if scalar @$remote_moms;
+
   my $mom_params        = {
                              'args' => $pbs_mom_cfg->{ 'args' }
                           };
@@ -89,27 +108,39 @@ sub startTorque #($)#
   # Pbs_mom Section
   ##########################
 
-  $mom_params->{clean} = 1 if exists $cfg->{clean_start};
-  $remote_mom_params->{clean} = 1 if exists $cfg->{clean_start};
+  $mom_params->{clean} = $cfg->{clean_start};
+  $remote_mom_params->{clean} = $cfg->{clean_start};
 
-  $torque_rtn = startPbsmom($mom_params);
-
-  push @mom_hosts, $props->get_property('Test.Host');
-
-  if( scalar @$remote_moms )
+  if( $multi_mom )
   {
+    $multi_mom->{host_list} = \@mom_hosts unless exists $multi_mom->{host_list};
+    my $ndata = setupMultiMOM($multi_mom);
+
+    startMultiMom({
+        node_data  => $ndata,
+        mom_params => $pbs_mom_cfg,
+      });
+  }
+  else
+  {
+    $torque_rtn = startPbsmom($mom_params);
+
+    if( scalar @$remote_moms )
+    {
       my $remote_moms_rtn = startPbsmom($remote_mom_params);
 
       $torque_rtn = $torque_rtn && $remote_moms_rtn;
-      
-      push @mom_hosts, @$remote_moms;
+    }
   }
 
   ##########################
   # Pbs_server Section
   ##########################
-  
-  $pbs_server_cfg->{mom_hosts} = \@mom_hosts;
+ 
+  if($cfg->{clean_start} && !defined $multi_mom)
+  {
+    createPbsserverNodes({hosts => \@mom_hosts});
+  }
 
   my $pbs_server_rtn = !exists $cfg->{clean_start}
 		     ? startPbsserver($pbs_server_cfg)
@@ -224,72 +255,55 @@ sub startPbsmom #($)#
 
   # Config variables
   my $args       = $cfg->{ 'args'       } || '';
+  my $ports      = $cfg->{ports}          || {};
   my $node       = $cfg->{ 'node'       } || undef;
   my $nodes      = $cfg->{ 'nodes'      } || [];
   my $local_node = $cfg->{ 'local_node' } || 0;
   my $do_clean   = $cfg->{clean}          || 0;
 
-  push(@$nodes, $node) 
-  if $node;
+  # Set Defaults
+  push(@$nodes, $node) if $node;
+
+  $ports->{service_port} ||= 15002;
+  $ports->{manager_port} ||= 15003;
 
   # Assume that we want to start the local node if no remote nodes are passed
   $local_node = 1 if scalar @$nodes == 0;
 
-  my $check_cmd = "ps aux | grep pbs_mom | grep -v grep";
+  my $check_cmd = "netstat -nap | grep -e $ports->{service_port} -e LISTEN | grep pbs_mom";
 
   my $pbs_mom_cmd  = "${torque_sbin}pbs_mom";
   $pbs_mom_cmd    .= " $args";
 
   my $clean_cmd = "rm -f $torque_home/mom_priv/jobs/*; rm -f $torque_home/mom_logs/*";
 
-  # Start any Remote mom's
-  if (scalar @$nodes)
+  my @hosts;
+  push @hosts, undef if $local_node;
+  push @hosts, @$nodes;
+
+  foreach my $n (@hosts)
   {
-    foreach my $n (@$nodes)
-    {
-      if( $do_clean )
-      {
-        runCommand($clean_cmd, test_success => 1, msg => "Cleaning Torque MOM Files on Host $n...", host => $n);
-      }
+    my $add_msg = '';
+    $add_msg   .= " on Remote Host $n" if defined $n;
 
-      my %ssh = runCommandSsh($n, $pbs_mom_cmd, 'test_success_die' => 1, 'msg' => "Starting New Remote PBS_Mom Process on Host $n...");
-
-      my $ps_info = sub{ return &$remote_ps_list($n, $check_cmd, 'pbs_mom'); };
-
-      my $wait = 30;
-      my $endtime = time() + $wait;
-      diag "Waiting for Remote PBS_Mom to Start on Host $n... (${wait}s Timeout)";
-
-      sleep 1 while time() <= $endtime && &$ps_info eq '';
-
-      if( time > $endtime )
-      {
-        die "Remote PBS_Mom Failed to Start on Host $n!";
-      }
-    }
-  }
-
-  # Start local mom
-  if ($local_node)
-  {
     if( $do_clean )
     {
-      runCommand($clean_cmd, test_success => 1, msg => 'Cleaning Torque MOM Files...');
+      runCommand($clean_cmd, host => $n, test_success => 1, msg => "Cleaning Torque MOM Files$add_msg...");
     }
 
-    runCommand($pbs_mom_cmd, 'test_success_die' => 1, 'msg' => 'Starting New Local PBS_Mom Process..');
+    runCommand($pbs_mom_cmd, host => $n, test_success_die => 1, msg => "Starting New Remote PBS_Mom Process$add_msg...");
 
-    my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_mom'); };
+    my $ps_info = sub{ my %cmd = runCommand($check_cmd, host => $n, logging_off => 1,); return $cmd{STDOUT} };
 
     my $wait = 30;
     my $endtime = time() + $wait;
-    diag "Waiting for Local PBS_Mom to Start... (${wait}s Timeout)";
+    diag "Waiting for Remote PBS_Mom to Start$add_msg... (${wait}s Timeout)";
 
     sleep 1 while time() <= $endtime && &$ps_info eq '';
 
     if( time > $endtime )
     {
-      die "Local PBS_Mom Failed to Start!";
+      die "PBS_Mom Failed to Start$add_msg!";
     }
   }
 
@@ -427,7 +441,6 @@ sub startPbsserverClean #($)
 
   my $localhost = $props->get_property('Test.Host');
   my $hosts = $cfg->{hosts} || [$localhost];
-  my $mom_hosts = $cfg->{mom_hosts} || $hosts;
   my $add_queues = $cfg->{add_queues} || [];
 
   # Variables
@@ -485,8 +498,6 @@ SETUP
   $setup_str .= "$qmgr_cmd -c 'set server default_queue = $default_queue'\n";
 
   # Configuration Variables
-  my %server_nodes = ();
-  $server_nodes{hosts} = $mom_hosts;
   my @setup_lines      = split /\n/, ($cfg->{setup_lines} || $setup_str);
 
   # pbs_server command
@@ -500,6 +511,12 @@ rm -f $torque_home/server_priv/accounting/*;
 rm -f $torque_home/server_logs/*
 CMD
   runCommand($clean_cmd, test_success => 1, msg => 'Cleaning Torque Server Files...');
+
+  # Back-up Nodes file, if it exists
+  if( runCommand("ls $torque_home/server_priv/nodes", logging_off => 1 ) == 0 )
+  {
+    runCommand("mv $torque_home/server_priv/nodes $torque_home/nodes.bak", test_success => 1, msg => 'Backing up existing nodes file');
+  }
 
   # Start the pbs server
   diag 'Attempting to Start PBS_Server Clean';
@@ -542,7 +559,12 @@ CMD
   sleep_diag 3;
 
   stopPbsserver();
-  createPbsserverNodes(\%server_nodes);
+  
+  if( runCommand("ls $torque_home/nodes.bak", logging_off => 1 ) == 0 )
+  {
+    runCommand("mv $torque_home/nodes.bak $torque_home/server_priv/nodes", test_success => 1, msg => 'Restoring existing nodes file');
+  }
+  
   startPbsserver();
 
   return 1;
@@ -777,32 +799,38 @@ sub restoreMomCfg #($)
 # 	'hosts' => [ 'g01', 'g02'],
 # });
 #--------------------------------------------------------------
-# Recreates the server_priv/nodes file for PBS Server.
+# Creates the server_priv/nodes file for Torque Server.
 #--------------------------------------------------------------
 sub createPbsserverNodes
 {
   my ($params) = @_;
 
-  my $nodes     = $params->{hosts} || [$props->get_property('Test.Host')];
-  my $node_file = "$torque_home/server_priv/nodes";
-  my $node_args = $props->get_property('torque.node.args');
+  my $nodes      = $params->{hosts} || [$props->get_property('Test.Host')];
+  my $node_attrs = $params->{node_attrs} || {};
+  my $node_file  = "$torque_home/server_priv/nodes";
+  my $node_args  = $props->get_property('torque.node.args');
 
   open NODES, ">$node_file"
     or die "Cannot open $node_file: $!";
 
-  print NODES "$_ $node_args\n" foreach @$nodes;
+  foreach my $node ( @$nodes )
+  {
+    my $line = "$node $node_args";
+    $line .= ' '.join(' ', map { "$_=".$node_attrs->{$node}{$_} } keys %{$node_attrs->{$node}}) if exists $node_attrs->{$node};
+
+    print NODES "$line\n";
+  }
 
   close NODES;
 
-  foreach (@$nodes)
-  {
-    ok(!runCommand("grep $_ $node_file"), "PBS Node File $node_file Contains Node $_")
-      or die "PBS_Server Node file $node_file was NOT setup correctly!";
-  }
+  runCommand("cat $node_file", test_success_die => 1, msg => "Created Torque Server Nodes File");
+
+  return 1;
 }
 
 #-------------------------------------------------------------------------------------
-# Ensures that the proper setup is in place (manipulates /etc/hosts) for multi-mom.
+# Ensures that the proper setup is in place (manipulates /etc/hosts, creates server
+#  nodes file) for multi-mom.
 # Returns a hashref of all moms and their relevant info, like IP address, ports, etc.
 #
 # NOTE: Please make sure to run teardownMultiMom once testing is complete.
@@ -833,7 +861,7 @@ sub setupMultiMOM
   my $mom_struct = $params->{mom_struct} || undef;
   my $total_moms = $params->{total_moms} || 2 * @$hosts;
 
-  my %node_data;
+  my (%node_data, %node_file);
 
   # If using total_moms, determine the mom_struct equivalent accounting for host_list
   if($total_moms && !defined $mom_struct)
@@ -868,13 +896,12 @@ sub setupMultiMOM
     $node_data{$host}{ip_address} = $ip_address;
 
     my @moms = ($host);
-    my @alias_moms;
-    push @alias_moms, "$host-m".$_ for 2 .. $mom_struct->{$host} + 1;
-    push @moms, @alias_moms;
+    push @moms, "$host-m".$_ for 2 .. $mom_struct->{$host} + 1;
+    push @{$node_file{hosts}}, @moms;
 
     $node_data{$host}{mom_aliases} = \@moms;
 
-    $host_string .= "$ip_address  ".join(' ', @alias_moms)."\n";
+    $host_string .= "$ip_address  ".join(' ', @moms)."\n";
 
     # Select port numbers
     my $start_port = 30001;
@@ -884,6 +911,9 @@ sub setupMultiMOM
         service_port => $start_port++,
         manager_port => $start_port++,
       };
+
+      $node_file{node_attrs}{$_}{mom_service_port} = $node_data{$host}{ports}{$_}{service_port};
+      $node_file{node_attrs}{$_}{mom_manager_port} = $node_data{$host}{ports}{$_}{manager_port};
     }
   }
   $host_string = "$marker\n$host_string$marker";
@@ -942,7 +972,41 @@ sub setupMultiMOM
     runCommand("cat $tmp_loc", test_success => 1, msg => "Edited /etc/hosts file for Host $host");
   }
 
+  # Create the node file for the server
+  createPbsserverNodes(\%node_file);
+
   return \%node_data;
+}
+
+#-------------------------------------------------------------------------------------
+# Starts up all Torque MOMs in the special way Multi-MOM must be started.
+#-------------------------------------------------------------------------------------
+# PARAMETERS:
+# - node_data => hashref returned by setupMultiMOM() (preferrably) (REQUIRED)
+#-------------------------------------------------------------------------------------
+sub startMultiMom
+{
+  my ($params) = @_;
+
+  my $node_data  = $params->{node_data} || die "Must provide node data via the 'node_data' key!";
+  my $mom_params = $params->{mom_params} || {};
+
+  foreach my $node (keys %$node_data)
+  {
+    foreach my $mom (@{$node_data->{$node}{mom_aliases}})
+    {
+      my $href = {%$mom_params};
+      my $args .= "-m -M $node_data->{$node}{ports}{$mom}{service_port} -R $node_data->{$node}{ports}{$mom}{manager_port} -A $mom";
+
+      $href->{args}  = $args.' '.($href->{args} || '');
+      $href->{ports} = $node_data->{$node}{ports}{$mom};
+      $href->{node}  = $node unless $node eq $localhost;
+
+      startPbsmom($href);
+    }
+  }
+
+  return 1;
 }
 
 #-------------------------------------------------------------------------------------
