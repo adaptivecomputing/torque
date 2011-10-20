@@ -10,13 +10,10 @@
 #include <limits.h>
 #include <assert.h>
 #include <ctype.h>
-#include <sys/stat.h>
 #include "dis.h"
 #include "libpbs.h"
 #include "portability.h"
 #include <errno.h>
-#include <fcntl.h>
-#include <pwd.h>
 #include <signal.h>
 #include <string.h>
 #include "list_link.h"

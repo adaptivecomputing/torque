@@ -83,8 +83,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <dirent.h>
-#include <pwd.h>
 #include <signal.h>
 #include <string.h>
 #include <ctype.h>
@@ -92,14 +90,10 @@
 #include <fcntl.h>
 #include <time.h>
 #include <limits.h>
-#include <netdb.h>
 #include <sys/types.h>
 #include <sys/param.h>
-#include <sys/times.h>
-#include <sys/stat.h>
 #include <netinet/in.h>
 #include <sys/time.h>
-#include <sys/resource.h>
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif

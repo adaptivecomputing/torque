@@ -1,12 +1,10 @@
 #include <pbs_config.h>
 
-#include <sys/stat.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <ctype.h>
 #include <signal.h>
-#include <unistd.h>
 #include <sys/param.h>
 #include <fcntl.h>
 #include <libgen.h>

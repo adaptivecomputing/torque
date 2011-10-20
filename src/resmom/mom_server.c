@@ -204,12 +204,9 @@
 #include <errno.h>
 #include <time.h>
 #include <limits.h>
-#include <netdb.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/param.h>
-#include <sys/times.h>
-#include <sys/stat.h>
 #include <netinet/in.h>
 #include <sys/time.h>
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)

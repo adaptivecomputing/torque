@@ -15,7 +15,6 @@
 #include <termios.h>
 #endif /* _CRAY */
 
-#include <pwd.h>
 #include <signal.h>
 #include <string.h>
 #include <ctype.h>
@@ -27,7 +26,6 @@
 #include <grp.h>
 #include <sys/types.h>
 #include <sys/param.h>
-#include <sys/times.h>
 #include <sys/stat.h>
 #if (PLOCK_DAEMONS & 4)
 #include <sys/lock.h>

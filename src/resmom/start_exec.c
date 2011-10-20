@@ -75,26 +75,21 @@
 #include <job.h>
 #endif /* JOBFAKE */
 #endif /* USEJOBCREATE */
-#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <pwd.h>
 #include <grp.h>
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
 #include <signal.h>
-#include <termios.h>
 #include <ctype.h>
 #include <time.h>
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
-#include <netinet/in.h>
 #if IBM_SP2==2 /* IBM SP with PSSP 3.1 */
   #include <st_client.h>
 #endif /* IBM SP */

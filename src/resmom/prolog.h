@@ -1,7 +1,6 @@
 #ifndef _PROLOG_H
 #define _PROLOG_H
 #include "license_pbs.h" /* See here for the software license */
-#include <pwd.h> /* uid_t, gid_t */
 
 #include "pbs_job.h" /* job */
 

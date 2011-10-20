@@ -4,8 +4,6 @@
 #ifdef BUILD_L26_CPUSETS
 #include <hwloc.h> /* hwloc_bitmap_t */
 #endif
-#include <sys/types.h> /* mode_t, pid_t */
-#include <pwd.h> /* struct passwd */
 
 #include "pbs_job.h" /* job */
 #include "list_link.h" /* pidl */
