@@ -1,3 +1,5 @@
+
+#include <grp.h>
 #include "utils.h"
 
 
@@ -11,32 +13,28 @@
 **/
 
 
-struct group * getgrnam_ext( 
+struct group *getgrnam_ext( 
 
-  char * grp_name ) /* I */
+  char *grp_name) /* I */
 
   {
-
   struct group * grp;
 
   /* bad argument check */
   if (grp_name == NULL)
     return NULL;
 
-  grp = getgrnam( grp_name );
+  grp = getgrnam(grp_name);
 
   /* if the group wasn't found by name, check if the name */
   /* was the group's id */
   if (grp == NULL)
     {
-
     if (isdigit(grp_name[0]))
       grp = getgrgid(atoi(grp_name));
-
     }
   
   return grp;
-  
-  }
+  } /* END getgrnam_ext() */
 
 

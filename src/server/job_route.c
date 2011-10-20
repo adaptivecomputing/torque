@@ -88,7 +88,6 @@
 
 #include <pthread.h>
 
-#include <sys/types.h>
 #include <sys/param.h>
 #include "pbs_ifl.h"
 #include <errno.h>

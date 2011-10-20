@@ -83,20 +83,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <pwd.h>
 #include <signal.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <time.h>
 #include <limits.h>
-#include <netdb.h>
-#include <grp.h>
 #include <sys/types.h>
 #include <sys/param.h>
-#include <sys/times.h>
-#include <sys/stat.h>
 #include <sys/select.h>
 
 #include "portability.h"

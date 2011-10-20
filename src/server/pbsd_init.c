@@ -74,8 +74,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <memory.h>
-#include <netdb.h>
-#include <pwd.h>
 #include <time.h>
 #include <unistd.h>
 #include <grp.h>

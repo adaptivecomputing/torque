@@ -87,7 +87,6 @@
  * status_job()
  * status_attrib()
  */
-#include <sys/types.h>
 #include <stdlib.h>
 #include "libpbs.h"
 #include <ctype.h>

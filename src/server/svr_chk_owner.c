@@ -80,7 +80,6 @@
 
 #include <pthread.h>
 
-#include <sys/types.h>
 #include <stdio.h>
 #include "libpbs.h"
 #include "string.h"

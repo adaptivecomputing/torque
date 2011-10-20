@@ -95,7 +95,6 @@
 #include <time.h>
 #include <sys/param.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "work_task.h"

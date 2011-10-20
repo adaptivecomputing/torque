@@ -85,8 +85,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <stdarg.h>

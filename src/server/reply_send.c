@@ -93,7 +93,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/types.h>
 #include "libpbs.h"
 #include "dis.h"
 #include "log.h"

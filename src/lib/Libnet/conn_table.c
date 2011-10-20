@@ -14,14 +14,18 @@ extern struct connect_handle connection[];
  * finds and locks an entry in the connection table or returns an error
  */ 
 int get_connection_entry(
-        int *conn_pos)
+    
+  int *conn_pos)
+
   {
-  int rc = PBSE_NONE;
-  int pos = 0;
-  pthread_mutex_t *tmp_mut = NULL;
-  pthread_mutexattr_t t_attr;
+  int                  rc = PBSE_NONE;
+  int                  pos = 0;
+  pthread_mutex_t     *tmp_mut = NULL;
+  pthread_mutexattr_t  t_attr;
+
   pthread_mutexattr_settype(&t_attr, PTHREAD_MUTEX_ERRORCHECK);
-  for (pos = 0;pos < PBS_NET_MAX_CONNECTIONS;pos++)
+
+  for (pos = 0; pos < PBS_NET_MAX_CONNECTIONS; pos++)
     { 
     lock_conn_table();
     if (connection[pos].ch_mutex == NULL)
@@ -35,11 +39,13 @@ int get_connection_entry(
         }
       }
     unlock_conn_table();
+    
     if (pthread_mutex_trylock(connection[pos].ch_mutex) != PBSE_NONE)
       {
       /* if we can't lock the mutex, it is busy*/
       continue; 
       }
+
     /* Why are we checking for this? Isn't it a bug if it's not locked while
      * in use? */
     if (connection[pos].ch_inuse == FALSE)
@@ -50,10 +56,14 @@ int get_connection_entry(
     else
       pthread_mutex_unlock(connection[pos].ch_mutex);
     }
+
   if (*conn_pos == -1)
+    {
     if (rc == PBSE_NONE)
       rc = PBSE_NOCONNECTS;
-  return rc;
-  }
+    }
+
+  return(rc);
+  } /* END get_connection_entry() */
 
 

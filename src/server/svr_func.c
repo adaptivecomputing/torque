@@ -83,7 +83,6 @@
 
 #include "portability.h"
 #include <assert.h>
-#include <sys/types.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>

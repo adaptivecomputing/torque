@@ -86,12 +86,11 @@
  * "server_limits.h"
  */
 
-#include <sys/types.h>
-#include <limits.h>
 
 #ifndef PBS_JOB_H
 #define PBS_JOB_H 1
 
+#include <limits.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "pbs_ifl.h"

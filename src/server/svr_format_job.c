@@ -7,7 +7,6 @@
 
 #include "pbs_ifl.h"
 #include <sys/types.h>
-#include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>

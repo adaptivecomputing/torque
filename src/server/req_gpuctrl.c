@@ -85,11 +85,8 @@
 
 #include <errno.h>
 #include <stdio.h>
-#include <sys/types.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include "libpbs.h"
-#include <fcntl.h>
 #include <signal.h>
 #include "attribute.h"
 #include "server.h"

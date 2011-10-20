@@ -2,7 +2,6 @@
 #include <pthread.h>
 
 #include <stdio.h>
-#include "sys/types.h"
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
