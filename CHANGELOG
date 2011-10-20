@@ -30,6 +30,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       when a job element of the array completed.
   b - Fixed a bug where array jobs .AZ file would not be deleted when the array job was done.
   b - fix so user epilogues are run as user instead of root (backported from 3.0.3)
+  b - fix the prevent pbs_server from hanging when doing server to server job moves.
+      (backported from 3.0.3)
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
