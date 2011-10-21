@@ -145,8 +145,6 @@ int   gpu_err_reset = FALSE;    /* was a gpu errcount reset requested */
 
 all_nodes allnodes;
 
-static int  svr_numnodes = 0; /* number of nodes currently available (global!!! - set in node_spec) */
-static int  svr_numcfgnodes = 0;   /* number of nodes currently configured (global!!! - set in node_spec) */
 static int  exclusive;  /* node allocation type */
 
 static int       num_addrnote_tasks = 0; /* number of outstanding send_cluster_addrs tasks */
@@ -2883,46 +2881,6 @@ static int hasppn(
 
 
 
-
-
-/*
-** Mark the properties of a node that match the marked
-** properties given.
-*/
-
-static void mark(
-
-  struct pbsnode *pnode,  /* I */
-  struct prop    *props)
-
-  {
-
-  struct  prop    *set, *pp;
-
-  for (pp = pnode->nd_first;pp != NULL;pp = pp->next)
-    {
-    pp->mark = 0;
-
-    for (set = props;set;set = set->next)
-      {
-      if (set->mark == 0)
-        continue;
-
-      if (strcmp(pp->name, set->name) == 0)
-        {
-        pp->mark = 1;
-
-        break;
-        }
-      }
-    }
-
-  return;
-  }  /* END mark() */
-
-
-
-
 /*
 ** Count how many gpus are available for use on this node
 */
@@ -3226,154 +3184,6 @@ int can_reshuffle(
 
 
 
-
-
-
-#define RECURSIVE_LIMIT 3
-
-/*
-** Search for a node which contains properties glorf and the requirements.
-** skip indicates which nodes to pass over for this search.
-** Don't do any recursive calls deeper than RECURSIVE_LIMIT.
-**      RETURN:  0 = failure, 1 = SUCCESS
-*/
-
-static int search(
-
-  struct prop *glorf,  /* properties */
-  int          vpreq,  /* VPs needed */
-  int          gpureq, /* GPUs needed */
-  int          skip,
-  int          order,
-  int          depth)
-
-  {
-  static int      pass = INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_UNKNOWN;
-
-  static char id[] = "search";
-  struct pbsnode *pnode = NULL;
-  int             found;
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
-
-  node_iterator   iter;
-
-  if (++depth == RECURSIVE_LIMIT)
-    {
-    return(0);
-    }
-  
-  reinitialize_node_iterator(&iter);
-
-  /* look for nodes we haven't picked already */
-  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
-    {
-    if (search_acceptable(pnode,glorf,skip,vpreq,gpureq) == TRUE)
-      {
-      pnode->nd_flag = thinking;
-      mark(pnode, glorf);
-      pnode->nd_needed = vpreq;
-      pnode->nd_ngpus_needed = gpureq;
-      pnode->nd_order  = order;
-
-      /* SUCCESS */
-      if (LOGLEVEL >= 6)
-        {
-        sprintf(log_buf,
-          "search: successful gpus on node %s need %d(%d) mode %d has %d free %d skip %d depth %d",
-          pnode->nd_name,
-          gpureq,
-          pnode->nd_ngpus_needed,
-          gpu_mode_rqstd,
-          pnode->nd_ngpus,
-          gpu_count(pnode, TRUE),
-          skip,
-          depth);
-
-         log_ext(-1, id, log_buf, LOG_DEBUG);
-         }
-
-      unlock_node(pnode, id, "search_acceptable == TRUE", LOGLEVEL);
-
-      return(1);
-      }
-    }
-
-  if (glorf == NULL)  /* no property */
-    {
-    /* FAILURE */
-
-    return(0);   /* can't retry */
-    }
-
-  /* try re-shuffling the nodes to get what we want */
-  reinitialize_node_iterator(&iter);
-  pnode = NULL;
-
-  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
-    {
-    /* all paths through here treat the mutex correctly. convoluted, but 
-     * correct. This has to happen because of the potential recursion */
-    if (can_reshuffle(pnode,glorf,skip,vpreq,gpureq,pass) == TRUE)
-      {
-      pnode->nd_flag = conflict;
-
-      unlock_node(pnode, id, "search in search", LOGLEVEL);
-
-      /* Ben Webb patch (CRI 10/06/03) */
-      found = search(
-                pnode->nd_first,
-                pnode->nd_needed,
-                pnode->nd_ngpus_needed,
-                skip,
-                pnode->nd_order,
-                depth);
-      
-      lock_node(pnode, id, "search in search", LOGLEVEL);
-
-      pnode->nd_flag = thinking;
-
-      if (found)
-        {
-        /* SUCCESS */
-        mark(pnode, glorf);
-
-        pnode->nd_needed = vpreq;
-        pnode->nd_ngpus_needed = gpureq;
-        pnode->nd_order  = order;
-
-        if (LOGLEVEL >= 6)
-          {
-          sprintf(log_buf,
-            "search(2): successful gpus on node %s need %d(%d) mode %d has %d free %d skip %d depth %d",
-            pnode->nd_name,
-            gpureq,
-            pnode->nd_ngpus_needed,
-            gpu_mode_rqstd,
-            pnode->nd_ngpus,
-            gpu_count(pnode, TRUE),
-            skip,
-            depth);
-
-           log_ext(-1, id, log_buf, LOG_DEBUG);
-           }
-    
-        unlock_node(pnode, id, "found", LOGLEVEL);
-        
-        return(1);
-        }
-      }  
-    }  /* END for (each node) */
-
-  /* FAILURE */
-  /* not found */
-
-  return(0);
-  }  /* END search() */
-
-
-
-
-
 /*
 ** Parse a number in a spec.
 ** Return 0 if okay, 1 if no number exists, -1 on error
@@ -3602,143 +3412,6 @@ static int proplist(
 
   return(PBSE_NONE);
   }  /* END proplist() */
-
-
-
-
-/*
- * Evaluate one element in a node spec.
- *
- * Return 1 if it can be satisfied
- *        0 if it cannot be completly satisfied. (not used now)
- *       -1 if error - can never be satisfied.
- */
-
-static int listelem(
-
-  char **str,
-  int    order)
-
-  {
-  int num = 1;
-  int i, hit;
-  int ret = -1;
-
-  struct prop *prop = NULL;
-
-  struct pbsnode *pnode;
-  int node_req = 1;
-  int gpu_req = 0;
-
-  node_iterator iter;
-
-  if ((i = number(str, &num)) == -1) /* get number */
-    {
-    /* FAILURE */
-
-    return(ret);
-    }
-
-  if (i == 0)
-    {
-    /* number exists */
-
-    if (**str == ':')
-      {
-      /* there are properties */
-
-      (*str)++;
-
-      if (proplist(str, &prop, &node_req, &gpu_req))
-        {
-        return(ret);
-        }
-      }
-    }
-  else
-    {
-    /* no number */
-
-    if (proplist(str, &prop, &node_req, &gpu_req))
-      {
-      /* must be a prop list with no number in front */
-
-      return(ret);
-      }
-    }
-
-  /* count number of nodes with the requested property */
-
-  hit = 0;
-
-  reinitialize_node_iterator(&iter);
-  pnode = NULL;
-
-  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
-    {
-    if (pnode->nd_ntype == NTYPE_CLUSTER)
-      {
-      if ((hasprop(pnode, prop)) && 
-          (hasppn(pnode, node_req, SKIP_NONE)) &&
-          (gpu_count(pnode, FALSE) >= gpu_req))
-        hit++;
-      
-      if (hit == num)
-        {
-        unlock_node(pnode, "listelem", NULL, LOGLEVEL);
-        break;  /* found enough  */
-        }
-      }
-    } /* END for each node */
-
-  if (hit < num)
-    {
-    /* request exceeds configured nodes */
-
-    if ((SvrNodeCt == 0) || (SvrNodeCt < num))
-      {
-      /* request exceeds server resources_available */
-
-      /* request can never be satisfied */
-
-      goto done;
-      }
-    }
-
-  /*
-  ** Find an initial set of nodes to satisfy the request.
-  ** Go ahead and use any nodes no matter what state they are in.
-  */
-
-  /* NOTE:  SKIP_NONE_REUSE will not mark nodes as inuse, ie allow node re-use */
-
-  for (i = 0;i < num;i++)
-    {
-    if (SvrNodeCt == 0)
-      {
-      if (search(prop, node_req, gpu_req, SKIP_NONE, order, 0))
-        continue;
-      }
-    else
-      {
-      if (search(prop, node_req, gpu_req, SKIP_NONE_REUSE, order, 0))
-        continue;
-      }
-
-    /* can never be satisfied */
-
-    goto done;
-    }
-
-  ret = 1;
-
-done:
-
-  free_prop(prop);
-
-  return(ret);
-  }  /* END listelem() */
-
 
 
 
@@ -4007,76 +3680,180 @@ int procs_available(
 
 
 
-/* checks if nodes are free/configured */
-/* NOTE: must always be called by a thread that already holds the mutex for pnode */
-int node_avail_check(
+int node_is_spec_acceptable(
 
-  struct pbsnode *pnode,           /* I */
-  char           *ProcBMStr)       /* I */
+  struct pbsnode   *pnode,
+  single_spec_data *spec,
+  char             *ProcBMStr,
+  int               exclusive,
+  int              *eligible_nodes)
 
   {
-  char           *id = "node_avail_check";
-
+  static char    *id = "node_is_spec_acceptable";
   struct pbssubn *snp;
+  struct prop    *prop = spec->prop;
+
+  int             ppn_req = spec->ppn;
+  int             gpu_req = spec->gpu;
 
 #ifdef GEOMETRY_REQUESTS
-  /* must be dedicated node use for cpusets */
-  if (IS_VALID_STR(ProcBMStr)) 
+  if (IS_VALID_STR(ProcBMStr))
     {
     if (pnode->nd_state != INUSE_FREE)
-      return(-1);
+      return(FALSE);
 
-    if (node_satisfies_request(pnode,ProcBMStr) == FALSE)
-      return(-1);
+    if (node_satisfies_request(pnode, ProcBMStr) == FALSE)
+      return(FALSE);
     }
-#endif /* GEOMETRY_REQUESTS */
+#endif
 
-  if (LOGLEVEL >= 6)
-    {
-    DBPRT(("%s: %s nsn %d, nsnfree %d, nsnshared %d\n",
-           id,
-           pnode->nd_name,
-           pnode->nd_nsn,
-           pnode->nd_nsnfree,
-           pnode->nd_nsnshared))
-    }
+  /* NYI: check if these are necessary */
+  pnode->nd_flag = okay;
 
-  pnode->nd_flag   = okay;
-
-  pnode->nd_needed = 0;
-
-  for (snp = pnode->nd_psn;snp != NULL;snp = snp->next)
+  for (snp = pnode->nd_psn; snp != NULL; snp = snp->next)
     {
     snp->flag = okay;
 
-    if (LOGLEVEL >= 6)
-      {
-      DBPRT(("%s: %s/%d inuse 0x%x nprops %d\n",
-             id,
-             pnode->nd_name,
-             snp->index,
-             snp->inuse,
-             pnode->nd_nprops))
-      }
+#ifndef NDEBUG
+    DBPRT(("%s: %s/%d inuse 0x%x nprops %d\n",
+      id,
+      pnode->nd_name,
+      snp->index,
+      snp->inuse,
+      pnode->nd_nprops))
+#endif
     }
 
-  if (pnode->nd_ntype == NTYPE_CLUSTER)
+  if (pnode->nd_ntype != NTYPE_CLUSTER)
+    return(FALSE);
+
+  if ((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) != 0)
+    return(FALSE);
+
+  /* make sure that the node has properties */
+  if (hasprop(pnode, prop) == FALSE)
+    return(FALSE);
+
+  if ((hasppn(pnode, ppn_req, SKIP_NONE) == FALSE) ||
+      (gpu_count(pnode, FALSE) < gpu_req))
+    return(FALSE);
+
+  (*eligible_nodes)++;
+
+  if (exclusive == TRUE) 
     {
-    /* configured node located */
-    svr_numcfgnodes++;
+    int gpu_free = gpu_count(pnode, TRUE) - pnode->nd_ngpus_to_be_used;
+    int np_free  = pnode->nd_nsnfree - pnode->nd_np_to_be_used;
 
-    if ((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) == 0)
+    if ((ppn_req > np_free) ||
+        (gpu_req > gpu_free))
+      return(FALSE);
+    }
+
+  return(TRUE);
+  } /* END node_is_spec_acceptable() */
+
+
+
+
+int parse_req_data(
+    
+  complete_spec_data *all_reqs)
+
+  {
+  int               i;
+  int               j;
+
+  single_spec_data *req;
+
+  for (i = 0; i < all_reqs->num_reqs; i++)
+    {
+    req = all_reqs->reqs + i;
+    req->nodes = 1;
+    req->gpu   = 0;
+    req->ppn   = 1;
+    req->prop  = NULL;
+
+    if ((j = number(&(all_reqs->req_start[i]), &(req->nodes))) == -1)
+      return(j);
+
+    if (j == 0)
       {
-      /* NOTE:  checking if node is not just up, but free */
-      /* available node located */
-
-      svr_numnodes++;
+      /* there was a number */
+      if (*(all_reqs->req_start[i]) != '\0')
+        {
+        if (*(all_reqs->req_start[i]) == ':')
+          all_reqs->req_start[i]++;
+        
+        if (proplist(&(all_reqs->req_start[i]), &(req->prop), &(req->ppn), &(req->gpu)))
+          return(-1);
+        }
+      }
+    else
+      {
+      if (*(all_reqs->req_start[i]) != '\0')
+        {
+        if (proplist(&(all_reqs->req_start[i]), &(req->prop), &(req->ppn), &(req->gpu)))
+          return(-1);
+        }
       }
     }
 
-  return(0);
-  } /* END node_avail_check() */
+  return(PBSE_NONE);
+  } /* END parse_req_data() */
 
+
+
+
+/* 
+ * builds the node_job_add_info struct that will be used by set_nodes
+ * instead of looping over different nodes.
+ */
+
+int save_node_for_adding(
+    
+  node_job_add_info *naji,
+  struct pbsnode    *pnode,
+  single_spec_data  *req)
+
+  {
+  static char       *id = "save_node_for_adding";
+  node_job_add_info *next;
+  node_job_add_info *current;
+
+  if (naji->node_name[0] == '\0')
+    {
+    /* first */
+    strcpy(naji->node_name, pnode->nd_name);
+    naji->ppn_needed = req->ppn;
+    naji->gpu_needed = req->gpu;
+    }
+  else
+    {
+    /* second */
+    if ((next = malloc(sizeof(node_job_add_info))) == NULL)
+      {
+      log_err(ENOMEM, id, "Cannot allocate memory!");
+
+      return(ENOMEM);
+      }
+
+    /* fix pointers, NOTE: works even if current == NULL */
+    current = naji->next;
+    next->next = current;
+    naji->next = next;
+
+    strcpy(next->node_name, pnode->nd_name);
+    next->ppn_needed = req->ppn;
+    next->gpu_needed = req->gpu;
+    }
+
+  /* count off the number we have reserved */
+  pnode->nd_np_to_be_used    += req->ppn;
+  pnode->nd_ngpus_to_be_used += req->gpu;
+
+  return(PBSE_NONE);
+  } /* END save_node_for_adding */
 
 
 
@@ -4093,15 +3870,17 @@ int node_avail_check(
 
 static int node_spec(
 
-  char  *spec,       /* I */
-  int    early,      /* I (boolean) */
-  int    exactmatch, /* I (boolean) - NOT USED */
-  char  *ProcBMStr,  /* I */
-  char  *FailNode,   /* O (optional,minsize=1024) */
-  char  *EMsg)       /* O (optional,minsize=1024) */
+  char              *spec_param, /* I */
+  int                early,      /* I (boolean) */
+  int                exactmatch, /* I (boolean) - NOT USED */
+  char              *ProcBMStr,  /* I */
+  char              *FailNode,   /* O (optional,minsize=1024) */
+  node_job_add_info *naji,       /* O (optional) */
+  char              *EMsg)       /* O (optional,minsize=1024) */
 
   {
   static char id[] = "node_spec";
+  static char shared[] = "shared";
 
   struct pbsnode *pnode;
   node_iterator   iter;
@@ -4110,8 +3889,11 @@ static int node_spec(
   char *str, *globs, *cp, *hold;
   int  i;
   int  num;
-  int  rv;
-  static char shared[] = "shared";
+  int  rc;
+  int  eligible_nodes = 0;
+  complete_spec_data all_reqs;
+  char  *spec;
+  char  *plus;
 
   extern int PNodeStateToString(int, char *, int);
 
@@ -4123,7 +3905,7 @@ static int node_spec(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buf, "entered spec=%.4000s", spec);
+    sprintf(log_buf, "entered spec=%.4000s", spec_param);
 
     log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
@@ -4132,7 +3914,7 @@ static int node_spec(
 
   exclusive = 1; /* by default, nodes (VPs) are requested exclusively */
 
-  spec = strdup(spec);
+  spec = strdup(spec_param);
 
   if (spec == NULL)
     {
@@ -4219,6 +4001,50 @@ static int node_spec(
     return(-1);
     }
 
+  all_reqs.total_nodes = num;
+  all_reqs.num_reqs = 1;
+  plus = spec;
+
+  /* count number of reqs */
+  while ((plus = strchr(plus + 1, '+')) != NULL)
+    all_reqs.num_reqs++;
+
+  /* allocate space in all_reqs */
+  all_reqs.reqs      = malloc(sizeof(single_spec_data) * all_reqs.num_reqs);
+  all_reqs.req_start = malloc(sizeof(char *) * all_reqs.num_reqs);
+
+  if ((all_reqs.reqs == NULL) ||
+      (all_reqs.req_start == NULL))
+    {
+    log_err(ENOMEM, id, "Cannot allocate memory!");
+    }
+
+  /* set up pointers for reqs */
+  plus = spec;
+  i = 0;
+  all_reqs.req_start[i] = spec;
+  i++;
+
+  while ((plus = strchr(plus + 1, '+')) != NULL)
+    {
+    /* advance past '+' */
+    plus++;
+
+    /* advance past "nodes=" */
+    if (!strncmp(plus, "nodes=", strlen("nodes=")))
+      plus += strlen("nodes=");
+
+    all_reqs.req_start[i] = plus;
+    *plus = '\0';
+    }
+
+  /* now parse each spec into the data */
+  if ((rc = parse_req_data(&all_reqs)) != PBSE_NONE)
+    {
+    /* FAILURE */
+    return(rc);
+    }
+
   if (LOGLEVEL >= 6)
     {
     sprintf(log_buf, "job allocation debug: %d requested, %d svr_clnodes, %d svr_totnodes",
@@ -4245,294 +4071,79 @@ static int node_spec(
     }
     */
 
-  /* reset subnodes (VPs) to okay */
-  svr_numnodes = 0;
-
-  svr_numcfgnodes = 0;
-  
   reinitialize_node_iterator(&iter);
   pnode = NULL;
 
+  /* iterate over all nodes */
   while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
-    node_avail_check(pnode,ProcBMStr);
-    }    /* END for (i = 0) */
-
-  /*
-   * Make first pass at finding nodes to allocate.
-   * process each subspec (piece between '+'s)
-   */
-
-  for (i = 1;;i++)
-    {
-    if ((rv = listelem(&str, i)) <= 0)
+    /* check each req against this node to see if it satisfies it */
+    for (i = 0; i < all_reqs.num_reqs; i++)
       {
-      free(spec);
+      single_spec_data *req = all_reqs.reqs + i;
 
-      return(rv);
+      if (req->nodes > 0)
+        {
+        if (node_is_spec_acceptable(pnode, req, ProcBMStr, exclusive, &eligible_nodes) == TRUE)
+          {
+          if (naji != NULL)
+            {
+            save_node_for_adding(naji, pnode, req);
+            }
+
+          /* decrement needed nodes */
+          all_reqs.total_nodes--;
+          req->nodes--;
+    
+          /* are all reqs satisfied? */
+          if (all_reqs.total_nodes == 0)
+            break;
+          }
+        }
       }
+      
+    unlock_node(pnode, id, NULL, LOGLEVEL);
 
-    if (*str != '+')
+    /* are all reqs satisfied? */
+    if (all_reqs.total_nodes == 0)
       break;
-
-    str++;
-    }  /* END for (i) */
-
-  i = (int) * str;
+    } /* END for each node */
 
   free(spec);
 
-  if (i != 0)     /* garbled list */
+  if (eligible_nodes < num)
     {
+    /* sufficient eligible nodes do not exist */
     /* FAILURE */
+    sprintf(log_buf,
+      "job requesting nodes that will never be available - spec = %s",
+      spec_param);
 
-    sprintf(log_buf, "job allocation request is corrupt");
-
-    if (LOGLEVEL >= 6)
-      {
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
-      }
-
-    if (EMsg != NULL)
-      {
-      strncpy(EMsg, log_buf, 1024);
-      }
+    log_err(-1, id, log_buf);
 
     return(-1);
     }
 
-  if ((num > svr_numnodes) && early) /* temp fail, not available */
+  if (all_reqs.total_nodes > 0)
     {
+    /* nodes no currently available */
     /* FAILURE */
-
     sprintf(log_buf,
       "job allocation request exceeds currently available cluster nodes, %d requested, %d available",
       num,
-      svr_numnodes);
-
-    if (LOGLEVEL >= 6)
-      {
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
-      }
-
-    if (EMsg != NULL)
-      {
-      strncpy(EMsg, log_buf, 1024);
-      }
-
-    return(0);
-    }  /* END if ((num > svr_numnodes) && early) */
-
-  if (LOGLEVEL >= 6)
-    {
-    sprintf(log_buf,
-      "job allocation debug(2): %d requested, %d svr_numnodes",
-      num,
-      svr_numnodes);
+      num - all_reqs.total_nodes);
 
     log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
-    DBPRT(("%s\n", log_buf));
-    }
-
-  /*
-   * At this point we know the spec is legal.
-   * Here we find a replacement for any nodes chosen above
-   * that are already inuse.
-   */
-  reinitialize_node_iterator(&iter);
-  pnode = NULL;
-
-  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
-    {
-    if ((pnode->nd_ntype != NTYPE_CLUSTER) ||
-        (pnode->nd_flag != thinking))  /* thinking is global */
+    if (EMsg != NULL)
       {
-      /* node is ok */
-      continue;
+      strncpy(EMsg, log_buf, MAXLINE);
       }
 
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "starting eval gpus on node %s need %d free %d",
-        pnode->nd_name,
-        pnode->nd_ngpus_needed,
-        gpu_count(pnode, TRUE));
-
-       log_ext(-1, id, log_buf, LOG_DEBUG);
-       }
-
-    if (pnode->nd_state == INUSE_FREE)
-      {
-      if (pnode->nd_needed <= pnode->nd_nsnfree)
-        {
-        if (pnode->nd_ngpus_needed <= gpu_count(pnode, TRUE))
-          {
-          /* adequate virtual nodes and gpus available - node is ok */
-          if (LOGLEVEL >= 7)
-            {
-            sprintf(log_buf, "adequate virtual nodes and gpus available - node is ok");
-            log_ext(-1, id, log_buf, LOG_DEBUG);
-            }
-          
-          continue;
-          }
-        }
-      
-      if (!exclusive &&
-          (pnode->nd_needed < pnode->nd_nsnfree + pnode->nd_nsnshared))
-        {
-        if (pnode->nd_ngpus_needed <= gpu_count(pnode, TRUE))
-          {
-          /* shared node - node is ok */
-          continue;
-          }
-        }
-      }
-    else
-      {
-      if (!exclusive &&
-          (pnode->nd_needed <= pnode->nd_nsnfree + pnode->nd_nsnshared))
-        {
-        if (pnode->nd_ngpus_needed <= pnode->nd_ngpus_free)
-          {
-          /* shared node - node is ok */
-          continue;
-          }
-        }
-      }
-
-    /* otherwise find replacement node */
-
-    /* Ben Webb search patch applied (CRI 10/03/03) */
-
-    pnode->nd_flag = okay;
-
-    unlock_node(pnode, "node_spec", "before search", LOGLEVEL);
-
-    if (search(
-          pnode->nd_first,
-          pnode->nd_needed,
-          pnode->nd_ngpus_needed,
-          (exclusive != 0) ? SKIP_ANYINUSE : SKIP_EXCLUSIVE,
-          pnode->nd_order,
-          0))
-      {
-      /* node is ok */
-      lock_node(pnode, "node_spec", "node ok", LOGLEVEL);
-      continue;
-      }
-    else
-      lock_node(pnode, "node_spec", "search fail", LOGLEVEL);
-
-    if (early != 0)
-      {
-      /* FAILURE */
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buf, "failure early");
-
-        log_ext(-1, id, log_buf, LOG_DEBUG);
-        }
-
-      /* specified node not available and replacement cannot be located */
-
-      if (pnode->nd_needed > pnode->nd_nsnfree)
-        {
-        char JobList[MAXLINE];
-
-        struct pbssubn *np;
-
-        struct jobinfo *jp;
-
-        char   *BPtr;
-        int     BSpace;
-
-        int     nindex;
-
-        JobList[0] = '\0';
-
-        BPtr = JobList;
-        BSpace = sizeof(JobList);
-
-        /* scheduler and pbs_server disagree on np availability - report current allocation */
-
-        /* show allocating jobs */
-
-        /* examine all subnodes in node */
-
-        nindex = 0;
-
-        for (np = pnode->nd_psn;np != NULL;np = np->next)
-          {
-          /* examine all jobs allocated to subnode */
-
-          for (jp = np->jobs;jp != NULL;jp = jp->next)
-            {
-            MSNPrintF(&BPtr, &BSpace, "%s%s:%d",
-                      (JobList[0] != '\0') ? "," : "",
-                      (jp->job != NULL) ? jp->job->ji_qs.ji_jobid : "???",
-                      nindex);
-            }
-
-          nindex++;
-          }  /* END for (np) */
-
-        snprintf(log_buf, sizeof(log_buf), 
-          "cannot allocate node '%s' to job - node not currently available (nps needed/free: %d/%d, gpus needed/free: %d/%d, joblist: %s)",
-          pnode->nd_name,
-          pnode->nd_needed,
-          pnode->nd_nsnfree,
-          pnode->nd_ngpus_needed,
-          gpu_count(pnode, TRUE),
-          JobList);
-
-#ifdef BROKENVNODECHECKS
-        /* NOTE:  hack - should be moved to update node state */
-
-        if (JobList[0] == '\0')
-          {
-          pnode->nd_nsnfree = pnode->nd_nsn;
-          pnode->nd_ngpus_free = pnode->nd_ngpus;
-          }
-
-#endif
-        }
-      else
-        {
-        char NodeState[1024];
-
-        PNodeStateToString(pnode->nd_state, NodeState, sizeof(NodeState));
-
-        sprintf(log_buf,
-          "cannot allocate node '%s' to job - node not currently available (state: %s)",
-          pnode->nd_name,
-          NodeState);
-        }
-
-      if (LOGLEVEL >= 7)
-        {
-        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
-        }
-
-      if (EMsg != NULL)
-        {
-        strncpy(EMsg, log_buf, 1024);
-        }
-
-      if (FailNode != NULL)
-        strncpy(FailNode, pnode->nd_name, 1024);
-
-      unlock_node(pnode, "node_spec", NULL, LOGLEVEL);
-
-      return(0);
-      }  /* END if (early != 0) */
-
-    num = 0;
-    }  /* END for each node */
+    return(0);
+    } /* END if (all_reqs.total_nodes > 0) */
 
   /* SUCCESS - spec is ok */
-
   if (LOGLEVEL >= 6)
     {
     sprintf(log_buf, "job allocation debug(3): returning %d requested", num);
@@ -4795,7 +4406,7 @@ int add_job_to_node(
     }
 
   /* decrement the amount of nodes needed */
-  --pnode->nd_needed;
+  --pnode->nd_np_to_be_used;
 
   return(SUCCESS);
   } /* END add_job_to_node() */
@@ -4822,8 +4433,7 @@ int add_job_to_gpu_subnode(
     pnode->nd_ngpus_free--;
     }
 
-  /* this seems to be a temporary variable needed for node selection */
-  pnode->nd_ngpus_needed--;
+  pnode->nd_ngpus_to_be_used--;
 
   return(PBSE_NONE);
   } /* END add_job_to_gpu_subnode() */
@@ -4929,9 +4539,10 @@ int add_gpu_to_hostlist(
 
 int place_gpus_in_hostlist(
 
-  struct pbsnode  *pnode,
-  job             *pjob,
-  struct howl    **gpu_list)
+  struct pbsnode     *pnode,
+  job                *pjob,
+  node_job_add_info  *naji,
+  struct howl       **gpu_list)
 
   {
   static char    *id = "place_gpus_in_hostlist";
@@ -4941,7 +4552,7 @@ int place_gpus_in_hostlist(
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* place the gpus in the hostlist as well */
-  for (j = 0; j < pnode->nd_ngpus && pnode->nd_ngpus_needed > 0; j++)
+  for (j = 0; j < pnode->nd_ngpus && naji->gpu_needed > 0; j++)
     {
     sprintf(log_buf,
       "node: %s j %d ngpus %d need %d",
@@ -4971,6 +4582,7 @@ int place_gpus_in_hostlist(
         continue;
     
     add_job_to_gpu_subnode(pnode,gn,pjob);
+    naji->gpu_needed--;
     
     sprintf(log_buf,
       "ADDING gpu %s/%d to exec_gpus still need %d",
@@ -5040,7 +4652,7 @@ int place_gpus_in_hostlist(
     }
 
   return(PBSE_NONE);
-  } /* END place_gpus_in_list() */
+  } /* END place_gpus_in_hostlist() */
 
 
 
@@ -5051,16 +4663,17 @@ int place_gpus_in_hostlist(
 
 int place_subnodes_in_hostlist(
 
-  struct howl    **hlist,
-  job             *pjob,
-  short            newstate,
-  struct pbsnode  *pnode)
+  struct howl       **hlist,
+  job                *pjob,
+  short               newstate,
+  struct pbsnode     *pnode,
+  node_job_add_info  *naji)
 
   {
   struct pbssubn *snp;
 
   /* place the subnodes (nps) in the hostlist */
-  for (snp = pnode->nd_psn;snp && pnode->nd_needed;snp = snp->next)
+  for (snp = pnode->nd_psn; snp && naji->ppn_needed > 0; snp = snp->next)
     {
     if (exclusive)
       {
@@ -5077,8 +4690,8 @@ int place_subnodes_in_hostlist(
     
     /* Mark subnode as being IN USE */
     add_job_to_node(pnode,snp,newstate,pjob,exclusive);
-    
     build_host_list(hlist,snp,pnode);
+    naji->ppn_needed--;
     }  /* END for (snp) */
 
   return(PBSE_NONE);
@@ -5185,66 +4798,73 @@ int translate_howl_to_string(
 
 int build_hostlist_nodes_req(
     
-  job          *pjob,     /* M */
-  char         *EMsg,     /* O */
-  char         *spec,     /* I */
-  short         newstate, /* I */
-  struct howl **hlist,    /* O */
-  struct howl **gpu_list) /* O */
+  job                *pjob,     /* M */
+  char               *EMsg,     /* O */
+  char               *spec,     /* I */
+  short               newstate, /* I */
+  struct howl       **hlist,    /* O */
+  struct howl       **gpu_list, /* O */
+  node_job_add_info  *naji)     /* I */
 
   {
-  struct pbsnode *pnode = NULL;
+  static char       *id = "build_hostlist_nodes_req";
+  struct pbsnode    *pnode = NULL;
 
-  node_iterator   iter;
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  node_job_add_info *current;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
+  int                failure = FALSE;
 
-  reinitialize_node_iterator(&iter);
+  current = naji;
 
-  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+  while (current != NULL)
     {
-    if (pnode->nd_flag != thinking)
+    if ((pnode = find_nodebyname(current->node_name)) != NULL)
       {
-      /* node is not considered/eligible for job - see search() */
-      continue;
-      }
-
-    /* within the node, check each subnode */
-#ifdef GEOMETRY_REQUESTS
-    if (ProcBMStr[0] != '\0')
-      {
-      /* check node here, a request was given */
-      if (node_satisfies_request(pnode,ProcBMStr) == TRUE)
+      if (failure == TRUE)
         {
-        reserve_node(pnode, newstate, pjob, ProcBMStr, hlist);
+        /* just remove the marked request from the node */
+        pnode->nd_np_to_be_used    -= current->ppn_needed;
+        pnode->nd_ngpus_to_be_used -= current->gpu_needed;
+        }
+      else
+        {
+        place_gpus_in_hostlist(pnode, pjob, current, gpu_list);      
+        place_subnodes_in_hostlist(hlist, pjob, newstate, pnode, current);
+
+        if ((naji->gpu_needed > 0) || 
+            (naji->ppn_needed > 0))
+          {
+          failure = TRUE;
+       
+          /* remove any remaining things marked on the node */
+          pnode->nd_np_to_be_used    -= current->ppn_needed;
+          pnode->nd_ngpus_to_be_used -= current->gpu_needed;
+          }
         }
 
-      continue;
+      unlock_node(pnode, id, NULL, LOGLEVEL);
       }
-#endif /* GEOMETRY_REQUESTS */
 
-    place_gpus_in_hostlist(pnode, pjob, gpu_list);
+    current = current->next;
+    } /* END processing reserved nodes */
 
-    /* make sure we found gpus to use, if job needed them */
-    if (pnode->nd_ngpus_needed > 0)
+  if (failure == TRUE)
+    {
+    /* did not satisfy the request */
+    if (EMsg != NULL)
       {
-      /* no resources located, request failed */      
-      if (EMsg != NULL)
-        {
-        sprintf(log_buf,
-          "could not locate requested gpu resources '%.4000s' (node_spec failed) %s",
-          spec,
-          EMsg);
-        
-        log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
-        }
-
-      unlock_node(pnode, "set_nodes", NULL, LOGLEVEL);
+      sprintf(log_buf,
+        "could not locate requested gpu resources '%.4000s' (node_spec failed) %s",
+        spec,
+        EMsg);
       
-      return(PBSE_RESCUNAV);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
-
-    place_subnodes_in_hostlist(hlist, pjob, newstate, pnode);
-    } /* END for each node */
+    
+    unlock_node(pnode, "set_nodes", NULL, LOGLEVEL);
+    
+    return(PBSE_RESCUNAV);
+    }
 
   return(PBSE_NONE);
   } /* END build_hostlist_nodes_req() */
@@ -5346,19 +4966,20 @@ int set_nodes(
   char  *EMsg)        /* O (optional,minsize=1024) */
 
   {
-  static char     id[] = "set_nodes";
+  static char        id[] = "set_nodes";
 
-  struct howl    *hlist;
-  struct howl    *gpu_list;
+  struct howl       *hlist;
+  struct howl       *gpu_list;
 
-  int             i;
-  int             rc;
-  int             NCount;
-  short           newstate;
+  int                i;
+  int                rc;
+  int                NCount;
+  short              newstate;
 
-  char           *gpu_str = NULL;
-  char            ProcBMStr[MAX_BM];
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  char              *gpu_str = NULL;
+  char               ProcBMStr[MAX_BM];
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
+  node_job_add_info  naji;
 
 #ifdef NVIDIA_GPUS
   int gpu_flags = 0;
@@ -5384,8 +5005,11 @@ int set_nodes(
   get_bitmap(pjob,sizeof(ProcBMStr),ProcBMStr);
 #endif /* GEOMETRY_REQUESTS */
 
+  naji.node_name[0] = '\0';
+  naji.next = NULL;
+
   /* allocate nodes */
-  if ((i = node_spec(spec, 1, 1, ProcBMStr, FailHost, EMsg)) == 0) /* check spec */
+  if ((i = node_spec(spec, 1, 1, ProcBMStr, FailHost, &naji, EMsg)) == 0) /* check spec */
     {
     /* no resources located, request failed */
     if (EMsg != NULL)
@@ -5407,16 +5031,12 @@ int set_nodes(
     return(PBSE_UNKNODE);
     }
 
-  /* i indicates number of matching nodes */
-  if (exclusive)        /* exclusive is global */
-    svr_numnodes -= i;
-
   hlist = NULL;
   gpu_list = NULL;
 
   newstate = exclusive ? INUSE_JOB : INUSE_JOBSHARE;
 
-  if ((rc = build_hostlist_nodes_req(pjob, EMsg, spec, newstate, &hlist, &gpu_list)) != PBSE_NONE)
+  if ((rc = build_hostlist_nodes_req(pjob, EMsg, spec, newstate, &hlist, &gpu_list, &naji)) != PBSE_NONE)
     {
     return(rc);
     }
@@ -5651,14 +5271,9 @@ int node_avail_complex(
   int *ndown)  /* O - number down      */
 
   {
-  int holdnum;
   int ret;
 
-  holdnum = svr_numnodes;
-
-  ret = node_spec(spec, 1, 0, NULL, NULL, NULL);
-
-  svr_numnodes = holdnum;
+  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL);
 
   *navail = ret;
   *nalloc = 0;
@@ -5820,16 +5435,17 @@ int node_reserve(
   resource_t  tag)   /* In/Out - tag for resource if reserved */
 
   {
-  static char    id[] = "node_reserve";
-  int            nrd;
+  static char        id[] = "node_reserve";
+  int                nrd;
 
-  struct pbsnode *pnode;
+  struct pbsnode    *pnode;
 
-  struct pbssubn *snp;
-  int             ret_val;
+  struct pbssubn    *snp;
+  int                ret_val;
 
-  node_iterator   iter;
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  node_iterator      iter;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
+  node_job_add_info  naji;
 
   DBPRT(("%s: entered\n",
          id))
@@ -5845,7 +5461,10 @@ int node_reserve(
     return(-1);
     }
 
-  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, NULL)) >= 0)
+  naji.node_name[0] = '\0';
+  naji.next         = NULL;
+
+  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, &naji, NULL)) >= 0)
     {
     /*
     ** Zero or more of the needed Nodes are available to be

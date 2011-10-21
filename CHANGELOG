@@ -33,6 +33,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 	    to be created in the Resource_List if no nodes or procs spec is given at the 
 			qsub command line.
   b - Enabled trqauthd to daemonize from the commandline.
+  e - Change node_spec from an N^2 (but average 5N) algorithm to an N algorithm with respect
+      to nodes. We only loop over each node once at a maximum.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

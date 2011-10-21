@@ -87,8 +87,6 @@ int MSNPrintF(char **BPtr, int *BSpace, char *Format, ...);
 
 int procs_available(int proc_ct);
 
-int node_avail_check(struct pbsnode *pnode, char *ProcBMStr);
-
 /* static int node_spec(char *spec, int early, int exactmatch, char *ProcBMStr, char *FailNode, char *EMsg); */
 
 #ifdef GEOMETRY_REQUESTS

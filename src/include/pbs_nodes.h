@@ -159,6 +159,33 @@ struct jobinfo
   struct jobinfo *next;
   };
 
+typedef struct single_spec_data
+  {
+  int          nodes; /* nodes needed for this req */
+  int          ppn;   /* ppn for this req */
+  int          gpu;   /* gpus for this req */
+  struct prop *prop;  /* node properties needed */
+  } single_spec_data;
+
+typedef struct complete_spec_data
+  {
+  single_spec_data  *reqs;        /* array of data for each req */
+  int                num_reqs;    /* number of reqs (number of '+' in spec + 1) */
+  int                total_nodes; /* number of nodes for all reqs in a spec */
+  /* pointer to start of req in spec, only valid until call of parse_req_data() */
+  char             **req_start;   
+  } complete_spec_data;
+
+typedef struct node_job_add_info
+  {
+  char                      node_name[PBS_MAXNODENAME];
+  int                       ppn_needed;
+  int                       gpu_needed;
+  struct node_job_add_info *next;
+  } node_job_add_info;
+
+
+
 struct pbssubn
   {
 
@@ -246,7 +273,7 @@ struct pbsnode
 
   struct array_strings *nd_status;
   char                 *nd_note;  /* note set by administrator */
-  int                   nd_stream; /* RPP stream to Mom on host */
+  int                   nd_stream; /* stream to Mom on host */
   enum psit             nd_flag;
   unsigned short        nd_mom_port; /* For multi-mom-mode unique port value PBS_MOM_SERVICE_PORT*/
   unsigned short        nd_mom_rm_port; /* For multi-mom-mode unique port value PBS_MANAGER_SERVICE_PORT */
@@ -256,6 +283,7 @@ struct pbsnode
   short                 nd_nsnfree; /* number of VPs free */
   short                 nd_nsnshared; /* number of VPs shared */
   short                 nd_needed; /* number of VPs needed */
+  short                 nd_np_to_be_used; /* number of VPs marked for a job but not yet assigned */
   unsigned short        nd_state;      /* node state (see INUSE_* #defines below) */
   unsigned short        nd_ntype; /* node type */
   short                 nd_order; /* order of user's request */
@@ -267,6 +295,7 @@ struct pbsnode
   struct gpusubn       *nd_gpusn;        /* gpu subnodes */
   short                 nd_ngpus_free;   /* number of free gpus */
   short                 nd_ngpus_needed; /* number of gpus needed */
+  short                 nd_ngpus_to_be_used; /* number of gpus marked for a job but not yet assigned */
   struct array_strings *nd_gpustatus;    /* string array of GPU status */
   short                 nd_ngpustatus;    /* number of gpu status items */
 
