@@ -29,6 +29,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed a problem where jobs dependent on an array using afteranyarray would not start
       when a job element of the array completed.
   b - Fixed a bug where array jobs .AZ file would not be deleted when the array job was done.
+  e - Modified qsub so that it will set PBS_O_HOST on the server from the incoming interface.
+      (with this fix QSUBHOST from torque.cfg will no longer work. Do we need to make it
+       to override the host name?)
   b - fix so user epilogues are run as user instead of root (backported from 3.0.3)
   b - fix the prevent pbs_server from hanging when doing server to server job moves.
       (backported from 3.0.3)

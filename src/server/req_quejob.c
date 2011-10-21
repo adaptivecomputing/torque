@@ -762,9 +762,6 @@ void req_quejob(
       pj->ji_wattr[JOB_ATR_rerunable].at_flags |= ATR_VFLAG_SET;
       }
 
-    /* need to set certain environmental variables per POSIX */
-
-    clear_attr(&tempattr, &job_attr_def[JOB_ATR_variables]);
 
     strcpy(buf, pbs_o_que);
 
@@ -776,7 +773,36 @@ void req_quejob(
       strcat(buf, pbs_o_host);
       strcat(buf, "=");
       strcat(buf, preq->rq_host);
+
+      clear_attr(&tempattr, &job_attr_def[JOB_ATR_submit_host]);
+      rc = job_attr_def[JOB_ATR_submit_host].at_decode(
+               &tempattr,
+               NULL,
+               NULL,
+               preq->rq_host);
+      if (!rc)
+        {
+        rc = job_attr_def[JOB_ATR_submit_host].at_set(
+                 &pj->ji_wattr[JOB_ATR_submit_host],
+                 &tempattr,
+                 INCR);
+        }
+
+      if (rc)
+        {
+        sprintf(log_buffer, "failed to add submit_host %s. Minor error", preq->rq_host);
+        log_event(
+          PBSEVENT_JOB | PBSEVENT_SYSTEM,
+          PBS_EVENTCLASS_SERVER,
+          msg_daemonname,
+          log_buffer);
+        }
+      job_attr_def[JOB_ATR_submit_host].at_free(&tempattr);
       }
+
+    /* need to set certain environmental variables per POSIX */
+
+    clear_attr(&tempattr, &job_attr_def[JOB_ATR_variables]);
 
     job_attr_def[JOB_ATR_variables].at_decode(
         &tempattr,
