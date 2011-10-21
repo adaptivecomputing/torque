@@ -35,6 +35,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix so user epilogues are run as user instead of root (backported from 3.0.3)
   b - fix the prevent pbs_server from hanging when doing server to server job moves.
       (backported from 3.0.3)
+  b - Fixed a problem where array jobs would always lose their state when pbs_server was
+      restarted. Array jobs now retain their previous state between restarts of the server
+      the same as non-array jobs. This fix takes care of a problem where Moab and TORQUE
+      would get out of sync on jobs because of this discrepency between states.
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
