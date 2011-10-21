@@ -221,18 +221,18 @@ void *req_orderjob(
 
   {
 #ifndef NDEBUG
-  char *id = "req_orderjob";
+  static char          *id = "req_orderjob";
 #endif
-  job *pjob;
-  job *pjob1;
-  job *pjob2;
-  int  rank;
-  int  rc;
-  char  tmpqn[PBS_MAXQUEUENAME+1];
+  job                  *pjob;
+  job                  *pjob1;
+  job                  *pjob2;
+  int                   rank;
+  int                   rc = 0;
+  char                  tmpqn[PBS_MAXQUEUENAME+1];
   struct batch_request *req = (struct batch_request *)vp;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  pbs_queue *pque1;
-  pbs_queue *pque2;
+  pbs_queue            *pque1;
+  pbs_queue            *pque2;
 
   if ((pjob1 = chk_job_request(req->rq_ind.rq_move.rq_jid, req)) == NULL)
     {
@@ -276,6 +276,7 @@ void *req_orderjob(
     {
     /* jobs are in different queues */
     int ok = FALSE;
+
     if ((pque2 = get_jobs_queue(pjob2)) == NULL)
       req_reject(PBSE_BADSTATE, 0, req, NULL, "job2 queue is unavailable");
     else

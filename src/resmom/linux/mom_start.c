@@ -80,14 +80,16 @@
 
 #include <string.h>
 #include <stdio.h>
-#include "libpbs.h"
 #include <signal.h>
 #include <errno.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #ifndef USEOLDTTY
 #include <pty.h>
 #endif /* USEOLDTTY */
 
+#include "libpbs.h"
 #include "list_link.h"
 #include "log.h"
 #include "server_limits.h"

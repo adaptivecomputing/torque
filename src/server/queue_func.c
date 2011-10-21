@@ -123,16 +123,24 @@ extern char *path_queues;
 extern struct    server server;
 extern all_queues svr_queues;
 
-int lock_queue(struct pbs_queue *the_queue, char *id, char *msg, int logging)
+int lock_queue(
+
+  struct pbs_queue *the_queue,
+  char             *id,
+  char             *msg,
+  int               logging)
+
   {
   int rc = PBSE_NONE;
-  char *err_msg;
+  char *err_msg = NULL;
+
   if (logging >= 6)
     { 
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s", the_queue->qu_qs.qu_name, id);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
+
   if (pthread_mutex_lock(the_queue->qu_mutex) != 0)
     { 
     if (logging >= 6) 
@@ -143,16 +151,24 @@ int lock_queue(struct pbs_queue *the_queue, char *id, char *msg, int logging)
       }
     rc = PBSE_MUTEX;
     } 
-  if (logging >= 6)
+
+  if (err_msg != NULL)
     free(err_msg);
+
   return rc;
   }
 
-int unlock_queue(struct pbs_queue *the_queue, char *id, char *msg, int logging)
+int unlock_queue(
+    
+  struct pbs_queue *the_queue,
+  char             *id,
+  char             *msg,
+  int               logging)
   {
   int rc = PBSE_NONE;
-  char *err_msg;
+  char *err_msg = NULL;
   char stub_msg[] = "no pos";
+
   if (logging >= 6)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
@@ -161,6 +177,7 @@ int unlock_queue(struct pbs_queue *the_queue, char *id, char *msg, int logging)
     snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", the_queue->qu_qs.qu_name, id, msg);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
+
   if (pthread_mutex_unlock(the_queue->qu_mutex) != 0)
     {
     if (logging >= 6)
@@ -171,8 +188,10 @@ int unlock_queue(struct pbs_queue *the_queue, char *id, char *msg, int logging)
       }
     rc = PBSE_MUTEX;
     }
-  if (logging >= 6)
+
+  if (err_msg != NULL)
     free(err_msg);
+
   return rc;
   }
 

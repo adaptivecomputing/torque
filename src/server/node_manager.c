@@ -728,6 +728,12 @@ void *sync_node_jobs(
     *jobstring_in = '\0';
     jobstring_in++;
     }
+  else
+    {
+    /* bad input */
+
+    return(NULL);
+    }
 
   if (!isdigit(*jobstring_in))
     {

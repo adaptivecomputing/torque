@@ -864,7 +864,7 @@ static int process_host_name_part(
 
   struct in_addr   addr;
   char            *phostname;  /* caller supplied hostname   */
-  int              ipcount;
+  int              ipcount = 0;
   int              len;
   int              totalipcount;
 
