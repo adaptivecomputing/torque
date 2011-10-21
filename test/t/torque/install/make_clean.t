@@ -11,4 +11,4 @@ setDesc('make clean');
 
 my $build_dir   = test_lib_loc().'/../..';
 
-runCommand("cd $build_dir; make clean", test_success_die => 1);
+runCommand("cd $build_dir; make clean");

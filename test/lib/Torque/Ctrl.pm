@@ -565,7 +565,7 @@ CMD
     runCommand("mv $torque_home/nodes.bak $torque_home/server_priv/nodes", test_success => 1, msg => 'Restoring existing nodes file');
   }
   
-  startPbsserver();
+  startPbsserver($cfg);
 
   return 1;
 }

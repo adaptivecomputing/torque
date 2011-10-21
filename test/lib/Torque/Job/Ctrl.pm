@@ -280,7 +280,10 @@ sub runJobs #(@)
   {
     $job_id = cleanupJobId($job_id);
 
-    my $cmd  = "qrun $job_id";
+    my $cmd  = 'qrun';
+    $cmd    .= ' '.$params->{flags} if exists $params->{flags};
+    $cmd    .= " $job_id";
+    
     my %qrun = runCommand($cmd, %$run_cmd_flags);
 
     push(@qruns, \%qrun);
