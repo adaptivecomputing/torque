@@ -39,6 +39,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       restarted. Array jobs now retain their previous state between restarts of the server
       the same as non-array jobs. This fix takes care of a problem where Moab and TORQUE
       would get out of sync on jobs because of this discrepency between states.
+  b - Replaced call to getpwnam_ext in pam_pbssimpleauth.c with getpwnam.  
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
