@@ -2198,6 +2198,14 @@ void req_signaljob(
       log_buffer);
     }
 
+  if (preq->rq_extend != NULL)
+    {
+    if (!strcasecmp("rerun", preq->rq_extend))
+      {
+      pjob->ji_job_is_being_rerun = TRUE;
+      }
+    }
+
   if (!strcasecmp(sname, SIG_SUSPEND))
     {
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)

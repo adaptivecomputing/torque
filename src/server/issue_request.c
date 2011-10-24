@@ -581,7 +581,7 @@ int issue_Drequest(
              conn,
              request->rq_ind.rq_signal.rq_jid,
              request->rq_ind.rq_signal.rq_signame,
-             NULL);
+             request->rq_extra);
 
       break;
 

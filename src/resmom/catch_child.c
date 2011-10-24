@@ -859,8 +859,12 @@ int post_epilogue(
 
   strcpy(preq->rq_ind.rq_jobobit.rq_jid, pjob->ji_qs.ji_jobid);
 
-  preq->rq_ind.rq_jobobit.rq_status =
-    pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
+  if (pjob->ji_job_is_being_rerun == TRUE)
+    {
+    pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
+    }
+ 
+  preq->rq_ind.rq_jobobit.rq_status = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
 
   CLEAR_HEAD(preq->rq_ind.rq_jobobit.rq_attr);
 
