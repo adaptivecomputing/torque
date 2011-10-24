@@ -1679,6 +1679,8 @@ void init_abort_jobs(
         log_err(-1, id, log_buffer);
         
         mom_deljob(pj);
+
+        continue;
         }
       }
 
