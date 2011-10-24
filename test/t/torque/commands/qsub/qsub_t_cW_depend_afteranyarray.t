@@ -9,8 +9,9 @@ use lib test_lib_loc();
 
 use CRI::Test;
 
+use Torque::Util qw( verify_job_state );
 use Torque::Util::Qstat qw( qstat_fx                );
-use Torque::Job::Ctrl   qw( qsub             delJobs );
+use Torque::Job::Ctrl   qw( qsub   runJobs  delJobs );
 use Torque::Job::Utils  qw( generateArrayIds         );
 
 plan('no_plan');
@@ -65,6 +66,20 @@ $jid1 =~ s/([\[\]\.])/\\$1/g; # get job array id ready for regex
 cmp_ok($jhash->{ $jid2 }{ 'job_state'  }, 'eq', "H",                               "Verifying the dependent job:$jid2 'job_state'");
 cmp_ok($jhash->{ $jid2 }{ 'hold_types' }, 'eq', "s",                               "Verifying the dependent job:$jid2 'hold_types'"); 
 like($jhash->{ $jid2 }{ 'depend'     }, qr/^afteranyarray:$jid1\@$test_host(?:\.\w+)?$/, "Verifying the dependent job:$jid2 'depend'");
+
+foreach(@jaids)
+{
+  runJobs($_);
+  verify_job_state({
+      job_id => $_,
+      exp_job_state => 'C',
+      wait_time => 15,
+    });
+}
+
+$jhash = qstat_fx({job_id => $jid2});
+is($jhash->{ $jid2 }{ 'job_state'  }, 'Q', "Verifying the dependent job:$jid2 now Queued");
+is($jhash->{ $jid2 }{ 'Hold_Types' }, 'n', "Verifying the dependent job:$jid2 'Hold_Types'"); 
 
 # Cleanup
 delJobs();

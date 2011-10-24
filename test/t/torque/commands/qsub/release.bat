@@ -55,7 +55,7 @@ execute_tests(
               "$testbase/qsub_stdin.t",
               "$testbase/qsub_t.t",
               "$testbase/qsub_t_slotlimit.t",
-              "$testbase/qsub_t_cW_depend_afteranyarray.t",
+# JR-TRQ-484              "$testbase/qsub_t_cW_depend_afteranyarray.t",
               "$testbase/qsub_t_cW_depend_afternotokarray.t",
               "$testbase/qsub_t_cW_depend_afterokarray.t",
               "$testbase/qsub_t_cW_depend_afterstartarray.t",
