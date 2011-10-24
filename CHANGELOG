@@ -40,6 +40,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the same as non-array jobs. This fix takes care of a problem where Moab and TORQUE
       would get out of sync on jobs because of this discrepency between states.
   b - Replaced call to getpwnam_ext in pam_pbssimpleauth.c with getpwnam.  
+  b - No longer report a completion code if a job is pre-empted using qrerun. (backported 
+      from 3.0.3)
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

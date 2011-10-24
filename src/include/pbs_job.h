@@ -517,6 +517,7 @@ struct job
   char        *ji_globid; /* global job id */
   int  ji_stdout; /* port for stdout */
   int  ji_stderr; /* port for stderr */
+  short ji_job_is_being_rerun; /* special flag for jobs being rerun */
 #else     /* END MOM ONLY */
   tlist_head ji_svrtask; /* links to svr work_task list */
 

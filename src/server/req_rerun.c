@@ -243,8 +243,10 @@ void req_rerunjob(
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
     {
     /* ask MOM to kill off the job if it is running */
+    static char *rerun = "rerun";
+    char        *extra = strdup(rerun);
 
-    rc = issue_signal(pjob, "SIGKILL", post_rerun, 0);
+    rc = issue_signal(pjob, "SIGKILL", post_rerun, extra);
     }
   else
     { 

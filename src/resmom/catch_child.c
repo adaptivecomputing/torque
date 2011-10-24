@@ -296,8 +296,7 @@ hnodent *get_node(
  *   JOB_SUBSTATE_OBIT (58) - preobit_reply()
  */
 
-void
-scan_for_exiting(void)
+void scan_for_exiting(void)
 
   {
   char         *id = "scan_for_exiting";
@@ -985,8 +984,12 @@ int post_epilogue(
 
   strcpy(preq->rq_ind.rq_jobobit.rq_jid, pjob->ji_qs.ji_jobid);
 
-  preq->rq_ind.rq_jobobit.rq_status =
-    pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
+  if (pjob->ji_job_is_being_rerun)
+    {
+    pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
+    }
+
+  preq->rq_ind.rq_jobobit.rq_status = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
 
   if (LOGLEVEL > 5)
     {
