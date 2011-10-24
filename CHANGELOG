@@ -42,6 +42,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Replaced call to getpwnam_ext in pam_pbssimpleauth.c with getpwnam.  
   b - No longer report a completion code if a job is pre-empted using qrerun. (backported 
       from 3.0.3)
+  c - In some rare cases, TORQUE loads a job with no groups. Do not crash in this case.
+      (backported from 3.0.3)
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
