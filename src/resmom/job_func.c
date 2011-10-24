@@ -500,6 +500,7 @@ job *job_alloc(void)
   pj->ji_stdout = 0;
   pj->ji_stderr = 0;
   pj->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
+  pj->ji_job_is_being_rerun = 0;
 
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
 
