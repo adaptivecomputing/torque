@@ -28,6 +28,7 @@ execute_tests(
               "$testbase/qsub_h.t",
               "$testbase/qsub_cI.t",
               "$testbase/qsub_j.t",
+              "$testbase/qsub_J_P.t",
               "$testbase/qsub_k.t",
               "$testbase/qsub_l_arch.t",
               "$testbase/qsub_l_cput.t",
