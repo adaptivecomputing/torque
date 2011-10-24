@@ -13,5 +13,5 @@ setDesc('ALL Prologue/Epilogue Script Tests');
 my $testbase = $FindBin::Bin;
 
 execute_tests(
-  "$testbase/.t",
+  "$testbase/epilogue_user.t",
 ); 
