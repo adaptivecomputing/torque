@@ -44,6 +44,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       from 3.0.3)
   c - In some rare cases, TORQUE loads a job with no groups. Do not crash in this case.
       (backported from 3.0.3)
+  e - Added instructions concerning the server parameter moab_array_compatible to the 
+      README.array_changes file.
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

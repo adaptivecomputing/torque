@@ -46,11 +46,16 @@ max_slot_limit you can use the following queue manager command.
 qmgr -c 'set server max_slot_limit=10'
 
 This means that no array can request a slot limit greater than 10, and 
-any array not equesting a slot limit will receive a slot limit of 10.
+any array not requesting a slot limit will receive a slot limit of 10.
 If a user requests a slot limit greater than 10, the job will be
 rejected with the message:
 
 Requested slot limit is too large, limit is X. In this case, X would be 10.
+
+It is recommended that if you are using torque with a scheduler like Moab or Maui
+that you also set the server parameter moab_array_compatible=true. Setting 
+moab_array_compatible will put all jobs over the slot limit on hold
+so the scheduler will not try and schedule jobs above the slot limit.
 
 
 JOB ARRAY DEPENDENCIES
