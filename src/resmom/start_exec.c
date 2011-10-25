@@ -4189,7 +4189,7 @@ int TMomFinalizeJob3(
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, id, log_buffer);
     }
 
-  if (sjr.sj_code < 0)
+  if (sjr.sj_code != 0)
     {
     char tmpLine[MAXLINE];
 
