@@ -46,6 +46,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (backported from 3.0.3)
   e - Added instructions concerning the server parameter moab_array_compatible to the 
       README.array_changes file.
+  e - Added a new function DIS_tcp_close to the the code. This takes care of a problem
+      where TORQUE memory keeps growing because the read and write buffers associated
+      with each tcparray entry would grow to accommodate incoming and outgoing data
+      but would not shrink.
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

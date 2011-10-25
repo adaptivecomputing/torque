@@ -186,13 +186,14 @@ int decode_arst_direct(
 
   bksize = (ns - 1) * sizeof(char *) + sizeof(struct array_strings);
 
-  if ((stp = (struct array_strings *)malloc(bksize)) == NULL)
+  if (( patr->at_val.at_arst = (struct array_strings *)malloc(bksize)) == NULL)
     {
     /* FAILURE */
 
     return(PBSE_SYSTEM);
     }
 
+  stp = patr->at_val.at_arst;
   memset(stp, 0, bksize);
 
   stp->as_npointers = ns;
@@ -238,7 +239,7 @@ int decode_arst_direct(
 
   patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
-  patr->at_val.at_arst = stp;
+/*  patr->at_val.at_arst = stp;*/
 
   free(tmpval);
  

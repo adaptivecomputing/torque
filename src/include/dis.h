@@ -238,11 +238,13 @@ extern const char *dis_emsg[];
 
 /* the following routines set/control DIS over tcp */
 
-extern void DIS_tcp_reset (int fd, int rw);
-extern void DIS_tcp_setup (int fd);
-extern int  DIS_tcp_wflush (int fd);
-extern void DIS_tcp_settimeout (long timeout);
-extern int  DIS_tcp_istimeout (int fd);
+void DIS_tcp_reset (int fd, int rw);
+void DIS_tcp_setup (int fd);
+int  DIS_tcp_wflush (int fd);
+void DIS_tcp_settimeout (long timeout);
+int  DIS_tcp_istimeout (int fd);
+void DIS_tcp_close (int fd);
+
 
 
 extern int  PConnTimeout(int);

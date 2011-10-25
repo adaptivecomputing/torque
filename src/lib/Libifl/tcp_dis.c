@@ -790,6 +790,27 @@ DIS_tcp_funcs(void)
   return;
   }
 
+void DIS_tcp_close(
+
+  int fd)
+
+  {
+  struct tcp_chan *tcp;
+
+  tcp = tcparray[fd];
+  if(tcp != NULL)
+    {
+    if(tcp->readbuf.tdis_thebuf != NULL)
+      free(tcp->readbuf.tdis_thebuf);
+    if(tcp->writebuf.tdis_thebuf != NULL)
+      free(tcp->writebuf.tdis_thebuf);
+
+    free(tcp);
+    tcparray[fd] = NULL;
+    }
+
+  return;
+  }
 
 
 
