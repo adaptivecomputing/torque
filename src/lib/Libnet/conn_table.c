@@ -40,7 +40,7 @@ int get_connection_entry(
       }
     unlock_conn_table();
     
-    if (pthread_mutex_trylock(connection[pos].ch_mutex) != PBSE_NONE)
+    if (pthread_mutex_trylock(connection[pos].ch_mutex) != 0)
       {
       /* if we can't lock the mutex, it is busy*/
       continue; 

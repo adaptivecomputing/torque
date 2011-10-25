@@ -5,7 +5,7 @@
 
 #define JOB_FUNC_SUITE 1
 Suite *job_func_suite();
-#define METH_2 2
-Suite *meth_2_suite();
+#define RECORD_JOBINFO_SUITE 2
+Suite *record_jobinfo_suite();
 
 #endif /* _JOB_FUNC_CT_H */

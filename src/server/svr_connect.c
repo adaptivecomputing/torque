@@ -362,7 +362,6 @@ int socket_to_handle(
 
   if ((rc = get_connection_entry(&conn_pos)) != PBSE_NONE)
     {
-    rc = -1;
     sprintf(log_buf,"internal socket table full (%d) - num_connections is %d",
       conn_pos,
       get_num_connections());

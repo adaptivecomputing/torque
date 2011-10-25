@@ -166,6 +166,15 @@ def main():
 
     sizeTotal = len(src_list)
     sizeTests = len(dir_list)
+    # The following line functions that have only a main that has a single call.
+    # src/cmds/qsub.c
+    # src/daemon_client/trq_main.c
+    # And files that have no function implementations.
+    # src/server/job_attr_def.c
+    # src/server/node_attr_def.c
+    # src/server/queue_attr_def.c
+    # src/server/svr_attr_def.c
+    sizeTotal = sizeTotal - 6;
 
     print "Total C files: %s  Files with unit tests: %s   Percent of files with a File Test Harness: %s%%" % (sizeTotal,sizeTests, (sizeTests * 100) / sizeTotal)
     print ""

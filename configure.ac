@@ -49,7 +49,7 @@ if test "x$MAKE" = "xerror" ;then
   AC_MSG_ERROR([cannot find a make command])
 fi
 
-m4_ifdef([AM_SILENT_RULES],
+m4_ifdef([HAVE_CHECK],
   [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 color-tests])],
   [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6])])
 
@@ -110,7 +110,7 @@ AM_CONDITIONAL(HAVE_CHECK, test x"$have_check" = "xyes")
 
 m4_ifdef([AM_SILENT_RULES],[
   if test "x$have_check" = "xyes"; then
-    AM_SILENT_RULES(yes)
+    AM_SILENT_RULES(no)
     AC_CONFIG_FILES(src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
     src/cmds/test/common_cmds/Makefile
@@ -222,16 +222,117 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Liblog/test/pbs_log/Makefile
     src/lib/Liblog/test/pbs_messages/Makefile
     src/lib/Liblog/test/setup_env/Makefile
+    src/lib/Libifl/test/Makefile
+    src/lib/Libifl/test/PBSD_gpuctrl2/Makefile
+    src/lib/Libifl/test/PBSD_manage2/Makefile
+    src/lib/Libifl/test/PBSD_manager_caps/Makefile
+    src/lib/Libifl/test/PBSD_msg2/Makefile
+    src/lib/Libifl/test/PBSD_rdrpy/Makefile
+    src/lib/Libifl/test/PBSD_sig2/Makefile
+    src/lib/Libifl/test/PBSD_status/Makefile
+    src/lib/Libifl/test/PBSD_status2/Makefile
+    src/lib/Libifl/test/PBSD_submit_caps/Makefile
+    src/lib/Libifl/test/PBS_attr/Makefile
+    src/lib/Libifl/test/PBS_data/Makefile
+    src/lib/Libifl/test/dec_Authen/Makefile
+    src/lib/Libifl/test/dec_CpyFil/Makefile
+    src/lib/Libifl/test/dec_Gpu/Makefile
+    src/lib/Libifl/test/dec_JobCred/Makefile
+    src/lib/Libifl/test/dec_JobFile/Makefile
+    src/lib/Libifl/test/dec_JobId/Makefile
+    src/lib/Libifl/test/dec_JobObit/Makefile
+    src/lib/Libifl/test/dec_Manage/Makefile
+    src/lib/Libifl/test/dec_MoveJob/Makefile
+    src/lib/Libifl/test/dec_MsgJob/Makefile
+    src/lib/Libifl/test/dec_QueueJob/Makefile
+    src/lib/Libifl/test/dec_Reg/Makefile
+    src/lib/Libifl/test/dec_ReqExt/Makefile
+    src/lib/Libifl/test/dec_ReqHdr/Makefile
+    src/lib/Libifl/test/dec_Resc/Makefile
+    src/lib/Libifl/test/dec_ReturnFile/Makefile
+    src/lib/Libifl/test/dec_RunJob/Makefile
+    src/lib/Libifl/test/dec_Shut/Makefile
+    src/lib/Libifl/test/dec_Sig/Makefile
+    src/lib/Libifl/test/dec_Status/Makefile
+    src/lib/Libifl/test/dec_Track/Makefile
+    src/lib/Libifl/test/dec_attrl/Makefile
+    src/lib/Libifl/test/dec_attropl/Makefile
+    src/lib/Libifl/test/dec_rpyc/Makefile
+    src/lib/Libifl/test/dec_rpys/Makefile
+    src/lib/Libifl/test/dec_svrattrl/Makefile
+    src/lib/Libifl/test/enc_CpyFil/Makefile
+    src/lib/Libifl/test/enc_Gpu/Makefile
+    src/lib/Libifl/test/enc_JobCred/Makefile
+    src/lib/Libifl/test/enc_JobFile/Makefile
+    src/lib/Libifl/test/enc_JobId/Makefile
+    src/lib/Libifl/test/enc_JobObit/Makefile
+    src/lib/Libifl/test/enc_Manage/Makefile
+    src/lib/Libifl/test/enc_MoveJob/Makefile
+    src/lib/Libifl/test/enc_MsgJob/Makefile
+    src/lib/Libifl/test/enc_QueueJob/Makefile
+    src/lib/Libifl/test/enc_QueueJob_hash/Makefile
+    src/lib/Libifl/test/enc_Reg/Makefile
+    src/lib/Libifl/test/enc_ReqExt/Makefile
+    src/lib/Libifl/test/enc_ReqHdr/Makefile
+    src/lib/Libifl/test/enc_ReturnFile/Makefile
+    src/lib/Libifl/test/enc_RunJob/Makefile
+    src/lib/Libifl/test/enc_Shut/Makefile
+    src/lib/Libifl/test/enc_Sig/Makefile
+    src/lib/Libifl/test/enc_Status/Makefile
+    src/lib/Libifl/test/enc_Track/Makefile
+    src/lib/Libifl/test/enc_attrl/Makefile
+    src/lib/Libifl/test/enc_attropl/Makefile
+    src/lib/Libifl/test/enc_attropl_hash/Makefile
+    src/lib/Libifl/test/enc_reply/Makefile
+    src/lib/Libifl/test/enc_svrattrl/Makefile
+    src/lib/Libifl/test/get_svrport/Makefile
+    src/lib/Libifl/test/list_link/Makefile
+    src/lib/Libifl/test/nonblock/Makefile
+    src/lib/Libifl/test/pbsD_alterjo/Makefile
+    src/lib/Libifl/test/pbsD_asyrun/Makefile
+    src/lib/Libifl/test/pbsD_chkptjob/Makefile
+    src/lib/Libifl/test/pbsD_connect/Makefile
+    src/lib/Libifl/test/pbsD_deljob/Makefile
+    src/lib/Libifl/test/pbsD_gpuctrl/Makefile
+    src/lib/Libifl/test/pbsD_holdjob/Makefile
+    src/lib/Libifl/test/pbsD_locjob/Makefile
+    src/lib/Libifl/test/pbsD_manager/Makefile
+    src/lib/Libifl/test/pbsD_movejob/Makefile
+    src/lib/Libifl/test/pbsD_msgjob/Makefile
+    src/lib/Libifl/test/pbsD_orderjo/Makefile
+    src/lib/Libifl/test/pbsD_rerunjo/Makefile
+    src/lib/Libifl/test/pbsD_resc/Makefile
+    src/lib/Libifl/test/pbsD_rlsjob/Makefile
+    src/lib/Libifl/test/pbsD_runjob/Makefile
+    src/lib/Libifl/test/pbsD_selectj/Makefile
+    src/lib/Libifl/test/pbsD_sigjob/Makefile
+    src/lib/Libifl/test/pbsD_stagein/Makefile
+    src/lib/Libifl/test/pbsD_statjob/Makefile
+    src/lib/Libifl/test/pbsD_statnode/Makefile
+    src/lib/Libifl/test/pbsD_statque/Makefile
+    src/lib/Libifl/test/pbsD_statsrv/Makefile
+    src/lib/Libifl/test/pbsD_submit/Makefile
+    src/lib/Libifl/test/pbsD_submit_hash/Makefile
+    src/lib/Libifl/test/pbsD_termin/Makefile
+    src/lib/Libifl/test/pbs_geterrmg/Makefile
+    src/lib/Libifl/test/pbs_statfree/Makefile
+    src/lib/Libifl/test/rpp/Makefile
+    src/lib/Libifl/test/tcp_dis/Makefile
+    src/lib/Libifl/test/tm/Makefile
+    src/lib/Libifl/test/torquecfg/Makefile
+    src/lib/Libifl/test/trq_auth/Makefile
     src/lib/Libnet/test/Makefile
     src/lib/Libnet/test/conn_table/Makefile
     src/lib/Libnet/test/get_hostaddr/Makefile
     src/lib/Libnet/test/get_hostname/Makefile
     src/lib/Libnet/test/md5/Makefile
     src/lib/Libnet/test/net_client/Makefile
+    src/lib/Libnet/test/net_common/Makefile
     src/lib/Libnet/test/net_server/Makefile
     src/lib/Libnet/test/net_set_clse/Makefile
     src/lib/Libnet/test/port_forwarding/Makefile
     src/lib/Libnet/test/rm/Makefile
+    src/lib/Libnet/test/server_core/Makefile
     src/lib/Libsite/test/Makefile
     src/lib/Libsite/test/site_allow_u/Makefile
     src/lib/Libsite/test/site_alt_rte/Makefile
@@ -246,12 +347,14 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libutils/test/u_groups/Makefile
     src/lib/Libutils/test/u_hash_map_structs/Makefile
     src/lib/Libutils/test/u_hash_table/Makefile
+    src/lib/Libutils/test/u_lock_ctl/Makefile
     src/lib/Libutils/test/u_memmgr/Makefile
     src/lib/Libutils/test/u_mom_hierarchy/Makefile
     src/lib/Libutils/test/u_mu/Makefile
     src/lib/Libutils/test/u_resizable_array/Makefile
     src/lib/Libutils/test/u_threadpool/Makefile
     src/lib/Libutils/test/u_tree/Makefile
+    src/lib/Libutils/test/u_users/Makefile
     src/lib/Libutils/test/u_xml/Makefile
     src/momctl/test/Makefile
     src/momctl/test/momctl/Makefile
@@ -287,6 +390,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/job_func/Makefile
     src/server/test/job_qs_upgrade/Makefile
     src/server/test/job_recov/Makefile
+    src/server/test/job_recycler/Makefile
     src/server/test/job_route/Makefile
     src/server/test/node_func/Makefile
     src/server/test/node_manager/Makefile

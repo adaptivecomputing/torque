@@ -3,7 +3,7 @@
 #include <stdio.h> /* fprintf */
 
 #include "pbs_ifl.h" /* MAXPATHLEN, PBS_MAXSERVERNAME */
-#include "server.h" /* server */
+#include "server.h" /* server, NO_BUFFER_SPACE */
 #include "pbs_job.h" /* all_jobs, job_array, job */
 #include "resizable_array.h" /* resizable_array */
 #include "attribute.h" /* attribute, attribute_def */
@@ -14,11 +14,18 @@
 #include "work_task.h" /* all_tasks */
 #include "array.h" /* ArrayEventsEnum */
 
+/* This section is for manipulting function return values */
+#include "test_job_func.h" /* *_SUITE */
+int func_num = 0; /* Suite number being run */
+int tc = 0; /* Used for test routining */
+int iter_num = 0;
+
+int valbuf_size = 0;
+/* end manip */
 
 char *path_jobs;
 char path_checkpoint[MAXPATHLEN + 1];
 char *job_log_file = NULL;
-attribute_def job_attr_def[10];
 char server_name[PBS_MAXSERVERNAME + 1];
 char *msg_abt_err = "Unable to abort Job %s which was in substate %d";
 int queue_rank = 0;
@@ -91,14 +98,24 @@ pbs_net_t get_hostaddr(int *local_errno, char *hostname)
 
 int log_job_record(char *buf)
   {
-  fprintf(stderr, "The call to log_job_record needs to be mocked!!\n");
-  exit(1);
+  int rc = 0;
+  if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 2))
+    rc = -1;
+  if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 8))
+    {
+    if (iter_num == 1)
+      rc = -1;
+    iter_num++;
+    }
+  return rc;
   }
 
 int job_log_open(char *filename, char *directory)
   {
-  fprintf(stderr, "The call to job_log_open needs to be mocked!!\n");
-  exit(1);
+  int rc = 0;
+  if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 1))
+    rc = -1;
+  return rc;
   }
 
 void delete_link(struct list_link *old)
@@ -283,8 +300,6 @@ void issue_track(job *pjob)
 
 void log_err(int errnum, char *routine, char *text)
   {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
-  exit(1);
   }
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate)
@@ -307,8 +322,34 @@ int insert_into_recycler(job *pjob)
 
 int attr_to_str(char *out, int size, attribute_def *at_def, struct attribute attr, int XML)
   {
-  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
-  exit(1);
+  int rc = 0;
+  if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 4))
+    {
+    if (iter_num == 0)
+      {
+      iter_num++;
+      rc = NO_BUFFER_SPACE;
+      valbuf_size = size;
+      }
+    else if (iter_num == 1)
+      {
+      iter_num++;
+      valbuf_size = valbuf_size << 2;
+      if (valbuf_size != size)
+        {
+        rc = -3;
+        }
+      }
+    }
+  else if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 5))
+    {
+    rc = NO_BUFFER_SPACE;
+    }
+  else if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 6))
+    {
+    iter_num++;
+    }
+  return rc;
   }
 
 void check_job_log(struct work_task *ptask)
@@ -346,4 +387,3 @@ int lock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int lo
   fprintf(stderr, "The call to lock_queue needs to be mocked!!\n");
   exit(1);
   }
-

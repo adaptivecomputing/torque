@@ -1,6 +1,10 @@
 include $(top_srcdir)/buildutils/config.mk
 
+#if HAVE_CHECK
+#SUBDIRS = samples test
+#else
 SUBDIRS = samples
+#endif
 
 PBS_LIBS = ../lib/Libpbs/libtorque.la
 

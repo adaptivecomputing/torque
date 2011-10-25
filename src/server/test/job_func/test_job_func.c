@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+
+extern attribute_def job_attr_def[];
+
 START_TEST(test_one)
   {
 

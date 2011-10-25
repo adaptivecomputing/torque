@@ -6,12 +6,13 @@ lib_LTLIBRARIES = libjob_func.la
 
 AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
-check_PROGRAMS = test_job_func
+check_PROGRAMS = test_record_jobinfo test_job_func
 
-libjob_func_la_SOURCES = scaffolding.c ${PROG_ROOT}/job_func.c
+libjob_func_la_SOURCES = ${PROG_ROOT}/job_attr_def.c ../scaffolding_job_attr_def.c scaffolding.c ${PROG_ROOT}/job_func.c
 libjob_func_la_LDFLAGS = @CHECK_LIBS@
 
 test_job_func_SOURCES = test_job_func.c
+test_record_jobinfo_SOURCES = test_record_jobinfo.c
 
 check_SCRIPTS = coverage_run.sh
 
