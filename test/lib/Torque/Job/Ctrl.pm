@@ -271,7 +271,7 @@ sub runJobs #(@)
   }
 
   # Variables
-  my $run_cmd_flags = $params->{ 'run_cmd_flags' } || { 'test_success' => 1 };
+  my $run_cmd_flags = $params->{ 'runcmd_flags' } || { 'test_success' => 1 };
 
   my @qruns        = ();
 

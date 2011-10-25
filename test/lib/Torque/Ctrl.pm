@@ -499,6 +499,7 @@ SETUP
 
   # Configuration Variables
   my @setup_lines      = split /\n/, ($cfg->{setup_lines} || $setup_str);
+  push @setup_lines, @{$cfg->{add_setup_lines}} if $cfg->{add_setup_lines};
 
   # pbs_server command
   my $pbs_cmd  = "$pbs_server_cmd -t create";
