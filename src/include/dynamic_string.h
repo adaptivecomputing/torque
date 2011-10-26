@@ -80,7 +80,8 @@
 * without reference to its choice of law rules.
 */
 
-#define DS_INITIAL_SIZE 64
+#include "attribute.h"
+#define DS_INITIAL_SIZE 1024
 
 typedef struct dynamic_string
   {
@@ -92,10 +93,12 @@ typedef struct dynamic_string
 
 int             copy_to_end_of_dynamic_string(dynamic_string *,char *);
 int             append_dynamic_string(dynamic_string *,char *);
+int             append_dynamic_string_xml(dynamic_string *,char *);
 dynamic_string *get_dynamic_string(int,char *);
 void            free_dynamic_string(dynamic_string *);
 void            clear_dynamic_string(dynamic_string *);
 char           *get_string(dynamic_string *);
+int             size_to_dynamic_string(dynamic_string *, struct size_value);
 
 #endif /* ifdef DYNAMIC_STRING_H */
 

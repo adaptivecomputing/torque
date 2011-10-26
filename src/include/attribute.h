@@ -443,6 +443,7 @@ extern char *parse_comma_string(char *,char **);
 #define NULL_FUNC (int (*)())0
 
 /* other associated funtions */
+struct dynamic_string;
 
 extern int   acl_check(attribute *, char *canidate, int type);
 extern char *arst_string(char *str, attribute *pattr);
@@ -453,7 +454,7 @@ extern int   save_attr(attribute_def *, attribute *, int);
 extern int   save_attr_xml(attribute_def *,attribute *,int,int);
 extern int   write_buffer(char *,int,int);
 extern int   size_to_str(struct size_value,char *,int);
-extern int   attr_to_str(char *,int, attribute_def *,struct attribute,int);
+extern int   attr_to_str(struct dynamic_string *ds, attribute_def *,struct attribute,int);
 extern int   str_to_attr(char *,char *,struct attribute *,struct attribute_def *);
 
 extern int      encode_state(attribute *, tlist_head *, char *, char *, int, int);

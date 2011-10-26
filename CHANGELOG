@@ -57,6 +57,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Change to allow qsub -l ncpus=x:gpus=x which adds a resource list entry for both
   b - fix so user epilogues are run as user instead of root
   b - No longer report a completion code if a job is pre-empted using qrerun. 
+  c - Fix a crash in record_jobinfo() - this is fixed by backporting dynamic strings from
+      4.0.0 so that all of the resizing is done in a central location, fixing the crash.
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it

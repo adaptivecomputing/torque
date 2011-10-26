@@ -84,6 +84,8 @@
 
 #include "pbs_error.h"
 #include "dynamic_string.h"
+#include "log.h" /* for MAXLINE */
+#include "utils.h"
 
 
 
@@ -113,6 +115,82 @@ size_t need_to_grow(
   } /* END need_to_grow() */
 
 
+
+
+
+int size_to_dynamic_string(
+    
+  dynamic_string    *ds,   /* O */
+  struct size_value  szv)  /* I */
+
+  {
+  char    buffer[MAXLINE];
+  size_t  len;
+  size_t  to_grow;
+
+  sprintf(buffer, "%lu", szv.atsv_num);
+  len = 2 + strlen(buffer);
+  if (ds->used == 0)
+    len++;
+
+  if (ds->size - ds->used < len)
+    {
+    char   *tmp;
+
+    if (len > ds->size * 2)
+      to_grow = len;
+    else
+      to_grow = ds->size * 2;
+
+    if ((tmp = realloc(ds->str, to_grow)) == NULL)
+      return(ENOMEM);
+
+    ds->str = tmp;
+    }
+
+  strcat(ds->str, buffer);
+  
+  switch (szv.atsv_shift)
+    {
+    case 10:
+
+      strcat(ds->str, "kb");
+
+      break;
+
+    case 20:
+
+      strcat(ds->str, "mb");
+
+      break;
+
+    case 30: 
+
+      strcat(ds->str, "gb");
+
+      break;
+
+    case 40:
+
+      strcat(ds->str, "tb");
+
+      break;
+
+    case 50:
+
+      strcat(ds->str, "pb");
+
+      break;
+    }
+
+  ds->used += len;
+
+  return(PBSE_NONE);
+  } /* END size_to_dynamic_string() */
+
+
+
+
 /*
  * appends to a string, resizing if necessary
  *
@@ -128,6 +206,9 @@ int append_dynamic_string(
   long long  to_grow = need_to_grow(ds,to_append);
   char      *tmp;
   int        len = strlen(to_append);
+
+  if (ds->used == 0)
+    ds->used += 1;
 
   if (to_grow > 0)
     {
@@ -154,8 +235,97 @@ int append_dynamic_string(
 
 
 
+
+
+int append_dynamic_string_xml(
+    
+  dynamic_string *ds,
+  char           *str)
+
+  {
+  int i;
+  int len = strlen(str);
+
+  if (ds->used == 0)
+    ds->used += 1;
+
+  for (i = 0; i < len; i++)
+    {
+    /* Resize if needed
+     * note - QUOT_ESCAPED_LEN is the most we could be adding right now */
+    if (ds->size - ds->used < QUOT_ESCAPED_LEN)
+      {
+      char   *tmp;
+      size_t  to_grow;
+
+      if (ds->size * 2 < QUOT_ESCAPED_LEN)
+        to_grow = QUOT_ESCAPED_LEN * 10;
+      else
+        to_grow = ds->size * 2;
+
+      if ((tmp = realloc(ds->str, to_grow)) == NULL)
+        return(ENOMEM);
+
+      ds->str = tmp;
+      }
+
+    switch (str[i])
+      {
+      case '<':
+
+        strcat(ds->str, LT_ESCAPED);
+        ds->used += LT_ESCAPED_LEN;
+
+        break;
+
+      case '>':
+
+        strcat(ds->str, GT_ESCAPED);
+        ds->used += GT_ESCAPED_LEN;
+
+        break;
+
+      case '&':
+
+        strcat(ds->str, AMP_ESCAPED);
+        ds->used += AMP_ESCAPED_LEN;
+
+        break;
+
+      case '"':
+
+        strcat(ds->str, QUOT_ESCAPED);
+        ds->used += QUOT_ESCAPED_LEN;
+
+        break;
+
+      case '\'':
+
+        strcat(ds->str, APOS_ESCAPED);
+        ds->used += APOS_ESCAPED_LEN;
+
+        break;
+
+      default:
+
+        /* copy one character */
+        ds->str[ds->used] = str[i];
+        ds->used += 1;
+
+        break;
+      }
+    }
+
+  return(PBSE_NONE);
+  } /* END append_dynamic_string_xml() */
+
+
+
 /*
  * performs a strcpy at the end of the string (used for node status strings)
+ * the difference is this function places strings with their terminating 
+ * characters one after another:
+ * string_one'\0'string_two'\0'...
  *
  * @param ds - the dynamic string we're copying to
  * @param str - the string being copied
@@ -230,7 +400,9 @@ dynamic_string *get_dynamic_string(
     free(ds);
     return(NULL);
     }
-
+    
+  /* initialize empty str */
+  ds->str[0] = '\0';
   ds->used = 0;
 
   /* add the string if it exists */
