@@ -30,12 +30,7 @@ my $verify_params;
 my $job_id;
 
 # Submit a job
-$job_params = {
-                'user'       => $props->get_property('User.1'),
-                'torque_bin' => $props->get_property('Torque.Home.Dir') . '/bin/',
-              };
-
-$job_id = submitSleepJob($job_params);
+$job_id = submitSleepJob({ sleep_time => 5 });
 
 # Run the job
 runJobs($job_id);
@@ -49,7 +44,7 @@ verify_job_state($verify_params);
 
 # Rerun the job
 $cmd = "qrerun $job_id";
-run_and_check_cmd($cmd);
+runCommand($cmd, test_success => 1);
 
 $verify_params = {
                    'job_id'        => $job_id,
@@ -57,3 +52,19 @@ $verify_params = {
                  };
 
 verify_job_state($verify_params);
+
+my %jhash = qstat_fx({ job_id => $job_id });
+
+cmp_ok($jhash{$job_id}{exit_status}, '==', 0, 'Job exit code is set to passing');
+
+runJobs($job_id);
+
+verify_job_state({
+    job_id => $job_id,
+    exp_job_state => 'C',
+    wait_time => 10,
+  });
+
+%jhash = qstat_fx({ job_id => $job_id });
+
+cmp_ok($jhash{$job_id}{exit_status}, '==', 0, 'Job exit code is still set to passing');
