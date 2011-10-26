@@ -797,12 +797,19 @@ void DIS_tcp_close(
   {
   struct tcp_chan *tcp;
 
+  /* On startup tcparray may not yet be initialized. check it */
+  if (tcparray == NULL)
+    return;
+
+  if (fd > tcparraymax)
+    return;
+
   tcp = tcparray[fd];
-  if(tcp != NULL)
+  if (tcp != NULL)
     {
-    if(tcp->readbuf.tdis_thebuf != NULL)
+    if (tcp->readbuf.tdis_thebuf != NULL)
       free(tcp->readbuf.tdis_thebuf);
-    if(tcp->writebuf.tdis_thebuf != NULL)
+    if (tcp->writebuf.tdis_thebuf != NULL)
       free(tcp->writebuf.tdis_thebuf);
 
     free(tcp);
