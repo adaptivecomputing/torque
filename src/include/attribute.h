@@ -105,6 +105,7 @@
 #define ATTRIBUTE_H 1
 
 /* define the size of fields in the structures */
+#include "list_link.h"
 
 #define ATRFLAG 16
 #define ATRTYPE  6  /* sync w/ATR_TYPE_*  (see #defines below) */
@@ -428,6 +429,7 @@ extern char *parse_comma_string(char *);
 #define NULL_FUNC (int (*)())0
 
 /* other associated funtions */
+struct dynamic_string;
 
 extern int   acl_check(attribute *, char *canidate, int type);
 extern char *arst_string(char *str, attribute *pattr);
@@ -435,6 +437,7 @@ extern void  attrl_fixlink(tlist_head *svrattrl);
 extern void  recov_acl(attribute *, attribute_def *, char *, char *);
 extern int   save_acl(attribute *, attribute_def *,  char *, char *);
 extern int   save_attr(attribute_def *, attribute *, int);
+extern int   attr_to_str(struct dynamic_string *ds, attribute_def *, struct attribute, int);
 
 extern int      encode_state(attribute *, tlist_head *, char *, char *, int);
 extern int      encode_props(attribute*, tlist_head*, char*, char*, int);

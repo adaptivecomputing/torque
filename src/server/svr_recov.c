@@ -109,6 +109,7 @@
 #include "pbs_error.h"
 #include "resource.h"
 #include "utils.h"
+#include "dynamic_string.h"
 
 #ifndef MAXLINE
 #define MAXLINE 1024
@@ -340,21 +341,22 @@ int size_to_str(
 /*
  * attr_to_str
  *
- * @param out - the string output
- * @param size - the largest possible string length
+ * @param ds - the dynamic string we're printing the attribute into
  * @param aindex - the attribute's index
  * @param attr - the attribute
+ * @param XML - boolean telling us whether to print XML or not
  */
 int attr_to_str(
 
-  char             *out,    /* O */
-  int               size,   /* I */
+  dynamic_string   *ds,     /* O */
   attribute_def    *at_def, /* I */
   struct attribute  attr,   /* I */
   int               XML)    /* I */
 
   {
   int rc = 0;
+  /* used to print numbers and chars as strings */
+  char local_buf[MAXLINE];
 
   if ((attr.at_flags & ATR_VFLAG_SET) == FALSE)
     return(NO_ATTR_DATA);
@@ -363,21 +365,15 @@ int attr_to_str(
     {
     case ATR_TYPE_LONG:
 
-      snprintf(out,size,"%ld",attr.at_val.at_long);
+      snprintf(local_buf, sizeof(local_buf), "%ld", attr.at_val.at_long);
+      rc = append_dynamic_string(ds, local_buf);
 
       break;
 
     case ATR_TYPE_CHAR:
 
-      if (size > 1)
-        {
-        out[0] = attr.at_val.at_char;
-        out[1] = '\0';
-        }
-      else
-        {
-        return(NO_BUFFER_SPACE);
-        }
+      sprintf(local_buf, "%c", attr.at_val.at_char);
+      rc = append_dynamic_string(ds, local_buf);
 
       break;
 
@@ -390,15 +386,9 @@ int attr_to_str(
         return(NO_ATTR_DATA);
 
       if (XML)
-        {
-        rc = escape_xml(attr.at_val.at_str,out,size);
-        if(rc == BUFFER_OVERFLOW)
-          {
-          return(NO_BUFFER_SPACE);
-          }
-        }
+        rc = append_dynamic_string_xml(ds, attr.at_val.at_str);
       else
-        snprintf(out,size,"%s",attr.at_val.at_str);
+        rc = append_dynamic_string(ds, attr.at_val.at_str);
 
       break;
 
@@ -412,44 +402,16 @@ int attr_to_str(
       if (arst == NULL)
         return(NO_ATTR_DATA);
 
-      if (size < arst->as_bufsize)
-        return(NO_BUFFER_SPACE);
-
-      out[0] = '\0';
-
       /* concatenate all of the array strings into one string */
       for (j = 0; j < arst->as_usedptr; j++)
         {
         if (j > 0)
-          {
-          int len;
-          strcat(out,",");
-          if (XML)
-            {
-            len = strlen(out);
-            rc = escape_xml(arst->as_string[j],out+len,size-len);
-            if(rc == BUFFER_OVERFLOW)
-              {
-              return(NO_BUFFER_SPACE);
-              }
-            }
-          else
-            strcat(out,arst->as_string[j]);
-          }
+          append_dynamic_string(ds, ",");
+
+        if (XML)
+          rc = append_dynamic_string_xml(ds, arst->as_string[j]);
         else
-          {
-          if (XML) 
-            {
-            int len = strlen(out);
-            rc = escape_xml(arst->as_string[j],out+len,size-len);
-            if(rc == BUFFER_OVERFLOW)
-              {
-              return(NO_BUFFER_SPACE);
-              }
-            }
-          else
-            strcat(out,arst->as_string[j]);
-          }
+          rc = append_dynamic_string(ds, arst->as_string[j]);
         }
       }
 
@@ -457,43 +419,36 @@ int attr_to_str(
 
     case ATR_TYPE_SIZE:
 
-      size_to_str(attr.at_val.at_size,out,size);
+      rc = size_to_dynamic_string(ds, attr.at_val.at_size);
 
       break;
 
     case ATR_TYPE_RESC:
 
       {
-      char *ptr;
-
-      int   lspace;
-      int   len;
-
       resource *current = (resource *)GET_NEXT(attr.at_val.at_list);
 
       if (current == NULL)
         return(NO_ATTR_DATA);
 
-      ptr = out;
-      lspace = size;
-
       /* print all of the resources */
       while (current != NULL)
         {
-
         /* there are only 3 resource types used */
         switch (current->rs_value.at_type)
           {
           case ATR_TYPE_LONG:
 
-            snprintf(ptr,lspace,"\t\t<%s>%ld</%s>\n",
-              current->rs_defin->rs_name,
-              current->rs_value.at_val.at_long,
-              current->rs_defin->rs_name);
-            
-            len = strlen(ptr);
-            ptr    += len;
-            lspace -= len;
+            append_dynamic_string(ds, "\t\t<");
+            append_dynamic_string(ds, current->rs_defin->rs_name);
+            append_dynamic_string(ds, ">");
+
+            snprintf(local_buf, sizeof(local_buf), "%ld", current->rs_value.at_val.at_long);
+            append_dynamic_string(ds, local_buf);
+
+            append_dynamic_string(ds, "</");
+            append_dynamic_string(ds, current->rs_defin->rs_name);
+            rc = append_dynamic_string(ds, ">\n");
 
             break;
 
@@ -504,61 +459,44 @@ int attr_to_str(
              * Bugzilla bug 101 
              */
 
-            if(current->rs_value.at_val.at_str == NULL)
+            if (current->rs_value.at_val.at_str == NULL)
               break;
 
-            if(strlen(current->rs_value.at_val.at_str) == 0)
+            if (strlen(current->rs_value.at_val.at_str) == 0)
               break;
 
-            snprintf(ptr,lspace,"\t\t<%s>",
-              current->rs_defin->rs_name);
-            len = strlen(ptr);
-            ptr    += len;
-            lspace -= len;
+            append_dynamic_string(ds, "\t\t<");
+            append_dynamic_string(ds, current->rs_defin->rs_name);
+            append_dynamic_string(ds, ">");
 
             if (XML)
-              rc = escape_xml(current->rs_value.at_val.at_str,ptr,lspace);
-            if(rc == BUFFER_OVERFLOW)
-              {
-              return(NO_BUFFER_SPACE);
-              }
+              append_dynamic_string_xml(ds, current->rs_value.at_val.at_str);
             else
-              snprintf(ptr,lspace,"%s",current->rs_value.at_val.at_str);
+              append_dynamic_string(ds, current->rs_value.at_val.at_str);
 
-            len = strlen(ptr);
-            ptr += len;
-            lspace -= len;
-
-            snprintf(ptr,lspace,"</%s>\n",
-              current->rs_defin->rs_name);
-            len = strlen(ptr);
-            ptr += len;
-            lspace -= len;
+            append_dynamic_string(ds, "</");
+            append_dynamic_string(ds, current->rs_defin->rs_name);
+            rc = append_dynamic_string(ds, ">\n");
 
             break;
 
           case ATR_TYPE_SIZE:
 
-            snprintf(ptr,lspace,"\t\t<%s>",current->rs_defin->rs_name);
-            len = strlen(ptr);
-            ptr += len;
-            lspace -= len;
-
-            size_to_str(current->rs_value.at_val.at_size,ptr,size);
-            len = strlen(ptr);
-            ptr += len;
-            lspace -= len;
-
-            snprintf(ptr,lspace,"</%s>\n",current->rs_defin->rs_name);
-            len = strlen(ptr);
-            ptr += len;
-            lspace -= len;
+            append_dynamic_string(ds, "\t\t<");
+            append_dynamic_string(ds, current->rs_defin->rs_name);
+            append_dynamic_string(ds, ">");
+ 
+            size_to_dynamic_string(ds, current->rs_value.at_val.at_size);
+ 
+            append_dynamic_string(ds, "</");
+            append_dynamic_string(ds, current->rs_defin->rs_name);
+            rc = append_dynamic_string(ds, ">\n");
 
             break;
           }
 
-        if (lspace == 0)
-          return(NO_BUFFER_SPACE);
+        if (rc != PBSE_NONE)
+          return(rc);
 
         current = (resource *)GET_NEXT(current->rs_link);
         }
@@ -576,7 +514,7 @@ int attr_to_str(
       break;
     } /* END switch attribute type */
 
-  return(0);
+  return(PBSE_NONE);
   } /* END attr_to_str */
 
 
@@ -958,6 +896,7 @@ int svr_save_xml(
   char *id   = "svr_save_xml";
   char  buf[MAXLINE<<8];
   char  valbuf[MAXLINE<<7];
+  dynamic_string *ds;
 
   int   fds;
   int   rc;
@@ -990,6 +929,12 @@ int svr_save_xml(
   if ((rc = write_buffer(buf,strlen(buf),fds)))
     return(rc);
 
+  if ((ds = get_dynamic_string(-1, NULL)) == NULL)
+    {
+    log_err(ENOMEM, id, "");
+    return(ENOMEM);
+    }
+
   i = 0;
   while (i != SRV_ATR_LAST)
     {
@@ -997,11 +942,7 @@ int svr_save_xml(
       {
       buf[0] = '\0';
       valbuf[0] = '\0';
-      if ((rc = attr_to_str(valbuf,
-              sizeof(valbuf),
-              svr_attr_def + i, 
-              ps->sv_attr[i],
-              TRUE) != 0))
+      if ((rc = attr_to_str(ds, svr_attr_def + i, ps->sv_attr[i], TRUE) != 0))
         {
         if (rc != NO_ATTR_DATA)
           {
@@ -1011,6 +952,7 @@ int svr_save_xml(
             svr_attr_def[i].at_name);
           log_err(-1,id,log_buffer);
 
+          free_dynamic_string(ds);
           return(rc);
           }
         }
@@ -1018,19 +960,24 @@ int svr_save_xml(
         {
         snprintf(buf,sizeof(buf),"<%s>%s</%s>\n",
           svr_attr_def[i].at_name,
-          valbuf,
+          ds->str,
           svr_attr_def[i].at_name);
         
         if (buf[0] != '\0')
           {
           if ((rc = write_buffer(buf,strlen(buf),fds)))
+            {
+            free_dynamic_string(ds);
             return(rc);
+            }
           }
         }      
       }
 
     i++;
     }
+
+  free_dynamic_string(ds);
   
   snprintf(buf,sizeof(buf),"</attributes>\n");
   if ((rc = write_buffer(buf,strlen(buf),fds)))
