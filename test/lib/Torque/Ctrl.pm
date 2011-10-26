@@ -404,18 +404,19 @@ sub startPbsserver #($)
 {
   my ($cfg) = @_;
 
-  my $args  = $cfg->{ 'args' } || undef;
+  my $args = $cfg->{ 'args' } || undef;
+  my $host = $cfg->{host} || undef;
 
   # pbs_server command
   my $pbs_server_cmd  = "${torque_sbin}pbs_server";
   $pbs_server_cmd    .= " $args" if defined $args;
 
   # Start the pbs server
-  runCommand($pbs_server_cmd, 'test_success_die' => 1, 'msg' => 'Starting New PBS_Server Process...');
+  runCommand($pbs_server_cmd, host => $host, 'test_success_die' => 1, 'msg' => 'Starting New PBS_Server Process...');
 
   my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
 
-  my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
+  my $ps_info = sub{ return &$ps_list($check_cmd, host => $host, 'pbs_server'); };
 
   my $wait = 30;
   my $endtime = time + 30;
@@ -439,8 +440,10 @@ sub startPbsserverClean #($)
 {
   my ($cfg) = @_;
 
-  my $localhost = $props->get_property('Test.Host');
-  my $hosts = $cfg->{hosts} || [$localhost];
+  my $localhost  = $props->get_property('Test.Host');
+
+  my $host       = $cfg->{host} || undef;
+  my $hosts      = $cfg->{hosts} || [defined $host ? $host : $localhost];
   my $add_queues = $cfg->{add_queues} || [];
 
   # Variables
@@ -503,6 +506,10 @@ SETUP
 
   # pbs_server command
   my $pbs_cmd  = "$pbs_server_cmd -t create";
+  if( defined $host )
+  {
+    $pbs_cmd = qq{ssh -t -o BatchMode=yes $host "$pbs_cmd"};
+  }
 
   # Clean server files
   my $clean_cmd = <<CMD;
@@ -511,12 +518,15 @@ rm -f $torque_home/server_priv/queues/*;
 rm -f $torque_home/server_priv/accounting/*;
 rm -f $torque_home/server_logs/*
 CMD
-  runCommand($clean_cmd, test_success => 1, msg => 'Cleaning Torque Server Files...');
+  runCommand($clean_cmd, host => $host, test_success => 1, msg => 'Cleaning Torque Server Files...');
+  
+  # Initialize the server_name file
+  runCommand('echo '.($host || $localhost)." > $torque_home/server_name", host => $host, test_success => 1, msg => 'Initialized server_name File');
 
   # Back-up Nodes file, if it exists
-  if( runCommand("ls $torque_home/server_priv/nodes", logging_off => 1 ) == 0 )
+  if( runCommand("ls $torque_home/server_priv/nodes", host => $host, logging_off => 1 ) == 0 )
   {
-    runCommand("mv $torque_home/server_priv/nodes $torque_home/nodes.bak", test_success => 1, msg => 'Backing up existing nodes file');
+    runCommand("mv $torque_home/server_priv/nodes $torque_home/nodes.bak", host => $host, test_success => 1, msg => 'Backing up existing nodes file');
   }
 
   # Start the pbs server
@@ -540,7 +550,7 @@ CMD
 
   my $check_cmd = "ps aux | grep pbs_server | grep -v grep";
 
-  my $ps_info = sub{ return &$ps_list($check_cmd, 'pbs_server'); };
+  my $ps_info = sub{ return &$ps_list($check_cmd, host => $host, 'pbs_server'); };
 
   my $wait = 30;
   my $endtime = time() + $wait;
@@ -555,15 +565,15 @@ CMD
   }
 
   diag("Re-Configure Torque");
-  runCommand($_, 'test_success_die' => 1) foreach @setup_lines;
+  runCommand($_, host => $host, 'test_success_die' => 1) foreach @setup_lines;
 
   sleep_diag 3;
 
-  stopPbsserver();
+  stopPbsserver({ host => $host });
   
-  if( runCommand("ls $torque_home/nodes.bak", logging_off => 1 ) == 0 )
+  if( runCommand("ls $torque_home/nodes.bak", host => $host, logging_off => 1 ) == 0 )
   {
-    runCommand("mv $torque_home/nodes.bak $torque_home/server_priv/nodes", test_success => 1, msg => 'Restoring existing nodes file');
+    runCommand("mv $torque_home/nodes.bak $torque_home/server_priv/nodes", host => $host, test_success => 1, msg => 'Restoring existing nodes file');
   }
   
   startPbsserver($cfg);
@@ -806,7 +816,8 @@ sub createPbsserverNodes
 {
   my ($params) = @_;
 
-  my $nodes      = $params->{hosts} || [$props->get_property('Test.Host')];
+  my $host       = $params->{host} || undef;
+  my $nodes      = $params->{hosts} || [defined $host ? $host : $props->get_property('Test.Host')];
   my $node_attrs = $params->{node_attrs} || {};
   my $node_file  = "$torque_home/server_priv/nodes";
   my $node_args  = $props->get_property('torque.node.args');
@@ -825,6 +836,11 @@ sub createPbsserverNodes
   close NODES;
 
   runCommand("cat $node_file", test_success_die => 1, msg => "Created Torque Server Nodes File");
+
+  if( defined $host )
+  {
+    runCommand("scp -B $node_file $host:$node_file", test_success_die => 1, msg => "Moved Server Nodes File to Remote Host $host");
+  }
 
   return 1;
 }
