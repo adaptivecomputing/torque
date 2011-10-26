@@ -1313,6 +1313,8 @@ void update_array_values(
         pa->ai_qs.jobs_done++;
         }
 
+      array_save(pa);
+
       /* update slot limit hold if necessary */
       if (server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_long != FALSE)
         {
