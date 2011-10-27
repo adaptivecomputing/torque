@@ -60,16 +60,15 @@ my @tests = (
       full_jobid => 1,
     },
   },
-# JR-TRQ-87
-#  {
-#    desc => 'Test Array with Slot Limit and Server Restart',
-#    specs => [1, 2 * ($num_moms + 2), $num_moms + 2],
-#    qsub  => {
-#      cmd => 'sleep '.int($cjob_time / 2),
-#      full_jobid => 1,
-#    },
-#    restart => 1,
-#  },
+  {
+    desc => 'Test Array with Slot Limit and Server Restart',
+    specs => [1, 2 * ($num_moms + 2), $num_moms + 2],
+    qsub  => {
+      cmd => 'sleep '.int($cjob_time / 2),
+      full_jobid => 1,
+    },
+    restart => 1,
+  },
   {
     desc => 'Test Simple Array (Moab-Compatibility Mode)',
     specs => [1, $np * $num_moms],
@@ -98,17 +97,16 @@ my @tests = (
     },
     moab_compat => 1,
   },
-# JR-TRQ-87
-#  {
-#    desc => 'Test Array with Slot Limit and Server Restart (Moab-Compatibility Mode)',
-#    specs => [1, 2 * ($num_moms + 2), $num_moms + 2],
-#    qsub  => {
-#      cmd => 'sleep '.int($cjob_time / 2),
-#      full_jobid => 1,
-#    },
-#    restart => 1,
-#    moab_compat => 1,
-#  },
+  {
+    desc => 'Test Array with Slot Limit and Server Restart (Moab-Compatibility Mode)',
+    specs => [1, 2 * ($num_moms + 2), $num_moms + 2],
+    qsub  => {
+      cmd => 'sleep '.int($cjob_time / 2),
+      full_jobid => 1,
+    },
+    restart => 1,
+    moab_compat => 1,
+  },
 );
 
 foreach my $case (@tests)
@@ -179,6 +177,14 @@ foreach my $case (@tests)
         runcmd_flags => {},
       });
 
+    # keep track of which ones should be running, completed, gone, etc.
+    for( my $i=0; $i < @$results; $i++ )
+    {
+      $job_info{$subjobs[$i]}{state} = 'R' unless $results->[$i]{EXIT_CODE};
+    }
+    
+    my @running = grep { $job_info{$_}{state} eq 'R' } @subjobs;
+    
     # Restart the Torque server, if desired
     if( $restart_server )
     {
@@ -188,14 +194,6 @@ foreach my $case (@tests)
   
       ok(-e $array_file, "Job Array file still exists after server restart");
     }
-
-    # keep track of which ones should be running, completed, gone, etc.
-    for( my $i=0; $i < @$results; $i++ )
-    {
-      $job_info{$subjobs[$i]}{state} = 'R' unless $results->[$i]{EXIT_CODE};
-    }
-
-    my @running = grep { $job_info{$_}{state} eq 'R' } @subjobs;
 
     cmp_ok(scalar @running, '<=', $slot, 'Array Slot Limit was Honored (Running subjobs do not exceed slot limit)') if defined $slot;
 
@@ -214,5 +212,5 @@ foreach my $case (@tests)
 
   ok(!-e $array_file, "Job Array file was removed as expected when completed");
 
-#  delJobs();
+  delJobs();
 }
