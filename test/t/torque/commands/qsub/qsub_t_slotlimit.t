@@ -41,7 +41,7 @@ runJobs({
        });
 my $j2_results = runJobs({
                           'job_ids'       => [ $jaids[1] ],
-                          'run_cmd_flags' => { 'test_fail' => 1 }
+                          'runcmd_flags' => { 'test_fail' => 1 }
                         });
 
 cmp_ok($j2_results->[0]->{ 'STDERR' }, 
