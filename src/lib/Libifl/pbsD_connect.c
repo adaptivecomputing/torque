@@ -706,27 +706,28 @@ ssize_t    send_unix_creds(int sd)
  */
 #define MAX_IFS 64
 
-int trq_set_preferred_network_interface(char *if_name, struct sockaddr *preferred_addr)
+int trq_set_preferred_network_interface(
+    
+  char            *if_name,
+  struct sockaddr *preferred_addr)
+
   {
-	struct ifreq *ifr, *ifend;
-	struct ifreq ifreqx;
+	struct ifreq *ifr;
+  struct ifreq *ifend;
+	struct ifreq  ifreqx;
 	struct ifconf ifc;
-	struct ifreq ifs[MAX_IFS];
-	int sockfd;
+	struct ifreq  ifs[MAX_IFS];
+	int           sockfd;
 
 	/* make sure we have a valid name for the interface */
-  if(if_name == NULL)
+  if ((if_name == NULL) ||
+      (preferred_addr == NULL))
 		return(PBSE_IVALREQ);	
 
-  if(preferred_addr == NULL)
-    {
-    return(PBSE_IVALREQ);
-    }
-    
   memset(preferred_addr, 0, sizeof(struct sockaddr));
 
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if(sockfd < 0)
+	if (sockfd < 0)
     {
     /* We can't do this without a socket */
     return(PBSE_SYSTEM);
@@ -736,6 +737,7 @@ int trq_set_preferred_network_interface(char *if_name, struct sockaddr *preferre
 	ifc.ifc_req = ifs;
 	if (ioctl(sockfd, SIOCGIFCONF, &ifc) < 0)
     {
+    close(sockfd);
     return(PBSE_SYSTEM);
     }
 
@@ -745,22 +747,26 @@ int trq_set_preferred_network_interface(char *if_name, struct sockaddr *preferre
     {
     if (ifr->ifr_addr.sa_family == AF_INET)
       {
-      if(!strncmp(if_name, ifr->ifr_name, IF_NAMESIZE))
+      if (!strncmp(if_name, ifr->ifr_name, IF_NAMESIZE))
         {
         strncpy(ifreqx.ifr_name, ifr->ifr_name,sizeof(ifreqx.ifr_name));
 
-        if(ioctl(sockfd, SIOCGIFADDR, &ifreqx) < 0)
+        if (ioctl(sockfd, SIOCGIFADDR, &ifreqx) < 0)
         	{
         	close(sockfd);
         	return(PBSE_SYSTEM);
           }
+
         /* get the address */
         memcpy(preferred_addr, &ifreqx.ifr_ifru.ifru_addr, sizeof(struct sockaddr));
         }
       }
     }
-    return(PBSE_NONE);
-  }
+
+  close(sockfd);
+
+  return(PBSE_NONE);
+  } /* END trq_set_preferred_network_interface() */
 
 
 /* returns socket descriptor or negative value (-1) on failure */
