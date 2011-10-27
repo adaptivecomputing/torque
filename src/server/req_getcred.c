@@ -194,9 +194,6 @@ int get_encode_host(
   } /* END get_encode_host() */
 
 
-
-
-
 int get_UID(
     
   int s, 
@@ -235,7 +232,6 @@ int get_UID(
 	
   return(0);
   }
-
 
 
 int write_munge_temp_file(
@@ -521,7 +517,6 @@ void *req_altauthenuser(
     {
     /* FAILED */
     pthread_mutex_unlock(svr_conn[s].cn_mutex);
-  	req_reject(PBSE_SYSTEM, 0, preq, NULL, "munge failure");
     return(NULL);
     }
 

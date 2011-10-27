@@ -203,6 +203,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       of the NIC interface, for example eth0.
   e - Added instructions concerning the server parameter moab_array_compatible to the 
       README.array_changes file.
+  b - Fixed a problem where pbs_server would seg-fault if munged was not running. It would
+      also seg-fault if an invalid credential were sent from a client. The seg-fault was
+      occurred in the same place for both cases.
 
 2.5.8
   e - added util function getpwnam_ext() that has retry and errno logging
