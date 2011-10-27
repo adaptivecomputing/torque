@@ -374,8 +374,11 @@ void scan_for_exiting(void)
       if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK)
         {
         /* master task is in state TI_STATE_EXITED */
-
-        pjob->ji_qs.ji_un.ji_momt.ji_exitstat = ptask->ti_qs.ti_exitstat;
+        if (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT)
+          {
+          /* do not over-write JOB_EXEC_OVERLIMIT */
+          pjob->ji_qs.ji_un.ji_momt.ji_exitstat = ptask->ti_qs.ti_exitstat;
+          }
 
         log_event(
           PBSEVENT_JOB,

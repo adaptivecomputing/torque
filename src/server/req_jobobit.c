@@ -2527,6 +2527,7 @@ void *req_jobobit(
       {
 
       case JOB_EXEC_OVERLIMIT:
+
         /* the job exceeded some resource limit such as walltime, mem, pmem, cput, etc */
         svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjoboverlimit);
         alreadymailed = 1;
