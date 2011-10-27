@@ -118,6 +118,7 @@
 #include "mcom.h"
 #include "resource.h"
 #include "utils.h"
+#include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 
 #ifdef ENABLE_CPA
   #include "pbs_cpa.h"
@@ -7410,6 +7411,7 @@ int TMomCheckJobChild(
   int i;
   fd_set fdset;
   int rc;
+  int read_size = sizeof(struct startjob_rtn);
   struct timeval timeout;
 
   /* NOTE:  assume if anything is on pipe, everything is on pipe
@@ -7442,12 +7444,14 @@ int TMomCheckJobChild(
     return(FAILURE);
     }
 
+  if (socket_avail_bytes_on_descriptor(TJE->jsmpipe[0]) < read_size)
+    {
+    return FAILURE;
+    }
+
   for (;;)
     {
-    i = read(
-            TJE->jsmpipe[0],
-            (char *) & TJE->sjr,
-            sizeof(struct startjob_rtn));
+    i = read(TJE->jsmpipe[0], (char *) &TJE->sjr, read_size);
 
     if ((i == -1) && (errno == EINTR))
       continue;

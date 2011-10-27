@@ -7445,7 +7445,7 @@ int TMOMScanForStarting(void)
 
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING)
       {
-      pjobexec_t *TJE;
+      pjobexec_t *TJE = NULL;
 
       if (LOGLEVEL >= 2)
         {
