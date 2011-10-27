@@ -591,6 +591,12 @@ job *job_recov(
 
     array_get_parent_id(pj->ji_qs.ji_jobid, parent_id);
     pa = get_array(parent_id);
+    if (pa == NULL)
+      {   
+      job_abt(&pj, "Array job missing array struct, aborting job");
+      close(fds);
+      return NULL;
+      }
 
     if (strcmp(parent_id, pj->ji_qs.ji_jobid) == 0)
       {
@@ -599,18 +605,19 @@ job *job_recov(
       }
     else
       {
-      /* XXX should we move this up after pa = get_array... */
-      if (pa == NULL)
-        {   
-        job_abt(&pj, "Array job missing array struct, aborting job");
-        close(fds);
-        return NULL;
-        }
-      else
+      pa->jobs[(int)pj->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = (void *)pj;
+      pj->ji_arraystruct = pa; 
+      pa->jobs_recovered++;
+
+      /* This is a bit of a kluge, but for some reason if an array job was 
+         on hold when the server went down the ji_wattr[JOB_ATR_hold].at_val.at_long
+         value is 0 on recovery even though pj->ji_qs.ji_state is JOB_STATE_HELD and
+         the substate is JOB_SUBSTATE_HELD
+      */
+      if ((pj->ji_qs.ji_state == JOB_STATE_HELD) && (pj->ji_qs.ji_substate == JOB_SUBSTATE_HELD))
         {
-        pa->jobs[pj->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = (void *)pj;
-        pj->ji_arraystruct = pa;
-        pa->jobs_recovered++;
+        pj->ji_wattr[JOB_ATR_hold].at_val.at_long = HOLD_l;
+        pj->ji_wattr[JOB_ATR_hold].at_flags = ATR_VFLAG_SET;
         }
       }
 
@@ -624,10 +631,7 @@ job *job_recov(
 
   /* all done recovering the job */
 
-  if (qs_upgrade == TRUE)
-    {
-    job_save(pj, SAVEJOB_FULL, 0);
-    }
+  job_save(pj, SAVEJOB_FULL);
 
   return(pj);
   }  /* END job_recov() */

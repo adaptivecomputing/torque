@@ -837,10 +837,6 @@ void svr_evaljobstate(
     *newsub   = JOB_SUBSTATE_QUEUED;
     }
 
-  if (pjob->ji_is_array_template)
-    {
-    *newsub = JOB_SUBSTATE_ARRAY_TEMP;
-    }
   return;
   }  /* END svr_evaljobstate() */
 
