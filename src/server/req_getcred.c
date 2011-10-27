@@ -141,7 +141,7 @@ void req_connect(
     }
   else
     {
-    req_reject(PBSE_BADCRED, 0, preq, NULL, NULL);
+    req_reject(PBSE_BADCRED, 0, preq, NULL, "Connection not authorized");
     }
 
 /*   pthread_mutex_unlock(svr_conn[sock].cn_mutex); */
@@ -257,7 +257,7 @@ int write_munge_temp_file(
 
   if ((cred_size = strlen(preq->rq_ind.rq_authen.rq_cred)) == 0)
     {
-    req_reject(PBSE_BADCRED, 0, preq, NULL, NULL);
+    req_reject(PBSE_BADCRED, 0, preq, NULL, "munge credential invalid");
     close(fd);
     return(-1);
     }
@@ -466,7 +466,7 @@ void *req_authenuser(
   log_err(PBSE_BADCRED, "req_authenuser", log_buffer);
   if (debug) printf("%s\n", log_buffer);
   free(log_buffer);
-  req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user");
+  req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user. Client connection not found");
 
   /* FAILURE */
 
@@ -512,10 +512,9 @@ void *req_altauthenuser(
   if (s >= PBS_NET_MAX_CONNECTIONS)
     {
     pthread_mutex_unlock(svr_conn[s].cn_mutex);
-    req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user");
+	  req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user. Client connection not found");
     return(NULL);
     }
-
 
   rc = unmunge_request(s, preq);
   if (rc)

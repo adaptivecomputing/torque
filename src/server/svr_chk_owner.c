@@ -379,17 +379,33 @@ int authenticate_user(
   struct credential    *pcred) /* I */
 
   {
+  char id[] = "authenticate_user";
   int    rc;
   char   uath[PBS_MAXUSER + PBS_MAXHOSTNAME + 1];
   time_t time_now = time(NULL);
+  char error_msg[1024];
 
   if (strncmp(preq->rq_user, pcred->username, PBS_MAXUSER))
     {
+    sprintf(error_msg, "Users do not match: Requested user %s: credential user: %s",
+                   preq->rq_user, pcred->username);
+    log_event(
+      PBSEVENT_ADMIN,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      error_msg);
     return(PBSE_BADCRED);
     }
 
   if (strncmp(preq->rq_host, pcred->hostname, PBS_MAXHOSTNAME))
     {
+    sprintf(error_msg, "Hosts do not match: Requested host %s: credential host: %s",
+                   preq->rq_host, pcred->hostname);
+    log_event(
+      PBSEVENT_ADMIN,
+      PBS_EVENTCLASS_SERVER,
+      id,
+      error_msg);
     return(PBSE_BADCRED);
     }
 
