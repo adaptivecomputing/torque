@@ -1298,7 +1298,7 @@ static void chk_svr_resc_limit(
             (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
           {
           if ((EMsg != NULL) && (EMsg[0] == '\0'))
-            strcpy(EMsg, "cannot locate feasible nodes");
+            strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or all systems are busy)");
         
           comp_resc_lt++;
           }
@@ -1318,7 +1318,7 @@ static void chk_svr_resc_limit(
               (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
             {
             if ((EMsg != NULL) && (EMsg[0] == '\0'))
-              strcpy(EMsg, "cannot locate feasible nodes");
+              strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or requested nodes exceed system)");
       
             comp_resc_lt++;
             }
@@ -1331,7 +1331,7 @@ static void chk_svr_resc_limit(
         (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
       {
       if ((EMsg != NULL) && (EMsg[0] == '\0'))
-        strcpy(EMsg, "cannot locate feasible nodes");
+        strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or requested nodes exceed all systems)");
     
       comp_resc_lt++;
       }

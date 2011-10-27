@@ -6971,7 +6971,13 @@ static int search_env_and_open(
 }	 /* END search_env_and_open() */
 
 
-
+int socket_avail_bytes_on_descriptor(int socket)
+  {
+  unsigned avail_bytes;
+  if (ioctl(socket, FIONREAD, &avail_bytes) != -1)
+    return avail_bytes;
+  return 0;
+  } 
 
 int TMomCheckJobChild(
 
@@ -6982,11 +6988,9 @@ int TMomCheckJobChild(
 
 {
 	int i;
-
 	fd_set fdset;
-
 	int rc;
-
+  int read_size = sizeof(struct startjob_rtn);
 	struct timeval timeout;
 
 	/* NOTE:  assume if anything is on pipe, everything is on pipe
@@ -7019,12 +7023,14 @@ int TMomCheckJobChild(
 		return(FAILURE);
 		}
 
+  if (socket_avail_bytes_on_descriptor(TJE->jsmpipe[0]) < read_size)
+    {
+    return FAILURE;
+    }
+
 	for (;;)
 		{
-		i = read(
-						TJE->jsmpipe[0],
-						(char *) & TJE->sjr,
-						sizeof(struct startjob_rtn));
+		i = read(TJE->jsmpipe[0], (char *) & TJE->sjr, read_size);
 
 		if ((i == -1) && (errno == EINTR))
 			continue;
