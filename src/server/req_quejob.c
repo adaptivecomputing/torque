@@ -774,6 +774,8 @@ void req_quejob(
       strcat(buf, "=");
       strcat(buf, preq->rq_host);
 
+      /* We need to add the hostname to the list of attributes
+         for this job */
       clear_attr(&tempattr, &job_attr_def[JOB_ATR_submit_host]);
       rc = job_attr_def[JOB_ATR_submit_host].at_decode(
                &tempattr,
