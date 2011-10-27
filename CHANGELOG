@@ -208,6 +208,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       occurred in the same place for both cases.
   b - Fixed a problem where jobs dependent on an array using afteranyarray would not start
       when a job element of the array completed.
+  b - Fixed a bug where array jobs .AZ file would not be deleted when the array job was done.
 
 2.5.8
   e - added util function getpwnam_ext() that has retry and errno logging

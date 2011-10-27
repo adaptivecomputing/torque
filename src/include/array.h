@@ -77,6 +77,7 @@ struct job_array
     int  num_started;    /* number of jobs that have begun execution */
     int  num_failed;     /* number of jobs that exited with status != 0 */
     int  num_successful; /* number of jobs that exited with status == 0 */
+    int  num_purged;     /* number of jobs which have called purge_job */
 
     /* dependency info */
     tlist_head deps;
