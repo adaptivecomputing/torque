@@ -116,6 +116,8 @@ extern int  lockfds;
 extern char *path_aux;
 
 extern int  reduceprologchecks;
+extern gid_t   pbsgroup;
+extern uid_t   pbsuser;
 
 unsigned int pe_alarm_time = PBS_PROLOG_TIME;
 static pid_t child;
@@ -1146,6 +1148,45 @@ int run_pelog(
           }
         }
       }
+
+  /*
+   * if we want to run as user then we need to reset real user permissions
+   * since it seems that some OSs use real not effective user id when execv'ing
+   */
+
+  if ((which == PE_PROLOGUSER) || 
+      (which == PE_EPILOGUSER) || 
+      (which == PE_PROLOGUSERJOB) || 
+      (which == PE_EPILOGUSERJOB))
+    {
+      seteuid(pbsuser);
+      setegid(pbsgroup);
+
+    if (setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "setgid(%lu) for UID = %lu failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      
+      log_err(errno, id, log_buffer);
+      
+      return(-1);
+      }
+    
+    if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) != 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "setuid(%lu) failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      
+      log_err(errno, id, log_buffer);
+      
+      return(-1);
+      }
+    }
 
     execv(pelog,arg);
 
