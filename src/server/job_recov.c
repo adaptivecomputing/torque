@@ -631,7 +631,7 @@ job *job_recov(
 
   /* all done recovering the job */
 
-  job_save(pj, SAVEJOB_FULL);
+  job_save(pj, SAVEJOB_FULL, 0);
 
   return(pj);
   }  /* END job_recov() */

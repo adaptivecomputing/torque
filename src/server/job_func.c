@@ -1604,6 +1604,8 @@ void job_purge(
   if ((pjob->ji_arraystruct) != NULL &&
       (pjob->ji_is_array_template == FALSE))
     {
+    /* pa->ai_mutex will come out locked after 
+       the call to get_jobs_array */
     job_array *pa = get_jobs_array(pjob);
 
     /* erase the pointer to this job in the job array */
@@ -1612,10 +1614,10 @@ void job_purge(
     /* if there are no more jobs in the arry,
      * then we can clean that up too */
     pa->ai_qs.num_purged++;
-    if (pa->ai_qs.jobs_done == pa->ai_qs.num_jobs)
+    if (pa->ai_qs.num_purged == pa->ai_qs.num_jobs)
       {
-      if (pa->ai_qs.num_purged == pa->ai_qs.num_jobs)
-        array_delete(pjob->ji_arraystruct);
+      /* array_delete will unlock pa->ai_mutex */
+      array_delete(pjob->ji_arraystruct);
       }
     else
       {
