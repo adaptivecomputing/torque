@@ -895,7 +895,6 @@ int svr_save_xml(
   {
   char *id   = "svr_save_xml";
   char  buf[MAXLINE<<8];
-  char  valbuf[MAXLINE<<7];
   dynamic_string *ds;
 
   int   fds;
@@ -941,7 +940,8 @@ int svr_save_xml(
     if (ps->sv_attr[i].at_flags & ATR_VFLAG_SET)
       {
       buf[0] = '\0';
-      valbuf[0] = '\0';
+      clear_dynamic_string(ds);
+
       if ((rc = attr_to_str(ds, svr_attr_def + i, ps->sv_attr[i], TRUE) != 0))
         {
         if (rc != NO_ATTR_DATA)

@@ -106,9 +106,9 @@ size_t need_to_grow(
 
   if (ds->size < ds->used + to_add)
     {
-    to_grow = ds->used + to_add - ds->size;
-    if (to_grow < (ds->size << 2))
-      to_grow = ds->size << 2;
+    to_grow = to_add + ds->size;
+    if (to_grow < (ds->size * 4))
+      to_grow = ds->size * 4;
     }
 
   return(to_grow);
@@ -203,7 +203,7 @@ int append_dynamic_string(
   char *to_append)    /* I */
 
   {
-  long long  to_grow = need_to_grow(ds,to_append);
+  size_t     to_grow = need_to_grow(ds,to_append);
   char      *tmp;
   int        len = strlen(to_append);
 
@@ -245,9 +245,10 @@ int append_dynamic_string_xml(
   {
   int i;
   int len = strlen(str);
+  int empty_at_start = (ds->used == 0);
 
-  if (ds->used == 0)
-    ds->used += 1;
+  if (empty_at_start == FALSE)
+    ds->used -= 1;
 
   for (i = 0; i < len; i++)
     {
@@ -316,6 +317,9 @@ int append_dynamic_string_xml(
       }
     }
 
+  ds->str[ds->used] = '\0';
+  ds->used += 1;
+
   return(PBSE_NONE);
   } /* END append_dynamic_string_xml() */
 
@@ -375,8 +379,8 @@ int copy_to_end_of_dynamic_string(
  */
 dynamic_string *get_dynamic_string(
     
-  int   initial_size, /* I */
-  char *str)          /* I */
+  int   initial_size, /* I (-1 means default) */
+  char *str)          /* I (optional) */
 
   {
   dynamic_string *ds = malloc(sizeof(dynamic_string));
@@ -448,8 +452,8 @@ void clear_dynamic_string(
   dynamic_string *ds) /* M */
 
   {
-  ds->str[0] = '\0';
   ds->used = 0;
+  memset(ds->str, 0, ds->size);
   } /* END clear_dynamic_string() */
 
 
