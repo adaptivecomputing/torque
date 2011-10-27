@@ -206,6 +206,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed a problem where pbs_server would seg-fault if munged was not running. It would
       also seg-fault if an invalid credential were sent from a client. The seg-fault was
       occurred in the same place for both cases.
+  b - Fixed a problem where jobs dependent on an array using afteranyarray would not start
+      when a job element of the array completed.
 
 2.5.8
   e - added util function getpwnam_ext() that has retry and errno logging

@@ -1451,10 +1451,12 @@ void update_array_values(
       if (exit_status == 0)
         {
         pa->ai_qs.num_successful++;
+        pa->ai_qs.jobs_done++;
         }
       else
         {
         pa->ai_qs.num_failed++;
+        pa->ai_qs.jobs_done++;
         }
 
       /* update slot limit hold if necessary */
