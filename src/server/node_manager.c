@@ -1111,6 +1111,10 @@ int is_stat_get(
         
         if (tmp == NULL)
           {
+          /* NYI: should we add logic here to attempt the canonical name if this 
+           * is the short name, and attempt the short name if this is the 
+           * canonical name? */
+
           /* ERROR */
           snprintf(log_buf,sizeof(log_buf),
             "Node %s is reporting on node %s, which pbs_server doesn't know about\n",
