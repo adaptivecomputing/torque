@@ -477,6 +477,8 @@ job *job_alloc(void)
     return(NULL);
     }
 
+  memset(pj, 0 ,sizeof(job));
+
   pj->ji_qs.qs_version = PBS_QS_VERSION;
 
   CLEAR_LINK(pj->ji_alljobs);
@@ -484,23 +486,8 @@ job *job_alloc(void)
 
   CLEAR_HEAD(pj->ji_tasks);
   pj->ji_taskid = TM_NULL_TASK + 1;
-  pj->ji_numnodes = 0;
-  pj->ji_numvnod  = 0;
-  pj->ji_hosts = NULL;
-  pj->ji_sisters = NULL;
-  pj->ji_vnods = NULL;
-  pj->ji_resources = NULL;
-  pj->ji_outstanding = 0;
-  pj->ji_im_nodeid = 0;
   pj->ji_obit = TM_NULL_EVENT;
-  pj->ji_preq = NULL;
   pj->ji_nodekill = TM_ERROR_NODE;
-  pj->ji_flags = 0;
-  pj->ji_globid = NULL;
-  pj->ji_stdout = 0;
-  pj->ji_stderr = 0;
-  pj->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
-  pj->ji_job_is_being_rerun = 0;
 
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
 
