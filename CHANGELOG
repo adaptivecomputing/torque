@@ -35,6 +35,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Enabled trqauthd to daemonize from the commandline.
   e - Change node_spec from an N^2 (but average 5N) algorithm to an N algorithm with respect
       to nodes. We only loop over each node once at a maximum.
+  b - Set the default value for node_check_interval to 1.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
