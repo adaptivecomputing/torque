@@ -372,6 +372,7 @@ int socket_to_handle(
     }
   else
     {
+    /* NOTE: get_connection_entry() locks connection[conn_pos] */
     connection[conn_pos].ch_stream = 0;
     connection[conn_pos].ch_inuse  = TRUE;
     connection[conn_pos].ch_errno  = 0;
@@ -380,10 +381,9 @@ int socket_to_handle(
 
     /* SUCCESS - save handle for later close */
     pthread_mutex_unlock(connection[conn_pos].ch_mutex);
+      
     pthread_mutex_lock(svr_conn[sock].cn_mutex);
-      
     svr_conn[sock].cn_handle = conn_pos;
-      
     pthread_mutex_unlock(svr_conn[sock].cn_mutex);
       
     if (conn_pos >= (PBS_NET_MAX_CONNECTIONS/2))
@@ -396,7 +396,6 @@ int socket_to_handle(
       }
 
     rc = conn_pos;
-    pthread_mutex_unlock(connection[conn_pos].ch_mutex);
     }
 
   return(rc);
