@@ -199,6 +199,77 @@ int status_job(
 
 
 
+int add_walltime_remaining(
+   
+  int         index,
+  attribute  *pattr,
+  tlist_head *phead)
+
+  {
+  int       len;
+  char      buf[MAXPATHLEN];
+  char     *pname;
+  svrattrl *pal;
+  resource *pres;
+  
+  int found = 0;
+  unsigned long remaining = 0;
+  unsigned long upperBound = 0;
+
+  /* encode walltime remaining, this is custom because walltime 
+   * remaining isn't an attribute */
+  if ((pattr + JOB_ATR_state)->at_val.at_char != 'R')
+    {
+    /* only for running jobs, do nothing */
+    return(PBSE_NONE);
+    }
+  
+  if (((pattr + JOB_ATR_resource)->at_val.at_list.ll_next != NULL) &&
+      ((pattr + JOB_ATR_resource)->at_flags & ATR_VFLAG_SET))
+    {
+    pres = (resource *)GET_NEXT((pattr + JOB_ATR_resource)->at_val.at_list);
+    
+    if ((pattr + JOB_ATR_comp_time)->at_flags & ATR_VFLAG_SET)
+      upperBound = (pattr + JOB_ATR_comp_time)->at_val.at_long;
+    else
+      upperBound = (unsigned long)time_now;
+    
+    /* find the walltime resource */
+    for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
+      {
+      pname = pres->rs_defin->rs_name;
+      
+      if (strcmp(pname, "walltime") == 0)
+        {
+        /* found walltime */
+        unsigned long value = (unsigned long)pres->rs_value.at_val.at_long;
+        remaining = value - (time_now - (pattr + index)->at_val.at_long);
+        found = TRUE;
+        break;
+        }
+      }
+    }
+  
+  if (found == TRUE)
+    {
+    snprintf(buf,sizeof(buf),"%lu",remaining);
+    
+    len = strlen(buf) + 1;
+    pal = attrlist_create("Walltime","Remaining",len);
+    
+    if (pal != NULL)
+      {
+      memcpy(pal->al_value,buf,len);
+      pal->al_flags = ATR_VFLAG_SET;
+      append_link(phead,&pal->al_link,pal);
+      }
+    }
+
+  return(PBSE_NONE);
+  } /* END add_walltime_remaining() */
+
+
+
 
 
 /**
@@ -214,13 +285,13 @@ int status_job(
 
 int status_attrib(
 
-  svrattrl *pal,      /* I */
+  svrattrl      *pal,      /* I */
   attribute_def *padef,
-  attribute *pattr,
-  int   limit,
-  int   priv,
-  tlist_head *phead,
-  int  *bad,
+  attribute     *pattr,
+  int            limit,
+  int            priv,
+  tlist_head    *phead,
+  int           *bad,
   int            IsOwner)  /* 0 == FALSE, 1 == TRUE */
 
   {
@@ -292,64 +363,7 @@ int status_attrib(
         /* add walltime remaining if started */
         if ((index == JOB_ATR_start_time) &&
             ((pattr + index)->at_flags & ATR_VFLAG_SET))
-          {
-          /* encode walltime remaining, this is custom because walltime 
-           * remaining isn't an attribute */
-          int       len;
-          char      buf[MAXPATHLEN];
-          char     *pname;
-          svrattrl *pal;
-          resource *pres;
-
-          int found = 0;
-          unsigned long remaining = 0;
-          unsigned long upperBound = 0;
-
-          if (((pattr + JOB_ATR_resource)->at_val.at_list.ll_next != NULL) &&
-              ((pattr + JOB_ATR_resource)->at_flags & ATR_VFLAG_SET))
-            {
-            pres = (resource *)GET_NEXT((pattr + JOB_ATR_resource)->at_val.at_list);
-
-            if ((pattr + JOB_ATR_comp_time)->at_flags & ATR_VFLAG_SET)
-              {
-              upperBound = (pattr + JOB_ATR_comp_time)->at_val.at_long;
-              }
-            else
-              {
-              upperBound = (unsigned long)time_now;
-              }
-
-            /* find the walltime resource */
-            for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
-              {
-              pname = pres->rs_defin->rs_name;
-
-              if (strcmp(pname, "walltime") == 0)
-                {
-                /* found walltime */
-                unsigned long value = (unsigned long)pres->rs_value.at_val.at_long;
-                remaining = value - (time_now - (pattr + index)->at_val.at_long);
-                found = TRUE;
-                break;
-                }
-              }
-            }
-
-          if (found == TRUE)
-            {
-            snprintf(buf,sizeof(buf),"%lu",remaining);
-
-            len = strlen(buf) + 1;
-            pal = attrlist_create("Walltime","Remaining",len);
-
-            if (pal != NULL)
-              {
-              memcpy(pal->al_value,buf,len);
-              pal->al_flags = ATR_VFLAG_SET;
-              append_link(phead,&pal->al_link,pal);
-              }
-            }
-          } /* END if (index == JOB_ATR_start_time) */
+          add_walltime_remaining(index, pattr, phead);
         }
       }
     }    /* END for (index) */
