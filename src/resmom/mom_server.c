@@ -4339,8 +4339,8 @@ void check_state(
 
       PBSNodeMsgBuf[sizeof(PBSNodeMsgBuf) - 1] = '\0';
 
-      /* NOTE:  not certain this is the correct behavior, scheduler should probably make this decision as
-                proper action may be context sensitive */
+      /* NOTE:  not certain this is the correct behavior, scheduler should 
+         probably make this decision as proper action may be context sensitive */
 
       if (IsError == 1)
         {
@@ -4361,7 +4361,7 @@ void check_state(
       }
     }      /* END if (PBSNodeCheckPath[0] != '\0') */
 
-  ICount ++;
+  ICount++;
 
   ICount %= MAX(1, PBSNodeCheckInterval);
 

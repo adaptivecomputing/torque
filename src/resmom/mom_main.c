@@ -381,7 +381,7 @@ static unsigned long usecp(char *);
 static unsigned long wallmult(char *);
 static unsigned long setpbsserver(char *);
 static unsigned long setnodecheckscript(char *);
-static unsigned long setnodecheckinterval(char *);
+unsigned long setnodecheckinterval(char *);
 static unsigned long settimeout(char *);
 extern unsigned long mom_checkpoint_set_checkpoint_interval(char *);
 extern unsigned long mom_checkpoint_set_checkpoint_script(char *);
@@ -552,7 +552,7 @@ static char  config_file[_POSIX_PATH_MAX] = "config";
 
 char                    PBSNodeMsgBuf[1024];
 char                    PBSNodeCheckPath[1024];
-int                     PBSNodeCheckInterval;
+int                     PBSNodeCheckInterval = 1;
 int                     PBSNodeCheckProlog = 0;
 int                     PBSNodeCheckEpilog = 0;
 static char            *MOMExePath = NULL;
@@ -2933,7 +2933,7 @@ static unsigned long setnodecheckscript(
 
 
 
-static unsigned long setnodecheckinterval(
+unsigned long setnodecheckinterval(
 
   char *value)
 
