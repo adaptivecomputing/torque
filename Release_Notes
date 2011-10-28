@@ -34,6 +34,40 @@ OVERVIEW
 ---------------------------------------------------------------------------
 WHAT'S NEW
 
+New in 2.5.9
+    There were several bug fixes to TORQUE 2.5.9. Following are a list of 
+    noteable bug fixes.
+
+        Added function DIS_tcp_close which frees buffer memory used for sending
+        and receiving tcp data. This reduces the running memory size of TORQUE. 
+    
+        Fix for a server seg-fault when using the record_job_info. 
+
+        Fix for afteranyarray and afterokarry where dependent jobs would not
+        run after the dependent array requirements were satisfied.
+
+        Fix to delete .AR array files from the $TORQUE_HOME/server_priv/arrays 
+        directory.
+
+        Fix to recover previous state of job arrays between restarts of pbs_server
+
+        Fix to prevent the server from hanging when moving jobs from one server to
+        another server
+
+        Fix to stop a segfault if using munge and the munge daemon was not running
+
+        Security fix to munge authorization to prevent users from gaining access
+        to TORQUE when munge was not running.
+
+        Fix to allow pam_pbssimpleauth to work properly.
+
+    A new torque.cfg option as added named TRQ_IFNAME. This option allows the 
+    administrator to select the outbound tcp interface by interface name for qsub
+    commands.
+
+    To see a compelete list of changes please see the CHANGELOG.
+
+
 New in 2.5.8
     There were no new features added to 2.5.8. Notable bug fixes included a fix
     for the queue resource procct where the procct value would be passed to
