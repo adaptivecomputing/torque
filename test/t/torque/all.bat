@@ -21,7 +21,8 @@ execute_tests(
 
 execute_tests(
     "$testbase/commands/all.bat",
-    "$testbase/job_arrays/release.bat",
+    "$testbase/job_arrays/all.bat",
+    "$testbase/queue/all.bat",
     "$testbase/prologue_epilogue/all.bat",
     "$testbase/ha/all.bat",
 );

@@ -80,9 +80,9 @@ for( 0 .. 1 )
     $user,
     $data->{groups}[$_],
     'STDIN',
-    re('\d+'),
+    re(qr/^d+$/),
     'neednodes=2,nodes=2,walltime=01:00:00',
-    'cput=00:00:00,mem=0kb,vmem=0kb,walltime=00:00:00',
+    re(qr/^cput=00:00:00,mem=0kb,vmem=0kb,walltime=00:00:0[01]$/),
     'batch',
     0
   );

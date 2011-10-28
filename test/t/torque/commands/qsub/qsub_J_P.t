@@ -12,7 +12,7 @@ use lib test_lib_loc();
 use CRI::Test;
 use Torque::Job::Ctrl qw( delJobs );
 use Torque::Util::Qstat qw( qstat_fx );
-use Torque::Util::Qmgr qw( list_server_info );
+use Torque::Test::Qmgr::Utils qw( list_server_info );
 plan('no_plan');
 setDesc('qsub -J -P');
 

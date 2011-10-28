@@ -271,7 +271,7 @@ sub runJobs #(@)
   }
 
   # Variables
-  my $run_cmd_flags = $params->{ 'runcmd_flags' } || { 'test_success' => 1 };
+  my $runcmd_flags = $params->{ 'runcmd_flags' } || { 'test_success' => 1 };
 
   my @qruns        = ();
 
@@ -284,7 +284,7 @@ sub runJobs #(@)
     $cmd    .= ' '.$params->{flags} if exists $params->{flags};
     $cmd    .= " $job_id";
     
-    my %qrun = runCommand($cmd, %$run_cmd_flags);
+    my %qrun = runCommand($cmd, %$runcmd_flags);
 
     push(@qruns, \%qrun);
 

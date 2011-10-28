@@ -1,5 +1,8 @@
 #!/usr//bin/perl
-
+#################################################
+# TRQ-490 - make sure that the exit code of the
+#  job is not set after qrerun is executed.
+#################################################
 use strict;
 use warnings;
 
@@ -7,19 +10,10 @@ use FindBin;
 use TestLibFinder;
 use lib test_lib_loc();
 
-
 use CRI::Test;
-
-use Torque::Util qw( 
-                             run_and_check_cmd
-                             verify_job_state
-                          );
-use Torque::Job::Ctrl   qw(
-                             submitSleepJob
-                             runJobs
-                             delJobs
-                          );
-
+use Torque::Util qw( verify_job_state );
+use Torque::Util::Qstat qw( qstat_fx );
+use Torque::Job::Ctrl qw( submitSleepJob  runJobs  delJobs );
 plan('no_plan');
 setDesc("qrerun");
 
