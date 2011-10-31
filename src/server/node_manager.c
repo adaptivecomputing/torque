@@ -3731,9 +3731,6 @@ int node_is_spec_acceptable(
   if (pnode->nd_ntype != NTYPE_CLUSTER)
     return(FALSE);
 
-  if ((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) != 0)
-    return(FALSE);
-
   /* make sure that the node has properties */
   if (hasprop(pnode, prop) == FALSE)
     return(FALSE);
@@ -3743,6 +3740,9 @@ int node_is_spec_acceptable(
     return(FALSE);
 
   (*eligible_nodes)++;
+
+  if ((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) != 0)
+    return(FALSE);
 
   if (exclusive == TRUE) 
     {
@@ -4031,7 +4031,8 @@ static int node_spec(
 
   while ((plus = strchr(plus + 1, '+')) != NULL)
     {
-    /* advance past '+' */
+    /* make the '+' NULL and advance past it */
+    *plus = '\0';
     plus++;
 
     /* advance past "nodes=" */
@@ -4039,7 +4040,6 @@ static int node_spec(
       plus += strlen("nodes=");
 
     all_reqs.req_start[i] = plus;
-    *plus = '\0';
     }
 
   /* now parse each spec into the data */
