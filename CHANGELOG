@@ -54,6 +54,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       4.0.0 so that all of the resizing is done in a central location, fixing the crash.
       (backported from 3.0.3)
   b - Initialized the default value for node_check_interval to 1.
+  b - No longer count down walltime for jobs that are suspending or have stopped running 
+      for any other reasons (backported from 3.0.3)
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
