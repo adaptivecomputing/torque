@@ -1,8 +1,8 @@
 include $(top_srcdir)/buildutils/config.mk
 
-if HAVE_CHECK
-SUBDIRS = test
-endif
+#if HAVE_CHECK
+#SUBDIRS = test
+#endif
 
 PBS_LIBS = ../lib/Libpbs/libtorque.la
 
