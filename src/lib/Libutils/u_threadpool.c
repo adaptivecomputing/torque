@@ -90,8 +90,7 @@
 
 
 
-
-
+#define MINIMUM_STACK_SIZE 12582912
 extern int    LOGLEVEL;
 sigset_t      fillset;
 
@@ -102,9 +101,11 @@ static void *work_thread(void *);
 int create_work_thread(void)
 
   {
-  int        rc;
-  sigset_t   oldset;
-  pthread_t *thread;
+  int             rc;
+  sigset_t        oldset;
+  pthread_t      *thread;
+  pthread_attr_t  attr;
+  size_t          stack_size;
 
   if (request_pool == NULL)
     {
@@ -115,9 +116,15 @@ int create_work_thread(void)
   if (thread == NULL)
     return(ENOMEM);
 
+  pthread_attr_init(&attr);
+  pthread_attr_getstacksize(&attr, &stack_size);
+  if (stack_size < MINIMUM_STACK_SIZE)
+    stack_size = MINIMUM_STACK_SIZE;
+  pthread_attr_setstacksize(&attr, stack_size);
+
   /* save old signal mask */
   pthread_sigmask(SIG_SETMASK,&fillset,&oldset);
-  rc = pthread_create(thread,&request_pool->tp_attr,work_thread,NULL);
+  rc = pthread_create(thread,&request_pool->tp_attr,work_thread, &attr);
   pthread_sigmask(SIG_SETMASK,&oldset,NULL);
   
   return(rc);

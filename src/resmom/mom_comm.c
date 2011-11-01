@@ -1799,18 +1799,21 @@ char *resc_string(
  */
 int contact_sisters(
 
-  job *pjob,
-  int sister_count,
+  job  *pjob,
+  int   sister_count,
   char *radix_hosts,
   char *radix_ports)
 
   {
-  int index, j, i,  mom_radix;
-  hnodent      *np;
+  int                index;
+  int                j;
+  int                i;
+  int                mom_radix;
+  hnodent           *np;
   struct radix_buf **sister_list;
-  int ret;
-  tlist_head    phead;
-  attribute     *pattr;
+  int                ret;
+  tlist_head         phead;
+  attribute         *pattr;
 
   /* we have to have a sister count of 2 or more for
      this to work */
@@ -1861,7 +1864,7 @@ int contact_sisters(
      job_radix. This is how the children will know who
      called them. */
   np = &pjob->ji_sisters[1];
-  for(j = 0; j < mom_radix; j++)
+  for (j = 0; j < mom_radix; j++)
     {
     add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[j]);
     }
