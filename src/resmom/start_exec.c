@@ -5952,13 +5952,14 @@ void start_exec(
       } while (i < nodenum);
 
     /* the sister lists have been made. Now contact the intermediate moms as designated by mom_radix */
-    open_tcp_stream_to_sisters(pjob,
-        IM_JOIN_JOB_RADIX,
-        mom_radix,
-        pjob->ji_hosts,
-        sister_list,
-        &phead,
-        MOTHER_SUPERIOR);
+    open_tcp_stream_to_sisters(
+      pjob,
+      IM_JOIN_JOB_RADIX,
+      mom_radix,
+      pjob->ji_hosts,
+      sister_list,
+      &phead,
+      MOTHER_SUPERIOR);
 
     free_attrlist(&phead);
     free_sisterlist(sister_list, mom_radix);

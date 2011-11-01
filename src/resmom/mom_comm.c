@@ -1035,10 +1035,13 @@ hnodent *find_node(
  * Format a message to all the sisterhood to get rid of their copy
  * of the job.  There should be no processes running at this point.
 */
+
 void job_start_error(
-  job *pjob,     /* I */
+
+  job   *pjob,     /* I */
   int    code,     /* I */
   char  *nodename) /* I */
+
   {
   static  char  id[] = "job_start_error";
 
@@ -2358,8 +2361,11 @@ int im_join_job_as_sister(
     if (IS_VALID_STREAM(reply_stream))
       {
       DIS_tcp_setup(reply_stream);
-      
-      ret = im_compose(reply_stream,jobid,cookie,IM_ALL_OKAY,event,fromtask);
+
+      if (job_radix == FALSE)
+        ret = im_compose(reply_stream, jobid, cookie, IM_ALL_OKAY, event, fromtask);
+      else
+        ret = im_compose(reply_stream, jobid, cookie, IM_RADIX_ALL_OK, event, fromtask);
 
       DIS_tcp_wflush(reply_stream);
         
