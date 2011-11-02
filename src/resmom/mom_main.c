@@ -5447,7 +5447,7 @@ void *tcp_request(
 
   sprintf(address, "%s:%d",
           tmp,
-          ntohs(svr_conn[fd].cn_port));
+          svr_conn[fd].cn_port);
 
   free(tmp);
 

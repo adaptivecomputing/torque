@@ -229,7 +229,6 @@ void *process_svr_conn(
   int msg_len = 0;
   int debug_mark = 0;
   int local_socket = *(int *)sock;
-  in_addr_t s_addr = inet_addr("127.0.0.1");
   free(sock);
   /* incoming message format is:
    * trq_system_len|trq_system|trq_port|Validation_type|user_len|user|psock|
@@ -256,7 +255,7 @@ void *process_svr_conn(
     disconnect_svr = FALSE;
     debug_mark = 2;
     }
-  else if ((svr_sock = socket_get_tcp_priv(&s_addr)) <= 0)
+  else if ((svr_sock = socket_get_tcp_priv()) <= 0)
     {
     rc = PBSE_SOCKET_FAULT;
     disconnect_svr = FALSE;

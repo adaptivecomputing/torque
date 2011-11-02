@@ -251,7 +251,6 @@ int tcp_connect_sockaddr(
   char *id = "tcp_connect_sockaddr";
   int stream = -1;
   char *err_msg = NULL;
-  struct sockaddr_in *tmp_addr = (struct sockaddr_in *)sa;
   /*
   int   stream = socket(AF_INET,SOCK_STREAM,0);
   
@@ -268,7 +267,7 @@ int tcp_connect_sockaddr(
     log_err(errno,id,"Failed when trying to open tcp connection - bindresvport() failed");
     }
     */
-  if ((stream = socket_get_tcp_priv(&tmp_addr->sin_addr.s_addr)) < 0)
+  if ((stream = socket_get_tcp_priv()) < 0)
     {
     /* FAILED */
     log_err(errno,id,"Failed when trying to get privileged port - socket_get_tcp_priv() failed");

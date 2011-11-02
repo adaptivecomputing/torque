@@ -60,7 +60,7 @@ int socket_connect_addr(int *local_socket, struct sockaddr *remote, size_t remot
   exit(1);
   }
 
-int socket_get_tcp_priv(in_addr_t *s_addr)
+int socket_get_tcp_priv()
   { 
   fprintf(stderr, "The call to socket_get_tcp_priv needs to be mocked!!\n");
   exit(1);

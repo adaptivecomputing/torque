@@ -25,10 +25,9 @@
 #define RES_PORT_RANGE (RES_PORT_END - RES_PORT_START + 1)
 #define RES_PORT_RETRY 3
 #define PBS_NET_RC_RETRY -2
-#define TCP_PROTO_NUM 6
+#define TCP_PROTO_NUM 0
 #define MAX_NUM_LEN 21
 
-static in_addr_t local_addr = 0;
 unsigned availBytesOnDescriptor(int pLocalSocket)
   {
   unsigned availBytes;
@@ -81,7 +80,7 @@ int get_random_reserved_port()
   return res_port;
   }
 
-int socket_get_tcp_priv(in_addr_t *s_addr)
+int socket_get_tcp_priv()
   {
   int priv_port = 0, local_socket = 0;
   int cntr = 0;
@@ -94,9 +93,6 @@ int socket_get_tcp_priv(in_addr_t *s_addr)
   int flags;
   memset(&local, 0, sizeof(struct sockaddr_in));
   local.sin_family = AF_INET;
-  if ((local_addr == 0) && (s_addr != NULL))
-    local_addr = *s_addr;
-  local.sin_addr.s_addr = local_addr;
 
   /* If any of the following 2 succeed (negative conditions) jump to else below
    * else run the default */
@@ -128,7 +124,6 @@ int socket_get_tcp_priv(in_addr_t *s_addr)
         {
         /* Success case */
         priv_port = ntohs(local.sin_port);
-        priv_port = local_socket;
         }
       else
         {
@@ -184,6 +179,10 @@ int socket_get_tcp_priv(in_addr_t *s_addr)
       /* If something worked the first time you end up here */
       rc = PBSE_NONE;
       }
+  if (rc != PBSE_NONE)
+    {
+    local_socket = -1;
+    }
   return local_socket;
   }
 
@@ -220,7 +219,6 @@ int socket_connect_addr(
   int rc = PBSE_NONE;
   char tmp_buf[LOCAL_LOG_BUF];
   const char id[] = "socket_connect_addr";
-  struct sockaddr_in *tmp_addr;
 
   while ((rc = connect(*local_socket, remote, remote_size)) != 0)
     {
@@ -258,8 +256,7 @@ int socket_connect_addr(
           if (cntr++ < RES_PORT_RETRY)
             {
             close(*local_socket);
-            tmp_addr = (struct sockaddr_in *)remote;
-            if ((*local_socket = socket_get_tcp_priv(&tmp_addr->sin_addr.s_addr)) < 0)
+            if ((*local_socket = socket_get_tcp_priv()) < 0)
               rc = PBSE_SOCKET_FAULT;
             else
               rc = PBSE_NONE;
