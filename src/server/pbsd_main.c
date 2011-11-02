@@ -1162,6 +1162,7 @@ void main_loop(void)
       {
       log_err(-1, msg_daemonname, "wait_request failed");
       }
+    LOGLEVEL = server.sv_attr[SRV_ATR_LogLevel].at_val.at_long;
 
     /* qmgr can dynamically set the loglevel specification
      * we use the new value if PBSLOGLEVEL was not specified

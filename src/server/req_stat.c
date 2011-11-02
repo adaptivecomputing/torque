@@ -321,6 +321,7 @@ void *req_stat_job(
   if (pque != NULL)
     unlock_queue(pque, "req_stat_job", "success", LOGLEVEL);
 
+  free(cntl);
   return(NULL);
   }  /* END req_stat_job() */
 
@@ -537,8 +538,6 @@ static void req_stat_job_step2(
       if (pa != NULL)
         pthread_mutex_unlock(pa->ai_mutex);
 
-      free(cntl);
-
       reply_free(preply);
 
       req_reject(rc, 0, preq, NULL, "cannot get update from mom");
@@ -605,7 +604,6 @@ static void req_stat_job_step2(
       }
     }
 
-  free(cntl);
 
   if ((type == tjstTruncatedServer) || (type == tjstTruncatedQueue))
     {
