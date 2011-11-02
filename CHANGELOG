@@ -56,6 +56,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Initialized the default value for node_check_interval to 1.
   b - No longer count down walltime for jobs that are suspending or have stopped running 
       for any other reasons (backported from 3.0.3)
+  b - Made a fix related to procct. If no resources are requested on the qsub line previous 
+      versions of TORQUE did not create a Resource_List attribute. Specifically a node and
+      nodect element for Resource_List. Adding this broke some applications. I made it so
+      if no nodes or procs resources are requested the procct is set to 1 without creating 
+      the nodes element.
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

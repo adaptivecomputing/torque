@@ -256,13 +256,29 @@ int initialize_procct(job *pjob)
     /* if neither pnodesp nor pprocsp are set, terminate */
     if(pnodesp == NULL && pprocsp == NULL)
       {
-      sprintf(log_buffer, "%s: Could not get nodes nor procs entry from Resource_List. Cannot proceed", id);
-      log_event(PBSEVENT_JOB,
+      /* nodes and procs were not set. Hopefully req_quejob set procct to 1 for us already */
+      procct_def = find_resc_def(svr_resc_def, "procct", svr_resc_size);
+      if(procct_def == NULL)
+        {
+        sprintf(log_buffer, "%s: Could not get procct resource definition. Cannot proceed", id);
+        log_event(PBSEVENT_JOB,
                 PBS_EVENTCLASS_JOB,
                 pjob->ji_qs.ji_jobid,
                 log_buffer);
-      pbs_errno = PBSE_INTERNAL;
-      return(ROUTE_PERM_FAILURE);
+        pbs_errno = PBSE_INTERNAL;
+        return(ROUTE_PERM_FAILURE);
+        }
+      procctp = find_resc_entry(pattr, procct_def);
+      if(procctp == NULL)
+        {
+        sprintf(log_buffer, "%s: Could not get nodes nor procs entry from Resource_List. Cannot proceed", id);
+        log_event(PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                log_buffer);
+        pbs_errno = PBSE_INTERNAL;
+        return(ROUTE_PERM_FAILURE);
+        }
       }
 
     /* we now set pjob->procct and we also set the resource attribute procct */

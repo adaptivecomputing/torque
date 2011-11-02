@@ -232,10 +232,13 @@ int set_nodes_attr(job *pjob)
 
     if(nodect_set == 0)
       {
-      /* neither procs nor nodes were requested. set nodes to 1
-         so the procct will process correctly. */
-      rc = decode_resc(&pjob->ji_wattr[JOB_ATR_resource], ATTR_l, "nodes", "1");
-     }
+      int temp_perm;
+      /* neither procs nor nodes were requested. set procct to 1 */
+      temp_perm = resc_access_perm;
+      resc_access_perm = ATR_DFLAG_WRACC | ATR_DFLAG_MGWR | ATR_DFLAG_RMOMIG;
+      rc = decode_resc(&pjob->ji_wattr[JOB_ATR_resource], "Resource_List", "procct", "1");
+      resc_access_perm = temp_perm;
+      }
 
   return(rc);
   }   /* END set_nodes_attr() */
