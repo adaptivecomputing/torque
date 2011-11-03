@@ -133,149 +133,102 @@ int AdjustAcctBufSize(char **Buf, unsigned int *BufSiz, int newStringLen, job *p
  * Used by account_jobstr() and account_jobend()
  */
 
-static char *acct_job(
+int acct_job(
 
-  job  *pjob,    /* I */
-  char **Buf,     /* O - buffer in which data is to be placed */
-  unsigned int   *BufSize) /* I */
+  job            *pjob, /* I */
+  dynamic_string *ds)   /* O */
 
   {
-  char *ptr;
-  int   Len;
-  int   runningBufSize = *BufSize;
-  int   newStringLen;
-  int   resc_access_perm = READ_ONLY;
+  int         rc;
+  int         resc_access_perm = READ_ONLY;
+  char        local_buf[MAXLINE*4];
 
-  tlist_head attrlist;
-  svrattrl *pal;
+  tlist_head  attrlist;
+  svrattrl   *pal;
 
   if (pjob == NULL)
     {
-    return(*Buf);
+    return(PBSE_NONE);
     }
 
   CLEAR_HEAD(attrlist);
-
-  ptr = *Buf;
 
   /* user */
 
 	/* acct_job is only called from account_jobstr and account_jobend. BufSize should be
 	 	 PBS_ACCT_MAX_RCD + 1 in size. We will make the assumption that the following
 	 	 strncat calls have ample buffer space to complete successfully */
-  sprintf(ptr, "user=%s ",
-          pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
-
-  ptr += strlen(ptr);
+  sprintf(local_buf, "user=%s ",
+    pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
+  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
+    return(rc);
 
   /* group */
-
-  sprintf(ptr, "group=%s ",
-          pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
-
-  ptr += strlen(ptr);
+  sprintf(local_buf, "group=%s ",
+    pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
+  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
+    return(rc);
 
   /* account */
-
   if (pjob->ji_wattr[JOB_ATR_account].at_flags & ATR_VFLAG_SET)
     {
-    sprintf(ptr, "account=%s ",
-            pjob->ji_wattr[JOB_ATR_account].at_val.at_str);
-
-    ptr += strlen(ptr);
+    sprintf(local_buf, "account=%s ",
+      pjob->ji_wattr[JOB_ATR_account].at_val.at_str);
+    if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
+      return(rc);
     }
 
   /* job name */
-
-  sprintf(ptr, "jobname=%s ",
-          pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str);
-
-  ptr += strlen(ptr);
+  sprintf(local_buf, "jobname=%s ",
+    pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str);
+  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
+    return(rc);
 
   /* queue name */
-
-  sprintf(ptr, "queue=%s ",
-          pjob->ji_qhdr->qu_qs.qu_name);
-
-  ptr += strlen(ptr);
+  sprintf(local_buf, "queue=%s ",
+    pjob->ji_qhdr->qu_qs.qu_name);
+  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
+    return(rc);
 
   /* create time */
-
-  sprintf(ptr, "ctime=%ld ",
-          pjob->ji_wattr[JOB_ATR_ctime].at_val.at_long);
-
-  ptr += strlen(ptr);
+  sprintf(local_buf, "ctime=%ld ",
+    pjob->ji_wattr[JOB_ATR_ctime].at_val.at_long);
+  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
+    return(rc);
 
   /* queued time */
-
-  sprintf(ptr, "qtime=%ld ",
-          pjob->ji_wattr[JOB_ATR_qtime].at_val.at_long);
-
-  ptr += strlen(ptr);
+  sprintf(local_buf, "qtime=%ld ",
+    pjob->ji_wattr[JOB_ATR_qtime].at_val.at_long);
+  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
+    return(rc);
 
   /* eligible time, how long ready to run */
-
-  sprintf(ptr, "etime=%ld ",
-          pjob->ji_wattr[JOB_ATR_etime].at_val.at_long);
-
-  ptr += strlen(ptr);
+  sprintf(local_buf, "etime=%ld ",
+    pjob->ji_wattr[JOB_ATR_etime].at_val.at_long);
+  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
+    return(rc);
 
   /* execution start time */
-
-  sprintf(ptr, "start=%ld ",
-          (long)pjob->ji_qs.ji_stime);
-
-  ptr += strlen(ptr);
+  sprintf(local_buf, "start=%ld ",
+    (long)pjob->ji_qs.ji_stime);
+  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
+    return(rc);
 
   /* user */
-
-  sprintf(ptr, "owner=%s ",
-          pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-
-
+  sprintf(local_buf, "owner=%s ",
+    pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
+    return(rc);
  
   /* For large clusters strings can get pretty long. We need to see if there
      is a need to allocate a bigger buffer */
-
-  runningBufSize -= strlen(*Buf);
-
-  newStringLen = strlen("exec_host=")+strlen(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-  if (runningBufSize <= newStringLen+1)
-    {
-    Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
-    if (Len == 0)
-      return(ptr);
-    runningBufSize += newStringLen+EXTRA_PAD;
-    }
-
-  ptr = *Buf;
-  ptr += strlen(*Buf);
-
   /* execution host name */
-  snprintf(ptr, runningBufSize, "exec_host=%s ",
-           pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-
-  Len = strlen(ptr);
-
-	runningBufSize -= Len;
-
-/*  if (BufSize <= 100)
-    {
-    char tmpLine[1024];
-
-    sprintf(tmpLine, "account record for job %s too long, not fully recorded - increase PBS_ACCT_MAX_RCD",
-            pjob->ji_qs.ji_jobid);
-
-    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", tmpLine);
-
-    return(ptr);
-    }*/
-
-  ptr += Len;
+  append_dynamic_string(ds, "exec_host=");
+  append_dynamic_string(ds, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  if ((rc = append_dynamic_string(ds, " ")) != PBSE_NONE)
+    return(rc);
 
   /* now encode the job's resource_list attribute */
-
-
   job_attr_def[JOB_ATR_resource].at_encode(
     &pjob->ji_wattr[JOB_ATR_resource],
     &attrlist,
@@ -288,102 +241,39 @@ static char *acct_job(
     {
 		/* exec_host can use a lot of buffer space. We can't assume
 		 	 we still have enough to make these small strncpy calls */
-
-		newStringLen = strlen(pal->al_name);
-		if (runningBufSize <= newStringLen+1)
-			{
-			Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
-			if (Len == 0)
-				return(ptr);
-
-			runningBufSize += newStringLen+EXTRA_PAD;
-			}
-
-    strncat(ptr, pal->al_name,runningBufSize);
-		runningBufSize -= strlen(ptr);
-		ptr += strlen(ptr);
+    append_dynamic_string(ds, pal->al_name);
 
     if (pal->al_resc != NULL)
       {
-			if (runningBufSize <= (int)(strlen(pal->al_resc)+2)) /*one for 0 and one for the '.' for 2 */
-				{
-				Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
-				if (Len == 0)
-					return(ptr);
-
-				runningBufSize += newStringLen+EXTRA_PAD;
-				}
-      strncat(ptr, ".",runningBufSize);
-      strncat(ptr, pal->al_resc,runningBufSize);
-			runningBufSize -= strlen(ptr);
-			ptr += strlen(ptr);
+      append_dynamic_string(ds, ".");
+      append_dynamic_string(ds, pal->al_resc);
       }
 
-		if (runningBufSize <= 2)
-			{
-			Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
-			if (Len == 0)
-				return(ptr);
-
-			runningBufSize += newStringLen+EXTRA_PAD;
-			}
-
-		strncat(ptr, "=",runningBufSize);
-
-    runningBufSize -= strlen(ptr);
-    newStringLen = strlen(pal->al_value);
-    if (runningBufSize <= newStringLen+1)
-      {
-      Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
-      if (Len == 0)
-        return(ptr);
-
-      runningBufSize += newStringLen+EXTRA_PAD;
-      }
-
-    strncat(ptr, pal->al_value, runningBufSize);
-    strncat(ptr, " ", runningBufSize);
+    append_dynamic_string(ds, "=");
+    append_dynamic_string(ds, pal->al_value);
+    if ((rc = append_dynamic_string(ds, " ")) != PBSE_NONE)
+      return(rc);
 
     delete_link(&pal->al_link);
-
     free(pal);
-
-    Len = strlen(ptr);
-
-    runningBufSize -= Len;
-
-    ptr += Len;
-
-   /*  if (BufSize <= 100)
-      {
-      char tmpLine[1024];
-
-      sprintf(tmpLine, "account record for job %s too long, not fully recorded - increase PBS_ACCT_MAX_RCD",
-              pjob->ji_qs.ji_jobid);
-
-      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", tmpLine);
-
-      return(ptr);
-      }*/
     }  /* END while (pal != NULL) */
 
 #ifdef ATTR_X_ACCT
 
   /* x attributes */
-
   if (pjob->ji_wattr[JOB_SITE_ATR_x].at_flags & ATR_VFLAG_SET)
     {
-    sprintf(ptr, "x=%s ",
+    sprintf(local_buf, "x=%s ",
             pjob->ji_wattr[JOB_SITE_ATR_x].at_val.at_str);
-
-    ptr += strlen(ptr);
+    if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
+      return(rc);
     }
 
 #endif
 
   /* SUCCESS */
 
-  return(ptr);
+  return(PBSE_NONE);
   }  /* END acct_job() */
 
 
@@ -560,25 +450,17 @@ void account_jobstr(
   job *pjob)
 
   {
-  /*char buf[PBS_ACCT_MAX_RCD + 1];*/
-  char *buf;
-  unsigned int  bufSize = PBS_ACCT_MAX_RCD + 1;
+  dynamic_string *ds;
 
   /* pack in general information about the job */
-
-  buf = (char *)malloc(bufSize+1);
-  if (!buf)
+  if ((ds = get_dynamic_string(-1, NULL)) == NULL)
     return;
 
-	memset(buf, 0, bufSize+1);
+  acct_job(pjob, ds);
 
-  acct_job(pjob, &buf, &bufSize);
+  account_record(PBS_ACCT_RUN, pjob, ds->str);
 
-  buf[bufSize] = '\0';
-
-  account_record(PBS_ACCT_RUN, pjob, buf);
-
-  free(buf);
+  free_dynamic_string(ds);
 
   return;
   }  /* END account_jobstr() */
@@ -594,48 +476,52 @@ void account_jobstr(
 
 void account_jobend(
 
-  job *pjob,
+  job  *pjob,
   char *used) /* job usage information, see req_jobobit() */
 
   {
-  time_t         time_now = time(NULL);
-  char          *buf;
-  unsigned int   bufSize = PBS_ACCT_MAX_RCD + 1;
-  char          *pb;
+  time_t          time_now = time(NULL);
+  dynamic_string *ds;
+  char            local_buf[MAXLINE * 4];
 #ifdef USESAVEDRESOURCES
-  attribute     *pattr;
-  long           walltime_val = 0;
+  attribute      *pattr;
+  long            walltime_val = 0;
 #endif
 
   /* pack in general information about the job */
-
-  buf = (char *)malloc(bufSize);
-  if (!buf)
+  if ((ds = get_dynamic_string(-1, NULL)) == NULL)
     return;
 
-	memset(buf, 0, bufSize);
-
-  pb = acct_job(pjob, &buf, &bufSize);
+  if ((acct_job(pjob, ds)) != PBSE_NONE)
+    {
+    free_dynamic_string(ds);
+    return;
+    }
 
   /* session */
+  sprintf(local_buf, "session=%ld ",
+    pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long);
 
-  sprintf(pb, "session=%ld ",
-          pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long);
-
-  pb += strlen(pb);
+  if (append_dynamic_string(ds, local_buf) != PBSE_NONE)
+    {
+    free_dynamic_string(ds);
+    return;
+    }
 
   /* Alternate id if present */
-
   if (pjob->ji_wattr[JOB_ATR_altid].at_flags & ATR_VFLAG_SET)
     {
-    sprintf(pb, "alt_id=%s ",
-            pjob->ji_wattr[JOB_ATR_altid].at_val.at_str);
+    sprintf(local_buf, "alt_id=%s ",
+      pjob->ji_wattr[JOB_ATR_altid].at_val.at_str);
 
-    pb += strlen(pb);
+    if (append_dynamic_string(ds, local_buf) != PBSE_NONE)
+      {
+      free_dynamic_string(ds);
+      return;
+      }
     }
 
   /* add the execution end time */
-
 #ifdef USESAVEDRESOURCES
   pattr = &pjob->ji_wattr[JOB_ATR_resc_used];
 
@@ -659,24 +545,27 @@ void account_jobend(
         }
       }
     }
-  sprintf(pb, "end=%ld ",
-          (long)pjob->ji_qs.ji_stime + walltime_val);
+  sprintf(local_buf, "end=%ld ", (long)pjob->ji_qs.ji_stime + walltime_val);
 #else
-  sprintf(pb, "end=%ld ",
-          (long)time_now);
+  sprintf(local_buf, "end=%ld ", (long)time_now);
 #endif /* USESAVEDRESOURCES */
 
-  pb += strlen(pb);
+  if (append_dynamic_string(ds, local_buf) != PBSE_NONE)
+    {
+    free_dynamic_string(ds);
+    return;
+    }
 
   /* finally add on resources used from req_jobobit() */
+  if (append_dynamic_string(ds, used) != PBSE_NONE)
+    {
+    free_dynamic_string(ds);
+    return;
+    }
 
-  strncat(pb, used, PBS_ACCT_MAX_RCD - (pb - buf));
+  account_record(PBS_ACCT_END, pjob, ds->str);
 
-  buf[PBS_ACCT_MAX_RCD] = '\0';
-
-  account_record(PBS_ACCT_END, pjob, buf);
-
-  free(buf);
+  free_dynamic_string(ds);
   return;
   }  /* END account_jobend() */
 
