@@ -1069,6 +1069,7 @@ torque_cv_have_cmsg="no"
   #include <sys/ucred.h>
   #endif
   #ifdef HAVE_SYS_SOCKET_H
+  #define _GNU_SOURCE 1
   #include <sys/socket.h>
   #endif
   #ifdef HAVE_SYS_UN_H
