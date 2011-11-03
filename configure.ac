@@ -19,10 +19,6 @@ dnl Expanded to support 'make distcheck', shared libs,
 dnl  bi-arches, pbs-config script, and updated to TORQUE 2.x
 dnl  by Garrick Staples (garrick@usc.edu)
 dnl
-dnl Expanded to allow --enable-high-availability in order to have improved
-dnl high availability features
-dnl by David Beer (dbeer@adaptivecomputing.com)
-dnl
 dnl Added --enable-libcpuset to use the cpuset API from libcpuset when --enable-cpuset
 dnl Added --enable-memacct to enable pbs_mom to get rss values that are more reliable
 dnl Added requirement for libhwloc when --enable-cpuset or --enable-numa-support
@@ -682,22 +678,6 @@ fi
 
 dnl Torque's own largefile support
 TAC_SYS_LARGEFILE
-
-dnl check if we should use high availability mode
-AC_ARG_ENABLE(high_availability, [
-  --enable-high-availability  Enables advanced high availability mode (multi-threaded)])
-if test "x$GCC" = "xyes" ;then
-  AC_MSG_CHECKING([whether to use threaded high availability])
-  if test "${enable_high_availability}" == "yes" ; then
-    AC_MSG_RESULT([yes])
-    PTHREAD_LIBS=-lpthread
-    LIBS="$LIBS $PTHREAD_LIBS"
-    CFLAGS="$CFLAGS -DUSE_HA_THREADS"
-  else
-    AC_MSG_RESULT([no])
-    high_availability=yes
-  fi
-fi
 
 
 dnl We need pthreads
