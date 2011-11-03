@@ -95,31 +95,30 @@
 #include "libpbs.h"
 #include "u_hash_map_structs.h"
 
-char *pbs_submit_hash(
-
-  int             c,
-  int            *local_errno,
+int pbs_submit_hash(
+  int             socket,
   memmgr        **mm,
   job_data       *job_attr,
   job_data       *res_attr,
   char           *script,
   char           *destination,
-  char           *extend)  /* (optional) */
-
+  char           *extend,  /* (optional) */
+  char          **return_jobid,
+  char          **msg)
   {
 
+  int rc = PBSE_NONE;
+  int tmp_size = 0;
 /*  struct attropl *pal; */
-  char * return_jobid = NULL;
-
   /* first be sure that the script is readable if specified ... */
 
   if ((script != NULL) && (*script != '\0'))
     {
     if (access(script, R_OK) != 0)
       {
-      *local_errno = PBSE_BADSCRIPT;
+      rc = PBSE_BADSCRIPT;
 
-      return(NULL);
+      return rc;
       }
     }
 
@@ -130,22 +129,26 @@ char *pbs_submit_hash(
 
   /* Queue job with null string for job id */
 
-  return_jobid = PBSD_QueueJob_hash(c, local_errno, "", destination, mm, job_attr, res_attr, extend);
+  rc = PBSD_QueueJob_hash(socket, "", destination, mm, job_attr, res_attr, extend, return_jobid, msg);
 
-  if (return_jobid == NULL)
+  if (rc != PBSE_NONE)
     {
-    return(NULL);
+    return rc;
     }
 
   /* send script across */
 
   if ((script != NULL) && (*script != '\0'))
     {
-    if (PBSD_jscript(c, script, NULL) != 0)
+    if (PBSD_jscript(socket, script, NULL) != 0)
       {
-      *local_errno = PBSE_BADSCRIPT;
+      rc = PBSE_BADSCRIPT;
+      if (connection[socket].ch_errtxt != NULL)
+        {
+        *msg = memmgr_strdup(mm, connection[socket].ch_errtxt, &tmp_size);
+        }
 
-      return(NULL);
+      return rc;
       }
     }
 
@@ -154,24 +157,29 @@ char *pbs_submit_hash(
 
 #ifndef PBS_MOM
 #ifndef QUICKCOMMIT
-  if ((*local_errno = PBSD_rdytocmt(c, return_jobid)) != 0)
+  if ((rc = PBSD_rdytocmt(socket, *return_jobid)) != 0)
     {
-    return(NULL);
+      if (connection[socket].ch_errtxt != NULL)
+        {
+        *msg = memmgr_strdup(mm, connection[socket].ch_errtxt, &tmp_size);
+        }
+    return rc;
     }
 
 #endif
 #endif
 
-  if ((*local_errno = PBSD_commit(c, return_jobid)) != 0)
+  if ((rc = PBSD_commit(socket, *return_jobid)) != 0)
     {
-    return(NULL);
+      if (connection[socket].ch_errtxt != NULL)
+        {
+        *msg = memmgr_strdup(mm, connection[socket].ch_errtxt, &tmp_size);
+        }
+    return rc;
     }
 
-  return(return_jobid);
+  return rc;
   }  /* END pbs_submit() */
 
 
 /* END pbsD_submit.c */
-
-
-

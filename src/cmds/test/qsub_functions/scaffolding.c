@@ -131,7 +131,7 @@ int add_verify_resources(memmgr **mm, job_data **res_attr, char *resources, int 
   exit(1);
   }
 
-char *pbs_submit_hash( int c, memmgr **mm, job_data *job_attr, job_data *res_attr, char *script, char *destination, char *extend)
+int pbs_submit_hash(int c, memmgr **mm, job_data *job_attr, job_data *res_attr, char *script, char *destination, char *extend, char **job_id, char **msg)
   {
   printf("Error, stub must be completed");
   exit(1);

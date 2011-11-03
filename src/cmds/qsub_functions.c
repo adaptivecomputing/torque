@@ -63,7 +63,7 @@ int inter_sock = -1;
 int interactivechild = 0;
 int x11child = 0;
 int have_terminal = TRUE;
-char *new_jobname;                  /* return from submit request */
+char *new_jobname = NULL;           /* return from submit request */
 /* for reference purposes:
  * pbs_server is defined in pbsD_connect.c and the extern is in pbs_ifl.h */
 static char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
@@ -4403,7 +4403,7 @@ void main_func(
   char *s_n_out;                      /* server part of destination */
   /* server:port to send request to */
   int   sock_num;                     /* return from pbs_connect */
-  char *errmsg;                       /* return from pbs_geterrmsg */
+  char *errmsg = NULL;                /* return from pbs_geterrmsg */
   int   local_errno = 0;
 
   struct stat statbuf;
@@ -4749,19 +4749,23 @@ void main_func(
 
   /* Send submit request to the server. */
 
-  new_jobname = pbs_submit_hash(
+  local_errno = pbs_submit_hash(
                   sock_num,
-                  &local_errno,
                   &ji.mm,
                   ji.job_attr,
                   ji.res_attr,
                   script_tmp,
                   destination,
-                  NULL);
+                  NULL,
+                  &new_jobname,
+                  &errmsg);
 
-  if (new_jobname == NULL)
+  if (local_errno != PBSE_NONE)
     {
-    errmsg = pbs_strerror(local_errno);
+    if (errmsg == NULL)
+      {
+      errmsg = pbs_strerror(local_errno);
+      }
 
     if (errmsg != NULL)
       fprintf(stderr, "qsub: submit error (%s)\n", errmsg);

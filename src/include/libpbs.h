@@ -312,7 +312,7 @@ struct batch_status *PBSD_status(int c, int function, int *, char *id, struct at
 struct batch_status *PBSD_status_get(int *local_errno, int c);
 
 char *PBSD_queuejob (int c, int *, char *j, char *d, struct attropl *a, char *ex);
-char *PBSD_QueueJob_hash(int c, int *, char *j, char *d, memmgr **mm, job_data *ja, job_data *ra, char *ex);
+int PBSD_QueueJob_hash(int c, char *j, char *d, memmgr **mm, job_data *ja, job_data *ra, char *ex, char **job_id, char **msg);
 
 
 extern int decode_DIS_JobId (int socket, char *jobid);

@@ -56,7 +56,7 @@ int PBSD_commit(int connect, char *jobid);
 int PBSD_jscript(int c, char *script_file, char *jobid);
 int PBSD_jobfile(int c, int req_type, char *path, char *jobid, enum job_file which);
 char *PBSD_queuejob(int connect, int *, char *jobid, char *destin, struct attropl *attrib, char *extend);
-char *PBSD_QueueJob_hash(int connect, int *, char *jobid, char *destin, memmgr **mm, job_data *job_attr, job_data *res_attr, char *extend);
+int PBSD_QueueJob_hash(int connect, char *jobid, char *destin, memmgr **mm, job_data *job_attr, job_data *res_attr, char *extend, char **job_id, char **msg);
 
 /* PBS_attr.c */
 int PBS_val_al(struct attrl *alp);

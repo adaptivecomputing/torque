@@ -530,22 +530,21 @@ char *PBSD_queuejob(
 
 
 
-char *PBSD_QueueJob_hash(
-
+int PBSD_QueueJob_hash(
   int             connect,     /* I */
-  int            *local_errno, /* O */
   char           *jobid,       /* I */
   char           *destin,
   memmgr         **mm,
   job_data       *job_attr,
   job_data       *res_attr,
-  char           *extend)
-
+  char           *extend,
+  char          **job_id,
+  char          **msg)
   {
   struct batch_reply *reply;
-  char               *return_jobid = (char *)NULL;
-  int                 rc;
+  int                 rc = PBSE_NONE;
   int                 sock;
+  int                 tmp_size = 0;
 
   pthread_mutex_lock(connection[connect].ch_mutex);
 
@@ -559,59 +558,73 @@ char *PBSD_QueueJob_hash(
       (rc = encode_DIS_QueueJob_hash(sock, jobid, destin, mm, job_attr, res_attr))||
       (rc = encode_DIS_ReqExtend(sock, extend)))
     {
-    connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
+    if (connection[connect].ch_errtxt == NULL)
+      {
+      connection[connect].ch_errtxt = memmgr_strdup(mm, (char *)dis_emsg[rc], &tmp_size);
+      }
+    *msg = memmgr_strdup(mm, connection[connect].ch_errtxt, &tmp_size);
 
-    *local_errno = PBSE_PROTOCOL;
+    /* rc = PBSE_PROTOCOL; */
 
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
-    return(return_jobid);
+    return rc;
     }
 
-  if (DIS_tcp_wflush(sock))
+  if ((rc = DIS_tcp_wflush(sock)))
     {
-    *local_errno = PBSE_PROTOCOL;
+    /* rc = PBSE_PROTOCOL; */
     
     pthread_mutex_unlock(connection[connect].ch_mutex);
-
-    return(return_jobid);
+    if (connection[connect].ch_errtxt == NULL)
+      {
+      *msg = memmgr_strdup(mm, connection[connect].ch_errtxt, &tmp_size);
+      }
+    return rc;
     }
 
   /* read reply from stream into presentation element */
 
-  reply = PBSD_rdrpy(local_errno, connect);
+  reply = PBSD_rdrpy(&rc, connect);
 
   if (reply == NULL)
     {
     if (PConnTimeout(sock) == 1)
       {
-      *local_errno = PBSE_EXPIRED;
+      rc = PBSE_EXPIRED;
       }
     else
       {
-      *local_errno = PBSE_PROTOCOL;
+      rc = PBSE_PROTOCOL;
       }
     }
   else if (reply->brp_choice &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Text &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Queue)
     {
-    *local_errno = PBSE_PROTOCOL;
+    rc = PBSE_PROTOCOL;
+    if (reply->brp_choice == BATCH_REPLY_CHOICE_Text)
+      {
+      *msg = memmgr_strdup(mm, reply->brp_un.brp_txt.brp_str, &tmp_size);
+      }
+    else
+      {
+      if (connection[connect].ch_errtxt == NULL)
+        {
+        *msg = memmgr_strdup(mm, connection[connect].ch_errtxt, &tmp_size);
+        }
+      }
     }
   else if (connection[connect].ch_errno == 0)
     {
-    return_jobid = strdup(reply->brp_un.brp_jid);
+    *job_id = memmgr_strdup(mm, reply->brp_un.brp_jid, &tmp_size);
     }
     
   pthread_mutex_unlock(connection[connect].ch_mutex);
 
   PBSD_FreeReply(reply);
 
-  return(return_jobid);
+  return rc;
   }  /* END PBSD_queuejob() */
 
-
-
-
 /* END PBSD_submit.c */
-
