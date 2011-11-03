@@ -126,7 +126,7 @@ int attempt_delete(
     change_restart_comment_if_needed(pjob);
     
     /* job has restart file at mom, do end job processing */
-    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING);
+    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
 
     pjob->ji_momhandle = -1;
     
@@ -155,7 +155,7 @@ int attempt_delete(
     struct pbs_queue *pque;
     int  KeepSeconds = 0;
 
-    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE);
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
     
     if ((pque = get_jobs_queue(pjob)) != NULL)
       {
@@ -386,7 +386,7 @@ void array_delete_wt(
 
           change_restart_comment_if_needed(pjob);
 
-          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING);
+          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
 
           pjob->ji_momhandle = -1;
 

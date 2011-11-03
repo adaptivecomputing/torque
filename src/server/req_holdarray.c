@@ -69,7 +69,7 @@ void hold_job(
 
     svr_evaljobstate(pjob, &newstate, &newsub, 0);
 
-    svr_setjobstate(pjob, newstate, newsub);
+    svr_setjobstate(pjob, newstate, newsub, FALSE);
     }
 
   } /* END hold_job() */

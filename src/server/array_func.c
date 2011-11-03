@@ -1490,7 +1490,7 @@ void update_array_values(
                 }
              
               svr_evaljobstate(pj, &newstate, &newsub, 1);
-              svr_setjobstate(pj, newstate, newsub);
+              svr_setjobstate(pj, newstate, newsub, FALSE);
               job_save(pj, SAVEJOB_FULL, 0);
 
               break;
@@ -1581,20 +1581,20 @@ void update_array_statuses(job_array *owned)
     
     if (running > 0)
       {
-      svr_setjobstate(pa->template_job, JOB_STATE_RUNNING, pa->template_job->ji_qs.ji_substate);
+      svr_setjobstate(pa->template_job, JOB_STATE_RUNNING, pa->template_job->ji_qs.ji_substate, FALSE);
       }
     else if (held > 0 && queued == 0 && complete == 0)
       {
-      svr_setjobstate(pa->template_job, JOB_STATE_HELD, pa->template_job->ji_qs.ji_substate);
+      svr_setjobstate(pa->template_job, JOB_STATE_HELD, pa->template_job->ji_qs.ji_substate, FALSE);
       }
     else if (complete > 0 && queued == 0 && held == 0)
       {
-      svr_setjobstate(pa->template_job, JOB_STATE_COMPLETE, pa->template_job->ji_qs.ji_substate);
+      svr_setjobstate(pa->template_job, JOB_STATE_COMPLETE, pa->template_job->ji_qs.ji_substate, FALSE);
       }
     else 
       {
       /* default to just calling the array queued */
-      svr_setjobstate(pa->template_job, JOB_STATE_QUEUED, pa->template_job->ji_qs.ji_substate);
+      svr_setjobstate(pa->template_job, JOB_STATE_QUEUED, pa->template_job->ji_qs.ji_substate, FALSE);
       }
       
     if (pa != owned)

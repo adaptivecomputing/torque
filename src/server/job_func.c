@@ -443,7 +443,7 @@ int job_abt(
 
   if (old_state == JOB_STATE_RUNNING)
     {
-    svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_ABORT);
+    svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_ABORT, FALSE);
 
     if ((rc = issue_signal(pjob, "SIGKILL", release_req, 0)) != 0)
       {
@@ -494,7 +494,7 @@ int job_abt(
     }
   else
     {
-    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_ABORT);
+    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_ABORT, FALSE);
 
     if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
       {
@@ -1058,7 +1058,7 @@ void job_clone_wt(
 
       svr_evaljobstate(pjobclone, &newstate, &newsub, 1);
 
-      svr_setjobstate(pjobclone, newstate, newsub);
+      svr_setjobstate(pjobclone, newstate, newsub, FALSE);
       pjobclone->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       pjobclone->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
@@ -1144,7 +1144,7 @@ void job_clone_wt(
 
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
 
-      svr_setjobstate(pjob, newstate, newsub);
+      svr_setjobstate(pjob, newstate, newsub, FALSE);
 
       job_save(pjob, SAVEJOB_FULL, 0);
       }

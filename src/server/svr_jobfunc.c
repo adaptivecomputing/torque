@@ -661,21 +661,24 @@ void svr_dequejob(
 
 int svr_setjobstate(
 
-  job *pjob,        /* I (modified) */
-  int  newstate,    /* I */
-  int  newsubstate) /* I */
+  job *pjob,            /* I (modified) */
+  int  newstate,        /* I */
+  int  newsubstate,     /* I */
+  int  has_queue_mutex) /* I */
 
   {
-  int        changed = 0;
-  int        oldstate;
+  static char *id = "svr_setjobstate";
+  int          changed = 0;
+  int          oldstate;
 
-  pbs_queue *pque;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
-  time_t     time_now = time(NULL);
+  pbs_queue   *pque;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t       time_now = time(NULL);
 
   if (LOGLEVEL >= 2)
     {
-    sprintf(log_buf, "svr_setjobstate: setting job %s state from %s-%s to %s-%s (%d-%d)\n",
+    sprintf(log_buf, "%s: setting job %s state from %s-%s to %s-%s (%d-%d)\n",
+      id,
       (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
       PJobState[pjob->ji_qs.ji_state],
       PJobSubState[pjob->ji_qs.ji_substate],
@@ -712,7 +715,12 @@ int svr_setjobstate(
       server.sv_jobstates[newstate]++;
       pthread_mutex_unlock(server.sv_jobstates_mutex);
 
-      if ((pque = get_jobs_queue(pjob)) != NULL)
+      if (has_queue_mutex == FALSE)
+        pque = get_jobs_queue(pjob);
+      else
+        pque = pjob->ji_qhdr;
+
+      if (pque != NULL)
         {
         pque->qu_njstate[oldstate]--;
         pque->qu_njstate[newstate]++;
@@ -745,7 +753,8 @@ int svr_setjobstate(
             &pjob->ji_wattr[JOB_ATR_etime]);
           }
 
-        unlock_queue(pque, "svr_setjobstate", NULL, LOGLEVEL);
+        if (has_queue_mutex == FALSE)
+          unlock_queue(pque, id, NULL, LOGLEVEL);
         }
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
@@ -2069,7 +2078,7 @@ static void job_wait_over(
     pjob->ji_modified = 1;
     
     svr_evaljobstate(pjob, &newstate, &newsub, 0);
-    svr_setjobstate(pjob, newstate, newsub);
+    svr_setjobstate(pjob, newstate, newsub, FALSE);
     
     pthread_mutex_unlock(pjob->ji_mutex);
     }

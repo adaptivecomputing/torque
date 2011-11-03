@@ -2023,7 +2023,7 @@ void req_commit(
 
   svr_evaljobstate(pj, &newstate, &newsub, 1);
 
-  svr_setjobstate(pj, newstate, newsub);
+  svr_setjobstate(pj, newstate, newsub, FALSE);
 
   /* set the queue rank attribute */
 

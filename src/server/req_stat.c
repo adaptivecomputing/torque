@@ -995,7 +995,7 @@ static void stat_update(
            this can happen if a diskless node reboots and the mom_priv/jobs
            directory is cleared, set its state to queued so job_abt doesn't
            think it is still running */
-        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT);
+        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
         rel_resc(pjob);
         job_abt(&pjob, "Job does not exist on node");
 

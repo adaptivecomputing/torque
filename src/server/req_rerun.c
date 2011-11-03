@@ -142,7 +142,7 @@ static void post_rerun(
       {
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
 
-      svr_setjobstate(pjob, newstate, newsub);
+      svr_setjobstate(pjob, newstate, newsub, FALSE);
 
       pthread_mutex_unlock(pjob->ji_mutex);
       }
@@ -260,11 +260,11 @@ void req_rerunjob(
     { 
     if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == HOLD_n)
       {
-      svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED);
+      svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
       }
     else
       {
-      svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_HELD);
+      svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_HELD, FALSE);
       }
 
     /* reset some job attributes */
@@ -355,7 +355,7 @@ void req_rerunjob(
 
         svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
 
-        svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3);
+        svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3, FALSE);
 
         rel_resc(pjob); /* free resc assigned to job */
 
@@ -382,7 +382,7 @@ void req_rerunjob(
 
         svr_evaljobstate(pjob, &newstate, &newsubst, 0);
 
-        svr_setjobstate(pjob, newstate, newsubst);
+        svr_setjobstate(pjob, newstate, newsubst, FALSE);
         }
 
       break;

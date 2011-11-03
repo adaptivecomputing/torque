@@ -1065,7 +1065,7 @@ extern void  svr_evaljobstate(job *, int *, int *, int);
 extern void  svr_mailowner(job *, int, int, char *);
 extern void  set_resc_deflt(job *, attribute *, int);
 extern void  set_statechar(job *);
-extern int   svr_setjobstate(job *, int, int);
+extern int   svr_setjobstate(job *, int, int, int);
 
 #ifdef BATCH_REQUEST_H
 extern job  *chk_job_request(char *, struct batch_request *);

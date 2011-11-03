@@ -271,7 +271,7 @@ void *req_holdjob(
 
       svr_evaljobstate(pjob, &newstate, &newsub, 0);
 
-      svr_setjobstate(pjob, newstate, newsub);
+      svr_setjobstate(pjob, newstate, newsub, FALSE);
       }
 
     reply_ack(preq);
@@ -394,7 +394,7 @@ int release_job(
 
     svr_evaljobstate(pjob, &newstate, &newsub, 0);
 
-    svr_setjobstate(pjob, newstate, newsub); /* saves job */
+    svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
     }
 
   sprintf(log_buf, msg_jobholdrel,
@@ -684,7 +684,7 @@ static void process_hold_reply(
 
     pjob->ji_modified = 1;    /* indicate attributes changed */
     svr_evaljobstate(pjob, &newstate, &newsub, 0);
-    svr_setjobstate(pjob, newstate, newsub); /* saves job */
+    svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
 
     if (preq->rq_reply.brp_code != PBSE_NOSUP)
       {
@@ -717,7 +717,7 @@ static void process_hold_reply(
     pjob->ji_modified = 1;    /* indicate attributes changed     */
 
     svr_evaljobstate(pjob, &newstate, &newsub, 0);
-    svr_setjobstate(pjob, newstate, newsub); /* saves job */
+    svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
 
     account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed and held"); /* note in accounting file */
     reply_ack(preq);

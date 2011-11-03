@@ -561,7 +561,7 @@ jump:
             }
           
           svr_evaljobstate(tmp, &newstate, &newsub, 1);
-          svr_setjobstate(tmp, newstate, newsub);
+          svr_setjobstate(tmp, newstate, newsub, FALSE);
           job_save(tmp, SAVEJOB_FULL, 0);
 
           break;
@@ -576,7 +576,7 @@ jump:
     {
     /* job has restart file at mom, do end job processing */
     
-    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING);
+    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
 
     pjob->ji_momhandle = -1;
 
@@ -606,7 +606,7 @@ jump:
     struct pbs_queue *pque;
     int  KeepSeconds = 0;
 
-    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE);
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
 
     if ((pque = get_jobs_queue(pjob)) != NULL)
       {

@@ -1764,7 +1764,7 @@ static void pbsd_init_reque(
 
     svr_evaljobstate(pjob, &newstate, &newsubstate, 0);
 
-    svr_setjobstate(pjob, newstate, newsubstate);
+    svr_setjobstate(pjob, newstate, newsubstate, FALSE);
     }
   else
     {

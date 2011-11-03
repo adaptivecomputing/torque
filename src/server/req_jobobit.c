@@ -757,7 +757,7 @@ int check_if_checkpoint_restart_failed(
       if (memcmp(pfailtype,"Temporary",9) == 0)
         {
         /* reque job */
-        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED);
+        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
         
         if (LOGLEVEL >= 4)
           {
@@ -782,7 +782,7 @@ int check_if_checkpoint_restart_failed(
         *hold_val |= HOLD_s;
         pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
         pjob->ji_modified = 1;
-        svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_HELD);
+        svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_HELD, FALSE);
 
         if (LOGLEVEL >= 4)
           {
@@ -819,7 +819,7 @@ int handle_exiting_or_abort_substate(
     depend_on_term(pjob);
     }
   
-  svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_RETURNSTD);
+  svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_RETURNSTD, FALSE);
 
   return(WORK_Immed);
   } /* END handle_exiting_or_abort_substate() */
@@ -981,7 +981,7 @@ int handle_returnstd(
     free_br(preq);
     }
 
-  svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEOUT);
+  svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEOUT, FALSE);
   
   return(WORK_Immed);
   } /* END handle_returnstd() */
@@ -1184,7 +1184,7 @@ int handle_stageout(
       preq = NULL;
     } /* END if preq != NULL */
 
-  svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEDEL);
+  svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEDEL, FALSE);
   
   return(WORK_Immed);
   } /* END handle_stageout() */
@@ -1289,7 +1289,7 @@ int handle_stagedel(
     free_br(preq);
     }
 
-  svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITED);
+  svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITED, FALSE);
 
   return(WORK_Immed);
   } /* END handle_stagedel() */
@@ -1349,7 +1349,7 @@ int handle_exited(
       }
     }
 
-  svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE);
+  svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
   
   if ((pque = get_jobs_queue(pjob)) != NULL)
     {
@@ -1754,7 +1754,7 @@ void on_job_rerun(
           {
           /* files don`t need to be moved, go to next step */
 
-          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN1);
+          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN1, FALSE);
 
           set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
@@ -1836,7 +1836,7 @@ void on_job_rerun(
           log_buf);
         }
 
-      svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN1);
+      svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN1, FALSE);
 
       ptask->wt_type = WORK_Immed;
 
@@ -1887,7 +1887,7 @@ void on_job_rerun(
           {
           /* no files to copy, any to delete? */
 
-          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN2);
+          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN2, FALSE);
 
           set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
@@ -1948,7 +1948,7 @@ void on_job_rerun(
 
       preq = NULL;
 
-      svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN2);
+      svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN2, FALSE);
 
       ptask->wt_type = WORK_Immed;
 
@@ -1988,7 +1988,7 @@ void on_job_rerun(
           }
         else
           {
-          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3);
+          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3, FALSE);
 
           set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
@@ -2036,7 +2036,7 @@ void on_job_rerun(
 
       preq = NULL;
 
-      svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3);
+      svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3, FALSE);
 
       ptask->wt_type = WORK_Immed;
 
@@ -2097,7 +2097,7 @@ void on_job_rerun(
 
       svr_evaljobstate(pjob, &newstate, &newsubst, 0);
 
-      svr_setjobstate(pjob, newstate, newsubst);
+      svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
       break;
     }  /* END switch (pjob->ji_qs.ji_substate) */
@@ -2633,7 +2633,7 @@ void *req_jobobit(
 
         svr_evaljobstate(pjob, &newstate, &newsubst, 1);
 
-        svr_setjobstate(pjob, newstate, newsubst);
+        svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
         svr_disconnect(pjob->ji_momhandle);
 
@@ -2677,7 +2677,7 @@ void *req_jobobit(
     /* If job is terminating (not rerun), */
     /*  update state and send mail        */
 
-    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING);
+    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
 
     if (alreadymailed == 0)
       svr_mailowner(pjob, MAIL_END, MAIL_NORMAL, mailbuf);
@@ -2770,7 +2770,7 @@ void *req_jobobit(
 
       svr_evaljobstate(pjob, &newstate, &newsubst, 1);
 
-      svr_setjobstate(pjob, newstate, newsubst);
+      svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
       svr_disconnect(pjob->ji_momhandle);
 
@@ -2779,10 +2779,7 @@ void *req_jobobit(
       return(NULL);
       }
 
-    svr_setjobstate(
-      pjob,
-      JOB_STATE_EXITING,
-      pjob->ji_qs.ji_substate);
+    svr_setjobstate(pjob, JOB_STATE_EXITING, pjob->ji_qs.ji_substate, FALSE);
 
     set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
 

@@ -355,7 +355,7 @@ static void post_checkpointsend(
         job_set_wait(pwait, pjob, 0);
         }
 
-      svr_setjobstate(pjob, JOB_STATE_WAITING, JOB_SUBSTATE_STAGEFAIL);
+      svr_setjobstate(pjob, JOB_STATE_WAITING, JOB_SUBSTATE_STAGEFAIL, FALSE);
 
       if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
         {
@@ -452,7 +452,7 @@ static int svr_send_checkpoint(
 
   if (rc == 0)
     {
-    svr_setjobstate(pjob, state, substate);
+    svr_setjobstate(pjob, state, substate, FALSE);
 
     /*
      * checkpoint copy started ok - reply to client as copy may
@@ -577,7 +577,7 @@ static void post_stagein(
         job_set_wait(pwait, pjob, 0);
         }
 
-      svr_setjobstate(pjob, JOB_STATE_WAITING, JOB_SUBSTATE_STAGEFAIL);
+      svr_setjobstate(pjob, JOB_STATE_WAITING, JOB_SUBSTATE_STAGEFAIL, FALSE);
 
       if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
         {
@@ -620,7 +620,7 @@ static void post_stagein(
         {
         svr_evaljobstate(pjob, &newstate, &newsub, 0);
 
-        svr_setjobstate(pjob, newstate, newsub);
+        svr_setjobstate(pjob, newstate, newsub, FALSE);
         }
       }
 
@@ -684,7 +684,7 @@ static int svr_stagein(
 
   if (rc == 0)
     {
-    svr_setjobstate(pjob, state, substate);
+    svr_setjobstate(pjob, state, substate, FALSE);
 
     /*
      * stage-in started ok - reply to client as copy may
@@ -1057,7 +1057,7 @@ static int svr_strtjob2(
 
   /* send the job to MOM */
 
-  svr_setjobstate(pjob,JOB_STATE_RUNNING,JOB_SUBSTATE_PRERUN);
+  svr_setjobstate(pjob,JOB_STATE_RUNNING,JOB_SUBSTATE_PRERUN, FALSE);
 
   /* if job start timeout attribute is set use its value */
   
@@ -1093,7 +1093,7 @@ static int svr_strtjob2(
     
     pjob->ji_qs.ji_destin[0] = '\0';
     
-    svr_setjobstate(pjob,old_state,old_subst);
+    svr_setjobstate(pjob, old_state, old_subst, FALSE);
     
     return(my_err);
     }
@@ -1154,7 +1154,7 @@ void finish_sendmom(
           (pjob->ji_qs.ji_substate == JOB_SUBSTATE_TRNOUTCM))
         {
         /* may be EXITING if job finished first */
-        svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_RUNNING);
+        svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_RUNNING, FALSE);
 
         /* above saves job structure */
         }
@@ -1200,7 +1200,7 @@ void finish_sendmom(
           req_reject(PBSE_MOMREJECT, 0, preq, node_name, "connection to mom timed out");
         
         svr_evaljobstate(pjob, &newstate, &newsub, 1);
-        svr_setjobstate(pjob, newstate, newsub);
+        svr_setjobstate(pjob, newstate, newsub, FALSE);
         }
       else
         {
@@ -1258,7 +1258,7 @@ void finish_sendmom(
         else
           {
           svr_evaljobstate(pjob, &newstate, &newsub, 1);
-          svr_setjobstate(pjob, newstate, newsub);
+          svr_setjobstate(pjob, newstate, newsub, FALSE);
           }
         }
       else if (preq != NULL)

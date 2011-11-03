@@ -941,7 +941,7 @@ void set_array_depend_holds(
               "Setting HOLD_s due to dependencies\n");
             }
 
-          svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_DEPNHOLD);
+          svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_DEPNHOLD, FALSE);
           }
         else 
           {
@@ -1642,7 +1642,7 @@ void set_depend_hold(
 
       svr_evaljobstate(pjob, &newstate, &newsubst, 0);
 
-      svr_setjobstate(pjob, newstate, newsubst);
+      svr_setjobstate(pjob, newstate, newsubst, FALSE);
       }
     }
   else
@@ -1661,7 +1661,7 @@ void set_depend_hold(
         "Setting HOLD_s due to dependencies\n");
       }
 
-    svr_setjobstate(pjob, JOB_STATE_HELD, substate);
+    svr_setjobstate(pjob, JOB_STATE_HELD, substate, FALSE);
     }
 
   return;

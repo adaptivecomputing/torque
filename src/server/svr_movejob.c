@@ -366,7 +366,7 @@ void finish_routing_processing(
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_ABORT)
         {
         /* job delete in progress, just set to queued status */
-        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT);
+        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
 
         pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -382,7 +382,7 @@ void finish_routing_processing(
       /* force re-eval of job state out of Transit */
 
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
-      svr_setjobstate(pjob, newstate, newsub);
+      svr_setjobstate(pjob, newstate, newsub, FALSE);
 
       /* need to have queue's mutex when entering job_route */
       if ((pque = get_jobs_queue(pjob)) != NULL)
@@ -467,7 +467,7 @@ void finish_moving_processing(
         {
         /* force re-eval of job state out of Transit */
         svr_evaljobstate(pjob, &newstate, &newsub, 1);
-        svr_setjobstate(pjob, newstate, newsub);
+        svr_setjobstate(pjob, newstate, newsub, FALSE);
    
         pthread_mutex_unlock(pjob->ji_mutex);
         }
@@ -1008,7 +1008,7 @@ int net_move(
     data      = NULL;
     }
 
-  svr_setjobstate(jobp, JOB_STATE_TRANSIT, JOB_SUBSTATE_TRNOUT);
+  svr_setjobstate(jobp, JOB_STATE_TRANSIT, JOB_SUBSTATE_TRNOUT, TRUE);
 
   args = malloc(sizeof(send_job_request));
 
