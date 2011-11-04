@@ -427,7 +427,7 @@ job_array *array_recov(char *path)
   exit(1);
   }
 
-int svr_setjobstate(job *pjob, int newstate, int newsubstate)
+int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
   fprintf(stderr, "The call to svr_setjobstate needs to be mocked!!\n");
   exit(1);

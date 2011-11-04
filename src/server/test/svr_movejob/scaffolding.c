@@ -212,7 +212,7 @@ void add_dest(job *jobp)
   exit(1);
   }
 
-int svr_setjobstate(job *pjob, int newstate, int newsubstate)
+int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
   fprintf(stderr, "The call to svr_setjobstate to be mocked!!\n");
   exit(1);

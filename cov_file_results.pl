@@ -174,10 +174,9 @@ def main():
     # src/server/node_attr_def.c
     # src/server/queue_attr_def.c
     # src/server/svr_attr_def.c
-    # src/lib/Libifl/PBS_data.c --
-    # src/lib/Libdis/dis.c --
-    # src/iff/iff2.c --
-    sizeTotal = sizeTotal - 6;
+    # src/lib/Libifl/PBS_data.c
+    # src/lib/Libdis/dis.c
+    sizeTotal = sizeTotal - 8;
 
     print "Total C files: %s  Files with unit tests: %s   Percent of files with a File Test Harness: %s%%" % (sizeTotal,sizeTests, (sizeTests * 100) / sizeTotal)
     print ""
