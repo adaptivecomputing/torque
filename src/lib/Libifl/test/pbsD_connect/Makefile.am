@@ -1,6 +1,8 @@
+include $(top_srcdir)/buildutils/config.mk
+
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\"
 
 lib_LTLIBRARIES = libpbsD_connect.la
 

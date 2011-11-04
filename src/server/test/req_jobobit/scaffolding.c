@@ -37,6 +37,7 @@ int LOGLEVEL = 0;
 char *msg_obitnodel = "Unable to delete files for job %s, on host %s";
 char *msg_momnoexec1 = "Job cannot be executed\nSee Administrator for help";
 char *msg_job_end_stat = "Exit_status=%d";
+char *msg_momjoboverlimit = "Job exceeded some resource limit (walltime, mem, etc.). Job was aborted\nSee Administrator for help";
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 

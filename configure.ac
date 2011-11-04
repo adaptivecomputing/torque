@@ -178,7 +178,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libcsv/test/Makefile
     src/lib/Libcsv/test/csv/Makefile
     src/lib/Libdis/test/Makefile
-    src/lib/Libdis/test/dis/Makefile
     src/lib/Libdis/test/discui_/Makefile
     src/lib/Libdis/test/discul_/Makefile
     src/lib/Libdis/test/disi10d_/Makefile
@@ -229,7 +228,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libifl/test/PBSD_status2/Makefile
     src/lib/Libifl/test/PBSD_submit_caps/Makefile
     src/lib/Libifl/test/PBS_attr/Makefile
-    src/lib/Libifl/test/PBS_data/Makefile
     src/lib/Libifl/test/dec_Authen/Makefile
     src/lib/Libifl/test/dec_CpyFil/Makefile
     src/lib/Libifl/test/dec_Gpu/Makefile

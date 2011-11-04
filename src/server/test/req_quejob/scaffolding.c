@@ -28,7 +28,7 @@ char *path_spool;
 struct server server;
 int LOGLEVEL = 0;
 char log_buffer[LOG_BUF_SIZE];
-
+char *msg_daemonname = "unset";
 
 
 int setup_array_struct(job *pjob)

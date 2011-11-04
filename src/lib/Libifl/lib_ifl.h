@@ -264,7 +264,6 @@ int PBSD_munge_authenticate(int psock, int handle);
 #ifndef MUNGE_AUTH
 int parse_svr_response(long long code, long long len, char *buf);
 int validate_socket(int psock);
-int PBSD_authenticate(int psock); 
 #endif 
 #ifdef ENABLE_UNIX_SOCKETS
 ssize_t send_unix_creds(int sd);

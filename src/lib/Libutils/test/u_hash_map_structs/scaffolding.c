@@ -9,6 +9,7 @@ int memmgr_init(memmgr **mgr, int mgr_size)
   {
   return TRUE;
   }
+
 void *memmgr_calloc(memmgr **mgr, int qty, int size)
   {
   if (calloc_fail)
@@ -16,6 +17,7 @@ void *memmgr_calloc(memmgr **mgr, int qty, int size)
   else
     return calloc(qty, size);
   }
+
 int memmgr_free(memmgr **mgr, void *ptr)
   {
   free(ptr);

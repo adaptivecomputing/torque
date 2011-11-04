@@ -13,6 +13,7 @@
 #include "batch_request.h" /* batch_request */
 #include "work_task.h" /* all_tasks */
 #include "array.h" /* ArrayEventsEnum */
+#include "dynamic_string.h" /* dynamic_string */
 
 /* This section is for manipulting function return values */
 #include "test_job_func.h" /* *_SUITE */
@@ -320,7 +321,7 @@ int insert_into_recycler(job *pjob)
   exit(1);
   }
 
-int attr_to_str(char *out, int size, attribute_def *at_def, struct attribute attr, int XML)
+int attr_to_str(struct dynamic_string *ds, attribute_def *attr_def,struct attribute attr,int XML)
   {
   int rc = 0;
   if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 4))
@@ -329,16 +330,10 @@ int attr_to_str(char *out, int size, attribute_def *at_def, struct attribute att
       {
       iter_num++;
       rc = NO_BUFFER_SPACE;
-      valbuf_size = size;
       }
     else if (iter_num == 1)
       {
       iter_num++;
-      valbuf_size = valbuf_size << 2;
-      if (valbuf_size != size)
-        {
-        rc = -3;
-        }
       }
     }
   else if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 5))
@@ -387,3 +382,28 @@ int lock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int lo
   fprintf(stderr, "The call to lock_queue needs to be mocked!!\n");
   exit(1);
   }
+
+int append_dynamic_string(dynamic_string *ds, char *to_append)
+  {
+  fprintf(stderr, "The call to append_dynamic_string needs to be mocked!!\n");
+  exit(1);
+  }
+
+void clear_dynamic_string(dynamic_string *ds)
+  {
+  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
+  exit(1);
+  }
+
+dynamic_string *get_dynamic_string(int initial_size, char *str)
+  {
+  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
+  exit(1);
+  }
+
+void free_dynamic_string(dynamic_string *ds)
+  {
+  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
+  exit(1);
+  }
+

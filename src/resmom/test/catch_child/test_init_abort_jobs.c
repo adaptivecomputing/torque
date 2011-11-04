@@ -192,6 +192,7 @@ START_TEST(test_iaj_nosis)
   }
 END_TEST
 
+/*
 START_TEST(test_iaj_exitingtasks) 
   {
   test_iaj_pathdot();
@@ -202,6 +203,7 @@ START_TEST(test_iaj_exitingtasks)
   fail_unless(exiting_tasks == 1, "This did not reach the end of the code path");
   }
 END_TEST
+*/
 
 START_TEST(test_iaj_term_reque) 
   {
@@ -240,7 +242,7 @@ Suite *init_abort_jobs_suite(void)
   tcase_add_test(tc_core, test_iaj_svflg);
   tcase_add_test(tc_core, test_iaj_radix);
   tcase_add_test(tc_core, test_iaj_nosis);
-  tcase_add_test(tc_core, test_iaj_exitingtasks);
+/*  tcase_add_test(tc_core, test_iaj_exitingtasks); */
   tcase_add_test(tc_core, test_iaj_term_reque);
 /*  tcase_add_test(tc_core, test_iaj_migratereque); */
   suite_add_tcase(s, tc_core);

@@ -20,6 +20,8 @@ int MOMPrologFailureCount;
 int LOGLEVEL = 0;
 char log_buffer[LOG_BUF_SIZE];
 int MOMPrologTimeoutCount;
+uid_t pbsuser;
+gid_t pbsgroup;
 
 int encode_resc(attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int ac_perm)
   {

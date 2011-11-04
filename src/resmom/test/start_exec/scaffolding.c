@@ -456,3 +456,9 @@ void mom_checkpoint_init_job_periodic_timer(job *pjob)
   fprintf(stderr, "The call to mom_checkpoint_init_job_periodic_timer needs to be mocked!!\n");
   exit(1);
   }
+
+int socket_avail_bytes_on_descriptor(int socket)
+  {
+  fprintf(stderr, "The call to socket_avail_bytes_on_descriptor needs to be mocked!!\n");
+  exit(1);
+  }

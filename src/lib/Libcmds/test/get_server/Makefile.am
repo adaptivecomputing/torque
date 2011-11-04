@@ -1,6 +1,9 @@
+include $(top_srcdir)/buildutils/config.mk
+
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\"
+
 
 lib_LTLIBRARIES = libget_server.la
 
@@ -8,7 +11,6 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_get_server
 
-libget_server_la_CFLAGS = -DPBS_DEFAULT_FILE="\"test_dir\""
 libget_server_la_SOURCES = scaffolding.c ${PROG_ROOT}/get_server.c
 libget_server_la_LDFLAGS = @CHECK_LIBS@
 

@@ -503,9 +503,7 @@ int get_parent_client_socket(int psock, int *pcsock)
   }
 
 int validate_socket(
-    
   int psock)
-
   {
   int            rc = PBSE_NONE;
   static char    id[] = "validate_socket";
@@ -583,164 +581,6 @@ int validate_socket(
   return rc;
   }
 
-int PBSD_authenticate(
-
-  int psock)  /* I */
-
-  {
-  char   cmd[PBS_MAXSERVERNAME + 80];
-  int    cred_type;
-  int    i;
-  int    j;
-  FILE *piff;
-  char  *ptr;
-  char  *path_copy;
-  char  *token;
-
-  struct stat buf;
-
-  static char iffpath[1024];
-
-  int    rc;
-
-  /* use pbs_iff to authenticate me */
-
-  if (iffpath[0] == '\0')
-    {
-    if ((ptr = getenv("PBSBINDIR")) != NULL)
-      {
-      snprintf(iffpath, sizeof(iffpath), "%s/pbs_iff",
-               ptr);
-      }
-    else
-      {
-      strcpy(iffpath, IFF_PATH);
-      }
-
-    rc = stat(iffpath, &buf);
-
-    if (rc == -1)
-      {
-      /* cannot locate iff in default location - search PATH */
-
-      if ((ptr = getenv("PATH")) != NULL)
-        {
-        ptr = strtok(ptr, ":");
-
-        if ((path_copy = strdup(ptr)) == NULL)
-          {
-          fprintf(stderr,"Cannot allocate memory, FAILURE");
-
-          return(-1);
-          }
-
-        token = strtok(path_copy, ":");
-
-        while (token != NULL)
-          {
-          snprintf(iffpath, sizeof(iffpath), "%s/pbs_iff", token);
-
-          rc = stat(iffpath, &buf);
-
-          if (rc != -1)
-            break;
-
-          token = strtok(NULL, ":");
-          }  /* END while (token != NULL) */
-        }    /* END if ((ptr = getenv("PATH")) != NULL) */
-
-      if (rc == -1)
-        {
-        /* FAILURE */
-
-        if (getenv("PBSDEBUG"))
-          {
-          fprintf(stderr, "ALERT:  cannot verify file '%s', errno=%d (%s)\n",
-                  cmd,
-                  errno,
-                  strerror(errno));
-          }
-
-        /* cannot locate iff in default location or  PATH */
-
-        iffpath[0] = '\0';
-
-        return(PBSE_IFF_NOT_FOUND);
-        }
-      }
-    }    /* END if (iffpath[0] == '\0') */
-
-  snprintf(cmd, sizeof(cmd), "%s %s %u %d",
-           iffpath,
-           server_name,
-           server_port,
-           psock);
-
-  piff = popen(cmd, "r");
-
-  if (piff == NULL)
-    {
-    /* FAILURE */
-
-    if (getenv("PBSDEBUG"))
-      {
-      fprintf(stderr, "ALERT:  cannot open pipe, errno=%d (%s)\n",
-              errno,
-              strerror(errno));
-      }
-
-    return(-1);
-    }
-
-  i = read(fileno(piff), &cred_type, sizeof(int));
-
-  if ((i != sizeof(int)) || (cred_type != PBS_credentialtype_none))
-    {
-    /* FAILURE */
-
-    if (getenv("PBSDEBUG"))
-      {
-      if (i != sizeof(int))
-        {
-        fprintf(stderr, "ALERT:  cannot read pipe, rc=%d, errno=%d (%s)\n",
-                i,
-                errno,
-                strerror(errno));
-        }
-      else
-        {
-        fprintf(stderr, "ALERT:  invalid cred type %d reported\n",
-                cred_type);
-        }
-      }
-
-    pclose(piff);
-
-    return(-1);
-    }  /* END if ((i != sizeof(int)) || ...) */
-
-  j = pclose(piff);
-
-  if (j != 0)
-    {
-    /* FAILURE */
-
-    if (getenv("PBSDEBUG"))
-      {
-      fprintf(stderr, "ALERT:  cannot close pipe, errno=%d (%s)\n",
-              errno,
-              strerror(errno));
-      }
-
-    /* report failure but do not fail (CRI) */
-
-    /* return(-1); */
-    }
-
-  /* SUCCESS */
-
-  return(0);
-  }  /* END PBSD_authenticate() */
 #endif /* ifndef MUNGE_AUTH */
 
 
@@ -1206,8 +1046,6 @@ int pbs_original_connect(
     
     
 #else  
-    /* Have pbs_iff authenticate connection */
-/*    if ((ENABLE_TRUSTED_AUTH == FALSE) && ((auth = PBSD_authenticate(connection[out].ch_socket)) != 0)) */
     /* new version of iff using daemon */
     if ((ENABLE_TRUSTED_AUTH == FALSE) && ((rc = validate_socket(connection[out].ch_socket)) != PBSE_NONE))
       {
