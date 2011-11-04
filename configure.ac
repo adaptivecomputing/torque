@@ -356,15 +356,15 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/test/catch_child/Makefile
     src/resmom/test/checkpoint/Makefile
     src/resmom/test/cray_cpa/Makefile
-    src/resmom/test/job_func/Makefile
+    src/resmom/test/mom_job_func/Makefile
     src/resmom/test/mom_comm/Makefile
     src/resmom/test/mom_inter/Makefile
     src/resmom/test/mom_main/Makefile
     src/resmom/test/mom_server/Makefile
     src/resmom/test/pbs_demux/Makefile
-    src/resmom/test/process_request/Makefile
+    src/resmom/test/mom_process_request/Makefile
     src/resmom/test/prolog/Makefile
-    src/resmom/test/req_quejob/Makefile
+    src/resmom/test/mom_req_quejob/Makefile
     src/resmom/test/requests/Makefile
     src/resmom/test/start_exec/Makefile
     src/resmom/test/tmsock_recov/Makefile
