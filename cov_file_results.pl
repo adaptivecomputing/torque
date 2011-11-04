@@ -159,10 +159,10 @@ def main():
     src_list = [];
 
     generate_data("src", dir_list, src_list)
-    print "dir list is:"
-    print dir_list
-    print "src list is:"
-    print src_list
+#    print "dir list is:"
+#    print dir_list
+#    print "src list is:"
+#    print src_list
 
     sizeTotal = len(src_list)
     sizeTests = len(dir_list)
