@@ -222,6 +222,14 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       restarted. Array jobs now retain their previous state between restarts of the server
       the same as non-array jobs. This fix takes care of a problem where Moab and TORQUE
       would get out of sync on jobs because of this discrepency between states.
+  b - Made a fix related to procct. If no resources are requested on the qsub line previous 
+      versions of TORQUE did not create a Resource_List attribute. Specifically a node and
+      nodect element for Resource_List. Adding this broke some applications. I made it so
+      if no nodes or procs resources are requested the procct is set to 1 without creating 
+      the nodes element.
+  e - Changed enable-job-create to with-job-create with an optional CFLAG argument.
+      --with-job-create=<CFLAG options>
+  e - Changed qstat.c to display 6 instead of 5 digits for Req'd Memory for a qstat -a.
 
 2.5.8
   e - added util function getpwnam_ext() that has retry and errno logging
