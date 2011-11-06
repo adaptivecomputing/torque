@@ -63,6 +63,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the nodes element.
   e - Changed enable-job-create to with-job-create with an optional CFLAG argument.
       --with-job-create=<CFLAG options>
+  e - Changed qstat.c to display 6 instead of 5 digits for Req'd Memory for a qstat -a.
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

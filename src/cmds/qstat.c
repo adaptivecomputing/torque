@@ -133,7 +133,7 @@ static char *summarize_arrays_extend_opt = "summarize_arrays";
 
 
 #ifdef TXT
-#define DEFTASKSIZE 5
+#define DEFTASKSIZE 6
 #else
 #define DEFTASKSIZE 3
 #endif
