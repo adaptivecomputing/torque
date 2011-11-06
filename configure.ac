@@ -709,29 +709,44 @@ case "$CSA" in
   *) AC_MSG_ERROR([--enable-csa should be yes or no]) ;;
 esac
 
-dnl
-dnl enable libjob job_create support
-dnl We do a full link test because some platforms require libcap and libpam and we want to make sure
-dnl they are installed
-dnl
-AC_MSG_CHECKING([whether to enable libjob job_create support])
-AC_ARG_ENABLE(job_create,
-    [  --enable-job-create     enable libjob job_create support],
-    JOBCREATE=$enableval,JOBCREATE=no)
-AC_MSG_RESULT($JOBCREATE)
-
 dnl We need pthreads by default in the MOM
   AC_CHECK_LIB(pthread, pthread_create, MOMLIBS="$MOMLIBS -lpthread -lrt")
 
-case "$JOBCREATE" in
-  yes) AC_DEFINE([USEJOBCREATE], 1, [Define to enable libjob job_create support])
-      AC_CHECK_LIB([job],[job_create],
-        [MOMLIBS="$MOMLIBS -ljob"],
-        [AC_MSG_ERROR([--enable-job-create requires libjob support]) ])
-      ;;
-  no) : ;;
-  *) AC_MSG_ERROR([--enable-job-create should be yes or no]) ;;
+
+dnl
+dnl enable libjob job_create support
+dnl attempt to find a location to install job_create support for CRAY
+dnl
+AC_MSG_CHECKING([whether to enable libjob job_create support])
+jobcreatedir=disabled
+AC_ARG_WITH(job_create,
+    [  --with-job-create=DIR   Directory that holds the job create modules.
+                          On Linux, 'yes' uses the default /opt/cray.],
+    [jobcreatedir=$withval])
+case "$jobcreatedir" in
+  disabled) ;;
+  no) jobcreatedir=disabled ;;
+  yes)
+    case "${PBS_MACH}" in
+      linux) AC_DEFINE([USEJOBCREATE], 1, [Define to enable libjob job_create support])
+        AC_CHECK_LIB([job],[job_create],
+          [MOMLIBS="-L/opt/cray/job/default/lib64 -ljob $MOMLIBS"
+          CFLAGS="$CFLAGS -I/opt/cray/job/default/include"],
+          [AC_MSG_ERROR([--enable-job-create requires libjob support]) ]);;
+      *) AC_MSG_ERROR([--with-job-create takes a full path to a directory]);;
+    esac ;;
+  *)
+    case "${PBS_MACH}" in
+      linux) AC_DEFINE([USEJOBCREATE], 1, [Define to enable libjob job_create support])
+        MOMLIBS="$jobcreatedir $MOMLIBS"
+        CFLAGS="$CFLAGS $jobcreatedir"
+        ;;
+      *) AC_MSG_ERROR([--with-job-create takes a full path to a directory]);;
+    esac ;;
 esac
+AC_MSG_RESULT([$jobcreatedir])
+
+
 
 dnl compile for munge authorization - allows sites to use munge
 dnl as a means to validate user identity from remote hosts.

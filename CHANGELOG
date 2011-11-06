@@ -61,6 +61,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       nodect element for Resource_List. Adding this broke some applications. I made it so
       if no nodes or procs resources are requested the procct is set to 1 without creating 
       the nodes element.
+  e - Changed enable-job-create to with-job-create with an optional CFLAG argument.
+      --with-job-create=<CFLAG options>
 
 2.5.8
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
