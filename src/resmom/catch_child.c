@@ -968,6 +968,7 @@ void *preobit_reply(
 
   while ((irtn = DIS_reply_read(sock, &preq->rq_reply)) &&
          (errno == EINTR));
+
   pbs_disconnect_socket(sock);
   close_conn(sock, FALSE);
 

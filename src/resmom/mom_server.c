@@ -3064,10 +3064,10 @@ void mom_server_update_stat(
       pbs_disconnect_socket(stream);
       }
   
-    close(stream);
-    
     if (ret != DIS_SUCCESS)
       {
+      close(stream);
+
       /* FAILURE */
       if (ret == UNREAD_STATUS)
         {
