@@ -4,6 +4,8 @@ if HAVE_CHECK
 SUBDIRS = test
 endif
 
+DIST_SUBDIRS =
+
 PBS_LIBS = ../lib/Libpbs/libtorque.la
 
 sbin_PROGRAMS = momctl

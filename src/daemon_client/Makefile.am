@@ -6,6 +6,8 @@ endif
 
 DIST_SUBDIRS =
 
+include_HEADERS = trq_auth_daemon.h
+
 AM_CFLAGS = -Wall -pthread -ldl -lrt -lssl -lcrypto
 
 bin_PROGRAMS = trqauthd

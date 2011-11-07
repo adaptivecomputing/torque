@@ -5,5 +5,4 @@ SUBDIRS = test
 endif
 
 DIST_SUBDIRS =
-
 # all compilation happens in lib/Libpbs

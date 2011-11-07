@@ -6,4 +6,5 @@ endif
 
 DIST_SUBDIRS =
 
+include_HEADERS = lib_ifl.h
 # all compilation happens in lib/Libpbs

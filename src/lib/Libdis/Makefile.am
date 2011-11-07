@@ -6,4 +6,5 @@ endif
 
 DIST_SUBDIRS =
 
+include_HEADERS = lib_dis.h
 # all compilation happens in lib/Libpbs
