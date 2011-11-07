@@ -86,7 +86,7 @@ void set_env_opts(
     len_name = parse_env_line(mm, envp[var_num], &name, &value);
     if (value != NULL)
       {
-      strtolower(name);
+/*      strtolower(name); */
       hash_add_item(mm, env_attr, name, value, ENV_DATA, SET);
       memmgr_free(mm, name); name = NULL;
       memmgr_free(mm, value); value = NULL;
