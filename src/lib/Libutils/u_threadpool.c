@@ -90,7 +90,7 @@
 
 
 
-#define MINIMUM_STACK_SIZE 12582912
+#define MINIMUM_STACK_SIZE 16777216
 extern int    LOGLEVEL;
 sigset_t      fillset;
 
