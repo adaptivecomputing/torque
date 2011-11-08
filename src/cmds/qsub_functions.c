@@ -2807,29 +2807,9 @@ void process_opts(
 /*           return(-1); */
 /*          } */
 
-        /* defer evaluation of resources in interactive submission. */
-
-        /* ORNL WRAPPER */
-
-/*         #define TMPLINE_LEN 4096 */
-        if (hash_find(ji->job_attr, ATTR_inter, &tmp_job_info))
-/*         if (Interact_opt == 1) */
-          {
-
-          /* Queue interactive resources to temp file. */
-          char tmpLine[TMPLINE_LEN];
-
-          strcpy(tmpLine, tmpResources);
-
-          sprintf(tmpResources, "%s#PBS -l %s\n",
-                  tmpLine,
-                  optarg);
-          }
-        else
-          {
-          /* The check for proc in value was here */
-          if (add_verify_resources(&ji->mm, &ji->res_attr, optarg, data_type) != 0)
-            print_qsub_usage_exit("qsub: illegal -l value");
+        /* The check for proc in value was here */
+        if (add_verify_resources(&ji->mm, &ji->res_attr, optarg, data_type) != 0)
+          print_qsub_usage_exit("qsub: illegal -l value");
 /*            {                                                                  
             fprintf(stderr, "qsub: illegal -l value\n");
 
@@ -2883,7 +2863,6 @@ void process_opts(
                 }
               }  // END for (attr) 
             } */
-          }      /* END else (Interact_opt == 1) */
 
         /* END ORNL WRAPPER */
 

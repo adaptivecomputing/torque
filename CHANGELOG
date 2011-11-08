@@ -36,6 +36,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Change node_spec from an N^2 (but average 5N) algorithm to an N algorithm with respect
       to nodes. We only loop over each node once at a maximum.
   b - Set the default value for node_check_interval to 1.
+  b - Fixed qsub so it would still allow -l gpus=x as a gres. This fix was also put into 
+      3.0-fixes but the code bases for qsub are different so a merge could not be applied.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
