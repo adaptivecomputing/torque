@@ -142,7 +142,7 @@ int decode_str(
 
   if ((val != NULL) && ((len = strlen(val) + 1) > 1))
     {
-    patr->at_val.at_str = malloc((unsigned)len);
+    patr->at_val.at_str = calloc(1, (unsigned)len);
 
     if (patr->at_val.at_str == NULL)
       {
