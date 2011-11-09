@@ -3061,12 +3061,12 @@ void mom_server_update_stat(
     else
       {
       read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&ret);
-      pbs_disconnect_socket(stream);
       }
+      
+    close(stream);
   
     if (ret != DIS_SUCCESS)
       {
-      close(stream);
 
       /* FAILURE */
       if (ret == UNREAD_STATUS)
