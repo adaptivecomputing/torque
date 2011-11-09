@@ -13,7 +13,7 @@
 #include <grp.h> /* setgroups */
 #include "pbs_error.h" /* PBSE_NONE */
 #include "pbs_constants.h" /* AUTH_IP */
-#include "pbs_ifl.h" /* pbs_default */
+#include "pbs_ifl.h" /* pbs_default, PBS_BATCH_SERVICE_PORT, TRQ_AUTHD_SERVICE_PORT */
 #include "../lib/Libnet/lib_net.h" /* start_listener */
 #include "../lib/Libifl/lib_ifl.h" /* process_svr_conn */
 #include "../lib/Liblog/chk_file_sec.h" /* IamRoot */
@@ -34,8 +34,8 @@ int load_config(
     {
     printf("hostname = %s\n", tmp_ip);
     *ip = tmp_ip;
-    *t_port = 15001;
-    *d_port = 15005;
+    *t_port = PBS_BATCH_SERVICE_PORT;
+    *d_port = TRQ_AUTHD_SERVICE_PORT;
     }
   return rc;
   }

@@ -504,6 +504,10 @@
 #define PBS_SCHEDULER_SERVICE_PORT 15004
 #endif /* PBS_SCHEDULER_SERVICE_PORT */
 
+#ifndef TRQ_AUTHD_SERVICE_PORT
+#define TRQ_AUTHD_SERVICE_PORT 15005
+#endif /* TRQ_AUTHD_SERVICE_PORT */
+
 /*
  * Other misc checkpoint defines
  */

@@ -13,19 +13,19 @@ int tc_num = 0;
 
 int hash_add_item(memmgr **mm, job_data **head, char *name, char *value, int var_type, int op_type)
   {
-  if ((strcmp(name, "one_var") == 0)
+  if ((strcmp(name, "ONE_VAR") == 0)
       && (strcmp(value, "ONE_VAL") == 0)
       && (tc_num == 1))
     {
     env_add_call++;
     }
-  else if ((strcmp(name, "two_var") == 0)
+  else if ((strcmp(name, "TWO_VAR") == 0)
       && (strcmp(value, "TWO_VAL") == 0)
       && (tc_num == 1))
     {
     env_add_call++;
     }
-  else if ((strcmp(name, "three_var") == 0)
+  else if ((strcmp(name, "THREE_VAR") == 0)
       && (strcmp(value, "   ") == 0)
       && (tc_num == 1))
     {
