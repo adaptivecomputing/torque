@@ -2312,7 +2312,7 @@ void process_opts(
 #if defined(PBS_NO_POSIX_VIOLATION)
 #define GETOPT_ARGS "a:A:c:C:e:Ehj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
 #else
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfhIj:k:l:m:M:N:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfhIj:J:k:l:m:M:N:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
 #endif /* PBS_NO_POSIX_VIOLATION */
   /* Note:
    * All other #ifdef's for PBS_NO_POSIX_VIOLATION are being removed because
@@ -2759,6 +2759,10 @@ void process_opts(
 /*           set_attr(&attrib, ATTR_j, optarg); */
 /*           } */
 
+        break;
+
+      case 'J':
+        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_J, optarg, data_type);
         break;
 
       case 'k':
