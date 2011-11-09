@@ -2275,6 +2275,8 @@ void process_opts(
   int c;
   int rc = 0;
   int errflg = 0;
+  int    J_opt = FALSE;
+  int    P_opt = FALSE;
   time_t after;
   char a_value[80];
   char *keyword;
@@ -2762,7 +2764,10 @@ void process_opts(
         break;
 
       case 'J':
+
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_J, optarg, data_type);
+        J_opt = TRUE;
+
         break;
 
       case 'k':
@@ -3002,6 +3007,8 @@ void process_opts(
 
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_P, user, data_type);
 /*           set_attr(&attrib, ATTR_P, user); */
+
+          P_opt = TRUE;
           }
         else
           print_qsub_usage_exit("qsub: -P requires a user name");
@@ -3616,6 +3623,12 @@ void process_opts(
         break;
       }
     }  /* END while ((c = getopt(argc,argv,GETOPT_ARGS)) != EOF) */
+
+  if ((J_opt == TRUE) && 
+      (P_opt != TRUE))
+    {
+    print_qsub_usage_exit("The -J option can only be used in conjunction with -P");
+    }
 
   /* ORNL WRAPPER */
 
@@ -4262,8 +4275,9 @@ void print_qsub_usage_exit(char *error_msg)
     depth=<int> | dir=<path> | interval=<minutes>}... ]\n\
     [-C directive_prefix] [-d path] [-D path]\n\
     [-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\
-    [-M user_list] [-N jobname] [-o path] [-p priority] [-P proxy_user] [-q queue] \n\
-    [-r y|n] [-S path] [-t number_to_submit] [-T type]  [-u user_list] [-w] path\n";
+    [-M user_list] [-N jobname] [-o path] [-p priority] [-P proxy_user [-J <jobid]]\n\
+    [-q queue] [-r y|n] [-S path] [-t number_to_submit] [-T type]  [-u user_list]\n\
+    [-w] path\n";
 
   /* need secondary usage since there appears to be a 512 byte size limit */
 
