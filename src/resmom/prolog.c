@@ -470,19 +470,32 @@ int run_pelog(
         }
       }
 
-    if (setgroups(
-          pjob->ji_grpcache->gc_ngroup,
-          (gid_t *)pjob->ji_grpcache->gc_groups) != 0)
+    /* pjob->ji_grpcache will not be set if using LDAP and LDAP not set */
+    /* It is possible that ji_grpcache failed to allocate as well. 
+       Make sure ji_grpcache is not NULL */
+    if (pjob->ji_grpcache != NULL)
       {
-      snprintf(log_buffer,sizeof(log_buffer),
-        "setgroups() for UID = %lu failed: %s\n",
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-        strerror(errno));
+      if (setgroups(
+            pjob->ji_grpcache->gc_ngroup,
+            (gid_t *)pjob->ji_grpcache->gc_groups) != 0)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "setgroups() for UID = %lu failed: %s\n",
+          (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+          strerror(errno));
       
-      log_err(errno, id, log_buffer);
+        log_err(errno, id, log_buffer);
       
+        undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      
+        return(-1);
+        }
+      }
+    else
+      {
+      sprintf(log_buffer, "pjob->ji_grpcache is null. check_pwd likely failed.");
+      log_err(-1, id, log_buffer);
       undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
-      
       return(-1);
       }
     

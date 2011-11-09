@@ -1,5 +1,9 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+2.5.10 
+  b - Fixed a problem where pbs_mom will crash of check_pwd returns NULL. This could
+      happen for example if LDAP was down and getpwnam returns NULL.
+
 2.5.9
   e - change mom to only log "cannot find nvidia-smi in PATH" once when built
       with --enable-nvidia-gpus and running on a node that does not have Nvidia
