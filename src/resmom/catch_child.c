@@ -573,6 +573,15 @@ void scan_for_exiting(void)
           log_buffer);
         }
 
+      /* This is quasi odd. If we are in an EXITED substate then we
+         already sent the obit to the server and it replied. But
+         we have not received a PBS_BATCH_DeleteJob request from the 
+         server. So we will delete the job ourself. The server
+         does not look for a return code from PBS_BATCH_DeleteJob
+         anyway */
+      if(pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITED)
+        mom_deljob(pjob);
+
       continue;
       }
 
