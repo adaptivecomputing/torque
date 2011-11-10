@@ -192,6 +192,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 2.5.10 
   b - Fixed a problem where pbs_mom will crash of check_pwd returns NULL. This could
       happen for example if LDAP was down and getpwnam returns NULL.
+  e - Added code to delete a job on the MOM if a job is in the EXITED substate and 
+      going through the scan_for_exiting code. This happens when an obit has been
+      sent and the obit reply received by the PBS_BATCH_DeleteJob has not been 
+      received from the server on the MOM. This fix allows the MOM to delete the
+      job and free up resources even if the server for some reason does not send 
+      the delete job request.
 
 2.5.9
   e - change mom to only log "cannot find nvidia-smi in PATH" once when built
