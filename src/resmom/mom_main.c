@@ -5402,6 +5402,8 @@ int do_tcp(
 
       im_request(fd,version);
 
+      break;
+
     default:
 
       DBPRT(("%s: unknown request %d\n",
