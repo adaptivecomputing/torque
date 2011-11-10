@@ -888,33 +888,39 @@ void *req_quejob(
     if (pj->ji_wattr[JOB_ATR_job_id].at_flags & ATR_VFLAG_SET)
       {
       char *dot = strchr(pj->ji_qs.ji_jobid,'.');
-      char  tmp_extension[PBS_MAXSVRJOBID + 1];
+      char  tmp_job_id[PBS_MAXSVRJOBID + 1];
       job  *tmpjob;
 
       if (dot != NULL)
         {
-        strcpy(tmp_extension,dot);
-
-        snprintf(pj->ji_qs.ji_jobid, sizeof(pj->ji_qs.ji_jobid),
-          "%s%s",
-          pj->ji_wattr[JOB_ATR_job_id].at_val.at_str,
-          tmp_extension);
+        snprintf(tmp_job_id, sizeof(tmp_job_id),
+          "%s%s", pj->ji_wattr[JOB_ATR_job_id].at_val.at_str, dot);
         }
       else
         {
-        strcpy(pj->ji_qs.ji_jobid,pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
+        strcpy(tmp_job_id, pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
         }
 
-      if ((tmpjob = find_job(pj->ji_qs.ji_jobid)) != NULL)
+      /* make sure the job id doesn't already exist */
+      if ((tmpjob = find_job(tmp_job_id)) != NULL)
         {
+        pthread_mutex_unlock(tmpjob->ji_mutex);
+
         unlock_queue(pque, "req_quejob", "job duplication", LOGLEVEL);
         /* not unique, reject job */
         job_purge(pj);
+        
         snprintf(log_buf,sizeof(log_buf),
           "Job with id %s already exists, cannot set job id\n",
           pj->ji_qs.ji_jobid);
         req_reject(PBSE_JOBEXIST,0,preq,NULL,log_buf);
+        
         return(NULL);
+        }
+      else
+        {
+        /* now change the job id */
+        strcpy(pj->ji_qs.ji_jobid, tmp_job_id);
         }
       }
 
