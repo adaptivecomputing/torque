@@ -1372,6 +1372,7 @@ int pbsd_init(
   had = server.sv_qs.sv_numjobs;
 
   server.sv_qs.sv_numjobs = 0;
+  pthread_mutex_unlock(server.sv_qs_mutex);
 
   dir = opendir(".");
 
@@ -1474,8 +1475,6 @@ int pbsd_init(
       {
       job *pjob = (job *)Array.Data[Index];
 
-      pthread_mutex_lock(pjob->ji_mutex);
-
       if (pbsd_init_job(pjob, type) == FAILURE)
         {
         log_event(
@@ -1518,6 +1517,7 @@ int pbsd_init(
       }
 
     DArrayFree(&Array);
+    pthread_mutex_lock(server.sv_qs_mutex);
 
     if ((had != server.sv_qs.sv_numjobs) &&
         (type != RECOV_CREATE) &&
@@ -1531,11 +1531,10 @@ int pbsd_init(
       }
 
     sprintf(log_buf, msg_init_exptjobs, had, server.sv_qs.sv_numjobs);
-
+    pthread_mutex_unlock(server.sv_qs_mutex);
     log_event(logtype,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
     }  /* END else */
 
-  pthread_mutex_unlock(server.sv_qs_mutex);
 
   /* If queue_rank has gone negative, renumber all jobs and reset rank */
   if (queue_rank < 0)
@@ -2011,6 +2010,7 @@ static int pbsd_init_job(
       break;
     }    /* END switch (pjob->ji_qs.ji_substate) */
 
+
   /* if job has IP address of Mom, it may have changed */
   /* reset based on hostname                           */
 
@@ -2064,6 +2064,7 @@ static void pbsd_init_reque(
     set_statechar(pjob);
     }
 
+  pthread_mutex_lock(server.sv_qs_mutex);
   if (svr_enquejob(pjob, TRUE) == 0)
     {
     strcat(logbuf, msg_init_queued);
@@ -2090,6 +2091,8 @@ static void pbsd_init_reque(
 
     /* NOTE:  pjob freed but dangling pointer remains */
     }
+  pthread_mutex_unlock(server.sv_qs_mutex);
+
 
   return;
   }  /* END pbsd_init_reque() */
