@@ -1475,6 +1475,8 @@ int pbsd_init(
       {
       job *pjob = (job *)Array.Data[Index];
 
+      pthread_mutex_lock(pjob->ji_mutex);
+
       if (pbsd_init_job(pjob, type) == FAILURE)
         {
         log_event(
@@ -1701,8 +1703,6 @@ int pbsd_init(
   }  /* END pbsd_init() */
 
 
-
-
 /*
  * build_path - build the pathname for a PBS directory
  */
@@ -1755,9 +1755,6 @@ static char *build_path(
 
   exit(3);
   }  /* END build_path() */
-
-
-
 
 
 /*
@@ -2092,8 +2089,6 @@ static void pbsd_init_reque(
     /* NOTE:  pjob freed but dangling pointer remains */
     }
   pthread_mutex_unlock(server.sv_qs_mutex);
-
-
   return;
   }  /* END pbsd_init_reque() */
 
