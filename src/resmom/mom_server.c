@@ -4325,6 +4325,7 @@ void is_request(
 
       if (read_status_strings(stream,version) < 0)
         ret = -1;
+  
       break;
 
     default:
@@ -4351,7 +4352,6 @@ void is_request(
       }
     }
 
-  /* NYI: should this stream be closed? */
   close_conn(stream, FALSE);
   }  /* END is_request() */
 

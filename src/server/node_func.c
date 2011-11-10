@@ -3126,6 +3126,9 @@ int send_hierarchy(
     DIS_tcp_wflush(sock);
     }
 
+  svr_disconnect(con);
+  close(sock);
+
   return(ret);
   } /* END send_hierarchy() */
 
