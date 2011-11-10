@@ -57,6 +57,7 @@
 #include "port_forwarding.h"
 #include "common_cmds.h" 
 #include "u_memmgr.h" /* global memmgr for client */
+#include "../lib/Liblog/chk_file_sec.h" /* IamRoot */
 
 /* START: These are needed for bailout purposes */
 int inter_sock = -1;
@@ -4443,6 +4444,11 @@ void main_func(
    */
 
 
+  if (IamRoot() == 1)
+    {
+    printf("qsub can not be run as root\n");
+    exit(1);
+    }
   /* (5) adds all env variables to a tmp hash */
   set_env_opts(&ji.mm, &ji.user_attr, envp);
   /* (6) set option default job values */

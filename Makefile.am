@@ -24,12 +24,15 @@ EXTRA_DIST = CHANGELOG \
 	contrib/init.d/debian.pbs_mom \
 	contrib/init.d/debian.pbs_sched \
 	contrib/init.d/debian.pbs_server \
+	contrib/init.d/debian.trqauthd \
 	contrib/init.d/pbs_mom \
 	contrib/init.d/pbs_sched \
 	contrib/init.d/pbs_server \
+	contrib/init.d/trqauthd \
 	contrib/init.d/suse.pbs_mom \
 	contrib/init.d/suse.pbs_sched \
 	contrib/init.d/suse.pbs_server \
+	contrib/init.d/suse.trqauthd \
 	contrib/pam_authuser.tar.gz \
 	contrib/pbstop \
 	contrib/pbsweb-lite-0.95.tar.gz \
