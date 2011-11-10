@@ -140,7 +140,7 @@ static int      job_log_auto_switch = 0;
 static int      joblog_open_day;
 static FILE     *joblogfile;  /* open stream for log file */
 static char     *joblogpath = NULL;
-static volatile int  job_log_opened = 0;
+static int  job_log_opened = 0;
 
 /*
  * the order of these names MUST match the defintions of
