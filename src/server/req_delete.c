@@ -667,6 +667,113 @@ struct batch_request *duplicate_request(
 
 
 
+int handle_delete_all(
+
+  struct batch_request *preq,
+  struct batch_request *preq_tmp,
+  char                 *Msg)
+
+  {
+  /* don't use the actual request so we can reply about all of the jobs */
+  struct batch_request *preq_dup = duplicate_request(preq);
+  job                  *pjob;
+  int                   iter = -1;
+  int                   failed_deletes = 0;
+  int                   total_jobs = 0;
+  int                   rc;
+  char                  tmpLine[MAXLINE];
+
+  preq_dup->rq_noreply = TRUE;
+  
+  if (preq_tmp != NULL)
+    {
+    reply_ack(preq_tmp);
+    preq->rq_noreply = TRUE; /* set for no more replies */
+    }
+  
+  while ((pjob = next_job(&alljobs,&iter)) != NULL)
+    {
+    if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+      {
+      pthread_mutex_unlock(pjob->ji_mutex);
+      
+      continue;
+      }
+    
+    total_jobs++;
+    
+    /* mutex is freed below */
+    if ((rc = forced_jobpurge(pjob,preq_dup)) == PBSE_NONE)
+      rc = execute_job_delete(pjob,Msg,preq_dup);
+    
+    if (rc != PURGE_SUCCESS)
+      {
+      /* duplicate the preq so we don't have a problem with double frees */
+      preq_dup = duplicate_request(preq);
+      preq_dup->rq_noreply = TRUE;
+      
+      if ((rc == MOM_DELETE) ||
+          (rc == ROUTE_DELETE))
+        failed_deletes++;
+      }
+    }
+  
+  if (failed_deletes == 0)
+    reply_ack(preq);
+  else
+    {
+    snprintf(tmpLine,sizeof(tmpLine),"Deletes failed for %d of %d jobs",
+      failed_deletes,
+      total_jobs);
+    
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, tmpLine);
+    }
+
+  return(PBSE_NONE);
+  } /* END handle_delete_all() */
+
+
+
+
+int handle_single_delete(
+
+  struct batch_request *preq,
+  struct batch_request *preq_tmp,
+  char                 *Msg)
+
+  {
+  int   rc= -1;
+  char *jobid = preq->rq_ind.rq_delete.rq_objname;
+  job  *pjob = find_job(jobid);
+
+  if (pjob == NULL)
+    {
+    log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jobid,pbse_to_txt(PBSE_UNKJOBID));
+    
+    req_reject(PBSE_UNKJOBID, 0, preq, NULL, "cannot locate job");
+    }
+  else
+    {
+    if (preq_tmp != NULL)
+      {
+      reply_ack(preq_tmp);
+      preq->rq_noreply = TRUE; /* set for no more replies */
+      }
+    
+    /* mutex is freed below */
+    if ((rc = forced_jobpurge(pjob,preq)) == PBSE_NONE)
+      rc = execute_job_delete(pjob,Msg,preq);
+    }
+  
+  if ((rc == PBSE_NONE) ||
+      (rc == PURGE_SUCCESS))
+    reply_ack(preq);
+
+  return(PBSE_NONE);
+  } /* END handle_single_delete() */
+
+
+
 
 /*
  * req_deletejob - service the Delete Job Request
@@ -714,15 +821,8 @@ void req_deletejob(
   struct batch_request *preq)  /* I */
 
   {
-  job                  *pjob;
-  int                   rc = -1;
-  int                   iter = -1;
-  int                   failed_deletes = 0;
-  int                   total_jobs = 0;
-  char                 *jobid;
   char                 *Msg = NULL;
   struct batch_request *preq_tmp = NULL;
-  char                  tmpLine[MAXPATHLEN];
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check if we are getting a purgecomplete from scheduler */
@@ -769,82 +869,11 @@ void req_deletejob(
 
   if (strcasecmp(preq->rq_ind.rq_delete.rq_objname,"all") == 0)
     {
-    /* don't use the actual request so we can reply about all of the jobs */
-    struct batch_request *preq_dup = duplicate_request(preq);
-    preq_dup->rq_noreply = TRUE;
-
-    if (preq_tmp != NULL)
-      {
-      reply_ack(preq_tmp);
-      preq->rq_noreply = TRUE; /* set for no more replies */
-      }
-
-    while ((pjob = next_job(&alljobs,&iter)) != NULL)
-      {
-      if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
-        {
-        pthread_mutex_unlock(pjob->ji_mutex);
-
-        continue;
-        }
-
-      total_jobs++;
-
-      /* mutex is freed below */
-      if ((rc = forced_jobpurge(pjob,preq_dup)) == PBSE_NONE)
-        rc = execute_job_delete(pjob,Msg,preq_dup);
-      
-      if (rc != PURGE_SUCCESS)
-        {
-        /* duplicate the preq so we don't have a problem with double frees */
-        preq_dup = duplicate_request(preq);
-        preq_dup->rq_noreply = TRUE;
-
-        if ((rc == MOM_DELETE) ||
-            (rc == ROUTE_DELETE))
-          failed_deletes++;
-        }
-      }
-
-    if (failed_deletes == 0)
-      reply_ack(preq);
-    else
-      {
-      snprintf(tmpLine,sizeof(tmpLine),"Deletes failed for %d of %d jobs",
-        failed_deletes,
-        total_jobs);
-
-      req_reject(PBSE_SYSTEM, 0, preq, NULL, tmpLine);
-      }
+    handle_delete_all(preq, preq_tmp, Msg);
     }
   else
     {
-    jobid = preq->rq_ind.rq_delete.rq_objname;
-
-    pjob = find_job(jobid);
-   
-    if (pjob == NULL)
-      {
-      log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jobid,pbse_to_txt(PBSE_UNKJOBID));
-      
-      req_reject(PBSE_UNKJOBID, 0, preq, NULL, "cannot locate job");
-      }
-    else
-      {
-      if (preq_tmp != NULL)
-        {
-        reply_ack(preq_tmp);
-        preq->rq_noreply = TRUE; /* set for no more replies */
-        }
-
-      /* mutex is freed below */
-      if ((rc = forced_jobpurge(pjob,preq)) == PBSE_NONE)
-        rc = execute_job_delete(pjob,Msg,preq);
-      }
-
-    if ((rc == PBSE_NONE) ||
-        (rc == PURGE_SUCCESS))
-      reply_ack(preq);
+    handle_single_delete(preq, preq_tmp, Msg);
     }
 
   return;
@@ -1134,8 +1163,6 @@ static int forced_jobpurge(
         }
       }
     }
-
-  pthread_mutex_unlock(pjob->ji_mutex);
 
   return(PBSE_NONE);
   }  /* END forced_jobpurge() */
