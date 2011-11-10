@@ -4444,7 +4444,7 @@ void main_func(
    */
 
 
-  if (IamRoot() == 1)
+  if ((getuid() == 0) && (geteuid() == 0))
     {
     printf("qsub can not be run as root\n");
     exit(1);
