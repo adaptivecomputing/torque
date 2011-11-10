@@ -1553,7 +1553,7 @@ void update_array_statuses(job_array *owned)
           {
           pa->jobs[i] = NULL;
 
-          pthread_mutex_lock(pj->ji_mutex);
+          pthread_mutex_unlock(pj->ji_mutex);
 
           continue;
           }
