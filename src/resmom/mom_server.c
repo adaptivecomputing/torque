@@ -4325,6 +4325,7 @@ void is_request(
 
       if (read_status_strings(stream,version) < 0)
         ret = -1;
+      break;
 
     default:
 
