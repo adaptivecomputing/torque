@@ -57,7 +57,6 @@
 #include "port_forwarding.h"
 #include "common_cmds.h" 
 #include "u_memmgr.h" /* global memmgr for client */
-#include "../lib/Liblog/chk_file_sec.h" /* IamRoot */
 
 /* START: These are needed for bailout purposes */
 int inter_sock = -1;
@@ -4444,11 +4443,6 @@ void main_func(
    */
 
 
-  if ((getuid() == 0) && (geteuid() == 0))
-    {
-    printf("qsub can not be run as root\n");
-    exit(1);
-    }
   /* (5) adds all env variables to a tmp hash */
   set_env_opts(&ji.mm, &ji.user_attr, envp);
   /* (6) set option default job values */
@@ -4685,6 +4679,28 @@ void main_func(
     }
   /* if walltime range specified, break into minwclimit and walltime */
   set_minwclimit(&ji.mm, &ji.job_attr);
+
+
+  /* Root user submission not allowed */
+  local_errno = PBSE_NONE;
+  if (hash_find(ji.job_attr, ATTR_P, &tmp_job_info) == TRUE)
+    {
+    if (strcmp("root", tmp_job_info->value) == 0)
+      {
+      local_errno = PBSE_BADUSER;
+      }
+    }
+  else if ((getuid() == 0) && (geteuid() == 0))
+    {
+    local_errno = PBSE_BADUSER;
+    }
+  if (local_errno != PBSE_NONE)
+    {
+    printf("qsub can not be run as root\n");
+    unlink(script_tmp);
+    memmgr_destroy(&ji.mm);
+    exit(1);
+    }
 
   /* connect to the server */
 
