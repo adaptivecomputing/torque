@@ -263,6 +263,7 @@ int execute_job_delete(
   struct batch_request *preq)            /* I */
 
   {
+  static char      *id = "execute_job_delete";
   struct work_task *pwtold;
   struct work_task *pwtnew;
   struct work_task *pwtcheck;
@@ -612,7 +613,7 @@ jump:
       {
       pque->qu_numcompleted++;
 
-      unlock_queue(pque, "execute_job_delete", NULL, LOGLEVEL);
+      unlock_queue(pque, id, NULL, LOGLEVEL);
 
       KeepSeconds = attr_ifelse_long(
                     &pque->qu_attr[QE_ATR_KeepCompleted],

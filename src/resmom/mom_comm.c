@@ -8750,6 +8750,13 @@ int read_status_strings(
   while (((str = disrst(fds,&rc)) != NULL) &&
          (rc == DIS_SUCCESS))
     {
+    /* terminate on end message */
+    if (!strcmp(str, IS_EOL_MESSAGE))
+      {
+      free(str);
+      break;
+      }
+
     /* place each string into the buffer */
     copy_to_end_of_dynamic_string(rn->statuses,str);
 
