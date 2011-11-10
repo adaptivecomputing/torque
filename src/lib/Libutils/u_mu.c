@@ -28,6 +28,40 @@ int is_whitespace(
 
 
 
+char *trim(
+
+  char *str) /* M */
+
+  {
+  char *front_ptr;
+  char *end_ptr;
+
+  if (str == NULL)
+    return(NULL);
+
+  front_ptr = str;
+  end_ptr = str + strlen(str);
+
+  while ((is_whitespace(*front_ptr) == TRUE) &&
+         (front_ptr < end_ptr))
+    {
+    front_ptr++;
+    }
+
+  while ((is_whitespace(*end_ptr) == TRUE) &&
+         (end_ptr > front_ptr))
+    {
+    *end_ptr = '\0';
+    end_ptr--;
+    }
+
+  return(front_ptr);
+  } /* END trim() */
+
+
+
+
+
 /**
  * similar to MUSNPrintF in moab
 */

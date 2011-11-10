@@ -136,6 +136,7 @@ char   mom_alias[PBS_MAXHOSTNAME + 1];
 char   TMOMRejectConn[MAXLINE];   /* most recent rejected connection */
 char   mom_short_name[PBS_MAXHOSTNAME + 1];
 int    num_var_env;
+int          needs_cluster_addrs;
 char        *path_epilog;
 char        *path_epilogp;
 char        *path_epiloguser;
@@ -7358,6 +7359,8 @@ int setup_program_environment(void)
     }  /* END if (ptr != NULL) */
 
   initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
+
+  needs_cluster_addrs = TRUE;
 
   /* allocate status strings if needed */
   received_statuses = initialize_resizable_array(2);

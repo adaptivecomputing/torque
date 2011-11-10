@@ -171,6 +171,7 @@ extern struct server server;
 extern tlist_head svr_newnodes;
 extern attribute_def  node_attr_def[];   /* node attributes defs */
 extern int            SvrNodeCt;
+extern hello_container hellos;
 
 extern int multi_mom;
 
@@ -1151,6 +1152,13 @@ int is_stat_get(
     if (!strncmp(ret_info, IS_EOL_MESSAGE, strlen(IS_EOL_MESSAGE)))
       {
       /* Skip this one */
+      }
+    else if (!strcmp(ret_info, "first_update=true"))
+      {
+      /* mom is requesting that we send the mom hierarchy file to her */
+      char *node_name = strdup(np->nd_name);
+      remove_hello(&hellos, node_name);
+      enqueue_threadpool_request(send_hierarchy_threadtask, node_name);
       }
     else if (decode_arst(&temp, NULL, NULL, ret_info, 0))
       {
@@ -2274,7 +2282,6 @@ void *is_request_work(
 
   switch (command)
     {
-
     case IS_NULL:  /* a ping from server */
 
       DBPRT(("%s: IS_NULL\n",

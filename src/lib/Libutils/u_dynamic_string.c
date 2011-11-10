@@ -425,6 +425,37 @@ dynamic_string *get_dynamic_string(
 
 
 
+int delete_last_word_from_dynamic_string(
+
+  dynamic_string *ds)
+
+  {
+  char *curr;
+
+  if (ds->used <= 0)
+    return(-1);
+
+  curr = ds->str + ds->used;
+
+  if (*curr == '\0')
+    {
+    curr--;
+    ds->used -= 1;
+    }
+
+  /* walk backwards across str until you hit a null terminator */
+  while ((curr > ds->str) &&
+         (*curr != '\0'))
+    {
+    curr--;
+    ds->used -= 1;
+    }
+
+  return(PBSE_NONE);
+  } /* END delete_last_word_from_dynamic_string() */
+
+
+
 
 /* 
  * frees a dynamic string 

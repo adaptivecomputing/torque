@@ -117,6 +117,7 @@
 #include "pbs_nodes.h"
 #include "pbs_error.h"
 #include "log.h"
+#include "dis.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "pbs_proto.h"
@@ -145,6 +146,7 @@ extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern AvlTree          ipaddrs;
 extern AvlTree          streams;
+extern dynamic_string  *hierarchy_holder;
 
 
 /* Functions in this file
@@ -3003,11 +3005,215 @@ struct pbsnode *next_host(
 
   pthread_mutex_unlock(an->allnodes_mutex);
 
-  if ((pnode != NULL) && (pnode != held))
+  if ((pnode != NULL) && 
+      (pnode != held))
     lock_node(pnode, "next_host", NULL, LOGLEVEL);
 
   return(pnode);
   } /* END next_host() */
 
 
+
+
+void *send_hierarchy_threadtask(
+
+  void *vp)
+
+  {
+  static char    *id = "send_hierarchy_threadtask";
+  char           *name = (char *)vp;
+  struct pbsnode *pnode = find_nodebyname(name);
+
+  send_hierarchy(pnode);
+
+  unlock_node(pnode, id, NULL, 0);
+
+  return(NULL);
+  } /* END send_hierarchy_threadtask() */
+
+
+
+
+int send_hierarchy(
+
+  struct pbsnode *pnode)
+
+  {
+  static char *id = "send_hierarchy";
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  char        *string;
+  int          ret;
+  int          con;
+  int          sock;
+  pbs_net_t    addr = get_hostaddr(&ret, pnode->nd_name);
+/*  int          num_retries = 5;
+  int          retry_count = 0;*/
+
+/*  while (retry_count <= num_retries)
+    {
+    if ((con = svr_connect(addr, pnode->rm_port, &ret, NULL, 0, ToServerDIS)) == PBS_NET_RC_FATAL)
+      {*/
+      /* FAILURE */
+/*      snprintf(log_buf, sizeof(log_buf),
+        "Fatal error when trying to send mom hierarchy to host %s", pnode->nd_name);
+      log_err(-1, id, log_buf);
+
+      return(-1);
+      }
+    else if (con >= 0)
+      {*/
+      /* successful */
+/*      break;
+      }
+    }*/
+
+  /* for now we'll only try once as this is going to be tried once each time in the loop */
+  con = svr_connect(addr, pnode->nd_mom_rm_port, &ret, pnode, 0, ToServerDIS);
+
+  if (con < 0)
+    {
+    /* could not connect */
+    snprintf(log_buf, sizeof(log_buf),
+      "Could not send mom hierarchy to host %s", /* - quiting after 5 retries",*/
+      pnode->nd_name);
+    log_err(-1, id, log_buf);
+
+    return(-1);
+    }
+
+  pthread_mutex_lock(connection[con].ch_mutex);
+  sock = connection[con].ch_socket;
+  pthread_mutex_unlock(connection[con].ch_mutex);
+
+  DIS_tcp_setup(sock);
+
+  /* write the protocol, version and command */
+  if ((ret = diswsi(sock, IS_PROTOCOL)) == DIS_SUCCESS)
+    {
+    if ((ret = diswsi(sock, IS_PROTOCOL_VER)) == DIS_SUCCESS)
+      {
+      ret = diswsi(sock, IS_CLUSTER_ADDRS);
+      }
+    }
+
+  if (ret == DIS_SUCCESS)
+    {
+    for (string = hierarchy_holder->str; string != NULL && *string != '\0'; string += strlen(string) + 1)
+      {
+      if ((ret = diswst(sock, string)) != DIS_SUCCESS)
+        {
+        if (ret > 0)
+          {
+          snprintf(log_buf, sizeof(log_buf),
+            "Could not send mom hierarchy to host %s - %s",
+            pnode->nd_name, dis_emsg[ret]);
+          }
+        else
+          {
+          snprintf(log_buf, sizeof(log_buf),
+            "Unknown error when sending mom hierarchy to host %s",
+            pnode->nd_name);
+          }
+        
+        log_err(-1, id, log_buf);
+        
+        break;
+        }
+      }
+
+    diswst(sock, IS_EOL_MESSAGE);
+
+    DIS_tcp_wflush(sock);
+    }
+
+  return(ret);
+  } /* END send_hierarchy() */
+
+
+
+
+void initialize_hello_container(
+
+  hello_container *hc)
+
+  {
+  hc->ra = initialize_resizable_array(INITIAL_NODE_SIZE);
+
+  hc->hello_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(hc->hello_mutex, NULL);
+  } /* END initialize_hello_container() */
+
+
+
+
+int needs_hello(
+
+  hello_container *hc,
+  char            *node_name)
+
+  {
+  int needs;
+
+  pthread_mutex_lock(hc->hello_mutex);
+  needs = is_present(hc->ra, node_name);
+  pthread_mutex_unlock(hc->hello_mutex);
+
+  return(needs);
+  } /* END needs_hello */
+
+
+
+
+int add_hello(
+
+  hello_container *hc,
+  char            *node_name)
+
+  {
+  int rc;
+
+  pthread_mutex_lock(hc->hello_mutex);
+
+  if ((rc = insert_thing(hc->ra, node_name)) == -1)
+    rc = ENOMEM;
+
+  pthread_mutex_unlock(hc->hello_mutex);
+
+  return(rc);
+  } /* END add_hello() */
+
+
+
+
+char *pop_hello(
+
+  hello_container *hc)
+
+  {
+  char *name;
+
+  pthread_mutex_lock(hc->hello_mutex);
+  name = (char *)pop_thing(hc->ra);
+  pthread_mutex_unlock(hc->hello_mutex);
+
+  return(name);
+  } /* END pop_hello() */
+
+
+
+
+int remove_hello(
+
+  hello_container *hc,
+  char            *node_name)
+
+  {
+  int rc;
+
+  pthread_mutex_lock(hc->hello_mutex);
+  rc = remove_thing(hc->ra, node_name);
+  pthread_mutex_unlock(hc->hello_mutex);
+
+  return(rc);
+  } /* END remove_hello() */
 

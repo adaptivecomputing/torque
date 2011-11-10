@@ -261,35 +261,36 @@ int            mom_server_count = 0;
 pbs_net_t      down_svraddrs[PBS_MAXSERVER];
 
 
-extern unsigned int default_server_port;
-extern char  mom_host[];
-extern char  *path_jobs;
-extern char  *path_home;
-extern  char            *path_spool;
-extern unsigned int pbs_mom_port;
-extern unsigned int pbs_rm_port;
-extern unsigned int pbs_tm_port;
-extern int             internal_state;
-extern int             LOGLEVEL;
-extern char            PBSNodeCheckPath[1024];
-extern int             PBSNodeCheckInterval;
-char                   TORQUE_JData[MMAX_LINE];
-extern char            PBSNodeMsgBuf[1024];
-extern int             received_hello_count[];
-extern char            TMOMRejectConn[];
-extern time_t          LastServerUpdateTime;
-extern int             ServerStatUpdateInterval;
-extern long            system_ncpus;
-extern int             alarm_time; /* time before alarm */
-extern int             rm_errno;
-extern time_t          time_now;
-extern int             verbositylevel;
-extern AvlTree         okclients;
-extern tlist_head      svr_alljobs;
-extern tlist_head      mom_polljobs;
+extern unsigned int        default_server_port;
+extern char                mom_host[];
+extern char               *path_jobs;
+extern char               *path_home;
+extern  char              *path_spool;
+extern unsigned int        pbs_mom_port;
+extern unsigned int        pbs_rm_port;
+extern unsigned int        pbs_tm_port;
+extern int                 internal_state;
+extern int                 LOGLEVEL;
+extern char                PBSNodeCheckPath[1024];
+extern int                 PBSNodeCheckInterval;
+char                       TORQUE_JData[MMAX_LINE];
+extern char                PBSNodeMsgBuf[1024];
+extern int                 received_hello_count[];
+extern char                TMOMRejectConn[];
+extern time_t              LastServerUpdateTime;
+extern int                 ServerStatUpdateInterval;
+extern long                system_ncpus;
+extern int                 alarm_time; /* time before alarm */
+extern int                 rm_errno;
+extern time_t              time_now;
+extern int                 verbositylevel;
+extern AvlTree             okclients;
+extern tlist_head          svr_alljobs;
+extern tlist_head          mom_polljobs;
 extern char                mom_alias[];
 extern int                 updates_waiting_to_send;
 time_t                     LastUpdateAttempt;
+extern int                 needs_cluster_addrs;
 extern int                 UpdateFailCount;
 extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
@@ -2864,6 +2865,11 @@ int write_update_header(
         
         if ((ret = diswst(stream,buf)) != DIS_SUCCESS)
           mom_server_stream_error(stream, name, id, "writing status string");
+        else if (needs_cluster_addrs == TRUE)
+          {
+          if ((ret = diswst(stream, "first_update=true")) != DIS_SUCCESS)
+            mom_server_stream_error(stream, name, id, "writing status string");
+          }
         }
       }
     }
@@ -3061,6 +3067,8 @@ void mom_server_update_stat(
     else
       {
       read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&ret);
+
+      needs_cluster_addrs = FALSE;
       }
       
     close(stream);
@@ -4001,6 +4009,177 @@ void pass_along_hellos(
 
 
 
+int process_host_name(
+
+  char *hostname,
+  int   path,
+  int   level,
+  int   path_complete)
+
+  {
+  static char        *id = "process_host_name";
+  char               *colon;
+  unsigned short      rm_port;
+  unsigned short      service_port;
+  unsigned long       ipaddr;
+  struct addrinfo    *addr_info;
+  struct sockaddr_in  sa;
+      
+  service_port = PBS_MOM_SERVICE_PORT;
+  rm_port      = PBS_MANAGER_SERVICE_PORT;
+  
+  if ((colon = strchr(hostname, ':')) != NULL)
+    {
+    *colon = '\0';
+    service_port = (unsigned short)atoi(colon+1);
+    
+    if ((colon = strchr(colon+1, ';')) != NULL)
+      rm_port = atoi(colon+1);
+    }
+  
+  if (getaddrinfo(hostname, NULL, NULL, &addr_info) == 0)
+    {
+    sa.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+    ipaddr      = ntohl(sa.sin_addr.s_addr);
+    
+    if (path_complete == FALSE)
+      add_network_entry(mh, hostname, addr_info, rm_port, service_port, path, level);
+
+    freeaddrinfo(addr_info);
+
+    /* add to acceptable host tree */
+    okclients = AVL_insert(ipaddr, rm_port, NULL, okclients);
+    }
+  else
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Bad entry in mom_hierarchy file, could not resolve host %s",
+      hostname);
+
+    log_err(PBSE_BADHOST, id, log_buffer);
+    }
+
+  return(PBSE_NONE);
+  } /* END process_host_name() */
+
+
+
+
+int process_level_string(
+
+  char *str,
+  int   path,
+  int   level,
+  int  *path_complete)
+
+  {
+  char *delims = ",";
+  char *host_tok;
+  int   rc = PBSE_NONE;
+  int   temp_rc;
+
+  if (strstr(str, mom_alias) != NULL)
+    {
+    /* we only need to store the path up to the level that includes ourselves */
+    *path_complete = TRUE;
+    }
+
+  host_tok = strtok(str, delims);
+
+  while (host_tok != NULL)
+    {
+    temp_rc = process_host_name(host_tok, path, level, *path_complete);
+
+    if (rc == PBSE_NONE)
+      rc = temp_rc;
+
+    host_tok = strtok(NULL, delims);
+    }
+
+  return(rc);
+  } /* END process_level_string() */
+
+
+
+
+
+int read_cluster_addresses(
+
+  int stream,
+  int version)
+
+  {
+  int   i;
+  int   j;
+  int   rc;
+  int   level = -1;
+  int   path_index  = -1;
+  int   path_complete = FALSE;
+  char *str;
+
+  if (mh != NULL)
+    free(mh);
+
+  mh = initialize_mom_hierarchy();
+
+  /* NYI: fix this so that we don't add the level that we are on */
+  while (((str = disrst(stream, &rc)) != NULL) &&
+         (rc == DIS_SUCCESS))
+    {
+    if (!strcmp(str, "<sp>"))
+      {
+      path_index++;
+      level = -1;
+      }
+    else if (!strcmp(str, "<sl>"))
+      {
+      level++;
+      }
+    else if ((!strcmp(str, "</sl>")) ||
+             (!strcmp(str, "</sp>")))
+      {
+      /* NO-OP */
+      }
+    else if (!strcmp(str, IS_EOL_MESSAGE))
+      {
+      /* done */
+      break;
+      }
+    else
+      {
+      /* receiving a level */
+      process_level_string(str, path_index, level, &path_complete);
+      }
+
+    free(str);
+    } /* END reading input from stream */
+
+  needs_cluster_addrs = FALSE;
+  send_update_within_ten();
+
+  /* now re-order the paths, the shallowest being first */
+  for (i = 0; i < path_index - 1; i++)
+    {
+    resizable_array *path = mh->paths->slots[i].item;
+    resizable_array *other;
+    
+    for (j = i + 1; j < path_index; j++)
+      {
+      other = mh->paths->slots[j].item;
+      if (other->num < path->num)
+        {
+        /* swap positions */
+        swap_things(mh->paths, path, other);
+        }
+      }
+    }
+
+  return(PBSE_NONE);
+  } /* END read_cluster_addresses() */
+
+
+
+
 
 /**
  * Request is coming from another server (i.e., pbs_server) over a DIS 
@@ -4132,6 +4311,13 @@ void is_request(
 
       break;
 
+    case IS_CLUSTER_ADDRS:
+
+      /* server is sending the mom hierarchy to me */
+      ret = read_cluster_addresses(stream, version);
+
+      break;
+
     case IS_STATUS:
 
       if (read_status_strings(stream,version) < 0)
@@ -4140,7 +4326,7 @@ void is_request(
     default:
 
       sprintf(log_buffer, "unknown command %d sent",
-              command);
+        command);
 
       log_ext(-1,id,log_buffer,LOG_ALERT);
 

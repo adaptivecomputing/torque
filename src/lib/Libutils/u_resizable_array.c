@@ -625,6 +625,16 @@ int get_index(
 
 
 
+void free_resizable_array(
+
+  resizable_array *ra)
+
+  {
+  free(ra->slots);
+  free(ra);
+  } /* END resizable_array() */
+
+
 
 void *get_thing_from_index(
 

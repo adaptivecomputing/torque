@@ -205,7 +205,7 @@ struct gpusubn
   {
   struct job     *pjob;   /* job on this gpu subnode */
   unsigned short  inuse;  /* 1 if this node is in use, 0 otherwise */
-  enum gpstatit	  state;  /* gpu state determined by server */
+  enum gpstatit   state;  /* gpu state determined by server */
   enum gpmodeit   mode;   /* gpu mode from hardware */
   int             driver_ver;  /* Driver version reported from hardware */
   enum psit       flag;   /* same as for pbssubn */
@@ -333,14 +333,31 @@ struct pbsnode *next_host(all_nodes *,int *,struct pbsnode *);
 
 
 
+typedef struct hello_container
+  {
+  resizable_array *ra;
+  pthread_mutex_t *hello_mutex;
+  } hello_container;
+
+
+void   initialize_hello_container(hello_container *);
+int    needs_hello(hello_container *, char *);
+int    add_hello(hello_container *, char *);
+char  *pop_hello(hello_container *);
+int    remove_hello(hello_container *, char *);
+int    send_hierarchy(struct pbsnode *);
+void  *send_hierarchy_threadtask(void *);
+
+
+
 struct howl
   {
-  char   	*name;
-  int     	order;
-  int     	index;
-  unsigned short	port;
+  char           *name;
+  int             order;
+  int             index;
+  unsigned short  port;
 
-  struct howl *next;
+  struct howl    *next;
   };
 
 
@@ -357,13 +374,13 @@ typedef struct tree_t
 
 typedef struct newtree_t
   {
-  u_long	key;			/* value used to be stored and sorted */
-  int		**index;		/* optional. pointer to array of newtree_t structures*/
-  struct pbsnode *nodep;
+  u_long             key;      /* value used to be stored and sorted */
+  int              **index;    /* optional. pointer to array of newtree_t structures*/
+  struct pbsnode    *nodep;
 
-  struct newtree_t *parent;
-  struct newtree_t *left;
-  struct newtree_t *right;
+  struct newtree_t  *parent;
+  struct newtree_t  *left;
+  struct newtree_t  *right;
   } newtree;
 
 
@@ -385,19 +402,19 @@ int tlist(tree *, char *, int);
  * The following INUSE_ are used in both subnode.inuse and in node.nd_state
  */
 
-#define INUSE_FREE  0x00 /* Node/VP is available   */
-#define INUSE_OFFLINE  0x01 /* Node was removed by administrator */
-#define INUSE_DOWN  0x02 /* Node is down/unresponsive   */
-#define INUSE_DELETED  0x04 /* Node is "deleted"   */
-#define INUSE_RESERVE  0x08 /* VP   being reserved by scheduler */
-#define INUSE_JOB  0x10 /* VP   in use by job (exclusive use) */
-#define INUSE_JOBSHARE  0x20 /* VP   is use by job(s) (time shared) */
-#define INUSE_BUSY  0x40 /* Node is busy (high loadave)  */
+#define INUSE_FREE             0x00 /* Node/VP is available   */
+#define INUSE_OFFLINE          0x01 /* Node was removed by administrator */
+#define INUSE_DOWN             0x02 /* Node is down/unresponsive   */
+#define INUSE_DELETED          0x04 /* Node is "deleted"   */
+#define INUSE_RESERVE          0x08 /* VP   being reserved by scheduler */
+#define INUSE_JOB              0x10 /* VP   in use by job (exclusive use) */
+#define INUSE_JOBSHARE         0x20 /* VP   is use by job(s) (time shared) */
+#define INUSE_BUSY             0x40 /* Node is busy (high loadave)  */
 
-#define INUSE_UNKNOWN  0x100 /* Node has not been heard from yet */
+#define INUSE_UNKNOWN          0x100 /* Node has not been heard from yet */
 #define INUSE_NEEDS_HELLO_PING 0x200  /*node needs to be informed of a*/
 /*new qmgr created node         */
-#define INUSE_SUBNODE_MASK 0xff /* bits both in nd_state and inuse */
+#define INUSE_SUBNODE_MASK     0xff /* bits both in nd_state and inuse */
 #define INUSE_COMMON_MASK  (INUSE_OFFLINE|INUSE_DOWN)
 /* state bits that go from node to subn */
 
@@ -474,7 +491,7 @@ extern int    svr_totnodes;  /* number of nodes (hosts) */
 extern int    svr_tsnodes;  /* number of timeshared nodes */
 extern int    svr_clnodes;  /* number of cluster nodes */
 
-extern int 	  MultiMomMode; /* moms configured for multiple moms per machine */
+extern int    MultiMomMode; /* moms configured for multiple moms per machine */
 
 /*extern struct tree_t  *ipaddrs;*/
 
@@ -488,24 +505,25 @@ extern int addr_ok(pbs_net_t,struct pbsnode *);
 struct pbsnode  *find_nodebyname(char *);
 
 #ifdef BATCH_REQUEST_H 
-extern void initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
-extern void effective_node_delete(struct pbsnode *);
-extern void setup_notification(char *);
+void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
+void             effective_node_delete(struct pbsnode *);
+void             setup_notification(char *);
 
-extern struct pbssubn  *find_subnodebyname(char *);
+struct pbssubn  *find_subnodebyname(char *);
 
-extern struct pbsnode  *find_nodebynameandaltname(char *, char *);
-extern void free_prop_list(struct prop*);
-extern void free_prop_attr(attribute*);
-extern void recompute_ntype_cnts();
-extern  int create_pbs_node(char *, svrattrl *, int, int *);
-extern  int create_partial_pbs_node(char *, unsigned long, int);
-extern  int mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);
+struct pbsnode  *find_nodebynameandaltname(char *, char *);
+void             free_prop_list(struct prop*);
+void             free_prop_attr(attribute*);
+void             recompute_ntype_cnts();
+int              create_pbs_node(char *, svrattrl *, int, int *);
+int              create_partial_pbs_node(char *, unsigned long, int);
+int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);
+void            *send_hierarchy_file(void *);
 
-extern node_iterator  *get_node_iterator();
-extern void            reinitialize_node_iterator(node_iterator *);
+node_iterator   *get_node_iterator();
+void             reinitialize_node_iterator(node_iterator *);
 
-struct prop  *init_prop(char *pname);
+struct prop     *init_prop(char *pname);
 #endif /* BATCH_REQUEST_H */
 
 #endif /* PBS_NODES_H */ 

@@ -145,11 +145,12 @@ extern int is_whitespace (char);
 extern int write_buffer (char *,int,int);
 
 /* moab-like utility functions in u_mu.c */
-extern int MUSNPrintF (char **, int *, char *, ...);
-extern int MUStrNCat (char **, int *, char *);
-extern int MUSleep (long);
-extern int MUReadPipe (char *, char *, int);
-extern int is_whitespace (char);
+int   MUSNPrintF (char **, int *, char *, ...);
+int   MUStrNCat (char **, int *, char *);
+int   MUSleep (long);
+int   MUReadPipe (char *, char *, int);
+int   is_whitespace (char);
+char *trim(char *);
 
 /* MXML functions from u_MXML.c */
 extern int MXMLGetChild (mxml_t *, char *, int *, mxml_t **);

@@ -118,6 +118,8 @@
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_recov.h" /* que_recov_xml */
+#include "dynamic_string.h"
+#include "utils.h"
 
 
 /*#ifndef SIGKILL*/
@@ -171,6 +173,7 @@ extern char *path_svrdb_new;
 extern char *path_svrlog;
 extern char *path_track;
 extern char *path_nodes;
+extern char *path_mom_hierarchy;
 extern char *path_nodes_new;
 extern char *path_nodestate;
 extern char *path_nodenote;
@@ -179,16 +182,19 @@ extern char *path_checkpoint;
 extern char *path_jobinfo_log;
 
 
-extern int  queue_rank;
-extern char  server_name[];
-extern tlist_head svr_newnodes;
-extern all_tasks  task_list_timed;
-extern all_tasks  task_list_event;
-extern struct all_jobs alljobs;
-extern struct all_jobs array_summary;
-extern struct all_jobs newjobs;
-all_queues svr_queues;
-job_recycler recycler;
+extern int              queue_rank;
+extern char             server_name[];
+extern tlist_head       svr_newnodes;
+extern all_tasks        task_list_timed;
+extern all_tasks        task_list_event;
+extern struct all_jobs  alljobs;
+extern struct all_jobs  array_summary;
+extern struct all_jobs  newjobs;
+all_queues              svr_queues;
+job_recycler            recycler;
+
+dynamic_string         *hierarchy_holder;
+hello_container         hellos;
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
 extern pthread_mutex_t *listener_command_mutex;
@@ -418,6 +424,280 @@ void add_server_names_to_acl_hosts(void)
   return;
   }
 
+
+
+
+dynamic_string *make_default_hierarchy() 
+
+  {
+  static char    *id = "make_default_hierarchy";
+  struct pbsnode *pnode;
+  dynamic_string *default_hierarchy;
+  int             iter = -1;
+
+  if ((default_hierarchy = get_dynamic_string(-1, NULL)) == NULL)
+    {
+    log_err(ENOMEM, id, "Cannot allocate memory");
+    return(NULL);
+    }
+
+  copy_to_end_of_dynamic_string(default_hierarchy, "<sp>");
+  copy_to_end_of_dynamic_string(default_hierarchy, "<sl>");
+
+  while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
+    {
+    copy_to_end_of_dynamic_string(default_hierarchy, pnode->nd_name);
+    unlock_node(pnode, id, NULL, LOGLEVEL);
+    }
+
+  copy_to_end_of_dynamic_string(default_hierarchy, "</sp>");
+  copy_to_end_of_dynamic_string(default_hierarchy, "</sl>");
+
+  return(default_hierarchy);
+  } /* END make_default_hierarchy() */
+
+
+
+
+
+int can_resolve_hostname(
+
+  char *hostname)
+
+  {
+  char            *colon;
+  struct addrinfo *addr_info;
+  int              can_resolve = FALSE;
+
+  if ((colon = strchr(hostname, ':')) != NULL)
+    *colon = '\0';
+
+  if (getaddrinfo(hostname, NULL, NULL, &addr_info) == 0)
+    {
+    can_resolve = TRUE;
+    freeaddrinfo(addr_info);
+    }
+
+  if (colon != NULL)
+    *colon = ':';
+
+  return(can_resolve);
+  } /* END can_resolve_hostname() */
+
+
+
+
+int handle_level(
+    
+  char           *level_iter,
+  dynamic_string *send_format)
+
+  {
+  char           *id = "handle_level";
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  char           *delims = ",";
+  char           *host_tok;
+  dynamic_string *level_buf;
+
+  if ((level_buf = get_dynamic_string(-1, NULL)) == NULL)
+    {
+    log_err(ENOMEM, id, "Cannot allocate memory");
+    return(ENOMEM);
+    }
+
+  copy_to_end_of_dynamic_string(send_format, "<sl>");
+      
+  /* find each hostname */
+  host_tok = strtok(level_iter, delims);
+
+  while (host_tok != NULL)
+    {
+    host_tok = trim(host_tok);
+
+    if (can_resolve_hostname(host_tok) == FALSE)
+      {
+      free_dynamic_string(send_format);
+      snprintf(log_buf, sizeof(log_buf),
+        "While parsing the mom hierarchy file, cannot resolve hostname %s",
+        host_tok);
+      log_err(-1, id, log_buf);
+      }
+    else
+      {
+      if (level_buf->used > 0)
+        append_dynamic_string(level_buf, ",");
+
+      append_dynamic_string(level_buf, host_tok);
+      }
+
+    host_tok = strtok(NULL, delims);
+    }
+     
+  copy_to_end_of_dynamic_string(send_format, level_buf->str);
+  copy_to_end_of_dynamic_string(send_format, "</sl>");
+
+  free_dynamic_string(level_buf);
+
+  return(PBSE_NONE);
+  } /* END handle_level() */
+
+
+
+
+int handle_path(
+
+  char           *path_iter,
+  dynamic_string *send_format)
+
+  {
+  char *id = "handle_path";
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char *level_parent;
+  char *level_child;
+
+  int   level_index = 0;
+
+  copy_to_end_of_dynamic_string(send_format, "<sp>");
+  
+  /* iterate over each level in the path */
+  while (get_parent_and_child(path_iter,&level_parent,&level_child,&path_iter) == PBSE_NONE)
+    {
+    if (!strncmp(level_parent,"level",strlen("level")))
+      {
+      handle_level(level_child, send_format);
+  
+      level_index++;
+      }
+    else
+      {
+      /* non-fatal error */
+      snprintf(log_buf, sizeof(log_buf),
+        "Found noise in the mom hierarchy file. Ignoring <%s>%s</%s>",
+        level_parent, level_child, level_parent);
+      log_err(-1, id, log_buf);
+      }
+    }
+  
+  if (level_index == 0)
+    {
+    /* empty level, delete the <sp> */
+    delete_last_word_from_dynamic_string(send_format);
+    }
+  else
+    {
+    /* close path */
+    copy_to_end_of_dynamic_string(send_format, "</sp>");
+    }
+
+  return(PBSE_NONE);
+  } /* END handle_path() */
+
+
+
+
+dynamic_string *parse_mom_hierarchy(
+    
+  int fds)
+
+  {
+  static char    *id = "parse_mom_hierarchy";
+  int             bytes_read;
+  char            buffer[MAXLINE<<10];
+  char           *current;
+  char           *parent;
+  char           *child;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  dynamic_string *send_format = NULL;
+
+  if ((bytes_read = read(fds, buffer, sizeof(buffer))) < 0)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Unable to read from %s", path_mom_hierarchy);
+    log_err(errno, id, log_buf);
+
+    return(NULL);
+    }
+  
+  if ((send_format = get_dynamic_string(-1, NULL)) == NULL)
+    {
+    log_err(ENOMEM, id, "Cannot allocate memory");
+    return(NULL);
+    }
+
+  current = buffer;
+
+  while (get_parent_and_child(current, &parent, &child, &current) == PBSE_NONE)
+    {
+    if (!strncmp(parent,"path",strlen("path")))
+      {
+      handle_path(child, send_format);
+      }
+    else
+      {
+      /* non-fatal error */
+      snprintf(log_buf, sizeof(log_buf),
+        "Found noise in the mom hierarchy file. Ignoring <%s>%s</%s>",
+        parent, child, parent);
+      log_err(-1, id, log_buf);
+      }
+    }
+
+  return(send_format);
+  } /* END parse_mom_hierarchy() */
+
+
+
+
+
+dynamic_string *prepare_mom_hierarchy()
+
+  {
+  static char    *id = "prepare_mom_hierarchy";
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  int             fds;
+  dynamic_string *send_format = NULL;
+
+  if ((fds = open(path_mom_hierarchy, O_RDONLY, 0)) < 0)
+    {
+    if (errno == ENOENT)
+      {
+      /* Each node is a top level node */
+      send_format = make_default_hierarchy();
+      return(send_format);
+      }
+
+    snprintf(log_buf, sizeof(log_buf),
+      "Unable to open %s", path_mom_hierarchy);
+    log_err(errno, id, log_buf);
+    }
+  else
+    send_format = parse_mom_hierarchy(fds);
+
+  return(send_format);
+  } /* END prepare_mom_hierarchy() */
+
+
+
+
+
+void add_all_nodes_to_hello_container()
+
+  {
+  static char    *id = "add_all_nodes_to_hello_container";
+  struct pbsnode *pnode;
+  int             iter = -1;
+  char           *node_name_dup;
+
+  while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
+    {
+    node_name_dup = strdup(pnode->nd_name);
+    add_hello(&hellos, node_name_dup);
+
+    unlock_node(pnode, id, NULL, LOGLEVEL);
+    }
+
+  return;
+  } /* END add_all_nodes_to_hello_container() */
 
 
 
@@ -689,6 +969,8 @@ int pbsd_init(
   path_nodestate = build_path(path_priv, NODE_STATUS,  NULL);
   path_nodenote  = build_path(path_priv, NODE_NOTE,    NULL);
   path_nodenote_new = build_path(path_priv, NODE_NOTE, new_tag);
+  path_mom_hierarchy = build_path(path_priv, PBS_MOM_HIERARCHY, NULL);
+
 
 #ifdef SERVER_CHKPTDIR
   /* need to make sure path ends with a '/' */
@@ -786,6 +1068,7 @@ int pbsd_init(
   initialize_all_jobs_array(&alljobs);
   initialize_all_jobs_array(&array_summary);
   initialize_all_jobs_array(&newjobs);
+  initialize_hello_container(&hellos);
 
   CLEAR_HEAD(svr_newnodes);
 
@@ -1400,6 +1683,16 @@ int pbsd_init(
   
   /* set work task to periodically save the tracking records */
   set_task(WORK_Timed, (long)(time_now + PBS_SAVE_TRACK_TM), track_save, NULL, FALSE);
+
+  /* read the hierarchy file */
+  if ((hierarchy_holder = prepare_mom_hierarchy()) == NULL)
+    {
+    /* hierarchy file exists but we couldn't open it */
+    return(-1);
+    }
+
+  /* mark all nodes as needing a hello */
+  add_all_nodes_to_hello_container();
 
   /* allow the threadpool to start processing */
   start_request_pool();

@@ -99,6 +99,7 @@ void            free_dynamic_string(dynamic_string *);
 void            clear_dynamic_string(dynamic_string *);
 char           *get_string(dynamic_string *);
 int             size_to_dynamic_string(dynamic_string *, struct size_value);
+int             delete_last_word_from_dynamic_string(dynamic_string *);
 
 #endif /* ifdef DYNAMIC_STRING_H */
 
