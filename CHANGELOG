@@ -4,40 +4,33 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - make a threadpool for TORQUE server. The number of threads is 
       customizable using min_threads and max_threads, and idle time before
       exiting can be set using thread_idle_seconds.
-  e - make node functionality multi-threaded. 
-  e - make job interactions multi-threaded. 
-  e - make job array interactions multi-threaded.
-  b - Updated torque.spec.in to be able to handle the snapshot 
-      names of builds.
-  e - make task functionality threadsafe
-  e - remove the forking from pbs_server running a job. Instead use threads and semaphores
-  e - remove the need to stat a job just after starting it
+  e - make pbs_server multi-threaded in order to increase responsiveness and scalability.
+  e - remove the forking from pbs_server running a job, the thread handling the request just
+      waits until the job is run.
   e - change qdel to simply send qdel all - previously this was executed by a qstat and a qdel
       of every individual job 
   e - no longer fork to send mail, just use a thread
-  e - make queues threadsafe
   e - use hwloc as the backbone for cpuset support in TORQUE (contributed by Dr. Bernd Kallies)
-  e - allow SMT support, at least with large-scale NUMA systems - hasn't been tested yet with
-      small-scale NUMA. (contributed by Dr. Bernd Kallies)
-  b - With the multi-threading the pbs_server -t create and -t cold commands could no longer
+  e - add the boolean variable $use_smt to mom config. If set to false, this skips logical
+      cores and uses only physical cores for the job. It is true by default.
+      (contributed by Dr. Bernd Kallies)
+  n - with the multi-threading the pbs_server -t create and -t cold commands could no longer
       ask for user input from the command line. The call to ask if the user wants to continue
       was moved higher in the initialization process and some of the wording changed to 
       reflect what is now happening.
-  e - Change poll jobs to just poll a job once it is run for 45 seconds after it is run, instead
-      of inspecting all jobs and polling them every 45 seconds. Done for optimization
-  e - If cpusets are configured but aren't found and cannot be mounted, pbs_mom will now fail to
+  e - if cpusets are configured but aren't found and cannot be mounted, pbs_mom will now fail to
       start instead of failing silently.
-  b - fix so job substate gets set to RUNNING after job start instead of being
-      left as TRNOUTCM.
-	b - Manually merged revision 4970 from 2.5-fixes. This patch allows for a nodes attribute
-	    to be created in the Resource_List if no nodes or procs spec is given at the 
-			qsub command line.
-  b - Enabled trqauthd to daemonize from the commandline.
   e - Change node_spec from an N^2 (but average 5N) algorithm to an N algorithm with respect
       to nodes. We only loop over each node once at a maximum.
-  b - Set the default value for node_check_interval to 1.
-  b - Fixed qsub so it would still allow -l gpus=x as a gres. This fix was also put into 
-      3.0-fixes but the code bases for qsub are different so a merge could not be applied.
+  e - Abandon pbs_iff in favor of trqauthd. trqauthd is a daemon to be started once that can
+      perform pbs_iff's functionality, increasing speed and enabling future security 
+      enhancements
+  e - add mom_hierarchy functionality for reporting. The file is located in 
+      <TORQUE_HOME>/server_priv/mom_hierarchy, and can be written to tell moms to send 
+      updates to other moms who will pass them on to pbs_server. See docs for details
+  e - add a unit testing framework (check). It is compiled with --with-check and tests 
+      are executed using make check. The framework is complete but not many tests have 
+      been written as of yet.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
