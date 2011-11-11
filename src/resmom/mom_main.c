@@ -5406,13 +5406,29 @@ int do_tcp(
 
     default:
 
-      DBPRT(("%s: unknown request %d\n",
-        id,
-        proto))
+      {
+      struct sockaddr_in *addr = NULL;
+      struct sockaddr     s_addr;
+      unsigned int        len = sizeof(s_addr);
+      
+      if (getpeername(fd, &s_addr, &len) == 0)
+        {
+        addr = (struct sockaddr_in *)&s_addr;
+        DBPRT(("%s: unknown request %d from %s",
+          id, proto, netaddr(addr)))
+        }
+      else
+        {
+        DBPRT(("%s: unknown request %d\n",
+          id,
+          proto))
+        }
+      }
 
       goto bad;
 
       /*NOTREACHED*/
+
 
       break;
     }  /* END switch (proto) */
@@ -7276,11 +7292,9 @@ int setup_program_environment(void)
   if (mom_alias[0] == '\0')
     strcpy(mom_alias,mom_short_name);
 
-  mh = initialize_mom_hierarchy();
-
-  parse_mom_hierarchy_file(path_mom_hierarchy,mh);
-
   initialize();  /* init RM code */
+
+  mh = initialize_mom_hierarchy();
 
   /* initialize machine-dependent polling routines */
   if ((c = mom_open_poll()) != PBSE_NONE)
@@ -8542,219 +8556,6 @@ int main(
   return(0);
   }  /* END main() */
 
-
-
-
-/*
- * parses a layout file for the network. file is in this format:
- * <path>
- *   <level> node0,node1,...
- *   </level>
- * </path>
- *
- * whitespace doesn't matter, opening and closing tags do
- */
-
-int parse_mom_hierarchy_file(
-
-  char            *path,
-  mom_hierarchy_t *nt)
-
-  {
-  int   fds;
-  int   bytes_read;
-  int   path_index = 0;
-  int   level_index = 0;
-  int   shortest_path;
-  int   i;
-  int   j;
-
-  /* 
-   * the following two are control variables for how to parse the path.
-   * path complete means for network purposes, we have all the path we need
-   * irrelevant_path means this path doesn't have this node in it and doesn't need
-   * to be stored here.
-   * Either way, we still want to parse the file 
-   */
-  int   path_complete = FALSE;
-  int   irrelevant_path;
-
-  char  buffer[MAXLINE<<10];
-  char *id = "parse_mom_hierarchy_file";
-  char *current;
-  char *parent;
-  char *child;
-  char *delims = ",";
-
-  fds = open(path,O_RDONLY,0);
-
-  if (fds < 0)
-    {
-    if (errno == ENOENT)
-      {
-      /* not an error */
-      return(PBSE_NONE);
-      }
-
-    log_err(errno,id,"Unable to open the network topology file");
-
-    return(-1);
-    }
-
-  bytes_read = read(fds,buffer,sizeof(buffer));
-
-  if (bytes_read < 0)
-    {
-    log_err(errno,id,"Unable to read from the network topology file");
-    return(-1);
-    }
-
-  current = buffer;
-
-  while (get_parent_and_child(current,&parent,&child,&current) == PBSE_NONE)
-    {
-    if (!strncmp(parent,"path",strlen("path")))
-      {
-      char *path_iter = child;
-      char *level_parent;
-      char *level_child;
-
-      /* check if this node is in this path. If not, then just move on */
-      if (strstr(path_iter,mom_alias) == NULL)
-        irrelevant_path = TRUE;
-      else
-        irrelevant_path = FALSE;
-
-      level_index = 0;
-
-      /* iterate over each level in the path */
-      while (get_parent_and_child(path_iter,&level_parent,&level_child,&path_iter) == PBSE_NONE)
-        {
-        if (!strncmp(level_parent,"level",strlen("level")))
-          {
-          char *ptr;
-
-          /* if this node is on the first level, then it reports directly to the server,
-           * meaning the tree should be empty */
-          if ((level_index == 0) &&
-              (strstr(level_child,mom_alias) != NULL))
-            {
-            irrelevant_path = TRUE;
-            path_complete = TRUE;
-            }
-             
-          ptr = strtok(level_child,delims);
-
-          /* find each hostname */
-          while (ptr != NULL)
-            {
-            unsigned short      rm_port;
-            unsigned short      service_port;
-            unsigned long       ipaddr;
-
-            char               *colon = strchr(ptr,':');
-
-            struct addrinfo    *addr_info;
-            struct sockaddr_in  sa;
-
-            if (colon == NULL)
-              {
-              service_port = PBS_MOM_SERVICE_PORT;
-              rm_port = PBS_MANAGER_SERVICE_PORT;
-              }
-            else
-              {
-              *colon = '\0';
-              service_port = atoi(colon+1);
-
-              if ((colon = strchr(colon+1,':')) != NULL)
-                rm_port = atoi(colon+1);
-              else
-                rm_port = PBS_MANAGER_SERVICE_PORT;
-              }
-
-            if (getaddrinfo(ptr, NULL, NULL, &addr_info) == 0)
-              {
-              sa.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-              ipaddr = ntohl(sa.sin_addr.s_addr);
-
-              if (!strcmp(mom_alias,ptr))
-                {
-                /* stop at the node, we don't want anything below it */
-                path_complete = TRUE;
-                }
-              
-              if (path_complete == FALSE)
-                add_network_entry(nt,ptr,addr_info,rm_port,service_port,path_index,level_index);
-              
-              freeaddrinfo(addr_info);
-              
-              /* add the ip addresses here because cluster addrs aren't going to be sent anymore */
-              okclients = AVL_insert(ipaddr,rm_port,NULL,okclients);
-              }
-            else
-              {
-              snprintf(log_buffer, sizeof(log_buffer),
-                "Bad entry in mom_hierarchy file, could not resolve host %s",
-                ptr);
-              log_err(PBSE_BADHOST, id, log_buffer);
-              }
-
-            ptr = strtok(NULL,delims);
-            } /* END parsing each hostname */
-
-          level_index++;
-          } /* END parsing a level */
-        else
-          {
-          /* this should never happen */
-          snprintf(log_buffer,sizeof(log_buffer),
-            "Found noise in the network topology file. Ignoring <%s>%s</%s>",
-            level_parent,
-            level_child,
-            level_parent);
-          }
-        } /* END parsing a path */
-
-      if (level_index == 0)
-        {
-        log_err(-1, id, "No levels found in path - please check your mom_hierarchy file");
-        }
-
-      if (irrelevant_path == FALSE)
-        path_index++;
-      }
-    else
-      {
-      /* this should never happen */
-      snprintf(log_buffer,sizeof(log_buffer),
-        "Found noise in the network topology file. Ignoring <%s>%s</%s>",
-        parent,
-        child,
-        parent);
-      }
-    } /* END parsing the file (potentially several paths) */
-
-  /* now re-order the paths, the shallowest being first */
-  for (i = 0; i < path_index - 1; i++)
-    {
-    resizable_array *path = nt->paths->slots[i].item;
-    resizable_array *other;
-    shortest_path = i;
-
-    for (j = i + 1; j < path_index; j++)
-      {
-      other = nt->paths->slots[j].item;
-      if (other->num < path->num)
-        {
-        /* swap positions */
-        swap_things(nt->paths,path,other);
-        }
-      }
-    }
-
-  return(PBSE_NONE);
-  } /* END parse_mom_hierarchy_file() */
 
 
 

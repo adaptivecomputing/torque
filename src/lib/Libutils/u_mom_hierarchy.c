@@ -147,7 +147,7 @@ int add_network_entry(
   resizable_array *levels;
   resizable_array *node_comm_entries;
 
-  memset(nc,0,sizeof(node_comm_t));
+  memset(nc, 0, sizeof(node_comm_t));
 
   /* check if the path is already in the array */
   if (nt->paths->num > path)
