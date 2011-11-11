@@ -3638,14 +3638,13 @@ int node_is_spec_acceptable(
     {
     snp->flag = okay;
 
-#ifndef NDEBUG
+  if (LOGLEVEL >= 9)
     DBPRT(("%s: %s/%d inuse 0x%x nprops %d\n",
       id,
       pnode->nd_name,
       snp->index,
       snp->inuse,
       pnode->nd_nprops))
-#endif
     }
 
   if (pnode->nd_ntype != NTYPE_CLUSTER)

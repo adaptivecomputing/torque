@@ -540,7 +540,7 @@ int wait_request(
 
       for (i = 0; i < MaxNumDescriptors; i++)
         {
-        if (FD_ISSET(i, GlobalSocketReadSet) == 0)
+        if (FD_ISSET(i, SelectSet) == 0)
           continue;
 
         if (fstat(i, &fbuf) == 0)
@@ -551,6 +551,8 @@ int wait_request(
         pthread_mutex_lock(global_sock_read_mutex);
         FD_CLR(i, GlobalSocketReadSet);
         pthread_mutex_unlock(global_sock_read_mutex);
+        pthread_mutex_unlock(svr_conn[i].cn_mutex);
+
         } /* END for each socket in global read set */
 
       free(SelectSet);
