@@ -12,6 +12,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       received from the server on the MOM. This fix allows the MOM to delete the
       job and free up resources even if the server for some reason does not send 
       the delete job request.
+  c - fix a crash in the dynamic_string.c code (backported from 3.0.3)
 
 2.5.9
   e - change mom to only log "cannot find nvidia-smi in PATH" once when built

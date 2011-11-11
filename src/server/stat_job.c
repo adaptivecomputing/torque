@@ -206,15 +206,15 @@ int add_walltime_remaining(
   tlist_head *phead)
 
   {
-  int       len;
-  char      buf[MAXPATHLEN];
-  char     *pname;
-  svrattrl *pal;
-  resource *pres;
+  int            len;
+  char           buf[MAXPATHLEN];
+  char          *pname;
+  svrattrl      *pal;
+  resource      *pres;
   
-  int found = 0;
-  unsigned long remaining = 0;
-  unsigned long upperBound = 0;
+  int            found = 0;
+  unsigned long  remaining = 0;
+  unsigned long  upperBound = 0;
 
   /* encode walltime remaining, this is custom because walltime 
    * remaining isn't an attribute */
