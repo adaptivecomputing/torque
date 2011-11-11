@@ -4036,7 +4036,7 @@ int process_host_name(
     *colon = '\0';
     service_port = (unsigned short)atoi(colon+1);
     
-    if ((colon = strchr(colon+1, ';')) != NULL)
+    if ((colon = strchr(colon+1, ':')) != NULL)
       rm_port = atoi(colon+1);
     }
   

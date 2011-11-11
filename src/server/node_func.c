@@ -3040,38 +3040,32 @@ int send_hierarchy(
   struct pbsnode *pnode)
 
   {
-  static char *id = "send_hierarchy";
-  char         log_buf[LOCAL_LOG_BUF_SIZE];
-  char        *string;
-  int          ret;
-  int          con;
-  int          sock;
-  pbs_net_t    addr = get_hostaddr(&ret, pnode->nd_name);
-/*  int          num_retries = 5;
-  int          retry_count = 0;*/
+  static char        *id = "send_hierarchy";
+  char                log_buf[LOCAL_LOG_BUF_SIZE];
+  char               *string;
+  int                 ret;
+  int                 sock;
+  struct addrinfo    *addr_info;
+  struct sockaddr_in  sa;
 
-/*  while (retry_count <= num_retries)
+  if (getaddrinfo(pnode->nd_name, NULL, NULL, &addr_info) != 0)
     {
-    if ((con = svr_connect(addr, pnode->rm_port, &ret, NULL, 0, ToServerDIS)) == PBS_NET_RC_FATAL)
-      {*/
-      /* FAILURE */
-/*      snprintf(log_buf, sizeof(log_buf),
-        "Fatal error when trying to send mom hierarchy to host %s", pnode->nd_name);
-      log_err(-1, id, log_buf);
+    snprintf(log_buf, sizeof(log_buf),
+      "Can't get address information for %s", pnode->nd_name);
+    log_err(PBSE_BADHOST, id, log_buf);
 
-      return(-1);
-      }
-    else if (con >= 0)
-      {*/
-      /* successful */
-/*      break;
-      }
-    }*/
+    return(PBSE_BADHOST);
+    }
+
+  sa.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+  sa.sin_family = AF_INET;
+  sa.sin_port = htons(pnode->nd_mom_rm_port);
+  freeaddrinfo(addr_info);
 
   /* for now we'll only try once as this is going to be tried once each time in the loop */
-  con = svr_connect(addr, pnode->nd_mom_rm_port, &ret, pnode, 0, ToServerDIS);
+  sock = tcp_connect_sockaddr((struct sockaddr *)&sa, sizeof(sa));
 
-  if (con < 0)
+  if (sock < 0)
     {
     /* could not connect */
     snprintf(log_buf, sizeof(log_buf),
@@ -3081,10 +3075,6 @@ int send_hierarchy(
 
     return(-1);
     }
-
-  pthread_mutex_lock(connection[con].ch_mutex);
-  sock = connection[con].ch_socket;
-  pthread_mutex_unlock(connection[con].ch_mutex);
 
   DIS_tcp_setup(sock);
 
@@ -3127,7 +3117,6 @@ int send_hierarchy(
     DIS_tcp_wflush(sock);
     }
 
-  svr_disconnect(con);
   close(sock);
 
   return(ret);
