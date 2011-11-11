@@ -30,6 +30,7 @@ attribute_def node_attr_def[2];
 char *path_nodenote_new;
 struct server server;
 int LOGLEVEL = 0;
+hello_container hellos;
 
 
 
@@ -314,4 +315,19 @@ void close_conn(int sock,int has_mut)
   { 
   fprintf(stderr, "The call to close_conn needs to be mocked!!\n");
   exit(1);                            
-  }        
+  }
+
+int remove_hello(hello_container *hc, char *nodename)
+  { 
+  fprintf(stderr, "The call to remove_hello needs to be mocked!!\n");
+  exit(1);                            
+  }
+
+
+void *send_hierarchy_threadtask(void *vp)
+  { 
+  fprintf(stderr, "The call to send_hierarchy_threadtask needs to be mocked!!\n");
+  exit(1);                            
+  }
+
+

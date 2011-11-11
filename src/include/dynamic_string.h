@@ -91,10 +91,10 @@ typedef struct dynamic_string
   } dynamic_string;
 
 
-int             copy_to_end_of_dynamic_string(dynamic_string *,char *);
-int             append_dynamic_string(dynamic_string *,char *);
-int             append_dynamic_string_xml(dynamic_string *,char *);
-dynamic_string *get_dynamic_string(int,char *);
+int             copy_to_end_of_dynamic_string(dynamic_string *, char *);
+int             append_dynamic_string(dynamic_string *, char *);
+int             append_dynamic_string_xml(dynamic_string *, char *);
+dynamic_string *get_dynamic_string(int initial_size, char *initial_string);
 void            free_dynamic_string(dynamic_string *);
 void            clear_dynamic_string(dynamic_string *);
 char           *get_string(dynamic_string *);

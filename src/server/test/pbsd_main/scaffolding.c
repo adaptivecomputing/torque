@@ -29,6 +29,7 @@ int listener_command = SCH_SCHEDULE_NULL;
 char *msg_startup1 = "Server %s started, initialization type = %d";
 int svr_chngNodesfile = 0; /* 1 signals want nodes file update */
 int svr_totnodes = 0; /* total number nodes defined */
+hello_container hellos;
 
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime)
@@ -346,6 +347,60 @@ int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int 
 void destroy_request_pool(void)
   {
   fprintf(stderr, "The call to destroy_request_pool needs to be mocked!!\n");
+  exit(1);
+  }
+
+
+void free_resizable_array(resizable_array *ra)
+  {
+  }
+
+resizable_array *initialize_resizable_array(int size)
+  {
+  fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");
+  exit(1);
+  }
+
+char *pop_hello(hello_container *hc)
+  {
+  fprintf(stderr, "The call to pop_hello needs to be mocked!!\n");
+  exit(1);
+  }
+
+int unlock_node(struct pbsnode *pnode, char *id, char *msg, int log_level)
+  {
+  fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
+  exit(1);
+  }
+
+struct pbsnode *find_nodebyname(char *name)
+  {
+  fprintf(stderr, "The call to find_nodebyname needs to be mocked!\n");
+  exit(1);
+  }
+
+
+int send_hierarchy(struct pbsnode *pnode)
+  {
+  fprintf(stderr, "The call to send_hierarchy needs to be mocked!\n");
+  exit(1);
+  }
+
+int add_hello(hello_container *hc, char *node_name)
+  {
+  fprintf(stderr, "The call to add_hello needs to be mocked!\n");
+  exit(1);
+  }
+
+void *pop_thing(resizable_array *ra)
+  {
+  fprintf(stderr, "The call to pop_thing needs to be mocked!\n");
+  exit(1);
+  }
+
+int insert_thing(resizable_array *ra, void *thing)
+  {
+  fprintf(stderr, "The call to insert_thing needs to be mocked!\n");
   exit(1);
   }
 

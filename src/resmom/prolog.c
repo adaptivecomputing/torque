@@ -856,7 +856,10 @@ int run_pelog(
         }
       }
 
-    if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER) || (which == PE_PROLOGUSERJOB) || (which == PE_EPILOGUSERJOB))
+    if ((which == PE_PROLOGUSER) || 
+        (which == PE_EPILOGUSER) || 
+        (which == PE_PROLOGUSERJOB) || 
+        (which == PE_EPILOGUSERJOB))
       {
       if (chdir(pjob->ji_grpcache->gc_homedir) != 0)
         {
@@ -897,7 +900,9 @@ int run_pelog(
 
     /* NOTE:  inside child */
 
-    if ( which == PE_EPILOG || which == PE_EPILOGUSER || which == PE_EPILOGUSERJOB )
+    if ((which == PE_EPILOG) || 
+        (which == PE_EPILOGUSER) || 
+        (which == PE_EPILOGUSERJOB))
       {
       /* for epilog only */
 

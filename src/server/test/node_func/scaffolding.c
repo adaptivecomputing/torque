@@ -28,6 +28,20 @@ struct server server;
 AvlTree ipaddrs = NULL;
 int LOGLEVEL = 0;
 int svr_totnodes = 0; 
+const char *dis_emsg[] = {"No error",
+  "Input value too large to convert to this type",
+  "Tried to write floating point infinity",
+  "Negative sign on an unsigned datum",
+  "Input count or value has leading zero",
+  "Non-digit found where a digit was expected",
+  "Input string has an embedded ASCII NUL",
+  "Premature end of message",
+  "Unable to malloc enough space for string",
+  "Supporting protocol failure",
+  "Protocol failure in commit",
+  "End of File"
+};
+dynamic_string *hierarchy_holder;
 
 
 int insert_thing(resizable_array *ra, void *thing)
@@ -174,3 +188,50 @@ int lock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
   exit(1);                    
   }                           
 
+void *pop_thing(resizable_array *ra)
+
+  {
+  fprintf(stderr, "The call to pop_thing needs to be mocked!!\n");
+  exit(1);                    
+  }
+
+int is_present(resizable_array *ra, void *thing)
+  {
+  fprintf(stderr, "The call to is_present needs to be mocked!!\n");
+  exit(1);                    
+  }
+
+
+void DIS_tcp_setup(int sock)
+  {
+  fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
+  exit(1);                    
+  }
+
+
+
+int DIS_tcp_wflush(int sock)
+  {
+  fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
+  exit(1);                    
+  }
+
+
+int diswcs (int stream, const char *value, int len)
+  {
+  fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
+  exit(1);                    
+  }
+
+
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t s)
+  {
+  fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
+  exit(1);                    
+  }
+
+int diswsi(int sock, int value)
+  {
+  fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
+  exit(1);                    
+  }

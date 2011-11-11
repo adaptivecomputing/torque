@@ -613,3 +613,9 @@ int lock_init()
   exit(1);
   }
 
+char *netaddr(struct sockaddr_in *sai)
+  {
+  fprintf(stderr, "The call to netaddr needs to be mocked!!\n");
+  exit(1);
+  }
+

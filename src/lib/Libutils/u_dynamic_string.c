@@ -107,6 +107,7 @@ size_t need_to_grow(
   if (ds->size < ds->used + to_add)
     {
     to_grow = to_add + ds->size;
+
     if (to_grow < (ds->size * 4))
       to_grow = ds->size * 4;
     }
@@ -117,6 +118,35 @@ size_t need_to_grow(
 
 
 
+int resize_if_needed(
+
+  dynamic_string *ds,
+  char           *to_check)
+
+  {
+  size_t  new_size = need_to_grow(ds, to_check);
+  size_t  difference;
+  char   *tmp;
+
+  if (new_size > 0)
+    {
+    /* need to resize */
+    difference = new_size - ds->size;
+
+    if ((tmp = realloc(ds->str, new_size)) == NULL)
+      return(ENOMEM);
+
+    ds->str = tmp;
+    /* zero out the new space as well */
+    memset(ds->str + ds->size, 0, difference);
+    ds->size = new_size;
+    }
+
+  return(PBSE_NONE);
+  } /* END resize_if_needed() */
+
+
+
 
 int size_to_dynamic_string(
     
@@ -124,31 +154,16 @@ int size_to_dynamic_string(
   struct size_value  szv)  /* I */
 
   {
-  char    buffer[MAXLINE];
-  size_t  len;
-  size_t  to_grow;
+  char buffer[MAXLINE];
+  int  add_one = FALSE;
+
+  if (ds->used == 0)
+    add_one = TRUE;
+
+  sprintf(buffer, "%lukb", szv.atsv_num);
+  resize_if_needed(ds, buffer);
 
   sprintf(buffer, "%lu", szv.atsv_num);
-  len = 2 + strlen(buffer);
-  if (ds->used == 0)
-    len++;
-
-  if (ds->size - ds->used < len)
-    {
-    char   *tmp;
-
-    if (len > ds->size * 2)
-      to_grow = len;
-    else
-      to_grow = ds->size * 2;
-
-    if ((tmp = realloc(ds->str, to_grow)) == NULL)
-      return(ENOMEM);
-
-    ds->str  = tmp;
-    ds->size = to_grow;
-    }
-
   strcat(ds->str, buffer);
   
   switch (szv.atsv_shift)
@@ -184,7 +199,9 @@ int size_to_dynamic_string(
       break;
     }
 
-  ds->used += len;
+  ds->used += strlen(buffer) + 2;
+  if (add_one == TRUE)
+    ds->used += 1;
 
   return(PBSE_NONE);
   } /* END size_to_dynamic_string() */
@@ -204,32 +221,19 @@ int append_dynamic_string(
   char *to_append)    /* I */
 
   {
-  size_t     to_grow = need_to_grow(ds,to_append);
-  char      *tmp;
   int        len = strlen(to_append);
+  int        add_one = FALSE;
 
   if (ds->used == 0)
-    ds->used += 1;
+    add_one = TRUE;
 
-  if (to_grow > 0)
-    {
-    tmp = realloc(ds->str,to_grow);
-
-    if (tmp == NULL)
-      return(ENOMEM);
-
-    strcat(tmp,to_append);
-
-    ds->str  = tmp;
-    ds->size = to_grow;
-    }
-  else
-    {
-    /* no need to grow, just append to the string */
-    strcat(ds->str,to_append);
-    }
+  resize_if_needed(ds, to_append);
+  strcat(ds->str,to_append);
     
   ds->used += len;
+
+  if (add_one == TRUE)
+    ds->used += 1;
 
   return(PBSE_NONE);
   } /* END append_dynamic_string() */
@@ -255,22 +259,7 @@ int append_dynamic_string_xml(
     {
     /* Resize if needed
      * note - QUOT_ESCAPED_LEN is the most we could be adding right now */
-    if (ds->size - ds->used < QUOT_ESCAPED_LEN)
-      {
-      char   *tmp;
-      size_t  to_grow;
-
-      if (ds->size * 2 < QUOT_ESCAPED_LEN)
-        to_grow = QUOT_ESCAPED_LEN * 10;
-      else
-        to_grow = ds->size * 2;
-
-      if ((tmp = realloc(ds->str, to_grow)) == NULL)
-        return(ENOMEM);
-
-      ds->str  = tmp;
-      ds->size = to_grow;
-      }
+    resize_if_needed(ds, QUOT_ESCAPED);
 
     switch (str[i])
       {
@@ -327,6 +316,8 @@ int append_dynamic_string_xml(
 
 
 
+
+
 /*
  * performs a strcpy at the end of the string (used for node status strings)
  * the difference is this function places strings with their terminating 
@@ -342,28 +333,11 @@ int copy_to_end_of_dynamic_string(
   char           *to_copy)
 
   {
-  size_t  to_grow = need_to_grow(ds,to_copy);
-  char   *tmp;
   int     len = strlen(to_copy) + 1;
 
-  if (to_grow > 0)
-    {
-    tmp = realloc(ds->str,to_grow);
+  resize_if_needed(ds, to_copy);
     
-    if (tmp == NULL)
-      return(ENOMEM);
-
-    strcpy(tmp + ds->used,to_copy);
-
-    ds->str  = tmp;
-    ds->size = to_grow;
-    }
-  else
-    {
-    /* no need to grow, just append to the string */
-    strcpy(ds->str + ds->used,to_copy);
-    }
-    
+  strcpy(ds->str + ds->used,to_copy);
   ds->used += len;
 
   return(PBSE_NONE);
@@ -391,15 +365,11 @@ dynamic_string *get_dynamic_string(
     return(ds);
 
   if (initial_size > 0)
-    {
     ds->size = initial_size;
-    ds->str = malloc(initial_size);
-    }
   else
-    {
     ds->size = DS_INITIAL_SIZE;
-    ds->str = malloc(DS_INITIAL_SIZE);
-    }
+    
+  ds->str = malloc(ds->size);
 
   if (ds->str == NULL)
     {
@@ -408,7 +378,7 @@ dynamic_string *get_dynamic_string(
     }
     
   /* initialize empty str */
-  ds->str[0] = '\0';
+  memset(ds->str, 0, ds->size);
   ds->used = 0;
 
   /* add the string if it exists */

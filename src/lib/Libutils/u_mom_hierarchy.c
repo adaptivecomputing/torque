@@ -133,7 +133,7 @@ mom_hierarchy_t *initialize_mom_hierarchy(void)
 
 int add_network_entry(
 
-  mom_hierarchy_t *nt,
+  mom_hierarchy_t    *nt,
   char               *name,
   struct addrinfo    *addr_info,
   unsigned short      rm_port,

@@ -984,8 +984,8 @@ void *preobit_reply(
   if (irtn != 0)
     {
     sprintf(log_buffer, 
-        "DIS_reply_read/decode_DIS_replySvr failed, rc=%d sock=%d",
-        irtn, sock);
+      "DIS_reply_read/decode_DIS_replySvr failed, rc=%d sock=%d",
+      irtn, sock);
 
     /* NOTE:  irtn=11 indicates EOF */
 
@@ -998,7 +998,7 @@ void *preobit_reply(
   else
     {
     log_record( PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id,
-        "DIS_reply_read/decode_DIS_replySvr worked, top of while loop");
+      "DIS_reply_read/decode_DIS_replySvr worked, top of while loop");
     }
 
   /* find the job that triggered this req */

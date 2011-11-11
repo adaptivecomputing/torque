@@ -79,6 +79,7 @@ all_tasks task_list_event;
 char *path_svrdb_new;
 char *path_home = PBS_SERVER_HOME;
 char *acct_file = NULL;
+char *path_mom_hierarchy = "/dev/null";
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 

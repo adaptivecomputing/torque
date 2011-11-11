@@ -46,6 +46,7 @@ char mom_alias[PBS_MAXHOSTNAME + 1];
 int LOGLEVEL = 0;
 char log_buffer[LOG_BUF_SIZE];
 int rm_errno;
+int needs_cluster_addrs;
 time_t LastServerUpdateTime;
 
 
@@ -271,4 +272,29 @@ int pbs_disconnect_socket(int sock)
   fprintf(stderr, "The call to pbs_disconnect_socket needs to be mocked!!\n");
   exit(1);
   }
+
+int add_network_entry(mom_hierarchy_t *mh, char *name, struct addrinfo *ai, unsigned short rm_port, unsigned short service_port, int path, int level)
+  {
+  fprintf(stderr, "The call to add_network_entry needs to be mocked!!\n");
+  exit(1);
+  }
+
+int swap_things(resizable_array *ra, void *obj1, void *obj2)
+  {
+  fprintf(stderr, "The call to swap_things needs to be mocked!!\n");
+  exit(1);
+  }
+
+char *disrst(int sock, int *ret)
+  {
+  fprintf(stderr, "The call to disrst needs to be mocked!!\n");
+  exit(1);
+  }
+
+mom_hierarchy_t *initialize_mom_hierarchy()
+  {
+  fprintf(stderr, "The call to initialize_mom_hierarchy needs to be mocked!!\n");
+  exit(1);
+  }
+
 
