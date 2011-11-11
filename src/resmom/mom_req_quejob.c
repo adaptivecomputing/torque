@@ -103,6 +103,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "svrfunc.h"
+#include "../server/reply_send.h" /* reply_send_mom */
 
 #include "mom_func.h"
 #include "utils.h"
@@ -205,7 +206,7 @@ void req_quejob(
     check_state(1);
 
     /* NYI: remove this? Why are we sending an update here? */
-    mom_server_all_update_stat();
+/*    mom_server_all_update_stat(); */
 
     if (internal_state & INUSE_DOWN)
       {
@@ -949,7 +950,7 @@ void reply_sid(
   preq->rq_reply.brp_code    = 0;
   preq->rq_reply.brp_auxcode = 0;
 
-  reply_send(preq);
+  reply_send_mom(preq);
   }  /* END reply_text() */
 
 

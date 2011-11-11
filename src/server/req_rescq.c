@@ -101,6 +101,7 @@
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "log.h"
+#include "reply_send.h" /* reply_send_svr */
 
 /* Global Data Items: */
 
@@ -193,7 +194,7 @@ void req_rescq(
 
     }
 
-  (void)reply_send(preq);
+  reply_send_svr(preq);
   }
 
 /*
@@ -293,7 +294,7 @@ void req_rescreserve(
 
   preq->rq_reply.brp_auxcode = tag;
 
-  reply_send(preq);
+  reply_send_svr(preq);
   }
 
 /*

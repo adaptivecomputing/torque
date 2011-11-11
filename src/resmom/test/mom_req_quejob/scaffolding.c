@@ -57,9 +57,9 @@ struct passwd *check_pwd(job *pjob)
   exit(1);
   }
 
-int reply_send(struct batch_request *request)
+int reply_send_mom(struct batch_request *request_mom)
   {
-  fprintf(stderr, "The call to reply_send needs to be mocked!!\n");
+  fprintf(stderr, "The call to reply_send_mom needs to be mocked!!\n");
   exit(1);
   }
 

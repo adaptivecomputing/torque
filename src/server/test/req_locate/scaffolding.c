@@ -10,9 +10,9 @@ char server_name[PBS_MAXSERVERNAME + 1];
 struct server server;
 int LOGLEVEL = 0;
 
-int reply_send(struct batch_request *request)
+int reply_send_svr(struct batch_request *request)
   {
-  fprintf(stderr, "The call to reply_send to be mocked!!\n");
+  fprintf(stderr, "The call to reply_send_svr to be mocked!!\n");
   exit(1);
   }
 

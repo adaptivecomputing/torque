@@ -34,9 +34,9 @@ void clear_attr(attribute *pattr, attribute_def *pdef)
   exit(1);
   }
 
-int reply_send(struct batch_request *request)
+int reply_send_svr(struct batch_request *request)
   {
-  fprintf(stderr, "The call to reply_send to be mocked!!\n");
+  fprintf(stderr, "The call to reply_send_svr to be mocked!!\n");
   exit(1);
   }
 

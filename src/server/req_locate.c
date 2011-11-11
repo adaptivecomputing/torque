@@ -103,6 +103,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "../lib/Liblog/log_event.h"
+#include "reply_send.h" /* reply_send_svr */
 
 /* Global Data Items: */
 
@@ -159,7 +160,7 @@ void *req_locatejob(
 
     strcpy(preq->rq_reply.brp_un.brp_locate, location);
 
-    reply_send(preq);
+    reply_send_svr(preq);
     }
   else
     {

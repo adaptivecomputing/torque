@@ -113,6 +113,8 @@
 #include "resmon.h"
 #include "net_connect.h"
 #include "utils.h"
+#include "../server/reply_send.h" /* reply_send_mom */
+
 #ifdef _CRAY
 #include <sys/category.h>
 #endif
@@ -2542,7 +2544,7 @@ void req_stat_job(
     encode_flagged_attrs(pjob, resc_access_perm, &pstat->brp_attr); /* adds other flagged attrs */
     }
 
-  reply_send(preq);
+  reply_send_mom(preq);
 
   return;
   }  /* END req_stat_job() */

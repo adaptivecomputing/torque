@@ -116,6 +116,7 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "svr_connect.h" /* svr_connect */
 #include "queue_func.h" /* find_queuebyname */
+#include "reply_send.h" /* reply_send_svr */
 
 /* Global Data Items: */
 
@@ -707,7 +708,7 @@ static void req_stat_job_step2(
     if (pa != NULL)
       pthread_mutex_unlock(pa->ai_mutex);
 
-    reply_send(preq);
+    reply_send_svr(preq);
 
     return;
     }        /* END if ((type == tjstTruncatedServer) || ...) */
@@ -793,7 +794,7 @@ nextjob:
   if (pa != NULL)
     pthread_mutex_unlock(pa->ai_mutex);
  
-  reply_send(preq);
+  reply_send_svr(preq);
 
   if (LOGLEVEL >= 7)
     {
@@ -1198,7 +1199,7 @@ void *req_stat_que(
     }
   else
     {
-    reply_send(preq);
+    reply_send_svr(preq);
     }
 
   return NULL;
@@ -1457,7 +1458,7 @@ void *req_stat_node(
     {
     /* SUCCESS */
 
-    reply_send(preq);
+    reply_send_svr(preq);
     }
   else
     {
@@ -1644,7 +1645,7 @@ void req_stat_svr(
     }
   else
     {
-    reply_send(preq);
+    reply_send_svr(preq);
     }
 
   return;

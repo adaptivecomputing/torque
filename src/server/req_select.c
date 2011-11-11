@@ -104,6 +104,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 #include "queue_func.h" /* find_queuebyname */
+#include "reply_send.h" /* reply_send_svr */
 
 
 /* Private Data */
@@ -690,7 +691,7 @@ nextjob:
   if (rc)
     req_reject(rc, 0, preq, NULL, NULL);
   else
-    reply_send(preq);
+    reply_send_svr(preq);
 
   return;
   }  /* END sel_step3() */

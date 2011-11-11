@@ -11,6 +11,8 @@
 /* static int dis_reply_write(int sfds, struct batch_reply *preply); */
 
 int reply_send(struct batch_request *request);
+int reply_send_svr(struct batch_request *request);
+int reply_send_mom(struct batch_request *request);
 
 void reply_ack(struct batch_request *preq);
 
