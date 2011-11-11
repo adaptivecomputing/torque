@@ -145,7 +145,8 @@ int size_to_dynamic_string(
     if ((tmp = realloc(ds->str, to_grow)) == NULL)
       return(ENOMEM);
 
-    ds->str = tmp;
+    ds->str  = tmp;
+    ds->size = to_grow;
     }
 
   strcat(ds->str, buffer);
@@ -219,8 +220,8 @@ int append_dynamic_string(
 
     strcat(tmp,to_append);
 
-    ds->str = tmp;
-    ds->size += to_grow;
+    ds->str  = tmp;
+    ds->size = to_grow;
     }
   else
     {
@@ -267,7 +268,8 @@ int append_dynamic_string_xml(
       if ((tmp = realloc(ds->str, to_grow)) == NULL)
         return(ENOMEM);
 
-      ds->str = tmp;
+      ds->str  = tmp;
+      ds->size = to_grow;
       }
 
     switch (str[i])
@@ -353,8 +355,8 @@ int copy_to_end_of_dynamic_string(
 
     strcpy(tmp + ds->used,to_copy);
 
-    ds->str = tmp;
-    ds->size += to_grow;
+    ds->str  = tmp;
+    ds->size = to_grow;
     }
   else
     {
