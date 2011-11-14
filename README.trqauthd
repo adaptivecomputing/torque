@@ -1,0 +1,49 @@
+Introduction
+     trqauthd is a new daemon starting in TORQUE 4.0. It replaces pbs_iff which is used by 
+     TORQUE client utilities to authorize user connections to pbs_server. Unlike pbs_iff 
+     which is executed by the TORQUE client utilities each time the utility is run, trqauthd
+     is started once and remains resident. TORQUE client utilities then communicate with 
+     trqauthd on port 15005 on the loopback interface. Unlike pbs_iff trqauthd is multi-threaded
+     and is able to successfully handle a greater volume of simultaneous requests than pbs_iff.
+
+Running trqauthd
+
+     trqauthd MUST be run as root. It must be running on any host where TORQUE client commands 
+     will execute.
+
+     By default trqauthd is installed to /usr/local/bin.
+
+     trqauthd can be invoked directly from the command line or by the use of init.d scripts 
+     which are located in the contrib/init.d directory of the TORQUE source.
+
+     There are three init.d scripts for trqauthd in the contrib/init.d directory of the 
+     TORQUE source tree. 
+
+     debian.trqauthd
+     Used for the apt based systems (debian, ubuntu are the most common variations of this)
+
+     suse.trqauthd
+     Used for the rpm based systems. (redhat, suse, scientific, centos, fedora, are some 
+     common examples)
+
+     trqauthd
+     An example for other packages managers. (anything that doesn't use rpm or apt)
+
+     Inside each of the scripts are the variable PBS_DAEMON and PBS_HOME. These two variables
+     should be updated to match your torque installation. PBS_DAEMON needs to point to the
+     location of trqauthd. PBS_HOME needs to match your TORQUE installation. For more information
+     about PBS_HOME please see the TORQUE documentation at www.adaptivecomputing.com.
+
+     Choose the script that matches your dist system and copy it to /etc/init.d. If needed, 
+     renamed it to trqauthd
+
+     To start the daemon type:
+          /etc/init.d/trqauthd start
+
+     To stop the daemon type:
+          /etc/init.d/trqauthd stop
+
+     You can also use the following:
+          service trqauthd start/stop
+
+

@@ -1,0 +1,186 @@
+TORQUE 4.0 What is new
+
+November 2011
+
+*******************************************************
+
+The readme file contains the following sections:
+
++ New Feature Highlights +
++ New Feature Details +
++ Upgrading and Backward Compatibility +
++ Known Issues +
+
+
+*******************************************************
+
++ New Feature Highlights +
+
+*******************************************************
+
+
+The following is a summary of key new features in TORQUE 4.0
+
+- Multi-threaded pbs_server
+  -- Faster response to client commands. No more waiting for someone else's call to qstat to 
+     finish before your request can run.
+  -- Higher job throughput
+  -- More robust 
+
+- New trqauthd client daemon
+  -- trqauthd replaces pbs_iff
+  -- trqauthd is multi-threaded and able to reliably handle multiple simultaneous client requests.
+  -- Run as root. Gives Administrators more control
+
+- Communication
+  -- RPP (reliable packet protocol) removed
+  -- UDP removed
+  -- All communication done using TCP/IP
+
+- Mom Hierarchy
+  -- Reduces overall compute node update traffic to pbs_server
+  -- Allows administrators to manage network communications 
+
+- Scalability
+  -- Ability to support over 15,000 compute nodes in a cluster
+  -- Job radix allows users to submit jobs with very large node needs
+
+
+*******************************************************
+
++ New Feature Details +
+
+*******************************************************
+
+This section contains detailed information pertaining to specific new features. 
+
+---------------------
+=== Mom Hierarchy ===
+---------------------
+
+The Mom Hierarchy is a new optional feature in TORQUE 4.0 which is designed to improve the 
+efficiency of communications between pbs_server and the compute nodes (pbs_mom). By default
+all compute nodes send status updates directly to pbs_server. As cluster sizes increase the 
+need to reduce the traffic and time required to keep the cluster status up to date becomes
+more important. The Mom Hierarchy allows administrators to configure compute nodes in a way
+where each node sends its status update information to another compute node. The compute nodes 
+pass the information up a tree or hierarchy until eventually the information reaches a node
+that will pass the information directly to pbs_server. 
+
+Setting up the Mom Hierarchy
+
+The name of the file that contains the configuration information is named mom_hierarchy. By 
+default it is located in the /var/spool/torque/server_priv directory. The file uses an XML like
+syntax. By the time TORQUE 4.0 is released this will be an XML compatible syntax. For now 
+they syntax is as follows:
+
+   <path>
+     <level> comma separated node list </level>
+     <level> comma separated node list </level>
+     ...
+   </path>
+   ...
+
+The <path> </path> tag pair identifies a group of compute nodes. The <level></level> tag pair
+contains a comma separated list of compute node names. Multiple paths can be defined with 
+multiple levels within each path. 
+
+Within a <path> tag pair the levels define the hierarchy. All nodes in the top level communicate
+directly with the server. All nodes in lower levels communicate to the first available node
+in the level directly above it. If the first node in the upper level goes down the nodes in the 
+subordinate level will then communicate to the next node in the upper level. If no nodes are 
+available in an upper level then the node will communicate directly to the server.
+
+If an upper level node has fallen out and it is back in again the lower level nodes will eventually
+find that the node is available and start sending their updates to that node.
+
+
+----------------
+=== trqauthd ===
+----------------
+
+trqauthd is a new daemon starting in TORQUE 4.0. It replaces pbs_iff which is used by 
+TORQUE client utilities to authorize user connections to pbs_server. Unlike pbs_iff 
+which is executed by the TORQUE client utilities each time the utility is run, trqauthd
+is started once and remains resident. TORQUE client utilities then communicate with 
+trqauthd on port 15005 on the loopback interface. Unlike pbs_iff trqauthd is multi-threaded
+and is able to successfully handle a greater volume of simultaneous requests than pbs_iff.
+
+Running trqauthd
+
+trqauthd MUST be run as root. It must be running on any host where TORQUE client commands 
+will execute.
+
+By default trqauthd is installed to /usr/local/bin.
+
+trqauthd can be invoked directly from the command line or by the use of init.d scripts 
+which are located in the contrib/init.d directory of the TORQUE source.
+
+There are three init.d scripts for trqauthd in the contrib/init.d directory of the 
+TORQUE source tree. 
+
+debian.trqauthd
+Used for the apt based systems (debian, ubuntu are the most common variations of this)
+
+suse.trqauthd
+Used for the rpm based systems. (redhat, suse, scientific, centos, fedora, are some 
+common examples)
+
+trqauthd
+An example for other packages managers. (anything that doesn't use rpm or apt)
+
+Inside each of the scripts are the variable PBS_DAEMON and PBS_HOME. These two variables
+should be updated to match your torque installation. PBS_DAEMON needs to point to the
+location of trqauthd. PBS_HOME needs to match your TORQUE installation. For more information
+about PBS_HOME please see the TORQUE documentation at www.adaptivecomputing.com.
+
+Choose the script that matches your dist system and copy it to /etc/init.d. If needed, 
+renamed it to trqauthd
+
+To start the daemon type:
+     /etc/init.d/trqauthd start
+
+To stop the daemon type:
+     /etc/init.d/trqauthd stop
+
+You can also use the following:
+     service trqauthd start/stop
+
+---------------------------------------------------
+=== Upgrading to 4.0 and Backward Compatibility ===
+---------------------------------------------------
+
+Because TORQUE 4.0 has removed all use of UDP/IP and moved all communication to use 
+TCP/IP previous versions of TORQUE will not be able to communicate with the components 
+of TORQUE 4.0. However, all files in the /var/spool/torque ($TORQUE_HOME) directory 
+and all subdirectories are forwardly compatible.
+
+Job Arrays
+Job arrays from TORQUE version 2.5 and 3.0 are compatible with TORQUE 4.0. Job arrays 
+were introduced in TORQUE version 2.4 but modified in 2.5. If upgrading from TORQUE
+2.4 you will nned to make sure all job arrays are complete before upgrading.
+
+serverdb
+The pbs_server configuration is saved in the file $TORQUE_HOME/server_priv/serverdb. 
+When TORQUE 4.0 is run for the first time this file will be converted from a binary 
+file to an XML like format. This format can be used by TORQUE versions 2.5 and 3.0 
+but not earlier versions. It is recommended this file be backed up before moving to 
+TORQUE 4.0.
+
+Upgrading
+Because TORQUE 4.0 will not communicate with previous versions of TORQUE it is not 
+possible to upgrade one component and not upgrade the others. Rolling upgrades will
+not work.
+
+Before upgrading the system all running jobs must complete. To prevent queued jobs
+from starting nodes can be set to offline or all queues can be disabled. Once all
+running jobs are complete the upgrade can be made. Remember to allow any job arrays
+in version 2.4 to complete before upgrading. Queued array jobs will be lost.
+
+-------------------
+=== Know Issues ===
+-------------------
+As of this writing TORQUE 4.0 is not code complete. All features are complete and have 
+been addressed in this document but code changes are expected. The success of TORQUE
+is directly tied to the involvement of the community. Please feel free to offer 
+suggestions to improve the documentation. 
