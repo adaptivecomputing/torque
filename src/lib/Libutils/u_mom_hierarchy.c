@@ -325,8 +325,8 @@ node_comm_t *force_path_update(
            (updated == FALSE))
       {
       levels = (resizable_array *)nt->paths->slots[nt->paths->num].item;
-      
-      for (level = 0; level < levels->num && updated == FALSE; level++)
+     
+      for (level = levels->num - 1; level >= 0 && updated == FALSE; level--) 
         {
         node_comm_entries = (resizable_array *)levels->slots[level+1].item;
         
@@ -359,7 +359,7 @@ node_comm_t *force_path_update(
     {
     levels = (resizable_array *)nt->paths->slots[nt->paths->num].item;
 
-    for (level = 0; level < levels->num && updated == FALSE; level++)
+    for (level = levels->num - 1; level >= 0 && updated == FALSE; level--)
       {
       node_comm_entries = (resizable_array *)levels->slots[level+1].item;
 
