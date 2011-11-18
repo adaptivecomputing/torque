@@ -139,7 +139,7 @@ struct work_task *set_task(
     return(NULL);
     }
 
-  memset(pnew,0,sizeof(work_task));
+  memset(pnew, 0, sizeof(work_task));
 
   pnew->wt_event    = event_id;
   pnew->wt_type     = type;

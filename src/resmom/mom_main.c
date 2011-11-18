@@ -271,7 +271,6 @@ extern int      shut_nvidia_nvml();
 
 void prepare_child_tasks_for_delete();
 static void mom_lock(int fds, int op);
-int parse_mom_hierarchy_file(char *,mom_hierarchy_t *);
 
 #ifdef NUMA_SUPPORT
 int setup_nodeboards();

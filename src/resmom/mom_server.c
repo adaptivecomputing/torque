@@ -3157,6 +3157,13 @@ int write_status_strings(
   
   int            fds = nc->stream;
   int            rc;
+
+  if (LOGLEVEL >= 9)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Attempting to send status update to mom %s", nc->name);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+    }
  
   DIS_tcp_setup(fds);
  
@@ -3171,6 +3178,13 @@ int write_status_strings(
         diswst(fds, IS_EOL_MESSAGE);
 
         rc = DIS_tcp_wflush(fds);
+
+        if (LOGLEVEL >= 7)
+          {
+          snprintf(log_buffer, sizeof(log_buffer),
+            "Successfully sent status update to mom %s", nc->name);
+          log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+          }
 
         /*if (rc == DIS_SUCCESS)*/
           /*read_tcp_reply(fds,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&rc);*/

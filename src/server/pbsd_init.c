@@ -642,6 +642,13 @@ dynamic_string *parse_mom_hierarchy(
       }
     }
 
+  if (send_format->used == 0)
+    {
+    /* if there were no valid paths, return NULL to signify an error */
+    free_dynamic_string(send_format);
+    send_format = NULL;
+    }
+
   return(send_format);
   } /* END parse_mom_hierarchy() */
 
@@ -670,8 +677,11 @@ dynamic_string *prepare_mom_hierarchy()
       "Unable to open %s", path_mom_hierarchy);
     log_err(errno, id, log_buf);
     }
-  else
-    send_format = parse_mom_hierarchy(fds);
+  else if ((send_format = parse_mom_hierarchy(fds)) == NULL)
+    {
+    /* if there's an error, make a default hierarchy */
+    send_format = make_default_hierarchy();
+    }
 
   return(send_format);
   } /* END prepare_mom_hierarchy() */

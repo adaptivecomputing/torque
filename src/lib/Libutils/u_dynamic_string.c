@@ -407,18 +407,21 @@ int delete_last_word_from_dynamic_string(
   if (ds->used <= 0)
     return(-1);
 
-  curr = ds->str + ds->used;
+  /* used is always strlen(str) + 1 + 1 */
+  curr = ds->str + ds->used - 1;
 
-  if (*curr == '\0')
+  if ((curr > ds->str) &&
+      (*curr == '\0'))
     {
     curr--;
     ds->used -= 1;
     }
 
   /* walk backwards across str until you hit a null terminator */
-  while ((curr > ds->str) &&
+  while ((curr >= ds->str) &&
          (*curr != '\0'))
     {
+    *curr = '\0';
     curr--;
     ds->used -= 1;
     }
