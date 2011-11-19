@@ -220,6 +220,83 @@ START_TEST(appending_xml)
 END_TEST
 
 
+
+START_TEST(getter)
+  {
+  dynamic_string *ds;
+  char           *string;
+
+  ds = get_dynamic_string(-1, NULL);
+  string = get_string(ds);
+
+  fail_unless((strlen(string) == 0), "length of string is nonzero");
+  fail_unless(string == ds->str, "String pointers do not match in test 1");
+  free_dynamic_string(ds);
+
+  ds = get_dynamic_string(-1, "bread");
+  string = get_string(ds);
+  fail_unless(string == ds->str, "String pointers do not match in test 2");
+  free_dynamic_string(ds);
+  }
+END_TEST
+
+
+
+START_TEST(series_of_strings)
+  {
+  dynamic_string *ds = get_dynamic_string(-1, NULL);
+  int             i;
+  size_t          correct_len = 0;
+  size_t          initial_len;
+  char           *str;
+
+  for (i = 0; i < num_words; i++)
+    {
+    copy_to_end_of_dynamic_string(ds, sentence[i]);
+    correct_len += strlen(sentence[i]) + 1;
+
+    /* verify length */
+    snprintf(buf, sizeof(buf),
+      "Used should be %d but is %d after adding word %d",
+      (int)correct_len, (int)ds->used, i);
+    fail_unless((correct_len == ds->used), buf);
+    }
+
+  /* make sure the correct strings are stored */
+  str = ds->str;
+  i = 0;
+  while ((str != NULL) &&
+         (*str != '\0'))
+    {
+    snprintf(buf, sizeof(buf),
+      "String should be %s but is %s at word %d",
+      sentence[i], str, i);
+    fail_unless((!strcmp(str, sentence[i])), buf);
+
+    str += strlen(str) + 1;
+    i++;
+    }
+
+  initial_len = correct_len;
+
+  /* test string deletion */
+  for (i = 0; i < num_words; i++)
+    {
+    delete_last_word_from_dynamic_string(ds);
+    correct_len -= strlen(sentence[num_words - i - 1]) + 1;
+
+    snprintf(buf, sizeof(buf),
+      "Used should be %d but is %d after deleting the %dth last word started at %d",
+      (int)correct_len, (int)ds->used, i, (int)initial_len);
+    fail_unless((correct_len == ds->used), buf);
+    }
+
+  free_dynamic_string(ds);
+  }
+END_TEST
+
+
+
 Suite *u_dynamic_string_suite(void)
   {
   Suite *s = suite_create("u_dynamic_string_suite methods");
@@ -233,6 +310,14 @@ Suite *u_dynamic_string_suite(void)
 
   tc_core = tcase_create("appending_xml");
   tcase_add_test(tc_core, appending_xml);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("getter");
+  tcase_add_test(tc_core, getter);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("series_of_strings");
+  tcase_add_test(tc_core, series_of_strings);
   suite_add_tcase(s, tc_core);
 
   return s;
