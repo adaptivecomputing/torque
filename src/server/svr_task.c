@@ -161,10 +161,7 @@ struct work_task *set_task(
       }
     
     pthread_mutex_init(pnew->wt_mutex,NULL);
-
-    /* only acquire the lock if they want it */
-    if (get_lock == TRUE)
-      pthread_mutex_lock(pnew->wt_mutex);
+    pthread_mutex_lock(pnew->wt_mutex);
    
     if (type == WORK_Timed)
       {
@@ -178,20 +175,24 @@ struct work_task *set_task(
       
       if (pold != NULL)
         {
-        insert_task_before(&task_list_timed,pnew,pold);
+        insert_task_before(&task_list_timed, pnew, pold);
         
         pthread_mutex_unlock(pold->wt_mutex);
         }
       else
         {
-        insert_task(&task_list_timed,pnew,FALSE);
+        insert_task(&task_list_timed, pnew);
         }
       
       }
     else
       {
-      insert_task(&task_list_event,pnew,FALSE);
+      insert_task(&task_list_event, pnew);
       }
+
+    /* only keep the lock if they want it */
+    if (get_lock == FALSE)
+      pthread_mutex_unlock(pnew->wt_mutex);
     }
 
   return(pnew);
@@ -236,9 +237,6 @@ void dispatch_task(
   if (ptask->wt_tasklist)
     remove_task(ptask->wt_tasklist,ptask);
 
-  if (ptask->wt_obj_tasklist)
-    remove_task(ptask->wt_obj_tasklist,ptask);
-
   /* unlock and free the mutex */
   pthread_mutex_unlock(ptask->wt_mutex);
   free(ptask->wt_mutex);
@@ -265,14 +263,10 @@ void delete_task(
   if (ptask->wt_tasklist)
     remove_task(ptask->wt_tasklist,ptask);
 
-  if (ptask->wt_obj_tasklist)
-    remove_task(ptask->wt_obj_tasklist,ptask);
-
   pthread_mutex_unlock(ptask->wt_mutex);
   free(ptask->wt_mutex);
 
   (void)free(ptask);
-
   } /* END delete_task() */
 
 
@@ -346,8 +340,7 @@ work_task *next_task(
 int insert_task(
 
   all_tasks *at,
-  work_task *wt,
-  int        object)
+  work_task *wt)
 
   {
   static char *id = "insert_task";
@@ -361,12 +354,8 @@ int insert_task(
     log_err(rc,id,"Cannot allocate space to resize the array");
     }
 
+  wt->wt_tasklist = at;
   pthread_mutex_unlock(at->alltasks_mutex);
-
-  if (object == TRUE)
-    wt->wt_obj_tasklist = at;
-  else
-    wt->wt_tasklist = at;
 
   return(rc);
   } /* END insert_task() */

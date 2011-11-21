@@ -129,7 +129,6 @@ typedef struct all_tasks
 typedef struct work_task
   {
   all_tasks           *wt_tasklist; 
-  all_tasks           *wt_obj_tasklist;
   pthread_mutex_t     *wt_mutex; 
   long                 wt_event; /* event id: time, pid, socket, ... */
   enum work_type       wt_type; /* type of event */
@@ -144,7 +143,7 @@ typedef struct work_task
 
 
 void       initialize_all_tasks_array(all_tasks *);
-int        insert_task(all_tasks *,work_task *,int);
+int        insert_task(all_tasks *, work_task *);
 int        insert_task_before(all_tasks *,work_task *before,work_task *after);
 int        insert_task_first(all_tasks *,work_task *);
 int        remove_task(all_tasks *,work_task *);

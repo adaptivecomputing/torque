@@ -52,11 +52,9 @@ int attempt_delete(
 
   {
   int        skipped = FALSE;
-  int        iter = -1;
   int        release_mutex = TRUE;
 
   char      *jobid_copy;
-  work_task *pwtold;
   job       *pjob;
   time_t     time_now = time(NULL);
 
@@ -68,25 +66,9 @@ int attempt_delete(
 
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
     {
-    /*
-     * Find pid of router from existing work task entry,
-     * then establish another work task on same child.
-     * Next, signal the router and wait for its completion;
-     */
-    
-    while ((pwtold = next_task(pjob->ji_svrtask,&iter)) != NULL)
-      {
-      if ((pwtold->wt_type == WORK_Deferred_Child) ||
-          (pwtold->wt_type == WORK_Deferred_Cmp))
-        {
-        kill((pid_t)pwtold->wt_event, SIGTERM);
-        
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_ABORT;
-        }
-      
-      pthread_mutex_unlock(pwtold->wt_mutex);
-      }
-
+    /* I'm not sure if this is still possible since the thread
+     * waits on the job to finish transmiting, but I'll leave
+     * this part here --dbeer */
     skipped = TRUE;
     
     return(!skipped);
@@ -102,7 +84,7 @@ int attempt_delete(
     {
     /* set up nanny */
     
-    if (!has_job_delete_nanny(pjob))
+    if (pjob->ji_has_delete_nanny == FALSE)
       {
       apply_job_delete_nanny(pjob, time_now + 60);
       
@@ -150,8 +132,6 @@ int attempt_delete(
      * the job is not transitting (though it may have been) and
      * is not running, so put in into a complete state.
      */
-
-    struct work_task *ptask;
     struct pbs_queue *pque;
     int  KeepSeconds = 0;
 
@@ -171,14 +151,7 @@ int attempt_delete(
 
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-    ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, TRUE);
-    
-    if (ptask != NULL)
-      {
-      insert_task(pjob->ji_svrtask, ptask, TRUE);
-
-      pthread_mutex_unlock(ptask->wt_mutex);
-      }
+    set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, FALSE);
     }
 
   if (release_mutex == TRUE)

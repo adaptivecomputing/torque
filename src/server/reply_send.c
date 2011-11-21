@@ -184,9 +184,6 @@ int reply_send_svr(
         if (ptask->wt_tasklist)
           remove_task(ptask->wt_tasklist,ptask);
         
-        if (ptask->wt_obj_tasklist)
-          remove_task(ptask->wt_obj_tasklist,ptask);
-        
         pthread_mutex_unlock(ptask->wt_mutex);
         free(ptask->wt_mutex);
 
@@ -230,8 +227,13 @@ int reply_send_svr(
   }  /* END reply_send_svr() */
 #endif /* PBS_MOM */
 
+
+
+
 int reply_send_mom(
+
   struct batch_request *request)  /* I (freed) */
+
   {
   int      rc = 0;
   int      sfds = request->rq_conn;  /* socket */

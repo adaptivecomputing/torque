@@ -564,15 +564,15 @@ struct job
 #endif
 
 #else     /* END MOM ONLY */
-  struct all_tasks *ji_svrtask; /* holds this job's tasks */
 
+  int               ji_has_delete_nanny;
   struct pbs_queue *ji_qhdr; /* current queue header */
-  int  ji_lastdest; /* last destin tried by route */
-  int  ji_retryok; /* ok to retry, some reject was temp */
-  tlist_head ji_rejectdest; /* list of rejected destinations */
-  struct job_array      *ji_arraystruct; /* pointer to job_array for this array */
-  int  ji_is_array_template;    /* set to TRUE if this is a "template job" for a job array*/
-  int  ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
+  int               ji_lastdest; /* last destin tried by route */
+  int               ji_retryok; /* ok to retry, some reject was temp */
+  tlist_head        ji_rejectdest; /* list of rejected destinations */
+  struct job_array *ji_arraystruct; /* pointer to job_array for this array */
+  int               ji_is_array_template;    /* set to TRUE if this is a "template job" for a job array*/
+  int               ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
 #endif/* PBS_MOM */   /* END SERVER ONLY */
 
   pthread_mutex_t *ji_mutex;

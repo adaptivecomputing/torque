@@ -1076,7 +1076,6 @@ void poll_job_task(
   {
   char      *jobid = (char *)ptask->wt_parm1;
   job       *pjob;
-  work_task *pwt;
   time_t     time_now = time(NULL);
 
   if (jobid != NULL)
@@ -1091,13 +1090,7 @@ void poll_job_task(
         stat_mom_job(pjob);
         
         /* add another task */
-        pwt = set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(jobid), TRUE);
-        
-        if (pwt != NULL)
-          {
-          insert_task(pjob->ji_svrtask,pwt,TRUE);
-          pthread_mutex_unlock(pwt->wt_mutex);
-          }
+        set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(jobid), TRUE);
         }
       
       pthread_mutex_unlock(pjob->ji_mutex);

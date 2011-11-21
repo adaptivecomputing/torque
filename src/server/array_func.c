@@ -668,7 +668,7 @@ int setup_array_struct(
 
   /* initialize the array */
   pa->jobs = malloc(array_size * sizeof(job *));
-  memset(pa->jobs,0,array_size * sizeof(job *));
+  memset(pa->jobs, 0, array_size * sizeof(job *));
 
   /* remember array_size */
   pa->ai_qs.array_size = array_size;
@@ -683,7 +683,6 @@ int setup_array_struct(
     return 2;
     }
 
-  pjob->ji_arraystruct = pa;
   pthread_mutex_unlock(pa->ai_mutex);
 
   return(PBSE_NONE);

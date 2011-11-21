@@ -139,8 +139,7 @@ static void purge_completed_jobs(struct batch_request *);
 
 /* Public Functions in this file */
 
-struct work_task *apply_job_delete_nanny(struct job *, int);
-int has_job_delete_nanny(struct job *);
+int  apply_job_delete_nanny(struct job *, int);
 void change_restart_comment_if_needed(struct job *);
 
 /* Private Data Items */
@@ -264,12 +263,10 @@ int execute_job_delete(
 
   {
   static char      *id = "execute_job_delete";
-  struct work_task *pwtold;
   struct work_task *pwtnew;
   struct work_task *pwtcheck;
 
   int               rc;
-  int               iter = -1;
   char             *sigt = "SIGTERM";
   char             *jobid_copy;
 
@@ -287,66 +284,9 @@ int execute_job_delete(
 
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
     {
-    /*
-     * Find pid of router from existing work task entry,
-     * then establish another work task on same child.
-     * Next, signal the router and wait for its completion;
-     */
-
-    while ((pwtold = next_task(pjob->ji_svrtask,&iter)) != NULL)
-      {
-      if ((pwtold->wt_type == WORK_Deferred_Child) ||
-          (pwtold->wt_type == WORK_Deferred_Cmp))
-        {
-        pwtnew = set_task(
-                   pwtold->wt_type,
-                   pwtold->wt_event,
-                   post_delete_route,
-                   preq,
-                   TRUE);
-
-        if (pwtnew != NULL)
-          {
-          /*
-           * reset type in case the SIGCHLD came
-           * in during the set_task;  it makes
-           * sure that next_task() will find the
-           * new entry.
-           */
-
-          pwtnew->wt_type = pwtold->wt_type;
-          pwtnew->wt_aux = pwtold->wt_aux;
-
-          kill((pid_t)pwtold->wt_event, SIGTERM);
-
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_ABORT;
-
-          pthread_mutex_unlock(pwtnew->wt_mutex);
-          pthread_mutex_unlock(pwtold->wt_mutex);
-          pthread_mutex_unlock(pjob->ji_mutex);
-
-          return(-1); /* all done for now */
-          }
-        else
-          {
-          pthread_mutex_unlock(pwtold->wt_mutex);
-          pthread_mutex_unlock(pjob->ji_mutex);
-
-          req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
-
-          return(MOM_DELETE);
-          }
-        }
-
-      pthread_mutex_unlock(pwtold->wt_mutex);
-      }
-
-    /* should never get here ...  */
-
-    log_err(-1, "req_delete", "Did not find work task for router");
-
-    req_reject(PBSE_INTERNAL, 0, preq, NULL, NULL);
-
+    /* see note in req_delete - not sure this is possible still,
+     * but the deleted code is irrelevant now. I will leave this
+     * part --dbeer */
     pthread_mutex_unlock(pjob->ji_mutex);
 
     return(-1);
@@ -444,7 +384,7 @@ jump:
     }
 
   if ((svr_chk_owner(preq, pjob) != 0) &&
-      !has_job_delete_nanny(pjob))
+      (pjob->ji_has_delete_nanny == FALSE))
     {
     /* only send email if owner did not delete job and job deleted
        has not been previously attempted */
@@ -476,7 +416,7 @@ jump:
      * comments at job_delete_nanny()).
      */
 
-    if (has_job_delete_nanny(pjob))
+    if (pjob->ji_has_delete_nanny == TRUE)
       {
       pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -521,14 +461,7 @@ jump:
         time_now + server.sv_attr[SRV_ATR_JobForceCancelTime].at_val.at_long,
         ensure_deleted,
         dup_jobid,
-        TRUE);
-    
-    if (pwtcheck != NULL)
-      {
-      insert_task(pjob->ji_svrtask,pwtcheck,TRUE);
-
-      pthread_mutex_unlock(pwtcheck->wt_mutex);
-      }
+        FALSE);
     }
 
   /* if configured, and this job didn't have a slot limit hold, free a job
@@ -602,8 +535,6 @@ jump:
      * the job is not transitting (though it may have been) and
      * is not running, so put in into a complete state.
      */
-
-    struct work_task *ptask;
     struct pbs_queue *pque;
     int  KeepSeconds = 0;
 
@@ -625,14 +556,7 @@ jump:
 
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-    ptask = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, TRUE);
-
-    if (ptask != NULL)
-      {
-      insert_task(pjob->ji_svrtask,ptask,TRUE);
-
-      pthread_mutex_unlock(ptask->wt_mutex);
-      }
+    set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, FALSE);
     }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
 
   if (has_mutex == TRUE)
@@ -966,7 +890,6 @@ static void post_delete_mom1(
   int                   dellen = strlen(deldelaystr);
   job                  *pjob;
 
-  struct work_task     *pwtnew;
   pbs_queue            *pque;
 
   struct batch_request *preq_sig;  /* signal request to MOM */
@@ -1049,15 +972,7 @@ static void post_delete_mom1(
       }
     }
 
-  pwtnew = set_task(WORK_Timed, delay + time_now, post_delete_mom2, strdup(pjob->ji_qs.ji_jobid), TRUE);
-
-  if (pwtnew)
-    {
-    /* ensure that work task will be removed if job goes away */
-    insert_task(pjob->ji_svrtask,pwtnew,TRUE);
-
-    pthread_mutex_unlock(pwtnew->wt_mutex);
-    }
+  set_task(WORK_Timed, delay + time_now, post_delete_mom2, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
   /*
    * Since the first signal has succeeded, let's reschedule the
@@ -1170,91 +1085,27 @@ static int forced_jobpurge(
 
 
 
-/* has_job_delete_nanny - return true if job has a job delete nanny
- *
- * This means someone has already tried to cancel this job, and
- * the nanny is taking care of things now.
- */
-
-int has_job_delete_nanny(
-
-  struct job *pjob)
-
-  {
-  int        iter = -1;
-  work_task *pwtiter;
-
-  while ((pwtiter = next_task(pjob->ji_svrtask,&iter)) != NULL)
-    {
-    if (pwtiter->wt_func == job_delete_nanny)
-      {
-      pthread_mutex_unlock(pwtiter->wt_mutex);
-
-      return(TRUE);
-      }
-
-    pthread_mutex_unlock(pwtiter->wt_mutex);
-    }
-
-  return(FALSE);
-  }  /* END has_job_delete_nanny() */
-
-
-
-
-
-/* remove_job_delete_nanny - remove all nannies on a job */
-
-void remove_job_delete_nanny(
-
-  struct job *pjob)
-
-  {
-  int        iter = -1;
-  work_task *pwtiter; 
-  work_task *pwtdel;
-
-  while ((pwtiter = next_task(pjob->ji_svrtask,&iter)) != NULL)
-    {
-    if (pwtiter->wt_func == job_delete_nanny)
-      {
-      pwtdel = pwtiter;
-      delete_task(pwtdel);
-
-      break;
-      }
-
-    pthread_mutex_unlock(pwtiter->wt_mutex);
-    }
-  }  /* END has_job_delete_nanny() */
-
-
-
-
-
 
 /* apply_job_delete_nanny - setup the job delete nanny on a job
  *
- * Only 1 nanny will be allowed at a time.  Before adding the new
- * nanny, we'll remove any existing nannies.
+ * Only 1 nanny will be allowed at a time. Don't add a new nanny
+ * if one already exists
  */
 
-struct work_task *apply_job_delete_nanny(
+int apply_job_delete_nanny(
 
   struct job *pjob,
   int         delay)  /* I */
 
   {
-  struct work_task *pwtnew;
-  enum work_type tasktype;
+  static char      *id = "apply_job_delete_nanny";
+  enum work_type    tasktype;
 
-  /* short-circuit if nanny isn't enabled */
-
-  if (!server.sv_attr[SRV_ATR_JobNanny].at_val.at_long)
+  /* short-circuit if nanny isn't enabled or we have a delete nanny */
+  if ((server.sv_attr[SRV_ATR_JobNanny].at_val.at_long == FALSE) ||
+      (pjob->ji_has_delete_nanny == TRUE))
     {
-    remove_job_delete_nanny(pjob); /* in case it was recently disabled */
-
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   if (delay == 0)
@@ -1267,28 +1118,15 @@ struct work_task *apply_job_delete_nanny(
     }
   else
     {
-    log_err(-1, "apply_job_delete_nanny", "negative delay requested for nanny");
+    log_err(-1, id, "negative delay requested for nanny");
 
-    return(NULL);
+    return(-1);
     }
 
-  /* first, surgically remove any existing nanny tasks */
+  /* add a nanny task at the requested time */
+  set_task(tasktype, delay, job_delete_nanny, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
-  remove_job_delete_nanny(pjob);
-
-  /* second, add a nanny task at the requested time */
-
-  pwtnew = set_task(tasktype, delay, job_delete_nanny, strdup(pjob->ji_qs.ji_jobid), TRUE);
-
-  if (pwtnew)
-    {
-    /* ensure that work task will be removed if job goes away */
-    insert_task(pjob->ji_svrtask,pwtnew,TRUE);
-
-    pthread_mutex_unlock(pwtnew->wt_mutex);
-    }
-
-  return(pwtnew);
+  return(PBSE_NONE);
   } /* END apply_job_delete_nanny() */
 
 
@@ -1346,7 +1184,7 @@ static void job_delete_nanny(
     }
   
   pjob = find_job(jobid);
-  free(pjob);
+  free(jobid);
 
   if (pjob != NULL)
     {
@@ -1385,16 +1223,13 @@ static void post_job_delete_nanny(
   struct work_task *pwt)
 
   {
-
-  struct batch_request *preq_sig;                /* signal request to MOM */
-
-  int   rc;
-  job  *pjob;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  struct batch_request *preq_sig;  /* signal request to MOM */
+  int                   rc;
+  job                  *pjob;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   preq_sig = pwt->wt_parm1;
   rc       = preq_sig->rq_reply.brp_code;
-
 
   if (!server.sv_attr[SRV_ATR_JobNanny].at_val.at_long)
     {
@@ -1405,7 +1240,6 @@ static void post_job_delete_nanny(
     }
 
   /* extract job id from task */
-
   pjob = find_job(preq_sig->rq_ind.rq_signal.rq_jid);
 
   if (pjob == NULL)

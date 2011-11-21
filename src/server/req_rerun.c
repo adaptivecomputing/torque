@@ -173,11 +173,9 @@ void req_rerunjob(
 
   {
   job       *pjob;
-  work_task	*pwt;
 
   int        Force;
   int        rc;
-  int        iter = -1;
   int        MgrRequired = TRUE;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -271,16 +269,6 @@ void req_rerunjob(
     
     pjob->ji_wattr[JOB_ATR_comp_time].at_flags &= ~ATR_VFLAG_SET;
     pjob->ji_wattr[JOB_ATR_reported].at_flags &= ~ATR_VFLAG_SET;
-
-    /*
-     * delete any work task entries associated with the job
-     * there may be tasks for keep_completed proccessing
-     */
-
-    while ((pwt = next_task(pjob->ji_svrtask,&iter)) != NULL) 
-      {
-      delete_task(pwt);
-      }
 
     set_statechar(pjob);
 

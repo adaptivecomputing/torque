@@ -1116,7 +1116,6 @@ void finish_sendmom(
   int        newstate;
   int        newsub;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
-  work_task *ptask;
   time_t     time_now = time(NULL);
 
   if (LOGLEVEL >= 6)
@@ -1170,14 +1169,8 @@ void finish_sendmom(
         depend_on_exec(pjob);
 
       /* set up the poll task */
-      ptask = set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(pjob->ji_qs.ji_jobid), TRUE);
+      set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
-      if (ptask != NULL)
-        {
-        insert_task(pjob->ji_svrtask,ptask,TRUE);
-        pthread_mutex_unlock(ptask->wt_mutex);
-        }
-      
       break;
 
     case LOCUTION_REQUEUE:

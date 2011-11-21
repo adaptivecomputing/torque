@@ -2019,17 +2019,17 @@ static void job_wait_over(
 
   {
   static char *id = "job_wait_over";
-  int   newstate;
-  int   newsub;
-  job  *pjob;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
-  char *jobid = (char *)pwt->wt_parm1;
+  int          newstate;
+  int          newsub;
+  job         *pjob;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  char        *jobid = (char *)pwt->wt_parm1;
   
   free(pwt);
 
   if (jobid == NULL)
     {
-    log_err(ENOMEM,id,"Cannot allocate memory");
+    log_err(ENOMEM, id, "Cannot allocate memory");
     return;
     }
 
@@ -2043,8 +2043,6 @@ static void job_wait_over(
       time_t now = time((time_t *)0);
       time_t when = ((job *)pjob)->ji_wattr[JOB_ATR_exectime].at_val.at_long;
       
-      struct work_task *ptask;
-      
       if (when > now)
         {
         sprintf(log_buf, msg_badwait, ((job *)pjob)->ji_qs.ji_jobid);
@@ -2052,15 +2050,7 @@ static void job_wait_over(
         log_err(-1, id, log_buf);
         
         /* recreate the work task entry */
-        
-        ptask = set_task(WORK_Timed, when, job_wait_over, strdup(pjob->ji_qs.ji_jobid), TRUE);
-        
-        if (ptask != NULL)
-          {
-          insert_task(pjob->ji_svrtask,ptask,TRUE);
-          
-          pthread_mutex_unlock(ptask->wt_mutex);
-          }
+        set_task(WORK_Timed, when, job_wait_over, strdup(pjob->ji_qs.ji_jobid), FALSE);
         
         pthread_mutex_unlock(pjob->ji_mutex);
         
@@ -2073,7 +2063,7 @@ static void job_wait_over(
     
     /* clear the exectime attribute */
     job_attr_def[JOB_ATR_exectime].at_free(
-        &pjob->ji_wattr[JOB_ATR_exectime]);
+      &pjob->ji_wattr[JOB_ATR_exectime]);
     
     pjob->ji_modified = 1;
     
@@ -2100,13 +2090,12 @@ static void job_wait_over(
 int job_set_wait(
 
   attribute *pattr,
-  void      *pjob, /* a (job *) cast to void * */
+  void      *j,    /* a (job *) cast to void * */
   int        mode) /* unused, do it for all action modes */
 
   {
-  work_task *ptask;
   long       when;
-  int        iter = -1;
+  job       *pjob = (job *)j;
 
   if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
     {
@@ -2115,40 +2104,13 @@ int job_set_wait(
 
   when  = pattr->at_val.at_long;
 
-  /* Is there already an entry for this job?  Then reuse it */
-
-  if (((job *)pjob)->ji_qs.ji_svrflags & JOB_SVFLG_HASWAIT)
-    {
-    while ((ptask = next_task(((job *)pjob)->ji_svrtask,&iter)) != NULL)
-      {
-      if ((ptask->wt_type == WORK_Timed) &&
-          (ptask->wt_func == job_wait_over) &&
-          (ptask->wt_parm1 == pjob))
-        {
-        ptask->wt_event = when;
-
-        pthread_mutex_unlock(ptask->wt_mutex);
-
-        return(PBSE_NONE);
-        }
-
-      pthread_mutex_unlock(ptask->wt_mutex);
-      } /* END for each task */
-    }
-
-  ptask = set_task(WORK_Timed, when, job_wait_over, strdup(((job *)pjob)->ji_qs.ji_jobid), TRUE);
-
-  if (ptask == NULL)
+  if (set_task(WORK_Timed, when, job_wait_over, strdup(pjob->ji_qs.ji_jobid), FALSE) == NULL)
     {
     return(-1);
     }
 
-  insert_task(((job *)pjob)->ji_svrtask,ptask,TRUE);
-
-  pthread_mutex_unlock(ptask->wt_mutex);
-
   /* set JOB_SVFLG_HASWAIT to show job has work task entry */
-  ((job *)pjob)->ji_qs.ji_svrflags |= JOB_SVFLG_HASWAIT;
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASWAIT;
 
   return(PBSE_NONE);
   }  /* END job_set_wait() */

@@ -641,9 +641,6 @@ job *job_alloc(void)
   /* set the working attributes to "unspecified" */
   job_init_wattr(pj);
   
-  pj->ji_svrtask = malloc(sizeof(all_tasks));
-  initialize_all_tasks_array(pj->ji_svrtask);
-
   return(pj);
   }  /* END job_alloc() */
 
@@ -661,7 +658,6 @@ void job_free(
   {
   int               i;
 
-  struct work_task *pwt;
   badplace         *bp;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -681,14 +677,7 @@ void job_free(
 
   i = -1;
 
-  /* delete any work task entries associated with the job */
-  while ((pwt = next_task(pj->ji_svrtask,&i)) != NULL)
-    {
-    delete_task(pwt);
-    }
-
   /* free any bad destination structs */
-
   bp = (badplace *)GET_NEXT(pj->ji_rejectdest);
 
   while (bp != NULL)
@@ -766,23 +755,16 @@ job *job_clone(
 
   /* new job structure is allocated,
      now we need to copy the old job, but modify based on taskid */
-
-  pnewjob->ji_svrtask = malloc(sizeof(all_tasks));
-  initialize_all_tasks_array(pnewjob->ji_svrtask);
   CLEAR_HEAD(pnewjob->ji_rejectdest);
   pnewjob->ji_modified = 1;   /* struct changed, needs to be saved */
 
   /* copy the fixed size quick save information */
-
   memcpy(&pnewjob->ji_qs, &template_job->ji_qs, sizeof(struct jobfix));
 
   /* find the job id for the cloned job */
-
-  oldid = strdup(template_job->ji_qs.ji_jobid);
-
-  if (oldid == NULL)
+  if ((oldid = strdup(template_job->ji_qs.ji_jobid)) == NULL)
     {
-    log_err(errno, id, "no memory");
+    log_err(ENOMEM, id, "no memory");
     job_free(pnewjob);
 
     return(NULL);
@@ -1617,7 +1599,7 @@ void job_purge(
     if (pa->ai_qs.num_purged == pa->ai_qs.num_jobs)
       {
       /* array_delete will unlock pa->ai_mutex */
-      array_delete(pjob->ji_arraystruct);
+      array_delete(pa);
       }
     else
       {

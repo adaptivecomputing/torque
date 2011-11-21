@@ -681,17 +681,7 @@ int mom_comm(
               (long)(time_now + PBS_NET_RETRY_TIME),
               func,
               jobid_copy,
-              TRUE);
-
-      if (pwt != NULL)
-        {
-        /* ensure that work task will be removed if job goes away */
-        insert_task(pjob->ji_svrtask,pwt,TRUE);
-
-        pthread_mutex_unlock(pwt->wt_mutex);
-        }
-      else if (jobid_copy != NULL)
-        free(jobid_copy);
+              FALSE);
 
       return(-1);
       }
@@ -1371,7 +1361,6 @@ int handle_complete_first_time(
 
   {
   pbs_queue   *pque;
-  work_task   *pwt = NULL;
   char        *jobid;
   int          KeepSeconds = 0;
   time_t       time_now = time(NULL);
@@ -1422,9 +1411,9 @@ int handle_complete_first_time(
      */
     jobid = strdup(pjob->ji_qs.ji_jobid);
     
-    pwt = set_task(WORK_Timed,
-        pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
-        on_job_exit, jobid, TRUE);
+    set_task(WORK_Timed,
+      pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
+      on_job_exit, jobid, FALSE);
     }
   else
     {
@@ -1438,7 +1427,7 @@ int handle_complete_first_time(
     
     jobid = strdup(pjob->ji_qs.ji_jobid);
     
-    pwt = set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid, TRUE);
+    set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid, FALSE);
     
     if (gettimeofday(&tv, &tz) == 0)
       {
@@ -1457,14 +1446,6 @@ int handle_complete_first_time(
     job_save(pjob, SAVEJOB_FULL, 0);
     }
   
-  if (pwt != NULL)
-    {
-    /* ensure that work task will be removed if job goes away */
-    insert_task(pjob->ji_svrtask,pwt,TRUE);
-    
-    pthread_mutex_unlock(pwt->wt_mutex);
-    }
-
   return(FALSE);
   } /* END handle_complete_first_time() */
 
@@ -1477,7 +1458,6 @@ int handle_complete_second_time(
   job *pjob)
 
   {
-  work_task   *pwt;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   char        *jobid;
   time_t       time_now = time(NULL);
@@ -1496,16 +1476,8 @@ int handle_complete_second_time(
       }
     
     jobid = strdup(pjob->ji_qs.ji_jobid);
-    pwt = set_task(WORK_Timed,time_now + JOBMUSTREPORTDEFAULTKEEP,on_job_exit,jobid,TRUE);
+    set_task(WORK_Timed, time_now + JOBMUSTREPORTDEFAULTKEEP, on_job_exit, jobid, FALSE);
     
-    if (pwt != NULL)
-      {
-      /* ensure that work task will be removed if job goes away */
-      insert_task(pjob->ji_svrtask,pwt,TRUE);
-      
-      pthread_mutex_unlock(pwt->wt_mutex);
-      }
-  
     return(FALSE); 
     }
   else
@@ -1616,9 +1588,6 @@ void on_job_exit(
     }
 
   /* MOM has killed everything it can kill, so we can stop the nanny */
-
-  remove_job_delete_nanny(pjob);
-
   switch (pjob->ji_qs.ji_substate)
     {
 
