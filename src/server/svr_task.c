@@ -165,7 +165,7 @@ struct work_task *set_task(
    
     if (type == WORK_Timed)
       {
-      while ((pold = next_task(&task_list_timed,&iter)) != NULL)
+      while ((pold = next_task(&task_list_timed, &iter)) != NULL)
         {
         if (pold->wt_event > pnew->wt_event)
           break;
@@ -235,7 +235,7 @@ void dispatch_task(
 
   {
   if (ptask->wt_tasklist)
-    remove_task(ptask->wt_tasklist,ptask);
+    remove_task(ptask->wt_tasklist, ptask);
 
   /* unlock and free the mutex */
   pthread_mutex_unlock(ptask->wt_mutex);

@@ -1145,15 +1145,23 @@ void main_loop(void)
 
       /* if time or event says to run scheduler, do it */
 
+      pthread_mutex_lock(svr_do_schedule_mutex);
+
       if ((svr_do_schedule != SCH_SCHEDULE_NULL) &&
           server.sv_attr[SRV_ATR_scheduling].at_val.at_long)
         {
+        pthread_mutex_unlock(svr_do_schedule_mutex);
+
         server.sv_next_schedule =
           time_now +
           server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long;
 
         schedule_jobs();
         notify_listeners();
+        }
+      else
+        {
+        pthread_mutex_unlock(svr_do_schedule_mutex);
         }
       }
     else if (*state == SV_STATE_HOT)
