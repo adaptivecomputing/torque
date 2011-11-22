@@ -177,8 +177,6 @@ static int contact_sched(
     {
     /* FAILURE */
 
-    bad_node_warning(pbs_scheduler_addr, NULL);
-
 #if 0
     sprintf(tmpLine, "%s - port %d %s",
             msg_sched_nocall,
