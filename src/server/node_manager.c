@@ -848,6 +848,7 @@ void update_job_data(
   char      *id = "update_job_data";
 
   char      *jobdata;
+  char      *jobdata_ptr;
   char      *jobidstr;
   char      *attr_name;
   char      *attr_value;
@@ -865,8 +866,9 @@ void update_job_data(
   /* FORMAT <JOBID>:<atrtributename=value>,<atrtributename=value>... */
 
   jobdata = strdup(jobstring_in);
+  jobdata_ptr = jobdata;
 
-  jobidstr = threadsafe_tokenizer(&jobdata, ":");
+  jobidstr = threadsafe_tokenizer(&jobdata_ptr, ":");
 
   if ((jobidstr != NULL) && isdigit(*jobidstr))
     {
@@ -886,11 +888,11 @@ void update_job_data(
         svrattrl tA;
         
         /* job exists, so get the attributes and update them */
-        attr_name = threadsafe_tokenizer(&jobdata, "=");
+        attr_name = threadsafe_tokenizer(&jobdata_ptr, "=");
         
         while (attr_name != NULL)
           {
-          attr_value = threadsafe_tokenizer(&jobdata, ",");
+          attr_value = threadsafe_tokenizer(&jobdata_ptr, ",");
           
           if (LOGLEVEL >= 9)
             {
@@ -915,7 +917,7 @@ void update_job_data(
             ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
             &bad);
 
-          attr_name = threadsafe_tokenizer(&jobdata, "=");
+          attr_name = threadsafe_tokenizer(&jobdata_ptr, "=");
           }
         
         pthread_mutex_unlock(pjob->ji_mutex);

@@ -725,9 +725,10 @@ int verify_moms_up(
   int                 nodenum;
 
   struct  addrinfo   *addr_info;
-  char               *nodestr;
+  char               *nodestr = NULL;
   char               *cp;
   char               *hostlist;
+  char               *hostlist_ptr;
   int                 size;
 
   struct sockaddr_in  saddr;
@@ -736,6 +737,7 @@ int verify_moms_up(
   
   /* NOTE: Copy the nodes into a temp string because threadsafe_tokenizer() is destructive. */
   hostlist = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  hostlist_ptr = hostlist;
 
   if (hostlist == NULL)
     {
@@ -747,7 +749,7 @@ int verify_moms_up(
     /* Get the first host. */
     strncpy(hostlist, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, size);
     hostlist[size] = '\0';
-    nodestr = threadsafe_tokenizer(&hostlist, "+");
+    nodestr = threadsafe_tokenizer(&hostlist_ptr, "+");
     }
 
   while (nodestr != NULL)
@@ -870,7 +872,7 @@ int verify_moms_up(
     /* clean up and get next host. */
     close(sock);
 
-    nodestr = threadsafe_tokenizer(&hostlist, "+");
+    nodestr = threadsafe_tokenizer(&hostlist_ptr, "+");
     }  /* END while (nodestr != NULL) */
 
   /* SUCCESS */
