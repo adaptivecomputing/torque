@@ -111,10 +111,11 @@ extern char     *msg_listnr_nocall;
 
 extern struct listener_connection listener_conns[];
 
-int scheduler_sock = -1;
-int scheduler_jobct = 0;
+int scheduler_sock;
+int scheduler_jobct;
 int listener_command = SCH_SCHEDULE_NULL;
 extern pthread_mutex_t *listener_command_mutex;
+extern pthread_mutex_t *scheduler_sock_jobct_mutex;
 
 
 /* Functions private to this file */
@@ -263,18 +264,27 @@ int schedule_jobs(void)
   svr_do_schedule = SCH_SCHEDULE_NULL;
   pthread_mutex_unlock(svr_do_schedule_mutex);
 
+  pthread_mutex_lock(scheduler_sock_jobct_mutex);
+
   if (scheduler_sock == -1)
     {
     scheduler_jobct = 0;
 
     if ((scheduler_sock = contact_sched(cmd)) < 0)
       {
+      pthread_mutex_unlock(scheduler_sock_jobct_mutex);
       return(-1);
       }
+      
+    pthread_mutex_unlock(scheduler_sock_jobct_mutex);
 
     first_time = 0;
 
     return(0);
+    }
+  else
+    {
+    pthread_mutex_unlock(scheduler_sock_jobct_mutex);
     }
 
   return(1);
@@ -425,6 +435,7 @@ static void scheduler_close(
   int sock)
 
   {
+  pthread_mutex_lock(scheduler_sock_jobct_mutex);
   scheduler_sock = -1;
 
   /*
@@ -449,6 +460,8 @@ static void scheduler_close(
     listener_command = SCH_SCHEDULE_RECYC;
     pthread_mutex_unlock(listener_command_mutex);
     }
+    
+  pthread_mutex_unlock(scheduler_sock_jobct_mutex);
 
   return;
   }  /* END scheduler_close() */

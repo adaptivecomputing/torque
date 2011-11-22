@@ -153,8 +153,9 @@ extern char *msg_badexit;
 extern char *msg_jobrun;
 extern char *msg_manager;
 extern char *msg_stageinfail;
-extern int   scheduler_jobct;
-extern int   scheduler_sock;
+extern int              scheduler_jobct;
+extern int              scheduler_sock;
+extern pthread_mutex_t *scheduler_sock_jobct_mutex;
 extern int   svr_totnodes; /* non-zero if using nodes */
 extern int   svr_tsnodes; /* non-zero if time-shared nodes */
 
@@ -208,8 +209,10 @@ void *req_runjob(
     return(NULL);
     }
 
+  pthread_mutex_lock(scheduler_sock_jobct_mutex);
   if (preq->rq_conn == scheduler_sock)
     ++scheduler_jobct; /* see scheduler_close() */
+  pthread_mutex_unlock(scheduler_sock_jobct_mutex);
 
   sprintf(log_buf, msg_manager, msg_jobrun, preq->rq_user, preq->rq_host);
 

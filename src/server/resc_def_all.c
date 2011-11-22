@@ -990,12 +990,15 @@ long count_proc(
   char *substr;
   char *ppnloc;
   char *spec;
+  char *spec_ptr;
 
   if ((spec = strdup(param_spec)) == NULL)
     return(-1);
 
+  spec_ptr = spec;
+
   /* split on + */
-  while ((substr = threadsafe_tokenizer(&spec, "+")) != NULL)
+  while ((substr = threadsafe_tokenizer(&spec_ptr, "+")) != NULL)
     {
     num_nodes = atoi(substr);
     if (num_nodes == 0)

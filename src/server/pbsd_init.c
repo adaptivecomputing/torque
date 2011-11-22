@@ -196,6 +196,9 @@ job_recycler            recycler;
 dynamic_string         *hierarchy_holder;
 hello_container         hellos;
 
+pthread_mutex_t        *scheduler_sock_jobct_mutex;
+extern int              scheduler_sock;
+extern int              scheduler_jobct;
 extern pthread_mutex_t *svr_do_schedule_mutex;
 extern pthread_mutex_t *listener_command_mutex;
 extern pthread_mutex_t *node_state_mutex;
@@ -1065,7 +1068,16 @@ int pbsd_init(
   pthread_mutex_init(listener_command_mutex, NULL);
 
   node_state_mutex = malloc(sizeof(pthread_mutex_t));
-  pthread_mutex_init(node_state_mutex,NULL);
+  pthread_mutex_init(node_state_mutex, NULL);
+
+  scheduler_sock_jobct_mutex = malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(scheduler_sock_jobct_mutex, NULL);
+
+  pthread_mutex_lock(scheduler_sock_jobct_mutex);
+  scheduler_sock = -1;
+  scheduler_jobct = 0;
+  pthread_mutex_unlock(scheduler_sock_jobct_mutex);
+
 
   /* make the task list child and events mutexes recursive because 
    * they can be called by a signal handler */

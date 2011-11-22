@@ -102,12 +102,13 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 
-extern int    LOGLEVEL;
-extern int    scheduler_sock;
-extern int    svr_do_schedule;
+extern int              LOGLEVEL;
+extern int              scheduler_sock;
+extern pthread_mutex_t *scheduler_sock_jobct_mutex;
+extern int              svr_do_schedule;
 extern pthread_mutex_t *svr_do_schedule_mutex;
 extern pthread_mutex_t *listener_command_mutex;
-extern int    listener_command;
+extern int              listener_command;
 
 /*
  * the following array of strings is used in decoding/encoding the server state
@@ -169,8 +170,13 @@ int encode_svrstate(
     {
     if (server.sv_attr[SRV_ATR_scheduling].at_val.at_long == 0)
       psname = svr_idle;
-    else if (scheduler_sock != -1)
-      psname = svr_sched;
+    else 
+      {
+      pthread_mutex_lock(scheduler_sock_jobct_mutex);
+      if (scheduler_sock != -1)
+        psname = svr_sched;
+      pthread_mutex_unlock(scheduler_sock_jobct_mutex);
+      }
     }
 
   pal = attrlist_create(atname, rsname, strlen(psname) + 1);
