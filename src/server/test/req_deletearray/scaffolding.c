@@ -128,7 +128,7 @@ int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int 
   exit(1);
   }
 
-int insert_task(all_tasks *at, work_task *wt, int object)
+int insert_task(all_tasks *at, work_task *wt)
   {
   fprintf(stderr, "The call to insert_task needs to be mocked!!\n");
   exit(1);

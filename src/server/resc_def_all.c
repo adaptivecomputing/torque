@@ -96,6 +96,7 @@
 #include "server_limits.h"
 #include "server.h"
 #include "array.h"
+#include "utils.h"
 
 extern struct server server;
 
@@ -980,19 +981,21 @@ int ctnodes(
 
 long count_proc(
 
-  char *spec)
+  char *param_spec)
 
   {
-  long num_nodes = 0, num_procs = 0, total_procs = 0;
-  char *substr, *ppnloc;
+  long  num_nodes = 0;
+  long  num_procs = 0;
+  long  total_procs = 0;
+  char *substr;
+  char *ppnloc;
+  char *spec;
 
-  spec = strdup(spec);
-  if (spec == NULL) 
+  if ((spec = strdup(param_spec)) == NULL)
     return(-1);
 
   /* split on + */
-  substr = strtok(spec, "+");
-  do
+  while ((substr = threadsafe_tokenizer(&spec, "+")) != NULL)
     {
     num_nodes = atoi(substr);
     if (num_nodes == 0)
@@ -1006,12 +1009,11 @@ long count_proc(
       num_procs = atoi(ppnloc + 5);
       
     total_procs += num_procs * num_nodes;
-    substr = strtok(NULL, "+");
-    } while(substr != NULL);
+    }
 
   free(spec);
-  return(total_procs);
 
+  return(total_procs);
   }  /* END count_proc */
 
 

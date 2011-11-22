@@ -3,6 +3,8 @@
 #define _U_MU_CT_H
 #include <check.h>
 
+char *threadsafe_tokenizer(char **str, char *delims);
+
 #define U_MU_SUITE 1
 Suite *u_mu_suite();
 #define METH_2 2

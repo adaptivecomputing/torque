@@ -144,13 +144,14 @@ extern void tfree (tree **);
 extern int is_whitespace (char);
 extern int write_buffer (char *,int,int);
 
-/* moab-like utility functions in u_mu.c */
+/* utility functions in u_mu.c */
 int   MUSNPrintF (char **, int *, char *, ...);
 int   MUStrNCat (char **, int *, char *);
 int   MUSleep (long);
 int   MUReadPipe (char *, char *, int);
 int   is_whitespace (char);
 char *trim(char *);
+char *threadsafe_tokenizer(char **str, char  *delims);
 
 /* MXML functions from u_MXML.c */
 extern int MXMLGetChild (mxml_t *, char *, int *, mxml_t **);

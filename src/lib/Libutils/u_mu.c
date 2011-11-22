@@ -105,6 +105,61 @@ int MUSNPrintF(
 
 
 
+/*
+ * a threadsafe tokenizing function - this also alters the input string
+ * just like strtok does.
+ *
+ * @param str - a modified string pointer (advanced past the token)
+ * @param delims - the delimiters to look for
+ * @return - a pointer to the token
+ */
+
+char *threadsafe_tokenizer(
+
+  char **str,    /* M */
+  char  *delims) /* I */
+
+  {
+  char *current_char;
+  char *start;
+
+  if ((str == NULL) ||
+      (*str == NULL))
+    return(NULL);
+
+  /* save start position */
+  start = *str;
+
+  /* return NULL at the end of the string */
+  if (*start == '\0')
+    return(NULL);
+
+  /* begin at the start */
+  current_char = start;
+
+  /* advance to the end of the string or until you find a delimiter */
+  while ((*current_char != '\0') &&
+         (!strchr(delims, *current_char)))
+    current_char++;
+
+  /* advance str */
+  if (*current_char != '\0')
+    {
+    /* not at the end of the string */
+    *str = current_char + 1;
+    *current_char = '\0';
+    }
+  else
+    {
+    /* at the end of the string */
+    *str = current_char;
+    }
+
+  return(start);
+  } /* END threadsafe_tokenizer() */
+
+
+
 
 char *MUStrTok(
 

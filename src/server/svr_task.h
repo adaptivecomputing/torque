@@ -16,7 +16,7 @@ void initialize_all_tasks_array(all_tasks *at);
 
 work_task *next_task(all_tasks *at, int *iter);
 
-int insert_task(all_tasks *at, work_task *wt, int object);
+int insert_task(all_tasks *at, work_task *wt);
 
 int insert_task_before(all_tasks *at, work_task *before, work_task *after);
 

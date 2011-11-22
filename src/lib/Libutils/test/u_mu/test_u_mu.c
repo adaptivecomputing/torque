@@ -7,9 +7,27 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
-  {
+char buf[4096];
 
+START_TEST(threadsafe_tokenizer_test)
+  {
+  char  my_str[] = "one,two,three,four";
+  char *strings[] = { "one", "two", "three", "four" };
+  char *delim = ",";
+  char *tok;
+  char *str_ptr = my_str;
+  int   i = 0;
+
+  while ((tok = threadsafe_tokenizer(&str_ptr, delim)) != NULL)
+    {
+    fail_unless(i < 4, "Too many strings were returned");
+
+    snprintf(buf, sizeof(buf),
+      "token should be '%s' but is '%s' on iteration %d",
+      strings[i], tok, i);
+    fail_unless((!strcmp(tok, strings[i])), buf);
+    i++;
+    }
 
   }
 END_TEST
@@ -24,8 +42,8 @@ END_TEST
 Suite *u_mu_suite(void)
   {
   Suite *s = suite_create("u_mu_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("threadsafe_tokenizer_test");
+  tcase_add_test(tc_core, threadsafe_tokenizer_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

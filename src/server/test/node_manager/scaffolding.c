@@ -331,3 +331,9 @@ void *send_hierarchy_threadtask(void *vp)
   }
 
 
+
+char *threadsafe_tokenizer(char **str, char *delims)
+  {
+  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
+  exit(1);
+  }

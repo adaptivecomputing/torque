@@ -110,6 +110,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 #include "array.h"
+#include "utils.h"
 
 #define PURGE_SUCCESS 1
 #define MOM_DELETE    2
@@ -817,37 +818,40 @@ void change_restart_comment_if_needed(
   struct job *pjob)
 
   {
-  if ((pjob->ji_wattr[JOB_ATR_start_count].at_val.at_long > 1) &&
-    (pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_flags & ATR_VFLAG_SET))
-    {
-      char *token1 = NULL;
-      char *token2 = NULL;
-      char commentMsg[25];
-      char *ptr;
-      
-      strncpy(commentMsg,
-        pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str, 24);
-      
-      token1 = strtok(commentMsg," ");
-      if (token1 != NULL)
-        token2 = strtok(NULL," ");
-      
-      if ((token2 != NULL) && 
-        ((memcmp(token2,"failure",7) == 0) || (memcmp(token2,"restarted",9) == 0)))
-        {
-        ptr = pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str;
-        if (isupper(*ptr))
-          {
-            *ptr = tolower(*ptr);
-            pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_flags
-              |= ATR_VFLAG_SET;
-            pjob->ji_modified = 1;
-          }
-        }
-    }
 
+  if ((pjob->ji_wattr[JOB_ATR_start_count].at_val.at_long > 1) &&
+      (pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_flags & ATR_VFLAG_SET))
+    {
+    char *token1 = NULL;
+    char *token2 = NULL;
+    char *comment_ptr;
+    char  commentMsg[25];
+    char *ptr;
+
+    strncpy(commentMsg,
+      pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str, 24);
+   
+    comment_ptr = commentMsg;
+    token1 = threadsafe_tokenizer(&comment_ptr, " ");
+    if (token1 != NULL)
+      token2 = threadsafe_tokenizer(&comment_ptr, " ");
+    
+    if ((token2 != NULL) && 
+        ((memcmp(token2,"failure",7) == 0) || 
+         (memcmp(token2,"restarted",9) == 0)))
+      {
+      ptr = pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str;
+      if (isupper(*ptr))
+        {
+        *ptr = tolower(*ptr);
+        pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_flags |= ATR_VFLAG_SET;
+        pjob->ji_modified = 1;
+        }
+      }
+    }
+  
   return;
-  }
+  } /* change_restart_comment_if_needed() */
 
 
  

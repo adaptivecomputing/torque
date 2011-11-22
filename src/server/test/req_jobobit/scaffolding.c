@@ -266,7 +266,7 @@ void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
   exit(1);
   }
 
-int insert_task(all_tasks *at, work_task *wt, int object) 
+int insert_task(all_tasks *at, work_task *wt) 
   {
   fprintf(stderr, "The call to insert_task to be mocked!!\n");
   exit(1);
@@ -278,3 +278,9 @@ void get_jobowner(char *from, char *to)
   exit(1);
   }
 
+
+char *threadsafe_tokenizer(char **str, char *delims)
+  {
+  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
+  exit(1);
+  }

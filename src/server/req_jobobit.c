@@ -112,6 +112,7 @@
 #include "queue.h"
 #include "array.h"
 #include "issue_request.h" /* issue_request */
+#include "utils.h"
 
 
 #define RESC_USED_BUF 2048
@@ -732,13 +733,15 @@ int check_if_checkpoint_restart_failed(
   char *pfailure = NULL;
   long *hold_val = 0;
   char  errMsg[MAXPATHLEN];
+  char *err_ptr;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
         
   snprintf(errMsg, sizeof(errMsg), "%s",
     pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str);
-  
-  if ((pfailtype = strtok(errMsg," ")) != NULL)
-    pfailure = strtok(NULL," ");
+ 
+  err_ptr = errMsg;
+  if ((pfailtype = threadsafe_tokenizer(&err_ptr, " ")) != NULL)
+    pfailure = threadsafe_tokenizer(&err_ptr, " ");
   
   if (pfailure != NULL)
     {

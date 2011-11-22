@@ -42,7 +42,7 @@
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "work_task.h"
-
+#include "utils.h"
 #include "array.h"
 
 extern int array_upgrade(job_array *, int, int, int *);
@@ -1617,21 +1617,22 @@ int num_array_jobs(
   char *req_str) /* I */
 
   {
-  int   num_jobs = 0;
-  int   start;
-  int   end;
+  int    num_jobs = 0;
+  int    start;
+  int    end;
 
-  char *delim = ",";
-  char *ptr;
-  char *dash;
-
-  char  tmp_str[MAXPATHLEN];
+  char  *delim = ",";
+  char  *ptr;
+  char  *dash;
+  char  *tmp_ptr;
+  char   tmp_str[MAXPATHLEN];
 
   if (req_str == NULL)
     return(-1);
 
   strcpy(tmp_str,req_str);
-  ptr = strtok(tmp_str,delim);
+  tmp_ptr = tmp_str;
+  ptr = threadsafe_tokenizer(&tmp_ptr, delim);
 
   while (ptr != NULL)
     {
@@ -1653,7 +1654,7 @@ int num_array_jobs(
       num_jobs++;
       }
 
-    ptr = strtok(NULL,delim);
+    ptr = threadsafe_tokenizer(&tmp_ptr, delim);
     }
 
   return(num_jobs);

@@ -508,7 +508,7 @@ int handle_level(
   copy_to_end_of_dynamic_string(send_format, "<sl>");
       
   /* find each hostname */
-  host_tok = strtok(level_iter, delims);
+  host_tok = threadsafe_tokenizer(&level_iter, delims);
 
   while (host_tok != NULL)
     {
@@ -530,7 +530,7 @@ int handle_level(
       append_dynamic_string(level_buf, host_tok);
       }
 
-    host_tok = strtok(NULL, delims);
+    host_tok = threadsafe_tokenizer(&level_iter, delims);
     }
      
   copy_to_end_of_dynamic_string(send_format, level_buf->str);

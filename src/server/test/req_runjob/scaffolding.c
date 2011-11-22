@@ -273,8 +273,14 @@ job *chk_job_request(char *jobid, struct batch_request *preq)
   exit(1);
   }
 
-int insert_task(all_tasks *at, work_task *wt, int object)
+int insert_task(all_tasks *at, work_task *wt)
   {
   fprintf(stderr, "The call to insert_task to be mocked!!\n");
+  exit(1);
+  }
+
+char *threadsafe_tokenizer(char **str, char *delims)
+  {
+  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);
   }

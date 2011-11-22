@@ -208,3 +208,9 @@ int decode_tokens(attribute *patr, char *name, char *rescn, char *val, int perm)
   }
 
 
+
+char *threadsafe_tokenizer(char **str, char *delims)
+  {
+  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
+  exit(1);
+  }

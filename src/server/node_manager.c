@@ -744,7 +744,7 @@ void *sync_node_jobs(
 
   /* FORMAT <JOBID>[ <JOBID>]... */
   joblist = jobstring_in;
-  jobidstr = strtok(joblist, " ");
+  jobidstr = threadsafe_tokenizer(&joblist, " ");
 
   np = find_nodebyname(node_id);
 
@@ -819,7 +819,7 @@ void *sync_node_jobs(
         pthread_mutex_unlock(pjob->ji_mutex);
       }
 
-    jobidstr = strtok(NULL, " ");
+    jobidstr = threadsafe_tokenizer(&joblist, " ");
     }  /* END while ((jobidstr != NULL) && ...) */
 
   /* SUCCESS */
@@ -866,7 +866,7 @@ void update_job_data(
 
   jobdata = strdup(jobstring_in);
 
-  jobidstr = strtok(jobdata, ":");
+  jobidstr = threadsafe_tokenizer(&jobdata, ":");
 
   if ((jobidstr != NULL) && isdigit(*jobidstr))
     {
@@ -886,12 +886,11 @@ void update_job_data(
         svrattrl tA;
         
         /* job exists, so get the attributes and update them */
-
-        attr_name = strtok(NULL, "=");
+        attr_name = threadsafe_tokenizer(&jobdata, "=");
         
         while (attr_name != NULL)
           {
-          attr_value = strtok(NULL, ",");
+          attr_value = threadsafe_tokenizer(&jobdata, ",");
           
           if (LOGLEVEL >= 9)
             {
@@ -916,7 +915,7 @@ void update_job_data(
             ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
             &bad);
 
-          attr_name = strtok(NULL, "=");
+          attr_name = threadsafe_tokenizer(&jobdata, "=");
           }
         
         pthread_mutex_unlock(pjob->ji_mutex);

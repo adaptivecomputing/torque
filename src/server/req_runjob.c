@@ -731,7 +731,7 @@ int verify_moms_up(
 
   badplace           *bp;
   
-  /* NOTE: Copy the nodes into a temp string because strtok() is destructive. */
+  /* NOTE: Copy the nodes into a temp string because threadsafe_tokenizer() is destructive. */
   hostlist = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
   if (hostlist == NULL)
@@ -744,7 +744,7 @@ int verify_moms_up(
     /* Get the first host. */
     strncpy(hostlist, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, size);
     hostlist[size] = '\0';
-    nodestr = strtok(hostlist, "+");
+    nodestr = threadsafe_tokenizer(&hostlist, "+");
     }
 
   while (nodestr != NULL)
@@ -867,7 +867,7 @@ int verify_moms_up(
     /* clean up and get next host. */
     close(sock);
 
-    nodestr = strtok(NULL, "+");
+    nodestr = threadsafe_tokenizer(&hostlist, "+");
     }  /* END while (nodestr != NULL) */
 
   /* SUCCESS */

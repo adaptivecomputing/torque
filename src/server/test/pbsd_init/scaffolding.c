@@ -476,3 +476,9 @@ int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int 
   exit(1);
   }
 
+
+char *threadsafe_tokenizer(char **str, char *delims)
+  {
+  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
+  exit(1);
+  }

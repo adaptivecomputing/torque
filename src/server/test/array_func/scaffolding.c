@@ -205,3 +205,8 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
+char *threadsafe_tokenizer(char **str, char *delims)
+  {
+  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
+  exit(1);
+  }
