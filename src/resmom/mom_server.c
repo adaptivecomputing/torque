@@ -4175,12 +4175,15 @@ int read_cluster_addresses(
   send_update_within_ten();
 
   /* now re-order the paths, the shallowest being first */
-  for (i = 0; i < path_index - 1; i++)
+  /* start at index 1 because index 0 is always empty */
+  for (i = 1; i < path_index; i++)
     {
     resizable_array *path = mh->paths->slots[i].item;
     resizable_array *other;
     
-    for (j = i + 1; j < path_index; j++)
+    /* can go all the way to path index because 0 
+     * is always empty */
+    for (j = i + 1; j <= path_index; j++)
       {
       other = mh->paths->slots[j].item;
       if (other->num < path->num)
