@@ -186,11 +186,9 @@ int add_network_entry(
   nc->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
   nc->sock_addr.sin_family = AF_INET;
   nc->sock_addr.sin_port = htons(rm_port);
-
-
   nc->stream = -1;
-  nc->name   = malloc(strlen(name) + 1);
-  if (nc->name == NULL)
+
+  if ((nc->name   = malloc(strlen(name) + 1)) == NULL)
     return(ENOMEM);
   else
     strcpy(nc->name,name);

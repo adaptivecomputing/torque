@@ -4146,6 +4146,7 @@ int read_cluster_addresses(
     if (!strcmp(str, "<sp>"))
       {
       path_index++;
+      path_complete = FALSE;
       level = -1;
       }
     else if (!strcmp(str, "<sl>"))
@@ -4170,6 +4171,9 @@ int read_cluster_addresses(
 
     free(str);
     } /* END reading input from stream */
+
+  /* increment path index because we started at -1 */
+  path_index++;
 
   needs_cluster_addrs = FALSE;
   send_update_within_ten();
