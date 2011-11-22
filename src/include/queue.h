@@ -95,6 +95,12 @@
 #define QTYPE_RoutePush 2
 #define QTYPE_RoutePull 3
 
+#define ROUTE_PERM_FAILURE  -1
+#define ROUTE_SUCCESS        0
+#define ROUTE_RETRY          1
+#define ROUTE_DEFERRED       2
+
+
 /**
  * Attributes, including the various resource-lists are maintained in an
  * array in a "decoded or parsed" form for quick access to the value.

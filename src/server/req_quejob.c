@@ -186,6 +186,58 @@ static int user_account_read_user(char *);
 
 static char *pbs_o_que = "PBS_O_QUEUE=";
 
+/****************************************************************** 
+ * set_nodes_attr - Check to see is the node resource was requested
+ *                 on the qsub line. If not add the node attribute
+ *                 to the Resource_List and set the value to 1. This
+ *                 makes it so that if  procct is set on a queue
+ *                 jobs without a node resource request will still
+ *                 be properly routed.
+ * Returns: 0 if OK 
+ *          Non-Zero on failure 
+ *****************************************************************/
+
+int set_nodes_attr(job *pjob)
+  {
+  resource *pres;
+	int  nodect_set = 0;
+  int  rc = 0;
+  char *pname;
+
+  if(pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
+    {
+    pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    while(pres != NULL)
+      {
+      if(pres->rs_defin != NULL)
+        {
+        pname = pres->rs_defin->rs_name;
+        if(pname == NULL || *pname == 0)
+          {
+          pres = (resource *)GET_NEXT(pres->rs_link);
+          continue;
+          }
+        
+        if(strncmp(pname, "nodes", 5) == 0 
+          || strncmp(pname, "procs", 5) == 0)
+          {
+          nodect_set = 1;
+          break;
+          }
+        }
+        pres = (resource *)GET_NEXT(pres->rs_link);
+      }
+    }                                                                         
+
+    if(nodect_set == 0)
+      {
+      int resc_access_perm = ATR_DFLAG_WRACC | ATR_DFLAG_MGWR | ATR_DFLAG_RMOMIG;
+      /* neither procs nor nodes were requested. set procct to 1 */
+      rc = decode_resc(&pjob->ji_wattr[JOB_ATR_resource], "Resource_List", "procct", "1", resc_access_perm);
+      }
+
+  return(rc);
+  }   /* END set_nodes_attr() */
 
 
 /*
@@ -815,7 +867,7 @@ void *req_quejob(
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
     } /* END while (psatl != NULL) */
 
-  rc = set_node_attr(pj);
+  rc = set_nodes_attr(pj);
   if (rc)
     {
     /* just record that we could not set node count */
