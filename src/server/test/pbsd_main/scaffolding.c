@@ -224,7 +224,7 @@ void log_roll(int max_depth)
   exit(1);
   }
  
-work_task *next_task(all_tasks *at, int *iter, int *mutex_inuse)
+work_task *next_task(all_tasks *at, int *iter)
   {
   fprintf(stderr, "The call to next_task needs to be mocked!!\n");
   exit(1);

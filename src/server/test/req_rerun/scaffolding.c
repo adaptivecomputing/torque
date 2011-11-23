@@ -72,7 +72,7 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
-work_task *next_task(all_tasks *at, int *iter, int *mutex_inuse)
+work_task *next_task(all_tasks *at, int *iter)
   {
   fprintf(stderr, "The call to next_task to be mocked!!\n");
   exit(1);

@@ -131,7 +131,6 @@ struct work_task *set_task(
   work_task *pnew;
   work_task *pold;
   int        iter = -1;
-  int        mutex_inuse = 0;
 
   pnew = (struct work_task *)malloc(sizeof(struct work_task));
 
@@ -166,10 +165,8 @@ struct work_task *set_task(
    
     if (type == WORK_Timed)
       {
-      while ((pold = next_task(&task_list_timed, &iter, &mutex_inuse)) != NULL)
+      while ((pold = next_task(&task_list_timed, &iter)) != NULL)
         {
-        if (mutex_inuse == 1)
-          continue;
         if (pold->wt_event > pnew->wt_event)
           break;
         
@@ -314,9 +311,9 @@ void initialize_all_tasks_array(
  * return the next task in this array using iter
  */
 work_task *next_task(
+
   all_tasks *at,
-  int       *iter,
-  int       *mutex_busy)
+  int       *iter)
 
   {
   work_task *wt;
@@ -328,15 +325,7 @@ work_task *next_task(
   pthread_mutex_unlock(at->alltasks_mutex);
 
   if (wt != NULL)
-    {
-    *mutex_busy = 0;
-    /* If the mutex is already busy, something is already working on it */
-    if (pthread_mutex_trylock(wt->wt_mutex) != 0)
-      {
-      *mutex_busy = 1;
-      return NULL;
-      }
-    }
+    pthread_mutex_lock(wt->wt_mutex);
 
   return(wt);
   } /* END next_task() */

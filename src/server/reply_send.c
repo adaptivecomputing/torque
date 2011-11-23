@@ -161,7 +161,6 @@ int reply_send_svr(
   char     log_buf[LOCAL_LOG_BUF_SIZE];
   int      iter = -1;
   int      sfds = request->rq_conn;  /* socket */
-  int      mutex_inuse = 0;
 
   static char    *id = "reply_send_svr";
 
@@ -177,11 +176,8 @@ int reply_send_svr(
      * the immediate list for dispatching.
      */
 
-    while ((ptask = next_task(&task_list_event,&iter, &mutex_inuse)) != NULL)
+    while ((ptask = next_task(&task_list_event,&iter)) != NULL)
       {
-      if (mutex_inuse == 1)
-        continue;
-
       if ((ptask->wt_type == WORK_Deferred_Local) &&
           (ptask->wt_parm1 == (void *)request))
         {

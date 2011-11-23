@@ -917,11 +917,10 @@ static time_t check_tasks()
   int        iter = -1;
 
   time_t     time_now = time(NULL);
-  int        mutex_inuse = 0;
 
   iter = -1;
 
-  while ((ptask = next_task(&task_list_timed,&iter,&mutex_inuse)) != NULL)
+  while ((ptask = next_task(&task_list_timed,&iter)) != NULL)
     {
     if ((delay = ptask->wt_event - time_now) > 0)
       {
@@ -1124,7 +1123,12 @@ void main_loop(void)
   if (plogenv == NULL) /* If no specification of loglevel from env */
     LOGLEVEL = server.sv_attr[SRV_ATR_LogLevel].at_val.at_long;
 
-  DBPRT(("pbs_server is up\n"));
+#ifdef PBS_VERSION
+  printf("pbs_server is up (svn version - %s)\n", PBS_VERSION);
+#else
+  printf("pbs_server is up (version - %s)\n", VERSION);
+#endif
+
 
   while (*state != SV_STATE_DOWN)
     {
