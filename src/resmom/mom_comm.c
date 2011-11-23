@@ -8763,11 +8763,6 @@ int read_status_strings(
     free(str);
     }
   
-  /*  if (rc == DIS_EOF)
-      write_tcp_reply(fds,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,DIS_SUCCESS);
-    else
-      write_tcp_reply(fds,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,rc);*/
-  
   updates_waiting_to_send++;
   
   if (is_new == TRUE)

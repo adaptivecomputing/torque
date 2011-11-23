@@ -31,7 +31,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - add a unit testing framework (check). It is compiled with --with-check and tests 
       are executed using make check. The framework is complete but not many tests have 
       been written as of yet.
- eb - Finished adding code for procct. The latest code was not merged from 2.5-fixes.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

@@ -3068,7 +3068,8 @@ void mom_server_update_stat(
       {
       read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&ret);
 
-      needs_cluster_addrs = FALSE;
+      if (ret == PBSE_NONE)
+        needs_cluster_addrs = FALSE;
       }
       
     close(stream);
@@ -3185,9 +3186,6 @@ int write_status_strings(
             "Successfully sent status update to mom %s", nc->name);
           log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
           }
-
-        /*if (rc == DIS_SUCCESS)*/
-          /*read_tcp_reply(fds,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&rc);*/
         }
       }
     }
@@ -4118,6 +4116,35 @@ int process_level_string(
 
 
 
+/* 
+ * re-order the paths, the shallowest being first, because
+ * we want to try the shallowest path
+ **/
+void sort_paths()
+
+  {
+  resizable_array *path1;
+  resizable_array *path2;
+  int forwards_iter = -1;
+  int backwards_iter;
+
+  while ((path1 = (resizable_array *)next_thing(mh->paths, &forwards_iter)) != NULL)
+    {
+    backwards_iter = -1;
+
+    while (((path2 = (resizable_array *)next_thing_from_back(mh->paths, &backwards_iter)) != NULL) &&
+           (path2 != path1))
+      {
+      if (path2->num < path1->num)
+        {
+        /* swap positions */
+        swap_things(mh->paths, path1, path2);
+        }
+      }
+    }
+  } /* END sort_paths() */
+
+
 
 
 int read_cluster_addresses(
@@ -4126,8 +4153,6 @@ int read_cluster_addresses(
   int version)
 
   {
-  int   i;
-  int   j;
   int   rc;
   int   level = -1;
   int   path_index  = -1;
@@ -4145,7 +4170,18 @@ int read_cluster_addresses(
     {
     if (!strcmp(str, "<sp>"))
       {
-      path_index++;
+      if ((path_index != -1) &&
+          (path_complete == FALSE))
+        {
+        /* we were not in the last path, so delete it */
+        remove_last_thing(mh->paths);
+        }
+      else
+        {
+        /* count it */
+        path_index++;
+        }
+
       path_complete = FALSE;
       level = -1;
       }
@@ -4172,31 +4208,10 @@ int read_cluster_addresses(
     free(str);
     } /* END reading input from stream */
 
-  /* increment path index because we started at -1 */
-  path_index++;
-
   needs_cluster_addrs = FALSE;
   send_update_within_ten();
 
-  /* now re-order the paths, the shallowest being first */
-  /* start at index 1 because index 0 is always empty */
-  for (i = 1; i < path_index; i++)
-    {
-    resizable_array *path = mh->paths->slots[i].item;
-    resizable_array *other;
-    
-    /* can go all the way to path index because 0 
-     * is always empty */
-    for (j = i + 1; j <= path_index; j++)
-      {
-      other = mh->paths->slots[j].item;
-      if (other->num < path->num)
-        {
-        /* swap positions */
-        swap_things(mh->paths, path, other);
-        }
-      }
-    }
+  sort_paths();
 
   return(PBSE_NONE);
   } /* END read_cluster_addresses() */

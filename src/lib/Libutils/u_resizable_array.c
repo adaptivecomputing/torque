@@ -499,6 +499,17 @@ int remove_thing_from_index(
 
 
 
+int remove_last_thing(
+
+  resizable_array *ra)
+
+  {
+  return(remove_thing_from_index(ra, ra->last));
+  } /* END remove_last_thing() */
+
+
+
+
 /*
  * mallocs and returns a resizable array with initial size size
  *

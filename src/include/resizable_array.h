@@ -112,6 +112,7 @@ int              insert_thing_after(resizable_array *,void *,int);
 int              insert_thing_before(resizable_array *,void *,int);
 int              remove_thing(resizable_array *,void *);
 int              remove_thing_from_index(resizable_array *,int);
+int              remove_last_thing(resizable_array *);
 int              swap_things(resizable_array *,void *,void *);
 int              is_present(resizable_array *,void *);
 int              get_index(resizable_array *,void *);
