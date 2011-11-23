@@ -164,7 +164,10 @@ int relay_to_mom(
   /* if MOM is down don't try to connect */
   addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
 
-  node = tfind_addr(addr,pjob->ji_qs.ji_un.ji_exect.ji_momport,pjob);
+  if ((node = tfind_addr(addr,pjob->ji_qs.ji_un.ji_exect.ji_momport,pjob)) == NULL)
+    {
+    return(PBSE_NORELYMOM);
+    }
 
   if ((node != NULL) &&
       (node->nd_state & INUSE_DOWN))

@@ -3960,6 +3960,7 @@ static int node_spec(
       plus += strlen("nodes=");
 
     all_reqs.req_start[i] = plus;
+    i++;
     }
 
   /* now parse each spec into the data */
