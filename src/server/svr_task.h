@@ -14,7 +14,7 @@ void delete_task(struct work_task *ptask);
 
 void initialize_all_tasks_array(all_tasks *at);
 
-work_task *next_task(all_tasks *at, int *iter);
+work_task *next_task(all_tasks *at, int *iter, int *mutex_inuse);
 
 int insert_task(all_tasks *at, work_task *wt);
 

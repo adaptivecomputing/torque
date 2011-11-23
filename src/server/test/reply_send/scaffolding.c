@@ -60,7 +60,7 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
-work_task *next_task(all_tasks *at, int *iter)
+work_task *next_task(all_tasks *at, int *iter, int *mutex_inuse)
   {
   fprintf(stderr, "The call to next_task needs to be mocked!!\n");
   exit(1);

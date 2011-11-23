@@ -718,6 +718,7 @@ void *process_Dreply(
   struct work_task *ptask;
   int    rc;
   int    iter = -1;
+  int    mutex_inuse = 0;
 
   struct batch_request *request;
   int sock = *(int *)new_sock;
@@ -729,8 +730,10 @@ void *process_Dreply(
 
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
-  while ((ptask = next_task(&task_list_event,&iter)) != NULL)
+  while ((ptask = next_task(&task_list_event,&iter,&mutex_inuse)) != NULL)
     {
+    if (mutex_inuse == 1)
+      continue;
     if ((ptask->wt_type == WORK_Deferred_Reply) &&
         (ptask->wt_event == handle))
       break;

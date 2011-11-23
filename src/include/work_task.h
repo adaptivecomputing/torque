@@ -148,7 +148,7 @@ int        insert_task_before(all_tasks *,work_task *before,work_task *after);
 int        insert_task_first(all_tasks *,work_task *);
 int        remove_task(all_tasks *,work_task *);
 int        has_task(all_tasks *);
-work_task *next_task(all_tasks *,int *);
+work_task *next_task(all_tasks *,int *,int *mutex_inuse);
 
 
 

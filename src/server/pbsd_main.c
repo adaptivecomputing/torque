@@ -917,10 +917,11 @@ static time_t check_tasks()
   int        iter = -1;
 
   time_t     time_now = time(NULL);
+  int        mutex_inuse = 0;
 
   iter = -1;
 
-  while ((ptask = next_task(&task_list_timed,&iter)) != NULL)
+  while ((ptask = next_task(&task_list_timed,&iter,&mutex_inuse)) != NULL)
     {
     if ((delay = ptask->wt_event - time_now) > 0)
       {
