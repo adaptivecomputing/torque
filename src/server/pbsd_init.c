@@ -519,7 +519,6 @@ int handle_level(
 
     if (can_resolve_hostname(host_tok) == FALSE)
       {
-      free_dynamic_string(send_format);
       snprintf(log_buf, sizeof(log_buf),
         "While parsing the mom hierarchy file, cannot resolve hostname %s",
         host_tok);
