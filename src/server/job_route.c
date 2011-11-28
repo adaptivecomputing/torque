@@ -109,13 +109,13 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "resource.h" /* struct resource */
-#include "resc_def_all.h" /* count_proc */
 #if __STDC__ != 1
 #include <memory.h>
 #endif
 
 /* External functions called */
 int svr_movejob(job *, char *, int *, struct batch_request *, int);
+long count_proc(char *spec);
 
 /* Local Functions */
 
