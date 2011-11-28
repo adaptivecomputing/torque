@@ -3289,6 +3289,8 @@ void mom_server_all_update_stat(void)
   node_comm_t *nc = NULL;
   int          sindex;
 
+  time_now = time(NULL);
+
   if (send_update() == FALSE)
     {
     /* no update is needed */
