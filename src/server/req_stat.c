@@ -1090,7 +1090,7 @@ void poll_job_task(
         stat_mom_job(pjob);
         
         /* add another task */
-        set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(jobid), TRUE);
+        set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(jobid), FALSE);
         }
       
       pthread_mutex_unlock(pjob->ji_mutex);
