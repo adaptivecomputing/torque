@@ -79,6 +79,7 @@
 #include "threadpool.h"
 #include "mom_hierarchy.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
+#include "mom_server.h"
 
 #include "mcom.h"
 
@@ -136,7 +137,8 @@ char   mom_alias[PBS_MAXHOSTNAME + 1];
 char   TMOMRejectConn[MAXLINE];   /* most recent rejected connection */
 char   mom_short_name[PBS_MAXHOSTNAME + 1];
 int    num_var_env;
-int          needs_cluster_addrs;
+int          received_cluster_addrs;
+time_t       requested_cluster_addrs;
 char        *path_epilog;
 char        *path_epilogp;
 char        *path_epiloguser;
@@ -7375,7 +7377,8 @@ int setup_program_environment(void)
 
   initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
 
-  needs_cluster_addrs = TRUE;
+  received_cluster_addrs = FALSE;
+  requested_cluster_addrs = 0;
 
   /* allocate status strings if needed */
   received_statuses = initialize_resizable_array(2);

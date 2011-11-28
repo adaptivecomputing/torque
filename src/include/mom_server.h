@@ -85,6 +85,7 @@
 #include "mcom.h" /* MMAX_LINE */
 #include "pbs_ifl.h" /* PBS_MAXSERVERNAME */
 
+#define DEFAULT_SERVER_STAT_UPDATES 45
 
 
 typedef struct mom_server

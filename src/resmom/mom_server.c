@@ -290,7 +290,8 @@ extern tlist_head          mom_polljobs;
 extern char                mom_alias[];
 extern int                 updates_waiting_to_send;
 time_t                     LastUpdateAttempt;
-extern int                 needs_cluster_addrs;
+extern int                 received_cluster_addrs;
+extern time_t              requested_cluster_addrs;
 extern int                 UpdateFailCount;
 extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
@@ -2841,6 +2842,26 @@ void generate_server_gpustatus_smi(
 
 
 
+int should_request_cluster_addrs()
+
+  {
+  int should = FALSE;
+  time_now = time(NULL);
+
+  if (received_cluster_addrs == FALSE)
+    {
+    if (time_now - requested_cluster_addrs > DEFAULT_SERVER_STAT_UPDATES)
+      {
+      should = TRUE;
+      }
+    }
+
+  return(should);
+  } /* END should_request_cluster_addrs() */
+
+
+
+
 /* 
  * writes the header for a server status update
  */
@@ -2865,10 +2886,12 @@ int write_update_header(
         
         if ((ret = diswst(stream,buf)) != DIS_SUCCESS)
           mom_server_stream_error(stream, name, id, "writing status string");
-        else if (needs_cluster_addrs == TRUE)
+        else if (should_request_cluster_addrs() == TRUE)
           {
           if ((ret = diswst(stream, "first_update=true")) != DIS_SUCCESS)
             mom_server_stream_error(stream, name, id, "writing status string");
+          else
+            requested_cluster_addrs = time_now;
           }
         }
       }
@@ -3067,9 +3090,6 @@ void mom_server_update_stat(
     else
       {
       read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&ret);
-
-      if (ret == PBSE_NONE)
-        needs_cluster_addrs = FALSE;
       }
       
     close(stream);
@@ -4208,10 +4228,22 @@ int read_cluster_addresses(
     free(str);
     } /* END reading input from stream */
 
-  needs_cluster_addrs = FALSE;
-  send_update_within_ten();
+  if (rc != DIS_SUCCESS)
+    {
+    /* transmission failure */
+    free(mh);
+    mh = initialize_mom_hierarchy();
 
-  sort_paths();
+    /* request new cluster addresses immediately */
+    requested_cluster_addrs = 0;
+    }
+  else
+    {
+    received_cluster_addrs = TRUE;
+    send_update_within_ten();
+    
+    sort_paths();
+    }
 
   return(PBSE_NONE);
   } /* END read_cluster_addresses() */

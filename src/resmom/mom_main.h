@@ -10,7 +10,6 @@
 #define NO_LAYOUT_FILE      -10
 #define BAD_LAYOUT_FILE     -505
 #define CHECK_POLL_TIME     45
-#define DEFAULT_SERVER_STAT_UPDATES 45
 
 #define PMAX_PORT                 32000
 #define MAX_PORT_STRING_LEN       6
