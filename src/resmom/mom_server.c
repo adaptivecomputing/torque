@@ -4190,18 +4190,8 @@ int read_cluster_addresses(
     {
     if (!strcmp(str, "<sp>"))
       {
-      if ((path_index != -1) &&
-          (path_complete == FALSE))
-        {
-        /* we were not in the last path, so delete it */
-        remove_last_thing(mh->paths);
-        }
-      else
-        {
-        /* count it */
-        path_index++;
-        }
 
+      path_index++;
       path_complete = FALSE;
       level = -1;
       }
@@ -4209,8 +4199,15 @@ int read_cluster_addresses(
       {
       level++;
       }
-    else if ((!strcmp(str, "</sl>")) ||
-             (!strcmp(str, "</sp>")))
+    else if (!strcmp(str, "</sp>"))
+      {
+      if (path_complete == FALSE)
+        {
+        /* we were not in the last path, so delete it */
+        remove_last_thing(mh->paths);
+        }
+      }
+    else if (!strcmp(str, "</sl>"))
       {
       /* NO-OP */
       }
