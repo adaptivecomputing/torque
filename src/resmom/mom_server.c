@@ -4051,7 +4051,8 @@ int process_host_name(
   char *hostname,
   int   path,
   int   level,
-  int   path_complete)
+  int   path_complete,
+  int  *something_added)
 
   {
   static char        *id = "process_host_name";
@@ -4080,7 +4081,10 @@ int process_host_name(
     ipaddr      = ntohl(sa.sin_addr.s_addr);
     
     if (path_complete == FALSE)
+      {
       add_network_entry(mh, hostname, addr_info, rm_port, service_port, path, level);
+      *something_added = TRUE;
+      }
 
     freeaddrinfo(addr_info);
 
@@ -4107,7 +4111,8 @@ int process_level_string(
   char *str,
   int   path,
   int   level,
-  int  *path_complete)
+  int  *path_complete,
+  int  *something_added)
 
   {
   char *delims = ",";
@@ -4125,7 +4130,7 @@ int process_level_string(
 
   while (host_tok != NULL)
     {
-    temp_rc = process_host_name(host_tok, path, level, *path_complete);
+    temp_rc = process_host_name(host_tok, path, level, *path_complete, something_added);
 
     if (rc == PBSE_NONE)
       rc = temp_rc;
@@ -4179,6 +4184,7 @@ int read_cluster_addresses(
   int   level = -1;
   int   path_index  = -1;
   int   path_complete = FALSE;
+  int   something_added;
   char *str;
 
   if (mh != NULL)
@@ -4192,9 +4198,9 @@ int read_cluster_addresses(
     {
     if (!strcmp(str, "<sp>"))
       {
-
       path_index++;
       path_complete = FALSE;
+      something_added = FALSE;
       level = -1;
       }
     else if (!strcmp(str, "<sl>"))
@@ -4207,6 +4213,13 @@ int read_cluster_addresses(
         {
         /* we were not in the last path, so delete it */
         remove_last_thing(mh->paths);
+        path_index--;
+        }
+      else if (something_added == FALSE)
+        {
+        /* if we're on the first level of the path, we didn't record anything 
+         * and we need to decrement the path_index */
+        path_index--;
         }
       }
     else if (!strcmp(str, "</sl>"))
@@ -4221,7 +4234,7 @@ int read_cluster_addresses(
     else
       {
       /* receiving a level */
-      process_level_string(str, path_index, level, &path_complete);
+      process_level_string(str, path_index, level, &path_complete, &something_added);
       }
 
     free(str);
