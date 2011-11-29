@@ -889,14 +889,9 @@ int send_sisters(
                (np->hn_host != NULL) ? np->hn_host : "NULL",
                np->hn_sister);
 
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buffer);
+      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
       /* garrick commented out continue statement below */
-
       /* continue; */
       }
 	    

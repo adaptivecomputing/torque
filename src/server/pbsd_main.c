@@ -197,6 +197,7 @@ void          restore_attr_default (struct attribute *);
 
 /* Global Data Items */
 
+int          ForceCreation;
 int          high_availability_mode = FALSE;
 char        *acct_file = NULL;
 char        *log_file  = NULL;
@@ -529,6 +530,8 @@ void parse_command_line(
   pbs_net_t listener_addr;
   unsigned int listener_port;
 
+  ForceCreation = FALSE;
+
   static struct
     {
     char *it_name;
@@ -542,8 +545,6 @@ void parse_command_line(
     { "create", RECOV_CREATE },
     { "", RECOV_Invalid }
     };
-
-
 
   while ((c = getopt(argc, argv, "A:a:d:DefhH:L:l:mM:p:R:S:t:v-:")) != -1)
     {
@@ -642,6 +643,12 @@ void parse_command_line(
       case 'f':
 
         TForceUpdate = 1;
+
+        break;
+
+      case 'F':
+
+        ForceCreation = TRUE;
 
         break;
 
@@ -1472,9 +1479,12 @@ int main(
      RECOV_CREATE and RECOV_COLD before we daemonize the server */
   if (server_init_type == RECOV_CREATE || server_init_type == RECOV_COLD)
     {
-    need_y_response(server_init_type);
-    /* If we made it to here the response from user was yes. Otherwise
-       we abort in need_y_response */
+    if (ForceCreation == FALSE)
+      {
+      need_y_response(server_init_type);
+      /* If we made it to here the response from user was yes. Otherwise
+         we abort in need_y_response */
+      }
     }
 
   /*
