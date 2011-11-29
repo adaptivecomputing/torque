@@ -257,6 +257,7 @@ int unmunge_request(int s, struct batch_request *preq)
   if(cred_size == 0)
     {
     req_reject(PBSE_BADCRED, 0, preq, NULL, "munge credential invalid");
+  	unlink(mungeFileName);
 		close(fd);
 		return(-1);
     }
@@ -265,6 +266,7 @@ int unmunge_request(int s, struct batch_request *preq)
   if(bytes_written == -1 || (bytes_written != cred_size))
 	  {
 	  req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not write credential to temporary munge file");
+  	unlink(mungeFileName);
     close(fd);
     return(-1);
     }
@@ -272,6 +274,7 @@ int unmunge_request(int s, struct batch_request *preq)
 	rc = fsync(fd);
 	if(rc < 0)
 		{
+  	unlink(mungeFileName);
 		close(fd);
 		return(rc);
 		}
