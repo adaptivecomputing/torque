@@ -263,7 +263,7 @@ int add_verify_resources(
       }
     else
       {
-      fprintf(stderr, "Error allocating memory for add_verify_resources");
+      fprintf(stderr, "Error allocating memory for add_verify_resources\n");
       exit(1);
       }
     /* Allocate memory for the attrl structure */

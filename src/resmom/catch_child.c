@@ -143,6 +143,58 @@ hnodent *get_node(
 
 
 
+int send_task_obit_response(
+    
+  job     *pjob,
+  hnodent *pnode,
+  char    *cookie,
+  obitent *pobit,
+  int      exitstat)
+
+  {
+  int i;
+  int ret;
+  int stream;
+ 
+  for (i = 0; i < 5; i++)
+    {
+    ret = -1;
+    stream = tcp_connect_sockaddr((struct sockaddr *)&pnode->sock_addr,sizeof(pnode->sock_addr));
+
+    if (IS_VALID_STREAM(stream))
+      {
+      DIS_tcp_setup(stream);
+      
+      ret = im_compose(
+        pnode->hn_stream,
+        pjob->ji_qs.ji_jobid,
+        cookie,
+        IM_ALL_OKAY,
+        pobit->oe_info.fe_event,
+        pobit->oe_info.fe_taskid);
+
+      if (ret == DIS_SUCCESS)
+        {
+        if ((ret = diswsi(pnode->hn_stream, exitstat)) == DIS_SUCCESS)
+          {
+          ret = DIS_tcp_wflush(stream);
+          }
+        }
+        
+      close(stream);
+      }
+
+    if (ret == DIS_SUCCESS)
+      break;
+
+    usleep(10);
+    }
+
+  return(ret);
+  } /* END send_task_obit_response() */
+
+
+
 
 /**
  * For all jobs in MOM
@@ -501,26 +553,7 @@ void scan_for_exiting(void)
           ** Send a response over to MOM
           ** whose child sent the request.
           */
-          int stream = tcp_connect_sockaddr((struct sockaddr *)&pnode->sock_addr,sizeof(pnode->sock_addr));
- 
-          if (IS_VALID_STREAM(stream) == FALSE)
-            {
-            DIS_tcp_setup(stream);
-  
-            im_compose(
-              pnode->hn_stream,
-              pjob->ji_qs.ji_jobid,
-              cookie,
-              IM_ALL_OKAY,
-              pobit->oe_info.fe_event,
-              pobit->oe_info.fe_taskid);
-            
-            diswsi(pnode->hn_stream, ptask->ti_qs.ti_exitstat);
-            
-            DIS_tcp_wflush(stream);
-
-            close(stream);
-            }
+          send_task_obit_response(pjob, pnode, cookie, pobit, ptask->ti_qs.ti_exitstat);
           }
 #endif /* ndef NUMA_SUPPORT */
 
@@ -1892,65 +1925,18 @@ void mom_deljob(
 
 
 
-void exit_mom_job(
-   
-  job *pjob,
-  int mom_radix)
+
+int needs_and_ready_for_reply(
+
+  job *pjob)
 
   {
-  char   *id = "exit_mom_job";
-  int     stream = -1;
-  char   *cookie;
-  task   *ptask;
-  u_long  gettime(resource *);
-  u_long  getsize(resource *);
-
-  if (pjob->ji_hosts != NULL)
-    {
-    hnodent *np = pjob->ji_hosts;
-    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
-    }
-  
-  if (LOGLEVEL >= 6)
-    {
-    log_record(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      "I'm not mother superior");
-    }
-  
-  
-  /* Check to see if I can contact the mother superior.  If not, kill this job. */
-  
-  if (IS_VALID_STREAM(stream) == FALSE)
-    {
-    if (LOGLEVEL >= 3)
-      {
-      log_event(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "connection to server lost - no obit sent - job will be purged");
-      }
-  
-    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
-      {
-      kill_job(pjob, SIGKILL, id, "connection to server lost - no obit sent");
-      }
-  
-    job_purge(pjob);
-  
-    return;
-    }
-  
-  /*
-  ** No event waiting for sending info to MS
-  ** so I'll just sit tight.
-  */
+  int   needs_and_ready = FALSE;
+  task *ptask;
   
   if (pjob->ji_obit == TM_NULL_EVENT)
     {
+    /* No event waiting for sending info to MS - we don't need a reply */
     if (LOGLEVEL >= 3)
       {
       log_event(
@@ -1959,44 +1945,48 @@ void exit_mom_job(
         pjob->ji_qs.ji_jobid,
         "obit method not specified for job - no obit sent");
       }
-
-    close(stream);
-  
-    return;
     }
-  
-  
-  /*
-  ** Check to see if any tasks are running.
-  */
-  
-  ptask = (task *)GET_NEXT(pjob->ji_tasks);
-  
-  while (ptask != NULL)
+  else
     {
-    if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
-      break;
-  
-    ptask = (task *)GET_NEXT(ptask->ti_jobtask);
-    }
-  
-  /* Still somebody there so don't send it yet. */
-  
-  if (ptask != NULL)
-    {
-    if (LOGLEVEL >= 3)
-      {
-      log_event(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "one or more running tasks found - no obit sent");
-      }
+    /* Are any tasks running? If so we're not ready */
+    ptask = (task *)GET_NEXT(pjob->ji_tasks);
     
-    close(stream);
+    while (ptask != NULL)
+      {
+      if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
+        break;
+      
+      ptask = (task *)GET_NEXT(ptask->ti_jobtask);
+      }
   
-    return;
+    /* Still somebody there so don't send it yet. */
+    if (ptask != NULL)
+      {
+      if (LOGLEVEL >= 3)
+        {
+        log_event(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          "one or more running tasks found - no obit sent");
+        }
+      }
+    else
+      needs_and_ready = TRUE;
     }
+
+  return(needs_and_ready);
+  } /* END needs_and_ready_for_reply() */
+
+
+
+
+void run_any_epilogues(
+
+  job *pjob)
+
+  {
+  static char *id = "run_any_epilogues";
 
   if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
       pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
@@ -2025,62 +2015,144 @@ void exit_mom_job(
       log_err(-1, id, "parallel epilog failed");
       }
     }
-  
-  /*
-  ** No tasks running ... format and send a
-  ** reply to the mother superior and get rid of
-  ** the job.
-  */
-  
+  } /* END run_any_epilogues() */
+
+
+
+
+int send_job_obit_to_ms(
+
+  job *pjob,
+  int  mom_radix)
+
+  {
+  static char *id = "send_job_obit_to_ms";
+  int          stream = -1;
+  int          i;
+  int          rc = PBSE_NONE;
+  char        *cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
+  u_long       gettime(resource *);
+  u_long       getsize(resource *);
+  hnodent     *np = pjob->ji_hosts;
+
+  /* no entry for Mother Superior?? */
+  if (np == NULL)
+    return(-1);
+
   if (LOGLEVEL >= 3)
     {
-    log_record(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      "sending IM_RADIX_ALL_OK");
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id, "sending IM_RADIX_ALL_OK");
     }
-  
-  cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
-  
-  DIS_tcp_setup(stream);
-
-  if (mom_radix < 2)
+    
+  for (i = 0; i < 5; i++)
     {
-    im_compose(stream,pjob->ji_qs.ji_jobid,cookie,IM_ALL_OKAY,pjob->ji_obit,TM_NULL_TASK);
-    }
-  else
-    {
-    im_compose(stream,pjob->ji_qs.ji_jobid,cookie,IM_RADIX_ALL_OK,IM_KILL_JOB_RADIX,TM_NULL_TASK);
-    }
+    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+      
+    if (IS_VALID_STREAM(stream))
+      {
+      DIS_tcp_setup(stream);
   
-  /* write the resources used for this job */
-  diswul(stream, resc_used(pjob, "cput", gettime));
-  diswul(stream, resc_used(pjob, "mem", getsize));
-  diswul(stream, resc_used(pjob, "vmem", getsize));
+      if (mom_radix < 2)
+        {
+        rc = im_compose(stream,pjob->ji_qs.ji_jobid,cookie,IM_ALL_OKAY,pjob->ji_obit,TM_NULL_TASK);
+        }
+      else
+        {
+        rc = im_compose(stream,pjob->ji_qs.ji_jobid,cookie,IM_RADIX_ALL_OK,IM_KILL_JOB_RADIX,TM_NULL_TASK);
+        }
+      
+      /* write the resources used for this job */
+      if (rc == DIS_SUCCESS)
+        {
+        if ((rc = diswul(stream, resc_used(pjob, "cput", gettime))) == DIS_SUCCESS)
+          {
+          if ((rc = diswul(stream, resc_used(pjob, "mem", getsize))) == DIS_SUCCESS)
+            {
+            if ((rc = diswul(stream, resc_used(pjob, "vmem", getsize))) == DIS_SUCCESS)
+              {
+              if (mom_radix >= 2)
+                {
+                rc = diswsi(stream, pjob->ji_nodeid);		
+                }
+              
+              if (rc == DIS_SUCCESS)
+                rc = DIS_tcp_wflush(stream);
 
-  if (mom_radix >= 2)
+              if (rc == DIS_SUCCESS)
+                {
+                /* SUCCESS - no more retries needed */
+                if (LOGLEVEL >= 6)
+                  {
+                  log_event(
+                    PBSEVENT_JOB,
+                    PBS_EVENTCLASS_JOB,
+                    pjob->ji_qs.ji_jobid,
+                    "all tasks complete - purging job as sister");
+                  }
+
+                break;
+                }
+              }
+            }
+          }
+        }
+            
+      /* NYI: read reply? */
+      close(stream);
+      } /* END work on a valid stream */
+    
+    usleep(10);
+    } /* END retry loop */
+
+  /* If I cannot contact mother superior, kill this job */
+  if (rc != PBSE_NONE)
     {
-    diswsi(stream, pjob->ji_nodeid);		
+    if (LOGLEVEL >= 3)
+      {
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "connection to server lost - no obit sent - job will be purged");
+      }
+ 
+    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
+      {
+      kill_job(pjob, SIGKILL, id, "connection to server lost - no obit sent");
+      }
     }
-  
-  DIS_tcp_wflush(stream);
 
-  /* NYI: read reply? */
-  close(stream);
+  return(rc);  
+  } /* END send_job_obit_to_ms() */
+
+
+
+
+void exit_mom_job(
+   
+  job *pjob,
+  int mom_radix)
+
+  {
+  char   *id = "exit_mom_job";
   
   if (LOGLEVEL >= 6)
     {
-    log_event(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      "all tasks complete - purging job as sister");
+    snprintf(log_buffer, sizeof(log_buffer),
+      "I'm not mother superior for job %s",
+      pjob->ji_qs.ji_jobid);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id, log_buffer);
     }
+
+  /* should we do anything yet? */
+  if (needs_and_ready_for_reply(pjob) == FALSE)
+    return;
+
+  run_any_epilogues(pjob);
+
+  send_job_obit_to_ms(pjob, mom_radix);
   
   job_purge(pjob);
-
-  return;
   } /* END exit_mom_job() */
 
 

@@ -1951,6 +1951,67 @@ void send_im_error(
 
 
 
+int reply_to_join_job_as_sister(
+
+  job                *pjob,
+  struct sockaddr_in *addr,
+  char               *cookie, 
+  tm_event_t          event, 
+  int                 fromtask,
+  int                 job_radix)
+
+  {
+  static char *id = "reply_to_join_job_as_sister";
+  int          reply_stream;
+  int          retry_count;
+  int          ret = DIS_SUCCESS;
+
+  for (retry_count = 0; retry_count < 5; retry_count++)
+    {
+    if (IS_VALID_STREAM(reply_stream = get_reply_stream(pjob)))
+      {
+      DIS_tcp_setup(reply_stream);
+      
+      if (job_radix == FALSE)
+        ret = im_compose(reply_stream, pjob->ji_qs.ji_jobid, cookie, IM_ALL_OKAY, event, fromtask);
+      else
+        ret = im_compose(reply_stream, pjob->ji_qs.ji_jobid, cookie, IM_RADIX_ALL_OK, event, fromtask);
+      
+      ret = DIS_tcp_wflush(reply_stream);
+      
+      close(reply_stream);
+      
+      if (ret == DIS_SUCCESS)
+        {
+        /* SUCCESS */
+        if (LOGLEVEL >= 8)
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "Successfully sent join job reply");
+
+        break;
+        }
+      }
+
+    usleep(10);
+    } /* END for 5 retries */
+  
+  if (ret != DIS_SUCCESS)
+    {
+    /* FAILURE */
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Couldn't send join job reply for job %s to %s - %s",
+      pjob->ji_qs.ji_jobid,
+      netaddr(addr),
+      dis_emsg[ret]);
+    
+    log_err(-1,id,log_buffer);
+    }
+
+  return(ret);
+  } /* END reply_to_join_job_as_sister() */
+
+
+
+
 /*
  ** Sender is mother superior sending a job structure to me.
  ** I am going to become a member of a job.
@@ -1992,7 +2053,6 @@ int im_join_job_as_sister(
   int                  index;
   int                  nodenum;
   int                  rc;
-  int                  reply_stream;
   int                  sister_count = 0;
   int                  resc_access_perm;
 
@@ -2359,40 +2419,13 @@ int im_join_job_as_sister(
     append_link(&svr_alljobs, &pjob->ji_alljobs, pjob);
     
     /* establish a connection and write the reply back */
-    reply_stream = get_reply_stream(pjob);
-    
-    if (IS_VALID_STREAM(reply_stream))
-      {
-      DIS_tcp_setup(reply_stream);
-
-      if (job_radix == FALSE)
-        ret = im_compose(reply_stream, jobid, cookie, IM_ALL_OKAY, event, fromtask);
-      else
-        ret = im_compose(reply_stream, jobid, cookie, IM_RADIX_ALL_OK, event, fromtask);
-
-      DIS_tcp_wflush(reply_stream);
-        
-      close(reply_stream);
-      
-      if (ret == DIS_SUCCESS)
-        {
-        /* SUCCESS */
-        
-        return(IM_DONE);
-        }
-      }
-    
-    /* FAILURE */
-    snprintf(log_buffer,sizeof(log_buffer),
-      "Couldn't send join job reply for job %s to %s - %s",
-      pjob->ji_qs.ji_jobid,
-      netaddr(addr),
-      dis_emsg[ret]);
-    
-    log_err(-1,id,log_buffer);
-    
-    return(IM_FAILURE);
+    if ((reply_to_join_job_as_sister(pjob, addr, cookie, event, fromtask, job_radix)) == DIS_SUCCESS)
+      ret = IM_DONE;
+    else
+      ret = IM_FAILURE;
     }
+
+  return(ret);
   } /* END im_join_job_as_sister() */
 
 
@@ -6835,7 +6868,7 @@ int tm_tasks_request(
     
     stream = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
     
-    if (IS_VALID_STREAM(stream) ==  FALSE)
+    if (IS_VALID_STREAM(stream) == FALSE)
       return(TM_DONE);
 
     DIS_tcp_setup(stream);
