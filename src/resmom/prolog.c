@@ -157,8 +157,8 @@ static char *resc_to_string(
 
   job       *pjob,      /* I (optional - if specified, report total job resources) */
   int        aindex,    /* I which attribute to convert */
-  char      *buf, /* O the buffer into which to convert */
-  int      buflen) /* I the length of the above buffer */
+  char      *buf,       /* O the buffer into which to convert */
+  int        buflen)    /* I the length of the above buffer */
 
   {
   int        need;

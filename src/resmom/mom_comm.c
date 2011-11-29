@@ -1917,23 +1917,36 @@ void send_im_error(
 
   {
   static char *id = "send_im_error";
-  int reply_stream = get_reply_stream(pjob);
+  int          reply_stream;
+  int          i;
+  int          rc;
   
   if (reply)
     {
-    if (IS_VALID_STREAM(reply_stream))
+    for (i = 0; i < 5; i++)
       {
-      DIS_tcp_setup(reply_stream);
-      
-      im_compose(reply_stream,pjob->ji_qs.ji_jobid,cookie,IM_ERROR,event,fromtask);
-      
-      diswsi(reply_stream,err);
-      
-      DIS_tcp_wflush(reply_stream);
-      
+      reply_stream = get_reply_stream(pjob);
+
+      if (IS_VALID_STREAM(reply_stream))
+        {
+        DIS_tcp_setup(reply_stream);
+        
+        if ((rc = im_compose(reply_stream,pjob->ji_qs.ji_jobid,cookie,IM_ERROR,event,fromtask)) == DIS_SUCCESS)
+          {
+          if ((rc = diswsi(reply_stream,err)) == DIS_SUCCESS)
+            {
+            rc = DIS_tcp_wflush(reply_stream);
+            }
+          }
+        }
+       
       close(reply_stream);
+
+      if (rc == DIS_SUCCESS)
+        break;
       }
-    else
+
+    if (rc != DIS_SUCCESS)
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "Could not send error on event %d for job %s",
@@ -1943,6 +1956,7 @@ void send_im_error(
       log_err(-1,id,log_buffer);
       }
     }
+
   } /* END send_im_error() */
 
 
