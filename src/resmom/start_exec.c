@@ -5729,9 +5729,11 @@ void start_exec(
 #ifndef NUMA_SUPPORT
   eventent     *ep;
   int           i;
-  int            j;
-  int            index;
+  int           j;
+  int           index;
   int           ret;
+  int           local_errno;
+  int           addr_len;
 
   hnodent      *np;
   attribute    *pattr;
@@ -5909,8 +5911,13 @@ void start_exec(
 
     for (i = 0; i <= mom_radix; i++)
       {
+      char *host_addr = NULL;
+
       np = &pjob->ji_hosts[i];
       add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[0]);
+      ret = get_hostaddr_hostent(&local_errno, np->hn_host, &host_addr, &addr_len);
+      memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
+      np->sock_addr.sin_port = htons(np->hn_port);
       }
 
     sister_job_nodes(pjob, sister_list[0]->host_list, sister_list[0]->port_list);

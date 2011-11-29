@@ -19,6 +19,7 @@ int start_listener(
   {
   struct sockaddr_in adr_svr, adr_client;
   int rc = PBSE_NONE;
+  int sockoptval;
   int len_inet = sizeof(struct sockaddr_in);
   char *ptr = NULL;
   int debug = 0;
@@ -87,6 +88,8 @@ int start_listener(
         }
       else
         {
+        sockoptval = 1;
+        setsockopt(*new_conn_port, SOL_SOCKET, SO_REUSEADDR, (void *)&sockoptval, sizeof(sockoptval));
         if (debug == 1)
           {
           process_meth((void *)new_conn_port);
