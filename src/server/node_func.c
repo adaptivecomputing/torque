@@ -1903,7 +1903,7 @@ static char *parse_node_token(
 int setup_nodes(void)
 
   {
-  static char id[] = "setup_nodes";
+  static char *id = "setup_nodes";
 
   FILE  *nin;
   char   line[MAXLINE << 4];
@@ -1933,7 +1933,7 @@ int setup_nodes(void)
   extern char server_name[];
   extern resource_t next_resource_tag;
 
-  sprintf(log_buf, "%s()", id);
+  snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%s()", id);
 
   log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
 

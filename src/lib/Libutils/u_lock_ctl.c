@@ -22,12 +22,15 @@ int lock_init()
   pthread_mutexattr_t startup_attr;
   pthread_mutexattr_t conn_attr;
   pthread_mutexattr_t tcp_attr;
+  pthread_mutexattr_t ss_attr;
   pthread_mutexattr_init(&startup_attr);
   pthread_mutexattr_settype(&startup_attr, PTHREAD_MUTEX_ERRORCHECK);
   pthread_mutexattr_init(&conn_attr);
   pthread_mutexattr_settype(&conn_attr, PTHREAD_MUTEX_ERRORCHECK);
   pthread_mutexattr_init(&tcp_attr);
   pthread_mutexattr_settype(&tcp_attr, PTHREAD_MUTEX_ERRORCHECK);
+  pthread_mutexattr_init(&ss_attr);
+  pthread_mutexattr_settype(&ss_attr, PTHREAD_MUTEX_ERRORCHECK);
   if ((locks = (lock_ctl *)calloc(1, sizeof(lock_ctl))) == NULL)
     rc = PBSE_MEM_MALLOC;
   else if ((locks->startup = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
@@ -35,6 +38,8 @@ int lock_init()
   else if ((locks->conn_table = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
     rc = PBSE_MEM_MALLOC;
   else if ((locks->tcp_table = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
+    rc = PBSE_MEM_MALLOC;
+  else if ((locks->setup_save = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
     rc = PBSE_MEM_MALLOC;
   else
     {
@@ -46,6 +51,9 @@ int lock_init()
 
     memset(locks->tcp_table, 0, sizeof(pthread_mutex_t));
     pthread_mutex_init(locks->tcp_table, &tcp_attr);
+
+    memset(locks->setup_save, 0, sizeof(pthread_mutex_t));
+    pthread_mutex_init(locks->setup_save, &ss_attr);
     }
   return rc;
   }
@@ -58,6 +66,8 @@ void lock_destroy()
   free(locks->conn_table);
   pthread_mutex_destroy(locks->tcp_table);
   free(locks->tcp_table);
+  pthread_mutex_destroy(locks->setup_save);
+  free(locks->setup_save);
   free(locks);
   locks = NULL;
   }
@@ -133,6 +143,31 @@ int unlock_tcp_table()
     }
   return(PBSE_NONE);
   }
+
+int lock_ss()
+  {
+  if (locks == NULL)
+    lock_init();
+  /* fprintf(stdout, "ss lock\n"); */
+  if (pthread_mutex_lock(locks->setup_save) != 0)
+    {
+    log_err(-1,"mutex_lock","ALERT:   cannot lock setup_save mutex!\n");
+    return(PBSE_MUTEX);
+    }
+  return(PBSE_NONE);
+  }
+
+int unlock_ss()
+  {
+  /* fprintf(stdout, "ss unlock\n"); */
+  if (pthread_mutex_unlock(locks->setup_save) != 0)
+    {
+    log_err(-1,"mutex_unlock","ALERT:   cannot unlock setup_save mutex!\n");
+    return(PBSE_MUTEX);
+    }
+  return(PBSE_NONE);
+  }
+
 
 int lock_node(
     

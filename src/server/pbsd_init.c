@@ -262,7 +262,7 @@ int DArrayInit(
   else
     {
     Array->Length = InitialSize;
-    Array->Data = (void **)malloc(sizeof(Array->Data[0]) * InitialSize);
+    Array->Data = (void **)calloc(sizeof(Array->Data[0]), InitialSize);
 
     if (Array->Data == NULL)
       return(FAILURE);
@@ -993,7 +993,7 @@ int pbsd_init(
     }
   else
     {
-    path_checkpoint = malloc(strlen(SERVER_CHKPTDIR) + strlen(suffix_slash) + 1);
+    path_checkpoint = calloc(1, strlen(SERVER_CHKPTDIR) + strlen(suffix_slash) + 1);
     strcpy (path_checkpoint, SERVER_CHKPTDIR);
     strcat (path_checkpoint, suffix_slash);
     }
@@ -1753,11 +1753,11 @@ static char *build_path(
   if (suffix != NULL)
     len += strlen(suffix);
 
-  ppath = malloc(len);
+  ppath = calloc(1, PATH_MAX);
 
   if (ppath != NULL)
     {
-    strcpy(ppath, parent);
+    strcat(ppath, parent);
 
     if (prefixslash)
       strcat(ppath, "/");

@@ -119,10 +119,6 @@ static int     pkbfds = -2; /* descriptor to use for saves */
 static size_t  spaceavail; /* space in pk_buffer available */
 static size_t  spaceused = 0; /* amount of space used  in pkbuffer */
 
-#ifndef PBS_MOM
-pthread_mutex_t *setup_save_mutex = NULL;
-#endif
-
 
 /*
  * save_setup - set up the save i/o buffer.

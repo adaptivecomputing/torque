@@ -221,17 +221,16 @@ int tcp_read(
   long              i;
   long              total = 0;
   unsigned long     newsize;
-  void             *ptr;
+  char             *ptr;
   int               done = 0;
-#ifdef HAVE_POLL
+#if 0
 
   struct pollfd pollset;
   int timeout;
-#else
+#endif
   fd_set            readset;
 
   struct timeval    timeout;
-#endif
 
   struct tcpdisbuf *tp;
 
@@ -253,7 +252,7 @@ int tcp_read(
 
   do
     {
-#ifdef HAVE_POLL
+#if 0
     /* poll()'s timeout is only a signed int, must be careful not to overflow */
 
     if (INT_MAX / 1000 > pbs_tcp_timeout)
@@ -266,9 +265,8 @@ int tcp_read(
     pollset.events = POLLIN | POLLHUP;
 
     i = poll(&pollset, 1, timeout);
-
-#else
-    timeout.tv_sec = pbs_tcp_timeout;
+#endif
+    timeout.tv_sec = 30;
 
     timeout.tv_usec = 0;
 
@@ -282,8 +280,6 @@ int tcp_read(
           NULL,
           NULL,
           &timeout);
-
-#endif
     }
   while ((i == -1) && (errno == EINTR));
 
@@ -343,7 +339,7 @@ int tcp_read(
 
     /* otherwise alloc more space and read again, add 25% more space */
     newsize = tp->tdis_bufsize * 1.25;
-    ptr = realloc(tp->tdis_thebuf,newsize);
+    ptr = (char *)calloc(1, newsize);
 
     if (ptr == NULL)
       {
@@ -354,11 +350,12 @@ int tcp_read(
       }
     else
       {
+      strcat(ptr, tp->tdis_thebuf);
       /* adjust the new values */
-      tp->tdis_eod += ((char *)ptr) - tp->tdis_thebuf;
-      tp->tdis_trailp += ((char *)ptr) - tp->tdis_thebuf;
-      tp->tdis_leadp += ((char *)ptr) - tp->tdis_thebuf;
-      tp->tdis_thebuf = (char *)ptr;
+      tp->tdis_eod += ptr - tp->tdis_thebuf;
+      tp->tdis_trailp += ptr - tp->tdis_thebuf;
+      tp->tdis_leadp += ptr - tp->tdis_thebuf;
+      tp->tdis_thebuf = ptr;
       tp->tdis_bufsize = newsize;
 
       /* fall through to continue reading more */
@@ -752,12 +749,12 @@ int tcp_puts(
     leadpct = (int)(tp->tdis_thebuf - tp->tdis_leadp);
     trailpct = (int)(tp->tdis_thebuf - tp->tdis_trailp);
     newbufsize = tp->tdis_bufsize + THE_BUF_SIZE;
-    temp = (char *)malloc(newbufsize);
+    temp = (char *)calloc(1, newbufsize);
     if (!temp)
       {
       /* FAILURE */
       snprintf(log_buf,sizeof(log_buf),
-        "out of space in buffer and cannot realloc message buffer (bufsize=%ld, buflen=%d, ct=%d)\n",
+        "out of space in buffer and cannot calloc message buffer (bufsize=%ld, buflen=%d, ct=%d)\n",
         tp->tdis_bufsize,
         (int)(tp->tdis_leadp - tp->tdis_thebuf),
         (int)ct);
@@ -925,12 +922,12 @@ void DIS_tcp_setup(
     /* Setting up the read buffer */
     tp = &tcp->readbuf;
 
-    tp->tdis_thebuf = (char *)malloc(THE_BUF_SIZE);
+    tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE);
     if (tp->tdis_thebuf == NULL)
       {
       pthread_mutex_unlock(&tcp->tcp_mutex);
 
-      log_err(errno,"DIS_tcp_setup","malloc failure");
+      log_err(errno,"DIS_tcp_setup","calloc failure");
 
       goto error;
       }
@@ -942,12 +939,12 @@ void DIS_tcp_setup(
     /* Setting up the write buffer */
     tp = &tcp->writebuf;
 
-    tp->tdis_thebuf = (char *)malloc(THE_BUF_SIZE);
+    tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE);
     if (tp->tdis_thebuf == NULL)
       {
       pthread_mutex_unlock(&tcp->tcp_mutex);
 
-      log_err(errno,"DIS_tcp_setup","malloc failure");
+      log_err(errno,"DIS_tcp_setup","calloc failure");
 
       goto error;
       }

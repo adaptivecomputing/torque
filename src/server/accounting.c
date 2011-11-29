@@ -600,6 +600,9 @@ int AdjustAcctBufSize(
   job           *pjob)
   
   {
+  /* I was going to update this to not use realloc
+   * but it doesn't look like it called anywhere
+   */
   char *newBuf;
 
   /* add 1000 so we don't have to realloc for the small strings */

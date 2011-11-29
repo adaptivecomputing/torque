@@ -186,12 +186,7 @@ BUF *allocbuf(
     return(bp);
     }
 
-  if (bp->buf != NULL)
-    tmpP = realloc(bp->buf,size);
-  else
-    tmpP = malloc(size);
-
-  if (tmpP == NULL)
+  if ((tmpP = calloc(1, size)) == NULL)
     {
     bp->cnt = 0;
 
@@ -199,6 +194,9 @@ BUF *allocbuf(
 
     return(0);
     }
+  if (bp->buf != NULL)
+    strcat(tmpP, bp->buf);
+  free(bp->buf);
 
   bp->buf = tmpP;
 

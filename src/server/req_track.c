@@ -202,9 +202,7 @@ void req_track(
 
       need = server.sv_tracksize * 3 / 2;
 
-      new  = (struct tracking *)realloc(
-               server.sv_track,
-               need * sizeof(struct tracking));
+      new = calloc(need, sizeof(struct tracking));
 
       if (new == NULL)
         {
@@ -216,6 +214,8 @@ void req_track(
 
         return;
         }
+
+      memcpy(new, server.sv_track, server.sv_tracksize);
 
       empty = new + server.sv_tracksize; /* first new slot */
 

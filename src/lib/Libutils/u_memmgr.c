@@ -238,6 +238,7 @@ void *memmgr_realloc(memmgr **mgr, void *ptr, int new_size)
           {
           if (mm->the_mem != NULL)
             {
+            memset(mm->the_mem + mm->alloc_size, 0, new_alloc - mm->alloc_size);
             res_mem = mm->the_mem + sizeof(int);
             mm->alloc_size =  new_alloc;
             mm->remaining = 0;

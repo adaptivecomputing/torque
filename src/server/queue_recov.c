@@ -109,8 +109,7 @@
 #include "utils.h"
 #include <pthread.h>
 #include "queue_func.h" /* que_alloc, que_free */
-
-extern pthread_mutex_t *setup_save_mutex;
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
 
 /* data global to this file */
 
@@ -162,14 +161,7 @@ int que_save(
     return(-1);
     }
 
-  /* set up save buffering system */
-  if (setup_save_mutex == NULL)
-    {
-    setup_save_mutex = malloc(sizeof(pthread_mutex_t));
-    pthread_mutex_init(setup_save_mutex,NULL);
-    }
-
-  pthread_mutex_lock(setup_save_mutex);
+  lock_ss();
 
   save_setup(fds);
 
@@ -185,11 +177,8 @@ int que_save(
   if ((rc = write_buffer(buf,strlen(buf),fds)))
     {
     log_err(rc,myid,"unable to write to the file");
-
     close(fds);
-
-    pthread_mutex_unlock(setup_save_mutex);
-
+    unlock_ss();
     return(-1);
     }
 
@@ -198,11 +187,8 @@ int que_save(
   if (save_attr_xml(que_attr_def, pque->qu_attr, QA_ATR_LAST,fds) != 0)
     {
     log_err(-1, myid, "save_attr failed");
-
     close(fds);
-
-    pthread_mutex_unlock(setup_save_mutex);
-
+    unlock_ss();
     return(-1);
     }
 
@@ -212,9 +198,7 @@ int que_save(
     {
     log_err(rc,myid,"unable to write to the queue's file");
     close(fds);
-
-    pthread_mutex_unlock(setup_save_mutex);
-
+    unlock_ss();
     return(-1);
     }
 
@@ -222,14 +206,12 @@ int que_save(
     {
     log_err(-1, myid, "save_flush failed");
     close(fds);
-    pthread_mutex_unlock(setup_save_mutex);
+    unlock_ss();
     return (-1);
     }
 
-  pthread_mutex_unlock(setup_save_mutex);
-
+  unlock_ss();
   close(fds);
-
   unlink(namebuf1);
 
   if (link(namebuf2, namebuf1) < 0)

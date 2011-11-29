@@ -676,7 +676,7 @@ int MXMLToXString(
 
     NewSize = MIN(NewSize << 1, MaxBufSize);
 
-    tmpBuf = (char *)realloc(*Buf,NewSize);
+    tmpBuf = (char *)calloc(1, NewSize);
 
     if (tmpBuf == NULL)
       {
@@ -684,6 +684,8 @@ int MXMLToXString(
 
       return(FAILURE);
       }
+    strcat(tmpBuf, *Buf);
+    free(*Buf);
 
     *Buf = tmpBuf;
 

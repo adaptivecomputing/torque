@@ -475,13 +475,13 @@ static int set_allacl(struct attribute *attr, struct attribute *new, enum batch_
 
         need = pas->as_bufsize + 2 * nsize;  /* alloc new buf */
 
-        if (pas->as_buf)
-          pc = realloc(pas->as_buf, (size_t)need);
-        else
-          pc = malloc((size_t)need);
+        pc = calloc(1, need);
 
         if (pc == (char *)0)
           return (PBSE_SYSTEM);
+
+        if (pas->as_buf)
+          strcat(pc, pas->as_buf);
 
         offset = pc - pas->as_buf;
 

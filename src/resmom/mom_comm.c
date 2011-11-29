@@ -1756,7 +1756,7 @@ char *resc_string(
       {
       tot *= 2;
 
-      tmpResStr = realloc(res_str,tot);
+      tmpResStr = calloc(1, tot);
 
       if (tmpResStr == NULL)
         {
@@ -1766,6 +1766,8 @@ char *resc_string(
 
         return(NULL);
         }
+      strcat(tmpResStr, res_str);
+      free(res_str);
 
       res_str = tmpResStr;
       }

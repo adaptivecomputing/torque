@@ -111,7 +111,7 @@ int get_fullhostname(
   char            *pcolon = NULL;
 
   char             hostname[MAXLINE];
-  struct addrinfo *addr_info;
+  struct addrinfo *addr_info = NULL;
   struct addrinfo  hints;
 
   int              index;

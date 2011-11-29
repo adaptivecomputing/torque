@@ -265,19 +265,19 @@ set_str(struct attribute *attr, struct attribute *new, enum batch_op op)
 
     case INCR: /* INCR is concatenate new to old string */
 
-      nsize += strlen(attr->at_val.at_str);
+      if (attr->at_val.at_str != NULL)
+        nsize += strlen(attr->at_val.at_str);
+      new_value = calloc(1, nsize);
 
-      if (attr->at_val.at_str)
-        new_value = realloc(attr->at_val.at_str, nsize);
-      else
-        new_value = malloc(nsize);
-
-      if (new_value == (char *)0)
+      if (new_value == NULL)
         return (PBSE_SYSTEM);
 
-      attr->at_val.at_str = new_value;
+      if (attr->at_val.at_str != NULL)
+        strcat(new_value, attr->at_val.at_str);
+      strcat(new_value, new->at_val.at_str);
 
-      (void)strcat(attr->at_val.at_str, new->at_val.at_str);
+      free(attr->at_val.at_str);
+      attr->at_val.at_str = new_value;
 
       break;
 

@@ -296,7 +296,7 @@ void *req_stat_job(
 
   CLEAR_HEAD(preq->rq_reply.brp_un.brp_status);
 
-  cntl = (struct stat_cntl *)malloc(sizeof(struct stat_cntl));
+  cntl = (struct stat_cntl *)calloc(1, sizeof(struct stat_cntl));
 
   if (cntl == NULL)
     {

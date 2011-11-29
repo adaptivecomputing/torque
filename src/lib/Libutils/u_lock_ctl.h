@@ -12,6 +12,8 @@ typedef struct lock_ctl
   pthread_mutex_t *conn_table;
   /* tcparray table mutex. Currently only used during malloc */
   pthread_mutex_t *tcp_table;
+  /* for saving files on startup */
+  pthread_mutex_t *setup_save;
   } lock_ctl;
 
 typedef struct lock_cntr
@@ -35,6 +37,10 @@ int unlock_conn_table();
 int lock_tcp_table();
 
 int unlock_tcp_table();
+
+int lock_ss();
+
+int unlock_ss();
 
 int lock_node(struct pbsnode *the_node, char *method_name, char *msg, int logging);
 

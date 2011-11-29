@@ -115,6 +115,7 @@
 #endif
 #ifndef PBS_MOM
 #include "array.h"
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
 #endif
 
 #ifndef TRUE
@@ -128,8 +129,6 @@
 #ifdef PBS_MOM
 int save_tmsock(job *);
 int recov_tmsock(int, job *);
-#else
-extern pthread_mutex_t *setup_save_mutex;
 #endif
 
 extern int job_qs_upgrade(job *, int, char *, int);
@@ -302,20 +301,12 @@ int job_save(
       return(-1);
       }
 
-#ifndef PBS_MOM
-      if (setup_save_mutex == NULL)
-        {
-        setup_save_mutex = malloc(sizeof(pthread_mutex_t));
-        pthread_mutex_init(setup_save_mutex,NULL);
-        }
-#endif
-
     for (i = 0;i < MAX_SAVE_TRIES;++i)
       {
       redo = 0; /* try to save twice */
 
 #ifndef PBS_MOM
-      pthread_mutex_lock(setup_save_mutex);
+      lock_ss();
 #endif
 
       save_setup(fds);
@@ -342,7 +333,7 @@ int job_save(
         }
 
 #ifndef PBS_MOM
-      pthread_mutex_unlock(setup_save_mutex);
+      unlock_ss();
 #endif
 
       if (redo != 0)

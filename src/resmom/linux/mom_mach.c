@@ -3655,13 +3655,11 @@ char *nusers(
 
           return(NULL);
           }
+        memset(hold+((maxuid-100)*sizeof(uid_t)), 0, 100*sizeof(uid_t));
 
         if (LOGLEVEL >= 7)
           {
-          sprintf(log_buffer, "%s[%d]: need more space: %d",
-                  id,
-                  nuids,
-		  maxuid);
+          sprintf(log_buffer, "%s[%d]: need more space: %d", id, nuids, maxuid);
           log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
           }
 

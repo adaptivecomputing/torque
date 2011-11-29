@@ -180,6 +180,7 @@ static char *mk_log_name(
   struct tm *ptm;
   struct tm  tmpPtm;
   time_t     time_now = time(NULL);
+  memset(&tmpPtm, 0, sizeof(struct tm));
 
   ptm = localtime_r(&time_now,&tmpPtm);
 
@@ -187,7 +188,7 @@ static char *mk_log_name(
     {
     if (!strcasecmp(log_suffix, "%h"))
       {
-      sprintf(pbuf, "%s/%04d%02d%02d.%s",
+      snprintf(pbuf, PATH_MAX, "%s/%04d%02d%02d.%s",
               log_directory,
               ptm->tm_year + 1900,
               ptm->tm_mon + 1,
@@ -196,7 +197,7 @@ static char *mk_log_name(
       }
     else
       {
-      sprintf(pbuf, "%s/%04d%02d%02d.%s",
+      snprintf(pbuf, PATH_MAX, "%s/%04d%02d%02d.%s",
               log_directory,
               ptm->tm_year + 1900,
               ptm->tm_mon + 1,
@@ -206,7 +207,7 @@ static char *mk_log_name(
     }
   else
     {
-    sprintf(pbuf, "%s/%04d%02d%02d",
+    snprintf(pbuf, PATH_MAX, "%s/%04d%02d%02d",
             log_directory,
             ptm->tm_year + 1900,
             ptm->tm_mon + 1,
@@ -306,7 +307,7 @@ int log_open(
   char *directory) /* normal log directory */
 
   {
-  char  buf[_POSIX_PATH_MAX];
+  char  buf[PATH_MAX];
   int   fds;
 
   if (log_opened > 0)
