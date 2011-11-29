@@ -530,8 +530,6 @@ void parse_command_line(
   pbs_net_t listener_addr;
   unsigned int listener_port;
 
-  ForceCreation = FALSE;
-
   static struct
     {
     char *it_name;
@@ -545,8 +543,10 @@ void parse_command_line(
     { "create", RECOV_CREATE },
     { "", RECOV_Invalid }
     };
+  
+  ForceCreation = FALSE;
 
-  while ((c = getopt(argc, argv, "A:a:d:DefhH:L:l:mM:p:R:S:t:v-:")) != -1)
+  while ((c = getopt(argc, argv, "A:a:d:DefFhH:L:l:mM:p:R:S:t:v-:")) != -1)
     {
     switch (c)
       {
