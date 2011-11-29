@@ -54,6 +54,34 @@ The following is a summary of key new features in TORQUE 4.0
 
 This section contains detailed information pertaining to specific new features. 
 
+---------------------------------
+=== Multi-threaded pbs_server ===
+---------------------------------
+
+pbs_server is multi-threaded starting with TORQUE 4.0. By default the number of available
+threads is 2*(number of cores)+1. This value can be modified using a set of three
+server parameters; min_threads, max_threads and thread_idle_seconds. Each of these
+parameters take an integer as an argument and can be set using qmgr.
+
+  min_threads: Sets the minimum number of threads that will be available in pbs_server
+
+  max_threads: Sets the maximum nuber of threads that can be on pbs_server
+
+  thread_idle_seconds: The number of seconds a thread can be idle before it is removed from
+  the system threadpool. Note the number of threads will never fall below the minimum.
+  thread_idle_seconds by default is -1. This indicates to TORQUE to never remove a thread
+  from the threadpool.
+
+By setting max_threads greater than min_threads pbs_server is able to dynamically add threads
+as the server load increases. The thread_idle_seconds parameter is used to detect a drop
+in the server load and removes threads as they are idle for the number of seconds given in 
+the parameter.
+
+Setting max_threads equal to min_threads will keep the number of threads static.
+
+
+
+
 ---------------------
 === Mom Hierarchy ===
 ---------------------
