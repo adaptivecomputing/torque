@@ -387,8 +387,8 @@ int authenticate_user(
 
   if (strncmp(preq->rq_user, pcred->username, PBS_MAXUSER))
     {
-    sprintf(error_msg, "Users do not match: Requested user %s: credential user: %s",
-                   preq->rq_user, pcred->username);
+    sprintf(error_msg, "Users do not match: Requested user %s: credential user %s: requested from host %s",
+                   preq->rq_user, pcred->username, preq->rq_host);
     log_event(
       PBSEVENT_ADMIN,
       PBS_EVENTCLASS_SERVER,
