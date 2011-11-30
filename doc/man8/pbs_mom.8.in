@@ -114,6 +114,9 @@ directory below the home directory of the server.
 If the log file cannot be opened, the diagnostic message is written
 to the system console.
 .SH OPTIONS
+.IP "\-A alias" 16
+Used with \-m (multi-mom option) to give the alias name of this instance 
+of pbs_mom
 .IP "\-a alarm" 16
 Used to specify the alarm timeout in seconds for computing a resource.
 Every time a resource request is processed, an alarm is set for the
@@ -149,13 +152,20 @@ open a file named for the current date in the PBS_HOME/mom_logs
 directory, see the
 .At \-d
 option.
+.IP "\-m" 16
+Directs the MOM to start in multi-mom mode. In addition to using -m the
+\-M, \-R and \-A options need to be used to properly start a MOM in multi-mom mode.
+For example 
+.B pbs_mom -m -M 30002 -R 30003 -A alias-host 
+will start pbs_mom with the service port on port 30002, the manager port at 30003 and with 
+the name alias-host.
 .IP "\-M port" 16
 Specifies the port number on which the mini-server (MOM) will
 listen for batch requests.  
 .IP "\-R port" 16
 Specifies the port number on which the mini-server (MOM) will
 listen for resource monitor requests, task manager requests and inter-MOM
-messages.  Both a UDP and a TCP port of this number will be used.
+messages. 
 .IP "\-p" 16
 (Default after version 2.4.0) (Preserve running jobs) -- Specifies the 
 impact on jobs which were in execution when the	mini-server shut-down. 
