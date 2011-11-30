@@ -2033,6 +2033,11 @@ int send_job_obit_to_ms(
   char        *cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
   u_long       gettime(resource *);
   u_long       getsize(resource *);
+  u_long       cput = resc_used(pjob, "cput", gettime);
+  u_long       mem = resc_used(pjob, "mem", getsize);
+  u_long       vmem = resc_used(pjob, "vmem", getsize);
+  int          command;
+  tm_event_t   event;
   hnodent     *np = pjob->ji_hosts;
 
   /* no entry for Mother Superior?? */
@@ -2043,6 +2048,17 @@ int send_job_obit_to_ms(
     {
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id, "sending IM_RADIX_ALL_OK");
     }
+
+  if (mom_radix < 2)
+    {
+    command = IM_ALL_OKAY;
+    event = pjob->ji_obit;
+    }
+  else
+    {
+    command = IM_RADIX_ALL_OK;
+    event = IM_KILL_JOB_RADIX;
+    }
     
   for (i = 0; i < 5; i++)
     {
@@ -2052,23 +2068,16 @@ int send_job_obit_to_ms(
       {
       DIS_tcp_setup(stream);
   
-      if (mom_radix < 2)
-        {
-        rc = im_compose(stream,pjob->ji_qs.ji_jobid,cookie,IM_ALL_OKAY,pjob->ji_obit,TM_NULL_TASK);
-        }
-      else
-        {
-        rc = im_compose(stream,pjob->ji_qs.ji_jobid,cookie,IM_RADIX_ALL_OK,IM_KILL_JOB_RADIX,TM_NULL_TASK);
-        }
+      rc = im_compose(stream,pjob->ji_qs.ji_jobid,cookie,command,event,TM_NULL_TASK);
       
       /* write the resources used for this job */
       if (rc == DIS_SUCCESS)
         {
-        if ((rc = diswul(stream, resc_used(pjob, "cput", gettime))) == DIS_SUCCESS)
+        if ((rc = diswul(stream, cput)) == DIS_SUCCESS)
           {
-          if ((rc = diswul(stream, resc_used(pjob, "mem", getsize))) == DIS_SUCCESS)
+          if ((rc = diswul(stream, mem)) == DIS_SUCCESS)
             {
-            if ((rc = diswul(stream, resc_used(pjob, "vmem", getsize))) == DIS_SUCCESS)
+            if ((rc = diswul(stream, vmem)) == DIS_SUCCESS)
               {
               if (mom_radix >= 2)
                 {
@@ -2107,18 +2116,45 @@ int send_job_obit_to_ms(
   /* If I cannot contact mother superior, kill this job */
   if (rc != PBSE_NONE)
     {
+    resend_momcomm     *mc = calloc(1, sizeof(resend_momcomm));
+    killjob_reply_info *kj = calloc(1, sizeof(killjob_reply_info));
+
+    if ((kj != NULL) &&
+        (mc != NULL))
+      {
+      mc->mc_type   = KILLJOB_REPLY;
+      mc->mc_struct = kj;
+
+      strcpy(kj->ici.jobid, pjob->ji_qs.ji_jobid);
+      strcpy(kj->ici.cookie, cookie);
+      memcpy(&(kj->ici.np), np, sizeof(kj->ici.np));
+      kj->ici.command = command;
+      kj->ici.event   = event;
+      kj->ici.taskid  = TM_NULL_TASK;
+      kj->mem = mem;
+      kj->vmem = vmem;
+      kj->cputime = cput;
+
+      if (mom_radix >= 2)
+        kj->node_id = pjob->ji_nodeid;
+      else
+        kj->node_id = -1;
+
+      add_to_resend_things(mc);
+      }
+
     if (LOGLEVEL >= 3)
       {
       log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "connection to server lost - no obit sent - job will be purged");
+        "couldn't contact mother superior - no obit sent - job will be purged");
       }
  
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
       {
-      kill_job(pjob, SIGKILL, id, "connection to server lost - no obit sent");
+      kill_job(pjob, SIGKILL, id, "couldn't contact mother superior - no obit sent");
       }
     }
 

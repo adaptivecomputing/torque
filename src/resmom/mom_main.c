@@ -180,7 +180,7 @@ double  wallfactor = 1.00;
 long  log_file_max_size = 0;
 long  log_file_roll_depth = 1;
 
-time_t  last_log_check;
+time_t          last_log_check;
 char           *nodefile_suffix = NULL;    /* suffix to append to each host listed in job host file */
 char           *submithost_suffix = NULL;  /* suffix to append to submithost for interactive jobs */
 char           *TNoSpoolDirList[TMAX_NSDCOUNT];
@@ -188,7 +188,8 @@ char           *TRemChkptDirList[TMAX_RCDCOUNT];
 
 job            *JobsToResend[MAX_RESEND_JOBS];
 
-char           *AllocParCmd = NULL;  /* (alloc) */
+resizable_array  *things_to_resend;
+char             *AllocParCmd = NULL;  /* (alloc) */
 
 int      src_login_batch = TRUE;
 int      src_login_interactive = TRUE;
@@ -249,6 +250,7 @@ pjobexec_t      TMOMStartInfo[TMAX_JE];
 
 /* prototypes */
 
+void            resend_things();
 void            im_request(int, int);
 extern void     add_resc_def(char *, char *);
 extern void     mom_server_all_diag(char **BPtr, int *BSpace);
@@ -7384,6 +7386,8 @@ int setup_program_environment(void)
   received_statuses = initialize_resizable_array(2);
   received_table = create_hash(101);
 
+  things_to_resend = initialize_resizable_array(10);
+
   if ((received_statuses == NULL) ||
       (received_table == NULL))
     {
@@ -8085,6 +8089,8 @@ void main_loop(void)
     if (LastServerUpdateTime == 0)
       tmpTime = 1;
 
+    resend_things();
+
     /* wait_request does a select and then calls the connection's cn_func for sockets with data */
 
     if (wait_request(tmpTime, NULL) != 0)
@@ -8558,6 +8564,150 @@ int main(
   return(0);
   }  /* END main() */
 
+
+
+
+int resend_join_job_reply(
+
+  joinjob_reply_info *jj)
+
+  {
+  int      ret = -1;
+  hnodent *np;
+  int      stream;
+
+  np = &jj->ici.np;
+  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  
+  if (IS_VALID_STREAM(stream))
+    {
+    ret = im_compose(stream, jj->ici.jobid, jj->ici.cookie, jj->ici.command, jj->ici.event, jj->ici.taskid);
+    
+    if (ret == DIS_SUCCESS)
+      {
+      if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
+        {
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jj->ici.jobid, "Successfully resent join job reply");
+        free(jj);
+        }
+      }
+    
+    close(stream);
+    }
+
+  return(ret);
+  } /* END resend_join_job_reply() */
+
+
+
+
+int resend_kill_job_reply(
+
+  killjob_reply_info *kj)
+
+  {
+  int      stream;
+  int      ret = -1;
+  hnodent *np;
+        
+  np = &kj->ici.np;
+  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  
+  if (IS_VALID_STREAM(stream))
+    {
+    ret = im_compose(stream, kj->ici.jobid, kj->ici.cookie, kj->ici.command, kj->ici.event, kj->ici.taskid);
+    
+    if (ret == DIS_SUCCESS)
+      {
+      if ((ret = diswul(stream, kj->cputime)) == DIS_SUCCESS)
+        {
+        if ((ret = diswul(stream, kj->mem)) == DIS_SUCCESS)
+          {
+          if ((ret = diswul(stream, kj->vmem)) == DIS_SUCCESS)
+            {
+            if (kj->node_id >= 0)
+              ret = diswsi(stream, kj->node_id);
+            
+            if (ret == DIS_SUCCESS)
+              {
+              if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
+                {
+                log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, kj->ici.jobid, "Successfully resent kill job reply");
+                free(kj);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+  return(ret);
+  } /* END resend_kill_job_reply() */
+
+
+
+
+void resend_things()
+
+  {
+  static char        *id = "resend_things";
+  int                 iter = -1;
+  int                 ret;
+  resend_momcomm     *mc;
+  joinjob_reply_info *jj;
+  killjob_reply_info *kj;
+
+  while ((mc = (resend_momcomm *)next_thing(things_to_resend, &iter)) != NULL)
+    {
+    ret = -1;
+
+    switch (mc->mc_type)
+      {
+      case JOINJOB_REPLY:
+
+        jj = (joinjob_reply_info *)mc;
+        resend_join_job_reply(jj);
+
+        break;
+
+      case KILLJOB_REPLY:
+
+        kj = (killjob_reply_info *)mc;
+        resend_kill_job_reply(kj);
+
+        break;
+
+      default:
+
+        snprintf(log_buffer, sizeof(log_buffer), 
+          "I don't recognize send mom communication of type %d",
+          mc->mc_type);
+        log_err(-1, id, log_buffer);
+
+        /* remove the garbage */
+        ret = DIS_SUCCESS;
+
+        break;
+      }
+
+    if (ret == DIS_SUCCESS)
+      {
+      remove_thing(things_to_resend, mc);
+      free(mc);
+      }
+    } /* END for each resendable thing */
+  } /* END resend_things() */
+
+
+
+int add_to_resend_things(
+
+  resend_momcomm *mc)
+
+  {
+  return(insert_thing(things_to_resend, mc));
+  } /* END add_to_resend_things() */
 
 
 

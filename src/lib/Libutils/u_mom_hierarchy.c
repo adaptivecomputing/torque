@@ -453,9 +453,8 @@ int write_tcp_reply(
       {
       if ((ret = diswsi(sock,command)) == DIS_SUCCESS)
         {
-        ret = diswsi(sock,exit_code);
-
-        DIS_tcp_wflush(sock);
+        if ((ret = diswsi(sock,exit_code)) == DIS_SUCCESS)
+          ret = DIS_tcp_wflush(sock);
 
         return(ret);
         }

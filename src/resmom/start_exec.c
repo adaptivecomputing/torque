@@ -330,7 +330,7 @@ extern int  setup_gpus_for_job(job *pjob);
 
 int exec_job_on_ms(job *pjob);
 
-void im_compose (int,char *,char *,int,tm_event_t,tm_task_id);
+int im_compose (int,char *,char *,int,tm_event_t,tm_task_id);
 
 
 /* END prototypes */
@@ -5699,6 +5699,169 @@ void sister_job_nodes(
 
 
 
+
+int send_join_job_to_sisters(
+    
+  job        *pjob,
+  int         node_index,
+  int         nodenum,
+  tlist_head  phead,
+  hnodent    *np)
+
+  {
+  static char *id = "send_join_job_to_sisters";
+  int          i;
+  int          stream;
+  int          connected;
+  int          ret;
+  eventent    *ep;
+  svrattrl    *psatl;
+
+  for (i = 0; i < 5; i++)
+    {
+    connected = FALSE;
+    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+
+    if (IS_VALID_STREAM(stream))
+      {
+      connected = TRUE;
+      ep = event_alloc(IM_JOIN_JOB, np, TM_NULL_EVENT, TM_NULL_TASK);
+
+      /* Send out a JOIN_JOB message to all the MOM's in the sisterhood. */
+      /* NOTE:  does not check success of join request */
+      DIS_tcp_setup(stream);
+      
+      ret = im_compose(stream,
+          pjob->ji_qs.ji_jobid,
+          pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
+          IM_JOIN_JOB,
+          ep->ee_event,
+          TM_NULL_TASK);
+
+      if (ret == DIS_SUCCESS)
+        {
+        /* nodeid of receiver */
+        if ((ret = diswsi(stream, node_index)) == DIS_SUCCESS)
+          {
+          /* number of nodes */
+          if ((ret = diswsi(stream, nodenum)) == DIS_SUCCESS)
+            {
+            /* out port number */
+            if ((ret = diswsi(stream, pjob->ji_portout)) == DIS_SUCCESS)
+              {
+              /* err port number */
+              if ((ret = diswsi(stream, pjob->ji_porterr)) == DIS_SUCCESS)
+                {
+                /* write jobattrs */
+                psatl = (svrattrl *)GET_NEXT(phead);
+                
+                if ((ret = encode_DIS_svrattrl(stream, psatl)) == DIS_SUCCESS)
+                  {
+                  if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
+                    {
+                    read_tcp_reply(stream,IM_PROTOCOL,IM_PROTOCOL_VER,IM_JOIN_JOB,&ret);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      
+      close(stream);
+
+      if (ret == DIS_SUCCESS)
+        {
+        /* successfully sent job */
+        break;
+        }
+      }
+
+    usleep(10);
+    } /* END for 5 retries */
+
+
+  if (connected == FALSE)
+    {
+    pjob->ji_nodekill = node_index;
+    
+    if (log_buffer[0] != '\0')
+      {
+      sprintf(log_buffer, "tcp_connect_sockaddr failed on %s", np->hn_host);
+      }
+    
+    log_err(errno, id, log_buffer);
+    
+    exec_bail(pjob, JOB_EXEC_FAIL1);
+    ret = -1;
+    }
+  else if (ret != DIS_SUCCESS)
+    {
+    /* FAILURE */
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Couldn't send join job request to %s for job %s",
+      np->hn_host,
+      pjob->ji_qs.ji_jobid);
+    
+    log_err(-1,id,log_buffer);
+    
+    exec_bail(pjob,JOB_EXEC_FAIL1);
+    }
+
+  return(ret);
+  } /* END send_join_job_to_sisters() */
+
+
+
+
+int generate_cookie(
+
+  job *pjob)
+
+  {
+  static char   *id = "generate_cookie";
+  char          *tt;
+  extern time_t  loopcnt;
+  MD5_CTX        c;
+  int            i;
+
+  if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+    {
+    if ((tt = malloc(JOB_COOKIE_SIZE)) == NULL)
+      {
+      log_err(ENOMEM, id, "cannot alloc memory");
+
+      exec_bail(pjob, JOB_EXEC_FAIL1);
+
+      return(-1);
+      }
+
+    pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str = tt;
+    pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
+
+    loopcnt++;
+
+    MD5Init(&c);
+    MD5Update(&c, (unsigned char *)&loopcnt, sizeof(loopcnt));
+    MD5Update(&c, (unsigned char *)pjob, sizeof(job));
+    MD5Final(&c);
+
+    for (i = 0;i < 16;i++)
+      {
+      sprintf(&tt[i * 2], "%02X",
+              c.digest[i]);
+      }
+
+    DBPRT(("===== MD5 %s\n", tt))
+    }   /* END if () */
+
+  return(PBSE_NONE);
+  } /* END generate_cookie() */
+
+
+
+
+
 /**
  * Start execution of a job.
  *
@@ -5723,90 +5886,44 @@ void start_exec(
   job *pjob)  /* I (modified) */
 
   {
-  static char  *id = "start_exec";
+  static char        *id = "start_exec";
 
-  int  nodenum;
+  int                 nodenum;
 #ifndef NUMA_SUPPORT
-  eventent     *ep;
-  int           i;
-  int           j;
-  int           index;
-  int           ret;
-  int           local_errno;
-  int           addr_len;
+  int                 i;
+  int                 j;
+  int                 index;
+  int                 ret;
+  int                 local_errno;
+  int                 addr_len;
 
-  hnodent      *np;
-  attribute    *pattr;
-  tlist_head    phead;
-  svrattrl     *psatl;
-  int           stream;
+  hnodent            *np;
+  attribute          *pattr;
+  tlist_head          phead;
 
-  int mom_radix = 0;
+  int                 mom_radix = 0;
   struct radix_buf  **sister_list;
-  struct timeval start_time;
-  struct timezone tz;
+  struct timeval      start_time;
+  struct timezone     tz;
 
 #endif /* ndef NUMA_SUPPORT */
 
-  char          tmpdir[MAXPATHLEN];
+  char                tmpdir[MAXPATHLEN];
 
 
   /* Step 1.0 Generate Cookie */
-
-  if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+  if (generate_cookie(pjob) != PBSE_NONE)
     {
-    char  *tt;
-    extern time_t loopcnt;
-    MD5_CTX  c;
-    int   i;
-
-    /* alloc 33 bytes? */
-
-    tt = malloc(33);
-
-    if (tt == NULL)
-      {
-      log_err(-1,id,"cannot alloc memory");
-
-      exec_bail(pjob,JOB_EXEC_FAIL1);
-
-      return;
-      }
-
-    pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str = tt;
-
-    pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
-
-    loopcnt++;
-
-    MD5Init(&c);
-
-    MD5Update(&c, (unsigned char *)&loopcnt, sizeof(loopcnt));
-
-    MD5Update(&c, (unsigned char *)pjob, sizeof(job));
-
-    MD5Final(&c);
-
-    for (i = 0;i < 16;i++)
-      {
-      sprintf(&tt[i * 2], "%02X",
-              c.digest[i]);
-      }
-
-    DBPRT(("===== MD5 %s\n",
-           tt))
-    }   /* END if () */
+    /* couldn't allocate memory */
+    return;
+    }
 
   /* Step 2.0 Initialize Job */
-
   /* update nodes info w/in job based on exec_hosts attribute */
-
   job_nodes(pjob);
 
   /* start_exec only executed on mother superior */
-
   pjob->ji_nodeid = 0; /* I'm MS */
-
   nodenum = pjob->ji_numnodes;
 
   /* Step 3.0 Validate/Initialize Environment */
@@ -5843,7 +5960,6 @@ void start_exec(
 
 #ifndef NUMA_SUPPORT
   index = find_attr(job_attr_def, "job_radix", JOB_ATR_LAST);
-
 
   if ((pjob->ji_wattr[index].at_flags & ATR_VFLAG_SET) &&
       (pjob->ji_wattr[index].at_val.at_long != 0))
@@ -5974,7 +6090,6 @@ void start_exec(
   else if (nodenum > 1)
     {
     /* Step 4.0A Send Join Request to Sisters */
-
     /* parallel job */
 
     pjob->ji_resources = (noderes *)calloc(nodenum - 1, sizeof(noderes));
@@ -5988,89 +6103,34 @@ void start_exec(
     for (i = 0;i < JOB_ATR_LAST;i++)
       {
       (job_attr_def + i)->at_encode(
-                                   pattr + i,
-                                   &phead,
-                                   (job_attr_def + i)->at_name,
-                                   NULL,
-                                   ATR_ENCODE_MOM,
-                                   ATR_DFLAG_ACCESS);
+          pattr + i,
+          &phead,
+          (job_attr_def + i)->at_name,
+          NULL,
+          ATR_ENCODE_MOM,
+          ATR_DFLAG_ACCESS);
       }   /* END for (i) */
 
     attrl_fixlink(&phead);
 
     /* open a pair of sockets for pbs_demux used later */
-    ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR);
-    if (ret != PBSE_NONE)
+    if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
+      {
+      /* can't gather stdout/err for the job - FAIL */
       return;
+      }
 
-    /* Open streams to the sisterhood. */
-
+    /* Send the join job request to the sisterhood. */
     for (i = 1;i < nodenum;i++)
       {
       np = &pjob->ji_hosts[i];
 
       log_buffer[0] = '\0';
 
-      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
-
-      if (IS_VALID_STREAM(stream) == FALSE)
+      if (send_join_job_to_sisters(pjob, i, nodenum, phead, np) != DIS_SUCCESS)
         {
-        pjob->ji_nodekill = i;
-
-        if (log_buffer[0] != '\0')
-          {
-          sprintf(log_buffer, "tcp_connect_sockaddr failed on %s", np->hn_host);
-          }
-
-        log_err(errno, id, log_buffer);
-
-        exec_bail(pjob, JOB_EXEC_FAIL1);
-
+        /* couldn't contact all of the sisters, we've already bailed */
         return;
-        }
-      
-      ep = event_alloc(IM_JOIN_JOB, np, TM_NULL_EVENT, TM_NULL_TASK);
-
-      /* Send out a JOIN_JOB message to all the MOM's in the sisterhood. */
-      /* NOTE:  does not check success of join request */
- 
-      DIS_tcp_setup(stream);
-      
-      im_compose(stream,
-          pjob->ji_qs.ji_jobid,
-          pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
-          IM_JOIN_JOB,
-          ep->ee_event,
-          TM_NULL_TASK);
-
-      diswsi(stream, i);                /* nodeid of receiver */
-      diswsi(stream, nodenum);          /* number of nodes */
-      diswsi(stream, pjob->ji_portout); /* out port number */
-      diswsi(stream, pjob->ji_porterr); /* err port number */
-
-      /* write jobattrs */
-
-      psatl = (svrattrl *)GET_NEXT(phead);
-
-      encode_DIS_svrattrl(stream, psatl);
-
-      DIS_tcp_wflush(stream);
-
-      read_tcp_reply(stream,IM_PROTOCOL,IM_PROTOCOL_VER,IM_JOIN_JOB,&ret);
-      
-      close(stream);
-     
-      if (ret != DIS_SUCCESS)
-        {
-        /* FAILURE */
-        snprintf(log_buffer,sizeof(log_buffer),
-          "Couldn't send join job request to %s for job %s",
-          np->hn_host,
-          pjob->ji_qs.ji_jobid);
-
-        log_err(-1,id,log_buffer);
-
-        exec_bail(pjob,JOB_EXEC_FAIL1);
         }
       }     /* END for (i) */
 

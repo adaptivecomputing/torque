@@ -143,6 +143,41 @@ struct varattr
   time_t      va_lasttime;
   };
 
+#define JOB_COOKIE_SIZE 33
+enum momcomm_type { JOINJOB_REPLY, KILLJOB_REPLY };
+
+typedef struct resend_momcomm
+  {
+  enum momcomm_type  mc_type;
+  void              *mc_struct;
+  } resend_momcomm;
+
+typedef struct im_compose_info
+  {
+  hnodent     np;
+  char        jobid[PBS_MAXSVRJOBID+1];
+  char        cookie[JOB_COOKIE_SIZE];
+  int         command;
+  tm_event_t  event;
+  tm_task_id  taskid;
+  } im_compose_info;
+
+typedef struct joinjob_reply_info
+  {
+  im_compose_info ici;
+  } joinjob_reply_info;
+
+typedef struct killjob_reply_info
+  {
+  im_compose_info  ici;
+  unsigned long    cputime;
+  unsigned long    mem;
+  unsigned long    vmem;
+  int              node_id; /* -1 unless using job_radix */
+  } killjob_reply_info;
+
+int add_to_resend_things(resend_momcomm *mc);
+
 /* public funtions within MOM */
 
 #ifdef _CRAY

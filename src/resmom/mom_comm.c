@@ -1976,6 +1976,12 @@ int reply_to_join_job_as_sister(
   int          reply_stream;
   int          retry_count;
   int          ret = DIS_SUCCESS;
+  int          command;
+
+  if (job_radix == FALSE)
+    command = IM_ALL_OKAY;
+  else
+    command = IM_RADIX_ALL_OK;
 
   for (retry_count = 0; retry_count < 5; retry_count++)
     {
@@ -1984,11 +1990,12 @@ int reply_to_join_job_as_sister(
       DIS_tcp_setup(reply_stream);
       
       if (job_radix == FALSE)
-        ret = im_compose(reply_stream, pjob->ji_qs.ji_jobid, cookie, IM_ALL_OKAY, event, fromtask);
+        ret = im_compose(reply_stream, pjob->ji_qs.ji_jobid, cookie, command, event, fromtask);
       else
-        ret = im_compose(reply_stream, pjob->ji_qs.ji_jobid, cookie, IM_RADIX_ALL_OK, event, fromtask);
+        ret = im_compose(reply_stream, pjob->ji_qs.ji_jobid, cookie, command, event, fromtask);
       
-      ret = DIS_tcp_wflush(reply_stream);
+      if (ret == DIS_SUCCESS)
+        ret = DIS_tcp_wflush(reply_stream);
       
       close(reply_stream);
       
@@ -2007,9 +2014,28 @@ int reply_to_join_job_as_sister(
   
   if (ret != DIS_SUCCESS)
     {
+    resend_momcomm     *mc = calloc(1, sizeof(resend_momcomm));
+    joinjob_reply_info *jj = calloc(1, sizeof(joinjob_reply_info));
+
+    if ((mc != NULL) &&
+        (jj != NULL))
+      {
+      mc->mc_type = JOINJOB_REPLY;
+      mc->mc_struct = jj;
+
+      strcpy(jj->ici.jobid, pjob->ji_qs.ji_jobid);
+      strcpy(jj->ici.cookie, cookie);
+      memcpy(&(jj->ici.np), pjob->ji_hosts, sizeof(jj->ici.np));
+      jj->ici.command = command;
+      jj->ici.event   = event;
+      jj->ici.taskid  = fromtask;
+
+      add_to_resend_things(mc);
+      }
+
     /* FAILURE */
     snprintf(log_buffer,sizeof(log_buffer),
-      "Couldn't send join job reply for job %s to %s - %s",
+      "Couldn't send join job reply for job %s to %s - %s will try later",
       pjob->ji_qs.ji_jobid,
       netaddr(addr),
       dis_emsg[ret]);
@@ -2213,7 +2239,7 @@ int im_join_job_as_sister(
     }
 
   /* write a reply back */
-  write_tcp_reply(stream,IM_PROTOCOL,IM_PROTOCOL_VER,IM_JOIN_JOB,0);
+  write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB, PBSE_NONE);
   
   strcpy(pjob->ji_qs.ji_jobid, jobid);
   
@@ -2405,7 +2431,6 @@ int im_join_job_as_sister(
       return(IM_DONE);
 
     contact_sisters(pjob,sister_count,radix_hosts,radix_ports);
-    pjob->ji_sisters[0].hn_stream = stream; /* this is who called us */
     job_save(pjob,SAVEJOB_FULL,momport);
     *reply_ptr = 0;
     
