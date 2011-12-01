@@ -2492,8 +2492,6 @@ err:
       node->nd_name,
       netaddr(addr));
     
-    update_node_state(node, INUSE_DOWN);
-    
     unlock_node(node, id, "err", LOGLEVEL);
     }
   else
