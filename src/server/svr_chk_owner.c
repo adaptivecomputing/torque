@@ -398,7 +398,16 @@ int authenticate_user(
   char uath[PBS_MAXUSER + PBS_MAXHOSTNAME + 1];
   char error_msg[1024];
 
+#ifdef MUNGE_AUTH
+  char uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
+
+  sprintf(uh, "%s@%s", preq->rq_user, pcred->hostname);
+  
+  if ((strncmp(preq->rq_user, pcred->username, PBS_MAXUSER)) &&
+     ((acl_check(&server.sv_attr[SRV_ATR_authusers], uh, ACL_User_Host)) == 0))
+#else
   if (strncmp(preq->rq_user, pcred->username, PBS_MAXUSER))
+#endif
     {
     sprintf(error_msg, "Users do not match: Requested user %s: credential user %s: requested from host %s",
                    preq->rq_user, pcred->username, preq->rq_host);
