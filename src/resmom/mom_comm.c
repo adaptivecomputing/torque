@@ -2017,7 +2017,12 @@ int reply_to_join_job_as_sister(
         ret = im_compose(reply_stream, pjob->ji_qs.ji_jobid, cookie, command, event, fromtask);
       
       if (ret == DIS_SUCCESS)
-        ret = DIS_tcp_wflush(reply_stream);
+        {
+        if ((ret = DIS_tcp_wflush(reply_stream)) == DIS_SUCCESS)
+          {
+          read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB, &ret);
+          }
+        }
       
       close(reply_stream);
       
@@ -4283,9 +4288,10 @@ int im_get_tid(
  */
 
 int handle_im_join_job_response(
-    
-  job                *pjob,  /* M */
-  struct sockaddr_in *addr)  /* I */
+   
+  int                 stream, /* I */ 
+  job                *pjob,   /* M */
+  struct sockaddr_in *addr)   /* I */
 
   {
   static char *id = "handle_im_join_job_response";
@@ -4300,6 +4306,8 @@ int handle_im_join_job_response(
     
     return(IM_FAILURE);
     }
+
+  write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB, PBSE_NONE);
 
   /* This is an O(N) algorithm We should do a countdown instead */
   for (i = 0;i < pjob->ji_numnodes;i++)
@@ -5554,7 +5562,7 @@ void im_request(
           {
           close_stream = TRUE;
 
-          if ((ret = handle_im_join_job_response(pjob,addr)) == IM_FAILURE)
+          if ((ret = handle_im_join_job_response(stream, pjob, addr)) == IM_FAILURE)
             goto err;
 
           break;
