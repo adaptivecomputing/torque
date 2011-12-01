@@ -7130,7 +7130,7 @@ int check_csa_status(enum csa_chk_cmd chk_action)
 		{
 		if (errno != ENOSYS)
 			{
-			sprintf("check_csa_status errno = %d\n", errno);
+			sprintf(log_buffer,"check_csa_status errno = %d\n", errno);
 
 			log_err(-1, id, log_buffer);
 			}
