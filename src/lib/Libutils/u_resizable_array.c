@@ -144,7 +144,7 @@ int check_and_resize(
   if (ra->max == ra->num + 1)
     {
     /* double the size if we're out of space */
-    size = (ra->max << 1) * sizeof(slot);
+    size = (ra->max * 2) * sizeof(slot);
 
     if ((tmp = realloc(ra->slots,size)) == NULL)
       {
@@ -154,11 +154,11 @@ int check_and_resize(
 
     remaining = ra->max * sizeof(slot);
 
-    memset(tmp + ra->max,0,remaining);
+    memset(tmp + ra->max, 0, remaining);
 
     ra->slots = tmp;
 
-    ra->max = ra->max << 1;
+    ra->max = ra->max * 2;
     }
 
   return(PBSE_NONE);

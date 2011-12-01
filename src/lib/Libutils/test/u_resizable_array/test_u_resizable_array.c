@@ -8,6 +8,7 @@
   
 char  buf[4096];
 char *a[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i" };
+int   num_elements = 9;
 
 /* check that arrays are initialized and resized correctly */
 START_TEST(initialize_and_resize)
@@ -199,6 +200,103 @@ END_TEST
 
 
 
+START_TEST(ordering_tests)
+  {
+  int              i;
+  int              iter;
+  int              backwards_iter = -1;
+  int              start_size = 2;
+  int              ones_index;
+  int              twos_index;
+  int              sevens_index;
+  void            *thing;
+  resizable_array *ra = initialize_resizable_array(start_size);
+
+  /* insert all elements */
+  for (i = 0; i < num_elements; i++)
+    insert_thing(ra, a[i]);
+
+  i = 8;
+
+  while ((thing = next_thing_from_back(ra, &backwards_iter)) != NULL)
+    {
+    fail_unless(thing == a[i], "out of order when iterating backwards");
+    i--;
+    }
+
+  free_resizable_array(ra);
+  ra = initialize_resizable_array(start_size);
+
+  insert_thing(ra, a[0]);
+  twos_index = insert_thing(ra, a[2]);
+  ones_index = insert_thing(ra, a[1]);
+  sevens_index = insert_thing(ra, a[7]);
+
+  backwards_iter = -1;
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[7], "not iterating backwards in order");
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[1], "not iterating backwards in order");
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[2], "not iterating backwards in order");
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[0], "not iterating backwards in order");
+
+  /* add some things using the ordered adds */
+  insert_thing_after(ra, a[3], ones_index);
+  insert_thing_before(ra, a[4], sevens_index);
+  insert_thing_after(ra, a[5], twos_index);
+
+  backwards_iter = -1;
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[7], "ordered inserts malfunctioning");
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[4], "ordered inserts malfunctioning");
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[3], "ordered inserts malfunctioning");
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[1], "ordered inserts malfunctioning");
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[5], "ordered inserts malfunctioning");
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[2], "ordered inserts malfunctioning");
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[0], "ordered inserts malfunctioning");
+
+  /* now remove some stuff */
+  remove_last_thing(ra);
+  remove_thing_from_index(ra, twos_index);
+  remove_thing_from_index(ra, ones_index);
+  
+  backwards_iter = -1;
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[4], "ordered inserts malfunctioning after removals");
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[3], "ordered inserts malfunctioning after removals");
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[5], "ordered inserts malfunctioning after removals");
+  thing = next_thing_from_back(ra, &backwards_iter);
+  fail_unless(thing == a[0], "ordered inserts malfunctioning after removals");
+
+  /* swap some things */
+  swap_things(ra, a[4], a[3]);
+  swap_things(ra, a[5], a[0]);
+
+  iter = -1;
+  thing = next_thing(ra, &iter);
+  fail_unless(thing == a[5], "swap is messing up the order");
+  thing = next_thing(ra, &iter);
+  fail_unless(thing == a[0], "swap is messing up the order");
+  thing = next_thing(ra, &iter);
+  fail_unless(thing == a[4], "swap is messing up the order");
+  thing = next_thing(ra, &iter);
+  fail_unless(thing == a[3], "swap is messing up the order");
+  
+  }
+END_TEST
+
+
+
 Suite *u_resizable_array_suite(void)
   {
   Suite *s = suite_create("u_resizable_array_suite methods");
@@ -212,6 +310,10 @@ Suite *u_resizable_array_suite(void)
 
   tc_core = tcase_create("iteration tests");
   tcase_add_test(tc_core, iteration_tests);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("ordering_tests");
+  tcase_add_test(tc_core, ordering_tests);
   suite_add_tcase(s, tc_core);
 
   return s;
@@ -242,3 +344,4 @@ int main(void)
   srunner_free(sr);
   return number_failed;
   }
+

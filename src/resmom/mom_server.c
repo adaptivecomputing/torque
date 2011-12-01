@@ -3170,7 +3170,6 @@ void node_comm_error(
 int write_status_strings(
  
   char        *stat_str,
-  int          len,
   node_comm_t *nc)
  
   {
@@ -3329,12 +3328,11 @@ void mom_server_all_update_stat(void)
       /* write to the socket */
       while (nc != NULL)
         {
-        if (write_status_strings(status_strings,strlen(status_strings),nc) < 0)
+        if (write_status_strings(status_strings, nc) < 0)
           {
           nc->bad = TRUE;
           nc->mtime = time_now;
           nc = force_path_update(mh);
-          close(nc->stream);
           }
         else 
           {

@@ -5,6 +5,7 @@
 
 #include "resizable_array.h" /* resizable_array */
 #include "mom_hierarchy.h" /* mom_hierarchy_t, node_comm_t */
+#include "mom_server.h"
 #include "resmon.h" /* config, rm_attribute */
 #include "mom_main.h" /* DEFAULT_SERVER_STAT_UPDATES */
 #include "log.h" /* MAXLINE, LOG_BUF_SIZE */
