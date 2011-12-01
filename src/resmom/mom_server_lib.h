@@ -81,7 +81,7 @@ void mom_server_update_stat(mom_server *pms, char *status_strings);
 
 void node_comm_error(node_comm_t *nc, char *message);
 
-int write_status_strings(char *stat_str, int len, node_comm_t *nc);
+int write_status_strings(char *stat_str, node_comm_t *nc);
 
 int send_update();
 
