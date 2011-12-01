@@ -5325,19 +5325,19 @@ void job_nodes(
   job *pjob)  /* I */
 
   {
-  char         *id = "job_nodes";
+  static char *id = "job_nodes";
 
-  int  i;
-  int  j;
-  int  nhosts;
-  int  nodenum;
-  int  ix;
+  int          i;
+  int          j;
+  int          nhosts;
+  int          nodenum;
+  int          ix;
 
-  char  *cp = NULL;
-  char  *nodestr = NULL;
-  char  *portstr = NULL;
-  hnodent *hp = NULL;
-  vnodent *np = NULL;
+  char        *cp = NULL;
+  char        *nodestr = NULL;
+  char        *portstr = NULL;
+  hnodent     *hp = NULL;
+  vnodent     *np = NULL;
 
   nodes_free(pjob);
 

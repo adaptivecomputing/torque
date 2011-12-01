@@ -8790,7 +8790,7 @@ int read_status_strings(
   
   if (index == -1)
     {
-    rn = malloc(sizeof(received_node));
+    rn = calloc(1, sizeof(received_node));
     
     if (rn == NULL)
       {
@@ -8859,28 +8859,35 @@ int read_status_strings(
 
     free(str);
     }
-  
-  updates_waiting_to_send++;
-  
-  if (is_new == TRUE)
+
+  if ((rc == DIS_SUCCESS) ||
+      (rc == DIS_EOF))
     {
-    int index = insert_thing(received_statuses,rn);
-    
-    if (index == -1)
+    /* SUCCESS */
+    write_tcp_reply(fds, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, PBSE_NONE);
+    updates_waiting_to_send++;
+  
+    if (is_new == TRUE)
       {
-      log_err(ENOMEM,id,"No memory to resize the received_statuses array...SYSTEM FAILURE\n");
-      }
-    else
-      {
-      add_hash(received_table,index,rn->hostname);
+      int index = insert_thing(received_statuses,rn);
       
+      if (index == -1)
+        {
+        log_err(ENOMEM,id,"No memory to resize the received_statuses array...SYSTEM FAILURE\n");
+        }
+      else
+        {
+        add_hash(received_table,index,rn->hostname);
+        
+        send_update_within_ten();
+        }
+      }
+    else if (updates_waiting_to_send >= MAX_UPDATES_BEFORE_SENDING)
+      {
       send_update_within_ten();
       }
     }
-  else if (updates_waiting_to_send >= MAX_UPDATES_BEFORE_SENDING)
-    {
-    send_update_within_ten();
-    }
+  
   
   return(PBSE_NONE);
   } /* END read_status_strings() */

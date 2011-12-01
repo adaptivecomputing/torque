@@ -3196,9 +3196,13 @@ int write_status_strings(
       if ((rc = write_cached_statuses(fds,id,nc,UPDATE_TO_SERVER)) == DIS_SUCCESS)
         {
         /* write message that we're done */
-        diswst(fds, IS_EOL_MESSAGE);
-
-        rc = DIS_tcp_wflush(fds);
+        if ((rc = diswst(fds, IS_EOL_MESSAGE)) == DIS_SUCCESS)
+          {
+          if ((rc = DIS_tcp_wflush(fds)) == DIS_SUCCESS)
+            {
+            read_tcp_reply(fds, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, &rc);
+            }
+          }
 
         if (LOGLEVEL >= 7)
           {
