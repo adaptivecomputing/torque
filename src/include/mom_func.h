@@ -144,7 +144,7 @@ struct varattr
   };
 
 #define JOB_COOKIE_SIZE 33
-enum momcomm_type { JOINJOB_REPLY, KILLJOB_REPLY };
+enum momcomm_type { COMPOSE_REPLY, KILLJOB_REPLY };
 
 typedef struct resend_momcomm
   {
@@ -162,14 +162,9 @@ typedef struct im_compose_info
   tm_task_id  taskid;
   } im_compose_info;
 
-typedef struct joinjob_reply_info
-  {
-  im_compose_info ici;
-  } joinjob_reply_info;
-
 typedef struct killjob_reply_info
   {
-  im_compose_info  ici;
+  im_compose_info *ici;
   unsigned long    cputime;
   unsigned long    mem;
   unsigned long    vmem;
@@ -177,6 +172,7 @@ typedef struct killjob_reply_info
   } killjob_reply_info;
 
 int add_to_resend_things(resend_momcomm *mc);
+im_compose_info *create_compose_reply_info(char *, char *, hnodent *, int command, tm_event_t, tm_task_id);
 
 /* public funtions within MOM */
 

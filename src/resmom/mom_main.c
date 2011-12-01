@@ -8567,28 +8567,72 @@ int main(
 
 
 
-int resend_join_job_reply(
+im_compose_info *create_compose_reply_info(
+    
+  char       *jobid,
+  char       *cookie,
+  hnodent    *np,
+  int         command,
+  tm_event_t  event,
+  tm_task_id  taskid)
 
-  joinjob_reply_info *jj)
+  {
+  static char     *id = "create_compose_reply_info";
+  im_compose_info *ici = calloc(1, sizeof(im_compose_info));
+
+  if (ici != NULL)
+    {
+    strcpy(ici->jobid, jobid);
+    strcpy(ici->cookie, cookie);
+    memcpy(&(ici->np), np, sizeof(ici->np));
+    ici->command = command;
+    ici->event   = event;
+    ici->taskid  = taskid;
+    }
+  else
+    log_err(ENOMEM, id, "Cannot allocate memory!");
+
+  return(ici);
+  } /* END create_compose_reply_info() */
+
+
+
+
+int im_compose_send_info(
+
+  int              stream,
+  im_compose_info *ici)
+
+  {
+  return(im_compose(stream, ici->jobid, ici->cookie, ici->command, ici->event, ici->taskid));
+  } /* END im_compose_send_info() */
+
+
+
+
+
+int resend_compose_reply(
+
+  im_compose_info *ici)
 
   {
   int      ret = -1;
   hnodent *np;
   int      stream;
 
-  np = &jj->ici.np;
+  np = &ici->np;
   stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
   
   if (IS_VALID_STREAM(stream))
     {
-    ret = im_compose(stream, jj->ici.jobid, jj->ici.cookie, jj->ici.command, jj->ici.event, jj->ici.taskid);
+    ret = im_compose_send_info(stream, ici);
     
     if (ret == DIS_SUCCESS)
       {
       if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
         {
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jj->ici.jobid, "Successfully resent join job reply");
-        free(jj);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ici->jobid, "Successfully resent im compose reply");
+        free(ici);
         }
       }
     
@@ -8596,7 +8640,7 @@ int resend_join_job_reply(
     }
 
   return(ret);
-  } /* END resend_join_job_reply() */
+  } /* END resend_compose_reply() */
 
 
 
@@ -8610,12 +8654,12 @@ int resend_kill_job_reply(
   int      ret = -1;
   hnodent *np;
         
-  np = &kj->ici.np;
+  np = &kj->ici->np;
   stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
   
   if (IS_VALID_STREAM(stream))
     {
-    ret = im_compose(stream, kj->ici.jobid, kj->ici.cookie, kj->ici.command, kj->ici.event, kj->ici.taskid);
+    ret = im_compose_send_info(stream, kj->ici);
     
     if (ret == DIS_SUCCESS)
       {
@@ -8632,7 +8676,8 @@ int resend_kill_job_reply(
               {
               if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
                 {
-                log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, kj->ici.jobid, "Successfully resent kill job reply");
+                log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, kj->ici->jobid, "Successfully resent kill job reply");
+                free(kj->ici);
                 free(kj);
                 }
               }
@@ -8655,7 +8700,7 @@ void resend_things()
   int                 iter = -1;
   int                 ret;
   resend_momcomm     *mc;
-  joinjob_reply_info *jj;
+  im_compose_info    *ici;
   killjob_reply_info *kj;
 
   while ((mc = (resend_momcomm *)next_thing(things_to_resend, &iter)) != NULL)
@@ -8664,16 +8709,16 @@ void resend_things()
 
     switch (mc->mc_type)
       {
-      case JOINJOB_REPLY:
+      case COMPOSE_REPLY:
 
-        jj = (joinjob_reply_info *)mc;
-        resend_join_job_reply(jj);
+        ici = (im_compose_info *)mc->mc_struct;
+        resend_compose_reply(ici);
 
         break;
 
       case KILLJOB_REPLY:
 
-        kj = (killjob_reply_info *)mc;
+        kj = (killjob_reply_info *)mc->mc_struct;
         resend_kill_job_reply(kj);
 
         break;

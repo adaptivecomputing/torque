@@ -806,14 +806,15 @@ int send_sisters(
   {
   static char *id = "send_sisters";
 
-  int          i;
-  int          num;
-  int          ret;
-  int       stream;
-  int       job_radix;
-  int       loop_limit;
-  eventent    *ep;
-  char        *cookie;
+  int              i;
+  int              num;
+  int              ret;
+  int              stream;
+  int              job_radix;
+  int              loop_limit;
+  eventent        *ep;
+  char            *cookie;
+  resend_momcomm  *mc;
 
   if (LOGLEVEL >= 4)
     {
@@ -894,20 +895,6 @@ int send_sisters(
       /* garrick commented out continue statement below */
       /* continue; */
       }
-	    
-    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
-    
-    if (IS_VALID_STREAM(stream) == FALSE)
-      {
-      snprintf(log_buffer, sizeof(log_buffer), "%s:  cannot open tcp connection to sister #%d (%s)",
-        id,
-        i,
-        (np->hn_host != NULL) ? np->hn_host : "NULL");
-      
-      log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
-      
-      continue;
-      }
 
     ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);
 
@@ -919,7 +906,31 @@ int send_sisters(
         pjob->ji_qs.ji_jobid,
         "cannot alloc event object in send_sisters");
 
-      close(stream);
+      continue;
+      }
+	    
+    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    
+    if (IS_VALID_STREAM(stream) == FALSE)
+      {
+      if ((mc = calloc(1, sizeof(resend_momcomm))) != NULL)
+        {
+        mc->mc_type = COMPOSE_REPLY;
+        mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
+
+        if (mc->mc_struct == NULL)
+          free(mc);
+        else
+          add_to_resend_things(mc);
+        }
+
+      snprintf(log_buffer, sizeof(log_buffer), "%s:  cannot open tcp connection to sister #%d (%s)",
+        id,
+        i,
+        (np->hn_host != NULL) ? np->hn_host : "NULL");
+      
+      log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      
       continue;
       }
 
@@ -933,6 +944,17 @@ int send_sisters(
 
     if (ret != DIS_SUCCESS)
       {
+      if ((mc = calloc(1, sizeof(resend_momcomm))) != NULL)
+        {
+        mc->mc_type = COMPOSE_REPLY;
+        mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
+
+        if (mc->mc_struct == NULL)
+          free(mc);
+        else
+          add_to_resend_things(mc);
+        }
+
       snprintf(log_buffer, sizeof(log_buffer),
         "%s:  cannot compose message to sister #%d (%s) - %d",
         id, i, (np->hn_host != NULL) ? np->hn_host : "NULL", ret);
@@ -2014,23 +2036,21 @@ int reply_to_join_job_as_sister(
   
   if (ret != DIS_SUCCESS)
     {
-    resend_momcomm     *mc = calloc(1, sizeof(resend_momcomm));
-    joinjob_reply_info *jj = calloc(1, sizeof(joinjob_reply_info));
+    resend_momcomm  *mc  = calloc(1, sizeof(resend_momcomm));
+    im_compose_info *ici;
 
-    if ((mc != NULL) &&
-        (jj != NULL))
+    if (mc != NULL)
       {
-      mc->mc_type = JOINJOB_REPLY;
-      mc->mc_struct = jj;
+      ici = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, pjob->ji_hosts, command, event, fromtask);
 
-      strcpy(jj->ici.jobid, pjob->ji_qs.ji_jobid);
-      strcpy(jj->ici.cookie, cookie);
-      memcpy(&(jj->ici.np), pjob->ji_hosts, sizeof(jj->ici.np));
-      jj->ici.command = command;
-      jj->ici.event   = event;
-      jj->ici.taskid  = fromtask;
-
-      add_to_resend_things(mc);
+      if (ici != NULL)
+        {
+        mc->mc_type = COMPOSE_REPLY;
+        mc->mc_struct = ici;
+        add_to_resend_things(mc);
+        }
+      else
+        free(mc);
       }
 
     /* FAILURE */

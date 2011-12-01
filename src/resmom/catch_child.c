@@ -2125,22 +2125,25 @@ int send_job_obit_to_ms(
       mc->mc_type   = KILLJOB_REPLY;
       mc->mc_struct = kj;
 
-      strcpy(kj->ici.jobid, pjob->ji_qs.ji_jobid);
-      strcpy(kj->ici.cookie, cookie);
-      memcpy(&(kj->ici.np), np, sizeof(kj->ici.np));
-      kj->ici.command = command;
-      kj->ici.event   = event;
-      kj->ici.taskid  = TM_NULL_TASK;
-      kj->mem = mem;
-      kj->vmem = vmem;
-      kj->cputime = cput;
-
-      if (mom_radix >= 2)
-        kj->node_id = pjob->ji_nodeid;
+      kj->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, command, event, TM_NULL_TASK);
+      if (kj->ici == NULL)
+        {
+        free(mc);
+        free(kj);
+        }
       else
-        kj->node_id = -1;
-
-      add_to_resend_things(mc);
+        {
+        kj->mem = mem;
+        kj->vmem = vmem;
+        kj->cputime = cput;
+        
+        if (mom_radix >= 2)
+          kj->node_id = pjob->ji_nodeid;
+        else
+          kj->node_id = -1;
+        
+        add_to_resend_things(mc);
+        }
       }
 
     if (LOGLEVEL >= 3)
