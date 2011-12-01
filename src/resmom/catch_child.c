@@ -2126,6 +2126,7 @@ int send_job_obit_to_ms(
       mc->mc_struct = kj;
 
       kj->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, command, event, TM_NULL_TASK);
+
       if (kj->ici == NULL)
         {
         free(mc);

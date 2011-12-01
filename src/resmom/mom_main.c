@@ -8712,14 +8712,14 @@ void resend_things()
       case COMPOSE_REPLY:
 
         ici = (im_compose_info *)mc->mc_struct;
-        resend_compose_reply(ici);
+        ret = resend_compose_reply(ici);
 
         break;
 
       case KILLJOB_REPLY:
 
         kj = (killjob_reply_info *)mc->mc_struct;
-        resend_kill_job_reply(kj);
+        ret = resend_kill_job_reply(kj);
 
         break;
 
