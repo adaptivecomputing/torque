@@ -3188,27 +3188,30 @@ int write_status_strings(
   DIS_tcp_setup(fds);
  
   /* write protocol */
-  if ((rc = write_update_header(fds,nc->name,id)) == DIS_SUCCESS)
+  if ((rc = write_update_header(fds,nc->name,id)) != DIS_SUCCESS)
     {
-    if ((rc = write_my_server_status(fds,id,stat_str,nc,UPDATE_TO_SERVER)) == DIS_SUCCESS)
+    }
+  else if ((rc = write_my_server_status(fds,id,stat_str,nc,UPDATE_TO_SERVER)) != DIS_SUCCESS)
+    {
+    }
+  else if ((rc = write_cached_statuses(fds,id,nc,UPDATE_TO_SERVER)) != DIS_SUCCESS)
+    {
+    }
+  /* write message that we're done */
+  else if ((rc = diswst(fds, IS_EOL_MESSAGE)) != DIS_SUCCESS)
+    {
+    }
+  else if ((rc = DIS_tcp_wflush(fds)) == DIS_SUCCESS)
+    {
+    read_tcp_reply(fds, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, &rc);
+    
+    if (rc == DIS_SUCCESS)
       {
-      if ((rc = write_cached_statuses(fds,id,nc,UPDATE_TO_SERVER)) == DIS_SUCCESS)
+      if (LOGLEVEL >= 7)
         {
-        /* write message that we're done */
-        if ((rc = diswst(fds, IS_EOL_MESSAGE)) == DIS_SUCCESS)
-          {
-          if ((rc = DIS_tcp_wflush(fds)) == DIS_SUCCESS)
-            {
-            read_tcp_reply(fds, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, &rc);
-            }
-          }
-
-        if (LOGLEVEL >= 7)
-          {
-          snprintf(log_buffer, sizeof(log_buffer),
-            "Successfully sent status update to mom %s", nc->name);
-          log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
-          }
+        snprintf(log_buffer, sizeof(log_buffer),
+          "Successfully sent status update to mom %s", nc->name);
+        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
         }
       }
     }
