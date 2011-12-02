@@ -3104,9 +3104,16 @@ void mom_server_update_stat(
         }
       else
         {
-        snprintf(log_buffer,sizeof(log_buffer),
-          "Couldn't send update to server: %s",
-          dis_emsg[ret]);
+        if (ret >= 0)
+          {
+          snprintf(log_buffer,sizeof(log_buffer),
+            "Couldn't send update to server: %s",
+            dis_emsg[ret]);
+          }
+        else
+          {
+          snprintf(log_buffer,sizeof(log_buffer), "Couldn't send update to server");
+          }
         }
       
       log_err(-1,id,log_buffer);

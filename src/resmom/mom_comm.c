@@ -744,30 +744,32 @@ int im_compose(
     return(DIS_EOF);
     }
 
-  if ((ret = diswsi(stream, IM_PROTOCOL)) == DIS_SUCCESS)
+  if ((ret = diswsi(stream, IM_PROTOCOL)) != DIS_SUCCESS)
     {
-    if ((ret = diswsi(stream, IM_PROTOCOL_VER)) == DIS_SUCCESS)
-      {
-      if ((ret = diswus(stream, pbs_rm_port)) == DIS_SUCCESS)
-        {
-        if ((ret = diswst(stream, jobid)) == DIS_SUCCESS)
-          {
-          if ((ret = diswst(stream, cookie)) == DIS_SUCCESS)
-            {
-            if ((ret = diswsi(stream, command)) == DIS_SUCCESS)
-              {
-              if ((ret = diswsi(stream, event)) == DIS_SUCCESS)
-                {
-                ret = diswsi(stream, taskid);
-                
-                DIS_tcp_wflush(stream);
-                }
-              }
-            }
-          }
-        }
-      }
     }
+  else if ((ret = diswsi(stream, IM_PROTOCOL_VER)) != DIS_SUCCESS)
+    {
+    }
+  else if ((ret = diswus(stream, pbs_rm_port)) != DIS_SUCCESS)
+    {
+    }
+  else if ((ret = diswst(stream, jobid)) != DIS_SUCCESS)
+    {
+    }
+  else if ((ret = diswst(stream, cookie)) != DIS_SUCCESS)
+    {
+    }
+  else if ((ret = diswsi(stream, command)) != DIS_SUCCESS)
+    {
+    }
+  else if ((ret = diswsi(stream, event)) != DIS_SUCCESS)
+    {
+    }
+  else if ((ret = diswsi(stream, taskid)) != DIS_SUCCESS)
+    {
+    }
+  else
+    ret = DIS_tcp_wflush(stream);
 
   if (ret != DIS_SUCCESS)
     {
@@ -1441,15 +1443,19 @@ void im_eof(
  
   if (getpeername(stream,&addr,&len) == 0)
     {
-    sprintf(log_buffer, "%s from addr %s",
-      dis_emsg[ret],
-     netaddr(((struct sockaddr_in *)&addr)));
-    
-   log_record(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      log_buffer);
+    if (ret >= 0)
+      {
+      sprintf(log_buffer, "%s from addr %s",
+        dis_emsg[ret],
+        netaddr(((struct sockaddr_in *)&addr)));
+      }
+    else
+      {
+      sprintf(log_buffer, "Communication error from addr %s",
+        netaddr(((struct sockaddr_in *)&addr)));
+      }
+   
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
   
     ipaddr = ntohl(((struct sockaddr_in *)&addr)->sin_addr.s_addr);
     }
@@ -1458,6 +1464,8 @@ void im_eof(
 
   if (ipaddr == 0)
     return;
+
+  /* NYI: I'm fairly certain this code should be removed --dbeer */
 
   /*
   ** Search though all the jobs looking for this stream.
@@ -2059,11 +2067,21 @@ int reply_to_join_job_as_sister(
       }
 
     /* FAILURE */
-    snprintf(log_buffer,sizeof(log_buffer),
-      "Couldn't send join job reply for job %s to %s - %s will try later",
-      pjob->ji_qs.ji_jobid,
-      netaddr(addr),
-      dis_emsg[ret]);
+    if (ret >= 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Couldn't send join job reply for job %s to %s - %s will try later",
+        pjob->ji_qs.ji_jobid,
+        netaddr(addr),
+        dis_emsg[ret]);
+      }
+    else
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Couldn't send join job reply for job %s to %s will try later",
+        pjob->ji_qs.ji_jobid,
+        netaddr(addr));
+      }
     
     log_err(-1,id,log_buffer);
     }
@@ -7900,10 +7918,20 @@ done:
     {
     if ((ret != DIS_SUCCESS) || (DIS_tcp_wflush(fd) == -1))
       {
-      sprintf(log_buffer, "comm failed %s when performing command %d for job %s",
-        dis_emsg[ret],
-        command,
-        jobid);
+      if (ret >= 0)
+        {
+        sprintf(log_buffer, "comm failed %s when performing command %d for job %s",
+          dis_emsg[ret],
+          command,
+          jobid);
+        }
+      else
+        {
+        sprintf(log_buffer, "comm failed when performing command %d for job %s",
+          command,
+          jobid);
+        }
+
       
       log_err(errno, id, log_buffer);
       
@@ -7920,7 +7948,12 @@ done:
 err:
   
   if (ret != DIS_SUCCESS)
-    sprintf(log_buffer, "bad header %s", dis_emsg[ret]);
+    {
+    if (ret >= 0)
+      sprintf(log_buffer, "bad header %s", dis_emsg[ret]);
+    else
+      sprintf(log_buffer, "bad header - communication error");
+    }
   
   log_err(errno, id, log_buffer);
   
