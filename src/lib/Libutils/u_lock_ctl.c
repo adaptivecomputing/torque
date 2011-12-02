@@ -43,16 +43,9 @@ int lock_init()
     rc = PBSE_MEM_MALLOC;
   else
     {
-    memset(locks->startup, 0, sizeof(pthread_mutex_t));
     pthread_mutex_init(locks->startup, &startup_attr);
-
-    memset(locks->conn_table, 0, sizeof(pthread_mutex_t));
     pthread_mutex_init(locks->conn_table, &conn_attr);
-
-    memset(locks->tcp_table, 0, sizeof(pthread_mutex_t));
     pthread_mutex_init(locks->tcp_table, &tcp_attr);
-
-    memset(locks->setup_save, 0, sizeof(pthread_mutex_t));
     pthread_mutex_init(locks->setup_save, &ss_attr);
     }
   return rc;

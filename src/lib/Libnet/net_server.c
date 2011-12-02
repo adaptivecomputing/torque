@@ -583,7 +583,8 @@ int wait_request(
 
         pthread_mutex_unlock(svr_conn[i].cn_mutex);
 
-        func((void *)&i);
+        if (func != NULL)
+          func((void *)&i);
 
         /* NOTE:  breakout if state changed (probably received shutdown request) */
 

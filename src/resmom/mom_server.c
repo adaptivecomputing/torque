@@ -4327,7 +4327,7 @@ void is_request(
 
     log_ext(-1,id,log_buffer,LOG_ALERT);
 
-    rpp_close(stream);
+    close_conn(stream, FALSE);
 
     return;
     }

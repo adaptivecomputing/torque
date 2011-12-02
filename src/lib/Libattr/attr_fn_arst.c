@@ -128,7 +128,7 @@ int decode_arst_direct(
   char      *pbuf = NULL;
   char      *pc = NULL;
   char      *pstr = NULL;
-  size_t     ssize;
+  int     ssize;
   char      *tmpval = NULL;
   char      *tmp = NULL;
 
@@ -143,7 +143,7 @@ int decode_arst_direct(
   ns = 1;
   ssize = strlen(val) + 1;
 
-  if ((tmpval = malloc((unsigned)ssize)) == NULL)
+  if ((tmpval = calloc(1, ssize)) == NULL)
     {
     /* FAILURE */
 

@@ -93,6 +93,8 @@
 #include "utils.h"
 #include "../Liblog/pbs_log.h"
 #include "../Libnet/lib_net.h" /* socket_get_tcp_priv, socket_connect_addr */
+#define LOCAL_LOG_BUF 1024
+
 
 
 
@@ -247,8 +249,10 @@ int tcp_connect_sockaddr(
 
   {
   char *id = "tcp_connect_sockaddr";
+  int rc = PBSE_NONE;
   int stream = -1;
   char *err_msg = NULL;
+  char local_err_buf[LOCAL_LOG_BUF];
   /*
   int   stream = socket(AF_INET,SOCK_STREAM,0);
   
@@ -270,9 +274,10 @@ int tcp_connect_sockaddr(
     /* FAILED */
     log_err(errno,id,"Failed when trying to get privileged port - socket_get_tcp_priv() failed");
     }
-  else if (socket_connect_addr(&stream, sa, sa_size, 1, &err_msg) != PBSE_NONE)
+  else if ((rc = socket_connect_addr(&stream, sa, sa_size, 1, &err_msg)) != PBSE_NONE)
     {
     /* FAILED */
+    snprintf(local_err_buf, LOCAL_LOG_BUF, "Failed when trying to open tcp connection - connect() failed [rc = %d] [sock = %d] [addr = %s]", rc, stream, sa->sa_data);
     log_err(errno,id,"Failed when trying to open tcp connection - connect() failed");
     if (err_msg != NULL)
       {

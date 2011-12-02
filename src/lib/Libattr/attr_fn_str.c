@@ -267,7 +267,7 @@ set_str(struct attribute *attr, struct attribute *new, enum batch_op op)
 
       if (attr->at_val.at_str != NULL)
         nsize += strlen(attr->at_val.at_str);
-      new_value = calloc(1, nsize);
+      new_value = calloc(1, nsize + 1);
 
       if (new_value == NULL)
         return (PBSE_SYSTEM);

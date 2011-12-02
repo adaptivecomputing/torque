@@ -132,14 +132,12 @@ struct work_task *set_task(
   work_task *pold;
   int        iter = -1;
 
-  pnew = (struct work_task *)malloc(sizeof(struct work_task));
+  pnew = (struct work_task *)calloc(1, sizeof(struct work_task));
 
   if (pnew == NULL)
     {
     return(NULL);
     }
-
-  memset(pnew, 0, sizeof(work_task));
 
   pnew->wt_event    = event_id;
   pnew->wt_type     = type;

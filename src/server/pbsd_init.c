@@ -747,6 +747,7 @@ int pbsd_init(
   int               min_threads;
   int               max_threads;
   int               thread_idle_time;
+  int               job_count = 0; /* Count of recovered jobs */
 
   struct stat       statbuf;
   char             *suffix_slash = "/";
@@ -1421,6 +1422,13 @@ int pbsd_init(
 
     while ((pdirent = readdir(dir)) != NULL)
       {
+      job_count++;
+      if ((job_count % 1000) == 0)
+        {
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%d files read from disk", job_count);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
+        }
+
       if (chk_save_file(pdirent->d_name) == 0)
         {
         /* recover the jobs */
@@ -1489,6 +1497,8 @@ int pbsd_init(
         }
       }    /* END while ((pdirent = readdir(dir)) != NULL) */
 
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%d total files read from disk", job_count);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
     closedir(dir);
     qsort(Array.Data,Array.AppendIndex,sizeof(Array.Data[0]),SortPrioAscend);
 

@@ -400,9 +400,9 @@ int enqueue_threadpool_request(
   void *arg)
 
   {
-  tp_work_t *work;
+  tp_work_t *work = NULL;
 
-  work = (tp_work_t *)malloc(sizeof(tp_work_t));
+  work = (tp_work_t *)calloc(1, sizeof(tp_work_t));
   if (work == NULL)
     {
     return(ENOMEM);

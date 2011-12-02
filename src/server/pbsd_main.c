@@ -1404,7 +1404,7 @@ int main(
   /* save argv and the path for later use */
   for (i = 0;i < argc;i++)
     {
-    ArgV[i] = (char *)malloc(sizeof(char) * (strlen(argv[i])+1));
+    ArgV[i] = (char *)calloc(sizeof(char), (strlen(argv[i])+1));
 
     if (ArgV[i] == NULL)
       {
@@ -1446,7 +1446,7 @@ int main(
     exit(1);    /* FAILURE - shutdown */
     }
 
-  strcpy(server_name, server_host); /* by default server = host */
+  strncpy(server_name, server_host, PBS_MAXHOSTNAME<strlen(server_host)?PBS_MAXHOSTNAME:strlen(server_host)); /* by default server = host */
 
   pbs_server_addr    = get_hostaddr(&local_errno, server_host);
   pbs_mom_addr       = pbs_server_addr;   /* assume on same host */

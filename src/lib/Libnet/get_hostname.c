@@ -115,6 +115,7 @@ int get_fullhostname(
   struct addrinfo  hints;
 
   int              index;
+  int              tmp_len = 0;
 
   if ((shortname == NULL) || (shortname[0] == '\0'))
     {
@@ -181,7 +182,8 @@ int get_fullhostname(
     return(-1);
     }
 
-  if ((size_t)bufsize <= strlen(addr_info->ai_canonname))
+  tmp_len = strlen(addr_info->ai_canonname);
+  if (bufsize <= tmp_len)
     {
     /* FAILURE - name too long */
 
@@ -194,10 +196,9 @@ int get_fullhostname(
     return(-1);
     }
 
-  strncpy(namebuf, addr_info->ai_canonname, bufsize);
+  memset(namebuf, 0, sizeof(namebuf));
+  strncpy(namebuf, addr_info->ai_canonname, tmp_len);
   freeaddrinfo(addr_info);
-
-  namebuf[bufsize - 1] = '\0'; /* ensure null terminated */
 
   for (index = 0;index < bufsize;index++)
     {

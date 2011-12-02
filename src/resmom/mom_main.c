@@ -32,6 +32,7 @@
 #endif /* PLOCK_DAEMONS */
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #ifdef _CRAY
 #include <sys/category.h>
 #include <sys/usrv.h>
@@ -40,9 +41,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/utsname.h>
-#if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
-#include <arpa/inet.h>
-#endif
 
 
 #include "libpbs.h"
@@ -7273,7 +7271,9 @@ int setup_program_environment(void)
 
   tryport = (port_care != FALSE) ? IPPORT_RESERVED : PMAX_PORT;
 
-  localaddr = addclient("localhost");
+  localaddr = ntohl(inet_addr("127.0.0.1"));
+
+  okclients = AVL_insert(localaddr, 0, NULL, okclients);
 
   addclient(mom_host);
 

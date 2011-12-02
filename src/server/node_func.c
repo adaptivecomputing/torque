@@ -3048,6 +3048,7 @@ int send_hierarchy(
 
     return(-1);
     }
+  add_conn(sock, ToServerDIS, ntohl(sa.sin_addr.s_addr), sa.sin_port, PBS_SOCK_INET, NULL);
 
   DIS_tcp_setup(sock);
 
@@ -3090,7 +3091,7 @@ int send_hierarchy(
     DIS_tcp_wflush(sock);
     }
 
-  close(sock);
+  close_conn(sock, FALSE);
 
   return(ret);
   } /* END send_hierarchy() */
