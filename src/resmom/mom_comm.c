@@ -5364,6 +5364,9 @@ void im_request(
  
   if (strcmp(oreo, cookie) != 0)
     {
+    /* multiple versions of the same job are out there, kill it */
+    exec_bail(pjob, JOB_EXEC_FAIL1);
+
     if (LOGLEVEL >= 0)
       {
       snprintf(log_buffer, sizeof(log_buffer),
@@ -5377,7 +5380,7 @@ void im_request(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
       }
 
-    send_im_error(PBSE_BADSTATE,reply,pjob,cookie,event,fromtask);
+    send_im_error(PBSE_BADSTATE, reply, pjob, cookie, event, fromtask);
  
     goto done;
     }
