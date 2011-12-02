@@ -1569,6 +1569,35 @@ void *obit_reply(
 
 
 
+int has_exec_host_and_port(
+
+  job *pjob)
+
+  {
+  char *hosts;
+  char *ports;
+  int   has_exec_info = TRUE;
+
+  if (((pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET) == FALSE) ||
+      ((pjob->ji_wattr[JOB_ATR_exec_port].at_flags & ATR_VFLAG_SET) == FALSE))
+    {
+    has_exec_info = FALSE;
+    }
+  else
+    {
+    hosts = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+    ports = pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str;
+
+    if ((hosts == NULL) ||
+        (ports == NULL))
+      has_exec_info = FALSE;
+    }
+
+  return(has_exec_info);
+  } /* END has_exec_host_and_port() */
+
+
+
 
 /*
  * init_abort_jobs - on mom initialization, recover all running jobs.
@@ -1651,6 +1680,13 @@ void init_abort_jobs(
 
       log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
 
+      continue;
+      }
+
+    if (has_exec_host_and_port(pj) == FALSE)
+      {
+      /* if you don't have the exec information, you can't recover the job */
+      mom_deljob(pj);
       continue;
       }
 

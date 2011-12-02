@@ -5343,8 +5343,7 @@ void job_nodes(
 
   nodenum = 1;
 
-  if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags &
-      ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
     {
     nodestr = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
     portstr = pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str;
@@ -5360,8 +5359,6 @@ void job_nodes(
         }
       }
     }
-  else
-    nodestr = mom_host;
 
   pjob->ji_hosts = (hnodent *)calloc(nodenum + 1, sizeof(hnodent));
 
