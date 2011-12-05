@@ -127,7 +127,7 @@ static int   run_exit;
 
 extern int pe_input(char *);
 extern int TTmpDirName(job *, char *);
-extern void encode_used(job *, tlist_head *);
+extern void encode_used(job *, int, tlist_head *);
 #ifdef ENABLE_CSA
 extern void add_wkm_end(uint64_t, int64_t, char *);
 
@@ -185,7 +185,7 @@ static char *resc_to_string(
     }
   else if (aindex == JOB_ATR_resc_used)
     {
-    encode_used(pjob, &svlist);
+    encode_used(pjob, ATR_DFLAG_RDACC, &svlist);
     }
   else
     {
