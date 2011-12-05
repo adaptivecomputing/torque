@@ -209,6 +209,7 @@ extern  char             DEFAULT_UMASK[];
 extern  char             PRE_EXEC[];
 
 extern int LOGLEVEL;
+extern int EXTPWDRETRY;
 extern long TJobStartBlockTime;
 
 extern char path_checkpoint[];
@@ -375,6 +376,7 @@ struct passwd *check_pwd(
   job *pjob) /* I (modified) */
 
   {
+  int retryCount;
 
   struct passwd *pwdp;
 
@@ -395,7 +397,17 @@ struct passwd *check_pwd(
   	return(NULL);
   	}
 
-  pwdp = getpwnam_ext(ptr);
+  /* we will retry if needed just to cover temporary problems */
+
+  for (retryCount = 0;retryCount < EXTPWDRETRY;retryCount++)
+    {
+    pwdp = getpwnam_ext(ptr);
+
+    if (pwdp != NULL)
+      break;
+
+    sleep(1);
+    }
 
   if (pwdp == NULL)
   	{

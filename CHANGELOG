@@ -13,6 +13,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       job and free up resources even if the server for some reason does not send 
       the delete job request.
   c - fix a crash in the dynamic_string.c code (backported from 3.0.3)
+  e - add a mom config option - $ext_pwd_retry - to specify # of retries on 
+      checking for password validity. (backported from 3.0.3)
 
 2.5.9
   e - change mom to only log "cannot find nvidia-smi in PATH" once when built

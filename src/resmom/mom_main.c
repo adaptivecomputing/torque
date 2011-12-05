@@ -414,6 +414,7 @@ unsigned long jobstarter(char *value);
 static unsigned long setthreadunlinkcalls(char *);
 unsigned long rppthrottle(char *value);
 static unsigned long setreduceprologchecks(char *);
+static unsigned long setextpwdretry(char *);
 
 static struct specials
   {
@@ -479,6 +480,7 @@ static struct specials
   { "thread_unlink_calls", setthreadunlinkcalls },
   { "attempt_to_make_dir", setattempttomakedir },
   { "reduce_prolog_checks",         setreduceprologchecks},
+  { "ext_pwd_retry",       setextpwdretry },
   { NULL,                  NULL }
   };
 
@@ -511,6 +513,7 @@ struct config common_config[] =
 
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     LOGKEEPDAYS = 0; /* days each log file should be kept before deleting */
+int                     EXTPWDRETRY = 3; /* # of times to try external pwd check */
 int                     DEBUGMODE = 0;
 int                     DOBACKGROUND = 1;
 char                    DEFAULT_UMASK[1024];
@@ -3117,6 +3120,26 @@ static unsigned long setlogkeepdays(
 
   return(1);
   }
+
+
+static unsigned long setextpwdretry(
+
+  char *value)  /* I */
+
+  {
+  int i;
+
+  i = (int)atoi(value);
+
+  if (i < 0)
+    {
+    return(0);  /* error */
+    }
+
+  EXTPWDRETRY = i;
+
+  return(1);
+  } /* END setextpwdretry() */
 
 
 
