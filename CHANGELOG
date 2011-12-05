@@ -59,6 +59,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       4.0.0 so that all of the resizing is done in a central location, fixing the crash.
   b - No longer count down walltime for jobs that are suspending or have stopped running 
       for any other reasons
+  e - add a mom config option - $ext_pwd_retry - to specify # of retries on 
+      checking for password validity.
 
 3.0.2
   c - check if the file pointer to /dev/console can be opened. If not, don't attempt to write it
