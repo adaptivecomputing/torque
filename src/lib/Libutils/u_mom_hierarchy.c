@@ -84,6 +84,8 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h> /* sockaddr_in */
+#include <arpa/inet.h> /* inet_ntoa */
 #include <unistd.h>
 
 #include "pbs_ifl.h"
@@ -253,6 +255,7 @@ int tcp_connect_sockaddr(
   int stream = -1;
   char *err_msg = NULL;
   char local_err_buf[LOCAL_LOG_BUF];
+  char *tmp_ip = NULL;
   /*
   int   stream = socket(AF_INET,SOCK_STREAM,0);
   
@@ -277,8 +280,9 @@ int tcp_connect_sockaddr(
   else if ((rc = socket_connect_addr(&stream, sa, sa_size, 1, &err_msg)) != PBSE_NONE)
     {
     /* FAILED */
-    snprintf(local_err_buf, LOCAL_LOG_BUF, "Failed when trying to open tcp connection - connect() failed [rc = %d] [sock = %d] [addr = %s]", rc, stream, sa->sa_data);
-    log_err(errno,id,"Failed when trying to open tcp connection - connect() failed");
+    tmp_ip = inet_ntoa(((struct sockaddr_in *)sa)->sin_addr);
+    snprintf(local_err_buf, LOCAL_LOG_BUF, "Failed when trying to open tcp connection - connect() failed [rc = %d] [sock = %d] [addr = %s]", rc, stream, tmp_ip);
+    log_err(errno,id,local_err_buf);
     if (err_msg != NULL)
       {
       log_err(errno,id,err_msg);
