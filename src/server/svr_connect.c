@@ -433,8 +433,10 @@ char *parse_servername(
   if (name == NULL)
     {
     /* invalid name specified */
+    tmp_val = (char *)calloc(1,1);
+    tmp_val[0] = "";
 
-    return("");
+    return tmp_val;
     }
 
   while (*pc && (i < PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2))
