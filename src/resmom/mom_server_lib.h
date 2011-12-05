@@ -101,7 +101,7 @@ void mom_server_update_receive_time(int stream, char *command_name);
 
 void mom_server_update_receive_time_by_ip(u_long ipaddr, char *command_name);
 
-mom_server *mom_server_valid_message_source(int stream);
+mom_server *mom_server_valid_message_source(int stream, char **err_msg);
 
 void pass_along_hellos(int hello_count);
 

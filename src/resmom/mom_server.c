@@ -3898,11 +3898,10 @@ AvlTree okclients = NULL;
 
 mom_server *mom_server_valid_message_source(
 
-  int stream)
+  int stream,
+  char **err_msg)
 
   {
-  static char     *id = "mom_server_valid_message_source";
- 
   struct sockaddr  addr;
   unsigned int     len = sizeof(addr);
   u_long           ipaddr;
@@ -3985,14 +3984,13 @@ mom_server *mom_server_valid_message_source(
 #endif
 
     if (LOGLEVEL >= 3)
-      sprintf(log_buffer, "bad connect from %s - unauthorized server. Will check if its a valid mom",
+      {
+      *err_msg = (char *)calloc(1,240);
+      snprintf(*err_msg, 240, "bad connect from %s - unauthorized server. Will check if its a valid mom",
         netaddr(((struct sockaddr_in *)&addr)));
+      }
 
-    sprintf(TMOMRejectConn, "%s  %s",
-            netaddr(((struct sockaddr_in *)&addr)),
-            "(server not authorized)");
-
-    log_ext(-1,id,log_buffer,LOG_ALERT);
+    sprintf(TMOMRejectConn, "%s  %s", netaddr(((struct sockaddr_in *)&addr)), "(server not authorized)");
     }
 
   return(NULL);
@@ -4302,6 +4300,7 @@ void is_request(
   mom_server         *pms;
  
   char                hostname[MAXLINE];
+  char               *err_msg = NULL;
   struct sockaddr     s_addr;
   unsigned int        len = sizeof(s_addr);
   struct sockaddr_in *addr = NULL;
@@ -4335,15 +4334,20 @@ void is_request(
   /* check that machine is okay to be a server */
   /* If the stream is the SStream we already opened, then it's fine  */
 
-  if ((pms = mom_server_valid_message_source(stream)) == NULL)
+  if ((pms = mom_server_valid_message_source(stream, &err_msg)) == NULL)
     {
     getpeername(stream,&s_addr,&len);
     addr = (struct sockaddr_in *)&s_addr;
     ipaddr = ntohl(addr->sin_addr.s_addr);
     if (AVL_is_in_tree_no_port_compare(ipaddr,0,okclients) == 0)
       {
-      /* unauthorized */
-      /* NYI - log something here */
+      if (err_msg)
+        {
+        log_ext(-1,"mom_server_valid_message_source",err_msg,LOG_ALERT);
+        free(err_msg);
+        }
+      else
+        log_ext(-1, id, "Invalid source for IS_REQUEST", LOG_ALERT);
       return;
       }
 

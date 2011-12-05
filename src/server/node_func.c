@@ -3041,9 +3041,10 @@ int send_hierarchy(
   if (sock < 0)
     {
     /* could not connect */
+    /* - quiting after 5 retries",*/
     snprintf(log_buf, sizeof(log_buf),
-      "Could not send mom hierarchy to host %s", /* - quiting after 5 retries",*/
-      pnode->nd_name);
+      "Could not send mom hierarchy to host %s:%d",
+      pnode->nd_name, pnode->nd_mom_rm_port);
     log_err(-1, id, log_buf);
 
     return(-1);

@@ -278,7 +278,7 @@ int tcp_connect_sockaddr(
     {
     /* FAILED */
     tmp_ip = inet_ntoa(((struct sockaddr_in *)sa)->sin_addr);
-    snprintf(local_err_buf, LOCAL_LOG_BUF, "Failed when trying to open tcp connection - connect() failed [rc = %d] [sock = %d] [addr = %s]", rc, stream, tmp_ip);
+    snprintf(local_err_buf, LOCAL_LOG_BUF, "Failed when trying to open tcp connection - connect() failed [rc = %d] [using sock = %d] [addr = %s:%d]", rc, stream, tmp_ip, htons(((struct sockaddr_in *)sa)->sin_port));
     log_err(errno,id,local_err_buf);
     if (err_msg != NULL)
       {
