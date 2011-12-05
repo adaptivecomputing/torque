@@ -48,12 +48,12 @@
 #define EOL(x)          (x == '\0')
 
 /* This macro will allocate memory for a character string */
-#define Mstring(x,y)    if ( (x=(char *)malloc(y)) == NULL ) { \
+#define Mstring(x,y)    if ( (x=(char *)calloc(1, y)) == NULL ) { \
     if( ! zopt ) fprintf(stderr,"qmgr: Out of memory\n"); \
     clean_up_and_exit(5); \
     }
 /* This macro will allocate memory for some fixed size object */
-#define Mstruct(x,y)    if ( (x=(y *)malloc(sizeof(y))) == NULL ) { \
+#define Mstruct(x,y)    if ( (x=(y *)calloc(1, sizeof(y))) == NULL ) { \
     if( ! zopt ) fprintf(stderr,"qmgr: Out of memory\n"); \
     clean_up_and_exit(5); \
     }

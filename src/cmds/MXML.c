@@ -526,7 +526,7 @@ int MXMLSetVal(
       ptr = (char *)V;
       Vlen = strlen(ptr);
     
-      outbuf = (char *)malloc(buf_size*(sizeof(char)));
+      outbuf = calloc(buf_size, (sizeof(char)));
       
       if (outbuf == NULL)
         {
@@ -750,7 +750,7 @@ int MXMLToXString(
     {
     NewSize = MMAX_BUFFER;
 
-    if ((*Buf = (char *)malloc(NewSize)) == NULL)
+    if ((*Buf = calloc(1, NewSize)) == NULL)
       {
       /* cannot allocate buffer */
 

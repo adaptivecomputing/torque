@@ -511,7 +511,7 @@ int remove_last_thing(
 
 
 /*
- * mallocs and returns a resizable array with initial size size
+ * callocs and returns a resizable array with initial size size
  *
  * @param size - the initial size of the resizable array
  * @return a pointer to the resizable array 
@@ -521,7 +521,7 @@ resizable_array *initialize_resizable_array(
   int               size)
 
   {
-  resizable_array *ra = malloc(sizeof(resizable_array));
+  resizable_array *ra = calloc(1, sizeof(resizable_array));
   size_t           amount = sizeof(slot) * size;
 
   ra->max       = size;
@@ -529,8 +529,7 @@ resizable_array *initialize_resizable_array(
   ra->next_slot = 1;
   ra->last      = 0;
 
-  ra->slots = malloc(amount);
-  memset(ra->slots,0,amount);
+  ra->slots = calloc(1, amount);
 
   return(ra);
   } /* END initialize_resizable_array() */

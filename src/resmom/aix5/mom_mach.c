@@ -380,7 +380,7 @@ void dep_initialize(void)
     log_err(errno, id, "F_SETFD");
     }
 
-  proc_tbl = malloc(ASIZE * sizeof(struct procsinfo));
+  proc_tbl = calloc(ASIZE, sizeof(struct procsinfo));
 
   proctot = ASIZE;
 
@@ -1050,7 +1050,7 @@ mom_open_poll(void)
 
   DBPRT(("%s: entered\n", id))
 
-  proc_tbl = malloc(ASIZE * sizeof(struct procsinfo));
+  proc_tbl = calloc(ASIZE, sizeof(struct procsinfo));
   proctot = ASIZE;
 
   return (PBSE_NONE);

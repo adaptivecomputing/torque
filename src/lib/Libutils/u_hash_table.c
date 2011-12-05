@@ -604,15 +604,12 @@ hash_table_t *create_hash(
   int size)
 
   {
-  hash_table_t *ht = malloc(sizeof(hash_table_t));
+  hash_table_t *ht = calloc(1, sizeof(hash_table_t));
   size_t        amount = sizeof(bucket *) * size;
 
   ht->size = size;
   ht->num  = 0;
-  ht->buckets = malloc(amount);
-
-  /* initialize the buckets */
-  memset(ht->buckets,0,amount);
+  ht->buckets = calloc(1, amount);
 
   return(ht);
   } /* END create_hash() */
@@ -688,7 +685,7 @@ void add_to_bucket(
   if (buckets[index] == NULL)
     {
     /* empty bucket, just add it here */
-    buckets[index] = malloc(sizeof(bucket));
+    buckets[index] = calloc(1, sizeof(bucket));
     buckets[index]->value = value;
     buckets[index]->key   = key;
     buckets[index]->next  = NULL;
@@ -701,7 +698,7 @@ void add_to_bucket(
     while (b->next != NULL)
       b = b->next;
 
-    b->next = malloc(sizeof(bucket));
+    b->next = calloc(1, sizeof(bucket));
     b->next->value = value;
     b->next->key   = key;
     b->next->next  = NULL;
@@ -725,17 +722,14 @@ int add_hash(
   if (ht->size == ht->num)
     {
     size_t   amount = (ht->size << 1) * sizeof(bucket *);
-    bucket **tmp = malloc(amount);
+    bucket **tmp = calloc(1, amount);
     int      i;
     int      new_index;
       
-    ht->size = ht->size << 1;
-
-    /* initialize the new buckets */
-    memset(tmp,0,amount);
+    ht->size = ht->size * 2;
 
     /* rehash all of the hold values */
-    for (i = 0; i < ht->size >> 1; i++)
+    for (i = 0; i < ht->size / 2; i++)
       {
       bucket *b = ht->buckets[i];
 

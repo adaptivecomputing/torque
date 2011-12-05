@@ -1061,16 +1061,16 @@ int pbsd_init(
 
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
 
-  svr_do_schedule_mutex = malloc(sizeof(pthread_mutex_t));
+  svr_do_schedule_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(svr_do_schedule_mutex, NULL);
 
-  listener_command_mutex = malloc(sizeof(pthread_mutex_t));
+  listener_command_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(listener_command_mutex, NULL);
 
-  node_state_mutex = malloc(sizeof(pthread_mutex_t));
+  node_state_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(node_state_mutex, NULL);
 
-  scheduler_sock_jobct_mutex = malloc(sizeof(pthread_mutex_t));
+  scheduler_sock_jobct_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(scheduler_sock_jobct_mutex, NULL);
 
   pthread_mutex_lock(scheduler_sock_jobct_mutex);

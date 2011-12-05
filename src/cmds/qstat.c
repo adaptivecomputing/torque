@@ -974,11 +974,11 @@ static void add_atropl(
 
   struct attropl *patro;
 
-  patro = (struct attropl *)malloc(sizeof(struct attropl));
+  patro = (struct attropl *)calloc(1, sizeof(struct attropl));
 
   if (patro == NULL)
     {
-    fprintf(stderr, "cannot malloc space\n");
+    fprintf(stderr, "cannot calloc space\n");
 
     exit(1);
     }
@@ -1891,7 +1891,7 @@ int tcl_stat(
 
     argv[num++] = Tcl_Merge(3, (const char **)threel);
 
-    free(threel[1]); /* malloc'ed in attrlist() */
+    free(threel[1]); /* calloc'ed in attrlist() */
 
     if (num == ARGNUM)
       break;

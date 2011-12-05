@@ -113,10 +113,7 @@ extern time_t time_now;
 mom_hierarchy_t *initialize_mom_hierarchy(void)
 
   {
-  /* malloc can be used here as ALL the variables inside the struct are
-   * manually initialized
-   */
-  mom_hierarchy_t *nt = malloc(sizeof(mom_hierarchy_t));
+  mom_hierarchy_t *nt = calloc(1, sizeof(mom_hierarchy_t));
   nt->paths = initialize_resizable_array(INITIAL_SIZE_NETWORK);
 
   if (nt->paths == NULL)
@@ -147,7 +144,7 @@ int add_network_entry(
 
   {
   int              rc;
-  node_comm_t     *nc = malloc(sizeof(node_comm_t));
+  node_comm_t     *nc = calloc(1, sizeof(node_comm_t));
   resizable_array *levels;
   resizable_array *node_comm_entries;
 
@@ -192,7 +189,7 @@ int add_network_entry(
   nc->sock_addr.sin_port = htons(rm_port);
   nc->stream = -1;
 
-  if ((nc->name   = malloc(strlen(name) + 1)) == NULL)
+  if ((nc->name   = calloc(1, strlen(name) + 1)) == NULL)
     return(ENOMEM);
   else
     strcpy(nc->name,name);

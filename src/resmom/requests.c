@@ -496,11 +496,11 @@ static pid_t fork_to_user(
 
     char *envstr;
 
-    envstr = malloc((strlen("HOME=") + strlen(hdir) + 1) * sizeof(char));
+    envstr = calloc((strlen("HOME=") + strlen(hdir) + 1), sizeof(char));
 
     if (envstr == NULL)
       {
-      sprintf(log_buffer, "malloc failed, errno=%d (%s)",
+      sprintf(log_buffer, "calloc failed, errno=%d (%s)",
               errno,
               strerror(errno));
 
@@ -518,11 +518,11 @@ static pid_t fork_to_user(
 
     putenv(envstr);
 
-    envstr = malloc((strlen("PBS_JOBID=") + strlen(preq->rq_ind.rq_cpyfile.rq_jobid) + 1) * sizeof(char));
+    envstr = calloc((strlen("PBS_JOBID=") + strlen(preq->rq_ind.rq_cpyfile.rq_jobid) + 1), sizeof(char));
 
     if (envstr == NULL)
       {
-      sprintf(log_buffer, "malloc failed, errno=%d (%s)",
+      sprintf(log_buffer, "calloc failed, errno=%d (%s)",
               errno,
               strerror(errno));
 
@@ -573,7 +573,7 @@ static void add_bad_list(
     {
     needed += strlen(newtext) + nl + 1;
 
-    pnew = malloc(needed);
+    pnew = calloc(1, needed);
 
     if (pnew != NULL)
       *pnew = '\0';
@@ -1378,7 +1378,7 @@ int message_job(
 
   if (text[len - 1] != '\n')
     {
-    if ((pstr = malloc(len + 2)) == NULL)
+    if ((pstr = calloc(1, len + 2)) == NULL)
       {
       close(fds);
 
@@ -2525,7 +2525,7 @@ void req_stat_job(
 
     /* allocate reply structure and fill in header portion */
 
-    pstat = (struct brp_status *)malloc(sizeof(struct brp_status));
+    pstat = (struct brp_status *)calloc(1, sizeof(struct brp_status));
 
     assert(pstat != NULL);
 
@@ -2595,11 +2595,11 @@ static int del_files(
   wordexp_t pathexp;
 #endif
 
-  path = malloc(sizeof(char)*(MAXPATHLEN + 1));
+  path = calloc((MAXPATHLEN + 1), sizeof(char));
 
   if (path==NULL)
     {
-    add_bad_list(pbadfile,"malloc failed",1);
+    add_bad_list(pbadfile,"calloc failed",1);
 
     return(-1);
     }
@@ -3448,7 +3448,7 @@ void req_cpyfile(
         {
         char *envstr;
 
-        envstr = malloc((strlen("TMPDIR=") + strlen(faketmpdir) + 1) * sizeof(char));
+        envstr = calloc((strlen("TMPDIR=") + strlen(faketmpdir) + 1), sizeof(char));
 
         if (envstr == NULL)
           {
@@ -3486,8 +3486,8 @@ void req_cpyfile(
 
   /* build up cp/rcp command(s), one per file pair */
 
-  arg2 = malloc(sizeof(char)*(MAXPATHLEN + 1));
-  arg3 = malloc(sizeof(char)*(MAXPATHLEN + 1));
+  arg2 = calloc((MAXPATHLEN + 1), sizeof(char));
+  arg3 = calloc((MAXPATHLEN + 1), sizeof(char));
 
   if ((arg2==NULL) || (arg3==NULL))
     {

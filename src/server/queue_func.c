@@ -225,9 +225,9 @@ pbs_queue *que_alloc(
 
   pq->qu_qs.qu_type = QTYPE_Unset;
 
-  pq->qu_mutex = malloc(sizeof(pthread_mutex_t));
-  pq->qu_jobs = malloc(sizeof(struct all_jobs));
-  pq->qu_jobs_array_sum = malloc(sizeof(struct all_jobs));
+  pq->qu_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pq->qu_jobs = calloc(1, sizeof(struct all_jobs));
+  pq->qu_jobs_array_sum = calloc(1, sizeof(struct all_jobs));
   
   if ((pq->qu_mutex == NULL) ||
       (pq->qu_jobs == NULL) ||
@@ -274,8 +274,7 @@ void que_free(
   attribute *pattr;
   attribute_def *pdef;
 
-  /* remove any malloc working attribute space */
-
+  /* remove any calloc working attribute space */
   for (i = 0;i < QA_ATR_LAST;i++)
     {
     pdef  = &que_attr_def[i];
@@ -427,7 +426,7 @@ void initialize_allques_array(
   aq->ra = initialize_resizable_array(INITIAL_QUEUE_SIZE);
   aq->ht = create_hash(INITIAL_HASH_SIZE);
 
-  aq->allques_mutex = malloc(sizeof(pthread_mutex_t));
+  aq->allques_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(aq->allques_mutex,NULL);
   } /* END initialize_all_ques_array() */
 

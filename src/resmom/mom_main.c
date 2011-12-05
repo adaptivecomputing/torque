@@ -2052,7 +2052,7 @@ static u_long usecp(
 
   if (cphosts_max == 0)
     {
-    pcphosts = malloc(2 * sizeof(struct cphosts));
+    pcphosts = calloc(2, sizeof(struct cphosts));
 
     if (pcphosts == NULL)
       {
@@ -2443,7 +2443,7 @@ static void add_static(
       }
     }
 
-  cp = (struct config_list *)malloc(sizeof(struct config_list));
+  cp = (struct config_list *)calloc(1, sizeof(struct config_list));
 
   memcheck((char *)cp);
 
@@ -3129,7 +3129,7 @@ unsigned long aliasservername( char *value)
 
     if (value)
       {
-      server_alias = (char *)malloc(strlen(value)+1);
+      server_alias = (char *)calloc(1, strlen(value)+1);
       if (server_alias)
         {
         strcpy(server_alias, value);
@@ -6387,7 +6387,7 @@ char *mk_dirs(
   char *pn;
   int   ltop = strlen(path_home);
 
-  pn = malloc(ltop + strlen(base) + 2);
+  pn = calloc(1, ltop + strlen(base) + 2);
 
   if (pn == NULL)
     {
@@ -7285,9 +7285,9 @@ int setup_program_environment(void)
 
   ret_size = RETURN_STRING_SIZE;
 
-  if ((ret_string = malloc(ret_size)) == NULL)
+  if ((ret_string = calloc(1, ret_size)) == NULL)
     {
-    perror("malloc");
+    perror("calloc");
 
     exit(1);
     }
@@ -7681,7 +7681,7 @@ void examine_all_polled_jobs(void)
         {
         char *kill_msg;
 
-        kill_msg = malloc(80 + strlen(log_buffer));
+        kill_msg = calloc(1, 80 + strlen(log_buffer));
 
         if (kill_msg != NULL)
           {
@@ -8162,23 +8162,11 @@ void restart_mom(
 
   char *envstr;
 
-  envstr = malloc(
-             (strlen("PATH") + strlen(orig_path) + 2) * sizeof(char));
+  envstr = calloc(1, (strlen("PATH") + strlen(orig_path) + 2) * sizeof(char));
 
   if (!envstr)
     {
-    sprintf(log_buffer, "malloc failed prior to execing myself: %s (%d)",
-            strerror(errno),
-            errno);
-
-    log_err(errno, id, log_buffer);
-
-    return;
-    }
-
-  if (!envstr)
-    {
-    sprintf(log_buffer, "malloc failed prior to execing myself: %s (%d)",
+    sprintf(log_buffer, "calloc failed prior to execing myself: %s (%d)",
             strerror(errno),
             errno);
 
@@ -8454,7 +8442,7 @@ int setup_nodeboards()
     /* Set up meminfo paths */
     if (node_boards[i].num_nodes)
       {
-      if ((node_boards[i].path_meminfo = (char **)malloc(node_boards[i].num_nodes * sizeof(char *))) == NULL)
+      if ((node_boards[i].path_meminfo = (char **)calloc(node_boards[i].num_nodes, sizeof(char *))) == NULL)
         {
         log_err(errno,id,"failed to allocate memory");   
         exit(-1);
@@ -8463,7 +8451,7 @@ int setup_nodeboards()
       k = 0;
       hwloc_bitmap_foreach_begin(j, node_boards[i].nodeset)
         {
-        if ((node_boards[i].path_meminfo[k] = (char *)malloc(mempath_len)) == NULL)
+        if ((node_boards[i].path_meminfo[k] = (char *)calloc(1, mempath_len)) == NULL)
           {
           log_err(errno,id,"failed to allocate memory");   
           exit(-1);

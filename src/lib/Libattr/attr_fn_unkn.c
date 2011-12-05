@@ -212,7 +212,7 @@ int encode_unkn(
 
   while (plist != (svrattrl *)0)
     {
-    pnew = (svrattrl *)malloc(plist->al_tsize);
+    pnew = (svrattrl *)calloc(1, plist->al_tsize);
 
     if (pnew == (svrattrl *)0)
       return (-1);

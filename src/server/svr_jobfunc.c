@@ -2243,7 +2243,7 @@ char *prefix_std_file(
     if (wdir)
       len += strlen(wdir);
 
-    name = malloc(len);
+    name = calloc(1, len);
 
     if (name)
       {
@@ -2287,7 +2287,7 @@ char *add_std_filename(
         PBS_MAXSEQNUM +
         5;
 
-  name = malloc(len);
+  name = calloc(1, len);
 
   if (name)
     {

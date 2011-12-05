@@ -1035,9 +1035,9 @@ void log_roll(
 
   file_buf_len = sizeof(char) * (strlen(logpath) + suffix_size + 1);
 
-  source = (char*)malloc(file_buf_len);
+  source = (char*)calloc(1, file_buf_len);
 
-  dest   = (char*)malloc(file_buf_len);
+  dest   = (char*)calloc(1, file_buf_len);
 
   if ((source == NULL) || (dest == NULL))
     {
@@ -1151,9 +1151,9 @@ void job_log_roll(
 
   file_buf_len = sizeof(char) * (strlen(joblogpath) + suffix_size + 1);
 
-  source = (char*)malloc(file_buf_len);
+  source = (char*)calloc(1, file_buf_len);
 
-  dest   = (char*)malloc(file_buf_len);
+  dest   = (char*)calloc(1, file_buf_len);
 
   if ((source == NULL) || (dest == NULL))
     {

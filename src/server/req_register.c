@@ -776,7 +776,7 @@ int register_array_depend(
   /* make dependency of none exists */
   if (pdep == NULL)
     {
-    pdep = malloc(sizeof(struct array_depend));
+    pdep = calloc(1, sizeof(struct array_depend));
 
     if (pdep != NULL)
       {
@@ -808,7 +808,7 @@ int register_array_depend(
     return(0);
 
   /* try to create the job */
-  pdj = (struct array_depend_job *)malloc(sizeof(struct array_depend_job));
+  pdj = (struct array_depend_job *)calloc(1, sizeof(struct array_depend_job));
 
   if (pdj != NULL)
     {
@@ -1753,7 +1753,7 @@ static struct depend *make_depend(
 
   struct depend *pdep = (struct depend *)0;
 
-  pdep = (struct depend *)malloc(sizeof(struct depend));
+  pdep = (struct depend *)calloc(1, sizeof(struct depend));
 
   if (pdep != NULL)
     {
@@ -2005,7 +2005,7 @@ static struct depend_job *make_dependjob(
 
   struct depend_job *pdj;
 
-  pdj = (struct depend_job *)malloc(sizeof(struct depend_job));
+  pdj = (struct depend_job *)calloc(1, sizeof(struct depend_job));
 
   if (pdj != NULL)
     {
@@ -2140,7 +2140,7 @@ static int send_depend_req(
  * Encoding the internal representation of the attribute to external
  * Setting the value by =, + or - operators.
  * Comparing a (decoded) value with the attribute value.
- * Freeing the space malloc-ed to the attribute value.
+ * Freeing the space calloc-ed to the attribute value.
  *
  * The prototypes are declared in "attribute.h"
  *
@@ -2852,7 +2852,7 @@ static int build_depend(
 
       /* a set of job_id[\:port][@server[\:port]] */
 
-      pdjb = (struct depend_job *)malloc(sizeof(*pdjb));
+      pdjb = (struct depend_job *)calloc(1, sizeof(*pdjb));
 
       if (pdjb)
         {

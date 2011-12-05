@@ -579,7 +579,7 @@ struct batch_request *alloc_br(
 
   struct batch_request *req = NULL;
 
-  req = (struct batch_request *)malloc(sizeof(struct batch_request));
+  req = (struct batch_request *)calloc(1, sizeof(struct batch_request));
 
   if (req == NULL)
     {

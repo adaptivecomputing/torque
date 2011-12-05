@@ -439,7 +439,7 @@ static int svr_send_checkpoint(
 
   /* save job id for post_checkpointsend */
 
-  momreq->rq_extra = malloc(PBS_MAXSVRJOBID + 1);
+  momreq->rq_extra = calloc(1, PBS_MAXSVRJOBID + 1);
 
   if (momreq->rq_extra == 0)
     {
@@ -671,7 +671,7 @@ static int svr_stagein(
 
   /* save job id for post_stagein */
 
-  momreq->rq_extra = malloc(PBS_MAXSVRJOBID + 1);
+  momreq->rq_extra = calloc(1, PBS_MAXSVRJOBID + 1);
 
   if (momreq->rq_extra == 0)
     {
@@ -741,7 +741,7 @@ int verify_moms_up(
 
   if (hostlist == NULL)
     {
-    sprintf(log_buf, "could not allocate temporary buffer (malloc failed) -- skipping TCP connect check");
+    sprintf(log_buf, "could not allocate temporary buffer (calloc failed) -- skipping TCP connect check");
     log_err(errno, id, log_buf);
     }
   else
@@ -777,7 +777,7 @@ int verify_moms_up(
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
       /* Add this host to the reject destination list for the job */
-      if ((bp = (badplace *)malloc(sizeof(badplace))) == NULL)
+      if ((bp = (badplace *)calloc(1, sizeof(badplace))) == NULL)
         {
         log_err(ENOMEM, id, msg_err_malloc);
 
@@ -812,7 +812,7 @@ int verify_moms_up(
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
       /* Add this host to the reject destination list for the job */
-      if ((bp = (badplace *)malloc(sizeof(badplace))) == NULL)
+      if ((bp = (badplace *)calloc(1, sizeof(badplace))) == NULL)
         {
         /* FAILURE - cannot allocate memory */
 
@@ -853,7 +853,7 @@ int verify_moms_up(
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
       /* Add this host to the reject list for the job */
-      if ((bp = (badplace *)malloc(sizeof(badplace))) == NULL)
+      if ((bp = (badplace *)calloc(1, sizeof(badplace))) == NULL)
         {
         /* FAILURE - cannot allocate memory */
         log_err(errno, id, msg_err_malloc);

@@ -1035,7 +1035,7 @@ void stat_mom_job(
 
   struct stat_cntl *cntl;
 
-  cntl = (struct stat_cntl *)malloc(sizeof(struct stat_cntl));
+  cntl = (struct stat_cntl *)calloc(1, sizeof(struct stat_cntl));
 
   if (cntl == NULL)
     {
@@ -1235,7 +1235,7 @@ static int status_que(
 
   /* allocate status sub-structure and fill in header portion */
 
-  pstat = (struct brp_status *)malloc(sizeof(struct brp_status));
+  pstat = (struct brp_status *)calloc(1, sizeof(struct brp_status));
 
   if (pstat == NULL)
     {
@@ -1498,7 +1498,7 @@ static int status_node(
 
   /* allocate status sub-structure and fill in header portion */
 
-  pstat = (struct brp_status *)malloc(sizeof(struct brp_status));
+  pstat = (struct brp_status *)calloc(1, sizeof(struct brp_status));
 
   if (pstat == NULL)
     {
@@ -1599,7 +1599,7 @@ void req_stat_svr(
 
   CLEAR_HEAD(preply->brp_un.brp_status);
 
-  pstat = (struct brp_status *)malloc(sizeof(struct brp_status));
+  pstat = (struct brp_status *)calloc(1, sizeof(struct brp_status));
 
   if (pstat == NULL)
     {

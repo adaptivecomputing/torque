@@ -235,8 +235,12 @@ int encode_str(
  *  >0 if error
  */
 
-int
-set_str(struct attribute *attr, struct attribute *new, enum batch_op op)
+int set_str(
+    
+  struct attribute *attr,
+  struct attribute *new,
+  enum batch_op     op)
+
   {
   char *new_value;
   char *p;
@@ -256,7 +260,7 @@ set_str(struct attribute *attr, struct attribute *new, enum batch_op op)
       if (attr->at_val.at_str)
         (void)free(attr->at_val.at_str);
 
-      if ((attr->at_val.at_str = malloc(nsize)) == (char *)0)
+      if ((attr->at_val.at_str = calloc(1, nsize)) == (char *)0)
         return (PBSE_SYSTEM);
 
       (void)strcpy(attr->at_val.at_str, new->at_val.at_str);
@@ -341,7 +345,7 @@ comp_str(struct attribute *attr, struct attribute *with)
 
 
 /*
- * free_str - free space malloc-ed for string attribute value
+ * free_str - free space calloc-ed for string attribute value
  */
 
 void free_str(

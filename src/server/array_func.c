@@ -367,8 +367,7 @@ job_array *array_recov(
     return NULL;
     }
 
-  pa->jobs = malloc(sizeof(job *) * pa->ai_qs.array_size);
-  memset(pa->jobs,0,sizeof(job *) * pa->ai_qs.array_size);
+  pa->jobs = calloc(pa->ai_qs.array_size, sizeof(job *));
 
   /* check to see if there is any additional info saved in the array file */
   /* check if there are any array request tokens that haven't been fully
@@ -388,7 +387,7 @@ job_array *array_recov(
 
     for (i = 0; i < num_tokens; i++)
       {
-      rn = (array_request_node*)malloc(sizeof(array_request_node));
+      rn = (array_request_node*)calloc(1, sizeof(array_request_node));
 
       if (read(fd, rn, sizeof(array_request_node)) != sizeof(array_request_node))
         {
@@ -430,7 +429,7 @@ job_array *array_recov(
     array_save(pa);
     }
 
-  pa->ai_mutex = malloc(sizeof(pthread_mutex_t));
+  pa->ai_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(pa->ai_mutex,NULL);
 
   pthread_mutex_lock(pa->ai_mutex);
@@ -591,7 +590,7 @@ int setup_array_struct(
   CLEAR_LINK(pa->all_arrays);
   CLEAR_HEAD(pa->request_tokens);
 
-  pa->ai_mutex = malloc(sizeof(pthread_mutex_t));
+  pa->ai_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(pa->ai_mutex,NULL);
   pthread_mutex_lock(pa->ai_mutex);
 
@@ -667,8 +666,7 @@ int setup_array_struct(
     }
 
   /* initialize the array */
-  pa->jobs = malloc(array_size * sizeof(job *));
-  memset(pa->jobs, 0, array_size * sizeof(job *));
+  pa->jobs = calloc(array_size, sizeof(job *));
 
   /* remember array_size */
   pa->ai_qs.array_size = array_size;
@@ -866,7 +864,7 @@ static int parse_array_request(
   num_tokens = array_request_token_count(request);
   num_bad_tokens = 0;
 
-  tokens = (char**)malloc(sizeof(char*) * num_tokens);
+  tokens = (char**)calloc(num_tokens, sizeof(char *));
   j = num_tokens - 1;
   /* start from back and scan backwards setting pointers to tokens and changing ',' to '\0' */
 
@@ -895,7 +893,7 @@ static int parse_array_request(
       }
     else
       {
-      rn = (array_request_node*)malloc(sizeof(array_request_node));
+      rn = (array_request_node*)calloc(1, sizeof(array_request_node));
       rn->start = start;
       rn->end = end;
       CLEAR_LINK(rn->request_tokens_link);
@@ -1671,7 +1669,7 @@ void initialize_all_arrays_array()
   {
   allarrays.ra = initialize_resizable_array(INITIAL_NUM_ARRAYS);
 
-  allarrays.allarrays_mutex = malloc(sizeof(pthread_mutex_t));
+  allarrays.allarrays_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(allarrays.allarrays_mutex,NULL);
   } /* END initialize_all_arrays_array() */
 

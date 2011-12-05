@@ -268,7 +268,7 @@ int add_verify_resources(
       }
     /* Allocate memory for the attrl structure */
 
-/*    attr = (struct attrl *)malloc(sizeof(struct attrl));
+/*    attr = (struct attrl *)calloc(sizeof(struct attrl));
 
     if (attr == NULL)
       {
@@ -282,7 +282,7 @@ int add_verify_resources(
 
     /* Allocate memory for the attribute name and copy */
 
-/*    str = (char *)malloc(strlen(ATTR_l) + 1);
+/*    str = (char *)calloc(strlen(ATTR_l) + 1);
 
     if (str == NULL)
       {
@@ -298,7 +298,7 @@ int add_verify_resources(
 
     /* Allocate memory for the resource name and copy */
 
-/*    str = (char *)malloc(len + 1);
+/*    str = (char *)calloc(len + 1);
 
     if (str == NULL)
       {
@@ -318,7 +318,7 @@ int add_verify_resources(
 
 /*    if (v != NULL)
       {
-      str = (char *)malloc(e - v + 1);
+      str = (char *)calloc(e - v + 1);
 
       if (str == NULL)
         {
@@ -335,7 +335,7 @@ int add_verify_resources(
       }
     else
       {
-      str = (char *)malloc(1);
+      str = (char *)calloc(1);
 
       if (str == NULL)
         {

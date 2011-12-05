@@ -135,7 +135,7 @@ char *disrst(
       }
     else
       {
-      value = (char *)malloc((size_t)count + 1);
+      value = (char *)calloc(1, (size_t)count + 1);
 
       if (value == NULL)
         {

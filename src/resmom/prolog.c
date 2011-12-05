@@ -452,7 +452,7 @@ int run_pelog(
       (which == PE_EPILOGUSERJOB))
     {
 
-    real_gids = malloc(sizeof(gid_t) * num_gids);
+    real_gids = calloc(num_gids, sizeof(gid_t));
     
     if (real_gids == NULL)
       {
@@ -959,8 +959,7 @@ int run_pelog(
       const char *envname = "PBS_RESOURCE_NODES=";
       char *envstr;
 
-      envstr = malloc(
-                 (strlen(envname) + strlen(r->rs_value.at_val.at_str) + 1) * sizeof(char));
+      envstr = calloc((strlen(envname) + strlen(r->rs_value.at_val.at_str) + 1), sizeof(char));
 
       if (envstr != NULL)
         {
@@ -985,8 +984,7 @@ int run_pelog(
       const char *envname = "PBS_RESOURCE_GRES=";
       char *envstr;
 
-      envstr = malloc(
-                 (strlen(envname) + strlen(r->rs_value.at_val.at_str) + 1) * sizeof(char));
+      envstr = calloc((strlen(envname) + strlen(r->rs_value.at_val.at_str) + 1), sizeof(char));
 
       if (envstr != NULL)
         {
@@ -1005,8 +1003,7 @@ int run_pelog(
       const char *envname = "TMPDIR=";
       char *envstr;
 
-      envstr = malloc(
-                 (strlen(envname) + strlen(buf) + 1) * sizeof(char));
+      envstr = calloc((strlen(envname) + strlen(buf) + 1), sizeof(char));
 
       if (envstr != NULL)
         {
@@ -1029,7 +1026,7 @@ int run_pelog(
 
       if ((envval = get_job_envvar(pjob, envname)) != NULL)
         {
-        envstr = malloc((strlen(envname) + strlen(envval) + 2) * sizeof(char));
+        envstr = calloc((strlen(envname) + strlen(envval) + 2), sizeof(char));
 
         if (envstr != NULL)
           {
@@ -1050,7 +1047,7 @@ int run_pelog(
       sprintf(buf, "%d",
         pjob->ji_nodeid);
 
-      envstr = malloc((strlen(envname) + strlen(buf) + 2) * sizeof(char));
+      envstr = calloc((strlen(envname) + strlen(buf) + 2), sizeof(char));
 
       if (envstr != NULL)
         {
@@ -1069,7 +1066,7 @@ int run_pelog(
 
       if ((pjob->ji_vnods[0].vn_host != NULL) && (pjob->ji_vnods[0].vn_host->hn_host != NULL))
         {
-        envstr = malloc((strlen(envname) + strlen(pjob->ji_vnods[0].vn_host->hn_host) + 2) * sizeof(char));
+        envstr = calloc((strlen(envname) + strlen(pjob->ji_vnods[0].vn_host->hn_host) + 2), sizeof(char));
 
         if (envstr != NULL)
           {
@@ -1093,7 +1090,7 @@ int run_pelog(
           path_aux,
           pjob->ji_qs.ji_jobid);
 
-        envstr = malloc((strlen(envname) + strlen(buf) + 2) * sizeof(char));
+        envstr = calloc((strlen(envname) + strlen(buf) + 2), sizeof(char));
 
         if (envstr != NULL)
           {
@@ -1115,7 +1112,7 @@ int run_pelog(
       workdir_val = get_job_envvar(pjob,envname);
       if (workdir_val != NULL)
         {
-        envstr = malloc((strlen(workdir_val) + strlen(envname) + 2) * sizeof(char));
+        envstr = calloc((strlen(workdir_val) + strlen(envname) + 2), sizeof(char));
 
         if (envstr != NULL)
           {
@@ -1156,7 +1153,7 @@ int run_pelog(
         {
         char *envstr;
 
-        envstr = malloc((strlen(vstrs->as_string[j])) * sizeof(char));
+        envstr = calloc((strlen(vstrs->as_string[j])), sizeof(char));
 
         if (envstr != NULL)
           {

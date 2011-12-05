@@ -800,12 +800,12 @@ mom_open_poll(void)
   char  *id = "mom_open_poll";
 
   DBPRT(("%s: entered\n", id))
-  proc_status = (prstatus_t *)malloc(sizeof(prstatus_t) * TBL_INC);
-  proc_info = (prpsinfo_t *)malloc(sizeof(prpsinfo_t) * TBL_INC);
+  proc_status = (prstatus_t *)calloc(sizeof(prstatus_t), TBL_INC);
+  proc_info = (prpsinfo_t *)calloc(sizeof(prpsinfo_t), TBL_INC);
 
   if (proc_status == NULL || proc_info == NULL)
     {
-    log_err(errno, id, "malloc");
+    log_err(errno, id, "calloc");
     return (PBSE_SYSTEM);
     }
 
@@ -1857,7 +1857,7 @@ ncpus(struct rm_attribute *attrib)
     }
 
   /* alloc the receiver PE table */
-  peidlist = (opr_peid_blk_t *)malloc(sizeof(opr_peid_blk_t) * ppnsize);
+  peidlist = (opr_peid_blk_t *)calloc(sizeof(opr_peid_blk_t), ppnsize);
 
   if (peidlist == NULL)
     {

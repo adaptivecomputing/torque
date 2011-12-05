@@ -140,7 +140,7 @@ int decode_DIS_svrattrl(
 
     tsize = sizeof(svrattrl) + data_len;
 
-    if ((psvrat = (svrattrl *)malloc(tsize)) == 0)
+    if ((psvrat = (svrattrl *)calloc(1, tsize)) == 0)
       return DIS_NOMALLOC;
 
     CLEAR_LINK(psvrat->al_link);

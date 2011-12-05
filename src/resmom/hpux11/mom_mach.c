@@ -1813,11 +1813,11 @@ static char *ncpus(
 
   /* Loop over processors, count the ones in this pset*/
 
-  pst_p = (struct pst_processor*) malloc(ncpus * sizeof(*pst_p));
+  pst_p = (struct pst_processor*) calloc(ncpus, sizeof(*pst_p));
 
   if (pst_p == NULL)
     {
-    sprintf(log_buffer, "malloc");
+    sprintf(log_buffer, "calloc");
     log_err(errno, id, log_buffer);
     return "1";
     }
@@ -2265,11 +2265,11 @@ get_la(double *rv)
    */
   pset = pset_ctl(PSET_GETCURRENTPSET, 0, 0);
   /* Loop over processors, adding load from the processors in this pset */
-  pst_p = (struct pst_processor*) malloc(ncpus * sizeof(*pst_p));
+  pst_p = (struct pst_processor*) calloc(ncpus, sizeof(*pst_p));
 
   if (pst_p == NULL)
     {
-    sprintf(log_buffer, "malloc");
+    sprintf(log_buffer, "calloc");
     log_err(errno, id, log_buffer);
     return (rm_errno = RM_ERR_SYSTEM);
     }

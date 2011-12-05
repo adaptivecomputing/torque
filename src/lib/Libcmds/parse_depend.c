@@ -298,12 +298,11 @@ parse_depend_item(
  *
  */
 
-int
-parse_depend_list(
+int parse_depend_list(
+
   char *list,
   char *rtn_list,  /* expanded list returned here */
-  int rtn_size  /* size of above array */
-)
+  int   rtn_size)  /* size of above array */
 
   {
   char *b, *c, *s, *lc;
@@ -312,7 +311,7 @@ parse_depend_list(
 
   if (strlen(list) == 0) return (1);
 
-  if ((lc = (char *)malloc(strlen(list) + 1)) == (char *)0)
+  if ((lc = (char *)calloc(1, strlen(list) + 1)) == (char *)0)
     {
     fprintf(stderr, "Out of memory.\n");
     exit(1);

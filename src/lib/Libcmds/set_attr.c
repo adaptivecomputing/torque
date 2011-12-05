@@ -102,7 +102,7 @@ void set_attr(
 
   struct attrl *attr, *ap;
 
-  attr = (struct attrl *)malloc(sizeof(struct attrl));
+  attr = (struct attrl *)calloc(1, sizeof(struct attrl));
 
   if (attr == NULL)
     {
@@ -117,7 +117,7 @@ void set_attr(
     }
   else
     {
-    attr->name = (char *)malloc(strlen(attrib_name) + 1);
+    attr->name = (char *)calloc(1, strlen(attrib_name) + 1);
 
     if (attr->name == NULL)
       {
@@ -136,7 +136,7 @@ void set_attr(
     }
   else
     {
-    attr->value = (char *)malloc(strlen(attrib_value) + 1);
+    attr->value = (char *)calloc(1, strlen(attrib_value) + 1);
 
     if (attr->value == NULL)
       {

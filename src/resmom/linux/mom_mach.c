@@ -1768,8 +1768,7 @@ int mom_do_poll(
  * Open kernel device and get namelist info.
  */
 
-int
-mom_open_poll(void)
+int mom_open_poll(void)
 
   {
   char *id = "mom_open_poll";
@@ -1785,7 +1784,7 @@ mom_open_poll(void)
 
   if (proc_array == NULL)
     {
-    log_err(errno, id, "malloc");
+    log_err(errno, id, "calloc");
 
     return(PBSE_SYSTEM);
     }
@@ -3349,7 +3348,7 @@ char *sessions(
       continue;
 
     /* not found */
-    if ((sp = (struct pidl *)malloc(sizeof(struct pidl))) == NULL)
+    if ((sp = (struct pidl *)calloc(1, sizeof(struct pidl))) == NULL)
       {
       log_err(errno, id, "no memory");
       rm_errno = RM_ERR_SYSTEM;
@@ -4595,7 +4594,7 @@ void collect_cpuact(void)
   
     if (system_ncpus)
       {
-      if ((cpu_array = (proc_cpu_t *)malloc(system_ncpus * sizeof(proc_cpu_t))) == NULL)
+      if ((cpu_array = (proc_cpu_t *)calloc(system_ncpus, sizeof(proc_cpu_t))) == NULL)
         {
         log_err(errno, id, "failed to allocate memory");
         return;

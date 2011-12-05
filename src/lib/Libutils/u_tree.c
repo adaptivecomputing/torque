@@ -93,8 +93,7 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 	if (tree == NULL)
     {
     /* Create and return a node */
-    tree = ( AvlTree )malloc( sizeof( struct AvlNode ) );
-    if (tree == NULL)
+    if ((tree = ( AvlTree )calloc(1, sizeof( struct AvlNode ) )) == NULL)
       {
       return( tree );
       }

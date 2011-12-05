@@ -141,10 +141,10 @@ void req_rescq(
   preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_RescQuery;
   preply->brq_number = prescq->rq_num;
 
-  preply->brq_avail = (int *)malloc(prescq->rq_num * sizeof(int));
-  preply->brq_alloc = (int *)malloc(prescq->rq_num * sizeof(int));
-  preply->brq_resvd = (int *)malloc(prescq->rq_num * sizeof(int));
-  preply->brq_down  = (int *)malloc(prescq->rq_num * sizeof(int));
+  preply->brq_avail = (int *)calloc(prescq->rq_num, sizeof(int));
+  preply->brq_alloc = (int *)calloc(prescq->rq_num, sizeof(int));
+  preply->brq_resvd = (int *)calloc(prescq->rq_num, sizeof(int));
+  preply->brq_down  = (int *)calloc(prescq->rq_num, sizeof(int));
 
   if ((preply->brq_avail == 0) || (preply->brq_alloc == 0) ||
       (preply->brq_resvd == 0) || (preply->brq_down  == 0))

@@ -269,7 +269,7 @@ static char **PBSD_select_get(
 
     totsize = stringtot + (njobs + 1) * (sizeof(char *));
 
-    retval = (char **)malloc(totsize);
+    retval = (char **)calloc(1, totsize);
 
     if (retval == (char **)NULL)
       {

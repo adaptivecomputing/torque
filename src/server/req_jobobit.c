@@ -172,7 +172,7 @@ static char *setup_from(
   {
   char *from;
 
-  from = malloc(strlen(pjob->ji_qs.ji_fileprefix) + strlen(suffix) + 1);
+  from = calloc(1, strlen(pjob->ji_qs.ji_fileprefix) + strlen(suffix) + 1);
 
   if (from != NULL)
     {
@@ -264,7 +264,7 @@ struct batch_request *setup_cpyfiles(
     pcf = &preq->rq_ind.rq_cpyfile;
     }
 
-  pair = (struct rqfpair *)malloc(sizeof(struct rqfpair));
+  pair = (struct rqfpair *)calloc(1, sizeof(struct rqfpair));
 
   if (pair == NULL)
     {
@@ -465,7 +465,7 @@ static struct batch_request *cpy_stdfile(
 
   /* go with the supplied name */
 
-  to = (char *)malloc(strlen(pathattr->at_val.at_str) + 1);
+  to = (char *)calloc(1, strlen(pathattr->at_val.at_str) + 1);
 
   if (to == NULL)
     {
@@ -576,7 +576,7 @@ struct batch_request *cpy_stage(
         {
         *prmt = '\0';
 
-        from = malloc(strlen(plocal) + 1);
+        from = calloc(1, strlen(plocal) + 1);
 
         if (from == NULL)
           {
@@ -593,7 +593,7 @@ struct batch_request *cpy_stage(
 
         *prmt = '@'; /* restore the @ */
 
-        to = malloc(strlen(prmt + 1) + 1);
+        to = calloc(1, strlen(prmt + 1) + 1);
 
         if (to == NULL)
           {
@@ -863,7 +863,7 @@ int handle_returnstd(
       strcat(namebuf, JOB_STDOUT_SUFFIX);
       
       /* allocate space for the string name plus ".SAV" */
-      namebuf2 = malloc((strlen(namebuf) + 5) * sizeof(char));
+      namebuf2 = calloc((strlen(namebuf) + 5), sizeof(char));
       
       if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != pbs_server_addr)
         {
@@ -1128,7 +1128,7 @@ int handle_stageout(
     strcat(namebuf, JOB_STDOUT_SUFFIX);
     
     /* allocate space for the string name plus ".SAV" */
-    namebuf2 = malloc((strlen(namebuf) + 5) * sizeof(char));
+    namebuf2 = calloc((strlen(namebuf) + 5), sizeof(char));
     
     strcpy(namebuf2, namebuf);
     strcat(namebuf2, ".SAV");
@@ -1546,7 +1546,7 @@ void on_job_exit(
     
   free(ptask);
 
-  /* check for malloc errors */
+  /* check for calloc errors */
   if (jobid == NULL)
     {
     log_err(ENOMEM,id,"Cannot allocate memory!");

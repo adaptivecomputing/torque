@@ -392,7 +392,7 @@ eventent *event_alloc(
   static tm_event_t  eventnum = TM_NULL_EVENT + 1;
   eventent          *ep;
 
-  ep = (eventent *)malloc(sizeof(eventent));
+  ep = (eventent *)calloc(1, sizeof(eventent));
 
   assert(ep);
 
@@ -1144,7 +1144,7 @@ void job_start_error(
 
 
 /*
-** Free malloc'ed array (used in SPAWN)
+** Free calloc'ed array (used in SPAWN)
 */
 
 void arrayfree(
@@ -1684,7 +1684,7 @@ void task_saveinfo(
     {
     /* new name */
 
-    ip = (infoent *)malloc(sizeof(infoent));
+    ip = (infoent *)calloc(1, sizeof(infoent));
 
     assert(ip);
 
@@ -1739,7 +1739,7 @@ char *resc_string(
 
   used = 0;
 
-  res_str = (char *)malloc(tot);
+  res_str = (char *)calloc(1, tot);
 
   if (res_str == NULL)
     {
@@ -3874,7 +3874,7 @@ int im_obit_task(
     {
     /* save obit request with task */
     
-    obitent *op = (obitent *)malloc(sizeof(obitent));
+    obitent *op = (obitent *)calloc(1, sizeof(obitent));
     
     if (op == NULL)
       {
@@ -6677,7 +6677,7 @@ int tm_spawn_request(
   
   if (argv == NULL)
     {
-    log_err(ENOMEM,id,"No memory available, cannot malloc!");
+    log_err(ENOMEM,id,"No memory available, cannot calloc!");
     
     return(TM_ERROR);
     }
@@ -6702,7 +6702,7 @@ int tm_spawn_request(
   
   if (envp == NULL)
     {
-    log_err(ENOMEM,id,"No memory available, cannot malloc!");
+    log_err(ENOMEM,id,"No memory available, cannot calloc!");
     
     return(TM_ERROR);
     }
@@ -6755,7 +6755,7 @@ int tm_spawn_request(
   
   /* tack on PBS_VNODENUM */
   
-  envp[i] = malloc(MAXLINE * sizeof(char));
+  envp[i] = calloc(MAXLINE, sizeof(char));
   
   if (envp[i] == NULL)
     {
@@ -7308,11 +7308,11 @@ int tm_obit_request(
     }
   else
     {
-    obitent *op = (obitent *)malloc(sizeof(obitent));
+    obitent *op = (obitent *)calloc(1, sizeof(obitent));
     
     if (op == NULL)
       {
-      log_err(ENOMEM,id,"No memory! Cannot malloc!");
+      log_err(ENOMEM,id,"No memory! Cannot calloc!");
       return(TM_ERROR);
       }
     
@@ -8287,7 +8287,7 @@ char *cat_dirs(
 
   len += strlen(base);
 
-  pn = malloc(len+2);
+  pn = calloc(1, len+2);
   if (!pn)
     {
     return(NULL);

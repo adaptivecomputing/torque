@@ -216,11 +216,11 @@ char **pbs_setup(
     exit(EXIT_FAILURE);
     }
 
-  hfile_mem = (char **)malloc(hfile_size * sizeof(char *));
+  hfile_mem = (char **)calloc(hfile_size, sizeof(char *));
 
   if (hfile_mem == NULL)
     {
-    fprintf(stderr, "%s: Can't malloc memory",
+    fprintf(stderr, "%s: Can't calloc memory",
       mcn);
 
     exit(EXIT_FAILURE);
@@ -240,7 +240,7 @@ char **pbs_setup(
 
       if (tmpHFileMem == NULL)
         {
-        fprintf(stderr, "%s: Can't malloc memory", 
+        fprintf(stderr, "%s: Can't calloc memory", 
           mcn);
 
         exit(EXIT_FAILURE);
@@ -272,11 +272,11 @@ char **pbs_setup(
 
   /* make an argument list */
 
-  newargs = malloc((argc + 8) * sizeof(char *));
+  newargs = calloc((argc + 8), sizeof(char *));
 
   if (newargs == NULL)
     {
-    perror("malloc");
+    perror("calloc");
 
     fprintf(stderr, "%s: Unable to allocate space for argument list\n",
       mcn);
@@ -583,9 +583,9 @@ void run_command(
     while (argv[i])
       syssz += strlen(argv[i++]) + 1;
 
-    if ((psyscmd = (char *)malloc(syssz + 1)) == NULL)
+    if ((psyscmd = (char *)calloc(1, syssz + 1)) == NULL)
       {
-      fprintf(stderr, "%s: unable to malloc memory\n", mcn);
+      fprintf(stderr, "%s: unable to calloc memory\n", mcn);
       clean_up(1);
       }
 

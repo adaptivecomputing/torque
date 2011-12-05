@@ -409,7 +409,7 @@ pbs_queue *que_recov_xml(
  * This function is only needed upon server start up.
  *
  * The queue structure is recovered from the disk.
- * Space to hold the above is malloc-ed as needed.
+ * Space to hold the above is calloc-ed as needed.
  *
  * Returns: pointer to new queue structure if successful
  *   null if error

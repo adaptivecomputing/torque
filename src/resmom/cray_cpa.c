@@ -452,14 +452,14 @@ int CPASetJobEnv(
   const char *AllVar = "BATCH_ALLOC_COOKIE";
   const char *JobVar = "BATCH_JOBID";
 
-  /* NOTE:  add two bytes to malloc for '=' and '\0' */
+  /* NOTE:  add two bytes to calloc for '=' and '\0' */
 
   sprintf(tmpNum, "%ld",
           ParID);
 
   if (tmpNum[0] != '\0')
     {
-    ptr = (char *)malloc(strlen(tmpNum) + strlen(ParVar) + 2);
+    ptr = (char *)calloc(1, strlen(tmpNum) + strlen(ParVar) + 2);
 
     if (ptr == NULL)
       {
@@ -480,7 +480,7 @@ int CPASetJobEnv(
 
   if (tmpNum[0] != '\0')
     {
-    ptr = (char *)malloc(strlen(tmpNum) + strlen(AllVar) + 2);
+    ptr = (char *)calloc(1, strlen(tmpNum) + strlen(AllVar) + 2);
 
     if (ptr == NULL)
       {
@@ -497,7 +497,7 @@ int CPASetJobEnv(
 
   if (JobID != NULL)
     {
-    ptr = (char *)malloc(strlen(JobID) + strlen(JobVar) + 2);
+    ptr = (char *)calloc(1, strlen(JobID) + strlen(JobVar) + 2);
 
     if (ptr == NULL)
       {

@@ -1927,7 +1927,7 @@ mom_get_sample(void)
 
   session_table_size = info.ent * info.len;
 
-  session_table = (struct sess*)malloc(session_table_size);
+  session_table = (struct sess*)calloc(1, session_table_size);
 
   if (session_table == NULL)
     return (PBSE_SYSTEM);
@@ -1946,7 +1946,7 @@ mom_get_sample(void)
 
   process_table_size = info.ent * info.len;
 
-  process_table = (struct proc*)malloc(process_table_size);
+  process_table = (struct proc*)calloc(1, process_table_size);
 
   if (process_table == NULL)
     return (PBSE_SYSTEM);

@@ -24,7 +24,7 @@ set_attrop(struct attropl **list, char *a_name, char *r_name, char *v_name, enum
 
   struct attropl *attr;
 
-  attr = (struct attropl *) malloc(sizeof(struct attropl));
+  attr = (struct attropl *) calloc(1, sizeof(struct attropl));
 
   if (attr == NULL)
     {
@@ -36,7 +36,7 @@ set_attrop(struct attropl **list, char *a_name, char *r_name, char *v_name, enum
     attr->name = NULL;
   else
     {
-    attr->name = (char *) malloc(strlen(a_name) + 1);
+    attr->name = (char *) calloc(1, strlen(a_name) + 1);
 
     if (attr->name == NULL)
       {
@@ -51,7 +51,7 @@ set_attrop(struct attropl **list, char *a_name, char *r_name, char *v_name, enum
     attr->resource = NULL;
   else
     {
-    attr->resource = (char *) malloc(strlen(r_name) + 1);
+    attr->resource = (char *) calloc(1, strlen(r_name) + 1);
 
     if (attr->resource == NULL)
       {
@@ -66,7 +66,7 @@ set_attrop(struct attropl **list, char *a_name, char *r_name, char *v_name, enum
     attr->value = NULL;
   else
     {
-    attr->value = (char *) malloc(strlen(v_name) + 1);
+    attr->value = (char *) calloc(1, strlen(v_name) + 1);
 
     if (attr->value == NULL)
       {

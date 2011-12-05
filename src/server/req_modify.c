@@ -668,7 +668,7 @@ int copy_batchrequest(
     /* we need to copy rq_extend if there is any data */
     if (preq->rq_extend)
       {
-      request->rq_extend = (char *)malloc(strlen(preq->rq_extend) + 1);
+      request->rq_extend = (char *)calloc(1, strlen(preq->rq_extend) + 1);
       if (request->rq_extend == NULL)
         {
         return(PBSE_SYSTEM);
@@ -722,7 +722,7 @@ int copy_batchrequest(
         pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
         while(pal != NULL)
           {
-          newpal = (svrattrl *)malloc(pal->al_tsize + 1);
+          newpal = (svrattrl *)calloc(1, pal->al_tsize + 1);
           if (!newpal)
             {
             return(PBSE_SYSTEM);

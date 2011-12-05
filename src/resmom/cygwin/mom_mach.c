@@ -1481,7 +1481,7 @@ mom_open_poll(void)
 
   if (proc_array == NULL)
     {
-    log_err(errno, id, "malloc");
+    log_err(errno, id, "calloc");
 
     return(PBSE_SYSTEM);
     }

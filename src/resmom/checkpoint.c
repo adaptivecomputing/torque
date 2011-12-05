@@ -186,8 +186,8 @@ int mom_checkpoint_execute_job(
   /* replace first arg with shell name
      note, this func is called from a child process that exits after the
      executable is launched, so we don't have to worry about freeing
-     this malloc later */
-  arg[1] = malloc(strlen(shell) + 1);
+     this calloc later */
+  arg[1] = calloc(1, strlen(shell) + 1);
 
   if (arg[1] == NULL)
     {
@@ -239,7 +239,7 @@ int mom_checkpoint_init(void)
 
   if (strlen(path_checkpoint) == 0) /* if not -C option */
     {
-    /* mk_dirs mallocs the string it returns so this string must be freed */
+    /* mk_dirs callocs the string it returns so this string must be freed */
 
     path_checkpt_tmp = mk_dirs("checkpoint/");
     snprintf(path_checkpoint,sizeof(path_checkpoint),"%s",path_checkpt_tmp);
@@ -2277,7 +2277,7 @@ int create_missing_files(job *pjob)
   if (should_have_stdout)
     {
     bufsize = strlen(pjob->ji_qs.ji_fileprefix) + strlen(path_spool) + strlen(JOB_STDOUT_SUFFIX) + 1;
-    namebuf = malloc(bufsize * sizeof(char));
+    namebuf = calloc(bufsize, sizeof(char));
 
     if (namebuf == NULL)
       {
@@ -2313,7 +2313,7 @@ int create_missing_files(job *pjob)
   if (should_have_stderr)
     {
     bufsize = strlen(pjob->ji_qs.ji_fileprefix) + strlen(path_spool) + strlen(JOB_STDOUT_SUFFIX) + 1;
-    namebuf = malloc(bufsize * sizeof(char));
+    namebuf = calloc(bufsize, sizeof(char));
 
     if (namebuf == NULL)
       {

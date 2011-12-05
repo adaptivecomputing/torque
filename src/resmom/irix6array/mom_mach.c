@@ -1001,7 +1001,7 @@ mom_open_poll(void)
 
   if (proc_array == NULL)
     {
-    log_err(errno, id, "malloc");
+    log_err(errno, id, "calloc");
     return (PBSE_SYSTEM);
     }
 
@@ -1124,7 +1124,7 @@ mom_get_sample(void)
         size_t nb = sizeof(prmap_sgi_t) * num;
 
         assert(num < MAPNUM);
-        pi->map = (prmap_sgi_t *) malloc(nb);
+        pi->map = (prmap_sgi_t *) calloc(1, nb);
         memcpy(pi->map, map, nb);
         pi->map_num = num;
         }

@@ -447,14 +447,12 @@ struct passwd *check_pwd(
 
   pjob->ji_qs.ji_un.ji_momt.ji_exuid = pwdp->pw_uid;
 
-  pjob->ji_grpcache = malloc(
-                            sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
+  pjob->ji_grpcache = calloc(1, sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
 
   if (pjob->ji_grpcache == NULL)
     {
     /* FAILURE */
-
-    sprintf(log_buffer, "malloc failed");
+    sprintf(log_buffer, "calloc failed");
 
     return(NULL);
     }
@@ -1209,11 +1207,11 @@ int InitUserEnv(
   vtable.v_bsize = ebsize + EXTRA_VARIABLE_SPACE +
                      (vstrs != NULL ? (vstrs->as_next - vstrs->as_buf) : 0);
 
-  vtable.v_block = malloc(vtable.v_bsize);
+  vtable.v_block = calloc(1, vtable.v_bsize);
 
   if (vtable.v_block == NULL)
     {
-    sprintf(log_buffer, "PBS: failed to init env, malloc: %s\n",
+    sprintf(log_buffer, "PBS: failed to init env, calloc: %s\n",
             strerror(errno));
 
     log_err(errno, id, log_buffer);
@@ -1225,11 +1223,11 @@ int InitUserEnv(
   
   vtable.v_used = 0;
   
-  vtable.v_envp = malloc(vtable.v_ensize * sizeof(char *));
+  vtable.v_envp = calloc(vtable.v_ensize, sizeof(char *));
 
   if (vtable.v_envp == NULL)
     {
-    sprintf(log_buffer, "PBS: failed to init env, malloc: %s\n",
+    sprintf(log_buffer, "PBS: failed to init env, calloc: %s\n",
       strerror(errno));
 
     log_err(errno, id, log_buffer);
@@ -1451,8 +1449,8 @@ int mom_jobstarter_execute_job(
   /* replace first arg with shell name
      note, this func is called from a child process that exits after the
      executable is launched, so we don't have to worry about freeing
-     this malloc later */
-  arg[1] = malloc(strlen(shell) + 1);
+     this calloc later */
+  arg[1] = calloc(1, strlen(shell) + 1);
   
   if (arg[1] == NULL)
     {
@@ -1649,13 +1647,13 @@ struct radix_buf **allocate_sister_list(
 
   for(i = 0; i < radix; i++)
     {
-    if ((sister_list[i] = malloc(sizeof(struct radix_buf))) == NULL)
+    if ((sister_list[i] = calloc(1, sizeof(struct radix_buf))) == NULL)
       {
       log_err(ENOMEM,id,"");
       return(NULL);
       }
 
-    if ((sister_list[i]->host_list = malloc(THE_LIST_SIZE)) == NULL)
+    if ((sister_list[i]->host_list = calloc(1, THE_LIST_SIZE)) == NULL)
       {
       log_err(ENOMEM,id,"");
       return(NULL);
@@ -1665,7 +1663,7 @@ struct radix_buf **allocate_sister_list(
     sister_list[i]->current_string_len = 0;
     sister_list[i]->max_string_len = THE_LIST_SIZE;
 
-    sister_list[i]->port_list = (char *)malloc(THE_LIST_SIZE);
+    sister_list[i]->port_list = (char *)calloc(1, THE_LIST_SIZE);
     assert(sister_list[i]->port_list);
 
     memset(sister_list[i]->port_list, 0, THE_LIST_SIZE);
@@ -3787,7 +3785,7 @@ int TMomFinalizeChild(
     if (((TJE->is_interactive == TRUE) && (src_login_interactive == FALSE)) ||
         ((TJE->is_interactive != TRUE) && (src_login_batch == FALSE)))
       {
-      arg[aindex] = malloc(strlen(shellname) + 1);
+      arg[aindex] = calloc(1, strlen(shellname) + 1);
 
       if (arg[aindex] == NULL)
         {
@@ -3812,7 +3810,7 @@ int TMomFinalizeChild(
       }
     else
       {
-      arg[aindex] = malloc(strlen(shellname) + 2);
+      arg[aindex] = calloc(1, strlen(shellname) + 2);
 
       if (arg[aindex] == NULL)
         {
@@ -3860,7 +3858,7 @@ int TMomFinalizeChild(
     /* Put the script's arguments on the command line (see configure option --enable-shell-use-argv). */
     if (TJE->is_interactive == FALSE)
       {
-      arg[aindex] = malloc(
+      arg[aindex] = calloc(1,
                           strlen(path_jobs) +
                           strlen(pjob->ji_qs.ji_fileprefix) +
                           strlen(JOB_SCRIPT_SUFFIX) + 1);
@@ -3903,7 +3901,7 @@ int TMomFinalizeChild(
 
       if ((pjob->ji_wattr[JOB_ATR_inter_cmd].at_flags & ATR_VFLAG_SET) != 0)
         {
-        arg[aindex] = malloc(strlen("-c") + 1);
+        arg[aindex] = calloc(1, strlen("-c") + 1);
 
         if (arg[aindex] == NULL)
           {
@@ -3922,7 +3920,7 @@ int TMomFinalizeChild(
 
         aindex++;
 
-        arg[aindex] = malloc(strlen(pjob->ji_wattr[JOB_ATR_inter_cmd].at_val.at_str) + 1);
+        arg[aindex] = calloc(1, strlen(pjob->ji_wattr[JOB_ATR_inter_cmd].at_val.at_str) + 1);
 
         if (arg[aindex] == NULL)
           {
@@ -4023,7 +4021,7 @@ int TMomFinalizeChild(
 
     aindex = 0;
 
-    arg[aindex] = malloc(strlen(shellname) + 1);
+    arg[aindex] = calloc(1, strlen(shellname) + 1);
 
     if (arg[aindex] == NULL)
       {
@@ -5841,7 +5839,7 @@ int generate_cookie(
 
   if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
     {
-    if ((tt = malloc(JOB_COOKIE_SIZE)) == NULL)
+    if ((tt = calloc(1, JOB_COOKIE_SIZE)) == NULL)
       {
       log_err(ENOMEM, id, "cannot alloc memory");
 

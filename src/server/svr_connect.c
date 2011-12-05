@@ -456,7 +456,7 @@ char *parse_servername(
 
   buf[i] = '\0';
 
-  val = malloc(strlen(buf) + 1);
+  val = calloc(1, strlen(buf) + 1);
   strcpy(val,buf);
 
   return(val);

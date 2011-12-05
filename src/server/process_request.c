@@ -264,18 +264,23 @@ int get_creds(
   size = sizeof(ucreds);
 
 #else
-  if (cmptr->cmsg_len < SOCKCREDSIZE(0)) return 0;
+  if (cmptr->cmsg_len < SOCKCREDSIZE(0))
+    return(0);
 
   size = SOCKCREDSIZE(((cred *)CMSG_DATA(cmptr))->sc_ngroups);
 
 #endif
-  if ((unsigned)cmptr->cmsg_len != CMSG_LEN(size)) return 0;
+  if ((unsigned)cmptr->cmsg_len != CMSG_LEN(size))
+    return(0);
 
-  if (cmptr->cmsg_level != SOL_SOCKET) return 0;
+  if (cmptr->cmsg_level != SOL_SOCKET)
+    return 0;
 
-  if (cmptr->cmsg_type != SCM_CREDS) return 0;
+  if (cmptr->cmsg_type != SCM_CREDS)
+    return 0;
 
-  if (!(credentials = (ucreds *)malloc(size))) return 0;
+  if (!(credentials = (ucreds *)calloc(1, size)))
+    return 0;
 
   *credentials = *(ucreds *)CMSG_DATA(cmptr);
 
@@ -944,7 +949,7 @@ struct batch_request *alloc_br(
 
   struct batch_request *req = NULL;
 
-  req = (struct batch_request *)malloc(sizeof(struct batch_request));
+  req = (struct batch_request *)calloc(1, sizeof(struct batch_request));
 
   if (req == NULL)
     {

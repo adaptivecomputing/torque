@@ -462,7 +462,7 @@ int encode_jobs(
     return(0);
     }
 
-  if (!(job_str = (char *)malloc(strsize)))
+  if (!(job_str = (char *)calloc(1, strsize)))
     {
     return -(PBSE_SYSTEM);
     }
@@ -556,7 +556,7 @@ int decode_state(
     }
   else
     {
-    if (!(sbufp = (char *)malloc(slen + 1)))
+    if (!(sbufp = (char *)calloc(1, slen + 1)))
       {
       return(PBSE_SYSTEM);
       }

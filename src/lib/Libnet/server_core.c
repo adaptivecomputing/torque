@@ -68,7 +68,7 @@ int start_listener(
     {
     while (1)
       {
-      new_conn_port = (int *)malloc(sizeof(int));
+      new_conn_port = (int *)calloc(1, sizeof(int));
       if ((*new_conn_port = accept(listen_socket, (struct sockaddr *)&adr_client, (socklen_t *)&len_inet)) == -1)
         {
         if (errno == EMFILE)

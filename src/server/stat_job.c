@@ -154,14 +154,12 @@ int status_job(
 
   /* allocate reply structure and fill in header portion */
 
-  pstat = (struct brp_status *)malloc(sizeof(struct brp_status));
+  pstat = (struct brp_status *)calloc(1, sizeof(struct brp_status));
 
   if (pstat == NULL)
     {
     return(PBSE_SYSTEM);
     }
-
-  memset(pstat, 0, sizeof(struct brp_status));
 
   CLEAR_LINK(pstat->brp_stlink);
 

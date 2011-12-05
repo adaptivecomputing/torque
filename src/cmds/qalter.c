@@ -525,7 +525,7 @@ int main(
           if (strcmp(keyword, ATTR_depend) == 0)
             {
             int rtn = 0;
-            pdepend = malloc(PBS_DEPEND_LEN);
+            pdepend = calloc(1, PBS_DEPEND_LEN);
 
             if ((pdepend == NULL) ||
                  (rtn = parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN)))

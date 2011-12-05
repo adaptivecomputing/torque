@@ -228,7 +228,7 @@ long attr_ifelse_long(
 
 /*
  * free_null - A free routine for attributes which do not
- * have malloc-ed space ( boolean, char, long ).
+ * have calloc-ed space ( boolean, char, long ).
  */
 
 /*ARGSUSED*/

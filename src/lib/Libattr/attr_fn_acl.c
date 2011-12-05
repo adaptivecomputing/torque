@@ -384,8 +384,7 @@ static int set_allacl(struct attribute *attr, struct attribute *new, enum batch_
     /* no array_strings control structure, make one */
 
     i = newpas->as_npointers;
-    pas = (struct array_strings *)malloc((i - 1) * sizeof(char *) +
-                                         sizeof(struct array_strings));
+    pas = (struct array_strings *)calloc(1, (i - 1) * sizeof(char *) + sizeof(struct array_strings));
 
     if (!pas)
       return (PBSE_SYSTEM);
@@ -437,7 +436,7 @@ static int set_allacl(struct attribute *attr, struct attribute *new, enum batch_
 
         nsize += nsize / 2;  /* alloc extra space */
 
-        if (!(pas->as_buf = malloc((size_t)nsize)))
+        if (!(pas->as_buf = calloc(1, (size_t)nsize)))
           {
           pas->as_bufsize = 0;
           return (PBSE_SYSTEM);

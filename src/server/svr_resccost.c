@@ -140,7 +140,7 @@ static struct resource_cost *add_cost_entry(
 
   struct resource_cost *pcost;
 
-  pcost = malloc(sizeof(struct resource_cost));
+  pcost = calloc(1, sizeof(struct resource_cost));
 
   if (pcost != NULL)
     {

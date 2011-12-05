@@ -136,9 +136,9 @@ int decode_DIS_attrl(
 
     if (rc) break;
 
-    pat = malloc(sizeof(struct attrl));
+    pat = calloc(1, sizeof(struct attrl));
 
-    if (pat == 0)
+    if (pat == NULL)
       return DIS_NOMALLOC;
 
     pat->next     = (struct attrl *)0;

@@ -89,7 +89,7 @@
  * Encoding the internal representation of the attribute to external
  * Setting the value by =, + or - operators.
  * Comparing a (decoded) value with the attribute value.
- * Freeing the space malloc-ed to the attribute value.
+ * Freeing the space calloc-ed to the attribute value.
  *
  * Some or all of the functions for an attribute type may be shared with
  * other attribute types.
@@ -150,8 +150,6 @@ int decode_arst_direct(
     return(PBSE_SYSTEM);
     }
 
-  memset(tmpval, 0, ssize);
-
   strcpy(tmpval,val);
 
   for (pc = tmpval;*pc;pc++)
@@ -176,7 +174,7 @@ int decode_arst_direct(
     ssize--;
     }
 
-  if ((pbuf = malloc((unsigned)ssize)) == NULL)
+  if ((pbuf = calloc(1, (unsigned)ssize)) == NULL)
     {
     /* FAILURE */
 
@@ -187,7 +185,7 @@ int decode_arst_direct(
 
   bksize = (ns - 1) * sizeof(char *) + sizeof(struct array_strings);
 
-  if ((stp = (struct array_strings *)malloc(bksize)) == NULL)
+  if ((stp = (struct array_strings *)calloc(1, bksize)) == NULL)
     {
     /* FAILURE */
 
@@ -592,7 +590,7 @@ int set_arst(
 
     need = sizeof(struct array_strings) + (j - 1) * sizeof(char *);
 
-    pas = (struct array_strings *)malloc((size_t)need);
+    pas = (struct array_strings *)calloc(1, (size_t)need);
 
     if (pas == NULL)
       {
@@ -646,7 +644,7 @@ int set_arst(
 
         nsize += nsize / 2;   /* alloc extra space */
 
-        if (!(pas->as_buf = malloc((size_t)nsize)))
+        if (!(pas->as_buf = calloc(1, (size_t)nsize)))
           {
           pas->as_bufsize = 0;
 
@@ -679,7 +677,7 @@ int set_arst(
         if (pas->as_buf)
           pc = realloc(pas->as_buf, (size_t)need);
         else
-          pc = malloc((size_t)need);
+          pc = calloc(1, (size_t)need);
 
         if (pc == NULL)
           {
@@ -761,9 +759,9 @@ int set_arst(
 
       j = 1.5 * (pas->as_usedptr + newpas->as_usedptr);
 
-      /* malloc the tmp array strings */
+      /* calloc the tmp array strings */
       need = sizeof(struct array_strings) + (j-1) * sizeof(char *);
-      tmp_arst = (struct array_strings *)malloc(need);
+      tmp_arst = (struct array_strings *)calloc(1, need);
 
       if (tmp_arst == NULL)
         return(PBSE_SYSTEM);
@@ -775,8 +773,8 @@ int set_arst(
       need = 2 * (nsize + used);
       tmp_arst->as_bufsize = need;
 
-      /* malloc the buffer size */
-      pc = malloc(need);
+      /* calloc the buffer size */
+      pc = calloc(1, need);
 
       if (pc == NULL)
         return(PBSE_SYSTEM);

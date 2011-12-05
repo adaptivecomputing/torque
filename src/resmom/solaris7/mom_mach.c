@@ -767,11 +767,11 @@ mom_open_poll(void)
   char  *id = "mom_open_poll";
 
   DBPRT(("%s: entered\n", id))
-  proc_info = (psinfo_t *)malloc(sizeof(psinfo_t) * TBL_INC);
+  proc_info = (psinfo_t *)calloc(sizeof(psinfo_t), TBL_INC);
 
   if (proc_info == NULL)
     {
-    log_err(errno, id, "malloc");
+    log_err(errno, id, "calloc");
     return (PBSE_SYSTEM);
     }
 
@@ -1041,7 +1041,7 @@ pid_t sid;
 
   if (Proc_lnks == NULL)
     {
-    Proc_lnks = (pbs_plinks *)malloc(TBL_INC * sizeof(pbs_plinks));
+    Proc_lnks = (pbs_plinks *)calloc(TBL_INC, sizeof(pbs_plinks));
     assert(Proc_lnks != NULL);
     myproc_max = TBL_INC;
     }

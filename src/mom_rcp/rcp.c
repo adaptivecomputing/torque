@@ -328,7 +328,7 @@ toremote(char *targ, int argc, char *argv[])
             strlen(src) + (tuser ? strlen(tuser) : 0) +
             strlen(thost) + strlen(targ) + CMDNEEDS + 20;
 
-      if (!(bp = malloc(len)))
+      if (!(bp = calloc(1, len)))
         err(1, NULL);
 
       if (host)
@@ -364,7 +364,7 @@ toremote(char *targ, int argc, char *argv[])
         {
         len = strlen(targ) + CMDNEEDS + 20;
 
-        if (!(bp = malloc(len)))
+        if (!(bp = calloc(1, len)))
           err(1, NULL);
 
         (void)sprintf(bp, "%s -t %s", cmd, targ);
@@ -412,7 +412,7 @@ tolocal(int argc, char *argv[])
       len = strlen(_PATH_CP) + strlen(argv[i]) +
             strlen(argv[argc - 1]) + 20;
 
-      if (!(bp = malloc(len)))
+      if (!(bp = calloc(1, len)))
         err(1, NULL);
 
       (void)sprintf(bp, "exec %s%s%s %s %s", _PATH_CP,
@@ -450,7 +450,7 @@ tolocal(int argc, char *argv[])
 
     len = strlen(src) + CMDNEEDS + 20;
 
-    if ((bp = malloc(len)) == NULL)
+    if ((bp = calloc(1, len)) == NULL)
       err(1, NULL);
 
     (void)sprintf(bp, "%s -f %s", cmd, src);
@@ -853,7 +853,7 @@ sink(int argc, char *argv[])
 
       if (need > cursize)
         {
-        if (!(namebuf = malloc(need)))
+        if (!(namebuf = calloc(1, need)))
           run_err("%s", strerror(errno));
         }
 

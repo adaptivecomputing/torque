@@ -315,7 +315,7 @@ void req_selectjobs(
     return;
     }
 
-  if ((cntl = (struct stat_cntl *)malloc(sizeof(struct stat_cntl))) == NULL)
+  if ((cntl = (struct stat_cntl *)calloc(1, sizeof(struct stat_cntl))) == NULL)
     {
     /* FAILURE */
 
@@ -627,7 +627,7 @@ static void sel_step3(
           {
           /* Select Jobs */
 
-          pselect = malloc(sizeof(struct brp_select));
+          pselect = calloc(1, sizeof(struct brp_select));
 
           if (pselect == NULL)
             {
@@ -858,7 +858,7 @@ static int build_selentry(
 
   /* create a select list entry for this attribute */
 
-  entry = (struct select_list *)malloc(sizeof(struct select_list));
+  entry = (struct select_list *)calloc(1, sizeof(struct select_list));
 
   if (entry == NULL)
     {

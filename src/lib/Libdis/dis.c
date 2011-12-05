@@ -93,7 +93,7 @@ const char *dis_emsg[] =
   "Non-digit found where a digit was expected",
   "Input string has an embedded ASCII NUL",
   "Premature end of message",
-  "Unable to malloc enough space for string",
+  "Unable to calloc enough space for string",
   "Supporting protocol failure",
   "Protocol failure in commit",
   "End of File"

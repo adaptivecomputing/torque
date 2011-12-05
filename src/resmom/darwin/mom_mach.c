@@ -1023,10 +1023,10 @@ static kinfo_proc *get_bsd_process_list(
       err = errno;
       }
 
-    /* if success malloc buffer based on the results of previous call */
+    /* if success calloc buffer based on the results of previous call */
     if (err == 0)
       {
-      result = malloc(length);
+      result = calloc(1, length);
 
       if (result == NULL)
         {

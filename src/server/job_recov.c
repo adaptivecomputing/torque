@@ -394,7 +394,7 @@ int job_save(
  *
  * The job structure, its attributes strings, and its dependencies
  * are recovered from the disk.  Space to hold the above is
- * malloc-ed as needed.
+ * calloc-ed as needed.
  *
  * Returns: job pointer to new job structure or a
  *   null pointer on an error.

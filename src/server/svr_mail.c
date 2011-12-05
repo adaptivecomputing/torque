@@ -209,7 +209,7 @@ void *send_the_mail(
   /* setup sendmail command line with -f from_whom */
   i = strlen(SENDMAIL_CMD) + strlen(mailfrom) + strlen(mi->mailto) + 6;
 
-  if ((cmdbuf = malloc(i)) == NULL)
+  if ((cmdbuf = calloc(1, i)) == NULL)
     {
     char tmpBuf[LOG_BUF_SIZE];
 
@@ -397,7 +397,7 @@ void svr_mailowner(
       }
     }
 
-  mi = malloc(sizeof(mail_info));
+  mi = calloc(1, sizeof(mail_info));
 
   if (mi == NULL)
     {

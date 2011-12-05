@@ -142,7 +142,7 @@ void add_dest(
   badplace  *bp;
   char      *baddest = jobp->ji_qs.ji_destin;
 
-  bp = (badplace *)malloc(sizeof(badplace));
+  bp = (badplace *)calloc(1, sizeof(badplace));
 
   if (bp == NULL)
     {

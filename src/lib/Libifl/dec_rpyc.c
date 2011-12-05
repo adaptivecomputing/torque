@@ -205,7 +205,7 @@ int decode_DIS_replyCmd(
 
       while (ct--)
         {
-        psel = (struct brp_select *)malloc(sizeof(struct brp_select));
+        psel = (struct brp_select *)calloc(1, sizeof(struct brp_select));
 
         if (psel == NULL)
           {
@@ -249,7 +249,7 @@ int decode_DIS_replyCmd(
 
       while (ct--)
         {
-        pstcmd = (struct brp_cmdstat *)malloc(sizeof(struct brp_cmdstat));
+        pstcmd = (struct brp_cmdstat *)calloc(1, sizeof(struct brp_cmdstat));
 
         if (pstcmd == NULL)
           {
@@ -327,13 +327,13 @@ int decode_DIS_replyCmd(
 
       reply->brp_un.brp_rescq.brq_number = ct;
 
-      reply->brp_un.brp_rescq.brq_avail  = (int *)malloc(ct * sizeof(int));
+      reply->brp_un.brp_rescq.brq_avail  = (int *)calloc(ct, sizeof(int));
 
-      reply->brp_un.brp_rescq.brq_alloc  = (int *)malloc(ct * sizeof(int));
+      reply->brp_un.brp_rescq.brq_alloc  = (int *)calloc(ct, sizeof(int));
 
-      reply->brp_un.brp_rescq.brq_resvd  = (int *)malloc(ct * sizeof(int));
+      reply->brp_un.brp_rescq.brq_resvd  = (int *)calloc(ct, sizeof(int));
 
-      reply->brp_un.brp_rescq.brq_down   = (int *)malloc(ct * sizeof(int));
+      reply->brp_un.brp_rescq.brq_down   = (int *)calloc(ct, sizeof(int));
 
       if ((reply->brp_un.brp_rescq.brq_avail == NULL) ||
           (reply->brp_un.brp_rescq.brq_alloc == NULL) ||

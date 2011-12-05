@@ -314,7 +314,7 @@ int set_queue_type(
       {
       ((pbs_queue *)pque)->qu_qs.qu_type = spectype;
       (void)free(pattr->at_val.at_str);
-      pattr->at_val.at_str = malloc(strlen(qt[i].name) + 1);
+      pattr->at_val.at_str = calloc(1, strlen(qt[i].name) + 1);
 
       if (pattr->at_val.at_str == (char *)0)
         return (PBSE_SYSTEM);
@@ -794,7 +794,7 @@ int mgr_set_node_attr(
        * call the specified "at_action" routine for that attribute passing it
        * the address of the temporary attribute and the address of the temporary
        * pbsnode object.  If any of the update actions fail along the way, undo
-       * everything.   Any malloc'd substructures should be hanging off the
+       * everything.   Any calloc'd substructures should be hanging off the
        * appropriate attribute of the attribute array "new".
        */
 
@@ -812,7 +812,7 @@ int mgr_set_node_attr(
 
   /*
    * we have successfully updated tnode; use it to modify pnode
-   * if pnode has any malloc-ed storage that is being replaced
+   * if pnode has any calloc-ed storage that is being replaced
    * be sure to free the old.
    */
 
@@ -1221,7 +1221,7 @@ void mgr_server_set(
     int       bhstrlen;
 
     bhstrlen = PBS_MAXHOSTNAME + 17;
-    bad_host = malloc(sizeof(char) * (bhstrlen + 1));
+    bad_host = calloc(sizeof(char), (bhstrlen + 1));
 
     if (bad_host == NULL)
       {
@@ -1676,7 +1676,7 @@ void mgr_node_set(
   if (check_all || propnodes)
     {
     /* handle scrolling over all nodes */
-    problem_nodes = (struct pbsnode **)malloc(svr_totnodes * sizeof(struct pbsnode *));
+    problem_nodes = (struct pbsnode **)calloc(svr_totnodes, sizeof(struct pbsnode *));
 
     problem_cnt = 0;
   
@@ -1819,7 +1819,7 @@ void mgr_node_set(
 
       len += strlen(pbse_to_txt(PBSE_GMODERR));
 
-      if ((problem_names = malloc(len)))
+      if ((problem_names = calloc(1, len)))
         {
         strcpy(problem_names, pbse_to_txt(PBSE_GMODERR));
 

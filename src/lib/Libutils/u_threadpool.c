@@ -112,8 +112,7 @@ int create_work_thread(void)
     initialize_threadpool(&request_pool,5,5,-1);
     }
 
-  thread = (pthread_t *)malloc(sizeof(pthread_t));
-  if (thread == NULL)
+  if ((thread = (pthread_t *)calloc(1, sizeof(pthread_t))) == NULL)
     return(ENOMEM);
 
   pthread_attr_init(&attr);
@@ -354,8 +353,7 @@ int initialize_threadpool(
     return(EINVAL);
     }
 
-  *pool = (threadpool_t *)malloc(sizeof(threadpool_t));
-  if (*pool == NULL)
+  if ((*pool = (threadpool_t *)calloc(1, sizeof(threadpool_t))) == NULL)
     {
     return(ENOMEM);
     }
@@ -402,8 +400,7 @@ int enqueue_threadpool_request(
   {
   tp_work_t *work = NULL;
 
-  work = (tp_work_t *)calloc(1, sizeof(tp_work_t));
-  if (work == NULL)
+  if ((work = (tp_work_t *)calloc(1, sizeof(tp_work_t))) == NULL)
     {
     return(ENOMEM);
     }

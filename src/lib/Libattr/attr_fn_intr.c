@@ -100,7 +100,7 @@
  * Encoding the machine representation of the value to a string
  * Setting the value by =, + or - operators.
  * Comparing a (decoded) value with the attribute value.
- * Freeing the space malloc-ed to the attribute value.
+ * Freeing the space calloc-ed to the attribute value.
  *
  * Some or all of the functions for an attribute type may be shared with
  * other attribute types.

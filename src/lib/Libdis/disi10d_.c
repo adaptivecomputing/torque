@@ -104,8 +104,8 @@ double *dis_dn10 = NULL;
  * dis_dmx10 equal to the largest value of n that fits the format.
  */
 
-void
-disi10d_(void)
+void disi10d_(void)
+
   {
   unsigned i;
   unsigned long ul;
@@ -127,11 +127,11 @@ disi10d_(void)
 
   tabsize = (dis_dmx10 + 1) * sizeof(double);
 
-  dis_dp10 = (double *)malloc(tabsize);
+  dis_dp10 = (double *)calloc(1, tabsize);
 
   assert(dis_dp10 != NULL);
 
-  dis_dn10 = (double *)malloc(tabsize);
+  dis_dn10 = (double *)calloc(1, tabsize);
 
   assert(dis_dn10 != NULL);
 

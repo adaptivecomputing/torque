@@ -133,7 +133,7 @@ char *trq_get_if_name()
   file_size = filestruct.st_size;
 
   /* we know the size of the torque.cfg file. Allocate some space for it */
-  torque_cfg_buf = (char *)malloc(file_size+1);
+  torque_cfg_buf = (char *)calloc(1, file_size+1);
   if(torque_cfg_buf == NULL)
     {
     fprintf(stderr, "failed to allocate memory in trq_get_if_name\n");
@@ -158,7 +158,7 @@ char *trq_get_if_name()
     }
 
   /* we have a name. We need to copy it to permanent storage */
-  if_name = (char *)malloc(strlen(ptr)+1);
+  if_name = (char *)calloc(1, strlen(ptr)+1);
   if(if_name == NULL)
     {
 	fprintf(stderr, "failed to allocate memory in trq_get_if_name for if_name\n");

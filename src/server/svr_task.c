@@ -132,9 +132,7 @@ struct work_task *set_task(
   work_task *pold;
   int        iter = -1;
 
-  pnew = (struct work_task *)calloc(1, sizeof(struct work_task));
-
-  if (pnew == NULL)
+  if ((pnew = (struct work_task *)calloc(1, sizeof(struct work_task))) == NULL)
     {
     return(NULL);
     }
@@ -150,9 +148,7 @@ struct work_task *set_task(
     }
   else
     {
-    pnew->wt_mutex = malloc(sizeof(pthread_mutex_t));
-    
-    if (pnew->wt_mutex == NULL)
+    if ((pnew->wt_mutex = calloc(1, sizeof(pthread_mutex_t))) == NULL)
       {
       free(pnew);
       return(NULL);
@@ -290,7 +286,7 @@ void initialize_all_tasks_array(
     log_err(ENOMEM,id,"Cannot allocate space for array...FAILURE");
     }
   
-  at->alltasks_mutex = malloc(sizeof(pthread_mutex_t));
+  at->alltasks_mutex = calloc(1, sizeof(pthread_mutex_t));
 
   if (at->alltasks_mutex == NULL)
     {

@@ -359,7 +359,7 @@ dynamic_string *get_dynamic_string(
   char *str)          /* I (optional) */
 
   {
-  dynamic_string *ds = malloc(sizeof(dynamic_string));
+  dynamic_string *ds = calloc(1, sizeof(dynamic_string));
 
   if (ds == NULL)
     return(ds);
@@ -369,7 +369,7 @@ dynamic_string *get_dynamic_string(
   else
     ds->size = DS_INITIAL_SIZE;
     
-  ds->str = malloc(ds->size);
+  ds->str = calloc(1, ds->size);
 
   if (ds->str == NULL)
     {
@@ -378,7 +378,6 @@ dynamic_string *get_dynamic_string(
     }
     
   /* initialize empty str */
-  memset(ds->str, 0, ds->size);
   ds->used = 0;
 
   /* add the string if it exists */

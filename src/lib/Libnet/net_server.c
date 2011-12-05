@@ -220,7 +220,7 @@ int *netcounter_get(void)
 
   if (netrates_mutex == NULL)
     {
-    netrates_mutex = malloc(sizeof(pthread_mutex_t));
+    netrates_mutex = calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(netrates_mutex,NULL);
     }
 
@@ -311,7 +311,7 @@ int init_network(
 
     for (i = 0;i < PBS_NET_MAX_CONNECTIONS;i++)
       {
-      svr_conn[i].cn_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+      svr_conn[i].cn_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
       pthread_mutex_init(svr_conn[i].cn_mutex,NULL);
       pthread_mutex_lock(svr_conn[i].cn_mutex);
       
@@ -323,10 +323,10 @@ int init_network(
     /* initialize global "read" socket FD bitmap */
     GlobalSocketReadSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
 
-    global_sock_read_mutex = malloc(sizeof(pthread_mutex_t));
+    global_sock_read_mutex = calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(global_sock_read_mutex,&t_attr);
 
-    num_connections_mutex = malloc(sizeof(pthread_mutex_t));
+    num_connections_mutex = calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(num_connections_mutex,&t_attr);
     
     type = Primary;
@@ -448,7 +448,7 @@ int init_network(
 
     if (nc_list_mutex == NULL)
       {
-      nc_list_mutex = malloc(sizeof(pthread_mutex_t));
+      nc_list_mutex = calloc(1, sizeof(pthread_mutex_t));
       pthread_mutex_init(nc_list_mutex,NULL);
       }
 
@@ -981,7 +981,7 @@ int get_connecthost(
 
   if (get_connecthost_mutex == NULL)
     {
-    get_connecthost_mutex = malloc(sizeof(pthread_mutex_t));
+    get_connecthost_mutex = calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(get_connecthost_mutex,NULL);
     }
 
@@ -1077,7 +1077,7 @@ char *netaddr_pbs_net_t(
           (ipadd & 0x0000ff00) >> 8,
           (ipadd & 0x000000ff));
 
-  return_value = malloc(strlen(out) + 1);
+  return_value = calloc(1, strlen(out) + 1);
   strcpy(return_value,out);
 
   return(return_value);

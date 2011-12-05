@@ -625,7 +625,7 @@ job *job_alloc(void)
       return(NULL);
       }
 
-    pj->ji_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+    pj->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(pj->ji_mutex,NULL);
     pthread_mutex_lock(pj->ji_mutex);
     }
@@ -668,8 +668,7 @@ void job_free(
     log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
     }
 
-  /* remove any malloc working attribute space */
-
+  /* remove any calloc working attribute space */
   for (i = 0;i < JOB_ATR_LAST;i++)
     {
     job_attr_def[i].at_free(&pj->ji_wattr[i]);
@@ -857,7 +856,7 @@ job *job_clone(
 
         slen = strlen(template_job->ji_wattr[i].at_val.at_str);
 
-        tmpstr = (char*)malloc(sizeof(char) * (slen + PBS_MAXJOBARRAYLEN + 1));
+        tmpstr = (char*)calloc(sizeof(char), (slen + PBS_MAXJOBARRAYLEN + 1));
 
         sprintf(tmpstr, "%s-%d",
                 template_job->ji_wattr[i].at_val.at_str,
@@ -1266,7 +1265,7 @@ struct batch_request *cpy_checkpoint(
       }
     }
 
-  to = (char *)malloc(strlen(serverfile) + strlen(server_name) + 2);
+  to = (char *)calloc(1, strlen(serverfile) + strlen(server_name) + 2);
 
   if (to == NULL)
     {
@@ -1287,7 +1286,7 @@ struct batch_request *cpy_checkpoint(
   strcat(to, ":");
   strcat(to, serverfile);
 
-  from = (char *)malloc(strlen(momfile) + 1);
+  from = (char *)calloc(1, strlen(momfile) + 1);
 
   if (from == NULL)
     {
@@ -1796,7 +1795,7 @@ char *get_correct_jobname(
       {
       /* alloc memory and sprint, add 3 for 2 '.' and NULL terminator */
       len = strlen(jobid) + strlen(server_name) + strlen(alias) + 3;
-      correct = malloc(len);
+      correct = calloc(1, len);
 
       if (correct == NULL)
         {
@@ -1812,7 +1811,7 @@ char *get_correct_jobname(
       /* add 2 for null terminator and '.' */
       len = strlen(alias) + 2 + strlen(jobid);
 
-      correct = malloc(len);
+      correct = calloc(1, len);
 
       if (correct == NULL)
         {
@@ -1835,7 +1834,7 @@ char *get_correct_jobname(
 
       len = strlen(jobid) + 1 ;
 
-      correct = malloc(len);
+      correct = calloc(1, len);
 
       if (correct == NULL)
         {
@@ -1860,7 +1859,7 @@ char *get_correct_jobname(
       {
       len = strlen(jobid) + strlen(server_name) + 2;
 
-      correct = malloc(len);
+      correct = calloc(1, len);
 
       if (correct == NULL)
         {
@@ -1882,7 +1881,7 @@ char *get_correct_jobname(
       {
       len = strlen(jobid) + strlen(alias) + 2;
 
-      correct = malloc(len);
+      correct = calloc(1, len);
 
       if (correct == NULL)
         {
@@ -1900,7 +1899,7 @@ char *get_correct_jobname(
       *dot = '\0';
 
       len += strlen(jobid);
-      correct = malloc(len);
+      correct = calloc(1, len);
 
       if (correct == NULL)
         {
@@ -1925,7 +1924,7 @@ char *get_correct_jobname(
       }
 
     len = strlen(jobid) + 1;
-    correct = malloc(len);
+    correct = calloc(1, len);
 
     if (correct == NULL)
       {
@@ -2040,7 +2039,7 @@ void initialize_all_jobs_array(
   aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
   aj->ht = create_hash(INITIAL_HASH_SIZE);
 
-  aj->alljobs_mutex = malloc(sizeof(pthread_mutex_t));
+  aj->alljobs_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(aj->alljobs_mutex,NULL);
   } /* END initialize_all_jobs_array() */
 

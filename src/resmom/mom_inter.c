@@ -541,11 +541,11 @@ int x11_create_display(
     return(-1);
     }
 
-  if ((homeenv = malloc(strlen("HOME=") + strlen(homedir) + 2)) == NULL)
+  if ((homeenv = calloc(1, strlen("HOME=") + strlen(homedir) + 2)) == NULL)
     {
     /* FAILURE - cannot alloc memory */
 
-    fprintf(stderr, "ERROR: could not malloc!\n");
+    fprintf(stderr, "ERROR: could not calloc!\n");
 
     return(-1);
     }

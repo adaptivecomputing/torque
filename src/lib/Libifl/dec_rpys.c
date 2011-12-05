@@ -174,7 +174,7 @@ int decode_DIS_replySvr(
 
       while (ct--)
         {
-        psel = (struct brp_select *)malloc(sizeof(struct brp_select));
+        psel = (struct brp_select *)calloc(1, sizeof(struct brp_select));
 
         if (psel == 0) return DIS_NOMALLOC;
 
@@ -208,7 +208,7 @@ int decode_DIS_replySvr(
 
       while (ct--)
         {
-        pstsvr = (struct brp_status *)malloc(sizeof(struct brp_status));
+        pstsvr = (struct brp_status *)calloc(1, sizeof(struct brp_status));
 
         if (pstsvr == 0) return DIS_NOMALLOC;
 

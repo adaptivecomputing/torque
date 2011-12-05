@@ -133,7 +133,7 @@ enum job_file
   Checkpoint
   };
 
-#define MH(type) (type *)malloc(sizeof(type))
+#define MH(type) (type *)calloc(1, sizeof(type))
 #define M(var,type) if( (var = MH(type)) == (type *)NULL ) \
       { return PBSE_SYSTEM; }
 #define STRLEN(s) ((s==(char *)NULL)?0:strlen(s))

@@ -181,7 +181,7 @@ static char *geteusernam(
       strcpy(username, ptr);
     }
 
-  ret_user = malloc(strlen(username) + 1);
+  ret_user = calloc(1, strlen(username) + 1);
   strcpy(ret_user,username);
 
   return(ret_user);
@@ -257,7 +257,7 @@ static char *getegroup(
 
   get_jobowner(hit, groupname);
 
-  ret_group = malloc(strlen(groupname) + 1);
+  ret_group = calloc(1, strlen(groupname) + 1);
   strcpy(ret_group,groupname);
 
   return(ret_group);
@@ -354,14 +354,14 @@ int set_jobexid(
         if (at != NULL)
           {
           len += strlen(at);
-          usr_at_host = (char *)malloc(len * sizeof(char));
+          usr_at_host = (char *)calloc(len, sizeof(char));
           snprintf(usr_at_host,len,"%s%s",
             puser,
             at);
           }
         else
           {
-          usr_at_host = (char *)malloc(len * sizeof(char));
+          usr_at_host = (char *)calloc(len, sizeof(char));
 
           snprintf(usr_at_host,len,"%s",
             puser);
@@ -458,14 +458,14 @@ int set_jobexid(
         if (at != NULL)
           {
           len += strlen(at);
-          usr_at_host = (char *)malloc(len * sizeof(char));
+          usr_at_host = (char *)calloc(len, sizeof(char));
           snprintf(usr_at_host,len,"%s%s",
             puser,
             at);
           }
         else
           {
-          usr_at_host = (char *)malloc(len * sizeof(char));
+          usr_at_host = (char *)calloc(len, sizeof(char));
 
           snprintf(usr_at_host,len,"%s",
             puser);

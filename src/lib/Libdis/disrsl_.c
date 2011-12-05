@@ -122,7 +122,7 @@ int disrsl_(
     {
     cp = discul_(scratch + DIS_BUFSIZ, ULONG_MAX, &ulmaxdigs);
 
-    ulmax = (char *)malloc(ulmaxdigs);
+    ulmax = (char *)calloc(1, ulmaxdigs);
 
     if (ulmax == NULL)
       {

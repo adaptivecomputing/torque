@@ -1876,9 +1876,9 @@ struct pidl *get_cpuset_pidlist(
     if ((PidIsPid(pid)) != 1)
       continue;
 
-    if ((pp = (struct pidl *)malloc(sizeof(struct pidl))) == NULL)
+    if ((pp = (struct pidl *)calloc(1,sizeof(struct pidl))) == NULL)
       {
-      log_err(errno, id, "malloc");
+      log_err(errno, id, "calloc");
       break;
       }
 
@@ -1965,9 +1965,9 @@ struct pidl *get_cpuset_pidlist(
             if ((PidIsPid(pid)) != 1)
               continue;
 
-            if ((pp = (struct pidl *)malloc(sizeof(struct pidl))) == NULL)
+            if ((pp = (struct pidl *)calloc(1, sizeof(struct pidl))) == NULL)
               {
-              log_err(errno, id, "malloc");
+              log_err(errno, id, "calloc");
               break;
               }
             else

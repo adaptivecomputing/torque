@@ -137,7 +137,7 @@ int decode_DIS_Rescl(
 
   if (ct)
     {
-    if ((ppc = (char **)malloc(ct * sizeof(char *))) == NULL)
+    if ((ppc = (char **)calloc(ct, sizeof(char *))) == NULL)
       {
       return(PBSE_RMSYSTEM);
       }

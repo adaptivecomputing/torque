@@ -146,7 +146,7 @@ int decode_DIS_CopyFiles(
   while (pair_ct--)
     {
 
-    ppair = (struct rqfpair *)malloc(sizeof(struct rqfpair));
+    ppair = (struct rqfpair *)calloc(1, sizeof(struct rqfpair));
 
     if (ppair == (struct rqfpair *)0)
       return DIS_NOMALLOC;

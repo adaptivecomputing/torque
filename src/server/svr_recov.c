@@ -544,7 +544,7 @@ int str_to_attr(
 
       unescape_xml(val,buf,sizeof(buf));
 
-      attr[index].at_val.at_str = (char *)malloc(strlen(buf)+1);
+      attr[index].at_val.at_str = (char *)calloc(1, strlen(buf)+1);
 
       if (attr[index].at_val.at_str == NULL)
         {
@@ -1129,7 +1129,7 @@ void recov_acl(
     return;  /* no data */
     }
 
-  buf = malloc((size_t)sb.st_size + 1); /* 1 extra for added null */
+  buf = calloc(1, (size_t)sb.st_size + 1); /* 1 extra for added null */
 
   if (buf == NULL)
     {

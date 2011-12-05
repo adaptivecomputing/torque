@@ -280,7 +280,7 @@ add_event(tm_event_t event, tm_node_id node, int type, void *info)
   {
   event_info  *ep, **head;
 
-  ep = (event_info *)malloc(sizeof(event_info));
+  ep = (event_info *)calloc(1, sizeof(event_info));
   assert(ep != NULL);
 
   head = &event_hash[event % EVENT_HASH];
@@ -369,7 +369,7 @@ new_task(char *jobid, tm_node_id node, tm_task_id task)
     return task;
     }
 
-  if ((tp = (task_info *)malloc(sizeof(task_info))) == NULL)
+  if ((tp = (task_info *)calloc(1, sizeof(task_info))) == NULL)
     return TM_NULL_TASK;
 
   head = &task_hash[task % TASK_HASH];
@@ -961,7 +961,7 @@ tm_taskinfo(
 
   DIS_tcp_wflush(local_conn);
 
-  thold = (struct taskhold *)malloc(sizeof(struct taskhold));
+  thold = (struct taskhold *)calloc(1, sizeof(struct taskhold));
 
   assert(thold != NULL);
 
@@ -1036,7 +1036,7 @@ int tm_rescinfo(
 
   DIS_tcp_wflush(local_conn);
 
-  rhold = (struct reschold *)malloc(sizeof(struct reschold));
+  rhold = (struct reschold *)calloc(1, sizeof(struct reschold));
 
   assert(rhold != NULL);
 
@@ -1133,7 +1133,7 @@ tm_subscribe(
 
   DIS_tcp_wflush(local_conn);
 
-  ihold = (struct infohold *)malloc(sizeof(struct infohold));
+  ihold = (struct infohold *)calloc(1, sizeof(struct infohold));
 
   assert(ihold != NULL);
 

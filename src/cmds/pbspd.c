@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 
   len = strlen(argv[1]) + strlen(job_key) + 1;
 
-  if ((jk  = (char *)malloc(len)) == 0)
+  if ((jk  = (char *)calloc(1, len)) == 0)
     {
     fprintf(stderr, "%s: cannot allocate memory\n", argv[0]);
     return 1;

@@ -1303,9 +1303,9 @@ void initialize_globals(void)
 
   msg_daemonname = strdup(pbs_current_user);
 
-  server.sv_qs_mutex = malloc(sizeof(pthread_mutex_t));
-  server.sv_attr_mutex = malloc(sizeof(pthread_mutex_t));
-  server.sv_jobstates_mutex = malloc(sizeof(pthread_mutex_t));
+  server.sv_qs_mutex = calloc(1, sizeof(pthread_mutex_t));
+  server.sv_attr_mutex = calloc(1, sizeof(pthread_mutex_t));
+  server.sv_jobstates_mutex = calloc(1, sizeof(pthread_mutex_t));
 
   pthread_mutex_init(server.sv_qs_mutex,NULL);
   pthread_mutex_init(server.sv_attr_mutex,NULL);
@@ -2890,11 +2890,11 @@ int svr_restart()
     {
     free(ArgV[0]);
     
-    ArgV[0] = malloc(sizeof(char) * (strlen(FullCmd) + 1));
+    ArgV[0] = calloc(sizeof(char), (strlen(FullCmd) + 1));
     
     if (ArgV[0] == NULL)
       {
-      /* could not malloc */
+      /* could not calloc */
       
       log_err(errno,id,"ERROR:     cannot allocate memory for full command, cannot restart\n");
       

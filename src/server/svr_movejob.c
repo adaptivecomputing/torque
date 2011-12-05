@@ -1010,7 +1010,7 @@ int net_move(
 
   svr_setjobstate(jobp, JOB_STATE_TRANSIT, JOB_SUBSTATE_TRNOUT, TRUE);
 
-  args = malloc(sizeof(send_job_request));
+  args = calloc(1, sizeof(send_job_request));
 
   if (args != NULL)
     {

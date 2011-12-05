@@ -522,7 +522,7 @@ void job_free(
                log_buffer);
     }
 
-  /* remove any malloc working attribute space */
+  /* remove any calloc working attribute space */
 
   for (i = 0;i < JOB_ATR_LAST;i++)
     {
@@ -778,7 +778,7 @@ void job_purge(
   static char           id[] = "job_purge";
   job_file_delete_info *jfdi;
 
-  jfdi = malloc(sizeof(job_file_delete_info));
+  jfdi = calloc(1, sizeof(job_file_delete_info));
 
   if (jfdi == NULL)
     {

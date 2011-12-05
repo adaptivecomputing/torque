@@ -10,7 +10,7 @@
  * Please do not touch */
 void *malloc_track(size_t __size)
   {
-  return malloc(__size);
+  return calloc(1, __size);
   }
 
 void *calloc_track(size_t __nmemb, size_t __size)

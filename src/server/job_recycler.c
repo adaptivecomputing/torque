@@ -95,7 +95,7 @@ void initialize_recycler()
   initialize_all_jobs_array(&recycler.rc_jobs);
   recycler.rc_iter = 0;
 
-  recycler.rc_mutex = malloc(sizeof(pthread_mutex_t));
+  recycler.rc_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(recycler.rc_mutex,NULL);
   } /* END initialize_recycler() */
 

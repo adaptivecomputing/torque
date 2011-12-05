@@ -747,17 +747,17 @@ chkerr:
 
   if (rc != 0)
     {
-    if ((error_buf = malloc(LOG_BUF_SIZE)) == NULL)
+    if ((error_buf = calloc(1, LOG_BUF_SIZE)) == NULL)
       {
       if (chk_file_sec_stderr)
         {
-        fprintf(stdout, "chk_tree: Malloc failed: error #%d: (%s)\n",
+        fprintf(stdout, "chk_tree: calloc failed: error #%d: (%s)\n",
                 rc,
                 strerror(rc) ? strerror(rc) : "UNKNOWN");
         }
       else
         {
-        log_err(rc, "chk_file_sec", "Malloc failed");
+        log_err(rc, "chk_file_sec", "calloc failed");
         }
       }
     else

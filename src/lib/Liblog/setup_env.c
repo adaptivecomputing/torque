@@ -150,7 +150,7 @@ int setup_env(
 
         if (evbufsize < len)
           {
-          if ((envbuf = malloc(PBS_ENV_CHUNCK)) == NULL)
+          if ((envbuf = calloc(1, PBS_ENV_CHUNCK)) == NULL)
             {
             fclose(efile);
 

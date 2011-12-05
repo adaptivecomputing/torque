@@ -211,7 +211,7 @@ parse_at_list(char *list, int use_count, int abs_path)
 
   if (strlen(list) == 0) return (1);
 
-  if ((l = (char *)malloc(strlen(list) + 1)) == (char *)0)
+  if ((l = (char *)calloc(1, strlen(list) + 1)) == (char *)0)
     {
     fprintf(stderr, "Out of memory.\n");
     exit(1);
@@ -264,7 +264,7 @@ parse_at_list(char *list, int use_count, int abs_path)
         ph = ph->next;
         }
 
-      nh = (struct hostlist *) malloc(sizeof(struct hostlist));
+      nh = (struct hostlist *) calloc(1, sizeof(struct hostlist));
 
       if (!nh)
         {

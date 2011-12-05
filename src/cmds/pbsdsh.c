@@ -513,7 +513,7 @@ char *gethostnames(
 
   if (!allnodes || !rescinfo || !rescevent)
     {
-    fprintf(stderr, "%s: malloc failed!\n",
+    fprintf(stderr, "%s: calloc failed!\n",
       id);
     tm_finalize();
 
@@ -715,11 +715,11 @@ int main(
   int posixly_correct_set_by_caller = 0;
   char *envstr;
 
-  id = malloc(60 * sizeof(char));
+  id = calloc(60, sizeof(char));
 
   if (id == NULL)
     {
-    fprintf(stderr, "%s: malloc failed, (%d)\n",
+    fprintf(stderr, "%s: calloc failed, (%d)\n",
       id,
       errno);
 
@@ -940,7 +940,7 @@ int main(
     return(1);
     }
 
-  /* malloc space for various arrays based on number of nodes/tasks */
+  /* calloc space for various arrays based on number of nodes/tasks */
 
   tid = (tm_task_id *)calloc(numnodes, sizeof(tm_task_id));
 

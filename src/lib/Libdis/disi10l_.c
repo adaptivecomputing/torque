@@ -127,11 +127,11 @@ disi10l_(void)
 
   tabsize = (dis_lmx10 + 1) * sizeof(dis_long_double_t);
 
-  dis_lp10 = (dis_long_double_t *)malloc(tabsize);
+  dis_lp10 = (dis_long_double_t *)calloc(1, tabsize);
 
   assert(dis_lp10 != NULL);
 
-  dis_ln10 = (dis_long_double_t *)malloc(tabsize);
+  dis_ln10 = (dis_long_double_t *)calloc(1, tabsize);
 
   assert(dis_ln10 != NULL);
 

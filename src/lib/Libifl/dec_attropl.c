@@ -136,7 +136,7 @@ int decode_DIS_attropl(
 
     if (rc) break;
 
-    pat = malloc(sizeof(struct attropl));
+    pat = calloc(1, sizeof(struct attropl));
 
     if (pat == 0)
       return DIS_NOMALLOC;

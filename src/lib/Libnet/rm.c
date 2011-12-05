@@ -142,7 +142,7 @@ static int addrm(
 
   struct out *op, **head;
 
-  if ((op = (struct out *)malloc(sizeof(struct out))) == NULL)
+  if ((op = (struct out *)calloc(1, sizeof(struct out))) == NULL)
     {
     return(errno);
     }

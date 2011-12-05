@@ -779,7 +779,7 @@ resource *find_resc_entry(
  * The parent attribute is marked with ATR_VFLAG_SET and ATR_VFLAG_MODIFY
  *
  * Returns: pointer to the newly added entry or NULL if unable
- *   to add it (malloc failed).  If the resource already
+ *   to add it (calloc failed).  If the resource already
  *   exists (it shouldn't) then that one is returned.
  */
 
@@ -807,7 +807,7 @@ resource *add_resource_entry(
     pr = (resource *)GET_NEXT(pr->rs_link);
     }
 
-  new = (resource *)malloc(sizeof(resource));
+  new = (resource *)calloc(1, sizeof(resource));
 
   if (new == (resource *)0)
     {

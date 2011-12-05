@@ -713,7 +713,7 @@ static int initialize_pbsnode(
   pnode->nd_gpustatus   = NULL;
   pnode->nd_ngpustatus  = 0;
 
-  pnode->nd_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+  pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
     {
     log_err(ENOMEM,id,"Could not allocate memory for the node's mutex");
@@ -995,7 +995,7 @@ static int process_host_name_part(
       {
       size = sizeof(u_long) * (ipcount + 1);
       
-      *pul = (u_long *)malloc(size);  /* zero-terminate list */
+      *pul = (u_long *)calloc(1, size);  /* zero-terminate list */
       }
     else
       {
@@ -1238,7 +1238,7 @@ struct prop *init_prop(
 
   struct prop *pp;
 
-  if ((pp = (struct prop *)malloc(sizeof(struct prop))) != NULL)
+  if ((pp = (struct prop *)calloc(1, sizeof(struct prop))) != NULL)
     {
     pp->name    = pname;
     pp->mark    = 0;
@@ -1267,7 +1267,7 @@ static struct pbssubn *create_subnode(
 
   struct pbssubn **nxtsn;
 
-  psubn = (struct pbssubn *)malloc(sizeof(struct pbssubn));
+  psubn = (struct pbssubn *)calloc(1, sizeof(struct pbssubn));
 
   if (psubn == NULL)
     {
@@ -1314,7 +1314,7 @@ int create_a_gpusubnode(
 
   {
   static char *id = "create_a_gpusubnode";
-  struct gpusubn *tmp = malloc(sizeof(struct gpusubn) * (1 + pnode->nd_ngpus));
+  struct gpusubn *tmp = calloc((1 + pnode->nd_ngpus), sizeof(struct gpusubn));
 
   if (tmp == NULL)
     {
@@ -1381,7 +1381,7 @@ int copy_properties(
  
   /* allocate the properties for the numa node */
   need = sizeof(struct array_strings) + main_node->as_npointers - 1;
-  dest->nd_prop = (struct array_strings *)malloc(need);
+  dest->nd_prop = (struct array_strings *)calloc(1, need);
   sub  = dest->nd_prop;
 
   /* copy simple values */
@@ -1390,7 +1390,7 @@ int copy_properties(
   sub->as_bufsize   = main_node->as_bufsize;
 
   /* allocate the buffer */
-  sub->as_buf = (char *)malloc(sub->as_bufsize);
+  sub->as_buf = (char *)calloc(1, sub->as_bufsize);
   memcpy(sub->as_buf,main_node->as_buf,sub->as_bufsize);
 
   /* set sub's offset to the same as main_nodes. Ugly and convoluted
@@ -1510,7 +1510,7 @@ int setup_node_boards(
 
   for (i = 0; i < pnode->num_node_boards; i++)
     {
-    pn = (struct pbsnode *)malloc(sizeof(struct pbsnode));
+    pn = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
 
     /* each numa node just has a number for a name */
     snprintf(pname,sizeof(pname),"%s-%d",
@@ -2564,7 +2564,7 @@ int numa_str_action(
       if (np->numa_str != NULL)
         {
         len = strlen(np->numa_str) + 1;
-        new->at_val.at_str = (char *)malloc(len * sizeof(char));
+        new->at_val.at_str = (char *)calloc(len, sizeof(char));
 
         if (new->at_val.at_str == NULL)
           return(PBSE_SYSTEM);
@@ -2581,7 +2581,7 @@ int numa_str_action(
       if (new->at_val.at_str != NULL)
         {
         len = strlen(new->at_val.at_str) + 1;
-        np->numa_str = (char *)malloc(len * sizeof(char));
+        np->numa_str = (char *)calloc(len, sizeof(char));
 
         if (np->numa_str == NULL)
           return(PBSE_SYSTEM);
@@ -2620,7 +2620,7 @@ int gpu_str_action(
       if (np->gpu_str != NULL)
         {
         len = strlen(np->gpu_str) + 1;
-        new->at_val.at_str = (char *)malloc(len * sizeof(char));
+        new->at_val.at_str = (char *)calloc(len, sizeof(char));
 
         if (new->at_val.at_str == NULL)
           return(PBSE_SYSTEM);
@@ -2637,7 +2637,7 @@ int gpu_str_action(
       if (new->at_val.at_str != NULL)
         {
         len = strlen(new->at_val.at_str) + 1;
-        np->gpu_str = (char *)malloc(len * sizeof(char));
+        np->gpu_str = (char *)calloc(len, sizeof(char));
 
         if (np->gpu_str == NULL)
           return(PBSE_SYSTEM);
@@ -2685,7 +2685,7 @@ int create_partial_pbs_node(
     }
 
   ntype = NTYPE_CLUSTER;
-  pul = malloc(sizeof(u_long) * 2);
+  pul = calloc(2, sizeof(u_long));
   if (!pul)
     {
     free(pnode);
@@ -2756,7 +2756,7 @@ int create_partial_pbs_node(
 node_iterator *get_node_iterator()
 
   {
-  node_iterator *iter = (node_iterator *)malloc(sizeof(node_iterator));
+  node_iterator *iter = (node_iterator *)calloc(1, sizeof(node_iterator));
 
   if (iter != NULL)
     {
@@ -2887,7 +2887,7 @@ void initialize_all_nodes_array(
   an->ra = initialize_resizable_array(INITIAL_NODE_SIZE);
   an->ht = create_hash(INITIAL_HASH_SIZE);
 
-  an->allnodes_mutex = malloc(sizeof(pthread_mutex_t));
+  an->allnodes_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(an->allnodes_mutex,NULL);
   } /* END initialize_all_nodes_array() */
 
@@ -3106,7 +3106,7 @@ void initialize_hello_container(
   {
   hc->ra = initialize_resizable_array(INITIAL_NODE_SIZE);
 
-  hc->hello_mutex = malloc(sizeof(pthread_mutex_t));
+  hc->hello_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(hc->hello_mutex, NULL);
   } /* END initialize_hello_container() */
 

@@ -217,7 +217,7 @@ char *x11_get_proto(
     return(NULL);
     }
 
-  authstring = malloc(strlen(proto) + strlen(data) + strlen(screen) + 4);
+  authstring = calloc(1, strlen(proto) + strlen(data) + strlen(screen) + 4);
 
   if (authstring == NULL)
     {
@@ -282,7 +282,7 @@ char *smart_strtok(
   start = *ptrPtr;
 
   tmpLineSize = (line == NULL) ? strlen(*ptrPtr) + 1 : strlen(line) + 1;
-  tmpLine = (char *)malloc(tmpLineSize * sizeof(char));
+  tmpLine = (char *)calloc(1, tmpLineSize * sizeof(char));
 
   tmpLine[0] = '\0';
 
@@ -1022,7 +1022,7 @@ void make_argv(
   int len;
   char quote;
 
-  buffer = malloc(strlen(line) + 1);
+  buffer = calloc(1, strlen(line) + 1);
 
   if (buffer == NULL)
     {
@@ -1078,7 +1078,7 @@ void make_argv(
       if (argv[*argc] != NULL)
         free(argv[*argc]);
 
-      argv[*argc] = (char *)malloc(len + 1);
+      argv[*argc] = (char *)calloc(1, len + 1);
 
       if (argv[*argc] == NULL)
         {
@@ -1113,7 +1113,7 @@ void make_argv(
     if (argv[*argc] != NULL)
       free(argv[*argc]);
 
-    argv[*argc] = (char *) malloc(len + 1);
+    argv[*argc] = (char *) calloc(1, len + 1);
 
     if (argv[*argc] == NULL)
       {
@@ -1877,7 +1877,7 @@ void x11handler(
 
   calloc_or_fail(mm, (char **)&socks, sizeof(struct pfwdsock) * NUM_SOCKS, "x11handler");
 /*    {
-    perror("x11handler malloc: ");
+    perror("x11handler calloc: ");
     exit(EXIT_FAILURE);
     }
     */
@@ -3163,7 +3163,7 @@ void process_opts(
           if (v_value != NULL)
             free(v_value);
 
-          v_value = (char *)malloc(strlen(optarg) + 1);
+          v_value = (char *)calloc(1, strlen(optarg) + 1);
 
           if (v_value == NULL)
             {
@@ -3251,7 +3251,7 @@ void process_opts(
               Depend_opt = passet;
               */
 
-              pdepend = malloc(PBS_DEPEND_LEN);
+              pdepend = calloc(1, PBS_DEPEND_LEN);
 
               if ((pdepend == NULL) ||
                    (rc = parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN)))

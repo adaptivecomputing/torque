@@ -774,7 +774,7 @@ int main(
         }
       else
         {
-        nodeargs = malloc(2 * sizeof(char **));
+        nodeargs = calloc(2, sizeof(char **));
         nodeargs[0] = strdup("");
         nodeargs[1] = '\0';
         }

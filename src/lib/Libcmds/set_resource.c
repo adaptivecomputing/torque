@@ -217,7 +217,7 @@ int set_resources(
 
     /* Allocate memory for the attrl structure */
 
-    attr = (struct attrl *)malloc(sizeof(struct attrl));
+    attr = (struct attrl *)calloc(1, sizeof(struct attrl));
 
     if (attr == NULL)
       {
@@ -230,7 +230,7 @@ int set_resources(
 
     /* Allocate memory for the attribute name and copy */
 
-    str = (char *)malloc(strlen(ATTR_l) + 1);
+    str = (char *)calloc(1, strlen(ATTR_l) + 1);
 
     if (str == NULL)
       {
@@ -258,7 +258,7 @@ int set_resources(
       }
     else
       {
-      str = (char *)malloc(len + 1);
+      str = (char *)calloc(1, len + 1);
       
       if (str == NULL)
         {
@@ -284,7 +284,7 @@ int set_resources(
         char *gpu_suffix = "gpus=";
         int   gpu_len = strlen(gpu_suffix) + 1 + (e - v);
 
-        str = malloc(gpu_len);
+        str = calloc(1, gpu_len);
         
         if (str == NULL)
           {
@@ -300,7 +300,7 @@ int set_resources(
         }
       else
         {
-        str = (char *)malloc(e - v + 1);
+        str = (char *)calloc(1, e - v + 1);
         
         if (str == NULL)
           {
@@ -318,7 +318,7 @@ int set_resources(
       }
     else
       {
-      str = (char *)malloc(1);
+      str = (char *)calloc(1, 1);
 
       if (str == NULL)
         {

@@ -208,7 +208,7 @@ void req_track(
         {
         /* FAILURE */
 
-        log_err(errno, "req_track", "malloc failed");
+        log_err(errno, "req_track", "calloc failed");
 
         req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 

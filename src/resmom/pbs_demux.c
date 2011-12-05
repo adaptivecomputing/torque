@@ -255,7 +255,7 @@ int main(
 
   maxfd = sysconf(_SC_OPEN_MAX);
 
-  routem = (struct routem *)malloc(maxfd * sizeof(struct routem));
+  routem = (struct routem *)calloc(maxfd, sizeof(struct routem));
 
   if (routem == NULL)
     {

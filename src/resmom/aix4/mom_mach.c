@@ -397,11 +397,11 @@ void dep_initialize(void)
     log_err(errno, id, "F_SETFD");
     }
 
-  if ((proc_tbl = malloc(ASIZE * sizeof(struct procsinfo))) == NULL)
+  if ((proc_tbl = calloc(1, ASIZE * sizeof(struct procsinfo))) == NULL)
     {
     /* FAILURE - cannot alloc memory */
 
-    log_err(errno,"dep_initialize","malloc failure");
+    log_err(errno,"dep_initialize","calloc failure");
 
     return;
     }
@@ -1044,7 +1044,7 @@ mom_open_poll(void)
 
   DBPRT(("%s: entered\n", id))
 
-  proc_tbl = malloc(ASIZE * sizeof(struct procsinfo));
+  proc_tbl = calloc(ASIZE, sizeof(struct procsinfo));
   proctot = ASIZE;
 
   return (PBSE_NONE);

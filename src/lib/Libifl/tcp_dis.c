@@ -896,13 +896,12 @@ void DIS_tcp_setup(
   lock_tcp_table();
   if (tcparray[fd] == NULL)
     {
-    if ((tcparray[fd] = (struct tcp_chan *)malloc(sizeof(struct tcp_chan))) == NULL)
+    if ((tcparray[fd] = (struct tcp_chan *)calloc(1, sizeof(struct tcp_chan))) == NULL)
       {
-      log_err(ENOMEM, "DIS_tcp_setup", "malloc failure");
+      log_err(ENOMEM, "DIS_tcp_setup", "calloc failure");
       }
     else
       {
-      memset(tcparray[fd], 0, sizeof(struct tcp_chan));
       tcp_setup = TRUE;
       }
     }

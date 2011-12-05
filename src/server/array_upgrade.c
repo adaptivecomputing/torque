@@ -118,7 +118,7 @@ int array_upgrade_v1(job_array *pa, int fds, int version, int *old_version)
 
   if (old_array_info.num_cloned < old_array_info.array_size)
     {
-    rn = (array_request_node*)malloc(sizeof(array_request_node));
+    rn = (array_request_node*)calloc(1, sizeof(array_request_node));
     rn->start = old_array_info.num_cloned - 1;
     rn->end = old_array_info.array_size - 1;
 

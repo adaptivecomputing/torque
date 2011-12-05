@@ -963,7 +963,7 @@ void setup_notification(
     /* call it offline until after all nodes get the new ipaddr */
     pnode->nd_state |= INUSE_OFFLINE;
 
-    nnew = malloc(sizeof(new_node));
+    nnew = calloc(1, sizeof(new_node));
 
     if (nnew == NULL)
       {
@@ -982,7 +982,7 @@ void setup_notification(
 
   if (addrnote_mutex == NULL)
     {
-    addrnote_mutex = malloc(sizeof(pthread_mutex_t));
+    addrnote_mutex = calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(addrnote_mutex,NULL);
     }
 
@@ -1284,7 +1284,7 @@ int is_stat_get(
       {
       /* walk job list reported by mom */
       size_t  len = strlen(ret_info) + PBS_MAXNODENAME + 2;
-      char   *str = malloc(len);
+      char   *str = calloc(1, len);
 
       sprintf(str, "%s:%s", np->nd_name, ret_info);
       enqueue_threadpool_request(sync_node_jobs, str);
@@ -2531,7 +2531,7 @@ void is_request(
 
   static char id[] = "is_request";
 
-  args = (int *)malloc(sizeof(int) * 2);
+  args = (int *)calloc(2, sizeof(int));
 
   if (args == NULL)
     {
@@ -3307,7 +3307,7 @@ static int proplist(
 #endif  /* NVIDIA_GPUS */
     else
       {
-      pp = (struct prop *)malloc(sizeof(struct prop));
+      pp = (struct prop *)calloc(1, sizeof(struct prop));
 
       pp->mark = 1;
       pp->name = strdup(pname);
@@ -3367,7 +3367,7 @@ static char *mod_spec(
 
   len = strlen(global);
 
-  line = malloc(nsubspec * (len + 1) + strlen(spec) + 1);
+  line = calloc(1, nsubspec * (len + 1) + strlen(spec) + 1);
 
   if (line == NULL)
     {
@@ -3753,7 +3753,7 @@ int save_node_for_adding(
   else
     {
     /* second */
-    if ((next = malloc(sizeof(node_job_add_info))) == NULL)
+    if ((next = calloc(1, sizeof(node_job_add_info))) == NULL)
       {
       log_err(ENOMEM, id, "Cannot allocate memory!");
 
@@ -3932,8 +3932,8 @@ static int node_spec(
     all_reqs.num_reqs++;
 
   /* allocate space in all_reqs */
-  all_reqs.reqs      = malloc(sizeof(single_spec_data) * all_reqs.num_reqs);
-  all_reqs.req_start = malloc(sizeof(char *) * all_reqs.num_reqs);
+  all_reqs.reqs      = calloc(all_reqs.num_reqs, sizeof(single_spec_data));
+  all_reqs.req_start = calloc(all_reqs.num_reqs, sizeof(char *));
 
   if ((all_reqs.reqs == NULL) ||
       (all_reqs.req_start == NULL))
@@ -4306,7 +4306,7 @@ int add_job_to_node(
   if (jp == NULL)
     {
     /* add job to front of subnode job array */
-    jp = (struct jobinfo *)malloc(sizeof(struct jobinfo));
+    jp = (struct jobinfo *)calloc(1, sizeof(struct jobinfo));
 
     jp->next = snp->jobs;
     snp->jobs = jp;
@@ -4383,7 +4383,7 @@ int build_host_list(
   struct howl *hp;
 
   /* initialize the pointers */
-  curr = (struct howl *)malloc(sizeof(struct howl));
+  curr = (struct howl *)calloc(1, sizeof(struct howl));
   curr->order = pnode->nd_order;
   curr->name  = pnode->nd_name;
   curr->index = snp->index;
@@ -4425,12 +4425,12 @@ int add_gpu_to_hostlist(
   static char *gpu = "gpu";
 
   /* create gpu_name */
-  gpu_name = malloc(strlen(pnode->nd_name) + strlen(gpu) + 2);
+  gpu_name = calloc(1, strlen(pnode->nd_name) + strlen(gpu) + 2);
   sprintf(gpu_name, "%s-%s", pnode->nd_name, gpu);
 
 
   /* initialize the pointers */
-  curr = (struct howl *)malloc(sizeof(struct howl));
+  curr = (struct howl *)calloc(1, sizeof(struct howl));
   curr->order = pnode->nd_order;
   curr->name  = gpu_name;
   curr->index = gn->index;
@@ -4652,7 +4652,7 @@ int translate_howl_to_string(
     count++;
     }
 
-  if ((str = malloc(len + 1)) == NULL)
+  if ((str = calloc(1, len + 1)) == NULL)
     {
     log_err(ENOMEM, id, "Cannot allocate memory!");
 
@@ -4667,7 +4667,7 @@ int translate_howl_to_string(
   if (port == TRUE)
     {
     /* port list will have a string of sister port addresses */
-    if ((portlist = malloc((count * PBS_MAXPORTNUM) + count)) == NULL)
+    if ((portlist = calloc(1, (count * PBS_MAXPORTNUM) + count)) == NULL)
       {
       log_err(ENOMEM, id, "Cannot allocate memory!");
       
@@ -5728,7 +5728,7 @@ static void set_one_old(
           {
           snp->inuse = shared;
           
-          jp = (struct jobinfo *)malloc(sizeof(struct jobinfo));
+          jp = (struct jobinfo *)calloc(1, sizeof(struct jobinfo));
           
           /* NOTE:  should report failure if jp == NULL (NYI) */
           if (jp != NULL)
