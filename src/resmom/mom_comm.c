@@ -100,7 +100,6 @@
 #include <sys/wait.h>
 
 #include "libpbs.h"
-#include "pbs_ifl.h"
 #include "list_link.h"
 #include "attribute.h"
 #include "resource.h"
@@ -122,6 +121,7 @@
 #include "svrfunc.h"
 #include "u_tree.h"
 #include "utils.h"
+#include "../lib/Libnet/lib_net.h" /* get_hostaddr_hostent_af */
 #include "mom_server.h"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
@@ -237,6 +237,7 @@ extern int use_cpusets(job *);
 /* END external functions */
 
 int get_reply_stream(job *);
+int get_radix_reply_stream(job *);
 int run_prologue_scripts(job *pjob);
 int get_job_struct(job **pjob, char *jobid, int command, int stream, struct sockaddr_in *addr, tm_node_id nodeid);
 char *cat_dirs(char *root, char *base);
@@ -1841,6 +1842,11 @@ int contact_sisters(
   int                ret;
   tlist_head         phead;
   attribute         *pattr;
+  
+  char *host_addr = NULL;
+  int addr_len;
+  int local_errno;
+  unsigned short af_family;
 
   /* we have to have a sister count of 2 or more for
      this to work */
@@ -1887,13 +1893,28 @@ int contact_sisters(
      our intermediate MOMs in our job_radix */
   sister_list = allocate_sister_list(mom_radix);
 
-  /* First add this MOM as the first entry for everyone in the
+  /* We need to get the address and port of the MOM who
+     called us (pjob->ji_sister[0]) so we can contact
+     her when we call back later */
+  np = &pjob->ji_sisters[0];
+  ret = get_hostaddr_hostent_af(&local_errno, np->hn_host, &af_family, &host_addr, &addr_len);
+  memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
+  np->sock_addr.sin_port = htons(np->hn_port);
+  np->sock_addr.sin_family = af_family;
+
+  /* Set this MOM as the first entry for everyone in the
      job_radix. This is how the children will know who
      called them. */
-  np = &pjob->ji_sisters[1];
+  index = 1;
   for (j = 0; j < mom_radix; j++)
     {
+    np = &pjob->ji_sisters[index];
     add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[j]);
+    ret = get_hostaddr_hostent_af(&local_errno, np->hn_host, &af_family, &host_addr, &addr_len);
+    memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
+    np->sock_addr.sin_port = htons(np->hn_port);
+    np->sock_addr.sin_family = af_family;
+    index++;
     }
 
   index = 2;   /* index 2 is the first child node. */
@@ -2015,20 +2036,20 @@ int reply_to_join_job_as_sister(
 
   for (retry_count = 0; retry_count < 5; retry_count++)
     {
-    if (IS_VALID_STREAM(reply_stream = get_reply_stream(pjob)))
+    if(job_radix)
+      reply_stream = get_radix_reply_stream(pjob);
+    else
+      reply_stream = get_reply_stream(pjob);
+    if (IS_VALID_STREAM(reply_stream))
       {
       DIS_tcp_setup(reply_stream);
       
-      if (job_radix == FALSE)
-        ret = im_compose(reply_stream, pjob->ji_qs.ji_jobid, cookie, command, event, fromtask);
-      else
-        ret = im_compose(reply_stream, pjob->ji_qs.ji_jobid, cookie, command, event, fromtask);
-      
+      ret = im_compose(reply_stream, pjob->ji_qs.ji_jobid, cookie, command, event, fromtask);
       if (ret == DIS_SUCCESS)
         {
         if ((ret = DIS_tcp_wflush(reply_stream)) == DIS_SUCCESS)
           {
-          read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB, &ret);
+          ret = read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB, &ret);
           }
         }
       
@@ -2282,7 +2303,12 @@ int im_join_job_as_sister(
     }
 
   /* write a reply back */
-  write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB, PBSE_NONE);
+  if (job_radix == FALSE)
+    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB, PBSE_NONE);
+  else
+    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, PBSE_NONE);
+
+  close(stream);
   
   strcpy(pjob->ji_qs.ji_jobid, jobid);
   
@@ -2295,7 +2321,7 @@ int im_join_job_as_sister(
   if ((job_radix == TRUE) &&
       (sister_count > 2))
     {
-    pjob->ji_qs.ji_svrflags = JOB_SVFLG_INTERMEDIATE_MOM;
+    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_INTERMEDIATE_MOM;
     }
 
   pjob->ji_qs.ji_un_type  = JOB_UNION_TYPE_MOM;
@@ -2481,28 +2507,44 @@ int im_join_job_as_sister(
     }
   else
     {
+    unsigned short af_family;
+    char *host_addr = NULL;
+    int  addr_len;
+    int  local_errno;
+
     /* handle the single contact case */
     if (job_radix == TRUE)
+      {
       sister_job_nodes(pjob,radix_hosts,radix_ports);
-    
-    /*
-     ** if certain resource limits require that the job usage be
-     ** polled, we link the job to mom_polljobs.
-     **
-     ** NOTE: we overload the job field ji_jobque for this as it
-     ** is not used otherwise by MOM
-     */
-    if (mom_do_poll(pjob))
-      append_link(&mom_polljobs, &pjob->ji_jobque, pjob);
-    
-    append_link(&svr_alljobs, &pjob->ji_alljobs, pjob);
-    
-    /* establish a connection and write the reply back */
-    if ((reply_to_join_job_as_sister(pjob, addr, cookie, event, fromtask, job_radix)) == DIS_SUCCESS)
-      ret = IM_DONE;
-    else
-      ret = IM_FAILURE;
+
+      np = &pjob->ji_sisters[0];
+      if(np != NULL)
+        {
+        ret = get_hostaddr_hostent_af(&local_errno, np->hn_host, &af_family, &host_addr, &addr_len);
+        memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
+        np->sock_addr.sin_port = htons(np->hn_port);
+        np->sock_addr.sin_family = af_family;
+        }
+      }
     }
+    
+  /*
+   ** if certain resource limits require that the job usage be
+   ** polled, we link the job to mom_polljobs.
+   **
+   ** NOTE: we overload the job field ji_jobque for this as it
+   ** is not used otherwise by MOM
+   */
+  if (mom_do_poll(pjob))
+    append_link(&mom_polljobs, &pjob->ji_jobque, pjob);
+  
+  append_link(&svr_alljobs, &pjob->ji_alljobs, pjob);
+  
+  /* establish a connection and write the reply back */
+  if ((reply_to_join_job_as_sister(pjob, addr, cookie, event, fromtask, job_radix)) == DIS_SUCCESS)
+    ret = IM_DONE;
+  else
+    ret = IM_FAILURE;
 
   return(ret);
   } /* END im_join_job_as_sister() */
@@ -4065,6 +4107,25 @@ int get_reply_stream(
   } /* END get_reply_stream() */
 
 
+/*
+ * get_radix_reply_stream
+ *
+ * NOTE: assumes pjob isn't NULL
+ * NOTE: this stream needs to be closed 
+ *
+ * @return the open stream to mother superior or intermmediate mom
+ * on a job radix, or -1 on error
+ */
+int get_radix_reply_stream(
+
+  job *pjob) /* I */
+
+  {
+  hnodent *np = pjob->ji_sisters;
+
+  return (tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr)));
+  } /* END get_reply_stream() */
+
 
 
 /* 
@@ -5300,12 +5361,12 @@ void im_request(
  
     case IM_ALL_OKAY:
     case IM_ERROR:
+    case IM_RADIX_ALL_OK:
  
       reply = 0;
  
        break;
  
-    case IM_RADIX_ALL_OK:
     case IM_KILL_JOB:
     case IM_KILL_JOB_RADIX:
  
@@ -5394,7 +5455,10 @@ void im_request(
     {
     for (nodeidx = 0;nodeidx < pjob->ji_numnodes;nodeidx++)
       {
-      np = &pjob->ji_hosts[nodeidx];
+      if(pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
+        np = &pjob->ji_sisters[nodeidx];
+      else
+        np = &pjob->ji_hosts[nodeidx];
  
       if ((ntohl(np->sock_addr.sin_addr.s_addr) == ipaddr) &&
           (htons(sender_port) == np->sock_addr.sin_port))
@@ -5716,12 +5780,13 @@ void im_request(
         ** )
         */
 
-      switch (event)
+      switch (event_com)
         {
         
         case IM_JOIN_JOB_RADIX:
           {
-          
+          write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, PBSE_NONE);
+
           pjob = find_job(jobid);
           if (pjob != NULL)
             {
@@ -5820,7 +5885,7 @@ void im_request(
                 
                 DIS_tcp_setup(stream);
                 
-                ep = event_alloc(IM_RADIX_ALL_OK, np, IM_JOIN_JOB_RADIX, TM_NULL_TASK);
+                ep = event_alloc(IM_RADIX_ALL_OK, np, event, TM_NULL_TASK);
                 
                 ret = im_compose(stream,jobid,cookie,IM_RADIX_ALL_OK,ep->ee_event,TM_NULL_TASK);
 

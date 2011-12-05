@@ -68,7 +68,7 @@ extern int   LOGLEVEL;
 extern char  *PJobSubState[];
 extern int   PBSNodeCheckProlog;
 extern int   PBSNodeCheckEpilog;
-
+extern char  *PMOMCommand[];
 
 /* external prototypes */
 
@@ -2080,10 +2080,6 @@ int send_job_obit_to_ms(
   if (np == NULL)
     return(-1);
 
-  if (LOGLEVEL >= 3)
-    {
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id, "sending IM_RADIX_ALL_OK");
-    }
 
   if (mom_radix < 2)
     {
@@ -2096,6 +2092,12 @@ int send_job_obit_to_ms(
     event = IM_KILL_JOB_RADIX;
     }
     
+  if (LOGLEVEL >= 3)
+    {
+    sprintf(log_buffer, "sending command %s", PMOMCommand[command]);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id, log_buffer);
+    }
+
   for (i = 0; i < 5; i++)
     {
     stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));

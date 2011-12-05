@@ -31,6 +31,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - add a unit testing framework (check). It is compiled with --with-check and tests 
       are executed using make check. The framework is complete but not many tests have 
       been written as of yet.
+  b - Made fixes so Job Radix will work properly. Still one but to fix at this point 
+      but code is good to check in without that fix.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

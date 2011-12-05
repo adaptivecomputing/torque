@@ -149,6 +149,7 @@ int get_trq_server_addr(
   int   rc = PBSE_NONE;
   int   local_errno;
   char *host_addr = NULL;
+  unsigned short af_family;
 
   if ((trq_server_name != NULL) && (strcmp(trq_server_name, server_name) == 0))
     {
@@ -160,7 +161,7 @@ int get_trq_server_addr(
     }
   else if (trq_server_name == NULL)
     {
-    if ((rc = get_hostaddr_hostent(&local_errno, server_name, server_addr, server_addr_len)) == PBSE_NONE)
+    if ((rc = get_hostaddr_hostent_af(&local_errno, server_name, &af_family, server_addr, server_addr_len)) == PBSE_NONE)
       {
       /* The following is not strictly thread safe.
        * It is set the first call, and if two calls to different systems
@@ -174,7 +175,7 @@ int get_trq_server_addr(
     }
   else
     {
-    if ((rc = get_hostaddr_hostent(&local_errno, server_name, server_addr, server_addr_len)) == PBSE_NONE)
+    if ((rc = get_hostaddr_hostent_af(&local_errno, server_name, &af_family, server_addr, server_addr_len)) == PBSE_NONE)
       {
       }
     }

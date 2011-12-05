@@ -1496,6 +1496,7 @@ int open_tcp_stream_to_sisters(
   int          i;
   hnodent     *np;
   int          stream;
+  int          exit_status;
   eventent     *ep;
   svrattrl     *psatl;
   
@@ -1571,7 +1572,10 @@ int open_tcp_stream_to_sisters(
 
     DIS_tcp_wflush(stream);
 
+    read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, &exit_status);
+
     close(stream);
+
     }
   
   return(PBSE_NONE);
@@ -5853,10 +5857,7 @@ int generate_cookie(
     }   /* END if () */
 
   return(PBSE_NONE);
-  } /* END generate_cookie() */
-
-
-
+  } /* END generate_cookie */
 
 
 /**
@@ -6019,18 +6020,22 @@ void start_exec(
 
     /* First mother superior needs to keep track of the sisters that will
        be in her first job_radix level */
-    /* create list of sisters for mother superiors radix */
+    /* create list of sisters for mother superiors radix.
+       This list will include mother superior and a list
+       of hosts equal to the size of the job_radix. */
     sister_list = allocate_sister_list(mom_radix);
 
     for (i = 0; i <= mom_radix; i++)
       {
       char *host_addr = NULL;
+      unsigned short af_family;
 
       np = &pjob->ji_hosts[i];
       add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[0]);
-      ret = get_hostaddr_hostent(&local_errno, np->hn_host, &host_addr, &addr_len);
+      ret = get_hostaddr_hostent_af(&local_errno, np->hn_host, &af_family, &host_addr, &addr_len);
       memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
       np->sock_addr.sin_port = htons(np->hn_port);
+      np->sock_addr.sin_family = af_family;
       }
 
     sister_job_nodes(pjob, sister_list[0]->host_list, sister_list[0]->port_list);

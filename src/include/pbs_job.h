@@ -543,7 +543,7 @@ struct job
   hnodent        *ji_hosts; /* ptr to job host management stuff */
   hnodent        *ji_sisters; /* ptr to job host management stuff for intermediate moms */
   vnodent        *ji_vnods; /* ptr to job vnode management stuff */
-  vnodent        *ji_sister_vnods; /* ptr to job vnode management stuff */
+  vnodent        *ji_sister_vnods; /* ptr to job vnode management stuff for job_radix requests*/
   noderes        *ji_resources; /* ptr to array of node resources */
   tlist_head     ji_tasks; /* list of task structs */
   tm_node_id     ji_nodekill; /* set to nodeid requesting job die */

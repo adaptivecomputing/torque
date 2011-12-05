@@ -518,6 +518,7 @@ int validate_socket(
   char          *err_msg = NULL;
   char          *l_server = NULL;
   int            l_server_len = 0;
+  unsigned short af_family;
   long long      code = -1;
   int            write_buf_len = 0;
   int            local_errno;
@@ -529,7 +530,7 @@ int validate_socket(
     snprintf(tmp_buf, LOCAL_LOG_BUF, "cannot get account info: uid %d, errno %d (%s)\n", (int)myrealuid, errno, strerror(errno));
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,tmp_buf);
     }
-  else if ((rc = get_hostaddr_hostent(&local_errno, AUTH_IP, &l_server, &l_server_len)) != PBSE_NONE)
+  else if ((rc = get_hostaddr_hostent_af(&local_errno, AUTH_IP, &af_family, &l_server, &l_server_len)) != PBSE_NONE)
     {
     }
   else if ((rc = get_parent_client_socket(psock, &parent_client_socket)) != PBSE_NONE)
