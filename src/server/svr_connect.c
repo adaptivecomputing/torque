@@ -423,6 +423,7 @@ char *parse_servername(
 
   int   i = 0;
   char *pc;
+  char *tmp_val = NULL;
 
   buf[0] = '\0';
 
@@ -434,7 +435,7 @@ char *parse_servername(
     {
     /* invalid name specified */
     tmp_val = (char *)calloc(1,1);
-    tmp_val[0] = "";
+    tmp_val[0] = '\0';
 
     return tmp_val;
     }
