@@ -7336,6 +7336,8 @@ int setup_program_environment(void)
 
     return(3);
     }
+  
+  things_to_resend = initialize_resizable_array(10);
 
   /* recover & abort jobs which were under MOM's control */
   log_record(
@@ -7409,7 +7411,6 @@ int setup_program_environment(void)
   received_statuses = initialize_resizable_array(2);
   received_table = create_hash(101);
 
-  things_to_resend = initialize_resizable_array(10);
 
   if ((received_statuses == NULL) ||
       (received_table == NULL))
