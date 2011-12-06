@@ -123,7 +123,6 @@
 #include "utils.h"
 #include "../lib/Libnet/lib_net.h" /* get_hostaddr_hostent_af */
 #include "mom_server.h"
-#include "start_exec.h" /* open_tcp_stream_to_sisters */
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
@@ -188,12 +187,12 @@ char noglobid[] = "none";
 
 extern int    LOGLEVEL;
 extern long   TJobStartBlockTime;
-enum rwhich {invalid, listen_out, listen_err, new_out, new_err};
+enum rwhich { invalid, listen_out, listen_err, new_out, new_err};
 struct routefd
   {
-    enum rwhich       r_which; /* Is this the listen out, err or new out and err sockets */
-      unsigned short    r_fd;
-        };
+  enum rwhich       r_which; /* Is this the listen out, err or new out and err sockets */
+  unsigned short    r_fd;
+  };
 
 fd_set readset;
 
@@ -207,7 +206,6 @@ extern int open_demux(u_long addr, int    port);
 extern int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval *y);
 int start_process(task *, char **, char **);
  
-/*extern int open_tcp_stream_to_sisters(job *, int, int, hnodent *, tm_event_t, struct radix_buf **, tlist_head *, int);*/
 int allocate_demux_sockets(job *pjob, int flag);
 
 extern void exec_bail(job *, int);

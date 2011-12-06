@@ -173,6 +173,7 @@ typedef struct killjob_reply_info
 
 int add_to_resend_things(resend_momcomm *mc);
 im_compose_info *create_compose_reply_info(char *, char *, hnodent *, int command, tm_event_t, tm_task_id);
+int open_tcp_stream_to_sisters(job *pjob, int com, tm_event_t parent_event, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag);
 
 /* public funtions within MOM */
 
