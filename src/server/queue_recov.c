@@ -109,7 +109,6 @@
 #include "utils.h"
 #include <pthread.h>
 #include "queue_func.h" /* que_alloc, que_free */
-#include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
 
 /* data global to this file */
 
@@ -161,10 +160,6 @@ int que_save(
     return(-1);
     }
 
-  lock_ss();
-
-  save_setup(fds);
-
   /* save basic queue structure (fixed length stuff) */
   snprintf(buf,sizeof(buf),
     "<queue>\n<modified>%d</modified>\n<type>%d</type>\n<create_time>%llu</create_time>\n<modify_time>%llu</modify_time>\n<name>%s</name>\n",
@@ -178,7 +173,6 @@ int que_save(
     {
     log_err(rc,myid,"unable to write to the file");
     close(fds);
-    unlock_ss();
     return(-1);
     }
 
@@ -188,7 +182,6 @@ int que_save(
     {
     log_err(-1, myid, "save_attr failed");
     close(fds);
-    unlock_ss();
     return(-1);
     }
 
@@ -198,19 +191,9 @@ int que_save(
     {
     log_err(rc,myid,"unable to write to the queue's file");
     close(fds);
-    unlock_ss();
     return(-1);
     }
 
-  if (save_flush() != 0)   /* flush the save buffer */
-    {
-    log_err(-1, myid, "save_flush failed");
-    close(fds);
-    unlock_ss();
-    return (-1);
-    }
-
-  unlock_ss();
   close(fds);
   unlink(namebuf1);
 

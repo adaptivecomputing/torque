@@ -33,32 +33,34 @@ u_long addclient(char *name);
 
 int save_tmsock(
 
-  job *pjob)  /* pointer to job structure */
-  {
-  static int sizeofint = sizeof(int);
+  job    *pjob,          /* pointer to job structure */
+  int     fds,           /* I */
+  char   *buffer,        /* O */
+  size_t *buf_remaining, /* M */
+  size_t  buf_size)      /* I */
 
+  {
   if ((pjob->ji_stdout > 0) && (pjob->ji_stdout < 1024))
     {
     /* We don't have real port numbers (yet), so don't bother */
 
-    return(0);
+    return(PBSE_NONE);
     }
 
   DBPRT(("saving extra job info stdout=%d stderr=%d taskid=%u nodeid=%u\n",
-
-         pjob->ji_stdout,
-         pjob->ji_stderr,
-         pjob->ji_taskid,
-         pjob->ji_nodeid));
+    pjob->ji_stdout,
+    pjob->ji_stderr,
+    pjob->ji_taskid,
+    pjob->ji_nodeid));
 
   /* FIXME: need error checking here */
 
-  save_struct((char *)&pjob->ji_stdout, sizeofint);
-  save_struct((char *)&pjob->ji_stderr, sizeofint);
-  save_struct((char *)&pjob->ji_taskid, sizeof(tm_task_id));
-  save_struct((char *)&pjob->ji_nodeid, sizeof(tm_node_id));
+  save_struct((char *)&pjob->ji_stdout, sizeof(int), fds, buffer, buf_remaining, buf_size);
+  save_struct((char *)&pjob->ji_stderr, sizeof(int), fds, buffer, buf_remaining, buf_size);
+  save_struct((char *)&pjob->ji_taskid, sizeof(tm_task_id), fds, buffer, buf_remaining, buf_size);
+  save_struct((char *)&pjob->ji_nodeid, sizeof(tm_node_id), fds, buffer, buf_remaining, buf_size);
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END save_tmsock() */
 
 

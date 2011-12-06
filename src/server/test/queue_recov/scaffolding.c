@@ -59,12 +59,6 @@ void que_free(pbs_queue *pq)
   exit(1);
   }
 
-int save_flush(void)
-  {
-  fprintf(stderr, "The call to save_flush needs to be mocked!!\n");
-  exit(1);
-  }
-
 int save_attr_xml(struct attribute_def *padef, struct attribute *pattr, int numattr, int fds)
   {
   fprintf(stderr, "The call to save_attr_xml needs to be mocked!!\n");
@@ -83,9 +77,4 @@ void log_event(int eventtype, int objclass, char *objname, char *text)
   exit(1);
   }
 
-void save_setup(int fds)
-  {
-  fprintf(stderr, "The call to save_setup needs to be mocked!!\n");
-  exit(1);
-  }
 

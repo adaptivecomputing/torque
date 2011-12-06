@@ -316,7 +316,7 @@ svrattrl *attrlist_alloc(
 
   tsize = sizeof(svrattrl) + szname + szresc + szval;
 
-  pal = (svrattrl *)calloc(1, tsize + 3);
+  pal = (svrattrl *)calloc(1, tsize);
 
   if (pal == NULL)
     {
@@ -338,11 +338,11 @@ svrattrl *attrlist_alloc(
   pal->al_name = (char *)pal + sizeof(svrattrl);
 
   if (szresc > 0)
-    pal->al_resc = pal->al_name + szname + 1;
+    pal->al_resc = pal->al_name + szname;
   else
     pal->al_resc = NULL;
 
-  pal->al_value = pal->al_name + szname + szresc + 2;
+  pal->al_value = pal->al_name + szname + szresc;
 
   return(pal);
   }  /* END attrlist_alloc() */

@@ -99,6 +99,8 @@
 #include "hash_table.h"
 #include "mom_hierarchy.h"
 
+#define SAVEJOB_BUF_SIZE 8192
+
 #ifndef MAX_LINE
 #define MAX_LINE 1024
 #endif

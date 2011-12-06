@@ -83,9 +83,7 @@
  *
  * Included public functions are:
  *
- * save_setup called to initialize the buffer
  * save_struct copy a struct into the save i/o buffer
- * save_flush flush out the current save operation
  * save_attr buffer and write attributes to disk file
  * recov_attr read attributes from disk file
  */
@@ -111,43 +109,8 @@
 
 /* data items global to functions in this file */
 
-#define PKBUFSIZE 2048
 #define ENDATTRIBUTES -711
 
-char   pk_buffer[PKBUFSIZE]; /* used to do buffered output */
-static int     pkbfds = -2; /* descriptor to use for saves */
-static size_t  spaceavail; /* space in pk_buffer available */
-static size_t  spaceused = 0; /* amount of space used  in pkbuffer */
-
-
-/*
- * save_setup - set up the save i/o buffer.
- * The "buffer control information" is left updated to reflect
- * the file descriptor, and the space in the buffer.
- */
-
-void save_setup(
-
-  int fds)  /* file descriptor to use for save */
-
-  {
-  if (pkbfds != -2)
-    {
-    /* somebody forgot to flush the buffer */
-
-    log_err(-1, "save_setup", "someone forgot to flush");
-    }
-
-  /* initialize buffer control */
-
-  pkbfds = fds;
-
-  spaceavail = PKBUFSIZE;
-
-  spaceused = 0;
-
-  return;
-  }  /* END save_setup() */
 
 
 
@@ -157,7 +120,7 @@ void save_setup(
  * This is useful to save fixed sized structure without pointers
  * that point outside of the structure itself.
  *
- * Write out buffer as required. Leave spaceavail and spaceused updated
+ * Write out buffer as required. Update space_remaining
  *
  * Returns: 0 on success
  *  -1 on error
@@ -165,124 +128,58 @@ void save_setup(
 
 int save_struct(
 
-  char         *pobj,    /* I */
-  unsigned int  objsize) /* I */
+  char         *pobj,            /* I */
+  unsigned int  objsize,         /* I */
+  int           fds,             /* I */
+  char         *buf_ptr,         /* M */
+  size_t       *space_remaining, /* O */
+  size_t        buf_size)        /* I */
 
   {
-  int    amt;
-  size_t copysize;
-  int    i;
-  char  *pbufin;
-  char  *pbufout;
+  static char *id = "save_struct";
+  size_t       left_to_copy = objsize;
+  size_t       copy_size;
+  char        *obj_current = pobj;
+  void        *start_buf;
 
-  assert(pkbfds >= 0);
-
-  /* NOTE:  pkbfds, spaceavail, spaceused, and pk_buffer are global */
-
-  while (objsize > 0)
+  while (left_to_copy > 0)
     {
-    pbufin = pk_buffer + spaceused;
+    start_buf = buf_ptr + (buf_size - *space_remaining);
 
-    if (objsize > spaceavail)
+    if (left_to_copy > *space_remaining)
       {
-      copysize = spaceavail;
+      copy_size = *space_remaining;
 
-      if (copysize != 0)
+      if (copy_size > 0)
         {
-        memcpy(pbufin, pobj, copysize);
+        memcpy(start_buf, obj_current, copy_size);
+        obj_current += copy_size;
+        left_to_copy -= copy_size;
         }
-
-      amt = PKBUFSIZE;
-
-      pbufout = pk_buffer;
-
-      while ((i = write(pkbfds, pbufout, amt)) != amt)
+    
+      /* write the buffer to the file */
+      if (write_buffer(buf_ptr, buf_size, fds) != PBSE_NONE)
         {
-        if (i == -1)
-          {
-          if (errno != EINTR)
-            {
-            return(-1);
-            }
-          }
-        else
-          {
-          amt -= i;
-          pbufout += i;
-          }
-        }
-
-      pobj += copysize;
-
-      spaceavail = PKBUFSIZE;
-      spaceused  = 0;
-      }
-    else
-      {
-      copysize = (size_t)objsize;
-
-      memcpy(pbufin, pobj, copysize);
-
-      spaceavail -= copysize;
-      spaceused  += copysize;
-      }
-
-    objsize -= copysize;
-    }  /* while (objsize > 0) */
-
-  return(0);
-  }  /* END save_struct() */
-
-
-
-
-
-/*
- * save_flush - flush out the current save operation
- * Flush buffer if needed, reset spaceavail, spaceused,
- * clear out file descriptor
- *
- * Returns: 0 on success
- *  -1 on failure (flush failed)
- */
-
-int save_flush(void)
-
-  {
-  int   i;
-  char *pbuf;
-
-  /* NOTE:  spaceused, pkbfds, and pk_buffer are global */
-
-  assert(pkbfds >= 0);
-
-  pbuf = pk_buffer;
-
-  if (spaceused > 0)
-    {
-    while ((i = write(pkbfds, pbuf, spaceused)) != (ssize_t)spaceused)
-      {
-      if (i == -1)
-        {
-        if (errno != EINTR)
-          {
-          log_err(errno, "save_flush", "bad write");
-
-          return(-1);
-          }
+        /* FAILURE */
+        log_err(-1, id, "Cannot write the buffer to the file!");
+        return(-1);
         }
       else
         {
-        pbuf      += i;
-        spaceused -= i;
+        *space_remaining = buf_size;
         }
+      }
+    else
+      {
+      /* copy the rest */
+      memcpy(start_buf, obj_current, left_to_copy);
+      *space_remaining -= left_to_copy;
+      left_to_copy = 0;
       }
     }
 
-  pkbfds = -2; /* flushed flag */
-
-  return(0);
-  }  /* END save_flush() */
+  return(PBSE_NONE);
+  }  /* END save_struct() */
 
 
 
@@ -305,18 +202,22 @@ int save_flush(void)
 
 int save_attr(
 
-  struct attribute_def *padef,   /* attribute definition array */
-  struct attribute     *pattr,   /* ptr to attribute value array */
-  int                   numattr) /* number of attributes in array */
+  struct attribute_def *padef,           /* attribute definition array */
+  struct attribute     *pattr,           /* ptr to attribute value array */
+  int                   numattr,         /* number of attributes in array */
+  int                   fds,
+  char                 *buf_ptr,         /* M */
+  size_t               *space_remaining, /* O */
+  size_t                buf_size)        /* I */
 
   {
-  int         errct = 0;
-  int         i;
-  int         rc;
-  int         resc_access_perm = ATR_DFLAG_ACCESS;
   svrattrl    dummy;
-  svrattrl   *pal;
+  int         errct = 0;
   tlist_head  lhead;
+  int         i;
+  int         resc_access_perm = ATR_DFLAG_ACCESS;
+  svrattrl   *pal;
+  int         rc;
 
   /* encode each attribute which has a value (not non-set) */
 
@@ -329,12 +230,12 @@ int save_attr(
       /* NOTE: access lists are not saved this way */
 
       rc = (padef + i)->at_encode(
-             pattr + i,
-             &lhead,
-             (padef + i)->at_name,
-             NULL,
-             ATR_ENCODE_SAVE,
-             resc_access_perm);
+          pattr + i,
+          &lhead,
+          (padef + i)->at_name,
+          NULL,
+          ATR_ENCODE_SAVE,
+          resc_access_perm);
 
       if (rc < 0)
         errct++;
@@ -345,7 +246,7 @@ int save_attr(
 
       while ((pal = (svrattrl *)GET_NEXT(lhead)) != NULL)
         {
-        if (save_struct((char *)pal, pal->al_tsize) < 0)
+        if (save_struct((char *)pal, pal->al_tsize, fds, buf_ptr, space_remaining, buf_size) < 0)
           errct++;
 
         delete_link(&pal->al_link);
@@ -361,7 +262,7 @@ int save_attr(
 
   dummy.al_tsize = ENDATTRIBUTES;
 
-  if (save_struct((char *)&dummy, sizeof(dummy)) < 0)
+  if (save_struct((char *)&dummy, sizeof(dummy), fds, buf_ptr, space_remaining, buf_size) < 0)
     errct++;
 
   if (errct != 0)
@@ -379,7 +280,6 @@ int save_attr(
 
 #ifndef PBS_MOM
 int save_attr_xml(
-
 
   struct attribute_def *padef,   /* attribute definition array */
   struct attribute     *pattr,   /* ptr to attribute value array */
@@ -411,8 +311,8 @@ int save_attr_xml(
           {
           /* ERROR */
           snprintf(log_buf,sizeof(log_buf),
-            "Not enough space to print attribute %s",
-            padef[i].at_name);
+              "Not enough space to print attribute %s",
+              padef[i].at_name);
 
           free_dynamic_string(ds);
           return(rc);
@@ -421,9 +321,9 @@ int save_attr_xml(
       else
         {
         snprintf(buf,sizeof(buf),"<%s>%s</%s>\n",
-          padef[i].at_name,
-          ds->str,
-          padef[i].at_name);
+            padef[i].at_name,
+            ds->str,
+            padef[i].at_name);
 
         if ((rc = write_buffer(buf,strlen(buf),fds)) != 0)
           {
@@ -433,7 +333,7 @@ int save_attr_xml(
         }
       }
     } /* END for each attribute */
-          
+
   free_dynamic_string(ds);
 
   /* close the attributes */
@@ -518,8 +418,8 @@ int recov_attr(
       return(-1);
       }
 
-    *pal = tempal;
-
+    memcpy(pal, &tempal, sizeof(svrattrl));
+  
     CLEAR_LINK(pal->al_link);
 
     /* read in the actual attribute data */
@@ -582,11 +482,11 @@ int recov_attr(
       }    /* END if (index < 0) */
 
     (padef + index)->at_decode(
-      pattr + index,
-      pal->al_name,
-      pal->al_resc,
-      pal->al_value,
-      resc_access_perm);
+        pattr + index,
+        pal->al_name,
+        pal->al_resc,
+        pal->al_value,
+        resc_access_perm);
 
     if ((do_actions) && (padef + index)->at_action != (int (*)())0)
       (padef + index)->at_action(pattr + index, parent, ATR_ACTION_RECOV);

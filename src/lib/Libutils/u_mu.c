@@ -396,13 +396,20 @@ int write_buffer(
     if ((errno == EINTR) &&
         (written == -1))
       continue;
-
-    log_err(errno,id,"Unable to write to file or socket");
-
-    return(-1);
+    else if (written > 0)
+      {
+      len -= written;
+      buf += written;
+      }
+    else
+      {
+      log_err(errno,id,"Unable to write to file or socket");
+      
+      return(-1);
+      }
     }
 
-  return(0);
+  return(PBSE_NONE);
   } /* END write_buffer */
 
 

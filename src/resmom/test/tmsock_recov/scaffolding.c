@@ -15,7 +15,7 @@ void log_err(int errnum, char *routine, char *text)
   exit(1);
   }
 
-int save_struct(char *pobj, unsigned int objsize)
+int save_struct(char *pobj, unsigned int objsize, int fds, char *buf, size_t *buf_remaining, size_t buf_size)
   {
   fprintf(stderr, "The call to save_struct needs to be mocked!!\n");
   exit(1);

@@ -188,7 +188,7 @@ int encode_str(
   char       *atname,  /* name of attribute */
   char       *rsname,  /* resource name or null */
   int         mode,    /* encode mode, unused here */
-  int         perm) /* only used for resources */
+  int         perm)    /* only used for resources */
 
   {
   svrattrl *pal;

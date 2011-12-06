@@ -6,11 +6,9 @@
 
 void save_setup(int fds);
 
-int save_struct(char *pobj, unsigned int objsize);
+int  save_struct(char *, unsigned int, int, char *, size_t *, size_t);
 
-int save_flush(void);
-
-int save_attr(struct attribute_def *padef, struct attribute *pattr, int numattr);
+int save_attr(struct attribute_def *padef, struct attribute *pattr, int numattr, int fds, char *, size_t *, size_t);
 
 #ifndef PBS_MOM
 int save_attr_xml(struct attribute_def *padef, struct attribute *pattr, int numattr, int fds);

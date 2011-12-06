@@ -127,7 +127,7 @@
 #define MAX_SAVE_TRIES 3
 
 #ifdef PBS_MOM
-int save_tmsock(job *);
+int save_tmsock(job *, int, char *, size_t *, size_t);
 int recov_tmsock(int, job *);
 #endif
 
@@ -172,14 +172,17 @@ int job_save(
   int  mom_port)   /* if 0 ignore otherwise append to end of job name. this is for multi-mom mode */
 
   {
-  int    fds;
-  int    i;
-  char   namebuf1[MAXPATHLEN];
-  char   namebuf2[MAXPATHLEN];
-  char   portname[MAXPATHLEN];
-  int    openflags;
-  int    redo;
-  time_t time_now = time(NULL);
+  int     fds;
+  int     i;
+  char    namebuf1[MAXPATHLEN];
+  char    namebuf2[MAXPATHLEN];
+  char    portname[MAXPATHLEN];
+  char    save_buf[SAVEJOB_BUF_SIZE];
+  size_t  buf_remaining = sizeof(save_buf);
+
+  int     openflags;
+  int     redo;
+  time_t  time_now = time(NULL);
 
   strcpy(namebuf1, path_jobs); /* job directory path */
   strcat(namebuf1, pjob->ji_qs.ji_fileprefix);
@@ -301,7 +304,7 @@ int job_save(
       return(-1);
       }
 
-    for (i = 0;i < MAX_SAVE_TRIES;++i)
+    for (i = 0; i < MAX_SAVE_TRIES; i++)
       {
       redo = 0; /* try to save twice */
 
@@ -309,25 +312,29 @@ int job_save(
       lock_ss();
 #endif
 
-      save_setup(fds);
-
-      if (save_struct((char *)&pjob->ji_qs, (size_t)quicksize) != 0)
+      if (save_struct((char *)&pjob->ji_qs, quicksize, fds, save_buf, &buf_remaining, sizeof(save_buf)) != PBSE_NONE)
         {
         redo++;
         }
-      else if (save_attr(job_attr_def, pjob->ji_wattr, JOB_ATR_LAST) != 0)
+      else if (save_attr(job_attr_def,
+            pjob->ji_wattr,
+            JOB_ATR_LAST,
+            fds,
+            save_buf,
+            &buf_remaining,
+            sizeof(save_buf)) != PBSE_NONE)
         {
         redo++;
         }
 
 #ifdef PBS_MOM
-      else if (save_tmsock(pjob) != 0)
+      else if (save_tmsock(pjob, fds, save_buf, &buf_remaining, sizeof(save_buf)) != PBSE_NONE)
         {
         redo++;
         }
 
 #endif  /* PBS_MOM */
-      else if (save_flush() != 0)
+      else if (write_buffer(save_buf, sizeof(save_buf) - buf_remaining, fds) != PBSE_NONE)
         {
         redo++;
         }

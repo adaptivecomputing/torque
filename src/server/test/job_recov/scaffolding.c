@@ -20,7 +20,7 @@ ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   exit(1);
   }
 
-int save_attr(struct attribute_def *padef, struct attribute *pattr, int numattr)
+int save_attr(struct attribute_def *padef, struct attribute *pattr, int numattr, int fds, char *buf, size_t *buf_remaining, size_t buf_size)
   {
   fprintf(stderr, "The call to save_attr needs to be mocked!!\n");
   exit(1);
@@ -56,12 +56,6 @@ int job_abt(job **pjobp, char *text)
   exit(1);
   }
 
-int save_flush(void)
-  {
-  fprintf(stderr, "The call to save_flush needs to be mocked!!\n");
-  exit(1);
-  }
-
 void array_get_parent_id(char *job_id, char *parent_id)
   {
   fprintf(stderr, "The call to array_get_parent_id needs to be mocked!!\n");
@@ -92,16 +86,11 @@ job *job_alloc(void)
   exit(1);
   }
 
-int save_struct(char *pobj, unsigned int objsize)
+int save_struct(char *pobj, unsigned int objsize, int fds, char *buf_ptr, size_t *space_remaining, size_t buf_size)
   {
   fprintf(stderr, "The call to save_struct needs to be mocked!!\n");
   exit(1);
   }
 
-void save_setup(int fds)
-  {
-  fprintf(stderr, "The call to save_setup needs to be mocked!!\n");
-  exit(1);
-  }
 
 
