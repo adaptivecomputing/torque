@@ -1496,6 +1496,7 @@ int open_tcp_stream_to_sisters(
 
   job               *pjob, 
   int                com,
+  tm_event_t         parent_event,
   int                mom_radix, 
   hnodent           *hosts, /* This is really an array of hnodent */
   struct radix_buf **sister_list,
@@ -1547,6 +1548,7 @@ int open_tcp_stream_to_sisters(
       }
     
     ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);
+    ep->ee_parent_event = parent_event;
     
     DIS_tcp_setup(stream);
     
@@ -6060,7 +6062,7 @@ void start_exec(
       This will always be the first sister in the list */
 
     /* now allocate sister list for all the sisters */
-    sister_list = allocate_sister_list(mom_radix);
+    sister_list = allocate_sister_list(mom_radix+1);
 
     np = &pjob->ji_hosts[0]; /* This is mother superior */
     for (j = 0; j < mom_radix; j++)
@@ -6071,7 +6073,7 @@ void start_exec(
     i = 1; /* Mother superior was the first entry, now start with the sisters */
     do
       {
-      for (j = 0; j < mom_radix && i < nodenum; j++)
+      for (j = 0; j < mom_radix+1 && i < nodenum; j++)
         {
         /* Generate a list of sisters divided in to 'mom_radix' number of lists.
            For example an exec_host list of host1+host2+host3+host4+host5+host6+host7
@@ -6091,6 +6093,7 @@ void start_exec(
     open_tcp_stream_to_sisters(
       pjob,
       IM_JOIN_JOB_RADIX,
+      -1,
       mom_radix,
       pjob->ji_hosts,
       sister_list,

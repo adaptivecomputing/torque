@@ -765,6 +765,7 @@ typedef struct eventent
   {
   int  ee_command; /* command event is for */
   tm_event_t ee_event; /* event number */
+  tm_event_t ee_parent_event; /* For job_radix calls. event of parent calling intermediate MOM */
   tm_task_id ee_taskid; /* which task id */
   fwdevent ee_forward; /* event to get notified */
   char  **ee_argv; /* save args for spawn */

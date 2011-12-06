@@ -123,6 +123,7 @@
 #include "utils.h"
 #include "../lib/Libnet/lib_net.h" /* get_hostaddr_hostent_af */
 #include "mom_server.h"
+#include "start_exec.h" /* open_tcp_stream_to_sisters */
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
@@ -206,7 +207,7 @@ extern int open_demux(u_long addr, int    port);
 extern int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval *y);
 int start_process(task *, char **, char **);
  
-extern int open_tcp_stream_to_sisters(job *, int, int, hnodent *, struct radix_buf **, tlist_head *, int);
+/*extern int open_tcp_stream_to_sisters(job *, int, int, hnodent *, tm_event_t, struct radix_buf **, tlist_head *, int);*/
 int allocate_demux_sockets(job *pjob, int flag);
 
 extern void exec_bail(job *, int);
@@ -405,6 +406,7 @@ eventent *event_alloc(
                  event;
 
   ep->ee_taskid = taskid;
+  ep->ee_parent_event = -1;
   ep->ee_forward.fe_node = TM_ERROR_NODE;
   ep->ee_forward.fe_event = TM_ERROR_EVENT;
   ep->ee_forward.fe_taskid = TM_NULL_TASK;
@@ -1828,6 +1830,7 @@ char *resc_string(
 int contact_sisters(
 
   job  *pjob,
+  tm_event_t event,
   int   sister_count,
   char *radix_hosts,
   char *radix_ports)
@@ -1891,7 +1894,7 @@ int contact_sisters(
 
   /* we now need to create the list of sisters to send to
      our intermediate MOMs in our job_radix */
-  sister_list = allocate_sister_list(mom_radix);
+  sister_list = allocate_sister_list(mom_radix+1);
 
   /* We need to get the address and port of the MOM who
      called us (pjob->ji_sister[0]) so we can contact
@@ -1906,7 +1909,7 @@ int contact_sisters(
      job_radix. This is how the children will know who
      called them. */
   index = 1;
-  for (j = 0; j < mom_radix; j++)
+  for (j = 0; j <= mom_radix && j < sister_count-1; j++)
     {
     np = &pjob->ji_sisters[index];
     add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[j]);
@@ -1942,6 +1945,7 @@ int contact_sisters(
    	 sent the IM_JOIN_JOB_RADIX request as a sister to lower MOMs */
   ret = open_tcp_stream_to_sisters(pjob,
       IM_JOIN_JOB_RADIX,
+      event,
       mom_radix,
       &pjob->ji_sisters[1],
       sister_list,
@@ -2499,7 +2503,7 @@ int im_join_job_as_sister(
     if (allocate_demux_sockets(pjob,INTERMEDIATE_MOM))
       return(IM_DONE);
 
-    contact_sisters(pjob,sister_count,radix_hosts,radix_ports);
+    contact_sisters(pjob,event,sister_count,radix_hosts,radix_ports);
     job_save(pjob,SAVEJOB_FULL,momport);
     *reply_ptr = 0;
     
@@ -5202,6 +5206,7 @@ void im_request(
   char               **argv = NULL;
   char               **envp = NULL;
   tm_event_t           event;
+  tm_event_t           parent_event;
   fwdevent             efwd;
   unsigned short       sender_port;
   unsigned int         momport = 0;
@@ -5500,6 +5505,7 @@ void im_request(
  
     event_com = ep->ee_command;
     event_task = ep->ee_taskid;
+    parent_event = ep->ee_parent_event;
     argv = ep->ee_argv;
     envp = ep->ee_envp;
     delete_link(&ep->ee_next);
@@ -5885,7 +5891,7 @@ void im_request(
                 
                 DIS_tcp_setup(stream);
                 
-                ep = event_alloc(IM_RADIX_ALL_OK, np, event, TM_NULL_TASK);
+                ep = event_alloc(IM_RADIX_ALL_OK, np, ep->ee_parent_event, TM_NULL_TASK);
                 
                 ret = im_compose(stream,jobid,cookie,IM_RADIX_ALL_OK,ep->ee_event,TM_NULL_TASK);
 

@@ -159,7 +159,7 @@ dynamic_string *get_dynamic_string(int initial_size, char *str)
   exit(1);
   }
 
-int open_tcp_stream_to_sisters(job *pjob, int com, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag)
+int open_tcp_stream_to_sisters(job *pjob, int com, tm_event_t parent_event, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag)
   {
   fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);

@@ -33,6 +33,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       been written as of yet.
   b - Made fixes so Job Radix will work properly. Still one but to fix at this point 
       but code is good to check in without that fix.
+  b - Added other fix needed to make Job Radix work correctly.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

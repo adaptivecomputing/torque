@@ -47,7 +47,7 @@ void task_saveinfo(task *ptask, char *name, void *info, size_t len);
 
 char *resc_string(job *pjob);
 
-int contact_sisters(job *pjob, int sister_count, char *radix_hosts, char *radix_ports);
+int contact_sisters(job *pjob, tm_event_t parent_event, int sister_count, char *radix_hosts, char *radix_ports);
 
 void send_im_error(int err, int reply, job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
 

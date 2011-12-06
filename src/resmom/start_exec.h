@@ -42,7 +42,7 @@ int InitUserEnv(job *pjob, task *ptask, char **envp, struct passwd *pwdp, char *
 
 int mom_jobstarter_execute_job(job *pjob, char *shell, char *arg[], struct var_table *vtable);
 
-int open_tcp_stream_to_sisters(job *pjob, int com, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag);
+int open_tcp_stream_to_sisters(job *pjob, int com, tm_event_t parent_event, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag);
 
 void free_sisterlist(struct radix_buf **list, int radix);
 
