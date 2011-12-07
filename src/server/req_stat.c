@@ -523,6 +523,7 @@ static void req_stat_job_step2(
 
           continue;
           }
+
         pthread_mutex_unlock(pjob->ji_mutex);
         if (pa != NULL)
           pthread_mutex_unlock(pa->ai_mutex);
@@ -726,7 +727,7 @@ static void req_stat_job_step2(
         }
       else
         {
-        pque = find_queuebyname(pjob->ji_qs.ji_queue);
+        pque = get_jobs_queue(pjob);
         
         if (pque->qu_qs.qu_type != QTYPE_Execution)
           {
