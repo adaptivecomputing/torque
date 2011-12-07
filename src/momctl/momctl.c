@@ -461,18 +461,6 @@ int send_command(
   {
   int rc;
 
-  DIS_tcp_setup(stream);
-
-  rc = diswsi(stream,RM_PROTOCOL);
-
-  if (rc != DIS_SUCCESS)
-    return(rc);
-
-  rc = diswsi(stream,RM_PROTOCOL_VER);
-
-  if (rc != DIS_SUCCESS)
-    return(rc);
-
   rc = diswsi(stream,cmd);
 
   if (cmd == RM_CMD_CONFIG)
@@ -574,6 +562,33 @@ char *read_mom_reply(
 
 
 
+int start_dialogue(
+
+  int stream)
+
+  {
+  int rc;
+
+  DIS_tcp_setup(stream);
+
+  rc = diswsi(stream, RM_PROTOCOL);
+
+  if (rc != DIS_SUCCESS)
+    return(rc);
+
+  rc = diswsi(stream, RM_PROTOCOL_VER);
+
+  if (rc != DIS_SUCCESS)
+    return(rc);
+
+  rc = diswsi(stream, QueryI);
+
+  return(rc);
+  } /* END start_dialogue() */
+
+
+
+
 int do_mom(
 
   char *HPtr,
@@ -602,6 +617,22 @@ int do_mom(
       }
 
     return(sd);
+    }
+
+  /* send protocol and version, plus how many queries we're sending */
+  if (QueryI == 0)
+    QueryI = 1;
+
+  if (start_dialogue(sd) != DIS_SUCCESS)
+    {
+    fprintf(stderr,"ERROR:    Unable to write the number of queries to %s (errno=%d-%s)\n",
+        HPtr,
+        errno,
+        strerror(errno));
+    
+    send_command(sd,RM_CMD_CLOSE);
+    
+    return(-1);
     }
 
   if (IsVerbose == TRUE)
@@ -720,7 +751,7 @@ int do_mom(
 
       char *Value;
 
-      for (rindex = 0;rindex < QueryI;rindex++)
+      for (rindex = 0; rindex < QueryI; rindex++)
         {
         if (send_command_str(sd, RM_CMD_REQUEST, Query[rindex]) != 0)
           {

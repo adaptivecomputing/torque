@@ -4321,6 +4321,8 @@ int rm_request(
   char *tmp;
   char *BPtr;
   int   BSpace;
+  int   num_queries = 0;
+  int   query_index;
 
   errno = 0;
   log_buffer[0] = '\0';
@@ -4352,9 +4354,11 @@ int rm_request(
     restrictrm = 1;
     }
 
-  /* looks okay, find out what command it is */
+  /* looks okay, find out how many queries and what command it is */
+  num_queries = disrsi(iochan, &ret);
 
-  command = disrsi(iochan, &ret);
+  if (ret == DIS_SUCCESS)
+    command = disrsi(iochan, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -4391,7 +4395,7 @@ int rm_request(
         goto bad;
         }
 
-      for (;;)
+      for (query_index = 0; query_index < num_queries; query_index++)
         {
         cp = disrst(iochan, &ret);
 
