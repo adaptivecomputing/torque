@@ -148,6 +148,11 @@ int disrsi(
     case DIS_OVERFLOW:
 
       value = negate ? INT_MIN : INT_MAX;
+      break;
+
+    default:
+      value = locret;
+
     }
 
   *retval = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?
