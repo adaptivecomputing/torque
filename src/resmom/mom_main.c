@@ -5099,6 +5099,14 @@ int rm_request(
 
           goto bad;
           }
+
+        if (DIS_tcp_wflush(iochan) == -1)
+          {
+          log_err(errno, id, "flush");
+
+          goto bad;
+          }
+
         }    /* END for () */
 
       break;
@@ -5187,6 +5195,14 @@ int rm_request(
 
         goto bad;
         }
+
+      if (DIS_tcp_wflush(iochan) == -1)
+        {
+        log_err(errno, id, "flush");
+
+        goto bad;
+        }
+
       }    /* END (case RM_CMD_CONFIG) */
 
     break;
@@ -5263,12 +5279,6 @@ int rm_request(
       break;
     }  /* END switch(command) */
 
-  if (DIS_tcp_wflush(iochan) == -1)
-    {
-    log_err(errno, id, "flush");
-
-    goto bad;
-    }
 
   return(PBSE_NONE);
 

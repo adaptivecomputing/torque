@@ -155,11 +155,8 @@ char *disrst(
           value[count] = '\0';
         }
       }
+    locret = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?  DIS_NOCOMMIT : locret;
     }
-
-  locret = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?
-
-           DIS_NOCOMMIT : locret;
 
   *retval = locret;
 
