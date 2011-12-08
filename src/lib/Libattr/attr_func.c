@@ -316,7 +316,7 @@ svrattrl *attrlist_alloc(
 
   tsize = sizeof(svrattrl) + szname + szresc + szval;
 
-  pal = (svrattrl *)calloc(1, tsize);
+  pal = calloc(1, tsize);
 
   if (pal == NULL)
     {

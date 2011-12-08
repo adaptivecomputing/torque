@@ -8015,7 +8015,7 @@ done:
   
   free(cookie);
   
-  return(0);
+  return PBSE_NONE;
   
 err:
   
@@ -8038,15 +8038,13 @@ err:
     (ipadd & 0x0000ff00) >> 8,
     (ipadd & 0x000000ff));
   
-  close_conn(fd, FALSE);
-  
   if (jobid)
     free(jobid);
   
   if (cookie)
     free(cookie);
   
-  return(-1);
+  return DIS_EOD;
   }  /* END tm_request() */
 
 

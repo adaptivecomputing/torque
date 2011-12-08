@@ -579,7 +579,7 @@ struct batch_request *alloc_br(
 
   struct batch_request *req = NULL;
 
-  req = (struct batch_request *)calloc(1, sizeof(struct batch_request));
+  req = calloc(1, sizeof(struct batch_request));
 
   if (req == NULL)
     {
@@ -587,8 +587,6 @@ struct batch_request *alloc_br(
 
     return(NULL);
     }
-
-  memset((void *)req, (int)0, sizeof(struct batch_request));
 
   req->rq_type = type;
 

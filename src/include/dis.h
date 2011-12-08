@@ -109,6 +109,7 @@
 #define DIS_PROTO       9 /* Supporting protocol failure */
 #define DIS_NOCOMMIT 10 /* Protocol failure in commit */
 #define DIS_EOF  11 /* End of File */
+#define DIS_INVALID 12 /* Invalid condition in code*/
 
 
 unsigned long disrul (int stream, int *retval);

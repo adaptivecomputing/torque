@@ -4371,10 +4371,7 @@ int rm_request(
   switch (command)
     {
     case RM_CMD_CLOSE:  /* no response to this */
-
-      close_conn(iochan, FALSE);
-
-      return(1);
+      return DIS_EOD;
 
       /*NOTREACHED*/
 
@@ -4920,13 +4917,13 @@ int rm_request(
                 if (verbositylevel >= 2)
                   {
                   if (pjob->ji_wattr[JOB_ATR_resc_used].at_type != ATR_TYPE_RESC)
-                    return(-1);
+                    return DIS_INVALID;
 
                   pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_list);
                   for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
                     {
                     if (pres->rs_defin == NULL) 
-                      return(-1);
+                      return DIS_INVALID;
 
                     resname = pres->rs_defin->rs_name;
                     if (!(strcmp(resname, "mem")))
@@ -5284,7 +5281,7 @@ int rm_request(
     }  /* END switch(command) */
 
 
-  return(PBSE_NONE);
+  return PBSE_NONE;
 
 bad:
   tmp = netaddr_pbs_net_t(ipadd);
@@ -5304,9 +5301,7 @@ bad:
 
   log_err(errno, id, log_buffer);
 
-  close_conn(iochan, FALSE);
-
-  return(-1);
+  return DIS_EOD;
   }  /* END rm_request() */
 
 
@@ -5322,7 +5317,8 @@ int do_tcp(
   static char id[] = "do_tcp";
 #endif
 
-  int ret, proto, version;
+  int rc = PBSE_NONE;
+  int proto, version;
   int tm_request(int stream, int version);
 
   time_t tmpT;
@@ -5331,7 +5327,7 @@ int do_tcp(
 
   pbs_tcp_timeout = 0;
 
-  proto = disrsi(fd, &ret);
+  proto = disrsi(fd, &rc);
 
   if (tmpT > 0)
     {
@@ -5346,45 +5342,37 @@ int do_tcp(
     pbs_tcp_timeout = PMOMTCPTIMEOUT;
     }
 
-  switch (ret)
+  switch (rc)
     {
     case DIS_SUCCESS:  /* worked */
 
       break;
 
     case DIS_EOF:   /* closed */
-
-      close_conn(fd,FALSE);
-
-      /* continue to next case */
-
     case DIS_EOD:   /* still open */
-
-      return(1);
-
+      return rc;
       /*NOTREACHED*/
-
       break;
 
     default:
 
       sprintf(log_buffer, "no protocol number: %s",
-              dis_emsg[ret]);
+              dis_emsg[rc]);
 
       goto bad;
 
       /*NOTREACHED*/
 
       break;
-    }  /* END switch (ret) */
+    }  /* END switch (rc) */
 
-  version = disrsi(fd, &ret);
+  version = disrsi(fd, &rc);
 
-  if (ret != DIS_SUCCESS)
+  if (rc != DIS_SUCCESS)
     {
     DBPRT(("%s: no protocol version number %s\n",
       id,
-      dis_emsg[ret]))
+      dis_emsg[rc]))
 
     goto bad;
     }
@@ -5403,7 +5391,7 @@ int do_tcp(
 
       pbs_tcp_timeout = 0;
 
-      ret = rm_request(fd, version);
+      rc = rm_request(fd, version);
 
       if (tmpT > 0)
         {
@@ -5426,7 +5414,7 @@ int do_tcp(
       DBPRT(("%s: got an internal task manager request\n",
         id))
 
-      ret = tm_request(fd, version);
+      rc = tm_request(fd, version);
 
       break;
 
@@ -5471,13 +5459,10 @@ int do_tcp(
       break;
     }  /* END switch (proto) */
 
-  return(ret);
+  return rc;
 
 bad:
-
-  close_conn(fd, FALSE);
-
-  return(-1);
+  return DIS_INVALID;
   }  /* END do_tcp() */
 
 
@@ -5494,6 +5479,7 @@ void *tcp_request(
   long  ipadd;
   char  address[80];
   char *tmp;
+  int rc = PBSE_NONE;
 
   extern struct connection svr_conn[];
   int fd = *(int *)new_sock;
@@ -5535,7 +5521,25 @@ void *tcp_request(
 
   for (c = 0;;c++)
     {
-    if (do_tcp(fd))
+    rc = do_tcp(fd);
+    switch (rc)
+      {
+      case PBSE_NONE:
+        continue;
+        break;
+
+      case DIS_EOF:
+      case DIS_EOD:
+      case DIS_INVALID:
+        close_conn(fd, FALSE);
+        break;
+
+      default:
+        close_conn(fd, FALSE);
+        DBPRT(("Error in connection. Closing %d\n", fd))
+        break;
+      }
+
       break;
     }  /* END for (c = 0) */
 

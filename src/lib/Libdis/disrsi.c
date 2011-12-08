@@ -119,15 +119,13 @@ int disrsi(
   {
   int  locret;
   int  negate;
-  int  value;
+  int  value = 0;
   unsigned uvalue;
   int (*disr_commit)(int stream, int commit);
 
   assert(retval != NULL);
 
   disr_commit = tcp_rcommit;
-
-  value = 0;
 
   switch (locret = disrsi_(stream, &negate, &uvalue, 1))
     {
@@ -137,26 +135,28 @@ int disrsi(
       if (negate ? uvalue <= (unsigned) - (INT_MIN + 1) + 1 : uvalue <= (unsigned)INT_MAX)
         {
         value = negate ? -uvalue : uvalue;
+        *retval = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?  DIS_NOCOMMIT : locret;
 
         break;
         }
       else
         {
         locret = DIS_OVERFLOW;
+        *retval = locret;
         }
 
     case DIS_OVERFLOW:
 
       value = negate ? INT_MIN : INT_MAX;
+      *retval = locret;
       break;
 
     default:
-      value = locret;
+      *retval = locret;
+      break;
 
     }
 
-  *retval = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?
-            DIS_NOCOMMIT : locret;
 
   return(value);
   }

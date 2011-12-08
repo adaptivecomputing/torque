@@ -154,7 +154,7 @@ int status_job(
 
   /* allocate reply structure and fill in header portion */
 
-  pstat = (struct brp_status *)calloc(1, sizeof(struct brp_status));
+  pstat = calloc(1, sizeof(struct brp_status));
 
   if (pstat == NULL)
     {
