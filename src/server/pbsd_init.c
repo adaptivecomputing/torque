@@ -313,8 +313,7 @@ int DArrayAppend(
     if (newLength <= 10)
       newLength = 10;
 
-    Array->Length = newLength;
-    Array->Data = realloc(Array->Data,sizeof(Array->Data[0]) * Array->Length);
+    Array->Data = realloc(Array->Data, sizeof(Array->Data[0]) * newLength);
 
     if (Array->Data == NULL)
       {
@@ -322,6 +321,9 @@ int DArrayAppend(
       Array->AppendIndex = 0;
       return(FAILURE);
       }
+    memset(Array->Data + (Array->Length * sizeof(Array->Data[0])), 0,
+        sizeof((newLength - Array->Length) * sizeof(Array->Data[0])));
+    Array->Length = newLength;
     }
 
   /*

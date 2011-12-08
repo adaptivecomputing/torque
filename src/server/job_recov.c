@@ -177,37 +177,38 @@ int job_save(
   int     i;
   char    namebuf1[MAXPATHLEN];
   char    namebuf2[MAXPATHLEN];
-  char    portname[MAXPATHLEN];
   char    save_buf[SAVEJOB_BUF_SIZE];
+  char   *tmp_ptr = NULL;
   size_t  buf_remaining = sizeof(save_buf);
 
   int     openflags;
   int     redo;
   time_t  time_now = time(NULL);
 
-  strcpy(namebuf1, path_jobs); /* job directory path */
-  strcat(namebuf1, pjob->ji_qs.ji_fileprefix);
-  if (mom_port)
-    {
-    sprintf(portname, "%d", mom_port);
-    strcat(namebuf1, portname);
-    }
-  strcpy(namebuf2, namebuf1); /* setup for later */
 
 #ifdef PBS_MOM
-  strcat(namebuf1, JOB_FILE_SUFFIX);
+  tmp_ptr = JOB_FILE_SUFFIX;
 #else
-
   if (pjob->ji_is_array_template == TRUE)
+    tmp_ptr = JOB_FILE_TMP_SUFFIX;
+  else
+    tmp_ptr = JOB_FILE_SUFFIX;
+#endif
+
+  if (mom_port)
     {
-    strcat(namebuf1, JOB_FILE_TMP_SUFFIX);
+    snprintf(namebuf1, MAXPATHLEN, "%s%s%d%s",
+        path_jobs, pjob->ji_qs.ji_fileprefix, mom_port, tmp_ptr);
+    snprintf(namebuf2, MAXPATHLEN, "%s%s%d%s",
+        path_jobs, pjob->ji_qs.ji_fileprefix, mom_port, JOB_FILE_COPY);
     }
   else
     {
-    strcat(namebuf1, JOB_FILE_SUFFIX);
+    snprintf(namebuf1, MAXPATHLEN, "%s%s%s",
+        path_jobs, pjob->ji_qs.ji_fileprefix, tmp_ptr);
+    snprintf(namebuf2, MAXPATHLEN, "%s%s%s",
+        path_jobs, pjob->ji_qs.ji_fileprefix, JOB_FILE_COPY);
     }
-
-#endif
 
   /* if ji_modified is set, ie an attribute changed, then update mtime */
 
@@ -286,8 +287,6 @@ int job_save(
      * (3) the attributes in the "external" form, and last
      * (4) the dependency list.
      */
-
-    strcat(namebuf2, JOB_FILE_COPY);
 
     openflags = O_CREAT | O_WRONLY | O_Sync;
 
@@ -438,15 +437,13 @@ job *job_recov(
     return(NULL);
     }
 
-  strcpy(namebuf, path_jobs); /* job directory path */
-
-  strcat(namebuf, filename);
+  snprintf(namebuf, MAXPATHLEN, "%s%s", path_jobs, filename); /* job directory path, filename */
 
   fds = open(namebuf, O_RDONLY, 0);
 
   if (fds < 0)
     {
-    sprintf(log_buf, "unable to open %s", namebuf);
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "unable to open %s", namebuf);
 
     log_err(errno, id, log_buf);
 
@@ -467,7 +464,7 @@ job *job_recov(
   if (read(fds, (char *)&pj->ji_qs, quicksize) != (ssize_t)quicksize &&
       pj->ji_qs.qs_version == PBS_QS_VERSION)
     {
-    sprintf(log_buf, "Unable to read %s", namebuf);
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Unable to read %s", namebuf);
 
     log_err(errno, id, log_buf);
 
@@ -488,7 +485,7 @@ job *job_recov(
   if (pj->ji_qs.qs_version != PBS_QS_VERSION)
     {
     /* ji_qs is older version */
-    sprintf(log_buf,
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
       "%s appears to be from an old version. Attempting to convert.\n",
       namebuf);
 
@@ -496,7 +493,7 @@ job *job_recov(
 
     if (job_qs_upgrade(pj, fds, namebuf, pj->ji_qs.qs_version) != 0)
       {
-      sprintf(log_buf, "unable to upgrade %s\n", namebuf);
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "unable to upgrade %s\n", namebuf);
 
       log_err(-1, id, log_buf);
 
@@ -524,7 +521,7 @@ job *job_recov(
     {
     /* mismatch, discard job */
 
-    sprintf(log_buf, "Job Id %s does not match file name for %s",
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Job Id %s does not match file name for %s",
       pj->ji_qs.ji_jobid,
       namebuf);
 
@@ -553,8 +550,7 @@ job *job_recov(
         JOB_ATR_UNKN,
         TRUE) != 0) 
     {
-    sprintf(log_buf, "unable to recover %s (file is likely corrupted)",
-            namebuf);
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "unable to recover %s (file is likely corrupted)", namebuf);
 
     log_err(-1, id, log_buf);
 
@@ -574,8 +570,9 @@ job *job_recov(
 
   if (recov_tmsock(fds, pj) != 0)
     {
-    sprintf(log_buf, "warning: tmsockets not recovered from %s (written by an older pbs_mom?)",
-            namebuf);
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+        "warning: tmsockets not recovered from %s (written by an older pbs_mom?)",
+        namebuf);
 
     log_err(-1, id, log_buf);
     }

@@ -665,7 +665,7 @@ void parse_command_line(
         /* overwrite locally detected hostname with specified hostname */
         /*  (used for multi-homed hosts) */
 
-        strncpy(server_host, optarg, PBS_MAXHOSTNAME);
+        snprintf(server_host, PBS_MAXHOSTNAME, "%s", optarg);
 
         if (get_fullhostname(server_host, server_host, PBS_MAXHOSTNAME, EMsg) == -1)
           {
@@ -675,9 +675,9 @@ void parse_command_line(
             {
             char tmpLine[1024];
 
-            snprintf(tmpLine, sizeof(tmpLine), "unable to determine full hostname for specified server host '%s' - %s",
-                     server_host,
-                     EMsg);
+            snprintf(tmpLine, sizeof(tmpLine),
+                "unable to determine full hostname for specified server host '%s' - %s",
+                server_host, EMsg);
 
             log_err(-1, "pbsd_main", tmpLine);
             }
@@ -689,7 +689,7 @@ void parse_command_line(
           exit(1);
           }
 
-        strcpy(server_name, server_host);
+        snprintf(server_name, PBS_MAXSERVERNAME, "%s", server_host);
 
         def_pbs_server_addr = pbs_server_addr;
 
@@ -1393,6 +1393,7 @@ int main(
 
   ProgName = argv[0];
   srand((unsigned int)getpid() + (unsigned int)time(NULL));
+  tzset(); /* localtime_r needs this */
 
   initialize_globals();
   set_globals_from_environment();
@@ -1446,7 +1447,7 @@ int main(
     exit(1);    /* FAILURE - shutdown */
     }
 
-  strncpy(server_name, server_host, PBS_MAXHOSTNAME<strlen(server_host)?PBS_MAXHOSTNAME:strlen(server_host)); /* by default server = host */
+  snprintf(server_name, PBS_MAXHOSTNAME, "%s", server_host); /* by default server = host */
 
   pbs_server_addr    = get_hostaddr(&local_errno, server_host);
   pbs_mom_addr       = pbs_server_addr;   /* assume on same host */
@@ -1527,14 +1528,14 @@ int main(
     }
   else
     {
-    sprintf(lockfile,"%s/%s/server.lock",
+    snprintf(lockfile,sizeof(lockfile),"%s/%s/server.lock",
       path_home,
       PBS_SVR_PRIVATE);
     }
 
   /* HA EVENTS MUST HAPPEN HERE */
 
-  strcpy(HALockFile,lockfile);
+  snprintf(HALockFile,MAXPATHLEN,"%s", lockfile);
   HALockCheckTime = server.sv_attr[SRV_ATR_LockfileCheckTime].at_val.at_long;
   HALockUpdateTime = server.sv_attr[SRV_ATR_LockfileUpdateTime].at_val.at_long;
 
