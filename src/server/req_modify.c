@@ -887,8 +887,7 @@ void *req_modifyarray(
 
   if (pa == NULL)
     {
-    req_reject(PBSE_IVALREQ,0,preq,NULL,"Cannot find array");
-
+    req_reject(PBSE_UNKARRAYID, 0, preq, NULL, "unable to find array");
     return(NULL);
     }
 

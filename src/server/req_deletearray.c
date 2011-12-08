@@ -423,11 +423,6 @@ void array_delete_wt(
           set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
 
           pthread_mutex_unlock(pjob->ji_mutex);
-          if(LOGLEVEL >= 7)
-            {
-            sprintf(log_buf, "%s: unlocked ai_mutex", id);
-            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-            }
           }
         else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
           {
@@ -451,6 +446,11 @@ void array_delete_wt(
       last_id = NULL;
 
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "%s: unlocked ai_mutex", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
 
       free(ptask);
 

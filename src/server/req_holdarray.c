@@ -102,6 +102,7 @@ void *req_holdarray(
     /* this shouldn't happen since we verify that this is a valid array
        just prior to calling this function */
     req_reject(PBSE_UNKARRAYID, 0, preq, NULL, "unable to find array");
+    return(NULL);
     }
 
   get_jobowner(pa->ai_qs.owner, owner);
@@ -152,11 +153,11 @@ void *req_holdarray(
   if ((rc = chk_hold_priv(temphold.at_val.at_long, preq->rq_perm)) != 0)
     {
     pthread_mutex_unlock(pa->ai_mutex);
-  if(LOGLEVEL >= 7)
-    {
-    sprintf(log_buf, "%s: unlocking ai_mutex", id);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
-    }
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: unlocking ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+      }
 
     req_reject(rc, 0, preq, NULL, NULL);
     return(NULL);

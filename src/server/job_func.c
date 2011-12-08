@@ -942,6 +942,11 @@ job *job_clone(
     release_mutex = TRUE;
     
     pa = get_array(template_job->ji_qs.ji_jobid);
+    if(pa == NULL)
+      {
+      job_free(pnewjob);
+      return(NULL);
+      }
     }
 
   pa->jobs[taskid] = pnewjob;
@@ -1009,7 +1014,6 @@ void job_clone_wt(
   if (pa == NULL)
     {
     free(ptask);
-
     return;
     }
 

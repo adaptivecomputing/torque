@@ -699,7 +699,7 @@ void req_registerarray(
         preq->rq_ind.rq_register.rq_parent,
         pbse_to_txt(PBSE_UNKJOBID));
 
-      req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
+      req_reject(PBSE_UNKARRAYID, 0, preq, NULL, "unable to find array");
       }
     else
       {

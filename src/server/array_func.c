@@ -187,7 +187,6 @@ job_array *get_array(
     if (strcmp(pa->ai_qs.parent_id, id) == 0)
       {
       strcpy(pa->ai_qs.array_id, id);
-      pthread_mutex_unlock(pa->ai_mutex);
       return(pa);
       }
 

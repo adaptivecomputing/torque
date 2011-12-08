@@ -622,12 +622,12 @@ job *job_recov(
 
     if (pa != NULL)
       {
+      pthread_mutex_unlock(pa->ai_mutex);
       if(LOGLEVEL >=7)
         {
         sprintf(log_buf, "unlocked ai_mutex: %s", id);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
         }
-      pthread_mutex_unlock(pa->ai_mutex);
       }
     }
 

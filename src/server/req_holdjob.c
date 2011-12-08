@@ -505,6 +505,12 @@ void *req_releasearray(
   struct batch_request *preq = (struct batch_request *)vp;
 
   pa = get_array(preq->rq_ind.rq_release.rq_objname);
+  if(pa == NULL)
+    {
+    req_reject(PBSE_IVALREQ,0,preq,NULL,"Cannot find array");
+    return(NULL);
+    }
+
 
   while (TRUE)
     {

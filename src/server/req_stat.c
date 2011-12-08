@@ -422,6 +422,11 @@ static void req_stat_job_step2(
   if (type == tjstArray)
     {
     pa = get_array(preq->rq_ind.rq_status.rq_id);
+    if(pa == NULL)
+      {
+      req_reject(PBSE_UNKARRAYID, 0, preq, NULL, "unable to find array");
+      return;
+      }
     }
 
   iter = -1;
