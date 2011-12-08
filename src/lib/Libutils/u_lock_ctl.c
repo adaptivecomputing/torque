@@ -171,11 +171,10 @@ int lock_node(
 
   {
   int   rc = PBSE_NONE;
-  char *err_msg = NULL;
+  char  err_msg[MSG_LEN_LONG];
   
   if (logging >= 6)
     {
-    err_msg = (char *)calloc(1, MSG_LEN_LONG);
     snprintf(err_msg, MSG_LEN_LONG, "locking start %s in method %s", the_node->nd_name, id);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
@@ -193,13 +192,10 @@ int lock_node(
   
   if (logging >= 6)
     {
-    err_msg = (char *)calloc(1, MSG_LEN_LONG);
     snprintf(err_msg, MSG_LEN_LONG, "locking complete %s in method %s", the_node->nd_name, id);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
 
-  if (err_msg != NULL)
-    free(err_msg);
   return rc;
   }
 

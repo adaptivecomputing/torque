@@ -197,6 +197,7 @@ void          restore_attr_default (struct attribute *);
 
 /* Global Data Items */
 
+int          lockfds = -1;
 int          ForceCreation;
 int          high_availability_mode = FALSE;
 char        *acct_file = NULL;
@@ -1380,7 +1381,6 @@ int main(
   {
   int          i;
   int          local_errno = 0;
-  int          lockfds = -1;
   char         lockfile[MAXPATHLEN + 1];
   char        *pc = NULL;
   char        *pathPtr = NULL;

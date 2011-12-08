@@ -266,7 +266,9 @@ void append_link(
  */
 
 void delete_link(
+
   struct list_link *old) /* ptr to link to delete */
+
   {
 
   if ((old->ll_prior != (list_link *)0) &&

@@ -517,6 +517,30 @@ void finish_move_process(
 
 
 
+void free_server_attrs(
+
+  tlist_head *attrl_ptr)
+
+  {
+  tlist_head  attrl = *attrl_ptr;
+  svrattrl   *pal;
+  svrattrl   *tmp;
+
+  pal = (svrattrl *)GET_NEXT(attrl);
+
+  while (pal != NULL)
+    {
+    tmp = GET_NEXT(pal->al_link);
+    delete_link(&pal->al_link);
+    free(pal);
+
+    pal = tmp;
+    }
+  } /* END free_server_attrs() */
+
+
+
+
 int send_job_work(
 
   job                  *pjob,      /* M */
@@ -640,6 +664,7 @@ int send_job_work(
         log_err(*my_err, id, log_buf);
 
         finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
+        free_server_attrs(&attrl);
 
         return(LOCUTION_FAIL);
         }
@@ -658,6 +683,7 @@ int send_job_work(
       log_err(*my_err, id, log_buf);
   
       finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
+      free_server_attrs(&attrl);
 
       return(LOCUTION_FAIL);
       }
@@ -717,6 +743,7 @@ int send_job_work(
             "MOM reports job already running");
 
           finish_move_process(pjob,preq,start_time,node_name,LOCUTION_SUCCESS,type);
+          free_server_attrs(&attrl);
 
           return(PBSE_NONE);
           }
@@ -818,6 +845,7 @@ int send_job_work(
 
         /* FAILURE */
         finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
+        free_server_attrs(&attrl);
 
         return(LOCUTION_FAIL);
         }
@@ -836,9 +864,12 @@ int send_job_work(
 
     /* SUCCESS */
     finish_move_process(pjob,preq,start_time,node_name,LOCUTION_SUCCESS,type);
+    free_server_attrs(&attrl);
 
     return(PBSE_NONE);
     }  /* END for (NumRetries) */
+        
+  free_server_attrs(&attrl);
 
   if (con >= 0)
     {

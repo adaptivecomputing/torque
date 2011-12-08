@@ -3939,6 +3939,7 @@ static int node_spec(
       (all_reqs.req_start == NULL))
     {
     log_err(ENOMEM, id, "Cannot allocate memory!");
+    return(-1);
     }
 
   /* set up pointers for reqs */
@@ -3965,6 +3966,9 @@ static int node_spec(
   if ((rc = parse_req_data(&all_reqs)) != PBSE_NONE)
     {
     /* FAILURE */
+    free(all_reqs.reqs);
+    free(all_reqs.req_start);
+
     return(rc);
     }
 
@@ -4032,6 +4036,8 @@ static int node_spec(
       break;
     } /* END for each node */
 
+  free(all_reqs.reqs);
+  free(all_reqs.req_start);
   free(spec);
 
   if (eligible_nodes < num)

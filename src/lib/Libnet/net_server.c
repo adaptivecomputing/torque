@@ -615,7 +615,7 @@ int wait_request(
       pthread_mutex_unlock(svr_conn[i].cn_mutex);
     } /* END for i */
 
-    free(SelectSet);
+  free(SelectSet);
 
   /* NOTE:  break out if shutdown request received */
 

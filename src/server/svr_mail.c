@@ -215,7 +215,7 @@ void *send_the_mail(
 
     snprintf(tmpBuf,sizeof(tmpBuf),
       "Unable to popen() command '%s' for writing: '%s' (error %d)\n",
-      cmdbuf,
+      SENDMAIL_CMD,
       strerror(errno),
       errno);
     log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
@@ -250,6 +250,7 @@ void *send_the_mail(
       tmpBuf);
 
     free_mail_info(mi);
+    free(cmdbuf);
 
     return(NULL);
     }
@@ -295,6 +296,7 @@ void *send_the_mail(
     }
 
   free_mail_info(mi);
+  free(cmdbuf);
     
   return(NULL);
   } /* END send_the_mail() */

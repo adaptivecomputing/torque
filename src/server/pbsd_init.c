@@ -686,6 +686,9 @@ dynamic_string *prepare_mom_hierarchy()
     send_format = make_default_hierarchy();
     }
 
+  if (fds >= 0)
+    close(fds);
+
   return(send_format);
   } /* END prepare_mom_hierarchy() */
 

@@ -87,6 +87,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "work_task.h"
@@ -125,6 +126,7 @@ extern char *msg_leftrunning;
 extern char *msg_stillrunning;
 extern char *msg_on_shutdown;
 extern char *msg_job_abort;
+extern int   lockfds;
 
 extern struct server server;
 extern attribute_def svr_attr_def[];
@@ -145,6 +147,8 @@ void svr_shutdown(
   long         *state;
   int           iter;
   char          log_buf[LOCAL_LOG_BUF_SIZE];
+
+  close(lockfds);
 
   /* Lets start by logging shutdown and saving everything */
 
