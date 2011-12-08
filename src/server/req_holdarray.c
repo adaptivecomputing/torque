@@ -24,6 +24,7 @@ extern int svr_authorize_req(struct batch_request *preq, char *owner,
                                char *submit_host);
 
 extern char *msg_permlog;
+extern int LOGLEVEL;
 
 
 void hold_job(
@@ -81,6 +82,7 @@ void *req_holdarray(
   void *vp) /* I */
 
   {
+  char id[] = "req_holdarray";
   int i;
 
   struct batch_request *preq = (struct batch_request *)vp;
@@ -120,6 +122,11 @@ void *req_holdarray(
       log_buf);
 
     pthread_mutex_unlock(pa->ai_mutex);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: unlocking ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+      }
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
     return(NULL);
@@ -130,6 +137,11 @@ void *req_holdarray(
                      &temphold)) != 0)
     {
     pthread_mutex_unlock(pa->ai_mutex);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: unlocking ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+      }
 
     req_reject(rc, 0, preq, NULL, NULL);
     return(NULL);
@@ -140,6 +152,11 @@ void *req_holdarray(
   if ((rc = chk_hold_priv(temphold.at_val.at_long, preq->rq_perm)) != 0)
     {
     pthread_mutex_unlock(pa->ai_mutex);
+  if(LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s: unlocking ai_mutex", id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+    }
 
     req_reject(rc, 0, preq, NULL, NULL);
     return(NULL);
@@ -182,6 +199,11 @@ void *req_holdarray(
     }
 
   pthread_mutex_unlock(pa->ai_mutex);
+  if(LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s: unlocking ai_mutex", id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+    }
 
   reply_ack(preq);
 

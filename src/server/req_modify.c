@@ -871,6 +871,8 @@ void *req_modifyarray(
   void *vp) /* I */
 
   {
+  char                 id[] = "req_modifyarray";
+  char                 log_buf[LOCAL_LOG_BUF_SIZE];
   job_array            *pa;
   job                  *pjob;
   svrattrl             *plist;
@@ -945,6 +947,11 @@ void *req_modifyarray(
        (rc != PBSE_RELAYED_TO_MOM))
       {
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "%s: unlocked ai_mutex", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
   
@@ -957,6 +964,11 @@ void *req_modifyarray(
     if (rc == PBSE_RELAYED_TO_MOM)
       {
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "%s: unlocked ai_mutex", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
 
       return(NULL);
       }
@@ -969,6 +981,11 @@ void *req_modifyarray(
         (rc != PBSE_RELAYED_TO_MOM))
       {
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "%s: unlocked ai_mutex", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error altering the array");
       return(NULL);
@@ -987,6 +1004,11 @@ void *req_modifyarray(
          so some elements fo the array will be updated but others are
          not. But at least the user will know something went wrong.*/
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "%s: unlocked ai_mutex", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
       pthread_mutex_unlock(pjob->ji_mutex);
 
       req_reject(rc,0,preq,NULL,NULL);
@@ -996,6 +1018,11 @@ void *req_modifyarray(
     if (rc == PBSE_RELAYED_TO_MOM)
       {
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "%s: unlocked ai_mutex", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
       pthread_mutex_unlock(pjob->ji_mutex);
       
       return(NULL);
@@ -1006,6 +1033,11 @@ void *req_modifyarray(
 
   /* SUCCESS */
   pthread_mutex_unlock(pa->ai_mutex);
+  if(LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s: unlocked ai_mutex", id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    }
 
   reply_ack(preq);
 

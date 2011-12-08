@@ -120,7 +120,8 @@
 #include "queue_recov.h" /* que_recov_xml */
 #include "dynamic_string.h"
 #include "utils.h"
-
+#include "job_func.h" /* job_clone_wt */
+#include "req_jobobit.h" /* on_job_exit */
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -212,7 +213,6 @@ extern struct server server;
 
 /* External Functions Called */
 
-extern void   on_job_exit(struct work_task *);
 extern void   on_job_rerun(struct work_task *);
 extern void   set_resc_assigned(job *, enum batch_op);
 extern void   set_old_nodes(job *);
@@ -220,7 +220,6 @@ extern void   acct_close(void);
 
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int     net_move(job *, struct batch_request *);
-extern void  job_clone_wt(struct work_task *);
 
 /* Private functions in this file */
 
@@ -1366,6 +1365,12 @@ int pbsd_init(
         pa->jobs_recovered = 0;
 
         pthread_mutex_unlock(pa->ai_mutex);
+        if(LOGLEVEL >= 7)
+          {
+          sprintf(log_buf, "%s: unlocking ai_mutex", id);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+          }
+                    
         }
       else
         {
@@ -1594,6 +1599,19 @@ int pbsd_init(
 
   while ((pa = next_array(&iter)) != NULL)
     {
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: locking ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      }
+                    
+    pthread_mutex_lock(pa->ai_mutex);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: locked ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      }
+                    
     pa->template_job = find_array_template(pa->ai_qs.parent_id);
 
     if (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)
@@ -1639,6 +1657,12 @@ int pbsd_init(
       pthread_mutex_unlock(pa->template_job->ji_mutex);
 
     pthread_mutex_unlock(pa->ai_mutex);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: unlocking ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      }
+                    
     }
 
 
@@ -1800,6 +1824,7 @@ static int pbsd_init_job(
   int  type)  /* I */
 
   {
+  char              id[] = "pbsd_init_job";
   unsigned int      d;
 
   time_t            time_now = time(NULL);
@@ -1999,6 +2024,12 @@ static int pbsd_init_job(
         update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
 
         pthread_mutex_unlock(pa->ai_mutex);
+        if(LOGLEVEL >= 7)
+          {
+          sprintf(log_buf, "%s: unlocking ai_mutex", id);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+          }
+                    
         }
 
       break;
@@ -2186,20 +2217,20 @@ static void catch_child(
   int sig)
 
   {
-  static char *id = "catch_child";
+/*  static char *id = "catch_child";*/
   pid_t        pid;
   int          statloc;
-  char         log_buf[LOCAL_LOG_BUF_SIZE];
+/*  char         log_buf[LOCAL_LOG_BUF_SIZE];*/
 
   while (1)
     {
     if (((pid = waitpid(-1, &statloc, WNOHANG)) == -1) &&
         (errno != EINTR))
       {
-      if ((LOGLEVEL >= 7) && (errno != ECHILD))
+/*      if ((LOGLEVEL >= 7) && (errno != ECHILD))
         {
         log_err(errno, id, "waitpid failed");
-        }
+        }*/
 
       return;
       }
@@ -2209,7 +2240,7 @@ static void catch_child(
       return;
       }
 
-    if (LOGLEVEL >= 7)
+/*    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "caught SIGCHLD for pid %d", pid);
 
@@ -2218,7 +2249,7 @@ static void catch_child(
         PBS_EVENTCLASS_SERVER,
         msg_daemonname,
         log_buf);
-      }
+      }*/
     }    /* END while (1) */
 
   return;

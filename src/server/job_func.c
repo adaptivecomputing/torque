@@ -163,7 +163,6 @@ extern struct batch_request *setup_cpyfiles(struct batch_request *,job *,char*,c
 extern int job_log_open(char *, char *);
 extern int log_job_record(char *buf);
 extern void check_job_log(struct work_task *ptask);
-job_array *get_jobs_array(job *);
 
 /* Local Private Functions */
 
@@ -474,6 +473,11 @@ int job_abt(
         update_array_values(pa,pjob,old_state,aeTerminate);
 
         pthread_mutex_unlock(pa->ai_mutex);
+        if(LOGLEVEL >= 7)
+          {
+          sprintf(log_buf, "unlocked ai_mutex: %s", myid);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+          }
         }
 
       job_purge(pjob);
@@ -517,6 +521,11 @@ int job_abt(
       update_array_values(pa,pjob,old_state,aeTerminate);
 
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "unlocked ai_mutex: %s", myid);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
       }
 
     job_purge(pjob);
@@ -716,6 +725,7 @@ job *job_clone(
 
   {
   static char   id[] = "job_clone";
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   job  *pnewjob;
   attribute tempattr;
@@ -734,6 +744,12 @@ job *job_clone(
   int    slen;
   int    release_mutex = FALSE;
 
+
+  if(LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "taskid %d", taskid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+    }
   if (taskid > PBS_MAXJOBARRAY)
     {
     log_err(-1, id, "taskid out of range");
@@ -930,9 +946,21 @@ job *job_clone(
 
   pa->jobs[taskid] = pnewjob;
   pnewjob->ji_arraystruct = pa;
+  if(LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "job id: %s. release_mutex: %d", pnewjob->ji_qs.ji_jobid, release_mutex);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+    }
 
   if (release_mutex == TRUE)
+    {
     pthread_mutex_unlock(pa->ai_mutex);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "unlocked ai_mutex: %s", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pnewjob->ji_qs.ji_jobid, log_buf);
+      }
+    }
 
   return(pnewjob);
   } /* END job_clone() */
@@ -954,6 +982,7 @@ void job_clone_wt(
 
   {
   static char         id[] = "job_clone_wt";
+  char                log_buf[LOCAL_LOG_BUF_SIZE];
   job                *pjob;
   job                *pjobclone;
 
@@ -985,6 +1014,12 @@ void job_clone_wt(
     }
 
   rn = (array_request_node*)GET_NEXT(pa->request_tokens);
+  if(rn == NULL)
+    {
+    /* something isn't right. */
+    pthread_mutex_unlock(pa->ai_mutex);
+    return;
+    }
 
   strcpy(namebuf, path_jobs);
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
@@ -1132,6 +1167,11 @@ void job_clone_wt(
     }
 
   pthread_mutex_unlock(pa->ai_mutex);
+  if(LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "unlocked ai_mutex: %s", id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    }
 
   free(ptask);
 
@@ -1605,6 +1645,11 @@ void job_purge(
       array_save(pa);
 
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >=7)
+        {
+        sprintf(log_buf, "unlocked ai_mutex: %s", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
       }
     }
 
@@ -2350,12 +2395,25 @@ job_array *get_jobs_array(
   job *pjob)
 
   {
+  char id[] = "get_jobs_array";
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+
   job_array *pa = pjob->ji_arraystruct;
 
   if (pthread_mutex_trylock(pa->ai_mutex))
     {
     pthread_mutex_unlock(pjob->ji_mutex);
+    if(LOGLEVEL >=7)
+      {
+      sprintf(log_buf, "locking ai_mutex: %s", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      }
     pthread_mutex_lock(pa->ai_mutex);
+    if(LOGLEVEL >=7)
+      {
+      sprintf(log_buf, "locked ai_mutex: %s", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      }
     pthread_mutex_lock(pjob->ji_mutex);
     }
 

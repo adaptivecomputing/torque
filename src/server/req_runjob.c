@@ -184,6 +184,7 @@ void *req_runjob(
   void *vp)  /* I (modified) */
 
   {
+  char   id[] = "req_runjob";
   struct batch_request *preq = (struct batch_request *)vp;
   job                  *pjob;
   int                   rc;
@@ -254,11 +255,21 @@ void *req_runjob(
 
       pthread_mutex_unlock(pjob->ji_mutex);
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "%s: unlocked ai_mutex", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
 
       return(NULL);
       }
     
     pthread_mutex_unlock(pa->ai_mutex);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: unlocked ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      }
     }
 
   /* NOTE:  nodes assigned to job in svr_startjob() */

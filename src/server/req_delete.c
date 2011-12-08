@@ -111,6 +111,7 @@
 #include "svrfunc.h"
 #include "array.h"
 #include "utils.h"
+#include "req_jobobit.h" /* on_job_exit */
 
 #define PURGE_SUCCESS 1
 #define MOM_DELETE    2
@@ -504,6 +505,11 @@ jump:
         }
 
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "%s: unlocking ai_mutex", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
       }
     } /* END MoabArrayCompatible check */
 
@@ -518,6 +524,15 @@ jump:
     /* force new connection */
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "calling on_job_exit from %s", id);
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buf);
+      }
     set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
@@ -547,6 +562,15 @@ jump:
 
       unlock_queue(pque, id, NULL, LOGLEVEL);
 
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "calling on_job_exit from %s", id);
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buf);
+      }
       KeepSeconds = attr_ifelse_long(
                     &pque->qu_attr[QE_ATR_KeepCompleted],
                     &server.sv_attr[SRV_ATR_KeepCompleted],

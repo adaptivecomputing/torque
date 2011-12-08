@@ -19,6 +19,7 @@
 #include "log.h"
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
+#include "req_jobobit.h"
 
 #include "array.h"
 
@@ -51,12 +52,14 @@ int attempt_delete(
   void *j) /* I */
 
   {
+  char       id[] = "attempt_delete";
   int        skipped = FALSE;
   int        release_mutex = TRUE;
 
   char      *jobid_copy;
   job       *pjob;
   time_t     time_now = time(NULL);
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* job considered deleted if null */
   if (j == NULL)
@@ -114,6 +117,15 @@ int attempt_delete(
     
     /* force new connection */
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "calling on_job_exit from %s", id);
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        log_buf);
+      }
     set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
@@ -151,6 +163,16 @@ int attempt_delete(
 
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "calling on_job_exit from %s", id);
+      log_event(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buf);
+      }
+
     set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, FALSE);
     }
 
@@ -171,6 +193,7 @@ void req_deletearray(
   struct batch_request *preq)
 
   {
+  char             id[] = "req_deletearray";
   job_array        *pa;
 
   char             *range;
@@ -205,6 +228,11 @@ void req_deletearray(
     log_event(PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buf);
 
     pthread_mutex_unlock(pa->ai_mutex);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: unlocked ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+      }
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
     return;
@@ -222,6 +250,11 @@ void req_deletearray(
       {
       /* ERROR */
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "%s: unlocked ai_mutex", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+        }
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error in specified array range");
       return;
@@ -233,11 +266,21 @@ void req_deletearray(
     }
 
   pthread_mutex_unlock(pa->ai_mutex);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: unlocked ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+      }
 
   /* check if the array is gone */
   if ((pa = get_array(preq->rq_ind.rq_delete.rq_objname)) != NULL)
     {
     pthread_mutex_unlock(pa->ai_mutex);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: unlocked ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+      }
 
     /* some jobs were not deleted.  They must have been running or had
        JOB_SUBSTATE_TRANSIT */
@@ -284,6 +327,7 @@ void array_delete_wt(
   struct work_task *ptask)
 
   {
+  char id[] = "array_delete_wt";
   struct batch_request *preq;
   job_array            *pa;
 
@@ -293,6 +337,7 @@ void array_delete_wt(
   static char          *last_id = NULL;
   char                 *jobid_copy;
   time_t                time_now = time(NULL);
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   preq = ptask->wt_parm1;
 
@@ -366,9 +411,23 @@ void array_delete_wt(
           /* force new connection */
           jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
+          if(LOGLEVEL >= 7)
+            {
+            sprintf(log_buf, "calling on_job_exit from %s", id);
+            log_event(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            log_buf);
+            }
           set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
 
           pthread_mutex_unlock(pjob->ji_mutex);
+          if(LOGLEVEL >= 7)
+            {
+            sprintf(log_buf, "%s: unlocked ai_mutex", id);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+            }
           }
         else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
           {
@@ -400,6 +459,11 @@ void array_delete_wt(
     }
 
   pthread_mutex_unlock(pa->ai_mutex);
+  if(LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s: unlocked ai_mutex", id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+    }
 
   req_deletearray(preq);
 

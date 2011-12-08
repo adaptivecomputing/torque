@@ -137,6 +137,7 @@ extern int job_qs_upgrade(job *, int, char *, int);
 
 extern char  *path_jobs;
 extern const char *PJobSubState[];
+extern int LOGLEVEL;
 
 /* data global only to this file */
 
@@ -620,7 +621,14 @@ job *job_recov(
       }
 
     if (pa != NULL)
+      {
+      if(LOGLEVEL >=7)
+        {
+        sprintf(log_buf, "unlocked ai_mutex: %s", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+        }
       pthread_mutex_unlock(pa->ai_mutex);
+      }
     }
 
 #endif

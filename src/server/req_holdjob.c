@@ -118,6 +118,7 @@ extern char *msg_jobholdset;
 extern char *msg_jobholdrel;
 extern char *msg_mombadhold;
 extern char *msg_postmomnojob;
+extern int LOGLEVEL;
 
 int chk_hold_priv(long val, int perm);
 int get_hold(tlist_head *, char **, attribute *);
@@ -494,6 +495,8 @@ void *req_releasearray(
   void *vp) /* I */
 
   {
+  char      id[] = "req_releasearray";
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
   job       *pjob;
   job_array *pa;
   char      *range;
@@ -527,6 +530,11 @@ void *req_releasearray(
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
 
     pthread_mutex_unlock(pa->ai_mutex);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: unlocking ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      }
     pthread_mutex_unlock(pjob->ji_mutex);
 
     return(NULL);
@@ -542,6 +550,11 @@ void *req_releasearray(
     if ((rc = release_array_range(pa,preq,range)) != 0)
       {
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "%s: unlocking ai_mutex", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
 
       req_reject(rc,0,preq,NULL,NULL);
 
@@ -551,6 +564,11 @@ void *req_releasearray(
   else if ((rc = release_whole_array(pa,preq)) != 0)
     {
     pthread_mutex_unlock(pa->ai_mutex);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: unlocking ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      }
 
     req_reject(rc,0,preq,NULL,NULL);
 
@@ -558,6 +576,11 @@ void *req_releasearray(
     }
 
   pthread_mutex_unlock(pa->ai_mutex);
+  if(LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s: unlocking ai_mutex", id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    }
 
   reply_ack(preq);
 

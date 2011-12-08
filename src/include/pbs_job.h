@@ -1090,9 +1090,7 @@ extern void  set_chkpt_deflt(job *, pbs_queue *);
 #endif /* QUEUE_H */
 
 #ifdef WORK_TASK_H
-extern void  job_clone_wt(struct work_task *);
 extern int   issue_signal(job *, char *, void(*)(struct work_task *), void *);
-extern void   on_job_exit(struct work_task *);
 #endif /* WORK_TASK_H */
 
 #endif /* PBS_JOB_H */

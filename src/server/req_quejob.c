@@ -118,13 +118,13 @@
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 #include "csv.h"
+#include "job_func.h"
 #include "array.h"
 #include "queue_func.h" /* get_dfltque, find_queuebyname */
+#include "array_func.h"
 
 
 #include "work_task.h"
-extern void  job_clone_wt(struct work_task *);
-extern int setup_array_struct(job *pjob);
 
 
 /* External Functions Called: */

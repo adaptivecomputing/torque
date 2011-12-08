@@ -353,30 +353,24 @@ static void req_stat_job_step2(
   struct stat_cntl *cntl)  /* I/O (freed on return) */
 
   {
+  char                  id[] = "req_stat_job_step2";
   svrattrl              *pal;
   job                   *pjob = NULL;
 
   struct batch_request  *preq;
-
   struct batch_reply    *preply;
   int                    rc = 0;
-
   enum TJobStatTypeEnum  type;
-
   pbs_queue             *pque = NULL;
   int                    exec_only = 0;
 
   int                    IsTruncated = 0;
   int                    bad = 0;
-
   long                   DTime;  /* delta time - only report full attribute list if J->MTime > DTime */
-
   static svrattrl       *dpal = NULL;
-  
   int                    job_array_index = 0;
   job_array             *pa = NULL;
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
-
   int                    iter;
   time_t                 time_now = time(NULL);
   
@@ -527,6 +521,12 @@ static void req_stat_job_step2(
         pthread_mutex_unlock(pjob->ji_mutex);
         if (pa != NULL)
           pthread_mutex_unlock(pa->ai_mutex);
+          if(LOGLEVEL >= 7)
+            {
+            sprintf(log_buf, "%s: unlocked ai_mutex", id);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+            }
+
 
         return; /* will pick up after mom replies */
         }
@@ -539,6 +539,11 @@ static void req_stat_job_step2(
       {
       if (pa != NULL)
         pthread_mutex_unlock(pa->ai_mutex);
+        if(LOGLEVEL >= 7)
+          {
+          sprintf(log_buf, "%s: unlocked ai_mutex", id);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+          }
 
       reply_free(preply);
 
@@ -680,7 +685,14 @@ static void req_stat_job_step2(
           req_reject(rc, bad, preq, NULL, NULL);
 
           if (pa != NULL)
+            {
             pthread_mutex_unlock(pa->ai_mutex);
+            if(LOGLEVEL >= 7)
+              {
+              sprintf(log_buf, "%s: unlocked ai_mutex", id);
+              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+              }
+            }
           pthread_mutex_unlock(pjob->ji_mutex);
           unlock_queue(pque, "req_stat_job_step2", "perm", LOGLEVEL);
           return;
@@ -708,6 +720,11 @@ static void req_stat_job_step2(
 
     if (pa != NULL)
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "%s: unlocked ai_mutex", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
 
     reply_send_svr(preq);
 
@@ -752,7 +769,14 @@ static void req_stat_job_step2(
     if ((rc != 0) && (rc != PBSE_PERM))
       {
       if (pa != NULL)
+        {
         pthread_mutex_unlock(pa->ai_mutex);
+        if(LOGLEVEL >= 7)
+          {
+          sprintf(log_buf, "%s: unlocked ai_mutex", id);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+          }
+        }
       pthread_mutex_unlock(pjob->ji_mutex);
 
       req_reject(rc, bad, preq, NULL, NULL);
@@ -793,7 +817,14 @@ nextjob:
     }  /* END while (pjob != NULL) */
 
   if (pa != NULL)
+    {
     pthread_mutex_unlock(pa->ai_mutex);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: unlocked ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      }
+    }
  
   reply_send_svr(preq);
 

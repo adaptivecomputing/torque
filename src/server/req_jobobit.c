@@ -1363,10 +1363,12 @@ int handle_complete_first_time(
   int  handle)
 
   {
+  char id[] = "handle_complete_first_time";
   pbs_queue   *pque;
   char        *jobid;
   int          KeepSeconds = 0;
   time_t       time_now = time(NULL);
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* first time in */
   if (LOGLEVEL >= 4)
@@ -1414,6 +1416,16 @@ int handle_complete_first_time(
      */
     jobid = strdup(pjob->ji_qs.ji_jobid);
     
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "calling on_job_exit from %s: handle = -1", id);
+      log_event(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buf);
+      }
+
     set_task(WORK_Timed,
       pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
       on_job_exit, jobid, FALSE);
@@ -1430,6 +1442,16 @@ int handle_complete_first_time(
     
     jobid = strdup(pjob->ji_qs.ji_jobid);
     
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "calling on_job_exit from %s", id);
+      log_event(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buf);
+      }
+
     set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid, FALSE);
     
     if (gettimeofday(&tv, &tz) == 0)
@@ -1461,6 +1483,7 @@ int handle_complete_second_time(
   job *pjob)
 
   {
+  char         id[] = "handle_complete_second_time";
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   char        *jobid;
   time_t       time_now = time(NULL);
@@ -1479,6 +1502,16 @@ int handle_complete_second_time(
       }
     
     jobid = strdup(pjob->ji_qs.ji_jobid);
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "calling on_job_exit from %s", id);
+      log_event(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buf);
+      }
+
     set_task(WORK_Timed, time_now + JOBMUSTREPORTDEFAULTKEEP, on_job_exit, jobid, FALSE);
     
     return(FALSE); 
@@ -2255,8 +2288,8 @@ void *req_jobobit(
   void *vp) /* I */
 
   {
-#ifdef USESAVEDRESOURCES
   char                  id[] = "req_jobobit";
+#ifdef USESAVEDRESOURCES
 #endif    /* USESAVEDRESOURCES */
   int                   alreadymailed = 0;
   int                   bad;
@@ -2691,6 +2724,16 @@ void *req_jobobit(
 
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
+    if(LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "calling on_job_exit from %s", id);
+      log_event(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buf);
+      }
+
     set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
 
     /* decrease array running job count */
@@ -2702,6 +2745,11 @@ void *req_jobobit(
       update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
 
       pthread_mutex_unlock(pa->ai_mutex);
+      if(LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "%s: unlocking ai_mutex", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
       }
 
     if (LOGLEVEL >= 4)
