@@ -52,14 +52,15 @@ struct tm_errcode
   { 0,  "?" }
   };
 
-int    *ev;
-tm_event_t *events_spawn;
-tm_event_t *events_obit;
-int     numnodes;
-tm_task_id *tid;
-int     verbose = 0;
-sigset_t allsigs;
+int            *ev;
+tm_event_t     *events_spawn;
+tm_event_t     *events_obit;
+int             numnodes;
+tm_task_id     *tid;
+int             verbose = 0;
+sigset_t        allsigs;
 char           *id;
+struct tm_roots rootrot;
 
 int stdoutfd, stdoutport;
 fd_set permrfsd;
@@ -161,8 +162,6 @@ mom_reconnect(void)
 
   {
   int c, rc;
-
-  struct tm_roots rootrot;
 
   for (;;)
     {
@@ -694,7 +693,6 @@ int main(
   int onenode = -1;
   int rc;
 
-  struct tm_roots rootrot;
   int  nspawned = 0;
   tm_node_id *nodelist;
   int start;

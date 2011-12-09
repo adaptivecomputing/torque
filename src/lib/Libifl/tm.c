@@ -853,9 +853,11 @@ int tm_spawn(
 ** signified by the handle, <tid>.
 */
 int tm_kill(
-  tm_task_id tid,  /* in  */
-  int sig,  /* in  */
+
+  tm_task_id  tid,  /* in  */
+  int         sig,  /* in  */
   tm_event_t *event)  /* out */
+
   {
   task_info *tp;
 
@@ -891,8 +893,9 @@ int tm_kill(
 ** dies.
 */
 int tm_obit(
-  tm_task_id tid,  /* in  */
-  int *obitval, /* out */
+
+  tm_task_id  tid,  /* in  */
+  int        *obitval, /* out */
   tm_event_t *event)  /* out */
   {
   task_info *tp;

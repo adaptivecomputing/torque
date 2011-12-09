@@ -120,7 +120,6 @@
 #include "queue_recov.h" /* que_recov_xml */
 #include "dynamic_string.h"
 #include "utils.h"
-#include "job_func.h" /* job_clone_wt */
 #include "req_jobobit.h" /* on_job_exit */
 
 /*#ifndef SIGKILL*/
