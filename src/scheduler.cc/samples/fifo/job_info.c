@@ -786,6 +786,7 @@ job_info **job_filter(job_info** jobs, int size,
                       int (*filter_func)(job_info*, void*), void *arg)
   {
   job_info **new_jobs = NULL;   /* new array of jobs */
+  job_info **tmp = NULL;
   int i, j = 0;
 
   if ((new_jobs = malloc((size + 1) * sizeof(job_info *))) == NULL)
@@ -803,11 +804,13 @@ job_info **job_filter(job_info** jobs, int size,
       }
     }
 
-  if ((new_jobs = realloc(new_jobs, (j + 1) * sizeof(job_info *))) == NULL)
+  if ((tmp = realloc(new_jobs, (j + 1) * sizeof(job_info *))) == NULL)
     {
+    free(new_jobs);
     perror("Memory Allocation Error");
     return NULL;
     }
+  new_jobs = tmp;
 
   new_jobs[j] = NULL;
 

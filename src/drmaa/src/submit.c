@@ -484,6 +484,7 @@ drmaa_set_job_environment(
   void **attrib = c->jt->attrib;
   size_t s;
   char *env;
+  char *tmp = NULL;
   int rc;
 
   env = strdup("");
@@ -499,7 +500,13 @@ drmaa_set_job_environment(
       RAISE_NO_MEMORY();
       }
 
-    env = realloc(env, s + strlen(value) + 1);
+    tmp = realloc(env, s + strlen(value) + 1);
+    if (tmp == NULL)
+      {
+      free(env);
+      return DRMAA_ERRNO_NO_MEMORY;
+      }
+    env = tmp;
 
     strcpy(env + s, value);
     free(value);

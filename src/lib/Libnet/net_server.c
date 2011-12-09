@@ -855,8 +855,6 @@ void close_conn(
     return;
     }
 
-  close(sd);
-
   /* if there is a function to call on close, do it */
 
   if (svr_conn[sd].cn_oncl != 0)
@@ -878,6 +876,8 @@ void close_conn(
     FD_CLR(sd, GlobalSocketReadSet);
     pthread_mutex_unlock(global_sock_read_mutex);
     }
+
+  close(sd);
 
   svr_conn[sd].cn_addr = 0;
 

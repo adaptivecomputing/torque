@@ -103,6 +103,7 @@
 #include "attribute.h"
 #include "credential.h"
 #include "pbs_job.h"
+#include "u_memmgr.h" /* memmgr */
 
 
 /*
@@ -332,6 +333,7 @@ struct batch_request
   void *rq_extra; /* optional ptr to extra info  */
   int   rq_noreply; /* Set true if no reply is required */
   char *rq_extend; /* request "extension" data  */
+  memmgr *mm;         /* Memory manager for this batch_request */
 
   struct batch_reply  rq_reply;   /* the reply area for this request */
 

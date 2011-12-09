@@ -523,6 +523,7 @@ node_info **node_filter(node_info **nodes, int size,
                         int (*filter_func)(node_info*, void*), void *arg)
   {
   node_info **new_nodes = NULL;   /* the new node array */
+  node_info **tmp = NULL;
   int i, j;
 
   if ((new_nodes = (node_info **) malloc((size + 1) * sizeof(node_info *))) == NULL)
@@ -547,10 +548,15 @@ node_info **node_filter(node_info **nodes, int size,
     free(new_nodes);
     new_nodes = NULL;
     }
-  else if ((new_nodes = realloc(new_nodes, (j + 1) * sizeof(node_info *))) == NULL)
+  else if ((tmp = realloc(new_nodes, (j + 1) * sizeof(node_info *))) == NULL)
     {
     perror("Memory Allocation Error");
     free(new_nodes);
+    new_nodes = NULL;
+    }
+  else
+    {
+    new_nodes = tmp;
     }
 
   return new_nodes;

@@ -1542,8 +1542,6 @@ static int status_node(
     return(PBSE_SYSTEM);
     }
 
-  memset(pstat, 0, sizeof(struct brp_status));
-
   pstat->brp_objtype = MGR_OBJ_NODE;
 
   strcpy(pstat->brp_objname, pnode->nd_name);

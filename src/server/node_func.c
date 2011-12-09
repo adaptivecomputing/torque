@@ -854,6 +854,7 @@ static int process_host_name_part(
 
   int              hindex;
   int              size = 0;
+  ulong           *tmp = NULL;
 
   len = strlen(objname);
 
@@ -995,16 +996,16 @@ static int process_host_name_part(
       {
       size = sizeof(u_long) * (ipcount + 1);
       
-      *pul = (u_long *)calloc(1, size);  /* zero-terminate list */
+      tmp = (u_long *)calloc(1, size);  /* zero-terminate list */
       }
     else
       {
       size += sizeof(u_long) * ipcount;
       
-      *pul = (u_long *)realloc(*pul, size);
+      tmp = (u_long *)realloc(*pul, size);
       }
     
-    if (*pul == NULL)
+    if (tmp == NULL)
       {
       if (phostname != NULL)
         {
@@ -1012,6 +1013,7 @@ static int process_host_name_part(
         phostname = NULL;
         }
       }
+    *pul = tmp;
     
     for (addr_iter = addr_info; addr_iter != NULL; addr_iter = addr_iter->ai_next)
       {

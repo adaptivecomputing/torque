@@ -621,23 +621,18 @@ int conn_qsub(
 job *job_alloc(void)
 
   {
-  job *pj = get_recycled_job();
-
+  job *pj = (job *)calloc(1, sizeof(job));
+  
   if (pj == NULL)
     {
-    pj = (job *)calloc(1, sizeof(job));
+    log_err(errno, "job_alloc", "no memory");
     
-    if (pj == NULL)
-      {
-      log_err(errno, "job_alloc", "no memory");
-      
-      return(NULL);
-      }
-
-    pj->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-    pthread_mutex_init(pj->ji_mutex,NULL);
-    pthread_mutex_lock(pj->ji_mutex);
+    return(NULL);
     }
+
+  pj->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(pj->ji_mutex,NULL);
+  pthread_mutex_lock(pj->ji_mutex);
 
   pj->ji_qs.qs_version = PBS_QS_VERSION;
 

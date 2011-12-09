@@ -199,6 +199,7 @@ void *memmgr_realloc(memmgr **mgr, void *ptr, int new_size)
   int new_alloc = sizeof(int) + new_size + 1;
   int size = 0;
   memmgr *mm = memmgr_find(mgr, ptr);
+  void *tmp = NULL;
   if ((new_size > 0) && (mm == NULL))
     {
     if ((mgr != NULL) && (*mgr != NULL))
@@ -234,18 +235,21 @@ void *memmgr_realloc(memmgr **mgr, void *ptr, int new_size)
       if (new_size > mm->alloc_size)
         {
         /* as it's the only thing, realloc the current block */
-        if ((mm->the_mem = realloc(mm->the_mem, new_alloc)) != NULL)
+        if ((tmp = realloc(mm->the_mem, new_alloc)) != NULL)
           {
-          if (mm->the_mem != NULL)
-            {
-            memset(mm->the_mem + mm->alloc_size, 0, new_alloc - mm->alloc_size);
-            res_mem = mm->the_mem + sizeof(int);
-            mm->alloc_size =  new_alloc;
-            mm->remaining = 0;
-            mm->current_pos = NULL;
-            mm->the_mem[new_alloc] = '\0';
-            memcpy(mm->the_mem, &new_size, sizeof(int));
-            }
+          mm->the_mem = tmp;
+          memset(mm->the_mem + mm->alloc_size, 0, new_alloc - mm->alloc_size);
+          res_mem = mm->the_mem + sizeof(int);
+          mm->alloc_size =  new_alloc;
+          mm->remaining = 0;
+          mm->current_pos = NULL;
+          mm->the_mem[new_alloc] = '\0';
+          memcpy(mm->the_mem, &new_size, sizeof(int));
+          }
+        else
+          {
+          free(mm->the_mem);
+          mm->the_mem = NULL;
           }
         }
       /* new_size > existing, less than total and only one ref */

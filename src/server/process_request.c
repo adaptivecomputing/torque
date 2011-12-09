@@ -948,25 +948,30 @@ struct batch_request *alloc_br(
   {
 
   struct batch_request *req = NULL;
+  int rc = PBSE_NONE;
 
-  req = (struct batch_request *)calloc(1, sizeof(struct batch_request));
-
-  if (req == NULL)
+  memmgr *mm = NULL;
+  if ((rc = memmgr_init(&mm, 0)) != PBSE_NONE)
+    {
+    printf("rc = %d\n", rc);
+    log_err(errno, "alloc_br", "memmgr_init in alloc_br failed");
+    }
+  else if ((req = (struct batch_request *)memmgr_calloc(&mm, 1, sizeof(struct batch_request))) == NULL)
     {
     log_err(errno, "alloc_br", msg_err_malloc);
-
-    return(NULL);
     }
+  else
+    {
 
-  memset((void *)req, (int)0, sizeof(struct batch_request));
+    req->mm = mm;
+    req->rq_type = type;
 
-  req->rq_type = type;
-
-  req->rq_conn = -1;  /* indicate not connected */
-  req->rq_orgconn = -1;  /* indicate not connected */
-  req->rq_time = time(NULL);
-  req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-  req->rq_noreply = FALSE;  /* indicate reply is needed */
+    req->rq_conn = -1;  /* indicate not connected */
+    req->rq_orgconn = -1;  /* indicate not connected */
+    req->rq_time = time(NULL);
+    req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+    req->rq_noreply = FALSE;  /* indicate reply is needed */
+    }
 
   return(req);
   } /* END alloc_br() */
@@ -1049,6 +1054,8 @@ void free_br(
   struct batch_request *preq)
 
   {
+  memmgr *mm = preq->mm;
+
   reply_free(&preq->rq_reply);
 
   if (preq->rq_extend) 
@@ -1174,7 +1181,7 @@ void free_br(
       break;
     }  /* END switch (preq->rq_type) */
 
-  free(preq);
+  memmgr_destroy(&mm);
 
   return;
   }  /* END free_br() */
