@@ -8661,7 +8661,7 @@ int resend_compose_reply(
       {
       if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
         {
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ici->jobid, "Successfully resent im compose reply");
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ici->jobid, "Successfully re-sent im compose reply");
         free(ici);
         }
       }
@@ -8706,7 +8706,7 @@ int resend_kill_job_reply(
               {
               if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
                 {
-                log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, kj->ici->jobid, "Successfully resent kill job reply");
+                log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, kj->ici->jobid, "Successfully re-sent kill job reply");
                 free(kj->ici);
                 free(kj);
                 }
@@ -8715,10 +8715,94 @@ int resend_kill_job_reply(
           }
         }
       }
+
+    close(stream);
     }
 
   return(ret);
   } /* END resend_kill_job_reply() */
+
+
+
+
+
+int resend_spawn_task_reply(
+    
+  spawn_task_info *st)
+
+  {
+  int      ret = -1;
+  hnodent *np = &st->ici->np;
+  int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+
+  if (IS_VALID_STREAM(stream))
+    {
+    ret = im_compose_send_info(stream, st->ici);
+
+    if (ret == DIS_SUCCESS)
+      {
+      if ((ret = diswsi(stream, st->ti_task)) == DIS_SUCCESS)
+        {
+        if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
+          {
+          read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, st->ici->command, &ret);
+
+          if (ret == DIS_SUCCESS)
+            {
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, st->ici->jobid, "Successfully re-sent spawn task reply");
+            free(st->ici);
+            free(st);
+            }
+          }
+        }
+      }
+
+    close(stream);
+    }
+
+  return(ret);
+  } /* END resend_spawn_task_reply() */
+
+
+
+
+int resend_obit_task_reply(
+
+  obit_task_info *ot)
+
+  {
+  int      ret = -1;
+  hnodent *np = &ot->ici->np;
+  int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+
+  if (IS_VALID_STREAM(stream))
+    {
+    ret = im_compose_send_info(stream, ot->ici);
+
+    if (ret == DIS_SUCCESS)
+      {
+      if ((ret = diswsi(stream, ot->ti_exitstat)) == DIS_SUCCESS)
+        {
+        if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
+          {
+          read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_OBIT_TASK, &ret);
+
+          if (ret == DIS_SUCCESS)
+            {
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ot->ici->jobid, "Successfully re-sent obit task reply");
+            free(ot->ici);
+            free(ot);
+            }
+          }
+        }
+      }
+
+    close(stream);
+    }
+  
+  return(ret);
+  } /* END resend_obit_task_reply() */
+
 
 
 
@@ -8732,6 +8816,7 @@ void resend_things()
   resend_momcomm     *mc;
   im_compose_info    *ici;
   killjob_reply_info *kj;
+  spawn_task_info    *st;
 
   while ((mc = (resend_momcomm *)next_thing(things_to_resend, &iter)) != NULL)
     {
@@ -8752,6 +8837,17 @@ void resend_things()
         ret = resend_kill_job_reply(kj);
 
         break;
+
+      case SPAWN_TASK_REPLY:
+
+        st = (spawn_task_info *)mc->mc_struct;
+        ret = resend_spawn_task_reply(st);
+
+        break;
+
+      case OBIT_TASK_REPLY:
+
+        ret = resend_obit_task_reply((obit_task_info *)mc->mc_struct);
 
       default:
 

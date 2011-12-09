@@ -725,7 +725,9 @@ static int open_pty(
 
   if ((pts = open(name, O_RDWR, 0600)) < 0)
     {
-    log_err(errno, "open_pty", "cannot open slave");
+    snprintf(log_buffer, sizeof(log_buffer),
+      "cannot open slave, file name: %s", name);
+    log_err(errno, "open_pty", log_buffer);
     }
   else
     {

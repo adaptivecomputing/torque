@@ -943,6 +943,7 @@ int send_sisters(
 
     if (ret == DIS_SUCCESS)
       ret = DIS_tcp_wflush(stream);
+
     close(stream);
 
     if (ret != DIS_SUCCESS)
@@ -2001,6 +2002,24 @@ void send_im_error(
 
     if (rc != DIS_SUCCESS)
       {
+      resend_momcomm *mc;
+
+      if ((mc = calloc(1, sizeof(resend_momcomm))) != NULL)
+        {
+        mc->mc_type = COMPOSE_REPLY;
+        mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, 
+            cookie,
+            pjob->ji_hosts,
+            IM_ERROR,
+            TM_NULL_EVENT,
+            TM_NULL_TASK);
+
+        if (mc->mc_struct == NULL)
+          free(mc);
+        else
+          add_to_resend_things(mc);
+        }
+
       snprintf(log_buffer,sizeof(log_buffer),
         "Could not send error on event %d for job %s",
         event,
@@ -2870,76 +2889,77 @@ int im_spawn_task(
         }
       else
         {
-/*      NYI: remove this once you fix the pbsdsh bug  --dbeer
-        char *connection_address = netaddr(addr);
-        if (!strncmp(connection_address,"127.",strlen("127.")))
-          {*/
-          /* connection is local, just reply to the task */
-/*          task *the_task = task_check(pjob, ptask->ti_qs.ti_task);
-
-          tm_reply(the_task->ti_fd, TM_OKAY, event);
-          diswsi(the_task->ti_fd, ptask->ti_qs.ti_task);
-          DIS_tcp_wflush(the_task->ti_fd);
-*/    
-          /* NYI: delete the event from this node 
-          ep = (eventent *)GET_NEXT(np->hn_events);
+        reply_stream = get_reply_stream(pjob);
+        
+        if (IS_VALID_STREAM(reply_stream))
+          {
+          DIS_tcp_setup(reply_stream);
           
-          while (ep != NULL)
+          ret = im_compose(reply_stream,jobid,cookie,IM_ALL_OKAY,event,fromtask);
+          
+          if (ret == DIS_SUCCESS)
             {
-            if ((ep->ee_event == event) && 
-                (ep->ee_taskid == fromtask))
-              break;
-            
-            ep = (eventent *)GET_NEXT(ep->ee_next);
+            if ((ret = diswsi(reply_stream, ptask->ti_qs.ti_task)) == DIS_SUCCESS)
+              {
+              if ((ret = DIS_tcp_wflush(reply_stream)) == DIS_SUCCESS)
+                {
+                read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_SPAWN_TASK, &ret);
+                }
+              }
             }
           
-          if (ep != NULL)
-            {
-            arrayfree(ep->ee_argv);
-            arrayfree(ep->ee_envp);
-            delete_link(&ep->ee_next);
-            
-            free(ep);
-            } */
-/*          }
+          close(reply_stream);
+          }
         else
-          {*/
-          reply_stream = get_reply_stream(pjob);
-
-          if (IS_VALID_STREAM(reply_stream))
+          {
+          ret = DIS_PROTO;
+          }
+        
+        if (ret != DIS_SUCCESS)
+          {
+          /* SUCCESS but cannot reply */
+          resend_momcomm  *mc;
+          spawn_task_info *st;
+          
+          if ((mc = calloc(1, sizeof(resend_momcomm))) != NULL)
             {
-            DIS_tcp_setup(reply_stream);
+            mc->mc_type = COMPOSE_REPLY;
+            st = calloc(1, sizeof(spawn_task_info));
             
-            ret = im_compose(reply_stream,jobid,cookie,IM_ALL_OKAY,event,fromtask);
-            
-            if (ret == DIS_SUCCESS)
+            if (st != NULL)
               {
-              ret = diswsi(reply_stream, ptask->ti_qs.ti_task);
+              st->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid, 
+                cookie,
+                pjob->ji_hosts,
+                IM_SPAWN_TASK,
+                TM_NULL_EVENT,
+                TM_NULL_TASK);
               
-              DIS_tcp_wflush(reply_stream);
+              if (st->ici == NULL)
+                {
+                free(st);
+                free(mc);
+                }
+              else
+                {
+                st->ti_task = ptask->ti_qs.ti_task;
+                mc->mc_struct = st;
+                add_to_resend_things(mc);
+                }
               }
-
-            close(reply_stream);
-            }
-          else
-            {
-            ret = DIS_PROTO;
+            else
+              free(mc);
             }
           
-          if (ret != DIS_SUCCESS)
+          if (LOGLEVEL >= 0)
             {
-            /* SUCCESS but cannot reply */
+            sprintf(log_buffer,
+              "ALERT:    received request '%s' from %s for job '%s' (task successfully started but reply failed)",
+              PMOMCommand[IM_SPAWN_TASK], netaddr(addr), jobid);
             
-            if (LOGLEVEL >= 0)
-              {
-              sprintf(log_buffer,
-                "ALERT:    received request '%s' from %s for job '%s' (task successfully started but reply failed)",
-                PMOMCommand[IM_SPAWN_TASK], netaddr(addr), jobid);
-              
-              log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-              }
-            } /* END SUCCESS but can't reply */
-/*          } *//* END trying to reply remotely */
+            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
+            }
+          } /* END SUCCESS but can't reply */
         } /* END SUCCESS i.e. started process successfully */
       }
     }
@@ -3067,11 +3087,30 @@ int im_signal_task(
     {
     DIS_tcp_setup(reply_stream);
 
-    im_compose(reply_stream, jobid, cookie, IM_ALL_OKAY, event, fromtask);
-
-    DIS_tcp_wflush(reply_stream);
+    if ((ret = im_compose(reply_stream, jobid, cookie, IM_ALL_OKAY, event, fromtask)) == DIS_SUCCESS)
+      {
+      read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_SIGNAL_TASK, &ret);
+      }
 
     close(reply_stream);
+
+    if (ret != DIS_SUCCESS)
+      {
+      resend_momcomm *mc = calloc(1, sizeof(resend_momcomm));
+
+      if (mc != NULL)
+        {
+        mc->mc_struct = create_compose_reply_info(jobid, cookie, pjob->ji_hosts, IM_SIGNAL_TASK, event, fromtask);
+
+        if (mc->mc_struct == NULL)
+          free(mc);
+        else
+          {
+          mc->mc_type = COMPOSE_REPLY;
+          add_to_resend_things(mc);
+          }
+        }
+      }
     }
  
   return(IM_DONE);
@@ -3718,7 +3757,9 @@ int handle_im_replies(
         close(reply_stream);
         
         if (ret != DIS_SUCCESS)
+          {
           return(IM_DONE);
+          }
         
         arrayfree(argv);
         arrayfree(envp);
@@ -3864,12 +3905,47 @@ int im_obit_task(
       
       if (ret == DIS_SUCCESS)
         {
-        ret = diswsi(reply_stream, ptask->ti_qs.ti_exitstat);
-
-        DIS_tcp_wflush(reply_stream);
+        if ((ret = diswsi(reply_stream, ptask->ti_qs.ti_exitstat)) == DIS_SUCCESS)
+          {
+          if ((ret = DIS_tcp_wflush(reply_stream)) == DIS_SUCCESS)
+            {
+            read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_OBIT_TASK, &ret);
+            }
+          }
         }
 
       close(reply_stream);
+
+      if (ret != DIS_SUCCESS)
+        {
+        resend_momcomm *mc = calloc(1, sizeof(resend_momcomm));
+        obit_task_info *ot;
+        
+        if (mc != NULL)
+          {
+          if ((ot = calloc(1, sizeof(obit_task_info))) != NULL)
+            {
+            free(mc);
+            }
+          else
+            {
+            ot->ici = create_compose_reply_info(jobid, cookie, pjob->ji_hosts, IM_OBIT_TASK, event, fromtask);
+
+            if (ot->ici == NULL)
+              {
+              free(ot);
+              free(mc);
+              }
+            else
+              {
+              mc->mc_type = OBIT_TASK_REPLY;
+              ot->ti_exitstat = ptask->ti_qs.ti_exitstat;
+              mc->mc_struct = ot;
+              add_to_resend_things(mc);
+              }
+            }
+          }
+        }
       }
     }
   else
@@ -4595,6 +4671,8 @@ int handle_im_spawn_task_response(
   task *ptask;
 
   taskid = disrsi(stream, &ret);
+
+  write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_SPAWN_TASK, ret);
   
   if (ret != DIS_SUCCESS)
     return(IM_FAILURE);
@@ -4756,6 +4834,8 @@ int handle_im_obit_task_response(
   task *ptask;
 
   exitval = disrsi(stream, &ret);
+
+  write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_OBIT_TASK, ret);
   
   if (ret != DIS_SUCCESS)
     return(IM_FAILURE);
