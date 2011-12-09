@@ -21,6 +21,13 @@ ssize_t write_nonblocking_socket(
 
   {
   ssize_t i;
+  time_t  start, now;
+
+  /* NOTE:  under some circumstances, a blocking fd will be passed */
+
+  /* Set a timer to prevent an infinite loop here. */
+  time(&now);
+  start = now;
 
   for (;;)
     {
@@ -39,11 +46,17 @@ ssize_t write_nonblocking_socket(
 
       return(i);
       }
-    }
 
-  /* NOTE:  what is current SIGPIPE handling behavior? */
+    time(&now);
+    if ((now - start) > 30)
+      {
+      /* timed out */
 
-  /* non-blocking socket not ready.  no bytes written */
+      return(i);
+      }
+    }    /* END for () */
+
+  /*NOTREACHED*/
 
   return(0);
   }  /* END write_nonblocking_socket() */

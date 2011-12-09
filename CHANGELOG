@@ -198,6 +198,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       received from the server on the MOM. This fix allows the MOM to delete the
       job and free up resources even if the server for some reason does not send 
       the delete job request.
+  b - TRQ-608: Removed code to check for blocking mode in write_nonblocking_socket().
+      Fixes problem with interactive jobs (qsub -I) exiting prematurely.
 
 2.5.9
   e - change mom to only log "cannot find nvidia-smi in PATH" once when built

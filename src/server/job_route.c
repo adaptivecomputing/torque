@@ -368,7 +368,7 @@ int remove_procct(job *pjob)
       pctdef->rs_free(&pctresc->rs_value);
 
   return(PBSE_NONE);
-  }
+  } /* END remove_procct */
 
 
 
