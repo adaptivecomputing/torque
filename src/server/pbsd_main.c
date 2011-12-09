@@ -175,6 +175,7 @@ static void lock_out_ha();
 
 /* external data items */
 
+extern hello_container failures;
 extern int    svr_chngNodesfile;
 extern int    svr_totnodes;
 extern AvlTree streams;
@@ -259,6 +260,7 @@ pthread_mutex_t *svr_do_schedule_mutex;
 extern all_queues svr_queues;
 extern int  listener_command;
 extern hello_container hellos;
+extern hello_container failures;
 pthread_mutex_t *listener_command_mutex;
 tlist_head svr_newnodes;          /* list of newly created nodes      */
 all_tasks task_list_timed;
@@ -1009,43 +1011,17 @@ static int start_hot_jobs(void)
 void send_any_hellos_needed()
 
   {
-  static char     *id = "send_any_hellos_needed";
-  resizable_array *failures;
-  struct pbsnode  *pnode;
+  /*static char     *id = "send_any_hellos_needed";*/
   char            *name;
 
-  if ((failures = initialize_resizable_array(10)) == NULL)
-    {
-    log_err(ENOMEM, id, "Cannot allocate memory!");
-    return;
-    }
-
+  /* send hierarchy using threadpool */
   while ((name = pop_hello(&hellos)) != NULL)
-    {
-    pnode = find_nodebyname(name);
-
-    if (pnode != NULL)
-      {
-      if (send_hierarchy(pnode) != PBSE_NONE)
-        {
-        insert_thing(failures, name);
-        }
-      else
-        free(name);
-
-      unlock_node(pnode, id, NULL, 0);
-      }
-    else
-      free(name);
-    }
+    enqueue_threadpool_request(send_hierarchy_threadtask, name);
 
   /* re-insert any failures */
-  while ((name = pop_thing(failures)) != NULL)
-    {
+  while ((name = pop_hello(&failures)) != NULL)
     add_hello(&hellos, name);
-    }
 
-  free_resizable_array(failures);
   } /* END send_any_hellos_needed() */
 
 

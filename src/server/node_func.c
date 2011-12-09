@@ -135,6 +135,7 @@ extern int h_errno;
 
 /* Global Data */
 
+extern hello_container  failures;
 extern struct addrinfo  hints;
 extern int              svr_totnodes;
 extern int              svr_tsnodes;
@@ -2999,10 +3000,26 @@ void *send_hierarchy_threadtask(
   static char    *id = "send_hierarchy_threadtask";
   char           *name = (char *)vp;
   struct pbsnode *pnode = find_nodebyname(name);
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
 
-  send_hierarchy(pnode);
+  if (pnode != NULL)
+    {
+    if (send_hierarchy(pnode) != PBSE_NONE)
+      add_hello(&failures, name);
+    else
+      {
+      if (LOGLEVEL >= 3)
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "Successfully sent hierarchy to %s", name);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buf);
+        }
+      
+      free(name);
+      }
 
-  unlock_node(pnode, id, NULL, 0);
+    unlock_node(pnode, id, NULL, 0);
+    }
 
   return(NULL);
   } /* END send_hierarchy_threadtask() */

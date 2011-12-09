@@ -196,6 +196,7 @@ job_recycler            recycler;
 
 dynamic_string         *hierarchy_holder;
 hello_container         hellos;
+hello_container         failures;
 
 pthread_mutex_t        *scheduler_sock_jobct_mutex;
 extern int              scheduler_sock;
@@ -1097,6 +1098,7 @@ int pbsd_init(
   initialize_all_jobs_array(&array_summary);
   initialize_all_jobs_array(&newjobs);
   initialize_hello_container(&hellos);
+  initialize_hello_container(&failures);
 
   CLEAR_HEAD(svr_newnodes);
 
