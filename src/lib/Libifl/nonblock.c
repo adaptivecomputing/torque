@@ -45,6 +45,7 @@ ssize_t write_nonblocking_socket(
       }
 
 
+    time(&now);
     if ((now - start) > 30)
       {
       /* timed out */
