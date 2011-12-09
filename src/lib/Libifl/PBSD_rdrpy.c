@@ -107,6 +107,7 @@ struct batch_reply *PBSD_rdrpy(
 
   struct batch_reply *reply;
   int      sock;
+  const char    *the_msg = NULL;
 
   sock = connection[c].ch_socket;
   /* clear any prior error message */
@@ -143,8 +144,10 @@ struct batch_reply *PBSD_rdrpy(
       }
 
     connection[c].ch_errno = *local_errno;
-
-    connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+    if ((the_msg = dis_emsg[rc]) != NULL)
+      {
+      connection[c].ch_errtxt = strdup(the_msg);
+      }
 
     return(NULL);
     }
@@ -157,7 +160,10 @@ struct batch_reply *PBSD_rdrpy(
 
   if (reply->brp_choice == BATCH_REPLY_CHOICE_Text)
     {
-    connection[c].ch_errtxt = strdup(reply->brp_un.brp_txt.brp_str);
+    if ((the_msg = reply->brp_un.brp_txt.brp_str) != NULL)
+      {
+      connection[c].ch_errtxt = strdup(the_msg);
+      }
     }
 
   return(reply);
