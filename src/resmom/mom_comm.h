@@ -71,7 +71,7 @@ int get_reply_stream(job *pjob);
 
 int get_radix_reply_stream(job *pjob);
 
-int im_poll_job_as_sister(int stream, job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
+int im_poll_job_as_sister(job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
 
 int im_abort_job(int stream, job *pjob, struct sockaddr_in *addr, char *cookie, tm_event_t event, tm_task_id fromtask, int *reply_ptr);
 

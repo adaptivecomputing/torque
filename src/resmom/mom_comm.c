@@ -766,11 +766,10 @@ int im_compose(
   else if ((ret = diswsi(stream, event)) != DIS_SUCCESS)
     {
     }
-  else if ((ret = diswsi(stream, taskid)) != DIS_SUCCESS)
-    {
-    }
   else
-    ret = DIS_tcp_wflush(stream);
+    {
+    ret = diswsi(stream, taskid);
+    }
 
   if (ret != DIS_SUCCESS)
     {
@@ -812,6 +811,7 @@ int send_sisters(
   int              i;
   int              num;
   int              ret;
+  int              exit_status;
   int              stream;
   int              job_radix;
   int              loop_limit;
@@ -943,6 +943,8 @@ int send_sisters(
 
     if (ret == DIS_SUCCESS)
       ret = DIS_tcp_wflush(stream);
+
+    read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, com, &exit_status);
 
     close(stream);
 
@@ -1536,7 +1538,7 @@ void im_eof(
 
 /*
  * Check to be sure this is a connection from Mother Superior on
- * a good port.
+ * a good port. A good port is a privileged port if port_care is TRUE.
  * Check to make sure I am not Mother Superior (talking to myself).
  * Set the stream in ji_nodes[0] if needed.
  * Return TRUE on error, FALSE if okay.
@@ -1589,8 +1591,6 @@ int check_ms(
   if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
     {
     log_err(-1, id, "Mother Superior talking to herself");
-
-    rpp_eom(stream);
 
     return(TRUE);
     }
@@ -3089,7 +3089,8 @@ int im_signal_task(
 
     if ((ret = im_compose(reply_stream, jobid, cookie, IM_ALL_OKAY, event, fromtask)) == DIS_SUCCESS)
       {
-      read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_SIGNAL_TASK, &ret);
+      if ((ret = DIS_tcp_wflush(reply_stream)) == DIS_SUCCESS)
+        read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_SIGNAL_TASK, &ret);
       }
 
     close(reply_stream);
@@ -3624,7 +3625,10 @@ int handle_im_replies(
         }
       
       if (ret != DIS_SUCCESS)
+        {
+        write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_POLL_JOB, ret);
         return(IM_FAILURE);
+        }
       
       if (LOGLEVEL >= 7)
         {
@@ -3656,7 +3660,8 @@ int handle_im_replies(
         
         pjob->ji_nodekill = np->hn_node;
         }
-      
+
+        write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_POLL_JOB, PBSE_NONE);
       break;
       
     case IM_GET_TID:
@@ -4214,7 +4219,6 @@ int get_radix_reply_stream(
  */
 int im_poll_job_as_sister(
 
-  int         stream,   /* I */
   job        *pjob,     /* I */
   char       *cookie,   /* I */
   tm_event_t  event,    /* I */
@@ -4228,8 +4232,6 @@ int im_poll_job_as_sister(
   unsigned int  momport = 0;
   char         *jobid = pjob->ji_qs.ji_jobid;
 
-  if (check_ms(stream, pjob))
-    return(IM_FINISHED);
   
   if (LOGLEVEL >= 7)
     {
@@ -4248,16 +4250,17 @@ int im_poll_job_as_sister(
     DIS_tcp_setup(reply_stream);
 
     ret = im_compose(reply_stream,jobid,cookie,IM_ALL_OKAY,event,fromtask);
+    if (ret != DIS_SUCCESS)
+      {
+      close(reply_stream);
+
+      return(IM_DONE);
+      }
+
     }
   else
     return(IM_DONE);
   
-  if (ret != DIS_SUCCESS)
-    {
-    close(reply_stream);
-
-    return(IM_DONE);
-    }
   
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
     {
@@ -4298,6 +4301,7 @@ int im_poll_job_as_sister(
         ret = diswul(reply_stream, resc_used(pjob, "vmem", getsize));
 
         DIS_tcp_wflush(reply_stream);
+        read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_POLL_JOB, &ret);
         }
       }
     }
@@ -5027,7 +5031,10 @@ int handle_im_poll_job_response(
     }
   
   if (ret != DIS_SUCCESS)
+    {
+    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_POLL_JOB, ret);
     return(IM_FAILURE);
+    }
 
   if (LOGLEVEL >= 7)
     {
@@ -5603,6 +5610,8 @@ void im_request(
       reply = 0;
  
       im_kill_job_as_sister(pjob,event,momport,FALSE);
+      write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB, PBSE_NONE);
+      goto fini;
       
       break;
       }
@@ -5617,6 +5626,8 @@ void im_request(
       reply = 0;                        
       
       im_kill_job_as_sister(pjob,event,momport,TRUE);
+      write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB_RADIX, PBSE_NONE);
+      goto fini;
       
       break;
       }
@@ -5691,11 +5702,29 @@ void im_request(
     case IM_POLL_JOB:
       {
       close_stream = TRUE;
-      
-      ret = im_poll_job_as_sister(stream,pjob,cookie,event,fromtask);
+
+      /* check the validity of our connection */
+      ret = check_ms(stream, pjob);
+      if(ret != FALSE)
+        goto err;
+
+      /* We will reply to the poll job request and close the connection */
+      /* im_poll_job_as_sister will create a new connection and send
+         an IM_ALL_OKAY message which will then be processed by the 
+         sending MOM (Mother superior for regular jobs or intermediate
+         MOM/Mother Superior for Job Radix */
+      ret = write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_POLL_JOB, PBSE_NONE);
+      if(ret != DIS_SUCCESS)
+        goto err;
+
+      /* we are going to open a new connection for the reply. It seems proper to 
+         close the old one since we are done with it. */
+      close_conn(stream, FALSE); 
+      close_stream = FALSE;
+      im_poll_job_as_sister(pjob,cookie,event,fromtask);
       reply = 0;
-      if (ret == IM_FINISHED)
-        goto fini;
+      /* we are done */
+      goto fini;
       
        break;
        }
@@ -5807,6 +5836,8 @@ void im_request(
 
           if ((ret = handle_im_poll_job_response(stream,pjob,nodeidx,np)) == IM_FAILURE)
             goto err;
+          
+          write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_POLL_JOB, PBSE_NONE);
 
           break;
 

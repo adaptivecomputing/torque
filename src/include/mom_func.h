@@ -237,7 +237,6 @@ extern int   message_job(job *, enum job_file, char *);
 extern void  term_job(job *);
 
 extern struct passwd *check_pwd(job *);
-extern int   send_sisters(job *, int,int);
 extern int   task_save(task *) ;
 extern void  DIS_rpp_reset(void);
 extern void  checkret(char **, long);

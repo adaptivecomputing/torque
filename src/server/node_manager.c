@@ -3787,7 +3787,8 @@ void set_first_node_name(
   char *first_node_name)
 
   {
-  int i;
+/*  int i; */
+  return;
   } /* END set_first_node_name() */
 
 

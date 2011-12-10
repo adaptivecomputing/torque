@@ -118,6 +118,7 @@
 #include "mcom.h"
 #include "resource.h"
 #include "utils.h"
+#include "mom_comm.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 
 #ifdef ENABLE_CPA
@@ -331,7 +332,6 @@ extern int  setup_gpus_for_job(job *pjob);
 
 int exec_job_on_ms(job *pjob);
 
-int im_compose (int,char *,char *,int,tm_event_t,tm_task_id);
 
 
 /* END prototypes */

@@ -30,6 +30,7 @@
 #include "svrfunc.h"
 #include "mom_mach.h"
 #include "mom_func.h"
+#include "mom_comm.h" /* im_compose */
 #include "pbs_error.h"
 #include "pbs_proto.h"
 #include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
@@ -92,7 +93,6 @@ extern int is_mom_server_down(pbs_net_t);
 extern void set_mom_server_down(pbs_net_t);
 extern int no_mom_servers_down();
 extern char *get_local_script_path(job *pjob, char *base);
-extern int im_compose(int, char *, char *, int, tm_event_t, tm_task_id);
 
 
 /* END external prototypes */

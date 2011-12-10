@@ -36,6 +36,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Added other fix needed to make Job Radix work correctly.
   b - Fixed a problem with job arrays when job_clone_wt is not able to get job_array. 
       The code did not check for null thus creating heap corruption.
+  b - Made changes to IM protocol where commands were not either waiting for a reply
+      or not sending a reply. Also made changes to close connections that were left
+      open.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

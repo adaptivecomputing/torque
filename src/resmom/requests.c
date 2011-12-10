@@ -102,6 +102,7 @@
 #include "resource.h"
 #include "pbs_job.h"
 #include "batch_request.h"
+#include "mom_comm.h" /* im_compose */
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "mom_hierarchy.h"
@@ -188,7 +189,6 @@ static char   rcperr[MAXPATHLEN]; /* file to contain rcp error */
 extern char PBSNodeMsgBuf[1024];
 extern int  LOGLEVEL;
 
-extern int im_compose(int, char *, char *, int, tm_event_t, tm_task_id);
 extern int mom_open_socket_to_jobs_server(job *, char *, void *(*)(void *));
 
 /* prototypes */
