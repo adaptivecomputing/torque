@@ -115,6 +115,7 @@
 #include "array.h"
 #include "csv.h"
 #include "pbs_nodes.h"
+#include "job_func.h" /* job_clone_wt */
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_recov.h" /* que_recov_xml */
