@@ -4325,7 +4325,6 @@ int im_poll_job_as_sister(
  */
 int im_abort_job(
 
-  int                 stream,    /* I */
   job                *pjob,      /* I */
   struct sockaddr_in *addr,      /* I */
   char               *cookie,    /* I */
@@ -4337,20 +4336,6 @@ int im_abort_job(
   static char *id = "im_abort_job";
   char *jobid = pjob->ji_qs.ji_jobid;
 
-  if (check_ms(stream, pjob))
-    {
-    if (LOGLEVEL >= 0)
-      {
-      sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (requestor is not parent)",
-        PMOMCommand[IM_ABORT_JOB],
-        netaddr(addr),
-        jobid);
-      
-      log_event( PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
-      }
-    
-    return(IM_FINISHED);
-    }
 
   if (LOGLEVEL >= 2)
     {
@@ -5734,8 +5719,17 @@ void im_request(
     case IM_ABORT_JOB:
       {
       close_stream = TRUE;
+      /* check the validity of our connection */
+      ret = check_ms(stream, pjob);
+      if(ret != FALSE)
+        goto err;
       
-      if ((ret = im_abort_job(stream,pjob,addr,cookie,event,fromtask,&reply)) == IM_FINISHED)
+      /* Reply to the IM_ABORT_JOB request */
+      ret = write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_ABORT_JOB, PBSE_NONE);
+      if(ret != DIS_SUCCESS)
+        goto err;
+        
+      if ((ret = im_abort_job(pjob,addr,cookie,event,fromtask,&reply)) == IM_FINISHED)
         goto fini;
       
       break;

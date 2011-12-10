@@ -39,6 +39,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Made changes to IM protocol where commands were not either waiting for a reply
       or not sending a reply. Also made changes to close connections that were left
       open.
+  b - Added write_tcp_reply to IM_ABORT_JOB case in im_request.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
