@@ -745,8 +745,8 @@ int pbsd_init(
   int               array_suf_len = strlen(ARRAY_FILE_SUFFIX);
   int               logtype;
   char             *new_tag = ".new";
-  job              *pjob;
-  pbs_queue        *pque;
+  job              *pjob = NULL;
+  pbs_queue        *pque = NULL;
   char             *psuffix;
   int               rc;
   int               Index;
@@ -1377,7 +1377,7 @@ int pbsd_init(
         if(LOGLEVEL >= 7)
           {
           sprintf(log_buf, "%s: unlocking ai_mutex", id);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
           }
                     
         }

@@ -1993,6 +1993,8 @@ void send_im_error(
             }
           }
         }
+      else
+        rc = DIS_INVALID;
        
       close(reply_stream);
 

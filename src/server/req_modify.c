@@ -874,7 +874,7 @@ void *req_modifyarray(
   char                 id[] = "req_modifyarray";
   char                 log_buf[LOCAL_LOG_BUF_SIZE];
   job_array            *pa;
-  job                  *pjob;
+  job                  *pjob = NULL;
   svrattrl             *plist;
   int                   checkpoint_req = FALSE;
   char                 *array_spec = NULL;
@@ -949,7 +949,7 @@ void *req_modifyarray(
       if(LOGLEVEL >= 7)
         {
         sprintf(log_buf, "%s: unlocked ai_mutex", id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
         }
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
@@ -966,7 +966,7 @@ void *req_modifyarray(
       if(LOGLEVEL >= 7)
         {
         sprintf(log_buf, "%s: unlocked ai_mutex", id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
         }
 
       return(NULL);
@@ -983,7 +983,7 @@ void *req_modifyarray(
       if(LOGLEVEL >= 7)
         {
         sprintf(log_buf, "%s: unlocked ai_mutex", id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
         }
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error altering the array");

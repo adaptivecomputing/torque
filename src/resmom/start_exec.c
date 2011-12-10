@@ -388,7 +388,7 @@ struct passwd *check_pwd(
   {
   int retryCount;
 
-  struct passwd *pwdp;
+  struct passwd *pwdp = NULL;
 
   struct group *grpp;
 
