@@ -260,7 +260,8 @@ int encode_tv(
 		}
   else
 	  {
-	  strcpy(atname, cvnbuf);
+    /* Is this right? time to attr name? */
+	  snprintf(atname, strlen(atname), "%s", cvnbuf);
 	  }
 
   return(1);

@@ -332,7 +332,8 @@ int encode_time(
     }
   else
     {
-    strcpy(atname, cvnbuf);
+    /* Is this right? Copy time to the name of the attr? */
+    snprintf(atname, strlen(atname), "%s", cvnbuf);
     }
 
   /* SUCCESS */

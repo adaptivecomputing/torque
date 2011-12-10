@@ -339,7 +339,7 @@ socket_to_conn(int sock)
   {
   int     i;
   pthread_mutexattr_t t_attr;
-  memset(&t_attr, 0, sizeof(pthread_mutexattr_t));
+  pthread_mutexattr_init(&t_attr);
   pthread_mutexattr_settype(&t_attr, PTHREAD_MUTEX_ERRORCHECK);
 
   for (i = 0; i < NCONNECTS; i++)

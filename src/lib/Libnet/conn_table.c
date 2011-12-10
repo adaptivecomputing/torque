@@ -23,6 +23,7 @@ int get_connection_entry(
   pthread_mutex_t     *tmp_mut = NULL;
   pthread_mutexattr_t  t_attr;
 
+  pthread_mutexattr_init(&t_attr);
   pthread_mutexattr_settype(&t_attr, PTHREAD_MUTEX_ERRORCHECK);
 
   for (pos = 0; pos < PBS_NET_MAX_CONNECTIONS; pos++)

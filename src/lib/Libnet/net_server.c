@@ -297,7 +297,7 @@ int init_network(
   memset(&unsocname, 0, sizeof(unsocname));
 #endif
 
-  memset(&t_attr, 0, sizeof(pthread_mutexattr_t));
+  pthread_mutexattr_init(&t_attr);
   pthread_mutexattr_settype(&t_attr, PTHREAD_MUTEX_ERRORCHECK);
 
   MaxNumDescriptors = get_max_num_descriptors();
