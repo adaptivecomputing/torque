@@ -3736,7 +3736,8 @@ int save_node_for_adding(
     
   node_job_add_info *naji,
   struct pbsnode    *pnode,
-  single_spec_data  *req)
+  single_spec_data  *req,
+  char              *first_node_name)
 
   {
   static char       *id = "save_node_for_adding";
@@ -3780,6 +3781,18 @@ int save_node_for_adding(
 
 
 
+void set_first_node_name(
+    
+  char *spec_param,
+  char *first_node_name)
+
+  {
+  int i;
+  } /* END set_first_node_name() */
+
+
+
+
 /*
  * Test a node specification.
  *
@@ -3801,21 +3814,25 @@ static int node_spec(
   char              *EMsg)       /* O (optional,minsize=1024) */
 
   {
-  static char id[] = "node_spec";
-  static char shared[] = "shared";
+  static char         id[] = "node_spec";
+  static char         shared[] = "shared";
 
-  struct pbsnode *pnode;
-  node_iterator   iter;
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  struct pbsnode     *pnode;
+  char                first_node_name[PBS_MAXHOSTNAME + 1];
+  node_iterator       iter;
+  char                log_buf[LOCAL_LOG_BUF_SIZE];
 
-  char *str, *globs, *cp, *hold;
-  int  i;
-  int  num;
-  int  rc;
-  int  eligible_nodes = 0;
-  complete_spec_data all_reqs;
-  char  *spec;
-  char  *plus;
+  char               *str;
+  char               *globs;
+  char               *cp;
+  char               *hold;
+  int                 i;
+  int                 num;
+  int                 rc;
+  int                 eligible_nodes = 0;
+  complete_spec_data  all_reqs;
+  char               *spec;
+  char               *plus;
 
   extern int PNodeStateToString(int, char *, int);
 
@@ -3835,6 +3852,8 @@ static int node_spec(
     }
 
   exclusive = 1; /* by default, nodes (VPs) are requested exclusively */
+
+  set_first_node_name(spec_param, first_node_name);
 
   spec = strdup(spec_param);
 
@@ -4015,7 +4034,7 @@ static int node_spec(
           {
           if (naji != NULL)
             {
-            save_node_for_adding(naji, pnode, req);
+            save_node_for_adding(naji, pnode, req, first_node_name);
             }
 
           /* decrement needed nodes */
