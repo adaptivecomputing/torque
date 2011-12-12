@@ -98,6 +98,7 @@
 #include "resizable_array.h"
 #include "hash_table.h"
 #include "mom_hierarchy.h"
+#include "dynamic_string.h"
 
 #define SAVEJOB_BUF_SIZE 8192
 
@@ -1058,8 +1059,8 @@ extern void  job_purge(job *);
 extern job  *job_recov(char *);
 extern int   job_save(job *, int, int);
 extern int   modify_job_attr(job *, svrattrl *, int, int *);
-extern char *prefix_std_file(job *, int);
-extern char *add_std_filename(job *, char *, int);
+extern char *prefix_std_file(job *, dynamic_string *, int);
+extern char *add_std_filename(job *, char *, int, dynamic_string *);
 extern int   set_jobexid(job *, attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *, int);
 void  svr_dequejob(job *, int);

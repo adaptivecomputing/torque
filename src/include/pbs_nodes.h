@@ -178,7 +178,7 @@ typedef struct complete_spec_data
 
 typedef struct node_job_add_info
   {
-  char                      node_name[PBS_MAXNODENAME];
+  char                      node_name[PBS_MAXNODENAME + 1];
   int                       ppn_needed;
   int                       gpu_needed;
   struct node_job_add_info *next;

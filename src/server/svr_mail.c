@@ -435,9 +435,8 @@ void svr_mailowner(
     if ((server.sv_attr[SRV_ATR_MailDomain].at_flags & ATR_VFLAG_SET) &&
         (server.sv_attr[SRV_ATR_MailDomain].at_val.at_str != NULL))
       {
-      strcpy(mailto, pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
-      strcat(mailto, "@");
-      strcat(mailto, server.sv_attr[SRV_ATR_MailDomain].at_val.at_str);
+      snprintf(mailto, sizeof(mailto), "%s@%s",
+        pjob->ji_wattr[JOB_ATR_euser].at_val.at_str, server.sv_attr[SRV_ATR_MailDomain].at_val.at_str);
 
       if (LOGLEVEL >= 5) 
         {
@@ -455,11 +454,10 @@ void svr_mailowner(
     else
       {
 #ifdef TMAILDOMAIN
-      strcpy(mailto, pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
-      strcat(mailto, "@");
-      strcat(mailto, TMAILDOMAIN);
+      snprintf(mailto, sizeof(mailto), "%s@%s",
+        pjob->ji_wattr[JOB_ATR_euser].at_val.at_str, TMAILDOMAIN);
 #else /* TMAILDOMAIN */
-      strcpy(mailto, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+      snprintf(mailto, sizeof(mailto), "%s", pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
 #endif /* TMAILDOMAIN */
 
       if (LOGLEVEL >= 5)

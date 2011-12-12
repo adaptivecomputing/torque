@@ -19,8 +19,8 @@ typedef struct credential
   {
   time_t timestamp;
   int    type;  /* see BATCH-types.h */
-  char   username[PBS_MAXUSER];
-  char   hostname[PBS_MAXHOSTNAME];
+  char   username[PBS_MAXUSER + 1];
+  char   hostname[PBS_MAXHOSTNAME + 1];
   } pbs_credential;
 
 /*

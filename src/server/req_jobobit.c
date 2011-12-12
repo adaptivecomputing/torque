@@ -248,7 +248,7 @@ struct batch_request *setup_cpyfiles(
     if (((pjob->ji_wattr[JOB_ATR_egroup].at_flags & ATR_VFLAG_DEFLT) == 0) &&
         (pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str != 0))
       {
-      strcpy(pcf->rq_group, pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
+      snprintf(pcf->rq_group, sizeof(pcf->rq_group), "%s", pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
       }
     else
       {
@@ -858,9 +858,8 @@ int handle_returnstd(
     
     if (KeepSeconds > 0)
       {
-      strcpy(namebuf, path_spool);
-      strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-      strcat(namebuf, JOB_STDOUT_SUFFIX);
+      snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+        path_spool, pjob->ji_qs.ji_fileprefix, JOB_STDOUT_SUFFIX);
       
       /* allocate space for the string name plus ".SAV" */
       namebuf2 = calloc((strlen(namebuf) + 5), sizeof(char));
@@ -1091,7 +1090,7 @@ int handle_stageout(
       
       if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
         {
-        strncat(log_buf,
+        safe_strncat(log_buf,
           preq->rq_reply.brp_un.brp_txt.brp_str,
           LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
         }
@@ -1122,10 +1121,7 @@ int handle_stageout(
        the mom and server are sharing this spool directory.
        pbs_server should take ownership of these files and rename them
        see  JOB_SUBSTATE_RETURNSTD above*/
-    
-    strcpy(namebuf, path_spool);
-    strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-    strcat(namebuf, JOB_STDOUT_SUFFIX);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, pjob->ji_qs.ji_fileprefix, JOB_STDOUT_SUFFIX);
     
     /* allocate space for the string name plus ".SAV" */
     namebuf2 = calloc((strlen(namebuf) + 5), sizeof(char));
@@ -1272,7 +1268,7 @@ int handle_stagedel(
       
       if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
         {
-        strncat(log_buf, preq->rq_reply.brp_un.brp_txt.brp_str,
+        safe_strncat(log_buf, preq->rq_reply.brp_un.brp_txt.brp_str,
           LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
         }
       
@@ -1935,7 +1931,7 @@ void on_job_rerun(
 
         if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
           {
-          strncat(
+          safe_strncat(
             log_buf,
             preq->rq_reply.brp_un.brp_txt.brp_str,
             LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
@@ -2449,7 +2445,7 @@ void *req_jobobit(
 
   if (exitstatus < 10000)
     {
-    strcpy(mailbuf, acctbuf);
+    snprintf(mailbuf, sizeof(mailbuf), "%s", acctbuf);
     }
   else
     {
@@ -2504,9 +2500,7 @@ void *req_jobobit(
 
 #endif    /* USESAVEDRESOURCES */
 
-  strncat(mailbuf, (acctbuf + accttail), RESC_USED_BUF - strlen(mailbuf) - 1);
-
-  mailbuf[RESC_USED_BUF - 1] = '\0';
+  safe_strncat(mailbuf, (acctbuf + accttail), sizeof(mailbuf) - strlen(mailbuf) - 1);
 
   /* make sure ji_momhandle is -1 to force new connection to mom */
   if (pjob->ji_momhandle >= 0)

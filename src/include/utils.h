@@ -152,6 +152,7 @@ int   MUReadPipe (char *, char *, int);
 int   is_whitespace (char);
 char *trim(char *);
 char *threadsafe_tokenizer(char **str, char  *delims);
+int   safe_strncat(char *, char *, size_t);
 
 /* MXML functions from u_MXML.c */
 extern int MXMLGetChild (mxml_t *, char *, int *, mxml_t **);

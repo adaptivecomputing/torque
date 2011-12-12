@@ -201,7 +201,7 @@ int get_server(
         return(1);
         }
 
-      strncpy(def_server, parent_server, PBS_MAXSERVERNAME);
+      snprintf(def_server, PBS_MAXSERVERNAME, "%s", parent_server);
       
       c = def_server;
       

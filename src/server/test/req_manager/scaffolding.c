@@ -310,7 +310,7 @@ void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq)
   exit(1);
   }
 
-int reply_text(struct batch_request *preq, int code, char *text)
+void reply_text(struct batch_request *preq, int code, char *text)
   {
   fprintf(stderr, "The call to reply_text to be mocked!!\n");
   exit(1);

@@ -11,6 +11,7 @@
 #include "list_link.h" /* list_link, tlist_head */
 #include "queue.h" /* pbs_queue */
 #include "work_task.h" /* work_task */
+#include "dynamic_string.h"
 
 const char *PJobSubState[10];
 int svr_resc_size = 0;
@@ -95,7 +96,7 @@ void req_reject(int code, int aux, struct batch_request *preq, char *HostName, c
   exit(1);
   }
 
-char *prefix_std_file(job *pjob, int key)
+char *prefix_std_file(job *pjob, dynamic_string *ds, int key)
   {
   fprintf(stderr, "The call to prefix_std_file to be mocked!!\n");
   exit(1);
@@ -209,7 +210,7 @@ void replace_attr_string(struct attribute *attr, char *newval)
   exit(1);
   }
 
-char *add_std_filename(job *pjob, char * path, int key)
+char *add_std_filename(job *pjob, char * path, int key, dynamic_string *ds)
   {
   fprintf(stderr, "The call to add_std_filename to be mocked!!\n");
   exit(1);

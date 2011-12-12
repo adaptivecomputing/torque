@@ -271,7 +271,7 @@ void req_register(
 
   if ((ps = strchr(preq->rq_ind.rq_register.rq_child, (int)'@')))
     {
-    strcpy(preq->rq_ind.rq_register.rq_svr, ps + 1);
+    snprintf(preq->rq_ind.rq_register.rq_svr, sizeof(preq->rq_ind.rq_register.rq_svr), "%s", ps + 1);
 
     *ps = '\0';
     }
@@ -386,9 +386,9 @@ void req_register(
                 /* has prior register, update it */
 
                 if (server_name != NULL)
-                  strncpy(pdj->dc_svr, server_name, PBS_MAXSERVERNAME);
+                  snprintf(pdj->dc_svr, sizeof(pdj->dc_svr), "%s", server_name);
                 else
-                  strncpy(pdj->dc_svr, preq->rq_ind.rq_register.rq_svr, PBS_MAXSERVERNAME);
+                  snprintf(pdj->dc_svr, sizeof(pdj->dc_svr), "%s", preq->rq_ind.rq_register.rq_svr);
                 }
               }
             else if ((rc = register_dep(pattr, preq, type, &made)) == 0)
@@ -620,8 +620,8 @@ void req_registerarray(
   char        id[] = "req_registerarray";
   char        log_buf[LOCAL_LOG_BUF_SIZE];
   job_array  *pa;
-  char        array_name[PBS_MAXSVRJOBID];
-  char        range[MAXPATHLEN >> 4];
+  char        array_name[PBS_MAXSVRJOBID + 1];
+  char        range[MAXPATHLEN];
   int         num_jobs = -1;
   char       *dot_server;
   char       *bracket_ptr;
@@ -1001,9 +1001,7 @@ static void post_doq(
   if (preq->rq_reply.brp_code)
     {
     /* request was rejected */
-    strcpy(log_buf, msg_regrej);
-    strcat(log_buf, preq->rq_ind.rq_register.rq_parent);
-
+    snprintf(log_buf, sizeof(log_buf), "%s%s", msg_regrej, preq->rq_ind.rq_register.rq_parent);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);
 
     pjob = find_job(jobid);
@@ -2059,7 +2057,7 @@ static int send_depend_req(
   int rc = 0;
   int                   i;
   char                 *myid = "send_depend_req";
-  char                  job_id[PBS_MAXSVRJOBID];
+  char                  job_id[PBS_MAXSVRJOBID + 1];
 
   struct batch_request *preq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -2902,13 +2900,13 @@ static int build_depend(
           if (pwhere)
             {
             if (server_name != NULL)
-              (void)strcpy(pdjb->dc_svr, server_name);
+              strcpy(pdjb->dc_svr, server_name);
             else
-              (void)strcpy(pdjb->dc_svr, pwhere + 1);
+              strcpy(pdjb->dc_svr, pwhere + 1);
             }
           else
             {
-            (void)free(pdjb);
+            free(pdjb);
             return (PBSE_BADATVAL);
             }
           }

@@ -329,7 +329,7 @@ static int shutdown_checkpoint(
   {
 
   struct batch_request *phold;
-  attribute        temp;
+  attribute             temp;
 
   phold = alloc_br(PBS_BATCH_HoldJob);
 
@@ -462,16 +462,12 @@ static void rerun_or_kill(
 
     pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
 
-    strcpy(log_buf, msg_init_queued);
-    strcat(log_buf, pjob->ji_qhdr->qu_qs.qu_name);
-    strcat(log_buf, text);
+    snprintf(log_buf, sizeof(log_buf), "%s%s%s", msg_init_queued, pjob->ji_qhdr->qu_qs.qu_name, text);
     }
   else if (server_state != SV_STATE_SHUTDEL)
     {
     /* job not rerunable, immediate shutdown - kill it off */
-
-    strcpy(log_buf, msg_job_abort);
-    strcat(log_buf, text);
+    snprintf(log_buf, sizeof(log_buf), "%s%s", msg_job_abort, text);
 
     /* need to record log message before purging job */
 
@@ -488,9 +484,7 @@ static void rerun_or_kill(
   else
     {
     /* delayed shutdown, leave job running */
-
-    strcpy(log_buf, msg_leftrunning);
-    strcat(log_buf, text);
+    snprintf(log_buf, sizeof(log_buf), "%s%s", msg_leftrunning, text);
     }
 
   log_event(

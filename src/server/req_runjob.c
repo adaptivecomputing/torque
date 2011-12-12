@@ -450,7 +450,7 @@ static int svr_send_checkpoint(
 
   /* save job id for post_checkpointsend */
 
-  momreq->rq_extra = calloc(1, PBS_MAXSVRJOBID + 1);
+  momreq->rq_extra = calloc(1, strlen(pjob->ji_qs.ji_jobid) + 1);
 
   if (momreq->rq_extra == 0)
     {
@@ -682,7 +682,7 @@ static int svr_stagein(
 
   /* save job id for post_stagein */
 
-  momreq->rq_extra = calloc(1, PBS_MAXSVRJOBID + 1);
+  momreq->rq_extra = calloc(1, strlen(pjob->ji_qs.ji_jobid) + 1);
 
   if (momreq->rq_extra == 0)
     {
@@ -740,7 +740,6 @@ int verify_moms_up(
   char               *cp;
   char               *hostlist;
   char               *hostlist_ptr;
-  int                 size;
 
   struct sockaddr_in  saddr;
 
@@ -758,8 +757,6 @@ int verify_moms_up(
   else
     {
     /* Get the first host. */
-    strncpy(hostlist, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, size);
-    hostlist[size] = '\0';
     nodestr = threadsafe_tokenizer(&hostlist_ptr, "+");
     }
 
@@ -780,10 +777,10 @@ int verify_moms_up(
         pbs_strerror(errno));
 
       if (FailHost != NULL)
-        strncpy(FailHost, nodestr, 1024);
+        snprintf(FailHost, 1024, "%s", nodestr);
 
       if (EMsg != NULL)
-        strncpy(EMsg, log_buf, 1024);
+        snprintf(EMsg, 1024, "%s", log_buf);
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
@@ -815,10 +812,10 @@ int verify_moms_up(
         pbs_strerror(errno));
 
       if (FailHost != NULL)
-        strncpy(FailHost, nodestr, 1024);
+        snprintf(FailHost, 1024, "%s", nodestr);
 
       if (EMsg != NULL)
-        strncpy(EMsg, log_buf, 1024);
+        snprintf(EMsg, 1024, "%s", log_buf);
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
@@ -856,10 +853,10 @@ int verify_moms_up(
         pbs_strerror(errno));
 
       if (FailHost != NULL)
-        strncpy(FailHost, nodestr, 1024);
+        snprintf(FailHost, 1024, "%s", nodestr);
 
       if (EMsg != NULL)
-        strncpy(EMsg, log_buf, 1024);
+        snprintf(EMsg, 1024, "%s", log_buf);
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
@@ -1304,8 +1301,8 @@ static job *chk_job_torun(
 
   char              EMsg[1024];
   char              FailHost[1024];
-  char              exec_host[1024];
-  char              *ptr;
+  char             *exec_host;
+  char             *ptr;
 
   prun = &preq->rq_ind.rq_run;
 
@@ -1383,8 +1380,12 @@ static job *chk_job_torun(
     if (prun->rq_destin && *prun->rq_destin) /* If a destination has been specified */
       {
       /* specified destination must match exec_host */
-
-      strcpy(exec_host, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+      if ((exec_host = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str)) == NULL)
+        {
+        req_reject(PBSE_RMSYSTEM, 0, preq, NULL, "Cannot allocate memory");
+        pthread_mutex_unlock(pjob->ji_mutex);
+        return(NULL);
+        }
 
       if ((ptr = strchr(exec_host, '/')))
         * ptr = 0; /* For some reason, node name has "/0" on the end (i.e. "node0001/0"). */
@@ -1392,6 +1393,7 @@ static job *chk_job_torun(
       if (strcmp(prun->rq_destin, exec_host) != 0)
         {
         /* FAILURE */
+        free(exec_host);
 
         if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE))
           req_reject(PBSE_EXECTHERE, 0, preq, NULL, "allocated nodes must match checkpoint location");
@@ -1402,6 +1404,8 @@ static job *chk_job_torun(
         
         return(NULL);
         }
+
+      free(exec_host);
       }
 
     if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HasNodes) == 0)
@@ -1766,7 +1770,7 @@ static int assign_hosts(
 
     tmp = parse_servername(hosttoalloc, &dummy);
 
-    strncpy(pjob->ji_qs.ji_destin,tmp,PBS_MAXROUTEDEST);
+    snprintf(pjob->ji_qs.ji_destin, sizeof(pjob->ji_qs.ji_destin), "%s", tmp);
 
     free(tmp);
 

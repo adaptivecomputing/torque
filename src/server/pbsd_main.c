@@ -2446,7 +2446,7 @@ static void lock_out_ha()
 
       while (acquire_file_lock(MutexLockFile,&MutexLockFD,"HA") == FAILURE)
         {
-        strcpy(log_buf,"Could not acquire HA flock--trying again in 1 second\n");
+        sprintf(log_buf,"Could not acquire HA flock--trying again in 1 second\n");
         
         usleep(DEF_USPERSECOND);
         }

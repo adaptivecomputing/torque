@@ -1086,14 +1086,12 @@ int MXMLGetAttr(
       {
       if ((AName != NULL) && (AName[0] == '\0'))
         {
-        strncpy(AName, E->AName[aindex], MMAX_NAME);
-        AName[MMAX_NAME - 1] = '\0';
+        snprintf(AName, MMAX_NAME, "%s", E->AName[aindex]);
         }
 
       if (AVal != NULL)
         {
-        strncpy(AVal, E->AVal[aindex], EVSize);
-        AVal[EVSize - 1] = '\0';
+        snprintf(AVal, EVSize, "%s", E->AVal[aindex]);
         }
 
       if (ATok != NULL)

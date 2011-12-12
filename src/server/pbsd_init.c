@@ -122,6 +122,7 @@
 #include "dynamic_string.h"
 #include "utils.h"
 #include "req_jobobit.h" /* on_job_exit */
+#include "job_func.h"
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -411,7 +412,7 @@ void add_server_names_to_acl_hosts(void)
 
     if (tp)
       {
-      strcpy(buffer, tp);
+      snprintf(buffer, sizeof(buffer), "%s", tp);
 
       if ((tp = strchr(buffer, ':')))  /* Don't include any port specification */
         *tp = 0;
@@ -1001,9 +1002,9 @@ int pbsd_init(
     }
   else
     {
-    path_checkpoint = calloc(1, strlen(SERVER_CHKPTDIR) + strlen(suffix_slash) + 1);
-    strcpy (path_checkpoint, SERVER_CHKPTDIR);
-    strcat (path_checkpoint, suffix_slash);
+    int len = strlen(SERVER_CHKPTDIR) + strlen(suffix_slash) + 1;
+    path_checkpoint = calloc(1, len);
+    snprintf(path_checkpoint, len, "%s%s", SERVER_CHKPTDIR, suffix_slash);
     }
 
 #else
@@ -1492,12 +1493,7 @@ int pbsd_init(
           log_err(-1, id, log_buf);
 
           /* remove corrupt job */
-
-          strcpy(basen, pdirent->d_name);
-
-          psuffix = basen + baselen;
-
-          strcpy(psuffix, JOB_BAD_SUFFIX);
+          snprintf(basen, sizeof(basen), "%s%s", pdirent->d_name, JOB_BAD_SUFFIX);
 
           if (link(pdirent->d_name, basen) < 0)
             {
@@ -1540,9 +1536,7 @@ int pbsd_init(
           (!(pjob->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)) &&
           (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
         {
-        strcpy(basen, pjob->ji_qs.ji_jobid);
-
-        strcat(basen, JOB_SCRIPT_SUFFIX);
+        snprintf(basen, sizeof(basen), "%s%s", pjob->ji_qs.ji_jobid, JOB_SCRIPT_SUFFIX);
 
         if (chk_save_file(basen) != 0)
           {
@@ -2492,9 +2486,7 @@ static void rm_files(
     {
     while ((pdirt = readdir(dir)) != NULL)
       {
-      strcpy(path, dirname);
-      strcat(path, "/");
-      strcat(path, pdirt->d_name);
+      snprintf(path, sizeof(path), "%s/%s", dirname, pdirt->d_name);
 
       if (stat(path, &stb) == 0)
         {
@@ -2510,8 +2502,7 @@ static void rm_files(
           }
         else if (unlink(path) == -1)
           {
-          strcpy(log_buf, "cannot unlink");
-          strcat(log_buf, path);
+          sprintf(log_buf, "cannot unlink %s", path);
 
           log_err(errno, "pbsd_init", log_buf);
           }

@@ -243,9 +243,7 @@ pbs_queue *que_recov_xml(
     return(NULL);
     }
 
-  strcpy(namebuf, path_queues);
-
-  strcat(namebuf, filename);
+  snprintf(namebuf, sizeof(namebuf), "%s%s", path_queues, filename);
 
   fds = open(namebuf, O_RDONLY, 0);
 
@@ -418,9 +416,7 @@ pbs_queue *que_recov(
     return(NULL);
     }
 
-  strcpy(namebuf, path_queues);
-
-  strcat(namebuf, filename);
+  snprintf(namebuf, sizeof(namebuf), "%s%s", path_queues, filename);
 
   fds = open(namebuf, O_RDONLY, 0);
 

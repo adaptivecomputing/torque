@@ -6,6 +6,7 @@
 #include "attribute.h" /* attribute */
 #include "resource.h" /* resource_def */
 #include "queue.h" /* pbs_queue */
+#include "dynamic_string.h"
 
 int svr_enquejob(job *pjob, int has_sv_qs_mutex);
 
@@ -33,9 +34,9 @@ int job_set_wait(attribute *pattr, void *pjob, int mode);
 
 /* static void default_std(job *pjob, int key, char *to); */
 
-char *prefix_std_file(job *pjob, int key);
+char *prefix_std_file(job *pjob, dynamic_string *ds, int key);
 
-char *add_std_filename(job *pjob, char * path, int key);
+char *add_std_filename(job *pjob, char * path, int key, dynamic_string *ds);
 
 void get_jobowner(char *from, char *to);
 

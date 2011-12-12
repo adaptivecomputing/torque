@@ -30,6 +30,7 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "work_task.h"
+#include "utils.h"
 
 
 
@@ -48,7 +49,8 @@ extern int LOGLEVEL;
 static void set_err_msg(
 
   int   code,
-  char *msgbuf)
+  char *msgbuf,
+  int   len)
 
   {
   char *msg = NULL;
@@ -60,15 +62,14 @@ static void set_err_msg(
 
   if (code == PBSE_SYSTEM)
     {
-    strcpy(msgbuf, msg_daemonname);
-    strcat(msgbuf, pbse_to_txt(PBSE_SYSTEM));
+    snprintf(msgbuf, len, "%s%s", msg_daemonname, pbse_to_txt(PBSE_SYSTEM));
 
     msg_tmp = strerror(errno);
 
     if (msg_tmp)
-      strncat(msgbuf, strerror(errno), ERR_MSG_SIZE - strlen(msgbuf));
+      safe_strncat(msgbuf, strerror(errno), len - strlen(msgbuf));
     else
-      strcat(msgbuf, "Unknown error");
+      safe_strncat(msgbuf, "Unknown error", len - strlen(msgbuf));
     }
   else if (code > PBSE_)
     {
@@ -81,10 +82,8 @@ static void set_err_msg(
 
   if (msg)
     {
-    strncpy(msgbuf, msg, ERR_MSG_SIZE);
+    snprintf(msgbuf, len, "%s", msg);
     }
-
-  msgbuf[ERR_MSG_SIZE] = '\0';
 
   return;
   }  /* END set_err_msg() */
@@ -364,7 +363,7 @@ void req_reject(
   char msgbuf2[ERR_MSG_SIZE + 256 + 1];
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
-  set_err_msg(code, msgbuf);
+  set_err_msg(code, msgbuf, sizeof(msgbuf));
 
   snprintf(msgbuf2, sizeof(msgbuf2), "%s", msgbuf);
 
@@ -422,7 +421,7 @@ void reply_badattr(
   int   i = 1;
   char  msgbuf[ERR_MSG_SIZE+1];
 
-  set_err_msg(code, msgbuf);
+  set_err_msg(code, msgbuf, sizeof(msgbuf));
 
   while (pal)
     {
@@ -512,7 +511,7 @@ int reply_jobid(
   preq->rq_reply.brp_auxcode = 0;
   preq->rq_reply.brp_choice  = which;
 
-  strncpy(preq->rq_reply.brp_un.brp_jid, jobid, PBS_MAXSVRJOBID);
+  snprintf(preq->rq_reply.brp_un.brp_jid, sizeof(preq->rq_reply.brp_un.brp_jid), "%s", jobid);
 
   return(reply_send(preq));
   }  /* END reply_jobid() */

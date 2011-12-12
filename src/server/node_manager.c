@@ -1437,7 +1437,8 @@ int gpu_has_job(
   job   *pjob;
   char  *gpu_str;
   char  *found_str;
-  char   tmp_str[PBS_MAXHOSTNAME + 5];
+  /* increased so that really high gpu indexes don't bother us */
+  char   tmp_str[PBS_MAXHOSTNAME + 10];
   char   num_str[6];
   struct pbssubn *np;
   struct jobinfo *jp;
@@ -1464,10 +1465,8 @@ int gpu_has_job(
 
             if (gpu_str != NULL)
               {
-              strcpy (tmp_str, pnode->nd_name);
-              strcat (tmp_str, "-gpu/");
-              sprintf (num_str, "%d", gpuid);
-              strcat (tmp_str, num_str);
+              snprintf(tmp_str, sizeof(tmp_str), "%s-gpu/%d",
+                pnode->nd_name, gpuid);
 
               /* look thru the string and see if it has this host and gpuid.
                * exec_gpus string should be in format of 
@@ -2227,7 +2226,7 @@ void *is_request_work(
     hp = gethostbyaddr(&ipaddr, sizeof(ipaddr), AF_INET);       
     if (hp != NULL)                                              
       {                                                         
-      strncpy(nodename, hp->h_name, PBS_MAXHOSTNAME);           
+      snprintf(nodename, PBS_MAXHOSTNAME, "%s", hp->h_name);
       err = create_partial_pbs_node(nodename, ipaddr, perm);    
       }                                                         
     else                                                        
@@ -3910,7 +3909,7 @@ static int node_spec(
 
     if (EMsg != NULL)
       {
-      strncpy(EMsg,log_buf,1024);
+      snprintf(EMsg, 1024, "%s", log_buf);
       }
 
     return(-1);
@@ -3977,7 +3976,7 @@ static int node_spec(
 
     if (EMsg != NULL)
       {
-      strncpy(EMsg, log_buf, 1024);
+      snprintf(EMsg, 1024, "%s", log_buf);
       }
 
     return(-1);
@@ -4126,7 +4125,7 @@ static int node_spec(
 
     if (EMsg != NULL)
       {
-      strncpy(EMsg, log_buf, MAXLINE);
+      snprintf(EMsg, MAXLINE, "%s", log_buf);
       }
 
     return(0);
@@ -5598,7 +5597,7 @@ void free_nodes(
   int             i;
   char           *gpu_str = NULL;
 #ifdef NVIDIA_GPUS
-  char            tmp_str[PBS_MAXHOSTNAME + 5];
+  char            tmp_str[PBS_MAXHOSTNAME + 10];
   char            num_str[6];
 #endif  /* NVIDIA_GPUS */
 

@@ -330,9 +330,7 @@ int que_purge(
     return(PBSE_QUEBUSY);
     }
 
-  strcpy(namebuf, path_queues); /* delete queue file */
-
-  strcat(namebuf, pque->qu_qs.qu_name);
+  snprintf(namebuf, sizeof(namebuf), "%s%s", path_queues, pque->qu_qs.qu_name);
 
   if (unlink(namebuf) < 0)
     {
@@ -364,9 +362,7 @@ pbs_queue *find_queuebyname(
   char   qname[PBS_MAXDEST + 1];
   int    i;
 
-  strncpy(qname, quename, PBS_MAXDEST);
-
-  qname[PBS_MAXDEST] = '\0';
+  snprintf(qname, sizeof(qname), "%s", quename);
 
   pc = strchr(qname, (int)'@'); /* strip off server (fragment) */
 

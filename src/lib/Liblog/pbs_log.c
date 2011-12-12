@@ -281,10 +281,10 @@ int log_init(
 
   {
   if (suffix != NULL)
-    strncpy(log_suffix, suffix, sizeof(log_suffix));
+    snprintf(log_suffix, sizeof(log_suffix), "%s", suffix);
 
   if (hostname != NULL)
-    strncpy(log_host, hostname, sizeof(log_host));
+    snprintf(log_host, sizeof(log_host), "%s", hostname);
 
   return(0);
   }  /* END log_init() */
@@ -316,7 +316,7 @@ int log_open(
 
   if (log_directory != directory)  /* some calls pass in log_directory */
     {
-    strncpy(log_directory, directory, (_POSIX_PATH_MAX) / 2 - 1);
+    snprintf(log_directory, (_POSIX_PATH_MAX) / 2 - 1, "%s", directory);
     }
 
   if ((filename == NULL) || (*filename == '\0'))
@@ -404,7 +404,7 @@ int job_log_open(
 
   if (job_log_directory != directory)  /* some calls pass in job_log_directory */
     {
-    strncpy(job_log_directory, directory, (_POSIX_PATH_MAX) / 2 - 1);
+    snprintf(job_log_directory, (_POSIX_PATH_MAX) / 2 - 1, "%s", directory);
     }
 
   if ((filename == NULL) || (*filename == '\0'))

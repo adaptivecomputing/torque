@@ -473,3 +473,19 @@ char *get_string(
   } /* END get_string() */
 
 
+
+
+int append_char_to_dynamic_string(
+    
+  dynamic_string *ds,
+  char            c)
+
+  {
+  char str[2];
+  str[0] = c;
+  str[1] = '\0';
+
+  return(append_dynamic_string(ds, str));
+  } /* END append_char_to_dynamic_string() */
+
+

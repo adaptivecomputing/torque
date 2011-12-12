@@ -165,13 +165,9 @@ void *req_movejob(
     case 0:
 
       /* success */
-
-      strcpy(log_buf, msg_movejob);
-
-      sprintf(log_buf + strlen(log_buf), msg_manager,
-        req->rq_ind.rq_move.rq_destin,
-        req->rq_user,
-        req->rq_host);
+      snprintf(log_buf, sizeof(log_buf), "%s", msg_movejob);
+      snprintf(log_buf + strlen(log_buf), sizeof(log_buf) - strlen(log_buf), msg_manager,
+        req->rq_ind.rq_move.rq_destin, req->rq_user, req->rq_host);
 
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobp->ji_qs.ji_jobid,log_buf);
 
@@ -323,13 +319,13 @@ void *req_orderjob(
 
   if (pjob1->ji_qhdr != pjob2->ji_qhdr)
     {
-    (void)strcpy(tmpqn, pjob1->ji_qs.ji_queue);
-    (void)strcpy(pjob1->ji_qs.ji_queue, pjob2->ji_qs.ji_queue);
-    (void)strcpy(pjob2->ji_qs.ji_queue, tmpqn);
+    strcpy(tmpqn, pjob1->ji_qs.ji_queue);
+    strcpy(pjob1->ji_qs.ji_queue, pjob2->ji_qs.ji_queue);
+    strcpy(pjob2->ji_qs.ji_queue, tmpqn);
     svr_dequejob(pjob1, FALSE);
     svr_dequejob(pjob2, FALSE);
-    (void)svr_enquejob(pjob1, FALSE);
-    (void)svr_enquejob(pjob2, FALSE);
+    svr_enquejob(pjob1, FALSE);
+    svr_enquejob(pjob2, FALSE);
 
     }
   else

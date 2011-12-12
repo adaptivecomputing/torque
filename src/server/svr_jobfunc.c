@@ -140,7 +140,7 @@
 
 /* Private Functions */
 
-static void default_std(job *, int key, char * to);
+static void default_std(job *, int key, dynamic_string *ds);
 static void eval_checkpoint(attribute *j, attribute *q);
 
 /* Global Data Items: */
@@ -1755,7 +1755,7 @@ int svr_chkque(
 
         char uname[PBS_MAXUSER + 1];
 
-        strncpy(uname, pjob->ji_wattr[JOB_ATR_euser].at_val.at_str, PBS_MAXUSER);
+        snprintf(uname, sizeof(uname), "%s", pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
 
         /* fetch the groups in the ACL and look for matching user membership */
 
@@ -2125,13 +2125,16 @@ int job_set_wait(
 
 static void default_std(
 
-  job  *pjob,
-  int   key,  /* 'e' for stderr, 'o' for stdout */
-  char *to)  /* ptr to buffer in which to return name */
-/* had better be big enough!   */
+  job            *pjob,
+  int             key,  /* 'e' for stderr, 'o' for stdout */
+  dynamic_string *ds)   /* O */
+
   {
-  int   len;
-  char *pd;
+  int            pd_len;
+  char          *pd;
+  unsigned long  job_id_num;
+  /* allow for very large job ids */
+  char           job_num_buf[100];
 
   pd = strrchr(pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str, '/');
 
@@ -2140,30 +2143,17 @@ static void default_std(
   else
     pd = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
 
-  len = strlen(pd);
+  pd_len = strlen(pd);
 
-  strcpy(to, pd);  /* start with the job name */
+  /* start with the job name */
+  append_dynamic_string(ds, pd);
+  append_char_to_dynamic_string(ds, '.');
+  append_char_to_dynamic_string(ds, (char)key);
 
-  *(to + len++) = '.';            /* the dot        */
+  job_id_num = strtol(pjob->ji_qs.ji_jobid, NULL, 10);
+  sprintf(job_num_buf, "%lu", job_id_num);
 
-  *(to + len++) = (char)key; /* the letter     */
-
-  pd = pjob->ji_qs.ji_jobid;      /* the seq_number */
-
-  while (isdigit((int)*pd))
-    *(to + len++) = *pd++;
-
-#ifdef JOBARRAYTESTING
-  if (isdigit((int)*(pd + 1)))
-    {
-    /* add the jatid (job array taskid) */
-    *(to + len++) = *pd++;
-
-    while (isdigit((int)*pd))
-      *(to + len++) = *pd++;
-    }
-
-#endif
+  append_dynamic_string(ds, job_num_buf);
 
   if (*pd == '[')
     {
@@ -2171,16 +2161,13 @@ static void default_std(
 
     if (isdigit(*pd))
       {
-      *(to + len++) = '-';
+      append_char_to_dynamic_string(ds, '-');
 
-      while (isdigit(*pd))
-        {
-        *(to + len++) = *pd++;
-        }
+      job_id_num = strtol(pd, NULL, 10);
+      sprintf(job_num_buf, "%lu", job_id_num);
+      append_dynamic_string(ds, job_num_buf);
       }
     }
-
-  *(to + len) = '\0';
 
   return;
   }  /* END default_std() */
@@ -2197,12 +2184,12 @@ static void default_std(
 
 char *prefix_std_file(
 
-  job *pjob,
-  int  key)
+  job            *pjob,
+  dynamic_string *ds,
+  int             key)
 
   {
-  int  len;
-  char *name = (char *)0;
+  int   len;
   char *qsubhost;
   char *wdir;
 
@@ -2243,27 +2230,23 @@ char *prefix_std_file(
     if (wdir)
       len += strlen(wdir);
 
-    name = calloc(1, len);
+    append_dynamic_string(ds, qsubhost);
+    append_char_to_dynamic_string(ds, ':');
 
-    if (name)
+    if (wdir)
       {
-      memset(name, 0, len);
-      strcpy(name, qsubhost); /* the qsub host name */
-      strcat(name, ":");        /* the :  */
-
-      if (wdir)
-        {
-        strcat(name, wdir); /* the qsub cwd  */
-        strcat(name, "/"); /* the final /  */
-        }
-
-      /* now add the rest */
-      default_std(pjob, key, name + strlen(name));
+      append_dynamic_string(ds, wdir);
+      append_char_to_dynamic_string(ds, '/');
       }
+
+    /* now add the rest */
+    default_std(pjob, key, ds);
     }
 
-  return(name);
-  }
+  return(ds->str);
+  } /* END prefix_std_file() */
+
+
 
 
 /*
@@ -2274,32 +2257,21 @@ char *prefix_std_file(
 
 char *add_std_filename(
 
-  job *pjob,
-  char * path,
-  int  key)
+  job            *pjob,
+  char           *path,
+  int             key,
+  dynamic_string *ds)
 
   {
-  int  len;
-  char *name = (char *)0;
+  append_dynamic_string(ds, path);
+  append_char_to_dynamic_string(ds, '/');
+  
+  /* now add the rest */
+  default_std(pjob, key, ds);
 
-  len = strlen(path) +
-        strlen(pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str) +
-        PBS_MAXSEQNUM +
-        5;
+  return(ds->str);
+  } /* add_std_filename() */
 
-  name = calloc(1, len);
-
-  if (name)
-    {
-    strcpy(name, path);
-    strcat(name, "/"); /* the final /  */
-
-    /* now add the rest */
-    default_std(pjob, key, name + strlen(name));
-    }
-
-  return(name);
-  }
 
 
 

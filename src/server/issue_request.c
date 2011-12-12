@@ -275,7 +275,7 @@ int issue_to_svr(
   struct work_task *pwt;
   time_t            time_now = time(NULL);
 
-  strcpy(preq->rq_host, servern);
+  snprintf(preq->rq_host, sizeof(preq->rq_host), "%s", servern);
 
   preq->rq_fromsvr = 1;
   preq->rq_perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_SvWR;

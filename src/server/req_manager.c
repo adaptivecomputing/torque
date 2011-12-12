@@ -118,6 +118,7 @@
 #include "server.h"
 #include "queue.h"
 #include "credential.h"
+#include "utils.h"
 #include "batch_request.h"
 #include "net_connect.h"
 #include "pbs_error.h"
@@ -313,13 +314,13 @@ int set_queue_type(
     if (spectype != -1)   /* set up the attribute */
       {
       ((pbs_queue *)pque)->qu_qs.qu_type = spectype;
-      (void)free(pattr->at_val.at_str);
+      free(pattr->at_val.at_str);
       pattr->at_val.at_str = calloc(1, strlen(qt[i].name) + 1);
 
       if (pattr->at_val.at_str == (char *)0)
         return (PBSE_SYSTEM);
 
-      (void)strcpy(pattr->at_val.at_str, qt[i].name);
+      strcpy(pattr->at_val.at_str, qt[i].name);
 
       return(PBSE_NONE);
       }
@@ -348,8 +349,7 @@ static void mgr_log_attr(
 
   while (plist)
     {
-    (void)strcpy(log_buf, msg);
-    (void)strcat(log_buf, plist->al_name);
+    snprintf(log_buf, sizeof(log_buf), "%s%s", msg, plist->al_name);
 
     if (plist->al_rescln)
       {
@@ -367,7 +367,7 @@ static void mgr_log_attr(
     (void)strcat(log_buf, pstr);
 
     if (plist->al_valln)
-      (void)strncat(log_buf, plist->al_value, LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
+      safe_strncat(log_buf, plist->al_value, sizeof(log_buf) - strlen(log_buf) - 1);
 
     log_buf[LOCAL_LOG_BUF_SIZE-1] = '\0';
 
@@ -1102,9 +1102,9 @@ int hostname_check(
   char *hostname)
 
   {
-  char  myhost[PBS_MAXHOSTNAME];
-  char  extension[PBS_MAXHOSTNAME];
-  char  ret_hostname[PBS_MAXHOSTNAME];
+  char  myhost[PBS_MAXHOSTNAME + 1];
+  char  extension[PBS_MAXHOSTNAME + 1];
+  char  ret_hostname[PBS_MAXHOSTNAME + 1];
   char *open_bracket;
 
   if (hostname == NULL)
@@ -2306,7 +2306,7 @@ int servername_chk(
 
   {
   int    err = 0;
-  char    hostname[PBS_MAXHOSTNAME + 1];
+  char    hostname[PBS_MAXSERVERNAME + 1];
   char *pstr;
 
   extern char              server_name[];

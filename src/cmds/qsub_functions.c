@@ -57,6 +57,7 @@
 #include "port_forwarding.h"
 #include "common_cmds.h" 
 #include "u_memmgr.h" /* global memmgr for client */
+#include "utils.h"
 
 /* START: These are needed for bailout purposes */
 int inter_sock = -1;
@@ -1638,7 +1639,9 @@ void send_winsize(
  * send_term - send the current TERM type and certain control characters
  */
 void send_term(
+
   int sock)
+
   {
   char  buf[PBS_TERM_BUF_SZ];
   char *term;
@@ -1651,7 +1654,7 @@ void send_term(
   if (term == NULL)
     strcat(buf, "unknown");
   else
-    strncat(buf, term, PBS_TERM_BUF_SZ - 5);
+    safe_strncat(buf, term, PBS_TERM_BUF_SZ - 5);
 
   if (write(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
     print_qsub_usage_exit("qsub: sending term type");

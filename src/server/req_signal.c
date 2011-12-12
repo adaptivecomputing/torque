@@ -255,12 +255,9 @@ int issue_signal(
 
   strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
 
-  strncpy(newreq->rq_ind.rq_signal.rq_signame, signame, PBS_SIGNAMESZ);
+  snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", signame);
 
-  rc = relay_to_mom(
-         pjob,
-         newreq,
-         func);
+  rc = relay_to_mom(pjob, newreq, func);
 
   /* when MOM replies, we just free the request structure */
 

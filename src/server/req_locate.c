@@ -91,6 +91,7 @@
 #include <signal.h>
 #include <string.h>
 #include <pthread.h>
+#include <stdio.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -157,8 +158,7 @@ void *req_locatejob(
     preq->rq_reply.brp_code = 0;
     preq->rq_reply.brp_auxcode = 0;
     preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_Locate;
-
-    strcpy(preq->rq_reply.brp_un.brp_locate, location);
+    snprintf(preq->rq_reply.brp_un.brp_locate, sizeof(preq->rq_reply.brp_un.brp_locate), "%s", location);
 
     reply_send_svr(preq);
     }

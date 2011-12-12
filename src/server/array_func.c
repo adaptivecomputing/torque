@@ -88,13 +88,14 @@ int is_array(
   char       jobid[PBS_MAXSVRJOBID];
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
+  snprintf(jobid, sizeof(jobid), "%s", id);
+
   /* remove the extra [] if present */
-  if ((bracket_ptr = strchr(id,'[')) != NULL)
+  if ((bracket_ptr = strchr(jobid,'[')) != NULL)
     {
     if ((bracket_ptr = strchr(bracket_ptr+1,'[')) != NULL)
       {
       *bracket_ptr = '\0';
-      strcpy(jobid,id);
       *bracket_ptr = '[';
       bracket_ptr = strchr(bracket_ptr+1,']');
 
@@ -103,26 +104,18 @@ int is_array(
         strcat(jobid,bracket_ptr+1);
         }
       }
-    else
-      {
-      strcpy(jobid,id);
-      }
-    }
-  else
-    {
-    strcpy(jobid,id);
     }
 
   while ((pa = next_array(&iter)) != NULL)
     {
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: locking ai_mutex: %s", func_name, pa->ai_qs.array_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
       }
 
     pthread_mutex_lock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: locked ai_mutex: %s", func_name, pa->ai_qs.array_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
@@ -131,18 +124,18 @@ int is_array(
     if (strcmp(pa->ai_qs.parent_id, jobid) == 0)
       {
       pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >= 7)
+
+      if (LOGLEVEL >= 7)
         {
         sprintf(log_buf, "%s: unlocking ai_mutex: %s", func_name, pa->ai_qs.array_id);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
         }
 
-
       return(TRUE);
       }
 
     pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: unlocking ai_mutex: %s", func_name, pa->ai_qs.array_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
@@ -163,22 +156,22 @@ job_array *get_array(
   char *id)
 
   {
-  char  func_name[] = "get_array";
-  job_array      *pa;
-  char                log_buf[LOCAL_LOG_BUF_SIZE];
+  char       func_name[] = "get_array";
+  job_array *pa;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
  
-  int             iter = -1;
+  int        iter = -1;
 
   while ((pa = next_array(&iter)) != NULL)
     {
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: locking ai_mutex: %s", func_name, pa->ai_qs.array_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
       }
 
     pthread_mutex_lock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: locked ai_mutex: %s", func_name, pa->ai_qs.array_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
@@ -186,12 +179,12 @@ job_array *get_array(
 
     if (strcmp(pa->ai_qs.parent_id, id) == 0)
       {
-      strcpy(pa->ai_qs.array_id, id);
+      snprintf(pa->ai_qs.array_id, sizeof(pa->ai_qs.array_id), "%s", id);
       return(pa);
       }
 
     pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: unlocking ai_mutex: %s", func_name, pa->ai_qs.array_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
@@ -215,9 +208,8 @@ int array_save(
   array_request_node *rn;
   int num_tokens = 0;
 
-  strcpy(namebuf, path_arrays);
-  strcat(namebuf, pa->ai_qs.fileprefix);
-  strcat(namebuf, ARRAY_FILE_SUFFIX);
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+    path_arrays, pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
 
   fds = open(namebuf, O_Sync | O_TRUNC | O_WRONLY | O_CREAT, 0600);
 
@@ -528,10 +520,8 @@ int array_delete(
   free(pa->ai_mutex);
 
   /* delete the on disk copy of the struct */
-
-  strcpy(path, path_arrays);
-  strcat(path, pa->ai_qs.fileprefix);
-  strcat(path, ARRAY_FILE_SUFFIX);
+  snprintf(path, sizeof(path), "%s%s%s",
+    path_arrays, pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
 
   if (unlink(path))
     {
@@ -650,8 +640,8 @@ int setup_array_struct(
 
   strcpy(pa->ai_qs.parent_id, pjob->ji_qs.ji_jobid);
   strcpy(pa->ai_qs.fileprefix, pjob->ji_qs.ji_fileprefix);
-  strncpy(pa->ai_qs.owner, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, PBS_MAXUSER + PBS_MAXSERVERNAME + 2);
-  strncpy(pa->ai_qs.submit_host, get_variable(pjob, pbs_o_host), PBS_MAXSERVERNAME);
+  snprintf(pa->ai_qs.owner, sizeof(pa->ai_qs.owner), "%s", pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+  snprintf(pa->ai_qs.submit_host, sizeof(pa->ai_qs.submit_host), "%s", get_variable(pjob, pbs_o_host));
 
   pa->ai_qs.num_cloned = 0;
   CLEAR_LINK(pa->all_arrays);
@@ -1738,7 +1728,7 @@ int num_array_jobs(
   if (req_str == NULL)
     return(-1);
 
-  strcpy(tmp_str,req_str);
+  snprintf(tmp_str, sizeof(tmp_str), "%s", req_str);
   tmp_ptr = tmp_str;
   ptr = threadsafe_tokenizer(&tmp_ptr, delim);
 

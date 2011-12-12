@@ -809,9 +809,8 @@ job *job_clone(
 
   do
     {
-    strcpy(namebuf, path_jobs);
-    strcat(namebuf, basename);
-    strcat(namebuf, JOB_FILE_SUFFIX);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+      path_jobs, basename, JOB_FILE_SUFFIX);
 
     fds = open(namebuf, O_CREAT | O_EXCL | O_WRONLY, 0600);
 
@@ -1020,9 +1019,8 @@ void job_clone_wt(
     return;
     }
 
-  strcpy(namebuf, path_jobs);
-  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-  strcat(namebuf, ".AR");
+  snprintf(namebuf, sizeof(namebuf), "%s%s.AR",
+    path_jobs, pjob->ji_qs.ji_fileprefix);
 
   /* do the clones in batches of CLONE_BATCH_SIZE */
 
@@ -1232,10 +1230,8 @@ struct batch_request *cpy_checkpoint(
     }
     
   /* build up the name used for SERVER file */
-
-  strcpy(serverfile, path_checkpoint);
-  strcat(serverfile, pjob->ji_qs.ji_fileprefix);
-  strcat(serverfile, JOB_CHECKPOINT_SUFFIX);
+  snprintf(serverfile, sizeof(serverfile), "%s%s%s",
+    path_checkpoint, pjob->ji_qs.ji_fileprefix, JOB_CHECKPOINT_SUFFIX);
   
   /*
    * We need to make sure the jobs checkpoint directory exists.  If it does
@@ -1257,22 +1253,20 @@ struct batch_request *cpy_checkpoint(
 
   if (pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
     {
-    strcpy(momfile, pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
-    strcat(momfile, "/");
-    strcat(momfile, pjob->ji_qs.ji_fileprefix);
-    strcat(momfile, JOB_CHECKPOINT_SUFFIX);
-    strcat(momfile, "/");
-    strcat(momfile, pattr->at_val.at_str);
+    snprintf(momfile, sizeof(momfile), "%s/%s%s/%s",
+      pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str,
+      pjob->ji_qs.ji_fileprefix,
+      JOB_CHECKPOINT_SUFFIX,
+      pattr->at_val.at_str);
     }
   else
     {
     /* if not specified, moms path may not be the same */
-    strcpy(momfile, MOM_DEFAULT_CHECKPOINT_DIR);
-    strcat(momfile, "/");
-    strcat(momfile, pjob->ji_qs.ji_fileprefix);
-    strcat(momfile, JOB_CHECKPOINT_SUFFIX);
-    strcat(momfile, "/");
-    strcat(momfile, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
+    snprintf(momfile, sizeof(momfile), "%s/%s%s/%s",
+      MOM_DEFAULT_CHECKPOINT_DIR,
+      pjob->ji_qs.ji_fileprefix,
+      JOB_CHECKPOINT_SUFFIX,
+      pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "Job has NO checkpoint dir specified, using file %s", momfile);
@@ -1533,9 +1527,8 @@ int record_jobinfo(
     
     append_dynamic_string(buffer, "\t<job_script>");
     
-    strcpy(namebuf, path_jobs);
-    strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-    strcat(namebuf, JOB_SCRIPT_SUFFIX);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+      path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
     
     if ((fd = open(namebuf, O_RDONLY)) > 0)
       {
@@ -1730,9 +1723,8 @@ void job_purge(
       }
     }
 
-  strcpy(namebuf, path_jobs); /* delete job file */
-
-  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+  snprintf(namebuf, sizeof(namebuf), "%s%s",
+    path_jobs, pjob->ji_qs.ji_fileprefix);
 
   if (pjob->ji_is_array_template == TRUE)
     {

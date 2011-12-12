@@ -852,8 +852,7 @@ void change_restart_comment_if_needed(
     char  commentMsg[25];
     char *ptr;
 
-    strncpy(commentMsg,
-      pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str, 24);
+    snprintf(commentMsg, sizeof(commentMsg), "%s", pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str);
    
     comment_ptr = commentMsg;
     token1 = threadsafe_tokenizer(&comment_ptr, " ");
@@ -1223,7 +1222,7 @@ static void job_delete_nanny(
     if ((newreq = alloc_br(PBS_BATCH_SignalJob)) != NULL)
       {
       strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
-      strncpy(newreq->rq_ind.rq_signal.rq_signame, sigk, PBS_SIGNAMESZ);
+      snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", sigk);
       }
     
     issue_signal(pjob, sigk, post_job_delete_nanny, newreq);

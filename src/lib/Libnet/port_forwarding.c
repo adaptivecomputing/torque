@@ -359,7 +359,7 @@ int x11_connect_display(
   * Connect to an inet socket.  The DISPLAY value is supposedly
   * hostname:d[.s], where hostname may also be numeric IP address.
   */
-  strncpy(buf, display, sizeof(buf));
+  snprintf(buf, sizeof(buf), "%s", display);
 
   cp = strchr(buf, ':');
 

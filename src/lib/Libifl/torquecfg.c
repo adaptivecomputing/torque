@@ -7,7 +7,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
 #include "pbs_ifl.h"
 
 #define TCONST_CFGFILE "torque.cfg"
@@ -32,11 +31,8 @@ int load_config(
     return(1);
     }
 
-  home_dir[0] = '\0';
-
-  strncat(home_dir, PBS_SERVER_HOME, MAXPATHLEN);
-  strcat(home_dir, "/");
-  strcat(home_dir, TCONST_CFGFILE);
+  snprintf(home_dir, sizeof(home_dir), "%s/%s",
+    PBS_SERVER_HOME, TCONST_CFGFILE);
 
   if ((config_stream = fopen(home_dir, "r")) == NULL)
     {
@@ -89,7 +85,7 @@ char *get_trq_param(
     return(NULL);
     }
 
-  strncpy(tmpLine, param_val, sizeof(tmpLine));
+  snprintf(tmpLine, sizeof(tmpLine), "%s", param_val);
 
   strtok(tmpLine, " \t\n=");
 
@@ -117,59 +113,57 @@ char *trq_get_if_name()
   int  file_size;
   int  rc;
 
-  if(length > MAXPATHLEN)
+  if (length > MAXPATHLEN)
     return(NULL); /* How are we going to return error information */
 
   home_dir[0] = '\0';
-
-  strncat(home_dir, PBS_SERVER_HOME, MAXPATHLEN);
-  strcat(home_dir, "/");
-  strcat(home_dir, TCONST_CFGFILE);
+  snprintf(home_dir, sizeof(home_dir), "%s/%s",
+    PBS_SERVER_HOME, TCONST_CFGFILE);
 
   rc = stat(home_dir, &filestruct);
-  if(rc < 0)
+  if (rc < 0)
     return(NULL); /* this is not an error. torque.cfg file is optional */
 
   file_size = filestruct.st_size;
 
   /* we know the size of the torque.cfg file. Allocate some space for it */
   torque_cfg_buf = (char *)calloc(1, file_size+1);
-  if(torque_cfg_buf == NULL)
+  if (torque_cfg_buf == NULL)
     {
     fprintf(stderr, "failed to allocate memory in trq_get_if_name\n");
     return(NULL);
     }
 
   rc = load_config(torque_cfg_buf, file_size);
-  if(rc)
+  if (rc)
     {
     fprintf(stderr, "load_config failed in trq_get_if_name: %d\n", rc);
-	if(torque_cfg_buf)
+	if (torque_cfg_buf)
       free(torque_cfg_buf);
     return(NULL);
 	}
 
   ptr = get_trq_param(TRQ_IFNAME, torque_cfg_buf);
-  if(ptr == NULL)
+  if (ptr == NULL)
     {
-    if(torque_cfg_buf)
+    if (torque_cfg_buf)
 	    free(torque_cfg_buf);
     return(NULL);
     }
 
   /* we have a name. We need to copy it to permanent storage */
   if_name = (char *)calloc(1, strlen(ptr)+1);
-  if(if_name == NULL)
+  if (if_name == NULL)
     {
 	fprintf(stderr, "failed to allocate memory in trq_get_if_name for if_name\n");
-	if(torque_cfg_buf)
+	if (torque_cfg_buf)
 	  free(torque_cfg_buf);
     return(NULL);
     }
 
   strcpy(if_name, ptr);
 
-  if(torque_cfg_buf)
+  if (torque_cfg_buf)
 	free(torque_cfg_buf);
 
   return(if_name);

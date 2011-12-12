@@ -11,6 +11,7 @@
 #include "queue.h" /* pbs_queue */
 #include "batch_request.h" /* batch_request */
 #include "work_task.h" /* work_task, work_type */
+#include "dynamic_string.h"
 
 const char *PJobSubState[10];
 char *path_jobs;
@@ -151,7 +152,7 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-char *prefix_std_file(job *pjob, int key)
+char *prefix_std_file(job *pjob, dynamic_string *ds, int key)
   {
   fprintf(stderr, "The call to prefix_std_file to be mocked!!\n");
   exit(1);
@@ -265,7 +266,7 @@ job *job_alloc(void)
   exit(1);
   }
 
-char *add_std_filename(job *pjob, char * path, int key)
+char *add_std_filename(job *pjob, char * path, int key, dynamic_string *ds)
   {
   fprintf(stderr, "The call to add_std_filename to be mocked!!\n");
   exit(1);

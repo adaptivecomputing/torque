@@ -3072,8 +3072,8 @@ static int sys_copy(
     /* local copy */
 
     ag0 = "/bin/cp";
-      ag1 = "-rp";
-      }
+    ag1 = "-rp";
+    }
   else
     {
     ag0 = rcp_path;
@@ -3234,47 +3234,48 @@ void req_cpyfile(
   struct batch_request *preq)  /* I */
 
   {
-  char   id[] = "req_cpyfile";
+  static char     id[] = "req_cpyfile";
 
-  char  *arg2 = NULL;
-  char  *arg3 = NULL;
-  int   bad_files = 0;
-  char  *bad_list = NULL;
-  int   dir = 0;
-  int   from_spool = 0;  /* boolean - set if file must be removed from spool after copy */
-  int   len;
-  char   localname[MAXPATHLEN + 1];  /* used only for in-bound */
+  char           *arg2 = NULL;
+  char           *arg3 = NULL;
+  int             bad_files = 0;
+  char           *bad_list = NULL;
+  int             dir = 0;
+  int             from_spool = 0;  /* boolean - set if file must be removed from spool after copy */
+  int             len;
+  char            localname[MAXPATHLEN + 1];  /* used only for in-bound */
 
   struct rqfpair *pair = NULL;
-  char  *prmt;
-  int   rc;
-  int   rmtflag = 0;
+  char           *prmt;
+  int             rc;
+  int             rmtflag = 0;
 #if NO_SPOOL_OUTPUT == 0
-  char   undelname[MAXPATHLEN + 1];
+  char            undelname[MAXPATHLEN + 1];
 #endif /* !NO_SPOOL_OUTPUT */
 
 #ifdef  _CRAY
-  char   tmpdirname[MAXPATHLEN + 1];
+  char            tmpdirname[MAXPATHLEN + 1];
 #endif  /* _CRAY */
-  char   localname_alt[MAXPATHLEN + 1];
+  char            localname_alt[MAXPATHLEN + 1];
 
-  struct stat  myspooldir;
-  int   rcstat;
-  char           homespool[MAXPATHLEN + 1];
-  int            havehomespool;
+  struct stat     myspooldir;
+  int             rcstat;
+  char            homespool[MAXPATHLEN + 1];
+  int             havehomespool;
 
-  char           EMsg[1024];
-  char           HDir[1024];
+  char            EMsg[1024];
+  char            HDir[1024];
 
-  job           *pjob = NULL;
+  job            *pjob = NULL;
 
 #ifdef HAVE_WORDEXP
-  int   madefaketmpdir = 0;
-  int   usedfaketmpdir = 0;
-  wordexp_t  arg2exp, arg3exp;
-  int            arg2index = -1;
-  char   faketmpdir[1024];
-  int   wordexperr = 0;
+  int             madefaketmpdir = 0;
+  int             usedfaketmpdir = 0;
+  wordexp_t       arg2exp;
+  wordexp_t       arg3exp;
+  int             arg2index = -1;
+  char            faketmpdir[1024];
+  int             wordexperr = 0;
 #endif
 
   /* there is nothing to copy */

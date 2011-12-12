@@ -246,7 +246,7 @@ int job_qs_upgrade(
     return (-1);
     }
 
-  strcpy(namebuf, path); /* .JB path */
+  snprintf(namebuf, sizeof(namebuf), "%s", path);
   namebuf[strlen(path) - strlen(JOB_FILE_SUFFIX)] = '\0'; /* cut off the .JB by replacing the '.' with a NULL */
   
   if (strlen(namebuf) + strlen(JOB_FILE_BACKUP) > MAXPATHLEN - 1)

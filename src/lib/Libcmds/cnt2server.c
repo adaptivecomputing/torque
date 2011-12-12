@@ -144,8 +144,7 @@ int cnt2server(
 
   if ((SpecServer != NULL) && (SpecServer[0] != '\0'))
     {
-    strncpy(Server, SpecServer, sizeof(Server));
-    Server[sizeof(Server) - 1] = '\0';
+    snprintf(Server, sizeof(Server), "%s", SpecServer);
     }
 
   /* NOTE:  env vars PBS_DEFAULT and PBS_SERVER will be checked and applied w/in pbs_connect() */
@@ -247,9 +246,7 @@ start:
 
             if ((fbserver != NULL) && (fbserver[0] != '\0'))
               {
-              strncpy(Server, fbserver, sizeof(Server));
-
-              Server[sizeof(Server) - 1] = '\0';
+              snprintf(Server, sizeof(Server), "%s", fbserver);
 
               if (getenv("PBSDEBUG") != NULL)
                 {

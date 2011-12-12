@@ -173,6 +173,8 @@ int PNodeStateToString(
   int   BufSize) /* I */
 
   {
+  int len; 
+
   if (Buf == NULL)
     {
     return(-1);
@@ -184,67 +186,118 @@ int PNodeStateToString(
 
   if (SBM & (INUSE_DOWN))
     {
-    if (Buf[0] != '\0')
-      strncat(Buf, ",", BufSize - strlen(Buf));
+    len = strlen(ND_down);
 
-    strncat(Buf, ND_down, BufSize - strlen(Buf));
+    if (len < BufSize)
+      {
+      strcat(Buf, ND_down);
+      BufSize -= len;
+      }
     }
 
   if (SBM & (INUSE_OFFLINE))
     {
-    if (Buf[0] != '\0')
-      strncat(Buf, ",", BufSize - strlen(Buf));
+    len = strlen(ND_offline) + 1;
 
-    strncat(Buf, ND_offline, BufSize - strlen(Buf));
+    if (len < BufSize)
+      {
+      if (Buf[0] != '\0')
+        strcat(Buf, ",");
+      else
+        len--;
+  
+      strcat(Buf, ND_offline);
+      BufSize -= len;
+      }
     }
 
   if (SBM & (INUSE_JOB))
     {
-    if (Buf[0] != '\0')
-      strncat(Buf, ",", BufSize - strlen(Buf));
+    len = strlen(ND_job_exclusive) + 1;
 
-    strncat(Buf, ND_job_exclusive, BufSize - strlen(Buf));
+    if (len < BufSize)
+      {
+      if (Buf[0] != '\0')
+        strcat(Buf, ",");
+      else
+        len--;
+      
+      strcat(Buf, ND_job_exclusive);
+      BufSize -= len;
+      }
     }
 
   if (SBM & (INUSE_JOBSHARE))
     {
-    if (Buf[0] != '\0')
-      strncat(Buf, ",", BufSize - strlen(Buf));
-
-    strncat(Buf, ND_job_sharing, BufSize - strlen(Buf));
+    len = strlen(ND_job_sharing) + 1;
+    
+    if (len < BufSize)
+      {
+      if (Buf[0] != '\0')
+        strcat(Buf, ",");
+      else
+        len--;
+      
+      strcat(Buf, ND_job_sharing);
+      BufSize -= len;
+      }
     }
 
   if (SBM & (INUSE_BUSY))
     {
-    if (Buf[0] != '\0')
-      strncat(Buf, ",", BufSize - strlen(Buf));
+    len = strlen(ND_busy) + 1;
 
-    strncat(Buf, ND_busy, BufSize - strlen(Buf));
+    if (len < BufSize)
+      {
+      if (Buf[0] != '\0')
+        strcat(Buf, ",");
+      else
+        len--;
+      
+      strcat(Buf, ND_busy);
+      BufSize -= len;
+      }
     }
 
   if (SBM & (INUSE_RESERVE))
     {
-    if (Buf[0] != '\0')
-      strncat(Buf, ",", BufSize - strlen(Buf));
+    len = strlen(ND_reserve) + 1;
 
-    strncat(Buf, ND_reserve, BufSize - strlen(Buf));
+    if (len < BufSize)
+      {
+      if (Buf[0] != '\0')
+        strcat(Buf, ",");
+      else
+        len--;
+
+      strcat(Buf, ND_reserve);
+      BufSize -= len;
+      }
     }
 
   if (SBM & (INUSE_UNKNOWN))
     {
-    if (Buf[0] != '\0')
-      strncat(Buf, ",", BufSize - strlen(Buf));
+    len = strlen(ND_state_unknown) + 1;
 
-    strncat(Buf, ND_state_unknown, BufSize - strlen(Buf));
+    if (len < BufSize)
+      {
+      if (Buf[0] != '\0')
+        strcat(Buf, ",");
+      else
+        len--;
+
+      strcat(Buf, ND_state_unknown);
+      BufSize -= len;
+      }
     }
 
   if (Buf[0] == '\0')
     {
-    strncpy(Buf, ND_free, BufSize);
+    snprintf(Buf, BufSize, "%s", ND_free);
     }
 
   return(0);
-  }
+  } /* END PNodeStateToString() */
 
 
 

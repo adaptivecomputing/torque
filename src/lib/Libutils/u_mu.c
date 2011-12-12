@@ -160,6 +160,31 @@ char *threadsafe_tokenizer(
 
 
 
+/*
+ * strcats if there is enough space, otherwise returns -1
+ */
+
+int safe_strncat(
+
+  char   *str,
+  char   *to_append,
+  size_t  space_remaining)
+
+  {
+  size_t len = strlen(to_append);
+
+  /* not enough space */
+  if (space_remaining < len)
+    return(-1);
+  else
+    strcat(str, to_append);
+
+  return(PBSE_NONE);
+  } /* END safe_strncat() */
+
+
+
+
 
 char *MUStrTok(
 

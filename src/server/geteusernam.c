@@ -178,7 +178,7 @@ static char *geteusernam(
     ptr = site_map_user(username, get_variable(pjob, "PBS_O_HOST"));
 
     if (ptr != username)
-      strcpy(username, ptr);
+      snprintf(username, sizeof(username), "%s", ptr);
     }
 
   ret_user = calloc(1, strlen(username) + 1);
@@ -503,7 +503,7 @@ int set_jobexid(
       return(PBSE_BADUSER);
       }
 
-    strncpy(tmpLine, puser, sizeof(tmpLine));
+    snprintf(tmpLine, sizeof(tmpLine), "%s", puser);
     }  /* END else (CheckID == 0) */
 
   pattr = attrry + JOB_ATR_euser;

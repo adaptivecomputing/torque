@@ -230,7 +230,7 @@ char *pbs_get_server_list(void)
       }
     else
       {
-      strncpy(server_list, server, sizeof(server_list));
+      snprintf(server_list, sizeof(server_list), "%s", server);
       }
 
     got_dflt = TRUE;
@@ -342,7 +342,7 @@ static char *PBS_get_server(
     }
   else
     {
-    strncpy(server_name, server, PBS_MAXSERVERNAME);
+    snprintf(server_name, sizeof(server_name), "%s", server);
     }
 
   /* now parse out the parts from 'server_name' */
@@ -679,7 +679,7 @@ int trq_set_preferred_network_interface(
       {
       if (!strncmp(if_name, ifr->ifr_name, IF_NAMESIZE))
         {
-        strncpy(ifreqx.ifr_name, ifr->ifr_name,sizeof(ifreqx.ifr_name));
+        snprintf(ifreqx.ifr_name, sizeof(ifreqx.ifr_name), "%s", ifr->ifr_name);
 
         if (ioctl(sockfd, SIOCGIFADDR, &ifreqx) < 0)
         	{
@@ -1193,7 +1193,7 @@ int pbs_connect(
 
   if (server_name_ptr && server_name_ptr[0])
     {
-    strncpy(server_name_list, server_name_ptr, sizeof(server_name_list) - 1);
+    snprintf(server_name_list, sizeof(server_name_list), "%s", server_name_ptr);
 
     if (getenv("PBSDEBUG"))
       {
@@ -1203,7 +1203,7 @@ int pbs_connect(
     }
   else
     {
-    strncpy(server_name_list, pbs_get_server_list(), sizeof(server_name_list) - 1);
+    snprintf(server_name_list, sizeof(server_name_list), "%s", pbs_get_server_list());
 
     if (getenv("PBSDEBUG"))
       {
@@ -1221,7 +1221,7 @@ int pbs_connect(
     if (tp && tp[0])
       {
       memset(current_name, 0, sizeof(current_name));
-      strncpy(current_name, tp, sizeof(current_name) - 1);
+      snprintf(current_name, sizeof(current_name), "%s", tp);
 
       if (getenv("PBSDEBUG"))
         {

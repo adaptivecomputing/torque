@@ -95,6 +95,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "pbs_ifl.h"
+#include "utils.h"
 
 int set_resources(
 
@@ -267,9 +268,7 @@ int set_resources(
         exit(2);
         }
       
-      strncpy(str, r, len);
-      
-      str[len] = '\0';
+      snprintf(str, len + 1,  "%s", r);
       
       attr->resource = str;
       }
@@ -293,9 +292,7 @@ int set_resources(
           exit(2);
           }
 
-        strcpy(str,gpu_suffix);
-        strncat(str, v, e - v);
-        str[gpu_len - 1] = '\0';
+        snprintf(str, gpu_len, "%s%s", gpu_suffix, v);
         attr->value = str;
         }
       else
@@ -309,10 +306,8 @@ int set_resources(
           exit(2);
           }
         
-        strncpy(str, v, e - v);
+        snprintf(str, e - v + 1, "%s", v);
         
-        str[e - v] = '\0';
-
         attr->value = str;
         }
       }

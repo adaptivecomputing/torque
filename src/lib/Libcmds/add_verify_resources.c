@@ -118,6 +118,7 @@ int add_verify_resources(
   int   gpugres;
 
   int len;
+  int vlen;
 
   char *qptr = NULL;
 
@@ -231,30 +232,36 @@ int add_verify_resources(
     gpugres = !strncmp(r,"gpus",strlen("gpus"));
     if (gpugres)
       {
-      name = (char *)memmgr_calloc(mm, 1, 5);
+      len = 5;
+      vlen = strlen(r) + 1;
+
+      name = (char *)memmgr_calloc(mm, 1, len);
       if (v)
-        value = (char *)memmgr_calloc(mm, 1, strlen(r) + 1);
+        value = (char *)memmgr_calloc(mm, 1, vlen);
       }
     else
       {
-      name = (char *)memmgr_calloc(mm, 1, len + 1);
+      len++;
+      vlen = (e -v) + 1;
+
+      name = (char *)memmgr_calloc(mm, 1, len);
       if (v)
-        value = (char *)memmgr_calloc(mm, 1, (e - v) + 1);
+        value = (char *)memmgr_calloc(mm, 1, vlen);
       }
 
     if ((name) && ((v) && (value)))
       {
       if (gpugres)
-        strncpy(name, "gres", 4);
+        snprintf(name, len, "gres");
       else
-        strncpy(name, r, len);
+        snprintf(name, len, "%s", r);
 
       if (v)
         {
         if (gpugres)
-          strncpy(value, r, strlen(r) + 1);
+          snprintf(value, vlen, "%s", r);
         else
-          strncpy(value, v, e - v);
+          snprintf(value, vlen, "%s", v);
 
         hash_add_or_exit(mm, res_attr, name, value, p_type);
         }

@@ -156,8 +156,7 @@ int acct_job(
   /* user */
 
 	/* acct_job is only called from account_jobstr and account_jobend. BufSize should be
-	 	 PBS_ACCT_MAX_RCD + 1 in size. We will make the assumption that the following
-	 	 strncat calls have ample buffer space to complete successfully */
+	 	 PBS_ACCT_MAX_RCD + 1 in size. */
   sprintf(local_buf, "user=%s ",
     pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
   if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
@@ -239,8 +238,7 @@ int acct_job(
 
   while ((pal = GET_NEXT(attrlist)) != NULL)
     {
-		/* exec_host can use a lot of buffer space. We can't assume
-		 	 we still have enough to make these small strncpy calls */
+		/* exec_host can use a lot of buffer space. Use a dynamic string */
     append_dynamic_string(ds, pal->al_name);
 
     if (pal->al_resc != NULL)

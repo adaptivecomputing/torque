@@ -209,7 +209,7 @@ int svr_movejob(
     return(-1);
     }
 
-  strncpy(jobp->ji_qs.ji_destin, destination, PBS_MAXROUTEDEST);
+  snprintf(jobp->ji_qs.ji_destin, sizeof(jobp->ji_qs.ji_destin), "%s", destination);
 
   jobp->ji_qs.ji_un_type = JOB_UNION_TYPE_ROUTE;
 
@@ -446,12 +446,9 @@ void finish_moving_processing(
       if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
         remove_checkpoint(pjob);
 
-      strcpy(log_buf, msg_movejob);
-
-      sprintf(log_buf + strlen(log_buf), msg_manager,
-        req->rq_ind.rq_move.rq_destin,
-        req->rq_user,
-        req->rq_host);
+      snprintf(log_buf, sizeof(log_buf), "%s", msg_movejob);
+      snprintf(log_buf + strlen(log_buf), sizeof(log_buf) - strlen(log_buf), msg_manager,
+        req->rq_ind.rq_move.rq_destin, req->rq_user, req->rq_host);
 
       job_purge(pjob);
     
@@ -621,19 +618,16 @@ int send_job_work(
   attrl_fixlink(&attrl);
 
   /* put together the job script file name */
-
-  strcpy(script_name, path_jobs);
-
   if (pjob->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
-    strcat(script_name, pjob->ji_arraystruct->ai_qs.fileprefix);
+    snprintf(script_name, sizeof(script_name), "%s%s%s",
+      path_jobs, pjob->ji_arraystruct->ai_qs.fileprefix, JOB_SCRIPT_SUFFIX);
     }
   else
     {
-    strcat(script_name, pjob->ji_qs.ji_fileprefix);
+    snprintf(script_name, sizeof(script_name), "%s%s%s",
+      path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
     }
-
-  strcat(script_name, JOB_SCRIPT_SUFFIX);
 
   con = -1;
 
@@ -1132,8 +1126,12 @@ static int move_job_file(
   {
   char path[MAXPATHLEN+1];
 
-  (void)strcpy(path, path_spool);
-  (void)strcat(path, pjob->ji_qs.ji_fileprefix);
+  snprintf(path, sizeof(path), "%s%s",
+    path_spool, pjob->ji_qs.ji_fileprefix);
+
+  /* make sure we have enough room for the strcat below */
+  if (sizeof(path) - strlen(path) < 4)
+    return(-1);
 
   if (which == StdOut)
     (void)strcat(path, JOB_STDOUT_SUFFIX);

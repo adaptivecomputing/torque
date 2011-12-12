@@ -1936,7 +1936,7 @@ int setup_nodes(void)
   extern char server_name[];
   extern resource_t next_resource_tag;
 
-  snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%s()", id);
+  snprintf(log_buf, sizeof(log_buf), "%s()", id);
 
   log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
 
@@ -2107,7 +2107,7 @@ int setup_nodes(void)
         int num_len = 1;
         int tmp = 10;
 
-        strcpy(tmp_node_name,nodename);
+        snprintf(tmp_node_name, sizeof(tmp_node_name), "%s", nodename);
 
         /* determine the length of the number */
         while (start / tmp > 0)

@@ -158,10 +158,7 @@ int svr_chk_owner_generic(
     return(-1);
     }
 
-  strncpy(rmtuser, pu, PBS_MAXUSER);
-
-  rmtuser[PBS_MAXUSER] = '\0';
-
+  snprintf(rmtuser, sizeof(rmtuser), "%s", pu);
 
   pu = site_map_user(owner, submit_host);
 
@@ -448,9 +445,7 @@ int authenticate_user(
 
   if (server.sv_attr[SRV_ATR_AclUserEnabled].at_val.at_long)
     {
-    strcpy(uath, preq->rq_user);
-    strcat(uath, "@");
-    strcat(uath, preq->rq_host);
+    snprintf(uath, sizeof(uath), "%s@%s", preq->rq_user, preq->rq_host);
 
     if (acl_check(&server.sv_attr[SRV_ATR_AclUsers], uath, ACL_User) == 0)
       {

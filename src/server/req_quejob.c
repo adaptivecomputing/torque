@@ -677,16 +677,11 @@ void *req_quejob(
    * so we may have to "hash" the name slightly
    */
 
-  strncpy(basename, jid, PBS_JOBBASE);
-
-  basename[PBS_JOBBASE] = '\0';
+  snprintf(basename, sizeof(basename), "%s", jid);
 
   do
     {
-    strcpy(namebuf, path_jobs);
-    strcat(namebuf, basename);
-    strcat(namebuf, JOB_FILE_SUFFIX);
-
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, basename, JOB_FILE_SUFFIX);
     fds = open(namebuf, O_CREAT | O_EXCL | O_WRONLY, 0600);
 
     if (fds < 0)
@@ -738,7 +733,6 @@ void *req_quejob(
     }
 
   strcpy(pj->ji_qs.ji_jobid, jid);
-
   strcpy(pj->ji_qs.ji_fileprefix, basename);
 
   pj->ji_modified       = 1;
@@ -981,11 +975,7 @@ void *req_quejob(
     job_attr_def[JOB_ATR_job_owner].at_free(
       &pj->ji_wattr[JOB_ATR_job_owner]);
 
-    strcpy(buf, preq->rq_user);
-
-    strcat(buf, "@");
-
-    strcat(buf, preq->rq_host);
+    snprintf(buf, sizeof(buf), "%s@%s", preq->rq_user, preq->rq_host);
 
     job_attr_def[JOB_ATR_job_owner].at_decode(
       &pj->ji_wattr[JOB_ATR_job_owner],
@@ -1015,10 +1005,7 @@ void *req_quejob(
       pj->ji_wattr[JOB_ATR_rerunable].at_flags |= ATR_VFLAG_SET;
       }
 
-
-    strcpy(buf, pbs_o_que);
-
-    strcat(buf, pque->qu_qs.qu_name);
+    snprintf(buf, sizeof(buf), "%s%s", pbs_o_que, pque->qu_qs.qu_name);
 
     if (get_variable(pj, pbs_o_host) == NULL)
       {
@@ -1080,10 +1067,12 @@ void *req_quejob(
     if (!(pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) ||
         (((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] == ':'))))
       {
-      pj->ji_wattr[JOB_ATR_outpath].at_val.at_str =
-        prefix_std_file(pj, (int)'o');
-
+      dynamic_string *ds = get_dynamic_string(-1, NULL);
+      pj->ji_wattr[JOB_ATR_outpath].at_val.at_str = prefix_std_file(pj, ds, (int)'o');
       pj->ji_wattr[JOB_ATR_outpath].at_flags |= ATR_VFLAG_SET;
+
+      /* don't call free_dynamic_string() */
+      free(ds);
       }
     /*
      * if the output path was specified and ends with a '/'
@@ -1092,13 +1081,15 @@ void *req_quejob(
     else if ((pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) &&
         (((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] == '/'))))
       {
+      dynamic_string *ds = get_dynamic_string(-1, NULL);
       pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
       
       replace_attr_string(
         &pj->ji_wattr[JOB_ATR_outpath],
-        (add_std_filename(pj,
-                          pj->ji_wattr[JOB_ATR_outpath].at_val.at_str,
-                          (int)'o')));
+        (add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds)));
+
+      /* don't call free_dynamic_string() */
+      free(ds);
       }
     else if (pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET)
       {
@@ -1120,13 +1111,14 @@ void *req_quejob(
         {
         if (S_ISDIR(stat_buf.st_mode))
           {
+          dynamic_string *ds = get_dynamic_string(-1, NULL);
 /*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
           replace_attr_string(
             &pj->ji_wattr[JOB_ATR_outpath],
-            (add_std_filename(pj,
-            pj->ji_wattr[JOB_ATR_outpath].at_val.at_str,
-            (int)'o')));
+            (add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds)));
       
+          /* don't call free_dynamic_string() */
+          free(ds);
           }
         }
       }
@@ -1134,10 +1126,12 @@ void *req_quejob(
     if (!(pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) ||
         (((pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] == ':'))))
       {
-      pj->ji_wattr[JOB_ATR_errpath].at_val.at_str =
-        prefix_std_file(pj, (int)'e');
-
+      dynamic_string *ds = get_dynamic_string(-1, NULL);
+      pj->ji_wattr[JOB_ATR_errpath].at_val.at_str = prefix_std_file(pj, ds, (int)'e');
       pj->ji_wattr[JOB_ATR_errpath].at_flags |= ATR_VFLAG_SET;
+
+      /* don't call free_dynamic_string() */
+      free(ds);
       }
     /*
      * if the error path was specified and ends with a '/'
@@ -1146,13 +1140,14 @@ void *req_quejob(
     else if ((pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) &&
         (((pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] == '/'))))
       {
+      dynamic_string *ds = get_dynamic_string(-1, NULL);
       pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
       
-      replace_attr_string(
-        &pj->ji_wattr[JOB_ATR_errpath],
-        (add_std_filename(pj,
-                          pj->ji_wattr[JOB_ATR_errpath].at_val.at_str,
-                          (int)'e')));
+      replace_attr_string(&pj->ji_wattr[JOB_ATR_errpath],
+        (add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds)));
+          
+      /* don't call free_dynamic_string() */      
+      free(ds);
       }
     else if (pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET)
       {
@@ -1174,13 +1169,13 @@ void *req_quejob(
         {
         if (S_ISDIR(stat_buf.st_mode))
           {
+          dynamic_string *ds = get_dynamic_string(-1, NULL);
 /*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
-          replace_attr_string(
-            &pj->ji_wattr[JOB_ATR_errpath],
-            (add_std_filename(pj,
-            pj->ji_wattr[JOB_ATR_errpath].at_val.at_str,
-            (int)'e')));
+          replace_attr_string(&pj->ji_wattr[JOB_ATR_errpath],
+            (add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds)));
       
+          /* don't call free_dynamic_string() */
+          free(ds);
           }
         }
       }
@@ -1535,10 +1530,7 @@ void req_jobscript(
     return;
     }
 
-  strcpy(namebuf, path_jobs);
-
-  strcat(namebuf, pj->ji_qs.ji_fileprefix);
-  strcat(namebuf, JOB_SCRIPT_SUFFIX);
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
 
   if (pj->ji_qs.ji_un.ji_newt.ji_scriptsz == 0)
     {
@@ -1651,9 +1643,7 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
     return;
     }
 
-  strcpy(namebuf, path_spool);
-
-  strcat(namebuf, pj->ji_qs.ji_fileprefix);
+  snprintf(namebuf, sizeof(namebuf), "%s%s", path_spool, pj->ji_qs.ji_fileprefix);
 
   switch ((enum job_file)preq->rq_ind.rq_jobfile.rq_type)
     {
@@ -1843,12 +1833,8 @@ void req_rdytocommit(
     {
     pj->ji_is_array_template = TRUE;
 
-
-    strcpy(namebuf, path_jobs);
-    strcat(namebuf, pj->ji_qs.ji_fileprefix);
-    strcat(namebuf, JOB_FILE_SUFFIX);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
     unlink(namebuf);
-
     }
 
   if (job_save(pj, SAVEJOB_NEW, 0) == -1)
@@ -2005,11 +1991,8 @@ void req_commit(
     {
     pj->ji_is_array_template = TRUE;
     
-    strcpy(namebuf, path_jobs);
-    strcat(namebuf, pj->ji_qs.ji_fileprefix);
-    strcat(namebuf, JOB_FILE_SUFFIX);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
     unlink(namebuf);
-
     }
 
 #endif /* QUICKCOMMIT */
@@ -2555,7 +2538,7 @@ int user_account_read_user(
         {
         if (isspace(s_buf[j]))
           {
-          strncpy(UserAcct.ActRaw, &s_buf[i], j - i);
+          snprintf(UserAcct.ActRaw, sizeof(UserAcct.ActRaw), "%s", &s_buf[i]);
           UserAcct.ActRaw[j-i] = '\0';
           goto have_account;
           }

@@ -1588,7 +1588,7 @@ int tm_poll(
       if (ret != DIS_SUCCESS)
         break;
 
-      strncpy(rhold->resc, info, rhold->len);
+      snprintf(rhold->resc, rhold->len, "%s", info);
 
       free(info);
 

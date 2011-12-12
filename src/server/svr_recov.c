@@ -544,7 +544,7 @@ int str_to_attr(
 
       unescape_xml(val,buf,sizeof(buf));
 
-      attr[index].at_val.at_str = (char *)calloc(1, strlen(buf)+1);
+      attr[index].at_val.at_str = strdup(buf);
 
       if (attr[index].at_val.at_str == NULL)
         {
@@ -552,8 +552,6 @@ int str_to_attr(
 
         return(PBSE_SYSTEM);
         }
-
-      strcpy(attr[index].at_val.at_str,buf);
 
       break;
 
@@ -974,10 +972,8 @@ int save_acl(
 
   attr->at_flags &= ~ATR_VFLAG_MODIFY;
 
-  strcpy(filename1, path_priv);
-  strcat(filename1, subdir);
-  strcat(filename1, "/");
-  strcat(filename1, name);
+  snprintf(filename1, sizeof(filename1), "%s%s/%s",
+    path_priv, subdir, name);
 
   if ((attr->at_flags & ATR_VFLAG_SET) == 0)
     {
@@ -988,9 +984,8 @@ int save_acl(
     return(0);
     }
 
-  strcpy(filename2, filename1);
-
-  strcat(filename2, ".new");
+  snprintf(filename2, sizeof(filename2), "%s.new",
+    filename1);
 
   fds = open(filename2, O_WRONLY | O_CREAT | O_TRUNC | O_Sync, 0600);
 
@@ -1091,15 +1086,10 @@ void recov_acl(
 
   errno = 0;
 
-  strcpy(filename1, path_priv);
-
   if (subdir != NULL)
-    {
-    strcat(filename1, subdir);
-    strcat(filename1, "/");
-    }
-
-  strcat(filename1, name);
+    snprintf(filename1, sizeof(filename1), "%s%s/%s", path_priv, subdir, name);
+  else
+    snprintf(filename1, sizeof(filename1), "%s%s", path_priv, name);
 
   fds = open(filename1, O_RDONLY, 0600);
 
