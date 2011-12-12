@@ -53,7 +53,7 @@ void send_im_error(int err, int reply, job *pjob, char *cookie, tm_event_t event
 
 int im_join_job_as_sister(int stream, char *jobid, struct sockaddr_in *addr, char *cookie, tm_event_t event, int fromtask, int command, int *reply_ptr, int job_radix);
 
-void im_kill_job_as_sister(job *pjob, tm_event_t event, unsigned int momport, int radix);
+void im_kill_job_as_sister(int stream, job *pjob, tm_event_t event, unsigned int momport, int radix);
 
 int im_spawn_task(int stream, int reply, char *cookie, tm_event_t event, struct sockaddr_in *addr, tm_task_id fromtask, job *pjob);
 
@@ -77,9 +77,9 @@ int im_abort_job(job *pjob, struct sockaddr_in *addr, char *cookie, tm_event_t e
 
 int im_get_tid(job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
 
-int handle_im_join_job_response(job *pjob, struct sockaddr_in *addr);
+int handle_im_join_job_response(int stream, job *pjob, struct sockaddr_in *addr);
 
-int handle_im_kill_job_response(int stream, job *pjob, hnodent *np, int nodeidx);
+int handle_im_kill_job_response(int stream, job *pjob, hnodent *np, int event_com, int nodeidx);
 
 int handle_im_spawn_task_response(int stream, job *pjob, tm_task_id event_task, tm_event_t event);
 

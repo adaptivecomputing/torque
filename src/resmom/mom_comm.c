@@ -117,6 +117,7 @@
 #include "mom_func.h"
 #include "batch_request.h"
 #include "resmon.h"
+#include "mom_comm.h"
 #include "mcom.h"
 #include "svrfunc.h"
 #include "u_tree.h"
@@ -2592,6 +2593,7 @@ int im_join_job_as_sister(
 
 void im_kill_job_as_sister(
 
+  int           stream,   /* I */
   job          *pjob,    /* M */
   tm_event_t    event,   /* I */
   unsigned int  momport, /* I */
@@ -2627,6 +2629,10 @@ void im_kill_job_as_sister(
   job_save(pjob, SAVEJOB_QUICK, momport);
   
   exiting_tasks = 1; /* Setting this to 1 will cause scan_for_exiting to execute */  
+  if(radix == FALSE)
+    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB, PBSE_NONE);
+  else
+    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB_RADIX, PBSE_NONE);
   } /* END im_kill_job_as_sister() */
 
 
@@ -4538,6 +4544,7 @@ int handle_im_kill_job_response(
   int      stream,
   job     *pjob,
   hnodent *np,
+  int      event_com,
   int      nodeidx)
 
   {
@@ -4551,7 +4558,7 @@ int handle_im_kill_job_response(
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {
     log_err(-1, id, "got KILL_JOB OKAY and I'm not MS");
-    
+    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, event_com, IM_FAILURE);
     return(IM_FAILURE);
     }
 
@@ -4575,7 +4582,10 @@ int handle_im_kill_job_response(
       }
     
     if (ret != DIS_SUCCESS)
+      {
+      write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, event_com, IM_FAILURE);
       return(IM_FAILURE);
+      }
     
     if (LOGLEVEL >= 7)
       {
@@ -4592,7 +4602,7 @@ int handle_im_kill_job_response(
       }
     }  /* END if (pjob_ji_resources != NULL) */
   
-  /* don't close stream in case other jobs use it */
+  write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, event_com, PBSE_NONE);
   
   np->hn_sister = SISTER_KILLDONE;  /* We are changing this node from SISTER_OKAY which was 
                                        set in send_sisters() */
@@ -5467,6 +5477,7 @@ void im_request(
  
   if (pjob == NULL)
     {
+    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_UNKJOBID);
     if (LOGLEVEL >= 0)
       {
       sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job does not exist locally)",
@@ -5484,6 +5495,7 @@ void im_request(
   if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
     {
     if (LOGLEVEL >= 0)
+    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_IVALREQ);
       {
       sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job has no cookie)",
        PMOMCommand[MIN(command,IM_MAX)],
@@ -5502,6 +5514,7 @@ void im_request(
  
   if (strcmp(oreo, cookie) != 0)
     {
+    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_IVALREQ);
     /* multiple versions of the same job are out there, kill it */
     exec_bail(pjob, JOB_EXEC_FAIL1);
 
@@ -5596,8 +5609,7 @@ void im_request(
  
       reply = 0;
  
-      im_kill_job_as_sister(pjob,event,momport,FALSE);
-      write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB, PBSE_NONE);
+      im_kill_job_as_sister(stream,pjob,event,momport,FALSE);
       goto fini;
       
       break;
@@ -5612,8 +5624,7 @@ void im_request(
       
       reply = 0;                        
       
-      im_kill_job_as_sister(pjob,event,momport,TRUE);
-      write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB_RADIX, PBSE_NONE);
+      im_kill_job_as_sister(stream,pjob,event,momport,TRUE);
       goto fini;
       
       break;
@@ -5766,7 +5777,7 @@ void im_request(
           {
           close_stream = TRUE;
 
-          if ((ret = handle_im_kill_job_response(stream,pjob,np,nodeidx)) == IM_FAILURE)
+          if ((ret = handle_im_kill_job_response(stream, pjob, np, event_com, nodeidx)) == IM_FAILURE)
             goto err;
 
           break;

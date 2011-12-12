@@ -40,6 +40,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       or not sending a reply. Also made changes to close connections that were left
       open.
   b - Added write_tcp_reply to IM_ABORT_JOB case in im_request.
+  b - Modified im_kill_job_as_sister and added a stream argument so we can reply
+      to the IM_KILL_JOB or IM_KILL_JOB_RADIX requests. Added write_tcp_reply
+      calls to error cases in im_request.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
