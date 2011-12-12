@@ -3741,8 +3741,14 @@ int save_node_for_adding(
 
   {
   static char       *id = "save_node_for_adding";
-  node_job_add_info *next;
-  node_job_add_info *current;
+  node_job_add_info *to_add;
+  node_job_add_info *old_next;
+
+  if ((first_node_name[0] != '\0') &&
+      (!strcmp(first_node_name, pnode->nd_name)))
+    pnode->nd_order = 0;
+  else
+    pnode->nd_order = 1;
 
   if (naji->node_name[0] == '\0')
     {
@@ -3754,21 +3760,22 @@ int save_node_for_adding(
   else
     {
     /* second */
-    if ((next = calloc(1, sizeof(node_job_add_info))) == NULL)
+    if ((to_add = calloc(1, sizeof(node_job_add_info))) == NULL)
       {
       log_err(ENOMEM, id, "Cannot allocate memory!");
 
       return(ENOMEM);
       }
+    
+    /* initialize to_add */
+    strcpy(to_add->node_name, pnode->nd_name);
+    to_add->ppn_needed = req->ppn;
+    to_add->gpu_needed = req->gpu;
 
-    /* fix pointers, NOTE: works even if current == NULL */
-    current = naji->next;
-    next->next = current;
-    naji->next = next;
-
-    strcpy(next->node_name, pnode->nd_name);
-    next->ppn_needed = req->ppn;
-    next->gpu_needed = req->gpu;
+    /* fix pointers, NOTE: works even if old_next == NULL */
+    old_next = naji->next;
+    to_add->next = old_next;
+    naji->next = to_add;
     }
 
   /* count off the number we have reserved */
@@ -3781,14 +3788,47 @@ int save_node_for_adding(
 
 
 
+/*
+ * if there is a node being requested, the spec should look like
+ * node_name[:ppn=X][+]...
+ * otherwise it should look like:
+ * <NUM_NODES>[:ppn=X][+]...
+ *
+ * If a specific node is being requested first, copy just the
+ * name into first_node_name  
+ */
+
 void set_first_node_name(
     
-  char *spec_param,
-  char *first_node_name)
+  char *spec_param,      /* I */
+  char *first_node_name) /* O */
 
   {
-/*  int i; */
-  return;
+  int   i;
+  int   len;
+
+  if (isdigit(spec_param[0]) == TRUE)
+    {
+    first_node_name[0] = '\0';
+    }
+  else
+    {
+    len = strlen(spec_param);
+    
+    for (i = 0; i < len; i++)
+      {
+      /* a ':' means you've moved on to ppn and a + means its the next req */
+      if ((spec_param[i] == ':') ||
+          (spec_param[i] == '+'))
+        break;
+      else
+        first_node_name[i] = spec_param[i];
+      }
+    
+    /* make sure you NULL terminate */
+    first_node_name[i] = '\0';
+    }
+
   } /* END set_first_node_name() */
 
 
@@ -5411,7 +5451,7 @@ int node_reserve(
     }
 
   naji.node_name[0] = '\0';
-  naji.next         = NULL;
+  naji.next = NULL;
 
   if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, &naji, NULL)) >= 0)
     {
