@@ -273,7 +273,7 @@ int prepare_path(
           (!memcmp(&ino, &statbuf.st_ino, sizeof(ino_t))))
         {
         if (c != NULL)
-          strcpy(cwd, c);
+          snprintf(cwd, MAXPATHLEN, "%s", c);
         }
       else
         {

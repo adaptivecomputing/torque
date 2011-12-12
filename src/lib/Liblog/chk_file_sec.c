@@ -557,7 +557,7 @@ int chk_file_sec(
     {
     /* check full path starting at root */
 
-    strcpy(shorter, path);
+    snprintf(shorter, _POSIX_PATH_MAX, "%s", path);
 
     pc = strrchr(shorter, '/');
 
@@ -620,7 +620,7 @@ int chk_file_sec(
       return(chk_file_sec(symlink, isdir, sticky, disallow, fullpath, EMsg));
       }
 
-    strcpy(shorter, path);
+    snprintf(shorter, _POSIX_PATH_MAX, "%s", path);
 
     /* terminate string after final directory delimiter */
 
@@ -649,11 +649,18 @@ int chk_file_sec(
 
     if (S_ISDIR(sbuf.st_mode) != 0)
       {
+      if (strlen(shorter) + strlen(symlink) > _POSIX_PATH_MAX)
+        {
+        snprintf(EMsg, 1024, "buffer length exceeded in chk_file_sec");
+        /* This isn't the right error */
+        rc = EPERM;
+        goto chkerr;
+        }
       strcat(shorter, symlink);
       }
     else
       {
-      strcpy(shorter, symlink);
+      snprintf(shorter, _POSIX_PATH_MAX, "%s", symlink);
       }
 
     return(chk_file_sec(shorter, isdir, sticky, disallow, fullpath, EMsg));

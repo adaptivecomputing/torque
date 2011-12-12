@@ -274,7 +274,7 @@ parse_at_list(char *list, int use_count, int abs_path)
 
       nh->next = hostlist;
 
-      strcpy(nh->host, host);
+      snprintf(nh->host, PBS_MAXHOSTNAME, "%s", host);
       hostlist = nh;
       }
 

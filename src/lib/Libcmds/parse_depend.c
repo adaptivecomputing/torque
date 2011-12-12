@@ -204,6 +204,10 @@ parse_depend_item(
       if ((i < 2) ||
           (array))
         {
+        if (strlen(rtn_list) + strlen(s) > (size_t)rtn_size)
+          {
+          return 2;
+          }
         strcat(rtn_list, s);
 
         if (array)

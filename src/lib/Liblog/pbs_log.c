@@ -227,9 +227,8 @@ static char *mk_log_name(
  */
 
 static char *mk_job_log_name(
-
-  char *pbuf)     /* O (minsize=1024) */
-
+  char *pbuf,
+  int buf_size)
   {
   struct tm *ptm;
   struct tm  tmpPtm;
@@ -241,7 +240,7 @@ static char *mk_job_log_name(
     {
     if (!strcasecmp(log_suffix, "%h"))
       {
-      sprintf(pbuf, "%s/%04d%02d%02d.%s",
+      snprintf(pbuf, buf_size, "%s/%04d%02d%02d.%s",
               job_log_directory,
               ptm->tm_year + 1900,
               ptm->tm_mon + 1,
@@ -250,7 +249,7 @@ static char *mk_job_log_name(
       }
     else
       {
-      sprintf(pbuf, "%s/%04d%02d%02d.%s",
+      snprintf(pbuf, buf_size, "%s/%04d%02d%02d.%s",
               job_log_directory,
               ptm->tm_year + 1900,
               ptm->tm_mon + 1,
@@ -260,7 +259,7 @@ static char *mk_job_log_name(
     }
   else
     {
-    sprintf(pbuf, "%s/%04d%02d%02d",
+    snprintf(pbuf, buf_size, "%s/%04d%02d%02d",
             job_log_directory,
             ptm->tm_year + 1900,
             ptm->tm_mon + 1,
@@ -410,7 +409,7 @@ int job_log_open(
 
   if ((filename == NULL) || (*filename == '\0'))
     {
-    filename = mk_job_log_name(buf);
+    filename = mk_job_log_name(buf, _POSIX_PATH_MAX);
 
     job_log_auto_switch = 1;
     }

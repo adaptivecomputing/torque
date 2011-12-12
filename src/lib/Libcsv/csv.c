@@ -9,6 +9,7 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 
 /**
  * Gets the number of items in a string list.
@@ -78,11 +79,14 @@ char *csv_nth(char *csv_str, int n)
 
   if ((tp = strchr(cp, ',')))
     {
+    if ((tp - cp) > 128)
+      return 0;
+    /* Does this need to be null terminated? */
     strncpy(buffer[buffer_index], cp, tp - cp);
     }
   else
     {
-    strcpy(buffer[buffer_index], cp);
+    snprintf(buffer[buffer_index], 128, "%s", cp);
     }
 
   return(buffer[buffer_index]);

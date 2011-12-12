@@ -1660,9 +1660,8 @@ void job_purge(
   if ((pjob->ji_arraystruct == NULL) ||
       (pjob->ji_is_array_template == TRUE))
     {
-    strcpy(namebuf, path_jobs); /* delete script file */
-    strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-    strcat(namebuf, JOB_SCRIPT_SUFFIX);
+    /* delete script file */        
+    snprintf(namebuf, MAXPATHLEN, path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
 
     if (unlink(namebuf) < 0)
       {
@@ -1677,10 +1676,8 @@ void job_purge(
       }
     }
 
-  strcpy(namebuf, path_spool); /* delete any spooled stdout */
-
-  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-  strcat(namebuf, JOB_STDOUT_SUFFIX);
+  /* delete any spooled stdout */
+  snprintf(namebuf, MAXPATHLEN, path_jobs, pjob->ji_qs.ji_fileprefix, JOB_STDOUT_SUFFIX);
 
   if (unlink(namebuf) < 0)
     {
@@ -1694,10 +1691,8 @@ void job_purge(
     log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
     }
 
-  strcpy(namebuf, path_spool); /* delete any spooled stderr */
-
-  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-  strcat(namebuf, JOB_STDERR_SUFFIX);
+  /* delete any spooled stderr */
+  snprintf(namebuf, MAXPATHLEN, path_jobs, pjob->ji_qs.ji_fileprefix, JOB_STDERR_SUFFIX);
 
   if (unlink(namebuf) < 0)
     {
@@ -1712,19 +1707,15 @@ void job_purge(
     }
 
   /* remove checkpoint restart file if there is one */
-  
   if (pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
     {
     cleanup_restart_file(pjob);
     }
 
   /* delete checkpoint file directory if there is one */
-  
   if (pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
     {
-    strcpy(namebuf, path_checkpoint);
-    strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-    strcat(namebuf, JOB_CHECKPOINT_SUFFIX);
+    snprintf(namebuf, MAXPATHLEN, path_checkpoint, pjob->ji_qs.ji_fileprefix, JOB_CHECKPOINT_SUFFIX);
 
     if (remtree(namebuf) < 0)
       {
@@ -1745,11 +1736,11 @@ void job_purge(
 
   if (pjob->ji_is_array_template == TRUE)
     {
-    strcat(namebuf, JOB_FILE_TMP_SUFFIX);
+    snprintf(namebuf, MAXPATHLEN, path_jobs, pjob->ji_qs.ji_fileprefix, JOB_FILE_TMP_SUFFIX);
     }
   else
     {
-    strcat(namebuf, JOB_FILE_SUFFIX);
+    snprintf(namebuf, MAXPATHLEN, path_jobs, pjob->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
     }
 
   if (unlink(namebuf) < 0)

@@ -608,7 +608,7 @@ void svr_dequejob(
 
 #ifndef NDEBUG
 
-  sprintf(log_buf, "dequeuing from %s, state %s",
+  snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "dequeuing from %s, state %s",
     pque ? pque->qu_qs.qu_name : "unknown queue",
     PJobState[pjob->ji_qs.ji_state]);
 
@@ -2672,7 +2672,7 @@ static void correct_ct()
 
   while ((pque = next_queue(&svr_queues,&queue_iter)) != NULL)
     {
-    sprintf(log_buf, "checking queue %s", pque->qu_qs.qu_name);
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "checking queue %s", pque->qu_qs.qu_name);
     log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
     pque->qu_numjobs = 0;
     pque->qu_numcompleted = 0;

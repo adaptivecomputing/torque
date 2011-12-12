@@ -1371,6 +1371,7 @@ int main(
   srand((unsigned int)getpid() + (unsigned int)time(NULL));
   tzset(); /* localtime_r needs this */
 
+  memset(&server, 0, sizeof(struct server));
   initialize_globals();
   set_globals_from_environment();
 
