@@ -95,7 +95,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <netdb.h>
 #include "libpbs.h"
+#include "log.h"
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -378,6 +380,36 @@ int unmunge_request(int s, struct batch_request *preq)
 }
 
 
+/*
+ * Check if the host names match
+ */
+
+int check_host(struct batch_request *preq, pbs_net_t ipaddr)
+{
+  struct hostent *host;
+  struct in_addr  from;
+
+  from.s_addr = htonl(ipaddr);
+
+  if ((host = gethostbyaddr(
+                (void *) & from,
+                sizeof(struct in_addr),
+                AF_INET)) == NULL)
+    {
+    sprintf(log_buffer, "gethostbyaddr failed for host %s: h_error is %d",
+            preq->rq_host, h_errno);
+
+    log_ext(-1, "check_host", log_buffer, LOG_DEBUG);
+    return(PBSE_SYSTEM);
+    }
+
+  if (!strcmp(preq->rq_host, host->h_name))
+    {
+    return (TRUE);
+    }
+  return (FALSE);
+}
+
 
 /*
  * req_authenuser - Authenticate a user connection based on the (new)
@@ -401,6 +433,11 @@ void req_authenuser(
   for (s = 0;s < PBS_NET_MAX_CONNECTIONS;++s)
     {
     if (preq->rq_ind.rq_authen.rq_port != svr_conn[s].cn_port)
+      {
+      continue;
+      }
+
+    if (!check_host(preq, svr_conn[s].cn_addr))
       {
       continue;
       }
@@ -460,7 +497,12 @@ int req_altauthenuser(
       {
       continue;
       }
-	break;
+
+    if (!check_host(preq, svr_conn[s].cn_addr))
+      {
+      continue;
+      }
+	  break;
     }  /* END for (s) */
 
   /* If s is less than PBS_NET_MAX_CONNECTIONS we have our port */
