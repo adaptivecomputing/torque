@@ -1589,7 +1589,9 @@ void update_array_values(
   } /* END update_array_values() */
 
 
-void update_array_statuses(job_array *owned)
+void update_array_statuses(
+    
+  job_array *owned)
 
   {
   char           func_name[] = "update_array_statuses";

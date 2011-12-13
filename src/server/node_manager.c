@@ -1238,7 +1238,7 @@ int is_stat_get(
       }
     else if (!strncmp(ret_info, "uname", 5) && allow_any_mom)
       {
-      /* for any mom mode if an address did not succeed at gethostbyaddr it was
+      /* for any mom mode if an address did not succeed at getnameinfo it was
        * given the hex value of its ip address */
       if (!strncmp(np->nd_name, "0x", 2))
         {
@@ -2131,7 +2131,6 @@ void *is_request_work(
   int                 err;
   char                nodename[PBS_MAXHOSTNAME];
   int                 perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
-  struct hostent     *hp;      
 
   unsigned long       ipaddr;
   unsigned short      mom_port;
@@ -2222,21 +2221,15 @@ void *is_request_work(
     {
     lock_node(node, id, "AVL_find", LOGLEVEL);
     } /* END if AVL_find != NULL) */
-  else if (allow_any_mom)                                           
-    { 
-    hp = gethostbyaddr(&ipaddr, sizeof(ipaddr), AF_INET);       
-    if (hp != NULL)                                              
-      {                                                         
-      snprintf(nodename, PBS_MAXHOSTNAME, "%s", hp->h_name);
-      err = create_partial_pbs_node(nodename, ipaddr, perm);    
-      }                                                         
-    else                                                        
+  else if (allow_any_mom)
+    {
+    if (getnameinfo(&s_addr, len, nodename, sizeof(nodename), NULL, 0, 0) != 0)
       {
       tmpaddr = ntohl(addr->sin_addr.s_addr);
-      
       sprintf(nodename, "0x%lX", tmpaddr);
-      err = create_partial_pbs_node(nodename, ipaddr, perm);
-      } 
+      }
+
+    err = create_partial_pbs_node(nodename, ipaddr, perm);
 
     if (err == PBSE_NONE)
       {

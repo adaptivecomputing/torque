@@ -196,8 +196,7 @@ int get_fullhostname(
     return(-1);
     }
 
-  memset(namebuf, 0, sizeof(namebuf));
-  snprintf(namebuf, sizeof(namebuf), "%s", addr_info->ai_canonname);
+  snprintf(namebuf, bufsize, "%s", addr_info->ai_canonname);
   freeaddrinfo(addr_info);
 
   for (index = 0;index < bufsize;index++)

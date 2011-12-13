@@ -952,8 +952,10 @@ void net_close(
  * mutex is TRUE if the mutex should be obtained, false otherwise
  */
 pbs_net_t get_connectaddr(
+
   int sock,   /* I */
   int mutex)  /* I */
+
   {
   pbs_net_t tmp;
 
@@ -973,18 +975,18 @@ pbs_net_t get_connectaddr(
  * get_connecthost - return name of host connected via the socket
  */
 int get_connecthost(
+
   int   sock,     /* I */
   char *namebuf,  /* O (minsize=size) */
   int   size)     /* I */
+
   {
+  struct in_addr          addr;
 
-  struct hostent *phe;
-
-  struct in_addr  addr;
-  int             namesize = 0;
-
-  static struct in_addr  serveraddr;
-  static char           *server_name = NULL;
+  struct sockaddr        *addr_info_ptr;
+  struct sockaddr_in      addr_in;
+  static struct in_addr   serveraddr;
+  static char            *server_name = NULL;
   static pthread_mutex_t *get_connecthost_mutex = NULL;
 
   if (get_connecthost_mutex == NULL)
@@ -993,30 +995,28 @@ int get_connecthost(
     pthread_mutex_init(get_connecthost_mutex,NULL);
     }
 
+  addr_in.sin_family = AF_INET;
+  addr_in.sin_port = 0;
   pthread_mutex_lock(get_connecthost_mutex);
 
   if ((server_name == NULL) && (pbs_server_addr != 0))
     {
     /* cache local server addr info */
-
     serveraddr.s_addr = htonl(pbs_server_addr);
+    addr_in.sin_addr = serveraddr;
+    addr_info_ptr = (struct sockaddr *)&addr_in;
 
-    if ((phe = gethostbyaddr(
-                 (char *) & serveraddr,
-                 sizeof(struct in_addr),
-                 AF_INET)) == NULL)
-      {
-      server_name = strdup(inet_ntoa(serveraddr));
-      }
+    if (getnameinfo(addr_info_ptr, sizeof(addr_in), namebuf, size, NULL, 0, 0) == 0)
+      server_name = strdup(namebuf);
     else
-      {
-      server_name = strdup(phe->h_name);
-      }
+      server_name = strdup(inet_ntoa(serveraddr));
     }
 
   size--;
 
   addr.s_addr = htonl(svr_conn[sock].cn_addr);
+  addr_in.sin_addr = addr;
+  addr_info_ptr = (struct sockaddr *)&addr_in;
 
   if ((server_name != NULL) && (svr_conn[sock].cn_socktype & PBS_SOCK_UNIX))
     {
@@ -1028,35 +1028,22 @@ int get_connecthost(
     {
     /* lookup request is for local server */
 
-    strcpy(namebuf, server_name);
+    snprintf(namebuf, size, "%s", server_name);
     }
-  else if ((phe = gethostbyaddr(
-                    (char *) & addr,
-                    sizeof(struct in_addr),
-                    AF_INET)) == NULL)
+  else if (getnameinfo(addr_info_ptr, sizeof(addr_in), namebuf, size, NULL, 0, 0) != 0)
     {
-    strcpy(namebuf, inet_ntoa(addr));
+    snprintf(namebuf, size, "%s", inet_ntoa(addr));
     }
   else
     {
-    if (strcmp(phe->h_name, "localhost") == 0)
+    if (strcmp(namebuf, "localhost") == 0)
       {
-      strcpy(namebuf, server_name);
+      snprintf(namebuf, size, "%s", server_name);
       }
     else
       {
-      namesize = strlen(phe->h_name);
-      strncpy(namebuf, phe->h_name, size);
-      *(namebuf + size) = '\0';
+      /* already in namebuf, NO-OP */
       }
-    }
-
-  if (namesize > size)
-    {
-    /* FAILURE - buffer too small */
-    pthread_mutex_unlock(get_connecthost_mutex);
-
-    return(-1);
     }
 
   /* SUCCESS */
