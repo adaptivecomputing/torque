@@ -69,7 +69,7 @@ int init_network(unsigned int port, void *(*readfunc)(void *));
 int thread_func(int active_sockets, fd_set *select_set);
 int wait_request(time_t waittime, long *SState); 
 /* static void accept_conn(void *new_conn); */
-void add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
+int add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
 void close_conn(int sd, int has_mutex); 
 void net_close(int but); 
 pbs_net_t get_connectaddr(int sock, int mutex); 

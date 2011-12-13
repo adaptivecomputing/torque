@@ -763,7 +763,7 @@ static void *accept_conn(
  * NOTE:  This routine cannot fail.
  */
 
-void add_conn(
+int add_conn(
 
   int            sock,    /* socket associated with connection */
   enum conn_type type,    /* type of connection */
@@ -773,6 +773,12 @@ void add_conn(
   void *(*func)(void *))  /* function to invoke on data rdy to read */
 
   {
+  if (num_connections_mutex == NULL)
+    {
+    usleep(100000);
+    /* To solve a race condition where there are jobs in the queue, but the network hasn't been initialized yet. */
+    return PBSE_SOCKET_FAULT;
+    }
   pthread_mutex_lock(num_connections_mutex);
   num_connections++;
   pthread_mutex_unlock(num_connections_mutex);
@@ -820,7 +826,7 @@ void add_conn(
 
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
-  return;
+  return PBSE_NONE;
   }  /* END add_conn() */
 
 

@@ -53,7 +53,7 @@ void bad_node_warning(pbs_net_t addr, struct pbsnode *the_node)
   exit(1);
   }
 
-void add_conn(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void *(*func)(void *))
+int add_conn(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void *(*func)(void *))
   {
   fprintf(stderr, "The call to add_conn to be mocked!!\n");
   exit(1);

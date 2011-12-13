@@ -172,10 +172,13 @@ int lock_node(
   {
   int   rc = PBSE_NONE;
   char  err_msg[MSG_LEN_LONG];
+  char  stub_msg[] = "no pos";
   
   if (logging >= 6)
     {
-    snprintf(err_msg, MSG_LEN_LONG, "locking start %s in method %s", the_node->nd_name, id);
+    if (msg == NULL)
+      msg = stub_msg;
+    snprintf(err_msg, MSG_LEN_LONG, "locking start %s in method %s-%s", the_node->nd_name, id, msg);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
   

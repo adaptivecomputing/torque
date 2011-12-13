@@ -909,6 +909,8 @@ int handle_returnstd(
      
     if (preq != NULL)
       {
+      if (preq->rq_extra != NULL)
+        free(preq->rq_extra);
       preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
       
       if (issue_Drequest(handle, preq, on_job_exit, NULL) == 0)
@@ -1564,13 +1566,13 @@ void on_job_exit(
     {
     preq = NULL;
 
-    jobid = (char *)ptask->wt_parm1;
+    jobid = strdup((char *)ptask->wt_parm1);
     }
   else
     {
     preq = (struct batch_request *)ptask->wt_parm1;
 
-    jobid = (char *)preq->rq_extra;
+    jobid = strdup((char *)preq->rq_extra);
     }
   
   free(ptask->wt_mutex);
@@ -1591,7 +1593,7 @@ void on_job_exit(
     {
     sprintf(log_buf, "%s called with INVALID jobid: %s", id, jobid);
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"NULL",log_buf);
-
+    free(jobid);
     return;
     }
   else

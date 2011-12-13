@@ -322,8 +322,7 @@ int tcp_read(
     else if (i == 0)
       {
       /* FAILURE - no data read */
-      
-      return(-2);
+      return -2;
       }
     
     /* SUCCESS */
@@ -931,8 +930,6 @@ void DIS_tcp_setup(
       goto error;
       }
 
-    memset(tp->tdis_thebuf, 0, THE_BUF_SIZE);
-
     tp->tdis_bufsize = THE_BUF_SIZE;
 
     /* Setting up the write buffer */
@@ -947,8 +944,6 @@ void DIS_tcp_setup(
 
       goto error;
       }
-
-    memset(tp->tdis_thebuf, 0, THE_BUF_SIZE);
 
     tp->tdis_bufsize = THE_BUF_SIZE;
 

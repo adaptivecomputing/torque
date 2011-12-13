@@ -136,6 +136,7 @@
 #include "csv.h"
 #include "array.h"
 #include "queue_func.h" /* find_queuebyname */
+#include "../lib/Libutils/u_lock_ctl.h" /* *startup */
 
 
 /* Private Functions */
@@ -2622,6 +2623,7 @@ static void correct_ct()
   char          log_buf[LOCAL_LOG_BUF_SIZE];
 
 
+  lock_startup();
   pthread_mutex_lock(server.sv_qs_mutex);
   sprintf(log_buf, "Job state counts incorrect, server %d: ", server.sv_qs.sv_numjobs);
 
@@ -2690,6 +2692,7 @@ static void correct_ct()
     server.sv_jobstates[i] = job_counts[i];
   pthread_mutex_unlock(server.sv_jobstates_mutex);
 
+  unlock_startup();
   return;
   }  /* END correct_ct() */
 

@@ -152,6 +152,7 @@ int svr_connect(
   time_t       STime;
   time_t       ETime;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
+  int          rc = PBSE_NONE;
 
   if (LOGLEVEL >= 4)
     {
@@ -244,7 +245,11 @@ int svr_connect(
   if (func != NULL)
     {
     /* connect attempt to XXX? */
-    add_conn(sock, ToServerDIS, hostaddr, port, PBS_SOCK_INET, func);
+    if ((rc = add_conn(sock, ToServerDIS, hostaddr, port, PBS_SOCK_INET, func)) != PBSE_NONE)
+        {
+        /* Return invalid handle */
+        return -1;
+        }
     }
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
