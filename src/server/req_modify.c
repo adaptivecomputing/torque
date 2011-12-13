@@ -1034,12 +1034,12 @@ void *req_modifyarray(
     }
 
   /* SUCCESS */
-  pthread_mutex_unlock(pa->ai_mutex);
-  if(LOGLEVEL >= 7)
+  if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "%s: unlocked ai_mutex", id);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
     }
+  pthread_mutex_unlock(pa->ai_mutex);
 
   reply_ack(preq);
 
