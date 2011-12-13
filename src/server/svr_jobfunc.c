@@ -2157,7 +2157,7 @@ static void default_std(
 
   append_dynamic_string(ds, job_num_buf);
 
-  if (*pd == '[')
+  if ((pd = strchr(pjob->ji_qs.ji_jobid, '[')) != NULL)
     {
     pd++;
 
