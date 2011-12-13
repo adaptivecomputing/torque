@@ -43,6 +43,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Modified im_kill_job_as_sister and added a stream argument so we can reply
       to the IM_KILL_JOB or IM_KILL_JOB_RADIX requests. Added write_tcp_reply
       calls to error cases in im_request.
+  b - Fixed send_job_obit_to_ms so it will close the stream on success. Previously
+      this function left the socket it created open and in a CLOSE_WAIT state.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

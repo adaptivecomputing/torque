@@ -2130,6 +2130,7 @@ int send_job_obit_to_ms(
 
               if (rc == DIS_SUCCESS)
                 {
+                read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, &rc);
                 /* SUCCESS - no more retries needed */
                 if (LOGLEVEL >= 6)
                   {
@@ -2147,12 +2148,14 @@ int send_job_obit_to_ms(
           }
         }
             
-      /* NYI: read reply? */
       close(stream);
       } /* END work on a valid stream */
     
+    
     usleep(10);
     } /* END retry loop */
+
+  close(stream);
 
   /* If I cannot contact mother superior, kill this job */
   if (rc != PBSE_NONE)
