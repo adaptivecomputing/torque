@@ -1607,14 +1607,14 @@ int pbsd_init(
     if(LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: locking ai_mutex", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
       }
                     
     pthread_mutex_lock(pa->ai_mutex);
     if(LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: locked ai_mutex", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
       }
                     
     pa->template_job = find_array_template(pa->ai_qs.parent_id);
@@ -1632,7 +1632,9 @@ int pbsd_init(
           {
           if (pa->jobs[i] != NULL)
             {
+            pthread_mutex_unlock(pa->ai_mutex);
             job_purge(pa->jobs[i]);
+            pthread_mutex_lock(pa->ai_mutex);
             }
           }
 

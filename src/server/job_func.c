@@ -1079,12 +1079,15 @@ void job_clone_wt(
       if ((rc = svr_enquejob(pjobclone, FALSE)))
         {
         /* XXX need more robust error handling */
+        pthread_mutex_unlock(pa->ai_mutex);
         job_purge(pjobclone);
+
         }
 
      if (job_save(pjobclone, SAVEJOB_FULL, 0) != 0)
         {
         /* XXX need more robust error handling */
+        pthread_mutex_unlock(pa->ai_mutex);
         job_purge(pjobclone);
         }
 
