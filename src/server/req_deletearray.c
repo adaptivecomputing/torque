@@ -312,7 +312,10 @@ static void post_delete(
   /* no op - do not reply to client */
 
   if (pwt)
+    {
+    free(pwt->wt_mutex);
     free(pwt);
+    }
   }
 
 
@@ -351,6 +354,7 @@ void array_delete_wt(
     free(last_id);
     last_id = NULL;
 
+    free(ptask->wt_mutex);
     free(ptask);
     return;
     }
@@ -446,7 +450,7 @@ void array_delete_wt(
       last_id = NULL;
 
       pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >= 7)
+      if (LOGLEVEL >= 7)
         {
         sprintf(log_buf, "%s: unlocked ai_mutex", id);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
@@ -467,6 +471,7 @@ void array_delete_wt(
 
   req_deletearray(preq);
 
+  free(ptask->wt_mutex);
   free(ptask);
   } /* END array_delete_wt() */
 

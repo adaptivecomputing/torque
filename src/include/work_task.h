@@ -130,6 +130,7 @@ typedef struct work_task
   {
   all_tasks           *wt_tasklist; 
   pthread_mutex_t     *wt_mutex; 
+  int                  wt_being_recycled;
   long                 wt_event; /* event id: time, pid, socket, ... */
   enum work_type       wt_type; /* type of event */
   void (*wt_func)      (struct work_task *);
@@ -140,7 +141,6 @@ typedef struct work_task
   /* used in reissue_to_svr to store wt_func */
   int                  wt_aux; /* optional info: e.g. child status */
   } work_task;
-
 
 void       initialize_all_tasks_array(all_tasks *);
 int        insert_task(all_tasks *, work_task *);
@@ -156,5 +156,28 @@ extern struct work_task *set_task(enum work_type, long event, void (*func)(), vo
 extern void clear_task(struct work_task *ptask);
 extern void dispatch_task(struct work_task *);
 extern void delete_task(struct work_task *ptask);
+
+
+#define TASKS_TO_REMOVE       1000
+#define MAX_TASKS_IN_RECYCLER 5000
+
+
+typedef struct task_recycler
+  {
+  unsigned int     next_id;
+  all_tasks        tasks;
+  int              iter;
+  unsigned int     max_id;
+  pthread_mutex_t *mutex;
+  } task_recycler;
+
+work_task *get_recycled_task();
+int        insert_task_into_recycler();
+void       update_task_recycler_next_id();
+void       garbage_collect_task_recycling();
+void       initialize_task_recycler();
+
+
+
 
 #endif /* WORK_TASK_H */

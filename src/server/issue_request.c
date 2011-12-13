@@ -240,6 +240,7 @@ static void reissue_to_svr(
     ((void (*)())pwt->wt_parmfunc)(pwt);
     }
 
+  free(pwt->wt_mutex);
   free(pwt);
   }  /* END reissue_to_svr() */
 
@@ -355,6 +356,7 @@ void release_req(
   if (pwt->wt_event != -1)
     svr_disconnect(pwt->wt_event);
 
+  free(pwt->wt_mutex);
   free(pwt);
   } /* END release_req() */
 
@@ -688,8 +690,10 @@ int issue_Drequest(
       log_err(-1, id, log_buf);
 
       pthread_mutex_lock(ptask->wt_mutex);
-
-      delete_task(ptask);
+      if (ptask->wt_being_recycled == FALSE)
+        delete_task(ptask);
+      else
+        pthread_mutex_unlock(ptask->wt_mutex);
 
       rc = -1;
 

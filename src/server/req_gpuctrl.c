@@ -325,6 +325,7 @@ static void process_gpu_request_reply(
     reply_ack(preq);
     }
 
+  free(pwt->wt_mutex);
   free(pwt);
   }
 #endif  /* NVIDIA_GPUS */

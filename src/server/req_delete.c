@@ -227,29 +227,26 @@ void ensure_deleted(
 
   jobid = ptask->wt_parm1;
 
-  if ((pjob = find_job(jobid)) == NULL)
+  if (jobid != NULL)
     {
-    /* job doesn't exist, we're done */
-    free(jobid);
-    free(ptask);
-
-    return;
+    if ((pjob = find_job(jobid)) != NULL)
+      {
+      sprintf(log_buf, "purging job without checking MOM");
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      
+      free_nodes(pjob);
+      
+      if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
+        {
+        set_resc_assigned(pjob, DECR);
+        }
+      
+      job_purge(pjob);
+      }
     }
-
-  sprintf(log_buf, "purging job without checking MOM");
-  
-  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
-  
-  free_nodes(pjob);
-  
-  if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
-    {
-    set_resc_assigned(pjob, DECR);
-    }
-  
-  job_purge(pjob);
 
   free(jobid);
+  free(ptask->wt_mutex);
   free(ptask);
   } /* END ensure_deleted() */
 
@@ -894,6 +891,7 @@ static void post_delete_route(
   {
   req_deletejob((struct batch_request *)pwt->wt_parm1);
 
+  free(pwt->wt_mutex);
   free(pwt);
   return;
   }
@@ -1026,6 +1024,7 @@ static void post_delete_mom2(
   job         *pjob;
 
   jobid = (char *)pwt->wt_parm1;
+  free(pwt->wt_mutex);
   free(pwt);
   
   if (jobid == NULL)
@@ -1197,41 +1196,42 @@ static void job_delete_nanny(
   /* short-circuit if nanny isn't enabled */
   if (!server.sv_attr[SRV_ATR_JobNanny].at_val.at_long)
     {
-    release_req(pwt);
-
-    return;
-    }
-  
-  jobid = (char *)pwt->wt_parm1;
-
-  if (jobid == NULL)
-    {
-    log_err(ENOMEM,id,"Cannot allocate memory");
-    return;
-    }
-  
-  pjob = find_job(jobid);
-  free(jobid);
-
-  if (pjob != NULL)
-    {
-    sprintf(log_buf, "exiting job '%s' still exists, sending a SIGKILL", pjob->ji_qs.ji_jobid);
-    log_err(-1, "job nanny", log_buf);
+    jobid = (char *)pwt->wt_parm1;
     
-    /* build up a Signal Job batch request */
-    if ((newreq = alloc_br(PBS_BATCH_SignalJob)) != NULL)
+    if (jobid != NULL)
       {
-      strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
-      snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", sigk);
+      pjob = find_job(jobid);
+      
+      if (pjob != NULL)
+        {
+        sprintf(log_buf, "exiting job '%s' still exists, sending a SIGKILL", pjob->ji_qs.ji_jobid);
+        log_err(-1, "job nanny", log_buf);
+        
+        /* build up a Signal Job batch request */
+        if ((newreq = alloc_br(PBS_BATCH_SignalJob)) != NULL)
+          {
+          strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
+          snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", sigk);
+          }
+        
+        issue_signal(pjob, sigk, post_job_delete_nanny, newreq);
+        
+        apply_job_delete_nanny(pjob, time_now + 60);
+        
+        pthread_mutex_unlock(pjob->ji_mutex);
+        }
       }
-    
-    issue_signal(pjob, sigk, post_job_delete_nanny, newreq);
-    
-    apply_job_delete_nanny(pjob, time_now + 60);
-    
-    pthread_mutex_unlock(pjob->ji_mutex);
+    else
+      {
+      log_err(ENOMEM,id,"Cannot allocate memory");
+      }
     }
+  
+  if (pwt->wt_parm1 != NULL)
+    free(pwt->wt_parm1);
 
+  free(pwt->wt_mutex);
+  free(pwt);
   } /* END job_delete_nanny() */
 
 

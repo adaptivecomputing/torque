@@ -93,11 +93,32 @@ void initialize_recycler()
   {
   recycler.rc_next_id = 0;
   initialize_all_jobs_array(&recycler.rc_jobs);
-  recycler.rc_iter = 0;
+  recycler.rc_iter = -1;
 
   recycler.rc_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(recycler.rc_mutex,NULL);
   } /* END initialize_recycler() */
+
+
+
+
+job *next_job_from_recycler(
+
+  struct all_jobs *aj,
+  int             *iter)
+
+  {
+  job *pjob;
+
+  pthread_mutex_lock(aj->alljobs_mutex);
+  pjob = next_thing(aj->ra, iter);
+  pthread_mutex_unlock(aj->alljobs_mutex);
+
+  if (pjob != NULL)
+    pthread_mutex_lock(pjob->ji_mutex);
+
+  return(pjob);
+  } /* END next_job_from_recycler() */
 
 
 
@@ -115,7 +136,7 @@ void *remove_some_recycle_jobs(
 
   for (i = 0; i < JOBS_TO_REMOVE; i++)
     {
-    pjob = next_job(&recycler.rc_jobs,&iter);
+    pjob = next_job_from_recycler(&recycler.rc_jobs,&iter);
     
     if (pjob == NULL)
       break;
@@ -173,20 +194,14 @@ job *get_recycled_job()
   job *pjob;
 
   pthread_mutex_lock(recycler.rc_mutex);
-
-  pjob = next_job(&recycler.rc_jobs,&recycler.rc_iter);
+  pjob = next_job_from_recycler(&recycler.rc_jobs,&recycler.rc_iter);
 
   if (pjob == NULL)
     recycler.rc_iter = -1;
-
   pthread_mutex_unlock(recycler.rc_mutex);
 
   if (pjob != NULL)
-    {
-    pthread_mutex_lock(pjob->ji_mutex);
-    
     pjob->ji_being_recycled = FALSE;
-    }
 
   return(pjob);
   } /* END get_recycled_job() */

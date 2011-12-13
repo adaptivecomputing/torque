@@ -694,6 +694,7 @@ static void process_hold_reply(
               msg_postmomnojob);
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, msg_postmomnojob);
 
+    free(pwt->wt_mutex);
     free(pwt);
 
     return;
@@ -754,6 +755,7 @@ static void process_hold_reply(
 
   pthread_mutex_unlock(pjob->ji_mutex);
 
+  free(pwt->wt_mutex);
   free(pwt);
   } /* END process_hold_reply() */
 
@@ -794,6 +796,7 @@ static void process_checkpoint_reply(
     pthread_mutex_unlock(pjob->ji_mutex);
     }
 
+  free(pwt->wt_mutex);
   free(pwt);
   } /* END process_checkpoint_reply() */
 

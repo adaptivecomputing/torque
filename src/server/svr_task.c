@@ -107,8 +107,9 @@ extern void check_nodes(struct work_task *);
 
 /* Global Data Items: */
 
-extern all_tasks task_list_timed;
-extern all_tasks task_list_event;
+extern all_tasks     task_list_timed;
+extern all_tasks     task_list_event;
+extern task_recycler tr;
 
 
 
@@ -132,9 +133,12 @@ struct work_task *set_task(
   work_task *pold;
   int        iter = -1;
 
-  if ((pnew = (struct work_task *)calloc(1, sizeof(struct work_task))) == NULL)
+  if ((pnew = get_recycled_task()) == NULL)
     {
-    return(NULL);
+    if ((pnew = (struct work_task *)calloc(1, sizeof(struct work_task))) == NULL)
+      {
+      return(NULL);
+      }
     }
 
   pnew->wt_event    = event_id;
@@ -148,10 +152,13 @@ struct work_task *set_task(
     }
   else
     {
-    if ((pnew->wt_mutex = calloc(1, sizeof(pthread_mutex_t))) == NULL)
+    if (pnew->wt_mutex == NULL)
       {
-      free(pnew);
-      return(NULL);
+      if ((pnew->wt_mutex = calloc(1, sizeof(pthread_mutex_t))) == NULL)
+        {
+        free(pnew);
+        return(NULL);
+        }
       }
     
     pthread_mutex_init(pnew->wt_mutex,NULL);
@@ -231,9 +238,9 @@ void dispatch_task(
   if (ptask->wt_tasklist)
     remove_task(ptask->wt_tasklist, ptask);
 
-  /* unlock and free the mutex */
+  /* mark the task as being recycled - it gets freed later */
+  ptask->wt_being_recycled = TRUE;
   pthread_mutex_unlock(ptask->wt_mutex);
-  free(ptask->wt_mutex);
 
   if (ptask->wt_func != NULL)
     enqueue_threadpool_request((void *(*)(void *))ptask->wt_func,ptask);
@@ -257,10 +264,10 @@ void delete_task(
   if (ptask->wt_tasklist)
     remove_task(ptask->wt_tasklist,ptask);
 
-  pthread_mutex_unlock(ptask->wt_mutex);
-  free(ptask->wt_mutex);
+  /* put the task in the recycler */
+  insert_task_into_recycler(ptask);
 
-  (void)free(ptask);
+  pthread_mutex_unlock(ptask->wt_mutex);
   } /* END delete_task() */
 
 
@@ -319,7 +326,16 @@ work_task *next_task(
   pthread_mutex_unlock(at->alltasks_mutex);
 
   if (wt != NULL)
+    {
     pthread_mutex_lock(wt->wt_mutex);
+
+    if (wt->wt_being_recycled == TRUE)
+      {
+      pthread_mutex_unlock(wt->wt_mutex);
+
+      wt = next_task(at, iter);
+      }
+    }
 
   return(wt);
   } /* END next_task() */
@@ -471,13 +487,134 @@ int remove_task(
     pthread_mutex_lock(wt->wt_mutex);
     }
 
-  rc = remove_thing(at->ra,wt);
-
+  if (wt->wt_being_recycled == FALSE)
+    {
+    rc = remove_thing(at->ra,wt);
+    }
+  else
+    {
+    rc = PBSE_NONE;
+    pthread_mutex_unlock(wt->wt_mutex);
+    }
+    
   pthread_mutex_unlock(at->alltasks_mutex);
 
   return(rc);
   } /* END remove_task() */
 
 
+
+
+void initialize_task_recycler()
+
+  {
+  initialize_all_tasks_array(&tr.tasks);
+  tr.iter = -1;
+
+  tr.mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(tr.mutex, NULL);
+  } /* END initialize_task_recycler() */
+
+
+
+
+work_task *next_task_from_recycler(
+
+  all_tasks *at,
+  int       *iter)
+
+  {
+  work_task *wt;
+
+  pthread_mutex_lock(at->alltasks_mutex);
+  wt = next_thing(at->ra,iter);
+  pthread_mutex_unlock(at->alltasks_mutex);
+
+  if (wt != NULL)
+    pthread_mutex_lock(wt->wt_mutex);
+
+  return(wt);
+  } /* END next_task_from_recycler() */
+
+
+
+void *remove_some_recycle_tasks(
+
+  void *vp)
+
+  {
+  int        i;
+  int        iter = -1;
+  work_task *ptask;
+
+  pthread_mutex_lock(tr.mutex);
+
+  for (i = 0; i < TASKS_TO_REMOVE; i++)
+    {
+    ptask = next_task_from_recycler(&tr.tasks, &iter);
+
+    if (ptask == NULL)
+      break;
+
+    remove_task(&tr.tasks, ptask);
+    pthread_mutex_unlock(ptask->wt_mutex);
+    free(ptask->wt_mutex);
+    free(ptask);
+    }
+
+  pthread_mutex_unlock(tr.mutex);
+
+  return(NULL);
+  } /* END remove_some_recycle_tasks() */
+
+
+
+
+int insert_task_into_recycler(
+
+  struct work_task *ptask)
+
+  {
+  pthread_mutex_t *tmp = ptask->wt_mutex;
+  int              rc;
+
+  memset(ptask, 0, sizeof(struct work_task));
+  ptask->wt_mutex = tmp;
+
+  pthread_mutex_lock(tr.mutex);
+
+  ptask->wt_being_recycled = TRUE;
+
+  if (tr.tasks.ra->num >= MAX_TASKS_IN_RECYCLER)
+    enqueue_threadpool_request(remove_some_recycle_tasks, NULL);
+
+  rc = insert_task(&tr.tasks, ptask);
+
+  pthread_mutex_unlock(tr.mutex);
+
+  return(rc);
+  } /* END insert_task_into_recycler() */
+
+
+
+
+
+work_task *get_recycled_task()
+
+  {
+  work_task *ptask;
+
+  pthread_mutex_lock(tr.mutex);
+  ptask = next_task_from_recycler(&tr.tasks, &tr.iter);
+
+  if (ptask == NULL)
+    tr.iter = -1;
+  pthread_mutex_unlock(tr.mutex);
+
+  if (ptask != NULL)
+    ptask->wt_being_recycled = FALSE;
+
+  return(ptask);
+  } /* END get_recycled_task() */
 
 

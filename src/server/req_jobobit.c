@@ -1572,7 +1572,8 @@ void on_job_exit(
 
     jobid = (char *)preq->rq_extra;
     }
-    
+  
+  free(ptask->wt_mutex);
   free(ptask);
 
   /* check for calloc errors */
@@ -1727,6 +1728,7 @@ void on_job_rerun(
   if (jobid == NULL)
     {
     log_err(ENOMEM,id,"Cannot allocate memory");
+    free(ptask->wt_mutex);
     free(ptask);
     return;
     }
@@ -1737,6 +1739,7 @@ void on_job_rerun(
   if ((handle = mom_comm(pjob, on_job_rerun)) < 0)
     {
     pthread_mutex_unlock(pjob->ji_mutex);
+    free(ptask->wt_mutex);
     free(ptask);
 
     return;
@@ -1761,6 +1764,7 @@ void on_job_rerun(
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
+          free(ptask->wt_mutex);
           free(ptask);
 
           return;
@@ -1775,6 +1779,7 @@ void on_job_rerun(
         if (preq == NULL)
           {
           pthread_mutex_unlock(pjob->ji_mutex);
+          free(ptask->wt_mutex);
           free(ptask);
           
           return;
@@ -1788,6 +1793,7 @@ void on_job_rerun(
           {
           /* request ok, will come back when its done */
           pthread_mutex_unlock(pjob->ji_mutex);
+          free(ptask->wt_mutex);
           free(ptask);
 
           return;
@@ -1867,6 +1873,7 @@ void on_job_rerun(
           if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
             {
             pthread_mutex_unlock(pjob->ji_mutex);
+            free(ptask->wt_mutex);
             free(ptask);
             
             return;  /* come back when mom replies */
@@ -1894,6 +1901,7 @@ void on_job_rerun(
 
           pthread_mutex_unlock(pjob->ji_mutex);
 
+          free(ptask->wt_mutex);
           free(ptask);
 
           return;
@@ -1974,6 +1982,7 @@ void on_job_rerun(
           if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
             {
             pthread_mutex_unlock(pjob->ji_mutex);
+            free(ptask->wt_mutex);
             free(ptask);
             
             return;
@@ -1995,6 +2004,7 @@ void on_job_rerun(
 
           pthread_mutex_unlock(pjob->ji_mutex);
             
+          free(ptask->wt_mutex);
           free(ptask);
 
           return;
@@ -2104,7 +2114,8 @@ void on_job_rerun(
     }  /* END switch (pjob->ji_qs.ji_substate) */
 
   pthread_mutex_unlock(pjob->ji_mutex);
-            
+    
+  free(ptask->wt_mutex);
   free(ptask);
 
   return;

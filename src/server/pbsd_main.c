@@ -1752,6 +1752,7 @@ void check_job_log(
     msg_daemonname,
     log_buf);
 
+  free(ptask->wt_mutex);
   free(ptask);
 
   set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_job_log, NULL, FALSE);
@@ -1824,6 +1825,7 @@ void check_log(
     msg_daemonname,
     log_buf);
 
+  free(ptask->wt_mutex);
   free(ptask);
 
   set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_log, NULL, FALSE);
@@ -1858,6 +1860,7 @@ void check_acct_log(
     acct_cleanup(server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long);
     }
 
+  free(ptask->wt_mutex);
   free(ptask);
 
   set_task(WORK_Timed,time_now + PBS_ACCT_CHECK_RATE,check_acct_log,NULL,FALSE);

@@ -1007,6 +1007,7 @@ void job_clone_wt(
 
   if (pa == NULL)
     {
+    free(ptask->wt_mutex);
     free(ptask);
     return;
     }
@@ -1170,6 +1171,7 @@ void job_clone_wt(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
     }
 
+  free(ptask->wt_mutex);
   free(ptask);
 
   return;

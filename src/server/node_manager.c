@@ -2061,6 +2061,7 @@ void *check_nodes_work(
     }
 
   /* since this is done via threading, we now free the task here */
+  free(ptask->wt_mutex);
   free(ptask);
 
   return(NULL);

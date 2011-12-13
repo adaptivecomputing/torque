@@ -668,7 +668,7 @@ typedef struct job job;
 #define JOB_NOT_FOUND             -1
 #define MAX_RECYCLE_JOBS           5000
 #define TOO_MANY_JOBS_IN_RECYCLER -1
-#define JOBS_TO_REMOVE             100
+#define JOBS_TO_REMOVE             1000
 
 /* on the server this array will replace many of the doubly linked-lists */
 struct all_jobs

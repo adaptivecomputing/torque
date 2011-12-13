@@ -189,6 +189,7 @@ extern char             server_name[];
 extern tlist_head       svr_newnodes;
 extern all_tasks        task_list_timed;
 extern all_tasks        task_list_event;
+task_recycler           tr;
 extern struct all_jobs  alljobs;
 extern struct all_jobs  array_summary;
 extern struct all_jobs  newjobs;
@@ -1100,6 +1101,7 @@ int pbsd_init(
   initialize_all_jobs_array(&newjobs);
   initialize_hello_container(&hellos);
   initialize_hello_container(&failures);
+  initialize_task_recycler();
 
   CLEAR_HEAD(svr_newnodes);
 
@@ -2444,6 +2446,7 @@ static void resume_net_move(
     free(jobid);
     }
 
+  free(ptask->wt_mutex);
   free(ptask);
   } /* END resume_net_move() */
 

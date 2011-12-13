@@ -179,6 +179,7 @@ static void post_modify_req(
       if ((pjob = find_job(preq->rq_ind.rq_modify.rq_objname)) == NULL)
         {
         req_reject(preq->rq_reply.brp_code, 0, preq, NULL, NULL);
+        free(pwt->wt_mutex);
         free(pwt);
         return;
         }
@@ -202,6 +203,7 @@ static void post_modify_req(
     reply_ack(preq);
     }
 
+  free(pwt->wt_mutex);
   free(pwt);
 
   return;
@@ -232,6 +234,7 @@ void mom_cleanup_checkpoint_hold(
   time_t                time_now = time(NULL);
 
   jobid = (char *)ptask->wt_parm1;
+  free(ptask->wt_mutex);
   free(ptask);
 
   if (jobid == NULL)
@@ -1408,6 +1411,7 @@ void post_modify_arrayreq(
         {
         parent_req->rq_refcount--;
 
+        free(pwt->wt_mutex);
         free(pwt);
 
         if (parent_req->rq_refcount == 0)
@@ -1450,6 +1454,7 @@ void post_modify_arrayreq(
       free_br(preq);
     }
 
+  free(pwt->wt_mutex);
   free(pwt);
 
   return;

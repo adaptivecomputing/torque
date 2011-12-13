@@ -175,6 +175,7 @@ static void post_message_req(
   else
     reply_ack(preq);
 
+  free(pwt->wt_mutex);
   free(pwt);
   } /* END post_message_req() */
 

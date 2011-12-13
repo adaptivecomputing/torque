@@ -404,10 +404,10 @@ void *req_authenuser(
   void *vp)  /* I */
 
   {
-  int s;
-  int debug = 0;
-  int delay_cntr = 0;
-  char *log_buffer = NULL;
+  int                   s;
+  int                   debug = 0;
+  int                   delay_cntr = 0;
+  char                  log_buffer[MAXLINE];
   struct batch_request *preq = (struct batch_request *)vp;
 
   /*
@@ -457,11 +457,10 @@ void *req_authenuser(
     usleep(10);
     }
 
-  log_buffer = (char *)calloc(1, 40);
   sprintf(log_buffer, "trqauthd fail %d", preq->rq_ind.rq_authen.rq_port);
   log_err(PBSE_BADCRED, "req_authenuser", log_buffer);
-  if (debug) printf("%s\n", log_buffer);
-  free(log_buffer);
+  if (debug) 
+    printf("%s\n", log_buffer);
   req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user. Client connection not found");
 
   /* FAILURE */

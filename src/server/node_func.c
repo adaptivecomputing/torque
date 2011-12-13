@@ -1608,6 +1608,7 @@ void recheck_for_node(
 
   if ((host_info = ptask->wt_parm1) == NULL)
     {
+    free(ptask->wt_mutex);
     free(ptask);
 
     return;
@@ -1627,6 +1628,7 @@ void recheck_for_node(
     free(host_info);
     }
 
+  free(ptask->wt_mutex);
   free(ptask);
   return;
   } /* END recheck_for_node() */

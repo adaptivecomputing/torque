@@ -2024,7 +2024,8 @@ static void job_wait_over(
   job         *pjob;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   char        *jobid = (char *)pwt->wt_parm1;
-  
+ 
+  free(pwt->wt_mutex);
   free(pwt);
 
   if (jobid == NULL)

@@ -154,7 +154,9 @@ int reply_send(
 
 #ifndef PBS_MOM
 int reply_send_svr(
+  
   struct batch_request *request)  /* I (freed) */
+
   {
   int      rc = 0;
   char     log_buf[LOCAL_LOG_BUF_SIZE];
@@ -184,7 +186,6 @@ int reply_send_svr(
           remove_task(ptask->wt_tasklist,ptask);
         
         pthread_mutex_unlock(ptask->wt_mutex);
-        free(ptask->wt_mutex);
 
         ptask->wt_func(ptask);
 
@@ -222,6 +223,7 @@ int reply_send_svr(
     {
     free_br(request);
     }
+
   return(rc);
   }  /* END reply_send_svr() */
 #endif /* PBS_MOM */

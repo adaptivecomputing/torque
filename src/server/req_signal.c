@@ -287,7 +287,8 @@ static void post_signal_req(
   svr_disconnect(pwt->wt_event); /* disconnect from MOM */
 
   preq = pwt->wt_parm1;
-  
+ 
+  free(pwt->wt_mutex);
   free(pwt);
 
   preq->rq_conn = preq->rq_orgconn;  /* restore client socket */

@@ -1136,6 +1136,7 @@ void poll_job_task(
     free(jobid);
     }
 
+  free(ptask->wt_mutex);
   free(ptask);
   }  /* END poll_job_task() */
 
