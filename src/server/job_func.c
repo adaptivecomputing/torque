@@ -473,7 +473,7 @@ int job_abt(
         update_array_values(pa,pjob,old_state,aeTerminate);
 
         pthread_mutex_unlock(pa->ai_mutex);
-        if(LOGLEVEL >= 7)
+        if (LOGLEVEL >= 7)
           {
           sprintf(log_buf, "unlocked ai_mutex: %s", myid);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
@@ -740,7 +740,7 @@ job *job_clone(
   int    release_mutex = FALSE;
 
 
-  if(LOGLEVEL >= 7)
+  if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "taskid %d", taskid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
@@ -752,9 +752,7 @@ job *job_clone(
     return(NULL);
     }
 
-  pnewjob = job_alloc();
-
-  if (pnewjob == NULL)
+  if ((pnewjob = job_alloc()) == NULL)
     {
     log_err(errno, id, "no memory");
 
@@ -789,9 +787,7 @@ job *job_clone(
   pnewjob->ji_qs.ji_jobid[PBS_MAXSVRJOBID-1] = '\0';
 
   snprintf(pnewjob->ji_qs.ji_jobid, PBS_MAXSVRJOBID, "%s[%d].%s",
-           oldid,
-           taskid,
-           hostname);
+    oldid, taskid, hostname);
 
 
   /* update the job filename
@@ -936,7 +932,7 @@ job *job_clone(
     release_mutex = TRUE;
     
     pa = get_array(template_job->ji_qs.ji_jobid);
-    if(pa == NULL)
+    if (pa == NULL)
       {
       job_free(pnewjob);
       return(NULL);
@@ -945,16 +941,11 @@ job *job_clone(
 
   pa->jobs[taskid] = pnewjob;
   pnewjob->ji_arraystruct = pa;
-  if(LOGLEVEL >= 7)
-    {
-    sprintf(log_buf, "job id: %s. release_mutex: %d", pnewjob->ji_qs.ji_jobid, release_mutex);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
-    }
 
   if (release_mutex == TRUE)
     {
     pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "unlocked ai_mutex: %s", id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pnewjob->ji_qs.ji_jobid, log_buf);
@@ -975,6 +966,7 @@ job *job_clone(
 /*
  * job_clone_wt - worktask to clone jobs for job array
  */
+
 void job_clone_wt(
 
   struct work_task *ptask)
@@ -982,13 +974,13 @@ void job_clone_wt(
   {
   static char         id[] = "job_clone_wt";
   char                log_buf[LOCAL_LOG_BUF_SIZE];
+  job                *template_job;
   job                *pjob;
   job                *pjobclone;
+  char               *jobid;
 
   int                 i;
-  int                 num_cloned;
-  int                 clone_size;
-  int                 clone_delay;
+  int                 actual_job_count = 0;
   int                 newstate;
   int                 newsub;
   int                 rc;
@@ -996,73 +988,45 @@ void job_clone_wt(
   job_array          *pa;
 
   array_request_node *rn;
-  time_t              time_now = time(NULL);
   int                 start;
   int                 end;
-  int                 loop;
 
-  pjob = (job*)(ptask->wt_parm1);
+  jobid = (char *)(ptask->wt_parm1);
+  free(ptask->wt_mutex);
+  free(ptask);
 
-  pa = get_array(pjob->ji_qs.ji_jobid);
-
-  if (pa == NULL)
+  if (jobid == NULL)
     {
-    free(ptask->wt_mutex);
-    free(ptask);
+    log_err(ENOMEM, id, "Can't malloc");
     return;
     }
 
-  rn = (array_request_node*)GET_NEXT(pa->request_tokens);
-  if(rn == NULL)
+  /* don't call get_jobs_array because the template job isn't part of the array */
+  if (((template_job = find_job(jobid)) == NULL) ||
+      ((pa = get_jobs_array(template_job)) == NULL))
     {
-    /* something isn't right. */
-    pthread_mutex_unlock(pa->ai_mutex);
+    free(jobid);
+    if (template_job != NULL)
+      pthread_mutex_unlock(template_job->ji_mutex);
     return;
     }
+
+  free(jobid);
 
   snprintf(namebuf, sizeof(namebuf), "%s%s.AR",
-    path_jobs, pjob->ji_qs.ji_fileprefix);
+    path_jobs, template_job->ji_qs.ji_fileprefix);
+  pthread_mutex_unlock(template_job->ji_mutex);
 
-  /* do the clones in batches of CLONE_BATCH_SIZE */
-
-  num_cloned = 0;
-
-  /* see if there are qmgr attributes for cloning the batch */
-
-  if (((server.sv_attr[SRV_ATR_clonebatchsize].at_flags & ATR_VFLAG_SET) != 0)
-       && (server.sv_attr[SRV_ATR_clonebatchsize].at_val.at_long > 0))
-    {
-    clone_size = server.sv_attr[SRV_ATR_clonebatchsize].at_val.at_long;
-    }
-  else
-    {
-    clone_size = CLONE_BATCH_SIZE;
-    }
-
-  if (((server.sv_attr[SRV_ATR_clonebatchdelay].at_flags & ATR_VFLAG_SET) != 0)
-       && (server.sv_attr[SRV_ATR_clonebatchdelay].at_val.at_long > 0))
-    {
-    clone_delay = server.sv_attr[SRV_ATR_clonebatchdelay].at_val.at_long;
-    }
-  else
-    {
-    /* default to one second */
-    clone_delay = 1;
-    }
-
-  for (loop = TRUE; loop;)
+  while ((rn = (array_request_node *)GET_NEXT(pa->request_tokens)) != NULL)
     {
     start = rn->start;
     end = rn->end;
 
-    if (end - start > clone_size)
-      {
-      end = start + clone_size - 1;
-      }
-
     for (i = start; i <= end; i++)
       {
-      pjobclone = job_clone(pjob, pa, i);
+      pthread_mutex_lock(template_job->ji_mutex);
+      pjobclone = job_clone(template_job, pa, i);
+      pthread_mutex_unlock(template_job->ji_mutex);
 
       if (pjobclone == NULL)
         {
@@ -1071,8 +1035,8 @@ void job_clone_wt(
         }
 
       svr_evaljobstate(pjobclone, &newstate, &newsub, 1);
-
       svr_setjobstate(pjobclone, newstate, newsub, FALSE);
+
       pjobclone->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       pjobclone->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
@@ -1081,7 +1045,8 @@ void job_clone_wt(
         /* XXX need more robust error handling */
         pthread_mutex_unlock(pa->ai_mutex);
         job_purge(pjobclone);
-
+        pthread_mutex_lock(pa->ai_mutex);
+        continue;
         }
 
      if (job_save(pjobclone, SAVEJOB_FULL, 0) != 0)
@@ -1089,95 +1054,75 @@ void job_clone_wt(
         /* XXX need more robust error handling */
         pthread_mutex_unlock(pa->ai_mutex);
         job_purge(pjobclone);
+        pthread_mutex_lock(pa->ai_mutex);
+        continue;
         }
 
       pa->ai_qs.num_cloned++;
 
       rn->start++;
 
-      pa->jobs[i] = (void *)pjobclone;
+      pa->jobs[i] = pjobclone;
 
       pthread_mutex_unlock(pjobclone->ji_mutex);
-
-      array_save(pa);
-      num_cloned++;
       }  /* END for (i) */
 
     if (rn->start > rn->end)
       {
       delete_link(&rn->request_tokens_link);
       free(rn);
-      rn = (array_request_node*)GET_NEXT(pa->request_tokens);
-      array_save(pa);
-      }
-
-    if (num_cloned == clone_size || rn == NULL)
-      {
-      loop = FALSE;
       }
     }    /* END while (loop) */
+      
+  array_save(pa);
 
-  if (rn != NULL)
+  /* scan over all the jobs in the array and unset the hold */
+  for (i = 0; i < pa->ai_qs.array_size; i++)
     {
-    set_task(WORK_Timed, time_now + clone_delay, job_clone_wt, ptask->wt_parm1, FALSE);
-    }
-  else
-    {
-    int i;
-    int actual_job_count = 0;
-    /* this is the last batch of jobs */
-
-    /* scan over all the jobs in the array and unset the hold */
-    for (i = 0; i < pa->ai_qs.array_size; i++)
+    if (pa->jobs[i] == NULL)
+      continue;
+    
+    actual_job_count++;
+    
+    pjob = (job *)pa->jobs[i];
+    pthread_mutex_lock(pjob->ji_mutex);
+    
+    pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
+    
+    if (server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_long != FALSE)
       {
-      if (pa->jobs[i] == NULL)
-        continue;
-
-      actual_job_count++;
-
-      pjob = (job *)pa->jobs[i];
-
-      pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
-
-      if (server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_long != FALSE)
+      /* if configured and necessary, apply a slot limit hold to all
+       * jobs above the slot limit threshold */
+      if ((pa->ai_qs.slot_limit != NO_SLOT_LIMIT) &&
+          (actual_job_count > pa->ai_qs.slot_limit))
         {
-        /* if configured and necessary, apply a slot limit hold to all
-         * jobs above the slot limit threshold */
-        if ((pa->ai_qs.slot_limit != NO_SLOT_LIMIT) &&
-            (actual_job_count > pa->ai_qs.slot_limit))
-          {
-          pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_l;
-          }
+        pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_l;
         }
-
-      if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
-        {
-        pjob->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
-        }
-      else
-        {
-        pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
-        }
-
-      svr_evaljobstate(pjob, &newstate, &newsub, 1);
-
-      svr_setjobstate(pjob, newstate, newsub, FALSE);
-
-      job_save(pjob, SAVEJOB_FULL, 0);
       }
+    
+    if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+      {
+      pjob->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+      }
+    else
+      {
+      pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+      }
+   
+    pjob->ji_modified = TRUE;
+    svr_evaljobstate(pjob, &newstate, &newsub, 1);
+    svr_setjobstate(pjob, newstate, newsub, FALSE);
+    
+    pthread_mutex_unlock(pjob->ji_mutex);
     }
 
-  pthread_mutex_unlock(pa->ai_mutex);
-  if(LOGLEVEL >= 7)
+  if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "unlocked ai_mutex: %s", id);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
     }
-
-  free(ptask->wt_mutex);
-  free(ptask);
-
-  return;
+  
+  pthread_mutex_unlock(pa->ai_mutex);
   }  /* END job_clone_wt */
 
 
@@ -2390,13 +2335,13 @@ job_array *get_jobs_array(
   if (pthread_mutex_trylock(pa->ai_mutex))
     {
     pthread_mutex_unlock(pjob->ji_mutex);
-    if(LOGLEVEL >=7)
+    if (LOGLEVEL >=7)
       {
       sprintf(log_buf, "locking ai_mutex: %s", id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
     pthread_mutex_lock(pa->ai_mutex);
-    if(LOGLEVEL >=7)
+    if (LOGLEVEL >=7)
       {
       sprintf(log_buf, "locked ai_mutex: %s", id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);

@@ -771,12 +771,13 @@ static void req_stat_job_step2(
            &preply->brp_un.brp_status,
            &bad);
 
-    if ((rc != 0) && (rc != PBSE_PERM))
+    if ((rc != 0) && 
+        (rc != PBSE_PERM))
       {
       if (pa != NULL)
         {
         pthread_mutex_unlock(pa->ai_mutex);
-        if(LOGLEVEL >= 7)
+        if (LOGLEVEL >= 7)
           {
           sprintf(log_buf, "%s: unlocked ai_mutex", id);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
@@ -823,12 +824,12 @@ nextjob:
 
   if (pa != NULL)
     {
-    pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: unlocked ai_mutex", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
       }
+    pthread_mutex_unlock(pa->ai_mutex);
     }
  
   reply_send_svr(preq);

@@ -649,13 +649,13 @@ int setup_array_struct(
 
   pa->ai_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(pa->ai_mutex,NULL);
-  if(LOGLEVEL >= 7)
+  if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "%s: locking ai_mutex: %s", func_name, pa->ai_qs.array_id);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, func_name, log_buf);
     }
   pthread_mutex_lock(pa->ai_mutex);
-  if(LOGLEVEL >= 7)
+  if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "%s: locked ai_mutex: %s", func_name, pa->ai_qs.array_id);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, func_name, log_buf);
@@ -667,7 +667,7 @@ int setup_array_struct(
     {
     /* the array is deleted in job_purge */
     pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: unlocked ai_mutex: %s", func_name, pa->ai_qs.array_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, func_name, log_buf);
@@ -754,8 +754,10 @@ int setup_array_struct(
     return 2;
     }
 
+  pjob->ji_arraystruct = pa;
+
   pthread_mutex_unlock(pa->ai_mutex);
-  if(LOGLEVEL >= 7)
+  if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "%s: unlocked ai_mutex", func_name);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, func_name, log_buf);

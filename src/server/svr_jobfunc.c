@@ -305,8 +305,9 @@ int svr_enquejob(
   time_t         time_now = time(NULL);
 
   /* make sure queue is still there, there exists a small window ... */
-
+  pthread_mutex_unlock(pjob->ji_mutex);
   pque = find_queuebyname(pjob->ji_qs.ji_queue);
+  pthread_mutex_lock(pjob->ji_mutex);
 
   if (pque == NULL)
     {

@@ -2189,7 +2189,7 @@ void req_commit(
   /* if job array, setup the cloning work task */
   if (pj->ji_is_array_template)
     {
-    set_task(WORK_Timed, time_now + 1, job_clone_wt, pj, FALSE);
+    set_task(WORK_Timed, time_now + 1, job_clone_wt, strdup(pj->ji_qs.ji_jobid), FALSE);
     }
     
   log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
