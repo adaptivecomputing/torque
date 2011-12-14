@@ -1672,6 +1672,7 @@ void update_array_statuses(
         }
       }
     
+    pthread_mutex_lock(pa->template_job->ji_mutex);
     if (running > 0)
       {
       svr_setjobstate(pa->template_job, JOB_STATE_RUNNING, pa->template_job->ji_qs.ji_substate, FALSE);
@@ -1689,6 +1690,7 @@ void update_array_statuses(
       /* default to just calling the array queued */
       svr_setjobstate(pa->template_job, JOB_STATE_QUEUED, pa->template_job->ji_qs.ji_substate, FALSE);
       }
+    pthread_mutex_unlock(pa->template_job->ji_mutex);
       
     if (pa != owned)
       {

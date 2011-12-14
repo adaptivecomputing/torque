@@ -1604,7 +1604,7 @@ void job_purge(
       (pjob->ji_is_array_template == TRUE))
     {
     /* delete script file */        
-    snprintf(namebuf, MAXPATHLEN, path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
 
     if (unlink(namebuf) < 0)
       {
@@ -1620,7 +1620,7 @@ void job_purge(
     }
 
   /* delete any spooled stdout */
-  snprintf(namebuf, MAXPATHLEN, path_jobs, pjob->ji_qs.ji_fileprefix, JOB_STDOUT_SUFFIX);
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pjob->ji_qs.ji_fileprefix, JOB_STDOUT_SUFFIX);
 
   if (unlink(namebuf) < 0)
     {
@@ -1635,7 +1635,7 @@ void job_purge(
     }
 
   /* delete any spooled stderr */
-  snprintf(namebuf, MAXPATHLEN, path_jobs, pjob->ji_qs.ji_fileprefix, JOB_STDERR_SUFFIX);
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pjob->ji_qs.ji_fileprefix, JOB_STDERR_SUFFIX);
 
   if (unlink(namebuf) < 0)
     {
@@ -1658,7 +1658,7 @@ void job_purge(
   /* delete checkpoint file directory if there is one */
   if (pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
     {
-    snprintf(namebuf, MAXPATHLEN, path_checkpoint, pjob->ji_qs.ji_fileprefix, JOB_CHECKPOINT_SUFFIX);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_checkpoint, pjob->ji_qs.ji_fileprefix, JOB_CHECKPOINT_SUFFIX);
 
     if (remtree(namebuf) < 0)
       {
@@ -1673,16 +1673,13 @@ void job_purge(
       }
     }
 
-  snprintf(namebuf, sizeof(namebuf), "%s%s",
-    path_jobs, pjob->ji_qs.ji_fileprefix);
-
   if (pjob->ji_is_array_template == TRUE)
     {
-    snprintf(namebuf, MAXPATHLEN, path_jobs, pjob->ji_qs.ji_fileprefix, JOB_FILE_TMP_SUFFIX);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pjob->ji_qs.ji_fileprefix, JOB_FILE_TMP_SUFFIX);
     }
   else
     {
-    snprintf(namebuf, MAXPATHLEN, path_jobs, pjob->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pjob->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
     }
 
   if (unlink(namebuf) < 0)
