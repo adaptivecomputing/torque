@@ -109,7 +109,7 @@ disiui_(void)
   memset(scratch, 0, DIS_BUFSIZ+1);
   cp = discui_(&scratch[DIS_BUFSIZ], UINT_MAX, &dis_umaxd);
   assert(dis_umaxd > 0);
-  dis_umax = (char *)calloc(1, dis_umaxd);
+  dis_umax = (char *)calloc(1, dis_umaxd+1);
   assert(dis_umax != NULL);
   memcpy(dis_umax, cp, dis_umaxd);
   }
