@@ -546,6 +546,7 @@ int array_delete(
      this also deletes the shared script file for the array*/
   if (pa->template_job)
     {
+    pthread_mutex_lock(pa->template_job->ji_mutex);
     job_purge(pa->template_job);
     }
 

@@ -1604,30 +1604,25 @@ int pbsd_init(
 
   while ((pa = next_array(&iter)) != NULL)
     {
-    if(LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: locking ai_mutex", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
-      }
-                    
     pthread_mutex_lock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: locked ai_mutex", id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
       }
-                    
+
     pa->template_job = find_array_template(pa->ai_qs.parent_id);
+    pthread_mutex_unlock(pa->template_job->ji_mutex);
 
     if (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)
       {
-
       /* if we can't finish building the job array then delete whats been done
          so far */
       if (pa->template_job == NULL)
         {
-        int i;
+        int        i;
         job_array *temp;
+
         for (i = 0; i < pa->ai_qs.array_size; i++)
           {
           if (pa->jobs[i] != NULL)
@@ -1648,11 +1643,12 @@ int pbsd_init(
         /* TODO Someone must have been naughty and did a kill -9 on pbs_server,
            we might need to validate that the last job was fully initialized
            before continuing the cloning process. */
-        set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pa->template_job,FALSE);
+        set_task(WORK_Timed, time_now + 1, job_clone_wt, strdup(pa->ai_qs.parent_id), FALSE);
         }
 
       }
-    else if (pa->ai_qs.jobs_done == pa->ai_qs.num_jobs && pa->template_job == NULL)
+    else if ((pa->ai_qs.jobs_done == pa->ai_qs.num_jobs) && 
+             (pa->template_job == NULL))
       {
       job_array *temp = (job_array*)GET_NEXT(pa->all_arrays);
       array_delete(pa);
@@ -1660,17 +1656,14 @@ int pbsd_init(
       continue;
       }
 
-    if (pa->template_job != NULL)
-      pthread_mutex_unlock(pa->template_job->ji_mutex);
-
-    pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: unlocking ai_mutex", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
       }
-                    
-    }
+    
+    pthread_mutex_unlock(pa->ai_mutex);
+    } /* END for each array */
 
 
   /* Put us back in the Server's Private directory */
