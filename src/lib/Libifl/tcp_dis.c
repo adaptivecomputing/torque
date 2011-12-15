@@ -386,17 +386,32 @@ int DIS_tcp_wflush(
   size_t ct;
   int  i;
   char *pb = NULL;
+  char *temp_pb = NULL;
+  char *pbs_debug = NULL;
+  int   rc = PBSE_NONE;
 
   struct tcpdisbuf *tp;
+
+  pbs_debug = getenv("PBSDEBUG");
 
   pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
 
   tp = &tcparray[fd]->writebuf;
   pb = tp->tdis_thebuf;
-
   ct = tp->tdis_trailp - tp->tdis_thebuf;
 
-  while ((i = write(fd, pb, ct)) != (ssize_t)ct)
+  if ((temp_pb = calloc(1, ct + 1)) == NULL)
+    {
+    if(pbs_debug != NULL)
+      fprintf(stderr, "DIS_tcp_wflush failed to on calloc of temp_pb: %d, (%s)\n", errno, strerror(errno));
+    rc = -1;
+    }
+  else
+    memcpy(temp_pb, pb, ct);
+
+  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+ 
+  while ((i = write(fd, temp_pb, ct)) != (ssize_t)ct)
     {
     if (i == -1)
       {
@@ -407,26 +422,23 @@ int DIS_tcp_wflush(
 
       /* FAILURE */
 
-      if (getenv("PBSDEBUG") != NULL)
+      if (pbs_debug != NULL)
         {
         fprintf(stderr, "TCP write of %d bytes (%.32s) failed, errno=%d (%s)\n",
-                (int)ct,
-                pb,
-                errno,
-                strerror(errno));
+                (int)ct, temp_pb, errno, strerror(errno));
         }
-
-      pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
 
       return(-1);
       }  /* END if (i == -1) */
 
     ct -= i;
 
-    pb += i;
+    temp_pb += i;
     }  /* END while (i) */
 
   /* SUCCESS */
+
+  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
 
   tp->tdis_eod = tp->tdis_leadp;
 
