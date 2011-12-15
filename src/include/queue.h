@@ -219,7 +219,7 @@ typedef struct all_queues
 
 
 int lock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging);
-int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging);
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging);
 pbs_queue *next_queue(all_queues *,int *);
 int        insert_queue(all_queues *,pbs_queue *);
 int        remove_queue(all_queues *,pbs_queue *);

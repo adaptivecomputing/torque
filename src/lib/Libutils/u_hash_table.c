@@ -617,6 +617,44 @@ hash_table_t *create_hash(
 
 
 
+
+void free_buckets(
+
+  bucket **buckets,
+  int      size)
+
+  {
+  int     i;
+  bucket *b;
+  bucket *tmp;
+
+  for (i = 0; i < size; i++)
+    {
+    b = buckets[i];
+
+    while (b != NULL)
+      {
+      tmp = b;
+      b = b->next;
+
+      free(tmp);
+      }
+    }
+  } /* END free_buckets() */
+
+
+void free_hash(
+
+  hash_table_t *ht)
+
+  {
+  free_buckets(ht->buckets, ht->size);
+  free(ht);
+  } /* END free_hash() */
+
+
+
+
 /* this will be replaced with a real hash function soon, but this works for testing */
 int get_hash(
     
@@ -642,33 +680,6 @@ int get_hash(
   return(hash & mask);
   } /* END get_hash() */
 
-
-
-
-
-void free_buckets(
-
-  bucket **buckets,
-  int      size)
-
-  {
-  int     i;
-  bucket *b;
-  bucket *tmp;
-
-  for (i = 0; i < size; i++)
-    {
-    b = buckets[i];
-
-    while (b != NULL)
-      {
-      tmp = b;
-      b = b->next;
-
-      free(tmp);
-      }
-    }
-  } /* END free_buckets() */
 
 
 

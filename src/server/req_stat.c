@@ -287,7 +287,8 @@ void *req_stat_job(
   if (rc != 0)
     {
     /* is invalid - an error */
-    if (pque != NULL) unlock_queue(pque, "req_stat_job", "invalid", LOGLEVEL);
+    if (pque != NULL) 
+      unlock_queue(pque, "req_stat_job", "invalid", LOGLEVEL);
     req_reject(rc, 0, preq, NULL, NULL);
     return(NULL);
     }
@@ -300,14 +301,24 @@ void *req_stat_job(
 
   if (cntl == NULL)
     {
-    if (pque != NULL) unlock_queue(pque, "req_stat_job", "no memory cntl", LOGLEVEL);
+    if (pque != NULL) 
+      unlock_queue(pque, "req_stat_job", "no memory cntl", LOGLEVEL);
     req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 
     return(NULL);
     }
 
-  cntl->sc_type   = (int)type;
+  if ((type == tjstTruncatedQueue) ||
+      (type == tjstTruncatedServer))
+    {
+    if (pque != NULL)
+      {
+      unlock_queue(pque, __func__, "", LOGLEVEL);
+      pque = NULL;
+      }
+    }
 
+  cntl->sc_type   = (int)type;
   cntl->sc_conn   = -1;
   cntl->sc_pque   = pque;
   cntl->sc_origrq = preq;
@@ -465,7 +476,8 @@ static void req_stat_job_step2(
           }
         else
           {
-          if ((type == tjstTruncatedServer) || (type == tjstTruncatedQueue))
+          if ((type == tjstTruncatedServer) || 
+              (type == tjstTruncatedQueue))
             IsTruncated = TRUE;
 
           pjob = next_job(&alljobs,&iter);
@@ -522,16 +534,16 @@ static void req_stat_job_step2(
 
           continue;
           }
+        
+        if (LOGLEVEL >= 7)
+          {
+          sprintf(log_buf, "%s: unlocked ai_mutex", id);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+          }
 
         pthread_mutex_unlock(pjob->ji_mutex);
         if (pa != NULL)
           pthread_mutex_unlock(pa->ai_mutex);
-          if(LOGLEVEL >= 7)
-            {
-            sprintf(log_buf, "%s: unlocked ai_mutex", id);
-            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-            }
-
 
         return; /* will pick up after mom replies */
         }
@@ -617,7 +629,8 @@ static void req_stat_job_step2(
     }
 
 
-  if ((type == tjstTruncatedServer) || (type == tjstTruncatedQueue))
+  if ((type == tjstTruncatedServer) || 
+      (type == tjstTruncatedQueue))
     {
     long sentJobCounter;
     long qjcounter;
@@ -625,7 +638,6 @@ static void req_stat_job_step2(
     int  iter = -1;
 
     /* loop through all queues */
-
     while ((pque = next_queue(&svr_queues,&iter)) != NULL)
       {
       qjcounter = 0;
@@ -720,16 +732,17 @@ static void req_stat_job_step2(
         log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_QUEUE,pque->qu_qs.qu_name,log_buf);
         }
     
-      unlock_queue(pque, "req_stat_job_step2", "end while", LOGLEVEL);
+      unlock_queue(pque, __func__, "end while", LOGLEVEL);
       }      /* END for (pque) */
+      
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s: unlocked ai_mutex", id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
+      }
 
     if (pa != NULL)
       pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >= 7)
-        {
-        sprintf(log_buf, "%s: unlocked ai_mutex", id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-        }
 
     reply_send_svr(preq);
 
@@ -1152,15 +1165,17 @@ void poll_job_task(
  */
 
 void *req_stat_que(
-  void *vp) /* ptr to the decoded request   */
-  {
-  char     *name;
-  pbs_queue    *pque = NULL;
 
-  struct batch_reply *preply;
+  void *vp) /* ptr to the decoded request   */
+
+  {
+  char                 *name;
+  pbs_queue            *pque = NULL;
+
+  struct batch_reply   *preply;
   struct batch_request *preq = (struct batch_request *)vp;
-  int      rc   = 0;
-  int      type = 0;
+  int                   rc   = 0;
+  int                   type = 0;
 
   /*
    * first, validate the name of the requested object, either
@@ -1462,9 +1477,6 @@ void *req_stat_node(
     {
     /* get status of all or several nodes */
     int iter = -1;
-
-    if (pnode != NULL)
-      unlock_node(pnode, "req_stat_node", "type != 0", LOGLEVEL);
 
     while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {

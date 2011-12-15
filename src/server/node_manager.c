@@ -822,6 +822,8 @@ void *sync_node_jobs(
     jobidstr = threadsafe_tokenizer(&joblist, " ");
     }  /* END while ((jobidstr != NULL) && ...) */
 
+  unlock_node(np, id, "done syncing node jobs", LOGLEVEL);
+
   /* SUCCESS */
   free(raw_input);
 
@@ -4081,12 +4083,13 @@ static int node_spec(
           }
         }
       }
-      
-    unlock_node(pnode, id, NULL, LOGLEVEL);
 
     /* are all reqs satisfied? */
     if (all_reqs.total_nodes == 0)
+      {
+      unlock_node(pnode, id, NULL, LOGLEVEL);
       break;
+      }
     } /* END for each node */
 
   free(all_reqs.reqs);
@@ -4842,8 +4845,6 @@ int build_hostlist_nodes_req(
       
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
-    
-    unlock_node(pnode, "set_nodes", NULL, LOGLEVEL);
     
     return(PBSE_RESCUNAV);
     }
@@ -5805,9 +5806,9 @@ static void set_one_old(
           break;
           }
         }    /* END for (snp) */
-
-      unlock_node(pnode, "set_one_old", NULL, LOGLEVEL);
       }
+
+    unlock_node(pnode, "set_one_old", NULL, LOGLEVEL);
     }
 
   return;

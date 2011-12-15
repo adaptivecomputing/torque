@@ -171,5 +171,6 @@ int           add_hash(hash_table_t *,int,char *);
 int           remove_hash(hash_table_t *,char *);
 void          change_value_hash(hash_table_t *,char *,int);
 hash_table_t *create_hash(int);
+void          free_hash(hash_table_t *);
 
 #endif /* HASH_TABLE_H */

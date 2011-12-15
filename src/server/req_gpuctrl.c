@@ -181,15 +181,14 @@ void req_gpuctrl(
     return;
     }
 
-  unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
-
   /* validate that the node is up */
 
   if (pnode->nd_state & (INUSE_DOWN | INUSE_OFFLINE | INUSE_UNKNOWN))
     {
     sprintf(log_buf,"Node %s is not available",pnode->nd_name);
-
     req_reject(PBSE_UNKREQ, 0, preq, NULL, log_buf);
+
+    unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
 
     return;
     }
@@ -199,6 +198,7 @@ void req_gpuctrl(
   if (!pnode->nd_gpus_real)
     {
     req_reject(PBSE_UNKREQ, 0, preq, NULL, "Not allowed for virtual gpus");
+    unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
     return;
     }
 
@@ -207,6 +207,7 @@ void req_gpuctrl(
   if ((gpuidx = gpu_entry_by_id(pnode, gpuid, FALSE)) == -1)
     {
     req_reject(PBSE_UNKREQ, 0, preq, NULL, "GPU ID does not exist on node");
+    unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
     return;
     }
 
@@ -215,6 +216,7 @@ void req_gpuctrl(
   if ((gpumode == -1) && (reset_perm == -1) && (reset_vol == -1))
     {
     req_reject(PBSE_UNKREQ, 0, preq, NULL, "No action specified");
+    unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
     return;
     }
 
@@ -223,6 +225,7 @@ void req_gpuctrl(
   if ((pnode->nd_gpusn[gpuidx].driver_ver == 260) && (gpumode > 2))
     {
     req_reject(PBSE_UNKREQ, 0, preq, NULL, "GPU driver version does not support mode 3");
+    unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
     return;
     }
 
@@ -238,6 +241,8 @@ void req_gpuctrl(
            pnode,
            process_Dreply,
            ToServerDIS);
+    
+  unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
 
   if (conn >= 0)
     {

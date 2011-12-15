@@ -1197,8 +1197,8 @@ int update_nodes_file(
 void recompute_ntype_cnts(void)
 
   {
-  int   svr_loc_clnodes = 0;
-  int   svr_loc_tsnodes = 0;
+  int              svr_loc_clnodes = 0;
+  int              svr_loc_tsnodes = 0;
 
   struct pbsnode  *pnode = NULL;
 

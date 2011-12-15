@@ -591,12 +591,12 @@ void svr_dequejob(
         log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "qu_njstate < 0. Recount required.");
         }
 
-      if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
-        if (--pque->qu_numcompleted < 0)
-          {
-          log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "qu_numcompleted < 0. Recount required.");
-          bad_ct = 1;
-          }
+      if ((pjob->ji_qs.ji_state == JOB_STATE_COMPLETE) &&
+          (--pque->qu_numcompleted < 0))
+        {
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "qu_numcompleted < 0. Recount required.");
+        bad_ct = 1;
+        }
       }
 
     /* just call remove job because nothing happens if it isn't there */
@@ -2414,17 +2414,14 @@ void set_resc_deflt(
     
     /* server defaults will only be applied to attributes which have
        not yet been set */
-    
     set_deflt_resc(ja, &server.sv_attr[SRV_ATR_resource_deflt]);
     
-    /* apply queue max limits first since they take precedence */
-    
 #ifdef RESOURCEMAXDEFAULT
+    /* apply queue max limits first since they take precedence */
     set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
     
     /* server max limits will only be applied to attributes which have
        not yet been set */
-    
     set_deflt_resc(ja, &server.sv_attr[SRV_ATR_ResourceMax]);
 #endif
 

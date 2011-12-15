@@ -123,6 +123,8 @@ extern char *path_queues;
 extern struct    server server;
 extern all_queues svr_queues;
 
+void free_alljobs_array(struct all_jobs *aj);
+
 int lock_queue(
 
   struct pbs_queue *the_queue,
@@ -161,9 +163,10 @@ int lock_queue(
 int unlock_queue(
     
   struct pbs_queue *the_queue,
-  char             *id,
+  const char       *id,
   char             *msg,
   int               logging)
+
   {
   int rc = PBSE_NONE;
   char *err_msg = NULL;
@@ -297,11 +300,10 @@ void que_free(
 
   remove_queue(&svr_queues,pq);
   unlock_queue(pq, "que_free", NULL, LOGLEVEL);
-  free(pq->qu_mutex);
-  /* Should the following two be freed? */
-/*  free(pq->qu_jobs); */
-/*  free(pq->qu_jobs_array_sum); */
 
+  free(pq->qu_mutex);
+  free_alljobs_array(pq->qu_jobs);
+  free_alljobs_array(pq->qu_jobs_array_sum);
   free((char *)pq);
 
   return;
@@ -425,6 +427,19 @@ void initialize_allques_array(
   aq->allques_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(aq->allques_mutex,NULL);
   } /* END initialize_all_ques_array() */
+
+
+
+
+void free_alljobs_array(
+
+  struct all_jobs *aj)
+
+  {
+  free(aj->alljobs_mutex);
+  free_resizable_array(aj->ra);
+  free_hash(aj->ht);
+  } /* END free_alljobs_array() */   
 
 
 

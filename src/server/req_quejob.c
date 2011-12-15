@@ -204,22 +204,22 @@ int set_nodes_attr(job *pjob)
   int  rc = 0;
   char *pname;
 
-  if(pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
     {
     pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
-    while(pres != NULL)
+    while (pres != NULL)
       {
-      if(pres->rs_defin != NULL)
+      if (pres->rs_defin != NULL)
         {
         pname = pres->rs_defin->rs_name;
-        if(pname == NULL || *pname == 0)
+        if (pname == NULL || *pname == 0)
           {
           pres = (resource *)GET_NEXT(pres->rs_link);
           continue;
           }
         
-        if(strncmp(pname, "nodes", 5) == 0 
-          || strncmp(pname, "procs", 5) == 0)
+        if ((strncmp(pname, "nodes", 5) == 0) || 
+            (strncmp(pname, "procs", 5) == 0))
           {
           nodect_set = 1;
           break;
@@ -229,7 +229,7 @@ int set_nodes_attr(job *pjob)
       }
     }                                                                         
 
-    if(nodect_set == 0)
+    if (nodect_set == 0)
       {
       int resc_access_perm = ATR_DFLAG_WRACC | ATR_DFLAG_MGWR | ATR_DFLAG_RMOMIG;
       /* neither procs nor nodes were requested. set procct to 1 */

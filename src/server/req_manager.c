@@ -981,7 +981,6 @@ void mgr_queue_create(
   pque = que_alloc(preq->rq_ind.rq_manager.rq_objname);
 
   /* set the queue attributes */
-
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
   rc = mgr_set_attr(
@@ -1062,7 +1061,6 @@ void mgr_queue_delete(
   if (pque == NULL)
     {
     /* FAILURE */
-
     req_reject(PBSE_UNKQUE, 0, preq, NULL, NULL);
 
     return;
@@ -1071,8 +1069,8 @@ void mgr_queue_delete(
   if ((rc = que_purge(pque)) != 0)
     {
     /* FAILURE */
-
     req_reject(rc, 0, preq, NULL, NULL);
+    unlock_queue(pque, __func__, "", LOGLEVEL);
 
     return;
     }

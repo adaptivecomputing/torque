@@ -14,7 +14,7 @@ void log_ext(int errnum, char *routine, char *text, int severity);
 
 int log_job_record(char *buf);
 
-void log_record(int eventtype, int objclass, char *objname, char *text); 
+void log_record(int eventtype, int objclass, const char *objname, char *text); 
 
 void log_close(int msg);
 

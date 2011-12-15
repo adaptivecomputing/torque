@@ -699,10 +699,10 @@ int log_job_record(char *buf)
 
 void log_record(
 
-  int   eventtype,  /* I */
-  int   objclass,   /* I */
-  char *objname,    /* I */
-  char *text)       /* I */
+  int         eventtype,  /* I */
+  int         objclass,   /* I */
+  const char *objname,    /* I */
+  char       *text)       /* I */
 
   {
   int tryagain = 2;
