@@ -4348,6 +4348,7 @@ void is_request(
         }
       else
         log_ext(-1, id, "Invalid source for IS_REQUEST", LOG_ALERT);
+      close_conn(stream, FALSE);
       return;
       }
 

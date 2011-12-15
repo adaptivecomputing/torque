@@ -410,6 +410,9 @@ int DIS_tcp_wflush(
     memcpy(temp_pb, pb, ct);
 
   pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+
+  if(rc != PBSE_NONE)
+    return(-1);
  
   while ((i = write(fd, temp_pb, ct)) != (ssize_t)ct)
     {
@@ -427,7 +430,7 @@ int DIS_tcp_wflush(
         fprintf(stderr, "TCP write of %d bytes (%.32s) failed, errno=%d (%s)\n",
                 (int)ct, temp_pb, errno, strerror(errno));
         }
-
+      free(temp_pb);
       return(-1);
       }  /* END if (i == -1) */
 
@@ -437,6 +440,12 @@ int DIS_tcp_wflush(
     }  /* END while (i) */
 
   /* SUCCESS */
+
+  free(temp_pb);
+  /* make sure something did not clean up the connection while
+     we were writing */
+  if(tcparray[fd] == NULL)
+    return (-1);
 
   pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
 
