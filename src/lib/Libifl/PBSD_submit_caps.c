@@ -406,6 +406,9 @@ int PBSD_jobfile(
   int   fd;
   char  s_buf[SCRIPT_CHUNK_Z];
 
+  if (path[0] == '\0')
+    return(PBSE_NONE);
+
   if ((fd = open(path, O_RDONLY, 0)) < 0)
     {
     return(-1);

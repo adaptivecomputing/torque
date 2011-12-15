@@ -134,13 +134,10 @@ int status_job(
   int        *bad) /* RETURN: index of first bad attribute */
 
   {
-
   struct brp_status *pstat;
-
-  int IsOwner = 0;
+  int                IsOwner = 0;
 
   /* see if the client is authorized to status this job */
-
   if (svr_authorize_jobreq(preq, pjob) == 0)
     IsOwner = 1;
 
@@ -153,10 +150,7 @@ int status_job(
     }
 
   /* allocate reply structure and fill in header portion */
-
-  pstat = calloc(1, sizeof(struct brp_status));
-
-  if (pstat == NULL)
+  if ((pstat = calloc(1, sizeof(struct brp_status))) == NULL)
     {
     return(PBSE_SYSTEM);
     }
@@ -315,7 +309,6 @@ int status_attrib(
         *bad = nth;
 
         /* FAILURE */
-
         return(-1);
         }
 
@@ -337,8 +330,7 @@ int status_attrib(
       }
 
     /* SUCCESS */
-
-    return(0);
+    return(PBSE_NONE);
     }    /* END if (pal != NULL) */
 
   /* attrlist not specified, return all readable attributes */
@@ -367,8 +359,7 @@ int status_attrib(
     }    /* END for (index) */
 
   /* SUCCESS */
-
-  return(0);
+  return(PBSE_NONE);
   }  /* END status_attrib() */
 
 /* END stat_job.c */

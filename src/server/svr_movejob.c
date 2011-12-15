@@ -132,6 +132,7 @@ extern void remove_checkpoint(job *);
 extern int  job_route(job *);
 void finish_sendmom(job *,struct batch_request *,long,char *,int);
 int PBSD_commit_get_sid(int ,long *,char *);
+int get_job_file_path(job *,enum job_file, char *, int);
 
 extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 
@@ -141,7 +142,6 @@ extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 
 static int  local_move(job *, int *, struct batch_request *, int);
 static int should_retry_route(int err);
-static int move_job_file(int con, job *pjob, enum job_file which);
 
 /* Global Data */
 
@@ -480,7 +480,7 @@ void finish_moving_processing(
 
 void finish_move_process(
 
-  job                  *pjob,
+  char                 *jobid,
   struct batch_request *preq,
   long                  time,
   char                 *node_name,
@@ -488,26 +488,41 @@ void finish_move_process(
   int                   type)
 
   {
-  switch (type)
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  /* NOTE: do not unlock job's mutex because functions up 
+   * the stack expect it to be locked */
+  job  *pjob = find_job(jobid);
+
+  if (pjob == NULL)
     {
-    case MOVE_TYPE_Move:
-
-      finish_moving_processing(pjob,preq,status);
-
-      break;
-
-    case MOVE_TYPE_Route:
+    /* somehow the job has been deleted mid-runjob */
+    snprintf(log_buf, sizeof(log_buf),
+      "Job %s was deleted while servicing qrun request", jobid);
+    req_reject(PBSE_JOBNOTFOUND, 0, preq, node_name, log_buf);
+    }
+  else
+    {
+    switch (type)
+      {
+      case MOVE_TYPE_Move:
         
-      finish_routing_processing(pjob,status);
-
-      break;
-
-    case MOVE_TYPE_Exec:
-
-      finish_sendmom(pjob,preq,time,node_name,status);
-
-      break;
-    } /* END switch (type) */
+        finish_moving_processing(pjob,preq,status);
+        
+        break;
+        
+      case MOVE_TYPE_Route:
+        
+        finish_routing_processing(pjob,status);
+        
+        break;
+        
+      case MOVE_TYPE_Exec:
+        
+        finish_sendmom(pjob,preq,time,node_name,status);
+        
+        break;
+      } /* END switch (type) */
+    }
 
   } /* END finish_move_process() */
 
@@ -559,16 +574,31 @@ int send_job_work(
   char                 *destin = pjob->ji_qs.ji_destin;
   char                  script_name[MAXPATHLEN + 1];
   char                 *pc;
+  char                  jobid[PBS_MAXSVRJOBID + 1];
+  char                  stdout_path[MAXPATHLEN + 1];
+  char                  stderr_path[MAXPATHLEN + 1];
+  char                  chkpt_path[MAXPATHLEN + 1];
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   long                  start_time = time(NULL);
   long                  sid;
+  unsigned char         attempt_to_queue_job = FALSE;
+  unsigned char         change_substate_on_attempt_to_queue = FALSE;
+  unsigned char         has_job_script = FALSE;
+  unsigned char         job_has_run = FALSE;
 
   struct attropl       *pqjatr;      /* list (single) of attropl for quejob */
   attribute            *pattr;
   mbool_t               Timeout = FALSE;
   
   pbs_net_t             hostaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
-  int                   port = pjob->ji_qs.ji_un.ji_exect.ji_momport;
+  unsigned short        port = pjob->ji_qs.ji_un.ji_exect.ji_momport;
+
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
+  if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT)
+    has_job_script = TRUE;
+
+  if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN)
+    job_has_run = TRUE;
 
   /* encode job attributes to be moved */
   CLEAR_HEAD(attrl);
@@ -628,7 +658,32 @@ int send_job_work(
     snprintf(script_name, sizeof(script_name), "%s%s%s",
       path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
     }
+  
+  if (job_has_run)
+    {
+    if ((get_job_file_path(pjob, StdOut, stdout_path, sizeof(stdout_path)) != 0) ||
+        (get_job_file_path(pjob ,StdErr, stderr_path, sizeof(stderr_path)) != 0) ||
+        (get_job_file_path(pjob, Checkpoint, chkpt_path, sizeof(chkpt_path)) != 0))
+      {
+      pthread_mutex_unlock(pjob->ji_mutex);
+      finish_move_process(jobid,preq,start_time,node_name,LOCUTION_FAIL,type);
+      free_server_attrs(&attrl);
+      return(LOCUTION_FAIL);
+      }
+    }
 
+  /* if the job is substate JOB_SUBSTATE_TRNOUTCM it means we are 
+   * recovering after being down or a late failure so we just want 
+   * to send the "ready-to-commit/commit" */
+  if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRNOUTCM)
+    {
+    attempt_to_queue_job = TRUE;
+
+    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRNOUT)
+      change_substate_on_attempt_to_queue = TRUE;
+    }
+  
+  pthread_mutex_unlock(pjob->ji_mutex);
   con = -1;
 
   for (NumRetries = 0;NumRetries < RETRY;NumRetries++)
@@ -636,11 +691,9 @@ int send_job_work(
     int rc;
 
     /* connect to receiving server with retries */
-
     if (NumRetries > 0)
       {
       /* recycle after an error */
-
       if (con >= 0)
         {
         svr_disconnect(con);
@@ -649,15 +702,13 @@ int send_job_work(
         }
 
       /* check my_err from previous attempt */
-
       if (should_retry_route(*my_err) == -1)
         {
-        sprintf(log_buf, "child failed in previous commit request for job %s",
-          pjob->ji_qs.ji_jobid);
+        sprintf(log_buf, "child failed in previous commit request for job %s", jobid);
 
         log_err(*my_err, id, log_buf);
 
-        finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
+        finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
         free_server_attrs(&attrl);
 
         return(LOCUTION_FAIL);
@@ -665,8 +716,6 @@ int send_job_work(
 
       sleep(1 << NumRetries);
       }
-
-    /* NOTE:  on node hangs, svr_connect is successful */
 
     if ((con = svr_connect(hostaddr, port, my_err, NULL, 0, cntype)) == PBS_NET_RC_FATAL)
       {
@@ -676,7 +725,7 @@ int send_job_work(
 
       log_err(*my_err, id, log_buf);
   
-      finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
+      finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
       free_server_attrs(&attrl);
 
       return(LOCUTION_FAIL);
@@ -690,35 +739,31 @@ int send_job_work(
       }
 
     pthread_mutex_lock(connection[con].ch_mutex);
-      
     sock = connection[con].ch_socket;
-
     pthread_mutex_unlock(connection[con].ch_mutex);
 
-    /*
-     * if the job is substate JOB_SUBSTATE_TRNOUTCM which means
-     * we are recovering after being down or a late failure, we
-     * just want to send the "ready-to-commit/commit"
-     */
-
-    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRNOUTCM)
+    if (attempt_to_queue_job == TRUE)
       {
-      if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRNOUT)
+      if (change_substate_on_attempt_to_queue == TRUE)
         {
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUT;
-
-        job_save(pjob, SAVEJOB_QUICK, 0);
+        if ((pjob = find_job(jobid)) != NULL)
+          {
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUT;
+          job_save(pjob, SAVEJOB_QUICK, 0);
+          pthread_mutex_unlock(pjob->ji_mutex);
+          }
+        else
+          {
+          finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
+          free_server_attrs(&attrl);
+          
+          return(LOCUTION_FAIL);
+          }
         }
 
       pqjatr = &((svrattrl *)GET_NEXT(attrl))->al_atopl;
 
-      if ((pc = PBSD_queuejob(
-                  con,
-                  my_err,
-                  pjob->ji_qs.ji_jobid,
-                  destin,
-                  pqjatr,
-                  NULL)) == NULL)
+      if ((pc = PBSD_queuejob(con, my_err, jobid, destin, pqjatr, NULL)) == NULL)
         {
         if (*my_err == PBSE_EXPIRED)
           {
@@ -727,16 +772,17 @@ int send_job_work(
           Timeout = TRUE;
           }
 
-        if ((*my_err == PBSE_JOBEXIST) && (type == MOVE_TYPE_Exec))
+        if ((*my_err == PBSE_JOBEXIST) && 
+            (type == MOVE_TYPE_Exec))
           {
           /* already running, mark it so */
           log_event(
             PBSEVENT_ERROR,
             PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+            jobid,
             "MOM reports job already running");
 
-          finish_move_process(pjob,preq,start_time,node_name,LOCUTION_SUCCESS,type);
+          finish_move_process(jobid, preq, start_time, node_name, LOCUTION_SUCCESS, type);
           free_server_attrs(&attrl);
 
           return(PBSE_NONE);
@@ -746,16 +792,16 @@ int send_job_work(
           destin,
           *my_err);
 
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);
 
         continue;
         }  /* END if ((pc = PBSD_queuejob() == NULL) */
 
       free(pc);
 
-      if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT)
+      if (has_job_script == TRUE)
         {
-        if (PBSD_jscript(con, script_name, pjob->ji_qs.ji_jobid) != 0)
+        if (PBSD_jscript(con, script_name, jobid) != 0)
           continue;
         }
 
@@ -764,39 +810,47 @@ int send_job_work(
          spool directory, then we still need to move the file */
 
       if ((type == MOVE_TYPE_Exec) &&
-          (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) &&
+          (job_has_run == TRUE) &&
           (hostaddr != pbs_server_addr))
         {
         /* send files created on prior run */
-
-        if ((move_job_file(con,pjob,StdOut) != 0) ||
-            (move_job_file(con,pjob,StdErr) != 0) ||
-            (move_job_file(con,pjob,Checkpoint) != 0))
+        if ((PBSD_jobfile(con, PBS_BATCH_MvJobFile, stdout_path, jobid, StdOut) != PBSE_NONE) ||
+            (PBSD_jobfile(con, PBS_BATCH_MvJobFile, stderr_path, jobid, StdErr) != PBSE_NONE) ||
+            (PBSD_jobfile(con, PBS_BATCH_MvJobFile, chkpt_path, jobid, Checkpoint) != PBSE_NONE))
           {
           continue;
           }
         }
 
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUTCM;
+      if ((pjob = find_job(jobid)) != NULL)
+        {
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUTCM;      
+        job_save(pjob, SAVEJOB_QUICK, 0);
+        pthread_mutex_unlock(pjob->ji_mutex);
+        }
+      else
+        {
+        finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
+        free_server_attrs(&attrl);
+        
+        return(LOCUTION_FAIL);
+        }
 
-      job_save(pjob, SAVEJOB_QUICK, 0);
+      attempt_to_queue_job = FALSE;
       }
 
-    if (PBSD_rdytocmt(con, pjob->ji_qs.ji_jobid) != 0)
+    if (PBSD_rdytocmt(con, jobid) != 0)
       {
       continue;
       }
 
-
-    if ((rc = PBSD_commit_get_sid(con, &sid, pjob->ji_qs.ji_jobid)) != PBSE_NONE)
+    if ((rc = PBSD_commit_get_sid(con, &sid, jobid)) != PBSE_NONE)
       {
       int   errno2;
       char *err_text;
 
       pthread_mutex_lock(connection[con].ch_mutex);
-
       err_text = connection[con].ch_errtxt;
-
       pthread_mutex_unlock(connection[con].ch_mutex);
 
       /* NOTE:  errno is modified by log_err */
@@ -823,7 +877,7 @@ int send_job_work(
         /* do we need a continue here? */
 
         sprintf(log_buf, "child commit request timed-out for job %s, increase tcp_timeout?",
-          pjob->ji_qs.ji_jobid);
+          jobid);
 
         log_ext(errno2, id, log_buf, LOG_WARNING);
 
@@ -833,12 +887,12 @@ int send_job_work(
         }
       else
         {
-        sprintf(log_buf, "child failed in commit request for job %s", pjob->ji_qs.ji_jobid);
+        sprintf(log_buf, "child failed in commit request for job %s", jobid);
 
         log_ext(errno2, id, log_buf, LOG_CRIT);
 
         /* FAILURE */
-        finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
+        finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
         free_server_attrs(&attrl);
 
         return(LOCUTION_FAIL);
@@ -847,8 +901,19 @@ int send_job_work(
     else if (sid != -1)
       {
       /* save the sid */
-      pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long = sid;
-      pjob->ji_wattr[JOB_ATR_session_id].at_flags |= ATR_VFLAG_SET;
+      if ((pjob = find_job(jobid)) != NULL)
+        {
+        pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long = sid;
+        pjob->ji_wattr[JOB_ATR_session_id].at_flags |= ATR_VFLAG_SET;
+        pthread_mutex_unlock(pjob->ji_mutex);
+        }
+      else
+        {
+        finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
+        free_server_attrs(&attrl);
+
+        return(LOCUTION_FAIL);
+        }
       }
 
     svr_disconnect(con);
@@ -857,7 +922,7 @@ int send_job_work(
     close(sock);
 
     /* SUCCESS */
-    finish_move_process(pjob,preq,start_time,node_name,LOCUTION_SUCCESS,type);
+    finish_move_process(jobid, preq, start_time, node_name, LOCUTION_SUCCESS, type);
     free_server_attrs(&attrl);
 
     return(PBSE_NONE);
@@ -877,27 +942,27 @@ int send_job_work(
     /* 10 indicates that job migrate timed out, server will mark node down *
           and abort the job - see post_sendmom() */
 
-    sprintf(log_buf, "child timed-out attempting to start job %s", pjob->ji_qs.ji_jobid);
+    sprintf(log_buf, "child timed-out attempting to start job %s", jobid);
 
     log_ext(*my_err, id, log_buf, LOG_WARNING);
 
-    finish_move_process(pjob,preq,start_time,node_name,LOCUTION_REQUEUE,type);
+    finish_move_process(jobid, preq, start_time, node_name, LOCUTION_REQUEUE, type);
     
     return(LOCUTION_REQUEUE);
     }
 
   if (should_retry_route(*my_err) == -1)
     {
-    sprintf(log_buf, "child failed and will not retry job %s", pjob->ji_qs.ji_jobid);
+    sprintf(log_buf, "child failed and will not retry job %s", jobid);
 
     log_err(*my_err, id, log_buf);
 
-    finish_move_process(pjob,preq,start_time,node_name,LOCUTION_FAIL,type);
+    finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
     
     return(LOCUTION_FAIL);
     }
 
-  finish_move_process(pjob,preq,start_time,node_name,LOCUTION_REQUEUE,type);
+  finish_move_process(jobid, preq, start_time, node_name, LOCUTION_REQUEUE, type);
     
   return(LOCUTION_REQUEUE);
   } /* END send_job_work() */
@@ -1117,37 +1182,36 @@ static int should_retry_route(
 
 
 
-static int move_job_file(
-   
-  int conn, 
-  job *pjob, 
-  enum job_file which)
+int get_job_file_path(
+
+  job           *pjob,
+  enum job_file  which,
+  char          *path,
+  int            path_size)
 
   {
-  char path[MAXPATHLEN+1];
+  snprintf(path, path_size, "%s%s", path_spool, pjob->ji_qs.ji_fileprefix);
 
-  snprintf(path, sizeof(path), "%s%s",
-    path_spool, pjob->ji_qs.ji_fileprefix);
-
-  /* make sure we have enough room for the strcat below */
-  if (sizeof(path) - strlen(path) < 4)
+  if (path_size - strlen(path) < 4)
     return(-1);
 
   if (which == StdOut)
-    (void)strcat(path, JOB_STDOUT_SUFFIX);
+    strcat(path, JOB_STDOUT_SUFFIX);
   else if (which == StdErr)
-    (void)strcat(path, JOB_STDERR_SUFFIX);
+    strcat(path, JOB_STDERR_SUFFIX);
   else if (which == Checkpoint)
-    (void)strcat(path, JOB_CHECKPOINT_SUFFIX);
+    strcat(path, JOB_CHECKPOINT_SUFFIX);
 
   if (access(path, F_OK) < 0)
     {
-    if (errno == ENOENT)
-      return (0);
+    if (errno != ENOENT)
+      return(errno);
     else
-      return (errno);
+      path[0] ='\0';
     }
 
-  return PBSD_jobfile(conn, PBS_BATCH_MvJobFile, path, pjob->ji_qs.ji_jobid, which);
-  } /* END move_job_file() */
+  return(PBSE_NONE);
+  } /* END get_job_file_path() */
+
+
 
