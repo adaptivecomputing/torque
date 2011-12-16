@@ -338,7 +338,7 @@ int tcp_read(
 
     /* otherwise alloc more space and read again, add 25% more space */
     newsize = tp->tdis_bufsize * 1.25;
-    ptr = (char *)calloc(1, newsize);
+    ptr = (char *)calloc(1, newsize+1);
 
     if (ptr == NULL)
       {
@@ -769,7 +769,7 @@ int tcp_puts(
     leadpct = (int)(tp->tdis_thebuf - tp->tdis_leadp);
     trailpct = (int)(tp->tdis_thebuf - tp->tdis_trailp);
     newbufsize = tp->tdis_bufsize + THE_BUF_SIZE;
-    temp = (char *)calloc(1, newbufsize);
+    temp = (char *)calloc(1, newbufsize+1);
     if (!temp)
       {
       /* FAILURE */
@@ -786,6 +786,15 @@ int tcp_puts(
       }
 
     memcpy(temp, tp->tdis_thebuf, tp->tdis_bufsize);
+    if (strlen(tp->tdis_thebuf) > tp->tdis_bufsize)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+          "line #%d, The length of the string is GREATER than the size of buf",
+          __LINE__);
+      log_err(ENOMEM, __func__, log_buf);
+      }
+    memset(tp->tdis_thebuf, 170, tp->tdis_bufsize);
+
     free(tp->tdis_thebuf);
     tp->tdis_thebuf = temp;
     tp->tdis_bufsize = newbufsize;
@@ -941,7 +950,7 @@ void DIS_tcp_setup(
     /* Setting up the read buffer */
     tp = &tcp->readbuf;
 
-    tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE);
+    tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE+1);
     if (tp->tdis_thebuf == NULL)
       {
       pthread_mutex_unlock(&tcp->tcp_mutex);
@@ -956,7 +965,7 @@ void DIS_tcp_setup(
     /* Setting up the write buffer */
     tp = &tcp->writebuf;
 
-    tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE);
+    tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE+1);
     if (tp->tdis_thebuf == NULL)
       {
       pthread_mutex_unlock(&tcp->tcp_mutex);

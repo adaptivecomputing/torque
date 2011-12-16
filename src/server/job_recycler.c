@@ -144,6 +144,7 @@ void *remove_some_recycle_jobs(
     remove_job(&recycler.rc_jobs,pjob);
     pthread_mutex_unlock(pjob->ji_mutex);
     free(pjob->ji_mutex);
+    memset(pjob, 255, sizeof(job));
     free(pjob);
     }
 
