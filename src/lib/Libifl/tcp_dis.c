@@ -402,7 +402,7 @@ int DIS_tcp_wflush(
 
   if ((temp_pb = calloc(1, ct + 1)) == NULL)
     {
-    if(pbs_debug != NULL)
+    if (pbs_debug != NULL)
       fprintf(stderr, "DIS_tcp_wflush failed to on calloc of temp_pb: %d, (%s)\n", errno, strerror(errno));
     rc = -1;
     }
@@ -411,7 +411,7 @@ int DIS_tcp_wflush(
 
   pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
 
-  if(rc != PBSE_NONE)
+  if (rc != PBSE_NONE)
     return(-1);
  
   while ((i = write(fd, temp_pb, ct)) != (ssize_t)ct)
@@ -444,7 +444,7 @@ int DIS_tcp_wflush(
   free(temp_pb);
   /* make sure something did not clean up the connection while
      we were writing */
-  if(tcparray[fd] == NULL)
+  if (tcparray[fd] == NULL)
     return (-1);
 
   pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));

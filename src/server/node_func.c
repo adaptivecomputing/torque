@@ -3003,10 +3003,14 @@ void *send_hierarchy_threadtask(
   char           *name = (char *)vp;
   struct pbsnode *pnode = find_nodebyname(name);
   char            log_buf[LOCAL_LOG_BUF_SIZE];
+  unsigned short  port;
 
   if (pnode != NULL)
     {
-    if (send_hierarchy(pnode) != PBSE_NONE)
+    port = pnode->nd_mom_rm_port;
+    unlock_node(pnode, id, NULL, 0);
+
+    if (send_hierarchy(name, port) != PBSE_NONE)
       add_hello(&failures, name);
     else
       {
@@ -3017,10 +3021,9 @@ void *send_hierarchy_threadtask(
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buf);
         }
       
+      /* only free here because otherwise it is re-used */
       free(name);
       }
-
-    unlock_node(pnode, id, NULL, 0);
     }
 
   return(NULL);
@@ -3031,10 +3034,10 @@ void *send_hierarchy_threadtask(
 
 int send_hierarchy(
 
-  struct pbsnode *pnode)
+  char           *name,
+  unsigned short  port)
 
   {
-  static char        *id = "send_hierarchy";
   char                log_buf[LOCAL_LOG_BUF_SIZE];
   char               *string;
   int                 ret;
@@ -3042,18 +3045,18 @@ int send_hierarchy(
   struct addrinfo    *addr_info;
   struct sockaddr_in  sa;
 
-  if (getaddrinfo(pnode->nd_name, NULL, NULL, &addr_info) != 0)
+  if (getaddrinfo(name, NULL, NULL, &addr_info) != 0)
     {
     snprintf(log_buf, sizeof(log_buf),
-      "Can't get address information for %s", pnode->nd_name);
-    log_err(PBSE_BADHOST, id, log_buf);
+      "Can't get address information for %s", name);
+    log_err(PBSE_BADHOST, __func__, log_buf);
 
     return(PBSE_BADHOST);
     }
 
   sa.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
   sa.sin_family = AF_INET;
-  sa.sin_port = htons(pnode->nd_mom_rm_port);
+  sa.sin_port = htons(port);
   freeaddrinfo(addr_info);
 
   /* for now we'll only try once as this is going to be tried once each time in the loop */
@@ -3065,8 +3068,8 @@ int send_hierarchy(
     /* - quiting after 5 retries",*/
     snprintf(log_buf, sizeof(log_buf),
       "Could not send mom hierarchy to host %s:%d",
-      pnode->nd_name, pnode->nd_mom_rm_port);
-    log_err(-1, id, log_buf);
+      name, port);
+    log_err(-1, __func__, log_buf);
 
     return(-1);
     }
@@ -3093,16 +3096,16 @@ int send_hierarchy(
           {
           snprintf(log_buf, sizeof(log_buf),
             "Could not send mom hierarchy to host %s - %s",
-            pnode->nd_name, dis_emsg[ret]);
+            name, dis_emsg[ret]);
           }
         else
           {
           snprintf(log_buf, sizeof(log_buf),
             "Unknown error when sending mom hierarchy to host %s",
-            pnode->nd_name);
+            name);
           }
         
-        log_err(-1, id, log_buf);
+        log_err(-1, __func__, log_buf);
         
         break;
         }

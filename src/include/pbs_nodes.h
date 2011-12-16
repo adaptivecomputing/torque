@@ -345,7 +345,7 @@ int    needs_hello(hello_container *, char *);
 int    add_hello(hello_container *, char *);
 char  *pop_hello(hello_container *);
 int    remove_hello(hello_container *, char *);
-int    send_hierarchy(struct pbsnode *);
+int    send_hierarchy(char *, unsigned short);
 void  *send_hierarchy_threadtask(void *);
 
 

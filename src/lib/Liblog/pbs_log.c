@@ -474,9 +474,9 @@ int job_log_open(
 
 void log_err(
 
-  int   errnum,  /* I (errno or PBSErrno) */
-  char *routine, /* I */
-  char *text)    /* I */
+  int         errnum,  /* I (errno or PBSErrno) */
+  const char *routine, /* I */
+  char       *text)    /* I */
 
   {
   log_ext(errnum,routine,text,LOG_ERR);
@@ -502,10 +502,10 @@ void log_err(
 
 void log_ext(
 
-  int   errnum,   /* I (errno or PBSErrno) */
-  char *routine,  /* I */
-  char *text,     /* I */
-  int   severity) /* I */
+  int         errnum,   /* I (errno or PBSErrno) */
+  const char *routine,  /* I */
+  char       *text,     /* I */
+  int         severity) /* I */
 
   {
   char  buf[LOG_BUF_SIZE];
