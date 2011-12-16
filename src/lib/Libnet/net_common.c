@@ -14,10 +14,9 @@
 #include <fcntl.h> /* fcntl, F_GETFL */
 #include "../lib/Liblog/pbs_log.h" /* log_err */
 
-
-
-
 #include "pbs_error.h" /* torque error codes */
+
+extern time_t pbs_tcp_timeout; /* located in tcp_dis.c. Move here later */
 
 #define LOCAL_LOG_BUF 1024
 #define RES_PORT_START 144
@@ -290,7 +289,9 @@ int socket_wait_for_write(int socket)
   int write_soc = 0, val;
   socklen_t len = sizeof(int);
   fd_set wfd;
-  struct timeval timeout = {5,0};
+  struct timeval timeout;
+  timeout.tv_sec = pbs_tcp_timeout;
+  timeout.tv_usec = 0;
   FD_ZERO(&wfd);
   FD_SET(socket, &wfd);
   if ((write_soc = select(socket+1, 0, &wfd, 0, &timeout)) != 1)
@@ -334,7 +335,9 @@ int socket_wait_for_read(int socket)
   int rc = PBSE_NONE;
   int read_soc = 0;
   fd_set rfd;
-  struct timeval timeout = {120,0};
+  struct timeval timeout;
+  timeout.tv_sec = pbs_tcp_timeout;
+  timeout.tv_usec = 0;
   FD_ZERO(&rfd);
   FD_SET(socket, &rfd);
   while (1)
@@ -393,6 +396,90 @@ int socket_write(int socket, char *data, int data_len)
   return data_len_actual;
   }
 
+int socket_read_force(
+    int socket,
+    char *the_str,
+    long long avail_bytes,
+    long long *byte_count)
+  {
+  int rc = PBSE_NONE;
+  char *read_loc = the_str;
+  long long tmp_len = avail_bytes;
+  long long bytes_read = 1;
+  while (bytes_read != 0)
+    {
+    bytes_read = read(socket, read_loc, tmp_len);
+    if ((bytes_read == -1) && (errno != EINTR))
+      {
+      if (getenv("PBSDEBUG") != NULL)
+        fprintf(stderr, "Error reading data from socket %d - (%s)\n",
+            errno, strerror(errno));
+      rc = PBSE_SOCKET_READ;
+      break;
+      }
+    else if (bytes_read == 0)
+      {
+      if (*byte_count == 0)
+        rc = PBSE_SOCKET_READ;
+      break;
+      }
+    else if (bytes_read == avail_bytes)
+      {
+      *byte_count += bytes_read;
+      break;
+      }
+    else
+      {
+      tmp_len -= bytes_read;
+      read_loc += bytes_read;
+      *byte_count += bytes_read;
+      }
+    }
+  return rc;
+  }
+
+int socket_read(int socket, char **the_str, long long *str_len)
+  {
+  int rc = PBSE_NONE;
+  long long avail_bytes = socket_avail_bytes_on_descriptor(socket);
+  long long byte_count = 0;
+
+  if ((the_str == NULL) || (str_len == NULL))
+    return PBSE_INTERNAL;
+
+  while (avail_bytes == 0)
+    {
+    if ((rc = socket_wait_for_read(socket)) != PBSE_NONE)
+      break;
+    avail_bytes = socket_avail_bytes_on_descriptor(socket);
+    if (avail_bytes == 0)
+      {
+      rc = PBSE_SOCKET_READ;
+      break;
+      }
+    }
+  if (rc != PBSE_NONE)
+    {
+    }
+  else if ((*the_str = calloc(1, avail_bytes+1)) == NULL)
+    {
+    rc = PBSE_MEM_MALLOC;
+    }
+  else if ((rc = socket_read_force(socket, *the_str, avail_bytes, &byte_count))
+      != PBSE_NONE)
+    {
+    }
+  else
+    {
+    if (getenv("PBSDEBUG") != NULL)
+      if (byte_count != avail_bytes)
+        fprintf(stderr, "Bytes on socket = %lld, bytes read = %lld\n",
+            avail_bytes, byte_count);
+    *str_len = byte_count;
+    }
+  return rc;
+  }
+
 int socket_read_one_byte(int socket, char *one_char)
   {
   int rc = PBSE_NONE;
@@ -425,9 +512,11 @@ int socket_read_num(int socket, long long *the_num)
       if ((rc = socket_wait_for_read(socket)) != PBSE_NONE)
         break;
       avail_bytes = socket_avail_bytes_on_descriptor(socket);
-      /* This check seems surperfluous given the wait succeeded... */
       if (avail_bytes == 0)
+        {
+        rc = PBSE_SOCKET_READ;
         break;
+        }
       }
     else if (read(socket, &tmp_char, 1) == -1)
       break;
@@ -461,8 +550,13 @@ int socket_read_num(int socket, long long *the_num)
 int socket_read_str(int socket, char **the_str, long long *str_len)
   {
   int rc =  PBSE_NONE;
-  int tmp_len = 0;
+  long long tmp_len = 0;
+  long long read_len = 0;
   char delin;
+
+  if ((the_str == NULL) || (str_len == NULL))
+    return PBSE_INTERNAL;
+
   if ((rc = socket_read_num(socket, (long long *)&tmp_len)) != PBSE_NONE)
     {
     }
@@ -470,8 +564,7 @@ int socket_read_str(int socket, char **the_str, long long *str_len)
     {
     /* Valid case, NULL string */
     *the_str = NULL;
-    if (str_len != NULL)
-      *str_len = 0;
+    *str_len = 0;
     rc = PBSE_NONE;
     }
   else if ((*the_str = (char *)calloc(1, (tmp_len)+1)) == NULL)
@@ -482,7 +575,7 @@ int socket_read_str(int socket, char **the_str, long long *str_len)
   else if ((rc = socket_wait_for_xbytes(socket, tmp_len+1)) != PBSE_NONE)
     {
     }
-  else if (read(socket, *the_str, tmp_len) == -1)
+  else if (socket_read_force(socket, *the_str, tmp_len, &read_len) == -1)
     {
     rc = PBSE_INTERNAL;
     }
@@ -496,8 +589,11 @@ int socket_read_str(int socket, char **the_str, long long *str_len)
     }
   else
     {
-    if (str_len != NULL)
-      *str_len = tmp_len;
+    if (getenv("PBSDEBUG") != NULL)
+      if (read_len != tmp_len)
+        fprintf(stderr, "Bytes on socket = %lld, bytes read = %lld\n",
+            tmp_len, read_len);
+    *str_len = tmp_len;
     /* SUCCESS */
     }
   return rc;

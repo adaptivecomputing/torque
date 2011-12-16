@@ -133,12 +133,9 @@ struct work_task *set_task(
   work_task *pold;
   int        iter = -1;
 
-  if ((pnew = get_recycled_task()) == NULL)
+  if ((pnew = (struct work_task *)calloc(1, sizeof(struct work_task))) == NULL)
     {
-    if ((pnew = (struct work_task *)calloc(1, sizeof(struct work_task))) == NULL)
-      {
-      return(NULL);
-      }
+    return(NULL);
     }
 
   pnew->wt_event    = event_id;
@@ -494,7 +491,6 @@ int remove_task(
   else
     {
     rc = PBSE_NONE;
-    pthread_mutex_unlock(wt->wt_mutex);
     }
     
   pthread_mutex_unlock(at->alltasks_mutex);

@@ -1118,7 +1118,7 @@ int pbs_disconnect_socket(
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
     sigaction(SIGALRM, &act, &oldact);
-    atime = alarm(pbs_tcp_timeout);
+    atime = alarm(5);
 
     while (1)
       {
