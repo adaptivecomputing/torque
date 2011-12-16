@@ -479,34 +479,47 @@ jump:
 
       for (i = 0; i < pa->ai_qs.array_size; i++)
         {
-        if (pa->jobs[i] == NULL)
+        if (pa->job_ids[i] == NULL)
           continue;
 
-        tmp = (job *)pa->jobs[i];
+        if (!strcmp(pa->job_ids[i], pjob->ji_qs.ji_jobid))
+          continue;
 
-        if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+        if ((tmp = find_job(pa->job_ids[i])) == NULL)
           {
-          tmp->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
-              
-          if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+          free(pa->job_ids[i]);
+          pa->job_ids[i] = NULL;
+          }
+        else
+          {
+          if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
             {
-            tmp->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
-            }
-          
-          svr_evaljobstate(tmp, &newstate, &newsub, 1);
-          svr_setjobstate(tmp, newstate, newsub, FALSE);
-          job_save(tmp, SAVEJOB_FULL, 0);
+            tmp->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
+            
+            if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+              {
+              tmp->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+              }
+            
+            svr_evaljobstate(tmp, &newstate, &newsub, 1);
+            svr_setjobstate(tmp, newstate, newsub, FALSE);
+            job_save(tmp, SAVEJOB_FULL, 0);
 
-          break;
+            pthread_mutex_unlock(tmp->ji_mutex);
+            
+            break;
+            }
+
+          pthread_mutex_unlock(tmp->ji_mutex);
           }
         }
 
-      pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >= 7)
+      if (LOGLEVEL >= 7)
         {
         sprintf(log_buf, "%s: unlocking ai_mutex", id);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
+      pthread_mutex_unlock(pa->ai_mutex);
       }
     } /* END MoabArrayCompatible check */
 

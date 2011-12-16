@@ -470,9 +470,18 @@ static void req_stat_job_step2(
           {
           job_array_index = 0;
           /* increment job_array_index until we find a non-null pointer or hit the end */
-          while (job_array_index < pa->ai_qs.array_size && (pjob = pa->jobs[job_array_index]) == NULL)
-             job_array_index++;
-         
+          while (job_array_index < pa->ai_qs.array_size)
+            {
+            if (pa->job_ids[job_array_index] != NULL)
+              {
+              if ((pjob = find_job(pa->job_ids[job_array_index])) != NULL)
+                {
+                break;
+                }
+              }
+
+            job_array_index++;
+            }
           }
         else
           {
@@ -498,8 +507,16 @@ static void req_stat_job_step2(
           {
           pjob = NULL;
           /* increment job_array_index until we find a non-null pointer or hit the end */
-          while (++job_array_index < pa->ai_qs.array_size && (pjob = pa->jobs[job_array_index]) == NULL)
-            ;
+          while (++job_array_index < pa->ai_qs.array_size)
+            {
+            if (pa->job_ids[job_array_index] != NULL)
+              {
+              if ((pjob = find_job(pa->job_ids[job_array_index])) != NULL)
+                {
+                break;
+                }
+              }
+            }
           }
         else
           pjob = next_job(&alljobs,&iter);
@@ -508,9 +525,6 @@ static void req_stat_job_step2(
 
       if (pjob == NULL)
         break;
-      else if ((type != tjstJob) && 
-               (type == tjstArray))
-        pthread_mutex_lock(pjob->ji_mutex);
 
       /* PBS_RESTAT_JOB defaults to 30 seconds */
 
@@ -597,15 +611,19 @@ static void req_stat_job_step2(
     job_array_index = 0;
     pjob = NULL;
     /* increment job_array_index until we find a non-null pointer or hit the end */
-    while (job_array_index < pa->ai_qs.array_size && (pjob = pa->jobs[job_array_index]) == NULL)
-        job_array_index++;
+    while (++job_array_index < pa->ai_qs.array_size)
+      {
+      if (pa->job_ids[job_array_index] != NULL)
+        {
+        if ((pjob = find_job(pa->job_ids[job_array_index])) != NULL)
+          {
+          break;
+          }
+        }
+      }
     }
   else
     pjob = next_job(&alljobs,&iter);
-
-  if ((pjob != NULL) &&
-      (type == tjstArray))
-    pthread_mutex_lock(pjob->ji_mutex);
 
   DTime = 0;
 
@@ -822,15 +840,19 @@ nextjob:
       {
       pjob = NULL;
       /* increment job_array_index until we find a non-null pointer or hit the end */
-      while (++job_array_index < pa->ai_qs.array_size && (pjob = pa->jobs[job_array_index]) == NULL)
-        ;
+      while (++job_array_index < pa->ai_qs.array_size)
+        {
+        if (pa->job_ids[job_array_index] != NULL)
+          {
+          if ((pjob = find_job(pa->job_ids[job_array_index])) != NULL)
+            {
+            break;
+            }
+          }
+        }
       }
     else
       pjob = next_job(&alljobs,&iter);
-
-    if ((pjob != NULL) &&
-        (type == tjstArray))
-    pthread_mutex_lock(pjob->ji_mutex);
 
     rc = 0;
     }  /* END while (pjob != NULL) */

@@ -456,35 +456,33 @@ int release_whole_array(
   struct batch_request *preq) /* I */
 
   {
-  int i;
-  int rc;
+  int  i;
+  int  rc;
+  job *pjob;
 
   for (i = 0; i < pa->ai_qs.array_size; i++)
     {
-    if (pa->jobs[i] == NULL)
+    if (pa->job_ids[i] == NULL)
       continue;
 
-    pthread_mutex_lock(pa->jobs[i]->ji_mutex);
-
-    if (pa->jobs[i]->ji_being_recycled == TRUE)
+    if ((pjob = find_job(pa->job_ids[i])) == NULL)
       {
-      pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
-
-      pa->jobs[i] = NULL;
-
-      continue;
+      free(pa->job_ids[i]);
+      pa->job_ids[i] = NULL;
       }
-
-    if ((rc = release_job(preq,pa->jobs[i])) != 0)
+    else
       {
-      return(rc);
+      if ((rc = release_job(preq, pjob)) != 0)
+        {
+        pthread_mutex_unlock(pjob->ji_mutex);
+        return(rc);
+        }
+  
+      pthread_mutex_unlock(pjob->ji_mutex);
       }
-
-    pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
     }
 
   /* SUCCESS */
-
   return(PBSE_NONE);
   } /* END release_whole_array */
 
@@ -505,27 +503,22 @@ void *req_releasearray(
   struct batch_request *preq = (struct batch_request *)vp;
 
   pa = get_array(preq->rq_ind.rq_release.rq_objname);
-  if(pa == NULL)
+  if (pa == NULL)
     {
     req_reject(PBSE_IVALREQ,0,preq,NULL,"Cannot find array");
     return(NULL);
     }
 
-
   while (TRUE)
     {
     index = first_job_index(pa);
-    pjob = (job *)pa->jobs[index];
-
-    if (pjob == NULL)
+    if (pa->job_ids[index] == NULL)
       return(NULL);
 
-    pthread_mutex_lock(pjob->ji_mutex);
-
-    if (pjob->ji_being_recycled == TRUE)
+    if ((pjob = find_job(pa->job_ids[index])) == NULL)
       {
-      pa->jobs[index] = NULL;
-      pthread_mutex_unlock(pjob->ji_mutex);
+      free(pa->job_ids[index]);
+      pa->job_ids[index] = NULL;
       }
     else
       break;
@@ -536,11 +529,6 @@ void *req_releasearray(
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
 
     pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: unlocking ai_mutex", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-      }
     pthread_mutex_unlock(pjob->ji_mutex);
 
     return(NULL);
@@ -555,12 +543,12 @@ void *req_releasearray(
     /* parse the array range */
     if ((rc = release_array_range(pa,preq,range)) != 0)
       {
-      pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >= 7)
+      if (LOGLEVEL >= 7)
         {
         sprintf(log_buf, "%s: unlocking ai_mutex", id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
         }
+      pthread_mutex_unlock(pa->ai_mutex);
 
       req_reject(rc,0,preq,NULL,NULL);
 

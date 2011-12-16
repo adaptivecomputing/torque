@@ -126,10 +126,10 @@ long     *log_event_mask = &log_event_lvl_priv;
 
 void log_event(
 
-  int   eventtype,
-  int   objclass,
-  char *objname,
-  char *text)
+  int         eventtype,
+  int         objclass,
+  const char *objname,
+  char       *text)
 
   {
   if (((eventtype & PBSEVENT_FORCE) == 0) &&

@@ -601,7 +601,7 @@ job *job_recov(
       }
     else
       {
-      pa->jobs[(int)pj->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = (void *)pj;
+      pa->job_ids[(int)pj->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = strdup(pj->ji_qs.ji_jobid);
       pj->ji_arraystruct = pa; 
       pa->jobs_recovered++;
 

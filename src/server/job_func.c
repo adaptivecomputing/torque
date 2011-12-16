@@ -939,7 +939,7 @@ job *job_clone(
       }
     }
 
-  pa->jobs[taskid] = pnewjob;
+  pa->job_ids[taskid] = strdup(pnewjob->ji_qs.ji_jobid);
   pnewjob->ji_arraystruct = pa;
 
   if (release_mutex == TRUE)
@@ -1062,8 +1062,6 @@ void job_clone_wt(
 
       rn->start++;
 
-      pa->jobs[i] = pjobclone;
-
       pthread_mutex_unlock(pjobclone->ji_mutex);
       }  /* END for (i) */
 
@@ -1079,41 +1077,46 @@ void job_clone_wt(
   /* scan over all the jobs in the array and unset the hold */
   for (i = 0; i < pa->ai_qs.array_size; i++)
     {
-    if (pa->jobs[i] == NULL)
+    if (pa->job_ids[i] == NULL)
       continue;
     
     actual_job_count++;
     
-    pjob = (job *)pa->jobs[i];
-    pthread_mutex_lock(pjob->ji_mutex);
-    
-    pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
-    
-    if (server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_long != FALSE)
+    if ((pjob = find_job(pa->job_ids[i])) == NULL)
       {
-      /* if configured and necessary, apply a slot limit hold to all
-       * jobs above the slot limit threshold */
-      if ((pa->ai_qs.slot_limit != NO_SLOT_LIMIT) &&
-          (actual_job_count > pa->ai_qs.slot_limit))
-        {
-        pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_l;
-        }
-      }
-    
-    if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
-      {
-      pjob->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+      free(pa->job_ids[i]);
+      pa->job_ids[i] = NULL;
       }
     else
       {
-      pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+      pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
+      
+      if (server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_long != FALSE)
+        {
+        /* if configured and necessary, apply a slot limit hold to all
+         * jobs above the slot limit threshold */
+        if ((pa->ai_qs.slot_limit != NO_SLOT_LIMIT) &&
+            (actual_job_count > pa->ai_qs.slot_limit))
+          {
+          pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_l;
+          }
+        }
+      
+      if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+        {
+        pjob->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+        }
+      else
+        {
+        pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+        }
+      
+      pjob->ji_modified = TRUE;
+      svr_evaljobstate(pjob, &newstate, &newsub, 1);
+      svr_setjobstate(pjob, newstate, newsub, FALSE);
+      
+      pthread_mutex_unlock(pjob->ji_mutex);
       }
-   
-    pjob->ji_modified = TRUE;
-    svr_evaljobstate(pjob, &newstate, &newsub, 1);
-    svr_setjobstate(pjob, newstate, newsub, FALSE);
-    
-    pthread_mutex_unlock(pjob->ji_mutex);
     }
 
   if (LOGLEVEL >= 7)
@@ -1572,7 +1575,8 @@ void job_purge(
     job_array *pa = get_jobs_array(pjob);
 
     /* erase the pointer to this job in the job array */
-    pa->jobs[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = NULL;
+    free(pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long]);
+    pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = NULL;
 
     /* if there are no more jobs in the arry,
      * then we can clean that up too */

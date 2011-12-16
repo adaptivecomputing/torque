@@ -52,9 +52,9 @@ struct job_array
                                 copying the "template" job to generate all of the 
                                 jobs in the array)*/
 
-  job **jobs; /* a pointer to the job pointers in this array */
+  char **job_ids; /* a pointer to the job pointers in this array */
 
-  int jobs_recovered; /* on server restart we track the number of array tasks
+  int    jobs_recovered; /* on server restart we track the number of array tasks
                          that have been recovered. this is incase the server
                          is restarted (cleanly) before the array is 
                          completely setup */

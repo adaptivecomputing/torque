@@ -252,24 +252,26 @@ void *req_runjob(
       
       if (preq != NULL)
         req_reject(PBSE_IVALREQ,0,preq,NULL,log_buf);
-
-      pthread_mutex_unlock(pjob->ji_mutex);
-      pthread_mutex_unlock(pa->ai_mutex);
+      
       if (LOGLEVEL >= 7)
         {
         sprintf(log_buf, "%s: unlocked ai_mutex", id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
         }
+
+      pthread_mutex_unlock(pjob->ji_mutex);
+      pthread_mutex_unlock(pa->ai_mutex);
 
       return(NULL);
       }
     
-    pthread_mutex_unlock(pa->ai_mutex);
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: unlocked ai_mutex", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
       }
+    
+    pthread_mutex_unlock(pa->ai_mutex);
     }
 
   /* NOTE:  nodes assigned to job in svr_startjob() */

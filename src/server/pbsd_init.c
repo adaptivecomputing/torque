@@ -1625,11 +1625,14 @@ int pbsd_init(
 
         for (i = 0; i < pa->ai_qs.array_size; i++)
           {
-          if (pa->jobs[i] != NULL)
+          if (pa->job_ids[i] != NULL)
             {
-            pthread_mutex_unlock(pa->ai_mutex);
-            job_purge(pa->jobs[i]);
-            pthread_mutex_lock(pa->ai_mutex);
+            if ((pjob = find_job(pa->job_ids[i])) != NULL)
+              {
+              pthread_mutex_unlock(pa->ai_mutex);
+              job_purge(pjob);
+              pthread_mutex_lock(pa->ai_mutex);
+              }
             }
           }
 

@@ -783,70 +783,64 @@ int modify_whole_array(
   int        checkpoint_req)  /* I */
 
   {
-  char id[] = "modify_whole_array";
-  int  i;
-  int  rc = 0;
-  int  mom_relay = 0;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
+  char  id[] = "modify_whole_array";
+  int   i;
+  int   rc = 0;
+  int   mom_relay = 0;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  job  *pjob;
 
   for (i = 0; i < pa->ai_qs.array_size; i++)
     {
-    if (pa->jobs[i] == NULL)
+    if (pa->job_ids[i] == NULL)
       continue;
 
-    pthread_mutex_lock(pa->jobs[i]->ji_mutex);
-
-    if (pa->jobs[i]->ji_being_recycled == TRUE)
+    if ((pjob = find_job(pa->job_ids[i])) == NULL)
       {
-      pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
-
-      pa->jobs[i] = NULL;
-
-      continue;
+      free(pa->job_ids[i]);
+      pa->job_ids[i] = NULL;
       }
-
-    /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
-    rc = modify_job(pa->jobs[i],plist,preq,checkpoint_req, NO_MOM_RELAY);
-
-    if (rc == PBSE_RELAYED_TO_MOM)
+    else
       {
-      struct batch_request *array_req = NULL;
-
-      /* We told modify_job not to call relay_to_mom so we need to contact the mom */
-      rc = copy_batchrequest(&array_req, preq, 0, i);
-      if (rc != 0)
+      /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
+      rc = modify_job(pjob,plist,preq,checkpoint_req, NO_MOM_RELAY);
+      
+      if (rc == PBSE_RELAYED_TO_MOM)
         {
-        pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+        struct batch_request *array_req = NULL;
         
-        return(rc);
-        }
-
-      preq->rq_refcount++;
-      if (mom_relay == 0)
-        {
+        /* We told modify_job not to call relay_to_mom so we need to contact the mom */
+        rc = copy_batchrequest(&array_req, preq, 0, i);
+        if (rc != 0)
+          {
+          pthread_mutex_unlock(pjob->ji_mutex);
+   
+          return(rc);
+          }
+        
         preq->rq_refcount++;
-        }
-      mom_relay++;
-      if ((rc = relay_to_mom(
-                  pa->jobs[i],
-                  array_req,
-                  post_modify_arrayreq)))
-        {  
-        snprintf(log_buf,sizeof(log_buf),
-          "Unable to relay information to mom for job '%s'\n",
-          pa->jobs[i]->ji_qs.ji_jobid);
-
-        log_err(rc,id,log_buf);
-
-        pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
+        if (mom_relay == 0)
+          {
+          preq->rq_refcount++;
+          }
+        mom_relay++;
+        if ((rc = relay_to_mom(pjob, array_req, post_modify_arrayreq)))
+          {  
+          snprintf(log_buf,sizeof(log_buf),
+            "Unable to relay information to mom for job '%s'\n",
+            pjob->ji_qs.ji_jobid);
+          
+          log_err(rc,id,log_buf);
+          
+          pthread_mutex_unlock(pjob->ji_mutex);
+   
+          return(rc); /* unable to get to MOM */
+          }
         
-        return(rc); /* unable to get to MOM */
         }
-
+      pthread_mutex_unlock(pjob->ji_mutex);
       }
-
-    pthread_mutex_unlock(pa->jobs[i]->ji_mutex);
-    }
+    } /* END foreach job in array */
 
   if (mom_relay)
     {

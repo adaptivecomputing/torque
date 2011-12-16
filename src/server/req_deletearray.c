@@ -381,64 +381,61 @@ void array_delete_wt(
 
     for (i = 0; i < pa->ai_qs.array_size; i++)
       {
-      if (pa->jobs[i] == NULL)
+      if (pa->job_ids[i] == NULL)
         continue;
 
-      pjob = (job *)pa->jobs[i];
-
-      pthread_mutex_lock(pjob->ji_mutex);
-
-      if (pjob->ji_being_recycled == TRUE)
+      if ((pjob = find_job(pa->job_ids[i])) == NULL)
         {
-        pa->jobs[i] = NULL;
-        pthread_mutex_unlock(pjob->ji_mutex);
-        continue;
+        free(pa->job_ids[i]);
+        pa->job_ids[i] = NULL;
         }
-
-      num_jobs++;
-
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
+      else
         {
-        num_prerun++;
-        /* mom still hasn't gotten job?? delete anyway */
-
-        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
+        num_jobs++;
+        
+        if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
           {
-          /* job has restart file at mom, do end job processing */
-
-          change_restart_comment_if_needed(pjob);
-
-          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
-
-          pjob->ji_momhandle = -1;
-
-          /* force new connection */
-          jobid_copy = strdup(pjob->ji_qs.ji_jobid);
-
-          if(LOGLEVEL >= 7)
+          num_prerun++;
+          /* mom still hasn't gotten job?? delete anyway */
+          
+          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
             {
-            sprintf(log_buf, "calling on_job_exit from %s", id);
-            log_event(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buf);
-            }
-          set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
+            /* job has restart file at mom, do end job processing */
+            change_restart_comment_if_needed(pjob);
+            
+            svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
+            
+            pjob->ji_momhandle = -1;
+            
+            /* force new connection */
+            jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-          pthread_mutex_unlock(pjob->ji_mutex);
+            if (LOGLEVEL >= 7)
+              {
+              sprintf(log_buf, "calling on_job_exit from %s", id);
+              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+              }
+            set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
+            
+            pthread_mutex_unlock(pjob->ji_mutex);
+            }
           }
         else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
           {
           /* job has staged-in file, should remove them */
-
           remove_stagein(pjob);
 
+          /* job_abt() calls job_purge which will try to lock the array again */
+          pthread_mutex_unlock(pa->ai_mutex);
           job_abt(&pjob, NULL);
+          pthread_mutex_lock(pa->ai_mutex);
           }
         else
           {
+          /* job_abt() calls job_purge which will try to lock the array again */
+          pthread_mutex_unlock(pa->ai_mutex);
           job_abt(&pjob, NULL);
+          pthread_mutex_lock(pa->ai_mutex);
           }
         } /* END if (ji_substate == JOB_SUBSTATE_PRERUN) */
       } /* END for each job in array */
