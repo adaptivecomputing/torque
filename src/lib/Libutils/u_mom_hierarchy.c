@@ -486,53 +486,70 @@ int read_tcp_reply(
   int *exit_status)
 
   {
-  static char *id = "read_tcp_reply";
-
-  int ret;
-  int value; /* value read from sock */
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  int  ret;
+  int  value; /* value read from sock */
 
   *exit_status = UNREAD_STATUS;
 
-  /*DIS_tcp_setup(sock);*/
-
-  if ((value = disrsi(sock,&ret)) == protocol)
+  if ((value = disrsi(sock,&ret)) != protocol)
     {
-    if ((value = disrsi(sock,&ret)) == version)
-      {
-      if ((value = disrsi(sock,&ret)) == command)
-        {
-        /* read the exit code */
-        *exit_status = disrsi(sock,&ret);
-
-        DIS_tcp_reset(sock,0);
-        }
-      else
-        {
-        snprintf(log_buffer,sizeof(log_buffer),
-          "Mismatching commands. Expected command %d for protocol %d but read command %d\n",
-          command,
-          protocol,
-          value);
-        log_err(-1,id,log_buffer);
-        }
-      }
-    else
-      {
-      snprintf(log_buffer,sizeof(log_buffer),
-        "Mismatching versions. Expected version %d for protocol %d but read version %d\n",
-        version,
-        protocol,
-        value);
-      log_err(-1,id,log_buffer);
-      }
-    }
-  else
-    {
-    snprintf(log_buffer,sizeof(log_buffer),
+    snprintf(log_buf,sizeof(log_buf),
       "Mismatching protocols. Expected protocol %d but read reply for %d\n",
       protocol,
       value);
-    log_err(-1,id,log_buffer);
+    log_err(-1, __func__, log_buf);
+    }
+  else if (ret != DIS_SUCCESS)
+    {
+    }
+  else if ((value = disrsi(sock,&ret)) != version)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Mismatching versions. Expected version %d for protocol %d but read version %d\n",
+      version,
+      protocol,
+      value);
+    log_err(-1, __func__, log_buf);
+    }
+  else if (ret != DIS_SUCCESS)
+    {
+    }
+  else if ((value = disrsi(sock,&ret)) != command)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Mismatching commands. Expected command %d for protocol %d but read command %d\n",
+      command,
+      protocol,
+      value);
+    log_err(-1, __func__, log_buf);
+    }
+  else if (ret != DIS_SUCCESS)
+    {
+    }
+  else
+    {
+    /* read the exit code */
+    *exit_status = disrsi(sock,&ret);
+    
+    DIS_tcp_reset(sock,0);
+    }
+
+  if (ret != DIS_SUCCESS)
+    {
+    if (ret >= 0)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Could not read reply for protocol %d command %d: %s",
+        protocol, command, dis_emsg[ret]);
+      }
+    else
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Could not read reply for protocol %d command %d",
+        protocol, command);
+      }
+    log_err(-1, __func__, log_buf);
     }
 
   return(ret);
