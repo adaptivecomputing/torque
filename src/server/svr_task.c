@@ -102,7 +102,7 @@
 #include "threadpool.h"
 #include "../lib/Liblog/pbs_log.h"
 
-
+#define AFTER_IS_BEING_RECYCLED -240
 extern void check_nodes(struct work_task *);
 
 /* Global Data Items: */
@@ -110,6 +110,29 @@ extern void check_nodes(struct work_task *);
 extern all_tasks     task_list_timed;
 extern all_tasks     task_list_event;
 extern task_recycler tr;
+
+
+
+
+struct work_task *find_insertion_point(
+
+  all_tasks *at,
+  work_task *wt)
+
+  {
+  int        iter = -1;
+  work_task *before_me;
+
+  while ((before_me = next_task(at, &iter)) != NULL)
+    {
+    if (before_me->wt_event > wt->wt_event)
+      break;
+
+    pthread_mutex_unlock(before_me->wt_mutex);
+    }
+
+  return(before_me);
+  }
 
 
 
@@ -131,7 +154,6 @@ struct work_task *set_task(
   {
   work_task *pnew;
   work_task *pold;
-  int        iter = -1;
 
   if ((pnew = (struct work_task *)calloc(1, sizeof(struct work_task))) == NULL)
     {
@@ -163,25 +185,26 @@ struct work_task *set_task(
    
     if (type == WORK_Timed)
       {
-      while ((pold = next_task(&task_list_timed, &iter)) != NULL)
+      unsigned char inserted = FALSE;
+
+      while (inserted != TRUE)
         {
-        if (pold->wt_event > pnew->wt_event)
-          break;
+        pold = find_insertion_point(&task_list_timed, pnew);
         
-        pthread_mutex_unlock(pold->wt_mutex);
+        if (pold != NULL)
+          {
+          if (insert_task_before(&task_list_timed, pnew, pold) == AFTER_IS_BEING_RECYCLED)
+            continue;
+  
+          pthread_mutex_unlock(pold->wt_mutex);
+          }
+        else
+          {
+          insert_task(&task_list_timed, pnew);
+          }
+
+        inserted = TRUE;
         }
-      
-      if (pold != NULL)
-        {
-        insert_task_before(&task_list_timed, pnew, pold);
-        
-        pthread_mutex_unlock(pold->wt_mutex);
-        }
-      else
-        {
-        insert_task(&task_list_timed, pnew);
-        }
-      
       }
     else
       {
@@ -371,8 +394,12 @@ int insert_task(
 
 
 /*
+ * NOTE: we currently don't unlock before in the trylock 
+ * because this is only called in set_task, and before is
+ * always a new task not in the structure yet
  * adds a task to the array after another
  */
+
 int insert_task_before(
 
   all_tasks *at,
@@ -384,7 +411,18 @@ int insert_task_before(
   int          rc;
   int          i;
 
-  pthread_mutex_lock(at->alltasks_mutex);
+  if (pthread_mutex_trylock(at->alltasks_mutex))
+    {
+    pthread_mutex_unlock(after->wt_mutex);
+    pthread_mutex_lock(at->alltasks_mutex);
+    pthread_mutex_lock(after->wt_mutex);
+    }
+
+  if (after->wt_being_recycled == TRUE)
+    {
+    pthread_mutex_unlock(after->wt_mutex);
+    return(AFTER_IS_BEING_RECYCLED);
+    }
 
   i = get_index(at->ra,after);
 
@@ -406,7 +444,7 @@ int insert_task_before(
   before->wt_tasklist = at;
 
   return(rc);
-  } /* insert_task_after() */
+  } /* insert_task_before() */
 
 
 
