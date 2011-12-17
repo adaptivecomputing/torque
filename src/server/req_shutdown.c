@@ -357,9 +357,12 @@ static int shutdown_checkpoint(
         ATR_ENCODE_CLIENT,
         0) < 0)
     {
+    free_br(phold);
     return(PBSE_SYSTEM);
     }
 
+  /* The phold is freed in relay_to_mom (failure)
+   * or in issue_Drequest (success) */
   if (relay_to_mom(pjob, phold, post_checkpoint) != 0)
     {
     /* FAILURE */

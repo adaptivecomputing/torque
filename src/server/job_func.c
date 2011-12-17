@@ -1337,7 +1337,8 @@ void remove_checkpoint(
     preq->rq_type = PBS_BATCH_DelFiles;
 
     preq->rq_extra = NULL;
-
+    /* The preq is freed in relay_to_mom (failure)
+     * or in issue_Drequest (success) */
     if (relay_to_mom(
           pjob,
           preq,
@@ -1354,8 +1355,6 @@ void remove_checkpoint(
         PBS_EVENTCLASS_FILE,
         pjob->ji_qs.ji_jobid,
         "unable to remove checkpoint file for job");
-
-      free_br(preq);
       }
     }
 

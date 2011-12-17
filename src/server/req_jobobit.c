@@ -1167,12 +1167,12 @@ int handle_stageout(
       
       unlink(namebuf2);
       }
-    
-      free(namebuf2);
-      
-      free_br(preq);
-      
-      preq = NULL;
+
+    free(namebuf2);
+
+    free_br(preq);
+
+    preq = NULL;
     } /* END if preq != NULL */
 
   svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEDEL, FALSE);
@@ -1730,6 +1730,8 @@ void on_job_rerun(
   if (jobid == NULL)
     {
     log_err(ENOMEM,id,"Cannot allocate memory");
+    if (preq != NULL)
+      free_br(preq);
     free(ptask->wt_mutex);
     free(ptask);
     return;
@@ -1741,6 +1743,8 @@ void on_job_rerun(
   if ((handle = mom_comm(pjob, on_job_rerun)) < 0)
     {
     pthread_mutex_unlock(pjob->ji_mutex);
+    if (preq != NULL)
+      free_br(preq);
     free(ptask->wt_mutex);
     free(ptask);
 
@@ -1776,9 +1780,7 @@ void on_job_rerun(
         /* ask mom to send them back to the server */
         /* mom deletes her copy if returned ok */
 
-        preq = alloc_br(PBS_BATCH_Rerun);
-
-        if (preq == NULL)
+        if ((preq = alloc_br(PBS_BATCH_Rerun)) == NULL)
           {
           pthread_mutex_unlock(pjob->ji_mutex);
           free(ptask->wt_mutex);

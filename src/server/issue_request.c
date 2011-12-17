@@ -173,6 +173,7 @@ int relay_to_mom(
       (node->nd_state & INUSE_DOWN))
     {
     unlock_node(node, id, "no rely mom", LOGLEVEL);
+    free_br(request);
     return(PBSE_NORELYMOM);
     }
 
@@ -200,6 +201,7 @@ int relay_to_mom(
     {
     log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_REQUEST,"",msg_norelytomom);
 
+    free_br(request);
     return(PBSE_NORELYMOM);
     }
 

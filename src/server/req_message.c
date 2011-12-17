@@ -99,6 +99,7 @@
 #include "log.h"
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
+#include "req_modify.h"  /* copy_batchrequest */
 
 
 /* Private Function local to this file */
@@ -125,6 +126,7 @@ void req_messagejob(
   {
   job   *pjob;
   int    rc;
+  struct batch_request *dup_req = NULL;
 
   if ((pjob = chk_job_request(preq->rq_ind.rq_message.rq_jid, preq)) == 0)
     return;
@@ -140,10 +142,13 @@ void req_messagejob(
     return;
     }
 
+  if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
+    {
+    }
   /* pass the request on to MOM */
-
-  if ((rc = relay_to_mom(pjob,
-                         preq, post_message_req)))
+  /* The dup_req is freed in relay_to_mom (failure)
+   * or in issue_Drequest (success) */
+  else if ((rc = relay_to_mom(pjob, dup_req, post_message_req)) != 0)
     req_reject(rc, 0, preq, NULL, NULL); /* unable to get to MOM */
 
   /* After MOM acts and replies to us, we pick up in post_message_req() */

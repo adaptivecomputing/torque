@@ -188,6 +188,8 @@ void remove_stagein(
     addr += pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport;
     addr += pjob->ji_qs.ji_un.ji_exect.ji_momport;
 
+    /* The preq is freed in relay_to_mom (failure)
+     * or in issue_Drequest (success) */
     if (relay_to_mom(
           pjob,
           preq,
@@ -204,8 +206,6 @@ void remove_stagein(
         PBS_EVENTCLASS_FILE,
         pjob->ji_qs.ji_jobid,
         "unable to remove staged in files for job");
-
-      free_br(preq);
       }
     }
 

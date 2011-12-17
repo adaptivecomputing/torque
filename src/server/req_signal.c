@@ -101,6 +101,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
+#include "req_modify.h"  /* copy_batchrequest */
 
 /* Private Function local to this file */
 
@@ -132,6 +133,7 @@ void req_signaljob(
   job *pjob;
   int  rc;
   char log_buf[LOCAL_LOG_BUF_SIZE];
+  struct batch_request *dup_req = NULL;
 
   if ((pjob = chk_job_request(preq->rq_ind.rq_signal.rq_jid, preq)) == 0)
     {
@@ -202,10 +204,12 @@ void req_signaljob(
 
   /* pass the request on to MOM */
 
-  if ((rc = relay_to_mom(
-              pjob,
-              preq,
-              post_signal_req)))
+  if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
+    {
+    }
+  /* The dup_req is freed in relay_to_mom (failure)
+   * or in issue_Drequest (success) */
+  else if ((rc = relay_to_mom(pjob, dup_req, post_signal_req)))
     {
     req_reject(rc, 0, preq, NULL, NULL);  /* unable to get to MOM */
 
@@ -257,9 +261,9 @@ int issue_signal(
 
   snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", signame);
 
+  /* The newreq is freed in relay_to_mom (failure)
+   * or in issue_Drequest (success) */
   rc = relay_to_mom(pjob, newreq, func);
-
-  /* when MOM replies, we just free the request structure */
 
   return(rc);
   }  /* END issue_signal() */

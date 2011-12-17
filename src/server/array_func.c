@@ -1091,16 +1091,15 @@ int delete_array_range(
           {
           /* invalid state for request,  skip */
           pthread_mutex_unlock(pjob->ji_mutex);
-          
           continue;
           }
-        
+
         if (attempt_delete((void *)pjob) == FALSE)
           {
           /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
            * release it here */
           pthread_mutex_unlock(pjob->ji_mutex);
-          
+
           num_skipped++;
           }
         }
@@ -1175,16 +1174,14 @@ int delete_whole_array(
         {
         /* invalid state for request,  skip */
         pthread_mutex_unlock(pjob->ji_mutex);
-        
         continue;
         }
-      
+
       if (attempt_delete((void *)pjob) == FALSE)
         {
-        /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
-         * release it here */
+        /* if the job was deleted, this mutex would be taked care of elsewhere.
+         * When it fails, release it here */
         pthread_mutex_unlock(pjob->ji_mutex);
-        
         num_skipped++;
         }
       }
@@ -1253,7 +1250,6 @@ int hold_array_range(
         else
           {
           hold_job(temphold,pjob);
-          
           pthread_mutex_unlock(pjob->ji_mutex);
           }
         }
@@ -1311,7 +1307,7 @@ int release_array_range(
       /* don't stomp on other memory */
       if (i >= pa->ai_qs.array_size)
         continue;
-      
+
       if (pa->job_ids[i] == NULL)
         continue;
 
@@ -1325,10 +1321,8 @@ int release_array_range(
         if ((rc = release_job(preq,pjob)))
           {
           pthread_mutex_unlock(pjob->ji_mutex);
-       
           return(rc);
           }
-        
         pthread_mutex_unlock(pjob->ji_mutex);
         }
       }
@@ -1385,7 +1379,7 @@ int modify_array_range(
         if ((i >= pa->ai_qs.array_size) ||
             (pa->job_ids[i] == NULL))
           continue;
- 
+
         if ((pjob = find_job(pa->job_ids[i])) == NULL)
           {
           free(pa->job_ids[i]);
@@ -1412,6 +1406,8 @@ int modify_array_range(
               preq->rq_refcount++;
               }
             mom_relay++;
+            /* The array_req is freed in relay_to_mom (failure)
+             * or in issue_Drequest (success) */
             if ((rc = relay_to_mom(pjob, array_req, post_modify_arrayreq)))
               {  
               snprintf(log_buf,sizeof(log_buf),

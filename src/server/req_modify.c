@@ -108,6 +108,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 #include "array.h"
+#include "req_modify.h" /* copy_batchrequest */
 
 #define CHK_HOLD 1
 #define CHK_CONT 2
@@ -270,7 +271,8 @@ void mom_cleanup_checkpoint_hold(
     else
       {
       strcpy(preq->rq_ind.rq_delete.rq_objname, pjob->ji_qs.ji_jobid);
-
+      /* The preq is freed in relay_to_mom (failure)
+       * or in issue_Drequest (success) */
       if ((rc = relay_to_mom(pjob, preq, release_req)) != 0)
         {
         snprintf(log_buf,sizeof(log_buf),
@@ -278,7 +280,6 @@ void mom_cleanup_checkpoint_hold(
           pjob->ji_qs.ji_jobid);
 
         log_err(rc,id,log_buf);
-        free_br(preq);
 
         pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -406,6 +407,7 @@ int modify_job(
 
   char *id = "modify_job";
   char  log_buf[LOCAL_LOG_BUF_SIZE];
+  struct batch_request *dup_req = NULL;
 
   job *pjob = (job *)j;
   
@@ -580,10 +582,13 @@ int modify_job(
        relay_to_mom so we do not need to do it here */
     if (flag != NO_MOM_RELAY)
       {
-      if ((rc = relay_to_mom(
-                  pjob,
-                  preq,
-                  post_modify_req)))
+      /* The last number is unused unless this is an array */
+      if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
+        {
+        }
+      /* The dup_req is freed in relay_to_mom (failure)
+       * or in issue_Drequest (success) */
+      else if ((rc = relay_to_mom(pjob, dup_req, post_modify_req)))
         {  
         snprintf(log_buf,sizeof(log_buf),
           "Unable to relay information to mom for job '%s'\n",
@@ -609,6 +614,8 @@ int modify_job(
 
       momreq->rq_extra = (void *)pjob;
 
+      /* The momreq is freed in relay_to_mom (failure)
+       * or in issue_Drequest (success) */
       if (checkpoint_req == CHK_HOLD)
         {
         rc = relay_to_mom(pjob, momreq, chkpt_xfr_hold);
@@ -674,6 +681,7 @@ int copy_batchrequest(
       request->rq_extend = (char *)calloc(1, strlen(preq->rq_extend) + 1);
       if (request->rq_extend == NULL)
         {
+        free_br(request);
         return(PBSE_SYSTEM);
         }
       strcpy(request->rq_extend, preq->rq_extend);
@@ -706,7 +714,7 @@ int copy_batchrequest(
            and not the individual job. We need to find out what we have and
            modify the name if needed */
         ptr1 = strstr(preq->rq_ind.rq_manager.rq_objname, "[]");
-        if (ptr1)
+        if ((ptr1) && (jobid != -1))
           {
           ptr1++;
           strcpy(newjobname, preq->rq_ind.rq_manager.rq_objname);
@@ -728,6 +736,7 @@ int copy_batchrequest(
           newpal = (svrattrl *)calloc(1, pal->al_tsize + 1);
           if (!newpal)
             {
+            free_br(request);
             return(PBSE_SYSTEM);
             }
           CLEAR_LINK(newpal->al_link);
@@ -804,39 +813,36 @@ int modify_whole_array(
       {
       /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
       rc = modify_job(pjob,plist,preq,checkpoint_req, NO_MOM_RELAY);
-      
+
       if (rc == PBSE_RELAYED_TO_MOM)
         {
         struct batch_request *array_req = NULL;
-        
-        /* We told modify_job not to call relay_to_mom so we need to contact the mom */
+        /* We told modify_job not to call relay_to_mom
+         * so we need to contact the mom */
         rc = copy_batchrequest(&array_req, preq, 0, i);
         if (rc != 0)
           {
           pthread_mutex_unlock(pjob->ji_mutex);
-   
           return(rc);
           }
-        
+
         preq->rq_refcount++;
         if (mom_relay == 0)
           {
           preq->rq_refcount++;
           }
         mom_relay++;
+        /* The array_req is freed in relay_to_mom (failure)
+         * or in issue_Drequest (success) */
         if ((rc = relay_to_mom(pjob, array_req, post_modify_arrayreq)))
           {  
           snprintf(log_buf,sizeof(log_buf),
             "Unable to relay information to mom for job '%s'\n",
             pjob->ji_qs.ji_jobid);
-          
           log_err(rc,id,log_buf);
-          
           pthread_mutex_unlock(pjob->ji_mutex);
-   
           return(rc); /* unable to get to MOM */
           }
-        
         }
       pthread_mutex_unlock(pjob->ji_mutex);
       }

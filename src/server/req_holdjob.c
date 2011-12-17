@@ -105,6 +105,7 @@
 #include "svrfunc.h"
 #include "csv.h"
 #include "array.h"
+#include "req_modify.h"  /* copy_batchrequest */
 
 /* Private Functions Local to this file */
 
@@ -175,6 +176,7 @@ void *req_holdjob(
   attribute *pattr;
   struct batch_request *preq = (struct batch_request *)vp;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  struct batch_request *dup_req = NULL;
 
   pjob = chk_job_request(preq->rq_ind.rq_hold.rq_orig.rq_objname, preq);
 
@@ -224,8 +226,12 @@ void *req_holdjob(
 
     /* have MOM attempt checkpointing */
 
-    if ((rc = relay_to_mom(pjob,
-                           preq, process_hold_reply)) != 0)
+    if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
+      {
+      }
+    /* The dup_req is freed in relay_to_mom (failure)
+     * or in issue_Drequest (success) */
+    else if ((rc = relay_to_mom(pjob, dup_req, process_hold_reply)) != 0)
       {
       *hold_val = old_hold;  /* reset to the old value */
       req_reject(rc, 0, preq, NULL, NULL);
@@ -300,6 +306,7 @@ void req_checkpointjob(
   int        rc;
   attribute *pattr;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
+  struct batch_request *dup_req = NULL;
 
   if ((pjob = chk_job_request(preq->rq_ind.rq_manager.rq_objname, preq)) == NULL)
     {
@@ -316,8 +323,12 @@ void req_checkpointjob(
     {
     /* have MOM attempt checkpointing */
 
-    if ((rc = relay_to_mom(pjob,
-                           preq, process_checkpoint_reply)) != 0)
+    if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
+      {
+      }
+    /* The dup_req is freed in relay_to_mom (failure)
+     * or in issue_Drequest (success) */
+    else if ((rc = relay_to_mom(pjob, dup_req, process_checkpoint_reply)) != 0)
       {
       req_reject(rc, 0, preq, NULL, NULL);
       }

@@ -361,7 +361,7 @@ void *req_stat_job(
 
 static void req_stat_job_step2(
 
-  struct stat_cntl *cntl)  /* I/O (freed on return) */
+  struct stat_cntl *cntl)  /* I/O (free'd on return) */
 
   {
   char                  id[] = "req_stat_job_step2";
@@ -942,6 +942,7 @@ int stat_to_mom(
       }
 
     unlock_node(node, "stat_to_mom", "no rely mom", LOGLEVEL);
+    free_br(newrq);
 
     return(PBSE_NORELYMOM);
     }
@@ -1085,8 +1086,12 @@ static void stat_update(
 
   if (cntl->sc_post)
     cntl->sc_post(cntl); /* continue where we left off */
-  else
-    free(cntl); /* a bit of a kludge but its saves an extra func */
+
+  /* If sc_post has a value it is:
+   * req_stat_job_step2
+   * if so, it expects cntl to be free'd after the call
+   */
+  free(cntl); /* a bit of a kludge but its saves an extra func */
 
   return;
   }  /* END stat_update() */
@@ -1128,7 +1133,7 @@ void stat_mom_job(
     free(cntl);
     }
 
-  /* if not an error, cntl freed in stat_update() */
+  /* if not an error, cntl free'd in stat_update() */
 
   return;
   }  /* END stat_mom_job() */

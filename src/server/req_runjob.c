@@ -437,6 +437,7 @@ static int svr_send_checkpoint(
 
   struct batch_request *momreq = 0;
   int        rc;
+  char *tmp_jobid = NULL;
 
   momreq = cpy_checkpoint(momreq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN);
 
@@ -452,21 +453,17 @@ static int svr_send_checkpoint(
 
   /* save job id for post_checkpointsend */
 
-  momreq->rq_extra = calloc(1, strlen(pjob->ji_qs.ji_jobid) + 1);
-
-  if (momreq->rq_extra == 0)
+  if ((tmp_jobid = strdup(pjob->ji_qs.ji_jobid)) == NULL)
     {
+    free_br(momreq);
     return(PBSE_SYSTEM);
     }
 
-  strcpy(momreq->rq_extra, pjob->ji_qs.ji_jobid);
+  momreq->rq_extra = tmp_jobid;
 
-  rc = relay_to_mom(
-         pjob,
-         momreq,
-         post_checkpointsend);
-
-  if (rc == 0)
+  /* The momreq is freed in relay_to_mom (failure)
+   * or in issue_Drequest (success) */
+  if ((rc = relay_to_mom(pjob, momreq, post_checkpointsend)) == 0)
     {
     svr_setjobstate(pjob, state, substate, FALSE);
 
@@ -480,7 +477,7 @@ static int svr_send_checkpoint(
     }
   else
     {
-    free(momreq->rq_extra);
+    free(tmp_jobid);
     }
 
   return(rc);
@@ -667,6 +664,7 @@ static int svr_stagein(
 
   struct batch_request *momreq = 0;
   int        rc;
+  char *tmp_jobid = NULL;
 
   momreq = cpy_stage(momreq, pjob, JOB_ATR_stagein, STAGE_DIR_IN);
 
@@ -684,21 +682,17 @@ static int svr_stagein(
 
   /* save job id for post_stagein */
 
-  momreq->rq_extra = calloc(1, strlen(pjob->ji_qs.ji_jobid) + 1);
-
-  if (momreq->rq_extra == 0)
+  if ((tmp_jobid = strdup(pjob->ji_qs.ji_jobid)) == NULL)
     {
+    free_br(momreq);
     return(PBSE_SYSTEM);
     }
 
-  strcpy(momreq->rq_extra, pjob->ji_qs.ji_jobid);
+  momreq->rq_extra = tmp_jobid;
 
-  rc = relay_to_mom(
-         pjob,
-         momreq,
-         post_stagein);
-
-  if (rc == 0)
+  /* The momreq is freed in relay_to_mom (failure)
+   * or in issue_Drequest (success) */
+  if ((rc = relay_to_mom(pjob, momreq, post_stagein)) == 0)
     {
     svr_setjobstate(pjob, state, substate, FALSE);
 
@@ -712,7 +706,7 @@ static int svr_stagein(
     }
   else
     {
-    free(momreq->rq_extra);
+    free(tmp_jobid);
     }
 
   return(rc);
