@@ -421,6 +421,7 @@ int insert_task_before(
   if (after->wt_being_recycled == TRUE)
     {
     pthread_mutex_unlock(after->wt_mutex);
+    pthread_mutex_unlock(at->alltasks_mutex);
     return(AFTER_IS_BEING_RECYCLED);
     }
 
