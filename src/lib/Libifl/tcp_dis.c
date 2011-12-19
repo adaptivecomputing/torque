@@ -471,7 +471,7 @@ static void DIS_tcp_clear(
   struct tcpdisbuf *tp)
 
   {
-  memset(tp->tdis_thebuf, 0, 10);
+  memset(tp->tdis_thebuf, 0, tp->tdis_bufsize);
   tp->tdis_leadp  = tp->tdis_thebuf;
   tp->tdis_trailp = tp->tdis_thebuf;
   tp->tdis_eod    = tp->tdis_thebuf;

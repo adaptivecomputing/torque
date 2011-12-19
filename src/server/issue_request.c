@@ -166,6 +166,7 @@ int relay_to_mom(
 
   if ((node = tfind_addr(addr,pjob->ji_qs.ji_un.ji_exect.ji_momport,pjob)) == NULL)
     {
+    free_br(request);
     return(PBSE_NORELYMOM);
     }
 

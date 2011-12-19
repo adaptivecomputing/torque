@@ -967,7 +967,9 @@ int stat_to_mom(
     if (pwt)
       delete_task(pwt);
 
-    free_br(newrq);
+    /* There are cases where this is free'd inside issue_Drequest in
+     * failure cases */
+/*    free_br(newrq); */
 
     if (cntl->sc_conn >= 0)
       svr_disconnect(cntl->sc_conn);

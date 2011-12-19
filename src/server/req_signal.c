@@ -135,6 +135,7 @@ void req_signaljob(
   char log_buf[LOCAL_LOG_BUF_SIZE];
   struct batch_request *dup_req = NULL;
 
+  /* preq free'd in error cases */
   if ((pjob = chk_job_request(preq->rq_ind.rq_signal.rq_jid, preq)) == 0)
     {
     return;
@@ -206,19 +207,21 @@ void req_signaljob(
 
   if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
     {
+    req_reject(rc, 0, preq, NULL, "can not allocate memory");
     }
   /* The dup_req is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  else if ((rc = relay_to_mom(pjob, dup_req, post_signal_req)))
+  else if ((rc = relay_to_mom(pjob, dup_req, post_signal_req)) != 0)
     {
     req_reject(rc, 0, preq, NULL, NULL);  /* unable to get to MOM */
-
-    pthread_mutex_unlock(pjob->ji_mutex);
-
-    return;
+    }
+  else
+    {
+    free_br(preq);
     }
 
-  /* After MOM acts and replies to us, we pick up in post_signal_req() */
+  /* After MOM acks and replies to us, we pick up in post_signal_req() */
+
 
   /* SUCCESS */
   pthread_mutex_unlock(pjob->ji_mutex);

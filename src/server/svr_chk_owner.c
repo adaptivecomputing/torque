@@ -571,7 +571,7 @@ job *chk_job_request(
   struct batch_request *preq)   /* I */
 
   {
-  job *pjob;
+  job *pjob = NULL;
 
   if ((pjob = find_job(jobid)) == NULL)
     {
