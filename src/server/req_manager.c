@@ -1683,7 +1683,8 @@ void mgr_node_set(
 
     while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
       {
-      if (propnodes && !hasprop(pnode, &props))
+      if ((propnodes == TRUE) && 
+          (!hasprop(pnode, &props)))
         {
         continue;
         }
@@ -1702,15 +1703,14 @@ void mgr_node_set(
 
       if (rc != 0)
         {
-        if (problem_nodes)     /*we have an array in which to save*/
-          problem_nodes[ problem_cnt ] = pnode;
+        if (problem_nodes) /* we have an array in which to save*/
+          problem_nodes[problem_cnt] = pnode;
         
         ++problem_cnt;
         }
       else
         {
         /* modifications succeeded for this node */
-
         chk_characteristic(pnode, &nci, &need_todo);
 
         mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, pnode->nd_name);
@@ -1735,7 +1735,7 @@ void mgr_node_set(
 
     if (rc != 0)
       {
-      /*In the specific node case, reply w/ error and return*/
+      /* In the specific node case, reply w/ error and return*/
       
       switch (rc)
         {
@@ -1773,7 +1773,6 @@ void mgr_node_set(
     else
       {
       /* modifications succeeded for this node */
-      
       chk_characteristic(pnode, &nci, &need_todo);
       
       mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, pnode->nd_name);

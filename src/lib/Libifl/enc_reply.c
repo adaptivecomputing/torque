@@ -100,19 +100,17 @@ int encode_DIS_reply(
   struct batch_reply *reply)
 
   {
-  int      ct;
-  int      i;
+  int                 ct;
+  int                 i;
 
   struct brp_select  *psel;
-
   struct brp_status  *pstat;
-  svrattrl    *psvrl;
-
-  int rc;
+  svrattrl           *psvrl;
+  int                 rc;
 
   /* first encode "header" consisting of protocol type and version */
 
-  if ((rc = diswui(sock, PBS_BATCH_PROT_TYPE))   ||
+  if ((rc = diswui(sock, PBS_BATCH_PROT_TYPE)) ||
       (rc = diswui(sock, PBS_BATCH_PROT_VER)))
     return rc;
 

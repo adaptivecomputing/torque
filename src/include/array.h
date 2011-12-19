@@ -59,8 +59,6 @@ struct job_array
                          is restarted (cleanly) before the array is 
                          completely setup */
 
-  job *template_job; /* pointer to the template job */
-
   pthread_mutex_t *ai_mutex;
 
   /* this info is saved in the array file */
@@ -87,7 +85,6 @@ struct job_array
     char parent_id[PBS_MAXSVRJOBID + 1];
     char fileprefix[PBS_JOBBASE + 1];
     char submit_host[PBS_MAXSERVERNAME +1];
-    char array_id[PBS_MAXSVRJOBID + 1];   /* job identifier */
     } ai_qs;
   };
 

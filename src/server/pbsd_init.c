@@ -1604,21 +1604,26 @@ int pbsd_init(
 
   while ((pa = next_array(&iter)) != NULL)
     {
+    int job_template_exists = FALSE;
     pthread_mutex_lock(pa->ai_mutex);
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: locked ai_mutex", id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
       }
-
-    pa->template_job = find_array_template(pa->ai_qs.parent_id);
-    pthread_mutex_unlock(pa->template_job->ji_mutex);
+     
+    if ((pjob = find_job(pa->ai_qs.parent_id)) != NULL)
+      {
+      job_template_exists = TRUE;
+      pthread_mutex_unlock(pjob->ji_mutex);
+      }
 
     if (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)
       {
       /* if we can't finish building the job array then delete whats been done
          so far */
-      if (pa->template_job == NULL)
+
+      if (job_template_exists == FALSE)
         {
         int        i;
         job_array *temp;
@@ -1651,7 +1656,7 @@ int pbsd_init(
 
       }
     else if ((pa->ai_qs.jobs_done == pa->ai_qs.num_jobs) && 
-             (pa->template_job == NULL))
+             (job_template_exists == FALSE))
       {
       job_array *temp = (job_array*)GET_NEXT(pa->all_arrays);
       array_delete(pa);

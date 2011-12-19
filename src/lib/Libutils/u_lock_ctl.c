@@ -165,7 +165,7 @@ int unlock_ss()
 int lock_node(
     
   struct pbsnode *the_node,
-  char           *id,
+  const char     *id,
   char           *msg,
   int             logging)
 
@@ -200,16 +200,16 @@ int lock_node(
     }
 
   return rc;
-  }
+  } /* END lock_node() */
 
 int unlock_node(
     
   struct pbsnode *the_node,
-  char           *id,
+  const char     *id,
   char           *msg,
   int             logging)
-  {
 
+  {
   int   rc = PBSE_NONE;
   char *err_msg = NULL;
   char  stub_msg[] = "no pos";
@@ -238,7 +238,7 @@ int unlock_node(
     free(err_msg);
 
   return rc;
-  }
+  } /* END unlock_node() */
 
 int lock_cntr_init()
   {

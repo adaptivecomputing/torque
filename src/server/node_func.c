@@ -206,7 +206,7 @@ struct pbsnode *PGetNodeFromAddr(
         }
       }    /* END for (aindex) */
 
-    unlock_node(pnode, "PGetNodeFromAddr", NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     } /* END for each node */
 
   return(NULL);
@@ -321,7 +321,7 @@ int addr_ok(
     }
 
   if (release_mutex == TRUE)
-    unlock_node(pnode, "addr_ok", "release_mutex = TRUE", LOGLEVEL);
+    unlock_node(pnode, __func__, "release_mutex = TRUE", LOGLEVEL);
 
   return(status);
   }  /* END addr_ok() */
@@ -348,19 +348,17 @@ struct pbsnode *find_nodebyname(
     *pslash = '\0';
 
   pthread_mutex_lock(allnodes.allnodes_mutex);
-
   i = get_value_hash(allnodes.ht,nodename);
 
   if (i >= 0)
     pnode = (struct pbsnode *)allnodes.ra->slots[i].item;
-
   pthread_mutex_unlock(allnodes.allnodes_mutex);
 
   if (pslash != NULL)
     *pslash = '/'; /* restore the slash */
 
   if (pnode != NULL)
-    lock_node(pnode, "find_nodebyname", NULL, LOGLEVEL);
+    lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(pnode);
   }  /* END find_nodebyname() */
@@ -377,11 +375,10 @@ struct pbsnode *find_nodebyname(
 
 struct pbssubn *find_subnodebyname(
 
-        char *nodename)
+  char *nodename)
 
   {
-
-  struct pbsnode  *pnode;
+  struct pbsnode *pnode;
   struct pbssubn *tmp;
 
   if ((pnode = find_nodebyname(nodename)) == NULL)
@@ -1208,7 +1205,7 @@ void recompute_ntype_cnts(void)
 
   if (svr_totnodes)
     {
-    while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+    while ((pnode = next_node(&allnodes, pnode, &iter)) != NULL)
       {
       /* count normally */
       if (pnode->nd_ntype == NTYPE_CLUSTER)
@@ -1337,7 +1334,6 @@ int create_a_gpusubnode(
 
   /* initialize the node */
   pnode->nd_gpus_real = FALSE;
-  pnode->nd_gpusn[pnode->nd_ngpus].pjob = NULL;
   pnode->nd_gpusn[pnode->nd_ngpus].inuse = FALSE;
   pnode->nd_gpusn[pnode->nd_ngpus].mode = gpu_normal;
   pnode->nd_gpusn[pnode->nd_ngpus].state = gpu_unallocated;
@@ -2197,12 +2193,12 @@ int setup_nodes(void)
           /* exclusive bits are calculated later in set_old_nodes() */
           np->nd_state &= ~(INUSE_JOB | INUSE_JOBSHARE);
 
-          unlock_node(np, "setup_nodes", "match", LOGLEVEL);
+          unlock_node(np, __func__, "match", LOGLEVEL);
 
           break;
           }
 
-        unlock_node(np, "setup_nodes", "no match", LOGLEVEL);
+        unlock_node(np, __func__, "no match", LOGLEVEL);
         }
       }
 
@@ -2219,27 +2215,17 @@ int setup_nodes(void)
                   line,
                   note) == 2)
       {
-      int iter = -1;
-
-      while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+      if ((np = find_nodebyname(line)) != NULL)
         {
-        if (strcmp(np->nd_name, line) == 0)
-          {
-          np->nd_note = strdup(note);
-
-          if (np->nd_note == NULL)
-            {
-            sprintf(log_buf, "couldn't allocate space for note (node = %s)", np->nd_name);
-
-            log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
-            }
+        np->nd_note = strdup(note);
         
-          unlock_node(np, "setup_nodes", "init - no note", LOGLEVEL);
-
-          break;
+        if (np->nd_note == NULL)
+          {
+          sprintf(log_buf, "couldn't allocate space for note (node = %s)", np->nd_name);          
+          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
           }
-
-        unlock_node(np, "setup_nodes", "init - has note", LOGLEVEL);
+        
+        unlock_node(np, __func__, "init - no note", LOGLEVEL);
         }
       }
 
@@ -2734,18 +2720,16 @@ int create_partial_pbs_node(
 
   if (rc != 0)
     {
-    lock_node(pnode, "create_partial_pbs_node", NULL, LOGLEVEL);
+    lock_node(pnode, __func__, NULL, LOGLEVEL);
     effective_node_delete(pnode);
 
     return(rc);
     }
 
   insert_node(&allnodes,pnode);
+  AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
   
   svr_totnodes++;
-
-  AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
-
   recompute_ntype_cnts();
 
   return(PBSE_NONE);     /*create completely successful*/
@@ -2805,8 +2789,9 @@ struct pbsnode *get_my_next_node_board(
   iter->numa_index++;
   numa = AVL_find(iter->numa_index,pnode->nd_mom_port,pnode->node_boards);
   
-  unlock_node(pnode, "get_my_next_node_board", "pnode", LOGLEVEL);
-  lock_node(numa, "get_my_next_node_board", "numa", LOGLEVEL);
+  unlock_node(pnode, __func__, "pnode", LOGLEVEL);
+  if (numa != NULL)
+    lock_node(numa, __func__, "numa", LOGLEVEL);
 
   return(numa);
   } /* END get_my_next_node_board() */
@@ -2954,9 +2939,9 @@ int remove_node(
 
   if (pthread_mutex_trylock(an->allnodes_mutex))
     {
-    unlock_node(pnode, "remove_node", NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     pthread_mutex_lock(an->allnodes_mutex);
-    lock_node(pnode, "remove_node", NULL, LOGLEVEL);
+    lock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
   rc = remove_thing(an->ra,pnode);
@@ -2986,7 +2971,7 @@ struct pbsnode *next_host(
 
   if ((pnode != NULL) && 
       (pnode != held))
-    lock_node(pnode, "next_host", NULL, LOGLEVEL);
+    lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(pnode);
   } /* END next_host() */

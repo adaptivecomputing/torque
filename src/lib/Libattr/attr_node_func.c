@@ -468,17 +468,15 @@ int encode_jobs(
   int         perm)  /* only used for resources */
 
   {
-  svrattrl  *pal;
+  svrattrl       *pal;
 
   struct jobinfo *jip;
-
   struct pbsnode *pnode;
-
   struct pbssubn *psubn;
-  int  i;
-  int  jobcnt;  /*number of jobs using the node     */
-  int  strsize; /*computed string size      */
-  char  *job_str; /*holds comma separated list of jobs*/
+  int             i;
+  int             jobcnt;  /*number of jobs using the node     */
+  int             strsize; /*computed string size      */
+  char           *job_str; /*holds comma separated list of jobs*/
 
   if (pattr == NULL)
     {
@@ -504,7 +502,7 @@ int encode_jobs(
       {
       jobcnt++;
 
-      strsize += strlen(jip->job->ji_qs.ji_jobid) + PCONST_ENCOVERHEAD;
+      strsize += strlen(jip->jobid) + PCONST_ENCOVERHEAD;
       }
     }    /* END for (psubn) */
 
@@ -534,8 +532,7 @@ int encode_jobs(
         i++;
 
       sprintf(job_str + strlen(job_str), "%d/%s",
-              psubn->index,
-              jip->job->ji_qs.ji_jobid);
+        psubn->index, jip->jobid);
       }
     }    /* END for (psubn) */
 

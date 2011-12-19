@@ -941,7 +941,7 @@ int stat_to_mom(
       log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
 
-    unlock_node(node, "stat_to_mom", "no rely mom", LOGLEVEL);
+    unlock_node(node, __func__, "no rely mom", LOGLEVEL);
     free_br(newrq);
 
     return(PBSE_NORELYMOM);
@@ -956,7 +956,7 @@ int stat_to_mom(
                     process_Dreply,
                     ToServerDIS);
 
-  unlock_node(node, "stat_to_mom", "after svr_connect", LOGLEVEL);
+  unlock_node(node, __func__, "after svr_connect", LOGLEVEL);
 
   if ((rc = cntl->sc_conn) >= 0)
     rc = issue_Drequest(cntl->sc_conn, newrq, stat_update, &pwt);
@@ -1395,9 +1395,9 @@ int get_numa_statuses(
     if (pn == NULL)
       continue;
 
-    lock_node(pn, "get_numa_statuses", NULL, LOGLEVEL);
+    lock_node(pn, __func__, NULL, LOGLEVEL);
     rc = status_node(pn, preq, bad, pstathd);
-    unlock_node(pn, "get_numa_statuses", NULL, LOGLEVEL);
+    unlock_node(pn, __func__, NULL, LOGLEVEL);
 
     if (rc != PBSE_NONE)
       {
@@ -1500,7 +1500,7 @@ void *req_stat_node(
     /* get the status on all of the numa nodes */
     rc = get_numa_statuses(pnode,preq,&bad,&preply->brp_un.brp_status);
 
-    unlock_node(pnode, "req_stat_node", "type == 0", LOGLEVEL);
+    unlock_node(pnode, __func__, "type == 0", LOGLEVEL);
     }
   else
     {
@@ -1512,18 +1512,18 @@ void *req_stat_node(
       if ((type == 2) && 
           (!hasprop(pnode, &props)))
         {
-        unlock_node(pnode, "req_stat_node", "type != 0, next_host", LOGLEVEL);
+        unlock_node(pnode, __func__, "type != 0, next_host", LOGLEVEL);
         continue;
         }
 
       /* get the status on all of the numa nodes */
       if ((rc = get_numa_statuses(pnode,preq,&bad,&preply->brp_un.brp_status)) != 0)
         {
-        unlock_node(pnode, "req_stat_node", "type != 0, rc != 0, get_numa_statuses", LOGLEVEL);
+        unlock_node(pnode, __func__, "type != 0, rc != 0, get_numa_statuses", LOGLEVEL);
         break;
         }
 
-      unlock_node(pnode, "req_stat_node", "type != 0, rc == 0, get_numa_statuses", LOGLEVEL);
+      unlock_node(pnode, __func__, "type != 0, rc == 0, get_numa_statuses", LOGLEVEL);
       }
     }
 
