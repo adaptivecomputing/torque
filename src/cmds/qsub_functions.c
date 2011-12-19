@@ -2315,9 +2315,9 @@ void process_opts(
   char path_out[MAXPATHLEN + 1];
 
 #if defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:c:C:e:Ehj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
+#define GETOPT_ARGS "a:A:c:C:e:Ehj:k:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
 #else
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfhIj:J:k:l:m:M:N:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfhIj:J:k:l:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
 #endif /* PBS_NO_POSIX_VIOLATION */
   /* Note:
    * All other #ifdef's for PBS_NO_POSIX_VIOLATION are being removed because
@@ -2373,53 +2373,27 @@ void process_opts(
 
       case 'a':
 
-/*        if_cmd_line(a_opt)
-          {
-          a_opt = passet;
-          */
-
           if ((after = cvtdate(optarg)) < 0)
             print_qsub_usage_exit("qsub: illegal -a value");
 
           sprintf(a_value, "%ld", (long)after);
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_a, a_value, data_type);
-/*           set_attr(&attrib, ATTR_a, a_value); */
-/*           } */
 
         break;
 
       case 'A':
 
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_A, optarg, data_type);
-/*        if_cmd_line(A_opt)
-          {
-          A_opt = passet;
-          set_attr(&attrib, ATTR_A, optarg); 
-          }
-          */
 
         break;
 
       case 'b':
 
         hash_add_or_exit(&ji->mm, &ji->client_attr, "cnt2server_retry", optarg, data_type);
-/*        if_cmd_line(b_opt)
-          {
-          b_opt = passet;
-
-          cnt2server_retry = atoi(optarg);
-          }
-          */
 
         break;
 
       case 'c':
-
-/*         if_cmd_line(c_opt) */
-/*           { */
-/*           c_opt = passet; */
-
-          /* remove whitespace */
 
           while (isspace((int)*optarg))
             optarg++;
@@ -2499,32 +2473,17 @@ void process_opts(
 
               if (csv_find_string(checkpoint_strings, search_string) == NULL)
                 print_qsub_usage_exit("qsub: illegal -c value");
-/*                {
-                fprintf(stderr, "qsub: illegal -c value \"%s\"\n", ptr);
-                errflg++;
-                goto err;
-                }
-                */
               }
             }
 
 #endif
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_c, optarg, data_type);
-/*          set_attr(&attrib, ATTR_c, optarg); */
-/*          }   END if_cmd_line() */
 
         break;
 
       case 'C':
 
         hash_add_or_exit(&ji->mm, &ji->client_attr, "pbs_dprefix", optarg, data_type);
-/*        if_cmd_line(C_opt)
-          {
-          C_opt = passet;
-
-          strcpy(dir_prefix, optarg);
-          }
-          */
 
         break;
 
@@ -2555,52 +2514,14 @@ void process_opts(
                   errno, strerror(errno));
               print_qsub_usage_exit(err_msg);
 
-/*              fprintf(stderr, "qsub: unable to get cwd: %d (%s)\n",
-                      errno,
-                      strerror(errno));
-
-              errflg++;
-
-              tmpPWD[0] = '\0';
-
-              mypwd = tmpPWD;
-              */
               }
-            /* As the memory is not dynamically allocated, this is not needed */
-/*            if ((strlen(mypwd) + strlen(optarg)) >= sizeof(PBS_InitDir))
-              {
-              fprintf(stderr, "qsub: -d arg is longer than %ld characters\n",
-                      (long)sizeof(PBS_InitDir));
-
-              errflg++;
-              }
-              */
-
-/*            snprintf(PBS_InitDir, sizeof(PBS_InitDir), "%s/%s",
-
-                     mypwd,
-                     optarg);
-                     */
+            
             alloc_len =  strlen(mypwd)+1+strlen(optarg) + 1;
             calloc_or_fail(&ji->mm, &idir, alloc_len, "-d attribute");
             sprintf(idir, "%s/%s", mypwd, optarg);
             hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_initdir, idir, data_type);
             memmgr_free(&ji->mm, idir);
             }  /* END if (optarg[0] != '/') */
-/*           else */
-/*             { */
-            /* As the memory is not dynamically allocated, this is not needed */
-/*            if (strlen(optarg) >= sizeof(PBS_InitDir))
-              {
-              fprintf(stderr, "qsub: -d arg is longer than %ld characters\n",
-                      (long)sizeof(PBS_InitDir));
-
-              errflg++;
-              }
-              */
-
-/*             strncpy(PBS_InitDir, optarg, sizeof(PBS_InitDir)); */
-/*            }  end optarg[1] != '/' */
 
           if (hash_find(ji->client_attr, "validate_path", &tmp_job_info))
             {
@@ -2613,18 +2534,9 @@ void process_opts(
               calloc_or_fail(&ji->mm, &err_msg, alloc_len, "-d attribute");
               snprintf(err_msg, alloc_len, "qsub: cannot chdir to '%s' errno: %d (%s)", optarg, errno, strerror(errno));
               print_qsub_usage_exit(err_msg);
-
-/*               errflg++; */
               }
             }
           }    /* END if (optarg != NULL) */
-/*         else */
-/*          {
-          fprintf(stderr, "qsub: illegal -d value\n");
-
-          errflg++;
-          }
-          */
 
         break;
 
@@ -2632,30 +2544,13 @@ void process_opts(
 
         if (optarg != NULL)
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_rootdir, optarg, data_type);
-/*          {
-          strncpy(PBS_RootDir, optarg, sizeof(PBS_RootDir));
-          }
-          */
         else
           print_qsub_usage_exit("qsub: illegal -D value");
-/*          {
-          fprintf(stderr, "qsub: illegal -D value\n");
-
-          errflg++;
-          }
-          */
 
         break;
 
       case 'e':
 
-/*        if_cmd_line(e_opt)
-          {
-          int rc = 0;
-          e_opt = passet;
-          */
-
-/*           if (qsub_host[0] != '\0') */
           if (hash_find(ji->job_attr, ATTR_submit_host, &tmp_job_info))
             rc = prepare_path(optarg,path_out,tmp_job_info->value);
           else
@@ -2663,32 +2558,14 @@ void process_opts(
 
           if ((rc == 0) || (rc == 3))
             hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_e, path_out, data_type);
-/*            {
-            set_attr(&attrib, ATTR_e, path_out);
-            }
-            */
           else
             print_qsub_usage_exit("qsub: illegal -D value");
-/*            {
-            fprintf(stderr, "qsub: illegal -e value\n");
-
-            errflg++;
-            }
-            */
-/*           } */
 
         break;
 
       case 'E':
 
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_node_exclusive, "TRUE", data_type);
-/*        if_cmd_line(E_opt)
-          {
-          E_opt = passet;
-          
-          set_attr(&attrib, ATTR_node_exclusive, "TRUE");
-          }
-          */
 
         break;
         
@@ -2697,13 +2574,6 @@ void process_opts(
       case 'f':
       
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_f, "TRUE", data_type);
-/*        if_cmd_line(f_opt)
-          {
-          f_opt = passet;
-          
-          set_attr(&attrib, ATTR_f, "TRUE");
-          }
-          */
           
         break;
       
@@ -2712,13 +2582,6 @@ void process_opts(
       case 'h':
 
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_h, "u", data_type);
-/*        if_cmd_line(h_opt)
-          {
-          h_opt = passet;
-
-          set_attr(&attrib, ATTR_h, "u");
-          }
-          */
 
         break;
 
@@ -2727,13 +2590,6 @@ void process_opts(
       case 'I':
 
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_inter, interactive_port(&inter_sock), data_type);
-/*        if_cmd_line(Interact_opt)
-          {
-          Interact_opt = passet;
-
-          set_attr(&attrib, ATTR_inter, interactive_port(&inter_sock));
-          }
-          */
 
         break;
 
@@ -2743,26 +2599,12 @@ void process_opts(
 
         /* FORMAT:  {oe|eo|n} */
 
-/*        if_cmd_line(j_opt)
-          {
-          j_opt = passet;
-          */
-
           if ((strcmp(optarg, "oe") != 0) &&
               (strcmp(optarg, "eo") != 0) &&
               (strcmp(optarg, "n") != 0))
             print_qsub_usage_exit("qsub: illegal -j value");
-/*            {
-            fprintf(stderr, "qsub: illegal -j value\n");
-            errflg++;
-
-            break;
-            }
-            */
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_j, optarg, data_type);
 
-/*           set_attr(&attrib, ATTR_j, optarg); */
-/*           } */
 
         break;
 
@@ -2777,58 +2619,22 @@ void process_opts(
 
         /* FORMAT:  {o|e} */
 
-/*        if_cmd_line(k_opt)
-          {
-          k_opt = passet;
-          */
-
           if ((strcmp(optarg, "o") != 0) &&
               (strcmp(optarg, "e") != 0) &&
               (strcmp(optarg, "oe") != 0) &&
               (strcmp(optarg, "eo") != 0) &&
               (strcmp(optarg, "n") != 0))
             print_qsub_usage_exit("qsub: illegal -k value");
-/*            {
-            fprintf(stderr, "qsub: illegal -k value\n");
-            errflg++;
-
-            break;
-            }
-            */
 
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_k, optarg, data_type);
-/*           set_attr(&attrib, ATTR_k, optarg); */
-/*           } */
 
         break;
 
       case 'l':
 
-/*         l_opt = passet; */
-
-        /* a ,procs= in the node spec is illegal. Validate the node spec */
-        /* as procs is in the list of resources, ,procs is now valid */
-/*        if (strstr(optarg, ",procs="))
-          {
-          alloc_len = 30 + strlen(optarg);
-          calloc_or_fail(mm, &err_msg, alloc_len, "qsub: illegal node spec");
-          snprintf(err_msg, alloc_len, "qsub: illegal node spec: %s", optarg);
-          print_qsub_usage_exit(err_msg);
-          */
-/*           printf("qsub: illegal node spec: %s\n", optarg); */
-/*           return(-1); */
-/*          } */
-
         /* The check for proc in value was here */
         if (add_verify_resources(&ji->mm, &ji->res_attr, optarg, data_type) != 0)
           print_qsub_usage_exit("qsub: illegal -l value");
-/*            {                                                                  
-            fprintf(stderr, "qsub: illegal -l value\n");
-
-            errflg++;
-            }
-            */
-
 
           /* walltime update has been pushed back to after all the
            * job attributes have been added */
@@ -2881,6 +2687,7 @@ void process_opts(
         break;
 
       case 'm':
+
           while (isspace((int)*optarg))
             optarg++;
 
@@ -2904,9 +2711,16 @@ void process_opts(
         break;
 
       case 'M':
+
           if (parse_at_list(optarg, FALSE, FALSE))
             print_qsub_usage_exit("qsub: illegal -M value");
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_M, optarg, data_type);
+        break;
+
+      case 'n':
+
+        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_node_exclusive, "TRUE", data_type);
+
         break;
 
       case 'N':
