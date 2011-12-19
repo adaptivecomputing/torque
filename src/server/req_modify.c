@@ -649,17 +649,18 @@ int modify_job(
 int copy_batchrequest(
     
   struct batch_request **newreq,
-  struct batch_request *preq,
-  int type,
-  int jobid)
+  struct batch_request  *preq,
+  int                    type,
+  int                    jobid)
 
   {
   struct batch_request *request;
-  svrattrl *pal = NULL;
-  svrattrl *newpal = NULL;
-  tlist_head *phead = NULL;
-  char *ptr1, *ptr2;
-  char newjobname[PBS_MAXSVRJOBID+1];
+  svrattrl             *pal = NULL;
+  svrattrl             *newpal = NULL;
+  tlist_head           *phead = NULL;
+  char                 *ptr1;
+  char                 *ptr2;
+  char                  newjobname[PBS_MAXSVRJOBID+1];
   
   request = alloc_br(type);
   if (request)
@@ -761,14 +762,32 @@ int copy_batchrequest(
           }
         
         break;
+
+      case PBS_BATCH_SignalJob:
+
+        strcpy(request->rq_ind.rq_signal.rq_jid, preq->rq_ind.rq_signal.rq_jid);
+        strcpy(request->rq_ind.rq_signal.rq_signame, preq->rq_ind.rq_signal.rq_signame);
+        request->rq_extra = strdup(preq->rq_extra);
+
+        break;
+
+      case PBS_BATCH_MessJob:
+
+        strcpy(request->rq_ind.rq_message.rq_jid, preq->rq_ind.rq_message.rq_jid);
+        request->rq_ind.rq_message.rq_file = preq->rq_ind.rq_message.rq_file;
+        strcpy(request->rq_ind.rq_message.rq_text, preq->rq_ind.rq_message.rq_text);
+
+        break;
         
       default:
+
         break;
         
       }
-    request->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
-    request->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
-    append_link(phead, &newpal->al_link, newpal);
+
+    if ((phead != NULL) &&
+        (newpal != NULL))
+      append_link(phead, &newpal->al_link, newpal);
     
     *newreq = request;
     return(0);
