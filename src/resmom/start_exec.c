@@ -118,6 +118,7 @@
 #include "mcom.h"
 #include "resource.h"
 #include "utils.h"
+#include "../lib/Libattr/attr_fn_tv.h"
 #include "mom_comm.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 
@@ -5922,7 +5923,9 @@ void start_exec(
 #endif /* ndef NUMA_SUPPORT */
 
   char                tmpdir[MAXPATHLEN];
-
+  struct timeval  tv;
+  struct timeval *tv_attr;
+  struct timeval  result;
 
   /* Step 1.0 Generate Cookie */
   if (generate_cookie(pjob) != PBSE_NONE)
@@ -6152,7 +6155,26 @@ void start_exec(
         }
       }     /* END for (i) */
 
+    /* We made it to here. That means all of the sisters responded and we
+       can now start the job */
+    if (LOGLEVEL >= 6)
+      {
+      if (gettimeofday(&tv, &tz) == 0)
+        {
+        tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
+        timeval_subtract(&result, &tv, tv_attr);
+        sprintf(log_buffer, "%s: total wire-up time for job %ld.%ld", 
+          id,
+          result.tv_sec, 
+          result.tv_usec);
+
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+        } 
+      }
+    
     free_attrlist(&phead);
+    exec_job_on_ms(pjob);
+
     }   /* END if (nodenum > 1) */
   else
 #endif /* ndef NUMA_SUPPORT */

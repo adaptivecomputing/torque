@@ -1893,7 +1893,7 @@ int mom_get_sample(void)
       {
       proc_stat_t *hold;
 
-      if (LOGLEVEL >= 8)
+      if (LOGLEVEL >= 9)
         {
         log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id, "alloc more proc_array");
         }
@@ -3296,7 +3296,7 @@ char *sessions(
 
       sid = ptask->ti_qs.ti_sid;
 
-      if (LOGLEVEL >= 7)
+      if (LOGLEVEL >= 9)
         {
         sprintf(log_buffer, "%s[%d]: job %s on %s? sid %d",
           id,
@@ -3330,7 +3330,7 @@ char *sessions(
     if ((sid = ps->session) == 0)
       continue;
 
-    if (LOGLEVEL >= 7)
+    if (LOGLEVEL >= 9)
       {
       sprintf(log_buffer, "%s[%d]: pid %d sid %d", id, nsids, ps->pid, sid);
       log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
@@ -3592,7 +3592,7 @@ char *nusers(
 
     uid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
 
-    if (LOGLEVEL >= 7)
+    if (LOGLEVEL >= 9)
       {
       sprintf(log_buffer, "%s[%d]: job %s on %s? uid %d",
         id,
@@ -3613,7 +3613,7 @@ char *nusers(
     if ((uid = ps->uid) == 0)
       continue;
 
-    if (LOGLEVEL >= 7)
+    if (LOGLEVEL >= 9)
       {
       sprintf(log_buffer, "%s[%d]: pid %d uid %d",
               id,

@@ -943,9 +943,10 @@ int send_sisters(
     ret = im_compose(stream,pjob->ji_qs.ji_jobid,cookie,com,ep->ee_event,TM_NULL_TASK);
 
     if (ret == DIS_SUCCESS)
+      {
       ret = DIS_tcp_wflush(stream);
-
-    read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, com, &exit_status);
+      read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, com, &exit_status);
+      }
 
     close(stream);
 
@@ -2565,10 +2566,13 @@ int im_join_job_as_sister(
   append_link(&svr_alljobs, &pjob->ji_alljobs, pjob);
   
   /* establish a connection and write the reply back */
-  if ((reply_to_join_job_as_sister(pjob, addr, cookie, event, fromtask, job_radix)) == DIS_SUCCESS)
-    ret = IM_DONE;
-  else
-    ret = IM_FAILURE;
+  if(job_radix)
+    {
+    if ((reply_to_join_job_as_sister(pjob, addr, cookie, event, fromtask, job_radix)) == DIS_SUCCESS)
+      ret = IM_DONE;
+    else
+      ret = IM_FAILURE;
+    }
 
   return(ret);
   } /* END im_join_job_as_sister() */
@@ -5488,7 +5492,7 @@ void im_request(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
       }
       
-    goto done;
+    goto err;
     }
  
   /* check cookie */
@@ -5507,7 +5511,7 @@ void im_request(
 
     send_im_error(PBSE_BADSTATE,reply,pjob,cookie,event,fromtask);
  
-    goto done;
+    goto err;
     }
  
   oreo = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
@@ -5561,6 +5565,7 @@ void im_request(
       
       log_err(-1, id, log_buffer);
  
+      write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_UNKREQ);
       goto err;
       }
  
@@ -5583,6 +5588,7 @@ void im_request(
  
       log_err(-1, id, log_buffer);
  
+      write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_UNKREQ);
       goto err;
       }
  
@@ -5624,6 +5630,9 @@ void im_request(
       
       reply = 0;                        
       
+      write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB_RADIX, PBSE_NONE);
+      close_conn(stream, FALSE);
+      close_stream = FALSE;
       im_kill_job_as_sister(stream,pjob,event,momport,TRUE);
       goto fini;
       

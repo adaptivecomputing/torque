@@ -127,9 +127,9 @@ int PBSD_rdytocmt(
     return(PBSE_PROTOCOL);
     }
 
+  pthread_mutex_unlock(connection[connect].ch_mutex);
   if (DIS_tcp_wflush(sock))
     {
-    pthread_mutex_unlock(connection[connect].ch_mutex);
   
     return(PBSE_PROTOCOL);
     }
@@ -139,8 +139,6 @@ int PBSD_rdytocmt(
   reply = PBSD_rdrpy(&rc, connect);
 
   PBSD_FreeReply(reply);
-
-  pthread_mutex_unlock(connection[connect].ch_mutex);
 
   return(rc);
   }
