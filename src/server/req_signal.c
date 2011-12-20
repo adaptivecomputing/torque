@@ -211,7 +211,7 @@ void req_signaljob(
     }
   /* The dup_req is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  else if ((rc = relay_to_mom(pjob, dup_req, post_signal_req)) != 0)
+  else if ((rc = relay_to_mom(&pjob, dup_req, post_signal_req)) != 0)
     {
     req_reject(rc, 0, preq, NULL, NULL);  /* unable to get to MOM */
     }
@@ -220,10 +220,7 @@ void req_signaljob(
     free_br(preq);
     }
 
-  /* After MOM acks and replies to us, we pick up in post_signal_req() */
-
-
-  /* SUCCESS */
+  /* If successful we ack after mom replies to us, we pick up in post_signal_req() */
   pthread_mutex_unlock(pjob->ji_mutex);
 
   return;
@@ -266,7 +263,7 @@ int issue_signal(
 
   /* The newreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  rc = relay_to_mom(pjob, newreq, func);
+  rc = relay_to_mom(&pjob, newreq, func);
 
   return(rc);
   }  /* END issue_signal() */

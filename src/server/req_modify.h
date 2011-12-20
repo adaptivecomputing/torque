@@ -16,7 +16,7 @@ void chkpt_xfr_hold(struct work_task *ptask);
 
 void chkpt_xfr_done(struct work_task *ptask);
 
-int modify_job(void *j, svrattrl *plist, struct batch_request *preq, int checkpoint_req, int flag);
+int modify_job(void **j, svrattrl *plist, struct batch_request *preq, int checkpoint_req, int flag);
 
 int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
 

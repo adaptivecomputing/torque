@@ -433,7 +433,7 @@ extern void req_returnfiles (struct batch_request *req);
 #endif
 
 #ifdef SERVER_LIMITS_H
-int relay_to_mom (job *, struct batch_request *, void (*func)());
+int relay_to_mom (job **, struct batch_request *, void (*func)());
 #endif  /* SERVER_LIMITS_H */
 
 /* PBS Batch Request Decode/Encode routines */

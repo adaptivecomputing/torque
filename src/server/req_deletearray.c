@@ -29,7 +29,7 @@ extern void job_purge(job *pjob);
 
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int has_job_delete_nanny(struct job *);
-extern void remove_stagein(job *pjob);
+extern void remove_stagein(job **pjob);
 extern void change_restart_comment_if_needed(struct job *);
 
 extern char *msg_unkarrayid;
@@ -93,13 +93,16 @@ int attempt_delete(
       
       /* need to issue a signal to the mom, but we don't want to sent an ack to the
        * client when the mom replies */
-      issue_signal(pjob, "SIGTERM", post_delete, NULL);
+      issue_signal(&pjob, "SIGTERM", post_delete, NULL);
       }
 
-    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
+    if (pjob != NULL)
       {
-      /* job has restart file at mom, change restart comment if failed */
-      change_restart_comment_if_needed(pjob);
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
+        {
+        /* job has restart file at mom, change restart comment if failed */
+        change_restart_comment_if_needed(pjob);
+        }
       }
     
     return(!skipped);
@@ -132,9 +135,10 @@ int attempt_delete(
     {
     /* job has staged-in file, should remove them */
     
-    remove_stagein(pjob);
+    remove_stagein(&pjob);
     
-    job_abt(&pjob, NULL);
+    if (pjob != NULL)
+      job_abt(&pjob, NULL);
 
     release_mutex = FALSE;
     }
@@ -423,12 +427,15 @@ void array_delete_wt(
         else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
           {
           /* job has staged-in file, should remove them */
-          remove_stagein(pjob);
+          remove_stagein(&pjob);
 
-          /* job_abt() calls job_purge which will try to lock the array again */
-          pthread_mutex_unlock(pa->ai_mutex);
-          job_abt(&pjob, NULL);
-          pthread_mutex_lock(pa->ai_mutex);
+          if (pjob != NULL)
+            {
+            /* job_abt() calls job_purge which will try to lock the array again */
+            pthread_mutex_unlock(pa->ai_mutex);
+            job_abt(&pjob, NULL);
+            pthread_mutex_lock(pa->ai_mutex);
+            }
           }
         else
           {

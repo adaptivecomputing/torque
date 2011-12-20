@@ -686,8 +686,6 @@ void *sync_node_jobs(
   void *vp)
 
   {
-  char                 *id = "sync_node_jobs";
-
   struct pbsnode       *np;
   char                 *raw_input = (char *)vp;
   char                 *node_id;
@@ -768,8 +766,7 @@ void *sync_node_jobs(
             {
             /* job is reported by mom but server has no record of job */
             sprintf(log_buf, "stray job %s found on %s", jobidstr, np->nd_name);
-            
-            log_err(-1, id, log_buf);
+            log_err(-1, __func__, log_buf);
             
             /* NOTE:  node is actively reporting so should not be deleted and
                np->nd_addrs[] should not be NULL */            
@@ -779,7 +776,7 @@ void *sync_node_jobs(
               {
               if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
                 {
-                log_err(-1, id, "unable to allocate DeleteJob request-trouble!");
+                log_err(-1, __func__, "unable to allocate DeleteJob request-trouble!");
                 
                 svr_disconnect(conn);
                 }
@@ -804,7 +801,8 @@ void *sync_node_jobs(
       jobidstr = threadsafe_tokenizer(&joblist, " ");
       }  /* END while ((jobidstr != NULL) && ...) */
     
-    unlock_node(np, id, "done syncing node jobs", LOGLEVEL);
+    if (np != NULL)
+      unlock_node(np, __func__, "done syncing node jobs", LOGLEVEL);
     } /* end if np != NULL */
 
   /* SUCCESS */

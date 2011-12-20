@@ -120,7 +120,7 @@
 
 /* External Functions Called: */
 
-extern int   send_job_work(job *,char *,int,int *,struct batch_request *);
+extern int   send_job_work(job **,char *,int,int *,struct batch_request *);
 extern void  set_resc_assigned(job *, enum batch_op);
 
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
@@ -136,8 +136,8 @@ int  svr_startjob(job *, struct batch_request **, char *, char *);
 
 /* Private Functions local to this file */
 
-static int  svr_stagein(job *, struct batch_request **, int, int);
-static int  svr_strtjob2(job *, struct batch_request *);
+static int  svr_stagein(job **, struct batch_request **, int, int);
+static int  svr_strtjob2(job **, struct batch_request *);
 static job *chk_job_torun(struct batch_request *, int);
 static int  assign_hosts(job *, char *, int, char *, char *);
 
@@ -408,10 +408,11 @@ static void post_checkpointsend(
       
       /* continue to start job running */
 
-      svr_strtjob2(pjob, NULL);
+      svr_strtjob2(&pjob, NULL);
       }
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    if (pjob != NULL)
+      pthread_mutex_unlock(pjob->ji_mutex);
     }    /* END if (pjob != NULL) */
 
   release_req(pwt); /* close connection and release request */
@@ -428,7 +429,7 @@ static void post_checkpointsend(
 
 static int svr_send_checkpoint(
 
-  job                   *pjob,     /* I */
+  job                  **pjob_ptr, /* I */
   struct batch_request **preq,     /* I */
   int                    state,    /* I */
   int                    substate) /* I */
@@ -436,15 +437,16 @@ static int svr_send_checkpoint(
   {
 
   struct batch_request *momreq = 0;
-  int        rc;
-  char *tmp_jobid = NULL;
+  int                   rc;
+  char                 *tmp_jobid = NULL;
+  job                  *pjob = *pjob_ptr;
 
   momreq = cpy_checkpoint(momreq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN);
 
   if (momreq == NULL)
     {
     /* no files to send, go directly to sending job to mom */
-    rc = svr_strtjob2(pjob, *preq);
+    rc = svr_strtjob2(&pjob, *preq);
 
     *preq = NULL;
 
@@ -463,9 +465,10 @@ static int svr_send_checkpoint(
 
   /* The momreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  if ((rc = relay_to_mom(pjob, momreq, post_checkpointsend)) == 0)
+  if ((rc = relay_to_mom(&pjob, momreq, post_checkpointsend)) == 0)
     {
-    svr_setjobstate(pjob, state, substate, FALSE);
+    if (pjob != NULL)
+      svr_setjobstate(pjob, state, substate, FALSE);
 
     /*
      * checkpoint copy started ok - reply to client as copy may
@@ -528,7 +531,7 @@ void *req_stagein(
     }
 
   if ((rc = svr_stagein(
-              pjob,
+              &pjob,
               &preq,
               JOB_STATE_QUEUED,
               JOB_SUBSTATE_STAGEIN)))
@@ -617,7 +620,7 @@ static void post_stagein(
           {
           /* need to copy checkpoint file to mom before running */
           svr_send_checkpoint(
-              pjob,
+              &pjob,
               &preq,
               JOB_STATE_RUNNING,
               JOB_SUBSTATE_CHKPTGO);
@@ -626,7 +629,7 @@ static void post_stagein(
           {
           /* continue to start job running */
 
-          svr_strtjob2(pjob, NULL);
+          svr_strtjob2(&pjob, NULL);
           }
         }
       else
@@ -637,7 +640,8 @@ static void post_stagein(
         }
       }
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    if (pjob != NULL)
+      pthread_mutex_unlock(pjob->ji_mutex);
     }    /* END if (pjob != NULL) */
 
   release_req(pwt); /* close connection and release request */
@@ -655,23 +659,23 @@ static void post_stagein(
 
 static int svr_stagein(
 
-  job                   *pjob,     /* I */
+  job                  **pjob_ptr, /* I */
   struct batch_request **preq,     /* I */
   int                    state,    /* I */
   int                    substate) /* I */
 
   {
-
+  job                  *pjob = *pjob_ptr;
   struct batch_request *momreq = 0;
-  int        rc;
-  char *tmp_jobid = NULL;
+  int                   rc;
+  char                 *tmp_jobid = NULL;
 
   momreq = cpy_stage(momreq, pjob, JOB_ATR_stagein, STAGE_DIR_IN);
 
   if (momreq == NULL)
     {
     /* no files to stage, go directly to sending job to mom */
-    rc = svr_strtjob2(pjob, *preq);
+    rc = svr_strtjob2(&pjob, *preq);
 
     *preq = NULL;
 
@@ -692,9 +696,10 @@ static int svr_stagein(
 
   /* The momreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  if ((rc = relay_to_mom(pjob, momreq, post_stagein)) == 0)
+  if ((rc = relay_to_mom(&pjob, momreq, post_stagein)) == 0)
     {
-    svr_setjobstate(pjob, state, substate, FALSE);
+    if (pjob != NULL)
+      svr_setjobstate(pjob, state, substate, FALSE);
 
     /*
      * stage-in started ok - reply to client as copy may
@@ -981,7 +986,7 @@ int svr_startjob(
     /* yes, we do that first; then start the job */
 
     rc = svr_stagein(
-           pjob,
+           &pjob,
            preq,
            JOB_STATE_RUNNING,
            JOB_SUBSTATE_STAGEGO);
@@ -993,7 +998,7 @@ int svr_startjob(
     /* Checkpoint file copy needed, start copy */
 
     rc = svr_send_checkpoint(
-           pjob,
+           &pjob,
            preq,
            JOB_STATE_RUNNING,
            JOB_SUBSTATE_CHKPTGO);
@@ -1002,7 +1007,7 @@ int svr_startjob(
     {
     /* No stage-in or already done, start job executing */
 
-    rc = svr_strtjob2(pjob, *preq);
+    rc = svr_strtjob2(&pjob, *preq);
 
     *preq = NULL;
     }
@@ -1025,19 +1030,20 @@ int svr_startjob(
 
 static int svr_strtjob2(
 
-  job                  *pjob,  /* I */
-  struct batch_request *preq)  /* I (modified - report status) */
+  job                  **pjob_ptr, /* I */
+  struct batch_request  *preq)     /* I (modified - report status) */
 
   {
   extern char *PAddrToString(pbs_net_t *);
 
-  int old_state;
-  int old_subst;
-  int my_err;
-  attribute *pattr;
-  char tmpLine[1024];
-  struct timeval start_time;
-  struct timezone tz;
+  job             *pjob = *pjob_ptr;
+  int              old_state;
+  int              old_subst;
+  int              my_err;
+  attribute       *pattr;
+  char             tmpLine[MAXLINE];
+  struct timeval   start_time;
+  struct timezone  tz;
 
   old_state = pjob->ji_qs.ji_state;
   old_subst = pjob->ji_qs.ji_substate;
@@ -1070,21 +1076,21 @@ static int svr_strtjob2(
 
   /* if job start timeout attribute is set use its value */
   
-  if (((server.sv_attr[SRV_ATR_JobStartTimeout].at_flags & ATR_VFLAG_SET) != 0)
-          && (server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long > 0))
+  if (((server.sv_attr[SRV_ATR_JobStartTimeout].at_flags & ATR_VFLAG_SET) != 0) &&
+      (server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long > 0))
     {
     DIS_tcp_settimeout(server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long);
     }
 
   /* if job start timeout attribute is set use its value */
   
-  if (((server.sv_attr[SRV_ATR_JobStartTimeout].at_flags & ATR_VFLAG_SET) != 0)
-          && (server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long > 0))
+  if (((server.sv_attr[SRV_ATR_JobStartTimeout].at_flags & ATR_VFLAG_SET) != 0) &&
+      (server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long > 0))
     {
     DIS_tcp_settimeout(server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long);
     }
 
-  if (send_job_work(pjob,NULL,MOVE_TYPE_Exec,&my_err,preq) == PBSE_NONE)
+  if (send_job_work(pjob_ptr, NULL, MOVE_TYPE_Exec, &my_err, preq) == PBSE_NONE)
     {
     /* SUCCESS */
     DIS_tcp_settimeout(server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long);
@@ -1094,15 +1100,17 @@ static int svr_strtjob2(
   else
     {
     DIS_tcp_settimeout(server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long);
-    
-    sprintf(tmpLine, "unable to run job, send to MOM '%s' failed",
-      PAddrToString(&pjob->ji_qs.ji_un.ji_exect.ji_momaddr));
-    
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,tmpLine);
-    
-    pjob->ji_qs.ji_destin[0] = '\0';
-    
-    svr_setjobstate(pjob, old_state, old_subst, FALSE);
+
+    if (*pjob_ptr != NULL)
+      {
+      sprintf(tmpLine, "unable to run job, send to MOM '%s' failed",
+        PAddrToString(&pjob->ji_qs.ji_un.ji_exect.ji_momaddr));
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,tmpLine);
+      
+      pjob->ji_qs.ji_destin[0] = '\0';
+      
+      svr_setjobstate(pjob, old_state, old_subst, FALSE);
+      }
     
     return(my_err);
     }

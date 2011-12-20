@@ -146,25 +146,27 @@ int issue_to_svr(char *, struct batch_request *, void (*f)(struct work_task *));
 
 int relay_to_mom(
 
-  job *pjob,
-  struct batch_request  *request, /* the request to send */
-  void (*func)(struct work_task *))
+  job                   **pjob_ptr,
+  struct batch_request   *request, /* the request to send */
+  void                  (*func)(struct work_task *))
 
   {
-  static char    *id = "relay_to_mom";
-
   int             conn; /* a client style connection handle */
   int             rc;
   int             local_errno = 0;
   pbs_net_t       addr;
+  unsigned short  port;
+  job            *pjob = *pjob_ptr;
+  char            jobid[PBS_MAXSVRJOBID + 1];
 
   struct pbsnode *node;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* if MOM is down don't try to connect */
   addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
+  port = pjob->ji_qs.ji_un.ji_exect.ji_momport;
 
-  if ((node = tfind_addr(addr,pjob->ji_qs.ji_un.ji_exect.ji_momport,pjob)) == NULL)
+  if ((node = tfind_addr(addr, port, pjob)) == NULL)
     {
     free_br(request);
     return(PBSE_NORELYMOM);
@@ -173,7 +175,7 @@ int relay_to_mom(
   if ((node != NULL) &&
       (node->nd_state & INUSE_DOWN))
     {
-    unlock_node(node, id, "no rely mom", LOGLEVEL);
+    unlock_node(node, __func__, "no rely mom", LOGLEVEL);
     free_br(request);
     return(PBSE_NORELYMOM);
     }
@@ -183,7 +185,7 @@ int relay_to_mom(
     char *tmp = netaddr_pbs_net_t(pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
     sprintf(log_buf, "momaddr=%s",tmp);
 
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
     free(tmp);
     }
@@ -196,7 +198,7 @@ int relay_to_mom(
            process_Dreply,
            ToServerDIS);
     
-  unlock_node(node, id, "after svr_connect", LOGLEVEL);
+  unlock_node(node, __func__, "after svr_connect", LOGLEVEL);
 
   if (conn < 0)
     {
@@ -206,9 +208,14 @@ int relay_to_mom(
     return(PBSE_NORELYMOM);
     }
 
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
+  pthread_mutex_unlock(pjob->ji_mutex);
+
   request->rq_orgconn = request->rq_conn; /* save client socket */
 
   rc = issue_Drequest(conn, request, func, NULL);
+
+  *pjob_ptr = find_job(jobid);
 
   return(rc);
   }  /* END relay_to_mom() */

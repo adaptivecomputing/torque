@@ -6,7 +6,7 @@
 #include "batch_request.h" /* batch_request */
 #include "work_task.h" /* work_task */
 
-int relay_to_mom(job *pjob, struct batch_request *request, void (*func)(struct work_task *));
+int relay_to_mom(job **pjob_ptr, struct batch_request *request, void (*func)(struct work_task *));
 
 /* static void reissue_to_svr(struct work_task *pwt); */
 

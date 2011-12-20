@@ -27,7 +27,7 @@ void job_clone_wt(struct work_task *ptask);
 
 struct batch_request *cpy_checkpoint(struct batch_request *preq, job *pjob, enum job_atr ati, int direction);
 
-void remove_checkpoint(job *pjob);
+void remove_checkpoint(job **pjob);
 
 void cleanup_restart_file(job *pjob);
 

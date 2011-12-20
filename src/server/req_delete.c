@@ -165,12 +165,13 @@ void chk_job_req_permissions(job **,struct batch_request *);
 
 void remove_stagein(
 
-  job *pjob)  /* I */
+  job **pjob_ptr)  /* I */
 
   {
 
   struct batch_request *preq = 0;
-  u_long addr;
+  job                  *pjob = *pjob_ptr;
+  u_long                addr;
 
   preq = cpy_stage(preq, pjob, JOB_ATR_stagein, 0);
 
@@ -190,9 +191,10 @@ void remove_stagein(
 
     /* The preq is freed in relay_to_mom (failure)
      * or in issue_Drequest (success) */
-    if (relay_to_mom(pjob, preq, release_req) == 0)
+    if (relay_to_mom(&pjob, preq, release_req) == 0)
       {
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
+      if (pjob != NULL)
+        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
       }
     else
       {
@@ -428,7 +430,7 @@ jump:
      * pick up and "finish" off the client request when MOM replies.
      */
 
-    if ((rc = issue_signal(pjob, sigt, post_delete_mom1, preq)))
+    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1, preq)))
       {
       /* cant send to MOM */
 
@@ -436,12 +438,13 @@ jump:
       }
 
     /* normally will ack reply when mom responds */
-
-    sprintf(log_buf, msg_delrunjobsig, sigt);
-
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
-
-    pthread_mutex_unlock(pjob->ji_mutex);
+    if (pjob != NULL)
+      {
+      sprintf(log_buf, msg_delrunjobsig, sigt);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+  
+      pthread_mutex_unlock(pjob->ji_mutex);
+      }
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
@@ -546,9 +549,10 @@ jump:
     {
     /* job has staged-in file, should remove them */
 
-    remove_stagein(pjob);
+    remove_stagein(&pjob);
 
-    job_abt(&pjob, Msg);
+    if (pjob != NULL)
+      job_abt(&pjob, Msg);
 
     has_mutex = FALSE;
     }
@@ -1046,14 +1050,17 @@ static void post_delete_mom2(
     {
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
-      issue_signal(pjob, sigk, release_req, 0);
+      issue_signal(&pjob, sigk, release_req, 0);
       
-      sprintf(log_buf, msg_delrunjobsig, sigk);
-      
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      if (pjob != NULL)
+        {
+        sprintf(log_buf, msg_delrunjobsig, sigk);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+        }
       }
     
-    pthread_mutex_unlock(pjob->ji_mutex);
+    if (pjob != NULL)
+      pthread_mutex_unlock(pjob->ji_mutex);
     }
   }  /* END post_delete_mom2() */
 
@@ -1220,11 +1227,14 @@ static void job_delete_nanny(
           snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", sigk);
           }
         
-        issue_signal(pjob, sigk, post_job_delete_nanny, newreq);
+        issue_signal(&pjob, sigk, post_job_delete_nanny, newreq);
         
-        apply_job_delete_nanny(pjob, time_now + 60);
-        
-        pthread_mutex_unlock(pjob->ji_mutex);
+        if (pjob != NULL)
+          {
+          apply_job_delete_nanny(pjob, time_now + 60);
+  
+          pthread_mutex_unlock(pjob->ji_mutex);
+          }
         }
       }
     else

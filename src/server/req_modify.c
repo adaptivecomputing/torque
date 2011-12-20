@@ -273,20 +273,24 @@ void mom_cleanup_checkpoint_hold(
       strcpy(preq->rq_ind.rq_delete.rq_objname, pjob->ji_qs.ji_jobid);
       /* The preq is freed in relay_to_mom (failure)
        * or in issue_Drequest (success) */
-      if ((rc = relay_to_mom(pjob, preq, release_req)) != 0)
+      if ((rc = relay_to_mom(&pjob, preq, release_req)) != 0)
         {
-        snprintf(log_buf,sizeof(log_buf),
-          "Unable to relay information to mom for job '%s'\n",
-          pjob->ji_qs.ji_jobid);
-
-        log_err(rc,id,log_buf);
-
-        pthread_mutex_unlock(pjob->ji_mutex);
+        if (pjob != NULL)
+          {
+          snprintf(log_buf,sizeof(log_buf),
+            "Unable to relay information to mom for job '%s'\n",
+            pjob->ji_qs.ji_jobid);
+          
+          log_err(rc,id,log_buf);
+          
+          pthread_mutex_unlock(pjob->ji_mutex);
+          }
 
         return;
         }
 
-      if (LOGLEVEL >= 7)
+      if ((LOGLEVEL >= 7) &&
+          (pjob != NULL))
         {
         log_event(
           PBSEVENT_JOB,
@@ -301,7 +305,8 @@ void mom_cleanup_checkpoint_hold(
     set_task(WORK_Timed, time_now + 1, mom_cleanup_checkpoint_hold, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
 
-  pthread_mutex_unlock(pjob->ji_mutex);
+  if (pjob != NULL)
+    pthread_mutex_unlock(pjob->ji_mutex);
   } /* END mom_cleanup_checkpoint_hold() */
 
 
@@ -389,11 +394,11 @@ void chkpt_xfr_done(
 
 int modify_job(
 
-  void      *j,               /* O */
-  svrattrl  *plist,           /* I */
-  struct batch_request *preq, /* I */
-  int        checkpoint_req,  /* I */
-  int        flag)            /* I */
+  void                 **j,               /* O */
+  svrattrl              *plist,           /* I */
+  struct batch_request  *preq,            /* I */
+  int                    checkpoint_req,  /* I */
+  int                    flag)            /* I */
 
   {
   int   bad = 0;
@@ -405,7 +410,6 @@ int modify_job(
   int   sendmom = 0;
   int   copy_checkpoint_files = FALSE;
 
-  char *id = "modify_job";
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   struct batch_request *dup_req = NULL;
 
@@ -420,7 +424,7 @@ int modify_job(
       "Cannot modify job '%s' in transit\n",
       pjob->ji_qs.ji_jobid);
 
-    log_err(PBSE_BADSTATE,id,log_buf);
+    log_err(PBSE_BADSTATE, __func__, log_buf);
 
     return(PBSE_BADSTATE);
     }
@@ -484,7 +488,7 @@ int modify_job(
         snprintf(log_buf,sizeof(log_buf),
           "Cannot modify attribute '%s' while running\n",
           plist->al_name);
-        log_err(PBSE_MODATRRUN,id,log_buf);
+        log_err(PBSE_MODATRRUN, __func__, log_buf);
 
         return PBSE_MODATRRUN;
         }
@@ -505,7 +509,7 @@ int modify_job(
             "Unknown attribute '%s'\n",
             plist->al_name);
 
-          log_err(PBSE_UNKRESC,id,log_buf);
+          log_err(PBSE_UNKRESC, __func__, log_buf);
 
           return(PBSE_UNKRESC);
           }
@@ -516,7 +520,7 @@ int modify_job(
           snprintf(log_buf,sizeof(log_buf),
             "Cannot modify attribute '%s' while running\n",
             plist->al_name);
-          log_err(PBSE_MODATRRUN,id,log_buf);
+          log_err(PBSE_MODATRRUN, __func__, log_buf);
 
           return(PBSE_MODATRRUN);
           }
@@ -548,7 +552,7 @@ int modify_job(
     snprintf(log_buf,sizeof(log_buf),
       "Cannot set attributes for job '%s'\n",
       pjob->ji_qs.ji_jobid);
-    log_err(rc,id,log_buf);
+    log_err(rc, __func__, log_buf);
 
     return(rc);
     }
@@ -588,14 +592,17 @@ int modify_job(
         }
       /* The dup_req is freed in relay_to_mom (failure)
        * or in issue_Drequest (success) */
-      else if ((rc = relay_to_mom(pjob, dup_req, post_modify_req)))
-        {  
-        snprintf(log_buf,sizeof(log_buf),
-          "Unable to relay information to mom for job '%s'\n",
-          pjob->ji_qs.ji_jobid);
+      else if ((rc = relay_to_mom(&pjob, dup_req, post_modify_req)))
+        {
+        if (pjob != NULL)
+          {
+          snprintf(log_buf,sizeof(log_buf),
+            "Unable to relay information to mom for job '%s'\n",
+            pjob->ji_qs.ji_jobid);
+          
+          log_err(rc, __func__, log_buf);
+          }
 
-        log_err(rc,id,log_buf);
-  
         return(rc); /* unable to get to MOM */
         }
       }
@@ -618,32 +625,37 @@ int modify_job(
        * or in issue_Drequest (success) */
       if (checkpoint_req == CHK_HOLD)
         {
-        rc = relay_to_mom(pjob, momreq, chkpt_xfr_hold);
+        rc = relay_to_mom(&pjob, momreq, chkpt_xfr_hold);
         }
       else
         {
-        rc = relay_to_mom(pjob, momreq, chkpt_xfr_done);
+        rc = relay_to_mom(&pjob, momreq, chkpt_xfr_done);
         }
 
       if (rc != 0)
         {
-        snprintf(log_buf,sizeof(log_buf),
-          "Unable to relay information to mom for job '%s'\n",
-          pjob->ji_qs.ji_jobid);
+        if (pjob != NULL)
+          {
+          snprintf(log_buf,sizeof(log_buf),
+            "Unable to relay information to mom for job '%s'\n",
+            pjob->ji_qs.ji_jobid);
+          
+          log_err(rc, __func__, log_buf);
+          }
 
-        log_err(rc,id,log_buf);
-
-        return(0);  /* come back when mom replies */
+        return(PBSE_NONE);  /* come back when mom replies */
         }
       }
     else
       {
-      log_err(-1,id, "Failed to get batch request");
+      log_err(-1, __func__, "Failed to get batch request");
       }
     }
 
-  return(0);
+  return(PBSE_NONE);
   } /* END modify_job() */
+
+
 
 
 int copy_batchrequest(
@@ -831,7 +843,7 @@ int modify_whole_array(
     else
       {
       /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
-      rc = modify_job(pjob,plist,preq,checkpoint_req, NO_MOM_RELAY);
+      rc = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
 
       if (rc == PBSE_RELAYED_TO_MOM)
         {
@@ -853,17 +865,23 @@ int modify_whole_array(
         mom_relay++;
         /* The array_req is freed in relay_to_mom (failure)
          * or in issue_Drequest (success) */
-        if ((rc = relay_to_mom(pjob, array_req, post_modify_arrayreq)))
-          {  
-          snprintf(log_buf,sizeof(log_buf),
-            "Unable to relay information to mom for job '%s'\n",
-            pjob->ji_qs.ji_jobid);
-          log_err(rc,id,log_buf);
-          pthread_mutex_unlock(pjob->ji_mutex);
+        if ((rc = relay_to_mom(&pjob, array_req, post_modify_arrayreq)))
+          {
+          if (pjob != NULL)
+            {
+            snprintf(log_buf,sizeof(log_buf),
+              "Unable to relay information to mom for job '%s'\n",
+              pjob->ji_qs.ji_jobid);
+            log_err(rc,id,log_buf);
+            pthread_mutex_unlock(pjob->ji_mutex);
+            }
+
           return(rc); /* unable to get to MOM */
           }
         }
-      pthread_mutex_unlock(pjob->ji_mutex);
+
+      if (pjob != NULL)
+        pthread_mutex_unlock(pjob->ji_mutex);
       }
     } /* END foreach job in array */
 
@@ -1014,7 +1032,7 @@ void *req_modifyarray(
 
     /* we modified the job array. We now need to update the job */
     pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
-    rc2 = modify_job(pjob,plist,preq,checkpoint_req, NO_MOM_RELAY);
+    rc2 = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
 
     if ((rc2) && 
         (rc != PBSE_RELAYED_TO_MOM))
@@ -1025,7 +1043,7 @@ void *req_modifyarray(
          so some elements fo the array will be updated but others are
          not. But at least the user will know something went wrong.*/
       pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >= 7)
+      if (LOGLEVEL >= 7)
         {
         sprintf(log_buf, "%s: unlocked ai_mutex", id);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
@@ -1131,7 +1149,7 @@ void *req_modifyjob(
       }
     }
 
-  if ((rc = modify_job(pjob,plist,preq,checkpoint_req, 0)) != 0)
+  if ((rc = modify_job((void **)&pjob, plist, preq, checkpoint_req, 0)) != 0)
     {
     if ((rc == PBSE_MODATRRUN) ||
         (rc == PBSE_UNKRESC))

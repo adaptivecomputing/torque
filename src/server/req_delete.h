@@ -6,7 +6,7 @@
 #include "work_task.h" /* work_task */
 #include "batch_request.h" /* batch_request */
 
-void remove_stagein(job *pjob);
+void remove_stagein(job **pjob);
 
 void ensure_deleted(struct work_task *ptask);
 

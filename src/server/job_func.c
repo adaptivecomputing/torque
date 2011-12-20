@@ -444,45 +444,47 @@ int job_abt(
     {
     svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_ABORT, FALSE);
 
-    if ((rc = issue_signal(pjob, "SIGKILL", release_req, 0)) != 0)
+    if ((rc = issue_signal(&pjob, "SIGKILL", release_req, 0)) != 0)
       {
-      sprintf(log_buf, msg_abt_err, pjob->ji_qs.ji_jobid, old_substate);
-
-      log_err(-1, myid, log_buf);
-
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+      if (pjob != NULL)
         {
-        /* notify creator that job is exited */
-
-        pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'E';
-
-        issue_track(pjob);
-        }
-
-      if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
-        {
-        depend_on_term(pjob);
-        }
-
-      /* update internal array bookeeping values */
-      if ((pjob->ji_arraystruct != NULL) &&
-          (pjob->ji_is_array_template == FALSE))
-        {
-        job_array *pa = get_jobs_array(pjob);
-
-        update_array_values(pa,pjob,old_state,aeTerminate);
-
-        pthread_mutex_unlock(pa->ai_mutex);
-        if (LOGLEVEL >= 7)
+        sprintf(log_buf, msg_abt_err, pjob->ji_qs.ji_jobid, old_substate);
+        
+        log_err(-1, myid, log_buf);
+        
+        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
           {
-          sprintf(log_buf, "unlocked ai_mutex: %s", myid);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+          /* notify creator that job is exited */
+          
+          pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'E';
+          
+          issue_track(pjob);
           }
+        
+        if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+          {
+          depend_on_term(pjob);
+          }
+        
+        /* update internal array bookeeping values */
+        if ((pjob->ji_arraystruct != NULL) &&
+            (pjob->ji_is_array_template == FALSE))
+          {
+          job_array *pa = get_jobs_array(pjob);
+          
+          update_array_values(pa,pjob,old_state,aeTerminate);
+          
+          if (LOGLEVEL >= 7)
+            {
+            sprintf(log_buf, "unlocked ai_mutex: %s", myid);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+            }
+          pthread_mutex_unlock(pa->ai_mutex);
+          }
+      
+        job_purge(pjob);
+        *pjobp = NULL;
         }
-
-      job_purge(pjob);
-
-      *pjobp = NULL;
       }
     }
   else if ((old_state == JOB_STATE_TRANSIT) &&
@@ -1160,9 +1162,9 @@ static void job_init_wattr(
 struct batch_request *cpy_checkpoint(
 
   struct batch_request *preq,
-  job       *pjob,
-  enum job_atr       ati,  /* JOB_ATR_checkpoint_name or JOB_ATR_restart_name */
-  int        direction)
+  job                  *pjob,
+  enum job_atr          ati,  /* JOB_ATR_checkpoint_name or JOB_ATR_restart_name */
+  int                   direction)
 
   {
   char        momfile[MAXPATHLEN+1];
@@ -1313,13 +1315,14 @@ struct batch_request *cpy_checkpoint(
 
 void remove_checkpoint(
 
-  job *pjob)  /* I */
+  job **pjob_ptr)  /* I */
 
   {
   static char          *id = "remove_checkpoint";
 
   struct batch_request *preq = NULL;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  job                  *pjob = *pjob_ptr;
 
   preq = cpy_checkpoint(preq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN);
 
@@ -1327,8 +1330,8 @@ void remove_checkpoint(
     {
     /* have files to delete  */
     sprintf(log_buf,"Removing checkpoint file (%s/%s)",
-      pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str,
-      pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
+      (*pjob_ptr)->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str,
+      (*pjob_ptr)->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
 
     log_ext(-1, id, log_buf, LOG_DEBUG);
 
@@ -1339,12 +1342,10 @@ void remove_checkpoint(
     preq->rq_extra = NULL;
     /* The preq is freed in relay_to_mom (failure)
      * or in issue_Drequest (success) */
-    if (relay_to_mom(
-          pjob,
-          preq,
-          release_req) == 0)
+    if (relay_to_mom(&pjob, preq, release_req) == 0)
       {
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_COPIED;
+      if (pjob != NULL)
+        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_COPIED;
       }
     else
       {

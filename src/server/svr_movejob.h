@@ -15,7 +15,7 @@ void finish_moving_processing(job *pjob, struct batch_request *req, int status);
 
 void finish_move_process(char *jobid, struct batch_request *preq, long time, char *node_name, int status, int type);
 
-int send_job_work(job *pjob, char *node_name, int type, struct batch_request *preq);
+int send_job_work(job **pjob, char *node_name, int type, struct batch_request *preq);
 
 void *send_job(void *vp);
 

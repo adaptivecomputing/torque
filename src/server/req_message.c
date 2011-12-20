@@ -149,14 +149,15 @@ void req_messagejob(
   /* pass the request on to MOM */
   /* The dup_req is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  else if ((rc = relay_to_mom(pjob, dup_req, post_message_req)) != 0)
+  else if ((rc = relay_to_mom(&pjob, dup_req, post_message_req)) != 0)
     req_reject(rc, 0, preq, NULL, NULL); /* unable to get to MOM */
   else
     free_br(preq);
 
   /* After MOM acts and replies to us, we pick up in post_message_req() */
 
-  pthread_mutex_unlock(pjob->ji_mutex);
+  if (pjob != NULL)
+    pthread_mutex_unlock(pjob->ji_mutex);
   } /* END req_messagejob() */
 
 /*

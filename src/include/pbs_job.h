@@ -1091,7 +1091,7 @@ extern void  set_chkpt_deflt(job *, pbs_queue *);
 #endif /* QUEUE_H */
 
 #ifdef WORK_TASK_H
-extern int   issue_signal(job *, char *, void(*)(struct work_task *), void *);
+extern int   issue_signal(job **, char *, void(*)(struct work_task *), void *);
 #endif /* WORK_TASK_H */
 
 #endif /* PBS_JOB_H */

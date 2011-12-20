@@ -127,8 +127,8 @@
 /* External functions called */
 
 extern void stat_mom_job(job *);
-extern void remove_stagein(job *);
-extern void remove_checkpoint(job *);
+extern void remove_stagein(job **);
+extern void remove_checkpoint(job **);
 extern int  job_route(job *);
 void finish_sendmom(job *,struct batch_request *,long,char *,int);
 int PBSD_commit_get_sid(int ,long *,char *);
@@ -352,12 +352,16 @@ void finish_routing_processing(
     case LOCUTION_SUCCESS:  /* normal return, job was routed */
 
       if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
-        remove_stagein(pjob);
+        remove_stagein(&pjob);
 
-      if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
-        remove_checkpoint(pjob);
+      if (pjob != NULL)
+        {
+        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
+          remove_checkpoint(&pjob);
 
-      job_purge(pjob); /* need to remove server job struct */
+        if (pjob != NULL)
+          job_purge(pjob); /* need to remove server job struct */
+        }
 
       break;
 
@@ -441,16 +445,20 @@ void finish_moving_processing(
 
       /* purge server's job structure */
       if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
-        remove_stagein(pjob);
+        remove_stagein(&pjob);
 
-      if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
-        remove_checkpoint(pjob);
+      if (pjob != NULL)
+        {
+        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
+          remove_checkpoint(&pjob);
+        }
 
       snprintf(log_buf, sizeof(log_buf), "%s", msg_movejob);
       snprintf(log_buf + strlen(log_buf), sizeof(log_buf) - strlen(log_buf), msg_manager,
         req->rq_ind.rq_move.rq_destin, req->rq_user, req->rq_host);
 
-      job_purge(pjob);
+      if (pjob != NULL)
+        job_purge(pjob);
     
       reply_ack(req);
 
@@ -555,11 +563,11 @@ void free_server_attrs(
 
 int send_job_work(
 
-  job                  *pjob,      /* M */
-  char                 *node_name, /* I */
-  int                   type,      /* I */
-  int                  *my_err,    /* O */
-  struct batch_request *preq)      /* M */
+  job                  **pjob_ptr,  /* M */
+  char                  *node_name, /* I */
+  int                    type,      /* I */
+  int                   *my_err,    /* O */
+  struct batch_request  *preq)      /* M */
 
   {
   static char          *id = "send_job_work";
@@ -571,7 +579,6 @@ int send_job_work(
   int                   i;
   int                   NumRetries;
   int                   resc_access_perm;
-  char                 *destin = pjob->ji_qs.ji_destin;
   char                  script_name[MAXPATHLEN + 1];
   char                 *pc;
   char                  jobid[PBS_MAXSVRJOBID + 1];
@@ -585,6 +592,8 @@ int send_job_work(
   unsigned char         change_substate_on_attempt_to_queue = FALSE;
   unsigned char         has_job_script = FALSE;
   unsigned char         job_has_run = FALSE;
+  job                  *pjob = *pjob_ptr;
+  char                 *destin = pjob->ji_qs.ji_destin;
 
   struct attropl       *pqjatr;      /* list (single) of attropl for quejob */
   attribute            *pattr;
@@ -756,6 +765,7 @@ int send_job_work(
           {
           finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
           free_server_attrs(&attrl);
+          *pjob_ptr = NULL;
           
           return(LOCUTION_FAIL);
           }
@@ -832,6 +842,7 @@ int send_job_work(
         {
         finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
         free_server_attrs(&attrl);
+        *pjob_ptr = NULL;
         
         return(LOCUTION_FAIL);
         }
@@ -911,6 +922,7 @@ int send_job_work(
         {
         finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
         free_server_attrs(&attrl);
+        *pjob_ptr = NULL;
 
         return(LOCUTION_FAIL);
         }
@@ -1022,10 +1034,11 @@ void *send_job(
       unlock_node(np, "send_job", NULL, LOGLEVEL);
       }
     
-    send_job_work(pjob,node_name,type,&local_errno,preq);
+    send_job_work(&pjob,node_name,type,&local_errno,preq);
 
     /* the other kinds unlock the mutex inside finish_move_process */
-    if (type == MOVE_TYPE_Exec)
+    if ((type == MOVE_TYPE_Exec) &&
+        (pjob != NULL))
       pthread_mutex_unlock(pjob->ji_mutex);
     }
 

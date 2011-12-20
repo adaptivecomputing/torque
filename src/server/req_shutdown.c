@@ -107,7 +107,7 @@
 
 /* Private Fuctions Local to this File */
 
-static int shutdown_checkpoint(job *);
+static int shutdown_checkpoint(job **);
 static void post_checkpoint(struct work_task *);
 static void rerun_or_kill(job *, char *text);
 
@@ -231,9 +231,10 @@ void svr_shutdown(
         {
         /* do checkpoint of job */
 
-        if (shutdown_checkpoint(pjob) == 0)
+        if (shutdown_checkpoint(&pjob) == 0)
           {
-          pthread_mutex_unlock(pjob->ji_mutex);
+          if (pjob != NULL)
+            pthread_mutex_unlock(pjob->ji_mutex);
 
           continue;
           }
@@ -324,10 +325,10 @@ void req_shutdown(
 
 static int shutdown_checkpoint(
 
-  job *pjob)
+  job **pjob_ptr)
 
   {
-
+  job                  *pjob = *pjob_ptr;
   struct batch_request *phold;
   attribute             temp;
 
@@ -363,29 +364,31 @@ static int shutdown_checkpoint(
 
   /* The phold is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  if (relay_to_mom(pjob, phold, post_checkpoint) != 0)
+  if (relay_to_mom(&pjob, phold, post_checkpoint) != 0)
     {
     /* FAILURE */
 
     return(-1);
     }
 
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
-
-  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
-
-  if (LOGLEVEL >= 1)
+  if (pjob != NULL)
     {
-    log_event(
-      PBSEVENT_SYSTEM | PBSEVENT_JOB | PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      "shutting down with active checkpointable job");
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
+    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
+    
+    if (LOGLEVEL >= 1)
+      {
+      log_event(
+        PBSEVENT_SYSTEM | PBSEVENT_JOB | PBSEVENT_DEBUG,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "shutting down with active checkpointable job");
+      }
+  
+    job_save(pjob, SAVEJOB_QUICK, 0);
     }
 
-  job_save(pjob, SAVEJOB_QUICK, 0);
-
-  return(0);
+  return(PBSE_NONE);
   }  /* END shutdown_checkpoint() */
 
 
@@ -461,11 +464,13 @@ static void rerun_or_kill(
     {
     /* job is rerunable, mark it to be requeued */
 
-    issue_signal(pjob, "SIGKILL", release_req, 0);
+    issue_signal(&pjob, "SIGKILL", release_req, 0);
 
-    pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
-
-    snprintf(log_buf, sizeof(log_buf), "%s%s%s", msg_init_queued, pjob->ji_qhdr->qu_qs.qu_name, text);
+    if (pjob != NULL)
+      {
+      pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
+      snprintf(log_buf, sizeof(log_buf), "%s%s%s", msg_init_queued, pjob->ji_qhdr->qu_qs.qu_name, text);
+      }
     }
   else if (server_state != SV_STATE_SHUTDEL)
     {
@@ -490,11 +495,14 @@ static void rerun_or_kill(
     snprintf(log_buf, sizeof(log_buf), "%s%s", msg_leftrunning, text);
     }
 
-  log_event(
-    PBSEVENT_SYSTEM | PBSEVENT_JOB | PBSEVENT_DEBUG,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    log_buf);
+  if (pjob != NULL)
+    {
+    log_event(
+      PBSEVENT_SYSTEM | PBSEVENT_JOB | PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buf);
+    }
 
   return;
   }  /* END rerun_or_kill() */
