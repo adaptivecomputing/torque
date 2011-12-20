@@ -675,7 +675,11 @@ int set_arst(
         need = pas->as_bufsize + 2 * nsize;  /* alloc new buf */
 
         if (pas->as_buf)
+          {
           pc = realloc(pas->as_buf, (size_t)need);
+          if (pc != NULL)
+            memset(pc + pas->as_bufsize, 0, need - pas->as_bufsize);
+          }
         else
           pc = calloc(1, (size_t)need);
 

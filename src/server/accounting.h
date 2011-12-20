@@ -18,6 +18,4 @@ void account_jobend(job *pjob, char *used);
 
 void acct_cleanup(long days_to_keep);
 
- int AdjustAcctBufSize(char **Buf, unsigned int *BufSize, int newStringLen, job *pjob);
-
 #endif /* _ACCOUNTING_H */

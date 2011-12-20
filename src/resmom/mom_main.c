@@ -870,9 +870,9 @@ static char *getjoblist(
 
     if ((int)strlen(list) >= listlen)
       {
+      int   new_list_len = listlen + BUFSIZ;
       char *tmpList;
 
-      listlen += BUFSIZ;
 
       tmpList = realloc(list,listlen);
 
@@ -887,7 +887,10 @@ static char *getjoblist(
         return(" ");
       	}
 
+      memset(tmpList + listlen, 0, new_list_len - listlen);
+
       list = tmpList;
+      listlen = new_list_len;
       }
 
     firstjob = 0;

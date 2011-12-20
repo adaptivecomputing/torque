@@ -125,7 +125,6 @@ extern int       LOGLEVEL;
 
 #define EXTRA_PAD 1000 /* Used to bad the account buffer string */
 
-int AdjustAcctBufSize(char **Buf, unsigned int *BufSiz, int newStringLen, job *pjob);
 
 
 /*
@@ -587,44 +586,6 @@ void acct_cleanup(
   }  /* END acct_cleanup() */
 
 
-/* AdjustAcctBufSize - Increase the size of the current size plus
-   newStringLen + EXTRA_PAD. Return newStringLen on success or 0 if the
-   realloc fails */
-int AdjustAcctBufSize(
-    
-  char         **Buf,
-  unsigned int  *BufSize,
-  int            newStringLen,
-  job           *pjob)
-  
-  {
-  /* I was going to update this to not use realloc
-   * but it doesn't look like it called anywhere
-   */
-  char *newBuf;
-
-  /* add 1000 so we don't have to realloc for the small strings */
-  newBuf = (char *)realloc(*Buf, *BufSize+newStringLen+EXTRA_PAD); 
-
-  if (newBuf == NULL)
-    {
-    char tmpLine[MAXLINE];
-    
-    sprintf(tmpLine, "account record for job %s too long and realloc failed. The job is not fully recorded.",
-      pjob->ji_qs.ji_jobid);
-    
-    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", tmpLine);
-    
-    return(0);
-    
-    }
-  
-  *BufSize += newStringLen+EXTRA_PAD;
-  
-  *Buf = newBuf;
-  
-  return(newStringLen);
-  }
 
 
 /* END accounting.c */
