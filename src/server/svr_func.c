@@ -219,63 +219,61 @@ void set_resc_assigned(
   resource_def *rscdef;
   attribute    *sysru;
   pbs_queue    *pque;
-  char         *id = "set_resc_assigned";
   char          log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if ((pjob == NULL) || (pjob->ji_qhdr == NULL))
-    {
-    /* job is corrupt */
-
+  if ((pjob == NULL))
     return;
-    }
-
-  if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
-    {
-    if (op == DECR)
-      {
-      /* if freeing completed job resources, ignore constraint (???) */
-
-      /* NO-OP */
-      }
-    }
-  else
-    {
-    snprintf(log_buf,sizeof(log_buf),
-      "job %s isn't in an execution queue, can't modify resources\njob is in queue %s",
-      pjob->ji_qs.ji_jobid,
-      pjob->ji_qhdr->qu_qs.qu_name);
-    log_err(-1,id,log_buf);
-
-    return;
-    }
-
-  if (op == INCR)
-    {
-    if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn)
-      {
-      return;  /* already added in */
-      }
-
-    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_RescAssn;
-    }
-  else if (op == DECR)
-    {
-    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn) == 0)
-      {
-      return;  /* not currently included */
-      }
-
-    pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_RescAssn;
-    }
-  else
-    {
-    return;   /* invalid op */
-    }
-
-  sysru = &server.sv_attr[SRV_ATR_resource_assn];
 
   if ((pque = get_jobs_queue(pjob)) != NULL)
     {
+    if (pque->qu_qs.qu_type == QTYPE_Execution)
+      {
+      if (op == DECR)
+        {
+        /* if freeing completed job resources, ignore constraint (???) */
+        /* NO-OP */
+        }
+      }
+    else
+      {
+      snprintf(log_buf,sizeof(log_buf),
+        "job %s isn't in an execution queue, can't modify resources\njob is in queue %s",
+        pjob->ji_qs.ji_jobid,
+        pque->qu_qs.qu_name);
+      log_err(-1, __func__, log_buf);
+    
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      return;
+      }
+  
+    if (op == INCR)
+      {
+      if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn)
+        {
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
+        return;  /* already added in */
+        }
+      
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_RescAssn;
+      }
+    else if (op == DECR)
+      {
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn) == 0)
+        {
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
+        return;  /* not currently included */
+        }
+      
+      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_RescAssn;
+      }
+    else
+      {
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      return;   /* invalid op */
+      }
+    
+    sysru = &server.sv_attr[SRV_ATR_resource_assn];
+
     queru = &pque->qu_attr[QE_ATR_ResourceAssn];
     jobrsc = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
 

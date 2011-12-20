@@ -2142,6 +2142,15 @@ void req_commit(
         return;
         }
       }
+
+    /* need to format message first, before request goes away - moved here because we have the mutex */
+    snprintf(log_buf, sizeof(log_buf),
+      msg_jobnew,
+      preq->rq_user, preq->rq_host,
+      pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+      pj->ji_wattr[JOB_ATR_jobname].at_val.at_str,
+      pque->qu_qs.qu_name);
+
     unlock_queue(pque, "req_commit", "route success", LOGLEVEL);
     }
 
@@ -2172,15 +2181,6 @@ void req_commit(
     }
 
 #endif
-
-  /* need to format message first, before request goes away */
-
-  snprintf(log_buf, sizeof(log_buf),
-    msg_jobnew,
-    preq->rq_user, preq->rq_host,
-    pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-    pj->ji_wattr[JOB_ATR_jobname].at_val.at_str,
-    pj->ji_qhdr->qu_qs.qu_name);
 
   /* acknowledge the request with the job id */
 

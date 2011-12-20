@@ -1197,10 +1197,15 @@ int modify_job_attr(
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_queue *pque;
 
-  if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
-    allow_unkn = -1;
-  else
-    allow_unkn = JOB_ATR_UNKN;
+  if ((pque = get_jobs_queue(pjob)) != NULL)
+    {
+    if (pque->qu_qs.qu_type == QTYPE_Execution)
+      allow_unkn = -1;
+    else
+      allow_unkn = JOB_ATR_UNKN;
+
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
+    }
 
   pattr = pjob->ji_wattr;
 

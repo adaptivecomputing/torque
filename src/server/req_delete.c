@@ -214,6 +214,36 @@ void remove_stagein(
 
 
 
+void force_purge_work(
+
+  job *pjob)
+
+  {
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_queue *pque;
+
+  snprintf(log_buf, sizeof(log_buf), "purging job %s without checking MOM", pjob->ji_qs.ji_jobid);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+  
+  free_nodes(pjob);
+
+  if ((pque = get_jobs_queue(pjob)) != NULL)
+    {
+    if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
+      {
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      set_resc_assigned(pjob, DECR);
+      }
+    else
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+    }
+  
+  job_purge(pjob);
+  } /* END force_purge_work() */
+
+
+
+
 
 void ensure_deleted(
 
@@ -222,7 +252,6 @@ void ensure_deleted(
   {
   job                  *pjob;
   char                 *jobid;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   jobid = ptask->wt_parm1;
 
@@ -230,17 +259,7 @@ void ensure_deleted(
     {
     if ((pjob = find_job(jobid)) != NULL)
       {
-      sprintf(log_buf, "purging job without checking MOM");
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
-      
-      free_nodes(pjob);
-      
-      if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
-        {
-        set_resc_assigned(pjob, DECR);
-        }
-      
-      job_purge(pjob);
+      force_purge_work(pjob);
       }
     }
 
@@ -1081,9 +1100,7 @@ static int forced_jobpurge(
   struct batch_request *preq)
 
   {
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
   /* check about possibly purging the job */
-
   if (preq->rq_extend != NULL)
     {
     if (!strncmp(preq->rq_extend, delpurgestr, strlen(delpurgestr)))
@@ -1091,18 +1108,7 @@ static int forced_jobpurge(
       if (((preq->rq_perm & (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR)) != 0) ||
           ((svr_chk_owner(preq, pjob) == 0) && (server.sv_attr[SRV_ATR_OwnerPurge].at_val.at_long)))
         {
-        sprintf(log_buf, "purging job without checking MOM");
-
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
-
-        free_nodes(pjob);
-
-        if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
-          {
-          set_resc_assigned(pjob, DECR);
-          }
-
-        job_purge(pjob);
+        force_purge_work(pjob);
 
         return(PURGE_SUCCESS);
         }

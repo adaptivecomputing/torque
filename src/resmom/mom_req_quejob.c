@@ -116,7 +116,6 @@ extern int  reply_jid(char *);
 extern void start_exec(job *);
 extern int  svr_authorize_jobreq(struct batch_request *, job *);
 extern int  svr_chkque(job *, pbs_queue *, char *, int, char *);
-extern int  job_route(job *);
 extern void check_state(int);
 extern void mom_server_all_update_stat();
 extern void mom_server_all_update_gpustat(void);

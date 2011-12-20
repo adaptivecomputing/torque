@@ -1119,35 +1119,42 @@ static void alter_unreg(
 int depend_on_que(
 
   attribute *pattr,
-  void       *pjob,
+  void       *pj,
   int        mode)
 
   {
-  long        cost;
+  long               cost;
 
-  struct depend *pdep;
+  struct depend     *pdep;
 
   struct depend_job *pparent;
-  int        rc;
-  int        type;
+  int                rc;
+  int                type;
+  job               *pjob = (job *)pj;
+  pbs_queue         *pque = get_jobs_queue(pjob);
 
-  if (((mode != ATR_ACTION_ALTER) && (mode != ATR_ACTION_NOOP)) ||
-      (((job *)pjob)->ji_qhdr == NULL) ||
-      (((job *)pjob)->ji_qhdr->qu_qs.qu_type != QTYPE_Execution))
+  if (pque == NULL)
+    return(PBSE_NONE);
+  else if (((mode != ATR_ACTION_ALTER) && 
+            (mode != ATR_ACTION_NOOP)) ||
+           (pque->qu_qs.qu_type != QTYPE_Execution))
     {
-    return(0);
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
+    return(PBSE_NONE);
     }
+  else
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
 
   if (mode == ATR_ACTION_ALTER)
     {
     /* if there are dependencies being removed, unregister them */
 
-    alter_unreg((job *)pjob, &((job *)pjob)->ji_wattr[JOB_ATR_depend], pattr);
+    alter_unreg(pjob, &(pjob)->ji_wattr[JOB_ATR_depend], pattr);
     }
 
   /* First set a System hold if required */
 
-  set_depend_hold((job *)pjob, pattr);
+  set_depend_hold(pjob, pattr);
 
   /* Check if there are dependencies that require registering */
 
@@ -1161,12 +1168,12 @@ int depend_on_que(
       {
       /* register myself - this calculates and records the cost */
 
-      cost = calc_job_cost((job *)pjob);
+      cost = calc_job_cost(pjob);
 
-      register_sync(pdep, ((job *)pjob)->ji_qs.ji_jobid, server_name, cost);
+      register_sync(pdep, (pjob)->ji_qs.ji_jobid, server_name, cost);
 
       if (pdep->dp_numreg > pdep->dp_numexp)
-        release_cheapest((job *)pjob, pdep);
+        release_cheapest(pjob, pdep);
       }
     else if (type != JOB_DEPEND_TYPE_ON)
       {
@@ -1174,7 +1181,7 @@ int depend_on_que(
 
       while (pparent)
         {
-        if ((rc = send_depend_req((job *)pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq)))
+        if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq)))
 
           return(rc);
 
@@ -1185,7 +1192,7 @@ int depend_on_que(
     pdep = (struct depend *)GET_NEXT(pdep->dp_link);
     }
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END depend_on_que() */
 
 

@@ -355,7 +355,6 @@ int svr_enquejob(
     } /* END if (pjob->is_array_template) */
 
   /* place into queue in order of queue rank starting at end */
-
   pjob->ji_qhdr = pque;
 
   if (!pjob->ji_is_array_template)

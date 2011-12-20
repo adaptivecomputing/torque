@@ -501,6 +501,8 @@ int default_router(
 /*
  * job_route - route a job to another queue
  *
+ * NOTE: This MUST always called by a thread holding queue's mutex.
+ *
  * This is only called for jobs in a routing queue.
  * Loop over all the possible destinations for the route queue.
  * Check each one to see if it is ok to try it.  It could have been

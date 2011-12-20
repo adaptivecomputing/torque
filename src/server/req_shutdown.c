@@ -457,8 +457,9 @@ static void rerun_or_kill(
   char *text)  /* I */
 
   {
-  long server_state = server.sv_attr[SRV_ATR_State].at_val.at_long;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
+  long       server_state = server.sv_attr[SRV_ATR_State].at_val.at_long;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_queue *pque;
 
   if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long)
     {
@@ -469,7 +470,12 @@ static void rerun_or_kill(
     if (pjob != NULL)
       {
       pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
-      snprintf(log_buf, sizeof(log_buf), "%s%s%s", msg_init_queued, pjob->ji_qhdr->qu_qs.qu_name, text);
+      if ((pque = get_jobs_queue(pjob)) != NULL)
+        {
+        snprintf(log_buf, sizeof(log_buf), "%s%s%s", msg_init_queued, pque->qu_qs.qu_name, text);
+
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
+        }
       }
     }
   else if (server_state != SV_STATE_SHUTDEL)

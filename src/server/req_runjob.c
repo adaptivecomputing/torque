@@ -1301,6 +1301,7 @@ static job *chk_job_torun(
   job              *pjob;
 
   struct rq_runjob *prun;
+  pbs_queue        *pque;
   int               rc;
 
   char              EMsg[1024];
@@ -1357,21 +1358,25 @@ static job *chk_job_torun(
     return(NULL);
     }
 
-  if (pjob->ji_qhdr->qu_qs.qu_type != QTYPE_Execution)
+  if ((pque = get_jobs_queue(pjob)) != NULL)
     {
-    /* FAILURE - job must be in execution queue */
+    if (pque->qu_qs.qu_type != QTYPE_Execution)
+      {
+      /* FAILURE - job must be in execution queue */
+      log_err(-1, id, "attempt to start job in non-execution queue");
+  
+      req_reject(PBSE_IVALREQ, 0, preq, NULL, "job not in execution queue");
+  
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      pthread_mutex_unlock(pjob->ji_mutex);
+  
+      return(NULL);
+      }
 
-    log_err(-1, id, "attempt to start job in non-execution queue");
-
-    req_reject(PBSE_IVALREQ, 0, preq, NULL, "job not in execution queue");
-
-    pthread_mutex_unlock(pjob->ji_mutex);
-
-    return(NULL);
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
 
   /* where to execute the job */
-
 #ifdef ENABLE_BLCR
   if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
 #else

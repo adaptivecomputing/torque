@@ -141,6 +141,7 @@ int acct_job(
   int         rc;
   int         resc_access_perm = READ_ONLY;
   char        local_buf[MAXLINE*4];
+  pbs_queue  *pque;
 
   tlist_head  attrlist;
   svrattrl   *pal;
@@ -182,11 +183,15 @@ int acct_job(
   if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
     return(rc);
 
-  /* queue name */
-  sprintf(local_buf, "queue=%s ",
-    pjob->ji_qhdr->qu_qs.qu_name);
-  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
-    return(rc);
+  if ((pque = get_jobs_queue(pjob)) != NULL)
+    {
+    /* queue name */
+    sprintf(local_buf, "queue=%s ", pque->qu_qs.qu_name);
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
+
+    if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
+      return(rc);
+    }
 
   /* create time */
   sprintf(local_buf, "ctime=%ld ",
