@@ -118,10 +118,8 @@
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 #include "csv.h"
-#include "job_func.h"
 #include "array.h"
 #include "queue_func.h" /* get_dfltque, find_queuebyname */
-#include "array_func.h"
 
 
 #include "work_task.h"
@@ -129,13 +127,15 @@
 
 /* External Functions Called: */
 
-extern int  reply_jid(char *);
-extern void start_exec(job *);
-extern int  svr_authorize_jobreq(struct batch_request *, job *);
-extern int  svr_chkque(job *, pbs_queue *, char *, int, char *);
-extern int  job_route(job *);
-extern int node_avail_complex(char *, int *, int *, int *, int*);
+extern int   reply_jid(char *);
+extern void  start_exec(job *);
+extern int   svr_authorize_jobreq(struct batch_request *, job *);
+extern int   svr_chkque(job *, pbs_queue *, char *, int, char *);
+extern int   job_route(job *);
+extern int   node_avail_complex(char *, int *, int *, int *, int*);
 extern void  set_chkpt_deflt(job *, pbs_queue *);
+int          setup_array_struct(job *pjob);
+void         job_clone_wt(struct work_task *);
 
 /* Global Data Items: */
 

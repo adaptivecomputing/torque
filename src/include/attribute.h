@@ -494,6 +494,8 @@ extern int 		job_radix_action (attribute *new, void *pobj, int actmode);
 
 extern int  decode_tokens(attribute *, char *, char *, char *, int);
 
+int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
+
 /* "type" to pass to acl_check() */
 #define ACL_Host  1
 #define ACL_User  2

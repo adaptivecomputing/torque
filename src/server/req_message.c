@@ -99,7 +99,6 @@
 #include "log.h"
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
-#include "req_modify.h"  /* copy_batchrequest */
 
 
 /* Private Function local to this file */
@@ -112,6 +111,7 @@ extern int   pbs_mom_port;
 extern char *msg_messagejob;
 
 extern job  *chk_job_request(char *, struct batch_request *);
+int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
 
 /*
  * req_messagejob - service the Message Job Request

@@ -111,7 +111,6 @@
 #include "svrfunc.h"
 #include "array.h"
 #include "utils.h"
-#include "req_jobobit.h" /* on_job_exit */
 
 #define PURGE_SUCCESS 1
 #define MOM_DELETE    2
@@ -157,6 +156,7 @@ extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 extern int   svr_chk_owner(struct batch_request *, job *);
 void chk_job_req_permissions(job **,struct batch_request *);
+void          on_job_exit(struct work_task *);
 
 /*
  * remove_stagein() - request that mom delete staged-in files for a job

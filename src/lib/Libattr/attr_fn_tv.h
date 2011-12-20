@@ -17,5 +17,3 @@ int comp_tv(struct attribute *attr, struct attribute *with);
 
 int job_radix_action (attribute *new, void *pobj, int actmode);
 
-int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
-

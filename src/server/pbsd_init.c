@@ -115,14 +115,11 @@
 #include "array.h"
 #include "csv.h"
 #include "pbs_nodes.h"
-#include "job_func.h" /* job_clone_wt */
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_recov.h" /* que_recov_xml */
 #include "dynamic_string.h"
 #include "utils.h"
-#include "req_jobobit.h" /* on_job_exit */
-#include "job_func.h"
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -223,6 +220,8 @@ extern void   acct_close(void);
 
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int     net_move(job *, struct batch_request *);
+void          job_clone_wt(struct work_task *);
+void          on_job_exit(struct work_task *);
 
 /* Private functions in this file */
 

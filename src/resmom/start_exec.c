@@ -94,7 +94,7 @@
   #include <st_client.h>
 #endif /* IBM SP */
 
-
+#include "rpp.h"
 #include "libpbs.h"
 #include "portability.h"
 #include "list_link.h"
@@ -106,7 +106,6 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "rpp.h"
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "pbs_error.h"
@@ -118,7 +117,6 @@
 #include "mcom.h"
 #include "resource.h"
 #include "utils.h"
-#include "../lib/Libattr/attr_fn_tv.h"
 #include "mom_comm.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 

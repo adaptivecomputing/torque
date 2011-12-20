@@ -105,7 +105,6 @@
 #include "svrfunc.h"
 #include "csv.h"
 #include "array.h"
-#include "req_modify.h"  /* copy_batchrequest */
 
 /* Private Functions Local to this file */
 
@@ -127,6 +126,7 @@ int get_hold(tlist_head *, char **, attribute *);
 /* external functions */
 extern int svr_authorize_jobreq(struct batch_request *,job *);
 extern job *chk_job_request(char *,struct batch_request *);
+int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
 
 /*
  * chk_hold_priv - check that client has privilege to set/clear hold

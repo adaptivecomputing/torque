@@ -108,7 +108,6 @@
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 #include "array.h"
-#include "req_modify.h" /* copy_batchrequest */
 
 #define CHK_HOLD 1
 #define CHK_CONT 2
@@ -135,6 +134,7 @@ extern void rel_resc(job *);
 
 extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
+int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
 
 /* prototypes */
 void post_modify_arrayreq(struct work_task *pwt);

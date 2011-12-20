@@ -19,7 +19,6 @@
 #include "log.h"
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
-#include "req_jobobit.h"
 
 #include "array.h"
 
@@ -38,6 +37,7 @@ extern char *msg_permlog;
 static void post_delete(struct work_task *pwt);
 
 void array_delete_wt(struct work_task *ptask);
+void          on_job_exit(struct work_task *);
 
 
 /**

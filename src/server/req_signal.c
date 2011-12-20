@@ -101,7 +101,6 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
-#include "req_modify.h"  /* copy_batchrequest */
 
 /* Private Function local to this file */
 
@@ -114,6 +113,7 @@ extern int   LOGLEVEL;
 extern void   set_old_nodes (job *);
 
 extern job  *chk_job_request(char *, struct batch_request *);
+int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
 
 /*
  * req_signaljob - service the Signal Job Request
