@@ -236,14 +236,14 @@ void req_signaljob(
 
 int issue_signal(
 
-  job  *pjob,
-  char *signame, /* name of the signal to send */
-  void (*func)(struct work_task *),
-  void *extra) /* extra parameter to be stored in sig request */
+  job  **pjob_ptr,
+  char  *signame, /* name of the signal to send */
+  void  (*func)(struct work_task *),
+  void  *extra) /* extra parameter to be stored in sig request */
 
   {
-  int rc;
-
+  int                   rc;
+  job                  *pjob = *pjob_ptr;
   struct batch_request *newreq;
 
   /* build up a Signal Job batch request */
