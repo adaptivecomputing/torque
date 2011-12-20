@@ -99,6 +99,7 @@
 #include "log.h"
 #include "../Liblog/pbs_log.h"
 #include "../Libutils/u_lock_ctl.h"
+#include "../Libnet/lib_net.h" /* socket_* */
 
 #ifdef HAVE_SYS_POLL_H
 #include <sys/poll.h>
@@ -190,6 +191,7 @@ static void tcp_pack_buff(
       {
       *(tp->tdis_thebuf + i) = *(tp->tdis_thebuf + i + start);
       }
+    *(tp->tdis_thebuf + amt) = '\0';
 
     tp->tdis_leadp  -= start;
 
@@ -214,31 +216,35 @@ static void tcp_pack_buff(
  */
 
 int tcp_read(
-
-  int fd)          /* I */
-
+  int fd,
+  long long *read_len,
+  long long *avail_len)
   {
-  long              i;
-  long              total = 0;
+  int               rc = PBSE_NONE;
   unsigned long     newsize;
   char             *ptr;
-  int               done = 0;
-#if 0
-
-  struct pollfd pollset;
-  int timeout;
-#endif
-  fd_set            readset;
-
-  struct timeval    timeout;
-
+  int               tdis_buf_len = 0;
+  int               max_read_len = 0;
+  char             *new_data = NULL;
   struct tcpdisbuf *tp;
+  int               tmp_leadp = 0;
+  int               tmp_trailp = 0;
+  int               tmp_eod = 0;
+  char              err_msg[1024];
 
+
+  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
   tp = &tcparray[fd]->readbuf;
 
   /* must compact any uncommitted data into bottom of buffer */
-
   tcp_pack_buff(tp);
+
+  tcparray[fd]->IsTimeout = 0;
+  tcparray[fd]->SelectErrno = 0;
+  tcparray[fd]->ReadErrno = 0;
+  tdis_buf_len = tp->tdis_bufsize;
+  max_read_len = tp->tdis_bufsize - (tp->tdis_eod - tp->tdis_thebuf);
+  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
 
   /*
    * we don't want to be locked out by an attack on the port to
@@ -246,122 +252,80 @@ int tcp_read(
    * deliver promptly
    */
 
-  tcparray[fd]->IsTimeout = 0;
-  tcparray[fd]->SelectErrno = 0;
-  tcparray[fd]->ReadErrno = 0;
-
-  do
+  if ((rc = socket_read(fd, &new_data, read_len)) != PBSE_NONE)
     {
-#if 0
-    /* poll()'s timeout is only a signed int, must be careful not to overflow */
-
-    if (INT_MAX / 1000 > pbs_tcp_timeout)
-      timeout = pbs_tcp_timeout * 1000;
-    else
-      timeout = INT_MAX;
-
-    pollset.fd = fd;
-
-    pollset.events = POLLIN | POLLHUP;
-
-    i = poll(&pollset, 1, timeout);
-#endif
-    timeout.tv_sec = 30;
-
-    timeout.tv_usec = 0;
-
-    FD_ZERO(&readset);
-
-    FD_SET(fd, &readset);
-
-    i = select(
-          fd + 1,
-          &readset,
-          NULL,
-          NULL,
-          &timeout);
-    }
-  while ((i == -1) && (errno == EINTR));
-
-  if (i == 0)
-    {
-    /* timeout has occurred */
-
-    tcparray[fd]->IsTimeout = 1;
-
-    return(0);
-    }
-  else if (i < 0)
-    {
-    /* select failed */
-
-    tcparray[fd]->SelectErrno = errno;
-
-    return(-1);
-    }
-
-  while (1)
-    {
-    while ((i = read(
-                  fd,
-                  tp->tdis_eod,
-                  tp->tdis_thebuf + tp->tdis_bufsize - tp->tdis_eod)) == -1)
+    pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
+    switch (rc)
       {
-      if (errno != EINTR)
+      case PBSE_TIMEOUT:
+        tcparray[fd]->IsTimeout = 1;
+        /* This return 0. This isn't accurate on a timeout */
+/*        rc = 0; */
+        break;
+      default:
+        tcparray[fd]->SelectErrno = rc;
+        tcparray[fd]->ReadErrno = rc;
         break;
       }
-    
-    if (i < 0)
-      {
-      /* FAILURE - read failed */
-      
-      tcparray[fd]->ReadErrno = errno;
-
-      return(-1);
-      }
-    else if (i == 0)
-      {
-      /* FAILURE - no data read */
-      return -2;
-      }
-    
-    /* SUCCESS */
-    if (i < tp->tdis_thebuf + tp->tdis_bufsize - tp->tdis_eod)
-      done = 1;
-    
-    tp->tdis_eod += i;
-    total += i;
-
-    /* done reading if we haven't read our max size */
-    if (done)
-      break;
-
-    /* otherwise alloc more space and read again, add 25% more space */
-    newsize = tp->tdis_bufsize * 1.25;
-    ptr = (char *)calloc(1, newsize+1);
-
-    if (ptr == NULL)
-      {
-      /* failure to allocate memory, return NULL? */
-      log_err(ENOMEM,"tcp_read","Could not allocate memory to read buffer");
-
-      return(-1);
-      }
-    else
-      {
-      strcat(ptr, tp->tdis_thebuf);
-      /* adjust the new values */
-      tp->tdis_eod += ptr - tp->tdis_thebuf;
-      tp->tdis_trailp += ptr - tp->tdis_thebuf;
-      tp->tdis_leadp += ptr - tp->tdis_thebuf;
-      tp->tdis_thebuf = ptr;
-      tp->tdis_bufsize = newsize;
-
-      /* fall through to continue reading more */
-      }
+    pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+    return rc;
     }
+  /* data read is less than buffer size */
+  else if (max_read_len > *read_len)
+    {
+    pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
+    strcat(tp->tdis_eod, new_data);
+    tp->tdis_eod += *read_len;
+    *avail_len = tp->tdis_eod - tp->tdis_leadp;
+    max_read_len = tp->tdis_eod - tp->tdis_thebuf;
+    pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+    if (max_read_len > tdis_buf_len)
+      {
+      snprintf(err_msg, sizeof(err_msg), "eod ptr BEYOND end of buffer!! (fit) Remaining buffer = %d, read_len = %lld", max_read_len, *read_len);
+      log_err(PBSE_INTERNAL,__func__,err_msg);
+      }
+    free(new_data);
+    }
+  /* data read is greater than buffer size */
+  else if (max_read_len < *read_len)
+    {
+    newsize = (tdis_buf_len + *read_len) * 2;
+    if ((ptr = (char *)calloc(1, newsize+1)) == NULL)
+      {
+      log_err(ENOMEM,__func__,"Could not allocate memory to read buffer");
+      rc = PBSE_MEM_MALLOC;
+      free(new_data);
+      return rc;
+      }
+    pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
 
-  return(total);
+    tmp_leadp = tp->tdis_leadp - tp->tdis_thebuf;
+    tmp_trailp = tp->tdis_trailp - tp->tdis_thebuf;
+    tmp_eod = tp->tdis_eod - tp->tdis_thebuf;
+
+    snprintf(ptr, newsize, "%s%s", tp->tdis_thebuf, new_data);
+    memset(tp->tdis_thebuf, '2', tp->tdis_bufsize);
+    free(tp->tdis_thebuf);
+    tp->tdis_thebuf = ptr;
+    tp->tdis_bufsize = newsize;
+    tp->tdis_eod = tp->tdis_thebuf + tmp_eod + *read_len;
+    tp->tdis_trailp = tp->tdis_thebuf + tmp_trailp;
+    tp->tdis_leadp = tp->tdis_thebuf + tmp_leadp;
+    *avail_len = tp->tdis_eod - tp->tdis_leadp;
+
+    max_read_len = tp->tdis_eod - tp->tdis_thebuf;
+    tdis_buf_len = newsize;
+    pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+
+    if (max_read_len > tdis_buf_len)
+      {
+      snprintf(err_msg, sizeof(err_msg), "eod ptr BEYOND end of buffer!!(expand) Remaining buffer = %d, read_len = %lld", max_read_len, *read_len);
+      log_err(PBSE_INTERNAL,__func__,err_msg);
+      }
+    free(new_data);
+
+    }
+  return rc;
   }  /* END tcp_read() */
 
 
@@ -546,64 +510,12 @@ int tcp_rskip(
 
 
 
-
-
-/*
- * tcp_getc - tcp/dis support routine to get next character from read buffer
- *
- * Return: >0 number of characters read
- *  -1 if EOD or error
- *  -2 if EOF (stream closed)
- */
-
-int tcp_getc(
-
-  int fd)
-
-  {
-  int x;
-
-  struct tcpdisbuf *tp;
-
-  if (tcparray[fd] == NULL)
-    return(-2);
-
-  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-
-  tp = &tcparray[fd]->readbuf;
-
-  if (tp->tdis_leadp >= tp->tdis_eod)
-    {
-    /* not enough data, try to get more */
-
-    x = tcp_read(fd);
-
-    if (x <= 0)
-      {
-      pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-
-      return((x == -2) ? -2 : -1); /* Error or EOF */
-      }
-    }
-
-  x = (int)*tp->tdis_leadp++;
-
-  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-
-  return(x);
-  }  /* END tcp_getc() */
-
-
-
-
-
 /*
  * tcp_gets - tcp/dis support routine to get a string from read buffer
  *
- * Return: >0 number of characters read
- *   0 if EOD (no data currently avalable)
+ * Return: number of characters read (>=1)
  *  -1 if error
- *  -2 if EOF (stream closed)
+ *  -2 if EOF/EOD (stream closed)
  */
 
 int tcp_gets(
@@ -613,41 +525,57 @@ int tcp_gets(
   size_t  ct)
 
   {
-  int             x;
-
+  int rc = 0;
   struct tcpdisbuf *tp;
+  long long data_read = 0;
+  long long data_avail = 0;
 
   if (tcparray[fd] == NULL)
     return(-2);
 
   pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-
   tp = &tcparray[fd]->readbuf;
+  /* length of usable data in current buffer */
+  data_avail = tp->tdis_eod - tp->tdis_leadp;
+  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
 
-  while (tp->tdis_eod - tp->tdis_leadp < (ssize_t)ct)
+  while ((size_t)data_avail < ct)
     {
     /* not enough data, try to get more */
-
-    x = tcp_read(fd);
-
-    if (x <= 0)
+    if ((rc = tcp_read(fd, &data_read, &data_avail)) != PBSE_NONE)
       {
-      pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-
-      return(x);  /* Error or EOF */
+      if (data_read == 0)
+        rc = -2;
+      else
+        rc = -1;
+      return(rc);  /* Error or EOF */
       }
     }
 
+  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
   memcpy((char *)str, tp->tdis_leadp, ct);
-
   tp->tdis_leadp += ct;
-
   pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
 
   return((int)ct);
   }  /* END tcp_gets() */
 
 
+/*
+ * tcp_getc - see tcp_gets
+ */
+
+int tcp_getc(
+
+  int fd)
+
+  {
+  int rc = DIS_SUCCESS;
+  char ret_val;
+  if ((rc = tcp_gets(fd, &ret_val, 1)) < 0)
+    return rc;
+  return (int)ret_val;
+  }  /* END tcp_getc() */
 
 
 int PConnTimeout(

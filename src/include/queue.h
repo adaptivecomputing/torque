@@ -174,8 +174,9 @@ extern attribute_def que_attr_def[];
 
 /* at last we come to the queue definition itself */
 
-struct pbs_queue
+typedef struct pbs_queue
   {
+  int              q_in_use;
 #ifndef PBS_MOM
   struct all_jobs *qu_jobs;  /* jobs in this queue */
   struct all_jobs *qu_jobs_array_sum; /* jobs with job arrays summarized */
@@ -203,10 +204,7 @@ struct pbs_queue
   /* the queue attributes */
 
   attribute qu_attr[QA_ATR_LAST];
-  };
-
-typedef struct pbs_queue pbs_queue;
-
+  } pbs_queue;
 
 
 typedef struct all_queues

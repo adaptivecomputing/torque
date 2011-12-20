@@ -115,7 +115,7 @@
       NOTE: stream=sock                           disrul(stream)      (Libdis/disrul.c)
                                                     disrsl_(stream)   (Libdis/disrsl_.c)
       NOTE: fd=stream                                 tcp_getc(fd)    (Libifl/tcp_dis.c)
-                                                        tcp_read(fd)  (Libifl/tcp_dis.c)
+                                                        tcp_read(fd,read_len,avail_len)  (Libifl/tcp_dis.c)
                                                           select(pbs_tcp_timeout)
                                                           read()
                                             svr_disconnect()

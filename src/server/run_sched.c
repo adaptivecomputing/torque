@@ -341,7 +341,6 @@ static int contact_listener(
   listener_conns[l_idx].first_time = 0;
 
   add_conn(
-
     sock,
     FromClientDIS,
     listener_conns[l_idx].address,

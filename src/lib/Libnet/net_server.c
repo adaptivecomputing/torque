@@ -701,6 +701,7 @@ static void *accept_conn(
   struct sockaddr_un unixfrom;
   torque_socklen_t fromsize;
   int sd = *(int *)new_conn;
+  int sock_type = -1;
 
   from.sin_addr.s_addr = 0;
   from.sin_port = 0;
@@ -717,8 +718,10 @@ static void *accept_conn(
   /* update lasttime of main socket */
   pthread_mutex_lock(svr_conn[sd].cn_mutex);
   svr_conn[sd].cn_lasttime = time((time_t *)0);
+  sock_type = svr_conn[sd].cn_socktype;
+  pthread_mutex_unlock(svr_conn[sd].cn_mutex);
 
-  if (svr_conn[sd].cn_socktype == PBS_SOCK_INET)
+  if (sock_type == PBS_SOCK_INET)
     {
     fromsize = sizeof(from);
     newsock = accept(sd, (struct sockaddr *) & from, &fromsize);
@@ -748,7 +751,6 @@ static void *accept_conn(
       read_func[(int)svr_conn[sd].cn_active]);
     }
 
-  pthread_mutex_unlock(svr_conn[sd].cn_mutex);
 
   return(NULL);
   }  /* END accept_conn() */

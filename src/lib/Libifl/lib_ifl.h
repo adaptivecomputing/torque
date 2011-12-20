@@ -432,7 +432,7 @@ void DIS_tcp_init(int sock);
 void DIS_tcp_settimeout(long timeout); 
 int DIS_tcp_istimeout(int sock);
 /* static void tcp_pack_buff(struct tcpdisbuf *tp); */
-int tcp_read(int fd); 
+int tcp_read(int fd, long *read_len, long *avail_len); 
 int DIS_tcp_wflush(int fd); 
 /* static void DIS_tcp_clear(struct tcpdisbuf *tp); */
 void DIS_tcp_reset(int fd, int i);

@@ -1069,9 +1069,8 @@ void mgr_queue_delete(
   if ((rc = que_purge(pque)) != 0)
     {
     /* FAILURE */
-    req_reject(rc, 0, preq, NULL, NULL);
     unlock_queue(pque, __func__, "", LOGLEVEL);
-
+    req_reject(rc, 0, preq, NULL, NULL);
     return;
     }
 

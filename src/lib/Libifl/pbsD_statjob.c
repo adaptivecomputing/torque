@@ -87,7 +87,7 @@
 
 /* NOTE:
 
-    tcp_read(fd=10)
+    tcp_read(fd=10, read_len, avail_len)
   #0  tcp_getc (fd=10) at ../Libifl/tcp_dis.c:399
   #1  0x081e40ab in disrsl_ (stream=10, negate=0xbffe9ed0, value=0xbffe9ecc, count=1) at ../Libdis/disrsl_.c:130
   #2  0x081e65ef in disrul (stream=10, retval=0xbffe9f04) at ../Libdis/disrul.c:124

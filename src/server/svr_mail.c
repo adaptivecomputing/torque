@@ -209,7 +209,7 @@ void *send_the_mail(
   /* setup sendmail command line with -f from_whom */
   i = strlen(SENDMAIL_CMD) + strlen(mailfrom) + strlen(mi->mailto) + 6;
 
-  if ((cmdbuf = calloc(1, i)) == NULL)
+  if ((cmdbuf = calloc(1, i + 1)) == NULL)
     {
     char tmpBuf[LOG_BUF_SIZE];
 
@@ -320,6 +320,7 @@ void svr_mailowner(
   mail_info            *mi;
 
   struct array_strings *pas;
+  memset(mailto, 0, sizeof(mailto));
 
   if ((server.sv_attr[SRV_ATR_MailDomain].at_flags & ATR_VFLAG_SET) &&
       (server.sv_attr[SRV_ATR_MailDomain].at_val.at_str != NULL) &&
@@ -408,7 +409,7 @@ void svr_mailowner(
     }
 
   /* Who does the mail go to?  If mail-list, them; else owner */
-  *mailto = '\0';
+  mailto[0] = '\0';
 
   if (pjob->ji_wattr[JOB_ATR_mailuser].at_flags & ATR_VFLAG_SET)
     {

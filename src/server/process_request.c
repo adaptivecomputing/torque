@@ -324,8 +324,17 @@ void *process_request(
   time_t                time_now = time(NULL);
   int free_request = TRUE;
   int sfds = *(int *)new_sock;
+  char tmpLine[1024];
 
-  request = alloc_br(0);
+  if ((request = alloc_br(0)) == NULL)
+    {
+    snprintf(tmpLine, sizeof(tmpLine),
+        "cannot allocate memory for request from %lu",
+        get_connectaddr(sfds,FALSE));
+    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
+    free_request = FALSE;
+    goto process_request_cleanup;
+    }
 
   request->rq_conn = sfds;
 
@@ -350,16 +359,14 @@ void *process_request(
     }
   else
     {
-    log_event(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_REQUEST,
-      "process_req",
-      "request on invalid type of connection");
-
-    close_conn(sfds, TRUE);
-    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-    free_br(request);
-    return NULL;
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST,
+      "process_req", "request on invalid type of connection");
+    snprintf(tmpLine, sizeof(tmpLine),
+        "request on invalid type of connection from%lu",
+        get_connectaddr(sfds,FALSE));
+    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
+    free_request = FALSE;
+    goto process_request_cleanup;
     }
 
   if (rc == -1)
@@ -393,16 +400,15 @@ void *process_request(
 
   if (get_connecthost(sfds, request->rq_host, PBS_MAXHOSTNAME) != 0)
     {
-    char tmpLine[1024];
-
     sprintf(log_buf, "%s: %lu",
       pbse_to_txt(PBSE_BADHOST),
       get_connectaddr(sfds,FALSE));
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buf);
 
-    snprintf(tmpLine, sizeof(tmpLine), "cannot determine hostname for connection from %lu",
-             get_connectaddr(sfds,FALSE));
+    snprintf(tmpLine, sizeof(tmpLine),
+        "cannot determine hostname for connection from %lu",
+        get_connectaddr(sfds,FALSE));
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
     free_request = FALSE;
@@ -499,7 +505,8 @@ void *process_request(
 
       if (svr_conn[sfds].cn_socktype == PBS_SOCK_INET)
         {
-        pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+        req_reject(rc, 0, request, NULL, NULL);
+        free_request = FALSE;
         goto process_request_cleanup;
         }
 
@@ -924,7 +931,7 @@ void dispatch_request(
 
       pthread_mutex_lock(svr_conn[sfds].cn_mutex);
 
-      close_conn(sfds, FALSE);
+      close_conn(sfds, TRUE);
       
       pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
