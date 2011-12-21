@@ -2424,8 +2424,7 @@ void set_resc_deflt(
     set_deflt_resc(ja, &server.sv_attr[SRV_ATR_ResourceMax]);
 #endif
 
-    if (has_queue_mutex == FALSE)
-      unlock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
+    unlock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
     }
 
   for (i = 0;i < JOB_ATR_LAST;++i)
@@ -2443,103 +2442,110 @@ void set_resc_deflt(
       }
     }
   
-    if (pque->qu_qs.qu_type == QTYPE_Execution)
-     {
-     /* unset the procct resource if it has been set */
-     remove_procct(pjob);
-     }
-     
-     return;
+  if (pque != NULL)
+    {
+      lock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
+      if (pque->qu_qs.qu_type == QTYPE_Execution)
+        {
+        /* unset the procct resource if it has been set */
+        remove_procct(pjob);
+        }
+    if(has_queue_mutex == FALSE)
+      unlock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
+    }
+
+    
+    return;
   }  /* END set_resc_deflt() */
 
 
 
 
-/**
- * Set job defaults
- *
- * @see svr_enquejob() - parent
- * @see set_chkpt_resc() - child
- *
- * @param pjob (I) [modified]
- * @param pque (I)
- *
- */
-
-void set_chkpt_deflt(
-
-  job       *pjob,     /* I (modified) */
-  pbs_queue *pque)     /* Input */
-
-  {
-  char log_buf[LOCAL_LOG_BUF_SIZE];
-
-  /* If execution queue has checkpoint defaults specified, but job does not have
-   * checkpoint values, then set defaults on the job.
+  /**
+   * Set job defaults
+   *
+   * @see svr_enquejob() - parent
+   * @see set_chkpt_resc() - child
+   *
+   * @param pjob (I) [modified]
+   * @param pque (I)
+   *
    */
 
-  if ((pque->qu_qs.qu_type == QTYPE_Execution) &&
-    (pque->qu_attr[QE_ATR_checkpoint_defaults].at_flags & ATR_VFLAG_SET) &&
-    (pque->qu_attr[QE_ATR_checkpoint_defaults].at_val.at_str))
+  void set_chkpt_deflt(
+
+      job       *pjob,     /* I (modified) */
+      pbs_queue *pque)     /* Input */
+
+  {
+    char log_buf[LOCAL_LOG_BUF_SIZE];
+
+    /* If execution queue has checkpoint defaults specified, but job does not have
+     * checkpoint values, then set defaults on the job.
+     */
+
+    if ((pque->qu_qs.qu_type == QTYPE_Execution) &&
+        (pque->qu_attr[QE_ATR_checkpoint_defaults].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QE_ATR_checkpoint_defaults].at_val.at_str))
     {
-    if ((!(pjob->ji_wattr[JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET)) ||
-      (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "u") != NULL))
+      if ((!(pjob->ji_wattr[JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET)) ||
+          (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "u") != NULL))
       {
-      job_attr_def[JOB_ATR_checkpoint].at_set(
-        &pjob->ji_wattr[JOB_ATR_checkpoint],
-        &pque->qu_attr[QE_ATR_checkpoint_defaults],
-        SET);
+        job_attr_def[JOB_ATR_checkpoint].at_set(
+            &pjob->ji_wattr[JOB_ATR_checkpoint],
+            &pque->qu_attr[QE_ATR_checkpoint_defaults],
+            SET);
 
-      if (LOGLEVEL >= 7)
+        if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf,"Applying queue (%s) checkpoint defaults (%s) to job",
-          pque->qu_qs.qu_name,
-          pque->qu_attr[QE_ATR_checkpoint_defaults].at_val.at_str);
+          sprintf(log_buf,"Applying queue (%s) checkpoint defaults (%s) to job",
+              pque->qu_qs.qu_name,
+              pque->qu_attr[QE_ATR_checkpoint_defaults].at_val.at_str);
 
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+          log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
         }
       }
     }
 
-  return;
+    return;
   }  /* END set_chkpt_deflt() */
 
 
 
 
 
-/*
- * set_statechar - set the job state attribute to the letter that correspondes
- * to its current state.
- */
+  /*
+   * set_statechar - set the job state attribute to the letter that correspondes
+   * to its current state.
+   */
 
-void set_statechar(
+  void set_statechar(
 
-  job *pjob) /* *I* (modified) */
+      job *pjob) /* *I* (modified) */
 
   {
-  static char *statechar = "TQHWREC";
-  static char suspend    = 'S';
+    static char *statechar = "TQHWREC";
+    static char suspend    = 'S';
 
-  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-      (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend))
+    if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+        (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend))
     {
-    pjob->ji_wattr[JOB_ATR_state].at_val.at_char = suspend;
+      pjob->ji_wattr[JOB_ATR_state].at_val.at_char = suspend;
     }
-  else
-    {
-    if (pjob->ji_qs.ji_state < (int)strlen(statechar))
-      {
-      pjob->ji_wattr[JOB_ATR_state].at_val.at_char =
-        *(statechar + pjob->ji_qs.ji_state);
-      }
     else
+    {
+      if (pjob->ji_qs.ji_state < (int)strlen(statechar))
       {
-      pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'U'; /* Unknown */
+        pjob->ji_wattr[JOB_ATR_state].at_val.at_char =
+          *(statechar + pjob->ji_qs.ji_state);
+      }
+      else
+      {
+        pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'U'; /* Unknown */
       }
     }
 
-  return;
+    return;
   }  /* END set_statechar() */
 
 
@@ -2547,49 +2553,49 @@ void set_statechar(
 
 
 
-/*
- * eval_checkpoint - if the job's checkpoint attribute is "c=nnnn" and
- *  nnnn is less than the queue' minimum checkpoint time, reset
- * to the queue min time.
- */
+  /*
+   * eval_checkpoint - if the job's checkpoint attribute is "c=nnnn" and
+   *  nnnn is less than the queue' minimum checkpoint time, reset
+   * to the queue min time.
+   */
 
-static void eval_checkpoint(
+  static void eval_checkpoint(
 
-  attribute *jobckp, /* job's checkpoint attribute */
-  attribute *queckp) /* queue's checkpoint attribute */
+      attribute *jobckp, /* job's checkpoint attribute */
+      attribute *queckp) /* queue's checkpoint attribute */
 
   {
-  int jobs;
-  char queues[30];
-  char *pv;
+    int jobs;
+    char queues[30];
+    char *pv;
 
-  if (((jobckp->at_flags & ATR_VFLAG_SET) == 0) ||
-      ((queckp->at_flags & ATR_VFLAG_SET) == 0))
+    if (((jobckp->at_flags & ATR_VFLAG_SET) == 0) ||
+        ((queckp->at_flags & ATR_VFLAG_SET) == 0))
     {
-    return;  /* need do nothing */
+      return;  /* need do nothing */
     }
 
-  pv = jobckp->at_val.at_str;
+    pv = jobckp->at_val.at_str;
 
-  if (*pv++ == 'c')
+    if (*pv++ == 'c')
     {
-    if (*pv == '=')
-      pv++;
+      if (*pv == '=')
+        pv++;
 
-    jobs = atoi(pv);
+      jobs = atoi(pv);
 
-    if (jobs < queckp->at_val.at_long)
+      if (jobs < queckp->at_val.at_long)
       {
-      sprintf(queues, "c=%ld",
-              queckp->at_val.at_long);
+        sprintf(queues, "c=%ld",
+            queckp->at_val.at_long);
 
-      free_str(jobckp);
+        free_str(jobckp);
 
-      decode_str(jobckp, 0, 0, queues, 0);
+        decode_str(jobckp, 0, 0, queues, 0);
       }
     }
 
-  return;
+    return;
   }  /* END eval_checkpoint() */
 
 
@@ -2598,99 +2604,99 @@ static void eval_checkpoint(
 
 #ifndef NDEBUG
 
-/*
- * correct_ct - This is a work-around for an as yet unfound bug where
- * the counts of jobs in each state sometimes (rarely) become wrong.
- * When this happens, the count for a state can become negative.
- * If this is detected (see above), this routine is called to reset
- * all of the counts and log a message.
- */
+  /*
+   * correct_ct - This is a work-around for an as yet unfound bug where
+   * the counts of jobs in each state sometimes (rarely) become wrong.
+   * When this happens, the count for a state can become negative.
+   * If this is detected (see above), this routine is called to reset
+   * all of the counts and log a message.
+   */
 
-static void correct_ct()
+  static void correct_ct()
 
   {
-  int           i;
-  char         *pc;
-  job          *pjob;
-  pbs_queue    *pque;
-  int           queue_iter = -1;
-  int           job_iter = -1;
-  int           num_jobs = 0;
-  int           job_counts[PBS_NUMJOBSTATE];
-  char          log_buf[LOCAL_LOG_BUF_SIZE];
+    int           i;
+    char         *pc;
+    job          *pjob;
+    pbs_queue    *pque;
+    int           queue_iter = -1;
+    int           job_iter = -1;
+    int           num_jobs = 0;
+    int           job_counts[PBS_NUMJOBSTATE];
+    char          log_buf[LOCAL_LOG_BUF_SIZE];
 
 
-  lock_startup();
-  pthread_mutex_lock(server.sv_qs_mutex);
-  sprintf(log_buf, "Job state counts incorrect, server %d: ", server.sv_qs.sv_numjobs);
+    lock_startup();
+    pthread_mutex_lock(server.sv_qs_mutex);
+    sprintf(log_buf, "Job state counts incorrect, server %d: ", server.sv_qs.sv_numjobs);
 
-  server.sv_qs.sv_numjobs = 0;
-  pthread_mutex_unlock(server.sv_qs_mutex);
-  
-  pthread_mutex_lock(server.sv_jobstates_mutex);
+    server.sv_qs.sv_numjobs = 0;
+    pthread_mutex_unlock(server.sv_qs_mutex);
 
-  for (i = 0;i < PBS_NUMJOBSTATE;++i)
-    {
-    pc = log_buf + strlen(log_buf);
-
-    sprintf(pc, "%d ", server.sv_jobstates[i]);
-
-    job_counts[i] = 0;
-    }
-
-  pthread_mutex_unlock(server.sv_jobstates_mutex);
-
-  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
-
-  while ((pque = next_queue(&svr_queues,&queue_iter)) != NULL)
-    {
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "checking queue %s", pque->qu_qs.qu_name);
-    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
-    pque->qu_numjobs = 0;
-    pque->qu_numcompleted = 0;
+    pthread_mutex_lock(server.sv_jobstates_mutex);
 
     for (i = 0;i < PBS_NUMJOBSTATE;++i)
-      pque->qu_njstate[i] = 0;
- 
-    /* iterate over each job in the queue and count it.
-     * This code used to iterate over each job, find the queue, and then count the job.
-     * This had to be changed because the mutex order needs to lock the queue before the 
-     * job, so in order to acquire a queue's mutex the job's mutex had to be released on 
-     * occasion, meaning the job could be deleted by the time that thread had the job's 
-     * lock again, since the mutex is released before being destroyed. This caused crashes 
-     * along with other mayhem. Thus, keep the code here and only get jobs that really 
-     * exist */
-    job_iter = -1;
+    {
+      pc = log_buf + strlen(log_buf);
 
-    while ((pjob = next_job(pque->qu_jobs, &job_iter)) != NULL)
+      sprintf(pc, "%d ", server.sv_jobstates[i]);
+
+      job_counts[i] = 0;
+    }
+
+    pthread_mutex_unlock(server.sv_jobstates_mutex);
+
+    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
+
+    while ((pque = next_queue(&svr_queues,&queue_iter)) != NULL)
+    {
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "checking queue %s", pque->qu_qs.qu_name);
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
+      pque->qu_numjobs = 0;
+      pque->qu_numcompleted = 0;
+
+      for (i = 0;i < PBS_NUMJOBSTATE;++i)
+        pque->qu_njstate[i] = 0;
+
+      /* iterate over each job in the queue and count it.
+       * This code used to iterate over each job, find the queue, and then count the job.
+       * This had to be changed because the mutex order needs to lock the queue before the 
+       * job, so in order to acquire a queue's mutex the job's mutex had to be released on 
+       * occasion, meaning the job could be deleted by the time that thread had the job's 
+       * lock again, since the mutex is released before being destroyed. This caused crashes 
+       * along with other mayhem. Thus, keep the code here and only get jobs that really 
+       * exist */
+      job_iter = -1;
+
+      while ((pjob = next_job(pque->qu_jobs, &job_iter)) != NULL)
       {
-      num_jobs++;
-      
-      job_counts[pjob->ji_qs.ji_state]++;
+        num_jobs++;
 
-      pque->qu_numjobs++;
-      pque->qu_njstate[pjob->ji_qs.ji_state]++;
+        job_counts[pjob->ji_qs.ji_state]++;
 
-      if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
-        pque->qu_numcompleted++;
+        pque->qu_numjobs++;
+        pque->qu_njstate[pjob->ji_qs.ji_state]++;
 
-      pthread_mutex_unlock(pjob->ji_mutex);
+        if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+          pque->qu_numcompleted++;
+
+        pthread_mutex_unlock(pjob->ji_mutex);
       }
 
-    unlock_queue(pque, "correct_ct", NULL, LOGLEVEL);
+      unlock_queue(pque, "correct_ct", NULL, LOGLEVEL);
     } /* END for each queue */
 
-  pthread_mutex_lock(server.sv_qs_mutex);
-  server.sv_qs.sv_numjobs = num_jobs;
-  pthread_mutex_unlock(server.sv_qs_mutex);
+    pthread_mutex_lock(server.sv_qs_mutex);
+    server.sv_qs.sv_numjobs = num_jobs;
+    pthread_mutex_unlock(server.sv_qs_mutex);
 
-  pthread_mutex_lock(server.sv_jobstates_mutex);
-  for (i = 0; i < PBS_NUMJOBSTATE; i++)
-    server.sv_jobstates[i] = job_counts[i];
-  pthread_mutex_unlock(server.sv_jobstates_mutex);
+    pthread_mutex_lock(server.sv_jobstates_mutex);
+    for (i = 0; i < PBS_NUMJOBSTATE; i++)
+      server.sv_jobstates[i] = job_counts[i];
+    pthread_mutex_unlock(server.sv_jobstates_mutex);
 
-  unlock_startup();
-  return;
+    unlock_startup();
+    return;
   }  /* END correct_ct() */
 
 
