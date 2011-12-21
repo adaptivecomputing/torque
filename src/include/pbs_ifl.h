@@ -671,6 +671,12 @@ char *trq_get_if_name(void);
 
 /* used by Moab */
 int closerm(int);
+char *getreq(int);
+unsigned int get_svrport(char *, char *, unsigned int);
+int openrm(char *, unsigned int);
+int addreq(int, char *);
+int pbs_stagein(int, char *, char *, char *);
+int pbs_stageout(int, char *, char *, char *);
 
 #endif /* _PBS_IFL_DEF */
 

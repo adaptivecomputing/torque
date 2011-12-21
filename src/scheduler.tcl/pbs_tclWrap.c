@@ -273,7 +273,7 @@ Tcl_Obj *CONST objv[];
 
   request = Tcl_GetStringFromObj(objv[2], NULL);
 
-  ret = addreq(fd, &local_errno, request);
+  ret = addreq_err(fd, &local_errno, request);
 
   if (ret == -1)
     {
@@ -316,7 +316,7 @@ Tcl_Obj *CONST objv[];
   {
   int fd;
   int local_errno = 0;
-  char *ret, *getreq();
+  char *ret, *getreq_err();
   char *cmd;
 
   cmd = Tcl_GetStringFromObj(objv[0], NULL);
@@ -331,7 +331,7 @@ Tcl_Obj *CONST objv[];
   if (Tcl_GetIntFromObj(interp, objv[1], &fd) != TCL_OK)
     return TCL_ERROR;
 
-  if ((ret = getreq(&local_errno, fd)) == NULL)
+  if ((ret = getreq_err(&local_errno, fd)) == NULL)
     {
     if (local_errno)
       {

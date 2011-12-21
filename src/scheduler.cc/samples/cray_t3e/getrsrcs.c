@@ -219,7 +219,7 @@ schd_get_resources(char *exechost)
 
   /* Receive MPPE_APP response from resource monitor. */
   /* returns the total number of Application PEs configured */
-  response = getreq(&local_errno, rm);
+  response = getreq_err(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -236,7 +236,7 @@ schd_get_resources(char *exechost)
 
   /* Receive MPPE_AVAIL response from resource monitor. */
   /* returns the largest contiguous block of APP PEs */
-  response = getreq(&local_errno, rm);
+  response = getreq_err(&local_errno, rm);
 
   if (response != NULL)
     {

@@ -673,7 +673,7 @@ static int doreq(
 ** Add a request to a single stream.
 */
 
-int addreq(
+int addreq_err(
 
   int   stream,
   int  *local_errno, 
@@ -695,7 +695,19 @@ int addreq(
     }
 
   return(0);
-  }  /* END addreq() */
+  }  /* END addreq_err() */
+
+
+
+
+int addreq(
+
+  int   stream,
+  char *line)
+
+  {
+  return(addreq_err(stream, &pbs_errno, line));
+  } /* END addreq() */
 
 
 
@@ -763,7 +775,7 @@ int allreq(
 ** there are no more or an error occured. 
 */
 
-char *getreq(
+char *getreq_err(
 
   int *local_errno,
   int  stream)  /* I */
@@ -851,8 +863,18 @@ char *getreq(
     }    /* END if (!full) */
 
   return(startline);
-  }  /* END getreq() */
+  }  /* END getreq_err() */
 
+
+
+
+char *getreq(
+
+  int stream)
+
+  {
+  return(getreq_err(&pbs_errno, stream));
+  } /* END getreq() */
 
 
 

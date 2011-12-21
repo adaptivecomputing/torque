@@ -435,9 +435,9 @@ int talk_with_mom(
 
     DIS_tcp_setup(mom_sd);
     for (i = 0; i < num_resget; i++)
-      addreq(mom_sd, &local_errno, (char *) res_to_get[i]);
+      addreq_err(mom_sd, &local_errno, (char *) res_to_get[i]);
 
-    for (i = 0; i < num_resget && (mom_ans = getreq(&local_errno, (mom_sd))) != NULL; i++)
+    for (i = 0; i < num_resget && (mom_ans = getreq_err(&local_errno, (mom_sd))) != NULL; i++)
       {
       if (!strcmp(res_to_get[i], "max_load"))
         {

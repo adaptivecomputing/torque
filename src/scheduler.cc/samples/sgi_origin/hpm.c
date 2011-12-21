@@ -255,8 +255,8 @@ setup_hpm(Resources *rsrcs, int mode)
   /* Ask the resource monitor on the remote host to set the mode for us. */
   response = NULL;
 
-  if (addreq(rm, &local_errno, hpm_ctl) == 0)
-    response = getreq(&local_errno, rm);
+  if (addreq_err(rm, &local_errno, hpm_ctl) == 0)
+    response = getreq_err(&local_errno, rm);
 
   closerm(rm);
 

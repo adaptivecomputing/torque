@@ -221,7 +221,7 @@ schd_get_resources(char *exechost)
   /* Get the values back from the resource monitor, and round up. */
 
   /* Receive LOADAVE response from resource monitor. */
-  response = getreq(&local_errno, rm);
+  response = getreq_err(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -238,7 +238,7 @@ schd_get_resources(char *exechost)
     }
 
   /* Receive AVAILMEM response from resource monitor. */
-  response = getreq(&local_errno, rm);
+  response = getreq_err(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -255,7 +255,7 @@ schd_get_resources(char *exechost)
     }
 
   /* Receive PHYSMEM response from resource monitor. */
-  response = getreq(&local_errno, rm);
+  response = getreq_err(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -272,7 +272,7 @@ schd_get_resources(char *exechost)
     }
 
   /* Receive NCPUS response from resource monitor. */
-  response = getreq(&local_errno, rm);
+  response = getreq_err(&local_errno, rm);
 
   if (response != NULL)
     {
@@ -291,7 +291,7 @@ schd_get_resources(char *exechost)
   /* DEBUG*/  /*new_rsrcs->ncpus_total *= 4; */
 
   /* Receive ARCH response from resource monitor. */
-  response = getreq(&local_errno, rm);
+  response = getreq_err(&local_errno, rm);
 
   if (response != NULL)
     {
