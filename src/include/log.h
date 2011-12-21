@@ -84,6 +84,7 @@
 #ifndef LOG_H
 #define LOG_H
 
+#include <pthread.h>
 #define LOG_BUF_SIZE        16384
 #define LOCAL_LOG_BUF_SIZE  5096
 
@@ -147,6 +148,8 @@
 #define MAXLINE 1024
 
 extern long *log_event_mask;
+extern pthread_mutex_t *log_mutex;
+extern pthread_mutex_t *job_log_mutex;
 
 /* set this to non-zero in calling app if errors go to stderr */
 extern int   chk_file_sec_stderr;

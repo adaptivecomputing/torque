@@ -1398,26 +1398,28 @@ int record_jobinfo(
   job *pjob)
 
   {
-  static char     id[] = "record_jobinfo";
-  attribute      *pattr;
-  int             i;
-  int             rc;
-  dynamic_string *buffer;
-  char            job_script_buf[MAXPATHLEN << 4];
-  char            namebuf[MAXPATHLEN + 1];
-  int             fd;
-  size_t          bytes_read = 0;
+  attribute              *pattr;
+  int                     i;
+  int                     rc;
+  dynamic_string         *buffer;
+  char                    job_script_buf[MAXPATHLEN << 4];
+  char                    namebuf[MAXPATHLEN + 1];
+  int                     fd;
+  size_t                  bytes_read = 0;
+  extern pthread_mutex_t *job_log_mutex; 
   
-  
+  pthread_mutex_lock(job_log_mutex);
   if ((rc = job_log_open(job_log_file, path_jobinfo_log)) < 0)
     {
-    log_err(rc, id, "Could not open job log ");
+    pthread_mutex_unlock(job_log_mutex);
+    log_err(rc, __func__, "Could not open job log ");
     return(rc);
     }
+  pthread_mutex_unlock(job_log_mutex);
 
   if ((buffer = get_dynamic_string(MAXLINE << 3, NULL)) == NULL)
     {
-    log_err(ENOMEM, id, "Can't allocate memory");
+    log_err(ENOMEM, __func__, "Can't allocate memory");
     return(-1);
     }
  
@@ -1428,7 +1430,7 @@ int record_jobinfo(
   
   if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
     {
-    log_err(rc, id, "log_job_record failed");
+    log_err(rc, __func__, "log_job_record failed");
     free_dynamic_string(buffer);
     return(rc);
     }
@@ -1466,7 +1468,7 @@ int record_jobinfo(
 
       if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
         {
-        log_err(rc, id, "log_job_record failed recording attributes");
+        log_err(rc, __func__, "log_job_record failed recording attributes");
         free_dynamic_string(buffer);
         return(rc);
         }
@@ -1502,7 +1504,7 @@ int record_jobinfo(
     if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
       {
       free_dynamic_string(buffer);
-      log_err(rc, id, "log_job_record failed");
+      log_err(rc, __func__, "log_job_record failed");
       return(rc);
       }
     }
@@ -1511,7 +1513,7 @@ int record_jobinfo(
 
   if ((rc = append_dynamic_string(buffer, "</Jobinfo>\n")) != PBSE_NONE)
     {
-    log_err(rc, id, "");
+    log_err(rc, __func__, "");
     free_dynamic_string(buffer);
     return(rc);
     }

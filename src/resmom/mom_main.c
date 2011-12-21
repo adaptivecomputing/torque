@@ -115,6 +115,8 @@ int            numa_index;
 char           path_meminfo[MAX_LINE];
 #endif
 
+extern pthread_mutex_t *log_mutex;
+
 int thread_unlink_calls = FALSE;
 /* by default, enforce these policies */
 int    ignwalltime = 0; 
@@ -4101,8 +4103,10 @@ process_hup(void)
   call_hup = 0;
   log_record(PBSEVENT_SYSTEM, 0, id, "reset");
 
+  pthread_mutex_lock(log_mutex);
   log_close(1);
   log_open(log_file, path_log);
+  pthread_mutex_unlock(log_mutex);
   log_file_max_size = 0;
   log_file_roll_depth = 1;
 #ifdef PENABLE_LINUX26_CPUSETS
@@ -6909,15 +6913,17 @@ int setup_program_environment(void)
     }
  
   /* open log file while std in,out,err still open, forces to fd 4 */
-
+  pthread_mutex_lock(log_mutex);
   if ((c = log_open(log_file, path_log)) != 0)
     {
+    pthread_mutex_unlock(log_mutex);
     /* use given name */
 
     fprintf(stderr, "pbs_mom: Unable to open logfile\n");
 
     return(1);
     }
+  pthread_mutex_unlock(log_mutex);
 
   check_log(); /* see if this log should be rolled */
 

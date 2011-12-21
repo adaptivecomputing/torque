@@ -1215,7 +1215,10 @@ int pbsd_init(
 
   if (server.sv_attr[SRV_ATR_RecordJobInfo].at_val.at_long)
     {
+    pthread_mutex_lock(job_log_mutex);
     rc = job_log_open(job_log_file, path_jobinfo_log);
+    pthread_mutex_unlock(job_log_mutex);
+
     if (rc != 0)
       {
       fprintf(stderr, "Could not open job_logs \n");
@@ -1816,7 +1819,9 @@ static char *build_path(
 
   log_err(errno, "build_path", msg_err_malloc);
 
+  pthread_mutex_lock(log_mutex);
   log_close(1);
+  pthread_mutex_unlock(log_mutex);
 
   exit(3);
   }  /* END build_path() */
@@ -2272,11 +2277,9 @@ static void catch_child(
  */
 
 #ifdef NO_SIGCHLD
-void
-check_children(void)
+void check_children(void)
 
   {
-
   catch_child(0);
 
   return;
@@ -2296,15 +2299,18 @@ static void change_logs(
 
   {
   acct_close();
+  pthread_mutex_lock(log_mutex);
   log_close(1);
-
   log_open(log_file, path_log);
+  pthread_mutex_unlock(log_mutex);
 
   acct_open(acct_file);
 
   if (server.sv_attr[SRV_ATR_RecordJobInfo].at_val.at_long)
     {
+    pthread_mutex_lock(job_log_mutex);
     job_log_open(job_log_file, path_jobinfo_log);
+    pthread_mutex_unlock(job_log_mutex);
     }
 
   rpp_dbprt = 1 - rpp_dbprt; /* toggle debug prints for RPP */

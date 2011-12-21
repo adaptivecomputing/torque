@@ -148,7 +148,6 @@ void req_signaljob(
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
     pthread_mutex_unlock(pjob->ji_mutex);
-
     return;
     }
 
@@ -160,9 +159,9 @@ void req_signaljob(
     if ((preq->rq_perm & (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR)) == 0)
       {
       /* for suspend/resume, must be mgr/op */
-
       req_reject(PBSE_PERM, 0, preq, NULL, NULL);
-
+      
+      pthread_mutex_unlock(pjob->ji_mutex);
       return;
       }
   
@@ -184,7 +183,6 @@ void req_signaljob(
     req_reject(PBSE_JOBTYPE, 0, preq, NULL, NULL);
 
     pthread_mutex_unlock(pjob->ji_mutex);
-
     return;
     }
 

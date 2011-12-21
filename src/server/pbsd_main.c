@@ -1535,6 +1535,8 @@ int main(
 #ifdef DISABLE_DAEMONS
     TDoBackground = 0;
 #endif
+ 
+  log_init(NULL, NULL);
 
   /* handle running in the background or not if we're debugging */
 
@@ -1601,7 +1603,9 @@ int main(
           path_home,
           PBS_LOGFILES);
 
+  pthread_mutex_lock(log_mutex);
   log_open(log_file, path_log);
+  pthread_mutex_unlock(log_mutex);
 
   sprintf(log_buf, msg_startup1, server_name, server_init_type);
 
@@ -1679,9 +1683,13 @@ int main(
 
   acct_close();
 
+  pthread_mutex_lock(log_mutex);
   log_close(1);
+  pthread_mutex_unlock(log_mutex);
 
+  pthread_mutex_lock(job_log_mutex);
   job_log_close(1);
+  pthread_mutex_unlock(job_log_mutex);
 
   exit(0);
   }  /* END main() */
@@ -2892,7 +2900,9 @@ int svr_restart()
 
   log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buf);
   
+  pthread_mutex_lock(log_mutex);
   log_close(1);
+  pthread_mutex_unlock(log_mutex);
   
   if ((rc = execv(FullCmd,ArgV)) == -1)
     {

@@ -108,6 +108,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <dirent.h>
+#include <pthread.h>
 
 #include "log.h"
 #if SYSLOG
@@ -138,6 +139,8 @@ static volatile int  log_opened = 0;
 static int      syslogopen = 0;
 #endif /* SYSLOG */
 
+pthread_mutex_t *log_mutex;
+
 /* variables for job logging */
 static int      job_log_auto_switch = 0;
 static int      joblog_open_day;
@@ -145,6 +148,7 @@ static FILE     *joblogfile;  /* open stream for log file */
 static char     *joblogpath = NULL;
 static volatile int  job_log_opened = 0;
 
+pthread_mutex_t *job_log_mutex;
 /*
  * the order of these names MUST match the defintions of
  * PBS_EVENTCLASS_* in log.h
@@ -227,8 +231,10 @@ static char *mk_log_name(
  */
 
 static char *mk_job_log_name(
+
   char *pbuf,
-  int buf_size)
+  int   buf_size)
+
   {
   struct tm *ptm;
   struct tm  tmpPtm;
@@ -266,7 +272,9 @@ static char *mk_job_log_name(
             ptm->tm_mday);
     }
 
+  pthread_mutex_lock(job_log_mutex);
   joblog_open_day = ptm->tm_yday; /* Julian date log opened */
+  pthread_mutex_unlock(job_log_mutex);
 
   return(pbuf);
   }  /* END mk_job_log_name() */
@@ -285,6 +293,12 @@ int log_init(
 
   if (hostname != NULL)
     snprintf(log_host, sizeof(log_host), "%s", hostname);
+
+  log_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(log_mutex, NULL);
+
+  job_log_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(job_log_mutex, NULL);
 
   return(0);
   }  /* END log_init() */
@@ -366,11 +380,15 @@ int log_open(
 
   log_opened = 1;   /* note that file is open */
 
+  pthread_mutex_unlock(log_mutex);
+  
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
     "Log",
     "Log opened");
+
+  pthread_mutex_lock(log_mutex);
 
   return(0);
   }  /* END log_open() */
@@ -444,7 +462,7 @@ int job_log_open(
     fds = job_log_opened;
     }
 
-  /* save the path of the last opened logfile for log_roll */
+  /* save the path of the last opened joblogfile for log_roll */
   if (joblogpath != filename)
     {
     if (joblogpath != NULL)
@@ -562,6 +580,8 @@ void log_ext(
 
   buf[LOG_BUF_SIZE - 1] = '\0';
 
+  pthread_mutex_lock(log_mutex);
+
   if (log_opened == 0)
     {
 #if !SYSLOG
@@ -575,15 +595,19 @@ void log_ext(
             msg_daemonname,
             buf);
     }
-
+    
   if (log_opened > 0)
     {
+    pthread_mutex_unlock(log_mutex);
+
     log_record(
       PBSEVENT_ERROR | PBSEVENT_FORCE,
       PBS_EVENTCLASS_SERVER,
       msg_daemonname,
       buf);
     }
+  else
+    pthread_mutex_unlock(log_mutex);
 
 #if SYSLOG
   if (syslogopen == 0)
@@ -667,6 +691,8 @@ int log_job_record(char *buf)
   now = time((time_t *)0);
   ptm = localtime_r(&now,&tmpPtm);
 
+  pthread_mutex_lock(job_log_mutex);
+
   /* do we need to switch the log to the new day? */
   if (job_log_auto_switch && (ptm->tm_yday != joblog_open_day))
     {
@@ -677,12 +703,14 @@ int log_job_record(char *buf)
     if (job_log_opened < 1)
       {
       log_err(-1, id, "job_log_opened < 1");
+      pthread_mutex_unlock(job_log_mutex);
       return(-1);
       }
     }
 
-
   fprintf(joblogfile, "%s\n", buf);
+  pthread_mutex_unlock(job_log_mutex);
+
   return(0);
   }
 
@@ -715,8 +743,11 @@ void log_record(
   char  *start = NULL, *end = NULL;
   size_t nchars;
 
+  pthread_mutex_lock(log_mutex);
+
   if (log_opened < 1)
     {
+    pthread_mutex_unlock(log_mutex);
     return;
     }
 
@@ -734,9 +765,11 @@ void log_record(
 
     if (log_opened < 1)
       {
+      pthread_mutex_unlock(log_mutex);
       return;
       }
     }
+      
 
   /*
    * Looking for the newline characters and splitting the output message
@@ -815,6 +848,8 @@ void log_record(
       }
     logfile = savlog;
     }
+  
+  pthread_mutex_unlock(log_mutex);
 
   return;
   }  /* END log_record() */
@@ -1013,14 +1048,16 @@ void log_roll(
   int err = 0;
   char *source  = NULL;
   char *dest    = NULL;
+  
+  pthread_mutex_lock(log_mutex);
 
   if (!log_opened)
     {
+    pthread_mutex_unlock(log_mutex);
     return;
     }
 
   /* save value of log_auto_switch */
-
   as = log_auto_switch;
 
   log_close(1);
@@ -1097,6 +1134,8 @@ done_roll:
     log_open(logpath, log_directory);
     }
 
+  pthread_mutex_unlock(log_mutex);
+
   if (source != NULL)
     free(source);
 
@@ -1129,13 +1168,16 @@ void job_log_roll(
   int err = 0;
   char *source  = NULL;
   char *dest    = NULL;
+      
+  pthread_mutex_lock(job_log_mutex);
 
   if (!job_log_opened)
     {
+    pthread_mutex_unlock(job_log_mutex);
     return;
     }
 
-  /* save value of log_auto_switch */
+  /* save value of job_log_auto_switch */
 
   as = job_log_auto_switch;
 
@@ -1233,6 +1275,8 @@ done_job_roll:
       "Job Log",
       "Job Log Rolled");
     }
+    
+  pthread_mutex_unlock(job_log_mutex);
 
   return;
   } /* END job_log_roll() */
@@ -1254,6 +1298,8 @@ long log_size(void)
 
   struct stat file_stat;
 #endif
+  
+  pthread_mutex_lock(log_mutex);
 
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
 
@@ -1266,8 +1312,11 @@ long log_size(void)
 
     log_err(errno, "log_size", "PBS cannot fstat logfile");
 
+    pthread_mutex_unlock(log_mutex);
     return(0);
     }
+  
+  pthread_mutex_unlock(log_mutex);
 
   return(file_stat.st_size / 1024);
   }
@@ -1284,6 +1333,8 @@ long job_log_size(void)
 
   struct stat file_stat;
 #endif
+  
+  pthread_mutex_lock(job_log_mutex);
 
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
 
@@ -1294,10 +1345,13 @@ long job_log_size(void)
     {
     /* FAILURE */
 
-    log_err(errno, "log_size", "PBS cannot fstat logfile");
+    log_err(errno, "log_size", "PBS cannot fstat joblogfile");
+    pthread_mutex_unlock(job_log_mutex);
 
     return(0);
     }
+  
+  pthread_mutex_unlock(job_log_mutex);
 
   return(file_stat.st_size / 1024);
   }
