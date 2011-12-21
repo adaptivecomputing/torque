@@ -2315,9 +2315,9 @@ void process_opts(
   char path_out[MAXPATHLEN + 1];
 
 #if defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:c:C:e:Ehj:k:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
+#define GETOPT_ARGS "a:A:c:C:e:EF:hj:k:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
 #else
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfhIj:J:k:l:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hIj:J:k:l:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
 #endif /* PBS_NO_POSIX_VIOLATION */
   /* Note:
    * All other #ifdef's for PBS_NO_POSIX_VIOLATION are being removed because
@@ -2568,13 +2568,18 @@ void process_opts(
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_node_exclusive, "TRUE", data_type);
 
         break;
-        
+
+      case 'F':
+
+        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_args, optarg, data_type);
+        break;
+
+
 /* #if !defined(PBS_NO_POSIX_VIOLATION) */
       
       case 'f':
       
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_f, "TRUE", data_type);
-          
         break;
       
 /* #endif */
@@ -2582,7 +2587,6 @@ void process_opts(
       case 'h':
 
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_h, "u", data_type);
-
         break;
 
 /* #if !defined(PBS_NO_POSIX_VIOLATION) */
