@@ -108,7 +108,7 @@ time_t        time_now;
 extern time_t time_now;
 #endif
 
-
+extern int LOGLEVEL;
 
 mom_hierarchy_t *initialize_mom_hierarchy(void)
 
@@ -491,6 +491,12 @@ int read_tcp_reply(
   int  value; /* value read from sock */
 
   *exit_status = UNREAD_STATUS;
+
+  if(LOGLEVEL >= 6)
+    {
+    sprintf(log_buf, "protocol: %d  version: %d  command:%d  sock:%d", protocol, version, command,sock);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,__func__, log_buf);
+    }
 
   if ((value = disrsi(sock,&ret)) != protocol)
     {

@@ -812,7 +812,6 @@ int send_sisters(
   int              i;
   int              num;
   int              ret;
-  int              exit_status;
   int              stream;
   int              job_radix;
   int              loop_limit;
@@ -945,7 +944,19 @@ int send_sisters(
     if (ret == DIS_SUCCESS)
       {
       ret = DIS_tcp_wflush(stream);
-      read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, com, &exit_status);
+        {
+        if(ret == DIS_SUCCESS)
+          {
+          read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, com, &ret);
+          sprintf(log_buffer, "%s:read_tcp_reply exit_status: %d", __func__, ret);
+          log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,log_buffer);
+          }
+        else
+          {
+          sprintf(log_buffer, "%s:DIS_tcp_wflush failed", __func__);
+          log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,log_buffer);
+          }
+        }
       }
 
     close(stream);
