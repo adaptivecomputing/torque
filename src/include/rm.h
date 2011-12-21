@@ -83,7 +83,8 @@
 */
 
 int openrm(char *, unsigned int);
-int closerm(int *, int);
+int closerm_err(int *, int);
+int closerm(int);
 int downrm(int *, int);
 int configrm(int, int *, char *);
 int addreq(int, int *, char *);

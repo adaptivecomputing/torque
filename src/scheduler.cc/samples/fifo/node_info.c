@@ -497,7 +497,7 @@ int talk_with_mom(
         }
       }
 
-    closerm(&local_errno, mom_sd);
+    closerm_err(&local_errno, mom_sd);
     }
 
   return 0;

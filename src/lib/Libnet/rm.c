@@ -106,7 +106,7 @@
 #include "dis_init.h"
 #include "rm.h"
 
-
+extern int pbs_errno;
 static int full = 1;
 
 /*
@@ -476,7 +476,7 @@ static int simpleget(
 ** all is ok or -1 if not (return errno).
 */
 
-int closerm(
+int closerm_err(
 
   int *local_errno,
   int  stream)
@@ -490,8 +490,18 @@ int closerm(
     }
 
   return(0);
-  }  /* END closerm() */
+  }  /* END closerm_err() */
 
+
+
+
+int closerm(
+
+  int stream)
+
+  {
+  return(closerm_err(&pbs_errno, stream));
+  } /* END closerm() */
 
 
 

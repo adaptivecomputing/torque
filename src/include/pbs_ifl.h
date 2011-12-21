@@ -669,6 +669,9 @@ int pbs_gpumode_err(int connect, char *node, char *gpuid, int gpumode, int *);
 int trq_set_preferred_network_interface(char *if_name, struct sockaddr *preferred_addr);
 char *trq_get_if_name(void);
 
+/* used by Moab */
+int closerm(int);
+
 #endif /* _PBS_IFL_DEF */
 
 /*  end of pbs_ifl.h  */

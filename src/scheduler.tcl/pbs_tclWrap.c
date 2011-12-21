@@ -166,7 +166,7 @@ Tcl_Obj *CONST objv[];
   if (Tcl_GetIntFromObj(interp, objv[1], &fd) != TCL_OK)
     return TCL_ERROR;
 
-  if ((ret = closerm(&local_errno, fd)) == -1)
+  if ((ret = closerm_err(&local_errno, fd)) == -1)
     {
     Tcl_PosixError(interp);
     log_err(local_errno, cmd, Tcl_GetStringFromObj(objv[1], NULL));
