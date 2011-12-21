@@ -1,5 +1,5 @@
 #include <license_pbs.h> /* See here for the software license */
-#include <pbs_config.h> /* Needed for PTHREAD_MUTEX_ERRORCHECK */
+#include <pbs_config.h> /* Needed for PTHREAD_MUTEX_NORMAL */
 #include "u_lock_ctl.h"
 
 #include <stdlib.h>
@@ -24,13 +24,13 @@ int lock_init()
   pthread_mutexattr_t tcp_attr;
   pthread_mutexattr_t ss_attr;
   pthread_mutexattr_init(&startup_attr);
-  pthread_mutexattr_settype(&startup_attr, PTHREAD_MUTEX_ERRORCHECK);
+  pthread_mutexattr_settype(&startup_attr, PTHREAD_MUTEX_NORMAL);
   pthread_mutexattr_init(&conn_attr);
-  pthread_mutexattr_settype(&conn_attr, PTHREAD_MUTEX_ERRORCHECK);
+  pthread_mutexattr_settype(&conn_attr, PTHREAD_MUTEX_NORMAL);
   pthread_mutexattr_init(&tcp_attr);
-  pthread_mutexattr_settype(&tcp_attr, PTHREAD_MUTEX_ERRORCHECK);
+  pthread_mutexattr_settype(&tcp_attr, PTHREAD_MUTEX_NORMAL);
   pthread_mutexattr_init(&ss_attr);
-  pthread_mutexattr_settype(&ss_attr, PTHREAD_MUTEX_ERRORCHECK);
+  pthread_mutexattr_settype(&ss_attr, PTHREAD_MUTEX_NORMAL);
   if ((locks = (lock_ctl *)calloc(1, sizeof(lock_ctl))) == NULL)
     rc = PBSE_MEM_MALLOC;
   else if ((locks->startup = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
@@ -245,7 +245,7 @@ int lock_cntr_init()
   int rc = PBSE_NONE;
   pthread_mutexattr_t cntr_attr;
   pthread_mutexattr_init(&cntr_attr);
-  pthread_mutexattr_settype(&cntr_attr, PTHREAD_MUTEX_ERRORCHECK);
+  pthread_mutexattr_settype(&cntr_attr, PTHREAD_MUTEX_NORMAL);
   if ((cntr = (lock_cntr *)calloc(1, sizeof(lock_cntr))) == NULL)
     rc = PBSE_MEM_MALLOC;
   else if ((cntr->the_lock = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)

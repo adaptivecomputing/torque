@@ -120,6 +120,7 @@
 #include "queue_recov.h" /* que_recov_xml */
 #include "dynamic_string.h"
 #include "utils.h"
+#include "queue_recycler.h" /* queue_recycler */
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -192,6 +193,7 @@ extern struct all_jobs  array_summary;
 extern struct all_jobs  newjobs;
 all_queues              svr_queues;
 job_recycler            recycler;
+queue_recycler          q_recycler;
 
 dynamic_string         *hierarchy_holder;
 hello_container         hellos;
@@ -1101,6 +1103,7 @@ int pbsd_init(
   initialize_hello_container(&hellos);
   initialize_hello_container(&failures);
   initialize_task_recycler();
+  initialize_queue_recycler();
 
   CLEAR_HEAD(svr_newnodes);
 

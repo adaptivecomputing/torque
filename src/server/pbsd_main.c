@@ -1180,6 +1180,9 @@ void main_loop(void)
     iter = -1;
 
     /* any jobs to route today */
+/*    sprintf(log_buf, "num of queues in svr_queues = %d", svr_queues.ra->num);
+    log_err(-1, __func__, log_buf);
+    */
     while ((pque = next_queue(&svr_queues,&iter)) != NULL)
       {
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)

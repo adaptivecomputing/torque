@@ -514,7 +514,7 @@ int remove_task(
   work_task *wt)
 
   {
-  int rc;
+  int rc = PBSE_NONE;
 
   if (pthread_mutex_trylock(at->alltasks_mutex))
     {
@@ -526,10 +526,6 @@ int remove_task(
   if (wt->wt_being_recycled == FALSE)
     {
     rc = remove_thing(at->ra,wt);
-    }
-  else
-    {
-    rc = PBSE_NONE;
     }
     
   pthread_mutex_unlock(at->alltasks_mutex);

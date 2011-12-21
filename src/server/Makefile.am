@@ -5,7 +5,7 @@ SUBDIRS = test
 endif
 DIST_SUBDIRS=
 
-include_HEADERS = array_func.h issue_request.h job_func.h node_func.h node_manager.h pbsd_main.h queue_func.h queue_recov.h pbsd_init.h reply_send.h req_holdjob.h req_jobobit.h req_manager.h svr_connect.h svr_jobfunc.h req_modify.h
+include_HEADERS = array_func.h issue_request.h job_func.h node_func.h node_manager.h pbsd_main.h queue_func.h queue_recov.h pbsd_init.h reply_send.h req_holdjob.h req_jobobit.h req_manager.h svr_connect.h svr_jobfunc.h req_modify.h queue_recycler.h
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libsite/libsite.a \
@@ -34,7 +34,7 @@ pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
 		     svr_func.c svr_jobfunc.c svr_mail.c svr_movejob.c \
 		     svr_recov.c svr_resccost.c svr_task.c req_tokens.c \
 		     job_qs_upgrade.c req_holdarray.c svr_format_job.c \
-				 job_recycler.c
+				 job_recycler.c queue_recycler.c
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :

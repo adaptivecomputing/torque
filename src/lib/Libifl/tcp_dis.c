@@ -397,10 +397,11 @@ int DIS_tcp_wflush(
       free(temp_pb);
       return(-1);
       }  /* END if (i == -1) */
-
-    ct -= i;
-
-    temp_pb += i;
+    else
+      {
+      ct -= i;
+      temp_pb += i;
+      }
     }  /* END while (i) */
 
   /* SUCCESS */

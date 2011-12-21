@@ -176,7 +176,7 @@ extern attribute_def que_attr_def[];
 
 typedef struct pbs_queue
   {
-  int              q_in_use;
+  int              q_being_recycled;
 #ifndef PBS_MOM
   struct all_jobs *qu_jobs;  /* jobs in this queue */
   struct all_jobs *qu_jobs_array_sum; /* jobs with job arrays summarized */
@@ -215,8 +215,24 @@ typedef struct all_queues
   pthread_mutex_t *allques_mutex;
   } all_queues;
 
+typedef struct queue_recycler
+  {
+  unsigned int     next_id;
+  pthread_mutex_t *mutex;
+  all_queues       queues;
+  int              iter;
+  unsigned int     max_id;
+  } queue_recycler;
 
-int lock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging);
+
+int insert_into_queue_recycler(pbs_queue *pq);
+pbs_queue *get_recycled_queue();
+void update_recycler_queue_next_id();
+void initialize_recycler_trash();
+void garbage_collect_recycling();
+
+
+int lock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging);
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging);
 pbs_queue *next_queue(all_queues *,int *);
 int        insert_queue(all_queues *,pbs_queue *);
