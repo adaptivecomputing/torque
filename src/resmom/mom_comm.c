@@ -945,13 +945,14 @@ int send_sisters(
       {
       ret = DIS_tcp_wflush(stream);
         {
-        if(ret == DIS_SUCCESS)
+        /*if(ret == DIS_SUCCESS)
           {
           read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, com, &ret);
           sprintf(log_buffer, "%s:read_tcp_reply exit_status: %d", __func__, ret);
           log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,log_buffer);
           }
-        else
+        else*/
+        if(ret != DIS_SUCCESS)
           {
           sprintf(log_buffer, "%s:DIS_tcp_wflush failed", __func__);
           log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,log_buffer);
@@ -3112,8 +3113,8 @@ int im_signal_task(
 
     if ((ret = im_compose(reply_stream, jobid, cookie, IM_ALL_OKAY, event, fromtask)) == DIS_SUCCESS)
       {
-      if ((ret = DIS_tcp_wflush(reply_stream)) == DIS_SUCCESS)
-        read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_SIGNAL_TASK, &ret);
+      ret = DIS_tcp_wflush(reply_stream);
+        /*read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_SIGNAL_TASK, &ret);*/
       }
 
     close(reply_stream);
@@ -3935,10 +3936,11 @@ int im_obit_task(
         {
         if ((ret = diswsi(reply_stream, ptask->ti_qs.ti_exitstat)) == DIS_SUCCESS)
           {
-          if ((ret = DIS_tcp_wflush(reply_stream)) == DIS_SUCCESS)
+          ret = DIS_tcp_wflush(reply_stream);
+          /*if ((ret = DIS_tcp_wflush(reply_stream)) == DIS_SUCCESS)
             {
             read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_OBIT_TASK, &ret);
-            }
+            }*/
           }
         }
 
@@ -4324,7 +4326,7 @@ int im_poll_job_as_sister(
         ret = diswul(reply_stream, resc_used(pjob, "vmem", getsize));
 
         DIS_tcp_wflush(reply_stream);
-        read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_POLL_JOB, &ret);
+        /*read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_POLL_JOB, &ret);*/
         }
       }
     }

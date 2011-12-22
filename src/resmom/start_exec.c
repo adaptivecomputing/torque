@@ -1509,7 +1509,6 @@ int open_tcp_stream_to_sisters(
   int          i;
   hnodent     *np;
   int          stream;
-  int          exit_status;
   eventent     *ep;
   svrattrl     *psatl;
   
@@ -1586,7 +1585,7 @@ int open_tcp_stream_to_sisters(
 
     DIS_tcp_wflush(stream);
 
-    read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, &exit_status);
+    /*read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, &exit_status);*/
 
     close(stream);
 
@@ -5772,10 +5771,11 @@ int send_join_job_to_sisters(
                 
                 if ((ret = encode_DIS_svrattrl(stream, psatl)) == DIS_SUCCESS)
                   {
-                  if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
+                  ret = DIS_tcp_wflush(stream);
+/*                  if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
                     {
                     read_tcp_reply(stream,IM_PROTOCOL,IM_PROTOCOL_VER,IM_JOIN_JOB,&ret);
-                    }
+                    }*/
                   }
                 }
               }
