@@ -86,25 +86,51 @@ int is_array(
   int             iter = -1;
 
   char      *bracket_ptr;
+  char      *end_bracket_ptr;
   char       jobid[PBS_MAXSVRJOBID];
+  char       temp_jobid[PBS_MAXSVRJOBID];
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   snprintf(jobid, sizeof(jobid), "%s", id);
 
-  /* remove the extra [] if present */
+  /* Check to see if we have an array dependency */
+  /* If there is an array dependency count then we will */
+  /* have an id of something like arrayid[][1]. We need to take */
+  /* off the [1] so we can compare the array id with and existing */
+  /* array entry. */
   if ((bracket_ptr = strchr(jobid,'[')) != NULL)
     {
-    if ((bracket_ptr = strchr(bracket_ptr+1,'[')) != NULL)
+    /* Make sure the next character is ']' */
+    if (*(++bracket_ptr) != ']')
       {
-      *bracket_ptr = '\0';
-      *bracket_ptr = '[';
-      bracket_ptr = strchr(bracket_ptr+1,']');
-
-      if (bracket_ptr != NULL)
-        {
-        strcat(jobid,bracket_ptr+1);
-        }
+      /* If we do not have a ']' then we have bad syntax. */
+      return(FALSE);
       }
+
+    if (*(++bracket_ptr) == '[')
+      {
+      /* we made it to here. That means we have a count inside
+         brackets. Just truncate them for the name comparison */
+      end_bracket_ptr = strchr(bracket_ptr, ']');
+      if (end_bracket_ptr == NULL)
+        {
+        /*  we do not have a ']' then we have bad syntax. */
+        return(FALSE);
+        }
+      /* advance end_bracket_ptr one. We should be either NULL or '.' */
+      end_bracket_ptr++;
+
+      /* truncate the string */
+      *bracket_ptr = 0; /* this makes jobid just the arrayid name */
+      /* append the rest of the job id */
+      snprintf(temp_jobid, sizeof(jobid), "%s%s", jobid, end_bracket_ptr);
+      snprintf(jobid, sizeof(jobid), "%s", temp_jobid);
+      }
+    }
+  else
+    {
+    /* No '[' then we do not have an array */
+    return (FALSE);
     }
 
   while ((pa = next_array(&iter)) != NULL)
