@@ -178,7 +178,9 @@ void die(
                id, "abnormal termination");
     }
 
+  pthread_mutex_lock(log_mutex);
   log_close(1);
+  pthread_mutex_unlock(log_mutex);
 
   exit(1);
   }  /* END die() */
@@ -575,8 +577,10 @@ restart(int sig)
 
   if (sig)
     {
+    pthread_mutex_lock(log_mutex);
     log_close(1);
     log_open(logfile, path_log);
+    pthread_mutex_unlock(log_mutex);
     sprintf(log_buffer, "restart on signal %d", sig);
     }
   else
@@ -785,6 +789,7 @@ int main(
 
   glob_argv = argv;
   alarm_time = 180;
+  log_init(NULL, NULL);
 
   /* The following is code to reduce security risks                */
   /* move this to a place where nss_ldap doesn't hold a socket yet */
@@ -976,11 +981,14 @@ int main(
 #endif /* not _CRAY */
 #endif /* DEBUG */
 
+  pthread_mutex_lock(log_mutex);
   if (log_open(logfile, path_log) == -1)
     {
+    pthread_mutex_unlock(log_mutex);
     fprintf(stderr, "%s: logfile could not be opened\n", argv[0]);
     exit(1);
     }
+  pthread_mutex_unlock(log_mutex);
 
   if (gethostname(host, sizeof(host)) == -1)
     {

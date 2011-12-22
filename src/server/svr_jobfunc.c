@@ -384,9 +384,7 @@ int svr_enquejob(
       }
 
     /* update counts: queue and queue by state */
-
     pque->qu_numjobs++;
-
     pque->qu_njstate[pjob->ji_qs.ji_state]++;
     }
   
