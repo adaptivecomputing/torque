@@ -1178,7 +1178,9 @@ int pbsd_init(
 
       rm_files(path_priv);
 
+      pthread_mutex_unlock(server.sv_attr_mutex);
       svr_save(&server, SVR_SAVE_FULL);
+      pthread_mutex_lock(server.sv_attr_mutex);
       }
     }
 

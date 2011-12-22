@@ -866,7 +866,6 @@ int svr_save_xml(
   int            mode)
 
   {
-  char   *id = "svr_save_xml";
   char    buf[MAXLINE<<8];
 
   int     fds;
@@ -878,7 +877,7 @@ int svr_save_xml(
 
   if (fds < 0)
     {
-    log_err(errno,id,msg_svdbopen);
+    log_err(errno, __func__, msg_svdbopen);
 
     return(-1);
     }
