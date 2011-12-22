@@ -583,7 +583,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_LogLevel */
-  {   ATTR_loglevel,  /* "loglevel" */
+  {   ATTR_loglevel,  /* "log_level" */
       decode_l,
       encode_l,
       set_l,

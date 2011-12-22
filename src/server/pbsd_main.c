@@ -2959,7 +2959,6 @@ void restore_attr_default(
   {
   int index;
 
-  pthread_mutex_lock(server.sv_attr_mutex);
   index = (int)(attr - server.sv_attr);
 
   attr->at_flags &= ~ATR_VFLAG_SET;
@@ -3006,7 +3005,6 @@ void restore_attr_default(
       break;
     }
 
-  pthread_mutex_unlock(server.sv_attr_mutex);
   } /* END restore_attr_default() */
 
 

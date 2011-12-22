@@ -1194,7 +1194,7 @@ void mgr_server_set(
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
-  /*pthread_mutex_lock(server.sv_attr_mutex);*/
+  pthread_mutex_lock(server.sv_attr_mutex);
   rc = mgr_set_attr(
          server.sv_attr,
          svr_attr_def,
@@ -1204,7 +1204,7 @@ void mgr_server_set(
          &bad_attr,
          (void *) & server,
          ATR_ACTION_ALTER);
-  /*pthread_mutex_unlock(server.sv_attr_mutex);*/
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   /* PBSE_BADACLHOST - lets show the user the first bad host in the ACL  */
 

@@ -2462,18 +2462,18 @@ void set_resc_deflt(
   
   if (pque != NULL)
     {
-      lock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
-      if (pque->qu_qs.qu_type == QTYPE_Execution)
-        {
-        /* unset the procct resource if it has been set */
-        remove_procct(pjob);
-        }
-    if(has_queue_mutex == FALSE)
+    lock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
+    if (pque->qu_qs.qu_type == QTYPE_Execution)
+      {
+      /* unset the procct resource if it has been set */
+      remove_procct(pjob);
+      }
+
+    if (has_queue_mutex == FALSE)
       unlock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
     }
-
-    
-    return;
+ 
+  return;
   }  /* END set_resc_deflt() */
 
 

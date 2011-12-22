@@ -141,7 +141,6 @@ int svr_recov(
   int read_only)  /* I */
 
   {
-  static char *id = "svr_recov";
   int i;
   int sdb;
 
@@ -158,11 +157,11 @@ int svr_recov(
       snprintf(tmpLine, sizeof(tmpLine), "cannot locate server database '%s' - use 'pbs_server -t create' to create new database if database has not been initialized.",
                svrfile);
 
-      log_err(errno, id, tmpLine);
+      log_err(errno, __func__, tmpLine);
       }
     else
       {
-      log_err(errno, id, msg_svdbopen);
+      log_err(errno, __func__, msg_svdbopen);
       }
 
     return(-1);
@@ -176,9 +175,9 @@ int svr_recov(
   if (i != sizeof(struct server_qs))
     {
     if (i < 0)
-      log_err(errno, id, "read of serverdb failed");
+      log_err(errno, __func__, "read of serverdb failed");
     else
-      log_err(errno, id, "short read of serverdb");
+      log_err(errno, __func__, "short read of serverdb");
 
     close(sdb);
 
@@ -189,7 +188,6 @@ int svr_recov(
   i = server.sv_qs.sv_jobidnumber;
 
   /* read in server attributes */
-  pthread_mutex_lock(server.sv_attr_mutex);
 
   if (recov_attr(
         sdb,
@@ -200,8 +198,7 @@ int svr_recov(
         0,
         !read_only) != 0 ) 
     {
-    pthread_mutex_unlock(server.sv_attr_mutex);
-    log_err(errno, id, "error on recovering server attr");
+    log_err(errno, __func__, "error on recovering server attr");
 
     close(sdb);
 
@@ -244,7 +241,6 @@ int svr_recov(
         }
       }
     }    /* END for (i) */
-  pthread_mutex_unlock(server.sv_attr_mutex);
 
   return(0);
   }  /* END svr_recov() */
@@ -904,11 +900,15 @@ int svr_save_xml(
   if ((rc = write_buffer(buf,len,fds)))
     return(rc);
 
+  pthread_mutex_lock(server.sv_attr_mutex);
+
   if ((rc = save_attr_xml(svr_attr_def,ps->sv_attr,SRV_ATR_LAST,fds)) != 0)
     {
     pthread_mutex_unlock(server.sv_attr_mutex);
     return(rc);
     }
+ 
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   /* close the server_db */
   snprintf(buf,sizeof(buf),"</server_db>");
