@@ -413,7 +413,7 @@ int modify_job(
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   struct batch_request *dup_req = NULL;
 
-  job *pjob = (job *)j;
+  job *pjob = (job *)*j;
   
   /* cannot be in exiting or transit, exiting has already been checked */
 
