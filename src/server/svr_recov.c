@@ -189,6 +189,7 @@ int svr_recov(
   i = server.sv_qs.sv_jobidnumber;
 
   /* read in server attributes */
+  pthread_mutex_lock(server.sv_attr_mutex);
 
   if (recov_attr(
         sdb,
@@ -199,6 +200,7 @@ int svr_recov(
         0,
         !read_only) != 0 ) 
     {
+    pthread_mutex_unlock(server.sv_attr_mutex);
     log_err(errno, id, "error on recovering server attr");
 
     close(sdb);
@@ -242,6 +244,7 @@ int svr_recov(
         }
       }
     }    /* END for (i) */
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   return(0);
   }  /* END svr_recov() */
@@ -839,7 +842,7 @@ int svr_recov_xml(
       /* shouldn't get here */
       }
     }
-    
+
   close(sdb);
     
   if (!read_only)
@@ -902,7 +905,10 @@ int svr_save_xml(
     return(rc);
 
   if ((rc = save_attr_xml(svr_attr_def,ps->sv_attr,SRV_ATR_LAST,fds)) != 0)
+    {
+    pthread_mutex_unlock(server.sv_attr_mutex);
     return(rc);
+    }
 
   /* close the server_db */
   snprintf(buf,sizeof(buf),"</server_db>");

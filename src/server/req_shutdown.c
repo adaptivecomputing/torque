@@ -144,25 +144,24 @@ void svr_shutdown(
   {
   attribute    *pattr;
   job          *pjob;
-  long         *state;
+  long          state;
   int           iter;
   char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   close(lockfds);
 
   /* Lets start by logging shutdown and saving everything */
-
-  state = &server.sv_attr[SRV_ATR_State].at_val.at_long;
+  get_svr_attr(SRV_ATR_State, &state);
 
   strcpy(log_buf, msg_shutdown_start);
 
-  if (*state == SV_STATE_SHUTIMM)
+  if (state == SV_STATE_SHUTIMM)
     {
     /* if already shuting down, another Immed/sig will force it */
-
     if ((type == SHUT_IMMEDIATE) || (type == SHUT_SIG))
       {
-      *state = SV_STATE_DOWN;
+      state = SV_STATE_DOWN;
+      set_svr_attr(SRV_ATR_State, &state);
 
       strcat(log_buf, "Forced");
 
@@ -178,25 +177,29 @@ void svr_shutdown(
 
   if (type == SHUT_IMMEDIATE)
     {
-    *state = SV_STATE_SHUTIMM;
+    state = SV_STATE_SHUTIMM;
+    set_svr_attr(SRV_ATR_State, &state);
 
     strcat(log_buf, "Immediate");
     }
   else if (type == SHUT_DELAY)
     {
-    *state = SV_STATE_SHUTDEL;
+    state = SV_STATE_SHUTDEL;
+    set_svr_attr(SRV_ATR_State, &state);
 
     strcat(log_buf, "Delayed");
     }
   else if (type == SHUT_QUICK)
     {
-    *state = SV_STATE_DOWN; /* set to down to brk pbsd_main loop */
+    state = SV_STATE_DOWN; /* set to down to brk pbsd_main loop */
+    set_svr_attr(SRV_ATR_State, &state);
 
     strcat(log_buf, "Quick");
     }
   else
     {
-    *state = SV_STATE_SHUTIMM;
+    state = SV_STATE_SHUTIMM;
+    set_svr_attr(SRV_ATR_State, &state);
 
     strcat(log_buf, "By Signal");
     }
@@ -457,10 +460,11 @@ static void rerun_or_kill(
   char *text)  /* I */
 
   {
-  long       server_state = server.sv_attr[SRV_ATR_State].at_val.at_long;
+  long       server_state;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_queue *pque;
 
+  get_svr_attr(SRV_ATR_State, &server_state);
   if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long)
     {
     /* job is rerunable, mark it to be requeued */

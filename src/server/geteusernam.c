@@ -316,6 +316,7 @@ int set_jobexid(
   char            tmpLine[1024 + 1];
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
+  long            disable_id_check;
   int             CheckID;  /* boolean */
 
   if (EMsg != NULL)
@@ -323,11 +324,10 @@ int set_jobexid(
 
   /* use the passed User_List if set, may be a newly modified one     */
   /* if not set, fall back to the job's actual User_List, may be same */
-
-  if (server.sv_attr[SRV_ATR_DisableServerIdCheck].at_val.at_long)
-    CheckID = 0;
-  else
+  if (get_svr_attr(SRV_ATR_DisableServerIdCheck, &disable_id_check) != PBSE_NONE)
     CheckID = 1;
+  else
+    CheckID = !disable_id_check;
 
   if (CheckID == 0)
     {
@@ -428,6 +428,9 @@ int set_jobexid(
 
     if (pwent->pw_uid == 0)
       {
+      struct array_strings *pas = NULL;
+      get_svr_attr(SRV_ATR_AclRoot, &pas);
+
       /* add check here for virtual user */
       if (pjob->ji_wattr[JOB_ATR_proxy_user].at_flags & ATR_VFLAG_SET)
         {
@@ -474,12 +477,9 @@ int set_jobexid(
         free(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
         pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str = usr_at_host;
         }
-      else if (server.sv_attr[SRV_ATR_AclRoot].at_flags & ATR_VFLAG_SET)
+      else if (get_svr_attr(SRV_ATR_AclRoot, &pas) == PBSE_NONE)
         {
-        if (acl_check(
-              &server.sv_attr[SRV_ATR_AclRoot],
-              pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-              ACL_User) == 0)
+        if (acl_check_my_array_string(pas, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, ACL_User) == 0)
           {
           if (EMsg != NULL)
             snprintf(EMsg, 1024, "root user %s fails ACL check",

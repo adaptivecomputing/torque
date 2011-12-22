@@ -160,10 +160,12 @@ int attempt_delete(
       unlock_queue(pque, "attempt_delete", NULL, LOGLEVEL);
       }
     
+    pthread_mutex_lock(server.sv_attr_mutex);
     KeepSeconds = attr_ifelse_long(
         &pque->qu_attr[QE_ATR_KeepCompleted],
         &server.sv_attr[SRV_ATR_KeepCompleted],
         0);
+    pthread_mutex_unlock(server.sv_attr_mutex);
 
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 

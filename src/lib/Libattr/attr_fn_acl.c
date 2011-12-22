@@ -177,39 +177,13 @@ int set_hostacl(
 
 
 
+/* this function returns a function pointer */
+int (*get_my_match_func(
 
-
-/*
- * acl_check - check a name:
- *  user or [user@]full_host_name
- *  group_name
- *  full_host_name
- * against the entries in an access control list.
- * Match is done by calling the approprate comparison function
- * with the name and each string from the list in turn.
- *
- * Returns: 1 if access is allowed;  0 if not allowed
- */
-
-int acl_check(
-
-  attribute *pattr,
-  char      *name,  /* I (optional) */
-  int      type)
+  int type))(const char *, const char *)
 
   {
-  int        i;
-#ifdef HOST_ACL_DEFAULT_ALL
-  int        default_rtn = 1;
-#else /* HOST_ACL_DEFAULT_ALL */
-  int        default_rtn = 0;
-#endif /* HOST_ACL_DEFAULT_ALL */
-
-  struct array_strings *pas;
-  char       *pstr;
   int (*match_func)(const char *, const char *);
-
-  extern char server_host[];
 
   switch (type)
     {
@@ -234,9 +208,96 @@ int acl_check(
     default:
 
       match_func = (int (*)())strcmp;
-
       break;
     }
+
+  return(match_func);
+  } /* END get_my_match_func() */
+
+
+
+
+int acl_check_my_array_string(
+
+  struct array_strings *pas,
+  char                 *name,
+  int                   type)
+
+  {
+#ifdef HOST_ACL_DEFAULT_ALL
+  int   default_rtn = 1;
+#else /* HOST_ACL_DEFAULT_ALL */
+  int   default_rtn = 0;
+#endif /* HOST_ACL_DEFAULT_ALL */
+  int (*match_func)(const char *, const char *);
+  int   i;
+  char *pstr;
+ 
+  match_func = get_my_match_func(type);
+
+  for (i = 0; i < pas->as_usedptr;i++)
+    {
+    pstr = pas->as_string[i];
+
+    if ((*pstr == '+') || (*pstr == '-'))
+      {
+      if (*(pstr + 1) == '\0') /* "+" or "-" sets default */
+        {
+        if (*pstr == '+')
+          default_rtn = 1;  /* allow by default */
+        else
+          default_rtn = 0;  /* deny by default */
+        }
+
+      pstr++;  /* skip over +/- if present */
+      }
+
+    if ((name != NULL) && 
+        (!match_func(name, pstr)))
+      {
+      /* acl matches */
+
+      if (*pas->as_string[i] == '-')
+        {
+        /* deny */
+
+        return(0);
+        }
+
+      /* allow */
+
+      return(1);
+      }
+    }    /* END for (i) */
+
+  return(default_rtn);
+  } /* END acl_check_my_array_string() */
+
+
+
+
+
+/*
+ * acl_check - check a name:
+ *  user or [user@]full_host_name
+ *  group_name
+ *  full_host_name
+ * against the entries in an access control list.
+ * Match is done by calling the approprate comparison function
+ * with the name and each string from the list in turn.
+ *
+ * Returns: 1 if access is allowed;  0 if not allowed
+ */
+
+int acl_check(
+
+  attribute *pattr,
+  char      *name,  /* I (optional) */
+  int      type)
+
+  {
+  struct array_strings *pas;
+  extern char server_host[];
 
   if (!(pattr->at_flags & ATR_VFLAG_SET) ||
       ((pas = pattr->at_val.at_arst) == NULL) || (pas->as_usedptr == 0))
@@ -261,41 +322,7 @@ int acl_check(
 #endif
     }
 
-  for (i = 0; i < pas->as_usedptr;i++)
-    {
-    pstr = pas->as_string[i];
-
-    if ((*pstr == '+') || (*pstr == '-'))
-      {
-      if (*(pstr + 1) == '\0') /* "+" or "-" sets default */
-        {
-        if (*pstr == '+')
-          default_rtn = 1;  /* allow by default */
-        else
-          default_rtn = 0;  /* deny by default */
-        }
-
-      pstr++;  /* skip over +/- if present */
-      }
-
-    if ((name != NULL) && !match_func(name, pstr))
-      {
-      /* acl matches */
-
-      if (*pas->as_string[i] == '-')
-        {
-        /* deny */
-
-        return(0);
-        }
-
-      /* allow */
-
-      return(1);
-      }
-    }    /* END for (i) */
-
-  return(default_rtn);
+  return(acl_check_my_array_string(pas, name, type));
   }  /* END acl_check() */
 
 

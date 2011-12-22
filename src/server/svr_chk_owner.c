@@ -338,6 +338,7 @@ int svr_get_privilege(
     }
 #endif /* __CYGWIN__ */
 
+  pthread_mutex_lock(server.sv_attr_mutex);
   if (!(server.sv_attr[SRV_ATR_managers].at_flags & ATR_VFLAG_SET))
     {
     if (is_root)
@@ -357,6 +358,7 @@ int svr_get_privilege(
     {
     priv |= (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR);
     }
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   return(priv);
   }  /* END svr_get_privilege() */
@@ -383,14 +385,17 @@ int authenticate_user(
   char   uath[PBS_MAXUSER + PBS_MAXHOSTNAME + 1];
   time_t time_now = time(NULL);
   char error_msg[1024];
+  long   acl_enabled = FALSE;
 
 #ifdef MUNGE_AUTH
   char uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
+  struct array_strings *my_acl = NULL;
 
   sprintf(uh, "%s@%s", preq->rq_user, pcred->hostname);
-  
+ 
+  get_svr_attr(SRV_ATR_authusers, &my_acl); 
   if ((strncmp(preq->rq_user, pcred->username, PBS_MAXUSER)) &&
-     ((acl_check(&server.sv_attr[SRV_ATR_authusers], uh, ACL_User_Host)) == 0))
+     ((acl_check_my_array_string(my_acl, uh, ACL_User_Host)) == 0))
 #else
   if (strncmp(preq->rq_user, pcred->username, PBS_MAXUSER))
 #endif
@@ -420,10 +425,9 @@ int authenticate_user(
   if (pcred->timestamp)
     {
     long lifetime;
-    if ((server.sv_attr[SRV_ATR_CredentialLifetime].at_flags & ATR_VFLAG_SET) != 0)
+    if (get_svr_attr(SRV_ATR_CredentialLifetime, &lifetime) == PBSE_NONE)
       {
       /* use configured value if set */
-      lifetime = server.sv_attr[SRV_ATR_CredentialLifetime].at_val.at_long;
       }
     else 
       {
@@ -444,12 +448,14 @@ int authenticate_user(
     }
 
   /* If Server's Acl_User enabled, check if user in list */
-
-  if (server.sv_attr[SRV_ATR_AclUserEnabled].at_val.at_long)
+  get_svr_attr(SRV_ATR_AclUserEnabled, &acl_enabled);
+  if (acl_enabled)
     {
+    struct array_strings *acl_users;
     snprintf(uath, sizeof(uath), "%s@%s", preq->rq_user, preq->rq_host);
-
-    if (acl_check(&server.sv_attr[SRV_ATR_AclUsers], uath, ACL_User) == 0)
+    
+    get_svr_attr(SRV_ATR_AclUsers, &acl_users);
+    if (acl_check_my_array_string(acl_users, uath, ACL_User) == 0)
       {
 
 #ifdef __CYGWIN__

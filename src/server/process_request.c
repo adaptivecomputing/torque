@@ -320,11 +320,13 @@ void *process_request(
   
   struct batch_request *request = NULL;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  long                  acl_enable = FALSE;
+  long                  state;
 
   time_t                time_now = time(NULL);
-  int free_request = TRUE;
-  int sfds = *(int *)new_sock;
-  char tmpLine[1024];
+  int                   free_request = TRUE;
+  int                   sfds = *(int *)new_sock;
+  char                  tmpLine[MAXLINE];
 
   if ((request = alloc_br(0)) == NULL)
     {
@@ -434,20 +436,21 @@ void *process_request(
     strcpy(request->rq_host, server_name);
     }
 
-  if (server.sv_attr[SRV_ATR_acl_host_enable].at_val.at_long)
+  get_svr_attr(SRV_ATR_acl_host_enable, &acl_enable);
+  if (acl_enable)
     {
     /* acl enabled, check it; always allow myself and nodes */
+    struct array_strings *pas;
+    struct pbsnode       *isanode;
 
-    struct pbsnode *isanode;
-
+    get_svr_attr(SRV_ATR_acl_hosts, &pas);
     isanode = PGetNodeFromAddr(get_connectaddr(sfds,FALSE));
 
     if ((isanode == NULL) &&
         (strcmp(server_host, request->rq_host) != 0) &&
-        (acl_check(&server.sv_attr[SRV_ATR_acl_hosts], request->rq_host,
-           ACL_Host) == 0))
+        (acl_check_my_array_string(pas, request->rq_host, ACL_Host) == 0))
       {
-      char tmpLine[1024];
+      char tmpLine[MAXLINE];
       snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
                request->rq_host);
 
@@ -599,8 +602,9 @@ void *process_request(
     }  /* END else (svr_conn[sfds].cn_authen == PBS_NET_CONN_FROM_PRIVIL) */
 
   /* if server shutting down, disallow new jobs and new running */
+  get_svr_attr(SRV_ATR_State, &state);
 
-  if (server.sv_attr[SRV_ATR_State].at_val.at_long > SV_STATE_RUN)
+  if (state > SV_STATE_RUN)
     {
     switch (request->rq_type)
       {

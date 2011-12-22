@@ -112,6 +112,7 @@
 #endif
 #include <pthread.h>
 #include "queue_recycler.h"
+#include "svrfunc.h"
 
 #define MSG_LEN_LONG 160
 
@@ -405,10 +406,11 @@ pbs_queue *get_dfltque(void)
 
   {
   pbs_queue *pq = NULL;
+  char      *dque = NULL;
 
-  if (server.sv_attr[SRV_ATR_dflt_que].at_flags & ATR_VFLAG_SET)
+  if (get_svr_attr(SRV_ATR_dflt_que, &dque) == PBSE_NONE)
     {
-    pq = find_queuebyname(server.sv_attr[SRV_ATR_dflt_que].at_val.at_str);
+    pq = find_queuebyname(dque);
     }
 
   return(pq);

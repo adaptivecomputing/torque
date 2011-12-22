@@ -367,10 +367,10 @@ void  update_default_np()
   {
   struct pbsnode *pnode;
   int             iter = -1;
-  long            default_np;
+  long            default_np = 0;
   long            npfreediff;
 
-  default_np = server.sv_attr[SRV_ATR_NPDefault].at_val.at_long;
+  get_svr_attr(SRV_ATR_NPDefault, &default_np);
 
   if (default_np > 0)
     {
@@ -754,9 +754,9 @@ int pbsd_init(
   int               rc;
   int               Index;
   int               iter;
-  int               min_threads;
-  int               max_threads;
-  int               thread_idle_time;
+  long              min_threads = DEFAULT_MIN_THREADS;
+  long              max_threads = DEFAULT_MAX_THREADS;
+  long              thread_idle_time = DEFAULT_THREAD_IDLE;
   int               job_count = 0; /* Count of recovered jobs */
 
   struct stat       statbuf;
@@ -832,21 +832,10 @@ int pbsd_init(
 #endif /* DEBUG */
   
   /* setup the threadpool for use */
-  if (server.sv_attr[SRV_ATR_minthreads].at_flags & ATR_VFLAG_SET) 
-    min_threads = server.sv_attr[SRV_ATR_minthreads].at_val.at_long;
-  else
-    min_threads = DEFAULT_MIN_THREADS;
-
-  if (server.sv_attr[SRV_ATR_maxthreads].at_flags & ATR_VFLAG_SET)
-    max_threads = server.sv_attr[SRV_ATR_maxthreads].at_val.at_long;
-  else
-    max_threads = DEFAULT_MAX_THREADS;
-
-  if (server.sv_attr[SRV_ATR_threadidleseconds].at_flags & ATR_VFLAG_SET)
-    thread_idle_time = server.sv_attr[SRV_ATR_threadidleseconds].at_val.at_long;
-  else
-    thread_idle_time = DEFAULT_THREAD_IDLE;
-      
+  get_svr_attr(SRV_ATR_minthreads, &min_threads);
+  get_svr_attr(SRV_ATR_maxthreads, &max_threads);
+  get_svr_attr(SRV_ATR_threadidleseconds, &thread_idle_time);
+  
   initialize_threadpool(&request_pool,min_threads,max_threads,thread_idle_time);
 
   /* 1. set up to catch or ignore various signals */
@@ -1114,18 +1103,14 @@ int pbsd_init(
   time_now = time((time_t *)0);
 
   /* 3. Set default server attibutes values */
-
+  pthread_mutex_lock(server.sv_attr_mutex);
   for (i = 0;i < SRV_ATR_LAST;i++)
     clear_attr(&server.sv_attr[i], &svr_attr_def[i]);
 
-  server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long =
-    PBS_SCHEDULE_CYCLE;
-
-  server.sv_attr[SRV_ATR_scheduler_iteration].at_flags =
-    ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long =  PBS_SCHEDULE_CYCLE;
+  server.sv_attr[SRV_ATR_scheduler_iteration].at_flags = ATR_VFLAG_SET;
 
   server.sv_attr[SRV_ATR_State].at_val.at_long = SV_STATE_INIT;
-
   server.sv_attr[SRV_ATR_State].at_flags = ATR_VFLAG_SET;
 
   svr_attr_def[SRV_ATR_mailfrom].at_decode(
@@ -1136,16 +1121,16 @@ int pbsd_init(
     0);
 
   server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long = PBS_TCPTIMEOUT;
-
   server.sv_attr[SRV_ATR_tcp_timeout].at_flags = ATR_VFLAG_SET;
 
   server.sv_attr[SRV_ATR_check_rate].at_val.at_long = PBS_NORMAL_PING_RATE / 2;
-
   server.sv_attr[SRV_ATR_check_rate].at_flags = ATR_VFLAG_SET;
 
   server.sv_attr[SRV_ATR_JobStatRate].at_val.at_long = PBS_RESTAT_JOB;
+  server.sv_attr[SRV_ATR_JobStatRate].at_flags = ATR_VFLAG_SET;
 
   server.sv_attr[SRV_ATR_PollJobs].at_val.at_long = PBS_POLLJOBS;
+  server.sv_attr[SRV_ATR_PollJobs].at_flags = ATR_VFLAG_SET;
 
   server.sv_attr[SRV_ATR_MomJobSync].at_flags = ATR_VFLAG_SET;
   server.sv_attr[SRV_ATR_MomJobSync].at_val.at_long = 1;
@@ -1153,7 +1138,6 @@ int pbsd_init(
   /* 4. force logging of all types */
 
   server.sv_attr[SRV_ATR_log_events].at_val.at_long = PBSEVENT_MASK;
-
   server.sv_attr[SRV_ATR_log_events].at_flags = ATR_VFLAG_SET;
 
   /* 5. If not a "create" initialization, recover server db */
@@ -1210,6 +1194,7 @@ int pbsd_init(
 
   if (acct_open(acct_file) != 0)
     {
+    pthread_mutex_unlock(server.sv_attr_mutex);
     return(-1);
     }
 
@@ -1222,6 +1207,7 @@ int pbsd_init(
     if (rc != 0)
       {
       fprintf(stderr, "Could not open job_logs \n");
+      pthread_mutex_unlock(server.sv_attr_mutex);
       return(-1);
       }
     }
@@ -1234,9 +1220,10 @@ int pbsd_init(
     /* a_option was set, overrides saved value of scheduling attr */
 
     server.sv_attr[SRV_ATR_scheduling].at_val.at_long = a_opt_init;
-    server.sv_attr[SRV_ATR_scheduling].at_flags |=
-      ATR_VFLAG_SET;
+    server.sv_attr[SRV_ATR_scheduling].at_flags |= ATR_VFLAG_SET;
     }
+      
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   /* Open and read in node list if one exists */
   initialize_all_nodes_array(&allnodes);
@@ -2298,6 +2285,7 @@ static void change_logs(
   int sig)
 
   {
+  long record_job_info = FALSE;
   acct_close();
   pthread_mutex_lock(log_mutex);
   log_close(1);
@@ -2306,7 +2294,8 @@ static void change_logs(
 
   acct_open(acct_file);
 
-  if (server.sv_attr[SRV_ATR_RecordJobInfo].at_val.at_long)
+  get_svr_attr(SRV_ATR_RecordJobInfo, &record_job_info);
+  if (record_job_info)
     {
     pthread_mutex_lock(job_log_mutex);
     job_log_open(job_log_file, path_jobinfo_log);
@@ -2333,34 +2322,34 @@ static void change_log_level(
 
   {
   char log_buf[LOCAL_LOG_BUF_SIZE];
+  long level = 0;
+  get_svr_attr(SRV_ATR_LogLevel, &level);
 
   if (sig == SIGUSR1)
     {
     /* increase log level */
 
     if (plogenv == NULL)
-      LOGLEVEL = server.sv_attr[SRV_ATR_LogLevel].at_val.at_long;
+      LOGLEVEL = level;
 
     LOGLEVEL = MIN(LOGLEVEL + 1, 7);
 
     if (plogenv == NULL)
       {
-      server.sv_attr[SRV_ATR_LogLevel].at_val.at_long = LOGLEVEL;
-      server.sv_attr[SRV_ATR_LogLevel].at_flags = ATR_VFLAG_SET;
+      set_svr_attr(SRV_ATR_LogLevel, &LOGLEVEL);
       }
     }
   else if (sig == SIGUSR2)
     {
     /* decrease log level */
     if (plogenv == NULL)
-      LOGLEVEL = server.sv_attr[SRV_ATR_LogLevel].at_val.at_long;
+      LOGLEVEL = level;
 
     LOGLEVEL = MAX(LOGLEVEL - 1, 0);
 
     if (plogenv == NULL)
       {
-      server.sv_attr[SRV_ATR_LogLevel].at_val.at_long = LOGLEVEL;
-      server.sv_attr[SRV_ATR_LogLevel].at_flags = ATR_VFLAG_SET;
+      set_svr_attr(SRV_ATR_LogLevel, &LOGLEVEL);
       }
     }
 
@@ -2395,7 +2384,8 @@ static void stop_me(
   int sig)
 
   {
-  server.sv_attr[SRV_ATR_State].at_val.at_long = SV_STATE_SHUTSIG;
+  long state = SV_STATE_SHUTSIG;
+  set_svr_attr(SRV_ATR_State, &state);
 
   return;
   }
@@ -2562,12 +2552,11 @@ static void init_abt_job(
  * This just reads in the server attributes from the server db.
  */
 
-int get_svr_attr(
+int recov_svr_attr(
 
   int type)		/* type of initialization   */
 
   {
-  static char id[] = "get_svr_attr";
   int	 rc;
   char	*suffix_slash = "/";
 
@@ -2597,7 +2586,7 @@ int get_svr_attr(
 
     if (((rc = chk_save_file(path_svrdb))!= 0) || ((rc = svr_recov_xml(path_svrdb, TRUE)) == -1)) 
       {
-      log_err(rc, id ,msg_init_baddb);
+      log_err(rc, __func__, msg_init_baddb);
 
       return(-1);
       }
@@ -2605,5 +2594,5 @@ int get_svr_attr(
     } 
 
   return(0);
-  }  /* END get_svr_attr() */
+  }  /* END recov_svr_attr() */
 

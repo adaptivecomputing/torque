@@ -848,10 +848,14 @@ int handle_returnstd(
     if ((pque = get_jobs_queue(pjob)) != NULL)
       {
       if (pque->qu_attr != NULL)
+        {
+        pthread_mutex_lock(server.sv_attr_mutex);
         KeepSeconds = attr_ifelse_long(
             &pque->qu_attr[QE_ATR_KeepCompleted],
             &server.sv_attr[SRV_ATR_KeepCompleted],
             0);
+        pthread_mutex_unlock(server.sv_attr_mutex);
+        }
 
       unlock_queue(pque, "handle_returnstd", NULL, LOGLEVEL);
       }
@@ -1367,6 +1371,7 @@ int handle_complete_first_time(
   int          KeepSeconds = 0;
   time_t       time_now = time(NULL);
   char         log_buf[LOCAL_LOG_BUF_SIZE];
+  long         must_report;
 
   /* first time in */
   if (LOGLEVEL >= 4)
@@ -1375,16 +1380,20 @@ int handle_complete_first_time(
   if ((pque = get_jobs_queue(pjob)) != NULL)
     {
     if (pque->qu_attr != NULL)
+      {
+      pthread_mutex_lock(server.sv_attr_mutex);
       KeepSeconds = attr_ifelse_long(
         &pque->qu_attr[QE_ATR_KeepCompleted],
         &server.sv_attr[SRV_ATR_KeepCompleted],
         0);
+      pthread_mutex_unlock(server.sv_attr_mutex);
+      }
 
     unlock_queue(pque, "handle_complete_first_time", NULL, LOGLEVEL);
     }
   
-  if (((server.sv_attr[SRV_ATR_JobMustReport].at_flags & ATR_VFLAG_SET) != 0) &&
-      (server.sv_attr[SRV_ATR_JobMustReport].at_val.at_long > 0))
+  if ((get_svr_attr(SRV_ATR_JobMustReport, &must_report) == PBSE_NONE) &&
+      (must_report > 0))
     {
     pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 0;
     pjob->ji_wattr[JOB_ATR_reported].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
@@ -2324,6 +2333,7 @@ void *req_jobobit(
   unsigned int          dummy;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   time_t                time_now = time(NULL);
+  long                  events = 0;
 
   strcpy(jobid, preq->rq_ind.rq_jobobit.rq_jid);  /* This will be needed later for logging after preq is freed. */
   pjob = find_job(preq->rq_ind.rq_jobobit.rq_jid);
@@ -2708,7 +2718,8 @@ void *req_jobobit(
 
     account_jobend(pjob, acctbuf);
 
-    if (server.sv_attr[SRV_ATR_log_events].at_val.at_long & PBSEVENT_JOB_USAGE)
+    get_svr_attr(SRV_ATR_log_events, &events);
+    if (events & PBSEVENT_JOB_USAGE)
       {
       /* log events set to record usage */
 

@@ -136,12 +136,14 @@ int status_job(
   {
   struct brp_status *pstat;
   int                IsOwner = 0;
+  long               query_others = 0;
 
   /* see if the client is authorized to status this job */
   if (svr_authorize_jobreq(preq, pjob) == 0)
     IsOwner = 1;
 
-  if (!server.sv_attr[SRV_ATR_query_others].at_val.at_long)
+  get_svr_attr(SRV_ATR_query_others, &query_others);
+  if (!query_others)
     {
     if (IsOwner == 0)
       {

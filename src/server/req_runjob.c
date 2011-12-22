@@ -1044,6 +1044,8 @@ static int svr_strtjob2(
   char             tmpLine[MAXLINE];
   struct timeval   start_time;
   struct timezone  tz;
+  long             job_timeout;
+  long             tcp_timeout;
 
   old_state = pjob->ji_qs.ji_state;
   old_subst = pjob->ji_qs.ji_substate;
@@ -1075,31 +1077,24 @@ static int svr_strtjob2(
   svr_setjobstate(pjob,JOB_STATE_RUNNING,JOB_SUBSTATE_PRERUN, FALSE);
 
   /* if job start timeout attribute is set use its value */
+  get_svr_attr(SRV_ATR_tcp_timeout, &tcp_timeout);
   
-  if (((server.sv_attr[SRV_ATR_JobStartTimeout].at_flags & ATR_VFLAG_SET) != 0) &&
-      (server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long > 0))
+  if ((get_svr_attr(SRV_ATR_JobStartTimeout, &job_timeout) == PBSE_NONE) &&
+      (job_timeout > 0))
     {
-    DIS_tcp_settimeout(server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long);
-    }
-
-  /* if job start timeout attribute is set use its value */
-  
-  if (((server.sv_attr[SRV_ATR_JobStartTimeout].at_flags & ATR_VFLAG_SET) != 0) &&
-      (server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long > 0))
-    {
-    DIS_tcp_settimeout(server.sv_attr[SRV_ATR_JobStartTimeout].at_val.at_long);
+    DIS_tcp_settimeout(job_timeout);
     }
 
   if (send_job_work(pjob_ptr, NULL, MOVE_TYPE_Exec, &my_err, preq) == PBSE_NONE)
     {
     /* SUCCESS */
-    DIS_tcp_settimeout(server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long);
+    DIS_tcp_settimeout(tcp_timeout);
 
     return(PBSE_NONE);
     }
   else
     {
-    DIS_tcp_settimeout(server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long);
+    DIS_tcp_settimeout(tcp_timeout);
 
     if (*pjob_ptr != NULL)
       {
@@ -1595,6 +1590,7 @@ static int assign_hosts(
   extern char  *mom_host;
   char          log_buf[LOCAL_LOG_BUF_SIZE];
   int           local_errno = 0;
+  char         *def_node = NULL;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -1680,6 +1676,7 @@ static int assign_hosts(
       }
     }
 
+  get_svr_attr(SRV_ATR_DefNode, &def_node);
   if (hosttoalloc != NULL)
     {
     /* NO-OP */
@@ -1688,10 +1685,9 @@ static int assign_hosts(
     {
     /* assign "local" */
 
-    if ((server.sv_attr[SRV_ATR_DefNode].at_flags & ATR_VFLAG_SET) &&
-        (server.sv_attr[SRV_ATR_DefNode].at_val.at_str != NULL))
+    if (def_node != NULL)
       {
-      hosttoalloc = server.sv_attr[SRV_ATR_DefNode].at_val.at_str;
+      hosttoalloc = def_node;
       }
     else
       {
@@ -1699,12 +1695,11 @@ static int assign_hosts(
       momaddr = pbs_mom_addr;
       }
     }
-  else if ((server.sv_attr[SRV_ATR_DefNode].at_flags & ATR_VFLAG_SET) &&
-           (server.sv_attr[SRV_ATR_DefNode].at_val.at_str != 0))
+  else if (def_node != NULL)
     {
     /* alloc server default_node */
 
-    hosttoalloc = server.sv_attr[SRV_ATR_DefNode].at_val.at_str;
+    hosttoalloc = def_node;
     }
   else if (svr_tsnodes != 0)
     {

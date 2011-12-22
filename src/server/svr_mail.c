@@ -154,7 +154,8 @@ void *send_the_mail(
   FILE      *outmail;
   
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
-  if ((mailfrom = server.sv_attr[SRV_ATR_mailfrom].at_val.at_str) == NULL)
+  get_svr_attr(SRV_ATR_mailfrom, &mailfrom);
+  if (mailfrom == NULL)
     {
     if (LOGLEVEL >= 5)
       {
@@ -173,23 +174,15 @@ void *send_the_mail(
     }
 
   /* mail subject line formating statement */
-  if ((server.sv_attr[SRV_ATR_MailSubjectFmt].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_MailSubjectFmt].at_val.at_str != NULL))
-    {
-    subjectfmt = server.sv_attr[SRV_ATR_MailSubjectFmt].at_val.at_str;
-    }
-  else
+  get_svr_attr(SRV_ATR_MailSubjectFmt, &subjectfmt);
+  if (subjectfmt == NULL)
     {
     subjectfmt = "PBS JOB %i";
     }
 
   /* mail body formating statement */
-  if ((server.sv_attr[SRV_ATR_MailBodyFmt].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_MailBodyFmt].at_val.at_str != NULL))
-    {
-    bodyfmt = server.sv_attr[SRV_ATR_MailBodyFmt].at_val.at_str;
-    }
-  else
+  get_svr_attr(SRV_ATR_MailBodyFmt, &bodyfmt);
+  if (bodyfmt == NULL)
     {
     bodyfmt =  strcpy(bodyfmtbuf, "PBS Job Id: %i\n"
                                   "Job Name:   %j\n");
@@ -316,15 +309,17 @@ void svr_mailowner(
   static char          *memory_err = "Cannot allocate memory to send email";
 
   char                  mailto[1024];
+  char                 *domain = NULL;
   int                   i;
   mail_info            *mi;
+  long                  no_force = FALSE;
 
   struct array_strings *pas;
   memset(mailto, 0, sizeof(mailto));
 
-  if ((server.sv_attr[SRV_ATR_MailDomain].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_MailDomain].at_val.at_str != NULL) &&
-      (!strcasecmp("never", server.sv_attr[SRV_ATR_MailDomain].at_val.at_str)))
+  get_svr_attr(SRV_ATR_MailDomain, &domain);
+  if ((domain != NULL) &&
+      (!strcasecmp("never", domain)))
     {
     /* never send user mail under any conditions */
     if (LOGLEVEL >= 3) 
@@ -360,8 +355,9 @@ void svr_mailowner(
    * unless server no_mail_force attribute is set to true
    */
 
+  get_svr_attr(SRV_ATR_NoMailForce, &no_force);
   if ((force != MAIL_FORCE) ||
-    (server.sv_attr[(int)SRV_ATR_NoMailForce].at_val.at_long == TRUE))
+      (no_force == TRUE))
     {
 
     if (pjob->ji_wattr[JOB_ATR_mailpnts].at_flags & ATR_VFLAG_SET)
@@ -433,11 +429,10 @@ void svr_mailowner(
     {
     /* no mail user list, just send to owner */
 
-    if ((server.sv_attr[SRV_ATR_MailDomain].at_flags & ATR_VFLAG_SET) &&
-        (server.sv_attr[SRV_ATR_MailDomain].at_val.at_str != NULL))
+    if (domain != NULL)
       {
       snprintf(mailto, sizeof(mailto), "%s@%s",
-        pjob->ji_wattr[JOB_ATR_euser].at_val.at_str, server.sv_attr[SRV_ATR_MailDomain].at_val.at_str);
+        pjob->ji_wattr[JOB_ATR_euser].at_val.at_str, domain);
 
       if (LOGLEVEL >= 5) 
         {

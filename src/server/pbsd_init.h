@@ -55,6 +55,6 @@ void check_children(void);
 
 /* static void init_abt_job(job *pjob); */
 
-int get_svr_attr(int type);
+int recov_svr_attr(int type);
 
 #endif /* _PBSD_INIT_H */

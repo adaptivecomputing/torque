@@ -202,8 +202,11 @@ void req_register(
      * job not found... if server is initializing, it may not
      * yet recovered, that is not an error.
      */
+    long state;
 
-    if (server.sv_attr[SRV_ATR_State].at_val.at_long != SV_STATE_INIT)
+    get_svr_attr(SRV_ATR_State, &state);
+
+    if (state != SV_STATE_INIT)
       {
       log_event(
         PBSEVENT_DEBUG,
@@ -690,8 +693,10 @@ void req_registerarray(
      * array not found... if server is initializing, it may not
      * yet be recovered, that is not an error.
      */
+    long state;
+    get_svr_attr(SRV_ATR_State, &state);
 
-    if (server.sv_attr[SRV_ATR_State].at_val.at_long != SV_STATE_INIT)
+    if (state != SV_STATE_INIT)
       {
       log_event(
         PBSEVENT_DEBUG,

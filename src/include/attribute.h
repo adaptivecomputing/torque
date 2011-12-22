@@ -446,6 +446,7 @@ extern char *parse_comma_string(char *,char **);
 struct dynamic_string;
 
 extern int   acl_check(attribute *, char *canidate, int type);
+int          acl_check_my_array_string(struct array_strings *, char *, int);
 extern char *arst_string(char *str, attribute *pattr);
 extern void  attrl_fixlink(tlist_head *svrattrl);
 extern void  recov_acl(attribute *, attribute_def *, char *, char *);

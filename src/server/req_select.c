@@ -294,9 +294,10 @@ void req_selectjobs(
   int      bad = 0;
 
   struct stat_cntl *cntl;
-  svrattrl    *plist;
-  pbs_queue    *pque = NULL;
-  int      rc;
+  svrattrl         *plist;
+  pbs_queue        *pque = NULL;
+  int               rc;
+  long              poll_jobs = 0;
 
   struct select_list *selistp;
 
@@ -341,11 +342,13 @@ void req_selectjobs(
 
   cntl->sc_select = selistp;  /* the select list */
 
+  get_svr_attr(SRV_ATR_PollJobs, &poll_jobs);
+
   if (preq->rq_type == PBS_BATCH_SelectJobs)
     {
     sel_step3(cntl);
     }
-  else if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
+  else if (poll_jobs)
     {
     sel_step3(cntl);
     }
@@ -382,8 +385,10 @@ static void sel_step2(
   pbs_queue    *pque = NULL;
   int           iter;
   time_t        time_now = time(NULL);
+  long          query_others;
 
   /* do first pass of finding jobs that match the selection criteria */
+  get_svr_attr(SRV_ATR_query_others, &query_others);
 
   if (cntl->sc_jobid[0] == '\0')
     pjob = NULL;
@@ -478,7 +483,7 @@ static void sel_step2(
         }
       }
 
-    if (server.sv_attr[SRV_ATR_query_others].at_val.at_long ||
+    if (query_others ||
         (svr_authorize_jobreq(cntl->sc_origrq, pjob) == 0))
       {
       /* have permission to look at job */
@@ -545,7 +550,9 @@ static void sel_step3(
   pbs_queue           *pque = NULL;
 
   int         iter = -1;
-
+  long        query_others;
+  
+  get_svr_attr(SRV_ATR_query_others, &query_others);
   if (cntl->sc_origrq->rq_extend != NULL)
     {
     if (!strncmp(cntl->sc_origrq->rq_extend, "summarize_arrays", strlen("summarize_arrays")))
@@ -594,7 +601,7 @@ static void sel_step3(
 
   while (pjob != NULL)
     {
-    if (server.sv_attr[SRV_ATR_query_others].at_val.at_long ||
+    if (query_others ||
         (svr_authorize_jobreq(preq, pjob) == 0))
       {
       /* either job owner or has special permission to look at job */

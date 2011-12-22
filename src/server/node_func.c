@@ -309,7 +309,8 @@ int addr_ok(
   else if (pnode->nd_state & INUSE_DOWN)
     {
     /* the node is ok if it is still talking to us */
-    long chk_len = server.sv_attr[SRV_ATR_check_rate].at_val.at_long;
+    long chk_len = 300; 
+    get_svr_attr(SRV_ATR_check_rate, &chk_len);
     
     if (pnode->nd_lastupdate != 0)
       {
@@ -917,10 +918,12 @@ static int process_host_name_part(
   
   if (NodeSuffixIsSet == 0)
     {
-    if (((server.sv_attr[SRV_ATR_NodeSuffix].at_flags & ATR_VFLAG_SET) != 0) &&
-        (server.sv_attr[SRV_ATR_NodeSuffix].at_val.at_str != NULL))
+    char *node_suffix = NULL;
+    get_svr_attr(SRV_ATR_NodeSuffix, &node_suffix);
+
+    if (node_suffix != NULL)
       {
-      NodeSuffix = strdup(server.sv_attr[SRV_ATR_NodeSuffix].at_val.at_str);
+      NodeSuffix = strdup(node_suffix);
       }
     
     NodeSuffixIsSet = 1;

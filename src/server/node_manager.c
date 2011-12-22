@@ -994,6 +994,10 @@ int is_stat_get(
   int             msg_error = 0;
   struct pbssubn *sp = NULL;
   time_t          time_now = time(NULL);
+  long            mom_job_sync = FALSE;
+  long            auto_np = FALSE;
+  long            np_default = FALSE;
+  long            down_on_error = FALSE;
 
   extern int TConnGetSelectErrno();
   extern int TConnGetReadErrno();
@@ -1010,6 +1014,11 @@ int is_stat_get(
     {
     return(DIS_EOF);
     }
+
+  get_svr_attr(SRV_ATR_MomJobSync, &mom_job_sync);
+  get_svr_attr(SRV_ATR_AutoNodeNP, &auto_np);
+  get_svr_attr(SRV_ATR_NPDefault, &np_default);
+  get_svr_attr(SRV_ATR_DownOnError, &down_on_error);
 
   /*
    *  Before filling the "temp" attribute, initialize it.
@@ -1249,13 +1258,13 @@ int is_stat_get(
         msg_error = 1;
         }
       }
-    else if (server.sv_attr[SRV_ATR_MomJobSync].at_val.at_long &&
+    else if (mom_job_sync &&
              !strncmp(ret_info, "jobdata=", 8))
       {
       /* update job attributes based on what the MOM gives us */      
       update_job_data(np, ret_info + strlen("jobdata="));
       }
-    else if (server.sv_attr[SRV_ATR_MomJobSync].at_val.at_long &&
+    else if (mom_job_sync &&
              !strncmp(ret_info, "jobs=", 5))
       {
       /* walk job list reported by mom */
@@ -1265,7 +1274,7 @@ int is_stat_get(
       sprintf(str, "%s:%s", np->nd_name, ret_info);
       enqueue_threadpool_request(sync_node_jobs, str);
       }
-    else if (server.sv_attr[SRV_ATR_AutoNodeNP].at_val.at_long)
+    else if (auto_np)
       {
       if (!(strncmp(ret_info, "ncpus=", 6)))
         {        
@@ -1286,20 +1295,17 @@ int is_stat_get(
           }
         }
       }
-    else if (server.sv_attr[SRV_ATR_NPDefault].at_val.at_long)
+    else if (np_default)
       {
       struct pbsnode *pnode;
       int             iter = -1;
-      long            max_np;
       long            nsnfreediff;
       
-      max_np = server.sv_attr[SRV_ATR_NPDefault].at_val.at_long;
-     
       while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
         {
         nsnfreediff = pnode->nd_nsn - pnode->nd_nsnfree;
-        pnode->nd_nsn = max_np;
-        pnode->nd_nsnfree = max_np - nsnfreediff;
+        pnode->nd_nsn = np_default;
+        pnode->nd_nsnfree = np_default - nsnfreediff;
        
         unlock_node(pnode, id, "SRV_ATR_NPDefault", LOGLEVEL);
         }
@@ -1342,7 +1348,7 @@ int is_stat_get(
     return(rc);
     }
 
-  if (msg_error && server.sv_attr[SRV_ATR_DownOnError].at_val.at_long)
+  if (msg_error && down_on_error)
     {
     update_node_state(np, INUSE_DOWN);
     }
@@ -1981,20 +1987,18 @@ void *check_nodes_work(
   work_task *ptask = (struct work_task *)vp;
 
   struct pbsnode   *np = NULL;
-  int               chk_len;
+  long              chk_len = 300;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   time_t            time_now = time(NULL);
 
   node_iterator     iter;
   
   /* load min refresh interval */
-
-  chk_len = server.sv_attr[SRV_ATR_check_rate].at_val.at_long;
+  get_svr_attr(SRV_ATR_check_rate, &chk_len);
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buf, "verifying nodes are active (min_refresh = %d seconds)",
-            chk_len);
+    sprintf(log_buf, "verifying nodes are active (min_refresh = %d seconds)", (int)chk_len);
 
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
     }

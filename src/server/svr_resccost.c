@@ -84,6 +84,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 #include "pbs_ifl.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -402,6 +403,7 @@ calc_job_cost(job *pjob)
   resource *pjobr;
   int   shiftct;
 
+  pthread_mutex_lock(server.sv_attr_mutex);
   pcost = (struct resource_cost *)GET_NEXT(server.sv_attr[SRV_ATR_resource_cost].at_val.at_list);
 
   while (pcost)
@@ -440,6 +442,7 @@ calc_job_cost(job *pjob)
     }
 
   cost += server.sv_attr[SRV_ATR_sys_cost].at_val.at_long;
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   return (cost);
   }

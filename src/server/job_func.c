@@ -1091,9 +1091,11 @@ void job_clone_wt(
       }
     else
       {
+      long moab_compatible = FALSE;;
+      get_svr_attr(SRV_ATR_MoabArrayCompatible, &moab_compatible);
       pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
       
-      if (server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_long != FALSE)
+      if (moab_compatible != FALSE)
         {
         /* if configured and necessary, apply a slot limit hold to all
          * jobs above the slot limit threshold */
@@ -1407,6 +1409,7 @@ int record_jobinfo(
   int                     fd;
   size_t                  bytes_read = 0;
   extern pthread_mutex_t *job_log_mutex; 
+  long                    record_job_script = FALSE;
   
   pthread_mutex_lock(job_log_mutex);
   if ((rc = job_log_open(job_log_file, path_jobinfo_log)) < 0)
@@ -1475,7 +1478,8 @@ int record_jobinfo(
       }
     }
   
-  if (server.sv_attr[SRV_ATR_RecordJobScript].at_val.at_long)
+  get_svr_attr(SRV_ATR_RecordJobScript, &record_job_script);
+  if (record_job_script)
     {
     /* This is for Baylor. We will make it a server parameter eventually
      * Write the contents of the script to our log file*/
@@ -1546,9 +1550,11 @@ void job_purge(
   char          namebuf[MAXPATHLEN + 1];
   extern char  *msg_err_purgejob;
   time_t        time_now = time(NULL);
+  long          record_job_info = FALSE;
 
   /* check to see if we are keeping a log of all jobs completed */
-  if (server.sv_attr[SRV_ATR_RecordJobInfo].at_val.at_long)
+  get_svr_attr(SRV_ATR_RecordJobInfo, &record_job_info);
+  if (record_job_info)
     {
     record_jobinfo(pjob);
 
@@ -1734,9 +1740,11 @@ char *get_correct_jobname(
   int len;
 
   char *id = "get_correct_jobname";
+  long  display_suffix = TRUE;
+  char *alias = NULL;
 
-  if ((server.sv_attr[SRV_ATR_display_job_server_suffix].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_display_job_server_suffix].at_val.at_long == FALSE))
+  get_svr_attr(SRV_ATR_display_job_server_suffix, &display_suffix);
+  if (display_suffix == FALSE)
     server_suffix = FALSE;
 
   if ((dot = strchr(jobid,'.')) != NULL)
@@ -1752,11 +1760,11 @@ char *get_correct_jobname(
   dot = NULL;
 
   /* check current settings */
-  if ((server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET) &&
+  get_svr_attr(SRV_ATR_job_suffix_alias, &alias);
+  if ((alias != NULL) &&
       (server_suffix == TRUE))
     {
     /* display the server suffix and the alias */
-    char *alias = server.sv_attr[SRV_ATR_job_suffix_alias].at_val.at_str;
 
     /* check if alias is already there */
     if (second_suffix != NULL)
@@ -1851,11 +1859,9 @@ char *get_correct_jobname(
         jobid,server_name);
       }
     } /* END if (just server_suffix) */
-  else if (server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET)
+  else if (alias != NULL)
     {
     /* just the alias, not the server */
-
-    char *alias = server.sv_attr[SRV_ATR_job_suffix_alias].at_val.at_str;
 
     if (first_suffix == NULL)
       {
@@ -1947,8 +1953,8 @@ job *find_job(
   if ((at = strchr(jobid, (int)'@')) != NULL)
     * at = '\0'; /* strip off @server_name */
 
-  if ((server.sv_attr[SRV_ATR_display_job_server_suffix].at_flags & ATR_VFLAG_SET) ||
-      (server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET))
+  if ((is_svr_attr_set(SRV_ATR_display_job_server_suffix)) ||
+      (is_svr_attr_set(SRV_ATR_job_suffix_alias)))
     {
     comp = get_correct_jobname(jobid);
     different = TRUE;

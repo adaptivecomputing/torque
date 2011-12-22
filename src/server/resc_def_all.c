@@ -782,9 +782,8 @@ int init_resc_defs(void)
 #ifndef PBS_MOM
   /* build up a temporary list of string resources */
 
-  if (server.sv_attr[SRV_ATR_ExtraResc].at_flags & ATR_VFLAG_SET)
+  if (get_svr_attr(SRV_ATR_ExtraResc, &resc_arst) == PBSE_NONE)
     {
-    resc_arst = server.sv_attr[SRV_ATR_ExtraResc].at_val.at_arst;
 
     tmpresc = calloc(resc_arst->as_usedptr + 1, sizeof(resource_def));
 

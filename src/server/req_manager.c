@@ -1194,6 +1194,7 @@ void mgr_server_set(
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
+  pthread_mutex_lock(server.sv_attr_mutex);
   rc = mgr_set_attr(
          server.sv_attr,
          svr_attr_def,
@@ -1203,6 +1204,7 @@ void mgr_server_set(
          &bad_attr,
          (void *) & server,
          ATR_ACTION_ALTER);
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   /* PBSE_BADACLHOST - lets show the user the first bad host in the ACL  */
 
@@ -1271,6 +1273,7 @@ void mgr_server_set(
       /* nothing wrong found in the request, let's try again
          with the server's list */
 
+      pthread_mutex_lock(server.sv_attr_mutex);
       pstr = server.sv_attr[index].at_val.at_arst;
 
       for (i = 0; i < pstr->as_usedptr; ++i)
@@ -1285,6 +1288,7 @@ void mgr_server_set(
           break;
           }
         }
+      pthread_mutex_unlock(server.sv_attr_mutex);
 
       if (bad_host[0] != '\0')
         break;
@@ -1353,6 +1357,7 @@ void mgr_server_unset(
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
+  pthread_mutex_lock(server.sv_attr_mutex);
   rc = mgr_unset_attr(
          server.sv_attr,
          svr_attr_def,
@@ -1360,6 +1365,7 @@ void mgr_server_unset(
          plist,
          preq->rq_perm,
          &bad_attr);
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   if (rc != 0)
     {

@@ -183,7 +183,7 @@ extern struct all_jobs alljobs;
 
 /* External Functions */
 
-extern int    get_svr_attr (int);
+extern int    recov_svr_attr (int);
 
 /* Local Private Functions */
 
@@ -611,6 +611,7 @@ void parse_command_line(
 
       case 'a':
 
+        pthread_mutex_lock(server.sv_attr_mutex);
         if (decode_b(
               &server.sv_attr[SRV_ATR_scheduling],
               NULL,
@@ -624,6 +625,7 @@ void parse_command_line(
           exit(1);
           }
         a_opt_init = server.sv_attr[SRV_ATR_scheduling].at_val.at_long;
+        pthread_mutex_unlock(server.sv_attr_mutex);
 
         break;
 
@@ -923,11 +925,14 @@ static time_t check_tasks()
   time_t     delay;
 
   work_task *ptask;
-  time_t     tilwhen = server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long;
+  long       til = 0;
+  time_t     tilwhen;
   int        iter = -1;
 
   time_t     time_now = time(NULL);
 
+  get_svr_attr(SRV_ATR_scheduler_iteration, &til);
+  tilwhen = til;
   iter = -1;
 
   while ((ptask = next_task(&task_list_timed,&iter)) != NULL)
@@ -1033,13 +1038,18 @@ void main_loop(void)
 
   {
   int            c;
-  long         *state;
+  long          state;
   time_t        waittime;
   pbs_queue    *pque;
   job          *pjob;
   int           iter;
   time_t        last_jobstat_time;
-  int           when;
+  long          when = 0;
+  long          timeout = 0;
+  long          log = 0;
+  long          poll_jobs = FALSE;
+  long          scheduling = FALSE;
+  long          sched_iteration = 0;
   time_t        time_now = time(NULL);
 
   extern char  *msg_startup2; /* log message   */
@@ -1070,7 +1080,8 @@ void main_loop(void)
   /* do not check nodes immediately as they will initially be marked
      down unless they have already reported in */
 
-  when = server.sv_attr[SRV_ATR_check_rate].at_val.at_long + time_now;
+  get_svr_attr(SRV_ATR_check_rate, &when);
+  when += time_now;
 
   if (svr_totnodes > 1024)
     {
@@ -1095,17 +1106,23 @@ void main_loop(void)
    * following section constitutes the "main" loop of the server
    */
 
-  state = &server.sv_attr[SRV_ATR_State].at_val.at_long;
+  get_svr_attr(SRV_ATR_State, &state);
 
-  DIS_tcp_settimeout(server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long);
+  get_svr_attr(SRV_ATR_tcp_timeout, &timeout);
+  DIS_tcp_settimeout(timeout);
 
   if (server_init_type == RECOV_HOT)
-    *state = SV_STATE_HOT;
+    state = SV_STATE_HOT;
   else
-    *state = SV_STATE_RUN;
+    state = SV_STATE_RUN;
+
+  set_svr_attr(SRV_ATR_State, &state);
 
   if (plogenv == NULL) /* If no specification of loglevel from env */
-    LOGLEVEL = server.sv_attr[SRV_ATR_LogLevel].at_val.at_long;
+    {
+    get_svr_attr(SRV_ATR_LogLevel, &log);
+    LOGLEVEL = log;
+    }
 
 #ifdef PBS_VERSION
   printf("pbs_server is up (svn version - %s)\n", PBS_VERSION);
@@ -1113,37 +1130,38 @@ void main_loop(void)
   printf("pbs_server is up (version - %s)\n", VERSION);
 #endif
 
-
-  while (*state != SV_STATE_DOWN)
+  while (state != SV_STATE_DOWN)
     {
     /* first process any task whose time delay has expired */
     last_jobstat_time = time_now = time(NULL);
 
     send_any_hellos_needed();
 
-    if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
+    get_svr_attr(SRV_ATR_PollJobs, &poll_jobs);
+
+    if (poll_jobs)
       waittime = MIN(check_tasks(), JobStatRate - (time_now - last_jobstat_time));
     else
       waittime = check_tasks();
 
     waittime = MAX(1, waittime);
 
-    if (*state == SV_STATE_RUN)
+    if (state == SV_STATE_RUN)
       {
       /* In normal Run state */
 
       /* if time or event says to run scheduler, do it */
+      get_svr_attr(SRV_ATR_scheduling, &scheduling);
+      get_svr_attr(SRV_ATR_scheduler_iteration, &sched_iteration);
 
       pthread_mutex_lock(svr_do_schedule_mutex);
 
       if ((svr_do_schedule != SCH_SCHEDULE_NULL) &&
-          server.sv_attr[SRV_ATR_scheduling].at_val.at_long)
+          scheduling)
         {
         pthread_mutex_unlock(svr_do_schedule_mutex);
 
-        server.sv_next_schedule =
-          time_now +
-          server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long;
+        server.sv_next_schedule = time_now + sched_iteration;
 
         schedule_jobs();
         notify_listeners();
@@ -1153,7 +1171,7 @@ void main_loop(void)
         pthread_mutex_unlock(svr_do_schedule_mutex);
         }
       }
-    else if (*state == SV_STATE_HOT)
+    else if (state == SV_STATE_HOT)
       {
       /* Are there HOT jobs to rerun */
       /* only try every _CYCLE seconds */
@@ -1173,7 +1191,8 @@ void main_loop(void)
         {
         server_init_type = RECOV_WARM;
 
-        *state = SV_STATE_RUN;
+        state = SV_STATE_RUN;
+        set_svr_attr(SRV_ATR_State, &state);
         }
       }
 
@@ -1206,17 +1225,22 @@ void main_loop(void)
 
     /* wait for a request and process it */
 
-    if (wait_request(waittime, state) != 0)
+    if (wait_request(waittime, &state) != 0)
       {
       log_err(-1, msg_daemonname, "wait_request failed");
       }
-    LOGLEVEL = server.sv_attr[SRV_ATR_LogLevel].at_val.at_long;
+
+    if (plogenv == NULL)
+      {
+      get_svr_attr(SRV_ATR_LogLevel, &log);
+      LOGLEVEL = log;
+      }
 
     /* qmgr can dynamically set the loglevel specification
      * we use the new value if PBSLOGLEVEL was not specified
      */
-
-    if (*state == SV_STATE_SHUTSIG)
+    get_svr_attr(SRV_ATR_State, &state);
+    if (state == SV_STATE_SHUTSIG)
       svr_shutdown(SHUT_SIG); /* caught sig */
 
     /*
@@ -1228,12 +1252,13 @@ void main_loop(void)
 
     pthread_mutex_lock(server.sv_jobstates_mutex);
 
-    if ((*state > SV_STATE_RUN) &&
+    if ((state > SV_STATE_RUN) &&
         (server.sv_jobstates[JOB_STATE_RUNNING] == 0) &&
         (server.sv_jobstates[JOB_STATE_EXITING] == 0) &&
         (has_task(&task_list_event) == FALSE))
       {
-      *state = SV_STATE_DOWN;
+      state = SV_STATE_DOWN;
+      set_svr_attr(SRV_ATR_State, &state);
 
       /* at this point kill the threadpool */
       destroy_request_pool();
@@ -1241,6 +1266,7 @@ void main_loop(void)
     
     pthread_mutex_unlock(server.sv_jobstates_mutex);
 
+    get_svr_attr(SRV_ATR_State, &state);
     }    /* END while (*state != SV_STATE_DOWN) */
 
   svr_save(&server, SVR_SAVE_FULL); /* final recording of server */
@@ -1473,7 +1499,7 @@ int main(
    * Attributes will not be read in on a pbs_server -t create
    */
 
-  if (get_svr_attr(server_init_type) == -1)
+  if (recov_svr_attr(server_init_type) == -1)
     {
     fprintf(stderr,"%s: failed to get server attributes\n", 
       ProgName);
@@ -1486,7 +1512,7 @@ int main(
    * If server lockfile attribute has been set use it.
    * If not use default location for it
    */
-   
+  pthread_mutex_lock(server.sv_attr_mutex); 
   if ((server.sv_attr[SRV_ATR_lockfile].at_flags & ATR_VFLAG_SET) &&
                (server.sv_attr[SRV_ATR_lockfile].at_val.at_str))
     {
@@ -1518,6 +1544,7 @@ int main(
   snprintf(HALockFile,MAXPATHLEN,"%s", lockfile);
   HALockCheckTime = server.sv_attr[SRV_ATR_LockfileCheckTime].at_val.at_long;
   HALockUpdateTime = server.sv_attr[SRV_ATR_LockfileUpdateTime].at_val.at_long;
+  pthread_mutex_unlock(server.sv_attr_mutex); 
 
   /* apply HA defaults */
 
@@ -1596,8 +1623,9 @@ int main(
    * set log_event_mask to point to the log_event attribute value so
    * it controls which events are logged.
    */
-
+  pthread_mutex_lock(server.sv_attr_mutex);
   log_event_mask = &server.sv_attr[SRV_ATR_log_events].at_val.at_long;
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   sprintf(path_log, "%s/%s",
           path_home,
@@ -1629,10 +1657,10 @@ int main(
   /* initialize the network interface */
 
   sprintf(log_buf, "Using ports Server:%d  Scheduler:%d  MOM:%d (server: '%s')",
-          pbs_server_port_dis,
-          pbs_scheduler_port,
-          pbs_mom_port,
-          server_host);
+    pbs_server_port_dis,
+    pbs_scheduler_port,
+    pbs_mom_port,
+    server_host);
 
   log_event(
     PBSEVENT_SYSTEM | PBSEVENT_ADMIN,
@@ -1704,42 +1732,48 @@ void check_job_log(
   long   depth = 1;
   char   log_buf[LOCAL_LOG_BUF_SIZE];
   time_t time_now = time(NULL);
+  long   keep_days = 0;
+  long   max_size = 0;
+  long   roll_depth = -1;
 
- /* remove logs older than LogKeepDays */
+  /* remove logs older than LogKeepDays */
+  get_svr_attr(SRV_ATR_JobLogKeepDays, &keep_days);
+  get_svr_attr(SRV_ATR_JobLogFileMaxSize, &max_size);
 
- if ((server.sv_attr[SRV_ATR_JobLogKeepDays].at_flags & ATR_VFLAG_SET) != 0)
-   {
-   snprintf(log_buf,sizeof(log_buf),"checking for old job logs in dir '%s' (older than %ld days)",
-     path_svrlog,
-     server.sv_attr[SRV_ATR_JobLogKeepDays].at_val.at_long);
- 
-   log_event(
-     PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-     PBS_EVENTCLASS_SERVER,
-     msg_daemonname,
-     log_buf);
-
-   if (log_remove_old(path_jobinfo_log,server.sv_attr[SRV_ATR_JobLogKeepDays].at_val.at_long * SECS_PER_DAY) != 0)
-     {
-     log_err(-1,"check_job_log","failure occurred when checking for old job logs");
-     }
-   }
-
-  if ((server.sv_attr[SRV_ATR_JobLogFileMaxSize].at_flags & ATR_VFLAG_SET) != 0)
+  if (keep_days != 0)
     {
-    if ((job_log_size() >= server.sv_attr[SRV_ATR_JobLogFileMaxSize].at_val.at_long) &&
-        (server.sv_attr[SRV_ATR_JobLogFileMaxSize].at_val.at_long > 0))
+    snprintf(log_buf,sizeof(log_buf),"checking for old job logs in dir '%s' (older than %ld days)",
+      path_svrlog,
+      keep_days);
+    
+    log_event(
+      PBSEVENT_SYSTEM | PBSEVENT_FORCE,
+      PBS_EVENTCLASS_SERVER,
+      msg_daemonname,
+      log_buf);
+    
+    if (log_remove_old(path_jobinfo_log, keep_days * SECS_PER_DAY) != 0)
       {
+      log_err(-1,"check_job_log","failure occurred when checking for old job logs");
+      }
+    }
+  
+  if (max_size != 0)
+    {
+    if ((job_log_size() >= max_size) &&
+        (max_size > 0))
+      {
+      get_svr_attr(SRV_ATR_JobLogFileRollDepth, &roll_depth);
+
       log_event(
         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
         PBS_EVENTCLASS_SERVER,
         msg_daemonname,
         "Rolling job log file");
-
-      if ((server.sv_attr[SRV_ATR_JobLogFileRollDepth].at_flags
-           & ATR_VFLAG_SET) != 0)
+      
+      if (roll_depth != -1)
         {
-        depth = server.sv_attr[SRV_ATR_JobLogFileRollDepth].at_val.at_long;
+        depth = roll_depth;
         }
 
       if ((depth >= INT_MAX) || (depth < 1))
@@ -1752,16 +1786,6 @@ void check_job_log(
         }
       }
     }
-
-  /* periodically record the version and loglevel */
-
-  sprintf(log_buf, msg_info_server, server.sv_attr[SRV_ATR_version].at_val.at_str, LOGLEVEL);
-
-  log_event(
-    PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-    PBS_EVENTCLASS_SERVER,
-    msg_daemonname,
-    log_buf);
 
   free(ptask->wt_mutex);
   free(ptask);
@@ -1777,16 +1801,18 @@ void check_log(
   struct work_task *ptask) /* I */
 
   {
-  long   depth = 1;
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
-  time_t time_now = time(NULL);
+  long    keep_days;
+  long    max_size;
+  char    log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t  time_now = time(NULL);
+  char   *version;
 
   /* remove logs older than LogKeepDays */
-  if ((server.sv_attr[SRV_ATR_LogKeepDays].at_flags & ATR_VFLAG_SET) != 0)
+  if (get_svr_attr(SRV_ATR_LogKeepDays, &keep_days) == PBSE_NONE)
     {
     snprintf(log_buf,sizeof(log_buf),"checking for old pbs_server logs in dir '%s' (older than %ld days)",
       path_svrlog,
-      server.sv_attr[SRV_ATR_LogKeepDays].at_val.at_long);
+      keep_days);
     
     log_event(
       PBSEVENT_SYSTEM | PBSEVENT_FORCE,
@@ -1794,16 +1820,18 @@ void check_log(
       msg_daemonname,
       log_buf);
     
-    if (log_remove_old(path_svrlog,server.sv_attr[SRV_ATR_LogKeepDays].at_val.at_long * SECS_PER_DAY) != 0)
+    if (log_remove_old(path_svrlog, keep_days * SECS_PER_DAY) != 0)
       {
       log_err(-1,"check_log","failure occurred when checking for old pbs_server logs");
       }
     }
   
-  if ((server.sv_attr[SRV_ATR_LogFileMaxSize].at_flags & ATR_VFLAG_SET) != 0)
+  if (get_svr_attr(SRV_ATR_LogFileMaxSize, &max_size) == PBSE_NONE)
     {
-    if ((log_size() >= server.sv_attr[SRV_ATR_LogFileMaxSize].at_val.at_long) && 
-        (server.sv_attr[SRV_ATR_LogFileMaxSize].at_val.at_long > 0))
+    long roll_depth = 1;
+
+    if ((log_size() >= max_size) && 
+        (max_size > 0))
       {
       log_event(
         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
@@ -1811,25 +1839,24 @@ void check_log(
         msg_daemonname,
         "Rolling log file");
       
-      if ((server.sv_attr[SRV_ATR_LogFileRollDepth].at_flags & ATR_VFLAG_SET) != 0)
-        {
-        depth = server.sv_attr[SRV_ATR_LogFileRollDepth].at_val.at_long;
-        }
+      get_svr_attr(SRV_ATR_LogFileRollDepth, &roll_depth);
 
-      if ((depth >= INT_MAX) || (depth < 1))
+      if ((roll_depth >= INT_MAX) || (roll_depth < 1))
         {
         log_err(-1, "check_log", "log roll cancelled, logfile depth is out of range");
         }
       else
         {
-        log_roll(depth);
+        log_roll(roll_depth);
         }
       }
     }
   
+
   /* periodically record the version and loglevel */
-  sprintf(log_buf, msg_info_server, server.sv_attr[SRV_ATR_version].at_val.at_str, LOGLEVEL);
-  
+  get_svr_attr(SRV_ATR_version, &version);
+  sprintf(log_buf, msg_info_server, version, LOGLEVEL);
+
   log_event(
     PBSEVENT_SYSTEM | PBSEVENT_FORCE,
     PBS_EVENTCLASS_SERVER,
@@ -1855,12 +1882,12 @@ void check_acct_log(
   {
   char   log_buf[LOCAL_LOG_BUF_SIZE];
   time_t time_now = time(NULL);
+  long   keep_days = 0;
 
-  if (((server.sv_attr[SRV_ATR_AcctKeepDays].at_flags & ATR_VFLAG_SET) != 0) &&
-      (server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long >= 0))
+  if ((get_svr_attr(SRV_ATR_AcctKeepDays, &keep_days) == PBSE_NONE) &&
+      (keep_days >= 0))
     {
-    sprintf(log_buf,"Checking accounting files - keep days = %ld",
-      server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long);
+    sprintf(log_buf,"Checking accounting files - keep days = %ld", keep_days);
     
     log_event(
       PBSEVENT_SYSTEM | PBSEVENT_FORCE,
@@ -1868,7 +1895,7 @@ void check_acct_log(
       msg_daemonname,
       log_buf);
      
-    acct_cleanup(server.sv_attr[SRV_ATR_AcctKeepDays].at_val.at_long);
+    acct_cleanup(keep_days);
     }
 
   free(ptask->wt_mutex);
@@ -2932,6 +2959,7 @@ void restore_attr_default(
   {
   int index;
 
+  pthread_mutex_lock(server.sv_attr_mutex);
   index = (int)(attr - server.sv_attr);
 
   attr->at_flags &= ~ATR_VFLAG_SET;
@@ -2978,6 +3006,7 @@ void restore_attr_default(
       break;
     }
 
+  pthread_mutex_unlock(server.sv_attr_mutex);
   } /* END restore_attr_default() */
 
 

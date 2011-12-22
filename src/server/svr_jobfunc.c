@@ -1006,6 +1006,7 @@ static int chk_svr_resc_limit(
 
     if (nodectresc != NULL)
       {
+      pthread_mutex_lock(server.sv_attr_mutex);
       svrc = (resource *)GET_NEXT(
                server.sv_attr[SRV_ATR_resource_avail].at_val.at_list);
 
@@ -1025,6 +1026,8 @@ static int chk_svr_resc_limit(
 
         svrc = (resource *)GET_NEXT(svrc->rs_link);
         } /* END while (svrc != NULL) */
+
+      pthread_mutex_unlock(server.sv_attr_mutex);
       }   /* END if (nodectresc != NULL) */
     }     /* END if ((noderesc == NULL) || ...) */
 
@@ -1045,10 +1048,12 @@ static int chk_svr_resc_limit(
 
       LimitName = jbrc->rs_defin->rs_name;
 
+      pthread_mutex_lock(server.sv_attr_mutex);
       cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceMax],
           &server.sv_attr[SRV_ATR_ResourceMax],
           jbrc->rs_defin,
           &LimitIsFromQueue);
+      pthread_mutex_unlock(server.sv_attr_mutex);
 
       if (strcmp(LimitName,"mppnppn") == 0)
         {
@@ -1164,10 +1169,12 @@ static int chk_svr_resc_limit(
       
       if (mppnppn != NULL)
         {
+        pthread_mutex_lock(server.sv_attr_mutex);
         cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceDefault],
             &server.sv_attr[SRV_ATR_resource_deflt],
             mppnppn,
             &LimitIsFromQueue);
+        pthread_mutex_unlock(server.sv_attr_mutex);
           
         if (cmpwith != NULL)
           {
@@ -1182,10 +1189,12 @@ static int chk_svr_resc_limit(
 
       if (mppwidthresc != NULL)
         {
+        pthread_mutex_lock(server.sv_attr_mutex);
         cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceDefault],
             &server.sv_attr[SRV_ATR_resource_deflt],
             mppwidthresc,
             &LimitIsFromQueue);
+        pthread_mutex_unlock(server.sv_attr_mutex);
           
         if (cmpwith != NULL)
           {
@@ -1213,10 +1222,12 @@ static int chk_svr_resc_limit(
     LimitIsFromQueue = 0;
     LimitName = mppnodect_resource->rs_defin->rs_name;
     
+    pthread_mutex_lock(server.sv_attr_mutex);
     cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceMax],
         &server.sv_attr[SRV_ATR_ResourceMax],
         mppnodect_resource->rs_defin,
         &LimitIsFromQueue);
+    pthread_mutex_unlock(server.sv_attr_mutex);
 
     if (cmpwith != NULL)
       {
@@ -1293,9 +1304,6 @@ static int chk_svr_resc_limit(
       tmpI = (int)strtol(ptr, NULL, 10);
 
       if ((SvrNodeCt > 0) && (tmpI <= SvrNodeCt))
-        IgnTest = 1;
-
-      if (server.sv_attr[SRV_ATR_NodePack].at_val.at_long)
         IgnTest = 1;
       }
 
@@ -1488,11 +1496,13 @@ int chk_resc_limits(
     EMsg[0] = '\0';
 
   /* first check against queue minimum */
+  pthread_mutex_lock(server.sv_attr_mutex);
   resc_gt = comp_resc2(&pque->qu_attr[QA_ATR_ResourceMin],
          pattr,
          server.sv_attr[SRV_ATR_QCQLimits].at_val.at_long,
          EMsg,
          GREATER);
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   if (resc_gt != PBSE_NONE)
     {
@@ -1726,10 +1736,12 @@ int svr_chkque(
       int rc;
       int slpygrp;
 
+      pthread_mutex_lock(server.sv_attr_mutex);
       slpygrp = attr_ifelse_long(
         &pque->qu_attr[QA_ATR_AclGroupSloppy],
         &server.sv_attr[SRV_ATR_AclGroupSloppy],
         0);
+      pthread_mutex_unlock(server.sv_attr_mutex);
 
       rc = acl_check(
              &pque->qu_attr[QA_ATR_AclGroup],
@@ -1790,9 +1802,11 @@ int svr_chkque(
           {
           int logic_or;
 
+          pthread_mutex_lock(server.sv_attr_mutex);
           logic_or = attr_ifelse_long(&pque->qu_attr[QA_ATR_AclLogic],
                                       &server.sv_attr[SRV_ATR_AclLogic],
                                       0);
+          pthread_mutex_unlock(server.sv_attr_mutex);
 
           if (logic_or && pque->qu_attr[QA_ATR_AclUserEnabled].at_val.at_long)
             {
@@ -1938,9 +1952,11 @@ int svr_chkque(
         {
         int logic_or;
 
+        pthread_mutex_lock(server.sv_attr_mutex);
         logic_or = attr_ifelse_long(&pque->qu_attr[QA_ATR_AclLogic],
                                     &server.sv_attr[SRV_ATR_AclLogic],
                                     0);
+        pthread_mutex_unlock(server.sv_attr_mutex);
 
         if (logic_or && pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long)
           {
@@ -2411,6 +2427,7 @@ void set_resc_deflt(
     {
     set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
     
+    pthread_mutex_lock(server.sv_attr_mutex);
     /* server defaults will only be applied to attributes which have
        not yet been set */
     set_deflt_resc(ja, &server.sv_attr[SRV_ATR_resource_deflt]);
@@ -2423,6 +2440,7 @@ void set_resc_deflt(
        not yet been set */
     set_deflt_resc(ja, &server.sv_attr[SRV_ATR_ResourceMax]);
 #endif
+    pthread_mutex_unlock(server.sv_attr_mutex);
 
     unlock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
     }

@@ -200,6 +200,7 @@ void *req_stat_job(
   job                  *pjob = NULL;
   pbs_queue            *pque = NULL;
   int                   rc = 0;
+  long                  poll_jobs = 0;
 
   struct batch_request *preq = (struct batch_request *)vp;
 
@@ -325,7 +326,8 @@ void *req_stat_job(
   cntl->sc_post   = req_stat_job_step2;
   cntl->sc_jobid[0] = '\0'; /* cause "start from beginning" */
 
-  if (server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
+  get_svr_attr(SRV_ATR_PollJobs, &poll_jobs);
+  if (poll_jobs)
     cntl->sc_post = 0; /* we're not going to make clients wait */
 
   req_stat_job_step2(cntl); /* go to step 2, see if running is current */
@@ -384,6 +386,7 @@ static void req_stat_job_step2(
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
   int                    iter;
   time_t                 time_now = time(NULL);
+  long                   poll_jobs = 0;
   
 
   preq   = cntl->sc_origrq;
@@ -442,7 +445,8 @@ static void req_stat_job_step2(
 
   iter = -1;
 
-  if (!server.sv_attr[SRV_ATR_PollJobs].at_val.at_long)
+  get_svr_attr(SRV_ATR_PollJobs, &poll_jobs);
+  if (!poll_jobs)
     {
     /* polljobs not set - indicates we may need to obtain fresh data from
        MOM */
@@ -1157,6 +1161,7 @@ void poll_job_task(
   char      *jobid = (char *)ptask->wt_parm1;
   job       *pjob;
   time_t     time_now = time(NULL);
+  long       poll_jobs;
 
   if (jobid != NULL)
     {
@@ -1164,7 +1169,8 @@ void poll_job_task(
     
     if (pjob != NULL)
       {
-      if ((server.sv_attr[SRV_ATR_PollJobs].at_val.at_long) &&
+      get_svr_attr(SRV_ATR_PollJobs, &poll_jobs);
+      if ((poll_jobs) &&
           (pjob->ji_qs.ji_state == JOB_STATE_RUNNING))
         {
         stat_mom_job(pjob);
@@ -1647,6 +1653,7 @@ void req_stat_svr(
   /* update count and state counts from sv_numjobs and sv_jobstates */
   pthread_mutex_lock(server.sv_qs_mutex);
 
+  pthread_mutex_lock(server.sv_attr_mutex);
   server.sv_attr[SRV_ATR_TotalJobs].at_val.at_long = server.sv_qs.sv_numjobs;
   
   pthread_mutex_unlock(server.sv_qs_mutex);
@@ -1684,6 +1691,7 @@ void req_stat_svr(
     reply_free(preply);
 
     req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
+    pthread_mutex_unlock(server.sv_attr_mutex);
 
     return;
     }
@@ -1718,6 +1726,8 @@ void req_stat_svr(
     {
     reply_send_svr(preq);
     }
+    
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   return;
   }  /* END req_stat_svr() */

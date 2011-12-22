@@ -872,11 +872,13 @@ void log_close(
 
     if (msg)
       {
+      pthread_mutex_unlock(log_mutex);
       log_record(
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_SERVER,
         "Log",
         "Log closed");
+      pthread_mutex_lock(log_mutex);
       }
 
     fclose(logfile);

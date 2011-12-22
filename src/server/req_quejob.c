@@ -500,9 +500,11 @@ void *req_quejob(
   svrattrl             *psatl;
   pbs_queue            *pque;
   attribute             tempattr;
+  char                 *alias = NULL;
   
   struct stat           stat_buf;
-
+  
+  get_svr_attr(SRV_ATR_job_suffix_alias, &alias);
   /*
    * if the job id is supplied, the request had better be
    * from another server
@@ -531,20 +533,18 @@ void *req_quejob(
   else
     {
     /* Create a job id */
-    char host_server[PBS_MAXSERVERNAME + 1];
-    int  server_suffix = TRUE;
+    char  host_server[PBS_MAXSERVERNAME + 1];
+    long  server_suffix = TRUE;
 
     created_here = JOB_SVFLG_HERE;
 
     memset(host_server, 0, sizeof(host_server));
 
-    if ((server.sv_attr[SRV_ATR_display_job_server_suffix].at_flags & ATR_VFLAG_SET) &&
-        (server.sv_attr[SRV_ATR_display_job_server_suffix].at_val.at_long == FALSE))
-      server_suffix = FALSE;
+    get_svr_attr(SRV_ATR_display_job_server_suffix, &server_suffix);
 
     pthread_mutex_lock(server.sv_qs_mutex);
 
-    if ((server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET) &&
+    if ((alias != NULL) &&
         (server_suffix == TRUE))
       {
       char *svrnm;
@@ -559,15 +559,11 @@ void *req_quejob(
         }
 
       snprintf(jidbuf,sizeof(jidbuf),"%d.%s.%s",
-        server.sv_qs.sv_jobidnumber,
-        svrnm,
-        server.sv_attr[SRV_ATR_job_suffix_alias].at_val.at_str);
+        server.sv_qs.sv_jobidnumber, svrnm, alias);
       }
-    else if (server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET)
+    else if (alias != NULL)
       {
-      snprintf(jidbuf,sizeof(jidbuf),"%d.%s",
-        server.sv_qs.sv_jobidnumber,
-        server.sv_attr[SRV_ATR_job_suffix_alias].at_val.at_str);
+      snprintf(jidbuf,sizeof(jidbuf),"%d.%s", server.sv_qs.sv_jobidnumber, alias);
       }
     else if (server_suffix == TRUE)
       {
@@ -597,9 +593,10 @@ void *req_quejob(
       server.sv_qs.sv_jobidnumber = 0; /* wrap it */
 
     /* Make the current job number visible in qmgr print server commnad. */
+    pthread_mutex_lock(server.sv_attr_mutex);
     server.sv_attr[SRV_ATR_NextJobNumber].at_val.at_long = server.sv_qs.sv_jobidnumber;
-
     server.sv_attr[SRV_ATR_NextJobNumber].at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+    pthread_mutex_unlock(server.sv_attr_mutex);
 
     pthread_mutex_unlock(server.sv_qs_mutex);
 
@@ -1226,13 +1223,18 @@ void *req_quejob(
           &pque->qu_attr[QE_ATR_checkpoint_dir],
           SET);
         }
-      else if ((server.sv_attr[SRV_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
-               (server.sv_attr[SRV_ATR_checkpoint_dir].at_val.at_str))
+      else 
         {
-        job_attr_def[JOB_ATR_checkpoint_dir].at_set(
-          &pj->ji_wattr[JOB_ATR_checkpoint_dir],
-          &server.sv_attr[SRV_ATR_checkpoint_dir],
-          SET);
+        pthread_mutex_lock(server.sv_attr_mutex);
+        if ((server.sv_attr[SRV_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
+            (server.sv_attr[SRV_ATR_checkpoint_dir].at_val.at_str))
+          {
+          job_attr_def[JOB_ATR_checkpoint_dir].at_set(
+            &pj->ji_wattr[JOB_ATR_checkpoint_dir],
+            &server.sv_attr[SRV_ATR_checkpoint_dir],
+            SET);
+          }
+        pthread_mutex_unlock(server.sv_attr_mutex);
         }
       }
 
@@ -2033,21 +2035,26 @@ void req_commit(
      *** job array under development */
   if (pj->ji_is_array_template)
     {
+    long max_size;
+    long max_slot;
+
     if ((rc = setup_array_struct(pj)))
       {
       if (rc == ARRAY_TOO_LARGE)
         {
+        get_svr_attr(SRV_ATR_MaxArraySize, &max_size);
         snprintf(log_buf,sizeof(log_buf),
           "Requested array size too large, limit is %ld",
-          server.sv_attr[SRV_ATR_MaxArraySize].at_val.at_long);
+           max_size);
 
         req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buf);
         }
       else if (rc == INVALID_SLOT_LIMIT)
         {
+        get_svr_attr(SRV_ATR_MaxSlotLimit, &max_slot);
         snprintf(log_buf,sizeof(log_buf),
           "Requested slot limit too large, limit is %ld",
-          server.sv_attr[SRV_ATR_MaxSlotLimit].at_val.at_long);
+          max_slot);
 
         req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buf);
         }

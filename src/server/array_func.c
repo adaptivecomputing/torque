@@ -314,8 +314,8 @@ job *find_array_template(
   if ((at = strchr(arrayid, (int)'@')) != NULL)
     * at = '\0'; /* strip off @server_name */
 
-  if ((server.sv_attr[SRV_ATR_display_job_server_suffix].at_flags & ATR_VFLAG_SET) ||
-      (server.sv_attr[SRV_ATR_job_suffix_alias].at_flags & ATR_VFLAG_SET))
+  if ((is_svr_attr_set(SRV_ATR_display_job_server_suffix) == TRUE) ||
+      (is_svr_attr_set(SRV_ATR_job_suffix_alias) == TRUE))
     {
     comp = get_correct_jobname(arrayid);
     different = TRUE;
@@ -574,13 +574,11 @@ int set_slot_limit(
 
   {
   char *pcnt;
-  int   max_limit = NO_SLOT_LIMIT;
+  long  max_limit;
 
   /* check for a max slot limit */
-  if (server.sv_attr[SRV_ATR_MaxSlotLimit].at_flags & ATR_VFLAG_SET)
-    {
-    max_limit = server.sv_attr[SRV_ATR_MaxSlotLimit].at_val.at_long;
-    }
+  if (get_svr_attr(SRV_ATR_MaxSlotLimit, &max_limit) != PBSE_NONE)
+    max_limit = NO_SLOT_LIMIT;
 
   if ((pcnt = strchr(request,'%')) != NULL)
     {
@@ -627,6 +625,7 @@ int setup_array_struct(
   int                 array_size;
   int                 rc;
   char                log_buf[LOCAL_LOG_BUF_SIZE];
+  long                max_array_size;
 
   /* setup a link to this job array in the servers all_arrays list */
   pa = (job_array *)calloc(1,sizeof(job_array));
@@ -679,12 +678,14 @@ int setup_array_struct(
 
   if ((rc = set_slot_limit(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str, pa)))
     {
+    long max_limit;
+    get_svr_attr(SRV_ATR_MaxSlotLimit, &max_limit);
     array_delete(pa);
 
     snprintf(log_buf,sizeof(log_buf),
       "Array %s requested a slot limit above the max limit %ld, rejecting\n",
       pa->ai_qs.parent_id,
-      server.sv_attr[SRV_ATR_MaxSlotLimit].at_val.at_long);
+      max_limit);
 
     log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pa->ai_qs.parent_id,log_buf);
 
@@ -717,9 +718,8 @@ int setup_array_struct(
   /* size of array is the biggest index + 1 */
   array_size++; 
 
-  if (server.sv_attr[SRV_ATR_MaxArraySize].at_flags & ATR_VFLAG_SET)
+  if (get_svr_attr(SRV_ATR_MaxArraySize, &max_array_size) == PBSE_NONE)
     {
-    int max_array_size = server.sv_attr[SRV_ATR_MaxArraySize].at_val.at_long;
     if (max_array_size < pa->ai_qs.num_jobs)
       {
       array_delete(pa);
@@ -1457,8 +1457,9 @@ void update_array_values(
   enum ArrayEventsEnum  event)     /* I */
 
   {
-  job *pjob = (job *)j;
-  int exit_status;
+  job  *pjob = (job *)j;
+  int   exit_status;
+  long  moab_compatible;
 
   switch (event)
     {
@@ -1501,7 +1502,10 @@ void update_array_values(
       array_save(pa);
 
       /* update slot limit hold if necessary */
-      if (server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_long != FALSE)
+      if (get_svr_attr(SRV_ATR_MoabArrayCompatible, &moab_compatible) != PBSE_NONE)
+        moab_compatible = FALSE;
+
+      if (moab_compatible != FALSE)
         {
         /* only need to update if the job wasn't previously held */
         if ((pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == FALSE)
