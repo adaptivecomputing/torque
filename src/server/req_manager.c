@@ -2605,8 +2605,6 @@ int set_nextjobnum(
 
   pthread_mutex_unlock(server.sv_qs_mutex);
 
-  svr_save(&server, SVR_SAVE_QUICK);
-
   return(PBSE_NONE);
   }
 
