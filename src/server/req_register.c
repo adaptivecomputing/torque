@@ -202,7 +202,7 @@ void req_register(
      * job not found... if server is initializing, it may not
      * yet recovered, that is not an error.
      */
-    long state;
+    long state = SV_STATE_DOWN;
 
     get_svr_attr(SRV_ATR_State, &state);
 
@@ -693,7 +693,7 @@ void req_registerarray(
      * array not found... if server is initializing, it may not
      * yet be recovered, that is not an error.
      */
-    long state;
+    long state = SV_STATE_DOWN;
     get_svr_attr(SRV_ATR_State, &state);
 
     if (state != SV_STATE_INIT)

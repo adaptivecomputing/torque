@@ -385,7 +385,7 @@ static void sel_step2(
   pbs_queue    *pque = NULL;
   int           iter;
   time_t        time_now = time(NULL);
-  long          query_others;
+  long          query_others = 0;
 
   /* do first pass of finding jobs that match the selection criteria */
   get_svr_attr(SRV_ATR_query_others, &query_others);
@@ -550,7 +550,7 @@ static void sel_step3(
   pbs_queue           *pque = NULL;
 
   int         iter = -1;
-  long        query_others;
+  long        query_others = 0;
   
   get_svr_attr(SRV_ATR_query_others, &query_others);
   if (cntl->sc_origrq->rq_extend != NULL)

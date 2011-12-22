@@ -678,7 +678,7 @@ int setup_array_struct(
 
   if ((rc = set_slot_limit(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str, pa)))
     {
-    long max_limit;
+    long max_limit = 0;
     get_svr_attr(SRV_ATR_MaxSlotLimit, &max_limit);
     array_delete(pa);
 

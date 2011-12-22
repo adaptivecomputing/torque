@@ -1371,7 +1371,7 @@ int handle_complete_first_time(
   int          KeepSeconds = 0;
   time_t       time_now = time(NULL);
   char         log_buf[LOCAL_LOG_BUF_SIZE];
-  long         must_report;
+  long         must_report = FALSE;
 
   /* first time in */
   if (LOGLEVEL >= 4)

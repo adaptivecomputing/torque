@@ -146,10 +146,10 @@ void *send_the_mail(
   mail_info *mi = (mail_info *)vp;
 
   int        i;
-  char      *mailfrom;
-  char      *subjectfmt;
-  char      *bodyfmt;
-  char      *cmdbuf;
+  char      *mailfrom = NULL;
+  char      *subjectfmt = NULL;
+  char      *bodyfmt = NULL;
+  char      *cmdbuf = NULL;
   char       bodyfmtbuf[MAXLINE];
   FILE      *outmail;
   

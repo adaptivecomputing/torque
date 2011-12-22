@@ -144,7 +144,7 @@ void svr_shutdown(
   {
   attribute    *pattr;
   job          *pjob;
-  long          state;
+  long          state = SV_STATE_DOWN;
   int           iter;
   char          log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -460,7 +460,7 @@ static void rerun_or_kill(
   char *text)  /* I */
 
   {
-  long       server_state;
+  long       server_state = SV_STATE_DOWN;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_queue *pque;
 

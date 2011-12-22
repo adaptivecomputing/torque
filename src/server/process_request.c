@@ -321,7 +321,7 @@ void *process_request(
   struct batch_request *request = NULL;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   long                  acl_enable = FALSE;
-  long                  state;
+  long                  state = SV_STATE_DOWN;
 
   time_t                time_now = time(NULL);
   int                   free_request = TRUE;
@@ -440,7 +440,7 @@ void *process_request(
   if (acl_enable)
     {
     /* acl enabled, check it; always allow myself and nodes */
-    struct array_strings *pas;
+    struct array_strings *pas = NULL;
     struct pbsnode       *isanode;
 
     get_svr_attr(SRV_ATR_acl_hosts, &pas);

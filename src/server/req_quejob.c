@@ -2035,8 +2035,8 @@ void req_commit(
      *** job array under development */
   if (pj->ji_is_array_template)
     {
-    long max_size;
-    long max_slot;
+    long max_size = 0;
+    long max_slot = 0;
 
     if ((rc = setup_array_struct(pj)))
       {

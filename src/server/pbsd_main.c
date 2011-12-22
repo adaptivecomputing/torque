@@ -1038,7 +1038,7 @@ void main_loop(void)
 
   {
   int            c;
-  long          state;
+  long          state = SV_STATE_DOWN;
   time_t        waittime;
   pbs_queue    *pque;
   job          *pjob;
@@ -1801,11 +1801,11 @@ void check_log(
   struct work_task *ptask) /* I */
 
   {
-  long    keep_days;
-  long    max_size;
+  long    keep_days =0;
+  long    max_size = 0;
   char    log_buf[LOCAL_LOG_BUF_SIZE];
   time_t  time_now = time(NULL);
-  char   *version;
+  char   *version = NULL;
 
   /* remove logs older than LogKeepDays */
   if (get_svr_attr(SRV_ATR_LogKeepDays, &keep_days) == PBSE_NONE)

@@ -424,7 +424,7 @@ int authenticate_user(
 
   if (pcred->timestamp)
     {
-    long lifetime;
+    long lifetime = 0;
     if (get_svr_attr(SRV_ATR_CredentialLifetime, &lifetime) == PBSE_NONE)
       {
       /* use configured value if set */
@@ -451,7 +451,7 @@ int authenticate_user(
   get_svr_attr(SRV_ATR_AclUserEnabled, &acl_enabled);
   if (acl_enabled)
     {
-    struct array_strings *acl_users;
+    struct array_strings *acl_users = NULL;
     snprintf(uath, sizeof(uath), "%s@%s", preq->rq_user, preq->rq_host);
     
     get_svr_attr(SRV_ATR_AclUsers, &acl_users);

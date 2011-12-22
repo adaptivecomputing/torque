@@ -1044,8 +1044,8 @@ static int svr_strtjob2(
   char             tmpLine[MAXLINE];
   struct timeval   start_time;
   struct timezone  tz;
-  long             job_timeout;
-  long             tcp_timeout;
+  long             job_timeout = 0;
+  long             tcp_timeout = 0;
 
   old_state = pjob->ji_qs.ji_state;
   old_subst = pjob->ji_qs.ji_substate;

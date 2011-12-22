@@ -290,7 +290,7 @@ int execute_job_delete(
   int               has_mutex = TRUE;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   time_t            time_now = time(NULL);
-  long              force_cancel;
+  long              force_cancel = FALSE;
   long              array_compatible = FALSE;
 
   chk_job_req_permissions(&pjob,preq);
@@ -1291,7 +1291,7 @@ static void post_job_delete_nanny(
   int                   rc;
   job                  *pjob;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  long                  nanny;
+  long                  nanny = 0;
 
   preq_sig = pwt->wt_parm1;
   rc       = preq_sig->rq_reply.brp_code;

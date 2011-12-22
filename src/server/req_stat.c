@@ -1161,7 +1161,7 @@ void poll_job_task(
   char      *jobid = (char *)ptask->wt_parm1;
   job       *pjob;
   time_t     time_now = time(NULL);
-  long       poll_jobs;
+  long       poll_jobs = 0;
 
   if (jobid != NULL)
     {
