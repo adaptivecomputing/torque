@@ -2458,9 +2458,8 @@ void set_resc_deflt(
       }
     }
   
-  if (pque != NULL)
+  if ((pque = get_jobs_queue(pjob)) != NULL)
     {
-    lock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
     if (pque->qu_qs.qu_type == QTYPE_Execution)
       {
       /* unset the procct resource if it has been set */
