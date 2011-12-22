@@ -274,6 +274,14 @@ int tcp_read(
   else if (max_read_len > *read_len)
     {
     pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
+/*This is a check to see if the ptr's have changed. Needed only in testing
+ * if (max_read_len != (int)(tp->tdis_bufsize - (tp->tdis_eod - tp->tdis_thebuf)))
+      {
+      snprintf(err_msg, sizeof(err_msg), "someone has been messing with the buffer!!!!");
+      log_err(PBSE_INTERNAL,__func__,err_msg);
+      exit(1);
+      }
+      */
     strcat(tp->tdis_eod, new_data);
     tp->tdis_eod += *read_len;
     *avail_len = tp->tdis_eod - tp->tdis_leadp;
@@ -351,6 +359,7 @@ int DIS_tcp_wflush(
   int  i;
   char *pb = NULL;
   char *temp_pb = NULL;
+  char *orig_temp_pb = NULL;
   char *pbs_debug = NULL;
   int   rc = PBSE_NONE;
 
@@ -364,14 +373,15 @@ int DIS_tcp_wflush(
   pb = tp->tdis_thebuf;
   ct = tp->tdis_trailp - tp->tdis_thebuf;
 
-  if ((temp_pb = calloc(1, ct + 1)) == NULL)
+  if ((orig_temp_pb = calloc(1, ct + 1)) == NULL)
     {
     if (pbs_debug != NULL)
       fprintf(stderr, "DIS_tcp_wflush failed to on calloc of temp_pb: %d, (%s)\n", errno, strerror(errno));
     rc = -1;
     }
   else
-    memcpy(temp_pb, pb, ct);
+    memcpy(orig_temp_pb, pb, ct);
+  temp_pb = orig_temp_pb;
 
   pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
 
@@ -394,7 +404,7 @@ int DIS_tcp_wflush(
         fprintf(stderr, "TCP write of %d bytes (%.32s) failed, errno=%d (%s)\n",
           (int)ct, temp_pb, errno, strerror(errno));
         }
-      free(temp_pb);
+      free(orig_temp_pb);
       return(-1);
       }  /* END if (i == -1) */
     else
@@ -406,7 +416,7 @@ int DIS_tcp_wflush(
 
   /* SUCCESS */
 
-  free(temp_pb);
+  free(orig_temp_pb);
   /* make sure something did not clean up the connection while
      we were writing */
   if (tcparray[fd] == NULL)
@@ -697,7 +707,7 @@ int tcp_puts(
     /* not enough room, reallocate the buffer */
     leadpct = (int)(tp->tdis_thebuf - tp->tdis_leadp);
     trailpct = (int)(tp->tdis_thebuf - tp->tdis_trailp);
-    newbufsize = tp->tdis_bufsize + THE_BUF_SIZE;
+    newbufsize = tp->tdis_bufsize + THE_BUF_SIZE + ct*2;
     temp = (char *)calloc(1, newbufsize+1);
     if (!temp)
       {
