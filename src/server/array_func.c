@@ -1628,7 +1628,7 @@ void update_array_statuses(
     
     if ((pjob = find_job(pa->ai_qs.parent_id)) != NULL)
       {
-      pthread_mutex_lock(pjob->ji_mutex);
+      /*pthread_mutex_lock(pjob->ji_mutex);*/
       if (running > 0)
         {
         svr_setjobstate(pjob, JOB_STATE_RUNNING, pjob->ji_qs.ji_substate, FALSE);
