@@ -1401,6 +1401,7 @@ int main(
   tzset(); /* localtime_r needs this */
 
   memset(&server, 0, sizeof(struct server));
+  log_init(NULL, NULL);
   initialize_globals();
   set_globals_from_environment();
 
@@ -1562,8 +1563,6 @@ int main(
 #ifdef DISABLE_DAEMONS
     TDoBackground = 0;
 #endif
- 
-  log_init(NULL, NULL);
 
   /* handle running in the background or not if we're debugging */
 
