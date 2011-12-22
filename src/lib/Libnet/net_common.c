@@ -152,7 +152,7 @@ int socket_get_tcp_priv()
       priv_port = get_random_reserved_port();
       while (cntr < RES_PORT_RETRY)
         {
-        if (++priv_port >= RES_PORT_RANGE)
+        if (++priv_port >= RES_PORT_END)
           priv_port = RES_PORT_START;
         local.sin_port = htons(priv_port);
         if (((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0) && ((rc == EADDRINUSE) || (errno = EADDRNOTAVAIL) || (errno == EINVAL) || (rc == EINPROGRESS)))
@@ -165,7 +165,7 @@ int socket_get_tcp_priv()
           break;
           }
         }
-      if (cntr == RES_PORT_START)
+      if (cntr >= RES_PORT_RETRY)
         {
         close(local_socket);
         rc = PBSE_SOCKET_FAULT;
@@ -251,6 +251,7 @@ int socket_connect_addr(
         if (is_privileged)
           {
           rc = PBSE_SOCKET_FAULT;
+          /* 3 connect attempts are made to each socket */
           /* Fail on RES_PORT_RETRY */
           if (cntr++ < RES_PORT_RETRY)
             {
@@ -258,11 +259,15 @@ int socket_connect_addr(
             if ((*local_socket = socket_get_tcp_priv()) < 0)
               rc = PBSE_SOCKET_FAULT;
             else
+              {
               rc = PBSE_NONE;
+              continue;
+              }
             }
           else
             {
             close(*local_socket);
+            *local_socket = -1;
             /* Hit RES_PORT_RETRY, exit */
             cntr = 0;
             }
@@ -275,6 +280,7 @@ int socket_connect_addr(
         close(*local_socket);
         rc = PBSE_SOCKET_FAULT;
         cntr = 0;
+        *local_socket = -1;
         break;
       }
     if (cntr == 0)
