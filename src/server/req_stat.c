@@ -1676,6 +1676,7 @@ void req_stat_svr(
 
   server.sv_attr[SRV_ATR_NetCounter].at_val.at_str = nc_buf;
   server.sv_attr[SRV_ATR_NetCounter].at_flags |= ATR_VFLAG_SET;
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   /* allocate a reply structure and a status sub-structure */
 
@@ -1727,7 +1728,6 @@ void req_stat_svr(
     reply_send_svr(preq);
     }
     
-  pthread_mutex_unlock(server.sv_attr_mutex);
 
   return;
   }  /* END req_stat_svr() */
