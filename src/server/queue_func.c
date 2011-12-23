@@ -373,14 +373,14 @@ pbs_queue *find_queuebyname(
   if (i >= 0)
     {
     pque = svr_queues.ra->slots[i].item;
-
     }
+    if (pque != NULL)
+      lock_queue(pque, __func__, NULL, LOGLEVEL);
 
   pthread_mutex_unlock(svr_queues.allques_mutex);
   
   if (pque != NULL)
     {
-    lock_queue(pque, __func__, NULL, LOGLEVEL);
     if (pque->q_being_recycled != FALSE)
       {
       unlock_queue(pque, __func__, "recycled queue", LOGLEVEL);

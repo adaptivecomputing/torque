@@ -327,12 +327,14 @@ void *process_request(
   int                   free_request = TRUE;
   int                   sfds = *(int *)new_sock;
   char                  tmpLine[MAXLINE];
+  int                   unlock_mutex = TRUE;
 
   if ((request = alloc_br(0)) == NULL)
     {
     snprintf(tmpLine, sizeof(tmpLine),
         "cannot allocate memory for request from %lu",
         get_connectaddr(sfds,FALSE));
+    free_request = FALSE;
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
     free_request = FALSE;
     goto process_request_cleanup;
@@ -366,6 +368,8 @@ void *process_request(
     snprintf(tmpLine, sizeof(tmpLine),
         "request on invalid type of connection from%lu",
         get_connectaddr(sfds,FALSE));
+    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+    unlock_mutex = FALSE;
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
     free_request = FALSE;
     goto process_request_cleanup;
@@ -395,6 +399,8 @@ void *process_request(
      * request type, in either case, return reject-reply
      */
 
+    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+    unlock_mutex = FALSE;
     req_reject(rc, 0, request, NULL, "cannot decode message");
     free_request = FALSE;
     goto process_request_cleanup;
@@ -412,6 +418,8 @@ void *process_request(
         "cannot determine hostname for connection from %lu",
         get_connectaddr(sfds,FALSE));
 
+    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+    unlock_mutex = FALSE;
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
     free_request = FALSE;
     goto process_request_cleanup;
@@ -454,6 +462,8 @@ void *process_request(
       snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
                request->rq_host);
 
+      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+      unlock_mutex = FALSE;
       req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
       free_request = FALSE;
       goto process_request_cleanup;
@@ -508,6 +518,8 @@ void *process_request(
 
       if (svr_conn[sfds].cn_socktype == PBS_SOCK_INET)
         {
+        pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+        unlock_mutex = FALSE;
         req_reject(rc, 0, request, NULL, NULL);
         free_request = FALSE;
         goto process_request_cleanup;
@@ -543,6 +555,8 @@ void *process_request(
 
     if (rc != 0)
       {
+      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+      unlock_mutex = FALSE;
       req_reject(rc, 0, request, NULL, NULL);
       free_request = FALSE;
       goto process_request_cleanup;
@@ -616,7 +630,8 @@ void *process_request(
       case PBS_BATCH_StageIn:
       case PBS_BATCH_jobscript:
 
-
+        pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+        unlock_mutex = FALSE;
         req_reject(PBSE_SVRDOWN, 0, request, NULL, NULL);
         free_request = FALSE;
         goto process_request_cleanup;
@@ -641,7 +656,8 @@ void *process_request(
 process_request_cleanup:
 
   close_conn(sfds, TRUE);
-  pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+  if (unlock_mutex == TRUE)
+    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
   if (free_request)
     free_br(request);
