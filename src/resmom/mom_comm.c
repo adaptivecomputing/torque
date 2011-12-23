@@ -2340,11 +2340,11 @@ int im_join_job_as_sister(
     }
 
   /* write a reply back */
-  if (job_radix == FALSE)
+/*  if (job_radix == FALSE)
     write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB, PBSE_NONE);
   else
     write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, PBSE_NONE);
-
+*/
   close(stream);
   
   strcpy(pjob->ji_qs.ji_jobid, jobid);
@@ -5929,7 +5929,7 @@ void im_request(
         
         case IM_JOIN_JOB_RADIX:
           {
-          write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, PBSE_NONE);
+/*          write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, PBSE_NONE); */
 
           pjob = find_job(jobid);
           if (pjob != NULL)
