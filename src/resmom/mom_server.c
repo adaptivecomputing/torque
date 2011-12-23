@@ -3089,7 +3089,7 @@ void mom_server_update_stat(
       }
     else
       {
-/*      read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&ret); */
+      read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&ret);
       }
       
     close(stream);
