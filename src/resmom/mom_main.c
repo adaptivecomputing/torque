@@ -8754,7 +8754,8 @@ int resend_spawn_task_reply(
         {
         if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
           {
-          read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, st->ici->command, &ret);
+/*          read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, st->ici->command, &ret);
+ *          */
 
           if (ret == DIS_SUCCESS)
             {
@@ -8794,7 +8795,7 @@ int resend_obit_task_reply(
         {
         if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
           {
-          read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_OBIT_TASK, &ret);
+/*          read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_OBIT_TASK, &ret); */
 
           if (ret == DIS_SUCCESS)
             {

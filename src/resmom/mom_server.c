@@ -3089,7 +3089,7 @@ void mom_server_update_stat(
       }
     else
       {
-      read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&ret);
+/*      read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,&ret); */
       }
       
     close(stream);
@@ -3210,17 +3210,18 @@ int write_status_strings(
     }
   else if ((rc = DIS_tcp_wflush(fds)) == DIS_SUCCESS)
     {
-    read_tcp_reply(fds, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, &rc);
+/*    read_tcp_reply(fds, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, &rc);
     
     if (rc == DIS_SUCCESS)
       {
+      */
       if (LOGLEVEL >= 7)
         {
         snprintf(log_buffer, sizeof(log_buffer),
           "Successfully sent status update to mom %s", nc->name);
         log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
         }
-      }
+/*      } */
     }
 
   close(fds);

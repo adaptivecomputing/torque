@@ -2086,7 +2086,7 @@ int reply_to_join_job_as_sister(
         {
         if ((ret = DIS_tcp_wflush(reply_stream)) == DIS_SUCCESS)
           {
-          ret = read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB, &ret);
+/*          ret = read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB, &ret); */
           }
         }
       
@@ -2927,7 +2927,7 @@ int im_spawn_task(
               {
               if ((ret = DIS_tcp_wflush(reply_stream)) == DIS_SUCCESS)
                 {
-                read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_SPAWN_TASK, &ret);
+/*                read_tcp_reply(reply_stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_SPAWN_TASK, &ret); */
                 }
               }
             }
