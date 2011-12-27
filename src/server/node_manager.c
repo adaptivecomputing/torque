@@ -3922,6 +3922,7 @@ static int node_spec(
 
   num = ctnodes(str);
 
+#ifndef CRAY_MOAB_PASSTHRU
   if (num > svr_clnodes)
     {
     /* FAILURE */
@@ -3944,6 +3945,7 @@ static int node_spec(
 
     return(-1);
     }
+#endif
 
   all_reqs.total_nodes = num;
   all_reqs.num_reqs = 1;
@@ -4063,6 +4065,7 @@ static int node_spec(
   free(all_reqs.req_start);
   free(spec);
 
+#ifndef CRAY_MOAB_PASSTHRU
   if (eligible_nodes < num)
     {
     /* sufficient eligible nodes do not exist */
@@ -4075,6 +4078,7 @@ static int node_spec(
 
     return(-1);
     }
+#endif
 
   if (all_reqs.total_nodes > 0)
     {
