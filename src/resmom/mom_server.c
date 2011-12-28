@@ -310,7 +310,6 @@ extern void send_update_within_ten();
 
 #ifdef NVIDIA_GPUS
 extern int find_file(char *, char *);
-extern int MXMLFromString(mxml_t **, char *, char **, char *);
 extern char  mom_host[];
 extern int             MOMNvidiaDriverVersion;
 #endif  /* NVIDIA_GPUS */
@@ -2338,7 +2337,7 @@ void generate_server_gpustatus_smi(
   int  gpuid = -1;
   mxml_t *EP;
   char *Tail;
-  char Emsg[256];
+  char Emsg[MAXLINE];
 
   if (buffer == NULL)
     {
@@ -2358,7 +2357,7 @@ void generate_server_gpustatus_smi(
   dataptr = strstr(gpu_string, "<timestamp>");
   if (dataptr)
     {
-    MXMLFromString(&EP, dataptr, &Tail, Emsg);
+    MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
     strcpy(buffer, "timestamp=");
     strcat(buffer, EP->Val);
     outptr = buffer;
@@ -2373,7 +2372,7 @@ void generate_server_gpustatus_smi(
   dataptr = strstr(gpu_string, "<driver_version>");
   if (dataptr)
     {
-    MXMLFromString(&EP, dataptr, &Tail, Emsg);
+    MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
     strcat(outptr, "driver_ver=");
     strcat(outptr, EP->Val);
     outptr += strlen(outptr) + 1;
@@ -2390,7 +2389,7 @@ void generate_server_gpustatus_smi(
     {
     if (dataptr)
       {
-      MXMLFromString(&EP, dataptr, &Tail, Emsg);
+      MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
       strcat(outptr, "gpuid=");
       strcat(outptr, EP->AVal[0]);
       outptr += strlen(outptr) + 1;
@@ -2451,7 +2450,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<prod_name>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_product_name=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2465,7 +2464,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<pci_device_id>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_pci_device_id=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2479,7 +2478,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<pci_location_id>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_pci_location_id=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2493,7 +2492,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<display>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_display=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2507,7 +2506,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<temp>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_temperature=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2521,7 +2520,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<fan_speed>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_fan_speed=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2535,7 +2534,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<gpu_util>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_utilization=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2548,7 +2547,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<memory_util>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_memory_utilization=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2565,7 +2564,7 @@ void generate_server_gpustatus_smi(
           if (tmpptr1)
             {
             tmpptr1 = strstr(tmpptr1, "<total>");
-            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             strcat(outptr, "gpu_single_bit_ecc_errors=");
             strcat(outptr, EP->Val);
             outptr += strlen(outptr) + 1;
@@ -2575,7 +2574,7 @@ void generate_server_gpustatus_smi(
           if (tmpptr1)
             {
             tmpptr1 = strstr(tmpptr1, "<total>");
-            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             strcat(outptr, "gpu_double_bit_ecc_errors=");
             strcat(outptr, EP->Val);
             outptr += strlen(outptr) + 1;
@@ -2594,7 +2593,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<product_name>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_product_name=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2608,7 +2607,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<display_mode>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_display=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2622,7 +2621,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<pci_device_id>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_pci_device_id=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2636,7 +2635,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<pci_bus_id>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_pci_location_id=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2650,7 +2649,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<fan_speed>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_fan_speed=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2666,7 +2665,7 @@ void generate_server_gpustatus_smi(
           tmpptr1 = strstr(dataptr, "<total>");
           if (tmpptr1)
             {
-            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             strcat(outptr, "gpu_memory_total=");
             strcat(outptr, EP->Val);
             outptr += strlen(outptr) + 1;
@@ -2675,7 +2674,7 @@ void generate_server_gpustatus_smi(
           tmpptr1 = strstr(dataptr, "<used>");
           if (tmpptr1)
             {
-            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             strcat(outptr, "gpu_memory_used=");
             strcat(outptr, EP->Val);
             outptr += strlen(outptr) + 1;
@@ -2690,7 +2689,7 @@ void generate_server_gpustatus_smi(
         dataptr = strstr(dataptr, "<compute_mode>");
         if (dataptr)
           {
-          MXMLFromString(&EP, dataptr, &Tail, Emsg);
+          MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           strcat(outptr, "gpu_mode=");
           strcat(outptr, EP->Val);
           outptr += strlen(outptr) + 1;
@@ -2727,7 +2726,7 @@ void generate_server_gpustatus_smi(
           tmpptr1 = strstr(dataptr, "<gpu_util>");
           if (tmpptr1)
             {
-            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             strcat(outptr, "gpu_utilization=");
             strcat(outptr, EP->Val);
             outptr += strlen(outptr) + 1;
@@ -2736,7 +2735,7 @@ void generate_server_gpustatus_smi(
           tmpptr1 = strstr(dataptr, "<memory_util>");
           if (tmpptr1)
             {
-            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             strcat(outptr, "gpu_memory_utilization=");
             strcat(outptr, EP->Val);
             outptr += strlen(outptr) + 1;
@@ -2753,7 +2752,7 @@ void generate_server_gpustatus_smi(
           tmpptr1 = strstr(dataptr, "<current_ecc>");
           if (tmpptr1)
             {
-            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             strcat(outptr, "gpu_ecc_mode=");
             strcat(outptr, EP->Val);
             outptr += strlen(outptr) + 1;
@@ -2774,7 +2773,7 @@ void generate_server_gpustatus_smi(
             if (tmpptr2)
               {
               tmpptr2 = strstr(tmpptr1, "<total>");
-              MXMLFromString(&EP, tmpptr2, &Tail, Emsg);
+              MXMLFromString(&EP, tmpptr2, &Tail, Emsg, sizeof(Emsg));
               strcat(outptr, "gpu_single_bit_ecc_errors=");
               strcat(outptr, EP->Val);
               outptr += strlen(outptr) + 1;
@@ -2784,7 +2783,7 @@ void generate_server_gpustatus_smi(
             if (tmpptr2)
               {
               tmpptr2 = strstr(tmpptr1, "<total>");
-              MXMLFromString(&EP, tmpptr2, &Tail, Emsg);
+              MXMLFromString(&EP, tmpptr2, &Tail, Emsg, sizeof(Emsg));
               strcat(outptr, "gpu_double_bit_ecc_errors=");
               strcat(outptr, EP->Val);
               outptr += strlen(outptr) + 1;
@@ -2803,7 +2802,7 @@ void generate_server_gpustatus_smi(
           tmpptr1 = strstr(dataptr, "<gpu_temp>");
           if (tmpptr1)
             {
-            MXMLFromString(&EP, tmpptr1, &Tail, Emsg);
+            MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             strcat(outptr, "gpu_temperature=");
             strcat(outptr, EP->Val);
             outptr += strlen(outptr) + 1;

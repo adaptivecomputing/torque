@@ -46,6 +46,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed send_job_obit_to_ms so it will close the stream on success. Previously
       this function left the socket it created open and in a CLOSE_WAIT state.
 
+3.0.4
+  c - fix a buffer being overrun with nvidia gpus enabled
+
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
   e - automatically create and mount /dev/cpuset when TORQUE is configured but the cpuset
