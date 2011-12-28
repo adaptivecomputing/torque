@@ -1202,9 +1202,7 @@ int pbsd_init(
 
   if (server.sv_attr[SRV_ATR_RecordJobInfo].at_val.at_long)
     {
-    pthread_mutex_lock(job_log_mutex);
     rc = job_log_open(job_log_file, path_jobinfo_log);
-    pthread_mutex_unlock(job_log_mutex);
 
     if (rc != 0)
       {

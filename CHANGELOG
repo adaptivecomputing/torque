@@ -31,20 +31,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - add a unit testing framework (check). It is compiled with --with-check and tests 
       are executed using make check. The framework is complete but not many tests have 
       been written as of yet.
-  b - Made fixes so Job Radix will work properly. Still one but to fix at this point 
-      but code is good to check in without that fix.
-  b - Added other fix needed to make Job Radix work correctly.
-  b - Fixed a problem with job arrays when job_clone_wt is not able to get job_array. 
-      The code did not check for null thus creating heap corruption.
   b - Made changes to IM protocol where commands were not either waiting for a reply
       or not sending a reply. Also made changes to close connections that were left
       open.
-  b - Added write_tcp_reply to IM_ABORT_JOB case in im_request.
-  b - Modified im_kill_job_as_sister and added a stream argument so we can reply
-      to the IM_KILL_JOB or IM_KILL_JOB_RADIX requests. Added write_tcp_reply
-      calls to error cases in im_request.
-  b - Fixed send_job_obit_to_ms so it will close the stream on success. Previously
-      this function left the socket it created open and in a CLOSE_WAIT state.
+  b - Fix for where qmgr record_job_info is True and server hangs on startup.
 
 3.0.4
   c - fix a buffer being overrun with nvidia gpus enabled
