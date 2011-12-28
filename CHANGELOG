@@ -17,6 +17,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       checking for password validity. (backported from 3.0.3)
   b - TRQ-608: Removed code to check for blocking mode in write_nonblocking_socket().
       Fixes problem with interactive jobs (qsub -I) exiting prematurely.
+  c - fix a buffer being overrun with nvidia gpus enabled (backported from 3.0.4)
 
 2.5.9
   e - change mom to only log "cannot find nvidia-smi in PATH" once when built

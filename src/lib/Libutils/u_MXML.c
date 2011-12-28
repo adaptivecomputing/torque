@@ -1218,7 +1218,8 @@ int MXMLFromString(
   mxml_t **EP,        /* O (populate or create) */
   char    *XMLString, /* I */
   char   **Tail,      /* O (optional) */
-  char    *EMsg)      /* O (optional) */
+  char    *EMsg,      /* O (optional) */
+  int      emsg_size) /* I */
 
   {
   mxml_t  *E;
@@ -1244,7 +1245,7 @@ int MXMLFromString(
   if ((XMLString == NULL) || (EP == NULL))
     {
     if (EMsg != NULL)
-      strcpy(EMsg, "invalid arguments");
+      snprintf(EMsg, emsg_size, "invalid arguments");
 
     return(FAILURE);
     }
@@ -1252,7 +1253,7 @@ int MXMLFromString(
   if ((ptr = strchr(XMLString, '<')) == NULL)
     {
     if (EMsg != NULL)
-      strcpy(EMsg, "no XML in string");
+      snprintf(EMsg, emsg_size, "no XML in string");
 
     return(FAILURE);
     }
@@ -1262,7 +1263,7 @@ int MXMLFromString(
     /* located tail marker */
 
     if (EMsg != NULL)
-      strcpy(EMsg, "premature termination marker");
+      snprintf(EMsg, emsg_size, "premature termination marker");
 
     return(FAILURE);
     }
@@ -1293,7 +1294,7 @@ int MXMLFromString(
         /* cannot locate next element */
 
         if (EMsg != NULL)
-          strcpy(EMsg, "cannot locate post-meta XML");
+          snprintf(EMsg, emsg_size, "cannot locate post-meta XML");
 
         return(FAILURE);
         }
@@ -1310,7 +1311,7 @@ int MXMLFromString(
         /* cannot locate end of comment element */
 
         if (EMsg != NULL)
-          strcpy(EMsg, "cannot locate comment termination marker");
+          snprintf(EMsg, emsg_size, "cannot locate comment termination marker");
 
         return(FAILURE);
         }
@@ -1320,7 +1321,7 @@ int MXMLFromString(
         /* cannot locate next element */
 
         if (EMsg != NULL)
-          strcpy(EMsg, "cannot locate post-comment XML");
+          snprintf(EMsg, emsg_size, "cannot locate post-comment XML");
 
         return(FAILURE);
         }
@@ -1339,7 +1340,7 @@ int MXMLFromString(
     /* cannot located start of element */
 
     if (EMsg != NULL)
-      strcpy(EMsg, "cannot locate start of root element");
+      snprintf(EMsg, emsg_size, "cannot locate start of root element");
 
     return(FAILURE);
     }
@@ -1362,8 +1363,7 @@ int MXMLFromString(
     if ((index >= MMAX_LINE) || (ptr[0] == '\0'))
       {
       if (EMsg != NULL)
-        sprintf(EMsg, "element name is too long - %.10s",
-                tmpNLine);
+        snprintf(EMsg, emsg_size, "element name is too long - %.10s", tmpNLine);
 
       return(FAILURE);
       }
@@ -1374,8 +1374,7 @@ int MXMLFromString(
   if ((*EP == NULL) && (MXMLCreateE(EP, tmpNLine) == FAILURE))
     {
     if (EMsg != NULL)
-      sprintf(EMsg, "cannot create XML element '%s'",
-              tmpNLine);
+      snprintf(EMsg, emsg_size, "cannot create XML element '%s'", tmpNLine);
 
     return(FAILURE);
     }
@@ -1427,7 +1426,7 @@ int MXMLFromString(
     if (*ptr == '\0')
       {
       if (EMsg != NULL)
-        sprintf(EMsg, "string is corrupt - early termination");
+        snprintf(EMsg, emsg_size, "string is corrupt - early termination");
 
       return(FAILURE);
       }
@@ -1450,8 +1449,7 @@ int MXMLFromString(
 
         if (EMsg != NULL)
           {
-          sprintf(EMsg, "attribute name is too long - %.10s",
-            tmpVLine);
+          snprintf(EMsg, emsg_size, "attribute name is too long - %.10s", tmpVLine);
           }
 
         return(FAILURE);
@@ -1511,8 +1509,7 @@ int MXMLFromString(
       {
       if (EMsg != NULL)
         {
-        sprintf(EMsg,"cannot alloc memory for value - %.10s",
-          tmpVLine);
+        snprintf(EMsg, emsg_size, "cannot alloc memory for value - %.10s", tmpVLine);
         }
 
       return(FAILURE);
@@ -1560,8 +1557,7 @@ int MXMLFromString(
           {
           if (EMsg != NULL)
             {
-            sprintf(EMsg,"element name is too long - %.10s",
-              tmpCName);
+            snprintf(EMsg, emsg_size, "element name is too long - %.10s", tmpCName);
             }
  
           return(FAILURE);
@@ -1573,7 +1569,7 @@ int MXMLFromString(
       MXMLGetChild(E, tmpCName, NULL, &C);
       }
 
-    if ((MXMLFromString(&C, ptr, &tail, EMsg) == FAILURE) ||
+    if ((MXMLFromString(&C, ptr, &tail, EMsg, emsg_size) == FAILURE) ||
         (MXMLAddE(E, C) == FAILURE))
       {
       break;
@@ -1589,7 +1585,7 @@ int MXMLFromString(
         *Tail = ptr;
 
       if ((EMsg != NULL) && (EMsg[0] == '\0'))
-        strcpy(EMsg, "cannot extract child");
+        snprintf(EMsg, emsg_size, "cannot extract child");
 
       return(FAILURE);
       }
