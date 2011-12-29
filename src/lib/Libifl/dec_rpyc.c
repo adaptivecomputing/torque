@@ -256,17 +256,11 @@ int decode_DIS_replyCmd(
           return(DIS_NOMALLOC);
           }
 
-        pstcmd->brp_stlink = NULL;
-
-        pstcmd->brp_objname[0] = '\0';
-
-        pstcmd->brp_attrl = NULL;
-
         pstcmd->brp_objtype = disrui(sock, &rc);
 
         if (rc == 0)
           {
-          rc = disrfst(sock, PBS_MAXSVRJOBID + 1, pstcmd->brp_objname);
+          rc = disrfst(sock, PBS_MAXSVRJOBID, pstcmd->brp_objname);
           }
 
         if (rc)
