@@ -3,14 +3,26 @@ include $(top_srcdir)/buildutils/config.mk
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = src doc contrib/blcr
 
-EXTRA_DIST = CHANGELOG \
+EXTRA_DIST = acinclude.m4 \
+  autogen.sh \
+  CHANGELOG \
+  configure.ac \
+  Doxyfile \
+  INSTALL \
 	INSTALL.GNU \
+  Makefile.am \
 	PBS_License_2.5.txt \
+  PBS_License.txt \
 	README.array_changes \
+  README.coding_notes \
 	README.configure \
 	README.cygwin \
+  README.new_in_4.0 \
+  README.NUMA \
 	README.torque \
+  README.trqauthd \
 	Release_Notes \
+  run_report.pl \
 	torque.setup \
 	torque.spec \
 	buildutils/config.mk \
