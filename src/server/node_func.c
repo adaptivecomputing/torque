@@ -2822,13 +2822,13 @@ struct pbsnode *next_node(
 
     /* the first call to next_node */
     next = next_thing(an->ra,&iter->node_index);
+    if (next != NULL)
+      lock_node(next, "next_node", "next != NULL", LOGLEVEL);
 
     pthread_mutex_unlock(an->allnodes_mutex);
 
     if (next != NULL)
       {
-      lock_node(next, "next_node", "next != NULL", LOGLEVEL);
-      
       /* if I have node_boards, look at those and not me */
       if (next->num_node_boards > 0)
         {

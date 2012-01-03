@@ -3794,7 +3794,23 @@ void set_first_node_name(
 
   } /* END set_first_node_name() */
 
+void release_node_allocation(node_job_add_info *naji)
+  {
+  node_job_add_info *current = NULL;
+  struct pbsnode    *pnode = NULL;
 
+  current = naji;
+  while (current != NULL) 
+    {
+    if ((pnode = find_nodebyname(current->node_name)) != NULL)
+      {
+      pnode->nd_np_to_be_used    -= current->ppn_needed;
+      pnode->nd_ngpus_to_be_used -= current->gpu_needed;
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      }
+    current = current->next;
+    }
+  }
 
 
 /*
@@ -4076,6 +4092,8 @@ static int node_spec(
       spec_param);
 
     log_err(-1, id, log_buf);
+    if (naji != NULL)
+      release_node_allocation(naji);
 
     return(-1);
     }
@@ -4096,6 +4114,8 @@ static int node_spec(
       {
       snprintf(EMsg, MAXLINE, "%s", log_buf);
       }
+    if (naji != NULL)
+      release_node_allocation(naji);
 
     return(0);
     } /* END if (all_reqs.total_nodes > 0) */
@@ -4901,8 +4921,23 @@ int build_hostlist_procs_req(
   } /* END build_hostlist_procs_req() */
 
 
+/* Free's the array */
+void free_naji(node_job_add_info *naji)
+  {
+  node_job_add_info *current = NULL;
+  node_job_add_info *tmp = NULL;
+  node_job_add_info *first = naji;
 
-
+  current = naji;
+  while (current != NULL) 
+    {
+    tmp = current;
+    current = current->next;
+    free(tmp);
+    if (current == first)
+      break;
+    }
+  }
 
 /*
  * set_nodes() - Call node_spec() to allocate nodes then set them inuse.
@@ -4934,7 +4969,7 @@ int set_nodes(
   char              *gpu_str = NULL;
   char               ProcBMStr[MAX_BM];
   char               log_buf[LOCAL_LOG_BUF_SIZE];
-  node_job_add_info  naji;
+  node_job_add_info  *naji = NULL;
 
 #ifdef NVIDIA_GPUS
   int gpu_flags = 0;
@@ -4960,11 +4995,10 @@ int set_nodes(
   get_bitmap(pjob,sizeof(ProcBMStr),ProcBMStr);
 #endif /* GEOMETRY_REQUESTS */
 
-  naji.node_name[0] = '\0';
-  naji.next = NULL;
+  naji = calloc(1, sizeof(node_job_add_info));
 
   /* allocate nodes */
-  if ((i = node_spec(spec, 1, 1, ProcBMStr, FailHost, &naji, EMsg)) == 0) /* check spec */
+  if ((i = node_spec(spec, 1, 1, ProcBMStr, FailHost, naji, EMsg)) == 0) /* check spec */
     {
     /* no resources located, request failed */
     if (EMsg != NULL)
@@ -4991,10 +5025,12 @@ int set_nodes(
 
   newstate = exclusive ? INUSE_JOB : INUSE_JOBSHARE;
 
-  if ((rc = build_hostlist_nodes_req(pjob, EMsg, spec, newstate, &hlist, &gpu_list, &naji)) != PBSE_NONE)
+  if ((rc = build_hostlist_nodes_req(pjob, EMsg, spec, newstate, &hlist, &gpu_list, naji)) != PBSE_NONE)
     {
+    free_naji(naji);
     return(rc);
     }
+  free_naji(naji);
 
   if ((rc = build_hostlist_procs_req(pjob, procs, newstate, &hlist)) != PBSE_NONE)
     {
@@ -5400,7 +5436,7 @@ int node_reserve(
 
   node_iterator      iter;
   char               log_buf[LOCAL_LOG_BUF_SIZE];
-  node_job_add_info  naji;
+  node_job_add_info  *naji = NULL;
 
   DBPRT(("%s: entered\n",
          id))
@@ -5416,10 +5452,9 @@ int node_reserve(
     return(-1);
     }
 
-  naji.node_name[0] = '\0';
-  naji.next = NULL;
+  naji = calloc(1, sizeof(node_job_add_info));
 
-  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, &naji, NULL)) >= 0)
+  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL)) >= 0)
     {
     /*
     ** Zero or more of the needed Nodes are available to be
@@ -5468,6 +5503,7 @@ int node_reserve(
 
     log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
     }
+  free_naji(naji);
 
   return(ret_val);
   }  /* END node_reserve() */
