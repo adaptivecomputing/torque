@@ -119,6 +119,7 @@
 #include "csv.h"
 #include "dis.h"
 #include "net_connect.h"
+#include "log.h"
 
 
 
@@ -368,6 +369,7 @@ int PBSD_munge_authenticate(
   int handle) /* I */
 
   {
+  static char        *id = "PBSD_munge_authenticate";
   int                 rc;
 
   int                 fd;
@@ -399,7 +401,7 @@ int PBSD_munge_authenticate(
 
   fd = fileno(munge_pipe);
 
-  while ((bytes_read = read(fd, ptr, MUNGE_SIZE)) > 0)
+  while ((bytes_read = read(fd, ptr, MUNGE_SIZE - total_bytes_read)) > 0)
     {
     total_bytes_read += bytes_read;
     ptr += bytes_read;
@@ -408,7 +410,7 @@ int PBSD_munge_authenticate(
   if (bytes_read == -1)
     {
     /* read failed */
-    fprintf(stderr, "error reading pipe in PBSD_munge_authenticate: errno = %d\n", errno);
+    log_err(errno, id, "error reading pipe in PBSD_munge_authenticate");
     return(-1);
     }
 
@@ -446,7 +448,8 @@ int PBSD_munge_authenticate(
   else
     {
     /* read the reply */
-    reply = PBSD_rdrpy(handle);
+    if ((reply = PBSD_rdrpy(handle)) != NULL)
+      free(reply);
     
     return(PBSE_NONE);
     }
