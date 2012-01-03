@@ -97,6 +97,7 @@
 #include "server.h"
 #include "array.h"
 #include "utils.h"
+#include "svr_func.h" /* get_svr_attr_* */
 
 extern struct server server;
 
@@ -782,7 +783,7 @@ int init_resc_defs(void)
 #ifndef PBS_MOM
   /* build up a temporary list of string resources */
 
-  if (get_svr_attr(SRV_ATR_ExtraResc, &resc_arst) == PBSE_NONE)
+  if (get_svr_attr_arst(SRV_ATR_ExtraResc, &resc_arst) == PBSE_NONE)
     {
 
     tmpresc = calloc(resc_arst->as_usedptr + 1, sizeof(resource_def));

@@ -111,6 +111,8 @@
 #include "svrfunc.h"
 #include "array.h"
 #include "utils.h"
+#include "svr_func.h" /* get_svr_attr_* */
+
 
 #define PURGE_SUCCESS 1
 #define MOM_DELETE    2
@@ -471,7 +473,7 @@ jump:
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
 
   /* make a cleanup task if set */
-  get_svr_attr(SRV_ATR_JobForceCancelTime, &force_cancel);
+  get_svr_attr_l(SRV_ATR_JobForceCancelTime, &force_cancel);
   if (force_cancel > 0)
     {
     char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
@@ -486,7 +488,7 @@ jump:
 
   /* if configured, and this job didn't have a slot limit hold, free a job
    * held with the slot limit hold */
-  get_svr_attr(SRV_ATR_MoabArrayCompatible, &array_compatible);
+  get_svr_attr_l(SRV_ATR_MoabArrayCompatible, &array_compatible);
   if ((array_compatible != FALSE) &&
       ((pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == FALSE))
     {
@@ -1114,7 +1116,7 @@ static int forced_jobpurge(
     {
     if (!strncmp(preq->rq_extend, delpurgestr, strlen(delpurgestr)))
       {
-      get_svr_attr(SRV_ATR_OwnerPurge, &owner_purge);
+      get_svr_attr_l(SRV_ATR_OwnerPurge, &owner_purge);
 
       if (((preq->rq_perm & (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR)) != 0) ||
           ((svr_chk_owner(preq, pjob) == 0) && (owner_purge)))
@@ -1159,7 +1161,7 @@ int apply_job_delete_nanny(
   long              nanny = FALSE;
 
   /* short-circuit if nanny isn't enabled or we have a delete nanny */
-  get_svr_attr(SRV_ATR_JobNanny, &nanny);
+  get_svr_attr_l(SRV_ATR_JobNanny, &nanny);
   if ((nanny == FALSE) ||
       (pjob->ji_has_delete_nanny == TRUE))
     {
@@ -1227,7 +1229,7 @@ static void job_delete_nanny(
   long                  nanny = FALSE;
 
   /* short-circuit if nanny isn't enabled */
-  get_svr_attr(SRV_ATR_JobNanny, &nanny);
+  get_svr_attr_l(SRV_ATR_JobNanny, &nanny);
   if (!nanny)
     {
     jobid = (char *)pwt->wt_parm1;
@@ -1296,7 +1298,7 @@ static void post_job_delete_nanny(
   preq_sig = pwt->wt_parm1;
   rc       = preq_sig->rq_reply.brp_code;
 
-  get_svr_attr(SRV_ATR_JobNanny, &nanny);
+  get_svr_attr_l(SRV_ATR_JobNanny, &nanny);
   if (!nanny)
     {
     /* the admin disabled nanny within the last minute or so */

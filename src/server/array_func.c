@@ -44,6 +44,7 @@
 #include "work_task.h"
 #include "utils.h"
 #include "array.h"
+#include "svr_func.h"
 
 extern int array_upgrade(job_array *, int, int, int *);
 extern char *get_correct_jobname(const char *jobid);
@@ -603,7 +604,7 @@ int set_slot_limit(
   long  max_limit;
 
   /* check for a max slot limit */
-  if (get_svr_attr(SRV_ATR_MaxSlotLimit, &max_limit) != PBSE_NONE)
+  if (get_svr_attr_l(SRV_ATR_MaxSlotLimit, &max_limit) != PBSE_NONE)
     max_limit = NO_SLOT_LIMIT;
 
   if ((pcnt = strchr(request,'%')) != NULL)
@@ -705,7 +706,7 @@ int setup_array_struct(
   if ((rc = set_slot_limit(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str, pa)))
     {
     long max_limit = 0;
-    get_svr_attr(SRV_ATR_MaxSlotLimit, &max_limit);
+    get_svr_attr_l(SRV_ATR_MaxSlotLimit, &max_limit);
     array_delete(pa);
 
     snprintf(log_buf,sizeof(log_buf),
@@ -744,7 +745,7 @@ int setup_array_struct(
   /* size of array is the biggest index + 1 */
   array_size++; 
 
-  if (get_svr_attr(SRV_ATR_MaxArraySize, &max_array_size) == PBSE_NONE)
+  if (get_svr_attr_l(SRV_ATR_MaxArraySize, &max_array_size) == PBSE_NONE)
     {
     if (max_array_size < pa->ai_qs.num_jobs)
       {
@@ -1528,7 +1529,7 @@ void update_array_values(
       array_save(pa);
 
       /* update slot limit hold if necessary */
-      if (get_svr_attr(SRV_ATR_MoabArrayCompatible, &moab_compatible) != PBSE_NONE)
+      if (get_svr_attr_l(SRV_ATR_MoabArrayCompatible, &moab_compatible) != PBSE_NONE)
         moab_compatible = FALSE;
 
       if (moab_compatible != FALSE)

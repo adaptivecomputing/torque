@@ -97,6 +97,7 @@
 #include "svrfunc.h"
 #include "mcom.h"
 #include "utils.h"
+#include "svr_func.h" /* get_svr_attr_* */
 
 /* Global Data */
 
@@ -393,7 +394,7 @@ int authenticate_user(
 
   sprintf(uh, "%s@%s", preq->rq_user, pcred->hostname);
  
-  get_svr_attr(SRV_ATR_authusers, &my_acl); 
+  get_svr_attr_arst(SRV_ATR_authusers, &my_acl); 
   if ((strncmp(preq->rq_user, pcred->username, PBS_MAXUSER)) &&
      ((acl_check_my_array_string(my_acl, uh, ACL_User)) == 0))
 #else
@@ -425,7 +426,7 @@ int authenticate_user(
   if (pcred->timestamp)
     {
     long lifetime = 0;
-    if (get_svr_attr(SRV_ATR_CredentialLifetime, &lifetime) == PBSE_NONE)
+    if (get_svr_attr_l(SRV_ATR_CredentialLifetime, &lifetime) == PBSE_NONE)
       {
       /* use configured value if set */
       }
@@ -448,13 +449,13 @@ int authenticate_user(
     }
 
   /* If Server's Acl_User enabled, check if user in list */
-  get_svr_attr(SRV_ATR_AclUserEnabled, &acl_enabled);
+  get_svr_attr_l(SRV_ATR_AclUserEnabled, &acl_enabled);
   if (acl_enabled)
     {
     struct array_strings *acl_users = NULL;
     snprintf(uath, sizeof(uath), "%s@%s", preq->rq_user, preq->rq_host);
     
-    get_svr_attr(SRV_ATR_AclUsers, &acl_users);
+    get_svr_attr_arst(SRV_ATR_AclUsers, &acl_users);
     if (acl_check_my_array_string(acl_users, uath, ACL_User) == 0)
       {
 

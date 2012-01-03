@@ -108,6 +108,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 #include "array.h"
+#include "svr_func.h" /* get_svr_attr_* */
 
 #define CHK_HOLD 1
 #define CHK_CONT 2
@@ -1233,7 +1234,7 @@ int modify_job_attr(
         long lim = 0;
         int comp_resc_lt;
        
-        get_svr_attr(SRV_ATR_QCQLimits, &lim);
+        get_svr_attr_l(SRV_ATR_QCQLimits, &lim);
         comp_resc_lt = comp_resc2(&pjob->ji_wattr[JOB_ATR_resource],
                                       &newattr[JOB_ATR_resource],
                                       lim,

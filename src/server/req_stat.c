@@ -117,6 +117,8 @@
 #include "svr_connect.h" /* svr_connect */
 #include "queue_func.h" /* find_queuebyname */
 #include "reply_send.h" /* reply_send_svr */
+#include "svr_func.h" /* get_svr_attr_* */
+
 
 /* Global Data Items: */
 
@@ -326,7 +328,7 @@ void *req_stat_job(
   cntl->sc_post   = req_stat_job_step2;
   cntl->sc_jobid[0] = '\0'; /* cause "start from beginning" */
 
-  get_svr_attr(SRV_ATR_PollJobs, &poll_jobs);
+  get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
   if (poll_jobs)
     cntl->sc_post = 0; /* we're not going to make clients wait */
 
@@ -445,7 +447,7 @@ static void req_stat_job_step2(
 
   iter = -1;
 
-  get_svr_attr(SRV_ATR_PollJobs, &poll_jobs);
+  get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
   if (!poll_jobs)
     {
     /* polljobs not set - indicates we may need to obtain fresh data from
@@ -1169,7 +1171,7 @@ void poll_job_task(
     
     if (pjob != NULL)
       {
-      get_svr_attr(SRV_ATR_PollJobs, &poll_jobs);
+      get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
       if ((poll_jobs) &&
           (pjob->ji_qs.ji_state == JOB_STATE_RUNNING))
         {

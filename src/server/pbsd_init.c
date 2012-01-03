@@ -122,6 +122,7 @@
 #include "utils.h"
 #include "queue_recycler.h" /* queue_recycler */
 #include "svr_task.h" /* initialize_task_recycler */
+#include "svr_func.h" /* get_svr_attr_* */
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -371,7 +372,7 @@ void  update_default_np()
   long            default_np = 0;
   long            npfreediff;
 
-  get_svr_attr(SRV_ATR_NPDefault, &default_np);
+  get_svr_attr_l(SRV_ATR_NPDefault, &default_np);
 
   if (default_np > 0)
     {
@@ -833,9 +834,9 @@ int pbsd_init(
 #endif /* DEBUG */
   
   /* setup the threadpool for use */
-  get_svr_attr(SRV_ATR_minthreads, &min_threads);
-  get_svr_attr(SRV_ATR_maxthreads, &max_threads);
-  get_svr_attr(SRV_ATR_threadidleseconds, &thread_idle_time);
+  get_svr_attr_l(SRV_ATR_minthreads, &min_threads);
+  get_svr_attr_l(SRV_ATR_maxthreads, &max_threads);
+  get_svr_attr_l(SRV_ATR_threadidleseconds, &thread_idle_time);
   
   initialize_threadpool(&request_pool,min_threads,max_threads,thread_idle_time);
 
@@ -2295,7 +2296,7 @@ static void change_logs(
 
   acct_open(acct_file);
 
-  get_svr_attr(SRV_ATR_RecordJobInfo, &record_job_info);
+  get_svr_attr_l(SRV_ATR_RecordJobInfo, &record_job_info);
   if (record_job_info)
     {
     pthread_mutex_lock(job_log_mutex);
@@ -2324,7 +2325,7 @@ static void change_log_level(
   {
   char log_buf[LOCAL_LOG_BUF_SIZE];
   long level = 0;
-  get_svr_attr(SRV_ATR_LogLevel, &level);
+  get_svr_attr_l(SRV_ATR_LogLevel, &level);
 
   if (sig == SIGUSR1)
     {

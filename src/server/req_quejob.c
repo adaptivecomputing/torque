@@ -120,6 +120,7 @@
 #include "csv.h"
 #include "array.h"
 #include "queue_func.h" /* get_dfltque, find_queuebyname */
+#include "svr_func.h" /* get_svr_attr_* */
 
 
 #include "work_task.h"
@@ -504,7 +505,7 @@ void *req_quejob(
   
   struct stat           stat_buf;
   
-  get_svr_attr(SRV_ATR_job_suffix_alias, &alias);
+  get_svr_attr_str(SRV_ATR_job_suffix_alias, &alias);
   /*
    * if the job id is supplied, the request had better be
    * from another server
@@ -540,7 +541,7 @@ void *req_quejob(
 
     memset(host_server, 0, sizeof(host_server));
 
-    get_svr_attr(SRV_ATR_display_job_server_suffix, &server_suffix);
+    get_svr_attr_l(SRV_ATR_display_job_server_suffix, &server_suffix);
 
     pthread_mutex_lock(server.sv_qs_mutex);
 
@@ -2042,7 +2043,7 @@ void req_commit(
       {
       if (rc == ARRAY_TOO_LARGE)
         {
-        get_svr_attr(SRV_ATR_MaxArraySize, &max_size);
+        get_svr_attr_l(SRV_ATR_MaxArraySize, &max_size);
         snprintf(log_buf,sizeof(log_buf),
           "Requested array size too large, limit is %ld",
            max_size);
@@ -2051,7 +2052,7 @@ void req_commit(
         }
       else if (rc == INVALID_SLOT_LIMIT)
         {
-        get_svr_attr(SRV_ATR_MaxSlotLimit, &max_slot);
+        get_svr_attr_l(SRV_ATR_MaxSlotLimit, &max_slot);
         snprintf(log_buf,sizeof(log_buf),
           "Requested slot limit too large, limit is %ld",
           max_slot);

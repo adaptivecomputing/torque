@@ -105,6 +105,7 @@
 #include "svrfunc.h"
 #include "queue_func.h" /* find_queuebyname */
 #include "reply_send.h" /* reply_send_svr */
+#include "svr_func.h" /* get_svr_attr_* */
 
 
 /* Private Data */
@@ -342,7 +343,7 @@ void req_selectjobs(
 
   cntl->sc_select = selistp;  /* the select list */
 
-  get_svr_attr(SRV_ATR_PollJobs, &poll_jobs);
+  get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
 
   if (preq->rq_type == PBS_BATCH_SelectJobs)
     {
@@ -388,7 +389,7 @@ static void sel_step2(
   long          query_others = 0;
 
   /* do first pass of finding jobs that match the selection criteria */
-  get_svr_attr(SRV_ATR_query_others, &query_others);
+  get_svr_attr_l(SRV_ATR_query_others, &query_others);
 
   if (cntl->sc_jobid[0] == '\0')
     pjob = NULL;
@@ -552,7 +553,7 @@ static void sel_step3(
   int         iter = -1;
   long        query_others = 0;
   
-  get_svr_attr(SRV_ATR_query_others, &query_others);
+  get_svr_attr_l(SRV_ATR_query_others, &query_others);
   if (cntl->sc_origrq->rq_extend != NULL)
     {
     if (!strncmp(cntl->sc_origrq->rq_extend, "summarize_arrays", strlen("summarize_arrays")))

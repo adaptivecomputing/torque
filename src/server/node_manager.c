@@ -122,6 +122,7 @@
 #include "node_func.h" /* find_nodebyname */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "../lib/Libnet/lib_net.h" /* socket_read_flush */
+#include "svr_func.h" /* get_svr_attr_* */
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -1015,10 +1016,10 @@ int is_stat_get(
     return(DIS_EOF);
     }
 
-  get_svr_attr(SRV_ATR_MomJobSync, &mom_job_sync);
-  get_svr_attr(SRV_ATR_AutoNodeNP, &auto_np);
-  get_svr_attr(SRV_ATR_NPDefault, &np_default);
-  get_svr_attr(SRV_ATR_DownOnError, &down_on_error);
+  get_svr_attr_l(SRV_ATR_MomJobSync, &mom_job_sync);
+  get_svr_attr_l(SRV_ATR_AutoNodeNP, &auto_np);
+  get_svr_attr_l(SRV_ATR_NPDefault, &np_default);
+  get_svr_attr_l(SRV_ATR_DownOnError, &down_on_error);
 
   /*
    *  Before filling the "temp" attribute, initialize it.
@@ -1994,7 +1995,7 @@ void *check_nodes_work(
   node_iterator     iter;
   
   /* load min refresh interval */
-  get_svr_attr(SRV_ATR_check_rate, &chk_len);
+  get_svr_attr_l(SRV_ATR_check_rate, &chk_len);
 
   if (LOGLEVEL >= 5)
     {

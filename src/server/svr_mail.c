@@ -99,7 +99,7 @@
 #include "server.h"
 #include "utils.h"
 #include "threadpool.h"
-
+#include "svr_func.h" /* get_svr_attr_* */
 
 /* External Functions Called */
 
@@ -154,7 +154,7 @@ void *send_the_mail(
   FILE      *outmail;
   
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
-  get_svr_attr(SRV_ATR_mailfrom, &mailfrom);
+  get_svr_attr_str(SRV_ATR_mailfrom, &mailfrom);
   if (mailfrom == NULL)
     {
     if (LOGLEVEL >= 5)
@@ -174,14 +174,14 @@ void *send_the_mail(
     }
 
   /* mail subject line formating statement */
-  get_svr_attr(SRV_ATR_MailSubjectFmt, &subjectfmt);
+  get_svr_attr_str(SRV_ATR_MailSubjectFmt, &subjectfmt);
   if (subjectfmt == NULL)
     {
     subjectfmt = "PBS JOB %i";
     }
 
   /* mail body formating statement */
-  get_svr_attr(SRV_ATR_MailBodyFmt, &bodyfmt);
+  get_svr_attr_str(SRV_ATR_MailBodyFmt, &bodyfmt);
   if (bodyfmt == NULL)
     {
     bodyfmt =  strcpy(bodyfmtbuf, "PBS Job Id: %i\n"
@@ -317,7 +317,7 @@ void svr_mailowner(
   struct array_strings *pas;
   memset(mailto, 0, sizeof(mailto));
 
-  get_svr_attr(SRV_ATR_MailDomain, &domain);
+  get_svr_attr_str(SRV_ATR_MailDomain, &domain);
   if ((domain != NULL) &&
       (!strcasecmp("never", domain)))
     {
@@ -355,7 +355,7 @@ void svr_mailowner(
    * unless server no_mail_force attribute is set to true
    */
 
-  get_svr_attr(SRV_ATR_NoMailForce, &no_force);
+  get_svr_attr_l(SRV_ATR_NoMailForce, &no_force);
   if ((force != MAIL_FORCE) ||
       (no_force == TRUE))
     {

@@ -98,12 +98,6 @@ void log_record(int eventtype, int objclass, char *objname, char *text)
   exit(1);
   }
 
-int get_svr_attr(int type)
-  {
-  fprintf(stderr, "The call to get_svr_attr needs to be mocked!!\n");
-  exit(1);
-  }
-
 void svr_shutdown(int type)
   {
   fprintf(stderr, "The call to svr_shutdown needs to be mocked!!\n");

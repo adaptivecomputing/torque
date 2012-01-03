@@ -34,7 +34,6 @@ extern int   init_resc_defs(void);
 
 int is_svr_attr_set(int);
 int set_svr_attr(int, void *);
-int get_svr_attr(int, void *);
 
 #ifdef PBS_JOB_H
 extern int   set_nodes(job *, char *, int, char **, char **, char *, char *);

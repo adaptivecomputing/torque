@@ -116,6 +116,8 @@
 #include "dis.h"
 #include "array.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
+#include "svr_func.h" /* get_svr_attr_* */
+
 
 /*
  * process_request - this function gets, checks, and invokes the proper
@@ -444,14 +446,14 @@ void *process_request(
     strcpy(request->rq_host, server_name);
     }
 
-  get_svr_attr(SRV_ATR_acl_host_enable, &acl_enable);
+  get_svr_attr_l(SRV_ATR_acl_host_enable, &acl_enable);
   if (acl_enable)
     {
     /* acl enabled, check it; always allow myself and nodes */
     struct array_strings *pas = NULL;
     struct pbsnode       *isanode;
 
-    get_svr_attr(SRV_ATR_acl_hosts, &pas);
+    get_svr_attr_arst(SRV_ATR_acl_hosts, &pas);
     isanode = PGetNodeFromAddr(get_connectaddr(sfds,FALSE));
 
     if ((isanode == NULL) &&
@@ -616,7 +618,7 @@ void *process_request(
     }  /* END else (svr_conn[sfds].cn_authen == PBS_NET_CONN_FROM_PRIVIL) */
 
   /* if server shutting down, disallow new jobs and new running */
-  get_svr_attr(SRV_ATR_State, &state);
+  get_svr_attr_l(SRV_ATR_State, &state);
 
   if (state > SV_STATE_RUN)
     {

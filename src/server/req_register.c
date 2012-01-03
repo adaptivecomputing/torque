@@ -101,6 +101,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 #include "array.h"
+#include "svr_func.h" /* get_svr_attr_* */
 
 #define SYNC_SCHED_HINT_NULL 0
 #define SYNC_SCHED_HINT_FIRST 1
@@ -204,7 +205,7 @@ void req_register(
      */
     long state = SV_STATE_DOWN;
 
-    get_svr_attr(SRV_ATR_State, &state);
+    get_svr_attr_l(SRV_ATR_State, &state);
 
     if (state != SV_STATE_INIT)
       {
@@ -694,7 +695,7 @@ void req_registerarray(
      * yet be recovered, that is not an error.
      */
     long state = SV_STATE_DOWN;
-    get_svr_attr(SRV_ATR_State, &state);
+    get_svr_attr_l(SRV_ATR_State, &state);
 
     if (state != SV_STATE_INIT)
       {

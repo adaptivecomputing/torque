@@ -103,7 +103,7 @@
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "resource.h"
-
+#include "svr_func.h" /* get_svr_attr_* */
 
 extern int     svr_authorize_jobreq(struct batch_request *, job *);
 int status_attrib(svrattrl *, attribute_def *, attribute *, int, int, tlist_head *, int *, int);
@@ -142,7 +142,7 @@ int status_job(
   if (svr_authorize_jobreq(preq, pjob) == 0)
     IsOwner = 1;
 
-  get_svr_attr(SRV_ATR_query_others, &query_others);
+  get_svr_attr_l(SRV_ATR_query_others, &query_others);
   if (!query_others)
     {
     if (IsOwner == 0)

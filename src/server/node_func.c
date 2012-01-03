@@ -128,6 +128,7 @@
 #include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
 #include "req_manager.h" /* mgr_set_node_attr */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
+#include "svr_func.h" /* get_svr_attr_* */
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 extern int h_errno;
@@ -310,7 +311,7 @@ int addr_ok(
     {
     /* the node is ok if it is still talking to us */
     long chk_len = 300; 
-    get_svr_attr(SRV_ATR_check_rate, &chk_len);
+    get_svr_attr_l(SRV_ATR_check_rate, &chk_len);
     
     if (pnode->nd_lastupdate != 0)
       {
@@ -919,7 +920,7 @@ static int process_host_name_part(
   if (NodeSuffixIsSet == 0)
     {
     char *node_suffix = NULL;
-    get_svr_attr(SRV_ATR_NodeSuffix, &node_suffix);
+    get_svr_attr_str(SRV_ATR_NodeSuffix, &node_suffix);
 
     if (node_suffix != NULL)
       {

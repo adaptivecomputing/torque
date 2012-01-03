@@ -104,6 +104,8 @@
 #include "svrfunc.h"
 #include "csv.h"
 #include "threadpool.h"
+#include "svr_func.h" /* get_svr_attr_* */
+
 
 /* Private Fuctions Local to this File */
 
@@ -151,7 +153,7 @@ void svr_shutdown(
   close(lockfds);
 
   /* Lets start by logging shutdown and saving everything */
-  get_svr_attr(SRV_ATR_State, &state);
+  get_svr_attr_l(SRV_ATR_State, &state);
 
   strcpy(log_buf, msg_shutdown_start);
 
@@ -464,7 +466,7 @@ static void rerun_or_kill(
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_queue *pque;
 
-  get_svr_attr(SRV_ATR_State, &server_state);
+  get_svr_attr_l(SRV_ATR_State, &server_state);
   if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long)
     {
     /* job is rerunable, mark it to be requeued */

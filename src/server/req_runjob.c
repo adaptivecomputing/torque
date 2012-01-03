@@ -113,6 +113,8 @@
 #include "threadpool.h"
 #include "node_func.h" /* find_nodebyname */
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
+#include "svr_func.h" /* get_svr_attr_* */
+
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -1077,9 +1079,9 @@ static int svr_strtjob2(
   svr_setjobstate(pjob,JOB_STATE_RUNNING,JOB_SUBSTATE_PRERUN, FALSE);
 
   /* if job start timeout attribute is set use its value */
-  get_svr_attr(SRV_ATR_tcp_timeout, &tcp_timeout);
+  get_svr_attr_l(SRV_ATR_tcp_timeout, &tcp_timeout);
   
-  if ((get_svr_attr(SRV_ATR_JobStartTimeout, &job_timeout) == PBSE_NONE) &&
+  if ((get_svr_attr_l(SRV_ATR_JobStartTimeout, &job_timeout) == PBSE_NONE) &&
       (job_timeout > 0))
     {
     DIS_tcp_settimeout(job_timeout);
@@ -1676,7 +1678,7 @@ static int assign_hosts(
       }
     }
 
-  get_svr_attr(SRV_ATR_DefNode, &def_node);
+  get_svr_attr_str(SRV_ATR_DefNode, &def_node);
   if (hosttoalloc != NULL)
     {
     /* NO-OP */

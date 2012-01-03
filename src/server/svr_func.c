@@ -526,73 +526,100 @@ int set_svr_attr(
   } /* END set_svr_attr() */
 
 
-
-
-
-int get_svr_attr(
-
-  int   attr_index, /* I */
-  void *output)     /* O */
-
+int get_svr_attr_l(
+    int attr_index,
+    long *l)
   {
-  char                 **str_ptr;
-  long                  *l;
-  char                  *c;
-  struct array_strings **arst;
-
+  int rc = PBSE_NONE;
   pthread_mutex_lock(server.sv_attr_mutex);
-
   if ((attr_index >= SRV_ATR_LAST) ||
       ((server.sv_attr[attr_index].at_flags & ATR_VFLAG_SET) == FALSE))
     {
-    pthread_mutex_unlock(server.sv_attr_mutex);
-    return(-1);
+    rc = -1;
     }
-
-  switch (svr_attr_def[attr_index].at_type)
+  else if (svr_attr_def[attr_index].at_type == ATR_TYPE_LONG)
     {
-    case ATR_TYPE_LONG:
-
-      l = (long *)output;
-      *l = server.sv_attr[attr_index].at_val.at_long;
-
-      break;
-
-    case ATR_TYPE_CHAR:
-
-      c = (char *)output;
-      *c = server.sv_attr[attr_index].at_val.at_char;
-
-      break;
-
-    case ATR_TYPE_STR:
-
-      str_ptr = (char **)output;
-      *str_ptr = server.sv_attr[attr_index].at_val.at_str;
-
-      break;
-
-    case ATR_TYPE_ARST:
-    case ATR_TYPE_ACL:
-
-      arst = (struct array_strings **)output;
-      *arst = server.sv_attr[attr_index].at_val.at_arst;
-
-      break;
-
-    default:
-
-      return(-2);
+    *l = server.sv_attr[attr_index].at_val.at_long;
     }
-  
+  else
+    {
+    rc = -2;
+    }
   pthread_mutex_unlock(server.sv_attr_mutex);
-
-  return(PBSE_NONE);
-  } /* END get_svr_attr() */
-
+  return rc;
+  }
 
 
+int get_svr_attr_c(
+    int attr_index,
+    char *c)
+  {
+  int rc = PBSE_NONE;
+  pthread_mutex_lock(server.sv_attr_mutex);
+  if ((attr_index >= SRV_ATR_LAST) ||
+      ((server.sv_attr[attr_index].at_flags & ATR_VFLAG_SET) == FALSE))
+    {
+    rc = -1;
+    }
+  else if (svr_attr_def[attr_index].at_type == ATR_TYPE_CHAR)
+    {
+    *c = server.sv_attr[attr_index].at_val.at_char;
+    }
+  else
+    {
+    rc = -2;
+    }
+  pthread_mutex_unlock(server.sv_attr_mutex);
+  return rc;
+  }
 
+int get_svr_attr_str(
+    int attr_index,
+    char **str)
+  {
+  int rc = PBSE_NONE;
+  pthread_mutex_lock(server.sv_attr_mutex);
+  if ((attr_index >= SRV_ATR_LAST) ||
+      ((server.sv_attr[attr_index].at_flags & ATR_VFLAG_SET) == FALSE))
+    {
+    rc = -1;
+    }
+  else if (svr_attr_def[attr_index].at_type == ATR_TYPE_STR)
+    {
+    *str = server.sv_attr[attr_index].at_val.at_str;
+    }
+  else
+    {
+    rc = -2;
+    }
+  pthread_mutex_unlock(server.sv_attr_mutex);
+  return rc;
+  }
+
+int get_svr_attr_arst(
+    int attr_index,
+    struct array_strings **arst)
+  {
+  int rc = PBSE_NONE;
+  pthread_mutex_lock(server.sv_attr_mutex);
+  if ((attr_index >= SRV_ATR_LAST) ||
+      ((server.sv_attr[attr_index].at_flags & ATR_VFLAG_SET) == FALSE))
+    {
+    rc = -1;
+    }
+  else if ((svr_attr_def[attr_index].at_type == ATR_TYPE_ARST)
+      || (svr_attr_def[attr_index].at_type == ATR_TYPE_ACL))
+    {
+    *arst = server.sv_attr[attr_index].at_val.at_arst;
+    }
+  else
+    {
+    rc = -2;
+    }
+  pthread_mutex_unlock(server.sv_attr_mutex);
+  return rc;
+  }
+  
 
 /*
  * poke_scheduler - action routine for the server's "scheduling" attribute.

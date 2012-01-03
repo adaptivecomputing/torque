@@ -142,6 +142,7 @@
 #include "pbs_job.h"
 #include "resizable_array.h"
 #include "dynamic_string.h"
+#include "svr_func.h" /* get_svr_attr_* */
 
 
 #ifndef TRUE
@@ -1092,7 +1093,7 @@ void job_clone_wt(
     else
       {
       long moab_compatible = FALSE;;
-      get_svr_attr(SRV_ATR_MoabArrayCompatible, &moab_compatible);
+      get_svr_attr_l(SRV_ATR_MoabArrayCompatible, &moab_compatible);
       pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
       
       if (moab_compatible != FALSE)
@@ -1478,7 +1479,7 @@ int record_jobinfo(
       }
     }
   
-  get_svr_attr(SRV_ATR_RecordJobScript, &record_job_script);
+  get_svr_attr_l(SRV_ATR_RecordJobScript, &record_job_script);
   if (record_job_script)
     {
     /* This is for Baylor. We will make it a server parameter eventually
@@ -1553,7 +1554,7 @@ void job_purge(
   long          record_job_info = FALSE;
 
   /* check to see if we are keeping a log of all jobs completed */
-  get_svr_attr(SRV_ATR_RecordJobInfo, &record_job_info);
+  get_svr_attr_l(SRV_ATR_RecordJobInfo, &record_job_info);
   if (record_job_info)
     {
     record_jobinfo(pjob);
@@ -1743,7 +1744,7 @@ char *get_correct_jobname(
   long  display_suffix = TRUE;
   char *alias = NULL;
 
-  get_svr_attr(SRV_ATR_display_job_server_suffix, &display_suffix);
+  get_svr_attr_l(SRV_ATR_display_job_server_suffix, &display_suffix);
   if (display_suffix == FALSE)
     server_suffix = FALSE;
 
@@ -1760,7 +1761,7 @@ char *get_correct_jobname(
   dot = NULL;
 
   /* check current settings */
-  get_svr_attr(SRV_ATR_job_suffix_alias, &alias);
+  get_svr_attr_str(SRV_ATR_job_suffix_alias, &alias);
   if ((alias != NULL) &&
       (server_suffix == TRUE))
     {

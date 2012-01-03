@@ -113,6 +113,8 @@
 #include "array.h"
 #include "issue_request.h" /* issue_request */
 #include "utils.h"
+#include "svr_func.h" /* get_svr_attr_* */
+
 
 
 #define RESC_USED_BUF 2048
@@ -1392,7 +1394,7 @@ int handle_complete_first_time(
     unlock_queue(pque, "handle_complete_first_time", NULL, LOGLEVEL);
     }
   
-  if ((get_svr_attr(SRV_ATR_JobMustReport, &must_report) == PBSE_NONE) &&
+  if ((get_svr_attr_l(SRV_ATR_JobMustReport, &must_report) == PBSE_NONE) &&
       (must_report > 0))
     {
     pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 0;
@@ -2718,7 +2720,7 @@ void *req_jobobit(
 
     account_jobend(pjob, acctbuf);
 
-    get_svr_attr(SRV_ATR_log_events, &events);
+    get_svr_attr_l(SRV_ATR_log_events, &events);
     if (events & PBSEVENT_JOB_USAGE)
       {
       /* log events set to record usage */

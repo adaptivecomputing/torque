@@ -99,6 +99,7 @@
 #ifdef _CRAY
 #include <udb.h>
 #endif /* _CRAY */
+#include "svr_func.h" /* get_svr_attr_* */
 
 /* External Data */
 
@@ -316,7 +317,7 @@ int set_jobexid(
   char            tmpLine[1024 + 1];
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
-  long            disable_id_check;
+  long            disable_id_check = 0;
   int             CheckID;  /* boolean */
 
   if (EMsg != NULL)
@@ -324,7 +325,7 @@ int set_jobexid(
 
   /* use the passed User_List if set, may be a newly modified one     */
   /* if not set, fall back to the job's actual User_List, may be same */
-  if (get_svr_attr(SRV_ATR_DisableServerIdCheck, &disable_id_check) != PBSE_NONE)
+  if (get_svr_attr_l(SRV_ATR_DisableServerIdCheck, &disable_id_check) != PBSE_NONE)
     CheckID = 1;
   else
     CheckID = !disable_id_check;
@@ -429,7 +430,7 @@ int set_jobexid(
     if (pwent->pw_uid == 0)
       {
       struct array_strings *pas = NULL;
-      get_svr_attr(SRV_ATR_AclRoot, &pas);
+      get_svr_attr_arst(SRV_ATR_AclRoot, &pas);
 
       /* add check here for virtual user */
       if (pjob->ji_wattr[JOB_ATR_proxy_user].at_flags & ATR_VFLAG_SET)
@@ -477,7 +478,7 @@ int set_jobexid(
         free(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
         pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str = usr_at_host;
         }
-      else if (get_svr_attr(SRV_ATR_AclRoot, &pas) == PBSE_NONE)
+      else if (get_svr_attr_arst(SRV_ATR_AclRoot, &pas) == PBSE_NONE)
         {
         if (acl_check_my_array_string(pas, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, ACL_User) == 0)
           {

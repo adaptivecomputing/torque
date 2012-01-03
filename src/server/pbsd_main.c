@@ -128,6 +128,7 @@
 #include <pthread.h>
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
+#include "svr_func.h" /* get_svr_attr_* */
 
 
 #define TSERVER_HA_CHECK_TIME  1  /* 1 second sleep time between checks on the lock file for high availability */
@@ -931,7 +932,7 @@ static time_t check_tasks()
 
   time_t     time_now = time(NULL);
 
-  get_svr_attr(SRV_ATR_scheduler_iteration, &til);
+  get_svr_attr_l(SRV_ATR_scheduler_iteration, &til);
   tilwhen = til;
   iter = -1;
 
@@ -1080,7 +1081,7 @@ void main_loop(void)
   /* do not check nodes immediately as they will initially be marked
      down unless they have already reported in */
 
-  get_svr_attr(SRV_ATR_check_rate, &when);
+  get_svr_attr_l(SRV_ATR_check_rate, &when);
   when += time_now;
 
   if (svr_totnodes > 1024)
@@ -1106,9 +1107,9 @@ void main_loop(void)
    * following section constitutes the "main" loop of the server
    */
 
-  get_svr_attr(SRV_ATR_State, &state);
+  get_svr_attr_l(SRV_ATR_State, &state);
 
-  get_svr_attr(SRV_ATR_tcp_timeout, &timeout);
+  get_svr_attr_l(SRV_ATR_tcp_timeout, &timeout);
   DIS_tcp_settimeout(timeout);
 
   if (server_init_type == RECOV_HOT)
@@ -1120,7 +1121,7 @@ void main_loop(void)
 
   if (plogenv == NULL) /* If no specification of loglevel from env */
     {
-    get_svr_attr(SRV_ATR_LogLevel, &log);
+    get_svr_attr_l(SRV_ATR_LogLevel, &log);
     LOGLEVEL = log;
     }
 
@@ -1137,7 +1138,7 @@ void main_loop(void)
 
     send_any_hellos_needed();
 
-    get_svr_attr(SRV_ATR_PollJobs, &poll_jobs);
+    get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
 
     if (poll_jobs)
       waittime = MIN(check_tasks(), JobStatRate - (time_now - last_jobstat_time));
@@ -1151,8 +1152,8 @@ void main_loop(void)
       /* In normal Run state */
 
       /* if time or event says to run scheduler, do it */
-      get_svr_attr(SRV_ATR_scheduling, &scheduling);
-      get_svr_attr(SRV_ATR_scheduler_iteration, &sched_iteration);
+      get_svr_attr_l(SRV_ATR_scheduling, &scheduling);
+      get_svr_attr_l(SRV_ATR_scheduler_iteration, &sched_iteration);
 
       pthread_mutex_lock(svr_do_schedule_mutex);
 
@@ -1232,14 +1233,14 @@ void main_loop(void)
 
     if (plogenv == NULL)
       {
-      get_svr_attr(SRV_ATR_LogLevel, &log);
+      get_svr_attr_l(SRV_ATR_LogLevel, &log);
       LOGLEVEL = log;
       }
 
     /* qmgr can dynamically set the loglevel specification
      * we use the new value if PBSLOGLEVEL was not specified
      */
-    get_svr_attr(SRV_ATR_State, &state);
+    get_svr_attr_l(SRV_ATR_State, &state);
     if (state == SV_STATE_SHUTSIG)
       svr_shutdown(SHUT_SIG); /* caught sig */
 
@@ -1266,7 +1267,7 @@ void main_loop(void)
     
     pthread_mutex_unlock(server.sv_jobstates_mutex);
 
-    get_svr_attr(SRV_ATR_State, &state);
+    get_svr_attr_l(SRV_ATR_State, &state);
     }    /* END while (*state != SV_STATE_DOWN) */
 
   svr_save(&server, SVR_SAVE_FULL); /* final recording of server */
@@ -1736,8 +1737,8 @@ void check_job_log(
   long   roll_depth = -1;
 
   /* remove logs older than LogKeepDays */
-  get_svr_attr(SRV_ATR_JobLogKeepDays, &keep_days);
-  get_svr_attr(SRV_ATR_JobLogFileMaxSize, &max_size);
+  get_svr_attr_l(SRV_ATR_JobLogKeepDays, &keep_days);
+  get_svr_attr_l(SRV_ATR_JobLogFileMaxSize, &max_size);
 
   if (keep_days != 0)
     {
@@ -1762,7 +1763,7 @@ void check_job_log(
     if ((job_log_size() >= max_size) &&
         (max_size > 0))
       {
-      get_svr_attr(SRV_ATR_JobLogFileRollDepth, &roll_depth);
+      get_svr_attr_l(SRV_ATR_JobLogFileRollDepth, &roll_depth);
 
       log_event(
         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
@@ -1807,7 +1808,7 @@ void check_log(
   char   *version = NULL;
 
   /* remove logs older than LogKeepDays */
-  if (get_svr_attr(SRV_ATR_LogKeepDays, &keep_days) == PBSE_NONE)
+  if (get_svr_attr_l(SRV_ATR_LogKeepDays, &keep_days) == PBSE_NONE)
     {
     snprintf(log_buf,sizeof(log_buf),"checking for old pbs_server logs in dir '%s' (older than %ld days)",
       path_svrlog,
@@ -1825,7 +1826,7 @@ void check_log(
       }
     }
   
-  if (get_svr_attr(SRV_ATR_LogFileMaxSize, &max_size) == PBSE_NONE)
+  if (get_svr_attr_l(SRV_ATR_LogFileMaxSize, &max_size) == PBSE_NONE)
     {
     long roll_depth = 1;
 
@@ -1838,7 +1839,7 @@ void check_log(
         msg_daemonname,
         "Rolling log file");
       
-      get_svr_attr(SRV_ATR_LogFileRollDepth, &roll_depth);
+      get_svr_attr_l(SRV_ATR_LogFileRollDepth, &roll_depth);
 
       if ((roll_depth >= INT_MAX) || (roll_depth < 1))
         {
@@ -1853,7 +1854,7 @@ void check_log(
   
 
   /* periodically record the version and loglevel */
-  get_svr_attr(SRV_ATR_version, &version);
+  get_svr_attr_str(SRV_ATR_version, &version);
   sprintf(log_buf, msg_info_server, version, LOGLEVEL);
 
   log_event(
@@ -1883,7 +1884,7 @@ void check_acct_log(
   time_t time_now = time(NULL);
   long   keep_days = 0;
 
-  if ((get_svr_attr(SRV_ATR_AcctKeepDays, &keep_days) == PBSE_NONE) &&
+  if ((get_svr_attr_l(SRV_ATR_AcctKeepDays, &keep_days) == PBSE_NONE) &&
       (keep_days >= 0))
     {
     sprintf(log_buf,"Checking accounting files - keep days = %ld", keep_days);
