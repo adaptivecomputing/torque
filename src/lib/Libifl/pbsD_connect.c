@@ -380,7 +380,7 @@ int PBSD_munge_authenticate(
   int                 fd;
   FILE               *munge_pipe;
   char                munge_buf[MUNGE_SIZE];
-  char                munge_command[MUNGE_SIZE << 3];
+  char                munge_command[MUNGE_SIZE];
   char               *ptr; /* pointer to the current place to copy data into munge_buf */
   int                 bytes_read;
   int                 total_bytes_read = 0;
@@ -394,7 +394,6 @@ int PBSD_munge_authenticate(
   struct sockaddr_in  sockname;
   socklen_t           socknamelen = sizeof(sockname);
 
-  /* NYI: have Ken check this to make sure its right */
   snprintf(munge_command,sizeof(munge_command),
     "munge -n");
 
@@ -409,7 +408,7 @@ int PBSD_munge_authenticate(
 
   fd = fileno(munge_pipe);
 
-  while ((bytes_read = read(fd, ptr, MUNGE_SIZE)) > 0)
+  while ((bytes_read = read(fd, ptr, MUNGE_SIZE - total_bytes_read)) > 0)
     {
     total_bytes_read += bytes_read;
     ptr += bytes_read;
@@ -418,12 +417,13 @@ int PBSD_munge_authenticate(
   if (bytes_read == -1)
     {
     /* read failed */
-    fprintf(stderr, "error reading pipe in PBSD_munge_authenticate: errno = %d\n", errno);
+    local_errno = errno;
+    log_err(local_errno, __func__, "error reading pipe in PBSD_munge_authenticate");
     return(-1);
     }
   
   /* if we got no bytes back then Munge may not be installed etc. */
-  if(total_bytes_read == 0)
+  if (total_bytes_read == 0)
     {
     return(PBSE_MUNGE_NOT_FOUND);
     }
@@ -456,7 +456,8 @@ int PBSD_munge_authenticate(
   else
     {
     /* read the reply */
-    reply = PBSD_rdrpy(&local_errno, handle);
+    if ((reply = PBSD_rdrpy(&local_errno, handle)) != NULL)
+      free(reply);
   
     return(PBSE_NONE);
     }

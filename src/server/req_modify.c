@@ -1189,7 +1189,7 @@ int modify_job_attr(
   int    *bad)   /* O */
 
   {
-  int        allow_unkn;
+  int        allow_unkn = -1;
   long       i;
   attribute  newattr[JOB_ATR_LAST];
   attribute *pattr;
@@ -1199,9 +1199,7 @@ int modify_job_attr(
 
   if ((pque = get_jobs_queue(pjob)) != NULL)
     {
-    if (pque->qu_qs.qu_type == QTYPE_Execution)
-      allow_unkn = -1;
-    else
+    if (pque->qu_qs.qu_type != QTYPE_Execution)
       allow_unkn = JOB_ATR_UNKN;
 
     unlock_queue(pque, __func__, NULL, LOGLEVEL);

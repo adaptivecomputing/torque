@@ -5727,7 +5727,7 @@ int send_join_job_to_sisters(
   int          i;
   int          stream;
   int          connected;
-  int          ret;
+  int          ret = PBSE_NONE;
   eventent    *ep;
   svrattrl    *psatl;
 

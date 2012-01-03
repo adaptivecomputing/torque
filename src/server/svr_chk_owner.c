@@ -395,7 +395,7 @@ int authenticate_user(
  
   get_svr_attr(SRV_ATR_authusers, &my_acl); 
   if ((strncmp(preq->rq_user, pcred->username, PBS_MAXUSER)) &&
-     ((acl_check_my_array_string(my_acl, uh, ACL_User_Host)) == 0))
+     ((acl_check_my_array_string(my_acl, uh, ACL_User)) == 0))
 #else
   if (strncmp(preq->rq_user, pcred->username, PBS_MAXUSER))
 #endif
