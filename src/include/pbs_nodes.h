@@ -288,6 +288,7 @@ struct pbsnode
   short                 nd_order; /* order of user's request */
   time_t                nd_warnbad;
   time_t                nd_lastupdate; /* time of last update. */
+  unsigned char         nd_in_hierarchy; /* set to TRUE if in the hierarchy file */
 
   short                 nd_ngpus;        /* number of gpus */ 
   short                 nd_gpus_real;    /* gpus are real not virtual */ 
@@ -502,6 +503,7 @@ extern void bad_node_warning(pbs_net_t, struct pbsnode *);
 extern int addr_ok(pbs_net_t,struct pbsnode *);
 
 struct pbsnode  *find_nodebyname(char *);
+int              create_partial_pbs_node(char *, unsigned long, int);
 
 #ifdef BATCH_REQUEST_H 
 void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
@@ -515,7 +517,6 @@ void             free_prop_list(struct prop*);
 void             free_prop_attr(attribute*);
 void             recompute_ntype_cnts();
 int              create_pbs_node(char *, svrattrl *, int, int *);
-int              create_partial_pbs_node(char *, unsigned long, int);
 int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);
 void            *send_hierarchy_file(void *);
 

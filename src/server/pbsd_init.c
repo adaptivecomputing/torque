@@ -499,6 +499,45 @@ int can_resolve_hostname(
 
 
 
+
+void check_if_in_nodes_file(
+
+  char *hostname)
+
+  {
+  char             log_buf[LOCAL_LOG_BUF_SIZE];
+  struct pbsnode  *pnode;
+  char            *colon;
+  struct addrinfo *addr_info;
+  unsigned long    ipaddr;
+
+  if ((colon = strchr(hostname, ':')) != NULL)
+    *colon = '\0';
+  
+  if ((pnode = find_nodebyname(hostname)) == NULL)
+    {
+    snprintf(log_buf, sizeof(log_buf), 
+      "Node %s found in mom_hierarchy but not found in nodes file. Adding",
+      hostname);
+    log_err(-1, __func__, log_buf);
+
+    getaddrinfo(hostname, NULL, NULL, &addr_info);
+    ipaddr = ntohl(((struct sockaddr_in *)addr_info->ai_addr)->sin_addr.s_addr);
+    create_partial_pbs_node(hostname, ipaddr, ATR_DFLAG_MGRD | ATR_DFLAG_MGWR);
+    pnode = find_nodebyname(hostname);
+    }
+    
+  pnode->nd_in_hierarchy = TRUE;
+  unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
+  if (colon != NULL)
+    *colon = ':';
+  } /* END check_if_in_nodes_file() */
+
+
+
+
+
 int handle_level(
     
   char           *level_iter,
@@ -537,6 +576,8 @@ int handle_level(
       {
       if (level_buf->used > 0)
         append_dynamic_string(level_buf, ",");
+
+      check_if_in_nodes_file(host_tok);
 
       append_dynamic_string(level_buf, host_tok);
       }
@@ -618,6 +659,9 @@ dynamic_string *parse_mom_hierarchy(
   char           *parent;
   char           *child;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
+  struct pbsnode *pnode;
+  int             iter = -1;
+  unsigned char   first_missing_node = TRUE;
   dynamic_string *send_format = NULL;
 
   if ((bytes_read = read(fds, buffer, sizeof(buffer))) < 0)
@@ -658,6 +702,36 @@ dynamic_string *parse_mom_hierarchy(
     /* if there were no valid paths, return NULL to signify an error */
     free_dynamic_string(send_format);
     send_format = NULL;
+    }
+  else
+    {
+    /* check if there are nodes that weren't in the hierarchy file that are in the nodes file */
+    while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
+      {
+      if (pnode->nd_in_hierarchy == FALSE)
+        {
+        if (first_missing_node == TRUE)
+          {
+          copy_to_end_of_dynamic_string(send_format, "<sp>");
+          copy_to_end_of_dynamic_string(send_format, "<sl>");
+          first_missing_node = FALSE;
+          copy_to_end_of_dynamic_string(send_format, pnode->nd_name);
+          }
+        else
+          {
+          append_dynamic_string(send_format, ",");
+          append_dynamic_string(send_format, pnode->nd_name);
+          }
+        }
+
+      unlock_node(pnode, id, NULL, LOGLEVEL);
+      }
+
+    if (first_missing_node == FALSE)
+      {
+      copy_to_end_of_dynamic_string(send_format, "</sl>");
+      copy_to_end_of_dynamic_string(send_format, "</sp>");
+      }
     }
 
   return(send_format);
