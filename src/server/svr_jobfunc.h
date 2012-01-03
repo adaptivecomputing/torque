@@ -8,7 +8,7 @@
 #include "queue.h" /* pbs_queue */
 #include "dynamic_string.h"
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex);
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, int);
 
 void svr_dequejob(job *pjob, int);
 

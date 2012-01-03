@@ -2080,7 +2080,7 @@ void req_commit(
 
   pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
-  if ((rc = svr_enquejob(pj, FALSE)))
+  if ((rc = svr_enquejob(pj, FALSE, -1)))
     {
     job_purge(pj);
 

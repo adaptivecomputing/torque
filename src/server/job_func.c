@@ -722,7 +722,6 @@ job *job_clone(
   int        taskid)  /* I */
 
   {
-  static char   id[] = "job_clone";
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
   job  *pnewjob;
@@ -746,18 +745,18 @@ job *job_clone(
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "taskid %d", taskid);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
   if (taskid > PBS_MAXJOBARRAY)
     {
-    log_err(-1, id, "taskid out of range");
+    log_err(-1, __func__, "taskid out of range");
 
     return(NULL);
     }
 
   if ((pnewjob = job_alloc()) == NULL)
     {
-    log_err(errno, id, "no memory");
+    log_err(errno, __func__, "no memory");
 
     return(NULL);
     }
@@ -775,7 +774,7 @@ job *job_clone(
   /* find the job id for the cloned job */
   if ((oldid = strdup(template_job->ji_qs.ji_jobid)) == NULL)
     {
-    log_err(ENOMEM, id, "no memory");
+    log_err(ENOMEM, __func__, "no memory");
     job_free(pnewjob);
 
     return(NULL);
@@ -827,7 +826,7 @@ job *job_clone(
             {
             /* FAILURE */
 
-            log_err(errno, id, "job file is corrupt");
+            log_err(errno, __func__, "job file is corrupt");
             job_free(pnewjob);
 
             return(NULL);
@@ -840,7 +839,7 @@ job *job_clone(
         {
         /* FAILURE */
 
-        log_err(errno, id, "cannot create job file");
+        log_err(errno, __func__, "cannot create job file");
         job_free(pnewjob);
 
         return(NULL);
@@ -950,7 +949,7 @@ job *job_clone(
     pthread_mutex_unlock(pa->ai_mutex);
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "unlocked ai_mutex: %s", id);
+      sprintf(log_buf, "unlocked ai_mutex: %s", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pnewjob->ji_qs.ji_jobid, log_buf);
       }
     }
@@ -975,7 +974,6 @@ void job_clone_wt(
   struct work_task *ptask)
 
   {
-  static char         id[] = "job_clone_wt";
   char                log_buf[LOCAL_LOG_BUF_SIZE];
   job                *template_job;
   job                *pjob;
@@ -983,6 +981,7 @@ void job_clone_wt(
   char               *jobid;
 
   int                 i;
+  int                 prev_index = -1;
   int                 actual_job_count = 0;
   int                 newstate;
   int                 newsub;
@@ -1000,7 +999,7 @@ void job_clone_wt(
 
   if (jobid == NULL)
     {
-    log_err(ENOMEM, id, "Can't malloc");
+    log_err(ENOMEM, __func__, "Can't malloc");
     return;
     }
 
@@ -1033,7 +1032,7 @@ void job_clone_wt(
 
       if (pjobclone == NULL)
         {
-        log_err(-1, id, "unable to clone job in job_clone_wt");
+        log_err(-1, __func__, "unable to clone job in job_clone_wt");
         continue;
         }
 
@@ -1043,7 +1042,7 @@ void job_clone_wt(
       pjobclone->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       pjobclone->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
-      if ((rc = svr_enquejob(pjobclone, FALSE)))
+      if ((rc = svr_enquejob(pjobclone, FALSE, prev_index)))
         {
         /* XXX need more robust error handling */
         pthread_mutex_unlock(pa->ai_mutex);
@@ -1052,7 +1051,7 @@ void job_clone_wt(
         continue;
         }
 
-     if (job_save(pjobclone, SAVEJOB_FULL, 0) != 0)
+      if (job_save(pjobclone, SAVEJOB_FULL, 0) != 0)
         {
         /* XXX need more robust error handling */
         pthread_mutex_unlock(pa->ai_mutex);
@@ -1060,11 +1059,13 @@ void job_clone_wt(
         pthread_mutex_lock(pa->ai_mutex);
         continue;
         }
-
+      
+      prev_index = get_jobs_index(&alljobs, pjobclone);
+      
       pa->ai_qs.num_cloned++;
-
+      
       rn->start++;
-
+      
       pthread_mutex_unlock(pjobclone->ji_mutex);
       }  /* END for (i) */
 
@@ -1126,7 +1127,7 @@ void job_clone_wt(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "unlocked ai_mutex: %s", id);
+    sprintf(log_buf, "unlocked ai_mutex: %s", __func__);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
     }
   
@@ -2045,7 +2046,6 @@ int insert_job(
   job             *pjob)
 
   {
-  static char  *id = "insert_job";
   int           rc;
 
   pthread_mutex_lock(aj->alljobs_mutex);
@@ -2053,11 +2053,11 @@ int insert_job(
   if ((rc = insert_thing(aj->ra,pjob)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc,id,"No memory to resize the array...SYSTEM FAILURE\n");
+    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
     }
   else
     {
-    add_hash(aj->ht,rc,pjob->ji_qs.ji_jobid);
+    add_hash(aj->ht, rc, pjob->ji_qs.ji_jobid);
 
     rc = PBSE_NONE;
     }
@@ -2085,9 +2085,8 @@ int insert_job_after(
   job             *pjob)
 
   {
-  static char *id = "insert_job_after";
-  int          rc;
-  int          i;
+  int rc;
+  int i;
 
   pthread_mutex_lock(aj->alljobs_mutex);
 
@@ -2100,7 +2099,7 @@ int insert_job_after(
     if ((rc = insert_thing_after(aj->ra,pjob,i)) == -1)
       {
       rc = ENOMEM;
-      log_err(rc,id,"No memory to resize the array...SYSTEM FAILURE");
+      log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
       }
     else
       {
@@ -2113,6 +2112,37 @@ int insert_job_after(
 
   return(rc);
   } /* END insert_job_after() */
+
+
+
+
+int insert_job_after_index(
+
+  struct all_jobs *aj,
+  int              index,
+  job             *pjob)
+
+  {
+  int rc;
+
+  pthread_mutex_lock(aj->alljobs_mutex);
+
+  if ((rc = insert_thing_after(aj->ra, pjob, index)) == -1)
+    {
+    rc = ENOMEM;
+    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
+    }
+  else
+    {
+    add_hash(aj->ht, rc, pjob->ji_qs.ji_jobid);
+    rc = PBSE_NONE;
+    }
+
+  pthread_mutex_unlock(aj->alljobs_mutex);
+
+  return(rc);
+  } /* END insert_job_after_index() */
+
 
 
 
@@ -2146,6 +2176,33 @@ int insert_job_first(
   return(rc);
   } /* END insert_job_first () */
 
+
+
+
+/*
+ * get the job's index in the array 
+ */
+
+int get_jobs_index(
+
+  struct all_jobs *aj,
+  job             *pjob)
+
+  {
+  int  index;
+
+  if (pthread_mutex_trylock(aj->alljobs_mutex))
+    {
+    pthread_mutex_unlock(pjob->ji_mutex);
+    pthread_mutex_lock(aj->alljobs_mutex);
+    pthread_mutex_lock(pjob->ji_mutex);
+    }
+
+  index = get_value_hash(aj->ht, pjob->ji_qs.ji_jobid);
+  pthread_mutex_unlock(aj->alljobs_mutex);
+
+  return(index);
+  } /* END get_jobs_index() */
 
 
 

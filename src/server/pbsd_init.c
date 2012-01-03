@@ -2202,7 +2202,7 @@ static void pbsd_init_reque(
     }
 
   pthread_mutex_lock(server.sv_qs_mutex);
-  if (svr_enquejob(pjob, TRUE) == 0)
+  if (svr_enquejob(pjob, TRUE, -1) == 0)
     {
     strcat(logbuf, msg_init_queued);
     strcat(logbuf, pjob->ji_qs.ji_queue);

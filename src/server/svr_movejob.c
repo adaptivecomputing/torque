@@ -320,7 +320,7 @@ static int local_move(
 
   jobp->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
 
-  *my_err = svr_enquejob(jobp, FALSE);
+  *my_err = svr_enquejob(jobp, FALSE, -1);
 
   if (*my_err != 0)
     {

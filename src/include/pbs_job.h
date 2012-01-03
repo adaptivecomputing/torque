@@ -682,7 +682,9 @@ struct all_jobs
 void initialize_all_jobs_array(struct all_jobs *);
 int  insert_job(struct all_jobs *, job *);
 int  insert_job_after(struct all_jobs *,job *before,job *after);
+int  insert_job_after_index(struct all_jobs *, int index, job *after);
 int  insert_job_first(struct all_jobs *,job *);
+int  get_jobs_index(struct all_jobs *, job *);
 int  remove_job(struct all_jobs *,job *);
 int  has_job(struct all_jobs *,job *);
 int  swap_jobs(struct all_jobs *,job *,job *);
@@ -1064,7 +1066,7 @@ extern char *add_std_filename(job *, char *, int, dynamic_string *);
 extern int   set_jobexid(job *, attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *, int);
 void  svr_dequejob(job *, int);
-extern int   svr_enquejob(job *, int);
+extern int   svr_enquejob(job *, int, int);
 extern void  svr_evaljobstate(job *, int *, int *, int);
 extern void  svr_mailowner(job *, int, int, char *);
 extern void  set_resc_deflt(job *, attribute *, int);

@@ -324,8 +324,8 @@ void *req_orderjob(
     strcpy(pjob2->ji_qs.ji_queue, tmpqn);
     svr_dequejob(pjob1, FALSE);
     svr_dequejob(pjob2, FALSE);
-    svr_enquejob(pjob1, FALSE);
-    svr_enquejob(pjob2, FALSE);
+    svr_enquejob(pjob1, FALSE, -1);
+    svr_enquejob(pjob2, FALSE, -1);
 
     }
   else

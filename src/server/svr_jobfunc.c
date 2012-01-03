@@ -292,7 +292,8 @@ const char *PJobSubState[] =
 int svr_enquejob(
 
   job *pjob,            /* I */
-  int  has_sv_qs_mutex) /* I */
+  int  has_sv_qs_mutex, /* I */
+  int  prev_job_index)  /* I */
 
   {
   attribute     *pattrjb;
@@ -328,7 +329,10 @@ int svr_enquejob(
 
   if (!pjob->ji_is_array_template)
     {
-    insert_job(&alljobs,pjob);
+    if (prev_job_index < 0)
+      insert_job(&alljobs, pjob);
+    else
+      insert_job_after_index(&alljobs, prev_job_index, pjob);
 
     if (has_sv_qs_mutex == FALSE)
       pthread_mutex_lock(server.sv_qs_mutex);
@@ -348,9 +352,9 @@ int svr_enquejob(
   /* place into array_summary if necessary */
   if (pjob->ji_is_array_template || pjob->ji_arraystruct == NULL)
     {
-    if (has_job(&array_summary,pjob) == FALSE)
+    if (has_job(&array_summary, pjob) == FALSE)
       {
-      insert_job(&array_summary,pjob);
+      insert_job(&array_summary, pjob);
       }
     } /* END if (pjob->is_array_template) */
 
@@ -475,7 +479,7 @@ int svr_enquejob(
       &pque->qu_attr[QE_ATR_checkpoint_min]);
 
     /* do anything needed doing regarding job dependencies */
-    unlock_queue(pque, "svr_enquejob", "anything", LOGLEVEL);
+    unlock_queue(pque, __func__, "anything", LOGLEVEL);
 
     if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
       {
@@ -512,7 +516,7 @@ int svr_enquejob(
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
     pjob->ji_qs.ji_un.ji_routet.ji_rteretry = 0;
     
-    unlock_queue(pque, "svr_enquejob", "route job", LOGLEVEL);
+    unlock_queue(pque, __func__, "route job", LOGLEVEL);
     }
 
   return(PBSE_NONE);
