@@ -222,28 +222,19 @@ void *mom_process_request(
   if (rc == -1)
     {
     /* FAILURE */
-
     /* premature end of file */
-
     mom_close_client(sfds);
-
     free_br(request);
-
     return NULL;
     }
 
   if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL))
     {
     /* FAILURE */
-
     /* read error, likely cannot send reply so just disconnect */
-
     /* ??? not sure about this ??? */
-
     mom_close_client(sfds);
-
     free_br(request);
-
     return NULL;
     }
 
@@ -257,9 +248,7 @@ void *mom_process_request(
      */
 
     req_reject(rc, 0, request, NULL, "cannot decode message");
-
     mom_close_client(sfds);
-
     return NULL;
     }
 
@@ -277,7 +266,7 @@ void *mom_process_request(
              get_connectaddr(sfds,FALSE));
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-
+    mom_close_client(sfds);
     return NULL;
     }
 
@@ -322,16 +311,9 @@ void *mom_process_request(
         reqtype_to_txt(request->rq_type),
         request->rq_host);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
-
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
       req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
-
       mom_close_client(sfds);
-
       return NULL;
       }
 
@@ -341,11 +323,7 @@ void *mom_process_request(
         reqtype_to_txt(request->rq_type),
         request->rq_host);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
       }
 
     mom_server_update_receive_time_by_ip(svr_conn[sfds].cn_addr, reqtype_to_txt(request->rq_type));

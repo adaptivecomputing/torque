@@ -121,6 +121,7 @@
 #include "dynamic_string.h"
 #include "utils.h"
 #include "queue_recycler.h" /* queue_recycler */
+#include "svr_task.h" /* initialize_task_recycler */
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */

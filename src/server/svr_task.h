@@ -26,4 +26,14 @@ int has_task(all_tasks *at);
 
 int remove_task(all_tasks *at, work_task *wt);
 
+void initialize_task_recycler();
+
+work_task *next_task_from_recycler(all_tasks *at, int *iter);
+
+void *remove_some_recycle_tasks(void *vp);
+
+int insert_task_into_recycler(struct work_task *ptask);
+
+
+
 #endif /* _SVR_TASK_H */

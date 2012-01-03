@@ -171,13 +171,5 @@ typedef struct task_recycler
   pthread_mutex_t *mutex;
   } task_recycler;
 
-work_task *get_recycled_task();
-int        insert_task_into_recycler();
-void       update_task_recycler_next_id();
-void       garbage_collect_task_recycling();
-void       initialize_task_recycler();
-
-
-
 
 #endif /* WORK_TASK_H */

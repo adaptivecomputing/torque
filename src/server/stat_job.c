@@ -189,7 +189,7 @@ int status_job(
 
 
 
-
+/* Is this dead code? It isn't called anywhere. */
 int add_walltime_remaining(
    
   int         index,
@@ -197,7 +197,7 @@ int add_walltime_remaining(
   tlist_head *phead)
 
   {
-  int            len;
+  int            len = 0;
   char           buf[MAXPATHLEN];
   char          *pname;
   svrattrl      *pal;
