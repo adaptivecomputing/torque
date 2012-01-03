@@ -130,19 +130,14 @@ int decode_DIS_Manage(
     return(rc);
     }
 
-  rc = disrfst(
-         sock,
-         PBS_MAXSVRJOBID + 1,
-         preq->rq_ind.rq_manager.rq_objname);
+  rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_manager.rq_objname);
 
   if (rc)
     {
     return(rc);
     }
 
-  rc = decode_DIS_svrattrl(
-         sock,
-         &preq->rq_ind.rq_manager.rq_attr);
+  rc = decode_DIS_svrattrl(sock, &preq->rq_ind.rq_manager.rq_attr);
 
   return (rc);
   }  /* END decode_DIS_Manage() */

@@ -181,7 +181,7 @@ int decode_DIS_replyCmd(
 
     case BATCH_REPLY_CHOICE_Commit:
 
-      if ((rc = disrfst(sock, PBS_MAXSVRJOBID + 1, reply->brp_un.brp_jid)))
+      if ((rc = disrfst(sock, PBS_MAXSVRJOBID, reply->brp_un.brp_jid)))
         {
         return(rc);
         }
@@ -214,9 +214,7 @@ int decode_DIS_replyCmd(
 
         psel->brp_next = NULL;
 
-        psel->brp_jobid[0] = '\0';
-
-        rc = disrfst(sock, PBS_MAXSVRJOBID + 1, psel->brp_jobid);
+        rc = disrfst(sock, PBS_MAXSVRJOBID, psel->brp_jobid);
 
         if (rc)
           {
@@ -260,7 +258,9 @@ int decode_DIS_replyCmd(
 
         if (rc == 0)
           {
-          rc = disrfst(sock, PBS_MAXSVRJOBID, pstcmd->brp_objname);
+          rc = disrfst(sock,
+              (PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID:PBS_MAXDEST),
+              pstcmd->brp_objname);
           }
 
         if (rc)
@@ -301,7 +301,7 @@ int decode_DIS_replyCmd(
 
       /* Locate Job Reply */
 
-      rc = disrfst(sock, PBS_MAXDEST + 1, reply->brp_un.brp_locate);
+      rc = disrfst(sock, PBS_MAXDEST, reply->brp_un.brp_locate);
 
       break;
 

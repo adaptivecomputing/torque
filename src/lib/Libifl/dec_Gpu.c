@@ -106,11 +106,11 @@ int decode_DIS_GpuCtrl(
   {
   int rc;
 
-  rc = disrfst(sock, PBS_MAXHOSTNAME + 1, preq->rq_ind.rq_gpuctrl.rq_momnode);
+  rc = disrfst(sock, PBS_MAXHOSTNAME, preq->rq_ind.rq_gpuctrl.rq_momnode);
 
   if (rc) return rc;
 
-  rc = disrfst(sock, PBS_MAXGPUID + 1, preq->rq_ind.rq_gpuctrl.rq_gpuid);
+  rc = disrfst(sock, PBS_MAXGPUID, preq->rq_ind.rq_gpuctrl.rq_gpuid);
 
   if (rc) return rc;
 

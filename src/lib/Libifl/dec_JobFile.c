@@ -131,7 +131,7 @@ int decode_DIS_JobFile(
     return(rc);
     }
 
-  if ((rc = disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_jobfile.rq_jobid)) != 0)
+  if ((rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_jobfile.rq_jobid)) != 0)
     {
     return(rc);
     }

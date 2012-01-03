@@ -125,7 +125,7 @@ int decode_DIS_AltAuthen(
     return(rc);
     }
 
-  rc = disrfst(sock, PBS_MAXCREDENTIAL_LEN + 1, preq->rq_ind.rq_authen.rq_cred);
+  rc = disrfst(sock, PBS_MAXCREDENTIAL_LEN, preq->rq_ind.rq_authen.rq_cred);
 
   return rc;
   } /* END decode_DIS_AltAuthen() */

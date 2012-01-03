@@ -109,7 +109,7 @@ int decode_DIS_RunJob(
 
   preq->rq_ind.rq_run.rq_destin = 0;
 
-  rc = disrfst(sock, PBS_MAXSVRJOBID + 1, preq->rq_ind.rq_run.rq_jid);
+  rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_run.rq_jid);
 
   if (rc) return rc;
 

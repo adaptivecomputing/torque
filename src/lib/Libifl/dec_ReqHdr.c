@@ -128,7 +128,7 @@ int decode_DIS_ReqHdr(
     return(rc);
     }
 
-  return(disrfst(sock, PBS_MAXUSER + 1, preq->rq_user));
+  return(disrfst(sock, PBS_MAXUSER, preq->rq_user));
   }  /* END decode_DIS_ReqHdr() */
 
 

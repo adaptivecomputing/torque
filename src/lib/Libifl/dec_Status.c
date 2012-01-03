@@ -109,7 +109,7 @@ int decode_DIS_Status(
 
   CLEAR_HEAD(preq->rq_ind.rq_status.rq_attr);
   rc = disrfst(sock,
-        (PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID : PBS_MAXDEST) + 1,
+        (PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID : PBS_MAXDEST),
         preq->rq_ind.rq_status.rq_id);
 
   if (rc) return rc;
