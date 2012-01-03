@@ -373,12 +373,13 @@ static void no_hang(
 
 
 struct passwd *check_pwd(
+
   job *pjob) /* I (modified) */
 
   {
   int retryCount;
 
-  struct passwd *pwdp;
+  struct passwd *pwdp = NULL;
 
   struct group *grpp;
 

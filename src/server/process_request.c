@@ -285,7 +285,7 @@ int get_creds(int sd, char *username, char *hostname)
 
   if (!(credentials = (ucreds *)malloc(size))) return 0;
 
-  *credentials = *(ucreds *)CMSG_DATA(cmptr);
+  memcpy(credentials, CMSG_DATA(cmptr), size);
 
   cpwd = getpwuid(SPC_PEER_UID(credentials));
 
