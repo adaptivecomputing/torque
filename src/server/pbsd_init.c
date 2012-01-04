@@ -1051,9 +1051,9 @@ int pbsd_init(
           continue;
 
 
-        pa = array_recov(pdirent->d_name);
+        rc = array_recov(pdirent->d_name, &pa);
 
-        if (pa == NULL)
+        if (rc != PBSE_NONE)
           {
 
           sprintf(log_buffer,
@@ -1063,7 +1063,7 @@ int pbsd_init(
 
           log_err(errno, "pbsd_init", log_buffer);
 
-          continue;
+          return(rc);
 
           }
 
@@ -1282,6 +1282,15 @@ int pbsd_init(
 
   while (pa != NULL)
     {
+    /* see if we need to upgrade the array version. */
+    /* We will upgrade from version 3 or later */
+    if(pa->ai_qs.struct_version == 3)
+      {
+      pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
+      pa->ai_qs.num_purged = pa->ai_qs.num_jobs - pa->jobs_recovered;
+      array_save(pa);
+      }
+
     pa->template_job = find_array_template(pa->ai_qs.parent_id);
 
     if (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)

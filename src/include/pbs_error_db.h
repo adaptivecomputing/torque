@@ -190,6 +190,8 @@ PbsErrClient(PBSE_NONONRERUNABLE,    "Queue does not allow nonrerunable jobs")
 PbsErrClient(PBSE_UNKARRAYID,        "Unknown Array ID")                          
 /* bad array request */
 PbsErrClient(PBSE_BAD_ARRAY_REQ,     "Bad Job Array Request")
+/* Bad file format for array */
+PbsErrClient(PBSE_BAD_ARRAY_DATA,    "Bad data reading job array from file ")
 /* Time out */
 PbsErrClient(PBSE_TIMEOUT,           "Time out")
 /* fault tolerant jobs not allowed in queue */

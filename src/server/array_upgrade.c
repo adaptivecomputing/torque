@@ -72,6 +72,13 @@ int array_upgrade(job_array *pa, int fds, int version, int *old_version)
     }
   else
     {
+    if(version == 3)
+      {
+      /* Between version 3 and version 4 the element ai_qs.num_purged
+         was added. We need to account for the new element from version
+         3 arrays. */
+      return 0;
+      }
     return 1;
     }
   }

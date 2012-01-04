@@ -18,7 +18,19 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-608: Removed code to check for blocking mode in write_nonblocking_socket().
       Fixes problem with interactive jobs (qsub -I) exiting prematurely.
   c - fix a buffer being overrun with nvidia gpus enabled (backported from 3.0.4)
+  b - To fix a problem in 2.5.9 where the job_array structure was modified
+      without changing the version or creating an upgrade path. This made
+      it incompatible with previous versions of TORQUE 2.5 and 3.0.
+      Added new array structure job_array_259. This is the original torque
+      2.5.9 job_array structure with the num_purged element added in the middle
+      of the structure. job_array_259 was created so users could upgrade from 2.5.9
+      and 3.0.3 to later versions of TORQUE. The job_array structure was
+      modified by moving the num_purged element to the bottom of the structure. 
+      pbsd_init now has an upgrade path for job arrays from version 3 to version
+      4. However, there is an exceptional case when upgrading from 2.5.9 or 3.0.3
+      where pbs_server must be started using a new -u option.
   b - no longer leave zombie processes when munge authenticating. (backported from 3.0.4)
+
 
 2.5.9
   e - change mom to only log "cannot find nvidia-smi in PATH" once when built
