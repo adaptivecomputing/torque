@@ -1256,7 +1256,7 @@ static int check_nvidia_version_file()
       {
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer,"Nvidia driver info: %s\n", tok);
+        sprintf(log_buffer,"Nvidia driver info: %s\n", line);
         log_ext(-1, id, log_buffer, LOG_DEBUG);
         }
       tok = strstr(line, "Kernel Module");
