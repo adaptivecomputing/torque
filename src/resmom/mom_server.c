@@ -1393,7 +1393,7 @@ static int check_nvidia_version_file()
       {
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer,"Nvidia driver info: %s\n", tok);
+        sprintf(log_buffer,"Nvidia driver info: %s\n", line);
         log_ext(-1, id, log_buffer, LOG_DEBUG);
         }
       tok = strstr(line, "Kernel Module");
@@ -4338,7 +4338,7 @@ void check_state(
 
       PBSNodeMsgBuf[sizeof(PBSNodeMsgBuf) - 1] = '\0';
 
-      /* NOTE:  not certain this is the correct behavior, scheduler should 
+      /* NOTE:  not certain this is the correct behavior, scheduler should
          probably make this decision as proper action may be context sensitive */
 
       if (IsError == 1)
