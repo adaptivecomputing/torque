@@ -85,7 +85,7 @@ int is_array(char *id)
   /* remove the extra [] if present */
   if ((bracket_ptr = strchr(id,'[')) != NULL)
     {
-    if((bracket_ptr = strchr(bracket_ptr+1,'[')) != NULL)
+    if ((bracket_ptr = strchr(bracket_ptr+1,'[')) != NULL)
       {
       *bracket_ptr = '\0';
       strcpy(jobid,id);
@@ -307,8 +307,6 @@ job *find_array_template(char *arrayid)
 int read_and_convert_259_array(int fd, job_array *pa, char *path)
   {
   int len;
-  int   rc;
-  int old_version;
   job_array_259 *pa_259; /* This is for a backward compatibility problem put 
                             into 2.5.9 and 3.0.3 */
   /* allocate the storage for the struct */
@@ -372,247 +370,250 @@ int read_and_convert_259_array(int fd, job_array *pa, char *path)
   }
 
 
-
 /* array_recov reads in  an array struct saved to disk and inserts it into
    the servers list of arrays */
-int array_recov(char *path, job_array **new_pa)
+int array_recov(
+
+  char *path, 
+  job_array **new_pa)
+
   {
-    extern tlist_head svr_jobarrays;
-    job_array *pa;
-    array_request_node *rn;
-    int fd;
-    int old_version;
-    int num_tokens;
-    int i;
-    int len;
-    int rc;
+  extern tlist_head svr_jobarrays;
+  job_array *pa;
+  array_request_node *rn;
+  int fd;
+  int old_version;
+  int num_tokens;
+  int i;
+  int len;
+  int rc;
 
-    old_version = ARRAY_QS_STRUCT_VERSION;
+  old_version = ARRAY_QS_STRUCT_VERSION;
 
-    /* allocate the storage for the struct */
-    pa = (job_array*)calloc(1,sizeof(job_array));
+  /* allocate the storage for the struct */
+  pa = (job_array*)calloc(1,sizeof(job_array));
 
-    if (pa == NULL)
+  if (pa == NULL)
+  {
+    return PBSE_SYSTEM;
+  }
+
+  /* initialize the linked list nodes */
+  CLEAR_LINK(pa->all_arrays);
+
+  CLEAR_HEAD(pa->request_tokens);
+
+  fd = open(path, O_RDONLY, 0);
+
+  if ( array_259_upgrade )
     {
-      return PBSE_SYSTEM;
-    }
-
-    /* initialize the linked list nodes */
-    CLEAR_LINK(pa->all_arrays);
-
-    CLEAR_HEAD(pa->request_tokens);
-
-    fd = open(path, O_RDONLY, 0);
-
-    if ( array_259_upgrade )
+    rc = read_and_convert_259_array(fd, pa, path);
+    if(rc != PBSE_NONE)
       {
-      rc = read_and_convert_259_array(fd, pa, path);
-      if(rc != PBSE_NONE)
+      free(pa);
+      close(fd);
+      return rc;
+      }
+    }
+  else
+    {
+
+    /* read the file into the struct previously allocated.
+     */
+
+    len = read(fd, &(pa->ai_qs), sizeof(pa->ai_qs));
+    if ((len < 0) || ((len < (int)sizeof(pa->ai_qs)) && (pa->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION)))
+      {
+      sprintf(log_buffer, "error reading %s", path);
+      log_err(errno, "array_recov", log_buffer);
+      free(pa);
+      close(fd);
+      return PBSE_SYSTEM;
+      }
+
+    if (pa->ai_qs.struct_version != ARRAY_QS_STRUCT_VERSION)
+      {
+      rc = array_upgrade(pa, fd, pa->ai_qs.struct_version, &old_version);
+      if(rc)
         {
+        sprintf(log_buffer, "Cannot upgrade array version %d to %d", pa->ai_qs.struct_version, ARRAY_QS_STRUCT_VERSION);
+        log_err(errno, "array_recov", log_buffer);
         free(pa);
         close(fd);
         return rc;
         }
       }
-    else
-      {
+    }
 
-      /* read the file into the struct previously allocated.
-       */
+  pa->jobs = malloc(sizeof(job *) * pa->ai_qs.array_size);
+  memset(pa->jobs,0,sizeof(job *) * pa->ai_qs.array_size);
 
-      len = read(fd, &(pa->ai_qs), sizeof(pa->ai_qs));
-      if ((len < 0) || ((len < sizeof(pa->ai_qs)) && (pa->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION)))
-        {
-        sprintf(log_buffer, "error reading %s", path);
-        log_err(errno, "array_recov", log_buffer);
-        free(pa);
-        close(fd);
-        return PBSE_SYSTEM;
-        }
+  /* check to see if there is any additional info saved in the array file */
+  /* check if there are any array request tokens that haven't been fully
+     processed */
 
-      if (pa->ai_qs.struct_version != ARRAY_QS_STRUCT_VERSION)
-        {
-        rc = array_upgrade(pa, fd, pa->ai_qs.struct_version, &old_version);
-        if(rc)
-          {
-          sprintf(log_buffer, "Cannot upgrade array version %d to %d", pa->ai_qs.struct_version, ARRAY_QS_STRUCT_VERSION);
-          log_err(errno, "array_recov", log_buffer);
-          free(pa);
-          close(fd);
-          return rc;
-          }
-        }
-      }
-
-    pa->jobs = malloc(sizeof(job *) * pa->ai_qs.array_size);
-    memset(pa->jobs,0,sizeof(job *) * pa->ai_qs.array_size);
-
-    /* check to see if there is any additional info saved in the array file */
-    /* check if there are any array request tokens that haven't been fully
-       processed */
-
-    if (old_version > 1)
+  if (old_version > 1)
+  {
+    if (read(fd, &num_tokens, sizeof(int)) != sizeof(int))
     {
-      if (read(fd, &num_tokens, sizeof(int)) != sizeof(int))
+      sprintf(log_buffer, "error reading token count from %s", path);
+      log_err(errno, "array_recov", log_buffer);
+
+      free(pa);
+      close(fd);
+      return PBSE_SYSTEM;
+    }
+
+    for (i = 0; i < num_tokens; i++)
+    {
+      rn = (array_request_node*)malloc(sizeof(array_request_node));
+
+      if (read(fd, rn, sizeof(array_request_node)) != sizeof(array_request_node))
       {
-        sprintf(log_buffer, "error reading token count from %s", path);
+
+        sprintf(log_buffer, "error reading array_request_node from %s", path);
         log_err(errno, "array_recov", log_buffer);
 
-        free(pa);
-        close(fd);
-        return PBSE_SYSTEM;
-      }
+        free(rn);
 
-      for (i = 0; i < num_tokens; i++)
-      {
-        rn = (array_request_node*)malloc(sizeof(array_request_node));
-
-        if (read(fd, rn, sizeof(array_request_node)) != sizeof(array_request_node))
+        for (rn = (array_request_node*)GET_NEXT(pa->request_tokens);
+            rn != NULL;
+            rn = (array_request_node*)GET_NEXT(pa->request_tokens))
         {
-
-          sprintf(log_buffer, "error reading array_request_node from %s", path);
-          log_err(errno, "array_recov", log_buffer);
-
+          delete_link(&rn->request_tokens_link);
           free(rn);
-
-          for (rn = (array_request_node*)GET_NEXT(pa->request_tokens);
-              rn != NULL;
-              rn = (array_request_node*)GET_NEXT(pa->request_tokens))
-          {
-            delete_link(&rn->request_tokens_link);
-            free(rn);
-          }
-
-          free(pa);
-
-          close(fd);
-          return PBSE_SYSTEM;
         }
 
-        CLEAR_LINK(rn->request_tokens_link);
+        free(pa);
 
-        append_link(&pa->request_tokens, &rn->request_tokens_link, (void*)rn);
-
+        close(fd);
+        return PBSE_SYSTEM;
       }
 
+      CLEAR_LINK(rn->request_tokens_link);
+
+      append_link(&pa->request_tokens, &rn->request_tokens_link, (void*)rn);
+
     }
 
-    close(fd);
+  }
 
-    CLEAR_HEAD(pa->ai_qs.deps);
+  close(fd);
 
-    if (old_version != ARRAY_QS_STRUCT_VERSION)
-    {
-      /* resave the array struct if the version on disk is older than the current */
-      array_save(pa);
-    }
+  CLEAR_HEAD(pa->ai_qs.deps);
 
-    /* link the struct into the servers list of job arrays */
-    append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
+  if (old_version != ARRAY_QS_STRUCT_VERSION)
+  {
+    /* resave the array struct if the version on disk is older than the current */
+    array_save(pa);
+  }
 
-    *new_pa = pa;
+  /* link the struct into the servers list of job arrays */
+  append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
 
-    return PBSE_NONE;
+  *new_pa = pa;
+
+  return PBSE_NONE;
 
   }
 
 
-  /* delete a job array struct from memory and disk. This is used when the number
-   *  of jobs that belong to the array becomes zero.
-   *  returns zero if there are no errors, non-zero otherwise
-   */
-  int array_delete(job_array *pa)
+/* delete a job array struct from memory and disk. This is used when the number
+ *  of jobs that belong to the array becomes zero.
+ *  returns zero if there are no errors, non-zero otherwise
+ */
+int array_delete(job_array *pa)
   {
 
-    char path[MAXPATHLEN + 1];
-    array_request_node *rn;
+  char path[MAXPATHLEN + 1];
+  array_request_node *rn;
 
 
-    /* first thing to do is take this out of the servers list of all arrays */
-    delete_link(&pa->all_arrays);
+  /* first thing to do is take this out of the servers list of all arrays */
+  delete_link(&pa->all_arrays);
 
 
-    /* delete the on disk copy of the struct */
+  /* delete the on disk copy of the struct */
 
-    strcpy(path, path_arrays);
-    strcat(path, pa->ai_qs.fileprefix);
-    strcat(path, ARRAY_FILE_SUFFIX);
+  strcpy(path, path_arrays);
+  strcat(path, pa->ai_qs.fileprefix);
+  strcat(path, ARRAY_FILE_SUFFIX);
 
-    if (unlink(path))
+  if (unlink(path))
     {
-      sprintf(log_buffer, "unable to delete %s", path);
-      log_err(errno, "array_delete", log_buffer);
+    sprintf(log_buffer, "unable to delete %s", path);
+    log_err(errno, "array_delete", log_buffer);
     }
 
 
-    /* clear array request linked list */
+  /* clear array request linked list */
 
-    for (rn = (array_request_node*)GET_NEXT(pa->request_tokens);
-        rn != NULL;
-        rn = (array_request_node*)GET_NEXT(pa->request_tokens))
+  for (rn = (array_request_node*)GET_NEXT(pa->request_tokens);
+       rn != NULL;
+       rn = (array_request_node*)GET_NEXT(pa->request_tokens))
     {
-      delete_link(&rn->request_tokens_link);
-      free(rn);
+    delete_link(&rn->request_tokens_link);
+    free(rn);
     }
 
-    /* free the memory for the job pointers */
-    free(pa->jobs);
+  /* free the memory for the job pointers */
+  free(pa->jobs);
 
-    /* purge the "template" job, 
-       this also deletes the shared script file for the array*/
-    if (pa->template_job)
+  /* purge the "template" job, 
+     this also deletes the shared script file for the array*/
+  if (pa->template_job)
     {
-      job_purge(pa->template_job);
+    job_purge(pa->template_job);
     }
+    
+  /* free the memory allocated for the struct */
+  free(pa);
 
-    /* free the memory allocated for the struct */
-    free(pa);
-
-    return 0;
+  return 0;
   }
 
 
-  /* 
-   * set_slot_limit()
-   * sets how many jobs can be run from this array at once
-   *
-   * @param request - the string array request
-   * @param pa - the array to receive a slot limit
-   *
-   * @return 0 on SUCCESS
-   */
-  int set_slot_limit(
+/* 
+ * set_slot_limit()
+ * sets how many jobs can be run from this array at once
+ *
+ * @param request - the string array request
+ * @param pa - the array to receive a slot limit
+ *
+ * @return 0 on SUCCESS
+ */
+int set_slot_limit(
 
-      char      *request, /* I */
-      job_array *pa)      /* O */
+  char      *request, /* I */
+  job_array *pa)      /* O */
 
   {
-    char *pcnt;
-    int   max_limit = NO_SLOT_LIMIT;
+  char *pcnt;
+  int   max_limit = NO_SLOT_LIMIT;
 
-    /* check for a max slot limit */
-    if (server.sv_attr[SRV_ATR_MaxSlotLimit].at_flags & ATR_VFLAG_SET)
+  /* check for a max slot limit */
+  if (server.sv_attr[SRV_ATR_MaxSlotLimit].at_flags & ATR_VFLAG_SET)
     {
-      max_limit = server.sv_attr[SRV_ATR_MaxSlotLimit].at_val.at_long;
+    max_limit = server.sv_attr[SRV_ATR_MaxSlotLimit].at_val.at_long;
     }
 
-    if ((pcnt = strchr(request,'%')) != NULL)
+  if ((pcnt = strchr(request,'%')) != NULL)
     {
-      /* remove '%' from the request, or else it can't be parsed */
-      while (*pcnt == '%')
+    /* remove '%' from the request, or else it can't be parsed */
+    while (*pcnt == '%')
       {
-        *pcnt = '\0';
-        pcnt++;
+      *pcnt = '\0';
+      pcnt++;
       }
 
-      /* read the number if one is given */
-      if (strlen(pcnt) > 0)
+    /* read the number if one is given */
+    if (strlen(pcnt) > 0)
       {
-        pa->ai_qs.slot_limit = atoi(pcnt);
-        if ((max_limit != NO_SLOT_LIMIT) &&
-            (max_limit < pa->ai_qs.slot_limit))
+      pa->ai_qs.slot_limit = atoi(pcnt);
+      if ((max_limit != NO_SLOT_LIMIT) &&
+          (max_limit < pa->ai_qs.slot_limit))
         {
-          return(INVALID_SLOT_LIMIT);
+        return(INVALID_SLOT_LIMIT);
         }
       }
       else
@@ -625,57 +626,54 @@ int array_recov(char *path, job_array **new_pa)
       pa->ai_qs.slot_limit = max_limit;
     }
 
-    return(0);
+  return(0);
   } /* END set_slot_limit() */
 
 
-  int setup_array_struct(
-
-      job *pjob)
-
+int setup_array_struct(job *pjob)
   {
-    job_array *pa;
+  job_array *pa;
 
-    /* struct work_task *wt; */
-    array_request_node *rn;
-    int bad_token_count;
-    int array_size;
-    int rc;
+  /* struct work_task *wt; */
+  array_request_node *rn;
+  int bad_token_count;
+  int array_size;
+  int rc;
 
-    /* setup a link to this job array in the servers all_arrays list */
-    pa = (job_array *)calloc(1,sizeof(job_array));
+  /* setup a link to this job array in the servers all_arrays list */
+  pa = (job_array *)calloc(1,sizeof(job_array));
 
-    pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
+  pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
+  
+  pa->template_job = pjob;
 
-    pa->template_job = pjob;
+  /*pa->ai_qs.array_size  = pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;*/
 
-    /*pa->ai_qs.array_size  = pjob->ji_wattr[(int)JOB_ATR_job_array_size].at_val.at_long;*/
+  strcpy(pa->ai_qs.parent_id, pjob->ji_qs.ji_jobid);
+  strcpy(pa->ai_qs.fileprefix, pjob->ji_qs.ji_fileprefix);
+  strncpy(pa->ai_qs.owner, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, PBS_MAXUSER + PBS_MAXSERVERNAME + 2);
+  strncpy(pa->ai_qs.submit_host, get_variable(pjob, pbs_o_host), PBS_MAXSERVERNAME);
 
-    strcpy(pa->ai_qs.parent_id, pjob->ji_qs.ji_jobid);
-    strcpy(pa->ai_qs.fileprefix, pjob->ji_qs.ji_fileprefix);
-    strncpy(pa->ai_qs.owner, pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str, PBS_MAXUSER + PBS_MAXSERVERNAME + 2);
-    strncpy(pa->ai_qs.submit_host, get_variable(pjob, pbs_o_host), PBS_MAXSERVERNAME);
+  pa->ai_qs.num_cloned = 0;
+  CLEAR_LINK(pa->all_arrays);
+  CLEAR_HEAD(pa->request_tokens);
+  append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
 
-    pa->ai_qs.num_cloned = 0;
-    CLEAR_LINK(pa->all_arrays);
-    CLEAR_HEAD(pa->request_tokens);
-    append_link(&svr_jobarrays, &pa->all_arrays, (void*)pa);
-
-    if (job_save(pjob, SAVEJOB_FULL) != 0)
+ if (job_save(pjob, SAVEJOB_FULL) != 0)
     {
-      job_purge(pjob);
+    job_purge(pjob);
 
 
-      if (LOGLEVEL >= 6)
+    if (LOGLEVEL >= 6)
       {
-        log_record(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            (pjob != NULL) ? pjob->ji_qs.ji_jobid : "NULL",
-            "cannot save job");
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "NULL",
+        "cannot save job");
       }
 
-      return 1;
+    return 1;
     }
 
     if ((rc = set_slot_limit(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str, pa)))
@@ -728,25 +726,25 @@ int array_recov(char *path, job_array **new_pa)
       {
         array_delete(pa);
 
-        return(ARRAY_TOO_LARGE);
+      return(ARRAY_TOO_LARGE);
       }
     }
 
-    /* initialize the array */
-    pa->jobs = malloc(array_size * sizeof(job *));
-    memset(pa->jobs,0,array_size * sizeof(job *));
+  /* initialize the array */
+  pa->jobs = malloc(array_size * sizeof(job *));
+  memset(pa->jobs,0,array_size * sizeof(job *));
 
-    /* remember array_size */
-    pa->ai_qs.array_size = array_size;
+  /* remember array_size */
+  pa->ai_qs.array_size = array_size;
 
-    CLEAR_HEAD(pa->ai_qs.deps);
+  CLEAR_HEAD(pa->ai_qs.deps);
 
-    array_save(pa);
+  array_save(pa);
 
-    if (bad_token_count > 0)
+  if (bad_token_count > 0)
     {
-      array_delete(pa);
-      return 2;
+    array_delete(pa);
+    return 2;
     }
 
     return 0;
