@@ -194,13 +194,13 @@ int PBSD_rdytocmt(int connect, char *jobid)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
@@ -224,7 +224,7 @@ job *find_job(char *jobid)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
   exit(1);
@@ -242,12 +242,14 @@ char *PBSD_queuejob(int connect, int *local_errno, char *jobid, char *destin, st
   exit(1);
   }
 
+void delete_link(struct list_link *old) {}
 
 char *pbse_to_txt(int err)
   {
   fprintf(stderr, "The call to pbse_to_txt to be mocked!!\n");
   exit(1);
   }
+
 int svr_chkque(job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg)
   {
   fprintf(stderr, "The call to svr_chkque to be mocked!!\n");

@@ -22,7 +22,7 @@ void req_reject(int code, int aux, struct batch_request *preq, char *HostName, c
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);

@@ -244,13 +244,13 @@ int PNodeStateToString(int SBM, char *Buf, int BufSize)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
@@ -280,7 +280,7 @@ void list_move(tlist_head *from, tlist_head *to)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
   exit(1);
@@ -314,4 +314,9 @@ void reply_text(struct batch_request *preq, int code, char *text)
   {
   fprintf(stderr, "The call to reply_text to be mocked!!\n");
   exit(1);
+  }
+
+int safe_strncat(char *str, char *to_append, size_t space_remaining)
+  {
+  return(0);
   }

@@ -6,7 +6,7 @@
 
 char *msg_daemonname = "unset";
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);
@@ -36,13 +36,13 @@ int get_fdset_size(void)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);

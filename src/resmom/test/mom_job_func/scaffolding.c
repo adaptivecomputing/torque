@@ -44,7 +44,7 @@ void delete_link(struct list_link *old)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -56,7 +56,7 @@ int enqueue_threadpool_request(void *(*func)(void *),void *arg)
   exit(1);
   }
 
-void log_ext(int errnum, char *routine, char *text, int severity)
+void log_ext(int errnum, const char *routine, char *text, int severity)
   {
   fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
@@ -92,7 +92,7 @@ void mom_checkpoint_delete_files(job_file_delete_info *jfdi)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);

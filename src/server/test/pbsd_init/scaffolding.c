@@ -18,6 +18,10 @@
 #include "net_connect.h" /* pbs_net_t */
 #include "queue.h" /* all_queues, pbs_queue */
 
+int scheduler_sock=0;
+int scheduler_jobct = 0;
+pthread_mutex_t *job_log_mutex;
+pthread_mutex_t *log_mutex;
 char *msg_init_chdir = "unable to change to directory %s";
 char *path_jobs;
 char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
@@ -170,7 +174,7 @@ int job_log_open(char *filename, char *directory)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -398,7 +402,7 @@ void free_arst(struct attribute *attr)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);
@@ -410,7 +414,7 @@ int decode_arst_direct(struct attribute *patr,  char *val)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -470,7 +474,7 @@ void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue needs to be mocked!!\n");
   exit(1);
@@ -482,3 +486,72 @@ char *threadsafe_tokenizer(char **str, char *delims)
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);
   }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+int append_dynamic_string (dynamic_string *ds, char *str)
+  {
+  return(0);
+  }
+
+int get_parent_and_child(char *start, char **parent, char **child, char **end)
+  {
+  return(0);
+  }
+
+int add_hello(hello_container *hc, char *node_name)
+  {
+  return(0);
+  }
+
+int create_partial_pbs_node(char *nodename, unsigned long addr, int perms)
+  {
+  return(0);
+  }
+
+dynamic_string *get_dynamic_string(int initial_size, char *str)
+  {
+  return(NULL);
+  }
+
+struct pbsnode *find_nodebyname(char *name)
+  {
+  return(NULL);
+  }
+
+void initialize_hello_container(hello_container *hc)
+  {
+  }
+
+void free_dynamic_string(dynamic_string *ds)
+  {
+  }
+
+int delete_last_word_from_dynamic_string(dynamic_string *ds)
+  {
+  return(0);
+  }
+
+void initialize_queue_recycler() {}
+
+int set_svr_attr(int attr_index, void *val) 
+  {
+  return(0);
+  }
+
+int copy_to_end_of_dynamic_string(dynamic_string *ds, char *str)
+  {
+  return(0);
+  }
+
+void initialize_task_recycler() {}
+
+char *trim(char *str)
+  {
+  return(str);
+  }
+
+

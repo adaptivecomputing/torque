@@ -6,9 +6,12 @@
 #include "list_link.h" /* list_link, tlist_head */
 #include "queue.h" /* pbs_queue */
 #include "batch_request.h" /* batach_request */
+#include "resource.h"
 
 char *msg_err_malloc = "malloc failed";
 char *msg_routexceed = "Route queue lifetime exceeded";
+int svr_resc_size = 0;
+resource_def *svr_resc_def;
 
 int svr_movejob(job *jobp, char *destination, struct batch_request *req)
   {
@@ -52,15 +55,35 @@ void append_link(tlist_head *head, list_link *new, void *pobj)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 
+resource *add_resource_entry(attribute *pattr, resource_def *prdef)
+  {
+  return(NULL);
+  }
+
+long count_proc(char *param_spec)
+
+  {
+  return(0);
+  }
+
+resource_def *find_resc_def(resource_def *rscdf, char *name, int limit) 
+  {
+  return(NULL);
+  }
+
+resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+  {
+  return(NULL);
+  }

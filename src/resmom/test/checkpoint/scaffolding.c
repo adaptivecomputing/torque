@@ -101,7 +101,7 @@ int decode_str(attribute *patr, char *name, char *rescn, char *val, int perm)
  exit(1);
  }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
  {
  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
  exit(1);
@@ -149,7 +149,7 @@ void net_close(int but)
  exit(1);
  }
 
-void log_ext(int errnum, char *routine, char *text, int severity)
+void log_ext(int errnum, const char *routine, char *text, int severity)
  {
  fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
  exit(1);
@@ -227,13 +227,13 @@ int task_save(task *ptask)
  exit(1);
  }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
  {
  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
  exit(1);
  }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
  {
  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
  exit(1);

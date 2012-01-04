@@ -15,6 +15,9 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 
+hello_container failures;
+pthread_mutex_t *job_log_mutex;
+pthread_mutex_t *log_mutex;
 all_queues svr_queues;
 char *msg_daemonname = "unset";
 char *msg_startup2 = "Server Ready, pid = %d, loglevel=%d";
@@ -92,7 +95,7 @@ void acct_cleanup(long days_to_keep)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -260,13 +263,13 @@ long log_size(void)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -332,7 +335,7 @@ int disrsi(int stream, int *retval)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue needs to be mocked!!\n");
   exit(1);
@@ -374,7 +377,7 @@ struct pbsnode *find_nodebyname(char *name)
   }
 
 
-int send_hierarchy(struct pbsnode *pnode)
+int send_hierarchy(char *nodename, unsigned short port)
   {
   fprintf(stderr, "The call to send_hierarchy needs to be mocked!\n");
   exit(1);
@@ -398,3 +401,56 @@ int insert_thing(resizable_array *ra, void *thing)
   exit(1);
   }
 
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+void *send_hierarchy_threadtask(void *vp)
+  {
+  return(NULL);
+  }
+
+void log_init(char *suffix, char *hostname) {}
+
+int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+  {
+  return(0);
+  }
+
+int set_svr_attr(int index, void *val)
+  {
+  return(0);
+  }
+
+int recov_svr_attr(int type)
+  {
+  return(0);
+  }
+
+int get_svr_attr_str(int index, char **str)
+  {
+  return(0);
+  }
+
+int get_svr_attr_arst(int index, struct array_strings **arst)
+  {
+  return(0);
+  }
+
+void memmgr_destroy(memmgr **mgr) {}
+
+int memmgr_init(memmgr **mgr, int mgr_size)
+  {
+  return(0);
+  }
+
+void *memmgr_calloc(memmgr **mgr, int qty, int size)
+  {
+  return(NULL);
+  }
+
+int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
+  {
+  return(0);
+  }

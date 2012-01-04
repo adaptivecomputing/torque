@@ -79,7 +79,7 @@ void delete_link(struct list_link *old)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -103,7 +103,7 @@ ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
   exit(1);
   }
 
-int modify_job(void *j, svrattrl *plist, struct batch_request *preq, int checkpoint_req, int flag)
+int modify_job(void **j, svrattrl *plist, struct batch_request *preq, int checkpoint_req, int flag)
   {
   fprintf(stderr, "The call to modify_job needs to be mocked!!\n");
   exit(1);
@@ -139,7 +139,7 @@ void append_link(tlist_head *head, list_link *new, void *pobj)
   exit(1);
   }
 
-int relay_to_mom(job *pjob, struct batch_request *request, void (*func)(struct work_task *))
+int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
   {
   fprintf(stderr, "The call to relay_to_mom needs to be mocked!!\n");
   exit(1);
@@ -157,13 +157,13 @@ int array_upgrade(job_array *pa, int fds, int version, int *old_version)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -210,3 +210,19 @@ char *threadsafe_tokenizer(char **str, char *delims)
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);
   }
+
+int get_svr_attr_l(int attr_index, long *l)
+  {
+  return(0);
+  }
+
+int is_svr_attr_set(int attr_index)
+  {
+  return(0);
+  }
+
+job *find_job(char *name)
+  {
+  return(NULL);
+  }
+

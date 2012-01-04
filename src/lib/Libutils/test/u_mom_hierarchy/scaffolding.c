@@ -10,7 +10,23 @@
 
 int pbs_errno;
 time_t time_now;
+int   LOGLEVEL=0;
 char log_buffer[LOG_BUF_SIZE];
+char *dis_emsg[] = 
+  {
+  "No error",
+  "Input value too large to convert to this type",
+  "Tried to write floating point infinity",
+  "Negative sign on an unsigned datum",
+  "Input count or value has leading zero",
+  "Non-digit found where a digit was expected",
+  "Input string has an embedded ASCII NUL",
+  "Premature end of message",
+  "Unable to calloc enough space for string",
+  "Supporting protocol failure",
+  "Protocol failure in commit",
+  "End of File"
+  };
 
 int insert_thing(resizable_array *ra, void *thing)
   { 
@@ -48,7 +64,7 @@ long disrsl(int stream, int *retval)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   { 
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -64,5 +80,9 @@ int socket_get_tcp_priv()
   { 
   fprintf(stderr, "The call to socket_get_tcp_priv needs to be mocked!!\n");
   exit(1);
+  }
+
+void log_event(int eventtype, int objclass, const char *objname, char *text)
+  {
   }
 

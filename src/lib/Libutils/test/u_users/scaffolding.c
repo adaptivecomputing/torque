@@ -6,7 +6,7 @@
 
 char log_buffer[LOG_BUF_SIZE];
 
-void log_ext(int errnum, char *routine, char *text, int severity)
+void log_ext(int errnum, const char *routine, char *text, int severity)
   {
   fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);

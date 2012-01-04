@@ -158,7 +158,7 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
-int relay_to_mom(job *pjob, struct batch_request *request, void (*func)(struct work_task *))
+int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
   {
   fprintf(stderr, "The call to relay_to_mom needs to be mocked!!\n");
   exit(1);
@@ -176,13 +176,13 @@ struct batch_request *cpy_stage(struct batch_request *preq, job *pjob, enum job_
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -200,7 +200,7 @@ job *find_job(char *jobid)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, char *id, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue needs to be mocked!!\n");
   exit(1);
@@ -224,3 +224,9 @@ char *threadsafe_tokenizer(char **str, char *delims)
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);
   }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+

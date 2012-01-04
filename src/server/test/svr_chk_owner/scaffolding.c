@@ -20,7 +20,7 @@ char *site_map_user(char *uname, char *host)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record to be mocked!!\n");
   exit(1);
@@ -44,7 +44,7 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
@@ -72,4 +72,19 @@ void get_jobowner(char *from, char *to)
   {
   fprintf(stderr, "The call to get_jobowner to be mocked!!\n");
   exit(1);
+  }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+int get_svr_attr_arst(int index, struct array_strings **arst)
+  {
+  return(0);
+  }
+
+int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
+  {
+  return(0);
   }

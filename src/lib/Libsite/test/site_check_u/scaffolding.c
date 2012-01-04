@@ -25,7 +25,7 @@ struct pbsnode *find_nodebyname( char *nodename)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text) 
+void log_event(int eventtype, int objclass, const char *objname, char *text) 
   { 
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);

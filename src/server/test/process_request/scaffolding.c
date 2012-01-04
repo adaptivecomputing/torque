@@ -97,7 +97,7 @@ void delete_link(struct list_link *old)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -349,7 +349,7 @@ int is_array(char *id)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);
@@ -367,7 +367,7 @@ void *req_runjob(void *vp)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -450,3 +450,31 @@ void req_selectjobs(struct batch_request *preq)
   fprintf(stderr, "The call to req_selectjobs needs to be mocked!!\n");
   exit(1);
   }
+
+int get_svr_attr_arst(int index, struct array_strings **arst)
+  {
+  return(0);
+  }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+void memmgr_destroy(memmgr **mgr) {}
+
+void *memmgr_calloc(memmgr **mgr, int qty, int size)
+  {
+  return(NULL);
+  }
+
+int memmgr_init(memmgr **mgr, int mgr_size)
+  {
+  return(0);
+  }
+
+int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
+  {
+  return(0);
+  }
+

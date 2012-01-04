@@ -18,7 +18,7 @@ int encode_DIS_reply(int sock, struct batch_reply *reply)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -66,13 +66,13 @@ work_task *next_task(all_tasks *at, int *iter)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_evenlog_event needs to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -96,3 +96,7 @@ const char *reqtype_to_txt(int reqtype)
   exit(1);
   }
 
+int safe_strncat(char *str, char *to_append, size_t space_remaining)
+  {
+  return(0);
+  }

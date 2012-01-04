@@ -103,7 +103,7 @@ int replace_checkpoint_path(char *path)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -169,7 +169,7 @@ int mom_open_socket_to_jobs_server(job *pjob, char *caller_id, void *(*message_h
   exit(1);
   }
 
-void log_ext(int errnum, char *routine, char *text, int severity)
+void log_ext(int errnum, const char *routine, char *text, int severity)
   {
   fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
@@ -289,13 +289,13 @@ int job_unlink_file(job *pjob, const char *name)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);

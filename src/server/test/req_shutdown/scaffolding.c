@@ -7,8 +7,9 @@
 #include "server.h" /* server */
 #include "batch_request.h" /* batch_request */
 #include "work_task.h" /* work_task */
+#include "queue.h"
 
-
+int lockfds=0;
 char *msg_daemonname = "unset";
 char *msg_shutdown_start = "Starting to shutdown the server, type is ";
 char *msg_init_queued = "Requeued in queue: ";
@@ -76,13 +77,13 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
- int relay_to_mom(job *pjob, struct batch_request *request, void (*func)(struct work_task *))
+ int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
   {
   fprintf(stderr, "The call to relay_to_mom to be mocked!!\n");
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
@@ -98,4 +99,26 @@ int svr_save(struct server *ps, int mode)
   {
   fprintf(stderr, "The call to svr_save to be mocked!!\n");
   exit(1);
+  }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+pbs_queue *get_jobs_queue(job *pjob)
+  {
+  return(pjob->ji_qhdr);
+  }
+
+void free_br(struct batch_request *b) {}
+
+int set_svr_attr (int index, void *v)
+  {
+  return(0);
+  }
+
+int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
+  {
+  return(0);
   }

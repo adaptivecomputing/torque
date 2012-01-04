@@ -37,7 +37,7 @@ int site_check_user_map(job *pjob, char *luser, char *EMsg, int logging)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -59,6 +59,21 @@ void get_jobowner(char *from, char *to)
   {
   fprintf(stderr, "The call to get_jobowner needs to be mocked!!\n");
   exit(1);
+  }
+
+int get_svr_attr_arst(int attr_index, struct array_strings **arst)
+  {
+  return(0);
+  }
+
+int get_svr_attr_l(int attr_index, long *l)
+  {
+  return(0);
+  }
+
+int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
+  {
+  return(0);
   }
 
 

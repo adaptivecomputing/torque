@@ -162,7 +162,7 @@ void set_resc_deflt(job *pjob, attribute *ji_wattr, int has_queue_mutex)
   exit(1);
   }
 
-int relay_to_mom(job *pjob, struct batch_request *request, void (*func)(struct work_task *))
+int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
   {
   fprintf(stderr, "The call to relay_to_mom to be mocked!!\n");
   exit(1);
@@ -174,13 +174,13 @@ int set_jobexid(job *pjob, attribute *attrry, char *EMsg)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
@@ -216,7 +216,7 @@ char *add_std_filename(job *pjob, char * path, int key, dynamic_string *ds)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
   exit(1);
@@ -240,3 +240,12 @@ void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq)
   exit(1);
   }
 
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+dynamic_string *get_dynamic_string(int initial_size, char *str)
+  {
+  return(NULL);
+  }

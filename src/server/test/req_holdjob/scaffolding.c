@@ -9,7 +9,7 @@
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_task */
 
-
+int LOGLEVEL = 0;
 attribute_def job_attr_def[10];
 char *msg_jobholdrel = "Holds %s released at request of %s@%s";
 char *msg_mombadhold = "MOM rejected hold request: %d";
@@ -76,13 +76,13 @@ char * csv_find_string(char *csv_str, char *search_str)
   exit(1);
   }
 
-int relay_to_mom(job *pjob, struct batch_request *request, void (*func)(struct work_task *))
+int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
   {
   fprintf(stderr, "The call to relay_to_mom to be mocked!!\n");
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
@@ -124,3 +124,7 @@ void req_reject(int code, int aux, struct batch_request *preq, char *HostName, c
   exit(1);
   }
 
+int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid)
+  {
+  return(0);
+  }

@@ -138,7 +138,6 @@ void add_dest(
   job *jobp)
 
   {
-  char      *id = "add_dest";
   badplace  *bp;
   char      *baddest = jobp->ji_qs.ji_destin;
 
@@ -146,7 +145,7 @@ void add_dest(
 
   if (bp == NULL)
     {
-    log_err(errno, id, msg_err_malloc);
+    log_err(errno, __func__, msg_err_malloc);
 
     return;
     }
@@ -202,9 +201,11 @@ badplace *is_bad_dest(
  *  
  * Returns 0 on success. Non-zero on failure
  */ 
-int initialize_procct(job *pjob)
+int initialize_procct(
+    
+  job *pjob)
+
   { 
-  char id[] = "initialize_procct";
   resource     *pnodesp = NULL;
   resource_def *pnodes_def = NULL;
   resource     *pprocsp = NULL;
@@ -212,41 +213,34 @@ int initialize_procct(job *pjob)
   resource     *procctp = NULL;
   resource_def *procct_def = NULL;
   attribute    *pattr = NULL;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
-  if(pattr == NULL)
+  if (pattr == NULL)
     {
     /* Something is really wrong. ji_wattr[JOB_ATR_resource] should always be set
        by the time this function is called */
-    sprintf(log_buffer, "%s: Resource_List is NULL. Cannot proceed", id);
-    log_event(PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
-    pbs_errno = PBSE_INTERNAL;
+    sprintf(log_buf, "%s: Resource_List is NULL. Cannot proceed", __func__);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
     return(ROUTE_PERM_FAILURE);
     }
 
   /* Has nodes been initialzed */
-  if(pattr->at_flags & ATR_VFLAG_SET)
+  if (pattr->at_flags & ATR_VFLAG_SET)
     {
     /* get the node spec from the nodes resource */
     pnodes_def = find_resc_def(svr_resc_def, "nodes", svr_resc_size);
-    if(pnodes_def == NULL)
+    if (pnodes_def == NULL)
       {
-      sprintf(log_buffer, "%s: Could not get nodes resource definition. Cannot proceed", id);
-      log_event(PBSEVENT_JOB,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
-      pbs_errno = PBSE_INTERNAL;
+      sprintf(log_buf, "%s: Could not get nodes resource definition. Cannot proceed", __func__);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       return(ROUTE_PERM_FAILURE);
       }
     pnodesp = find_resc_entry(pattr, pnodes_def);
 
     /* Get the procs count if the procs resource attribute is set */
     pprocs_def = find_resc_def(svr_resc_def, "procs", svr_resc_size);
-    if(pprocs_def != NULL)
+    if (pprocs_def != NULL)
       {
       /* if pprocs_def is NULL we just go on. Otherwise we will get its value now */
       pprocsp = find_resc_entry(pattr, pprocs_def);
@@ -254,57 +248,41 @@ int initialize_procct(job *pjob)
       }
 
     /* if neither pnodesp nor pprocsp are set, terminate */
-    if(pnodesp == NULL && pprocsp == NULL)
+    if (pnodesp == NULL && pprocsp == NULL)
       {
       /* nodes and procs were not set. Hopefully req_quejob set procct to 1 for us already */
       procct_def = find_resc_def(svr_resc_def, "procct", svr_resc_size);
-      if(procct_def == NULL)
+      if (procct_def == NULL)
         {
-        sprintf(log_buffer, "%s: Could not get procct resource definition. Cannot proceed", id);
-        log_event(PBSEVENT_JOB,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
-        pbs_errno = PBSE_INTERNAL;
+        sprintf(log_buf, "%s: Could not get procct resource definition. Cannot proceed", __func__);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         return(ROUTE_PERM_FAILURE);
         }
       procctp = find_resc_entry(pattr, procct_def);
-      if(procctp == NULL)
+      if (procctp == NULL)
         {
-        sprintf(log_buffer, "%s: Could not get nodes nor procs entry from Resource_List. Cannot proceed", id);
-        log_event(PBSEVENT_JOB,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
-        pbs_errno = PBSE_INTERNAL;
+        sprintf(log_buf, "%s: Could not get nodes nor procs entry from Resource_List. Cannot proceed", __func__);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         return(ROUTE_PERM_FAILURE);
         }
       }
 
     /* we now set pjob->procct and we also set the resource attribute procct */
     procct_def = find_resc_def(svr_resc_def, "procct", svr_resc_size);
-    if(procct_def == NULL)
+    if (procct_def == NULL)
       {
-      sprintf(log_buffer, "%s: Could not get procct resource definition. Cannot proceed", id);
-      log_event(PBSEVENT_JOB,
-                PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
-                log_buffer);
-      pbs_errno = PBSE_INTERNAL;
+      sprintf(log_buf, "%s: Could not get procct resource definition. Cannot proceed", __func__);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       return(ROUTE_PERM_FAILURE);
       }
     procctp = find_resc_entry(pattr, procct_def);
-    if(procctp == NULL)
+    if (procctp == NULL)
       {
       procctp = add_resource_entry(pattr, procct_def);
-      if(procctp == NULL)
+      if (procctp == NULL)
         {
-        sprintf(log_buffer, "%s: Could not add procct resource. Cannot proceed", id);
-        log_event(PBSEVENT_JOB,
-                  PBS_EVENTCLASS_JOB,
-                  pjob->ji_qs.ji_jobid,
-                  log_buffer);
-        pbs_errno = PBSE_INTERNAL;
+        sprintf(log_buf, "%s: Could not add procct resource. Cannot proceed", __func__);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         return(ROUTE_PERM_FAILURE);
         }
       }
@@ -312,12 +290,12 @@ int initialize_procct(job *pjob)
     /* Finally the moment of truth. We have the nodes and procs resources. Add them
        to the procct resoruce*/
     procctp->rs_value.at_val.at_long = 0;
-    if(pnodesp != NULL)
+    if (pnodesp != NULL)
       {
       procctp->rs_value.at_val.at_long = count_proc(pnodesp->rs_value.at_val.at_str);
       }
 
-    if(pprocsp != NULL)
+    if (pprocsp != NULL)
       {
       procctp->rs_value.at_val.at_long += pprocsp->rs_value.at_val.at_long;
       }
@@ -327,12 +305,8 @@ int initialize_procct(job *pjob)
     {
     /* Something is really wrong. ji_wattr[JOB_ATR_resource] should always be set
        by the time this function is called */
-    sprintf(log_buffer, "%s: Resource_List not set. Cannot proceed", id);
-    log_event(PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
-    pbs_errno = PBSE_INTERNAL;
+    sprintf(log_buf, "%s: Resource_List not set. Cannot proceed", __func__);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
     return(ROUTE_PERM_FAILURE);
     }
 
@@ -340,24 +314,23 @@ int initialize_procct(job *pjob)
   } /* END initialize_procct */
 
 
-int remove_procct(job *pjob)
+int remove_procct(
+
+  job *pjob)
+
   {
-  char id[] = "remove_procct";
   attribute    *pattr;
   resource_def *pctdef;
   resource     *pctresc;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
-  if(pattr == NULL)
+  if (pattr == NULL)
     {
     /* Something is really wrong. ji_wattr[JOB_ATR_resource] should always be set
        by the time this function is called */
-    sprintf(log_buffer, "%s: Resource_List is NULL. Cannot proceed", id);
-    log_event(PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
-    pbs_errno = PBSE_INTERNAL;
+    sprintf(log_buf, "%s: Resource_List is NULL. Cannot proceed", __func__);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
     return(ROUTE_PERM_FAILURE);
     }
 
@@ -520,7 +493,6 @@ int job_route(
   job *jobp)      /* job to route */
 
   {
-  char             *id = "job_route";
   int               bad_state = 0;
   time_t            life;
   time_t            time_now = time(NULL);
@@ -565,9 +537,8 @@ int job_route(
 
     default:
 
-      sprintf(log_buf, "%s %d", pbse_to_txt(PBSE_BADSTATE), jobp->ji_qs.ji_state);
-
-      strcat(log_buf, id);
+      snprintf(log_buf, sizeof(log_buf), "%s %d %s", 
+        pbse_to_txt(PBSE_BADSTATE), jobp->ji_qs.ji_state, __func__);
 
       log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jobp->ji_qs.ji_jobid,log_buf);
       

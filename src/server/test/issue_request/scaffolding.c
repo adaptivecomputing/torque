@@ -56,7 +56,7 @@ pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -176,7 +176,7 @@ void dispatch_request(int sfds, struct batch_request *request)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);
@@ -188,7 +188,7 @@ int PBSD_msg_put(int c, char *jobid, int fileopt, char *msg, char *extend)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -222,4 +222,9 @@ int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
   { 
   fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
   exit(1);                    
-  }                           
+  }
+
+job *find_job (char *name)
+  {
+  return(NULL);
+  }

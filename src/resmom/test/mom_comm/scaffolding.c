@@ -147,7 +147,7 @@ char *get_job_envvar(job *pjob, char *variable)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
@@ -359,7 +359,7 @@ int TTmpDirName(job *pjob, char *tmpdir)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
@@ -371,7 +371,7 @@ void job_nodes(job *pjob)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);

@@ -5,10 +5,13 @@
 
 #include "attribute.h" /* attribute_def */
 #include "dynamic_string.h" /* dynamic_string */
+#include "pbs_job.h"
+#include "queue.h"
 
 
 char path_acct[_POSIX_PATH_MAX];
 attribute_def job_attr_def[10];
+int LOGLEVEL=0;
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime) 
   {
@@ -22,7 +25,7 @@ void delete_link(struct list_link *old)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -34,7 +37,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -56,5 +59,15 @@ void free_dynamic_string(dynamic_string *ds)
   {
   fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
   exit(1);
+  }
+
+int unlock_queue(pbs_queue *the_queue, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+pbs_queue *get_jobs_queue(job *pjob)
+  {
+  return(pjob->ji_qhdr);
   }
 

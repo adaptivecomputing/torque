@@ -207,7 +207,10 @@ int decode_tokens(attribute *patr, char *name, char *rescn, char *val, int perm)
   exit(1);
   }
 
-
+int get_svr_attr_arst(int index, struct array_strings **arst)
+  {
+  return(0);
+  }
 
 char *threadsafe_tokenizer(char **str, char *delims)
   {

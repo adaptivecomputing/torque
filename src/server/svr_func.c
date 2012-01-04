@@ -527,8 +527,10 @@ int set_svr_attr(
 
 
 int get_svr_attr_l(
-    int attr_index,
-    long *l)
+
+  int   attr_index,
+  long *l)
+
   {
   int rc = PBSE_NONE;
   pthread_mutex_lock(server.sv_attr_mutex);
@@ -551,8 +553,10 @@ int get_svr_attr_l(
 
 
 int get_svr_attr_c(
-    int attr_index,
-    char *c)
+
+  int   attr_index,
+  char *c)
+
   {
   int rc = PBSE_NONE;
   pthread_mutex_lock(server.sv_attr_mutex);
@@ -574,8 +578,10 @@ int get_svr_attr_c(
   }
 
 int get_svr_attr_str(
-    int attr_index,
-    char **str)
+    
+  int    attr_index,
+  char **str)
+
   {
   int rc = PBSE_NONE;
   pthread_mutex_lock(server.sv_attr_mutex);
@@ -597,8 +603,10 @@ int get_svr_attr_str(
   }
 
 int get_svr_attr_arst(
-    int attr_index,
-    struct array_strings **arst)
+    
+  int                    attr_index,
+  struct array_strings **arst)
+
   {
   int rc = PBSE_NONE;
   pthread_mutex_lock(server.sv_attr_mutex);

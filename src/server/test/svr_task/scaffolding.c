@@ -7,7 +7,7 @@
 
 all_tasks task_list_timed;
 all_tasks task_list_event;
-
+task_recycler           tr;
 
 int insert_thing(resizable_array *ra, void *thing)
   {
@@ -57,7 +57,7 @@ int insert_thing_after(resizable_array *ra, void *thing, int index)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);

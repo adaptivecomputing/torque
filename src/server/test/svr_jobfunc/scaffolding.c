@@ -188,13 +188,13 @@ int set_jobexid(job *pjob, attribute *attrry, char *EMsg)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
@@ -224,7 +224,7 @@ int insert_job_first(struct all_jobs *aj, job *pjob)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, char *id, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
   exit(1);
@@ -254,3 +254,32 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
+int append_dynamic_string (dynamic_string *ds, char *str)
+  {
+  return(0);
+  }
+
+int unlock_startup() 
+  {
+  return(0);
+  }
+
+int lock_startup()
+  {
+  return(0);
+  }
+
+int remove_procct(job *pjob)
+  {
+  return(0);
+  }
+
+int insert_job_after_index(struct all_jobs *aj, int index, job *pjob)
+  {
+  return(0);
+  }
+
+int append_char_to_dynamic_string (dynamic_string *ds, char c)
+  {
+  return(0);
+  }

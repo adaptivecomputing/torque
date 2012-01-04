@@ -112,7 +112,7 @@ int stat_to_mom(job *pjob, struct stat_cntl *cntl)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
@@ -130,7 +130,7 @@ job *find_job(char *jobid)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
   exit(1);
@@ -147,3 +147,9 @@ void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq)
   fprintf(stderr, "The call to reply_badattr to be mocked!!\n");
   exit(1);
   }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+

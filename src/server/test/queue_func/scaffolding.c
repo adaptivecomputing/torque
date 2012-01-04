@@ -45,7 +45,7 @@ int add_hash(hash_table_t *ht, int value, char *key)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -81,7 +81,7 @@ hash_table_t *create_hash(int size)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -93,5 +93,18 @@ int remove_hash(hash_table_t *ht, char *key)
   exit(1);
   }
 
+int insert_into_queue_recycler(pbs_queue *pq)
+  {
+  return(0);
+  }
+
+void free_hash(hash_table_t *ht) {}
+
+void free_resizable_array(resizable_array *ra) {}
+
+int get_svr_attr_str(int index, char **str)
+  {
+  return(0);
+  }
 
 

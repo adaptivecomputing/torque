@@ -45,7 +45,7 @@ void free_nodes(node_info **ninfo_arr)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record to be mocked!!\n");
   exit(1);
@@ -69,19 +69,19 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
-int relay_to_mom(job *pjob, struct batch_request *request, void (*func)(struct work_task *))
+int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
   {
   fprintf(stderr, "The call to relay_to_mom to be mocked!!\n");
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
@@ -98,3 +98,10 @@ job *chk_job_request(char *jobid, struct batch_request *preq)
   fprintf(stderr, "The call to chk_job_request to be mocked!!\n");
   exit(1);
   }
+
+int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid)
+  {
+  return(0);
+  }
+
+void free_br(struct batch_request *b) {}

@@ -163,10 +163,12 @@ int lock_queue(
   }
 
 int unlock_queue(
+
   struct pbs_queue *the_queue,
   const char       *id,
   char             *msg,
   int               logging)
+
   {
   int rc = PBSE_NONE;
   char *err_msg = NULL;

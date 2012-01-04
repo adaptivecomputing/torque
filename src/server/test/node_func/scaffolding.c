@@ -13,6 +13,7 @@
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_task, work_type */
 
+hello_container failures;
 int svr_tsnodes = 0; 
 resource_t next_resource_tag;
 char server_name[PBS_MAXSERVERNAME + 1];
@@ -74,7 +75,7 @@ int add_hash(hash_table_t *ht, int value, char *key)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -152,13 +153,13 @@ hash_table_t *create_hash(int size)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -234,4 +235,23 @@ int diswsi(int sock, int value)
   {
   fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
   exit(1);                    
+  }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+int add_conn(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void *(*func)(void *))
+  {
+  return(0);
+  }
+
+void close_conn(int sd, int has_mutex)
+  {
+  }
+
+int get_svr_attr_str(int index, char **str)
+  {
+  return(0);
   }

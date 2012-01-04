@@ -3,6 +3,7 @@
 #include <stdio.h> /* fprintf */
 
 #include "pbs_job.h" /* job_recycler, all_jobs, job */
+#include "resizable_array.h"
 
 job_recycler recycler;
 
@@ -37,3 +38,7 @@ int remove_job(struct all_jobs *aj, job *pjob)
   exit(1);
   }
 
+void *next_thing(resizable_array *ra, int *iter)
+  {
+  return(NULL);
+  }

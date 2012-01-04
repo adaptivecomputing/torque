@@ -134,7 +134,7 @@ void free_nodes(node_info **ninfo_arr)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record to be mocked!!\n");
   exit(1);
@@ -218,7 +218,7 @@ int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, vo
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
@@ -230,7 +230,7 @@ void issue_track(job *pjob)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text) 
+void log_err(int errnum, const char *routine, char *text) 
   {
   fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
@@ -254,7 +254,7 @@ int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
   exit(1);
@@ -284,3 +284,14 @@ char *threadsafe_tokenizer(char **str, char *delims)
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);
   }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+int safe_strncat(char *str, char *to_append, size_t space_remaining)
+  {
+  return(0);
+  }
+

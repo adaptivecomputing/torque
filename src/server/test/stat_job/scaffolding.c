@@ -41,3 +41,8 @@ void append_link(tlist_head *head, list_link *new, void *pobj)
   fprintf(stderr, "The call to append_link to be mocked!!\n");
   exit(1);
   }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }

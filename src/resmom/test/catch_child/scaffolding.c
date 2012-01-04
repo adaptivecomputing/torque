@@ -15,7 +15,28 @@
 #include "test_catch_child.h"
 #include "batch_request.h" /* batch_request */
 #include "errno.h"
+#include "mom_func.h"
 
+const char *PMOMCommand[] =
+  {
+  "ALL_OKAY",
+  "JOIN_JOB",
+  "KILL_JOB",
+  "SPAWN_TASK",
+  "GET_TASKS",
+  "SIGNAL_TASK",
+  "OBIT_TASK",
+  "POLL_JOB",
+  "GET_INFO",
+  "GET_RESC",
+  "ABORT_JOB",
+  "GET_TID",
+  "RADIX_ALL_OK",
+  "JOIN_JOB_RADIX",
+  "KILL_JOB_RADIX",
+  "ERROR",     /* 14+ */
+  NULL
+  };
 int termin_child = 0; /* mom_main.c */
 int LOGLEVEL = 0; /* mom_main.c/pbsd_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
@@ -51,7 +72,7 @@ void exit_test(int num)
   exit_called = num;
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   }
 
@@ -593,7 +614,7 @@ void checkpoint_partial(job *pjob)
   {
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   }
 
@@ -1038,7 +1059,7 @@ int DIS_reply_read(int sock, struct batch_reply *preply)
   return rc;
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   }
 
@@ -1100,7 +1121,7 @@ int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type)
   return 1;
   }
 
-void log_ext(int errnum, char *routine, char *text, int severity)
+void log_ext(int errnum, const char *routine, char *text, int severity)
   {
   }
 
@@ -1251,7 +1272,7 @@ struct passwd *check_pwd(job *pjob)
   return respass;
   }
 
-int gettime(resource *pres, unsigned long *ret)
+unsigned long gettime(resource *pres)
   {
   fprintf(stderr, "The call to gettime needs to be mocked!!\n");
   exit(1);
@@ -1283,4 +1304,13 @@ int pbs_disconnect_socket(int sock)
   return 1;
   }       
 
+int add_to_resend_things(resend_momcomm *mc)
+  {
+  return(0);
+  }
+
+im_compose_info *create_compose_reply_info(char *jobid, char *cookie, hnodent *np, int command, tm_event_t event, tm_task_id taskid)
+  {
+  return(NULL);
+  }
 

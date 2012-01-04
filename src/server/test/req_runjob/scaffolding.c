@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <pthread.h>
 
 
 #include "attribute.h" /* attribute_def, batch_op */
@@ -15,7 +16,9 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "work_task.h" /* work_task, work_type */
 #include "list_link.h" /* list_link  */
+#include "queue.h"
 
+pthread_mutex_t *scheduler_sock_jobct_mutex;
 const char *PJobSubState[10];
 int svr_tsnodes = 0;
 int svr_resc_size = 0;
@@ -99,7 +102,7 @@ void free_nodes(node_info **ninfo_arr)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record to be mocked!!\n");
   exit(1);
@@ -201,7 +204,7 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
-int relay_to_mom(job *pjob, struct batch_request *request, void (*func)(struct work_task *))
+int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
   {
   fprintf(stderr, "The call to relay_to_mom to be mocked!!\n");
   exit(1);
@@ -213,13 +216,13 @@ struct batch_request *cpy_stage(struct batch_request *preq, job *pjob, enum job_
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
@@ -284,3 +287,26 @@ char *threadsafe_tokenizer(char **str, char *delims)
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);
   }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+pbs_queue *get_jobs_queue(job *pjob)
+  {
+  return(pjob->ji_qhdr);
+  }
+
+void free_br(struct batch_request *b) {}
+
+int get_svr_attr_str(int index, char **str)
+  {
+  return(0);
+  }
+
+int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+

@@ -493,14 +493,14 @@ job_array *array_recov(
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "%s: locking ai_mutex: %s", id, pa->ai_qs.parent_id);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
     }
 
   pthread_mutex_lock(pa->ai_mutex);
   if (LOGLEVEL >= 7)
      {
     sprintf(log_buf, "%s: locked ai_mutex: %s", id, pa->ai_qs.parent_id);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
     }
 
 

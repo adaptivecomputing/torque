@@ -9,7 +9,7 @@
 #include "pbs_job.h" /* job */
 
 char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
-
+int LOGLEVEL=0;
 
 int svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host)
   {
@@ -59,7 +59,7 @@ char * csv_find_string(char *csv_str, char *search_str)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
@@ -83,3 +83,7 @@ void get_jobowner(char *from, char *to)
   exit(1);
   }
 
+job *find_job(char *jobid)
+  {
+  return(NULL);
+  }

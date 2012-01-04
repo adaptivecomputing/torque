@@ -9,6 +9,7 @@
 #include "list_link.h" /* tlist_head, list_link */
 #include "array.h" /* job_array */
 #include "work_task.h" /* work_task */
+#include "queue.h"
 
 char *msg_illregister = "Illegal op in register request received for job %s";
 char *msg_registerdel = "Job deleted as result of dependency on job %s";
@@ -118,13 +119,13 @@ int issue_to_svr(char *servern, struct batch_request *preq, void (*replyfunc)(st
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
@@ -152,5 +153,20 @@ char *parse_comma_string(char *start, char **ptr)
   {
   fprintf(stderr, "The call to parse_comma_string to be mocked!!\n");
   exit(1);
+  }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+pbs_queue *get_jobs_queue(job *pjob)
+  {
+  return(pjob->ji_qhdr);
+  }
+
+int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
+  {
+  return(0);
   }
 

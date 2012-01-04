@@ -13,6 +13,7 @@
 #include "list_link.h" /* tlist_head, list_link */
 #include "work_task.h" /* work_task, work_type */
 #include "u_tree.h" /* AvlTree */
+#include "queue.h"
 
 all_nodes allnodes;
 pthread_mutex_t *netrates_mutex = NULL;
@@ -81,7 +82,7 @@ void *process_Dreply(void *new_sock)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record to be mocked!!\n");
   exit(1);
@@ -243,7 +244,7 @@ int is_array(char *id)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
@@ -273,7 +274,7 @@ job *find_job(char *jobid)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
   exit(1);
@@ -295,4 +296,14 @@ int status_attrib(svrattrl *pal, attribute_def *padef, attribute *pattr, int lim
   {
   fprintf(stderr, "The call to status_attrib to be mocked!!\n");
   exit(1);
+  }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+pbs_queue *get_jobs_queue(job *pjob)
+  {
+  return(pjob->ji_qhdr);
   }

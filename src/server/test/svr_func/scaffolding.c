@@ -17,7 +17,26 @@ int svr_do_schedule = SCH_SCHEDULE_NULL;
 int listener_command = SCH_SCHEDULE_NULL;
 int LOGLEVEL = 0;
 pthread_mutex_t *svr_do_schedule_mutex;
+pthread_mutex_t *scheduler_sock_jobct_mutex;
 pthread_mutex_t *listener_command_mutex;
+
+int encode_svrstate(attribute *pattr, tlist_head *phead, char *atname, char *rsname, int mode, int perm);
+
+attribute_def svr_attr_def[] =
+  {
+  /* SRV_ATR_State */
+    { ATTR_status,  /* "server_state" */
+    decode_null,
+    encode_svrstate,
+    set_null,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    READ_ONLY,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_SERVER,
+    }
+  };
 
 resource *add_resource_entry(attribute *pattr, resource_def *prdef)
   {
@@ -61,7 +80,7 @@ void append_link(tlist_head *head, list_link *new, void *pobj)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
@@ -73,8 +92,15 @@ resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, char *id, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
   exit(1);
+  }
+
+void free_null(struct attribute *attr) {}
+
+int comp_l(struct attribute *attr, struct attribute *with)
+  {
+  return(0);
   }

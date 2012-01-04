@@ -34,7 +34,7 @@ void req_reject(int code, int aux, struct batch_request *preq, char *HostName, c
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);

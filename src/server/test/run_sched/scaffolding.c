@@ -20,6 +20,7 @@ struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 pbs_net_t pbs_scheduler_addr;
 int svr_do_schedule = SCH_SCHEDULE_NULL;
 pthread_mutex_t *svr_do_schedule_mutex;
+pthread_mutex_t *scheduler_sock_jobct_mutex;
 pthread_mutex_t *listener_command_mutex;
 
 
@@ -71,13 +72,13 @@ void *process_request(void *new_sock)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);

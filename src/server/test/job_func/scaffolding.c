@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <pthread.h>
 
 #include "pbs_ifl.h" /* MAXPATHLEN, PBS_MAXSERVERNAME */
 #include "server.h" /* server, NO_BUFFER_SPACE */
@@ -36,6 +37,7 @@ struct server server;
 struct all_jobs array_summary;
 char *path_jobinfo_log;
 int LOGLEVEL = 0;
+pthread_mutex_t *job_log_mutex;
 
 int array_save(job_array *pa)
   {
@@ -131,7 +133,7 @@ int add_hash(hash_table_t *ht, int value, char *key)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -179,7 +181,7 @@ job *get_recycled_job()
   exit(1);
   }
 
-void log_ext(int errnum, char *routine, char *text, int severity)
+void log_ext(int errnum, const char *routine, char *text, int severity)
   {
   fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
@@ -257,7 +259,7 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
-int relay_to_mom(job *pjob, struct batch_request *request, void (*func)(struct work_task *))
+int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
   {
   fprintf(stderr, "The call to relay_to_mom needs to be mocked!!\n");
   exit(1);
@@ -287,7 +289,7 @@ int insert_thing_after(resizable_array *ra, void *thing, int index)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);
@@ -299,7 +301,7 @@ void issue_track(job *pjob)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   }
 
@@ -377,7 +379,7 @@ void change_value_hash(hash_table_t *ht, char *key, int new_value)
   exit(1);
   }
 
-int lock_queue(struct pbs_queue *the_queue, char *method_name, char *msg, int logging)
+int lock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
   {
   fprintf(stderr, "The call to lock_queue needs to be mocked!!\n");
   exit(1);
@@ -407,3 +409,17 @@ void free_dynamic_string(dynamic_string *ds)
   exit(1);
   }
 
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+int is_svr_attr_set(int index)
+  {
+  return(0);
+  }
+
+int get_svr_attr_str(int index, char **str)
+  {
+  return(0);
+  }

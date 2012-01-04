@@ -106,7 +106,7 @@ void clear_dynamic_string(dynamic_string *ds)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -142,7 +142,7 @@ int AVL_is_in_tree_no_port_compare(u_long key, uint16_t port, AvlTree tree)
   exit(1);
   }
 
-void log_ext(int errnum, char *routine, char *text, int severity)
+void log_ext(int errnum, const char *routine, char *text, int severity)
   {
   fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
@@ -160,7 +160,7 @@ int diswcs(int stream, const char *value, size_t nchars)
   exit(1);
   }
 
-void add_conn(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void *(*func)(void *))
+int add_conn(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void *(*func)(void *))
   {
   fprintf(stderr, "The call to add_conn needs to be mocked!!\n");
   exit(1);
@@ -220,7 +220,7 @@ int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);
@@ -232,7 +232,7 @@ char *size_fs(char *param)
   exit(1);
   }
 
-void log_err(int errnum, char *routine, char *text)
+void log_err(int errnum, const char *routine, char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
