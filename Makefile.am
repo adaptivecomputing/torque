@@ -7,10 +7,12 @@ EXTRA_DIST = acinclude.m4 \
   autogen.sh \
   CHANGELOG \
   configure.ac \
+  cov_file_results.pl \
   Doxyfile \
   INSTALL \
 	INSTALL.GNU \
   Makefile.am \
+  parse_cov_results.pl \
 	PBS_License_2.5.txt \
   PBS_License.txt \
 	README.array_changes \
@@ -45,6 +47,8 @@ EXTRA_DIST = acinclude.m4 \
 	contrib/init.d/suse.pbs_sched \
 	contrib/init.d/suse.pbs_server \
 	contrib/init.d/suse.trqauthd \
+  contrib/nwloc_install.sh \
+  contrib/mom_gencfg \
 	contrib/pam_authuser.tar.gz \
 	contrib/pbstop \
 	contrib/pbsweb-lite-0.95.tar.gz \
