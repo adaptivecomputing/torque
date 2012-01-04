@@ -280,6 +280,7 @@ char           *NodeSuffix = NULL;
 int MultiMomMode = 0;
 
 int allow_any_mom = FALSE;
+int array_259_upgrade = FALSE;
 
 
 
@@ -550,7 +551,7 @@ void parse_command_line(
   
   ForceCreation = FALSE;
 
-  while ((c = getopt(argc, argv, "A:a:d:DefFhH:L:l:mM:p:R:S:t:v-:")) != -1)
+  while ((c = getopt(argc, argv, "A:a:d:DefhH:L:l:mM:p:R:S:t:uv-:")) != -1)
     {
     switch (c)
       {
@@ -880,6 +881,10 @@ void parse_command_line(
           exit(1);
           }
 
+        break;
+
+      case 'u':
+        array_259_upgrade = TRUE;
         break;
 
       case 'v':

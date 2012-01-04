@@ -1428,9 +1428,9 @@ int pbsd_init(
         if (strcmp(psuffix, ARRAY_FILE_SUFFIX))
           continue;
 
-        pa = array_recov(pdirent->d_name);
+        rc = array_recov(pdirent->d_name, &pa);
 
-        if (pa == NULL)
+        if (rc != PBSE_NONE)
           {
           sprintf(log_buf,
             "could not recover array-struct from file %s--skipping. "
@@ -1439,7 +1439,7 @@ int pbsd_init(
 
           log_err(errno, id, log_buf);
 
-          continue;
+          return(rc);
           }
 
         pa->jobs_recovered = 0;
@@ -1684,6 +1684,15 @@ int pbsd_init(
       {
       job_template_exists = TRUE;
       pthread_mutex_unlock(pjob->ji_mutex);
+      }
+
+    /* see if we need to upgrade the array version. */
+    /* We will upgrade from version 3 or later */
+    if(pa->ai_qs.struct_version == 3)
+      {
+      pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
+      pa->ai_qs.num_purged = pa->ai_qs.num_jobs - pa->jobs_recovered;
+      array_save(pa);
       }
 
     if (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)
