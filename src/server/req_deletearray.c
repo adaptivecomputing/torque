@@ -17,6 +17,7 @@
 #include "pbs_error.h"
 #include "acct.h"
 #include "log.h"
+#include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 
@@ -38,6 +39,8 @@ static void post_delete(struct work_task *pwt);
 
 void array_delete_wt(struct work_task *ptask);
 void          on_job_exit(struct work_task *);
+
+extern int LOGLEVEL;
 
 
 /**
@@ -249,6 +252,20 @@ void req_deletearray(
   if ((range != NULL) &&
       (strstr(range,ARRAY_RANGE) != NULL))
     {
+    if (LOGLEVEL >= 5)
+      {
+      sprintf(log_buffer, "delete array requested by %s@%s for %s (%s)",
+            preq->rq_user,
+            preq->rq_host,
+            preq->rq_ind.rq_delete.rq_objname,
+            range);
+
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        "req_deletearray",
+        log_buffer);
+      }
     /* parse the array range */
     num_skipped = delete_array_range(pa,range);
 
@@ -268,6 +285,20 @@ void req_deletearray(
     }
   else
     {
+    if (LOGLEVEL >= 5)
+      {
+      sprintf(log_buffer, "delete array requested by %s@%s for %s",
+            preq->rq_user,
+            preq->rq_host,
+            preq->rq_ind.rq_delete.rq_objname);
+
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        "req_deletearray",
+        log_buffer);
+      }
+
     num_skipped = delete_whole_array(pa);
     }
 
