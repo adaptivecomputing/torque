@@ -2636,7 +2636,10 @@ void process_opts(
 
       case 'l':
 
-        /* The check for proc in value was here */
+        if ((strstr(optarg, ",procs=") != NULL) &&
+            (strstr(optarg, "nodes=") != NULL))
+          print_qsub_usage_exit("qsub: illegal -l value");
+
         if (add_verify_resources(&ji->mm, &ji->res_attr, optarg, data_type) != 0)
           print_qsub_usage_exit("qsub: illegal -l value");
 

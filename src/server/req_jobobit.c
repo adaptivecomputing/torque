@@ -2310,9 +2310,6 @@ void *req_jobobit(
   void *vp) /* I */
 
   {
-  char                  id[] = "req_jobobit";
-#ifdef USESAVEDRESOURCES
-#endif    /* USESAVEDRESOURCES */
   int                   alreadymailed = 0;
   int                   bad;
   char                  acctbuf[RESC_USED_BUF];
@@ -2354,20 +2351,18 @@ void *req_jobobit(
 
       sprintf(log_buf, msg_obitnojob, preq->rq_host, PBSE_CLEANEDOUT);
 
+      bad = PBSE_CLEANEDOUT;
       req_reject(PBSE_CLEANEDOUT, 0, preq, NULL, NULL);
       }
     else
       {
       sprintf(log_buf, msg_obitnojob, preq->rq_host, PBSE_UNKJOBID);
 
+      bad = PBSE_UNKJOBID;
       req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
       }
 
-    log_event(
-      PBSEVENT_ERROR | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      jobid,
-      log_buf);
+    log_err(bad, jobid, log_buf);
 
     if (pjob != NULL)
       pthread_mutex_unlock(pjob->ji_mutex);
@@ -2398,11 +2393,7 @@ void *req_jobobit(
         preq->rq_host,
         PJobState[pjob->ji_qs.ji_state]);
 
-      log_event(
-        PBSEVENT_ERROR | PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        jobid,
-        log_buf);
+      log_err(PBSE_BADSTATE, jobid, log_buf);
 
       bad = PBSE_BADSTATE;
       }
@@ -2507,7 +2498,7 @@ void *req_jobobit(
       /* FAILURE */
       sprintf(log_buf, "cannot allocate memory for temp obit message");
 
-      log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,id,log_buf);
+      log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
       pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -2748,7 +2739,7 @@ void *req_jobobit(
 
     if(LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s", id);
+      sprintf(log_buf, "calling on_job_exit from %s", __func__);
       log_event(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
@@ -2769,7 +2760,7 @@ void *req_jobobit(
       pthread_mutex_unlock(pa->ai_mutex);
       if(LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "%s: unlocking ai_mutex", id);
+        sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
       }
