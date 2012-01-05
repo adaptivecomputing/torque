@@ -1041,7 +1041,7 @@ static int svr_strtjob2(
   job             *pjob = *pjob_ptr;
   int              old_state;
   int              old_subst;
-  int              my_err;
+  int              my_err = 0;
   attribute       *pattr;
   char             tmpLine[MAXLINE];
   struct timeval   start_time;

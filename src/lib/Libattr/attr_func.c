@@ -124,7 +124,7 @@ void clear_attr(
 
 #endif /* NDEBUG */
 
-  memset((char *)pattr, 0, sizeof(struct attribute));
+  memset(pattr, 0, sizeof(struct attribute));
 
   pattr->at_type = pdef->at_type;
 

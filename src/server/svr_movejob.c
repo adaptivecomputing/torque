@@ -570,10 +570,10 @@ int send_job_work(
   struct batch_request  *preq)      /* M */
 
   {
-  static char          *id = "send_job_work";
+  int                   rc = LOCUTION_FAIL;
   tlist_head            attrl;
   enum conn_type        cntype = ToServerDIS;
-  int                   con;
+  int                   con = -1;
   int                   sock = -1;
   int                   encode_type;
   int                   i;
@@ -675,9 +675,7 @@ int send_job_work(
         (get_job_file_path(pjob, Checkpoint, chkpt_path, sizeof(chkpt_path)) != 0))
       {
       pthread_mutex_unlock(pjob->ji_mutex);
-      finish_move_process(jobid,preq,start_time,node_name,LOCUTION_FAIL,type);
-      free_server_attrs(&attrl);
-      return(LOCUTION_FAIL);
+      goto send_job_work_end;
       }
     }
 
@@ -693,12 +691,9 @@ int send_job_work(
     }
   
   pthread_mutex_unlock(pjob->ji_mutex);
-  con = -1;
 
   for (NumRetries = 0;NumRetries < RETRY;NumRetries++)
     {
-    int rc;
-
     /* connect to receiving server with retries */
     if (NumRetries > 0)
       {
@@ -715,12 +710,8 @@ int send_job_work(
         {
         sprintf(log_buf, "child failed in previous commit request for job %s", jobid);
 
-        log_err(*my_err, id, log_buf);
-
-        finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
-        free_server_attrs(&attrl);
-
-        return(LOCUTION_FAIL);
+        log_err(*my_err, __func__, log_buf);
+        goto send_job_work_end;
         }
 
       sleep(1 << NumRetries);
@@ -732,12 +723,8 @@ int send_job_work(
         hostaddr,
         port);
 
-      log_err(*my_err, id, log_buf);
-  
-      finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
-      free_server_attrs(&attrl);
-
-      return(LOCUTION_FAIL);
+      log_err(*my_err, __func__, log_buf);
+      goto send_job_work_end;
       }
 
     if (con == PBS_NET_RC_RETRY)
@@ -763,11 +750,8 @@ int send_job_work(
           }
         else
           {
-          finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
-          free_server_attrs(&attrl);
           *pjob_ptr = NULL;
-          
-          return(LOCUTION_FAIL);
+          goto send_job_work_end;
           }
         }
 
@@ -782,20 +766,14 @@ int send_job_work(
           Timeout = TRUE;
           }
 
-        if ((*my_err == PBSE_JOBEXIST) && 
-            (type == MOVE_TYPE_Exec))
+        if ((*my_err == PBSE_JOBEXIST) && (type == MOVE_TYPE_Exec))
           {
           /* already running, mark it so */
-          log_event(
-            PBSEVENT_ERROR,
-            PBS_EVENTCLASS_JOB,
-            jobid,
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, jobid,
             "MOM reports job already running");
-
-          finish_move_process(jobid, preq, start_time, node_name, LOCUTION_SUCCESS, type);
-          free_server_attrs(&attrl);
-
-          return(PBSE_NONE);
+          rc = PBSE_NONE; /* Equivalent to LOCUTION_SUCCESS */
+          close(sock);
+          goto send_job_work_end;
           }
 
         sprintf(log_buf, "send of job to %s failed error = %d",
@@ -840,11 +818,8 @@ int send_job_work(
         }
       else
         {
-        finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
-        free_server_attrs(&attrl);
         *pjob_ptr = NULL;
-        
-        return(LOCUTION_FAIL);
+        goto send_job_work_end;
         }
 
       attempt_to_queue_job = FALSE;
@@ -872,7 +847,7 @@ int send_job_work(
         rc,
         (err_text != NULL) ? err_text : "N/A");
 
-      log_ext(errno2, id, log_buf, LOG_WARNING);
+      log_ext(errno2, __func__, log_buf, LOG_WARNING);
 
       /* if failure occurs, pbs_mom should purge job and pbs_server should set *
          job state to idle w/error msg */
@@ -890,23 +865,21 @@ int send_job_work(
         sprintf(log_buf, "child commit request timed-out for job %s, increase tcp_timeout?",
           jobid);
 
-        log_ext(errno2, id, log_buf, LOG_WARNING);
+        log_ext(errno2, __func__, log_buf, LOG_WARNING);
 
         /* don't retry on timeout--break out and report error! */
-
+        rc = LOCUTION_FAIL;
         break;
         }
       else
         {
         sprintf(log_buf, "child failed in commit request for job %s", jobid);
 
-        log_ext(errno2, id, log_buf, LOG_CRIT);
+        log_ext(errno2, __func__, log_buf, LOG_CRIT);
 
         /* FAILURE */
-        finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
-        free_server_attrs(&attrl);
-
-        return(LOCUTION_FAIL);
+        rc = LOCUTION_FAIL;
+        goto send_job_work_end;
         }
       } /* END if ((rc = PBSD_commit(con,jobid)) != 0) */
     else if (sid != -1)
@@ -920,28 +893,21 @@ int send_job_work(
         }
       else
         {
-        finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
-        free_server_attrs(&attrl);
+        rc = LOCUTION_FAIL;
         *pjob_ptr = NULL;
-
-        return(LOCUTION_FAIL);
+        goto send_job_work_end;
         }
       }
 
     svr_disconnect(con);
 
-    /* why is this necessary? it works though */
     close(sock);
 
     /* SUCCESS */
-    finish_move_process(jobid, preq, start_time, node_name, LOCUTION_SUCCESS, type);
-    free_server_attrs(&attrl);
-
-    return(PBSE_NONE);
+    rc = PBSE_NONE;  /* Equivalent value to LOCUTION_SUCCESS */
+    goto send_job_work_end;
     }  /* END for (NumRetries) */
         
-  free_server_attrs(&attrl);
-
   if (con >= 0)
     {
     svr_disconnect(con);
@@ -953,30 +919,25 @@ int send_job_work(
     {
     /* 10 indicates that job migrate timed out, server will mark node down *
           and abort the job - see post_sendmom() */
-
     sprintf(log_buf, "child timed-out attempting to start job %s", jobid);
-
-    log_ext(*my_err, id, log_buf, LOG_WARNING);
-
-    finish_move_process(jobid, preq, start_time, node_name, LOCUTION_REQUEUE, type);
-    
-    return(LOCUTION_REQUEUE);
+    log_ext(*my_err, __func__, log_buf, LOG_WARNING);
+    rc = LOCUTION_REQUEUE;
+    goto send_job_work_end;
     }
 
   if (should_retry_route(*my_err) == -1)
     {
     sprintf(log_buf, "child failed and will not retry job %s", jobid);
-
-    log_err(*my_err, id, log_buf);
-
-    finish_move_process(jobid, preq, start_time, node_name, LOCUTION_FAIL, type);
-    
-    return(LOCUTION_FAIL);
+    log_err(*my_err, __func__, log_buf);
+    rc = LOCUTION_FAIL;
+    goto send_job_work_end;
     }
+  rc = LOCUTION_REQUEUE;
 
-  finish_move_process(jobid, preq, start_time, node_name, LOCUTION_REQUEUE, type);
-    
-  return(LOCUTION_REQUEUE);
+send_job_work_end:
+  finish_move_process(jobid,preq,start_time,node_name,rc,type);
+  free_server_attrs(&attrl);
+  return rc;
   } /* END send_job_work() */
 
 

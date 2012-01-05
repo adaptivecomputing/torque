@@ -851,13 +851,12 @@ typedef struct job_file_delete_info
 #define IM_GET_RESC        9
 #define IM_ABORT_JOB      10
 #define IM_GET_TID        11
-#define IM_ERROR 99
 #define IM_RADIX_ALL_OK   12
 #define IM_JOIN_JOB_RADIX 13
 #define IM_KILL_JOB_RADIX 14
-#define IM_ERROR          99
-
 #define IM_MAX            15
+
+#define IM_ERROR          99
 
 eventent *event_alloc( int  command,
                            hnodent *pnode,
