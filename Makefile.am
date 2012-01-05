@@ -13,7 +13,6 @@ EXTRA_DIST = acinclude.m4 \
 	INSTALL.GNU \
   Makefile.am \
   parse_cov_results.pl \
-	PBS_License_2.5.txt \
   PBS_License.txt \
 	README.array_changes \
   README.coding_notes \
