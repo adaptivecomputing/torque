@@ -30,6 +30,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       4. However, there is an exceptional case when upgrading from 2.5.9 or 3.0.3
       where pbs_server must be started using a new -u option.
   b - no longer leave zombie processes when munge authenticating. (backported from 3.0.4)
+  b - no longer reject procs if it is the second argument to -l (backported from 3.0.4)
 
 
 2.5.9
