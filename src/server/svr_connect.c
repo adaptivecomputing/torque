@@ -104,6 +104,8 @@
 #include <errno.h>
 #include <time.h>
 #include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
 #include "libpbs.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
@@ -282,6 +284,23 @@ int svr_connect(
   }  /* END svr_connect() */
 
 
+/*
+ * localalm() - alarm handler for svr_disconnect()
+ */
+
+static void localalm(
+
+  int sig)  /* I */
+
+  {
+
+  log_ext(-1,"svr_disconnect","alarm fired",LOG_DEBUG);
+  return;
+  }  /* END localalm() */
+
+
+
+
 
 
 
@@ -311,15 +330,32 @@ void svr_disconnect(
     if ((encode_DIS_ReqHdr(sock, PBS_BATCH_Disconnect, pbs_current_user) == 0) &&
         (DIS_tcp_wflush(sock) == 0))
       {
+      struct sigaction act;
+      struct sigaction oldact;
       /* wait for other server to close connection */
+      act.sa_handler = localalm;
+
+      sigemptyset(&act.sa_mask);
+
+      act.sa_flags = 0;
+
+      sigaction(SIGALRM, &act, &oldact);
+
+      ualarm(100000, 0); /* 1/10 of second */
 
       while (1)
         {
         /* don't call the non-blocking function */
-
         if (read_blocking_socket(sock, &x, 1) < 1)
           break;
         }
+
+      ualarm(0, 0);
+
+      /* restore the previous handler */
+
+      sigaction(SIGALRM, &oldact, 0);
+
       }
 
     shutdown(connection[handle].ch_socket, 2);

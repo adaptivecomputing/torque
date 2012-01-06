@@ -505,8 +505,10 @@ void finish_move_process(
     {
     /* somehow the job has been deleted mid-runjob */
     snprintf(log_buf, sizeof(log_buf),
-      "Job %s was deleted while servicing qrun request", jobid);
-    req_reject(PBSE_JOBNOTFOUND, 0, preq, node_name, log_buf);
+      "Job %s was deleted while servicing move request", jobid);
+
+    if (preq != NULL)
+      req_reject(PBSE_JOBNOTFOUND, 0, preq, node_name, log_buf);
     }
   else
     {
@@ -571,6 +573,7 @@ int send_job_work(
 
   {
   int                   rc = LOCUTION_FAIL;
+  int                   local_errno = 0;
   tlist_head            attrl;
   enum conn_type        cntype = ToServerDIS;
   int                   con = -1;
@@ -608,6 +611,16 @@ int send_job_work(
 
   if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN)
     job_has_run = TRUE;
+
+  if ((destin != NULL) && 
+      (type != MOVE_TYPE_Exec))
+    {
+    if ((pc = strchr(destin, '@')) != NULL)
+      {
+      hostaddr = get_hostaddr(&local_errno, pc + 1);
+      port = pbs_server_port_dis;
+      }
+    }
 
   /* encode job attributes to be moved */
   CLEAR_HEAD(attrl);
