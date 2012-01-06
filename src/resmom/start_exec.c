@@ -5917,13 +5917,12 @@ void start_exec(
   struct radix_buf  **sister_list;
   struct timeval      start_time;
   struct timezone     tz;
-
+  struct timeval      tv;
+  struct timeval     *tv_attr;
+  struct timeval      result;
 #endif /* ndef NUMA_SUPPORT */
 
   char                tmpdir[MAXPATHLEN];
-  struct timeval  tv;
-  struct timeval *tv_attr;
-  struct timeval  result;
 
   /* Step 1.0 Generate Cookie */
   if (generate_cookie(pjob) != PBSE_NONE)

@@ -12,8 +12,6 @@ void svr_disconnect(int handle);
 
 int get_connection_entry(int *conn_pos);
 
-int socket_to_handle(int sock, int *errno);
-
 char *parse_servername(char *name, unsigned int *service);
 
 #endif /* _SVR_CONNECT_H */

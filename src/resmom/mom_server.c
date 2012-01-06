@@ -3326,7 +3326,7 @@ void mom_server_all_update_stat(void)
     }
  
 #ifdef NUMA_SUPPORT
-  for (numa_index = 0; numa_index < num_numa_nodes; numa_index++)
+  for (numa_index = 0; numa_index < num_node_boards; numa_index++)
 #endif /* NUMA_SUPPORT */
     {
     memset(status_strings, 0, sizeof(status_strings));

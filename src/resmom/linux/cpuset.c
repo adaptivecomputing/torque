@@ -10,6 +10,7 @@
 #include <libgen.h>
 #include <hwloc.h>
 #include <errno.h>
+#include <sys/stat.h>
 #ifdef USELIBCPUSET
 #  include <bitmask.h>
 #  include <cpuset.h>

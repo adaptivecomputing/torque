@@ -7133,11 +7133,13 @@ int tm_tasks_request(
   int         nodeid)     /* I */
   {
   static char *id = "tm_tasks_request";
-  int       stream;
  
   char     *jobid = pjob->ji_qs.ji_jobid;
-  eventent *ep;
   task     *ptask;
+#ifndef NUMA_SUPPORT
+  eventent *ep;
+  int       stream;
+#endif
  
   if (LOGLEVEL >= 7)
     {
@@ -7236,12 +7238,14 @@ int tm_signal_request(
   {
   static char *id = "tm_signal_request";
   int       taskid;
-  int       stream;
   int       signum;
   char     *jobid = pjob->ji_qs.ji_jobid;
- 
-  eventent *ep;
   task     *ptask;
+
+#ifndef NUMA_SUPPORT 
+  eventent *ep;
+  int       stream;
+#endif
   
   taskid = disrui(fd, ret);
 
@@ -7362,11 +7366,13 @@ int tm_obit_request(
   {
   static char *id = "tm_obit_request";
   int       taskid;
-  int       stream;
   char     *jobid = pjob->ji_qs.ji_jobid;
- 
-  eventent *ep;
   task     *ptask;
+
+#ifndef NUMA_SUPPORT 
+  eventent *ep;
+  int       stream;
+#endif
  
   taskid = disrui(fd, ret);
   
@@ -7505,13 +7511,15 @@ int tm_getinfo_request(
   {
   static char *id = "tm_getinfo_request";
   int       taskid;
-  int       stream;
   char     *jobid = pjob->ji_qs.ji_jobid;
   char     *name;
- 
-  eventent *ep;
   task     *ptask;
   infoent  *ip;
+
+#ifndef NUMA_SUPPORT 
+  eventent *ep;
+  int       stream;
+#endif
   
   taskid = disrui(fd, ret);
   
@@ -7626,11 +7634,13 @@ int tm_resources_request(
   int         nodeid)     /* I */
   {
   static char *id = "tm_resources_request";
-  int      stream;
   char    *jobid = pjob->ji_qs.ji_jobid;
   char    *info = NULL;
- 
+
+#ifndef NUMA_SUPPORT 
+  int      stream;
   eventent *ep;
+#endif
  
   if (LOGLEVEL >= 7)
     {
