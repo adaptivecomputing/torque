@@ -46,7 +46,7 @@ EXTRA_DIST = acinclude.m4 \
 	contrib/init.d/suse.pbs_sched \
 	contrib/init.d/suse.pbs_server \
 	contrib/init.d/suse.trqauthd \
-  contrib/nwloc_install.sh \
+  contrib/hwloc_install.sh \
   contrib/mom_gencfg \
 	contrib/pam_authuser.tar.gz \
 	contrib/pbstop \
