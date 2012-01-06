@@ -200,7 +200,7 @@ void          restore_attr_default (struct attribute *);
 /* Global Data Items */
 
 int          lockfds = -1;
-int          ForceCreation;
+int          ForceCreation = FALSE;
 int          high_availability_mode = FALSE;
 char        *acct_file = NULL;
 char        *log_file  = NULL;
@@ -272,7 +272,6 @@ char           *plogenv = NULL;
 int             LOGLEVEL = 0;
 int             DEBUGMODE = 0;
 int             TDoBackground = 1;  /* background daemon */
-int             TForceUpdate = 0;  /* (boolean) */
 
 char           *ProgName;
 char           *NodeSuffix = NULL;
@@ -648,12 +647,6 @@ void parse_command_line(
         break;
 
       case 'f':
-
-        TForceUpdate = 1;
-
-        break;
-
-      case 'F':
 
         ForceCreation = TRUE;
 
