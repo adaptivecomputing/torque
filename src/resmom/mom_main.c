@@ -5595,16 +5595,14 @@ char *find_signal_name(
 
 int kill_job(
 
-  job  *pjob,  /* I */
-  int   sig,   /* I */
-  char *killer_id_name, /* I - process name of calling routine */
-  char *why_killed_reason) /* I - reason for killing */
+  job        *pjob,              /* I */
+  int         sig,               /* I */
+  const char *killer_id_name,    /* I - process name of calling routine */
+  char       *why_killed_reason) /* I - reason for killing */
 
   {
   task *ptask;
-  int ct = 0;
-
-  char *id = "kill_job";
+  int   ct = 0;
 
   sprintf(log_buffer, "%s: sending signal %d, \"%s\" to job %s, reason: %s",
           killer_id_name,
@@ -5614,11 +5612,7 @@ int kill_job(
 
   if (LOGLEVEL >= 2)
     {
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
   DBPRT(("%s\n", log_buffer));
@@ -5636,7 +5630,7 @@ int kill_job(
 
   if (run_pelog(PE_EPILOGUSER, path_epilogpdel, pjob, PE_IO_TYPE_NULL) != 0)
     {
-    log_err(-1, (char *)id, "precancel epilog failed");
+    log_err(-1, __func__, "precancel epilog failed");
 
     sprintf(PBSNodeMsgBuf, "ERROR:  precancel epilog failed");
     }

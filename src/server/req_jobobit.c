@@ -934,7 +934,6 @@ int handle_returnstd(
       preq->rq_reply.brp_code   = PBSE_MOMREJECT;
       preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
       preq->rq_reply.brp_un.brp_txt.brp_txtlen = 0;
-      
       }
     else
       {

@@ -354,8 +354,8 @@ void svr_mailowner(
    * if force is true, force the mail out regardless of mailpoint
    * unless server no_mail_force attribute is set to true
    */
-
   get_svr_attr_l(SRV_ATR_NoMailForce, &no_force);
+
   if ((force != MAIL_FORCE) ||
       (no_force == TRUE))
     {

@@ -213,7 +213,7 @@ void *tcp_request(void *sock_num);
 
 char *find_signal_name(int sig);
 
-int kill_job(job *pjob, int sig, char *killer_id_name, char *why_killed_reason);
+int kill_job(job *pjob, int sig, const char *killer_id_name, char *why_killed_reason);
 
 unsigned long getsize(resource *pres);
 

@@ -203,7 +203,7 @@ extern pid_t fork_me(int sock);
 extern int   get_la(double *);
 extern void  init_abort_jobs(int);
 extern int   init_groups(char *, int, int, int *);
-/* extern int   kill_job(job *, int sig, char *killer_id_name, char *why_killed_reason); */
+int   kill_job(job *, int sig, const char *killer_id_name, char *why_killed_reason);
 extern void  mom_deljob(job *);
 extern void  mom_freenodes(job *);
 extern void  scan_for_exiting();
@@ -241,7 +241,7 @@ extern int   task_save(task *) ;
 extern void  DIS_rpp_reset(void);
 extern void  checkret(char **, long);
 extern char *get_job_envvar(job *, char *);
-extern int   mom_open_socket_to_jobs_server(job* pjob, char *id, void *(*message_hander)(void *));
+extern int   mom_open_socket_to_jobs_server(job* pjob, const char *id, void *(*message_hander)(void *));
 
 /* defined in mach-dependant mom_mach.c */
 extern int kill_task(struct task *, int, int);

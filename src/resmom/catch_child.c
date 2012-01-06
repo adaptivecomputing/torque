@@ -84,7 +84,6 @@ extern void job_nodes (job *);
 extern int task_recov (job *);
 extern void mom_server_all_update_stat(void);
 extern void check_state(int);
-extern int mom_open_socket_to_jobs_server (job *, char *, void *(*) (void *));
 extern int mark_for_resend (job *);
 extern void checkpoint_partial(job *pjob);
 extern void mom_checkpoint_recover(job *pjob);
@@ -278,14 +277,11 @@ int send_task_obit_response(
 void scan_for_exiting(void)
 
   {
-  char         *id = "scan_for_exiting";
-
   int  found_one = 0;
   job  *nextjob;
   job  *pjob;
   task  *ptask;
   obitent *pobit;
-  int  sock;
   char  *cookie;
   u_long gettime(resource *);
   u_long getsize(resource *);
@@ -309,7 +305,7 @@ void scan_for_exiting(void)
     log_record(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_SERVER,
-      id,
+      __func__,
       "searching for exiting jobs");
     }
 
@@ -359,7 +355,7 @@ void scan_for_exiting(void)
         log_record(
           PBSEVENT_DEBUG,
           PBS_EVENTCLASS_SERVER,
-          id,
+          __func__,
           log_buffer);
         }
 
@@ -406,7 +402,7 @@ void scan_for_exiting(void)
       log_record(
         PBSEVENT_DEBUG,
         PBS_EVENTCLASS_SERVER,
-        id,
+        __func__,
         "working on a job");
       }
 
@@ -504,7 +500,7 @@ void scan_for_exiting(void)
           {
           snprintf(log_buffer, sizeof(log_buffer),
             "%s: master task has exited - sent kill job request to %d sisters",
-            id, NumSisters);
+            __func__, NumSisters);
 
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
           }
@@ -583,7 +579,7 @@ void scan_for_exiting(void)
 	  	    {
 	  	    snprintf(log_buffer, sizeof(log_buffer),
             "%s:intermediate mom has not received reply from all siblings",
-            id);
+            __func__);
 
 	  	  	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 	  	    }
@@ -603,7 +599,7 @@ void scan_for_exiting(void)
         {
         snprintf(log_buffer, sizeof(log_buffer),
           "%s:job is in non-exiting substate %s, no obit sent at this time",
-          id, PJobSubState[pjob->ji_qs.ji_substate]);
+          __func__, PJobSubState[pjob->ji_qs.ji_substate]);
     
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
         }
@@ -651,7 +647,7 @@ void scan_for_exiting(void)
         }
       else
         {
-        kill_job(pjob, SIGKILL, id, "kill_job message received");
+        kill_job(pjob, SIGKILL, __func__, "kill_job message received");
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
         /*pjob->ji_obit = event;*/
@@ -679,7 +675,7 @@ void scan_for_exiting(void)
     pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
-      kill_job(pjob, SIGKILL, id, "local task termination detected");
+      kill_job(pjob, SIGKILL, __func__, "local task termination detected");
     else
       {
       ptask = (task *)GET_NEXT(pjob->ji_tasks);
@@ -733,65 +729,11 @@ void scan_for_exiting(void)
       log_record(
         PBSEVENT_DEBUG,
         PBS_EVENTCLASS_SERVER,
-        id,
+        __func__,
         "calling mom_open_socket_to_jobs_server");
       }
 
-    sock = mom_open_socket_to_jobs_server(pjob, id, preobit_reply);
-
-    if (sock < 0)
-      {
-      if ((errno == EINPROGRESS) || (errno == ETIMEDOUT) || (errno == EINTR))
-        {
-        sprintf(log_buffer, "connect to server unsuccessful after 5 seconds - will retry");
-        }
-
-      /*
-       * continue through the jobs loop since we can have jobs for multiple
-       * servers.  Keep track that this server is down so we don't try to
-       * process any more jobs for it. We will leave it's exiting_tasks set
-       * so Mom will retry Obit when server is available
-       */
-
-      set_mom_server_down(pjob->ji_qs.ji_un.ji_momt.ji_svraddr);
-
-      continue;
-      }  /* END if (sock < 0) */
-
-    if (LOGLEVEL >= 2)
-      {
-      log_record(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "sending preobit jobstat");
-      }
-
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
-
-    /* send the pre-obit job stat request */
-
-    DIS_tcp_setup(sock);
-
-    if (encode_DIS_ReqHdr(sock, PBS_BATCH_StatusJob, pbs_current_user) ||
-        encode_DIS_Status(sock, pjob->ji_qs.ji_jobid, NULL) ||
-        encode_DIS_ReqExtend(sock, NULL))
-      {
-      /* FAILURE */
-
-      log_record(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "failed creating preobit message");
-
-      shutdown(sock, SHUT_RDWR);
-      close_conn(sock, FALSE);
-
-      return;
-      }
-
-    DIS_tcp_wflush(sock);
+    post_epilogue(pjob, pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0);
 
     if (found_one++ >= ObitsAllowed)
       {
@@ -834,23 +776,18 @@ int post_epilogue(
   int  ev)    /* I exit value (only used to determine if retrying obit) */
 
   {
-  char id[] = "post_epilogue";
-
-  int sock;
-  int resc_access_perm;
+  int                   sock;
+  int                   resc_access_perm;
   struct batch_request *preq;
 
   if (LOGLEVEL >= 2)
     {
-    sprintf(log_buffer, "preparing obit message for job %s",
-            pjob->ji_qs.ji_jobid);
-
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buffer);
+    sprintf(log_buffer, "preparing obit message for job %s", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
 
   /* open new connection - register obit_reply as handler */
-
-  sock = mom_open_socket_to_jobs_server(pjob, id, obit_reply);
+  sock = mom_open_socket_to_jobs_server(pjob, __func__, obit_reply);
 
   if (sock < 0)
     {
@@ -864,7 +801,7 @@ int post_epilogue(
 
       for (retrycount = 0;retrycount < 2;retrycount++)
         {
-        sock = mom_open_socket_to_jobs_server(pjob, id, obit_reply);
+        sock = mom_open_socket_to_jobs_server(pjob, __func__, obit_reply);
 
         if (sock >= 0)
           break;
@@ -897,7 +834,7 @@ int post_epilogue(
 
     sprintf(log_buffer, "cannot allocate memory for obit message");
 
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
 
     shutdown(sock, SHUT_RDWR);
     close_conn(sock, FALSE);
@@ -934,7 +871,7 @@ int post_epilogue(
       "cannot create obit message for job %s",
       pjob->ji_qs.ji_jobid);
 
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
 
     shutdown(sock, SHUT_RDWR);
     close_conn(sock, FALSE);
@@ -982,31 +919,26 @@ void *preobit_reply(
   void *new_sock)  /* I */
 
   {
-  char id[] = "preobit_reply";
-
-  pid_t cpid;
-  job *pjob;
-  int irtn;
+  pid_t                 cpid;
+  job                  *pjob;
+  int                   irtn;
 
   struct batch_request *preq;
 
   struct brp_status    *pstatus;
   svrattrl             *sattrl;
-  int  runepilogue = 0;
-  int  deletejob = 0;
-  int  jobiscorrupt = 0;
+  int                   runepilogue = 0;
+  int                   deletejob = 0;
+  int                   jobiscorrupt = 0;
 
-  char *path_epiloguserjob;
-  resource *presc;
-  int sock = *(int *)new_sock;
+  char                 *path_epiloguserjob;
+  resource             *presc;
+  int                   sock = *(int *)new_sock;
 
   /* struct batch_status *bsp = NULL; */
-
-  log_record( PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id,
-      "top of preobit_reply");
+  log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, "top of preobit_reply");
 
   /* read and decode the reply */
-
   preq = alloc_br(PBS_BATCH_StatusJob);
 
   CLEAR_HEAD(preq->rq_ind.rq_status.rq_attr);
@@ -1027,13 +959,13 @@ void *preobit_reply(
 
     /* NOTE:  errno not set, thus log_err say success in spite of failure */
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
 
     preq->rq_reply.brp_code = -1;
     }
   else
     {
-    log_record( PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id,
+    log_record( PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__,
       "DIS_reply_read/decode_DIS_replySvr worked, top of while loop");
     }
 
@@ -1058,7 +990,7 @@ void *preobit_reply(
     {
     /* FAILURE - cannot locate job that triggered req */
 
-    log_record( PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, id,
+    log_record( PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__,
         "cannot locate job that triggered req");
 
     free_br(preq);
@@ -1089,7 +1021,7 @@ void *preobit_reply(
       log_record(
         PBSEVENT_DEBUG,
         PBS_EVENTCLASS_SERVER,
-        id,
+        __func__,
         "in while loop, no error from job stat");
 
       if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Status)
@@ -1290,7 +1222,7 @@ void *preobit_reply(
           {
           if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, PE_IO_TYPE_NULL) != 0)
             {
-            log_err(-1, id, "user local epilog failed");
+            log_err(-1, __func__, "user local epilog failed");
             }
           free(path_epiloguserjob);
           }
@@ -1299,12 +1231,12 @@ void *preobit_reply(
 
     if (run_pelog(PE_EPILOGUSER, path_epiloguser, pjob, PE_IO_TYPE_NULL) != 0)
       {
-      log_err(-1, id, "user epilog failed - interactive job");
+      log_err(-1, __func__, "user epilog failed - interactive job");
       }
 
     if (run_pelog(PE_EPILOG, path_epilog, pjob, PE_IO_TYPE_NULL) != 0)
       {
-      log_err(-1, id, "system epilog failed - interactive job");
+      log_err(-1, __func__, "system epilog failed - interactive job");
       }
     }
   else
@@ -1325,7 +1257,7 @@ void *preobit_reply(
           {
           if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, PE_IO_TYPE_STD) != 0)
             {
-            log_err(-1, id, "user local epilog failed");
+            log_err(-1, __func__, "user local epilog failed");
             }
           free(path_epiloguserjob);
           }
@@ -1334,7 +1266,7 @@ void *preobit_reply(
 
     if (run_pelog(PE_EPILOGUSER, path_epiloguser, pjob, PE_IO_TYPE_STD) != 0)
       {
-      log_err(-1, id, "user epilog failed");
+      log_err(-1, __func__, "user epilog failed");
       }
 
     if ((rc = run_pelog(PE_EPILOG, path_epilog, pjob, PE_IO_TYPE_STD)) != 0)
@@ -1342,7 +1274,7 @@ void *preobit_reply(
       sprintf(log_buffer, "system epilog failed w/rc=%d",
               rc);
 
-      log_err(-1, id, log_buffer);
+      log_err(-1, __func__, log_buffer);
       }
     }    /* END else (jobisinteractive) */
 

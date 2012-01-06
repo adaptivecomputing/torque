@@ -204,9 +204,6 @@ void req_quejob(
     {
     check_state(1);
 
-    /* NYI: remove this? Why are we sending an update here? */
-/*    mom_server_all_update_stat(); */
-
     if (internal_state & INUSE_DOWN)
       {
       req_reject(PBSE_MOMREJECT,0,preq,NULL,NULL);

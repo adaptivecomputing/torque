@@ -189,7 +189,6 @@ static char   rcperr[MAXPATHLEN]; /* file to contain rcp error */
 extern char PBSNodeMsgBuf[1024];
 extern int  LOGLEVEL;
 
-extern int mom_open_socket_to_jobs_server(job *, char *, void *(*)(void *));
 
 /* prototypes */
 

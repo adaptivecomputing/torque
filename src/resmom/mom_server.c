@@ -4940,9 +4940,9 @@ mom_server_all_send_state(void)
 
 int mom_open_socket_to_jobs_server(
 
-  job  *pjob,
-  char *caller_id,
-  void *(*message_handler)(void *))
+  job        *pjob,
+  const char *caller_id,
+  void       *(*message_handler)(void *))
 
   {
   char       *svrport = NULL;
