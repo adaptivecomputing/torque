@@ -1325,6 +1325,7 @@ static void chk_svr_resc_limit(
         }    
     }
 
+#ifndef CRAY_MOAB_PASSTHRU
   if((proc_ct + req_procs) > svr_clnodes) 
     {
     if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
@@ -1336,6 +1337,7 @@ static void chk_svr_resc_limit(
       comp_resc_lt++;
       }
     }
+#endif
 
   if (MPPWidth > 0)
     {
