@@ -357,16 +357,16 @@ int pipe_and_read_unmunge(
 
 int unmunge_request(
     
-  int sock,                   /* I */
+  int                   sock, /* I */
   struct batch_request *preq) /* M */
  
   {
-  time_t myTime;
-  struct timeval tv;
-  suseconds_t millisecs;
-  struct tm *timeinfo;
-  char mungeFileName[MAXPATHLEN + MAXNAMLEN+1];
-  int rc = PBSE_NONE;
+  time_t          myTime;
+  struct timeval  tv;
+  suseconds_t     millisecs;
+  struct tm      *timeinfo;
+  char            mungeFileName[MAXPATHLEN + MAXNAMLEN+1];
+  int             rc = PBSE_NONE;
 
   /* create a sudo random file name */
   gettimeofday(&tv, NULL);

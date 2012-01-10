@@ -1372,29 +1372,6 @@ fi
 AC_SUBST(SCHD_CODE)
 
 
-dnl
-dnl  ######################################################################
-dnl  Global settings
-dnl
-AC_MSG_NOTICE([Checking global settings...])
-
-AC_ARG_ENABLE(rpp,
-[
-  --disable-rpp           use RPP/UDP for resource queries from PBS server
-                          to mom.  This is enabled by default.  If disabled,
-                          TCP is used.  This does not effect general node/job
-                          status messages, job launch/exit messages, inter-mom
-                          messages, etc.],
-[case "${enableval}" in
-  yes) RPP=1 ;;
-  no)  RPP=0 ;;
-  *)   AC_MSG_ERROR(--enable-rpp cannot take a value) ;;
-esac],[RPP=1])dnl
-AC_DEFINE_UNQUOTED(RPP, ${RPP}, [Define to enable RPP resource queries])
-AM_CONDITIONAL(USING_RPP, [test "$RPP" = "1"])
-
-
-
 AC_ARG_ENABLE(filesync, [
   --enable-filesync       open files with sync on each write operation.  Don't
                           bother enabling this, all it does is slow down TORQUE.
