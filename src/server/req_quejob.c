@@ -129,7 +129,6 @@
 /* External Functions Called: */
 
 extern int   reply_jid(char *);
-extern void  start_exec(job *);
 extern int   svr_authorize_jobreq(struct batch_request *, job *);
 extern int   svr_chkque(job *, pbs_queue *, char *, int, char *);
 extern int   job_route(job *);

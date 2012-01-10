@@ -113,7 +113,6 @@
 /* External Functions Called: */
 
 extern int  reply_jid(char *);
-extern void start_exec(job *);
 extern int  svr_authorize_jobreq(struct batch_request *, job *);
 extern int  svr_chkque(job *, pbs_queue *, char *, int, char *);
 extern void check_state(int);
@@ -184,8 +183,6 @@ void req_quejob(
   struct batch_request *preq) /* ptr to the decoded request   */
 
   {
-  char  *id = "req_quejob";
-
   char   basename[PBS_JOBBASE + 1];
   int    created_here = 0;
   int    index;
@@ -224,7 +221,7 @@ void req_quejob(
     {
     /* request must be from server */
 
-    log_err(errno, id, "request not from server");
+    log_err(errno, __func__, "request not from server");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "request not received from server");
 
@@ -275,7 +272,7 @@ void req_quejob(
       {
       /* FAILURE - job exists and is running */
 
-      log_err(errno,id,"cannot queue new job, job exists and is running");
+      log_err(errno, __func__, "cannot queue new job, job exists and is running");
 
       req_reject(PBSE_JOBEXIST,0,preq,NULL,"job is running");
 
@@ -546,8 +543,6 @@ void req_jobscript(
   struct batch_request *preq) /* ptr to the decoded request*/
 
   {
-  char *id = "req_jobscript";
-
   int  fds;
   char  namebuf[MAXPATHLEN];
   char  portname[MAXPATHLEN];
@@ -561,7 +556,7 @@ void req_jobscript(
 
   if (pj == NULL)
     {
-    log_err(errno, id, "cannot locate new job");
+    log_err(errno, __func__, "cannot locate new job");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
@@ -587,7 +582,7 @@ void req_jobscript(
               strerror(errno));
       }
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
 
     req_reject(PBSE_IVALREQ, 0, preq, mom_host, log_buffer);
 
@@ -640,7 +635,7 @@ void req_jobscript(
 
     /* NOTE: log_err may modify errno */
 
-    log_err(errno, id, msg_script_open);
+    log_err(errno, __func__, msg_script_open);
 
     req_reject(PBSE_INTERNAL, 0, preq, mom_host, tmpLine);
 
@@ -654,7 +649,7 @@ void req_jobscript(
     {
     /* FAILURE */
 
-    log_err(errno, id, msg_script_write);
+    log_err(errno, __func__, msg_script_write);
 
     req_reject(PBSE_INTERNAL, 0, preq, mom_host, "cannot write job command file");
 
@@ -966,6 +961,7 @@ void req_commit(
 
   {
   unsigned int  momport = 0;
+  int           rc;
   job          *pj = locate_new_job(preq->rq_conn, preq->rq_ind.rq_commit);
 
   if (LOGLEVEL >= 6)
@@ -1026,7 +1022,7 @@ void req_commit(
       "req_commit:starting job execution");
     }
 
-  start_exec(pj);
+  rc = start_exec(pj);
 
   if (LOGLEVEL >= 6)
     {
@@ -1064,7 +1060,7 @@ void req_commit(
         tmpLine);
       }
 
-    reply_text(preq, 0, tmpLine);
+    reply_text(preq, rc, tmpLine);
     }
   else
     {

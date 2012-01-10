@@ -1030,6 +1030,9 @@ int TTmpDirName(
 
 
 
+/*
+ * @return PBSE_NONE on success, PBSE_... otherwise
+ */
 
 int TMakeTmpDir(
 
@@ -1037,8 +1040,6 @@ int TMakeTmpDir(
   char *tmpdir) /* I */
 
   {
-  static char  id[] = "TMakeTmpDir";
-
   int          rc;
   int          retval;
 
@@ -1051,7 +1052,7 @@ int TMakeTmpDir(
   if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1) ||
       (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
     {
-    return(0);
+    return(PBSE_BADUSER);
     }
 
 #ifdef TOP_TEMPDIR_ONLY
@@ -1079,7 +1080,7 @@ int TMakeTmpDir(
   else
     {
     /* log the first error */
-    log_err(errno,id,strerror(errno));
+    log_err(errno, __func__, strerror(errno));
 
     rc = stat(tmpdir, &sb);
 
@@ -1095,6 +1096,8 @@ int TMakeTmpDir(
           "Unable to make job transient directory: %s",
           tmpdir);
 
+        retval = PBSE_CANTCREATETMPDIR;
+
         break;
 
       case 0:
@@ -1103,7 +1106,7 @@ int TMakeTmpDir(
           {
           if (sb.st_uid == pjob->ji_qs.ji_un.ji_momt.ji_exuid)
             {
-            retval = 0;   /* owned by the job, allowed */
+            retval = PBSE_NONE;   /* owned by the job, allowed */
             }
           else
             {
@@ -1112,7 +1115,7 @@ int TMakeTmpDir(
               tmpdir,
               sb.st_uid);
 
-            retval = -1;
+            retval = PBSE_TMPDIFFOWNER;
             }
           }
         else
@@ -1121,7 +1124,7 @@ int TMakeTmpDir(
             "Job transient tmpdir %s exists, but is not a directory",
             tmpdir);
 
-          retval = -1;
+          retval = PBSE_TMPNOTDIR;
           }
 
         break;
@@ -1132,7 +1135,7 @@ int TMakeTmpDir(
          "Cannot name job tmp directory %s (on stat)",
          tmpdir);
 
-       return(0);
+       return(PBSE_TMPNONAME);
 
        break;
       }
@@ -1143,9 +1146,9 @@ int TMakeTmpDir(
   setegid(pbsgroup);
 
   if (retval != 0)
-    log_err(retval, id, log_buffer);
+    log_err(retval, __func__, log_buffer);
 
-  return(retval == 0);  /* return boolean */
+  return(retval);
   }   /* END TMakeTmpDir() */
 
 
@@ -5723,7 +5726,6 @@ int send_join_job_to_sisters(
   hnodent    *np)
 
   {
-  static char *id = "send_join_job_to_sisters";
   int          i;
   int          stream;
   int          connected;
@@ -5805,10 +5807,11 @@ int send_join_job_to_sisters(
       sprintf(log_buffer, "tcp_connect_sockaddr failed on %s", np->hn_host);
       }
     
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
     
     exec_bail(pjob, JOB_EXEC_FAIL1);
-    ret = -1;
+   
+    ret = PBSE_CANTCONTACTSISTERS;
     }
   else if (ret != DIS_SUCCESS)
     {
@@ -5818,9 +5821,11 @@ int send_join_job_to_sisters(
       np->hn_host,
       pjob->ji_qs.ji_jobid);
     
-    log_err(-1,id,log_buffer);
+    log_err(-1, __func__, log_buffer);
     
     exec_bail(pjob,JOB_EXEC_FAIL1);
+    
+    ret = PBSE_CANTCONTACTSISTERS;
     }
 
   return(ret);
@@ -5893,13 +5898,11 @@ int generate_cookie(
  *       mom and will send a join_job request along each connection.
  */
 
-void start_exec(
+int start_exec(
 
   job *pjob)  /* I (modified) */
 
   {
-  static char        *id = "start_exec";
-
   int                 nodenum;
 #ifndef NUMA_SUPPORT
   int                 i;
@@ -5928,7 +5931,7 @@ void start_exec(
   if (generate_cookie(pjob) != PBSE_NONE)
     {
     /* couldn't allocate memory */
-    return;
+    return(PBSE_MEM_MALLOC);
     }
 
   /* Step 2.0 Initialize Job */
@@ -5942,29 +5945,28 @@ void start_exec(
   /* Step 3.0 Validate/Initialize Environment */
 
   /* check creds early because we need the uid/gid for TMakeTmpDir() */
-
   if (!check_pwd(pjob))
     {
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     exec_bail(pjob, JOB_EXEC_FAIL1);
 
-    return;
+    return(PBSE_BADUSER);
     }
 
   /* should we make a tmpdir? */
 
   if (TTmpDirName(pjob, tmpdir))
     {
-    if (!TMakeTmpDir(pjob, tmpdir))
+    if ((ret = TMakeTmpDir(pjob, tmpdir)) != PBSE_NONE)
       {
       snprintf(log_buffer, sizeof(log_buffer), "cannot create temp dir '%s'", tmpdir);
 
-      log_err(-1, id, log_buffer);
+      log_err(-1, __func__, log_buffer);
 
       exec_bail(pjob, JOB_EXEC_FAIL1);
 
-      return;
+      return(ret);
       }
     }
 
@@ -6023,9 +6025,8 @@ void start_exec(
 
     attrl_fixlink(&phead);
 
-    ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR);
-    if (ret != PBSE_NONE)
-      return;
+    if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
+      return(ret);
 
 
     pjob->ji_sisters = NULL;
@@ -6135,7 +6136,7 @@ void start_exec(
     if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
       {
       /* can't gather stdout/err for the job - FAIL */
-      return;
+      return(ret);
       }
 
     /* Send the join job request to the sisterhood. */
@@ -6145,10 +6146,10 @@ void start_exec(
 
       log_buffer[0] = '\0';
 
-      if (send_join_job_to_sisters(pjob, i, nodenum, phead, np) != DIS_SUCCESS)
+      if ((ret = send_join_job_to_sisters(pjob, i, nodenum, phead, np)) != DIS_SUCCESS)
         {
         /* couldn't contact all of the sisters, we've already bailed */
-        return;
+        return(ret);
         }
       }     /* END for (i) */
 
@@ -6161,7 +6162,7 @@ void start_exec(
         tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
         timeval_subtract(&result, &tv, tv_attr);
         sprintf(log_buffer, "%s: total wire-up time for job %ld.%ld", 
-          id,
+          __func__,
           result.tv_sec, 
           result.tv_usec);
 
@@ -6194,7 +6195,7 @@ void start_exec(
       if (LOGLEVEL >= 3)
         {
         sprintf(log_buffer,"%s:job %s reported successful start on %d node(s)",
-          id,
+          __func__,
           pjob->ji_qs.ji_jobid,
           nodenum);
 
@@ -6206,7 +6207,7 @@ void start_exec(
       if (LOGLEVEL >= 3)
         {
         sprintf(log_buffer,"%s:job %s reported failure to start of %d node(s)",
-          id,
+          __func__,
           pjob->ji_qs.ji_jobid,
           nodenum);
 
@@ -6215,7 +6216,7 @@ void start_exec(
       }
     } /* end else if mom_radix > 0 */
 
-  return;
+  return(PBSE_NONE);
   }   /* END start_exec() */
 
 
@@ -6783,15 +6784,14 @@ int open_std_file(
   char *path;
   int   old_umask = 0;
 
-  char *id = "open_std_file";
   int  changed_to_user = FALSE;
-  int rc;
+  int  rc;
 
   struct stat statbuf;
 
   if ((path = std_file_name(pjob, which, &keeping)) == NULL)
     {
-    log_err(-1, id, "cannot determine filename");
+    log_err(-1, __func__, "cannot determine filename");
 
     /* FAILURE - cannot determine filename */
 
@@ -6811,7 +6811,7 @@ int open_std_file(
 					geteuid(),
 					pjob->ji_qs.ji_un.ji_momt.ji_exuid);
 
-		log_ext(-1, id, log_buffer, LOG_DEBUG);
+		log_ext(-1, __func__, log_buffer, LOG_DEBUG);
 	  }
 #ifdef __CYGWIN__
   if (IamRoot() == 1)
@@ -6826,7 +6826,7 @@ int open_std_file(
         (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
         strerror(errno));
 
-      log_err(errno,id,log_buffer);
+      log_err(errno, __func__, log_buffer);
       }
 
     if (setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0)
@@ -6837,7 +6837,7 @@ int open_std_file(
         (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
         strerror(errno));
 
-      log_err(errno,id,log_buffer);
+      log_err(errno, __func__, log_buffer);
 
       return(-1);
       }
@@ -6849,7 +6849,7 @@ int open_std_file(
         (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
         strerror(errno));
 
-      log_err(errno,id,log_buffer);
+      log_err(errno, __func__, log_buffer);
 
       setegid(pbsgroup);
       return(-1);
@@ -6873,7 +6873,7 @@ int open_std_file(
 
       if (S_ISLNK(statbuf.st_mode))
         {
-        log_err(-1, id, "std file is symlink, someone is doing something fishy");
+        log_err(-1, __func__, "std file is symlink, someone is doing something fishy");
 
         goto reset_ids_fail;
         }
@@ -6882,7 +6882,7 @@ int open_std_file(
         {
         if (statbuf.st_uid != pjob->ji_qs.ji_un.ji_momt.ji_exuid)
           {
-          log_err(-1, id, "std file exists with the wrong owner, someone is doing something fishy");
+          log_err(-1, __func__, "std file exists with the wrong owner, someone is doing something fishy");
 
           goto reset_ids_fail;
           }
@@ -6901,7 +6901,7 @@ int open_std_file(
 
           if (equal == FALSE)
             {
-            log_err(-1, id, "std file exists with the wrong group, someone is doing something fishy");
+            log_err(-1, __func__, "std file exists with the wrong group, someone is doing something fishy");
 
             goto reset_ids_fail;
             }
@@ -6924,7 +6924,7 @@ int open_std_file(
           path);
 
         if (LOGLEVEL >= 6)
-          log_err(errno, id, log_buffer);
+          log_err(errno, __func__, log_buffer);
 
         /* fail on timeout */
 
@@ -6936,7 +6936,7 @@ int open_std_file(
           path);
 
         if (LOGLEVEL >= 6)
-          log_ext(errno, id, log_buffer, LOG_DEBUG);
+          log_ext(errno, __func__, log_buffer, LOG_DEBUG);
         }
       }
     }     /* END else (keeping) */
@@ -6961,7 +6961,7 @@ int open_std_file(
       mode,
       (keeping == 0) ? "FALSE" : "TRUE");
 
-    log_err(local_errno, id, log_buffer);
+    log_err(local_errno, __func__, log_buffer);
 
     if (local_errno == ENOENT)
       {
@@ -7041,7 +7041,7 @@ int open_std_file(
       (unsigned long)pbsuser,
       strerror(errno));
 
-    log_err(errno,id,log_buffer);
+    log_err(errno, __func__, log_buffer);
 	  }
 
 	  setegid(pbsgroup);
@@ -7066,27 +7066,29 @@ int open_std_file(
       sprintf(log_buffer, "successfully created/opened stdout/stderr file '%s'",
               path);
 
-      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
       }
     }
 
   return(fds);
 
 reset_ids_fail:
-    if (changed_to_user)
-      {
-      seteuid(pbsuser);
-      setegid(pbsgroup);
-      }
-    return(-1);
+
+  if (changed_to_user)
+    {
+    seteuid(pbsuser);
+    setegid(pbsgroup);
+    }
+  return(-1);
 
 reset_ids_timeout:
-    if (changed_to_user)
-      {
-      seteuid(pbsuser);
-      setegid(pbsgroup);
-      }
-    return(-2);
+
+  if (changed_to_user)
+    {
+    seteuid(pbsuser);
+    setegid(pbsgroup);
+    }
+  return(-2);
   }   /* END open_std_file() */
 
 
@@ -8328,7 +8330,7 @@ int allocate_demux_sockets(
 
     exec_bail(pjob, JOB_EXEC_FAIL1);
 
-    ret = JOB_EXEC_FAIL1;
+    ret = PBSE_CANTOPENSOCKET;
 
     goto done;
     }

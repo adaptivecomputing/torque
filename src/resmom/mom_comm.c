@@ -2449,7 +2449,7 @@ int im_join_job_as_sister(
   
   if (TTmpDirName(pjob, namebuf))
     {
-    if (!TMakeTmpDir(pjob, namebuf))
+    if (TMakeTmpDir(pjob, namebuf) != PBSE_NONE)
       {
       log_event(
         PBSEVENT_JOB,

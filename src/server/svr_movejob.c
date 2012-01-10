@@ -130,7 +130,7 @@ extern void stat_mom_job(job *);
 extern void remove_stagein(job **);
 extern void remove_checkpoint(job **);
 extern int  job_route(job *);
-void finish_sendmom(job *,struct batch_request *,long,char *,int);
+void finish_sendmom(job *, struct batch_request *, long, char *, int, int);
 int PBSD_commit_get_sid(int ,long *,char *);
 int get_job_file_path(job *,enum job_file, char *, int);
 
@@ -493,7 +493,8 @@ void finish_move_process(
   long                  time,
   char                 *node_name,
   int                   status,
-  int                   type)
+  int                   type,
+  int                   mom_err)
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -508,7 +509,12 @@ void finish_move_process(
       "Job %s was deleted while servicing move request", jobid);
 
     if (preq != NULL)
-      req_reject(PBSE_JOBNOTFOUND, 0, preq, node_name, log_buf);
+      {
+      if (mom_err != PBSE_NONE)
+        req_reject(mom_err, 0, preq, node_name, log_buf);
+      else
+        req_reject(PBSE_JOBNOTFOUND, 0, preq, node_name, log_buf);
+      }
     }
   else
     {
@@ -516,19 +522,19 @@ void finish_move_process(
       {
       case MOVE_TYPE_Move:
         
-        finish_moving_processing(pjob,preq,status);
+        finish_moving_processing(pjob, preq, status);
         
         break;
         
       case MOVE_TYPE_Route:
         
-        finish_routing_processing(pjob,status);
+        finish_routing_processing(pjob, status);
         
         break;
         
       case MOVE_TYPE_Exec:
         
-        finish_sendmom(pjob,preq,time,node_name,status);
+        finish_sendmom(pjob, preq, time, node_name, status, mom_err);
         
         break;
       } /* END switch (type) */
@@ -579,6 +585,7 @@ int send_job_work(
   int                   con = -1;
   int                   sock = -1;
   int                   encode_type;
+  int                   mom_err = PBSE_NONE;
   int                   i;
   int                   NumRetries;
   int                   resc_access_perm;
@@ -843,7 +850,7 @@ int send_job_work(
       continue;
       }
 
-    if ((rc = PBSD_commit_get_sid(con, &sid, jobid)) != PBSE_NONE)
+    if ((mom_err = PBSD_commit_get_sid(con, &sid, jobid)) != PBSE_NONE)
       {
       int   errno2;
       char *err_text;
@@ -853,12 +860,18 @@ int send_job_work(
       pthread_mutex_unlock(connection[con].ch_mutex);
 
       /* NOTE:  errno is modified by log_err */
-
-      errno2 = errno;
-
-      sprintf(log_buf, "send_job commit failed, rc=%d (%s)",
-        rc,
-        (err_text != NULL) ? err_text : "N/A");
+      if (mom_err > PBSE_FLOOR)
+        {
+        sprintf(log_buf, "send_job commit failed, rc=%d (%s: %s)",
+          mom_err, pbse_to_txt(mom_err), (err_text != NULL) ? err_text : "N/A");
+        errno2 = mom_err;
+        }
+      else
+        {
+        sprintf(log_buf, "send_job commit failed, rc=%d (%s)",
+          mom_err, (err_text != NULL) ? err_text : "N/A");
+        errno2 = errno;
+        }
 
       log_ext(errno2, __func__, log_buf, LOG_WARNING);
 
@@ -948,7 +961,7 @@ int send_job_work(
   rc = LOCUTION_REQUEUE;
 
 send_job_work_end:
-  finish_move_process(jobid,preq,start_time,node_name,rc,type);
+  finish_move_process(jobid, preq, start_time, node_name, rc, type, mom_err);
   free_server_attrs(&attrl);
   return rc;
   } /* END send_job_work() */

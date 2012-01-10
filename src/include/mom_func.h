@@ -213,7 +213,7 @@ extern int   set_job(job *, struct startjob_rtn *);
 extern void  set_globid(job *, struct startjob_rtn *);
 extern int   set_mach_vars(job *, struct var_table *);
 extern char *set_shell(job *, struct passwd *);
-extern void  start_exec(job *);
+extern int   start_exec(job *);
 extern int   open_master(char **);
 extern int   open_slave();
 extern char *rcvttype(int);

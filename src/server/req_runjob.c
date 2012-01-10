@@ -1123,7 +1123,8 @@ void finish_sendmom(
   struct batch_request *preq,
   long                  start_time,
   char                 *node_name,
-  int                   status)
+  int                   status,
+  int                   mom_err)
 
   {
   pbs_net_t  addr;
@@ -1204,7 +1205,12 @@ void finish_sendmom(
       if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_ABORT)
         {
         if (preq != NULL)
-          req_reject(PBSE_MOMREJECT, 0, preq, node_name, "connection to mom timed out");
+          {
+          if (mom_err != PBSE_NONE)
+            req_reject(mom_err, 0, preq, node_name, "connection to mom timed out");
+          else
+            req_reject(PBSE_MOMREJECT, 0, preq, node_name, "connection to mom timed out");
+          }
         
         svr_evaljobstate(pjob, &newstate, &newsub, 1);
         svr_setjobstate(pjob, newstate, newsub, FALSE);
@@ -1212,7 +1218,12 @@ void finish_sendmom(
       else
         {
         if (preq != NULL)
-          req_reject(PBSE_BADSTATE, 0, preq, node_name, "job was aborted by mom");
+          {
+          if (mom_err != PBSE_NONE)
+            req_reject(mom_err, 0, preq, node_name, "job was aboted by mom");
+          else
+            req_reject(PBSE_BADSTATE, 0, preq, node_name, "job was aborted by mom");
+          }
         }
       
       break;
@@ -1250,7 +1261,11 @@ void finish_sendmom(
               (node_name != NULL) ? node_name : "mom",
               PJobSubState[pjob->ji_qs.ji_substate]);
             
-            req_reject(PBSE_MOMREJECT, 0, preq, node_name, tmpLine);
+            if (mom_err != PBSE_NONE)
+              req_reject(mom_err, 0, preq, node_name, tmpLine);
+            else
+              req_reject(PBSE_MOMREJECT, 0, preq, node_name, tmpLine);
+
             }
           }
         
@@ -1269,7 +1284,12 @@ void finish_sendmom(
           }
         }
       else if (preq != NULL)
-        req_reject(PBSE_BADSTATE, 0, preq, node_name, "send failed - abort");
+        {
+        if (mom_err != PBSE_NONE)
+          req_reject(mom_err, 0, preq, node_name, "send failed - abort");
+        else
+          req_reject(PBSE_BADSTATE, 0, preq, node_name, "send failed - abort");
+        }
       
       break;
       }

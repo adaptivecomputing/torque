@@ -75,7 +75,7 @@ void job_nodes(job *pjob);
 
 void sister_job_nodes(job *pjob, char *radix_hosts, char *radix_ports );
 
-void start_exec(job *pjob);
+int  start_exec(job *pjob);
 
 pid_t fork_me(int conn);
 
