@@ -183,19 +183,19 @@ void req_quejob(
   struct batch_request *preq) /* ptr to the decoded request   */
 
   {
-  char   basename[PBS_JOBBASE + 1];
-  int    created_here = 0;
-  int    index;
-  char  *jid;
+  char           basename[PBS_JOBBASE + 1];
+  int            created_here = 0;
+  int            index;
+  char          *jid;
   attribute_def *pdef;
-  job   *pj;
-  svrattrl *psatl;
-  int    rc;
-  int    sock = preq->rq_conn;
+  job           *pj;
+  svrattrl      *psatl;
+  int            rc;
+  int            sock = preq->rq_conn;
 
-  int    IsCheckpoint = 0;
+  int            IsCheckpoint = 0;
   /* set basic (user) level access permission */
-  int resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
+  int            resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
 
   if (PBSNodeCheckProlog)
     {
@@ -203,7 +203,7 @@ void req_quejob(
 
     if (internal_state & INUSE_DOWN)
       {
-      req_reject(PBSE_MOMREJECT,0,preq,NULL,NULL);
+      req_reject(PBSE_BADMOMSTATE, 0, preq, NULL, NULL);
 
       return;
       }
@@ -274,7 +274,7 @@ void req_quejob(
 
       log_err(errno, __func__, "cannot queue new job, job exists and is running");
 
-      req_reject(PBSE_JOBEXIST,0,preq,NULL,"job is running");
+      req_reject(PBSE_JOBEXIST, 0, preq, NULL, "job is running");
 
       return;
       }
@@ -300,7 +300,7 @@ void req_quejob(
       {
       /* FAILURE */
 
-      req_reject(PBSE_SYSTEM, 0, preq, NULL, "cannot allocate new job structure");
+      req_reject(PBSE_MEM_MALLOC, 0, preq, NULL, "cannot allocate new job structure");
 
       return;
       }
@@ -348,7 +348,7 @@ void req_quejob(
 
       job_purge(pj);   /* CRI - 12/20/2004 */
 
-      reply_badattr(PBSE_NOATTR,1,psatl,preq);
+      reply_badattr(PBSE_NOATTR, 1, psatl, preq);
 
       return;
       }
@@ -363,7 +363,7 @@ void req_quejob(
 
       job_purge(pj);
 
-      reply_badattr(PBSE_ATTRRO,1,psatl,preq);
+      reply_badattr(PBSE_ATTRRO, 1, psatl, preq);
 
       return;
       }
@@ -396,7 +396,7 @@ void req_quejob(
 
       job_purge(pj);
 
-      reply_badattr(rc,1,psatl,preq);
+      reply_badattr(rc, 1, psatl, preq);
 
       return;
       }
@@ -414,7 +414,7 @@ void req_quejob(
           {
           job_purge(pj);
 
-          reply_badattr(rc,1,psatl, preq);
+          reply_badattr(rc, 1, psatl, preq);
 
           return;
           }
@@ -543,12 +543,12 @@ void req_jobscript(
   struct batch_request *preq) /* ptr to the decoded request*/
 
   {
-  int  fds;
-  char  namebuf[MAXPATHLEN];
-  char  portname[MAXPATHLEN];
-  job *pj;
-  int  filemode = 0700;
-  extern char mom_host[];
+  int          fds;
+  char         namebuf[MAXPATHLEN];
+  char         portname[MAXPATHLEN];
+  job         *pj;
+  int          filemode = 0700;
+  extern char  mom_host[];
 
   errno = 0;
 
@@ -570,16 +570,16 @@ void req_jobscript(
     if (errno == 0)
       {
       sprintf(log_buffer, "job %s in unexpected state '%s'",
-              pj->ji_qs.ji_jobid,
-              PJobSubState[pj->ji_qs.ji_substate]);
+        pj->ji_qs.ji_jobid,
+        PJobSubState[pj->ji_qs.ji_substate]);
       }
     else
       {
       sprintf(log_buffer, "job %s in unexpected state '%s' (errno=%d - %s)",
-              pj->ji_qs.ji_jobid,
-              PJobSubState[pj->ji_qs.ji_substate],
-              errno,
-              strerror(errno));
+        pj->ji_qs.ji_jobid,
+        PJobSubState[pj->ji_qs.ji_substate],
+        errno,
+        strerror(errno));
       }
 
     log_err(errno, __func__, log_buffer);
@@ -627,9 +627,7 @@ void req_jobscript(
     char tmpLine[1024];
 
     snprintf(tmpLine, sizeof(tmpLine), "cannot open '%s' errno=%d - %s",
-             namebuf,
-             errno,
-             strerror(errno));
+      namebuf, errno, strerror(errno));
 
     /* FAILURE */
 
@@ -711,8 +709,8 @@ void req_mvjobfile(
   if (pj == NULL)
     {
     snprintf(log_buffer, 1024, "cannot find job %s for move of %s file",
-             preq->rq_ind.rq_jobfile.rq_jobid,
-             TJobFileType[jft]);
+      preq->rq_ind.rq_jobfile.rq_jobid,
+      TJobFileType[jft]);
 
     log_err(-1, "req_mvjobfile", log_buffer);
 
@@ -819,22 +817,20 @@ void req_rdytocommit(
 
   if (pj == NULL)
     {
+    /* FAILURE */
     log_err(errno, "req_rdytocommit", "unknown job id");
 
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
-
-    /* FAILURE */
 
     return;
     }
 
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
     {
+    /* FAILURE */
     log_err(errno, "req_rdytocommit", "cannot commit job in unexpected state");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
-
-    /* FAILURE */
 
     return;
     }
@@ -857,11 +853,11 @@ void req_rdytocommit(
 
   if (job_save(pj, SAVEJOB_NEW, momport) == -1)
     {
-    char tmpLine[1024];
+    /* FAILURE */
+    char tmpLine[MAXLINE];
 
     sprintf(tmpLine, "cannot save job - errno=%d - %s",
-            errno,
-            strerror(errno));
+      errno, strerror(errno));
 
     log_err(errno, "req_rdytocommit", tmpLine);
 
@@ -874,8 +870,6 @@ void req_rdytocommit(
 
     req_reject(PBSE_SYSTEM, 0, preq, NULL, tmpLine);
 
-    /* FAILURE */
-
     return;
     }
 
@@ -883,19 +877,18 @@ void req_rdytocommit(
 
   if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_RdytoCom) != 0)
     {
+    /* FAILURE */
     /* reply failed, purge the job and close the connection */
 
     sprintf(log_buffer, "cannot report jobid - errno=%d - %s",
-            errno,
-            strerror(errno));
+      errno,
+      strerror(errno));
 
     log_err(errno, "req_rdytocommit", log_buffer);
 
     close_conn(sock, FALSE);
 
     job_purge(pj);
-
-    /* FAILURE */
 
     return;
     }
@@ -928,7 +921,6 @@ void reply_sid(
   if (preq->rq_reply.brp_choice != BATCH_REPLY_CHOICE_NULL)
     {
     /* in case another reply was being built up, clean it out */
-
     reply_free(&preq->rq_reply);
     }
 

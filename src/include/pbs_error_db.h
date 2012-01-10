@@ -220,6 +220,7 @@ PbsErrClient(PBSE_TMPNONAME, "tmpdir cannot be named for job")
 PbsErrClient(PBSE_CANTOPENSOCKET, "cannot open demux sockets")
 PbsErrClient(PBSE_CANTCONTACTSISTERS, "cannot send join job to all sisters")
 PbsErrClient(PBSE_CANTCREATETMPDIR, "cannot create tmpdir for job")
+PbsErrClient(PBSE_BADMOMSTATE, "Mom is down, cannot run job")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

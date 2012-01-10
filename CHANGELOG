@@ -35,6 +35,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       or not sending a reply. Also made changes to close connections that were left
       open.
   b - Fix for where qmgr record_job_info is True and server hangs on startup.
+  e - Mom rejection messages are now passed back to qrun when possible
 
 3.0.4
   c - fix a buffer being overrun with nvidia gpus enabled
