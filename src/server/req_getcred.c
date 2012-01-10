@@ -104,6 +104,7 @@
 #include "credential.h"
 #include "net_connect.h"
 #include "batch_request.h"
+#include "errno.h"
 
 #define SPACE 32 /* ASCII space character */
 
@@ -213,171 +214,163 @@ int get_UID(int s, char *munge_buf, struct batch_request *preq)
 
   }
 
-int unmunge_request(int s, struct batch_request *preq)
-{
-  time_t myTime;
-  struct timeval tv;
-  suseconds_t millisecs;
-  struct tm *timeinfo;
-  char mungeFileName[MAXPATHLEN + MAXNAMLEN+1];
-  int fd, newfd;
-  char buf[MUNGE_SIZE];
-  char munge_buf[MUNGE_SIZE];
-  int bytes_written;
-  int cred_size;
-  pid_t pid;
 
-  int fd_pipe[2];
-  char execname[20]; /* for execvp. will be "munge" */
-  char *options[3];  /* argument list for execvp */
-  char com1[20];     /* first argument to execvp */
-  char com2[MAXPATHLEN + MAXNAMLEN+5];      /* second argument to execvp */
-  int bytes_read;
-  int total_bytes_read = 0;        
-  char *ptr; /* pointer to the current place to copy data into munge_buf */
+
+
+int write_munge_temp_file(
+
+  struct batch_request *preq,          /* I */
+  char                 *mungeFileName) /* I */
+
+  {
+  int fd;
+  int cred_size;
+  int bytes_written;
   int rc;
 
-  /* create a sudo randome file name */
-  gettimeofday(&tv, NULL);
-  myTime = tv.tv_sec;
-  timeinfo = localtime(&myTime);
-  millisecs = tv.tv_usec;
-  sprintf(mungeFileName, "%smunge-%d-%d-%d-%d", 
-  path_credentials, timeinfo->tm_hour, timeinfo->tm_min, 
-  timeinfo->tm_sec, (int)millisecs);
-
-  fd = open(mungeFileName, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-  if(fd == -1)
+  if ((fd = open(mungeFileName, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)) < 0)
     {
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not create temporary munge file");
-	  return(-1);
+    return(-1);
     }
 
-  /* Write the munge credential to the newly created file */
-
-  cred_size = strlen(preq->rq_ind.rq_authen.rq_cred);
-  if(cred_size == 0)
+  if ((cred_size = strlen(preq->rq_ind.rq_authen.rq_cred)) == 0)
     {
     req_reject(PBSE_BADCRED, 0, preq, NULL, "munge credential invalid");
-  	unlink(mungeFileName);
-		close(fd);
-		return(-1);
-    }
-
-  bytes_written = write(fd, preq->rq_ind.rq_authen.rq_cred, cred_size);
-  if(bytes_written == -1 || (bytes_written != cred_size))
-	  {
-	  req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not write credential to temporary munge file");
-  	unlink(mungeFileName);
     close(fd);
     return(-1);
     }
 
-	rc = fsync(fd);
-	if(rc < 0)
+  bytes_written = write(fd, preq->rq_ind.rq_authen.rq_cred, cred_size);
+
+  if ((bytes_written == -1) || 
+      (bytes_written != cred_size))
+    {
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not write credential to temporary munge file");
+    close(fd);
+    return(-1);
+    }
+
+	if ((rc = fsync(fd)) < 0)
 		{
-  	unlink(mungeFileName);
 		close(fd);
 		return(rc);
 		}
 
   close(fd);
 
-  /* For the child to run the unmunge utility on the file we just created.
-   	 The parent will read from the child and use the unmunged data to validate
-	 the user */
-  rc = pipe(fd_pipe);
-  if(rc == -1)
-	{
-	unlink(mungeFileName);
-	req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not create pipe to unmunge");
-	return(-1);
-	}
+  return(PBSE_NONE);
+  } /* END write_munge_temp_file() */
 
-  pid = fork();
-  if(pid != 0)
-	  {
-	  /* This is the parent*/
-	  /* set up the pipe to be able to read from the child */
-	  close(fd_pipe[1]);
-	  
-	  memset(buf, 0, MUNGE_SIZE);
-	  memset(munge_buf, 0, MUNGE_SIZE);
-	  ptr = munge_buf; 
-	  
-	  do
-	    {
-	    bytes_read = read(fd_pipe[0], buf, MUNGE_SIZE);
-	    if(bytes_read > 0)
-	  	  {
-	  	  total_bytes_read += bytes_read;
-	  	  memcpy(ptr, buf, bytes_read);
-	  	  ptr += bytes_read;
-	  	  }
-	    }while(bytes_read > 0);
-	  
-	    if(bytes_read == -1)
-	  	  {
-	  	  /* read failed */
-	  	  unlink(mungeFileName);
-	  	  req_reject(PBSE_SYSTEM, 0, preq, NULL, "error reading unmunge data");
-	  		close(fd_pipe[0]);
-	  	  return(-1);
-	  	  }
-	  
-	  
-	    if(total_bytes_read == 0)
-	  	  {
-	  	  /* unmunge failed. Probably a bad credential. But we do not know */
-	  	  req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not unmunge credentials");
-				unlink(mungeFileName);
-	  		close(fd_pipe[0]);
-	  	  return(-1);
-	  	  }
-	  
-	    rc = get_encode_host(s, munge_buf, preq);
-	    if(rc)
-	  	  {
-				unlink(mungeFileName);
-	  		close(fd_pipe[0]);
-	  	  return(rc);
-	  	  }
-	  
-	    rc = get_UID(s, munge_buf, preq);
-	    if(rc)
-	    	{
-				unlink(mungeFileName);
-	  		close(fd_pipe[0]);
-    		return(rc);
-	  	  }
-	  
-	  	unlink(mungeFileName);
-	  }
-  else
-	  {
-	  close(fd_pipe[0]);
-	  newfd = dup2(fd_pipe[1], 1);
-	  strcpy(execname, "unmunge");
-	  strcpy(com1, "unmunge");
-	  strcpy(com2, "--input=");
-	  strcat(com2, mungeFileName);
-	  options[0] = com1;
-	  options[1] = com2;
-	  options[2] = NULL;
-	  
-	  rc = execvp(execname, options);
-	  
-	  /* Something went wrong. We will have to depend on the parent
-	     to let everyone know */
-	  close(fd_pipe[1]);
-	  exit(0);
-	  
-	  }
 
-	close(fd_pipe[0]);
-  return(0);
 
-}
+
+
+int pipe_and_read_unmunge(
+
+  char                 *mungeFileName, /* I */
+  struct batch_request *preq,          /* I */
+  int                   sock)          /* I */
+
+  {
+  static char *id = "pipe_and_read_unmunge";
+  char         munge_buf[MUNGE_SIZE << 4];
+
+  FILE *munge_pipe;
+  char *ptr; /* pointer to the current place to copy data into munge_buf */
+  char  munge_command[MAXPATHLEN<<1];
+  int   bytes_read;
+  int   total_bytes_read = 0;
+  int   fd;
+  int   rc;
+  
+  snprintf(munge_command,sizeof(munge_command),
+    "unmunge --input=%s",
+    mungeFileName);
+  
+  if ((munge_pipe = popen(munge_command,"r")) == NULL)
+    {
+    /* FAILURE */
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Unable to popen command '%s' for reading",
+      munge_command);
+    log_err(errno, id, log_buffer);
+    
+    unlink(mungeFileName);
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, "couldn't create pipe to unmunge");
+    return(-1);
+    }
+  
+  memset(munge_buf, 0, MUNGE_SIZE);
+  ptr = munge_buf;
+  
+  fd = fileno(munge_pipe);
+  
+  while ((bytes_read = read(fd, ptr, MUNGE_SIZE)) > 0)
+    {
+    total_bytes_read += bytes_read;
+    ptr += bytes_read;
+    }
+  
+  pclose(munge_pipe);
+  
+  if (bytes_read == -1)
+    {
+    /* read failed */
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, "error reading unmunge data");
+    rc = -1;
+    }
+  else if (total_bytes_read == 0)
+    {
+    /* unmunge failed. Probably a bad credential. But we do not know */
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not unmunge credentials");
+    rc = -1;
+    }
+  else if ((rc = get_encode_host(sock, munge_buf, preq)) == PBSE_NONE)
+    {
+    rc = get_UID(sock, munge_buf, preq);
+    }
+
+  return(rc);
+  } /* END pipe_and_read_unmunge() */
+
+
+
+
+int unmunge_request(
+    
+  int                   s,
+  struct batch_request *preq)
+
+  {
+  time_t          myTime;
+  struct timeval  tv;
+  suseconds_t     millisecs;
+  struct tm      *timeinfo;
+  char            mungeFileName[MAXPATHLEN + MAXNAMLEN+1];
+  int             rc = PBSE_NONE;
+
+  /* create a sudo random file name */
+  gettimeofday(&tv, NULL);
+  myTime = tv.tv_sec;
+  timeinfo = localtime(&myTime);
+  millisecs = tv.tv_usec;
+  sprintf(mungeFileName, "%smunge-%d-%d-%d-%d", 
+	  path_credentials, timeinfo->tm_hour, timeinfo->tm_min, 
+	  timeinfo->tm_sec, (int)millisecs);
+
+  /* Write the munge credential to the newly created file */
+  if ((rc = write_munge_temp_file(preq, mungeFileName)) == PBSE_NONE)
+    {
+    /* open the munge command as a pipe and read the result */
+    rc = pipe_and_read_unmunge(mungeFileName, preq, s);
+    }
+  
+  /* delete the old file */
+  unlink(mungeFileName);
+
+  return(rc);
+  } /* END unmunge_request() */
 
 
 /*
@@ -506,7 +499,7 @@ int req_altauthenuser(
     }  /* END for (s) */
 
   /* If s is less than PBS_NET_MAX_CONNECTIONS we have our port */
-  if(s >= PBS_NET_MAX_CONNECTIONS)
+  if (s >= PBS_NET_MAX_CONNECTIONS)
 	  {
 	  req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user. Client connection not found");
 	  return (PBSE_BADCRED);
@@ -514,7 +507,7 @@ int req_altauthenuser(
 
 
   rc = unmunge_request(s, preq);
-  if(rc)
+  if (rc)
 	  {
 	  /* FAILED */
 	  /*req_reject(PBSE_SYSTEM, 0, preq, NULL, "munge failure");*/
@@ -531,7 +524,6 @@ int req_altauthenuser(
 
   reply_ack(preq);
   return (PBSE_NONE);
-
   }  /* END req_altauthenuser() */
 
 
