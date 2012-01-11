@@ -242,6 +242,7 @@ extern void  DIS_rpp_reset(void);
 extern void  checkret(char **, long);
 extern char *get_job_envvar(job *, char *);
 extern int   mom_open_socket_to_jobs_server(job* pjob, const char *id, void *(*message_hander)(void *));
+void         clear_servers();
 
 /* defined in mach-dependant mom_mach.c */
 extern int kill_task(struct task *, int, int);

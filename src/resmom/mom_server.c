@@ -347,6 +347,28 @@ void mom_server_init(
 
 
 
+/* clear servers */
+
+void clear_servers()
+
+  {
+  mom_server *pms;
+  int         sindex;
+
+  for (sindex = 0; sindex < PBS_MAXSERVER; sindex++)
+    {
+    pms = &mom_servers[sindex];
+    /* the name is what we check in order to know if the server is there */
+    memset(pms->pbs_servername, 0, sizeof(pms->pbs_servername));
+    }
+
+  mom_server_count = 0;
+
+  } /* END clear_servers() */
+
+
+
+
 
 /**
  * mom_server_all_init

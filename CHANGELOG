@@ -39,6 +39,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 3.0.4
   c - fix a buffer being overrun with nvidia gpus enabled
+  b - no longer leave zombie processes when munge authenticating.
+  b - no longer reject procs if it is the second argument to -l
+  b - when having pbs_mom re-read the config file, old servers were kept, and pbs_mom
+      attempted to communicate with those as well. Now they are cleared and only the 
+      new server(s) are contacted.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

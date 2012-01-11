@@ -133,7 +133,7 @@ struct work_task *find_insertion_point(
     }
 
   return(before_me);
-  }
+  } /* END find_insertion_point() */
 
 
 
