@@ -4300,6 +4300,7 @@ process_hup(void)
 
   {
   char *id = "process_hup";
+  char  old_servernames[PBS_MAXSERVER][PBS_MAXSERVERNAME + 1];
 
   call_hup = 0;
   log_record(PBSEVENT_SYSTEM, 0, id, "reset");
@@ -4308,6 +4309,7 @@ process_hup(void)
   log_open(log_file, path_log);
   log_file_max_size = 0;
   log_file_roll_depth = 1;
+  clear_servers();
   read_config(NULL);
   check_log();
   cleanup();
@@ -5349,6 +5351,8 @@ int rm_request(
           body = NULL;
           }
         }
+
+      clear_servers();
 
       len = read_config(body);
 

@@ -31,6 +31,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       where pbs_server must be started using a new -u option.
   b - no longer leave zombie processes when munge authenticating. (backported from 3.0.4)
   b - no longer reject procs if it is the second argument to -l (backported from 3.0.4)
+  b - when having pbs_mom re-read the config file, old servers were kept, and pbs_mom
+      attempted to communicate with those as well. Now they are cleared and only the 
+      new server(s) are contacted. (backported from 3.0.4)
 
 
 2.5.9
