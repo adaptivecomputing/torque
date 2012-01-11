@@ -407,6 +407,8 @@ int PBSD_munge_authenticate(
     ptr += bytes_read;
     }
 
+  pclose(munge_pipe);
+
   if (bytes_read == -1)
     {
     /* read failed */
