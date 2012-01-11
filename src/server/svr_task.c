@@ -343,13 +343,13 @@ work_task *next_task(
   pthread_mutex_lock(at->alltasks_mutex);
 
   wt = next_thing(at->ra,iter);
+  if (wt != NULL)
+    pthread_mutex_lock(wt->wt_mutex);
 
   pthread_mutex_unlock(at->alltasks_mutex);
 
   if (wt != NULL)
     {
-    pthread_mutex_lock(wt->wt_mutex);
-
     if (wt->wt_being_recycled == TRUE)
       {
       pthread_mutex_unlock(wt->wt_mutex);
