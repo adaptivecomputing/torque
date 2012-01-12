@@ -416,15 +416,15 @@ void addxmlnode(
 
 const char *NState[] =
   {
-  "NONE",
-  "active",
-  "all",
-  "busy",
-  "down",
-  "free",
-  "offline",
-  "unknown",
-  "up",
+  ND_free,
+  ND_offline,
+  ND_down,
+  ND_reserve,
+  ND_job_exclusive,
+  ND_job_sharing,
+  ND_busy,
+  ND_state_unknown,
+  ND_timeshared,
   NULL
   };
 

@@ -44,6 +44,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - when having pbs_mom re-read the config file, old servers were kept, and pbs_mom
       attempted to communicate with those as well. Now they are cleared and only the 
       new server(s) are contacted.
+  b - pbsnodes -l can now search on all valid node states
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate
