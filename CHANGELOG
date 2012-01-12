@@ -35,6 +35,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       attempted to communicate with those as well. Now they are cleared and only the 
       new server(s) are contacted. (backported from 3.0.4)
   b - pbsnodes -l can now search on all valid node states (backported from 3.0.4)
+  e - Improvements in munge handling of client connections and authentication.
 
 
 2.5.9

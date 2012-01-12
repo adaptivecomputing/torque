@@ -325,6 +325,10 @@ void process_request(
 
   struct batch_request *request = NULL;
 
+#ifndef PBS_MOM
+  char *auth_err = NULL;
+#endif
+
   time_now = time(NULL);
 
   request = alloc_br(0);
@@ -552,19 +556,24 @@ void process_request(
           }
         return;
         }
+      else if (svr_conn[sfds].cn_authen != PBS_NET_CONN_AUTHENTICATED)
+        /* skip checking user if we did not get an authenticated credential */
+        rc = PBSE_BADCRED;
       else
         {
-        rc = authenticate_user(request, &conn_credent[sfds]);
+        rc = authenticate_user(request, &conn_credent[sfds], &auth_err);
         }
       }
     else if (svr_conn[sfds].cn_authen != PBS_NET_CONN_AUTHENTICATED)
       rc = PBSE_BADCRED;
     else
-      rc = authenticate_user(request, &conn_credent[sfds]);
+      rc = authenticate_user(request, &conn_credent[sfds], &auth_err);
 
     if (rc != 0)
       {
-      req_reject(rc, 0, request, NULL, NULL);
+      req_reject(rc, 0, request, NULL, auth_err);
+      if (auth_err != NULL)
+        free(auth_err);
 
       close_client(sfds);
 
