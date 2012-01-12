@@ -419,20 +419,26 @@ void addxmlnode(
 
 enum NStateEnum
   {
-  tnsNONE = 0, /* default behavior - show down, offline, and unknown nodes */
-  tnsActive,   /* one or more jobs running on node */
-  tnsAll,      /* list all nodes */
-  tnsBusy,     /* node cannot accept additional workload */
-  tnsDown,     /* node is down */
-  tnsFree,     /* node is idle/free */
-  tnsOffline,  /* node is offline */
-  tnsUnknown,  /* node is unknown - no contact recieved */
-  tnsUp,       /* node is healthy */
+  tnsNONE = 0,     /* default behavior - show down, offline, and unknown nodes */
+  tnsFree,         /* node is idle/free */
+  tnsOffline,      /* node is offline */
+  tnsDown,         /* node is down */
+  tnsReserve,      /* node is in state reserve */
+  tnsJobExclusive, /* node is in state job exclusive */
+  tnsJobSharing,   /* node is in state job exclusive */
+  tnsBusy,         /* node cannot accept additional workload */
+  tnsUnknown,      /* node is unknown - no contact recieved */
+  tnsTimeshared,   /* node is in state timeshared */
+  tnsActive,       /* one or more jobs running on node */
+  tnsAll,          /* list all nodes */
+  tnsUp,           /* node is healthy */
   tnsLAST
   };
 
+
 const char *NState[] =
   {
+  "",
   ND_free,
   ND_offline,
   ND_down,
@@ -442,6 +448,9 @@ const char *NState[] =
   ND_busy,
   ND_state_unknown,
   ND_timeshared,
+  ND_active,
+  ND_all,
+  ND_up,
   NULL
   };
 
@@ -471,39 +480,6 @@ int filterbystate(
 
       break;
 
-    case tnsActive:   /* one or more jobs running on node */
-
-      if (strstr(S, ND_busy) || strstr(S, ND_job_exclusive) || strstr(S, ND_job_sharing))
-        {
-        Display = 1;
-        }
-
-      break;
-
-    case tnsAll:      /* list all nodes */
-
-      Display = 1;
-
-      break;
-
-    case tnsBusy:     /* node cannot accept additional workload */
-
-      if (strstr(S, ND_busy))
-        {
-        Display = 1;
-        }
-
-      break;
-
-    case tnsDown:     /* node is down or unknown */
-
-      if (strstr(S, ND_down) || strstr(S, ND_state_unknown))
-        {
-        Display = 1;
-        }
-
-      break;
-
     case tnsFree:     /* node is idle/free */
 
       if (strstr(S, ND_free))
@@ -522,12 +498,81 @@ int filterbystate(
 
       break;
 
+    case tnsDown:     /* node is down or unknown */
+
+      if (strstr(S, ND_down) || strstr(S, ND_state_unknown))
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsReserve:
+
+      if (strstr(S, ND_reserve))
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsJobExclusive:
+
+      if (strstr(S, ND_job_exclusive))
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsJobSharing:
+
+      if (strstr(S, ND_job_sharing))
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsBusy:     /* node cannot accept additional workload */
+
+      if (strstr(S, ND_busy))
+        {
+        Display = 1;
+        }
+
+      break;
+
     case tnsUnknown:  /* node is unknown - no contact recieved */
 
       if (strstr(S, ND_state_unknown))
         {
         Display = 1;
         }
+
+      break;
+
+    case tnsTimeshared:
+
+      if (strstr(S, ND_timeshared))
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsActive:   /* one or more jobs running on node */
+
+      if (strstr(S, ND_busy) || strstr(S, ND_job_exclusive) || strstr(S, ND_job_sharing))
+        {
+        Display = 1;
+        }
+
+      break;
+
+    case tnsAll:      /* list all nodes */
+
+      Display = 1;
 
       break;
 
