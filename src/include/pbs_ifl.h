@@ -371,15 +371,25 @@
 
 /* node-attribute values (state,ntype) */
 
-#define ND_free   "free"
-#define ND_offline  "offline"
-#define ND_down   "down"
-#define ND_reserve  "reserve"
+#define ND_free          "free"
+#define ND_offline       "offline"
+#define ND_down          "down"
+#define ND_reserve       "reserve"
 #define ND_job_exclusive "job-exclusive"
-#define ND_job_sharing  "job-sharing"
-#define ND_busy   "busy"
+#define ND_job_sharing   "job-sharing"
+#define ND_busy          "busy"
 #define ND_state_unknown "state-unknown"
-#define ND_timeshared  "time-shared"
+#define ND_timeshared    "time-shared"
+
+/* these are not state values, they describe states and are used in pbsnodes */
+/* active = job-exclusive, job-sharing, or busy */
+#define ND_active        "active"
+/* all = all */
+#define ND_all           "all"
+/* up = job-execlusive, job-sharing, reserve, free, busy and time-shared */
+#define ND_up            "up"
+
+/* this specifies the type of node */
 #define ND_cluster  "cluster"
 
 /* queue disallowed types */

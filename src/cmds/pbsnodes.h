@@ -5,15 +5,19 @@
 
 enum NStateEnum
   {
-  tnsNONE = 0, /* default behavior - show down, offline, and unknown nodes */
-  tnsActive,   /* one or more jobs running on node */
-  tnsAll,      /* list all nodes */
-  tnsBusy,     /* node cannot accept additional workload */
-  tnsDown,     /* node is down */
-  tnsFree,     /* node is idle/free */
-  tnsOffline,  /* node is offline */
-  tnsUnknown,  /* node is unknown - no contact recieved */
-  tnsUp,       /* node is healthy */
+  tnsNONE = 0,     /* default behavior - show down, offline, and unknown nodes */
+  tnsFree,         /* node is idle/free */
+  tnsOffline,      /* node is offline */
+  tnsDown,         /* node is down */
+  tnsReserve,      /* node is in state reserve */
+  tnsJobExclusive, /* node is in state job exclusive */
+  tnsJobSharing,   /* node is in state job exclusive */
+  tnsBusy,         /* node cannot accept additional workload */
+  tnsUnknown,      /* node is unknown - no contact recieved */
+  tnsTimeshared,   /* node is in state timeshared */
+  tnsActive,       /* one or more jobs running on node */
+  tnsAll,          /* list all nodes */
+  tnsUp,           /* node is healthy */
   tnsLAST             
   };
 
