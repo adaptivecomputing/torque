@@ -96,6 +96,7 @@
 #include <sys/stat.h>
 #include <ctype.h>
 #include <netdb.h>
+#include <signal.h>
 #include "libpbs.h"
 #include "log.h"
 #include "server_limits.h"
@@ -275,14 +276,15 @@ int pipe_and_read_unmunge(
   {
   static char *id = "pipe_and_read_unmunge";
   char         munge_buf[MUNGE_SIZE << 4];
+  sigset_t     child_set;
 
-  FILE *munge_pipe;
-  char *ptr; /* pointer to the current place to copy data into munge_buf */
-  char  munge_command[MAXPATHLEN<<1];
-  int   bytes_read;
-  int   total_bytes_read = 0;
-  int   fd;
-  int   rc;
+  FILE        *munge_pipe;
+  char        *ptr; /* pointer to the current place to copy data into munge_buf */
+  char         munge_command[MAXPATHLEN<<1];
+  int          bytes_read;
+  int          total_bytes_read = 0;
+  int          fd;
+  int          rc;
   
   snprintf(munge_command,sizeof(munge_command),
     "unmunge --input=%s",
@@ -306,11 +308,19 @@ int pipe_and_read_unmunge(
   
   fd = fileno(munge_pipe);
   
+  /* block SIGCHLD so we don't get messed up mid-loop */
+  sigemptyset(&child_set);
+  sigaddset(&child_set, SIGCHLD);
+  sigprocmask(SIG_BLOCK, &child_set, NULL);
+
   while ((bytes_read = read(fd, ptr, MUNGE_SIZE)) > 0)
     {
     total_bytes_read += bytes_read;
     ptr += bytes_read;
     }
+
+  /* out of loop, we're good with SIGCHLD */
+  sigprocmask(SIG_UNBLOCK, &child_set, NULL);
   
   pclose(munge_pipe);
   

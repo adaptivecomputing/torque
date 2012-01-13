@@ -36,6 +36,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       new server(s) are contacted. (backported from 3.0.4)
   b - pbsnodes -l can now search on all valid node states (backported from 3.0.4)
   e - Improvements in munge handling of client connections and authentication.
+  b - block SIGCHLD while reading the munge file to avoid false errors (backported from 3.0.4)
 
 
 2.5.9
