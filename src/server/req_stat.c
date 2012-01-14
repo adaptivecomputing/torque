@@ -954,6 +954,7 @@ int stat_to_mom(
     }
 
   /* get connection to MOM */
+  unlock_node(node, __func__, "after svr_connect", LOGLEVEL);
   cntl->sc_conn = svr_connect(
                     pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
                     pjob->ji_qs.ji_un.ji_exect.ji_momport,
@@ -962,7 +963,6 @@ int stat_to_mom(
                     process_Dreply,
                     ToServerDIS);
 
-  unlock_node(node, __func__, "after svr_connect", LOGLEVEL);
 
   if ((rc = cntl->sc_conn) >= 0)
     rc = issue_Drequest(cntl->sc_conn, newrq, stat_update, &pwt);

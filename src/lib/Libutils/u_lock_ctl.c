@@ -181,6 +181,7 @@ int lock_node(
     snprintf(err_msg, MSG_LEN_LONG, "locking start %s in method %s-%s", the_node->nd_name, id, msg);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
+
   
   if (pthread_mutex_lock(the_node->nd_mutex) != 0)
     {

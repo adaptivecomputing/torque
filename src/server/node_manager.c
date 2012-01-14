@@ -1038,9 +1038,11 @@ int is_stat_get(
     return(DIS_NOCOMMIT);
     }
 
+  unlock_node(np, id, "np numa update", LOGLEVEL);
   while (((ret_info = disrst(stream, &rc)) != NULL) && 
          (rc == DIS_SUCCESS))
     {
+    lock_node(np, id, "np numa update", LOGLEVEL);
     /* check if this is the update on a numa node */
     if (!strncmp(ret_info,NUMA_KEYWORD,strlen(NUMA_KEYWORD)))
       {
@@ -1083,6 +1085,7 @@ int is_stat_get(
 
       np->nd_lastupdate = time_now;
 
+      unlock_node(np, id, "np numa update", LOGLEVEL);
       /* resume normal processing on the next line */
       free(ret_info);
       continue;
@@ -1130,6 +1133,7 @@ int is_stat_get(
 
       np->nd_lastupdate = time_now;
 
+      unlock_node(np, id, "np numa update", LOGLEVEL);
       /* resume normal processing on the next time */
       free(ret_info);
       continue;
@@ -1321,17 +1325,20 @@ int is_stat_get(
 
         log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, log_buf);
         }
+      unlock_node(np, id, "np numa update", LOGLEVEL);
       rc = DIS_EOD;
       free(ret_info);
       break;
       }
 
+    unlock_node(np, id, "np numa update", LOGLEVEL);
     free(ret_info);
     }    /* END while (rc != DIS_EOD) */
 
   /* clear the transmission */
   DIS_tcp_reset(stream,0);
 
+  lock_node(np, id, "np numa update", LOGLEVEL);
   /* DIS_EOD and DIS_EOF are the only valid final values of rc, check it */
   if ((rc != DIS_EOD) &&
       (rc != DIS_EOF))
