@@ -110,6 +110,7 @@ int get_parent_and_child(
   int   parent_len = 0;
   char *child_start;
   char *child_end;
+  int   reached_space = FALSE;
 
   char *id = "get_parent_and_child";
 
@@ -128,8 +129,19 @@ int get_parent_and_child(
   sprintf(closingTag,"</");
   while (*ptr != '>')
     {
-    closingTag[parent_len+2] = *ptr;
-    parent_len++;
+    if (*ptr == ' ')
+      {
+      reached_space = TRUE;
+      *ptr = '\0';
+      }
+    else if (reached_space == FALSE)
+      {
+      closingTag[parent_len+2] = *ptr;
+      parent_len++;
+      }
+    /* if attribute support becomes needed, start recording attribute strings 
+     * in an else here */
+    
     ptr++;
     }
 
