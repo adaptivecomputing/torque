@@ -182,6 +182,10 @@ foreach my $jobFile (@jobFiles)
         {
             $jobAttr{'Memory Used'} = $1;
         }
+        elsif ($line =~ /<vmem>([^<]+)</ && $context eq 'resources_used')
+        {
+            $jobAttr{'vmem Used'} = $1;
+        }
         elsif ($line =~ /<opsys>([^<]+)</ && $context eq 'resource_List')
         {
             $jobAttr{'Operating System'} = $1;
@@ -317,6 +321,7 @@ foreach my $job (@jobs)
         'Wallclock Duration',
         'CPUTime',
         'Memory Used',
+        'vmem Used',
         'Submit Time',
         'Start Time',
         'End Time',
