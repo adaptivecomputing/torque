@@ -412,7 +412,7 @@ free_attrlist(tlist_head *pattrlisthead)
     }
   pal = (svrattrl *)GET_NEXT(*pattrlisthead);
 
-  while (pal != (svrattrl *)0)
+  while (pal != NULL)
     {
     nxpal = (struct svrattrl *)GET_NEXT(pal->al_link);
     delete_link(&pal->al_link);

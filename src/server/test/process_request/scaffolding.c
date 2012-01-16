@@ -409,7 +409,7 @@ void req_messagejob(struct batch_request *preq)
   exit(1);
   }
 
-void req_gpuctrl(struct batch_request *preq)
+void *req_gpuctrl_svr(void *vp)
   {
   fprintf(stderr, "The call to req_gpuctrl needs to be mocked!!\n");
   exit(1);

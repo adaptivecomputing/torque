@@ -732,15 +732,17 @@ int add_hash(
   /* check if we need to rehash */
   if (ht->size == ht->num)
     {
-    size_t   amount = (ht->size << 1) * sizeof(bucket *);
+    int      old_bucket_size = ht->size;
+    int      new_bucket_size = ht->size * 2;
+    size_t   amount = new_bucket_size * sizeof(bucket *);
     bucket **tmp = calloc(1, amount);
     int      i;
     int      new_index;
       
-    ht->size = ht->size * 2;
+    ht->size = new_bucket_size;
 
     /* rehash all of the hold values */
-    for (i = 0; i < ht->size / 2; i++)
+    for (i = 0; i < old_bucket_size; i++)
       {
       bucket *b = ht->buckets[i];
 
@@ -754,7 +756,9 @@ int add_hash(
         }
       } /* END foreach (old buckets) */
 
-    free_buckets(ht->buckets,ht->size >> 1);
+    free_buckets(ht->buckets, old_bucket_size);
+
+    free(ht->buckets);
 
     ht->buckets = tmp;
     } /* END if (need to rehash) */

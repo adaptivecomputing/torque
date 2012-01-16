@@ -4341,7 +4341,6 @@ int add_job_to_node(
   int             exclusive) /* I */
 
   {
-  char           *id = "add_job_to_node";
   struct jobinfo *jp;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -4354,7 +4353,7 @@ int add_job_to_node(
       pjob->ji_qs.ji_jobid,
       pnode->nd_nsnfree);
 
-    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     DBPRT(("%s\n", log_buf));
     }
 

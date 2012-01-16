@@ -133,7 +133,7 @@ int decode_str(
   {
   size_t len;
 
-  if ((patr->at_flags & ATR_VFLAG_SET) && (patr->at_val.at_str != NULL))
+  if (patr->at_val.at_str != NULL)
     {
     free(patr->at_val.at_str);
 
@@ -249,7 +249,7 @@ int set_str(
   assert(attr && new && new->at_val.at_str && (new->at_flags & ATR_VFLAG_SET));
   nsize = strlen(new->at_val.at_str) + 1; /* length of new string */
 
-  if ((op == INCR) && !attr->at_val.at_str)
+  if ((op == INCR) && (attr->at_val.at_str == NULL))
     op = SET; /* no current string, change INCR to SET */
 
   switch (op)
@@ -257,11 +257,12 @@ int set_str(
 
     case SET: /* set is replace old string with new */
 
+      if ((new_value = calloc(1, nsize)) == NULL)
+        return (PBSE_SYSTEM);
+
       if (attr->at_val.at_str)
         (void)free(attr->at_val.at_str);
-
-      if ((attr->at_val.at_str = calloc(1, nsize)) == (char *)0)
-        return (PBSE_SYSTEM);
+      attr->at_val.at_str = new_value;
 
       (void)strcpy(attr->at_val.at_str, new->at_val.at_str);
 
@@ -269,15 +270,13 @@ int set_str(
 
     case INCR: /* INCR is concatenate new to old string */
 
-      if (attr->at_val.at_str != NULL)
-        nsize += strlen(attr->at_val.at_str);
+      nsize += strlen(attr->at_val.at_str);
       new_value = calloc(1, nsize + 1);
 
       if (new_value == NULL)
         return (PBSE_SYSTEM);
 
-      if (attr->at_val.at_str != NULL)
-        strcat(new_value, attr->at_val.at_str);
+      strcat(new_value, attr->at_val.at_str);
       strcat(new_value, new->at_val.at_str);
 
       free(attr->at_val.at_str);
@@ -287,7 +286,7 @@ int set_str(
 
     case DECR: /* DECR is remove substring if match, start at end */
 
-      if (!attr->at_val.at_str)
+      if (attr->at_val.at_str == NULL)
         break;
 
       if (--nsize == 0)

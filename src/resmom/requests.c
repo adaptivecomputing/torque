@@ -1227,7 +1227,7 @@ void req_checkpointjob(
 
 
 
-void req_gpuctrl(
+void req_gpuctrl_mom(
 
   struct batch_request *preq)  /* I */
 

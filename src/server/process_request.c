@@ -117,6 +117,7 @@
 #include "array.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "svr_func.h" /* get_svr_attr_* */
+#include "req_gpuctrl.h" /* req_gpuctrl_svr */
 
 
 /*
@@ -197,7 +198,6 @@ void req_signaljob(struct batch_request *preq);
 void req_mvjobfile(struct batch_request *preq);
 void req_checkpointjob(struct batch_request *preq);
 void req_messagejob(struct batch_request *preq);
-void req_gpuctrl(struct batch_request *preq);
 
 /* END request processing prototypes */
 
@@ -868,7 +868,7 @@ void dispatch_request(
 
     case PBS_BATCH_GpuCtrl:
 
-      req_gpuctrl(request);
+      enqueue_threadpool_request(req_gpuctrl_svr, request);
 
       break;
 

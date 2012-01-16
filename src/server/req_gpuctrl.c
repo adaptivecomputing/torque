@@ -121,9 +121,9 @@ extern unsigned int  pbs_mom_port;
  * req_gpuctrl - Do a GPU change mode
  */
 
-void req_gpuctrl(
+void *req_gpuctrl_svr(
 
-  struct batch_request *preq)
+  void *vp)
 
   {
   char   *id = "req_gpuctrl";
@@ -141,12 +141,14 @@ void req_gpuctrl(
   int    rc = 0;
   int    conn;
 #endif  /* NVIDIA_GPUS */
+  struct batch_request *preq = (struct batch_request *)vp;
+
 
   if ((preq->rq_perm &
        (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR)) == 0)
     {
     req_reject(PBSE_PERM, 0, preq, NULL, NULL);
-    return;
+    return NULL;
     }
 
   nodename = preq->rq_ind.rq_gpuctrl.rq_momnode;
@@ -178,7 +180,7 @@ void req_gpuctrl(
   if (pnode == NULL)
     {
     req_reject(PBSE_UNKNODE, 0, preq, NULL, NULL);
-    return;
+    return NULL;
     }
 
   /* validate that the node is up */
@@ -190,7 +192,7 @@ void req_gpuctrl(
 
     unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
 
-    return;
+    return NULL;
     }
 
   /* validate that the node has real gpus not virtual */
@@ -199,7 +201,7 @@ void req_gpuctrl(
     {
     req_reject(PBSE_UNKREQ, 0, preq, NULL, "Not allowed for virtual gpus");
     unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
-    return;
+    return NULL;
     }
 
   /* validate the gpuid exists */
@@ -208,7 +210,7 @@ void req_gpuctrl(
     {
     req_reject(PBSE_UNKREQ, 0, preq, NULL, "GPU ID does not exist on node");
     unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
-    return;
+    return NULL;
     }
 
   /* validate that we have a real request */
@@ -217,7 +219,7 @@ void req_gpuctrl(
     {
     req_reject(PBSE_UNKREQ, 0, preq, NULL, "No action specified");
     unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
-    return;
+    return NULL;
     }
 
   /* for mode changes validate the mode with the driver_version */
@@ -226,7 +228,7 @@ void req_gpuctrl(
     {
     req_reject(PBSE_UNKREQ, 0, preq, NULL, "GPU driver version does not support mode 3");
     unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
-    return;
+    return NULL;
     }
 
   /* we need to relay request to the mom for processing */
@@ -275,7 +277,7 @@ void req_gpuctrl(
 
 #endif  /* NVIDIA_GPUS */
 
-  return;
+  return NULL;
   }
 
 

@@ -423,8 +423,8 @@ extern void  *req_stat_que (void *req);
 extern void  req_stat_svr (struct batch_request *req);
 /* DIAGTODO: declr req_stat_diag() */
 extern void  req_trackjob (struct batch_request *req);
-extern void  req_gpuctrl (struct batch_request *req);
-extern void *req_stat_job (void *batch_req);
+extern void  *req_gpuctrl (void *req);
+extern void *req_stat_job (void *req);
 #else
 extern void  req_stat_job (struct batch_request *req);
 extern void  req_cpyfile (struct batch_request *req);

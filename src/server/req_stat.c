@@ -1483,17 +1483,6 @@ void *req_stat_node(
       props.next = NULL;
       }
     }
-  else
-    {
-    pnode = find_nodebyname(name);
-
-    if (pnode == NULL)
-      {
-      req_reject(PBSE_UNKNODE, 0, preq, NULL, "cannot locate specified node");
-
-      return(NULL);
-      }
-    }
 
   preply = &preq->rq_reply;
 
@@ -1504,6 +1493,12 @@ void *req_stat_node(
   if (type == 0)
     {
     /* get status of the named node */
+    pnode = find_nodebyname(name);
+    if (pnode == NULL)
+      {
+      req_reject(PBSE_UNKNODE, 0, preq, NULL, "cannot locate specified node");
+      return NULL;
+      }
 
     /* get the status on all of the numa nodes */
     rc = get_numa_statuses(pnode,preq,&bad,&preply->brp_un.brp_status);
@@ -1595,7 +1590,7 @@ static int status_node(
 
   pstat->brp_objtype = MGR_OBJ_NODE;
 
-  strcpy(pstat->brp_objname, pnode->nd_name);
+  strncpy(pstat->brp_objname, pnode->nd_name, sizeof(pstat->brp_objname)-1);
 
   CLEAR_LINK(pstat->brp_stlink);
   CLEAR_HEAD(pstat->brp_attr);

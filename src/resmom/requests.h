@@ -31,7 +31,7 @@ void mom_req_holdjob(struct batch_request *preq);
 
 void req_checkpointjob(struct batch_request *preq);
 
-void req_gpuctrl(struct batch_request *preq);
+void req_gpuctrl_mom(struct batch_request *preq);
 
 int message_job(job *pjob, enum job_file jft, char *text);
 

@@ -809,9 +809,9 @@ resource *add_resource_entry(
 
   new = (resource *)calloc(1, sizeof(resource));
 
-  if (new == (resource *)0)
+  if (new == NULL)
     {
-    return ((resource *)0);
+    return NULL;
     }
 
   CLEAR_LINK(new->rs_link);
@@ -821,7 +821,7 @@ resource *add_resource_entry(
   new->rs_value.at_flags = 0;
   prdef->rs_free(&new->rs_value);
 
-  if (pr != (resource *)0)
+  if (pr != NULL)
     {
     insert_link(&pr->rs_link, &new->rs_link, new, LINK_INSET_BEFORE);
     }

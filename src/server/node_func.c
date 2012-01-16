@@ -354,47 +354,16 @@ struct pbsnode *find_nodebyname(
 
   if (i >= 0)
     pnode = (struct pbsnode *)allnodes.ra->slots[i].item;
+  if (pnode != NULL)
+    lock_node(pnode, __func__, NULL, LOGLEVEL);
+
   pthread_mutex_unlock(allnodes.allnodes_mutex);
 
   if (pslash != NULL)
     *pslash = '/'; /* restore the slash */
 
-  if (pnode != NULL)
-    lock_node(pnode, __func__, NULL, LOGLEVEL);
-
   return(pnode);
   }  /* END find_nodebyname() */
-
-
-
-
-
-/*
- * find_subnodebyname() - find a subnode by its (parent's) name
- *
- * returns first of N subnodes for a given node name
- */
-
-struct pbssubn *find_subnodebyname(
-
-  char *nodename)
-
-  {
-  struct pbsnode *pnode;
-  struct pbssubn *tmp;
-
-  if ((pnode = find_nodebyname(nodename)) == NULL)
-    {
-    return(NULL);
-    }
-
-  tmp = pnode->nd_psn;
-
-  unlock_node(pnode, "find_subnodebyname", NULL, LOGLEVEL);
-
-  return(tmp);
-  }  /* END find_subnodebyname() */
-
 
 
 
@@ -1267,9 +1236,10 @@ static struct pbssubn *create_subnode(
 
   {
 
-  struct pbssubn  *psubn;
+  struct pbssubn  *psubn = NULL;
 
-  struct pbssubn **nxtsn;
+  struct pbssubn *nxtsn = NULL;
+  struct pbssubn *lastsn = NULL;
 
   psubn = (struct pbssubn *)calloc(1, sizeof(struct pbssubn));
 
@@ -1299,12 +1269,18 @@ static struct pbssubn *create_subnode(
 
   psubn->allocto = (resource_t)0;
 
-  nxtsn = &pnode->nd_psn;    /* link subnode onto parent node's list */
-
-  while (*nxtsn)
-    nxtsn = &((*nxtsn)->next);
-
-  *nxtsn = psubn;
+  if (pnode->nd_psn == NULL)
+    pnode->nd_psn = psubn;
+  else
+    {
+    nxtsn = pnode->nd_psn;    /* link subnode onto parent node's list */
+    while (nxtsn != NULL)
+      {
+      lastsn = nxtsn;
+      nxtsn = nxtsn->next;
+      }
+    lastsn->next = psubn;
+    }
 
   return(psubn);
   }  /* END create_subnode() */
@@ -2285,6 +2261,11 @@ static void delete_a_subnode(
     psubn = psubn->next;
     }
 
+  if (pprior == pnode->nd_psn)
+    pnode->nd_psn = NULL;
+  if (pprior != NULL)
+    pprior->next = NULL;
+
   /*
    * found last subnode in list for given node, mark it deleted
    * note, have to update nd_nsnfree using pnode rather than psubn->host
@@ -2296,10 +2277,8 @@ static void delete_a_subnode(
     pnode->nd_nsnfree--;
 
   subnode_delete(psubn);
-
-  if (pprior != NULL)
-    pprior->next = NULL;
-
+  memset(psubn, 252, sizeof(struct pbssubn));
+  free(psubn);
   return;
   }  /* END delete_a_subnode() */
 
@@ -2397,10 +2376,12 @@ int node_np_action(
  * node_mom_port_action - action routine for node's port attribute
  */
 
-int node_mom_port_action(new, pobj, actmode)
-attribute *new;  /*derive props into this attribute*/
-void  *pobj;  /*pointer to a pbsnode struct     */
-int   actmode; /*action mode; "NEW" or "ALTER"   */
+int node_mom_port_action(
+
+    attribute *new, /*derive props into this attribute*/
+    void *pobj, /*pointer to a pbsnode struct     */
+    int actmode) /*action mode; "NEW" or "ALTER"   */
+
   {
 
   struct pbsnode *pnode = (struct pbsnode *)pobj;
@@ -2668,9 +2649,9 @@ int create_partial_pbs_node(
   int              rc;
   int              bad = 0;
   svrattrl        *plist = NULL;
-  struct pbsnode  *pnode;
-  u_long          *pul;
-  char            *pname;
+  struct pbsnode  *pnode = NULL;
+  u_long          *pul = NULL;
+  char            *pname = NULL;
 
   pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
   
@@ -2970,12 +2951,11 @@ struct pbsnode *next_host(
   pthread_mutex_lock(an->allnodes_mutex);
 
   pnode = next_thing(an->ra,iter);
+  if ((pnode != NULL) && (pnode != held))
+    lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   pthread_mutex_unlock(an->allnodes_mutex);
 
-  if ((pnode != NULL) && 
-      (pnode != held))
-    lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(pnode);
   } /* END next_host() */
