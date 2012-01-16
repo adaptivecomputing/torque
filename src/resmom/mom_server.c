@@ -4138,6 +4138,40 @@ int process_host_name(
 
 
 
+int am_i_on_this_level(
+
+  char *level_str)
+
+  {
+  char *myself = level_str;
+
+  while ((myself = strstr(myself, mom_alias)) != NULL)
+    {
+    if ((myself - 1 < level_str) ||
+        (*(myself - 1) == ','))
+      {
+      myself += strlen(mom_alias);
+      
+      if ((*myself == '\0') ||
+          (*myself == ','))
+        {
+        /* we only need to store the path up to the level that includes ourselves */
+        return(TRUE);
+        break;
+        }
+      }
+    else
+      {
+      myself++;
+      }
+    }
+
+  return(FALSE);
+  } /* END am_i_on_this_level() */
+
+
+
+
 int process_level_string(
 
   char *str,
@@ -4152,11 +4186,8 @@ int process_level_string(
   int   rc = PBSE_NONE;
   int   temp_rc;
 
-  if (strstr(str, mom_alias) != NULL)
-    {
-    /* we only need to store the path up to the level that includes ourselves */
+  if (am_i_on_this_level(str) == TRUE)
     *path_complete = TRUE;
-    }
 
   host_tok = strtok(str, delims);
 
