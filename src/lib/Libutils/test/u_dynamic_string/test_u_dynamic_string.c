@@ -49,6 +49,10 @@ START_TEST(initialize)
     sprintf(buf, "Initial string is %s but should be %s", ds->str, strings[i]);
     fail_unless((!strcmp(ds->str, strings[i])), buf);
 
+    clear_dynamic_string(ds);
+    fail_unless(ds->used == 0, "used not cleared");
+    fail_unless(ds->str[0] == '\0', "string not cleared");
+
     free_dynamic_string(ds);
     }
 
@@ -146,6 +150,10 @@ START_TEST(appending_and_resizing)
   sprintf(buf, "String should be %s but is %s after appending words 3-10", sentence_three_to_ten, ds->str);
   fail_unless((!strcmp(ds->str, sentence_three_to_ten)), buf);
 
+  clear_dynamic_string(ds);
+  fail_unless(ds->used == 0, "used not cleared");
+  fail_unless(ds->str[0] == '\0', "string not cleared");
+
   free_dynamic_string(ds);
   }
 END_TEST
@@ -215,6 +223,10 @@ START_TEST(appending_xml)
     (int)strlen(sentence_three_ten_escaped) + 1, (int)ds->used);
   fail_unless((ds->used == strlen(sentence_three_ten_escaped) + 1), buf);
 
+  clear_dynamic_string(ds);
+  fail_unless(ds->used == 0, "used not cleared");
+  fail_unless(ds->str[0] == '\0', "string not cleared");
+
   free_dynamic_string(ds);
   }
 END_TEST
@@ -236,6 +248,11 @@ START_TEST(getter)
   ds = get_dynamic_string(-1, "bread");
   string = get_string(ds);
   fail_unless(string == ds->str, "String pointers do not match in test 2");
+
+  clear_dynamic_string(ds);
+  fail_unless(ds->used == 0, "used not cleared");
+  fail_unless(ds->str[0] == '\0', "string not cleared");
+
   free_dynamic_string(ds);
   }
 END_TEST
@@ -291,9 +308,71 @@ START_TEST(series_of_strings)
     fail_unless((correct_len == ds->used), buf);
     }
 
+  clear_dynamic_string(ds);
+  fail_unless(ds->used == 0, "used not cleared");
+  fail_unless(ds->str[0] == '\0', "string not cleared");
+
   free_dynamic_string(ds);
   }
 END_TEST
+
+
+
+
+START_TEST(char_size_test)
+  {
+  dynamic_string    *ds = get_dynamic_string(-1, NULL);
+  char              *str = "a monday";
+  int                num_chars = 8;
+  int                i;
+  struct size_value  sz;
+
+  for (i = 0; i < num_chars; i++)
+    {
+    append_char_to_dynamic_string(ds, str[i]);
+    }
+
+  snprintf(buf, sizeof(buf), "string should be %s but is %s",
+    str, ds->str);
+  fail_unless(!strcmp(ds->str, str), buf);
+
+  clear_dynamic_string(ds);
+
+
+  sz.atsv_num = 5;
+  sz.atsv_shift = 10;
+
+  size_to_dynamic_string(ds, sz);
+  snprintf(buf, sizeof(buf), "string should be 5kb but is %s", ds->str);
+  fail_unless(!strcmp(ds->str, "5kb"), buf);
+
+  clear_dynamic_string(ds);
+  sz.atsv_shift = 20;
+  size_to_dynamic_string(ds, sz);
+  snprintf(buf, sizeof(buf), "string should be 5mb but is %s", ds->str);
+  fail_unless(!strcmp(ds->str, "5mb"), buf);
+
+  clear_dynamic_string(ds);
+  sz.atsv_shift = 30;
+  size_to_dynamic_string(ds, sz);
+  snprintf(buf, sizeof(buf), "string should be 5gb but is %s", ds->str);
+  fail_unless(!strcmp(ds->str, "5gb"), buf);
+
+  clear_dynamic_string(ds);
+  sz.atsv_shift = 40;
+  size_to_dynamic_string(ds, sz);
+  snprintf(buf, sizeof(buf), "string should be 5tb but is %s", ds->str);
+  fail_unless(!strcmp(ds->str, "5tb"), buf);
+
+  clear_dynamic_string(ds);
+  sz.atsv_shift = 50;
+  size_to_dynamic_string(ds, sz);
+  snprintf(buf, sizeof(buf), "string should be 5pb but is %s", ds->str);
+  fail_unless(!strcmp(ds->str, "5pb"), buf);
+  }
+END_TEST
+
+
 
 
 
@@ -318,6 +397,10 @@ Suite *u_dynamic_string_suite(void)
 
   tc_core = tcase_create("series_of_strings");
   tcase_add_test(tc_core, series_of_strings);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("char_size_test");
+  tcase_add_test(tc_core, char_size_test);
   suite_add_tcase(s, tc_core);
 
   return s;
