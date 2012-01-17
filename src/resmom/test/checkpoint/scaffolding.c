@@ -251,7 +251,7 @@ resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
  exit(1);
  }
 
-int kill_job(job *pjob, int sig, char *killer_id_name, char *why_killed_reason)
+int kill_job(job *pjob, int sig, const char *killer_id_name, char *why_killed_reason)
  {
  fprintf(stderr, "The call to kill_job needs to be mocked!!\n");
  exit(1);

@@ -471,7 +471,6 @@ void *req_quejob(
   void *vp) /* ptr to the decoded request   */
 
   {
-  static char          *id = "req_quejob";
   struct batch_request *preq = (struct batch_request *)vp;
 
   int                   created_here = 0;
@@ -524,7 +523,7 @@ void *req_quejob(
 
     /* a job id is not allowed from a client */
 
-    log_err(errno, id, "job id not allowed from client");
+    log_err(errno, __func__, "job id not allowed from client");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "job not allowed from client");
 
@@ -629,7 +628,7 @@ void *req_quejob(
     {
     /* server will reject queue request if job already exists */
 
-    log_err(errno, id, "cannot queue new job, job already exists");
+    log_err(errno, __func__, "cannot queue new job, job already exists");
 
     req_reject(PBSE_JOBEXIST, 0, preq, NULL, NULL);
 
@@ -661,7 +660,7 @@ void *req_quejob(
     {
     /* FAILURE */
 
-    log_err(-1, id, "requested queue not found");
+    log_err(-1, __func__, "requested queue not found");
 
     req_reject(rc, 0, preq, NULL, "cannot locate queue"); /* not there   */
 
@@ -695,7 +694,7 @@ void *req_quejob(
             {
             /* FAILURE */
             unlock_queue(pque, "req_quejob", "job file corrupt", LOGLEVEL);
-            log_err(errno, id, "job file is corrupt");
+            log_err(errno, __func__, "job file is corrupt");
             req_reject(PBSE_INTERNAL, 0, preq, NULL, "job file is corrupt");
             return(NULL);
             }
@@ -707,7 +706,7 @@ void *req_quejob(
         {
         /* FAILURE */
         unlock_queue(pque, "req_quejob", "cannot create job file", LOGLEVEL);
-        log_err(errno, id, "cannot create job file");
+        log_err(errno, __func__, "cannot create job file");
         req_reject(PBSE_SYSTEM, 0, preq, NULL, "cannot open new job file");
         return(NULL);
         }
@@ -723,7 +722,7 @@ void *req_quejob(
     {
     /* FAILURE */
     unlock_queue(pque, "req_quejob", "cannot alloc new job", LOGLEVEL);
-    log_err(errno, id, "cannot alloc new job");
+    log_err(errno, __func__, "cannot alloc new job");
     unlink(namebuf);
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "cannot alloc new job structure");
     return(NULL);
@@ -862,9 +861,9 @@ void *req_quejob(
   if (rc)
     {
     /* just record that we could not set node count */
-    sprintf(log_buffer, "Could not set default node count. Error not fatal. Will continue submitting job: %d",
+    sprintf(log_buf, "Could not set default node count. Error not fatal. Will continue submitting job: %d",
             rc);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
   /* perform any at_action routine declared for the attributes */
@@ -1031,12 +1030,12 @@ void *req_quejob(
 
       if (rc)
         {
-        sprintf(log_buffer, "failed to add submit_host %s. Minor error", preq->rq_host);
+        sprintf(log_buf, "failed to add submit_host %s. Minor error", preq->rq_host);
         log_event(
           PBSEVENT_JOB | PBSEVENT_SYSTEM,
           PBS_EVENTCLASS_SERVER,
           msg_daemonname,
-          log_buffer);
+          log_buf);
         }
       job_attr_def[JOB_ATR_submit_host].at_free(&tempattr);
       }
@@ -1294,7 +1293,7 @@ void *req_quejob(
       {
       unlock_queue(pque, "req_quejob", "job owner not set", LOGLEVEL);
       job_purge(pj);
-      log_err(errno, id, "job owner not set");
+      log_err(errno, __func__, "job owner not set");
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "no job owner specified");
       return(NULL);
       }

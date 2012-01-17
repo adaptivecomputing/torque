@@ -426,7 +426,7 @@ int setup_env(char *filen)
   exit(1);
   }
 
-job_array *array_recov(char *path)
+int array_recov(char *path, job_array **pa)
   {
   fprintf(stderr, "The call to array_recov needs to be mocked!!\n");
   exit(1);
@@ -554,4 +554,8 @@ char *trim(char *str)
   return(str);
   }
 
+int array_save(job_array *pa)
+  {
+  return(0);
+  }
 

@@ -375,9 +375,15 @@ job *find_array_template(
   }   /* END find_array_template() */
 
 
-int read_and_convert_259_array(int fd, job_array *pa, char *path)
+int read_and_convert_259_array(
+    
+  int        fd,
+  job_array *pa,
+  char      *path)
+
   {
-  int len;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  int            len;
   job_array_259 *pa_259; /* This is for a backward compatibility problem put 
                             into 2.5.9 and 3.0.3 */
   /* allocate the storage for the struct */
@@ -391,8 +397,8 @@ int read_and_convert_259_array(int fd, job_array *pa, char *path)
   len = read(fd, &(pa_259->ai_qs), sizeof(pa_259->ai_qs));
   if (len < 0) 
     {
-    sprintf(log_buffer, "error reading %s", path);
-    log_err(errno, "read_and_convert_259_array", log_buffer);
+    sprintf(log_buf, "error reading %s", path);
+    log_err(errno, "read_and_convert_259_array", log_buf);
     free(pa_259);
     close(fd);
     return PBSE_BAD_ARRAY_DATA;
@@ -400,8 +406,8 @@ int read_and_convert_259_array(int fd, job_array *pa, char *path)
 
   if (pa_259->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION)
     {
-    sprintf(log_buffer, "Already at array structure version 4. Restart pbs_server without -u option");
-    log_err(errno, "read_and_convert_259_array", log_buffer);
+    sprintf(log_buf, "Already at array structure version 4. Restart pbs_server without -u option");
+    log_err(errno, "read_and_convert_259_array", log_buf);
     free(pa_259);
     close(fd);
     return PBSE_BAD_ARRAY_DATA;
@@ -409,9 +415,9 @@ int read_and_convert_259_array(int fd, job_array *pa, char *path)
     
   if (pa_259->ai_qs.struct_version != 3)
     {
-    sprintf(log_buffer, "Cannot upgrade array version %d to %d", 
+    sprintf(log_buf, "Cannot upgrade array version %d to %d", 
              pa_259->ai_qs.struct_version, ARRAY_QS_STRUCT_VERSION);
-    log_err(errno, "read_and_convert_259_array", log_buffer);
+    log_err(errno, "read_and_convert_259_array", log_buf);
     free(pa_259);
     close(fd);
     return PBSE_BAD_ARRAY_DATA;
@@ -495,8 +501,8 @@ int array_recov(
     len = read(fd, &(pa->ai_qs), sizeof(pa->ai_qs));
     if ((len < 0) || ((len < (int)sizeof(pa->ai_qs)) && (pa->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION)))
       {
-      sprintf(log_buffer, "error reading %s", path);
-      log_err(errno, "array_recov", log_buffer);
+      sprintf(log_buf, "error reading %s", path);
+      log_err(errno, "array_recov", log_buf);
       free(pa);
       close(fd);
       return PBSE_SYSTEM;
@@ -507,8 +513,8 @@ int array_recov(
       rc = array_upgrade(pa, fd, pa->ai_qs.struct_version, &old_version);
       if(rc)
         {
-        sprintf(log_buffer, "Cannot upgrade array version %d to %d", pa->ai_qs.struct_version, ARRAY_QS_STRUCT_VERSION);
-        log_err(errno, "array_recov", log_buffer);
+        sprintf(log_buf, "Cannot upgrade array version %d to %d", pa->ai_qs.struct_version, ARRAY_QS_STRUCT_VERSION);
+        log_err(errno, "array_recov", log_buf);
         free(pa);
         close(fd);
         return rc;
@@ -527,8 +533,8 @@ int array_recov(
     {
     if (read(fd, &num_tokens, sizeof(int)) != sizeof(int))
       {
-      sprintf(log_buffer, "error reading token count from %s", path);
-      log_err(errno, "array_recov", log_buffer);
+      sprintf(log_buf, "error reading token count from %s", path);
+      log_err(errno, "array_recov", log_buf);
 
       free(pa);
       close(fd);
@@ -542,8 +548,8 @@ int array_recov(
       if (read(fd, rn, sizeof(array_request_node)) != sizeof(array_request_node))
         {
 
-        sprintf(log_buffer, "error reading array_request_node from %s", path);
-        log_err(errno, "array_recov", log_buffer);
+        sprintf(log_buf, "error reading array_request_node from %s", path);
+        log_err(errno, "array_recov", log_buf);
 
         free(rn);
 
@@ -585,14 +591,14 @@ int array_recov(
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "%s: locking ai_mutex: %s", __func__, pa->ai_qs.parent_id);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
   pthread_mutex_lock(pa->ai_mutex);
   if (LOGLEVEL >= 7)
      {
     sprintf(log_buf, "%s: locked ai_mutex: %s", __func__, pa->ai_qs.parent_id);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
   /* link the struct into the servers list of job arrays */

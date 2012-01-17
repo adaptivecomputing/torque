@@ -444,7 +444,7 @@ int allocate_demux_sockets(job *pjob, int flag)
   exit(1);
   }
 
-int kill_job(job *pjob, int sig, char *killer_id_name, char *why_killed_reason)
+int kill_job(job *pjob, int sig, const char *killer_id_name, char *why_killed_reason)
   {
   fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);

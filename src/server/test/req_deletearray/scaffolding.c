@@ -150,3 +150,7 @@ job *find_job(char *jobid)
   {
   return(NULL);
   }
+
+void log_record(int eventtype, int objclass, const char *objname, char *text)
+  {
+  }

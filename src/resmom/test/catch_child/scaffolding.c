@@ -774,7 +774,7 @@ const char *PJobSubState[] =
   NULL
   };
 
-int kill_job(job *pjob, int sig, char *killer_id_name, char *why_killed_reason)
+int kill_job(job *pjob, int sig, const char *killer_id_name, char *why_killed_reason)
   {
   if (func_num == INIT_ABORT_JOBS)
     {
@@ -787,7 +787,7 @@ int kill_job(job *pjob, int sig, char *killer_id_name, char *why_killed_reason)
   return 0;
   }
 
-int mom_open_socket_to_jobs_server(job *pjob, char *caller_id, void *(*message_handler)(void *))
+int mom_open_socket_to_jobs_server(job *pjob, const char *caller_id, void *(*message_handler)(void *))
   {
   int sock = 1;
   if (func_num == POST_EPILOGUE)

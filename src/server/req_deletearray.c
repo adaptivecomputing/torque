@@ -123,7 +123,7 @@ int attempt_delete(
     
     /* force new connection */
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s", id);
       log_event(
@@ -172,14 +172,10 @@ int attempt_delete(
 
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s", id);
-      log_event(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
     set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, FALSE);
@@ -202,7 +198,6 @@ void req_deletearray(
   struct batch_request *preq)
 
   {
-  char             id[] = "req_deletearray";
   job_array        *pa;
 
   char             *range;
@@ -237,10 +232,10 @@ void req_deletearray(
     log_event(PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buf);
 
     pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocked ai_mutex", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
@@ -254,17 +249,13 @@ void req_deletearray(
     {
     if (LOGLEVEL >= 5)
       {
-      sprintf(log_buffer, "delete array requested by %s@%s for %s (%s)",
+      sprintf(log_buf, "delete array requested by %s@%s for %s (%s)",
             preq->rq_user,
             preq->rq_host,
             preq->rq_ind.rq_delete.rq_objname,
             range);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        "req_deletearray",
-        log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
     /* parse the array range */
     num_skipped = delete_array_range(pa,range);
@@ -273,10 +264,10 @@ void req_deletearray(
       {
       /* ERROR */
       pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >= 7)
+      if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "%s: unlocked ai_mutex", id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+        sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error in specified array range");
@@ -287,36 +278,32 @@ void req_deletearray(
     {
     if (LOGLEVEL >= 5)
       {
-      sprintf(log_buffer, "delete array requested by %s@%s for %s",
-            preq->rq_user,
-            preq->rq_host,
-            preq->rq_ind.rq_delete.rq_objname);
+      sprintf(log_buf, "delete array requested by %s@%s for %s",
+        preq->rq_user,
+        preq->rq_host,
+        preq->rq_ind.rq_delete.rq_objname);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        "req_deletearray",
-        log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
     num_skipped = delete_whole_array(pa);
     }
 
   pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: unlocked ai_mutex", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
-      }
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   /* check if the array is gone */
   if ((pa = get_array(preq->rq_ind.rq_delete.rq_objname)) != NULL)
     {
     pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocked ai_mutex", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
     /* some jobs were not deleted.  They must have been running or had
@@ -500,7 +487,7 @@ void array_delete_wt(
     }
 
   pthread_mutex_unlock(pa->ai_mutex);
-  if(LOGLEVEL >= 7)
+  if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "%s: unlocked ai_mutex", id);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);

@@ -2607,7 +2607,7 @@ void *req_jobobit(
 
           tA.al_name  = "sched_hint";
           tA.al_resc  = "";
-          tA.al_value = log_buffer;
+          tA.al_value = log_buf;
           tA.al_op    = SET;
 
           modify_job_attr(

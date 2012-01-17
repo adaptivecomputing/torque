@@ -163,7 +163,7 @@ int in_remote_checkpoint_dir(char *ckpt_path)
   exit(1);
   }
 
-int mom_open_socket_to_jobs_server(job *pjob, char *caller_id, void *(*message_handler)(void *))
+int mom_open_socket_to_jobs_server(job *pjob, const char *caller_id, void *(*message_handler)(void *))
   {
   fprintf(stderr, "The call to mom_open_socket_to_jobs_server needs to be mocked!!\n");
   exit(1);
@@ -355,7 +355,7 @@ job *job_alloc(void)
   exit(1);
   }
 
-int kill_job(job *pjob, int sig, char *killer_id_name, char *why_killed_reason)
+int kill_job(job *pjob, int sig, const char *killer_id_name, char *why_killed_reason)
   {
   fprintf(stderr, "The call to kill_job needs to be mocked!!\n");
   exit(1);

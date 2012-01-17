@@ -18,7 +18,7 @@ void array_get_parent_id(char *job_id, char *parent_id);
 
 job *find_array_template(char *arrayid);
 
-job_array *array_recov(char *path);
+int array_recov(char *path, job_array **);
 
 int array_delete(job_array *pa);
 

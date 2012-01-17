@@ -101,13 +101,6 @@
 
 
 
-/* external global vars */
-#ifndef PBS_MOM
-time_t        time_now;
-#else
-extern time_t time_now;
-#endif
-
 extern int LOGLEVEL;
 
 mom_hierarchy_t *initialize_mom_hierarchy(void)
@@ -220,7 +213,7 @@ int rm_establish_connection(
 
   if (nc->stream < 0)
     {
-    nc->mtime = time_now;
+    nc->mtime = time(NULL);
     nc->bad = TRUE;
     return(-1);
     }
@@ -310,11 +303,12 @@ node_comm_t *force_path_update(
   mom_hierarchy_t *nt)
 
   {
-  int path;
-  int level;
-  int node;
-  int attempts = 0;
-  int updated  = FALSE;
+  int                 path;
+  int                 level;
+  int                 node;
+  int                 attempts = 0;
+  int                 updated  = FALSE;
+  time_t              time_now = time(NULL);
  
   resizable_array    *levels;
   resizable_array    *node_comm_entries;
@@ -421,7 +415,7 @@ node_comm_t *update_current_path(
            (nt->current_level != 0) ||
            (nt->current_node  != 0))
     {
-    if ((time_now - nc->mtime) > NODE_COMM_RETRY_TIME)
+    if ((time(NULL) - nc->mtime) > NODE_COMM_RETRY_TIME)
       {
       close(nc->stream);
       return(force_path_update(nt));

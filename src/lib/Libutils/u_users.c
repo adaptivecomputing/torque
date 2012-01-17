@@ -14,15 +14,13 @@
 **/
 
 
-struct passwd * getpwnam_ext( 
+struct passwd *getpwnam_ext( 
 
-  char * user_name ) /* I */
+  char *user_name) /* I */
 
   {
-  static char id[] = "getpwnam_ext";
-
   struct passwd *pwent = NULL;
-  int retrycnt = 0;
+  int            retrycnt = 0;
 
   /* bad argument check */
   if (user_name == NULL)
@@ -49,9 +47,10 @@ struct passwd * getpwnam_ext(
                   errno,
                   strerror(errno));
 
-          log_ext(-1,id,log_buffer,LOG_ERR);
+          log_ext(-1, __func__, log_buffer, LOG_ERR);
           retrycnt++;
           break;
+
         default:
           retrycnt = -1;
           break;
@@ -59,7 +58,7 @@ struct passwd * getpwnam_ext(
       }
     }
 
-  return pwent;
-  }
+  return(pwent);
+  } /* END getpwnam_ext() */
 
 
