@@ -2968,31 +2968,43 @@ void *send_hierarchy_threadtask(
   void *vp)
 
   {
-  static char    *id = "send_hierarchy_threadtask";
-  char           *name = (char *)vp;
-  struct pbsnode *pnode = find_nodebyname(name);
+  hello_info     *hi = (hello_info *)vp;
+  struct pbsnode *pnode = find_nodebyname(hi->name);
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   unsigned short  port;
 
   if (pnode != NULL)
     {
     port = pnode->nd_mom_rm_port;
-    unlock_node(pnode, id, NULL, 0);
+    unlock_node(pnode, __func__, NULL, 0);
 
-    if (send_hierarchy(name, port) != PBSE_NONE)
-      add_hello(&failures, name);
+    if (send_hierarchy(hi->name, port) != PBSE_NONE)
+      {
+      if (hi->num_retries < 3)
+        {
+        hi->num_retries++;
+        hi->last_retry = time(NULL);
+        add_hello_info(&failures, hi);
+        }
+      }
     else
       {
       if (LOGLEVEL >= 3)
         {
         snprintf(log_buf, sizeof(log_buf),
-          "Successfully sent hierarchy to %s", name);
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buf);
+          "Successfully sent hierarchy to %s", hi->name);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
       
       /* only free here because otherwise it is re-used */
-      free(name);
+      free(hi->name);
+      free(hi);
       }
+    }
+  else
+    {
+    free(hi->name);
+    free(hi);
     }
 
   return(NULL);
@@ -3131,11 +3143,13 @@ int add_hello(
   char            *node_name)
 
   {
-  int rc;
+  int         rc;
+  hello_info *hi = calloc(1, sizeof(hello_info));
+  hi->name = node_name;
 
   pthread_mutex_lock(hc->hello_mutex);
 
-  if ((rc = insert_thing(hc->ra, node_name)) == -1)
+  if ((rc = insert_thing(hc->ra, hi)) == -1)
     rc = ENOMEM;
 
   pthread_mutex_unlock(hc->hello_mutex);
@@ -3146,18 +3160,46 @@ int add_hello(
 
 
 
-char *pop_hello(
+int add_hello_info(
+
+  hello_container *hc,
+  hello_info      *hi)
+
+  {
+  int rc;
+
+  pthread_mutex_lock(hc->hello_mutex);
+  if ((rc = insert_thing(hc->ra, hi)) == -1)
+    rc = ENOMEM;
+  pthread_mutex_unlock(hc->hello_mutex);
+
+  return(rc);
+  } /* END add_hello_info() */
+
+
+
+
+hello_info *pop_hello(
 
   hello_container *hc)
 
   {
-  char *name;
+  hello_info *hi = NULL;
+  int         index;
 
   pthread_mutex_lock(hc->hello_mutex);
-  name = (char *)pop_thing(hc->ra);
+  index = hc->ra->slots[ALWAYS_EMPTY_INDEX].next;
+  if (index != ALWAYS_EMPTY_INDEX)
+    {
+    hi = (hello_info *)hc->ra->slots[index].item;
+    if (time(NULL) - hi->last_retry > HELLO_RESEND_WAIT_TIME)
+      hi = (hello_info *)pop_thing(hc->ra);
+    else
+      hi = NULL;
+    }
   pthread_mutex_unlock(hc->hello_mutex);
 
-  return(name);
+  return(hi);
   } /* END pop_hello() */
 
 

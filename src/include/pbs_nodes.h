@@ -332,6 +332,16 @@ struct pbsnode *next_node(all_nodes *,struct pbsnode *,node_iterator *);
 struct pbsnode *next_host(all_nodes *,int *,struct pbsnode *);
 
 
+#define HELLO_RESEND_WAIT_TIME 10
+
+typedef struct hello_info
+  {
+  char   *name;
+  time_t  last_retry;
+  int     num_retries;
+  } hello_info;
+
+
 
 typedef struct hello_container
   {
@@ -340,13 +350,14 @@ typedef struct hello_container
   } hello_container;
 
 
-void   initialize_hello_container(hello_container *);
-int    needs_hello(hello_container *, char *);
-int    add_hello(hello_container *, char *);
-char  *pop_hello(hello_container *);
-int    remove_hello(hello_container *, char *);
-int    send_hierarchy(char *, unsigned short);
-void  *send_hierarchy_threadtask(void *);
+void        initialize_hello_container(hello_container *);
+int         needs_hello(hello_container *, char *);
+int         add_hello(hello_container *, char *);
+int         add_hello_info(hello_container *, hello_info *);
+hello_info *pop_hello(hello_container *);
+int         remove_hello(hello_container *, char *);
+int         send_hierarchy(char *, unsigned short);
+void       *send_hierarchy_threadtask(void *);
 
 
 

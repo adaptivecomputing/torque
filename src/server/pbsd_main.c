@@ -1015,16 +1015,15 @@ static int start_hot_jobs(void)
 void send_any_hellos_needed()
 
   {
-  /*static char     *id = "send_any_hellos_needed";*/
-  char            *name;
+  hello_info *hi;
 
   /* send hierarchy using threadpool */
-  while ((name = pop_hello(&hellos)) != NULL)
-    enqueue_threadpool_request(send_hierarchy_threadtask, name);
+  while ((hi = pop_hello(&hellos)) != NULL)
+    enqueue_threadpool_request(send_hierarchy_threadtask, hi);
 
   /* re-insert any failures */
-  while ((name = pop_hello(&failures)) != NULL)
-    add_hello(&hellos, name);
+  while ((hi = pop_hello(&failures)) != NULL)
+    add_hello_info(&hellos, hi);
 
   } /* END send_any_hellos_needed() */
 
