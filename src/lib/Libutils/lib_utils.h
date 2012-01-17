@@ -193,7 +193,7 @@ uint16_t AVL_get_port_by_ipaddr(u_long key, AvlTree tree);
 
 AvlTree AVL_delete_node(u_long key, uint16_t port, AvlTree tree);
 
-int AVL_list(AvlTree tree, char *Buf, long BufSize );
+int AVL_list(AvlTree tree, char **Buf, long BufSize );
 
 
 /* u_users.c */

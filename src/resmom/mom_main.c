@@ -4874,12 +4874,20 @@ int rm_request(
               {
               /* display okclient list */
 
-              tmpLine[0] = '\0';
+              char *tmp_line = calloc(1, 1024);
+              if (tmp_line != NULL)
+                {
+                ret = AVL_list(okclients, &tmp_line, 1024-1);
 
-              ret = AVL_list(okclients, tmpLine, sizeof(tmpLine));
-
-              MUSNPrintF(&BPtr, &BSpace, "Trusted Client List:  %s:  %d\n",
-                         tmpLine, ret);
+                MUSNPrintF(&BPtr, &BSpace, "Trusted Client List:  %s:  %d\n",
+                    tmp_line, ret);
+                free(tmp_line);
+                }
+              else
+                {
+                MUSNPrintF(&BPtr, &BSpace,
+                    "Trusted Client Could not be retrieved\n");
+                }
               }
 
             if (verbositylevel >= 1)

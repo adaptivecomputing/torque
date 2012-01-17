@@ -133,7 +133,7 @@ void exec_bail(job *pjob, int code)
   exit(1);
   }
 
-int AVL_list(AvlTree tree, char *Buf, long BufSize)
+int AVL_list(AvlTree tree, char **Buf, long BufSize)
   {
   fprintf(stderr, "The call to AVL_list needs to be mocked!!\n");
   exit(1);

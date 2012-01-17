@@ -5346,22 +5346,25 @@ void im_request(
   
   if (AVL_is_in_tree_no_port_compare(ipaddr, 0, okclients) == 0 )
     {
-    char tmpLine[MAXLINE];
- 
-    tmpLine[0] = '\0';
- 
-    ret = AVL_list(okclients, tmpLine, sizeof(tmpLine));
+    char *tmp_line = calloc(1, 1024);
+    if (tmp_line != NULL)
+      ret = AVL_list(okclients, &tmp_line, 1024-1);
+    else
+      ret = -1;
+
     if (ret == 0)
       {
       sprintf(log_buffer, "bad connect from %s - unauthorized (okclients: %s)",
         netaddr(addr),
-        tmpLine);
+        tmp_line);
       }
     else
       sprintf(log_buffer, "bad connect from %s - unauthorized (could not get ok clients %d)",
         netaddr(addr),
         ret);
     
+    if (tmp_line != NULL)
+      free(tmp_line);
     log_err(-1, id, log_buffer);
 
     close(stream);

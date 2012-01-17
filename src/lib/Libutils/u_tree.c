@@ -372,11 +372,15 @@ AvlTree AVL_delete_node(
  * return -1 if Buffer is too small 
  * return 1 if Buf or T are null 
  */ 
-int AVL_list( AvlTree tree, char *Buf, long BufSize )
+int AVL_list( AvlTree tree, char **Buf, long BufSize )
   {
 	long len;
+	long buf_len = 0;
+	long l_buf_len = 0;
+  char *tmp_buf = NULL;
+  char *current_buffer = NULL;
 	char     tmpLine[32];
-	int rc;
+	int rc = PBSE_NONE;
 
 	if ( tree == NULL || Buf == NULL || BufSize == 0 )
     {
@@ -389,32 +393,45 @@ int AVL_list( AvlTree tree, char *Buf, long BufSize )
 	if ( tree->left != NULL )
     {
 		rc = AVL_list( tree->left, Buf, len );
-		if ( rc )
+		if (rc != PBSE_NONE)
       {
-      return( rc );
+      return rc;
       }
-    len -= strlen( Buf );
+    l_buf_len = strlen(*Buf);
+    len -= l_buf_len;
     }
 
 	/* now go right */
 	if ( tree->right != NULL )
     {
     rc = AVL_list( tree->right, Buf, len );		
-    if ( rc )
+    if (rc != PBSE_NONE)
       {
-			return( rc );
+			return rc;
       }
-    len -= strlen( Buf );
+    buf_len = strlen(*Buf);
+    len -= (buf_len - l_buf_len);
     }
 
 	/* each entry can be a maximum of 21 bytes plus one for
 	   NULL termination and one for a ','. We need at least 23 bytes to make
 	   this work. (entry format XXX.XXX.XXX.XXX:XXXXX --
 	   This does not work for IPV6 )*/
+  if (buf_len == 0)
+    buf_len = strlen(*Buf);
 	if (len < 23)
     {
-    return( -1 );
+    if (buf_len == 0)
+      buf_len = l_buf_len;
+    tmp_buf = calloc(1, buf_len + 1024);
+    if (tmp_buf == NULL)
+      return PBSE_MEM_MALLOC;
+    memcpy(tmp_buf, *Buf, buf_len);
+    free(*Buf);
+    *Buf = tmp_buf;
+    BufSize = buf_len + 1024 - 1;
     }
+  current_buffer = *Buf;
 
 	sprintf( tmpLine, "%ld.%ld.%ld.%ld:%d",
 	  (tree->key & 0xFF000000) >> 24,
@@ -426,16 +443,16 @@ int AVL_list( AvlTree tree, char *Buf, long BufSize )
 	/* Buf must come in with at least the first byte set to NULL
 	   initially. Every time after that append
 	   a comma */
-	if (Buf[0] == 0)
+	if (current_buffer[0] == 0)
 	  {
-		strcpy(Buf, tmpLine);
+		strcpy(current_buffer, tmpLine);
 	  }
 	else
 	  {
-	  strcat(Buf, ",");
-	  strcat(Buf, tmpLine);
+	  strcat(current_buffer, ",");
+	  strcat(current_buffer, tmpLine);
 	  }
 
-	return( 0 );
+	return PBSE_NONE;
   } /* end AVL_list */
 
