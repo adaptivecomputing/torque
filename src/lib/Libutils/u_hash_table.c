@@ -846,13 +846,13 @@ int get_value_hash(
   while (b != NULL)
     {
     if (!strcmp(b->key,key))
+      {
+      value = b->value;
       break;
+      }
 
     b = b->next;
     }
-
-  if (b != NULL)
-    value = b->value;
 
   return(value);
   } /* END get_value_from_hash() */
