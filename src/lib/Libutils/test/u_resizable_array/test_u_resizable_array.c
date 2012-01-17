@@ -297,6 +297,86 @@ END_TEST
 
 
 
+START_TEST(get_index_tests)
+  {
+  void            *thing;
+  resizable_array *ra = initialize_resizable_array(20);
+  int              index;
+  int              i;
+  int              iter;
+
+  for (i = 0; i < num_elements; i++)
+    {
+    insert_thing(ra, a[i]);
+    }
+
+  for (i = 0; i < num_elements; i++)
+    {
+    index = get_index(ra, a[i]);
+    thing = get_thing_from_index(ra, index);
+    snprintf(buf, sizeof(buf), "Object at index not the same: %s != %s",
+      a[i], (char *)thing);
+    fail_unless(thing == a[i], buf);
+    }
+
+  i = num_elements;
+
+  while (i > 0)
+    {
+    initialize_ra_iterator(ra, &iter);
+    fail_unless(iter == ra->slots[ALWAYS_EMPTY_INDEX].next, "Iterator not initialized correctly");
+    thing = pop_thing(ra);
+    i--;
+    }
+
+  }
+END_TEST
+
+
+
+
+START_TEST(error_cases)
+  {
+  resizable_array *ra = initialize_resizable_array(20);
+  int              i;
+  int              old_last;
+  int              rc;
+  char            *tom = "tom";
+  char            *bob = "bob";
+  void            *thing;
+  int              index = -1;
+
+  for (i = 0; i < num_elements; i++)
+    {
+    insert_thing(ra, a[i]);
+    }
+
+  rc = swap_things(ra, a[0], tom);
+  fail_unless(rc == THING_NOT_FOUND, "somehow thought unadded element was added");
+
+  old_last = ra->last;
+  insert_thing_after(ra, tom, ra->last);
+  fail_unless(old_last != ra->last, "didn't properly insert thing after index");
+
+  rc = remove_thing_from_index(ra, ra->last + 2);
+  fail_unless(rc == THING_NOT_FOUND, "somehow found an extra element");
+
+  rc = get_index(ra, bob);
+  fail_unless(rc == THING_NOT_FOUND, "found element that doesn't exist");
+
+  thing = get_thing_from_index(ra, index);
+  fail_unless(thing == a[0], "order got messed up somewhere");
+
+  index = 5000;
+  thing = get_thing_from_index(ra, index);
+  fail_unless(thing == NULL, "returned item for out of bounds index??");
+  }
+END_TEST
+
+
+
+
+
 Suite *u_resizable_array_suite(void)
   {
   Suite *s = suite_create("u_resizable_array_suite methods");
@@ -314,6 +394,14 @@ Suite *u_resizable_array_suite(void)
 
   tc_core = tcase_create("ordering_tests");
   tcase_add_test(tc_core, ordering_tests);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("get_index_tests");
+  tcase_add_test(tc_core, get_index_tests);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("error_cases");
+  tcase_add_test(tc_core, error_cases);
   suite_add_tcase(s, tc_core);
 
   return s;
