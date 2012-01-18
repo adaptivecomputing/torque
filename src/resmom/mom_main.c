@@ -4874,10 +4874,12 @@ int rm_request(
               {
               /* display okclient list */
 
-              char *tmp_line = calloc(1, 1024);
+              long max_len = 1024;
+              long final_len = 0;
+              char *tmp_line = calloc(1, max_len + 1);
               if (tmp_line != NULL)
                 {
-                ret = AVL_list(okclients, &tmp_line, 1024-1);
+                ret = AVL_list(okclients, &tmp_line, &final_len, &max_len);
 
                 MUSNPrintF(&BPtr, &BSpace, "Trusted Client List:  %s:  %d\n",
                     tmp_line, ret);

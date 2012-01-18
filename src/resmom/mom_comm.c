@@ -5346,9 +5346,11 @@ void im_request(
   
   if (AVL_is_in_tree_no_port_compare(ipaddr, 0, okclients) == 0 )
     {
-    char *tmp_line = calloc(1, 1024);
+    long max_len = 1024;
+    long final_len = 0;
+    char *tmp_line = calloc(1, max_len + 1);
     if (tmp_line != NULL)
-      ret = AVL_list(okclients, &tmp_line, 1024-1);
+      ret = AVL_list(okclients, &tmp_line, &final_len, &max_len);
     else
       ret = -1;
 

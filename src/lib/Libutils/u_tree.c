@@ -362,96 +362,94 @@ AvlTree AVL_delete_node(
   return(tree);
   } /*  End delete_node */
 
-/* AVL_list -- return the key and port values for
- * each entry in the tree in a ',' delimited list
- * returned in Buf 
- * @param T - root of the tree to list 
- * @param Buf - output buffer 
- * @param BufSize - size of the output buffer 
- * return 0 on success 
- * return -1 if Buffer is too small 
- * return 1 if Buf or T are null 
- */ 
-int AVL_list( AvlTree tree, char **Buf, long BufSize )
+
+int AVL_list_add_item(
+    AvlTree tree,
+    char **r_buf,
+    long *current_len,
+    long *max_len)
   {
-	long len;
-	long buf_len = 0;
-	long l_buf_len = 0;
-  char *tmp_buf = NULL;
-  char *current_buffer = NULL;
-	char     tmpLine[32];
-	int rc = PBSE_NONE;
-
-	if ( tree == NULL || Buf == NULL || BufSize == 0 )
-    {
-    return( 1 );
-    }
-
-	len = BufSize;
-
-	/* start down the left side */
-	if ( tree->left != NULL )
-    {
-		rc = AVL_list( tree->left, Buf, len );
-		if (rc != PBSE_NONE)
-      {
-      return rc;
-      }
-    l_buf_len = strlen(*Buf);
-    len -= l_buf_len;
-    }
-
-	/* now go right */
-	if ( tree->right != NULL )
-    {
-    rc = AVL_list( tree->right, Buf, len );		
-    if (rc != PBSE_NONE)
-      {
-			return rc;
-      }
-    buf_len = strlen(*Buf);
-    len -= (buf_len - l_buf_len);
-    }
-
+  char    *tmp_buf = NULL;
+  char    *current_buffer = NULL;
+  int     add_len = 0;
+	char    tmp_line[32];
+ 
 	/* each entry can be a maximum of 21 bytes plus one for
 	   NULL termination and one for a ','. We need at least 23 bytes to make
 	   this work. (entry format XXX.XXX.XXX.XXX:XXXXX --
 	   This does not work for IPV6 )*/
-  if (buf_len == 0)
-    buf_len = strlen(*Buf);
-	if (len < 23)
+	if ((*max_len - *current_len) < 23)
     {
-    if (buf_len == 0)
-      buf_len = l_buf_len;
-    tmp_buf = calloc(1, buf_len + 1024);
+    *max_len = *max_len + 1024;
+    tmp_buf = calloc(1, *max_len + 1);
     if (tmp_buf == NULL)
       return PBSE_MEM_MALLOC;
-    memcpy(tmp_buf, *Buf, buf_len);
-    free(*Buf);
-    *Buf = tmp_buf;
-    BufSize = buf_len + 1024 - 1;
+    memcpy(tmp_buf, *r_buf, *current_len);
+    free(*r_buf);
+    *r_buf = tmp_buf;
     }
-  current_buffer = *Buf;
+  current_buffer = *r_buf;
 
-	sprintf( tmpLine, "%ld.%ld.%ld.%ld:%d",
+	sprintf( tmp_line, "%ld.%ld.%ld.%ld:%d",
 	  (tree->key & 0xFF000000) >> 24,
     (tree->key & 0x00FF0000) >> 16,
     (tree->key & 0x0000FF00) >> 8,
     (tree->key & 0x000000FF),
     tree->port);
 
-	/* Buf must come in with at least the first byte set to NULL
+  add_len = strlen(tmp_line);
+	/* r_buf must come in with at least the first byte set to NULL
 	   initially. Every time after that append
 	   a comma */
 	if (current_buffer[0] == 0)
 	  {
-		strcpy(current_buffer, tmpLine);
+		strcpy(current_buffer, tmp_line);
+    *current_len = *current_len + add_len;
 	  }
 	else
 	  {
 	  strcat(current_buffer, ",");
-	  strcat(current_buffer, tmpLine);
+	  strcat(current_buffer, tmp_line);
+    *current_len = *current_len + add_len + 1;
 	  }
+  return PBSE_NONE;
+  }
+
+/* AVL_list -- return the key and port values for
+ * each entry in the tree in a ',' delimited list
+ * returned in Buf 
+ * @param T - root of the tree to list 
+ * @param Buf - output buffer 
+ * @param BufSize - size of the output buffer 
+ * return PBSE_NONE on success 
+ * return PBSE_MEM_MALLOC if malloc failed 
+ * return PBSE_RMNOPARAM if parameters are invalid.
+ */ 
+int AVL_list( AvlTree tree, char **Buf, long *current_len, long *max_len )
+  {
+	int rc = PBSE_NONE;
+
+	if (Buf == NULL || *Buf == NULL || current_len == NULL || max_len == NULL)
+    {
+    return PBSE_RMNOPARAM;
+    }
+
+	/* start down the left side */
+	if ( tree->left != NULL )
+    {
+		if ((rc = AVL_list(tree->left, Buf, current_len, max_len)) != PBSE_NONE)
+      return rc;
+    }
+
+  if ((rc = AVL_list_add_item(tree, Buf, current_len, max_len)) != PBSE_NONE)
+    return rc;
+
+	/* now go right */
+	if ( tree->right != NULL )
+    {
+    if ((rc = AVL_list(tree->right, Buf, current_len, max_len)) != PBSE_NONE)
+      return rc;
+    }
 
 	return PBSE_NONE;
   } /* end AVL_list */
