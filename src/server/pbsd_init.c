@@ -789,7 +789,8 @@ void add_all_nodes_to_hello_container()
   while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
     {
     node_name_dup = strdup(pnode->nd_name);
-    add_hello(&hellos, node_name_dup);
+    if (node_name_dup != NULL)
+      add_hello(&hellos, node_name_dup);
 
     unlock_node(pnode, id, NULL, LOGLEVEL);
     }

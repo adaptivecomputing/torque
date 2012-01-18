@@ -3211,10 +3211,22 @@ int remove_hello(
   char            *node_name)
 
   {
-  int rc;
+  int         rc;
+  int         iter = -1;
+  int         prev_index = -1;
+  hello_info *hi;
 
   pthread_mutex_lock(hc->hello_mutex);
-  rc = remove_thing(hc->ra, node_name);
+  while ((hi = (hello_info *)next_thing(hc->ra, &iter)) != NULL)
+    {
+    if (!strcmp(hi->name, node_name))
+      {
+      if (prev_index == -1)
+        prev_index = hc->ra->slots[ALWAYS_EMPTY_INDEX].next;
+
+      rc = remove_thing_from_index(hc->ra, prev_index);
+      }
+    }
   pthread_mutex_unlock(hc->hello_mutex);
 
   return(rc);

@@ -1147,9 +1147,10 @@ int is_stat_get(
     else if (!strcmp(ret_info, "first_update=true"))
       {
       /* mom is requesting that we send the mom hierarchy file to her */
-      char *node_name = strdup(np->nd_name);
-      remove_hello(&hellos, node_name);
-      enqueue_threadpool_request(send_hierarchy_threadtask, node_name);
+      hello_info *hi = calloc(1, sizeof(hello_info));
+      hi->name = strdup(np->nd_name);
+      remove_hello(&hellos, hi->name);
+      enqueue_threadpool_request(send_hierarchy_threadtask, hi);
       }
     else if (decode_arst(&temp, NULL, NULL, ret_info, 0))
       {
