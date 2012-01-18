@@ -339,7 +339,13 @@ int pipe_and_read_unmunge(
     }
   else if (total_bytes_read == 0)
     {
-    /* unmunge failed. Probably a bad credential. But we do not know */
+    /* 
+     * unmunge failed. Probably a bad credential. But we do not know for sure.
+     * Bad credential gives us ECHILD error which gets added to log message
+     * and confuses users, so reset it to zero show it does not show up in log
+     */
+    if (errno == ECHILD)
+      errno = 0;
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "could not unmunge credentials");
     rc = -1;
     }

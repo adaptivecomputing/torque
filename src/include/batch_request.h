@@ -399,7 +399,7 @@ extern void  reply_badattr (int code, int aux, svrattrl *, struct batch_request 
 extern void  reply_text (struct batch_request *, int code, char *text);
 extern int   reply_jobid (struct batch_request *, char *, int);
 extern void  reply_free (struct batch_reply *);
-extern int   authenticate_user (struct batch_request *, struct credential *);
+extern int   authenticate_user (struct batch_request *, struct credential *, char **);
 extern void  dispatch_request (int, struct batch_request *);
 extern void  free_br (struct batch_request *);
 extern int   isode_request_read (int, struct batch_request *);

@@ -378,7 +378,8 @@ int svr_get_privilege(
 int authenticate_user(
 
   struct batch_request *preq,  /* I */
-  struct credential    *pcred) /* I */
+  struct credential    *pcred,
+  char   **autherr) /* O */
 
   {
   char id[] = "authenticate_user";
@@ -389,20 +390,35 @@ int authenticate_user(
   long   acl_enabled = FALSE;
 
 #ifdef MUNGE_AUTH
-  char uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
-  struct array_strings *my_acl = NULL;
-
-  sprintf(uh, "%s@%s", preq->rq_user, pcred->hostname);
  
-  get_svr_attr_arst(SRV_ATR_authusers, &my_acl); 
-  if ((strncmp(preq->rq_user, pcred->username, PBS_MAXUSER)) &&
-     ((acl_check_my_array_string(my_acl, uh, ACL_User)) == 0))
+  if (strncmp(preq->rq_user, pcred->username, PBS_MAXUSER))
+    {
+    /* extra check for munge */
+    struct array_strings *my_acl = NULL;
+    char uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
+
+    sprintf(uh, "%s@%s", preq->rq_user, pcred->hostname);
+    
+    get_svr_attr_arst(SRV_ATR_authusers, &my_acl); 
+    if ((acl_check_my_array_string(my_acl, uh, ACL_User_Host)) == 0)
+      {
+      *autherr = strdup("User not in authorized user list.");
+      sprintf(error_msg, "%s Requested user %s: requested from host %s",
+                     *autherr, preq->rq_user, preq->rq_host);
+      log_event(
+        PBSEVENT_ADMIN,
+        PBS_EVENTCLASS_SERVER,
+        id,
+        error_msg);
+      return(PBSE_BADCRED);
+      }
+    }
 #else
   if (strncmp(preq->rq_user, pcred->username, PBS_MAXUSER))
-#endif
     {
-    sprintf(error_msg, "Users do not match: Requested user %s: credential user %s: requested from host %s",
-                   preq->rq_user, pcred->username, preq->rq_host);
+    *autherr = strdup("Users do not match");
+    sprintf(error_msg, "%s: Requested user %s: credential user %s: requested from host %s",
+                   *autherr, preq->rq_user, pcred->username, preq->rq_host);
     log_event(
       PBSEVENT_ADMIN,
       PBS_EVENTCLASS_SERVER,
@@ -410,11 +426,13 @@ int authenticate_user(
       error_msg);
     return(PBSE_BADCRED);
     }
+#endif
 
   if (strncmp(preq->rq_host, pcred->hostname, PBS_MAXHOSTNAME))
     {
-    sprintf(error_msg, "Hosts do not match: Requested host %s: credential host: %s",
-                   preq->rq_host, pcred->hostname);
+    *autherr = strdup("Hosts do not match");
+    sprintf(error_msg, "%s: Requested host %s: credential host: %s",
+                   *autherr, preq->rq_host, pcred->hostname);
     log_event(
       PBSEVENT_ADMIN,
       PBS_EVENTCLASS_SERVER,

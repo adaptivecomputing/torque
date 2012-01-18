@@ -395,7 +395,7 @@ int PBSD_munge_authenticate(
   socklen_t           socknamelen = sizeof(sockname);
 
   snprintf(munge_command,sizeof(munge_command),
-    "munge -n");
+    "munge -n 2>/dev/null");
 
   memset(munge_buf, 0, MUNGE_SIZE);
   ptr = munge_buf; 

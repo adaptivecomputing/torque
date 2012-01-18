@@ -45,6 +45,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       attempted to communicate with those as well. Now they are cleared and only the 
       new server(s) are contacted.
   b - pbsnodes -l can now search on all valid node states
+  e - Added functionality that allows the values for the server parameter
+      authorized_users to use wild cards for both the user and host portion.
+  e - Improvements in munge handling of client connections and authentication.
 
 3.0.3
   b - fix for bugzilla #141 - qsub was overwriting the path variable in PBSD_authenticate

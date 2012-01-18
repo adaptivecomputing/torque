@@ -498,9 +498,10 @@ extern int  decode_tokens(attribute *, char *, char *, char *, int);
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
 
 /* "type" to pass to acl_check() */
-#define ACL_Host  1
-#define ACL_User  2
-#define ACL_Group 3
-#define ACL_Gid   4
+#define ACL_Host      1
+#define ACL_User      2
+#define ACL_Group 	  3
+#define ACL_Gid   	  4
+#define ACL_User_Host 5
 
 #endif  /* ATTRIBUTE_H */

@@ -330,6 +330,7 @@ void *process_request(
   int                   sfds = *(int *)new_sock;
   char                  tmpLine[MAXLINE];
   int                   unlock_mutex = TRUE;
+  char                 *auth_err = NULL;
 
   if ((request = alloc_br(0)) == NULL)
     {
@@ -547,19 +548,22 @@ void *process_request(
         }
       else
         {
-        rc = authenticate_user(request, &conn_credent[sfds]);
+        rc = authenticate_user(request, &conn_credent[sfds], &auth_err);
         }
       }
     else if (svr_conn[sfds].cn_authen != PBS_NET_CONN_AUTHENTICATED)
+      /* skip checking user if we did not get an authenticated credential */
       rc = PBSE_BADCRED;
     else
-      rc = authenticate_user(request, &conn_credent[sfds]);
+      rc = authenticate_user(request, &conn_credent[sfds], &auth_err);
 
     if (rc != 0)
       {
       pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
       unlock_mutex = FALSE;
-      req_reject(rc, 0, request, NULL, NULL);
+      req_reject(rc, 0, request, NULL, auth_err);
+      if (auth_err != NULL)
+        free(auth_err);
       free_request = FALSE;
       goto process_request_cleanup;
       }
