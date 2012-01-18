@@ -337,7 +337,6 @@ void *process_request(
     snprintf(tmpLine, sizeof(tmpLine),
         "cannot allocate memory for request from %lu",
         get_connectaddr(sfds,FALSE));
-    free_request = FALSE;
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
     free_request = FALSE;
     goto process_request_cleanup;
