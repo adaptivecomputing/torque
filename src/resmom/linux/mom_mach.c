@@ -153,7 +153,7 @@ static char *netload  (struct rm_attribute *);
 static char *cpuact   (struct rm_attribute *);
 #endif
 #ifdef USELIBMEMACCT
-static long long get_memacct_resi(pid_t pid);
+long long   get_memacct_resi(pid_t pid);
 extern long get_weighted_memory_size(pid_t);
 #endif
 
