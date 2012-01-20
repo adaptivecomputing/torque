@@ -8,7 +8,7 @@
 void *req_gpuctrl_svr(void *vp);
 
 #ifdef NVIDIA_GPUS
-static void process_gpu_request_reply(struct work_task *pwt);
+void process_gpu_request_reply(struct work_task *pwt);
 #endif /* NVIDIA_GPUS */
 
 #endif /* _REQ_GPUCTRL_H */

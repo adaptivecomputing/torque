@@ -1632,8 +1632,12 @@ static int assign_hosts(
 
   if ((given != NULL) && (given[0] != '\0'))
     {
-    /* assign what was specified in run request */
+#ifdef NVIDIA_GPUS
+    char *mode_string;
+    char *request;
+#endif
 
+    /* assign what was specified in run request */
     hosttoalloc = given;
 
     /* check to see if there is a gpus request. If so moab

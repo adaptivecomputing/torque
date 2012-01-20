@@ -173,6 +173,7 @@ extern tlist_head svr_newnodes;
 extern attribute_def  node_attr_def[];   /* node attributes defs */
 extern int            SvrNodeCt;
 extern hello_container hellos;
+extern struct all_jobs alljobs;
 
 extern int multi_mom;
 
@@ -5584,6 +5585,64 @@ char *find_ts_node(void)
 
 
 
+#ifdef NVIDIA_GPUS
+/*
+ *  * Function to check if there is a job assigned to this gpu
+ *   */
+
+int count_gpu_jobs(
+
+  char *mom_node,
+  int   gpuid)
+
+  {
+  job   *pjob;
+  char  *gpu_str;
+  char  *found_str;
+  char   tmp_str[PBS_MAXHOSTNAME + 8];
+  char   num_str[6];
+  int    job_count = 0;
+  int    iter = -1;
+
+  strcpy (tmp_str, mom_node);
+  strcat (tmp_str, "-gpu/");
+  sprintf (num_str, "%d", gpuid);
+  strcat (tmp_str, num_str);
+
+  while ((pjob = next_job(&alljobs, &iter)) != NULL)
+    {
+    /*
+     * Does this job have this gpuid assigned? skip non running jobs
+     * if so, return TRUE
+     */
+    if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+        (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
+      {
+      gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+      
+      if (gpu_str != NULL)
+        {
+        /* look thru the string and see if it has this host and gpuid.
+         * exec_gpus string should be in format of 
+         * <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
+         */
+        
+        if ((found_str = strstr (gpu_str, tmp_str)) != NULL)
+          {
+          job_count++;
+          }
+        }
+      }
+    }  /* END for each job */
+  
+  return(job_count);
+  } /* END count_gpu_jobs() */
+
+#endif /* NVIDIA_GPUS */
+
+
+
+
 
 /*
  * free_nodes - free nodes allocated to a job
@@ -5661,7 +5720,7 @@ void free_nodes(
             if ((gn->mode == gpu_exclusive_thread) ||
                  (gn->mode == gpu_exclusive_process) ||
                  ((gn->mode == gpu_normal) && 
-                 (count_gpu_jobs(pnode->nd_name, i) == 0)))
+                  (count_gpu_jobs(pnode->nd_name, i) == 0)))
               {
               gn->state = gpu_unallocated;
 

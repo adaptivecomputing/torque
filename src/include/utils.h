@@ -160,6 +160,7 @@ extern int MXMLAddE (mxml_t *, mxml_t *);
 extern int MXMLGetAttrF (mxml_t *, char *, int *, void *, enum MDataFormatEnum, int);
 extern int MXMLGetAttr (mxml_t *, char *, int *, char *, int);
 extern int MXMLToString (mxml_t *, char *, int, char **, mbool_t);
+int        MXMLFromString(mxml_t **EP, char *XMLString, char **Tail, char *EMsg, int emsg_size);
 
 /* functions from u_xml.c */
 int get_parent_and_child(char *,char **,char **,char **);

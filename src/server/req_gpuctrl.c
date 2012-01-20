@@ -118,7 +118,7 @@ static void process_gpu_request_reply(struct work_task *);
 extern int           LOGLEVEL;
 extern unsigned int  pbs_mom_port;
 /*
- * req_gpuctrl - Do a GPU change mode
+ * req_gpuctrl_svr - Do a GPU change mode
  */
 
 void *req_gpuctrl_svr(
@@ -126,8 +126,6 @@ void *req_gpuctrl_svr(
   void *vp)
 
   {
-  char   *id = "req_gpuctrl";
-
   char  *nodename = NULL;
   char  *gpuid = NULL;
   int    gpumode = -1;
@@ -170,7 +168,7 @@ void *req_gpuctrl_svr(
       reset_perm,
       reset_vol);
 
-    log_ext(-1, id, log_buf, LOG_INFO);
+    log_ext(-1, __func__, log_buf, LOG_INFO);
     }
 
   /* validate mom node exists */
@@ -270,7 +268,7 @@ void *req_gpuctrl_svr(
 
   if (LOGLEVEL >= 3)
     {
-    log_ext(-1, id, log_buf, LOG_INFO);
+    log_ext(-1, __func__, log_buf, LOG_INFO);
     }
 
   req_reject(PBSE_NOSUP, 0, preq, NULL, NULL);
@@ -288,7 +286,7 @@ void *req_gpuctrl_svr(
  * is received.  Completes the gpu request.
  */
 #ifdef NVIDIA_GPUS
-static void process_gpu_request_reply(
+void process_gpu_request_reply(
 
   struct work_task *pwt)
 
