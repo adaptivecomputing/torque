@@ -95,7 +95,7 @@ int encode_ll(
 
   {
   size_t   ct;
-  char cvn[MAXLONGLEN];
+  char cvn[MAXLONGLEN+1];
   svrattrl *pal;
 
   if (!attr)
@@ -106,14 +106,12 @@ int encode_ll(
 
   snprintf(cvn, MAXLONGLEN, LLD, attr->at_val.at_ll);
 
-  ct = strlen(cvn) + 1;
+  ct = strlen(cvn);
 
-  pal = attrlist_create(atname, rsname, ct);
-
-  if (pal == (svrattrl *)0)
+  if ((pal = attrlist_create(atname, rsname, ct + 1)) == NULL)
     return (-1);
 
-  (void)memcpy(pal->al_value, cvn, ct);
+  memcpy(pal->al_value, cvn, ct);
 
   pal->al_flags = attr->at_flags;
 

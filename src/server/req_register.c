@@ -2477,6 +2477,7 @@ int encode_depend(
     if ((nxdp->dp_type == JOB_DEPEND_TYPE_SYNCCT) ||
         (nxdp->dp_type == JOB_DEPEND_TYPE_ON))
       {
+      /* Doesn't this mean it could be too short? *CHECK* */
       ct += 30;   /* a guess at a reasonable amt of space */
       }
     else
@@ -2492,7 +2493,7 @@ int encode_depend(
       }
     }
 
-  if ((pal = attrlist_create(atname, rsname, ct)) == (svrattrl *)0)
+  if ((pal = attrlist_create(atname, rsname, ct+1)) == NULL)
     {
     return (-1);
     }

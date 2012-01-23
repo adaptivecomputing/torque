@@ -209,9 +209,6 @@ int encode_hold(
       *(pal->al_value + i++) = 'u';
     }
 
-  while (i < HOLD_ENCODE_SIZE + 1)
-    *(pal->al_value + i++) = '\0';
-
   pal->al_flags = attr->at_flags;
 
   append_link(phead, &pal->al_link, pal);

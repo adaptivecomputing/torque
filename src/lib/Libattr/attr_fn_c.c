@@ -179,8 +179,6 @@ int encode_c(
 
   *pal->al_value   = attr->at_val.at_char;
 
-  *(pal->al_value + 1) = '\0';
-
   pal->al_flags = attr->at_flags;
 
   append_link(phead, &pal->al_link, pal);

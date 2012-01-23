@@ -858,16 +858,14 @@ typedef struct job_file_delete_info
 
 #define IM_ERROR          99
 
-eventent *event_alloc( int  command,
+eventent *event_alloc(int  command,
                            hnodent *pnode,
                            tm_event_t event,
                            tm_task_id taskid);
 
-task *pbs_task_create( job *pjob,
-                           tm_task_id taskid);
+task *pbs_task_create(job *pjob, tm_task_id taskid);
 
-task *task_find( job *pjob,
-                     tm_task_id taskid);
+task *task_find(job *pjob, tm_task_id taskid);
 #else
 
 #define LOCUTION_SUCCESS  0

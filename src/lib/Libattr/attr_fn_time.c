@@ -262,7 +262,7 @@ badval:
 
 /* NOTE:  if phead not specified, report output via atname (minsize=1024) */
 
-#define CVNBUFSZ 21
+#define ENCODE_TIME_SIZE 21
 
 int encode_time(
 
@@ -275,7 +275,7 @@ int encode_time(
 
   {
   size_t  ct;
-  char   cvnbuf[CVNBUFSZ];
+  char   cvnbuf[ENCODE_TIME_SIZE];
   int    hr;
   int   min;
   long   n;
@@ -311,11 +311,11 @@ int encode_time(
 
   pv += strlen(pv);
 
-  ct = strlen(cvnbuf) + 1;
+  ct = strlen(cvnbuf);
 
   if (phead != NULL)
     {
-    pal = attrlist_create(atname, rsname, ct);
+    pal = attrlist_create(atname, rsname, ct+1);
 
     if (pal == NULL)
       {

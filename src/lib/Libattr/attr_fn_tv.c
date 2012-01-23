@@ -113,7 +113,7 @@ int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval 
  * --------------------------------------------------
  */
 
-#define CVNBUFSZ 256
+#define ENCODE_TC_BUF_SIZE 256
 
 /*
  * decode_tv - decode struct timeval into attribute structure 
@@ -216,7 +216,7 @@ int encode_tv(
 
   {
   size_t 		 ct;
-  char 	 		 cvnbuf[CVNBUFSZ];
+  char 	 		 cvnbuf[ENCODE_TC_BUF_SIZE];
   time_t	 	 secs;
   suseconds_t	 usecs;
   struct timeval *tv;
@@ -240,11 +240,11 @@ int encode_tv(
 
   sprintf(cvnbuf, "%ld.%06ld", secs, usecs);
 
-  ct = strlen(cvnbuf) + 1;
+  ct = strlen(cvnbuf);
 
   if (phead != NULL)
 		{
-		pal = attrlist_create(atname, rsname, ct);
+		pal = attrlist_create(atname, rsname, ct+1);
 	
 		if (pal == NULL)
 		  {
@@ -261,7 +261,7 @@ int encode_tv(
   else
 	  {
     /* Is this right? time to attr name? */
-	  snprintf(atname, strlen(atname), "%s", cvnbuf);
+	  snprintf(atname, strlen(atname) - 1, "%s", cvnbuf);
 	  }
 
   return(1);

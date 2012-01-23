@@ -168,7 +168,7 @@ int decode_size(
  */
 /*ARGSUSED*/
 
-#define CVNBUFSZ 23
+#define ENCODE_SIZE_SIZE 23
 
 int encode_size(
 
@@ -181,7 +181,7 @@ int encode_size(
 
   {
   size_t    ct;
-  char     cvnbuf[CVNBUFSZ];
+  char     cvnbuf[ENCODE_SIZE_SIZE];
   svrattrl *pal;
 
   if (attr == NULL)
@@ -198,9 +198,9 @@ int encode_size(
 
   from_size(&attr->at_val.at_size, cvnbuf);
 
-  ct = strlen(cvnbuf) + 1;
+  ct = strlen(cvnbuf);
 
-  pal = attrlist_create(atname, rsname, ct);
+  pal = attrlist_create(atname, rsname, ct + 1);
 
   if (pal == NULL)
     {
@@ -530,7 +530,7 @@ int to_size(
 void from_size(
 
   struct size_value *psize,  /* I */
-  char              *cvnbuf) /* O (minsize=CVNBUFSZ) */
+  char              *cvnbuf) /* O (minsize=ENCODE_SIZE_SIZE) */
 
   {
   sprintf(cvnbuf, "%lu",

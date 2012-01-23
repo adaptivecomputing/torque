@@ -159,7 +159,7 @@ int decode_unkn(
     return (PBSE_SYSTEM);
 
   if (valln)
-    memcpy(entry->al_value, value, valln);
+    memcpy(entry->al_value, value, valln - 1);
 
   append_link(&patr->at_val.at_list, &entry->al_link, entry);
 
@@ -212,7 +212,7 @@ int encode_unkn(
 
   while (plist != (svrattrl *)0)
     {
-    pnew = (svrattrl *)calloc(1, plist->al_tsize);
+    pnew = (svrattrl *)calloc(1, plist->al_tsize+1);
 
     if (pnew == (svrattrl *)0)
       return (-1);

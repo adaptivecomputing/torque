@@ -169,7 +169,7 @@ int decode_l(
  */
 /*ARGSUSED*/
 
-#define CVNBUFSZ 21
+#define ENCODE_L_BUF_SIZE 21
 
 int encode_l(
 
@@ -182,7 +182,7 @@ int encode_l(
 
   {
   size_t   ct;
-  char   cvnbuf[CVNBUFSZ];
+  char   cvnbuf[ENCODE_L_BUF_SIZE];
   svrattrl *pal;
 
   if (!attr)
@@ -191,16 +191,16 @@ int encode_l(
   if (!(attr->at_flags & ATR_VFLAG_SET))
     return (0);
 
-  (void)sprintf(cvnbuf, "%ld", attr->at_val.at_long);
+  sprintf(cvnbuf, "%ld", attr->at_val.at_long);
 
-  ct = strlen(cvnbuf) + 1;
+  ct = strlen(cvnbuf);
 
-  pal = attrlist_create(atname, rsname, ct);
+  pal = attrlist_create(atname, rsname, ct + 1);
 
   if (pal == (svrattrl *)0)
     return (-1);
 
-  (void)memcpy(pal->al_value, cvnbuf, ct);
+  memcpy(pal->al_value, cvnbuf, ct);
 
   pal->al_flags = attr->at_flags;
 

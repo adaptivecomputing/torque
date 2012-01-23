@@ -246,8 +246,8 @@ int add_walltime_remaining(
     {
     snprintf(buf,sizeof(buf),"%lu",remaining);
     
-    len = strlen(buf) + 1;
-    pal = attrlist_create("Walltime","Remaining",len);
+    len = strlen(buf);
+    pal = attrlist_create("Walltime","Remaining",len+1);
     
     if (pal != NULL)
       {

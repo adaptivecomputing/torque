@@ -503,6 +503,7 @@ int status_nodeattrib(
   int   nth;  /*tracks list position (ordinal tacker)   */
 
   attribute atemp[ND_ATR_LAST]; /*temporary array of attributes   */
+  memset(&atemp, 0, sizeof(attribute)*ND_ATR_LAST);
 
   priv &= ATR_DFLAG_RDACC;    /* user-client privilege          */
 
@@ -3150,7 +3151,11 @@ int add_hello(
   pthread_mutex_lock(hc->hello_mutex);
 
   if ((rc = insert_thing(hc->ra, hi)) == -1)
+    {
     rc = ENOMEM;
+    free(hi->name);
+    free(hi);
+    }
 
   pthread_mutex_unlock(hc->hello_mutex);
 

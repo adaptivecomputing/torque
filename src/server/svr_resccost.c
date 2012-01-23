@@ -283,9 +283,7 @@ int encode_rcost(
       return(-1);
       }
 
-    sprintf(pal->al_value, "%ld",
-
-            pcost->rc_cost);
+    snprintf(pal->al_value, 22, "%ld", pcost->rc_cost);
 
     pal->al_flags = attr->at_flags;
 

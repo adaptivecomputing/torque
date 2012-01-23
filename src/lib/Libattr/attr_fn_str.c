@@ -192,6 +192,7 @@ int encode_str(
 
   {
   svrattrl *pal;
+  int len = 0;
 
   if (attr == NULL)
     {
@@ -205,14 +206,16 @@ int encode_str(
     return(0);
     }
 
-  pal = attrlist_create(atname, rsname, (int)strlen(attr->at_val.at_str) + 1);
+  len = strlen(attr->at_val.at_str);
+
+  pal = attrlist_create(atname, rsname, len + 1);
 
   if (pal == NULL)
     {
     return(-1);
     }
 
-  strcpy(pal->al_value, attr->at_val.at_str);
+  strncpy(pal->al_value, attr->at_val.at_str, len);
 
   pal->al_flags = attr->at_flags;
 

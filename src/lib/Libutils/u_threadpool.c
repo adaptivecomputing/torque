@@ -103,7 +103,7 @@ int create_work_thread(void)
   {
   int             rc;
   sigset_t        oldset;
-  pthread_t      *thread;
+  pthread_t       wthread;
   pthread_attr_t  attr;
   size_t          stack_size;
 
@@ -111,9 +111,6 @@ int create_work_thread(void)
     {
     initialize_threadpool(&request_pool,5,5,-1);
     }
-
-  if ((thread = (pthread_t *)calloc(1, sizeof(pthread_t))) == NULL)
-    return(ENOMEM);
 
   pthread_attr_init(&attr);
   pthread_attr_getstacksize(&attr, &stack_size);
@@ -123,7 +120,7 @@ int create_work_thread(void)
 
   /* save old signal mask */
   pthread_sigmask(SIG_SETMASK,&fillset,&oldset);
-  rc = pthread_create(thread,&request_pool->tp_attr,work_thread, &attr);
+  rc = pthread_create(&wthread,&request_pool->tp_attr,work_thread, &attr);
   pthread_sigmask(SIG_SETMASK,&oldset,NULL);
   
   return(rc);

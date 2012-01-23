@@ -402,7 +402,7 @@
 #define Q_DT_job_array          "job_array"
 
 /*constant related to sum of string lengths for above strings*/
-#define MAX_ENCODE_BFR  100
+#define MAX_ENCODE_BFR  150
 
 #define MGR_CMD_CREATE 0
 #define MGR_CMD_DELETE 1

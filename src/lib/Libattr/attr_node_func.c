@@ -477,6 +477,7 @@ int encode_jobs(
   int             jobcnt;  /*number of jobs using the node     */
   int             strsize; /*computed string size      */
   char           *job_str; /*holds comma separated list of jobs*/
+  int             job_str_len = 0;
 
   if (pattr == NULL)
     {
@@ -513,12 +514,10 @@ int encode_jobs(
     return(0);
     }
 
-  if (!(job_str = (char *)calloc(1, strsize)))
+  if ((job_str = (char *)calloc(1, strsize+1)) == NULL)
     {
     return -(PBSE_SYSTEM);
     }
-
-  memset(job_str, 0, strsize);
 
   i = 0;
 
@@ -535,8 +534,9 @@ int encode_jobs(
         psubn->index, jip->jobid);
       }
     }    /* END for (psubn) */
+  job_str_len = strlen(job_str);
 
-  pal = attrlist_create(aname, rname, (int)strlen(job_str) + 1);
+  pal = attrlist_create(aname, rname, job_str_len+1);
 
   if (pal == NULL)
     {
@@ -545,7 +545,7 @@ int encode_jobs(
     return -(PBSE_SYSTEM);
     }
 
-  strcpy(pal->al_value, job_str);
+  strncpy(pal->al_value, job_str, job_str_len);
 
   pal->al_flags = ATR_VFLAG_SET;
 

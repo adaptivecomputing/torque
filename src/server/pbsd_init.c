@@ -330,6 +330,7 @@ int DArrayAppend(
       return(FAILURE);
       }
     memcpy(tmp, Array->Data, sizeof(Array->Data[0]) * Array->Length);
+    free(Array->Data);
     Array->Data = tmp;
     Array->Length = newLength;
     }

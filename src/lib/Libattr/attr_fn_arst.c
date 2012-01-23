@@ -472,7 +472,7 @@ int encode_arst(
       ++j;
     }
 
-  pal = attrlist_create(atname, rsname, j);
+  pal = attrlist_create(atname, rsname, j + 1);
 
   if (pal == NULL)
     {

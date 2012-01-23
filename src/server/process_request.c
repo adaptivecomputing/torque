@@ -734,10 +734,11 @@ void dispatch_request(
 
     case PBS_BATCH_DeleteJob:
 
-      /* if this is a server size job delete request, then the request could also be
-      * for an entire array.  we check to see if the request object name is an array id.
-      * if so we hand off the the req_deletearray() function.  If not we pass along to the
-      * normal req_deltejob() function.
+      /* if this is a server size job delete request, then the request
+       * could also be for an entire array.  we check to see if the
+       * request object name is an array id. If so we hand off the the
+       * req_deletearray() function.  If not we pass along to the normal
+       * req_deletejob() function.
       */
 
       if (is_array(request->rq_ind.rq_delete.rq_objname))

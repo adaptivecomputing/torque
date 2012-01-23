@@ -211,14 +211,14 @@ int encode_b(
     value = false_val;
     }
 
-  ct = strlen(value) + 1;
+  ct = strlen(value);
 
-  pal = attrlist_create(atname, rsname, ct);
+  pal = attrlist_create(atname, rsname, ct+1);
 
   if (pal == (svrattrl *)0)
     return (-1);
 
-  strcpy(pal->al_value, value);
+  strncpy(pal->al_value, value, ct);
 
   pal->al_flags = attr->at_flags;
 
