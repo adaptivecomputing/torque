@@ -471,7 +471,8 @@ void *process_request(
       goto process_request_cleanup;
       }
 
-    unlock_node(isanode, "process_request", NULL, LOGLEVEL);
+    if (isanode != NULL)
+      unlock_node(isanode, "process_request", NULL, LOGLEVEL);
     }
 
   /*
