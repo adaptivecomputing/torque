@@ -3142,7 +3142,159 @@ int im_signal_task(
   } /* END im_signal_task() */
 
 
+int handle_im_response_kill_job(
+    int sock,
+    struct sockaddr_in *si,
+    job *pjob,
+    char *cookie,
+    int event,
+    int fromtask)
+  {
+  int rc = PBSE_NONE;
+  int ret = 0;
+  int nodeidx = -1;
+  int cntr = -1;
+  u_long si_ip;
+  u_long node_ip;
+  int tmp_cpu = 0;
+  int tmp_mem = 0;
+  int tmp_vmem = 0;
+  unsigned int   momport = 0;
+  hnodent *tmp_np = NULL;
+  hnodent *np = NULL;
+  char *jobid = pjob->ji_qs.ji_jobid;
+  /*
+   ** Sender is sending a response that a job
+   ** which needs to die has been given the ax.
+   ** I'm mother superior.
+   **
+   ** auxiliary info (
+   **   cput    ulong;
+   **   mem     ulong;
+   **   vmem    ulong;
+   ** )
+   */
 
+  si_ip = ntohl(si->sin_addr.s_addr);
+
+  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+    {
+    log_err(-1, __func__, "got KILL_JOB OKAY and I'm not MS");
+
+    return(IM_FAILURE);
+    }
+
+  for (cntr = 0; cntr < pjob->ji_numnodes;cntr++)
+    {
+    tmp_np = &pjob->ji_hosts[cntr];
+    node_ip = ntohl(tmp_np->sock_addr.sin_addr.s_addr);
+    if (node_ip == si_ip)
+      {
+      nodeidx = cntr;
+      np = tmp_np;
+      break;
+      }
+    }
+
+  if (LOGLEVEL >= 2)
+    {
+    if ((nodeidx == -1) || (np == NULL))
+      {
+      sprintf(log_buffer, "%s:KILL_JOB response, unknown host %s",
+          __func__, netaddr(si));
+      return IM_FAILURE;
+      }
+    else
+      sprintf(log_buffer, "%s:KILL_JOB acknowledgement received, host %s",
+          __func__, netaddr(si));
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
+    }
+
+  rc = disrui(sock, &ret);
+
+  if ((ret == DIS_SUCCESS) && (rc != PBSE_NONE))
+    {
+    /* Error on mom, should the error code from the mom be assigned here? */
+    sprintf(log_buffer,
+        "%s:KILL_JOB response from host %s indicates error (%d)",
+        __func__, netaddr(si), rc);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
+    np->hn_sister = rc;
+    return IM_FAILURE;
+    }
+
+  if (pjob->ji_resources != NULL)
+    {
+    if (ret == DIS_SUCCESS)
+      tmp_cpu = disrul(sock, &ret);
+    if (ret == DIS_SUCCESS)
+      tmp_mem = disrul(sock, &ret);
+    if (ret == DIS_SUCCESS)
+      tmp_vmem = disrul(sock, &ret);
+
+
+    if (ret == DIS_SUCCESS)
+      {
+      pjob->ji_resources[nodeidx].nr_cput = tmp_cpu;
+      pjob->ji_resources[nodeidx].nr_mem = tmp_mem;
+      pjob->ji_resources[nodeidx].nr_vmem = tmp_vmem;
+      }
+    else
+      return(IM_FAILURE);
+
+    if (LOGLEVEL >= 7)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+          "%s: %s FINAL from %d  cpu %lu sec  mem %lu kb  vmem %ld kb\n",
+          __func__,
+          jobid,
+          nodeidx,
+          pjob->ji_resources[nodeidx].nr_cput,
+          pjob->ji_resources[nodeidx].nr_mem,
+          pjob->ji_resources[nodeidx].nr_vmem);
+
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
+      }
+    }  /* END if (pjob_ji_resources != NULL) */
+
+  np->hn_sister = SISTER_KILLDONE;  /* We are changing this node from SISTER_OKAY which was 
+                                       set in send_sisters() */
+
+  for (cntr = 1;cntr < pjob->ji_numnodes;cntr++)
+    {
+    /* if we get through this loop without finding a
+     * hn_sister set to SISTER_OKAY then we know
+     * all sisters have reported in */
+    if (pjob->ji_hosts[cntr].hn_sister == SISTER_OKAY)
+      break;
+    }
+
+  if (cntr == pjob->ji_numnodes)
+    {
+    /* all dead */
+    if (LOGLEVEL >= 3)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+          "%s: ALL DONE, set EXITING job %s\n",
+          __func__,
+          jobid);
+
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
+      }
+
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+    if (multi_mom)
+      {
+      momport = pbs_rm_port;
+      }
+
+    job_save(pjob, SAVEJOB_QUICK, momport);
+
+    exiting_tasks = 1;
+    }
+  return rc;
+  }
 
 /*
  * handle_im_replies - sender is another MOM telling me that a request has
@@ -3169,7 +3321,6 @@ int handle_im_replies(
   int            exitval;
   int            event_com = ep->ee_command;
   size_t         len;
-  unsigned int   momport = 0;
   char          *jobid = pjob->ji_qs.ji_jobid;
   char         **argv;
   char         **envp;
@@ -3257,105 +3408,8 @@ int handle_im_replies(
     
     case IM_KILL_JOB:
       {
-      /*
-       ** Sender is sending a response that a job
-       ** which needs to die has been given the ax.
-       ** I'm mother superior.
-       **
-       ** auxiliary info (
-       **   cput    ulong;
-       **   mem     ulong;
-       **   vmem    ulong;
-       ** )
-       */
-      
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
-        {
-        log_err(-1, id, "got KILL_JOB OKAY and I'm not MS");
-        
-        return(IM_FAILURE);
-        }
-      
-      if (LOGLEVEL >= 2)
-        {
-        sprintf(log_buffer, "%s:KILL_JOB acknowledgement received", id);
-        
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buffer);
-        }
-      
-      if (pjob->ji_resources != NULL)
-        {
-        pjob->ji_resources[nodeidx - 1].nr_cput = disrul(stream, &ret);
-        
-        if (ret == DIS_SUCCESS)
-          {
-          pjob->ji_resources[nodeidx - 1].nr_mem = disrul(stream, &ret);
-          
-          if (ret == DIS_SUCCESS)
-            pjob->ji_resources[nodeidx - 1].nr_vmem = disrul(stream, &ret);
-          }
-
-        if (ret != DIS_SUCCESS)
-          return(IM_FAILURE);
-        
-        if (LOGLEVEL >= 7)
-          {
-          snprintf(log_buffer,sizeof(log_buffer),
-            "%s: %s FINAL from %d  cpu %lu sec  mem %lu kb  vmem %ld kb\n",
-            id,
-            jobid,
-            nodeidx,
-            pjob->ji_resources[nodeidx - 1].nr_cput,
-            pjob->ji_resources[nodeidx - 1].nr_mem,
-            pjob->ji_resources[nodeidx - 1].nr_vmem);
-          
-          log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-          }
-        }  /* END if (pjob_ji_resources != NULL) */
-      
-      /* don't close stream in case other jobs use it */
-      
-      np->hn_sister = SISTER_KILLDONE;  /* We are changing this node from SISTER_OKAY which was 
-                                           set in send_sisters() */
-      
-      for (i = 1;i < pjob->ji_numnodes;i++)
-        {
-        /* if we get through this loop without finding a
-         * hn_sister set to SISTER_OKAY then we know
-         * all sisters have reported in */
-        if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
-          break;
-        }
-      
-      if (i == pjob->ji_numnodes)
-        {
-        /* all dead */
-        if (LOGLEVEL >= 3)
-          {
-          snprintf(log_buffer,sizeof(log_buffer),
-            "%s: ALL DONE, set EXITING job %s\n",
-            id,
-            jobid);
-          
-          log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-          }
-        
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-        
-        if (multi_mom)
-          {
-          momport = pbs_rm_port;
-          }
-        
-        job_save(pjob, SAVEJOB_QUICK, momport);
-        
-        exiting_tasks = 1;
-        }
-      
+      ret = handle_im_response_kill_job(stream, addr, pjob,
+                                      cookie, event, event_task);
       break;
       }
     
@@ -3378,7 +3432,8 @@ int handle_im_replies(
       
       if (LOGLEVEL >= 5)
         {
-        sprintf(log_buffer, "%s: SPAWN_TASK %s OKAY task %d\n", id, jobid, taskid);
+        sprintf(log_buffer, "%s: SPAWN_TASK %s OKAY task %d\n",
+            id, jobid, taskid);
         
         log_record(
           PBSEVENT_JOB,
@@ -5246,12 +5301,79 @@ int handle_im_get_tid_response(
   } /* END handle_im_get_tid_response() */
 
 
+int send_im_error_addr(
 
+  int         err,
+  int         reply,
+  struct sockaddr_in *si,
+  char *jobid,
+  char       *cookie,
+  tm_event_t  event,
+  tm_task_id  fromtask)
 
+  {
+  int rc = PBSE_NONE;
+  int          cntr = 0;
+  int sock = 0;
+  /*  char log_buf[LOCAL_LOG_BUF_SIZE]; */
 
+  si->sin_port = htons(pbs_rm_port);
 
+  for (cntr = 0; cntr < 5; cntr++)
+    {
 
+    if ((sock = tcp_connect_sockaddr((struct sockaddr *)si,sizeof(struct sockaddr))) < 0)
+      {
+      continue;
+      }
+    DIS_tcp_setup(sock);
 
+    if ((rc = im_compose(sock,jobid,cookie,IM_ERROR,event,fromtask)) != DIS_SUCCESS)
+      {
+      }
+    else if ((rc = diswsi(sock,err)) != DIS_SUCCESS)
+      {
+      }
+    else if ((rc = DIS_tcp_wflush(sock)) != DIS_SUCCESS)
+      {
+      }
+
+    close(sock);
+
+    if (rc == DIS_SUCCESS)
+      break;
+    }
+
+  /*    if (rc != DIS_SUCCESS)
+        {
+        resend_momcomm *mc;
+
+        if ((mc = calloc(1, sizeof(resend_momcomm))) != NULL)
+        {
+        mc->mc_type = COMPOSE_REPLY;
+        mc->mc_struct = create_compose_reply_info(jobid, 
+        cookie,
+        si,
+        IM_ERROR,
+        TM_NULL_EVENT,
+        TM_NULL_TASK);
+
+        if (mc->mc_struct == NULL)
+        free(mc);
+        else
+        add_to_resend_things(mc);
+        }
+
+        snprintf(log_buf,sizeof(log_buf),
+        "Could not send error on event %d for job %s",
+        event,
+        pjob->ji_qs.ji_jobid);
+
+        log_err(-1,__func__,log_buf);
+        }
+        */
+  return rc;
+  }
 
 
 /**
@@ -5266,11 +5388,11 @@ int handle_im_get_tid_response(
  * task   int
  *  )
  *
- * Format the reply and write it back.
+ * Replies now need to be sent in a new connection (for now) due to
+ * threading issues.
  *
  * @see im_eof() - child - called if failure occurs
  */
-
 void im_request(
 
   int stream,   /* I */
@@ -5289,7 +5411,6 @@ void im_request(
   task                *ptask;
   hnodent             *np;
   eventent            *ep = NULL;
-  int                  close_stream = FALSE;
 
   struct sockaddr_in  *addr;
   struct sockaddr      stack_addr;
@@ -5433,9 +5554,6 @@ void im_request(
     case IM_JOIN_JOB:
       {
       ret = im_join_job_as_sister(stream,jobid,addr,cookie,event,fromtask,command,&reply,FALSE);
- 
-      close_stream = TRUE;
-
       reply = 0;
 
       if (ret == IM_FAILURE)
@@ -5453,9 +5571,6 @@ void im_request(
     case IM_JOIN_JOB_RADIX:
       {
       ret = im_join_job_as_sister(stream,jobid,addr,cookie,event,fromtask,command,&reply,TRUE);
- 
-      close_stream = TRUE;
-
       reply = 0;
 
       if (ret == IM_FAILURE)
@@ -5499,16 +5614,15 @@ void im_request(
  
   if (pjob == NULL)
     {
-    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_UNKJOBID);
-    if (LOGLEVEL >= 0)
-      {
-      sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job does not exist locally)",
-        PMOMCommand[MIN(command,IM_MAX)],
-        netaddr(addr),
-        jobid);
- 
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
-      }
+    /* Without this if, the systems will play ping pong with the request */
+    if (command != IM_ERROR)
+      send_im_error_addr(PBSE_UNKJOBID,reply,addr,jobid,cookie,event,fromtask);
+    sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job does not exist locally)",
+      PMOMCommand[MIN(command,IM_MAX)],
+      netaddr(addr),
+      jobid);
+
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
       
     goto err;
     }
@@ -5516,16 +5630,13 @@ void im_request(
   /* check cookie */
   if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
     {
-    if (LOGLEVEL >= 0)
     write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_IVALREQ);
-      {
-      sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job has no cookie)",
-       PMOMCommand[MIN(command,IM_MAX)],
-        netaddr(addr),
-        jobid);
+    sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job has no cookie)",
+     PMOMCommand[MIN(command,IM_MAX)],
+      netaddr(addr),
+      jobid);
 
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
-      }
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
 
     send_im_error(PBSE_BADSTATE,reply,pjob,cookie,event,fromtask);
  
@@ -5626,8 +5737,6 @@ void im_request(
     {
     case IM_KILL_JOB:
       {
-      close_stream = TRUE;
-      
       if (check_ms(stream, pjob))
         goto fini;
  
@@ -5641,16 +5750,12 @@ void im_request(
 
     case IM_KILL_JOB_RADIX:
       {
-      close_stream = TRUE;
- 
       if (check_ms(stream, pjob))
         goto fini;
       
       reply = 0;                        
       
       write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB_RADIX, PBSE_NONE);
-      close_conn(stream, FALSE);
-      close_stream = FALSE;
       im_kill_job_as_sister(stream,pjob,event,momport,TRUE);
       goto fini;
       
@@ -5659,13 +5764,12 @@ void im_request(
  
     case IM_SPAWN_TASK:
       {
-      close_stream = TRUE;
-      
       ret = im_spawn_task(stream,reply,cookie,event,addr,fromtask,pjob);
       reply = 0;
 
       if (ret == IM_FAILURE)
         {
+        log_err(-1, __func__, "im_spawn_task error");
         goto err;
         }
  
@@ -5674,64 +5778,69 @@ void im_request(
  
     case IM_SIGNAL_TASK:
       {
-      close_stream = TRUE;
-      
       ret = im_signal_task(stream,pjob,cookie,event,fromtask,reply);
       reply = 0;
       
       if (ret == IM_FAILURE)
+        {
+        log_err(-1, __func__, "im_signal_task error");
         goto err;
+        }
       
       break;
       }
 
     case IM_OBIT_TASK:
       {
-      close_stream = TRUE;
-      
       ret = im_obit_task(stream,pjob,cookie,event,fromtask,reply);
       reply = 0;
       
       if (ret == IM_FAILURE)
+        {
+        log_err(-1, __func__, "im_obit_task error");
         goto err;
+        }
       
       break;
       }
     
     case IM_GET_INFO:
       {
-      close_stream = TRUE;
-      
       ret = im_get_info(stream,pjob,cookie,event,fromtask,reply);
       reply = 0;
       
       if (ret == IM_FAILURE)
+        {
+        log_err(-1, __func__, "im_get_info error");
         goto err;
+        }
       
       break;
       }
     
     case IM_GET_RESC:
       {
-      close_stream = TRUE;
-      
       ret = im_get_resc_as_sister(stream,pjob,cookie,event,fromtask,reply);
       reply = 0;
       
       if (ret == IM_FAILURE)
+        {
+        log_err(-1, __func__, "im_get_resc_as_sister error");
         goto err;
+        }
       
       break;
       }
     
     case IM_POLL_JOB:
       {
-      close_stream = TRUE;
-
       /* check the validity of our connection */
       ret = check_ms(stream, pjob);
       if(ret != FALSE)
+        {
+        log_err(-1, __func__, "check_ms error IM_POLL_JOB");
         goto err;
+        }
 
       /* We will reply to the poll job request and close the connection */
       /* im_poll_job_as_sister will create a new connection and send
@@ -5740,12 +5849,13 @@ void im_request(
          MOM/Mother Superior for Job Radix */
       ret = write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_POLL_JOB, PBSE_NONE);
       if(ret != DIS_SUCCESS)
+        {
+        log_err(-1, __func__, "reply error IM_POLL_JOB");
         goto err;
+        }
 
       /* we are going to open a new connection for the reply. It seems proper to 
          close the old one since we are done with it. */
-      close_conn(stream, FALSE); 
-      close_stream = FALSE;
       im_poll_job_as_sister(pjob,cookie,event,fromtask);
       reply = 0;
       /* we are done */
@@ -5756,16 +5866,21 @@ void im_request(
 
     case IM_ABORT_JOB:
       {
-      close_stream = TRUE;
       /* check the validity of our connection */
       ret = check_ms(stream, pjob);
       if(ret != FALSE)
+        {
+        log_err(-1, __func__, "check_ms error IM_ABORT_JOB");
         goto err;
+        }
       
       /* Reply to the IM_ABORT_JOB request */
       ret = write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_ABORT_JOB, PBSE_NONE);
       if(ret != DIS_SUCCESS)
+        {
+        log_err(-1, __func__, "reply to IM_ABORT_JOB error");
         goto err;
+        }
         
       if ((ret = im_abort_job(pjob,addr,cookie,event,fromtask,&reply)) == IM_FINISHED)
         goto fini;
@@ -5775,11 +5890,12 @@ void im_request(
     
     case IM_GET_TID:
       {
-      close_stream = TRUE;
-
       reply = 0; 
       if ((ret = im_get_tid(pjob,cookie,event,fromtask)) == IM_FAILURE)
+        {
+        log_err(-1, __func__, "im_get_tid error");
         goto err;
+        }
       
       break;
       }
@@ -5792,93 +5908,92 @@ void im_request(
         {
         case IM_JOIN_JOB:
           {
-          close_stream = TRUE;
-
           if ((ret = handle_im_join_job_response(stream, pjob, addr)) == IM_FAILURE)
+            {
+            log_err(-1, __func__, "handle_im_join_job_response error");
             goto err;
+            }
 
           break;
           }
 
         case IM_KILL_JOB:
           {
-          close_stream = TRUE;
-
           if ((ret = handle_im_kill_job_response(stream, pjob, np, event_com, nodeidx)) == IM_FAILURE)
+            {
+            log_err(-1, __func__, "handle_im_kill_job_response error");
             goto err;
+            }
 
           break;
           }
 
         case IM_SPAWN_TASK:
-
-          close_stream = TRUE;
-
           if ((ret = handle_im_spawn_task_response(stream,pjob,event_task,event)) == IM_FAILURE)
+            {
+            log_err(-1, __func__, "handle_im_spawn_task_response error");
             goto err;
+            }
 
           break;
 
         case IM_GET_TASKS:
-
-          close_stream = TRUE;
-
           if ((ret = handle_im_get_tasks_response(stream,pjob,event_task,event)) == IM_FAILURE)
+            {
+            log_err(-1, __func__, "handle_im_get_tasks_response error");
             goto err;
+            }
 
           break;
 
         case IM_SIGNAL_TASK:
-
-          close_stream = TRUE;
-
           if ((ret = handle_im_signal_task_response(pjob,event_task,event)) == IM_FAILURE)
+            {
+            log_err(-1, __func__, "handle_im_signal_task_response error");
             goto err;
+            }
 
           break;
 
         case IM_OBIT_TASK:
-
-          close_stream = TRUE;
-
           if ((ret = handle_im_obit_task_response(stream,pjob,event_task,event)) == IM_FAILURE)
+            {
+            log_err(-1, __func__, "handle_im_obit_task_response error");
             goto err;
+            }
 
           break;
 
         case IM_GET_INFO:
-
-          close_stream = TRUE;
-
           if ((ret = handle_im_get_info_response(stream,pjob,event_task,event)) == IM_FAILURE)
+            {
+            log_err(-1, __func__, "handle_im_get_info_response error");
             goto err;
+            }
 
           break;
 
         case IM_GET_RESC:
-
-          close_stream = TRUE;
-
           if ((ret = handle_im_get_resc_response(stream,pjob,event_task,event)) == IM_FAILURE)
+            {
+            log_err(-1, __func__, "handle_im_get_resc_response error");
             goto err;
+            }
 
           break;
 
         case IM_POLL_JOB:
-
-          close_stream = TRUE;
-
           if ((ret = handle_im_poll_job_response(stream,pjob,nodeidx,np)) == IM_FAILURE)
+            {
+            log_err(-1, __func__, "handle_im_poll_job_response error");
             goto err;
+            }
           
           write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_POLL_JOB, PBSE_NONE);
 
           break;
 
         case IM_GET_TID:
-
-          close_stream = TRUE;
-
           ret = handle_im_get_tid_response(stream,pjob,cookie,argv,envp,&efwd);
 
           switch (ret)
@@ -5886,14 +6001,17 @@ void im_request(
             case IM_FINISHED:
 
               goto fini;
+              break;
 
             case IM_DONE:
 
               break;
 
             case IM_FAILURE:
-
+              {
+              log_err(-1, __func__, "IM_FAILURE in IM_GET_TID handle response");
               goto err;
+              }
             }
 
           break;
@@ -5912,8 +6030,6 @@ void im_request(
     case IM_RADIX_ALL_OK:
       {
       reply = 0;
-      close_stream = TRUE;
-
        /*
         ** Sender is an intermediate MOM or leaf within the radix
         ** of the current MOM. The sending intermediate mom
@@ -6121,20 +6237,19 @@ void im_request(
             
             cput = disrul(stream, &ret);
             if (ret == DIS_SUCCESS)
-              {
               mem  = disrul(stream, &ret);
               
-              if (ret == DIS_SUCCESS)
-                {
-                vmem  = disrul(stream, &ret);
+            if (ret == DIS_SUCCESS)
+              vmem  = disrul(stream, &ret);
                 
-                if (ret == DIS_SUCCESS)
-                  nodeid = disrsi(stream, &ret);
-                }
-              }
+            if (ret == DIS_SUCCESS)
+              nodeid = disrsi(stream, &ret);
             
             if (ret != DIS_SUCCESS)
+              {
+              log_err(-1, __func__, "Count not read cput||mem||vmem||nodeid");
               goto err;
+              }
             
             np = &pjob->ji_hosts[nodeid];
             
@@ -6204,19 +6319,31 @@ void im_request(
             
             cput = disrul(stream, &ret);
             if (ret != DIS_SUCCESS)
+              {
+              log_err(-1, __func__, "Count not read cput");
               goto err;
+              }
             
             mem  = disrul(stream, &ret);
             if (ret != DIS_SUCCESS)
+              {
+              log_err(-1, __func__, "Count not read mem");
               goto err;
+              }
             
             vmem  = disrul(stream, &ret);
             if (ret != DIS_SUCCESS)
+              {
+              log_err(-1, __func__, "Count not read vmem");
               goto err;
+              }
 
             nodeid = disrsi(stream, &ret);
             if (ret != DIS_SUCCESS)
+              {
+              log_err(-1, __func__, "Could not read nodeid");
               goto err;
+              }
             
             np = &pjob->ji_sisters[nodeid+1]; /* yes this is klugey but the sisters are off by one on the index */
             
@@ -6301,12 +6428,13 @@ void im_request(
        **  error value int;
        ** )
        */
-      close_stream = TRUE;
-      
       errcode = disrsi(stream, &ret);
       
       if (ret != DIS_SUCCESS)
+        {
+        log_err(-1, __func__, "Could not read error code");
         goto err;
+        }
       
       switch (event_com)
         {
@@ -6494,7 +6622,7 @@ void im_request(
           
           sprintf(log_buffer, "unknown command %d error", event_com);
           
-          log_err(-1, id, log_buffer);
+          log_err(-1, __func__, log_buffer);
           
           goto err;
 
@@ -6505,37 +6633,28 @@ void im_request(
       
       break;
       }
-    
+
     default:
-    
-    sprintf(log_buffer, "unknown command %d sent", command);
-    
-    log_err(-1, id, log_buffer);
-    
-    goto err;
-    
-    /*NOTREACHED*/
-    
-    break;
+      {
+
+      sprintf(log_buffer, "unknown command %d sent", command);
+
+      log_err(-1, __func__, log_buffer);
+
+      goto err;
+
+      /*NOTREACHED*/
+
+      break;
+      }
     }  /* END switch (Command) */
   
 done:
   
   /*rpp_eom(stream);*/
   
-  if (reply)
-    {
-    /* check if write worked */
-    
-    if ((ret != DIS_SUCCESS) ||
-        (DIS_tcp_wflush(stream) == -1))
-      {
-      log_err(errno, id, "DIS_tcp_wflush");
-      
-      close_conn(stream, FALSE);
-      close_stream = FALSE;
-      }
-    }
+  if ((ret != DIS_SUCCESS) || (DIS_tcp_wflush(stream) == -1))
+    log_err(errno, id, "DIS_tcp_wflush");
   
   goto fini;
   
@@ -6552,9 +6671,6 @@ err:
     jobid ? jobid : "unknown");
   
   log_err(-1, id, log_buffer);
-  
-  close_conn(stream, FALSE);
-  close_stream = FALSE;
   /*im_eof(stream, ret);*/
   
 fini:
@@ -6565,10 +6681,7 @@ fini:
   if (cookie != NULL)
     free(cookie);
   
-  if (close_stream == TRUE)
-    {
-    close_conn(stream, FALSE);
-    }
+  close_conn(stream, FALSE);
   
   return;
   }  /* END im_request() */

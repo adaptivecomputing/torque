@@ -983,12 +983,15 @@ typedef struct send_job_request
 #define JOB_SUBSTATE_SUSPEND 43 /* job suspended, CRAY only */
 
 #define JOB_SUBSTATE_EXITING 50 /* Start of job exiting processing */
-#define JOB_SUBSTATE_STAGEOUT 51 /* job staging out (other) files   */
-#define JOB_SUBSTATE_STAGEDEL 52 /* job deleteing staged out files  */
-#define JOB_SUBSTATE_EXITED 53 /* job exit processing completed   */
-#define JOB_SUBSTATE_ABORT      54 /* job is being aborted by server  */
-#define JOB_SUBSTATE_NOTERM_REQUE 55 /* (MOM) on mom initialization. Requeue job
-                                        but do not terminate any running process */
+#define JOB_SUBSTATE_EXIT_WAIT 51 /* Waiting for response from other moms
+                                     or from server */
+#define JOB_SUBSTATE_STAGEOUT 52 /* job staging out (other) files   */
+#define JOB_SUBSTATE_STAGEDEL 53 /* job deleteing staged out files  */
+#define JOB_SUBSTATE_EXITED 54 /* job exit processing completed   */
+#define JOB_SUBSTATE_ABORT      55 /* job is being aborted by server  */
+#define JOB_SUBSTATE_NOTERM_REQUE 56 /* (MOM) on mom initialization.
+                                        Requeue job but do not terminate
+                                        any running process */
 #define JOB_SUBSTATE_PREOBIT    57 /* (MOM) preobit jobstat sent */
 #define JOB_SUBSTATE_OBIT       58 /* (MOM) job obit notice sent */
 #define JOB_SUBSTATE_COMPLETE   59 /* job is complete */

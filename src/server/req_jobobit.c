@@ -1581,8 +1581,15 @@ void on_job_exit(
   else
     {
     preq = (struct batch_request *)ptask->wt_parm1;
-
-    jobid = strdup((char *)preq->rq_extra);
+    if (preq->rq_extra != NULL)
+      jobid = strdup((char *)preq->rq_extra);
+    else
+      {
+      /* Something is broken. */
+      free(ptask->wt_mutex);
+      free(ptask);
+      return;
+      }
     }
   
   free(ptask->wt_mutex);
@@ -2373,7 +2380,13 @@ void *req_jobobit(
 
   free(tmp);
 
-  if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+  if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+    {
+    pthread_mutex_unlock(pjob->ji_mutex);
+    return(NULL);
+    /* Mom didn't update correctly past time, so this was resent. */
+    }
+  else if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
     {
     if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
       {

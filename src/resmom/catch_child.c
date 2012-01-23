@@ -448,9 +448,9 @@ void scan_for_exiting(void)
             pjob->ji_sampletim = time(NULL);
             if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
               {
-              /* only call send_sisters with radix == TRUE if this is mother superior
-                 intermediate moms already called this in im_request
-                 IM_KILL_JOB_RADIX */
+              /* only call send_sisters with radix == TRUE if this
+               * is mother superior intermediate moms already called
+               * this in im_request IM_KILL_JOB_RADIX */
               NumSisters = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
               pjob->ji_outstanding = NumSisters;
               }
@@ -734,6 +734,7 @@ void scan_for_exiting(void)
       }
 
     post_epilogue(pjob, pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0);
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
 
     if (found_one++ >= ObitsAllowed)
       {
@@ -1312,6 +1313,7 @@ void *obit_reply(
   job   *pjob;
   attribute  *pattr;
   unsigned int momport = 0;
+  char tmp_line[MAXLINE];
 
   struct batch_request *preq;
   int    x; /* dummy */
@@ -1440,34 +1442,33 @@ void *obit_reply(
         default:
 
           {
-          char tmpLine[MAXLINE];
 
           switch (preq->rq_reply.brp_code)
             {
 
             case PBSE_BADSTATE:
 
-              sprintf(tmpLine, "server rejected job obit - unexpected job state");
+              sprintf(tmp_line, "server rejected job obit - unexpected job state");
 
               break;
 
             case PBSE_SYSTEM:
 
-              sprintf(tmpLine, "server rejected job obit - server not ready for job completion");
+              sprintf(tmp_line, "server rejected job obit - server not ready for job completion");
 
               break;
 
             default:
 
-              sprintf(tmpLine, "server rejected job obit - %d",
+              sprintf(tmp_line, "server rejected job obit - %d",
                       preq->rq_reply.brp_code);
 
               break;
             }  /* END switch (preq->rq_reply.brp_code) */
 
-          log_ext(-1,id,tmpLine,LOG_ALERT);
+          log_ext(-1,id,tmp_line,LOG_ALERT);
 
-          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmpLine);
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
           }  /* END BLOCK */
 
         mom_deljob(pjob);
@@ -1477,6 +1478,28 @@ void *obit_reply(
 
       break;
       }    /* END if (...) */
+    else
+      {
+      if (pjob->ji_momhandle == sock)
+        {
+        if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
+          {
+          /* This means the server has no idea what this job is
+           * and it should be deleted!!! */
+          mom_deljob(pjob);
+          break;
+          }
+        /* Commenting for now. The mom's are way to chatty right now */
+/*        else
+          {
+          sprintf(tmp_line, "Current state is: %d code (%d) sock (%d) - unknown Job state/request",
+              pjob->ji_qs.ji_substate, preq->rq_reply.brp_code, sock);
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid, tmp_line);
+          }
+          */
+        }
+      }
 
     pjob = nxjob;
     }  /* END while (pjob != NULL) */
@@ -1488,7 +1511,7 @@ void *obit_reply(
 
   free_br(preq);
 
-  pbs_disconnect_socket(sock);
+/*  pbs_disconnect_socket(sock); */
   close_conn(sock, FALSE);
 
   if (PBSNodeCheckEpilog)

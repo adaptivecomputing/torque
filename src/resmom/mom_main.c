@@ -585,12 +585,12 @@ const char *PJobSubState[] =
   "SUBSTATE48",
   "SUBSTATE49",
   "EXITING",   /* Start of job exiting processing */
+  "EXIT_WAIT", /* Waiting for a response from other mom's */
   "STAGEOUT",  /* job staging out (other) files   */
   "STAGEDEL",  /* job deleteing staged out files  */
   "EXITED",    /* job exit processing completed   */
   "ABORT",     /* job is being aborted by server  */
-  "SUBSTATE55",
-  "SUBSTATE56",
+  "NOTERM_REQUE",
   "PREOBIT",   /* preobit job status */
   "OBIT",      /* (MOM) job obit notice sent */
   "COMPLETED",
@@ -5629,17 +5629,22 @@ int kill_job(
     }
 
   DBPRT(("%s\n", log_buffer));
+  DBPRT(("Job - %s Current State %s\n", pjob->ji_qs.ji_jobid, PJobSubState[MAX(0,pjob->ji_qs.ji_substate)]));
 
-  /* NOTE:  should change be made to only execute precancel epilog if job is active? (NYI) */
+  /* NOTE:  should change be made to only execute precancel epilog if
+   * job is active? (NYI) */
 
-  /* NOTE:  epilog blocks until complete, which may cause issues if shutdown grace time is
-            enabled.  Change model to allow epilog.precancel to run in background and have
-            kill_task() executed once it is complete (NYI) */
+  /* NOTE:  epilog blocks until complete, which may cause issues if
+   * shutdown grace time is enabled.  Change model to allow
+   * epilog.precancel to run in background and have kill_task()
+   * executed once it is complete (NYI) */
 
-  /* NOTE:  this will allow kill_job to return immediately and will require sigchild
-            harvesting and the kill_task loop to be called once this signal is received */
+  /* NOTE:  this will allow kill_job to return immediately and will
+   * require sigchild harvesting and the kill_task loop to be called
+   * once this signal is received */
 
-  /* NOTE:  if path_epilogpdel is not set, kill_task should be called immediately (NYI) */
+  /* NOTE:  if path_epilogpdel is not set, kill_task should be called
+   * immediately (NYI) */
 
   if (run_pelog(PE_EPILOGUSER, path_epilogpdel, pjob, PE_IO_TYPE_NULL) != 0)
     {
