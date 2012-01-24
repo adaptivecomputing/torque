@@ -275,7 +275,7 @@ static int local_move(
     {
     if ((pque = get_jobs_queue(jobp)) == NULL)
       {
-      sprintf(log_buf, "queue %s does not exist\n", pjob->ji_qs.ji_queue);
+      sprintf(log_buf, "queue %s does not exist\n", jobp->ji_qs.ji_queue);
 
       log_err(-1, __func__, log_buf);
 
