@@ -261,21 +261,42 @@ static int local_move(
   int                   parent_queue_mutex_held)
 
   {
-  char      *id = "local_move";
   pbs_queue *pque;
+  pbs_queue *dest_que;
   char      *destination = jobp->ji_qs.ji_destin;
   int        mtype;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* search for destination queue */
-
-  if ((pque = find_queuebyname(destination)) == NULL)
+  /* CAUTION!!! This code is very complex - be very careful editing */
+  if (parent_queue_mutex_held == TRUE)
+    pque = jobp->ji_qhdr;
+  else
     {
-    sprintf(log_buf, "queue %s does not exist\n", destination);
+    if ((pque = get_jobs_queue(jobp)) == NULL)
+      {
+      sprintf(log_buf, "queue %s does not exist\n", pjob->ji_qs.ji_queue);
 
-    log_err(-1, id, log_buf);
+      log_err(-1, __func__, log_buf);
+
+      *my_err = PBSE_UNKQUE;
+
+      return(-1);
+      }
+    }
+
+  /* now that we have the routing queue we can lock the destination
+     queue. This is ok because we will never be routing from a 
+     destination queue to a routing queue */
+  if ((dest_que = find_queuebyname(destination)) == NULL)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "destination queue %s does not exist", destination);
+    log_err(-1, __func__, log_buf);
 
     *my_err = PBSE_UNKQUE;
+    if (parent_queue_mutex_held == FALSE)
+      unlock_queue(pque, __func__, NULL, 0);
 
     return(-1);
     }
@@ -299,37 +320,47 @@ static int local_move(
     mtype = MOVE_TYPE_Move; /* non-privileged move */
     }
 
+  /* check the destination */
   if ((*my_err = svr_chkque(
                      jobp,
-                     pque,
+                     dest_que,
                      get_variable(jobp, pbs_o_host), mtype, NULL)))
     {
     /* should this queue be retried? */
-    unlock_queue(pque, id, "retry", LOGLEVEL);
+    if (parent_queue_mutex_held == FALSE)
+      unlock_queue(pque, __func__, "retry", LOGLEVEL);
+
     return(should_retry_route(*my_err));
     }
-    
-  unlock_queue(pque, id, "success", LOGLEVEL);
 
   /* dequeue job from present queue, update destination and */
   /* queue_rank for new queue and enqueue into destination  */
 
-  svr_dequejob(jobp, parent_queue_mutex_held);
+  svr_dequejob(jobp, TRUE);
 
   strcpy(jobp->ji_qs.ji_queue, destination);
 
   jobp->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+    
+  unlock_queue(dest_que, __func__, NULL, 0);
+  unlock_queue(pque, __func__, "success", LOGLEVEL);
 
   *my_err = svr_enquejob(jobp, FALSE, -1);
 
   if (*my_err != 0)
     {
+    if (parent_queue_mutex_held == TRUE)
+      lock_queue(pque, __func__, NULL, 0);
+
     return(-1); /* should never ever get here */
     }
 
   jobp->ji_lastdest = 0; /* reset in case of another route */
 
   job_save(jobp, SAVEJOB_FULL, 0);
+    
+  if (parent_queue_mutex_held == TRUE)
+    lock_queue(pque, __func__, NULL, 0);
 
   return(PBSE_NONE);
   }  /* END local_move() */
@@ -424,7 +455,6 @@ void finish_moving_processing(
   int                   status)
 
   {
-  static char *id = "finish_moving_processing";
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   int          newstate;
@@ -434,7 +464,7 @@ void finish_moving_processing(
     {
     sprintf(log_buf, "bad request type %d\n", req->rq_type);
 
-    log_err(-1, id, log_buf);
+    log_err(-1, __func__, log_buf);
 
     return;
     }
@@ -1058,7 +1088,6 @@ int net_move(
   int               local_errno = 0;
   unsigned int      port = pbs_server_port_dis;
   char             *toserver;
-  static char      *id = "net_move";
   char             *tmp;
   send_job_request *args;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1069,7 +1098,7 @@ int net_move(
     {
     sprintf(log_buf, "no server specified in %s\n", destination);
 
-    log_err(-1, id, log_buf);
+    log_err(-1, __func__, log_buf);
 
     return(-1);
     }
