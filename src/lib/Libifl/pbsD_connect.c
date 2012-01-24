@@ -496,7 +496,7 @@ int get_parent_client_socket(int psock, int *pcsock)
   if (getsockname(psock, (struct sockaddr *)&sockname, &socknamelen) < 0)
     {
     rc = PBSE_SOCKET_FAULT;
-    fprintf(stderr, "pbs_iff: cannot get sockname for socket %d, errno=%d (%s)\n", psock, errno, strerror(errno));
+    fprintf(stderr, "iff: cannot get sockname for socket %d, errno=%d (%s)\n", psock, errno, strerror(errno));
     }
   else
     {
@@ -551,24 +551,29 @@ int validate_socket(
     write_buf_len = strlen(write_buf);
     if ((local_socket = socket_get_tcp()) <= 0)
       {
+      fprintf(stderr, "socket_get_tcp error\n");
       rc = PBSE_SOCKET_FAULT;
       }
     else if ((rc = socket_connect(&local_socket, l_server, l_server_len, AUTH_PORT, AF_INET, 0, &err_msg)) != PBSE_NONE)
       {
-      fprintf(stderr, "Error with socket_connect - %d-%s\n", rc, err_msg);
+      fprintf(stderr, "socket_connect error (VERIFY THAT trqauthd IS RUNNING)\n");
       }
     else if ((rc = socket_write(local_socket, write_buf, write_buf_len)) != write_buf_len)
       {
       rc = PBSE_SOCKET_WRITE;
+      fprintf(stderr, "socket_write error\n");
       }
     else if ((rc = socket_read_num(local_socket, &code)) != PBSE_NONE)
       {
+      fprintf(stderr, "socket_read_num error\n");
       }
     else if ((rc = socket_read_str(local_socket, &read_buf, &read_buf_len)) != PBSE_NONE)
       {
+      fprintf(stderr, "socket_read_str error\n");
       }
     else if ((rc = parse_daemon_response(code, read_buf_len, read_buf)) != PBSE_NONE)
       {
+      fprintf(stderr, "parse_daemon_response error\n");
       }
     else
       {
@@ -576,6 +581,13 @@ int validate_socket(
         {
         fprintf(stderr, "%s : Connection authorized (server socket %d)\n", id, parent_client_socket);
         }
+      }
+    }
+  if (rc != PBSE_NONE)
+    {
+    if (err_msg != NULL)
+      {
+      fprintf(stderr, "Error in connection to trqauthd (%d)-[%s]\n", rc, err_msg);
       }
     }
   if (err_msg != NULL)

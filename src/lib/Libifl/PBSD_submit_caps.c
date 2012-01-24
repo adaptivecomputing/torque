@@ -190,8 +190,16 @@ int PBSD_commit_get_sid(
   /* read the sid if given and no error */
   if (rc == PBSE_NONE)
     {
-    if (sid != NULL)
-      *sid = atol(reply->brp_un.brp_txt.brp_str);
+    if (reply->brp_choice == BATCH_REPLY_CHOICE_Text)
+      {
+      if (sid != NULL)
+        *sid = atol(reply->brp_un.brp_txt.brp_str);
+      }
+    else
+      /* (reply->brp_choice == BATCH_REPLY_CHOICE_NULL) */
+      {
+      *sid = reply->brp_code;
+      }
     }
 
   PBSD_FreeReply(reply);
