@@ -1168,11 +1168,8 @@ static int overmem_proc(
 
   {
   char               *id = "overmem_proc";
-  unsigned long long  memsize;
   int                 i;
   proc_stat_t        *ps;
-
-  memsize = 0;
 
   if (LOGLEVEL >= 6)
     {

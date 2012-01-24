@@ -364,13 +364,6 @@ void chkpt_xfr_done(
   struct work_task *ptask)
 
   {
-  job       *pjob;
-
-  struct batch_request *preq;
-
-  preq = (struct batch_request *)ptask->wt_parm1;
-  pjob = (job *)preq->rq_extra;
-
   /* Why are we grabbing a pointer to the job or the request here??? 
    * Nothing is done??!!?? 
    * If implemented later, thread protection must be added */

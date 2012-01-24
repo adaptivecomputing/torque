@@ -379,7 +379,6 @@ static void req_stat_job_step2(
   pbs_queue             *pque = NULL;
   int                    exec_only = 0;
 
-  int                    IsTruncated = 0;
   int                    bad = 0;
   long                   DTime;  /* delta time - only report full attribute list if J->MTime > DTime */
   static svrattrl       *dpal = NULL;
@@ -396,9 +395,6 @@ static void req_stat_job_step2(
   preply = &preq->rq_reply;
 
   /* See pbs_server_attributes(1B) for details on "poll_jobs" behaviour */
-
-  /* NOTE:  If IsTruncated is true, should walk all queues and walk jobs in each queue
-            until max_reported is reached (NYI) */
 
   if (dpal == NULL)
     {
@@ -491,10 +487,6 @@ static void req_stat_job_step2(
           }
         else
           {
-          if ((type == tjstTruncatedServer) || 
-              (type == tjstTruncatedQueue))
-            IsTruncated = TRUE;
-
           pjob = next_job(&alljobs,&iter);
           }
 

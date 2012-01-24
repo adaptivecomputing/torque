@@ -2579,7 +2579,6 @@ static int del_files(
   char  *path;
   char  *pp;
   char  *prmt;
-  int   del_dir = 0;
 
   struct stat  sb;
 #if NO_SPOOL_OUTPUT == 1
@@ -2727,7 +2726,7 @@ static int del_files(
 
     strcat(path, pair->fp_local);
 
-    del_dir = replace_checkpoint_path(path);
+    replace_checkpoint_path(path);
 
     if (local_or_remote(&prmt) == 0)
       {
@@ -2834,7 +2833,6 @@ static int del_files(
      * Do not remove if it is in the remote checkpoint directory list
      */
 
-/*    if (del_dir) */
     if (pair->fp_flag == JOBCKPFILE)
       {
       char *ptr;
@@ -2987,8 +2985,6 @@ void req_returnfiles(
   struct batch_request *preq)
 
   {
-  int          rc;
-
   struct job  *pjob;
   int          sock;
   int          retry_attempts = 0;
@@ -3019,12 +3015,12 @@ void req_returnfiles(
       {
       if (preq->rq_ind.rq_returnfiles.rq_return_stdout)
         {
-        rc = return_file(pjob, StdOut, sock, FALSE);
+        return_file(pjob, StdOut, sock, FALSE);
         }
       
       if (preq->rq_ind.rq_returnfiles.rq_return_stderr)
         {
-        rc = return_file(pjob, StdErr, sock, FALSE);
+        return_file(pjob, StdErr, sock, FALSE);
         }
       
       reply_ack(preq);
@@ -3674,12 +3670,11 @@ void req_cpyfile(
 
       if (pair->fp_flag == JOBCKPFILE)
         {
-        int path_changed = 0;
         char needdir[MAXPATHLEN + 1];
         int saveumask;
         char *ptr;
 
-        path_changed = replace_checkpoint_path(arg3);
+        replace_checkpoint_path(arg3);
 
         /*
          * If the checkpoint directory

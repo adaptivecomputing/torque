@@ -642,7 +642,6 @@ int mom_comm(
   unsigned int      dummy;
   time_t            time_now = time(NULL);
 
-  struct work_task *pwt;
   char             *jobid_copy;
   int               local_errno = 0;
 
@@ -679,12 +678,7 @@ int mom_comm(
 
       jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-      pwt = set_task(
-              WORK_Timed,
-              (long)(time_now + PBS_NET_RETRY_TIME),
-              func,
-              jobid_copy,
-              FALSE);
+      set_task(WORK_Timed, time_now + PBS_NET_RETRY_TIME, func, jobid_copy, FALSE);
 
       return(-1);
       }
@@ -2321,7 +2315,9 @@ void *req_jobobit(
   char                  acctbuf[RESC_USED_BUF];
   int                   accttail;
   int                   exitstatus;
+#ifdef USESAVEDRESOURCES
   int                   have_resc_used = FALSE;
+#endif
   char                  mailbuf[RESC_USED_BUF];
   int                   newstate;
   int                   newsubst;
@@ -2485,9 +2481,8 @@ void *req_jobobit(
 
   accttail = strlen(acctbuf);
 
-  have_resc_used = get_used(patlist, acctbuf);
-
 #ifdef USESAVEDRESOURCES
+  have_resc_used = get_used(patlist, acctbuf);
 
   /* if we don't have resources from the obit, use what the job already had */
 

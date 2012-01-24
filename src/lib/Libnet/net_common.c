@@ -377,11 +377,13 @@ int socket_wait_for_read(int socket)
 void socket_read_flush(int socket)
   {
   char incoming[256];
-  int avail_bytes = 0, read_bytes = 0;
+  int  avail_bytes = 0;
+  
   while ((avail_bytes = socket_avail_bytes_on_descriptor(socket)) > 0)
     {
-    if (avail_bytes > 256) avail_bytes = 256; 
-    read_bytes = read(socket, incoming, avail_bytes);
+    if (avail_bytes > 256)
+      avail_bytes = 256; 
+    read(socket, incoming, avail_bytes);
     }
   }
 

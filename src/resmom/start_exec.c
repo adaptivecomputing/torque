@@ -1706,8 +1706,10 @@ int TMomFinalizeJob1(
   
   attribute          *pattr;
   attribute          *pattri;
-  resource           *presc;
+#ifndef MOM_FORCENODEFILE
   resource_def       *prd;
+  resource           *presc;
+#endif
   
 #ifndef NUMA_SUPPORT
   torque_socklen_t   slen;
@@ -1787,14 +1789,13 @@ int TMomFinalizeJob1(
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
   
-  prd = find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
-  
-  presc = find_resc_entry(pattr, prd);
-  
 #ifdef MOM_FORCENODEFILE
   pjob->ji_flags |= MOM_HAS_NODEFILE;
   
 #else /* MOM_FORCENODEFILE */
+  prd = find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
+  presc = find_resc_entry(pattr, prd);
+  
   if (presc != NULL)
     pjob->ji_flags |= MOM_HAS_NODEFILE;
   
@@ -2121,10 +2122,8 @@ int TMomFinalizeJob2(
 #endif  /* !SHELL_USE_ARGV */
 
   job                  *pjob;
-  task                 *ptask;
   
   pjob  = (job *)TJE->pjob;
-  ptask = (task *)TJE->ptask;
   
   if (LOGLEVEL >= 4)
     {

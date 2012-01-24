@@ -77,13 +77,13 @@ void set_env_opts(
   job_data **env_attr,
   char **envp)
   {
-  int len_name = 0, var_num = 0;
+  int   var_num = 0;
   char *name = NULL;
   char *value = NULL;
 
   while (envp[var_num] != NULL)
     {
-    len_name = parse_env_line(mm, envp[var_num], &name, &value);
+    parse_env_line(mm, envp[var_num], &name, &value);
     if (value != NULL)
       {
 /*      strtolower(name); */

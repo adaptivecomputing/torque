@@ -283,7 +283,6 @@ int execute_job_delete(
   {
   static char      *id = "execute_job_delete";
   struct work_task *pwtnew;
-  struct work_task *pwtcheck;
 
   int               rc;
   char             *sigt = "SIGTERM";
@@ -477,13 +476,8 @@ jump:
   if (force_cancel > 0)
     {
     char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
-
-    pwtcheck = set_task(
-        WORK_Timed,
-        time_now + force_cancel,
-        ensure_deleted,
-        dup_jobid,
-        FALSE);
+ 
+    set_task(WORK_Timed, time_now + force_cancel, ensure_deleted, dup_jobid, FALSE);    
     }
 
   /* if configured, and this job didn't have a slot limit hold, free a job

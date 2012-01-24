@@ -977,7 +977,6 @@ static int chk_svr_resc_limit(
   static resource_def *mppwidthresc = NULL;
   static resource_def *mppnppn      = NULL;
   static resource_def *procresc     = NULL;
-  static resource_def *gpuresc      = NULL;
   char                 log_buf[LOCAL_LOG_BUF_SIZE];
 
   static time_t UpdateTime = 0;
@@ -1002,7 +1001,6 @@ static int chk_svr_resc_limit(
     mppwidthresc = find_resc_def(svr_resc_def, "mppwidth",  svr_resc_size);
     mppnppn      = find_resc_def(svr_resc_def, "mppnppn",   svr_resc_size);
     procresc     = find_resc_def(svr_resc_def, "procs",   svr_resc_size);
-    gpuresc      = find_resc_def(svr_resc_def, "gpus",   svr_resc_size);
 
     SvrNodeCt = 0;
 
@@ -2152,7 +2150,6 @@ static void default_std(
   dynamic_string *ds)   /* O */
 
   {
-  int            pd_len;
   char          *pd;
   unsigned long  job_id_num;
   /* allow for very large job ids */
@@ -2164,8 +2161,6 @@ static void default_std(
     ++pd;
   else
     pd = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
-
-  pd_len = strlen(pd);
 
   /* start with the job name */
   append_dynamic_string(ds, pd);

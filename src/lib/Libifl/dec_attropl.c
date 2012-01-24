@@ -116,7 +116,6 @@ int decode_DIS_attropl(
   {
   int   hasresc;
   unsigned int  i;
-  unsigned int  name_len;
   unsigned int  numpat;
 
   struct attropl  *pat = NULL;
@@ -131,8 +130,7 @@ int decode_DIS_attropl(
 
   for (i = 0; i < numpat; ++i)
     {
-
-    name_len = disrui(sock, &rc); /* name_len is unused here */
+    disrui(sock, &rc); /* name_len is unused here */
 
     if (rc) break;
 

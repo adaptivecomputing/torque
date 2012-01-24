@@ -480,10 +480,9 @@ void get_chkpt_dir_to_use(
 
 int replace_checkpoint_path(
 
-        char *path) /* I */
+  char *path) /* I */
 
   {
-  char           *id = "replace_checkpoint_path";
   char *ptr1;
   char *ptr2;
   char tmppath[MAXPATHLEN+1];
@@ -509,7 +508,7 @@ int replace_checkpoint_path(
     strcpy(path, tmppath);
     sprintf(log_buffer,"Converted filename is (%s)\n",
         path);
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     rtnval = 1;
     }
 
@@ -1205,17 +1204,16 @@ int mom_checkpoint_job(
   int  abort) /* I */
 
   {
-  int  hasold = 0;
-  int  sesid = -1;
-  int  ckerr;
-  unsigned short momport = 0;
+  int             hasold = 0;
+  int             sesid = -1;
+  int             ckerr;
+  unsigned short  momport = 0;
 
-  struct stat statbuf;
-  char  path[MAXPATHLEN + 1];
-  char  oldp[MAXPATHLEN + 1];
-  char  file[MAXPATHLEN + 1];
-  int  filelen;
-  task         *ptask;
+  struct stat     statbuf;
+  char            path[MAXPATHLEN + 1];
+  char            oldp[MAXPATHLEN + 1];
+  char            file[MAXPATHLEN + 1];
+  task           *ptask;
 
   assert(pjob != NULL);
 
@@ -1237,7 +1235,6 @@ int mom_checkpoint_job(
 
   mkdir(path, 0755);
 
-  filelen = strlen(path);
   strcpy(file, path);
 
 #ifdef _CRAY

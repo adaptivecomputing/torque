@@ -2457,7 +2457,6 @@ int encode_depend(
   struct dependnames *pn;
 
   char *BPtr = 0;
-  int   BSpace = -1;
 
   if (!attr)
     return (-1);
@@ -2501,32 +2500,31 @@ int encode_depend(
   *pal->al_value = '\0';
 
   BPtr = pal->al_value;
-  BSpace = pal->al_tsize;  /* this is actually a little larger than the actual buffer */
 
-	for (nxdp = pdp; nxdp; nxdp = (struct depend *)GET_NEXT(nxdp->dp_link))
+  for (nxdp = pdp; nxdp; nxdp = (struct depend *)GET_NEXT(nxdp->dp_link))
     {
-		if ((nxdp->dp_type != JOB_DEPEND_TYPE_SYNCCT) &&
-		    (nxdp->dp_type != JOB_DEPEND_TYPE_ON)       &&
-		    !(pdjb = (struct depend_job *)GET_NEXT(nxdp->dp_jobs)))
+    if ((nxdp->dp_type != JOB_DEPEND_TYPE_SYNCCT) &&
+        (nxdp->dp_type != JOB_DEPEND_TYPE_ON)       &&
+        !(pdjb = (struct depend_job *)GET_NEXT(nxdp->dp_jobs)))
       {
-			continue;	/* no value, skip this one */
+      continue; /* no value, skip this one */
       }
-
-		if (nxdp != pdp)
+    
+    if (nxdp != pdp)
       fast_strcat(&BPtr,",");  /* comma between */
 
-		pn = &dependnames[nxdp->dp_type];
+    pn = &dependnames[nxdp->dp_type];
     fast_strcat(&BPtr,pn->name);
 
-		if ((pn->type == JOB_DEPEND_TYPE_SYNCCT) ||
-		    (pn->type == JOB_DEPEND_TYPE_ON))
+    if ((pn->type == JOB_DEPEND_TYPE_SYNCCT) ||
+        (pn->type == JOB_DEPEND_TYPE_ON))
       {
-			sprintf(cvtbuf, ":%d", nxdp->dp_numexp);
+      sprintf(cvtbuf, ":%d", nxdp->dp_numexp);
       fast_strcat(&BPtr,cvtbuf);
       }
     else
       {
-			while (pdjb)
+      while (pdjb)
         {
         fast_strcat(&BPtr,":");
         cat_jobsvr(&BPtr,pdjb->dc_child);
@@ -2539,12 +2537,13 @@ int encode_depend(
           cat_jobsvr(&BPtr,pdjb->dc_svr);
           }
 
-				pdjb = (struct depend_job *)GET_NEXT(pdjb->dc_link);
-			  } 
-		  }
+	pdjb = (struct depend_job *)GET_NEXT(pdjb->dc_link);
+	} 
 
-		++numdep;
-	  }
+      }	
+
+    ++numdep;
+  }
 
   if (numdep)
     {

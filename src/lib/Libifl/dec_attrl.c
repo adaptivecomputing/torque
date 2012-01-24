@@ -116,7 +116,6 @@ int decode_DIS_attrl(
   {
   int   hasresc;
   unsigned int  i;
-  unsigned int  name_len;
   unsigned int  numpat;
 
   struct attrl  *pat = NULL;
@@ -131,8 +130,7 @@ int decode_DIS_attrl(
 
   for (i = 0; i < numpat; ++i)
     {
-
-    name_len = disrui(sock, &rc); /* name_len is unusued here */
+    disrui(sock, &rc); /* name_len is unusued here */
 
     if (rc) break;
 

@@ -176,15 +176,15 @@ static int await_connect(
   int sockd)     /* I */
 
   {
-  int n, val, rc;
+  int               n;
+  int               val;
+  int               rc;
 
-  int MaxNumDescriptors = 0;
+  fd_set           *BigFDSet = NULL;
 
-  fd_set *BigFDSet = NULL;
+  struct timeval    tv;
 
-  struct timeval tv;
-
-  torque_socklen_t len;
+  torque_socklen_t  len;
 
   /* 
    * some operating systems (like FreeBSD) cannot have a value for tv.tv_usec
@@ -196,8 +196,6 @@ static int await_connect(
   tv.tv_usec = timeout % 1000000;
 
   /* calculate needed size for fd_set in select() */
-
-  MaxNumDescriptors = get_max_num_descriptors();
 
   BigFDSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
 

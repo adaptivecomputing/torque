@@ -1105,13 +1105,6 @@ int net_move(
 
   toserver++;  /* point to server name */
 
-  tmp = parse_servername(toserver, &port);
-
-  hostname = tmp;
-  hostaddr = get_hostaddr(&local_errno, hostname);
-
-  free(tmp);
-
   if (req)
     {
     /* note, in this case, req is the orginal Move Request */

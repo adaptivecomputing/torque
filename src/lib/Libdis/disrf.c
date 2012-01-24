@@ -345,18 +345,9 @@ float disrf(
   unsigned uexpon;
   int  locret;
   int  negate;
-  int (*dis_getc)(int);
-  int (*dis_gets)(int, char *, size_t);
-  int (*disr_skip)(int,size_t);
-  int (*disr_commit)(int, int);
 
   assert(retval != NULL);
   assert(stream >= 0);
-
-  dis_getc = tcp_getc;
-  dis_gets = tcp_gets;
-  disr_skip = tcp_rskip;
-  disr_commit = tcp_rcommit;
 
   dval = 0.0;
 
@@ -403,7 +394,7 @@ float disrf(
       }
     }
 
-  if ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0)
+  if (tcp_rcommit(stream, locret == DIS_SUCCESS) < 0)
     locret = DIS_NOCOMMIT;
 
   *retval = locret;

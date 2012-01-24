@@ -1953,7 +1953,7 @@ void tcl_run(
 #else
 #define tcl_init()
 #define tcl_addarg(name, arg)
-#define tcl_stat(type, bs, f_opt) 1
+#define tcl_stat(type, bs, f_opt) ; 
 #define tcl_run(f_opt)
 #endif /* TCL_QSTAT */
 
@@ -1978,10 +1978,11 @@ int main(
   char *conflict = "qstat: conflicting options.\n";
 #if (TCL_QSTAT == 0)
   char *pc;
+#else
+  char option[3];
 #endif
   int located = FALSE;
 
-  char option[3];
 
   char job_id[PBS_MAXCLTJOBID];
 
@@ -2041,18 +2042,22 @@ int main(
   tcl_init();
   tcl_addarg(flags, argv[0]);
 
+#ifdef TCL_QSTAT
   option[0] = '-';
   option[2] = '\0';
+#endif
 
   if (getenv("PBS_QSTAT_EXECONLY") != NULL)
     exec_only = 1;
     
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
+#ifdef TCL_QSTAT
     option[1] = (char)c;
 
     tcl_addarg(flags, option);
     tcl_addarg(flags, optarg);
+#endif
 
     switch (c)
       {
@@ -2464,7 +2469,6 @@ int main(
   for (;optind < argc;optind++)
     {
     int connect;
-    int ret;
 
     located = FALSE;
 
@@ -2490,7 +2494,7 @@ int main(
             fprintf(stderr, "qstat: illegally formed job identifier: %s\n",
                     job_id);
 
-            ret = tcl_stat(error, NULL, f_opt);
+            tcl_stat(error, NULL, f_opt);
 
             any_failed = 1;
 
@@ -2513,7 +2517,7 @@ int main(
             fprintf(stderr, "qstat: illegally formed destination: %s\n",
                     destination);
 
-            ret = tcl_stat(error, NULL, f_opt);
+            tcl_stat(error, NULL, f_opt);
 
             any_failed = 1;
 
@@ -2550,7 +2554,7 @@ job_no_args:
                   any_failed,
                   pbs_strerror(any_failed));
 
-          ret = tcl_stat(error, NULL, f_opt);
+          tcl_stat(error, NULL, f_opt);
 
           any_failed = connect;
 
@@ -2606,13 +2610,13 @@ job_no_args:
               goto job_no_args;
               }
 
-            ret = tcl_stat("job", NULL, f_opt);
+            tcl_stat("job", NULL, f_opt);
 
             prt_job_err("qstat", connect, job_id_out);
             }
           else
             {
-            ret = tcl_stat("job", NULL, f_opt);
+            tcl_stat("job", NULL, f_opt);
 
             if (any_failed != PBSE_NONE)
               {
@@ -2622,11 +2626,17 @@ job_no_args:
           }
         else
           {
+          int condition = TRUE;
+#ifdef TCL_QSTAT
+          condition = tcl_stat("job", p_status, f_opt);
+#endif
+          
           if (alt_opt != 0)
             {
             altdsp_statjob(p_status, p_server, alt_opt);
             }
-          else if ((f_opt == 0) || tcl_stat("job", p_status, f_opt))
+          else if ((f_opt == 0) ||
+                   (condition)) 
             {
             display_statjob(p_status, p_header, f_opt);
             }
@@ -2649,7 +2659,7 @@ job_no_args:
                                  &server_name_out))
           {
           fprintf(stderr, "qstat: illegal 'destination' value\n");
-          ret = tcl_stat(error, NULL, f_opt);
+          tcl_stat(error, NULL, f_opt);
           any_failed = 1;
           break;
           }
@@ -2672,7 +2682,7 @@ que_no_args:
           any_failed = -1 * connect;
           fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
                   pbs_server, any_failed, pbs_strerror(any_failed));
-          ret = tcl_stat(error, NULL, f_opt);
+          tcl_stat(error, NULL, f_opt);
           break;
           }
 
@@ -2694,16 +2704,20 @@ que_no_args:
 
             fprintf(stderr, "%s\n", queue_name_out);
 
-            ret = tcl_stat(error, NULL, f_opt);
+            tcl_stat(error, NULL, f_opt);
             }
           }
         else
           {
+          int condition = TRUE;
+#ifdef TCL_QSTAT
+          condition = tcl_stat("queue", p_status, f_opt);
+#endif
           if (alt_opt & ALT_DISPLAY_q)
             {
             altdsp_statque(pbs_server, p_status, alt_opt);
             }
-          else if (tcl_stat("queue", p_status, f_opt))
+          else if (condition)
             {
             display_statque(p_status, p_header, f_opt);
             }
@@ -2729,7 +2743,7 @@ svr_no_args:
 
           fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
                   pbs_server, any_failed, pbs_strerror(any_failed));
-          ret = tcl_stat(error, NULL, f_opt);
+          tcl_stat(error, NULL, f_opt);
           any_failed = connect;
           break;
           }
@@ -2752,12 +2766,16 @@ svr_no_args:
 
             fprintf(stderr, "%s\n", server_out);
 
-            ret = tcl_stat(error, NULL, f_opt);
+            tcl_stat(error, NULL, f_opt);
             }
           }
         else
           {
-          if (tcl_stat("server", p_status, f_opt))
+          int condition = TRUE;
+#ifdef TCL_QSTAT
+          condition = tcl_stat("server", p_status, f_opt);
+#endif
+          if (condition)
             display_statserver(p_status, p_header, f_opt);
 
           p_header = FALSE;

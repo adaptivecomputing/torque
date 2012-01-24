@@ -6745,7 +6745,6 @@ int setup_program_environment(void)
 #endif
   char logSuffix[MAX_PORT_STRING_LEN];
   char momLock[MAX_LOCK_FILE_NAME_LEN];
-  int  tryport;
 #ifdef PENABLE_LINUX26_CPUSETS
   int  rc;
 #endif
@@ -7330,8 +7329,6 @@ int setup_program_environment(void)
 
     exit(1);
     }
-
-  tryport = (port_care != FALSE) ? IPPORT_RESERVED : PMAX_PORT;
 
   localaddr = ntohl(inet_addr("127.0.0.1"));
 

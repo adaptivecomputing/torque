@@ -4184,7 +4184,6 @@ int im_get_resc_as_sister(
   int       reply_stream;
   char     *jobid = pjob->ji_qs.ji_jobid;
   char     *info;
-  hnodent  *np;
   vnodent  *vp;
 
   nodeid = disrsi(stream, &ret);
@@ -4209,10 +4208,6 @@ int im_get_resc_as_sister(
     send_im_error(PBSE_BADHOST,reply,pjob,cookie,event,fromtask);
       
     return(IM_DONE);
-    }
-  else
-    {
-    np = vp->vn_host;
     }
   
   snprintf(log_buffer,sizeof(log_buffer),
@@ -5168,7 +5163,6 @@ int handle_im_get_tid_response(
   char     *jobid = pjob->ji_qs.ji_jobid;
 
   hnodent  *np;
-  eventent *ep;
   task     *ptask;
 
   if (check_ms(stream, pjob))
@@ -5195,7 +5189,7 @@ int handle_im_get_tid_response(
     if (np == NULL)
       return(IM_DONE);
 
-    ep = event_alloc(IM_SPAWN_TASK,np,efwd->fe_event,efwd->fe_taskid);
+    event_alloc(IM_SPAWN_TASK,np,efwd->fe_event,efwd->fe_taskid);
     
     reply_stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
     
@@ -5426,7 +5420,6 @@ void im_request(
   char               **argv = NULL;
   char               **envp = NULL;
   tm_event_t           event;
-  tm_event_t           parent_event;
   fwdevent             efwd;
   unsigned short       sender_port;
   unsigned int         momport = 0;
@@ -5725,7 +5718,6 @@ void im_request(
  
     event_com = ep->ee_command;
     event_task = ep->ee_taskid;
-    parent_event = ep->ee_parent_event;
     argv = ep->ee_argv;
     envp = ep->ee_envp;
     delete_link(&ep->ee_next);
@@ -7255,7 +7247,6 @@ int tm_tasks_request(
   char     *jobid = pjob->ji_qs.ji_jobid;
   task     *ptask;
 #ifndef NUMA_SUPPORT
-  eventent *ep;
   int       stream;
 #endif
  
@@ -7278,7 +7269,7 @@ int tm_tasks_request(
   if (pjob->ji_nodeid != nodeid)
     {
     /* not me */
-    ep = event_alloc(IM_GET_TASKS, phost, event, fromtask);
+    event_alloc(IM_GET_TASKS, phost, event, fromtask);
     
     stream = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
     
@@ -7361,7 +7352,6 @@ int tm_signal_request(
   task     *ptask;
 
 #ifndef NUMA_SUPPORT 
-  eventent *ep;
   int       stream;
 #endif
   
@@ -7395,8 +7385,7 @@ int tm_signal_request(
   if (pjob->ji_nodeid != nodeid)
     {
     /* not me XXX */
- 
-    ep = event_alloc(IM_SIGNAL_TASK, phost, event, fromtask);
+    event_alloc(IM_SIGNAL_TASK, phost, event, fromtask);
     
     stream = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
     
@@ -7488,7 +7477,6 @@ int tm_obit_request(
   task     *ptask;
 
 #ifndef NUMA_SUPPORT 
-  eventent *ep;
   int       stream;
 #endif
  
@@ -7516,8 +7504,7 @@ int tm_obit_request(
   if (pjob->ji_nodeid != nodeid)
     {
     /* not me */
- 
-    ep = event_alloc(IM_OBIT_TASK, phost, event, fromtask);
+    event_alloc(IM_OBIT_TASK, phost, event, fromtask);
     
     stream = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
     
@@ -7635,7 +7622,6 @@ int tm_getinfo_request(
   infoent  *ip;
 
 #ifndef NUMA_SUPPORT 
-  eventent *ep;
   int       stream;
 #endif
   
@@ -7672,7 +7658,7 @@ int tm_getinfo_request(
   if (pjob->ji_nodeid != nodeid)
     {
     /* not me */
-    ep = event_alloc(IM_GET_INFO,phost,event,fromtask);
+    event_alloc(IM_GET_INFO,phost,event,fromtask);
     
     stream = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
     
@@ -7757,7 +7743,6 @@ int tm_resources_request(
 
 #ifndef NUMA_SUPPORT 
   int      stream;
-  eventent *ep;
 #endif
  
   if (LOGLEVEL >= 7)
@@ -7779,8 +7764,7 @@ int tm_resources_request(
   if (pjob->ji_nodeid != nodeid)
     {
     /* not me XXX */
-    
-    ep = event_alloc(IM_GET_RESC, phost, event, fromtask);
+    event_alloc(IM_GET_RESC, phost, event, fromtask);
     
     stream = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
 
@@ -8785,13 +8769,9 @@ int readit(
   int fd)
 
   {
-  int   amt;
-  char  buf[READ_BUF_SIZE];
-  int   i;
+  int     amt;
+  char    buf[READ_BUF_SIZE];
   size_t  ret;
-
-  i = 0;
-
 
   if ((amt = recv(sock, buf, READ_BUF_SIZE, 0)) > 0)
     {
@@ -9132,18 +9112,18 @@ int read_status_strings(
   unsigned short  is_new = FALSE;
   int             rc;
   int             index;
-  unsigned short  mom_port;
-  unsigned short  rm_port;
   char           *str;
   char           *hostname;
   char           *node_str;
   received_node  *rn;
-  
-  mom_port = disrsi(fds,&rc);
+ 
+  /* was mom_port but storage unnecessary */ 
+  disrsi(fds,&rc);
 
   if (rc == DIS_SUCCESS)
     {
-    rm_port = disrsi(fds,&rc);
+    /* was rm_port but no longer needed to be stored */   
+    disrsi(fds,&rc);
 
     if (rc == DIS_SUCCESS)
       {

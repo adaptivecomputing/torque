@@ -236,6 +236,7 @@ int add_walltime_remaining(
         /* found walltime */
         unsigned long value = (unsigned long)pres->rs_value.at_val.at_long;
         remaining = value - (time_now - (pattr + index)->at_val.at_long);
+        found = upperBound * 12;
         found = TRUE;
         break;
         }
