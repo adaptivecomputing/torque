@@ -255,3 +255,10 @@ int get_svr_attr_str(int index, char **str)
   {
   return(0);
   }
+
+int remove_thing_from_index(resizable_array *ra, int index)
+  {
+  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
+  exit(1);
+  }
+

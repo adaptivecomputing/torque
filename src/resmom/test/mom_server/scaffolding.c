@@ -49,6 +49,8 @@ char log_buffer[LOG_BUF_SIZE];
 int rm_errno;
 int needs_cluster_addrs;
 time_t LastServerUpdateTime;
+int received_cluster_addrs;
+time_t       requested_cluster_addrs;
 
 
 
@@ -298,4 +300,15 @@ mom_hierarchy_t *initialize_mom_hierarchy()
   exit(1);
   }
 
+int remove_last_thing(resizable_array *ra)
+  {
+  fprintf(stderr, "The call to remove_last_thing needs to be mocked!!\n");
+  exit(1);
+  }
+
+void *next_thing_from_back(resizable_array *ra, int *iter)
+  {
+  fprintf(stderr, "The call to next_thing_from_back needs to be mocked!!\n");
+  exit(1);
+  }
 

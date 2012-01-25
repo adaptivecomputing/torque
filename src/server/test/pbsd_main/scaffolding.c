@@ -358,7 +358,7 @@ resizable_array *initialize_resizable_array(int size)
   exit(1);
   }
 
-char *pop_hello(hello_container *hc)
+hello_info *pop_hello(hello_container *hc)
   {
   fprintf(stderr, "The call to pop_hello needs to be mocked!!\n");
   exit(1);
@@ -454,3 +454,11 @@ int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
   {
   return(0);
   }
+
+int add_hello_info(hello_container *hc, hello_info *hi)
+  {
+  fprintf(stderr, "The call to insert_thing needs to be mocked!\n");
+  exit(1);
+  }
+
+

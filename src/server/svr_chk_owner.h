@@ -16,7 +16,7 @@ int svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host
 
 int svr_get_privilege(char *user, char *host);
 
-int authenticate_user(struct batch_request *preq, struct credential *pcred);
+int authenticate_user(struct batch_request *preq, struct credential *pcred, char **autherr);
 
 void chk_job_req_permissions(job **pjob_ptr, struct batch_request *preq);
 

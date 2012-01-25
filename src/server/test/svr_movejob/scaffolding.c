@@ -256,3 +256,8 @@ int svr_chkque(job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg
   exit(1);
   }
 
+int lock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
+  {
+  fprintf(stderr, "The call to lock_queue to be mocked!!\n");
+  exit(1);
+  }

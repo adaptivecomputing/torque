@@ -325,7 +325,7 @@ int remove_job(struct all_jobs *aj, job *pjob)
   exit(1);
   }
 
-int authenticate_user(struct batch_request *preq, struct credential *pcred)
+int authenticate_user(struct batch_request *preq, struct credential *pcred, char **autherr)
   {
   fprintf(stderr, "The call to authenticate_user needs to be mocked!!\n");
   exit(1);

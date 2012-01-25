@@ -40,6 +40,7 @@ AvlTree okclients;
 time_t pbs_tcp_timeout = 20;
 time_t wait_time = 10;
 char log_buffer[LOG_BUF_SIZE];
+pthread_mutex_t *log_mutex;
 
 
 
@@ -133,7 +134,7 @@ void exec_bail(job *pjob, int code)
   exit(1);
   }
 
-int AVL_list(AvlTree tree, char **Buf, long BufSize)
+int AVL_list(AvlTree tree, char **Buf, long *current_len, long *max_len)
   {
   fprintf(stderr, "The call to AVL_list needs to be mocked!!\n");
   exit(1);
@@ -616,6 +617,48 @@ int lock_init()
 char *netaddr(struct sockaddr_in *sai)
   {
   fprintf(stderr, "The call to netaddr needs to be mocked!!\n");
+  exit(1);
+  }
+
+int remove_thing(resizable_array *ra, void *thing)
+  {
+  fprintf(stderr, "The call to remove_thing needs to be mocked!!\n");
+  exit(1);
+  }
+
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
+  {
+  fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
+  exit(1);
+  }
+
+int insert_thing(resizable_array *ra, void *thing)
+  {
+  fprintf(stderr, "The call to insert_thing needs to be mocked!!\n");
+  exit(1);
+  }
+
+void clear_servers()
+  {
+  fprintf(stderr, "The call to clear_servers needs to be mocked!!\n");
+  exit(1);
+  }
+
+int diswul(int stream, unsigned long value)
+  {
+  fprintf(stderr, "The call to diswul needs to be mocked!!\n");
+  exit(1);
+  }
+
+void *next_thing(resizable_array *ra, int *iter)
+  {
+  fprintf(stderr, "The call to next_thing needs to be mocked!!\n");
+  exit(1);
+  }
+
+int im_compose(int stream, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
+  {
+  fprintf(stderr, "The call to im_compose needs to be mocked!!\n");
   exit(1);
   }
 

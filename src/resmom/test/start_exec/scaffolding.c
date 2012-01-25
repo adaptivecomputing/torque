@@ -54,6 +54,7 @@ char log_buffer[LOG_BUF_SIZE];
 int num_var_env;
 char jobstarter_exe_name[MAXPATHLEN + 1];
 int    attempttomakedir = 0;
+int EXTPWDRETRY = 3;
 
 int mom_close_poll(void)
   {
@@ -462,3 +463,17 @@ int socket_avail_bytes_on_descriptor(int socket)
   fprintf(stderr, "The call to socket_avail_bytes_on_descriptor needs to be mocked!!\n");
   exit(1);
   }
+
+int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y)
+  {
+  fprintf(stderr, "The call to timeval_subtract needs to be mocked!!\n");
+  exit(1);
+  }
+
+int get_hostaddr_hostent_af(int *local_errno, char *hostname, unsigned short *af_family, char **host_addr, int *host_addr_len)
+  {
+  fprintf(stderr, "The call to get_hostaddr_hostent_af needs to be mocked!!\n");
+  exit(1);
+  }
+
+

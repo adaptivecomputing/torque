@@ -282,7 +282,7 @@ int tcp_read(
       exit(1);
       }
       */
-    strcat(tp->tdis_eod, new_data);
+    memcpy(tp->tdis_eod, new_data, *read_len);
     tp->tdis_eod += *read_len;
     *avail_len = tp->tdis_eod - tp->tdis_leadp;
     max_read_len = tp->tdis_eod - tp->tdis_thebuf;

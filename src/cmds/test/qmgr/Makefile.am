@@ -1,3 +1,4 @@
+include $(top_srcdir)/buildutils/config.mk
 PROG_ROOT = ../..
 
 AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
@@ -9,7 +10,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qmgr
 
 libqmgr_la_SOURCES = scaffolding.c ${PROG_ROOT}/qmgr.c
-libqmgr_la_LDFLAGS = @CHECK_LIBS@
+libqmgr_la_LDFLAGS = @CHECK_LIBS@ $(PBS_LIBS) $(READLINE_LIBS)
 
 test_qmgr_SOURCES = test_qmgr.c
 
