@@ -326,6 +326,8 @@ static int local_move(
                      dest_que,
                      get_variable(jobp, pbs_o_host), mtype, NULL)))
     {
+    unlock_queue(dest_que, __func__, NULL, 0);
+
     /* should this queue be retried? */
     if (parent_queue_mutex_held == FALSE)
       unlock_queue(pque, __func__, "retry", LOGLEVEL);
@@ -429,7 +431,7 @@ void finish_routing_processing(
         else
           pthread_mutex_unlock(pjob->ji_mutex);
 
-        unlock_queue(pque, "finish_routing_processing", NULL, LOGLEVEL);
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         }
       else
         {
@@ -1082,13 +1084,8 @@ int net_move(
   {
   void             *data;
   char             *destination = jobp->ji_qs.ji_destin;
-  pbs_net_t         hostaddr;
-  char             *hostname;
   int               move_type;
-  int               local_errno = 0;
-  unsigned int      port = pbs_server_port_dis;
   char             *toserver;
-  char             *tmp;
   send_job_request *args;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 

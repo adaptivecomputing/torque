@@ -108,10 +108,13 @@
 #include "pbs_job.h"
 #include "credential.h"
 #include "batch_request.h"
+#include "threadpool.h"
 #include "resource.h" /* struct resource */
 #if __STDC__ != 1
 #include <memory.h>
 #endif
+
+#define ROUTE_RETRY_TIME 30
 
 /* External functions called */
 int svr_movejob(job *, char *, int *, struct batch_request *, int);
@@ -125,7 +128,6 @@ void queue_route(pbs_queue *);
 /* Global Data */
 extern char *msg_routexceed;
 extern char *msg_err_malloc;
-extern char *msg_routexceed;
 
 /*
  * Add an entry to the list of bad destinations for a job.
@@ -615,6 +617,47 @@ int job_route(
 
 
 
+void *reroute_job(
+
+  void *vp)
+
+  {
+  pbs_queue *pque;
+  char      *jobid;
+  job       *pjob;
+  int        rc;
+
+  jobid = (char *)vp;
+
+  if ((jobid != NULL) &&
+      ((pjob = find_job(jobid)) != NULL))
+    {
+    pque = get_jobs_queue(pjob);
+
+    if ((pque != NULL) &&
+        (pque->qu_qs.qu_type == QTYPE_RoutePush))
+      {
+      rc = job_route(pjob);
+      
+      unlock_queue(pque, __func__, NULL, 0);
+
+      if (rc == PBSE_ROUTEREJ)
+        job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
+      else if (rc == PBSE_ROUTEEXPD)
+        job_abt(&pjob, msg_routexceed);
+      }
+    else if (pque != NULL)
+      unlock_queue(pque, __func__, NULL, 0);
+
+    if (pjob != NULL)
+      pthread_mutex_unlock(pjob->ji_mutex);
+    }
+
+  return(NULL);      
+  } /* END reroute_job() */
+
+
+
 
 /*
  * queue_route - route any "ready" jobs in a specific queue
@@ -634,7 +677,6 @@ void queue_route(
   {
   job    *pjob = NULL;
 
-  int     rc;
   int     iter = -1;
   time_t  time_now = time(NULL);
 
@@ -643,27 +685,16 @@ void queue_route(
     /* the second condition says we only want to try if routing
      * has been tried once - this is to let req_commit have the 
      * first crack at routing always */
-    if ((pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now) &&
+    if ((pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now - ROUTE_RETRY_TIME) &&
         (pjob->ji_qs.ji_un.ji_routet.ji_rteretry != 0))
       {
-      if ((rc = job_route(pjob)) == PBSE_ROUTEREJ)
-        {
-        job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
-
-        continue;
-        }
-      else if (rc == PBSE_ROUTEEXPD)
-        {
-        job_abt(&pjob, msg_routexceed);
-
-        continue;
-        }
+      enqueue_threadpool_request(reroute_job, strdup(pjob->ji_qs.ji_jobid));
       }
 
     pthread_mutex_unlock(pjob->ji_mutex);
     }
 
   return;
-  }
+  } /* END queue_route() */
 
 
