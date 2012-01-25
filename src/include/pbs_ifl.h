@@ -492,10 +492,6 @@
 
 #define PBS_BATCH_SERVICE_NAME_DIS "pbs_dis" /* new DIS port   */
 
-#ifndef PBS_BATCH_SERVICE_PORT_DIS
-#define PBS_BATCH_SERVICE_PORT_DIS 15001  /* new DIS port   */
-#endif /* PBS_BATCH_SERVICE_PORT_DIS */
-
 #define PBS_MOM_SERVICE_NAME  "pbs_mom"
 
 #ifndef PBS_MOM_SERVICE_PORT

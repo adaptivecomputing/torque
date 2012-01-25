@@ -10,6 +10,7 @@ include_HEADERS = array_func.h issue_request.h job_func.h node_func.h node_manag
 PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libsite/libsite.a \
 		 ../lib/Libutils/libutils.a \
+		 ../lib/Libifl/libifl.a \
 	   ../lib/Libpbs/libtorque.la
 
 sbin_PROGRAMS = pbs_server

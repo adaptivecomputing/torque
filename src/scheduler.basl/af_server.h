@@ -248,7 +248,7 @@ struct server_struct
   int     portNumberOneWay; /* scheduler <-- server */
   /* if set to 0, use PBS_SCHEDULER_SERVICE_PORT */
   int portNumberTwoWay; /* scheduler <-> server */
-  /* if set to 0, use PBS_BATCH_SERVICE_PORT_DIS */
+  /* if set to 0, use PBS_BATCH_SERVICE_PORT */
   int     socket;        /* socket file descriptor */
   int     fdOneWay;      /* fd to use when only receiving messages from */
   /* the Server */

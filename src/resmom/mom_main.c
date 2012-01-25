@@ -6308,7 +6308,7 @@ void initialize_globals(void)
     default_server_port = get_svrport(
                             PBS_BATCH_SERVICE_NAME,
                             "tcp",
-                            PBS_BATCH_SERVICE_PORT_DIS);
+                            PBS_BATCH_SERVICE_PORT);
     }
 
   ptr = getenv("PBS_MANAGER_SERVICE_PORT");

@@ -257,7 +257,8 @@ void empty_alarm_handler(int signo);
 char *pbs_get_server_list(void);
 char *pbs_default(void);
 char *pbs_fbserver(void);
-/* static char *PBS_get_server(char *server, unsigned int *port);  */
+char *PBS_get_server(char *server, unsigned int *port);
+void get_port_from_server_name_file(unsigned int *server_name_file_port);
 #ifdef MUNGE_AUTH
 int PBSD_munge_authenticate(int psock, int handle); 
 #endif 

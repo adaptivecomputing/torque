@@ -24,17 +24,22 @@ int load_config(
     int *d_port)
   {
   int rc = PBSE_NONE;
-  char *tmp_ip;
+  char *tmp_name = pbs_default();
   /* Assume TORQUE_HOME = /var/spool/torque */
   /* /var/spool/torque/server_name */
-  tmp_ip = pbs_default();
-  if (tmp_ip == NULL)
+  if (tmp_name == NULL)
     rc = PBSE_BADHOST;
   else
     {
-    printf("hostname = %s\n", tmp_ip);
-    *ip = tmp_ip;
-    *t_port = PBS_BATCH_SERVICE_PORT;
+    /* Currently this only display's the port for the trq server
+     * from the lib_ifl.h file or server_name file (The same way
+     * the client utilities determine the pbs_server port)
+     */
+    printf("hostname = %s\n", tmp_name);
+    *ip = tmp_name;
+    PBS_get_server(tmp_name, (unsigned int *)t_port);
+    if (*t_port == 0)
+      *t_port = PBS_BATCH_SERVICE_PORT;
     *d_port = TRQ_AUTHD_SERVICE_PORT;
     }
   return rc;
@@ -54,6 +59,7 @@ int validate_server(
     char **sign_key)
   {
   int rc = PBSE_NONE;
+  fprintf(stdout, "pbs_server port is:%d\n", t_server_port);
   return rc;
   }
 
@@ -94,7 +100,7 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
       }
     else
       {
-      fprintf(stdout, "trqauthd daemonized\n");
+      fprintf(stdout, "trqauthd daemonized - port %d\n", server_port);
       /* If I made it here I am the child */
       fclose(stdin);
       fclose(stdout);

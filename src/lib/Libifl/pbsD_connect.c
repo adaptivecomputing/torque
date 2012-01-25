@@ -241,6 +241,15 @@ char *pbs_get_server_list(void)
 
 
 
+void get_port_from_server_name_file(unsigned int *server_name_file_port)
+  {
+  char *the_server = pbs_default();
+
+  if (the_server != NULL)
+    {
+    PBS_get_server(the_server, server_name_file_port);
+    }
+  }
 
 
 /**
@@ -307,7 +316,7 @@ char *pbs_fbserver(void)
 
 
 
-static char *PBS_get_server(
+char *PBS_get_server(
 
   char         *server,  /* I (NULL|'\0' for not set,modified) */
   unsigned int *port)    /* O */
@@ -328,7 +337,7 @@ static char *PBS_get_server(
     dflt_port = get_svrport(
                   PBS_BATCH_SERVICE_NAME,
                   "tcp",
-                  PBS_BATCH_SERVICE_PORT_DIS);
+                  PBS_BATCH_SERVICE_PORT);
     }
 
   /* first, get the "net.address[:port]" into 'server_name' */

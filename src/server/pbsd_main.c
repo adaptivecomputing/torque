@@ -129,6 +129,7 @@
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
 #include "svr_func.h" /* get_svr_attr_* */
+#include "../lib/Libifl/lib_ifl.h" /* get_port_from_server_name_file */
 
 
 #define TSERVER_HA_CHECK_TIME  1  /* 1 second sleep time between checks on the lock file for high availability */
@@ -1123,9 +1124,11 @@ void main_loop(void)
     }
 
 #ifdef PBS_VERSION
-  printf("pbs_server is up (svn version - %s)\n", PBS_VERSION);
+  printf("pbs_server is up (svn version - %s, port %d)\n",
+      PBS_VERSION, pbs_server_port_dis);
 #else
-  printf("pbs_server is up (version - %s)\n", VERSION);
+  printf("pbs_server is up (version - %s, port - %d)\n",
+      VERSION, pbs_server_port_dis);
 #endif
 
   while (state != SV_STATE_DOWN)
@@ -1369,9 +1372,6 @@ void set_globals_from_environment(void)
   }  /* END set_globals_from_environment() */
 
 
-
-
-
 /*
  * main - the initialization and main loop of pbs_daemon
  */
@@ -1390,6 +1390,7 @@ int main(
   char         EMsg[MAX_LINE];
   char         tmpLine[MAX_LINE];
   char         log_buf[LOCAL_LOG_BUF_SIZE];
+  unsigned int server_name_file_port = 0;
 
   extern char *msg_svrdown; /* log message   */
   extern char *msg_startup1; /* log message   */
@@ -1458,10 +1459,13 @@ int main(
   pbs_mom_addr       = pbs_server_addr;   /* assume on same host */
   pbs_scheduler_addr = pbs_server_addr;   /* assume on same host */
 
+  get_port_from_server_name_file(&server_name_file_port);
+  if (server_name_file_port != 0)
+    pbs_server_port_dis = server_name_file_port;
   /* The following port numbers might have been initialized in set_globals_from_environment() above. */
 
   if (pbs_server_port_dis <= 0)
-    pbs_server_port_dis = get_svrport(PBS_BATCH_SERVICE_NAME, "tcp", PBS_BATCH_SERVICE_PORT_DIS);
+    pbs_server_port_dis = get_svrport(PBS_BATCH_SERVICE_NAME, "tcp", PBS_BATCH_SERVICE_PORT);
 
   if (pbs_scheduler_port <= 0)
     pbs_scheduler_port = get_svrport(PBS_SCHEDULER_SERVICE_NAME, "tcp", PBS_SCHEDULER_SERVICE_PORT);
