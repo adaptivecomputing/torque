@@ -1025,7 +1025,7 @@ void *req_quejob(
         rc = job_attr_def[JOB_ATR_submit_host].at_set(
                  &pj->ji_wattr[JOB_ATR_submit_host],
                  &tempattr,
-                 INCR);
+                 SET);
         }
 
       if (rc)
