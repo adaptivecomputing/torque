@@ -1552,6 +1552,9 @@ int open_tcp_stream_to_sisters(
     
     ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);
     ep->ee_parent_event = parent_event;
+
+    sprintf(log_buffer, "event %d to host %s: com: %d", ep->ee_event, np->hn_host,com);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     
     DIS_tcp_setup(stream);
     
@@ -6002,9 +6005,9 @@ int start_exec(
 
     assert(pjob->ji_resources != NULL);
 
-    pjob->ji_resources[0].nr_cput = 11223344;
-    pjob->ji_resources[0].nr_mem = 11223344;
-    pjob->ji_resources[0].nr_vmem = 11223344;
+    pjob->ji_resources[0].nr_cput = 0;
+    pjob->ji_resources[0].nr_mem = 0;
+    pjob->ji_resources[0].nr_vmem = 0;
 
     CLEAR_HEAD(phead);
 
@@ -6038,7 +6041,7 @@ int start_exec(
     /* create list of sisters for mother superiors radix.
        This list will include mother superior and a list
        of hosts equal to the size of the job_radix. */
-    sister_list = allocate_sister_list(mom_radix);
+    sister_list = allocate_sister_list(mom_radix+1);
 
     for (i = 0; i <= mom_radix; i++)
       {
@@ -6064,9 +6067,10 @@ int start_exec(
       This will always be the first sister in the list */
 
     /* now allocate sister list for all the sisters */
-    sister_list = allocate_sister_list(mom_radix+1);
+    sister_list = allocate_sister_list(mom_radix);
 
-    np = &pjob->ji_hosts[0]; /* This is mother superior */
+    np = &pjob->ji_hosts[0]; /* This is mother superior. Mother superior will be the first
+                                sister in the list */
     for (j = 0; j < mom_radix; j++)
       {
       add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[j]);
@@ -6075,7 +6079,7 @@ int start_exec(
     i = 1; /* Mother superior was the first entry, now start with the sisters */
     do
       {
-      for (j = 0; j < mom_radix+1 && i < nodenum; j++)
+      for (j = 0; j < mom_radix && i < nodenum; j++)
         {
         /* Generate a list of sisters divided in to 'mom_radix' number of lists.
            For example an exec_host list of host1+host2+host3+host4+host5+host6+host7

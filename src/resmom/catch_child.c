@@ -631,6 +631,7 @@ void scan_for_exiting(void)
     if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) &&
         ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0))
       {
+      mom_radix = pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long;
       exit_mom_job(pjob, mom_radix);
       continue;
       }  /* END if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) */
@@ -642,7 +643,7 @@ void scan_for_exiting(void)
       {
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING)
         {
-        pjob->ji_obit = 1;
+        mom_radix = pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long;
         exit_mom_job(pjob, mom_radix);
         }
       else
@@ -2032,8 +2033,12 @@ int send_job_obit_to_ms(
   u_long       vmem = resc_used(pjob, "vmem", getsize);
   int          command;
   tm_event_t   event;
-  hnodent     *np = pjob->ji_hosts;
+  hnodent     *np;
 
+  if(mom_radix)
+    np = pjob->ji_sisters;
+  else
+    np = pjob->ji_hosts;
   /* no entry for Mother Superior?? */
   if (np == NULL)
     return(-1);
@@ -2047,7 +2052,7 @@ int send_job_obit_to_ms(
   else
     {
     command = IM_RADIX_ALL_OK;
-    event = IM_KILL_JOB_RADIX;
+    event = pjob->ji_obit;
     }
     
   if (LOGLEVEL >= 3)

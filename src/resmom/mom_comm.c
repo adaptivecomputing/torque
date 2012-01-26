@@ -866,15 +866,24 @@ int send_sisters(
   for (i = 0; i < loop_limit && job_radix < pjob->ji_radix; i++)
     {
     hnodent *np;
+     char *host_addr = NULL;
+     unsigned short af_family;
+     int            local_errno;
+     int            addr_len;
 
-    if (using_radix == TRUE)
+    if ((using_radix == TRUE) && (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
       {
       np = &pjob->ji_sisters[i];
 
-      if ((pjob->ji_nodeid == 0 && np->hn_node == 0) || 
-          (pjob->ji_im_nodeid == 1 && np->hn_node == 1))
-        continue;  /* this is me */
-      
+      if ((i == 0) || (i == 1)) /* ji_sisters[0] is the superior node to me and */
+        continue;               /* ji_sisters[1] is me. We skip them */
+
+      /* we need to record the addresses of sister nodes for later */
+      get_hostaddr_hostent_af(&local_errno, np->hn_host, &af_family, &host_addr, &addr_len);
+      memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
+      np->sock_addr.sin_port = htons(np->hn_port);
+      np->sock_addr.sin_family = af_family;
+     
       job_radix++;
       }
     else
@@ -911,7 +920,7 @@ int send_sisters(
 
       continue;
       }
-	    
+
     stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
     
     if (IS_VALID_STREAM(stream) == FALSE)
@@ -1933,6 +1942,17 @@ int contact_sisters(
     index++;
     }
 
+  free_sisterlist(sister_list, mom_radix+1);
+
+  sister_list = allocate_sister_list(mom_radix);
+
+  /* Add this node as the first node in each sister_list */
+  np = &pjob->ji_sisters[1];
+  for (i = 0; i < mom_radix; i++)
+    {
+    add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[i]);
+    }
+
   index = 2;   /* index 2 is the first child node. */
 
   do
@@ -2345,7 +2365,6 @@ int im_join_job_as_sister(
   else
     write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, PBSE_NONE);
 */
-  close(stream);
   
   strcpy(pjob->ji_qs.ji_jobid, jobid);
   
@@ -2644,11 +2663,17 @@ void im_kill_job_as_sister(
   
   job_save(pjob, SAVEJOB_QUICK, momport);
   
-  exiting_tasks = 1; /* Setting this to 1 will cause scan_for_exiting to execute */  
-  if(radix == FALSE)
+  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) &&
+      (radix == TRUE))
+    {
+    exiting_tasks = 0;
+    }
+  else
+    exiting_tasks = 1; /* Setting this to 1 will cause scan_for_exiting to execute */  
+/*  if(radix == FALSE)
     write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB, PBSE_NONE);
   else
-    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB_RADIX, PBSE_NONE);
+    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB_RADIX, PBSE_NONE);*/
   } /* END im_kill_job_as_sister() */
 
 
@@ -5548,6 +5573,7 @@ void im_request(
       {
       ret = im_join_job_as_sister(stream,jobid,addr,cookie,event,fromtask,command,&reply,FALSE);
       reply = 0;
+      close_conn(stream, FALSE);
 
       if (ret == IM_FAILURE)
         goto err;
@@ -5565,6 +5591,7 @@ void im_request(
       {
       ret = im_join_job_as_sister(stream,jobid,addr,cookie,event,fromtask,command,&reply,TRUE);
       reply = 0;
+      close_conn(stream, FALSE);
 
       if (ret == IM_FAILURE)
         goto err;
@@ -5623,7 +5650,7 @@ void im_request(
   /* check cookie */
   if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
     {
-    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_IVALREQ);
+    /* write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_IVALREQ);*/
     sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job has no cookie)",
      PMOMCommand[MIN(command,IM_MAX)],
       netaddr(addr),
@@ -5640,7 +5667,7 @@ void im_request(
  
   if (strcmp(oreo, cookie) != 0)
     {
-    write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_IVALREQ);
+    /*write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_IVALREQ);*/
     /* multiple versions of the same job are out there, kill it */
     exec_bail(pjob, JOB_EXEC_FAIL1);
 
@@ -5687,7 +5714,7 @@ void im_request(
       
       log_err(-1, id, log_buffer);
  
-      write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_UNKREQ);
+      /*write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_UNKREQ);*/
       goto err;
       }
  
@@ -5710,7 +5737,7 @@ void im_request(
  
       log_err(-1, id, log_buffer);
  
-      write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_UNKREQ);
+      /*write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, command, PBSE_UNKREQ);*/
       goto err;
       }
  
@@ -5742,12 +5769,11 @@ void im_request(
 
     case IM_KILL_JOB_RADIX:
       {
-      if (check_ms(stream, pjob))
-        goto fini;
+      /*if (check_ms(stream, pjob))
+        goto fini;*/
       
       reply = 0;                        
       
-      write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB_RADIX, PBSE_NONE);
       im_kill_job_as_sister(stream,pjob,event,momport,TRUE);
       goto fini;
       
@@ -5839,12 +5865,12 @@ void im_request(
          an IM_ALL_OKAY message which will then be processed by the 
          sending MOM (Mother superior for regular jobs or intermediate
          MOM/Mother Superior for Job Radix */
-      ret = write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_POLL_JOB, PBSE_NONE);
+      /*ret = write_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_POLL_JOB, PBSE_NONE);
       if(ret != DIS_SUCCESS)
         {
         log_err(-1, __func__, "reply error IM_POLL_JOB");
         goto err;
-        }
+        }*/
 
       /* we are going to open a new connection for the reply. It seems proper to 
          close the old one since we are done with it. */
