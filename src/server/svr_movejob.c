@@ -133,6 +133,7 @@ extern int  job_route(job *);
 void finish_sendmom(job *, struct batch_request *, long, char *, int, int);
 int PBSD_commit_get_sid(int ,long *,char *);
 int get_job_file_path(job *,enum job_file, char *, int);
+int get_parent_dest_queues(char *queue_parent_name, char *queue_dest_name, pbs_queue **parent, pbs_queue **dest, job **pjob_ptr);
 
 extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 
@@ -241,7 +242,6 @@ int svr_movejob(
 
 
 
-
 /*
  * local_move - internally move a job to another queue
  *
@@ -285,20 +285,19 @@ static int local_move(
       }
     }
 
-  /* now that we have the routing queue we can lock the destination
-     queue. This is ok because we will never be routing from a 
-     destination queue to a routing queue */
-  if ((dest_que = find_queuebyname(destination)) == NULL)
+  if (get_parent_dest_queues(jobp->ji_qs.ji_queue, destination, &pque, &dest_que, &jobp) != PBSE_NONE)
     {
-    snprintf(log_buf, sizeof(log_buf),
-      "destination queue %s does not exist", destination);
-    log_err(-1, __func__, log_buf);
+    if (dest_que != NULL)
+      unlock_queue(dest_que, __func__, NULL, 0);
 
-    *my_err = PBSE_UNKQUE;
-    if (parent_queue_mutex_held == FALSE)
+    if ((parent_queue_mutex_held == FALSE) &&
+        (pque != NULL))
       unlock_queue(pque, __func__, NULL, 0);
 
-    return(-1);
+    if (jobp == NULL)
+      return(-10);
+    else
+      return(-1);
     }
 
   /*
@@ -349,20 +348,17 @@ static int local_move(
 
   *my_err = svr_enquejob(jobp, FALSE, -1);
 
+  if (parent_queue_mutex_held == TRUE)
+    lock_queue(pque, __func__, NULL, 0);
+
   if (*my_err != 0)
     {
-    if (parent_queue_mutex_held == TRUE)
-      lock_queue(pque, __func__, NULL, 0);
-
     return(-1); /* should never ever get here */
     }
 
   jobp->ji_lastdest = 0; /* reset in case of another route */
 
   job_save(jobp, SAVEJOB_FULL, 0);
-    
-  if (parent_queue_mutex_held == TRUE)
-    lock_queue(pque, __func__, NULL, 0);
 
   return(PBSE_NONE);
   }  /* END local_move() */

@@ -1203,7 +1203,8 @@ void main_loop(void)
 /*    sprintf(log_buf, "num of queues in svr_queues = %d", svr_queues.ra->num);
     log_err(-1, __func__, log_buf);
     */
-    while ((pque = next_queue(&svr_queues,&iter)) != NULL)
+
+    while ((pque = next_queue(&svr_queues, &iter)) != NULL)
       {
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
         queue_route(pque);
@@ -1249,8 +1250,6 @@ void main_loop(void)
      * and all children are done, change state to DOWN
      */
 
-    iter = -1;
-
     pthread_mutex_lock(server.sv_jobstates_mutex);
 
     if ((state > SV_STATE_RUN) &&
@@ -1277,7 +1276,7 @@ void main_loop(void)
   iter = -1;
 
   /* save any jobs that need saving */
-  while ((pjob = next_job(&alljobs,&iter)) != NULL)
+  while ((pjob = next_job(&alljobs, &iter)) != NULL)
     {
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);

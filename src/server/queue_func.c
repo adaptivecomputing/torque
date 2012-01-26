@@ -378,8 +378,9 @@ pbs_queue *find_queuebyname(
     {
     pque = svr_queues.ra->slots[i].item;
     }
-    if (pque != NULL)
-      lock_queue(pque, __func__, NULL, LOGLEVEL);
+  
+  if (pque != NULL)
+    lock_queue(pque, __func__, NULL, LOGLEVEL);
 
   pthread_mutex_unlock(svr_queues.allques_mutex);
   
@@ -543,6 +544,86 @@ pbs_queue *next_queue(
 
   return(pque);
   } /* END next_queue() */
+
+
+
+
+/* 
+ * gets the locks on both queues without releasing the all_queues mutex lock.
+ * Doing this another way can cause deadlock.
+ *
+ * @return PBSE_NONE on success
+ */
+
+int get_parent_dest_queues(
+
+  char       *queue_parent_name,
+  char       *queue_dest_name,
+  pbs_queue **parent,
+  pbs_queue **dest,
+  job       **pjob_ptr)
+
+  {
+  pbs_queue *pque_parent;
+  pbs_queue *pque_dest;
+  char       jobid[PBS_MAXSVRJOBID + 1];
+  job       *pjob = *pjob_ptr;
+  int        index_parent;
+  int        index_dest;
+  int        rc = PBSE_NONE;
+
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
+  pthread_mutex_unlock(pjob->ji_mutex);
+
+  unlock_queue(*parent, __func__, NULL, 0);
+
+  *parent = NULL;
+  *dest   = NULL;
+
+  pthread_mutex_lock(svr_queues.allques_mutex);
+
+  index_parent = get_value_hash(svr_queues.ht, queue_parent_name);
+  index_dest   = get_value_hash(svr_queues.ht, queue_dest_name);
+
+  if ((index_parent < 0) ||
+      (index_dest < 0))
+    {
+    rc = -1;
+    lock_queue(*parent, __func__, NULL, 0);
+    }
+  else
+    {
+    /* good path */
+    pque_parent = svr_queues.ra->slots[index_parent].item;
+    pque_dest   = svr_queues.ra->slots[index_dest].item;
+
+    if ((pque_parent == NULL) ||
+        (pque_dest == NULL))
+      {
+      rc = -1;
+      lock_queue(*parent, __func__, NULL, 0);
+      }
+    else
+      {
+      /* SUCCESS! */
+      lock_queue(pque_parent, __func__, NULL, 0);
+      lock_queue(pque_dest,   __func__, NULL, 0);
+      *parent = pque_parent;
+      *dest = pque_dest;
+
+      rc = PBSE_NONE;
+      }
+    }
+
+  pthread_mutex_unlock(svr_queues.allques_mutex);
+
+  if ((*pjob_ptr = find_job(jobid)) == NULL)
+    rc = -1;
+
+  return(rc);
+  } /* END get_parent_dest_queues() */
+
+
 
 
 /* END queue_func.c */

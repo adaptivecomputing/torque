@@ -1066,7 +1066,7 @@ void mgr_queue_delete(
     return;
     }
 
-  if ((rc = que_purge(pque)) != 0)
+  if ((rc = que_purge(pque)) != PBSE_NONE)
     {
     /* FAILURE */
     unlock_queue(pque, __func__, "", LOGLEVEL);
@@ -1402,15 +1402,15 @@ void mgr_queue_set(
   struct batch_request *preq)
 
   {
-  int    allques;
-  int    bad = 0;
-  char   *badattr;
+  int        allques;
+  int        bad = 0;
+  char      *badattr;
   svrattrl  *plist;
   pbs_queue *pque;
   char      *qname;
-  int    rc;
-  int    iter = -1;
-  char     log_buf[LOCAL_LOG_BUF_SIZE];
+  int        rc;
+  int        iter = -1;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
@@ -1548,20 +1548,13 @@ void mgr_queue_unset(
     }
 
   sprintf(log_buf, msg_manager, msg_man_uns, preq->rq_user, preq->rq_host);
-
   log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_QUEUE,qname,log_buf);
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
   while (pque != NULL)
     {
-    rc = mgr_unset_attr(
-           pque->qu_attr,
-           que_attr_def,
-           QA_ATR_LAST,
-           plist,
-           preq->rq_perm,
-           &bad_attr);
+    rc = mgr_unset_attr(pque->qu_attr, que_attr_def, QA_ATR_LAST, plist, preq->rq_perm, &bad_attr);
 
     if (rc != 0)
       {

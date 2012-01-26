@@ -651,7 +651,7 @@ void *req_quejob(
   else
     {
     /* else find the named queue */
-    pque = find_queuebyname(preq->rq_ind.rq_queuejob.rq_destin);
+    pque = find_queuebyname(qname);
 
     rc   = PBSE_UNKQUE;
     }
@@ -781,8 +781,8 @@ void *req_quejob(
      */
     
     if ((strcmp(psatl->al_name,ATTR_l) == 0) &&
-      (strcmp(psatl->al_resc,"ncpus") == 0) &&
-      ((pc = strstr(psatl->al_value,":gpus=")) != NULL))
+        (strcmp(psatl->al_resc,"ncpus") == 0) &&
+        ((pc = strstr(psatl->al_value,":gpus=")) != NULL))
       {
       /* save off gpu resource list then add new resource_list entry for it */
       char *gpuval;
@@ -1147,8 +1147,8 @@ void *req_quejob(
       }
     else if (pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET)
       {
-        /* check to see if the path pointed to is a directory. If so apendd the default output file name.
-           Otherwise we treat the string as a path to a file */
+      /* check to see if the path pointed to is a directory. If so apendd the default output file name.
+         Otherwise we treat the string as a path to a file */
       char *ptr;
 
       ptr = strchr(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, ':');
@@ -1352,7 +1352,6 @@ void *req_quejob(
              hostname);
 
     free(oldid);    
-       
     }
 
   if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
