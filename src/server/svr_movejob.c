@@ -113,6 +113,7 @@
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname */
+#include "svr_movejob.h" /* get_parent_dest_queues */
 
 
 #if __STDC__ != 1
@@ -133,7 +134,6 @@ extern int  job_route(job *);
 void finish_sendmom(job *, struct batch_request *, long, char *, int, int);
 int PBSD_commit_get_sid(int ,long *,char *);
 int get_job_file_path(job *,enum job_file, char *, int);
-int get_parent_dest_queues(char *queue_parent_name, char *queue_dest_name, pbs_queue **parent, pbs_queue **dest, job **pjob_ptr);
 
 extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 

@@ -7,6 +7,7 @@
 #include "resizable_array.h" /* resizable_array */
 #include "attribute.h" /* attribute */
 #include "hash_table.h" /* hash_table */
+#include "pbs_job.h" /* job */
 
 char *msg_err_unlink = "Unlink of %s file %s failed";
 all_queues svr_queues;
@@ -107,4 +108,9 @@ int get_svr_attr_str(int index, char **str)
   return(0);
   }
 
+job *find_job(char *jobid)
+  {
+  fprintf(stderr, "The call to find_job needs to be mocked!!\n");
+  exit(1);
+  }
 

@@ -29,4 +29,6 @@ int remove_queue(all_queues *aq, pbs_queue *pque);
 
 pbs_queue *next_queue(all_queues *aq, int *iter);
 
+int get_parent_dest_queues(char *queue_parent_name, char *queue_dest_name, pbs_queue **parent, pbs_queue **dest, job **pjob_ptr);
+
 #endif /* _QUEUE_FUNC_H */

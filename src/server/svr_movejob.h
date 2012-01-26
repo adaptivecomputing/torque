@@ -13,9 +13,9 @@ void finish_routing_processing(job *pjob, int status);
 
 void finish_moving_processing(job *pjob, struct batch_request *req, int status);
 
-void finish_move_process(char *jobid, struct batch_request *preq, long time, char *node_name, int status, int type);
+void finish_move_process(char *jobid, struct batch_request *preq, long time, char *node_name, int status, int type, int mom_err);
 
-int send_job_work(job **pjob, char *node_name, int type, struct batch_request *preq);
+int send_job_work(job **pjob_ptr, char *node_name, int type, int *my_err, struct batch_request *preq);
 
 void *send_job(void *vp);
 

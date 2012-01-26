@@ -261,3 +261,9 @@ int lock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, 
   fprintf(stderr, "The call to lock_queue to be mocked!!\n");
   exit(1);
   }
+
+int get_parent_dest_queues(char *queue_parent_name, char *queue_dest_name, pbs_queue **parent, pbs_queue **dest, job **pjob_ptr)
+  {
+  fprintf(stderr, "The call to get_parent_dest_queues to be mocked!!\n");
+  exit(1);
+  }

@@ -457,8 +457,12 @@ int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
 
 int add_hello_info(hello_container *hc, hello_info *hi)
   {
-  fprintf(stderr, "The call to insert_thing needs to be mocked!\n");
+  fprintf(stderr, "The call to add_hello_info needs to be mocked!\n");
   exit(1);
   }
 
-
+void get_port_from_server_name_file(unsigned int *server_name_file_port)
+  {
+  fprintf(stderr, "The call to get_port_from_server_name_file needs to be mocked!\n");
+  exit(1);
+  }

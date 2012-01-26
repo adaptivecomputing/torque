@@ -87,3 +87,28 @@ resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
   {
   return(NULL);
   }
+
+int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+  {
+  fprintf(stderr, "The call to enqueue_threadpool_request needs to be mocked!!\n");
+  exit(1);
+  }
+
+pbs_queue *get_jobs_queue(job *pjob)
+  {
+  fprintf(stderr, "The call to get_jobs_queue needs to be mocked!!\n");
+  exit(1);
+  }
+
+
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
+  {
+  fprintf(stderr, "The call to unlock_queue needs to be mocked!!\n");
+  exit(1);
+  }
+
+job *find_job(char *jobid)
+  {
+  fprintf(stderr, "The call to find_job needs to be mocked!!\n");
+  exit(1);
+  }
