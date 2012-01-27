@@ -3216,7 +3216,7 @@ int remove_hello(
   char            *node_name)
 
   {
-  int         rc;
+  int         rc = PBSE_NONE;
   int         iter = -1;
   int         prev_index = -1;
   hello_info *hi;

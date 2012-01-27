@@ -378,12 +378,15 @@ void socket_read_flush(int socket)
   {
   char incoming[256];
   int  avail_bytes = 0;
+  int  i;
   
   while ((avail_bytes = socket_avail_bytes_on_descriptor(socket)) > 0)
     {
     if (avail_bytes > 256)
       avail_bytes = 256; 
-    read(socket, incoming, avail_bytes);
+    i = read(socket, incoming, avail_bytes);
+    if (i < 0)
+      break;
     }
   }
 
