@@ -38,7 +38,7 @@
 # *** Instructions for use *** 
 #
 # 1. Install hwloc - see contrib/hwloc_install.sh. This should already be done since
-#    TORQUE needs hwloc for its cpuset implementation starting in 3.1
+#    TORQUE needs hwloc for its cpuset implementation starting in 4.0
 # 2. Install Sys::Hwloc from CPAN 
 # 3. Set $PBS_HOME to the proper value if not already set
 # 4. Update the variables in the section 'Config Definitions' Especially update firstNodeId
