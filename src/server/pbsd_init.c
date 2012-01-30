@@ -446,9 +446,11 @@ dynamic_string *make_default_hierarchy()
   static char    *id = "make_default_hierarchy";
   struct pbsnode *pnode;
   dynamic_string *default_hierarchy;
+  dynamic_string *level_ds;
   int             iter = -1;
 
-  if ((default_hierarchy = get_dynamic_string(-1, NULL)) == NULL)
+  if (((default_hierarchy = get_dynamic_string(-1, NULL)) == NULL) ||
+      ((level_ds = get_dynamic_string(-1, NULL)) == NULL))
     {
     log_err(ENOMEM, id, "Cannot allocate memory");
     return(NULL);
@@ -459,12 +461,18 @@ dynamic_string *make_default_hierarchy()
 
   while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
     {
-    copy_to_end_of_dynamic_string(default_hierarchy, pnode->nd_name);
+    if (level_ds->used > 0)
+      append_dynamic_string(level_ds, ",");
+
+    append_dynamic_string(level_ds, pnode->nd_name);
     unlock_node(pnode, id, NULL, LOGLEVEL);
     }
 
-  copy_to_end_of_dynamic_string(default_hierarchy, "</sp>");
+  copy_to_end_of_dynamic_string(default_hierarchy, level_ds->str);
   copy_to_end_of_dynamic_string(default_hierarchy, "</sl>");
+  copy_to_end_of_dynamic_string(default_hierarchy, "</sp>");
+
+  free_dynamic_string(level_ds);
 
   return(default_hierarchy);
   } /* END make_default_hierarchy() */
