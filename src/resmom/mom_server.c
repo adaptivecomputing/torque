@@ -3078,7 +3078,7 @@ void mom_server_update_stat(
   static char   *id = "mom_server_update_stat";
   int            stream;
   int            ret = -1;
- 
+
   if ((pms->pbs_servername[0] == 0) ||
       (time_now < (pms->MOMLastSendToServerTime + ServerStatUpdateInterval)))
     {
@@ -3154,8 +3154,13 @@ void mom_server_update_stat(
       
       /* It would be redundant to send state since it is already in status */  
       pms->ReportMomState = 0;
-      
+
+#ifndef NUMA_SUPPORT      
       pms->MOMLastSendToServerTime = time_now;
+#else
+      if (numa_index + 1 >= num_node_boards)
+        pms->MOMLastSendToServerTime = time_now;
+#endif
       LastServerUpdateTime = time_now;
       
       UpdateFailCount = 0;

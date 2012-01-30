@@ -5906,11 +5906,11 @@ int start_exec(
 
   {
   int                 nodenum;
+  int                 ret;
 #ifndef NUMA_SUPPORT
   int                 i;
   int                 j;
   int                 index;
-  int                 ret;
   int                 local_errno;
   int                 addr_len;
 
