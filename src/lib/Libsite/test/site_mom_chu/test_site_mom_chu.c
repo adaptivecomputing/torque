@@ -9,15 +9,10 @@
 
 START_TEST(test_one)
   {
-
-
-  }
-END_TEST
-
-START_TEST(test_two)
-  {
-
-
+  job *pjob = NULL;
+  int rc = -1;
+  rc = site_mom_chkuser(pjob);
+  fail_unless(rc == 0, "return value has changed!!!");
   }
 END_TEST
 
@@ -27,11 +22,6 @@ Suite *site_mom_chu_suite(void)
   TCase *tc_core = tcase_create("test_one");
   tcase_add_test(tc_core, test_one);
   suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
-  suite_add_tcase(s, tc_core);
-
   return s;
   }
 

@@ -9,17 +9,15 @@
 
 START_TEST(test_one)
   {
-
-
+  char *uname = strdup("someone");
+  char *host = NULL;
+  char *ret_uname = NULL;
+  ret_uname = site_map_user(uname, host);
+  fail_unless(strcmp(uname, ret_uname) == 0, "Usernames don't match");
+  free(uname);
   }
 END_TEST
 
-START_TEST(test_two)
-  {
-
-
-  }
-END_TEST
 
 Suite *site_map_usr_suite(void)
   {
@@ -27,11 +25,6 @@ Suite *site_map_usr_suite(void)
   TCase *tc_core = tcase_create("test_one");
   tcase_add_test(tc_core, test_one);
   suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
-  suite_add_tcase(s, tc_core);
-
   return s;
   }
 

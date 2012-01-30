@@ -9,15 +9,20 @@
 
 START_TEST(test_one)
   {
-
-
+  job *pjob = NULL;
+  int hold_type = -1;
+  int rc = -1;
+  rc = site_mom_postchk(pjob, hold_type);
+  fail_unless(rc == 0, "return value has changed!!!");
   }
 END_TEST
 
 START_TEST(test_two)
   {
-
-
+  job *pjob = NULL;
+  int rc = -1;
+  rc = site_mom_prerst(pjob);
+  fail_unless(rc == 0, "return value has changed!!!");
   }
 END_TEST
 

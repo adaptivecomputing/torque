@@ -5,10 +5,16 @@
 #include "pbs_job.h" /* job */
 #include "queue.h" /* pbs_queue */
 
-int default_router(job *jobp, struct pbs_queue *qp, long retry_time)
-  { 
-  fprintf(stderr, "The call to gettime needs to be mocked!!\n");
-  exit(1);
+job *scaf_pjob = NULL;
+pbs_queue *scaf_qp = NULL;
+int scaf_retry_time = -1;
+
+int default_router(job *pjob, struct pbs_queue *qp, long retry_time)
+  {
+  scaf_pjob = pjob;
+  scaf_qp = qp;
+  scaf_retry_time = retry_time;
+  return 1;
   }
 
 

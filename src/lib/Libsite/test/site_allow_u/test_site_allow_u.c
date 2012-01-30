@@ -9,15 +9,12 @@
 
 START_TEST(test_one)
   {
-
-
-  }
-END_TEST
-
-START_TEST(test_two)
-  {
-
-
+  /* As this is site specific, there is no implementation in this function */
+  char *user = NULL;
+  char *host = NULL;
+  int rc = -1;
+  rc = site_allow_u(user, host);
+  fail_unless(rc == 0, "The return value has changed!!!");
   }
 END_TEST
 
@@ -27,11 +24,6 @@ Suite *site_allow_u_suite(void)
   TCase *tc_core = tcase_create("test_one");
   tcase_add_test(tc_core, test_one);
   suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
-  suite_add_tcase(s, tc_core);
-
   return s;
   }
 

@@ -3,33 +3,64 @@
 #include "test_u_users.h"
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <pwd.h>
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(null_check)
   {
-
-
+  char *user_name = NULL;
+  struct passwd *ret_user = NULL;
+  ret_user = getpwnam_ext(user_name);
+  fail_unless(ret_user == NULL, "null shouldn't work as user_name");
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(invalid_user)
   {
+  char *user_name = strdup("unknown_user");
+  struct passwd *ret_user = NULL;
+  ret_user = getpwnam_ext(user_name);
+  fail_unless(ret_user == NULL, "unknown_user is a valid user????");
+  free(user_name);
+  }
+END_TEST
 
+START_TEST(valid_user)
+  {
+  char *user_name = strdup("root");
+  struct passwd *ret_user = NULL;
+  ret_user = getpwnam_ext(user_name);
+  fail_if(ret_user == NULL, "unknown_user is a valid user????");
+  fail_unless(strcmp(user_name, ret_user->pw_name) == 0, "Incorrect user returned (%s != %s)", user_name, ret_user->pw_name);
+  free(user_name);
+  }
+END_TEST
 
+START_TEST(invalid_user_with_error)
+  {
+  /* How do I lock memory allocation again.... */
+  char *user_name = strdup("unknown_user");
+  struct passwd *ret_user = NULL;
+  ret_user = getpwnam_ext(user_name);
+  fail_unless(ret_user == NULL, "unknown_user is a valid user????");
+  free(user_name);
   }
 END_TEST
 
 Suite *u_users_suite(void)
   {
   Suite *s = suite_create("u_users_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("null_check");
+  tcase_add_test(tc_core, null_check);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("invalid_user");
+  tcase_add_test(tc_core, invalid_user);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("valid_user");
+  tcase_add_test(tc_core, valid_user);
   suite_add_tcase(s, tc_core);
 
   return s;
@@ -37,6 +68,9 @@ Suite *u_users_suite(void)
 
 void rundebug()
   {
+  char *user_name = strdup("root");
+  struct passwd *ret_user = NULL;
+  ret_user = getpwnam_ext(user_name);
   }
 
 int main(void)

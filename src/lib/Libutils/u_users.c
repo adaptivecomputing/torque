@@ -1,4 +1,4 @@
-
+#include "license_pbs.h" /* See here for the software license */
 #include <pwd.h>
 #include "utils.h"
 #include "errno.h"
@@ -60,5 +60,3 @@ struct passwd *getpwnam_ext(
 
   return(pwent);
   } /* END getpwnam_ext() */
-
-

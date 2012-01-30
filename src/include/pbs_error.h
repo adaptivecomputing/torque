@@ -123,6 +123,8 @@ extern char *pbse_to_txt(int);
 
 extern char *pbs_strerror(int);
 
+extern int pbs_errno;
+
 #endif  /* END PBSE_ */
 
 
