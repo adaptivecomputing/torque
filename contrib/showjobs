@@ -419,7 +419,7 @@ B<showjobs> - list historical job information
 
 =head1 SYNOPSIS
 
-B<showjobs> [B<-u> I<user_name>] [B<-g> I<group_name>] [B<-a> I<account_name>] [B<-q> I<queue_name>] [B<-s> I<start date>] [B<-e> I<end date>] [B<-n> I<days>] [B<--help>] [B<--man>] [[B<-j>] <job id>]
+B<showjobs> [B<-u> I<user_name>] [B<-g> I<group_name>] [B<-a> I<account_name>] [B<-q> I<queue_name>] [B<-s> I<start date>] [B<-e> I<end date>] [B<-n> I<# of job files>] [B<--help>] [B<--man>] [[B<-j>] <job id>]
 
 =head1 DESCRIPTION
 
@@ -445,7 +445,7 @@ Show only job records matching the specified group.
 
 Show only job records matching the specified job id.
 
-=item B<-n> I<days>
+=item B<-n> I<#_of_job_files>
 
 Restricts the number of past job files to search.
 
