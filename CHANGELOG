@@ -1,5 +1,8 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+2.5.11
+  b - fix for writing too much data when job_script is saved to job log. (backported from 3.0.5)
+
 2.5.10 
   b - Fixed a problem where pbs_mom will crash of check_pwd returns NULL. This could
       happen for example if LDAP was down and getpwnam returns NULL.
@@ -140,7 +143,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       queues because there is no proc count available to evaluate. This fix sets
       a default nodes value of 1 if the nodes or procs resources are not requested.
   b - There is a bug where the procct resource would be passed up to the scheduler
-      if a job were delayed in a routing queue. The procct resource is interpreted
+      i  b - fix for writing too much data when job_script is saved to job log.
+f a job were delayed in a routing queue. The procct resource is interpreted
       as a generic resource in the scheduler. This would cause the job to never be
       able to run because it had a generic resource that did not exist (procct).
       It is important for procct to be removed from the Resource_List before it is 
