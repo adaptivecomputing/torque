@@ -1406,7 +1406,7 @@ int record_jobinfo(
   int                     i;
   int                     rc;
   dynamic_string         *buffer;
-  char                    job_script_buf[MAXPATHLEN << 4];
+  char                    job_script_buf[(MAXPATHLEN << 4) + 1];
   char                    namebuf[MAXPATHLEN + 1];
   int                     fd;
   size_t                  bytes_read = 0;
@@ -1495,6 +1495,8 @@ int record_jobinfo(
       {
       while ((bytes_read = read(fd, job_script_buf, sizeof(job_script_buf))) > 0)
         {
+        job_script_buf[bytes_read] = '\0';
+        
         rc = append_dynamic_string(buffer, job_script_buf);
         }
 
