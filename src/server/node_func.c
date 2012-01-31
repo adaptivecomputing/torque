@@ -341,21 +341,60 @@ struct pbsnode *find_nodebyname(
 
   {
   char           *pslash;
+  char           *dash = NULL;
+  char           *tmp;
 
   struct pbsnode *pnode = NULL;
+  struct pbsnode *numa  = NULL;
 
   int             i;
+  int             numa_index;
 
   if ((pslash = strchr(nodename, (int)'/')) != NULL)
     *pslash = '\0';
 
   pthread_mutex_lock(allnodes.allnodes_mutex);
-  i = get_value_hash(allnodes.ht,nodename);
+  i = get_value_hash(allnodes.ht, nodename);
 
   if (i >= 0)
     pnode = (struct pbsnode *)allnodes.ra->slots[i].item;
   if (pnode != NULL)
     lock_node(pnode, __func__, NULL, LOGLEVEL);
+  else
+    {
+    /* check if it was a numa node */
+    tmp = nodename;
+    while ((tmp = strchr(tmp, '-')) != NULL)
+      {
+      dash = tmp;
+      tmp++;
+      }
+
+    if (dash != NULL)
+      {
+      *dash = '\0';
+      numa_index = atoi(dash + 1);
+
+      if ((i = get_value_hash(allnodes.ht, nodename)) >= 0)
+        {
+        if ((pnode = (struct pbsnode *)allnodes.ra->slots[i].item) != NULL)
+          {
+          lock_node(pnode, __func__, NULL, LOGLEVEL);
+          
+          /* get the NUMA node */
+          numa = AVL_find(numa_index, pnode->nd_mom_port, pnode->node_boards);
+          if (numa != NULL)
+            lock_node(numa, __func__, NULL, LOGLEVEL);
+
+          unlock_node(pnode, __func__, NULL, LOGLEVEL);
+          pnode = numa;
+          }
+        }
+
+      *dash = '-';
+      }
+    }
+
 
   pthread_mutex_unlock(allnodes.allnodes_mutex);
 
