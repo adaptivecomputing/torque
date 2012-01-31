@@ -75,9 +75,10 @@ Suite *u_groups_suite(void)
 
 void rundebug()
   {
+  /*
   char *grp_name = strdup("root");
   struct group *grp = NULL;
-  grp == getgrnam_ext(grp_name);
+  grp == getgrnam_ext(grp_name);*/
   }
 
 int main(void)
