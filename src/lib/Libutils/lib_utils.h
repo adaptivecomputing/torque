@@ -39,7 +39,7 @@ int MXMLGetAttr(mxml_t *E, char *AName, int *ATok, char *AVal, int VSize);
 
 int MXMLGetChild(mxml_t *E, char *CName, int *CTok, mxml_t **C);
 int MXMLGetChildCI(mxml_t *E, char *CName, int *CTok, mxml_t **CP);
-int MXMLFromString(mxml_t **EP, char *XMLString, char **Tail, char *EMsg);
+int        MXMLFromString(mxml_t **EP, char *XMLString, char **Tail, char *EMsg, int emsg_size);
 
 /* u_dynamic_string.c */
 size_t need_to_grow(dynamic_string *ds, char *to_check);
@@ -105,8 +105,6 @@ int read_tcp_reply(int sock, int protocol, int version, int command, int *exit_s
 int is_whitespace(char c);
  
 int MUSNPrintF(char **BPtr, int *BSpace, char *Format, ...);
-
-char *MUStrTok(char *Line, char *DList, char **Ptr);
 
 int MUStrNCat(char **BPtr, int *BSpace, char *Src);
 

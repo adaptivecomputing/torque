@@ -984,8 +984,6 @@ int is_stat_get(
   struct pbsnode *np)  /* I (modified) */
 
   {
-  char           *id = "is_stat_get";
-
   struct pbsnode *orig_np = np;
   int             stream = np->nd_stream;
   int             rc;
@@ -1009,7 +1007,7 @@ int is_stat_get(
     sprintf(log_buf, "received status from node %s",
       (np != NULL) ? np->nd_name : "NULL");
 
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
   if (stream < 0)
@@ -1035,21 +1033,21 @@ int is_stat_get(
 
   if (decode_arst(&temp, NULL, NULL, NULL, 0))
     {
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, "cannot initialize attribute");
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, "cannot initialize attribute");
     return(DIS_NOCOMMIT);
     }
 
-  unlock_node(np, id, "np numa update", LOGLEVEL);
+  unlock_node(np, __func__, "np numa update", LOGLEVEL);
   while (((ret_info = disrst(stream, &rc)) != NULL) && 
          (rc == DIS_SUCCESS))
     {
-    lock_node(np, id, "np numa update", LOGLEVEL);
+    lock_node(np, __func__, "np numa update", LOGLEVEL);
     /* check if this is the update on a numa node */
     if (!strncmp(ret_info,NUMA_KEYWORD,strlen(NUMA_KEYWORD)))
       {
-      char *numa_id;
+      char           *numa_id;
       struct pbsnode *tmp;
-      unsigned long numa_index;
+      unsigned long   numa_index;
 
       if (np->node_boards == NULL)
         {
@@ -1057,7 +1055,7 @@ int is_stat_get(
         snprintf(log_buf,sizeof(log_buf),
           "Node %s isn't declared to be NUMA, but mom is reporting\n",
           np->nd_name);
-        log_err(-1,id,log_buf);
+        log_err(-1, __func__, log_buf);
 
         return(DIS_NOCOMMIT);
         }
@@ -1074,19 +1072,19 @@ int is_stat_get(
           "Could not find NUMA index %lu for node %s\n",
           numa_index,
           np->nd_name);
-        log_err(-1,id,log_buf);
+        log_err(-1, __func__, log_buf);
 
         return(DIS_NOCOMMIT);
         }
       
-      unlock_node(np, id, "np numa update", LOGLEVEL);
-      lock_node(tmp, id, "tmp numa update", LOGLEVEL);
+      unlock_node(np, __func__, "np numa update", LOGLEVEL);
+      lock_node(tmp, __func__, "tmp numa update", LOGLEVEL);
 
       np = tmp;
 
       np->nd_lastupdate = time_now;
 
-      unlock_node(np, id, "np numa update", LOGLEVEL);
+      unlock_node(np, __func__, "np numa update", LOGLEVEL);
       /* resume normal processing on the next line */
       free(ret_info);
       continue;
@@ -1099,7 +1097,7 @@ int is_stat_get(
 
       if (strcmp(node_id,np->nd_name))
         {
-        unlock_node(np, id, "np not numa update", LOGLEVEL);
+        unlock_node(np, __func__, "np not numa update", LOGLEVEL);
         
         tmp = find_nodebyname(node_id);
         
@@ -1114,7 +1112,7 @@ int is_stat_get(
             "Node %s is reporting on node %s, which pbs_server doesn't know about\n",
             orig_np->nd_name,
             node_id);
-          log_err(-1,id,log_buf);
+          log_err(-1, __func__, log_buf);
           
           return(DIS_NOCOMMIT);
           }
@@ -1126,7 +1124,7 @@ int is_stat_get(
             orig_np->nd_name,
             node_id);
           
-          log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buf);
+          log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
           }
         
         np = tmp;
@@ -1134,7 +1132,7 @@ int is_stat_get(
 
       np->nd_lastupdate = time_now;
 
-      unlock_node(np, id, "np numa update", LOGLEVEL);
+      unlock_node(np, __func__, "np numa update", LOGLEVEL);
       /* resume normal processing on the next time */
       free(ret_info);
       continue;
@@ -1163,8 +1161,8 @@ int is_stat_get(
 
       if (orig_np != np)
         {
-        unlock_node(np, id, "np->orig_np", LOGLEVEL);
-        lock_node(orig_np, id, "orig_np", LOGLEVEL);
+        unlock_node(np, __func__, "np->orig_np", LOGLEVEL);
+        lock_node(orig_np, __func__, "orig_np", LOGLEVEL);
         }
 
       return(DIS_NOCOMMIT);
@@ -1192,7 +1190,7 @@ int is_stat_get(
           ret_info,
           (np->nd_name != NULL) ? np->nd_name : "NULL");
 
-        log_err(-1, id, log_buf);
+        log_err(-1, __func__, log_buf);
 
         update_node_state(np, INUSE_UNKNOWN);
         }
@@ -1203,7 +1201,7 @@ int is_stat_get(
           np->nd_name,
           np->nd_state);
 
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
 
       for (sp = np->nd_psn;sp != NULL;sp = sp->next)
@@ -1219,7 +1217,7 @@ int is_stat_get(
               "offline",
               np->nd_name);
  
-            log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
+            log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
             }
  
           sp->inuse &= ~INUSE_OFFLINE;
@@ -1314,7 +1312,7 @@ int is_stat_get(
         pnode->nd_nsn = np_default;
         pnode->nd_nsnfree = np_default - nsnfreediff;
        
-        unlock_node(pnode, id, "SRV_ATR_NPDefault", LOGLEVEL);
+        unlock_node(pnode, __func__, "SRV_ATR_NPDefault", LOGLEVEL);
         }
       }
     else if (!strncmp(ret_info, IS_EOL_MESSAGE, strlen(IS_EOL_MESSAGE)))
@@ -1325,22 +1323,22 @@ int is_stat_get(
           "End of message detected for communication from node %s",
           orig_np->nd_name);
 
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, log_buf);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, log_buf);
         }
-      unlock_node(np, id, "np numa update", LOGLEVEL);
+      unlock_node(np, __func__, "np numa update", LOGLEVEL);
       rc = DIS_EOD;
       free(ret_info);
       break;
       }
 
-    unlock_node(np, id, "np numa update", LOGLEVEL);
+    unlock_node(np, __func__, "np numa update", LOGLEVEL);
     free(ret_info);
     }    /* END while (rc != DIS_EOD) */
 
   /* clear the transmission */
   DIS_tcp_reset(stream,0);
 
-  lock_node(np, id, "np numa update", LOGLEVEL);
+  lock_node(np, __func__, "np numa update", LOGLEVEL);
   /* DIS_EOD and DIS_EOF are the only valid final values of rc, check it */
   if ((rc != DIS_EOD) &&
       (rc != DIS_EOF))
@@ -1351,8 +1349,8 @@ int is_stat_get(
       
     if (orig_np != np)
       {
-      unlock_node(np, id, "!DIS_EOD/F np->orig_np", LOGLEVEL);
-      lock_node(orig_np, id, "!DIS_EOD/F orig_np", LOGLEVEL);
+      unlock_node(np, __func__, "!DIS_EOD/F np->orig_np", LOGLEVEL);
+      lock_node(orig_np, __func__, "!DIS_EOD/F orig_np", LOGLEVEL);
       }
 
     return(rc);
@@ -1376,8 +1374,8 @@ int is_stat_get(
       
     if (orig_np != np)
       {
-      unlock_node(np, id, "decode_arst np->orig_np", LOGLEVEL);
-      lock_node(orig_np, id, "decode_arst orig_np", LOGLEVEL);
+      unlock_node(np, __func__, "decode_arst np->orig_np", LOGLEVEL);
+      lock_node(orig_np, __func__, "decode_arst orig_np", LOGLEVEL);
       }
 
     return(DIS_NOCOMMIT);
@@ -1392,8 +1390,8 @@ int is_stat_get(
       
     if (orig_np != np)
       {
-      unlock_node(np, id, "node_status_list np->orig_np", LOGLEVEL);
-      lock_node(orig_np, id, "node_status_list orig_np", LOGLEVEL);
+      unlock_node(np, __func__, "node_status_list np->orig_np", LOGLEVEL);
+      lock_node(orig_np, __func__, "node_status_list orig_np", LOGLEVEL);
       }
 
     return(DIS_NOCOMMIT);
@@ -1402,8 +1400,8 @@ int is_stat_get(
   /* NOTE:  node state adjusted in update_node_state() */
   if (orig_np != np)
     {
-    unlock_node(np, id, "final np->orig_np", LOGLEVEL);
-    lock_node(orig_np, id, "final orig_np", LOGLEVEL);
+    unlock_node(np, __func__, "final np->orig_np", LOGLEVEL);
+    lock_node(orig_np, __func__, "final orig_np", LOGLEVEL);
     }
 
   return(DIS_SUCCESS);

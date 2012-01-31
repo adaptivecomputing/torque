@@ -40,10 +40,10 @@ char *trim(
     return(NULL);
 
   front_ptr = str;
-  end_ptr = str + strlen(str);
+  end_ptr = str + strlen(str) - 1;
 
   while ((is_whitespace(*front_ptr) == TRUE) &&
-         (front_ptr < end_ptr))
+         (front_ptr <= end_ptr))
     {
     front_ptr++;
     }
@@ -182,91 +182,6 @@ int safe_strncat(
   return(PBSE_NONE);
   } /* END safe_strncat() */
 
-
-
-
-
-char *MUStrTok(
-
-  char  *Line,  /* I (optional) */
-  char  *DList, /* I */
-  char **Ptr)   /* O point to termination character of returned token */
-
-  {
-  static char *Head = NULL;
-
-  int dindex;
-
-  mbool_t ignchar;
-
-  /* NOTE:  no handling if Line is NULL and Ptr is uninitialized */
-
-  if (Ptr == NULL)
-    {
-    /* tokPtr not specified */
-
-    return(NULL);
-    }
-
-  if (Line != NULL)
-    {
-    *Ptr = Line;
-
-    if (Line[0] == '\0')
-      {
-      /* line is empty */
-
-      if (Ptr != NULL)
-        *Ptr = NULL;
-
-      return(NULL);
-      }
-    }
-  else if (*Ptr == NULL)
-    {
-    return(NULL);
-    }
-
-  ignchar = FALSE;
-
-  Head = NULL;
-
-  while (**Ptr != '\0')
-    {
-    for (dindex = 0;DList[dindex] != '\0';dindex++)
-      {
-      if (**Ptr == DList[dindex])
-        {
-        **Ptr = '\0';
-
-        (*Ptr)++;
-
-        if (Head != NULL)
-          {
-          return(Head);
-          }
-        else
-          {
-          ignchar = TRUE;
-
-          break;
-          }
-        }
-      }    /* END for (dindex) */
-
-    if ((ignchar != TRUE) && (**Ptr != '\0'))
-      {
-      if (Head == NULL)
-        Head = *Ptr;
-
-      (*Ptr)++;
-      }
-
-    ignchar = FALSE;
-    }  /* END while (**Ptr != '\0') */
-
-  return(Head);
-  }  /* END MUStrTok() */
 
 
 

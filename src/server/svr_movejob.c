@@ -113,7 +113,6 @@
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname */
-#include "svr_movejob.h" /* get_parent_dest_queues */
 
 
 #if __STDC__ != 1
