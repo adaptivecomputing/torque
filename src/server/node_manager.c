@@ -2391,6 +2391,7 @@ void *is_request_work(
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
         }
 
+      node->nd_stream = sock;
       ret = is_gpustat_get(node);
 
       if (ret != DIS_SUCCESS)

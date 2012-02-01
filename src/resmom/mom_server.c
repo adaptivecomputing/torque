@@ -651,9 +651,9 @@ void mom_server_stream_error(
 
 int mom_server_flush_io(
 
-  int   stream,
-  char *id,
-  char *message)
+  int         stream,
+  const char *id,
+  char       *message)
 
   {
   if (DIS_tcp_wflush(stream) == -1)
@@ -1310,9 +1310,9 @@ static int check_nvidia_version_file()
 #ifdef NVIDIA_GPUS
 static int check_nvidia_setup()
   {
-  static char id[] = "check_nvidia_setup";
-
+#ifndef NVML_API
   int  rc;
+#endif
   static int check_setup = TRUE;
   static int nvidia_setup_is_ok = FALSE;
 
@@ -1320,7 +1320,9 @@ static int check_nvidia_setup()
 
   if (check_setup)
     {
+#ifndef NVML_API
     char *pathEnv;
+#endif
 
     /* only check the setup once */
     check_setup = FALSE;
@@ -1352,10 +1354,7 @@ static int check_nvidia_setup()
       {
       if (LOGLEVEL >= 3)
         {
-        log_err(
-          PBSE_RMSYSTEM,
-          id,
-          "cannot get PATH");
+        log_err(PBSE_RMSYSTEM, __func__, "cannot get PATH");
         }
       return(FALSE);
       }
@@ -1366,10 +1365,7 @@ static int check_nvidia_setup()
       {
       if (LOGLEVEL >= 3)
         {
-        log_err(
-          PBSE_RMSYSTEM,
-          id,
-          "cannot find nvidia-smi in PATH");
+        log_err(PBSE_RMSYSTEM, __func__, "cannot find nvidia-smi in PATH");
         }
       return(FALSE);
       }
@@ -3470,91 +3466,75 @@ void mom_server_update_gpustat(
   char       *status_strings)
 
   {
-  static char *id = "mom_server_update_gpustat";
   char *cp;
-  int ret;
+  int   ret;
+  int   stream;
 
   if (pms->pbs_servername[0] == 0)
     {
     /* No server is defined for this slot */
-
     return;
     }
 
-  if (pms->SStream == -1)
+  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr,sizeof(pms->sock_addr));
+
+  if (IS_VALID_STREAM(stream))
     {
-    sprintf(log_buffer, "server \"%s\" has no active stream",
-      pms->pbs_servername);
-
-    log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
-
-    return;
-    }
-
-  pms->MOMLastSendToServerTime = time(0);
-
-  /* Generate the message header. */
-
-  if (is_compose(pms->SStream, pms->pbs_servername, IS_GPU_STATUS) != DIS_SUCCESS)
-    {
-    return;
-    }
-
-  ret = diswus(pms->SStream, pbs_mom_port);
-  if (ret)
-    {
-    return;
-    }
-  
-  ret = diswus(pms->SStream, pbs_rm_port);
-  if (ret)
-    {
-    return;
-    }
-  
-  /* For each string, put it into the message. */
-
-  for (cp = status_strings;cp && *cp;cp += strlen(cp) + 1)
-    {
-    if (LOGLEVEL >= 7)
+    pms->MOMLastSendToServerTime = time(0);
+    
+    /* Generate the message header. */  
+    if (is_compose(stream, pms->pbs_servername, IS_GPU_STATUS) != DIS_SUCCESS)
       {
-      sprintf(log_buffer,"%s: sending to server \"%s\"",
-        id,
-        cp);
-
-      log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+      }
+    else if ((ret = diswus(stream, pbs_mom_port)) != DIS_SUCCESS)
+      {
+      }
+    else if ((ret = diswus(stream, pbs_rm_port)) != DIS_SUCCESS)
+      {
+      }
+    else
+      {
+      /* For each string, put it into the message. */
+      for (cp = status_strings;cp && *cp;cp += strlen(cp) + 1)
+        {
+        if (LOGLEVEL >= 7)
+          {
+          sprintf(log_buffer,"%s: sending to server \"%s\"",
+            __func__, cp);
+          
+          log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
+          }
+        
+        if ((ret = diswst(stream, cp)) != DIS_SUCCESS)
+          {
+          mom_server_stream_error(stream, pms->pbs_servername, __func__, "writing status string");
+          
+          break;
+          }
+        }
+      
+      if (ret == DIS_SUCCESS)
+        {
+        /* Launch the message */
+        if (mom_server_flush_io(stream, __func__, "flush") == DIS_SUCCESS)
+          {
+          if (LOGLEVEL >= 3)
+            {
+            sprintf(log_buffer, "status update successfully sent to %s",
+              pms->pbs_servername);
+            
+            log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
+            }
+          
+          /* It would be redundant to send state since it is already in status */
+          pms->ReportMomState = 0;
+          }
+        }
+      
       }
 
-    if (diswst(pms->SStream, cp) != DIS_SUCCESS)
-      {
-      mom_server_stream_error(pms->SStream, pms->pbs_servername, id, "writing status string");
-
-      /* FAILURE */
-
-      return;
-      }
+    close(stream);
     }
-
-  /* Launch the message */
-
-  if (mom_server_flush_io(pms->SStream, id, "flush") != DIS_SUCCESS)
-    {
-    /* FAILURE */
-
-    return;
-    }
-
-  if (LOGLEVEL >= 3)
-    {
-    sprintf(log_buffer, "status update successfully sent to %s",
-      pms->pbs_servername);
-
-    log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
-    }
-
-  /* It would be redundant to send state since it is already in status */
-
-  pms->ReportMomState = 0;
 
   return;
   }  /* END mom_server_update_gpustat() */

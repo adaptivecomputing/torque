@@ -21,7 +21,7 @@ int mom_server_add(char *value);
 
 void mom_server_stream_error(int stream, char *name, const char *id, char *message);
 
-int mom_server_flush_io(int stream, char *id, char *message);
+int mom_server_flush_io(int stream, const char *id, char *message);
 
 int is_compose(int stream, char *server_name, int command);
 
