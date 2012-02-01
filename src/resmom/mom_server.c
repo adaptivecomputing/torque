@@ -2032,7 +2032,7 @@ int setup_gpus_for_job(
 
   char *gpu_str;
   char *ptr;
-  char  tmp_str[PBS_MAXHOSTNAME + 5];
+  char  tmp_str[PBS_MAXHOSTNAME + 10];
   int   gpu_flags = 0;
   char  gpu_id[30];
   int   gpu_mode = -1;
@@ -2070,6 +2070,12 @@ int setup_gpus_for_job(
   /* traverse the gpu_str to see what gpus we have assigned */
 
   strcpy(tmp_str, mom_host);
+  
+  /* might be fully qualified host name */
+  ptr = strchr(tmp_str, '.');
+  if (ptr != NULL)
+    ptr[0] = NULL;
+
   strcat(tmp_str, "-gpu/");
 
   ptr = strstr(gpu_str, tmp_str);
