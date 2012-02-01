@@ -731,6 +731,11 @@ dynamic_string *parse_mom_hierarchy(
           append_dynamic_string(send_format, ",");
           append_dynamic_string(send_format, pnode->nd_name);
           }
+
+        snprintf(log_buf, sizeof(log_buf),
+          "Node %s found in the nodes file but not in the mom_hierarchy file. Making it a level 1 node",
+          pnode->nd_name);
+        log_err( -1, __func__, log_buf);
         }
 
       unlock_node(pnode, id, NULL, LOGLEVEL);

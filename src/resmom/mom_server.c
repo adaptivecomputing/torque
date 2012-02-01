@@ -1934,7 +1934,7 @@ int setup_gpus_for_job(
   /* might be fully qualified host name */
   ptr = strchr(tmp_str, '.');
   if (ptr != NULL)
-    ptr[0] = NULL;
+    ptr[0] = '\0';
 
   strcat(tmp_str, "-gpu/");
 
