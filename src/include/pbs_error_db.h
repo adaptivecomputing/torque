@@ -41,9 +41,9 @@ PbsErrClient(PBSE_TOOMANY,           "Too many submit retries")
 PbsErrClient(PBSE_PERM,              "Unauthorized Request ")
 /* pbs_iff not found */
 PbsErrClient(PBSE_IFF_NOT_FOUND,     "pbs_iff command not found, unable to authenticate")
-/* 15010 */
 /* munge not found */
 PbsErrClient(PBSE_MUNGE_NOT_FOUND,   "munge executable not found, unable to authenticate")
+/* 15010 */
 /* access from host not allowed */
 PbsErrClient(PBSE_BADHOST,           "Access from host not allowed, or unknown host")
 /* job already exists */
@@ -62,9 +62,9 @@ PbsErrClient(PBSE_BADATVAL,          "Illegal attribute or resource value for ")
 PbsErrClient(PBSE_MODATRRUN,         "Cannot modify attribute while job running ")
 /* request invalid for job state */
 PbsErrClient(PBSE_BADSTATE,          "Request invalid for state of job")
-/* 15020 */
 /* gap filler */
 PbsErrClient(PBSE_GAP017,            (char*)0)
+/* 15020 */
 /* Unknown queue name */
 PbsErrClient(PBSE_UNKQUE,            "Unknown queue")
 /* Invalid Credential in request */
@@ -83,9 +83,9 @@ PbsErrClient(PBSE_HOPCOUNT,          "Job routing over too many hops")
 PbsErrClient(PBSE_QUEEXIST,          "Queue already exists")
 /* incompatable queue attribute type */
 PbsErrClient(PBSE_ATTRTYPE,          "Incompatible type")
-/* 15030 */
 /* Queue Busy (not empty) */
 PbsErrClient(PBSE_QUEBUSY,           "Cannot delete busy queue")
+/* 15030 */
 /* Queue name too long */
 PbsErrClient(PBSE_QUENBIG,           "Queue name too long")
 /* Feature/function not supported */
@@ -104,9 +104,9 @@ PbsErrClient(PBSE_NOSERVER,          "No server specified")
 PbsErrClient(PBSE_UNKRESC,           "Unknown resource type ")
 /* Job exceeds Queue resource limits */
 PbsErrClient(PBSE_EXCQRESC,          "Job exceeds queue resource limits")
-/* 15040 */
 /* No Default Queue Defined */
 PbsErrClient(PBSE_QUENODFLT,         "No default queue specified")
+/* 15040 */
 /* Job Not Rerunnable */
 PbsErrClient(PBSE_NORERUN,           "job is not rerunnable")
 /* Route rejected by all destinations */
@@ -125,9 +125,9 @@ PbsErrClient(PBSE_RESCUNAV,          "Resource temporarily unavailable")
 PbsErrClient(PBSE_BADGRP,            "Bad GID for job execution")
 /* Max number of jobs in queue */
 PbsErrClient(PBSE_MAXQUED,           "Maximum number of jobs already in queue")
-/* 15050 */
 /* Checkpoint Busy, may be retries */
 PbsErrClient(PBSE_CKPBSY,            "Checkpoint busy, may retry")
+/* 15050 */
 /* Limit exceeds allowable */
 PbsErrClient(PBSE_EXLIMIT,           "Resource limit exceeds allowable")
 /* Bad Account attribute value */
@@ -146,9 +146,9 @@ PbsErrClient(PBSE_BADDEPEND,         "Invalid Job Dependency")
 PbsErrClient(PBSE_DUPLIST,           "Duplicate entry in list ")
 /* Bad DIS based Request Protocol */
 PbsErrClient(PBSE_DISPROTO,          "Bad DIS based Request Protocol")
-/* 15060 */
 /* cannot execute there */
 PbsErrClient(PBSE_EXECTHERE,         "Cannot execute at specified host because of checkpoint or stagein files")
+/* 15060 */
 /* sister rejected */
 PbsErrClient(PBSE_SISREJECT,         "sister rejected")
 /* sister could not communicate */
@@ -167,9 +167,9 @@ PbsErrClient(PBSE_NONODES,           "Server has no node list")
 PbsErrClient(PBSE_NODENBIG,          "Node name is too big")
 /* Node name already exists */
 PbsErrClient(PBSE_NODEEXIST,         "Node name already exists")
-/* 15070 */
 /* Bad node-attribute value */
 PbsErrClient(PBSE_BADNDATVAL,        "Illegal value for ")
+/* 15070 */
 /* State values are mutually exclusive */
 PbsErrClient(PBSE_MUTUALEX,          "Mutually exclusive values for ")
 /* Error(s) during global modification of nodes */
@@ -188,9 +188,9 @@ PbsErrClient(PBSE_MAXUSERQUED,       "Maximum number of jobs already in queue fo
 PbsErrClient(PBSE_BADDISALLOWTYPE,   "Bad type in disallowed_types list")
 /* interactive jobs not allowed in queue */
 PbsErrClient(PBSE_NOINTERACTIVE,     "Queue does not allow interactive jobs")
-/* 15080 */
 /* batch jobs not allowed in queue */
 PbsErrClient(PBSE_NOBATCH,           "Queue does not allow batch jobs")
+/* 15080 */
 /* rerunable jobs not allowed in queue */
 PbsErrClient(PBSE_NORERUNABLE,       "Queue does not allow rerunable jobs")
 /* nonrerunable jobs not allowed in queue */
@@ -206,10 +206,10 @@ PbsErrClient(PBSE_TIMEOUT,           "Time out")
 PbsErrClient(PBSE_JOBNOTFOUND,		 "Job not found")
 /* fault tolerant jobs not allowed in queue */
 PbsErrClient(PBSE_NOFAULTTOLERANT,   "Queue does not allow fault tolerant jobs")
-/* 15090 */
 /* only fault tolerant jobs allowed in queue */
 PbsErrClient(PBSE_NOFAULTINTOLERANT, "Queue does not allow fault intolerant jobs")
 PbsErrClient(PBSE_NOJOBARRAYS, "Queue does not allow job arrays")
+/* 15090 */
 PbsErrClient(PBSE_RELAYED_TO_MOM, "request was relayed to a MOM") /* */
 PbsErrClient(PBSE_MEM_MALLOC, "Error allocating memory - out of memory")
 PbsErrClient(PBSE_MUTEX, "Error allocating controling mutex (lock/unlock)")
@@ -217,10 +217,10 @@ PbsErrClient(PBSE_THREADATTR, "Error setting thread attributes")
 PbsErrClient(PBSE_THREAD, "Error creating thread")
 PbsErrClient(PBSE_SELECT, "Error in socket select")
 PbsErrClient(PBSE_SOCKET_FAULT, "Error getting connection to socket")
-/* 15100 */
 PbsErrClient(PBSE_SOCKET_WRITE, "Error writing data to socket")
 PbsErrClient(PBSE_SOCKET_READ, "Error reading data from socket")
 PbsErrClient(PBSE_SOCKET_CLOSE, "Socket close detected")
+/* 15100 */
 PbsErrClient(PBSE_SOCKET_LISTEN, "Error listening on socket")
 PbsErrClient(PBSE_AUTH_INVALID, "Invalid auth type in request")
 PbsErrClient(PBSE_NOT_IMPLEMENTED, "This functionality is not yet implemented")
@@ -228,11 +228,11 @@ PbsErrClient(PBSE_QUENOTAVAILABLE, "Queue is currently not available")
 PbsErrClient(PBSE_TMPDIFFOWNER, "tmpdir owned by another user")
 PbsErrClient(PBSE_TMPNOTDIR, "tmpdir exists but is not a directory")
 PbsErrClient(PBSE_TMPNONAME, "tmpdir cannot be named for job")
-/* 15110 */
 PbsErrClient(PBSE_CANTOPENSOCKET, "cannot open demux sockets")
 PbsErrClient(PBSE_CANTCONTACTSISTERS, "cannot send join job to all sisters")
 PbsErrClient(PBSE_CANTCREATETMPDIR, "cannot create tmpdir for job")
 PbsErrClient(PBSE_BADMOMSTATE, "Mom is down, cannot run job")
+/* 15110 */
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

@@ -19,7 +19,7 @@ mom_server *mom_server_find_empty_slot(void);
 
 int mom_server_add(char *value);
 
-void mom_server_stream_error(int stream, char *name, char *id, char *message);
+void mom_server_stream_error(int stream, char *name, const char *id, char *message);
 
 int mom_server_flush_io(int stream, char *id, char *message);
 
@@ -71,11 +71,11 @@ void generate_server_status(char *buffer, int buffer_size);
 void generate_server_gpustatus_nvml(char *buffer, int buffer_size);
 #endif /* NVML_API */
 
-int write_update_header(int stream, char *id, char *name);
+int write_update_header(int stream, const char *id, char *name);
 
-int write_my_server_status(int stream, char *id, char *status_strings, void *dest, int mode);
+int write_my_server_status(int stream, const char *id, char *status_strings, void *dest, int mode);
 
-int write_cached_statuses(int stream, char *id, void *dest, int mode);
+int write_cached_statuses(int stream, const char *id, void *dest, int mode);
 
 void mom_server_update_stat(mom_server *pms, char *status_strings);
 

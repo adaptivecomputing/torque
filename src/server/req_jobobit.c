@@ -2379,6 +2379,7 @@ void *req_jobobit(
   if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
     {
     pthread_mutex_unlock(pjob->ji_mutex);
+    reply_ack(preq);
     return(NULL);
     /* Mom didn't update correctly past time, so this was resent. */
     }
@@ -2427,6 +2428,7 @@ void *req_jobobit(
      * when you aren't sure what should happen. */
 
     pthread_mutex_unlock(pjob->ji_mutex);
+    /* Connection is left open to be used in wait_for_send */
 
     return(NULL);
     }
@@ -2509,6 +2511,7 @@ void *req_jobobit(
 
       pthread_mutex_unlock(pjob->ji_mutex);
 
+      req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
       return(NULL);
       }
 
@@ -2530,8 +2533,7 @@ void *req_jobobit(
   /* make sure ji_momhandle is -1 to force new connection to mom */
   if (pjob->ji_momhandle >= 0)
     {
-    svr_disconnect(pjob->ji_momhandle);
-  
+    close_conn(pjob->ji_momhandle, FALSE);
     pjob->ji_momhandle = -1;
     }
 
@@ -2659,7 +2661,9 @@ void *req_jobobit(
 
         svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
-        svr_disconnect(pjob->ji_momhandle);
+        req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
+        close_conn(pjob->ji_momhandle, FALSE);
+        pjob->ji_momhandle = -1;
 
         pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -2812,7 +2816,9 @@ void *req_jobobit(
 
       svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
-      svr_disconnect(pjob->ji_momhandle);
+      req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
+      close_conn(pjob->ji_momhandle, FALSE);
+      pjob->ji_momhandle = -1;
 
       pthread_mutex_unlock(pjob->ji_mutex);
 

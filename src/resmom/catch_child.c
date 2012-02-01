@@ -593,7 +593,8 @@ void scan_for_exiting(void)
     ** in any state other than EXITING continue on.
     */
 
-    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) && (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
+    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING)
+        && (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
       {
       if (LOGLEVEL >= 3)
         {
@@ -735,7 +736,7 @@ void scan_for_exiting(void)
       }
 
     post_epilogue(pjob, pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0);
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
 
     if (found_one++ >= ObitsAllowed)
       {
@@ -838,7 +839,6 @@ int post_epilogue(
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
 
-    shutdown(sock, SHUT_RDWR);
     close_conn(sock, FALSE);
 
     return(1);
@@ -875,7 +875,6 @@ int post_epilogue(
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
 
-    shutdown(sock, SHUT_RDWR);
     close_conn(sock, FALSE);
 
     free_br(preq);
@@ -1485,11 +1484,20 @@ void *obit_reply(
         {
         if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
           {
+          sprintf(tmp_line, "Unknown job id on server. Setting to exited and deleting");
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
           /* This means the server has no idea what this job is
            * and it should be deleted!!! */
           mom_deljob(pjob);
-          break;
           }
+        else if (preq->rq_reply.brp_code == PBSE_ALRDYEXIT)
+          {
+          sprintf(tmp_line, "Job already in exit state on server. Setting to exited");
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+          }
+        break;
         /* Commenting for now. The mom's are way to chatty right now */
 /*        else
           {

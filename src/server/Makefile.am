@@ -5,7 +5,7 @@ SUBDIRS = test
 endif
 DIST_SUBDIRS=
 
-include_HEADERS = array_func.h issue_request.h job_func.h node_func.h node_manager.h pbsd_main.h queue_func.h queue_recov.h pbsd_init.h reply_send.h req_holdjob.h req_jobobit.h req_manager.h svr_connect.h svr_jobfunc.h req_gpuctrl.h req_modify.h queue_recycler.h svr_task.h svr_func.h
+include_HEADERS = array_func.h issue_request.h job_func.h node_func.h node_manager.h pbsd_main.h queue_func.h queue_recov.h pbsd_init.h reply_send.h req_holdjob.h req_jobobit.h req_manager.h svr_connect.h svr_jobfunc.h req_gpuctrl.h req_modify.h queue_recycler.h svr_movejob.h svr_task.h svr_func.h
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libsite/libsite.a \

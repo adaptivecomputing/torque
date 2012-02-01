@@ -622,7 +622,7 @@ void mom_server_stream_error(
 
   int   stream,
   char *name,
-  char *id,
+  const char *id,
   char *message)
 
   {
@@ -2889,7 +2889,7 @@ int should_request_cluster_addrs()
 int write_update_header(
     
   int   stream,
-  char *id,
+  const char *id,
   char *name)
 
   {
@@ -2927,7 +2927,7 @@ int write_update_header(
 int write_my_server_status(
  
   int   stream,
-  char *id,
+  const char *id,
   char *status_strings,
   void *dest,
   int   mode)
@@ -2987,7 +2987,7 @@ int write_my_server_status(
 int write_cached_statuses(
  
   int   stream,
-  char *id,
+  const char *id,
   void *dest,
   int   mode)
  
@@ -3007,7 +3007,7 @@ int write_cached_statuses(
     while ((cp != NULL) &&
            (cp - rn->statuses->str < (int)rn->statuses->used))
       {
-      if (LOGLEVEL >= 3)
+      if (LOGLEVEL >= 7)
         {
         sprintf(log_buffer,"%s: sending to server \"%s\"",
           id,
@@ -3075,7 +3075,6 @@ void mom_server_update_stat(
   char       *status_strings)
  
   {
-  static char   *id = "mom_server_update_stat";
   int            stream;
   int            ret = -1;
 
@@ -3093,13 +3092,13 @@ void mom_server_update_stat(
     {
     DIS_tcp_setup(stream);
 
-    if ((ret = write_update_header(stream,pms->pbs_servername,id)) != DIS_SUCCESS)
+    if ((ret = write_update_header(stream,__func__,pms->pbs_servername)) != DIS_SUCCESS)
       {
       }
-    else if ((ret = write_my_server_status(stream,id,status_strings,pms,UPDATE_TO_SERVER)) != DIS_SUCCESS)
+    else if ((ret = write_my_server_status(stream,__func__,status_strings,pms,UPDATE_TO_SERVER)) != DIS_SUCCESS)
       {
       }
-    else if ((ret = write_cached_statuses(stream,id,pms,UPDATE_TO_SERVER)) != DIS_SUCCESS)
+    else if ((ret = write_cached_statuses(stream,__func__,pms,UPDATE_TO_SERVER)) != DIS_SUCCESS)
       {
       }
     else if ((ret = diswst(stream, IS_EOL_MESSAGE)) != DIS_SUCCESS)
@@ -3137,7 +3136,7 @@ void mom_server_update_stat(
           }
         }
       
-      log_err(-1,id,log_buffer);
+      log_err(-1,__func__,log_buffer);
       
       /* force another update to the server so we get this out there */
       UpdateFailCount++;
@@ -3149,7 +3148,7 @@ void mom_server_update_stat(
         {
         sprintf(log_buffer, "status update successfully sent to %s", pms->pbs_servername);
         
-        log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+        log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
         }
       
       /* It would be redundant to send state since it is already in status */  
@@ -3173,7 +3172,7 @@ void mom_server_update_stat(
     sprintf(log_buffer,
       "Cannot get a valid stream to send update to server '%s'",
       pms->pbs_servername);
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
     }
   
   }  /* END mom_server_update_stat() */
@@ -3206,8 +3205,6 @@ int write_status_strings(
   node_comm_t *nc)
  
   {
-  char          *id = "write_status_strings";
-  
   int            fds = nc->stream;
   int            rc;
 
@@ -3215,19 +3212,19 @@ int write_status_strings(
     {
     snprintf(log_buffer, sizeof(log_buffer),
       "Attempting to send status update to mom %s", nc->name);
-    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
  
   DIS_tcp_setup(fds);
  
   /* write protocol */
-  if ((rc = write_update_header(fds,nc->name,id)) != DIS_SUCCESS)
+  if ((rc = write_update_header(fds,__func__,nc->name)) != DIS_SUCCESS)
     {
     }
-  else if ((rc = write_my_server_status(fds,id,stat_str,nc,UPDATE_TO_SERVER)) != DIS_SUCCESS)
+  else if ((rc = write_my_server_status(fds,__func__,stat_str,nc,UPDATE_TO_SERVER)) != DIS_SUCCESS)
     {
     }
-  else if ((rc = write_cached_statuses(fds,id,nc,UPDATE_TO_SERVER)) != DIS_SUCCESS)
+  else if ((rc = write_cached_statuses(fds,__func__,nc,UPDATE_TO_SERVER)) != DIS_SUCCESS)
     {
     }
   /* write message that we're done */
@@ -3245,7 +3242,7 @@ int write_status_strings(
         {
         snprintf(log_buffer, sizeof(log_buffer),
           "Successfully sent status update to mom %s", nc->name);
-        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,__func__,log_buffer);
         }
 /*      } */
     }
@@ -4368,7 +4365,7 @@ void is_request(
   if (cmdp != NULL)
     *cmdp = 0;
 
-  if (LOGLEVEL >= 4)
+  if (LOGLEVEL >= 7)
     {
     sprintf(log_buffer, "stream %d version %d",
       stream,

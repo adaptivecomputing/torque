@@ -843,8 +843,7 @@ next_seq(int *seq)
 ** Put a human readable representation of a network addres into
 ** a staticly allocated string.
 */
-char *
-netaddr(struct sockaddr_in *ap)
+char * netaddr(struct sockaddr_in *ap)
   {
   static char out[80];
   u_long  ipadd;

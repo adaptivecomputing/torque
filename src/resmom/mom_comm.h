@@ -51,21 +51,21 @@ int contact_sisters(job *pjob, tm_event_t parent_event, int sister_count, char *
 
 void send_im_error(int err, int reply, job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
 
-int im_join_job_as_sister(int stream, char *jobid, struct sockaddr_in *addr, char *cookie, tm_event_t event, int fromtask, int command, int *reply_ptr, int job_radix);
+int im_join_job_as_sister(int stream, char *jobid, struct sockaddr_in *addr, char *cookie, tm_event_t event, int fromtask, int command, int job_radix);
 
 void im_kill_job_as_sister(int stream, job *pjob, tm_event_t event, unsigned int momport, int radix);
 
-int im_spawn_task(int stream, int reply, char *cookie, tm_event_t event, struct sockaddr_in *addr, tm_task_id fromtask, job *pjob);
+int im_spawn_task(int stream, char *cookie, tm_event_t event, struct sockaddr_in *addr, tm_task_id fromtask, job *pjob);
 
-int im_signal_task(int stream, job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask, int reply);
+int im_signal_task(int stream, job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
 
 int handle_im_replies(char *id, int stream, job *pjob, char *cookie, struct sockaddr_in *addr, int nodeidx, hnodent *np, eventent *ep, tm_event_t event);
 
-int im_obit_task(int stream, job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask, int reply);
+int im_obit_task(int stream, job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
 
-int im_get_info(int stream, job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask, int reply);
+int im_get_info(int stream, job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
 
-int im_get_resc_as_sister(int stream, job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask, int reply);
+int im_get_resc_as_sister(int stream, job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
 
 int get_reply_stream(job *pjob);
 
@@ -73,7 +73,7 @@ int get_radix_reply_stream(job *pjob);
 
 int im_poll_job_as_sister(job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
 
-int im_abort_job(job *pjob, struct sockaddr_in *addr, char *cookie, tm_event_t event, tm_task_id fromtask, int *reply_ptr);
+int im_abort_job(job *pjob, struct sockaddr_in *addr, char *cookie, tm_event_t event, tm_task_id fromtask);
 
 int im_get_tid(job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
 

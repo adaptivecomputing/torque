@@ -2476,7 +2476,7 @@ int encode_depend(
     if ((nxdp->dp_type == JOB_DEPEND_TYPE_SYNCCT) ||
         (nxdp->dp_type == JOB_DEPEND_TYPE_ON))
       {
-      /* Doesn't this mean it could be too short? *CHECK* */
+      /* Doesn't this mean it could be too short? *MUTSU* */
       ct += 30;   /* a guess at a reasonable amt of space */
       }
     else

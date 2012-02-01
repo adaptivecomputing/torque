@@ -8667,6 +8667,7 @@ int resend_compose_reply(
   int      ret = -1;
   hnodent *np;
   int      stream;
+  char     log_buf[LOCAL_LOG_BUF_SIZE];
 
   np = &ici->np;
   stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
@@ -8679,7 +8680,8 @@ int resend_compose_reply(
       {
       if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
         {
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ici->jobid, "Successfully re-sent im compose reply");
+        sprintf(log_buf, "re-sent im_compose reply to %s", netaddr(&np->sock_addr));
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ici->jobid, log_buf);
         free(ici);
         }
       }
