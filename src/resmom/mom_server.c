@@ -247,7 +247,7 @@
 #define UPDATE_TO_SERVER                  0
 #define UPDATE_TO_MOM                     1
 #define MIN_SERVER_UDPATE_SPACING         3
-#define MAX_SERVER_UPDATE_SPACING         20
+#define MAX_SERVER_UPDATE_SPACING         40
 
 #ifdef NUMA_SUPPORT
 extern int numa_index;
@@ -3300,8 +3300,8 @@ int send_update()
       /* try to introduce some random delay here */
       srand(time_now + UpdateFailCount);
       
-      /* wait progressively more as */
-      mod_value = MAX(2,UpdateFailCount);
+      /* make sending more likely the longer we've waited */
+      mod_value = MAX(2, ServerStatUpdateInterval - attempt_diff);
       
       if (rand() % mod_value == 0)
         return(TRUE);
