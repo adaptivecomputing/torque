@@ -18,6 +18,8 @@
 #include "../lib/Libifl/lib_ifl.h" /* process_svr_conn */
 #include "../lib/Liblog/chk_file_sec.h" /* IamRoot */
 
+extern int debug_mode;
+
 int load_config(
     char **ip,
     int *t_port,
@@ -85,7 +87,9 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
     return(1);
     }
 
-  if (getenv("PBSDEBUG") == NULL)
+  if (getenv("PBSDEBUG") != NULL)
+    debug_mode = TRUE;
+  if (debug_mode == FALSE)
     {
     pid = fork();
     if(pid > 0)
@@ -101,7 +105,7 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
       }
     else
       {
-      fprintf(stdout, "trqauthd daemonized - port %d\n", server_port);
+      fprintf(stderr, "trqauthd daemonized - port %d\n", server_port);
       /* If I made it here I am the child */
       fclose(stdin);
       fclose(stdout);
@@ -126,14 +130,38 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
     exit(0);
   }
 
+void parse_command_line(int argc, char **argv)
+  {
+  extern int   optind;
+  extern char *optarg;
+  int c;
+
+  while ((c = getopt(argc, argv, "d")) != -1)
+    {
+    switch (c)
+      {
+      case 'd':
+        debug_mode = TRUE;
+        break;
+      default:
+        fprintf(stderr, "Only the -d flag  is currently supported\n");
+        exit(1);
+        break;
+      }
+    }
+  }
+
 int trq_main(
     int argc,
     char **argv,
     char **envp)
   {
   int rc = PBSE_NONE;
-  char *trq_server_ip = NULL, *the_key = NULL, *sign_key = NULL;
-  int trq_server_port = 0, daemon_port = 0;
+  char *trq_server_ip = NULL;
+  char *the_key = NULL;
+  char *sign_key = NULL;
+  int trq_server_port = 0;
+  int daemon_port = 0;
   void *(*process_method)(void *) = process_svr_conn;
 
   if(IamRoot() == 0)
@@ -143,6 +171,7 @@ int trq_main(
     }
 
 
+  parse_command_line(argc, argv);
   if ((rc = load_config(&trq_server_ip, &trq_server_port, &daemon_port)) != PBSE_NONE)
     {
     }

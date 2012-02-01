@@ -11,6 +11,7 @@
 char *trq_addr = NULL;
 int trq_addr_len;
 char *trq_server_name = NULL;
+int debug_mode = 0;
 
 int parse_request_client(
     int sock,
@@ -205,7 +206,7 @@ void send_svr_disconnect(int sock, char *user_name)
   resp_msg_len = strlen(resp_msg);
   if ((rc = socket_write(sock, resp_msg, resp_msg_len)) != resp_msg_len)
     {
-    if (getenv("PBSDEBUG"))
+    if (debug_mode == TRUE)
       fprintf(stderr, "Can not close socket to pbs_server!! (socket #%d)\n", sock);
     }
   free(resp_msg);
@@ -292,7 +293,7 @@ void *process_svr_conn(
       free(send_message);
     send_message = (char *)calloc(1, 6);
     strcat(send_message, "0|0||");
-    if (getenv("PBSDEBUG"))
+    if (debug_mode == TRUE)
       {
       fprintf(stderr, "Conn to %s port %d success. Conn %d authorized\n", server_name, server_port, user_sock);
       }
@@ -308,7 +309,7 @@ void *process_svr_conn(
     msg_len += strlen(error_msg);
     send_message = (char *)calloc(1, msg_len);
     snprintf(send_message, msg_len, "%d|%d|%s|", rc, (int)strlen(error_msg), error_msg);
-    if (getenv("PBSDEBUG"))
+    if (debug_mode == TRUE)
       {
       fprintf(stderr, "Conn to %s port %d Fail. Conn %d not authorized (dm = %d, Err Num %d)\n", server_name, server_port, user_sock, debug_mark, rc);
       }
