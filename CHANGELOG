@@ -39,6 +39,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 3.0.5
   b - fix for writing too much data when job_script is saved to job log.
+  b - fix for where pbs_mom would not automatically set gpu mode.
 
 3.0.4
   c - fix a buffer being overrun with nvidia gpus enabled
