@@ -517,7 +517,6 @@ int mom_server_add(
   char *value)
 
   {
-  static char     *id = "mom_server_add";
   mom_server      *pms;
   struct addrinfo *addr_info;
   char             tmp_server_name[PBS_MAXSERVERNAME];
@@ -531,7 +530,7 @@ int mom_server_add(
     sprintf(log_buffer, "server host %s already added",
             value);
 
-    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
   else if ((pms = mom_server_find_empty_slot()) != NULL)
     {
@@ -563,7 +562,7 @@ int mom_server_add(
     mom_server_count++;
 
     sprintf(log_buffer, "server %s added", pms->pbs_servername);
-    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
   else
     {
@@ -571,7 +570,7 @@ int mom_server_add(
       PBS_MAXSERVER,
       value);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     return(0); /* FAILURE */
     }
@@ -594,7 +593,7 @@ int mom_server_add(
       {
       sprintf(log_buffer, "host %s not found", pms->pbs_servername);
 
-      log_err(-1, id, log_buffer);
+      log_err(-1, __func__, log_buffer);
       }
     else
       {

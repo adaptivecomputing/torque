@@ -8,12 +8,13 @@
 # Source the library functions
 . /etc/rc.d/init.d/functions
 
+
+# NOTE: customize these two variables as needed
 PBS_DAEMON=/usr/local/bin/trqauthd
 PBS_HOME=/var/spool/torque
-export PBS_DAEMON PBS_HOME
 
-if [ -f /etc/sysconfig/trqauthd ];then
-   . /etc/sysconfig/trqauthd
+if [ -f /etc/sysconfig/trqauthd ]; then
+  . /etc/sysconfig/trqauthd
 fi
 
 # let see how we were called
@@ -24,7 +25,7 @@ case "$1" in
 		RET=$?
 		[ $RET -eq 0 ] && echo -n "trqauthd already running" && success && echo && exit 0
 
-		daemon $PBS_DAEMON -d $PBS_HOME
+		daemon $PBS_DAEMON
 		RET=$?
 		[ $RET -eq 0 ] && touch /var/lock/subsys/trqauthd
 		echo

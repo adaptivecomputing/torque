@@ -9,9 +9,10 @@ ulimit -n 32768
 # Source the library functions
 . /etc/rc.d/init.d/functions
 
-PBS_DAEMON=/usr/local/sbin/pbs_mom
+# NOTE: customize these variables as needed
+SBIN_PATH=/usr/local/sbin
+PBS_DAEMON="$SBIN_PATH/pbs_mom"
 PBS_HOME=/var/spool/torque
-export PBS_DAEMON PBS_HOME
 
 if [ -f /etc/sysconfig/pbs_mom ];then
     . /etc/sysconfig/pbs_mom
@@ -40,7 +41,7 @@ kill_pbs_mom() {
    fi
    retval=1
    while kill -0 $pid 2>/dev/null;do
-      kill -TERM $pid
+      $SBIN_PATH/momctl -s
       retval=$?
       sleep 1
    done

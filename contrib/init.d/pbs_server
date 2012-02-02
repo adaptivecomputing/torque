@@ -19,7 +19,7 @@ create() {
     while [ ! -r $PBS_SERVERDB ]; do
         sleep 1
     done
-    killproc pbs_server
+    $BIN_PATH/qterm
     RET=$?
 }
 
@@ -47,7 +47,7 @@ stop() {
         exit 0
     fi
     echo -n "Shutting down TORQUE Server: "
-    killproc pbs_server
+    qterm pbs_server
     RET=$?
     rm -f /var/lock/subsys/pbs_server
     echo
@@ -60,11 +60,13 @@ reload() {
     echo
 }
 
-PBS_DAEMON=/usr/local/sbin/pbs_server
+# customize these to match your settings
+SBIN_PATH=/usr/local/sbin
+BIN_PATH=/usr/local/bin
+PBS_DAEMON=$SBIN_PATH/pbs_server
 PBS_HOME=/var/spool/torque
 PBS_ARGS=""
 PBS_SERVERDB="$PBS_HOME/server_priv/serverdb"
-export PBS_DAEMON PBS_HOME PBS_ARGS PBS_SERVERDB
 
 if [ -f /etc/sysconfig/pbs_server ]; then
    . /etc/sysconfig/pbs_server
