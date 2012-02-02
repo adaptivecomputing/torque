@@ -136,15 +136,15 @@ void parse_command_line(int argc, char **argv)
   extern char *optarg;
   int c;
 
-  while ((c = getopt(argc, argv, "d")) != -1)
+  while ((c = getopt(argc, argv, "D")) != -1)
     {
     switch (c)
       {
-      case 'd':
+      case 'D':
         debug_mode = TRUE;
         break;
       default:
-        fprintf(stderr, "Only the -d flag  is currently supported\n");
+        fprintf(stderr, "Only the -D flag  is currently supported\n");
         exit(1);
         break;
       }

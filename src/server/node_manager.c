@@ -125,6 +125,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
+#define SEND_HELLO 11
 
 extern int LOGLEVEL;
 
@@ -998,6 +999,7 @@ int is_stat_get(
   long            auto_np = FALSE;
   long            np_default = FALSE;
   long            down_on_error = FALSE;
+  int             send_hello = FALSE;
 
   extern int TConnGetSelectErrno();
   extern int TConnGetReadErrno();
@@ -1146,10 +1148,8 @@ int is_stat_get(
     else if (!strcmp(ret_info, "first_update=true"))
       {
       /* mom is requesting that we send the mom hierarchy file to her */
-      hello_info *hi = calloc(1, sizeof(hello_info));
-      hi->name = strdup(np->nd_name);
-      remove_hello(&hellos, hi->name);
-      enqueue_threadpool_request(send_hierarchy_threadtask, hi);
+      remove_hello(&hellos, np->nd_name);
+      send_hello = TRUE;
       }
     else if (decode_arst(&temp, NULL, NULL, ret_info, 0))
       {
@@ -1404,7 +1404,10 @@ int is_stat_get(
     lock_node(orig_np, __func__, "final orig_np", LOGLEVEL);
     }
 
-  return(DIS_SUCCESS);
+  if (send_hello == TRUE)
+    return(SEND_HELLO);
+  else
+    return(DIS_SUCCESS);
   }  /* END is_stat_get() */
 
 
@@ -2355,7 +2358,16 @@ void *is_request_work(
       ret = is_stat_get(node);
       socket_read_flush(sock);
 
-      write_tcp_reply(sock,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
+      if (ret == SEND_HELLO)
+        {
+        struct hello_info *hi = calloc(1, sizeof(struct hello_info));
+        write_tcp_reply(sock, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, DIS_SUCCESS);
+
+        hi->name = strdup(node->nd_name);
+        enqueue_threadpool_request(send_hierarchy_threadtask, hi);
+        }
+      else
+        write_tcp_reply(sock,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
 
       node->nd_stream = -1;
 

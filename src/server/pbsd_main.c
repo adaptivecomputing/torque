@@ -131,7 +131,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "../lib/Libifl/lib_ifl.h" /* get_port_from_server_name_file */
 
-
+#define HELLO_WAIT_TIME        600
 #define TSERVER_HA_CHECK_TIME  1  /* 1 second sleep time between checks on the lock file for high availability */
 
 /* external functions called */
@@ -200,87 +200,89 @@ void          restore_attr_default (struct attribute *);
 
 /* Global Data Items */
 
-int          lockfds = -1;
-int          ForceCreation = FALSE;
-int          high_availability_mode = FALSE;
-char        *acct_file = NULL;
-char        *log_file  = NULL;
-char        *job_log_file = NULL;
-char        *path_home = PBS_SERVER_HOME;
-char        *path_acct;
-char         path_log[MAXPATHLEN + 1];
-char        *path_priv = NULL;
-char        *path_arrays;
-char        *path_credentials;
-char        *path_jobs;
-char        *path_queues;
-char        *path_spool;
-char        *path_svrdb = NULL;
-char        *path_svrdb_new;
-char        *path_svrlog;
-char        *path_track;
-char        *path_nodes;
-char        *path_mom_hierarchy;
-char        *path_nodes_new;
-char        *path_nodestate;
-char        *path_nodenote;
-char        *path_nodenote_new;
-char        *path_checkpoint;
-char        *path_jobinfo_log;
-char        *ArgV[MAX_CMD_ARGS];
-extern char    *msg_daemonname;
-extern char *msg_info_server; /* Server information message   */
-char        *pbs_o_host = "PBS_O_HOST";
-pbs_net_t pbs_mom_addr;
-unsigned int pbs_mom_port = 0;
-unsigned int pbs_rm_port;
-pbs_net_t pbs_scheduler_addr;
-unsigned int pbs_scheduler_port;
-extern pbs_net_t pbs_server_addr;
-unsigned int pbs_server_port_dis;
-listener_connection listener_conns[MAXLISTENERS];
-int  queue_rank = 0;
-int a_opt_init = -1;
+int                     lockfds = -1;
+int                     ForceCreation = FALSE;
+int                     high_availability_mode = FALSE;
+char                   *acct_file = NULL;
+char                   *log_file  = NULL;
+char                   *job_log_file = NULL;
+char                   *path_home = PBS_SERVER_HOME;
+char                   *path_acct;
+char                    path_log[MAXPATHLEN + 1];
+char                   *path_priv = NULL;
+char                   *path_arrays;
+char                   *path_credentials;
+char                   *path_jobs;
+char                   *path_queues;
+char                   *path_spool;
+char                   *path_svrdb = NULL;
+char                   *path_svrdb_new;
+char                   *path_svrlog;
+char                   *path_track;
+char                   *path_nodes;
+char                   *path_mom_hierarchy;
+char                   *path_nodes_new;
+char                   *path_nodestate;
+char                   *path_nodenote;
+char                   *path_nodenote_new;
+char                   *path_checkpoint;
+char                   *path_jobinfo_log;
+char                   *ArgV[MAX_CMD_ARGS];
+extern char            *msg_daemonname;
+extern char            *msg_info_server; /* Server information message   */
+char                   *pbs_o_host = "PBS_O_HOST";
+pbs_net_t               pbs_mom_addr;
+unsigned int            pbs_mom_port = 0;
+unsigned int            pbs_rm_port;
+pbs_net_t               pbs_scheduler_addr;
+unsigned int            pbs_scheduler_port;
+extern pbs_net_t        pbs_server_addr;
+unsigned int            pbs_server_port_dis;
+
+listener_connection     listener_conns[MAXLISTENERS];
+int                     queue_rank = 0;
+int                     a_opt_init = -1;
+int                     wait_for_moms_hierarchy = FALSE;
 /* HA global data items */
-long      HALockCheckTime = 0;
-long      HALockUpdateTime = 0;
-char      HALockFile[MAXPATHLEN+1];
-char      OriginalPath[MAXPATHLEN+1];
-mutex_t   EUIDMutex; /* prevents thread from trying to lock the file 
-                        from a different euid */
-int HALockFD;
+long                    HALockCheckTime = 0;
+long                    HALockUpdateTime = 0;
+char                    HALockFile[MAXPATHLEN+1];
+char                    OriginalPath[MAXPATHLEN+1];
+mutex_t                 EUIDMutex; /* prevents thread from trying to lock the file 
+                                      from a different euid */
+int                     HALockFD;
 
 /* END HA global data items */
 
-struct server server;  /* the server structure */
-char         server_host[PBS_MAXHOSTNAME + 1]; /* host_name */
-char        *mom_host = server_host;
-int   server_init_type = RECOV_WARM;
-char         server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
-int  svr_do_schedule = SCH_SCHEDULE_NULL;
-pthread_mutex_t *svr_do_schedule_mutex;
-extern all_queues svr_queues;
-extern int  listener_command;
-extern hello_container hellos;
-extern hello_container failures;
-pthread_mutex_t *listener_command_mutex;
-tlist_head svr_newnodes;          /* list of newly created nodes      */
-all_tasks task_list_timed;
-all_tasks task_list_event;
-pid_t    sid;
+struct server           server;  /* the server structure */
+char                    server_host[PBS_MAXHOSTNAME + 1]; /* host_name */
+char                   *mom_host = server_host;
+int                     server_init_type = RECOV_WARM;
+char                    server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
+int                     svr_do_schedule = SCH_SCHEDULE_NULL;
+pthread_mutex_t        *svr_do_schedule_mutex;
+extern all_queues       svr_queues;
+extern int              listener_command;
+extern hello_container  hellos;
+extern hello_container  failures;
+pthread_mutex_t        *listener_command_mutex;
+tlist_head              svr_newnodes;          /* list of newly created nodes      */
+all_tasks               task_list_timed;
+all_tasks               task_list_event;
+pid_t                   sid;
 
-char           *plogenv = NULL;
-int             LOGLEVEL = 0;
-int             DEBUGMODE = 0;
-int             TDoBackground = 1;  /* background daemon */
+char                   *plogenv = NULL;
+int                     LOGLEVEL = 0;
+int                     DEBUGMODE = 0;
+int                     TDoBackground = 1;  /* background daemon */
 
-char           *ProgName;
-char           *NodeSuffix = NULL;
+char                   *ProgName;
+char                   *NodeSuffix = NULL;
 
-int MultiMomMode = 0;
+int                     MultiMomMode = 0;
 
-int allow_any_mom = FALSE;
-int array_259_upgrade = FALSE;
+int                     allow_any_mom = FALSE;
+int                     array_259_upgrade = FALSE;
 
 
 
@@ -366,7 +368,6 @@ void *process_pbs_server_port(
   void *new_sock)
  
   {
-  static char *id = "process_pbs_server_port";
   int          proto_type;
   int          rc;
   int          version;
@@ -391,7 +392,7 @@ void *process_pbs_server_port(
       
       if (rc != DIS_SUCCESS)
         {
-        log_err(-1,id,"Cannot read version - skipping this request.\n");
+        log_err(-1,  __func__, "Cannot read version - skipping this request.\n");
         close_conn(sock,FALSE);
         break;
         }
@@ -417,7 +418,7 @@ void *process_pbs_server_port(
           snprintf(log_buf,sizeof(log_buf),
               "Socket (%d) Unknown protocol %d from %s", sock, proto_type, netaddr(addr));
 
-        log_err(-1,id,log_buf);
+        log_err(-1, __func__, log_buf);
         }
 
       close_conn(sock, FALSE);
@@ -551,7 +552,7 @@ void parse_command_line(
   
   ForceCreation = FALSE;
 
-  while ((c = getopt(argc, argv, "A:a:d:DefhH:L:l:mM:p:R:S:t:uv-:")) != -1)
+  while ((c = getopt(argc, argv, "A:a:cd:DefhH:L:l:mM:p:R:S:t:uv-:")) != -1)
     {
     switch (c)
       {
@@ -628,6 +629,12 @@ void parse_command_line(
           }
         a_opt_init = server.sv_attr[SRV_ATR_scheduling].at_val.at_long;
         pthread_mutex_unlock(server.sv_attr_mutex);
+
+        break;
+
+      case 'c':
+
+        wait_for_moms_hierarchy = TRUE;
 
         break;
 
@@ -1050,6 +1057,7 @@ void main_loop(void)
   long          scheduling = FALSE;
   long          sched_iteration = 0;
   time_t        time_now = time(NULL);
+  time_t        try_hellos = 0;
 
   extern char  *msg_startup2; /* log message   */
   char          log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1131,12 +1139,17 @@ void main_loop(void)
       VERSION, pbs_server_port_dis);
 #endif
 
+  time_now = time(NULL);
+  if (wait_for_moms_hierarchy == TRUE)
+    try_hellos = time_now + HELLO_WAIT_TIME;
+
   while (state != SV_STATE_DOWN)
     {
     /* first process any task whose time delay has expired */
     last_jobstat_time = time_now = time(NULL);
 
-    send_any_hellos_needed();
+    if (try_hellos <= time_now)
+      send_any_hellos_needed();
 
     get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
 
@@ -2019,7 +2032,6 @@ int is_ha_lock_file_valid(
   {
   char        LockDir[MAX_PATH_LEN];
   char        ErrorString[MAX_LINE];
-  char        id[] = "is_ha_lock_file_valid";
   struct stat Stat;
   bool_t      GoodPermissions = FALSE;
 
@@ -2041,7 +2053,7 @@ int is_ha_lock_file_valid(
       LockDir,
       ErrorString);
 
-    log_err(errno,id,tmpLine);
+    log_err(errno, __func__, tmpLine);
 
     return(FALSE);
     }
@@ -2067,7 +2079,7 @@ int is_ha_lock_file_valid(
 
   if (GoodPermissions == FALSE)
     {
-    log_err(-1,id,"could not obtain the needed permissions for the lock file");
+    log_err(-1, __func__, "could not obtain the needed permissions for the lock file");
     }
 
   return(GoodPermissions);
@@ -2159,7 +2171,6 @@ int acquire_file_lock(
   {
   struct flock flock;
   int          fds;
-  char         id[] = "acquire_file_lock";
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((LockFile == NULL) ||
@@ -2173,7 +2184,7 @@ int acquire_file_lock(
     {
     sprintf(log_buf,"ALERT:   empty %s lock filename\n",
       FileType);
-    log_err(-1,id,log_buf);
+    log_err(-1, __func__, log_buf);
 
     return(FAILURE);
     }
@@ -2189,7 +2200,7 @@ int acquire_file_lock(
       LockFile,
       errno,
       strerror(errno));
-    log_err(errno,id,log_buf);
+    log_err(errno, __func__, log_buf);
 
     return(FAILURE);
     }
@@ -2209,7 +2220,7 @@ int acquire_file_lock(
       errno,
       strerror(errno));
 
-    log_err(errno,id,log_buf);
+    log_err(errno, __func__, log_buf);
 
     return(FAILURE);
     }
@@ -2246,7 +2257,6 @@ void *update_ha_lock_thread(
   struct stat    statbuf;
   struct utimbuf timebuf;
   static long    LastModifyTime = 0;
-  char           id[] = "update_ha_lock_thread";
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (ISEMPTYSTR(HALockFile))
@@ -2320,7 +2330,7 @@ void *update_ha_lock_thread(
           LocalErrno,
           ErrorString);
         
-        log_err(LocalErrno,id,log_buf);
+        log_err(LocalErrno, __func__, log_buf);
         }
       else
         {
@@ -2328,7 +2338,7 @@ void *update_ha_lock_thread(
           HALockFile,
           EMsg);
         
-        log_err(-1,id,log_buf);
+        log_err(-1, __func__, log_buf);
         }
 
       /* restart pbs_server */
@@ -2355,14 +2365,13 @@ int start_update_ha_lock_thread()
   int fds;
 
   char smallBuf[MAX_LINE];
-  char id[] = "start_update_ha_lock_thread";
 
   /* write the pid to the lockfile for correctness */
   fds = open(HALockFile,O_TRUNC|O_WRONLY,0600);
 
   if (fds < 0)
     {
-    log_err(-1,id,"Couldn't write the pid to the lockfile\n");
+    log_err(-1, __func__, "Couldn't write the pid to the lockfile\n");
 
     return(FAILURE);
     }
@@ -2370,7 +2379,7 @@ int start_update_ha_lock_thread()
   snprintf(smallBuf,sizeof(smallBuf),"%ld\n",(long)sid); 
   if (write(fds,smallBuf,strlen(smallBuf)) != (ssize_t)strlen(smallBuf))
     {
-    log_err(-1,id,"Couldn't write the pid to the lockfile\n");
+    log_err(-1, __func__, "Couldn't write the pid to the lockfile\n");
 
     return(FAILURE);
     }
@@ -2386,7 +2395,7 @@ int start_update_ha_lock_thread()
     {
     /* error creating thread */
 
-    log_err(-1,id,"Could not create HA Lock Thread\n");
+    log_err(-1, __func__, "Could not create HA Lock Thread\n");
 
     return(FAILURE);
     }
@@ -2394,7 +2403,7 @@ int start_update_ha_lock_thread()
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
-    id,
+    __func__,
     "HA Lock update thread is now created\n");
 
   return(SUCCESS);
@@ -2451,7 +2460,6 @@ static void lock_out_ha()
   bool_t     FileIsMissing = FALSE;
 
   char        MutexLockFile[MAX_NAME];
-  char        id[] = "lock_out_ha";
 
   int         MutexLockFD = -1;
   int         NumChecks = 0;
@@ -2564,7 +2572,7 @@ static void lock_out_ha()
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
-    id,
+    __func__,
     "high availability file lock obtained");
   } /* END lock_out_ha() */
 
@@ -2588,8 +2596,6 @@ static int daemonize_server(
   int    pid;          
   FILE  *dummyfile;
   
-  char   id[] = "daemonize_server";
-  
   if (!DoBackground)
     {  
     /* handle foreground (i.e. debug mode) */
@@ -2608,7 +2614,7 @@ static int daemonize_server(
   
   if ((pid = fork()) == -1)
     {
-    log_err(errno,id,"cannot fork into background");
+    log_err(errno, __func__, "cannot fork into background");
     
     return(FAILURE);
    }
@@ -2621,7 +2627,7 @@ static int daemonize_server(
      log_event(
        PBSEVENT_SYSTEM,
        PBS_EVENTCLASS_SERVER,
-       id,
+       __func__,
        "INFO:      parent is exiting");
    
      exit(0);
@@ -2631,7 +2637,7 @@ static int daemonize_server(
   
   if ((*sid = setsid()) == -1)
     {
-    log_err(errno,id,"Could not disconnect from controlling terminal");
+    log_err(errno, __func__, "Could not disconnect from controlling terminal");
 
     return(FAILURE);
     }    
@@ -2653,7 +2659,7 @@ static int daemonize_server(
     
   if ((pid = fork()) == -1)
     {
-    log_err(errno,id,"cannot fork into background");
+    log_err(errno, __func__, "cannot fork into background");
       
     return(FAILURE);
     }
@@ -2665,7 +2671,7 @@ static int daemonize_server(
     log_event(
       PBSEVENT_SYSTEM,
       PBS_EVENTCLASS_SERVER,
-      id,
+      __func__,
       "INFO:      parent is exiting");
       
     exit(0);
@@ -2678,7 +2684,7 @@ static int daemonize_server(
   log_event(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
-    id,
+    __func__,
     "INFO:      child process in background");
     
   return(SUCCESS);
@@ -2710,7 +2716,6 @@ int get_file_info(
   {
   int          rc;
   char        *ptr;
-  char        *id = "get_file_info";
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   
   struct stat  sbuf;
@@ -2749,7 +2754,7 @@ int get_file_info(
       errno,
       strerror(errno));
     
-    log_err(errno,id,log_buf);
+    log_err(errno, __func__, log_buf);
     
     return(FAILURE);
     }
@@ -2884,7 +2889,6 @@ int svr_restart()
   int   rc;
   
   char  FullCmd[MAX_LINE];
-  char *id = "svr_restart";
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   
   if (get_full_path(
@@ -2894,7 +2898,7 @@ int svr_restart()
     {
     sprintf(log_buf, "ALERT:      cannot locate full path for '%s'\n", ArgV[0]);
     
-    log_err(-1,id,log_buf);
+    log_err(-1, __func__, log_buf);
 
     exit(-10);
     }
@@ -2915,7 +2919,7 @@ int svr_restart()
       {
       /* could not calloc */
       
-      log_err(errno,id,"ERROR:     cannot allocate memory for full command, cannot restart\n");
+      log_err(errno, __func__, "ERROR:     cannot allocate memory for full command, cannot restart\n");
       
       exit(-10);
       }
@@ -2925,7 +2929,7 @@ int svr_restart()
 
   sprintf(log_buf, "INFO:     about to exec '%s'\n", ArgV[0]);
 
-  log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buf);
+  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
   
   pthread_mutex_lock(log_mutex);
   log_close(1);
