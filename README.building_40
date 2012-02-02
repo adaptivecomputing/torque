@@ -6,7 +6,9 @@ building TORQUE from source, as many in the community will desire to
 checkout the code and build it.
 
 Required packages:
-For running autogen.sh:
+NOTE: running autogen.sh is only required for building from svn source. If you downloaded a distribution,
+either during the beta or the official release, this is not necessary.
+For running autogen.sh: 
 autoconf
 automake
 libtool

@@ -22,6 +22,7 @@ EXTRA_DIST = acinclude.m4 \
   README.NUMA \
 	README.torque \
   README.trqauthd \
+	README.building_40 \
 	Release_Notes \
   run_report.pl \
 	torque.setup \
