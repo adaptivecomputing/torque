@@ -571,7 +571,7 @@ static void altdsp_statjob(
 
       printf("Job ID               Username Queue    Jobname          SessID NDS   Tasks  Memory Time  S Time\n");
 
-      printf("-------------------- -------- -------- ---------------- ------ ----- ----- ------- ----- - -----\n");
+      printf("-------------------- -------- -------- ---------------- ------ ----- ------ ------ ----- - -----\n");
       }
     else
       {
