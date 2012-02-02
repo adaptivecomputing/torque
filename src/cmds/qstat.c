@@ -626,13 +626,13 @@ static void altdsp_statjob(
 
       printf("-------------------- -------- -------- ----- --- ------ ----- - ----- ----- ----- -----\n");
       }
-    else if (tasksize == 5)
+    else if (tasksize == 6)
       {
-      printf("\n                                                                           Req'd  Req'd   Elap\n");
+      printf("\n                                                                            Req'd  Req'd   Elap\n");
 
-      printf("Job ID               Username Queue    Jobname          SessID NDS   Tasks Memory Time  S Time\n");
+      printf("Job ID               Username Queue    Jobname          SessID NDS   Tasks  Memory Time  S Time\n");
 
-      printf("-------------------- -------- -------- ---------------- ------ ----- ----- ------ ----- - -----\n");
+      printf("-------------------- -------- -------- ---------------- ------ ----- ------ ------ ----- - -----\n");
       }
     else
       {
