@@ -37,7 +37,7 @@ int load_config(
      * from the lib_ifl.h file or server_name file (The same way
      * the client utilities determine the pbs_server port)
      */
-    printf("hostname = %s\n", tmp_name);
+    printf("hostname: %s\n", tmp_name);
     *ip = tmp_name;
     PBS_get_server(tmp_name, (unsigned int *)t_port);
     if (*t_port == 0)
@@ -61,7 +61,7 @@ int validate_server(
     char **sign_key)
   {
   int rc = PBSE_NONE;
-  fprintf(stdout, "pbs_server port is:%d\n", t_server_port);
+  fprintf(stderr, "pbs_server port is: %d\n", t_server_port);
   return rc;
   }
 
@@ -117,6 +117,10 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
       fd = fopen("/dev/null", "r");
       }
     }
+  else
+    {
+    fprintf(stderr, "trqauthd port: %d\n", server_port);
+    }
 
     /* start the listener */
     rc = start_listener(server_ip, server_port, process_meth);
@@ -143,6 +147,7 @@ void parse_command_line(int argc, char **argv)
       case 'D':
         debug_mode = TRUE;
         break;
+
       default:
         fprintf(stderr, "Only the -D flag  is currently supported\n");
         exit(1);

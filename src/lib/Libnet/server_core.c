@@ -10,6 +10,7 @@
 #include "../Liblog/log_event.h" /* log_event */
 #include "../Libifl/lib_ifl.h" /* process_svr_conn */
 
+extern int debug_mode;
 
 /* Note, in extremely high load cases, the alloc value in /proc/net/sockstat can exceed the max value. This will substantially slow down throughput and generate connection failures (accept gets a EMFILE error). As the client is designed to run on each submit host, that issue shouldn't occur. The client must be restarted to clear out this issue. */
 int start_listener(
@@ -21,8 +22,6 @@ int start_listener(
   int rc = PBSE_NONE;
   int sockoptval;
   int len_inet = sizeof(struct sockaddr_in);
-  char *ptr = NULL;
-  int debug = 0;
   int *new_conn_port = NULL;
   int listen_socket = 0;
   int total_cntr = 0;
@@ -30,8 +29,6 @@ int start_listener(
   pthread_attr_t t_attr;
   adr_svr.sin_family = AF_INET;
 
-  if ((ptr = getenv("PBSDEBUG")) != NULL)
-    debug = 1;
   if (!(adr_svr.sin_port = htons(server_port)))
     {
     }
@@ -90,7 +87,7 @@ int start_listener(
         {
         sockoptval = 1;
         setsockopt(*new_conn_port, SOL_SOCKET, SO_REUSEADDR, (void *)&sockoptval, sizeof(sockoptval));
-        if (debug == 1)
+        if (debug_mode == TRUE)
           {
           process_meth((void *)new_conn_port);
           }
@@ -99,7 +96,7 @@ int start_listener(
           pthread_create(&tid, &t_attr, process_meth, (void *)new_conn_port);
           }
         }
-      if (debug == 1)
+      if (debug_mode == TRUE)
         {
         if (total_cntr % 1000 == 0)
           {
