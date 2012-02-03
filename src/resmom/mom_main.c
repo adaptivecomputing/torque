@@ -89,6 +89,7 @@
 #include <sys/mman.h>
 #endif /* _POSIX_MEMLOCK */
 
+#define MAX_UPDATES_BEFORE_SENDING  20
 /* Global Data Items */
 
 char  *program_name;
@@ -117,26 +118,27 @@ char           path_meminfo[MAX_LINE];
 
 extern pthread_mutex_t *log_mutex;
 
-int thread_unlink_calls = FALSE;
+int          thread_unlink_calls = FALSE;
 /* by default, enforce these policies */
-int    ignwalltime = 0; 
-int    ignmem = 0;
-int    igncput = 0;
-int    ignvmem = 0; 
+int          ignwalltime = 0; 
+int          ignmem = 0;
+int          igncput = 0;
+int          ignvmem = 0; 
 /* end policies */
-int    spoolasfinalname = 0;
-int    attempttomakedir = 0;
-int    reduceprologchecks;
-int    lockfds = -1;
-int    multi_mom = 0;
-time_t loopcnt;  /* used for MD5 calc */
-float  max_load_val = -1.0;
-int    hostname_specified = 0;
-char   mom_host[PBS_MAXHOSTNAME + 1];
-char   mom_alias[PBS_MAXHOSTNAME + 1];
-char   TMOMRejectConn[MAXLINE];   /* most recent rejected connection */
-char   mom_short_name[PBS_MAXHOSTNAME + 1];
-int    num_var_env;
+int          spoolasfinalname = 0;
+int          maxupdatesbeforesending = MAX_UPDATES_BEFORE_SENDING;
+int          attempttomakedir = 0;
+int          reduceprologchecks;
+int          lockfds = -1;
+int          multi_mom = 0;
+time_t       loopcnt;  /* used for MD5 calc */
+float        max_load_val = -1.0;
+int          hostname_specified = 0;
+char         mom_host[PBS_MAXHOSTNAME + 1];
+char         mom_alias[PBS_MAXHOSTNAME + 1];
+char         TMOMRejectConn[MAXLINE];   /* most recent rejected connection */
+char         mom_short_name[PBS_MAXHOSTNAME + 1];
+int          num_var_env;
 int          received_cluster_addrs;
 time_t       requested_cluster_addrs;
 char        *path_epilog;
@@ -375,6 +377,7 @@ static unsigned long setmempressdur(char *);
 #endif
 static unsigned long setreduceprologchecks(char *);
 static unsigned long setextpwdretry(char *);
+static unsigned long setmaxupdatesbeforesending(char *);
 static unsigned long setthreadunlinkcalls(char *);
 unsigned long rppthrottle(char *value);
 
@@ -448,6 +451,7 @@ static struct specials
   { "thread_unlink_calls", setthreadunlinkcalls },
   { "attempt_to_make_dir", setattempttomakedir },
   { "ext_pwd_retry",       setextpwdretry },
+  { "max_updates_before_sending", setmaxupdatesbeforesending },
   { NULL,                  NULL }
   };
 
@@ -2219,11 +2223,7 @@ static unsigned long setloglevel(
   {
   int i;
 
-  log_record(
-    PBSEVENT_SYSTEM,
-    PBS_EVENTCLASS_SERVER,
-    "setloglevel",
-    value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
 
   i = (int)atoi(value);
 
@@ -2236,6 +2236,29 @@ static unsigned long setloglevel(
 
   return(1);
   }  /* END setloglevel() */
+
+
+
+
+static unsigned long setmaxupdatesbeforesending(
+    
+  char *value)
+
+  {
+  int i;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  i = (int)atoi(value);
+
+  if (i < 0)
+    return(0); /* error */
+
+  maxupdatesbeforesending = i;
+
+  /* SUCCESS */
+  return(1);
+  } /* END setmaxupdatesbeforesending() */
 
 
 

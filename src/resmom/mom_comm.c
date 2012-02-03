@@ -132,7 +132,6 @@
 #define IM_FINISHED                 1
 #define IM_DONE                     0
 #define IM_FAILURE                 -1
-#define MAX_UPDATES_BEFORE_SENDING  20
 
 
 /* Global Data Items */
@@ -153,14 +152,15 @@ extern int           port_care;
 extern char         *path_prologp;
 extern char         *path_prologuserp;
 extern int           multi_mom;
-char               *stat_string_aggregate = NULL;
-unsigned int        ssa_index;
-unsigned long       ssa_size;
-resizable_array    *received_statuses; /* holds information on node's whose statuses we've received */
-hash_table_t       *received_table;
-int                 updates_waiting_to_send = 0;
-time_t              LastServerUpdateTime;
-int                 ServerStatUpdateInterval;
+extern int           maxupdatesbeforesending;
+char                *stat_string_aggregate = NULL;
+unsigned int         ssa_index;
+unsigned long        ssa_size;
+resizable_array     *received_statuses; /* holds information on node's whose statuses we've received */
+hash_table_t        *received_table;
+int                  updates_waiting_to_send = 0;
+time_t               LastServerUpdateTime;
+int                  ServerStatUpdateInterval;
 
 const char *PMOMCommand[] =
   {
@@ -9175,7 +9175,7 @@ int read_status_strings(
         send_update_within_ten();
         }
       }
-    else if (updates_waiting_to_send >= MAX_UPDATES_BEFORE_SENDING)
+    else if (updates_waiting_to_send >= maxupdatesbeforesending)
       {
       send_update_within_ten();
       }

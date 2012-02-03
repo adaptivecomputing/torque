@@ -260,7 +260,6 @@ mom_server     mom_servers[PBS_MAXSERVER];
 int            mom_server_count = 0;
 pbs_net_t      down_svraddrs[PBS_MAXSERVER];
 
-
 extern unsigned int        default_server_port;
 extern char                mom_host[];
 extern char               *path_jobs;
