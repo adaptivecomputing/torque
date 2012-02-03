@@ -3817,9 +3817,7 @@ static char *ncpus(
       procs++;
     }
 
-  sprintf(ret_string, "%d",
-
-          procs);
+  sprintf(ret_string, "%d", procs);
 
   system_ncpus = procs;
 

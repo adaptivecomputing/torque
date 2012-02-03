@@ -815,6 +815,38 @@ void add_all_nodes_to_hello_container()
 
 
 
+int get_default_threads()
+
+  {
+  int   default_threads = DEFAULT_MIN_THREADS;
+  int   count = 0;
+  char  label[128];
+  FILE *fp;
+
+  if ((fp = fopen("/proc/cpuinfo", "r")) != NULL)
+    {
+    /* if we can determine the number of cores, make 
+     * the default number of threads 2 * cores + 1 */
+    while (!feof(fp))
+      {
+      if (fscanf(fp, "%s %*[^\n]%*c", label) == 0)
+        {
+        getc(fp);  /* must do something to get to eof */
+        }
+      else if (strcmp("processor", label) == 0)
+        count++;
+      }
+
+    if (count > 0)
+      default_threads = (2 * count) + 1;
+    }
+
+  return(default_threads);
+  } /* END get_default_threads() */
+
+
+
+
 /*
  * This file contains the functions to initialize the PBS Batch Server.
  * The code is called once when the server is brought up.
@@ -845,8 +877,8 @@ int pbsd_init(
   int               rc;
   int               Index;
   int               iter;
-  long              min_threads = DEFAULT_MIN_THREADS;
-  long              max_threads = DEFAULT_MAX_THREADS;
+  long              min_threads;
+  long              max_threads;
   long              thread_idle_time = DEFAULT_THREAD_IDLE;
   int               job_count = 0; /* Count of recovered jobs */
 
@@ -864,6 +896,9 @@ int pbsd_init(
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char   EMsg[1024];
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
+
+  min_threads = get_default_threads();
+  max_threads = min_threads;
 
   memset(&hints, 0, sizeof(hints));
   hints.ai_flags = AI_CANONNAME;
