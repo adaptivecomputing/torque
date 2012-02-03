@@ -25,7 +25,7 @@ my $torqueHomeDir = "/var/spool/torque";
 my (
     $account,        $endDate,   $full, $group,
     $help,           $man,       $num,  $queue,
-    $specifiedJobId, $startDate, $user
+    $specifiedJobId, $startDate, $user, $oneonly
 );
 GetOptions(
     'account=s'   => \$account,
@@ -39,6 +39,7 @@ GetOptions(
     'num=i'       => \$num,
     'startDate=s' => \$startDate,
     'user=s'      => \$user,
+    'oneonly'     => \$oneonly,
 ) or pod2usage(2);
 
 # Display usage if necessary
@@ -71,6 +72,9 @@ if (@ARGV)
     {
         pod2usage(2);
     }
+    # treat brackets as literal in job id for array jobs
+    $specifiedJobId =~ s/\[/\\\[/g;
+    $specifiedJobId =~ s/\]/\\\]/g;
 }
 
 # Build a sorted list of job files
@@ -78,7 +82,14 @@ chdir("${torqueHomeDir}/job_logs")
   or die
   "Unable to change directory to job_logs directory (${torqueHomeDir}/job_logs): $!\n";
 my @jobFiles = glob("20*");
-@jobFiles = sort @jobFiles;
+if ($specifiedJobId)
+{
+    @jobFiles = reverse sort @jobFiles; # search from most recent log if a particular jobs is specified
+}
+else
+{
+    @jobFiles = sort @jobFiles;
+}
 if ($startDate)
 {
     if ($startDate =~ /^(\d{4})[\/\-](\d{2})[\/\-](\d{2})$/)
@@ -105,8 +116,17 @@ if ($endDate)
 }
 if ($num)
 {
-    my $firstIndex = ($num <= @jobFiles) ? @jobFiles - $num : 0;
-    my $lastIndex = $#jobFiles;
+    my ($firstIndex, $lastIndex);
+    if ($specifiedJobId)
+      {
+      $firstIndex = 0;
+      $lastIndex = ($num < $#jobFiles) ? $num : $#jobFiles;
+      }
+    else
+      {
+      $firstIndex = ($num <= @jobFiles) ? @jobFiles - $num : 0;
+      $lastIndex = $#jobFiles;
+      }
     @jobFiles = @jobFiles[$firstIndex .. $lastIndex];
 }
 
@@ -116,7 +136,7 @@ if ($num)
 my %jobAttr = ();
 my @jobs    = ();
 my $context = '';
-foreach my $jobFile (@jobFiles)
+OUTER: foreach my $jobFile (@jobFiles)
 {
     open JOBS, "< $jobFile"
       or die "Unable to open job file ($jobFile) for reading: $!\n";
@@ -180,11 +200,11 @@ foreach my $jobFile (@jobFiles)
         }
         elsif ($line =~ /<mem>([^<]+)</ && $context eq 'resources_used')
         {
-            $jobAttr{'Memory Used'} = $1;
+            $jobAttr{'Memory Used'} = ktoMG($1);
         }
         elsif ($line =~ /<vmem>([^<]+)</ && $context eq 'resources_used')
         {
-            $jobAttr{'vmem Used'} = $1;
+            $jobAttr{'vmem Used'} = ktoMG($1);
         }
         elsif ($line =~ /<opsys>([^<]+)</ && $context eq 'resource_List')
         {
@@ -265,7 +285,7 @@ foreach my $jobFile (@jobFiles)
               if (
                 defined $specifiedJobId
                 && (! defined $jobAttr{'Job Id'}
-                    || $jobAttr{'Job Id'} !~ /^${specifiedJobId}\b/)
+                    || $jobAttr{'Job Id'} !~ /^${specifiedJobId}(?:.|\b)/)
               );
             next
               if (
@@ -294,6 +314,7 @@ foreach my $jobFile (@jobFiles)
             my %jobAttrCopy = %jobAttr;
             push @jobs, \%jobAttrCopy;
         }
+        last OUTER if @jobs and $oneonly;
     }
 }
 
@@ -409,6 +430,31 @@ sub ddhhmmss
     else { return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds); }
 }
 
+
+################################################################################
+# $ktoMG = ktoMG($kilo)
+# Converts kilo units to mega or giga (mebi and gibi)
+# k, M and G are used rather than the more correct Ki, Mi and Gi
+################################################################################
+sub ktoMG
+{
+    my ($value) = @_;
+    if ($value =~ /^\s*(\d+)k/) {
+        my $k = $1;
+        if ($k > 1024) {
+            my $M = $k / 1024;
+            if ($M > 1024) {
+                my $G = $M / 1024;
+                $G = sprintf("%.1f", $G);
+                $value =~ s/${k}k/${G}G/;
+            } else {
+                $M = sprintf("%.1f", $M);
+                $value =~ s/${k}k/${M}M/;
+            }
+        }
+    }
+    return $value;
+}
 ##############################################################################
 
 __END__
@@ -419,7 +465,7 @@ B<showjobs> - list historical job information
 
 =head1 SYNOPSIS
 
-B<showjobs> [B<-u> I<user_name>] [B<-g> I<group_name>] [B<-a> I<account_name>] [B<-q> I<queue_name>] [B<-s> I<start date>] [B<-e> I<end date>] [B<-n> I<# of job files>] [B<--help>] [B<--man>] [[B<-j>] <job id>]
+B<showjobs> [B<-u> I<user_name>] [B<-g> I<group_name>] [B<-a> I<account_name>] [B<-q> I<queue_name>] [B<-s> I<start date>] [B<-e> I<end date>] [B<-n> I<days>] [B<--help>] [B<--man>] [[B<-j>] <job id>]
 
 =head1 DESCRIPTION
 
@@ -445,7 +491,7 @@ Show only job records matching the specified group.
 
 Show only job records matching the specified job id.
 
-=item B<-n> I<#_of_job_files>
+=item B<-n> I<days>
 
 Restricts the number of past job files to search.
 
@@ -460,6 +506,10 @@ Restricts the search to job files starting with the specified date. The date is 
 =item B<-u> I<user_name>
 
 Show only job records matching the specified user.
+
+=item B<-o | --oneonly>
+
+Show only the first job record found. This will mostly be much faster and give the same result as if the flag is omitted if the search is for a specific non-array job or specific array job member.
 
 =item B<-? | --help>
 
