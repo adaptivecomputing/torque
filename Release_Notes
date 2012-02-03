@@ -6,35 +6,8 @@ Software Version 4.0.0
 
 		                   	-------- WARNING! --------
 
-#rough outline for what should go into 4.0's release notes when it is released.
-
 TORQUE 4.0.0 is not backwards compatible in any way. When you upgrade to 4.0.0, 
 everything has to be upgraded at once.
-
-TORQUE is now multi-threaded so that it will respond to user commands much faster.
-
-TORQUE no longer uses rpp to communicate - tcp is used in all cases.
-
-TORQUE now needs to be set up with a mom hierarchy file (located in 
-mom_priv/mom_hierarchy) specifying in what order each mom should report to 
-pbs_server instead of each mom speaking directly to pbs_server.
-
-TORQUE now includes a job_radix option (-W job_radix=X) to specify how
-many moms each mom should communicate with for that job. Moms are then an 
-n-branch tree communications-wise
-
-TORQUE no longer has unix sockets as the default on configure. The pbs_iff replacement (trqauthd) is now the default.
-
-Software Version 2.5.0
-
-This file contains a few notes on building and installing TORQUE and 
-Release notes concerning some of the new features of this release.
-
-		                   	-------- WARNING! --------
-
-TORQUE 2.5 Array Changes - WARNING: TORQUE 2.5 Job Arrays are not backwards
-compatible, you MUST NOT upgrade to this from 2.3 or 2.4 while you have job
-arrays queued - See README.array_changes for more details.
 
 ---------------------------------------------------------------------------
 CONTENTS
@@ -49,96 +22,43 @@ CONTENTS
 --------------------------------------------------------------------------
 OVERVIEW
 
-    Enhanced job array functionality and Cygwin compatibility are the two
-    main new features of TORQUE 2.5.0. Several other minor enhancements 
-    have also been added to TORQUE 2.5.0 along with several bug fixes.
-    For a complete list of changes see CHANGELOG.
+    TORQUE needs to be able to scale to newer, larger systems. This includes:
+    handling larger numbers of jobs, nodes, and commands per second. TORQUE 
+    also needs to become far more reliable. To respond to these challenges,
+    TORQUE has undergone a huge makeover - pbs_server is now multi-threaded,
+    RPP/UDP is no longer used, mom reporting can be organized into 
+    hierarchies, job reporting can be divided into a tree structure, and 
+    many other smaller yet significant changes.
     
 ---------------------------------------------------------------------------
 WHAT'S NEW
 
+
+    pbs_server is now multi-threaded so that it will respond to user commands 
+    much faster, and most importantly, one user command doesn't tie up the 
+    system and block other things.
+
+    TORQUE no longer uses rpp to communicate - tcp is used in all cases. rpp 
+    allows the network to drop its packets when it is at a high load. tcp 
+    does not allow this in the protocol, making it more reliable.
+
+    TORQUE now has the option of using a mom hierarchy to specify how the moms report
+    to the server. If not specified, each mom will report directly to the server as 
+    previous versions have, but if specified direct traffic on the server can be 
+    greatly reduced. Details on providing a mom hierarchy file are found here:
+    http://www.adaptivecomputing.com/resources/docs/torque/4-0/help.htm in 
+    section 1.3.2 
+    (1.0 Installation and configuration > 1.3 Advanced configuration > 1.3.2 Server configuration)
+    
     pbs_iff has been replaced with a daemon that needs to be running on any
     submit host (under the condition that you are using iff, not munge or unix
     sockets) To start the iff replacement, run trqauthd as root.
 
-    Completed job information can now be logged. A new Boolean server parameter 
-    record_job_info can be set to TRUE and a log file will be created
-    under $TORQUE_HOME/job_logs. The log file is in XML format and 
-    contains the same information that would be produced by qstat -f.
+    TORQUE now includes a job_radix option (-W job_radix=X) to specify how
+    many moms each mom should communicate with for that job. Moms are then an 
+    n-branch tree communications-wise
 
-    The serverdb file which contains the queue and server configuration
-    data can optionally be converted to XML format. If you configure 
-    TORQUE with the --enable-server-xml option the serverdb file will
-    be stored in XML format. If you are upgrading from a version of 
-    TORQUE earlier than 2.5.3 the old serverdb file will be converted 
-    to the new XML format.
-
-    Munge has been added as an option for user authorization on the server.
-    The default user authorization for TORQUE uses privileged ports and 
-    ruserok to authorize client applications. Munge creates an alternative 
-    which is more scalable and can bypass the rsh type ruserok function
-    call.
-
-    Job arrays are now suported in the commands qalter, qdel, qhold, qrls 
-    in addition to the qsub command.
-
-    Slot limits are a new feature added to job arrays which allow users and
-    administrators to have more control of the number of concurrently 
-    running jobs from a job array. Slot limits can be set on a per job basis
-    or system wide with the new server parameter 'max_slot_limit'. 
-    Administrators can also control how large user arrays can be with
-    the new server parameter 'max_job_array_size'.
-
-    New job dependecy options have been added to work with job arrays. Users
-    can create dependecies based on the status of entire job arrays and
-    not just individual jobs.
-
-    qstat has also been updated to more conveniently display job array. Job
-    arrays are displayed in a summary of the array by default, however,
-    expanded display of the entire job can also be done.
-
-    Special thanks to Glen Beane and David Beer for their work on the 
-    new job array functionality. For more information concerning updates 
-    to job arrays in TORQUE 2.5.0 refer to the README.array_changes document.
-
-    TORQUE 2.5.0 can now be run with Cygwin. This feature was added by
-    Igor Ilyenko, Yauheni Charniauski and Vikentsi Lapa. To learn how to 
-    run TORQUE with Cygwin see README.cygwin. TORQUE on Cygwin was a
-    community project and support for this feature will be provided by
-    the TORQUE community. 
-    
-    For more information concerning the installation and use of TORQUE
-    with Cygwin please see the README.cygwin file.
-
-    The 'procs' keyword has been part of the qsub syntax for some time. 
-    However, TORQUE itself never interpreted this argument and simply 
-    passed it through to the scheduler. With TORQUE 2.5.0 the 'procs' 
-    keyword is now interpreted to mean allocate a designated number of 
-    processors on any combination of nodes. For example the following
-    qsub command
-
-    qsub -l nodes=2 -l procs=2 
-
-    will allocate two separate nodes with one processor each plus it will
-    allocate two additional processors from any other available nodes.
-    The same allocation can be achieved with the following syntax as well.
-
-    qsub -l nodes=2+procs=2.
-
-    A new MOM config option was added named 'alias_server_name'. This option
-    allows a MOM to add an additional host name address to its trusted 
-    addresses. The option was added to overcome a problem with RPP and UDP
-    when alias IP addresses are used on a pbs_server.
-
-    'clone_batch_size', 'clone_batch_delay', 'job_start_timeout', and 
-    'checkpoint_defaults' were added as new qmgr server parameters. 
-
-    To find more information concerning the new parameters as well as other
-    TORQUE features see the documentation at 
-    http://www.clusterresources.com/products/torque/docs/
-
-
-
+    More detail can be found in README.new_in_4.0
 
 REQUIREMENTS
 ------------
@@ -159,6 +79,8 @@ BUILD AND INSTALLATION DIRECTIONS
 The directions to build and install are found in the PBS Administrators Guide.
 A postscript and PDF copy are found in this directory.  Please read and
 follow the directions CAREFULLY.
+
+Also consider additional considerations in README.building_40.
 
 Installation instructions can also be found at http://www.clusterresources.com/products/torque/docs/
 
