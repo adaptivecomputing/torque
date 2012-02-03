@@ -36,6 +36,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       open.
   b - Fix for where qmgr record_job_info is True and server hangs on startup.
   e - Mom rejection messages are now passed back to qrun when possible
+  e - Added the option -c for startup. By default, the server attempts to send the mom 
+      hierarchy file to all moms on startup, and all moms update the server and request 
+      the hierarchy file. If both are trying to do this at once, it can cause a lot of 
+      traffic. -c tells pbs_server to wait 10 minutes to attempt to contact moms that 
+      haven't contacted it, reducing this traffic.
 
 3.0.5
   b - fix for writing too much data when job_script is saved to job log.
