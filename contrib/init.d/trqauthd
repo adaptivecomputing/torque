@@ -20,7 +20,7 @@ fi
 # let see how we were called
 case "$1" in
 	start) 
-		echo -n "Starting TORQUE Scheduler: "
+		echo -n "Starting TORQUE Authorization Daemon: "
 		status trqauthd 2>&1 > /dev/null
 		RET=$?
 		[ $RET -eq 0 ] && echo -n "trqauthd already running" && success && echo && exit 0
@@ -31,7 +31,7 @@ case "$1" in
 		echo
 		;;
 	stop)
-		echo -n "Shutting down TORQUE Scheduler: "
+		echo -n "Shutting down TORQUE Authorization Daemon: "
 		status trqauthd 2>&1 > /dev/null
 		RET=$?
 		[ ! $RET -eq 0 ] && echo -n "trqauthd already stopped" && success && echo && exit 0
@@ -50,7 +50,7 @@ case "$1" in
 		$0 start
 		;;
 	reload) 
-		echo -n "Reloading trqauthd: "
+		echo -n "Reloading TORQUE Authorization Daemon: "
 		killproc trqauthd -HUP
 		RET=$?
 		echo

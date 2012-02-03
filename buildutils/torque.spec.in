@@ -32,13 +32,13 @@
 %bcond_without syslog
 
 ### Autoconf macro expansions
-%define ac_with_blcr    --%{?with_blcr:en}%{!?with_blcr:dis}able-blcr
-%define ac_with_cpuset  --%{?with_cpuset:en}%{!?with_cpuset:dis}able-cpuset
-%define ac_with_drmaa   --%{?with_drmaa:en}%{!?with_drmaa:dis}able-drmaa
+%define ac_with_blcr       --%{?with_blcr:en}%{!?with_blcr:dis}able-blcr
+%define ac_with_cpuset     --%{?with_cpuset:en}%{!?with_cpuset:dis}able-cpuset
+%define ac_with_drmaa      --%{?with_drmaa:en}%{!?with_drmaa:dis}able-drmaa
 %define ac_with_gui        --%{?with_gui:en}%{!?with_gui:dis}able-gui --with%{!?with_gui:out}-tcl
-%define ac_with_ha      --%{?with_ha:en}%{!?with_ha:dis}able-high-availability
-%define ac_with_pthreads --%{?with_ha:en}%{!?with_ha:dis}able-pthreads
-%define ac_with_munge   --%{?with_munge:en}%{!?with_munge:dis}able-munge-auth
+%define ac_with_ha         --%{?with_ha:en}%{!?with_ha:dis}able-high-availability
+%define ac_with_pthreads   --%{?with_ha:en}%{!?with_ha:dis}able-pthreads
+%define ac_with_munge      --%{?with_munge:en}%{!?with_munge:dis}able-munge-auth
 %define ac_with_numa       --%{?with_numa:en}%{!?with_numa:dis}able-numa-support
 %define ac_with_memacct    --%{?with_memacct:en}%{!?with_memacct:dis}able-memacct
 %define ac_with_libcpuset  --%{?with_libcpuset:en}%{!?with_libcpuset:dis}able-libcpuset
@@ -189,7 +189,7 @@ export CFLAGS CXXFLAGS
 %{__mkdir_p} $RPM_BUILD_ROOT%{_initrddir}
 INIT_PREFIX=""
 test -f /etc/SuSE-release && INIT_PREFIX="suse."
-for PROG in pbs_mom pbs_sched pbs_server ; do
+for PROG in pbs_mom pbs_sched pbs_server trqauthd ; do
     %{__sed} -e 's|^PBS_HOME=.*|PBS_HOME=%{torque_home}|' \
              -e 's|^PBS_DAEMON=.*|PBS_DAEMON=%{_sbindir}/'$PROG'|' contrib/init.d/$INIT_PREFIX$PROG \
         > $RPM_BUILD_ROOT%{_initrddir}/$PROG
@@ -208,7 +208,20 @@ echo '$pbsserver %{torque_server}' > $RPM_BUILD_ROOT%{torque_home}/mom_priv/conf
 mv $RPM_BUILD_ROOT%{_docdir}/*drmaa* drmaa-doc-dir
 %endif
 
-%post -p /sbin/ldconfig
+%post
+/sbin/ldconfig
+if [ $1 -eq 1 ]; then
+    chkconfig --add trqauthd >/dev/null 2>&1 || :
+    chkconfig trqauthd on >/dev/null 2>&1 || :
+    service trqauthd condrestart >/dev/null 2>&1 || :
+fi
+
+%preun
+if [ $1 -eq 0 ]; then
+    chkconfig trqauthd off >/dev/null 2>&1 || :
+    service trqauthd stop >/dev/null 2>&1 || :
+    chkconfig --del trqauthd >/dev/null 2>&1 || :
+fi
 
 %postun -p /sbin/ldconfig
 
@@ -248,14 +261,16 @@ if [ $1 -eq 1 ]; then
     qmgr -c "set server default_queue = batch" >/dev/null 2>&1 || :
     qmgr -c "set node $TORQUE_SERVER state = free" >/dev/null 2>&1 || :
 
+    chkconfig --add pbs_server >/dev/null 2>&1 || :
     chkconfig pbs_server on >/dev/null 2>&1 || :
     service pbs_server condrestart >/dev/null 2>&1 || :
 fi
 
 %preun server
 if [ $1 -eq 0 ]; then
-    chkconfig pbs_server off
+    chkconfig pbs_server off >/dev/null 2>&1 || :
     service pbs_server stop >/dev/null 2>&1 || :
+    chkconfig --del pbs_server >/dev/null 2>&1 || :
 fi
 
 %post client
@@ -275,26 +290,30 @@ if [ $1 -eq 1 ]; then
         TORQUE_SERVER=`hostname`
         perl -pi -e "s/localhost/$TORQUE_SERVER/g" %{torque_home}/mom_priv/config 2>/dev/null || :
     fi
-    chkconfig pbs_mom on
+    chkconfig --add pbs_mom >/dev/null 2>&1 || :
+    chkconfig pbs_mom on >/dev/null 2>&1 || :
     service pbs_mom condrestart >/dev/null 2>&1 || :
 fi
 
 %preun client
 if [ $1 -eq 0 ]; then
-    chkconfig pbs_mom off
+    chkconfig pbs_mom off >/dev/null 2>&1 || :
     service pbs_mom stop >/dev/null 2>&1 || :
+    chkconfig --del pbs_mom >/dev/null 2>&1 || :
 fi
 
 %post scheduler
 if [ $1 -eq 1 ]; then
-    chkconfig pbs_sched on
+    chkconfig --add pbs_sched >/dev/null 2>&1 || :
+    chkconfig pbs_sched on >/dev/null 2>&1 || :
     service pbs_sched condrestart >/dev/null 2>&1 || :
 fi
 
 %preun scheduler
 if [ $1 -eq 0 ]; then
-    chkconfig pbs_sched off
+    chkconfig pbs_sched off >/dev/null 2>&1 || :
     service pbs_sched stop >/dev/null 2>&1 || :
+    chkconfig --del pbs_sched >/dev/null 2>&1 || :
 fi
 
 %clean
@@ -306,6 +325,7 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %doc doc/READ_ME doc/doc_fonts doc/soelim.c doc/ers
 %config(noreplace) %{torque_home}/pbs_environment
 %config(noreplace) %{torque_home}/server_name
+%{_initrddir}/trqauthd
 %{_bindir}/chk_tree
 %{_bindir}/hostn
 %{_bindir}/nqs2pbs
@@ -317,7 +337,7 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %{_bindir}/printtracking
 %{_bindir}/q*
 %{_bindir}/tracejob
-%attr(4755, root, root) %{_sbindir}/pbs_iff
+%{_sbindir}/trqauthd
 %if %{without scp}
 %attr(4755, root, root) %{_sbindir}/pbs_rcp
 %endif
