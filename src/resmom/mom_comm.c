@@ -9049,8 +9049,6 @@ int read_status_strings(
   int   version)  /* I */
 
   {
-  static char *id = "read_status_strings";
-  
   unsigned short  is_new = FALSE;
   int             rc;
   int             index;
@@ -9087,7 +9085,7 @@ int read_status_strings(
     
     if (rn == NULL)
       {
-      log_err(ENOMEM,id,"No memory to allocate for status information\n");
+      log_err(ENOMEM, __func__, "No memory to allocate for status information\n");
       return(ENOMEM);
       }
     
@@ -9097,7 +9095,7 @@ int read_status_strings(
     
     if (rn->statuses == NULL)
       {
-      log_err(ENOMEM,id,"No memory to allocate for status information\n");
+      log_err(ENOMEM, __func__, "No memory to allocate for status information\n");
       return(ENOMEM);
       }
     
@@ -9109,7 +9107,7 @@ int read_status_strings(
         "Received first status from mom %s",
         hostname);
 
-      log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
       }
     
     is_new = TRUE;
@@ -9127,7 +9125,7 @@ int read_status_strings(
         "Received status update from mom %s",
         hostname);
       
-      log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
       }
     }
   
@@ -9148,7 +9146,7 @@ int read_status_strings(
       }
 
     /* place each string into the buffer */
-    copy_to_end_of_dynamic_string(rn->statuses,str);
+    copy_to_end_of_dynamic_string(rn->statuses, str);
 
     free(str);
     }
@@ -9162,15 +9160,15 @@ int read_status_strings(
   
     if (is_new == TRUE)
       {
-      int index = insert_thing(received_statuses,rn);
+      int index = insert_thing(received_statuses, rn);
       
       if (index == -1)
         {
-        log_err(ENOMEM,id,"No memory to resize the received_statuses array...SYSTEM FAILURE\n");
+        log_err(ENOMEM, __func__, "No memory to resize the received_statuses array...SYSTEM FAILURE\n");
         }
       else
         {
-        add_hash(received_table,index,rn->hostname);
+        add_hash(received_table, index, rn->hostname);
         
         send_update_within_ten();
         }

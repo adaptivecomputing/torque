@@ -60,15 +60,15 @@ int resetgpuecc(char *gpuid, int reset_perm, int reset_vol);
 
 int setup_gpus_for_job(job *pjob);
 
-void generate_server_gpustatus_smi(char *buffer, int buffer_size);
+void generate_server_gpustatus_smi(dynamic_string *gpu_status);
 
 void mom_server_update_gpustat(mom_server *pms, char *status_strings);
 #endif /* NVIDIA_GPUS */
 
-void generate_server_status(char *buffer, int buffer_size);
+int generate_server_status(char *buffer, int buffer_size);
 
 #ifdef NVML_API
-void generate_server_gpustatus_nvml(char *buffer, int buffer_size);
+void generate_server_gpustatus_nvml(dynamic_string *gpu_status);
 #endif /* NVML_API */
 
 int write_update_header(int stream, const char *id, char *name);

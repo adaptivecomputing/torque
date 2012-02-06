@@ -158,6 +158,7 @@ char        *path_aux;
 char        *path_home = PBS_SERVER_HOME;
 char        *mom_home;
 
+extern dynamic_string *mom_status;
 extern int  multi_mom;
 extern unsigned int pbs_rm_port;
 char        *path_layout;
@@ -6891,6 +6892,9 @@ int setup_program_environment(void)
   path_aux         = mk_dirs("aux/");
 #endif  /* __CYGWIN__ */
 
+  /* initialize the mom_status */
+  mom_status = get_dynamic_string(16 * 1024, NULL);
+
   init_resc_defs();
 
   c |= mom_checkpoint_init();
@@ -8092,11 +8096,6 @@ void main_loop(void)
     /* if needed, update server with my state change */
     /* can be changed in check_busy(), query_adp(), and update_stat() */
     mom_server_all_send_state();
-
-#ifdef NVIDIA_GPUS
-    /* FIXME: make it so this is called only at appropriate intervals */
-    mom_server_all_update_gpustat();
-#endif  /* NVIDIA_GPUS */
 
 #ifdef USESAVEDRESOURCES
     /* if -p, must poll tasks inside jobs to look for completion */

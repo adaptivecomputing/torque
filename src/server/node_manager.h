@@ -27,7 +27,7 @@ int is_stat_get(struct pbsnode *np);
 int gpu_has_job(struct pbsnode *pnode, int gpuid);
 #endif /* NVIDIA_GPUS */
 
-int is_gpustat_get(struct pbsnode *np);
+int is_gpustat_get(struct pbsnode *np, int stream);
 
 int is_compose(int stream, int command);
 

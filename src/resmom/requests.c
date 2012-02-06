@@ -146,7 +146,6 @@ extern int TTmpDirName(job*, char *);
 #ifdef NVIDIA_GPUS
 int setgpumode(char *, int);
 int resetgpuecc(char *, int, int);
-extern void mom_server_all_update_gpustat(void);
 #endif /* NVIDIA_GPUS */
 
 /* External Global Data Items */
@@ -1285,7 +1284,7 @@ void req_gpuctrl_mom(
 
     if (gpumode != -1)
       {
-      mom_server_all_update_gpustat();
+      send_update_within_ten();
       }
     }
   else
@@ -1294,9 +1293,7 @@ void req_gpuctrl_mom(
     }
 #else
 
-    sprintf(
-      log_buffer,
-      "GPU control request not supported: node %s gpuid %s mode %d reset_perm %d reset_vol %d",
+    sprintf(log_buffer, "GPU control request not supported: node %s gpuid %s mode %d reset_perm %d reset_vol %d",
       mom_node,
       gpuid,
       gpumode,
@@ -1305,7 +1302,7 @@ void req_gpuctrl_mom(
 
   if (LOGLEVEL >= 3)
     {
-      log_ext(-1, id, log_buffer, LOG_INFO);
+    log_ext(-1, id, log_buffer, LOG_INFO);
     }
 
   req_reject(PBSE_NOSUP, 0, preq, NULL, NULL);

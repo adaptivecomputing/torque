@@ -157,6 +157,7 @@ extern int  has_nodes;
 
 #ifdef NVIDIA_GPUS
 extern int create_a_gpusubnode(struct pbsnode *);
+int        is_gpustat_get(struct pbsnode *np, int stream);
 #endif  /* NVIDIA_GPUS */
 
 extern int ctnodes(char *);
@@ -1145,6 +1146,12 @@ int is_stat_get(
       {
       /* Skip this one */
       }
+#ifdef NVIDIA_GPUS
+    else if (!strcmp(ret_info, "<gpu status>"))
+      {
+      is_gpustat_get(np, stream);
+      }
+#endif
     else if (!strcmp(ret_info, "first_update=true"))
       {
       /* mom is requesting that we send the mom hierarchy file to her */
@@ -1486,12 +1493,10 @@ int gpu_has_job(
 
 int is_gpustat_get(
 
-  struct pbsnode *np)  /* I (modified) */
+  struct pbsnode *np,     /* I (modified) */
+  int             stream) /* I */
 
   {
-  char      *id = "is_gpustat_get";
-
-  int stream = np->nd_stream;
   int        rc;
   char      *ret_info;
   attribute  temp;
@@ -1511,7 +1516,7 @@ int is_gpustat_get(
     sprintf(log_buf, "received gpu status from node %s",
       (np != NULL) ? np->nd_name : "NULL");
 
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
   if (stream < 0)
@@ -1534,12 +1539,11 @@ int is_gpustat_get(
     {
     DBPRT(("is_gpustat_get:  cannot initialize attribute\n"));
 
-    rpp_eom(stream);
-
     return(DIS_NOCOMMIT);
     }
 
-  while (((ret_info = disrst(stream, &rc)) != NULL) && (rc == DIS_SUCCESS))
+  while (((ret_info = disrst(stream, &rc)) != NULL) && 
+         (rc == DIS_SUCCESS))
     {
     /* add the info to the "temp" attribute */
 
@@ -1551,10 +1555,7 @@ int is_gpustat_get(
         DBPRT(("is_gpustat_get: cannot add attributes\n"));
 
         free_arst(&temp);
-
         free(ret_info);
-
-        rpp_eom(stream);
 
         return(DIS_NOCOMMIT);
         }
@@ -1569,15 +1570,17 @@ int is_gpustat_get(
         DBPRT(("is_gpustat_get: cannot add attributes\n"));
 
         free_arst(&temp);
-
         free(ret_info);
-
-        rpp_eom(stream);
 
         return(DIS_NOCOMMIT);
         }
       drv_ver = atoi(ret_info + 11);
       continue;
+      }
+    else if (!strcmp(ret_info, "</gpu status>"))
+      {
+      free(ret_info);
+      break;
       }
 
     /* gpuid must come before the rest or we will be in trouble */
@@ -1591,10 +1594,7 @@ int is_gpustat_get(
           DBPRT(("is_gpustat_get: cannot add attributes\n"));
 
           free_arst(&temp);
-
           free(ret_info);
-
-          rpp_eom(stream);
 
           return(DIS_NOCOMMIT);
           }
@@ -1624,7 +1624,7 @@ int is_gpustat_get(
             gpuid,
             np->nd_name);
 
-          log_ext(-1, id, log_buf, LOG_DEBUG);
+          log_ext(-1, __func__, log_buf, LOG_DEBUG);
           }
 
         free_arst(&temp);
@@ -1723,7 +1723,7 @@ int is_gpustat_get(
             gpuid,
             np->nd_name);
 
-          log_ext(-1, id, log_buf, LOG_DEBUG);
+          log_ext(-1, __func__, log_buf, LOG_DEBUG);
           }
         }
  
@@ -1753,37 +1753,31 @@ int is_gpustat_get(
 
     } /* end of while disrst */
 
-    if (strlen(gpuinfo) > 0)
+  if (strlen(gpuinfo) > 0)
+    {
+    if (decode_arst(&temp, NULL, NULL, gpuinfo, 0))
       {
-      if (decode_arst(&temp, NULL, NULL, gpuinfo, 0))
-        {
-        DBPRT(("is_gpustat_get: cannot add attributes\n"));
+      DBPRT(("is_gpustat_get: cannot add attributes\n"));
+      
+      free_arst(&temp);      
+      free(ret_info);
 
-        free_arst(&temp);
-
-        free(ret_info);
-
-        rpp_eom(stream);
-
-        return(DIS_NOCOMMIT);
-        }
+      return(DIS_NOCOMMIT);
       }
+    }
 
   /* maintain the gpu count */
-
   if (gpucnt != np->nd_ngpus)
     {
     np->nd_ngpus = gpucnt;
 
     /* update the nodes file */
-
     update_nodes_file(np);
     }
 
   node_gpustatus_list(&temp, np, ATR_ACTION_ALTER);
 
   return(DIS_SUCCESS);
-
   }  /* END is_gpustat_get() */
 #endif  /* NVIDIA_GPUS */
 
@@ -1846,7 +1840,6 @@ void stream_eof(
   int       ret)     /* I (ignored) */
 
   {
-  static char     id[] = "stream_eof";
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   struct pbsnode *np;
@@ -1874,14 +1867,14 @@ void stream_eof(
     return;
     }
 
-  lock_node(np, id, "parent", LOGLEVEL);
+  lock_node(np, __func__, "parent", LOGLEVEL);
 
   sprintf(log_buf,
     "connection to %s is no longer valid, connection may have been closed remotely, remote service may be down, or message may be corrupt (%s).  setting node state to down",
     np->nd_name,
     dis_emsg[ret]);
 
-  log_err(-1, id, log_buf);
+  log_err(-1, __func__, log_buf);
 
   /* mark node and all subnodes as down */
 
@@ -1894,9 +1887,9 @@ void stream_eof(
       {
       pnode = AVL_find(i,np->nd_mom_port,np->node_boards);
 
-      lock_node(pnode, id, "subs", LOGLEVEL);
+      lock_node(pnode, __func__, "subs", LOGLEVEL);
       update_node_state(pnode,INUSE_DOWN);
-      unlock_node(pnode, id, "subs", LOGLEVEL);
+      unlock_node(pnode, __func__, "subs", LOGLEVEL);
       }
     }
   else
@@ -1911,7 +1904,7 @@ void stream_eof(
     np->nd_stream = -1;
     }
 
-  unlock_node(np, id, "parent", LOGLEVEL);
+  unlock_node(np, __func__, "parent", LOGLEVEL);
 
   return;
   }  /* END stream_eof() */
@@ -2403,8 +2396,7 @@ void *is_request_work(
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
         }
 
-      node->nd_stream = sock;
-      ret = is_gpustat_get(node);
+      ret = is_gpustat_get(node, sock);
 
       if (ret != DIS_SUCCESS)
         {

@@ -221,14 +221,17 @@ int append_dynamic_string(
   char *to_append)    /* I */
 
   {
-  int        len = strlen(to_append);
-  int        add_one = FALSE;
+  int len = strlen(to_append);
+  int add_one = FALSE;
+  int offset = ds->used;
 
   if (ds->used == 0)
     add_one = TRUE;
+  else
+    offset -= 1;
 
   resize_if_needed(ds, to_append);
-  strcat(ds->str,to_append);
+  strcat(ds->str + offset, to_append);
     
   ds->used += len;
 
