@@ -480,7 +480,7 @@ int attr_to_str(
       break;
     } /* END switch attribute type */
 
-  return(PBSE_NONE);
+  return(rc);
   } /* END attr_to_str */
 
 

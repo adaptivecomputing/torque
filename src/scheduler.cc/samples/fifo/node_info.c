@@ -655,7 +655,7 @@ node_info *find_best_node(job_info *jinfo, node_info **ninfo_arr)
     if (ninfo_arr[ln_i] == NULL)
       {
       strcpy(last_node_name, ninfo_arr[0] -> name);
-      ln_i = 0;
+      /* ln_i = 0; */
       }
 
     /* if the last node is at the end of the list, cycle back to the front */

@@ -185,7 +185,6 @@ int build_var_list(
 /*       if (*var_list != NULL) */
 /*         len = strlen(*var_list); */
 /*      new_len = len + 1; *//* Existing string, */
-      name_len = 0;
       value_len = strlen(atr->value); /* value\0 */
       *var_list = memmgr_realloc(mm, *var_list,
           current_len + 1 + value_len + 1);

@@ -822,8 +822,7 @@ int main(
           {
           errflg = 1;
           }
-
-        if (!strcmp(optarg, "version"))
+        else if (!strcmp(optarg, "version"))
           {
           fprintf(stderr, "version: %s\n", PACKAGE_VERSION);
           exit(0);
