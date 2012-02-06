@@ -63,6 +63,9 @@ Suite *u_users_suite(void)
   tcase_add_test(tc_core, valid_user);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("invalid_user_with_error");
+  tcase_add_test(tc_core, invalid_user_with_error);
+  suite_add_tcase(s, tc_core);
   return s;
   }
 

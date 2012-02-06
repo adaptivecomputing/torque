@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
+int debug_mode = 0;
 int socket_get_tcp()
   {
   fprintf(stderr, "The call to socket_get_tcp needs to be mocked!!\n");

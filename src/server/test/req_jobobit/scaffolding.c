@@ -295,3 +295,9 @@ int safe_strncat(char *str, char *to_append, size_t space_remaining)
   return(0);
   }
 
+void close_conn(int sd, int mutex)
+  {
+  fprintf(stderr, "The call to close_conn needs to be mocked!!\n");
+  exit(1);
+  }
+
