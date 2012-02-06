@@ -18,15 +18,14 @@
 %bcond_with    cpuset
 %bcond_with    drmaa
 %bcond_with    gui
-%bcond_with    munge
-%bcond_with    pam
-%bcond_with    numa
-%bcond_with    memacct
 %bcond_with    libcpuset
+%bcond_with    memacct
+%bcond_with    munge
+%bcond_with    numa
+%bcond_with    pam
 %bcond_with    top
 
 ### Features enabled by default
-%bcond_without ha
 %bcond_without scp
 %bcond_without spool
 %bcond_without syslog
@@ -36,8 +35,6 @@
 %define ac_with_cpuset     --%{?with_cpuset:en}%{!?with_cpuset:dis}able-cpuset
 %define ac_with_drmaa      --%{?with_drmaa:en}%{!?with_drmaa:dis}able-drmaa
 %define ac_with_gui        --%{?with_gui:en}%{!?with_gui:dis}able-gui --with%{!?with_gui:out}-tcl
-%define ac_with_ha         --%{?with_ha:en}%{!?with_ha:dis}able-high-availability
-%define ac_with_pthreads   --%{?with_ha:en}%{!?with_ha:dis}able-pthreads
 %define ac_with_munge      --%{?with_munge:en}%{!?with_munge:dis}able-munge-auth
 %define ac_with_numa       --%{?with_numa:en}%{!?with_numa:dis}able-numa-support
 %define ac_with_memacct    --%{?with_memacct:en}%{!?with_memacct:dis}able-memacct
@@ -162,7 +159,7 @@ Summary: DRMAA 1.0 Implementation for TORQUE
 Group: Applications/System
 Provides: pbs-drmaa = %{version}-%{release}
 
-%description
+%description drmaa
 This package contains a DRMAA 1.0 implementation for use with TORQUE.
 %endif
 
@@ -177,7 +174,7 @@ export CFLAGS CXXFLAGS
 %configure --includedir=%{_includedir}/%{name} --with-default-server=%{torque_server} \
     --with-server-home=%{torque_home} --with-sendmail=%{sendmail_path} \
     --disable-dependency-tracking %{ac_with_gui} %{ac_with_scp} %{ac_with_syslog} \
-    --disable-gcc-warnings %{ac_with_munge} %{ac_with_pam} %{ac_with_drmaa} %{ac_with_ha} \
+    --disable-gcc-warnings %{ac_with_munge} %{ac_with_pam} %{ac_with_drmaa} \
     --disable-qsub-keep-override %{ac_with_blcr} %{ac_with_cpuset} %{ac_with_spool} %{?acflags}
 %{__make} %{?_smp_mflags} %{?mflags}
 
@@ -191,6 +188,8 @@ INIT_PREFIX=""
 test -f /etc/SuSE-release && INIT_PREFIX="suse."
 for PROG in pbs_mom pbs_sched pbs_server trqauthd ; do
     %{__sed} -e 's|^PBS_HOME=.*|PBS_HOME=%{torque_home}|' \
+             -e 's|^BIN_PATH=.*|BIN_PATH=%{_bindir}|' \
+             -e 's|^SBIN_PATH=.*|SBIN_PATH=%{_sbindir}|' \
              -e 's|^PBS_DAEMON=.*|PBS_DAEMON=%{_sbindir}/'$PROG'|' contrib/init.d/$INIT_PREFIX$PROG \
         > $RPM_BUILD_ROOT%{_initrddir}/$PROG
     %{__chmod} 0755 $RPM_BUILD_ROOT%{_initrddir}/$PROG
@@ -213,6 +212,8 @@ mv $RPM_BUILD_ROOT%{_docdir}/*drmaa* drmaa-doc-dir
 if [ $1 -eq 1 ]; then
     chkconfig --add trqauthd >/dev/null 2>&1 || :
     chkconfig trqauthd on >/dev/null 2>&1 || :
+    service trqauthd start >/dev/null 2>&1 || :
+else
     service trqauthd condrestart >/dev/null 2>&1 || :
 fi
 
@@ -238,31 +239,36 @@ if [ $1 -eq 1 ]; then
 	pbs_resmom    15003/udp           # mom resource management requests
 	pbs_sched     15004/tcp           # scheduler
 	pbs_sched     15004/udp           # scheduler
+	trqauthd      15005/tcp           # authorization daemon
+	trqauthd      15005/udp           # authorization daemon
 	EOF
-    pbs_server -t create || exit 0
+    if [ ! -e %{torque_home}/server_priv/serverdb ]; then
+        if [ "%{torque_server}" = "localhost" ]; then
+            TORQUE_SERVER=`hostname`
+            perl -pi -e "s/localhost/$TORQUE_SERVER/g" %{torque_home}/server_name %{torque_home}/server_priv/nodes 2>/dev/null || :
+        else
+            TORQUE_SERVER="%{torque_server}"
+        fi
 
-    if [ "%{torque_server}" = "localhost" ]; then
-        TORQUE_SERVER=`hostname`
-        perl -pi -e "s/localhost/$TORQUE_SERVER/g" %{torque_home}/server_name %{torque_home}/server_priv/nodes 2>/dev/null || :
-    else
-        TORQUE_SERVER="%{torque_server}"
+        pbs_server -t create -f >/dev/null 2>&1 || :
+        sleep 1
+        qmgr -c "set server scheduling = true" >/dev/null 2>&1 || :
+        qmgr -c "set server managers += root@$TORQUE_SERVER" >/dev/null 2>&1 || :
+        qmgr -c "set server managers += %{torque_user}@$TORQUE_SERVER" >/dev/null 2>&1 || :
+        qmgr -c "create queue batch queue_type = execution" >/dev/null 2>&1 || :
+        qmgr -c "set queue batch started = true" >/dev/null 2>&1 || :
+        qmgr -c "set queue batch enabled = true" >/dev/null 2>&1 || :
+        qmgr -c "set queue batch resources_default.walltime = 1:00:00" >/dev/null 2>&1 || :
+        qmgr -c "set queue batch resources_default.nodes = 1" >/dev/null 2>&1 || :
+        qmgr -c "set server default_queue = batch" >/dev/null 2>&1 || :
+        qmgr -c "set node $TORQUE_SERVER state = free" >/dev/null 2>&1 || :
+        killall -TERM pbs_server >/dev/null 2>&1 || :
     fi
-
-    qmgr -c "set server scheduling = true" >/dev/null 2>&1 || :
-    qmgr -c "set server operators += root@$TORQUE_SERVER" >/dev/null 2>&1 || :
-    qmgr -c "set server managers += root@$TORQUE_SERVER" >/dev/null 2>&1 || :
-    qmgr -c "set server operators += %{torque_user}@$TORQUE_SERVER" >/dev/null 2>&1 || :
-    qmgr -c "set server managers += %{torque_user}@$TORQUE_SERVER" >/dev/null 2>&1 || :
-    qmgr -c "create queue batch queue_type = execution" >/dev/null 2>&1 || :
-    qmgr -c "set queue batch started = true" >/dev/null 2>&1 || :
-    qmgr -c "set queue batch enabled = true" >/dev/null 2>&1 || :
-    qmgr -c "set queue batch resources_default.walltime = 1:00:00" >/dev/null 2>&1 || :
-    qmgr -c "set queue batch resources_default.nodes = 1" >/dev/null 2>&1 || :
-    qmgr -c "set server default_queue = batch" >/dev/null 2>&1 || :
-    qmgr -c "set node $TORQUE_SERVER state = free" >/dev/null 2>&1 || :
 
     chkconfig --add pbs_server >/dev/null 2>&1 || :
     chkconfig pbs_server on >/dev/null 2>&1 || :
+    service pbs_server start >/dev/null 2>&1 || :
+else
     service pbs_server condrestart >/dev/null 2>&1 || :
 fi
 
@@ -285,6 +291,8 @@ if [ $1 -eq 1 ]; then
 	pbs_resmom    15003/udp           # mom resource management requests
 	pbs_sched     15004/tcp           # scheduler
 	pbs_sched     15004/udp           # scheduler
+	trqauthd      15005/tcp           # authorization daemon
+	trqauthd      15005/udp           # authorization daemon
 	EOF
     if [ "%{torque_server}" = "localhost" ]; then
         TORQUE_SERVER=`hostname`
@@ -292,6 +300,8 @@ if [ $1 -eq 1 ]; then
     fi
     chkconfig --add pbs_mom >/dev/null 2>&1 || :
     chkconfig pbs_mom on >/dev/null 2>&1 || :
+    service pbs_mom start >/dev/null 2>&1 || :
+else
     service pbs_mom condrestart >/dev/null 2>&1 || :
 fi
 
@@ -306,6 +316,8 @@ fi
 if [ $1 -eq 1 ]; then
     chkconfig --add pbs_sched >/dev/null 2>&1 || :
     chkconfig pbs_sched on >/dev/null 2>&1 || :
+    service pbs_sched start >/dev/null 2>&1 || :
+else
     service pbs_sched condrestart >/dev/null 2>&1 || :
 fi
 
@@ -386,6 +398,7 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %dir %{torque_home}/mom_priv
 %config(noreplace) %{torque_home}/mom_priv/config
 %{_initrddir}/pbs_mom
+%{_sbindir}/momctl
 %{_sbindir}/pbs_demux
 %{_sbindir}/pbs_mom
 %{_sbindir}/qnoded

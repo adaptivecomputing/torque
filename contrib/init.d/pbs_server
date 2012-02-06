@@ -6,7 +6,7 @@
 # description: PBS is a versatile batch system for SMPs and clusters
 #
 # Source the library functions
-#. /etc/rc.d/init.d/functions
+test -f /etc/rc.d/init.d/functions && . /etc/rc.d/init.d/functions
 
 create() {
     echo -n "Creating initial TORQUE configuration: "
@@ -15,12 +15,18 @@ create() {
         exit 1
     fi
 
-    $PBS_DAEMON -d $PBS_HOME -t create &
-    while [ ! -r $PBS_SERVERDB ]; do
-        sleep 1
+    for SLEEP in 2 4 6 8 10 ; do
+        $PBS_DAEMON -d $PBS_HOME -t create &
+        sleep $SLEEP
+        $BIN_PATH/qterm
     done
-    $BIN_PATH/qterm
-    RET=$?
+    if [ -r $PBS_SERVERDB ]; then
+        success
+        RET=0
+    else
+        failure
+        RET=1
+    fi
 }
 
 start() {
@@ -29,7 +35,6 @@ start() {
         echo "pbs_server is already running."
         exit 0
     fi
-    echo $PBS_SERVERDB
     if [ ! -r $PBS_SERVERDB ]; then
         create
     fi
@@ -47,7 +52,7 @@ stop() {
         exit 0
     fi
     echo -n "Shutting down TORQUE Server: "
-    qterm pbs_server
+    killproc pbs_server -TERM
     RET=$?
     rm -f /var/lock/subsys/pbs_server
     echo
