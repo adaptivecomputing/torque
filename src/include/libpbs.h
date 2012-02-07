@@ -110,7 +110,7 @@
 #define PBS_BATCH_PROT_VER 2
 /* #define PBS_REQUEST_MAGIC (56) */
 /* #define PBS_REPLY_MAGIC   (57) */
-#define SCRIPT_CHUNK_Z (4096)
+#define SCRIPT_CHUNK_Z (65536)
 #ifndef TRUE
 #define TRUE 1
 #define FALSE 0

@@ -46,6 +46,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix for writing too much data when job_script is saved to job log.
   b - fix for where pbs_mom would not automatically set gpu mode.
   b - fix for alligning qstat -r output when configured with -DTXT.
+  e - Change size of transfer block used on job rerun from 4k to 64k.
 
 3.0.4
   c - fix a buffer being overrun with nvidia gpus enabled
