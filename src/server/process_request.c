@@ -535,7 +535,6 @@ void *process_request(
       svr_conn[sfds].cn_authen = PBS_NET_CONN_AUTHENTICATED;
       }
 
-
     if (ENABLE_TRUSTED_AUTH == TRUE )
       rc = 0;  /* bypass the authentication of the user--trust the client completely */
     else if (munge_on)
@@ -544,7 +543,11 @@ void *process_request(
       if ( request->rq_type == PBS_BATCH_AltAuthenUser)
         {
         enqueue_threadpool_request(req_altauthenuser,request); 
-        goto process_request_cleanup;
+      
+        if (unlock_mutex == TRUE)
+          pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+
+        return(NULL);
         }
       else
         {
@@ -665,7 +668,7 @@ process_request_cleanup:
   if (unlock_mutex == TRUE)
     pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
-  if (free_request)
+  if (free_request == TRUE)
     free_br(request);
 
   return(NULL);
@@ -890,6 +893,7 @@ void dispatch_request(
       break;
 
     case PBS_BATCH_StatusNode:
+      
       enqueue_threadpool_request(req_stat_node,request);
 
       break;
