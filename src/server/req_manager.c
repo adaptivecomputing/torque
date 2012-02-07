@@ -1118,7 +1118,7 @@ int hostname_check(
     {
     /* handle normally */
     if ((get_fullhostname(hostname,ret_hostname,PBS_MAXHOSTNAME,NULL)) ||
-        strncmp(hostname, ret_hostname, PBS_MAXHOSTNAME))
+        strncasecmp(hostname, ret_hostname, PBS_MAXHOSTNAME))
       {
       return(FAILURE);
       }
