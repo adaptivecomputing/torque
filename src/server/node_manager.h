@@ -39,9 +39,9 @@ void *check_nodes_work(void *vp);
 
 void check_nodes(struct work_task *ptask);
 
-void *is_request_work(void *vp);
+void *svr_is_request_work(void *vp);
 
-void is_request(int stream, int version);
+void svr_is_request(int stream, int version, int *cmdp);
 
 void *write_node_state_work(void *vp);
 

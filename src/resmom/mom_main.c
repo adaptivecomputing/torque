@@ -268,7 +268,7 @@ extern int      post_epilogue(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
 extern void     mom_checkpoint_set_directory_path(char *str);
-extern int      is_request(int, int, int *);
+extern int      mom_is_request(int, int, int *);
 
 #if defined(NVIDIA_GPUS) && defined(NVML_API)
 extern int      init_nvidia_nvml();
@@ -5463,7 +5463,7 @@ int do_tcp(
 
     case IS_PROTOCOL:
 
-      is_request(fd,version,NULL);
+      mom_is_request(fd,version,NULL);
 
       break;
 

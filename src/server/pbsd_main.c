@@ -130,6 +130,7 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "../lib/Libifl/lib_ifl.h" /* get_port_from_server_name_file */
+#include "node_manager.h" /* svr_is_request */
 
 #define HELLO_WAIT_TIME        600
 #define TSERVER_HA_CHECK_TIME  1  /* 1 second sleep time between checks on the lock file for high availability */
@@ -150,7 +151,6 @@ extern void acct_close(void);
 extern int  svr_startjob(job *, struct batch_request *, char *, char *);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
-extern void is_request(int,int,int *);
 #ifdef NO_SIGCHLD
 extern void check_children();
 #endif
@@ -397,7 +397,7 @@ void *process_pbs_server_port(
         break;
         }
       
-      is_request(sock,version,NULL);
+      svr_is_request(sock,version,NULL);
       
       break;
 

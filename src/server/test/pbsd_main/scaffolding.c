@@ -173,9 +173,9 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-void is_request(int stream, int version, int *cmdp)
+void svr_is_request(int stream, int version, int *cmdp)
   {
-  fprintf(stderr, "The call to is_request needs to be mocked!!\n");
+  fprintf(stderr, "The call to svr_is_request needs to be mocked!!\n");
   exit(1);
   }
 

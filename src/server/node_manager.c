@@ -2084,8 +2084,8 @@ const char *PBSServerCmds2[] =
 
 
 /* 
- * is_request_work
- * the function that performs the processing of the is_request. This function is 
+ * svr_is_request_work
+ * the function that performs the processing of the svr_is_request. This function is 
  * passed to the threadpool to be started from there.
  *
  * vp is an array of int pointers. 
@@ -2093,13 +2093,11 @@ const char *PBSServerCmds2[] =
  * The second slot is the version
  */
 
-void *is_request_work(
+void *svr_is_request_work(
 
   void *vp)
 
   {
-  static char         id[] = "is_request_work";
-
   int                 command = 0;
   int                 ret = DIS_SUCCESS;
   int                 i;
@@ -2142,7 +2140,7 @@ void *is_request_work(
       sock,
       version);
 
-    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
+    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,__func__,log_buf);
     }
 
   if (getpeername(sock, &s_addr, &len) != 0)
@@ -2151,7 +2149,7 @@ void *is_request_work(
 
     free(vp);
 
-    log_err(errno,id,"Cannot get socket name using getpeername\n");
+    log_err(errno,__func__,"Cannot get socket name using getpeername\n");
 
     return(NULL);
     }
@@ -2168,7 +2166,7 @@ void *is_request_work(
       version,
       netaddr(addr));
 
-    log_err(-1, id, log_buf);
+    log_err(-1, __func__, log_buf);
 
     close_conn(sock, 2);
 
@@ -2187,14 +2185,14 @@ void *is_request_work(
       mom_port,
       rm_port);
 
-    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
+    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,__func__,log_buf);
     }
 
   ipaddr = ntohl(addr->sin_addr.s_addr);
   
   if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
     {
-    lock_node(node, id, "AVL_find", LOGLEVEL);
+    lock_node(node, __func__, "AVL_find", LOGLEVEL);
     } /* END if AVL_find != NULL) */
   else if (allow_any_mom)
     {
@@ -2210,7 +2208,7 @@ void *is_request_work(
       {
       node = AVL_find(ipaddr, 0, ipaddrs);
        
-      lock_node(node, id, "no error", LOGLEVEL);
+      lock_node(node, __func__, "no error", LOGLEVEL);
       }                                                         
     }
     
@@ -2224,10 +2222,10 @@ void *is_request_work(
     
     if (LOGLEVEL >= 2)
       {
-      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
+      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
     
-    log_err(-1, id, log_buf);
+    log_err(-1, __func__, log_buf);
     
     close_conn(sock, FALSE);
     
@@ -2246,15 +2244,14 @@ void *is_request_work(
       netaddr(addr),
       sock);
 
-    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
+    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,__func__,log_buf);
     }
 
   switch (command)
     {
     case IS_NULL:  /* a ping from server */
 
-      DBPRT(("%s: IS_NULL\n",
-             id))
+      DBPRT(("%s: IS_NULL\n", __func__))
 
       break;
 
@@ -2264,7 +2261,7 @@ void *is_request_work(
         {
         sprintf(log_buf, "HELLO received from %s", node->nd_name);
 
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
 
 #ifndef ALT_CLSTR_ADDR
@@ -2277,7 +2274,7 @@ void *is_request_work(
         {
         sprintf(log_buf, "Add cluster addrs to %s", node->nd_name);
 
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
 
       if (add_cluster_addrs(sock,node) != DIS_SUCCESS)
@@ -2292,7 +2289,7 @@ void *is_request_work(
         {
         sprintf(log_buf, "sending cluster-addrs to node %s\n", node->nd_name);
 
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
 
       /* CLUSTER_ADDRS successful */
@@ -2303,8 +2300,7 @@ void *is_request_work(
 
     case IS_UPDATE:
 
-      DBPRT(("%s: IS_UPDATE\n",
-             id))
+      DBPRT(("%s: IS_UPDATE\n", __func__))
 
       i = disrui(sock, &ret);
 
@@ -2314,17 +2310,13 @@ void *is_request_work(
           {
           sprintf(log_buf, "IS_UPDATE error %d on node %s\n", ret, node->nd_name);
 
-          log_err(ret, id, log_buf);
+          log_err(ret, __func__, log_buf);
           }
 
         goto err;
         }
 
-      DBPRT(("%s: IS_UPDATE %s 0x%x\n",
-
-             id,
-             node->nd_name,
-             i))
+      DBPRT(("%s: IS_UPDATE %s 0x%x\n", __func__, node->nd_name, i))
 
       update_node_state(node, i);
 
@@ -2343,7 +2335,7 @@ void *is_request_work(
         {
         sprintf(log_buf, "IS_STATUS received from %s", node->nd_name);
 
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
 
       node->nd_stream = sock;
@@ -2370,7 +2362,7 @@ void *is_request_work(
           {
           sprintf(log_buf, "IS_STATUS error %d on node %s", ret, node->nd_name);
 
-          log_err(ret, id, log_buf);
+          log_err(ret, __func__, log_buf);
           }
 
         goto err;
@@ -2393,7 +2385,7 @@ void *is_request_work(
         {
         sprintf(log_buf, "IS_GPU_STATUS received from %s", node->nd_name);
 
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
 
       ret = is_gpustat_get(node, sock);
@@ -2406,7 +2398,7 @@ void *is_request_work(
             ret,
             node->nd_name);
 
-          log_err(ret, id, log_buf);
+          log_err(ret, __func__, log_buf);
           }
 
         goto err;
@@ -2419,7 +2411,7 @@ void *is_request_work(
         sprintf(log_buf, "Not configured: IS_GPU_STATUS received from %s",
           node->nd_name);
 
-        log_err(ret, id, log_buf);
+        log_err(ret, __func__, log_buf);
         }
 
 #endif  /* NVIDIA_GPUS */
@@ -2433,7 +2425,7 @@ void *is_request_work(
         command,
         node->nd_name);
 
-      log_err(-1, id, log_buf);
+      log_err(-1, __func__, log_buf);
 
       goto err;
 
@@ -2443,7 +2435,7 @@ void *is_request_work(
   /* must be closed because mom opens and closes this connection each time */
   close_conn(sock, FALSE);
 
-  unlock_node(node, id, "close", LOGLEVEL);
+  unlock_node(node, __func__, "close", LOGLEVEL);
   
   free(vp);
 
@@ -2458,7 +2450,7 @@ err:
     if (LOGLEVEL >= 1)
       {
       DBPRT(("%s: error processing node %s\n",
-            id,
+            __func__,
             node->nd_name))
       }
 
@@ -2467,7 +2459,7 @@ err:
       node->nd_name,
       netaddr(addr));
     
-    unlock_node(node, id, "err", LOGLEVEL);
+    unlock_node(node, __func__, "err", LOGLEVEL);
     }
   else
     {
@@ -2476,14 +2468,14 @@ err:
       sock);
     }
     
-  log_err(-1, id, log_buf);
+  log_err(-1, __func__, log_buf);
     
   close_conn(sock, FALSE);
     
   free(vp);
 
   return(NULL);
-  } /* END is_request_work */
+  } /* END svr_is_request_work */
 
 
 
@@ -2495,7 +2487,7 @@ err:
  * Read the stream to get a Inter-Server request.
  */
 
-void is_request(
+void svr_is_request(
 
   int  stream,  /* I */
   int  version) /* I */
@@ -2504,26 +2496,24 @@ void is_request(
   int *args;
   int rc;
 
-  static char id[] = "is_request";
-
   args = (int *)calloc(2, sizeof(int));
 
   if (args == NULL)
     {
-    log_err(ENOMEM,id,"Cannot allocate memory...system failure inevitable");
+    log_err(ENOMEM,__func__,"Cannot allocate memory...system failure inevitable");
     return;
     }
 
   args[0] = stream;
   args[1] = version;
 
-  rc = enqueue_threadpool_request(is_request_work,args);
+  rc = enqueue_threadpool_request(svr_is_request_work,args);
 
   if (rc)
     {
-    log_err(rc,id,"Unable to enqueue is request task into the threadpool");
+    log_err(rc,__func__,"Unable to enqueue is request task into the threadpool");
     }
-  }  /* END is_request() */
+  }  /* END svr_is_request() */
 
 
 
@@ -2620,7 +2610,7 @@ void write_node_state(void)
 
   if (rc)
     {
-    log_err(rc,id,"Unable to enqueue is_request task into the threadpool");
+    log_err(rc,id,"Unable to enqueue write_node_state_work task into the threadpool");
     }
   }  /* END write_node_state() */
 

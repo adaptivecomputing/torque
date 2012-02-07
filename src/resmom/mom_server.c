@@ -675,7 +675,7 @@ int mom_server_flush_io(
  *
  * @see state_to_server() - parent - create state IS_UPDATE message
  * @see is_update_stat() - parent - create full IS_UPDATE message
- * @see is_request() - peer - process hello/cluster_addrs requests from pbs_server
+ * @see mom_is_request() - peer - process hello/cluster_addrs requests from pbs_server
  */
 
 int is_compose(
@@ -3664,14 +3664,14 @@ AvlTree okclients = NULL;
 /**
  * mom_server_valid_message_source
  *
- * This routine is called from is_request to validate
+ * This routine is called from mom_is_request to validate
  * that the request is coming from a know server.
  * If the server is good, a pointer to the server
  * instance is returned.  Otherwise NULL indicates error.
  *
  * @param stream The stream number in question
  * @return pms A pointer to the server instance.
- * @see is_request
+ * @see mom_is_request
  */
 
 mom_server *mom_server_valid_message_source(
@@ -4094,15 +4094,13 @@ int read_cluster_addresses(
  * Read the stream to get a Inter-Server request.
  */
 
-void is_request(
+void mom_is_request(
 
   int  stream,   /* I */
   int  version,  /* I */
   int *cmdp)     /* O (optional) */
 
   {
-  static char        id[] = "is_request";
- 
   static int          hello_count = 0;
   int                 command = 0;
   int                 ret = DIS_SUCCESS;
@@ -4125,7 +4123,7 @@ void is_request(
       stream,
       version);
 
-    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, id, log_buffer);
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
   if (version != IS_PROTOCOL_VER)
@@ -4133,7 +4131,7 @@ void is_request(
     sprintf(log_buffer, "protocol version %d unknown",
             version);
 
-    log_ext(-1,id,log_buffer,LOG_ALERT);
+    log_ext(-1,__func__,log_buffer,LOG_ALERT);
 
     close_conn(stream, FALSE);
 
@@ -4156,7 +4154,7 @@ void is_request(
         free(err_msg);
         }
       else
-        log_ext(-1, id, "Invalid source for IS_REQUEST", LOG_ALERT);
+        log_ext(-1, __func__, "Invalid source for IS_REQUEST", LOG_ALERT);
       close_conn(stream, FALSE);
       return;
       }
@@ -4182,7 +4180,7 @@ void is_request(
       log_record(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_JOB,
-        id,
+        __func__,
         log_buffer);
       }
     
@@ -4239,7 +4237,7 @@ void is_request(
       sprintf(log_buffer, "unknown command %d sent",
         command);
 
-      log_ext(-1,id,log_buffer,LOG_ALERT);
+      log_ext(-1,__func__,log_buffer,LOG_ALERT);
 
       ret = -1;
     }  /* END switch(command) */
@@ -4254,12 +4252,12 @@ void is_request(
         dis_emsg[ret],
         (addr != NULL) ? netaddr(addr) : "???");
       
-      log_ext(-1,id,log_buffer,LOG_ALERT);
+      log_ext(-1,__func__,log_buffer,LOG_ALERT);
       }
     }
 
   close_conn(stream, FALSE);
-  }  /* END is_request() */
+  }  /* END mom_is_request() */
 
 
 

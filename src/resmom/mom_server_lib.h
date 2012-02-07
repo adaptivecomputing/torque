@@ -105,7 +105,7 @@ mom_server *mom_server_valid_message_source(int stream, char **err_msg);
 
 void pass_along_hellos(int hello_count);
 
-void is_request(int stream, int version, int *cmdp);
+void mom_is_request(int stream, int version, int *cmdp);
 
 float compute_load_threshold(char *config, int numvnodes, float threshold);
 
