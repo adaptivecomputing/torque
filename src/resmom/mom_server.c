@@ -3209,7 +3209,7 @@ int add_gpu_status(
 
   {
 #ifdef NVIDIA_GPUS
-  copy_to_end_of_dynamic_string(mom_status, "<gpu status>");
+  copy_to_end_of_dynamic_string(mom_status, START_GPU_STATUS);
 
 #ifdef NVML_API
   generate_server_gpustatus_nvml(mom_status);
@@ -3218,7 +3218,7 @@ int add_gpu_status(
   generate_server_gpustatus_smi(mom_status);
 #endif /* NVML_API */
 
-  copy_to_end_of_dynamic_string(mom_status, "</gpu status>");
+  copy_to_end_of_dynamic_string(mom_status, END_GPU_STATUS);
 #endif /* NVIDIA_GPUS */
 
   return(PBSE_NONE);

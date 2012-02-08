@@ -382,12 +382,12 @@ void  update_default_np()
       npfreediff = pnode->nd_nsn - pnode->nd_nsnfree;
       pnode->nd_nsn = default_np;
       pnode->nd_nsnfree = default_np - npfreediff;
-      unlock_node(pnode, "update_default_np", NULL, LOGLEVEL);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }
 
   return;
-  }
+  } /* END update_default_np() */
 
 /* Add the server names from /var/spool/torque/server_name to the trusted hosts list. */
 

@@ -2987,15 +2987,32 @@ struct pbsnode *next_host(
 
   {
   struct pbsnode *pnode;
+  char           *name = NULL;
 
-  pthread_mutex_lock(an->allnodes_mutex);
+  if (pthread_mutex_trylock(an->allnodes_mutex))
+    {
+    if (held != NULL)
+      {
+      name = strdup(held->nd_name);
+      unlock_node(held, __func__, NULL, 0);
+      }
+    pthread_mutex_lock(an->allnodes_mutex);
+    }
 
   pnode = next_thing(an->ra,iter);
-  if ((pnode != NULL) && (pnode != held))
+  if ((pnode != NULL) &&
+      ((pnode != held) && 
+       (name == NULL)))
     lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   pthread_mutex_unlock(an->allnodes_mutex);
 
+  if ((held != pnode) &&
+      (name != NULL))
+    held = find_nodebyname(name);
+
+  if (name != NULL)
+    free(name);
 
   return(pnode);
   } /* END next_host() */

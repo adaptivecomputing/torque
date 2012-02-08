@@ -157,7 +157,7 @@ extern int  has_nodes;
 
 #ifdef NVIDIA_GPUS
 extern int create_a_gpusubnode(struct pbsnode *);
-int        is_gpustat_get(struct pbsnode *np, int stream);
+int        is_gpustat_get(struct pbsnode *np, char **str_ptr);
 #endif  /* NVIDIA_GPUS */
 
 extern int ctnodes(char *);
@@ -978,6 +978,472 @@ void setup_notification(
   }
 
 
+/* 
+ * reads all of the status information from stream
+ * and stores it in a dynamic string
+ */
+
+dynamic_string *get_status_info(
+
+  int stream)
+
+  {
+  dynamic_string *ds = get_dynamic_string(-1, NULL);
+  char           *ret_info;
+  int             rc;
+
+  if (ds == NULL)
+    return(NULL);
+  
+  while (((ret_info = disrst(stream, &rc)) != NULL) && 
+         (rc == DIS_SUCCESS))
+    {
+    if (!strcmp(ret_info, IS_EOL_MESSAGE))
+      {
+      free(ret_info);
+      break;
+      }
+
+    copy_to_end_of_dynamic_string(ds, ret_info);
+    free(ret_info);
+    }
+
+  /* clear the transmission */
+  DIS_tcp_reset(stream,0);
+
+  return(ds);
+  } /* END get_status_info() */
+
+
+
+/*
+ * switches the current node to the desired
+ * numa subnode requested in str and unlocks np
+ */
+
+struct pbsnode *get_numa_from_str(
+    
+  char           *str, /* I */
+  struct pbsnode *np)  /* I */
+
+  {
+  char           *numa_id;
+  struct pbsnode *numa;
+  unsigned long   numa_index;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  
+  if (np->node_boards == NULL)
+    {
+    /* ERROR */
+    snprintf(log_buf,sizeof(log_buf),
+      "Node %s isn't declared to be NUMA, but mom is reporting\n",
+      np->nd_name);
+    log_err(-1, __func__, log_buf);
+  
+    unlock_node(np, __func__, "np numa update", LOGLEVEL);
+    
+    return(NULL);
+    }
+  
+  numa_id = str + strlen(NUMA_KEYWORD);
+  numa_index = atoi(numa_id);
+  
+  numa = AVL_find(numa_index, np->nd_mom_port, np->node_boards);
+  
+  if (numa == NULL)
+    {
+    /* ERROR */
+    snprintf(log_buf,sizeof(log_buf),
+      "Could not find NUMA index %lu for node %s\n",
+      numa_index,
+      np->nd_name);
+    log_err(-1, __func__, log_buf);
+    
+    unlock_node(np, __func__, "np numa update", LOGLEVEL);
+    
+    return(NULL);
+    }
+ 
+  /* SUCCESS */
+  unlock_node(np, __func__, "np numa update", LOGLEVEL);
+  lock_node(numa, __func__, "numa numa update", LOGLEVEL);
+  
+  numa->nd_lastupdate = time(NULL);
+  
+  return(numa);
+  } /* END get_numa_from_str() */
+
+
+
+/* 
+ * unlocks np and returns a the node specified in string, locked
+ */
+
+struct pbsnode *get_node_from_str(
+
+  char           *str,     /* I */
+  char           *orig_id, /* I */
+  struct pbsnode *np)      /* M */
+
+  {
+  /* this is a node reporting on another node as well */
+  char           *node_id = str + strlen("node=");
+  struct pbsnode *next = NULL;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+ 
+  /* don't do anything if the name is the same as this node's name */
+  if (strcmp(node_id, np->nd_name))
+    {
+    unlock_node(np, __func__, "np not numa update", LOGLEVEL);
+    
+    next = find_nodebyname(node_id);
+    
+    if (next == NULL)
+      {
+      /* NYI: should we add logic here to attempt the canonical name if this 
+       * is the short name, and attempt the short name if this is the 
+       * canonical name? */
+      
+      /* ERROR */
+      snprintf(log_buf,sizeof(log_buf),
+        "Node %s is reporting on node %s, which pbs_server doesn't know about\n",
+        orig_id,
+        node_id);
+      log_err(-1, __func__, log_buf);
+      }
+    else
+      {
+      if (LOGLEVEL >= 7)
+        {
+        snprintf(log_buf,sizeof(log_buf),
+          "Node %s is reporting for node %s\n",
+          orig_id,
+          node_id);
+        
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+        }
+      
+      next->nd_lastupdate = time(NULL);
+      }
+    }
+  else
+    next = np;
+
+  /* next may be NULL */
+
+  return(next);
+  } /* END get_node_from_str() */
+
+
+
+
+int handle_auto_np(
+
+  struct pbsnode *np,  /* M */
+  char           *str) /* I */
+
+  {
+  struct attribute nattr;
+  
+  /* first we decode str into nattr... + 6 is because str has format
+   * ncpus=X, and 6 = strlen(ncpus=) */  
+  if ((node_attr_def + ND_ATR_np)->at_decode(&nattr, ATTR_NODE_np, NULL, str + 6, 0) == 0)
+    {
+    /* ... and if MOM's ncpus is different than our np... */
+    if (nattr.at_val.at_long != np->nd_nsn)
+      {
+      /* ... then we do the defined magic to create new subnodes */
+      (node_attr_def + ND_ATR_np)->at_action(&nattr, (void *)np, ATR_ACTION_ALTER);
+      
+      update_nodes_file(np);
+      }
+    }
+
+  return(PBSE_NONE);
+  } /* END handle_auto_np() */
+
+
+
+
+int process_uname_str(
+
+  struct pbsnode *np,
+  char           *str)
+
+  {
+  /* for any mom mode if an address did not succeed at getnameinfo it was
+   * given the hex value of its ip address */
+  if (!strncmp(np->nd_name, "0x", 2))
+    {
+    char *cp;
+    char  node_name[PBS_MAXHOSTNAME + 1];
+    int   count;
+    
+    cp = strchr(str, ' ');
+    count = 0;
+    
+    do
+      {
+      cp++;
+      node_name[count] = *cp;
+      count++;
+      } while (*cp != ' ' && count < PBS_MAXHOSTNAME);
+    
+    node_name[count-1] = 0;
+    cp = strdup(node_name);
+    free(np->nd_name);
+    np->nd_name = cp;
+    np->nd_first = init_prop(np->nd_name);
+    np->nd_last = np->nd_first;
+    np->nd_f_st = init_prop(np->nd_name);
+    np->nd_l_st = np->nd_f_st;
+    }
+
+  return(PBSE_NONE);
+  } /* END process_uname_str() */
+
+
+
+
+int process_state_str(
+
+  struct pbsnode *np,
+  char           *str)
+
+  {
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  struct pbssubn *sp = NULL;
+  int             rc = PBSE_NONE;
+
+  if (!strncmp(str, "state=down", 10))
+    {
+    update_node_state(np, INUSE_DOWN);
+    }
+  else if (!strncmp(str, "state=busy", 10))
+    {
+    update_node_state(np, INUSE_BUSY);
+    }
+  else if (!strncmp(str, "state=free", 10))
+    {
+    update_node_state(np, INUSE_FREE);
+    }
+  else
+    {
+    sprintf(log_buf, "unknown %s from node %s",
+      str,
+      (np->nd_name != NULL) ? np->nd_name : "NULL");
+    
+    log_err(-1, __func__, log_buf);
+    
+    update_node_state(np, INUSE_UNKNOWN);
+    }
+  
+  if (LOGLEVEL >= 9)
+    {
+    sprintf(log_buf, "node '%s' is at state '0x%x'\n",
+      np->nd_name,
+      np->nd_state);
+    
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+    }
+  
+  for (sp = np->nd_psn; sp != NULL; sp = sp->next)
+    {
+    if ((!(np->nd_state & INUSE_OFFLINE)) &&
+        (sp->inuse & INUSE_OFFLINE))
+      {
+      /* this doesn't seem to ever happen */
+      if (LOGLEVEL >= 2)
+        {
+        sprintf(log_buf, "sync'ing subnode state '%s' with node state on node %s\n",
+          "offline",
+          np->nd_name);
+        
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+        }
+      
+      sp->inuse &= ~INUSE_OFFLINE;
+      }
+    
+    sp->inuse &= ~INUSE_DOWN;
+    }
+
+  return(rc);
+  } /* END process_state_str() */
+
+
+
+int save_node_status(
+
+  struct pbsnode *np,
+  attribute      *temp)
+
+  {
+  int  rc = PBSE_NONE;
+  char date_attrib[MAXLINE];
+
+  /* it's nice to know when the last update happened */
+  snprintf(date_attrib, sizeof(date_attrib), "rectime=%ld", (long)time(NULL));
+  
+  if (decode_arst(temp, NULL, NULL, date_attrib, 0))
+    {
+    DBPRT(("is_stat_get:  cannot add date_attrib\n"));
+    }
+  
+  /* insert the information from "temp" into np */
+  if ((rc = node_status_list(temp, np, ATR_ACTION_ALTER)) != PBSE_NONE)
+    {
+    DBPRT(("is_stat_get: cannot set node status list\n"));
+    }
+
+  free_arst(temp);
+
+  return(rc);
+  }
+
+
+
+
+int process_status_info(
+
+  char           *nd_name,
+  dynamic_string *status_info)
+
+  {
+  char           *str;
+  char           *name = nd_name;
+  struct pbsnode *current;
+  long            mom_job_sync = FALSE;
+  long            auto_np = FALSE;
+  long            down_on_error = FALSE;
+  attribute       temp;
+  int             rc = PBSE_NONE;
+  int             send_hello = FALSE;
+
+  str = status_info->str;
+
+  get_svr_attr_l(SRV_ATR_MomJobSync, &mom_job_sync);
+  get_svr_attr_l(SRV_ATR_AutoNodeNP, &auto_np);
+  get_svr_attr_l(SRV_ATR_DownOnError, &down_on_error);
+
+  /* Before filling the "temp" attribute, initialize it.
+   * The second and third parameter to decode_arst are never
+   * used, so just leave them empty. (GBS) */
+  memset(&temp, 0, sizeof(temp));
+
+  if ((rc = decode_arst(&temp, NULL, NULL, NULL, 0)) != PBSE_NONE)
+    {
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, "cannot initialize attribute");
+    return(rc);
+    }
+
+  /* if original node cannot be found do not process the update */
+  if ((current = find_nodebyname(nd_name)) == NULL)
+    return(PBSE_NONE);
+
+  /* str is already initialized above, loop over each string */
+  for (; str != NULL && *str; str += strlen(str) + 1)
+    {
+    /* these two options are for switching nodes */
+    if (!strncmp(str, NUMA_KEYWORD, strlen(NUMA_KEYWORD)))
+      {
+      /* if we've already processed some, save this before moving on */
+      if (str != status_info->str)
+        save_node_status(current, &temp);
+
+      if ((current = get_numa_from_str(str, current)) == NULL)
+        break;
+      else
+        continue;
+      }
+    else if (!strncmp(str, "node=", strlen("node=")))
+      {
+      /* if we've already processed some, save this before moving on */
+      if (str != status_info->str)
+        save_node_status(current, &temp);
+
+      if ((current = get_node_from_str(str, name, current)) == NULL)
+        break;
+      else
+        continue;
+      }
+
+    /* add the info to the "temp" attribute */
+#ifdef NVIDIA_GPUS
+    else if (!strcmp(str, START_GPU_STATUS))
+      {
+      is_gpustat_get(current, &str);
+      }
+#endif
+    else if (!strcmp(str, "first_update=true"))
+      {
+      /* mom is requesting that we send the mom hierarchy file to her */
+      remove_hello(&hellos, current->nd_name);
+      send_hello = TRUE;
+      }
+    else if ((rc = decode_arst(&temp, NULL, NULL, str, 0)) != PBSE_NONE)
+      {
+      DBPRT(("is_stat_get: cannot add attributes\n"));
+
+      free_arst(&temp);
+
+      break;
+      }
+
+    if (!strncmp(str, "state", 5))
+      {
+      process_state_str(current, str);
+      }
+    else if ((allow_any_mom == TRUE) &&
+             (!strncmp(str, "uname", 5))) 
+      {
+      process_uname_str(current, str);
+      }
+    else if (!strncmp(str, "me", 2))  /* shorter str compare than "message" */
+      {
+      if ((!strncmp(str, "message=ERROR", 13)) &&
+          (down_on_error == TRUE))
+        update_node_state(current, INUSE_DOWN);
+      }
+    else if ((mom_job_sync == TRUE) &&
+             (!strncmp(str, "jobdata=", 8)))
+      {
+      /* update job attributes based on what the MOM gives us */      
+      update_job_data(current, str + strlen("jobdata="));
+      }
+    else if ((mom_job_sync == TRUE) &&
+             (!strncmp(str, "jobs=", 5)))
+      {
+      /* walk job list reported by mom */
+      size_t  len = strlen(str) + strlen(current->nd_name) + 2;
+      char   *jobstr = calloc(1, len);
+
+      sprintf(jobstr, "%s:%s", current->nd_name, str);
+      enqueue_threadpool_request(sync_node_jobs, jobstr);
+      }
+    else if (auto_np)
+      {
+      if (!(strncmp(str, "ncpus=", 6)))
+        {
+        handle_auto_np(current, str);
+        }
+      }
+    } /* END processing strings */
+
+  if (current != NULL)
+    {
+    save_node_status(current, &temp);
+    unlock_node(current, __func__, NULL, 0);
+    }
+  
+  if ((rc == PBSE_NONE) &&
+      (send_hello == TRUE))
+    rc = SEND_HELLO;
+    
+  return(rc);
+  } /* END process_status_info() */
+
+
 
 
 
@@ -986,24 +1452,11 @@ int is_stat_get(
   struct pbsnode *np)  /* I (modified) */
 
   {
-  struct pbsnode *orig_np = np;
+  char           *orig_nd_name;
   int             stream = np->nd_stream;
   int             rc;
-  char           *ret_info;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  attribute       temp;
-  char            date_attrib[100];
-  int             msg_error = 0;
-  struct pbssubn *sp = NULL;
-  time_t          time_now = time(NULL);
-  long            mom_job_sync = FALSE;
-  long            auto_np = FALSE;
-  long            np_default = FALSE;
-  long            down_on_error = FALSE;
-  int             send_hello = FALSE;
-
-  extern int TConnGetSelectErrno();
-  extern int TConnGetReadErrno();
+  dynamic_string *status_info;
 
   if (LOGLEVEL >= 3)
     {
@@ -1018,403 +1471,21 @@ int is_stat_get(
     return(DIS_EOF);
     }
 
-  get_svr_attr_l(SRV_ATR_MomJobSync, &mom_job_sync);
-  get_svr_attr_l(SRV_ATR_AutoNodeNP, &auto_np);
-  get_svr_attr_l(SRV_ATR_NPDefault, &np_default);
-  get_svr_attr_l(SRV_ATR_DownOnError, &down_on_error);
-
-  /*
-   *  Before filling the "temp" attribute, initialize it.
-   *  The second and third parameter to decode_arst are never
-   *  used, so just leave them empty. (GBS)
-   */
-
-  memset(&temp, 0, sizeof(temp));
-  memset(date_attrib, 0, 100);
-
-  rc = DIS_SUCCESS;
-
-  if (decode_arst(&temp, NULL, NULL, NULL, 0))
-    {
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, "cannot initialize attribute");
-    return(DIS_NOCOMMIT);
-    }
+  orig_nd_name = strdup(np->nd_name);
 
   unlock_node(np, __func__, "np numa update", LOGLEVEL);
-  while (((ret_info = disrst(stream, &rc)) != NULL) && 
-         (rc == DIS_SUCCESS))
-    {
-    lock_node(np, __func__, "np numa update", LOGLEVEL);
-    /* check if this is the update on a numa node */
-    if (!strncmp(ret_info,NUMA_KEYWORD,strlen(NUMA_KEYWORD)))
-      {
-      char           *numa_id;
-      struct pbsnode *tmp;
-      unsigned long   numa_index;
 
-      if (np->node_boards == NULL)
-        {
-        /* ERROR */
-        snprintf(log_buf,sizeof(log_buf),
-          "Node %s isn't declared to be NUMA, but mom is reporting\n",
-          np->nd_name);
-        log_err(-1, __func__, log_buf);
+  status_info = get_status_info(stream);
 
-        return(DIS_NOCOMMIT);
-        }
+  rc = process_status_info(orig_nd_name, status_info);
 
-      numa_id = ret_info + strlen(NUMA_KEYWORD);
-      numa_index = atoi(numa_id);
+  free_dynamic_string(status_info);
 
-      tmp = AVL_find(numa_index,orig_np->nd_mom_port,orig_np->node_boards);
+  np = find_nodebyname(orig_nd_name);
 
-      if (tmp == NULL)
-        {
-        /* ERROR */
-        snprintf(log_buf,sizeof(log_buf),
-          "Could not find NUMA index %lu for node %s\n",
-          numa_index,
-          np->nd_name);
-        log_err(-1, __func__, log_buf);
+  free(orig_nd_name);
 
-        return(DIS_NOCOMMIT);
-        }
-      
-      unlock_node(np, __func__, "np numa update", LOGLEVEL);
-      lock_node(tmp, __func__, "tmp numa update", LOGLEVEL);
-
-      np = tmp;
-
-      np->nd_lastupdate = time_now;
-
-      unlock_node(np, __func__, "np numa update", LOGLEVEL);
-      /* resume normal processing on the next line */
-      free(ret_info);
-      continue;
-      }
-    else if (!strncmp(ret_info,"node=",strlen("node=")))
-      {
-      /* this is a node reporting on another node as well */
-      char           *node_id = ret_info + strlen("node=");
-      struct pbsnode *tmp;
-
-      if (strcmp(node_id,np->nd_name))
-        {
-        unlock_node(np, __func__, "np not numa update", LOGLEVEL);
-        
-        tmp = find_nodebyname(node_id);
-        
-        if (tmp == NULL)
-          {
-          /* NYI: should we add logic here to attempt the canonical name if this 
-           * is the short name, and attempt the short name if this is the 
-           * canonical name? */
-
-          /* ERROR */
-          snprintf(log_buf,sizeof(log_buf),
-            "Node %s is reporting on node %s, which pbs_server doesn't know about\n",
-            orig_np->nd_name,
-            node_id);
-          log_err(-1, __func__, log_buf);
-          
-          return(DIS_NOCOMMIT);
-          }
-        
-        if (LOGLEVEL >= 7)
-          {
-          snprintf(log_buf,sizeof(log_buf),
-            "Node %s is reporting for node %s\n",
-            orig_np->nd_name,
-            node_id);
-          
-          log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-          }
-        
-        np = tmp;
-        }
-
-      np->nd_lastupdate = time_now;
-
-      unlock_node(np, __func__, "np numa update", LOGLEVEL);
-      /* resume normal processing on the next time */
-      free(ret_info);
-      continue;
-      }
-
-    /* add the info to the "temp" attribute */
-    if (!strncmp(ret_info, IS_EOL_MESSAGE, strlen(IS_EOL_MESSAGE)))
-      {
-      /* Skip this one */
-      }
-#ifdef NVIDIA_GPUS
-    else if (!strcmp(ret_info, "<gpu status>"))
-      {
-      is_gpustat_get(np, stream);
-      }
-#endif
-    else if (!strcmp(ret_info, "first_update=true"))
-      {
-      /* mom is requesting that we send the mom hierarchy file to her */
-      remove_hello(&hellos, np->nd_name);
-      send_hello = TRUE;
-      }
-    else if (decode_arst(&temp, NULL, NULL, ret_info, 0))
-      {
-      DBPRT(("is_stat_get: cannot add attributes\n"));
-
-      free_arst(&temp);
-
-      free(ret_info);
-
-      if (orig_np != np)
-        {
-        unlock_node(np, __func__, "np->orig_np", LOGLEVEL);
-        lock_node(orig_np, __func__, "orig_np", LOGLEVEL);
-        }
-
-      return(DIS_NOCOMMIT);
-      }
-
-    if (!strncmp(ret_info, "state", 5))
-      {
-      /* MOM currently never sends multiple states - bad assumption for the future? */
-
-      if (!strncmp(ret_info, "state=down", 10))
-        {
-        update_node_state(np, INUSE_DOWN);
-        }
-      else if (!strncmp(ret_info, "state=busy", 10))
-        {
-        update_node_state(np, INUSE_BUSY);
-        }
-      else if (!strncmp(ret_info, "state=free", 10))
-        {
-        update_node_state(np, INUSE_FREE);
-        }
-      else
-        {
-        sprintf(log_buf, "unknown %s from node %s",
-          ret_info,
-          (np->nd_name != NULL) ? np->nd_name : "NULL");
-
-        log_err(-1, __func__, log_buf);
-
-        update_node_state(np, INUSE_UNKNOWN);
-        }
-
-      if (LOGLEVEL >= 9)
-        {
-        sprintf(log_buf, "node '%s' is at state '0x%x'\n",
-          np->nd_name,
-          np->nd_state);
-
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-        }
-
-      for (sp = np->nd_psn;sp != NULL;sp = sp->next)
-        {
-        if (!(np->nd_state & INUSE_OFFLINE) &&
-            (sp->inuse & INUSE_OFFLINE))
-          {
-          /* this doesn't seem to ever happen */
-
-          if (LOGLEVEL >= 2)
-            {
-            sprintf(log_buf, "sync'ing subnode state '%s' with node state on node %s\n",
-              "offline",
-              np->nd_name);
- 
-            log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-            }
- 
-          sp->inuse &= ~INUSE_OFFLINE;
-          }
-
-        sp->inuse &= ~INUSE_DOWN;
-        }
-      }
-    else if (!strncmp(ret_info, "uname", 5) && allow_any_mom)
-      {
-      /* for any mom mode if an address did not succeed at getnameinfo it was
-       * given the hex value of its ip address */
-      if (!strncmp(np->nd_name, "0x", 2))
-        {
-        char *cp;
-        char node_name[PBS_MAXHOSTNAME + 1];
-        int count;
-        
-        cp = strchr(ret_info, ' ');
-        count = 0;
-        
-        do
-          {
-          cp++;
-          node_name[count] = *cp;
-          count++;
-          } while (*cp != ' ' && count < PBS_MAXHOSTNAME);
-
-        node_name[count-1] = 0;
-        cp = strdup(node_name);
-        free(np->nd_name);
-        np->nd_name = cp;
-        np->nd_first = init_prop(np->nd_name);
-        np->nd_last = np->nd_first;
-        np->nd_f_st = init_prop(np->nd_name);
-        np->nd_l_st = np->nd_f_st;
-        }
-      }
-    else if (!strncmp(ret_info, "me", 2))  /* shorter str compare than "message" */
-      {
-      if (!strncmp(ret_info, "message=ERROR", 13))
-        {
-        msg_error = 1;
-        }
-      }
-    else if (mom_job_sync &&
-             !strncmp(ret_info, "jobdata=", 8))
-      {
-      /* update job attributes based on what the MOM gives us */      
-      update_job_data(np, ret_info + strlen("jobdata="));
-      }
-    else if (mom_job_sync &&
-             !strncmp(ret_info, "jobs=", 5))
-      {
-      /* walk job list reported by mom */
-      size_t  len = strlen(ret_info) + PBS_MAXNODENAME + 2;
-      char   *str = calloc(1, len);
-
-      sprintf(str, "%s:%s", np->nd_name, ret_info);
-      enqueue_threadpool_request(sync_node_jobs, str);
-      }
-    else if (auto_np)
-      {
-      if (!(strncmp(ret_info, "ncpus=", 6)))
-        {        
-        struct attribute nattr;
-        
-        /* first we decode ret_info into nattr... */
-        
-        if ((node_attr_def + ND_ATR_np)->at_decode(&nattr, ATTR_NODE_np, NULL, ret_info + 6, 0) == 0)
-          {
-          /* ... and if MOM's ncpus is different than our np... */
-          if (nattr.at_val.at_long != np->nd_nsn)
-            {
-            /* ... then we do the defined magic to create new subnodes */
-            (node_attr_def + ND_ATR_np)->at_action(&nattr, (void *)np, ATR_ACTION_ALTER);
-            
-            update_nodes_file(np);
-            }
-          }
-        }
-      }
-    else if (np_default)
-      {
-      struct pbsnode *pnode;
-      int             iter = -1;
-      long            nsnfreediff;
-      
-      while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
-        {
-        nsnfreediff = pnode->nd_nsn - pnode->nd_nsnfree;
-        pnode->nd_nsn = np_default;
-        pnode->nd_nsnfree = np_default - nsnfreediff;
-       
-        unlock_node(pnode, __func__, "SRV_ATR_NPDefault", LOGLEVEL);
-        }
-      }
-    else if (!strncmp(ret_info, IS_EOL_MESSAGE, strlen(IS_EOL_MESSAGE)))
-      {
-      if (LOGLEVEL >= 6)
-        {
-        snprintf(log_buf, sizeof(log_buf),
-          "End of message detected for communication from node %s",
-          orig_np->nd_name);
-
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, log_buf);
-        }
-      unlock_node(np, __func__, "np numa update", LOGLEVEL);
-      rc = DIS_EOD;
-      free(ret_info);
-      break;
-      }
-
-    unlock_node(np, __func__, "np numa update", LOGLEVEL);
-    free(ret_info);
-    }    /* END while (rc != DIS_EOD) */
-
-  /* clear the transmission */
-  DIS_tcp_reset(stream,0);
-
-  lock_node(np, __func__, "np numa update", LOGLEVEL);
-  /* DIS_EOD and DIS_EOF are the only valid final values of rc, check it */
-  if ((rc != DIS_EOD) &&
-      (rc != DIS_EOF))
-    {
-    update_node_state(np, INUSE_UNKNOWN);
-
-    free_arst(&temp);
-      
-    if (orig_np != np)
-      {
-      unlock_node(np, __func__, "!DIS_EOD/F np->orig_np", LOGLEVEL);
-      lock_node(orig_np, __func__, "!DIS_EOD/F orig_np", LOGLEVEL);
-      }
-
-    return(rc);
-    }
-
-  if (msg_error && down_on_error)
-    {
-    update_node_state(np, INUSE_DOWN);
-    }
-
-  /* it's nice to know when the last update happened */
-
-  sprintf(date_attrib, "rectime=%ld",
-          (long)time_now);
-
-  if (decode_arst(&temp, NULL, NULL, date_attrib, 0))
-    {
-    DBPRT(("is_stat_get:  cannot add date_attrib\n"));
-
-    free_arst(&temp);
-      
-    if (orig_np != np)
-      {
-      unlock_node(np, __func__, "decode_arst np->orig_np", LOGLEVEL);
-      lock_node(orig_np, __func__, "decode_arst orig_np", LOGLEVEL);
-      }
-
-    return(DIS_NOCOMMIT);
-    }
-
-
-  /* insert the information from "temp" into np */
-
-  if (node_status_list(&temp, np, ATR_ACTION_ALTER))
-    {
-    DBPRT(("is_stat_get: cannot set node status list\n"));
-      
-    if (orig_np != np)
-      {
-      unlock_node(np, __func__, "node_status_list np->orig_np", LOGLEVEL);
-      lock_node(orig_np, __func__, "node_status_list orig_np", LOGLEVEL);
-      }
-
-    return(DIS_NOCOMMIT);
-    }
-
-  /* NOTE:  node state adjusted in update_node_state() */
-  if (orig_np != np)
-    {
-    unlock_node(np, __func__, "final np->orig_np", LOGLEVEL);
-    lock_node(orig_np, __func__, "final orig_np", LOGLEVEL);
-    }
-
-  if (send_hello == TRUE)
-    return(SEND_HELLO);
-  else
-    return(DIS_SUCCESS);
+  return(rc);
   }  /* END is_stat_get() */
 
 
@@ -1486,6 +1557,29 @@ int gpu_has_job(
 
 
 
+
+#ifdef NVIDIA_GPUS
+char *move_past_gpu_status(
+
+  char *str)
+
+  {
+  while ((str != NULL) &&
+         (str[0] != '\0'))
+    {
+    if (!strcmp(str, END_GPU_STATUS))
+      break;
+
+    str += strlen(str) + 1;
+    }
+
+  return(str);
+  } /* END move_past_gpu_status() */
+#endif
+
+
+
+
 #ifdef NVIDIA_GPUS
 /*
  * Function to process gpu status messages received from the mom
@@ -1493,14 +1587,14 @@ int gpu_has_job(
 
 int is_gpustat_get(
 
-  struct pbsnode *np,     /* I (modified) */
-  int             stream) /* I */
+  struct pbsnode  *np,      /* I (modified) */
+  char           **str_ptr) /* I (modified) */
 
   {
   int        rc;
-  char      *ret_info;
   attribute  temp;
   char      *gpuid;
+  char      *str = *str_ptr;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   int        gpuidx = -1;
   char       gpuinfo[2048];
@@ -1508,20 +1602,12 @@ int is_gpustat_get(
   int        gpucnt = 0;
   int        drv_ver;
 
-  extern int TConnGetSelectErrno();
-  extern int TConnGetReadErrno();
-
-  if (LOGLEVEL >= 3)
+  if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "received gpu status from node %s",
       (np != NULL) ? np->nd_name : "NULL");
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-    }
-
-  if (stream < 0)
-    {
-    return(DIS_EOF);
     }
 
   /*
@@ -1542,20 +1628,21 @@ int is_gpustat_get(
     return(DIS_NOCOMMIT);
     }
 
-  while (((ret_info = disrst(stream, &rc)) != NULL) && 
-         (rc == DIS_SUCCESS))
+  str += strlen(str) + 1;
+
+  for (; str != NULL && *str; str += strlen(str) + 1)
     {
     /* add the info to the "temp" attribute */
 
     /* get timestamp */
-    if (!strncmp(ret_info, "timestamp=", 10))
+    if (!strncmp(str, "timestamp=", 10))
       {
-      if (decode_arst(&temp, NULL, NULL, ret_info, 0))
+      if (decode_arst(&temp, NULL, NULL, str, 0))
         {
         DBPRT(("is_gpustat_get: cannot add attributes\n"));
 
         free_arst(&temp);
-        free(ret_info);
+        *str_ptr = move_past_gpu_status(str);
 
         return(DIS_NOCOMMIT);
         }
@@ -1563,29 +1650,28 @@ int is_gpustat_get(
       }
 
     /* get driver version, if there is one */
-    if (!strncmp(ret_info, "driver_ver=", 11))
+    if (!strncmp(str, "driver_ver=", 11))
       {
-      if (decode_arst(&temp, NULL, NULL, ret_info, 0))
+      if (decode_arst(&temp, NULL, NULL, str, 0))
         {
         DBPRT(("is_gpustat_get: cannot add attributes\n"));
 
         free_arst(&temp);
-        free(ret_info);
+        *str_ptr = move_past_gpu_status(str);
 
         return(DIS_NOCOMMIT);
         }
-      drv_ver = atoi(ret_info + 11);
+      drv_ver = atoi(str + 11);
       continue;
       }
-    else if (!strcmp(ret_info, "</gpu status>"))
+    else if (!strcmp(str, END_GPU_STATUS))
       {
-      free(ret_info);
       break;
       }
 
     /* gpuid must come before the rest or we will be in trouble */
 
-    if (!strncmp(ret_info, "gpuid=", 6))
+    if (!strncmp(str, "gpuid=", 6))
       {
       if (strlen(gpuinfo) > 0)
         {
@@ -1594,14 +1680,14 @@ int is_gpustat_get(
           DBPRT(("is_gpustat_get: cannot add attributes\n"));
 
           free_arst(&temp);
-          free(ret_info);
+          *str_ptr = move_past_gpu_status(str);
 
           return(DIS_NOCOMMIT);
           }
         memset(gpuinfo, 0, 2048);
         }
 
-      gpuid = &ret_info[6];
+      gpuid = &str[6];
 
       /*
        * Get this gpus index, if it does not yet exist then find an empty entry.
@@ -1628,8 +1714,7 @@ int is_gpustat_get(
           }
 
         free_arst(&temp);
-
-        free(ret_info);
+        *str_ptr = move_past_gpu_status(str);
 
         return(DIS_SUCCESS);
         }
@@ -1658,15 +1743,15 @@ int is_gpustat_get(
         {
         strcat(gpuinfo, ";");
         }
-      strcat(gpuinfo, ret_info);
+      strcat(gpuinfo, str);
       need_delimiter = TRUE;
       }
 
     /* check current gpu mode and determine gpu state */
     
-    if (!memcmp(ret_info, "gpu_mode=", 9))
+    if (!memcmp(str, "gpu_mode=", 9))
       {
-      if ((!memcmp(ret_info+9, "Normal", 6)) || (!memcmp(ret_info+9, "Default", 7)))
+      if ((!memcmp(str + 9, "Normal", 6)) || (!memcmp(str + 9, "Default", 7)))
         {
         np->nd_gpusn[gpuidx].mode = gpu_normal;
         if (gpu_has_job(np, gpuidx))
@@ -1679,8 +1764,8 @@ int is_gpustat_get(
           np->nd_gpusn[gpuidx].state = gpu_unallocated;
           }
         }
-      else if ((!memcmp(ret_info+9, "Exclusive", 9)) ||
-              (!memcmp(ret_info+9, "Exclusive_Thread", 16)))
+      else if ((!memcmp(str + 9, "Exclusive", 9)) ||
+              (!memcmp(str + 9, "Exclusive_Thread", 16)))
         {
         np->nd_gpusn[gpuidx].mode = gpu_exclusive_thread;
         if (gpu_has_job(np, gpuidx))
@@ -1693,7 +1778,7 @@ int is_gpustat_get(
           np->nd_gpusn[gpuidx].state = gpu_unallocated;
           }
         }
-      else if (!memcmp(ret_info+9, "Exclusive_Process", 17))
+      else if (!memcmp(str + 9, "Exclusive_Process", 17))
         {
         np->nd_gpusn[gpuidx].mode = gpu_exclusive_process;
         if (gpu_has_job(np, gpuidx))
@@ -1706,7 +1791,7 @@ int is_gpustat_get(
           np->nd_gpusn[gpuidx].state = gpu_unallocated;
           }
         }
-      else if (!memcmp(ret_info+9, "Prohibited", 10))
+      else if (!memcmp(str + 9, "Prohibited", 10))
         {
         np->nd_gpusn[gpuidx].mode = gpu_prohibited;
         np->nd_gpusn[gpuidx].state = gpu_unavailable;
@@ -1759,8 +1844,8 @@ int is_gpustat_get(
       {
       DBPRT(("is_gpustat_get: cannot add attributes\n"));
       
-      free_arst(&temp);      
-      free(ret_info);
+      free_arst(&temp);
+      *str_ptr = move_past_gpu_status(str);
 
       return(DIS_NOCOMMIT);
       }
@@ -1776,6 +1861,7 @@ int is_gpustat_get(
     }
 
   node_gpustatus_list(&temp, np, ATR_ACTION_ALTER);
+  *str_ptr = move_past_gpu_status(str);
 
   return(DIS_SUCCESS);
   }  /* END is_gpustat_get() */
@@ -2117,9 +2203,6 @@ void *svr_is_request_work(
   struct pbsnode     *node = NULL;
 
   char                log_buf[LOCAL_LOG_BUF_SIZE];
-#ifdef NVIDIA_GPUS
-  time_t              time_now = time(NULL);
-#endif
 
   int                 sock;
   int                 version;
@@ -2369,55 +2452,6 @@ void *svr_is_request_work(
         }
 
       break;
-
-    case IS_GPU_STATUS:
-
-      /* pbs_server brought up
-         pbs_mom brought up
-         they send IS_HELLO to each other
-         pbs_mom sends IS_STATUS followed by
-         IS_GPU_STATUS message to pbs_server (replying to IS_HELLO)
-         pbs_server sends IS_CLUSTER_ADDRS message to pbs_mom  (replying to IS_HELLO)
-         pbs_mom uses IS_CLUSTER_ADDRS message to authorize contacts from sisters */
-
-#ifdef NVIDIA_GPUS
-      if (LOGLEVEL >= 2)
-        {
-        sprintf(log_buf, "IS_GPU_STATUS received from %s", node->nd_name);
-
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-        }
-
-      ret = is_gpustat_get(node, sock);
-
-      if (ret != DIS_SUCCESS)
-        {
-        if (LOGLEVEL >= 1)
-          {
-          sprintf(log_buf, "IS_GPU_STATUS error %d on node %s",
-            ret,
-            node->nd_name);
-
-          log_err(ret, __func__, log_buf);
-          }
-
-        goto err;
-        }
-
-      node->nd_lastupdate = time_now;
-#else
-      if (LOGLEVEL >= 2)
-        {
-        sprintf(log_buf, "Not configured: IS_GPU_STATUS received from %s",
-          node->nd_name);
-
-        log_err(ret, __func__, log_buf);
-        }
-
-#endif  /* NVIDIA_GPUS */
-
-      break;
-
 
     default:
 

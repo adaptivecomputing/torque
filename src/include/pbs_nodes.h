@@ -99,6 +99,8 @@
 #endif
 
 #define NUMA_KEYWORD           "numa"
+#define START_GPU_STATUS       "<gpu_status>"
+#define END_GPU_STATUS         "</gpu_status>"
 
 #ifdef NUMA_SUPPORT
 #  define MAX_NODE_BOARDS      2048
