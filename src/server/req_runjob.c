@@ -87,6 +87,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <errno.h>
