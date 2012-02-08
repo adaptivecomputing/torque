@@ -821,6 +821,7 @@ int get_default_threads()
   int   default_threads = DEFAULT_MIN_THREADS;
   int   count = 0;
   char  label[128];
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
   FILE *fp;
 
   if ((fp = fopen("/proc/cpuinfo", "r")) != NULL)
@@ -839,6 +840,13 @@ int get_default_threads()
 
     if (count > 0)
       default_threads = (2 * count) + 1;
+    }
+
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Defaulting min_threads to %d threads", default_threads);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     }
 
   return(default_threads);
