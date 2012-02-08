@@ -1740,8 +1740,12 @@ static int assign_hosts(
 
   if ((given != NULL) && (given[0] != '\0'))
     {
+#ifdef NVIDIA_GPUS
     hosttoalloc = get_correct_spec_string(given, pjob);
     to_free = hosttoalloc;
+#else
+    hosttoalloc = given;
+#endif
     }
   else
     {
