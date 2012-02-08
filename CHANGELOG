@@ -5,6 +5,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix for where pbs_mom would not automatically set gpu mode. (backported from 3.0.5)
   b - fix for alligning qstat -r output when configured with -DTXT. (backported from 3.0.5)
   e - Change size of transfer block used on job rerun from 4k to 64k. (backported from 3.0.5)
+  b - With nvidia gpus, TORQUE was losing the directive of what nodes it should
+      run the job on from Moab. Corrected (backported from 3.0.5)
 
 2.5.10 
   b - Fixed a problem where pbs_mom will crash of check_pwd returns NULL. This could
