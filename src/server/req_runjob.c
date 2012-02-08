@@ -86,6 +86,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <ctype.h>
 #include <time.h>
 #include <pthread.h>
 #include "libpbs.h"
@@ -1584,6 +1585,112 @@ int set_mother_superior_ports(
   } /* END set_mother_superior_ports() */
 
 
+
+
+#ifdef NVIDIA_GPUS
+char *get_correct_spec_string(
+
+  char *given,
+  job  *pjob)
+
+  {
+  char     mode[20];
+  char    *mode_string;
+  char    *request;
+  char    *correct_spec;
+  char    *outer_plus;
+  char    *plus;
+  char    *one_req;
+  int      num_gpu_reqs;
+  char    *gpu_req;
+  int      len;
+  resource *pres;
+
+  /* check to see if there is a gpus request. If so moab
+   * sripted the mode request if it existed. We need to
+   * put it back */
+  mode_string = strstr(given, ":gpus=");
+
+  if (mode_string != NULL)
+    {
+    /* Build our host list from what is in the job attrs */
+    pres = find_resc_entry(
+      &pjob->ji_wattr[(int)JOB_ATR_resource],
+      find_resc_def(svr_resc_def, "neednodes", svr_resc_size));
+    
+    if (pres != NULL)
+      {
+      /* assign what was in "neednodes" */
+      request = pres->rs_value.at_val.at_str;
+      
+      if ((request != NULL) && 
+          (request[0] != 0))
+        {
+        gpu_req = strstr(request, ":gpus=");
+
+        mode_string = gpu_req + strlen(":gpus=");
+        while (isdigit(*mode_string))
+          mode_string++;
+
+        if (*mode_string == ':')
+          {
+          if ((outer_plus = strchr(mode_string, '+')) != NULL)
+            *outer_plus = '\0';
+
+          strcpy(mode, mode_string);
+
+          if (outer_plus != NULL)
+            *outer_plus = '+';
+          
+          num_gpu_reqs = 1;
+          
+          while ((gpu_req = strstr(gpu_req + 1, ":gpus=")) != NULL)
+            num_gpu_reqs++;
+          
+          /* 20 is a little more than the max length of gpu modes */
+          len = strlen(given) + 1 + (num_gpu_reqs * 20);
+          if ((correct_spec = calloc(1, len)) != NULL)
+            {
+            one_req = given;
+            
+            while (one_req != NULL)
+              {
+              if ((plus = strchr(one_req, '+')) != NULL)
+                {
+                *plus = '\0';
+                }
+              
+              strcat(correct_spec, one_req);
+              if (strstr(one_req, ":gpus") != NULL)
+                strcat(correct_spec, mode);
+              
+              if (plus != NULL)
+                {
+                *plus = '+';
+                one_req = plus + 1;
+                }
+              else
+                one_req = NULL;
+              }
+            }
+          }
+        else
+          correct_spec = strdup(given);
+        }
+      }
+    }
+  else
+    correct_spec = strdup(given);
+
+  return(correct_spec);
+  } /* get_correct_spec_string() */
+#endif
+
+
+
+
+
+
 /*
  * assign_hosts - assign hosts (nodes) to job by the following rules:
  * 1. use nodes that are "given"; from exec_host when required by
@@ -1613,6 +1720,7 @@ static int assign_hosts(
   char          log_buf[LOCAL_LOG_BUF_SIZE];
   int           local_errno = 0;
   char         *def_node = NULL;
+  char         *to_free = NULL;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -1632,39 +1740,8 @@ static int assign_hosts(
 
   if ((given != NULL) && (given[0] != '\0'))
     {
-#ifdef NVIDIA_GPUS
-    char *mode_string;
-    char *request;
-#endif
-
-    /* assign what was specified in run request */
-    hosttoalloc = given;
-
-    /* check to see if there is a gpus request. If so moab
-     * sripted the mode request if it existed. We need to
-     * put it back */
-#ifdef NVIDIA_GPUS
-    mode_string = strstr(hosttoalloc, ":gpus=");
-    if(mode_string != NULL)
-      {
-      /* Build our host list from what is in the job attrs */
-      pres = find_resc_entry(
-               &pjob->ji_wattr[(int)JOB_ATR_resource],
-               find_resc_def(svr_resc_def, "neednodes", svr_resc_size));
-
-      if (pres != NULL)
-        {
-        /* assign what was in "neednodes" */
-
-        request = pres->rs_value.at_val.at_str;
-
-        if(request != NULL && request[0] != 0)
-          {
-          hosttoalloc = request;
-          }
-        }
-      }
-#endif
+    hosttoalloc = get_correct_spec_string(given, pjob);
+    to_free = hosttoalloc;
     }
   else
     {
@@ -1791,7 +1868,6 @@ static int assign_hosts(
     else
       {
       /* leave exec_host alone and reuse old IP address */
-
       momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
 
       hosttoalloc = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
@@ -1820,6 +1896,9 @@ static int assign_hosts(
 
         log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
+        if (to_free != NULL)
+          free(to_free);
+
         return(PBSE_BADHOST);
         }
       }
@@ -1832,6 +1911,9 @@ static int assign_hosts(
 
   if (list != NULL)
     free(list);
+        
+  if (to_free != NULL)
+    free(to_free);
 
   if (portlist != NULL)
     free(portlist);
