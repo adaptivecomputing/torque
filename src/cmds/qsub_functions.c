@@ -71,6 +71,10 @@ static char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
 struct termios oldtio;
 /* END: bailout globals */
 
+/* state booleans for protecting already-set options */
+int    J_opt = FALSE;
+int    P_opt = FALSE;
+
 char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
 
 /* adapted from openssh */
@@ -2278,8 +2282,6 @@ void process_opts(
   int c;
   int rc = 0;
   int errflg = 0;
-  int    J_opt = FALSE;
-  int    P_opt = FALSE;
   time_t after;
   char a_value[80];
   char *keyword;
