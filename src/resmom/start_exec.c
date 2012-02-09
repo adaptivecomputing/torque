@@ -257,6 +257,7 @@ enum TVarElseEnum
   tveNumPpn,
   tveGpuFile,
   tveNprocs,
+  tveWallTime,
   tveLAST
   };
 
@@ -281,6 +282,7 @@ static char *variables_else[] =   /* variables to add, value computed */
   "PBS_NUM_PPN",    /* ppn value specified by nodes string */
   "PBS_GPUFILE",    /* file containing which GPUs to access */
   "PBS_NP",         /* number of processors requested */
+  "PBS_WALLTIME",   /* requested or default walltime */
   NULL
   };
 
@@ -1350,6 +1352,18 @@ int InitUserEnv(
     sprintf(buf, "%s/%sgpu", path_aux, pjob->ji_qs.ji_jobid);
 
     bld_env_variables(&vtable, variables_else[tveGpuFile], buf);
+    }
+
+  /* PBS_WALLTIME */
+
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  prd = find_resc_def(svr_resc_def, "walltime", svr_resc_size);
+
+  if ((presc = find_resc_entry(pattr, prd)) != NULL)
+    {
+    sprintf(buf, "%ld", presc->rs_value.at_val.at_long);
+
+    bld_env_variables(&vtable, variables_else[tveWallTime], buf);
     }
 
   /* PBS_NNODES */
