@@ -7,6 +7,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Change size of transfer block used on job rerun from 4k to 64k. (backported from 3.0.5)
   b - With nvidia gpus, TORQUE was losing the directive of what nodes it should
       run the job on from Moab. Corrected (backported from 3.0.5)
+  e - add the $PBS_WALLTIME variable to jobs, thanks to a patch from Mark Roberts 
+      (backported from 3.0.5)
 
 2.5.10 
   b - Fixed a problem where pbs_mom will crash of check_pwd returns NULL. This could
