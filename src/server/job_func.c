@@ -1933,6 +1933,80 @@ char *get_correct_jobname(
 
 
 
+/*
+ * searches the regular job list for the job
+ */
+
+job *find_job_regular_jobs(
+
+  char *searchable_jobid)
+
+  {
+  job *pj = NULL;
+  int  i;
+
+  pthread_mutex_lock(alljobs.alljobs_mutex);
+  
+  i = get_value_hash(alljobs.ht, searchable_jobid);
+  
+  if (i >= 0)
+    pj = (job *)alljobs.ra->slots[i].item;
+  
+  pthread_mutex_unlock(alljobs.alljobs_mutex);
+  
+  if (pj != NULL)
+    {
+    pthread_mutex_lock(pj->ji_mutex);
+
+    if (pj->ji_being_recycled == TRUE)
+      {
+      pthread_mutex_unlock(pj->ji_mutex);
+      pj = NULL;
+      }
+    }
+
+  return(pj);
+  } /* END find_job_regular_jobs() */
+
+
+
+/* 
+ * searches the array list for the job
+ */ 
+
+job *find_job_array_jobs(
+
+  char *searchable_jobid)
+
+  {
+  job *pj = NULL;
+  int  i;
+
+  pthread_mutex_lock(array_summary.alljobs_mutex);
+  
+  i = get_value_hash(array_summary.ht, searchable_jobid);
+  
+  if (i >= 0)
+    pj = (job *)array_summary.ra->slots[i].item;
+  
+  pthread_mutex_unlock(array_summary.alljobs_mutex);
+  
+  if (pj != NULL)
+    {
+    pthread_mutex_lock(pj->ji_mutex);
+
+    if (pj->ji_being_recycled == TRUE)
+      {
+      pthread_mutex_unlock(pj->ji_mutex);
+      pj = NULL;
+      }
+    }
+
+  return(pj);
+  } /* END find_job_array_jobs() */
+
+
+
 
 
 /*
@@ -1950,7 +2024,6 @@ job *find_job(
   char *at;
   char *comp;
   int   different = FALSE;
-  int   i;
 
   job  *pj = NULL;
 
@@ -1973,40 +2046,18 @@ job *find_job(
 
   if (strstr(jobid,"[]") == NULL)
     {
-    pthread_mutex_lock(alljobs.alljobs_mutex);
+    pj = find_job_regular_jobs(comp);
 
-    i = get_value_hash(alljobs.ht,comp);
-
-    if (i >= 0)
-      pj = (job *)alljobs.ra->slots[i].item;
-    
-    pthread_mutex_unlock(alljobs.alljobs_mutex);
-    
-    if (pj != NULL)
-      pthread_mutex_lock(pj->ji_mutex);
+    /* when remotely routing jobs, they are removed from the 
+     * regular job list first and the array summary after. 
+     * Attempt to find them there if NULL */
+    if (pj == NULL)
+      pj = find_job_array_jobs(comp);
     } /* END if (not an array template job) */
   else
     {
-    /* search in the array summary */
-    pthread_mutex_lock(array_summary.alljobs_mutex);
-
-    i = get_value_hash(array_summary.ht,comp);
-
-    if (i >= 0)
-      pj = (job *)array_summary.ra->slots[i].item;
-
-    pthread_mutex_unlock(array_summary.alljobs_mutex);
-
-    if (i >= 0)
-      pthread_mutex_lock(pj->ji_mutex);
+    pj = find_job_array_jobs(comp);
     } /* END if (job is array template) */
-
-  if ((pj != NULL) &&
-      (pj->ji_being_recycled == TRUE))
-    {
-    pthread_mutex_unlock(pj->ji_mutex);
-    pj = NULL;
-    }
 
   if (at)
     *at = '@'; /* restore @server_name */

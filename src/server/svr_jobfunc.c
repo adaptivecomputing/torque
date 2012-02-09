@@ -536,7 +536,6 @@ void svr_dequejob(
   int  parent_queue_mutex_held) /* I */
 
   {
-  static char *id = "svr_dequejob";
   int          bad_ct = 0;
   attribute   *pattr;
   pbs_queue   *pque;
@@ -546,7 +545,7 @@ void svr_dequejob(
   /* remove job from server's all job list and reduce server counts */
 
   /* the only error is if the job isn't present */
-  if (remove_job(&alljobs,pjob) == PBSE_NONE)
+  if (remove_job(&alljobs, pjob) == PBSE_NONE)
     {
     if (!pjob->ji_is_array_template)
       {
@@ -555,7 +554,7 @@ void svr_dequejob(
       if (--server.sv_qs.sv_numjobs < 0)
         {
         bad_ct = 1;
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "sv_numjobs < 0. Recount required.");
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "sv_numjobs < 0. Recount required.");
         }
       
       pthread_mutex_unlock(server.sv_qs_mutex);
@@ -564,7 +563,7 @@ void svr_dequejob(
       if (--server.sv_jobstates[pjob->ji_qs.ji_state] < 0)
         {
         bad_ct = 1;
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "sv_jobstates < 0. Recount required.");
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "sv_jobstates < 0. Recount required.");
         }
       
       pthread_mutex_unlock(server.sv_jobstates_mutex);
@@ -583,19 +582,19 @@ void svr_dequejob(
       if (--pque->qu_numjobs < 0)
         {
         bad_ct = 1;
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "qu_numjobs < 0. Recount required.");
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "qu_numjobs < 0. Recount required.");
         }
 
       if (--pque->qu_njstate[pjob->ji_qs.ji_state] < 0)
         {
         bad_ct = 1;
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "qu_njstate < 0. Recount required.");
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "qu_njstate < 0. Recount required.");
         }
 
       if ((pjob->ji_qs.ji_state == JOB_STATE_COMPLETE) &&
           (--pque->qu_numcompleted < 0))
         {
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, id, "qu_numcompleted < 0. Recount required.");
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "qu_numcompleted < 0. Recount required.");
         bad_ct = 1;
         }
       }
@@ -606,7 +605,7 @@ void svr_dequejob(
     pjob->ji_qhdr = NULL;
 
     if (parent_queue_mutex_held == FALSE)
-      unlock_queue(pque, id, NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
 
 #ifndef NDEBUG
@@ -670,7 +669,6 @@ int svr_setjobstate(
   int  has_queue_mutex) /* I */
 
   {
-  static char *id = "svr_setjobstate";
   int          changed = 0;
   int          oldstate;
 
@@ -681,7 +679,7 @@ int svr_setjobstate(
   if (LOGLEVEL >= 2)
     {
     sprintf(log_buf, "%s: setting job %s state from %s-%s to %s-%s (%d-%d)\n",
-      id,
+      __func__,
       (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
       PJobState[pjob->ji_qs.ji_state],
       PJobSubState[pjob->ji_qs.ji_substate],
@@ -757,7 +755,7 @@ int svr_setjobstate(
           }
 
         if (has_queue_mutex == FALSE)
-          unlock_queue(pque, id, NULL, LOGLEVEL);
+          unlock_queue(pque, __func__, NULL, LOGLEVEL);
         }
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
@@ -2037,7 +2035,6 @@ static void job_wait_over(
   struct work_task *pwt)
 
   {
-  static char *id = "job_wait_over";
   int          newstate;
   int          newsub;
   job         *pjob;
@@ -2049,7 +2046,7 @@ static void job_wait_over(
 
   if (jobid == NULL)
     {
-    log_err(ENOMEM, id, "Cannot allocate memory");
+    log_err(ENOMEM, __func__, "Cannot allocate memory");
     return;
     }
 
@@ -2067,7 +2064,7 @@ static void job_wait_over(
         {
         sprintf(log_buf, msg_badwait, ((job *)pjob)->ji_qs.ji_jobid);
         
-        log_err(-1, id, log_buf);
+        log_err(-1, __func__, log_buf);
         
         /* recreate the work task entry */
         set_task(WORK_Timed, when, job_wait_over, strdup(pjob->ji_qs.ji_jobid), FALSE);

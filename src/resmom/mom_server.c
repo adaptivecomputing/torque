@@ -1702,12 +1702,12 @@ int setgpumode(
 
 #ifdef NVIDIA_GPUS
 int resetgpuecc(
+
   char *gpuid,
   int   reset_perm,
   int   reset_vol)
-  {
-  static char id[] = "resetgpuecc";
 
+  {
 #ifdef NVML_API
   nvmlReturn_t      rc;
   nvmlEccBitType_t  counter_type;
@@ -1742,7 +1742,7 @@ int resetgpuecc(
 						  reset_vol,
 						  gpuid);
 
-		  log_ext(-1, id, log_buffer, LOG_DEBUG);
+		  log_ext(-1, __func__, log_buffer, LOG_DEBUG);
 	    }
 
     rc = nvmlDeviceClearEccErrorCounts(device_hndl, counter_type);
@@ -1750,7 +1750,7 @@ int resetgpuecc(
     if (rc == NVML_SUCCESS)
       return (TRUE);
 
-    log_nvml_error (rc, gpuid, id);
+    log_nvml_error (rc, gpuid, __func__);
     }
 
   return(FALSE);
@@ -1806,8 +1806,8 @@ int resetgpuecc(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buffer,"%s: GPU cmd issued: %s\n", id, buf);
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    sprintf(log_buffer,"%s: GPU cmd issued: %s\n", __func__, buf);
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
 	if ((fd = popen(buf, "r")) != NULL)
@@ -1837,7 +1837,7 @@ int resetgpuecc(
             log_buffer,
             "nvidia-smi gpu reset ecc returned: %s",
             buf);
-          log_ext(-1, id, log_buffer, LOG_INFO);
+          log_ext(-1, __func__, log_buffer, LOG_INFO);
           }
         pclose(fd);
         return(FALSE);
@@ -1851,10 +1851,7 @@ int resetgpuecc(
       {
       sprintf(log_buffer, "error %d (%s) on popen", errno, strerror(errno));
 
-      log_err(
-        PBSE_RMSYSTEM,
-        id,
-        log_buffer);
+      log_err(PBSE_RMSYSTEM, __func__, log_buffer);
       }
     return(FALSE);
     }
@@ -2782,9 +2779,9 @@ int should_request_cluster_addrs()
  */
 int write_update_header(
     
-  int   stream,
+  int         stream,
   const char *id,
-  char *name)
+  char       *name)
 
   {
   int  ret;
@@ -2820,11 +2817,11 @@ int write_update_header(
 
 int write_my_server_status(
  
-  int   stream,
+  int         stream,
   const char *id,
-  char *status_strings,
-  void *dest,
-  int   mode)
+  char       *status_strings,
+  void       *dest,
+  int         mode)
  
   {
   int          ret = DIS_SUCCESS;
@@ -2880,10 +2877,10 @@ int write_my_server_status(
 
 int write_cached_statuses(
  
-  int   stream,
+  int         stream,
   const char *id,
-  void *dest,
-  int   mode)
+  void       *dest,
+  int         mode)
  
   {
   int            ret = DIS_SUCCESS;

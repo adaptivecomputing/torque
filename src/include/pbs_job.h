@@ -1046,6 +1046,8 @@ extern int   depend_on_que(attribute *, void *, int);
 extern int   depend_on_exec(job *);
 extern int   depend_on_term(job *);
 extern job  *find_job(char *);
+job         *find_job_regular_jobs(char *);
+job         *find_job_array_jobs(char *);
 extern char *get_egroup(job *);
 extern char *get_variable(job *, char *);
 extern int   init_chkmom(job *);
