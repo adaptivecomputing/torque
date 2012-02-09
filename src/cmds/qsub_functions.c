@@ -3862,7 +3862,7 @@ int load_config(
       (ferror(config_stream) != 0))
     {
     /* FAILURE */
-
+    fclose(config_stream);
     return(1);
     }
 
@@ -3880,6 +3880,7 @@ int load_config(
 
   /* SUCCESS */
 
+  fclose(config_stream);
   return(0);
   }  /* END load_config() */
 
