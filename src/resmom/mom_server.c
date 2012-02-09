@@ -525,9 +525,7 @@ int mom_server_add(
   if ((pms = mom_server_find_by_name(value)))
     {
     /* This server name has already been added. */
-
-    sprintf(log_buffer, "server host %s already added",
-            value);
+    sprintf(log_buffer, "server host %s already added", value);
 
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
@@ -545,13 +543,16 @@ int mom_server_add(
     else
       port = default_server_port;
 
-    /* copy the server name and set up the sock address */
-    strncpy(pms->pbs_servername,tmp_server_name,PBS_MAXSERVERNAME);
-
     if (getaddrinfo(tmp_server_name, NULL, NULL, &addr_info) != 0)
       {
-      /* NYI handle this failure case */
+      sprintf(log_buffer, "Cannot resolve host %s for pbs_server", tmp_server_name);
+      log_err(PBSE_BADHOST, __func__, log_buffer);
+
+      return(0); /* FAILURE */
       }
+
+    /* copy the server name and set up the sock address */
+    strncpy(pms->pbs_servername,tmp_server_name,PBS_MAXSERVERNAME);
 
     pms->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
     pms->sock_addr.sin_family = AF_INET;
