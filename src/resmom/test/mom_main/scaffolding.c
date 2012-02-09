@@ -41,6 +41,7 @@ time_t pbs_tcp_timeout = 20;
 time_t wait_time = 10;
 char log_buffer[LOG_BUF_SIZE];
 pthread_mutex_t *log_mutex;
+dynamic_string  *mom_status;
 
 
 
@@ -659,6 +660,12 @@ void *next_thing(resizable_array *ra, int *iter)
 int im_compose(int stream, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
   {
   fprintf(stderr, "The call to im_compose needs to be mocked!!\n");
+  exit(1);
+  }
+
+dynamic_string *get_dynamic_string(int size, char *str)
+  {
+  fprintf(stderr, "The call to get_dynamic_string needs to be mocked!!\n");
   exit(1);
   }
 

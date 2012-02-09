@@ -330,6 +330,22 @@ void *send_hierarchy_threadtask(void *vp)
   exit(1);                            
   }
 
+dynamic_string *get_dynamic_string(int size, char *str)
+  {
+  fprintf(stderr, "The call to get_dynamic_string needs to be mocked!!\n");
+  exit(1);                            
+  }
+
+int copy_to_end_of_dynamic_string(dynamic_string *ds, char *str)
+  {
+  fprintf(stderr, "The call to copy_to_end_of_dynamic_string needs to be mocked!!\n");
+  exit(1);                            
+  }
+
+void free_dynamic_string(dynamic_string *ds)
+  {
+  }
+
 
 
 char *threadsafe_tokenizer(char **str, char *delims)
