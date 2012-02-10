@@ -2559,6 +2559,7 @@ int set_nextjobnum(
    * Otherwise, if the number is in the default range, it sets it to the new range.
    */
 
+  pthread_mutex_lock(server.sv_qs_mutex);
   switch (op)
     {
 
@@ -2572,7 +2573,6 @@ int set_nextjobnum(
 
     case INCR:
 
-      pthread_mutex_lock(server.sv_qs_mutex);
 
       attr->at_val.at_long = MAX(server.sv_qs.sv_jobidnumber, new->at_val.at_long);
       
@@ -2586,13 +2586,11 @@ int set_nextjobnum(
 
     default:
      
+      pthread_mutex_unlock(server.sv_qs_mutex);
       return(PBSE_SYSTEM);
     }
 
   attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-
-  if (op != INCR)
-    pthread_mutex_lock(server.sv_qs_mutex);
 
   server.sv_qs.sv_jobidnumber = attr->at_val.at_long;
 

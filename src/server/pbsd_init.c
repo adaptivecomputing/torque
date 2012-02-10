@@ -1496,7 +1496,7 @@ int pbsd_init(
             pdirent->d_name);
 
           log_err(errno, id, log_buf);
-
+          pthread_mutex_unlock(server.sv_qs_mutex);
           return(rc);
           }
 
