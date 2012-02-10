@@ -130,10 +130,12 @@ extern all_queues svr_queues;
 extern queue_recycler q_recycler;
 
 int lock_queue(
+
   struct pbs_queue *the_queue,
   const char       *id,
   char             *msg,
   int               logging)
+
   {
   int rc = PBSE_NONE;
   char *err_msg = NULL;
@@ -210,10 +212,10 @@ int unlock_queue(
 
 pbs_queue *que_alloc(
 
-  char *name)
+  char *name,
+  int   sv_qs_mutex_held)
 
   {
-  static char *id = "que_alloc";
   static char *mem_err = "no memory";
 
   int        i;
@@ -223,7 +225,7 @@ pbs_queue *que_alloc(
 
   if (pq == NULL)
     {
-    log_err(errno, id, mem_err);
+    log_err(errno, __func__, mem_err);
 
     return(NULL);
     }
@@ -238,7 +240,7 @@ pbs_queue *que_alloc(
       (pq->qu_jobs == NULL) ||
       (pq->qu_jobs_array_sum == NULL))
     {
-    log_err(ENOMEM,id,mem_err);
+    log_err(ENOMEM, __func__, mem_err);
     return(NULL);
     }
 
@@ -250,8 +252,12 @@ pbs_queue *que_alloc(
   strncpy(pq->qu_qs.qu_name, name, PBS_MAXQUEUENAME);
 
   insert_queue(&svr_queues,pq);
-    
+ 
+  if (sv_qs_mutex_held == FALSE)
+    pthread_mutex_lock(server.sv_qs_mutex);
   server.sv_qs.sv_numque++;
+  if (sv_qs_mutex_held == FALSE)
+    pthread_mutex_unlock(server.sv_qs_mutex);
 
   /* set the working attributes to "unspecified" */
 
@@ -272,7 +278,8 @@ pbs_queue *que_alloc(
 
 void que_free(
 
-  pbs_queue *pq)
+  pbs_queue *pq,
+  int        sv_qs_mutex_held)
 
   {
   int   i;
@@ -298,7 +305,11 @@ void que_free(
     }
 
   /* now free the main structure */
+  if (sv_qs_mutex_held == FALSE)
+    pthread_mutex_lock(server.sv_qs_mutex);
   server.sv_qs.sv_numque--;
+  if (sv_qs_mutex_held == FALSE)
+    pthread_mutex_unlock(server.sv_qs_mutex);
 
   remove_queue(&svr_queues, pq);
   pq->q_being_recycled = TRUE;
@@ -340,7 +351,7 @@ int que_purge(
     log_err(errno, "queue_purge", log_buf);
     }
 
-  que_free(pque);
+  que_free(pque, FALSE);
 
   return(0);
   }
@@ -458,7 +469,6 @@ int insert_queue(
   pbs_queue  *pque)
 
   {
-  static char *id = "insert_queue";
   int          rc;
 
   pthread_mutex_lock(aq->allques_mutex);
@@ -466,7 +476,7 @@ int insert_queue(
   if ((rc = insert_thing(aq->ra,pque)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc,id,"No memory to resize the array");
+    log_err(rc, __func__, "No memory to resize the array");
     }
   else
     {

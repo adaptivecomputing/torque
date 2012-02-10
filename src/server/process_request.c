@@ -900,7 +900,7 @@ void dispatch_request(
 
     case PBS_BATCH_StatusSvr:
 
-      req_stat_svr(request);
+      enqueue_threadpool_request(req_stat_svr, request);
 
       break;
 

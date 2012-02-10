@@ -1625,28 +1625,29 @@ static int status_node(
  * This request processes the request for status of the Server
  */
 
-void req_stat_svr(
+void *req_stat_svr(
 
-  struct batch_request *preq) /* ptr to the decoded request */
+  void *vp) /* ptr to the decoded request */
 
   {
-  svrattrl           *pal;
+  svrattrl             *pal;
 
-  struct batch_reply *preply;
+  struct batch_reply   *preply;
+  struct batch_request *preq = (struct batch_request *)vp;
 
-  struct brp_status  *pstat;
-  int                *nc;
-  int                 bad = 0;
-  static char         nc_buf[128];
+  struct brp_status    *pstat;
+  int                  *nc;
+  int                   bad = 0;
+  static char           nc_buf[128];
+  int                   numjobs;
 
   /* update count and state counts from sv_numjobs and sv_jobstates */
-  pthread_mutex_lock(server.sv_attr_mutex);
   pthread_mutex_lock(server.sv_qs_mutex);
-
-  server.sv_attr[SRV_ATR_TotalJobs].at_val.at_long = server.sv_qs.sv_numjobs;
-  
+  numjobs = server.sv_qs.sv_numjobs;
   pthread_mutex_unlock(server.sv_qs_mutex);
   
+  pthread_mutex_lock(server.sv_attr_mutex);
+  server.sv_attr[SRV_ATR_TotalJobs].at_val.at_long = numjobs;
   server.sv_attr[SRV_ATR_TotalJobs].at_flags |= ATR_VFLAG_SET;
 
   pthread_mutex_lock(server.sv_jobstates_mutex);
@@ -1683,7 +1684,7 @@ void req_stat_svr(
     req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
     pthread_mutex_unlock(server.sv_attr_mutex);
 
-    return;
+    return(NULL);
     }
 
   CLEAR_LINK(pstat->brp_stlink);
@@ -1718,7 +1719,7 @@ void req_stat_svr(
     }
     
 
-  return;
+  return(NULL);
   }  /* END req_stat_svr() */
 
 /* DIAGTODO: write req_stat_diag() */

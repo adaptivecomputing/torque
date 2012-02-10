@@ -232,13 +232,11 @@ pbs_queue *que_recov_xml(
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   time_t       time_now = time(NULL);
 
-  static char *id = "que_recov_xml";
-
-  pq = que_alloc(filename);  /* allocate & init queue structure space */
+  pq = que_alloc(filename, TRUE);  /* allocate & init queue structure space */
 
   if (pq == NULL)
     {
-    log_err(-1, id, "que_alloc failed");
+    log_err(-1, __func__, "que_alloc failed");
 
     return(NULL);
     }
@@ -249,9 +247,9 @@ pbs_queue *que_recov_xml(
 
   if (fds < 0)
     {
-    log_err(errno, id, "open error");
+    log_err(errno, __func__, "open error");
 
-    que_free(pq);
+    que_free(pq, TRUE);
 
     return(NULL);
     }
@@ -262,7 +260,7 @@ pbs_queue *que_recov_xml(
     snprintf(log_buf,sizeof(log_buf),
       "Unable to read from queue file %s",
       filename);
-    log_err(errno,id,log_buf);
+    log_err(errno, __func__, log_buf);
     
     close(fds);
 
@@ -277,9 +275,9 @@ pbs_queue *que_recov_xml(
     {
     log_event(PBSEVENT_SYSTEM,
       PBS_EVENTCLASS_SERVER,
-      id,
+      __func__,
       "Cannot find a queue tag, attempting to load legacy format");
-    que_free(pq);
+    que_free(pq, TRUE);
     
     close(fds);
 
@@ -290,8 +288,8 @@ pbs_queue *que_recov_xml(
 
   if (end == NULL)
     {
-    log_err(-1,id,"No queue tag found in the queue file???");
-    que_free(pq);
+    log_err(-1, __func__, "No queue tag found in the queue file???");
+    que_free(pq, TRUE);
     close(fds);
     return(NULL);
     }
@@ -309,9 +307,9 @@ pbs_queue *que_recov_xml(
       snprintf(log_buf,sizeof(log_buf),
         "Bad XML in the queue file at: %s",
         current);
-      log_err(-1,id,log_buf);
+      log_err(-1, __func__, log_buf);
 
-      que_free(pq);
+      que_free(pq, TRUE);
       close(fds);
       return(NULL);
       }
@@ -340,9 +338,9 @@ pbs_queue *que_recov_xml(
           snprintf(log_buf,sizeof(log_buf),
             "Bad XML in the queue file at: %s",
             current);
-          log_err(-1,id,log_buf);
+          log_err(-1, __func__, log_buf);
           
-          que_free(pq);
+          que_free(pq, TRUE);
           close(fds);
           return(NULL);
           }
@@ -353,9 +351,9 @@ pbs_queue *que_recov_xml(
           snprintf(log_buf,sizeof(log_buf),
             "Error creating attribute %s",
             child_parent);
-          log_err(rc,id,log_buf);
+          log_err(rc, __func__, log_buf);
 
-          que_free(pq);
+          que_free(pq, TRUE);
           close(fds);
           return(NULL);
           }
@@ -407,7 +405,7 @@ pbs_queue *que_recov(
   char       namebuf[MAXPATHLEN];
   time_t     time_now = time(NULL);
 
-  pq = que_alloc(filename);  /* allocate & init queue structure space */
+  pq = que_alloc(filename, TRUE);  /* allocate & init queue structure space */
 
   if (pq == NULL)
     {
@@ -424,7 +422,7 @@ pbs_queue *que_recov(
     {
     log_err(errno, "que_recov", "open error");
 
-    que_free(pq);
+    que_free(pq, TRUE);
 
     return(NULL);
     }
@@ -435,7 +433,7 @@ pbs_queue *que_recov(
       sizeof(struct queuefix))
     {
     log_err(errno, "que_recov", "read error");
-    que_free(pq);
+    que_free(pq, TRUE);
     close(fds);
     return ((pbs_queue *)0);
     }
@@ -446,7 +444,7 @@ pbs_queue *que_recov(
 	               QA_ATR_LAST, 0, TRUE) != 0)
     {
     log_err(-1, "que_recov", "recov_attr[common] failed");
-    que_free(pq);
+    que_free(pq, TRUE);
     close(fds);
     return ((pbs_queue *)0);
     }

@@ -88,7 +88,7 @@ struct pbsnode *find_nodebyname(char *nodename)
   exit(1);
   }
 
-pbs_queue *que_alloc(char *name)
+pbs_queue *que_alloc(char *name, int sv_qs_mutex_held)
   {
   fprintf(stderr, "The call to que_alloc to be mocked!!\n");
   exit(1);
@@ -172,7 +172,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-void que_free(pbs_queue *pq)
+void que_free(pbs_queue *pq, int sv_qs_mutex_held)
   {
   fprintf(stderr, "The call to que_free to be mocked!!\n");
   exit(1);

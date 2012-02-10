@@ -978,7 +978,7 @@ void mgr_queue_create(
     return;
     }
 
-  pque = que_alloc(preq->rq_ind.rq_manager.rq_objname);
+  pque = que_alloc(preq->rq_ind.rq_manager.rq_objname, FALSE);
 
   /* set the queue attributes */
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
@@ -997,7 +997,7 @@ void mgr_queue_create(
     {
     reply_badattr(rc, bad, plist, preq);
 
-    que_free(pque);
+    que_free(pque, FALSE);
     }
   else
     {
@@ -2597,7 +2597,7 @@ int set_nextjobnum(
   pthread_mutex_unlock(server.sv_qs_mutex);
 
   return(PBSE_NONE);
-  }
+  } /* END set_nextjobnum() */
 
 /* END req_manager.c */
 

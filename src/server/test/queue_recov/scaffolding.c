@@ -35,7 +35,7 @@ int write_buffer(char *buf, int len, int fds)
   exit(1);
   }
 
-pbs_queue *que_alloc(char *name)
+pbs_queue *que_alloc(char *name, int sv_qs_mutex_held)
   {
   fprintf(stderr, "The call to que_alloc needs to be mocked!!\n");
   exit(1);
@@ -53,7 +53,7 @@ int str_to_attr(char *name, char *val, struct attribute *attr, struct attribute_
   exit(1);
   }
 
-void que_free(pbs_queue *pq)
+void que_free(pbs_queue *pq, int sv_qs_mutex_held)
   {
   fprintf(stderr, "The call to que_free needs to be mocked!!\n");
   exit(1);

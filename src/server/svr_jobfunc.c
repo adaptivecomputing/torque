@@ -2628,88 +2628,88 @@ void set_resc_deflt(
   static void correct_ct()
 
   {
-    int           i;
-    char         *pc;
-    job          *pjob;
-    pbs_queue    *pque;
-    int           queue_iter = -1;
-    int           job_iter = -1;
-    int           num_jobs = 0;
-    int           job_counts[PBS_NUMJOBSTATE];
-    char          log_buf[LOCAL_LOG_BUF_SIZE];
-
-
-    lock_startup();
-    pthread_mutex_lock(server.sv_qs_mutex);
-    sprintf(log_buf, "Job state counts incorrect, server %d: ", server.sv_qs.sv_numjobs);
-
-    server.sv_qs.sv_numjobs = 0;
-    pthread_mutex_unlock(server.sv_qs_mutex);
-
-    pthread_mutex_lock(server.sv_jobstates_mutex);
-
-    for (i = 0;i < PBS_NUMJOBSTATE;++i)
+  int           i;
+  char         *pc;
+  job          *pjob;
+  pbs_queue    *pque;
+  int           queue_iter = -1;
+  int           job_iter = -1;
+  int           num_jobs = 0;
+  int           job_counts[PBS_NUMJOBSTATE];
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
+  
+  
+  lock_startup();
+  pthread_mutex_lock(server.sv_qs_mutex);
+  sprintf(log_buf, "Job state counts incorrect, server %d: ", server.sv_qs.sv_numjobs);
+  
+  server.sv_qs.sv_numjobs = 0;
+  pthread_mutex_unlock(server.sv_qs_mutex);
+  
+  pthread_mutex_lock(server.sv_jobstates_mutex);
+  
+  for (i = 0;i < PBS_NUMJOBSTATE;++i)
     {
-      pc = log_buf + strlen(log_buf);
-
-      sprintf(pc, "%d ", server.sv_jobstates[i]);
-
-      job_counts[i] = 0;
+    pc = log_buf + strlen(log_buf);
+    
+    sprintf(pc, "%d ", server.sv_jobstates[i]);
+    
+    job_counts[i] = 0;
     }
-
-    pthread_mutex_unlock(server.sv_jobstates_mutex);
-
-    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
-
-    while ((pque = next_queue(&svr_queues,&queue_iter)) != NULL)
+  
+  pthread_mutex_unlock(server.sv_jobstates_mutex);
+  
+  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
+  
+  while ((pque = next_queue(&svr_queues,&queue_iter)) != NULL)
     {
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "checking queue %s", pque->qu_qs.qu_name);
-      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
-      pque->qu_numjobs = 0;
-      pque->qu_numcompleted = 0;
-
-      for (i = 0;i < PBS_NUMJOBSTATE;++i)
-        pque->qu_njstate[i] = 0;
-
-      /* iterate over each job in the queue and count it.
-       * This code used to iterate over each job, find the queue, and then count the job.
-       * This had to be changed because the mutex order needs to lock the queue before the 
-       * job, so in order to acquire a queue's mutex the job's mutex had to be released on 
-       * occasion, meaning the job could be deleted by the time that thread had the job's 
-       * lock again, since the mutex is released before being destroyed. This caused crashes 
-       * along with other mayhem. Thus, keep the code here and only get jobs that really 
-       * exist */
-      job_iter = -1;
-
-      while ((pjob = next_job(pque->qu_jobs, &job_iter)) != NULL)
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "checking queue %s", pque->qu_qs.qu_name);
+    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
+    pque->qu_numjobs = 0;
+    pque->qu_numcompleted = 0;
+    
+    for (i = 0;i < PBS_NUMJOBSTATE;++i)
+      pque->qu_njstate[i] = 0;
+    
+    /* iterate over each job in the queue and count it.
+     * This code used to iterate over each job, find the queue, and then count the job.
+     * This had to be changed because the mutex order needs to lock the queue before the 
+     * job, so in order to acquire a queue's mutex the job's mutex had to be released on 
+     * occasion, meaning the job could be deleted by the time that thread had the job's 
+     * lock again, since the mutex is released before being destroyed. This caused crashes 
+     * along with other mayhem. Thus, keep the code here and only get jobs that really 
+     * exist */
+    job_iter = -1;
+    
+    while ((pjob = next_job(pque->qu_jobs, &job_iter)) != NULL)
       {
-        num_jobs++;
-
-        job_counts[pjob->ji_qs.ji_state]++;
-
-        pque->qu_numjobs++;
-        pque->qu_njstate[pjob->ji_qs.ji_state]++;
-
-        if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
-          pque->qu_numcompleted++;
-
-        pthread_mutex_unlock(pjob->ji_mutex);
+      num_jobs++;
+      
+      job_counts[pjob->ji_qs.ji_state]++;
+      
+      pque->qu_numjobs++;
+      pque->qu_njstate[pjob->ji_qs.ji_state]++;
+      
+      if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+        pque->qu_numcompleted++;
+      
+      pthread_mutex_unlock(pjob->ji_mutex);
       }
-
-      unlock_queue(pque, "correct_ct", NULL, LOGLEVEL);
+    
+    unlock_queue(pque, "correct_ct", NULL, LOGLEVEL);
     } /* END for each queue */
-
-    pthread_mutex_lock(server.sv_qs_mutex);
-    server.sv_qs.sv_numjobs = num_jobs;
-    pthread_mutex_unlock(server.sv_qs_mutex);
-
-    pthread_mutex_lock(server.sv_jobstates_mutex);
-    for (i = 0; i < PBS_NUMJOBSTATE; i++)
-      server.sv_jobstates[i] = job_counts[i];
-    pthread_mutex_unlock(server.sv_jobstates_mutex);
-
-    unlock_startup();
-    return;
+  
+  pthread_mutex_lock(server.sv_qs_mutex);
+  server.sv_qs.sv_numjobs = num_jobs;
+  pthread_mutex_unlock(server.sv_qs_mutex);
+  
+  pthread_mutex_lock(server.sv_jobstates_mutex);
+  for (i = 0; i < PBS_NUMJOBSTATE; i++)
+    server.sv_jobstates[i] = job_counts[i];
+  pthread_mutex_unlock(server.sv_jobstates_mutex);
+  
+  unlock_startup();
+  return;
   }  /* END correct_ct() */
 
 
