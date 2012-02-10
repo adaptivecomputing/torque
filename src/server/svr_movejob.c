@@ -271,18 +271,19 @@ static int local_move(
   if (parent_queue_mutex_held == TRUE)
     pque = jobp->ji_qhdr;
   else
+    pque = get_jobs_queue(jobp); 
+
+  if (pque == NULL)
     {
-    if ((pque = get_jobs_queue(jobp)) == NULL)
-      {
-      sprintf(log_buf, "queue %s does not exist\n", jobp->ji_qs.ji_queue);
+    sprintf(log_buf, "queue %s does not exist\n", jobp->ji_qs.ji_queue);
 
-      log_err(-1, __func__, log_buf);
+    log_err(-1, __func__, log_buf);
 
-      *my_err = PBSE_UNKQUE;
+    *my_err = PBSE_UNKQUE;
 
-      return(-1);
-      }
+    return(-1);
     }
+   
 
   if (get_parent_dest_queues(jobp->ji_qs.ji_queue, destination, &pque, &dest_que, &jobp) != PBSE_NONE)
     {
