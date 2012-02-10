@@ -2812,7 +2812,7 @@ struct pbsnode *get_my_next_node_board(
   struct pbsnode *numa;
   
   iter->numa_index++;
-  numa = AVL_find(iter->numa_index,pnode->nd_mom_port,pnode->node_boards);
+  numa = AVL_find(iter->numa_index, pnode->nd_mom_port, pnode->node_boards);
   
   unlock_node(pnode, __func__, "pnode", LOGLEVEL);
   if (numa != NULL)
@@ -2860,7 +2860,7 @@ struct pbsnode *next_node(
   else
     {
     /* if current is a numa subnode, go back to the parent */
-    if (iter->numa_index > 0)
+    if (iter->numa_index >= 0)
       {
       tmp = current->numa_parent;
       unlock_node(current, "next_node", "current == NULL && numa_index > 0", LOGLEVEL);
@@ -2871,20 +2871,30 @@ struct pbsnode *next_node(
     /* move to the next host or get my next node board? */
     if (iter->numa_index + 1 >= current->num_node_boards)
       {
+      /* reset the numa_index to -1 */
+      iter->numa_index = -1;
+
       /* go to the next node in all nodes */
       unlock_node(current, "next_node", "next == NULL && numa_index+1", LOGLEVEL);
       pthread_mutex_lock(an->allnodes_mutex);
 
-      next = next_thing(an->ra,&iter->node_index);
+      next = next_thing(an->ra, &iter->node_index);
 
       pthread_mutex_unlock(an->allnodes_mutex);
 
       if (next != NULL)
+        {
         lock_node(next, "next_node", "next != NULL && numa_index+1", LOGLEVEL);
+
+        if (next->num_node_boards > 0)
+          {
+          next = get_my_next_node_board(iter, next);
+          }
+        }
       }
     else
       {
-      next = get_my_next_node_board(iter,current);
+      next = get_my_next_node_board(iter, current);
       }
     } /* END all other iterations */
 
