@@ -842,12 +842,9 @@ int get_default_threads()
       default_threads = (2 * count) + 1;
     }
 
-  if (LOGLEVEL >= 7)
-    {
-    snprintf(log_buf, sizeof(log_buf),
-      "Defaulting min_threads to %d threads", default_threads);
-    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-    }
+  snprintf(log_buf, sizeof(log_buf),
+    "Defaulting min_threads to %d threads", default_threads);
+  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
 
   return(default_threads);
   } /* END get_default_threads() */
@@ -1503,7 +1500,7 @@ int pbsd_init(
         pa->jobs_recovered = 0;
 
         pthread_mutex_unlock(pa->ai_mutex);
-        if(LOGLEVEL >= 7)
+        if (LOGLEVEL >= 7)
           {
           sprintf(log_buf, "%s: unlocking ai_mutex", id);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
