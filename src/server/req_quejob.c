@@ -500,6 +500,7 @@ void *req_quejob(
   pbs_queue            *pque;
   attribute             tempattr;
   char                 *alias = NULL;
+  int                   jobid_number;
   
   struct stat           stat_buf;
   
@@ -591,13 +592,15 @@ void *req_quejob(
     if (++server.sv_qs.sv_jobidnumber > PBS_SEQNUMTOP)
       server.sv_qs.sv_jobidnumber = 0; /* wrap it */
 
+    jobid_number = server.sv_qs.sv_jobidnumber;
+    pthread_mutex_unlock(server.sv_qs_mutex);
+
     /* Make the current job number visible in qmgr print server commnad. */
     pthread_mutex_lock(server.sv_attr_mutex);
-    server.sv_attr[SRV_ATR_NextJobNumber].at_val.at_long = server.sv_qs.sv_jobidnumber;
+    server.sv_attr[SRV_ATR_NextJobNumber].at_val.at_long = jobid_number;
     server.sv_attr[SRV_ATR_NextJobNumber].at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
     pthread_mutex_unlock(server.sv_attr_mutex);
 
-    pthread_mutex_unlock(server.sv_qs_mutex);
 
     if (svr_save(&server, SVR_SAVE_QUICK))
       {
