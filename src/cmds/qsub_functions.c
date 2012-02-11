@@ -566,8 +566,10 @@ int isexecutable(
 
 
 char *ispbsdir(
+
   char *s,
   char *prefix)
+
   {
   char *it;
   int l;
@@ -591,8 +593,10 @@ char *ispbsdir(
 /* #define MMAX_VERIFY_BYTES 50 */
 
 int istext(
+
   FILE   *fd,      /* I */
   int    *IsText)  /* O (optional) */
+
   {
   int i;
   int c;
@@ -643,8 +647,10 @@ int istext(
  * /usr/local/sbin/torque_submitfilter   -- legacy
  */
 int validate_submit_filter(
-    memmgr **mm,
-    job_data **a_hash)
+
+  memmgr   **mm,
+  job_data **a_hash)
+
   {
   int rc = 0;
   job_data *filter_info = NULL;
@@ -675,8 +681,10 @@ int validate_submit_filter(
   }
 
 void validate_pbs_o_workdir(
-    memmgr **mm,
-    job_data **job_attr)
+    
+  memmgr   **mm,
+  job_data **job_attr)
+
   {
   job_data *tmp_job_info = NULL;
   char *the_val = NULL;
@@ -706,8 +714,10 @@ void validate_pbs_o_workdir(
  * validate pbs_host, if not valid assign qsub_host as pbs_host
  */
 void validate_qsub_host_pbs_o_server(
-    memmgr **mm,
-    job_data **job_attr)
+
+  memmgr   **mm,
+  job_data **job_attr)
+
   {
   job_data *tmp_job_info = NULL;
   char *qsub_host = NULL;
@@ -1169,9 +1179,11 @@ void do_dir(
   }  /* END do_dir() */
 
 char *copy_env_value(
+
   char *dest,      /* destination  */
   char *pv,        /* value string */
   int   quote_flg) /* non-zero then assume single word (quoting on) */
+
   {
   int go = 1;
   int q_ch = 0;
@@ -1272,7 +1284,9 @@ char *copy_env_value(
  * will be connected to this socket.
  */
 char *interactive_port(
-    int *sock)
+    
+  int *sock)
+
   {
   torque_socklen_t namelen;
   static char portstring[8];
@@ -1338,7 +1352,9 @@ char *interactive_port(
  * settermraw - set terminal into "raw" mode
  */
 void settermraw(
+
   struct termios *ptio)
+
   {
 
   struct termios tio;
@@ -1375,7 +1391,9 @@ void settermraw(
  * when resumed, again set terminal to raw.
  */
 void stopme(
+
   pid_t p)  /* pid of 0 (process group) or just myself (writer) */
+
   {
   tcsetattr(0, TCSANOW, &oldtio); /* reset terminal */
 
@@ -1391,8 +1409,10 @@ void stopme(
  *      and writes that out to the stdout
  */
 int reader(
+
   int s, /* I - reading socket */
-  int d)        /* I - writing socket */
+  int d) /* I - writing socket */
+
   {
   char  buf[4096];
   int   c;
@@ -1460,8 +1480,10 @@ int reader(
  * data out to the rem socket
  */
 void writer(
+
   int s,  /* writing socket */
   int d)  /* reader socket */
+
   {
   char c;
   int i;
@@ -1597,7 +1619,9 @@ void writer(
  * getwinsize - get the current window size
  */
 int getwinsize(
+
   struct winsize *wsz)
+
   {
   if (ioctl(0, TIOCGWINSZ, wsz) < 0)
     {
@@ -1613,8 +1637,10 @@ int getwinsize(
  * send_winsize = send the current tty's window size
  */
 void send_winsize(
-  int sock,
+
+  int             sock,
   struct winsize *wsz)
+
   {
   char  buf[PBS_TERM_BUF_SZ];
 
@@ -1873,8 +1899,9 @@ void catchint(
 
 
 void x11handler(
+
   memmgr **mm,
-  int param_sock)
+  int      param_sock)
 
   {
 
@@ -1921,8 +1948,9 @@ void x11handler(
  */
 
 void interactive(
-    memmgr **mm,
-    job_data *client_attr)
+    
+  memmgr   **mm,
+  job_data  *client_attr)
 
   {
   int  amt;
@@ -3965,7 +3993,10 @@ void update_job_env_names(job_info *ji)
   }
 
 /* Process all config files options */
-void process_config_file(job_info *ji)
+void process_config_file(
+    
+  job_info *ji)
+
   {
   char config_buf[MAX_LINE_LEN];      /* Buffer holds config file */
   char *param_val;
@@ -4116,7 +4147,13 @@ void print_qsub_usage_exit(char *error_msg)
   exit(2);
   }
 
-void add_submit_args_to_job(memmgr **mm, job_data **job_attr, int argc, char **argv)
+void add_submit_args_to_job(
+    
+  memmgr   **mm,
+  job_data **job_attr,
+  int        argc,
+  char     **argv)
+
   {
   int alloc_len = 1; /* Trailing \0 */
   int argi = 0;
@@ -4146,8 +4183,10 @@ void add_submit_args_to_job(memmgr **mm, job_data **job_attr, int argc, char **a
   }
 
 void set_minwclimit(
-    memmgr **mm,
-    job_data **res_attr)
+    
+  memmgr   **mm,
+  job_data **res_attr)
+
   {
   job_data *tmp_job_info;
   char *ptr;
@@ -4175,36 +4214,39 @@ void set_minwclimit(
   }
 
 void add_variable_list(
-    job_info *ji,
-    char *var_name,
-    job_data *src_hash)
-  {
-    int total_len = 0;
-    int count = 0;
-    int pos = 0;
-    char *var_list = NULL;
-    job_data *en;
 
-    total_len = hash_strlen(ji->user_attr);
-    count = hash_count(ji->user_attr);
-    total_len += count*2;
-    var_list = memmgr_calloc(&ji->mm, 1, total_len);
-    for (en=src_hash; en != NULL; en=en->hh.next)
+  job_info *ji,
+  char     *var_name,
+  job_data *src_hash)
+
+  {
+  int       total_len = 0;
+  int       count = 0;
+  int       pos = 0;
+  char     *var_list = NULL;
+  job_data *en;
+
+  total_len = hash_strlen(ji->user_attr);
+  count = hash_count(ji->user_attr);
+  total_len += count*2;
+  var_list = memmgr_calloc(&ji->mm, 1, total_len);
+  for (en=src_hash; en != NULL; en=en->hh.next)
+    {
+    pos++;
+    strcat(var_list, en->name);
+    strcat(var_list, "=");
+    if (en->value != NULL)
       {
-      pos++;
-      strcat(var_list, en->name);
-      strcat(var_list, "=");
-      if (en->value != NULL)
-        {
-        strcat(var_list, en->value);
-        }
-      if (pos != count)
-        {
-        strcat(var_list, ",");
-        }
+      strcat(var_list, en->value);
       }
-    /* If the attribute ATTR_v already exists, this will overwrite it */
-    hash_add_or_exit(&ji->mm, &ji->job_attr, var_name, var_list, CMDLINE_DATA);
+    if (pos != count)
+      {
+      strcat(var_list, ",");
+      }
+    }
+
+  /* If the attribute ATTR_v already exists, this will overwrite it */
+  hash_add_or_exit(&ji->mm, &ji->job_attr, var_name, var_list, CMDLINE_DATA);
   }
 
 /** 
@@ -4213,9 +4255,11 @@ void add_variable_list(
  * @see process_opts() - child
  */
 void main_func(
+
   int    argc,  /* I */
   char **argv,  /* I */
   char **envp)  /* I */
+
   {
   int errflg;                         /* option error */
   char script[MAXPATHLEN + 1] = ""; /* name of script file */

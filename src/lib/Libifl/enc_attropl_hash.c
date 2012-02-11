@@ -115,19 +115,23 @@
 
 /* This whole method is a workaround until the server code is updated */
 int build_var_list(
-    memmgr **mm,
-    char **var_list,
-    job_data **attrs)
+
+  memmgr   **mm,
+  char     **var_list,
+  job_data **attrs)
+
   {
-  job_data *atr, *tmp;
-  int current_len = 0;
-  int name_len = 0;
-  int value_len = 0;
-  int item_count = 0;
-  int offset = 0;
-  char *tmp_var_list = NULL;
-  char *workdir_val = NULL;
-  int preexisting_var_list = FALSE;
+  job_data *atr; 
+  job_data *tmp;
+  int       current_len = 0;
+  int       name_len = 0;
+  int       value_len = 0;
+  int       item_count = 0;
+  int       offset = 0;
+  char     *tmp_var_list = NULL;
+  char     *workdir_val = NULL;
+  int       preexisting_var_list = FALSE;
+
   HASH_ITER(hh, *attrs, atr, tmp)
     {
     if (strncmp(atr->name, "pbs_o", 5) == 0)
@@ -177,7 +181,6 @@ int build_var_list(
       memcpy((*var_list) + current_len, atr->value, value_len);
       current_len += value_len;
       (*var_list)[current_len] = '\0';
-      item_count++;
       hash_del_item(mm, attrs, atr->name);
       }
     else if (strcmp(atr->name, ATTR_v) == 0)
@@ -217,17 +220,26 @@ int build_var_list(
     sprintf(tmp_var_list + offset, ",PBS_O_WORKDIR=%s", workdir_val);
     *var_list = tmp_var_list;
     }
-  return item_count;
-  }
+
+  return(item_count);
+  } /* END build_var_list() */
+
+
+
 
 int encode_DIS_attropl_hash_single(
-    int sock,
-    job_data *attrs,
-    int is_res)
+    
+  int       sock,
+  job_data *attrs,
+  int       is_res)
+
   {
-  int rc = 0;
-  unsigned int len, attr_len = 0;
-  job_data *atr, *tmp;
+  int           rc = 0;
+  unsigned int  len;
+  unsigned int  attr_len = 0;
+  job_data     *atr;
+  job_data     *tmp;
+
   if (is_res)
     attr_len = strlen(ATTR_l);
   /* An iterator requires access at a lower level that the wrapper
@@ -251,26 +263,29 @@ int encode_DIS_attropl_hash_single(
       break;
     if (is_res)
       {
-      if ((rc = diswst(sock, ATTR_l))         /* name */
-          || (rc = diswui(sock, 1))           /* resource name exists */
-          || (rc = diswst(sock, atr->name)))  /* resource name */
+      if ((rc = diswst(sock, ATTR_l)) ||      /* name */
+          (rc = diswui(sock, 1))      ||      /* resource name exists */
+          (rc = diswst(sock, atr->name)))     /* resource name */
       break;
       }
     else
       {
-      if ((rc = diswst(sock, atr->name))    /* name */
-          || (rc = diswui(sock, 0)))        /* no resource */
+      if ((rc = diswst(sock, atr->name)) || /* name */
+          (rc = diswui(sock, 0)))           /* no resource */
         break;
       }
 
     /* Value is always populated. "\0" == "" */
-    if ((rc = diswst(sock, atr->value))     /* value */
-        || (rc = diswui(sock, (unsigned int)atr->op_type))) /* op */
+    if ((rc = diswst(sock, atr->value)) ||               /* value */
+        (rc = diswui(sock, (unsigned int)atr->op_type))) /* op */
       break;
 
     }
   return rc;
   }
+
+
+
 
 int encode_DIS_attropl_hash(
 
@@ -280,11 +295,13 @@ int encode_DIS_attropl_hash(
   job_data *res_attr)
 
   {
-  unsigned int ct = 0, var_list_count = 0;
-  unsigned int len;
-  char *var_list = NULL;
-  int rc;
-  memmgr *var_mm;
+  unsigned int  ct = 0;
+  unsigned int  var_list_count = 0;
+  unsigned int  len;
+  char         *var_list = NULL;
+  int           rc;
+  memmgr       *var_mm;
+
   if ((rc = memmgr_init(&var_mm, 0)) == PBSE_NONE)
     {
     var_list_count = build_var_list(&var_mm, &var_list, &job_attr);
@@ -292,16 +309,6 @@ int encode_DIS_attropl_hash(
     ct += hash_count(res_attr);
     ct++; /* var_list */
     }
-
-/*  struct attropl *ps; */
-
-  /* count how many */
-
-/*  for (ps = pattropl;ps;ps = ps->next)
-    {
-    ++ct;
-    }
-    */
 
   if (rc != PBSE_NONE)
     {}
@@ -313,79 +320,18 @@ int encode_DIS_attropl_hash(
     {}
   else
     {
-/*    fprintf(stderr, "[%s]=[%s]\n", ATTR_v, var_list); */
     len = strlen(ATTR_v) + 1;
     len += strlen(var_list) + 1;
-    if ((rc = diswui(sock, len))                      /* attr length */
-          || (rc = diswst(sock, ATTR_v))              /* attr name */
-          || (rc = diswui(sock, 0))                   /* no resource */
-          || (rc = diswst(sock, var_list))            /* attr value */
-          || (rc = diswui(sock, (unsigned int)SET)))  /* attr op type */
+    if ((rc = diswui(sock, len))               ||  /* attr length */
+        (rc = diswst(sock, ATTR_v))            ||  /* attr name */
+        (rc = diswui(sock, 0))                 ||  /* no resource */
+        (rc = diswst(sock, var_list))          ||  /* attr value */
+        (rc = diswui(sock, (unsigned int)SET)))    /* attr op type */
       {}
     }
   memmgr_destroy(&var_mm);
-  return rc;
 
-/*  for (ps = pattropl;ps;ps = ps->next)
-    {
-    */
-
-    /* length of three strings */
-
-    /* Given the properties of a hashmap, it's not possible for the
-     * attribute to be missing a name */
-/*    if (ps->name == NULL)
-      {
-      // Continue if attribute has no name (CRI 2005-04-22).
-
-      continue;
-      }
-
-    name_len = strlen(atr->name) + 1;
-
-    if (atr->value != NULL)
-      name_len += strlen(atr->value) + 1;
-
-    if (ps->resource != NULL)
-      name_len += strlen(ps->resource) + 1;
-
-    if ((rc = diswui(sock, name_len)))
-      break;
-
-    if ((rc = diswst(sock, ps->name)))
-      break;
-
-    if (ps->resource != NULL)
-      {
-      // has a resource name
-
-      if ((rc = diswui(sock, 1)))
-        break;
-
-      if ((rc = diswst(sock, ps->resource)))
-        break;
-      }
-    else
-      {
-      if ((rc = diswui(sock, 0))) // no resource name 
-        break;
-      }
-    if (ps->value != NULL)
-      {
-      if ((rc = diswst(sock, ps->value)) ||
-          (rc = diswui(sock, (unsigned int)SET)))
-        break;
-      }
-    else
-      {
-      if ((rc = diswst(sock, "")) ||
-          (rc = diswui(sock, (unsigned int)SET)))
-        break;
-      }
-    }    // END for (ps)
-*/
-
-/*  return(rc); */
+  return(rc);
   }  /* END encode_DIS_attropl() */
 
 

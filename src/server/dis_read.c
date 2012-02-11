@@ -125,8 +125,6 @@ int dis_request_read(
   struct batch_request *request) /* server internal structure */
 
   {
-  char *id = "dis_request_read";
-
   int   proto_type;
   int   proto_ver;
   int   rc;  /* return code */
@@ -155,7 +153,7 @@ int dis_request_read(
             dis_emsg[rc],
             reqtype_to_txt(request->rq_type));
 
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buf);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
     return(PBSE_DISPROTO);
     }
@@ -166,7 +164,7 @@ int dis_request_read(
             proto_ver,
             PBS_BATCH_PROT_VER);
 
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buf);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
     return(PBSE_DISPROTO);
     }
@@ -175,7 +173,7 @@ int dis_request_read(
     {
     sprintf(log_buf, "invalid request type: %d", request->rq_type);
 
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buf);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
     return(PBSE_DISPROTO);
     }
@@ -188,7 +186,7 @@ int dis_request_read(
       reqtype_to_txt(request->rq_type),
       request->rq_user);
 
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, id, log_buf);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
   switch (request->rq_type)
@@ -397,7 +395,7 @@ int dis_request_read(
         request->rq_type,
         request->rq_user);
 
-      log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_REQUEST,id,log_buf);
+      log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
       rc = PBSE_UNKREQ;
 

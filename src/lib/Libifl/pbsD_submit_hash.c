@@ -96,6 +96,7 @@
 #include "u_hash_map_structs.h"
 
 int pbs_submit_hash(
+
   int             socket,
   memmgr        **mm,
   job_data       *job_attr,
@@ -105,8 +106,8 @@ int pbs_submit_hash(
   char           *extend,  /* (optional) */
   char          **return_jobid,
   char          **msg)
-  {
 
+  {
   int rc = PBSE_NONE;
   int tmp_size = 0;
 /*  struct attropl *pal; */

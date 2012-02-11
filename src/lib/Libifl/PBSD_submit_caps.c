@@ -540,15 +540,17 @@ char *PBSD_queuejob(
 
 
 int PBSD_QueueJob_hash(
+
   int             connect,     /* I */
   char           *jobid,       /* I */
   char           *destin,
-  memmgr         **mm,
+  memmgr        **mm,
   job_data       *job_attr,
   job_data       *res_attr,
   char           *extend,
   char          **job_id,
   char          **msg)
+
   {
   struct batch_reply *reply;
   int                 rc = PBSE_NONE;

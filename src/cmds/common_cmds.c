@@ -102,10 +102,12 @@ void set_env_opts(
  * return indicates success, failure will exit the run
  */
 void calloc_or_fail(
+
   memmgr **mm,            /* memory manager */
-  char **dest,
-  int alloc_size,
-  char *err_msg)
+  char   **dest,
+  int      alloc_size,
+  char    *err_msg)
+
   {
   *dest = (char *)memmgr_calloc(mm, 1, alloc_size);
   if (*dest == NULL)
@@ -122,12 +124,14 @@ void calloc_or_fail(
  * return 1 on success, 0 on failure
  */
 void parse_variable_list(
+
   memmgr   **mm,        /* memory manager */
   job_data **dest_hash, /* This is the dest hashmap for vars found */
   job_data  *user_env,  /* This is the source hashmap */
   int        var_type,  /* Type for vars not pulled from the source hash */
   int        op_type,   /* Op for vars not pulled from the source hash */
   char      *the_list)  /* name=value,name1=value1,etc to be parsed */
+
   {
   int alloc_size = 0;
   char *s = NULL;
