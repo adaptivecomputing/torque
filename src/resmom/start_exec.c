@@ -4478,6 +4478,10 @@ int start_process(
     {
     ipaddr = htonl(localaddr);
     }
+  else if (pjob->ji_radix > 1)
+    {
+    ipaddr = pjob->ji_sisters[0].sock_addr.sin_addr.s_addr;
+    }
   else
     {
     ipaddr = pjob->ji_hosts[0].sock_addr.sin_addr.s_addr;
@@ -8369,10 +8373,12 @@ int allocate_demux_sockets(
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer, "%s: stdout: %d  stderr: %d",
+    sprintf(log_buffer, "%s: stdout: %d:%d  stderr: %d:%d",
         id,
         socks[0],
-        socks[1]);
+        ports[0],
+        socks[1],
+        ports[1]);
 
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
     }

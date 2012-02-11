@@ -2575,6 +2575,10 @@ int im_join_job_as_sister(
         np->sock_addr.sin_port = htons(np->hn_port);
         np->sock_addr.sin_family = af_family;
         }
+
+      /* This is a leaf node in the job radix hierarchy. pjob->ji_radix needs to be set to non-zero
+         for later in tm_spawn calls. */
+      pjob->ji_radix = 2;
       }
     }
     
