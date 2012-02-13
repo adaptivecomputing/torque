@@ -123,20 +123,20 @@
 #define ATTR_submit_host "submit_host"
 #define ATTR_init_work_dir "init_work_dir"
 /* The following were part of the variable_list */
-#define ATTR_pbs_o_initdir          "pbs_o_initdir"
-#define ATTR_pbs_o_rootdir          "pbs_o_rootdir"
-#define ATTR_pbs_o_workdir          "pbs_o_workdir" /* same as init_work_dir */
-#define ATTR_pbs_o_host             "pbs_o_host" /* same as submit_host */
-#define ATTR_pbs_o_server           "pbs_o_server"
-#define ATTR_pbs_o_home             "pbs_o_home"
-#define ATTR_pbs_o_logname          "pbs_o_logname"
-#define ATTR_pbs_o_path             "pbs_o_path"
-#define ATTR_pbs_o_mail             "pbs_o_mail"
-#define ATTR_pbs_o_shell            "pbs_o_shell"
-#define ATTR_pbs_o_tz               "pbs_o_tz"
-#define ATTR_pbs_o_lang             "pbs_o_lang"
-#define ATTR_pbs_o_uid              "pbs_o_uid"
-#define ATTR_pbs_o_submit_filter    "pbs_o_submit_filter"
+#define ATTR_pbs_o_initdir          "PBS_O_INITDIR"
+#define ATTR_pbs_o_rootdir          "PBS_O_ROOTDIR"
+#define ATTR_pbs_o_workdir          "PBS_O_WORKDIR" /* same as init_work_dir */
+#define ATTR_pbs_o_host             "PBS_O_HOST" /* same as submit_host */
+#define ATTR_pbs_o_server           "PBS_O_SERVER"
+#define ATTR_pbs_o_home             "PBS_O_HOME"
+#define ATTR_pbs_o_logname          "PBS_O_LOGNAME"
+#define ATTR_pbs_o_path             "PBS_O_PATH"
+#define ATTR_pbs_o_mail             "PBS_O_MAIL"
+#define ATTR_pbs_o_shell            "PBS_O_SHELL"
+#define ATTR_pbs_o_tz               "PBS_O_TZ"
+#define ATTR_pbs_o_lang             "PBS_O_LANG"
+#define ATTR_pbs_o_uid              "PBS_O_UID"
+#define ATTR_pbs_o_submit_filter    "PBS_O_SUBMIT_FILTER"
 
 /* additional job and general attribute names */
 

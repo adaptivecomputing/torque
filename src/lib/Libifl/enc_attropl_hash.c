@@ -134,7 +134,8 @@ int build_var_list(
 
   HASH_ITER(hh, *attrs, atr, tmp)
     {
-    if (strncmp(atr->name, "pbs_o", 5) == 0)
+    if ((strncmp(atr->name, "pbs_o", 5) == 0)
+        || (strncmp(atr->name, "PBS_O", 5) == 0))
       {
 /*       if (*var_list != NULL) */
 /*         len = strlen(*var_list); */
@@ -248,7 +249,8 @@ int encode_DIS_attropl_hash_single(
     {
     /* Data pattern:
      * len of (name)(0 OR 1resource)(value)(op) */
-    if (strncmp(atr->name, "pbs_o", 5) == 0)
+    if ((strncmp(atr->name, "pbs_o", 5) == 0)
+        || (strncmp(atr->name, "PBS_O", 5) == 0))
       continue;
     if (is_res)
       {
