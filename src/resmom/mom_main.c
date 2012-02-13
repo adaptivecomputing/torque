@@ -141,6 +141,7 @@ char         mom_short_name[PBS_MAXHOSTNAME + 1];
 int          num_var_env;
 int          received_cluster_addrs;
 time_t       requested_cluster_addrs;
+time_t       first_update_time = 0;
 char        *path_epilog;
 char        *path_epilogp;
 char        *path_epiloguser;
@@ -6484,7 +6485,7 @@ void parse_command_line(
 
   errflg = 0;
 
-  while ((c = getopt(argc, argv, "a:A:c:C:d:DhH:l:L:mM:pPqrR:s:S:vx-:")) != -1)
+  while ((c = getopt(argc, argv, "a:A:c:C:d:DhH:l:L:mM:pPqrR:s:S:vwx-:")) != -1)
     {
     switch (c)
       {
@@ -6719,6 +6720,14 @@ void parse_command_line(
                 PACKAGE_VERSION);
 
         exit(0);
+
+        break;
+
+      case 'w':
+
+        /* wait 10 minutes or until you get the mom hierarchy file from the 
+         * server to send your first update */
+        first_update_time = time(NULL) + 600;
 
         break;
 

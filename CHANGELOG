@@ -41,6 +41,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the hierarchy file. If both are trying to do this at once, it can cause a lot of 
       traffic. -c tells pbs_server to wait 10 minutes to attempt to contact moms that 
       haven't contacted it, reducing this traffic.
+  e - Added mom parameter -w to reduce start times. This parameter wait to send it's 
+      first update until the server sends it the mom hierarchy file, or until 10 
+      minutes have passed. This should reduce large cluster startup times.
 
 3.0.5
   b - fix for writing too much data when job_script is saved to job log.

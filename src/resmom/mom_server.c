@@ -291,6 +291,7 @@ extern int                 updates_waiting_to_send;
 time_t                     LastUpdateAttempt;
 extern int                 received_cluster_addrs;
 extern time_t              requested_cluster_addrs;
+extern time_t              first_update_time;
 extern int                 UpdateFailCount;
 extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
@@ -3159,6 +3160,9 @@ int send_update()
   
   {
   int mod_value;
+
+  if (first_update_time > time_now)
+    return(FALSE);
   
   if (time_now < (LastServerUpdateTime + ServerStatUpdateInterval))
     return(FALSE);
@@ -4072,6 +4076,9 @@ int read_cluster_addresses(
     send_update_within_ten();
     
     sort_paths();
+ 
+    /* tell the mom to go ahead and send an update to pbs_server */
+    first_update_time = 0;
     }
 
   return(PBSE_NONE);
