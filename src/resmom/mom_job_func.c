@@ -183,7 +183,7 @@ extern int thread_unlink_calls;
 
 extern void MOMCheckRestart(void);
 extern int delete_cpuset(char *);
-void       send_update_within_ten();
+void       send_update_soon();
 
 
 extern int multi_mom;
@@ -794,7 +794,7 @@ void job_purge(
   if (((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0) &&
       (pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL))
     {
-    send_update_within_ten();
+    send_update_soon();
     }
 #endif  /* NVIDIA_GPUS */
 

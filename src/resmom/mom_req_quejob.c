@@ -117,7 +117,7 @@ extern int  svr_authorize_jobreq(struct batch_request *, job *);
 extern int  svr_chkque(job *, pbs_queue *, char *, int, char *);
 extern void check_state(int);
 extern void mom_server_all_update_stat();
-void        send_update_within_ten();
+void        send_update_soon();
 extern int  multi_mom;
 extern unsigned int pbs_rm_port;
 
@@ -1074,7 +1074,7 @@ void req_commit(
   if (((pj->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0) &&
       (pj->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL))
     {
-    send_update_within_ten();
+    send_update_soon();
     }
 #endif  /* NVIDIA_GPUS */
 

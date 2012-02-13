@@ -9005,13 +9005,14 @@ void fork_demux(
 
 
 
-void send_update_within_ten()
+void send_update_soon()
 
   {
   int sindex;
+  int amount_of_time = ServerStatUpdateInterval / 3;
   
-  /* force an update within 10 seconds, or now if it has been at least 10 seconds */
-  if (time_now - LastServerUpdateTime > 10)
+  /* force an update reasonably soon */
+  if (time_now - LastServerUpdateTime > amount_of_time)
     {
     LastServerUpdateTime = 0;
     
@@ -9022,7 +9023,7 @@ void send_update_within_ten()
     }
   else
     {
-    time_t temp = time_now - ServerStatUpdateInterval + 10;
+    time_t temp = time_now - ServerStatUpdateInterval + amount_of_time;
     
     if (temp < LastServerUpdateTime)
       {
@@ -9034,7 +9035,7 @@ void send_update_within_ten()
         }
       }
     }
-  } /* END send_update_within_ten() */
+  } /* END send_update_soon() */
 
 
 
@@ -9174,12 +9175,12 @@ int read_status_strings(
         {
         add_hash(received_table, index, rn->hostname);
         
-        send_update_within_ten();
+        send_update_soon();
         }
       }
     else if (updates_waiting_to_send >= maxupdatesbeforesending)
       {
-      send_update_within_ten();
+      send_update_soon();
       }
     }
   

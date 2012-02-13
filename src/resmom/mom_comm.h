@@ -135,7 +135,7 @@ void demux_wait(int sig);
 
 void fork_demux(job *pjob);
 
-void send_update_within_ten();
+void send_update_soon();
 
 int read_status_strings(int fds, int version);
 

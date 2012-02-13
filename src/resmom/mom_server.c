@@ -306,7 +306,7 @@ extern struct rm_attribute *momgetattr(char *str);
 extern char *conf_res(char *resline, struct rm_attribute *attr);
 extern char *dependent(char *res, struct rm_attribute *attr);
 extern char *reqgres(struct rm_attribute *);
-extern void send_update_within_ten();
+extern void send_update_soon();
 
 
 #ifdef NVIDIA_GPUS
@@ -4073,7 +4073,7 @@ int read_cluster_addresses(
   else
     {
     received_cluster_addrs = TRUE;
-    send_update_within_ten();
+    send_update_soon();
     
     sort_paths();
  
@@ -4217,7 +4217,7 @@ void mom_is_request(
       hello_count++;
  
       /* FORCE immediate server update */
-      send_update_within_ten();
+      send_update_soon();
  
       pass_along_hellos(hello_count);
 

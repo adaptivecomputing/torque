@@ -1284,7 +1284,7 @@ void req_gpuctrl_mom(
 
     if (gpumode != -1)
       {
-      send_update_within_ten();
+      send_update_soon();
       }
     }
   else
