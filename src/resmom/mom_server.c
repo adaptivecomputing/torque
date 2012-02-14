@@ -2070,15 +2070,21 @@ int setup_gpus_for_job(
   /* traverse the gpu_str to see what gpus we have assigned */
 
   strcpy(tmp_str, mom_host);
-  
-  /* might be fully qualified host name */
-  ptr = strchr(tmp_str, '.');
-  if (ptr != NULL)
-    ptr[0] = NULL;
-
   strcat(tmp_str, "-gpu/");
 
   ptr = strstr(gpu_str, tmp_str);
+  
+  if (ptr == NULL)
+    {
+    /* might be fully qualified host name */
+    strcpy(tmp_str, mom_host);
+    ptr = strchr(tmp_str, '.');
+    if (ptr != NULL)
+      ptr[0] = NULL;
+
+    strcat(tmp_str, "-gpu/");
+    ptr = strstr(gpu_str, tmp_str);
+    }
 
   while(ptr != NULL)
     {
