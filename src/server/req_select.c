@@ -287,20 +287,21 @@ static attribute_def state_sel =
  * @see req_statjob() - peer - process qstat request
  */
 
-void req_selectjobs(
+void *req_selectjobs(
 
-  struct batch_request *preq)
+  void *vp)
 
   {
-  int      bad = 0;
+  struct batch_request *preq = (struct batch_request *)vp;
+  int                   bad = 0;
 
-  struct stat_cntl *cntl;
-  svrattrl         *plist;
-  pbs_queue        *pque = NULL;
-  int               rc;
-  long              poll_jobs = 0;
+  struct stat_cntl     *cntl;
+  svrattrl             *plist;
+  pbs_queue            *pque = NULL;
+  int                   rc;
+  long                  poll_jobs = 0;
 
-  struct select_list *selistp;
+  struct select_list   *selistp;
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_select);
 
@@ -314,7 +315,7 @@ void req_selectjobs(
 
     free_sellist(selistp);
 
-    return;
+    return(NULL);
     }
 
   if ((cntl = (struct stat_cntl *)calloc(1, sizeof(struct stat_cntl))) == NULL)
@@ -325,7 +326,7 @@ void req_selectjobs(
 
     req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 
-    return;
+    return(NULL);
     }
 
   if (pque != NULL)
@@ -363,7 +364,7 @@ void req_selectjobs(
   if (pque != NULL)
     unlock_queue(pque, "req_selectjobs", NULL, LOGLEVEL);
 
-  return;
+  return(NULL);
   }  /* END req_selectjobs() */
 
 

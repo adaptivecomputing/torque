@@ -168,23 +168,24 @@ extern int   svr_chk_owner(struct batch_request *, job *);
  * to be graceful.
  */
 
-void req_register(
+void *req_register(
 
-  struct batch_request *preq)  /* I */
+  void *vp)  /* I */
 
   {
-  int                made;
-  attribute         *pattr;
+  struct batch_request *preq = (struct batch_request *)vp;
+  int                   made;
+  attribute            *pattr;
 
-  struct depend     *pdep;
+  struct depend        *pdep;
 
-  struct depend_job *pdj;
-  job               *pjob;
-  char              *ps;
-  int                rc = 0;
-  int                revtype;
-  int                type;
-  char               log_buf[LOCAL_LOG_BUF_SIZE];
+  struct depend_job    *pdj;
+  job                  *pjob;
+  char                 *ps;
+  int                   rc = 0;
+  int                   revtype;
+  int                   type;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /*  make sure request is from a server */
 
@@ -192,7 +193,7 @@ void req_register(
     {
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
-    return;
+    return(NULL);
     }
 
   /* find the "parent" job specified in the request */
@@ -222,7 +223,7 @@ void req_register(
       reply_ack(preq);
       }
 
-    return;
+    return(NULL);
     }
 
   type = preq->rq_ind.rq_register.rq_dependtype;
@@ -254,7 +255,7 @@ void req_register(
 
     pthread_mutex_unlock(pjob->ji_mutex);
     
-    return;
+    return(NULL);
     }
 
   if (LOGLEVEL >= 8)
@@ -605,7 +606,7 @@ void req_register(
   if (pjob != NULL)
     pthread_mutex_unlock(pjob->ji_mutex);
 
-  return;
+  return(NULL);
   }  /* END req_register() */
 
 
@@ -616,12 +617,12 @@ void req_register(
  * registers a dependency on an array
  */
 
-void req_registerarray(
+void *req_registerarray(
 
-  struct batch_request *preq)  /* I */
+  void *vp)  /* I */
 
   {
-  char        id[] = "req_registerarray";
+  struct batch_request *preq = (struct batch_request *)vp;
   char        log_buf[LOCAL_LOG_BUF_SIZE];
   job_array  *pa;
   char        array_name[PBS_MAXSVRJOBID + 1];
@@ -637,7 +638,7 @@ void req_registerarray(
     {
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
-    return;
+    return(NULL);
     }
 
   strcpy(array_name,preq->rq_ind.rq_register.rq_parent);
@@ -712,7 +713,7 @@ void req_registerarray(
       reply_ack(preq);
       }
 
-    return;
+    return(NULL);
     }
 
   type = preq->rq_ind.rq_register.rq_dependtype;
@@ -720,16 +721,16 @@ void req_registerarray(
   if (type < JOB_DEPEND_TYPE_AFTERSTARTARRAY)
     {
     pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocked ai_mutex", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
     req_reject(PBSE_IVALREQ,0,preq,NULL,
       "Arrays may only be given array dependencies");
 
-    return;
+    return(NULL);
     }
 
   /* register the dependency on the array */
@@ -759,12 +760,13 @@ void req_registerarray(
     } /* END switch (preq->rq_ind.rq_register.rq_op */
 
   pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: unlocked ai_mutex", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
-      }
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
+  return(NULL);
   } /* END req_registerarray() */
 
 

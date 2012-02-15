@@ -114,7 +114,6 @@
 #include "resmon.h"
 #include "net_connect.h"
 #include "utils.h"
-#include "../server/reply_send.h" /* reply_send_mom */
 
 #ifdef _CRAY
 #include <sys/category.h>
@@ -125,6 +124,8 @@
 
 extern struct var_table vtable;      /* see start_exec.c */
 extern char           **environ;
+
+int reply_send_mom(struct batch_request *request);
 
 extern int InitUserEnv(
 

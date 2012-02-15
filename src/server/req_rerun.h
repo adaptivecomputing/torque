@@ -6,6 +6,6 @@
 
 /* static void post_rerun(struct work_task *pwt); */
 
-void req_rerunjob(struct batch_request *preq);
+void *req_rerunjob(void *preq);
 
 #endif /* _REQ_RERUN_H */

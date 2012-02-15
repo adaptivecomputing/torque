@@ -116,24 +116,25 @@ resource_t next_resource_tag;
  * Currently only recognizes "nodes"
  */
 
-void req_rescq(
+void *req_rescq(
     
-  struct batch_request *preq)
+  void *vp)
 
   {
-  int i;
-  char *pn;
-  char *pv;
-  int rc;
+  struct batch_request *preq = (struct batch_request *)vp;
+  int                   i;
+  char                 *pn;
+  char                 *pv;
+  int                   rc;
 
-  struct brp_rescq *preply;
+  struct brp_rescq     *preply;
 
-  struct rq_rescq *prescq = &preq->rq_ind.rq_rescq;
+  struct rq_rescq      *prescq = &preq->rq_ind.rq_rescq;
 
   if (prescq->rq_num < 1)
     {
     req_reject(RM_ERR_BADPARAM, 0, preq, NULL, NULL);
-    return;
+    return(NULL);
     }
 
   preply = &preq->rq_reply.brp_un.brp_rescq;
@@ -150,7 +151,7 @@ void req_rescq(
       (preply->brq_resvd == 0) || (preply->brq_down  == 0))
     {
     req_reject(PBSE_SYSTEM, errno, preq, NULL, NULL);
-    return;
+    return(NULL);
     }
 
 
@@ -183,19 +184,24 @@ void req_rescq(
                            preply->brq_down + i)) != 0)
         {
         req_reject(rc, 0, preq, NULL, NULL);
-        return;
+        return(NULL);
         }
       }
     else
       {
       req_reject(RM_ERR_BADPARAM, 0, preq, NULL, NULL);
-      return;
+      return(NULL);
       }
 
     }
 
   reply_send_svr(preq);
-  }
+
+  return(NULL);
+  } /* END req_rescq() */
+
+
+
 
 /*
  * req_rescreserve - Resource reserve
@@ -203,31 +209,32 @@ void req_rescq(
  * Reserve a set of resources (only "nodes" for now)
  */
 
-void req_rescreserve(
+void *req_rescreserve(
     
-  struct batch_request *preq)
+  void *vp)
 
   {
-  int i;
-  int freeold = 0;
+  struct batch_request *preq = (struct batch_request *)vp;
+  int                   i;
+  int                   freeold = 0;
 
-  struct rq_rescq *prescq = &preq->rq_ind.rq_rescq;
-  int     part = 0;
-  char   *pn;
-  char   *pv;
-  int     rc;
-  resource_t tag;
+  struct rq_rescq      *prescq = &preq->rq_ind.rq_rescq;
+  int                   part = 0;
+  char                 *pn;
+  char                 *pv;
+  int                   rc;
+  resource_t            tag;
 
   if ((preq->rq_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)) == 0)
     {
     req_reject(PBSE_PERM, 0, preq, NULL, NULL);
-    return;
+    return(NULL);
     }
 
   if (prescq->rq_num < 1)
     {
     req_reject(RM_ERR_BADPARAM, 0, preq, NULL, NULL);
-    return;
+    return(NULL);
     }
 
   tag = prescq->rq_rhandle;
@@ -272,7 +279,7 @@ void req_rescreserve(
       if (rc < 0)
         {
         req_reject(rc, 0, preq, NULL, NULL);
-        return;
+        return(NULL);
 
         }
       else if (rc == 0)
@@ -283,7 +290,7 @@ void req_rescreserve(
     else
       {
       req_reject(PBSE_RMUNKNOWN, 0, preq, NULL, NULL);
-      return;
+      return(NULL);
       }
     }
 
@@ -295,25 +302,33 @@ void req_rescreserve(
   preq->rq_reply.brp_auxcode = tag;
 
   reply_send_svr(preq);
-  }
+
+  return(NULL);
+  } /* END req_rescreserve() */
+
+
+
 
 /*
  * req_rescfree - Free a reserved set of resources
  */
 
-void req_rescfree(
+void *req_rescfree(
     
-  struct batch_request *preq)
+  void *vp)
 
   {
+  struct batch_request *preq = (struct batch_request *)vp;
   if ((preq->rq_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)) == 0)
     {
     req_reject(PBSE_PERM, 0, preq, NULL, NULL);
-    return;
+    return(NULL);
     }
 
   node_unreserve(preq->rq_ind.rq_rescq.rq_rhandle);
 
   reply_ack(preq);
-  }
+
+  return(NULL);
+  } /* END req_rescfree() */
 

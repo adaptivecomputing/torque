@@ -83,6 +83,7 @@
 #include "portability.h"
 #include <errno.h>
 #include <pthread.h>
+#include <arpa/inet.h>
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"

@@ -188,16 +188,16 @@ void *req_orderjob(void *preq);
 void *req_modifyarray(void *preq);
 void *req_modifyjob(void *preq);
 
-void req_track(struct batch_request *preq);
-void req_rescreserve(struct batch_request *preq);
-void req_rescfree(struct batch_request *preq);
+void *req_track(void *preq);
+void *req_rescreserve(void *preq);
+void *req_rescfree(void *preq);
 
 
-void req_shutdown(struct batch_request *preq);
-void req_signaljob(struct batch_request *preq);
-void req_mvjobfile(struct batch_request *preq);
-void req_checkpointjob(struct batch_request *preq);
-void req_messagejob(struct batch_request *preq);
+void  req_shutdown(struct batch_request *preq);
+void *req_signaljob(void *preq);
+void *req_mvjobfile(void *preq);
+void *req_checkpointjob(void *preq);
+void *req_messagejob(void *preq);
 
 /* END request processing prototypes */
 
@@ -754,15 +754,15 @@ void dispatch_request(
 
     case PBS_BATCH_HoldJob:
       if (is_array(request->rq_ind.rq_hold.rq_orig.rq_objname))
-        enqueue_threadpool_request(req_holdarray,request);
+        enqueue_threadpool_request(req_holdarray, request);
       else
-        enqueue_threadpool_request(req_holdjob,request);
+        enqueue_threadpool_request(req_holdjob, request);
 
       break;
 
     case PBS_BATCH_CheckpointJob:
 
-      req_checkpointjob(request);
+      enqueue_threadpool_request(req_checkpointjob, request);
 
       break;
 
@@ -774,13 +774,13 @@ void dispatch_request(
 
     case PBS_BATCH_Manager:
 
-      enqueue_threadpool_request(req_manager,request);
+      enqueue_threadpool_request(req_manager, request);
 
       break;
 
     case PBS_BATCH_MessJob:
 
-      req_messagejob(request);
+      enqueue_threadpool_request(req_messagejob, request);
 
       break;
 
@@ -788,54 +788,54 @@ void dispatch_request(
 
     case PBS_BATCH_ModifyJob:
       if (is_array(request->rq_ind.rq_delete.rq_objname))
-        enqueue_threadpool_request(req_modifyarray,request);
+        enqueue_threadpool_request(req_modifyarray, request);
       else
-        enqueue_threadpool_request(req_modifyjob,request);
+        enqueue_threadpool_request(req_modifyjob, request);
 
       break;
 
     case PBS_BATCH_Rerun:
 
-      req_rerunjob(request);
+      enqueue_threadpool_request(req_rerunjob, request);
 
       break;
 
     case PBS_BATCH_MoveJob:
 
-      enqueue_threadpool_request(req_movejob,request);
+      enqueue_threadpool_request(req_movejob, request);
 
       break;
 
     case PBS_BATCH_OrderJob:
 
-      enqueue_threadpool_request(req_orderjob,request);
+      enqueue_threadpool_request(req_orderjob, request);
 
       break;
 
     case PBS_BATCH_Rescq:
 
-      req_rescq(request);
+      enqueue_threadpool_request(req_rescq, request);
 
       break;
 
     case PBS_BATCH_ReserveResc:
 
-      req_rescreserve(request);
+      enqueue_threadpool_request(req_rescreserve, request);
 
       break;
 
     case PBS_BATCH_ReleaseResc:
 
-      req_rescfree(request);
+      enqueue_threadpool_request(req_rescfree, request);
 
       break;
 
     case PBS_BATCH_ReleaseJob:
 
       if (is_array(request->rq_ind.rq_delete.rq_objname))
-        enqueue_threadpool_request(req_releasearray,request);
+        enqueue_threadpool_request(req_releasearray, request);
       else
-        enqueue_threadpool_request(req_releasejob,request);
+        enqueue_threadpool_request(req_releasejob, request);
 
       break;
 
@@ -843,7 +843,7 @@ void dispatch_request(
 
     case PBS_BATCH_AsyrunJob:
 
-      enqueue_threadpool_request(req_runjob,request);
+      enqueue_threadpool_request(req_runjob, request);
 
       break;
 
@@ -854,9 +854,9 @@ void dispatch_request(
       /* handle special 'truncated' keyword */
 
       if (!strncasecmp(request->rq_ind.rq_status.rq_id, "truncated", strlen("truncated")))
-        enqueue_threadpool_request(req_stat_job,request);
-      else
-        req_selectjobs(request);
+        enqueue_threadpool_request(req_stat_job, request);
+      else 
+        enqueue_threadpool_request(req_selectjobs, request);
 
       break;
 
@@ -870,7 +870,7 @@ void dispatch_request(
 
     case PBS_BATCH_AsySignalJob:
 
-      req_signaljob(request);
+      enqueue_threadpool_request(req_signaljob, request);
 
       break;
 
@@ -882,19 +882,19 @@ void dispatch_request(
 
     case PBS_BATCH_MvJobFile:
 
-      req_mvjobfile(request);
+      enqueue_threadpool_request(req_mvjobfile, request);
 
       break;
 
     case PBS_BATCH_StatusQue:
 
-      enqueue_threadpool_request(req_stat_que,request);
+      enqueue_threadpool_request(req_stat_que, request);
 
       break;
 
     case PBS_BATCH_StatusNode:
       
-      enqueue_threadpool_request(req_stat_node,request);
+      enqueue_threadpool_request(req_stat_node, request);
 
       break;
 
@@ -908,7 +908,7 @@ void dispatch_request(
 
     case PBS_BATCH_TrackJob:
 
-      req_track(request);
+      enqueue_threadpool_request(req_track, request);
 
       break;
 
@@ -916,11 +916,11 @@ void dispatch_request(
 
       if (is_array(request->rq_ind.rq_register.rq_parent))
         {
-        req_registerarray(request);
+        enqueue_threadpool_request(req_registerarray, request);
         }
       else
         {
-        req_register(request);
+        enqueue_threadpool_request(req_register, request);
         }
 
       break;
@@ -928,9 +928,7 @@ void dispatch_request(
     case PBS_BATCH_AuthenUser:
 
       /* determine if user is valid */
-
-/*       req_authenuser(request); */
-      enqueue_threadpool_request(req_authenuser,request); 
+      enqueue_threadpool_request(req_authenuser, request); 
 
       break;
 
@@ -940,7 +938,7 @@ void dispatch_request(
 
     case PBS_BATCH_JobObit:
 
-      enqueue_threadpool_request(req_jobobit,request);
+      enqueue_threadpool_request(req_jobobit, request);
 
       break;
 

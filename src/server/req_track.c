@@ -120,22 +120,20 @@ extern int           LOGLEVEL;
  * req_track - record job tracking information
  */
 
-void req_track(
+void *req_track(
 
-  struct batch_request *preq)
+  void *vp)
 
   {
+  struct batch_request *preq = (struct batch_request *)vp;
+  struct tracking      *empty = (struct tracking *)0;
+  int                   i;
+  int                   need;
+  time_t                time_now = time(NULL);
 
-  struct tracking *empty = (struct tracking *)0;
-  int    i;
-  int    need;
-  time_t time_now = time(NULL);
-
-  struct tracking *new;
-
-  struct tracking *ptk;
-
-  struct rq_track *prqt;
+  struct tracking      *new;
+  struct tracking      *ptk;
+  struct rq_track      *prqt;
 
   /*  make sure request is from a server */
 
@@ -143,7 +141,7 @@ void req_track(
     {
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
-    return;
+    return(NULL);
     }
 
   /* attempt to locate tracking record for this job    */
@@ -181,7 +179,7 @@ void req_track(
 
         reply_ack(preq);
 
-        return;
+        return(NULL);
         }
       }
     else if (empty == NULL)
@@ -212,7 +210,7 @@ void req_track(
 
         req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 
-        return;
+        return(NULL);
         }
 
       memcpy(new, server.sv_track, server.sv_tracksize);
@@ -247,8 +245,8 @@ void req_track(
 
   reply_ack(preq);
 
-  return;
-  }
+  return(NULL);
+  } /* END req_track() */
 
 
 

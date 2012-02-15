@@ -4007,19 +4007,25 @@ int read_cluster_addresses(
   int version)
 
   {
-  int   rc;
-  int   level = -1;
-  int   path_index  = -1;
-  int   path_complete = FALSE;
-  int   something_added;
-  char *str;
+  int             rc;
+  int             level = -1;
+  int             path_index  = -1;
+  int             path_complete = FALSE;
+  int             something_added;
+  char           *str;
+  char            okclients_list[MAXLINE * 2];
+  char           *list_ptr = okclients_list;
+  dynamic_string *hierarchy_file;
+  long            list_size = sizeof(okclients_list);
+  long            list_len = 0;
 
   if (mh != NULL)
     free(mh);
 
   mh = initialize_mom_hierarchy();
 
-  /* NYI: fix this so that we don't add the level that we are on */
+  hierarchy_file = get_dynamic_string(-1, "\n");
+
   while (((str = disrst(stream, &rc)) != NULL) &&
          (rc == DIS_SUCCESS))
     {
@@ -4029,9 +4035,12 @@ int read_cluster_addresses(
       path_complete = FALSE;
       something_added = FALSE;
       level = -1;
+
+      append_dynamic_string(hierarchy_file, "<path>\n");
       }
     else if (!strcmp(str, "<sl>"))
       {
+      append_dynamic_string(hierarchy_file, "  <level>");
       level++;
       }
     else if (!strcmp(str, "</sp>"))
@@ -4041,16 +4050,21 @@ int read_cluster_addresses(
         /* we were not in the last path, so delete it */
         remove_last_thing(mh->paths);
         path_index--;
+        delete_last_word_from_dynamic_string(hierarchy_file);
         }
       else if (something_added == FALSE)
         {
         /* if we're on the first level of the path, we didn't record anything 
          * and we need to decrement the path_index */
         path_index--;
+        delete_last_word_from_dynamic_string(hierarchy_file);
         }
+      else
+        append_dynamic_string(hierarchy_file, "</path>\n");
       }
     else if (!strcmp(str, "</sl>"))
       {
+      append_dynamic_string(hierarchy_file, "  </level>\n");
       /* NO-OP */
       }
     else if (!strcmp(str, IS_EOL_MESSAGE))
@@ -4061,6 +4075,7 @@ int read_cluster_addresses(
     else
       {
       /* receiving a level */
+      append_dynamic_string(hierarchy_file, str);
       process_level_string(str, path_index, level, &path_complete, &something_added);
       }
 
@@ -4082,10 +4097,20 @@ int read_cluster_addresses(
     send_update_soon();
     
     sort_paths();
+
+    /* log the hierrarchy */
+    okclients_list[0] = '\0';
+    AVL_list(okclients, &list_ptr, &list_len, &list_size);
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Successfully received the mom hiearchy file. My okclients list is '%s', and the hierarchy file is '%s'",
+      okclients_list, hierarchy_file->str);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
  
     /* tell the mom to go ahead and send an update to pbs_server */
     first_update_time = 0;
     }
+
+  free_dynamic_string(hierarchy_file);
 
   return(PBSE_NONE);
   } /* END read_cluster_addresses() */

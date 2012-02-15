@@ -302,20 +302,21 @@ void *req_holdjob(
  *
  */
 
-void req_checkpointjob(
+void *req_checkpointjob(
 
-  struct batch_request *preq)
+  void *vp)
 
   {
-  job       *pjob;
-  int        rc;
-  attribute *pattr;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  struct batch_request *preq = (struct batch_request *)vp;
+  job                  *pjob;
+  int                   rc;
+  attribute            *pattr;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
   struct batch_request *dup_req = NULL;
 
   if ((pjob = chk_job_request(preq->rq_ind.rq_manager.rq_objname, preq)) == NULL)
     {
-    return;
+    return(NULL);
     }
 
   pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
@@ -360,7 +361,11 @@ void req_checkpointjob(
 
   if (pjob != NULL)
     pthread_mutex_unlock(pjob->ji_mutex);
+
+  return(NULL);
   }  /* END req_checkpointjob() */
+
+
 
 
 /*

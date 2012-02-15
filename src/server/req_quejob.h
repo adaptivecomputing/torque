@@ -12,9 +12,9 @@ void *req_quejob(void *vp);
 
 void *req_jobcredential(void *vp);
 
-void req_jobscript(struct batch_request *preq);
+void  req_jobscript(struct batch_request *preq);
 
-void req_mvjobfile(struct batch_request *preq);
+void *req_mvjobfile(void *preq);
 
 void req_rdytocommit(struct batch_request *preq);
 

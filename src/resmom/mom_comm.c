@@ -9180,6 +9180,14 @@ int read_status_strings(
       }
     else if (updates_waiting_to_send >= maxupdatesbeforesending)
       {
+      if (LOGLEVEL >= 3)
+        {
+        snprintf(log_buffer, sizeof(log_buffer),
+          "Forcing update because I have received %d updates", 
+          updates_waiting_to_send);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
+        }
+
       send_update_soon();
       }
     }

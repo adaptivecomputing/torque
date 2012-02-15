@@ -6,10 +6,8 @@
  * misc server function prototypes
  */
 
-#include "../server/req_holdjob.h"
-/* extern int   chk_hold_priv(long hold, int priv); */
-#include "../server/svr_jobfunc.h"
-/* extern void  get_jobowner(char *from, char *to); */
+extern int   chk_hold_priv(long hold, int priv);
+extern void  get_jobowner(char *from, char *to); 
 extern char *parse_servername(char *, unsigned int *);
 extern void  process_Areply(int);
 extern void  *process_Dreply(void *);
@@ -57,9 +55,9 @@ extern int   svr_connect(pbs_net_t, unsigned int, int *, struct pbsnode *, void 
 
 #ifdef WORK_TASK_H
 extern void  release_req(struct work_task *);
-/*#ifdef BATCH_REQUEST_H*/
+#ifdef BATCH_REQUEST_H
 extern int   issue_Drequest(int, struct batch_request *, void (*)(), struct work_task **);
-/*#endif*/ /* BATCH_REQUEST_H */
+#endif /* BATCH_REQUEST_H */
 #endif /* WORK_TASK_H */
 
 

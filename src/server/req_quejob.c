@@ -1616,15 +1616,16 @@ void req_jobscript(
  * within the spool directory.
  */
 
-void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this routine */
+void *req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this routine */
 
-  struct batch_request *preq) /* ptr to the decoded request   */
+  void *vp) /* ptr to the decoded request   */
 
   {
-  int   fds;
-  char  namebuf[MAXPATHLEN];
-  job  *pj;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  struct batch_request *preq = (struct batch_request *)vp;
+  int                   fds;
+  char                  namebuf[MAXPATHLEN];
+  job                  *pj;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   pj = locate_new_job(preq->rq_conn, NULL);
 
@@ -1643,7 +1644,7 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
     if (pj != NULL)
       pthread_mutex_unlock(pj->ji_mutex);
 
-    return;
+    return(NULL);
     }
 
   snprintf(namebuf, sizeof(namebuf), "%s%s", path_spool, pj->ji_qs.ji_fileprefix);
@@ -1677,7 +1678,7 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
 
       pthread_mutex_unlock(pj->ji_mutex);
 
-      return;
+      return(NULL);
 
       /*NOTREACHED*/
 
@@ -1700,7 +1701,7 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
 
     pthread_mutex_unlock(pj->ji_mutex);
 
-    return;
+    return(NULL);
     }
 
   if (write(
@@ -1716,7 +1717,7 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
 
     pthread_mutex_unlock(pj->ji_mutex);
 
-    return;
+    return(NULL);
     }
 
   close(fds);
@@ -1739,7 +1740,7 @@ void req_mvjobfile(  /* NOTE:  routine for server only - mom code follows this r
 
   pthread_mutex_unlock(pj->ji_mutex);
 
-  return;
+  return(NULL);
   }  /* END req_mvjobfile() */
 
 

@@ -164,7 +164,7 @@ int insert_into_recycler(
   int              rc;
   pthread_mutex_t *tmp = pjob->ji_mutex;
 
-  memset(pjob,0,sizeof(job));
+  memset(pjob, 0, sizeof(job));
   pjob->ji_mutex = tmp;
 
   pthread_mutex_lock(recycler.rc_mutex);

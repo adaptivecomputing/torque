@@ -103,7 +103,6 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "svrfunc.h"
-#include "../server/reply_send.h" /* reply_send_mom */
 
 #include "mom_func.h"
 #include "utils.h"
@@ -115,6 +114,7 @@
 extern int  reply_jid(char *);
 extern int  svr_authorize_jobreq(struct batch_request *, job *);
 extern int  svr_chkque(job *, pbs_queue *, char *, int, char *);
+int         reply_send_mom(struct batch_request *request);
 extern void check_state(int);
 extern void mom_server_all_update_stat();
 void        send_update_soon();

@@ -11,7 +11,7 @@ int chk_hold_priv(long val, int perm);
 
 void *req_holdjob(void *vp);
 
-void req_checkpointjob(struct batch_request *preq);
+void *req_checkpointjob(void *preq);
 
 int release_job(struct batch_request *preq, void *j);
 

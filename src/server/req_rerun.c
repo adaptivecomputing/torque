@@ -167,17 +167,18 @@ static void post_rerun(
  * NOTE:  can be used to requeue active jobs or completed jobs.
  */
 
-void req_rerunjob(
+void *req_rerunjob(
 
-  struct batch_request *preq) /* I */
+  void *vp) /* I */
 
   {
-  job       *pjob;
+  struct batch_request *preq = (struct batch_request *)vp;
+  job                  *pjob;
 
-  int        Force;
-  int        rc;
-  int        MgrRequired = TRUE;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  int                   Force;
+  int                   rc;
+  int                   MgrRequired = TRUE;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check if requestor is admin, job owner, etc */
 
@@ -187,7 +188,7 @@ void req_rerunjob(
 
     /* chk_job_request calls req_reject() */
 
-    return;
+    return(NULL);
     }
 
   /* the job must be running or completed */
@@ -215,7 +216,7 @@ void req_rerunjob(
 
     pthread_mutex_unlock(pjob->ji_mutex);
 
-    return;
+    return(NULL);
     }
 
   if ((MgrRequired == TRUE) &&
@@ -227,7 +228,7 @@ void req_rerunjob(
 
     pthread_mutex_unlock(pjob->ji_mutex);
 
-    return;
+    return(NULL);
     }
 
   /* the job must be rerunnable */
@@ -243,7 +244,7 @@ void req_rerunjob(
 
     pthread_mutex_unlock(pjob->ji_mutex);
 
-    return;
+    return(NULL);
     }
 
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
@@ -303,7 +304,7 @@ void req_rerunjob(
 
       req_reject(PBSE_SYSTEM, 0, preq, NULL, "cannot allocate memory");
 
-      return;
+      return(NULL);
 
       /*NOTREACHED*/
 
@@ -318,7 +319,7 @@ void req_rerunjob(
         if (pjob != NULL)
           pthread_mutex_unlock(pjob->ji_mutex);
 
-        return;
+        return(NULL);
         }
       else
         {
@@ -393,6 +394,8 @@ void req_rerunjob(
     account_record(PBS_ACCT_RERUN, pjob, NULL);
     pthread_mutex_unlock(pjob->ji_mutex);
     }
+
+  return(NULL);
   }  /* END req_rerunjob() */
 
 

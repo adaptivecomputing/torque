@@ -125,20 +125,21 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
  * Which then replies to the requester with either a reject or ack
  */
 
-void req_signaljob(
+void *req_signaljob(
 
-  struct batch_request *preq)  /* I */
+  void *vp)  /* I */
 
   {
-  job *pjob;
-  int  rc;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
+  struct batch_request *preq = (struct batch_request *)vp;
+  job                  *pjob;
+  int                   rc;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
   struct batch_request *dup_req = NULL;
 
   /* preq free'd in error cases */
   if ((pjob = chk_job_request(preq->rq_ind.rq_signal.rq_jid, preq)) == 0)
     {
-    return;
+    return(NULL);
     }
 
   /* the job must be running */
@@ -148,7 +149,7 @@ void req_signaljob(
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
     pthread_mutex_unlock(pjob->ji_mutex);
-    return;
+    return(NULL);
     }
 
   /* Special pseudo signals for suspend and resume require op/mgr */
@@ -162,7 +163,7 @@ void req_signaljob(
       req_reject(PBSE_PERM, 0, preq, NULL, NULL);
       
       pthread_mutex_unlock(pjob->ji_mutex);
-      return;
+      return(NULL);
       }
   
     }
@@ -183,7 +184,7 @@ void req_signaljob(
     req_reject(PBSE_JOBTYPE, 0, preq, NULL, NULL);
 
     pthread_mutex_unlock(pjob->ji_mutex);
-    return;
+    return(NULL);
     }
 
 #endif
@@ -221,7 +222,7 @@ void req_signaljob(
   /* If successful we ack after mom replies to us, we pick up in post_signal_req() */
   pthread_mutex_unlock(pjob->ji_mutex);
 
-  return;
+  return(NULL);
   }  /* END req_signaljob() */
 
 

@@ -119,17 +119,18 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
  * This request sends (via MOM) a message to a running job.
  */
 
-void req_messagejob(
+void *req_messagejob(
     
-  struct batch_request *preq)
+  void *vp)
 
   {
-  job   *pjob;
-  int    rc;
+  struct batch_request *preq = (struct batch_request *)vp;
+  job                  *pjob;
+  int                   rc;
   struct batch_request *dup_req = NULL;
 
   if ((pjob = chk_job_request(preq->rq_ind.rq_message.rq_jid, preq)) == NULL)
-    return;
+    return(NULL);
 
   /* the job must be running */
 
@@ -139,7 +140,7 @@ void req_messagejob(
 
     pthread_mutex_unlock(pjob->ji_mutex);
     
-    return;
+    return(NULL);
     }
 
   if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
@@ -155,9 +156,10 @@ void req_messagejob(
     free_br(preq);
 
   /* After MOM acts and replies to us, we pick up in post_message_req() */
-
   if (pjob != NULL)
     pthread_mutex_unlock(pjob->ji_mutex);
+
+  return(NULL);
   } /* END req_messagejob() */
 
 /*
