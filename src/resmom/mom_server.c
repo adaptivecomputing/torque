@@ -4013,10 +4013,9 @@ int read_cluster_addresses(
   int             path_complete = FALSE;
   int             something_added;
   char           *str;
-  char            okclients_list[MAXLINE * 2];
-  char           *list_ptr = okclients_list;
+  char           *okclients_list;
   dynamic_string *hierarchy_file;
-  long            list_size = sizeof(okclients_list);
+  long            list_size;
   long            list_len = 0;
 
   if (mh != NULL)
@@ -4099,12 +4098,15 @@ int read_cluster_addresses(
     sort_paths();
 
     /* log the hierrarchy */
-    okclients_list[0] = '\0';
-    AVL_list(okclients, &list_ptr, &list_len, &list_size);
-    snprintf(log_buffer, sizeof(log_buffer),
-      "Successfully received the mom hiearchy file. My okclients list is '%s', and the hierarchy file is '%s'",
-      okclients_list, hierarchy_file->str);
-    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
+    list_size = MAXLINE * 2;
+    if ((okclients_list = calloc(1, list_size)) != NULL)
+      {
+      AVL_list(okclients, &okclients_list, &list_len, &list_size);
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Successfully received the mom hiearchy file. My okclients list is '%s', and the hierarchy file is '%s'",
+        okclients_list, hierarchy_file->str);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
+      }
  
     /* tell the mom to go ahead and send an update to pbs_server */
     first_update_time = 0;
