@@ -171,7 +171,7 @@ int lock_node(
 
   {
   int   rc = PBSE_NONE;
-  char  err_msg[MSG_LEN_LONG];
+  char  err_msg[MSG_LEN_LONG + 1];
   char  stub_msg[] = "no pos";
   
   if (logging >= 6)
@@ -212,12 +212,11 @@ int unlock_node(
 
   {
   int   rc = PBSE_NONE;
-  char *err_msg = NULL;
+  char  err_msg[MSG_LEN_LONG + 1];
   char  stub_msg[] = "no pos";
 
   if (logging >= 6)
     {
-    err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)
       msg = stub_msg;
     snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", the_node->nd_name, id, msg);
@@ -234,9 +233,6 @@ int unlock_node(
       }
     rc = PBSE_MUTEX;
     }
-
-  if (err_msg != NULL)
-    free(err_msg);
 
   return rc;
   } /* END unlock_node() */
