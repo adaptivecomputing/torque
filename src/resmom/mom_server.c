@@ -1930,7 +1930,7 @@ int setup_gpus_for_job(
     strcpy(tmp_str, mom_host);
     ptr = strchr(tmp_str, '.');
     if (ptr != NULL)
-      ptr[0] = NULL;
+      ptr[0] = '\0';
 
     strcat(tmp_str, "-gpu/");
     ptr = strstr(gpu_str, tmp_str);
