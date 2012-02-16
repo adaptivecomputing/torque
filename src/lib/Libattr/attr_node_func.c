@@ -324,11 +324,11 @@ int encode_state(
   int        perm) /* only used for resources */
 
   {
-  int   i;
+  int       i;
   svrattrl *pal;
-  short   state;
+  short     state;
 
-  static char state_str[MAX_ENCODE_BFR];
+  char      state_str[MAX_ENCODE_BFR];
 
   if (!pattr)
     {
@@ -406,9 +406,8 @@ int encode_ntype(
 
   {
   svrattrl *pal;
-  short  ntype;
-
-  static   char ntype_str[ MAX_ENCODE_BFR ];
+  short     ntype;
+  char      ntype_str[MAX_ENCODE_BFR];
 
   if (!pattr)
     return -(PBSE_INTERNAL);
@@ -429,7 +428,7 @@ int encode_ntype(
   if (pal == (svrattrl *)0)
     return -(PBSE_SYSTEM);
 
-  (void)strcpy(pal->al_value, ntype_str);
+  strcpy(pal->al_value, ntype_str);
 
   pal->al_flags = ATR_VFLAG_SET;
 

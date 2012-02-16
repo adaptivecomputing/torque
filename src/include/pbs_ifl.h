@@ -379,7 +379,6 @@
 #define ND_job_sharing   "job-sharing"
 #define ND_busy          "busy"
 #define ND_state_unknown "state-unknown"
-#define ND_timeshared    "time-shared"
 
 /* these are not state values, they describe states and are used in pbsnodes */
 /* active = job-exclusive, job-sharing, or busy */
@@ -390,7 +389,8 @@
 #define ND_up            "up"
 
 /* this specifies the type of node */
-#define ND_cluster  "cluster"
+#define ND_timeshared    "time-shared"
+#define ND_cluster       "cluster"
 
 /* queue disallowed types */
 #define Q_DT_batch              "batch"
