@@ -1127,7 +1127,10 @@ struct pbsnode *get_node_from_str(
       }
     }
   else
+    {
     next = np;
+    next->nd_lastupdate = time(NULL);
+    }
 
   /* next may be NULL */
 
@@ -2072,8 +2075,6 @@ void *check_nodes_work(
   void *vp)
 
   {
-  static char       id[] = "check_nodes_work";
-
   work_task *ptask = (struct work_task *)vp;
 
   struct pbsnode   *np = NULL;
@@ -2090,7 +2091,7 @@ void *check_nodes_work(
     {
     sprintf(log_buf, "verifying nodes are active (min_refresh = %d seconds)", (int)chk_len);
 
-    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     }
 
   /* evaluate all nodes */
@@ -2108,7 +2109,7 @@ void *check_nodes_work(
             np->nd_name,
             (long int)(time_now - np->nd_lastupdate));
           
-          log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
+          log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
           }
         
         update_node_state(np, (INUSE_DOWN));    

@@ -6769,7 +6769,6 @@ void parse_command_line(
 int setup_program_environment(void)
 
   {
-  static char   id[] = "setup_program_environment";
   int           c;
   int           hostc = 1;
 #if !defined(DEBUG) && !defined(DISABLE_DAEMONS)
@@ -6823,11 +6822,11 @@ int setup_program_environment(void)
     {
     snprintf(log_buffer, sizeof(log_buffer),
       "Unable to drop secondary groups. Some MAC framework is active?\n");
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
     snprintf(log_buffer, sizeof(log_buffer),
       "setgroups(group = %lu) failed: %s\n",
       (unsigned long)c, strerror(errno));
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
 
     return(1);
     }
@@ -7059,7 +7058,7 @@ int setup_program_environment(void)
   sprintf(log_buffer, "machine topology contains %d memory nodes, %d cpus",
     hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
     hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
 #endif
 
@@ -7456,7 +7455,7 @@ int setup_program_environment(void)
     MOMExePath == NULL ? "NULL" : MOMExePath,
     (long int)MOMExeTime);
 
-  log_record(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buffer);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
   ptr = getenv("MOMSLEEPTIME");
 
@@ -7484,7 +7483,7 @@ int setup_program_environment(void)
   if ((received_statuses == NULL) ||
       (received_table == NULL))
     {
-    log_err(ENOMEM,id,"No memory!!!");
+    log_err(ENOMEM, __func__, "No memory!!!");
     return(-1);
     }
 
