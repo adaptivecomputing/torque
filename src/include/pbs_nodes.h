@@ -212,6 +212,7 @@ struct gpusubn
   enum psit       flag;   /* same as for pbssubn */
   short           index;  /* gpu index */
   char           *gpuid;  /* gpu id */
+  int             job_count;
   };
 
 
