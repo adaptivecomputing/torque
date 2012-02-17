@@ -102,11 +102,15 @@ default it is located in the /var/spool/torque/server_priv directory. The file u
 syntax. By the time TORQUE 4.0 is released this will be an XML compatible syntax. For now 
 they syntax is as follows:
 
-   <path>
-     <level> comma separated node list </level>
-     <level> comma separated node list </level>
+   <path attr=val>
+     <level attr=val> comma separated node list </level>
+     <level attr=val> comma separated node list </level>
      ...
-   </path>
+   </path attr=val>
+   <path attr=val>
+     <level attr=val> comma separated node list </level>
+     ...
+   </path attr=val>
    ...
 
 The <path> </path> tag pair identifies a group of compute nodes. The <level></level> tag pair

@@ -8775,6 +8775,7 @@ void fork_demux(
 	struct sigaction act;
   struct routefd  *routem;
   int open_sockets = 0;
+  int amt_read = 0;
 
   maxfd = sysconf(_SC_OPEN_MAX);
 
@@ -8802,6 +8803,7 @@ void fork_demux(
   if (im_mom_stdout == -1)
     {
     fprintf(stderr, "could not dup stdout in fork_demux");
+    free(routem);
     return;
     }
   close(pjob->ji_im_stdout);
@@ -8810,6 +8812,7 @@ void fork_demux(
   if (im_mom_stdout == -1)
     {
     fprintf(stderr, "could not dup stdout in fork_demux");
+    free(routem);
     return;
     }
   close(pjob->ji_im_stderr);
@@ -8835,7 +8838,8 @@ void fork_demux(
             pjob->ji_qs.ji_jobid);
 
     log_err(-1, id, log_buffer);
-
+    close(im_mom_stdout);
+    close(im_mom_stderr);
     _exit(5);
     }
 
@@ -8843,7 +8847,8 @@ void fork_demux(
   if (ret)
     {
     fprintf(stderr,"get addrinfo failed in im_demux_thread: %d\n", ret);
-
+    close(im_mom_stdout);
+    close(im_mom_stderr);
     _exit(5);
     }
 
@@ -8868,14 +8873,16 @@ void fork_demux(
   if (listen(im_mom_stdout, TORQUE_LISTENQUEUE) < 0)
     {
     perror("listen on out");
-
+    close(im_mom_stdout);
+    close(im_mom_stderr);
     _exit(5);
     }
 
   if (listen(im_mom_stderr, TORQUE_LISTENQUEUE) < 0)
     {
     perror("listen on err");
-
+    close(im_mom_stdout);
+    close(im_mom_stderr);
     _exit(5);
     }
 
@@ -8888,13 +8895,26 @@ void fork_demux(
     if (fd1 >= 0)
       break;
 
+    usleep(500000);
     retries++;
     } while(retries < 10);
+
+  if(retries >= 10)
+    {
+    perror("could not open demux to parent");
+    close(im_mom_stdout);
+    close(im_mom_stderr);
+    _exit(5);
+    }
+
 
   fd2 = open_demux(htonl(ipaddr), pjob->ji_porterr);
   if (fd2 < 0)
     {
     perror("cannot open mux stderr port");
+    close(im_mom_stdout);
+    close(im_mom_stderr);
+    close(fd1);
     _exit(5);
     }
   
@@ -8915,7 +8935,10 @@ void fork_demux(
       else
         {
         perror("fork_demux: select failed\n");
-        
+        close(im_mom_stdout);
+        close(im_mom_stderr);
+        close(fd1);
+        close(fd2); 
         _exit(1);
         }
       }
@@ -8952,6 +8975,10 @@ void fork_demux(
             if (newsock < 0)
               {
               perror("accept failed");
+              close(fd1);
+              close(fd2);
+              close(im_mom_stdout);
+              close(im_mom_stderr);
               _exit(5);
               }
             
@@ -8965,11 +8992,22 @@ void fork_demux(
             
           case new_out:
             
-            readit(i, fd1);
+            amt_read = readit(i, fd1);
+            if(amt_read <= 0)
+              {
+              routem[i].r_fd = -1;
+              routem[i].r_which = invalid;
+              }
+            break;
             
           case new_err:
             
-            readit(i, fd2);
+            amt_read = readit(i, fd2);
+            if(amt_read <= 0)
+              {
+              routem[i].r_fd = -1;
+              routem[i].r_which = invalid;
+              }
             break;
             
           default:
