@@ -95,7 +95,8 @@ const char *dis_emsg[] =
   "Unable to calloc enough space for string",
   "Supporting protocol failure",
   "Protocol failure in commit",
-  "End of File"
+  "End of File",
+  "Invalid condition in code"
   };
 
 /*char dis_buffer[DIS_BUFSIZ];*/
