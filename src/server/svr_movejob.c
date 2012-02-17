@@ -800,7 +800,7 @@ int send_job_work(
         else
           {
           *pjob_ptr = NULL;
-          goto send_job_work_end;
+          break;
           }
         }
 
@@ -821,8 +821,7 @@ int send_job_work(
           log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, jobid,
             "MOM reports job already running");
           rc = PBSE_NONE; /* Equivalent to LOCUTION_SUCCESS */
-          close(sock);
-          goto send_job_work_end;
+          break;
           }
 
         sprintf(log_buf, "send of job to %s failed error = %d",
@@ -868,7 +867,7 @@ int send_job_work(
       else
         {
         *pjob_ptr = NULL;
-        goto send_job_work_end;
+        break;
         }
 
       attempt_to_queue_job = FALSE;
@@ -934,7 +933,7 @@ int send_job_work(
 
         /* FAILURE */
         rc = LOCUTION_FAIL;
-        goto send_job_work_end;
+        break;
         }
       } /* END if ((rc = PBSD_commit(con,jobid)) != 0) */
     else if (sid != -1)
@@ -950,7 +949,7 @@ int send_job_work(
         {
         rc = LOCUTION_FAIL;
         *pjob_ptr = NULL;
-        goto send_job_work_end;
+        break;
         }
       }
 
@@ -977,22 +976,22 @@ int send_job_work(
     sprintf(log_buf, "child timed-out attempting to start job %s", jobid);
     log_ext(*my_err, __func__, log_buf, LOG_WARNING);
     rc = LOCUTION_REQUEUE;
-    goto send_job_work_end;
     }
-
-  if (should_retry_route(*my_err) == -1)
+  else if (should_retry_route(*my_err) == -1)
     {
     sprintf(log_buf, "child failed and will not retry job %s", jobid);
     log_err(*my_err, __func__, log_buf);
     rc = LOCUTION_FAIL;
-    goto send_job_work_end;
     }
-  rc = LOCUTION_REQUEUE;
+  else
+    rc = LOCUTION_REQUEUE;
 
 send_job_work_end:
+
   finish_move_process(jobid, preq, start_time, node_name, rc, type, mom_err);
   free_server_attrs(&attrl);
-  return rc;
+
+  return(rc);
   } /* END send_job_work() */
 
 
