@@ -110,10 +110,11 @@
 
 /* Local Data */
 
-static FILE     *acctfile;  /* open stream for log file */
+static FILE         *acctfile;  /* open stream for log file */
 static volatile int  acct_opened = 0;
-static int      acct_opened_day;
-static int      acct_auto_switch = 0;
+static int           acct_opened_day;
+static int           acct_auto_switch = 0;
+pthread_mutex_t     *acctfile_mutex;
 
 /* Global Data */
 
@@ -340,17 +341,19 @@ int acct_open(
 
   if ((newacct = fopen(filename, "a")) == NULL)
     {
-    log_err(errno, "acct_open", filename);
+    log_err(errno, __func__, filename);
 
     return(-1);
     }
 
   setbuf(newacct, NULL);        /* set no buffering */
 
+  pthread_mutex_lock(acctfile_mutex);
   if (acct_opened > 0)          /* if acct was open, close it */
     fclose(acctfile);
 
   acctfile = newacct;
+  pthread_mutex_unlock(acctfile_mutex);
 
   acct_opened = 1;  /* note that file is open */
 
@@ -370,16 +373,17 @@ int acct_open(
  * acct_close - close the current open log file
  */
 
-void
-acct_close(void)
+void acct_close(void)
 
   {
+  pthread_mutex_lock(acctfile_mutex);
   if (acct_opened == 1)
     {
     fclose(acctfile);
 
     acct_opened = 0;
     }
+  pthread_mutex_unlock(acctfile_mutex);
 
   return;
   }  /* END acct_close() */
@@ -424,6 +428,7 @@ void account_record(
   if (text == NULL)
     text = "";
 
+  pthread_mutex_lock(acctfile_mutex);
   fprintf(acctfile, "%02d/%02d/%04d %02d:%02d:%02d;%c;%s;%s\n",
           ptm->tm_mon + 1,
           ptm->tm_mday,
@@ -434,6 +439,7 @@ void account_record(
           (char)acctype,
           pjob->ji_qs.ji_jobid,
           text);
+  pthread_mutex_unlock(acctfile_mutex);
 
   return;
   }  /* END account_record() */

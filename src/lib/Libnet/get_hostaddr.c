@@ -117,32 +117,17 @@ extern const char *hstrerror(int);
  */
 
 
-char *PAddrToString(
-
-  pbs_net_t *Addr)
-
-  {
-  static char tmpLine[1024];
-
-  sprintf(tmpLine, "%lu",
-          *(unsigned long *)Addr);
-
-  return(tmpLine);
-  }
-
-
-
 pbs_net_t get_hostaddr(
 
   int  *local_errno, /* O */    
   char *hostname)    /* I */
 
   {
-  pbs_net_t              rval = 0;
-  char                  *tmp_addr = NULL;
-  static struct in_addr  hostaddr;
-  int                    tmp_addr_len = 0;
-  unsigned short         af_family;
+  pbs_net_t       rval = 0;
+  char           *tmp_addr = NULL;
+  struct in_addr  hostaddr;
+  int             tmp_addr_len = 0;
+  unsigned short  af_family;
 
   if ((rval = get_hostaddr_hostent_af(local_errno, hostname, &af_family, &tmp_addr, &tmp_addr_len)) == PBSE_NONE)
     {
@@ -243,11 +228,11 @@ int  get_hostaddr_hostent(
 
 int  get_hostaddr_hostent_af(
 
-  int   *local_errno,
-  char  *hostname,
-  unsigned short *af_family,
-  char **host_addr,
-  int   *host_addr_len)
+  int             *local_errno,
+  char            *hostname,
+  unsigned short  *af_family,
+  char           **host_addr,
+  int             *host_addr_len)
 
   {
   int                    rc = PBSE_NONE;

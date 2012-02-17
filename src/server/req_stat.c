@@ -1638,7 +1638,7 @@ void *req_stat_svr(
   struct brp_status    *pstat;
   int                  *nc;
   int                   bad = 0;
-  static char           nc_buf[128];
+  char                  nc_buf[128];
   int                   numjobs;
 
   /* update count and state counts from sv_numjobs and sv_jobstates */
@@ -1659,7 +1659,7 @@ void *req_stat_svr(
   
   pthread_mutex_unlock(server.sv_jobstates_mutex);
 
-  nc = netcounter_get();
+  nc = netcounter_get(); /* locks netrates mutex */
   sprintf(nc_buf, "%d %d %d", *nc, *(nc + 1), *(nc + 2));
   
   pthread_mutex_unlock(netrates_mutex);

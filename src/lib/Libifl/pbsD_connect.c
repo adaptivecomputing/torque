@@ -133,8 +133,6 @@
 
 /* NOTE:  globals, must not impose per connection constraints */
 
-static uid_t pbs_current_uid;               /* only one uid per requestor */
-
 extern time_t pbs_tcp_timeout;              /* source? */
 
 static unsigned int dflt_port = 0;
@@ -515,7 +513,9 @@ int get_parent_client_socket(int psock, int *pcsock)
   }
 
 int validate_socket(
+
   int psock)
+
   {
   int            rc = PBSE_NONE;
   static char    id[] = "validate_socket";
@@ -749,6 +749,7 @@ int pbs_original_connect(
   struct sockaddr preferred_addr; /* set if TRQ_IFNAME set in torque.cfg */
   struct passwd *pw;
   int use_unixsock = 0;
+  uid_t pbs_current_uid;
 
 #ifdef ENABLE_UNIX_SOCKETS
   struct sockaddr_un unserver_addr;
@@ -1124,7 +1125,7 @@ int pbs_disconnect_socket(
   int sock)  /* I (socket descriptor) */
 
   {
-  static char tmp_buf[THE_BUF_SIZE / 4];
+  char tmp_buf[THE_BUF_SIZE / 4];
 
   DIS_tcp_setup(sock);
 

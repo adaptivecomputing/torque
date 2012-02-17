@@ -115,11 +115,11 @@ extern struct server server;
 
 /* sync w/job_attr_def.c */
 
-static int decode_nodes(struct attribute *, char *, char *, char *, int);
-static int set_node_ct(resource *, attribute *, int actmode);
-static int set_proc_ct(resource *, attribute *, int actmode);
-static int set_tokens(struct attribute *attr, struct attribute *new, enum batch_op actmode);
-static int set_mppnodect(resource *, attribute *, int actmode);
+int decode_nodes(struct attribute *, char *, char *, char *, int);
+int set_node_ct(resource *, attribute *, int actmode);
+int set_proc_ct(resource *, attribute *, int actmode);
+int set_tokens_nodect(struct attribute *attr, struct attribute *new, enum batch_op actmode);
+int set_mppnodect(resource *, attribute *, int actmode);
 resource_def *svr_resc_def;
 
 resource_def svr_resc_def_const[] =
@@ -592,7 +592,7 @@ resource_def svr_resc_def_const[] =
   { ATTR_tokens,                               /* tokens required to run */
     decode_tokens,
     encode_str,
-    set_tokens,
+    set_tokens_nodect,
     comp_str,
     free_str,
     NULL_FUNC,
@@ -873,7 +873,7 @@ int init_resc_defs(void)
  * where node_spec is: number | property | number:property
  */
 
-static int decode_nodes(
+int decode_nodes(
 
   attribute *patr,
   char      *name,   /* attribute name */
@@ -1210,11 +1210,11 @@ int set_proc_ct(
 
 
 /*
- * set_tokens = set node count
+ * set_tokens_nodect = set node count
  *
  */
 
-static int set_tokens(
+int set_tokens_nodect(
 
   struct attribute *attr,
   struct attribute *new,
@@ -1252,14 +1252,14 @@ static int set_tokens(
     }
 
   return(ret);
-  }  /* END set_tokens() */
+  }  /* END set_tokens_nodect() */
 
 /*
  * set_mppnodect
  *
  */
 
-static int set_mppnodect(
+int set_mppnodect(
 
   resource *res,
   attribute *attr,

@@ -201,6 +201,7 @@ dynamic_string         *hierarchy_holder;
 hello_container         hellos;
 hello_container         failures;
 
+extern pthread_mutex_t *acctfile_mutex;
 pthread_mutex_t        *scheduler_sock_jobct_mutex;
 extern int              scheduler_sock;
 extern int              scheduler_jobct;
@@ -229,18 +230,18 @@ void          on_job_exit(struct work_task *);
 
 /* Private functions in this file */
 
-static void  init_abt_job(job *);
-static char *build_path(char *, char *, char *);
-static void  catch_child(int);
-static void  catch_abort(int);
-static void  change_logs(int);
-static void  change_log_level(int);
-static int   chk_save_file(char *);
-static int   pbsd_init_job(job *, int);
-static void  pbsd_init_reque(job *, int);
-static void  resume_net_move(struct work_task *);
-static void  rm_files(char *);
-static void  stop_me(int);
+void  init_abt_job(job *);
+char *build_path(char *, char *, char *);
+void  catch_child(int);
+void  catch_abort(int);
+void  change_logs(int);
+void  change_log_level(int);
+int   chk_save_file(char *);
+int   pbsd_init_job(job *, int);
+void  pbsd_init_reque(job *, int);
+void  resume_net_move(struct work_task *);
+void  rm_files(char *);
+void  stop_me(int);
 
 /* private data */
 
@@ -351,7 +352,7 @@ int DArrayAppend(
  * @param B (I)
  */
 
-static int SortPrioAscend(
+int SortPrioAscend(
 
   const void *A, /* I */
   const void *B) /* I */
@@ -361,6 +362,7 @@ static int SortPrioAscend(
   job *pjob2 = *((job **)B);
   int prio1 = pjob1->ji_wattr[JOB_ATR_qrank].at_val.at_long;
   int prio2 = pjob2->ji_wattr[JOB_ATR_qrank].at_val.at_long;
+
   return(prio1 - prio2);
   } /*END SortPrioAscend */
 
@@ -443,7 +445,6 @@ void add_server_names_to_acl_hosts(void)
 dynamic_string *make_default_hierarchy() 
 
   {
-  static char    *id = "make_default_hierarchy";
   struct pbsnode *pnode;
   dynamic_string *default_hierarchy;
   dynamic_string *level_ds;
@@ -452,7 +453,7 @@ dynamic_string *make_default_hierarchy()
   if (((default_hierarchy = get_dynamic_string(-1, NULL)) == NULL) ||
       ((level_ds = get_dynamic_string(-1, NULL)) == NULL))
     {
-    log_err(ENOMEM, id, "Cannot allocate memory");
+    log_err(ENOMEM, __func__, "Cannot allocate memory");
     return(NULL);
     }
 
@@ -465,7 +466,7 @@ dynamic_string *make_default_hierarchy()
       append_dynamic_string(level_ds, ",");
 
     append_dynamic_string(level_ds, pnode->nd_name);
-    unlock_node(pnode, id, NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
   copy_to_end_of_dynamic_string(default_hierarchy, level_ds->str);
@@ -661,7 +662,6 @@ dynamic_string *parse_mom_hierarchy(
   int fds)
 
   {
-  static char    *id = "parse_mom_hierarchy";
   int             bytes_read;
   char            buffer[MAXLINE<<10];
   char           *current;
@@ -677,14 +677,14 @@ dynamic_string *parse_mom_hierarchy(
     {
     snprintf(log_buf, sizeof(log_buf),
       "Unable to read from %s", path_mom_hierarchy);
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
 
     return(NULL);
     }
   
   if ((send_format = get_dynamic_string(-1, NULL)) == NULL)
     {
-    log_err(ENOMEM, id, "Cannot allocate memory");
+    log_err(ENOMEM, __func__, "Cannot allocate memory");
     return(NULL);
     }
 
@@ -702,7 +702,7 @@ dynamic_string *parse_mom_hierarchy(
       snprintf(log_buf, sizeof(log_buf),
         "Found noise in the mom hierarchy file. Ignoring <%s>%s</%s>",
         parent, child, parent);
-      log_err(-1, id, log_buf);
+      log_err(-1, __func__, log_buf);
       }
     }
 
@@ -738,7 +738,7 @@ dynamic_string *parse_mom_hierarchy(
         log_err( -1, __func__, log_buf);
         }
 
-      unlock_node(pnode, id, NULL, LOGLEVEL);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
 
     if (first_missing_node == FALSE)
@@ -758,7 +758,6 @@ dynamic_string *parse_mom_hierarchy(
 dynamic_string *prepare_mom_hierarchy()
 
   {
-  static char    *id = "prepare_mom_hierarchy";
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   int             fds;
   dynamic_string *send_format = NULL;
@@ -774,7 +773,7 @@ dynamic_string *prepare_mom_hierarchy()
 
     snprintf(log_buf, sizeof(log_buf),
       "Unable to open %s", path_mom_hierarchy);
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
     }
   else if ((send_format = parse_mom_hierarchy(fds)) == NULL)
     {
@@ -795,7 +794,6 @@ dynamic_string *prepare_mom_hierarchy()
 void add_all_nodes_to_hello_container()
 
   {
-  static char    *id = "add_all_nodes_to_hello_container";
   struct pbsnode *pnode;
   int             iter = -1;
   char           *node_name_dup;
@@ -806,7 +804,7 @@ void add_all_nodes_to_hello_container()
     if (node_name_dup != NULL)
       add_hello(&hellos, node_name_dup);
 
-    unlock_node(pnode, id, NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
   return;
@@ -862,7 +860,6 @@ int pbsd_init(
   int type)  /* type of initialization   */
 
   {
-  static char       id[] = "pbsd_init";
   int               baselen = 0;
   char              basen[MAXPATHLEN+1];
 
@@ -922,11 +919,11 @@ int pbsd_init(
     {
     snprintf(log_buf, sizeof(log_buf),
       "Unable to drop secondary groups. Some MAC framework is active?\n");
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
     snprintf(log_buf, sizeof(log_buf),
       "setgroups(group = %lu) failed: %s\n",
       (unsigned long)i, strerror(errno));
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
 
     return(-1);
     }
@@ -978,7 +975,7 @@ int pbsd_init(
 
   if (sigaction(SIGHUP, &act, &oact) != 0)
     {
-    log_err(errno, id, "sigaction for HUP");
+    log_err(errno, __func__, "sigaction for HUP");
 
     return(2);
     }
@@ -987,14 +984,14 @@ int pbsd_init(
 
   if (sigaction(SIGINT, &act, &oact) != 0)
     {
-    log_err(errno, id, "sigaction for INT");
+    log_err(errno, __func__, "sigaction for INT");
 
     return(2);
     }
 
   if (sigaction(SIGTERM, &act, &oact) != 0)
     {
-    log_err(errno, id, "sigactin for TERM");
+    log_err(errno, __func__, "sigactin for TERM");
 
     return(2);
     }
@@ -1003,7 +1000,7 @@ int pbsd_init(
 
   if (sigaction(SIGQUIT, &act, &oact) != 0)
     {
-    log_err(errno, id, "sigactin for QUIT");
+    log_err(errno, __func__, "sigactin for QUIT");
 
     return(2);
     }
@@ -1014,7 +1011,7 @@ int pbsd_init(
 
   if (sigaction(SIGSHUTDN, &act, &oact) != 0)
     {
-    log_err(errno, id, "sigactin for SHUTDN");
+    log_err(errno, __func__, "sigactin for SHUTDN");
 
     return(2);
     }
@@ -1054,7 +1051,7 @@ int pbsd_init(
 
   if (sigaction(SIGCHLD, &act, &oact) != 0)
     {
-    log_err(errno, id, "sigaction for CHLD");
+    log_err(errno, __func__, "sigaction for CHLD");
 
     return(2);
     }
@@ -1063,7 +1060,7 @@ int pbsd_init(
 
   if (sigaction(SIGPIPE, &act, &oact) != 0)
     {
-    log_err(errno, id, "sigaction for PIPE");
+    log_err(errno, __func__, "sigaction for PIPE");
 
     return(2);
     }
@@ -1072,14 +1069,14 @@ int pbsd_init(
 
   if (sigaction(SIGUSR1, &act, &oact) != 0)
     {
-    log_err(errno, id, "sigaction for USR1");
+    log_err(errno, __func__, "sigaction for USR1");
 
     return(2);
     }
 
   if (sigaction(SIGUSR2, &act, &oact) != 0)
     {
-    log_err(errno, id, "sigaction for USR2");
+    log_err(errno, __func__, "sigaction for USR2");
 
     return(2);
     }
@@ -1169,9 +1166,9 @@ int pbsd_init(
     rc = init_resc_defs();
     if (rc != 0)
       {
-        log_err(rc, id, msg_init_baddb);
-
-        return(-1);
+      log_err(rc, __func__, msg_init_baddb);
+      
+      return(-1);
       }
     }
 
@@ -1284,7 +1281,7 @@ int pbsd_init(
 
     if ((rc != 0) || ((rc = svr_recov_xml(path_svrdb, FALSE)) == -1)) 
       {
-      log_err(rc, id, msg_init_baddb);
+      log_err(rc, __func__, msg_init_baddb);
 
       return(-1);
       }
@@ -1327,6 +1324,8 @@ int pbsd_init(
     0);
 
   /* 6. open accounting file and job log file if logging is set */
+  acctfile_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(acctfile_mutex, NULL);
 
   if (acct_open(acct_file) != 0)
     {
@@ -1379,7 +1378,7 @@ int pbsd_init(
     {
     sprintf(log_buf, msg_init_chdir, path_queues);
 
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
 
     return(-1);
     }
@@ -1394,7 +1393,7 @@ int pbsd_init(
 
   if (dir == NULL)
     {
-    log_err(-1, id, msg_init_noqueues);
+    log_err(-1, __func__, msg_init_noqueues);
 
     pthread_mutex_unlock(server.sv_qs_mutex);
 
@@ -1432,7 +1431,7 @@ int pbsd_init(
             &pque->qu_attr[QE_ATR_ResourceAssn]);
           }
 
-        unlock_queue(pque, id, NULL, LOGLEVEL);
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         }
       }
     }
@@ -1459,7 +1458,7 @@ int pbsd_init(
     {
     sprintf(log_buf, msg_init_chdir, path_arrays);
 
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
 
     pthread_mutex_unlock(server.sv_qs_mutex);
 
@@ -1495,7 +1494,7 @@ int pbsd_init(
             "job array can not be recovered.",
             pdirent->d_name);
 
-          log_err(errno, id, log_buf);
+          log_err(errno, __func__, log_buf);
           pthread_mutex_unlock(server.sv_qs_mutex);
           return(rc);
           }
@@ -1505,8 +1504,8 @@ int pbsd_init(
         pthread_mutex_unlock(pa->ai_mutex);
         if (LOGLEVEL >= 7)
           {
-          sprintf(log_buf, "%s: unlocking ai_mutex", id);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+          sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
           }
                     
         }
@@ -1527,7 +1526,7 @@ int pbsd_init(
     {
     sprintf(log_buf, msg_init_chdir, path_jobs);
 
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
 
     pthread_mutex_unlock(server.sv_qs_mutex);
 
@@ -1553,7 +1552,7 @@ int pbsd_init(
         {
         sprintf(log_buf, msg_init_exptjobs, had, 0);
 
-        log_err(-1, id, log_buf);
+        log_err(-1, __func__, log_buf);
         }
       }
     }
@@ -1618,14 +1617,14 @@ int pbsd_init(
           {
           sprintf(log_buf, msg_init_badjob, pdirent->d_name);
 
-          log_err(-1, id, log_buf);
+          log_err(-1, __func__, log_buf);
 
           /* remove corrupt job */
           snprintf(basen, sizeof(basen), "%s%s", pdirent->d_name, JOB_BAD_SUFFIX);
 
           if (link(pdirent->d_name, basen) < 0)
             {
-            log_err(errno, id, "failed to link corrupt .JB file to .BD");
+            log_err(errno, __func__, "failed to link corrupt .JB file to .BD");
             }
           else
             {
@@ -1734,7 +1733,7 @@ int pbsd_init(
     pthread_mutex_lock(pa->ai_mutex);
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: locked ai_mutex", id);
+      sprintf(log_buf, "%s: locked ai_mutex", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
       }
      
@@ -1801,7 +1800,7 @@ int pbsd_init(
 
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocking ai_mutex", id);
+      sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
       }
     
@@ -1815,7 +1814,7 @@ int pbsd_init(
     {
     sprintf(log_buf, msg_init_chdir, path_priv);
 
-    log_err(-1, id, log_buf);
+    log_err(-1, __func__, log_buf);
 
     return(3);
     }
@@ -1827,7 +1826,7 @@ int pbsd_init(
 
   if (fd < 0)
     {
-    log_err(errno, id, "unable to open tracking file");
+    log_err(errno, __func__, "unable to open tracking file");
 
     return(-1);
     }
@@ -1905,7 +1904,7 @@ int pbsd_init(
  * build_path - build the pathname for a PBS directory
  */
 
-static char *build_path(
+char *build_path(
 
   char *parent,  /* parent directory name (dirname) */
   char *name,  /* sub directory name */
@@ -1963,7 +1962,7 @@ static char *build_path(
  * The action depends on the type of initialization.
  */
 
-static int pbsd_init_job(
+int pbsd_init_job(
 
   job *pjob,  /* I */
   int  type)  /* I */
@@ -2240,7 +2239,7 @@ static int pbsd_init_job(
 
 
 
-static void pbsd_init_reque(
+void pbsd_init_reque(
 
   job *pjob,         /* I (modified/possibly freed) */
   int  change_state) /* I */
@@ -2309,7 +2308,7 @@ static void pbsd_init_reque(
  * csamuel@vpac.org - 29th July 2003
  */
 
-static void catch_abort(
+void catch_abort(
 
   int sig)  /* I */
 
@@ -2357,12 +2356,11 @@ static void catch_abort(
  * The list entry is marked as immediate to show the child is gone and
  */
 
-static void catch_child(
+void catch_child(
 
   int sig)
 
   {
-/*  static char *id = "catch_child";*/
   pid_t        pid;
   int          statloc;
 /*  char         log_buf[LOCAL_LOG_BUF_SIZE];*/
@@ -2423,7 +2421,7 @@ void check_children(void)
  * Thus the old one can be renamed.
  */
 
-static void change_logs(
+void change_logs(
 
   int sig)
 
@@ -2459,7 +2457,7 @@ static void change_logs(
  * which allows qmgr to see the current log level value
  */
 
-static void change_log_level(
+void change_log_level(
 
   int sig)
 
@@ -2522,7 +2520,7 @@ static void change_log_level(
 
 /*ARGSUSED*/
 
-static void stop_me(
+void stop_me(
 
   int sig)
 
@@ -2535,7 +2533,7 @@ static void stop_me(
 
 
 
-static int chk_save_file(
+int chk_save_file(
 
   char *filename)
 
@@ -2571,7 +2569,7 @@ static int chk_save_file(
  * in JOB_SUBSTATE_TRNOUTCM state.
  */
 
-static void resume_net_move(
+void resume_net_move(
 
   struct work_task *ptask)
 
@@ -2600,7 +2598,7 @@ static void resume_net_move(
  * directory (path_priv) and any subdirectory except under "jobs".
  */
 
-static void rm_files(
+void rm_files(
 
   char *dirname)
 
@@ -2639,7 +2637,7 @@ static void rm_files(
         {
         if (S_ISDIR(stb.st_mode))
           {
-          for (i = 0;byebye[i];++i)
+          for (i = 0; byebye[i]; ++i)
             {
             if (strcmp(pdirt->d_name, byebye[i]) == 0)
               {
@@ -2670,7 +2668,7 @@ static void rm_files(
  * initialization; then purge job (must be called after job is enqueued.
  */
 
-static void init_abt_job(
+void init_abt_job(
 
   job *pjob)
 

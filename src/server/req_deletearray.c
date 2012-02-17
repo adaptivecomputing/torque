@@ -35,7 +35,7 @@ extern void change_restart_comment_if_needed(struct job *);
 extern char *msg_unkarrayid;
 extern char *msg_permlog;
 
-static void post_delete(struct work_task *pwt);
+void post_delete(struct work_task *pwt);
 
 void array_delete_wt(struct work_task *ptask);
 void          on_job_exit(struct work_task *);
@@ -310,7 +310,7 @@ void req_deletearray(
        JOB_SUBSTATE_TRANSIT */
     if (num_skipped != 0)
       {
-      ptask = set_task(WORK_Timed, time_now + 2, array_delete_wt, preq, FALSE);
+      ptask = set_task(WORK_Timed, time_now + 10, array_delete_wt, preq, FALSE);
 
       if (ptask)
         {
@@ -328,7 +328,7 @@ void req_deletearray(
 
 
 
-static void post_delete(
+void post_delete(
     
   struct work_task *pwt)
 
@@ -354,17 +354,16 @@ void array_delete_wt(
   struct work_task *ptask)
 
   {
-  char id[] = "array_delete_wt";
   struct batch_request *preq;
   job_array            *pa;
 
   int                   i;
 
-  static int            last_check = 0;
-  static char          *last_id = NULL;
   char                 *jobid_copy;
-  time_t                time_now = time(NULL);
-  char              log_buf[LOCAL_LOG_BUF_SIZE];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  int                   num_jobs = 0;
+  int                   num_prerun = 0;
+  job                  *pjob;
 
   preq = ptask->wt_parm1;
 
@@ -374,126 +373,91 @@ void array_delete_wt(
     {
     /* jobs must have exited already */
     reply_ack(preq);
-    last_check = 0;
-    free(last_id);
-    last_id = NULL;
 
     free(ptask->wt_mutex);
     free(ptask);
     return;
     }
 
-  if (last_id == NULL)
+  for (i = 0; i < pa->ai_qs.array_size; i++)
     {
-    last_id = strdup(preq->rq_ind.rq_delete.rq_objname);
-    last_check = time_now;
-    }
-  else if (strcmp(last_id, preq->rq_ind.rq_delete.rq_objname) != 0)
-    {
-    last_check = time_now;
-    free(last_id);
-    last_id = strdup(preq->rq_ind.rq_delete.rq_objname);
-    }
-  else if (time_now - last_check > 10)
-    {
-    int num_jobs;
-    int num_prerun;
-    job *pjob;
-
-    num_jobs = 0;
-    num_prerun = 0;
-
-    for (i = 0; i < pa->ai_qs.array_size; i++)
+    if (pa->job_ids[i] == NULL)
+      continue;
+    
+    if ((pjob = find_job(pa->job_ids[i])) == NULL)
       {
-      if (pa->job_ids[i] == NULL)
-        continue;
-
-      if ((pjob = find_job(pa->job_ids[i])) == NULL)
+      free(pa->job_ids[i]);
+      pa->job_ids[i] = NULL;
+      }
+    else
+      {
+      num_jobs++;
+      
+      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
         {
-        free(pa->job_ids[i]);
-        pa->job_ids[i] = NULL;
-        }
-      else
-        {
-        num_jobs++;
+        num_prerun++;
+        /* mom still hasn't gotten job?? delete anyway */
         
-        if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
+        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
           {
-          num_prerun++;
-          /* mom still hasn't gotten job?? delete anyway */
+          /* job has restart file at mom, do end job processing */
+          change_restart_comment_if_needed(pjob);
           
-          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
+          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
+          
+          pjob->ji_momhandle = -1;
+          
+          /* force new connection */
+          jobid_copy = strdup(pjob->ji_qs.ji_jobid);
+          
+          if (LOGLEVEL >= 7)
             {
-            /* job has restart file at mom, do end job processing */
-            change_restart_comment_if_needed(pjob);
-            
-            svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
-            
-            pjob->ji_momhandle = -1;
-            
-            /* force new connection */
-            jobid_copy = strdup(pjob->ji_qs.ji_jobid);
-
-            if (LOGLEVEL >= 7)
-              {
-              sprintf(log_buf, "calling on_job_exit from %s", id);
-              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-              }
-            set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
-            
-            pthread_mutex_unlock(pjob->ji_mutex);
+            sprintf(log_buf, "calling on_job_exit from %s", __func__);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
             }
+          set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
+          
+          pthread_mutex_unlock(pjob->ji_mutex);
           }
-        else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
-          {
-          /* job has staged-in file, should remove them */
-          remove_stagein(&pjob);
-
-          if (pjob != NULL)
-            {
-            /* job_abt() calls job_purge which will try to lock the array again */
-            pthread_mutex_unlock(pa->ai_mutex);
-            job_abt(&pjob, NULL);
-            pthread_mutex_lock(pa->ai_mutex);
-            }
-          }
-        else
+        }
+      else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
+        {
+        /* job has staged-in file, should remove them */
+        remove_stagein(&pjob);
+        
+        if (pjob != NULL)
           {
           /* job_abt() calls job_purge which will try to lock the array again */
           pthread_mutex_unlock(pa->ai_mutex);
           job_abt(&pjob, NULL);
           pthread_mutex_lock(pa->ai_mutex);
           }
-        } /* END if (ji_substate == JOB_SUBSTATE_PRERUN) */
-      } /* END for each job in array */
-
-    if (num_jobs == num_prerun)
-      {
-      reply_ack(preq);
-      free(last_id);
-      last_id = NULL;
-
-      pthread_mutex_unlock(pa->ai_mutex);
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buf, "%s: unlocked ai_mutex", id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
-
-      free(ptask);
-
-      return;
-      }
-    }
-
+      else
+        {
+        /* job_abt() calls job_purge which will try to lock the array again */
+        pthread_mutex_unlock(pa->ai_mutex);
+        job_abt(&pjob, NULL);
+        pthread_mutex_lock(pa->ai_mutex);
+        }
+      } /* END if (ji_substate == JOB_SUBSTATE_PRERUN) */
+    } /* END for each job in array */
+  
   pthread_mutex_unlock(pa->ai_mutex);
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "%s: unlocked ai_mutex", id);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+    sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
-
-  req_deletearray(preq);
+  
+  if (num_jobs == num_prerun)
+    {
+    reply_ack(preq);
+    }
+  else
+    {
+    req_deletearray(preq);
+    }
 
   free(ptask->wt_mutex);
   free(ptask);

@@ -158,7 +158,7 @@ pbs_net_t        pbs_server_addr;
 
 /* Private function within this file */
 
-static void *accept_conn(void *);
+void *accept_conn(void *);
 
 
 static struct netcounter nc_list[60];
@@ -483,8 +483,6 @@ int wait_request(
   long   *SState)     /* I (optional) */
 
   {
-  extern char *PAddrToString(pbs_net_t *);
-
   int i;
   int n;
 
@@ -657,9 +655,9 @@ int wait_request(
 
     /* NOTE:  add info about node associated with connection - NYI */
 
-    snprintf(tmpLine, sizeof(tmpLine), "connection %d to host %s has timed out after %d seconds - closing stale connection\n",
+    snprintf(tmpLine, sizeof(tmpLine), "connection %d to host %lu has timed out after %d seconds - closing stale connection\n",
       i,
-      PAddrToString(&cp->cn_addr),
+      cp->cn_addr,
       PBS_NET_MAXCONNECTIDLE);
     
     log_err(-1, "wait_request", tmpLine);
@@ -691,7 +689,7 @@ int wait_request(
  * NOTE: accept conn is called by functions that have a mutex on the socket already 
  */
 
-static void *accept_conn(
+void *accept_conn(
 
   void *new_conn)  /* main socket with connection request pending */
 

@@ -1598,7 +1598,7 @@ void mgr_node_set(
   struct batch_request *preq)  /* I */
 
   {
-  static int       need_todo = 0;
+  int               need_todo = 0;
 
   int               check_all = 0;
   int               propnodes = 0;

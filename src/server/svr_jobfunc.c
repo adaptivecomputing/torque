@@ -141,8 +141,8 @@
 
 /* Private Functions */
 
-static void default_std(job *, int key, dynamic_string *ds);
-static void eval_checkpoint(attribute *j, attribute *q);
+void default_std(job *, int key, dynamic_string *ds);
+void eval_checkpoint(attribute *j, attribute *q);
 
 /* Global Data Items: */
 
@@ -179,7 +179,7 @@ extern int remove_procct(job *);
 /* Private Functions */
 
 #ifndef NDEBUG
-static void correct_ct();
+void correct_ct();
 #endif  /* NDEBUG */
 
 /* sync w/#define JOB_STATE_XXX */
@@ -935,7 +935,7 @@ resource *get_resource(
  * does not make use of comp_resc_eq or comp_resc_nc
  */
 
-static int chk_svr_resc_limit(
+int chk_svr_resc_limit(
 
   attribute *jobatr, /* I */
   pbs_queue *pque,   /* I */
@@ -943,94 +943,79 @@ static int chk_svr_resc_limit(
   char      *EMsg)   /* O (optional,minsize=1024) */
 
   {
-  int       dummy;
-  int       rc;
-  int       req_procs = 0; /* must start at 0 */
-  resource *jbrc;
+  int           dummy;
+  int           rc;
+  int           req_procs = 0; /* must start at 0 */
+  resource     *jbrc;
+  resource     *jbrc_nodes = NULL;
+  resource     *qurc;
+  resource     *svrc;
+  resource     *cmpwith;
 
-  resource *jbrc_nodes = NULL;
-
-  resource *qurc;
-  resource *svrc;
-  resource *cmpwith;
-
-  int       LimitIsFromQueue;
-  char     *LimitName;
+  int           LimitIsFromQueue;
+  char         *LimitName;
 
   /* NOTE:  support Cray-specific evaluation */
 
-  int       MPPWidth = 0;
-  int       PPN = 0;
-  int       comp_resc_lt = 0;
+  int           MPPWidth = 0;
+  int           PPN = 0;
+  int           comp_resc_lt = 0;
 
-  long      mpp_nppn = 0;
-  long      mpp_width = 0;
-  long      mpp_nodect = 0;
-  resource  *mppnodect_resource = NULL;
-  long      proc_ct = 0;
+  long          mpp_nppn = 0;
+  long          mpp_width = 0;
+  long          mpp_nodect = 0;
+  resource     *mppnodect_resource = NULL;
+  long          proc_ct = 0;
 
-  static resource_def *noderesc     = NULL;
-  static resource_def *needresc     = NULL;
-  static resource_def *nodectresc   = NULL;
-  static resource_def *mppwidthresc = NULL;
-  static resource_def *mppnppn      = NULL;
-  static resource_def *procresc     = NULL;
-  char                 log_buf[LOCAL_LOG_BUF_SIZE];
-
-  static time_t UpdateTime = 0;
-  static time_t now;
+  resource_def *noderesc     = NULL;
+  resource_def *needresc     = NULL;
+  resource_def *nodectresc   = NULL;
+  resource_def *mppwidthresc = NULL;
+  resource_def *mppnppn      = NULL;
+  resource_def *procresc     = NULL;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* NOTE:  server limits are specified with server.resources_available */
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
 
-  time(&now);
-
-  if ((noderesc == NULL) || (now > UpdateTime + 30))
+  noderesc     = find_resc_def(svr_resc_def, "nodes",     svr_resc_size);
+  needresc     = find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
+  nodectresc   = find_resc_def(svr_resc_def, "nodect",    svr_resc_size);
+  mppwidthresc = find_resc_def(svr_resc_def, "mppwidth",  svr_resc_size);
+  mppnppn      = find_resc_def(svr_resc_def, "mppnppn",   svr_resc_size);
+  procresc     = find_resc_def(svr_resc_def, "procs",   svr_resc_size);
+  
+  SvrNodeCt = 0;
+  
+  if (nodectresc != NULL)
     {
-    UpdateTime = now;
-
-    /* NOTE:  to optimize, only update once per 30 seconds */
-
-    noderesc     = find_resc_def(svr_resc_def, "nodes",     svr_resc_size);
-    needresc     = find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
-    nodectresc   = find_resc_def(svr_resc_def, "nodect",    svr_resc_size);
-    mppwidthresc = find_resc_def(svr_resc_def, "mppwidth",  svr_resc_size);
-    mppnppn      = find_resc_def(svr_resc_def, "mppnppn",   svr_resc_size);
-    procresc     = find_resc_def(svr_resc_def, "procs",   svr_resc_size);
-
-    SvrNodeCt = 0;
-
-    if (nodectresc != NULL)
+    pthread_mutex_lock(server.sv_attr_mutex);
+    svrc = (resource *)GET_NEXT(
+        server.sv_attr[SRV_ATR_resource_avail].at_val.at_list);
+    
+    while (svrc != NULL)
       {
-      pthread_mutex_lock(server.sv_attr_mutex);
-      svrc = (resource *)GET_NEXT(
-               server.sv_attr[SRV_ATR_resource_avail].at_val.at_list);
-
-      while (svrc != NULL)
+      if (svrc->rs_defin == nodectresc)
         {
-        if (svrc->rs_defin == nodectresc)
+        svrc = find_resc_entry(
+            &server.sv_attr[SRV_ATR_resource_avail],
+            svrc->rs_defin);
+        
+        if ((svrc != NULL) && (svrc->rs_value.at_flags & ATR_VFLAG_SET))
           {
-          svrc = find_resc_entry(
-                   &server.sv_attr[SRV_ATR_resource_avail],
-                   svrc->rs_defin);
-
-          if ((svrc != NULL) && (svrc->rs_value.at_flags & ATR_VFLAG_SET))
-            {
-            SvrNodeCt = svrc->rs_value.at_val.at_long;
-            }
+          SvrNodeCt = svrc->rs_value.at_val.at_long;
           }
-
-        svrc = (resource *)GET_NEXT(svrc->rs_link);
-        } /* END while (svrc != NULL) */
-
-      pthread_mutex_unlock(server.sv_attr_mutex);
-      }   /* END if (nodectresc != NULL) */
-    }     /* END if ((noderesc == NULL) || ...) */
+        }
+      
+      svrc = (resource *)GET_NEXT(svrc->rs_link);
+      } /* END while (svrc != NULL) */
+    
+    pthread_mutex_unlock(server.sv_attr_mutex);
+    }   /* END if (nodectresc != NULL) */
 
   /* return values via global comp_resc_gt and comp_resc_lt */
-
   comp_resc_gt = 0;
 
 
@@ -2030,7 +2015,7 @@ int svr_chkque(
  * If indeed the case, re-evaluate and set the job state.
  */
 
-static void job_wait_over(
+void job_wait_over(
 
   struct work_task *pwt)
 
@@ -2140,7 +2125,7 @@ int job_set_wait(
  * "job_name".[e|o]job_sequence_number
  */
 
-static void default_std(
+void default_std(
 
   job            *pjob,
   int             key,  /* 'e' for stderr, 'o' for stdout */
@@ -2326,7 +2311,7 @@ void get_jobowner(
  * @param *dflt
  */
 
-static void set_deflt_resc(
+void set_deflt_resc(
 
   attribute *jb,
   attribute *dflt)
@@ -2532,33 +2517,33 @@ void set_resc_deflt(
    * to its current state.
    */
 
-  void set_statechar(
+void set_statechar(
 
-      job *pjob) /* *I* (modified) */
+  job *pjob) /* *I* (modified) */
 
   {
-    static char *statechar = "TQHWREC";
-    static char suspend    = 'S';
-
-    if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-        (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend))
+  static char *statechar = "TQHWREC";
+  static char suspend    = 'S';
+  
+  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+      (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend))
     {
-      pjob->ji_wattr[JOB_ATR_state].at_val.at_char = suspend;
+    pjob->ji_wattr[JOB_ATR_state].at_val.at_char = suspend;
     }
+  else
+    {
+    if (pjob->ji_qs.ji_state < (int)strlen(statechar))
+      {
+      pjob->ji_wattr[JOB_ATR_state].at_val.at_char =
+        *(statechar + pjob->ji_qs.ji_state);
+      }
     else
-    {
-      if (pjob->ji_qs.ji_state < (int)strlen(statechar))
       {
-        pjob->ji_wattr[JOB_ATR_state].at_val.at_char =
-          *(statechar + pjob->ji_qs.ji_state);
-      }
-      else
-      {
-        pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'U'; /* Unknown */
+      pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'U'; /* Unknown */
       }
     }
-
-    return;
+  
+  return;
   }  /* END set_statechar() */
 
 
@@ -2566,49 +2551,48 @@ void set_resc_deflt(
 
 
 
-  /*
-   * eval_checkpoint - if the job's checkpoint attribute is "c=nnnn" and
-   *  nnnn is less than the queue' minimum checkpoint time, reset
-   * to the queue min time.
-   */
+/*
+ * eval_checkpoint - if the job's checkpoint attribute is "c=nnnn" and
+ *  nnnn is less than the queue' minimum checkpoint time, reset
+ * to the queue min time.
+ */
 
-  static void eval_checkpoint(
-
-      attribute *jobckp, /* job's checkpoint attribute */
-      attribute *queckp) /* queue's checkpoint attribute */
+void eval_checkpoint(
+    
+  attribute *jobckp, /* job's checkpoint attribute */
+  attribute *queckp) /* queue's checkpoint attribute */
 
   {
-    int jobs;
-    char queues[30];
-    char *pv;
+  int   jobs;
+  char  queues[30];
+  char *pv;
 
-    if (((jobckp->at_flags & ATR_VFLAG_SET) == 0) ||
-        ((queckp->at_flags & ATR_VFLAG_SET) == 0))
+  if (((jobckp->at_flags & ATR_VFLAG_SET) == 0) ||
+      ((queckp->at_flags & ATR_VFLAG_SET) == 0))
     {
-      return;  /* need do nothing */
+    return;  /* need do nothing */
     }
-
-    pv = jobckp->at_val.at_str;
-
-    if (*pv++ == 'c')
+  
+  pv = jobckp->at_val.at_str;
+  
+  if (*pv++ == 'c')
     {
-      if (*pv == '=')
-        pv++;
-
-      jobs = atoi(pv);
-
-      if (jobs < queckp->at_val.at_long)
+    if (*pv == '=')
+      pv++;
+    
+    jobs = atoi(pv);
+    
+    if (jobs < queckp->at_val.at_long)
       {
-        sprintf(queues, "c=%ld",
-            queckp->at_val.at_long);
+      sprintf(queues, "c=%ld", queckp->at_val.at_long);
+      
+      free_str(jobckp);
 
-        free_str(jobckp);
-
-        decode_str(jobckp, 0, 0, queues, 0);
+      decode_str(jobckp, 0, 0, queues, 0);
       }
     }
-
-    return;
+  
+  return;
   }  /* END eval_checkpoint() */
 
 
@@ -2617,16 +2601,16 @@ void set_resc_deflt(
 
 #ifndef NDEBUG
 
-  /*
-   * correct_ct - This is a work-around for an as yet unfound bug where
-   * the counts of jobs in each state sometimes (rarely) become wrong.
-   * When this happens, the count for a state can become negative.
-   * If this is detected (see above), this routine is called to reset
-   * all of the counts and log a message.
-   */
+/*
+ * correct_ct - This is a work-around for an as yet unfound bug where
+ * the counts of jobs in each state sometimes (rarely) become wrong.
+ * When this happens, the count for a state can become negative.
+ * If this is detected (see above), this routine is called to reset
+ * all of the counts and log a message.
+ */
 
-  static void correct_ct()
-
+void correct_ct()
+  
   {
   int           i;
   char         *pc;
@@ -2637,7 +2621,6 @@ void set_resc_deflt(
   int           num_jobs = 0;
   int           job_counts[PBS_NUMJOBSTATE];
   char          log_buf[LOCAL_LOG_BUF_SIZE];
-  
   
   lock_startup();
   pthread_mutex_lock(server.sv_qs_mutex);

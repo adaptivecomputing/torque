@@ -1037,8 +1037,6 @@ static int svr_strtjob2(
   struct batch_request  *preq)     /* I (modified - report status) */
 
   {
-  extern char *PAddrToString(pbs_net_t *);
-
   job             *pjob = *pjob_ptr;
   int              old_state;
   int              old_subst;
@@ -1101,8 +1099,8 @@ static int svr_strtjob2(
 
     if (*pjob_ptr != NULL)
       {
-      sprintf(tmpLine, "unable to run job, send to MOM '%s' failed",
-        PAddrToString(&pjob->ji_qs.ji_un.ji_exect.ji_momaddr));
+      sprintf(tmpLine, "unable to run job, send to MOM '%lu' failed",
+        pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,tmpLine);
       
       pjob->ji_qs.ji_destin[0] = '\0';
