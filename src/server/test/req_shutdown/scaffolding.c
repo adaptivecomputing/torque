@@ -106,9 +106,9 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
-pbs_queue *get_jobs_queue(job *pjob)
+pbs_queue *get_jobs_queue(job **pjob)
   {
-  return(pjob->ji_qhdr);
+  return((*pjob)->ji_qhdr);
   }
 
 void free_br(struct batch_request *b) {}

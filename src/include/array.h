@@ -188,6 +188,6 @@ int        remove_array(job_array *);
 job_array *next_array(int *);
 void       initialize_all_arrays_array();
 
-job_array *get_jobs_array(job *);
+job_array *get_jobs_array(job **);
 
 #endif

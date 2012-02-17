@@ -2163,17 +2163,20 @@ int pbsd_init_job(
       if ((pjob->ji_arraystruct != NULL) &&
           (pjob->ji_is_array_template == FALSE))
         {
-        job_array *pa = get_jobs_array(pjob);
+        job_array *pa = get_jobs_array(&pjob);
 
-        update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
-
-        pthread_mutex_unlock(pa->ai_mutex);
-        if(LOGLEVEL >= 7)
+        if (pjob != NULL)
           {
-          sprintf(log_buf, "%s: unlocking ai_mutex", id);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+          update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
+          
+          pthread_mutex_unlock(pa->ai_mutex);
+          if (LOGLEVEL >= 7)
+            {
+            sprintf(log_buf, "%s: unlocking ai_mutex", id);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+            }
           }
-                    
+         
         }
 
       break;

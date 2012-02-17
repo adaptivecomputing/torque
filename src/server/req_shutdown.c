@@ -476,7 +476,7 @@ static void rerun_or_kill(
     if (pjob != NULL)
       {
       pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
-      if ((pque = get_jobs_queue(pjob)) != NULL)
+      if ((pque = get_jobs_queue(&pjob)) != NULL)
         {
         snprintf(log_buf, sizeof(log_buf), "%s%s%s", msg_init_queued, pque->qu_qs.qu_name, text);
 

@@ -156,29 +156,33 @@ int attempt_delete(
 
     svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
     
-    if ((pque = get_jobs_queue(pjob)) != NULL)
+    if ((pque = get_jobs_queue(&pjob)) != NULL)
       {
       pque->qu_numcompleted++;
 
       unlock_queue(pque, "attempt_delete", NULL, LOGLEVEL);
       }
-    
-    pthread_mutex_lock(server.sv_attr_mutex);
-    KeepSeconds = attr_ifelse_long(
+    else if (pjob != NULL)
+      {
+      pthread_mutex_lock(server.sv_attr_mutex);
+      KeepSeconds = attr_ifelse_long(
         &pque->qu_attr[QE_ATR_KeepCompleted],
         &server.sv_attr[SRV_ATR_KeepCompleted],
         0);
-    pthread_mutex_unlock(server.sv_attr_mutex);
-
-    jobid_copy = strdup(pjob->ji_qs.ji_jobid);
-
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "calling on_job_exit from %s", id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      pthread_mutex_unlock(server.sv_attr_mutex);
+      
+      jobid_copy = strdup(pjob->ji_qs.ji_jobid);
+      
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "calling on_job_exit from %s", id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
+      
+      set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, FALSE);
       }
-
-    set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, FALSE);
+    else
+      release_mutex = FALSE;
     }
 
   if (release_mutex == TRUE)

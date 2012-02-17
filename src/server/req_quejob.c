@@ -2123,7 +2123,7 @@ void req_commit(
    * to the user.
    */
 
-  if ((pque = get_jobs_queue(pj)) != NULL)
+  if ((pque = get_jobs_queue(&pj)) != NULL)
     {
     if ((preq->rq_fromsvr == 0) &&
         (pque->qu_qs.qu_type == QTYPE_RoutePush) &&

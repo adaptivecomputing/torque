@@ -226,7 +226,7 @@ void set_resc_assigned(
   if ((pjob == NULL))
     return;
 
-  if ((pque = get_jobs_queue(pjob)) != NULL)
+  if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
     if (pque->qu_qs.qu_type == QTYPE_Execution)
       {
@@ -327,6 +327,10 @@ void set_resc_assigned(
       }  /* END while (jobrsc != NULL) */
 
     unlock_queue(pque, "set_resc_assigned", "success", LOGLEVEL);
+    }
+  else if (pjob == NULL)
+    {
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
     }
 
   return;

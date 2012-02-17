@@ -229,7 +229,7 @@ void force_purge_work(
   
   free_nodes(pjob);
 
-  if ((pque = get_jobs_queue(pjob)) != NULL)
+  if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
     if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
       {
@@ -239,8 +239,8 @@ void force_purge_work(
     else
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
-  
-  job_purge(pjob);
+  else if (pjob != NULL)
+    job_purge(pjob);
   } /* END force_purge_work() */
 
 
@@ -493,7 +493,10 @@ jump:
       int        newstate;
       int        newsub;
       job       *tmp;
-      job_array *pa = get_jobs_array(pjob);
+      job_array *pa = get_jobs_array(&pjob);
+
+      if (pjob == NULL)
+        return(-1);
 
       for (i = 0; i < pa->ai_qs.array_size; i++)
         {
@@ -585,7 +588,7 @@ jump:
 
     svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
 
-    if ((pque = get_jobs_queue(pjob)) != NULL)
+    if ((pque = get_jobs_queue(&pjob)) != NULL)
       {
       pque->qu_numcompleted++;
 
@@ -604,12 +607,16 @@ jump:
                     0);
       pthread_mutex_unlock(server.sv_attr_mutex);
       }
-    else
+    else if (pjob != NULL)
+      {
       KeepSeconds = 0;
 
-    jobid_copy = strdup(pjob->ji_qs.ji_jobid);
-
-    set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, FALSE);
+      jobid_copy = strdup(pjob->ji_qs.ji_jobid);
+      
+      set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, FALSE);
+      }
+    else
+      has_mutex = FALSE;
     }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
 
   if (has_mutex == TRUE)
@@ -1019,15 +1026,17 @@ static void post_delete_mom1(
    */
   if (delay == 0)
     {
-    if ((pque = get_jobs_queue(pjob)) != NULL)
+    if ((pque = get_jobs_queue(&pjob)) != NULL)
       {
       pthread_mutex_lock(server.sv_attr_mutex);
       delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
                              &server.sv_attr[SRV_ATR_KillDelay],
                              2);
       pthread_mutex_unlock(server.sv_attr_mutex);
-      unlock_queue(pque, "post_delete_mom1", NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       }
+    else if (pjob == NULL)
+      return;
     }
 
   set_task(WORK_Timed, delay + time_now, post_delete_mom2, strdup(pjob->ji_qs.ji_jobid), FALSE);

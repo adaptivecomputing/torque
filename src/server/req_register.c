@@ -1073,12 +1073,10 @@ static void alter_unreg(
   attribute *new)  /* job dependency attribute after alter */
 
   {
-
   struct depend     *poldd;
-
   struct depend     *pnewd;
-
   struct depend_job *oldjd;
+
   int                type;
 
   for (poldd = (struct depend *)GET_NEXT(old->at_val.at_list);
@@ -1139,10 +1137,18 @@ int depend_on_que(
   int                rc;
   int                type;
   job               *pjob = (job *)pj;
-  pbs_queue         *pque = get_jobs_queue(pjob);
+  pbs_queue         *pque = get_jobs_queue(&pjob);
 
   if (pque == NULL)
-    return(PBSE_NONE);
+    {
+    if (pjob == NULL)
+      {
+      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+      return(PBSE_JOBNOTFOUND);
+      }
+    else
+      return(PBSE_NONE);
+    }
   else if (((mode != ATR_ACTION_ALTER) && 
             (mode != ATR_ACTION_NOOP)) ||
            (pque->qu_qs.qu_type != QTYPE_Execution))

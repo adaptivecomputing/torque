@@ -96,7 +96,7 @@ void on_job_rerun(struct work_task *ptask)
   exit(1);
   }
 
-job_array *get_jobs_array(job *pjob)
+job_array *get_jobs_array(job **pjob)
   {
   fprintf(stderr, "The call to get_jobs_array needs to be mocked!!\n");
   exit(1);

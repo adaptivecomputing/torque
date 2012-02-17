@@ -778,7 +778,10 @@ static void req_stat_job_step2(
         }
       else
         {
-        pque = get_jobs_queue(pjob);
+        pque = get_jobs_queue(&pjob);
+
+        if (pjob == NULL)
+          goto nextjob;
         
         if (pque->qu_qs.qu_type != QTYPE_Execution)
           {

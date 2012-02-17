@@ -23,7 +23,7 @@ int svr_movejob(job *jobp, char *destination, struct batch_request *req)
   exit(1);
   }
 
-pbs_queue *get_jobs_queue(job *pjob)
+pbs_queue *get_jobs_queue(job **pjob)
   {
   fprintf(stderr, "The call to get_jobs_queue to be mocked!!\n");
   exit(1);

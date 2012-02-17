@@ -66,8 +66,8 @@ int unlock_queue(pbs_queue *the_queue, const char *id, char *msg, int logging)
   return(0);
   }
 
-pbs_queue *get_jobs_queue(job *pjob)
+pbs_queue *get_jobs_queue(job **pjob)
   {
-  return(pjob->ji_qhdr);
+  return((*pjob)->ji_qhdr);
   }
 

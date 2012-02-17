@@ -571,7 +571,14 @@ void svr_dequejob(
     }
 
   if (parent_queue_mutex_held == FALSE)
-    pque = get_jobs_queue(pjob);
+    {
+    pque = get_jobs_queue(&pjob);
+    if (pjob == NULL)
+      {
+      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+      return;
+      }
+    }
   else
     pque = pjob->ji_qhdr;
 
@@ -607,6 +614,8 @@ void svr_dequejob(
     if (parent_queue_mutex_held == FALSE)
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
+  else if (pjob == NULL)
+    return;
 
 #ifndef NDEBUG
 
@@ -717,7 +726,15 @@ int svr_setjobstate(
       pthread_mutex_unlock(server.sv_jobstates_mutex);
 
       if (has_queue_mutex == FALSE)
-        pque = get_jobs_queue(pjob);
+        {
+        pque = get_jobs_queue(&pjob);
+
+        if (pjob == NULL)
+          {
+          log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+          return(PBSE_JOBNOTFOUND);
+          }
+        }
       else
         pque = pjob->ji_qhdr;
 
@@ -2399,7 +2416,14 @@ void set_resc_deflt(
     ja = &pjob->ji_wattr[JOB_ATR_resource];
 
   if (has_queue_mutex == FALSE)
-    pque = get_jobs_queue(pjob);
+    {
+    pque = get_jobs_queue(&pjob);
+    if (pjob == NULL)
+      {
+      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+      return;
+      }
+    }
   else
     pque = pjob->ji_qhdr;
 
@@ -2441,7 +2465,7 @@ void set_resc_deflt(
       }
     }
   
-  if ((pque = get_jobs_queue(pjob)) != NULL)
+  if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
     if (pque->qu_qs.qu_type == QTYPE_Execution)
       {
@@ -2451,6 +2475,10 @@ void set_resc_deflt(
 
     if (has_queue_mutex == FALSE)
       unlock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
+    }
+  else if (pjob == NULL)
+    {
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
     }
  
   return;

@@ -160,9 +160,9 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
-pbs_queue *get_jobs_queue(job *pjob)
+pbs_queue *get_jobs_queue(job **pjob)
   {
-  return(pjob->ji_qhdr);
+  return((*pjob)->ji_qhdr);
   }
 
 int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)

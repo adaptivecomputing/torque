@@ -44,7 +44,7 @@ void remove_stagein(job *pjob)
   exit(1);
   }
 
-pbs_queue *get_jobs_queue(job *pjob)
+pbs_queue *get_jobs_queue(job **pjob)
   {
   fprintf(stderr, "The call to get_jobs_queue needs to be mocked!!\n");
   exit(1);

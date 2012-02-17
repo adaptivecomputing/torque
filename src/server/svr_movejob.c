@@ -271,7 +271,15 @@ static int local_move(
   if (parent_queue_mutex_held == TRUE)
     pque = jobp->ji_qhdr;
   else
-    pque = get_jobs_queue(jobp); 
+    {
+    pque = get_jobs_queue(&jobp);
+
+    if (jobp == NULL)
+      {
+      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+      return(PBSE_JOBNOTFOUND);
+      }
+    }
 
   if (pque == NULL)
     {
@@ -336,8 +344,9 @@ static int local_move(
 
   /* dequeue job from present queue, update destination and */
   /* queue_rank for new queue and enqueue into destination  */
-
   svr_dequejob(jobp, TRUE);
+  if (strlen(jobp->ji_qs.ji_jobid) == 0)
+    return(PBSE_JOBNOTFOUND);
 
   strcpy(jobp->ji_qs.ji_queue, destination);
 
@@ -418,7 +427,7 @@ void finish_routing_processing(
       svr_setjobstate(pjob, newstate, newsub, FALSE);
 
       /* need to have queue's mutex when entering job_route */
-      if ((pque = get_jobs_queue(pjob)) != NULL)
+      if ((pque = get_jobs_queue(&pjob)) != NULL)
         {
         if ((status = job_route(pjob)) == PBSE_ROUTEREJ)
           job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
@@ -429,7 +438,7 @@ void finish_routing_processing(
 
         unlock_queue(pque, __func__, NULL, LOGLEVEL);
         }
-      else
+      else if (pjob != NULL)
         {
         /* Currently, abort if the job has no queue.
          * Should a queue be assigned in this case? */
@@ -682,6 +691,11 @@ int send_job_work(
 
     /* clear default resource settings */
     svr_dequejob(pjob, FALSE);
+    if (strlen(pjob->ji_qs.ji_jobid) == 0)
+      {
+      *pjob_ptr = NULL;
+      return(PBSE_JOBNOTFOUND);
+      }
     }
 
   pattr = pjob->ji_wattr;

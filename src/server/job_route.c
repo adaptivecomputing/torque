@@ -632,7 +632,7 @@ void *reroute_job(
   if ((jobid != NULL) &&
       ((pjob = find_job(jobid)) != NULL))
     {
-    pque = get_jobs_queue(pjob);
+    pque = get_jobs_queue(&pjob);
 
     if ((pque != NULL) &&
         (pque->qu_qs.qu_type == QTYPE_RoutePush))

@@ -273,18 +273,18 @@ void *req_orderjob(
     /* jobs are in different queues */
     int ok = FALSE;
 
-    if ((pque2 = get_jobs_queue(pjob2)) == NULL)
+    if ((pque2 = get_jobs_queue(&pjob2)) == NULL)
       req_reject(PBSE_BADSTATE, 0, req, NULL, "job2 queue is unavailable");
     else
       {
       if ((rc = svr_chkque(pjob1, pque2, get_variable(pjob1, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
         {
         unlock_queue(pque2, "req_orderjob", "pque2 svr_chkque pass", LOGLEVEL);
-        if ((pque1 = get_jobs_queue(pjob1)) == NULL)
+        if ((pque1 = get_jobs_queue(&pjob1)) == NULL)
           {
           req_reject(PBSE_BADSTATE, 0, req, NULL, "job1 queue is unavailable");
           }
-        else
+        else if (pjob1 != NULL)
           {
           if ((rc = svr_chkque(pjob2, pque1, get_variable(pjob2, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
             {
@@ -301,8 +301,10 @@ void *req_orderjob(
       {
       req_reject(rc, 0, req, NULL, NULL);
 
-      pthread_mutex_unlock(pjob1->ji_mutex);
-      pthread_mutex_unlock(pjob2->ji_mutex);
+      if (pjob1 != NULL)
+        pthread_mutex_unlock(pjob1->ji_mutex);
+      if (pjob2 != NULL)
+        pthread_mutex_unlock(pjob2->ji_mutex);
 
       return(NULL);
       }
@@ -324,13 +326,19 @@ void *req_orderjob(
     strcpy(pjob2->ji_qs.ji_queue, tmpqn);
     svr_dequejob(pjob1, FALSE);
     svr_dequejob(pjob2, FALSE);
-    svr_enquejob(pjob1, FALSE, -1);
-    svr_enquejob(pjob2, FALSE, -1);
+    if (strlen(pjob1->ji_qs.ji_jobid) > 0)
+      svr_enquejob(pjob1, FALSE, -1);
+    else
+      pjob1 = NULL;
 
+    if (strlen(pjob2->ji_qs.ji_jobid) > 0)
+      svr_enquejob(pjob2, FALSE, -1);
+    else
+      pjob2 = NULL;
     }
   else
     {
-    if ((pque1 = get_jobs_queue(pjob1)) != NULL)
+    if ((pque1 = get_jobs_queue(&pjob1)) != NULL)
       {
       swap_jobs(pque1->qu_jobs,pjob1,pjob2);
       swap_jobs(NULL,pjob1,pjob2);
@@ -339,16 +347,18 @@ void *req_orderjob(
     }
 
   /* need to update disk copy of both jobs to save new order */
-
-  job_save(pjob1, SAVEJOB_FULL, 0);
-
-  job_save(pjob2, SAVEJOB_FULL, 0);
+  if (pjob1 != NULL)
+    job_save(pjob1, SAVEJOB_FULL, 0);
+  if (pjob2 != NULL)
+    job_save(pjob2, SAVEJOB_FULL, 0);
 
   reply_ack(req);
 
   /* SUCCESS */
-  pthread_mutex_unlock(pjob1->ji_mutex);
-  pthread_mutex_unlock(pjob2->ji_mutex);
+  if (pjob1 != NULL)
+    pthread_mutex_unlock(pjob1->ji_mutex);
+  if (pjob2 != NULL)
+    pthread_mutex_unlock(pjob2->ji_mutex);
 
   return(NULL);
   }  /* END req_orderjob() */

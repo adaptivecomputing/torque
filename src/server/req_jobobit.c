@@ -841,7 +841,7 @@ int handle_returnstd(
      * the job has a checkpoint file and the file is not joined to another
      *  file */
 
-    if ((pque = get_jobs_queue(pjob)) != NULL)
+    if ((pque = get_jobs_queue(&pjob)) != NULL)
       {
       if (pque->qu_attr != NULL)
         {
@@ -853,7 +853,12 @@ int handle_returnstd(
         pthread_mutex_unlock(server.sv_attr_mutex);
         }
 
-      unlock_queue(pque, "handle_returnstd", NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      }
+    else if (pjob == NULL)
+      {
+      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+      return(PBSE_JOBNOTFOUND);
       }
     
     if (KeepSeconds > 0)
@@ -1341,11 +1346,16 @@ int handle_exited(
 
   svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
   
-  if ((pque = get_jobs_queue(pjob)) != NULL)
+  if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
     pque->qu_numcompleted++;
 
     unlock_queue(pque, "handle_exited", NULL, LOGLEVEL);
+    }
+  else if (pjob == NULL)
+    {
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+    return(PBSE_JOBNOTFOUND);
     }
   
   return(WORK_Immed);
@@ -1360,7 +1370,6 @@ int handle_complete_first_time(
   int  handle)
 
   {
-  char id[] = "handle_complete_first_time";
   pbs_queue   *pque;
   char        *jobid;
   int          KeepSeconds = 0;
@@ -1372,7 +1381,7 @@ int handle_complete_first_time(
   if (LOGLEVEL >= 4)
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"JOB_SUBSTATE_COMPLETE");
   
-  if ((pque = get_jobs_queue(pjob)) != NULL)
+  if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
     if (pque->qu_attr != NULL)
       {
@@ -1384,7 +1393,13 @@ int handle_complete_first_time(
       pthread_mutex_unlock(server.sv_attr_mutex);
       }
 
-    unlock_queue(pque, "handle_complete_first_time", NULL, LOGLEVEL);
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
+    }
+  else if (pjob == NULL)
+    {
+    /* let the caller know the job is gone */
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+    return(TRUE);
     }
   
   if ((get_svr_attr_l(SRV_ATR_JobMustReport, &must_report) == PBSE_NONE) &&
@@ -1420,7 +1435,7 @@ int handle_complete_first_time(
     
     if(LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s: handle = -1", id);
+      sprintf(log_buf, "calling on_job_exit from %s: handle = -1", __func__);
       log_event(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
@@ -1446,7 +1461,7 @@ int handle_complete_first_time(
     
     if(LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s", id);
+      sprintf(log_buf, "calling on_job_exit from %s", __func__);
       log_event(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
@@ -1654,7 +1669,12 @@ void on_job_exit(
        * job can be restarted from a checkpoint file.
        */
 
-      if ((type = handle_returnstd(pjob,preq,handle,type)) < 0)
+      if ((type = handle_returnstd(pjob,preq,handle,type)) == PBSE_JOBNOTFOUND)
+        {
+        purged = TRUE;
+        break;
+        }
+      else if (type < 0)
         break;
       else
         preq = NULL;
@@ -1675,7 +1695,12 @@ void on_job_exit(
 
     case JOB_SUBSTATE_EXITED:
 
-      if ((type = handle_exited(pjob,handle)) < 0)
+      if ((type = handle_exited(pjob,handle)) == PBSE_JOBNOTFOUND)
+        {
+        purged = TRUE;
+        break;
+        }
+      else if (type < 0)
         break;
 
     case JOB_SUBSTATE_COMPLETE:
@@ -2748,14 +2773,10 @@ void *req_jobobit(
 
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s", __func__);
-      log_event(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
     set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
@@ -2764,12 +2785,15 @@ void *req_jobobit(
     if ((pjob->ji_arraystruct != NULL) &&
         (pjob->ji_is_array_template == FALSE))
       {
-      job_array *pa = get_jobs_array(pjob);
+      job_array *pa = get_jobs_array(&pjob);
 
+      if (pjob == NULL)
+        return(NULL);
+        
       update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
-
+        
       pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >= 7)
+      if (LOGLEVEL >= 7)
         {
         sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);

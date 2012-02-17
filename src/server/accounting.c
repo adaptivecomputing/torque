@@ -184,7 +184,7 @@ int acct_job(
   if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
     return(rc);
 
-  if ((pque = get_jobs_queue(pjob)) != NULL)
+  if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
     /* queue name */
     sprintf(local_buf, "queue=%s ", pque->qu_qs.qu_name);
@@ -192,6 +192,11 @@ int acct_job(
 
     if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
       return(rc);
+    }
+  else if (pjob == NULL)
+    {
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+    return(PBSE_JOBNOTFOUND);
     }
 
   /* create time */

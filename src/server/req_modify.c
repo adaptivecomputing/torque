@@ -548,6 +548,9 @@ int modify_job(
       pjob->ji_qs.ji_jobid);
     log_err(rc, __func__, log_buf);
 
+    if (rc == PBSE_JOBNOTFOUND)
+      *j = NULL;
+
     return(rc);
     }
 
@@ -1177,10 +1180,10 @@ void *req_modifyjob(
 
 int modify_job_attr(
 
-  job    *pjob,  /* I (modified) */
+  job      *pjob,  /* I (modified) */
   svrattrl *plist, /* I */
-  int     perm,
-  int    *bad)   /* O */
+  int       perm,
+  int      *bad)   /* O */
 
   {
   int        allow_unkn = -1;
@@ -1191,12 +1194,17 @@ int modify_job_attr(
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_queue *pque;
 
-  if ((pque = get_jobs_queue(pjob)) != NULL)
+  if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
     if (pque->qu_qs.qu_type != QTYPE_Execution)
       allow_unkn = JOB_ATR_UNKN;
 
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
+    }
+  else
+    {
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+    return(PBSE_JOBNOTFOUND);
     }
 
   pattr = pjob->ji_wattr;
@@ -1244,10 +1252,15 @@ int modify_job_attr(
 
       if (rc == 0)
         {
-        if ((pque = get_jobs_queue(pjob)) != NULL)
+        if ((pque = get_jobs_queue(&pjob)) != NULL)
           {
           rc = chk_resc_limits( &newattr[JOB_ATR_resource], pque, NULL);
-          unlock_queue(pque, "modify_job_attr", NULL, LOGLEVEL);
+          unlock_queue(pque, __func__, NULL, LOGLEVEL);
+          }
+        else if (pjob == NULL)
+          {
+          log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+          return(PBSE_JOBNOTFOUND);
           }
         else
           rc = PBSE_QUENOTAVAILABLE;

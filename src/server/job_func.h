@@ -57,6 +57,6 @@ job *next_job_from_back(struct all_jobs *aj, int *iter);
 
 int swap_jobs(struct all_jobs *aj, job *job1, job *job2);
 
-job_array *get_jobs_array(job *pjob);
+job_array *get_jobs_array(job **pjob);
 
 #endif /* _JOB_FUNC_H */
