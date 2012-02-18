@@ -364,10 +364,12 @@ AvlTree AVL_delete_node(
 
 
 int AVL_list_add_item(
-    AvlTree tree,
-    char **r_buf,
-    long *current_len,
-    long *max_len)
+
+  AvlTree   tree,
+  char    **r_buf,
+  long     *current_len,
+  long     *max_len)
+
   {
   char    *tmp_buf = NULL;
   char    *current_buffer = NULL;

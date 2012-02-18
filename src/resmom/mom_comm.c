@@ -5468,12 +5468,14 @@ void im_request(
 
     if (ret == 0)
       {
-      sprintf(log_buffer, "bad connect from %s - unauthorized (okclients: %s)",
+      snprintf(log_buffer, sizeof(log_buffer),
+        "bad connect from %s - unauthorized (okclients: %s)",
         netaddr(addr),
         tmp_line);
       }
     else
-      sprintf(log_buffer, "bad connect from %s - unauthorized (could not get ok clients %d)",
+      snprintf(log_buffer, sizeof(log_buffer),
+        "bad connect from %s - unauthorized (could not get ok clients %d)",
         netaddr(addr),
         ret);
     
