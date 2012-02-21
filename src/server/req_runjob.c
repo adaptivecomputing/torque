@@ -1056,14 +1056,6 @@ static int svr_strtjob2(
     DIS_tcp_settimeout(server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_val.at_long);
     }
 
-  /* if job start timeout attribute is set use its value */
-  
-  if (((server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_flags & ATR_VFLAG_SET) != 0)
-          && (server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_val.at_long > 0))
-    {
-    DIS_tcp_settimeout(server.sv_attr[(int)SRV_ATR_JobStartTimeout].at_val.at_long);
-    }
-
   if (send_job(
         pjob,
         pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
