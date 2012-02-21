@@ -607,10 +607,11 @@ jump:
                     0);
       pthread_mutex_unlock(server.sv_attr_mutex);
       }
-    else if (pjob != NULL)
-      {
+    else
       KeepSeconds = 0;
 
+    if (pjob != NULL)
+      {
       jobid_copy = strdup(pjob->ji_qs.ji_jobid);
       
       set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, FALSE);
