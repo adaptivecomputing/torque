@@ -162,7 +162,8 @@ int attempt_delete(
 
       unlock_queue(pque, "attempt_delete", NULL, LOGLEVEL);
       }
-    else if (pjob != NULL)
+    
+    if (pjob != NULL)
       {
       pthread_mutex_lock(server.sv_attr_mutex);
       KeepSeconds = attr_ifelse_long(

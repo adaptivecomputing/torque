@@ -239,7 +239,8 @@ void force_purge_work(
     else
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
-  else if (pjob != NULL)
+  
+  if (pjob != NULL)
     job_purge(pjob);
   } /* END force_purge_work() */
 
