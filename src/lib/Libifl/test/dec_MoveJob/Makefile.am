@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_dec_MoveJob
 
 libdec_MoveJob_la_SOURCES = scaffolding.c ${PROG_ROOT}/dec_MoveJob.c
-libdec_MoveJob_la_LDFLAGS = @CHECK_LIBS@
+libdec_MoveJob_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_dec_MoveJob_SOURCES = test_dec_MoveJob.c
 

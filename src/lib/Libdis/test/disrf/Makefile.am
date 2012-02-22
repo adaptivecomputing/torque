@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_disrf
 
 libdisrf_la_SOURCES = scaffolding.c ${PROG_ROOT}/disrf.c
-libdisrf_la_LDFLAGS = @CHECK_LIBS@
+libdisrf_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_disrf_SOURCES = test_disrf.c
 

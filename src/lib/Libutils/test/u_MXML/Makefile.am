@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_u_MXML
 
 libu_MXML_la_SOURCES = scaffolding.c ${PROG_ROOT}/u_MXML.c
-libu_MXML_la_LDFLAGS = @CHECK_LIBS@
+libu_MXML_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_u_MXML_SOURCES = test_u_MXML.c
 

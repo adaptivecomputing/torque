@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_cpuset
 
 libcpuset_la_SOURCES = scaffolding.c ${PROG_ROOT}/cpuset.c
-libcpuset_la_LDFLAGS = @CHECK_LIBS@
+libcpuset_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_cpuset_SOURCES = test_cpuset.c
 

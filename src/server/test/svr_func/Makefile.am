@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_svr_func
 
 libsvr_func_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_func.c
-libsvr_func_la_LDFLAGS = @CHECK_LIBS@
+libsvr_func_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_svr_func_SOURCES = test_svr_func.c
 

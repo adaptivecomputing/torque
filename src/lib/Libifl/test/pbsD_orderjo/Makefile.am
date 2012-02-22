@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsD_orderjo
 
 libpbsD_orderjo_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_orderjo.c
-libpbsD_orderjo_la_LDFLAGS = @CHECK_LIBS@
+libpbsD_orderjo_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbsD_orderjo_SOURCES = test_pbsD_orderjo.c
 

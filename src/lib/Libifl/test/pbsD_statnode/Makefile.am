@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsD_statnode
 
 libpbsD_statnode_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_statnode.c
-libpbsD_statnode_la_LDFLAGS = @CHECK_LIBS@
+libpbsD_statnode_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbsD_statnode_SOURCES = test_pbsD_statnode.c
 

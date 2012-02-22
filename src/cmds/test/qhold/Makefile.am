@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qhold
 
 libqhold_la_SOURCES = scaffolding.c ${PROG_ROOT}/qhold.c
-libqhold_la_LDFLAGS = @CHECK_LIBS@
+libqhold_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_qhold_SOURCES = test_qhold.c
 

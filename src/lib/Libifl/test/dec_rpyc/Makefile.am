@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_dec_rpyc
 
 libdec_rpyc_la_SOURCES = scaffolding.c ${PROG_ROOT}/dec_rpyc.c
-libdec_rpyc_la_LDFLAGS = @CHECK_LIBS@
+libdec_rpyc_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_dec_rpyc_SOURCES = test_dec_rpyc.c
 

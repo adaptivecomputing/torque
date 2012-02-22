@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_server_core
 
 libserver_core_la_SOURCES = scaffolding.c ${PROG_ROOT}/server_core.c
-libserver_core_la_LDFLAGS = @CHECK_LIBS@
+libserver_core_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_server_core_SOURCES = test_server_core.c
 

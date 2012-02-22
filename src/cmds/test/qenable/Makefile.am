@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qenable
 
 libqenable_la_SOURCES = scaffolding.c ${PROG_ROOT}/qenable.c
-libqenable_la_LDFLAGS = @CHECK_LIBS@
+libqenable_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_qenable_SOURCES = test_qenable.c
 

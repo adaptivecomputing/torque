@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbs_messages
 
 libpbs_messages_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbs_messages.c
-libpbs_messages_la_LDFLAGS = @CHECK_LIBS@
+libpbs_messages_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbs_messages_SOURCES = test_pbs_messages.c
 

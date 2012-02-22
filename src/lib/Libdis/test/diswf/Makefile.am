@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_diswf
 
 libdiswf_la_SOURCES = scaffolding.c ${PROG_ROOT}/diswf.c
-libdiswf_la_LDFLAGS = @CHECK_LIBS@
+libdiswf_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_diswf_SOURCES = test_diswf.c
 

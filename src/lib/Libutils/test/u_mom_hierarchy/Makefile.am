@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_u_mom_hierarchy
 
 libu_mom_hierarchy_la_SOURCES = scaffolding.c ${PROG_ROOT}/u_mom_hierarchy.c
-libu_mom_hierarchy_la_LDFLAGS = @CHECK_LIBS@
+libu_mom_hierarchy_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_u_mom_hierarchy_SOURCES = test_u_mom_hierarchy.c
 

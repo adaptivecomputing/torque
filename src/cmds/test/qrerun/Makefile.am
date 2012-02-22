@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qrerun
 
 libqrerun_la_SOURCES = scaffolding.c ${PROG_ROOT}/qrerun.c
-libqrerun_la_LDFLAGS = @CHECK_LIBS@
+libqrerun_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_qrerun_SOURCES = test_qrerun.c
 

@@ -86,8 +86,7 @@ char *acct_file = NULL;
 char *path_mom_hierarchy = "/dev/null";
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
-
-
+pthread_mutex_t     *acctfile_mutex;
 
 
 void on_job_rerun(struct work_task *ptask)

@@ -1,6 +1,7 @@
 #ifndef _SVRFUNC_H
 #define _SVRFUNC_H
 #include "license_pbs.h" /* See here for the software license */
+#include "queue.h" /* pbs_queue */
 
 /*
  * misc server function prototypes

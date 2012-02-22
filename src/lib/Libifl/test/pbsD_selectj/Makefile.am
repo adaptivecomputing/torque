@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsD_selectj
 
 libpbsD_selectj_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_selectj.c
-libpbsD_selectj_la_LDFLAGS = @CHECK_LIBS@
+libpbsD_selectj_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbsD_selectj_SOURCES = test_pbsD_selectj.c
 

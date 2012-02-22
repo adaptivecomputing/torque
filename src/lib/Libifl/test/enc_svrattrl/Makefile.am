@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_enc_svrattrl
 
 libenc_svrattrl_la_SOURCES = scaffolding.c ${PROG_ROOT}/enc_svrattrl.c
-libenc_svrattrl_la_LDFLAGS = @CHECK_LIBS@
+libenc_svrattrl_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_enc_svrattrl_SOURCES = test_enc_svrattrl.c
 

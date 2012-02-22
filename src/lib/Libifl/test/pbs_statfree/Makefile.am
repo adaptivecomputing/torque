@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbs_statfree
 
 libpbs_statfree_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbs_statfree.c
-libpbs_statfree_la_LDFLAGS = @CHECK_LIBS@
+libpbs_statfree_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbs_statfree_SOURCES = test_pbs_statfree.c
 

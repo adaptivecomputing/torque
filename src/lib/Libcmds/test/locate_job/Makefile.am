@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_locate_job
 
 liblocate_job_la_SOURCES = scaffolding.c ${PROG_ROOT}/locate_job.c
-liblocate_job_la_LDFLAGS = @CHECK_LIBS@
+liblocate_job_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_locate_job_SOURCES = test_locate_job.c
 

@@ -10,7 +10,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_common_cmds
 
 libcommon_cmds_la_SOURCES = scaffolding.c ${PROG_ROOT}/common_cmds.c
-libcommon_cmds_la_LDFLAGS = @CHECK_LIBS@
+libcommon_cmds_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_common_cmds_SOURCES = test_common_cmds.c
 

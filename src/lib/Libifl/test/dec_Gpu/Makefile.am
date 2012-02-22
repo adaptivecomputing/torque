@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_dec_Gpu
 
 libdec_Gpu_la_SOURCES = scaffolding.c ${PROG_ROOT}/dec_Gpu.c
-libdec_Gpu_la_LDFLAGS = @CHECK_LIBS@
+libdec_Gpu_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_dec_Gpu_SOURCES = test_dec_Gpu.c
 

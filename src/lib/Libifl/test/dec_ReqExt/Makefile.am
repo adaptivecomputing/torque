@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_dec_ReqExt
 
 libdec_ReqExt_la_SOURCES = scaffolding.c ${PROG_ROOT}/dec_ReqExt.c
-libdec_ReqExt_la_LDFLAGS = @CHECK_LIBS@
+libdec_ReqExt_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_dec_ReqExt_SOURCES = test_dec_ReqExt.c
 

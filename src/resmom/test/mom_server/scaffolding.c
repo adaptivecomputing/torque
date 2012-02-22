@@ -51,7 +51,7 @@ int needs_cluster_addrs;
 time_t LastServerUpdateTime;
 int received_cluster_addrs;
 time_t       requested_cluster_addrs;
-
+time_t       first_update_time = 0;
 
 
 int MUReadPipe(char *Command, char *Buffer, int BufSize)
@@ -312,3 +312,38 @@ void *next_thing_from_back(resizable_array *ra, int *iter)
   exit(1);
   }
 
+int append_dynamic_string(dynamic_string *ds, char *to_append)
+  {
+  fprintf(stderr, "The call to append_dynamic_string to be mocked!!\n");
+  exit(1);
+  }
+
+dynamic_string *get_dynamic_string(int initial_size, char *str)
+  {
+  fprintf(stderr, "The call to get_dynamic_string needs to be mocked!!\n");
+  exit(1);
+  }
+
+void free_dynamic_string(dynamic_string *ds)
+  {
+  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
+  exit(1);
+  }
+
+int delete_last_word_from_dynamic_string(dynamic_string *ds)
+  {
+  fprintf(stderr, "The call to delete_last_word_from_dynamic_string needs to be mocked!!\n");
+  exit(1);
+  }
+
+void send_update_soon()
+  {
+  fprintf(stderr, "The call to send_update_soon needs to be mocked!!\n");
+  exit(1);
+  }
+
+int AVL_list(AvlTree tree, char **Buf, long *current_len, long *max_len)
+  {
+  fprintf(stderr, "The call to AVL_list needs to be mocked!!\n");
+  exit(1);
+  }

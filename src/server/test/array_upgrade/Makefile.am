@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_array_upgrade
 
 libarray_upgrade_la_SOURCES = scaffolding.c ${PROG_ROOT}/array_upgrade.c
-libarray_upgrade_la_LDFLAGS = @CHECK_LIBS@
+libarray_upgrade_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_array_upgrade_SOURCES = test_array_upgrade.c
 

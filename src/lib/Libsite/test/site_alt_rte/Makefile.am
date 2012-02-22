@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_site_alt_rte
 
 libsite_alt_rte_la_SOURCES = scaffolding.c ${PROG_ROOT}/site_alt_rte.c
-libsite_alt_rte_la_LDFLAGS = @CHECK_LIBS@
+libsite_alt_rte_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_site_alt_rte_SOURCES = test_site_alt_rte.c
 

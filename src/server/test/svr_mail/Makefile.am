@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_svr_mail
 
 libsvr_mail_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_mail.c
-libsvr_mail_la_LDFLAGS = @CHECK_LIBS@
+libsvr_mail_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_svr_mail_SOURCES = test_svr_mail.c
 

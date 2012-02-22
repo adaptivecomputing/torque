@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsD_termin
 
 libpbsD_termin_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_termin.c
-libpbsD_termin_la_LDFLAGS = @CHECK_LIBS@
+libpbsD_termin_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbsD_termin_SOURCES = test_pbsD_termin.c
 

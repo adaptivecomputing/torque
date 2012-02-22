@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsnodes
 
 libpbsnodes_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsnodes.c
-libpbsnodes_la_LDFLAGS = @CHECK_LIBS@
+libpbsnodes_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbsnodes_SOURCES = test_pbsnodes.c
 

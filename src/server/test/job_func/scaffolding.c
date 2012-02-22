@@ -423,3 +423,10 @@ int get_svr_attr_str(int index, char **str)
   {
   return(0);
   }
+
+int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
+  {
+  fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
+  exit(1);
+  }
+

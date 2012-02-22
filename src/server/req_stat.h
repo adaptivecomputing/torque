@@ -32,7 +32,7 @@ void *req_stat_node(void *vp);
 
 /* static int status_node(struct pbsnode *pnode, struct batch_request *preq, tlist_head *pstathd); */
 
-void req_stat_svr(struct batch_request *preq);
+void *req_stat_svr(void *vp);
 
 /* static void update_state_ct(attribute *pattr, int *ct_array, char *buf); */
 

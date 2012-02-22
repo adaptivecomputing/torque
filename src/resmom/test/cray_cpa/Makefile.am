@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_cray_cpa
 
 libcray_cpa_la_SOURCES = scaffolding.c ${PROG_ROOT}/cray_cpa.c
-libcray_cpa_la_LDFLAGS = @CHECK_LIBS@
+libcray_cpa_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_cray_cpa_SOURCES = test_cray_cpa.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_site_allow_u
 
 libsite_allow_u_la_SOURCES = scaffolding.c ${PROG_ROOT}/site_allow_u.c
-libsite_allow_u_la_LDFLAGS = @CHECK_LIBS@
+libsite_allow_u_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_site_allow_u_SOURCES = test_site_allow_u.c
 

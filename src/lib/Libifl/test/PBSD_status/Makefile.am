@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_PBSD_status
 
 libPBSD_status_la_SOURCES = scaffolding.c ${PROG_ROOT}/PBSD_status.c
-libPBSD_status_la_LDFLAGS = @CHECK_LIBS@
+libPBSD_status_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_PBSD_status_SOURCES = test_PBSD_status.c
 

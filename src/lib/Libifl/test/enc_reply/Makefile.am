@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_enc_reply
 
 libenc_reply_la_SOURCES = scaffolding.c ${PROG_ROOT}/enc_reply.c
-libenc_reply_la_LDFLAGS = @CHECK_LIBS@
+libenc_reply_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_enc_reply_SOURCES = test_enc_reply.c
 

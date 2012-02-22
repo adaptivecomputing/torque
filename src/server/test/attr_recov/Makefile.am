@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_attr_recov
 
 libattr_recov_la_SOURCES = scaffolding.c ${PROG_ROOT}/attr_recov.c
-libattr_recov_la_LDFLAGS = @CHECK_LIBS@
+libattr_recov_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_attr_recov_SOURCES = test_attr_recov.c
 

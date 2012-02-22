@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_u_resizable_array
 
 libu_resizable_array_la_SOURCES = scaffolding.c ${PROG_ROOT}/u_resizable_array.c
-libu_resizable_array_la_LDFLAGS = @CHECK_LIBS@
+libu_resizable_array_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_u_resizable_array_SOURCES = test_u_resizable_array.c
 

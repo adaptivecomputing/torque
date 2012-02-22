@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_hostn
 
 libhostn_la_SOURCES = scaffolding.c ${PROG_ROOT}/hostn.c
-libhostn_la_LDFLAGS = @CHECK_LIBS@
+libhostn_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_hostn_SOURCES = test_hostn.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qterm
 
 libqterm_la_SOURCES = scaffolding.c ${PROG_ROOT}/qterm.c
-libqterm_la_LDFLAGS = @CHECK_LIBS@
+libqterm_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_qterm_SOURCES = test_qterm.c
 

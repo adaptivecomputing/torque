@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qdisable
 
 libqdisable_la_SOURCES = scaffolding.c ${PROG_ROOT}/qdisable.c
-libqdisable_la_LDFLAGS = @CHECK_LIBS@
+libqdisable_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_qdisable_SOURCES = test_qdisable.c
 

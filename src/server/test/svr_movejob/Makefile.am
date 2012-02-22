@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_svr_movejob
 
 libsvr_movejob_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_movejob.c
-libsvr_movejob_la_LDFLAGS = @CHECK_LIBS@
+libsvr_movejob_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_svr_movejob_SOURCES = test_svr_movejob.c
 

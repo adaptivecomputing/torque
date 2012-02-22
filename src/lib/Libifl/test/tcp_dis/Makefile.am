@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_tcp_dis
 
 libtcp_dis_la_SOURCES = scaffolding.c ${PROG_ROOT}/tcp_dis.c
-libtcp_dis_la_LDFLAGS = @CHECK_LIBS@
+libtcp_dis_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_tcp_dis_SOURCES = test_tcp_dis.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_PBSD_submit_caps
 
 libPBSD_submit_caps_la_SOURCES = scaffolding.c ${PROG_ROOT}/PBSD_submit_caps.c
-libPBSD_submit_caps_la_LDFLAGS = @CHECK_LIBS@
+libPBSD_submit_caps_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_PBSD_submit_caps_SOURCES = test_PBSD_submit_caps.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_dis_read
 
 libdis_read_la_SOURCES = scaffolding.c ${PROG_ROOT}/dis_read.c
-libdis_read_la_LDFLAGS = @CHECK_LIBS@
+libdis_read_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_dis_read_SOURCES = test_dis_read.c
 

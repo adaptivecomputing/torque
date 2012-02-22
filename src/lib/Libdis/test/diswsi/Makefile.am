@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_diswsi
 
 libdiswsi_la_SOURCES = scaffolding.c ${PROG_ROOT}/diswsi.c
-libdiswsi_la_LDFLAGS = @CHECK_LIBS@
+libdiswsi_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_diswsi_SOURCES = test_diswsi.c
 

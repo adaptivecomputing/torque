@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_set_attr
 
 libset_attr_la_SOURCES = scaffolding.c ${PROG_ROOT}/set_attr.c
-libset_attr_la_LDFLAGS = @CHECK_LIBS@
+libset_attr_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_set_attr_SOURCES = test_set_attr.c
 

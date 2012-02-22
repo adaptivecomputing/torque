@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_list_link
 
 liblist_link_la_SOURCES = scaffolding.c ${PROG_ROOT}/list_link.c
-liblist_link_la_LDFLAGS = @CHECK_LIBS@
+liblist_link_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_list_link_SOURCES = test_list_link.c
 

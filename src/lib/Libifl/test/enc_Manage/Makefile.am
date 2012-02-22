@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_enc_Manage
 
 libenc_Manage_la_SOURCES = scaffolding.c ${PROG_ROOT}/enc_Manage.c
-libenc_Manage_la_LDFLAGS = @CHECK_LIBS@
+libenc_Manage_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_enc_Manage_SOURCES = test_enc_Manage.c
 

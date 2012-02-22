@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_stat
 
 libreq_stat_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_stat.c
-libreq_stat_la_LDFLAGS = @CHECK_LIBS@
+libreq_stat_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_req_stat_SOURCES = test_req_stat.c
 

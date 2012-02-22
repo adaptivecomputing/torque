@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsD_submit
 
 libpbsD_submit_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_submit.c
-libpbsD_submit_la_LDFLAGS = @CHECK_LIBS@
+libpbsD_submit_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbsD_submit_SOURCES = test_pbsD_submit.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_disrsi_
 
 libdisrsi__la_SOURCES = scaffolding.c ${PROG_ROOT}/disrsi_.c
-libdisrsi__la_LDFLAGS = @CHECK_LIBS@
+libdisrsi__la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_disrsi__SOURCES = test_disrsi_.c
 

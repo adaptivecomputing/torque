@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_torquecfg
 
 libtorquecfg_la_SOURCES = scaffolding.c ${PROG_ROOT}/torquecfg.c
-libtorquecfg_la_LDFLAGS = @CHECK_LIBS@
+libtorquecfg_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_torquecfg_SOURCES = test_torquecfg.c
 

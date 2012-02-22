@@ -21,7 +21,7 @@ int LOGLEVEL = 1;
 char log_buffer[LOG_BUF_SIZE];
 
 
-void req_rerunjob(struct batch_request *preq)
+void *req_rerunjob(void *vp)
   {
   fprintf(stderr, "The call to req_rerunjob needs to be mocked!!\n");
   exit(1);

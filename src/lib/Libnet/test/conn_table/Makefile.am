@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_conn_table
 
 libconn_table_la_SOURCES = scaffolding.c ${PROG_ROOT}/conn_table.c
-libconn_table_la_LDFLAGS = @CHECK_LIBS@
+libconn_table_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_conn_table_SOURCES = test_conn_table.c
 

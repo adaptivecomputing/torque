@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_rpp
 
 librpp_la_SOURCES = scaffolding.c ${PROG_ROOT}/rpp.c
-librpp_la_LDFLAGS = @CHECK_LIBS@
+librpp_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_rpp_SOURCES = test_rpp.c
 

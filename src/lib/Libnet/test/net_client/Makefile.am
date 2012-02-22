@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_net_client
 
 libnet_client_la_SOURCES = scaffolding.c ${PROG_ROOT}/net_client.c
-libnet_client_la_LDFLAGS = @CHECK_LIBS@
+libnet_client_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_net_client_SOURCES = test_net_client.c
 

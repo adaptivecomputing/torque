@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_attr_func
 
 libattr_func_la_SOURCES = scaffolding.c ${PROG_ROOT}/attr_func.c
-libattr_func_la_LDFLAGS = @CHECK_LIBS@
+libattr_func_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_attr_func_SOURCES = test_attr_func.c
 

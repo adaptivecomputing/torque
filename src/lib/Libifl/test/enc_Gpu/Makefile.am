@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_enc_Gpu
 
 libenc_Gpu_la_SOURCES = scaffolding.c ${PROG_ROOT}/enc_Gpu.c
-libenc_Gpu_la_LDFLAGS = @CHECK_LIBS@
+libenc_Gpu_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_enc_Gpu_SOURCES = test_enc_Gpu.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbs_track
 
 libpbs_track_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbs_track.c
-libpbs_track_la_LDFLAGS = @CHECK_LIBS@
+libpbs_track_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbs_track_SOURCES = test_pbs_track.c
 

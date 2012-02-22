@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_dec_Track
 
 libdec_Track_la_SOURCES = scaffolding.c ${PROG_ROOT}/dec_Track.c
-libdec_Track_la_LDFLAGS = @CHECK_LIBS@
+libdec_Track_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_dec_Track_SOURCES = test_dec_Track.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_PBSD_rdrpy
 
 libPBSD_rdrpy_la_SOURCES = scaffolding.c ${PROG_ROOT}/PBSD_rdrpy.c
-libPBSD_rdrpy_la_LDFLAGS = @CHECK_LIBS@
+libPBSD_rdrpy_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_PBSD_rdrpy_SOURCES = test_PBSD_rdrpy.c
 

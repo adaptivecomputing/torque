@@ -8,9 +8,9 @@
 #include "pbs_job.h" /* job */
 #include "list_link.h" /* tlist_head */
 
-void req_register(struct batch_request *preq);
+void *req_register(void *vp);
 
-void req_registerarray(struct batch_request *preq);
+void *req_registerarray(void *vp);
 
 int register_array_depend(job_array *pa, struct batch_request *preq, int type, int num_jobs);
 

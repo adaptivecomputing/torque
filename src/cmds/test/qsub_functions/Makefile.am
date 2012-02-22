@@ -10,7 +10,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_x11_get_proto
 
 libqsub_functions_la_SOURCES = scaffolding.c ${PROG_ROOT}/qsub_functions.c
-libqsub_functions_la_LDFLAGS = @CHECK_LIBS@
+libqsub_functions_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_x11_get_proto_SOURCES = test_x11_get_proto.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_chk_tree
 
 libchk_tree_la_SOURCES = scaffolding.c ${PROG_ROOT}/chk_tree.c
-libchk_tree_la_LDFLAGS = @CHECK_LIBS@
+libchk_tree_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_chk_tree_SOURCES = test_chk_tree.c
 

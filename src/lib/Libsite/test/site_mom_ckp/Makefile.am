@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_site_mom_ckp
 
 libsite_mom_ckp_la_SOURCES = scaffolding.c ${PROG_ROOT}/site_mom_ckp.c
-libsite_mom_ckp_la_LDFLAGS = @CHECK_LIBS@
+libsite_mom_ckp_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_site_mom_ckp_SOURCES = test_site_mom_ckp.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbspoe
 
 libpbspoe_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbspoe.c
-libpbspoe_la_LDFLAGS = @CHECK_LIBS@
+libpbspoe_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbspoe_SOURCES = test_pbspoe.c
 

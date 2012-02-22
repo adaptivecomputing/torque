@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_enc_QueueJob
 
 libenc_QueueJob_la_SOURCES = scaffolding.c ${PROG_ROOT}/enc_QueueJob.c
-libenc_QueueJob_la_LDFLAGS = @CHECK_LIBS@
+libenc_QueueJob_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_enc_QueueJob_SOURCES = test_enc_QueueJob.c
 

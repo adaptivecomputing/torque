@@ -5512,7 +5512,7 @@ void im_request(
     sprintf(log_buffer,"request for job %s failed - %s (command)",
       jobid,
       dis_emsg[ret]);
-    log_err(-1,id,log_buffer);
+    log_err(-1,__func__,log_buffer);
     goto err;
     }
  
@@ -5658,7 +5658,7 @@ void im_request(
         {
         close_conn(stream, FALSE);
         sprintf(log_buffer, "stream %d not found", stream);
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
         goto err;
         }
    
@@ -5677,7 +5677,7 @@ void im_request(
         {
         close_conn(stream, FALSE);
         sprintf(log_buffer, "event %d taskid %ld not found", event, (long)fromtask);
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
         goto err;
         }
   
@@ -6389,6 +6389,7 @@ void im_request(
         if ((ret = check_ms(stream, pjob)) == TRUE)
           {
           close_conn(stream, FALSE);
+          log_err(-1, __func__, "IM_GET_TID close_conn");
           goto err;
           }
         }

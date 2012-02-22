@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_rerun
 
 libreq_rerun_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_rerun.c
-libreq_rerun_la_LDFLAGS = @CHECK_LIBS@
+libreq_rerun_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_req_rerun_SOURCES = test_req_rerun.c
 

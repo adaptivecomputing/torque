@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_svr_jobfunc
 
 libsvr_jobfunc_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_jobfunc.c
-libsvr_jobfunc_la_LDFLAGS = @CHECK_LIBS@
+libsvr_jobfunc_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_svr_jobfunc_SOURCES = test_svr_jobfunc.c
 

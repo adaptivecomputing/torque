@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsD_connect
 
 libpbsD_connect_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_connect.c
-libpbsD_connect_la_LDFLAGS = @CHECK_LIBS@
+libpbsD_connect_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbsD_connect_SOURCES = test_pbsD_connect.c
 

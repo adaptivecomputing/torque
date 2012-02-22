@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_tracejob
 
 libtracejob_la_SOURCES = scaffolding.c ${PROG_ROOT}/tracejob.c
-libtracejob_la_LDFLAGS = @CHECK_LIBS@
+libtracejob_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_tracejob_SOURCES = test_tracejob.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} ${PROG_ROOT}/../lib/Libpbs/.libs/li
 check_PROGRAMS = test_trq_auth_daemon
 
 libtrq_auth_daemon_la_SOURCES = scaffolding.c ${PROG_ROOT}/trq_auth_daemon.c
-libtrq_auth_daemon_la_LDFLAGS = @CHECK_LIBS@
+libtrq_auth_daemon_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_trq_auth_daemon_SOURCES = test_trq_auth_daemon.c
 

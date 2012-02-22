@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbs_geterrmg
 
 libpbs_geterrmg_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbs_geterrmg.c
-libpbs_geterrmg_la_LDFLAGS = @CHECK_LIBS@
+libpbs_geterrmg_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbs_geterrmg_SOURCES = test_pbs_geterrmg.c
 

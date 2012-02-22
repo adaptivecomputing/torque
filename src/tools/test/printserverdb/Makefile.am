@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_printserverdb
 
 libprintserverdb_la_SOURCES = scaffolding.c ${PROG_ROOT}/printserverdb.c
-libprintserverdb_la_LDFLAGS = @CHECK_LIBS@
+libprintserverdb_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_printserverdb_SOURCES = test_printserverdb.c
 

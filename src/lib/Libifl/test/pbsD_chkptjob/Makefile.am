@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsD_chkptjob
 
 libpbsD_chkptjob_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_chkptjob.c
-libpbsD_chkptjob_la_LDFLAGS = @CHECK_LIBS@
+libpbsD_chkptjob_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbsD_chkptjob_SOURCES = test_pbsD_chkptjob.c
 

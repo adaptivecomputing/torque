@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qchkpt
 
 libqchkpt_la_SOURCES = scaffolding.c ${PROG_ROOT}/qchkpt.c
-libqchkpt_la_LDFLAGS = @CHECK_LIBS@
+libqchkpt_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_qchkpt_SOURCES = test_qchkpt.c
 

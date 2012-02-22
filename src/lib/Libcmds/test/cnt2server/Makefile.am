@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_cnt2server
 
 libcnt2server_la_SOURCES = scaffolding.c ${PROG_ROOT}/cnt2server.c
-libcnt2server_la_LDFLAGS = @CHECK_LIBS@
+libcnt2server_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_cnt2server_SOURCES = test_cnt2server.c
 

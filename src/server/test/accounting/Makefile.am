@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_accounting
 
 libaccounting_la_SOURCES = scaffolding.c ${PROG_ROOT}/accounting.c
-libaccounting_la_LDFLAGS = @CHECK_LIBS@
+libaccounting_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_accounting_SOURCES = test_accounting.c
 

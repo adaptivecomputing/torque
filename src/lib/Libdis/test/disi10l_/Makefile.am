@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_disi10l_
 
 libdisi10l__la_SOURCES = scaffolding.c ${PROG_ROOT}/disi10l_.c
-libdisi10l__la_LDFLAGS = @CHECK_LIBS@
+libdisi10l__la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_disi10l__SOURCES = test_disi10l_.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_net_set_clse
 
 libnet_set_clse_la_SOURCES = scaffolding.c ${PROG_ROOT}/net_set_clse.c
-libnet_set_clse_la_LDFLAGS = @CHECK_LIBS@
+libnet_set_clse_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_net_set_clse_SOURCES = test_net_set_clse.c
 

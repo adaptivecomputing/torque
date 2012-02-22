@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_locate
 
 libreq_locate_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_locate.c
-libreq_locate_la_LDFLAGS = @CHECK_LIBS@
+libreq_locate_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_req_locate_SOURCES = test_req_locate.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsD_gpuctrl
 
 libpbsD_gpuctrl_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_gpuctrl.c
-libpbsD_gpuctrl_la_LDFLAGS = @CHECK_LIBS@
+libpbsD_gpuctrl_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbsD_gpuctrl_SOURCES = test_pbsD_gpuctrl.c
 

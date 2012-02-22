@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_delete
 
 libreq_delete_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_delete.c
-libreq_delete_la_LDFLAGS = @CHECK_LIBS@
+libreq_delete_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_req_delete_SOURCES = test_req_delete.c
 

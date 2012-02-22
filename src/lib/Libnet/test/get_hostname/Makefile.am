@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_get_hostname
 
 libget_hostname_la_SOURCES = scaffolding.c ${PROG_ROOT}/get_hostname.c
-libget_hostname_la_LDFLAGS = @CHECK_LIBS@
+libget_hostname_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_get_hostname_SOURCES = test_get_hostname.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_disiui_
 
 libdisiui__la_SOURCES = scaffolding.c ${PROG_ROOT}/disiui_.c
-libdisiui__la_LDFLAGS = @CHECK_LIBS@
+libdisiui__la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_disiui__SOURCES = test_disiui_.c
 

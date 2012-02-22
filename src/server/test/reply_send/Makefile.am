@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_reply_send
 
 libreply_send_la_SOURCES = scaffolding.c ${PROG_ROOT}/reply_send.c
-libreply_send_la_LDFLAGS = @CHECK_LIBS@
+libreply_send_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_reply_send_SOURCES = test_reply_send.c
 

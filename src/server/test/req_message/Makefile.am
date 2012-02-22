@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_message
 
 libreq_message_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_message.c
-libreq_message_la_LDFLAGS = @CHECK_LIBS@
+libreq_message_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_req_message_SOURCES = test_req_message.c
 

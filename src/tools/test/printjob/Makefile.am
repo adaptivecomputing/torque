@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} $(MY_TCLTK_LIBS)
 check_PROGRAMS = test_printjob
 
 libprintjob_la_SOURCES = scaffolding.c ${PROG_ROOT}/printjob.c
-libprintjob_la_LDFLAGS = @CHECK_LIBS@
+libprintjob_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_printjob_SOURCES = test_printjob.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qgpureset
 
 libqgpureset_la_SOURCES = scaffolding.c ${PROG_ROOT}/qgpureset.c
-libqgpureset_la_LDFLAGS = @CHECK_LIBS@
+libqgpureset_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_qgpureset_SOURCES = test_qgpureset.c
 

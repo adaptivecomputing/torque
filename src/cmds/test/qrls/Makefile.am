@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qrls
 
 libqrls_la_SOURCES = scaffolding.c ${PROG_ROOT}/qrls.c
-libqrls_la_LDFLAGS = @CHECK_LIBS@
+libqrls_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_qrls_SOURCES = test_qrls.c
 

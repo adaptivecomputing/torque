@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_holdarray
 
 libreq_holdarray_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_holdarray.c
-libreq_holdarray_la_LDFLAGS = @CHECK_LIBS@
+libreq_holdarray_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_req_holdarray_SOURCES = test_req_holdarray.c
 

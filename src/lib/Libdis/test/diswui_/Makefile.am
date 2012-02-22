@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_diswui_
 
 libdiswui__la_SOURCES = scaffolding.c ${PROG_ROOT}/diswui_.c
-libdiswui__la_LDFLAGS = @CHECK_LIBS@
+libdiswui__la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_diswui__SOURCES = test_diswui_.c
 

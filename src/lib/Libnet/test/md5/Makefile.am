@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_md5
 
 libmd5_la_SOURCES = scaffolding.c ${PROG_ROOT}/md5.c
-libmd5_la_LDFLAGS = @CHECK_LIBS@
+libmd5_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_md5_SOURCES = test_md5.c
 

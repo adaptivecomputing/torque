@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qstop
 
 libqstop_la_SOURCES = scaffolding.c ${PROG_ROOT}/qstop.c
-libqstop_la_LDFLAGS = @CHECK_LIBS@
+libqstop_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_qstop_SOURCES = test_qstop.c
 

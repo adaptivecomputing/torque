@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} $(MY_TCL_LIBS)
 check_PROGRAMS = test_pbsTclInit
 
 libpbsTclInit_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsTclInit.c
-libpbsTclInit_la_LDFLAGS = @CHECK_LIBS@
+libpbsTclInit_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbsTclInit_SOURCES = test_pbsTclInit.c
 

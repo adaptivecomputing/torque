@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_printtracking
 
 libprinttracking_la_SOURCES = scaffolding.c ${PROG_ROOT}/printtracking.c
-libprinttracking_la_LDFLAGS = @CHECK_LIBS@
+libprinttracking_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_printtracking_SOURCES = test_printtracking.c
 

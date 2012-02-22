@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_log_event
 
 liblog_event_la_SOURCES = scaffolding.c ${PROG_ROOT}/log_event.c
-liblog_event_la_LDFLAGS = @CHECK_LIBS@
+liblog_event_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_log_event_SOURCES = test_log_event.c
 

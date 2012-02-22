@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_enc_ReturnFile
 
 libenc_ReturnFile_la_SOURCES = scaffolding.c ${PROG_ROOT}/enc_ReturnFile.c
-libenc_ReturnFile_la_LDFLAGS = @CHECK_LIBS@
+libenc_ReturnFile_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_enc_ReturnFile_SOURCES = test_enc_ReturnFile.c
 

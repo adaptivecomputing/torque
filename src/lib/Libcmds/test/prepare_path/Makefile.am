@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_prepare_path
 
 libprepare_path_la_SOURCES = scaffolding.c ${PROG_ROOT}/prepare_path.c
-libprepare_path_la_LDFLAGS = @CHECK_LIBS@
+libprepare_path_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_prepare_path_SOURCES = test_prepare_path.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qmove
 
 libqmove_la_SOURCES = scaffolding.c ${PROG_ROOT}/qmove.c
-libqmove_la_LDFLAGS = @CHECK_LIBS@
+libqmove_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_qmove_SOURCES = test_qmove.c
 

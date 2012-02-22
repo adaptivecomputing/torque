@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_queue_func
 
 libqueue_func_la_SOURCES = scaffolding.c ${PROG_ROOT}/queue_func.c
-libqueue_func_la_LDFLAGS = @CHECK_LIBS@
+libqueue_func_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_queue_func_SOURCES = test_queue_func.c
 

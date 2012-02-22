@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_enc_JobFile
 
 libenc_JobFile_la_SOURCES = scaffolding.c ${PROG_ROOT}/enc_JobFile.c
-libenc_JobFile_la_LDFLAGS = @CHECK_LIBS@
+libenc_JobFile_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_enc_JobFile_SOURCES = test_enc_JobFile.c
 

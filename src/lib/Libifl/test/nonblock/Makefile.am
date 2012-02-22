@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_nonblock
 
 libnonblock_la_SOURCES = scaffolding.c ${PROG_ROOT}/nonblock.c
-libnonblock_la_LDFLAGS = @CHECK_LIBS@
+libnonblock_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_nonblock_SOURCES = test_nonblock.c
 

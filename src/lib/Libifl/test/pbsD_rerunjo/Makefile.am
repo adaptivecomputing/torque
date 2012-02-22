@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsD_rerunjo
 
 libpbsD_rerunjo_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_rerunjo.c
-libpbsD_rerunjo_la_LDFLAGS = @CHECK_LIBS@
+libpbsD_rerunjo_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbsD_rerunjo_SOURCES = test_pbsD_rerunjo.c
 

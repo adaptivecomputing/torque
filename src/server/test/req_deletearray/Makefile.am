@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_deletearray
 
 libreq_deletearray_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_deletearray.c
-libreq_deletearray_la_LDFLAGS = @CHECK_LIBS@
+libreq_deletearray_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_req_deletearray_SOURCES = test_req_deletearray.c
 

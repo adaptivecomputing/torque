@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_dec_ReqHdr
 
 libdec_ReqHdr_la_SOURCES = scaffolding.c ${PROG_ROOT}/dec_ReqHdr.c
-libdec_ReqHdr_la_LDFLAGS = @CHECK_LIBS@
+libdec_ReqHdr_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_dec_ReqHdr_SOURCES = test_dec_ReqHdr.c
 

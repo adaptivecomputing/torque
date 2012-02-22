@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_prt_job_err
 
 libprt_job_err_la_SOURCES = scaffolding.c ${PROG_ROOT}/prt_job_err.c
-libprt_job_err_la_LDFLAGS = @CHECK_LIBS@
+libprt_job_err_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_prt_job_err_SOURCES = test_prt_job_err.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_diswul
 
 libdiswul_la_SOURCES = scaffolding.c ${PROG_ROOT}/diswul.c
-libdiswul_la_LDFLAGS = @CHECK_LIBS@
+libdiswul_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_diswul_SOURCES = test_diswul.c
 

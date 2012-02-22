@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsD_asyrun
 
 libpbsD_asyrun_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_asyrun.c
-libpbsD_asyrun_la_LDFLAGS = @CHECK_LIBS@
+libpbsD_asyrun_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_pbsD_asyrun_SOURCES = test_pbsD_asyrun.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qalter
 
 libqalter_la_SOURCES = scaffolding.c ${PROG_ROOT}/qalter.c
-libqalter_la_LDFLAGS = @CHECK_LIBS@
+libqalter_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_qalter_SOURCES = test_qalter.c
 

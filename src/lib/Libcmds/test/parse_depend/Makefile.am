@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_parse_depend
 
 libparse_depend_la_SOURCES = scaffolding.c ${PROG_ROOT}/parse_depend.c
-libparse_depend_la_LDFLAGS = @CHECK_LIBS@
+libparse_depend_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_parse_depend_SOURCES = test_parse_depend.c
 

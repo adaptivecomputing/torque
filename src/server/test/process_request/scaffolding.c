@@ -31,13 +31,13 @@ void *req_releasejob(void *vp)
   exit(1);
   }
 
-void req_rerunjob(struct batch_request *preq)
+void *req_rerunjob(void *vp)
   {
   fprintf(stderr, "The call to req_rerunjob needs to be mocked!!\n");
   exit(1);
   }
 
-void req_stat_svr(struct batch_request *preq)
+void *req_stat_svr(void *vp)
   {
   fprintf(stderr, "The call to req_stat_svr needs to be mocked!!\n");
   exit(1);
@@ -49,7 +49,7 @@ void req_shutdown(struct batch_request *preq)
   exit(1);
   }
 
-void req_rescq(struct batch_request *preq)
+void *req_rescq(void *vp)
   {
   fprintf(stderr, "The call to req_rescq needs to be mocked!!\n");
   exit(1);
@@ -85,7 +85,7 @@ void *req_holdjob(void *vp)
   exit(1);
   }
 
-void req_registerarray(struct batch_request *preq)
+void *req_registerarray(void *vp)
   {
   fprintf(stderr, "The call to req_registerarray needs to be mocked!!\n");
   exit(1);
@@ -253,7 +253,7 @@ void req_signaljob(struct batch_request *preq)
   exit(1);
   }
 
-void req_register(struct batch_request *preq)
+void *req_register(void *vp)
   {
   fprintf(stderr, "The call to req_register needs to be mocked!!\n");
   exit(1);
@@ -445,7 +445,7 @@ void *req_authenuser(void *vp)
   exit(1);
   }
 
-void req_selectjobs(struct batch_request *preq)
+void *req_selectjobs(void *vp)
   {
   fprintf(stderr, "The call to req_selectjobs needs to be mocked!!\n");
   exit(1);

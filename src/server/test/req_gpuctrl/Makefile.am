@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_gpuctrl
 
 libreq_gpuctrl_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_gpuctrl.c
-libreq_gpuctrl_la_LDFLAGS = @CHECK_LIBS@
+libreq_gpuctrl_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_req_gpuctrl_SOURCES = test_req_gpuctrl.c
 

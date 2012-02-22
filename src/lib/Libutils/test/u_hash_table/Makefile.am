@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_u_hash_table
 
 libu_hash_table_la_SOURCES = scaffolding.c ${PROG_ROOT}/u_hash_table.c
-libu_hash_table_la_LDFLAGS = @CHECK_LIBS@
+libu_hash_table_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 test_u_hash_table_SOURCES = test_u_hash_table.c
 
