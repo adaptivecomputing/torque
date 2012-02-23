@@ -15,7 +15,7 @@
 
 DESC="TORQUE auth daemon"
 NAME=trqauthd
-DAEMON=/usr/local/bin/$NAME
+DAEMON=/usr/local/sbin/$NAME
 PBS_DAEMON=$DAEMON
 PBS_HOME=/var/spool/torque
 PIDFILE=$PBS_HOME/server_priv/trqauthd.lock
