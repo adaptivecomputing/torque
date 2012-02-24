@@ -1465,6 +1465,7 @@ int setup_array_struct(job *pjob)
   {
     job_array *pa;
     job *pj;
+    char tmp_buf[1025];
     int i;
     unsigned int running;
     unsigned int queued;
@@ -1505,8 +1506,17 @@ int setup_array_struct(job *pjob)
         }
       }
 
-      if (running > 0)
-      {
+      if (pa->template_job == NULL)
+        {
+        /* Skip this item. */
+        snprintf(tmp_buf, 1024,
+            "Error in job array [%s]. It appears that there are no jobs left for this array and the .AR file (array) associated with the job may need to be deleted.\n",
+            pa->ai_qs.parent_id);
+        log_err(-1, "update_array_statuses", tmp_buf);
+        }
+
+      else if (running > 0)
+        {
         svr_setjobstate(pa->template_job, JOB_STATE_RUNNING, pa->template_job->ji_qs.ji_substate);
       }
       else if (held > 0 && queued == 0 && complete == 0)
