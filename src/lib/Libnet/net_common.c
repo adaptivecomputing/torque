@@ -27,7 +27,10 @@ extern time_t pbs_tcp_timeout; /* located in tcp_dis.c. Move here later */
 #define TCP_PROTO_NUM 0
 #define MAX_NUM_LEN 21
 
-unsigned availBytesOnDescriptor(int pLocalSocket)
+unsigned availBytesOnDescriptor(
+    
+  int pLocalSocket)
+
   {
   unsigned availBytes;
   if (ioctl(pLocalSocket, FIONREAD, &availBytes) != -1)
@@ -36,7 +39,13 @@ unsigned availBytesOnDescriptor(int pLocalSocket)
   return 0;
   }
 
-int socket_avail_bytes_on_descriptor(int socket)
+
+
+
+int socket_avail_bytes_on_descriptor(
+    
+  int socket)
+
   {
   unsigned avail_bytes;
   if (ioctl(socket, FIONREAD, &avail_bytes) != -1)
@@ -45,6 +54,7 @@ int socket_avail_bytes_on_descriptor(int socket)
   }
 
 int socket_get_tcp()
+
   {
   int local_socket = 0;
   struct linger l_delay;
@@ -72,14 +82,22 @@ int socket_get_tcp()
   return local_socket;
   }
 
+
+
+
 int get_random_reserved_port()
+
   {
   int res_port = 0;
   res_port = (rand() % RES_PORT_RANGE) + RES_PORT_START;
   return res_port;
   }
 
+
+
+
 int socket_get_tcp_priv()
+
   {
   int priv_port = 0, local_socket = 0;
   int cntr = 0;
@@ -187,6 +205,7 @@ int socket_get_tcp_priv()
 
 
 int socket_connect(
+
   int   *local_socket,
   char  *dest_addr,
   int    dest_addr_len,
@@ -194,6 +213,7 @@ int socket_connect(
   int    family,
   int    is_privileged,
   char **error_msg)
+
   {
   struct sockaddr_in remote;
   size_t r_size = sizeof(struct sockaddr_in);
@@ -207,11 +227,11 @@ int socket_connect(
 
 int socket_connect_addr(
     
-  int *local_socket,
-  struct sockaddr *remote,
-  size_t remote_size,
-  int is_privileged,
-  char **error_msg)
+  int              *local_socket,
+  struct sockaddr  *remote,
+  size_t            remote_size,
+  int               is_privileged,
+  char            **error_msg)
 
   {
   int cntr = 0;
@@ -289,7 +309,13 @@ int socket_connect_addr(
   return rc;
   } /* END socket_connect() */
 
-int socket_wait_for_write(int socket)
+
+
+
+int socket_wait_for_write(
+    
+  int socket)
+
   {
   int rc = PBSE_NONE;
   int write_soc = 0, val;
@@ -316,7 +342,14 @@ int socket_wait_for_write(int socket)
   return rc;
   }
 
-int socket_wait_for_xbytes(int socket, int len)
+
+
+
+int socket_wait_for_xbytes(
+    
+  int socket,
+  int len)
+
   {
   int rc = PBSE_NONE;
   int avail_bytes = socket_avail_bytes_on_descriptor(socket);
@@ -336,7 +369,10 @@ int socket_wait_for_xbytes(int socket, int len)
   return rc;
   }
 
-int socket_wait_for_read(int socket)
+int socket_wait_for_read(
+    
+  int socket)
+
   {
   int rc = PBSE_NONE;
   int read_soc = 0;
@@ -374,7 +410,10 @@ int socket_wait_for_read(int socket)
   return rc;
   }
 
-void socket_read_flush(int socket)
+void socket_read_flush(
+    
+  int socket)
+
   {
   char incoming[256];
   int  avail_bytes = 0;
@@ -390,7 +429,15 @@ void socket_read_flush(int socket)
     }
   }
 
-int socket_write(int socket, char *data, int data_len)
+
+
+
+int socket_write(
+    
+  int   socket,
+  char *data,
+  int   data_len)
+
   {
   int data_len_actual = -1;
   if ((data != NULL) || (data_len > 0))
@@ -408,10 +455,12 @@ int socket_write(int socket, char *data, int data_len)
   }
 
 int socket_read_force(
-    int socket,
-    char *the_str,
-    long long avail_bytes,
-    long long *byte_count)
+
+  int        socket,
+  char      *the_str,
+  long long  avail_bytes,
+  long long *byte_count)
+
   {
   int rc = PBSE_NONE;
   char *read_loc = the_str;
@@ -449,7 +498,15 @@ int socket_read_force(
   return rc;
   }
 
-int socket_read(int socket, char **the_str, long long *str_len)
+
+
+
+int socket_read(
+    
+  int         socket,
+  char      **the_str,
+  long long  *str_len)
+
   {
   int rc = PBSE_NONE;
   long long avail_bytes = socket_avail_bytes_on_descriptor(socket);

@@ -7465,8 +7465,6 @@ int setup_program_environment(void)
 
     tmpL = strtol(ptr, NULL, 10);
 
-    srand(getpid());
-
     sleep(tmpL % (rand() + 1));
     }  /* END if (ptr != NULL) */
 
@@ -7486,6 +7484,8 @@ int setup_program_environment(void)
     log_err(ENOMEM, __func__, "No memory!!!");
     return(-1);
     }
+
+  srand(get_random_number());
 
   return(PBSE_NONE);
   }  /* END setup_program_environment() */

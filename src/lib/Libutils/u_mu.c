@@ -8,6 +8,23 @@
 
 
 
+unsigned int get_random_number()
+
+  {
+  FILE         *rando_file = fopen("/dev/random", "r");
+  int           fd = fileno(rando_file);
+  unsigned int  ans;
+  char         *ptr = (char *)&ans;
+  
+  while (read(fd, ptr, sizeof(ans)) <= 0) ;
+  
+  fclose(rando_file);
+  
+  return(ans);
+  } /* END get_random_number() */
+
+
+
 
 int is_whitespace(
 

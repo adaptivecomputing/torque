@@ -101,6 +101,7 @@
 #include <time.h>
 #include <unistd.h> /* getpid */
 #include <stdlib.h>
+#include <pthread.h>
 #include "list_link.h"
 #include "work_task.h"
 #include "log.h"
@@ -125,7 +126,7 @@
 #include "batch_request.h"
 #include "pbs_proto.h"
 #include "u_tree.h"
-#include <pthread.h>
+#include "utils.h"
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
 #include "svr_func.h" /* get_svr_attr_* */
@@ -1408,7 +1409,7 @@ int main(
   extern char *msg_startup1; /* log message   */
 
   ProgName = argv[0];
-  srand((unsigned int)getpid() + (unsigned int)time(NULL));
+  srand(get_random_number());
   tzset(); /* localtime_r needs this */
 
   memset(&server, 0, sizeof(struct server));

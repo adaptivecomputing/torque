@@ -103,7 +103,7 @@
 
 extern int LOGLEVEL;
 
-mom_hierarchy_t *initialize_mom_hierarchy(void)
+mom_hierarchy_t *initialize_mom_hierarchy()
 
   {
   mom_hierarchy_t *nt = calloc(1, sizeof(mom_hierarchy_t));
@@ -381,6 +381,8 @@ node_comm_t *force_path_update(
   /* if this ever happens the mom will go to the server */
   return(NULL);
   } /* END force_path_update() */
+
+
 
 
 /* 

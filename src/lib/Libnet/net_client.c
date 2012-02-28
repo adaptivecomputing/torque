@@ -377,9 +377,6 @@ retry:  /* retry goto added (rentec) */
 #else /* HAVE_BINDRESVPORT */
 
 		/* Pseudo-casual shuffling of tryport */
-		
-		srand((unsigned int)getpid() + (unsigned int)time(NULL) + (unsigned int)trycount);
-
 		tryport = (rand() % NPORTS) + STARTPORT;
 	
 #endif     /* HAVE_BINDRESVPORT */

@@ -3193,9 +3193,6 @@ int send_update()
           (attempt_diff > MAX_SERVER_UPDATE_SPACING))
         return(TRUE);
       
-      /* try to introduce some random delay here */
-      srand(time_now + UpdateFailCount);
-      
       /* make sending more likely the longer we've waited */
       mod_value = MAX(2, ServerStatUpdateInterval - attempt_diff);
       
