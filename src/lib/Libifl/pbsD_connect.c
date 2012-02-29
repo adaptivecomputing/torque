@@ -1214,28 +1214,21 @@ int pbs_connect(
 
   memset(server_name_list, 0, sizeof(server_name_list));
 
-  /* If a server name is passed in, use it, otherwise use the list from server_name file. */
+  /* Use the list from the server_name file.
+   * If a server name is passed in, append it at the beginning. */
 
   if (server_name_ptr && server_name_ptr[0])
     {
     snprintf(server_name_list, sizeof(server_name_list), "%s", server_name_ptr);
-
-    if (getenv("PBSDEBUG"))
-      {
-      fprintf(stderr, "pbs_connect called with explicit server name \"%s\"\n",
-        server_name_list);
-      }
+    strcat(server_name_list, ",");
     }
-  else
-    {
-    snprintf(server_name_list, sizeof(server_name_list), "%s", pbs_get_server_list());
 
-    if (getenv("PBSDEBUG"))
-      {
-      fprintf(stderr, "pbs_connect using default server name list \"%s\"\n",
+  strncat(server_name_list, pbs_get_server_list(),
+      sizeof(server_name_list) -1 - strlen(server_name_ptr) - 1);
+
+  if (getenv("PBSDEBUG"))
+    fprintf(stderr, "pbs_connect using following server list \"%s\"\n",
         server_name_list);
-      }
-    }
 
   list_len = csv_length(server_name_list);
 
