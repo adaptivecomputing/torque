@@ -2,6 +2,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 4.0.1
   b - Fix trqauthd init scripts to use correct path to trqauthd.
+  b - fix so multiple stage in/out files can again be used with qsub -W
+  b - fix so comma separated file list can be used with qsub -W stagein/stageout.
+      Matches qsub documentation again.
 
 4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 

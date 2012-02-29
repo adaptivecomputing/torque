@@ -494,7 +494,7 @@ char **value;
   if (start != NULL)
     strcpy(tmpLine, start);
 
-  curr_ptr = smart_strtok(tmpLine,",",&tok_ptr,FALSE);
+  curr_ptr = smart_strtok(tmpLine,"",&tok_ptr,FALSE);
 
   if ((curr_ptr == NULL))
     return(0);
@@ -3202,8 +3202,30 @@ void process_opts(
                 break;
                 }
                 */
+              if (hash_find(ji->job_attr, ATTR_stagein, &tmp_job_info))
+                {
+                /* 
+                 * if this attribute already exists, we need to append this
+                 * value to it because multiples are allowed.
+                 */
+                char *tmpBuf;
 
-              hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_stagein, valuewd, data_type);
+                if ((tmpBuf = (char *)malloc(strlen(valuewd) + strlen(tmp_job_info->value) + 2)) == (char *)0)
+                  {
+                  fprintf(stderr, "Out of memory.\n");
+                  exit(1);
+                  }
+                strcpy(tmpBuf, tmp_job_info->value);
+                strcat(tmpBuf, ",");
+                strcat(tmpBuf, valuewd);
+                hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_stagein, tmpBuf, data_type);
+                free(tmpBuf);
+                }
+              else
+                {
+                hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_stagein, valuewd, data_type);
+                }
+
 /*               set_attr(&attrib, ATTR_stagein, valuewd); */
 /*               } */
             }
@@ -3226,8 +3248,30 @@ void process_opts(
                 break;
                 }
                 */
+              if (hash_find(ji->job_attr, ATTR_stageout, &tmp_job_info))
+                {
+                /* 
+                 * if this attribute already exists, we need to append this
+                 * value to it because multiples are allowed.
+                 */
+                char *tmpBuf;
 
-              hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_stageout, valuewd, data_type);
+                if ((tmpBuf = (char *)malloc(strlen(valuewd) + strlen(tmp_job_info->value) + 2)) == (char *)0)
+                  {
+                  fprintf(stderr, "Out of memory.\n");
+                  exit(1);
+                  }
+                strcpy(tmpBuf, tmp_job_info->value);
+                strcat(tmpBuf, ",");
+                strcat(tmpBuf, valuewd);
+                hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_stageout, tmpBuf, data_type);
+                free(tmpBuf);
+                }
+              else
+                {
+                hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_stageout, valuewd, data_type);
+                }
+
 /*               set_attr(&attrib, ATTR_stageout, valuewd); */
 /*               } */
             }
