@@ -1198,6 +1198,8 @@ int pbs_connect(char *server_name_ptr)    /* I (optional) */
   if (server_name_ptr && server_name_ptr[0])
     {
     strncpy(server_name_list, server_name_ptr, sizeof(server_name_list) - 1);
+    strcat(server_name_list, ",");
+    strncat(server_name_list, pbs_get_server_list(), sizeof(server_name_list) -1 - strlen(server_name_ptr) - 1);
 
     if (getenv("PBSDEBUG"))
       {
