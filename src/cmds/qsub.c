@@ -589,7 +589,7 @@ char **value;
   if (start != NULL)
     strcpy(tmpLine, start);
 
-  curr_ptr = smart_strtok(tmpLine,",",&tok_ptr,FALSE);
+  curr_ptr = smart_strtok(tmpLine,"",&tok_ptr,FALSE);
 
   if ((curr_ptr == NULL))
     return(0);
