@@ -3867,21 +3867,16 @@ int process_host_name(
   static char        *id = "process_host_name";
   char               *colon;
   unsigned short      rm_port;
-  unsigned short      service_port;
   unsigned long       ipaddr;
   struct addrinfo    *addr_info;
   struct sockaddr_in  sa;
       
-  service_port = PBS_MOM_SERVICE_PORT;
   rm_port      = PBS_MANAGER_SERVICE_PORT;
   
   if ((colon = strchr(hostname, ':')) != NULL)
     {
     *colon = '\0';
-    service_port = (unsigned short)atoi(colon+1);
-    
-    if ((colon = strchr(colon+1, ':')) != NULL)
-      rm_port = atoi(colon+1);
+    rm_port = (unsigned short)atoi(colon+1);
     }
   
   if (getaddrinfo(hostname, NULL, NULL, &addr_info) == 0)
@@ -3891,7 +3886,7 @@ int process_host_name(
     
     if (path_complete == FALSE)
       {
-      add_network_entry(mh, hostname, addr_info, rm_port, service_port, path, level);
+      add_network_entry(mh, hostname, addr_info, rm_port, path, level);
       *something_added = TRUE;
       }
 

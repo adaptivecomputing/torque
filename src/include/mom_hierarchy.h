@@ -106,7 +106,6 @@ typedef struct node_comm_t
   short               bad;          /* indicates an error occurred with this communication */ 
   struct sockaddr_in  sock_addr;    /* information for the socket connection */
   char               *name;         /* the node's hostname */
-  unsigned short      service_port; /* the node's service port */
   } node_comm_t;
 
 
@@ -131,7 +130,7 @@ typedef struct reported_node
 
 
 
-int add_network_entry(mom_hierarchy_t *,char *,struct addrinfo *,unsigned short,unsigned short,int,int);
+int add_network_entry(mom_hierarchy_t *,char *,struct addrinfo *,unsigned short,int,int);
 mom_hierarchy_t *initialize_mom_hierarchy();
 node_comm_t *force_path_update(mom_hierarchy_t *);
 node_comm_t *update_current_path(mom_hierarchy_t *);

@@ -131,7 +131,6 @@ int add_network_entry(
   char               *name,
   struct addrinfo    *addr_info,
   unsigned short      rm_port,
-  unsigned short      service_port,
   int                 path,
   int                 level)
 
@@ -172,8 +171,6 @@ int add_network_entry(
     if ((rc = insert_thing(levels,node_comm_entries)) < 0)
       return(rc);
     }
-
-  nc->service_port = service_port;
 
   /* finally, insert the entry into the node_comm_entries */
   /* initialize the node comm entry */

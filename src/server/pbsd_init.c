@@ -449,6 +449,7 @@ dynamic_string *make_default_hierarchy()
   dynamic_string *default_hierarchy;
   dynamic_string *level_ds;
   int             iter = -1;
+  char            buf[MAXLINE];
 
   if (((default_hierarchy = get_dynamic_string(-1, NULL)) == NULL) ||
       ((level_ds = get_dynamic_string(-1, NULL)) == NULL))
@@ -466,6 +467,13 @@ dynamic_string *make_default_hierarchy()
       append_dynamic_string(level_ds, ",");
 
     append_dynamic_string(level_ds, pnode->nd_name);
+
+    if (PBS_MANAGER_SERVICE_PORT != pnode->nd_mom_rm_port)
+      {
+      snprintf(buf, sizeof(buf), ":%d", (int)pnode->nd_mom_rm_port);
+      append_dynamic_string(level_ds, buf);
+      }
+
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
