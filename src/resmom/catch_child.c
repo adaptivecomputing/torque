@@ -759,8 +759,81 @@ void scan_for_exiting(void)
   return;
   }  /* END scan_for_exiting() */
 
+ 
+int run_epilogues(job *pjob)
+  {
+  char *path_epiloguserjob;
+  resource *presc; 
+  int rc;
 
+  /* check epilog script */
 
+  if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+       pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+    {
+    /* job is interactive */
+
+    presc = find_resc_entry( &pjob->ji_wattr[(int)JOB_ATR_resource],
+                             find_resc_def(svr_resc_def, "epilogue", svr_resc_size));
+    if ((presc != NULL))
+      if ((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
+        {
+        path_epiloguserjob = get_local_script_path(pjob, presc->rs_value.at_val.at_str);
+        if (path_epiloguserjob)
+          {
+          if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, PE_IO_TYPE_NULL) != 0)
+            {
+            log_err(-1, __func__, "user local epilog failed");
+            }
+          free(path_epiloguserjob);
+          }
+        }
+    
+    if (run_pelog(PE_EPILOGUSER, path_epiloguser, pjob, PE_IO_TYPE_NULL) != 0)
+      {
+      log_err(-1, __func__, "user epilog failed - interactive job");
+      }
+
+    if (run_pelog(PE_EPILOG, path_epilog, pjob, PE_IO_TYPE_NULL) != 0)
+      {
+      log_err(-1, __func__, "system epilog failed - interactive job");
+      }
+    }
+  else
+    {
+    /* job is not interactive */
+
+    presc = find_resc_entry( &pjob->ji_wattr[(int)JOB_ATR_resource], 
+                             find_resc_def(svr_resc_def, "epilogue", svr_resc_size));
+    if ((presc != NULL))
+      if( (presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
+        {
+        path_epiloguserjob = get_local_script_path(pjob, presc->rs_value.at_val.at_str);
+
+        if (path_epiloguserjob)
+          {
+          if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, PE_IO_TYPE_STD) != 0)
+            {
+            log_err(-1, __func__, "user local epilog failed");
+            }
+          free(path_epiloguserjob);
+          }
+       }
+
+    if (run_pelog(PE_EPILOGUSER, path_epiloguser, pjob, PE_IO_TYPE_STD) != 0)
+      {
+      log_err(-1, __func__, "user epilog failed");
+      }
+
+    if ((rc = run_pelog(PE_EPILOG, path_epilog, pjob, PE_IO_TYPE_STD)) != 0)
+      {
+      sprintf(log_buffer, "system epilog failed w/rc=%d", rc);
+      log_err(-1, __func__, log_buffer);
+      }
+    }    /* END else (jobisinteractive) */
+
+  return(PBSE_NONE);
+  }
 
 
 /**
@@ -788,6 +861,8 @@ int post_epilogue(
     sprintf(log_buffer, "preparing obit message for job %s", pjob->ji_qs.ji_jobid);
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
+
+  run_epilogues(pjob);
 
   /* open new connection - register obit_reply as handler */
   sock = mom_open_socket_to_jobs_server(pjob, __func__, obit_reply);

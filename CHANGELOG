@@ -6,6 +6,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix so comma separated file list can be used with qsub -W stagein/stageout.
       Matches qsub documentation again.
   b - Only seed the random number generator once
+  b - The code to run the epilogue set of scripts was removed when refactoring the 
+      obit code. The epilogues are now run as part of post_epilogue. preobit_reply 
+      is no longer used.
   b - if using a default hierarchy and moms on non-default ports, pass that information
       along in the hierarchy
   e - Make pbs_server contact pbs_moms in the order in which they appear in the hierarchy
