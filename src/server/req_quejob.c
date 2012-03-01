@@ -2083,10 +2083,6 @@ void req_commit(
 
   if ((rc = svr_enquejob(pj, FALSE, -1)))
     {
-    job_purge(pj);
-
-    req_reject(rc, 0, preq, NULL, NULL);
-
     if (LOGLEVEL >= 6)
       {
       log_record(
@@ -2096,15 +2092,15 @@ void req_commit(
         "cannot queue job");
       }
 
+    job_purge(pj);
+
+    req_reject(rc, 0, preq, NULL, NULL);
+
     return;
     }
 
   if (job_save(pj, SAVEJOB_FULL, 0) != 0)
     {
-    job_purge(pj);
-
-    req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
-
     if (LOGLEVEL >= 6)
       {
       log_record(
@@ -2113,6 +2109,10 @@ void req_commit(
         (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
         "cannot save job");
       }
+
+    job_purge(pj);
+
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 
     return;
     }
@@ -2133,10 +2133,6 @@ void req_commit(
         {
         unlock_queue(pque, "req_commit", "can't route job", LOGLEVEL);
 
-        job_purge(pj);
-
-        req_reject(rc, 0, preq, NULL, NULL);
-
         if (LOGLEVEL >= 6)
           {
           log_record(
@@ -2145,6 +2141,10 @@ void req_commit(
             (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
             "job route job");
           }
+
+        job_purge(pj);
+
+        req_reject(rc, 0, preq, NULL, NULL);
 
         /* FAILURE */
 
