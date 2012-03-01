@@ -163,8 +163,8 @@ int delete_array_range(job_array *pa, char *range);
 int delete_whole_array(job_array *pa);
 int attempt_delete(void *);
 
-int hold_array_range(job_array *,char *,attribute *);
-void hold_job(attribute *,void *);
+int hold_array_range(job_array *,char *,pbs_attribute *);
+void hold_job(pbs_attribute *,void *);
 
 int modify_array_range(job_array *,char *,svrattrl *,struct batch_request *,int);
 int modify_job(void **,svrattrl *,struct batch_request *,int, int);

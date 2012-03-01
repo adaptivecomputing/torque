@@ -129,14 +129,14 @@ static int user_match(const char *can, const char *master);
 static int gid_match(const char *can, const char *master);
 static int host_order(char *old, char *new);
 static int user_order(char *old, char *new);
-static int set_allacl(attribute *, attribute *, enum batch_op,
+static int set_allacl(pbs_attribute *, pbs_attribute *, enum batch_op,
                           int (*order_func)());
 
 /* for all decode_*acl() - use decode_arst() */
 /* for all encode_*acl() - use encode_arst() */
 
 /*
- * set_uacl - set value of one User ACL attribute to another
+ * set_uacl - set value of one User ACL pbs_attribute to another
  * with special sorting.
  *
  * A=B --> set of strings in A replaced by set of strings in B
@@ -147,15 +147,18 @@ static int set_allacl(attribute *, attribute *, enum batch_op,
  *  >0 if error
  */
 
-int
-set_uacl(struct attribute *attr, struct attribute *new, enum batch_op op)
-  {
+int set_uacl(
+    
+  pbs_attribute *attr,
+  pbs_attribute *new,
+  enum batch_op  op)
 
+  {
   return (set_allacl(attr, new, op, user_order));
   }
 
 /*
- * set_hostacl - set value of one Host ACL attribute to another
+ * set_hostacl - set value of one Host ACL pbs_attribute to another
  * with special sorting.
  *
  * A=B --> set of strings in A replaced by set of strings in B
@@ -168,9 +171,9 @@ set_uacl(struct attribute *attr, struct attribute *new, enum batch_op op)
 
 int set_hostacl(
 
-  struct attribute *attr,
-  struct attribute *new,
-  enum batch_op     op)
+  pbs_attribute *attr,
+  pbs_attribute *new,
+  enum batch_op  op)
 
   {
   return(set_allacl(attr, new, op, host_order));
@@ -296,9 +299,9 @@ int acl_check_my_array_string(
 
 int acl_check(
 
-  attribute *pattr,
-  char      *name,  /* I (optional) */
-  int      type)
+  pbs_attribute *pattr,
+  char          *name,  /* I (optional) */
+  int            type)
 
   {
   struct array_strings *pas;
@@ -384,7 +387,13 @@ static int chk_dup_acl(
  * parameter which indicates the ACL type.
  */
 
-static int set_allacl(struct attribute *attr, struct attribute *new, enum batch_op op, int (*order_func)(char *, char *))
+static int set_allacl(
+    
+  pbs_attribute *attr,
+  pbs_attribute *new,
+  enum batch_op  op,
+  int          (*order_func)(char *, char *))
+
   {
   int  i;
   int  j;

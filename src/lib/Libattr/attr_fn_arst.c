@@ -86,18 +86,18 @@
  *
  * Each set has functions for:
  * Decoding the value string to the machine representation.
- * Encoding the internal representation of the attribute to external
+ * Encoding the internal representation of the pbs_attribute to external
  * Setting the value by =, + or - operators.
- * Comparing a (decoded) value with the attribute value.
- * Freeing the space calloc-ed to the attribute value.
+ * Comparing a (decoded) value with the pbs_attribute value.
+ * Freeing the space calloc-ed to the pbs_attribute value.
  *
- * Some or all of the functions for an attribute type may be shared with
- * other attribute types.
+ * Some or all of the functions for an pbs_attribute type may be shared with
+ * other pbs_attribute types.
  *
  * The prototypes are declared in "attribute.h"
  *
  * ----------------------------------------------------------------------------
- * Attribute functions for attributes with value type "array of strings".
+ * pbs_Attribute functions for attributes with value type "array of strings".
  *
  * The "encoded" or external form of the value is a string with the orginial
  * strings separated by commas (or new-lines) and terminated by a null.
@@ -111,15 +111,15 @@
 
 
 /**
- * Parse string and convert to attribute array.
+ * Parse string and convert to pbs_attribute array.
  *
  * @return 0 on SUCCESS, PBSE_* on FAILURE
  */
 
 int decode_arst_direct(
 
-  struct attribute *patr,  /* I (modified) */
-  char             *val)   /* I */
+  pbs_attribute *patr,  /* I (modified) */
+  char          *val)   /* I */
 
   {
   unsigned long bksize;
@@ -263,15 +263,15 @@ int decode_arst_direct(
 
 int decode_arst(
 
-  struct attribute *patr,    /* O (modified) */
-  char             *name,    /* I attribute name (notused) */
-  char             *rescn,   /* I resource name (notused) */
-  char             *val,     /* I attribute value */
-  int               perm) /* only used for resources */
+  pbs_attribute *patr,    /* O (modified) */
+  char          *name,    /* I pbs_attribute name (notused) */
+  char          *rescn,   /* I resource name (notused) */
+  char          *val,     /* I pbs_attribute value */
+  int            perm) /* only used for resources */
 
   {
-  int   rc;
-  attribute temp;
+  int           rc;
+  pbs_attribute temp;
 
   if ((val == NULL) || (strlen(val) == 0))
     {
@@ -282,7 +282,7 @@ int decode_arst(
     return(0);
     }
 
-  memset(&temp, 0, sizeof(attribute));
+  memset(&temp, 0, sizeof(pbs_attribute));
 
   if ((patr->at_flags & ATR_VFLAG_SET) && (patr->at_val.at_arst))
     {
@@ -290,7 +290,7 @@ int decode_arst(
     /* then use set(incr) to add new to existing */
 
 
-    /* convert value string into attribute array */
+    /* convert value string into pbs_attribute array */
 
     if ((rc = decode_arst_direct(&temp,val)) != 0)
       {
@@ -306,7 +306,7 @@ int decode_arst(
     return(rc);
     }
 
-  /* decode directly into real attribute */
+  /* decode directly into real pbs_attribute */
 
   return(decode_arst_direct(patr,val));
   }  /* END decode_arst() */
@@ -328,15 +328,15 @@ int decode_arst(
 
 int decode_arst_merge(
 
-  struct attribute *patr,    /* O (modified) */
-  char             *name,    /* I attribute name (notused) */
-  char             *rescn,   /* I resource name (notused) */
-  char             *val)     /* I attribute value */
+  pbs_attribute *patr,    /* O (modified) */
+  char          *name,    /* I pbs_attribute name (notused) */
+  char          *rescn,   /* I resource name (notused) */
+  char          *val)     /* I pbs_attribute value */
 
   {
-  int       rc;
-  attribute new;
-  attribute tmp;
+  int           rc;
+  pbs_attribute new;
+  pbs_attribute tmp;
 
   if ((val == NULL) || (strlen(val) == 0))
     {
@@ -349,18 +349,18 @@ int decode_arst_merge(
 
   if (!(patr->at_flags & ATR_VFLAG_SET) || (patr->at_val.at_arst == NULL))
     {
-    /* decode directly into real attribute */
+    /* decode directly into real pbs_attribute */
 
     return(decode_arst_direct(patr,val));
     }
 
-  memset(&new,0x0,sizeof(attribute));
-  memset(&tmp,0x0,sizeof(attribute));
+  memset(&new,0x0,sizeof(pbs_attribute));
+  memset(&tmp,0x0,sizeof(pbs_attribute));
 
   /* already have values, decode new into temp */
   /* then use set(incr) to add new to existing */
 
-  /* convert value string into attribute array */
+  /* convert value string into pbs_attribute array */
 
   if ((rc = decode_arst_direct(&new,val)) != 0)
     {
@@ -415,12 +415,12 @@ int decode_arst_merge(
 
 int encode_arst(
 
-  attribute  *attr,   /* I ptr to attribute to encode */
-  tlist_head *phead,  /* O ptr to head of attrlist list */
-  char       *atname, /* I attribute name */
-  char       *rsname, /* I resource name or NULL (optional) */
-  int         mode,   /* I encode mode */
-  int         perm)   /* only used for resources */
+  pbs_attribute  *attr,   /* I ptr to pbs_attribute to encode */
+  tlist_head     *phead,  /* O ptr to head of attrlist list */
+  char           *atname, /* I pbs_attribute name */
+  char           *rsname, /* I resource name or NULL (optional) */
+  int             mode,   /* I encode mode */
+  int             perm)   /* only used for resources */
 
   {
   char  *end;
@@ -536,7 +536,7 @@ int encode_arst(
 
 
 /*
- * set_arst - set value of attribute of type ATR_TYPE_ARST to another
+ * set_arst - set value of pbs_attribute of type ATR_TYPE_ARST to another
  *
  * A=B --> set of strings in A replaced by set of strings in B
  * A+B --> set of strings in B appended to set of strings in A
@@ -548,8 +548,8 @@ int encode_arst(
 
 int set_arst(
 
-  struct attribute *attr,  /* I/O */
-  struct attribute *new,   /* I */
+  pbs_attribute *attr,  /* I/O */
+  pbs_attribute *new,   /* I */
   enum batch_op     op)    /* I */
 
   {
@@ -908,8 +908,8 @@ int set_arst(
 
 int comp_arst(
 
-  struct attribute *attr,
-  struct attribute *with)
+ pbs_attribute *attr,
+ pbs_attribute *with)
 
   {
   int i;
@@ -953,7 +953,7 @@ int comp_arst(
 
 void free_arst(
 
-  struct attribute *attr)
+ pbs_attribute *attr)
 
   {
   if ((attr->at_flags & ATR_VFLAG_SET) && (attr->at_val.at_arst))
@@ -979,8 +979,8 @@ void free_arst(
 
 
 /*
- * arst_string - see if a string occurs as a prefix in an arst attribute entry
- * Search each entry in the value of an arst attribute for a sub-string
+ * arst_string - see if a string occurs as a prefix in an arst pbs_attribute entry
+ * Search each entry in the value of an arst pbs_attribute for a sub-string
  * that begins with the passed string
  *
  * Return: pointer to string if so, NULL if not
@@ -988,8 +988,8 @@ void free_arst(
 
 char *arst_string(
 
-  char      *str,
-  attribute *pattr)
+  char          *str,
+  pbs_attribute *pattr)
 
   {
   int    i;

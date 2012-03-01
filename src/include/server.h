@@ -228,7 +228,7 @@ struct server
   int              sv_jobstates[PBS_NUMJOBSTATE];  /* # of jobs per state */
   char             sv_jobstbuf[100];
 
-  attribute        sv_attr[SRV_ATR_LAST]; /* the server attributes      */
+  pbs_attribute    sv_attr[SRV_ATR_LAST]; /* the server attributes      */
 
   int              sv_trackmodifed; /* 1 if tracking list modified     */
   int              sv_tracksize;  /* total number of sv_track entries */

@@ -282,11 +282,11 @@ void que_free(
   int        sv_qs_mutex_held)
 
   {
-  int   i;
-  attribute *pattr;
+  int            i;
+  pbs_attribute *pattr;
   attribute_def *pdef;
 
-  /* remove any calloc working attribute space */
+  /* remove any calloc working pbs_attribute space */
   for (i = 0;i < QA_ATR_LAST;i++)
     {
     pdef  = &que_attr_def[i];

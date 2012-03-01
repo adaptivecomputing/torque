@@ -197,7 +197,7 @@ int mutex_unlock (mutex_t *);
 int get_file_info (char *,unsigned long *,long *,bool_t *,bool_t *);
 int get_full_path (char *,char *,int);
 int svr_restart();
-void          restore_attr_default (struct attribute *);
+void          restore_attr_default (struct pbs_attribute *);
 
 /* Global Data Items */
 
@@ -1525,7 +1525,7 @@ int main(
 
   /*
    * make sure no other server is running with this home directory.
-   * If server lockfile attribute has been set use it.
+   * If server lockfile pbs_attribute has been set use it.
    * If not use default location for it
    */
   pthread_mutex_lock(server.sv_attr_mutex); 
@@ -1634,7 +1634,7 @@ int main(
   /*
    * Open the log file so we can start recording events
    *
-   * set log_event_mask to point to the log_event attribute value so
+   * set log_event_mask to point to the log_event pbs_attribute value so
    * it controls which events are logged.
    */
   pthread_mutex_lock(server.sv_attr_mutex);
@@ -2954,12 +2954,12 @@ int svr_restart()
 
 /**
  *
- * restores this attribute to its default where supported/possible
+ * restores this pbs_attribute to its default where supported/possible
  */
 
 void restore_attr_default(
 
-  struct attribute *attr) /* I */
+  pbs_attribute *attr) /* I */
 
   {
   int index;

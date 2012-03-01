@@ -118,6 +118,9 @@
 #include "queue_func.h" /* find_queuebyname */
 #include "reply_send.h" /* reply_send_svr */
 #include "svr_func.h" /* get_svr_attr_* */
+#ifdef USE_ALPS_LIB
+#include "libalps_report/generate_alps_status.h"
+#endif
 
 
 /* Global Data Items: */
@@ -143,7 +146,7 @@ extern pthread_mutex_t *netrates_mutex;
 /* Extern Functions */
 
 int status_job(job *, struct batch_request *, svrattrl *, tlist_head *, int *);
-int status_attrib(svrattrl *, attribute_def *, attribute *, int, int, tlist_head *, int *, int);
+int status_attrib(svrattrl *, attribute_def *, pbs_attribute *, int, int, tlist_head *, int *, int);
 extern int  svr_connect(pbs_net_t, unsigned int, int *, struct pbsnode *, void *(*)(void *), enum conn_type);
 extern int  status_nodeattrib(svrattrl *, attribute_def *, struct pbsnode *, int, int, tlist_head *, int*);
 extern int  hasprop(struct pbsnode *, struct prop *);
@@ -151,9 +154,9 @@ extern void rel_resc(job*);
 
 /* The following private support functions are included */
 
-static void update_state_ct(attribute *, int *, char *);
+static void update_state_ct(pbs_attribute *, int *, char *);
 static int  status_que(pbs_queue *, struct batch_request *, tlist_head *);
-static int  status_node(struct pbsnode *, struct batch_request *, int *, tlist_head *);
+int         status_node(struct pbsnode *, struct batch_request *, int *, tlist_head *);
 static void req_stat_job_step2(struct stat_cntl *);
 static void stat_update(struct work_task *);
 
@@ -368,7 +371,6 @@ static void req_stat_job_step2(
   struct stat_cntl *cntl)  /* I/O (free'd on return) */
 
   {
-  char                  id[] = "req_stat_job_step2";
   svrattrl              *pal;
   job                   *pjob = NULL;
 
@@ -380,7 +382,7 @@ static void req_stat_job_step2(
   int                    exec_only = 0;
 
   int                    bad = 0;
-  long                   DTime;  /* delta time - only report full attribute list if J->MTime > DTime */
+  long                   DTime;  /* delta time - only report full pbs_attribute list if J->MTime > DTime */
   static svrattrl       *dpal = NULL;
   int                    job_array_index = 0;
   job_array             *pa = NULL;
@@ -398,7 +400,7 @@ static void req_stat_job_step2(
 
   if (dpal == NULL)
     {
-    /* build 'delta' attribute list */
+    /* build 'delta' pbs_attribute list */
 
     svrattrl *tpal;
 
@@ -549,7 +551,7 @@ static void req_stat_job_step2(
         
         if (LOGLEVEL >= 7)
           {
-          sprintf(log_buf, "%s: unlocked ai_mutex", id);
+          sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
           }
 
@@ -570,7 +572,7 @@ static void req_stat_job_step2(
         pthread_mutex_unlock(pa->ai_mutex);
         if(LOGLEVEL >= 7)
           {
-          sprintf(log_buf, "%s: unlocked ai_mutex", id);
+          sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
           }
 
@@ -722,7 +724,7 @@ static void req_stat_job_step2(
             pthread_mutex_unlock(pa->ai_mutex);
             if(LOGLEVEL >= 7)
               {
-              sprintf(log_buf, "%s: unlocked ai_mutex", id);
+              sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
               log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
               }
             }
@@ -753,7 +755,7 @@ static void req_stat_job_step2(
       
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocked ai_mutex", id);
+      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
       }
 
@@ -811,7 +813,7 @@ static void req_stat_job_step2(
         pthread_mutex_unlock(pa->ai_mutex);
         if (LOGLEVEL >= 7)
           {
-          sprintf(log_buf, "%s: unlocked ai_mutex", id);
+          sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
           }
         }
@@ -862,7 +864,7 @@ nextjob:
     {
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocked ai_mutex", id);
+      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
       }
     pthread_mutex_unlock(pa->ai_mutex);
@@ -1426,7 +1428,6 @@ void *req_stat_node(
   void *vp) /* ptr to the decoded request   */
 
   {
-  static char          *id = "req_stat_node";
   char                 *name;
 
   int                   rc   = 0;
@@ -1448,7 +1449,7 @@ void *req_stat_node(
 
   if (LOGLEVEL >= 6)
     {
-    log_record( PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, "entered");
+    log_record( PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, "entered");
     }
 
   if (svr_totnodes <= 0)
@@ -1496,7 +1497,14 @@ void *req_stat_node(
       }
 
     /* get the status on all of the numa nodes */
-    rc = get_numa_statuses(pnode,preq,&bad,&preply->brp_un.brp_status);
+#ifndef USE_ALPS_LIB
+    rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
+#else
+    if (is_alps_reporter(pnode))
+      rc = get_alps_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
+    else
+      rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
+#endif
 
     unlock_node(pnode, __func__, "type == 0", LOGLEVEL);
     }
@@ -1515,7 +1523,15 @@ void *req_stat_node(
         }
 
       /* get the status on all of the numa nodes */
-      if ((rc = get_numa_statuses(pnode,preq,&bad,&preply->brp_un.brp_status)) != 0)
+#ifndef USE_ALPS_LIB
+      rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
+#else
+      if (is_alps_reporter(pnode))
+        rc = get_alps_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
+      else
+        rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
+#endif
+      if (rc != PBSE_NONE)
         {
         unlock_node(pnode, __func__, "type != 0, rc != 0, get_numa_statuses", LOGLEVEL);
         break;
@@ -1556,7 +1572,7 @@ void *req_stat_node(
  * status_node - Build the status reply for a single node.
  */
 
-static int status_node(
+int status_node(
 
   struct pbsnode       *pnode,    /* ptr to node receiving status query */
   struct batch_request *preq,
@@ -1736,9 +1752,9 @@ void *req_stat_svr(
 
 static void update_state_ct(
     
-  attribute *pattr,
-  int *ct_array,
-  char *buf)
+  pbs_attribute *pattr,
+  int           *ct_array,
+  char          *buf)
 
   {
   static char *statename[] = { "Transit", "Queued", "Held",

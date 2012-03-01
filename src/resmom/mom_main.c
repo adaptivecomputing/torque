@@ -127,6 +127,9 @@ int          ignvmem = 0;
 /* end policies */
 int          spoolasfinalname = 0;
 int          maxupdatesbeforesending = MAX_UPDATES_BEFORE_SENDING;
+char        *apbasil_path     = NULL;
+char        *apbasil_protocol = NULL;
+int          reject_job_submit = 0;
 int          attempttomakedir = 0;
 int          reduceprologchecks;
 int          lockfds = -1;
@@ -381,6 +384,9 @@ static unsigned long setreduceprologchecks(char *);
 static unsigned long setextpwdretry(char *);
 static unsigned long setmaxupdatesbeforesending(char *);
 static unsigned long setthreadunlinkcalls(char *);
+static unsigned long setapbasilpath(char *);
+static unsigned long setapbasilprotocol(char *);
+static unsigned long setrejectjobsubmission(char *);
 unsigned long rppthrottle(char *value);
 
 static struct specials
@@ -454,6 +460,9 @@ static struct specials
   { "attempt_to_make_dir", setattempttomakedir },
   { "ext_pwd_retry",       setextpwdretry },
   { "max_updates_before_sending", setmaxupdatesbeforesending },
+  { "apbasil_path",        setapbasilpath },
+  { "reject_job_submission", setrejectjobsubmission },
+  { "apbasil_protocol",    setapbasilprotocol },
   { NULL,                  NULL }
   };
 
@@ -3150,24 +3159,19 @@ static unsigned long setnospooldirlist(
 
 unsigned long aliasservername( char *value)
   {
-    log_record(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_SERVER,
-      "aliasservername",
-      value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
 
-    if (value)
+  if (value)
+    {
+    server_alias = (char *)calloc(1, strlen(value)+1);
+    if (server_alias)
       {
-      server_alias = (char *)calloc(1, strlen(value)+1);
-      if (server_alias)
-        {
-        strcpy(server_alias, value);
-        }
+      strcpy(server_alias, value);
       }
-
-
-    return(1);
-  }
+    }
+  
+  return(1);
+  } /* END aliasservername() */
 
 
 
@@ -3186,6 +3190,80 @@ static unsigned long setspoolasfinalname(
 
   return(1);
   }  /* END setspoolasfinalname() */
+
+
+
+static unsigned long setapbasilpath(
+
+  char *value)
+
+  {
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "apbasil_path", value);
+
+  if (value != NULL)
+    {
+    if (value[0] != '/')
+      apbasil_path = strdup(value);
+    else
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Path must be an absolute path, but is %s", value);
+      log_err(-1, __func__, log_buffer);
+      }
+    }
+
+  return(1);
+  } /* END setapbasilpath() */
+
+
+
+static unsigned long setapbasilprotocol(
+
+  char *value)
+
+  {
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "apbasil_protocol", value);
+
+  if (value != NULL)
+    {
+    /* only versions 1.0 to 1.3 are supported for now. update later */
+    if ((strlen(value) != 3) ||
+        (value[0] != '1') ||
+        (value[1] != '.') ||
+        ((value[2] != '0') &&
+         (value[2] != '1') &&
+         (value[2] != '2') &&
+         (value[2] != '3')))
+      {
+      snprintf(log_buffer, sizeof(log_buffer), 
+        "Value must be 1.[0-3] but is %s", value);
+      log_err(-1, __func__, log_buffer);
+      }
+    else
+      apbasil_protocol = strdup(value);
+    }
+
+  return(1);
+  } /* END setapbasilprotocol() */
+
+
+
+static unsigned long setrejectjobsubmission(
+
+  char *value)
+
+  {
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if (!strncasecmp(value,"t",1) ||
+      (value[0] == '1') ||
+      (!strcasecmp(value,"on")))
+    reject_job_submit = TRUE;
+  else
+    reject_job_submit = FALSE;
+
+  return(1);
+  } /* END setrejectjobsubmission() */
 
 
 
@@ -5805,19 +5883,19 @@ int job_over_limit(
   job *pjob)  /* I */
 
   {
-  attribute *attr;
-  attribute *used;
-  resource *limresc;
-  resource *useresc;
+  pbs_attribute       *attr;
+  pbs_attribute       *used;
+  resource            *limresc;
+  resource            *useresc;
 
   struct resource_def *rd;
-  unsigned long total;
-  int  index;
-  unsigned long limit;
-  char  *units;
+  unsigned long        total;
+  int                  index;
+  unsigned long        limit;
+  char                *units;
 
 #ifndef NUMA_SUPPORT
-  int  i;
+  int                  i;
 #endif /* ndef NUMA_SUPPORT */
 
   if (mom_over_limit(pjob))
@@ -8928,6 +9006,21 @@ int add_to_resend_things(
   return(insert_thing(things_to_resend, mc));
   } /* END add_to_resend_things() */
 
+
+
+#ifdef USE_ALPS_LIB
+/* stubs for unused server methods */
+attribute_def node_attr_def[1];
+struct pbssubn *create_subnode(struct pbsnode *pnode) {return(NULL);}
+int save_node_status(struct pbsnode *pnode, pbs_attribute *temp) {return(PBSE_NONE);}
+struct pbsnode *find_nodebyname(char *name) {return(NULL);}
+int mgr_set_node_attr(struct pbsnode *pnode, attribute_def *pdef, int limit, svrattrl *plist, int privil, int *bad, void *parent, int mode) {return(PBSE_NONE);}
+struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *held) {return(NULL);}
+int insert_node(all_nodes *an, struct pbsnode *pnode) {return(PBSE_NONE);}
+int initialize_pbsnode(struct pbsnode *pnode, char *pname, u_long *pul, int ntype) {return(PBSE_NONE);}
+int status_node(struct pbsnode *pnode, struct batch_request *preq, int *bad, tlist_head *pstathd) {return(PBSE_NONE);}
+void update_node_state(struct pbsnode *pnode, int state) {}
+#endif
 
 
 

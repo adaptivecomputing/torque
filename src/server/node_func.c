@@ -160,7 +160,7 @@ extern dynamic_string  *hierarchy_holder;
  * chk_characteristic() -  check for changes to the node's set of
  *  characteristics and set appropriate flag bits in the "need_todo"
  *  location depending on which characteristics changed
- * status_nodeattrib() -    add status of each requested (or all) node-attribute
+ * status_nodeattrib() -    add status of each requested (or all) node-pbs_attribute
  *  to the status reply
  * initialize_pbsnode() -   performs node initialization on a new node
  * effective_node_delete() -  effectively deletes a node from the server's node
@@ -512,19 +512,19 @@ int chk_characteristic(
 
 
 
-/* status_nodeattrib() - add status of each requested (or all) node-attribute to
+/* status_nodeattrib() - add status of each requested (or all) node-pbs_attribute to
  *    the status reply
  *
  *      Returns:     0 is success
- *                != 0 is error, if a node-attribute is incorrectly specified, *bad is
- *   set to the node-attribute's ordinal position
+ *                != 0 is error, if a node-pbs_attribute is incorrectly specified, *bad is
+ *   set to the node-pbs_attribute's ordinal position
  */
 
 int status_nodeattrib(
 
   svrattrl        *pal,         /*an svrattrl from the request  */
   attribute_def   *padef, /*the defined node attributes   */
-  struct pbsnode  *pnode, /*no longer an attribute ptr */
+  struct pbsnode  *pnode, /*no longer an pbs_attribute ptr */
   int              limit, /*number of array elts in padef */
   int              priv, /*requester's privilege  */
 
@@ -532,7 +532,7 @@ int status_nodeattrib(
   /*off the brp_attr member of the status sub*/
   /*structure in the request's "reply area"  */
 
-  int             *bad)         /*if node-attribute error, record it's*/
+  int             *bad)         /*if node-pbs_attribute error, record it's*/
 /*list position here                 */
 
   {
@@ -541,8 +541,8 @@ int status_nodeattrib(
   int   index;
   int   nth;  /*tracks list position (ordinal tacker)   */
 
-  attribute atemp[ND_ATR_LAST]; /*temporary array of attributes   */
-  memset(&atemp, 0, sizeof(attribute)*ND_ATR_LAST);
+  pbs_attribute atemp[ND_ATR_LAST]; /*temporary array of attributes   */
+  memset(&atemp, 0, sizeof(atemp));
 
   priv &= ATR_DFLAG_RDACC;    /* user-client privilege          */
 
@@ -682,7 +682,7 @@ int status_nodeattrib(
  * pbs node.  The assumption is that all the parameters are valid.
 */
 
-static int initialize_pbsnode(
+int initialize_pbsnode(
 
   struct pbsnode *pnode,
   char           *pname, /* node name */
@@ -691,10 +691,6 @@ static int initialize_pbsnode(
   int             ntype) /* time-shared or cluster */
 
   {
-  static char *id = "initialize_pbsnode";
-
-/*  int i; */
-
   memset(pnode, 0, sizeof(struct pbsnode));
 
   pnode->nd_name        = pname;
@@ -725,7 +721,7 @@ static int initialize_pbsnode(
   pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
     {
-    log_err(ENOMEM,id,"Could not allocate memory for the node's mutex");
+    log_err(ENOMEM, __func__, "Could not allocate memory for the node's mutex");
     
     return(ENOMEM);
     }
@@ -841,7 +837,6 @@ static int process_host_name_part(
   int   *ntype) /* node type; time-shared, not   */
 
   {
-  static char     id[] = "process_host_name_part";
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   struct addrinfo *addr_info;
@@ -893,7 +888,7 @@ static int process_host_name_part(
     {
     sprintf(log_buf, "host %s not found", objname);
 
-    log_err(PBSE_UNKNODE, id, log_buf);
+    log_err(PBSE_UNKNODE, __func__, log_buf);
 
     free(phostname);
     phostname = NULL;
@@ -910,7 +905,7 @@ static int process_host_name_part(
       phostname,
       addr_info->ai_canonname);
 
-    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, tmpLine);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, tmpLine);
     }
 
   addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
@@ -986,7 +981,7 @@ static int process_host_name_part(
         errno,
         pbs_strerror(errno));
       
-      log_err(PBSE_UNKNODE, id, log_buf);
+      log_err(PBSE_UNKNODE, __func__, log_buf);
       
       if (phostname != NULL)
         {
@@ -1067,10 +1062,6 @@ int update_nodes_file(
   struct pbsnode *held)
 
   {
-#ifndef NDEBUG
-  static char id[] = "update_nodes_file";
-#endif
-
   struct pbsnode  *np;
   int              j;
   int              iter = -1;
@@ -1078,8 +1069,7 @@ int update_nodes_file(
 
   if (LOGLEVEL >= 2)
     {
-    DBPRT(("%s: entered\n",
-           id))
+    DBPRT(("%s: entered\n", __func__))
     }
 
   if ((nin = fopen(path_nodes_new, "w")) == NULL)
@@ -1270,12 +1260,11 @@ struct prop *init_prop(
  *  NOTE: pname arg must be a copy of prop list as it is linked directly in
  */
 
-static struct pbssubn *create_subnode(
-
-        struct pbsnode *pnode)
+struct pbssubn *create_subnode(
+    
+  struct pbsnode *pnode)
 
   {
-
   struct pbssubn  *psubn = NULL;
 
   struct pbssubn *nxtsn = NULL;
@@ -1333,12 +1322,11 @@ int create_a_gpusubnode(
   struct pbsnode *pnode)
 
   {
-  static char *id = "create_a_gpusubnode";
   struct gpusubn *tmp = calloc((1 + pnode->nd_ngpus), sizeof(struct gpusubn));
 
   if (tmp == NULL)
     {
-    log_err(ENOMEM,id,"Couldn't allocate memory for a subnode. EPIC FAILURE");
+    log_err(ENOMEM, __func__, "Couldn't allocate memory for a subnode. EPIC FAILURE");
     return(ENOMEM);
     }
 
@@ -1665,7 +1653,6 @@ int create_pbs_node(
   int      *bad)
 
   {
-  static char     *id = "create_pbs_node"; 
   struct pbsnode  *pnode = NULL;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -1689,7 +1676,7 @@ int create_pbs_node(
 
     if (host_info == NULL)
       {
-      log_err(-1, id, "create_pbs_node calloc failed");
+      log_err(-1, __func__, "create_pbs_node calloc failed");
       return(PBSE_SYSTEM);
       }
 
@@ -1704,7 +1691,7 @@ int create_pbs_node(
       pattrl = attrlist_create(pal->al_atopl.name, 0, strlen(pal->al_atopl.value) + 1);
       if (pattrl == NULL)
         {
-        log_err(-1, id, "cannot create node attribute");
+        log_err(-1, __func__, "cannot create node attribute");
         return(PBSE_SYSTEM);
         }
 
@@ -1725,7 +1712,7 @@ int create_pbs_node(
       if (host_info->nodename == NULL)
         {
         free(host_info);
-        log_err(-1, id, "create_pbs_node calloc failed");
+        log_err(-1, __func__, "create_pbs_node calloc failed");
         return(PBSE_SYSTEM);
         }
 
@@ -1756,7 +1743,7 @@ int create_pbs_node(
     free(pname);
     free(pul);
 
-    unlock_node(pnode, "create_pbs_node", NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
     return(PBSE_NODEEXIST);
     }
@@ -1809,7 +1796,7 @@ int create_pbs_node(
         (pul[i] & 0x0000ff00) >> 8,
         (pul[i] & 0x000000ff));
 
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
     
     addr = pul[i];
@@ -1820,6 +1807,10 @@ int create_pbs_node(
     {
     return(rc);
     }
+
+#ifdef USE_ALPS_LIB
+  initialize_all_nodes_array(&(pnode->alps_subnodes));
+#endif
 
   insert_node(&allnodes,pnode);
 
@@ -2026,7 +2017,7 @@ int setup_nodes(void)
 
       if (xchar == '=')
         {
-        /* have new style attribute, keyword=value */
+        /* have new style pbs_attribute, keyword=value */
 
         val = parse_node_token(NULL, 0, 1, &err, &xchar);
 
@@ -2359,17 +2350,16 @@ static void delete_a_gpusubnode(
 
 
 /*
- * node_np_action - action routine for node's np attribute
+ * node_np_action - action routine for node's np pbs_attribute
  */
 
 int node_np_action(
     
-  attribute *new,  /*derive props into this attribute*/
-  void *pobj,      /*pointer to a pbsnode struct     */
-  int actmode)     /*action mode; "NEW" or "ALTER"   */
+  pbs_attribute *new,     /* derive props into this pbs_attribute*/
+  void          *pobj,    /* pointer to a pbsnode struct     */
+  int            actmode) /* action mode; "NEW" or "ALTER"   */
   
   {
-
   struct pbsnode *pnode = (struct pbsnode *)pobj;
   short  old_np;
   short  new_np;
@@ -2413,17 +2403,16 @@ int node_np_action(
 
 
 /*
- * node_mom_port_action - action routine for node's port attribute
+ * node_mom_port_action - action routine for node's port pbs_attribute
  */
 
 int node_mom_port_action(
 
-    attribute *new, /*derive props into this attribute*/
-    void *pobj, /*pointer to a pbsnode struct     */
-    int actmode) /*action mode; "NEW" or "ALTER"   */
+  pbs_attribute *new,     /*derive props into this pbs_attribute*/
+  void          *pobj,    /*pointer to a pbsnode struct     */
+  int            actmode) /*action mode; "NEW" or "ALTER"   */
 
   {
-
   struct pbsnode *pnode = (struct pbsnode *)pobj;
   int rc = 0;
 
@@ -2447,15 +2436,16 @@ int node_mom_port_action(
   }
 
 /*
- * node_mom_rm_port_action - action routine for node's port attribute
+ * node_mom_rm_port_action - action routine for node's port pbs_attribute
  */
 
-int node_mom_rm_port_action(new, pobj, actmode)
-  attribute *new;  /*derive props into this attribute*/
-  void  *pobj;  /*pointer to a pbsnode struct     */
-  int   actmode; /*action mode; "NEW" or "ALTER"   */
-  {
+int node_mom_rm_port_action(
 
+  pbs_attribute *new,     /* derive props into this pbs_attribute*/
+  void          *pobj,    /* pointer to a pbsnode struct     */
+  int            actmode) /* action mode; "NEW" or "ALTER"   */
+
+  {
   struct pbsnode *pnode = (struct pbsnode *)pobj;
   int rc = 0;
 
@@ -2482,9 +2472,9 @@ int node_mom_rm_port_action(new, pobj, actmode)
 
 int node_gpus_action(
 
-  attribute *new,
-  void      *pnode,
-  int        actmode)
+  pbs_attribute *new,
+  void          *pnode,
+  int            actmode)
 
   {
   struct pbsnode *np = (struct pbsnode *)pnode;
@@ -2534,9 +2524,9 @@ int node_gpus_action(
 
 int node_numa_action(
 
-  attribute *new,           /*derive status into this attribute*/
-  void      *pnode,         /*pointer to a pbsnode struct     */
-  int        actmode)       /*action mode; "NEW" or "ALTER"   */
+  pbs_attribute *new,     /* derive status into this pbs_attribute*/
+  void          *pnode,   /* pointer to a pbsnode struct     */
+  int            actmode) /* action mode; "NEW" or "ALTER"   */
 
   {
 
@@ -2565,9 +2555,9 @@ int node_numa_action(
 
 int numa_str_action(
 
-  attribute *new,           /*derive status into this attribute*/
-  void      *pnode,         /*pointer to a pbsnode struct     */
-  int        actmode)       /*action mode; "NEW" or "ALTER"   */
+  pbs_attribute *new,     /* derive status into this pbs_attribute*/
+  void          *pnode,   /* pointer to a pbsnode struct     */
+  int            actmode) /* action mode; "NEW" or "ALTER"   */
 
   {
   struct pbsnode *np = (struct pbsnode *)pnode;
@@ -2621,9 +2611,9 @@ int numa_str_action(
 
 int gpu_str_action(
 
-  attribute *new,
-  void      *pnode,
-  int        actmode)
+  pbs_attribute *new,
+  void          *pnode,
+  int            actmode)
 
   {
   struct pbsnode *np = (struct pbsnode *)pnode;
@@ -2680,9 +2670,9 @@ int gpu_str_action(
 
 int create_partial_pbs_node(
 
-  char *nodename,
-  unsigned long addr,
-  int perms)
+  char          *nodename,
+  unsigned long  addr,
+  int            perms)
 
   {
   int              ntype; /* node type; time-shared, not */
@@ -3095,8 +3085,9 @@ int send_hierarchy(
 
   if (getaddrinfo(name, NULL, NULL, &addr_info) != 0)
     {
+    int local_errno = errno;
     snprintf(log_buf, sizeof(log_buf),
-      "Can't get address information for %s", name);
+      "Can't get address information for %s - %s", name, strerror(local_errno));
     log_err(PBSE_BADHOST, __func__, log_buf);
 
     return(PBSE_BADHOST);

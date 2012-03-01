@@ -16,8 +16,8 @@
 /* max word length in the reqest */
 #define MAX_REQ_WORD_LEN 32768  /* increased from 1024 */
 
-/* there can be three words before the attribute list
- * command object name <attribute list> */
+/* there can be three words before the pbs_attribute list
+ * command object name <pbs_attribute list> */
 #define MAX_REQ_WORDS 3
 #define IND_CMD         0
 #define IND_OBJ         1

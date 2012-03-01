@@ -144,11 +144,11 @@ void svr_shutdown(
   int type) /* I */
 
   {
-  attribute    *pattr;
-  job          *pjob;
-  long          state = SV_STATE_DOWN;
-  int           iter;
-  char          log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_attribute *pattr;
+  job           *pjob;
+  long           state = SV_STATE_DOWN;
+  int            iter;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   close(lockfds);
 
@@ -335,7 +335,7 @@ static int shutdown_checkpoint(
   {
   job                  *pjob = *pjob_ptr;
   struct batch_request *phold;
-  attribute             temp;
+  pbs_attribute         temp;
 
   phold = alloc_br(PBS_BATCH_HoldJob);
 

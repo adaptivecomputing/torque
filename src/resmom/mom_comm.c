@@ -436,7 +436,7 @@ task *pbs_task_create(
   {
   static char  id[] = "pbs_task_create";
   task  *ptask;
-  attribute *at;
+  pbs_attribute *at;
   resource_def *rd;
   resource *pres;
   u_long  tasks;
@@ -1092,14 +1092,14 @@ void job_start_error(
   char  *nodename) /* I */
 
   {
-  static  char  id[] = "job_start_error";
+  static  char   id[] = "job_start_error";
 
-  static char   abortjobid[64];
-  static int    abortcount = -1;
+  static char    abortjobid[64];
+  static int     abortcount = -1;
 
-  attribute    *pattr;
+  pbs_attribute *pattr;
 
-  char          tmpLine[1024];
+  char           tmpLine[1024];
 
   if (abortcount == -1)
     {
@@ -1347,7 +1347,7 @@ void node_bailout(
 
         /* we should be more patient - how do we recover this connection? (NYI) */
 
-        /* if job attribute fault_tolerant is not set or set to false then kill the job */
+        /* if job pbs_attribute fault_tolerant is not set or set to false then kill the job */
         if ((pjob->ji_wattr[JOB_ATR_fault_tolerant].at_flags & ATR_VFLAG_SET) &&
             pjob->ji_wattr[JOB_ATR_fault_tolerant].at_val.at_long)
           {
@@ -1635,10 +1635,10 @@ u_long resc_used(
   u_long(*func)(resource *))
 
   {
-  attribute    *at;
-  resource_def *rd;
-  resource     *pres;
-  u_long        val = 0L;
+  pbs_attribute *at;
+  resource_def  *rd;
+  resource      *pres;
+  u_long         val = 0L;
 
   at = &pjob->ji_wattr[JOB_ATR_resc_used];
 
@@ -1747,7 +1747,7 @@ char *resc_string(
   job *pjob)
 
   {
-  attribute  *at;
+  pbs_attribute  *at;
   attribute_def  *ad;
   svrattrl  *pal;
   tlist_head  lhead;
@@ -1869,7 +1869,7 @@ int contact_sisters(
   struct radix_buf **sister_list;
   int                ret;
   tlist_head         phead;
-  attribute         *pattr;
+  pbs_attribute     *pattr;
   
   char *host_addr = NULL;
   int addr_len;
@@ -2338,7 +2338,7 @@ int im_join_job_as_sister(
     return(IM_FAILURE);
     }
   
-  /* Get the hashname from the attribute. */
+  /* Get the hashname from the pbs_attribute. */
   
   psatl = (svrattrl *)GET_NEXT(lhead);
   
@@ -2386,7 +2386,7 @@ int im_join_job_as_sister(
       psatl;
       psatl = (svrattrl *)GET_NEXT(psatl->al_link))
     {
-    /* identify the attribute by name */
+    /* identify the pbs_attribute by name */
     
     index = find_attr(job_attr_def, psatl->al_name, JOB_ATR_LAST);
     
@@ -2401,7 +2401,7 @@ int im_join_job_as_sister(
 
     pdef = &job_attr_def[index];
     
-    /* decode attribute */
+    /* decode pbs_attribute */
     
     if ((rc = pdef->at_decode(&pjob->ji_wattr[index],
           psatl->al_name, psatl->al_resc, psatl->al_value,resc_access_perm)) != PBSE_NONE)
@@ -7804,7 +7804,7 @@ int tm_request(
   int  prev_error = 0;
   tm_node_id nodeid;
   tm_task_id fromtask;
-  attribute *at;
+  pbs_attribute *at;
  
   pid_t pid;
  
@@ -8334,7 +8334,7 @@ static int adoptSession(
   if (strcmp(cookie, "ADOPT COOKIE"))
     {
     char *oreo;
-    attribute *at = &pjob->ji_wattr[JOB_ATR_Cookie];
+    pbs_attribute *at = &pjob->ji_wattr[JOB_ATR_Cookie];
 
     if (!(at->at_flags & ATR_VFLAG_SET))
       {

@@ -249,11 +249,11 @@ struct grpcache
 /*
  * Job attributes/resources are maintained in one of two ways.
  * Most of the attributes are maintained in a decoded or parsed form.
- * This allows quick access to the attribute and resource values
+ * This allows quick access to the pbs_attribute and resource values
  * when making decisions about the job (scheduling, routing, ...),
  * see ji_wattr[].
  *
- * Any attribute or resource which is not recognized on this server
+ * Any pbs_attribute or resource which is not recognized on this server
  * are kept in an "attrlist", a linked list of the "external"
  * form (attr_extern, see attribute.h).  These are maintained because
  * the job may be passed on to another server (route or qmove) that
@@ -653,7 +653,7 @@ struct job
    * Its presence is for rapid acces to the attributes.
    */
 
-  attribute ji_wattr[JOB_ATR_LAST]; /* decoded attributes  */
+  pbs_attribute ji_wattr[JOB_ATR_LAST]; /* decoded attributes  */
 
   int  maxAdoptedTaskId;  /* DJH 27 Feb 2002. Keep track of the task ids
                              the local mom allocates to adopted tasks; */
@@ -1042,7 +1042,7 @@ dir so that job can be restarted */
 
 extern void  add_dest(job *);
 extern void  depend_clrrdy(job *);
-extern int   depend_on_que(attribute *, void *, int);
+extern int   depend_on_que(pbs_attribute *, void *, int);
 extern int   depend_on_exec(job *);
 extern int   depend_on_term(job *);
 extern job  *find_job(char *);
@@ -1065,13 +1065,13 @@ extern int   job_save(job *, int, int);
 extern int   modify_job_attr(job *, svrattrl *, int, int *);
 extern char *prefix_std_file(job *, dynamic_string *, int);
 extern char *add_std_filename(job *, char *, int, dynamic_string *);
-extern int   set_jobexid(job *, attribute *, char *);
+extern int   set_jobexid(job *, pbs_attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *, int);
 void  svr_dequejob(job *, int);
 extern int   svr_enquejob(job *, int, int);
 extern void  svr_evaljobstate(job *, int *, int *, int);
 extern void  svr_mailowner(job *, int, int, char *);
-extern void  set_resc_deflt(job *, attribute *, int);
+extern void  set_resc_deflt(job *, pbs_attribute *, int);
 extern void  set_statechar(job *);
 extern int   svr_setjobstate(job *, int, int, int);
 

@@ -156,17 +156,17 @@ const char *PPEType[] =
 static char *resc_to_string(
 
   job       *pjob,      /* I (optional - if specified, report total job resources) */
-  int        aindex,    /* I which attribute to convert */
+  int        aindex,    /* I which pbs_attribute to convert */
   char      *buf,       /* O the buffer into which to convert */
   int        buflen)    /* I the length of the above buffer */
 
   {
-  int        need;
-  svrattrl  *patlist;
-  tlist_head  svlist;
-  attribute *pattr;
+  int            need;
+  svrattrl      *patlist;
+  tlist_head     svlist;
+  pbs_attribute *pattr;
 
-  int       isfirst = 1;
+  int            isfirst = 1;
 
   CLEAR_HEAD(svlist);
 

@@ -99,11 +99,11 @@
  * Decoding the value string to the machine representation.
  * Encoding the machine representation of the value to a string
  * Setting the value by =, + or - operators.
- * Comparing a (decoded) value with the attribute value.
- * Freeing the space calloc-ed to the attribute value.
+ * Comparing a (decoded) value with the pbs_attribute value.
+ * Freeing the space calloc-ed to the pbs_attribute value.
  *
- * Some or all of the functions for an attribute type may be shared with
- * other attribute types.
+ * Some or all of the functions for an pbs_attribute type may be shared with
+ * other pbs_attribute types.
  *
  * The prototypes are declared in "attribute.h"
  *
@@ -116,7 +116,7 @@ static char true_val[]  = ATR_TRUE;
 static char false_val[] = ATR_FALSE;
 
 /*
- * decode_b - decode string into boolean attribute
+ * decode_b - decode string into boolean pbs_attribute
  *
  * String of "1" decodes to true, all else to false
  * Returns: 0 if ok
@@ -126,11 +126,11 @@ static char false_val[] = ATR_FALSE;
 
 int decode_b(
 
-  attribute *patr,
-  char      *name,  /* attribute name */
-  char      *rescn,  /* resource name, unused here */
-  char      *val,  /* attribute value */
-  int        perm) /* only used for resources */
+  pbs_attribute *patr,
+  char          *name,  /* pbs_attribute name */
+  char          *rescn,  /* resource name, unused here */
+  char          *val,  /* pbs_attribute value */
+  int            perm) /* only used for resources */
 
   {
   char *pc;
@@ -174,7 +174,7 @@ int decode_b(
   }
 
 /*
- * encode_b - encode attribute of type ATR_TYPE_LONG to attr_extern
+ * encode_b - encode pbs_attribute of type ATR_TYPE_LONG to attr_extern
  *
  * Returns: >0 size of data returned to buffer
  *   =0 if not value, no link added
@@ -184,12 +184,12 @@ int decode_b(
 
 int encode_b(
 
-  attribute  *attr,  /* ptr to attribute */
-  tlist_head *phead,  /* head of attribute list */
-  char       *atname, /* attribute name */
-  char       *rsname, /* resource name or null */
-  int         mode,  /* encode mode, unused here */
-  int         perm) /* only used for resources */
+  pbs_attribute  *attr,   /* ptr to pbs_attribute */
+  tlist_head     *phead,  /* head of pbs_attribute list */
+  char           *atname, /* pbs_attribute name */
+  char           *rsname, /* resource name or null */
+  int             mode,   /* encode mode, unused here */
+  int             perm)   /* only used for resources */
 
   {
   size_t   ct;
@@ -228,7 +228,7 @@ int encode_b(
   }
 
 /*
- * set_b - set attribute of type ATR_TYPE_LONG
+ * set_b - set pbs_attribute of type ATR_TYPE_LONG
  *
  * A=B --> A set to value of B
  * A+B --> A = A | B  (inclusive or, turn on)
@@ -238,8 +238,12 @@ int encode_b(
  *  >0 if error
  */
 
-int
-set_b(struct attribute *attr, struct attribute *new, enum batch_op op)
+int set_b(
+    
+  pbs_attribute *attr,
+  pbs_attribute *new,
+  enum batch_op  op)
+
   {
   assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
 
@@ -276,8 +280,11 @@ set_b(struct attribute *attr, struct attribute *new, enum batch_op op)
  *  +1 if different value
  */
 
-int
-comp_b(struct attribute *attr, struct attribute *with)
+int comp_b(
+    
+  pbs_attribute *attr,
+  pbs_attribute *with)
+
   {
   if (!attr || !with)
     return (1);

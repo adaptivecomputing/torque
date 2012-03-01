@@ -643,7 +643,7 @@ int send_job_work(
   char                 *destin = pjob->ji_qs.ji_destin;
 
   struct attropl       *pqjatr;      /* list (single) of attropl for quejob */
-  attribute            *pattr;
+  pbs_attribute        *pattr;
   mbool_t               Timeout = FALSE;
   
   pbs_net_t             hostaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;

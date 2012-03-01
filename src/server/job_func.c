@@ -91,7 +91,7 @@
  *   job_clone_wt work task for cloning a job
  *
  * Include private function:
- *   job_init_wattr() initialize job working attribute array to "unspecified"
+ *   job_init_wattr() initialize job working pbs_attribute array to "unspecified"
  *
  * NOTE: for multi-threaded TORQUE, all functions in here except find_job assume that
  * the caller holds any relevant mutexes
@@ -197,9 +197,9 @@ void send_qsub_delmsg(
   char *text)  /* I */
 
   {
-  char      *phost;
-  attribute *pattri;
-  int        qsub_sock;
+  char          *phost;
+  pbs_attribute *pattri;
+  int            qsub_sock;
 
   phost = arst_string("PBS_O_HOST", &pjob->ji_wattr[JOB_ATR_variables]);
 
@@ -623,7 +623,7 @@ int conn_qsub(
 
 /*
  * job_alloc - allocate space for a job structure and initialize working
- * attribute to "unset"
+ * pbs_attribute to "unset"
  *
  * Returns: pointer to structure or null is space not available.
  *
@@ -684,7 +684,7 @@ void job_free(
     log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
     }
 
-  /* remove any calloc working attribute space */
+  /* remove any calloc working pbs_attribute space */
   for (i = 0;i < JOB_ATR_LAST;i++)
     {
     job_attr_def[i].at_free(&pj->ji_wattr[i]);
@@ -731,25 +731,24 @@ job *job_clone(
   int        taskid)  /* I */
 
   {
-  char log_buf[LOCAL_LOG_BUF_SIZE];
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
-  job  *pnewjob;
-  attribute tempattr;
+  job           *pnewjob;
+  pbs_attribute  tempattr;
 
-  char  *oldid;
-  char  *hostname;
-  char  *bracket;
-  char  *tmpstr;
-  char   basename[PBS_JOBBASE+1];
-  char   namebuf[MAXPATHLEN + 1];
-  char   buf[256];
-  char  *pc;
-  int    fds;
+  char          *oldid;
+  char          *hostname;
+  char          *bracket;
+  char          *tmpstr;
+  char           basename[PBS_JOBBASE+1];
+  char           namebuf[MAXPATHLEN + 1];
+  char           buf[256];
+  char          *pc;
+  int            fds;
 
-  int    i;
-  int    slen;
-  int    release_mutex = FALSE;
-
+  int            i;
+  int            slen;
+  int            release_mutex = FALSE;
 
   if (LOGLEVEL >= 7)
     {
@@ -1147,7 +1146,7 @@ void job_clone_wt(
 
 
 /*
- * job_init_wattr - initialize job working attribute array
+ * job_init_wattr - initialize job working pbs_attribute array
  * set the types and the "unspecified value" flag
  */
 
@@ -1180,13 +1179,13 @@ struct batch_request *cpy_checkpoint(
   int                   direction)
 
   {
-  char        momfile[MAXPATHLEN+1];
-  char        serverfile[MAXPATHLEN+1];
-  char       *from = NULL;
-  char       *to = NULL;
-  char        log_buf[LOCAL_LOG_BUF_SIZE];
-  attribute  *pattr;
-  mode_t      saveumask = 0;
+  char            momfile[MAXPATHLEN+1];
+  char            serverfile[MAXPATHLEN+1];
+  char           *from = NULL;
+  char           *to = NULL;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_attribute  *pattr;
+  mode_t          saveumask = 0;
   
   pattr = &pjob->ji_wattr[ati];
 
@@ -1392,7 +1391,7 @@ void cleanup_restart_file(
 
 /*    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_COPIED; */
 
-    /* clear restart_name attribute since purging job will clean it up */
+    /* clear restart_name pbs_attribute since purging job will clean it up */
 
     pjob->ji_wattr[JOB_ATR_restart_name].at_flags &= ~ATR_VFLAG_SET;
     pjob->ji_modified = 1;
@@ -1411,7 +1410,7 @@ int record_jobinfo(
   job *pjob)
 
   {
-  attribute              *pattr;
+  pbs_attribute          *pattr;
   int                     i;
   int                     rc;
   dynamic_string         *buffer;
@@ -1459,8 +1458,8 @@ int record_jobinfo(
       {
       if (!strcmp(job_attr_def[i].at_name, "depend"))
         {
-        /* we don't want this attribute in our log -
-           The dependecies will show on the submit_args attribute */
+        /* we don't want this pbs_attribute in our log -
+           The dependecies will show on the submit_args pbs_attribute */
         continue;
         }
       

@@ -305,9 +305,9 @@ static int is_joined(
   enum job_atr  ati)   /* I */
 
   {
-  char       key;
-  attribute *pattr;
-  char     *pd;
+  char           key;
+  pbs_attribute *pattr;
+  char          *pd;
 
   if (ati == JOB_ATR_outpath)
     key = 'o';
@@ -397,15 +397,15 @@ static struct batch_request *cpy_stdfile(
   enum job_atr         ati) /* JOB_ATR_ output or error path */
 
   {
-  char *from;
-  char  key;
+  char          *from;
+  char           key;
 
-  attribute *jkpattr;
-  attribute *pathattr = &pjob->ji_wattr[ati];
+  pbs_attribute *jkpattr;
+  pbs_attribute *pathattr = &pjob->ji_wattr[ati];
 
-  char *suffix;
-  char *to = NULL;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char          *suffix;
+  char          *to = NULL;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags) &&
       (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long))
@@ -451,7 +451,7 @@ static struct batch_request *cpy_stdfile(
     }
 
   /*
-   * If the job has a keep file attribute, and the specified file is in
+   * If the job has a keep file pbs_attribute, and the specified file is in
    * the keep list, MOM has already placed the file in the user's HOME
    * directory.  It doesn't need to be copied.
    */
@@ -537,7 +537,7 @@ struct batch_request *cpy_stage(
   {
   int                   i;
   char                 *from;
-  attribute            *pattr;
+  pbs_attribute        *pattr;
 
   struct array_strings *parst;
   char                 *plocal;
@@ -1508,7 +1508,7 @@ int handle_complete_second_time(
   if (((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
       (pjob->ji_wattr[JOB_ATR_reported].at_val.at_long == 0))
     {
-    /* the job must report attribute but hasn't:
+    /* the job must report pbs_attribute but hasn't:
      * skip the job if it has not yet reported to the scheduler. */
     if (LOGLEVEL >= 7)
       {
@@ -2283,9 +2283,9 @@ void encode_job_used(
   tlist_head *phead)  /* O */
 
   {
-  attribute  *at;
+  pbs_attribute  *at;
   attribute_def  *ad;
-  resource  *rs;
+  resource       *rs;
 
   at = &pjob->ji_wattr[JOB_ATR_resc_used];
   ad = &job_attr_def[JOB_ATR_resc_used];
@@ -2300,10 +2300,10 @@ void encode_job_used(
        rs = (resource *)GET_NEXT(rs->rs_link))
     {
     resource_def *rd = rs->rs_defin;
-    attribute     val;
+    pbs_attribute val;
     int           rc;
 
-    val = rs->rs_value; /* copy resource attribute */
+    val = rs->rs_value; /* copy resource pbs_attribute */
 
     rc = rd->rs_encode(
 
@@ -2462,7 +2462,7 @@ void *req_jobobit(
    * save exit state, update the resources used, and reply to MOM.
    *
    * Note, must make the log/mail message about resources used BEFORE
-   * replying to MOM.  The reply will free the attribute list so it
+   * replying to MOM.  The reply will free the pbs_attribute list so it
    * cannot be used after the call to reply_ack();
    */
 

@@ -2137,7 +2137,7 @@ int mom_set_use(
   static char       *id = "mom_set_use";
 #endif
   resource      *pres;
-  attribute     *at;
+  pbs_attribute *at;
   resource_def  *rd;
   unsigned long *lp;
   unsigned long  lnum;

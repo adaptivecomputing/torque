@@ -210,7 +210,7 @@ int job_save(
         path_jobs, pjob->ji_qs.ji_fileprefix, JOB_FILE_COPY);
     }
 
-  /* if ji_modified is set, ie an attribute changed, then update mtime */
+  /* if ji_modified is set, ie an pbs_attribute changed, then update mtime */
 
   if (pjob->ji_modified)
     {

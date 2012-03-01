@@ -99,14 +99,14 @@
  * the types with specific definition and meaning.
  *
  * Because the type is unknown, it cannot be decoded into a native
- * form.  Thus the attribute is maintained in the attrlist form.
- * Any attribute/value located here will be sent to the Scheduler and it
+ * form.  Thus the pbs_attribute is maintained in the attrlist form.
+ * Any pbs_attribute/value located here will be sent to the Scheduler and it
  * within its rules may do as it choses with them.
  *
  * The prototypes are declared in "attribute.h"
  *
  * ----------------------------------------------------------------------------
- * Attribute functions for attributes with value type "unknown"
+ * pbs_Attribute functions for attributes with value type "unknown"
  * ----------------------------------------------------------------------------
  */
 
@@ -118,7 +118,7 @@
 
 /*
  * decode_unkn - decode a pair of strings (name and value) into the Unknown
- * type attribute/resource which is maintained as a "svrattrl", a
+ * type pbs_attribute/resource which is maintained as a "svrattrl", a
  * linked list of structures containing strings.
  *
  * Returns: 0 if ok,
@@ -128,18 +128,18 @@
 
 int decode_unkn(
 
-  attribute *patr,  /* May be Modified on Return */
-  char      *name,
-  char      *rescn,
-  char      *value,
-  int        perm)  /* only used for resources */
+  pbs_attribute *patr,  /* May be Modified on Return */
+  char          *name,
+  char          *rescn,
+  char          *value,
+  int            perm)  /* only used for resources */
 
   {
   svrattrl *entry;
   size_t      valln;
 
 
-  if (patr == (attribute *)0)
+  if (patr == NULL)
     return (PBSE_INTERNAL);
 
   if (!(patr->at_flags & ATR_VFLAG_SET))
@@ -172,11 +172,11 @@ int decode_unkn(
 /*
  * encode_unkn - encode attr of unknown type into attrlist form
  *
- * Here things are different from the typical attribute.  Most have a
- * single value to be encoded.  But "the unknown" attribute may have a whole
+ * Here things are different from the typical pbs_attribute.  Most have a
+ * single value to be encoded.  But "the unknown" pbs_attribute may have a whole
  * list.
  *
- * This function does not use the parent attribute name, after all "_other_"
+ * This function does not use the parent pbs_attribute name, after all "_other_"
  * is rather meaningless.  In addition, each unknown already is in an
  * attrlist form.
  *
@@ -191,12 +191,12 @@ int decode_unkn(
 
 int encode_unkn(
 
-  attribute  *attr,   /* ptr to attribute to encode */
-  tlist_head *phead,   /* list to place entry in */
-  char       *atname,  /* attribute name, not used here */
-  char       *rsname,  /* resource name, not used here */
-  int         mode,   /* encode mode, unused here */
-  int         perm)  /* only used for resources */
+  pbs_attribute  *attr,   /* ptr to pbs_attribute to encode */
+  tlist_head     *phead,   /* list to place entry in */
+  char           *atname,  /* pbs_attribute name, not used here */
+  char           *rsname,  /* resource name, not used here */
+  int             mode,   /* encode mode, unused here */
+  int             perm)  /* only used for resources */
 
   {
   svrattrl *plist;
@@ -263,9 +263,9 @@ int encode_unkn(
 
 
 /*
- * set_unkn - set value of attribute of unknown type  to another
+ * set_unkn - set value of pbs_attribute of unknown type  to another
  *
- * Each entry in the list headed by the "new" attribute is appended
+ * Each entry in the list headed by the "new" pbs_attribute is appended
  * to the list headed by "old".
  *
  * All operations, set, incr, and decr, map to append.
@@ -274,8 +274,12 @@ int encode_unkn(
  */
 
 /*ARGSUSED*/
-int
-set_unkn(struct attribute *old, struct attribute *new, enum batch_op op)
+int set_unkn(
+   
+  pbs_attribute *old,
+  pbs_attribute *new,
+  enum batch_op  op)
+
   {
   svrattrl *plist;
   svrattrl *pnext;
@@ -305,20 +309,25 @@ set_unkn(struct attribute *old, struct attribute *new, enum batch_op op)
  *
  */
 
-int
-comp_unkn(struct attribute *attr, struct attribute *with)
+int comp_unkn(
+   
+  pbs_attribute *attr,
+  pbs_attribute *with)
+
   {
   return (1);
   }
 
 /*
- * free_unkn - free space associated with attribute value
+ * free_unkn - free space associated with pbs_attribute value
  *
  * For each entry in the list, it is delinked, and freed.
  */
 
-void
-free_unkn(attribute *pattr)
+void free_unkn(
+    
+  pbs_attribute *pattr)
+
   {
   svrattrl *plist;
 

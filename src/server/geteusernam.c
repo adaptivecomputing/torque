@@ -118,8 +118,8 @@ extern int LOGLEVEL;
 
 static char *geteusernam(
 
-  job       *pjob,
-  attribute *pattr) /* pointer to User_List attribute */
+  job           *pjob,
+  pbs_attribute *pattr) /* pointer to User_List pbs_attribute */
 
   {
   int  rule3 = 0;
@@ -132,7 +132,7 @@ static char *geteusernam(
   char  username[PBS_MAXUSER + 1];
   char *ret_user;
 
-  /* search the user-list attribute */
+  /* search the user-list pbs_attribute */
 
   if ((pattr->at_flags & ATR_VFLAG_SET) &&
       (parst = pattr->at_val.at_arst))
@@ -205,8 +205,8 @@ static char *geteusernam(
 
 static char *getegroup(
 
-  job       *pjob,  /* I */
-  attribute *pattr) /* I group_list attribute */
+  job           *pjob,  /* I */
+  pbs_attribute *pattr) /* I group_list pbs_attribute */
 
   {
   char *hit = 0;
@@ -218,7 +218,7 @@ static char *getegroup(
   char  groupname[PBS_MAXUSER + 1];
   char *ret_group;
 
-  /* search the group-list attribute */
+  /* search the group-list pbs_attribute */
 
   if ((pattr->at_flags & ATR_VFLAG_SET) &&
       (parst = pattr->at_val.at_arst))
@@ -287,13 +287,13 @@ static char *getegroup(
 
 int set_jobexid(
 
-  job       *pjob,    /* I */
-  attribute *attrry,  /* I */
-  char      *EMsg)    /* O (optional,minsize=1024) */
+  job           *pjob,    /* I */
+  pbs_attribute *attrry,  /* I */
+  char          *EMsg)    /* O (optional,minsize=1024) */
 
   {
   int             addflags = 0;
-  attribute      *pattr;
+  pbs_attribute  *pattr;
   char          **pmem;
 
   struct group   *gpent;

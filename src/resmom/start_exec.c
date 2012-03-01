@@ -781,7 +781,7 @@ int is_joined(
   job *pjob)   /* I */
 
   {
-  attribute *pattr;
+  pbs_attribute *pattr;
 
   pattr = &pjob->ji_wattr[JOB_ATR_join];
 
@@ -1178,7 +1178,7 @@ int InitUserEnv(
   int                   num_nodes = 1;
   int                   num_ppn = 1;
 
-  attribute            *pattr;
+  pbs_attribute        *pattr;
   resource             *presc;
   resource_def         *prd;
 
@@ -1721,8 +1721,8 @@ int TMomFinalizeJob1(
   int                 i;
   int                 rc;
   
-  attribute          *pattr;
-  attribute          *pattri;
+  pbs_attribute      *pattr;
+  pbs_attribute      *pattri;
 #ifndef MOM_FORCENODEFILE
   resource_def       *prd;
   resource           *presc;
@@ -4261,7 +4261,7 @@ int TMomFinalizeJob3(
 
         if (sjr.sj_session < 0)
           {
-          /* NOTE:  push sjr.sj_sid into job attribute X to be used by encode_used */
+          /* NOTE:  push sjr.sj_sid into job pbs_attribute X to be used by encode_used */
 
           ptask->ti_qs.ti_sid = sjr.sj_session;
           }
@@ -5350,7 +5350,7 @@ int add_host_to_sister_list(
 
 
 /**
- * Generate array hosts & vnodes for a job from the exec_host attribute.
+ * Generate array hosts & vnodes for a job from the exec_host pbs_attribute.
  * Call nodes_free() just in case we have seen this job before.
  * Parse exec_host first to count the number of nodes and allocate
  * an array of nodeent's.  Then, parse it again to get the hostname
@@ -5933,7 +5933,7 @@ int start_exec(
   int                 addr_len;
 
   hnodent            *np;
-  attribute          *pattr;
+  pbs_attribute      *pattr;
   tlist_head          phead;
 
   int                 mom_radix = 0;
@@ -5955,7 +5955,7 @@ int start_exec(
     }
 
   /* Step 2.0 Initialize Job */
-  /* update nodes info w/in job based on exec_hosts attribute */
+  /* update nodes info w/in job based on exec_hosts pbs_attribute */
   job_nodes(pjob);
 
   /* start_exec only executed on mother superior */
@@ -6014,7 +6014,7 @@ int start_exec(
     pattr->at_val.at_timeval.tv_usec = start_time.tv_usec;
     }
 
-  /* If the job_radix attribute has been set then nodenum must be at least one
+  /* If the job_radix pbs_attribute has been set then nodenum must be at least one
      more than mom_radix or there is no point in doing a radix */
   if (mom_radix > 0 && (mom_radix + 1) <= nodenum)
     {

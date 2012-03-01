@@ -94,28 +94,28 @@
 /*
  * This file contains functions for manipulating attributes of type string
  *
- * Then there are a set of functions for each type of attribute:
+ * Then there are a set of functions for each type of pbs_attribute:
  * string
  *
  * Each set has functions for:
  * Decoding the value string to the internal representation.
- * Encoding the internal attribute form to external form
+ * Encoding the internal pbs_attribute form to external form
  * Setting the value by =, + or - operators.
- * Comparing a (decoded) value with the attribute value.
+ * Comparing a (decoded) value with the pbs_attribute value.
  *
- * Some or all of the functions for an attribute type may be shared with
- * other attribute types.
+ * Some or all of the functions for an pbs_attribute type may be shared with
+ * other pbs_attribute types.
  *
  * The prototypes are declared in "attribute.h"
  *
  * -------------------------------------------------
- * Set of general attribute functions for attributes
+ * Set of general pbs_attribute functions for attributes
  * with value type "string"
  * -------------------------------------------------
  */
 
 /*
- * decode_str - decode string into string attribute
+ * decode_str - decode string into string pbs_attribute
  *
  * Returns: 0 if 0k
  *  >0 error number if error
@@ -124,11 +124,11 @@
 
 int decode_str(
 
-  attribute *patr,   /* (I modified, allocated ) */
-  char      *name,   /* (I - optional) attribute name */
-  char      *rescn,  /* resource name - unused here */
-  char      *val,    /* attribute value */
-  int        perm)   /* only used for resources */
+  pbs_attribute *patr,   /* (I modified, allocated ) */
+  char          *name,   /* (I - optional) pbs_attribute name */
+  char          *rescn,  /* resource name - unused here */
+  char          *val,    /* pbs_attribute value */
+  int            perm)   /* only used for resources */
 
   {
   size_t len;
@@ -172,7 +172,7 @@ int decode_str(
 
 
 /*
- * encode_str - encode attribute of type ATR_TYPE_STR into attr_extern
+ * encode_str - encode pbs_attribute of type ATR_TYPE_STR into attr_extern
  *
  * Returns: >0 if ok
  *   =0 if no value, so no link added to list
@@ -183,12 +183,12 @@ int decode_str(
 
 int encode_str(
 
-  attribute  *attr,    /* ptr to attribute */
-  tlist_head *phead,   /* head of attrlist */
-  char       *atname,  /* name of attribute */
-  char       *rsname,  /* resource name or null */
-  int         mode,    /* encode mode, unused here */
-  int         perm)    /* only used for resources */
+  pbs_attribute  *attr,    /* ptr to pbs_attribute */
+  tlist_head     *phead,   /* head of attrlist */
+  char           *atname,  /* name of pbs_attribute */
+  char           *rsname,  /* resource name or null */
+  int             mode,    /* encode mode, unused here */
+  int             perm)    /* only used for resources */
 
   {
   svrattrl *pal;
@@ -228,7 +228,7 @@ int encode_str(
 
 
 /*
- * set_str - set attribute value based upon another
+ * set_str - set pbs_attribute value based upon another
  *
  * A+B --> B is concatenated to end of A
  * A=B --> A is replaced with B
@@ -240,9 +240,9 @@ int encode_str(
 
 int set_str(
     
-  struct attribute *attr,
-  struct attribute *new,
-  enum batch_op     op)
+  pbs_attribute *attr,
+  pbs_attribute *new,
+  enum batch_op  op)
 
   {
   char *new_value;
@@ -334,8 +334,7 @@ int set_str(
  * Returns: see strcmp(3)
  */
 
-int
-comp_str(struct attribute *attr, struct attribute *with)
+int comp_str(pbs_attribute *attr, pbs_attribute *with)
   {
   if (!attr || !attr->at_val.at_str)
     return (-1);
@@ -347,12 +346,12 @@ comp_str(struct attribute *attr, struct attribute *with)
 
 
 /*
- * free_str - free space calloc-ed for string attribute value
+ * free_str - free space calloc-ed for string pbs_attribute value
  */
 
 void free_str(
 
-  struct attribute *attr)
+  pbs_attribute *attr)
 
   {
   if ((attr->at_flags & ATR_VFLAG_SET) && (attr->at_val.at_str != NULL))
@@ -370,13 +369,13 @@ void free_str(
 
 
 /*
- * replace_attr_string - replace string attribute value
+ * replace_attr_string - replace string pbs_attribute value
  */
 
 void replace_attr_string(
 
-  struct attribute *attr,
-  char *newval)
+  pbs_attribute *attr,
+  char          *newval)
 
   {
   free_str(attr);
@@ -387,8 +386,6 @@ void replace_attr_string(
   return;
   }  /* END replace_job_attr_string() */
 
-
-/* END attr_fn_str.c */
 
 /* END attr_fn_str.c */
 

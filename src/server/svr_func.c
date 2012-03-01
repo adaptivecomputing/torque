@@ -137,12 +137,12 @@ static char *svr_state_names[] =
 
 int encode_svrstate(
 
-  attribute  *pattr,   /* ptr to attribute */
-  tlist_head *phead,   /* head of attrlist list */
-  char       *atname,  /* attribute name */
-  char       *rsname,  /* null */
-  int         mode,    /* encode mode */
-  int         perm)    /* only used for resources */
+  pbs_attribute  *pattr,   /* ptr to pbs_attribute */
+  tlist_head     *phead,   /* head of attrlist list */
+  char           *atname,  /* pbs_attribute name */
+  char           *rsname,  /* null */
+  int             mode,    /* encode mode */
+  int             perm)    /* only used for resources */
 
   {
   svrattrl *pal;
@@ -206,7 +206,7 @@ int encode_svrstate(
 
 /*
  * set_resc_assigned - set the resources used by a job in the server and
- * queue resources_used attribute
+ * queue resources_used pbs_attribute
  */
 
 void set_resc_assigned(
@@ -215,13 +215,13 @@ void set_resc_assigned(
   enum batch_op op)  /* INCR or DECR */
 
   {
-  resource     *jobrsc;
-  resource     *pr;
-  attribute    *queru;
-  resource_def *rscdef;
-  attribute    *sysru;
-  pbs_queue    *pque;
-  char          log_buf[LOCAL_LOG_BUF_SIZE];
+  resource      *jobrsc;
+  resource      *pr;
+  pbs_attribute *queru;
+  resource_def  *rscdef;
+  pbs_attribute *sysru;
+  pbs_queue     *pque;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((pjob == NULL))
     return;
@@ -288,7 +288,7 @@ void set_resc_assigned(
       if ((rscdef->rs_flags & ATR_DFLAG_RASSN) &&
           (jobrsc->rs_value.at_flags & ATR_VFLAG_SET))
         {
-        /* update system attribute of resources assigned */
+        /* update system pbs_attribute of resources assigned */
 
         pr = find_resc_entry(sysru, rscdef);
 
@@ -305,7 +305,7 @@ void set_resc_assigned(
 
         rscdef->rs_set(&pr->rs_value, &jobrsc->rs_value, op);
 
-        /* update queue attribute of resources assigned */
+        /* update queue pbs_attribute of resources assigned */
 
         pr = find_resc_entry(queru, rscdef);
 
@@ -341,7 +341,7 @@ void set_resc_assigned(
 
 
 /*
- * ck_checkpoint - check validity of job checkpoint attribute value
+ * ck_checkpoint - check validity of job checkpoint pbs_attribute value
  *
  * This routine is not directly called.
  * Rather it is referenced by an at_action field.
@@ -350,9 +350,9 @@ void set_resc_assigned(
 
 int ck_checkpoint(
 
-  attribute *pattr,
-  void      *pobject, /* not used */
-  int        mode) /* not used */
+  pbs_attribute *pattr,
+  void          *pobject, /* not used */
+  int            mode) /* not used */
 
   {
   char *val;
@@ -418,11 +418,11 @@ int ck_checkpoint(
 
 
 /*
- * decode_null - Null attribute decode routine for Read Only (server
+ * decode_null - Null pbs_attribute decode routine for Read Only (server
  * and queue ) attributes.  It just returns 0.
  */
 
-int decode_null(attribute *patr, char *name, char *rn, char *val, int perm)
+int decode_null(pbs_attribute *patr, char *name, char *rn, char *val, int perm)
   {
   return 0;
   }
@@ -437,8 +437,8 @@ int decode_null(attribute *patr, char *name, char *rn, char *val, int perm)
 
 int set_null(
 
-  attribute     *pattr,
-  attribute     *new,
+  pbs_attribute *pattr,
+  pbs_attribute *new,
   enum batch_op  op)
 
   {
@@ -634,15 +634,15 @@ int get_svr_attr_arst(
   
 
 /*
- * poke_scheduler - action routine for the server's "scheduling" attribute.
- * Call the scheduler whenever the attribute is set (or reset) to true.
+ * poke_scheduler - action routine for the server's "scheduling" pbs_attribute.
+ * Call the scheduler whenever the pbs_attribute is set (or reset) to true.
  */
 
 int poke_scheduler(
 
-  attribute *pattr,
-  void      *pobj,
-  int        actmode)
+  pbs_attribute *pattr,
+  void          *pobj,
+  int            actmode)
 
   {
   if (actmode == ATR_ACTION_ALTER)

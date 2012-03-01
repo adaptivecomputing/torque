@@ -239,7 +239,7 @@ int send_task_obit_response(
  *        then the job is deleted from the mom: mom_deljob -> job_purge,
  *        and that should be it for the job. Otherwise, we fork:
  *      - fork_me()
- *        o parent registers post_epilog in job ji_mompost attribute, sets job
+ *        o parent registers post_epilog in job ji_mompost pbs_attribute, sets job
  *          substate to JOB_SUBSTATE_OBIT, and registers post_epilogue handler.
  *          This handler will be invoked when the waitpid in scan_for_terminated
  *          catches a SIGCHLD for the job epilog invoked by the child.
@@ -766,7 +766,7 @@ void scan_for_exiting(void)
 /**
  * Send obit to server.
  *
- * @see scan_for_terminated() - calls post_epilog() via ji_mompost job attribute
+ * @see scan_for_terminated() - calls post_epilog() via ji_mompost job pbs_attribute
  * @see mom_open_socket_to_jobs_server() - child
  * @see obit_reply() - registered handler for obit connection
  *
@@ -1311,7 +1311,7 @@ void *obit_reply(
   int    irtn;
   job   *nxjob;
   job   *pjob;
-  attribute  *pattr;
+  pbs_attribute  *pattr;
   unsigned int momport = 0;
   char tmp_line[MAXLINE];
 

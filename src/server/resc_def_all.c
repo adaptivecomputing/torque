@@ -102,7 +102,7 @@
 extern struct server server;
 
 /*
- * The entries for each attribute are (see attribute.h):
+ * The entries for each pbs_attribute are (see pbs_attribute.h):
  * name,
  * decode function,
  * encode function,
@@ -115,11 +115,11 @@ extern struct server server;
 
 /* sync w/job_attr_def.c */
 
-int decode_nodes(struct attribute *, char *, char *, char *, int);
-int set_node_ct(resource *, attribute *, int actmode);
-int set_proc_ct(resource *, attribute *, int actmode);
-int set_tokens_nodect(struct attribute *attr, struct attribute *new, enum batch_op actmode);
-int set_mppnodect(resource *, attribute *, int actmode);
+int decode_nodes(struct pbs_attribute *, char *, char *, char *, int);
+int set_node_ct(resource *, pbs_attribute *, int actmode);
+int set_proc_ct(resource *, pbs_attribute *, int actmode);
+int set_tokens_nodect(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op actmode);
+int set_mppnodect(resource *, pbs_attribute *, int actmode);
 resource_def *svr_resc_def;
 
 resource_def svr_resc_def_const[] =
@@ -875,11 +875,11 @@ int init_resc_defs(void)
 
 int decode_nodes(
 
-  attribute *patr,
-  char      *name,   /* attribute name */
-  char      *rescn,  /* resource name - unused here */
-  char      *val,    /* attribute value */
-  int        perm)   /* replaces resc_access_perm */
+  pbs_attribute *patr,
+  char          *name,   /* pbs_attribute name */
+  char          *rescn,  /* resource name - unused here */
+  char          *val,    /* pbs_attribute value */
+  int            perm)   /* replaces resc_access_perm */
 
   {
   char *pc;
@@ -1024,17 +1024,17 @@ long count_proc(
  * set_node_ct = set node count
  *
  * This is the "at_action" routine for the resource "nodes".
- * When the resource_list attribute changes, then set/update
+ * When the resource_list pbs_attribute changes, then set/update
  * the value of the resource "nodect" for use by the scheduler.
- * When the resource_list attribute changes, then set/update the
+ * When the resource_list pbs_attribute changes, then set/update the
  * value of the resources "nodect" and "procct" for use by the scheduler.
  */
 
 int set_node_ct(
 
-  resource  *pnodesp,  /* I */
-  attribute *pattr,    /* I */
-  int        actmode)  /* I */
+  resource      *pnodesp,  /* I */
+  pbs_attribute *pattr,    /* I */
+  int            actmode)  /* I */
 
   {
   resource *pnct;
@@ -1143,15 +1143,15 @@ int set_node_ct(
  * set_proc_ct = set processor count
  *
  * This is the "at_action" routine for the resource "procs".
- * When the resource_list attribute changes, then set/update
+ * When the resource_list pbs_attribute changes, then set/update
  * the value of the resource "procct"
  */
 
 int set_proc_ct(
 
-  resource  *pprocsp,  /* I */
-  attribute *pattr,    /* I */
-  int        actmode)  /* I */
+  resource      *pprocsp,  /* I */
+  pbs_attribute *pattr,    /* I */
+  int            actmode)  /* I */
 
   {
   resource *pnodesp;
@@ -1216,9 +1216,9 @@ int set_proc_ct(
 
 int set_tokens_nodect(
 
-  struct attribute *attr,
-  struct attribute *new,
-  enum batch_op     op)
+  pbs_attribute *attr,
+  pbs_attribute *new,
+  enum batch_op  op)
 
   {
   char  *colon = NULL;
@@ -1261,9 +1261,9 @@ int set_tokens_nodect(
 
 int set_mppnodect(
 
-  resource *res,
-  attribute *attr,
-  int op)
+  resource      *res,
+  pbs_attribute *attr,
+  int            op)
 
   {
   int width;
@@ -1310,7 +1310,7 @@ int set_mppnodect(
     nodect = (nodect + nppn - 1) / nppn;
     }
 
-  /* Find or create the "mppnodect" attribute entry */
+  /* Find or create the "mppnodect" pbs_attribute entry */
 
   if (((pdef = find_resc_def(svr_resc_def,"mppnodect",svr_resc_size))) &&
     (((pent = find_resc_entry(attr,pdef)) == NULL)) &&

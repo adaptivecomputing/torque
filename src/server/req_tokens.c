@@ -32,9 +32,9 @@
 
 int token_chk(
     
-  attribute *pattr, 
-  void *pobject, 
-  int actmode)
+  pbs_attribute *pattr, 
+  void          *pobject, 
+  int            actmode)
   
   {
   char   *entry;
@@ -159,14 +159,12 @@ static int chk_dup_token(
 
 int set_tokens(
     
-  struct attribute *attr, 
-  struct attribute *new, 
-  enum batch_op op)
+  pbs_attribute *attr, 
+  pbs_attribute *new, 
+  enum batch_op  op)
 
   {
-
   struct array_strings *pas;
-
   struct array_strings *newpas;
 
   pas = attr->at_val.at_arst; /* array of strings control struct */

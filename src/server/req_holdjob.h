@@ -5,7 +5,7 @@
 #include "batch_request.h" /* batch_request */
 #include "array.h" /* job_array */
 #include "list_link.h" /* tlist_head */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 
 int chk_hold_priv(long val, int perm);
 
@@ -21,7 +21,7 @@ int release_whole_array(job_array *pa, struct batch_request *preq);
 
 void *req_releasearray(void *vp);
 
-int get_hold(tlist_head *phead, char **pset, attribute *temphold);
+int get_hold(tlist_head *phead, char **pset, pbs_attribute *temphold);
 
 /* static void process_hold_reply(struct work_task *pwt); */
 

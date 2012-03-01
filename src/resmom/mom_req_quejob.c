@@ -152,10 +152,11 @@ extern char *msg_init_abt;
 extern char *msg_jobnew;
 extern time_t time_now;
 extern int    LOGLEVEL;
+extern int    reject_job_submit;
 
 extern  char *msg_daemonname;
 
-extern int decode_arst_merge(struct attribute *,char *,char *,char *);
+extern int decode_arst_merge(struct pbs_attribute *,char *,char *,char *);
 
 
 /* Private Functions in this file */
@@ -209,6 +210,12 @@ void req_quejob(
       }
     }
 
+  if (reject_job_submit == TRUE)
+    {
+    req_reject(-1, 0, preq, NULL, "This mom is configured not to run jobs");
+    return;
+    }
+
   if (preq->rq_fromsvr)
     {
     /* from another server - accept the extra attributes */
@@ -247,7 +254,7 @@ void req_quejob(
    * New job ...
    *
    * for MOM - rather than make up a hashname, we use the name sent
-   * to us by the server as an attribute.
+   * to us by the server as an pbs_attribute.
    */
 
   psatl = (svrattrl *)GET_NEXT(preq->rq_ind.rq_queuejob.rq_attr);
@@ -336,7 +343,7 @@ void req_quejob(
         }
       }
 
-    /* identify the attribute by name */
+    /* identify the pbs_attribute by name */
 
     index = find_attr(job_attr_def,psatl->al_name,JOB_ATR_LAST);
 
@@ -355,7 +362,7 @@ void req_quejob(
 
     pdef = &job_attr_def[index];
 
-    /* Is attribute not writeable by manager or by a server? */
+    /* Is pbs_attribute not writeable by manager or by a server? */
 
     if ((pdef->at_flags & resc_access_perm) == 0)
       {
@@ -368,7 +375,7 @@ void req_quejob(
       return;
       }
 
-    /* decode attribute */
+    /* decode pbs_attribute */
 
     if (!strcmp(psatl->al_name,ATTR_v))
       {
@@ -1082,7 +1089,7 @@ void req_commit(
   /* NOTE: we used to flag JOB_ATR_errpath, JOB_ATR_outpath,
    * JOB_ATR_session_id, and JOB_ATR_altid as modified at this point to make sure
    * pbs_server got these attr values.  This worked fine before TORQUE modified
-   * job launched into an async process.  At 2.0.0p6, a new attribute "SEND" flag
+   * job launched into an async process.  At 2.0.0p6, a new pbs_attribute "SEND" flag
    * was added to handle this process. */
 
   return;

@@ -15,7 +15,7 @@ PBS_LIBS = ../lib/Libattr/libattr.a \
 
 sbin_PROGRAMS = pbs_server
 
-pbs_server_LDADD = $(PBS_LIBS)
+pbs_server_LDADD = $(PBS_LIBS) $(ALPS_LIBS)
 AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\"
 
 pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \

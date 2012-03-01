@@ -4,7 +4,7 @@
 
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "pbs_nodes.h" /* pbs_nodes, node_check_info, node_iterator, all_nodes */
-#include "attribute.h" /* svrattrl, attribute */
+#include "attribute.h" /* svrattrl, pbs_attribute */
 #include "list_link.h" /* tlist_head */
 #include "work_task.h" /* work_task */
 
@@ -32,8 +32,6 @@ int chk_characteristic(struct pbsnode *pnode, node_check_info *nci, int *pneed_t
 
 int status_nodeattrib(svrattrl *pal, attribute_def *padef, struct pbsnode *pnode, int limit, int priv, tlist_head *phead, int *bad);
 
-/* static int initialize_pbsnode(struct pbsnode *pnode, char *pname, u_long *pul, int ntype); */
-
 /* static void subnode_delete(struct pbssubn *psubn); */
 
 void effective_node_delete(struct pbsnode *pnode);
@@ -45,8 +43,6 @@ int update_nodes_file(struct pbsnode *held);
 void recompute_ntype_cnts(void);
 
 struct prop *init_prop(char *pname);
-
-/* static struct pbssubn *create_subnode(struct pbsnode *pnode); */
 
 int create_a_gpusubnode(struct pbsnode *pnode);
 
@@ -68,19 +64,19 @@ int setup_nodes(void);
 
 /* static void delete_a_gpusubnode(struct pbsnode *pnode); */
 
-int node_np_action(attribute *new, void *pobj, int actmode);
+int node_np_action(pbs_attribute *new, void *pobj, int actmode);
 
-int node_mom_port_action(attribute *new, void *pobj, int actmode);
+int node_mom_port_action(pbs_attribute *new, void *pobj, int actmode);
 
-int node_mom_rm_port_action(attribute *new, void *pobj, int actmode);
+int node_mom_rm_port_action(pbs_attribute *new, void *pobj, int actmode);
 
-int node_gpus_action(attribute *new, void *pnode, int actmode);
+int node_gpus_action(pbs_attribute *new, void *pnode, int actmode);
 
-int node_numa_action(attribute *new, void *pnode, int actmode);
+int node_numa_action(pbs_attribute *new, void *pnode, int actmode);
 
-int numa_str_action(attribute *new, void *pnode, int actmode);
+int numa_str_action(pbs_attribute *new, void *pnode, int actmode);
 
-int gpu_str_action(attribute *new, void *pnode, int actmode);
+int gpu_str_action(pbs_attribute *new, void *pnode, int actmode);
 
 int create_partial_pbs_node(char *nodename, unsigned long addr, int perms);
 

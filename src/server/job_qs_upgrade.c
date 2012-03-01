@@ -401,7 +401,7 @@ int upgrade_2_3_X(
   }
 
 
-/* NOTE,  stripped out the code that updates the job array request attribute
+/* NOTE,  stripped out the code that updates the job array request pbs_attribute
    from the old 2.2 style to the current stile. Array's changed so much it 
    isn't practicle to try to upgrade them. We don't support upgrading 
    with these ond prototype job arrays queued */

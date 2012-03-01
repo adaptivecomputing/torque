@@ -396,19 +396,19 @@ void  update_default_np()
 void add_server_names_to_acl_hosts(void)
 
   {
-  int        n; 
-  int        list_len; 
-  int        rc;
+  int            n; 
+  int            list_len; 
+  int            rc;
 
-  char      *server_list_ptr;
-  char      *tp;
-  char       buffer[PBS_MAXSERVERNAME+1];
-  attribute  temp;
+  char          *server_list_ptr;
+  char          *tp;
+  char           buffer[PBS_MAXSERVERNAME+1];
+  pbs_attribute  temp;
 
-  attribute *patr = &server.sv_attr[SRV_ATR_acl_hosts];
+  pbs_attribute *patr = &server.sv_attr[SRV_ATR_acl_hosts];
 
   memset(buffer, 0, PBS_MAXSERVERNAME+1);
-  memset(&temp, 0, sizeof(attribute));
+  memset(&temp, 0, sizeof(pbs_attribute));
 
   server_list_ptr = pbs_get_server_list();
   list_len = csv_length(server_list_ptr);
@@ -1978,7 +1978,7 @@ int pbsd_init_job(
 
   pjob->ji_momhandle = -1;
 
-  /* update at_server attribute in case name changed */
+  /* update at_server pbs_attribute in case name changed */
 
   job_attr_def[JOB_ATR_at_server].at_free(
     &pjob->ji_wattr[JOB_ATR_at_server]);
@@ -2456,7 +2456,7 @@ void change_logs(
  * Increases log level if SIGUSR1 is received.
  * Decreases log level if SIGUSR2 is received.
  * Variable plogenv tells us whether or not PBSLOGLEVEL was specified
- * If it was not then we will update the server log level attribute
+ * If it was not then we will update the server log level pbs_attribute
  * which allows qmgr to see the current log level value
  */
 

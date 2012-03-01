@@ -1316,9 +1316,9 @@ int delete_whole_array(
  */
 int hold_array_range(
 
-  job_array *pa,         /* O */
-  char      *range_str,  /* I */
-  attribute *temphold)   /* I */
+  job_array     *pa,         /* O */
+  char          *range_str,  /* I */
+  pbs_attribute *temphold)   /* I */
 
   {
   tlist_head          tl;

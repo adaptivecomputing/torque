@@ -1157,7 +1157,7 @@ void mom_req_holdjob(
   int  rc;
   job *pjob;
   svrattrl *pal;
-  attribute tmph;
+  pbs_attribute tmph;
 
   /* If checkpoint supported, do it and terminate the job */
   /* otherwise, return PBSE_NOSUP    */
@@ -1551,16 +1551,16 @@ void req_modifyjob(
   struct batch_request *preq)  /* I */
 
   {
-  int   bad = 0;
-  int   i;
-  attribute  newattr[JOB_ATR_LAST];
-  attribute *pattr;
-  job  *pjob;
-  svrattrl *plist;
-  int   rc;
-  unsigned int momport = 0;
+  int            bad = 0;
+  int            i;
+  pbs_attribute  newattr[JOB_ATR_LAST];
+  pbs_attribute *pattr;
+  job           *pjob;
+  svrattrl      *plist;
+  int            rc;
+  unsigned int   momport = 0;
 
-  char tmpLine[1024];
+  char           tmpLine[1024];
 
   pjob = find_job(preq->rq_ind.rq_modify.rq_objname);
 
@@ -1630,7 +1630,7 @@ void req_modifyjob(
     return;
     }
 
-  /* OK, now copy the new values into the job attribute array */
+  /* OK, now copy the new values into the job pbs_attribute array */
 
   for (i = 0;i < JOB_ATR_LAST;i++)
     {
@@ -2337,10 +2337,10 @@ void encode_used(
 
   {
   unsigned long  lnum;
-  int   i;
-  attribute  *at;
-  attribute_def  *ad;
-  resource  *rs;
+  int            i;
+  pbs_attribute *at;
+  attribute_def *ad;
+  resource      *rs;
 
   at = &pjob->ji_wattr[JOB_ATR_resc_used];
   ad = &job_attr_def[JOB_ATR_resc_used];
@@ -2355,13 +2355,13 @@ void encode_used(
        rs = (resource *)GET_NEXT(rs->rs_link))
     {
     resource_def *rd = rs->rs_defin;
-    attribute     val;
+    pbs_attribute val;
     int           rc;
 
     if ((rd->rs_flags & perm) == 0)
       continue;
 
-    val = rs->rs_value; /* copy resource attribute */
+    val = rs->rs_value; /* copy resource pbs_attribute */
 
     /* count up sisterhood too */
 
@@ -2417,8 +2417,8 @@ void encode_flagged_attrs(
   tlist_head *phead)  /* O */
 
   {
-  int index;
-  attribute  *at;
+  int             index;
+  pbs_attribute  *at;
   attribute_def  *ad;
 
   for (index = 0;(int)index < JOB_ATR_LAST;++index)

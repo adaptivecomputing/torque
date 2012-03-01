@@ -97,23 +97,23 @@
  *
  * Each set has functions for:
  * Decoding the value string to the machine representation.
- * Encoding the machine representation of the attribute to external form
+ * Encoding the machine representation of the pbs_attribute to external form
  * Setting the value by =, + or - operators.
- * Comparing a (decoded) value with the attribute value.
+ * Comparing a (decoded) value with the pbs_attribute value.
  *
- * Some or all of the functions for an attribute type may be shared with
- * other attribute types.
+ * Some or all of the functions for an pbs_attribute type may be shared with
+ * other pbs_attribute types.
  *
  * The prototypes are declared in "attribute.h"
  *
  * --------------------------------------------------
- * The Set of Attribute Functions for attributes with
+ * The Set of pbs_Attribute Functions for attributes with
  * value type "char"
  * --------------------------------------------------
  */
 
 /*
- * decode_c - decode first character of string into attribute structure
+ * decode_c - decode first character of string into pbs_attribute structure
  *
  * Returns: 0 if ok
  *  >0 error number if error
@@ -122,11 +122,11 @@
 
 int decode_c(
 
-  attribute *patr,
-  char      *name,  /* attribute name */
-  char      *rescn,  /* resource name, unused here */
-  char      *val,  /* attribute value */
-  int        perm) /* only used for resources */
+  pbs_attribute *patr,
+  char          *name,  /* pbs_attribute name */
+  char          *rescn,  /* resource name, unused here */
+  char          *val,  /* pbs_attribute value */
+  int            perm) /* only used for resources */
 
   {
   if ((val == (char *)0) || (strlen(val) == 0))
@@ -145,7 +145,7 @@ int decode_c(
   }
 
 /*
- * encode_c - encode attribute of type character into attr_extern
+ * encode_c - encode pbs_attribute of type character into attr_extern
  *
  * Returns: >0 if ok
  *   =0 if no value, no link entry created
@@ -155,12 +155,12 @@ int decode_c(
 
 int encode_c(
 
-  attribute  *attr,  /* ptr to attribute */
-  tlist_head *phead,  /* head of attrlist list */
-  char       *atname, /* attribute name */
-  char       *rsname, /* resource name or null */
-  int         mode,  /* encode mode, unused here */
-  int         perm) /* only used for resources */
+  pbs_attribute  *attr,   /* ptr to pbs_attribute */
+  tlist_head     *phead,  /* head of attrlist list */
+  char           *atname, /* pbs_attribute name */
+  char           *rsname, /* resource name or null */
+  int             mode,   /* encode mode, unused here */
+  int             perm)   /* only used for resources */
 
   {
 
@@ -187,15 +187,18 @@ int encode_c(
   }
 
 /*
- * set_c - set attribute A to attribute B,
+ * set_c - set pbs_attribute A to pbs_attribute B,
  * either A=B, A += B, or A -= B
  *
  * Returns: 0 if ok
  *  >0 if error
  */
 
-int
-set_c(struct attribute *attr, struct attribute *new, enum batch_op op)
+int set_c(
+   
+  pbs_attribute *attr,
+  pbs_attribute *new,
+  enum batch_op  op)
   {
   assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
 
@@ -235,8 +238,11 @@ set_c(struct attribute *attr, struct attribute *new, enum batch_op op)
  *   -1 if 1st < 2nd
  */
 
-int
-comp_c(struct attribute *attr, struct attribute *with)
+int comp_c(
+    
+  pbs_attribute *attr,
+  pbs_attribute *with)
+
   {
   if (!attr || !with)
     return (-1);

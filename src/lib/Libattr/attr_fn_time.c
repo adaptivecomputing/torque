@@ -96,24 +96,24 @@
  *
  * Each set has functions for:
  * Decoding the value string to the machine representation.
- * Encoding the internal attribute to external form
+ * Encoding the internal pbs_attribute to external form
  * Setting the value by =, + or - operators.
- * Comparing a (decoded) value with the attribute value.
+ * Comparing a (decoded) value with the pbs_attribute value.
  *
- * Some or all of the functions for an attribute type may be shared with
- * other attribute types.
+ * Some or all of the functions for an pbs_attribute type may be shared with
+ * other pbs_attribute types.
  *
  * The prototypes are declared in "attribute.h"
  *
  * --------------------------------------------------
- * The Set of Attribute Functions for attributes with
+ * The Set of pbs_Attribute Functions for attributes with
  * value type "long"
  * --------------------------------------------------
  */
 
 
 /*
- * decode_time - decode time into into attribute structure of type ATR_TYPE_LONG
+ * decode_time - decode time into into pbs_attribute structure of type ATR_TYPE_LONG
  *
  * Returns: 0 if ok
  *  >0 error number if error
@@ -124,11 +124,11 @@
 
 int decode_time(
 
-  attribute *patr,  /* I/O (modified) */
-  char      *name,  /* I - attribute name (not used) */
-  char      *rescn, /* I - resource name (not used) */
-  char      *val,   /* I - attribute value */
-  int        perm)  /* only used for resources */
+  pbs_attribute *patr,  /* I/O (modified) */
+  char          *name,  /* I - pbs_attribute name (not used) */
+  char          *rescn, /* I - resource name (not used) */
+  char          *val,   /* I - pbs_attribute value */
+  int            perm)  /* only used for resources */
 
   {
   int   i;
@@ -251,7 +251,7 @@ badval:
 
 
 /*
- * encode_time - encode attribute of type long into attr_extern
+ * encode_time - encode pbs_attribute of type long into attr_extern
  * with value in form of [[hh:]mm:]ss
  *
  * Returns: >0 if ok
@@ -266,12 +266,12 @@ badval:
 
 int encode_time(
 
-  attribute  *attr,   /* ptr to attribute (value in attr->at_val.at_long) */
-  tlist_head *phead,  /* head of attrlist list (optional) */
-  char       *atname, /* attribute name */
-  char       *rsname, /* resource name (optional) */
-  int         mode,   /* encode mode (not used) */
-  int         perm)  /* only used for resources */
+  pbs_attribute  *attr,   /* ptr to pbs_attribute (value in attr->at_val.at_long) */
+  tlist_head     *phead,  /* head of attrlist list (optional) */
+  char           *atname, /* pbs_attribute name */
+  char           *rsname, /* resource name (optional) */
+  int             mode,   /* encode mode (not used) */
+  int             perm)  /* only used for resources */
 
   {
   size_t  ct;

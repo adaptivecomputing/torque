@@ -104,9 +104,9 @@ extern int LOGLEVEL;
 
 
 /*
- * This file contains functions for deriving attribute values from a pbsnode
+ * This file contains functions for deriving pbs_attribute values from a pbsnode
  * and for updating the "state" (inuse), "node type" (ntype) or "properties"
- * list using the "value" carried in an attribute.
+ * list using the "value" carried in an pbs_attribute.
  *
  * Included are:
  *
@@ -304,8 +304,8 @@ int PNodeStateToString(
 
 /*
  * encode_state
- * Once the node's "inuse" field is converted to an attribute,
- * the attribute can be passed to this function for encoding into
+ * Once the node's "inuse" field is converted to an pbs_attribute,
+ * the pbs_attribute can be passed to this function for encoding into
  * an svrattrl structure
  * Returns  <0       an error encountered; value is negative of an error code
  *           0       ok, encode happened and svrattrl created and linked in,
@@ -314,14 +314,13 @@ int PNodeStateToString(
 
 int encode_state(
 
-  attribute *pattr, /*struct attribute being encoded  */
-  tlist_head *ph, /*head of a list of  "svrattrl"   */
-  /*structs which are to be returned*/
-
-  char      *aname, /*attribute's name    */
-  char      *rname, /*resource's name (null if none)  */
-  int        mode, /*mode code, unused here   */
-  int        perm) /* only used for resources */
+  pbs_attribute *pattr, /*struct pbs_attribute being encoded  */
+  tlist_head    *ph, /*head of a list of  "svrattrl" structs 
+                       which are to be returned*/
+  char          *aname, /*pbs_attribute's name    */
+  char          *rname, /*resource's name (null if none)  */
+  int            mode, /*mode code, unused here   */
+  int            perm) /* only used for resources */
 
   {
   int       i;
@@ -337,7 +336,7 @@ int encode_state(
 
   if (!(pattr->at_flags & ATR_VFLAG_SET))
     {
-    /* SUCCESS - attribute not set */
+    /* SUCCESS - pbs_attribute not set */
 
     return(0);
     }
@@ -387,8 +386,8 @@ int encode_state(
 
 /*
  * encode_ntype
- * Once the node's "ntype" field is converted to an attribute,
- * the attribute can be passed to this function for encoding into
+ * Once the node's "ntype" field is converted to an pbs_attribute,
+ * the pbs_attribute can be passed to this function for encoding into
  * an svrattrl structure
  * Returns  <0       an error encountered; value is negative of an error code
  *           0       ok, encode happened and svrattrl created and linked in,
@@ -397,12 +396,12 @@ int encode_state(
 
 int encode_ntype(
   
-  attribute  *pattr, /*struct attribute being encoded  */
-  tlist_head *ph,    /*head of a list of  "svrattrl"   */
-  char       *aname, /*attribute's name    */
-  char       *rname, /*resource's name (null if none)  */
-  int         mode,  /*mode code, unused here   */
-  int         perm)  /* only used for resources */
+  pbs_attribute  *pattr, /*struct pbs_attribute being encoded  */
+  tlist_head     *ph,    /*head of a list of  "svrattrl"   */
+  char           *aname, /*pbs_attribute's name    */
+  char           *rname, /*resource's name (null if none)  */
+  int             mode,  /*mode code, unused here   */
+  int             perm)  /* only used for resources */
 
   {
   svrattrl *pal;
@@ -443,7 +442,7 @@ int encode_ntype(
 /*
  * encode_jobs
  * Once the node's struct jobinfo pointer is put in the data area of
- * temporary attribute containing a pointer to the parent node, this
+ * temporary pbs_attribute containing a pointer to the parent node, this
  * function will walk the list of jobs and generate the comma separated
  * list to send back via an svrattrl structure.
  * Returns  <0       an error encountered; value is negative of an error code
@@ -458,13 +457,13 @@ int encode_ntype(
 
 int encode_jobs(
 
-  attribute  *pattr, /*struct attribute being encoded  */
-  tlist_head *ph,    /*head of a  list of "svrattrl"   */
-  /*structs which are to be returned*/
-  char       *aname, /*attribute's name    */
-  char       *rname, /*resource's name (null if none)  */
-  int         mode,  /*mode code, unused here   */
-  int         perm)  /* only used for resources */
+  pbs_attribute  *pattr, /*struct pbs_attribute being encoded  */
+  tlist_head     *ph,    /*head of a  list of "svrattrl" structs 
+                           which are to be returned*/
+  char           *aname, /*pbs_attribute's name    */
+  char           *rname, /*resource's name (null if none)  */
+  int             mode,  /*mode code, unused here   */
+  int             perm)  /* only used for resources */
 
   {
   svrattrl       *pal;
@@ -561,21 +560,21 @@ int encode_jobs(
 /*
  * decode_state
  * In this case, the two arguments that get  used are
- * pattr-- it points to an attribute whose value is a short,
+ * pattr-- it points to an pbs_attribute whose value is a short,
  * and the argument "val".
  * Once the "value" argument, val, is decoded from its form
  * as a string of comma separated substrings, the component
- * values are used to set the appropriate bits in the attribute's
+ * values are used to set the appropriate bits in the pbs_attribute's
  * value field.
  */
 
 int decode_state(
 
-  attribute *pattr,   /* I (modified) */
-  char      *name,    /* attribute name */
-  char      *rescn,   /* resource name, unused here */
-  char      *val,     /* attribute value */
-  int        perm)    /* only used for resources */
+  pbs_attribute *pattr,   /* I (modified) */
+  char          *name,    /* pbs_attribute name */
+  char          *rescn,   /* resource name, unused here */
+  char          *val,     /* pbs_attribute value */
+  int            perm)    /* only used for resources */
 
   {
   int   rc = 0;  /*return code; 0==success*/
@@ -671,7 +670,7 @@ int decode_state(
 /*
  * decode_ntype
  * In this case, the two arguments that get  used are
- * pattr-- it points to an attribute whose value is a short,
+ * pattr-- it points to an pbs_attribute whose value is a short,
  * and the argument "val".
  * Although we have only "time-shared" and "cluster" at this
  * point in PBS's evolution, there may come a time when other
@@ -681,11 +680,11 @@ int decode_state(
 
 int decode_ntype(
 
-  attribute *pattr,
-  char      *name,   /* attribute name */
-  char      *rescn,  /* resource name, unused here */
-  char      *val,    /* attribute value */
-  int        perm)   /* only used for resources */
+  pbs_attribute *pattr,
+  char          *name,   /* pbs_attribute name */
+  char          *rescn,  /* resource name, unused here */
+  char          *val,    /* pbs_attribute value */
+  int            perm)   /* only used for resources */
 
 
   {
@@ -738,18 +737,18 @@ free_prop_list(struct prop *prop)
 
 
 /*
- * set_node_state - the information in the "short" attribute, *new, is used to
- *      update the information in the "short" attribute, *pattr.
+ * set_node_state - the information in the "short" pbs_attribute, *new, is used to
+ *      update the information in the "short" pbs_attribute, *pattr.
  *      the mode of the update is goverened by the argument "op"
  *      (SET,INCR,DECR)
  */
 
 int set_node_state(
 
-  attribute *pattr,  /*attribute gets modified    */
-  attribute *new,  /*carries new, modifying info*/
-  /*that got decoded into 'new"*/
-  enum batch_op op)
+  pbs_attribute *pattr,  /*pbs_attribute gets modified    */
+  pbs_attribute *new,  /*carries new, modifying info that 
+                         got decoded into 'new"*/
+  enum           batch_op op)
 
   {
   int rc = 0;
@@ -803,19 +802,19 @@ int set_node_state(
 
 
 /*
- * set_node_ntype - the value entry in attribute "new" is a short.  It was
+ * set_node_ntype - the value entry in pbs_attribute "new" is a short.  It was
  *      generated by the decode routine is used to update the
- *      value portion of the attribute *pattr
+ *      value portion of the pbs_attribute *pattr
  *      the mode of the update is goverened by the argument "op"
  *      (SET,INCR,DECR)
  */
 
-int
-set_node_ntype(
-  attribute *pattr,  /*attribute gets modified    */
-  attribute *new,  /*carries new, modifying info*/
-  enum batch_op op
-)
+int set_node_ntype(
+
+  pbs_attribute *pattr,  /*pbs_attribute gets modified    */
+  pbs_attribute *new,  /*carries new, modifying info*/
+  enum batch_op  op)
+
   {
   int rc = 0;
 
@@ -904,14 +903,14 @@ static int set_nodeflag(
 
 
 /*
- * node_state - Either derive a "state" attribute from the node
+ * node_state - Either derive a "state" pbs_attribute from the node
  *  or update node's "inuse" field using the "state"
- *  attribute.
+ *  pbs_attribute.
  */
 
 int node_state(
 
-  attribute *new, /*derive state into this attribute*/
+  pbs_attribute *new, /*derive state into this pbs_attribute*/
   void     *pnode, /*pointer to a pbsnode struct    */
   int      actmode) /*action mode; "NEW" or "ALTER"   */
 
@@ -925,7 +924,7 @@ int node_state(
   switch (actmode)
     {
 
-    case ATR_ACTION_NEW:  /*derive attribute*/
+    case ATR_ACTION_NEW:  /*derive pbs_attribute*/
 
       new->at_val.at_short = np->nd_state;
 
@@ -952,17 +951,17 @@ int node_state(
 
 
 /*
- * node_ntype - Either derive an "ntype" attribute from the node
+ * node_ntype - Either derive an "ntype" pbs_attribute from the node
  *  or update node's "ntype" field using the
- *  attribute's data
+ *  pbs_attribute's data
  */
 
-int
-node_ntype(
-  attribute *new,  /*derive ntype into this attribute*/
-  void *pnode,  /*pointer to a pbsnode struct     */
-  int actmode /*action mode; "NEW" or "ALTER"   */
-)
+int node_ntype(
+
+  pbs_attribute *new,      /*derive ntype into this pbs_attribute*/
+  void          *pnode,   /*pointer to a pbsnode struct     */
+  int            actmode) /*action mode; "NEW" or "ALTER"   */
+
   {
   int rc = 0;
 
@@ -974,7 +973,7 @@ node_ntype(
   switch (actmode)
     {
 
-    case ATR_ACTION_NEW:  /*derive attribute*/
+    case ATR_ACTION_NEW:  /*derive pbs_attribute*/
       new->at_val.at_short = np->nd_ntype;
       break;
 
@@ -993,21 +992,21 @@ node_ntype(
 
 
 /*
- * node_prop_list - Either derive a "prop list" attribute from the node
- *      or update node's prop list from attribute's prop list.
+ * node_prop_list - Either derive a "prop list" pbs_attribute from the node
+ *      or update node's prop list from pbs_attribute's prop list.
  */
 
 int node_prop_list(
 
-  attribute *new, /*derive props into this attribute*/
-  void     *pnode, /*pointer to a pbsnode struct     */
-  int      actmode) /*action mode; "NEW" or "ALTER"   */
+  pbs_attribute *new,     /*derive props into this pbs_attribute*/
+  void          *pnode,   /*pointer to a pbsnode struct     */
+  int            actmode) /*action mode; "NEW" or "ALTER"   */
 
   {
   int   rc = 0;
 
   struct pbsnode  *np;
-  attribute  temp;
+  pbs_attribute    temp;
 
   np = (struct pbsnode*)pnode; /*because of at_action arg type*/
 
@@ -1021,7 +1020,7 @@ int node_prop_list(
 
       if (np->nd_prop != NULL)
         {
-        /* setup temporary attribute with the array_strings */
+        /* setup temporary pbs_attribute with the array_strings */
         /* from the node        */
 
         temp.at_val.at_arst = np->nd_prop;
@@ -1032,7 +1031,7 @@ int node_prop_list(
         }
       else
         {
-        /* Node has no properties, setup empty attribute */
+        /* Node has no properties, setup empty pbs_attribute */
 
         new->at_val.at_arst = 0;
         new->at_flags       = 0;
@@ -1071,21 +1070,21 @@ int node_prop_list(
 
 
 /*
- * node_status_list - Either derive a "status list" attribute from the node
- *                 or update node's status list from attribute's status list.
+ * node_status_list - Either derive a "status list" pbs_attribute from the node
+ *                 or update node's status list from pbs_attribute's status list.
  */
 
 int node_status_list(
 
-  attribute *new,           /*derive status into this attribute*/
-  void      *pnode,         /*pointer to a pbsnode struct     */
-  int        actmode)       /*action mode; "NEW" or "ALTER"   */
+  pbs_attribute *new,           /*derive status into this pbs_attribute*/
+  void          *pnode,         /*pointer to a pbsnode struct     */
+  int            actmode)       /*action mode; "NEW" or "ALTER"   */
 
   {
   int              rc = 0;
 
   struct pbsnode  *np;
-  attribute        temp;
+  pbs_attribute    temp;
 
   np = (struct pbsnode *)pnode;    /* because of at_action arg type */
 
@@ -1099,7 +1098,7 @@ int node_status_list(
 
       if (np->nd_status != NULL)
         {
-        /* setup temporary attribute with the array_strings */
+        /* setup temporary pbs_attribute with the array_strings */
         /* from the node                                    */
 
         temp.at_val.at_arst = np->nd_status;
@@ -1110,7 +1109,7 @@ int node_status_list(
         }
       else
         {
-        /* node has no properties, setup empty attribute */
+        /* node has no properties, setup empty pbs_attribute */
 
         new->at_val.at_arst = NULL;
         new->at_flags       = 0;
@@ -1157,21 +1156,21 @@ int node_status_list(
 
 
 /*
- * node_gpustatus_list - Either derive a "gpu status list" attribute from the node
- *                 or update node's status list from attribute's status list.
+ * node_gpustatus_list - Either derive a "gpu status list" pbs_attribute from the node
+ *                 or update node's status list from pbs_attribute's status list.
  */
 
 int node_gpustatus_list(
 
-  attribute *new,           /*derive status into this attribute*/
-  void      *pnode,         /*pointer to a pbsnode struct     */
-  int        actmode)       /*action mode; "NEW" or "ALTER"   */
+  pbs_attribute *new,      /* derive status into this pbs_attribute*/
+  void          *pnode,    /* pointer to a pbsnode struct     */
+  int            actmode)  /* action mode; "NEW" or "ALTER"   */
 
   {
   int              rc = 0;
 
-  struct pbsnode  *np;
-  attribute        temp;
+  struct pbsnode *np;
+  pbs_attribute   temp;
 
   np = (struct pbsnode *)pnode;    /* because of at_action arg type */
 
@@ -1185,7 +1184,7 @@ int node_gpustatus_list(
 
       if (np->nd_gpustatus != NULL)
         {
-        /* setup temporary attribute with the array_strings */
+        /* setup temporary pbs_attribute with the array_strings */
         /* from the node                                    */
 
         temp.at_val.at_arst = np->nd_gpustatus;
@@ -1196,7 +1195,7 @@ int node_gpustatus_list(
         }
       else
         {
-        /* node has no properties, setup empty attribute */
+        /* node has no properties, setup empty pbs_attribute */
 
         new->at_val.at_arst = NULL;
         new->at_flags       = 0;
@@ -1243,21 +1242,21 @@ int node_gpustatus_list(
 
 
 /*
- * node_note - Either derive a note attribute from the node
- *             or update node's note from attribute's list.
+ * node_note - Either derive a note pbs_attribute from the node
+ *             or update node's note from pbs_attribute's list.
  */
 
 int node_note(
 
-  attribute *new,           /*derive status into this attribute*/
-  void      *pnode,         /*pointer to a pbsnode struct     */
-  int        actmode)       /*action mode; "NEW" or "ALTER"   */
+  pbs_attribute *new,      /*derive status into this pbs_attribute*/
+  void          *pnode,    /*pointer to a pbsnode struct     */
+  int            actmode)  /*action mode; "NEW" or "ALTER"   */
 
   {
   int              rc = 0;
 
-  struct pbsnode  *np;
-  attribute        temp;
+  struct pbsnode *np;
+  pbs_attribute   temp;
 
   np = (struct pbsnode *)pnode;    /* because of at_action arg type */
 
@@ -1271,7 +1270,7 @@ int node_note(
 
       if (np->nd_note != NULL)
         {
-        /* setup temporary attribute with the string from the node */
+        /* setup temporary pbs_attribute with the string from the node */
 
         temp.at_val.at_str = np->nd_note;
         temp.at_flags = ATR_VFLAG_SET;
@@ -1281,7 +1280,7 @@ int node_note(
         }
       else
         {
-        /* node has no properties, setup empty attribute */
+        /* node has no properties, setup empty pbs_attribute */
 
         new->at_val.at_str  = NULL;
         new->at_flags       = 0;
@@ -1325,9 +1324,9 @@ int node_note(
 
 int set_note_str(
 
-  struct attribute *attr,
-  struct attribute *new,
-  enum batch_op     op)
+  pbs_attribute *attr,
+  pbs_attribute *new,
+  enum batch_op  op)
 
   {
   static char id[] = "set_note_str";

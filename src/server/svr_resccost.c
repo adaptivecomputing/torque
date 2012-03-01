@@ -96,7 +96,7 @@
 
 /*
  * This file contains the functions for manipulating the server
- * attribute "resource cost", which is of type ATR_TYPE_LIST
+ * pbs_attribute "resource cost", which is of type ATR_TYPE_LIST
  *
  * It contains functions for:
  * Decoding the value string to the machine representation, a long
@@ -115,7 +115,7 @@
 
 /*
  * Resource_cost entry, one per resource type which has been set.
- * The list is headed in the resource_cost attribute.
+ * The list is headed in the resource_cost pbs_attribute.
  */
 
 struct resource_cost
@@ -134,11 +134,10 @@ struct resource_cost
 
 static struct resource_cost *add_cost_entry(
 
-        attribute    *patr,
-        resource_def *prdef)
+  pbs_attribute *patr,
+  resource_def  *prdef)
 
   {
-
   struct resource_cost *pcost;
 
   pcost = calloc(1, sizeof(struct resource_cost));
@@ -170,17 +169,17 @@ static struct resource_cost *add_cost_entry(
 
 int decode_rcost(
 
-  attribute *patr,
-  char      *name,  /* attribute name */
-  char      *rescn, /* resource name, unused here */
-  char      *val,   /* attribute value */
-  int        perm)  /* used only with resources */
+  pbs_attribute *patr,
+  char          *name,  /* pbs_attribute name */
+  char          *rescn, /* resource name, unused here */
+  char          *val,   /* pbs_attribute value */
+  int            perm)  /* used only with resources */
 
   {
   resource_def *prdef;
 
   struct resource_cost *pcost;
-  void free_rcost(attribute *);
+  void free_rcost(pbs_attribute *);
 
   if ((val == NULL) || (rescn == NULL))
     {
@@ -233,7 +232,7 @@ int decode_rcost(
 
 
 /*
- * encode_rcost - encode attribute of type long into attr_extern
+ * encode_rcost - encode pbs_attribute of type long into attr_extern
  *
  * Returns: >0 if ok
  *   =0 if no value, no attrlist link added
@@ -244,12 +243,12 @@ int decode_rcost(
 
 int encode_rcost(
 
-  attribute  *attr,   /* ptr to attribute */
-  tlist_head *phead,   /* head of attrlist list */
-  char       *atname,  /* attribute name */
-  char       *rsname,  /* resource name or null */
-  int         mode,   /* encode mode, unused here */
-  int         perm)  /* used only with resources */
+  pbs_attribute *attr,   /* ptr to pbs_attribute */
+  tlist_head    *phead,   /* head of attrlist list */
+  char          *atname,  /* pbs_attribute name */
+  char          *rsname,  /* resource name or null */
+  int            mode,   /* encode mode, unused here */
+  int            perm)  /* used only with resources */
 
   {
   svrattrl *pal;
@@ -300,19 +299,21 @@ int encode_rcost(
 
 
 /*
- * set_rcost - set attribute A to attribute B,
+ * set_rcost - set pbs_attribute A to pbs_attribute B,
  * either A=B, A += B, or A -= B
  *
  * Returns: 0 if ok
  *  >0 if error
  */
 
-int
-set_rcost(struct attribute *old, struct attribute *new, enum batch_op op)
+int set_rcost(
+   
+  pbs_attribute *old,
+  pbs_attribute *new,
+  enum batch_op  op)
+
   {
-
   struct resource_cost *pcnew;
-
   struct resource_cost *pcold;
 
   assert(old && new && (new->at_flags & ATR_VFLAG_SET));
@@ -364,13 +365,14 @@ set_rcost(struct attribute *old, struct attribute *new, enum batch_op op)
 
 
 /*
- * free_rcost - free space used by resource cost attribute
+ * free_rcost - free space used by resource cost pbs_attribute
  */
 
-void
-free_rcost(attribute *pattr)
-  {
+void free_rcost(
+    
+  pbs_attribute *pattr)
 
+  {
   struct resource_cost *pcost;
 
   while ((pcost = (struct resource_cost *)GET_NEXT(pattr->at_val.at_list)))

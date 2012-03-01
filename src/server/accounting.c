@@ -237,7 +237,7 @@ int acct_job(
   if ((rc = append_dynamic_string(ds, " ")) != PBSE_NONE)
     return(rc);
 
-  /* now encode the job's resource_list attribute */
+  /* now encode the job's resource_list pbs_attribute */
   job_attr_def[JOB_ATR_resource].at_encode(
     &pjob->ji_wattr[JOB_ATR_resource],
     &attrlist,
@@ -493,12 +493,12 @@ void account_jobend(
   char *used) /* job usage information, see req_jobobit() */
 
   {
-  time_t          time_now = time(NULL);
-  dynamic_string *ds;
-  char            local_buf[MAXLINE * 4];
+  time_t              time_now = time(NULL);
+  dynamic_string     *ds;
+  char                local_buf[MAXLINE * 4];
 #ifdef USESAVEDRESOURCES
-  attribute      *pattr;
-  long            walltime_val = 0;
+  pbs_attribute      *pattr;
+  long                walltime_val = 0;
 #endif
 
   /* pack in general information about the job */

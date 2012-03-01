@@ -20,11 +20,11 @@
 
 int decode_tokens(
 
-  attribute *patr,
-  char      *name,  /* attribute name */
-  char      *rescn, /* resource name, unused here */
-  char      *val,   /* attribute value */
-  int        perm)  /* only used for resources */
+  pbs_attribute *patr,
+  char          *name,  /* pbs_attribute name */
+  char          *rescn, /* resource name, unused here */
+  char          *val,   /* pbs_attribute value */
+  int            perm)  /* only used for resources */
 
 
   {

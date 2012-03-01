@@ -42,10 +42,10 @@ extern void  free_nodes(job *);
 #endif /* PBS_JOB_H */
 
 #ifdef ATTRIBUTE_H
-extern int   check_que_enable(attribute *, void *, int);
-extern int   set_queue_type(attribute *, void *, int);
+extern int   check_que_enable(pbs_attribute *, void *, int);
+extern int   set_queue_type(pbs_attribute *, void *, int);
 #ifdef QUEUE_H
-extern int   chk_resc_limits(attribute *, pbs_queue *, char *);
+extern int   chk_resc_limits(pbs_attribute *, pbs_queue *, char *);
 #endif /* QUEUE_H */
 #endif /* ATTRIBUTE_H */
 
@@ -70,10 +70,10 @@ struct select_list
   {
 
   struct select_list *sl_next; /* ptr to next in list   */
-  enum batch_op     sl_op; /* comparison operator   */
+  enum batch_op       sl_op; /* comparison operator   */
   attribute_def      *sl_def; /* ptr to attr definition,for at_comp */
-  int      sl_atindx; /* index into attribute_def, for type */
-  attribute     sl_attr; /* the attribute (value) */
+  int                 sl_atindx; /* index into attribute_def, for type */
+  pbs_attribute       sl_attr; /* the pbs_attribute (value) */
   };
 
 struct stat_cntl    /* used in req_stat_job */

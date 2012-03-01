@@ -106,7 +106,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 
 extern int     svr_authorize_jobreq(struct batch_request *, job *);
-int status_attrib(svrattrl *, attribute_def *, attribute *, int, int, tlist_head *, int *, int);
+int status_attrib(svrattrl *, attribute_def *, pbs_attribute *, int, int, tlist_head *, int *, int);
 
 /* Global Data Items: */
 
@@ -131,7 +131,7 @@ int status_job(
   struct batch_request *preq,
   svrattrl   *pal, /* specific attributes to status */
   tlist_head *pstathd, /* RETURN: head of list to append status to */
-  int        *bad) /* RETURN: index of first bad attribute */
+  int        *bad) /* RETURN: index of first bad pbs_attribute */
 
   {
   struct brp_status *pstat;
@@ -192,9 +192,9 @@ int status_job(
 /* Is this dead code? It isn't called anywhere. */
 int add_walltime_remaining(
    
-  int         index,
-  attribute  *pattr,
-  tlist_head *phead)
+  int             index,
+  pbs_attribute  *pattr,
+  tlist_head     *phead)
 
   {
   int            len = 0;
@@ -209,7 +209,7 @@ int add_walltime_remaining(
   time_t         time_now   = time(NULL);
 
   /* encode walltime remaining, this is custom because walltime 
-   * remaining isn't an attribute */
+   * remaining isn't an pbs_attribute */
   if ((pattr + JOB_ATR_state)->at_val.at_char != 'R')
     {
     /* only for running jobs, do nothing */
@@ -269,7 +269,7 @@ int add_walltime_remaining(
  * status_attrib - add each requested or all attributes to the status reply
  *
  *   Returns: 0 on success
- *           -1 on error (bad attribute), "bad" set to ordinal of attribute
+ *           -1 on error (bad pbs_attribute), "bad" set to ordinal of pbs_attribute
  *
  * @see status_job() - parent
  * @see find_attr() - child
@@ -280,7 +280,7 @@ int status_attrib(
 
   svrattrl      *pal,      /* I */
   attribute_def *padef,
-  attribute     *pattr,
+  pbs_attribute *pattr,
   int            limit,
   int            priv,
   tlist_head    *phead,
@@ -295,7 +295,7 @@ int status_attrib(
   priv &= ATR_DFLAG_RDACC;  /* user-client privilege  */
   resc_access_perm = priv; 
 
-  /* for each attribute asked for or for all attributes, add to reply */
+  /* for each pbs_attribute asked for or for all attributes, add to reply */
 
   if (pal != NULL)
     {

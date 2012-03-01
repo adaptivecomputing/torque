@@ -498,7 +498,7 @@ void *req_quejob(
   attribute_def        *pdef;
   svrattrl             *psatl;
   pbs_queue            *pque;
-  attribute             tempattr;
+  pbs_attribute         tempattr;
   char                 *alias = NULL;
   int                   jobid_number;
   
@@ -754,7 +754,7 @@ void *req_quejob(
         }
       }
 
-    /* identify the attribute by name */
+    /* identify the pbs_attribute by name */
     attr_index = find_attr(job_attr_def, psatl->al_name, JOB_ATR_LAST);
 
     if (attr_index < 0)
@@ -768,7 +768,7 @@ void *req_quejob(
 
     pdef = &job_attr_def[attr_index];
 
-    /* Is attribute not writeable by manager or by a server? */
+    /* Is pbs_attribute not writeable by manager or by a server? */
 
     if ((pdef->at_flags & resc_access_perm) == 0)
       {
@@ -818,7 +818,7 @@ void *req_quejob(
       pdef = &job_attr_def[attr_index];
       }
 
-    /* decode attribute */
+    /* decode pbs_attribute */
 
     rc = pdef->at_decode(
            &pj->ji_wattr[attr_index],
@@ -1198,8 +1198,8 @@ void *req_quejob(
 
     if (!(pj->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
       {
-      attribute *pattr;
-      char *vp;
+      pbs_attribute *pattr;
+      char          *vp;
 
       pattr = &pj->ji_wattr[JOB_ATR_checkpoint];
 
@@ -1312,7 +1312,7 @@ void *req_quejob(
       }
     }
 
-  /* set up at_server attribute for status */
+  /* set up at_server pbs_attribute for status */
 
   job_attr_def[JOB_ATR_at_server].at_decode(
     &pj->ji_wattr[JOB_ATR_at_server],
@@ -1921,32 +1921,32 @@ void req_commit(
   struct batch_request *preq)  /* I */
 
   {
-  job       *pj;
+  job                  *pj;
 
-  int        newstate;
-  int        newsub;
-  pbs_queue *pque;
-  int        rc;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
-  time_t     time_now = time(NULL);
+  int                   newstate;
+  int                   newsub;
+  pbs_queue            *pque;
+  int                   rc;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t                time_now = time(NULL);
 
 #ifdef AUTORUN_JOBS
 
   struct batch_request *preq_run = '\0';
-  attribute *pattr;
-  int nodes_avail = -1;
-  int dummy;
-  char *spec = NULL;
-  char *rq_destin = NULL;
+  pbs_attribute        *pattr;
+  int                   nodes_avail = -1;
+  int                   dummy;
+  char                 *spec = NULL;
+  char                  *rq_destin = NULL;
 #endif /* AUTORUN_JOBS */
 
 #ifdef QUICKCOMMIT
-  int  OrigState;
-  int  OrigSState;
-  char OrigSChar;
-  long OrigFlags;
+  int                    OrigState;
+  int                    OrigSState;
+  char                   OrigSChar;
+  long                   OrigFlags;
 
-  char namebuf[MAXPATHLEN+1];
+  char                   namebuf[MAXPATHLEN+1];
 #endif /* QUICKCOMMIT */
 
   pj = locate_new_job(preq->rq_conn, preq->rq_ind.rq_commit);

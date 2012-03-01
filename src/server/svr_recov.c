@@ -144,7 +144,7 @@ int svr_recov(
   int i;
   int sdb;
 
-  void recov_acl(attribute *, attribute_def *, char *, char *);
+  void recov_acl(pbs_attribute *, attribute_def *, char *, char *);
 
   sdb = open(svrfile, O_RDONLY, 0);
 
@@ -304,16 +304,16 @@ int size_to_str(
 /*
  * attr_to_str
  *
- * @param ds - the dynamic string we're printing the attribute into
- * @param aindex - the attribute's index
- * @param attr - the attribute
+ * @param ds - the dynamic string we're printing the pbs_attribute into
+ * @param aindex - the pbs_attribute's index
+ * @param attr - the pbs_attribute
  * @param XML - boolean telling us whether to print XML or not
  */
 int attr_to_str(
 
   dynamic_string   *ds,     /* O */
   attribute_def    *at_def, /* I */
-  struct attribute  attr,   /* I */
+  pbs_attribute     attr,   /* I */
   int               XML)    /* I */
 
   {
@@ -382,7 +382,7 @@ int attr_to_str(
 
     case ATR_TYPE_SIZE:
 
-      rc = size_to_dynamic_string(ds, attr.at_val.at_size);
+      rc = size_to_dynamic_string(ds, &(attr.at_val.at_size));
 
       break;
 
@@ -451,7 +451,7 @@ int attr_to_str(
             append_dynamic_string(ds, current->rs_defin->rs_name);
             append_dynamic_string(ds, ">");
 
-            size_to_dynamic_string(ds, current->rs_value.at_val.at_size);
+            size_to_dynamic_string(ds, &(current->rs_value.at_val.at_size));
 
             append_dynamic_string(ds, "</");
             append_dynamic_string(ds, current->rs_defin->rs_name);
@@ -478,7 +478,7 @@ int attr_to_str(
     case ATR_TYPE_JINFOP:
 
       break;
-    } /* END switch attribute type */
+    } /* END switch pbs_attribute type */
 
   return(rc);
   } /* END attr_to_str */
@@ -486,15 +486,15 @@ int attr_to_str(
 
 
 
-/* converts a string to an attribute 
+/* converts a string to an pbs_attribute 
  * @return PBSE_NONE on success
  */
 
 int str_to_attr(
 
-  char                *name,    /* I */
+  char                 *name,    /* I */
   char                 *val,    /* I */
-  struct attribute     *attr,   /* O */
+  pbs_attribute        *attr,   /* O */
   struct attribute_def *padef)  /* I */
 
   {
@@ -516,7 +516,7 @@ int str_to_attr(
 
   if (index < 0)
     {
-    /* couldn't find attribute */
+    /* couldn't find pbs_attribute */
     snprintf(log_buf,sizeof(log_buf),
       "Couldn't find attribute %s\n",
       name);
@@ -675,7 +675,7 @@ int str_to_attr(
     case ATR_TYPE_JINFOP:
 
       break;
-    } /* END switch (attribute type) */
+    } /* END switch (pbs_attribute type) */
 
   attr[index].at_flags |= ATR_VFLAG_SET;
 
@@ -946,17 +946,17 @@ int svr_save(
 /**
  * Save an Access Control List to its file.
  *
- * @param attr   A pointer to an acl (access control list) attribute.
- * @param pdef   A pointer to the attribute definition structure.
+ * @param attr   A pointer to an acl (access control list) pbs_attribute.
+ * @param pdef   A pointer to the pbs_attribute definition structure.
  * @param subdir The sub-directory path specifying where to write the file.
  * @param name   The parent object name which in this context becomes the file name.
- * @return       Zero on success (File may not be written if attribute is clean) or -1 on error.
+ * @return       Zero on success (File may not be written if pbs_attribute is clean) or -1 on error.
  */
 
 int save_acl(
 
-  attribute     *attr,  /* acl attribute */
-  attribute_def *pdef,  /* attribute def structure */
+  pbs_attribute *attr,  /* acl pbs_attribute */
+  attribute_def *pdef,  /* pbs_attribute def structure */
   char          *subdir, /* sub-directory path */
   char          *name)  /* parent object name = file name */
 
@@ -1065,29 +1065,29 @@ int save_acl(
 /**
  * Reload an Access Control List from its file.
  *
- * @param attr   A pointer to an acl (access control list) attribute.
- * @param pdef   A pointer to the attribute definition structure.
+ * @param attr   A pointer to an acl (access control list) pbs_attribute.
+ * @param pdef   A pointer to the pbs_attribute definition structure.
  * @param subdir The sub-directory path specifying where to read the file.
  * @param name   The parent object name which in this context is the file name.
- * @return       Zero on success (File may not be written if attribute is clean) or -1 on error.
+ * @return       Zero on success (File may not be written if pbs_attribute is clean) or -1 on error.
  */
 
 void recov_acl(
 
-  attribute     *pattr, /* acl attribute */
-  attribute_def *pdef, /* attribute def structure */
+  pbs_attribute *pattr, /* acl pbs_attribute */
+  attribute_def *pdef, /* pbs_attribute def structure */
   char          *subdir, /* directory path */
   char         *name) /* parent object name = file name */
 
   {
-  static char *this_function_name = "recov_acl";
-  char        *buf;
-  int          fds;
-  char         filename1[MAXPATHLEN];
-  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  static char   *this_function_name = "recov_acl";
+  char          *buf;
+  int            fds;
+  char           filename1[MAXPATHLEN];
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
-  struct stat  sb;
-  attribute    tempat;
+  struct stat    sb;
+  pbs_attribute  tempat;
 
   errno = 0;
 

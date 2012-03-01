@@ -128,7 +128,7 @@ extern void  set_resc_assigned(job *, enum batch_op);
 
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 void                         stream_eof(int, u_long, uint16_t, int);
-extern int                   job_set_wait(attribute *, void *, int);
+extern int                   job_set_wait(pbs_attribute *, void *, int);
 extern void                  stat_mom_job(job *);
 
 extern int LOGLEVEL;
@@ -351,7 +351,7 @@ static void post_checkpointsend(
   job                  *pjob;
 
   struct batch_request *preq;
-  attribute            *pwait;
+  pbs_attribute            *pwait;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   time_t                time_now = time(NULL);
 
@@ -404,7 +404,7 @@ static void post_checkpointsend(
 
       pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_COPIED;
       
-      /* set restart_name attribute to the checkpoint_name we just copied */
+      /* set restart_name pbs_attribute to the checkpoint_name we just copied */
       
       job_attr_def[JOB_ATR_restart_name].at_set(
         &pjob->ji_wattr[JOB_ATR_restart_name],
@@ -574,7 +574,7 @@ static void post_stagein(
   job                  *pjob;
 
   struct batch_request *preq;
-  attribute            *pwait;
+  pbs_attribute        *pwait;
   time_t                time_now = time(NULL);
 
   preq = pwt->wt_parm1;
@@ -927,7 +927,7 @@ int svr_startjob(
     EMsg[0] = '\0';
 
   /* if not already setup, transfer the control/script file basename */
-  /* into an attribute accessible by MOM */
+  /* into an pbs_attribute accessible by MOM */
 
   if (!(pjob->ji_wattr[JOB_ATR_hashname].at_flags & ATR_VFLAG_SET))
     {
@@ -1047,7 +1047,7 @@ static int svr_strtjob2(
   int              old_state;
   int              old_subst;
   int              my_err = 0;
-  attribute       *pattr;
+  pbs_attribute   *pattr;
   char             tmpLine[MAXLINE];
   struct timeval   start_time;
   struct timezone  tz;
@@ -1083,7 +1083,7 @@ static int svr_strtjob2(
 
   svr_setjobstate(pjob,JOB_STATE_RUNNING,JOB_SUBSTATE_PRERUN, FALSE);
 
-  /* if job start timeout attribute is set use its value */
+  /* if job start timeout pbs_attribute is set use its value */
   get_svr_attr_l(SRV_ATR_tcp_timeout, &tcp_timeout);
   
   if ((get_svr_attr_l(SRV_ATR_JobStartTimeout, &job_timeout) == PBSE_NONE) &&
@@ -1508,7 +1508,7 @@ static job *chk_job_torun(
 
     resource *JRes;      /* resource on job */
 
-    attribute *Attr;     /* 'neednodes' attribute */
+    pbs_attribute *Attr;     /* 'neednodes' pbs_attribute */
 
     Attr = &pjob->ji_wattr[JOB_ATR_resource];
 

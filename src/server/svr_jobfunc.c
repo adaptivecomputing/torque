@@ -91,7 +91,7 @@
  * prefix_std_file()  - build the fully prefixed default name for std e/o
  * get_jobowner()     - get job owner name without @host suffix
  * set_resc_deflt()   - set unspecified resource_limit to default values
- * set_statechar()    - set the job state attribute character value
+ * set_statechar()    - set the job state pbs_attribute character value
  *
  * Private functions
  * chk_svr_resc_limit() - check job requirements againt queue/server limits
@@ -142,7 +142,7 @@
 /* Private Functions */
 
 void default_std(job *, int key, dynamic_string *ds);
-void eval_checkpoint(attribute *j, attribute *q);
+void eval_checkpoint(pbs_attribute *j, pbs_attribute *q);
 
 /* Global Data Items: */
 
@@ -296,7 +296,7 @@ int svr_enquejob(
   int  prev_job_index)  /* I */
 
   {
-  attribute     *pattrjb;
+  pbs_attribute *pattrjb;
   attribute_def *pdef;
   job           *pjcur;
   pbs_queue     *pque;
@@ -419,7 +419,7 @@ int svr_enquejob(
       }
     }
 
-  /* update the current location and type attribute */
+  /* update the current location and type pbs_attribute */
 
   pdef    = &job_attr_def[JOB_ATR_in_queue];
 
@@ -536,11 +536,11 @@ void svr_dequejob(
   int  parent_queue_mutex_held) /* I */
 
   {
-  int          bad_ct = 0;
-  attribute   *pattr;
-  pbs_queue   *pque;
-  resource    *presc;
-  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  int            bad_ct = 0;
+  pbs_attribute *pattr;
+  pbs_queue     *pque;
+  resource      *presc;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* remove job from server's all job list and reduce server counts */
 
@@ -875,7 +875,7 @@ void svr_evaljobstate(
  * variable of a job
  *
  * Returns a pointer to the start of the value or NULL if the variable
- * is not found in the variable_list attribute.
+ * is not found in the variable_list pbs_attribute.
  */
 
 char *get_variable(
@@ -910,10 +910,10 @@ char *get_variable(
 
 resource *get_resource(
 
-  attribute    *p_queattr,  /* I */
-  attribute    *p_svrattr,  /* I */
-  resource_def *rscdf,      /* I */
-  int          *fromQueue)  /* O */
+  pbs_attribute *p_queattr,  /* I */
+  pbs_attribute *p_svrattr,  /* I */
+  resource_def  *rscdf,      /* I */
+  int           *fromQueue)  /* O */
 
   {
   resource *pr;
@@ -954,10 +954,10 @@ resource *get_resource(
 
 int chk_svr_resc_limit(
 
-  attribute *jobatr, /* I */
-  pbs_queue *pque,   /* I */
-  int       qtype,   /* I */
-  char      *EMsg)   /* O (optional,minsize=1024) */
+  pbs_attribute *jobatr, /* I */
+  pbs_queue     *pque,   /* I */
+  int            qtype,   /* I */
+  char          *EMsg)   /* O (optional,minsize=1024) */
 
   {
   int           dummy;
@@ -1478,7 +1478,7 @@ int count_queued_jobs(
 
 
 /*
- * chk_resc_limits - check job Resource_Limits attribute against the queue
+ * chk_resc_limits - check job Resource_Limits pbs_attribute against the queue
  * and server maximum and mininum values.
  *
  * return 0 if within limits, or an pbs_error number if not.
@@ -1486,9 +1486,9 @@ int count_queued_jobs(
 
 int chk_resc_limits(
 
-  attribute *pattr,  /* I */
-  pbs_queue *pque,   /* I */
-  char      *EMsg)   /* O (optional,minsize=1024) */
+  pbs_attribute *pattr,  /* I */
+  pbs_queue     *pque,   /* I */
+  char          *EMsg)   /* O (optional,minsize=1024) */
 
   {
   int resc_lt;
@@ -1612,7 +1612,7 @@ int svr_chkque(
       return(PBSE_UNKRESC);
       }
 
-    /* 1d. cannot have an unknown attribute */
+    /* 1d. cannot have an unknown pbs_attribute */
 
     if (pjob->ji_wattr[JOB_ATR_UNKN].at_flags & ATR_VFLAG_SET)
       {
@@ -2080,7 +2080,7 @@ void job_wait_over(
 
     pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HASWAIT;
     
-    /* clear the exectime attribute */
+    /* clear the exectime pbs_attribute */
     job_attr_def[JOB_ATR_exectime].at_free(
       &pjob->ji_wattr[JOB_ATR_exectime]);
     
@@ -2103,14 +2103,14 @@ void job_wait_over(
  * wait time of the job.
  *
  * This is called as the at_action (see attribute.h) function associated
- * with the execution-time job attribute.
+ * with the execution-time job pbs_attribute.
  */
 
 int job_set_wait(
 
-  attribute *pattr,
-  void      *j,    /* a (job *) cast to void * */
-  int        mode) /* unused, do it for all action modes */
+  pbs_attribute *pattr,
+  void          *j,    /* a (job *) cast to void * */
+  int            mode) /* unused, do it for all action modes */
 
   {
   long       when;
@@ -2330,8 +2330,8 @@ void get_jobowner(
 
 void set_deflt_resc(
 
-  attribute *jb,
-  attribute *dflt)
+  pbs_attribute *jb,
+  pbs_attribute *dflt)
 
   {
   resource *prescjb;
@@ -2398,12 +2398,12 @@ void set_deflt_resc(
 
 void set_resc_deflt(
 
-  job       *pjob,            /* I (modified) */
-  attribute *ji_wattr,        /* I (optional) decoded attributes  */
-  int        has_queue_mutex) /* I */
+  job           *pjob,            /* I (modified) */
+  pbs_attribute *ji_wattr,        /* I (optional) decoded attributes  */
+  int            has_queue_mutex) /* I */
 
   {
-  attribute     *ja;
+  pbs_attribute *ja;
 
   pbs_queue     *pque;
   attribute_def *pdef;
@@ -2541,7 +2541,7 @@ void set_resc_deflt(
 
 
   /*
-   * set_statechar - set the job state attribute to the letter that correspondes
+   * set_statechar - set the job state pbs_attribute to the letter that correspondes
    * to its current state.
    */
 
@@ -2580,15 +2580,15 @@ void set_statechar(
 
 
 /*
- * eval_checkpoint - if the job's checkpoint attribute is "c=nnnn" and
+ * eval_checkpoint - if the job's checkpoint pbs_attribute is "c=nnnn" and
  *  nnnn is less than the queue' minimum checkpoint time, reset
  * to the queue min time.
  */
 
 void eval_checkpoint(
     
-  attribute *jobckp, /* job's checkpoint attribute */
-  attribute *queckp) /* queue's checkpoint attribute */
+  pbs_attribute *jobckp, /* job's checkpoint pbs_attribute */
+  pbs_attribute *queckp) /* queue's checkpoint pbs_attribute */
 
   {
   int   jobs;

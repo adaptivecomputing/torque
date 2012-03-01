@@ -78,8 +78,8 @@
 */
 /*
  * save_attr.c - This file contains the functions to perform a buffered
- * save of an object (structure) and an attribute array to a file.
- * It also has the function to recover (reload) an attribute array.
+ * save of an object (structure) and an pbs_attribute array to a file.
+ * It also has the function to recover (reload) an pbs_attribute array.
  *
  * Included public functions are:
  *
@@ -191,19 +191,19 @@ int save_struct(
  * Each of the attributes is encoded  into the attrlist form.
  * They are packed and written using save_struct().
  *
- * The final real attribute is followed by a dummy attribute with a
+ * The final real pbs_attribute is followed by a dummy pbs_attribute with a
  * al_size of ENDATTRIB.  This cannot be mistaken for the size of a
- * real attribute.
+ * real pbs_attribute.
  *
  * Note: attributes of type ATR_TYPE_ACL are not saved with the other
- * attribute of the parent (queue or server).  They are kept in their
+ * pbs_attribute of the parent (queue or server).  They are kept in their
  * own file.
  */
 
 int save_attr(
 
-  struct attribute_def *padef,           /* attribute definition array */
-  struct attribute     *pattr,           /* ptr to attribute value array */
+  struct attribute_def *padef,           /* pbs_attribute definition array */
+  pbs_attribute        *pattr,           /* ptr to pbs_attribute value array */
   int                   numattr,         /* number of attributes in array */
   int                   fds,
   char                 *buf_ptr,         /* M */
@@ -219,7 +219,7 @@ int save_attr(
   svrattrl   *pal;
   int         rc;
 
-  /* encode each attribute which has a value (not non-set) */
+  /* encode each pbs_attribute which has a value (not non-set) */
 
   CLEAR_HEAD(lhead);
 
@@ -281,8 +281,8 @@ int save_attr(
 #ifndef PBS_MOM
 int save_attr_xml(
 
-  struct attribute_def *padef,   /* attribute definition array */
-  struct attribute     *pattr,   /* ptr to attribute value array */
+  struct attribute_def *padef,   /* pbs_attribute definition array */
+  pbs_attribute        *pattr,   /* ptr to pbs_attribute value array */
   int                   numattr, /* number of attributes in array */
   int                   fds)     /* file descriptor where attributes are written */
 
@@ -311,7 +311,7 @@ int save_attr_xml(
           {
           /* ERROR */
           snprintf(log_buf,sizeof(log_buf),
-              "Not enough space to print attribute %s",
+              "Not enough space to print pbs_attribute %s",
               padef[i].at_name);
 
           free_dynamic_string(ds);
@@ -332,7 +332,7 @@ int save_attr_xml(
           }
         }
       }
-    } /* END for each attribute */
+    } /* END for each pbs_attribute */
 
   free_dynamic_string(ds);
 
@@ -350,7 +350,7 @@ int save_attr_xml(
 /*
  * recov_attr() - read attributes from disk file
  *
- * Recover (reload) attribute from file written by save_attr().
+ * Recover (reload) pbs_attribute from file written by save_attr().
  * Since this is not often done (only on server initialization),
  * Buffering the reads isn't done.
  */
@@ -360,7 +360,7 @@ int recov_attr(
   int                   fd,
   void                 *parent,
   struct attribute_def *padef,
-  struct attribute     *pattr,
+  pbs_attribute        *pattr,
   int                   limit,
   int                   unknown,
   int                   do_actions)
@@ -382,7 +382,7 @@ int recov_attr(
   /* decode_resc() in lib/Libattr/attr_fn_resc.c                        */
 
 
-  /* For each attribute, read in the attr_extern header */
+  /* For each pbs_attribute, read in the attr_extern header */
 
   while (1)
     {
@@ -396,7 +396,7 @@ int recov_attr(
       }
 
     if (tempal.al_tsize == ENDATTRIBUTES)
-      break;            /* hit dummy attribute that is eof */
+      break;            /* hit dummy pbs_attribute that is eof */
 
     if (tempal.al_tsize <= (int)sizeof(tempal))
       {
@@ -405,7 +405,7 @@ int recov_attr(
       return(-1);
       }
 
-    /* read in the attribute chunck (name and encoded value) */
+    /* read in the pbs_attribute chunck (name and encoded value) */
 
     palsize = tempal.al_tsize;
 
@@ -422,7 +422,7 @@ int recov_attr(
   
     CLEAR_LINK(pal->al_link);
 
-    /* read in the actual attribute data */
+    /* read in the actual pbs_attribute data */
 
     amt = pal->al_tsize - sizeof(svrattrl);
 
@@ -451,7 +451,7 @@ int recov_attr(
     else
       pal->al_value = NULL;
 
-    /* find the attribute definition based on the name */
+    /* find the pbs_attribute definition based on the name */
 
     index = find_attr(padef, pal->al_name, limit);
 
@@ -459,10 +459,10 @@ int recov_attr(
       {
       /*
        * There are two ways this could happen:
-       * 1. if the (job) attribute is in the "unknown" list -
+       * 1. if the (job) pbs_attribute is in the "unknown" list -
        * keep it there;
-       * 2. if the server was rebuilt and an attribute was
-       * deleted, -  the fact is logged and the attribute
+       * 2. if the server was rebuilt and an pbs_attribute was
+       * deleted, -  the fact is logged and the pbs_attribute
        * is discarded (system,queue) or kept (job)
        *
        */

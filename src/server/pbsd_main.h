@@ -5,7 +5,7 @@
 
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "work_task.h" /* work_task */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "server.h" /* mutex_t */
 
 /* static void need_y_response(int type); */
@@ -66,6 +66,6 @@ int get_full_path(char *Cmd, char *GoodCmd, int GoodCmdLen);
 
 int svr_restart();
 
-void restore_attr_default(struct attribute *attr);
+void restore_attr_default(struct pbs_attribute *attr);
 
 #endif /* _PBSD_MAIN_H */

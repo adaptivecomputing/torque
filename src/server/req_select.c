@@ -128,7 +128,7 @@ extern struct all_jobs array_summary;
 static int  build_selist(svrattrl *, int perm, struct  select_list **,
                              pbs_queue **, int *bad);
 static void free_sellist(struct select_list *pslist);
-static int  sel_attr(attribute *, struct select_list *);
+static int  sel_attr(pbs_attribute *, struct select_list *);
 static int  select_job(job *, struct select_list *);
 static void sel_step2(struct stat_cntl *);
 static void sel_step3(struct stat_cntl *);
@@ -138,13 +138,13 @@ static void sel_step3(struct stat_cntl *);
 
 
 /**
- * order_checkpoint - provide order value for various checkpoint attribute values
+ * order_checkpoint - provide order value for various checkpoint pbs_attribute values
  * n > s > c=minutes > c
  */
 
 static int order_checkpoint(
 
-  attribute *attr)
+  pbs_attribute *attr)
 
   {
   if (((attr->at_flags & ATR_VFLAG_SET) == 0) ||
@@ -189,8 +189,8 @@ static int order_checkpoint(
 
 int comp_checkpoint(
 
-  attribute *attr,
-  attribute *with)
+  pbs_attribute *attr,
+  pbs_attribute *with)
 
   {
   int a;
@@ -220,8 +220,8 @@ int comp_checkpoint(
 
 static int comp_state(
 
-  attribute *state,
-  attribute *selstate)
+  pbs_attribute *state,
+  pbs_attribute *selstate)
 
   {
   char *ps;
@@ -756,14 +756,14 @@ static int select_job(
 
 
 /*
- * sel_attr - determine if attribute is according to the selection operator
+ * sel_attr - determine if pbs_attribute is according to the selection operator
  *
- * Returns 1 if attribute meets criteria, 0 if not
+ * Returns 1 if pbs_attribute meets criteria, 0 if not
  */
 
 static int sel_attr(
     
-  attribute *jobat,
+  pbs_attribute      *jobat,
   struct select_list *pselst)
 
   {
@@ -775,7 +775,7 @@ static int sel_attr(
     {
 
     /* Only one resource per selection entry,   */
-    /* find matching resource in job attribute if one */
+    /* find matching resource in job pbs_attribute if one */
 
     rescsl = (resource *)GET_NEXT(pselst->sl_attr.at_val.at_list);
     rescjb = find_resc_entry(jobat, rescsl->rs_defin);
@@ -789,7 +789,7 @@ static int sel_attr(
     }
   else
     {
-    /* "normal" attribute */
+    /* "normal" pbs_attribute */
 
     rc = pselst->sl_def->at_comp(jobat, &pselst->sl_attr);
     }
@@ -865,7 +865,7 @@ static int build_selentry(
   struct select_list *entry;
   int                 rc;
 
-  /* create a select list entry for this attribute */
+  /* create a select list entry for this pbs_attribute */
 
   entry = (struct select_list *)calloc(1, sizeof(struct select_list));
 
@@ -889,7 +889,7 @@ static int build_selentry(
       (plist->al_op != EQ) &&
       (plist->al_op != NE))
     {
-    /* can only select eq/ne on this attribute */
+    /* can only select eq/ne on this pbs_attribute */
 
     free(entry);
 
@@ -898,7 +898,7 @@ static int build_selentry(
     return(PBSE_IVALREQ);
     }
 
-  /* decode the attribute into the entry */
+  /* decode the pbs_attribute into the entry */
 
   if ((rc = pdef->at_decode(
               &entry->sl_attr,
@@ -920,7 +920,7 @@ static int build_selentry(
     }
 
   /*
-   * save the pointer to the attribute definition,
+   * save the pointer to the pbs_attribute definition,
    * if a resource, use the resource specific one
    */
 
@@ -1012,7 +1012,7 @@ static int build_selist(
       i = find_attr(job_attr_def, plist->al_name, JOB_ATR_LAST);
 
       if (i < 0)
-        return (PBSE_NOATTR);   /* no such attribute */
+        return (PBSE_NOATTR);   /* no such pbs_attribute */
 
       if (i == JOB_ATR_state)
         {

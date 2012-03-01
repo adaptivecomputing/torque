@@ -217,6 +217,9 @@
 #include "nvml.h"
 #endif  /* NVIDIA_GPUS and NVML_API */
 
+#ifdef USE_ALPS_LIB
+#include "libalps_report/generate_alps_status.h"
+#endif
 
 #include "pbs_ifl.h"
 #include "pbs_error.h"
@@ -255,6 +258,10 @@ extern int num_node_boards;
 extern void collect_cpuact(void);
 #endif /* NUMA_SUPPORT */
 
+#ifdef USE_ALPS_LIB
+extern char *apbasil_path;
+extern char *apbasil_protocol;
+#endif
 
 mom_server     mom_servers[PBS_MAXSERVER];
 int            mom_server_count = 0;
@@ -2793,7 +2800,9 @@ int write_update_header(
 
   {
   int  ret;
+#ifndef USE_ALPS_LIB
   char buf[MAXLINE];
+#endif
   
   if ((ret = is_compose(stream,name,IS_STATUS)) == DIS_SUCCESS)
     {
@@ -2801,7 +2810,9 @@ int write_update_header(
       {
       if ((ret = diswus(stream, pbs_rm_port)) == DIS_SUCCESS)
         {
-        /* write this node's name first */
+#ifndef USE_ALPS_LIB
+        /* NYI: check this to be sure */
+        /* write this node's name first - alps handles this separately */
         snprintf(buf,sizeof(buf),"node=%s",mom_alias);
         
         if ((ret = diswst(stream,buf)) != DIS_SUCCESS)
@@ -2813,6 +2824,7 @@ int write_update_header(
           else
             requested_cluster_addrs = time_now;
           }
+#endif
         }
       }
     }
@@ -3276,7 +3288,11 @@ void mom_server_all_update_stat(void)
     {
     clear_dynamic_string(mom_status);
 
+#ifndef USE_ALPS_LIB
     mom_status->used = generate_server_status(mom_status->str, mom_status->size);
+#else
+    generate_alps_status(mom_status, apbasil_path, apbasil_protocol);
+#endif
     add_gpu_status(mom_status);
  
     if ((nc = update_current_path(mh)) != NULL)

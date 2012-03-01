@@ -4,7 +4,7 @@
 
 #include "array.h" /* job_array, ArrayEventsEnum */
 #include "pbs_job.h" /* job */
-#include "attribute.h" /* attribute, svrattrl */
+#include "attribute.h" /* pbs_attribute, svrattrl */
 #include "batch_request.h" /* batch_request */
 
 
@@ -40,7 +40,7 @@ int first_job_index(job_array *pa);
 
 int delete_whole_array(job_array *pa);
 
-int hold_array_range(job_array *pa, char *range_str, attribute *temphold);
+int hold_array_range(job_array *pa, char *range_str, pbs_attribute *temphold);
 
 int release_array_range(job_array *pa, struct batch_request *preq, char *range_str);
 

@@ -91,7 +91,7 @@
 #include "pbs_error.h"
 
 /*
- * This file contains general functions for manipulating an attribute array.
+ * This file contains general functions for manipulating an pbs_attribute array.
  * Included is:
  * attr_atomic_set()
  * attr_atomic_node_set()
@@ -102,29 +102,29 @@
 
 
 /*
- * attr_atomic_set - atomically set a attribute array with values from
+ * attr_atomic_set - atomically set a pbs_attribute array with values from
  * an svrattrl
 */
 
 int attr_atomic_set(
 
   struct svrattrl *plist,
-  attribute *old,
-  attribute *new,
-  attribute_def *pdef,
-  int   limit,
-  int   unkn,
-  int   privil,
-  int  *badattr)
+  pbs_attribute   *old,
+  pbs_attribute   *new,
+  attribute_def   *pdef,
+  int              limit,
+  int              unkn,
+  int              privil,
+  int             *badattr)
 
   {
-  int        acc;
-  int        index;
-  int        listidx;
-  resource  *prc;
-  int        rc;
-  attribute  temp;
-  int        resc_access_perm = privil; /* set privilege for decode_resc() */
+  int           acc;
+  int           index;
+  int           listidx;
+  resource      *prc;
+  int            rc;
+  pbs_attribute  temp;
+  int            resc_access_perm = privil; /* set privilege for decode_resc() */
 
   for (index = 0;index < limit;index++)
     clear_attr(new + index, pdef + index);
@@ -152,7 +152,7 @@ int attr_atomic_set(
         }
       }
 
-    /* have we privilege to set the attribute ? */
+    /* have we privilege to set the pbs_attribute ? */
 
     acc = (pdef + index)->at_flags & ATR_DFLAG_ACCESS;
 
@@ -160,14 +160,14 @@ int attr_atomic_set(
       {
       if (privil & ATR_DFLAG_SvWR)
         {
-        /* from a daemon, just ignore this attribute */
+        /* from a daemon, just ignore this pbs_attribute */
 
         plist = (struct svrattrl *)GET_NEXT(plist->al_link);
 
         continue;
         }
 
-      /* from user, error if can't write attribute */
+      /* from user, error if can't write pbs_attribute */
 
       rc = PBSE_ATTRRO;
 
@@ -315,33 +315,33 @@ int attr_atomic_set(
 
 
 /*
- * attr_atomic_node_set - atomically set an attribute array with
+ * attr_atomic_node_set - atomically set an pbs_attribute array with
  * values from an svrattrl
 */
 
 int attr_atomic_node_set(
 
-  struct svrattrl *plist,  /* list of attribute modif structs */
-  attribute *old,          /* unused */
-  attribute *new,          /* new attribute array begins here */
-  attribute_def *pdef,     /* begin array  definition structs */
-  int limit,               /* number elts in definition array */
-  int unkn,                /* <0 unknown attrib not permitted */
-  int privil,              /* requester's access privileges   */
-  int *badattr)            /* return list position wher bad   */
+  struct svrattrl *plist,    /* list of pbs_attribute modif structs */
+  pbs_attribute   *old,      /* unused */
+  pbs_attribute   *new,      /* new pbs_attribute array begins here */
+  attribute_def   *pdef,     /* begin array  definition structs */
+  int              limit,    /* number elts in definition array */
+  int              unkn,     /* <0 unknown attrib not permitted */
+  int              privil,   /* requester's access privileges   */
+  int             *badattr)  /* return list position wher bad   */
 
   {
-  int     acc;
-  int     index;
-  int     listidx;
-  int     rc = 0;
-  attribute temp;
+  int           acc;
+  int           index;
+  int           listidx;
+  int           rc = 0;
+  pbs_attribute temp;
 
   listidx = 0;
 
   while (plist)
     {
-    /*Traverse loop for each client entered attribute*/
+    /*Traverse loop for each client entered pbs_attribute*/
 
     listidx++;
 
@@ -357,8 +357,8 @@ int attr_atomic_node_set(
       }
 
 
-    /* The name of the attribute is in the definitions list*/
-    /* Now, have we privilege to set the attribute ?       */
+    /* The name of the pbs_attribute is in the definitions list*/
+    /* Now, have we privilege to set the pbs_attribute ?       */
     /* Check access capabilities specified in the attrdef  */
     /* against the requestor's privilege level        */
 
@@ -368,13 +368,13 @@ int attr_atomic_node_set(
       {
       if (privil & ATR_DFLAG_SvWR)
         {
-        /*  from a daemon, just ignore this attribute */
+        /*  from a daemon, just ignore this pbs_attribute */
         plist = (struct svrattrl *)GET_NEXT(plist->al_link);
         continue;
         }
       else
         {
-        /*from user, no write access to attribute     */
+        /*from user, no write access to pbs_attribute     */
         rc = PBSE_ATTRRO;
         break;
         }
@@ -428,8 +428,8 @@ int attr_atomic_node_set(
 
     /*"at_free" functions get invoked by upstream caller*/
     /*invoking attr_atomic_kill() on the array of       */
-    /*node-attribute structs-- any hanging structs are  */
-    /*freed and then the node-attribute array is freed  */
+    /*node-pbs_attribute structs-- any hanging structs are  */
+    /*freed and then the node-pbs_attribute array is freed  */
 
     *badattr = listidx;   /*the svrattrl that gave a problem*/
     }
@@ -440,15 +440,19 @@ int attr_atomic_node_set(
 
 
 /*
- * attr_atomic_kill - kill (free) a temporary attribute array which
+ * attr_atomic_kill - kill (free) a temporary pbs_attribute array which
  * was set up by attr_atomic_set().
  *
  * at_free() is called on each element on the array, then
  * the array itself is freed.
  */
 
-void
-attr_atomic_kill(attribute *temp, attribute_def *pdef, int limit)
+void attr_atomic_kill(
+    
+  pbs_attribute *temp,
+  attribute_def *pdef,
+  int            limit)
+
   {
   int i;
 

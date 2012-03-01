@@ -2,14 +2,14 @@
 #define _REQ_SELECT_H
 #include "license_pbs.h" /* See here for the software license */
 
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "batch_request.h" /* batch_request */
 
-/* static int order_checkpoint(attribute *attr); */
+/* static int order_checkpoint(pbs_attribute *attr); */
 
-int comp_checkpoint(attribute *attr, attribute *with);
+int comp_checkpoint(pbs_attribute *attr, pbs_attribute *with);
 
-/* static int comp_state(attribute *state, attribute *selstate); */
+/* static int comp_state(pbs_attribute *state, pbs_attribute *selstate); */
 
 void *req_selectjobs(void *vp);
 
@@ -19,7 +19,7 @@ void *req_selectjobs(void *vp);
 
 /* static int select_job(job *pjob, struct select_list *psel); */
 
-/* static int sel_attr(attribute *jobat, struct select_list *pselst); */
+/* static int sel_attr(pbs_attribute *jobat, struct select_list *pselst); */
 
 /* static void free_sellist(struct select_list *pslist); */
 

@@ -1111,6 +1111,25 @@ if test "x$nvmllib" != "xnone" && test "x$nvmlinclude" == "xnone" ;then
   AC_MSG_ERROR([--with-nvml-include needs to be specified])
 fi
 
+dnl 
+dnl Tell TORQUE about any ALPS helper libraries
+dnl
+ALPS_LIBS=""
+
+AC_ARG_WITH(alpsstatus_lib,
+    [ --with-alpsstatus-lib=LIB library path for an alps status library],
+    alps_lib="$withval",
+    alps_lib=none)
+
+if test "x$alps_lib" != "xnone" ; then
+  ALPS_LIBS="$ALPS_LIBS -l$alps_lib `xml2-config --libs`"
+dnl  MOMLIBS="$MOMLIBS $ALPS_LIBS"
+  AM_CFLAGS="$AMCFLAGS `xml2-config --cflags`"
+  AC_DEFINE(USE_ALPS_LIB, 1, [Define this to use a plugin ALPS reporting library])
+fi
+
+
+
 dnl
 dnl enable logging of x attributes for accounting
 dnl
@@ -1997,6 +2016,8 @@ dnl  Output
 dnl
 
 AC_CREATE_GENERIC_CONFIG([pbs],[-ltorque])
+
+AC_SUBST(ALPS_LIBS)
 
 dnl these are quoted, and this removes them
 SPEC_NAME=$PACKAGE_TARNAME

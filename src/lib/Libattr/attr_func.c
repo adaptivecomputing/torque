@@ -104,12 +104,12 @@
  */
 
 /*
- * clear_attr - clear an attribute value structure and clear ATR_VFLAG_SET
+ * clear_attr - clear an pbs_attribute value structure and clear ATR_VFLAG_SET
  */
 
 void clear_attr(
 
-  attribute *pattr, /* O */
+  pbs_attribute *pattr, /* O */
   attribute_def *pdef)  /* I */
 
   {
@@ -124,7 +124,7 @@ void clear_attr(
 
 #endif /* NDEBUG */
 
-  memset(pattr, 0, sizeof(struct attribute));
+  memset(pattr, 0, sizeof(pbs_attribute));
 
   pattr->at_type = pdef->at_type;
 
@@ -167,9 +167,9 @@ static int str_nc_cmp(
 
 
 /*
- * find_attr - find attribute definition by name
+ * find_attr - find pbs_attribute definition by name
  *
- * Searches array of attribute definition strutures to find one
+ * Searches array of pbs_attribute definition strutures to find one
  * whose name matches the requested name.
  *
  * Returns: >= 0 index into definition struture array
@@ -178,9 +178,9 @@ static int str_nc_cmp(
 
 int find_attr(
 
-  struct attribute_def *attr_def, /* ptr to attribute definitions */
-  char                 *name,   /* attribute name to find */
-  int                   limit)   /* limit on size of def array */
+  struct attribute_def *attr_def, /* ptr to pbs_attribute definitions */
+  char                 *name,     /* pbs_attribute name to find */
+  int                   limit)    /* limit on size of def array */
 
   {
   int index;
@@ -210,9 +210,9 @@ int find_attr(
 
 long attr_ifelse_long(
 
-  attribute *attr1,
-  attribute *attr2,
-  long deflong)
+  pbs_attribute *attr1,
+  pbs_attribute *attr2,
+  long           deflong)
 
   {
 
@@ -235,7 +235,7 @@ long attr_ifelse_long(
 
 void free_null(
 
-  struct attribute *attr)
+  pbs_attribute *attr)
 
   {
   /*
@@ -262,7 +262,7 @@ void free_null(
 
 void free_noop(
 
-  struct attribute *attr)
+  pbs_attribute *attr)
 
   {
   /* no nothing */
@@ -274,14 +274,14 @@ void free_noop(
 
 
 /*
- * comp_null - A do nothing, except return 0, attribute comparison
+ * comp_null - A do nothing, except return 0, pbs_attribute comparison
  *        function.
  */
 
 int comp_null(
 
-  struct attribute *attr,   /* I */
-  struct attribute *with)   /* I */
+  pbs_attribute *attr,   /* I */
+  pbs_attribute *with)   /* I */
 
   {
   /* SUCCESS */
@@ -354,7 +354,7 @@ svrattrl *attrlist_alloc(
  * attrlist_create - create an svrattrl structure entry
  *
  * The space required for the entry is calculated and allocated.
- * The attribute and resource name is copied into the entry.
+ * The pbs_attribute and resource name is copied into the entry.
  * Note, the value string should be inserted by the caller after this returns.
  *
  * Return: ptr to entry or NULL if error
@@ -362,7 +362,7 @@ svrattrl *attrlist_alloc(
 
 svrattrl *attrlist_create(
 
-  char  *aname, /* I - attribute name */
+  char  *aname, /* I - pbs_attribute name */
   char  *rname, /* I - resource name if needed or null */
   int    vsize) /* I - size of resource value         */
 
@@ -371,7 +371,7 @@ svrattrl *attrlist_create(
   size_t    asz;
   size_t    rsz;
 
-  asz = strlen(aname) + 1;     /* attribute name,allow for null term */
+  asz = strlen(aname) + 1;     /* pbs_attribute name,allow for null term */
 
   if (rname == NULL)      /* resource name only if type resource */
     rsz = 0;
@@ -396,8 +396,10 @@ svrattrl *attrlist_create(
  * structures
  */
 
-void
-free_attrlist(tlist_head *pattrlisthead)
+void free_attrlist(
+    
+  tlist_head *pattrlisthead)
+
   {
   svrattrl *pal;
   svrattrl *nxpal;

@@ -19,7 +19,7 @@
 #include "csv.h"
 
 extern int chk_hold_priv(long val, int perm);
-extern int get_hold(tlist_head *, char **, attribute *);
+extern int get_hold(tlist_head *, char **, pbs_attribute *);
 extern int svr_authorize_req(struct batch_request *preq, char *owner,
                                char *submit_host);
 
@@ -29,8 +29,8 @@ extern int LOGLEVEL;
 
 void hold_job(
 
-  attribute *temphold, /* I */
-  void      *j)        /* I */
+  pbs_attribute *temphold, /* I */
+  void          *j)        /* I */
 
   {
   long *hold_val;
@@ -39,7 +39,7 @@ void hold_job(
   int newstate;
   int newsub;
 
-  attribute *pattr;
+  pbs_attribute *pattr;
   job *pjob = (job *)j;
 
   if (pjob == NULL)
@@ -87,7 +87,7 @@ void *req_holdarray(
   char                 *pset;
   char                 *range_str;
   int                   rc;
-  attribute             temphold;
+  pbs_attribute         temphold;
   char                  owner[PBS_MAXUSER + 1];
   job_array            *pa;
   job                  *pjob;

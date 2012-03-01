@@ -95,19 +95,19 @@
  * G,t, or T, optionally followed by w,W,b,B.
  * If 'w' or 'W' is not specified, b for bytes is assumed.
  *
- * The attribute has functions for:
+ * The pbs_attribute has functions for:
  * Decoding the value string to the machine representation.
- * Encoding the internal attribute to external form
+ * Encoding the internal pbs_attribute to external form
  * Setting the value by =, + or - operators.
- * Comparing a (decoded) value with the attribute value.
+ * Comparing a (decoded) value with the pbs_attribute value.
  *
- * Some or all of the functions for an attribute type may be shared with
- * other attribute types.
+ * Some or all of the functions for an pbs_attribute type may be shared with
+ * other pbs_attribute types.
  *
  * The prototypes are declared in "attribute.h"
  *
  * --------------------------------------------------
- * The Set of Attribute Functions for attributes with
+ * The Set of pbs_Attribute Functions for attributes with
  * value type "size"
  * --------------------------------------------------
  */
@@ -119,7 +119,7 @@ int normalize_size(struct size_value *a, struct size_value *b,
                        struct size_value *c, struct size_value *d);
 
 /*
- * decode_size - decode size into attribute structure
+ * decode_size - decode size into pbs_attribute structure
  *
  * Returns: 0 if ok
  *  >0 error number if error
@@ -128,11 +128,11 @@ int normalize_size(struct size_value *a, struct size_value *b,
 
 int decode_size(
 
-  attribute *patr,
-  char      *name, /* attribute name */
-  char      *rescn, /* resource name, unused here */
-  char      *val, /* attribute value */
-  int        perm)  /* only used for resources */
+  pbs_attribute *patr,
+  char          *name, /* pbs_attribute name */
+  char          *rescn, /* resource name, unused here */
+  char          *val, /* pbs_attribute value */
+  int            perm)  /* only used for resources */
 
   {
 
@@ -160,7 +160,7 @@ int decode_size(
 
 
 /*
- * encode_size - encode attribute of type size into attr_extern
+ * encode_size - encode pbs_attribute of type size into attr_extern
  *
  * Returns: >0 if ok
  *   =0 if no value, no attrlist link added
@@ -172,12 +172,12 @@ int decode_size(
 
 int encode_size(
 
-  attribute  *attr,    /* ptr to attribute */
-  tlist_head *phead,   /* head of attrlist list */
-  char       *atname,  /* attribute name */
-  char       *rsname,  /* resource name (optional) */
-  int         mode,    /* encode mode (not used) */
-  int         perm)  /* only used for resources */
+  pbs_attribute  *attr,    /* ptr to pbs_attribute */
+  tlist_head     *phead,   /* head of attrlist list */
+  char           *atname,  /* pbs_attribute name */
+  char           *rsname,  /* resource name (optional) */
+  int             mode,    /* encode mode (not used) */
+  int             perm)    /* only used for resources */
 
   {
   size_t    ct;
@@ -225,15 +225,19 @@ int encode_size(
 
 
 /*
- * set_size - set attribute A to attribute B,
+ * set_size - set pbs_attribute A to pbs_attribute B,
  * either A=B, A += B, or A -= B
  *
  * Returns: 0 if ok
  *  >0 if error
  */
 
-int
-set_size(struct attribute *attr, struct attribute *new, enum batch_op op)
+int set_size(
+   
+  pbs_attribute *attr,
+  pbs_attribute *new,
+  enum batch_op  op)
+
   {
   unsigned long old;
 
@@ -305,12 +309,13 @@ set_size(struct attribute *attr, struct attribute *new, enum batch_op op)
  *   -1 if 1st < 2nd
  */
 
-int
-comp_size(struct attribute *attr, struct attribute *with)
+int comp_size(
+   
+  pbs_attribute *attr,
+  pbs_attribute *with)
+
   {
-
   struct size_value tmpa;
-
   struct size_value tmpw;
 
   if (normalize_size(&attr->at_val.at_size, &with->at_val.at_size,

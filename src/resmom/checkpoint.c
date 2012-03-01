@@ -67,7 +67,6 @@
 #include "server_limits.h"
 #include "pbs_job.h"
 #include "batch_request.h"
-#include "attribute.h"
 #include "resmon.h"
 #include "mom_mach.h"
 #include "mom_func.h"
@@ -137,10 +136,12 @@ int create_missing_files(job *pjob);
 
 
 int mom_checkpoint_job_is_checkpointable(
-    job *pjob)
+
+  job *pjob)
+
   {
-  attribute    *pattr;
-  int           rc;
+  pbs_attribute *pattr;
+  int            rc;
 
   pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
 
@@ -2022,10 +2023,12 @@ fail:
  * @see TMomFinalizeJob1
  */
 void mom_checkpoint_init_job_periodic_timer(
-    job *pjob)
+
+  job *pjob)
+
   {
-  attribute    *pattr;
-  char         *vp;
+  pbs_attribute  *pattr;
+  char           *vp;
 
   /* Should we set up the job for periodic checkpoint? */
 
@@ -2134,7 +2137,7 @@ int mom_checkpoint_job_has_checkpoint(
     log_ext(-1, "mom_checkpoint_job_has_checkpoint", "FALSE", LOG_DEBUG);
     }
 
-  return(FALSE); /* No checkpoint attribute on job. */
+  return(FALSE); /* No checkpoint pbs_attribute on job. */
   }
 
 
@@ -2233,17 +2236,19 @@ int mom_checkpoint_start_restart(
    even if empty.  If any expected files are missing we create them here */
 
 /* TODO: this needs to be modified to work with user .pbs_spool directories */
-int create_missing_files(job *pjob)
-  {
-  int should_have_stderr;
-  int should_have_stdout;
-  attribute *pattr;
-  char *pstr;
-  char *namebuf;
-  int bufsize;
-  int files_created = 0;
-  int fd;
+int create_missing_files(
+    
+  job *pjob)
 
+  {
+  int            should_have_stderr;
+  int            should_have_stdout;
+  pbs_attribute *pattr;
+  char          *pstr;
+  char          *namebuf;
+  int            bufsize;
+  int            files_created = 0;
+  int            fd;
 
   should_have_stderr = TRUE;
   should_have_stdout = TRUE;

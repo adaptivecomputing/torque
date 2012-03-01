@@ -123,6 +123,9 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "../lib/Libnet/lib_net.h" /* socket_read_flush */
 #include "svr_func.h" /* get_svr_attr_* */
+#ifdef USE_ALPS_LIB
+#include "libalps_report/generate_alps_status.h"
+#endif
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 #define SEND_HELLO 11
@@ -1146,7 +1149,7 @@ int handle_auto_np(
   char           *str) /* I */
 
   {
-  struct attribute nattr;
+  pbs_attribute nattr;
   
   /* first we decode str into nattr... + 6 is because str has format
    * ncpus=X, and 6 = strlen(ncpus=) */  
@@ -1279,7 +1282,7 @@ int process_state_str(
 int save_node_status(
 
   struct pbsnode *np,
-  attribute      *temp)
+  pbs_attribute  *temp)
 
   {
   int  rc = PBSE_NONE;
@@ -1302,7 +1305,7 @@ int save_node_status(
   free_arst(temp);
 
   return(rc);
-  }
+  } /* END save_node_status() */
 
 
 
@@ -1319,17 +1322,15 @@ int process_status_info(
   long            mom_job_sync = FALSE;
   long            auto_np = FALSE;
   long            down_on_error = FALSE;
-  attribute       temp;
+  pbs_attribute   temp;
   int             rc = PBSE_NONE;
   int             send_hello = FALSE;
-
-  str = status_info->str;
 
   get_svr_attr_l(SRV_ATR_MomJobSync, &mom_job_sync);
   get_svr_attr_l(SRV_ATR_AutoNodeNP, &auto_np);
   get_svr_attr_l(SRV_ATR_DownOnError, &down_on_error);
 
-  /* Before filling the "temp" attribute, initialize it.
+  /* Before filling the "temp" pbs_attribute, initialize it.
    * The second and third parameter to decode_arst are never
    * used, so just leave them empty. (GBS) */
   memset(&temp, 0, sizeof(temp));
@@ -1344,8 +1345,8 @@ int process_status_info(
   if ((current = find_nodebyname(nd_name)) == NULL)
     return(PBSE_NONE);
 
-  /* str is already initialized above, loop over each string */
-  for (; str != NULL && *str; str += strlen(str) + 1)
+  /* loop over each string */
+  for (str = status_info->str; str != NULL && *str; str += strlen(str) + 1)
     {
     /* these two options are for switching nodes */
     if (!strncmp(str, NUMA_KEYWORD, strlen(NUMA_KEYWORD)))
@@ -1371,7 +1372,7 @@ int process_status_info(
         continue;
       }
 
-    /* add the info to the "temp" attribute */
+    /* add the info to the "temp" pbs_attribute */
 #ifdef NVIDIA_GPUS
     else if (!strcmp(str, START_GPU_STATUS))
       {
@@ -1480,7 +1481,11 @@ int is_stat_get(
 
   status_info = get_status_info(stream);
 
+#ifndef USE_ALPS_LIB
   rc = process_status_info(orig_nd_name, status_info);
+#else
+  rc = process_alps_status(orig_nd_name, status_info);
+#endif
 
   free_dynamic_string(status_info);
 
@@ -1594,16 +1599,16 @@ int is_gpustat_get(
   char           **str_ptr) /* I (modified) */
 
   {
-  int        rc;
-  attribute  temp;
-  char      *gpuid;
-  char      *str = *str_ptr;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
-  int        gpuidx = -1;
-  char       gpuinfo[2048];
-  int        need_delimiter;
-  int        gpucnt = 0;
-  int        drv_ver;
+  int            rc;
+  pbs_attribute  temp;
+  char          *gpuid;
+  char          *str = *str_ptr;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  int            gpuidx = -1;
+  char           gpuinfo[2048];
+  int            need_delimiter;
+  int            gpucnt = 0;
+  int            drv_ver;
 
   if (LOGLEVEL >= 7)
     {
@@ -1614,7 +1619,7 @@ int is_gpustat_get(
     }
 
   /*
-   *  Before filling the "temp" attribute, initialize it.
+   *  Before filling the "temp" pbs_attribute, initialize it.
    *  The second and third parameter to decode_arst are never
    *  used, so just leave them empty. (GBS)
    */
@@ -1815,7 +1820,7 @@ int is_gpustat_get(
           }
         }
  
-      /* add gpu_mode so it gets added to the attribute */
+      /* add gpu_mode so it gets added to the pbs_attribute */
 
       if (need_delimiter)
         {
@@ -3440,7 +3445,7 @@ static int cntjons(
 
 /*
  * nodecmp - compare two nodes for sorting
- * For "exclusive", depending on setting of node_order attribute:
+ * For "exclusive", depending on setting of node_order pbs_attribute:
  *     pack:    put free node with fewest non-zero free VPs in node first
  *     scatter: put free node with most fre VPs first
  * For "shared", put current shared with fewest jobs first,
@@ -4715,7 +4720,7 @@ int place_subnodes_in_hostlist(
 
 /*
  * takes a struct howl and translates it to a string that will
- * become a job attribute (exec_hosts, exec_gpus, exec_ports)
+ * become a job pbs_attribute (exec_hosts, exec_gpus, exec_ports)
  * NOTE: frees list (the struct howl)
  */
 

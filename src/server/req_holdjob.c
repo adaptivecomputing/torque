@@ -121,7 +121,7 @@ extern char *msg_postmomnojob;
 extern int LOGLEVEL;
 
 int chk_hold_priv(long val, int perm);
-int get_hold(tlist_head *, char **, attribute *);
+int get_hold(tlist_head *, char **, pbs_attribute *);
 
 /* external functions */
 extern int svr_authorize_jobreq(struct batch_request *,job *);
@@ -165,15 +165,15 @@ void *req_holdjob(
   void *vp) /* I */
 
   {
-  long  *hold_val;
-  int   newstate;
-  int   newsub;
-  long   old_hold;
-  job    *pjob;
-  char    *pset;
-  int     rc;
-  attribute temphold;
-  attribute *pattr;
+  long                 *hold_val;
+  int                   newstate;
+  int                   newsub;
+  long                  old_hold;
+  job                  *pjob;
+  char                 *pset;
+  int                   rc;
+  pbs_attribute         temphold;
+  pbs_attribute        *pattr;
   struct batch_request *preq = (struct batch_request *)vp;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   struct batch_request *dup_req = NULL;
@@ -310,7 +310,7 @@ void *req_checkpointjob(
   struct batch_request *preq = (struct batch_request *)vp;
   job                  *pjob;
   int                   rc;
-  attribute            *pattr;
+  pbs_attribute        *pattr;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   struct batch_request *dup_req = NULL;
 
@@ -379,15 +379,15 @@ int release_job(
   void                 *j)    /* I/O */
 
   {
-  long   old_hold;
-  int    rc = 0;
-  int    newstate;
-  int    newsub;
-  char  *pset;
-  job   *pjob = (job *)j;
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  long           old_hold;
+  int            rc = 0;
+  int            newstate;
+  int            newsub;
+  char          *pset;
+  job           *pjob = (job *)j;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
-  attribute      temphold;
+  pbs_attribute  temphold;
 
   /* cannot do anything until we decode the holds to be set */
 
@@ -611,18 +611,18 @@ void *req_releasearray(
 
 /*
  * get_hold - search a list of attributes (svrattrl) for the hold-types
- *  attribute.  This is used by the Hold Job and Release Job request,
- * therefore it is an error if the hold-types attribute is not present,
+ *  pbs_attribute.  This is used by the Hold Job and Release Job request,
+ * therefore it is an error if the hold-types pbs_attribute is not present,
  * or there is more than one.
  *
- * Decode the hold attribute into temphold.
+ * Decode the hold pbs_attribute into temphold.
  */
 
 int get_hold(
 
-  tlist_head *phead,
-  char      **pset,     /* O - ptr to hold value */
-  attribute *temphold)   /* O - ptr to attribute to decode value into  */
+  tlist_head     *phead,
+  char          **pset,     /* O - ptr to hold value */
+  pbs_attribute  *temphold)   /* O - ptr to pbs_attribute to decode value into  */
 
 
   {
@@ -657,7 +657,7 @@ int get_hold(
     return(PBSE_IVALREQ);
     }
 
-  /* decode into temporary attribute structure */
+  /* decode into temporary pbs_attribute structure */
 
   clear_attr(temphold, &job_attr_def[JOB_ATR_hold]);
 
@@ -686,7 +686,7 @@ static void process_hold_reply(
 
   {
   job                  *pjob;
-  attribute             temphold;
+  pbs_attribute         temphold;
 
   struct batch_request *preq;
   int                   newstate;

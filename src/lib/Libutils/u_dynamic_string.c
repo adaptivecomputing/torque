@@ -82,6 +82,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "attribute.h"
 #include "pbs_error.h"
 #include "dynamic_string.h"
 #include "log.h" /* for MAXLINE */
@@ -98,7 +99,7 @@
 size_t need_to_grow(
 
   dynamic_string *ds,
-  char           *to_check)
+  const char     *to_check)
 
   {
   size_t to_add = strlen(to_check) + 1;
@@ -121,7 +122,7 @@ size_t need_to_grow(
 int resize_if_needed(
 
   dynamic_string *ds,
-  char           *to_check)
+  const char     *to_check)
 
   {
   size_t  new_size = need_to_grow(ds, to_check);
@@ -151,7 +152,7 @@ int resize_if_needed(
 int size_to_dynamic_string(
     
   dynamic_string    *ds,   /* O */
-  struct size_value  szv)  /* I */
+  struct size_value *szv)  /* I */
 
   {
   char buffer[MAXLINE];
@@ -160,13 +161,13 @@ int size_to_dynamic_string(
   if (ds->used == 0)
     add_one = TRUE;
 
-  sprintf(buffer, "%lukb", szv.atsv_num);
+  sprintf(buffer, "%lukb", szv->atsv_num);
   resize_if_needed(ds, buffer);
 
-  sprintf(buffer, "%lu", szv.atsv_num);
+  sprintf(buffer, "%lu", szv->atsv_num);
   strcat(ds->str, buffer);
   
-  switch (szv.atsv_shift)
+  switch (szv->atsv_shift)
     {
     case 10:
 
@@ -217,8 +218,8 @@ int size_to_dynamic_string(
  */
 int append_dynamic_string(
     
-  dynamic_string *ds, /* M */
-  char *to_append)    /* I */
+  dynamic_string *ds,        /* M */
+  const char     *to_append) /* I */
 
   {
   int len = strlen(to_append);
@@ -248,7 +249,7 @@ int append_dynamic_string(
 int append_dynamic_string_xml(
     
   dynamic_string *ds,
-  char           *str)
+  const char     *str)
 
   {
   int i;
@@ -333,7 +334,7 @@ int append_dynamic_string_xml(
 int copy_to_end_of_dynamic_string(
 
   dynamic_string *ds,
-  char           *to_copy)
+  const char     *to_copy)
 
   {
   int     len = strlen(to_copy) + 1;
@@ -358,8 +359,8 @@ int copy_to_end_of_dynamic_string(
  */
 dynamic_string *get_dynamic_string(
     
-  int   initial_size, /* I (-1 means default) */
-  char *str)          /* I (optional) */
+  int         initial_size, /* I (-1 means default) */
+  const char *str)          /* I (optional) */
 
   {
   dynamic_string *ds = calloc(1, sizeof(dynamic_string));

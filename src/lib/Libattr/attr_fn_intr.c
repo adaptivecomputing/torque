@@ -99,11 +99,11 @@
  * Decoding the value string to the machine representation.
  * Encoding the machine representation of the value to a string
  * Setting the value by =, + or - operators.
- * Comparing a (decoded) value with the attribute value.
- * Freeing the space calloc-ed to the attribute value.
+ * Comparing a (decoded) value with the pbs_attribute value.
+ * Freeing the space calloc-ed to the pbs_attribute value.
  *
- * Some or all of the functions for an attribute type may be shared with
- * other attribute types.
+ * Some or all of the functions for an pbs_attribute type may be shared with
+ * other pbs_attribute types.
  *
  * The prototypes are declared in "attribute.h"
  *
@@ -111,7 +111,7 @@
  * Set of General functions for attributes of type interactive
  * -----------------------------------------------------------
  *
- * This attribute contains the port number to which an Interactive qsub is
+ * This pbs_attribute contains the port number to which an Interactive qsub is
  * listening.
  */
 
@@ -119,9 +119,9 @@
 /* decode_interactive - use decode_l() */
 
 /*
- * encode_inter - encode attribute of type ATR_TYPE_STR to attr_extern
+ * encode_inter - encode pbs_attribute of type ATR_TYPE_STR to attr_extern
  *
- * Special case for "interactive" attribute,  decode into TRUE/FALSE
+ * Special case for "interactive" pbs_attribute,  decode into TRUE/FALSE
  * for  client, decode into port number for all others.
  *
  * Returns: >0 size of data returned to buffer
@@ -132,12 +132,12 @@
 
 int encode_inter(
 
-  attribute  *attr,  /* ptr to attribute */
-  tlist_head *phead,  /* head of attribute list */
-  char       *atname, /* attribute name */
-  char       *rsname, /* resource name or null */
-  int         mode,  /* encode mode, unused here */
-  int         perm) /* only used for resources */
+  pbs_attribute  *attr,   /* ptr to pbs_attribute */
+  tlist_head     *phead,  /* head of pbs_attribute list */
+  char           *atname, /* pbs_attribute name */
+  char           *rsname, /* resource name or null */
+  int             mode,   /* encode mode, unused here */
+  int             perm)   /* only used for resources */
 
   {
   if (mode == ATR_ENCODE_CLIENT)

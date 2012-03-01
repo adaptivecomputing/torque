@@ -208,14 +208,14 @@ int initialize_procct(
   job *pjob)
 
   { 
-  resource     *pnodesp = NULL;
-  resource_def *pnodes_def = NULL;
-  resource     *pprocsp = NULL;
-  resource_def *pprocs_def = NULL;
-  resource     *procctp = NULL;
-  resource_def *procct_def = NULL;
-  attribute    *pattr = NULL;
-  char          log_buf[LOCAL_LOG_BUF_SIZE];
+  resource      *pnodesp = NULL;
+  resource_def  *pnodes_def = NULL;
+  resource      *pprocsp = NULL;
+  resource_def  *pprocs_def = NULL;
+  resource      *procctp = NULL;
+  resource_def  *procct_def = NULL;
+  pbs_attribute *pattr = NULL;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
   if (pattr == NULL)
@@ -240,7 +240,7 @@ int initialize_procct(
       }
     pnodesp = find_resc_entry(pattr, pnodes_def);
 
-    /* Get the procs count if the procs resource attribute is set */
+    /* Get the procs count if the procs resource pbs_attribute is set */
     pprocs_def = find_resc_def(svr_resc_def, "procs", svr_resc_size);
     if (pprocs_def != NULL)
       {
@@ -269,7 +269,7 @@ int initialize_procct(
         }
       }
 
-    /* we now set pjob->procct and we also set the resource attribute procct */
+    /* we now set pjob->procct and we also set the resource pbs_attribute procct */
     procct_def = find_resc_def(svr_resc_def, "procct", svr_resc_size);
     if (procct_def == NULL)
       {
@@ -321,10 +321,10 @@ int remove_procct(
   job *pjob)
 
   {
-  attribute    *pattr;
-  resource_def *pctdef;
-  resource     *pctresc;
-  char          log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_attribute *pattr;
+  resource_def  *pctdef;
+  resource      *pctresc;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
   if (pattr == NULL)
@@ -417,7 +417,7 @@ int default_router(
       continue;
 
     /* We need to manage the procct resource which is 
-       part of the Resource_List attribute. At this point 
+       part of the Resource_List pbs_attribute. At this point 
        we need to remember what the procct value is and also
 	     make sure it is in the Resource_List before calling
 	     svr_movejob. See ROUTE_RETRY to see what is done

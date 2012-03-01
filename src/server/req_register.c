@@ -120,21 +120,21 @@ extern long calc_job_cost(job *);
 
 /* Local Private Functions */
 
-void set_depend_hold(job *, attribute *);
+void set_depend_hold(job *, pbs_attribute *);
 static int register_sync(struct depend *,  char *child, char *host, long);
-static int register_dep(attribute *, struct batch_request *, int, int *);
-static int unregister_dep(attribute *, struct batch_request *);
-static int unregister_sync(attribute *, struct batch_request *);
+static int register_dep(pbs_attribute *, struct batch_request *, int, int *);
+static int unregister_dep(pbs_attribute *, struct batch_request *);
+static int unregister_sync(pbs_attribute *, struct batch_request *);
 
-static struct depend *find_depend(int type, attribute *pattr);
+static struct depend *find_depend(int type, pbs_attribute *pattr);
 
-static struct depend *make_depend(int type, attribute *pattr);
+static struct depend *make_depend(int type, pbs_attribute *pattr);
 
 static struct depend_job *find_dependjob(struct depend *, char *name);
 
 static struct depend_job *make_dependjob(struct depend *, char *jobid, char *host);
 static void   del_depend_job(struct depend_job *pdj);
-static int    build_depend(attribute *, char *);
+static int    build_depend(pbs_attribute *, char *);
 static void   clear_depend(struct depend *, int type, int exists);
 static void   del_depend(struct depend *);
 static void   release_cheapest(job *, struct depend *);
@@ -175,7 +175,7 @@ void *req_register(
   {
   struct batch_request *preq = (struct batch_request *)vp;
   int                   made;
-  attribute            *pattr;
+  pbs_attribute        *pattr;
 
   struct depend        *pdep;
 
@@ -1000,7 +1000,7 @@ static void post_doq(
 
   char *msg;
   job  *pjob;
-  attribute       *pattr;
+  pbs_attribute       *pattr;
 
   struct depend     *pdp;
 
@@ -1061,16 +1061,16 @@ static void post_doq(
 
 
 /*
- * alter_unreg - if required, unregister dependencies on alter of attribute
+ * alter_unreg - if required, unregister dependencies on alter of pbs_attribute
  * This is called from depend_on_que() when is is acting as the at_action
- * routine for the dependency attribute.
+ * routine for the dependency pbs_attribute.
  */
 
 static void alter_unreg(
 
-  job     *pjob,
-  attribute *old,  /* current job dependency attribure */
-  attribute *new)  /* job dependency attribute after alter */
+  job           *pjob,
+  pbs_attribute *old,  /* current job dependency attribure */
+  pbs_attribute *new)  /* job dependency pbs_attribute after alter */
 
   {
   struct depend     *poldd;
@@ -1119,14 +1119,14 @@ static void alter_unreg(
  * that needs action when the job is queued into an execution queue.
  *
  * Called from svr_enquejob() when a job enters an
- * execution queue.  Also  the at_action routine for the attribute.
+ * execution queue.  Also  the at_action routine for the pbs_attribute.
  */
 
 int depend_on_que(
 
-  attribute *pattr,
-  void       *pj,
-  int        mode)
+  pbs_attribute *pattr,
+  void          *pj,
+  int            mode)
 
   {
   long               cost;
@@ -1222,13 +1222,13 @@ static void post_doe(
 
   {
   struct batch_request *preq = pwt->wt_parm1;
-  char       *jobid = preq->rq_ind.rq_register.rq_child;
-  attribute      *pattr;
+  char                 *jobid = preq->rq_ind.rq_register.rq_child;
+  pbs_attribute        *pattr;
 
-  struct depend      *pdep;
+  struct depend        *pdep;
 
-  struct depend_job  *pdj;
-  job       *pjob;
+  struct depend_job    *pdj;
+  job                  *pjob;
 
   pjob = find_job(jobid);
 
@@ -1357,7 +1357,7 @@ int depend_on_exec(
  * appropriate.
  *
  * This function is invoked from on_job_exit() in req_jobobit.c.
- * When there are no depends to deal with, free the attribute and
+ * When there are no depends to deal with, free the pbs_attribute and
  * recall on_job_exit().
  */
 
@@ -1366,16 +1366,16 @@ int depend_on_term(
   job *pjob)
 
   {
-  int        exitstat = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-  int        op;
-  attribute     *pattr;
+  int                exitstat = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+  int                op;
+  pbs_attribute     *pattr;
 
-  struct depend *pdep;
+  struct depend     *pdep;
 
   struct depend_job *pparent;
-  int        rc;
-  int        shouldkill = 0;
-  int        type;
+  int                rc;
+  int                shouldkill = 0;
+  int                type;
 
   pattr = &pjob->ji_wattr[JOB_ATR_depend];
 
@@ -1561,8 +1561,8 @@ static void release_cheapest(
 
 void set_depend_hold(
 
-  job       *pjob,
-  attribute *pattr)
+  job           *pjob,
+  pbs_attribute *pattr)
 
   {
   int  loop = 1;
@@ -1702,7 +1702,7 @@ void set_depend_hold(
 
 
 /*
- * depend_clrrdy - clear state ready flags in job dependency attribute
+ * depend_clrrdy - clear state ready flags in job dependency pbs_attribute
  */
 
 void depend_clrrdy(
@@ -1744,8 +1744,8 @@ void depend_clrrdy(
 
 static struct depend *find_depend(
 
-  int        type,
-  attribute *pattr)
+  int            type,
+  pbs_attribute *pattr)
 
   {
 
@@ -1777,8 +1777,8 @@ static struct depend *find_depend(
 
 static struct depend *make_depend(
 
-  int        type,
-  attribute *pattr)
+  int            type,
+  pbs_attribute *pattr)
 
   {
 
@@ -1862,15 +1862,13 @@ static int register_sync(
 
 static int register_dep(
 
-  attribute        *pattr,
+  pbs_attribute        *pattr,
   struct batch_request *preq,
-  int          type,
-  int         *made) /* RETURN */
+  int                   type,
+  int                  *made) /* RETURN */
 
   {
-
   struct depend     *pdep;
-
   struct depend_job *pdj;
 
   /* change into the mirror image type */
@@ -1925,7 +1923,7 @@ static int register_dep(
 
 static int unregister_dep(
 
-  attribute            *pattr,
+  pbs_attribute        *pattr,
   struct batch_request *preq)
 
   {
@@ -1961,7 +1959,7 @@ static int unregister_dep(
 
 static int unregister_sync(
 
-  attribute            *pattr,
+  pbs_attribute        *pattr,
   struct batch_request *preq)
 
   {
@@ -2166,17 +2164,17 @@ static int send_depend_req(
 /*
  * This section contains general function for dependency attributes
  *
- * Each attribute has functions for:
+ * Each pbs_attribute has functions for:
  * Decoding the value string to the machine representation.
- * Encoding the internal representation of the attribute to external
+ * Encoding the internal representation of the pbs_attribute to external
  * Setting the value by =, + or - operators.
- * Comparing a (decoded) value with the attribute value.
- * Freeing the space calloc-ed to the attribute value.
+ * Comparing a (decoded) value with the pbs_attribute value.
+ * Freeing the space calloc-ed to the pbs_attribute value.
  *
  * The prototypes are declared in "attribute.h"
  *
  * ----------------------------------------------------------------------------
- * Attribute functions for attributes of type "dependency".
+ * pbs_Attribute functions for attributes of type "dependency".
  *
  * The "encoded" or external form of the value is a string with sub-strings
  * separated by commas and terminated by a null.
@@ -2232,11 +2230,11 @@ struct dependnames
 
 int decode_depend(
 
-  attribute *patr,
-  char      *name,  /* attribute name */
-  char      *rescn, /* resource name, unused here */
-  char      *val,   /* attribute value */
-  int        perm)  /* only used for resources */
+  pbs_attribute *patr,
+  char          *name,  /* attribute name */
+  char          *rescn, /* resource name, unused here */
+  char          *val,   /* attribute value */
+  int            perm)  /* only used for resources */
 
   {
   int  rc;
@@ -2386,7 +2384,7 @@ static void fast_strcat(
 
 static int dup_depend(
 
-  attribute     *pattr,
+  pbs_attribute *pattr,
   struct depend *pd)
 
   {
@@ -2442,12 +2440,12 @@ static int dup_depend(
 
 int encode_depend(
 
-  attribute    *attr,   /* ptr to attribute to encode */
-  tlist_head   *phead,  /* ptr to head of attrlist list */
-  char	       *atname, /* attribute name */
-  char	       *rsname, /* resource name or null */
-  int           mode,   /* encode mode, unused here */
-  int           perm)   /* only used for resources */
+  pbs_attribute *attr,   /* ptr to attribute to encode */
+  tlist_head    *phead,  /* ptr to head of attrlist list */
+  char	        *atname, /* attribute name */
+  char	        *rsname, /* resource name or null */
+  int            mode,   /* encode mode, unused here */
+  int            perm)   /* only used for resources */
 
   {
   int      ct = 0;
@@ -2573,7 +2571,7 @@ int encode_depend(
 
 
 /*
- * set_depend - set value of attribute of dependency type to another
+ * set_depend - set value of pbs_attribute of dependency type to another
  *
  * A=B --> set of dependencies in A replaced by set in B
  * A+B --> dependencies in B added to list in A
@@ -2585,9 +2583,9 @@ int encode_depend(
 
 int set_depend(
 
-  struct attribute *attr,
-  struct attribute *new,
-  enum batch_op     op)
+  pbs_attribute *attr,
+  pbs_attribute *new,
+  enum batch_op  op)
 
   {
 
@@ -2661,23 +2659,19 @@ int set_depend(
 
 int comp_depend(
     
-  struct attribute *attr, 
-  struct attribute *with)
+  pbs_attribute *attr, 
+  pbs_attribute *with)
 
   {
-
   return (-1);
-
   }
 
 void free_depend(
 
-  struct attribute *attr)
+  pbs_attribute *attr)
 
   {
-
-  struct depend   *pdp;
-
+  struct depend     *pdp;
   struct depend_job *pdjb;
 
   while ((pdp = (struct depend *)GET_NEXT(attr->at_val.at_list)))
@@ -2712,8 +2706,8 @@ void free_depend(
 
 static int build_depend(
 
-  attribute *pattr,
-  char      *value)
+  pbs_attribute *pattr,
+  char          *value)
 
   {
 

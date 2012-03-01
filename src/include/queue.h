@@ -86,7 +86,7 @@
 #include "hash_table.h" /* hash_table_t */
 #include "pbs_ifl.h" /* PBS_MAXQUEUENAME */
 #include "server_limits.h" /* PBS_NUMJOBSTATE */
-#include "attribute.h" /* attribute_def, attribute */
+#include "attribute.h" /* attribute_def, pbs_attribute */
 
 #define INITIAL_QUEUE_SIZE 5
 
@@ -153,7 +153,7 @@ enum queueattr
   QE_ATR_KeepCompleted,
   QE_ATR_is_transit,
 
-  /* The following attribute apply only to routing queues... */
+  /* The following pbs_attribute apply only to routing queues... */
 
   QR_ATR_RouteDestin,
   QR_ATR_AltRouter,
@@ -203,7 +203,7 @@ typedef struct pbs_queue
 
   /* the queue attributes */
 
-  attribute qu_attr[QA_ATR_LAST];
+  pbs_attribute qu_attr[QA_ATR_LAST];
   } pbs_queue;
 
 

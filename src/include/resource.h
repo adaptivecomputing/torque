@@ -1,7 +1,7 @@
 #ifndef RESOURCE_H
 #define RESOURCE_H
 
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
@@ -94,12 +94,12 @@
  * structures as attributes.  Certain types, type related functions,
  * and flags may differ between the two.
  *
- * Within the resource structure, the value is contained in an attribute
- * substructure, this is done so the various attribute decode and encode
+ * Within the resource structure, the value is contained in an pbs_attribute
+ * substructure, this is done so the various pbs_attribute decode and encode
  * routines can be "reused".
  *
- * For any server, queue or job attribute which is a set of resources,
- * the attribute points to an list  of "resource" structures.
+ * For any server, queue or job pbs_attribute which is a set of resources,
+ * the pbs_attribute points to an list  of "resource" structures.
  * The value of the resource is contained in these structures.
  *
  * Unlike "attributes" which are typically identical between servers
@@ -113,18 +113,18 @@ typedef struct resource
   list_link            rs_link; /* link to other resources in list */
 
   struct resource_def *rs_defin; /* pointer to definition entry */
-  attribute            rs_value; /* attribute struct holding value */
+  pbs_attribute        rs_value; /* pbs_attribute struct holding value */
   } resource;
 
 typedef struct resource_def
   {
   char   *rs_name;
-  int     (*rs_decode)(attribute *, char *, char *, char *, int);
-  int     (*rs_encode)(attribute *, tlist_head *, char *, char *, int, int);
-  int     (*rs_set)(attribute *, attribute *, enum batch_op);
-  int     (*rs_comp)(attribute *, attribute *);
-  void    (*rs_free)(attribute *);
-  int     (*rs_action)(resource *, attribute *, int);
+  int     (*rs_decode)(pbs_attribute *, char *, char *, char *, int);
+  int     (*rs_encode)(pbs_attribute *, tlist_head *, char *, char *, int, int);
+  int     (*rs_set)(pbs_attribute *, pbs_attribute *, enum batch_op);
+  int     (*rs_comp)(pbs_attribute *, pbs_attribute *);
+  void    (*rs_free)(pbs_attribute *);
+  int     (*rs_action)(resource *, pbs_attribute *, int);
 
 unsigned int rs_flags:
   ATRFLAG; /* flags: R/O, ..., see attribute.h */
@@ -142,9 +142,9 @@ extern resource_def *svr_resc_def;
 /* size (num elements) in above  */
 extern int         svr_resc_size;
 
-extern resource     *add_resource_entry(attribute *, resource_def *);
+extern resource     *add_resource_entry(pbs_attribute *, resource_def *);
 extern resource_def *find_resc_def(resource_def *, char *, int);
-extern resource     *find_resc_entry(attribute *, resource_def *);
+extern resource     *find_resc_entry(pbs_attribute *, resource_def *);
 
 /* END resource.h */
 #endif

@@ -256,6 +256,18 @@ typedef struct node_iterator
   } node_iterator;
 
 
+
+typedef struct all_nodes
+  {
+  resizable_array *ra;
+  hash_table_t    *ht;
+
+  pthread_mutex_t *allnodes_mutex;
+  } all_nodes;
+
+
+
+
 struct pbsnode
   {
   char                 *nd_name; /* node's host name */
@@ -307,20 +319,12 @@ struct pbsnode
   struct AvlNode       *node_boards; /* private tree of numa nodes */
   char                 *numa_str; /* comma-delimited string of processor values */
   char                 *gpu_str; /* comma-delimited string of the number of gpus for each nodeboard */
+#ifdef USE_ALPS_LIB
+  all_nodes             alps_subnodes;
+#endif
 
   pthread_mutex_t      *nd_mutex; /* semaphore for accessing this node's data */
   };
-
-
-
-
-typedef struct all_nodes
-  {
-  resizable_array *ra;
-  hash_table_t    *ht;
-
-  pthread_mutex_t *allnodes_mutex;
-  } all_nodes;
 
 
 
@@ -453,7 +457,7 @@ int tlist(tree *, char *, int);
 /*
  * Although at the present time a struct pbssnode doesn't have an array of
  * attributes associated with it, it is convenient for the server's req_manager
- * function to use as much of the existing attribute processing functions and
+ * function to use as much of the existing pbs_attribute processing functions and
  * philosophy as practical to carry out any node modification requests sent via
  * "qmgr".   For this reason, and for the fact that some day struct pbssnodes
  * may be redefined to possess attributes, it is convenient to pretend that
@@ -518,6 +522,7 @@ extern int addr_ok(pbs_net_t,struct pbsnode *);
 
 struct pbsnode  *find_nodebyname(char *);
 int              create_partial_pbs_node(char *, unsigned long, int);
+struct pbssubn  *create_subnode(struct pbsnode *pnode);
 
 #ifdef BATCH_REQUEST_H 
 void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
@@ -528,7 +533,7 @@ struct pbssubn  *find_subnodebyname(char *);
 
 struct pbsnode  *find_nodebynameandaltname(char *, char *);
 void             free_prop_list(struct prop*);
-void             free_prop_attr(attribute*);
+void             free_prop_attr(pbs_attribute*);
 void             recompute_ntype_cnts();
 int              create_pbs_node(char *, svrattrl *, int, int *);
 int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);

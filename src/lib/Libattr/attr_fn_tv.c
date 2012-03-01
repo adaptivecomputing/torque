@@ -98,17 +98,17 @@ int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval 
  *
  * Each set has functions for:
  * Decoding the value string to the machine representation.
- * Encoding the internal attribute to external form
+ * Encoding the internal pbs_attribute to external form
  * Setting the value by =, + or - operators.
- * Comparing a (decoded) value with the attribute value.
+ * Comparing a (decoded) value with the pbs_attribute value.
  *
- * Some or all of the functions for an attribute type may be shared with
- * other attribute types.
+ * Some or all of the functions for an pbs_attribute type may be shared with
+ * other pbs_attribute types.
  *
  * The prototypes are declared in "attribute.h"
  *
  * --------------------------------------------------
- * The Set of Attribute Functions for attributes with
+ * The Set of pbs_Attribute Functions for attributes with
  * value type "struct timeval"
  * --------------------------------------------------
  */
@@ -116,7 +116,7 @@ int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval 
 #define ENCODE_TC_BUF_SIZE 256
 
 /*
- * decode_tv - decode struct timeval into attribute structure 
+ * decode_tv - decode struct timeval into pbs_attribute structure 
  *  
  * Returns: 0 if ok 
  *  		>0 error number
@@ -125,11 +125,11 @@ int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval 
 
 int decode_tv(
 
-  attribute *patr,
-  char      *name,  /* attribute name */
-  char      *rescn, /* resource name*/
-  char      *val,   /* attribute value */
-  int        perm)  /* only used for resources */
+  pbs_attribute *patr,
+  char          *name,  /* pbs_attribute name */
+  char          *rescn, /* resource name*/
+  char          *val,   /* pbs_attribute value */
+  int            perm)  /* only used for resources */
    
   {
   char 		*pc;
@@ -197,7 +197,7 @@ badval:
   } /* END decode_tv */
 
  /*
-  * encode_tv - encode attribute of type struct timeval into attr_extern 
+  * encode_tv - encode pbs_attribute of type struct timeval into attr_extern 
   * with the value in form of [seconds:microseconds] 
   *  
   * Returns: >0 if ok
@@ -207,12 +207,12 @@ badval:
 
 int encode_tv(
 
-  attribute  *attr,   /* ptr to attribute (value in attr->at_val.at_long) */
-  tlist_head *phead,  /* head of attrlist list (optional) */
-  char       *atname, /* attribute name */
-  char       *rsname, /* resource name (optional) */
-  int 		    mode,   /* endcode mode (not used) */
-  int         perm)   /* only used for resources */
+  pbs_attribute  *attr,   /* ptr to pbs_attribute (value in attr->at_val.at_long) */
+  tlist_head     *phead,  /* head of attrlist list (optional) */
+  char           *atname, /* pbs_attribute name */
+  char           *rsname, /* resource name (optional) */
+  int             mode,   /* endcode mode (not used) */
+  int             perm)   /* only used for resources */
 
   {
   size_t 		 ct;
@@ -268,7 +268,7 @@ int encode_tv(
   }
 
 /*
- * set_tv - set attribute A to attribute B,
+ * set_tv - set pbs_attribute A to pbs_attribute B,
  * either A=B, A += B, or A -= B
  *
  * Returns: 0 if ok
@@ -277,8 +277,8 @@ int encode_tv(
 
 int set_tv(
 
-	struct attribute *attr, 
-	struct attribute *new, 
+  pbs_attribute *attr, 
+  pbs_attribute *new, 
 	enum batch_op op)
 
   {
@@ -321,8 +321,8 @@ int set_tv(
 
 int comp_tv(
     
-  struct attribute *attr,
-  struct attribute *with)
+  pbs_attribute *attr,
+  pbs_attribute *with)
 
   {
 
@@ -354,9 +354,9 @@ int comp_tv(
 
 int job_radix_action (
 
-  attribute *new,
-  void      *pobj,
-  int       actmode)
+  pbs_attribute *new,
+  void          *pobj,
+  int            actmode)
 
   {
   job *pjob;

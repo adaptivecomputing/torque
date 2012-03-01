@@ -471,7 +471,7 @@ int modify_job(
     {
     while (plist != NULL)
       {
-      /* is the attribute modifiable in RUN state ? */
+      /* is the pbs_attribute modifiable in RUN state ? */
 
       i = find_attr(job_attr_def, plist->al_name, JOB_ATR_LAST);
 
@@ -1186,13 +1186,13 @@ int modify_job_attr(
   int      *bad)   /* O */
 
   {
-  int        allow_unkn = -1;
-  long       i;
-  attribute  newattr[JOB_ATR_LAST];
-  attribute *pattr;
-  int        rc;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
-  pbs_queue *pque;
+  int            allow_unkn = -1;
+  long           i;
+  pbs_attribute  newattr[JOB_ATR_LAST];
+  pbs_attribute *pattr;
+  int            rc;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_queue     *pque;
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {

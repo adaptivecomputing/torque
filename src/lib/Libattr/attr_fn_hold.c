@@ -97,10 +97,10 @@
 
 /*
  * This file contains special decode and encode functions for the hold-types
- * attribute.  All other functions for this attribute are the standard
+ * pbs_attribute.  All other functions for this pbs_attribute are the standard
  * _b (boolean) routines.
  *
- * decode_hold - decode string into hold attribute
+ * decode_hold - decode string into hold pbs_attribute
  *
  * Returns: 0 if 0k
  *  >0 error number if error
@@ -109,11 +109,11 @@
 
 int decode_hold(
 
-  attribute *patr,
-  char      *name,  /* attribute name */
-  char      *rescn,  /* resource name - unused here */
-  char      *val,  /* attribute value */
-  int        perm) /* only used for resources */
+  pbs_attribute *patr,
+  char          *name,  /* pbs_attribute name */
+  char          *rescn,  /* resource name - unused here */
+  char          *val,  /* pbs_attribute value */
+  int            perm) /* only used for resources */
 
   {
   char  *pc;
@@ -160,7 +160,7 @@ int decode_hold(
   }
 
 /*
- * encode_str - encode attribute of type ATR_TYPE_STR into attr_extern
+ * encode_str - encode pbs_attribute of type ATR_TYPE_STR into attr_extern
  *
  * Returns: >0 if ok
  *   =0 if no value, so no link added to list
@@ -170,12 +170,12 @@ int decode_hold(
 
 int encode_hold(
 
-  attribute  *attr,   /* ptr to attribute */
-  tlist_head *phead,   /* head of attrlist */
-  char       *atname,  /* name of attribute */
-  char       *rsname,  /* resource name or null */
-  int         mode,   /* encode mode, unused here */
-  int         perm) /* only used for resources */
+  pbs_attribute  *attr,   /* ptr to pbs_attribute */
+  tlist_head     *phead,  /* head of attrlist */
+  char           *atname, /* name of pbs_attribute */
+  char           *rsname, /* resource name or null */
+  int             mode,   /* encode mode, unused here */
+  int             perm)   /* only used for resources */
 
 
   {
@@ -223,8 +223,11 @@ int encode_hold(
  *    0 if 1st == 2nd
  */
 
-int
-comp_hold(struct attribute *attr, struct attribute *with)
+int comp_hold(
+   
+  pbs_attribute *attr,
+  pbs_attribute *with)
+
   {
   if (!attr || !with)
     return -1;

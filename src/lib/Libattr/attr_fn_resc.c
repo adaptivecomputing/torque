@@ -95,15 +95,15 @@
  * This file contains functions for manipulating attributes of type
  * resource
  *
- * A "resource" is similiar to an attribute but with two levels of
- * names.  The first name is the attribute name, e.g. "resource-list",
+ * A "resource" is similiar to an pbs_attribute but with two levels of
+ * names.  The first name is the pbs_attribute name, e.g. "resource-list",
  * the second name is the resource name, e.g. "mem".
  *
  * Each resource_def has functions for:
  * Decoding the value string to the internal representation.
- * Encoding the internal attribute to external form
+ * Encoding the internal pbs_attribute to external form
  * Setting the value by =, + or - operators.
- * Comparing a (decoded) value with the attribute value.
+ * Comparing a (decoded) value with the pbs_attribute value.
  * freeing the resource value space (if extra memory is allocated)
  *
  * Some or all of the functions for an resource type may be shared with
@@ -112,7 +112,7 @@
  * The prototypes are declared in "attribute.h", also see resource.h
  *
  * ----------------------------------------------------------------------------
- * Attribute functions for attributes with value type resource
+ * pbs_Attribute functions for attributes with value type resource
  * ----------------------------------------------------------------------------
  */
 
@@ -126,8 +126,8 @@ int comp_resc_nc; /* count of resources not compared */
 
 
 /*
- * decode_resc - decode a "attribute name/resource name/value" triplet into
- *          a resource type attribute
+ * decode_resc - decode a "pbs_attribute name/resource name/value" triplet into
+ *          a resource type pbs_attribute
  *
  * Returns: 0 if ok,
  *  >0 error number if error,
@@ -136,11 +136,11 @@ int comp_resc_nc; /* count of resources not compared */
 
 int decode_resc(
 
-  struct attribute *patr,  /* Modified on Return */
-  char             *name,  /* attribute name */
-  char             *rescn, /* I resource name - is used here */
-  char             *val,   /* resource value */
-  int               perm)  /* access permissions */
+  pbs_attribute *patr,  /* Modified on Return */
+  char          *name,  /* pbs_attribute name */
+  char          *rescn, /* I resource name - is used here */
+  char          *val,   /* resource value */
+  int            perm)  /* access permissions */
 
   {
   resource *prsc;
@@ -216,11 +216,11 @@ int decode_resc(
 /*
  * encode_resc - encode attr of type ATR_TYPE_RESR into attr_extern form
  *
- * Here we are a little different from the typical attribute.  Most have a
- * single value to be encoded.  But resource attribute may have a whole bunch.
- * First get the name of the parent attribute (typically "resource-list").
+ * Here we are a little different from the typical pbs_attribute.  Most have a
+ * single value to be encoded.  But resource pbs_attribute may have a whole bunch.
+ * First get the name of the parent pbs_attribute (typically "resource-list").
  * Then for each resource in the list, call the individual resource decode
- * routine with "aname" set to the parent attribute name.
+ * routine with "aname" set to the parent pbs_attribute name.
  *
  * If mode is either ATR_ENCODE_SAVE or ATR_ENCODE_SVR, then any resource
  * currently set to the default value is not encoded.   This allows it to be
@@ -229,7 +229,7 @@ int decode_resc(
  * If the mode is ATR_ENCODE_CLIENT or ATR_ENCODE_MOM, the client permission
  * passed in ac_perm is checked against each
  * definition.  This allows a resource by resource access setting, not just
- * on the attribute.
+ * on the pbs_attribute.
  *
  * Returns: >0 if ok
  *   =0 if no value to encode, no entries added to list
@@ -238,12 +238,12 @@ int decode_resc(
 
 int encode_resc(
 
-  attribute  *attr,    /* ptr to attribute to encode */
-  tlist_head *phead,   /* head of attrlist list */
-  char       *atname,  /* attribute name */
-  char       *rsname,  /* resource name, null on call */
-  int         mode,    /* encode mode */
-  int         ac_perm) /* access permissions */
+  pbs_attribute  *attr,    /* ptr to pbs_attribute to encode */
+  tlist_head     *phead,   /* head of attrlist list */
+  char           *atname,  /* pbs_attribute name */
+  char           *rsname,  /* resource name, null on call */
+  int             mode,    /* encode mode */
+  int             ac_perm) /* access permissions */
 
   {
   int     dflt;
@@ -301,9 +301,9 @@ int encode_resc(
 
 
 /*
- * set_resc - set value of attribute of type ATR_TYPE_RESR to another
+ * set_resc - set value of pbs_attribute of type ATR_TYPE_RESR to another
  *
- * For each resource in the list headed by the "new" attribute,
+ * For each resource in the list headed by the "new" pbs_attribute,
  * the correspondingly name resource in the list headed by "old"
  * is modified.
  *
@@ -315,9 +315,9 @@ int encode_resc(
 
 int set_resc(
 
-  struct attribute *old,
-  struct attribute *new,
-  enum batch_op     op)
+  pbs_attribute *old,
+  pbs_attribute *new,
+  enum batch_op  op)
 
   {
   enum batch_op local_op;
@@ -405,8 +405,8 @@ int set_resc(
 
 int comp_resc(
 
-  struct attribute *attr,  /* I queue's min/max attributes */
-  struct attribute *with)  /* I job's current requirements/attributes */
+  pbs_attribute *attr,  /* I queue's min/max attributes */
+  pbs_attribute *with)  /* I job's current requirements/attributes */
 
   {
   resource *atresc;
@@ -428,7 +428,7 @@ int comp_resc(
   /* comparison is job centric */
 
   /* NOTE:  this check only enforces attributes if the job specifies the
-            attribute.  If the queue has a min requirement of resource X
+            pbs_attribute.  If the queue has a min requirement of resource X
             and the job has no value set for this resource, this routine
             will not trigger comp_resc_lt */
 
@@ -501,8 +501,8 @@ int comp_resc(
 
 int comp_resc2(
 
-  struct attribute   *attr,           /* I queue's min/max attributes */
-  struct attribute   *with,           /* I job's current requirements/attributes */
+  pbs_attribute      *attr,           /* I queue's min/max attributes */
+  pbs_attribute      *with,           /* I job's current requirements/attributes */
   int                 IsQueueCentric, /* I */
   char               *EMsg,           /* O (optional,minsize=1024) */
   enum compare_types  type)           /* I type of comparison to detect */
@@ -596,7 +596,7 @@ int comp_resc2(
     /* comparison is job centric */
 
     /* NOTE:  this check only enforces attributes if the job specifies the
-              attribute.  If the queue has a min requirement of resource X
+              pbs_attribute.  If the queue has a min requirement of resource X
               and the job has no value set for this resource, this routine
               will not trigger comp_resc_lt */
 
@@ -667,7 +667,7 @@ int comp_resc2(
 
 
 /*
- * free_resc - free space associated with attribute value
+ * free_resc - free space associated with pbs_attribute value
  *
  * For each entry in the resource list, the entry is delinked,
  * the resource entry value space freed (by calling the resource
@@ -676,7 +676,7 @@ int comp_resc2(
 
 void free_resc(
 
-  attribute *pattr)
+  pbs_attribute *pattr)
 
   {
   resource *next;
@@ -743,14 +743,14 @@ resource_def *find_resc_def(
 
 /*
  * find_resc_entry - find a resource (value) entry in a list headed in an
- * an attribute that points to the specified resource_def structure
+ * an pbs_attribute that points to the specified resource_def structure
  *
  * Returns: pointer to struct resource or NULL
  */
 
 resource *find_resc_entry(
 
-  attribute    *pattr,  /* I */
+  pbs_attribute    *pattr,  /* I */
   resource_def *rscdf)  /* I */
 
   {
@@ -774,9 +774,9 @@ resource *find_resc_entry(
 
 /*
  * add_resource_entry - add and "unset" entry for a resource type to a
- * list headed in an attribute.  Just for later displaying, the
+ * list headed in an pbs_attribute.  Just for later displaying, the
  * resource list is maintained in an alphabetic order.
- * The parent attribute is marked with ATR_VFLAG_SET and ATR_VFLAG_MODIFY
+ * The parent pbs_attribute is marked with ATR_VFLAG_SET and ATR_VFLAG_MODIFY
  *
  * Returns: pointer to the newly added entry or NULL if unable
  *   to add it (calloc failed).  If the resource already
@@ -785,8 +785,8 @@ resource *find_resc_entry(
 
 resource *add_resource_entry(
 
-  attribute    *pattr,
-  resource_def *prdef)
+  pbs_attribute    *pattr,
+  resource_def     *prdef)
 
   {
   int    i;
@@ -840,16 +840,16 @@ resource *add_resource_entry(
 
 
 /*
- * action_resc - the at_action for the resource_list attribute
+ * action_resc - the at_action for the resource_list pbs_attribute
  * For each resource in the list, if it has its own action routine,
  * call it.
  */
 
 int action_resc(
 
-  attribute *pattr,
-  void      *pobject,
-  int        actmode)
+  pbs_attribute *pattr,
+  void          *pobject,
+  int            actmode)
 
   {
   resource *pr;
