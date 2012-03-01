@@ -8,6 +8,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Only seed the random number generator once
   b - if using a default hierarchy and moms on non-default ports, pass that information
       along in the hierarchy
+  e - Make pbs_server contact pbs_moms in the order in which they appear in the hierarchy
+      in order to reduce errors on start-up of a large cluster.
 
 4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 

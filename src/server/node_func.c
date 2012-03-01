@@ -693,30 +693,31 @@ int initialize_pbsnode(
   {
   memset(pnode, 0, sizeof(struct pbsnode));
 
-  pnode->nd_name        = pname;
-  pnode->nd_mom_port    = PBS_MOM_SERVICE_PORT;
-  pnode->nd_mom_rm_port = PBS_MANAGER_SERVICE_PORT;
-  pnode->nd_addrs       = pul;       /* list of host byte order */
-  pnode->nd_ntype       = ntype;
-  pnode->nd_nsn         = 0;
-  pnode->nd_nsnfree     = 0;
-  pnode->nd_needed      = 0;
-  pnode->nd_order       = 0;
-  pnode->nd_prop        = NULL;
-  pnode->nd_status      = NULL;
-  pnode->nd_note        = NULL;
-  pnode->nd_psn         = NULL;
-  pnode->nd_state       = INUSE_NEEDS_HELLO_PING | INUSE_DOWN;
-  pnode->nd_first       = init_prop(pnode->nd_name);
-  pnode->nd_last        = pnode->nd_first;
-  pnode->nd_f_st        = init_prop(pnode->nd_name);
-  pnode->nd_l_st        = pnode->nd_f_st;
-  pnode->nd_nprops      = 0;
-  pnode->nd_nstatus     = 0;
-  pnode->nd_warnbad     = 0;
-  pnode->nd_ngpus       = 0;
-  pnode->nd_gpustatus   = NULL;
-  pnode->nd_ngpustatus  = 0;
+  pnode->nd_name            = pname;
+  pnode->nd_mom_port        = PBS_MOM_SERVICE_PORT;
+  pnode->nd_mom_rm_port     = PBS_MANAGER_SERVICE_PORT;
+  pnode->nd_addrs           = pul;       /* list of host byte order */
+  pnode->nd_ntype           = ntype;
+  pnode->nd_nsn             = 0;
+  pnode->nd_nsnfree         = 0;
+  pnode->nd_needed          = 0;
+  pnode->nd_order           = 0;
+  pnode->nd_prop            = NULL;
+  pnode->nd_status          = NULL;
+  pnode->nd_note            = NULL;
+  pnode->nd_psn             = NULL;
+  pnode->nd_state           = INUSE_NEEDS_HELLO_PING | INUSE_DOWN;
+  pnode->nd_first           = init_prop(pnode->nd_name);
+  pnode->nd_last            = pnode->nd_first;
+  pnode->nd_f_st            = init_prop(pnode->nd_name);
+  pnode->nd_l_st            = pnode->nd_f_st;
+  pnode->nd_hierarchy_level = -1; /* maximum unsigned short */
+  pnode->nd_nprops          = 0;
+  pnode->nd_nstatus         = 0;
+  pnode->nd_warnbad         = 0;
+  pnode->nd_ngpus           = 0;
+  pnode->nd_gpustatus       = NULL;
+  pnode->nd_ngpustatus      = 0;
 
   pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
@@ -3218,6 +3219,35 @@ int add_hello(
 
   return(rc);
   } /* END add_hello() */
+
+
+
+
+int add_hello_after(
+
+  hello_container *hc,
+  char            *node_name,
+  int              index)
+
+  {
+  hello_info *hi = calloc(1, sizeof(hello_info));
+  int         rc;
+
+  hi->name = node_name;
+
+  pthread_mutex_lock(hc->hello_mutex);
+
+  if ((rc = insert_thing_after(hc->ra, hi, index)) == -1)
+    {
+    rc = ENOMEM;
+    free(hi->name);
+    free(hi);
+    }
+
+  pthread_mutex_unlock(hc->hello_mutex);
+
+  return(rc);
+  } /* END insert_thing_after() */
 
 
 

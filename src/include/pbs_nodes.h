@@ -118,6 +118,7 @@
 
 #define PBS_MAXNODENAME 80 /* upper bound on the node name size    */
 #define BM_ERROR -20
+#define MAX_LEVEL_DEPTH 100 /* maximum levels per path */
 
 
 enum psit
@@ -303,6 +304,7 @@ struct pbsnode
   short                 nd_order; /* order of user's request */
   time_t                nd_warnbad;
   time_t                nd_lastupdate; /* time of last update. */
+  unsigned short        nd_hierarchy_level;
   unsigned char         nd_in_hierarchy; /* set to TRUE if in the hierarchy file */
 
   short                 nd_ngpus;        /* number of gpus */ 
@@ -360,6 +362,7 @@ typedef struct hello_container
 void        initialize_hello_container(hello_container *);
 int         needs_hello(hello_container *, char *);
 int         add_hello(hello_container *, char *);
+int         add_hello_after(hello_container *, char *, int);
 int         add_hello_info(hello_container *, hello_info *);
 hello_info *pop_hello(hello_container *);
 int         remove_hello(hello_container *, char *);

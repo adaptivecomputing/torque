@@ -520,7 +520,8 @@ int can_resolve_hostname(
 
 void check_if_in_nodes_file(
 
-  char *hostname)
+  char *hostname,
+  int   level_index)
 
   {
   char             log_buf[LOCAL_LOG_BUF_SIZE];
@@ -546,6 +547,10 @@ void check_if_in_nodes_file(
     }
     
   pnode->nd_in_hierarchy = TRUE;
+
+  if (pnode->nd_hierarchy_level > level_index)
+    pnode->nd_hierarchy_level = level_index;
+
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
   if (colon != NULL)
@@ -559,10 +564,10 @@ void check_if_in_nodes_file(
 int handle_level(
     
   char           *level_iter,
-  dynamic_string *send_format)
+  dynamic_string *send_format,
+  int             level_index)
 
   {
-  char           *id = "handle_level";
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   char           *delims = ",";
   char           *host_tok;
@@ -570,7 +575,7 @@ int handle_level(
 
   if ((level_buf = get_dynamic_string(-1, NULL)) == NULL)
     {
-    log_err(ENOMEM, id, "Cannot allocate memory");
+    log_err(ENOMEM, __func__, "Cannot allocate memory");
     return(ENOMEM);
     }
 
@@ -588,14 +593,14 @@ int handle_level(
       snprintf(log_buf, sizeof(log_buf),
         "While parsing the mom hierarchy file, cannot resolve hostname %s",
         host_tok);
-      log_err(-1, id, log_buf);
+      log_err(-1, __func__, log_buf);
       }
     else
       {
       if (level_buf->used > 0)
         append_dynamic_string(level_buf, ",");
 
-      check_if_in_nodes_file(host_tok);
+      check_if_in_nodes_file(host_tok, level_index);
 
       append_dynamic_string(level_buf, host_tok);
       }
@@ -620,7 +625,6 @@ int handle_path(
   dynamic_string *send_format)
 
   {
-  char *id = "handle_path";
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   char *level_parent;
   char *level_child;
@@ -634,7 +638,7 @@ int handle_path(
     {
     if (!strncmp(level_parent,"level",strlen("level")))
       {
-      handle_level(level_child, send_format);
+      handle_level(level_child, send_format, level_index);
   
       level_index++;
       }
@@ -644,7 +648,7 @@ int handle_path(
       snprintf(log_buf, sizeof(log_buf),
         "Found noise in the mom hierarchy file. Ignoring <%s>%s</%s>",
         level_parent, level_child, level_parent);
-      log_err(-1, id, log_buf);
+      log_err(-1, __func__, log_buf);
       }
     }
   
@@ -798,19 +802,55 @@ dynamic_string *prepare_mom_hierarchy()
 
 
 
+int get_insertion_point(
+
+  struct pbsnode *pnode,
+  int            *indices)
+
+  {
+  int i;
+  int level = pnode->nd_hierarchy_level;
+  int insertion_point = 0;
+
+  for (i = level - 1; i >= 0; i--)
+    {
+    if (indices[i] != 0)
+      {
+      insertion_point = indices[i];
+      break;
+      }
+    }
+
+  return(insertion_point);
+  } /* END get_insertion_point() */
+
+
+
 
 void add_all_nodes_to_hello_container()
 
   {
   struct pbsnode *pnode;
   int             iter = -1;
+  int             level_indices[MAX_LEVEL_DEPTH];
+  int             insertion_index;
   char           *node_name_dup;
+
+  memset(level_indices, 0, sizeof(level_indices));
 
   while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
     {
-    node_name_dup = strdup(pnode->nd_name);
-    if (node_name_dup != NULL)
-      add_hello(&hellos, node_name_dup);
+    if ((node_name_dup = strdup(pnode->nd_name)) != NULL)
+      {
+      /* make sure to insert things in order */
+      if (level_indices[pnode->nd_hierarchy_level] == 0)
+        {
+        insertion_index = get_insertion_point(pnode, level_indices);
+        level_indices[pnode->nd_hierarchy_level] = add_hello_after(&hellos, node_name_dup, insertion_index);
+        }
+      else
+        add_hello_after(&hellos, node_name_dup, level_indices[pnode->nd_hierarchy_level]);
+      }
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
@@ -1976,7 +2016,6 @@ int pbsd_init_job(
   int  type)  /* I */
 
   {
-  char              id[] = "pbsd_init_job";
   unsigned int      d;
 
   time_t            time_now = time(NULL);
@@ -2180,7 +2219,7 @@ int pbsd_init_job(
           pthread_mutex_unlock(pa->ai_mutex);
           if (LOGLEVEL >= 7)
             {
-            sprintf(log_buf, "%s: unlocking ai_mutex", id);
+            sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
             }
           }
