@@ -8,6 +8,20 @@ if [ "$1" = "" ] ; then
   exit 1
   fi
 
+unset PBSDEBUG
+TRQ_CHECK=`pgrep trqauthd`
+TRQ_CHECK_RES=$?
+if [ "$TRQ_CHECK_RES" = "1" ]; then
+  TRQ_START=`trqauthd`
+  TRQ_START_RES=$?
+  if [ "$TRQ_START_RES" = "1" ]; then
+    echo "trqauthd failed to start!!! exiting setup"
+    exit 1
+  else
+    echo "trqauthd successfully started"
+  fi
+fi
+
 if [ "$2" = "" ] ; then
   # obtain name obtained from reverse lookup of ip address
   HOSTNAME=`perl -e "print +(gethostbyname(\"$(hostname)\"))[0]"`
