@@ -473,6 +473,8 @@ dynamic_string *make_default_hierarchy()
       append_dynamic_string(level_ds, buf);
       }
 
+    pnode->nd_hierarchy_level = 0;
+
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
