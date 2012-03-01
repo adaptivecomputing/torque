@@ -232,7 +232,6 @@ void          on_job_exit(struct work_task *);
 
 void  init_abt_job(job *);
 char *build_path(char *, char *, char *);
-void  catch_child(int);
 void  catch_abort(int);
 void  change_logs(int);
 void  change_log_level(int);
@@ -1089,13 +1088,7 @@ int pbsd_init(
     sigaction(SIGSYS,  &act, NULL);
     }
 
-#ifdef NO_SIGCHLD
   act.sa_handler = SIG_DFL;
-
-#else
-  act.sa_handler = catch_child;
-
-#endif
 
   if (sigaction(SIGCHLD, &act, &oact) != 0)
     {
@@ -2398,72 +2391,6 @@ void catch_abort(
 
 
 
-
-/*
- * catch_child() - the signal handler for  SIGCHLD.
- *
- * Collect child status and add to work list entry for that child.
- * The list entry is marked as immediate to show the child is gone and
- */
-
-void catch_child(
-
-  int sig)
-
-  {
-  pid_t        pid;
-  int          statloc;
-/*  char         log_buf[LOCAL_LOG_BUF_SIZE];*/
-
-  while (1)
-    {
-    if (((pid = waitpid(-1, &statloc, WNOHANG)) == -1) &&
-        (errno != EINTR))
-      {
-/*      if ((LOGLEVEL >= 7) && (errno != ECHILD))
-        {
-        log_err(errno, id, "waitpid failed");
-        }*/
-
-      return;
-      }
-
-    if (pid == 0)
-      {
-      return;
-      }
-
-/*    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "caught SIGCHLD for pid %d", pid);
-
-      log_record(
-        PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-        PBS_EVENTCLASS_SERVER,
-        msg_daemonname,
-        log_buf);
-      }*/
-    }    /* END while (1) */
-
-  return;
-  }  /* END catch_child() */
-
-
-/*
- * check_children() - Check for child proccess that have exited
- *
- */
-
-#ifdef NO_SIGCHLD
-void check_children(void)
-
-  {
-  catch_child(0);
-
-  return;
-  } /* END check_children() */
-
-#endif
 
 /*
  * changs_logs - signal handler for SIGHUP

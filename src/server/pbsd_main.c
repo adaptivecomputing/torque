@@ -152,9 +152,6 @@ extern void acct_close(void);
 extern int  svr_startjob(job *, struct batch_request *, char *, char *);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
-#ifdef NO_SIGCHLD
-extern void check_children();
-#endif
 void stream_eof(int, u_long, uint16_t, int);
 
 #ifndef MAX_PATH_LEN
@@ -1078,13 +1075,6 @@ void main_loop(void)
 
   log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
 
-#ifdef NO_SIGCHLD
-  log_record(
-    PBSEVENT_SYSTEM | PBSEVENT_FORCE,
-    PBS_EVENTCLASS_SERVER,
-    msg_daemonname,
-    "Server NOT using signal handler for SIGCHLD");
-#endif
   /* do not check nodes immediately as they will initially be marked
      down unless they have already reported in */
 
@@ -1225,19 +1215,6 @@ void main_loop(void)
 
       unlock_queue(pque, "main_loop", NULL, LOGLEVEL);
       } 
-
-#ifdef NO_SIGCHLD
-    pthread_mutex_lock(server.sv_qs_mutex);
-
-    /* if we have any jobs, check if any child jobs have completed */
-
-    if (server.sv_qs.sv_numjobs > 0)
-      {
-      check_children();
-      }
-    
-    pthread_mutex_unlock(server.sv_qs_mutex);
-#endif
 
     /* wait for a request and process it */
 

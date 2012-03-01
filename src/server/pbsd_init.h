@@ -35,12 +35,6 @@ int pbsd_init(int type);
 
 /* static void catch_abort(int sig); */
 
-/* static void catch_child(int sig); */
-
-#ifdef NO_SIGCHLD
-void check_children(void);
-#endif
-
 /* static void change_logs(int sig); */
 
 /* static void change_log_level(int sig); */

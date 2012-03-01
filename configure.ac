@@ -503,18 +503,6 @@ AC_ARG_ENABLE(qsub-keep-override, [
   *)   AC_MSG_ERROR(--enable-qsub-keep-override cannot take a value) ;;
 esac])dnl
 
-dnl
-dnl  ######################################################################
-dnl  No SIG_CHLD mode?
-dnl
-AC_MSG_CHECKING([whether to turn on the NO_SIGCHLD flag])
-AC_ARG_ENABLE(nochildsignal,
-    [  --enable-nochildsignal  turn on the NO_SIGCHLD flag],
-    enable_nochildsignal=$enableval, enable_nochildsignal=no)
-AC_MSG_RESULT($enable_nochildsignal)
-if test "x$enable_nochildsignal" = "xyes" ; then
-	AC_DEFINE(NO_SIGCHLD, 1, [turns on the compilation of NO_SIGCHLD code])
-fi
 
 
 dnl
