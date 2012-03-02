@@ -4,7 +4,7 @@
 #include <time.h> /* timeval */
 #include <pthread.h> /* pthread_mutex_t */
 
-#include "attribute.h" /* attribute_def, svrattrl, attribute */
+#include "attribute.h" /* attribute_def, svrattrl, pbs_attribute */
 #include "net_connect.h" /* pbs_net_t, conn_type */
 #include "server_limits.h" /* RECOV_WARM */
 #include "work_task.h" /* work _task, work_type, all_tasks */
@@ -92,7 +92,7 @@ pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   exit(1);
   }
 
-long attr_ifelse_long(attribute *attr1, attribute *attr2, long deflong)
+long attr_ifelse_long(pbs_attribute *attr1, pbs_attribute *attr2, long deflong)
   {
   fprintf(stderr, "The call to attr_ifelse_long to be mocked!!\n");
   exit(1);

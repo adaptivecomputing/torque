@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
-#include "attribute.h" /* attribute_def, attribute, svrattrl */
+#include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "pbs_job.h" /* all_jobs, job */
 #include "resource.h" /* resource_def */
 #include "pbs_ifl.h" /* PBS_MAXSERVERNAME */
@@ -62,7 +62,7 @@ void set_chkpt_deflt(job *pjob, pbs_queue *pque)
   exit(1);
   }
 
-void clear_attr(attribute *pattr, attribute_def *pdef)
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
   fprintf(stderr, "The call to clear_attr to be mocked!!\n");
   exit(1);
@@ -134,7 +134,7 @@ int find_attr(struct attribute_def *attr_def, char *name, int limit)
   exit(1);
   }
 
-int decode_resc(struct attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_resc(struct pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_resc to be mocked!!\n");
   exit(1);
@@ -236,7 +236,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry to be mocked!!\n");
   exit(1);
@@ -254,7 +254,7 @@ int svr_save(struct server *ps, int mode)
   exit(1);
   }
 
-void replace_attr_string(struct attribute *attr, char *newval)
+void replace_attr_string(struct pbs_attribute *attr, char *newval)
   {
   fprintf(stderr, "The call to replace_attr_string to be mocked!!\n");
   exit(1);
@@ -318,7 +318,7 @@ int get_svr_attr_str(int index, char **str)
   return(0);
   }
 
-dynamic_string *get_dynamic_string(int initial_size, char *str)
+dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
   return(NULL);
   }

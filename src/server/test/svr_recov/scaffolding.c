@@ -3,7 +3,7 @@
 #include <stdio.h> /* fprintf */
 
 #include "server.h" /* server */
-#include "attribute.h" /* attribute, attribute_def */
+#include "attribute.h" /* pbs_attribute, attribute_def */
 #include "dynamic_string.h" /* dynamic_string */
 
 char *path_priv = NULL;
@@ -33,7 +33,7 @@ int write_buffer(char *buf, int len, int fds)
  exit(1);
  }
 
-void clear_attr(attribute *pattr, attribute_def *pdef)
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
  {
  fprintf(stderr, "The call to clear_attr to be mocked!!\n");
  exit(1);
@@ -51,7 +51,7 @@ int find_attr(struct attribute_def *attr_def, char *name, int limit)
  exit(1);
  }
 
-int decode_resc(struct attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_resc(struct pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
  {
  fprintf(stderr, "The call to decode_resc to be mocked!!\n");
  exit(1);
@@ -63,7 +63,7 @@ int unescape_xml(char *in, char *out, int size)
  exit(1);
  }
 
-int recov_attr(int fd, void *parent, struct attribute_def *padef, struct attribute *pattr, int limit, int unknown, int do_actions)
+int recov_attr(int fd, void *parent, struct attribute_def *padef, struct pbs_attribute *pattr, int limit, int unknown, int do_actions)
  {
  fprintf(stderr, "The call to recov_attr to be mocked!!\n");
  exit(1);
@@ -75,13 +75,13 @@ void *get_next(list_link pl, char *file, int line)
  exit(1);
  }
 
-int decode_arst(struct attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_arst(struct pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
  {
  fprintf(stderr, "The call to decode_arst to be mocked!!\n");
  exit(1);
  }
 
-int save_attr_xml(struct attribute_def *padef, struct attribute *pattr, int numattr, int fds)
+int save_attr_xml(struct attribute_def *padef, struct pbs_attribute *pattr, int numattr, int fds)
  {
  fprintf(stderr, "The call to save_attr_xml to be mocked!!\n");
  exit(1);
@@ -105,19 +105,19 @@ void log_err(int errnum, const char *routine, char *text)
  exit(1);
  }
 
-int append_dynamic_string(dynamic_string *ds, char *to_append)
+int append_dynamic_string(dynamic_string *ds, const char *to_append)
  {
  fprintf(stderr, "The call to append_dynamic_string to be mocked!!\n");
  exit(1);
  }
 
-int size_to_dynamic_string(dynamic_string *ds, struct size_value szv)
+int size_to_dynamic_string(dynamic_string *ds, struct size_value *szv)
  {
  fprintf(stderr, "The call to size_to_dynamic_string to be mocked!!\n");
  exit(1);
  }
 
-int append_dynamic_string_xml(dynamic_string *ds, char *str)
+int append_dynamic_string_xml(dynamic_string *ds, const char *str)
  {
  fprintf(stderr, "The call to append_dynamic_string_xml to be mocked!!\n");
  exit(1);

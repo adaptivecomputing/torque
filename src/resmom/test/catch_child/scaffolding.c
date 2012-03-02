@@ -1095,7 +1095,7 @@ pid_t fork_me(int conn)
   return rc;
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   resource *presc = (resource *)calloc(1, sizeof(resource));
   presc->rs_value.at_flags |= ATR_VFLAG_SET;

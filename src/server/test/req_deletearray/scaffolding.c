@@ -5,7 +5,7 @@
 #include "server.h" /* server */
 #include "batch_request.h" /* batch_request */
 #include "pbs_job.h" /* job */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "work_task.h" /* work_task, all_tasks */
 #include "queue.h" /* pbs_queue */
 #include "array.h" /* job_array */
@@ -26,7 +26,7 @@ int has_job_delete_nanny(struct job *pjob)
   exit(1);
   }
 
-long attr_ifelse_long(attribute *attr1, attribute *attr2, long deflong)
+long attr_ifelse_long(pbs_attribute *attr1, pbs_attribute *attr2, long deflong)
   {
   fprintf(stderr, "The call to attr_ifelse_long needs to be mocked!!\n");
   exit(1);

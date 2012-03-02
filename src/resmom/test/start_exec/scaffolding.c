@@ -7,7 +7,7 @@
 #include <md5.h> /* MD5_CTX */
 #include <sys/socket.h> /* sockaddr_in, sockaddr */
 
-#include "attribute.h" /* attribute_def, attribute, svrattrl */
+#include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "resource.h" /* resource_def */
 #include "pbs_ifl.h" /* PBS_MAXHOSTNAME, MAXPATHLEN */
 #include "list_link.h" /* tlist_head, list_link */
@@ -80,7 +80,7 @@ int mom_checkpoint_start_restart(job *pjob)
   exit(1);
   }
 
-char *arst_string(char *str, attribute *pattr)
+char *arst_string(char *str, pbs_attribute *pattr)
   {
   fprintf(stderr, "The call to arst_string needs to be mocked!!\n");
   exit(1);
@@ -428,7 +428,7 @@ char *pbs_strerror(int err)
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry needs to be mocked!!\n");
   exit(1);

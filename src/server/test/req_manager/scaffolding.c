@@ -6,7 +6,7 @@
 #include "queue.h" /* all_queues, pbs_queue */
 #include "pbs_ifl.h" /* PBS_MAXSERVERNAME */
 #include "resource.h" /* resource_def */
-#include "attribute.h" /* attribute_def, attribute, svrattrl */
+#include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "server.h" /* server */
 #include "batch_request.h" /* batch_request */
 #include "list_link.h" /* list_link */
@@ -46,13 +46,13 @@ pbs_queue *find_queuebyname(char *quename)
   exit(1);
   }
 
-void clear_attr(attribute *pattr, attribute_def *pdef)
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
   fprintf(stderr, "The call to clear_attr to be mocked!!\n");
   exit(1);
   }
 
-int attr_atomic_node_set(struct svrattrl *plist, attribute *old, attribute *new, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
+int attr_atomic_node_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
   {
   fprintf(stderr, "The call to attr_atomic_node_set to be mocked!!\n");
   exit(1);
@@ -154,7 +154,7 @@ struct prop *init_prop(char *pname)
   exit(1);
   }
 
-int attr_atomic_set(struct svrattrl *plist, attribute *old, attribute *new, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
+int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
   {
   fprintf(stderr, "The call to attr_atomic_set to be mocked!!\n");
   exit(1);
@@ -196,7 +196,7 @@ int hasprop(struct pbsnode *pnode, struct prop *props)
   exit(1);
   }
 
-void attr_atomic_kill(attribute *temp, attribute_def *pdef, int limit)
+void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int limit)
   {
   fprintf(stderr, "The call to attr_atomic_kill to be mocked!!\n");
   exit(1);
@@ -220,7 +220,7 @@ int init_resc_defs(void)
   exit(1);
   }
 
-void free_arst(struct attribute *attr)
+void free_arst(struct pbs_attribute *attr)
   {
   fprintf(stderr, "The call to free_arst to be mocked!!\n");
   exit(1);
@@ -256,7 +256,7 @@ void log_err(int errnum, const char *routine, char *text)
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry to be mocked!!\n");
   exit(1);

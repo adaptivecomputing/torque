@@ -5,7 +5,7 @@
 
 #include "mom_server.h" /* mom_server */
 #include "resmon.h" /* PBS_MAXSERVER */
-#include "attribute.h" /* attribute_def, attribute */
+#include "attribute.h" /* attribute_def, pbs_attribute */
 #include "net_connect.h" /* connection, PBS_NET_MAX_CONNECTIONS */
 #include "log.h" /* LOG_BUF_SIZE */
 #include "list_link.h" /* tlist_head */
@@ -153,7 +153,7 @@ void log_record(int eventtype, int objclass, const char *objname, char *text)
   exit(1);
   }
 
-dynamic_string *get_dynamic_string(int initial_size, char *str)
+dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
   fprintf(stderr, "The call to get_dynamic_string needs to be mocked!!\n");
   exit(1);
@@ -383,7 +383,7 @@ void close_conn(int sd, int has_mutex)
   exit(1);
   }
 
-int copy_to_end_of_dynamic_string(dynamic_string *ds, char *to_copy)
+int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *to_copy)
   {
   fprintf(stderr, "The call to copy_to_end_of_dynamic_string needs to be mocked!!\n");
   exit(1);
@@ -401,7 +401,7 @@ int rpp_eom(int index)
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry needs to be mocked!!\n");
   exit(1);

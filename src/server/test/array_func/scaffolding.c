@@ -5,7 +5,7 @@
 #include "resizable_array.h" /* resizable_array */
 #include "pbs_job.h" /* job */
 #include "batch_request.h" /* batch_request */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_task */
 #include "array.h" /* job_array */
@@ -55,7 +55,7 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
   exit(1);
   }
 
-void hold_job(attribute *temphold, void *j)
+void hold_job(pbs_attribute *temphold, void *j)
   {
   fprintf(stderr, "The call to hold_job needs to be mocked!!\n");
   exit(1);

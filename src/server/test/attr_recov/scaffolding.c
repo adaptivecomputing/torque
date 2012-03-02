@@ -3,7 +3,7 @@
 #include <stdio.h> /* fprintf */
 
 #include "list_link.h" /* list_link */
-#include "attribute.h" /* attribute, attribute_def */
+#include "attribute.h" /* pbs_attribute, attribute_def */
 #include "dynamic_string.h" /* dynamic_string */
 
 
@@ -49,7 +49,7 @@ void log_err(int errnum, const char *routine, char *text)
   exit(1);
   }
 
-int attr_to_str(struct dynamic_string *ds, attribute_def *at_def, struct attribute attr, int XML)
+int attr_to_str(struct dynamic_string *ds, attribute_def *at_def, struct pbs_attribute attr, int XML)
   {
   fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
   exit(1);
@@ -61,7 +61,7 @@ void clear_dynamic_string(dynamic_string *ds)
   exit(1);
   }
 
-dynamic_string *get_dynamic_string(int initial_size, char *str)
+dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
   fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
   exit(1);

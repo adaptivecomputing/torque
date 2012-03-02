@@ -5,7 +5,7 @@
 #include "batch_request.h" /* batch_request */
 #include "list_link.h" /* tlist_head */
 #include "array.h" /* job_array */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "pbs_job.h" /* job */
 
 char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
@@ -17,7 +17,7 @@ int svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host
   exit(1);
   }
 
-int get_hold(tlist_head *phead, char **pset, attribute *temphold)
+int get_hold(tlist_head *phead, char **pset, pbs_attribute *temphold)
   {
   fprintf(stderr, "The call to get_hold to be mocked!!\n");
   exit(1);
@@ -29,7 +29,7 @@ void reply_ack(struct batch_request *preq)
   exit(1);
   }
 
-int hold_array_range(job_array *pa, char *range_str, attribute *temphold)
+int hold_array_range(job_array *pa, char *range_str, pbs_attribute *temphold)
   {
   fprintf(stderr, "The call to hold_array_range to be mocked!!\n");
   exit(1);

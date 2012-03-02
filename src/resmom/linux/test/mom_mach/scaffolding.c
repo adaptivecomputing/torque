@@ -7,7 +7,7 @@
 #include "resource.h" /* resource_def, resource */
 #include "list_link.h" /* tlist_head, list_link, pidl */
 #include "log.h" /* LOG_BUF_SIZE */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "resmon.h" /* rm_attribute */
 #include "pbs_job.h" /* task */
 
@@ -35,7 +35,7 @@ int rm_errno;
 
 
 
-resource *add_resource_entry(attribute *pattr, resource_def *prdef)
+resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
   fprintf(stderr, "The call to add_resource_entry needs to be mocked!!\n");
   exit(1);
@@ -113,7 +113,7 @@ void log_err(int errnum, const char *routine, char *text)
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry needs to be mocked!!\n");
   exit(1);

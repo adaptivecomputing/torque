@@ -6,7 +6,7 @@
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "server.h" /* server */
 #include "resource.h" /* resource */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "pbs_job.h" /* job */
 #include "queue.h" /* pbs_queue */
 #include "list_link.h" /* list_link */
@@ -20,7 +20,7 @@ pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *scheduler_sock_jobct_mutex;
 pthread_mutex_t *listener_command_mutex;
 
-int encode_svrstate(attribute *pattr, tlist_head *phead, char *atname, char *rsname, int mode, int perm);
+int encode_svrstate(pbs_attribute *pattr, tlist_head *phead, char *atname, char *rsname, int mode, int perm);
 
 attribute_def svr_attr_def[] =
   {
@@ -38,7 +38,7 @@ attribute_def svr_attr_def[] =
     }
   };
 
-resource *add_resource_entry(attribute *pattr, resource_def *prdef)
+resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
   fprintf(stderr, "The call to add_resource_entry to be mocked!!\n");
   exit(1);
@@ -86,7 +86,7 @@ void log_err(int errnum, const char *routine, char *text)
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry to be mocked!!\n");
   exit(1);
@@ -98,9 +98,9 @@ int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int log
   exit(1);
   }
 
-void free_null(struct attribute *attr) {}
+void free_null(struct pbs_attribute *attr) {}
 
-int comp_l(struct attribute *attr, struct attribute *with)
+int comp_l(struct pbs_attribute *attr, struct pbs_attribute *with)
   {
   return(0);
   }

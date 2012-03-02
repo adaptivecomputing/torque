@@ -6,7 +6,7 @@
 #include "pbs_ifl.h" /* PBS_MAXQUEUENAME */
 #include "net_connect.h" /* pbs_net_t */
 #include "netinet/in.h" /* sockaddr_in */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "work_task.h" /* work_task, work_type, all_tasks */
 #include "pbs_job.h" /* job, all_jobs */
 #include "batch_request.h" /* batch_request */
@@ -71,7 +71,7 @@ char * netaddr(struct sockaddr_in *ap)
   exit(1);
   }
 
-int decode_b(attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_b(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_b needs to be mocked!!\n");
   exit(1);

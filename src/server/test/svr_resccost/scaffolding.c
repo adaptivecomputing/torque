@@ -5,7 +5,7 @@
 #include "resource.h" /* resource_def */
 #include "server.h" /* server */
 #include "list_link.h" /* list_link, tlist_head */
-#include "attribute.h" /* attribute, svrattrl */
+#include "attribute.h" /* pbs_attribute, svrattrl */
 
 int svr_resc_size = 0;
 resource_def *svr_resc_def;
@@ -42,7 +42,7 @@ void append_link(tlist_head *head, list_link *new, void *pobj)
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry to be mocked!!\n");
   exit(1);

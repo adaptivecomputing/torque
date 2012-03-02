@@ -3,7 +3,7 @@
 #include <stdio.h> /* fprintf */
 
 #include "pbs_job.h" /* job */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "batch_request.h" /* batch_request */
 #include "server.h" /* server */
 
@@ -56,7 +56,7 @@ job *find_job(char *jobid)
   exit(1);
   }
 
-int acl_check(attribute *pattr, char *name, int type)
+int acl_check(pbs_attribute *pattr, char *name, int type)
   {
   fprintf(stderr, "The call to acl_check to be mocked!!\n");
   exit(1);

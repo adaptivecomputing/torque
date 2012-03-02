@@ -174,7 +174,7 @@ void set_resc_assigned(job *pjob, enum batch_op op)
   exit(1);
   }
 
-int job_set_wait(attribute *pattr, void *pjob, int mode)
+int job_set_wait(pbs_attribute *pattr, void *pjob, int mode)
   {
   fprintf(stderr, "The call to job_set_wait to be mocked!!\n");
   exit(1);
@@ -240,7 +240,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry to be mocked!!\n");
   exit(1);

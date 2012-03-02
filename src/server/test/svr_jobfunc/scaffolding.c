@@ -4,7 +4,7 @@
 #include <pthread.h> /* pthread */
 
 #include "queue.h" /* all_queues, pbs_queue */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "pbs_job.h" /* all_jobs, job */
 #include "resource.h" /* resouce */
 #include "server.h" /* server */
@@ -32,7 +32,7 @@ pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 
 
-resource *add_resource_entry(attribute *pattr, resource_def *prdef)
+resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
   fprintf(stderr, "The call to add_resource_entry to be mocked!!\n");
   exit(1);
@@ -50,7 +50,7 @@ void account_record(int acctype, job *pjob, char *text)
   exit(1);
   }
 
-char *arst_string(char *str, attribute *pattr)
+char *arst_string(char *str, pbs_attribute *pattr)
   {
   fprintf(stderr, "The call to arst_string to be mocked!!\n");
   exit(1);
@@ -62,7 +62,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-long attr_ifelse_long(attribute *attr1, attribute *attr2, long deflong)
+long attr_ifelse_long(pbs_attribute *attr1, pbs_attribute *attr2, long deflong)
   {
   fprintf(stderr, "The call to attr_ifelse_long to be mocked!!\n");
   exit(1);
@@ -80,13 +80,13 @@ int procs_available(int proc_ct)
   exit(1);
   }
 
-int decode_str(attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_str to be mocked!!\n");
   exit(1);
   }
 
-int depend_on_que(attribute *pattr, void *pjob, int mode)
+int depend_on_que(pbs_attribute *pattr, void *pjob, int mode)
   {
   fprintf(stderr, "The call to depend_on_que to be mocked!!\n");
   exit(1);
@@ -140,7 +140,7 @@ job *next_job_from_back(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-int comp_resc2(struct attribute *attr, struct attribute *with, int IsQueueCentric, char *EMsg, enum compare_types type)
+int comp_resc2(struct pbs_attribute *attr, struct pbs_attribute *with, int IsQueueCentric, char *EMsg, enum compare_types type)
   {
   fprintf(stderr, "The call to comp_resc2 to be mocked!!\n");
   exit(1);
@@ -182,7 +182,7 @@ int remove_job(struct all_jobs *aj, job *pjob)
   exit(1);
   }
 
-int set_jobexid(job *pjob, attribute *attrry, char *EMsg)
+int set_jobexid(job *pjob, pbs_attribute *attrry, char *EMsg)
   {
   fprintf(stderr, "The call to set_jobexid to be mocked!!\n");
   exit(1);
@@ -206,7 +206,7 @@ int site_acl_check(job *pjob, pbs_queue *pque)
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry to be mocked!!\n");
   exit(1);
@@ -230,7 +230,7 @@ int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int log
   exit(1);
   }
 
-int acl_check(attribute *pattr, char *name, int type)
+int acl_check(pbs_attribute *pattr, char *name, int type)
   {
   fprintf(stderr, "The call to acl_check to be mocked!!\n");
   exit(1);
@@ -242,7 +242,7 @@ int insert_task(all_tasks *at, work_task *wt)
   exit(1);
   }
 
-void free_str(struct attribute *attr)
+void free_str(struct pbs_attribute *attr)
   {
   fprintf(stderr, "The call to free_str to be mocked!!\n");
   exit(1);
@@ -254,7 +254,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int append_dynamic_string (dynamic_string *ds, char *str)
+int append_dynamic_string (dynamic_string *ds, const char *str)
   {
   return(0);
   }

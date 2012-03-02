@@ -4,7 +4,7 @@
 
 #include "resource.h" /* resource_def */
 #include "log.h" /* LOG_BUF_SIZE */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "list_link.h" /* tlist_head, list_link */
 #include "pbs_job.h" /* job */
 #include "libpbs.h" /* job_file */
@@ -23,7 +23,7 @@ int MOMPrologTimeoutCount;
 uid_t pbsuser;
 gid_t pbsgroup;
 
-int encode_resc(attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int ac_perm)
+int encode_resc(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int ac_perm)
   {
   fprintf(stderr, "The call to encode_resc needs to be mocked!!\n");
   exit(1);
@@ -119,7 +119,7 @@ void log_err(int errnum, const char *routine, char *text)
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry needs to be mocked!!\n");
   exit(1);

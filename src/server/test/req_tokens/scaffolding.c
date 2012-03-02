@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
-#include "attribute.h" /* attribute, batch_op */
+#include "attribute.h" /* pbs_attribute, batch_op */
 
-int set_arst(struct attribute *attr, struct attribute *new, enum batch_op op)
+int set_arst(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
   {
   fprintf(stderr, "The call to set_arst to be mocked!!\n");
   exit(1);

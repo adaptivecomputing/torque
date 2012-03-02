@@ -11,7 +11,7 @@
 #include "pbs_job.h" /* job, all_jobs */
 #include "list_link.h" /* list_link, tlist_head */
 #include "pbs_nodes.h" /* pbsnode */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 
 char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
 struct credential conn_credent[PBS_NET_MAX_CONNECTIONS];
@@ -427,7 +427,7 @@ void net_add_close_func(int sd, void (*func)(int), int has_mutex)
   exit(1);
   }
 
-int acl_check(attribute *pattr, char *name, int type)
+int acl_check(pbs_attribute *pattr, char *name, int type)
   {
   fprintf(stderr, "The call to acl_check needs to be mocked!!\n");
   exit(1);

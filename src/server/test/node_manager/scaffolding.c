@@ -3,7 +3,7 @@
 #include <stdio.h> /* fprintf */
 #include <netinet/in.h> /* sockaddr_in */
 
-#include "attribute.h" /* attribute_def, attribute, svrattrl */
+#include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "pbs_ifl.h" /* PBS_MAXSERVERNAME */
 #include "list_link.h" /* tlist_head, list_link */
 #include "resource.h" /* resource_def, resource */
@@ -161,7 +161,7 @@ struct prop *init_prop(char *pname)
   exit(1);
   }
 
-int node_status_list(attribute *new, void *pnode, int actmode)
+int node_status_list(pbs_attribute *new, void *pnode, int actmode)
   {
   fprintf(stderr, "The call to node_status_list needs to be mocked!!\n");
   exit(1);
@@ -197,7 +197,7 @@ resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
   exit(1);
   }
 
-int decode_arst(struct attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_arst(struct pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_arst needs to be mocked!!\n");
   exit(1);
@@ -221,7 +221,7 @@ void append_link(tlist_head *head, list_link *new, void *pobj)
   exit(1);
   }
 
-void free_arst(struct attribute *attr)
+void free_arst(struct pbs_attribute *attr)
   {
   fprintf(stderr, "The call to free_arst needs to be mocked!!\n");
   exit(1);
@@ -257,7 +257,7 @@ int diswul(int stream, unsigned long value)
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry needs to be mocked!!\n");
   exit(1);
@@ -330,13 +330,13 @@ void *send_hierarchy_threadtask(void *vp)
   exit(1);                            
   }
 
-dynamic_string *get_dynamic_string(int size, char *str)
+dynamic_string *get_dynamic_string(int size, const char *str)
   {
   fprintf(stderr, "The call to get_dynamic_string needs to be mocked!!\n");
   exit(1);                            
   }
 
-int copy_to_end_of_dynamic_string(dynamic_string *ds, char *str)
+int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *str)
   {
   fprintf(stderr, "The call to copy_to_end_of_dynamic_string needs to be mocked!!\n");
   exit(1);                            

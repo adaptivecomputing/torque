@@ -5,7 +5,7 @@
 #include <sys/socket.h> /* sockaddr */
 #include <sys/types.h> /* pid_t */
 
-#include "attribute.h" /* attribute_def, attribute, svrattrl */
+#include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "pbs_ifl.h" /* PBS_MAXUSER, MAXPATHLEN */
 #include "mom_func.h" /* var_table */
 #include "resmon.h" /* TMAX_NSDCOUNT */
@@ -49,7 +49,7 @@ struct batch_request *alloc_br(int type)
   exit(1);
   }
 
-char *arst_string(char *str, attribute *pattr)
+char *arst_string(char *str, pbs_attribute *pattr)
   {
   fprintf(stderr, "The call to arst_string needs to be mocked!!\n");
   exit(1);
@@ -79,7 +79,7 @@ pid_t fork_me(int conn)
   exit(1);
   }
 
-void clear_attr(attribute *pattr, attribute_def *pdef)
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
   fprintf(stderr, "The call to clear_attr needs to be mocked!!\n");
   exit(1);
@@ -199,7 +199,7 @@ void rpp_terminate(void)
   exit(1);
   }
 
-int attr_atomic_set(struct svrattrl *plist, attribute *old, attribute *new, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
+int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
   {
   fprintf(stderr, "The call to attr_atomic_set needs to be mocked!!\n");
   exit(1);

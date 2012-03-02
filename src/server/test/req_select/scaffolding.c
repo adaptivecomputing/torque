@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
-#include "attribute.h" /* attribute_def, attribute, svrattrl */
+#include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "pbs_job.h" /* all_jobs */
 #include "resource.h" /* resource_def */
 #include "server.h" /* server */
@@ -28,7 +28,7 @@ pbs_queue *find_queuebyname(char *quename)
   exit(1);
   }
 
-void clear_attr(attribute *pattr, attribute_def *pdef)
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
   fprintf(stderr, "The call to clear_attr to be mocked!!\n");
   exit(1);
@@ -40,7 +40,7 @@ int reply_send_svr(struct batch_request *request)
   exit(1);
   }
 
-int encode_str(attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_str(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_str to be mocked!!\n");
   exit(1);
@@ -52,7 +52,7 @@ int svr_authorize_jobreq(struct batch_request *preq, job *pjob)
   exit(1);
   }
 
-int decode_str(attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_str to be mocked!!\n");
   exit(1);
@@ -64,7 +64,7 @@ int find_attr(struct attribute_def *attr_def, char *name, int limit)
   exit(1);
   }
 
-int set_str(struct attribute *attr, struct attribute *new, enum batch_op op)
+int set_str(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
   {
   fprintf(stderr, "The call to set_str to be mocked!!\n");
   exit(1);
@@ -82,7 +82,7 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-void free_str(struct attribute *attr)
+void free_str(struct pbs_attribute *attr)
   {
   fprintf(stderr, "The call to free_str to be mocked!!\n");
   exit(1);
@@ -118,7 +118,7 @@ void log_err(int errnum, const char *routine, char *text)
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry to be mocked!!\n");
   exit(1);
@@ -136,7 +136,7 @@ int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg
   exit(1);
   }
 
-int acl_check(attribute *pattr, char *name, int type)
+int acl_check(pbs_attribute *pattr, char *name, int type)
   {
   fprintf(stderr, "The call to acl_check to be mocked!!\n");
   exit(1);

@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
-#include "attribute.h" /* attribute, attribute_def */
+#include "attribute.h" /* pbs_attribute, attribute_def */
 #include "list_link.h" /* list_link */
 
-void clear_attr(attribute *pattr, attribute_def *pdef)
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
   fprintf(stderr, "The call to clear_attr needs to be mocked!!\n");
   exit(1);

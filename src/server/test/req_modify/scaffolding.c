@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
-#include "attribute.h" /* attribute_def, attribute, svrattrl, compare_types */
+#include "attribute.h" /* attribute_def, pbs_attribute, svrattrl, compare_types */
 #include "resource.h" /* resource_def, resource */
 #include "server.h" /* server */
 #include "batch_request.h" /* batch_request */
@@ -102,7 +102,7 @@ char *prefix_std_file(job *pjob, dynamic_string *ds, int key)
   exit(1);
   }
 
-int attr_atomic_set(struct svrattrl *plist, attribute *old, attribute *new, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
+int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
   {
   fprintf(stderr, "The call to attr_atomic_set to be mocked!!\n");
   exit(1);
@@ -126,7 +126,7 @@ int modify_array_range(job_array *pa, char *range, svrattrl *plist, struct batch
   exit(1);
   }
 
-int comp_resc2(struct attribute *attr, struct attribute *with, int IsQueueCentric, char *EMsg, enum compare_types type)
+int comp_resc2(struct pbs_attribute *attr, struct pbs_attribute *with, int IsQueueCentric, char *EMsg, enum compare_types type)
   {
   fprintf(stderr, "The call to comp_resc2 to be mocked!!\n");
   exit(1);
@@ -138,7 +138,7 @@ resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
   exit(1);
   }
 
-int chk_resc_limits(attribute *pattr, pbs_queue *pque, char *EMsg)
+int chk_resc_limits(pbs_attribute *pattr, pbs_queue *pque, char *EMsg)
   {
   fprintf(stderr, "The call to chk_resc_limits to be mocked!!\n");
   exit(1);
@@ -156,7 +156,7 @@ void append_link(tlist_head *head, list_link *new, void *pobj)
   exit(1);
   }
 
-void set_resc_deflt(job *pjob, attribute *ji_wattr, int has_queue_mutex)
+void set_resc_deflt(job *pjob, pbs_attribute *ji_wattr, int has_queue_mutex)
   {
   fprintf(stderr, "The call to set_resc_deflt to be mocked!!\n");
   exit(1);
@@ -168,7 +168,7 @@ int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct 
   exit(1);
   }
 
-int set_jobexid(job *pjob, attribute *attrry, char *EMsg)
+int set_jobexid(job *pjob, pbs_attribute *attrry, char *EMsg)
   {
   fprintf(stderr, "The call to set_jobexid to be mocked!!\n");
   exit(1);
@@ -204,7 +204,7 @@ void list_move(tlist_head *from, tlist_head *to)
   exit(1);
   }
 
-void replace_attr_string(struct attribute *attr, char *newval)
+void replace_attr_string(struct pbs_attribute *attr, char *newval)
   {
   fprintf(stderr, "The call to replace_attr_string to be mocked!!\n");
   exit(1);
@@ -245,7 +245,7 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
-dynamic_string *get_dynamic_string(int initial_size, char *str)
+dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
   return(NULL);
   }

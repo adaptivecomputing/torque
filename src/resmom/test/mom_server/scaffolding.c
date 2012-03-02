@@ -312,13 +312,13 @@ void *next_thing_from_back(resizable_array *ra, int *iter)
   exit(1);
   }
 
-int append_dynamic_string(dynamic_string *ds, char *to_append)
+int append_dynamic_string(dynamic_string *ds, const char *to_append)
   {
   fprintf(stderr, "The call to append_dynamic_string to be mocked!!\n");
   exit(1);
   }
 
-dynamic_string *get_dynamic_string(int initial_size, char *str)
+dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
   fprintf(stderr, "The call to get_dynamic_string needs to be mocked!!\n");
   exit(1);

@@ -95,7 +95,7 @@ int mom_does_checkpoint()
  exit(1);
  }
 
-int decode_str(attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
  {
  fprintf(stderr, "The call to decode_str needs to be mocked!!\n");
  exit(1);
@@ -245,7 +245,7 @@ char *pbs_strerror(int err)
  exit(1);
  }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
  {
  fprintf(stderr, "The call to find_resc_entry needs to be mocked!!\n");
  exit(1);

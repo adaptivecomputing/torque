@@ -22,13 +22,13 @@ void log_record(int eventtype, int objclass, const char *objname, char *text)
   exit(1);
   }
 
-int set_str(struct attribute *attr, struct attribute *new, enum batch_op op)
+int set_str(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
   {
   fprintf(stderr, "The call to set_str needs to be mocked!!\n");
   exit(1);
   }
 
-int set_arst(struct attribute *attr, struct attribute *new, enum batch_op op) 
+int set_arst(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op) 
   {
   fprintf(stderr, "The call to set_arst needs to be mocked!!\n");
   exit(1);

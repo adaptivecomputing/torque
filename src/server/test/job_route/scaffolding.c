@@ -67,7 +67,7 @@ void log_err(int errnum, const char *routine, char *text)
   exit(1);
   }
 
-resource *add_resource_entry(attribute *pattr, resource_def *prdef)
+resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
   return(NULL);
   }
@@ -83,7 +83,7 @@ resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
   return(NULL);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   return(NULL);
   }

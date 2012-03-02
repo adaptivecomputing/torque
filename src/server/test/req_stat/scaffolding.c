@@ -292,7 +292,7 @@ int insert_task(all_tasks *at, work_task *wt)
   exit(1);
   }
 
-int status_attrib(svrattrl *pal, attribute_def *padef, attribute *pattr, int limit, int priv, tlist_head *phead, int *bad, int IsOwner)
+int status_attrib(svrattrl *pal, attribute_def *padef, pbs_attribute *pattr, int limit, int priv, tlist_head *phead, int *bad, int IsOwner)
   {
   fprintf(stderr, "The call to status_attrib to be mocked!!\n");
   exit(1);

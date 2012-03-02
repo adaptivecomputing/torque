@@ -5,7 +5,7 @@
 #include "queue.h" /* all_queues */
 #include "server.h" /* server */
 #include "resizable_array.h" /* resizable_array */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "hash_table.h" /* hash_table */
 #include "pbs_job.h" /* job */
 
@@ -28,13 +28,13 @@ int remove_thing_from_index(resizable_array *ra, int index)
   exit(1);
   }
 
-void clear_attr(attribute *pattr, attribute_def *pdef)
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
   fprintf(stderr, "The call to clear_attr needs to be mocked!!\n");
   exit(1);
   }
 
-int save_acl(attribute *attr, attribute_def *pdef, char *subdir, char *name)
+int save_acl(pbs_attribute *attr, attribute_def *pdef, char *subdir, char *name)
   {
   fprintf(stderr, "The call to save_acl needs to be mocked!!\n");
   exit(1);

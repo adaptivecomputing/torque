@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <pwd.h> /* gid_t, uid_t */
 
-#include "attribute.h" /* attribute_def, attribute */
+#include "attribute.h" /* attribute_def, pbs_attribute */
 #include "list_link.h" /* tlist_head, list_link */
 #include "log.h" /* LOG_BUF_SIZE */
 #include "pbs_ifl.h" /* MAXPATHLEN */
@@ -26,7 +26,7 @@ int LOGLEVEL = 0; /* mom_main.c/pbsd_main.c */
 char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
 
 
-void clear_attr(attribute *pattr, attribute_def *pdef)
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
   fprintf(stderr, "The call to clear_attr needs to be mocked!!\n");
   exit(1);

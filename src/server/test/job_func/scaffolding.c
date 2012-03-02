@@ -7,7 +7,7 @@
 #include "server.h" /* server, NO_BUFFER_SPACE */
 #include "pbs_job.h" /* all_jobs, job_array, job */
 #include "resizable_array.h" /* resizable_array */
-#include "attribute.h" /* attribute, attribute_def */
+#include "attribute.h" /* pbs_attribute, attribute_def */
 #include "net_connect.h" /* pbs_net_t */
 #include "list_link.h" /* list_link */
 #include "hash_table.h" /* hash_table_t */
@@ -57,7 +57,7 @@ void account_record(int acctype, job *pjob, char *text)
   exit(1);
   }
 
-char *arst_string(char *str, attribute *pattr)
+char *arst_string(char *str, pbs_attribute *pattr)
   {
   fprintf(stderr, "The call to arst_string needs to be mocked!!\n");
   exit(1);
@@ -87,7 +87,7 @@ ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   exit(1);
   }
 
-void clear_attr(attribute *pattr, attribute_def *pdef)
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
   fprintf(stderr, "The call to clear_attr needs to be mocked!!\n");
   exit(1);
@@ -323,7 +323,7 @@ int insert_into_recycler(job *pjob)
   exit(1);
   }
 
-int attr_to_str(struct dynamic_string *ds, attribute_def *attr_def,struct attribute attr,int XML)
+int attr_to_str(struct dynamic_string *ds, attribute_def *attr_def,struct pbs_attribute attr,int XML)
   {
   int rc = 0;
   if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 4))
@@ -385,7 +385,7 @@ int lock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, 
   exit(1);
   }
 
-int append_dynamic_string(dynamic_string *ds, char *to_append)
+int append_dynamic_string(dynamic_string *ds, const char *to_append)
   {
   fprintf(stderr, "The call to append_dynamic_string needs to be mocked!!\n");
   exit(1);
@@ -397,7 +397,7 @@ void clear_dynamic_string(dynamic_string *ds)
   exit(1);
   }
 
-dynamic_string *get_dynamic_string(int initial_size, char *str)
+dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
   fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
   exit(1);

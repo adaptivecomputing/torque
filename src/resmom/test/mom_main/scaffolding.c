@@ -13,7 +13,7 @@
 #include "list_link.h" /* list_link, tlist_head */
 #include "resizable_array.h" /* resizable_array */
 #include "pbs_nodes.h" /* pbsnode */
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 #include "resource.h" /* resource_def */
 #include "prolog.h" /* PBS_PROLOG_TIME */
 #include "log.h" /* LOG_BUF_SIZE */
@@ -165,7 +165,7 @@ int IamRoot()
   exit(1);
   }
 
-int add_network_entry(mom_hierarchy_t *nt, char *name, struct addrinfo *ai, unsigned short rm_port, unsigned short service_port, int path, int level)
+int add_network_entry(mom_hierarchy_t *nt, char *name, struct addrinfo *ai, unsigned short rm_port, int path, int level)
   {
   fprintf(stderr, "The call to add_network_entry needs to be mocked!!\n");
   exit(1);
@@ -555,7 +555,7 @@ AvlTree AVL_insert(u_long key, uint16_t port, struct pbsnode *node, AvlTree tree
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry needs to be mocked!!\n");
   exit(1);
@@ -663,7 +663,7 @@ int im_compose(int stream, char *jobid, char *cookie, int command, tm_event_t ev
   exit(1);
   }
 
-dynamic_string *get_dynamic_string(int size, char *str)
+dynamic_string *get_dynamic_string(int size, const char *str)
   {
   fprintf(stderr, "The call to get_dynamic_string needs to be mocked!!\n");
   exit(1);

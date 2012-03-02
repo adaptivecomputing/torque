@@ -6,7 +6,7 @@
 
 #include "resizable_array.h" /* resizable_array */
 #include "pbs_nodes.h" /* all_nodes, pbsnode */
-#include "attribute.h" /* attribute_def, attribute, svrattrl */
+#include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "server.h" /* server */
 #include "u_tree.h" /* AvlTree */
 #include "hash_table.h" /* hash_table_t */

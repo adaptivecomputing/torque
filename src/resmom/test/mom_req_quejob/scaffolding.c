@@ -3,7 +3,7 @@
 #include <stdio.h> /* fprintf */
 #include <pwd.h> /* struct password */
 
-#include "attribute.h" /* attribute_def, attribute, svrattrl */
+#include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "list_link.h" /* tlist_head */
 #include "resource.h" /* resource_def, resource */
 #include "log.h" /* LOG_BUF_SIZE */
@@ -81,7 +81,7 @@ void log_record(int eventtype, int objclass, const char *objname, char *text)
   exit(1);
   }
 
-int decode_arst_merge(struct attribute *patr, char *name, char *rescn, char *val)
+int decode_arst_merge(struct pbs_attribute *patr, char *name, char *rescn, char *val)
   {
   fprintf(stderr, "The call to decode_arst_merge needs to be mocked!!\n");
   exit(1);
@@ -177,7 +177,7 @@ void close_conn(int sd, int has_mutex)
   exit(1);
   }
 
-resource *find_resc_entry(attribute *pattr, resource_def *rscdf)
+resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
   fprintf(stderr, "The call to find_resc_entry needs to be mocked!!\n");
   exit(1);

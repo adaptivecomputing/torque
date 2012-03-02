@@ -3,7 +3,7 @@
 #include <stdio.h> /* fprintf */
 #include <pthread.h> /* pthread_mutex_t */
 
-#include "attribute.h" /* attribute_def, attribute */
+#include "attribute.h" /* attribute_def, pbs_attribute */
 #include "pbs_job.h" /* job */
 #include "array.h" /* job_array */
 
@@ -21,7 +21,7 @@ ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   exit(1);
   }
 
-int save_attr(struct attribute_def *padef, struct attribute *pattr, int numattr, int fds, char *buf, size_t *buf_remaining, size_t buf_size)
+int save_attr(struct attribute_def *padef, struct pbs_attribute *pattr, int numattr, int fds, char *buf, size_t *buf_remaining, size_t buf_size)
   {
   fprintf(stderr, "The call to save_attr needs to be mocked!!\n");
   exit(1);
@@ -45,7 +45,7 @@ int job_qs_upgrade(job *pj, int fds, char *path, int version)
   exit(1);
   }
 
-int recov_attr(int fd, void *parent, struct attribute_def *padef, struct attribute *pattr, int limit, int unknown, int do_actions)
+int recov_attr(int fd, void *parent, struct attribute_def *padef, struct pbs_attribute *pattr, int limit, int unknown, int do_actions)
   {
   fprintf(stderr, "The call to recov_attr needs to be mocked!!\n");
   exit(1);

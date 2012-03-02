@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
-#include "attribute.h" /* attribute_def, attribute */
+#include "attribute.h" /* attribute_def, pbs_attribute */
 #include "batch_request.h" /* batch_request */
 #include "pbs_job.h" /* job */
 #include "array.h" /* job_array.h */
@@ -28,7 +28,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-void clear_attr(attribute *pattr, attribute_def *pdef)
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
   fprintf(stderr, "The call to clear_attr to be mocked!!\n");
   exit(1);

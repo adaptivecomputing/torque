@@ -4,7 +4,7 @@
 #include <pwd.h> /* passwd */
 
 #include "pbs_job.h" /* job */
-#include "attribute.h" /* attribute_def, attribute  */
+#include "attribute.h" /* attribute_def, pbs_attribute  */
 #include "server.h" /* server */
 
 attribute_def job_attr_def[10];
@@ -49,7 +49,7 @@ struct group * getgrnam_ext(char * grp_name)
   exit(1);
   }
 
-int acl_check(attribute *pattr, char   *name, int   type)
+int acl_check(pbs_attribute *pattr, char   *name, int   type)
   {
   fprintf(stderr, "The call to acl_check needs to be mocked!!\n");
   exit(1);

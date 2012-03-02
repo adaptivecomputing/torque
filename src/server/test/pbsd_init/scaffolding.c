@@ -5,7 +5,7 @@
 #include <limits.h> /* _POSIX_PATH_MAX */
 
 #include "pbs_nodes.h" /* all_nodes, pbsnode */
-#include "attribute.h" /* attribute_def, attribute, batch_op */
+#include "attribute.h" /* attribute_def, pbs_attribute, batch_op */
 #include "pbs_ifl.h" /* PBS_MAXSERVERNAME, MAXPATHLEN */
 #include "list_link.h" /* tlist_head */
 #include "resource.h" /* resource_def */
@@ -149,7 +149,7 @@ void set_statechar(job *pjob)
   exit(1);
   }
 
-void clear_attr(attribute *pattr, attribute_def *pdef)
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
   fprintf(stderr, "The call to clear_attr needs to be mocked!!\n");
   exit(1);
@@ -287,7 +287,7 @@ void log_close(int msg)
   exit(1);
   }
 
-int set_arst(struct attribute *attr, struct attribute *new, enum batch_op op)
+int set_arst(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
   {
   fprintf(stderr, "The call to set_arst needs to be mocked!!\n");
   exit(1);
@@ -395,7 +395,7 @@ int init_resc_defs(void)
   exit(1);
   }
 
-void free_arst(struct attribute *attr)
+void free_arst(struct pbs_attribute *attr)
   {
   fprintf(stderr, "The call to free_arst needs to be mocked!!\n");
   exit(1);
@@ -407,7 +407,7 @@ void log_event(int eventtype, int objclass, const char *objname, char *text)
   exit(1);
   }
 
-int decode_arst_direct(struct attribute *patr,  char *val)
+int decode_arst_direct(struct pbs_attribute *patr,  char *val)
   {
   fprintf(stderr, "The call to decode_arst_direct needs to be mocked!!\n");
   exit(1);
@@ -491,7 +491,7 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
-int append_dynamic_string (dynamic_string *ds, char *str)
+int append_dynamic_string (dynamic_string *ds, const char *str)
   {
   return(0);
   }
@@ -511,7 +511,7 @@ int create_partial_pbs_node(char *nodename, unsigned long addr, int perms)
   return(0);
   }
 
-dynamic_string *get_dynamic_string(int initial_size, char *str)
+dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
   return(NULL);
   }
@@ -541,7 +541,7 @@ int set_svr_attr(int attr_index, void *val)
   return(0);
   }
 
-int copy_to_end_of_dynamic_string(dynamic_string *ds, char *str)
+int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *str)
   {
   return(0);
   }

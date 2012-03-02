@@ -4,14 +4,14 @@
 #include <pthread.h> /* pthread_mutex_t */
 
 
-#include "attribute.h" /* attribute_def, attribute */
+#include "attribute.h" /* attribute_def, pbs_attribute */
 #include "queue.h" /* pbs_queue */
 
 pthread_mutex_t *setup_save_mutex = NULL;
 char *path_queues;
 attribute_def que_attr_def[10];
 
-void recov_acl(attribute *pattr, attribute_def *pdef, char *subdir, char *name)
+void recov_acl(pbs_attribute *pattr, attribute_def *pdef, char *subdir, char *name)
   {
   fprintf(stderr, "The call to recov_acl needs to be mocked!!\n");
   exit(1);
@@ -41,13 +41,13 @@ pbs_queue *que_alloc(char *name, int sv_qs_mutex_held)
   exit(1);
   }
 
-int recov_attr(int fd, void *parent, struct attribute_def *padef, struct attribute *pattr, int limit, int unknown, int do_actions)
+int recov_attr(int fd, void *parent, struct attribute_def *padef, struct pbs_attribute *pattr, int limit, int unknown, int do_actions)
   {
   fprintf(stderr, "The call to recov_attr needs to be mocked!!\n");
   exit(1);
   }
 
-int str_to_attr(char *name, char *val, struct attribute *attr, struct attribute_def *padef)
+int str_to_attr(char *name, char *val, struct pbs_attribute *attr, struct attribute_def *padef)
   {
   fprintf(stderr, "The call to str_to_attr needs to be mocked!!\n");
   exit(1);
@@ -59,7 +59,7 @@ void que_free(pbs_queue *pq, int sv_qs_mutex_held)
   exit(1);
   }
 
-int save_attr_xml(struct attribute_def *padef, struct attribute *pattr, int numattr, int fds)
+int save_attr_xml(struct attribute_def *padef, struct pbs_attribute *pattr, int numattr, int fds)
   {
   fprintf(stderr, "The call to save_attr_xml needs to be mocked!!\n");
   exit(1);
