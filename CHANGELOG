@@ -13,6 +13,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       along in the hierarchy
   e - Make pbs_server contact pbs_moms in the order in which they appear in the hierarchy
       in order to reduce errors on start-up of a large cluster.
+  b - fix another possibility for deadlock with routing queues
 
 4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 

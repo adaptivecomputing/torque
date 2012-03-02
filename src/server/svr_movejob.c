@@ -358,16 +358,22 @@ static int local_move(
   *my_err = svr_enquejob(jobp, FALSE, -1);
 
   if (parent_queue_mutex_held == TRUE)
-    lock_queue(pque, __func__, NULL, 0);
+    {
+    if ((pque = get_jobs_queue(&jobp)) == NULL)
+      lock_queue(pque, __func__, NULL, 0);
+    }
 
   if (*my_err != 0)
     {
     return(-1); /* should never ever get here */
     }
 
-  jobp->ji_lastdest = 0; /* reset in case of another route */
-
-  job_save(jobp, SAVEJOB_FULL, 0);
+  if (jobp != NULL)
+    {
+    jobp->ji_lastdest = 0; /* reset in case of another route */
+    
+    job_save(jobp, SAVEJOB_FULL, 0);
+    }
 
   return(PBSE_NONE);
   }  /* END local_move() */
