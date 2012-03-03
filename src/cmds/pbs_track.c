@@ -250,7 +250,7 @@ int main(
 
     /* do the exec */
 
-    execv(Args[0], Args);
+    execvp(Args[0], Args);
     }  /* END if ((DoBackground == 0) || (pid == 0)) */
   else if (pid > 0)
     {
