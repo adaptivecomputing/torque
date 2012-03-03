@@ -109,6 +109,11 @@ exec_prefix=@exec_prefix@
 CHK_TREE=${DESTDIR}@bindir@/chk_tree
 
 PBS_DEFAULT_SERVER=@PBS_DEFAULT_SERVER@
+PBS_LIB_PATH=@prefix@/lib
+PBS_LOAD_LIB_DIR=/etc/ld.so.conf.d
+PBS_LOAD_LIB_FILE=/etc/ld.so.conf.d/libtorque.conf
+HAVE_LOAD_LIB_FILE=@have_loadlibfile@
+
 
 # PBS_SERVER_HOME is defined without DESTDIR so that DEFAULT_FILE and EVIRON
 # can be based on SERVER_HOME.  SERVER_HOME is defined a second time to pick
@@ -343,6 +348,23 @@ mk_mom_dirs()
 	chk_tree_wrap -n $PBS_ENVIRON || return 1
 }
 							
+mk_default_ld_lib_file()
+{
+  echo "loadlibfile = $HAVE_LOAD_LIB_FILE"
+  if [ "$HAVE_LOAD_LIB_FILE" = "yes" ]; then
+    test -n "$verbose" && echo Making libtorque.conf
+
+    if [ ! -d $PBS_LOAD_LIB_DIR ]; then
+      echo $PBS_LOAD_LIB_DIR missing
+    else
+      echo $PBS_LIB_PATH > $PBS_LOAD_LIB_FILE && \
+        chmod 644 $PBS_LOAD_LIB_FILE || return 1
+      chk_tree_wrap -n $PBS_LOAD_LIB_FILE || return 1
+    fi
+  fi
+
+}
+
 mk_default_file()
 {
 	test -n "$verbose" && echo Making default server file
@@ -356,12 +378,18 @@ mk_default_file()
 		chmod 644 $PBS_DEFAULT_FILE || return 1
 	fi
 
+  mk_default_ld_lib_file || return 1
+
 	chk_tree_wrap -n $PBS_DEFAULT_FILE || return 1
 }
 
+
 mk_common()
 {
+  echo $PBS_LIB_PATH > $PBS_LOAD_LIB_FILE
+  $ECHO "$PBS_LOAD_LIB_FILE"
 	mk_default_file || return 1
+  mk_ld_lib_file
 	mk_aux_dir || return 1
 	install_dir $PBS_SERVER_HOME/spool 1777 || return 1
 	check_env || return 1

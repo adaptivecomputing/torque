@@ -89,6 +89,13 @@ AC_DEFINE_UNQUOTED(PBS_MACH, "${PBS_MACH}",
 AC_DEFINE_UNQUOTED(MACH_RESC_DEFS, "resc_def_${PBS_MACH}.c",
 		   [the machine specific resc_def_* file name])
 
+dnl
+dnl ##########################################################################
+dnl Do not install load library path in /etc/ld.so.conf.d
+
+AC_ARG_WITH(loadlibfile,
+   [AS_HELP_STRING([--without-loadlibfile], [ (Disable automatic install of entry to ld.so.conf.d (default=yes)])], [have_loadlibfile=no], [have_loadlibfile=yes])
+AC_SUBST(have_loadlibfile)
 
 dnl
 dnl  ######################################################################
