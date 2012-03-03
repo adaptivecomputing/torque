@@ -133,6 +133,8 @@
 #include "../lib/Libifl/lib_ifl.h" /* get_port_from_server_name_file */
 #include "node_manager.h" /* svr_is_request */
 
+#define TASK_CHECK_INTERVAL    10
+#define RETRY_ROUTING_INTERVAL 45
 #define HELLO_WAIT_TIME        600
 #define TSERVER_HA_CHECK_TIME  1  /* 1 second sleep time between checks on the lock file for high availability */
 
@@ -198,6 +200,8 @@ void          restore_attr_default (struct pbs_attribute *);
 
 /* Global Data Items */
 
+time_t                  last_routing_retry_time = 0;
+time_t                  last_task_check_time = 0;
 int                     lockfds = -1;
 int                     ForceCreation = FALSE;
 int                     high_availability_mode = FALSE;
@@ -259,6 +263,8 @@ int                     server_init_type = RECOV_WARM;
 char                    server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int                     svr_do_schedule = SCH_SCHEDULE_NULL;
 pthread_mutex_t        *svr_do_schedule_mutex;
+pthread_mutex_t        *check_tasks_mutex;
+pthread_mutex_t        *retry_routing_mutex;
 extern all_queues       svr_queues;
 extern int              listener_command;
 extern hello_container  hellos;
@@ -451,7 +457,7 @@ void clear_listeners(void)   /* I */
 
 int add_listener(
 
-  pbs_net_t l_addr,  /* I */
+  pbs_net_t    l_addr,  /* I */
   unsigned int l_port)  /* I */
 
   {
@@ -517,7 +523,7 @@ int PBSShowUsage(
 
 void parse_command_line(
     
-  int argc,
+  int   argc,
   char *argv[])
 
   {
@@ -924,29 +930,23 @@ void parse_command_line(
  * Returns: amount of time till next task
  */
 
-static time_t check_tasks()
+void *check_tasks()
 
   {
-  time_t     delay;
-
   work_task *ptask;
-  long       til = 0;
-  time_t     tilwhen;
   int        iter = -1;
 
-  time_t     time_now = time(NULL);
+  time_t     time_now;
 
-  get_svr_attr_l(SRV_ATR_scheduler_iteration, &til);
-  tilwhen = til;
-  iter = -1;
+  pthread_mutex_lock(check_tasks_mutex);
 
-  while ((ptask = next_task(&task_list_timed,&iter)) != NULL)
+  time_now = time(NULL);
+  last_task_check_time = time_now;
+
+  while ((ptask = next_task(&task_list_timed, &iter)) != NULL)
     {
-    if ((delay = ptask->wt_event - time_now) > 0)
+    if (ptask->wt_event - time_now > 0)
       {
-      if (tilwhen > delay)
-        tilwhen = delay;
-
       pthread_mutex_unlock(ptask->wt_mutex);
 
       break;
@@ -957,9 +957,8 @@ static time_t check_tasks()
       }
     }
 
-  /* should the scheduler be run?  If so, adjust the delay time  */
-
-  if ((delay = server.sv_next_schedule - time_now) <= 0)
+  /* should the scheduler be run?  If so, adjust the schedule time  */
+  if (server.sv_next_schedule - time_now <= 0)
     {
     pthread_mutex_lock(svr_do_schedule_mutex);
     svr_do_schedule = SCH_SCHEDULE_TIME;
@@ -969,10 +968,10 @@ static time_t check_tasks()
     listener_command = SCH_SCHEDULE_TIME;
     pthread_mutex_unlock(listener_command_mutex);
     }
-  else if (delay < tilwhen)
-    tilwhen = delay;
+  
+  pthread_mutex_unlock(check_tasks_mutex);
 
-  return(tilwhen);
+  return(NULL);
   }  /* END check_tasks() */
 
 
@@ -1036,6 +1035,51 @@ void send_any_hellos_needed()
 
 
 
+void *handle_queue_routing_retries(
+
+  void *vp)
+
+  {
+  pbs_queue *pque;
+  int        iter = -1;
+  time_t     time_now = time(NULL);
+
+  pthread_mutex_lock(retry_routing_mutex);
+
+  if (time_now - last_routing_retry_time > RETRY_ROUTING_INTERVAL)
+    {
+    last_routing_retry_time = time_now;
+    
+    while ((pque = next_queue(&svr_queues, &iter)) != NULL)
+      {
+      if (pque->qu_qs.qu_type == QTYPE_RoutePush)
+        queue_route(pque);
+      
+      unlock_queue(pque, __func__, NULL, 0);
+      }
+    }
+  
+  pthread_mutex_unlock(retry_routing_mutex);
+
+  return(NULL);
+  } /* END handle_queue_routing_retries() */
+
+
+
+
+void *handle_scheduler_contact(
+
+  void *vp)
+
+  {
+  schedule_jobs();
+  notify_listeners();
+
+  return(NULL);
+  } /* END handle_scheduler_contact() */
+
+
+
 
 
 void main_loop(void)
@@ -1043,15 +1087,13 @@ void main_loop(void)
   {
   int            c;
   long          state = SV_STATE_DOWN;
-  time_t        waittime;
-  pbs_queue    *pque;
+  time_t        waittime = 5;
   job          *pjob;
   int           iter;
   time_t        last_jobstat_time;
   long          when = 0;
   long          timeout = 0;
   long          log = 0;
-  long          poll_jobs = FALSE;
   long          scheduling = FALSE;
   long          sched_iteration = 0;
   time_t        time_now = time(NULL);
@@ -1142,19 +1184,13 @@ void main_loop(void)
     if (try_hellos <= time_now)
       send_any_hellos_needed();
 
-    get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
-
-    if (poll_jobs)
-      waittime = MIN(check_tasks(), JobStatRate - (time_now - last_jobstat_time));
-    else
-      waittime = check_tasks();
+    if (time_now - last_task_check_time > TASK_CHECK_INTERVAL)
+      enqueue_threadpool_request(check_tasks, NULL);
 
     waittime = MAX(1, waittime);
 
     if (state == SV_STATE_RUN)
       {
-      /* In normal Run state */
-
       /* if time or event says to run scheduler, do it */
       get_svr_attr_l(SRV_ATR_scheduling, &scheduling);
       get_svr_attr_l(SRV_ATR_scheduler_iteration, &sched_iteration);
@@ -1168,8 +1204,7 @@ void main_loop(void)
 
         server.sv_next_schedule = time_now + sched_iteration;
 
-        schedule_jobs();
-        notify_listeners();
+        enqueue_threadpool_request(handle_scheduler_contact, NULL);
         }
       else
         {
@@ -1191,8 +1226,8 @@ void main_loop(void)
         }
 
       /* If more than _LIMIT seconds since start, stop */
-
-      if ((c == 0) || (time_now > server.sv_started + SVR_HOT_LIMIT))
+      if ((c == 0) || 
+          (time_now > server.sv_started + SVR_HOT_LIMIT))
         {
         server_init_type = RECOV_WARM;
 
@@ -1201,23 +1236,11 @@ void main_loop(void)
         }
       }
 
-    iter = -1;
-
-    /* any jobs to route today */
-/*    sprintf(log_buf, "num of queues in svr_queues = %d", svr_queues.ra->num);
-    log_err(-1, __func__, log_buf);
-    */
-
-    while ((pque = next_queue(&svr_queues, &iter)) != NULL)
-      {
-      if (pque->qu_qs.qu_type == QTYPE_RoutePush)
-        queue_route(pque);
-
-      unlock_queue(pque, "main_loop", NULL, LOGLEVEL);
-      } 
+    /* retry routing as needed */
+    if (time_now - last_routing_retry_time > RETRY_ROUTING_INTERVAL)
+      enqueue_threadpool_request(handle_queue_routing_retries, NULL);
 
     /* wait for a request and process it */
-
     if (wait_request(waittime, &state) != 0)
       {
       log_err(-1, msg_daemonname, "wait_request failed");

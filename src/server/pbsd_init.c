@@ -208,6 +208,8 @@ extern int              scheduler_jobct;
 extern pthread_mutex_t *svr_do_schedule_mutex;
 extern pthread_mutex_t *listener_command_mutex;
 extern pthread_mutex_t *node_state_mutex;
+extern pthread_mutex_t *check_tasks_mutex;
+extern pthread_mutex_t *retry_routing_mutex;
 
 extern int a_opt_init;
 
@@ -1233,6 +1235,12 @@ int pbsd_init(
 
   svr_do_schedule_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(svr_do_schedule_mutex, NULL);
+
+  check_tasks_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(check_tasks_mutex, NULL);
+
+  retry_routing_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(retry_routing_mutex, NULL);
 
   listener_command_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(listener_command_mutex, NULL);

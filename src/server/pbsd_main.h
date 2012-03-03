@@ -20,8 +20,6 @@ int PBSShowUsage(char *EMsg);
 
 void parse_command_line(int argc, char *argv[]);
 
-/* static time_t check_tasks(); */
-
 /* static int start_hot_jobs(void); */
 
 void main_loop(void);
