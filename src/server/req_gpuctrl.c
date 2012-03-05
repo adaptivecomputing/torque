@@ -100,6 +100,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "pbs_nodes.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
+#include "issue_request.h" /* issue_Drequest */
 
 /* External Functions */
 
