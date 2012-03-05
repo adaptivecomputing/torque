@@ -9020,6 +9020,8 @@ int insert_node(all_nodes *an, struct pbsnode *pnode) {return(PBSE_NONE);}
 int initialize_pbsnode(struct pbsnode *pnode, char *pname, u_long *pul, int ntype) {return(PBSE_NONE);}
 int status_node(struct pbsnode *pnode, struct batch_request *preq, int *bad, tlist_head *pstathd) {return(PBSE_NONE);}
 void update_node_state(struct pbsnode *pnode, int state) {}
+int create_a_gpusubnode(struct pbsnode *pnode) {return(PBSE_NONE);}
+int node_gpustatus_list(pbs_attribute *new, void *pnode, int actmode) {return(PBSE_NONE);}
 #endif
 
 
