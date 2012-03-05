@@ -329,6 +329,7 @@ extern char *cat_dirs(char *root, char *base);
 extern char *get_local_script_path(job *pjob, char *base);
 #ifdef NVIDIA_GPUS
 extern int  setup_gpus_for_job(job *pjob);
+extern int  use_nvidia_gpu;
 #endif  /* NVIDIA_GPUS */
 
 int exec_job_on_ms(job *pjob);
@@ -2760,7 +2761,7 @@ int TMomFinalizeChild(
       }
 
 #ifdef NVIDIA_GPUS
-    if (setup_gpus_for_job(pjob) == -1)
+    if ((use_nvidia_gpu) && setup_gpus_for_job(pjob) == -1)
       {
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
 

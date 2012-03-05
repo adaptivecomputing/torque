@@ -118,6 +118,9 @@ int         reply_send_mom(struct batch_request *request);
 extern void check_state(int);
 extern void mom_server_all_update_stat();
 void        send_update_soon();
+#ifdef NVIDIA_GPUS
+extern int  use_nvidia_gpu;
+#endif  /* NVIDIA_GPUS */
 extern int  multi_mom;
 extern unsigned int pbs_rm_port;
 
@@ -1078,7 +1081,8 @@ void req_commit(
    * Does this job have a gpuid assigned?
    * if so, then update gpu status
    */
-  if (((pj->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0) &&
+  if ((use_nvidia_gpu) && 
+      ((pj->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0) &&
       (pj->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL))
     {
     send_update_soon();

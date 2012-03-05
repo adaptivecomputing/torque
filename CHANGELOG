@@ -75,6 +75,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       run the job on from Moab. Corrected.
   e - add the $PBS_WALLTIME variable to jobs, thanks to a patch from Mark Roberts 
   n - change moab_array_compatible server parameter so it defaults to true
+  e - change to allow pbs_mom to run if configured with --enable-nvidia-gpus but
+      installed on a node without Nvidia gpus.
 
 3.0.4
   c - fix a buffer being overrun with nvidia gpus enabled
