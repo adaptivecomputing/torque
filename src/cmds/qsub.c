@@ -3723,13 +3723,10 @@ int process_opts(
             char *group;
             char *colon;
             
-            /* make sure this is the super user */
-            if (geteuid() != (uid_t)0)
-              {
-              fprintf(stderr, "qsub: Must be the super user to submit a proxy job\n");
-              
-              errflg++;
-              }
+            /* don't check privileges, this happens on the server
+               side as managers are allowed to submit jobs on behalf
+               of other users */
+
             user = optarg;
             colon = strchr(user,':');
             

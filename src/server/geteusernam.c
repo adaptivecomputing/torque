@@ -379,6 +379,8 @@ int set_jobexid(
     }  /* END if (CheckID == 0) */
   else
     {
+    int perm;
+
     if ((attrry + (int)JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
       pattr = attrry + (int)JOB_ATR_userlst;
     else
@@ -394,6 +396,8 @@ int set_jobexid(
 
     pwent = getpwnam_ext(puser);
 
+    perm = svr_get_privilege(puser,get_variable(pjob,"PBS_O_HOST"));
+
     if (pwent == NULL)
       {
       snprintf(log_buffer,sizeof(log_buffer),
@@ -408,7 +412,8 @@ int set_jobexid(
       return(PBSE_BADUSER);
       }
 
-    if (pwent->pw_uid == 0)
+    if ((pwent->pw_uid == 0) ||
+        (perm & ATR_DFLAG_MGWR))
       {
       /* add check here for virtual user */
       if (pjob->ji_wattr[JOB_ATR_proxy_user].at_flags & ATR_VFLAG_SET)
