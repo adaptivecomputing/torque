@@ -394,6 +394,8 @@ int set_jobexid(
     }  /* END if (CheckID == 0) */
   else
     {
+    int perm;
+
     if ((attrry + JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
       pattr = attrry + JOB_ATR_userlst;
     else
@@ -411,6 +413,8 @@ int set_jobexid(
 
     pwent = getpwnam_ext(puser);
 
+    perm = svr_get_privilege(puser,get_variable(pjob,"PBS_O_HOST"));
+
     if (pwent == NULL)
       {
       snprintf(log_buf,sizeof(log_buf),
@@ -427,7 +431,8 @@ int set_jobexid(
       return(PBSE_BADUSER);
       }
 
-    if (pwent->pw_uid == 0)
+    if ((pwent->pw_uid == 0) ||
+        (perm & ATR_DFLAG_MGWR))
       {
       struct array_strings *pas = NULL;
       get_svr_attr_arst(SRV_ATR_AclRoot, &pas);
