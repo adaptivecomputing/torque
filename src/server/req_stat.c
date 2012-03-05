@@ -1500,7 +1500,7 @@ void *req_stat_node(
 #ifndef USE_ALPS_LIB
     rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
 #else
-    if (is_alps_reporter(pnode))
+    if (pnode->nd_is_alps_reporter == TRUE)
       rc = get_alps_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
     else
       rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
@@ -1526,7 +1526,7 @@ void *req_stat_node(
 #ifndef USE_ALPS_LIB
       rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
 #else
-      if (is_alps_reporter(pnode))
+      if (pnode->nd_is_alps_reporter == TRUE)
         rc = get_alps_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
       else
         rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);

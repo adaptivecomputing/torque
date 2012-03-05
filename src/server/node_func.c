@@ -129,6 +129,7 @@
 #include "req_manager.h" /* mgr_set_node_attr */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "svr_func.h" /* get_svr_attr_* */
+#include "libalps_report/generate_alps_status.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 extern int h_errno;
@@ -1916,39 +1917,38 @@ static char *parse_node_token(
 int setup_nodes(void)
 
   {
-  static char *id = "setup_nodes";
-
-  FILE  *nin;
-  char   line[MAXLINE << 4];
-  char   note[MAX_NOTE+1];
-  char  *nodename;
-  char   propstr[256];
-  char  *token;
-  char  *open_bracket;
-  char  *close_bracket;
-  char  *dash;
-  char   tmp_node_name[MAX_LINE];
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
-  int    bad;
-  int    num;
-  int    linenum;
-  int    err;
-  int    start = -1;
-  int    end = -1;
+  FILE           *nin;
+  char            line[MAXLINE << 4];
+  char            note[MAX_NOTE+1];
+  char           *nodename;
+  char            propstr[256];
+  char           *token;
+  char           *open_bracket;
+  char           *close_bracket;
+  char           *dash;
+  char            tmp_node_name[MAX_LINE];
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  int             bad;
+  int             num;
+  int             linenum;
+  int             err;
+  int             start = -1;
+  int             end = -1;
+  int             is_alps_reporter;
 
   struct pbsnode *np;
-  char     *val;
-  char      xchar;
-  svrattrl *pal;
-  int   perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
-  tlist_head atrlist;
+  char           *val;
+  char            xchar;
+  svrattrl       *pal;
+  int             perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
+  tlist_head      atrlist;
 
   extern char server_name[];
   extern resource_t next_resource_tag;
 
-  snprintf(log_buf, sizeof(log_buf), "%s()", id);
+  snprintf(log_buf, sizeof(log_buf), "%s()", __func__);
 
-  log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+  log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
   CLEAR_HEAD(atrlist);
 
@@ -1977,6 +1977,8 @@ int setup_nodes(void)
     {
     if (line[0] == '#') /* comment */
       continue;
+
+    is_alps_reporter = FALSE;
 
     /* first token is the node name, may have ":ts" appended */
 
@@ -2031,7 +2033,7 @@ int setup_nodes(void)
           {
           strcpy(log_buf, "cannot create node attribute");
 
-          log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
           goto errtoken2;
           }
@@ -2057,24 +2059,31 @@ int setup_nodes(void)
 
     if (propstr[0] != '\0')
       {
-      pal = attrlist_create(ATTR_NODE_properties, 0, strlen(propstr) + 1);
-
-      if (pal == NULL)
+#ifdef USE_ALPS_LIB
+      if (!strcmp(propstr, alps_reporter_feature))
+        is_alps_reporter = TRUE;
+      else
+#endif
         {
-        strcpy(log_buf, "cannot create node attribute");
-
-        log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
-
-        /* FAILURE */
-
-        return(-1);
+        pal = attrlist_create(ATTR_NODE_properties, 0, strlen(propstr) + 1);
+        
+        if (pal == NULL)
+          {
+          strcpy(log_buf, "cannot create node attribute");
+          
+          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+          
+          /* FAILURE */
+          
+          return(-1);
+          }
+        
+        strcpy(pal->al_value, propstr);
+        
+        pal->al_flags = SET;
+        
+        append_link(&atrlist, &pal->al_link, pal);
         }
-
-      strcpy(pal->al_value, propstr);
-
-      pal->al_flags = SET;
-
-      append_link(&atrlist, &pal->al_link, pal);
       }
 
     /* now create node and subnodes */
@@ -2097,7 +2106,7 @@ int setup_nodes(void)
           "malformed nodename with range: %s, must be of form [x-y]\n",
           nodename);
 
-        log_err(-1,id,log_buf);
+        log_err(-1, __func__, log_buf);
 
         goto errtoken2;
         }
@@ -2157,7 +2166,7 @@ int setup_nodes(void)
         nodename,
         linenum);
       
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
       goto errtoken2;
       }
@@ -2168,17 +2177,24 @@ int setup_nodes(void)
         nodename,
         err);
 
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
       free_attrlist(&atrlist);
       continue;
+      }
+
+    if (is_alps_reporter == TRUE)
+      {
+      np = find_nodebyname(nodename);
+      np->nd_is_alps_reporter = TRUE;
+      unlock_node(np, __func__, NULL, 0);
       }
 
     if (LOGLEVEL >= 3)
       {
       sprintf(log_buf, "node '%s' successfully loaded from nodes file", nodename);
 
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
 
     free_attrlist(&atrlist);
@@ -2234,7 +2250,7 @@ int setup_nodes(void)
         if (np->nd_note == NULL)
           {
           sprintf(log_buf, "couldn't allocate space for note (node = %s)", np->nd_name);          
-          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
+          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
           }
         
         unlock_node(np, __func__, "init - no note", LOGLEVEL);
@@ -2256,7 +2272,7 @@ errtoken1:
 
 errtoken2:
 
-  log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+  log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
   free_attrlist(&atrlist);
 

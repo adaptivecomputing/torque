@@ -322,6 +322,7 @@ struct pbsnode
   char                 *numa_str; /* comma-delimited string of processor values */
   char                 *gpu_str; /* comma-delimited string of the number of gpus for each nodeboard */
 #ifdef USE_ALPS_LIB
+  unsigned char         nd_is_alps_reporter;
   all_nodes             alps_subnodes;
 #endif
 
