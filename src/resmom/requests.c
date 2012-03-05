@@ -160,6 +160,10 @@ extern char            *msg_manager;
 extern time_t  time_now;
 extern int  resc_access_perm; /* see encode_resc() */
 extern int spoolasfinalname;
+#ifdef NVIDIA_GPUS
+extern int  use_nvidia_gpu;
+#endif /* NVIDIA_GPUS */
+
 /* in attr_fn_resc.c */
 
 extern char             MOMUNameMissing[];
@@ -1261,6 +1265,26 @@ void req_gpuctrl(
     log_ext(-1, id, log_buffer, LOG_INFO);
     }
 
+  if (!use_nvidia_gpu)
+    {
+    sprintf(
+      log_buffer,
+      "GPU control requests not active: node %s gpuid %s mode %d reset_perm %d reset_vol %d",
+      mom_node,
+      gpuid,
+      gpumode,
+      reset_perm,
+      reset_vol);
+
+    if (LOGLEVEL >= 3)
+      {
+        log_ext(-1, id, log_buffer, LOG_INFO);
+      }
+
+    req_reject(PBSE_NOSUP, 0, preq, NULL, NULL);
+    return;
+    }
+
     /* assume success? */
 
   if (gpumode != -1)
@@ -1292,14 +1316,14 @@ void req_gpuctrl(
     }
 #else
 
-    sprintf(
-      log_buffer,
-      "GPU control request not supported: node %s gpuid %s mode %d reset_perm %d reset_vol %d",
-      mom_node,
-      gpuid,
-      gpumode,
-      reset_perm,
-      reset_vol);
+  sprintf(
+    log_buffer,
+    "GPU control requests not supported: node %s gpuid %s mode %d reset_perm %d reset_vol %d",
+    mom_node,
+    gpuid,
+    gpumode,
+    reset_perm,
+    reset_vol);
 
   if (LOGLEVEL >= 3)
     {

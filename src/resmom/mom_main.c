@@ -290,6 +290,7 @@ char           *auto_ideal_load = NULL;
 char           *auto_max_load   = NULL;
 #ifdef NVIDIA_GPUS
 int             MOMNvidiaDriverVersion    = 0;
+int             use_nvidia_gpu = TRUE;
 #endif  /* NVIDIA_GPUS */
 
 #define TMAX_JE  64
@@ -315,10 +316,13 @@ extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
 extern void     mom_checkpoint_set_directory_path(char *str);
 
-#if defined(NVIDIA_GPUS) && defined(NVML_API)
+#ifdef NVIDIA_GPUS
+#ifdef NVML_API
 extern int      init_nvidia_nvml();
 extern int      shut_nvidia_nvml();
-#endif  /* NVIDIA_GPUS and NVML_API */
+#endif  /* NVML_API */
+extern int      check_nvidia_setup();
+#endif  /* NVIDIA_GPUS */
 
 void prepare_child_tasks_for_delete();
 
@@ -8310,6 +8314,7 @@ void main_loop(void)
         mom_server_all_update_stat();
 
 #ifdef NVIDIA_GPUS
+       if (use_nvidia_gpu)
         mom_server_all_update_gpustat();
 #endif  /* NVIDIA_GPUS */
 
@@ -8514,12 +8519,26 @@ int main(
     return(rc);
     }
 
-#if defined(NVIDIA_GPUS) && defined(NVML_API)
+#ifdef NVIDIA_GPUS
+#ifdef NVML_API
   if (!init_nvidia_nvml())
     {
-    return(1);
+    use_nvidia_gpu = FALSE;
     }
-#endif  /* NVIDIA_GPUS and NVML_API */
+#endif  /* NVML_API */
+  if (!check_nvidia_setup())
+    {
+    use_nvidia_gpu = FALSE;
+    }
+
+  if (!use_nvidia_gpu)
+    {
+    sprintf(log_buffer, "Not using Nvidia gpu support even though built with --enable-nvidia-gpus");
+
+    log_ext(-1, "main", log_buffer, LOG_DEBUG);
+    }
+
+#endif  /* NVIDIA_GPUS */
 
   main_loop();
 

@@ -120,7 +120,10 @@ extern int  svr_chkque(job *, pbs_queue *, char *, int, char *);
 extern int  job_route(job *);
 extern void check_state(int);
 extern void mom_server_all_update_stat();
+#ifdef NVIDIA_GPUS
 extern void mom_server_all_update_gpustat(void);
+extern int  use_nvidia_gpu;
+#endif  /* NVIDIA_GPUS */
 
 /* Global Data Items: */
 
@@ -1045,7 +1048,8 @@ void req_commit(
    * Does this job have a gpuid assigned?
    * if so, then update gpu status
    */
-  if (((pj->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0) &&
+  if ((use_nvidia_gpu) && 
+      ((pj->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0) &&
       (pj->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL))
     {
     mom_server_all_update_gpustat();

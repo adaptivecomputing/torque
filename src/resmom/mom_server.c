@@ -304,6 +304,7 @@ extern char *reqgres(struct rm_attribute *);
 extern int find_file(char *, char *);
 extern char  mom_host[];
 extern int             MOMNvidiaDriverVersion;
+extern int  use_nvidia_gpu;
 #endif  /* NVIDIA_GPUS */
 
 char TORQUE_JData[MMAX_LINE];
@@ -1252,11 +1253,28 @@ int init_nvidia_nvml()
   static char id[] = "init_nvidia_nvml";
 
   nvmlReturn_t  rc;
+  unsigned int      device_count;
 
   rc = nvmlInit();
 
   if (rc == NVML_SUCCESS)
-    return (TRUE);
+    {
+    rc = nvmlDeviceGetCount(&device_count);
+    if (rc == NVML_SUCCESS)
+      {
+      if ((int)device_count > 0)
+        return (TRUE);
+
+      sprintf(log_buffer,"No Nvidia gpus detected\n");
+      log_ext(-1, id, log_buffer, LOG_DEBUG);
+
+      /* since we detected no gpus, shut down nvml */
+
+      shut_nvidia_nvml();
+
+      return (FALSE);
+      }
+    }
 
   log_nvml_error (rc, NULL, id);
 
@@ -1275,6 +1293,9 @@ int shut_nvidia_nvml()
   static char id[] = "shut_nvidia_nvml";
 
   nvmlReturn_t  rc;
+
+  if (!use_nvidia_gpu)
+    return (TRUE);
 
   rc = nvmlShutdown();
 
@@ -1445,7 +1466,7 @@ static int check_nvidia_version_file()
  * Function to determine if nvidia-smi is setup correctly
  */
 #ifdef NVIDIA_GPUS
-static int check_nvidia_setup()
+int check_nvidia_setup()
   {
   static char id[] = "check_nvidia_setup";
 
