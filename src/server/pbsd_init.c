@@ -1714,7 +1714,7 @@ int pbsd_init(
           (!(pjob->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)) &&
           (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
         {
-        snprintf(basen, sizeof(basen), "%s%s", pjob->ji_qs.ji_jobid, JOB_SCRIPT_SUFFIX);
+        snprintf(basen, sizeof(basen), "%s%s", pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
 
         if (chk_save_file(basen) != 0)
           {

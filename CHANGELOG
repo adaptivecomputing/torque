@@ -20,6 +20,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       to /etc/ld.so.conf.d in a file named libtorque.conf. The file will be created
       by default during make install. The configuration can be made to not install this
       file by using the configure option --without-loadlibfile
+  b - Fixed a bug where Moab was using the option SYNCJOBID=TRUE which allows Moab
+      to create the job ids in TORQUE. With this in place if TORQUE were terminated
+      it would delete all jobs submitted through msub when pbs_server was restarted.
+      This fix recovers all jobs whether submitted with msub or qsub when pbs_server
+      restarts.
 
 4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 
