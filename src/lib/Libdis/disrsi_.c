@@ -30,7 +30,7 @@ int disrsi_(
     return DIS_INVALID;
   if (value == NULL)
     return DIS_INVALID;
-  if (stream <= 0)
+  if (stream < 0)
     return DIS_INVALID;
   if (count == 0)
     return DIS_INVALID;
