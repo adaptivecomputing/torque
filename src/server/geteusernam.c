@@ -494,7 +494,7 @@ int set_jobexid(
           return(PBSE_BADUSER); /* root not allowed */
           }
         }
-      else
+      else if (pwent->pw_uid == 0)
         {
         if (EMsg != NULL)
           snprintf(EMsg, 1024, "root user %s not allowed",
