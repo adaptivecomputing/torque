@@ -129,7 +129,9 @@
 #include "req_manager.h" /* mgr_set_node_attr */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "svr_func.h" /* get_svr_attr_* */
+#ifdef USE_ALPS_LIB
 #include "libalps_report/generate_alps_status.h"
+#endif
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 extern int h_errno;
@@ -2183,12 +2185,14 @@ int setup_nodes(void)
       continue;
       }
 
+#ifdef USE_ALPS_LIB
     if (is_alps_reporter == TRUE)
       {
       np = find_nodebyname(nodename);
       np->nd_is_alps_reporter = TRUE;
       unlock_node(np, __func__, NULL, 0);
       }
+#endif
 
     if (LOGLEVEL >= 3)
       {
