@@ -53,12 +53,6 @@ int get_num_connections()
   exit(1);
   }
 
-void log_ext(int errnum, char *routine, char *text, int severity)
-  {
-  fprintf(stderr, "The call to log_ext to be mocked!!\n");
-  exit(1);
-  }
-
 int DIS_tcp_wflush(int fd)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush to be mocked!!\n");
@@ -86,12 +80,6 @@ int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *E
 int encode_DIS_ReqHdr(int sock, int reqt, char *user)
   {
   fprintf(stderr, "The call to encode_DIS_ReqHdr to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
   }
 

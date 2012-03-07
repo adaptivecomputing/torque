@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_mom_req_quejob
 
 libmom_req_quejob_la_SOURCES = scaffolding.c ${PROG_ROOT}/mom_req_quejob.c
-libmom_req_quejob_la_LDFLAGS = @CHECK_LIBS@ -shared
+libmom_req_quejob_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_mom_req_quejob_SOURCES = test_mom_req_quejob.c
 

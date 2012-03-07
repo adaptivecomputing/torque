@@ -28,7 +28,6 @@ int queue_rank = 0;
 char *path_spool;
 struct server server;
 int LOGLEVEL = 0;
-char log_buffer[LOG_BUF_SIZE];
 char *msg_daemonname = "unset";
 
 
@@ -83,12 +82,6 @@ void reply_ack(struct batch_request *preq)
 int svr_authorize_jobreq(struct batch_request *preq, job *pjob)
   {
   fprintf(stderr, "The call to svr_authorize_jobreq to be mocked!!\n");
-  exit(1);
-  }
-
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record to be mocked!!\n");
   exit(1);
   }
 
@@ -206,21 +199,9 @@ int reply_jobid(struct batch_request *preq, char *jobid, int which)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event to be mocked!!\n");
-  exit(1);
-  }
-
 void issue_track(job *pjob)
   {
   fprintf(stderr, "The call to issue_track to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
   }
 

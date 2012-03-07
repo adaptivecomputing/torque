@@ -18,12 +18,6 @@ int encode_DIS_reply(int sock, struct batch_reply *reply)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
-  }
-
 void free_br(struct batch_request *preq)
   {
   fprintf(stderr, "The call to free_br needs to be mocked!!\n");
@@ -63,18 +57,6 @@ char *pbse_to_txt(int err)
 work_task *next_task(all_tasks *at, int *iter)
   {
   fprintf(stderr, "The call to next_task needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_evenlog_event needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 

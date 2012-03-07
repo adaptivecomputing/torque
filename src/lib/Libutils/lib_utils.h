@@ -44,11 +44,11 @@ int        MXMLFromString(mxml_t **EP, char *XMLString, char **Tail, char *EMsg,
 /* u_dynamic_string.c */
 size_t need_to_grow(dynamic_string *ds, char *to_check);
 
-int append_dynamic_string(dynamic_string *ds, char *to_append);
+int append_dynamic_string(dynamic_string *ds, const char *to_append);
 
-int copy_to_end_of_dynamic_string(dynamic_string *ds, char *to_copy);
+int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *to_copy);
 
-dynamic_string *get_dynamic_string(int initial_size, char *str);
+dynamic_string *get_dynamic_string(int initial_size, const char *str);
 
 void free_dynamic_string(dynamic_string *ds);
 

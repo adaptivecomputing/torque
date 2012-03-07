@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_svr_chk_owner
 
 libsvr_chk_owner_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_chk_owner.c
-libsvr_chk_owner_la_LDFLAGS = @CHECK_LIBS@ -shared
+libsvr_chk_owner_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_svr_chk_owner_SOURCES = test_svr_chk_owner.c
 

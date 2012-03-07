@@ -37,7 +37,6 @@ unsigned int alarm_time = 10;
 char *TNoSpoolDirList[TMAX_NSDCOUNT];
 tlist_head svr_alljobs;
 int LOGLEVEL = 0;
-char log_buffer[LOG_BUF_SIZE];
 char *msg_manager = "%s at request of %s@%s";
 int multi_mom = 1;
 char MOMUNameMissing[64];
@@ -103,12 +102,6 @@ int replace_checkpoint_path(char *path)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
-  }
-
 int DIS_reply_read(int sock, struct batch_reply *preply)
   {
   fprintf(stderr, "The call to DIS_reply_read needs to be mocked!!\n");
@@ -166,12 +159,6 @@ int in_remote_checkpoint_dir(char *ckpt_path)
 int mom_open_socket_to_jobs_server(job *pjob, const char *caller_id, void *(*message_handler)(void *))
   {
   fprintf(stderr, "The call to mom_open_socket_to_jobs_server needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_ext(int errnum, const char *routine, char *text, int severity)
-  {
-  fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
   }
 
@@ -286,18 +273,6 @@ int is_joined(job *pjob)
 int job_unlink_file(job *pjob, const char *name)
   {
   fprintf(stderr, "The call to job_unlink_file needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 

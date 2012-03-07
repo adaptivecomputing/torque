@@ -83,12 +83,6 @@ void *process_Dreply(void *new_sock)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
-  }
-
 char *netaddr_pbs_net_t(pbs_net_t ipadd)
   {
   fprintf(stderr, "The call to netaddr_pbs_net_t needs to be mocked!!\n");
@@ -134,12 +128,6 @@ void svr_disconnect(int handle)
 struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *held)
   {
   fprintf(stderr, "The call to next_host needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_ext(int errnum, char *routine, char *text, int severity)
-  {
-  fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
   }
 
@@ -236,18 +224,6 @@ int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, vo
 int PNodeStateToString(int SBM, char *Buf, int BufSize)
   {
   fprintf(stderr, "The call to PNodeStateToString needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 

@@ -64,17 +64,3 @@ int save_attr_xml(struct attribute_def *padef, struct pbs_attribute *pattr, int 
   fprintf(stderr, "The call to save_attr_xml needs to be mocked!!\n");
   exit(1);
   }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
- void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
-  exit(1);
-  }
-
-

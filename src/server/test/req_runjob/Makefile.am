@@ -9,7 +9,8 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_runjob
 
 libreq_runjob_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_runjob.c
-libreq_runjob_la_LDFLAGS = @CHECK_LIBS@ -shared
+libreq_runjob_la_LDFLAGS = @CHECK_LIBS@ -shared -L../.libs -lscaffolding_svr -L../../../lib/test/.libs -lscaffolding_lib
+
 
 test_req_runjob_SOURCES = test_req_runjob.c
 

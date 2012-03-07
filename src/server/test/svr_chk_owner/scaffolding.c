@@ -20,12 +20,6 @@ char *site_map_user(char *uname, char *host)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record to be mocked!!\n");
-  exit(1);
-  }
-
 char *get_variable(job *pjob, char *variable)
   {
   fprintf(stderr, "The call to get_variable to be mocked!!\n");
@@ -41,12 +35,6 @@ void req_reject(int code, int aux, struct batch_request *preq, char *HostName, c
 char *pbse_to_txt(int err)
   {
   fprintf(stderr, "The call to pbse_to_txt to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
   }
 

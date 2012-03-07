@@ -19,7 +19,6 @@ unsigned int pbs_rm_port = 0;
 tlist_head svr_alljobs;
 char noglobid[] = "none";
 int LOGLEVEL = 0;
-char log_buffer[LOG_BUF_SIZE];
 char *AllocParCmd = NULL;
 
 
@@ -35,21 +34,9 @@ char *get_job_envvar(job *pjob, char *variable)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
-  }
-
 int mom_get_sample(void)
   {
   fprintf(stderr, "The call to mom_get_sample needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_ext(int errnum, const char *routine, char *text, int severity)
-  {
-  fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
   }
 
@@ -86,17 +73,5 @@ int openpty (int *__amaster, int *__aslave, char *__name, const struct termios *
 int task_save(task *ptask)
   {
   fprintf(stderr, "The call to task_save needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }

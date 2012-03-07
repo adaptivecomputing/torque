@@ -46,12 +46,6 @@ int add_hash(hash_table_t *ht, int value, char *key)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
-  }
-
 int get_value_hash(hash_table_t *ht, char *key)
   {
   fprintf(stderr, "The call to get_value_hash needs to be mocked!!\n");
@@ -79,12 +73,6 @@ void *next_thing(resizable_array *ra, int *iter)
 hash_table_t *create_hash(int size)
   {
   fprintf(stderr, "The call to create_hash needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 

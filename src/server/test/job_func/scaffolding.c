@@ -133,12 +133,6 @@ int add_hash(hash_table_t *ht, int value, char *key)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
-  }
-
 void free_br(struct batch_request *preq)
   {
   fprintf(stderr, "The call to free_br needs to be mocked!!\n");
@@ -178,12 +172,6 @@ job_array *get_array(char *id)
 job *get_recycled_job()
   {
   fprintf(stderr, "The call to get_recycled_job needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_ext(int errnum, const char *routine, char *text, int severity)
-  {
-  fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
   }
 
@@ -259,12 +247,6 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
-int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
-  {
-  fprintf(stderr, "The call to relay_to_mom needs to be mocked!!\n");
-  exit(1);
-  }
-
 hash_table_t *create_hash(int size)
   {
   fprintf(stderr, "The call to create_hash needs to be mocked!!\n");
@@ -289,20 +271,10 @@ int insert_thing_after(resizable_array *ra, void *thing, int index)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
 void issue_track(job *pjob)
   {
   fprintf(stderr, "The call to issue_track needs to be mocked!!\n");
   exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
   }
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)

@@ -134,12 +134,6 @@ void svr_disconnect(int handle)
   exit(1);
   }
 
-void log_ext(int errnum, char *routine, char *text, int severity)
-  {
-  fprintf(stderr, "The call to log_ext to be mocked!!\n");
-  exit(1);
-  }
-
 void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
@@ -191,18 +185,6 @@ struct pbsnode *PGetNodeFromAddr(pbs_net_t addr)
 int PBSD_rdytocmt(int connect, char *jobid)
   {
   fprintf(stderr, "The call to PBSD_rdytocmt to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
   }
 

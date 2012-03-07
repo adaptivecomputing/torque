@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_issue_request
 
 libissue_request_la_SOURCES = scaffolding.c ${PROG_ROOT}/issue_request.c
-libissue_request_la_LDFLAGS = @CHECK_LIBS@ -shared
+libissue_request_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_issue_request_SOURCES = test_issue_request.c
 

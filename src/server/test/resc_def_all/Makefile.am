@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_resc_def_all
 
 libresc_def_all_la_SOURCES = scaffolding.c ${PROG_ROOT}/resc_def_all.c
-libresc_def_all_la_LDFLAGS = @CHECK_LIBS@ -shared
+libresc_def_all_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_resc_def_all_SOURCES = test_resc_def_all.c
 

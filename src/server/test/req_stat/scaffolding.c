@@ -82,12 +82,6 @@ void *process_Dreply(void *new_sock)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record to be mocked!!\n");
-  exit(1);
-  }
-
 void free_br(struct batch_request *preq)
   {
   fprintf(stderr, "The call to free_br to be mocked!!\n");
@@ -241,12 +235,6 @@ int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, vo
 int is_array(char *id)
   {
   fprintf(stderr, "The call to is_array to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event to be mocked!!\n");
   exit(1);
   }
 

@@ -86,7 +86,10 @@ char *acct_file = NULL;
 char *path_mom_hierarchy = "/dev/null";
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
-pthread_mutex_t     *acctfile_mutex;
+pthread_mutex_t *acctfile_mutex;
+pthread_mutex_t *check_tasks_mutex;
+pthread_mutex_t *retry_routing_mutex;
+
 
 
 void on_job_rerun(struct work_task *ptask)
@@ -170,12 +173,6 @@ void on_job_exit(struct work_task *ptask)
 int job_log_open(char *filename, char *directory)
   {
   fprintf(stderr, "The call to job_log_open needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
   }
 
@@ -401,21 +398,9 @@ void free_arst(struct pbs_attribute *attr)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
 int decode_arst_direct(struct pbs_attribute *patr,  char *val)
   {
   fprintf(stderr, "The call to decode_arst_direct needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 
@@ -558,3 +543,8 @@ int array_save(job_array *pa)
   return(0);
   }
 
+int add_hello_after(hello_container *hc, char *node_name, int index)
+  {
+  fprintf(stderr, "The call to add_hello_after needs to be mocked!!\n");
+  exit(1);
+  }

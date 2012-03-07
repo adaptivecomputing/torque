@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_prolog
 
 libprolog_la_SOURCES = scaffolding.c ${PROG_ROOT}/prolog.c
-libprolog_la_LDFLAGS = @CHECK_LIBS@ -shared
+libprolog_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_prolog_SOURCES = test_prolog.c
 

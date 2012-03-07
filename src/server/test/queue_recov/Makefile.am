@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_queue_recov
 
 libqueue_recov_la_SOURCES = scaffolding.c ${PROG_ROOT}/queue_recov.c
-libqueue_recov_la_LDFLAGS = @CHECK_LIBS@ -shared
+libqueue_recov_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_queue_recov_SOURCES = test_queue_recov.c
 

@@ -77,12 +77,6 @@ int svr_chkque(job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event to be mocked!!\n");
-  exit(1);
-  }
-
 int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");

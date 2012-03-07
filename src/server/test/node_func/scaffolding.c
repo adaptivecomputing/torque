@@ -75,12 +75,6 @@ int add_hash(hash_table_t *ht, int value, char *key)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
-  }
-
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to set_task needs to be mocked!!\n");
@@ -150,18 +144,6 @@ void append_link(tlist_head *head, list_link *new, void *pobj)
 hash_table_t *create_hash(int size)
   {
   fprintf(stderr, "The call to create_hash needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 
@@ -258,7 +240,13 @@ int get_svr_attr_str(int index, char **str)
 
 int remove_thing_from_index(resizable_array *ra, int index)
   {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
+  fprintf(stderr, "The call to remove_thing_from_index needs to be mocked!!\n");
+  exit(1);
+  }
+
+int insert_thing_after(resizable_array *ra, void *thing, int index)
+  {
+  fprintf(stderr, "The call to insert_thing_after needs to be mocked!!\n");
   exit(1);
   }
 

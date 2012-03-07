@@ -45,12 +45,6 @@ void free_nodes(node_info **ninfo_arr)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record to be mocked!!\n");
-  exit(1);
-  }
-
 void svr_disconnect(int handle)
   {
   fprintf(stderr, "The call to svr_disconnect to be mocked!!\n");
@@ -66,24 +60,6 @@ void req_reject(int code, int aux, struct batch_request *preq, char *HostName, c
 char *pbse_to_txt(int err)
   {
   fprintf(stderr, "The call to pbse_to_txt to be mocked!!\n");
-  exit(1);
-  }
-
-int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
-  {
-  fprintf(stderr, "The call to relay_to_mom to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
   }
 

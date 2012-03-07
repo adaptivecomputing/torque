@@ -20,7 +20,6 @@ resource_def *svr_resc_def; /* resc_def_all.c */
 char *path_spool; /* mom_main.c */
 int pbs_rm_port; /* mom_main.c */
 int LOGLEVEL = 0; /* mom_main.c/pbsd_main.c */
-char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
 
 
 int job_save(job *pjob, int updatetype, int mom_port)
@@ -101,12 +100,6 @@ int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm
  exit(1);
  }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
- {
- fprintf(stderr, "The call to log_record needs to be mocked!!\n");
- exit(1);
- }
-
 int pbs_rlsjob(int c, char *jobid, char *holdtype, char *extend)
  {
  fprintf(stderr, "The call to pbs_rlsjob needs to be mocked!!\n");
@@ -146,12 +139,6 @@ int set_job(job *job, struct startjob_rtn *rtn)
 void net_close(int but)
  {
  fprintf(stderr, "The call to net_close needs to be mocked!!\n");
- exit(1);
- }
-
-void log_ext(int errnum, const char *routine, char *text, int severity)
- {
- fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
  exit(1);
  }
 
@@ -224,18 +211,6 @@ int site_mom_postchk(job *pjob, int hold_type)
 int task_save(task *ptask)
  {
  fprintf(stderr, "The call to task_save needs to be mocked!!\n");
- exit(1);
- }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
- {
- fprintf(stderr, "The call to log_event needs to be mocked!!\n");
- exit(1);
- }
-
-void log_err(int errnum, const char *routine, char *text)
- {
- fprintf(stderr, "The call to log_err needs to be mocked!!\n");
  exit(1);
  }
 

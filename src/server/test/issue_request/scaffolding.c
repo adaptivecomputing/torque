@@ -56,12 +56,6 @@ pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
-  }
-
 int DIS_reply_read(int sock, struct batch_reply *preply)
   {
   fprintf(stderr, "The call to DIS_reply_read needs to be mocked!!\n");
@@ -176,21 +170,9 @@ void dispatch_request(int sfds, struct batch_request *request)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
 int PBSD_msg_put(int c, char *jobid, int fileopt, char *msg, char *extend)
   {
   fprintf(stderr, "The call to PBSD_msg_put needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 

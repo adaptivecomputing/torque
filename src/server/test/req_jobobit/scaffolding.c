@@ -134,12 +134,6 @@ void free_nodes(node_info **ninfo_arr)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record to be mocked!!\n");
-  exit(1);
-  }
-
 void free_br(struct batch_request *preq)
   {
   fprintf(stderr, "The call to free_br to be mocked!!\n");
@@ -218,21 +212,9 @@ int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, vo
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event to be mocked!!\n");
-  exit(1);
-  }
-
 void issue_track(job *pjob)
   {
   fprintf(stderr, "The call to issue_track to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text) 
-  {
-  fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
   }
 

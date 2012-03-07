@@ -63,18 +63,6 @@ void array_get_parent_id(char *job_id, char *parent_id)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
-  exit(1);
-  }
-
 void job_free(job *pj)
   {
   fprintf(stderr, "The call to job_free needs to be mocked!!\n");

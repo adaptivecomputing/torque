@@ -77,18 +77,6 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
- int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
-  {
-  fprintf(stderr, "The call to relay_to_mom to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event to be mocked!!\n");
-  exit(1);
-  }
-
 job *find_job(char *jobid)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");

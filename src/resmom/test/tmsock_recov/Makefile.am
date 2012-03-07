@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_tmsock_recov
 
 libtmsock_recov_la_SOURCES = scaffolding.c ${PROG_ROOT}/tmsock_recov.c
-libtmsock_recov_la_LDFLAGS = @CHECK_LIBS@ -shared
+libtmsock_recov_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_tmsock_recov_SOURCES = test_tmsock_recov.c
 

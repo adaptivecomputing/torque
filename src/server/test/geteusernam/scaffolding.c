@@ -37,12 +37,6 @@ int site_check_user_map(job *pjob, char *luser, char *EMsg, int logging)
   exit(1);
   }
 
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
-  exit(1);
-  }
-
 struct group * getgrnam_ext(char * grp_name)
   {
   fprintf(stderr, "The call to getgrnam_ext needs to be mocked!!\n");

@@ -54,15 +54,3 @@ int issue_to_svr(char *servern, struct batch_request *preq, void (*replyfunc)(st
   fprintf(stderr, "The call to issue_to_svr to be mocked!!\n");
   exit(1);
   }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text) 
-  {
-  fprintf(stderr, "The call to log_err to be mocked!!\n");
-  exit(1);
-  }

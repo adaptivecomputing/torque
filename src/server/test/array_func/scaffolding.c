@@ -79,12 +79,6 @@ void delete_link(struct list_link *old)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
-  }
-
 char *get_variable(job *pjob, char *variable)
   {
   fprintf(stderr, "The call to get_variable needs to be mocked!!\n");
@@ -139,12 +133,6 @@ void append_link(tlist_head *head, list_link *new, void *pobj)
   exit(1);
   }
 
-int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
-  {
-  fprintf(stderr, "The call to relay_to_mom needs to be mocked!!\n");
-  exit(1);
-  }
-
 void set_array_depend_holds(job_array *pa)
   {
   fprintf(stderr, "The call to set_array_depend_holds needs to be mocked!!\n");
@@ -154,18 +142,6 @@ void set_array_depend_holds(job_array *pa)
 int array_upgrade(job_array *pa, int fds, int version, int *old_version)
   {
   fprintf(stderr, "The call to array_upgrade needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 

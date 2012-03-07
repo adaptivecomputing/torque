@@ -35,7 +35,6 @@ tlist_head mom_polljobs; /* mom_main.c */
 char *path_prologp; /* mom_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
 int LOGLEVEL = 0; /* mom_main.c/pbsd_main.c */
-char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
 int maxupdatesbeforesending = 0;
 
 int insert_thing(resizable_array *ra, void *thing)
@@ -144,12 +143,6 @@ int add_hash(hash_table_t *ht, int value, char *key)
 char *get_job_envvar(job *pjob, char *variable)
   {
   fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
   }
 
@@ -359,21 +352,9 @@ int TTmpDirName(job *pjob, char *tmpdir)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
 void job_nodes(job *pjob)
   {
   fprintf(stderr, "The call to job_nodes needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 

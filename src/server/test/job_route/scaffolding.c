@@ -55,18 +55,6 @@ void append_link(tlist_head *head, list_link *new, void *pobj)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
-  exit(1);
-  }
-
 resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
   return(NULL);

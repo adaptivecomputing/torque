@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_geteusernam
 
 libgeteusernam_la_SOURCES = scaffolding.c ${PROG_ROOT}/geteusernam.c
-libgeteusernam_la_LDFLAGS = @CHECK_LIBS@ -shared
+libgeteusernam_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_geteusernam_SOURCES = test_geteusernam.c
 

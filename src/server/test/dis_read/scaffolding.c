@@ -122,12 +122,6 @@ int decode_DIS_RunJob(int sock, struct batch_request *preq)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
 int decode_DIS_MoveJob(int sock, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_MoveJob needs to be mocked!!\n");

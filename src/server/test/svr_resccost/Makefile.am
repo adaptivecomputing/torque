@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_svr_resccost
 
 libsvr_resccost_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_resccost.c
-libsvr_resccost_la_LDFLAGS = @CHECK_LIBS@ -shared
+libsvr_resccost_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_svr_resccost_SOURCES = test_svr_resccost.c
 

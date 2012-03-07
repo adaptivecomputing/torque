@@ -28,7 +28,6 @@ int ignvmem = 0;
 char *msg_momsetlim = "Job start failed. Can't set \"%s\" limit: %s.\n";
 tlist_head svr_alljobs;
 int LOGLEVEL = 0;
-char log_buffer[LOG_BUF_SIZE];
 int ignwalltime = 0;
 int rm_errno;
 
@@ -44,12 +43,6 @@ resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
 void checkret(char **spot, long len)
   {
   fprintf(stderr, "The call to checkret needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_record(int eventtype, int objclass, char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
   }
 
@@ -98,18 +91,6 @@ char *pbse_to_txt(int err)
 int task_save(task *ptask)
   {
   fprintf(stderr, "The call to task_save needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 

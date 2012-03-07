@@ -110,12 +110,6 @@ void change_restart_comment_if_needed(struct job *pjob)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
   fprintf(stderr, "The call to svr_setjobstate needs to be mocked!!\n");
@@ -149,8 +143,4 @@ int delete_whole_array(job_array *pa)
 job *find_job(char *jobid)
   {
   return(NULL);
-  }
-
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
   }

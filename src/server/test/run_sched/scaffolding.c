@@ -42,12 +42,6 @@ void DIS_tcp_setup(int fd)
   exit(1);
   }
 
-void log_ext(int errnum, char *routine, char *text, int severity)
-  {
-  fprintf(stderr, "The call to log_ext to be mocked!!\n");
-  exit(1);
-  }
-
 void bad_node_warning(pbs_net_t addr, struct pbsnode *the_node)
   {
   fprintf(stderr, "The call to bad_node_warning to be mocked!!\n");
@@ -69,18 +63,6 @@ int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *E
 void *process_request(void *new_sock)
   {
   fprintf(stderr, "The call to process_request to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
   }
 

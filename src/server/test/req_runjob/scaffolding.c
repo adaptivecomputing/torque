@@ -102,12 +102,6 @@ void free_nodes(node_info **ninfo_arr)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record to be mocked!!\n");
-  exit(1);
-  }
-
 char *PAddrToString(pbs_net_t *Addr)
   {
   fprintf(stderr, "The call to PAddrToString to be mocked!!\n");
@@ -204,27 +198,9 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
-int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
-  {
-  fprintf(stderr, "The call to relay_to_mom to be mocked!!\n");
-  exit(1);
-  }
-
 struct batch_request *cpy_stage(struct batch_request *preq, job *pjob, enum job_atr ati, int direction)
   {
   fprintf(stderr, "The call to cpy_stage to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err to be mocked!!\n");
   exit(1);
   }
 

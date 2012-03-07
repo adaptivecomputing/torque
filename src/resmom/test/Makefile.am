@@ -2,4 +2,3 @@ SUBDIRS = catch_child checkpoint mom_job_func mom_comm mom_inter mom_main mom_se
 if BUILDCPA
 SUBDIRS += cray_cpa
 endif
-

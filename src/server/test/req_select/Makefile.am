@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_select
 
 libreq_select_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_select.c
-libreq_select_la_LDFLAGS = @CHECK_LIBS@ -shared
+libreq_select_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_req_select_SOURCES = test_req_select.c
 

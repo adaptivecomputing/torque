@@ -2,9 +2,9 @@
 #ifndef _REQ_HOLDARRAY_H
 #define _REQ_HOLDARRAY_H
 
-#include "attribute.h" /* attribute */
+#include "attribute.h" /* pbs_attribute */
 
-void hold_job(attribute *temphold, void *j);
+void hold_job(pbs_attribute *temphold, void *j);
 
 void *req_holdarray(void *vp);
 

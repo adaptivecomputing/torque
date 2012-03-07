@@ -6,12 +6,6 @@
 
 int LOGLEVEL = 0;
 
-void log_ext(int errnum, char *routine, char *text, int severity)
-  {
-  fprintf(stderr, "The call to log_ext to be mocked!!\n");
-  exit(1);
-  }
-
 void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
   {
   fprintf(stderr, "The call to log_ext to be mocked!!\n");

@@ -121,6 +121,7 @@
 #include "array.h"
 #include "queue_func.h" /* get_dfltque, find_queuebyname */
 #include "svr_func.h" /* get_svr_attr_* */
+#include "array_func.h" /* setup_array_struct */
 
 
 #include "work_task.h"
@@ -134,7 +135,6 @@ extern int   svr_chkque(job *, pbs_queue *, char *, int, char *);
 extern int   job_route(job *);
 extern int   node_avail_complex(char *, int *, int *, int *, int*);
 extern void  set_chkpt_deflt(job *, pbs_queue *);
-int          setup_array_struct(job *pjob);
 void         job_clone_wt(struct work_task *);
 
 /* Global Data Items: */

@@ -50,7 +50,6 @@ long TJobStartBlockTime = 5;
 char *TNoSpoolDirList[TMAX_NSDCOUNT];
 int LOGLEVEL = 0;
 char *submithost_suffix = NULL;
-char log_buffer[LOG_BUF_SIZE];
 int num_var_env;
 char jobstarter_exe_name[MAXPATHLEN + 1];
 int    attempttomakedir = 0;
@@ -164,12 +163,6 @@ char *get_job_envvar(job *pjob, char *variable)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
-  }
-
 int x11_create_display(int x11_use_localhost, char *display, char *phost, int pport, char *homedir, char *x11authstr)
   {
   fprintf(stderr, "The call to x11_create_display needs to be mocked!!\n");
@@ -251,12 +244,6 @@ int mom_reader(int s, int ptc)
 void net_close(int but)
   {
   fprintf(stderr, "The call to net_close needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_ext(int errnum, const char *routine, char *text, int severity)
-  {
-  fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
   }
 
@@ -401,18 +388,6 @@ char *rcvttype(int sock)
 int task_save(task *ptask)
   {
   fprintf(stderr, "The call to task_save needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 

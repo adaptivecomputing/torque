@@ -9,7 +9,8 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_mom_main
 
 libmom_main_la_SOURCES = scaffolding.c ${PROG_ROOT}/mom_main.c
-libmom_main_la_LDFLAGS = @CHECK_LIBS@ -shared
+libmom_main_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
+
 
 test_mom_main_SOURCES = test_mom_main.c
 

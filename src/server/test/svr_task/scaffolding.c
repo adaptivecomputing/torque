@@ -57,12 +57,6 @@ int insert_thing_after(resizable_array *ra, void *thing, int index)
   exit(1);
   }
 
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err to be mocked!!\n");
-  exit(1);
-  }
-
 int get_index(resizable_array *ra, void *thing)
   {
   fprintf(stderr, "The call to get_index to be mocked!!\n");

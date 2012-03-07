@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_track
 
 libreq_track_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_track.c
-libreq_track_la_LDFLAGS = @CHECK_LIBS@ -shared
+libreq_track_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_req_track_SOURCES = test_req_track.c
 

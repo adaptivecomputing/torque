@@ -95,12 +95,6 @@ void acct_cleanup(long days_to_keep)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
-  }
-
 void svr_shutdown(int type)
   {
   fprintf(stderr, "The call to svr_shutdown needs to be mocked!!\n");
@@ -260,18 +254,6 @@ unsigned disrui_peek(int stream, int *retval)
 long log_size(void)
   {
   fprintf(stderr, "The call to log_size needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 
@@ -464,5 +446,11 @@ int add_hello_info(hello_container *hc, hello_info *hi)
 void get_port_from_server_name_file(unsigned int *server_name_file_port)
   {
   fprintf(stderr, "The call to get_port_from_server_name_file needs to be mocked!\n");
+  exit(1);
+  }
+
+unsigned int get_random_number()
+  {
+  fprintf(stderr, "The call to get_random_number needs to be mocked!\n");
   exit(1);
   }

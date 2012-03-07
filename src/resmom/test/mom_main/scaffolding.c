@@ -39,7 +39,6 @@ threadpool_t *request_pool;
 AvlTree okclients;
 time_t pbs_tcp_timeout = 20;
 time_t wait_time = 10;
-char log_buffer[LOG_BUF_SIZE];
 pthread_mutex_t *log_mutex;
 dynamic_string  *mom_status;
 
@@ -186,12 +185,6 @@ int post_epilogue(job *pjob, int ev)
 char *get_job_envvar(job *pjob, char *variable)
   {
   fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
   }
 
@@ -513,21 +506,9 @@ int task_save(task *ptask)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
 void *mom_process_request(void *sock_num)
   {
   fprintf(stderr, "The call to mom_process_request needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 
@@ -666,6 +647,12 @@ int im_compose(int stream, char *jobid, char *cookie, int command, tm_event_t ev
 dynamic_string *get_dynamic_string(int size, const char *str)
   {
   fprintf(stderr, "The call to get_dynamic_string needs to be mocked!!\n");
+  exit(1);
+  }
+
+unsigned int get_random_number()
+  {                           
+  fprintf(stderr, "The call to get_random_number needs to be mocked!\n");
   exit(1);
   }
 

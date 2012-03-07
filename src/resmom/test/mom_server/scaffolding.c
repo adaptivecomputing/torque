@@ -45,7 +45,6 @@ int alarm_time;
 tlist_head svr_alljobs;
 char mom_alias[PBS_MAXHOSTNAME + 1];
 int LOGLEVEL = 0;
-char log_buffer[LOG_BUF_SIZE];
 int rm_errno;
 int needs_cluster_addrs;
 time_t LastServerUpdateTime;
@@ -108,12 +107,6 @@ void clear_dynamic_string(dynamic_string *ds)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
-  }
-
 struct rm_attribute *momgetattr(char *str)
   {
   fprintf(stderr, "The call to rm_attribute needs to be mocked!!\n");
@@ -141,12 +134,6 @@ int read_status_strings(int fds, int version)
 int AVL_is_in_tree_no_port_compare(u_long key, uint16_t port, AvlTree tree)
   {
   fprintf(stderr, "The call to AVL_is_in_tree_no_port_compare needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_ext(int errnum, const char *routine, char *text, int severity)
-  {
-  fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
   }
 
@@ -222,21 +209,9 @@ int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
 char *size_fs(char *param)
   {
   fprintf(stderr, "The call to size_fs needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 

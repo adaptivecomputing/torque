@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_checkpoint
 
 libcheckpoint_la_SOURCES = scaffolding.c ${PROG_ROOT}/checkpoint.c
-libcheckpoint_la_LDFLAGS = @CHECK_LIBS@ -shared
+libcheckpoint_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_checkpoint_SOURCES = test_checkpoint.c
 

@@ -18,7 +18,6 @@ tlist_head svr_newjobs;
 char *msg_request = "Type %s request received from %s@%s, sock=%d";
 AvlTree okclients = NULL;
 int LOGLEVEL = 1;
-char log_buffer[LOG_BUF_SIZE];
 
 
 void *req_rerunjob(void *vp)
@@ -66,12 +65,6 @@ pbs_net_t get_connectaddr(int sock, int mutex)
 void delete_link(struct list_link *old)
   {
   fprintf(stderr, "The call to delete_link needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
   }
 
@@ -195,21 +188,9 @@ void req_returnfiles(struct batch_request *preq)
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
 void req_deletejob(struct batch_request *preq)
   {
   fprintf(stderr, "The call to req_deletejob needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 

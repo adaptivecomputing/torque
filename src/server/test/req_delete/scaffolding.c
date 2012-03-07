@@ -158,12 +158,6 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
-int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
-  {
-  fprintf(stderr, "The call to relay_to_mom needs to be mocked!!\n");
-  exit(1);
-  }
-
  work_task *next_task(all_tasks *at, int *iter)
   {
   fprintf(stderr, "The call to next_task needs to be mocked!!\n");
@@ -173,18 +167,6 @@ int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct 
 struct batch_request *cpy_stage(struct batch_request *preq, job *pjob, enum job_atr ati, int direction)
   {
   fprintf(stderr, "The call to cpy_stage needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
-
-void log_err(int errnum, const char *routine, char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
   }
 

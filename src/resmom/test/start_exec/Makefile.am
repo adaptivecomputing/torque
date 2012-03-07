@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_start_exec
 
 libstart_exec_la_SOURCES = scaffolding.c ${PROG_ROOT}/start_exec.c
-libstart_exec_la_LDFLAGS = @CHECK_LIBS@ -shared
+libstart_exec_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_start_exec_SOURCES = test_start_exec.c
 

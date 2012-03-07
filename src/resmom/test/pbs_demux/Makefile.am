@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbs_demux
 
 libpbs_demux_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbs_demux.c
-libpbs_demux_la_LDFLAGS = @CHECK_LIBS@ -shared
+libpbs_demux_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_pbs_demux_SOURCES = test_pbs_demux.c
 

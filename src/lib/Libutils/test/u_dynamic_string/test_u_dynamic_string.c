@@ -3,6 +3,7 @@
 #include "test_u_dynamic_string.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "attribute.h" /* size_value */
 
 
 #include "pbs_error.h"
@@ -342,31 +343,31 @@ START_TEST(char_size_test)
   sz.atsv_num = 5;
   sz.atsv_shift = 10;
 
-  size_to_dynamic_string(ds, sz);
+  size_to_dynamic_string(ds, &sz);
   snprintf(buf, sizeof(buf), "string should be 5kb but is %s", ds->str);
   fail_unless(!strcmp(ds->str, "5kb"), buf);
 
   clear_dynamic_string(ds);
   sz.atsv_shift = 20;
-  size_to_dynamic_string(ds, sz);
+  size_to_dynamic_string(ds, &sz);
   snprintf(buf, sizeof(buf), "string should be 5mb but is %s", ds->str);
   fail_unless(!strcmp(ds->str, "5mb"), buf);
 
   clear_dynamic_string(ds);
   sz.atsv_shift = 30;
-  size_to_dynamic_string(ds, sz);
+  size_to_dynamic_string(ds, &sz);
   snprintf(buf, sizeof(buf), "string should be 5gb but is %s", ds->str);
   fail_unless(!strcmp(ds->str, "5gb"), buf);
 
   clear_dynamic_string(ds);
   sz.atsv_shift = 40;
-  size_to_dynamic_string(ds, sz);
+  size_to_dynamic_string(ds, &sz);
   snprintf(buf, sizeof(buf), "string should be 5tb but is %s", ds->str);
   fail_unless(!strcmp(ds->str, "5tb"), buf);
 
   clear_dynamic_string(ds);
   sz.atsv_shift = 50;
-  size_to_dynamic_string(ds, sz);
+  size_to_dynamic_string(ds, &sz);
   snprintf(buf, sizeof(buf), "string should be 5pb but is %s", ds->str);
   fail_unless(!strcmp(ds->str, "5pb"), buf);
   }

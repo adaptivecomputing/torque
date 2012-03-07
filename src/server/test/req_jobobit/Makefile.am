@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_jobobit
 
 libreq_jobobit_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_jobobit.c
-libreq_jobobit_la_LDFLAGS = @CHECK_LIBS@ -shared
+libreq_jobobit_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_req_jobobit_SOURCES = test_req_jobobit.c
 

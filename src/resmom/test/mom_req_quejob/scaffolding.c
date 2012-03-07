@@ -30,6 +30,7 @@ tlist_head svr_alljobs;
 int LOGLEVEL = 0;
 int PBSNodeCheckProlog = 0;
 char log_buffer[LOG_BUF_SIZE];
+int reject_job_submit = 0;
 
 
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_job_recycler
 
 libjob_recycler_la_SOURCES = scaffolding.c ${PROG_ROOT}/job_recycler.c
-libjob_recycler_la_LDFLAGS = @CHECK_LIBS@ -shared
+libjob_recycler_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
 test_job_recycler_SOURCES = test_job_recycler.c
 
