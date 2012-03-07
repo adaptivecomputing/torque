@@ -19,6 +19,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       (backported from 3.0.5)
   b - Fixed a problem where starting pbs_mom with the default -p option would delete
       running jobs instead of trying to recover them if cpusets were enabled. TRQ-828
+  b - fix problem with '+ and segfault when using multiple node gpu requests.
+      (backported from 4.0.1)
 
 2.5.10 
   b - Fixed a problem where pbs_mom will crash of check_pwd returns NULL. This could
