@@ -26,6 +26,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       This fix recovers all jobs whether submitted with msub or qsub when pbs_server
       restarts.
   b - fix for where pbsnodes displays outdated gpu_status information.
+  b - fix problem with '+ and segfault when using multiple node gpu requests.
 
 4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 

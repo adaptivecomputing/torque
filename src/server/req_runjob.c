@@ -1603,6 +1603,7 @@ char *get_correct_spec_string(
   job  *pjob)
 
   {
+  static char   id[] = "get_correct_spec_string";
   char     mode[20];
   char    *mode_string;
   char    *request;
@@ -1629,7 +1630,13 @@ char *get_correct_spec_string(
     
     if (pres != NULL)
       {
-      /* assign what was in "neednodes" */
+      /* determine # of gpu requests in spec, we found 1 in given up above */
+      num_gpu_reqs = 1;
+      gpu_req = mode_string;
+      while ((gpu_req = strstr(gpu_req + 1, ":gpus=")) != NULL)
+        num_gpu_reqs++;
+
+      /* assign gpu mode that was in "neednodes" */
       request = pres->rs_value.at_val.at_str;
       
       if ((request != NULL) && 
@@ -1643,6 +1650,20 @@ char *get_correct_spec_string(
 
         if (*mode_string == ':')
           {
+          if (LOGLEVEL >= 7)
+            {
+            sprintf(log_buffer, "%s: job has %d gpu requests in node spec '%s'",
+                    id,
+                    num_gpu_reqs,
+                    given);
+
+            log_event(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              log_buffer);
+            }
+
           if ((outer_plus = strchr(mode_string, '+')) != NULL)
             *outer_plus = '\0';
 
@@ -1650,12 +1671,7 @@ char *get_correct_spec_string(
 
           if (outer_plus != NULL)
             *outer_plus = '+';
-          
-          num_gpu_reqs = 1;
-          
-          while ((gpu_req = strstr(gpu_req + 1, ":gpus=")) != NULL)
-            num_gpu_reqs++;
-          
+
           /* 20 is a little more than the max length of gpu modes */
           len = strlen(given) + 1 + (num_gpu_reqs * 20);
           if ((correct_spec = calloc(1, len)) != NULL)
@@ -1675,12 +1691,24 @@ char *get_correct_spec_string(
               
               if (plus != NULL)
                 {
-                *plus = '+';
+                strcat(correct_spec, "+");
                 one_req = plus + 1;
                 }
               else
                 one_req = NULL;
               }
+            }
+          if ((LOGLEVEL >= 7) && (correct_spec != NULL) && (correct_spec[0] != '\0'))
+            {
+            sprintf(log_buffer, "%s: job gets adjusted gpu node spec of '%s'",
+                    id,
+                    correct_spec);
+
+            log_event(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              log_buffer);
             }
           }
         else
