@@ -2168,6 +2168,52 @@ void check_nodes(
 
 
 
+
+#ifdef NVIDIA_GPUS
+/*
+ **     reset gpu data in case mom reconnects with changed gpus.
+ **     If we have real gpus, not virtual ones, then clear out gpu_status,
+ **     gpus count and remove gpu subnodes.
+ */
+
+void clear_nvidia_gpus(
+
+  struct pbsnode *np)  /* I */
+
+  {
+  static char     id[] = "clear_nvidia_gpus";
+  attribute       temp;
+
+  if ((np->nd_gpus_real) && (np->nd_ngpus > 0))
+    {
+    /* delete gpusubnodes by freeing it */
+    free(np->nd_gpusn);
+    np->nd_gpusn = NULL;
+
+    /* reset # of gpus, etc */
+    np->nd_ngpus = 0;
+    np->nd_ngpus_free = 0;
+
+    /* unset "gpu_status" node attribute */
+
+    memset(&temp, 0, sizeof(temp));
+
+    if (decode_arst(&temp, NULL, NULL, NULL))
+      {
+      log_err(-1, id, "clear_nvidia_gpus:  cannot initialize attribute\n");
+
+      return;
+      }
+
+    node_gpustatus_list(&temp, np, ATR_ACTION_ALTER);
+    }
+  return;
+  }  /* END clear_nvidia_gpus() */
+
+#endif  /* NVIDIA_GPUS */
+
+
+
 /* sync w/#define IS_XXX */
 
 const char *PBSServerCmds2[] =
@@ -2401,6 +2447,13 @@ found:
 
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buffer);
         }
+        
+#ifdef NVIDIA_GPUS
+
+      /* reset gpu data in case mom reconnects with changed gpus */
+      clear_nvidia_gpus(node);
+
+#endif  /* NVIDIA_GPUS */
 
 #ifndef ALT_CLSTR_ADDR
       ret = is_compose(stream, IS_CLUSTER_ADDRS);

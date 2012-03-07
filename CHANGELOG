@@ -15,6 +15,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       Matches qsub documentation again. (backported from 4.0.1)
   e - change to allow pbs_mom to run if configured with --enable-nvidia-gpus but
       installed on a node without Nvidia gpus. (backported from 3.0.5)
+  b - fix for where pbsnodes displays outdated gpu_status information.
+      (backported from 3.0.5)
 
 2.5.10 
   b - Fixed a problem where pbs_mom will crash of check_pwd returns NULL. This could
