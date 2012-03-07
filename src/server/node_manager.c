@@ -297,7 +297,6 @@ void update_node_state(
   int             newstate)   /* I (one of INUSE_*) */
 
   {
-  char           *id = "update_node_state";
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   struct pbssubn *sp;
@@ -319,7 +318,7 @@ void update_node_state(
       np->nd_state,
       newstate);
 
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
   log_buf[0] = '\0';
@@ -470,7 +469,7 @@ void update_node_state(
                 (jp->job != NULL) ? jp->job->ji_qs.ji_jobid : "???",
                 np->nd_name);
 
-              log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, tmpLine);
+              log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, tmpLine);
 
               jpprev->next = jp->next;
 
@@ -586,7 +585,7 @@ void update_node_state(
 
   if ((LOGLEVEL >= 2) && (log_buf[0] != '\0'))
     {
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
   return;
@@ -835,8 +834,6 @@ void update_job_data(
   char           *jobstring_in)  /* I (changed attributes sent by mom) */
 
   {
-  char      *id = "update_job_data";
-
   char      *jobdata;
   char      *jobdata_ptr;
   char      *jobidstr;
@@ -915,7 +912,7 @@ void update_job_data(
         /* job is reported by mom but server has no record of job */
         sprintf(log_buf, "stray job %s reported on %s", jobidstr, np->nd_name);
 
-        log_err(-1, id, log_buf);
+        log_err(-1, __func__, log_buf);
         }
       }
     }
@@ -2064,7 +2061,6 @@ int add_cluster_addrs(
   struct pbsnode *held) /* I */
 
   {
-  static char     id[] = "add_cluster_addrs";
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   int             iter = -1;
@@ -2080,7 +2076,7 @@ int add_cluster_addrs(
       {
       sprintf(log_buf, "adding node %s to hello response", np->nd_name);
 
-      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
       }
 
     for (j = 0; np->nd_addrs[j]; j++)
@@ -2094,7 +2090,7 @@ int add_cluster_addrs(
           j,
           tmp);
 
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
+        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
 
         free(tmp);
         }
@@ -2105,14 +2101,14 @@ int add_cluster_addrs(
         {
         /* FAILURE */
         if (np != held)
-          unlock_node(np, id, "failure", LOGLEVEL);
+          unlock_node(np, __func__, "failure", LOGLEVEL);
 
         return(ret);
         }
       }  /* END for (j) */
 
     if (np != held)
-      unlock_node(np, id, "success", LOGLEVEL);
+      unlock_node(np, __func__, "success", LOGLEVEL);
     }    /* END for (i) */
 
   return(DIS_SUCCESS);
@@ -2197,12 +2193,11 @@ void check_nodes(
   struct work_task *ptask)  /* I (modified) */
 
   {
-  static char id[] = "check_nodes";
   int rc = enqueue_threadpool_request(check_nodes_work,ptask);
 
   if (rc)
     {
-    log_err(rc,id,"Unable to enqueue check nodes task into the threadpool");
+    log_err(rc, __func__, "Unable to enqueue check nodes task into the threadpool");
     }
   }  /* END check_nodes() */
 
@@ -2613,7 +2608,6 @@ void *write_node_state_work(
   void *vp)
 
   {
-  char id[] = "write_node_state_work";
   struct pbsnode *np;
   static char    *fmt = "%s %d\n";
   static FILE    *nstatef = NULL;
@@ -2638,7 +2632,7 @@ void *write_node_state_work(
 
     if (ftruncate(fileno(nstatef), (off_t)0) != 0)
       {
-      log_err(errno, id, "could not truncate file");
+      log_err(errno, __func__, "could not truncate file");
 
       pthread_mutex_unlock(node_state_mutex);
       
@@ -2651,7 +2645,7 @@ void *write_node_state_work(
 
     if ((nstatef = fopen(path_nodestate, "w+")) == NULL)
       {
-      log_err( errno, id, "could not open file");
+      log_err(errno, __func__, "could not open file");
 
       pthread_mutex_unlock(node_state_mutex);
       
@@ -2671,12 +2665,12 @@ void *write_node_state_work(
       fprintf(nstatef, fmt, np->nd_name, np->nd_state & savemask);
       }
 
-    unlock_node(np, id, NULL, LOGLEVEL);
+    unlock_node(np, __func__, NULL, LOGLEVEL);
     } /* END for each node */
 
   if (fflush(nstatef) != 0)
     {
-    log_err(errno, id, "failed saving node state to disk");
+    log_err(errno, __func__, "failed saving node state to disk");
     }
 
   fclose(nstatef);
@@ -2694,12 +2688,11 @@ void *write_node_state_work(
 void write_node_state(void)
 
   {
-  static char id[] = "write_node_state";
   int rc = enqueue_threadpool_request(write_node_state_work,NULL);
 
   if (rc)
     {
-    log_err(rc,id,"Unable to enqueue write_node_state_work task into the threadpool");
+    log_err(rc, __func__, "Unable to enqueue write_node_state_work task into the threadpool");
     }
   }  /* END write_node_state() */
 
@@ -2713,16 +2706,13 @@ void write_node_state(void)
 int write_node_note(void)
 
   {
-  static char id[] = "write_node_note";
-
   struct pbsnode *np;
   int             iter = -1;
   FILE           *nin;
 
   if (LOGLEVEL >= 2)
     {
-    DBPRT(("%s: entered\n",
-           id))
+    DBPRT(("%s: entered\n", __func__))
     }
 
   if ((nin = fopen(path_nodenote_new, "w")) == NULL)
@@ -2731,7 +2721,7 @@ int write_node_note(void)
   if ((svr_totnodes == 0))
     {
     log_event(
-      PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, "Server has empty nodes list");
+      PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, "Server has empty nodes list");
 
     fclose(nin);
 
@@ -2747,7 +2737,7 @@ int write_node_note(void)
       fprintf(nin, "%s %s\n", np->nd_name, np->nd_note);
       }
     
-    unlock_node(np, id, NULL, LOGLEVEL);
+    unlock_node(np, __func__, NULL, LOGLEVEL);
     }
 
   fflush(nin);
@@ -2762,8 +2752,7 @@ int write_node_note(void)
 
   if (rename(path_nodenote_new, path_nodenote) != 0)
     {
-    log_event(
-      PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id,
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__,
       "replacing old node note file failed");
 
     return(-1);
@@ -2772,8 +2761,8 @@ int write_node_note(void)
   return(PBSE_NONE);
 
 err1:
-  log_event(
-    PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, "Node note file update failed");
+  log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__,
+    "Node note file update failed");
 
   return(-1);
   }  /* END write_node_note() */
@@ -2858,12 +2847,11 @@ void node_unreserve(
   resource_t handle)
 
   {
-  static char id[] = "node_unreserve";
   int rc = enqueue_threadpool_request(node_unreserve_work,NULL);
 
   if (rc)
     {
-    log_err(rc,id,"Unable to enqueue node_unreserve task into the threadpool");
+    log_err(rc, __func__, "Unable to enqueue node_unreserve task into the threadpool");
     }
   }  /* END node_unreserve() */
 
@@ -2954,7 +2942,6 @@ static int gpu_count(
   int    freeonly)        /* I */
 
   {
-  static char id[] = "gpu_count";
   int  count = 0;
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -2970,7 +2957,7 @@ static int gpu_count(
         (freeonly? "free":"available"),
         pnode->nd_name);
 
-		  log_ext(-1, id, log_buf, LOG_DEBUG);
+		  log_ext(-1, __func__, log_buf, LOG_DEBUG);
       }
     return (count);
     }
@@ -3021,7 +3008,7 @@ static int gpu_count(
       (freeonly? "free":"available"),
       pnode->nd_name);
 
-	  log_ext(-1, id, log_buf, LOG_DEBUG);
+	  log_ext(-1, __func__, log_buf, LOG_DEBUG);
     }
 
   return(count);
@@ -3107,8 +3094,6 @@ int can_reshuffle(
   int             pass)
 
   {
-  static char id[] = "can_reshuffle";
-
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pnode->nd_ntype == NTYPE_CLUSTER)
@@ -3135,7 +3120,7 @@ int can_reshuffle(
         gpu_count(pnode, TRUE),
         skip);
 
-       log_ext(-1, id, log_buf, LOG_DEBUG);
+       log_ext(-1, __func__, log_buf, LOG_DEBUG);
        }
 
     if ((skip == SKIP_EXCLUSIVE) && 
@@ -3273,7 +3258,6 @@ static int proplist(
   char        *pname;
   char        *pequal;
 #ifdef NVIDIA_GPUS
-  static char  id[] = "proplist";
   int          have_gpus = FALSE;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 #endif  /* NVIDIA_GPUS */
@@ -3377,7 +3361,7 @@ static int proplist(
         "proplist: set needed gpu mode to %d",
         gpu_mode_rqstd);
 
-       log_ext(-1, id, log_buf, LOG_DEBUG);
+       log_ext(-1, __func__, log_buf, LOG_DEBUG);
       }
 #endif  /* NVIDIA_GPUS */
 
@@ -3666,7 +3650,6 @@ int node_is_spec_acceptable(
   int              *eligible_nodes)
 
   {
-  static char    *id = "node_is_spec_acceptable";
   struct pbssubn *snp;
   struct prop    *prop = spec->prop;
 
@@ -3693,7 +3676,7 @@ int node_is_spec_acceptable(
 
   if (LOGLEVEL >= 9)
     DBPRT(("%s: %s/%d inuse 0x%x nprops %d\n",
-      id,
+      __func__,
       pnode->nd_name,
       snp->index,
       snp->inuse,
@@ -3794,7 +3777,6 @@ int save_node_for_adding(
   char              *first_node_name)
 
   {
-  static char       *id = "save_node_for_adding";
   node_job_add_info *to_add;
   node_job_add_info *old_next;
 
@@ -3816,7 +3798,7 @@ int save_node_for_adding(
     /* second */
     if ((to_add = calloc(1, sizeof(node_job_add_info))) == NULL)
       {
-      log_err(ENOMEM, id, "Cannot allocate memory!");
+      log_err(ENOMEM, __func__, "Cannot allocate memory!");
 
       return(ENOMEM);
       }
@@ -3925,7 +3907,6 @@ static int node_spec(
   char              *EMsg)       /* O (optional,minsize=1024) */
 
   {
-  static char         id[] = "node_spec";
   static char         shared[] = "shared";
 
   struct pbsnode     *pnode;
@@ -3957,7 +3938,7 @@ static int node_spec(
     {
     sprintf(log_buf, "entered spec=%.4000s", spec_param);
 
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
     DBPRT(("%s\n", log_buf));
     }
@@ -3975,7 +3956,7 @@ static int node_spec(
 
     if (LOGLEVEL >= 1)
       {
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
 
     if (EMsg != NULL)
@@ -4043,7 +4024,7 @@ static int node_spec(
 
     if (LOGLEVEL >= 6)
       {
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
 
     if (EMsg != NULL)
@@ -4070,7 +4051,7 @@ static int node_spec(
   if ((all_reqs.reqs == NULL) ||
       (all_reqs.req_start == NULL))
     {
-    log_err(ENOMEM, id, "Cannot allocate memory!");
+    log_err(ENOMEM, __func__, "Cannot allocate memory!");
     return(-1);
     }
 
@@ -4111,10 +4092,9 @@ static int node_spec(
       svr_clnodes,
       svr_totnodes);
 
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
-    DBPRT(("%s\n",
-      log_buf));
+    DBPRT(("%s\n", log_buf));
     }
 
   /*
@@ -4164,7 +4144,7 @@ static int node_spec(
     /* are all reqs satisfied? */
     if (all_reqs.total_nodes == 0)
       {
-      unlock_node(pnode, id, NULL, LOGLEVEL);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
       break;
       }
     } /* END for each node */
@@ -4182,7 +4162,7 @@ static int node_spec(
       "job requesting nodes that will never be available - spec = %s",
       spec_param);
 
-    log_err(-1, id, log_buf);
+    log_err(-1, __func__, log_buf);
     if (naji != NULL)
       release_node_allocation(naji);
 
@@ -4199,7 +4179,7 @@ static int node_spec(
       num,
       num - all_reqs.total_nodes);
 
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
     if (EMsg != NULL)
       {
@@ -4216,7 +4196,7 @@ static int node_spec(
     {
     sprintf(log_buf, "job allocation debug(3): returning %d requested", num);
 
-    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
     DBPRT(("%s\n", log_buf));
     }
@@ -4613,7 +4593,6 @@ int place_gpus_in_hostlist(
   struct howl       **gpu_list)
 
   {
-  static char    *id = "place_gpus_in_hostlist";
   int             j;
   struct gpusubn *gn;
 
@@ -4631,7 +4610,7 @@ int place_gpus_in_hostlist(
     
     if (LOGLEVEL >= 7)
       {
-      log_ext(-1, id, log_buf, LOG_DEBUG);
+      log_ext(-1, __func__, log_buf, LOG_DEBUG);
       }
     DBPRT(("%s\n", log_buf));
     
@@ -4660,7 +4639,7 @@ int place_gpus_in_hostlist(
 
     if (LOGLEVEL >= 7)
       {
-      log_ext(-1, id, log_buf, LOG_DEBUG);
+      log_ext(-1, __func__, log_buf, LOG_DEBUG);
       }
     DBPRT(("%s\n", log_buf));
     
@@ -4690,7 +4669,7 @@ int place_gpus_in_hostlist(
       
       if (LOGLEVEL >= 7)
         {
-        log_ext(-1, id, log_buf, LOG_DEBUG);
+        log_ext(-1, __func__, log_buf, LOG_DEBUG);
         }
       }
     
@@ -4713,7 +4692,7 @@ int place_gpus_in_hostlist(
       
       if (LOGLEVEL >= 7)
         {
-        log_ext(-1, id, log_buf, LOG_DEBUG);
+        log_ext(-1, __func__, log_buf, LOG_DEBUG);
         }
       }
 #endif  /* NVIDIA_GPUS */
@@ -4783,7 +4762,6 @@ int translate_howl_to_string(
   int           port)
 
   {
-  static char *id = "translate_howl_to_string";
   struct howl *hp;
   struct howl *next;
   size_t       len = 1;
@@ -4799,7 +4777,7 @@ int translate_howl_to_string(
 
   if ((str = calloc(1, len + 1)) == NULL)
     {
-    log_err(ENOMEM, id, "Cannot allocate memory!");
+    log_err(ENOMEM, __func__, "Cannot allocate memory!");
 
     if (EMsg != NULL)
       sprintf(EMsg,"no nodes can be allocated to job");
@@ -4814,7 +4792,7 @@ int translate_howl_to_string(
     /* port list will have a string of sister port addresses */
     if ((portlist = calloc(1, (count * PBS_MAXPORTNUM) + count)) == NULL)
       {
-      log_err(ENOMEM, id, "Cannot allocate memory!");
+      log_err(ENOMEM, __func__, "Cannot allocate memory!");
       
       if (EMsg != NULL)
         sprintf(EMsg,"no nodes can be allocated to job");
@@ -4875,7 +4853,6 @@ int build_hostlist_nodes_req(
   node_job_add_info  *naji)     /* I */
 
   {
-  static char       *id = "build_hostlist_nodes_req";
   struct pbsnode    *pnode = NULL;
 
   node_job_add_info *current;
@@ -4910,7 +4887,7 @@ int build_hostlist_nodes_req(
           }
         }
 
-      unlock_node(pnode, id, NULL, LOGLEVEL);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
 
     current = current->next;
@@ -5047,8 +5024,6 @@ int set_nodes(
   char  *EMsg)        /* O (optional,minsize=1024) */
 
   {
-  static char        id[] = "set_nodes";
-
   struct howl       *hlist;
   struct howl       *gpu_list;
 
@@ -5078,7 +5053,7 @@ int set_nodes(
       pjob->ji_qs.ji_jobid,
       spec);
 
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
   ProcBMStr[0] = '\0';
@@ -5107,7 +5082,7 @@ int set_nodes(
   else if (i < 0)
     {
     /* request failed, corrupt request */
-    log_err(PBSE_UNKNODE, id, "request failed, corrupt request");
+    log_err(PBSE_UNKNODE, __func__, "request failed, corrupt request");
     return(PBSE_UNKNODE);
     }
 
@@ -5135,7 +5110,7 @@ int set_nodes(
       sprintf(log_buf, "no nodes can be allocated to job %s",
         pjob->ji_qs.ji_jobid);
 
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
 
     if (EMsg != NULL)
@@ -5189,7 +5164,7 @@ int set_nodes(
           gpu_flags,
           pjob->ji_wattr[JOB_ATR_gpu_flags].at_val.at_long);
 
-  		  log_ext(-1, id, log_buf, LOG_DEBUG);
+  		  log_ext(-1, __func__, log_buf, LOG_DEBUG);
 	      }
 /*      job_save(pjob,SAVEJOB_FULL,0); */
       }
@@ -5203,7 +5178,7 @@ int set_nodes(
       NCount,
       *rtnlist);
 
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
   /* SUCCESS */
@@ -5221,7 +5196,6 @@ int procs_requested(
   char *spec)
 
   {
-  char *id = "procs_requested";
   char *str, *globs, *cp, *hold;
   int num_nodes = 0, num_procs = 0, total_procs = 0, num_gpus = 0;
   int i;
@@ -5240,7 +5214,7 @@ int procs_requested(
 
     if (LOGLEVEL >= 1)
       {
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
 
     return(-1);
@@ -5390,7 +5364,6 @@ int node_avail(
   int *ndown)  /* O - number down      */
 
   {
-  char *id = "node_avail";
   int j;
   int holdnum;
 
@@ -5411,7 +5384,7 @@ int node_avail(
 
   if (spec == NULL)
     {
-    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, "no spec");
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, "no spec");
 
     return(RM_ERR_NOPARAM);
     }
@@ -5517,7 +5490,6 @@ int node_reserve(
   resource_t  tag)   /* In/Out - tag for resource if reserved */
 
   {
-  static char        id[] = "node_reserve";
   int                nrd;
 
   struct pbsnode    *pnode;
@@ -5529,16 +5501,11 @@ int node_reserve(
   char               log_buf[LOCAL_LOG_BUF_SIZE];
   node_job_add_info  *naji = NULL;
 
-  DBPRT(("%s: entered\n",
-         id))
+  DBPRT(("%s: entered\n", __func__))
 
   if ((nspec == NULL) || (*nspec == '\0'))
     {
-    log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      "no spec");
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, "no spec");
 
     return(-1);
     }
@@ -5592,7 +5559,7 @@ int node_reserve(
 
     snprintf(log_buf, sizeof(log_buf), "can never reserve %s", nspec);
 
-    log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
   free_naji(naji);
 
@@ -5677,8 +5644,6 @@ void free_nodes(
   job *pjob)  /* I (modified) */
 
   {
-  static char id[] = "free_nodes";
-
   struct pbssubn *np;
 
   struct pbsnode *pnode;
@@ -5700,7 +5665,7 @@ void free_nodes(
     {
     sprintf(log_buf, "freeing nodes for job %s", pjob->ji_qs.ji_jobid);
 
-    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
   if ((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
@@ -5757,7 +5722,7 @@ void free_nodes(
                   i,
                   pjob->ji_qs.ji_jobid);
 
-                log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
+                log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
                 }
 
               }
@@ -5795,7 +5760,7 @@ void free_nodes(
             pjob->ji_qs.ji_jobid,
             pnode->nd_nsnfree);
 
-          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
+          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
           }
 
         if (prev == NULL)
@@ -5813,7 +5778,7 @@ void free_nodes(
             pnode->nd_nsnfree,
             pnode->nd_nsn);
 
-          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, id, log_buf);
+          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
           }
 
         pnode->nd_state &= ~(INUSE_JOB | INUSE_JOBSHARE);
