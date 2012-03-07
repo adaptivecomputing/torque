@@ -1322,7 +1322,7 @@ void clear_nvidia_gpus(
 
   {
   static char     id[] = "clear_nvidia_gpus";
-  attribute       temp;
+  pbs_attribute   temp;
 
   if ((np->nd_gpus_real) && (np->nd_ngpus > 0))
     {
