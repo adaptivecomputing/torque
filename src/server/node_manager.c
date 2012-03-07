@@ -1309,6 +1309,51 @@ int save_node_status(
 
 
 
+#ifdef NVIDIA_GPUS
+/*
+ **     reset gpu data in case mom reconnects with changed gpus.
+ **     If we have real gpus, not virtual ones, then clear out gpu_status,
+ **     gpus count and remove gpu subnodes.
+ */
+
+void clear_nvidia_gpus(
+
+  struct pbsnode *np)  /* I */
+
+  {
+  static char     id[] = "clear_nvidia_gpus";
+  attribute       temp;
+
+  if ((np->nd_gpus_real) && (np->nd_ngpus > 0))
+    {
+    /* delete gpusubnodes by freeing it */
+    free(np->nd_gpusn);
+    np->nd_gpusn = NULL;
+
+    /* reset # of gpus, etc */
+    np->nd_ngpus = 0;
+    np->nd_ngpus_free = 0;
+
+    /* unset "gpu_status" node attribute */
+
+    memset(&temp, 0, sizeof(temp));
+
+    if (decode_arst(&temp, NULL, NULL, NULL, 0))
+      {
+      log_err(-1, id, "clear_nvidia_gpus:  cannot initialize attribute\n");
+
+      return;
+      }
+
+    node_gpustatus_list(&temp, np, ATR_ACTION_ALTER);
+    }
+  return;
+  }  /* END clear_nvidia_gpus() */
+
+#endif  /* NVIDIA_GPUS */
+
+
+
 
 int process_status_info(
 
@@ -1384,6 +1429,10 @@ int process_status_info(
       /* mom is requesting that we send the mom hierarchy file to her */
       remove_hello(&hellos, current->nd_name);
       send_hello = TRUE;
+#ifdef NVIDIA_GPUS
+      /* reset gpu data in case mom reconnects with changed gpus */
+      clear_nvidia_gpus(current);
+#endif  /* NVIDIA_GPUS */
       }
     else if ((rc = decode_arst(&temp, NULL, NULL, str, 0)) != PBSE_NONE)
       {
