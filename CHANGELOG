@@ -17,6 +17,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       installed on a node without Nvidia gpus. (backported from 3.0.5)
   b - fix for where pbsnodes displays outdated gpu_status information.
       (backported from 3.0.5)
+  b - Fixed a problem where starting pbs_mom with the default -p option would delete
+      running jobs instead of trying to recover them if cpusets were enabled. TRQ-828
 
 2.5.10 
   b - Fixed a problem where pbs_mom will crash of check_pwd returns NULL. This could

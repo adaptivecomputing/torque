@@ -7608,6 +7608,7 @@ int setup_program_environment(void)
     "before init_abort_jobs");
 
   init_abort_jobs(recover);
+  remove_defunct_cpusets();
 
 #ifdef _POSIX_MEMLOCK
   /* call mlockall() only 1 time, since it seems to leak mem */

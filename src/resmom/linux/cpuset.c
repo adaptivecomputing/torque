@@ -513,12 +513,6 @@ initialize_root_cpuset(void)
       memset(cpuset_buf, '\0', sizeof(cpuset_buf));
       }  /* END if (fp != NULL) */
     }    /* END if (lstat(path,&statbuf) != 0) */
-  else
-    {
-    /* The cpuset already exists, delete any cpusets for jobs that no longer exist. */
-
-    remove_defunct_cpusets();
-    }
 
   return;
   }  /* END initialize_root_cpuset() */

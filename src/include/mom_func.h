@@ -185,6 +185,7 @@ extern void  checkret(char **, int);
 extern char *get_job_envvar(job *, char *);
 extern int   mom_open_socket_to_jobs_server(job* pjob, char *id, void (*message_hander)(int));
 void         clear_servers();
+void remove_defunct_cpusets();
 
 /* defined in mach-dependant mom_mach.c */
 extern int kill_task(struct task *, int, int);
