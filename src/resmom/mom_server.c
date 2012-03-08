@@ -244,6 +244,7 @@
 
 #define MAX_RETRY_TIME_IN_SECS  (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS  2
+#define MAX_GPUS  32
 
 
 
@@ -2516,8 +2517,12 @@ void generate_server_gpustatus_smi(
   static char id[] = "generate_server_gpustatus_smi";
 
   char *dataptr, *outptr, *tmpptr1, *tmpptr2, *savptr;
-  char gpu_string[16 * 1024];
-  int  gpu_modes[32];
+  /* 
+   * we hope we don't get more than 32 gpus on a node so we guess at how much
+   * data might get returned from nvidia-smi. xml inflates return data.
+   */
+  char gpu_string[MAX_GPUS * 3000];
+  int  gpu_modes[MAX_GPUS];
   int  have_modes = FALSE;
   int  gpuid = -1;
   mxml_t *EP;
@@ -3262,7 +3267,7 @@ void mom_server_all_update_gpustat(void)
   {
   static char *id = "mom_server_all_update_gpustat";
 
-  static char gpu_status_strings[16 * 1024];  /* Big but smaller than before in is_update_stat */
+  static char gpu_status_strings[MAX_GPUS * 512];
   int sindex;
 
   /* We generate the status once, because this might be costly.
