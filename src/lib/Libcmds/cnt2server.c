@@ -102,8 +102,12 @@
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h> /* sockaddr_in */
+#include <arpa/inet.h>
 #include "pbs_ifl.h"
 #include "pbs_error.h"
+#include "../Libnet/lib_net.h" /* get_hostaddr_hostent_af */
 
 #define CNTRETRYDELAY 5
 
@@ -120,8 +124,6 @@ int cnt2server_conf(
 
   return(0);
   }  /* END cnt2server_conf() */
-
-
 
 
 
@@ -232,11 +234,11 @@ start:
           break;
         }
       }    /* END if (a PBSE_ was reported) */
-    else
+    else /* These represent system errors (errno numbers) */
       {
       if (thistime == 0)
         {
-        if (errno == ECONNREFUSED)
+        if ((connect *-1) == ECONNREFUSED)
           {
           if (Server[0] == '\0')
             {
@@ -268,7 +270,7 @@ start:
           }
         else
           {
-          perror(NULL);
+          pbs_strerror(connect *-1);
           }
         }
 

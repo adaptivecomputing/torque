@@ -16,7 +16,6 @@ int get_connection_entry(int *conn_pos);
 char *PAddrToString(pbs_net_t *Addr);
 pbs_net_t get_hostaddr(int *, char *hostname);
 int get_hostaddr_hostent_af(int *, char *hostname, unsigned short *af_family, char **host_addr, int *host_addr_len);
-int get_hostaddr_hostent(int *, char *hostname, char **host_addr, int *host_addr_len);
 
 /* from file get_hostname.c */
 int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg); 

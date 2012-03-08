@@ -135,11 +135,9 @@ int pbs_runjob_err(
   char *jobid,
   char *location,
   char *extend,
-  int  *local_errno)
+  int  *rc)
 
   {
-  int                   rc;
-
   struct batch_reply   *reply;
   unsigned int          resch = 0;
   int                   sock;
@@ -148,7 +146,8 @@ int pbs_runjob_err(
 
   if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
     {
-    return(PBSE_IVALREQ);
+    *rc = PBSE_IVALREQ;
+    return (*rc) * -1;
     }
 
   if (location == NULL)
@@ -166,35 +165,35 @@ int pbs_runjob_err(
 
   /* send run request */
 
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_RunJob, pbs_current_user)) ||
-      (rc = encode_DIS_RunJob(sock, jobid, location, resch)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((*rc = encode_DIS_ReqHdr(sock, PBS_BATCH_RunJob, pbs_current_user)) ||
+      (*rc = encode_DIS_RunJob(sock, jobid, location, resch)) ||
+      (*rc = encode_DIS_ReqExtend(sock, extend)))
     {
-    connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+    connection[c].ch_errtxt = strdup(dis_emsg[*rc]);
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return(PBSE_PROTOCOL);
+    return (*rc) * -1;
     }
 
-  if (DIS_tcp_wflush(sock))
+  if ((*rc = DIS_tcp_wflush(sock)) != PBSE_NONE)
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return(PBSE_PROTOCOL);
+    return (*rc) * -1;
     }
 
   /* get reply */
 
-  reply = PBSD_rdrpy(local_errno, c);
+  reply = PBSD_rdrpy(rc, c);
 
-  rc = connection[c].ch_errno;
+/*  *rc = connection[c].ch_errno; */
 
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   PBSD_FreeReply(reply);
 
-  return(rc);
+  return (*rc) * -1;
   }  /* END pbs_runjob_err() */
 
 

@@ -1189,7 +1189,29 @@ int pbs_disconnect(
 
 
 
-
+void print_server_port_to_stderr(
+    char *s_name)
+  {
+  int rc = PBSE_NONE;
+  char *s_addr = NULL;
+  unsigned short af_family;
+  struct in_addr  hostaddr;
+  char *ip_addr = NULL;
+  int s_len = 0;
+  if ((rc = get_hostaddr_hostent_af(&rc, s_name, &af_family, &s_addr, &s_len)) == PBSE_NONE)
+    {   
+    memcpy((void *)&hostaddr, (void *)s_addr, s_len);
+    ip_addr = inet_ntoa(hostaddr);
+    fprintf(stderr, "Error communicating with %s(%s)\n", s_name, ip_addr);
+    }
+  else  
+    {
+    fprintf(stderr, "Can not resolve name for server %s. (rc = %d - %s)\n",
+        s_name,
+        rc,  
+        pbs_strerror(rc));
+    }        
+  }
 
 /**
  * This is a new version of this function that allows
@@ -1256,6 +1278,8 @@ int pbs_connect(
 
         return(connect);  /* Success, we have a connection, return it. */
         }
+      else
+        print_server_port_to_stderr(current_name);
       }
     }
 

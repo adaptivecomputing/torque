@@ -198,8 +198,8 @@ cnt:
     {
     fprintf(stderr, "qrun: could not connect to server %s (%d) %s\n",
             server,
-            local_errno,
-            pbs_strerror(local_errno));
+            ct * -1,
+            pbs_strerror(ct * -1));
 
     exitstatus = 2;
     }
