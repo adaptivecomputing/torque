@@ -91,8 +91,6 @@ long power(register int x, register int n);
 
 int calculate_retry_seconds(int count);
 
-int mom_server_send_hello(mom_server *pms);
-
 void mom_server_diag(mom_server *pms, int sindex, char **BPtr, int *BSpace);
 
 void mom_server_all_diag(char **BPtr, int *BSpace);

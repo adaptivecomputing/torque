@@ -33,8 +33,6 @@ int is_compose(int stream, int command);
 
 void stream_eof(int stream, u_long addr, uint16_t port, int ret);
 
-int add_cluster_addrs(int stream, struct pbsnode *held);
-
 void *check_nodes_work(void *vp);
 
 void check_nodes(struct work_task *ptask);

@@ -192,7 +192,6 @@ extern int multi_mom;
 #endif
 
 int hasprop(struct pbsnode *, struct prop *);
-int add_cluster_addrs(int,struct pbsnode *);
 int is_compose(int, int);
 int add_job_to_node(struct pbsnode *,struct pbssubn *,short,job *,int);
 int node_satisfies_request(struct pbsnode *,char *);
@@ -2052,71 +2051,6 @@ void stream_eof(
 
 
 
-
-/* add_cluster_addrs - add the IPaddr of every node to the stream */
-
-int add_cluster_addrs(
-
-  int stream,           /* I */
-  struct pbsnode *held) /* I */
-
-  {
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
-
-  int             iter = -1;
-  int             j;
-  int             ret;
-
-  struct pbsnode *np;
-
-  /* should we cache this response and send it as a single string? */
-  while ((np = next_host(&allnodes,&iter,held)) != NULL)
-    {
-    if (LOGLEVEL == 7)  /* higher loglevel gets more info below */
-      {
-      sprintf(log_buf, "adding node %s to hello response", np->nd_name);
-
-      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-      }
-
-    for (j = 0; np->nd_addrs[j]; j++)
-      {
-      u_long ipaddr = np->nd_addrs[j];
-
-      if (LOGLEVEL >= 8)
-        {
-        char *tmp = netaddr_pbs_net_t(ipaddr);
-        sprintf(log_buf, "adding node interface[%d] %s to hello response",
-          j,
-          tmp);
-
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-
-        free(tmp);
-        }
-
-      ret = diswul(stream, ipaddr);
-
-      if (ret != DIS_SUCCESS)
-        {
-        /* FAILURE */
-        if (np != held)
-          unlock_node(np, __func__, "failure", LOGLEVEL);
-
-        return(ret);
-        }
-      }  /* END for (j) */
-
-    if (np != held)
-      unlock_node(np, __func__, "success", LOGLEVEL);
-    }    /* END for (i) */
-
-  return(DIS_SUCCESS);
-  } /* END add_cluster_addrs */
-
-
-
-
 /*
  * wrapper task that check_nodes places in the thread pool's queue
  */
@@ -2388,49 +2322,6 @@ void *svr_is_request_work(
 
       break;
 
-    case IS_HELLO:
-
-      if (LOGLEVEL >= 1)
-        {
-        sprintf(log_buf, "HELLO received from %s", node->nd_name);
-
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-        }
-
-#ifndef ALT_CLSTR_ADDR
-      ret = is_compose(sock, IS_CLUSTER_ADDRS);
-
-      if (ret != DIS_SUCCESS)
-        goto err;
-
-      if (LOGLEVEL >= 6)
-        {
-        sprintf(log_buf, "Add cluster addrs to %s", node->nd_name);
-
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-        }
-
-      if (add_cluster_addrs(sock,node) != DIS_SUCCESS)
-        goto err;
-
-      ret = DIS_tcp_wflush(sock);
-
-      if (ret != DIS_SUCCESS)
-        goto err;
-
-      if (LOGLEVEL >= 3)
-        {
-        sprintf(log_buf, "sending cluster-addrs to node %s\n", node->nd_name);
-
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-        }
-
-      /* CLUSTER_ADDRS successful */
-#endif
-      node->nd_state &= ~(INUSE_NEEDS_HELLO_PING);
-
-      break;
-
     case IS_UPDATE:
 
       DBPRT(("%s: IS_UPDATE\n", __func__))
@@ -2456,13 +2347,6 @@ void *svr_is_request_work(
       break;
 
     case IS_STATUS:
-
-      /* pbs_server brought up
-         pbs_mom brought up
-         they send IS_HELLO to each other
-         pbs_mom sends IS_STATUS message to pbs_server (replying to IS_HELLO)
-         pbs_server sends IS_CLUSTER_ADDRS message to pbs_mom  (replying to IS_HELLO)
-         pbs_mom uses IS_CLUSTER_ADDRS message to authorize contacts from sisters */
 
       if (LOGLEVEL >= 2)
         {

@@ -3408,71 +3408,6 @@ int calculate_retry_seconds(
   }
 
 
-/**
- * mom_server_send_hello
- *
- * This sends a hello message to server.
- *
- * @param pms pointer to mom_server instance
- * @return count 0 or -1
- *
- */
-
-int mom_server_send_hello(
-
-  mom_server *pms)
-
-  {
-  static char id[] = "mom_server_send_hello";
-  int ret;
-
-  if (LOGLEVEL >= 6)
-    {
-    sprintf(log_buffer, "%s", id);
-
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, id, log_buffer);
-    }
-
-  if (is_compose(pms->SStream, pms->pbs_servername, IS_HELLO) == -1)
-    {
-    return(-1);
-    }
-
-  ret = diswus(pms->SStream, pbs_mom_port);
-  if (ret)
-    {
-    return(-1);
-    }
-  
-  ret = diswus(pms->SStream, pbs_rm_port);
-  if (ret)
-    {
-    return(-1);
-    }
-
-  if (mom_server_flush_io(pms->SStream, id, "flush") != DIS_SUCCESS)
-    {
-    return(-1);
-    }
-
-  pms->sent_hello_count++;
-
-  if (LOGLEVEL >= 6)
-    {
-    sprintf(log_buffer, "%s done. Sent count = %d",
-            id, pms->sent_hello_count);
-
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      log_buffer);
-    }
-
-  return(0);
-  }  /* END mom_server_send_hello() */
-
-
 
 
 /**
@@ -3824,63 +3759,6 @@ mom_server *mom_server_valid_message_source(
 
 
 
-void pass_along_hellos(
-  
-  int hello_count) /* I */
-
-  {
-  int                 iter = -1;
-  int                 ret;
-  received_node      *rn;
-  struct addrinfo    *addr_info;
-  struct sockaddr_in  sa;
-  unsigned long       ipaddr;
-  int                 stream;
-
-  while ((rn = next_thing(received_statuses,&iter)) != NULL)
-    {
-    if (rn->hellos_sent < hello_count)
-      {
-      if (getaddrinfo(rn->hostname, NULL, NULL, &addr_info) == 0)
-        {
-        /* get socket information */
-        sa.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-        sa.sin_family = AF_INET;
-        freeaddrinfo(addr_info);
-        ipaddr = ntohl(sa.sin_addr.s_addr);
-        sa.sin_port = htons(AVL_get_port_by_ipaddr(ipaddr,okclients));
-
-        stream = tcp_connect_sockaddr((struct sockaddr *)&sa,sizeof(sa));
-
-        if (IS_VALID_STREAM(stream))
-          {
-          DIS_tcp_setup(stream);
-          
-          if ((ret = diswsi(stream,IS_PROTOCOL)) == DIS_SUCCESS)
-            {
-            if ((ret = diswsi(stream,IS_PROTOCOL_VER)) == DIS_SUCCESS)
-              {
-              diswsi(stream,IS_HELLO);
-
-              DIS_tcp_wflush(stream);
-              }
-            }
-          
-          /*read_tcp_reply(stream,IS_PROTOCOL,IS_PROTOCOL_VER,IS_HELLO,&ret);*/
-          
-          close(stream);
-          
-          rn->hellos_sent++;
-          }
-        }
-      }
-    } /* END looking at each received node */
-
-  } /* END pass_along_hellos() */
-
-
-
-
 int process_host_name(
 
   char *hostname,
@@ -4173,7 +4051,6 @@ void mom_is_request(
   int *cmdp)     /* O (optional) */
 
   {
-  static int          hello_count = 0;
   int                 command = 0;
   int                 ret = DIS_SUCCESS;
   mom_server         *pms;
@@ -4276,17 +4153,6 @@ void mom_is_request(
             state_to_server(sindex, 1);
           }
         }
-
-      break;
-
-    case IS_HELLO:  /* server wants a return ping */
-
-      hello_count++;
- 
-      /* FORCE immediate server update */
-      send_update_soon();
- 
-      pass_along_hellos(hello_count);
 
       break;
 

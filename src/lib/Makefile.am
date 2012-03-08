@@ -5,3 +5,5 @@ SUBDIRS = Libattr Libcmds Libcsv Libdis Libifl Liblog Libnet Libpbs Libsite Libu
 if HAVE_CHECK
 SUBDIRS += test
 endif
+
+DIST_SUBDIRS = Libattr Libcmds Libcsv Libdis Libifl Liblog Libnet Libpbs Libsite Libutils
