@@ -251,6 +251,7 @@
 #define UPDATE_TO_MOM                     1
 #define MIN_SERVER_UDPATE_SPACING         3
 #define MAX_SERVER_UPDATE_SPACING         40
+#define MAX_GPUS  32
 
 #ifdef NUMA_SUPPORT
 extern int numa_index;
@@ -2356,8 +2357,12 @@ void generate_server_gpustatus_smi(
   char   *tmpptr1;
   char   *tmpptr2;
   char   *savptr;
-  char    gpu_string[16 * 1024];
-  int     gpu_modes[32];
+  /* 
+   * we hope we don't get more than 32 gpus on a node so we guess at how much
+   * data might get returned from nvidia-smi. xml inflates return data.
+   */
+  char gpu_string[MAX_GPUS * 3000];
+  int  gpu_modes[MAX_GPUS];
   int     have_modes = FALSE;
   int     gpuid = -1;
   mxml_t *EP;

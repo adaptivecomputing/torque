@@ -27,6 +27,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       restarts.
   b - fix for where pbsnodes displays outdated gpu_status information.
   b - fix problem with '+ and segfault when using multiple node gpu requests.
+  b - fix problem with mom segfault when using 8 or more gpus on mom node.
 
 4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 
