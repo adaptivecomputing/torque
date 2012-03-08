@@ -27,6 +27,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       restarts.
   b - fix for where pbsnodes displays outdated gpu_status information.
   b - fix problem with '+ and segfault when using multiple node gpu requests.
+  b - Fixed a bug in svr_connect. If the value for func were null then the newly
+      created connection was not added to the svr_conn table. This was not right. 
+      We now always add the new connection to svr_conn.
   b - fix problem with mom segfault when using 8 or more gpus on mom node.
 
 4.0.0

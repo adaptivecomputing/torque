@@ -244,14 +244,10 @@ int svr_connect(
 
   /* add the connection to the server connection table and select list */
 
-  if (func != NULL)
+  if ((rc = add_conn(sock, ToServerDIS, hostaddr, port, PBS_SOCK_INET, func)) != PBSE_NONE)
     {
-    /* connect attempt to XXX? */
-    if ((rc = add_conn(sock, ToServerDIS, hostaddr, port, PBS_SOCK_INET, func)) != PBSE_NONE)
-        {
-        /* Return invalid handle */
-        return -1;
-        }
+    /* Return invalid handle */
+    return -1;
     }
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
