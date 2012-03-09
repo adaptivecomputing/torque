@@ -94,7 +94,7 @@ dnl ##########################################################################
 dnl Do not install load library path in /etc/ld.so.conf.d
 
 AC_ARG_WITH(loadlibfile,
-   [AS_HELP_STRING([--without-loadlibfile], [ (Disable automatic install of entry to ld.so.conf.d (default=yes)])], [have_loadlibfile=no], [have_loadlibfile=yes])
+   [AS_HELP_STRING([--with-loadlibfile], [ (Enable automatic install of libtorqueue.conf entry to ld.so.conf.d (default=no)])], [have_loadlibfile=yes], [have_loadlibfile=no])
 AC_SUBST(have_loadlibfile)
 
 dnl

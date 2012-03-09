@@ -14,6 +14,6 @@ automake
 libtool
 pkg-config
 
-Non-standard packages for building the source:
+Non-standard packages required for building the source:
 libssl-dev (name may vary among OSes)
 
