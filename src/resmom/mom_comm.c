@@ -5301,6 +5301,7 @@ int send_im_error_addr(
 
   int         err,
   struct sockaddr_in *si,
+  int mom_mgr_sock,
   char *jobid,
   char       *cookie,
   tm_event_t  event,
@@ -5312,7 +5313,7 @@ int send_im_error_addr(
   int sock = 0;
   /*  char log_buf[LOCAL_LOG_BUF_SIZE]; */
 
-  si->sin_port = htons(pbs_rm_port);
+  si->sin_port = htons(mom_mgr_sock);
 
   for (cntr = 0; cntr < 5; cntr++)
     {
@@ -5581,7 +5582,7 @@ void im_request(
       close_conn(stream, FALSE);
       goto err;
       }
-    send_im_error_addr(PBSE_UNKJOBID,addr,jobid,cookie,event,fromtask);
+    send_im_error_addr(PBSE_UNKJOBID,addr,sender_port,jobid,cookie,event,fromtask);
     sprintf(log_buffer, "ERROR: received request '%s' from %s for job '%s' cookie '%s' event '%d' (job does not exist locally).",
       PMOMCommand[MIN(command,IM_MAX)],
       netaddr(addr),
