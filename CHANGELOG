@@ -31,6 +31,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       created connection was not added to the svr_conn table. This was not right. 
       We now always add the new connection to svr_conn.
   b - fix problem with mom segfault when using 8 or more gpus on mom node.
+  e - Enabled the configuration to be able to write the path of the library directory
+      to /etc/ld.so.conf.d in a file named libtorque.conf. The file will be created
+      by default during make install. The configuration can be made to not install this
+      file by using the configure option --without-loadlibfile
 
 4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 
