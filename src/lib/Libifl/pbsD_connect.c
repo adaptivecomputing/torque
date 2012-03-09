@@ -969,7 +969,7 @@ int pbs_original_connect(
                 if_name, errno);
         if (if_name)
           free(if_name);
-        return(PBSE_SYSTEM);
+        return(PBSE_SYSTEM * -1);
         }
       }
 
