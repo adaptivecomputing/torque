@@ -151,7 +151,6 @@ extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern AvlTree          ipaddrs;
-extern AvlTree          streams;
 extern dynamic_string  *hierarchy_holder;
 
 
@@ -1965,9 +1964,6 @@ int setup_nodes(void)
     }
 
   next_resource_tag = time(0); /* initialize next resource handle */
-
-  /*tfree(&streams);
-  tfree(&ipaddrs);*/
 
   svr_totnodes = 0;
 

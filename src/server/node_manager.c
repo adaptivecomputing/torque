@@ -213,10 +213,7 @@ pthread_mutex_t *node_state_mutex = NULL;
 **      Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
 */
 
-/* tree *ipaddrs = NULL; */ /* tree of ip addrs */
 AvlTree ipaddrs = NULL;
-/* tree *streams = NULL; */ /* tree of stream numbers */
-AvlTree streams = NULL;
 
 
 /**
@@ -1968,7 +1965,7 @@ done:
 
 
 /* EOF on a stream received (either stream or addr must be specified) */
-/* mark node down and remove associated streams */
+/* mark node down */
 /* NOTE: pass in stream = -1 if you wish the stream to be optional */
 
 void stream_eof(
@@ -1990,11 +1987,9 @@ void stream_eof(
     {
     close(stream);
 
-    /* find who the stream belongs to and mark down */
-    np = AVL_find(stream, 0, streams);
     }
 
-  if ((np == NULL) && (addr != 0))
+  if (addr != 0)
     {
     np = AVL_find(addr, port, ipaddrs);
     }
@@ -2033,15 +2028,6 @@ void stream_eof(
     }
   else
     update_node_state(np, INUSE_DOWN);
-
-  /* remove stream from list of valid connections */
-
-  if (np->nd_stream >= 0)
-    {
-    streams = AVL_delete_node(np->nd_stream, 0, streams);
-
-    np->nd_stream = -1;
-    }
 
   unlock_node(np, __func__, "parent", LOGLEVEL);
 
@@ -5518,6 +5504,193 @@ char *find_ts_node(void)
 
 
 
+char *get_next_exec_host(
+
+  char **current)
+
+  {
+  char *name_ptr = *current;
+  char *plus;
+  char *slash;
+  
+  if (name_ptr != NULL)
+    {
+    if ((plus = strchr(name_ptr, '+')) != NULL)
+      {
+      *current = plus + 1;
+      *plus = '\0';
+      }
+    else
+      *current = NULL;
+
+    if ((slash = strchr(name_ptr, '/')) != NULL)
+      *slash = '\0';
+    }
+
+  return(name_ptr);
+  } /* END get_next_exec_host() */
+
+
+
+int remove_job_from_nodes_gpus(
+
+  struct pbsnode *pnode,
+  job            *pjob)
+
+  {
+  struct gpusubn *gn;
+  char           *gpu_str;
+  int             i;
+#ifdef NVIDIA_GPUS
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  char            tmp_str[PBS_MAXHOSTNAME + 10];
+  char            num_str[6];
+#endif
+ 
+  if (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET)
+    gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+
+  if (gpu_str != NULL)
+    {
+    /* reset gpu nodes */
+    for (i = 0; i < pnode->nd_ngpus; i++)
+      {
+      gn = pnode->nd_gpusn + i;
+#ifdef NVIDIA_GPUS
+      if (pnode->nd_gpus_real)
+        {
+        /* reset real gpu nodes */
+        strcpy (tmp_str, pnode->nd_name);
+        strcat (tmp_str, "-gpu/");
+        sprintf (num_str, "%d", i);
+        strcat (tmp_str, num_str);
+        
+        /* look thru the string and see if it has this host and gpuid.
+         * exec_gpus string should be in format of 
+         * <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
+         *
+         * if we are using the gpu node exclusively or if shared mode and
+         * this is last job assigned to this gpu then set it's state
+         * unallocated so its available for a new job. Takes time to get the
+         * gpu status report from the moms.
+         */
+        
+        if (strstr(gpu_str, tmp_str) != NULL)
+          {
+          gn->job_count--;
+          
+          if ((gn->mode == gpu_exclusive_thread) ||
+              (gn->mode == gpu_exclusive_process) ||
+              ((gn->mode == gpu_normal) && 
+               (gn->job_count == 0)))
+            {
+            gn->state = gpu_unallocated;
+            
+            if (LOGLEVEL >= 7)
+              {
+              sprintf(log_buf, "freeing node %s gpu %d for job %s",
+                pnode->nd_name,
+                i,
+                pjob->ji_qs.ji_jobid);
+              
+              log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+              }
+            
+            }
+          }
+        }
+      else
+#endif  /* NVIDIA_GPUS */
+        {
+        if (!strcmp(gn->jobid, pjob->ji_qs.ji_jobid))
+          {
+          gn->inuse = FALSE;
+          memset(gn->jobid, 0, sizeof(gn->jobid));
+          
+          pnode->nd_ngpus_free++;
+          }
+        }
+      }
+    }
+
+  return(PBSE_NONE);
+  } /* END remove_job_from_nodes_gpus() */
+
+
+
+
+int remove_job_from_node(
+
+  struct pbsnode *pnode,
+  job            *pjob)
+
+  {
+  struct pbssubn *np;
+  struct jobinfo *jp;
+  struct jobinfo *prev;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  
+  /* examine all subnodes in node */
+  for (np = pnode->nd_psn;np != NULL;np = np->next)
+    {
+    /* examine all jobs allocated to subnode */
+    
+    for (prev = NULL, jp = np->jobs;jp != NULL;prev = jp, jp = jp->next)
+      {
+      if (strcmp(jp->jobid, pjob->ji_qs.ji_jobid))
+        continue;
+      
+      if (LOGLEVEL >= 4)
+        {
+        sprintf(log_buf, "freeing node %s/%d from job %s (nsnfree=%d)",
+          pnode->nd_name,
+          np->index,
+          pjob->ji_qs.ji_jobid,
+          pnode->nd_nsnfree);
+        
+        log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+        }
+      
+      if (prev == NULL)
+        np->jobs = jp->next;
+      else
+        prev->next = jp->next;
+
+      free(jp);
+      
+      pnode->nd_nsnfree++; /* up count of free */
+      
+      if (LOGLEVEL >= 6)
+        {
+        sprintf(log_buf, "increased sub-node free count to %d of %d\n",
+          pnode->nd_nsnfree,
+          pnode->nd_nsn);
+        
+        log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+        }
+      
+      pnode->nd_state &= ~(INUSE_JOB | INUSE_JOBSHARE);
+      
+      /* if no jobs are associated with subnode, mark subnode as free */
+      
+      if (np->jobs == NULL)
+        {
+        if (np->inuse & INUSE_JOBSHARE)
+          pnode->nd_nsnshared--;
+        
+        /* adjust node state (turn off job/job-exclusive) */        
+        np->inuse &= ~(INUSE_JOB | INUSE_JOBSHARE);
+        }
+      
+      break;
+      }  /* END for (prev) */
+    }    /* END for (np) */
+
+  return(PBSE_NONE);
+  } /* END remove_job_from_node() */
+
+
+
 
 /*
  * free_nodes - free nodes allocated to a job
@@ -5528,22 +5701,13 @@ void free_nodes(
   job *pjob)  /* I (modified) */
 
   {
-  struct pbssubn *np;
-
   struct pbsnode *pnode;
 
-  struct jobinfo *jp;
-  struct jobinfo *prev;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-
-  int             i;
-  char           *gpu_str = NULL;
-#ifdef NVIDIA_GPUS
-  char            tmp_str[PBS_MAXHOSTNAME + 10];
-  char            num_str[6];
-#endif  /* NVIDIA_GPUS */
-
-  node_iterator iter;
+  char           *exec_hosts;
+  char           *host_ptr;
+  char           *hostname;
+  char           *previous_hostname = NULL;
 
   if (LOGLEVEL >= 3)
     {
@@ -5552,137 +5716,27 @@ void free_nodes(
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
-  if ((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
-    {
-    gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
-    }
+  exec_hosts = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  host_ptr = exec_hosts;
 
-  /* examine all nodes in cluster */
-  reinitialize_node_iterator(&iter);
-  pnode = NULL;
-
-  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+  while ((hostname = get_next_exec_host(&host_ptr)) != NULL)
     {
-    if (gpu_str != NULL)
+    if ((previous_hostname) != NULL)
       {
-      /* reset gpu nodes */
-      for (i = 0; i < pnode->nd_ngpus; i++)
-        {
-        struct gpusubn *gn = pnode->nd_gpusn + i;
-#ifdef NVIDIA_GPUS
-        if (pnode->nd_gpus_real)
-          {
-          /* reset real gpu nodes */
-          strcpy (tmp_str, pnode->nd_name);
-          strcat (tmp_str, "-gpu/");
-          sprintf (num_str, "%d", i);
-          strcat (tmp_str, num_str);
-
-          /* look thru the string and see if it has this host and gpuid.
-           * exec_gpus string should be in format of 
-           * <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
-           *
-           * if we are using the gpu node exclusively or if shared mode and
-           * this is last job assigned to this gpu then set it's state
-           * unallocated so its available for a new job. Takes time to get the
-           * gpu status report from the moms.
-           */
-
-          if (strstr(gpu_str, tmp_str) != NULL)
-            {
-            gn->job_count--;
-
-            if ((gn->mode == gpu_exclusive_thread) ||
-                 (gn->mode == gpu_exclusive_process) ||
-                 ((gn->mode == gpu_normal) && 
-                  (gn->job_count == 0)))
-              {
-              gn->state = gpu_unallocated;
-
-              if (LOGLEVEL >= 7)
-                {
-                sprintf(log_buf, "freeing node %s gpu %d for job %s",
-                  pnode->nd_name,
-                  i,
-                  pjob->ji_qs.ji_jobid);
-
-                log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-                }
-
-              }
-            }
-          }
-        else
-#endif  /* NVIDIA_GPUS */
-          {
-          if (!strcmp(gn->jobid, pjob->ji_qs.ji_jobid))
-            {
-            gn->inuse = FALSE;
-            memset(gn->jobid, 0, sizeof(gn->jobid));
-
-            pnode->nd_ngpus_free++;
-            }
-          }
-        }
+      if (!strcmp(hostname, previous_hostname))
+        continue;
       }
 
-    /* examine all subnodes in node */
-    for (np = pnode->nd_psn;np != NULL;np = np->next)
+    previous_hostname = hostname;
+
+    if ((pnode = find_nodebyname(hostname)) != NULL)
       {
-      /* examine all jobs allocated to subnode */
+      remove_job_from_node(pnode, pjob);
+      unlock_node(pnode, __func__, NULL, 0);
+      }
+    }
 
-      for (prev = NULL, jp = np->jobs;jp != NULL;prev = jp, jp = jp->next)
-        {
-        if (strcmp(jp->jobid, pjob->ji_qs.ji_jobid))
-          continue;
-
-        if (LOGLEVEL >= 4)
-          {
-          sprintf(log_buf, "freeing node %s/%d from job %s (nsnfree=%d)",
-            pnode->nd_name,
-            np->index,
-            pjob->ji_qs.ji_jobid,
-            pnode->nd_nsnfree);
-
-          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-          }
-
-        if (prev == NULL)
-          np->jobs = jp->next;
-        else
-          prev->next = jp->next;
-
-        free(jp);
-
-        pnode->nd_nsnfree++; /* up count of free */
-
-        if (LOGLEVEL >= 6)
-          {
-          sprintf(log_buf, "increased sub-node free count to %d of %d\n",
-            pnode->nd_nsnfree,
-            pnode->nd_nsn);
-
-          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-          }
-
-        pnode->nd_state &= ~(INUSE_JOB | INUSE_JOBSHARE);
-
-        /* if no jobs are associated with subnode, mark subnode as free */
-
-        if (np->jobs == NULL)
-          {
-          if (np->inuse & INUSE_JOBSHARE)
-            pnode->nd_nsnshared--;
-
-          /* adjust node state (turn off job/job-exclusive) */
-
-          np->inuse &= ~(INUSE_JOB | INUSE_JOBSHARE);
-          }
-
-        break;
-        }  /* END for (prev) */
-      }    /* END for (np) */
-    } /* END for each node */
+  free(exec_hosts);
 
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HasNodes;
 

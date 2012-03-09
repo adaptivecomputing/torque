@@ -35,6 +35,7 @@ hello_container hellos;
 
 
 
+
 struct batch_request *alloc_br(int type)
   {
   fprintf(stderr, "The call to alloc_br needs to be mocked!!\n");

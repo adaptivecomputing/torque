@@ -1,5 +1,10 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+evans
+  e - make free_nodes() only look at nodes in the exec_host list and not examine
+      all nodes to check if the job at hand was there. This should greatly speed
+      up freeing nodes.
+
 4.0.1
   b - Fix trqauthd init scripts to use correct path to trqauthd.
   b - fix so multiple stage in/out files can again be used with qsub -W

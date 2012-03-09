@@ -178,9 +178,8 @@ static void lock_out_ha();
 /* external data items */
 
 extern hello_container failures;
-extern int    svr_chngNodesfile;
-extern int    svr_totnodes;
-extern AvlTree streams;
+extern int             svr_chngNodesfile;
+extern int             svr_totnodes;
 extern struct all_jobs alljobs;
 
 /* External Functions */
