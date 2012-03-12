@@ -5704,8 +5704,8 @@ void free_nodes(
   struct pbsnode *pnode;
 
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  char           *exec_hosts;
-  char           *host_ptr;
+  char           *exec_hosts = NULL;
+  char           *host_ptr = NULL;
   char           *hostname;
   char           *previous_hostname = NULL;
 
@@ -5716,8 +5716,14 @@ void free_nodes(
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
-  exec_hosts = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-  host_ptr = exec_hosts;
+  if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
+    {
+    if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+      {
+      exec_hosts = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+      host_ptr = exec_hosts;
+      }
+    }
 
   while ((hostname = get_next_exec_host(&host_ptr)) != NULL)
     {

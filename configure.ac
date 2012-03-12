@@ -1121,7 +1121,7 @@ if test "x$alps_lib" != "xnone" ; then
   ALPS_LIBS="$ALPS_LIBS -l$alps_lib `xml2-config --libs`"
 dnl  MOMLIBS="$MOMLIBS $ALPS_LIBS"
   AM_CFLAGS="$AMCFLAGS `xml2-config --cflags`"
-  AC_DEFINE(USE_ALPS_LIB, 1, [Define this to use a plugin ALPS reporting library])
+  AC_DEFINE(USE_ALPS_LIB, 1, [Define this to use a plugin ALPS helper library])
 fi
 
 
