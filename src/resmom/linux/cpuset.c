@@ -66,10 +66,10 @@ extern long             system_ncpus;
  */
 
 int hwloc_bitmap_parselist(
- 
+
   const char     *buf, /* I */
   hwloc_bitmap_t  map) /* O */
- 
+
   {
   unsigned a;
   unsigned b;
@@ -77,16 +77,16 @@ int hwloc_bitmap_parselist(
 
   if (!map)
     return(-1);
- 
+
   hwloc_bitmap_zero(map);
 
   do
     {
     if (!isdigit(*buf))
       return(-1);
-    
+
     b = a = strtoul(buf, (char **)&buf, 10);
-    
+
     if (*buf == '-')
       {
       buf++;
@@ -94,21 +94,21 @@ int hwloc_bitmap_parselist(
         return(-1);
       b = strtoul(buf, (char **)&buf, 10);
       }
-    
+
     if (a > b)
       return(-1);
-    
+
     while (a <= b)
       {
       hwloc_bitmap_set(map, a++);
       c++;
       }
-    
+
     if (*buf == ',')
       buf++;
-    
+
     } while(*buf != '\0' && *buf != '\n');
- 
+
   return(c);
   } /* END hwloc_bitmap_parselist() */
 
@@ -129,27 +129,27 @@ int hwloc_bitmap_parselist(
  * @param buflen - (I) - max chars to become written
  * @param map    - (I) - bitmap
  */
- 
+
 int hwloc_bitmap_displaylist(
- 
+
   char           *buf,    /* O */
   size_t          buflen, /* I */
   hwloc_bitmap_t  map)    /* I */
- 
+
   {
   int len = 0;
   int fid;
   int lid;
   int id;
- 
+
   *buf = '\0';
-  
+
   fid = id = hwloc_bitmap_first(map);
   while (id != -1)
     {
     lid = id;
     id = hwloc_bitmap_next(map, id);
-    if ((id == -1) || 
+    if ((id == -1) ||
         (id > lid + 1))
       {
       if (len > 0)
@@ -204,7 +204,7 @@ int init_cpusets(void)
   struct stat    statbuf;
 #endif
 
-#ifdef USELIBCPUSET 
+#ifdef USELIBCPUSET
   /* Allocate a cpuset */
   if ((cp = cpuset_alloc()) == NULL)
     {
@@ -384,7 +384,7 @@ int create_cpuset(
       }
 
     bitmask_free(mask);
-    } /* END cpus != NULL */  
+    } /* END cpus != NULL */
 
   /* Set mems */
   if (mems != NULL)
@@ -490,7 +490,7 @@ int create_cpuset(
 
   /* Set cpus */
   if (cpus != NULL)
-    { 
+    {
     sprintf(path, "%s/cpus", cpuset_path);
 
     if ((fd = fopen(path, "w")) == NULL)
@@ -645,12 +645,12 @@ int read_cpuset(
         hwloc_bitmap_parselist(cpuset_buf, cpus);
         }
 
-      bitmask_free(mask); 
+      bitmask_free(mask);
       }
 
     /* Read mems */
     if (mems != NULL)
-      { 
+      {
       if ((mask = bitmask_alloc(cpuset_mems_nbits())) == NULL)
         {
         sprintf(log_buffer, "(%s) failed to allocate bitmask", id);
@@ -672,7 +672,7 @@ int read_cpuset(
         hwloc_bitmap_parselist(cpuset_buf, mems);
         }
 
-      bitmask_free(mask);      
+      bitmask_free(mask);
       }
     }
 
@@ -682,7 +682,7 @@ int read_cpuset(
   return(rc);
 #else
 
-  /* Construct the name of the cpuset */ 
+  /* Construct the name of the cpuset */
   if (name[0] == '/')
     strncpy(cpuset_path, name, sizeof(cpuset_path));
   else
@@ -697,10 +697,10 @@ int read_cpuset(
 
   /* Stat cpuset */
   if ((rc = lstat(cpuset_path, &statbuf)) == 0)
-    { 
+    {
     /* Read cpus */
     if (cpus != NULL)
-      {      
+      {
       sprintf(path, "%s/cpus", cpuset_path);
 
       if ((fd = fopen(path, "r")) == NULL)
@@ -720,7 +720,7 @@ int read_cpuset(
           }
         }
 
-      fclose(fd); 
+      fclose(fd);
       }
 
     /* Read mems */
@@ -745,7 +745,7 @@ int read_cpuset(
           }
         }
 
-      fclose(fd); 
+      fclose(fd);
       }
 
     }
@@ -765,7 +765,7 @@ int read_cpuset(
 
 /**
  * Deletes a cpuset.
- * 
+ *
  * Returns 0 on success.
  * On failure, -1 is returned.
  *
@@ -848,7 +848,7 @@ int delete_cpuset(
   if ((dir = opendir(cpuset_path)) != NULL)
     {
     while ((pdirent = readdir(dir)) != NULL)
-      {      
+      {
       /* Skip parent and current directory. */
       if ((!strcmp(pdirent->d_name, ".")) ||
           (!strcmp(pdirent->d_name, "..")))
@@ -893,11 +893,11 @@ int delete_cpuset(
             sleep(1);
             slept++;
             }
-          } while ((npids > 0) && (slept <= 5));        
-        } 
+          } while ((npids > 0) && (slept <= 5));
+        }
       } /* END while((pdirent = readdir(dir)) != NULL) */
 
-    closedir(dir); 
+    closedir(dir);
     } /* END if (opendir) */
 
   if (rmdir(cpuset_path) == 0)
@@ -937,7 +937,7 @@ void cleanup_torque_cpuset(void)
 
   {
   char          *id = "cleanup_torque_cpuset";
-  char           path[MAXPATHLEN + 1];        
+  char           path[MAXPATHLEN + 1];
   struct dirent *pdirent;
   struct stat    statbuf;
   DIR           *dir;
@@ -951,7 +951,7 @@ void cleanup_torque_cpuset(void)
   while ((pdirent = readdir(dir)) != NULL)
     {
     /* Skip parent and current directory. */
-    if ((!strcmp(pdirent->d_name, ".")) || 
+    if ((!strcmp(pdirent->d_name, ".")) ||
         (!strcmp(pdirent->d_name, "..")))
       continue;
 
@@ -964,14 +964,14 @@ void cleanup_torque_cpuset(void)
 
     /* If a directory is found, it is a cpuset. */
     if ((statbuf.st_mode & S_IFDIR) == S_IFDIR)
-      { 
+      {
       /*
        * Check if entry name corresponds to a known job.
        * If not, delete the cpuset.
        */
 
       if (find_job(pdirent->d_name) == NULL)
-        {        
+        {
         if (LOGLEVEL >= 6)
           {
           sprintf(log_buffer, "about to delete orphaned cpuset %s", path);
@@ -1033,7 +1033,7 @@ void cleanup_torque_cpuset(void)
 
 int init_torque_cpuset(void)
 
-  { 
+  {
   static char    id[]  = "init_torque_cpuset";
   hwloc_bitmap_t cpus = NULL;
   hwloc_bitmap_t mems = NULL;
@@ -1072,7 +1072,7 @@ int init_torque_cpuset(void)
     {
     hwloc_bitmap_or(cpus, cpus, node_boards[i].cpuset);
     hwloc_bitmap_or(mems, mems, node_boards[i].nodeset);
-    } 
+    }
 #else
 
   /*
@@ -1346,7 +1346,7 @@ int create_job_cpuset(
       hwloc_bitmap_or(mems, mems, node_boards[numa_idx].nodeset);
       }
     else
-      {      
+      {
       /* Add core at position vn_index in nodeboard cpuset */
       if (add_obj_from_cpuset(node_boards[numa_idx].cpuset, cpus, np->vn_index) == -1)
         {
@@ -1356,7 +1356,7 @@ int create_job_cpuset(
 
       /* Set mems to all memory nodes covered by cpus */
       hwloc_cpuset_to_nodeset_strict(topology, cpus, mems);
-      }    
+      }
     } /* END for(j) */
 
 #else /* ndef NUMA_SUPPORT follows */
@@ -1413,7 +1413,7 @@ int create_job_cpuset(
             obj = core;
 
       /* Add cpuset of found object */
-      hwloc_bitmap_or(cpus, cpus, obj->cpuset);      
+      hwloc_bitmap_or(cpus, cpus, obj->cpuset);
       } /* END for(j) */
     }
   else
@@ -1442,7 +1442,7 @@ int create_job_cpuset(
     }
 
   /* give this job the mems that these cpus cover */
-  hwloc_cpuset_to_nodeset_strict(topology, cpus, mems); 
+  hwloc_cpuset_to_nodeset_strict(topology, cpus, mems);
 
 #endif /* NUMA_SUPPORT (first section def, second sectoin ndef */
 
@@ -1591,7 +1591,7 @@ int move_to_job_cpuset(
     log_ext(-1, id, log_buffer, LOG_DEBUG);
     }
 
-  return(SUCCESS); 
+  return(SUCCESS);
 #endif
   }  /* END move_to_job_cpuset() */
 
@@ -1606,7 +1606,6 @@ int move_to_job_cpuset(
  *
  * @param cpusetStr - (I) the cpuset string
  * @param cpusetMap - (I/O) the cpuset map
- * @param mapSize - (I) the map size
  * @param add - (I) True to add cpuset to map else we remove cpuset from map
  */
 
@@ -1614,7 +1613,6 @@ void adjust_root_map(
 
     char *cpusetStr, /* I */
     int   cpusetMap[], /* I/O */
-    int   mapSize,   /* I */
     int   add)       /* I */
 
   {
@@ -1717,10 +1715,10 @@ void remove_boot_set(
     }
 
   /* add the root cpuset to the map */
-  adjust_root_map(rootStr, cpusetMap, 1024, TRUE);
+  adjust_root_map(rootStr, cpusetMap, TRUE);
 
   /* now remove the boot cpuset from the map */
-  adjust_root_map(bootStr, cpusetMap, 1024, FALSE);
+  adjust_root_map(bootStr, cpusetMap, FALSE);
 
   /* convert the cpuset map back into the root cpuset string */
   rootStr[0] = '\0';

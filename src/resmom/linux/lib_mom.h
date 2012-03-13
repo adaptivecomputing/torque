@@ -27,7 +27,7 @@ typedef struct proc_mem
 int hwloc_bitmap_parselist(const char *buf, hwloc_bitmap_t map);
 
 int hwloc_bitmap_displaylist(char *buf, size_t buflen, hwloc_bitmap_t map);
- 
+
 int init_cpusets(void);
 
 int create_cpuset(const char *name, const hwloc_bitmap_t cpus, const hwloc_bitmap_t mems, mode_t flags);
@@ -46,7 +46,7 @@ int create_job_cpuset(job *pjob);
 
 int move_to_job_cpuset(pid_t pid, job *pjob);
 
-void adjust_root_map(char *cpusetStr, int cpusetMap[], int mapSize, int add);
+void adjust_root_map(char *cpusetStr, int cpusetMap[], int add);
 
 void remove_boot_set(char *rootStr, char *bootStr);
 
