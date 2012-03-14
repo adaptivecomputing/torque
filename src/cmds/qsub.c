@@ -132,6 +132,8 @@
 #include "log.h"
 #include "port_forwarding.h"
 
+int load_config(char *config_buf, int buffer_size);
+
 /* DefaultFilterPath is used to fall back on in order to maintain backwards compatibility.
    the new preferred path for the submit filter is ${libexecdir}/qsub_filter */
 
@@ -4515,71 +4517,6 @@ set_opt_defaults(void)
     }
   return;
   }  /* END set_opt_defaults() */
-
-
-
-
-#define TCONST_CFGFILE "torque.cfg"
-
-int load_config(
-
-  char *config_buf, /* O */
-  int   BufSize)    /* I */
-
-  {
-  FILE *config_stream;
-
-  char home_dir[MAXPATHLEN];
-
-  int  length = strlen(PBS_SERVER_HOME) + strlen(TCONST_CFGFILE) + 1;
-
-  char *ptr;
-
-  if (length >= MAXPATHLEN)
-    {
-    /* FAILURE */
-
-    return(1);
-    }
-
-  home_dir[0] = '\0';
-
-  strcat(home_dir, PBS_SERVER_HOME);
-
-  strcat(home_dir, "/");
-
-  strcat(home_dir, TCONST_CFGFILE);
-
-  if ((config_stream = fopen(home_dir, "r")) == NULL)
-    {
-    /* FAILURE */
-
-    return(1);
-    }
-
-  if ((fread(config_buf, BufSize, 1, config_stream) <= 0) && (ferror(config_stream) != 0))
-    {
-    /* FAILURE */
-
-    return(1);
-    }
-
-  ptr = config_buf;
-
-  while ((ptr = strchr(ptr, '#')) != NULL)
-    {
-    ptr++;
-
-    for (;(*ptr != '\0') && (*ptr != '\n');ptr++)
-      {
-      *ptr = ' ';
-      }
-    }   /* END while ((ptr = strchr(ptr,'#')) != NULL) */
-
-  /* SUCCESS */
-
-  return(0);
-  }  /* END load_config() */
 
 
 
