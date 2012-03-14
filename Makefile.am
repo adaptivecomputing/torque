@@ -18,7 +18,6 @@ EXTRA_DIST = acinclude.m4 \
   README.coding_notes \
 	README.configure \
 	README.cygwin \
-  README.new_in_4.0 \
   README.NUMA \
 	README.torque \
   README.trqauthd \

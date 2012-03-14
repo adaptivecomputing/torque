@@ -2300,10 +2300,10 @@ int validate_group_list(
 
 void process_opts(
 
-  int    argc,             /* I */
-  char **argv,             /* I */
-  job_info *ji,            /* M */
-  int data_type)
+  int        argc,      /* I */
+  char     **argv,      /* I */
+  job_info  *ji,        /* M */
+  int        data_type)
 
   {
   int i;
@@ -3828,7 +3828,10 @@ void process_opts(
  * the job_attr hashmap is empty on start and no checks for existing values are needed
  */
 
-void set_job_defaults(job_info *ji)
+void set_job_defaults(
+    
+  job_info *ji)
+
   {
   job_data *tmp_job_info = NULL;
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_c, CHECKPOINT_UNSPECIFIED, STATIC_DATA);
@@ -3891,75 +3894,13 @@ void set_job_defaults(job_info *ji)
 
 
 
-/* #define TCONST_CFGFILE "torque.cfg" */
-
-int load_config(
-  char *config_buf, /* O */
-  int   BufSize)    /* I */
-  {
-  FILE *config_stream;
-
-  char home_dir[MAXPATHLEN];
-
-  int  length = strlen(PBS_SERVER_HOME) + strlen(TCONST_CFGFILE) + 1;
-
-  char *ptr;
-
-  if (length >= MAXPATHLEN)
-    {
-    /* FAILURE */
-
-    return(1);
-    }
-
-  home_dir[0] = '\0';
-
-  strcat(home_dir, PBS_SERVER_HOME);
-
-  strcat(home_dir, "/");
-
-  strcat(home_dir, TCONST_CFGFILE);
-
-  if ((config_stream = fopen(home_dir, "r")) == NULL)
-    {
-    /* FAILURE */
-
-    return(1);
-    }
-
-  if ((fread(config_buf, BufSize, 1, config_stream) <= 0) &&
-      (ferror(config_stream) != 0))
-    {
-    /* FAILURE */
-    fclose(config_stream);
-    return(1);
-    }
-
-  ptr = config_buf;
-
-  while ((ptr = strchr(ptr, '#')) != NULL)
-    {
-    ptr++;
-
-    for (;(*ptr != '\0') && (*ptr != '\n');ptr++)
-      {
-      *ptr = ' ';
-      }
-    }   /* END while ((ptr = strchr(ptr,'#')) != NULL) */
-
-  /* SUCCESS */
-
-  fclose(config_stream);
-  return(0);
-  }  /* END load_config() */
-
-
-
 
 
 char *get_param(
+
   char *param,      /* I */
   char *config_buf) /* I */
+
   {
   char tmpLine[1024];
 
