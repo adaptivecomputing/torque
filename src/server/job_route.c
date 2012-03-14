@@ -423,7 +423,7 @@ int default_router(
 	     svr_movejob. See ROUTE_RETRY to see what is done
 	     if the job stays in the routing queue. */
     rc = initialize_procct(jobp);
-    if(rc != PBSE_NONE)
+    if (rc != PBSE_NONE)
       {
       return(rc);
       }

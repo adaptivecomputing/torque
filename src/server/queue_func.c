@@ -636,5 +636,38 @@ int get_parent_dest_queues(
 
 
 
+
+pbs_queue *lock_queue_with_job_held(
+
+  pbs_queue  *pque,
+  job       **pjob_ptr)
+
+  {
+  char       jobid[PBS_MAXSVRJOBID];
+  job       *pjob = *pjob_ptr;
+
+  if (pque != NULL)
+    {
+    if (pthread_mutex_trylock(pque->qu_mutex))
+      {
+      /* if fail */
+      strcpy(jobid, pjob->ji_qs.ji_jobid);
+      pthread_mutex_unlock(pjob->ji_mutex);
+      lock_queue(pque, __func__, NULL, LOGLEVEL);
+
+      if ((pjob = find_job(jobid)) == NULL)
+        {
+        unlock_queue(pque, __func__, NULL, 0);
+        pque = NULL;
+        *pjob_ptr = NULL;
+        }
+      }
+    }
+
+  return(pque);
+  } /* END get_jobs_queue() */
+
+
+
 /* END queue_func.c */
 

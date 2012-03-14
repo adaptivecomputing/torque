@@ -260,7 +260,7 @@ static int local_move(
   int                   parent_queue_mutex_held)
 
   {
-  pbs_queue *pque;
+  pbs_queue *routing_que;
   pbs_queue *dest_que;
   char      *destination = jobp->ji_qs.ji_destin;
   int        mtype;
@@ -269,10 +269,10 @@ static int local_move(
   /* search for destination queue */
   /* CAUTION!!! This code is very complex - be very careful editing */
   if (parent_queue_mutex_held == TRUE)
-    pque = jobp->ji_qhdr;
+    routing_que = jobp->ji_qhdr;
   else
     {
-    pque = get_jobs_queue(&jobp);
+    routing_que = get_jobs_queue(&jobp);
 
     if (jobp == NULL)
       {
@@ -281,7 +281,7 @@ static int local_move(
       }
     }
 
-  if (pque == NULL)
+  if (routing_que == NULL)
     {
     sprintf(log_buf, "queue %s does not exist\n", jobp->ji_qs.ji_queue);
 
@@ -293,14 +293,14 @@ static int local_move(
     }
    
 
-  if (get_parent_dest_queues(jobp->ji_qs.ji_queue, destination, &pque, &dest_que, &jobp) != PBSE_NONE)
+  if (get_parent_dest_queues(jobp->ji_qs.ji_queue, destination, &routing_que, &dest_que, &jobp) != PBSE_NONE)
     {
     if (dest_que != NULL)
       unlock_queue(dest_que, __func__, NULL, 0);
 
     if ((parent_queue_mutex_held == FALSE) &&
-        (pque != NULL))
-      unlock_queue(pque, __func__, NULL, 0);
+        (routing_que != NULL))
+      unlock_queue(routing_que, __func__, NULL, 0);
 
     if (jobp == NULL)
       return(-10);
@@ -337,7 +337,7 @@ static int local_move(
 
     /* should this queue be retried? */
     if (parent_queue_mutex_held == FALSE)
-      unlock_queue(pque, __func__, "retry", LOGLEVEL);
+      unlock_queue(routing_que, __func__, "retry", LOGLEVEL);
 
     return(should_retry_route(*my_err));
     }
@@ -353,14 +353,15 @@ static int local_move(
   jobp->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
     
   unlock_queue(dest_que, __func__, NULL, 0);
-  unlock_queue(pque, __func__, "success", LOGLEVEL);
+  unlock_queue(routing_que, __func__, "success", LOGLEVEL);
 
   *my_err = svr_enquejob(jobp, FALSE, -1);
 
   if (parent_queue_mutex_held == TRUE)
     {
-    if ((pque = get_jobs_queue(&jobp)) == NULL)
-      lock_queue(pque, __func__, NULL, 0);
+    /* re-lock the routing queue */
+    if ((routing_que = lock_queue_with_job_held(routing_que, &jobp)) == NULL)
+      lock_queue(routing_que, __func__, NULL, 0);
     }
 
   if (*my_err != 0)

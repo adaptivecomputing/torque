@@ -231,7 +231,9 @@ void update_recycler_queue_next_id();
 void initialize_recycler_trash();
 void garbage_collect_recycling();
 
+struct job;
 
+pbs_queue *lock_queue_with_job_held(pbs_queue *pque, struct job **pjob_ptr);
 int lock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging);
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging);
 pbs_queue *next_queue(all_queues *,int *);
