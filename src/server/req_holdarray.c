@@ -163,8 +163,11 @@ void *req_holdarray(
     {
     if ((rc = hold_array_range(pa,range_str,&temphold)) != 0)
       {
+      pthread_mutex_unlock(pa->ai_mutex);
+
       req_reject(rc,0,preq,NULL,
         "Error in specified array range");
+      return(NULL);
       }
     }
   else
