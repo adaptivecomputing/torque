@@ -55,14 +55,13 @@ int attempt_delete(
   void *j) /* I */
 
   {
-  char       id[] = "attempt_delete";
   int        skipped = FALSE;
   int        release_mutex = TRUE;
 
   char      *jobid_copy;
   job       *pjob;
   time_t     time_now = time(NULL);
-  char              log_buf[LOCAL_LOG_BUF_SIZE];
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* job considered deleted if null */
   if (j == NULL)
@@ -106,6 +105,8 @@ int attempt_delete(
         /* job has restart file at mom, change restart comment if failed */
         change_restart_comment_if_needed(pjob);
         }
+
+      pthread_mutex_unlock(pjob->ji_mutex);
       }
     
     return(!skipped);
@@ -125,13 +126,10 @@ int attempt_delete(
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s", id);
-      log_event(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buf);
+      sprintf(log_buf, "calling on_job_exit from %s", __func__);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
+
     set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
@@ -160,7 +158,7 @@ int attempt_delete(
       {
       pque->qu_numcompleted++;
 
-      unlock_queue(pque, "attempt_delete", NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       }
     
     if (pjob != NULL)
@@ -176,7 +174,7 @@ int attempt_delete(
       
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "calling on_job_exit from %s", id);
+        sprintf(log_buf, "calling on_job_exit from %s", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
       
