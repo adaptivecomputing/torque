@@ -614,17 +614,15 @@ int PBSD_QueueJob_hash(
            reply->brp_choice != BATCH_REPLY_CHOICE_Queue)
     {
     rc = PBSE_PROTOCOL;
-    if (reply->brp_choice == BATCH_REPLY_CHOICE_Text)
+    
+    if (connection[connect].ch_errtxt == NULL)
       {
-      *msg = memmgr_strdup(mm, reply->brp_un.brp_txt.brp_str, &tmp_size);
+      *msg = memmgr_strdup(mm, connection[connect].ch_errtxt, &tmp_size);
       }
-    else
-      {
-      if (connection[connect].ch_errtxt == NULL)
-        {
-        *msg = memmgr_strdup(mm, connection[connect].ch_errtxt, &tmp_size);
-        }
-      }
+    }
+  else if (reply->brp_choice == BATCH_REPLY_CHOICE_Text)
+    {
+    *msg = memmgr_strdup(mm, reply->brp_un.brp_txt.brp_str, &tmp_size);
     }
   else if (connection[connect].ch_errno == 0)
     {
