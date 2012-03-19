@@ -227,7 +227,7 @@ extern void   acct_close(void);
 
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int     net_move(job *, struct batch_request *);
-void          job_clone_wt(struct work_task *);
+void         *job_clone_wt(void *vp);
 void          on_job_exit(struct work_task *);
 
 /* Private functions in this file */
@@ -1836,7 +1836,7 @@ int pbsd_init(
         /* TODO Someone must have been naughty and did a kill -9 on pbs_server,
            we might need to validate that the last job was fully initialized
            before continuing the cloning process. */
-        set_task(WORK_Timed, time_now + 1, job_clone_wt, strdup(pa->ai_qs.parent_id), FALSE);
+        enqueue_threadpool_request(job_clone_wt, strdup(pa->ai_qs.parent_id));
         }
 
       }

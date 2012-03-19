@@ -777,8 +777,6 @@ int setup_array_struct(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
-  insert_array(pa);
-
   if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
     {
     /* the array is deleted in job_purge */
@@ -872,6 +870,8 @@ int setup_array_struct(
     }
 
   pjob->ji_arraystruct = pa;
+
+  insert_array(pa);
 
   if (LOGLEVEL >= 7)
     {

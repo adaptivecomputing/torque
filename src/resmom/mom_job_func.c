@@ -87,8 +87,6 @@
  *    childern structures.
  *   job_purge   purge job from server
  *
- *   job_clone    clones a job (for use with job_arrays)
- *   job_clone_wt work task for cloning a job
  *   job_unlink_file() unlinks a given file using job credentials
  *
  * Include private function:

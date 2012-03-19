@@ -518,13 +518,12 @@ void *req_releasearray(
   void *vp) /* I */
 
   {
-  char      id[] = "req_releasearray";
-  char      log_buf[LOCAL_LOG_BUF_SIZE];
-  job       *pjob;
-  job_array *pa;
-  char      *range;
-  int        rc;
-  int        index;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  job                  *pjob;
+  job_array            *pa;
+  char                 *range;
+  int                   rc;
+  int                   index;
   struct batch_request *preq = (struct batch_request *)vp;
 
   pa = get_array(preq->rq_ind.rq_release.rq_objname);
@@ -536,9 +535,13 @@ void *req_releasearray(
 
   while (TRUE)
     {
-    index = first_job_index(pa);
-    if (pa->job_ids[index] == NULL)
+    if (((index = first_job_index(pa)) == -1) ||
+        (pa->job_ids[index] == NULL))
+      {
+      pthread_mutex_unlock(pa->ai_mutex);
+
       return(NULL);
+      }
 
     if ((pjob = find_job(pa->job_ids[index])) == NULL)
       {
@@ -570,7 +573,7 @@ void *req_releasearray(
       {
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "%s: unlocking ai_mutex", id);
+        sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
         }
       pthread_mutex_unlock(pa->ai_mutex);
@@ -582,24 +585,26 @@ void *req_releasearray(
     }
   else if ((rc = release_whole_array(pa,preq)) != 0)
     {
-    pthread_mutex_unlock(pa->ai_mutex);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocking ai_mutex", id);
+      sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
+    
+    pthread_mutex_unlock(pa->ai_mutex);
 
     req_reject(rc,0,preq,NULL,NULL);
 
     return(NULL);
     }
-
-  pthread_mutex_unlock(pa->ai_mutex);
-  if(LOGLEVEL >= 7)
+  
+  if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "%s: unlocking ai_mutex", id);
+    sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
     }
+
+  pthread_mutex_unlock(pa->ai_mutex);
 
   reply_ack(preq);
 

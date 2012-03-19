@@ -21,7 +21,7 @@ void job_free(job *pj);
 
 job *job_clone(job *template_job, job_array *pa, int taskid);
 
-void job_clone_wt(struct work_task *ptask);
+void job_clone_wt(void *vp);
 
 /* static void job_init_wattr(job *pj); */
 
