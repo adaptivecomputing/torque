@@ -132,11 +132,7 @@ static char *summarize_arrays_extend_opt = "summarize_arrays";
 /* END globals */
 
 
-#ifdef TXT
 #define DEFTASKSIZE 6
-#else
-#define DEFTASKSIZE 3
-#endif
 
 int   tasksize = DEFTASKSIZE;
 int   alias_opt = FALSE;
@@ -598,7 +594,7 @@ static void altdsp_statjob(
   char *jstate;
   char *eltimecpu;
   char *eltimewal;
-  char tmpLine[MAX_LINE_LEN];
+  char tmpLine[MAX_LINE_LEN+1];
 
   int   usecput;
   static char  pfs[SIZEL];
@@ -622,25 +618,17 @@ static void altdsp_statjob(
       {
       printf("\n                                                 Req'd  Req'd   Elap \n");
 
-      printf("Job ID               Username Queue    NDS   TSK Memory Time  S Time   BIG  FAST   PFS\n");
+      printf("Job ID               Username    Queue    NDS   TSK    Memory Time  S Time   BIG  FAST   PFS\n");
 
-      printf("-------------------- -------- -------- ----- --- ------ ----- - ----- ----- ----- -----\n");
-      }
-    else if (tasksize == 6)
-      {
-      printf("\n                                                                            Req'd  Req'd   Elap\n");
-
-      printf("Job ID               Username Queue    Jobname          SessID NDS   Tasks  Memory Time  S Time\n");
-
-      printf("-------------------- -------- -------- ---------------- ------ ----- ------ ------ ----- - -----\n");
+      printf("-------------------- ----------- -------- ----- ------ ------ ----- - ----- ----- ----- -----\n");
       }
     else
       {
       printf("\n                                                                         Req'd  Req'd   Elap\n");
 
-      printf("Job ID               Username Queue    Jobname          SessID NDS   TSK Memory Time  S Time\n");
+      printf("Job ID               Username    Queue    Jobname          SessID NDS   TSK    Memory Time  S Time\n");
 
-      printf("-------------------- -------- -------- ---------------- ------ ----- --- ------ ----- - -----\n");
+      printf("-------------------- ----------- -------- ---------------- ------ ----- ------ ------ ----- - -----\n");
       }
     }
 
@@ -782,7 +770,7 @@ static void altdsp_statjob(
       pat = pat->next;
       }
 
-    snprintf(tmpLine, sizeof(tmpLine), "%%-20.%ds %%-8.8s %%-8.8s ",
+    snprintf(tmpLine, MAX_LINE_LEN, "%%-20.%ds %%-11.11s %%-8.8s ",
 
              PBS_NAMELEN);
 
@@ -808,7 +796,7 @@ static void altdsp_statjob(
       }
     else
       {
-      snprintf(tmpLine, sizeof(tmpLine), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%5.5s %%1.1s %%5.5s",
+      snprintf(tmpLine, MAX_LINE_LEN, "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%5.5s %%1.1s %%5.5s",
                PBS_NAMELEN, PBS_NAMELEN);
 
       printf(tmpLine,
