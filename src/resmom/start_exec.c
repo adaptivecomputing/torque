@@ -5798,6 +5798,7 @@ static void starter_return(
   {
   struct startjob_rtn ack;
   int i;
+  int alarmsecs = 0;
 
   sjrtn->sj_code = code;
 
@@ -5808,15 +5809,33 @@ static void starter_return(
   if (code < 0)
     close(upfds);
 
-  /* wait for acknowledgement */
+  /* 
+   * Wait for acknowledgement.  Need to allow for a timeout.  If it takes a while
+   * to start the job which includes running prologues then the mom we are
+   * communicating with may have timed out and gone into a recheck mode using
+   * TMOMScanForStarting().  This works fine until someone qdels the job before
+   * this mom can reply.  In this case TMOMScanForStarting() won't see this job
+   * anymore and will not read what we just wrote and we will hang forever on
+   * the read.  If we timed out we should probably exit instead of continuing on
+   * and trying to start the job which was deleted.
+   */
 
   do
     {
+    alarm(120);
     i = read(downfds, &ack, sizeof(ack));
+    alarmsecs = alarm(0);
 
     if ((i == -1) && (errno != EINTR))
       {
       break;
+      }
+
+    /* check for case where job has been qdel'd */
+    if ((i == -1) && (errno == EINTR) && (alarmsecs == 0) && (code == 0))
+      {
+      close(downfds);
+      exit(0);
       }
     }
   while (i < 0);
