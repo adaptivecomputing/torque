@@ -40,6 +40,8 @@ evans
       to /etc/ld.so.conf.d in a file named libtorque.conf. The file will be created
       by default during make install. The configuration can be made to not install this
       file by using the configure option --without-loadlibfile
+  b - Fix so child pbs_mom does not remain running after qdel on slow starting job.
+      TRQ-860.
 
 4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 
