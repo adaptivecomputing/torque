@@ -42,6 +42,7 @@ evans
       file by using the configure option --without-loadlibfile
   b - Fix so child pbs_mom does not remain running after qdel on slow starting job.
       TRQ-860.
+  b - Made it so the MOM will let pbs_server know it is down after momctl -s is invoked.
 
 4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 

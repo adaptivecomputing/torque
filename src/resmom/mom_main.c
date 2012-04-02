@@ -80,6 +80,7 @@
 #include "mom_server.h"
 
 #include "mcom.h"
+#include "mom_server_lib.h" /* shutdown_to_server */
 
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
@@ -261,19 +262,16 @@ void            resend_things();
 void            im_request(int, int);
 extern void     add_resc_def(char *, char *);
 extern void     mom_server_all_diag(char **BPtr, int *BSpace);
-extern void     mom_server_update_receive_time(int stream, const char *command_name);
 extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
 extern void     mom_server_all_update_gpustat(void);
 extern int      mark_for_resend(job *);
-extern int      mom_server_all_send_state(void);
 extern int      mom_server_add(char *name);
 extern int      mom_server_count;
 extern int      post_epilogue(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
 extern void     mom_checkpoint_set_directory_path(char *str);
-extern int      mom_is_request(int, int, int *);
 
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
@@ -4420,6 +4418,7 @@ int rm_request(
   int  command, ret;
   int  restrictrm = 0;
   char  *curr, *value, *cp, *body;
+  int sindex;
 
   struct config  *ap;
 
@@ -5361,6 +5360,15 @@ int rm_request(
 
       mom_lock(lockfds, F_UNLCK);
       close(lockfds);
+
+      mom_run_state = MOM_RUN_STATE_EXIT;
+      internal_state = INUSE_DOWN;
+
+      for (sindex = 0; sindex < PBS_MAXSERVER; sindex++)
+        {
+        if(mom_servers[sindex].SStream != -1)
+          shutdown_to_server(sindex);
+        }
 
       cleanup();
 

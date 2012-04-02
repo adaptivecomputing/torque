@@ -112,6 +112,7 @@ void check_busy(double mla);
 void check_state(int Force);
 
 void state_to_server(int ServerIndex, int force);
+void shutdown_to_server(int ServerIndex);
 
 void mom_server_all_send_state(void);
 

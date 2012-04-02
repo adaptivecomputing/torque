@@ -4560,6 +4560,86 @@ void check_state(
   }  /* END check_state() */
 
 
+/**
+ * shutdown_to_server() - if ReportMomState is set, send state message to
+ * the server.
+ *
+ * @see is_compose() - child
+ */
+
+void shutdown_to_server(
+
+  int ServerIndex)  /* I */
+
+  {
+  static char id[] = "state_to_server";
+  int     sock;
+  u_long   ipaddr;
+  mom_server *pms = &mom_servers[ServerIndex];
+  int ret;
+  char error_buf[1024];
+
+  /* We high jacked this function from state_to_server. We are modifying it 
+     so we make our own connection to the server */
+
+  ipaddr = htonl(pms->sock_addr.sin_addr.s_addr);
+  sock = client_to_svr(
+                 ipaddr,
+                 default_server_port,
+                 0,
+                 error_buf);
+  if(sock < 0)
+    return;
+
+  if (is_compose(sock, pms->pbs_servername, IS_UPDATE) != DIS_SUCCESS)
+    {
+    goto shutdown_to_server_done;
+    }
+
+  ret = diswus(sock, pbs_mom_port);
+  if (ret)
+    {
+    goto shutdown_to_server_done;
+    }
+  
+  ret = diswus(sock, pbs_rm_port);
+  if (ret)
+    {
+    goto shutdown_to_server_done;
+    }
+
+  if (diswui(sock, internal_state) != DIS_SUCCESS)
+    {
+    mom_server_stream_error(sock, pms->pbs_servername, id, "writing internal state");
+
+    goto shutdown_to_server_done;
+    }
+
+  if (mom_server_flush_io(sock, id, "flush") == DIS_SUCCESS)
+    {
+    /* send successful, unset ReportMomState */
+
+    pms->ReportMomState = 0;
+
+    if (LOGLEVEL >= 4)
+      {
+      sprintf(log_buffer, "sent updated state 0x%x to server %s",
+              internal_state,
+              pms->pbs_servername);
+
+      log_record(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_JOB,
+        id,
+        log_buffer);
+      }
+    }
+
+shutdown_to_server_done:
+  close(sock);
+  return;
+  }  /* END shutdown_to_server() */
+
 
 
 
