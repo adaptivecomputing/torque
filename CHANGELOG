@@ -3,6 +3,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 2.5.12
   b - Fix so child pbs_mom does not remain running after qdel on slow starting job.
       TRQ-860. (backported from 4.0.1)
+  b - Fix so pbs_mom won't segfault after a qdel is done for a job that is still
+      running the prologue. TRQ-832. (backported from 4.0.1)
 
 2.5.11
   b - fix for writing too much data when job_script is saved to job log. (backported from 3.0.5)

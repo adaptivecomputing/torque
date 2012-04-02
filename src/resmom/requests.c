@@ -190,6 +190,7 @@ extern int  LOGLEVEL;
 
 extern int im_compose(int, char *, char *, int, tm_event_t, tm_task_id);
 extern int mom_open_socket_to_jobs_server(job *, char *, void (*)(int));
+extern int TMOMJobGetStartInfo(job *, pjobexec_t **) ;
 
 /* prototypes */
 
@@ -1116,6 +1117,7 @@ void req_deletejob(
 
   {
   job *pjob;
+  pjobexec_t *TJE = NULL;
 
   pjob = find_job(preq->rq_ind.rq_delete.rq_objname);
 
@@ -1128,6 +1130,19 @@ void req_deletejob(
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
         "deleting job");
+      }
+
+    /*
+     * We need to clear out the TJE starter slot if this job is in it.  This
+     * can occur if we qdel the job while the prologue is running.  If we
+     * don't remove ourself here then the TJE slot may remain with data that is
+     * no longer valid, yet we will reuse the slot since it only matches on the
+     * address of the pjob not on a jobid.  This can lead to unexpected crashes.
+     */
+
+    if (TMOMJobGetStartInfo(pjob, &TJE) == SUCCESS)
+      {
+      memset(TJE, 0, sizeof(pjobexec_t));
       }
 
     /* assume success? */
