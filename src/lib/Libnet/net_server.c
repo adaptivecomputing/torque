@@ -121,7 +121,11 @@
 #include "../Libifl/lib_ifl.h" /* DIS_* */
 #include "pbs_error.h" /* PBSE_NONE */
 
+char   local_host_name[PBS_MAXHOSTNAME + 1];
+size_t local_host_name_len = PBS_MAXHOSTNAME;
+
 extern int  LOGLEVEL;
+extern char local_host_name[];
 
 /* External Functions Called */
 
@@ -262,10 +266,6 @@ int *netcounter_get(void)
 
   return netrates;
   }
-
-
-
-
 
 /**
  * init_network - initialize the network interface
@@ -981,6 +981,26 @@ pbs_net_t get_connectaddr(
   return(tmp);
   }
 
+void set_localhost_name(char *localhost_name, size_t len)
+  {
+  struct sockaddr sa;
+  int             rc;
+
+  memset(&sa, 0, sizeof(struct sockaddr));
+  sa.sa_family = AF_INET;
+  sa.sa_data[2] = 0x7F;
+  sa.sa_data[5] = 1;
+  rc = getnameinfo(&sa, sizeof(sa), local_host_name, local_host_name_len, NULL, 0, 0);
+  if(rc != 0)
+    {
+    strcpy(local_host_name, "localhost");
+    strncpy(localhost_name, "localhost", len);
+    }
+  else
+    strncpy(localhost_name, local_host_name, len);
+  }
+
+                    
 
 /*
  * get_connecthost - return name of host connected via the socket
@@ -1047,9 +1067,9 @@ int get_connecthost(
     }
   else
     {
-    if (strcmp(namebuf, "localhost") == 0)
+    if (strcmp(namebuf, local_host_name) == 0)
       {
-      snprintf(namebuf, size, "%s", server_name);
+      snprintf(namebuf, size, "%s", local_host_name);
       }
     else
       {

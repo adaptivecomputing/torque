@@ -43,6 +43,7 @@ evans
   b - Fix so child pbs_mom does not remain running after qdel on slow starting job.
       TRQ-860.
   b - Made it so the MOM will let pbs_server know it is down after momctl -s is invoked.
+  e - Made it so localhost is no longer hard coded. The string comes from getnameinfo.
 
 4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 

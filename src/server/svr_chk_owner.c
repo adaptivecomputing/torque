@@ -106,6 +106,8 @@ extern char *pbs_o_host;
 extern char  server_host[];
 extern char *msg_permlog;
 
+extern char server_localhost[];
+
 extern char *PJobState[];
 
 extern int site_allow_u(char *, char *);
@@ -329,7 +331,7 @@ int svr_get_privilege(
 /*  snprintf(log_buf, sizeof(log_buf), "%s - %s\n", user, server_host);
   log_record(PBSEVENT_SECURITY, PBS_EVENTCLASS_SERVER, "svr_get_privilege", log_buf); */
   if ((strcmp(user, PBS_DEFAULT_ADMIN) == 0) &&
-       !strcasecmp(host_no_port, server_host))
+       (!strcasecmp(host_no_port, server_host) || !strcasecmp(host_no_port, server_localhost)))
     {
     is_root = 1;
 

@@ -132,6 +132,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "../lib/Libifl/lib_ifl.h" /* get_port_from_server_name_file */
 #include "node_manager.h" /* svr_is_request */
+#include "net_connect.h" /* set_localhost_name */
 
 #define TASK_CHECK_INTERVAL    10
 #define RETRY_ROUTING_INTERVAL 45
@@ -289,6 +290,10 @@ int                     array_259_upgrade = FALSE;
 
 
 
+
+
+char server_localhost[PBS_MAXHOSTNAME + 1];
+size_t localhost_len = PBS_MAXHOSTNAME;
 /*
  * need_y_response - on create/clean initialization that would delete
  * information, obtain the operator approval first.
@@ -1656,6 +1661,7 @@ int main(
     msg_daemonname,
     log_buf);
 
+  set_localhost_name(server_localhost, localhost_len);
   /* initialize the server objects and perform specified recovery */
   /* will be left in the server's private directory  */
   /* NOTE:  env cleared in pbsd_init() */
