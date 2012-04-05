@@ -5,6 +5,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       TRQ-860. (backported from 4.0.1)
   b - Fix so pbs_mom won't segfault after a qdel is done for a job that is still
       running the prologue. TRQ-832. (backported from 4.0.1)
+  b - Added code from 3.0-fixes which fixes a problem with procct getting up to Moab.
+      3.0-fixes revision 5941
+      
 
 2.5.11
   b - fix for writing too much data when job_script is saved to job log. (backported from 3.0.5)
