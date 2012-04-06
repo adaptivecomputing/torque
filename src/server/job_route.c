@@ -433,6 +433,11 @@ int default_router(
 
       case ROUTE_PERM_FAILURE: /* permanent failure */
 
+        rc = remove_procct(jobp);
+        if(rc != PBSE_NONE)
+          {
+          return(rc);
+          }
         add_dest(jobp);
 
         break;
