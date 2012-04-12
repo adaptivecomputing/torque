@@ -85,8 +85,6 @@ int MSNPrintF(char **BPtr, int *BSpace, char *Format, ...);
 
 int procs_available(int proc_ct);
 
-/* static int node_spec(char *spec, int early, int exactmatch, char *ProcBMStr, char *FailNode, char *EMsg); */
-
 #ifdef GEOMETRY_REQUESTS
 int get_bitmap(job *pjob, int ProcBMSize, char *ProcBMPtr);
 
@@ -118,8 +116,6 @@ int is_ts_node(char *nodestr);
 char *find_ts_node(void);
 
 void free_nodes(job *pjob);
-
-/* static void set_one_old(char *name, job *pjob, int shared); */
 
 void set_old_nodes(job *pjob);
 

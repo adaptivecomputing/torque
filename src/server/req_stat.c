@@ -118,9 +118,7 @@
 #include "queue_func.h" /* find_queuebyname */
 #include "reply_send.h" /* reply_send_svr */
 #include "svr_func.h" /* get_svr_attr_* */
-#ifdef USE_ALPS_LIB
-#include "libalps_report/generate_alps_status.h"
-#endif
+#include "alps_functions.h"
 
 
 /* Global Data Items: */
@@ -1497,14 +1495,10 @@ void *req_stat_node(
       }
 
     /* get the status on all of the numa nodes */
-#ifndef USE_ALPS_LIB
-    rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
-#else
     if (pnode->nd_is_alps_reporter == TRUE)
       rc = get_alps_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
     else
       rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
-#endif
 
     unlock_node(pnode, __func__, "type == 0", LOGLEVEL);
     }
@@ -1523,14 +1517,11 @@ void *req_stat_node(
         }
 
       /* get the status on all of the numa nodes */
-#ifndef USE_ALPS_LIB
-      rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
-#else
       if (pnode->nd_is_alps_reporter == TRUE)
         rc = get_alps_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
       else
         rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
-#endif
+      
       if (rc != PBSE_NONE)
         {
         unlock_node(pnode, __func__, "type != 0, rc != 0, get_numa_statuses", LOGLEVEL);

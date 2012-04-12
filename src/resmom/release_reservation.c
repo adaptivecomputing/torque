@@ -77,103 +77,120 @@
 * without reference to its choice of law rules.
 */
 
-/*
- * This is a list of public server attributes
- *
- * FORMAT:
- *  attr1,
- *   attr2, <--- important the last has a comma after it
- *
- *  This file will be used for the initialization of an array
- *
- */
 
-/* sync w/SRV_ATR_* in server.h, server/svr_attr_def.c, and ATTR_* in pbs_ifl.h  */
 
-ATTR_aclhten,
-ATTR_aclhost,
-ATTR_acluren,
-ATTR_acluser,
-ATTR_aclroot,
-ATTR_comment,
-ATTR_defnode,
-ATTR_dfltque,
-ATTR_locsvrs,
-ATTR_logevents,
-ATTR_loglevel,
-ATTR_managers,
-ATTR_mailfrom,
-ATTR_maxrun,
-ATTR_maxuserrun,
-ATTR_maxgrprun,
-ATTR_nodepack,
-ATTR_nodesuffix,
-ATTR_operators,
-ATTR_queryother,
-ATTR_rescavail,
-ATTR_resccost,
-ATTR_rescdflt,
-ATTR_rescmax,
-ATTR_schedit,
-ATTR_scheduling,
-ATTR_syscost,
-ATTR_pingrate,
-ATTR_ndchkrate,
-ATTR_tcptimeout,
-ATTR_jobstatrate,
-ATTR_polljobs,
-ATTR_downonerror,
-ATTR_disableserveridcheck,
-ATTR_jobnanny,
-ATTR_ownerpurge,
-ATTR_qcqlimits,
-ATTR_momjobsync,
-ATTR_maildomain,
-ATTR_killdelay,
-ATTR_acllogic,
-ATTR_aclgrpslpy,
-ATTR_keepcompleted,
-ATTR_submithosts,
-ATTR_allownodesubmit,
-ATTR_allowproxyuser,
-ATTR_servername,
-ATTR_autonodenp,
-ATTR_logfilemaxsize,
-ATTR_logfilerolldepth,
-ATTR_logkeepdays,
-ATTR_nextjobnum,
-ATTR_tokens,
-ATTR_extraresc,
-ATTR_schedversion,
-ATTR_acctkeepdays,
-ATTR_lockfile,
-ATTR_LockfileUpdateTime,
-ATTR_LockfileCheckTime,
-ATTR_credentiallifetime,
-ATTR_jobmustreport,
-ATTR_checkpoint_dir,
-ATTR_dispsvrsuffix,
-ATTR_jobsuffixalias,
-ATTR_mailsubjectfmt,
-ATTR_mailbodyfmt,
-ATTR_npdefault,
-ATTR_clonebatchsize,
-ATTR_clonebatchdelay,
-ATTR_jobstarttimeout,
-ATTR_jobforcecanceltime,
-ATTR_maxarraysize,
-ATTR_maxslotlimit,
-ATTR_recordjobinfo,
-ATTR_recordjobscript,
-ATTR_joblogfilemaxsize,
-ATTR_joblogfilerolldepth,
-ATTR_joblogkeepdays,
-#ifdef MUNGE_AUTH
-ATTR_authusers,
-#endif
-ATTR_minthreads,
-ATTR_maxthreads,
-ATTR_threadidleseconds,
-ATTR_moabarraycompatible,
-ATTR_nomailforce,
-ATTR_crayenabled,
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <unistd.h>
+
+#include "alps_constants.h"
+#include "utils.h"
+
+
+
+
+
+int parse_release_output(
+
+  char *output)
+
+  {
+  int        rc = -1;
+  xmlDocPtr  doc;
+  xmlNode   *node;
+  char      *attr_val;
+
+  if ((doc = xmlReadMemory(output, strlen(output), "apbasil", NULL, 0)) == NULL)
+    {
+    char buf[MAXLINE * 4];
+    xmlErrorPtr pErr = xmlGetLastError();
+    snprintf(buf, sizeof(buf), "Failed to parse the output of alps - %s", pErr->message);
+    log_err(-1, __func__, buf);
+    return(ALPS_PARSING_ERROR);
+    }
+
+  node = xmlDocGetRootElement(doc);
+
+  while (node != NULL)
+    {
+    if (!strcmp((const char *)node->name, response_data))
+      {
+      attr_val = (char *)xmlGetProp(node, (const xmlChar *)status);
+
+      if (strcmp((const char *)attr_val, success))
+        rc = -1;
+      else
+        rc = PBSE_NONE;
+
+      break;
+      }
+    else if (!strcmp((const char *)node->name, text_name))
+      node = node->next;
+    else
+      node = node->children;
+    }
+
+  return(rc);
+  } /* END parse_release_output() */
+
+
+
+
+
+int destroy_alps_reservation(
+
+  char *reservation_id,
+  char *apbasil_path,
+  char *apbasil_protocol)
+
+  {
+  int       rc;
+  char      command_buf[MAXLINE * 2];
+  FILE     *alps_pipe;
+  int       fd;
+  char      output[MAXLINE * 4];
+  char     *ptr;
+  int       bytes_read;
+  int       total_bytes_read = 0;
+
+  snprintf(command_buf, sizeof(command_buf), DELETE_BASIL_REQ,
+    apbasil_protocol, reservation_id,
+    (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
+
+  if ((alps_pipe = popen(command_buf, "r")) == NULL)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Unable to open command %s for apbasil",
+      command_buf);
+    log_err(errno, __func__, log_buffer);
+
+    return(WRITING_PIPE_ERROR);
+    }
+
+  fd = fileno(alps_pipe);
+
+  /* now read from the pipe */
+  ptr = output;
+  memset(output, 0, sizeof(output));
+
+  while ((bytes_read = read(fd, ptr, sizeof(output) - total_bytes_read - 1)) > 0)
+    {
+    total_bytes_read += bytes_read;
+    ptr += bytes_read;
+    }
+
+  /* perform post-processing */
+  pclose(alps_pipe);
+
+  if ((bytes_read == -1) ||
+      (total_bytes_read == 0))
+    rc = READING_PIPE_ERROR;
+  else
+    rc = parse_release_output(output);
+
+  return(rc);
+  } /* END destroy_alps_reservation() */
+

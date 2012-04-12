@@ -199,6 +199,7 @@ enum srv_atr
   SRV_ATR_threadidleseconds,
   SRV_ATR_MoabArrayCompatible,
   SRV_ATR_NoMailForce,
+  SRV_ATR_CrayEnabled,
 
 #include "site_svr_attr_enum.h"
   /* This must be last */

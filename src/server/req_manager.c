@@ -627,7 +627,7 @@ int mgr_unset_attr(
  * otherwise updated.
  */
 
-static void update_subnode(
+void update_subnode(
 
   struct pbsnode *pnode)
 

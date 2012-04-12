@@ -361,18 +361,21 @@ m4_ifdef([AM_SILENT_RULES],[
     src/momctl/test/Makefile
     src/momctl/test/momctl/Makefile
     src/resmom/test/Makefile
+    src/resmom/test/alps_reservations/Makefile
     src/resmom/test/catch_child/Makefile
     src/resmom/test/checkpoint/Makefile
     src/resmom/test/cray_cpa/Makefile
+    src/resmom/test/generate_alps_status/Makefile
     src/resmom/test/mom_job_func/Makefile
     src/resmom/test/mom_comm/Makefile
     src/resmom/test/mom_inter/Makefile
     src/resmom/test/mom_main/Makefile
     src/resmom/test/mom_server/Makefile
-    src/resmom/test/pbs_demux/Makefile
     src/resmom/test/mom_process_request/Makefile
-    src/resmom/test/prolog/Makefile
     src/resmom/test/mom_req_quejob/Makefile
+    src/resmom/test/pbs_demux/Makefile
+    src/resmom/test/prolog/Makefile
+    src/resmom/test/release_reservation/Makefile
     src/resmom/test/requests/Makefile
     src/resmom/test/start_exec/Makefile
     src/resmom/test/tmsock_recov/Makefile
@@ -387,6 +390,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/array_upgrade/Makefile
     src/server/test/attr_recov/Makefile
     src/server/test/dis_read/Makefile
+    src/server/test/display_alps_status/Makefile
     src/server/test/geteusernam/Makefile
     src/server/test/issue_request/Makefile
     src/server/test/job_func/Makefile
@@ -398,6 +402,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/node_manager/Makefile
     src/server/test/pbsd_init/Makefile
     src/server/test/pbsd_main/Makefile
+    src/server/test/process_alps_status/Makefile
     src/server/test/process_request/Makefile
     src/server/test/queue_func/Makefile
     src/server/test/queue_recov/Makefile
@@ -688,6 +693,18 @@ AC_CHECK_LIB(ssl, SSL_accept,
 AC_CHECK_LIB(crypto, BN_init,
   [],
   [AC_MSG_ERROR([TORQUE needs lib crypto in order to build]) ])
+
+
+
+dnl
+dnl we need libxml2
+dnl 
+xmlLib=`xml2-config --libs`
+
+dnl skip the first two chars because its -l<libname>
+AC_CHECK_LIB(${xmlLib:2}, xmlGetProp,
+  [],
+  [AC_MSG_ERROR([TORQUE needs libxml2 in order to build]) ])
 
 
 
@@ -1113,23 +1130,6 @@ fi
 
 if test "x$nvmllib" != "xnone" && test "x$nvmlinclude" == "xnone" ;then
   AC_MSG_ERROR([--with-nvml-include needs to be specified])
-fi
-
-dnl 
-dnl Tell TORQUE about any ALPS helper libraries
-dnl
-ALPS_LIBS=""
-
-AC_ARG_WITH(alpsstatus_lib,
-    [ --with-alpsstatus-lib=LIB library path for an alps status library],
-    alps_lib="$withval",
-    alps_lib=none)
-
-if test "x$alps_lib" != "xnone" ; then
-  ALPS_LIBS="$ALPS_LIBS -l$alps_lib `xml2-config --libs`"
-dnl  MOMLIBS="$MOMLIBS $ALPS_LIBS"
-  AM_CFLAGS="$AMCFLAGS `xml2-config --cflags`"
-  AC_DEFINE(USE_ALPS_LIB, 1, [Define this to use a plugin ALPS helper library])
 fi
 
 

@@ -161,7 +161,7 @@ void log_ext (int, const char *,char *,int);
 void log_event (int, int, const char *, char *);
 /* extern int  log_open (char *, char *); */
 /* extern int  job_log_open (char *, char *); */
-/* extern void log_record (int, int, char *, char *); */
+void log_record (int, int, const char *, char *);
 /* extern void log_roll (int); */
 /* extern long log_size (void); */
 /* extern long job_log_size (void); */

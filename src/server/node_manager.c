@@ -123,72 +123,73 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "../lib/Libnet/lib_net.h" /* socket_read_flush */
 #include "svr_func.h" /* get_svr_attr_* */
-#ifdef USE_ALPS_LIB
-#include "libalps_report/generate_alps_status.h"
-#endif
+#include "alps_functions.h"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 #define SEND_HELLO 11
 
-extern int LOGLEVEL;
+extern int              LOGLEVEL;
 
-extern int allow_any_mom;
+extern int              allow_any_mom;
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
-extern int h_errno;
+extern int              h_errno;
 #endif
+  
+const char              shared[] = "shared";
 
-int   svr_totnodes = 0; /* total number nodes defined       */
-int   svr_clnodes  = 0; /* number of cluster nodes     */
-int   svr_tsnodes  = 0; /* number of time shared nodes     */
-int   svr_chngNodesfile = 0; /* 1 signals want nodes file update */
-int   gpu_mode_rqstd = -1;  /* default gpu mode requested */
+int                     svr_totnodes = 0; /* total number nodes defined       */
+int                     svr_clnodes  = 0; /* number of cluster nodes     */
+int                     svr_tsnodes  = 0; /* number of time shared nodes     */
+int                     svr_chngNodesfile = 0; /* 1 signals want nodes file update */
+int                     gpu_mode_rqstd = -1;  /* default gpu mode requested */
 #ifdef NVIDIA_GPUS
-int   gpu_err_reset = FALSE;    /* was a gpu errcount reset requested */
+int                     gpu_err_reset = FALSE;    /* was a gpu errcount reset requested */
 #endif  /* NVIDIA_GPUS */
 /* on server shutdown, (qmgr mods)  */
 
-all_nodes allnodes;
+all_nodes               allnodes;
 
-static int  exclusive;  /* node allocation type */
+static int              exclusive;  /* node allocation type */
 
-static int       num_addrnote_tasks = 0; /* number of outstanding send_cluster_addrs tasks */
-pthread_mutex_t *addrnote_mutex = NULL;
+static int              num_addrnote_tasks = 0; /* number of outstanding send_cluster_addrs tasks */
+pthread_mutex_t        *addrnote_mutex = NULL;
 
-extern int  server_init_type;
-extern int  has_nodes;
+extern int              server_init_type;
+extern int              has_nodes;
 
 #ifdef NVIDIA_GPUS
 extern int create_a_gpusubnode(struct pbsnode *);
 int        is_gpustat_get(struct pbsnode *np, char **str_ptr);
 #endif  /* NVIDIA_GPUS */
 
-extern int ctnodes(char *);
-extern char *path_home;
-extern char *path_nodes;
-extern char *path_nodes_new;
-extern char *path_nodestate;
-extern char *path_nodenote;
-extern char *path_nodenote_new;
-extern unsigned int pbs_mom_port;
-extern char  server_name[];
+extern int              ctnodes(char *);
 
-extern struct server server;
-extern tlist_head svr_newnodes;
-extern attribute_def  node_attr_def[];   /* node attributes defs */
-extern int            SvrNodeCt;
-extern hello_container hellos;
-extern struct all_jobs alljobs;
+extern char            *path_home;
+extern char            *path_nodes;
+extern char            *path_nodes_new;
+extern char            *path_nodestate;
+extern char            *path_nodenote;
+extern char            *path_nodenote_new;
+extern unsigned int     pbs_mom_port;
+extern char             server_name[];
 
-extern int multi_mom;
+extern struct server    server;
+extern tlist_head       svr_newnodes;
+extern attribute_def    node_attr_def[];   /* node attributes defs */
+extern int              SvrNodeCt;
+extern hello_container  hellos;
+extern struct all_jobs  alljobs;
 
-#define SKIP_NONE 0
-#define SKIP_EXCLUSIVE 1
-#define SKIP_ANYINUSE 2
+extern int              multi_mom;
+
+#define SKIP_NONE       0
+#define SKIP_EXCLUSIVE  1
+#define SKIP_ANYINUSE   2
 #define SKIP_NONE_REUSE 3
 
 #ifndef MAX_BM
-#define MAX_BM   64
+#define MAX_BM          64
 #endif
 
 int hasprop(struct pbsnode *, struct prop *);
@@ -205,7 +206,7 @@ int gpu_entry_by_id(struct pbsnode *,char *, int);
 job *get_job_from_jobinfo(struct jobinfo *,struct pbsnode *);
 
 /* marks a stream as finished being serviced */
-pthread_mutex_t *node_state_mutex = NULL;
+pthread_mutex_t        *node_state_mutex = NULL;
 
 
 
@@ -213,7 +214,7 @@ pthread_mutex_t *node_state_mutex = NULL;
 **      Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
 */
 
-AvlTree ipaddrs = NULL;
+AvlTree                 ipaddrs = NULL;
 
 
 /**
@@ -296,10 +297,6 @@ void update_node_state(
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   struct pbssubn *sp;
-#ifdef ALT_CLSTR_ADDR
-  int             ret;
-  int             send_addrs = FALSE;
-#endif
 
   /*
    * LOGLEVEL >= 4 logs all state changes
@@ -318,23 +315,6 @@ void update_node_state(
     }
 
   log_buf[0] = '\0';
-
-#ifdef ALT_CLSTR_ADDR
-  /*
-   *  If coming out of DOWN or UNKNOWN states
-   *  then we want to send IS_CLUSTER_ADDRS message
-   */
-
-  if ((np->nd_state & INUSE_DOWN) ||
-      (np->nd_state & INUSE_UNKNOWN))
-    {
-    if (!(newstate & INUSE_DOWN))
-      {
-      send_addrs = TRUE;
-      }
-    }
-
-#endif
 
   if (newstate & INUSE_DOWN)
     {
@@ -830,12 +810,12 @@ void update_job_data(
   char           *jobstring_in)  /* I (changed attributes sent by mom) */
 
   {
-  char      *jobdata;
-  char      *jobdata_ptr;
-  char      *jobidstr;
-  char      *attr_name;
-  char      *attr_value;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  char       *jobdata;
+  char       *jobdata_ptr;
+  char       *jobidstr;
+  char       *attr_name;
+  char       *attr_value;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
 
   struct job *pjob = NULL;
   int         on_node = FALSE;
@@ -1314,7 +1294,6 @@ void clear_nvidia_gpus(
   struct pbsnode *np)  /* I */
 
   {
-  static char     id[] = "clear_nvidia_gpus";
   pbs_attribute   temp;
 
   if ((np->nd_gpus_real) && (np->nd_ngpus > 0))
@@ -1333,13 +1312,14 @@ void clear_nvidia_gpus(
 
     if (decode_arst(&temp, NULL, NULL, NULL, 0))
       {
-      log_err(-1, id, "clear_nvidia_gpus:  cannot initialize attribute\n");
+      log_err(-1, __func__, "clear_nvidia_gpus:  cannot initialize attribute\n");
 
       return;
       }
 
     node_gpustatus_list(&temp, np, ATR_ACTION_ALTER);
     }
+
   return;
   }  /* END clear_nvidia_gpus() */
 
@@ -1492,6 +1472,25 @@ int process_status_info(
 
 
 
+int is_reporter_node(
+
+  char *node_id)
+
+  {
+  struct pbsnode *pnode = find_nodebyname(node_id);
+  int             rc = FALSE;
+
+  if (pnode != NULL)
+    {
+    rc = pnode->nd_is_alps_reporter;
+    unlock_node(pnode, __func__, NULL, 0);
+    }
+
+  return(rc);
+  } /* END is_reporter_node() */
+
+
+
 
 int is_stat_get(
 
@@ -1523,11 +1522,10 @@ int is_stat_get(
 
   status_info = get_status_info(stream);
 
-#ifndef USE_ALPS_LIB
-  rc = process_status_info(orig_nd_name, status_info);
-#else
-  rc = process_alps_status(orig_nd_name, status_info);
-#endif
+  if (is_reporter_node(orig_nd_name))
+    rc = process_alps_status(orig_nd_name, status_info);
+  else
+    rc = process_status_info(orig_nd_name, status_info);
 
   free_dynamic_string(status_info);
 
@@ -2045,7 +2043,7 @@ void *check_nodes_work(
   void *vp)
 
   {
-  work_task *ptask = (struct work_task *)vp;
+  work_task        *ptask = (struct work_task *)vp;
 
   struct pbsnode   *np = NULL;
   long              chk_len = 300;
@@ -2448,7 +2446,7 @@ void svr_is_request(
 
   {
   int *args;
-  int rc;
+  int  rc;
 
   args = (int *)calloc(2, sizeof(int));
 
@@ -2483,7 +2481,7 @@ void *write_node_state_work(
   static FILE    *nstatef = NULL;
   int             iter = -1;
 
-  int   savemask;
+  int             savemask;
 
   pthread_mutex_lock(node_state_mutex);
 
@@ -2648,7 +2646,6 @@ static void free_prop(
   struct prop *prop)
 
   {
-
   struct prop *pp;
 
   for (pp = prop;pp != NULL;pp = prop)
@@ -2670,10 +2667,9 @@ void *node_unreserve_work(
   void *vp)
 
   {
-  resource_t handle = *((resource_t *)vp);
+  resource_t       handle = *((resource_t *)vp);
 
   struct  pbsnode *np;
-
   struct  pbssubn *sp;
   int              iter = -1;
 
@@ -2739,7 +2735,6 @@ int hasprop(
   struct prop    *props)
 
   {
-
   struct  prop    *need;
 
   for (need = props;need;need = need->next)
@@ -2899,7 +2894,6 @@ int gpu_entry_by_id(
   int    get_empty)
 
   {
-
   if (pnode->nd_gpus_real)
     {
     int j;
@@ -3204,7 +3198,7 @@ static int proplist(
       {
       gpu_mode_rqstd = gpu_normal;
       }
-    else if (have_gpus && (!strcasecmp(pname, "shared")))
+    else if (have_gpus && (!strcasecmp(pname, shared)))
       {
       gpu_mode_rqstd = gpu_normal;
       }
@@ -3259,7 +3253,7 @@ static char *mod_spec(
 
   {
   char  *line;
-  char *cp;
+  char  *cp;
   int    len;
   int    nsubspec;
 
@@ -3307,112 +3301,6 @@ static char *mod_spec(
   return(line);
   }  /* END mod_spec() */
 
-
-
-
-/* cntjons - count jobs on (shared) nodes */
-/*
-static int cntjons(
-
-  struct pbsnode *pn)
-
-  {
-
-  struct pbssubn *psn;
-  int ct = 0;
-  int n;
-
-  struct jobinfo *pj;
-
-  psn = pn->nd_psn;
-
-  for (n = 0;n < pn->nd_nsn;++n)
-    {
-    pj = psn->jobs;
-
-    while (pj)
-      {
-      ++ct;
-
-      pj = pj->next;
-      }
-
-    psn = psn->next;
-    }
-
-  return(ct);
-  }
-*/
-
-
-
-/*
- * nodecmp - compare two nodes for sorting
- * For "exclusive", depending on setting of node_order pbs_attribute:
- *     pack:    put free node with fewest non-zero free VPs in node first
- *     scatter: put free node with most fre VPs first
- * For "shared", put current shared with fewest jobs first,
- *  then free nodes, and others last
- */
-
-
-#define BIG_NUM 32768 /* used only in nodecmp() */
-
-/*
-static int nodecmp(
-
-  const void *aa,
-  const void *bb)
-
-  {
-
-  struct pbsnode *a = *(struct pbsnode **)aa;
-
-  struct pbsnode *b = *(struct pbsnode **)bb;
-  int aprim, bprim;
-*/
-  /* exclusive is global */
-/*
-  if (exclusive)
-    {
-*/    /* best is free */
-/*
-    if (server.sv_attr[SRV_ATR_NodePack].at_val.at_long)
-      {
-*/      /* pack - fill up nodes first */
-/*
-      aprim = (a->nd_nsnfree > 0) ? a->nd_nsnfree : BIG_NUM;
-
-      bprim = (b->nd_nsnfree > 0) ? b->nd_nsnfree : BIG_NUM;
-      }
-    else
-      {
-*/      /* scatter - spread amoung nodes first */
-/*
-      aprim = a->nd_nsn - a->nd_nsnfree;
-      bprim = b->nd_nsn - b->nd_nsnfree;
-      }
-    }
-  else
-    {
-*/    /* best is shared with fewest jobs */
-/*
-    aprim = (a->nd_state == INUSE_JOBSHARE) ?
-            cntjons(a) :
-            ((a->nd_state == INUSE_FREE) ? 5 : 1000);
-
-    bprim = (b->nd_state == INUSE_JOBSHARE) ?
-            cntjons(b) :
-            ((b->nd_state == INUSE_FREE) ? 5 : 1000);
-    }
-
-  if (aprim == bprim)
-    {
-    return(a->nd_nprops - b->nd_nprops);
-    }
-
-  return (aprim - bprim);
-  }*/  /* END nodecmp() */
 
 
 
@@ -3544,13 +3432,13 @@ int node_is_spec_acceptable(
     {
     snp->flag = okay;
 
-  if (LOGLEVEL >= 9)
-    DBPRT(("%s: %s/%d inuse 0x%x nprops %d\n",
-      __func__,
-      pnode->nd_name,
-      snp->index,
-      snp->inuse,
-      pnode->nd_nprops))
+    if (LOGLEVEL >= 9)
+      DBPRT(("%s: %s/%d inuse 0x%x nprops %d\n",
+        __func__,
+        pnode->nd_name,
+        snp->index,
+        snp->inuse,
+        pnode->nd_nprops))
     }
 
   if (pnode->nd_ntype != NTYPE_CLUSTER)
@@ -3737,7 +3625,13 @@ void set_first_node_name(
 
   } /* END set_first_node_name() */
 
-void release_node_allocation(node_job_add_info *naji)
+
+
+
+void release_node_allocation(
+    
+  node_job_add_info *naji)
+
   {
   node_job_add_info *current = NULL;
   struct pbsnode    *pnode = NULL;
@@ -3756,6 +3650,35 @@ void release_node_allocation(node_job_add_info *naji)
   }
 
 
+
+
+int add_login_node_if_needed(
+
+  char              *first_node_name,
+  node_job_add_info *naji)
+
+  {
+  struct pbsnode *login = find_nodebyname(first_node_name);
+
+  if (login == NULL)
+    {
+    }
+  else if (login->nd_is_alps_starter == FALSE)
+    {
+    unlock_node(login, __func__, NULL, 0);
+    }
+  else
+    {
+    /* you don't need to add anything */
+    unlock_node(login, __func__, NULL, 0);
+    }
+
+  return(PBSE_NONE);
+  } /* END add_login_node_if_needed() */
+
+
+
+
 /*
  * Test a node specification.
  *
@@ -3766,7 +3689,7 @@ void release_node_allocation(node_job_add_info *naji)
  * VPs selected are marked "thinking"
  */
 
-static int node_spec(
+int node_spec(
 
   char              *spec_param, /* I */
   int                early,      /* I (boolean) */
@@ -3777,8 +3700,6 @@ static int node_spec(
   char              *EMsg)       /* O (optional,minsize=1024) */
 
   {
-  static char         shared[] = "shared";
-
   struct pbsnode     *pnode;
   char                first_node_name[PBS_MAXHOSTNAME + 1];
   node_iterator       iter;
@@ -3795,8 +3716,6 @@ static int node_spec(
   complete_spec_data  all_reqs;
   char               *spec;
   char               *plus;
-
-  extern int PNodeStateToString(int, char *, int);
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -3817,12 +3736,14 @@ static int node_spec(
 
   set_first_node_name(spec_param, first_node_name);
 
+  add_login_node_if_needed(first_node_name, naji);
+
   spec = strdup(spec_param);
 
   if (spec == NULL)
     {
     /* FAILURE */
-    sprintf(log_buf,"cannot alloc memory");
+    sprintf(log_buf, "cannot alloc memory");
 
     if (LOGLEVEL >= 1)
       {
@@ -3966,19 +3887,6 @@ static int node_spec(
 
     DBPRT(("%s\n", log_buf));
     }
-
-  /*
-   * if SRV_ATR_NodePack set (true or false), then
-   * sort nodes by state, number of VPs and number of attributes;
-   * otherwise, leave unsorted
-   */
-
-  /*
-  if (server.sv_attr[SRV_ATR_NodePack].at_flags & ATR_VFLAG_SET)
-    {
-    qsort(pbsndlist, svr_totnodes, sizeof(struct pbsnode *), nodecmp);
-    }
-    */
 
   reinitialize_node_iterator(&iter);
   pnode = NULL;
@@ -4216,8 +4124,8 @@ int reserve_node(
   struct howl    **hlistptr)  /* O */
 
   {
-  int BMLen;
-  int BMIndex;
+  int             BMLen;
+  int             BMIndex;
 
   struct pbssubn *snp; 
 
@@ -5066,13 +4974,18 @@ int procs_requested(
   char *spec)
 
   {
-  char *str, *globs, *cp, *hold;
-  int num_nodes = 0, num_procs = 0, total_procs = 0, num_gpus = 0;
-  int i;
-  static char shared[] = "shared";
+  char        *str;
+  char        *globs;
+  char        *cp;
+  char        *hold;
+  int          num_nodes = 0;
+  int          num_procs = 0;
+  int          total_procs = 0;
+  int          num_gpus = 0;
+  int          i;
   struct prop *prop = NULL;
-  char *tmp_spec;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char        *tmp_spec;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   tmp_spec = strdup(spec);  
   
@@ -5234,23 +5147,22 @@ int node_avail(
   int *ndown)  /* O - number down      */
 
   {
-  int j;
-  int holdnum;
+  int             j;
+  int             holdnum;
 
   struct pbsnode *pn;
+  struct pbssubn *psn;
+  char           *pc;
 
-  struct  pbssubn *psn;
-  char    *pc;
+  struct prop    *prop = NULL;
+  register int    xavail;
+  register int    xalloc;
+  register int    xresvd;
+  register int    xdown;
+  int             node_req = 1;
+  int             gpu_req = 0;
 
-  struct prop *prop = NULL;
-  register int xavail;
-  register int xalloc;
-  register int xresvd;
-  register int xdown;
-  int          node_req = 1;
-  int          gpu_req = 0;
-
-  node_iterator iter;
+  node_iterator   iter;
 
   if (spec == NULL)
     {
@@ -5363,7 +5275,6 @@ int node_reserve(
   int                nrd;
 
   struct pbsnode    *pnode;
-
   struct pbssubn    *snp;
   int                ret_val;
 
@@ -5431,6 +5342,7 @@ int node_reserve(
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
+
   free_naji(naji);
 
   return(ret_val);
@@ -5757,17 +5669,16 @@ void free_nodes(
  * set_one_old - set a named node as allocated to a job
  */
 
-static void set_one_old(
+void set_one_old(
 
   char *name,
   job  *pjob,
-  int   shared) /* how used flag, either INUSE_JOB or INUSE_JOBSHARE */
+  int   is_shared) /* how used flag, either INUSE_JOB or INUSE_JOBSHARE */
 
   {
   int             index;
 
   struct pbsnode *pnode;
-
   struct pbssubn *snp;
 
   struct jobinfo *jp;
@@ -5795,7 +5706,7 @@ static void set_one_old(
         {
         if (snp->index == index)
           {
-          snp->inuse = shared;
+          snp->inuse = is_shared;
           
           jp = (struct jobinfo *)calloc(1, sizeof(struct jobinfo));
           
@@ -5810,7 +5721,7 @@ static void set_one_old(
             }
           
           if (--pnode->nd_nsnfree <= 0)
-            pnode->nd_state |= shared;
+            pnode->nd_state |= is_shared;
          
           break;
           }
@@ -5837,10 +5748,10 @@ void set_old_nodes(
   job *pjob)  /* I (modified) */
 
   {
-  char *old;
-  char *po;
+  char     *old;
+  char     *po;
   resource *presc;
-  int   shared = INUSE_JOB;
+  int       is_shared = INUSE_JOB;
 
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
     {
@@ -5854,8 +5765,8 @@ void set_old_nodes(
       {
       if ((po = strchr(presc->rs_value.at_val.at_str, '#')))
         {
-        if (strstr(++po, "shared") != NULL)
-          shared = INUSE_JOBSHARE;
+        if (strstr(++po, shared) != NULL)
+          is_shared = INUSE_JOBSHARE;
         }
       }
 
@@ -5872,10 +5783,10 @@ void set_old_nodes(
       {
       *po++ = '\0';
 
-      set_one_old(po, pjob, shared);
+      set_one_old(po, pjob, is_shared);
       }
 
-    set_one_old(old, pjob, shared);
+    set_one_old(old, pjob, is_shared);
 
     free(old);
     }  /* END if pjobs exec host is set */

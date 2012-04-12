@@ -214,6 +214,8 @@ short    memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int      MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 #endif
 
+int      is_reporter_mom = FALSE;
+
 /* externs */
 
 extern char *server_alias;
@@ -388,6 +390,7 @@ static unsigned long setmaxupdatesbeforesending(char *);
 static unsigned long setthreadunlinkcalls(char *);
 static unsigned long setapbasilpath(char *);
 static unsigned long setapbasilprotocol(char *);
+static unsigned long setreportermom(char *);
 static unsigned long setrejectjobsubmission(char *);
 unsigned long rppthrottle(char *value);
 
@@ -465,6 +468,7 @@ static struct specials
   { "apbasil_path",        setapbasilpath },
   { "reject_job_submission", setrejectjobsubmission },
   { "apbasil_protocol",    setapbasilprotocol },
+  { "reporter_mom",        setreportermom },
   { NULL,                  NULL }
   };
 
@@ -3247,6 +3251,30 @@ static unsigned long setapbasilprotocol(
 
   return(1);
   } /* END setapbasilprotocol() */
+
+
+
+
+static unsigned long setreportermom(
+
+  char *value)
+
+  {
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if (value != NULL)
+    {
+    if ((value[0] == 't') ||
+        (value[0] == 'T') ||
+        (value[0] == 'y') ||
+        (value[0] == 'Y'))
+      is_reporter_mom = TRUE;
+    else
+      is_reporter_mom = FALSE;
+    }
+
+  return(1);
+  } /* END setreportermom() */
 
 
 
@@ -9031,24 +9059,6 @@ int add_to_resend_things(
   {
   return(insert_thing(things_to_resend, mc));
   } /* END add_to_resend_things() */
-
-
-
-#ifdef USE_ALPS_LIB
-/* stubs for unused server methods */
-attribute_def node_attr_def[1];
-struct pbssubn *create_subnode(struct pbsnode *pnode) {return(NULL);}
-int save_node_status(struct pbsnode *pnode, pbs_attribute *temp) {return(PBSE_NONE);}
-struct pbsnode *find_nodebyname(char *name) {return(NULL);}
-int mgr_set_node_attr(struct pbsnode *pnode, attribute_def *pdef, int limit, svrattrl *plist, int privil, int *bad, void *parent, int mode) {return(PBSE_NONE);}
-struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *held) {return(NULL);}
-int insert_node(all_nodes *an, struct pbsnode *pnode) {return(PBSE_NONE);}
-int initialize_pbsnode(struct pbsnode *pnode, char *pname, u_long *pul, int ntype) {return(PBSE_NONE);}
-int status_node(struct pbsnode *pnode, struct batch_request *preq, int *bad, tlist_head *pstathd) {return(PBSE_NONE);}
-void update_node_state(struct pbsnode *pnode, int state) {}
-int create_a_gpusubnode(struct pbsnode *pnode) {return(PBSE_NONE);}
-int node_gpustatus_list(pbs_attribute *new, void *pnode, int actmode) {return(PBSE_NONE);}
-#endif
 
 
 

@@ -16,7 +16,8 @@ PBS_LIBS = ../lib/Libattr/libattr.a \
 sbin_PROGRAMS = pbs_server
 
 pbs_server_LDADD = $(PBS_LIBS) $(ALPS_LIBS)
-AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\"
+AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\" `xml2-config --cflags`
+AM_LIBS   =`xml2-config --libs`
 
 pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
 		     dis_read.c geteusernam.c \
@@ -35,7 +36,8 @@ pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
 		     svr_func.c svr_jobfunc.c svr_mail.c svr_movejob.c \
 		     svr_recov.c svr_resccost.c svr_task.c req_tokens.c \
 		     job_qs_upgrade.c req_holdarray.c svr_format_job.c \
-				 job_recycler.c queue_recycler.c
+				 job_recycler.c queue_recycler.c process_alps_status.c \
+				 display_alps_status.c
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :

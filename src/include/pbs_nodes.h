@@ -254,6 +254,7 @@ typedef struct node_iterator
   {
   int node_index;
   int numa_index;
+  int alps_index;
   } node_iterator;
 
 
@@ -271,62 +272,62 @@ typedef struct all_nodes
 
 struct pbsnode
   {
-  char                 *nd_name; /* node's host name */
+  char                 *nd_name;             /* node's host name */
 
-  struct pbssubn       *nd_psn; /* ptr to list of subnodes */
+  struct pbssubn       *nd_psn;              /* ptr to list of subnodes */
 
-  struct prop          *nd_first; /* first and last property */
+  struct prop          *nd_first;            /* first and last property */
 
   struct prop          *nd_last;
 
-  struct prop          *nd_f_st;       /* first and last status */
+  struct prop          *nd_f_st;             /* first and last status */
 
   struct prop          *nd_l_st;
-  u_long               *nd_addrs; /* IP addresses of host */
+  u_long               *nd_addrs;            /* IP addresses of host */
 
-  struct array_strings *nd_prop; /* array of properities */
+  struct array_strings *nd_prop;             /* array of properities */
 
   struct array_strings *nd_status;
-  char                 *nd_note;  /* note set by administrator */
-  int                   nd_stream; /* stream to Mom on host */
+  char                 *nd_note;             /* note set by administrator */
+  int                   nd_stream;           /* stream to Mom on host */
   enum psit             nd_flag;
-  unsigned short        nd_mom_port; /* For multi-mom-mode unique port value PBS_MOM_SERVICE_PORT*/
-  unsigned short        nd_mom_rm_port; /* For multi-mom-mode unique port value PBS_MANAGER_SERVICE_PORT */
-  short                 nd_nprops; /* number of properties */
-  short                 nd_nstatus;    /* number of status items */
-  short                 nd_nsn; /* number of VPs  */
-  short                 nd_nsnfree; /* number of VPs free */
-  short                 nd_nsnshared; /* number of VPs shared */
-  short                 nd_needed; /* number of VPs needed */
-  short                 nd_np_to_be_used; /* number of VPs marked for a job but not yet assigned */
-  unsigned short        nd_state;      /* node state (see INUSE_* #defines below) */
-  unsigned short        nd_ntype; /* node type */
-  short                 nd_order; /* order of user's request */
+  unsigned short        nd_mom_port;         /* For multi-mom-mode unique port value PBS_MOM_SERVICE_PORT*/
+  unsigned short        nd_mom_rm_port;      /* For multi-mom-mode unique port value PBS_MANAGER_SERVICE_PORT */
+  short                 nd_nprops;           /* number of properties */
+  short                 nd_nstatus;          /* number of status items */
+  short                 nd_nsn;              /* number of VPs  */
+  short                 nd_nsnfree;          /* number of VPs free */
+  short                 nd_nsnshared;        /* number of VPs shared */
+  short                 nd_needed;           /* number of VPs needed */
+  short                 nd_np_to_be_used;    /* number of VPs marked for a job but not yet assigned */
+  unsigned short        nd_state;            /* node state (see INUSE_* #defines below) */
+  unsigned short        nd_ntype;            /* node type */
+  short                 nd_order;            /* order of user's request */
   time_t                nd_warnbad;
-  time_t                nd_lastupdate; /* time of last update. */
+  time_t                nd_lastupdate;       /* time of last update. */
   unsigned short        nd_hierarchy_level;
-  unsigned char         nd_in_hierarchy; /* set to TRUE if in the hierarchy file */
+  unsigned char         nd_in_hierarchy;     /* set to TRUE if in the hierarchy file */
 
-  short                 nd_ngpus;        /* number of gpus */ 
-  short                 nd_gpus_real;    /* gpus are real not virtual */ 
-  struct gpusubn       *nd_gpusn;        /* gpu subnodes */
-  short                 nd_ngpus_free;   /* number of free gpus */
-  short                 nd_ngpus_needed; /* number of gpus needed */
+  short                 nd_ngpus;            /* number of gpus */ 
+  short                 nd_gpus_real;        /* gpus are real not virtual */ 
+  struct gpusubn       *nd_gpusn;            /* gpu subnodes */
+  short                 nd_ngpus_free;       /* number of free gpus */
+  short                 nd_ngpus_needed;     /* number of gpus needed */
   short                 nd_ngpus_to_be_used; /* number of gpus marked for a job but not yet assigned */
-  struct array_strings *nd_gpustatus;    /* string array of GPU status */
-  short                 nd_ngpustatus;    /* number of gpu status items */
+  struct array_strings *nd_gpustatus;        /* string array of GPU status */
+  short                 nd_ngpustatus;       /* number of gpu status items */
 
-  struct pbsnode       *numa_parent;     /* pointer to the node holding this node, or NULL */
-  unsigned short        num_node_boards; /* number of numa nodes */
-  struct AvlNode       *node_boards; /* private tree of numa nodes */
-  char                 *numa_str; /* comma-delimited string of processor values */
-  char                 *gpu_str; /* comma-delimited string of the number of gpus for each nodeboard */
-#ifdef USE_ALPS_LIB
+  struct pbsnode       *parent;              /* pointer to the node holding this node, or NULL */
+  unsigned short        num_node_boards;     /* number of numa nodes */
+  struct AvlNode       *node_boards;         /* private tree of numa nodes */
+  char                 *numa_str;            /* comma-delimited string of processor values */
+  char                 *gpu_str;             /* comma-delimited string of the number of gpus for each nodeboard */
+  
   unsigned char         nd_is_alps_reporter;
+  unsigned char         nd_is_alps_starter;
   all_nodes             alps_subnodes;
-#endif
 
-  pthread_mutex_t      *nd_mutex; /* semaphore for accessing this node's data */
+  pthread_mutex_t      *nd_mutex;            /* semaphore for accessing this node's data */
   };
 
 
@@ -544,5 +545,8 @@ void             reinitialize_node_iterator(node_iterator *);
 
 struct prop     *init_prop(char *pname);
 #endif /* BATCH_REQUEST_H */
+
+int              initialize_pbsnode(struct pbsnode *, char *pname, u_long *pul, int ntype);
+int              hasprop(struct pbsnode *pnode, struct prop *props);
 
 #endif /* PBS_NODES_H */ 

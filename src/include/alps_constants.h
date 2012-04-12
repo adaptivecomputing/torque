@@ -1,7 +1,7 @@
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
-* Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+* Copyright (c) 1999-2010 Veridian Information Solutions, Inc.
 * All rights reserved.
 *
 * ---------------------------------------------------------------------------
@@ -77,103 +77,67 @@
 * without reference to its choice of law rules.
 */
 
-/*
- * This is a list of public server attributes
- *
- * FORMAT:
- *  attr1,
- *   attr2, <--- important the last has a comma after it
- *
- *  This file will be used for the initialization of an array
- *
- */
 
-/* sync w/SRV_ATR_* in server.h, server/svr_attr_def.c, and ATTR_* in pbs_ifl.h  */
 
-ATTR_aclhten,
-ATTR_aclhost,
-ATTR_acluren,
-ATTR_acluser,
-ATTR_aclroot,
-ATTR_comment,
-ATTR_defnode,
-ATTR_dfltque,
-ATTR_locsvrs,
-ATTR_logevents,
-ATTR_loglevel,
-ATTR_managers,
-ATTR_mailfrom,
-ATTR_maxrun,
-ATTR_maxuserrun,
-ATTR_maxgrprun,
-ATTR_nodepack,
-ATTR_nodesuffix,
-ATTR_operators,
-ATTR_queryother,
-ATTR_rescavail,
-ATTR_resccost,
-ATTR_rescdflt,
-ATTR_rescmax,
-ATTR_schedit,
-ATTR_scheduling,
-ATTR_syscost,
-ATTR_pingrate,
-ATTR_ndchkrate,
-ATTR_tcptimeout,
-ATTR_jobstatrate,
-ATTR_polljobs,
-ATTR_downonerror,
-ATTR_disableserveridcheck,
-ATTR_jobnanny,
-ATTR_ownerpurge,
-ATTR_qcqlimits,
-ATTR_momjobsync,
-ATTR_maildomain,
-ATTR_killdelay,
-ATTR_acllogic,
-ATTR_aclgrpslpy,
-ATTR_keepcompleted,
-ATTR_submithosts,
-ATTR_allownodesubmit,
-ATTR_allowproxyuser,
-ATTR_servername,
-ATTR_autonodenp,
-ATTR_logfilemaxsize,
-ATTR_logfilerolldepth,
-ATTR_logkeepdays,
-ATTR_nextjobnum,
-ATTR_tokens,
-ATTR_extraresc,
-ATTR_schedversion,
-ATTR_acctkeepdays,
-ATTR_lockfile,
-ATTR_LockfileUpdateTime,
-ATTR_LockfileCheckTime,
-ATTR_credentiallifetime,
-ATTR_jobmustreport,
-ATTR_checkpoint_dir,
-ATTR_dispsvrsuffix,
-ATTR_jobsuffixalias,
-ATTR_mailsubjectfmt,
-ATTR_mailbodyfmt,
-ATTR_npdefault,
-ATTR_clonebatchsize,
-ATTR_clonebatchdelay,
-ATTR_jobstarttimeout,
-ATTR_jobforcecanceltime,
-ATTR_maxarraysize,
-ATTR_maxslotlimit,
-ATTR_recordjobinfo,
-ATTR_recordjobscript,
-ATTR_joblogfilemaxsize,
-ATTR_joblogfilerolldepth,
-ATTR_joblogkeepdays,
-#ifdef MUNGE_AUTH
-ATTR_authusers,
-#endif
-ATTR_minthreads,
-ATTR_maxthreads,
-ATTR_threadidleseconds,
-ATTR_moabarraycompatible,
-ATTR_nomailforce,
-ATTR_crayenabled,
+#define WRITING_PIPE_ERROR          -1
+#define READING_PIPE_ERROR          -2
+#define ALPS_PARSING_ERROR          -3
+#define ALPS_QUERY_FAILURE          -4
+#define DEFAULT_APBASIL_PATH        "/usr/bin/apbasil"
+#define DEFAULT_APBASIL_PROTOCOL    "1.0"
+#define APBASIL_QUERY               "echo \\<?xml version=\\'1.0\\'?\\>\n\\<BasilRequest protocol='%s' method='QUERY' type='INVENTORY'\\>\\</BasilRequest\\> | %s"
+#define APBASIL_RESERVE_PARAM_BEGIN "\\<ReserveParam architecture='XT' width='%d' nppn='%d'\\>\\<NodeParamArray\\>\\<NodeParam\\>"
+#define APBASIL_RESERVE_PARAM_END   "\\</NodeParam\\>\\</NodeParamArray\\>\\</ReserveParam\\>"
+#define APBASIL_RESERVE_ARRAY       "\\<ReserveParamArray user_name='%s' batch_id='%s'\\>"
+#define CLOSE_RESERVE_ARRAY         "\\</ReserveParamArray\\>"
+#define APBASIL_RESERVE_REQ         "echo \\<?xml version='1.0'?\\>\\<BasilRequest protocol='%s' method='RESERVE'\\>"
+#define CLOSE_BASIL_REQ             "\\</BasilRequest\\>"
+#define CONFIRM_BASIL_REQ           "echo \\<?xml version='1.0'?\\>\\<BasilRequest protocol='%s' method='CONFIRM' reservation_id='%s' pagg_id='%lld'/\\> | %s"
+#define DELETE_BASIL_REQ            "echo \\<?xml version='1.0'?\\>\\<BasilRequest protocol='%s' method='RELEASE' reservation_id='%s'/\\> | %s"
+
+
+extern const char *response_data;
+extern const char *node_array;
+extern const char *node_name;
+extern const char *reservation_array;
+extern const char *name;
+extern const char *node_id;
+extern const char *architecture;
+extern const char *state;
+extern const char *success;
+extern const char *status;
+extern const char *clock_mhz;
+extern const char *reservation_id;
+extern const char *processor_array;
+extern const char *processor;
+extern const char *memory_array;
+extern const char *memory_name;
+extern const char *label_array;
+extern const char *segment_array;
+extern const char *segment;
+extern const char *accelerator_array;
+extern const char *accelerator;
+extern const char *ordinal;
+extern const char *type;
+extern const char *text_name;
+extern const char *memory_mb;
+extern const char *family;
+extern const char *cproc_eq;
+extern const int   cproc_eq_len;
+extern const char *CRAY_GPU_STATUS_START;
+extern const char *CRAY_GPU_STATUS_END;
+extern const char *alps_reporter_feature;
+extern const char *alps_starter_feature;
+extern const char *reserved;
+extern const char *pagg_id;
+extern const char *admin_cookie;
+
+typedef struct host_req
+  {
+  unsigned int     ppn;
+  char            *hostname;
+  } host_req;
+
+
+host_req *get_host_req(char *hostname);
+void      free_host_req(host_req *hr);

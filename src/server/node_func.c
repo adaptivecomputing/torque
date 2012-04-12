@@ -129,9 +129,7 @@
 #include "req_manager.h" /* mgr_set_node_attr */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "svr_func.h" /* get_svr_attr_* */
-#ifdef USE_ALPS_LIB
-#include "libalps_report/generate_alps_status.h"
-#endif
+#include "alps_constants.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 extern int h_errno;
@@ -1491,7 +1489,7 @@ int setup_node_boards(
   if (pnode == NULL)
     return(-1);
 
-  pnode->numa_parent = NULL;
+  pnode->parent = NULL;
 
   /* if this isn't a numa node, return no error */
   if ((pnode->num_node_boards == 0) &&
@@ -1581,7 +1579,7 @@ int setup_node_boards(
         pnode->node_boards);
 
     /* set my parent node pointer */
-    pn->numa_parent = pnode;
+    pn->parent = pnode;
     } /* END for each node_board */
 
   if (LOGLEVEL >= 3)
@@ -1811,10 +1809,6 @@ int create_pbs_node(
     return(rc);
     }
 
-#ifdef USE_ALPS_LIB
-  initialize_all_nodes_array(&(pnode->alps_subnodes));
-#endif
-
   insert_node(&allnodes,pnode);
 
   svr_totnodes++;
@@ -1936,6 +1930,7 @@ int setup_nodes(void)
   int             start = -1;
   int             end = -1;
   int             is_alps_reporter;
+  int             is_alps_starter;
 
   struct pbsnode *np;
   char           *val;
@@ -2057,11 +2052,11 @@ int setup_nodes(void)
 
     if (propstr[0] != '\0')
       {
-#ifdef USE_ALPS_LIB
       if (!strcmp(propstr, alps_reporter_feature))
         is_alps_reporter = TRUE;
+      else if (!strcmp(propstr, alps_starter_feature))
+        is_alps_starter = TRUE;
       else
-#endif
         {
         pal = attrlist_create(ATTR_NODE_properties, 0, strlen(propstr) + 1);
         
@@ -2181,14 +2176,20 @@ int setup_nodes(void)
       continue;
       }
 
-#ifdef USE_ALPS_LIB
     if (is_alps_reporter == TRUE)
       {
       np = find_nodebyname(nodename);
       np->nd_is_alps_reporter = TRUE;
+      initialize_all_nodes_array(&(np->alps_subnodes));
       unlock_node(np, __func__, NULL, 0);
       }
-#endif
+    else if (is_alps_reporter == TRUE)
+      {
+      np = find_nodebyname(nodename);
+      np->nd_is_alps_starter = TRUE;
+      /* NYI: add to login node list */
+      unlock_node(np, __func__, NULL, 0);
+      }
 
     if (LOGLEVEL >= 3)
       {
@@ -2804,6 +2805,7 @@ void reinitialize_node_iterator(
     {
     iter->node_index = -1;
     iter->numa_index = -1;
+    iter->alps_index = -1;
     }
   } /* END reinitialize_node_iterator() */
 
@@ -2831,6 +2833,22 @@ struct pbsnode *get_my_next_node_board(
 
 
 
+struct pbsnode *get_my_next_alps_node(
+
+  node_iterator  *iter,
+  struct pbsnode *pnode)
+
+  {
+  struct pbsnode *alps_node = next_host(&(pnode->alps_subnodes), &(iter->alps_index), NULL);
+
+  unlock_node(pnode, __func__, NULL, 0);
+
+  return(alps_node);
+  } /* END get_my_nexT_alps_node() */
+
+
+
+
 /* 
  * @return the next node, from 0->end, accounting for numa nodes
  */
@@ -2849,9 +2867,9 @@ struct pbsnode *next_node(
     pthread_mutex_lock(an->allnodes_mutex);
 
     /* the first call to next_node */
-    next = next_thing(an->ra,&iter->node_index);
+    next = next_thing(an->ra, &iter->node_index);
     if (next != NULL)
-      lock_node(next, "next_node", "next != NULL", LOGLEVEL);
+      lock_node(next, __func__, "next != NULL", LOGLEVEL);
 
     pthread_mutex_unlock(an->allnodes_mutex);
 
@@ -2862,27 +2880,51 @@ struct pbsnode *next_node(
         {
         next = get_my_next_node_board(iter,next);
         }
+      else if (next->nd_is_alps_reporter)
+        {
+        next = get_my_next_alps_node(iter, next);
+        }
       }
     } /* END first iteration */
   else
     {
     /* if current is a numa subnode, go back to the parent */
-    if (iter->numa_index >= 0)
+    if ((iter->numa_index >= 0) ||
+        (iter->alps_index >= 0))
       {
-      tmp = current->numa_parent;
-      unlock_node(current, "next_node", "current == NULL && numa_index > 0", LOGLEVEL);
-      lock_node(tmp, "next_node", "tmp && numa_index > 0", LOGLEVEL);
+      tmp = current->parent;
+      unlock_node(current, __func__, "current == NULL && numa_index > 0", LOGLEVEL);
+      lock_node(tmp, __func__, "tmp && numa_index > 0", LOGLEVEL);
       current = tmp;
       }
 
     /* move to the next host or get my next node board? */
-    if (iter->numa_index + 1 >= current->num_node_boards)
+    if (iter->alps_index >= 0)
+      {
+      if ((next = get_my_next_alps_node(iter, current)) == NULL)
+        {
+        iter->alps_index = -1;
+
+        pthread_mutex_lock(an->allnodes_mutex);
+        next = next_thing(an->ra, &iter->node_index);
+        pthread_mutex_unlock(an->allnodes_mutex);
+
+        if (next != NULL)
+          {
+          lock_node(next, __func__, NULL, 0);
+
+          if (next->nd_is_alps_reporter)
+            next = get_my_next_alps_node(iter, next);
+          }
+        }
+      }
+    else if (iter->numa_index + 1 >= current->num_node_boards)
       {
       /* reset the numa_index to -1 */
       iter->numa_index = -1;
 
       /* go to the next node in all nodes */
-      unlock_node(current, "next_node", "next == NULL && numa_index+1", LOGLEVEL);
+      unlock_node(current, __func__, "next == NULL && numa_index+1", LOGLEVEL);
       pthread_mutex_lock(an->allnodes_mutex);
 
       next = next_thing(an->ra, &iter->node_index);
@@ -2891,7 +2933,7 @@ struct pbsnode *next_node(
 
       if (next != NULL)
         {
-        lock_node(next, "next_node", "next != NULL && numa_index+1", LOGLEVEL);
+        lock_node(next, __func__, "next != NULL && numa_index+1", LOGLEVEL);
 
         if (next->num_node_boards > 0)
           {

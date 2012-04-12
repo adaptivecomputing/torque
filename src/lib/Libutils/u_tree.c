@@ -168,7 +168,12 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
   } /* End AVL_insert */
 
 /* return a pbsnode with the corresponding key and port */
-struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
+struct pbsnode *AVL_find(
+    
+  u_long   key,
+  uint16_t port,
+  AvlTree  tree)
+
   {
 	if (tree == NULL)
 		{

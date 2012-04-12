@@ -655,7 +655,6 @@ void free_hash(
 
 
 
-/* this will be replaced with a real hash function soon, but this works for testing */
 int get_hash(
     
   hash_table_t *ht,
