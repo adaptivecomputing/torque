@@ -192,8 +192,6 @@ int decode_arst_direct(
     return(PBSE_SYSTEM);
     }
 
-  memset(stp, 0, bksize);
-
   stp->as_npointers = ns;
 
   /* number of slots (sub strings) */

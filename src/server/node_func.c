@@ -130,6 +130,7 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "alps_constants.h"
+#include "login_nodes.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 extern int h_errno;
@@ -1929,8 +1930,8 @@ int setup_nodes(void)
   int             err;
   int             start = -1;
   int             end = -1;
-  int             is_alps_reporter;
-  int             is_alps_starter;
+  int             is_alps_reporter = FALSE;
+  int             is_alps_starter = FALSE;
 
   struct pbsnode *np;
   char           *val;
@@ -1972,6 +1973,7 @@ int setup_nodes(void)
       continue;
 
     is_alps_reporter = FALSE;
+    is_alps_starter = FALSE;
 
     /* first token is the node name, may have ":ts" appended */
 
@@ -2176,19 +2178,23 @@ int setup_nodes(void)
       continue;
       }
 
-    if (is_alps_reporter == TRUE)
+    if (server.sv_attr[SRV_ATR_CrayEnabled].at_val.at_long == TRUE)
       {
-      np = find_nodebyname(nodename);
-      np->nd_is_alps_reporter = TRUE;
-      initialize_all_nodes_array(&(np->alps_subnodes));
-      unlock_node(np, __func__, NULL, 0);
-      }
-    else if (is_alps_reporter == TRUE)
-      {
-      np = find_nodebyname(nodename);
-      np->nd_is_alps_starter = TRUE;
-      /* NYI: add to login node list */
-      unlock_node(np, __func__, NULL, 0);
+      if (is_alps_reporter == TRUE)
+        {
+        np = find_nodebyname(nodename);
+        np->nd_is_alps_reporter = TRUE;
+        initialize_all_nodes_array(&(np->alps_subnodes));
+        unlock_node(np, __func__, NULL, 0);
+        }
+      else if (is_alps_starter == TRUE)
+        {
+        np = find_nodebyname(nodename);
+        np->nd_is_alps_starter = TRUE;
+        add_to_login_holder(np);
+        /* NYI: add to login node list */
+        unlock_node(np, __func__, NULL, 0);
+        }
       }
 
     if (LOGLEVEL >= 3)

@@ -15,7 +15,7 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h batch_request.h \
 		 pbs_batchreqtype_db.h utils.h u_tree.h threadpool.h \
 		 resizable_array.h hash_table.h tcp.h mom_hierarchy.h \
 		 dynamic_string.h mom_server.h alps_constants.h \
-		 alps_functions.h
+		 alps_functions.h login_nodes.h
 
 BUILT_SOURCES = site_job_attr_def.h site_job_attr_enum.h \
 		site_qmgr_node_print.h site_qmgr_que_print.h \

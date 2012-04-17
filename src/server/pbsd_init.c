@@ -123,6 +123,7 @@
 #include "queue_recycler.h" /* queue_recycler */
 #include "svr_task.h" /* initialize_task_recycler */
 #include "svr_func.h" /* get_svr_attr_* */
+#include "login_nodes.h"
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -1278,6 +1279,9 @@ int pbsd_init(
   initialize_all_arrays_array();
 
   initialize_allques_array(&svr_queues);
+
+  if (server.sv_attr[SRV_ATR_CrayEnabled].at_val.at_long == TRUE)
+    initialize_login_holder();
 
   time_now = time((time_t *)0);
 

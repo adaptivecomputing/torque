@@ -124,6 +124,7 @@
 #include "../lib/Libnet/lib_net.h" /* socket_read_flush */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "alps_functions.h"
+#include "login_nodes.h"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 #define SEND_HELLO 11
@@ -3108,15 +3109,14 @@ static int property(
 ** Return 0 if all is well, 1 otherwise.
 */
 
-static int proplist(
+int proplist(
 
-  char  **str,
+  char        **str,
   struct prop **plist,
-  int   *node_req,
-  int   *gpu_req)
+  int          *node_req,
+  int          *gpu_req)
 
   {
-
   struct prop *pp;
   char         name_storage[80];
   char        *pname;
@@ -3628,6 +3628,85 @@ void set_first_node_name(
 
 
 
+int is_reserved_property(
+
+  char *prop)
+
+  {
+  if ((strncmp(prop, "ppn", strlen("ppn")) == 0) ||
+      (strncmp(prop, "gpus", strlen("gpus") == 0)) ||
+      (strncasecmp(prop, "exclusive_thread", strlen("exclusive_thread")) == 0) ||
+      (strncasecmp(prop, "exclusive", strlen("exclusive")) == 0) ||
+      (strncasecmp(prop, "exclusive_process", strlen("exclusive_process")) == 0) ||
+      (strncasecmp(prop, "default", strlen("default")) == 0) ||
+      (strncasecmp(prop, "shared", strlen("shared")) == 0) ||
+      (strncasecmp(prop, "reseterr", strlen("reseterr")) == 0))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_reserved_property() */
+
+
+
+
+
+int set_first_node_properties(
+    
+  char *spec_param,
+  char *first_node_prop,
+  int   prop_space)
+
+  {
+  int spec_len = strlen(spec_param);
+  int i;
+  int prop_index = 0;
+  int rc = PBSE_NONE;
+
+  for (i = 0; i < spec_len; i++)
+    {
+    if (spec_param[i] == '+')
+      break;
+
+    while (spec_param[i] == ':')
+      {
+      i++;
+
+      if ((isdigit(spec_param[i]) == FALSE) &&
+          (is_reserved_property(spec_param + i) == FALSE))
+        {
+        /* seperate multiple properties with ':' */
+        if (prop_index > 0)
+          first_node_prop[prop_index++] = ':';
+
+        /* copy the property */
+        while (i < spec_len)
+          {
+          if (prop_index >= prop_space - 1)
+            {
+            rc = -1;
+            break;
+            }
+
+          if (spec_param[i] == ':')
+            break;
+
+          first_node_prop[prop_index] = spec_param[i];
+
+          prop_index++;
+          i++;
+          }
+        }
+      }
+    }
+
+  first_node_prop[prop_index] = '\0';
+
+  return(rc);
+  } /* END set_first_node_properties() */
+
+
+
+
 void release_node_allocation(
     
   node_job_add_info *naji)
@@ -3654,26 +3733,63 @@ void release_node_allocation(
 
 int add_login_node_if_needed(
 
-  char              *first_node_name,
-  node_job_add_info *naji)
+  char              **first_node_name_ptr,
+  char               *first_node_prop,
+  node_job_add_info  *naji)
 
   {
-  struct pbsnode *login = find_nodebyname(first_node_name);
+  char             *first_node_name = *first_node_name_ptr;
+  struct pbsnode   *login = find_nodebyname(first_node_name);
+  int               need_to_add_login = FALSE;
+  int               rc = PBSE_NONE;
+  int               dummy1;
+  int               dummy2;
+  struct prop      *prop = NULL;
+  single_spec_data  req;
 
   if (login == NULL)
-    {
-    }
-  else if (login->nd_is_alps_starter == FALSE)
-    {
-    unlock_node(login, __func__, NULL, 0);
-    }
+    need_to_add_login = TRUE;
   else
     {
-    /* you don't need to add anything */
+    if (login->nd_is_alps_starter == FALSE)
+      need_to_add_login = TRUE;
+
     unlock_node(login, __func__, NULL, 0);
     }
 
-  return(PBSE_NONE);
+  if (need_to_add_login == TRUE)
+    {
+    if (first_node_prop[0] != '\0')
+      {
+      proplist(&first_node_prop, &prop, &dummy1, &dummy2);
+      }
+
+
+    if ((login = get_next_login_node(prop)) == NULL)
+      rc = -1;
+    else
+      {
+      if (naji != NULL)
+        {
+        /* add to naji */
+        req.nodes = 1;
+        req.ppn = 1;
+        req.gpu = 0;
+        req.prop = NULL;
+        save_node_for_adding(naji, login, &req, login->nd_name);
+        strcpy(*first_node_name_ptr, login->nd_name);
+        }
+      
+      rc = PBSE_NONE;
+
+      unlock_node(login, __func__, NULL, 0);
+      }
+
+    if (prop != NULL)
+      free_prop(prop);
+    }
+
+  return(rc);
   } /* END add_login_node_if_needed() */
 
 
@@ -3702,6 +3818,8 @@ int node_spec(
   {
   struct pbsnode     *pnode;
   char                first_node_name[PBS_MAXHOSTNAME + 1];
+  char                first_node_prop[PBS_MAXHOSTNAME];
+  char               *first_name_ptr;
   node_iterator       iter;
   char                log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -3736,7 +3854,21 @@ int node_spec(
 
   set_first_node_name(spec_param, first_node_name);
 
-  add_login_node_if_needed(first_node_name, naji);
+  if (server.sv_attr[SRV_ATR_CrayEnabled].at_val.at_long == TRUE)
+    {
+    set_first_node_properties(spec_param, first_node_prop, sizeof(first_node_prop));
+
+    first_name_ptr = first_node_name;
+    if (add_login_node_if_needed(&first_name_ptr, first_node_prop, naji) != PBSE_NONE)
+      {
+      snprintf(log_buf, sizeof(log_buf), 
+        "Couldn't find an acceptable login node for spec '%s' with feature request '%s'",
+        spec_param,
+        first_node_prop);
+      log_err(-1, __func__, log_buf);
+      return(-1);
+      }
+    }
 
   spec = strdup(spec_param);
 

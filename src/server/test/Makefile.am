@@ -18,4 +18,4 @@ SUBDIRS = . accounting array_func array_upgrade attr_recov dis_read geteusernam 
 					req_modify req_movejob req_quejob req_register req_rerun req_rescq req_runjob req_select \
 					req_shutdown req_signal req_stat req_tokens req_track resc_def_all run_sched stat_job \
 					svr_chk_owner svr_connect svr_format_job svr_func svr_jobfunc svr_mail svr_movejob \
-					svr_recov svr_resccost svr_task display_alps_status process_alps_status
+					svr_recov svr_resccost svr_task display_alps_status process_alps_status login_nodes
