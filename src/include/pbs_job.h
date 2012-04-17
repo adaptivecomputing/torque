@@ -367,6 +367,7 @@ enum job_atr
 #endif  /* NVIDIA_GPUS */
   JOB_ATR_job_id,
   JOB_ATR_arguments,
+  JOB_ATR_reservation_id,
 #include "site_job_attr_enum.h"
 
   JOB_ATR_UNKN,  /* the special "unknown" type    */

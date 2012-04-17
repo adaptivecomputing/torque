@@ -493,6 +493,12 @@ void dispatch_request(
 
       break;
 
+    case PBS_BATCH_DeleteReservation:
+
+      req_delete_reservation(request);
+
+      break;
+
     default:
 
       req_reject(PBSE_UNKREQ, 0, request, NULL, NULL);

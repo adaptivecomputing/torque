@@ -134,7 +134,7 @@
 #include "net_connect.h"
 #include "portability.h"
 #include "threadpool.h"
-
+#include "alps_functions.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -160,17 +160,20 @@ static void job_init_wattr(job *);
 
 /* Global Data items */
 
-extern char tmpdir_basename[];	/* for TMPDIR */
-extern gid_t pbsgroup;
-extern uid_t pbsuser;
-extern char *msg_abt_err;
-extern char *path_jobs;
-extern char *path_spool;
-extern char *path_aux;
-extern char *msg_err_purgejob;
-extern char  server_name[];
-extern time_t time_now;
-extern int   LOGLEVEL;
+extern char   *apbasil_path;
+extern char   *apbasil_protocol;
+extern char    tmpdir_basename[];	/* for TMPDIR */
+extern gid_t   pbsgroup;
+extern uid_t   pbsuser;
+extern char   *msg_abt_err;
+extern char   *path_jobs;
+extern char   *path_spool;
+extern char   *path_aux;
+extern char   *msg_err_purgejob;
+extern char    server_name[];
+extern time_t  time_now;
+extern int     LOGLEVEL;
+extern int     is_login_node;
 
 extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
@@ -250,8 +253,7 @@ int remtree(
   char *dirname)
 
   {
-  static char id[] = "remtree";
-  DIR  *dir;
+  DIR           *dir;
 
   struct dirent *pdir;
   char           namebuf[MAXPATHLEN];
@@ -260,10 +262,10 @@ int remtree(
   int            rtnv = 0;
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
 
-  struct stat64 sb;
+  struct stat64  sb;
 #else
 
-  struct stat sb;
+  struct stat    sb;
 #endif
 
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
@@ -275,7 +277,7 @@ int remtree(
     {
 
     if (errno != ENOENT)
-      log_err(errno, id, "stat");
+      log_err(errno, __func__, "stat");
 
     return(-1);
     }
@@ -285,7 +287,7 @@ int remtree(
     if ((dir = opendir(dirname)) == NULL)
       {
       if (errno != ENOENT)
-        log_err(errno, id, "opendir");
+        log_err(errno, __func__, "opendir");
 
       return(-1);
       }
@@ -312,7 +314,7 @@ int remtree(
       if (lstat(namebuf, &sb) == -1)
 #endif
         {
-        log_err(errno, id, "stat");
+        log_err(errno, __func__, "stat");
 
         rtnv = -1;
 
@@ -328,7 +330,7 @@ int remtree(
         if (errno != ENOENT)
           {
           sprintf(log_buffer, "unlink failed on %s", namebuf);
-          log_err(errno, id, log_buffer);
+          log_err(errno, __func__, log_buffer);
           
           rtnv = -1;
           }
@@ -337,7 +339,7 @@ int remtree(
         {
         sprintf(log_buffer, "unlink(1) succeeded on %s", namebuf);
 
-        log_ext(-1, id, log_buffer, LOG_DEBUG);
+        log_ext(-1, __func__, log_buffer, LOG_DEBUG);
         }
       }    /* END while ((pdir = readdir(dir)) != NULL) */
 
@@ -350,7 +352,7 @@ int remtree(
         sprintf(log_buffer, "rmdir failed on %s",
                 dirname);
 
-        log_err(errno, id, log_buffer);
+        log_err(errno, __func__, log_buffer);
 
         rtnv = -1;
         }
@@ -359,13 +361,13 @@ int remtree(
       {
       sprintf(log_buffer, "rmdir succeeded on %s", dirname);
 
-      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
       }
     }
   else if (unlink(dirname) < 0)
     {
     snprintf(log_buffer,sizeof(log_buffer),"unlink failed on %s",dirname);
-    log_err(errno,id,log_buffer);
+    log_err(errno,__func__,log_buffer);
 
     rtnv = -1;
     }
@@ -373,7 +375,7 @@ int remtree(
     {
     sprintf(log_buffer, "unlink(2) succeeded on %s", dirname);
 
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
   return(rtnv);
@@ -566,8 +568,8 @@ int job_unlink_file(
   const char *name)	 /* I */
 
   {
-  int saved_errno = 0;
-  int result = 0;
+  int   saved_errno = 0;
+  int   result = 0;
   uid_t uid = geteuid();
   gid_t gid = getegid();
 
@@ -590,7 +592,7 @@ int job_unlink_file(
   setegid(gid);
 
   errno = saved_errno;
-  return result;
+  return(result);
   }  /* END job_unlink_file() */
 
 
@@ -625,7 +627,6 @@ void *delete_job_files(
   void *vp)
 
   {
-  static char          *id = "delete_job_files";
   job_file_delete_info *jfdi = (job_file_delete_info *)vp;
   char                  namebuf[MAXPATHLEN];
   int                   rc = 0;
@@ -701,7 +702,7 @@ void *delete_job_files(
   if (unlink(namebuf) < 0)
     {
     if (errno != ENOENT)
-      log_err(errno,id,msg_err_purgejob);
+      log_err(errno,__func__,msg_err_purgejob);
     }
   else
     {
@@ -750,7 +751,7 @@ void *delete_job_files(
   if (unlink(namebuf) < 0)
     {
     if (errno != ENOENT)
-      log_err(errno,id,msg_err_purgejob);
+      log_err(errno,__func__,msg_err_purgejob);
     }
   else if (LOGLEVEL >= 6)
     {
@@ -767,20 +768,47 @@ void *delete_job_files(
 
 
 
+int release_job_reservation(
+
+  job *pjob)
+
+  {
+  int   rc = PBSE_NONE;
+  char *rsv_id;
+
+  /* release this job's reservation */
+  if ((pjob->ji_wattr[JOB_ATR_reservation_id].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL))
+    {
+    rsv_id = pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str;
+
+    if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol)) != PBSE_NONE)
+      {
+      snprintf(log_buffer, sizeof(log_buffer), "Couldn't release reservation for job %s",
+        pjob->ji_qs.ji_jobid);
+      log_err(-1, __func__, log_buffer);
+      }
+    }
+
+  return(rc);
+  } /* END release_job_reservation() */
+
+
+
+
 
 void job_purge(
 
   job *pjob)  /* I (modified) */
 
   {
-  static char           id[] = "job_purge";
   job_file_delete_info *jfdi;
 
   jfdi = calloc(1, sizeof(job_file_delete_info));
 
   if (jfdi == NULL)
     {
-    log_err(ENOMEM,id,"No space to allocate info for job file deletion");
+    log_err(ENOMEM,__func__,"No space to allocate info for job file deletion");
     return;
     }
 
@@ -795,6 +823,9 @@ void job_purge(
     send_update_soon();
     }
 #endif  /* NVIDIA_GPUS */
+
+  if (is_login_node == TRUE)
+    release_job_reservation(pjob);
 
   /* initialize struct information */
   if (pjob->ji_flags & MOM_HAS_TMPDIR)
@@ -819,8 +850,6 @@ void job_purge(
   if ((pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) &&
       (pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET))
     jfdi->checkpoint_dir = strdup(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
-  else
-    jfdi->checkpoint_dir = NULL;
 
   jfdi->gid = pjob->ji_qs.ji_un.ji_momt.ji_exgid;
   jfdi->uid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
@@ -838,7 +867,7 @@ void job_purge(
     {
     sprintf(log_buffer,"removing job");
 
-    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
     }
 
 #if IBM_SP2==2        /* IBM SP PSSP 3.1 */
@@ -863,7 +892,7 @@ void job_purge(
 /*
  * find_job() - find job by jobid
  *
- * Search list of all server jobs for one with same job id
+ * Search list of all server jobs for one with same jobid
  * Return NULL if not found or pointer to job struct if found
  */
 

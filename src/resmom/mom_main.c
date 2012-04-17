@@ -215,6 +215,7 @@ int      MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 #endif
 
 int      is_reporter_mom = FALSE;
+int      is_login_node   = FALSE;
 
 /* externs */
 
@@ -391,6 +392,7 @@ static unsigned long setthreadunlinkcalls(char *);
 static unsigned long setapbasilpath(char *);
 static unsigned long setapbasilprotocol(char *);
 static unsigned long setreportermom(char *);
+static unsigned long setloginnode(char *);
 static unsigned long setrejectjobsubmission(char *);
 unsigned long rppthrottle(char *value);
 
@@ -469,6 +471,7 @@ static struct specials
   { "reject_job_submission", setrejectjobsubmission },
   { "apbasil_protocol",    setapbasilprotocol },
   { "reporter_mom",        setreportermom },
+  { "login_node",          setloginnode },
   { NULL,                  NULL }
   };
 
@@ -3275,6 +3278,31 @@ static unsigned long setreportermom(
 
   return(1);
   } /* END setreportermom() */
+
+
+
+
+static unsigned long setloginnode(
+
+  char *value)
+
+  {
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if (value != NULL)
+    {
+    if ((value[0] == 't') ||
+        (value[0] == 'T') ||
+        (value[0] == 'y') ||
+        (value[0] == 'Y'))
+      is_login_node = TRUE;
+    else
+      is_login_node = FALSE;
+    }
+
+  return(1);
+  } /* END setloginnode() */
+
 
 
 

@@ -80,6 +80,7 @@
 #include "csv.h"
 #include "svrfunc.h"
 #include "pbs_ifl.h"
+#include "alps_functions.h"
 
 extern int exiting_tasks;
 extern int LOGLEVEL;
@@ -91,9 +92,12 @@ extern int task_recov(job *pjob);
 extern char *path_spool;
 extern char  *path_jobs;
 extern char  *TRemChkptDirList[];
+extern char  *apbasil_path;
+extern char  *apbasil_protocol;
 
 extern int  multi_mom;
 extern unsigned short pbs_rm_port;
+extern int            is_login_node;
 
 #ifdef USEJOBCREATE
 extern uint64_t get_jobid(char *);
@@ -169,12 +173,13 @@ int mom_checkpoint_job_is_checkpointable(
  * @see TMomFinalizeChild
  */
 int mom_checkpoint_execute_job(
-    job *pjob,
-    char *shell,
-    char *arg[],
-    struct var_table *vtable)
+
+  job              *pjob,
+  char             *shell,
+  char             *arg[],
+  struct var_table *vtable)
+
   {
-  static char          *id = "mom_checkpoint_execute_job";
 
   /* Launch job executable with cr_run command so that cr_checkpoint command will work. */
 
@@ -191,7 +196,7 @@ int mom_checkpoint_execute_job(
 
   if (arg[1] == NULL)
     {
-    log_err(errno,id,"cannot alloc env");
+    log_err(errno, __func__, "cannot alloc env");
 
     return(-1);
     }
@@ -214,7 +219,7 @@ int mom_checkpoint_execute_job(
 
     log_buffer[0] = '\0';
     sprintf(log_buffer, "execing checkpoint command (%s)\n", cmd);
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
   execve(checkpoint_run_exe_name, arg, vtable->v_envp);
@@ -529,7 +534,6 @@ int in_remote_checkpoint_dir(
         char *ckpt_path) /* I */
 
   {
-  char           *id = "in_remote_checkpoint_dir";
   int   dindex;
 
   /*
@@ -540,11 +544,12 @@ int in_remote_checkpoint_dir(
     {
     if (TRemChkptDirList[dindex] == NULL)
       {
-        if ((LOGLEVEL >= 10) && (dindex == 0))
-          {
-          sprintf(log_buffer, "NO remote checkpoint directories configured");
-          log_ext(-1, id, log_buffer, LOG_DEBUG);
-          }
+      if ((LOGLEVEL >= 10) && (dindex == 0))
+        {
+        sprintf(log_buffer, "NO remote checkpoint directories configured");
+        log_ext(-1, __func__, log_buffer, LOG_DEBUG);
+        }
+
       break;
       }
 
@@ -553,18 +558,20 @@ int in_remote_checkpoint_dir(
         strlen(TRemChkptDirList[dindex])) ||
         !strcmp(TRemChkptDirList[dindex], "*"))
       {
-        if (LOGLEVEL >= 10)
-          {
-          sprintf(log_buffer,
+      if (LOGLEVEL >= 10)
+        {
+        snprintf(log_buffer, sizeof(log_buffer),
           "Checkpoint file %s matched in remote directory %s\n",
           ckpt_path,
           TRemChkptDirList[dindex]);
-          log_ext(-1, id, log_buffer, LOG_DEBUG);
-          }
-      return (TRUE);
+        log_ext(-1, __func__, log_buffer, LOG_DEBUG);
+        }
+
+      return(TRUE);
       }
     }  /* END for (dindex) */
-  return (FALSE);
+
+  return(FALSE);
   }  /* END in_remote_checkpoint_dir() */
 
 
@@ -582,7 +589,6 @@ void delete_blcr_checkpoint_files(
   job *pjob)
 
   {
-  static char id[] = "delete_blcr_checkpoint_files";
   char namebuf[MAXPATHLEN+1];
 
   if ((pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET) == 0)
@@ -591,7 +597,7 @@ void delete_blcr_checkpoint_files(
       {
       sprintf(log_buffer,
         "No checkpoint directory specified for %s\n", pjob->ji_qs.ji_jobid);
-      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
       }
 
     return;
@@ -615,7 +621,7 @@ void delete_blcr_checkpoint_files(
         {
         sprintf(log_buffer,
           "remtree for checkpoint %s\n",namebuf);
-        log_ext(-1, id, log_buffer, LOG_DEBUG);
+        log_ext(-1, __func__, log_buffer, LOG_DEBUG);
         }
       remtree(namebuf);
       }
@@ -661,7 +667,6 @@ void delete_blcr_files(
   job_file_delete_info *jfdi)
 
   {
-  static char id[] = "delete_blcr_files";
   char namebuf[MAXPATHLEN+1];
 
   if (jfdi->checkpoint_dir == NULL)
@@ -670,7 +675,7 @@ void delete_blcr_files(
       {
       sprintf(log_buffer,
         "No checkpoint directory specified for %s\n", jfdi->jobid);
-      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
       }
 
     return;
@@ -688,7 +693,7 @@ void delete_blcr_files(
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buffer, "remtree for checkpoint %s\n", namebuf);
-      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
       }
     remtree(namebuf);
     }
@@ -878,26 +883,24 @@ int blcr_checkpoint_job(
   struct batch_request *preq)  /* may be null */
 
   {
-  char *id = "blcr_checkpoint_job";
-
-  char  sid[20];
-  char  *arg[20];
-  char  buf[1024];
-  char  **ap;
-  FILE *fs;
-  char *cmd;
-  int rc;
-  int request_type = 0;
-  char err_buf[4098];
-  char line[1028];
-  char namebuf[MAXPATHLEN+1];
-  int conn = -1;
-  int err;
-  int conn_fail = 0;
-  int local_errno = 0;
-  struct attrl *attrib = NULL;
-  time_t epoch;
-  unsigned short momport = 0;
+  char             sid[20];
+  char            *arg[20];
+  char             buf[1024];
+  char           **ap;
+  FILE            *fs;
+  char            *cmd;
+  int              rc;
+  int              request_type = 0;
+  char             err_buf[4098];
+  char             line[1028];
+  char             namebuf[MAXPATHLEN+1];
+  int              conn = -1;
+  int              err;
+  int              conn_fail = 0;
+  int              local_errno = 0;
+  struct attrl    *attrib = NULL;
+  time_t           epoch;
+  unsigned short   momport = 0;
 
   assert(pjob != NULL);
   assert(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str != NULL);
@@ -917,7 +920,7 @@ int blcr_checkpoint_job(
           pjob->ji_qs.ji_un.ji_momt.ji_exuid,
           pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
       {
-      log_err(errno, id, "cannot change checkpoint directory owner");
+      log_err(errno, __func__, "cannot change checkpoint directory owner");
       }
     }
   
@@ -925,7 +928,7 @@ int blcr_checkpoint_job(
 
   if (checkpoint_script_name[0] == '\0')
     {
-    log_err(PBSE_RMEXIST, id, "No checkpoint script defined");
+    log_err(PBSE_RMEXIST, __func__, "No checkpoint script defined");
 
     if (preq != NULL)
       {
@@ -979,7 +982,7 @@ int blcr_checkpoint_job(
 
   strcat(buf, " 2>&1 1>/dev/null");
 
-  log_ext(-1, id, buf, LOG_DEBUG);
+  log_ext(-1, __func__, buf, LOG_DEBUG);
   if (preq != NULL)
     {
     request_type = preq->rq_type;
@@ -994,7 +997,7 @@ int blcr_checkpoint_job(
   if (fs == NULL)
     {
     sprintf(buf, "error executing checkpoint script");
-    log_err(errno, id, buf);
+    log_err(errno, __func__, buf);
     rc = -1;
     }
   else
@@ -1015,7 +1018,7 @@ int blcr_checkpoint_job(
     if (rc != 0)
       {
       sprintf(buf, "checkpoint script returned value %d\n", rc);
-      log_err(-1, id, buf);
+      log_err(-1, __func__, buf);
       }
     }
 
@@ -1038,7 +1041,7 @@ int blcr_checkpoint_job(
 
     sprintf(buf, "Checkpoint failed for job %s, removing checkpoint directory\n",
         pjob->ji_qs.ji_jobid);
-    log_ext(-1, id, buf, LOG_DEBUG);
+    log_ext(-1, __func__, buf, LOG_DEBUG);
 
     delete_blcr_checkpoint_files(pjob);
 
@@ -1058,7 +1061,7 @@ int blcr_checkpoint_job(
             pjob->ji_qs.ji_jobid,
             MAX_CONN_RETRY,
             pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
-          log_err(-1, id, log_buffer);
+          log_err(-1, __func__, log_buffer);
           }
         }
       }
@@ -1071,7 +1074,7 @@ int blcr_checkpoint_job(
       {
       sprintf(buf, "pbs_alterjob requested on job %s failed (%d-%s)\n",
           pjob->ji_qs.ji_jobid, err, pbs_strerror(err));
-      log_err(-1, id, buf);
+      log_err(-1, __func__, buf);
       if (err == PBSE_UNKJOBID)
         {
         /* TODO: GB - can the job exit while waiting for the checkpoint
@@ -1124,7 +1127,7 @@ int blcr_checkpoint_job(
             pjob->ji_qs.ji_jobid,
             MAX_CONN_RETRY,
             pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
-          log_err(-1, id, log_buffer);
+          log_err(-1, __func__, log_buffer);
           }
         }
       }
@@ -1154,7 +1157,7 @@ int blcr_checkpoint_job(
       {
       sprintf(buf, "pbs_alterjob requested on job %s failed (%d-%s)\n",
           pjob->ji_qs.ji_jobid, err, pbs_strerror(err));
-      log_err(-1, id, buf);
+      log_err(-1, __func__, buf);
       if (err == PBSE_UNKJOBID)
         {
         /* TODO: GB - can the job exit while waiting for the checkpoint
@@ -1482,10 +1485,9 @@ int start_checkpoint(
   {
 
   pid_t     pid;
-  char *id = "start_checkpoint";
   int       rc = PBSE_NONE;
   char      name_buffer[MAXPATHLEN + 1];
-  time_t time_now;
+  time_t    time_now;
 
   time_now = time((time_t *)0);
 
@@ -1569,7 +1571,7 @@ int start_checkpoint(
     {
     /* error on fork */
 
-    log_err(errno, id, "cannot fork child process for checkpoint");
+    log_err(errno, __func__, "cannot fork child process for checkpoint");
 
     return(PBSE_SYSTEM);
     }
@@ -1627,7 +1629,6 @@ void checkpoint_partial(
   job *pjob)
 
   {
-  static char id[] = "checkpoint_partial";
   char  namebuf[MAXPATHLEN];
   task  *ptask;
   int  texit = 0;
@@ -1663,7 +1664,7 @@ void checkpoint_partial(
     if (mach_restart(ptask, namebuf) == -1)
       {
       pjob->ji_flags &= ~MOM_CHECKPOINT_POST;
-      kill_job(pjob, SIGKILL, id, "failed to restart");
+      kill_job(pjob, SIGKILL, __func__, "failed to restart");
       return;
       }
 
@@ -1718,27 +1719,28 @@ int blcr_restart_job(
   job *pjob)
 
   {
-  char *id = "blcr_restart_job";
-  int   pid;
-  char  sid[20];
-  char  *arg[20];
-  extern  char    restart_script_name[MAXPATHLEN + 1];
-  task *ptask;
-  char  buf[1024];
-  char  namebuf[MAXPATHLEN + 1];
-  char  restartfile[MAXPATHLEN + 1];
-  char  script_buf[MAXPATHLEN + 1];
-  char  **ap;
+  int            pid;
+  char           sid[20];
+  char          *arg[20];
+  extern char    restart_script_name[MAXPATHLEN + 1];
+  task          *ptask;
+  char           buf[1024];
+  char           namebuf[MAXPATHLEN + 1];
+  char           restartfile[MAXPATHLEN + 1];
+  char           script_buf[MAXPATHLEN + 1];
+  char         **ap;
 #ifdef USEJOBCREATE
-	uint64_t job_id;
+	uint64_t       job_id;
 #endif /* USEJOBCREATE */
+  char          *rsv_id;
+  long long      pagg = 0;
 
 
   /* if a restart script is defined launch it */
 
   if (restart_script_name[0] == '\0')
     {
-    log_err(PBSE_RMEXIST, id, "No restart script defined");
+    log_err(PBSE_RMEXIST, __func__, "No restart script defined");
 
     return(PBSE_RMEXIST);
     }
@@ -1755,7 +1757,7 @@ int blcr_restart_job(
        null and we need to create a task We'll just create one task*/
     if ((ptask = pbs_task_create(pjob, TM_NULL_TASK)) == NULL)
       {
-      log_err(PBSE_RMNOPARAM, id, "Job has no tasks");
+      log_err(PBSE_RMNOPARAM, __func__, "Job has no tasks");
       return(PBSE_RMNOPARAM);
       }
 
@@ -1775,9 +1777,9 @@ int blcr_restart_job(
   job_id  = get_jobid(pjob->ji_qs.ji_jobid);
 
   pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll = job_id;
-
-  pjob->ji_wattr[JOB_ATR_pagg_id].at_flags =
-    ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+  pjob->ji_wattr[JOB_ATR_pagg_id].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+  if (is_login_node)
+    pagg = job_id;
 #endif /* USEJOBCREATE */
 
   /* launch the script and return success */
@@ -1825,7 +1827,7 @@ int blcr_restart_job(
           pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
       {
       sprintf(log_buffer,"cannot change owner for file %s", script_buf);
-      log_err(errno, id, log_buffer);
+      log_err(errno, __func__, log_buffer);
       }
 
     strcpy(restartfile, namebuf);
@@ -1837,7 +1839,7 @@ int blcr_restart_job(
           pjob->ji_qs.ji_un.ji_momt.ji_exuid,
           pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
       {
-      log_err(errno, id, "cannot change checkpoint restart file owner");
+      log_err(errno, __func__, "cannot change checkpoint restart file owner");
       }
 
 
@@ -1861,7 +1863,7 @@ int blcr_restart_job(
       strcat(buf, *ap);
       }
 
-    log_ext(-1, id, buf, LOG_DEBUG);
+    log_ext(-1, __func__, buf, LOG_DEBUG);
 
     log_close(0);
 
@@ -1874,8 +1876,30 @@ int blcr_restart_job(
     net_close(-1);
 
     /* set us up with a new session */
+    pid = setsid();
 
-    pid = set_job(pjob, NULL);
+    if (is_login_node == TRUE)
+      {
+      if (create_alps_reservation(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
+            pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+            pjob->ji_qs.ji_jobid,
+            apbasil_path,
+            apbasil_protocol,
+            pagg,
+            &rsv_id) != PBSE_NONE)
+        {
+        snprintf(log_buffer, sizeof(log_buffer),
+          "Couldn't create the reservation for job %s",
+          pjob->ji_qs.ji_jobid);
+        log_err(-1, __func__, log_buffer);
+        }
+      
+      if (rsv_id != NULL)
+        {
+        pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
+        pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsv_id;
+        }
+      }
 
     if (pid < 0)
       {
@@ -1904,19 +1928,21 @@ int blcr_restart_job(
 
 /* start each task based on task checkpoint records located job-specific checkpoint directory */
 
-int mom_restart_job(job  *pjob)
+int mom_restart_job(
+    
+  job  *pjob)
+
   {
-  static char id[] = "mom_restart_job";
-  char  path[MAXPATHLEN];
-  int  i;
-  char  namebuf[MAXPATHLEN];
-  char  *filnam;
-  DIR  *dir;
+  char           path[MAXPATHLEN];
+  int            i;
+  char           namebuf[MAXPATHLEN];
+  char          *filnam;
+  DIR           *dir;
 
   struct dirent *pdir;
-  tm_task_id taskid;
-  task         *ptask;
-  int  tcount = 0;
+  tm_task_id     taskid;
+  task          *ptask;
+  int            tcount = 0;
   long  mach_restart(task *, char *path);
 
   get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, namebuf);
@@ -1926,7 +1952,7 @@ int mom_restart_job(job  *pjob)
     sprintf(log_buffer, "opendir %s",
             path);
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
 
     return(PBSE_RMEXIST);
     }
@@ -2001,7 +2027,7 @@ int mom_restart_job(job  *pjob)
 
 fail:
 
-  log_err(errno, id, log_buffer);
+  log_err(errno, __func__, log_buffer);
 
   closedir(dir);
 
@@ -2160,8 +2186,6 @@ int mom_checkpoint_start_restart(
   job *pjob)
 
   {
-  /* static char *id = "mom_checkpoint_start_restart"; */
-
   int            rc = PBSE_NONE;
 
   /* At this point we believe that there is a checkpoint image, try to restart it. */

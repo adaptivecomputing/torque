@@ -117,102 +117,6 @@ extern unsigned short pbs_rm_port;
 #define TMAX_TJCACHESIZE 128
 job *TJCache[TMAX_TJCACHESIZE];
 
-/*
- * set_job - set up a new job session
- *  Set session id and whatever else is required on this machine
- * to create a new job.
- *
- * NOTE:  This routine is run as root after fork for both parallel and serial jobs
- * NOTE:  This routine is called by TMOMFinalizeChild()
- *
- *      Return: session/job id or if error:
- *  -1 - if setsid() fails
- *  -2 - if other, message in log_buffer
- */
-
-int set_job(
-
-  job                 *pjob,  /* I (not used) */
-  struct startjob_rtn *sjr)   /* I (modified,optional) */
-
-  {
-  char id[] = "set_job";
-
-  char *PPtr;
-  char *CPtr;
-
-  int   rc;
-
-  long  sid;
-
-  sid = setsid();
-
-  if (sjr != NULL)
-    sjr->sj_session = sid;
-
-  /* NOTE:  only activate partition create script for XT4+ environments */
-
-  if (((PPtr = get_job_envvar(pjob, "BATCH_PARTITION_ID")) != NULL) &&
-      ((CPtr = get_job_envvar(pjob, "BATCH_ALLOC_COOKIE")) != NULL) &&
-      !strcmp(CPtr, "0"))
-    {
-    char  tmpLine[MAXLINE];
-
-    if (AllocParCmd == NULL)
-      AllocParCmd = strdup("/opt/moab/default/tools/partition.create.xt4.pl");
-
-#ifdef USEJOBCREATE
-
-    if ((pjob->ji_wattr[JOB_ATR_pagg_id].at_flags & ATR_VFLAG_SET) &&
-      (pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll != (long)JOB_FAIL) &&
-      (pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll > 0x00000000ffffffff))
-      {
-      snprintf(tmpLine, sizeof(tmpLine), "%s --confirm -p %s -j %s -a %lld",
-               AllocParCmd,
-               PPtr,
-               pjob->ji_qs.ji_jobid,
-               pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll);
-      }
-    else
-#endif  /* USEJOBCREATE */
-      {
-      snprintf(tmpLine, sizeof(tmpLine), "%s --confirm -p %s -j %s -a %ld",
-             AllocParCmd,
-             PPtr,
-             pjob->ji_qs.ji_jobid,
-             sid);
-      }
-
-    log_ext(
-      -1,
-      id,
-      tmpLine,
-      LOG_DEBUG);
-
-    rc = system(tmpLine);
-
-    if (WEXITSTATUS(rc) != 0)
-      {
-      snprintf(log_buffer, sizeof(log_buffer), "cannot create alloc partition");
-
-      sid = -3;
-
-      if (sjr != NULL)
-        sjr->sj_session = sid;
-
-      log_err(
-        -1,
-        id,
-        log_buffer);
-
-      return(sid);
-      }
-    }    /* END if (((PPtr = get_job_envvar(pjob,"BATCH_PARTITION_ID")) != NULL) && ...) */
-
-  return(sid);
-  }  /* END set_job() */
-
-
 
 
 
@@ -318,14 +222,12 @@ char *set_shell(
 void scan_for_terminated(void)
 
   {
-  static char id[] = "scan_for_terminated";
-
-  int  exiteval = 0;
-  pid_t  pid;
-  job *pjob;
-  task *ptask = NULL;
-  int  statloc;
-  unsigned int momport = 0;
+  int           exiteval = 0;
+  pid_t         pid;
+  job          *pjob;
+  task         *ptask = NULL;
+  int           statloc;
+  unsigned int  momport = 0;
 
 #ifdef USESAVEDRESOURCES
   int  update_stats = TRUE;
@@ -335,11 +237,7 @@ void scan_for_terminated(void)
 
   if (LOGLEVEL >= 7)
     {
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      id,
-      "entered");
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "entered");
     }
 
   /* update the latest intelligence about the running jobs;         */
@@ -492,7 +390,7 @@ void scan_for_terminated(void)
           statloc,
           exiteval);
 
-        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
+        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
         }
 
       continue;
@@ -548,7 +446,7 @@ void scan_for_terminated(void)
               ptask->ti_qs.ti_task,
               exiteval);
 
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
 
     /* where is job purged?  How do we keep job from progressing in state until the obit is sent? */
@@ -562,10 +460,10 @@ void scan_for_terminated(void)
     task_save(ptask);
 
     sprintf(log_buffer, "%s: job %s task %d terminated, sid=%d",
-            id,
-            pjob->ji_qs.ji_jobid,
-            ptask->ti_qs.ti_task,
-            ptask->ti_qs.ti_sid);
+      __func__,
+      pjob->ji_qs.ji_jobid,
+      ptask->ti_qs.ti_task,
+      ptask->ti_qs.ti_sid);
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 

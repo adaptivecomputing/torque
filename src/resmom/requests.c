@@ -114,6 +114,7 @@
 #include "resmon.h"
 #include "net_connect.h"
 #include "utils.h"
+#include "alps_functions.h"
 
 #ifdef _CRAY
 #include <sys/category.h>
@@ -124,6 +125,8 @@
 
 extern struct var_table vtable;      /* see start_exec.c */
 extern char           **environ;
+extern char            *apbasil_path;
+extern char            *apbasil_protocol;
 
 int reply_send_mom(struct batch_request *request);
 
@@ -3330,7 +3333,8 @@ void req_cpyfile(
 
     req_reject(-rc, 0, preq, mom_host, EMsg);
 
-    if ((rc != -PBSE_SYSTEM) && (rc != -PBSE_BADUSER))
+    if ((rc != -PBSE_SYSTEM) &&
+        (rc != -PBSE_BADUSER))
       {
       sprintf(tmpLine, "fork_to_user failed with rc=%d '%s' - exiting",
         rc,
@@ -4133,6 +4137,32 @@ void req_delfile(
   exit(0);
   }  /* END req_delfile() */
 
+
+
+
+void req_delete_reservation(
+    
+  struct batch_request *request)
+
+  {
+  char *rsv_id = request->rq_extend;
+  int   rc = PBSE_NONE;
+
+  if (rsv_id != NULL)
+    {
+    if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol)) != PBSE_NONE)
+      {
+      snprintf(log_buffer, sizeof(log_buffer), "Couldn't release reservation id %s",
+        rsv_id);
+      log_err(-1, __func__, log_buffer);
+      }
+    }
+
+  if (rc == PBSE_NONE)
+    reply_ack(request);
+  else
+    req_reject(-1, 0, request, NULL, log_buffer);
+  } /* END req_delete_reservation() */
 
 
 
