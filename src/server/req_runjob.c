@@ -202,6 +202,15 @@ void req_runjob(
     return;
     }
 
+  /* we don't currently allow running of an entire job array */
+
+  if (strstr(pjob->ji_qs.ji_jobid,"[]") != NULL)
+    {
+    req_reject(PBSE_IVALREQ, 0, preq, NULL, "cannot run a job array");
+
+    return;
+    }
+
   if (preq->rq_conn == scheduler_sock)
     ++scheduler_jobct; /* see scheduler_close() */
 
