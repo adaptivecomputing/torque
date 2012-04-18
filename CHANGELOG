@@ -44,6 +44,7 @@ evans
       TRQ-860.
   b - Made it so the MOM will let pbs_server know it is down after momctl -s is invoked.
   e - Made it so localhost is no longer hard coded. The string comes from getnameinfo.
+  b - fix a mom hiearchy error for running the moms on non-default ports
 
 4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 

@@ -3831,7 +3831,8 @@ int am_i_on_this_level(
       myself += strlen(mom_alias);
       
       if ((*myself == '\0') ||
-          (*myself == ','))
+          (*myself == ',')  ||
+          (*myself == ':'))
         {
         /* we only need to store the path up to the level that includes ourselves */
         return(TRUE);
