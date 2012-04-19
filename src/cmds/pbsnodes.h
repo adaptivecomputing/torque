@@ -31,7 +31,7 @@ enum NStateEnum
 
 /* static int marknode(int con, char *name, char *state1, enum batch_op op1, char *state2, enum batch_op op2); */
 
-struct batch_status *statnode(int con, char *nodearg);
+struct batch_status *statnode(int con, char *nodearg, int display_login_nodes);
 
 void addxmlnode(mxml_t *DE, struct batch_status *pbstat);
 
