@@ -1365,8 +1365,24 @@ int InitUserEnv(
   sprintf(buf,"%d",num_nodes);
   bld_env_variables(&vtable,variables_else[tveNumNodesStr],buf);
 
+  if (LOGLEVEL >= 3)
+    {
+    snprintf(log_buffer, sizeof(log_buffer), 
+      "Added %s=%s to environment",
+      variables_else[tveNumNodesStr], buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    }
+   
   sprintf(buf,"%d",num_ppn);
   bld_env_variables(&vtable,variables_else[tveNumPpn],buf);
+
+  if (LOGLEVEL >= 3)
+    {
+    snprintf(log_buffer, sizeof(log_buffer), 
+      "Added %s=%s to environment",
+      variables_else[tveNumPpn], buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    }
 
   /* setup TMPDIR */
 
