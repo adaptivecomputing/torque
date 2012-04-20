@@ -225,32 +225,35 @@ struct pbsnode *get_next_login_node(
 
   pthread_mutex_lock(logins.ln_mutex);
   ln = (login_node *)logins.ra->slots[logins.next_node].item;
-  pnode = ln->pnode;
-  lock_node(pnode, __func__, NULL, 0);
-
-  if (needed != NULL)
+  if (ln != NULL)
     {
-    if (hasprop(pnode, needed) == FALSE)
+    pnode = ln->pnode;
+    lock_node(pnode, __func__, NULL, 0);
+    
+    if (needed != NULL)
+      {
+      if (hasprop(pnode, needed) == FALSE)
+        {
+        node_fits = FALSE;
+        }
+      }
+    
+    /* must have at least one execution slot available */
+    if (pnode->nd_nsn - pnode->nd_np_to_be_used < 1)
       {
       node_fits = FALSE;
       }
-    }
-
-  /* must have at least one execution slot available */
-  if (pnode->nd_nsn - pnode->nd_np_to_be_used < 1)
-    {
-    node_fits = FALSE;
-    }
-
-  if (node_fits == FALSE)
-    {
-    unlock_node(pnode, __func__, NULL, 0);
-    pnode = find_fitting_node(needed);
-    }
-  else
-    {
-    ln->times_used++;
-    update_next_node_index(ln->times_used);
+    
+    if (node_fits == FALSE)
+      {
+      unlock_node(pnode, __func__, NULL, 0);
+      pnode = find_fitting_node(needed);
+      }
+    else
+      {
+      ln->times_used++;
+      update_next_node_index(ln->times_used);
+      }
     }
 
   pthread_mutex_unlock(logins.ln_mutex);
