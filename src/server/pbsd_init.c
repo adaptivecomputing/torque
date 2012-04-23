@@ -751,6 +751,8 @@ dynamic_string *parse_mom_hierarchy(
         snprintf(log_buf, sizeof(log_buf),
           "Node %s found in the nodes file but not in the mom_hierarchy file. Making it a level 1 node",
           pnode->nd_name);
+
+        pnode->nd_hierarchy_level = 0;
         log_err( -1, __func__, log_buf);
         }
 
