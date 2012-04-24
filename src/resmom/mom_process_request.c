@@ -650,8 +650,8 @@ void free_br(
 
   reply_free(&preq->rq_reply);
 
-  if (preq->rq_extend) 
-      free(preq->rq_extend);
+  if (preq->rq_extend)
+    free(preq->rq_extend);
 
   switch (preq->rq_type)
     {

@@ -1500,7 +1500,6 @@ int handle_complete_second_time(
   job *pjob)
 
   {
-  char         id[] = "handle_complete_second_time";
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   char        *jobid;
   time_t       time_now = time(NULL);
@@ -1519,14 +1518,10 @@ int handle_complete_second_time(
       }
     
     jobid = strdup(pjob->ji_qs.ji_jobid);
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s", id);
-      log_event(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buf);
+      sprintf(log_buf, "calling on_job_exit from %s", __func__);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
     set_task(WORK_Timed, time_now + JOBMUSTREPORTDEFAULTKEEP, on_job_exit, jobid, FALSE);
@@ -1568,7 +1563,6 @@ void on_job_exit(
   struct work_task *ptask)  /* I */
 
   {
-  static char          *id = "on_job_exit";
   int                   handle = -1;
   job                  *pjob;
 
@@ -1607,7 +1601,7 @@ void on_job_exit(
   /* check for calloc errors */
   if (jobid == NULL)
     {
-    log_err(ENOMEM,id,"Cannot allocate memory!");
+    log_err(ENOMEM, __func__, "Cannot allocate memory!");
     return;
     }
 
@@ -1617,7 +1611,7 @@ void on_job_exit(
   /* if the job doesn't exist, just exit */
   if (pjob == NULL)
     {
-    sprintf(log_buf, "%s called with INVALID jobid: %s", id, jobid);
+    sprintf(log_buf, "%s called with INVALID jobid: %s", __func__, jobid);
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"NULL",log_buf);
     free(jobid);
     return;
@@ -1625,7 +1619,7 @@ void on_job_exit(
   else
     {
     sprintf(log_buf, "%s valid pjob: %p (substate=%d)",
-      id,
+      __func__,
       (void *)pjob,
       pjob->ji_qs.ji_substate);
     
@@ -1738,7 +1732,6 @@ void on_job_rerun(
   struct work_task *ptask)
 
   {
-  static char          *id = "on_job_rerun";
   int                   handle;
   int                   newstate;
   int                   newsubst;
@@ -1765,7 +1758,7 @@ void on_job_rerun(
   /* check for memory allocation */
   if (jobid == NULL)
     {
-    log_err(ENOMEM,id,"Cannot allocate memory");
+    log_err(ENOMEM, __func__, "Cannot allocate memory");
     if (preq != NULL)
       free_br(preq);
     free(ptask->wt_mutex);

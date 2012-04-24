@@ -93,6 +93,10 @@
 #include "req_manager.h"
 #include "node_manager.h"
 #include "node_func.h"
+#include "track_alps_reservations.h"
+#include "login_nodes.h"
+#include "svrfunc.h"
+#include "issue_request.h"
 
 extern attribute_def    node_attr_def[];
 int save_node_status(struct pbsnode *current, pbs_attribute *temp);
@@ -178,6 +182,40 @@ struct pbsnode *create_alps_subnode(
   
   return(subnode);
   } /* END create_alps_subnode() */
+
+
+
+
+int check_if_orphaned(
+
+  char *rsv_id)
+
+  {
+  struct batch_request *preq;
+  int                   handle;
+  struct pbsnode       *pnode;
+
+  if (is_orphaned(rsv_id) == TRUE)
+    {
+    preq = alloc_br(PBS_BATCH_DeleteReservation);
+    preq->rq_extra = strdup(rsv_id);
+
+    if ((pnode = get_next_login_node(NULL)) != NULL)
+      {
+      int       local_errno;
+      pbs_net_t momaddr = get_hostaddr(&local_errno, pnode->nd_name);
+
+      handle = svr_connect(momaddr, pnode->nd_mom_port, &local_errno, NULL, process_Dreply, ToServerDIS);
+
+      if (issue_Drequest(handle, preq, release_req, 0) == 0)
+        free_br(preq);
+
+      unlock_node(pnode, __func__, NULL, 0);
+      }
+    }
+
+  return(PBSE_NONE);
+  } /* END check_if_orphaned() */
 
 
 
@@ -384,6 +422,59 @@ int process_gpu_status(
 
 
 
+
+
+int record_reservation(
+
+  struct pbsnode *pnode,
+  char           *rsv_id)
+
+  {
+  struct pbssubn *sub_node;
+  job            *pjob;
+  
+  for (sub_node = pnode->nd_psn; sub_node != NULL; sub_node = sub_node->next)
+    {
+    if (sub_node->jobs != NULL)
+      {
+      if ((pjob = find_job(sub_node->jobs->jobid)) != NULL)
+        {
+        pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(pjob->ji_qs.ji_jobid);
+        pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
+
+        create_alps_reservation(pjob);
+
+        pthread_mutex_unlock(pjob->ji_mutex);
+        break;
+        }
+      }
+    }
+
+  return(PBSE_NONE);
+  } /* END record_reservation() */
+
+
+
+
+int process_reservation_id(
+    
+  struct pbsnode *pnode, 
+  char           *rsv_id_str)
+
+  {
+  char           *rsv_id = rsv_id_str + strlen(reservation_id);
+
+  if (already_recorded(rsv_id) == TRUE)
+    check_if_orphaned(rsv_id);
+  else
+    record_reservation(pnode, rsv_id);
+
+  return(PBSE_NONE);
+  } /* END process_reservation_id() */
+
+
+
+
 int process_alps_status(
 
   char           *nd_name,
@@ -427,6 +518,10 @@ int process_alps_status(
       {
       process_gpu_status(current, &str);
       continue;
+      }
+    else if (!strncmp(reservation_id, str, strlen(reservation_id)))
+      {
+      process_reservation_id(current, str);
       }
     /* save this as is to the status strings */
     else if ((rc = decode_arst(&temp, NULL, NULL, str, 0)) != PBSE_NONE)

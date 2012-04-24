@@ -1932,6 +1932,7 @@ int setup_nodes(void)
   int             end = -1;
   int             is_alps_reporter = FALSE;
   int             is_alps_starter = FALSE;
+  long            cray_enabled;
 
   struct pbsnode *np;
   char           *val;
@@ -1962,6 +1963,8 @@ int setup_nodes(void)
   next_resource_tag = time(0); /* initialize next resource handle */
 
   svr_totnodes = 0;
+
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
   /* clear out line so we don't have residual data if there is no LF */
 
@@ -2178,7 +2181,7 @@ int setup_nodes(void)
       continue;
       }
 
-    if (server.sv_attr[SRV_ATR_CrayEnabled].at_val.at_long == TRUE)
+    if (cray_enabled == TRUE)
       {
       if (is_alps_reporter == TRUE)
         {

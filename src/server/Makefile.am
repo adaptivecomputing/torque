@@ -37,7 +37,7 @@ pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
 		     svr_recov.c svr_resccost.c svr_task.c req_tokens.c \
 		     job_qs_upgrade.c req_holdarray.c svr_format_job.c \
 				 job_recycler.c queue_recycler.c process_alps_status.c \
-				 display_alps_status.c login_nodes.c
+				 display_alps_status.c login_nodes.c track_alps_reservations.c
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :

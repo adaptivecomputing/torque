@@ -3834,6 +3834,7 @@ int node_spec(
   complete_spec_data  all_reqs;
   char               *spec;
   char               *plus;
+  long                cray_enabled;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -3853,8 +3854,9 @@ int node_spec(
   exclusive = 1; /* by default, nodes (VPs) are requested exclusively */
 
   set_first_node_name(spec_param, first_node_name);
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
-  if (server.sv_attr[SRV_ATR_CrayEnabled].at_val.at_long == TRUE)
+  if (cray_enabled == TRUE)
     {
     set_first_node_properties(spec_param, first_node_prop, sizeof(first_node_prop));
 

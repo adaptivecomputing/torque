@@ -143,6 +143,7 @@
 #include "resizable_array.h"
 #include "dynamic_string.h"
 #include "svr_func.h" /* get_svr_attr_* */
+#include "track_alps_reservations.h"
 
 
 #ifndef TRUE
@@ -246,7 +247,6 @@ int remtree(
   char *dirname)
 
   {
-  static char    id[] = "remtree";
   DIR           *dir;
 
   struct dirent *pdir;
@@ -271,7 +271,7 @@ int remtree(
     {
 
     if (errno != ENOENT)
-      log_err(errno, id, "stat");
+      log_err(errno, __func__, "stat");
 
     return(-1);
     }
@@ -281,7 +281,7 @@ int remtree(
     if ((dir = opendir(dirname)) == NULL)
       {
       if (errno != ENOENT)
-        log_err(errno, id, "opendir");
+        log_err(errno, __func__, "opendir");
 
       return(-1);
       }
@@ -308,7 +308,7 @@ int remtree(
       if (lstat(namebuf, &sb) == -1)
 #endif
         {
-        log_err(errno, id, "stat");
+        log_err(errno, __func__, "stat");
 
         rtnv = -1;
 
@@ -325,7 +325,7 @@ int remtree(
           {
           sprintf(log_buf, "unlink failed on %s", namebuf);
 
-          log_err(errno, id, log_buf);
+          log_err(errno, __func__, log_buf);
 
           rtnv = -1;
           }
@@ -334,7 +334,7 @@ int remtree(
         {
         sprintf(log_buf, "unlink(1) succeeded on %s", namebuf);
 
-        log_ext(-1, id, log_buf, LOG_DEBUG);
+        log_ext(-1, __func__, log_buf, LOG_DEBUG);
         }
       }    /* END while ((pdir = readdir(dir)) != NULL) */
 
@@ -346,7 +346,7 @@ int remtree(
         {
         sprintf(log_buf, "rmdir failed on %s", dirname);
 
-        log_err(errno, id, log_buf);
+        log_err(errno, __func__, log_buf);
 
         rtnv = -1;
         }
@@ -355,14 +355,14 @@ int remtree(
       {
       sprintf(log_buf, "rmdir succeeded on %s", dirname);
 
-      log_ext(-1, id, log_buf, LOG_DEBUG);
+      log_ext(-1, __func__, log_buf, LOG_DEBUG);
       }
     }
   else if (unlink(dirname) < 0)
     {
     sprintf(log_buf, "unlink failed on %s", dirname);
 
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
 
     rtnv = -1;
     }
@@ -370,7 +370,7 @@ int remtree(
     {
     sprintf(log_buf, "unlink(2) succeeded on %s", dirname);
 
-    log_ext(-1, id, log_buf, LOG_DEBUG);
+    log_ext(-1, __func__, log_buf, LOG_DEBUG);
     }
 
   return(rtnv);
@@ -1328,8 +1328,6 @@ void remove_checkpoint(
   job **pjob_ptr)  /* I */
 
   {
-  static char          *id = "remove_checkpoint";
-
   struct batch_request *preq = NULL;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   job                  *pjob = *pjob_ptr;
@@ -1343,7 +1341,7 @@ void remove_checkpoint(
       (*pjob_ptr)->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str,
       (*pjob_ptr)->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
 
-    log_ext(-1, id, log_buf, LOG_DEBUG);
+    log_ext(-1, __func__, log_buf, LOG_DEBUG);
 
     /* change the request type from copy to delete  */
 
@@ -1554,13 +1552,12 @@ void job_purge(
   job *pjob)  /* I (modified) */
 
   {
-  static char   id[] = "job_purge";
-
   char          log_buf[LOCAL_LOG_BUF_SIZE];
   char          namebuf[MAXPATHLEN + 1];
   extern char  *msg_err_purgejob;
   time_t        time_now = time(NULL);
   long          record_job_info = FALSE;
+  long          cray_enabled = FALSE;
 
   /* check to see if we are keeping a log of all jobs completed */
   get_svr_attr_l(SRV_ATR_RecordJobInfo, &record_job_info);
@@ -1576,7 +1573,10 @@ void job_purge(
       check_job_log_started = 1;
       }
     }
-    
+  
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+  if (cray_enabled == TRUE)
+    remove_alps_reservation(pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
 
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN) &&
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM))
@@ -1616,7 +1616,7 @@ void job_purge(
         pthread_mutex_unlock(pa->ai_mutex);
         if (LOGLEVEL >=7)
           {
-          sprintf(log_buf, "unlocked ai_mutex: %s", id);
+          sprintf(log_buf, "unlocked ai_mutex: %s", __func__);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
           }
         }
@@ -1639,7 +1639,7 @@ void job_purge(
     if (unlink(namebuf) < 0)
       {
       if (errno != ENOENT)
-        log_err(errno, id, msg_err_purgejob);
+        log_err(errno, __func__, msg_err_purgejob);
       }
     else if (LOGLEVEL >= 6)
       {
@@ -1655,7 +1655,7 @@ void job_purge(
   if (unlink(namebuf) < 0)
     {
     if (errno != ENOENT)
-      log_err(errno, id, msg_err_purgejob);
+      log_err(errno, __func__, msg_err_purgejob);
     }
   else if (LOGLEVEL >= 6)
     {
@@ -1670,7 +1670,7 @@ void job_purge(
   if (unlink(namebuf) < 0)
     {
     if (errno != ENOENT)
-      log_err(errno, id, msg_err_purgejob);
+      log_err(errno, __func__, msg_err_purgejob);
     }
   else if (LOGLEVEL >= 6)
     {
@@ -1693,7 +1693,7 @@ void job_purge(
     if (remtree(namebuf) < 0)
       {
       if (errno != ENOENT)
-        log_err(errno, id, msg_err_purgejob);
+        log_err(errno, __func__, msg_err_purgejob);
       }
     else if (LOGLEVEL >= 6)
       {
@@ -1715,7 +1715,7 @@ void job_purge(
   if (unlink(namebuf) < 0)
     {
     if (errno != ENOENT)
-      log_err(errno, id, msg_err_purgejob);
+      log_err(errno, __func__, msg_err_purgejob);
     }
   else if (LOGLEVEL >= 6)
     {
@@ -1757,7 +1757,6 @@ char *get_correct_jobname(
 
   int len;
 
-  char *id = "get_correct_jobname";
   long  display_suffix = TRUE;
   char *alias = NULL;
 
@@ -1792,7 +1791,7 @@ char *get_correct_jobname(
         correct = strdup(jobid);
 
         if (correct == NULL)
-          log_err(-1,id,"ERROR:    Fatal - Cannot allocate memory\n");
+          log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
 
         return(correct);
         }
@@ -1805,7 +1804,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1,id,"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
 
@@ -1821,7 +1820,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1,id,"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
 
@@ -1844,7 +1843,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1,id,"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
 
@@ -1857,7 +1856,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1,id,"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
       }
@@ -1869,7 +1868,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1,id,"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
 
@@ -1889,7 +1888,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1,id,"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
 
@@ -1907,7 +1906,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1,id,"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
 
@@ -1932,7 +1931,7 @@ char *get_correct_jobname(
 
     if (correct == NULL)
       {
-      log_err(-1,id,"ERROR:    Fatal - Cannot allocate memory\n");
+      log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
       return(NULL);
       }
 
@@ -2222,7 +2221,6 @@ int insert_job_first(
   job             *pjob)
 
   {
-  static char *id = "insert_job_first";
   int          rc;
 
   pthread_mutex_lock(aj->alljobs_mutex);
@@ -2230,7 +2228,7 @@ int insert_job_first(
   if ((rc = insert_thing_after(aj->ra,pjob,ALWAYS_EMPTY_INDEX)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc,id,"No memory to resize the array...SYSTEM FAILURE");
+    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
     }
   else
     {

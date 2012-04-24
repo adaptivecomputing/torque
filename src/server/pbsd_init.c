@@ -124,6 +124,7 @@
 #include "svr_task.h" /* initialize_task_recycler */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "login_nodes.h"
+#include "track_alps_reservations.h"
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -201,6 +202,8 @@ queue_recycler          q_recycler;
 dynamic_string         *hierarchy_holder;
 hello_container         hellos;
 hello_container         failures;
+
+reservation_holder alps_reservations;
 
 extern pthread_mutex_t *acctfile_mutex;
 pthread_mutex_t        *scheduler_sock_jobct_mutex;
@@ -935,6 +938,7 @@ int pbsd_init(
   int               iter;
   long              min_threads;
   long              max_threads;
+  long              cray_enabled;
   long              thread_idle_time = DEFAULT_THREAD_IDLE;
   int               job_count = 0; /* Count of recovered jobs */
 
@@ -1282,8 +1286,12 @@ int pbsd_init(
 
   initialize_allques_array(&svr_queues);
 
-  if (server.sv_attr[SRV_ATR_CrayEnabled].at_val.at_long == TRUE)
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+  if (cray_enabled == TRUE)
+    {
     initialize_login_holder();
+    initialize_alps_reservations();
+    }
 
   time_now = time((time_t *)0);
 

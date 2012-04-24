@@ -661,7 +661,6 @@ int get_hash(
   char         *key)
 
   {
-  /* since key is a job name, just get the numbers from the front */
   size_t   len = strlen(key);
   uint32_t hash;
   uint32_t mask = 0;

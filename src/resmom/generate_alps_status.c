@@ -110,7 +110,7 @@ int process_processor_array(
   xmlNode  *node,
   int      *total_procs,
   int      *total_avail_procs,
-  char     *rsv_id)
+  char    **rsv_id)
 
   {
   xmlNode  *child;
@@ -128,8 +128,8 @@ int process_processor_array(
        * available */
       if ((processor_allocation = child->children) == NULL)
         avail_procs++;
-      else if (rsv_id == NULL)
-        rsv_id = (char *)xmlGetProp(processor_allocation, (const xmlChar *)reservation_id);
+      else if (*rsv_id == NULL)
+        *rsv_id = strdup((char *)xmlGetProp(processor_allocation, (const xmlChar *)reservation_id));
       }
     }
 
@@ -310,7 +310,7 @@ int process_node(
         for (segment_child = segments->children; segment_child != NULL; segment_child = segment_child->next)
           {
           if (!strcmp((const char *)segment_child->name, processor_array))
-            process_processor_array(segment_child, &num_procs, &avail_procs, rsv_id);
+            process_processor_array(segment_child, &num_procs, &avail_procs, &rsv_id);
           else if (!strcmp((const char *)segment_child->name, memory_array))
             process_memory_array(segment_child, &memory);
           else if (!strcmp((const char *)segment_child->name, label_array))
@@ -320,7 +320,7 @@ int process_node(
       }
     else if (!strcmp((const char *)child->name, processor_array))
       {
-      process_processor_array(child, &num_procs, &avail_procs, rsv_id);
+      process_processor_array(child, &num_procs, &avail_procs, &rsv_id);
       }
     else if (!strcmp((const char *)child->name, memory_array))
       {
