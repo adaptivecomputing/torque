@@ -418,7 +418,6 @@ int issue_Drequest(
   int               rc;
   int               sock = 0;
   enum work_type    wt;
-  char             *id = "issue_Drequest";
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (conn == PBS_LOCAL_CONNECTION)
@@ -449,7 +448,7 @@ int issue_Drequest(
 
   if (ptask == NULL)
     {
-    log_err(errno, id, "could not set_task");
+    log_err(errno, __func__, "could not set_task");
 
     return(-1);
     }
@@ -697,7 +696,7 @@ int issue_Drequest(
       sprintf(log_buf, msg_issuebad,
               request->rq_type);
 
-      log_err(-1, id, log_buf);
+      log_err(-1, __func__, log_buf);
 
       pthread_mutex_lock(ptask->wt_mutex);
       if (ptask->wt_being_recycled == FALSE)
@@ -729,7 +728,6 @@ void *process_Dreply(
   void *new_sock)
 
   {
-  static char *id = "process_Dreply";
   int    handle;
 
   struct work_task *ptask;
@@ -757,7 +755,7 @@ void *process_Dreply(
 
   if (ptask == NULL)
     {
-    log_err(-1, id, "Unable to find work task for connection");
+    log_err(-1, __func__, "Unable to find work task for connection");
 
     close_conn(sock, FALSE);
 

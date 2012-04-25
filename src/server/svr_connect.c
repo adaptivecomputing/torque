@@ -146,8 +146,6 @@ int svr_connect(
   enum conn_type   cntype)
 
   {
-  static char *id = "svr_connect";
-
   char         EMsg[1024];
   int          handle;
   int          sock;
@@ -164,7 +162,7 @@ int svr_connect(
       ((int)hostaddr != 0) ? tmp : "localhost",
       port);
 
-    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
 
     free(tmp);
     }
@@ -187,7 +185,7 @@ int svr_connect(
         (hostaddr == pbs_server_addr) ? "server" : "host",
         port);
 
-      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
       }
 
     *my_err = EHOSTDOWN;
@@ -220,7 +218,7 @@ int svr_connect(
         EMsg,
         (long)(ETime - STime));
 
-      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, id, log_buf);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
       }
 
     bad_node_warning(hostaddr,pnode);
@@ -239,7 +237,7 @@ int svr_connect(
       port,
       (long)(ETime - STime));
 
-    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     }
 
   /* add the connection to the server connection table and select list */
@@ -268,7 +266,7 @@ int svr_connect(
         (hostaddr == pbs_server_addr) ? "server" : "host",
         port);
 
-      log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,log_buf);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
       }
 
     close_conn(sock, FALSE);
@@ -391,7 +389,6 @@ int socket_to_handle(
   int *local_errno) /* O */
 
   {
-  char *id = "socket_to_handle";
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   int   conn_pos = 0;
@@ -403,7 +400,7 @@ int socket_to_handle(
       conn_pos,
       get_num_connections());
 
-    log_ext(-1,id,log_buf,LOG_ALERT);
+    log_ext(-1, __func__, log_buf, LOG_ALERT);
 
     *local_errno = PBSE_NOCONNECTS;
     }
@@ -429,7 +426,7 @@ int socket_to_handle(
         conn_pos,
         get_num_connections());
         
-      log_ext(-1,id,log_buf,LOG_CRIT);
+      log_ext(-1, __func__, log_buf, LOG_CRIT);
       }
 
     rc = conn_pos;

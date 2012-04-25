@@ -225,8 +225,6 @@ void mom_cleanup_checkpoint_hold(
   struct work_task *ptask)
 
   {
-  static char          *id = "mom_cleanup_checkpoint_hold";
-
   int                   rc = 0;
   job                  *pjob;
   char                 *jobid;
@@ -241,7 +239,7 @@ void mom_cleanup_checkpoint_hold(
 
   if (jobid == NULL)
     {
-    log_err(ENOMEM,id,"Cannot allocate memory");
+    log_err(ENOMEM, __func__, "Cannot allocate memory");
     return;
     }
 
@@ -267,7 +265,7 @@ void mom_cleanup_checkpoint_hold(
     {
     if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
       {
-      log_err(-1, id, "unable to allocate DeleteJob request - big trouble!");
+      log_err(-1, __func__, "unable to allocate DeleteJob request - big trouble!");
       }
     else
       {
@@ -282,7 +280,7 @@ void mom_cleanup_checkpoint_hold(
             "Unable to relay information to mom for job '%s'\n",
             pjob->ji_qs.ji_jobid);
           
-          log_err(rc,id,log_buf);
+          log_err(rc, __func__, log_buf);
           
           pthread_mutex_unlock(pjob->ji_mutex);
           }
@@ -820,7 +818,6 @@ int modify_whole_array(
   int        checkpoint_req)  /* I */
 
   {
-  char  id[] = "modify_whole_array";
   int   i;
   int   rc = 0;
   int   mom_relay = 0;
@@ -869,7 +866,7 @@ int modify_whole_array(
             snprintf(log_buf,sizeof(log_buf),
               "Unable to relay information to mom for job '%s'\n",
               pjob->ji_qs.ji_jobid);
-            log_err(rc,id,log_buf);
+            log_err(rc, __func__, log_buf);
             pthread_mutex_unlock(pjob->ji_mutex);
             }
 
@@ -908,8 +905,7 @@ void *req_modifyarray(
   void *vp) /* I */
 
   {
-  char                 id[] = "req_modifyarray";
-  char                 log_buf[LOCAL_LOG_BUF_SIZE];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
   job_array            *pa;
   job                  *pjob = NULL;
   svrattrl             *plist;
@@ -983,10 +979,10 @@ void *req_modifyarray(
        (rc != PBSE_RELAYED_TO_MOM))
       {
       pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >= 7)
+      if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "%s: unlocked ai_mutex", id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+        sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
@@ -1000,10 +996,10 @@ void *req_modifyarray(
     if (rc == PBSE_RELAYED_TO_MOM)
       {
       pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >= 7)
+      if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "%s: unlocked ai_mutex", id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+        sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
 
       return(NULL);
@@ -1017,10 +1013,10 @@ void *req_modifyarray(
         (rc != PBSE_RELAYED_TO_MOM))
       {
       pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >= 7)
+      if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "%s: unlocked ai_mutex", id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
+        sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error altering the array");
@@ -1042,7 +1038,7 @@ void *req_modifyarray(
       pthread_mutex_unlock(pa->ai_mutex);
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "%s: unlocked ai_mutex", id);
+        sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
       pthread_mutex_unlock(pjob->ji_mutex);
@@ -1054,9 +1050,9 @@ void *req_modifyarray(
     if (rc == PBSE_RELAYED_TO_MOM)
       {
       pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >= 7)
+      if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "%s: unlocked ai_mutex", id);
+        sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
       pthread_mutex_unlock(pjob->ji_mutex);
@@ -1070,7 +1066,7 @@ void *req_modifyarray(
   /* SUCCESS */
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "%s: unlocked ai_mutex", id);
+    sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
     }
   pthread_mutex_unlock(pa->ai_mutex);

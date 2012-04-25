@@ -187,7 +187,6 @@ void *req_runjob(
   void *vp)  /* I (modified) */
 
   {
-  char   id[] = "req_runjob";
   struct batch_request *preq = (struct batch_request *)vp;
   job                  *pjob;
   int                   rc;
@@ -264,7 +263,7 @@ void *req_runjob(
       
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "%s: unlocked ai_mutex", id);
+        sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
         }
 
@@ -276,7 +275,7 @@ void *req_runjob(
     
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocked ai_mutex", id);
+      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
       }
     
@@ -741,7 +740,6 @@ int verify_moms_up(
   job *pjob)
 
   {
-  static char        *id = "svr_startjob";
   int                 sock;
   int                 nodenum;
 
@@ -762,7 +760,7 @@ int verify_moms_up(
   if (hostlist == NULL)
     {
     sprintf(log_buf, "could not allocate temporary buffer (calloc failed) -- skipping TCP connect check");
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
     }
   else
     {
@@ -797,7 +795,7 @@ int verify_moms_up(
       /* Add this host to the reject destination list for the job */
       if ((bp = (badplace *)calloc(1, sizeof(badplace))) == NULL)
         {
-        log_err(ENOMEM, id, msg_err_malloc);
+        log_err(ENOMEM, __func__, msg_err_malloc);
 
         return(PBSE_SYSTEM);
         }
@@ -834,7 +832,7 @@ int verify_moms_up(
         {
         /* FAILURE - cannot allocate memory */
 
-        log_err(errno, id, msg_err_malloc);
+        log_err(errno, __func__, msg_err_malloc);
 
         return(PBSE_RESCUNAV);
         }
@@ -874,7 +872,7 @@ int verify_moms_up(
       if ((bp = (badplace *)calloc(1, sizeof(badplace))) == NULL)
         {
         /* FAILURE - cannot allocate memory */
-        log_err(errno, id, msg_err_malloc);
+        log_err(errno, __func__, msg_err_malloc);
 
         return(PBSE_RESCUNAV);
         }
@@ -1318,8 +1316,6 @@ static job *chk_job_torun(
   int                   setnn) /* I */
 
   {
-  static char *id = "chk_job_torun";
-
   job              *pjob;
 
   struct rq_runjob *prun;
@@ -1385,7 +1381,7 @@ static job *chk_job_torun(
     if (pque->qu_qs.qu_type != QTYPE_Execution)
       {
       /* FAILURE - job must be in execution queue */
-      log_err(-1, id, "attempt to start job in non-execution queue");
+      log_err(-1, __func__, "attempt to start job in non-execution queue");
   
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "job not in execution queue");
   
@@ -1603,17 +1599,16 @@ char *get_correct_spec_string(
   job  *pjob)
 
   {
-  static char   id[] = "get_correct_spec_string";
-  char     mode[20];
-  char    *mode_string;
-  char    *request;
-  char    *correct_spec;
-  char    *outer_plus;
-  char    *plus;
-  char    *one_req;
-  int      num_gpu_reqs;
-  char    *gpu_req;
-  int      len;
+  char      mode[20];
+  char     *mode_string;
+  char     *request;
+  char     *correct_spec;
+  char     *outer_plus;
+  char     *plus;
+  char     *one_req;
+  int       num_gpu_reqs;
+  char     *gpu_req;
+  int       len;
   resource *pres;
 
   /* check to see if there is a gpus request. If so moab
@@ -1653,15 +1648,11 @@ char *get_correct_spec_string(
           if (LOGLEVEL >= 7)
             {
             sprintf(log_buffer, "%s: job has %d gpu requests in node spec '%s'",
-                    id,
-                    num_gpu_reqs,
-                    given);
+              __func__,
+              num_gpu_reqs,
+              given);
 
-            log_event(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
             }
 
           if ((outer_plus = strchr(mode_string, '+')) != NULL)
@@ -1701,14 +1692,10 @@ char *get_correct_spec_string(
           if ((LOGLEVEL >= 7) && (correct_spec != NULL) && (correct_spec[0] != '\0'))
             {
             sprintf(log_buffer, "%s: job gets adjusted gpu node spec of '%s'",
-                    id,
-                    correct_spec);
+              __func__,
+              correct_spec);
 
-            log_event(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              log_buffer);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
             }
           }
         else

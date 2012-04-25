@@ -99,7 +99,6 @@ static int dis_reply_write(
   struct batch_reply *preply)  /* I */
 
   {
-  static char *id = "dis_reply_write";
   int          rc;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -114,7 +113,7 @@ static int dis_reply_write(
     {
     sprintf(log_buf, "DIS reply failure, %d", rc);
 
-    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
     /* don't need to get the lock here because we already have it from process request */
     close_conn(sfds, FALSE);
@@ -160,12 +159,10 @@ int reply_send_svr(
   struct batch_request *request)  /* I (freed) */
 
   {
-  int      rc = 0;
-  char     log_buf[LOCAL_LOG_BUF_SIZE];
-  int      iter = -1;
-  int      sfds = request->rq_conn;  /* socket */
-
-  static char    *id = "reply_send_svr";
+  int               rc = 0;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
+  int               iter = -1;
+  int               sfds = request->rq_conn;  /* socket */
 
   struct work_task *ptask;
 
@@ -199,7 +196,7 @@ int reply_send_svr(
 
     /* should have found a task and didn't */
 
-    log_err(-1, id, "did not find work task for local request");
+    log_err(-1, __func__, "did not find work task for local request");
 
     rc = PBSE_SYSTEM;
     }
@@ -216,7 +213,7 @@ int reply_send_svr(
           reqtype_to_txt(request->rq_type),
           sfds);
 
-        log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buf);
+        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
       }
     }

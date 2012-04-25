@@ -305,7 +305,6 @@ void svr_mailowner(
   char  *text)      /* (optional) additional message text */
 
   {
-  static char          *id = "svr_mailowner";
   static char          *memory_err = "Cannot allocate memory to send email";
 
   char                  mailto[1024];
@@ -400,7 +399,7 @@ void svr_mailowner(
 
   if (mi == NULL)
     {
-    log_err(ENOMEM,id,memory_err);
+    log_err(ENOMEM, __func__, memory_err);
     return;
     }
 
@@ -475,7 +474,7 @@ void svr_mailowner(
 
   if ((mi->mailto = strdup(mailto)) == NULL)
     {
-    log_err(ENOMEM,id,memory_err);
+    log_err(ENOMEM, __func__, memory_err);
     return;
     }
 
@@ -487,7 +486,7 @@ void svr_mailowner(
 
     if (mi->exec_host == NULL)
       {
-      log_err(ENOMEM,id,memory_err);
+      log_err(ENOMEM, __func__, memory_err);
       return;
       }
     }
@@ -496,7 +495,7 @@ void svr_mailowner(
 
   if ((mi->jobid = strdup(pjob->ji_qs.ji_jobid)) == NULL)
     {
-    log_err(ENOMEM,id,memory_err);
+    log_err(ENOMEM, __func__, memory_err);
     return;
     }
 
@@ -506,7 +505,7 @@ void svr_mailowner(
 
     if (mi->jobname == NULL)
       {
-      log_err(ENOMEM,id,memory_err);
+      log_err(ENOMEM, __func__, memory_err);
       return;
       }
     }
@@ -517,7 +516,7 @@ void svr_mailowner(
     {
     if ((mi->text = strdup(text)) == NULL)
       {
-      log_err(ENOMEM,id,memory_err);
+      log_err(ENOMEM, __func__, memory_err);
       return;
       }
     }

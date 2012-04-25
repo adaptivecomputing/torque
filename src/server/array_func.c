@@ -83,7 +83,6 @@ int is_array(
   char *id)
 
   {
-  char func_name[] = "is_array";
   job_array      *pa;
 
   int             iter = -1;
@@ -142,7 +141,7 @@ int is_array(
     
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: locked ai_mutex: %s", func_name, pa->ai_qs.parent_id);
+      sprintf(log_buf, "%s: locked ai_mutex: %s", __func__, pa->ai_qs.parent_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
       }
 
@@ -150,7 +149,7 @@ int is_array(
       {
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "%s: unlocking ai_mutex: %s", func_name, pa->ai_qs.parent_id);
+        sprintf(log_buf, "%s: unlocking ai_mutex: %s", __func__, pa->ai_qs.parent_id);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
         }
       
@@ -161,7 +160,7 @@ int is_array(
 
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocking ai_mutex: %s", func_name, pa->ai_qs.parent_id);
+      sprintf(log_buf, "%s: unlocking ai_mutex: %s", __func__, pa->ai_qs.parent_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
       }
 
@@ -181,7 +180,6 @@ job_array *get_array(
   char *id)
 
   {
-  char       func_name[] = "get_array";
   job_array *pa;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
  
@@ -193,7 +191,7 @@ job_array *get_array(
     
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: locked ai_mutex: %s", func_name, pa->ai_qs.parent_id);
+      sprintf(log_buf, "%s: locked ai_mutex: %s", __func__, pa->ai_qs.parent_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
       }
 
@@ -205,7 +203,7 @@ job_array *get_array(
 
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocking ai_mutex: %s", func_name, pa->ai_qs.parent_id);
+      sprintf(log_buf, "%s: unlocking ai_mutex: %s", __func__, pa->ai_qs.parent_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buf);
       }
 
@@ -1464,7 +1462,6 @@ int modify_array_range(
   int        checkpoint_req)  /* I */
 
   {
-  char                id[] = "modify_array_range";
   char                log_buf[LOCAL_LOG_BUF_SIZE];
   tlist_head          tl;
   int                 i;
@@ -1532,7 +1529,7 @@ int modify_array_range(
                 snprintf(log_buf,sizeof(log_buf),
                   "Unable to relay information to mom for job '%s'\n",
                   pjob->ji_qs.ji_jobid);
-                log_err(rc,id,log_buf);
+                log_err(rc, __func__, log_buf);
                 
                 pthread_mutex_unlock(pjob->ji_mutex);
                 
@@ -1701,7 +1698,6 @@ void update_array_statuses(
   job_array *owned)
 
   {
-  char           func_name[] = "update_array_statuses";
   job_array      *pa;
   job            *pj;
   job            *pjob;
@@ -1780,8 +1776,8 @@ void update_array_statuses(
       pthread_mutex_unlock(pa->ai_mutex);
       if(LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "%s: unlocked ai_mutex", func_name);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, func_name, log_buf);
+        sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
       }
     }
@@ -1873,14 +1869,13 @@ int insert_array(
   job_array *pa)
 
   {
-  static char  *id = "insert_array";
   int           rc;
 
   pthread_mutex_lock(allarrays.allarrays_mutex);
 
   if ((rc = insert_thing(allarrays.ra,pa)) == ENOMEM)
     {
-    log_err(rc,id,"No memory to resize the array...SYSTEM FAILURE\n");
+    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
     }
 
   pthread_mutex_unlock(allarrays.allarrays_mutex);
@@ -1897,7 +1892,6 @@ int remove_array(
   job_array *pa)
 
   {
-  char func_name[] = "remove_array";
   char log_buf[LOCAL_LOG_BUF_SIZE];
   int  rc;
 
@@ -1906,22 +1900,22 @@ int remove_array(
     pthread_mutex_unlock(pa->ai_mutex);
     if(LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocked ai_mutex", func_name);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, func_name, log_buf);
+      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
     pthread_mutex_lock(allarrays.allarrays_mutex);
     if(LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocked ai_mutex", func_name);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, func_name, log_buf);
+      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
     pthread_mutex_lock(pa->ai_mutex);
     if(LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "%s: unlocked ai_mutex", func_name);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, func_name, log_buf);
+      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
     }

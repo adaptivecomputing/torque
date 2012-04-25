@@ -292,8 +292,6 @@ void process_gpu_request_reply(
   struct work_task *pwt)
 
   {
-  char                 *id = "process_gpu_request_reply";
-
   struct batch_request *preq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -307,7 +305,7 @@ void process_gpu_request_reply(
     sprintf(log_buf,
       "MOM failed on GPU request, rc = %d",
       preq->rq_reply.brp_code);
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
 
     req_reject(preq->rq_reply.brp_code, 0, preq, NULL, log_buf);
     }
@@ -325,7 +323,7 @@ void process_gpu_request_reply(
         preq->rq_ind.rq_gpuctrl.rq_reset_perm,
         preq->rq_ind.rq_gpuctrl.rq_reset_vol);
 
-      log_ext(-1, id, log_buf, LOG_INFO);
+      log_ext(-1, __func__, log_buf, LOG_INFO);
       }
 
     reply_ack(preq);

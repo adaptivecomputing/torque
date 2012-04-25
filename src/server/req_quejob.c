@@ -1472,8 +1472,6 @@ void req_jobscript(
   struct batch_request *preq) /* ptr to the decoded request*/
 
   {
-  char *id = "req_jobscript";
-
   int   fds;
   char  namebuf[MAXPATHLEN];
   job  *pj;
@@ -1486,7 +1484,7 @@ void req_jobscript(
 
   if (pj == NULL)
     {
-    log_err(errno, id, "cannot locate new job");
+    log_err(errno, __func__, "cannot locate new job");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
@@ -1514,7 +1512,7 @@ void req_jobscript(
         strerror(errno));
       }
 
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buf);
 
@@ -1527,7 +1525,7 @@ void req_jobscript(
     {
     /* FAILURE */
 
-    log_err(errno, id, "cannot authorize request");
+    log_err(errno, __func__, "cannot authorize request");
 
     req_reject(PBSE_PERM, 0, preq, NULL, "cannot receive job script");
 
@@ -1562,7 +1560,7 @@ void req_jobscript(
 
     /* NOTE: log_err may modify errno */
 
-    log_err(errno, id, msg_script_open);
+    log_err(errno, __func__, msg_script_open);
 
     req_reject(PBSE_INTERNAL, 0, preq, NULL, tmpLine);
 
@@ -1578,7 +1576,7 @@ void req_jobscript(
     {
     /* FAILURE */
 
-    log_err(errno, id, msg_script_write);
+    log_err(errno, __func__, msg_script_write);
 
     req_reject(PBSE_INTERNAL, 0, preq, NULL, "cannot write job command file");
 
@@ -1770,7 +1768,6 @@ void req_rdytocommit(
   char  OrigSChar;
   long  OrigFlags;
 
-  char *id = "req_rdytocommit";
   char  namebuf[MAXPATHLEN+1];
   char  jobid[PBS_MAXSVRJOBID + 1];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1788,7 +1785,7 @@ void req_rdytocommit(
 
   if (pj == NULL)
     {
-    log_err(errno, id, "unknown job id");
+    log_err(errno, __func__, "unknown job id");
 
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 
@@ -1799,7 +1796,7 @@ void req_rdytocommit(
 
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
     {
-    log_err(errno, id, "cannot commit job in unexpected state");
+    log_err(errno, __func__, "cannot commit job in unexpected state");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
@@ -1853,7 +1850,7 @@ void req_rdytocommit(
       errno,
       strerror(errno));
 
-    log_err(errno, id, tmpLine);
+    log_err(errno, __func__, tmpLine);
 
     /* commit failed, backoff state changes */
 
@@ -1885,7 +1882,7 @@ void req_rdytocommit(
       errno,
       strerror(errno));
 
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
 
     close_conn(sock,FALSE);
 

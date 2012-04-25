@@ -412,8 +412,6 @@ job *job_recov(
   char *filename) /* I */   /* pathname to job save file */
 
   {
-  static char *id = "job_recov";
-
   int  fds;
   job  *pj;
   char *pn;
@@ -442,7 +440,7 @@ job *job_recov(
     {
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "unable to open %s", namebuf);
 
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
 
 #ifndef PBS_MOM
     pthread_mutex_unlock(pj->ji_mutex);
@@ -463,7 +461,7 @@ job *job_recov(
     {
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Unable to read %s", namebuf);
 
-    log_err(errno, id, log_buf);
+    log_err(errno, __func__, log_buf);
 
 #ifndef PBS_MOM
     pthread_mutex_unlock(pj->ji_mutex);
@@ -486,13 +484,13 @@ job *job_recov(
       "%s appears to be from an old version. Attempting to convert.\n",
       namebuf);
 
-    log_err(-1, id, log_buf);
+    log_err(-1, __func__, log_buf);
 
     if (job_qs_upgrade(pj, fds, namebuf, pj->ji_qs.qs_version) != 0)
       {
       snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "unable to upgrade %s\n", namebuf);
 
-      log_err(-1, id, log_buf);
+      log_err(-1, __func__, log_buf);
 
 #ifndef PBS_MOM
       pthread_mutex_unlock(pj->ji_mutex);
@@ -521,7 +519,7 @@ job *job_recov(
       pj->ji_qs.ji_jobid,
       namebuf);
 
-    log_err(-1, id, log_buf);
+    log_err(-1, __func__, log_buf);
 
 #ifndef PBS_MOM
     pthread_mutex_unlock(pj->ji_mutex);
@@ -548,7 +546,7 @@ job *job_recov(
     {
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "unable to recover %s (file is likely corrupted)", namebuf);
 
-    log_err(-1, id, log_buf);
+    log_err(-1, __func__, log_buf);
 
 #ifndef PBS_MOM
     pthread_mutex_unlock(pj->ji_mutex);
@@ -570,7 +568,7 @@ job *job_recov(
         "warning: tmsockets not recovered from %s (written by an older pbs_mom?)",
         namebuf);
 
-    log_err(-1, id, log_buf);
+    log_err(-1, __func__, log_buf);
     }
 
 #else /* PBS_MOM */
@@ -618,7 +616,7 @@ job *job_recov(
       pthread_mutex_unlock(pa->ai_mutex);
       if(LOGLEVEL >=7)
         {
-        sprintf(log_buf, "unlocked ai_mutex: %s", id);
+        sprintf(log_buf, "unlocked ai_mutex: %s", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
         }
       }

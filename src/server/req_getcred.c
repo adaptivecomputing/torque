@@ -289,7 +289,6 @@ int pipe_and_read_unmunge(
   int                   sock)          /* I */
 
   {
-  static char *id = "pipe_and_read_unmunge";
   char         munge_buf[MUNGE_SIZE << 4];
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -311,7 +310,7 @@ int pipe_and_read_unmunge(
     snprintf(log_buf,sizeof(log_buf),
       "Unable to popen command '%s' for reading",
       munge_command);
-    log_err(errno,id,log_buf);
+    log_err(errno, __func__, log_buf);
     
     unlink(mungeFileName);
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "couldn't create pipe to unmunge");

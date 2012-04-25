@@ -282,7 +282,6 @@ int execute_job_delete(
   struct batch_request *preq)            /* I */
 
   {
-  static char      *id = "execute_job_delete";
   struct work_task *pwtnew;
 
   int               rc;
@@ -538,7 +537,7 @@ jump:
 
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "%s: unlocking ai_mutex", id);
+        sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
       pthread_mutex_unlock(pa->ai_mutex);
@@ -556,14 +555,10 @@ jump:
     /* force new connection */
     jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s", id);
-      log_event(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buf);
+      sprintf(log_buf, "calling on_job_exit from %s", __func__);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
     set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
     }
@@ -593,11 +588,11 @@ jump:
       {
       pque->qu_numcompleted++;
 
-      unlock_queue(pque, id, NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buf, "calling on_job_exit from %s", id);
+        sprintf(log_buf, "calling on_job_exit from %s", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
     
@@ -1061,7 +1056,6 @@ static void post_delete_mom2(
   struct work_task *pwt)
 
   {
-  static char *id = "post_delete_mom2";
   char        *jobid;
   char        *sigk = "SIGKILL";
   char         log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1073,7 +1067,7 @@ static void post_delete_mom2(
   
   if (jobid == NULL)
     {
-    log_err(ENOMEM,id,"Cannot allocate memory");
+    log_err(ENOMEM, __func__, "Cannot allocate memory");
     return;
     }
 
@@ -1161,7 +1155,6 @@ int apply_job_delete_nanny(
   int         delay)  /* I */
 
   {
-  static char      *id = "apply_job_delete_nanny";
   enum work_type    tasktype;
   long              nanny = FALSE;
 
@@ -1183,7 +1176,7 @@ int apply_job_delete_nanny(
     }
   else
     {
-    log_err(-1, id, "negative delay requested for nanny");
+    log_err(-1, __func__, "negative delay requested for nanny");
 
     return(-1);
     }
@@ -1223,7 +1216,6 @@ static void job_delete_nanny(
   struct work_task *pwt)
 
   {
-  static char          *id = "job_delete_nanny";
   job                  *pjob;
   char                 *sigk = "SIGKILL";
   char                 *jobid;
@@ -1267,7 +1259,7 @@ static void job_delete_nanny(
       }
     else
       {
-      log_err(ENOMEM,id,"Cannot allocate memory");
+      log_err(ENOMEM, __func__, "Cannot allocate memory");
       }
     }
   
@@ -1359,7 +1351,6 @@ void purge_completed_jobs(
   struct batch_request *preq)  /* I */
 
   {
-  char         *id = "purge_completed_jobs";
   job          *pjob;
   char         *time_str;
   time_t        purge_time = 0;
@@ -1391,7 +1382,7 @@ void purge_completed_jobs(
     sprintf(log_buf,"Received purge completed jobs command, purge time is %ld (%s)",
       (long)purge_time, preq->rq_extend);
 
-    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
   iter = -1;

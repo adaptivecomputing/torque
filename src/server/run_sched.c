@@ -163,12 +163,11 @@ static int contact_sched(
   int cmd)  /* I */
 
   {
-  int sock;
+  int   sock;
 
   char  tmpLine[1024];
   char  EMsg[1024];
 
-  char *id = "contact_sched";
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* connect to the Scheduler */
@@ -178,17 +177,9 @@ static int contact_sched(
     {
     /* FAILURE */
 
-#if 0
-    sprintf(tmpLine, "%s - port %d %s",
-            msg_sched_nocall,
-            pbs_scheduler_port,
-            EMsg);
-
-    log_ext(errno,id,tmpLine,LOG_ALERT);
-#endif
-
     return(-1);
     }
+
   add_conn(
     sock,
     FromClientDIS,
@@ -211,7 +202,7 @@ static int contact_sched(
             msg_sched_nocall,
             pbs_scheduler_port);
 
-    log_ext(errno,id,tmpLine,LOG_ALERT);
+    log_ext(errno, __func__, tmpLine, LOG_ALERT);
 
     close_conn(sock, TRUE);
 
@@ -299,12 +290,11 @@ static int contact_listener(
   int l_idx)  /* I */
 
   {
-  int sock;
+  int   sock;
 
   char  tmpLine[1024];
   char  EMsg[1024];
 
-  char *id = "contact_listener";
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* If this is the first time contacting the scheduler for
@@ -334,7 +324,7 @@ static int contact_listener(
 
     /* we lost contact with the scheduler. reset*/
     listener_conns[l_idx].first_time = 1;
-    log_err(errno, id, tmpLine);
+    log_err(errno, __func__, tmpLine);
 
     return(-1);
     }
@@ -368,7 +358,7 @@ static int contact_listener(
             l_idx + 1,
             listener_conns[l_idx].port);
 
-    log_err(errno, id, tmpLine);
+    log_err(errno, __func__, tmpLine);
 
     close_conn(sock, TRUE);
   

@@ -690,7 +690,6 @@ void dispatch_request(
   struct batch_request *request) /* I */
 
   {
-  char *id = "dispatch_request";
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 5)
@@ -699,7 +698,7 @@ void dispatch_request(
       reqtype_to_txt(request->rq_type),
       sfds);
 
-    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,id,log_buf);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
   switch (request->rq_type)

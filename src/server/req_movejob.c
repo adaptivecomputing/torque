@@ -122,9 +122,6 @@ void *req_movejob(
   void *vp) /* I */
 
   {
-#ifndef NDEBUG
-  char *id = "req_movejob";
-#endif
   job *jobp;
   struct batch_request *req = (struct batch_request *)vp;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -142,7 +139,7 @@ void *req_movejob(
       (jobp->ji_qs.ji_state != JOB_STATE_WAITING))
     {
 #ifndef NDEBUG
-    sprintf(log_buf, "%s %d %s", pbse_to_txt(PBSE_BADSTATE), jobp->ji_qs.ji_state, id);
+    sprintf(log_buf, "%s %d %s", pbse_to_txt(PBSE_BADSTATE), jobp->ji_qs.ji_state, __func__);
 
     log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jobp->ji_qs.ji_jobid,log_buf);
 #endif /* NDEBUG */
@@ -216,9 +213,6 @@ void *req_orderjob(
   void *vp) /* I */
 
   {
-#ifndef NDEBUG
-  static char          *id = "req_orderjob";
-#endif
   job                  *pjob;
   job                  *pjob1;
   job                  *pjob2;
@@ -248,7 +242,7 @@ void *req_orderjob(
             pbse_to_txt(PBSE_BADSTATE),
             pjob->ji_qs.ji_state);
 
-    strcat(log_buf, id);
+    strcat(log_buf, __func__);
 
     log_event(
       PBSEVENT_DEBUG,

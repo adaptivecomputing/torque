@@ -280,7 +280,6 @@ static void post_signal_req(
   struct work_task *pwt)
 
   {
-  static char          *id = "post_signal_req";
   char                 *jobid;
   job                  *pjob;
 
@@ -312,7 +311,7 @@ static void post_signal_req(
     {
     if ((jobid = preq->rq_extra) == NULL)
       {
-      log_err(ENOMEM,id,"Cannot allocate memory! FAILURE");
+      log_err(ENOMEM, __func__, "Cannot allocate memory! FAILURE");
       return;
       }
 
@@ -358,7 +357,7 @@ static void post_signal_req(
       snprintf(log_buf,sizeof(log_buf),
         "Cannot find job '%s', assuming success",
         jobid);
-      log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,id,log_buf);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
     free(jobid);

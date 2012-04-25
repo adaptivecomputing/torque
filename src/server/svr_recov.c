@@ -499,7 +499,6 @@ int str_to_attr(
 
   {
   int   index;
-  char *id = "str_to_attr";
   char  buf[MAXLINE<<5];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -507,7 +506,7 @@ int str_to_attr(
       (val  == NULL) ||
       (attr == NULL))
     {
-    log_err(-1,id,"Illegal NULL pointer argument");
+    log_err(-1, __func__, "Illegal NULL pointer argument");
 
     return(-10);
     }
@@ -520,7 +519,7 @@ int str_to_attr(
     snprintf(log_buf,sizeof(log_buf),
       "Couldn't find attribute %s\n",
       name);
-    log_err(-1,id,log_buf);
+    log_err(-1, __func__, log_buf);
 
     return(ATTR_NOT_FOUND);
     }
@@ -547,7 +546,7 @@ int str_to_attr(
 
       if (attr[index].at_val.at_str == NULL)
         {
-        log_err(PBSE_SYSTEM,id,"Cannot allocate memory\n");
+        log_err(PBSE_SYSTEM, __func__, "Cannot allocate memory\n");
 
         return(PBSE_SYSTEM);
         }
@@ -657,7 +656,7 @@ int str_to_attr(
           
           errFlg = TRUE;
 
-          log_err(rc,id,log_buf);
+          log_err(rc, __func__, log_buf);
           }
         }
 
@@ -705,8 +704,6 @@ int svr_recov_xml(
   char *end;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  char *id = "svr_recov_xml";
-
   sdb = open(svrfile, O_RDONLY, 0);
 
   if (sdb < 0)
@@ -717,11 +714,11 @@ int svr_recov_xml(
         "cannot locate server database '%s' - use 'pbs_server -t create' to create new database if database has not been initialized.",
         svrfile);
 
-      log_err(errno, id, log_buf);
+      log_err(errno, __func__, log_buf);
       }
     else
       {
-      log_err(errno, id, msg_svdbopen);
+      log_err(errno, __func__, msg_svdbopen);
       }
 
     return(-1);
@@ -735,7 +732,7 @@ int svr_recov_xml(
       "Unable to read from serverdb file - %s",
       strerror(errno));
 
-    log_err(errno,id,log_buf);
+    log_err(errno, __func__, log_buf);
 
     return(-1);
     }
@@ -750,7 +747,7 @@ int svr_recov_xml(
     /* no server tag - check if this is the old format */
     log_event(PBSEVENT_SYSTEM,
       PBS_EVENTCLASS_SERVER,
-      id,
+      __func__,
       "Cannot find a server tag, attempting to load legacy format\n");
 
     close(sdb);
@@ -763,7 +760,7 @@ int svr_recov_xml(
   if (end == NULL)
     {
     /* no server tag???? */
-    log_err(-1,id,"No server tag found in the database file???");
+    log_err(-1, __func__, "No server tag found in the database file???");
     close(sdb);
 
     return(-1);
@@ -827,7 +824,7 @@ int svr_recov_xml(
             "Error creating attribute %s",
             child_parent);
 
-          log_err(rc,id,log_buf);
+          log_err(rc, __func__, log_buf);
 
           break;
           }

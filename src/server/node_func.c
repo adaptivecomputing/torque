@@ -1484,7 +1484,6 @@ int setup_node_boards(
   int             gpus;
   int             rc;
 
-  char           *id = "setup_node_boards";
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pnode == NULL)
@@ -1530,7 +1529,7 @@ int setup_node_boards(
     if (allocd_name == NULL)
       {
       /* no memory error */
-      log_err(PBSE_SYSTEM,id,"Cannot allocate memory for node name\n");
+      log_err(PBSE_SYSTEM, __func__, "Cannot allocate memory for node name\n");
 
       return(PBSE_SYSTEM);
       }
@@ -1590,7 +1589,7 @@ int setup_node_boards(
       pnode->num_node_boards,
       pnode->nd_name);
 
-    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buf);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
     }
 
   return(PBSE_NONE);
@@ -2990,7 +2989,6 @@ int insert_node(
   struct pbsnode *pnode) /* I */
 
   {
-  static char *id = "insert_node";
   int          rc;
 
   pthread_mutex_lock(an->allnodes_mutex);
@@ -2998,7 +2996,7 @@ int insert_node(
   if ((rc = insert_thing(an->ra,pnode)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc,id,"No memory to resize the array...SYSTEM FAILURE");
+    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
     }
   else
     {

@@ -254,7 +254,6 @@ int svr_get_privilege(
   char *host)  /* I */
 
   {
-  char  id[] = "svr_get_privilege";
   int   is_root = 0;
   int   priv = (ATR_DFLAG_USRD | ATR_DFLAG_USWR);
   int   num_host_chars;
@@ -267,7 +266,7 @@ int svr_get_privilege(
     {
     sprintf(log_buf, "Invalid user: %s", "null");
 
-    log_record(PBSEVENT_SECURITY,PBS_EVENTCLASS_SERVER,id,log_buf);
+    log_record(PBSEVENT_SECURITY, PBS_EVENTCLASS_SERVER, __func__, log_buf);
 
     return(0);
     }
@@ -277,7 +276,7 @@ int svr_get_privilege(
     {
     sprintf(log_buf, "Invalid user: %s", user);
 
-    log_record(PBSEVENT_SECURITY,PBS_EVENTCLASS_SERVER,id,log_buf);
+    log_record(PBSEVENT_SECURITY, PBS_EVENTCLASS_SERVER, __func__, log_buf);
      
     return(0);
     }
@@ -311,7 +310,7 @@ int svr_get_privilege(
     {
     snprintf(log_buf, sizeof(log_buf), "Invalid host: %s", host);
 
-    log_record(PBSEVENT_SECURITY,PBS_EVENTCLASS_SERVER,id,log_buf);
+    log_record(PBSEVENT_SECURITY, PBS_EVENTCLASS_SERVER, __func__, log_buf);
 
     return(0);
     }
@@ -384,11 +383,10 @@ int authenticate_user(
   char   **autherr) /* O */
 
   {
-  char id[] = "authenticate_user";
   int    rc;
   char   uath[PBS_MAXUSER + PBS_MAXHOSTNAME + 1];
   time_t time_now = time(NULL);
-  char error_msg[1024];
+  char   error_msg[1024];
   long   acl_enabled = FALSE;
 
 #ifdef MUNGE_AUTH
@@ -407,11 +405,7 @@ int authenticate_user(
       *autherr = strdup("User not in authorized user list.");
       sprintf(error_msg, "%s Requested user %s: requested from host %s",
                      *autherr, preq->rq_user, preq->rq_host);
-      log_event(
-        PBSEVENT_ADMIN,
-        PBS_EVENTCLASS_SERVER,
-        id,
-        error_msg);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, error_msg);
       return(PBSE_BADCRED);
       }
     }
@@ -421,11 +415,7 @@ int authenticate_user(
     *autherr = strdup("Users do not match");
     sprintf(error_msg, "%s: Requested user %s: credential user %s: requested from host %s",
                    *autherr, preq->rq_user, pcred->username, preq->rq_host);
-    log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      error_msg);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, error_msg);
     return(PBSE_BADCRED);
     }
 #endif
@@ -435,11 +425,7 @@ int authenticate_user(
     *autherr = strdup("Hosts do not match");
     sprintf(error_msg, "%s: Requested host %s: credential host: %s",
                    *autherr, preq->rq_host, pcred->hostname);
-    log_event(
-      PBSEVENT_ADMIN,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      error_msg);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, error_msg);
     return(PBSE_BADCRED);
     }
 

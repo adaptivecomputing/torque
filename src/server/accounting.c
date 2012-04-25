@@ -591,11 +591,10 @@ void acct_cleanup(
   long	days_to_keep)	/* Number of days to keep accounting files */
 
   {
-  char *id = "acct_cleanup";
 
   if (log_remove_old(path_acct,(days_to_keep * SECS_PER_DAY)) != 0)
     {
-    log_err(-1,id,"failure occurred when checking for old accounting logs");
+    log_err(-1, __func__, "failure occurred when checking for old accounting logs");
     }
 
   return;

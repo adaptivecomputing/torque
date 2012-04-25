@@ -136,7 +136,6 @@ int save_struct(
   size_t        buf_size)        /* I */
 
   {
-  static char *id = "save_struct";
   size_t       left_to_copy = objsize;
   size_t       copy_size;
   char        *obj_current = pobj;
@@ -161,7 +160,7 @@ int save_struct(
       if (write_buffer(buf_ptr, buf_size, fds) != PBSE_NONE)
         {
         /* FAILURE */
-        log_err(-1, id, "Cannot write the buffer to the file!");
+        log_err(-1, __func__, "Cannot write the buffer to the file!");
         return(-1);
         }
       else
@@ -366,8 +365,6 @@ int recov_attr(
   int                   do_actions)
 
   {
-  static char  id[] = "recov_attr";
-
   int       amt;
   int       i;
   int       index;
@@ -390,7 +387,7 @@ int recov_attr(
 
     if (i != sizeof(tempal))
       {
-      log_err(errno, id, "read1");
+      log_err(errno, __func__, "read1");
 
       return(-1);
       }
@@ -400,7 +397,7 @@ int recov_attr(
 
     if (tempal.al_tsize <= (int)sizeof(tempal))
       {
-      log_err(-1, id, "attr size too small");
+      log_err(-1, __func__, "attr size too small");
 
       return(-1);
       }
@@ -413,7 +410,7 @@ int recov_attr(
 
     if (pal == NULL)
       {
-      log_err(errno, id, "calloc failed");
+      log_err(errno, __func__, "calloc failed");
 
       return(-1);
       }
@@ -430,7 +427,7 @@ int recov_attr(
 
     if (i != amt)
       {
-      log_err(errno, id, "read2");
+      log_err(errno, __func__, "read2");
 
       free(pal);
 
@@ -473,7 +470,7 @@ int recov_attr(
         }
       else
         {
-        log_err(-1, id, "unknown attribute discarded");
+        log_err(-1, __func__, "unknown attribute discarded");
 
         free(pal);
 

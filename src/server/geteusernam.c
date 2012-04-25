@@ -299,7 +299,6 @@ int set_jobexid(
   struct group   *gpent;
   int             free_puser = FALSE;
   char           *puser = NULL;
-  char           *id = "set_jobexid";
   char           *at;
   char           *usr_at_host = NULL;
   int             len;
@@ -421,7 +420,7 @@ int set_jobexid(
         "User %s does not exist in server password file\n",
         puser);
 
-      log_err(errno, id, log_buf);
+      log_err(errno, __func__, log_buf);
 
       if (EMsg != NULL)
         snprintf(EMsg,1024,"%s",log_buf);
@@ -453,7 +452,7 @@ int set_jobexid(
             "User %s does not exist in server password file\n",
             puser);
 
-          log_err(errno, id, log_buf);
+          log_err(errno, __func__, log_buf);
 
           if (EMsg != NULL)
             snprintf(EMsg,1024,"%s",log_buf);
@@ -631,7 +630,7 @@ int set_jobexid(
       }
     else
       {
-      log_err(errno, id, "getpwnam failed");
+      log_err(errno, __func__, "getpwnam failed");
 
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "user does not exist in server password file");
@@ -707,7 +706,7 @@ int set_jobexid(
           puser,
           pgrpn);
 
-        log_err(-1,id,log_buf);
+        log_err(-1, __func__, log_buf);
 
         if (EMsg != NULL)
           snprintf(EMsg, 1024, "%s",log_buf);

@@ -305,20 +305,18 @@ void initialize_all_tasks_array(
   all_tasks *at) /* O */
 
   {
-  static char         *id = "initialize_all_tasks_array";
-
   at->ra = initialize_resizable_array(INITIAL_ALL_TASKS_SIZE);
 
   if (at->ra == NULL)
     {
-    log_err(ENOMEM,id,"Cannot allocate space for array...FAILURE");
+    log_err(ENOMEM, __func__, "Cannot allocate space for array...FAILURE");
     }
   
   at->alltasks_mutex = calloc(1, sizeof(pthread_mutex_t));
 
   if (at->alltasks_mutex == NULL)
     {
-    log_err(ENOMEM,id,"Cannot allocate space for mutex...FAILURE");
+    log_err(ENOMEM, __func__, "Cannot allocate space for mutex...FAILURE");
     }
   else
     {
@@ -374,7 +372,6 @@ int insert_task(
   work_task *wt)
 
   {
-  static char *id = "insert_task";
   int rc;
 
   pthread_mutex_lock(at->alltasks_mutex);
@@ -382,7 +379,7 @@ int insert_task(
   if ((rc = insert_thing(at->ra,wt)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc,id,"Cannot allocate space to resize the array");
+    log_err(rc, __func__, "Cannot allocate space to resize the array");
     }
 
   wt->wt_tasklist = at;
@@ -408,7 +405,6 @@ int insert_task_before(
   work_task *after)
 
   {
-  static char *id = "insert_task_after";
   int          rc;
   int          i;
 
@@ -437,7 +433,7 @@ int insert_task_before(
     if ((rc = insert_thing_before(at->ra,before,i)) == -1)
       {
       rc = ENOMEM;
-      log_err(rc,id,"Cannot allocate space to resize the array");
+      log_err(rc, __func__, "Cannot allocate space to resize the array");
       }
     }
 
@@ -458,7 +454,6 @@ int insert_task_first(
   work_task *wt)
 
   {
-  static char *id = "insert_task_first";
   int          rc;
 
   pthread_mutex_lock(at->alltasks_mutex);
@@ -466,7 +461,7 @@ int insert_task_first(
   if ((rc = insert_thing_after(at->ra,wt,ALWAYS_EMPTY_INDEX)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc,id,"Cannot allocate space to resize the array");
+    log_err(rc, __func__, "Cannot allocate space to resize the array");
     }
 
   pthread_mutex_unlock(at->alltasks_mutex);
