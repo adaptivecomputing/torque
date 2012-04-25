@@ -78,7 +78,7 @@
 */
 
 
-
+#define APBASIL_RETRIES             5
 #define WRITING_PIPE_ERROR          -1
 #define READING_PIPE_ERROR          -2
 #define ALPS_PARSING_ERROR          -3
@@ -96,6 +96,8 @@
 #define DELETE_BASIL_REQ            "echo \\<?xml version='1.0'?\\>\\<BasilRequest protocol='%s' method='RELEASE' reservation_id='%s'/\\> | %s"
 
 
+extern const int   apbasil_fail_transient;
+extern const int   apbasil_fail_permanent;
 extern const char *response_data;
 extern const char *node_array;
 extern const char *node_name;
@@ -131,6 +133,7 @@ extern const char *alps_starter_feature;
 extern const char *reserved;
 extern const char *pagg_id;
 extern const char *admin_cookie;
+extern const char *error_class;
 
 typedef struct host_req
   {

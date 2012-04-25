@@ -255,6 +255,38 @@ dynamic_string *get_reservation_command(
 
 
 
+int find_error_type(
+
+  xmlNode *node)
+
+  {
+  char    *attr_val = (char *)xmlGetProp(node, (const xmlChar *)error_class);
+  int      rc = apbasil_fail_transient;
+  xmlNode *child;
+
+  if (!strcmp(attr_val, "PERMANENT"))
+    rc = apbasil_fail_permanent;
+
+  for (child = node->children; child != NULL; child = child->next)
+    {
+    if (!strcmp((const char *)child->name, text_name))
+      {
+      char *errtext = (char *)xmlNodeGetContent(child);
+      if (strstr(errtext, "error") != NULL)
+        {
+        snprintf(log_buffer, sizeof(log_buffer), "%s alps error: '%s'",
+          attr_val, errtext);
+        log_err(-1, __func__, log_buffer);
+        }
+      }
+    }
+
+  return(rc);
+  } /* END find_and_log_error() */
+
+
+
+
 int parse_reservation_output(
 
   char  *output,
@@ -264,7 +296,7 @@ int parse_reservation_output(
   xmlDocPtr  doc;
   xmlNode   *node;
   char      *attr_val;
-  int        rc = -1;
+  int        rc = apbasil_fail_transient;
 
   if ((doc = xmlReadMemory(output, strlen(output), "apbasil", NULL, 0)) == NULL)
     {
@@ -290,8 +322,8 @@ int parse_reservation_output(
       attr_val = (char *)xmlGetProp(node, (const xmlChar *)status);
       if (strcmp(attr_val, success))
         {
-        /* FAILURE */
-        return(rc);
+        /* FAILURE - permanent or transient? */
+        return(find_error_type(node));
         }
       else
         rc = PBSE_NONE;
@@ -391,7 +423,9 @@ int parse_confirmation_output(
       attr_val = (char *)xmlGetProp(node, (const xmlChar *)status);
 
       if (strcmp(attr_val, success))
-        rc = -1;
+        {
+        rc = find_error_type(node);
+        }
       else
         rc = PBSE_NONE;
 
@@ -481,18 +515,35 @@ int create_alps_reservation(
   {
   resizable_array *host_req_list;
   dynamic_string  *command;
-  int              rc;
+  int              rc = 1;
+  int              retry_count = 0;
 
   host_req_list = parse_exec_hosts(exec_hosts);
   
   command = get_reservation_command(host_req_list, username, jobid, apbasil_path, apbasil_protocol);
 
-  rc = execute_reservation(command->str, reservation_id);
+  /* retry on failure up to  */
+  while ((retry_count++ < APBASIL_RETRIES) &&
+         (rc != apbasil_fail_permanent) &&
+         (rc != PBSE_NONE))
+    {
+    rc = execute_reservation(command->str, reservation_id);
+    }
 
   free_dynamic_string(command);
 
   if (rc == PBSE_NONE)
-    confirm_reservation(jobid, reservation_id, pagg_id, apbasil_path, apbasil_protocol);
+    {
+    rc = 1;
+    retry_count = 0;
+  
+    while ((retry_count++ < APBASIL_RETRIES) &&
+           (rc != apbasil_fail_permanent) &&
+           (rc != PBSE_NONE))
+      {
+      rc = confirm_reservation(jobid, reservation_id, pagg_id, apbasil_path, apbasil_protocol);
+      }
+    }
 
   return(rc);
   } /* END create_alps_reservation() */

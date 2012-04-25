@@ -86,6 +86,7 @@
 #include <libxml/tree.h>
 #include <unistd.h>
 
+#include "alps_functions.h"
 #include "alps_constants.h"
 #include "utils.h"
 
@@ -121,7 +122,9 @@ int parse_release_output(
       attr_val = (char *)xmlGetProp(node, (const xmlChar *)status);
 
       if (strcmp((const char *)attr_val, success))
-        rc = -1;
+        {
+        rc = find_error_type(node);
+        }
       else
         rc = PBSE_NONE;
 
@@ -138,33 +141,24 @@ int parse_release_output(
 
 
 
-
-
-int destroy_alps_reservation(
-
-  char *reservation_id,
-  char *apbasil_path,
-  char *apbasil_protocol)
+int execute_alps_release(
+    
+  char *command)
 
   {
-  int       rc;
-  char      command_buf[MAXLINE * 2];
   FILE     *alps_pipe;
-  int       fd;
   char      output[MAXLINE * 4];
+  int       fd;
+  int       rc;
   char     *ptr;
   int       bytes_read;
   int       total_bytes_read = 0;
 
-  snprintf(command_buf, sizeof(command_buf), DELETE_BASIL_REQ,
-    apbasil_protocol, reservation_id,
-    (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
-
-  if ((alps_pipe = popen(command_buf, "r")) == NULL)
+  if ((alps_pipe = popen(command, "r")) == NULL)
     {
     snprintf(log_buffer, sizeof(log_buffer),
       "Unable to open command %s for apbasil",
-      command_buf);
+      command);
     log_err(errno, __func__, log_buffer);
 
     return(WRITING_PIPE_ERROR);
@@ -190,6 +184,34 @@ int destroy_alps_reservation(
     rc = READING_PIPE_ERROR;
   else
     rc = parse_release_output(output);
+
+  return(rc);
+  } /* END execute_alps_release() */
+
+
+
+
+int destroy_alps_reservation(
+
+  char *reservation_id,
+  char *apbasil_path,
+  char *apbasil_protocol)
+
+  {
+  int       rc = 1;
+  int       retry_count = 0;
+  char      command_buf[MAXLINE * 2];
+
+  snprintf(command_buf, sizeof(command_buf), DELETE_BASIL_REQ,
+    apbasil_protocol, reservation_id,
+    (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
+
+  while ((rc != PBSE_NONE) &&
+         (rc != apbasil_fail_permanent) &&
+         (retry_count < APBASIL_RETRIES))
+    {
+    rc = execute_alps_release(command_buf);
+    }
 
   return(rc);
   } /* END destroy_alps_reservation() */

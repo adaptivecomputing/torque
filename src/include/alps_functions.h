@@ -81,6 +81,8 @@
 #include "pbs_nodes.h"
 #include "dynamic_string.h"
 #include "batch_request.h"
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 extern const char *alps_reporter_feature;
 
@@ -94,3 +96,4 @@ int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apb
 
 int create_alps_reservation(char *exec_hosts, char *username, char *jobid, char *apbasil_path, char *apbasil_protocol, long long pagg_id, char **reservation_id);
 
+int find_error_type(xmlNode *node);
