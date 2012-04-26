@@ -514,7 +514,8 @@ int svr_enquejob(
     /* start attempts to route job */
     pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_ROUTE;
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
-    pjob->ji_qs.ji_un.ji_routet.ji_rteretry = 0;
+    /* must be set to 1 so that routing is attempted */
+    pjob->ji_qs.ji_un.ji_routet.ji_rteretry = 1;
     
     unlock_queue(pque, __func__, "route job", LOGLEVEL);
     }
