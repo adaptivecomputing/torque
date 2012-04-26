@@ -1550,38 +1550,19 @@ static job *chk_job_torun(
 
 int set_mother_superior_ports(
     
-  job *pjob,
-  char *list)
+  job *pjob)
 
   {
-  char ms[PBS_MAXHOSTNAME];
-  char *ptr;
-  int  i;
   struct pbsnode *pnode;
 
-  if (list == NULL)
-    {
-    return(PBSE_UNKNODEATR);
-    }
-
-  memset(ms, 0, PBS_MAXHOSTNAME);
-  ptr = list;
-
-  /* get the first name in list. This is Mother Superior */
-  for(i = 0; ptr && (*ptr != '/') && (i < PBS_MAXHOSTNAME); i++)
-    {
-    ms[i] = *ptr;
-    ptr++;
-    }
-
-  pnode = find_nodebyname(ms);
+  pnode = find_nodebyname(pjob->ji_qs.ji_destin);
 
   if (pnode != NULL)
     {
     pjob->ji_qs.ji_un.ji_exect.ji_momport = pnode->nd_mom_port;
     pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport = pnode->nd_mom_rm_port;
 
-    unlock_node(pnode, "set_mother_superior_ports", NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     
     return(PBSE_NONE);
     }
@@ -1745,6 +1726,7 @@ static int assign_hosts(
   int           local_errno = 0;
   char         *def_node = NULL;
   char         *to_free = NULL;
+  long          cray_enabled = FALSE;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -1902,10 +1884,15 @@ static int assign_hosts(
       portlist = pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str;
       }
 
-    tmp = parse_servername(hosttoalloc, &dummy);
-
+    get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+    if ((cray_enabled == TRUE) &&
+        (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
+      tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
+    else
+      tmp = parse_servername(hosttoalloc, &dummy);
+    
     snprintf(pjob->ji_qs.ji_destin, sizeof(pjob->ji_qs.ji_destin), "%s", tmp);
-
+    
     free(tmp);
 
     if (momaddr == 0)
@@ -1933,7 +1920,7 @@ static int assign_hosts(
 
     pjob->ji_qs.ji_un.ji_exect.ji_momaddr = momaddr;
 
-    rc = set_mother_superior_ports(pjob, list);
+    rc = set_mother_superior_ports(pjob);
 
     }  /* END if (rc == 0) */
 

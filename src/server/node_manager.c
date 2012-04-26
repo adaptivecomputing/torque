@@ -4947,7 +4947,8 @@ int set_nodes(
   char              *gpu_str = NULL;
   char               ProcBMStr[MAX_BM];
   char               log_buf[LOCAL_LOG_BUF_SIZE];
-  node_job_add_info  *naji = NULL;
+  node_job_add_info *naji = NULL;
+  long               cray_enabled = FALSE; 
 
 #ifdef NVIDIA_GPUS
   int gpu_flags = 0;
@@ -5037,6 +5038,28 @@ int set_nodes(
   if ((rc = translate_howl_to_string(hlist, EMsg, &NCount, rtnlist, rtnportlist, TRUE)) != PBSE_NONE)
     {
     return(rc);
+    }
+
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+  if (cray_enabled == TRUE)
+    {
+    char *plus = strchr(*rtnlist, '+');
+    char *login_name;
+
+    /* only do this if there's more than one host in the host list */
+    if (plus != NULL)
+      {
+      char *to_free = *rtnlist;
+
+      *plus = '\0';
+      login_name = strdup(*rtnlist);
+      *rtnlist = strdup(plus + 1);
+      free(to_free);
+      
+
+      pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str = login_name;
+      pjob->ji_wattr[JOB_ATR_login_node_id].at_flags = ATR_VFLAG_SET;
+      }
     }
 
   if (gpu_list != NULL)

@@ -325,8 +325,7 @@ static int marknode(
 struct batch_status *statnode(
 
   int   con,
-  char *nodearg,
-  int   display_login_nodes)
+  char *nodearg)
 
   {
 
@@ -334,10 +333,7 @@ struct batch_status *statnode(
   char                *errmsg;
   int                  local_errno = 0;
 
-  if (display_login_nodes == FALSE)
-    bstatus = pbs_statnode_err(con, nodearg, NULL, NULL, &local_errno);
-  else
-    bstatus = pbs_statnode_err(con, nodearg, NULL, "login_nodes", &local_errno);
+  bstatus = pbs_statnode_err(con, nodearg, NULL, NULL, &local_errno);
 
   if (bstatus == NULL)
     {
@@ -596,7 +592,6 @@ int main(
   enum  note_flags      note_flag = unused;
   char                **nodeargs = NULL;
   int                   lindex;
-  int                   display_login_nodes = FALSE;
 
   enum NStateEnum ListType = tnsNONE;
 
@@ -604,19 +599,13 @@ int main(
 
   progname = strdup(argv[0]);
 
-  while ((i = getopt(argc, argv, "aAcdlopqrs:x-:N:n")) != EOF)
+  while ((i = getopt(argc, argv, "acdlopqrs:x-:N:n")) != EOF)
     {
     switch (i)
       {
       case 'a':
 
         flag = ALLI;
-
-        break;
-
-      case 'A':
-
-        display_login_nodes = TRUE;
 
         break;
 
@@ -909,7 +898,7 @@ int main(
 
         for (lindex = 0;nodeargs[lindex] != '\0';lindex++)
           {
-          bstatus = statnode(con, nodeargs[lindex], display_login_nodes);
+          bstatus = statnode(con, nodeargs[lindex]);
 
           for (pbstat = bstatus;pbstat;pbstat = pbstat->next)
             {
@@ -930,7 +919,7 @@ int main(
         {
         for (lindex = 0;nodeargs[lindex] != '\0';lindex++)
           {
-          bstatus = statnode(con, nodeargs[lindex], display_login_nodes);
+          bstatus = statnode(con, nodeargs[lindex]);
 
           for (pbstat = bstatus;pbstat;pbstat = pbstat->next)
             {
@@ -954,7 +943,7 @@ int main(
 
       for (lindex = 0;nodeargs[lindex] != '\0';lindex++)
         {
-        bstatus = statnode(con, nodeargs[lindex], display_login_nodes);
+        bstatus = statnode(con, nodeargs[lindex]);
 
         for (pbstat = bstatus;pbstat != NULL;pbstat = pbstat->next)
           {

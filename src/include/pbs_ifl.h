@@ -113,6 +113,7 @@
 #define ATTR_A "Account_Name"
 #define ATTR_args "job_arguments"
 #define ATTR_reservation_id "reservation_id"
+#define ATTR_login_node_id "login_node_id"
 #define ATTR_M "Mail_Users"
 #define ATTR_N "Job_Name"
 #define ATTR_S "Shell_Path_List"

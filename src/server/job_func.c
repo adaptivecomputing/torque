@@ -1575,7 +1575,8 @@ void job_purge(
     }
   
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-  if (cray_enabled == TRUE)
+  if ((cray_enabled == TRUE) &&
+      (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL))
     remove_alps_reservation(pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
 
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN) &&

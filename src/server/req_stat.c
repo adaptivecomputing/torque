@@ -1383,12 +1383,6 @@ int get_numa_statuses(
 
   struct pbsnode *pn;
 
-  /* only display alps starter nodes upon request */
-  if ((pnode->nd_is_alps_starter == TRUE) &&
-      ((preq->rq_extend == NULL) ||
-       (strcmp(preq->rq_extend, "login_nodes") != 0)))
-    return(rc);
-
   if (pnode->num_node_boards == 0)
     {
     /* no numa nodes, just return the status for this node */

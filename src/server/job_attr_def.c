@@ -1089,14 +1089,26 @@ attribute_def job_attr_def[] =
    PARENT_TYPE_JOB},
 
   /* JOB_ATR_reservation_id */
-  {ATTR_reservation_id,
+  {ATTR_reservation_id, /* reservation_id */
    decode_str,
    encode_str,
    set_str,
    comp_str,
    free_str,
    NULL_FUNC,
-   READ_WRITE | ATR_DFLAG_SELEQ | ATR_DFLAG_MOM,
+   READ_WRITE |  ATR_DFLAG_MOM,
+   ATR_TYPE_STR,
+   PARENT_TYPE_JOB},
+
+  /* JOB_ATR_login_node_id */
+  {ATTR_login_node_id,  /* login_node_id */
+   decode_str,
+   encode_str,
+   set_str,
+   comp_str,
+   free_str,
+   NULL_FUNC,
+   READ_WRITE,
    ATR_TYPE_STR,
    PARENT_TYPE_JOB},
 
