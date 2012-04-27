@@ -164,7 +164,7 @@ void dispatch_task(struct work_task *ptask)
   exit(1);
   }
 
-void dispatch_request(int sfds, struct batch_request *request)
+int dispatch_request(int sfds, struct batch_request *request)
   {
   fprintf(stderr, "The call to dispatch_request needs to be mocked!!\n");
   exit(1);

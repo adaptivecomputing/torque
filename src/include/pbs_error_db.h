@@ -231,8 +231,17 @@ PbsErrClient(PBSE_TMPNONAME, "tmpdir cannot be named for job")
 PbsErrClient(PBSE_CANTOPENSOCKET, "cannot open demux sockets")
 PbsErrClient(PBSE_CANTCONTACTSISTERS, "cannot send join job to all sisters")
 PbsErrClient(PBSE_CANTCREATETMPDIR, "cannot create tmpdir for job")
-PbsErrClient(PBSE_BADMOMSTATE, "Mom is down, cannot run job")
 /* 15110 */
+PbsErrClient(PBSE_BADMOMSTATE, "Mom is down, cannot run job")
+PbsErrClient(PBSE_SOCKET_INFORMATION, "socket information is not accessible")
+PbsErrClient(PBSE_SOCKET_DATA, "data on socket does not process correctly")
+PbsErrClient(PBSE_CLIENT_INVALID, "client is not allowed/trusted")
+PbsErrClient(PBSE_PREMATURE_EOF, "Premature End of File")
+PbsErrClient(PBSE_CAN_NOT_SAVE_FILE, "Error saving file")
+PbsErrClient(PBSE_CAN_NOT_OPEN_FILE, "Error opening file")
+PbsErrClient(PBSE_CAN_NOT_WRITE_FILE, "Error opening file")
+PbsErrClient(PBSE_JOB_FILE_CORRUPT, "Job file corrupt")
+PbsErrClient(PBSE_JOB_RERUN, "Job can not be rerun")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

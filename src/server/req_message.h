@@ -4,7 +4,7 @@
 
 #include "batch_request.h" /* batch_request */
 
-void *req_messagejob(void *preq);
+int req_messagejob(struct batch_request *preq);
   
 /* static void post_message_req(struct work_task *pwt); */
 

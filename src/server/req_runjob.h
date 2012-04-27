@@ -5,7 +5,7 @@
 #include "pbs_job.h" /* job */
 #include "batch_request.h" /* batch_request */
 
-void *req_runjob(void *vp);
+int req_runjob(struct batch_request *preq);
 
 /* static int is_checkpoint_restart(job *pjob); */
 
@@ -13,7 +13,7 @@ void *req_runjob(void *vp);
 
 /* static int svr_send_checkpoint(job *pjob, struct batch_request *preq, int state, int substate); */
 
-void *req_stagein(void *vp);
+int req_stagein(struct batch_request *preq);
 
 /* static void post_stagein(struct work_task *pwt); */
 

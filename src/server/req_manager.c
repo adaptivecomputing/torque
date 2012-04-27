@@ -2065,12 +2065,11 @@ void mgr_node_create(
  * appropriate function is called to perform the operation.
  */
 
-void *req_manager(
-
-  void *vp) /* I */
-
+int req_manager(
+    struct batch_request *preq)
   {
-  struct batch_request *preq = (struct batch_request *)vp;
+  int rc = PBSE_NONE;
+  char log_buf[LOCAL_LOG_BUF_SIZE+1];
 
   switch (preq->rq_ind.rq_manager.rq_cmd)
     {
@@ -2081,9 +2080,11 @@ void *req_manager(
 
       if ((preq->rq_perm & PERM_MANAGER) == 0)
         {
-        req_reject(PBSE_PERM, 0, preq, NULL, NULL);
-
-        return(NULL);
+        rc = PBSE_PERM;
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+            "error in permissions (PERM_MANAGER)");
+        req_reject(rc, 0, preq, NULL, log_buf);
+        return rc;
         }
 
       switch (preq->rq_ind.rq_manager.rq_objtype)
@@ -2109,10 +2110,10 @@ void *req_manager(
 
         default:
 
-          req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
-
-          return(NULL);
-
+          rc = PBSE_IVALREQ;
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Invalid object type");
+          req_reject(rc, 0, preq, NULL, log_buf);
+          return rc;
           break;
         }
 
@@ -2122,9 +2123,11 @@ void *req_manager(
 
       if ((preq->rq_perm & PERM_OPorMGR) == 0)
         {
-        req_reject(PBSE_PERM, 0, preq, NULL, NULL);
-
-        return(NULL);
+        rc = PBSE_PERM;
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+            "error in permissions (PERM_OPorMGR)");
+        req_reject(rc, 0, preq, NULL, log_buf);
+        return rc;
         }
 
       switch (preq->rq_ind.rq_manager.rq_objtype)
@@ -2161,9 +2164,11 @@ void *req_manager(
 
       if ((preq->rq_perm & PERM_OPorMGR) == 0)
         {
-        req_reject(PBSE_PERM, 0, preq, NULL, NULL);
-
-        return(NULL);
+        rc = PBSE_PERM;
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+            "error in permissions (PERM_OPorMGR)");
+        req_reject(rc, 0, preq, NULL, log_buf);
+        return rc;
         }
 
       switch (preq->rq_ind.rq_manager.rq_objtype)
@@ -2209,7 +2214,7 @@ void *req_manager(
       break;
     }  /* END switch() */
 
-  return(NULL);
+  return rc;
   }  /* END req_manager() */
 
 

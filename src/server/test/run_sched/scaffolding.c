@@ -60,7 +60,7 @@ int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *E
   exit(1);
   }
 
-void *process_request(void *new_sock)
+int process_request(int new_sock)
   {
   fprintf(stderr, "The call to process_request to be mocked!!\n");
   exit(1);

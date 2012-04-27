@@ -7,7 +7,7 @@
 
 int attempt_delete(void *j);
 
-void req_deletearray(struct batch_request *preq);
+int req_deletearray(struct batch_request *preq);
 
 void array_delete_wt(struct work_task *ptask);
 

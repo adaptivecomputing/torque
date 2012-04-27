@@ -10,7 +10,6 @@
 #include "list_link.h" /* list_link */
 #include "batch_request.h" /* batch_request */
 
-#define STAT_CNTL
 #include "svrfunc.h" /* stat_cntl */
 
 int svr_resc_size = 0;

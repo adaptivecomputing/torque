@@ -3,6 +3,7 @@
 #include <time.h> /* time_t */
 #include <netinet/in.h> /* sockaddr_in */
 #include <sys/select.h> /* fd_set */
+#include <netdb.h> /* struct addrinfo */
 
 #include "net_connect.h" /* pbs_net_t,conn_type */
 #include "md5.h" /* MD5_CTX */
@@ -30,6 +31,7 @@ void MD5Final(MD5_CTX *mdContext);
 unsigned availBytesOnDescriptor(int pLocalSocket);
 int socket_avail_bytes_on_descriptor(int socket);
 int socket_get_tcp();
+int get_listen_socket(struct addrinfo *);
 int get_random_reserved_port();
 int socket_get_tcp_priv();
 int socket_connect(int *local_socket, char *dest_addr, int dest_addr_len, int dest_port, int family, int is_privileged, char **err_msg);
@@ -48,6 +50,7 @@ int socket_close(int socket);
 
 /* from file server_core.c */
 int start_listener(char *server_ip, int server_port, void *(*process_meth)(void *));
+int start_listener_addrinfo(char *host_name, int server_port, void *(*process_meth)(void *));
 
 /* from file net_client.c */
 #ifdef __APPLE__

@@ -8,7 +8,7 @@ void svr_shutdown(int type);
 
 void shutdown_ack(void);
 
-void req_shutdown(struct batch_request *preq);
+int req_shutdown(struct batch_request *preq);
 
 /* static int shutdown_checkpoint(job *pjob); */
 

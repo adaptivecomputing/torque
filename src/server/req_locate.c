@@ -118,16 +118,14 @@ extern int    LOGLEVEL;
  * This request attempts to locate a job.
  */
 
-void *req_locatejob(
-
-  void *vp)
-
+int  req_locatejob(
+    struct batch_request *preq)
   {
+  int rc = PBSE_NONE;
   char   *at;
   int   i;
   job  *pjob;
   char  *location = (char *)0;
-  struct batch_request *preq = (struct batch_request *)vp;
 
   if ((at = strchr(preq->rq_ind.rq_locate, (int)'@')))
     * at = '\0';  /* strip off @server_name */
@@ -173,9 +171,10 @@ void *req_locatejob(
         "cannot find job in server tracking list");
       }
 
-    req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
+    rc = PBSE_UNKJOBID;
+    req_reject(rc, 0, preq, NULL, NULL);
     }
 
-  return(NULL);
+  return rc;
   }  /* END req_locatejob() */
 

@@ -8,9 +8,9 @@
 int get_creds(int   sd, char *username, char *hostname);
 #endif
 
-void *process_request(void *new_sock);
+int process_request(int sock);
 
-void dispatch_request(int sfds, struct batch_request *request);
+int dispatch_request(int sfds, struct batch_request *request);
 
 /* static void svr_close_client(int sfds); */
 

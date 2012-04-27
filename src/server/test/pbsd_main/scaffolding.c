@@ -167,7 +167,7 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-void svr_is_request(int stream, int version, int *cmdp)
+int svr_is_request(int stream, int version)
   {
   fprintf(stderr, "The call to svr_is_request needs to be mocked!!\n");
   exit(1);
@@ -191,7 +191,7 @@ void check_nodes(struct work_task *ptask)
   exit(1);
   }
 
-void *process_request(void *new_sock)
+int process_request(int sock)
   {
   fprintf(stderr, "The call to process_request needs to be mocked!!\n");
   exit(1);

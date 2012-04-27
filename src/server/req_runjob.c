@@ -182,12 +182,11 @@ void poll_job_task(work_task *);
  * This request forces a job into execution.  Client must be privileged.
  */
 
-void *req_runjob(
+int req_runjob(
 
-  void *vp)  /* I (modified) */
+  struct batch_request *preq)  /* I (modified) */
 
   {
-  struct batch_request *preq = (struct batch_request *)vp;
   job                  *pjob;
   int                   rc;
   void                 *bp;
@@ -196,7 +195,7 @@ void *req_runjob(
 
   char                  failhost[MAXLINE];
   char                  emsg[MAXLINE];
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
   /* chk_job_torun will extract job id and assign hostlist if specified */
 
@@ -209,7 +208,7 @@ void *req_runjob(
     {
     /* FAILURE - chk_job_torun performs req_reject internally */
 
-    return(NULL);
+    return(PBSE_UNKJOBID);
     }
 
   pthread_mutex_lock(scheduler_sock_jobct_mutex);
@@ -243,7 +242,7 @@ void *req_runjob(
     if (pjob == NULL)
       {
       req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
-      return(NULL);
+      return(PBSE_JOBNOTFOUND);
       }
     
     if ((pa->ai_qs.slot_limit < 0) ||
@@ -270,7 +269,7 @@ void *req_runjob(
       pthread_mutex_unlock(pjob->ji_mutex);
       pthread_mutex_unlock(pa->ai_mutex);
 
-      return(NULL);
+      return(PBSE_IVALREQ);
       }
     
     if (LOGLEVEL >= 7)
@@ -305,7 +304,7 @@ void *req_runjob(
 
   pthread_mutex_unlock(pjob->ji_mutex);
 
-  return(NULL);
+  return(rc);
   }  /* END req_runjob() */
 
 
@@ -506,16 +505,15 @@ static int svr_send_checkpoint(
  * Client must be privileged.
  */
 
-void *req_stagein(
+int req_stagein(
 
-  void *vp)  /* I */
+  struct batch_request *preq)  /* I */
 
   {
   job *pjob;
-  int  rc;
+  int  rc = PBSE_NONE;
 
   int  setneednodes;
-  struct batch_request *preq = (struct batch_request *)vp;
 
   if (getenv("TORQUEAUTONN"))
     setneednodes = 1;
@@ -524,7 +522,7 @@ void *req_stagein(
 
   if ((pjob = chk_job_torun(preq, setneednodes)) == NULL)
     {
-    return(NULL);
+    return(PBSE_UNKJOBID);
     }
 
   if ((pjob->ji_wattr[JOB_ATR_stagein].at_flags & ATR_VFLAG_SET) == 0)
@@ -535,7 +533,7 @@ void *req_stagein(
  
     pthread_mutex_unlock(pjob->ji_mutex);
 
-    return(NULL);
+    return(PBSE_IVALREQ);
     }
 
   if ((rc = svr_stagein(
@@ -551,7 +549,7 @@ void *req_stagein(
 
   pthread_mutex_unlock(pjob->ji_mutex);
 
-  return(NULL);
+  return(rc);
   }  /* END req_stagein() */
 
 

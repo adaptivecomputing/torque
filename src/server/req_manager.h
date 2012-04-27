@@ -42,7 +42,7 @@ void mgr_node_set(struct batch_request *preq);
 
 void mgr_node_create(struct batch_request *preq);
 
-void *req_manager(void *vp);
+int req_manager(struct batch_request *preq);
 
 int manager_oper_chk(pbs_attribute *pattr, void *pobject, int actmode);
 

@@ -400,33 +400,15 @@ extern void  reply_text (struct batch_request *, int code, char *text);
 extern int   reply_jobid (struct batch_request *, char *, int);
 extern void  reply_free (struct batch_reply *);
 extern int   authenticate_user (struct batch_request *, struct credential *, char **);
-extern void  dispatch_request (int, struct batch_request *);
 extern void  free_br (struct batch_request *);
 extern int   isode_request_read (int, struct batch_request *);
 
 #ifndef PBS_MOM
-extern void *req_authenuser (void *req);
-extern void *req_altauthenuser (void *req);
 extern void  req_connect (struct batch_request *req);
-extern void *req_locatejob (void *req);
-extern void *req_manager (void *req);
-extern void *req_movejob (void *req);
-void        *req_register (void *req);
-void        *req_registerarray (void *req);
-extern void *req_releasearray (void *req);
-extern void *req_releasejob (void *req);
-void        *req_rescq (void *req);
-void        *req_rerunjob (void *req);
-extern void *req_runjob (void *req);
-void        *req_selectjobs (void *req);
-extern void *req_stat_que (void *req);
-extern void *req_stat_svr (void *req);
 /* DIAGTODO: declr req_stat_diag() */
 extern void  req_trackjob (struct batch_request *req);
 extern void *req_gpuctrl (void *req);
-extern void *req_stat_job (void *req);
 #else
-extern void  req_stat_job (struct batch_request *req);
 extern void  req_cpyfile (struct batch_request *req);
 extern void  req_delfile (struct batch_request *req);
 extern void  req_returnfiles (struct batch_request *req);

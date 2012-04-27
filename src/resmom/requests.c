@@ -2494,7 +2494,7 @@ void encode_flagged_attrs(
  * the server that tells the server the MOM's general stats (see mom_server_all_update_stat()).
  */
 
-void req_stat_job(
+int req_stat_job(
 
   struct batch_request *preq)  /* I */
 
@@ -2531,7 +2531,7 @@ void req_stat_job(
       {
       req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 
-      return;
+      return(PBSE_UNKJOBID);
       }
     }
 
@@ -2570,7 +2570,7 @@ void req_stat_job(
 
   reply_send_mom(preq);
 
-  return;
+  return(PBSE_NONE);
   }  /* END req_stat_job() */
 
 

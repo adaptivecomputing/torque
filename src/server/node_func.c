@@ -125,6 +125,7 @@
 #include "net_connect.h"
 #include "utils.h"
 #include "u_tree.h"
+#include "node_manager.h" /* is_compose */
 #include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
 #include "req_manager.h" /* mgr_set_node_attr */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
@@ -3183,13 +3184,7 @@ int send_hierarchy(
   DIS_tcp_setup(sock);
 
   /* write the protocol, version and command */
-  if ((ret = diswsi(sock, IS_PROTOCOL)) == DIS_SUCCESS)
-    {
-    if ((ret = diswsi(sock, IS_PROTOCOL_VER)) == DIS_SUCCESS)
-      {
-      ret = diswsi(sock, IS_CLUSTER_ADDRS);
-      }
-    }
+  ret = is_compose(sock, IS_CLUSTER_ADDRS);
 
   if (ret == DIS_SUCCESS)
     {

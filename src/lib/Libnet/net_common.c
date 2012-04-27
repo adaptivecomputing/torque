@@ -7,7 +7,9 @@
 #include <string.h> /* memset */
 #include <sys/ioctl.h> /* ioctl, FIONREAD */
 #include <signal.h> /* Signals SIGPIPE, etc */
+#include <sys/types.h>
 #include <sys/socket.h> /* Socket communication */
+#include <netdb.h> /* struct addrinfo */
 #include <netinet/in.h> /* Internet domain sockets */
 #include <arpa/inet.h> /* in_addr_t */
 #include <errno.h> /* errno */
@@ -82,7 +84,32 @@ int socket_get_tcp()
   return local_socket;
   }
 
+int get_listen_socket(struct addrinfo *addr_info)
+  {
+  int local_socket = 0;
+  struct linger l_delay;
+  int on = 1;
+  
+  (void) signal(SIGPIPE, SIG_IGN);
+  memset(&l_delay, 0, sizeof(struct linger));
+  l_delay.l_onoff = 0;
 
+  if ((local_socket = socket(addr_info->ai_family, addr_info->ai_socktype, addr_info->ai_protocol)) == -1)
+    {
+    local_socket = -2;
+    }
+  else if (setsockopt(local_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1)
+    {
+    local_socket = -3;
+    }
+  else if (setsockopt(local_socket, SOL_SOCKET, SO_LINGER, &l_delay, sizeof(struct linger)) == -1)
+    {
+    local_socket = -4;
+    }
+
+    return(local_socket);
+  }
+   
 
 
 int get_random_reserved_port()

@@ -106,6 +106,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Libnet/lib_net.h" /* global_sock_add */
+#include "req_getcred.h" /* req_altauthenuser */
 
 #define SPACE 32 /* ASCII space character */
 
@@ -405,16 +406,13 @@ int unmunge_request(
  * non-privileged connection.  This connection is marked as authenticated.
  */
 
-void *req_authenuser(
-
-  void *vp)  /* I */
-
+int req_authenuser(
+    struct batch_request *preq)
   {
   int                   s;
   int                   debug = 0;
   int                   delay_cntr = 0;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  struct batch_request *preq = (struct batch_request *)vp;
 
   /*
    * find the socket whose client side is bound to the port named
@@ -457,7 +455,7 @@ void *req_authenuser(
       pthread_mutex_unlock(svr_conn[s].cn_mutex);
       if (debug) printf("(FOUND_PROCESSED) unlock %d (port %d)\n", s, svr_conn[s].cn_port);
 
-      return NULL;
+      return PBSE_NONE;
       }  /* END for (s) */
     if (debug) fprintf(stderr, "sock not found, sleeping (%d)\n", delay_cntr);
     usleep(10);
@@ -471,7 +469,7 @@ void *req_authenuser(
 
   /* FAILURE */
 
-  return NULL;
+  return PBSE_BADCRED;
   }  /* END req_authenuser() */
 
 
@@ -482,14 +480,13 @@ void *req_authenuser(
  * utility 
  * 
 */
-void *req_altauthenuser(
+int req_altauthenuser(
 
-  void *vp)  /* I */
+  struct batch_request *preq)  /* I */
 
   {
-  struct batch_request *preq = (struct batch_request *)vp;
   int s;
-  int rc;
+  int rc = PBSE_NONE;
   
   /*
    * find the socket whose client side is bound to the port named
@@ -514,7 +511,7 @@ void *req_altauthenuser(
     {
     pthread_mutex_unlock(svr_conn[s].cn_mutex);
 	  req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user. Client connection not found");
-    return(NULL);
+    return(PBSE_BADCRED);
     }
 
   rc = unmunge_request(s, preq);
@@ -522,7 +519,7 @@ void *req_altauthenuser(
     {
     /* FAILED */
     pthread_mutex_unlock(svr_conn[s].cn_mutex);
-    return(NULL);
+    return(rc);
     }
 
   /* SUCCESS */
@@ -537,7 +534,7 @@ void *req_altauthenuser(
 
   reply_ack(preq);
   
-  return(NULL);
+  return(PBSE_NONE);
   }  /* END req_altauthenuser() */
 
 

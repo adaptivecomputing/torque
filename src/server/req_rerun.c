@@ -167,16 +167,13 @@ static void post_rerun(
  * NOTE:  can be used to requeue active jobs or completed jobs.
  */
 
-void *req_rerunjob(
-
-  void *vp) /* I */
-
+int req_rerunjob(
+    struct batch_request *preq)
   {
-  struct batch_request *preq = (struct batch_request *)vp;
+  int rc = PBSE_NONE;
   job                  *pjob;
 
   int                   Force;
-  int                   rc;
   int                   MgrRequired = TRUE;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -188,7 +185,8 @@ void *req_rerunjob(
 
     /* chk_job_request calls req_reject() */
 
-    return(NULL);
+    rc = PBSE_SYSTEM;
+    return rc; /* This needs to fixed to return an accurate error */
     }
 
   /* the job must be running or completed */
@@ -211,12 +209,12 @@ void *req_rerunjob(
   else
     {
     /* FAILURE - job is in bad state */
-
-    req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
-
+    rc = PBSE_BADSTATE;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "job %s is in a bad state",
+        preq->rq_ind.rq_rerun);
+    req_reject(rc, 0, preq, NULL, log_buf);
     pthread_mutex_unlock(pjob->ji_mutex);
-
-    return(NULL);
+    return rc;
     }
 
   if ((MgrRequired == TRUE) &&
@@ -224,11 +222,12 @@ void *req_rerunjob(
     {
     /* FAILURE */
 
-    req_reject(PBSE_PERM, 0, preq, NULL, NULL);
-
+    rc = PBSE_PERM;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+        "additional permissions required (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)");
+    req_reject(rc, 0, preq, NULL, log_buf);
     pthread_mutex_unlock(pjob->ji_mutex);
-
-    return(NULL);
+    return rc;
     }
 
   /* the job must be rerunnable */
@@ -240,11 +239,12 @@ void *req_rerunjob(
                 IEEE Std 1003.1 specifically says rerun is to be rejected
                 if rerunable==FALSE -garrick */
 
-    req_reject(PBSE_NORERUN, 0, preq, NULL, NULL);
-
+    rc = PBSE_NORERUN;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "job %s not rerunnable",
+        preq->rq_ind.rq_rerun);
+    req_reject(rc, 0, preq, NULL, log_buf);
     pthread_mutex_unlock(pjob->ji_mutex);
-
-    return(NULL);
+    return rc;
     }
 
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
@@ -300,26 +300,23 @@ void *req_rerunjob(
 
       break;
 
-    case PBSE_SYSTEM:
-
-      req_reject(PBSE_SYSTEM, 0, preq, NULL, "cannot allocate memory");
-
-      return(NULL);
-
-      /*NOTREACHED*/
-
+    case PBSE_SYSTEM: /* This may not be accurate...*/
+      rc = PBSE_MEM_MALLOC;
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Can not allocate memory");
+      req_reject(rc, 0, preq, NULL, log_buf);
+      return rc;
       break;
 
     default:
 
       if (Force == 0)
         {
-        req_reject(PBSE_MOMREJECT, 0, preq, NULL, NULL);
-
+        rc = PBSE_MOMREJECT;
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Rejected by mom");
+        req_reject(rc, 0, preq, NULL, log_buf);
         if (pjob != NULL)
           pthread_mutex_unlock(pjob->ji_mutex);
-
-        return(NULL);
+        return rc;
         }
       else
         {
@@ -379,7 +376,11 @@ void *req_rerunjob(
     }  /* END switch (rc) */
 
   /* So job has run and is to be rerun (not restarted) */
-  if (pjob != NULL)
+  if (pjob == NULL)
+    {
+    rc = PBSE_JOB_RERUN;
+    }
+  else
     {
     pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
         ~(JOB_SVFLG_CHECKPOINT_FILE |JOB_SVFLG_CHECKPOINT_MIGRATEABLE |
@@ -395,7 +396,7 @@ void *req_rerunjob(
     pthread_mutex_unlock(pjob->ji_mutex);
     }
 
-  return(NULL);
+  return rc;
   }  /* END req_rerunjob() */
 
 

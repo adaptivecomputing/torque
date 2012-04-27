@@ -11,7 +11,7 @@ int comp_checkpoint(pbs_attribute *attr, pbs_attribute *with);
 
 /* static int comp_state(pbs_attribute *state, pbs_attribute *selstate); */
 
-void *req_selectjobs(void *vp);
+int req_selectjobs(struct batch_request *preq);
 
 /* static void sel_step2(struct stat_cntl *cntl); */
 

@@ -121,7 +121,7 @@ void *req_jobobit(void *vp)
   exit(1);
   }
 
-void *req_stat_job(void *vp)
+int *req_stat_job(struct batch_request *preq)
   {
   fprintf(stderr, "The call to req_stat_job needs to be mocked!!\n");
   exit(1);
@@ -205,7 +205,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-void *req_altauthenuser(void *vp)
+int req_altauthenuser(struct batch_request *preq)
   {
   fprintf(stderr, "The call to req_altauthenuser needs to be mocked!!\n");
   exit(1);

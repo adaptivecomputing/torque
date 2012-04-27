@@ -6,7 +6,7 @@
 #include "work_task.h" /* work_task */
 #include "pbs_job.h" /* job */
 
-void *req_track(void *preq);
+int req_track(struct batch_request *preq);
 
 void track_save(struct work_task *pwt);
     

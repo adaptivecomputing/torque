@@ -10,7 +10,7 @@ DIST_SUBDIRS = aix4 aix5 cygwin darwin digitalunix freebsd freebsd5 fujitsu \
 	hpux10 hpux11 irix5 irix6 irix6array linux netbsd solaris5 solaris7 sunos4 \
 	unicos8 unicosmk2
 
-include_HEADERS = catch_child.h checkpoint.h mom_comm.h mom_main.h mom_server_lib.h prolog.h
+include_HEADERS = catch_child.h checkpoint.h mom_comm.h mom_main.h mom_process_request.h mom_requests.h mom_server_lib.h prolog.h
 
 AM_CFLAGS = `xml2-config --cflags`
 AM_LIBS   = `xml2-config --libs`
@@ -32,7 +32,7 @@ sbin_PROGRAMS = pbs_mom pbs_demux
 LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS) $(ALPS_LIBS)
 
 pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c \
-		   mom_server.c prolog.c requests.c start_exec.c \
+		   mom_server.c prolog.c mom_requests.c start_exec.c \
        checkpoint.c tmsock_recov.c mom_req_quejob.c mom_job_func.c \
 			 mom_process_request.c alps_reservations.c release_reservation.c \
 			 generate_alps_status.c \

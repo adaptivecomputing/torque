@@ -9,17 +9,17 @@
 
 int chk_hold_priv(long val, int perm);
 
-void *req_holdjob(void *vp);
+int req_holdjob(struct batch_request *preq);
 
-void *req_checkpointjob(void *preq);
+int req_checkpointjob(struct batch_request *preq);
 
 int release_job(struct batch_request *preq, void *j);
 
-void *req_releasejob(void *vp);
+int req_releasejob(struct batch_request *preq);
 
 int release_whole_array(job_array *pa, struct batch_request *preq);
 
-void *req_releasearray(void *vp);
+int req_releasearray(struct batch_request *preq);
 
 int get_hold(tlist_head *phead, char **pset, pbs_attribute *temphold);
 

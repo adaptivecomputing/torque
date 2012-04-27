@@ -22,9 +22,9 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
 
 int modify_whole_array(job_array *pa, svrattrl *plist, struct batch_request *preq, int checkpoint_req);
 
-void *req_modifyarray(void *vp);
+int req_modifyarray(struct batch_request *preq);
 
-void *req_modifyjob(void *vp);
+int req_modifyjob(struct batch_request *preq);
 
 int modify_job_attr(job *pjob, svrattrl *plist, int perm, int *bad);
 

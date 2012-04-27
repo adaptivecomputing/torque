@@ -74,7 +74,7 @@ void req_jobscript(struct batch_request *preq)
   exit(1);
   }
 
-void req_stat_job(struct batch_request *preq)
+int req_stat_job(struct batch_request *preq)
   {
   fprintf(stderr, "The call to req_stat_job needs to be mocked!!\n");
   exit(1);

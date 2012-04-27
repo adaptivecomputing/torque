@@ -6,7 +6,7 @@
 
 void *mom_process_request(void *sock_num);
 
-void dispatch_request(int  sfds, struct batch_request *request);
+void mom_dispatch_request(int  sfds, struct batch_request *request);
 
 /* static void mom_close_client(int sfds); */
 

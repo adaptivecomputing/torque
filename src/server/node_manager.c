@@ -753,7 +753,7 @@ void *sync_node_jobs(
             
             /* NOTE:  node is actively reporting so should not be deleted and
                np->nd_addrs[] should not be NULL */            
-            conn = svr_connect(np->nd_addrs[0],pbs_mom_port,&local_errno,np,process_Dreply,ToServerDIS);
+            conn = svr_connect(np->nd_addrs[0],pbs_mom_port,&local_errno,np,NULL,ToServerDIS);
             
             if (conn >= 0)
               {
@@ -2137,20 +2137,10 @@ const char *PBSServerCmds2[] =
 
 
 
-
-/* 
- * svr_is_request_work
- * the function that performs the processing of the svr_is_request. This function is 
- * passed to the threadpool to be started from there.
- *
- * vp is an array of int pointers. 
- * The first slot is the socket number 
- * The second slot is the version
- */
-
-void *svr_is_request_work(
-
-  void *vp)
+int svr_is_request(
+    
+  int sock,
+  int version)
 
   {
   int                 command = 0;
@@ -2171,14 +2161,7 @@ void *svr_is_request_work(
 
   struct pbsnode     *node = NULL;
 
-  char                log_buf[LOCAL_LOG_BUF_SIZE];
-
-  int                 sock;
-  int                 version;
-  int                *args = (int *)vp;
-
-  sock = args[0];
-  version = args[1];
+  char                log_buf[LOCAL_LOG_BUF_SIZE+1];
 
   command = disrsi(sock, &ret);
 
@@ -2187,10 +2170,10 @@ void *svr_is_request_work(
 
   if (LOGLEVEL >= 4)
     {
-    sprintf(log_buf,
-      "message received from sock %d (version %d)",
-      sock,
-      version);
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+        "message received from sock %d (version %d)",
+        sock,
+        version);
 
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,__func__,log_buf);
     }
@@ -2198,40 +2181,30 @@ void *svr_is_request_work(
   if (getpeername(sock, &s_addr, &len) != 0)
     {
     close_conn(sock, FALSE);
-
-    free(vp);
-
     log_err(errno,__func__,"Cannot get socket name using getpeername\n");
-
-    return(NULL);
+    return PBSE_SOCKET_INFORMATION;
     }
 
   addr = (struct sockaddr_in *)&s_addr;
 
-  mom_port = disrsi(sock, &ret);
-  rm_port = disrsi(sock, &ret);
-
   if (version != IS_PROTOCOL_VER)
     {
-    sprintf(log_buf,
-      "protocol version %d unknown from %s",
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "protocol version %d unknown from %s",
       version,
       netaddr(addr));
 
     log_err(-1, __func__, log_buf);
-
-    close_conn(sock, 2);
-
-    free(vp);
-  
-    return(NULL);
+    close_conn(sock, FALSE);
+    return PBSE_SOCKET_DATA;
     }
 
   /* check that machine is known */
+  mom_port = disrsi(sock, &ret);
+  rm_port = disrsi(sock, &ret);
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buf,
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
       "message received from sock %s: mom_port %d  - rm_port %d",
       netaddr(addr),
       mom_port,
@@ -2248,7 +2221,7 @@ void *svr_is_request_work(
     } /* END if AVL_find != NULL) */
   else if (allow_any_mom)
     {
-    if (getnameinfo(&s_addr, len, nodename, sizeof(nodename), NULL, 0, 0) != 0)
+    if (getnameinfo(&s_addr, len, nodename, sizeof(nodename)-1,NULL,0,0) != 0)
       {
       tmpaddr = ntohl(addr->sin_addr.s_addr);
       sprintf(nodename, "0x%lX", tmpaddr);
@@ -2268,7 +2241,7 @@ void *svr_is_request_work(
     {
     /* node not listed in trusted ipaddrs list */
     
-    sprintf(log_buf,
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
       "bad attempt to connect from %s (address not trusted - check entry in server_priv/nodes)",
       netaddr(addr));
     
@@ -2276,19 +2249,18 @@ void *svr_is_request_work(
       {
       log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
-    
-    log_err(-1, __func__, log_buf);
+    else
+      {
+      log_err(-1, __func__, log_buf);
+      }
     
     close_conn(sock, FALSE);
-    
-    free(vp);
- 
-    return(NULL);
+    return PBSE_CLIENT_INVALID;
     }
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buf,
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
       "message %s (%d) received from mom on host %s (%s) (sock %d)",
       PBSServerCmds2[command],
       command,
@@ -2317,7 +2289,8 @@ void *svr_is_request_work(
         {
         if (LOGLEVEL >= 1)
           {
-          sprintf(log_buf, "IS_UPDATE error %d on node %s\n", ret, node->nd_name);
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+              "IS_UPDATE error %d on node %s\n", ret, node->nd_name);
 
           log_err(ret, __func__, log_buf);
           }
@@ -2335,7 +2308,8 @@ void *svr_is_request_work(
 
       if (LOGLEVEL >= 2)
         {
-        sprintf(log_buf, "IS_STATUS received from %s", node->nd_name);
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+            "IS_STATUS received from %s", node->nd_name);
 
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
@@ -2352,6 +2326,7 @@ void *svr_is_request_work(
 
         hi->name = strdup(node->nd_name);
         enqueue_threadpool_request(send_hierarchy_threadtask, hi);
+        ret = DIS_SUCCESS;
         }
       else
         write_tcp_reply(sock,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
@@ -2362,7 +2337,8 @@ void *svr_is_request_work(
         {
         if (LOGLEVEL >= 1)
           {
-          sprintf(log_buf, "IS_STATUS error %d on node %s", ret, node->nd_name);
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+              "IS_STATUS error %d on node %s", ret, node->nd_name);
 
           log_err(ret, __func__, log_buf);
           }
@@ -2374,7 +2350,8 @@ void *svr_is_request_work(
 
     default:
 
-      sprintf(log_buf, "unknown command %d sent from %s",
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+          "unknown command %d sent from %s",
         command,
         node->nd_name);
 
@@ -2390,9 +2367,7 @@ void *svr_is_request_work(
 
   unlock_node(node, __func__, "close", LOGLEVEL);
   
-  free(vp);
-
-  return(NULL);
+  return PBSE_NONE;
 
 err:
 
@@ -2424,50 +2399,9 @@ err:
   log_err(-1, __func__, log_buf);
     
   close_conn(sock, FALSE);
-    
-  free(vp);
 
-  return(NULL);
-  } /* END svr_is_request_work */
-
-
-
-
-
-
-/*
- * Input is coming from the pbs_mom over a DIS tcp stream.
- * Read the stream to get a Inter-Server request.
- */
-
-void svr_is_request(
-
-  int  stream,  /* I */
-  int  version) /* I */
-
-  {
-  int *args;
-  int  rc;
-
-  args = (int *)calloc(2, sizeof(int));
-
-  if (args == NULL)
-    {
-    log_err(ENOMEM,__func__,"Cannot allocate memory...system failure inevitable");
-    return;
-    }
-
-  args[0] = stream;
-  args[1] = version;
-
-  rc = enqueue_threadpool_request(svr_is_request_work,args);
-
-  if (rc)
-    {
-    log_err(rc,__func__,"Unable to enqueue is request task into the threadpool");
-    }
-  }  /* END svr_is_request() */
-
+  return(PBSE_INTERNAL);
+  } /* END svr_is_request */
 
 
 

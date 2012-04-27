@@ -168,12 +168,11 @@ extern int   svr_chk_owner(struct batch_request *, job *);
  * to be graceful.
  */
 
-void *req_register(
+int req_register(
 
-  void *vp)  /* I */
+  struct batch_request *preq)  /* I */
 
   {
-  struct batch_request *preq = (struct batch_request *)vp;
   int                   made;
   pbs_attribute        *pattr;
 
@@ -182,10 +181,10 @@ void *req_register(
   struct depend_job    *pdj;
   job                  *pjob;
   char                 *ps;
-  int                   rc = 0;
+  int                   rc = PBSE_NONE;
   int                   revtype;
   int                   type;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
   /*  make sure request is from a server */
 
@@ -193,7 +192,7 @@ void *req_register(
     {
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
-    return(NULL);
+    return(PBSE_IVALREQ);
     }
 
   /* find the "parent" job specified in the request */
@@ -216,14 +215,16 @@ void *req_register(
         preq->rq_ind.rq_register.rq_parent,
         pbse_to_txt(PBSE_UNKJOBID));
 
-      req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
+      rc = PBSE_UNKJOBID;
+      req_reject(rc, 0, preq, NULL, NULL);
       }
     else
       {
       reply_ack(preq);
+      rc = PBSE_JOBNOTFOUND;
       }
 
-    return(NULL);
+    return(rc);
     }
 
   type = preq->rq_ind.rq_register.rq_dependtype;
@@ -251,11 +252,12 @@ void *req_register(
       preq->rq_ind.rq_register.rq_parent,
       pbse_to_txt(PBSE_BADSTATE));
     
-    req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
+    rc = PBSE_BADSTATE;
+    req_reject(rc, 0, preq, NULL, NULL);
 
     pthread_mutex_unlock(pjob->ji_mutex);
     
-    return(NULL);
+    return(rc);
     }
 
   if (LOGLEVEL >= 8)
@@ -606,7 +608,7 @@ void *req_register(
   if (pjob != NULL)
     pthread_mutex_unlock(pjob->ji_mutex);
 
-  return(NULL);
+  return(rc);
   }  /* END req_register() */
 
 
@@ -617,20 +619,19 @@ void *req_register(
  * registers a dependency on an array
  */
 
-void *req_registerarray(
+int req_registerarray(
 
-  void *vp)  /* I */
+  struct batch_request *preq)  /* I */
 
   {
-  struct batch_request *preq = (struct batch_request *)vp;
-  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  char        log_buf[LOCAL_LOG_BUF_SIZE + 1];
   job_array  *pa;
   char        array_name[PBS_MAXSVRJOBID + 1];
   char        range[MAXPATHLEN];
   int         num_jobs = -1;
   char       *dot_server;
   char       *bracket_ptr;
-  int         rc = 0;
+  int         rc = PBSE_NONE;
   int         type;
 
   /*  make sure request is from a server */
@@ -638,7 +639,7 @@ void *req_registerarray(
     {
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
-    return(NULL);
+    return(PBSE_IVALREQ);
     }
 
   strcpy(array_name,preq->rq_ind.rq_register.rq_parent);
@@ -676,6 +677,7 @@ void *req_registerarray(
 
           req_reject(PBSE_IVALREQ,0,preq,NULL,
             "No server specified");
+          return(PBSE_IVALREQ);
           }
         }
       else
@@ -684,6 +686,7 @@ void *req_registerarray(
 
         req_reject(PBSE_IVALREQ,0,preq,NULL,
           "Array range format invalid, must have closed bracket ']'");
+        return(PBSE_IVALREQ);
         }
       } /* end second brackets if */
     }
@@ -698,6 +701,7 @@ void *req_registerarray(
     long state = SV_STATE_DOWN;
     get_svr_attr_l(SRV_ATR_State, &state);
 
+    rc = PBSE_UNKARRAYID;
     if (state != SV_STATE_INIT)
       {
       log_event(
@@ -706,14 +710,14 @@ void *req_registerarray(
         preq->rq_ind.rq_register.rq_parent,
         pbse_to_txt(PBSE_UNKJOBID));
 
-      req_reject(PBSE_UNKARRAYID, 0, preq, NULL, "unable to find array");
+      req_reject(rc, 0, preq, NULL, "unable to find array");
       }
     else
       {
       reply_ack(preq);
       }
 
-    return(NULL);
+    return(rc);
     }
 
   type = preq->rq_ind.rq_register.rq_dependtype;
@@ -727,10 +731,11 @@ void *req_registerarray(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
-    req_reject(PBSE_IVALREQ,0,preq,NULL,
+    rc = PBSE_IVALREQ;
+    req_reject(rc,0,preq,NULL,
       "Arrays may only be given array dependencies");
 
-    return(NULL);
+    return(rc);
     }
 
   /* register the dependency on the array */
@@ -766,7 +771,7 @@ void *req_registerarray(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
-  return(NULL);
+  return(rc);
   } /* END req_registerarray() */
 
 

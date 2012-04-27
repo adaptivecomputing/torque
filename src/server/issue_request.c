@@ -110,6 +110,8 @@
 #include "server.h"
 #include <stdint.h>
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
+#include "process_request.h" /* dispatch_request */
+
 
 /* Global Data Items: */
 
@@ -195,7 +197,7 @@ int relay_to_mom(
            pjob->ji_qs.ji_un.ji_exect.ji_momport,
            &local_errno,
            node,
-           process_Dreply,
+           NULL,
            ToServerDIS);
     
   unlock_node(node, __func__, "after svr_connect", LOGLEVEL);
@@ -307,7 +309,7 @@ int issue_to_svr(
     }
   else
     {
-    handle = svr_connect(svraddr, port, &my_err, NULL, process_Dreply, ToServerDIS);
+    handle = svr_connect(svraddr, port, &my_err, NULL, NULL, ToServerDIS);
 
     if (handle >= 0)
       {
@@ -708,7 +710,14 @@ int issue_Drequest(
 
       break;
     }  /* END switch (request->rq_type) */
-
+  if ((rc = DIS_reply_read(sock, &request->rq_reply)) != 0)
+    {
+    close_conn(sock, FALSE);
+    request->rq_reply.brp_code = rc;
+    request->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+    }
+  if (func != NULL)
+    dispatch_task(ptask);
   return(rc);
   }  /* END issue_Drequest() */
 

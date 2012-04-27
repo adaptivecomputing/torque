@@ -2,6 +2,7 @@
 #define _SVRFUNC_H
 #include "license_pbs.h" /* See here for the software license */
 #include "queue.h" /* pbs_queue */
+#include "batch_request.h"
 
 /*
  * misc server function prototypes
@@ -13,7 +14,6 @@ extern char *parse_servername(char *, unsigned int *);
 extern void  process_Areply(int);
 extern void  *process_Dreply(void *);
 extern void  *mom_process_request(void *);
-extern void  *process_request(void *);
 extern void  process_dis_request(int);
 extern int   save_struct(char *, unsigned int, int, char *, size_t *, size_t);
 extern void  schedule_job(void);
@@ -64,7 +64,6 @@ extern int   issue_Drequest(int, struct batch_request *, void (*)(), struct work
 
 /* The following is used in req_stat.c and req_select.c */
 
-#ifdef STAT_CNTL
 
 struct select_list
   {
@@ -93,7 +92,6 @@ struct stat_cntl    /* used in req_stat_job */
 
 extern int stat_to_mom(job *, struct stat_cntl *);
 
-#endif /* STAT_CNTL */
 
 /*
  * the following defines are due to the fact that O_SYNC was not

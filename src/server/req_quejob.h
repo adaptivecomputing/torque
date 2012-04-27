@@ -8,17 +8,17 @@
 
 void sum_select_mem_request(job * pj);
 
-void *req_quejob(void *vp);
+int req_quejob(struct batch_request *preq);
 
-void *req_jobcredential(void *vp);
+int req_jobcredential(struct batch_request *preq);
 
-void  req_jobscript(struct batch_request *preq);
+int req_jobscript(struct batch_request *preq);
 
-void *req_mvjobfile(void *preq);
+int req_mvjobfile(struct batch_request *preq);
 
-void req_rdytocommit(struct batch_request *preq);
+int req_rdytocommit(struct batch_request *preq);
 
-void req_commit(struct batch_request *preq);
+int req_commit(struct batch_request *preq);
 
 /* static job *locate_new_job(int sock, char *jobid); */
 

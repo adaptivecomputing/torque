@@ -14,7 +14,7 @@ int execute_job_delete(job *pjob, char *Msg, struct batch_request *preq);
 
 struct batch_request *duplicate_request(struct batch_request *preq);
 
-void req_deletejob(struct batch_request *preq);
+int req_deletejob(struct batch_request *preq);
 
 void change_restart_comment_if_needed(struct job *pjob);
 

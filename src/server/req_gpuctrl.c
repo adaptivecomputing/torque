@@ -122,17 +122,16 @@ extern unsigned int  pbs_mom_port;
  * req_gpuctrl_svr - Do a GPU change mode
  */
 
-void *req_gpuctrl_svr(
-
-  void *vp)
-
+int req_gpuctrl_svr(
+    struct batch_request *preq)
   {
+  int rc = PBSE_NONE;
   char  *nodename = NULL;
   char  *gpuid = NULL;
   int    gpumode = -1;
   int    reset_perm = -1;
   int    reset_vol = -1;
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  char   log_buf[LOCAL_LOG_BUF_SIZE+1];
 #ifdef NVIDIA_GPUS
   int    local_errno = 0;
   struct pbsnode *pnode = NULL;
@@ -140,14 +139,16 @@ void *req_gpuctrl_svr(
   int    rc = 0;
   int    conn;
 #endif  /* NVIDIA_GPUS */
-  struct batch_request *preq = (struct batch_request *)vp;
 
 
   if ((preq->rq_perm &
        (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR)) == 0)
     {
-    req_reject(PBSE_PERM, 0, preq, NULL, NULL);
-    return NULL;
+    rc = PBSE_PERM;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+        "invalid permissions (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR)");
+    req_reject(rc, 0, preq, NULL, log_buf);
+    return rc;
     }
 
   nodename = preq->rq_ind.rq_gpuctrl.rq_momnode;
@@ -179,55 +180,58 @@ void *req_gpuctrl_svr(
   if (pnode == NULL)
     {
     req_reject(PBSE_UNKNODE, 0, preq, NULL, NULL);
-    return NULL;
+    return PBSE_UNKNODE;
     }
 
   /* validate that the node is up */
 
   if (pnode->nd_state & (INUSE_DOWN | INUSE_OFFLINE | INUSE_UNKNOWN))
     {
+    rc = PBSE_UNKREQ;
     sprintf(log_buf,"Node %s is not available",pnode->nd_name);
-    req_reject(PBSE_UNKREQ, 0, preq, NULL, log_buf);
-
+    req_reject(rc, 0, preq, NULL, log_buf);
     unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
-
-    return NULL;
+    return rc;
     }
 
   /* validate that the node has real gpus not virtual */
 
   if (!pnode->nd_gpus_real)
     {
-    req_reject(PBSE_UNKREQ, 0, preq, NULL, "Not allowed for virtual gpus");
+    rc = PBSE_UNKREQ;
+    req_reject(rc, 0, preq, NULL, "Not allowed for virtual gpus");
     unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
-    return NULL;
+    return rc;
     }
 
   /* validate the gpuid exists */
 
   if ((gpuidx = gpu_entry_by_id(pnode, gpuid, FALSE)) == -1)
     {
-    req_reject(PBSE_UNKREQ, 0, preq, NULL, "GPU ID does not exist on node");
+    rc = PBSE_UNKREQ;
+    req_reject(rc, 0, preq, NULL, "GPU ID does not exist on node");
     unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
-    return NULL;
+    return rc;
     }
 
   /* validate that we have a real request */
 
   if ((gpumode == -1) && (reset_perm == -1) && (reset_vol == -1))
     {
-    req_reject(PBSE_UNKREQ, 0, preq, NULL, "No action specified");
+    rc = PBSE_UNKREQ;
+    req_reject(rc, 0, preq, NULL, "No action specified");
     unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
-    return NULL;
+    return rc;
     }
 
   /* for mode changes validate the mode with the driver_version */
 
   if ((pnode->nd_gpusn[gpuidx].driver_ver == 260) && (gpumode > 2))
     {
-    req_reject(PBSE_UNKREQ, 0, preq, NULL, "GPU driver version does not support mode 3");
+    rc = PBSE_UNKREQ;
+    req_reject(rc, 0, preq, NULL, "GPU driver version does not support mode 3");
     unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
-    return NULL;
+    return rc;
     }
 
   /* we need to relay request to the mom for processing */
@@ -240,7 +244,7 @@ void *req_gpuctrl_svr(
            pbs_mom_port,
            &local_errno,
            pnode,
-           process_Dreply,
+           NULL,
            ToServerDIS);
     
   unlock_node(pnode, "req_gpuctrl", NULL, LOGLEVEL);
@@ -251,6 +255,7 @@ void *req_gpuctrl_svr(
       {
       req_reject(rc, 0, preq, NULL, NULL);
       }
+    svr_disconnect(cntl->sc_conn);
     }
   else
     {
@@ -276,7 +281,7 @@ void *req_gpuctrl_svr(
 
 #endif  /* NVIDIA_GPUS */
 
-  return NULL;
+  return rc;
   }
 
 

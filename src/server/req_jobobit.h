@@ -56,6 +56,6 @@ int get_used(svrattrl *patlist, char *acctbuf);
 void encode_job_used(job *pjob, tlist_head *phead);
 #endif /* USESAVEDRESOURCES */
 
-void *req_jobobit(void *vp);
+int req_jobobit(struct batch_request *preq);
 
 #endif /* _REQ_JOBOBIT_H */

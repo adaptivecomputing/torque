@@ -114,6 +114,7 @@
 #include "issue_request.h" /* issue_request */
 #include "utils.h"
 #include "svr_func.h" /* get_svr_attr_* */
+#include "req_jobobit.h" /* req_jobobit */
 
 
 
@@ -154,11 +155,6 @@ int timeval_subtract(struct timeval *,struct timeval *,struct timeval *);
 extern void set_resc_assigned(job *, enum batch_op);
 extern void cleanup_restart_file(job *);
 void        on_job_exit(work_task *);
-
-/* Local public functions  */
-
-void *req_jobobit(void *);
-
 
 
 /*
@@ -660,7 +656,7 @@ int mom_comm(
                            pjob->ji_qs.ji_un.ji_exect.ji_momport,
                            &local_errno,
                            NULL,
-                           process_Dreply,
+                           NULL,
                            ToServerDIS);
 
     if (pjob->ji_momhandle < 0)
@@ -2323,13 +2319,13 @@ void encode_job_used(
  * This notice is sent from MOM when a job terminates.
  */
 
-void *req_jobobit(
+int req_jobobit(
 
-  void *vp) /* I */
+  struct batch_request *preq) /* I */
 
   {
   int                   alreadymailed = 0;
-  int                   bad;
+  int                   rc = PBSE_NONE;
   char                  acctbuf[RESC_USED_BUF];
   int                   accttail;
   int                   exitstatus;
@@ -2345,7 +2341,6 @@ void *req_jobobit(
   char                 *jobid_copy;
   job                  *pjob;
   char                  jobid[PBS_MAXSVRJOBID+1];
-  struct batch_request *preq = (struct batch_request *)vp;  
 
   struct work_task     *ptask;
   svrattrl             *patlist;
@@ -2371,25 +2366,25 @@ void *req_jobobit(
 
       sprintf(log_buf, msg_obitnojob, preq->rq_host, PBSE_CLEANEDOUT);
 
-      bad = PBSE_CLEANEDOUT;
+      rc = PBSE_CLEANEDOUT;
       req_reject(PBSE_CLEANEDOUT, 0, preq, NULL, NULL);
       }
     else
       {
       sprintf(log_buf, msg_obitnojob, preq->rq_host, PBSE_UNKJOBID);
 
-      bad = PBSE_UNKJOBID;
+      rc = PBSE_UNKJOBID;
       req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
       }
 
-    log_err(bad, jobid, log_buf);
+    log_err(rc, jobid, log_buf);
 
     if (pjob != NULL)
       pthread_mutex_unlock(pjob->ji_mutex);
 
     free(tmp);
 
-    return(NULL);
+    return(rc);
     }  /* END if ((pjob == NULL) || ...) */
 
   free(tmp);
@@ -2398,7 +2393,7 @@ void *req_jobobit(
     {
     pthread_mutex_unlock(pjob->ji_mutex);
     reply_ack(preq);
-    return(NULL);
+    return(PBSE_BADSTATE);
     /* Mom didn't update correctly past time, so this was resent. */
     }
   else if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
@@ -2407,7 +2402,7 @@ void *req_jobobit(
       {
       /* already in exit processing, ignore this request */
 
-      bad = PBSE_ALRDYEXIT;
+      rc = PBSE_ALRDYEXIT;
       }
     else
       {
@@ -2422,14 +2417,14 @@ void *req_jobobit(
 
       log_err(PBSE_BADSTATE, jobid, log_buf);
 
-      bad = PBSE_BADSTATE;
+      rc = PBSE_BADSTATE;
       }
 
-    req_reject(bad,0,preq,NULL,NULL);
+    req_reject(rc,0,preq,NULL,NULL);
 
     pthread_mutex_unlock(pjob->ji_mutex);
 
-    return(NULL);
+    return(rc);
     }  /* END if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) */
 
   if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
@@ -2448,7 +2443,7 @@ void *req_jobobit(
     pthread_mutex_unlock(pjob->ji_mutex);
     /* Connection is left open to be used in wait_for_send */
 
-    return(NULL);
+    return(PBSE_SYSTEM);
     }
 
   /*
@@ -2484,7 +2479,7 @@ void *req_jobobit(
     pjob,
     patlist,
     ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
-    &bad);
+    &rc);
 
   sprintf(acctbuf, msg_job_end_stat,
           pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
@@ -2530,7 +2525,7 @@ void *req_jobobit(
       pthread_mutex_unlock(pjob->ji_mutex);
 
       req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
-      return(NULL);
+      return(PBSE_SYSTEM);
       }
 
     CLEAR_HEAD(tmppreq->rq_ind.rq_jobobit.rq_attr);
@@ -2685,7 +2680,7 @@ void *req_jobobit(
 
         pthread_mutex_unlock(pjob->ji_mutex);
 
-        return(NULL);
+        return(PBSE_SYSTEM);
 
         /*NOTREACHED*/
 
@@ -2781,7 +2776,7 @@ void *req_jobobit(
       job_array *pa = get_jobs_array(&pjob);
 
       if (pjob == NULL)
-        return(NULL);
+        return(PBSE_UNKJOBID);
         
       update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
         
@@ -2839,7 +2834,7 @@ void *req_jobobit(
 
       pthread_mutex_unlock(pjob->ji_mutex);
 
-      return(NULL);
+      return(PBSE_SYSTEM);
       }
 
     svr_setjobstate(pjob, JOB_STATE_EXITING, pjob->ji_qs.ji_substate, FALSE);
@@ -2894,7 +2889,7 @@ void *req_jobobit(
 
   pthread_mutex_unlock(pjob->ji_mutex);
 
-  return(NULL);
+  return(PBSE_NONE);
   }  /* END req_jobobit() */
 
 
