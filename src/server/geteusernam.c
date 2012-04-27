@@ -481,6 +481,25 @@ int set_jobexid(
         return(PBSE_BADUSER); /* root not allowed */
         }
       }    /* END if (pwent->pw_uid == 0) */
+    else if (pjob->ji_wattr[JOB_ATR_proxy_user].at_flags & ATR_VFLAG_SET)
+      {
+      /* cannot submit a proxy job if not root or a manager */
+      if (EMsg != NULL)
+        {
+        snprintf(EMsg, 1024,
+          "User '%s' is attempting to submit a proxy job for user '%s' but is not a manager",
+          puser,
+          pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str);
+        }
+      
+      snprintf(log_buffer, 1024,
+        "User '%s' is attempting to submit a proxy job for user '%s' but is not a manager",
+        puser,
+        pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str);
+      log_err(PBSE_BADUSER, id, log_buffer);
+      
+      return(PBSE_BADUSER);
+      }
 
     if (site_check_user_map(pjob, puser, EMsg) == -1)
       {

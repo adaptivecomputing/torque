@@ -1106,6 +1106,7 @@ int TMakeTmpDir(
  * and file copies */
 
 int InitUserEnv(
+
   job            *pjob,   /* I */
   task           *ptask,   /* I (optional) */
   char          **envp,   /* I (optional) */
