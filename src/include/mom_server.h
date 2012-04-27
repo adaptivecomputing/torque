@@ -90,7 +90,6 @@
 
 typedef struct mom_server
   {
-  int                SStream;                  /* streams to pbs_server daemons */
   struct sockaddr_in sock_addr;                /* tcp connection information */
   char               pbs_servername[PBS_MAXSERVERNAME + 1];
   time_t             next_connect_time;

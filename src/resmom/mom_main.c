@@ -5422,7 +5422,7 @@ int rm_request(
 
       for (sindex = 0; sindex < PBS_MAXSERVER; sindex++)
         {
-        if(mom_servers[sindex].SStream != -1)
+        if (mom_servers[sindex].pbs_servername[0] != '\0')
           shutdown_to_server(sindex);
         }
 
