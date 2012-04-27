@@ -216,7 +216,6 @@ dynamic_string *get_reservation_command(
   snprintf(buf, sizeof(buf), APBASIL_RESERVE_ARRAY, username, jobid);
   append_dynamic_string(command, buf);
 
-  
   while ((hr = (host_req *)next_thing(host_req_list, &iter)) != NULL)
     {
     /* find the node list for nodes of equal ppn */
@@ -246,7 +245,7 @@ dynamic_string *get_reservation_command(
   free_dynamic_string(node_list);
 
   /* pipe the output to apbasil */
-  snprintf(buf, sizeof(buf), " | %s",
+  snprintf(buf, sizeof(buf), "\" | %s",
     (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
   append_dynamic_string(command, buf);
 

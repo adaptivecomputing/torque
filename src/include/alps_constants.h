@@ -85,15 +85,15 @@
 #define ALPS_QUERY_FAILURE          -4
 #define DEFAULT_APBASIL_PATH        "/usr/bin/apbasil"
 #define DEFAULT_APBASIL_PROTOCOL    "1.0"
-#define APBASIL_QUERY               "echo \\<?xml version=\\'1.0\\'?\\>\n\\<BasilRequest protocol='%s' method='QUERY' type='INVENTORY'\\>\\</BasilRequest\\> | %s"
-#define APBASIL_RESERVE_PARAM_BEGIN "\\<ReserveParam architecture='XT' width='%d' nppn='%d'\\>\\<NodeParamArray\\>\\<NodeParam\\>"
-#define APBASIL_RESERVE_PARAM_END   "\\</NodeParam\\>\\</NodeParamArray\\>\\</ReserveParam\\>"
-#define APBASIL_RESERVE_ARRAY       "\\<ReserveParamArray user_name='%s' batch_id='%s'\\>"
-#define CLOSE_RESERVE_ARRAY         "\\</ReserveParamArray\\>"
-#define APBASIL_RESERVE_REQ         "echo \\<?xml version='1.0'?\\>\\<BasilRequest protocol='%s' method='RESERVE'\\>"
-#define CLOSE_BASIL_REQ             "\\</BasilRequest\\>"
-#define CONFIRM_BASIL_REQ           "echo \\<?xml version='1.0'?\\>\\<BasilRequest protocol='%s' method='CONFIRM' reservation_id='%s' pagg_id='%lld'/\\> | %s"
-#define DELETE_BASIL_REQ            "echo \\<?xml version='1.0'?\\>\\<BasilRequest protocol='%s' method='RELEASE' reservation_id='%s'/\\> | %s"
+#define APBASIL_QUERY               "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='QUERY' type='INVENTORY'></BasilRequest>\" | %s"
+#define APBASIL_RESERVE_PARAM_BEGIN "<ReserveParam architecture='XT' width='%d' nppn='%d'><NodeParamArray><NodeParam>"
+#define APBASIL_RESERVE_PARAM_END   "</NodeParam></NodeParamArray></ReserveParam>"
+#define APBASIL_RESERVE_ARRAY       "<ReserveParamArray user_name='%s' batch_id='%s'>"
+#define CLOSE_RESERVE_ARRAY         "</ReserveParamArray>"
+#define APBASIL_RESERVE_REQ         "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='RESERVE'>"
+#define CLOSE_BASIL_REQ             "</BasilRequest>"
+#define CONFIRM_BASIL_REQ           "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='CONFIRM' reservation_id='%s' pagg_id='%lld'/>\" | %s"
+#define DELETE_BASIL_REQ            "echo <?xml version='1.0'?><BasilRequest protocol='%s' method='RELEASE' reservation_id='%s'/>\" | %s"
 
 
 extern const int   apbasil_fail_transient;
