@@ -11,12 +11,6 @@
 
 int req_stat_job(struct batch_request *preq);
 
-/* static void req_stat_job_step2(struct stat_cntl *cntl); */
-
-int stat_to_mom(job *pjob, struct stat_cntl *cntl);
-
-/* static void stat_update(struct work_task *pwt); */
-
 void stat_mom_job(job *pjob);
 
 void poll_job_task(struct work_task *ptask);
