@@ -93,6 +93,9 @@
 #include "utils.h"
 
 
+extern char mom_alias[];
+extern char mom_host[];
+
 
 host_req *get_host_req(
 
@@ -140,17 +143,22 @@ resizable_array *parse_exec_hosts(
     if ((slash = strchr(host_tok, '/')) != NULL)
       *slash = '\0';
 
-    if ((prev_host_tok != NULL) &&
-        (!strcmp(prev_host_tok, host_tok)))
+    /* skip this host - the login shouldn't be part of the alps reservation */
+    if ((strcmp(mom_host, host_tok)) &&
+        (strcmp(mom_alias, host_tok)))
       {
-      hr = (host_req *)host_req_list->slots[host_req_list->last].item;
-      hr->ppn += 1;
-      }
-    else
-      {
-      prev_host_tok = host_tok;
-      hr = get_host_req(host_tok);
-      insert_thing(host_req_list, hr);
+      if ((prev_host_tok != NULL) &&
+          (!strcmp(prev_host_tok, host_tok)))
+        {
+        hr = (host_req *)host_req_list->slots[host_req_list->last].item;
+        hr->ppn += 1;
+        }
+      else
+        {
+        prev_host_tok = host_tok;
+        hr = get_host_req(host_tok);
+        insert_thing(host_req_list, hr);
+        }
       }
     }
 
