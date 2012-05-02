@@ -1374,7 +1374,7 @@ void main_loop(void)
     usleep(100);
     }    /* END while (*state != SV_STATE_DOWN) */
   
-  pthread_kill(accept_thread_id, 9);
+  pthread_cancel(accept_thread_id);
 
   svr_save(&server, SVR_SAVE_FULL); /* final recording of server */
 
