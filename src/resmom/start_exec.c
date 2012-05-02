@@ -5976,251 +5976,249 @@ int start_exec(
      return once job is started */
 
 #ifndef NUMA_SUPPORT
-  if (is_login_node == FALSE)
+  index = find_attr(job_attr_def, "job_radix", JOB_ATR_LAST);
+  
+  if ((pjob->ji_wattr[index].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[index].at_val.at_long != 0))
     {
-    index = find_attr(job_attr_def, "job_radix", JOB_ATR_LAST);
-    
-    if ((pjob->ji_wattr[index].at_flags & ATR_VFLAG_SET) &&
-        (pjob->ji_wattr[index].at_val.at_long != 0))
-      {
-      /* parallel job */
-      mom_radix = pjob->ji_wattr[index].at_val.at_long;
-      }
-    
-    pjob->ji_radix = mom_radix;
-    
-    /* this starts tracking total run time for the MOM */
-    pattr = &pjob->ji_wattr[JOB_ATR_total_runtime];
-    
-    if (gettimeofday(&start_time, &tz) == 0)
-      {
-      pattr->at_val.at_timeval.tv_sec = start_time.tv_sec;
-      pattr->at_val.at_timeval.tv_usec = start_time.tv_usec;
-      }
-    
-    /* If the job_radix pbs_attribute has been set then nodenum must be at least one
-       more than mom_radix or there is no point in doing a radix */
-    if (mom_radix > 0 && (mom_radix + 1) <= nodenum)
-      {
-      pjob->ji_resources = (noderes *)calloc(nodenum - 1, sizeof(noderes));
-      
-      assert(pjob->ji_resources != NULL);
-      
-      pjob->ji_resources[0].nr_cput = 0;
-      pjob->ji_resources[0].nr_mem = 0;
-      pjob->ji_resources[0].nr_vmem = 0;
-      
-      CLEAR_HEAD(phead);
-      
-      pattr = pjob->ji_wattr;
-      
-      /* prepare the attributes to go out on the wire. at_encode does this */
-      for (i = 0;i < JOB_ATR_LAST;i++)
-        {
-        (job_attr_def + i)->at_encode(
-          pattr + i,
-          &phead,
-          (job_attr_def + i)->at_name,
-          NULL,
-          ATR_ENCODE_MOM,
-          ATR_DFLAG_ACCESS);
-        }  /* END for (i) */
-      
-      attrl_fixlink(&phead);
-      
-      if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
-        return(ret);
-      
-      pjob->ji_sisters = NULL;
-      pjob->ji_numsisternodes = 0;
-      
-      /* Parse nodes into the radix */
-      
-      /* First mother superior needs to keep track of the sisters that will
-         be in her first job_radix level */
-      /* create list of sisters for mother superiors radix.
-       * This list will include mother superior and a list
-       *  of hosts equal to the size of the job_radix. */
-      sister_list = allocate_sister_list(mom_radix+1);
-      
-      for (i = 0; i <= mom_radix; i++)
-        {
-        char           *host_addr = NULL;
-        unsigned short  af_family;
-        
-        np = &pjob->ji_hosts[i];
-        add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[0]);
-        ret = get_hostaddr_hostent_af(&local_errno, np->hn_host, &af_family, &host_addr, &addr_len);
-        memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
-        np->sock_addr.sin_port = htons(np->hn_port);
-        np->sock_addr.sin_family = af_family;
-        }
-      
-      sister_job_nodes(pjob, sister_list[0]->host_list, sister_list[0]->port_list);
-      
-      free_sisterlist(sister_list, mom_radix);
-      
-      /* The first element in the sister list will be the
-        originator of the IM_JOIN_JOB_RADIX request. When
-        the IM_OK_REPLY is received back the intermediate
-        mothers need to know who called them so they can reply.
-        This will always be the first sister in the list */
-
-      /* now allocate sister list for all the sisters */
-      sister_list = allocate_sister_list(mom_radix);
-      
-      np = &pjob->ji_hosts[0]; /* This is mother superior. Mother superior will be the first
-                                  sister in the list */
-      for (j = 0; j < mom_radix; j++)
-        {
-        add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[j]);
-        }
-      
-      i = 1; /* Mother superior was the first entry, now start with the sisters */
-      do
-        {
-        for (j = 0; j < mom_radix && i < nodenum; j++)
-          {
-          /* Generate a list of sisters divided in to 'mom_radix' number of lists.
-             For example an exec_host list of host1+host2+host3+host4+host5+host6+host7
-             would create sister lists on a mom_radix of 3 like the following
-             host1+host4+host7
-             host2+host5
-             host3+host6
-             */
-          np = &pjob->ji_hosts[i];
-          add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[j]);
-          i++;
-          }
-        
-        } while (i < nodenum);
-      
-      /* the sister lists have been made. Now contact the intermediate moms as designated by mom_radix */
-      open_tcp_stream_to_sisters(
-        pjob,
-        IM_JOIN_JOB_RADIX,
-        -1,
-        mom_radix,
-        pjob->ji_hosts,
-        sister_list,
-        &phead,
-        MOTHER_SUPERIOR);
-      
-      free_attrlist(&phead);
-      free_sisterlist(sister_list, mom_radix);
-      }
-    else if (nodenum > 1)
-      {
-      /* Step 4.0A Send Join Request to Sisters */
-      /* parallel job */
-      
-      pjob->ji_resources = (noderes *)calloc(nodenum - 1, sizeof(noderes));
-      
-      assert(pjob->ji_resources != NULL);
-      
-      CLEAR_HEAD(phead);
-      
-      pattr = pjob->ji_wattr;
-      
-      for (i = 0;i < JOB_ATR_LAST;i++)
-        {
-        (job_attr_def + i)->at_encode(
-          pattr + i,
-          &phead,
-          (job_attr_def + i)->at_name,
-          NULL,
-          ATR_ENCODE_MOM,
-          ATR_DFLAG_ACCESS);
-        }   /* END for (i) */
-      
-      attrl_fixlink(&phead);
-      
-      /* open a pair of sockets for pbs_demux used later */
-      if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
-        {
-        /* can't gather stdout/err for the job - FAIL */
-        return(ret);
-        }
-      
-      /* Send the join job request to the sisterhood. */
-      for (i = 1;i < nodenum;i++)
-        {
-        np = &pjob->ji_hosts[i];
-        
-        log_buffer[0] = '\0';
-        
-        if ((ret = send_join_job_to_sisters(pjob, i, nodenum, phead, np)) != DIS_SUCCESS)
-          {
-          /* couldn't contact all of the sisters, we've already bailed */
-          return(ret);
-          }
-        }     /* END for (i) */
-      
-      /* We made it to here. That means all of the sisters responded and we
-         can now start the job */
-      if (LOGLEVEL >= 6)
-        {
-        if (gettimeofday(&tv, &tz) == 0)
-          {
-          tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
-          timeval_subtract(&result, &tv, tv_attr);
-          sprintf(log_buffer, "%s: total wire-up time for job %ld.%ld", 
-            __func__,
-            result.tv_sec, 
-            result.tv_usec);
-          
-          log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
-          } 
-        }
-      
-      free_attrlist(&phead);
-      exec_job_on_ms(pjob);
-      
-      }   /* END if (nodenum > 1) */
-    else
-#endif /* ndef NUMA_SUPPORT */
-      {
-      /* Step 4.0B Launch Serial Task Locally */
-      
-      /* serial job */
-      
-      /* single node job - no sisters */
-      
-      pjob->ji_porterr = -1;
-      pjob->ji_portout = -1;
-      pjob->ji_stdout = -1;
-      pjob->ji_stderr = -1;
-      
-      if (exec_job_on_ms(pjob) == PBSE_NONE)
-        {
-        /* SUCCESS */
-        
-        if (LOGLEVEL >= 3)
-          {
-          sprintf(log_buffer,"%s:job %s reported successful start on %d node(s)",
-            __func__,
-            pjob->ji_qs.ji_jobid,
-            nodenum);
-          
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-          }
-        }
-      else
-        {
-        if (LOGLEVEL >= 3)
-          {
-          sprintf(log_buffer,"%s:job %s reported failure to start of %d node(s)",
-            __func__,
-            pjob->ji_qs.ji_jobid,
-            nodenum);
-          
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-          }
-        }
-      } /* end else if mom_radix > 0 */
-#ifndef NUMA_SUPPORT
+    /* parallel job */
+    mom_radix = pjob->ji_wattr[index].at_val.at_long;
     }
-#endif
+  
+  pjob->ji_radix = mom_radix;
+  
+  /* this starts tracking total run time for the MOM */
+  pattr = &pjob->ji_wattr[JOB_ATR_total_runtime];
+  
+  if (gettimeofday(&start_time, &tz) == 0)
+    {
+    pattr->at_val.at_timeval.tv_sec = start_time.tv_sec;
+    pattr->at_val.at_timeval.tv_usec = start_time.tv_usec;
+    }
+   
+  /* If the job_radix pbs_attribute has been set then nodenum must be at least one
+     more than mom_radix or there is no point in doing a radix */
+  if ((mom_radix > 0) && 
+      ((mom_radix + 1) <= nodenum) &&
+      (is_login_node == FALSE))
+    {
+    pjob->ji_resources = (noderes *)calloc(nodenum - 1, sizeof(noderes));
+    
+    assert(pjob->ji_resources != NULL);
+    
+    pjob->ji_resources[0].nr_cput = 0;
+    pjob->ji_resources[0].nr_mem = 0;
+    pjob->ji_resources[0].nr_vmem = 0;
+    
+    CLEAR_HEAD(phead);
+    
+    pattr = pjob->ji_wattr;
+    
+    /* prepare the attributes to go out on the wire. at_encode does this */
+    for (i = 0;i < JOB_ATR_LAST;i++)
+      {
+      (job_attr_def + i)->at_encode(
+        pattr + i,
+        &phead,
+        (job_attr_def + i)->at_name,
+        NULL,
+        ATR_ENCODE_MOM,
+        ATR_DFLAG_ACCESS);
+      }  /* END for (i) */
+    
+    attrl_fixlink(&phead);
+    
+    if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
+      return(ret);
+
+    pjob->ji_sisters = NULL;
+    pjob->ji_numsisternodes = 0;
+    
+    /* Parse nodes into the radix */
+
+    /* First mother superior needs to keep track of the sisters that will
+       be in her first job_radix level */
+    /* create list of sisters for mother superiors radix.
+     * This list will include mother superior and a list
+     *  of hosts equal to the size of the job_radix. */
+    sister_list = allocate_sister_list(mom_radix+1);
+    
+    for (i = 0; i <= mom_radix; i++)
+      {
+      char           *host_addr = NULL;
+      unsigned short  af_family;
+      
+      np = &pjob->ji_hosts[i];
+      add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[0]);
+      ret = get_hostaddr_hostent_af(&local_errno, np->hn_host, &af_family, &host_addr, &addr_len);
+      memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
+      np->sock_addr.sin_port = htons(np->hn_port);
+      np->sock_addr.sin_family = af_family;
+      }
+    
+    sister_job_nodes(pjob, sister_list[0]->host_list, sister_list[0]->port_list);
+    
+    free_sisterlist(sister_list, mom_radix);
+    
+    /* The first element in the sister list will be the
+       originator of the IM_JOIN_JOB_RADIX request. When
+       the IM_OK_REPLY is received back the intermediate
+       mothers need to know who called them so they can reply.
+       This will always be the first sister in the list */
+    
+    /* now allocate sister list for all the sisters */
+    sister_list = allocate_sister_list(mom_radix);
+    
+    np = &pjob->ji_hosts[0]; /* This is mother superior. Mother superior will be the first
+                                sister in the list */
+    for (j = 0; j < mom_radix; j++)
+      {
+      add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[j]);
+      }
+    
+    i = 1; /* Mother superior was the first entry, now start with the sisters */
+    do
+      {
+      for (j = 0; j < mom_radix && i < nodenum; j++)
+        {
+        /* Generate a list of sisters divided in to 'mom_radix' number of lists.
+           For example an exec_host list of host1+host2+host3+host4+host5+host6+host7
+           would create sister lists on a mom_radix of 3 like the following
+           host1+host4+host7
+           host2+host5
+           host3+host6
+           */
+        np = &pjob->ji_hosts[i];
+        add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[j]);
+        i++;
+        }
+      
+      } while (i < nodenum);
+    
+    /* the sister lists have been made. Now contact the intermediate moms as designated by mom_radix */
+    open_tcp_stream_to_sisters(
+      pjob,
+      IM_JOIN_JOB_RADIX,
+      -1,
+      mom_radix,
+      pjob->ji_hosts,
+      sister_list,
+      &phead,
+      MOTHER_SUPERIOR);
+    
+    free_attrlist(&phead);
+    free_sisterlist(sister_list, mom_radix);
+    }
+  else if ((nodenum > 1) &&
+           (is_login_node == FALSE))
+    {
+    /* Step 4.0A Send Join Request to Sisters */
+    /* parallel job */
+    
+    pjob->ji_resources = (noderes *)calloc(nodenum - 1, sizeof(noderes));
+    
+    assert(pjob->ji_resources != NULL);
+    
+    CLEAR_HEAD(phead);
+    
+    pattr = pjob->ji_wattr;
+
+    for (i = 0;i < JOB_ATR_LAST;i++)
+      {
+      (job_attr_def + i)->at_encode(
+        pattr + i,
+        &phead,
+        (job_attr_def + i)->at_name,
+        NULL,
+        ATR_ENCODE_MOM,
+        ATR_DFLAG_ACCESS);
+      }   /* END for (i) */
+    
+    attrl_fixlink(&phead);
+    
+    /* open a pair of sockets for pbs_demux used later */
+    if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
+      {
+      /* can't gather stdout/err for the job - FAIL */
+      return(ret);
+      }
+    
+    /* Send the join job request to the sisterhood. */
+    for (i = 1;i < nodenum;i++)
+      {
+      np = &pjob->ji_hosts[i];
+      
+      log_buffer[0] = '\0';
+      
+      if ((ret = send_join_job_to_sisters(pjob, i, nodenum, phead, np)) != DIS_SUCCESS)
+        {
+        /* couldn't contact all of the sisters, we've already bailed */
+        return(ret);
+        }
+      }     /* END for (i) */
+    
+    /* We made it to here. That means all of the sisters responded and we
+       can now start the job */
+    if (LOGLEVEL >= 6)
+      {
+      if (gettimeofday(&tv, &tz) == 0)
+        {
+        tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
+        timeval_subtract(&result, &tv, tv_attr);
+        sprintf(log_buffer, "%s: total wire-up time for job %ld.%ld", 
+          __func__,
+          result.tv_sec, 
+          result.tv_usec);
+        
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+        } 
+      }
+    
+    free_attrlist(&phead);
+    exec_job_on_ms(pjob);
+    
+    }   /* END if (nodenum > 1) */
+  else
+#endif /* ndef NUMA_SUPPORT */
+    {
+    /* Step 4.0B Launch Serial Task Locally */
+
+    /* serial job */
+    
+    /* single node job - no sisters */
+    
+    pjob->ji_porterr = -1;
+    pjob->ji_portout = -1;
+    pjob->ji_stdout = -1;
+    pjob->ji_stderr = -1;
+    
+    if (exec_job_on_ms(pjob) == PBSE_NONE)
+      {
+      /* SUCCESS */
+      
+      if (LOGLEVEL >= 3)
+        {
+        sprintf(log_buffer,"%s:job %s reported successful start on %d node(s)",
+          __func__,
+          pjob->ji_qs.ji_jobid,
+          nodenum);
+        
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        }
+      }
+    else
+      {
+      if (LOGLEVEL >= 3)
+        {
+        sprintf(log_buffer,"%s:job %s reported failure to start of %d node(s)",
+          __func__,
+          pjob->ji_qs.ji_jobid,
+          nodenum);
+        
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        }
+      }
+    } /* end else if mom_radix > 0 */
 
   return(PBSE_NONE);
   }   /* END start_exec() */
@@ -6826,17 +6824,17 @@ int open_std_file(
    * run_pelog setuid etc. are called and the this function is invoked,
    * so doing this again fails and is unnecessary */
 
-	if (LOGLEVEL > 7)
-	  {
-	  sprintf(log_buffer, "job %s which = %d getuid() = %d geteuid = %d to euid = %d",
-					pjob->ji_qs.ji_jobid,
-					which,
-					getuid(),
-					geteuid(),
-					pjob->ji_qs.ji_un.ji_momt.ji_exuid);
-
-		log_ext(-1, __func__, log_buffer, LOG_DEBUG);
-	  }
+  if (LOGLEVEL > 7)
+    {
+    sprintf(log_buffer, "job %s which = %d getuid() = %d geteuid = %d to euid = %d",
+      pjob->ji_qs.ji_jobid,
+      which,
+      getuid(),
+      geteuid(),
+      pjob->ji_qs.ji_un.ji_momt.ji_exuid);
+    
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
+    }
 #ifdef __CYGWIN__
   if (IamRoot() == 1)
 #else
@@ -7059,8 +7057,8 @@ int open_std_file(
 
   if (changed_to_user)
     {
-	  rc = seteuid(pbsuser);
-	  if (rc != 0)
+    rc = seteuid(pbsuser);
+    if (rc != 0)
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "seteuid(%lu) failed, error: %s\n",

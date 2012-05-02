@@ -182,7 +182,7 @@ extern dynamic_string  *hierarchy_holder;
 
 #include "work_task.h"
 
-
+struct pbsnode *alps_reporter;
 
 
 /* use IP address to look up matchin node structure */
@@ -351,6 +351,7 @@ struct pbsnode *find_nodebyname(
 
   int             i;
   int             numa_index;
+  long            cray_enabled = FALSE;
 
   if ((pslash = strchr(nodename, (int)'/')) != NULL)
     *pslash = '\0';
@@ -364,36 +365,57 @@ struct pbsnode *find_nodebyname(
     lock_node(pnode, __func__, NULL, LOGLEVEL);
   else
     {
-    /* check if it was a numa node */
-    tmp = nodename;
-    while ((tmp = strchr(tmp, '-')) != NULL)
+    get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+    if (cray_enabled == TRUE)
       {
-      dash = tmp;
-      tmp++;
-      }
-
-    if (dash != NULL)
-      {
-      *dash = '\0';
-      numa_index = atoi(dash + 1);
-
-      if ((i = get_value_hash(allnodes.ht, nodename)) >= 0)
+      if (alps_reporter != NULL)
         {
-        if ((pnode = (struct pbsnode *)allnodes.ra->slots[i].item) != NULL)
+        lock_node(alps_reporter, __func__, NULL, 0);
+        
+        if ((i = get_value_hash(alps_reporter->alps_subnodes.ht, nodename)) >= 0)
           {
-          lock_node(pnode, __func__, NULL, LOGLEVEL);
-          
-          /* get the NUMA node */
-          numa = AVL_find(numa_index, pnode->nd_mom_port, pnode->node_boards);
-          if (numa != NULL)
-            lock_node(numa, __func__, NULL, LOGLEVEL);
-
-          unlock_node(pnode, __func__, NULL, LOGLEVEL);
-          pnode = numa;
+          if ((pnode = (struct pbsnode *)alps_reporter->alps_subnodes.ra->slots[i].item) != NULL)
+            {
+            lock_node(pnode, __func__, NULL, 0);
+            }
           }
+        
+        unlock_node(alps_reporter, __func__, NULL, 0);
         }
-
-      *dash = '-';
+      }
+    else
+      {
+      /* check if it was a numa node */
+      tmp = nodename;
+      while ((tmp = strchr(tmp, '-')) != NULL)
+        {
+        dash = tmp;
+        tmp++;
+        }
+      
+      if (dash != NULL)
+        {
+        *dash = '\0';
+        numa_index = atoi(dash + 1);
+        
+        if ((i = get_value_hash(allnodes.ht, nodename)) >= 0)
+          {
+          if ((pnode = (struct pbsnode *)allnodes.ra->slots[i].item) != NULL)
+            {
+            lock_node(pnode, __func__, NULL, LOGLEVEL);
+            
+            /* get the NUMA node */
+            numa = AVL_find(numa_index, pnode->nd_mom_port, pnode->node_boards);
+            if (numa != NULL)
+              lock_node(numa, __func__, NULL, LOGLEVEL);
+            
+            unlock_node(pnode, __func__, NULL, LOGLEVEL);
+            pnode = numa;
+            }
+          }
+        
+        *dash = '-';
+        }
       }
     }
 
@@ -2187,6 +2209,7 @@ int setup_nodes(void)
         {
         np = find_nodebyname(nodename);
         np->nd_is_alps_reporter = TRUE;
+        alps_reporter = np;
         initialize_all_nodes_array(&(np->alps_subnodes));
         unlock_node(np, __func__, NULL, 0);
         }
