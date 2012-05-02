@@ -100,7 +100,7 @@
 
 extern attribute_def    node_attr_def[];
 int save_node_status(struct pbsnode *current, pbs_attribute *temp);
-
+extern int svr_clnodes;
 
 
 struct pbsnode *find_alpsnode_by_name(
@@ -174,6 +174,7 @@ struct pbsnode *create_alps_subnode(
     return(NULL);
     }
 
+  subnode->nd_ntype = NTYPE_CLUSTER;
   subnode->parent = parent;
 
   lock_node(subnode, __func__, NULL, 0);
@@ -274,6 +275,8 @@ int set_ncpus(
       log_err(ENOMEM, __func__, "");
       return(PBSE_SYSTEM);
       }
+
+    svr_clnodes++;
     }
 
   return(PBSE_NONE);
