@@ -217,7 +217,8 @@ dynamic_string *get_reservation_command(
   host_req       *hr;
 
   /* place the top header */
-  snprintf(buf, sizeof(buf), APBASIL_RESERVE_REQ, apbasil_protocol);
+  snprintf(buf, sizeof(buf), APBASIL_RESERVE_REQ, 
+    (apbasil_protocol != NULL) ? apbasil_protocol : "1.0");
   append_dynamic_string(command, buf);
 
   /* place the reserve header */
@@ -253,7 +254,7 @@ dynamic_string *get_reservation_command(
   free_dynamic_string(node_list);
 
   /* pipe the output to apbasil */
-  snprintf(buf, sizeof(buf), "\" | %s",
+  snprintf(buf, sizeof(buf), "</ReserveParamArray></BasilRequest>\" | %s",
     (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
   append_dynamic_string(command, buf);
 
@@ -524,10 +525,17 @@ int create_alps_reservation(
   dynamic_string  *command;
   int              rc = 1;
   int              retry_count = 0;
+  char            *user = strdup(username);
+  char            *aroba;
 
   host_req_list = parse_exec_hosts(exec_hosts);
+
+  if ((aroba = strchr(user, '@')) != NULL)
+    *aroba = '\0';
   
-  command = get_reservation_command(host_req_list, username, jobid, apbasil_path, apbasil_protocol);
+  command = get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol);
+
+  free(user);
 
   /* retry on failure up to  */
   while ((retry_count++ < APBASIL_RETRIES) &&
