@@ -39,7 +39,6 @@
 #include "u_tree.h"
 #include "threadpool.h"
 #include "dis.h"
-#include "mom_requests.h"
 
 /*
  * mom_process_request - this function gets, checks, and invokes the proper
