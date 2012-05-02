@@ -4650,8 +4650,9 @@ void state_to_server(
   int         ret;
   int         stream;
 
-  if ((force == 0) &&
-      (pms->ReportMomState == 0))
+  if (((force == 0) &&
+       (pms->ReportMomState == 0)) ||
+      (pms->pbs_servername[0] == '\0'))
     {
     return;    /* Do nothing, just return */
     }
