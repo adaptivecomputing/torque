@@ -6428,9 +6428,21 @@ int open_std_file(
 
           if (equal == FALSE)
             {
+#ifdef RESETGROUP
+            /* Change the group of the file to be the user's group */
+            if (chown(path,
+                  pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+                  pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
+              {
+              log_err(errno, id, "std file exists with the wrong group, someone is doing something fishy, cannot change file group");
+
+              goto reset_ids_fail;
+              }
+#else
             log_err(-1, id, "std file exists with the wrong group, someone is doing something fishy");
 
             goto reset_ids_fail;
+#endif
             }
           }
         }
