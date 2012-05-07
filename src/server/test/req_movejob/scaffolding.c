@@ -41,7 +41,7 @@ char *get_variable(job *pjob, char *variable)
   exit(1);
   }
 
-void svr_dequejob(job *pjob, int val)
+int svr_dequejob(char *job_id, int val)
   {
   fprintf(stderr, "The call to svr_dequejob to be mocked!!\n");
   exit(1);

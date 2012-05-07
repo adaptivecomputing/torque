@@ -708,6 +708,14 @@ AC_CHECK_LIB(${xmlLib:2}, xmlGetProp,
   [],
   [AC_MSG_ERROR([TORQUE needs libxml2 in order to build]) ])
 
+dnl we need -lssl and -lcrypto, lets make sure they exist
+AC_CHECK_LIB(ssl, SSL_accept,
+  [],
+  [AC_MSG_ERROR([TORQUE needs lib ssl in order to build]) ])
+AC_CHECK_LIB(crypto, BN_init,
+  [],
+  [AC_MSG_ERROR([TORQUE needs lib crypto in order to build]) ])
+
 
 
 
@@ -2076,6 +2084,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  buildutils/modulefiles.vers
 	  Makefile
 	  contrib/blcr/Makefile
+	  contrib/init.d/Makefile
 	  doc/Makefile
 	  doc/man1/Makefile
 	  doc/man3/Makefile

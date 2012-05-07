@@ -85,6 +85,7 @@
 #include <limits.h>
 #include <float.h>
 #include <pthread.h>
+#include "tcp.h" /* tcp_chan */
 
 #ifndef TRUE
 #define TRUE 1
@@ -112,66 +113,69 @@
 #define DIS_INVALID 12 /* Invalid condition in code*/
 
 
-unsigned long disrul (int stream, int *retval);
+unsigned long disrul (struct tcp_chan *chan, int *retval);
 
 /*#if UINT_MAX == ULONG_MAX*/
 #if SIZEOF_UNSIGNED == SIZEOF_LONG
-#define disrui(stream, retval) (unsigned)disrul(stream, (retval))
+#define disrui(chan, retval) (unsigned)disrul(chan, (retval))
 #else
-unsigned disrui (int stream,  int *retval);
+unsigned disrui (struct tcp_chan *chan,  int *retval);
 #endif
 
-unsigned disrui_peek (int stream, int *retval);
+unsigned disrui_peek (struct tcp_chan *chan, int *retval);
 
 
 /*#if USHRT_MAX == UINT_MAX*/
 #if SIZEOF_UNSIGNED_SHORT == SIZEOF_UNSIGNED_INT
-#define disrus(stream, retval) (unsigned short)disrui(stream, (retval))
+#define disrus(chan, retval) (unsigned short)disrui(chan, (retval))
 #else
-unsigned short disrus (int stream, int *retval);
+unsigned short disrus (struct tcp_chan *chan, int *retval);
 #endif
 
 /*#if UCHAR_MAX == USHRT_MAX*/
 #if SIZEOF_UNSIGNED_CHAR == SIZEOF_UNSIGNED_SHORT
-#define disruc(stream, retval) (unsigned char)disrus(stream, (retval))
+#define disruc(chan, retval) (unsigned char)disrus(chan, (retval))
 #else
-unsigned char disruc (int stream, int *retval);
+unsigned char disruc (struct tcp_chan *chan, int *retval);
 #endif
 
-long disrsl (int stream, int *retval);
+long disrsl (struct tcp_chan *chan, int *retval);
 /*#if INT_MIN == LONG_MIN && INT_MAX == LONG_MAX*/
 #if SIZEOF_INT == SIZEOF_LONG
-#define disrsi(stream, retval) (int)disrsl(stream, (retval))
+#define disrsi(chan, retval) (int)disrsl(chan, (retval))
 #else
-int disrsi (int stream, int *retval);
+int disrsi (struct tcp_chan *chan, int *retval);
 #endif
 
+/* MUTSU -- disrss does not appear to be in use anywhere in the code base!! */
 /*#if SHRT_MIN == INT_MIN && SHRT_MAX == INT_MAX*/
 #if SIZEOF_SHORT == SIZEOF_INT
-#define disrss(stream, retval) (short)disrsi(stream, (retval))
+#define disrss(chan, retval) (short)disrsi(chan, (retval))
 #else
-short disrss (int stream, int *retval);
+short disrss (struct tcp_chan *chan, int *retval);
 #endif
 
+/* MUTSU -- disrsc does not appear to be in use anywhere in the code base!! */
 /*#if CHAR_MIN == SHRT_MIN && CHAR_MAX == SHRT_MAX*/
 #if SIZEOF_SIGNED_CHAR == SIZEOF_SHORT
-#define disrsc(stream, retval) (signed char)disrss(stream, (retval))
+#define disrsc(chan, retval) (signed char)disrss(chan, (retval))
 #else
-signed char disrsc (int stream, int *retval);
+signed char disrsc (struct tcp_chan *chan, int *retval);
 #endif
 
+/* MUTSU -- disrc does not appear to be in use anywhere in the code base!! */
 /*#if CHAR_MIN, i.e. if chars are signed*/
 /* also, flip the order of statements */
 #ifdef __CHAR_UNSIGNED__
-#define disrc(retval, stream) (char)disruc(stream, (retval))
+#define disrc(retval, chan) (char)disruc(chan, (retval))
 #else
-#define disrc(stream, retval) (char)disrsc(stream, (retval))
+#define disrc(chan, retval) (char)disrsc(chan, (retval))
 #endif
 
-char *disrcs(int stream, size_t *nchars, int *retval);
-int disrfcs(int stream, size_t *nchars, size_t achars, char *value);
-char *disrst(int stream, int *retval);
-int disrfst(int stream, size_t achars, char *value);
+char *disrcs(struct tcp_chan *chan, size_t *nchars, int *retval);
+int disrfcs(struct tcp_chan *chan, size_t *nchars, size_t achars, char *value);
+char *disrst(struct tcp_chan *chan, int *retval);
+int disrfst(struct tcp_chan *chan, size_t achars, char *value);
 
 /*
  * some compilers do not like long doubles, if long double is the same
@@ -183,59 +187,68 @@ typedef double dis_long_double_t;
 typedef long double dis_long_double_t;
 #endif
 
-dis_long_double_t disrl (int stream, int *retval);
+/* MUTSU -- disrl does not appear to be in use anywhere in the code base!! */
+dis_long_double_t disrl (struct tcp_chan *chan, int *retval);
 /*#if DBL_MANT_DIG == LDBL_MANT_DIG && DBL_MAX_EXP == LDBL_MAX_EXP*/
+
+/* MUTSU -- disrd does not appear to be in use anywhere in the code base!! */
 #if SIZEOF_DOUBLE == SIZEOF_LONG_DOUBLE
-#define disrd(stream, retval) (double)disrl(stream, (retval))
+#define disrd(chan, retval) (double)disrl(chan, (retval))
 #else
-double disrd (int stream, int *retval);
+double disrd (struct tcp_chan *chan, int *retval);
 #endif
 
+/* MUTSU -- disrf does not appear to be in use anywhere in the code base!! */
 /*#if FLT_MANT_DIG == DBL_MANT_DIG && FLT_MAX_EXP == DBL_MAX_EXP*/
 #if SIZEOF_FLOAT == SIZEOF_DOUBLE
-#define disrf(stream, retval) (float)disrd(stream, (retval))
+#define disrf(chan, retval) (float)disrd(chan, (retval))
 #else
-float disrf (int stream, int *retval);
+float disrf (struct tcp_chan *chan, int *retval);
 #endif
 
-int diswul (int stream, unsigned long value);
+int diswul (struct tcp_chan *chan, unsigned long value);
 /*#if UINT_MAX == ULONG_MAX*/
 #if SIZEOF_UNSIGNED_INT == SIZEOF_UNSIGNED_LONG
-#define diswui(stream, value) diswul(stream, (unsigned long)(value))
+#define diswui(chan, value) diswul(chan, (unsigned long)(value))
 #else
-int diswui (int stream, unsigned value);
+int diswui (struct tcp_chan *chan, unsigned value);
 #endif
-#define diswus(stream, value) diswui(stream, (unsigned)(value))
-#define diswuc(stream, value) diswui(stream, (unsigned)(value))
+#define diswus(chan, value) diswui(chan, (unsigned)(value))
+#define diswuc(chan, value) diswui(chan, (unsigned)(value))
 
-int diswsl (int stream, long value);
+int diswsl (struct tcp_chan *chan, long value);
 /*#if INT_MIN == LONG_MIN && INT_MAX == LONG_MAX*/
 #if SIZEOF_INT == SIZEOF_LONG
-#define diswsi(stream, value) diswsl(stream, (long)(value))
+#define diswsi(chan, value) diswsl(chan, (long)(value))
 #else
-int diswsi (int stream, int value);
+int diswsi (struct tcp_chan *chan, int value);
 #endif
-#define diswss(stream, value) diswsi(stream, (int)(value))
-#define diswsc(stream, value) diswsi(stream, (int)(value))
+/* MUTSU -- diswss does not appear to be in use anywhere in the code base!! */
+#define diswss(chan, value) diswsi(chan, (int)(value))
+/* MUTSU -- diswsc does not appear to be in use anywhere in the code base!! */
+#define diswsc(chan, value) diswsi(chan, (int)(value))
 
+/* MUTSU -- diswc does not appear to be in use anywhere in the code base!! */
 /*#if CHAR_MIN*/
 #ifdef __CHAR_UNSIGNED__
-#define diswc(stream, value) diswui(stream, (unsigned)(value))
+#define diswc(chan, value) diswui(chan, (unsigned)(value))
 #else
-#define diswc(stream, value) diswsi(stream, (int)(value))
+#define diswc(chan, value) diswsi(chan, (int)(value))
 #endif
 
-int diswcs (int stream, const char *value, size_t nchars);
-#define diswst(stream, value) diswcs(stream, value, strlen(value))
+int diswcs (struct tcp_chan *chan, const char *value, size_t nchars);
+#define diswst(chan, value) diswcs(chan, value, strlen(value))
 
-int diswl_ (int stream, dis_long_double_t value, unsigned int ndigs);
-#define diswl(stream, value) diswl_(stream, (value), LDBL_DIG)
-#define diswd(stream, value) diswl_(stream, (dis_long_double_t)(value), DBL_DIG)
+int diswl_ (struct tcp_chan *chan, dis_long_double_t value, unsigned int ndigs);
+/* MUTSU -- diswl does not appear to be in use anywhere in the code base!! */
+#define diswl(chan, value) diswl_(chan, (value), LDBL_DIG)
+/* MUTSU -- diswd does not appear to be in use anywhere in the code base!! */
+#define diswd(chan, value) diswl_(chan, (dis_long_double_t)(value), DBL_DIG)
 /*#if FLT_MANT_DIG == DBL_MANT_DIG || DBL_MANT_DIG == LDBL_MANT_DIG*/
 #if SIZEOF_FLOAT == SIZEOF_DOUBLE
-#define diswf(stream,value) diswl_(stream,(dis_long_double_t)(value),FLT_DIG)
+#define diswf(chan,value) diswl_(chan,(dis_long_double_t)(value),FLT_DIG)
 #else
-int diswf (int stream, double value);
+int diswf (struct tcp_chan *chan, double value);
 #endif
 
 
@@ -243,14 +256,12 @@ extern const char *dis_emsg[];
 
 /* the following routines set/control DIS over tcp */
 
-extern void DIS_tcp_reset (int fd, int rw);
-extern void DIS_tcp_setup (int fd);
-extern int  DIS_tcp_wflush (int fd);
+extern struct tcp_chan * DIS_tcp_setup (int fd);
+extern int  DIS_tcp_wflush (struct tcp_chan *chan);
 extern void DIS_tcp_settimeout (long timeout);
-extern int  DIS_tcp_istimeout (int fd);
+extern void DIS_tcp_cleanup(struct tcp_chan *chan);
+extern void DIS_tcp_close(struct tcp_chan *chan);
 
-
-extern int  PConnTimeout(int);
 
 /* NOTE:  increase THE_BUF_SIZE to 131072 for systems > 5k nodes */
 
@@ -263,28 +274,5 @@ extern int  PConnTimeout(int);
 /* used to tell dis functions whether or not to use tcp or rpp */
 #define RPP_FUNC 1
 #define TCP_FUNC 0
-
-
-struct tcpdisbuf
-  {
-  unsigned long tdis_bufsize;
-  char *tdis_leadp;
-  char *tdis_trailp;
-  char *tdis_eod;
-  char  *tdis_thebuf;
-  };
-
-struct tcp_chan
-  {
-
-  struct tcpdisbuf readbuf;
-
-  struct tcpdisbuf writebuf;
-
-  int              IsTimeout;  /* (boolean)  1 - true */
-  int              ReadErrno;
-  int              SelectErrno;
-  pthread_mutex_t tcp_mutex;
-  };
 
 #endif /* DATA_IS_STRINGS_ */

@@ -135,6 +135,8 @@
 #include "net_connect.h" /* set_localhost_name */
 #include "../lib/Libnet/lib_net.h" /* start_listener_addrinfo */
 #include "process_request.h" /* process_request */
+#include "net_connect.h" /* set_localhost_name */
+#include "tcp.h" /* tcp_chan */
 
 #define TASK_CHECK_INTERVAL    10
 #define RETRY_ROUTING_INTERVAL 45
@@ -382,31 +384,36 @@ int process_pbs_server_port(
   int          rc = PBSE_NONE;
   int          version;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
+  struct tcp_chan *chan = NULL;
+   
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    }
+
+  proto_type = disrui_peek(chan,&rc);
   
-  DIS_tcp_setup(sock);
-  
-  proto_type = disrui_peek(sock,&rc);
-  
-  switch(proto_type)
+  switch (proto_type)
     {
     case PBS_BATCH_PROT_TYPE:
       
-      rc = process_request(sock);
+      rc = process_request(chan);
       
       break;
       
     case IS_PROTOCOL:
 
-      version = disrsi(sock,&rc);
+      version = disrsi(chan, &rc);
       
       if (rc != DIS_SUCCESS)
         {
         log_err(-1,  __func__, "Cannot read version - skipping this request.\n");
+
         close_conn(sock,FALSE);
+
         break;
         }
       
-      rc = svr_is_request(sock, version);
+      rc = svr_is_request(chan, version);
       
       break;
 
@@ -430,12 +437,14 @@ int process_pbs_server_port(
         log_err(-1, __func__, log_buf);
         }
 
-      close_conn(sock, FALSE);
       rc = PBSE_SOCKET_DATA;
 
       break;
       }
     }
+
+  if (chan != NULL)
+    DIS_tcp_cleanup(chan);
 
   return(rc);
   }  /* END process_pbs_server_port() */
@@ -476,10 +485,18 @@ void *start_process_pbs_server_port(
  
   free(new_sock);
 
-  while (rc == PBSE_NONE)
+  while ((rc != PBSE_SOCKET_DATA) &&
+         (rc != PBSE_SOCKET_INFORMATION) &&
+         (rc != PBSE_INTERNAL) &&
+         (rc != PBSE_SYSTEM) &&
+         (rc != PBSE_SOCKET_CLOSE))
     {
+    netcounter_incr();
+
     rc = process_pbs_server_port(sock);
     }
+
+  close_conn(sock, FALSE);
 
   /* Thread exit */
   return(NULL);
@@ -972,6 +989,8 @@ void parse_command_line(
 
 /* Globals to thread the accept port */
 pthread_t      accept_thread_id = -1;
+
+
 /*
  * check_tasks - look for the next work task to perform:
  * 1. All items on the immediate list, then
@@ -1132,7 +1151,14 @@ void *handle_scheduler_contact(
 
 void *start_accept_listener()
   {
-  start_listener_addrinfo(server_name, pbs_server_port_dis, start_process_pbs_server_port);
+  char server_name_trimmed[PBS_MAXSERVERNAME + 1];
+  char *colon_pos = NULL;
+  colon_pos = strchr(server_name, ':');
+  if (colon_pos == NULL)
+    strcpy(server_name_trimmed, server_name);
+  else
+    strncpy(server_name_trimmed, server_name, colon_pos - server_name);
+  start_listener_addrinfo(server_name_trimmed, pbs_server_port_dis, start_process_pbs_server_port);
   return NULL;
   }
 
@@ -1734,9 +1760,7 @@ int main(
   log_event_mask = &server.sv_attr[SRV_ATR_log_events].at_val.at_long;
   pthread_mutex_unlock(server.sv_attr_mutex);
 
-  sprintf(path_log, "%s/%s",
-          path_home,
-          PBS_LOGFILES);
+  sprintf(path_log, "%s/%s", path_home, PBS_LOGFILES);
 
   pthread_mutex_lock(log_mutex);
   log_open(log_file, path_log);
@@ -1751,10 +1775,10 @@ int main(
     log_buf);
 
   set_localhost_name(server_localhost, localhost_len);
+
   /* initialize the server objects and perform specified recovery */
   /* will be left in the server's private directory  */
   /* NOTE:  env cleared in pbsd_init() */
-
   if (pbsd_init(server_init_type) != 0)
     {
     log_err(-1, msg_daemonname, "pbsd_init failed");
@@ -1776,15 +1800,6 @@ int main(
     msg_daemonname,
     log_buf);
 
-
-  if (init_network(63000, start_process_pbs_server_port) != 0)
-    {
-    perror("pbs_server: network");
-
-    log_err(-1, msg_daemonname, "init_network failed dis");
-
-    exit(3);
-    }
 
   if (init_network(0, start_process_pbs_server_port) != 0)
     {

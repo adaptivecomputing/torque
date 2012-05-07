@@ -23,7 +23,7 @@ int svr_startjob(job *pjob, struct batch_request *preq, char *FailHost, char *EM
 
 /* static int svr_strtjob2(job *pjob, struct batch_request *preq); */
 
-void finish_sendmom(job *pjob, struct batch_request *preq, long start_time, char *node_name, int status, int);
+void finish_sendmom(char *job_id, struct batch_request *preq, long start_time, char *node_name, int status, int);
 
 /* static job *chk_job_torun(struct batch_request *preq, int setnn); */
 

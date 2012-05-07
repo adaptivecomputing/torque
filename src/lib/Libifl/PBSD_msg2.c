@@ -105,30 +105,33 @@ int PBSD_msg_put(
   {
   int rc = 0;
   int sock;
+  struct tcp_chan *chan = NULL;
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
   sock = connection[c].ch_socket;
-  DIS_tcp_setup(sock);
-
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_MessJob, pbs_current_user)) ||
-      (rc = encode_DIS_MessageJob(sock, jobid, fileopt, msg)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_MessJob,pbs_current_user)) ||
+      (rc = encode_DIS_MessageJob(chan, jobid, fileopt, msg)) ||
+      (rc = encode_DIS_ReqExtend(chan, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return (PBSE_PROTOCOL);
     }
 
   pthread_mutex_unlock(connection[c].ch_mutex);
 
-  if (DIS_tcp_wflush(sock))
+  if (DIS_tcp_wflush(chan))
     {
     rc = PBSE_PROTOCOL;
     }
 
+  DIS_tcp_cleanup(chan);
   return(rc);
   } /* END PBSD_msg_put() */
 

@@ -106,6 +106,7 @@
 #include "queue_func.h" /* find_queuebyname */
 #include "reply_send.h" /* reply_send_svr */
 #include "svr_func.h" /* get_svr_attr_* */
+#include "req_stat.h" /* stat_mom_job */
 
 
 /* Private Data */
@@ -375,7 +376,7 @@ static void sel_step2(
   struct stat_cntl *cntl)
 
   {
-  job          *pjob;
+  job          *pjob = NULL;
   int           rc;
   int           exec_only = 0;
   int           summarize_arrays = 0;
@@ -383,14 +384,12 @@ static void sel_step2(
   int           iter;
   time_t        time_now = time(NULL);
   long          query_others = 0;
+  char job_id[PBS_MAXSVRJOBID+1];
+  int job_substate = -1;
+  time_t job_momstattime = -1;
 
   /* do first pass of finding jobs that match the selection criteria */
   get_svr_attr_l(SRV_ATR_query_others, &query_others);
-
-  if (cntl->sc_jobid[0] == '\0')
-    pjob = NULL;
-  else
-    pjob = find_job(cntl->sc_jobid);
 
   if (cntl->sc_origrq->rq_extend != NULL)
     {
@@ -412,47 +411,17 @@ static void sel_step2(
 
     if (summarize_arrays)
       {
-      if (pjob == NULL)
-        {
-        if (cntl->sc_pque)
-          pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
-        else
-          next_job(&array_summary,&iter);
-        }
-      else if (cntl->sc_pque)
-        {
-        pthread_mutex_unlock(pjob->ji_mutex);
-
+      if (cntl->sc_pque)
         pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
-        }
       else
-        {
-        pthread_mutex_unlock(pjob->ji_mutex);
-
         pjob = next_job(&array_summary,&iter);;
-        }
       }
     else
       {
-      if (pjob == NULL)
-        {
-        if (cntl->sc_pque)
-          pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
-        else
-          pjob = next_job(&alljobs,&iter);
-        }
-      else if (cntl->sc_pque)
-        {
-        pthread_mutex_unlock(pjob->ji_mutex);
-
+      if (cntl->sc_pque)
         pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
-        }
       else
-        {
-        pthread_mutex_unlock(pjob->ji_mutex);
-
         pjob = next_job(&alljobs,&iter);
-        }
       }
 
     if (pjob == NULL)
@@ -487,33 +456,36 @@ static void sel_step2(
 
       if (select_job(pjob, cntl->sc_select))
         {
-        if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING) &&
-            ((time_now - pjob->ji_momstat) > JobStatRate))
+        strcpy(cntl->sc_jobid, pjob->ji_qs.ji_jobid);
+        strcpy(job_id, pjob->ji_qs.ji_jobid);
+        job_substate = pjob->ji_qs.ji_substate;
+        job_momstattime = pjob->ji_momstat;
+        pthread_mutex_unlock(pjob->ji_mutex);
+
+        if ((job_substate == JOB_SUBSTATE_RUNNING) &&
+            ((time_now - job_momstattime) > JobStatRate))
           {
-          strcpy(cntl->sc_jobid, pjob->ji_qs.ji_jobid);
 
-          if ((rc = stat_to_mom(pjob, cntl)) == PBSE_SYSTEM)
+          if ((rc = stat_to_mom(job_id, cntl)) == PBSE_MEM_MALLOC)
             {
-            pthread_mutex_unlock(pjob->ji_mutex);
-
             break;
             }
 
           if (rc == 0)
             {
-            pthread_mutex_unlock(pjob->ji_mutex);
-
             return;
             }
 
-          rc = 0;
-
+          rc = PBSE_NONE;
           /* ignore this job */
-
           continue;
           }
         }
+      else
+        pthread_mutex_unlock(pjob->ji_mutex);
       }
+    else
+      pthread_mutex_unlock(pjob->ji_mutex);
     }
 
   sel_step3(cntl);

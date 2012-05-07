@@ -1083,6 +1083,11 @@ static void alter_unreg(
   struct depend_job *oldjd;
 
   int                type;
+  char               job_id[PBS_MAXSVRJOBID+1];
+
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  pthread_mutex_unlock(pjob->ji_mutex);
+  pjob = NULL;
 
   for (poldd = (struct depend *)GET_NEXT(old->at_val.at_list);
        poldd;
@@ -1100,6 +1105,8 @@ static void alter_unreg(
         {
         if ((pnewd == 0) || (find_dependjob(pnewd, oldjd->dc_child) == 0))
           {
+          if ((pjob = find_job(job_id)) == NULL)
+              return;
           send_depend_req(
             pjob,
             oldjd,
@@ -1107,6 +1114,7 @@ static void alter_unreg(
             JOB_DEPEND_OP_UNREG,
             SYNC_SCHED_HINT_NULL,
             release_req);
+          pjob = NULL;
           }
 
         oldjd = (struct depend_job *)GET_NEXT(oldjd->dc_link);
@@ -1143,6 +1151,9 @@ int depend_on_que(
   int                type;
   job               *pjob = (job *)pj;
   pbs_queue         *pque = get_jobs_queue(&pjob);
+  char job_id[PBS_MAXSVRJOBID+1];
+
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   if (pque == NULL)
     {
@@ -1169,6 +1180,8 @@ int depend_on_que(
     /* if there are dependencies being removed, unregister them */
 
     alter_unreg(pjob, &(pjob)->ji_wattr[JOB_ATR_depend], pattr);
+    if ((pjob = find_job(job_id)) == NULL)
+      return PBSE_JOBNOTFOUND;
     }
 
   /* First set a System hold if required */
@@ -1200,9 +1213,16 @@ int depend_on_que(
 
       while (pparent)
         {
-        if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq)))
-
+        if ((pjob == NULL) && ((pjob = find_job(job_id)) == NULL))
+          {
+          return PBSE_JOBNOTFOUND;
+          }
+        if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq)) != PBSE_NONE)
+          {
+          pjob = find_job(job_id);
           return(rc);
+          }
+        pjob = NULL;
 
         pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
         }
@@ -1263,8 +1283,6 @@ static void post_doe(
 
 
 
-
-
 /*
  * depend_on_exec - Perform actions if job has
  * "beforestart" dependency - send "register-release" to child job; or
@@ -1278,13 +1296,12 @@ int depend_on_exec(
   job *pjob)
 
   {
-
   struct depend     *pdep;
-
   struct depend_job *pdj;
+  char               jobid[PBS_MAXSVRJOBID+1];
 
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
   /* If any jobs come after my start, release them */
-
   pdep = find_depend(
            JOB_DEPEND_TYPE_BEFORESTART,
            &pjob->ji_wattr[JOB_ATR_depend]);
@@ -1302,6 +1319,10 @@ int depend_on_exec(
         JOB_DEPEND_OP_RELEASE,
         SYNC_SCHED_HINT_NULL,
         post_doe);
+      pjob = NULL; /* send_depend_req returns unlocked, NULL--> unlocked */
+
+      if ((pjob = find_job(jobid)) == NULL)
+        return PBSE_JOBNOTFOUND;
 
       pdj = (struct depend_job *)GET_NEXT(pdj->dc_link);
       }
@@ -1327,6 +1348,8 @@ int depend_on_exec(
         JOB_DEPEND_OP_READY,
         SYNC_SCHED_HINT_NULL,
         release_req);
+      if ((pjob == NULL) && ((pjob = find_job(jobid)) == NULL))
+        return PBSE_JOBNOTFOUND;
       }
     }
 
@@ -1381,6 +1404,10 @@ int depend_on_term(
   int                rc;
   int                shouldkill = 0;
   int                type;
+  char               job_id[PBS_MAXSVRJOBID+1];
+  int                job_unlocked = 0;
+ 
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   pattr = &pjob->ji_wattr[JOB_ATR_depend];
 
@@ -1454,10 +1481,17 @@ int depend_on_term(
 
           while (pparent)
             {
-            send_depend_req(pjob, pparent, type,
+            if ((pjob == NULL) && 
+                ((pjob = find_job(job_id)) == NULL))
+              return(PBSE_JOBNOTFOUND);
+
+            rc = send_depend_req(pjob, pparent, type,
                             JOB_DEPEND_OP_DELETE,
                             SYNC_SCHED_HINT_NULL,
                             release_req);
+
+            pjob = NULL;
+            job_unlocked = 1;
 
             pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
             }
@@ -1473,11 +1507,17 @@ int depend_on_term(
 
       while (pparent)
         {
+        if ((pjob == NULL) && 
+            ((pjob = find_job(job_id)) == NULL))
+          return(PBSE_JOBNOTFOUND);
 
         /* "release" the job to execute */
-        if ((rc = send_depend_req(pjob, pparent, type, op,
-                                  SYNC_SCHED_HINT_NULL, release_req)))
+        if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL,
+                release_req)) != PBSE_NONE)
+          {
           return (rc);
+          }
+        job_unlocked = 1;
 
         pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
         }
@@ -1485,6 +1525,8 @@ int depend_on_term(
 
     pdep = (struct depend *)GET_NEXT(pdep->dp_link);
     }
+  if (!job_unlocked)
+    pthread_mutex_unlock(pjob->ji_mutex);
 
   return(0);
   }  /* END depend_on_term() */
@@ -1504,13 +1546,14 @@ static void release_cheapest(
   struct depend *pdep)
 
   {
+  char job_id[PBS_MAXSVRJOBID+1];
   long     lowestcost = 0;
-
   struct depend_job *cheapest = (struct depend_job *)0;
   int     hint = SYNC_SCHED_HINT_OTHER;
   int     nreleased = 0;
-
   struct depend_job *pdj;
+
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   pdj = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
 
@@ -1548,6 +1591,7 @@ static void release_cheapest(
       {
       cheapest->dc_state = JOB_DEPEND_OP_RELEASE;
       }
+    pjob = find_job(job_id);
     }
 
   return;
@@ -2091,7 +2135,7 @@ static int send_depend_req(
   if (preq == NULL)
     {
     log_err(errno, myid, msg_err_malloc);
-
+    pthread_mutex_unlock(pjob->ji_mutex);
     return PBSE_SYSTEM;
     }
 
@@ -2148,17 +2192,8 @@ static int send_depend_req(
   if ((rc = issue_to_svr(pparent->dc_svr, preq, postfunc)) != PBSE_NONE)
     {
     sprintf(log_buf, "Unable to perform dependency with job %s\n", pparent->dc_child);
-
-    find_job(job_id);
-
     return rc;
     }
-
-  pjob = find_job(job_id);
-
-  if (pjob == NULL)
-    return PBSE_JOBNOTFOUND;
-
   return PBSE_NONE;
   }  /* END send_depend_req() */
 

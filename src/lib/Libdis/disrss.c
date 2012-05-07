@@ -115,7 +115,7 @@
 
 short disrss(
     
-  int  stream,
+  struct tcp_chan *chan,
   int *retval)
   
   {
@@ -123,15 +123,12 @@ short disrss(
   int  negate;
   short  value;
   unsigned uvalue;
-  int (*disr_commit)(int stream, int commit);
 
   assert(retval != NULL);
 
-  disr_commit = tcp_rcommit;
-
   value = 0;
 
-  switch (locret = disrsi_(stream, &negate, &uvalue, 1))
+  switch (locret = disrsi_(chan, &negate, &uvalue, 1))
     {
 
     case DIS_SUCCESS:
@@ -148,7 +145,7 @@ short disrss(
       value = negate ? SHRT_MIN : SHRT_MAX;
     }
 
-  *retval = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?
+  *retval = (tcp_rcommit(chan, locret == DIS_SUCCESS) < 0) ?
             DIS_NOCOMMIT : locret;
 
   return (value);

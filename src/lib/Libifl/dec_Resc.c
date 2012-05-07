@@ -88,6 +88,7 @@
 #include "batch_request.h"
 #include "pbs_error.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 /*
  * decode_DIS_rescl() - decode a resource request
@@ -106,7 +107,7 @@
 
 int decode_DIS_Rescl(
 
-  int  sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
@@ -117,7 +118,7 @@ int decode_DIS_Rescl(
 
   /* first, the resource handle (even if not used in request) */
 
-  preq->rq_ind.rq_rescq.rq_rhandle = disrsi(sock, &rc);
+  preq->rq_ind.rq_rescq.rq_rhandle = disrsi(chan, &rc);
 
   if (rc)
     {
@@ -126,7 +127,7 @@ int decode_DIS_Rescl(
 
   /* next need to know how many query strings */
 
-  ct = disrui(sock, &rc);
+  ct = disrui(chan, &rc);
 
   if (rc)
     {
@@ -149,7 +150,7 @@ int decode_DIS_Rescl(
 
     for (i = 0;i < ct;i++)
       {
-      *(ppc + i) = disrst(sock, &rc);
+      *(ppc + i) = disrst(chan, &rc);
 
       if (rc)
         break;

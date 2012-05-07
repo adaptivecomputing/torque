@@ -54,12 +54,6 @@ int DIS_tcp_wflush(int fd)
   exit(1);
   }
 
-int PConnTimeout(int sock)
-  {
-  fprintf(stderr, "The call to PConnTimeout needs to be mocked!!\n");
-  exit(1);
-  }
-
 struct batch_reply *PBSD_rdrpy(int *local_errno, int c)
   {
   fprintf(stderr, "The call to PBSD_rdrpy needs to be mocked!!\n");

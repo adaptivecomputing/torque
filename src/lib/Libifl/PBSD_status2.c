@@ -100,33 +100,38 @@ int PBSD_status_put(
   {
   int rc = 0;
   int sock;
+  struct tcp_chan *chan = NULL;
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
   sock = connection[c].ch_socket;
 
-  DIS_tcp_setup(sock);
-
-  if ((rc = encode_DIS_ReqHdr(sock, function, pbs_current_user)) ||
-      (rc = encode_DIS_Status(sock, id, attrib)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    rc = PBSE_MEM_MALLOC;
+    return rc;
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, function, pbs_current_user)) ||
+      (rc = encode_DIS_Status(chan, id, attrib)) ||
+      (rc = encode_DIS_ReqExtend(chan, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
 
   pthread_mutex_unlock(connection[c].ch_mutex);
 
-  if (DIS_tcp_wflush(sock))
+  if (DIS_tcp_wflush(chan))
     {
-    return(PBSE_PROTOCOL);
+    rc = PBSE_PROTOCOL;
     }
 
   /* success */
 
+  DIS_tcp_cleanup(chan);
   return(PBSE_NONE);
   }  /* END PBSD_status_put() */
 

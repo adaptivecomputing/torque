@@ -107,10 +107,12 @@
 #include <stdlib.h>
 #include "libpbs.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
+/* MUTSU -- This isn't in use anywhere !!! */
 int decode_DIS_attropl(
     
-  int              sock,
+  struct tcp_chan *chan,
   struct attropl **ppatt)
 
   {
@@ -124,13 +126,13 @@ int decode_DIS_attropl(
   int   rc;
 
 
-  numpat = disrui(sock, &rc);
+  numpat = disrui(chan, &rc);
 
   if (rc) return rc;
 
   for (i = 0; i < numpat; ++i)
     {
-    disrui(sock, &rc); /* name_len is unused here */
+    disrui(chan, &rc); /* name_len is unused here */
 
     if (rc) break;
 
@@ -147,26 +149,26 @@ int decode_DIS_attropl(
 
     pat->value    = (char *)0;
 
-    pat->name = disrst(sock, &rc);
+    pat->name = disrst(chan, &rc);
 
     if (rc) break;
 
-    hasresc = disrui(sock, &rc);
+    hasresc = disrui(chan, &rc);
 
     if (rc) break;
 
     if (hasresc)
       {
-      pat->resource = disrst(sock, &rc);
+      pat->resource = disrst(chan, &rc);
 
       if (rc) break;
       }
 
-    pat->value = disrst(sock, &rc);
+    pat->value = disrst(chan, &rc);
 
     if (rc) break;
 
-    pat->op = (enum batch_op)disrui(sock, &rc);
+    pat->op = (enum batch_op)disrui(chan, &rc);
 
     if (rc) break;
 

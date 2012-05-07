@@ -123,6 +123,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "array_func.h" /* setup_array_struct */
 #include "threadpool.h"
+#include "job_func.h" /* job_purge */
 
 
 #include "work_task.h"
@@ -470,7 +471,10 @@ int set_node_attr(
  */
 
 int req_quejob(
-    struct batch_request *preq)
+
+  struct batch_request *preq,
+  char **pjob_id)
+
   {
   int                   created_here = 0;
   int                   attr_index;
@@ -490,7 +494,6 @@ int req_quejob(
   char                  buf[256];
   char                  EMsg[MAXPATHLEN];
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-
   time_t                time_now = time(NULL);
 
   job                  *pj;
@@ -1406,8 +1409,8 @@ int req_quejob(
     *(hostname++) = '\0';
 
     snprintf(pj->ji_qs.ji_jobid, PBS_MAXSVRJOBID, "%s[].%s",
-             oldid,
-             hostname);
+      oldid,
+      hostname);
 
     free(oldid);    
     }
@@ -1456,8 +1459,6 @@ int req_quejob(
     /* reply failed, purge the job and close the connection */
     unlock_queue(pque, __func__, "reply fail", LOGLEVEL);
 
-    close_conn(sock,FALSE);
-
     job_purge(pj);
 
     return(PBSE_SOCKET_WRITE);
@@ -1467,6 +1468,7 @@ int req_quejob(
   insert_job(&newjobs,pj);
 
   unlock_queue(pque, __func__, "success", LOGLEVEL);
+  *pjob_id = strdup(pj->ji_qs.ji_jobid);
   pthread_mutex_unlock(pj->ji_mutex);
 
   return(PBSE_NONE);
@@ -1524,7 +1526,7 @@ int req_jobcredential(
 
 int req_jobscript(
 
-  struct batch_request *preq) /* ptr to the decoded request*/
+  struct batch_request *preq)
 
   {
   int   fds;
@@ -1978,11 +1980,8 @@ int req_rdytocommit(
     
     log_err(rc, __func__, log_buf);
 
-    close_conn(sock,FALSE);
-    
-    pj = find_job(jobid);
-    
-    job_purge(pj);
+    if ((pj = find_job(jobid)) != NULL)
+      job_purge(pj);
     
     return(rc);
     }
@@ -2187,7 +2186,7 @@ int req_commit(
 
   pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
-  if ((rc = svr_enquejob(pj, FALSE, -1)))
+  if ((rc = svr_enquejob(pj, FALSE, -1)) != PBSE_NONE)
     {
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not queue job %s",
       pj->ji_qs.ji_jobid);
@@ -2371,33 +2370,27 @@ static job *locate_new_job(
 
   while ((pj = next_job(&newjobs,&iter)) != NULL)
     {
-    if ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1) ||
-        ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == sock) &&
-         (pj->ji_qs.ji_un.ji_newt.ji_fromaddr == get_connectaddr(sock,TRUE))))
+    if ((jobid != NULL) && (*jobid != '\0'))
       {
-      if ((jobid != NULL) && (*jobid != '\0'))
+      if (!strncmp(pj->ji_qs.ji_jobid, jobid, PBS_MAXSVRJOBID))
         {
-        if (!strncmp(pj->ji_qs.ji_jobid, jobid, PBS_MAXSVRJOBID))
-          {
-          /* requested job located */
-
-          break;
-          }
-        }
-      else if (pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1)
-        {
-        /* empty job slot located */
+        /* requested job located */
 
         break;
         }
-      else
-        {
-        /* matching job slot located */
+      }
+    else if (pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1)
+      {
+      /* empty job slot located */
 
-        break;
-        }
-      }    /* END if ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1) || ...) */
+      break;
+      }
+    else
+      {
+      /* matching job slot located */
 
+      break;
+      }
     pthread_mutex_unlock(pj->ji_mutex);
     }  /* END while(pj != NULL) */
 

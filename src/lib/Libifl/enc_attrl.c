@@ -106,7 +106,7 @@
 
 int encode_DIS_attrl(
 
-  int         sock,
+  struct tcp_chan *chan,
   struct attrl *pattrl)
 
   {
@@ -123,7 +123,7 @@ int encode_DIS_attrl(
     ++ct;
     }
 
-  if ((rc = diswui(sock, ct)))
+  if ((rc = diswui(chan, ct)))
     {
     return(rc);
     }
@@ -147,12 +147,12 @@ int encode_DIS_attrl(
     if (ps->resource != NULL)
       name_len += strlen(ps->resource) + 1;
 
-    rc = diswui(sock, name_len);
+    rc = diswui(chan, name_len);
 
     if (rc != 0)
       break;
 
-    rc = diswst(sock, ps->name);
+    rc = diswst(chan, ps->name);
 
     if (rc != 0)
       break;
@@ -161,22 +161,22 @@ int encode_DIS_attrl(
       {
       /* has a resource name */
 
-      if ((rc = diswui(sock, 1)) != 0)
+      if ((rc = diswui(chan, 1)) != 0)
         break;
 
-      if ((rc = diswst(sock, ps->resource)) != 0)
+      if ((rc = diswst(chan, ps->resource)) != 0)
         break;
       }
     else
       {
-      if ((rc = diswui(sock, 0)) != 0) /* no resource name */
+      if ((rc = diswui(chan, 0)) != 0) /* no resource name */
         break;
       }
 
     if ((rc = diswst(
-                sock,
+                chan,
                 (ps->value != NULL) ? ps->value : "")) ||
-        (rc = diswui(sock, (unsigned int)SET)))
+        (rc = diswui(chan, (unsigned int)SET)))
       break;
     }  /* END for (ps) */
 

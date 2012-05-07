@@ -7,21 +7,21 @@
 #include "pbs_ifl.h" /* resource_t */
 #include "pbs_nodes.h" /* howl, gpusubn */
 
-struct pbsnode *tfind_addr(const u_long key, uint16_t port, job *pjob);
+struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname);
 
 void update_node_state(struct pbsnode *np, int newstate);
 
-job *check_node_for_job(struct pbsnode *pnode, char *jobid);
+int check_node_for_job(struct pbsnode *pnode, char *jobid);
 
 job *find_job_by_node(struct pbsnode *pnode, char *jobid);
 
-void sync_node_jobs(struct pbsnode *np, char *jobstring_in);
+void *sync_node_jobs(void *vp);
 
 void update_job_data(struct pbsnode *np, char *jobstring_in);
 
 void setup_notification(char *pname);
 
-int is_stat_get(struct pbsnode *np);
+int is_stat_get(char *node_name, struct tcp_chan *chan);
 
 #ifdef NVIDIA_GPUS
 int gpu_has_job(struct pbsnode *pnode, int gpuid);
@@ -29,7 +29,7 @@ int gpu_has_job(struct pbsnode *pnode, int gpuid);
 
 int is_gpustat_get(struct pbsnode *np, char **str_ptr);
 
-int is_compose(int stream, int command);
+int is_compose(struct tcp_chan *chan, int command);
 
 void stream_eof(int stream, u_long addr, uint16_t port, int ret);
 
@@ -37,7 +37,7 @@ void *check_nodes_work(void *vp);
 
 void check_nodes(struct work_task *ptask);
 
-int svr_is_request(int stream, int version);
+int svr_is_request(struct tcp_chan *chan, int version);
 
 void *write_node_state_work(void *vp);
 

@@ -95,11 +95,11 @@
 
 int encode_DIS_JobId(
     
-  int   sock,
+  struct tcp_chan *chan,
   char *jobid)
 
   {
-  return (diswst(sock, jobid));
+  return (diswst(chan, jobid));
   }
 
 

@@ -97,13 +97,13 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "batch_request.h"
-
-extern int decode_DIS_attrl(int, struct attrl **);
+#include "tcp.h" /* tcp_chan */
+#include "lib_ifl.h" /* decode_DIS_attrl */
 
 
 int decode_DIS_replyCmd(
 
-  int                 sock,
+  struct tcp_chan *chan,
   struct batch_reply *reply)
 
   {
@@ -121,7 +121,7 @@ int decode_DIS_replyCmd(
 
   /* first decode "header" consisting of protocol type and version */
 
-  i = disrui(sock, &rc);
+  i = disrui(chan, &rc);
 
   if (rc != 0)
     {
@@ -133,7 +133,7 @@ int decode_DIS_replyCmd(
     return(DIS_PROTO);
     }
 
-  i = disrui(sock, &rc);
+  i = disrui(chan, &rc);
 
   if (rc != 0)
     {
@@ -147,21 +147,21 @@ int decode_DIS_replyCmd(
 
   /* next decode code, auxcode and choice (union type identifier) */
 
-  reply->brp_code = disrsi(sock, &rc);
+  reply->brp_code = disrsi(chan, &rc);
 
   if (rc != 0)
     {
     return(rc);
     }
 
-  reply->brp_auxcode = disrsi(sock, &rc);
+  reply->brp_auxcode = disrsi(chan, &rc);
 
   if (rc != 0)
     {
     return(rc);
     }
 
-  reply->brp_choice = disrui(sock, &rc);
+  reply->brp_choice = disrui(chan, &rc);
 
   if (rc != 0)
     {
@@ -181,7 +181,7 @@ int decode_DIS_replyCmd(
 
     case BATCH_REPLY_CHOICE_Commit:
 
-      if ((rc = disrfst(sock, PBS_MAXSVRJOBID, reply->brp_un.brp_jid)))
+      if ((rc = disrfst(chan, PBS_MAXSVRJOBID, reply->brp_un.brp_jid)))
         {
         return(rc);
         }
@@ -196,7 +196,7 @@ int decode_DIS_replyCmd(
 
       pselx = &reply->brp_un.brp_select;
 
-      ct = disrui(sock, &rc);
+      ct = disrui(chan, &rc);
 
       if (rc)
         {
@@ -214,7 +214,7 @@ int decode_DIS_replyCmd(
 
         psel->brp_next = NULL;
 
-        rc = disrfst(sock, PBS_MAXSVRJOBID, psel->brp_jobid);
+        rc = disrfst(chan, PBS_MAXSVRJOBID, psel->brp_jobid);
 
         if (rc)
           {
@@ -238,7 +238,7 @@ int decode_DIS_replyCmd(
 
       pstcx = &reply->brp_un.brp_statc;
 
-      ct = disrui(sock, &rc);
+      ct = disrui(chan, &rc);
 
       if (rc)
         {
@@ -254,11 +254,11 @@ int decode_DIS_replyCmd(
           return(DIS_NOMALLOC);
           }
 
-        pstcmd->brp_objtype = disrui(sock, &rc);
+        pstcmd->brp_objtype = disrui(chan, &rc);
 
         if (rc == 0)
           {
-          rc = disrfst(sock,
+          rc = disrfst(chan,
               (PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID:PBS_MAXDEST),
               pstcmd->brp_objname);
           }
@@ -270,7 +270,7 @@ int decode_DIS_replyCmd(
           return(rc);
           }
 
-        rc = decode_DIS_attrl(sock, &pstcmd->brp_attrl);
+        rc = decode_DIS_attrl(chan, &pstcmd->brp_attrl);
 
         if (rc)
           {
@@ -291,7 +291,7 @@ int decode_DIS_replyCmd(
       /* text reply */
 
       reply->brp_un.brp_txt.brp_str = disrcs(
-                                        sock,
+                                        chan,
                                         &reply->brp_un.brp_txt.brp_txtlen,
                                         &rc);
 
@@ -301,7 +301,7 @@ int decode_DIS_replyCmd(
 
       /* Locate Job Reply */
 
-      rc = disrfst(sock, PBS_MAXDEST, reply->brp_un.brp_locate);
+      rc = disrfst(chan, PBS_MAXDEST, reply->brp_un.brp_locate);
 
       break;
 
@@ -314,7 +314,7 @@ int decode_DIS_replyCmd(
       reply->brp_un.brp_rescq.brq_resvd = NULL;
       reply->brp_un.brp_rescq.brq_down  = NULL;
 
-      ct = disrui(sock, &rc);
+      ct = disrui(chan, &rc);
 
       if (rc)
         break;
@@ -338,16 +338,16 @@ int decode_DIS_replyCmd(
         }
 
       for (i = 0;(i < ct) && (rc == 0);++i)
-        *(reply->brp_un.brp_rescq.brq_avail + i) = disrui(sock, &rc);
+        *(reply->brp_un.brp_rescq.brq_avail + i) = disrui(chan, &rc);
 
       for (i = 0;(i < ct) && (rc == 0);++i)
-        *(reply->brp_un.brp_rescq.brq_alloc + i) = disrui(sock, &rc);
+        *(reply->brp_un.brp_rescq.brq_alloc + i) = disrui(chan, &rc);
 
       for (i = 0;(i < ct) && (rc == 0);++i)
-        *(reply->brp_un.brp_rescq.brq_resvd + i) = disrui(sock, &rc);
+        *(reply->brp_un.brp_rescq.brq_resvd + i) = disrui(chan, &rc);
 
       for (i = 0;(i < ct) && (rc == 0);++i)
-        *(reply->brp_un.brp_rescq.brq_down + i)  = disrui(sock, &rc);
+        *(reply->brp_un.brp_rescq.brq_down + i)  = disrui(chan, &rc);
 
       break;
 

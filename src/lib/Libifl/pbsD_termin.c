@@ -86,6 +86,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int pbs_terminate_err(
 
@@ -100,6 +101,7 @@ int pbs_terminate_err(
 
   int                 rc = 0;
   int                 sock;
+  struct tcp_chan *chan = NULL;
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -108,23 +110,27 @@ int pbs_terminate_err(
 
   /* setup DIS support routines for following DIS calls */
 
-  DIS_tcp_setup(sock);
-
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_Shutdown, pbs_current_user)) ||
-      (rc = encode_DIS_ShutDown(sock, manner)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    pthread_mutex_unlock(connection[c].ch_mutex);
+    rc = PBSE_PROTOCOL;
+    return rc;
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_Shutdown, pbs_current_user)) ||
+      (rc = encode_DIS_ShutDown(chan, manner)) ||
+      (rc = encode_DIS_ReqExtend(chan, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
 
-  if (DIS_tcp_wflush(sock))
+  if (DIS_tcp_wflush(chan))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
 
@@ -136,7 +142,7 @@ int pbs_terminate_err(
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   PBSD_FreeReply(reply);
-
+  DIS_tcp_cleanup(chan);
   return(rc);
   }  /* END pbs_terminate_err() */
 

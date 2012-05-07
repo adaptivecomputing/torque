@@ -14,7 +14,7 @@
 
 int disrsi_(
 
-  int       stream,
+  struct tcp_chan *chan,
   int      *negate,
   unsigned *value,
   unsigned  count)
@@ -30,8 +30,6 @@ int disrsi_(
     return DIS_INVALID;
   if (value == NULL)
     return DIS_INVALID;
-  if (stream < 0)
-    return DIS_INVALID;
   if (count == 0)
     return DIS_INVALID;
 
@@ -41,7 +39,7 @@ int disrsi_(
   if (count > DIS_BUFSIZ)
     return DIS_INVALID;
 
-  switch (c = tcp_getc(stream))
+  switch (c = tcp_getc(chan))
     {
 
     case '-':
@@ -49,7 +47,7 @@ int disrsi_(
 
       *negate = c == '-';
 
-      if (tcp_gets(stream, scratch, count) != (int)count)
+      if (tcp_gets(chan, scratch, count) != (int)count)
         {
         return(DIS_EOD);
         }
@@ -99,7 +97,7 @@ int disrsi_(
 
       if (count > 1)
         {
-        if (tcp_gets(stream, scratch + 1, count - 1) != (int)count - 1)
+        if (tcp_gets(chan, scratch + 1, count - 1) != (int)count - 1)
           {
           return(DIS_EOD);
           }
@@ -128,7 +126,7 @@ int disrsi_(
           }
         }    /* END if (count > 1) */
 
-      return(disrsi_(stream, negate, value, ndigs));
+      return(disrsi_(chan, negate, value, ndigs));
       break;
 
     case -1:

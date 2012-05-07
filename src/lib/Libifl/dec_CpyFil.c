@@ -106,10 +106,11 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_CopyFiles(
     
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
@@ -123,23 +124,23 @@ int decode_DIS_CopyFiles(
   pcf = &preq->rq_ind.rq_cpyfile;
   CLEAR_HEAD(pcf->rq_pair);
 
-  if ((rc = disrfst(sock, PBS_MAXSVRJOBID, pcf->rq_jobid)) != 0)
+  if ((rc = disrfst(chan, PBS_MAXSVRJOBID, pcf->rq_jobid)) != 0)
     return rc;
 
-  if ((rc = disrfst(sock, PBS_MAXUSER, pcf->rq_owner)) != 0)
+  if ((rc = disrfst(chan, PBS_MAXUSER, pcf->rq_owner)) != 0)
     return rc;
 
-  if ((rc = disrfst(sock, PBS_MAXUSER, pcf->rq_user))  != 0)
+  if ((rc = disrfst(chan, PBS_MAXUSER, pcf->rq_user))  != 0)
     return rc;
 
-  if ((rc = disrfst(sock, PBS_MAXGRPN, pcf->rq_group)) != 0)
+  if ((rc = disrfst(chan, PBS_MAXGRPN, pcf->rq_group)) != 0)
     return rc;
 
-  pcf->rq_dir = disrui(sock, &rc);
+  pcf->rq_dir = disrui(chan, &rc);
 
   if (rc) return rc;
 
-  pair_ct = disrui(sock, &rc);
+  pair_ct = disrui(chan, &rc);
 
   if (rc) return rc;
 
@@ -157,7 +158,7 @@ int decode_DIS_CopyFiles(
 
     ppair->fp_rmt   = 0;
 
-    ppair->fp_flag = disrui(sock, &rc);
+    ppair->fp_flag = disrui(chan, &rc);
 
     if (rc)
       {
@@ -165,7 +166,7 @@ int decode_DIS_CopyFiles(
       return rc;
       }
 
-    ppair->fp_local = disrst(sock, &rc);
+    ppair->fp_local = disrst(chan, &rc);
 
     if (rc)
       {
@@ -173,7 +174,7 @@ int decode_DIS_CopyFiles(
       return rc;
       }
 
-    ppair->fp_rmt = disrst(sock, &rc);
+    ppair->fp_rmt = disrst(chan, &rc);
 
     if (rc)
       {

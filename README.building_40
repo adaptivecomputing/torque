@@ -17,3 +17,7 @@ pkg-config
 Non-standard packages required for building the source:
 libssl-dev (name may vary among OSes)
 
+*** For admins that use cpusets in any form ***
+hwloc version 1.1 or greater is now required for building TORQUE with cpusets, as pbs_mom now uses the 
+hwloc API to create the cpusets instead of creating them manually.
+

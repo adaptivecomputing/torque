@@ -86,6 +86,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
   
 /* NOTE:  routes over to req_runjob() on server side
@@ -141,6 +142,7 @@ int pbs_runjob_err(
   struct batch_reply   *reply;
   unsigned int          resch = 0;
   int                   sock;
+  struct tcp_chan *chan = NULL;
 
   /* NOTE:  set_task sets WORK_Deferred_Child : request remains until child terminates */
 
@@ -161,26 +163,33 @@ int pbs_runjob_err(
 
   /* setup DIS support routines for following DIS calls */
 
-  DIS_tcp_setup(sock);
-
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    pthread_mutex_unlock(connection[c].ch_mutex);
+    *rc = PBSE_PROTOCOL;
+    return(*rc);
+    }
   /* send run request */
-
-  if ((*rc = encode_DIS_ReqHdr(sock, PBS_BATCH_RunJob, pbs_current_user)) ||
-      (*rc = encode_DIS_RunJob(sock, jobid, location, resch)) ||
-      (*rc = encode_DIS_ReqExtend(sock, extend)))
+  else if ((*rc = encode_DIS_ReqHdr(chan, PBS_BATCH_RunJob, pbs_current_user)) ||
+           (*rc = encode_DIS_RunJob(chan, jobid, location, resch)) ||
+           (*rc = encode_DIS_ReqExtend(chan, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[*rc]);
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
-    return (*rc) * -1;
+    DIS_tcp_cleanup(chan);
+
+    return(PBSE_PROTOCOL);
     }
 
-  if ((*rc = DIS_tcp_wflush(sock)) != PBSE_NONE)
+  if ((*rc = DIS_tcp_wflush(chan)) != PBSE_NONE)
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
+    
+    DIS_tcp_cleanup(chan);
 
-    return (*rc) * -1;
+    return(PBSE_PROTOCOL);
     }
 
   /* get reply */
@@ -192,8 +201,10 @@ int pbs_runjob_err(
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   PBSD_FreeReply(reply);
+    
+  DIS_tcp_cleanup(chan);
 
-  return (*rc) * -1;
+  return(*rc);
   }  /* END pbs_runjob_err() */
 
 

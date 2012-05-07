@@ -141,7 +141,7 @@ int pbs_submit_hash(
 
   if ((script != NULL) && (*script != '\0'))
     {
-    if (PBSD_jscript(socket, script, NULL) != 0)
+    if (PBSD_jscript(socket, script, (*return_jobid==NULL)?NULL:*return_jobid) != 0)
       {
       rc = PBSE_BADSCRIPT;
       if (connection[socket].ch_errtxt != NULL)

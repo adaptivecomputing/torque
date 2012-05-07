@@ -519,7 +519,6 @@ extern int    MultiMomMode; /* moms configured for multiple moms per machine */
 extern int update_nodes_file(struct pbsnode *);
 
 extern void bad_node_warning(pbs_net_t, struct pbsnode *);
-extern int addr_ok(pbs_net_t,struct pbsnode *);
 
 struct pbsnode  *find_nodebyname(char *);
 int              create_partial_pbs_node(char *, unsigned long, int);

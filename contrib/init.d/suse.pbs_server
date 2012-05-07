@@ -16,7 +16,7 @@
 #	on the local host.
 ### END INIT INFO
 
-PBS_DAEMON=/usr/sbin/pbs_server
+PBS_DAEMON=/usr/local/sbin/pbs_server
 PBS_HOME=/var/spool/torque
 PIDFILE=$PBS_HOME/server_priv/server.lock
 export PBS_DAEMON PBS_HOME PIDFILE

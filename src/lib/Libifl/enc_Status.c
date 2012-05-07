@@ -90,18 +90,19 @@
 #include "libpbs.h"
 #include "pbs_error.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int encode_DIS_Status(
 
-  int           sock,
+  struct tcp_chan *chan,
   char         *objid,
   struct attrl *pattrl)
 
   {
   int rc;
 
-  if ((rc = diswst(sock, objid) != 0) ||
-      (rc = encode_DIS_attrl(sock, pattrl) != 0))
+  if ((rc = diswst(chan, objid) != 0) ||
+      (rc = encode_DIS_attrl(chan, pattrl) != 0))
     {
     return(rc);
     }

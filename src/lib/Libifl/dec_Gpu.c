@@ -99,30 +99,31 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_GpuCtrl(
-    int sock,
+    struct tcp_chan *chan,
     struct batch_request *preq)
   {
   int rc;
 
-  rc = disrfst(sock, PBS_MAXHOSTNAME, preq->rq_ind.rq_gpuctrl.rq_momnode);
+  rc = disrfst(chan, PBS_MAXHOSTNAME, preq->rq_ind.rq_gpuctrl.rq_momnode);
 
   if (rc) return rc;
 
-  rc = disrfst(sock, PBS_MAXGPUID, preq->rq_ind.rq_gpuctrl.rq_gpuid);
+  rc = disrfst(chan, PBS_MAXGPUID, preq->rq_ind.rq_gpuctrl.rq_gpuid);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_gpuctrl.rq_gpumode = disrui(sock, &rc);
+  preq->rq_ind.rq_gpuctrl.rq_gpumode = disrui(chan, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_gpuctrl.rq_reset_perm = disrui(sock, &rc);
+  preq->rq_ind.rq_gpuctrl.rq_reset_perm = disrui(chan, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_gpuctrl.rq_reset_vol = disrui(sock, &rc);
+  preq->rq_ind.rq_gpuctrl.rq_reset_vol = disrui(chan, &rc);
 
   return rc;
   }

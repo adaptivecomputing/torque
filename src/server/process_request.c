@@ -95,6 +95,7 @@
 #include <pthread.h>
 
 #include "libpbs.h"
+#include "../lib/Libifl/lib_ifl.h" /* netaddr_long */
 #include "pbs_error.h"
 #include "server_limits.h"
 #include "pbs_nodes.h"
@@ -117,6 +118,7 @@
 #include "array.h"
 #include "req_stat.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
+#include "../lib/Libnet/lib_net.h" /* globalset_del_sock */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_gpuctrl.h" /* req_gpuctrl_svr */
 #include "req_getcred.h" /* req_altauthenuer */ 
@@ -140,7 +142,8 @@
 #include "req_rerun.h" /* req_rerunjob */
 #include "req_select.h" /* req_selectjobs */
 #include "req_register.h" /* req_register, req_registerarray */
-
+#include "job_func.h" /* job_purge */
+#include "tcp.h" /* tcp_chan */
 
 /*
  * process_request - this function gets, checks, and invokes the proper
@@ -185,7 +188,6 @@ static const int munge_on = 0;
 
 static void freebr_manage(struct rq_manage *);
 static void freebr_cpyfile(struct rq_cpyfile *);
-static void close_quejob(int sfds);
 static void free_rescrq(struct rq_rescq *);
 
 /* END private prototypes */
@@ -307,7 +309,7 @@ int get_creds(
 
 int process_request(
 
-  int sfds) /* file descriptor (socket) to get request */
+  struct tcp_chan *chan) /* file descriptor (socket) to get request */
 
   {
   int                   rc = PBSE_NONE;
@@ -319,15 +321,26 @@ int process_request(
   time_t                time_now = time(NULL);
   int                   free_request = TRUE;
   char                  tmpLine[MAXLINE];
-  int                   unlock_mutex = TRUE;
   char                 *auth_err = NULL;
+  enum conn_type        conn_active;
+  unsigned short        conn_socktype;
+  unsigned short        conn_authen;
+  unsigned long         conn_addr;
+  int sfds = chan->sock;
+
+  pthread_mutex_lock(svr_conn[sfds].cn_mutex);
+  conn_active = svr_conn[sfds].cn_active;
+  conn_socktype = svr_conn[sfds].cn_socktype;
+  conn_authen = svr_conn[sfds].cn_authen;
+  conn_addr = svr_conn[sfds].cn_addr;
+  pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
   if ((request = alloc_br(0)) == NULL)
     {
     snprintf(tmpLine, sizeof(tmpLine),
         "cannot allocate memory for request from %lu",
-        get_connectaddr(sfds,FALSE));
-    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
+        conn_addr);
+    req_reject(PBSE_MEM_MALLOC, 0, request, NULL, tmpLine);
     free_request = FALSE;
     rc = PBSE_SYSTEM;
     goto process_request_cleanup;
@@ -338,32 +351,32 @@ int process_request(
   /*
    * Read in the request and decode it to the internal request structure.
    */
-
-  pthread_mutex_lock(svr_conn[sfds].cn_mutex);
-
-  if (svr_conn[sfds].cn_active == FromClientDIS)
+  if (conn_active == FromClientDIS || conn_active == ToServerDIS)
     {
 #ifdef ENABLE_UNIX_SOCKETS
 
-    if ((svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX) &&
-        (svr_conn[sfds].cn_authen != PBS_NET_CONN_AUTHENTICATED))
+    if ((conn_socktype & PBS_SOCK_UNIX) &&
+        (conn_authen != PBS_NET_CONN_AUTHENTICATED))
       {
       /* get_creds interestingly always returns 0 */
       get_creds(sfds, conn_credent[sfds].username, conn_credent[sfds].hostname);
       }
 
 #endif /* END ENABLE_UNIX_SOCKETS */
-    rc = dis_request_read(sfds, request);
+    rc = dis_request_read(chan, request);
     }
   else
     {
+    char out[80];
+
+    snprintf(tmpLine, MAXLINE, "request on invalid type of connection: %d, sock type: %d, from address %s", 
+                conn_active,conn_socktype, netaddr_long(conn_addr, out));
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST,
-      "process_req", "request on invalid type of connection");
+      "process_req", tmpLine);
     snprintf(tmpLine, sizeof(tmpLine),
-        "request on invalid type of connection from%lu",
-        get_connectaddr(sfds,FALSE));
-    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-    unlock_mutex = FALSE;
+        "request on invalid type of connection (%d) from %s",
+        conn_active,
+        netaddr_long(conn_addr, out));
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
     free_request = FALSE;
     rc = PBSE_BADHOST;
@@ -378,7 +391,7 @@ int process_request(
     goto process_request_cleanup;
     }
 
-  if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL))
+  if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL) || (rc == PBSE_SOCKET_CLOSE))
     {
     /* FAILURE */
     /* read error, likely cannot send reply so just disconnect */
@@ -395,8 +408,6 @@ int process_request(
      * request type, in either case, return reject-reply
      */
 
-    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-    unlock_mutex = FALSE;
     req_reject(rc, 0, request, NULL, "cannot decode message");
     free_request = FALSE;
     goto process_request_cleanup;
@@ -406,16 +417,14 @@ int process_request(
     {
     sprintf(log_buf, "%s: %lu",
       pbse_to_txt(PBSE_BADHOST),
-      get_connectaddr(sfds,FALSE));
+      conn_addr);
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buf);
 
     snprintf(tmpLine, sizeof(tmpLine),
         "cannot determine hostname for connection from %lu",
-        get_connectaddr(sfds,FALSE));
+        conn_addr);
 
-    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-    unlock_mutex = FALSE;
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
     free_request = FALSE;
     rc = PBSE_BADHOST;
@@ -436,7 +445,7 @@ int process_request(
 
   /* is the request from a host acceptable to the server */
 
-  if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
+  if (conn_socktype & PBS_SOCK_UNIX)
     {
     strcpy(request->rq_host, server_name);
     }
@@ -449,7 +458,7 @@ int process_request(
     struct pbsnode       *isanode;
 
     get_svr_attr_arst(SRV_ATR_acl_hosts, &pas);
-    isanode = PGetNodeFromAddr(get_connectaddr(sfds,FALSE));
+    isanode = PGetNodeFromAddr(conn_addr);
 
     if ((isanode == NULL) &&
         (strcmp(server_host, request->rq_host) != 0) &&
@@ -459,8 +468,6 @@ int process_request(
       snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
                request->rq_host);
 
-      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-      unlock_mutex = FALSE;
       req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
       free_request = FALSE;
       rc = PBSE_BADHOST;
@@ -476,7 +483,7 @@ int process_request(
    * set the permissions granted to the client
    */
 
-  if (svr_conn[sfds].cn_authen == PBS_NET_CONN_FROM_PRIVIL)
+  if (conn_authen == PBS_NET_CONN_FROM_PRIVIL)
     {
     /* request came from another server */
 
@@ -515,10 +522,8 @@ int process_request(
       {
       req_connect(request);
 
-      if (svr_conn[sfds].cn_socktype == PBS_SOCK_INET)
+      if (conn_socktype == PBS_SOCK_INET)
         {
-        pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-        unlock_mutex = FALSE;
         rc = PBSE_IVALREQ;
         req_reject(rc, 0, request, NULL, NULL);
         free_request = FALSE;
@@ -527,9 +532,11 @@ int process_request(
 
       }
 
-    if (svr_conn[sfds].cn_socktype & PBS_SOCK_UNIX)
+    if (conn_socktype & PBS_SOCK_UNIX)
       {
+      pthread_mutex_lock(svr_conn[sfds].cn_mutex);
       svr_conn[sfds].cn_authen = PBS_NET_CONN_AUTHENTICATED;
+      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
       }
 
     if (ENABLE_TRUSTED_AUTH == TRUE )
@@ -539,8 +546,6 @@ int process_request(
       /* If munge_on is true we will validate the connection now */
       if (request->rq_type == PBS_BATCH_AltAuthenUser)
         {
-        if (unlock_mutex == TRUE)
-          pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
         rc = req_altauthenuser(request); 
         }
       else
@@ -548,7 +553,7 @@ int process_request(
         rc = authenticate_user(request, &conn_credent[sfds], &auth_err);
         }
       }
-    else if (svr_conn[sfds].cn_authen != PBS_NET_CONN_AUTHENTICATED)
+    else if (conn_authen != PBS_NET_CONN_AUTHENTICATED)
       /* skip checking user if we did not get an authenticated credential */
       rc = PBSE_BADCRED;
     else
@@ -556,8 +561,6 @@ int process_request(
 
     if (rc != 0)
       {
-      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-      unlock_mutex = FALSE;
       req_reject(rc, 0, request, NULL, auth_err);
       if (auth_err != NULL)
         free(auth_err);
@@ -633,8 +636,6 @@ int process_request(
       case PBS_BATCH_StageIn:
       case PBS_BATCH_jobscript:
 
-        pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-        unlock_mutex = FALSE;
         req_reject(PBSE_SVRDOWN, 0, request, NULL, NULL);
         rc = PBSE_SVRDOWN;
         free_request = FALSE;
@@ -645,8 +646,6 @@ int process_request(
       }
     }
 
-  pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-
   /*
    * dispatch the request to the correct processing function.
    * The processing function must call reply_send() to free
@@ -655,13 +654,12 @@ int process_request(
 
   rc = dispatch_request(sfds, request);
 
+
   return(rc);
 
 process_request_cleanup:
 
-  close_conn(sfds, TRUE);
-  if (unlock_mutex == TRUE)
-    pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+  /*close_conn(sfds, FALSE);*/
 
   if (free_request == TRUE)
     free_br(request);
@@ -687,6 +685,7 @@ int dispatch_request(
   {
   int   rc = PBSE_NONE;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char *job_id = NULL;
 
   if (LOGLEVEL >= 5)
     {
@@ -700,36 +699,48 @@ int dispatch_request(
   switch (request->rq_type)
     {
     case PBS_BATCH_QueueJob:
-
-      net_add_close_func(sfds, close_quejob, FALSE);
-
-      rc = req_quejob(request);
-
+      rc = req_quejob(request, &job_id);
+      if ((rc != PBSE_NONE) && (job_id != NULL))
+        close_quejob_by_jobid(job_id);
+      if (job_id != NULL)
+        free(job_id);
       break;
+
 
     case PBS_BATCH_JobCred:
-
       rc = req_jobcredential(request);
-
       break;
+
 
     case PBS_BATCH_jobscript:
-
+      job_id = strdup(request->rq_ind.rq_jobfile.rq_jobid);
       rc = req_jobscript(request);
+      if ((rc != PBSE_NONE) && (job_id != NULL))
+        close_quejob_by_jobid(job_id);
+      if (job_id != NULL)
+        free(job_id);
       break;
+
 
     case PBS_BATCH_RdytoCommit:
-
+      job_id = strdup(request->rq_ind.rq_rdytocommit);
       rc = req_rdytocommit(request);
+      if ((rc != PBSE_NONE) && (job_id != NULL))
+        close_quejob_by_jobid(job_id);
+      if (job_id != NULL)
+        free(job_id);
       break;
+
 
     case PBS_BATCH_Commit:
-
+      job_id = strdup(request->rq_ind.rq_commit);
       rc = req_commit(request);
-
-      net_add_close_func(sfds, (void (*)())0, FALSE);
-
+      if ((rc != PBSE_NONE) && (job_id != NULL))
+        close_quejob_by_jobid(job_id);
+      if (job_id != NULL)
+        free(job_id);
       break;
+
 
     case PBS_BATCH_DeleteJob:
 
@@ -837,7 +848,7 @@ int dispatch_request(
     case PBS_BATCH_RunJob:
 
     case PBS_BATCH_AsyrunJob:
-
+      globalset_del_sock(request->rq_conn);
       rc = req_runjob(request);
 
       break;
@@ -923,8 +934,7 @@ int dispatch_request(
     case PBS_BATCH_AuthenUser:
 
       /* determine if user is valid */
-      /*rc = req_authenuser( request); */
-      req_authenuser(request); 
+      rc = req_authenuser( request); 
 
       break;
 
@@ -954,11 +964,7 @@ int dispatch_request(
 
       req_reject(PBSE_UNKREQ, 0, request, NULL, NULL);
 
-      pthread_mutex_lock(svr_conn[sfds].cn_mutex);
-
-      close_conn(sfds, TRUE);
-      
-      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+      close_conn(sfds, FALSE);
 
       break;
     }  /* END switch (request->rq_type) */
@@ -1010,69 +1016,38 @@ struct batch_request *alloc_br(
 
 
 
-
-
-/*
- * close_quejob - locate and deal with the new job that was being recevied
- *    when the net connection closed.
- */
-
-static void close_quejob(
-
-  int sfds)
-
+int close_quejob_by_jobid(char *job_id)
   {
-  job *pjob;
+  int rc = PBSE_NONE;
+  job *pjob = NULL;
 
-  int iter = -1;
-
-  while ((pjob = next_job(&newjobs,&iter)) != NULL)
+  if ((pjob = find_job(job_id)) == NULL)
     {
-    if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds)
-      {
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_TRANSICM)
-        {
-        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
-          {
-          /*
-           * the job was being created here for the first time
-           * go ahead and enqueue it as QUEUED; otherwise, hold
-           * it here as TRANSICM until we hear from the sending
-           * server again to commit.
-           */
-
-          remove_job(&newjobs,pjob);
-
-          pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
-
-          if (svr_enquejob(pjob, FALSE, -1))
-            job_abt(&pjob, msg_err_noqueue);
-          }
-        }
-      else
-        {
-        /* else delete the job */
-        remove_job(&newjobs,pjob);
-
-        job_purge(pjob);
-
-        pjob = NULL;
-        }
-
-      break;
-      }  /* END if (..) */
-
-    pthread_mutex_unlock(pjob->ji_mutex);
+    rc = PBSE_JOBNOTFOUND;
     }
-
+  else if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
+    {
+    remove_job(&newjobs,pjob);
+    job_purge(pjob);
+    pjob = NULL;
+    }
+  else if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+    {
+    remove_job(&newjobs,pjob);
+    pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
+    rc = svr_enquejob(pjob, FALSE, -1);
+    if (rc == PBSE_JOBNOTFOUND)
+      {
+      pjob = NULL;
+      }
+    else if (rc != PBSE_NONE)
+      job_abt(&pjob, msg_err_noqueue);
+    }
   if (pjob != NULL)
     pthread_mutex_unlock(pjob->ji_mutex);
-
-  return;
-  }  /* END close_quejob() */
-
-
+  return rc;
+  }
 
 
 
@@ -1087,6 +1062,7 @@ void free_br(
 
   {
   memmgr *mm = preq->mm;
+
 
   reply_free(&preq->rq_reply);
 

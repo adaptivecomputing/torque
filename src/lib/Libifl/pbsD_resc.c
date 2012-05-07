@@ -86,6 +86,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 /* Variables for this file */
 
@@ -107,7 +108,7 @@ static char *resc_nodes = "nodes";
 
 static int encode_DIS_Resc(
     
-  int          sock,
+  struct tcp_chan *chan,
   char       **rlist,
   int          ct,
   resource_t   rh)
@@ -116,19 +117,19 @@ static int encode_DIS_Resc(
   int    i;
   int    rc;
 
-  if ((rc = diswsi(sock,rh)) == 0)     /* resource reservation handle */
+  if ((rc = diswsi(chan,rh)) == 0)     /* resource reservation handle */
     {
 
     /* next send the number of resource strings */
 
-    if ((rc = diswui(sock, ct)) == 0)
+    if ((rc = diswui(chan, ct)) == 0)
       {
 
       /* now send each string (if any) */
 
       for (i = 0; i < ct; ++i)
         {
-        if ((rc = diswst(sock, *(rlist + i))) != 0)
+        if ((rc = diswst(chan, *(rlist + i))) != 0)
           break;
         }
       }
@@ -147,6 +148,7 @@ static int PBS_resc(
   {
   int rc;
   int sock;
+  struct tcp_chan *chan = NULL;
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -154,27 +156,32 @@ static int PBS_resc(
 
   /* setup DIS support routines for following DIS calls */
 
-  DIS_tcp_setup(sock);
-
-  if ((rc = encode_DIS_ReqHdr(sock, reqtype, pbs_current_user)) ||
-      (rc = encode_DIS_Resc(sock, rescl, ct, rh)) ||
-      (rc = encode_DIS_ReqExtend(sock, (char *)0)))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    pthread_mutex_unlock(connection[c].ch_mutex);
+    rc = PBSE_PROTOCOL;
+    return rc;
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, reqtype, pbs_current_user)) ||
+      (rc = encode_DIS_Resc(chan, rescl, ct, rh)) ||
+      (rc = encode_DIS_ReqExtend(chan, (char *)0)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return (PBSE_PROTOCOL);
     }
 
   pthread_mutex_unlock(connection[c].ch_mutex);
 
-  if (DIS_tcp_wflush(sock))
+  if (DIS_tcp_wflush(chan))
     {
-    return (PBSE_PROTOCOL);
+    rc = PBSE_PROTOCOL;
     }
 
-  return (0);
+  DIS_tcp_cleanup(chan);
+  return rc;
   } /* END PBS_resc() */
 
 

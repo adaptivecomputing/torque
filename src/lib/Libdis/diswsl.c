@@ -111,7 +111,7 @@
 
 int diswsl(
 
-  int  stream,
+  struct tcp_chan *chan,
   long value)
 
   {
@@ -121,13 +121,6 @@ int diswsl(
   char  c;
   char  *cp;
   char  scratch[DIS_BUFSIZ+1];
-  int (*dis_puts)(int stream, const char *, size_t);
-  int (*disw_commit)(int stream, int);
-
-  assert(stream >= 0);
-
-  dis_puts = tcp_puts;
-  disw_commit = tcp_wcommit;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
 
@@ -149,10 +142,10 @@ int diswsl(
   while (ndigs > 1)
     cp = discui_(cp, ndigs, &ndigs);
 
-  retval = (*dis_puts)(stream, cp,
+  retval = tcp_puts(chan, cp,
                        strlen(cp)) < 0 ?
            DIS_PROTO : DIS_SUCCESS;
 
-  return (((*disw_commit)(stream, retval == DIS_SUCCESS) < 0) ?
+  return ((tcp_wcommit(chan, retval == DIS_SUCCESS) < 0) ?
           DIS_NOCOMMIT : retval);
   }

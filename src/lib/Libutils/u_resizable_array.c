@@ -186,7 +186,7 @@ void update_next_slot(
 /*
  * inserts an item, resizing the array if necessary
  *
- * @return the index in the array or ENOMEM
+ * @return the index in the array or -1 on failure
  */
 int insert_thing(
     

@@ -167,16 +167,6 @@ int main(
   else
     svrs = default_server_name();
 
-  errflg = connect_servers(svrs, ALL_SERVERS);
-
-  if ((aopt && errflg) || (nservers == 0))
-    clean_up_and_exit(3);
-
-  errflg = set_active(MGR_OBJ_SERVER, svrs);
-
-  if (errflg && aopt)
-    clean_up_and_exit(4);
-
   /*
    * If no command was given on the command line, then read them from
    * stdin until end-of-file.  Otherwise, execute the one command only.
@@ -206,6 +196,16 @@ int main(
 
       if (!nopt && !errflg)
         {
+        errflg = connect_servers(svrs, ALL_SERVERS);
+
+        if ((aopt && errflg) || (nservers == 0))
+          clean_up_and_exit(3);
+
+        errflg = set_active(MGR_OBJ_SERVER, svrs);
+
+        if (errflg && aopt)
+          clean_up_and_exit(4);
+
         errflg = execute(
                    aopt,
                    oper,
@@ -215,11 +215,27 @@ int main(
 
         if (aopt && errflg)
           clean_up_and_exit(2);
+        else
+          {
+          clean_up();
+          servers = NULL;
+          active_servers = NULL;
+          }
         }
       }
     }
   else
     {
+    errflg = connect_servers(svrs, ALL_SERVERS);
+
+    if ((aopt && errflg) || (nservers == 0))
+      clean_up_and_exit(3);
+
+    errflg = set_active(MGR_OBJ_SERVER, svrs);
+
+    if (errflg && aopt)
+      clean_up_and_exit(4);
+
     if (eopt)
       printf("%s\n", copt);
 
@@ -877,6 +893,26 @@ disconnect_from_server(struct server *svr)
   nservers--;
   }
 
+
+
+void clean_up()
+  {
+  struct server *cur_svr, *next_svr;
+
+  cur_svr = servers;
+
+  while (cur_svr)
+    {
+    next_svr = cur_svr -> next;
+    pbs_disconnect(cur_svr->s_connect);
+    cur_svr = next_svr;
+    }
+
+  fflush(NULL);   /* peter h IPSec+jan n NANCO 2009 * fix truncated output. */
+  }
+
+
+
 /*
  *
  * clean_up_and_exit - disconnect from the servers and free memory used
@@ -887,30 +923,14 @@ disconnect_from_server(struct server *svr)
  * Returns: Never
  *
  */
-void
-clean_up_and_exit(int exit_val)
+void clean_up_and_exit(int exit_val)
   {
-
-  struct server *cur_svr, *next_svr;
-
+  clean_up();
   free_objname_list(active_servers);
   free_objname_list(active_queues);
   free_objname_list(active_nodes);
-
-  cur_svr = servers;
-
-  while (cur_svr)
-    {
-    next_svr = cur_svr -> next;
-    disconnect_from_server(cur_svr);
-    cur_svr = next_svr;
-    }
-
-  fflush(NULL);   /* peter h IPSec+jan n NANCO 2009 * fix truncated output. */
-
   exit(exit_val);
   }
-
 
 
 

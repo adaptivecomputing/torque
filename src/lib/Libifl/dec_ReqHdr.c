@@ -101,10 +101,11 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_ReqHdr(
 
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq,
   int                  *proto_type,
   int                  *proto_ver)
@@ -116,11 +117,11 @@ int decode_DIS_ReqHdr(
    	 We are just hard coding it here */
   *proto_type = PBS_BATCH_PROT_TYPE;
 
-  *proto_ver = disrui(sock, &rc);
+  *proto_ver = disrui(chan, &rc);
 
   if (rc == 0)
     {
-    preq->rq_type = disrui(sock, &rc);
+    preq->rq_type = disrui(chan, &rc);
     }
 
   if (rc != 0)
@@ -128,7 +129,7 @@ int decode_DIS_ReqHdr(
     return(rc);
     }
 
-  return(disrfst(sock, PBS_MAXUSER, preq->rq_user));
+  return(disrfst(chan, PBS_MAXUSER, preq->rq_user));
   }  /* END decode_DIS_ReqHdr() */
 
 

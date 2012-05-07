@@ -106,7 +106,7 @@
 
 int encode_DIS_attropl(
 
-  int   sock,
+  struct tcp_chan *chan,
   struct attropl *pattropl)
 
   {
@@ -123,7 +123,7 @@ int encode_DIS_attropl(
     ++ct;
     }
 
-  if ((rc = diswui(sock, ct)))
+  if ((rc = diswui(chan, ct)))
     {
     return(rc);
     }
@@ -147,38 +147,38 @@ int encode_DIS_attropl(
     if (ps->resource != NULL)
       name_len += strlen(ps->resource) + 1;
 
-    if ((rc = diswui(sock, name_len)))
+    if ((rc = diswui(chan, name_len)))
       break;
 
-    if ((rc = diswst(sock, ps->name)))
+    if ((rc = diswst(chan, ps->name)))
       break;
 
     if (ps->resource != NULL)
       {
       /* has a resource name */
 
-      if ((rc = diswui(sock, 1)))
+      if ((rc = diswui(chan, 1)))
         break;
 
-      if ((rc = diswst(sock, ps->resource)))
+      if ((rc = diswst(chan, ps->resource)))
         break;
       }
     else
       {
-      if ((rc = diswui(sock, 0))) /* no resource name */
+      if ((rc = diswui(chan, 0))) /* no resource name */
         break;
       }
 
     if (ps->value != NULL)
       {
-      if ((rc = diswst(sock, ps->value)) ||
-          (rc = diswui(sock, (unsigned int)ps->op)))
+      if ((rc = diswst(chan, ps->value)) ||
+          (rc = diswui(chan, (unsigned int)ps->op)))
         break;
       }
     else
       {
-      if ((rc = diswst(sock, "")) ||
-          (rc = diswui(sock, (unsigned int)ps->op)))
+      if ((rc = diswst(chan, "")) ||
+          (rc = diswui(chan, (unsigned int)ps->op)))
         break;
       }
     }    /* END for (ps) */

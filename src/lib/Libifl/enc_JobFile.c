@@ -95,7 +95,7 @@
 
 int encode_DIS_JobFile(
     
-  int   sock,
+  struct tcp_chan *chan,
   int   seq,
   char *buf,
   int   len,
@@ -108,11 +108,11 @@ int encode_DIS_JobFile(
   if (jobid == (char *)0)
     jobid = "";
 
-  if ((rc = diswui(sock, seq) != 0) ||
-      (rc = diswui(sock, which) != 0) ||
-      (rc = diswui(sock, len) != 0) ||
-      (rc = diswst(sock, jobid) != 0) ||
-      (rc = diswcs(sock, buf, len) != 0))
+  if ((rc = diswui(chan, seq) != 0) ||
+      (rc = diswui(chan, which) != 0) ||
+      (rc = diswui(chan, len) != 0) ||
+      (rc = diswst(chan, jobid) != 0) ||
+      (rc = diswcs(chan, buf, len) != 0))
     return rc;
 
   return 0;

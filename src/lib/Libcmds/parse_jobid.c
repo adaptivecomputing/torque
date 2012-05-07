@@ -94,8 +94,8 @@
 #include <string.h>
 #include <ctype.h>
 #include "pbs_ifl.h"
+#include "cmds.h" /* MAXSERVERNAME */
 
-#define MAXSERVERNAME PBS_MAXSERVERNAME+PBS_MAXPORTNUM+2
 #define ISNAMECHAR(x) ( (isgraph(x)) && ((x) != '#') && ( (x) != '@') )
 
 static char seq_number[PBS_MAXSEQNUM+PBS_MAXJOBARRAYLEN+1];

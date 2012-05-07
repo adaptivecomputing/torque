@@ -92,9 +92,9 @@
 #include <string.h>
 #include <ctype.h>
 #include "pbs_ifl.h"
+#include "cmds.h" /* MAXSERVERNAME */
 
 #define ISNAMECHAR(x) ( (isgraph(x)) && ((x) != '#') && ( (x) != '@') )
-#define MAXSERVERNAME PBS_MAXSERVERNAME+PBS_MAXPORTNUM+2
 
 static char queue_name[PBS_MAXQUEUENAME+1];
 static int q_pos;

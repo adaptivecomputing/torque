@@ -98,10 +98,11 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_JobFile(
 
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
@@ -110,33 +111,33 @@ int decode_DIS_JobFile(
 
   preq->rq_ind.rq_jobfile.rq_data = 0;
 
-  preq->rq_ind.rq_jobfile.rq_sequence = disrui(sock, &rc);
+  preq->rq_ind.rq_jobfile.rq_sequence = disrui(chan, &rc);
 
   if (rc)
     {
     return(rc);
     }
 
-  preq->rq_ind.rq_jobfile.rq_type = disrui(sock, &rc);
+  preq->rq_ind.rq_jobfile.rq_type = disrui(chan, &rc);
 
   if (rc)
     {
     return(rc);
     }
 
-  preq->rq_ind.rq_jobfile.rq_size = disrui(sock, &rc);
+  preq->rq_ind.rq_jobfile.rq_size = disrui(chan, &rc);
 
   if (rc)
     {
     return(rc);
     }
 
-  if ((rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_jobfile.rq_jobid)) != 0)
+  if ((rc = disrfst(chan, PBS_MAXSVRJOBID, preq->rq_ind.rq_jobfile.rq_jobid)) != 0)
     {
     return(rc);
     }
 
-  preq->rq_ind.rq_jobfile.rq_data = disrcs(sock, &amt, &rc);
+  preq->rq_ind.rq_jobfile.rq_data = disrcs(chan, &amt, &rc);
 
   if (((long)amt != preq->rq_ind.rq_jobfile.rq_size) && (rc == 0))
     rc = DIS_EOD;

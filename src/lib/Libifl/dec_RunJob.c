@@ -99,26 +99,27 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_RunJob(
     
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
   {
   int rc;
 
   preq->rq_ind.rq_run.rq_destin = 0;
 
-  rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_run.rq_jid);
+  rc = disrfst(chan, PBS_MAXSVRJOBID, preq->rq_ind.rq_run.rq_jid);
 
   if (rc) return rc;
 
   /* This will need to be changed for nodes for FPA */
-  preq->rq_ind.rq_run.rq_destin = disrst(sock, &rc);
+  preq->rq_ind.rq_run.rq_destin = disrst(chan, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_run.rq_resch = disrui(sock, &rc);
+  preq->rq_ind.rq_run.rq_resch = disrui(chan, &rc);
 
   return rc;
   }

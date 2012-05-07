@@ -156,55 +156,43 @@ int size_to_dynamic_string(
 
   {
   char buffer[MAXLINE];
-  int  add_one = FALSE;
-
-  if (ds->used == 0)
-    add_one = TRUE;
-
-  sprintf(buffer, "%lukb", szv->atsv_num);
-  resize_if_needed(ds, buffer);
 
   sprintf(buffer, "%lu", szv->atsv_num);
-  strcat(ds->str, buffer);
   
   switch (szv->atsv_shift)
     {
     case 10:
 
-      strcat(ds->str, "kb");
+      strcat(buffer, "kb");
 
       break;
 
     case 20:
 
-      strcat(ds->str, "mb");
+      strcat(buffer, "mb");
 
       break;
 
     case 30: 
 
-      strcat(ds->str, "gb");
+      strcat(buffer, "gb");
 
       break;
 
     case 40:
 
-      strcat(ds->str, "tb");
+      strcat(buffer, "tb");
 
       break;
 
     case 50:
 
-      strcat(ds->str, "pb");
+      strcat(buffer, "pb");
 
       break;
     }
 
-  ds->used += strlen(buffer) + 2;
-  if (add_one == TRUE)
-    ds->used += 1;
-
-  return(PBSE_NONE);
+  return(append_dynamic_string(ds, buffer));
   } /* END size_to_dynamic_string() */
 
 

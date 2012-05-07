@@ -102,7 +102,7 @@
 
 int encode_DIS_GpuCtrl(
     
-  int sock,
+  struct tcp_chan *chan,
   char *node,
   char *gpuid,
   int gpumode,
@@ -112,12 +112,12 @@ int encode_DIS_GpuCtrl(
   {
   int   rc;
 
-  if ((rc = diswst(sock, node) != 0) ||
-      (rc = diswst(sock, gpuid) != 0) ||
-      (rc = diswui(sock, gpumode) != 0) ||
-      (rc = diswui(sock, reset_perm) != 0) ||
-      (rc = diswui(sock, reset_vol) != 0) ||
-      (rc = encode_DIS_ReqExtend(sock, NULL)))
+  if ((rc = diswst(chan, node) != 0) ||
+      (rc = diswst(chan, gpuid) != 0) ||
+      (rc = diswui(chan, gpumode) != 0) ||
+      (rc = diswui(chan, reset_perm) != 0) ||
+      (rc = diswui(chan, reset_vol) != 0) ||
+      (rc = encode_DIS_ReqExtend(chan, NULL)))
     return rc;
 
   return 0;

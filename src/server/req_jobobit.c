@@ -115,7 +115,8 @@
 #include "utils.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_jobobit.h" /* req_jobobit */
-
+#include "svr_connect.h" /* svr_connect */
+#include "job_func.h" /* job_purge */
 
 
 #define RESC_USED_BUF 2048
@@ -539,7 +540,7 @@ struct batch_request *cpy_stage(
   char                 *plocal;
   char                 *prmt;
   char                 *to;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE+1];
 
   pattr = &pjob->ji_wattr[ati];
 
@@ -638,49 +639,43 @@ int mom_comm(
   unsigned int      dummy;
   time_t            time_now = time(NULL);
 
-  char             *jobid_copy;
   int               local_errno = 0;
+  int               handle = -1;
 
-  if (pjob->ji_momhandle < 0)
+  /* need to make connection, called from pbsd_init() */
+  if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0)
     {
-    /* need to make connection, called from pbsd_init() */
+    char *tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
+    pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(&local_errno, tmp);
+    }
 
-    if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0)
+  handle = svr_connect(
+      pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
+      pjob->ji_qs.ji_un.ji_exect.ji_momport,
+      &local_errno,
+      NULL,
+      NULL,
+      ToServerDIS);
+
+  if (handle < 0)
+    {
+    /* FAILURE */
+
+    if (LOGLEVEL >= 2)
       {
-      char *tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
-      pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(&local_errno, tmp);
-      }
-
-    pjob->ji_momhandle = svr_connect(
-                           pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
-                           pjob->ji_qs.ji_un.ji_exect.ji_momport,
-                           &local_errno,
-                           NULL,
-                           NULL,
-                           ToServerDIS);
-
-    if (pjob->ji_momhandle < 0)
-      {
-      /* FAILURE */
-
-      if (LOGLEVEL >= 2)
-        {
-        log_event(
+      log_event(
           PBSEVENT_ERROR | PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
           "cannot establish connection with mom for clean-up - will retry later");
-        }
-
-      jobid_copy = strdup(pjob->ji_qs.ji_jobid);
-
-      set_task(WORK_Timed, time_now + PBS_NET_RETRY_TIME, func, jobid_copy, FALSE);
-
-      return(-1);
       }
-    }    /* END if (pjob->ji_momhandle < 0) */
 
-  return(pjob->ji_momhandle);
+    set_task(WORK_Timed, time_now + PBS_NET_RETRY_TIME, func, strdup(pjob->ji_qs.ji_jobid), FALSE);
+
+    return(-1);
+    }
+
+  return(handle);
   }  /* END mom_comm() */
 
 
@@ -726,7 +721,7 @@ int check_if_checkpoint_restart_failed(
   long *hold_val = 0;
   char  errMsg[MAXPATHLEN];
   char *err_ptr;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char  log_buf[LOCAL_LOG_BUF_SIZE+1];
         
   snprintf(errMsg, sizeof(errMsg), "%s",
     pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str);
@@ -795,18 +790,26 @@ int handle_exiting_or_abort_substate(
   job *pjob)
 
   {
+  char job_id[PBS_MAXSVRJOBID+1];
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
+
   if (LOGLEVEL >= 2)
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"JOB_SUBSTATE_EXITING");
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,"JOB_SUBSTATE_EXITING");
 
   /* see if job has any dependencies */
   if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
     {
-    depend_on_term(pjob);
+    depend_on_term(pjob); /* pjob locked on entry, unlocked on exit */
+    pjob = NULL;
     }
-  
-  svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_RETURNSTD, FALSE);
+ 
+  if ((pjob != NULL) || ((pjob = find_job(job_id)) != NULL))
+    {
+    svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_RETURNSTD, FALSE);
+    pthread_mutex_unlock(pjob->ji_mutex);
+    }
 
-  return(WORK_Immed);
+  return(PBSE_NONE);
   } /* END handle_exiting_or_abort_substate() */
 
 
@@ -816,16 +819,41 @@ int handle_returnstd(
 
   job                  *pjob,
   struct batch_request *preq,
-  int                   handle,
   int                   type)
 
   {
+  int rc = PBSE_NONE;
   int         KeepSeconds = 0;
   int         IsFaked = 0;
   char       *namebuf2;
   char        namebuf[MAXPATHLEN + 1];
-  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  char        log_buf[LOCAL_LOG_BUF_SIZE+1];
   pbs_queue  *pque;
+  int handle = -1;
+  char job_id[PBS_MAXSVRJOBID+1];
+  char job_fileprefix[PBS_JOBBASE+1];
+  unsigned long job_momaddr;
+  unsigned short job_momport;
+  char *job_momname = NULL;
+
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
+  job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
+  job_momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
+  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
+    {
+    pthread_mutex_unlock(pjob->ji_mutex);
+    rc = PBSE_JOB_FILE_CORRUPT;
+    goto handle_returnstd_cleanup;
+    }
+    
+  job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  if (job_momname == NULL)
+    {
+    pthread_mutex_unlock(pjob->ji_mutex);
+    rc = PBSE_MEM_MALLOC;
+    goto handle_returnstd_cleanup;
+    }
 
   if (type != WORK_Deferred_Reply)
     {
@@ -853,19 +881,20 @@ int handle_returnstd(
       }
     else if (pjob == NULL)
       {
-      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
-      return(PBSE_JOBNOTFOUND);
+      rc = PBSE_JOBNOTFOUND;
+      log_err(rc, __func__, "Job lost while acquiring queue");
+      goto handle_returnstd_cleanup;
       }
     
     if (KeepSeconds > 0)
       {
       snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-        path_spool, pjob->ji_qs.ji_fileprefix, JOB_STDOUT_SUFFIX);
+        path_spool, job_fileprefix, JOB_STDOUT_SUFFIX);
       
       /* allocate space for the string name plus ".SAV" */
       namebuf2 = calloc((strlen(namebuf) + 5), sizeof(char));
       
-      if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != pbs_server_addr)
+      if (job_momaddr != pbs_server_addr)
         {
         preq = return_stdfile(preq, pjob, JOB_ATR_outpath);
         }
@@ -878,7 +907,7 @@ int handle_returnstd(
           log_event(
             PBSEVENT_ERROR | PBSEVENT_SECURITY,
             PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+            job_id,
             "Link(1) in on_job_exit failed");
           }
         }
@@ -887,7 +916,7 @@ int handle_returnstd(
       
       strcat(namebuf, JOB_STDERR_SUFFIX);
       
-      if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != pbs_server_addr)
+      if (job_momaddr != pbs_server_addr)
         {
         preq = return_stdfile(preq, pjob, JOB_ATR_errpath);
         }
@@ -900,7 +929,7 @@ int handle_returnstd(
           log_event(
             PBSEVENT_ERROR | PBSEVENT_SECURITY,
             PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+            job_id,
             "Link(2) in on_job_exit failed");
           }
         }
@@ -912,38 +941,48 @@ int handle_returnstd(
       {
       if (preq->rq_extra != NULL)
         free(preq->rq_extra);
-      preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
-      
-      if (issue_Drequest(handle, preq, on_job_exit, NULL) == 0)
+      preq->rq_extra = strdup(job_id);
+
+      if ((handle = mom_comm(pjob, on_job_exit)) < 0)
         {
-        /* success, we'll come back after mom replies */
-        return(-1);
+        pthread_mutex_unlock(pjob->ji_mutex);
+        rc = PBSE_CONNECT;
+        log_err(rc, __func__, "Job can not make connection to mom");
+        goto handle_returnstd_cleanup;
         }
-      
-      /* set up as if mom returned error, if we fall through to
-       * here then we want to hit the error processing below
-       * because something bad happened */
-      
-      IsFaked = 1;
-      
-      preq->rq_reply.brp_code   = PBSE_MOMREJECT;
-      preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-      preq->rq_reply.brp_un.brp_txt.brp_txtlen = 0;
+      else
+        {
+        pthread_mutex_unlock(pjob->ji_mutex);
+        if ((rc = issue_Drequest(handle, preq, NULL, NULL)) != PBSE_NONE)
+          {
+          /* set up as if mom returned error, if we fall through to
+           * here then we want to hit the error processing below
+           * because something bad happened */
+
+          IsFaked = 1;
+
+          preq->rq_reply.brp_code   = PBSE_MOMREJECT;
+          preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+          preq->rq_reply.brp_un.brp_txt.brp_txtlen = 0;
+          }
+        }
       }
     else
       {
+      pthread_mutex_unlock(pjob->ji_mutex);
       /* we don't need to return files to the server spool,
        * move on to see if we need to delete files */
       if (LOGLEVEL >= 6)
         {
-        log_event(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "no spool files to return");
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+            job_id,
+            "no spool files to return");
         }
       }
     }
+  else
+    pthread_mutex_unlock(pjob->ji_mutex);
+
 
   /* this check is added to allow the case where no files need to be returned to function smoothly */
   if (preq != NULL)
@@ -954,15 +993,15 @@ int handle_returnstd(
       if (LOGLEVEL >= 3)
         {
         snprintf(log_buf, sizeof(log_buf), "request to return spool files failed on node '%s' for job %s%s",
-          pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
-          pjob->ji_qs.ji_jobid,
-          (IsFaked == 1) ? "*" : "");
+            job_momname,
+            job_id,
+            (IsFaked == 1) ? "*" : "");
         
         log_event(
-          PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          log_buf);
+            PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            job_id,
+            log_buf);
         }
       } /* end if (preq->rq_reply.brp_code != 0) */
 
@@ -975,9 +1014,17 @@ int handle_returnstd(
     free_br(preq);
     }
 
-  svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEOUT, FALSE);
-  
-  return(WORK_Immed);
+  if ((pjob = find_job(job_id)) != NULL)
+    {
+    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEOUT, FALSE);
+    pthread_mutex_unlock(pjob->ji_mutex);
+    }
+ 
+handle_returnstd_cleanup:
+   if (job_momname != NULL)
+    free(job_momname); 
+
+  return rc;
   } /* END handle_returnstd() */
 
 
@@ -987,18 +1034,32 @@ int handle_stageout(
 
   job                  *pjob,
   int                   type,
-  int                   handle,
   struct batch_request *preq)
 
   {
+  int rc = PBSE_NONE;
   int     IsFaked = 0;
   int     spool_file_exists;
-  char    log_buf[LOCAL_LOG_BUF_SIZE];
+  char    log_buf[LOCAL_LOG_BUF_SIZE+1];
   char    namebuf[MAXPATHLEN + 1];
   char   *namebuf2;
+  int handle = -1;
+  char job_id[PBS_MAXSVRJOBID+1];
+  char *job_momname = NULL;
+  char job_fileprefix[PBS_JOBBASE+1];
+
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
+  job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  if (job_momname == NULL)
+    {
+    pthread_mutex_unlock(pjob->ji_mutex);
+    rc = PBSE_MEM_MALLOC;
+    goto handle_stageout_cleanup;
+    }
   
   if (LOGLEVEL >= 4)
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"JOB_SUBSTATE_STAGEOUT");
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,"JOB_SUBSTATE_STAGEOUT");
   
   if (type != WORK_Deferred_Reply)
     {
@@ -1019,43 +1080,48 @@ int handle_stageout(
         log_event(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          job_id,
           "about to copy stdout/stderr/stageout files");
         }
       
-      preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
+      preq->rq_extra = strdup(job_id);
       
-      if (issue_Drequest(handle, preq, on_job_exit, NULL) == 0)
+      if ((handle = mom_comm(pjob, on_job_exit)) < 0) /* Error */
         {
-        /* request sucessfully sent, we'll come back to this function
-           when mom replies */
-
-        return(-1);
+        pthread_mutex_unlock(pjob->ji_mutex);
+        rc = PBSE_CONNECT;
+        goto handle_stageout_cleanup;
         }
-      
-      /* FAILURE */      
-      if (LOGLEVEL >= 1)
+      else
         {
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"copy request failed");
+        pthread_mutex_unlock(pjob->ji_mutex);
+        if ((rc = issue_Drequest(handle, preq, NULL, NULL)) != PBSE_NONE)
+          {
+          /* FAILURE */      
+          if (LOGLEVEL >= 1)
+            {
+            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,
+                "copy request failed");
+            }
+          /* set up as if mom returned error */      
+          IsFaked = 1;
+          preq->rq_reply.brp_code   = PBSE_MOMREJECT;
+          preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+          preq->rq_reply.brp_un.brp_txt.brp_txtlen = 0;
+          }
         }
-      
-      /* set up as if mom returned error */      
-      IsFaked = 1;
-      
-      preq->rq_reply.brp_code   = PBSE_MOMREJECT;
-      preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-      preq->rq_reply.brp_un.brp_txt.brp_txtlen = 0;
-      
-      /* we will "fall" into the post reply side */
       }
     else
       {
+      pthread_mutex_unlock(pjob->ji_mutex);
       /* no files to copy, go to next step */
 
       if (LOGLEVEL >= 4)
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"no files to copy");
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,"no files to copy");
       }
     }    /* END if (ptask->wt_type != WORK_Deferred_Reply) */
+  else
+    pthread_mutex_unlock(pjob->ji_mutex);
  
   /* place this check so that we just fall through when a file needs to be copied */
   if (preq != NULL)
@@ -1067,26 +1133,25 @@ int handle_stageout(
       svrattrl tA;
       
       /* error from MOM */
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, msg_obitnocpy, pjob->ji_qs.ji_jobid,
-        pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, msg_obitnocpy, job_id, job_momname);
       
       log_event(
         PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        job_id,
         log_buf);
       
       if (LOGLEVEL >= 3)
         {
         snprintf(log_buf, sizeof(log_buf), "request to copy stageout files failed on node '%s' for job %s%s",
-          pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
-          pjob->ji_qs.ji_jobid,
+          job_momname,
+          job_id,
           (IsFaked == 1) ? "*" : "");
         
         log_event(
           PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          job_id,
           log_buf);
         }
       
@@ -1097,6 +1162,11 @@ int handle_stageout(
           LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
         }
       
+      if ((pjob = find_job(job_id)) == NULL)
+        {
+        rc = PBSE_JOBNOTFOUND;
+        goto handle_stageout_cleanup;
+        }
       svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
       
       memset(&tA, 0, sizeof(tA));
@@ -1111,6 +1181,7 @@ int handle_stageout(
         &tA,                              /* I: ATTR_sched_hint - svrattrl */
         ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
         &bad);
+      pthread_mutex_unlock(pjob->ji_mutex);
       }  /* END if (preq->rq_reply.brp_code != 0) */
 
     /*
@@ -1123,7 +1194,7 @@ int handle_stageout(
        the mom and server are sharing this spool directory.
        pbs_server should take ownership of these files and rename them
        see  JOB_SUBSTATE_RETURNSTD above*/
-    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, pjob->ji_qs.ji_fileprefix, JOB_STDOUT_SUFFIX);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, job_fileprefix, JOB_STDOUT_SUFFIX);
     
     /* allocate space for the string name plus ".SAV" */
     namebuf2 = calloc((strlen(namebuf) + 5), sizeof(char));
@@ -1140,7 +1211,7 @@ int handle_stageout(
         log_event(
           PBSEVENT_ERROR | PBSEVENT_SECURITY,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          job_id,
           "Link(3) in on_job_exit failed");
         }
       unlink(namebuf2);
@@ -1161,7 +1232,7 @@ int handle_stageout(
         log_event(
           PBSEVENT_ERROR | PBSEVENT_SECURITY,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          job_id,
           "Link(4) in on_job_exit failed");
         }
       
@@ -1169,15 +1240,32 @@ int handle_stageout(
       }
 
     free(namebuf2);
+    if (preq->rq_extra != NULL)
+      {
+      free(preq->rq_extra);
+      preq->rq_extra = NULL;
+      }
 
     free_br(preq);
 
     preq = NULL;
     } /* END if preq != NULL */
 
-  svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEDEL, FALSE);
-  
-  return(WORK_Immed);
+  if ((pjob = find_job(job_id)) != NULL)
+    {
+    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEDEL, FALSE);
+    pthread_mutex_unlock(pjob->ji_mutex);
+    }
+ 
+handle_stageout_cleanup:
+  if ((preq != NULL) && (preq->rq_extra != NULL))
+    {
+    free(preq->rq_extra);
+    preq->rq_extra = NULL;
+    }
+   if (job_momname != NULL)
+    free(job_momname); 
+  return rc;
   } /* END handle_stageout() */
 
 
@@ -1187,15 +1275,21 @@ int handle_stagedel(
 
   job                  *pjob,
   int                   type,
-  int                   handle,
   struct batch_request *preq)
 
   {
+  int rc = PBSE_NONE;
   int   IsFaked = 0;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char  log_buf[LOCAL_LOG_BUF_SIZE+1];
+  int handle = -1;
+  char job_id[PBS_MAXSVRJOBID+1];
+  char *job_momname = NULL;
+
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
   if (LOGLEVEL >= 4)
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"JOB_SUBSTATE_STAGEDEL");
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,"JOB_SUBSTATE_STAGEDEL");
 
   if (type != WORK_Deferred_Reply)
     {
@@ -1212,33 +1306,42 @@ int handle_stagedel(
       /* have files to delete */
       /* change the request type from copy to delete  */
       preq->rq_type = PBS_BATCH_DelFiles;
-      preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
+      preq->rq_extra = strdup(job_id);
       
-      if (issue_Drequest(handle, preq, on_job_exit, NULL) == 0)
+      if ((handle = mom_comm(pjob, on_job_exit)) < 0)
         {
-        /* request issued,  we'll come back when mom replies */
-        return(-1);
+        pthread_mutex_unlock(pjob->ji_mutex);
+        rc = PBSE_CONNECT;
+        goto handle_stagedel_cleanup;
         }
-      
-      /* FAILURE */
-      if (LOGLEVEL >= 2)
+      else
         {
-        log_event(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "cannot issue file delete request for staged files");
+        pthread_mutex_unlock(pjob->ji_mutex);
+        if (issue_Drequest(handle, preq, NULL, NULL) != PBSE_NONE)
+          {
+          if (LOGLEVEL >= 2)
+            {
+            log_event(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              job_id,
+              "cannot issue file delete request for staged files");
+            }
+          
+          IsFaked = 1;
+
+          /* set up as if mom returned error since the issue_Drequest failed */
+          preq->rq_reply.brp_code = PBSE_MOMREJECT;
+          preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+          }
         }
-      
-      IsFaked = 1;
-
-      /* set up as if mom returned error since the issue_Drequest failed */
-      preq->rq_reply.brp_code = PBSE_MOMREJECT;
-      preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-
-      /* we will "fall" into the post reply side */
       }
+    else
+      pthread_mutex_unlock(pjob->ji_mutex);
     }
+  else
+    pthread_mutex_unlock(pjob->ji_mutex);
+
 
   /* place if here so that jobs without staged files just fall through */
   if (preq != NULL)
@@ -1247,24 +1350,22 @@ int handle_stagedel(
     if (preq->rq_reply.brp_code != 0)
       {
       /* an error occurred */
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, msg_obitnodel,
-        pjob->ji_qs.ji_jobid,
-        pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, msg_obitnodel, job_id, job_momname);
       
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,log_buf);
       
       if (LOGLEVEL >= 3)
         {
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
           "request to remove stage-in files failed on node '%s' for job %s%s",
-          pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
-          pjob->ji_qs.ji_jobid,
+          job_momname,
+          job_id,
           (IsFaked == 1) ? "*" : "");
         
         log_event(
           PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          job_id,
           log_buf);
         }
       
@@ -1274,57 +1375,84 @@ int handle_stagedel(
           LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
         }
       
+      if ((pjob = find_job(job_id)) == NULL)
+        {
+        rc = PBSE_JOBNOTFOUND;
+        goto handle_stagedel_cleanup;
+        }
       svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
+      pthread_mutex_unlock(pjob->ji_mutex);
       }
     
     free_br(preq);
     }
 
-  svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITED, FALSE);
+  if ((pjob = find_job(job_id)) != NULL)
+    {
+    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITED, FALSE);
+    pthread_mutex_unlock(pjob->ji_mutex);
+    }
 
-  return(WORK_Immed);
+handle_stagedel_cleanup:
+  if (job_momname != NULL)
+    free(job_momname);
+
+  return rc;
   } /* END handle_stagedel() */
 
 
 
 
 int handle_exited(
-
-  job          *pjob,
-  int           handle)
-
+  job          *pjob)
   {
   struct batch_request *preq;
   pbs_queue            *pque;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE+1];
   int                   rc;
+  int handle = -1;
+  char job_id[PBS_MAXSVRJOBID+1];
+
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   if (LOGLEVEL >= 4)
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"JOB_SUBSTATE_EXITED");
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,"JOB_SUBSTATE_EXITED");
 
   /* tell mom to delete the job, send final track and purge it */
   preq = alloc_br(PBS_BATCH_DeleteJob);
   
   if (preq != NULL)
     {
-    strcpy(preq->rq_ind.rq_delete.rq_objname, pjob->ji_qs.ji_jobid);
+    strcpy(preq->rq_ind.rq_delete.rq_objname, job_id);
     
-    rc = issue_Drequest(handle, preq, release_req, 0);
-    
-    if (rc != 0)
+    if ((handle = mom_comm(pjob, on_job_exit)) < 0)
       {
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d", rc);
-      
-      log_event(
-        PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        log_buf);
+      pthread_mutex_unlock(pjob->ji_mutex);
+      return PBSE_CONNECT;
       }
+    else
+      {
+      pthread_mutex_unlock(pjob->ji_mutex);
+      if ((rc = issue_Drequest(handle, preq, NULL, 0)) != PBSE_NONE)
+        {
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d", rc);
 
+        log_event(
+            PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            job_id,
+            log_buf);
+        }
+      }
     /* release_req will free preq and close connection */
     }
+  else
+    pthread_mutex_unlock(pjob->ji_mutex);
+  free_br(preq);
+  preq = NULL;
   
+  if ((pjob = find_job(job_id)) == NULL)
+    return PBSE_JOBNOTFOUND;
   /* NOTE: we never check if MOM actually deleted the job */
   rel_resc(pjob); /* free any resc assigned to the job */
   
@@ -1336,6 +1464,7 @@ int handle_exited(
     {
     if (check_if_checkpoint_restart_failed(pjob) == TRUE)
       {
+      pthread_mutex_unlock(pjob->ji_mutex);
       return(-1);
       }
     }
@@ -1353,8 +1482,8 @@ int handle_exited(
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
     return(PBSE_JOBNOTFOUND);
     }
-  
-  return(WORK_Immed);
+  pthread_mutex_unlock(pjob->ji_mutex);
+  return PBSE_NONE;
   } /* END handle_exited() */
 
 
@@ -1362,20 +1491,23 @@ int handle_exited(
 
 int handle_complete_first_time(
 
-  job *pjob,
-  int  handle)
+  job *pjob)
 
   {
+  int rc = PBSE_NONE;
   pbs_queue   *pque;
-  char        *jobid;
   int          KeepSeconds = 0;
   time_t       time_now = time(NULL);
-  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  char         log_buf[LOCAL_LOG_BUF_SIZE+1];
   long         must_report = FALSE;
+  int          job_complete = 0;
+  char job_id[PBS_MAXSVRJOBID+1];
+
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   /* first time in */
   if (LOGLEVEL >= 4)
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"JOB_SUBSTATE_COMPLETE");
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,"JOB_SUBSTATE_COMPLETE");
   
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
@@ -1395,7 +1527,7 @@ int handle_complete_first_time(
     {
     /* let the caller know the job is gone */
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
-    return(TRUE);
+    return PBSE_JOBNOTFOUND;
     }
   
   if ((get_svr_attr_l(SRV_ATR_JobMustReport, &must_report) == PBSE_NONE) &&
@@ -1414,12 +1546,14 @@ int handle_complete_first_time(
 
   if (KeepSeconds <= 0)
     {
-    job_purge(pjob);
-    
-    return(TRUE);
+    rc = job_purge(pjob);
+    if (rc == PBSE_UNKJOBID)
+      pthread_mutex_unlock(pjob->ji_mutex);
+    return rc;
     }
 
-  if ((handle == -1) &&
+  job_complete = pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE ? 1 : 0;
+  if ((job_complete == 1) &&
       (pjob->ji_wattr[JOB_ATR_comp_time].at_flags & ATR_VFLAG_SET))
     {
     /*
@@ -1427,21 +1561,19 @@ int handle_complete_first_time(
      * better be restarting.
      * use the comp_time to determine task invocation time
      */
-    jobid = strdup(pjob->ji_qs.ji_jobid);
-    
     if(LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s: handle = -1", __func__);
+      sprintf(log_buf, "calling on_job_exit from %s: rc = -1", __func__);
       log_event(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      job_id,
       log_buf);
       }
 
     set_task(WORK_Timed,
       pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
-      on_job_exit, jobid, FALSE);
+      on_job_exit, strdup(job_id), FALSE);
     }
   else
     {
@@ -1453,19 +1585,17 @@ int handle_complete_first_time(
     pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long = (long)time(NULL);
     pjob->ji_wattr[JOB_ATR_comp_time].at_flags |= ATR_VFLAG_SET;
     
-    jobid = strdup(pjob->ji_qs.ji_jobid);
-    
     if(LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s", __func__);
       log_event(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      job_id,
       log_buf);
       }
 
-    set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid, FALSE);
+    set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, strdup(job_id), FALSE);
     
     if (gettimeofday(&tv, &tz) == 0)
       {
@@ -1483,6 +1613,7 @@ int handle_complete_first_time(
     
     job_save(pjob, SAVEJOB_FULL, 0);
     }
+  pthread_mutex_unlock(pjob->ji_mutex);
   
   return(FALSE);
   } /* END handle_complete_first_time() */
@@ -1499,6 +1630,10 @@ int handle_complete_second_time(
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   char        *jobid;
   time_t       time_now = time(NULL);
+  int          rc = PBSE_NONE;
+  char         job_id[PBS_MAXSVRJOBID+1];
+
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
   
   if (((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
       (pjob->ji_wattr[JOB_ATR_reported].at_val.at_long == 0))
@@ -1510,27 +1645,27 @@ int handle_complete_second_time(
       sprintf(log_buf, "Bypassing job %s waiting for purge completed command",
         pjob->ji_qs.ji_jobid);
       
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
       }
     
     jobid = strdup(pjob->ji_qs.ji_jobid);
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
       }
 
     set_task(WORK_Timed, time_now + JOBMUSTREPORTDEFAULTKEEP, on_job_exit, jobid, FALSE);
     
-    return(FALSE); 
+    rc = PBSE_JOBWORKDELAY; 
     }
   else
     {
-    job_purge(pjob);
-    
-    return(TRUE);
+    if ((rc = job_purge(pjob)) == PBSE_UNKJOBID)
+      pthread_mutex_unlock(pjob->ji_mutex);
     }
- 
+
+  return(rc); 
   } /* END handle_complete_second_time() */
 
 
@@ -1559,13 +1694,12 @@ void on_job_exit(
   struct work_task *ptask)  /* I */
 
   {
-  int                   handle = -1;
+  int                   rc = PBSE_NONE;
   job                  *pjob;
 
   struct batch_request *preq;
 
-  int                   purged = FALSE;
-  char                 *jobid;
+  char                 *job_id;
   int                   type = ptask->wt_type;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -1575,13 +1709,18 @@ void on_job_exit(
     {
     preq = NULL;
 
-    jobid = strdup((char *)ptask->wt_parm1);
+    job_id = strdup((char *)ptask->wt_parm1);
+    free(ptask->wt_parm1);
     }
   else
     {
     preq = (struct batch_request *)ptask->wt_parm1;
     if (preq->rq_extra != NULL)
-      jobid = strdup((char *)preq->rq_extra);
+      {
+      job_id = strdup((char *)preq->rq_extra);
+      free(preq->rq_extra);
+      preq->rq_extra = NULL;
+      }
     else
       {
       /* Something is broken. */
@@ -1595,21 +1734,23 @@ void on_job_exit(
   free(ptask);
 
   /* check for calloc errors */
-  if (jobid == NULL)
+  if (job_id == NULL)
     {
     log_err(ENOMEM, __func__, "Cannot allocate memory!");
     return;
     }
 
   /* make sure the job is actually still there */
-  pjob = find_job(jobid);
+  pjob = find_job(job_id);
 
   /* if the job doesn't exist, just exit */
   if (pjob == NULL)
     {
-    sprintf(log_buf, "%s called with INVALID jobid: %s", __func__, jobid);
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"NULL",log_buf);
-    free(jobid);
+    sprintf(log_buf, "%s called with INVALID jobid: %s", __func__, job_id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, "NULL", log_buf);
+
+    free(job_id);
+
     return;
     }
   else
@@ -1619,25 +1760,12 @@ void on_job_exit(
       (void *)pjob,
       pjob->ji_qs.ji_substate);
     
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
     }
 
-  free(jobid);
+  free(job_id);
 
-  /*
-   * we don't need a handle if we are complete. On starting up we will NOT have
-   * a connection to mom, but still want to try and process the completed job
-   */
-  
-  if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) &&
-      ((handle = mom_comm(pjob,on_job_exit)) < 0))
-    {
-    /* FAILURE - cannot connect to mom */
-    pthread_mutex_unlock(pjob->ji_mutex);
-
-    return;
-    }
-
+  /* NOTE: pjob is unlocked in all error cases */
   /* MOM has killed everything it can kill, so we can stop the nanny */
   switch (pjob->ji_qs.ji_substate)
     {
@@ -1646,7 +1774,8 @@ void on_job_exit(
 
     case JOB_SUBSTATE_ABORT:
 
-      type = handle_exiting_or_abort_substate(pjob);
+      rc = handle_exiting_or_abort_substate(pjob);
+      pjob = NULL;
 
       /* NO BREAK, fall into stage out processing */
 
@@ -1658,53 +1787,60 @@ void on_job_exit(
        * and keep_completed is a positive value. This is so that a completed
        * job can be restarted from a checkpoint file.
        */
+      if ((pjob == NULL) && ((pjob = find_job(job_id)) == NULL))
+        break;
 
-      if ((type = handle_returnstd(pjob,preq,handle,type)) == PBSE_JOBNOTFOUND)
-        {
-        purged = TRUE;
+      if ((rc = handle_returnstd(pjob,preq,type)) != PBSE_NONE)
         break;
-        }
-      else if (type < 0)
-        break;
-      else
-        preq = NULL;
+
+      preq = NULL;
+      pjob = NULL;
 
     case JOB_SUBSTATE_STAGEOUT:
 
-      if ((type = handle_stageout(pjob,type,handle,preq)) < 0)
+      if ((pjob == NULL) && ((pjob = find_job(job_id)) == NULL))
         break;
-      else
-        preq = NULL;
+
+      if ((rc = handle_stageout(pjob,type,preq)) != PBSE_NONE)
+        break;
+
+      preq = NULL;
+      pjob = NULL;
 
     case JOB_SUBSTATE_STAGEDEL:
 
-      if ((type = handle_stagedel(pjob,type,handle,preq)) < 0)
+      if ((pjob == NULL) && ((pjob = find_job(job_id)) == NULL))
         break;
-      else
-        preq = NULL;
+
+      if ((rc = handle_stagedel(pjob,type,preq)) != PBSE_NONE)
+        break;
+      preq = NULL;
+      pjob = NULL;
 
     case JOB_SUBSTATE_EXITED:
 
-      if ((type = handle_exited(pjob,handle)) == PBSE_JOBNOTFOUND)
-        {
-        purged = TRUE;
+      if ((pjob == NULL) && ((pjob = find_job(job_id)) == NULL))
         break;
-        }
-      else if (type < 0)
+
+      if ((rc = handle_exited(pjob)) == PBSE_JOBNOTFOUND)
         break;
+      type = rc;
+      pjob = NULL;
 
     case JOB_SUBSTATE_COMPLETE:
 
-      if (type == WORK_Immed)
-        purged = handle_complete_first_time(pjob,handle);
-      else
-        purged = handle_complete_second_time(pjob);
+      if ((pjob == NULL) && ((pjob = find_job(job_id)) == NULL))
+        break;
 
+      if (type == WORK_Immed) /* WORK_Immed == PBSE_NONE.... */
+        handle_complete_first_time(pjob);
+      else
+        handle_complete_second_time(pjob);
       break;
     }  /* END switch (pjob->ji_qs.ji_substate) */
 
-  if (purged == FALSE)
-    pthread_mutex_unlock(pjob->ji_mutex);
+  if (job_id != NULL)
+    free(job_id);
 
   return;
   }  /* END on_job_exit() */
@@ -1738,7 +1874,7 @@ void on_job_rerun(
   struct batch_request *preq;
 
   int                   IsFaked;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE+1];
 
   if (ptask->wt_type != WORK_Deferred_Reply)
     {
@@ -2338,19 +2474,20 @@ int req_jobobit(
   int                   local_errno = 0;
   char                 *pc;
   char                 *tmp;
-  char                 *jobid_copy;
   job                  *pjob;
-  char                  jobid[PBS_MAXSVRJOBID+1];
+  char                  job_id[PBS_MAXSVRJOBID+1];
+  long  job_atr_hold;
+  int   job_exit_status;
 
   struct work_task     *ptask;
   svrattrl             *patlist;
   unsigned int          dummy;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE+1];
   time_t                time_now = time(NULL);
   long                  events = 0;
 
-  strcpy(jobid, preq->rq_ind.rq_jobobit.rq_jid);  /* This will be needed later for logging after preq is freed. */
-  pjob = find_job(preq->rq_ind.rq_jobobit.rq_jid);
+  strcpy(job_id, preq->rq_ind.rq_jobobit.rq_jid);  /* This will be needed later for logging after preq is freed. */
+  pjob = find_job(job_id);
 
   tmp = parse_servername(preq->rq_host, &dummy);
 
@@ -2377,7 +2514,7 @@ int req_jobobit(
       req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
       }
 
-    log_err(rc, jobid, log_buf);
+    log_err(rc, job_id, log_buf);
 
     if (pjob != NULL)
       pthread_mutex_unlock(pjob->ji_mutex);
@@ -2410,20 +2547,19 @@ int req_jobobit(
 
       /* NOTE:  was logged w/msg_obitnojob */
 
-      sprintf(log_buf, "obit received for job %s from host %s with bad state (state: %s)",
-        jobid,
-        preq->rq_host,
-        PJobState[pjob->ji_qs.ji_state]);
+      sprintf(log_buf,
+          "obit received for job %s from host %s with bad state (state: %s)",
+          job_id,
+          preq->rq_host,
+          PJobState[pjob->ji_qs.ji_state]);
 
-      log_err(PBSE_BADSTATE, jobid, log_buf);
+      log_err(PBSE_BADSTATE, job_id, log_buf);
 
       rc = PBSE_BADSTATE;
       }
 
-    req_reject(rc,0,preq,NULL,NULL);
-
     pthread_mutex_unlock(pjob->ji_mutex);
-
+    req_reject(rc,0,preq,NULL,NULL);
     return(rc);
     }  /* END if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING) */
 
@@ -2434,14 +2570,14 @@ int req_jobobit(
 
     ptask = set_task(WORK_Timed, time_now + 1, wait_for_send, (void *)preq, FALSE);
 
+    pthread_mutex_unlock(pjob->ji_mutex);
     if (ptask == NULL)
       req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 
     /* In else case, the request is after callback. Please don't change things 
      * when you aren't sure what should happen. */
-
-    pthread_mutex_unlock(pjob->ji_mutex);
-    /* Connection is left open to be used in wait_for_send */
+    /* Connection is left open to be used in wait_for_send
+     * which ends up being a call to this function that writes to the socket */
 
     return(PBSE_SYSTEM);
     }
@@ -2471,7 +2607,7 @@ int req_jobobit(
     log_event(
       PBSEVENT_ERROR | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      jobid,
+      job_id,
       "obit received - updating final job usage info");
     }
 
@@ -2509,7 +2645,7 @@ int req_jobobit(
       log_event(
         PBSEVENT_ERROR | PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        jobid,
+        job_id,
         "No resources used found");
       }
 
@@ -2542,13 +2678,6 @@ int req_jobobit(
 #endif    /* USESAVEDRESOURCES */
 
   safe_strncat(mailbuf, (acctbuf + accttail), sizeof(mailbuf) - strlen(mailbuf) - 1);
-
-  /* make sure ji_momhandle is -1 to force new connection to mom */
-  if (pjob->ji_momhandle >= 0)
-    {
-    close_conn(pjob->ji_momhandle, FALSE);
-    pjob->ji_momhandle = -1;
-    }
 
   reply_ack(preq);
 
@@ -2662,7 +2791,7 @@ int req_jobobit(
           log_event(
             PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
             PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+            job_id,
             "received JOB_EXEC_INITRST, setting job CHECKPOINT_FLAG flag");
           }
 
@@ -2674,7 +2803,6 @@ int req_jobobit(
 
         svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
-        req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
         close_conn(pjob->ji_momhandle, FALSE);
         pjob->ji_momhandle = -1;
 
@@ -2706,7 +2834,7 @@ int req_jobobit(
     log_event(
       PBSEVENT_ERROR | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      jobid,
+      job_id,
       log_buf);
     }
 
@@ -2743,7 +2871,7 @@ int req_jobobit(
       log_event(
         PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        job_id,
         acctbuf);
       }
     else
@@ -2755,19 +2883,17 @@ int req_jobobit(
       log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        job_id,
         acctbuf);
       }
-
-    jobid_copy = strdup(pjob->ji_qs.ji_jobid);
 
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
       }
 
-    set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
+    set_task(WORK_Immed, 0, on_job_exit, strdup(job_id), FALSE);
 
     /* decrease array running job count */
     if ((pjob->ji_arraystruct != NULL) &&
@@ -2777,15 +2903,22 @@ int req_jobobit(
 
       if (pjob == NULL)
         return(PBSE_UNKJOBID);
+      
+      job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
+      job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+      pthread_mutex_unlock(pjob->ji_mutex);
+      update_array_values(pa,JOB_STATE_RUNNING,aeTerminate,
+          job_id, job_atr_hold, job_exit_status);
         
-      update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
-        
-      pthread_mutex_unlock(pa->ai_mutex);
       if (LOGLEVEL >= 7)
         {
         sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
         }
+      pthread_mutex_unlock(pa->ai_mutex);
+      pjob = find_job(job_id);
+      if (pjob == NULL)
+        return(PBSE_UNKJOBID);
       }
 
     if (LOGLEVEL >= 4)
@@ -2793,7 +2926,7 @@ int req_jobobit(
       log_event(
         PBSEVENT_ERROR | PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        jobid,
+        job_id,
         "on_job_exit task assigned to job");
       }
 
@@ -2828,7 +2961,6 @@ int req_jobobit(
 
       svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
-      req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
       close_conn(pjob->ji_momhandle, FALSE);
       pjob->ji_momhandle = -1;
 
@@ -2839,14 +2971,14 @@ int req_jobobit(
 
     svr_setjobstate(pjob, JOB_STATE_EXITING, pjob->ji_qs.ji_substate, FALSE);
 
-    set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    set_task(WORK_Immed, 0, on_job_rerun, strdup(job_id), FALSE);
 
     if (LOGLEVEL >= 4)
       {
       log_event(
         PBSEVENT_ERROR | PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        jobid,
+        job_id,
         "on_job_rerun task assigned to job");
       }
 
@@ -2883,7 +3015,7 @@ int req_jobobit(
     log_event(
       PBSEVENT_ERROR | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      jobid,
+      job_id,
       "req_jobobit completed");
     }
 

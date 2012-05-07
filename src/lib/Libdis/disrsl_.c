@@ -94,7 +94,7 @@ static unsigned ulmaxdigs = 0;
 
 int disrsl_(
 
-  int   stream,
+  struct tcp_chan *chan,
   int  *negate,
   unsigned long *value,
   unsigned long  count)
@@ -105,16 +105,10 @@ int disrsl_(
   unsigned long ndigs;
   char  *cp;
   char  scratch[DIS_BUFSIZ+1];
-  int (*dis_getc)(int);
-  int (*dis_gets)(int, char *, size_t);
 
   assert(negate != NULL);
   assert(value != NULL);
   assert(count);
-  assert(stream >= 0);
-
-  dis_getc = tcp_getc;
-  dis_gets = tcp_gets;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
 
@@ -135,7 +129,7 @@ int disrsl_(
       disiui_();
     }
 
-  c = (*dis_getc)(stream);
+  c = tcp_getc(chan);
 
   /* FORMAT:  +2+1+0+0+64+2079+22+251175826.teva.westgrid.ubc2+362+21+8Job_Name+02+11run32_.2557+02+ ... */
 
@@ -148,7 +142,7 @@ int disrsl_(
 
       *negate = (c == '-');
 
-      if ((*dis_gets)(stream, scratch, count) != (int)count)
+      if (tcp_gets(chan, scratch, count) != (int)count)
         {
         return(DIS_EOD);
         }
@@ -215,7 +209,7 @@ int disrsl_(
 
       if (count > 1)
         {
-        if ((*dis_gets)(stream, scratch + 1, count - 1) != (int)count - 1)
+        if (tcp_gets(chan, scratch + 1, count - 1) != (int)count - 1)
           {
           /* FAILURE */
 
@@ -248,7 +242,7 @@ int disrsl_(
           }
         }
 
-      return(disrsl_(stream, negate, value, ndigs));
+      return(disrsl_(chan, negate, value, ndigs));
 
       /*NOTREACHED*/
 

@@ -4,7 +4,7 @@
 
 #include "list_link.h" /* tlist_head, list_link */
 
-int decode_DIS_svrattrl(int sock, tlist_head *phead)
+int decode_DIS_svrattrl(struct tcp_chan *chan, tlist_head *phead)
   {
   fprintf(stderr, "The call to decode_DIS_svrattrl needs to be mocked!!\n");
   exit(1);

@@ -116,6 +116,8 @@
 #include "dis.h"
 #include "../lib/Libnet/lib_net.h" /* get_connection_entry */
 #include "../lib/Liblog/pbs_log.h" /* print_trace */
+#include "node_func.h" /* addr_ok */
+#include "tcp.h" /* tcp_chan */
 
 
 /* global data */
@@ -132,7 +134,6 @@ extern int               LOGLEVEL;
 extern void    bad_node_warning(pbs_net_t, struct pbsnode *);
 extern ssize_t read_blocking_socket(int, void *, ssize_t);
 extern int get_num_connections();
-int            addr_ok(pbs_net_t,struct pbsnode *);
 
 
 
@@ -196,7 +197,7 @@ int svr_connect(
   /* establish socket connection to specified host */
 
   sock = client_to_svr(hostaddr, port, 1, EMsg);
-
+ 
   time(&ETime);
 
   if (LOGLEVEL >= 2)
@@ -249,9 +250,7 @@ int svr_connect(
     }
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
-
   svr_conn[sock].cn_authen = PBS_NET_CONN_AUTHENTICATED;
-
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
   /* find a connect_handle entry we can use and pass to the PBS_*() */
@@ -294,6 +293,31 @@ static void localalm(
 
 
 
+void connection_clear(
+   int con_pos)
+  {
+  pthread_mutex_lock(connection[con_pos].ch_mutex);
+  connection[con_pos].ch_errtxt = 0;
+  connection[con_pos].ch_inuse = FALSE;
+  connection[con_pos].ch_socket = -1;
+  connection[con_pos].ch_stream = 0;
+  pthread_mutex_unlock(connection[con_pos].ch_mutex);
+  }
+
+
+
+void svr_disconnect_sock(
+    int handle)
+  {
+  int sock = 0;
+  if ((handle >=0) && (handle < PBS_LOCAL_CONNECTION))
+    {
+    pthread_mutex_lock(connection[handle].ch_mutex);
+    sock = connection[handle].ch_socket;
+    pthread_mutex_unlock(connection[handle].ch_mutex);
+    close_conn(sock, FALSE);
+    }
+  }
 
 
 
@@ -312,17 +336,19 @@ void svr_disconnect(
   {
   int sock;
   int x;
+  struct tcp_chan *chan = NULL;
 
   if ((handle >= 0) && (handle < PBS_LOCAL_CONNECTION))
     {
     pthread_mutex_lock(connection[handle].ch_mutex);
-
     sock = connection[handle].ch_socket;
+    pthread_mutex_unlock(connection[handle].ch_mutex);
 
-    DIS_tcp_setup(sock);
-
-    if ((encode_DIS_ReqHdr(sock, PBS_BATCH_Disconnect, pbs_current_user) == 0) &&
-        (DIS_tcp_wflush(sock) == 0))
+    if ((chan = DIS_tcp_setup(sock)) == NULL)
+      {
+      }
+    else if ((encode_DIS_ReqHdr(chan, PBS_BATCH_Disconnect, pbs_current_user) == 0) &&
+        (DIS_tcp_wflush(chan) == 0))
       {
       struct sigaction act;
       struct sigaction oldact;
@@ -352,9 +378,13 @@ void svr_disconnect(
 
       }
 
+
+    pthread_mutex_lock(connection[handle].ch_mutex);
     shutdown(connection[handle].ch_socket, 2);
 
     close_conn(connection[handle].ch_socket, FALSE);
+    if (chan != NULL)
+      DIS_tcp_cleanup(chan);
 
     if (connection[handle].ch_errtxt != NULL)
       {

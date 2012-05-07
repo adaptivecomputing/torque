@@ -109,7 +109,7 @@
 
 int disrfst(
 
-  int     stream,
+  struct tcp_chan *chan,
   size_t  achars,
   char   *value)
 
@@ -119,15 +119,10 @@ int disrfst(
 
   int  negate;
   unsigned count;
-  int (*disr_commit)(int stream, int commit);
-  int (*dis_gets)(int, char *, size_t);
 
   assert(value != NULL);
   
-  disr_commit = tcp_rcommit;
-  dis_gets = tcp_gets;
-
-  locret = disrsi_(stream, &negate, &count, 1);
+  locret = disrsi_(chan, &negate, &count, 1);
 
   if (locret == DIS_SUCCESS)
     {
@@ -135,7 +130,7 @@ int disrfst(
       locret = DIS_BADSIGN;
     else if (count > achars)
       locret = DIS_OVERFLOW;
-    else if ((*dis_gets)(stream, value, (size_t)count) != (int)count)
+    else if (tcp_gets(chan, value, (size_t)count) != (int)count)
       locret = DIS_PROTO;
 
 #ifndef NDEBUG
@@ -149,14 +144,14 @@ int disrfst(
 
   /*
     if (locret == DIS_SUCCESS)
-      rc = (*disr_commit)(stream,TRUE);
+      rc = tcp_rcommit(chan,TRUE);
     else
-      rc = (*disr_commit)(stream,FALSE);
+      rc = tcp_rcommit(chan,FALSE);
 
     locret = (rc != 0) ? rc : DIS_NOCOMMIT;
   */
 
-  locret = (*disr_commit)(stream, locret == DIS_SUCCESS) ?
+  locret = tcp_rcommit(chan, locret == DIS_SUCCESS) ?
            DIS_NOCOMMIT :
            locret;
 

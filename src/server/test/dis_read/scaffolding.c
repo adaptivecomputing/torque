@@ -8,37 +8,37 @@ const char *dis_emsg[10];
 int LOGLEVEL = 0;
 
 
-int decode_DIS_JobId(int sock, char *jobid)
+int decode_DIS_JobId(struct tcp_chan *chan, char *jobid)
   {
   fprintf(stderr, "The call to decode_DIS_JobId needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_Register(int sock, struct batch_request *preq)
+int decode_DIS_Register(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_Register needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_svrattrl(int sock, tlist_head *phead)
+int decode_DIS_svrattrl(struct tcp_chan *chan, tlist_head *phead)
   {
   fprintf(stderr, "The call to decode_DIS_svrattrl needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_MessageJob(int sock, struct batch_request *preq)
+int decode_DIS_MessageJob(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_MessageJob needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_JobObit(int sock, struct batch_request *preq)
+int decode_DIS_JobObit(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_JobObit needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_JobCred(int sock, struct batch_request *preq)
+int decode_DIS_JobCred(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_JobCred needs to be mocked!!\n");
   exit(1);
@@ -50,55 +50,55 @@ void DIS_tcp_setup(int fd)
   exit(1);
   }
 
-int decode_DIS_ReqExtend(int sock, struct batch_request *preq)
+int decode_DIS_ReqExtend(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_ReqExtend needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_QueueJob(int sock, struct batch_request *preq)
+int decode_DIS_QueueJob(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_QueueJob needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_SignalJob(int sock, struct batch_request *preq)
+int decode_DIS_SignalJob(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_SignalJob needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_AltAuthen(int sock, struct batch_request *preq)
+int decode_DIS_AltAuthen(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_AltAuthen needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_GpuCtrl(int sock, struct batch_request *preq)
+int decode_DIS_GpuCtrl(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_GpuCtrl needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_Status(int sock, struct batch_request *preq)
+int decode_DIS_Status(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_Status needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_Manage(int sock, struct batch_request *preq)
+int decode_DIS_Manage(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_Manage needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_TrackJob(int sock, struct batch_request *preq)
+int decode_DIS_TrackJob(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_TrackJob needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_JobFile(int sock, struct batch_request *preq)
+int decode_DIS_JobFile(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_JobFile needs to be mocked!!\n");
   exit(1);
@@ -110,19 +110,19 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
-int decode_DIS_ReqHdr(int sock, struct batch_request *preq, int *proto_type, int *proto_ver)
+int decode_DIS_ReqHdr(struct tcp_chan *chan, struct batch_request *preq, int *proto_type, int *proto_ver)
   {
   fprintf(stderr, "The call to decode_DIS_ReqHdr needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_RunJob(int sock, struct batch_request *preq)
+int decode_DIS_RunJob(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_RunJob needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_MoveJob(int sock, struct batch_request *preq)
+int decode_DIS_MoveJob(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_MoveJob needs to be mocked!!\n");
   exit(1);
@@ -134,25 +134,25 @@ const char *reqtype_to_txt(int reqtype)
   exit(1);
   }
 
-int decode_DIS_Authen(int sock, struct batch_request *preq)
+int decode_DIS_Authen(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_Authen needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_Rescl(int sock, struct batch_request *preq)
+int decode_DIS_Rescl(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_Rescl needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_replySvr(int sock, struct batch_reply *reply)
+int decode_DIS_replySvr(struct tcp_chan *chan, struct batch_reply *reply)
   {
   fprintf(stderr, "The call to decode_DIS_replySvr needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_DIS_ShutDown(int sock, struct batch_request *preq)
+int decode_DIS_ShutDown(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to decode_DIS_ShutDown needs to be mocked!!\n");
   exit(1);

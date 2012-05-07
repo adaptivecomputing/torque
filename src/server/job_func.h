@@ -17,11 +17,11 @@ int conn_qsub(char *hostname, long port, char *EMsg);
 
 job *job_alloc(void);
 
-void job_free(job *pj);
+void job_free(job *pj, int use_recycle);
 
 job *job_clone(job *template_job, job_array *pa, int taskid);
 
-void job_clone_wt(void *vp);
+void *job_clone_wt(void *vp);
 
 /* static void job_init_wattr(job *pj); */
 
@@ -33,12 +33,13 @@ void cleanup_restart_file(job *pjob);
 
 int record_jobinfo(job *pjob);
 
-void job_purge(job *pjob);
+int job_purge(job *pjob);
 
 char *get_correct_jobname(const char *jobid);
 
 job *find_job(char *jobid);
 
+#ifndef PBS_MOM
 void initialize_all_jobs_array(struct all_jobs *aj);
 
 int insert_job(struct all_jobs *aj, job *pjob);
@@ -56,7 +57,7 @@ job *next_job(struct all_jobs *aj, int *iter);
 job *next_job_from_back(struct all_jobs *aj, int *iter);
 
 int swap_jobs(struct all_jobs *aj, job *job1, job *job2);
-
+#endif
 job_array *get_jobs_array(job **pjob);
 
 #endif /* _JOB_FUNC_H */

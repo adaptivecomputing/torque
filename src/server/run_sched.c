@@ -190,10 +190,10 @@ static int contact_sched(
     process_pbs_server_port_scheduler);
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
-
   svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
+  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
-  net_add_close_func(sock, scheduler_close, TRUE);
+  net_add_close_func(sock, scheduler_close);
 
   /* send command to Scheduler */
 
@@ -205,17 +205,11 @@ static int contact_sched(
 
     log_ext(errno, __func__, tmpLine, LOG_ALERT);
 
-    close_conn(sock, TRUE);
-
-    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+    close_conn(sock, FALSE);
 
     return(-1);
     }
     
-  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-
-  DIS_tcp_setup(sock);
-
   sprintf(log_buf, msg_sched_called, (cmd != SCH_ERROR) ? PSchedCmdType[cmd] : "ERROR");
 
   log_event(PBSEVENT_SCHED,PBS_EVENTCLASS_SERVER,server_name,log_buf);
@@ -242,6 +236,7 @@ int schedule_jobs(void)
   int cmd;
 
   static int first_time = 1;
+  int tmp_sched_sock = -1;
 
   pthread_mutex_lock(svr_do_schedule_mutex);
 
@@ -256,35 +251,39 @@ int schedule_jobs(void)
   pthread_mutex_unlock(svr_do_schedule_mutex);
 
   pthread_mutex_lock(scheduler_sock_jobct_mutex);
-
   if (scheduler_sock == -1)
-    {
     scheduler_jobct = 0;
+  else
+    tmp_sched_sock = scheduler_sock;
+  pthread_mutex_unlock(scheduler_sock_jobct_mutex);
 
-    if ((scheduler_sock = contact_sched(cmd)) < 0)
+  if (tmp_sched_sock != -1)
+    {
+    if ((tmp_sched_sock = contact_sched(cmd)) < 0)
       {
-      pthread_mutex_unlock(scheduler_sock_jobct_mutex);
       return(-1);
       }
-      
+    pthread_mutex_lock(scheduler_sock_jobct_mutex);
+    scheduler_sock = tmp_sched_sock;
     pthread_mutex_unlock(scheduler_sock_jobct_mutex);
 
     first_time = 0;
 
     return(0);
     }
-  else
-    {
-    pthread_mutex_unlock(scheduler_sock_jobct_mutex);
-    }
-
   return(1);
   }  /* END schedule_jobs() */
+
+
 
 void *start_process_request(void *vp)
   {
   int sock = *(int *)vp;
-  process_request(sock);
+  struct tcp_chan *chan = NULL;
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    return NULL;
+  process_request(chan);
+  DIS_tcp_cleanup(chan);
   return(NULL);
   }
 
@@ -347,11 +346,10 @@ static int contact_listener(
     start_process_request);
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
-
   svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
+  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
-
-  net_add_close_func(sock, listener_close, TRUE);
+  net_add_close_func(sock, listener_close);
 
   /* send command to Listener */
   pthread_mutex_lock(listener_command_mutex);
@@ -367,16 +365,13 @@ static int contact_listener(
 
     log_err(errno, __func__, tmpLine);
 
-    close_conn(sock, TRUE);
+    close_conn(sock, FALSE);
   
-    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
     return(-1);
     }
 
   pthread_mutex_unlock(listener_command_mutex);
-
-  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
   sprintf(log_buf, msg_listnr_called, l_idx + 1,
     (listener_command != SCH_ERROR) ? PSchedCmdType[listener_command] : "ERROR");

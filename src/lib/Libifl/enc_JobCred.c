@@ -92,7 +92,7 @@
 
 int encode_DIS_JobCred(
     
-  int   sock,
+  struct tcp_chan *chan,
   int   type, 
   char *cred,
   int   len)
@@ -100,10 +100,10 @@ int encode_DIS_JobCred(
   {
   int   rc;
 
-  if ((rc = diswui(sock, type)))
+  if ((rc = diswui(chan, type)))
     return rc;
 
-  rc = diswcs(sock, cred, (size_t)len);
+  rc = diswcs(chan, cred, (size_t)len);
 
   return rc;
   }

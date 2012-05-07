@@ -120,6 +120,7 @@
 #include "mom_comm.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 #include "alps_functions.h"
+#include "tcp.h" /* tcp_chan */
 
 #ifdef ENABLE_CPA
   #include "pbs_cpa.h"
@@ -672,7 +673,7 @@ int become_the_user(
 
 
 
-#define RETRY 3
+#define RETRY 10
 
 int open_demux(
 
@@ -1609,11 +1610,13 @@ int open_tcp_stream_to_sisters(
   int                flag)
 
   {
-  int          i;
-  hnodent     *np;
-  int          stream;
-  eventent     *ep;
-  svrattrl     *psatl;
+  int              rc = DIS_SUCCESS;
+  int              i;
+  hnodent         *np;
+  int              stream;
+  eventent        *ep;
+  svrattrl        *psatl;
+  struct tcp_chan *chan = NULL;
   
   np = hosts;
   pjob->ji_outstanding = 0;
@@ -1656,43 +1659,71 @@ int open_tcp_stream_to_sisters(
     sprintf(log_buffer, "event %d to host %s: com: %d", ep->ee_event, np->hn_host,com);
     log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     
-    DIS_tcp_setup(stream);
-    
-    im_compose(stream,
-        pjob->ji_qs.ji_jobid,
+    if ((chan = DIS_tcp_setup(stream)) == NULL)
+      {
+      close(stream);
+      exec_bail(pjob, JOB_EXEC_FAIL1);
+      return(PBSE_SISCOMM);
+      }
+    else if ((rc = im_compose(chan, pjob->ji_qs.ji_jobid,
         pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
         com,
         ep->ee_event,
-        TM_NULL_TASK);
-    
-    diswsi(stream, i);  /* nodeid of receiver */
-    diswsi(stream, pjob->ji_numnodes);  /* number of nodes */
-    
-    if (flag == MOTHER_SUPERIOR)
+        TM_NULL_TASK)) != DIS_SUCCESS)
       {
-      diswsi(stream, pjob->ji_portout);  /* out port number */
-      diswsi(stream, pjob->ji_porterr);  /* err port number */
+      }
+      /* nodeid of receiver */
+    else if ((rc = diswsi(chan, i)) != DIS_SUCCESS)
+      {
+      }
+      /* number of nodes */
+    else if ((rc = diswsi(chan, pjob->ji_numnodes)) != DIS_SUCCESS)
+      {
+      }
+      /* out port number */
+    else if ((flag == MOTHER_SUPERIOR)
+        && ((rc = diswsi(chan, pjob->ji_portout)) != DIS_SUCCESS))
+      {
+      }
+      /* err port number */
+    else if ((flag == MOTHER_SUPERIOR)
+        && ((rc = diswsi(chan, pjob->ji_porterr)) != DIS_SUCCESS))
+      {
+      }
+      /* out port number */
+    else if ((flag != MOTHER_SUPERIOR)
+        && ((rc = diswsi(chan, pjob->ji_im_portout)) != DIS_SUCCESS))
+      {
+      }
+      /* err port number */
+    else if ((flag != MOTHER_SUPERIOR)
+        && ((rc = diswsi(chan, pjob->ji_im_porterr)) != DIS_SUCCESS))
+      {
+      }
+      /* sisters for this intermediate mom */
+    else if ((rc = diswst(chan, sister_list[i-1]->host_list)) != DIS_SUCCESS)
+      {
+      }
+      /* sisters for this intermediate mom */
+    else if ((rc = diswst(chan, sister_list[i-1]->port_list)) != DIS_SUCCESS)
+      {
+      }
+      /* how many sisters in this radix group */
+    else if ((rc = diswsi(chan, sister_list[i-1]->count)) != DIS_SUCCESS)
+      {
       }
     else
       {
-      diswsi(stream, pjob->ji_im_portout); /* out port number */
-      diswsi(stream, pjob->ji_im_porterr); /* err port number */
+      /* write jobattrs */
+      psatl = (svrattrl *)GET_NEXT(*phead);
+      if ((rc = encode_DIS_svrattrl(chan, psatl)) == DIS_SUCCESS)
+        DIS_tcp_wflush(chan);
       }
 
-    diswst(stream, sister_list[i-1]->host_list ); /* sisters for this intermediate mom */
-    diswst(stream, sister_list[i-1]->port_list ); /* sisters for this intermediate mom */
-    diswsi(stream, sister_list[i-1]->count );     /* how many sisters in this radix group */
+    /*read_tcp_reply(chan, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, &exit_status);*/
 
-    /* write jobattrs */
-
-    psatl = (svrattrl *)GET_NEXT(*phead);
-
-    encode_DIS_svrattrl(stream, psatl);
-
-    DIS_tcp_wflush(stream);
-
-    /*read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, &exit_status);*/
-
+    if (chan != NULL)
+      DIS_tcp_cleanup(chan);
     close(stream);
 
     }
@@ -5596,10 +5627,12 @@ void sister_job_nodes(
     }
 
   pjob->ji_sisters = (hnodent *)calloc(nodenum + 1, sizeof(hnodent));
-  assert(pjob->ji_sisters);
+  if (pjob->ji_sisters == NULL)
+    return;
 
   pjob->ji_sister_vnods = (vnodent *)calloc(nodenum + 1, sizeof(vnodent));
-  assert(pjob->ji_sister_vnods);
+  if (pjob->ji_sister_vnods == NULL)
+    return;
 
   nhosts = 0;
 
@@ -5735,6 +5768,7 @@ int send_join_job_to_sisters(
   int          ret = PBSE_NONE;
   eventent    *ep;
   svrattrl    *psatl;
+  struct tcp_chan *chan = NULL;
 
   for (i = 0; i < 5; i++)
     {
@@ -5748,38 +5782,37 @@ int send_join_job_to_sisters(
 
       /* Send out a JOIN_JOB message to all the MOM's in the sisterhood. */
       /* NOTE:  does not check success of join request */
-      DIS_tcp_setup(stream);
-      
-      ret = im_compose(stream,
+      if ((chan = DIS_tcp_setup(stream)) == NULL)
+        {
+        }
+      else if ((ret = im_compose(chan,
           pjob->ji_qs.ji_jobid,
           pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
           IM_JOIN_JOB,
           ep->ee_event,
-          TM_NULL_TASK);
-
-      if (ret == DIS_SUCCESS)
+          TM_NULL_TASK)) == DIS_SUCCESS)
         {
         /* nodeid of receiver */
-        if ((ret = diswsi(stream, node_index)) == DIS_SUCCESS)
+        if ((ret = diswsi(chan, node_index)) == DIS_SUCCESS)
           {
           /* number of nodes */
-          if ((ret = diswsi(stream, nodenum)) == DIS_SUCCESS)
+          if ((ret = diswsi(chan, nodenum)) == DIS_SUCCESS)
             {
             /* out port number */
-            if ((ret = diswsi(stream, pjob->ji_portout)) == DIS_SUCCESS)
+            if ((ret = diswsi(chan, pjob->ji_portout)) == DIS_SUCCESS)
               {
               /* err port number */
-              if ((ret = diswsi(stream, pjob->ji_porterr)) == DIS_SUCCESS)
+              if ((ret = diswsi(chan, pjob->ji_porterr)) == DIS_SUCCESS)
                 {
                 /* write jobattrs */
                 psatl = (svrattrl *)GET_NEXT(phead);
                 
-                if ((ret = encode_DIS_svrattrl(stream, psatl)) == DIS_SUCCESS)
+                if ((ret = encode_DIS_svrattrl(chan, psatl)) == DIS_SUCCESS)
                   {
-                  ret = DIS_tcp_wflush(stream);
-/*                  if ((ret = DIS_tcp_wflush(stream)) == DIS_SUCCESS)
+                  ret = DIS_tcp_wflush(chan);
+/*                  if ((ret = DIS_tcp_wflush(chan)) == DIS_SUCCESS)
                     {
-                    read_tcp_reply(stream,IM_PROTOCOL,IM_PROTOCOL_VER,IM_JOIN_JOB,&ret);
+                    read_tcp_reply(chan,IM_PROTOCOL,IM_PROTOCOL_VER,IM_JOIN_JOB,&ret);
                     }*/
                   }
                 }
@@ -5787,6 +5820,8 @@ int send_join_job_to_sisters(
             }
           }
         }
+      if (chan != NULL)
+        DIS_tcp_cleanup(chan);
       
       close(stream);
 
@@ -6323,7 +6358,7 @@ static void starter_return(
 
   struct startjob_rtn ack;
   int                 i;
-  int alarmsecs = 0;
+  int                 alarmsecs = 0;
 
   sjrtn->sj_code = code;
 
@@ -6355,7 +6390,7 @@ static void starter_return(
       {
       break;
       }
- 
+
     /* check for case where job has been qdel'd */
     if ((i == -1) && (errno == EINTR) && (alarmsecs == 0) && (code == 0))
       {
@@ -6805,6 +6840,7 @@ int open_std_file(
   int   keeping;  /* boolean:  1=TRUE, 0=FALSE */
   char *path;
   int   old_umask = 0;
+  char  local_buf[LOCAL_LOG_BUF_SIZE + 1];
 
   int  changed_to_user = FALSE;
   int  rc;
@@ -6906,7 +6942,8 @@ int open_std_file(
         {
         if (statbuf.st_uid != pjob->ji_qs.ji_un.ji_momt.ji_exuid)
           {
-          log_err(-1, __func__, "std file exists with the wrong owner, someone is doing something fishy");
+          snprintf(local_buf, LOCAL_LOG_BUF_SIZE,"std file exists with the wrong owner, userid: %d owner: %d. someone is doing something fishy", pjob->ji_qs.ji_un.ji_momt.ji_exuid, statbuf.st_uid);
+          log_err(-1, __func__, local_buf);
 
           goto reset_ids_fail;
           }
@@ -6925,9 +6962,21 @@ int open_std_file(
 
           if (equal == FALSE)
             {
+#ifdef RESETGROUP
+            /* Change the group of the file to be the user's group */
+            if (chown(path,
+                  pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+                  pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
+              {
+              log_err(errno, __func__, "std file exists with the wrong group, someone is doing something fishy, cannot change file group");
+
+              goto reset_ids_fail;
+              }
+#else
             log_err(-1, __func__, "std file exists with the wrong group, someone is doing something fishy");
 
             goto reset_ids_fail;
+#endif
             }
           }
         }

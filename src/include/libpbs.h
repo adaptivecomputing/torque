@@ -102,6 +102,7 @@
 #include "list_link.h"
 #include "pbs_error.h"
 #include "u_memmgr.h"
+#include "tcp.h" /* tcp_chan */
 
 #ifndef LIBPBS_H
 #define LIBPBS_H
@@ -315,30 +316,30 @@ char *PBSD_queuejob (int c, int *, char *j, char *d, struct attropl *a, char *ex
 int PBSD_QueueJob_hash(int c, char *j, char *d, memmgr **mm, job_data *ja, job_data *ra, char *ex, char **job_id, char **msg);
 
 
-extern int decode_DIS_JobId (int socket, char *jobid);
-extern int decode_DIS_replyCmd (int socket, struct batch_reply *);
+extern int decode_DIS_JobId (struct tcp_chan *chan, char *jobid);
+extern int decode_DIS_replyCmd (struct tcp_chan *chan, struct batch_reply *);
 
-extern int encode_DIS_GpuCtrl (int socket, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol);
-extern int encode_DIS_JobCred (int socket, int type, char *cred, int len);
-extern int encode_DIS_JobFile (int socket, int, char *, int, char *, int);
-extern int encode_DIS_JobId (int socket, char *);
-extern int encode_DIS_Manage (int socket, int cmd, int objt, char *, struct attropl *);
-extern int encode_DIS_MoveJob (int socket, char *jid, char *dest);
-extern int encode_DIS_MessageJob (int socket, char *jid, int fopt, char *m);
-extern int encode_DIS_QueueJob (int socket, char *jid, char *dest, struct attropl *);
-int encode_DIS_QueueJob_hash(int socket, char *jid, char *destin, memmgr **mm, job_data *job_attr, job_data *res_attr);
-extern int encode_DIS_ReqExtend (int socket, char *extend);
-extern int encode_DIS_ReqHdr (int socket, int reqt, char *user);
-extern int encode_DIS_Rescq (int socket, char **rlist, int num);
-extern int encode_DIS_RunJob (int socket, char *jid, char *where, unsigned int resch);
-extern int encode_DIS_ShutDown (int socket, int manner);
-extern int encode_DIS_SignalJob (int socket, char *jid, char *sig);
-extern int encode_DIS_Status (int socket, char *objid, struct attrl *);
-extern int encode_DIS_attrl (int socket, struct attrl *);
-extern int encode_DIS_attropl (int socket, struct attropl *);
-int encode_DIS_attropl_hash(int socket, memmgr **mm, job_data *job_attr, job_data *res_attr);
+extern int encode_DIS_GpuCtrl (struct tcp_chan *chan, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol);
+extern int encode_DIS_JobCred (struct tcp_chan *chan, int type, char *cred, int len);
+extern int encode_DIS_JobFile (struct tcp_chan *chan, int, char *, int, char *, int);
+extern int encode_DIS_JobId (struct tcp_chan *chan, char *);
+extern int encode_DIS_Manage (struct tcp_chan *chan, int cmd, int objt, char *, struct attropl *);
+extern int encode_DIS_MoveJob (struct tcp_chan *chan, char *jid, char *dest);
+extern int encode_DIS_MessageJob (struct tcp_chan *chan, char *jid, int fopt, char *m);
+extern int encode_DIS_QueueJob (struct tcp_chan *chan, char *jid, char *dest, struct attropl *);
+int encode_DIS_QueueJob_hash(struct tcp_chan *chan, char *jid, char *destin, memmgr **mm, job_data *job_attr, job_data *res_attr);
+extern int encode_DIS_ReqExtend (struct tcp_chan *chan, char *extend);
+extern int encode_DIS_ReqHdr (struct tcp_chan *chan, int reqt, char *user);
+extern int encode_DIS_Rescq (struct tcp_chan *chan, char **rlist, int num);
+extern int encode_DIS_RunJob (struct tcp_chan *chan, char *jid, char *where, unsigned int resch);
+extern int encode_DIS_ShutDown (struct tcp_chan *chan, int manner);
+extern int encode_DIS_SignalJob (struct tcp_chan *chan, char *jid, char *sig);
+extern int encode_DIS_Status (struct tcp_chan *chan, char *objid, struct attrl *);
+extern int encode_DIS_attrl (struct tcp_chan *chan, struct attrl *);
+extern int encode_DIS_attropl (struct tcp_chan *chan, struct attropl *);
+int encode_DIS_attropl_hash(struct tcp_chan *chan, memmgr **mm, job_data *job_attr, job_data *res_attr);
 
-extern int DIS_reply_read (int socket, struct batch_reply *preply);
+extern int DIS_reply_read (struct tcp_chan *chan, struct batch_reply *preply);
 #endif /* LIBPBS_H */
 
 

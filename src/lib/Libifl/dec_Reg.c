@@ -102,33 +102,34 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_Register(
     
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
   int   rc;
 
-  if ((rc = disrfst(sock, PBS_MAXUSER, preq->rq_ind.rq_register.rq_owner)))
+  if ((rc = disrfst(chan, PBS_MAXUSER, preq->rq_ind.rq_register.rq_owner)))
     return rc;
 
-  if ((rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_register.rq_parent)))
+  if ((rc = disrfst(chan, PBS_MAXSVRJOBID, preq->rq_ind.rq_register.rq_parent)))
     return rc;
 
-  if ((rc = disrfst(sock, PBS_MAXCLTJOBID, preq->rq_ind.rq_register.rq_child)))
+  if ((rc = disrfst(chan, PBS_MAXCLTJOBID, preq->rq_ind.rq_register.rq_child)))
     return rc;
 
-  preq->rq_ind.rq_register.rq_dependtype = disrui(sock, &rc);
+  preq->rq_ind.rq_register.rq_dependtype = disrui(chan, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_register.rq_op = disrui(sock, &rc);
+  preq->rq_ind.rq_register.rq_op = disrui(chan, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_register.rq_cost = disrsl(sock, &rc);
+  preq->rq_ind.rq_register.rq_cost = disrsl(chan, &rc);
 
   return rc;
   }

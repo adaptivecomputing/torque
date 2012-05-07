@@ -98,23 +98,24 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_Status(
     
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
   int rc;
 
   CLEAR_HEAD(preq->rq_ind.rq_status.rq_attr);
-  rc = disrfst(sock,
+  rc = disrfst(chan,
         (PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID : PBS_MAXDEST),
         preq->rq_ind.rq_status.rq_id);
 
   if (rc) return rc;
 
-  rc = decode_DIS_svrattrl(sock, &preq->rq_ind.rq_status.rq_attr);
+  rc = decode_DIS_svrattrl(chan, &preq->rq_ind.rq_status.rq_attr);
 
   return rc;
   }

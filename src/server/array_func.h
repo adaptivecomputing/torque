@@ -46,7 +46,7 @@ int release_array_range(job_array *pa, struct batch_request *preq, char *range_s
 
 int modify_array_range(job_array *pa, char *range, svrattrl *plist, struct batch_request *preq, int checkpoint_req);
 
-void update_array_values(job_array *pa, void *j, int old_state, enum ArrayEventsEnum event);
+void update_array_values(job_array *pa,int old_state,enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status);
 
 void update_array_statuses(job_array *owned);
 

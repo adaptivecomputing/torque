@@ -98,8 +98,6 @@
 
 
 
-
-
 int PBSD_rdytocmt(
 
   int   connect,
@@ -110,29 +108,33 @@ int PBSD_rdytocmt(
 
   struct batch_reply *reply;
   int                 sock;
+  struct tcp_chan *chan = NULL;
 
   pthread_mutex_lock(connection[connect].ch_mutex);
-
   sock = connection[connect].ch_socket;
-  DIS_tcp_setup(sock);
-
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_RdytoCommit, pbs_current_user)) ||
-      (rc = encode_DIS_JobId(sock, jobid)) ||
-      (rc = encode_DIS_ReqExtend(sock, NULL)))
-    {
-    connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
-
-    pthread_mutex_unlock(connection[connect].ch_mutex);
-
-    return(PBSE_PROTOCOL);
-    }
-
   pthread_mutex_unlock(connection[connect].ch_mutex);
-  if (DIS_tcp_wflush(sock))
+
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
-  
+    return(PBSE_MEM_MALLOC);
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_RdytoCommit, pbs_current_user)) ||
+      (rc = encode_DIS_JobId(chan, jobid)) ||
+      (rc = encode_DIS_ReqExtend(chan, NULL)))
+    {
+    pthread_mutex_lock(connection[connect].ch_mutex);
+    connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
+
+  if (DIS_tcp_wflush(chan))
+    {
+    DIS_tcp_cleanup(chan);
+    return(PBSE_PROTOCOL);
+    }
+  DIS_tcp_cleanup(chan);
 
   /* read reply */
 
@@ -157,35 +159,40 @@ int PBSD_commit_get_sid(
   int                 rc;
   int                 sock;
   int                 local_errno = 0;
+  struct tcp_chan *chan = NULL;
 
   pthread_mutex_lock(connection[connect].ch_mutex);
-
   sock = connection[connect].ch_socket;
+  pthread_mutex_unlock(connection[connect].ch_mutex);
 
-  DIS_tcp_setup(sock);
-
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_Commit, pbs_current_user)) ||
-      (rc = encode_DIS_JobId(sock, jobid)) ||
-      (rc = encode_DIS_ReqExtend(sock, NULL)))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
+    return(PBSE_MEM_MALLOC);
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_Commit, pbs_current_user)) ||
+      (rc = encode_DIS_JobId(chan, jobid)) ||
+      (rc = encode_DIS_ReqExtend(chan, NULL)))
+    {
+    pthread_mutex_lock(connection[connect].ch_mutex);
     connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
-
     pthread_mutex_unlock(connection[connect].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
 
-  if (DIS_tcp_wflush(sock))
+  if (DIS_tcp_wflush(chan))
     {
-    pthread_mutex_unlock(connection[connect].ch_mutex);
-  
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
+  DIS_tcp_cleanup(chan);
 
   /* PBSD_rdrpy sets connection[connect].ch_errno */
   reply = PBSD_rdrpy(&local_errno, connect);
 
+  pthread_mutex_lock(connection[connect].ch_mutex);
   rc = connection[connect].ch_errno;
+  pthread_mutex_unlock(connection[connect].ch_mutex);
  
   /* read the sid if given and no error */
   if (rc == PBSE_NONE)
@@ -203,8 +210,6 @@ int PBSD_commit_get_sid(
     }
 
   PBSD_FreeReply(reply);
-
-  pthread_mutex_unlock(connection[connect].ch_mutex);
 
   return(rc);
   } /* END PBSD_commit_get_sid() */
@@ -229,38 +234,38 @@ int PBSD_commit(
   struct batch_reply *reply;
   int                 rc;
   int                 sock;
+  struct tcp_chan *chan = NULL;
 
   pthread_mutex_lock(connection[connect].ch_mutex);
-
   sock = connection[connect].ch_socket;
+  pthread_mutex_unlock(connection[connect].ch_mutex);
 
-  DIS_tcp_setup(sock);
-
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_Commit, pbs_current_user)) ||
-      (rc = encode_DIS_JobId(sock, jobid)) ||
-      (rc = encode_DIS_ReqExtend(sock, NULL)))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
+    return(PBSE_MEM_MALLOC);
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_Commit, pbs_current_user)) ||
+      (rc = encode_DIS_JobId(chan, jobid)) ||
+      (rc = encode_DIS_ReqExtend(chan, NULL)))
+    {
+    pthread_mutex_lock(connection[connect].ch_mutex);
     connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
-
     pthread_mutex_unlock(connection[connect].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
 
-  if (DIS_tcp_wflush(sock))
+  if (DIS_tcp_wflush(chan))
     {
-    pthread_mutex_unlock(connection[connect].ch_mutex);
-  
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
+  DIS_tcp_cleanup(chan);
 
   /* PBSD_rdrpy sets connection[connect].ch_errno */
   reply = PBSD_rdrpy(&rc, connect);
 
   PBSD_FreeReply(reply);
-
-  pthread_mutex_unlock(connection[connect].ch_mutex);
-
   return(rc);
   }  /* END PBSD_commit() */
 
@@ -291,33 +296,36 @@ static int PBSD_scbuf(
   int                 rc;
   int                 sock;
   int                 local_errno = 0;
+  struct tcp_chan *chan = NULL;
 
   pthread_mutex_lock(connection[c].ch_mutex);
-
   sock = connection[c].ch_socket;
+  pthread_mutex_unlock(connection[c].ch_mutex);
 
-  DIS_tcp_setup(sock);
-
-  if (jobid == NULL)
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    return(PBSE_MEM_MALLOC);
+    }
+  else if (jobid == NULL)
     jobid = ""; /* use null string for null pointer */
 
-  if ((rc = encode_DIS_ReqHdr(sock, reqtype, pbs_current_user)) ||
-      (rc = encode_DIS_JobFile(sock, seq, buf, len, jobid, which)) ||
-      (rc = encode_DIS_ReqExtend(sock, NULL)))
+  if ((rc = encode_DIS_ReqHdr(chan, reqtype, pbs_current_user)) ||
+      (rc = encode_DIS_JobFile(chan, seq, buf, len, jobid, which)) ||
+      (rc = encode_DIS_ReqExtend(chan, NULL)))
     {
+    pthread_mutex_lock(connection[c].ch_mutex);
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
-
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
 
-  if (DIS_tcp_wflush(sock))
+  if (DIS_tcp_wflush(chan))
     {
-    pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
+  DIS_tcp_cleanup(chan);
 
   /* read reply */
 
@@ -325,9 +333,10 @@ static int PBSD_scbuf(
 
   PBSD_FreeReply(reply);
 
+  pthread_mutex_lock(connection[c].ch_mutex);
   rc = connection[c].ch_errno;
-
   pthread_mutex_unlock(connection[c].ch_mutex);
+
 
   return(rc);
   }
@@ -466,57 +475,50 @@ char *PBSD_queuejob(
   char           *extend)
 
   {
-
   struct batch_reply *reply;
-  char  *return_jobid = (char *)NULL;
-  int    rc;
-  int    sock;
+  char               *return_jobid = NULL;
+  int                 rc;
+  int                 sock;
+  struct tcp_chan    *chan = NULL;
 
   pthread_mutex_lock(connection[connect].ch_mutex);
-
   sock = connection[connect].ch_socket;
   connection[connect].ch_errno = 0;
+  pthread_mutex_unlock(connection[connect].ch_mutex);
 
-  DIS_tcp_setup(sock);
-
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    return NULL;
+    }
   /* first, set up the body of the Queue Job request */
-
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_QueueJob, pbs_current_user)) ||
-      (rc = encode_DIS_QueueJob(sock, jobid, destin, attrib)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  else if ((rc = encode_DIS_ReqHdr(chan,PBS_BATCH_QueueJob,pbs_current_user)) ||
+      (rc = encode_DIS_QueueJob(chan, jobid, destin, attrib)) ||
+      (rc = encode_DIS_ReqExtend(chan, extend)))
     {
+    pthread_mutex_unlock(connection[connect].ch_mutex);
     connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
-
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
     *local_errno = PBSE_PROTOCOL;
-
-    return(return_jobid);
+    DIS_tcp_cleanup(chan);
+    return NULL;
     }
 
-  if (DIS_tcp_wflush(sock))
+  if (DIS_tcp_wflush(chan))
     {
-    pthread_mutex_unlock(connection[connect].ch_mutex);
-
     *local_errno = PBSE_PROTOCOL;
-
-    return(return_jobid);
+    DIS_tcp_cleanup(chan);
+    return NULL;
     }
+  DIS_tcp_cleanup(chan);
 
   /* read reply from stream into presentation element */
 
   reply = PBSD_rdrpy(local_errno, connect);
 
+  pthread_mutex_lock(connection[connect].ch_mutex);
   if (reply == NULL)
     {
-    if (PConnTimeout(sock) == 1)
-      {
-      *local_errno = PBSE_EXPIRED;
-      }
-    else
-      {
-      *local_errno = PBSE_PROTOCOL;
-      }
     }
   else if (reply->brp_choice &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Text &&
@@ -528,10 +530,9 @@ char *PBSD_queuejob(
     {
     return_jobid = strdup(reply->brp_un.brp_jid);
     }
+  pthread_mutex_unlock(connection[connect].ch_mutex);
 
   PBSD_FreeReply(reply);
-
-  pthread_mutex_unlock(connection[connect].ch_mutex);
 
   return(return_jobid);
   }  /* END PBSD_queuejob() */
@@ -556,58 +557,59 @@ int PBSD_QueueJob_hash(
   int                 rc = PBSE_NONE;
   int                 sock;
   int                 tmp_size = 0;
+  struct tcp_chan *chan = NULL;
 
   pthread_mutex_lock(connection[connect].ch_mutex);
-
   sock = connection[connect].ch_socket;
+  pthread_mutex_unlock(connection[connect].ch_mutex);
 
-  DIS_tcp_setup(sock);
-
-  /* first, set up the body of the Queue Job request */
-
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_QueueJob, pbs_current_user)) ||
-      (rc = encode_DIS_QueueJob_hash(sock, jobid, destin, mm, job_attr, res_attr))||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
+    return(PBSE_PROTOCOL);
+    }
+  /* first, set up the body of the Queue Job request */
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_QueueJob, pbs_current_user)) ||
+           (rc = encode_DIS_QueueJob_hash(chan, jobid, destin, mm, job_attr, res_attr)) ||
+           (rc = encode_DIS_ReqExtend(chan, extend)))
+    {
+    pthread_mutex_lock(connection[connect].ch_mutex);
     if (connection[connect].ch_errtxt == NULL)
       {
       connection[connect].ch_errtxt = memmgr_strdup(mm, (char *)dis_emsg[rc], &tmp_size);
       }
     *msg = memmgr_strdup(mm, connection[connect].ch_errtxt, &tmp_size);
 
-    /* rc = PBSE_PROTOCOL; */
-
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
-    return rc;
+    DIS_tcp_cleanup(chan);
+
+    return(rc);
     }
 
-  if ((rc = DIS_tcp_wflush(sock)))
+  if ((rc = DIS_tcp_wflush(chan)))
     {
-    /* rc = PBSE_PROTOCOL; */
-    
-    pthread_mutex_unlock(connection[connect].ch_mutex);
+    pthread_mutex_lock(connection[connect].ch_mutex);
     if (connection[connect].ch_errtxt == NULL)
       {
       *msg = memmgr_strdup(mm, connection[connect].ch_errtxt, &tmp_size);
       }
-    return rc;
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+
+    DIS_tcp_cleanup(chan);
+
+    return(rc);
     }
+    
+  DIS_tcp_cleanup(chan);
 
   /* read reply from stream into presentation element */
-
   reply = PBSD_rdrpy(&rc, connect);
 
+  pthread_mutex_lock(connection[connect].ch_mutex);
   if (reply == NULL)
     {
-    if (PConnTimeout(sock) == 1)
-      {
+    if (rc == PBSE_TIMEOUT)
       rc = PBSE_EXPIRED;
-      }
-    else
-      {
-      rc = PBSE_PROTOCOL;
-      }
     }
   else if (reply->brp_choice &&
            reply->brp_choice != BATCH_REPLY_CHOICE_Text &&

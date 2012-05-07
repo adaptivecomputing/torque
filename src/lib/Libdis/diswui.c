@@ -112,17 +112,13 @@
 
 int diswui(
     
-  int      stream,
+  struct tcp_chan *chan,
   unsigned value)
 
   {
   int  retval;
 
-  int (*disw_commit)(int stream, int commit);
-
-  disw_commit = tcp_wcommit;
-
-  retval = diswui_(stream, value);
-  return (((*disw_commit)(stream, retval == DIS_SUCCESS) < 0) ?
+  retval = diswui_(chan, value);
+  return ((tcp_wcommit(chan, retval == DIS_SUCCESS) < 0) ?
           DIS_NOCOMMIT : retval);
   }

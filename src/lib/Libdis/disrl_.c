@@ -89,7 +89,7 @@
 
 int disrl_(
 
-  int                stream,
+  struct tcp_chan *chan,
   dis_long_double_t *ldval,
   unsigned          *ndigs,
   unsigned          *nskips,
@@ -103,21 +103,12 @@ int disrl_(
   char  *cp;
   dis_long_double_t fpnum;
   char  scratch[DIS_BUFSIZ+1];
-  int (*dis_getc)(int);
-  int (*disr_skip)(int, size_t);
-  int (*dis_gets)(int, char *, size_t);
-
-  assert(stream >= 0);
-
-  disr_skip = tcp_rskip;
-  dis_getc = tcp_getc;
-  dis_gets = tcp_gets;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   if (dis_umaxd == 0)
     disiui_();
 
-  switch (c = (*dis_getc)(stream))
+  switch (c = tcp_getc(chan))
     {
 
     case '-':
@@ -136,7 +127,7 @@ int disrl_(
 
       do
         {
-        if (((c = (*dis_getc)(stream)) < '0') || (c > '9'))
+        if (((c = tcp_getc(chan)) < '0') || (c > '9'))
           {
           if (c < 0)
             {
@@ -158,7 +149,7 @@ int disrl_(
         {
         count--;
 
-        switch ((*dis_getc)(stream))
+        switch (tcp_getc(chan))
           {
 
           case '5':
@@ -191,7 +182,7 @@ int disrl_(
           case '4':
 
             if ((count > 0) &&
-                ((*disr_skip)(stream, (size_t)count) == (int)count))
+                (tcp_rskip(chan, (size_t)count) == (int)count))
               {
               /* all characters successfully read in */
 
@@ -207,7 +198,7 @@ int disrl_(
             /*NOTREACHED*/
 
             break;
-          }  /* END switch ((*dis_getc)(stream)) */
+          }  /* END switch (tcp_getc(chan)) */
         }    /* END if (count > 0) */
 
       *ldval = negate ? -fpnum : fpnum;
@@ -246,9 +237,9 @@ int disrl_(
 
       if (count > 1)
         {
-        if ((*dis_gets)(stream, scratch + 1, count - 1) != (int)count - 1)
+        if (tcp_gets(chan, scratch + 1, count - 1) != (int)count - 1)
           {
-          /* cannot read all requested characters from stream */
+          /* cannot read all requested characters from chan */
 
           /* FAILURE */
 
@@ -279,7 +270,7 @@ int disrl_(
           }
         }    /* END if (count > 1) */
 
-      return(disrl_(stream, ldval, ndigs, nskips, sigd, unum));
+      return(disrl_(chan, ldval, ndigs, nskips, sigd, unum));
 
       /*NOTREACHED*/
 
@@ -312,7 +303,7 @@ int disrl_(
       /*NOTREACHED*/
 
       break;
-    }  /* END switch (c = (*dis_getc)(stream)) */
+    }  /* END switch (c = tcp_getc(chan)) */
 
   *ldval = HUGE_VAL;
 

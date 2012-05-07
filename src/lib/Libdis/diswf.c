@@ -103,7 +103,7 @@
 
 int diswf(
     
-  int    stream,
+  struct tcp_chan *chan,
   double value)
   
   {
@@ -117,13 +117,6 @@ int diswf(
   char  *ocp;
   double  dval;
   char  scratch[DIS_BUFSIZ+1];
-  int (*dis_puts)(int stream, const char *string, size_t count);
-  int (*disw_commit)(int stream, int commit);
-
-  assert(stream >= 0);
-
-  dis_puts = tcp_puts;
-  disw_commit = tcp_wcommit;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   /* Make zero a special case.  If we don't it will blow exponent  */
@@ -131,9 +124,9 @@ int diswf(
 
   if (value == 0.0)
     {
-    retval = (*dis_puts)(stream, "+0+0", 4) != 4 ?
+    retval = tcp_puts(chan, "+0+0", 4) != 4 ?
              DIS_PROTO : DIS_SUCCESS;
-    return (((*disw_commit)(stream, retval == DIS_SUCCESS) < 0) ?
+    return ((tcp_wcommit(chan, retval == DIS_SUCCESS) < 0) ?
             DIS_NOCOMMIT : retval);
     }
 
@@ -224,13 +217,13 @@ int diswf(
     cp = discui_(cp, ndigs, &ndigs);
 
   /* The complete coefficient integer is done.  Put it out.  */
-  retval = (*dis_puts)(stream, cp, (size_t)(ocp - cp)) < 0 ?
+  retval = tcp_puts(chan, cp, (size_t)(ocp - cp)) < 0 ?
            DIS_PROTO : DIS_SUCCESS;
 
   /* If that worked, follow with the exponent, commit, and return. */
   if (retval == DIS_SUCCESS)
-    return (diswsi(stream, expon));
+    return (diswsi(chan, expon));
 
   /* If coefficient didn't work, negative commit and return the error. */
-  return (((*disw_commit)(stream, FALSE) < 0)  ? DIS_NOCOMMIT : retval);
+  return ((tcp_wcommit(chan, FALSE) < 0)  ? DIS_NOCOMMIT : retval);
   }

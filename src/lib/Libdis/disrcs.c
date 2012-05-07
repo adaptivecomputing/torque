@@ -109,7 +109,7 @@
 
 char *disrcs(
     
-  int     stream, 
+  struct tcp_chan *chan,
   size_t *nchars,
   int    *retval)
   
@@ -118,16 +118,11 @@ char *disrcs(
   int  negate;
   unsigned count = 0;
   char  *value = NULL;
-  int (*disr_commit)(int stream, int commit);
-  int (*dis_gets)(int, char *, size_t);
 
   assert(nchars != NULL);
   assert(retval != NULL);
 
-  disr_commit = tcp_rcommit;
-  dis_gets = tcp_gets;
-
-  locret = disrsi_(stream, &negate, &count, 1);
+  locret = disrsi_(chan, &negate, &count, 1);
   locret = negate ? DIS_BADSIGN : locret;
 
   if (locret == DIS_SUCCESS)
@@ -142,7 +137,7 @@ char *disrcs(
         locret = DIS_NOMALLOC;
       else
         {
-        if ((*dis_gets)(stream, value,
+        if (tcp_gets(chan, value,
                         (size_t)count) != (int)count)
           locret = DIS_PROTO;
         else
@@ -151,7 +146,7 @@ char *disrcs(
       }
     }
 
-  locret = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?
+  locret = (tcp_rcommit(chan, locret == DIS_SUCCESS) < 0) ?
 
            DIS_NOCOMMIT : locret;
 

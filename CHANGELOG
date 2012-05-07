@@ -5,6 +5,21 @@ evans
       all nodes to check if the job at hand was there. This should greatly speed
       up freeing nodes.
 
+4.0.2
+  e - Change so init.d script variables get set based on the configure command.
+      TRQ-789, TRQ-792.
+  b - Fix so qrun jobid[] does not cause pbs_server segfault. TRQ-865.
+  b - Fix to validate qsub -l nodes=x against resources_max.nodes the same as v2.4.
+      TRQ-897.
+  b - bugzilla #185. Empty arrays should no longer be loaded and now when qdel'ed 
+      they will be deleted.
+  b - bugzilla #182. The serverdb will now correctly write out memory allocated.
+  b - bugzilla #188. The deadlock when using job logging is resolved
+  b - bugzilla #184. pbs_server will no longer log an erroneous error when the 12th 
+      job array is submitted.
+  e - Allow pbs_mom to change users group on stderr/stdout files. Enabled by configuring
+      Torque with CFLAGS='-DRESETGROUP'. TRQ-908.
+
 4.0.1
   b - Fix trqauthd init scripts to use correct path to trqauthd.
   b - fix so multiple stage in/out files can again be used with qsub -W
@@ -36,16 +51,23 @@ evans
       created connection was not added to the svr_conn table. This was not right. 
       We now always add the new connection to svr_conn.
   b - fix problem with mom segfault when using 8 or more gpus on mom node.
-  e - Enabled the configuration to be able to write the path of the library directory
-      to /etc/ld.so.conf.d in a file named libtorque.conf. The file will be created
-      by default during make install. The configuration can be made to not install this
-      file by using the configure option --without-loadlibfile
   b - Fix so child pbs_mom does not remain running after qdel on slow starting job.
       TRQ-860.
   b - Made it so the MOM will let pbs_server know it is down after momctl -s is invoked.
   e - Made it so localhost is no longer hard coded. The string comes from getnameinfo.
   b - fix a mom hiearchy error for running the moms on non-default ports
   b - Fix server segfault for where mom in nodes file is not in mom_hierarchy. TRQ-873.
+  b - Fix so pbs_mom won't segfault after a qdel is done for a job that is still
+      running the prologue. TRQ-832.
+  b - Fix for segfault when using routing queues in pbs_server. TRQ-808
+  b - Fix so epilogue.precancel runs only once and only for cancelled jobs. TRQ-831.
+  b - Added a close socket to validate_socket to properly terminate the connection. 
+      Moved the free of the incoming variable sock to process_svr_conn from the
+      beginning of the function to the end. This fixed a problem where the client
+      would always get a RST when trying to close its end of the connection.
+  b - Fix server segfault for where mom in nodes file is not in mom_hierarchy. TRQ-873.
+  b - routing to a routing queue now works again, TRQ-905, bugzilla 186
+  b - Fix server segfaults that happened doing qhold for blcr job. TRQ-900.
 
 4.0.0
   e - make a threadpool for TORQUE server. The number of threads is 

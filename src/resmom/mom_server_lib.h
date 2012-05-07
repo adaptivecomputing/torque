@@ -6,6 +6,7 @@
 #include "pbs_job.h" /* job */
 #include "mom_hierarchy.h" /* node_comm_t */
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
+#include "tcp.h" /* tcp_chan */
 
 void mom_server_init(mom_server *pms);
 
@@ -19,11 +20,11 @@ mom_server *mom_server_find_empty_slot(void);
 
 int mom_server_add(char *value);
 
-void mom_server_stream_error(int stream, char *name, const char *id, char *message);
+void mom_server_stream_error(int socket, char *name, const char *id, char *message);
 
-int mom_server_flush_io(int stream, const char *id, char *message);
+int mom_server_flush_io(struct tcp_chan *chan, const char *id, char *message);
 
-int is_compose(int stream, char *server_name, int command);
+int is_compose(struct tcp_chan *chan, char *server_name, int command);
 
 void gen_size(char *name, char **BPtr, int *BSpace);
 
@@ -71,11 +72,11 @@ int generate_server_status(char *buffer, int buffer_size);
 void generate_server_gpustatus_nvml(dynamic_string *gpu_status);
 #endif /* NVML_API */
 
-int write_update_header(int stream, const char *id, char *name);
+int write_update_header(struct tcp_chan *chan, const char *id, char *name);
 
-int write_my_server_status(int stream, const char *id, char *status_strings, void *dest, int mode);
+int write_my_server_status(struct tcp_chan *chan, const char *id, char *status_strings, void *dest, int mode);
 
-int write_cached_statuses(int stream, const char *id, void *dest, int mode);
+int write_cached_statuses(struct tcp_chan *chan, const char *id, void *dest, int mode);
 
 void mom_server_update_stat(mom_server *pms, char *status_strings);
 
@@ -99,11 +100,11 @@ void mom_server_update_receive_time(int stream, char *command_name);
 
 void mom_server_update_receive_time_by_ip(u_long ipaddr, char *command_name);
 
-mom_server *mom_server_valid_message_source(int stream, char **err_msg);
+mom_server *mom_server_valid_message_source(struct tcp_chan *chan, char **err_msg);
 
 void pass_along_hellos(int hello_count);
 
-void mom_is_request(int stream, int version, int *cmdp);
+void mom_is_request(struct tcp_chan *chan, int version, int *cmdp);
 
 float compute_load_threshold(char *config, int numvnodes, float threshold);
 

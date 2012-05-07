@@ -866,22 +866,35 @@ int svr_save_xml(
   char    buf[MAXLINE<<8];
 
   int     fds;
-  int     rc;
+  int     rc = PBSE_NONE;
   int     len;
   time_t  time_now = time(NULL);
+  char   *tmp_file = NULL;
+  int     tmp_file_len = 0;
 
-  fds = open(path_svrdb, O_WRONLY | O_CREAT | O_Sync | O_TRUNC, 0600);
+  tmp_file_len = strlen(path_svrdb) + 5;
+  if ((tmp_file = calloc(sizeof(char), tmp_file_len)) == NULL)
+    {
+    rc = PBSE_MEM_MALLOC;
+    return rc;
+    }
+  else
+    {
+    snprintf(tmp_file, tmp_file_len - 1, "%s.tmp", path_svrdb);
+    }
+
+  pthread_mutex_lock(server.sv_qs_mutex);
+  fds = open(tmp_file, O_WRONLY | O_CREAT | O_Sync | O_TRUNC, 0600);
 
   if (fds < 0)
     {
+    pthread_mutex_unlock(server.sv_qs_mutex);
     log_err(errno, __func__, msg_svdbopen);
-
+    free(tmp_file);
     return(-1);
     }
 
   /* write the sv_qs info */
-  pthread_mutex_lock(server.sv_qs_mutex);
-
   snprintf(buf,sizeof(buf),
     "<server_db>\n<numjobs>%d</numjobs>\n<numque>%d</numque>\n<nextjobid>%d</nextjobid>\n<savetime>%ld</savetime>\n",
     ps->sv_qs.sv_numjobs,
@@ -889,30 +902,41 @@ int svr_save_xml(
     ps->sv_qs.sv_jobidnumber,
     time_now);
   
-  pthread_mutex_unlock(server.sv_qs_mutex);
   
   len = strlen(buf);
 
   if ((rc = write_buffer(buf,len,fds)))
+    {
+    pthread_mutex_unlock(server.sv_attr_mutex);
+    free(tmp_file);
     return(rc);
-
-  pthread_mutex_lock(server.sv_attr_mutex);
+    }
 
   if ((rc = save_attr_xml(svr_attr_def,ps->sv_attr,SRV_ATR_LAST,fds)) != 0)
     {
     pthread_mutex_unlock(server.sv_attr_mutex);
+    free(tmp_file);
     return(rc);
     }
  
-  pthread_mutex_unlock(server.sv_attr_mutex);
-
   /* close the server_db */
   snprintf(buf,sizeof(buf),"</server_db>");
   if ((rc = write_buffer(buf,strlen(buf),fds)))
+    {
+    pthread_mutex_unlock(server.sv_qs_mutex);
+    free(tmp_file);
     return(rc);
+    }
 
   close(fds);
 
+  if ((rc = rename(tmp_file, path_svrdb)) == -1)
+    {
+    rc = PBSE_CAN_NOT_MOVE_FILE;
+    }
+  pthread_mutex_unlock(server.sv_qs_mutex);
+
+  free(tmp_file);
   return(0);
   } /* END svr_save_xml */
 

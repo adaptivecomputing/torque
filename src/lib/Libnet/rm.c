@@ -120,7 +120,7 @@ static int full = 1;
 
 struct out
   {
-  int stream;
+  struct tcp_chan *chan;
   int len;
 
   struct out *next;
@@ -146,10 +146,14 @@ static int addrm(
     {
     return(errno);
     }
+  else if ((op->chan = DIS_tcp_setup(stream)) == NULL)
+    {
+    free(op);
+    return errno;
+    }
 
   head = &outs[stream % HASHOUT];
 
-  op->stream = stream;
   op->len = -1;
   op->next = *head;
   *head = op;
@@ -158,9 +162,6 @@ static int addrm(
 
 
 
-
-#define close_dis(x) close(x)
-#define flush_dis(x) DIS_tcp_wflush(x)
 
 char TRMEMsg[1024];  /* global rm error message */
 
@@ -257,7 +258,7 @@ int openrm(
 
   if (addrm(stream) == -1)
     {
-    close_dis(stream);
+    close(stream);
 
     return(-1 * errno);
     }
@@ -285,7 +286,7 @@ static int delrm(
 
   for (op = outs[stream % HASHOUT];op;op = op->next)
     {
-    if (op->stream == stream)
+    if (op->chan->sock == stream)
       break;
 
     prev = op;
@@ -293,13 +294,14 @@ static int delrm(
 
   if (op != NULL)
     {
-    close_dis(stream);
+    close(stream);
 
     if (prev != NULL)
       prev->next = op->next;
     else
       outs[stream % HASHOUT] = op->next;
 
+    DIS_tcp_cleanup(op->chan);
     free(op);
 
     return(0);
@@ -327,7 +329,7 @@ static struct out *findout(
 
   for (op = outs[stream % HASHOUT];op;op = op->next)
     {
-    if (op->stream == stream)
+    if (op->chan->sock == stream)
       break;
     }
 
@@ -342,22 +344,22 @@ static struct out *findout(
 
 static int startcom(
 
-  int  stream,      /* I */
+  struct tcp_chan *chan,
   int *local_errno, /* O */
   int  com)         /* I */
 
   {
   int ret;
 
-  ret = diswsi(stream, RM_PROTOCOL);
+  ret = diswsi(chan, RM_PROTOCOL);
 
   if (ret == DIS_SUCCESS)
     {
-    ret = diswsi(stream, RM_PROTOCOL_VER);
+    ret = diswsi(chan, RM_PROTOCOL_VER);
 
     if (ret == DIS_SUCCESS)
       {
-      ret = diswsi(stream, com);
+      ret = diswsi(chan, com);
       }
     }
 
@@ -399,21 +401,21 @@ static int simplecom(
 
   op->len = -1;
 
-  if (startcom(stream, local_errno, com) != DIS_SUCCESS)
+  if (startcom(op->chan, local_errno, com) != DIS_SUCCESS)
     {
-    close_dis(stream);
+    close(op->chan->sock);
 
     return(-1);
     }
 
-  if (flush_dis(stream) == -1)
+  if (DIS_tcp_wflush(op->chan) == -1)
     {
     *local_errno = errno;
 
     DBPRT(("simplecom: flush error %d (%s)\n",
            *local_errno, pbs_strerror(*local_errno)))
 
-    close_dis(stream);
+    close(op->chan->sock);
 
     return(-1);
     }
@@ -432,13 +434,13 @@ static int simplecom(
 static int simpleget(
 
   int *local_errno,
-  int  stream)
+  struct tcp_chan *chan)
 
   {
   int ret, num;
 
 
-  num = disrsi(stream, &ret);
+  num = disrsi(chan, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -448,7 +450,7 @@ static int simpleget(
 
     *local_errno = errno ? errno : EIO;
 
-    close_dis(stream);
+    close(chan->sock);
 
     return(-1);
     }
@@ -517,12 +519,19 @@ int downrm(
   int  stream)  /* I */
 
   {
+  struct out *op;
+
   if (simplecom(stream, local_errno, RM_CMD_SHUTDOWN))
     {
     return(-1);
     }
 
-  if (simpleget(local_errno, stream))
+  if ((op = findout(local_errno, stream)) == NULL)
+    {
+    return -1;
+    }
+
+  if (simpleget(local_errno, op->chan))
     {
     return(-1);
     }
@@ -568,12 +577,12 @@ int configrm(
     return(-1 * EINVAL);
     }
 
-  if (startcom(stream, local_errno, RM_CMD_CONFIG) != DIS_SUCCESS)
+  if (startcom(op->chan, local_errno, RM_CMD_CONFIG) != DIS_SUCCESS)
     {
     return(-1);
     }
 
-    ret = diswcs(stream, file, len);
+    ret = diswcs(op->chan, file, len);
 
 
   if (ret != DIS_SUCCESS)
@@ -592,7 +601,7 @@ int configrm(
     return(-1);
     }
 
-  if (flush_dis(stream) == -1)
+  if (DIS_tcp_wflush(op->chan) == -1)
     {
     DBPRT(("configrm: flush error %d (%s)\n",
            errno, pbs_strerror(errno)))
@@ -600,7 +609,7 @@ int configrm(
     return(-1 * errno);
     }
 
-  if (simpleget(local_errno, stream))
+  if (simpleget(local_errno, op->chan))
     {
     return(-1);
     }
@@ -632,7 +641,7 @@ static int doreq(
     {
     /* start new message */
 
-    if (startcom(op->stream, &local_errno, RM_CMD_REQUEST) != DIS_SUCCESS)
+    if (startcom(op->chan, &local_errno, RM_CMD_REQUEST) != DIS_SUCCESS)
       {
       if (local_errno != 0)
         return(-1 * local_errno);
@@ -643,7 +652,7 @@ static int doreq(
     op->len = 1;
     }
 
-  ret = diswcs(op->stream, line, strlen(line));
+  ret = diswcs(op->chan, line, strlen(line));
 
 
   if (ret != DIS_SUCCESS)
@@ -742,7 +751,7 @@ int allreq(
 
         struct out *hold = op;
 
-        close_dis(op->stream);
+        close(op->chan->sock);
 
         if (prev)
           prev->next = op->next;
@@ -795,7 +804,7 @@ char *getreq_err(
     {
     /* there is a message to send */
 
-    if (flush_dis(stream) == -1)
+    if (DIS_tcp_wflush(op->chan) == -1)
       {
       DBPRT(("getreq: flush error %d (%s)\n",
              errno, pbs_strerror(errno)))
@@ -811,7 +820,7 @@ char *getreq_err(
 
   if (op->len == -2)
     {
-    if (simpleget(local_errno, stream) == -1)
+    if (simpleget(local_errno, op->chan) == -1)
       {
       return(NULL);
       }
@@ -820,7 +829,7 @@ char *getreq_err(
     }
 
 
-  startline = disrst(stream, &ret);
+  startline = disrst(op->chan, &ret);
 
   if (ret == DIS_EOF)
     {
@@ -900,14 +909,15 @@ int flushreq(void)
       if (op->len <= 0) /* no message to send */
         continue;
 
-      if (flush_dis(op->stream) == -1)
+      if (DIS_tcp_wflush(op->chan) == -1)
         {
         DBPRT(("flushreq: flush error %d (%s)\n",
                errno, pbs_strerror(errno)))
 
-        close_dis(op->stream);
+        close(op->chan->sock);
+        DIS_tcp_cleanup(op->chan);
 
-        op->stream = -1;
+        op->chan = NULL;
 
         continue;
         }
@@ -925,7 +935,7 @@ int flushreq(void)
       {
       /* get rid of bad streams */
 
-      if (op->stream != -1)
+      if (op->chan != NULL)
         {
         prev = op;
 
@@ -938,6 +948,7 @@ int flushreq(void)
         {
         outs[i] = op->next;
 
+        DIS_tcp_cleanup(op->chan);
         free(op);
 
         op = outs[i];
@@ -946,6 +957,7 @@ int flushreq(void)
         {
         prev->next = op->next;
 
+        DIS_tcp_cleanup(op->chan);
         free(op);
 
         op = prev->next;
@@ -995,7 +1007,7 @@ int activereq(void)
 
     while (op)
       {
-			FD_SET(op->stream, FDSet);
+			FD_SET(op->chan->sock, FDSet);
       op = op->next;
       }
     }
@@ -1027,10 +1039,10 @@ int activereq(void)
 
     while (op)
       {
-			if (FD_ISSET(op->stream, FDSet))
+			if (FD_ISSET(op->chan->sock, FDSet))
         {
         free(FDSet);
-				return op->stream;
+				return op->chan->sock;
         }
 
       op = op->next;

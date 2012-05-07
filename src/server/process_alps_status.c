@@ -206,7 +206,7 @@ int check_if_orphaned(
       int       local_errno;
       pbs_net_t momaddr = get_hostaddr(&local_errno, pnode->nd_name);
 
-      handle = svr_connect(momaddr, pnode->nd_mom_port, &local_errno, NULL, process_Dreply, ToServerDIS);
+      handle = svr_connect(momaddr, pnode->nd_mom_port, &local_errno, NULL, NULL, ToServerDIS);
 
       if (issue_Drequest(handle, preq, release_req, 0) == 0)
         free_br(preq);

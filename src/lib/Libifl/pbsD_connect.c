@@ -205,7 +205,7 @@ char *pbs_get_server_list(void)
       if (fgets(tmp, sizeof(tmp), fd) == NULL)
         {
         fclose(fd);
-
+        fprintf(stderr, "\n%s: server_name file\n(%s)\nis EMPTY!!!\n\n", __func__, pbs_destn_file);
         return(server_list);
         }
 
@@ -382,7 +382,7 @@ int PBSD_munge_authenticate(
   int handle) /* I */
 
   {
-  int                 rc;
+  int                 rc = PBSE_NONE;
 
   int                 fd;
   FILE               *munge_pipe;
@@ -400,6 +400,7 @@ int PBSD_munge_authenticate(
   unsigned short      user_port = 0;
   struct sockaddr_in  sockname;
   socklen_t           socknamelen = sizeof(sockname);
+  struct tcp_chan *chan = NULL;
 
   snprintf(munge_command,sizeof(munge_command),
     "munge -n 2>/dev/null");
@@ -428,7 +429,7 @@ int PBSD_munge_authenticate(
     /* read failed */
     local_errno = errno;
     log_err(local_errno, __func__, "error reading pipe in PBSD_munge_authenticate");
-    return(-1);
+    return -1;
     }
   
   /* if we got no bytes back then Munge may not be installed etc. */
@@ -446,30 +447,33 @@ int PBSD_munge_authenticate(
   if (rc == -1)
     {
     fprintf(stderr, "getsockname failed: %d\n", errno);
-    return(-1);
+    return rc;
     }
   
   user_port = ntohs(sockname.sin_port);
   
-  DIS_tcp_setup(psock);
-
-  if ((rc = encode_DIS_ReqHdr(psock, PBS_BATCH_AltAuthenUser, pwent->pw_name)) ||
-      (rc = diswui(psock, user_port)) ||
-      (rc = diswst(psock, munge_buf)) ||
-      (rc = encode_DIS_ReqExtend(psock, NULL)) ||
-      (rc = DIS_tcp_wflush(psock)))
+  if ((chan = DIS_tcp_setup(psock)) == NULL)
+    {
+    rc = PBSE_MEM_MALLOC;
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan,PBS_BATCH_AltAuthenUser,pwent->pw_name))
+      || (rc = diswui(chan, user_port))
+      || (rc = diswst(chan, munge_buf))
+      || (rc = encode_DIS_ReqExtend(chan, NULL))
+      || (rc = DIS_tcp_wflush(chan)))
     {
     /* ERROR */
-    return(rc);
     }
   else
     {
     /* read the reply */
     if ((reply = PBSD_rdrpy(&local_errno, handle)) != NULL)
       free(reply);
-  
-    return(PBSE_NONE);
+    rc = PBSE_NONE;
     }
+  if (chan != NULL)
+    DIS_tcp_cleanup(chan);
+  return rc;
   } /* END PBSD_munge_authenticate() */
 #endif /* ifdef MUNGE_AUTH */
 
@@ -494,6 +498,8 @@ int parse_daemon_response(long long code, long long len, char *buf)
     }
   return rc;
   }
+
+
 
 int get_parent_client_socket(int psock, int *pcsock)
   {
@@ -590,6 +596,7 @@ int validate_socket(
         {
         fprintf(stderr, "%s : Connection authorized (server socket %d)\n", id, parent_client_socket);
         }
+      socket_close(local_socket);
       }
     }
   if (rc != PBSE_NONE)
@@ -928,7 +935,6 @@ int pbs_original_connect(
      * try */
 
     connection[out].ch_socket = socket(AF_INET, SOCK_STREAM, 0);
-    DIS_tcp_init(connection[out].ch_socket);
 
     if (connection[out].ch_socket < 0)
       {
@@ -1097,8 +1103,6 @@ int pbs_original_connect(
 
   /* setup DIS support routines for following pbs_* calls */
 
-  DIS_tcp_setup(connection[out].ch_socket);
-
   if ((ptr = getenv("PBSAPITIMEOUT")) != NULL)
     {
     pbs_tcp_timeout = strtol(ptr, NULL, 0);
@@ -1126,11 +1130,13 @@ int pbs_disconnect_socket(
 
   {
   char tmp_buf[THE_BUF_SIZE / 4];
+  struct tcp_chan *chan = NULL;
 
-  DIS_tcp_setup(sock);
-
-  if ((encode_DIS_ReqHdr(sock, PBS_BATCH_Disconnect, pbs_current_user) == 0) &&
-      (DIS_tcp_wflush(sock) == 0))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    }
+  else if ((encode_DIS_ReqHdr(chan,PBS_BATCH_Disconnect, pbs_current_user) == 0)
+      && (DIS_tcp_wflush(chan) == 0))
     {
     int atime;
     struct sigaction act;
@@ -1158,6 +1164,8 @@ int pbs_disconnect_socket(
     sigaction(SIGALRM, &oldact, NULL);
     }
 
+  if (chan != NULL)
+    DIS_tcp_cleanup(chan);
   close(sock);
   return(0);
   }  /* END pbs_disconnect() */

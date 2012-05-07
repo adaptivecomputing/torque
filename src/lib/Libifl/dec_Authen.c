@@ -97,35 +97,36 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_Authen(
     
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
   int rc;
 
-  preq->rq_ind.rq_authen.rq_port = disrui(sock, &rc);
+  preq->rq_ind.rq_authen.rq_port = disrui(chan, &rc);
   return rc;
   } /* END decode_DIS_Authen() */
 
 
 int decode_DIS_AltAuthen(
     
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
   int rc;
 
-  preq->rq_ind.rq_authen.rq_port = disrui(sock, &rc);
+  preq->rq_ind.rq_authen.rq_port = disrui(chan, &rc);
   if (rc != 0)
     {
     return(rc);
     }
 
-  rc = disrfst(sock, PBS_MAXCREDENTIAL_LEN, preq->rq_ind.rq_authen.rq_cred);
+  rc = disrfst(chan, PBS_MAXCREDENTIAL_LEN, preq->rq_ind.rq_authen.rq_cred);
 
   return rc;
   } /* END decode_DIS_AltAuthen() */

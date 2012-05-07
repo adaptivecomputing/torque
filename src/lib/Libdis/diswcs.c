@@ -102,27 +102,22 @@
 
 int diswcs(
 
-  int          stream,
+  struct tcp_chan *chan,
   const char  *value,
   size_t       nchars)
 
   {
   int retval;
-  int (*dis_puts)(int stream, const char *string, size_t count);
-  int (*disw_commit)(int stream, int commit);
 
-  dis_puts = tcp_puts;
-  disw_commit = tcp_wcommit;
-
-  retval = diswui_(stream, (unsigned)nchars);
+  retval = diswui_(chan, (unsigned)nchars);
 
   if ((retval == DIS_SUCCESS) &&
       (nchars > 0) &&
-      ((*dis_puts)(stream, value, nchars) != (int)nchars))
+      (tcp_puts(chan, value, nchars) != (int)nchars))
     {
     retval = DIS_PROTO;
     }
 
-  return (((*disw_commit)(stream, retval == DIS_SUCCESS) < 0) ?  DIS_NOCOMMIT : retval);
+  return ((tcp_wcommit(chan, retval == DIS_SUCCESS) < 0) ?  DIS_NOCOMMIT : retval);
   }
 

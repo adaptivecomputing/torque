@@ -98,20 +98,21 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_SignalJob(
     
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
   int rc;
 
-  rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_signal.rq_jid);
+  rc = disrfst(chan, PBS_MAXSVRJOBID, preq->rq_ind.rq_signal.rq_jid);
 
   if (rc) return rc;
 
-  rc = disrfst(sock, PBS_SIGNAMESZ, preq->rq_ind.rq_signal.rq_signame);
+  rc = disrfst(chan, PBS_SIGNAMESZ, preq->rq_ind.rq_signal.rq_signame);
 
   return rc;
   }

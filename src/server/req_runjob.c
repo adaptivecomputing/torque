@@ -115,6 +115,7 @@
 #include "node_func.h" /* find_nodebyname */
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "svr_func.h" /* get_svr_attr_* */
+#include "req_stat.h" /* stat_mom_job */
 
 
 #ifdef HAVE_NETINET_IN_H
@@ -123,13 +124,12 @@
 
 /* External Functions Called: */
 
-extern int   send_job_work(job **,char *,int,int *,struct batch_request *);
+extern int   send_job_work(char *job_id,char *,int,int *,struct batch_request *);
 extern void  set_resc_assigned(job *, enum batch_op);
 
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 void                         stream_eof(int, u_long, uint16_t, int);
 extern int                   job_set_wait(pbs_attribute *, void *, int);
-extern void                  stat_mom_job(job *);
 
 extern int LOGLEVEL;
 
@@ -196,6 +196,11 @@ int req_runjob(
   char                  failhost[MAXLINE];
   char                  emsg[MAXLINE];
   char                  log_buf[LOCAL_LOG_BUF_SIZE + 1];
+  int                   reply_sent = FALSE;
+  char                  job_id[PBS_MAXSVRJOBID+1];
+  long                  job_atr_hold;
+  int                   job_exit_status;
+  int                   job_state;
 
   /* chk_job_torun will extract job id and assign hostlist if specified */
 
@@ -209,6 +214,16 @@ int req_runjob(
     /* FAILURE - chk_job_torun performs req_reject internally */
 
     return(PBSE_UNKJOBID);
+    }
+
+  /* we don't currently allow running of an entire job array */
+
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  if (strstr(pjob->ji_qs.ji_jobid,"[]") != NULL)
+    {
+    pthread_mutex_unlock(pjob->ji_mutex);
+    req_reject(PBSE_IVALREQ, 0, preq, NULL, "cannot run a job array");
+    return(PBSE_IVALREQ);
     }
 
   pthread_mutex_lock(scheduler_sock_jobct_mutex);
@@ -228,9 +243,17 @@ int req_runjob(
   if ((preq != NULL) &&
       (preq->rq_type == PBS_BATCH_AsyrunJob))
     {
+    /* This is less than graceful...
+     * Down in reply_ack, if the req is of type
+     * PBS_BATCH_AsyModifyJob && noreply is false, the req is not free'd,
+     * so this is set temporarily to NOT free preq and reassigned to
+     * original settings afterwards
+     */
+    preq->rq_type = PBS_BATCH_AsyModifyJob;
+    preq->rq_noreply = FALSE;
     reply_ack(preq);
-
-    preq = NULL;  /* cleared so we don't try to reuse */
+    preq->rq_type = PBS_BATCH_AsyrunJob;
+    reply_sent = TRUE;
     }
 
   /* if the job is part of an array, check the slot limit */
@@ -242,13 +265,35 @@ int req_runjob(
     if (pjob == NULL)
       {
       req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
+
+      pthread_mutex_unlock(pa->ai_mutex);
+
       return(PBSE_JOBNOTFOUND);
       }
     
     if ((pa->ai_qs.slot_limit < 0) ||
         (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running))
       {
-      update_array_values(pa,pjob,pjob->ji_qs.ji_state,aeRun);
+      job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
+      job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+      job_state = pjob->ji_qs.ji_state;
+
+      pthread_mutex_unlock(pjob->ji_mutex);
+
+      update_array_values(pa,job_state,aeRun, job_id, job_atr_hold, job_exit_status);
+
+      if ((pjob = find_job(job_id)) == NULL)
+        {
+        rc = PBSE_JOBNOTFOUND;
+
+        if (reply_sent == FALSE)
+          req_reject(rc, 0, preq, NULL, "Job deleted while updating array values");
+
+        pthread_mutex_unlock(pa->ai_mutex);
+
+        return(rc);
+        }
+
       }
     else
       {
@@ -257,7 +302,7 @@ int req_runjob(
         pa->ai_qs.slot_limit,
         pa->ai_qs.jobs_running);
       
-      if (preq != NULL)
+      if (reply_sent == FALSE)
         req_reject(PBSE_IVALREQ,0,preq,NULL,log_buf);
       
       if (LOGLEVEL >= 7)
@@ -853,6 +898,7 @@ int verify_moms_up(
     /* Connect to the host. */
     if (connect(sock, (struct sockaddr *)&saddr, sizeof(saddr)) < 0)
       {
+      close(sock);
       sprintf(log_buf, "could not contact %s (connect failed, errno: %d (%s))",
         nodestr,
         errno,
@@ -1049,6 +1095,8 @@ static int svr_strtjob2(
   struct timezone  tz;
   long             job_timeout = 0;
   long             tcp_timeout = 0;
+  unsigned long    job_momaddr = -1;
+  char             job_id[PBS_MAXSVRJOBID+1];
 
   old_state = pjob->ji_qs.ji_state;
   old_subst = pjob->ji_qs.ji_substate;
@@ -1087,11 +1135,20 @@ static int svr_strtjob2(
     {
     DIS_tcp_settimeout(job_timeout);
     }
+  job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  pthread_mutex_unlock(pjob->ji_mutex);
+  *pjob_ptr = NULL;
+  pjob = NULL;
 
-  if (send_job_work(pjob_ptr, NULL, MOVE_TYPE_Exec, &my_err, preq) == PBSE_NONE)
+  if (send_job_work(job_id, NULL, MOVE_TYPE_Exec, &my_err, preq) == PBSE_NONE)
     {
     /* SUCCESS */
     DIS_tcp_settimeout(tcp_timeout);
+    if ((pjob = find_job(job_id)) != NULL)
+      {
+      *pjob_ptr = pjob;
+      }
 
     return(PBSE_NONE);
     }
@@ -1099,12 +1156,11 @@ static int svr_strtjob2(
     {
     DIS_tcp_settimeout(tcp_timeout);
 
-    if (*pjob_ptr != NULL)
+    if ((pjob = find_job(job_id)) != NULL)
       {
-      sprintf(tmpLine, "unable to run job, send to MOM '%lu' failed",
-        pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,tmpLine);
-      
+      sprintf(tmpLine, "unable to run job, send to MOM '%lu' failed", job_momaddr);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,tmpLine);
+      *pjob_ptr = pjob;
       pjob->ji_qs.ji_destin[0] = '\0';
       
       svr_setjobstate(pjob, old_state, old_subst, FALSE);
@@ -1120,7 +1176,7 @@ static int svr_strtjob2(
 
 void finish_sendmom(
 
-  job                  *pjob,
+  char                  *job_id,
   struct batch_request *preq,
   long                  start_time,
   char                 *node_name,
@@ -1131,12 +1187,19 @@ void finish_sendmom(
   pbs_net_t  addr;
   int        newstate;
   int        newsub;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  char       log_buf[LOCAL_LOG_BUF_SIZE+1];
   time_t     time_now = time(NULL);
+  job *pjob;
+
+  if ((pjob = find_job(job_id)) == NULL)
+    {
+    req_reject(PBSE_JOBNOTFOUND, 0, preq, node_name, log_buf);
+    return;
+    }
 
   if (LOGLEVEL >= 6)
     {
-    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"entering post_sendmom");
+    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,"entering finish_sendmom");
     }
 
   if (LOGLEVEL >= 1)
@@ -1147,7 +1210,7 @@ void finish_sendmom(
       (node_name != NULL) ? node_name : "???",
       status);
 
-    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,job_id,log_buf);
     }
 
   switch (status)
@@ -1185,7 +1248,7 @@ void finish_sendmom(
         depend_on_exec(pjob);
 
       /* set up the poll task */
-      set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+      set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(job_id), FALSE);
 
       break;
 
@@ -1198,7 +1261,7 @@ void finish_sendmom(
       /* send failed, requeue the job */
       log_event(PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        job_id,
         "unable to run job, MOM rejected/timeout");
 
       free_nodes(pjob);
@@ -1239,7 +1302,7 @@ void finish_sendmom(
       /* send failed, requeue the job */
       sprintf(log_buf, "unable to run job, MOM rejected/rc=%d", status);
       
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,log_buf);
       
       free_nodes(pjob);
       
@@ -1276,7 +1339,9 @@ void finish_sendmom(
           pjob->ji_momstat = 0;
           
           /* update mom-based job status */
-          stat_mom_job(pjob);
+          pthread_mutex_unlock(pjob->ji_mutex);
+          stat_mom_job(job_id);
+          pjob = find_job(job_id);
           }
         else
           {
@@ -1295,6 +1360,7 @@ void finish_sendmom(
       break;
       }
     }  /* END switch (status) */
+  pthread_mutex_unlock(pjob->ji_mutex);
 
   } /* END finish_sendmom() */
 

@@ -12,7 +12,7 @@ int conn_qsub(char *hostname, long port, char *EMsg);
 
 job *job_alloc(void);
 
-void job_free(job *pj);
+void mom_job_free(job *pj);
 
 int job_unlink_file(job *pjob, const char *name);
 

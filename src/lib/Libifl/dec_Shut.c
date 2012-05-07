@@ -97,16 +97,17 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_ShutDown(
     
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
   int rc;
 
-  preq->rq_ind.rq_shutdown = disrui(sock, &rc);
+  preq->rq_ind.rq_shutdown = disrui(chan, &rc);
 
   return rc;
   }

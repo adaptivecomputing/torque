@@ -113,7 +113,7 @@
 
 int disrsi(
 
-  int  stream,
+  struct tcp_chan *chan,
   int *retval)
 
   {
@@ -121,13 +121,10 @@ int disrsi(
   int  negate;
   int  value = 0;
   unsigned uvalue;
-  int (*disr_commit)(int stream, int commit);
 
   assert(retval != NULL);
 
-  disr_commit = tcp_rcommit;
-
-  switch (locret = disrsi_(stream, &negate, &uvalue, 1))
+  switch (locret = disrsi_(chan, &negate, &uvalue, 1))
     {
 
     case DIS_SUCCESS:
@@ -135,7 +132,7 @@ int disrsi(
       if (negate ? uvalue <= (unsigned) - (INT_MIN + 1) + 1 : uvalue <= (unsigned)INT_MAX)
         {
         value = negate ? -uvalue : uvalue;
-        *retval = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?  DIS_NOCOMMIT : locret;
+        *retval = (tcp_rcommit(chan, locret == DIS_SUCCESS) < 0) ?  DIS_NOCOMMIT : locret;
 
         break;
         }

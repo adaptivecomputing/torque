@@ -6,6 +6,7 @@
 #include "pbs_job.h" /* job, pjobexec_t */
 #include "resource.h" /* resource */
 #include "mom_hierarchy.h" /* mom_hierarchy_t */
+#include "tcp.h" /* tcp_chan */
 
 #define NO_LAYOUT_FILE      -10
 #define BAD_LAYOUT_FILE     -505
@@ -205,9 +206,9 @@ int bad_restrict(u_long ipadd);
 
 /* static void mom_lock(int fds, int op); */
 
-int rm_request(int iochan, int version);
+int rm_request(struct tcp_chan *chan, int version);
 
-int do_tcp(int fd);
+int do_tcp(int socket);
 
 void *tcp_request(void *sock_num);
 

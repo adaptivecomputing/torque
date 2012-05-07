@@ -63,7 +63,7 @@ void array_get_parent_id(char *job_id, char *parent_id)
   exit(1);
   }
 
-void job_free(job *pj)
+void job_free(job *pj, int use_recycle)
   {
   fprintf(stderr, "The call to job_free needs to be mocked!!\n");
   exit(1);

@@ -219,7 +219,7 @@ char *set_shell(
  *
  */
 
-void scan_for_terminated(void)
+void scan_for_terminated(void) /* linux */
 
   {
   int           exiteval = 0;

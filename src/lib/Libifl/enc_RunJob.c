@@ -93,16 +93,16 @@
 
 int encode_DIS_RunJob(
     
-  int           sock,
+  struct tcp_chan *chan,
   char         *jobid,
   char         *where,
   unsigned int  resch)
   {
   int   rc;
 
-  if ((rc = diswst(sock, jobid) != 0) ||
-      (rc = diswst(sock, where) != 0) ||
-      (rc = diswui(sock, resch) != 0))
+  if ((rc = diswst(chan, jobid) != 0) ||
+      (rc = diswst(chan, where) != 0) ||
+      (rc = diswui(chan, resch) != 0))
     return rc;
 
   return 0;

@@ -146,7 +146,7 @@ int cnt2server(
 
   if ((SpecServer != NULL) && (SpecServer[0] != '\0'))
     {
-    snprintf(Server, sizeof(Server), "%s", SpecServer);
+    snprintf(Server, sizeof(Server)-1, "%s", SpecServer);
     }
 
   /* NOTE:  env vars PBS_DEFAULT and PBS_SERVER will be checked and applied w/in pbs_connect() */

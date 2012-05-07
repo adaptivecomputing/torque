@@ -109,7 +109,7 @@
 
 int encode_DIS_svrattrl(
     
-  int       sock,
+  struct tcp_chan *chan,
   svrattrl *psattl)
 
   {
@@ -125,7 +125,7 @@ int encode_DIS_svrattrl(
     ++ct;
     }
 
-  if ((rc = diswui(sock, ct)))
+  if ((rc = diswui(chan, ct)))
     return rc;
 
   for (ps = psattl; ps; ps = (svrattrl *)GET_NEXT(ps->al_link))
@@ -137,28 +137,28 @@ int encode_DIS_svrattrl(
     if (ps->al_atopl.resource)
       name_len += strlen(ps->al_atopl.resource) + 1;
 
-    if ((rc = diswui(sock, name_len)))
+    if ((rc = diswui(chan, name_len)))
       break;
 
-    if ((rc = diswst(sock, ps->al_atopl.name)))
+    if ((rc = diswst(chan, ps->al_atopl.name)))
       break;
 
     if (ps->al_rescln)   /* has a resource name */
       {
-      if ((rc = diswui(sock, 1)))
+      if ((rc = diswui(chan, 1)))
         break;
 
-      if ((rc = diswst(sock, ps->al_atopl.resource)))
+      if ((rc = diswst(chan, ps->al_atopl.resource)))
         break;
       }
     else
       {
-      if ((rc = diswui(sock, 0))) /* no resource name */
+      if ((rc = diswui(chan, 0))) /* no resource name */
         break;
       }
 
-    if ((rc = diswst(sock, ps->al_atopl.value)) ||
-        (rc = diswui(sock, (unsigned int)ps->al_op)))
+    if ((rc = diswst(chan, ps->al_atopl.value)) ||
+        (rc = diswui(chan, (unsigned int)ps->al_op)))
       break;
     }
 

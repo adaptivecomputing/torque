@@ -112,7 +112,7 @@
 #include "array.h"
 #include "utils.h"
 #include "svr_func.h" /* get_svr_attr_* */
-
+#include "job_func.h" /* job_purge */
 
 #define PURGE_SUCCESS 1
 #define MOM_DELETE    2
@@ -286,7 +286,6 @@ int execute_job_delete(
 
   int               rc;
   char             *sigt = "SIGTERM";
-  char             *jobid_copy;
 
   int               has_mutex = TRUE;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
@@ -547,20 +546,18 @@ jump:
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
     /* job has restart file at mom, do end job processing */
-    
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
 
-    pjob->ji_momhandle = -1;
-
     /* force new connection */
-    jobid_copy = strdup(pjob->ji_qs.ji_jobid);
+    pjob->ji_momhandle = -1;
 
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
-    set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
+
+    set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
@@ -608,9 +605,7 @@ jump:
 
     if (pjob != NULL)
       {
-      jobid_copy = strdup(pjob->ji_qs.ji_jobid);
-      
-      set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, FALSE);
+      set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
       }
     else
       has_mutex = FALSE;

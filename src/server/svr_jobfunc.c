@@ -282,13 +282,9 @@ const char *PJobSubState[] =
 
 
 
-
-
-
 /*
  * svr_enquejob() - enqueue job into specified queue
  */
-
 int svr_enquejob(
 
   job *pjob,            /* I */
@@ -304,16 +300,23 @@ int svr_enquejob(
   int            iter;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   time_t         time_now = time(NULL);
+  char           job_id[PBS_MAXSVRJOBID+1];
+  char           queue_name[PBS_MAXQUEUENAME+1];
+  long           job_qrank = -1;
 
   /* make sure queue is still there, there exists a small window ... */
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  strcpy(queue_name, pjob->ji_qs.ji_queue);
   pthread_mutex_unlock(pjob->ji_mutex);
-  pque = find_queuebyname(pjob->ji_qs.ji_queue);
-  pthread_mutex_lock(pjob->ji_mutex);
+  pque = find_queuebyname(queue_name);
 
   if (pque == NULL)
     {
     return(PBSE_UNKQUE);
     }
+  /* This is called when a job is not yet in the queue,
+   * so find_job can not be used.... */
+  pthread_mutex_lock(pjob->ji_mutex);
 
   /* add job to server's 'all job' list and update server counts */
 
@@ -361,19 +364,32 @@ int svr_enquejob(
   /* place into queue in order of queue rank starting at end */
   pjob->ji_qhdr = pque;
 
+    
   if (!pjob->ji_is_array_template)
     {
     iter = -1;
 
+    /* we have to unlock the job because next_job_from_back may 
+       give us this job */
+    job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
+    pthread_mutex_unlock(pjob->ji_mutex);
     while ((pjcur = next_job_from_back(pque->qu_jobs,&iter)) != NULL)
       {
-      if ((unsigned long)pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long >=
-          (unsigned long)pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
+      if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
         break;
-
+      if (strcmp(job_id, pjcur->ji_qs.ji_jobid) == 0)
+        {
+        pthread_mutex_unlock(pjcur->ji_mutex);
+        unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
+        return PBSE_NONE;
+        }
       pthread_mutex_unlock(pjcur->ji_mutex);
       }
-
+    if ((pjob = find_job(job_id)) == NULL)
+      {
+      unlock_queue(pque, __func__, "array_template check lost job", LOGLEVEL);
+      return(PBSE_JOBNOTFOUND);
+      }
     if (pjcur == NULL)
       {
       /* link first in list */
@@ -383,7 +399,6 @@ int svr_enquejob(
       {
       /* link after 'current' job in list */
       insert_job_after(pque->qu_jobs,pjcur,pjob);
-
       pthread_mutex_unlock(pjcur->ji_mutex);
       }
 
@@ -391,20 +406,30 @@ int svr_enquejob(
     pque->qu_numjobs++;
     pque->qu_njstate[pjob->ji_qs.ji_state]++;
     }
-  
+
   if (pjob->ji_is_array_template || pjob->ji_arraystruct == NULL)
     {
     iter = -1;
 
+    job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
+    pthread_mutex_unlock(pjob->ji_mutex);
     while ((pjcur = next_job_from_back(pque->qu_jobs_array_sum,&iter)) != NULL)
       {
-      if ((unsigned long)pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long >=
-          (unsigned long)pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
+      if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
         break;
-
+      if (strcmp(job_id, pjcur->ji_qs.ji_jobid) == 0)
+        {
+        pthread_mutex_unlock(pjcur->ji_mutex);
+        unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
+        return PBSE_NONE;
+        }
       pthread_mutex_unlock(pjcur->ji_mutex);
+      } /* end of while */
+    if ((pjob = find_job(job_id)) == NULL)
+      {
+      unlock_queue(pque, __func__, "array_template check lost job", LOGLEVEL);
+      return(PBSE_JOBNOTFOUND);
       }
-
     if (pjcur == NULL)
       {
       /* link first in list */
@@ -531,19 +556,23 @@ int svr_enquejob(
  * svr_dequejob() - remove job from whatever queue its in and reduce counts
  */
 
-void svr_dequejob(
+int svr_dequejob(
 
-  job *pjob,                    /* I, M */
-  int  parent_queue_mutex_held) /* I */
+  char *job_id,                  /* I, M */
+  int   parent_queue_mutex_held) /* I */
 
   {
   int            bad_ct = 0;
+  job           *pjob = NULL;
   pbs_attribute *pattr;
   pbs_queue     *pque;
   resource      *presc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* remove job from server's all job list and reduce server counts */
+
+  if ((pjob = find_job(job_id)) == NULL)
+    return PBSE_JOBNOTFOUND;
 
   /* the only error is if the job isn't present */
   if (remove_job(&alljobs, pjob) == PBSE_NONE)
@@ -577,7 +606,7 @@ void svr_dequejob(
     if (pjob == NULL)
       {
       log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
-      return;
+      return PBSE_JOBNOTFOUND;
       }
     }
   else
@@ -616,7 +645,7 @@ void svr_dequejob(
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   else if (pjob == NULL)
-    return;
+    return PBSE_JOBNOTFOUND;
 
 #ifndef NDEBUG
 
@@ -624,7 +653,7 @@ void svr_dequejob(
     pque ? pque->qu_qs.qu_name : "unknown queue",
     PJobState[pjob->ji_qs.ji_state]);
 
-  log_event(PBSEVENT_DEBUG2,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+  log_event(PBSEVENT_DEBUG2,PBS_EVENTCLASS_JOB,job_id,log_buf);
 
   if (bad_ct)   /* state counts are all messed up */
     correct_ct();
@@ -636,6 +665,7 @@ void svr_dequejob(
   /* clear any default resource values.  */
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  pthread_mutex_unlock(pjob->ji_mutex);
 
   if (pattr->at_flags & ATR_VFLAG_SET)
     {
@@ -659,7 +689,7 @@ void svr_dequejob(
   listener_command = SCH_SCHEDULE_TERM;
   pthread_mutex_unlock(listener_command_mutex);
 
-  return;
+  return PBSE_NONE;
   }  /* END svr_dequejob() */
 
 
@@ -1090,7 +1120,7 @@ int chk_svr_resc_limit(
         }
 
       /* Added 6/14/2010 Ken Nielson for ability to parse the procs resource */
-      if ((jbrc->rs_defin == procresc) && (qtype == QTYPE_Execution))
+      else if ((jbrc->rs_defin == procresc) && (qtype == QTYPE_Execution))
         {
         proc_ct = jbrc->rs_value.at_val.at_long;
         }

@@ -58,7 +58,7 @@ int build_request_svr(
   int len = 0;
   int user_ll = 0, user_len = 0, port_len = 0;
   char *resp_msg;
-  char tmp_buf[8];
+  char tmp_buf[13];
   len += 2 + 2 + 4;
   user_len = strlen(user);
   sprintf(tmp_buf, "%d", user_len);
@@ -110,14 +110,18 @@ int parse_response_svr(
    */
   int rc = PBSE_NONE;
   struct batch_reply *reply = NULL;
-  DIS_tcp_setup(sock);
-  if ((reply = (struct batch_reply *)calloc(1, sizeof(struct batch_reply))) == NULL)
+  char *tmp_val = NULL;
+  struct tcp_chan *chan = NULL;
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
     }
-  else if ((rc = decode_DIS_replyCmd(sock, reply)))
+  else if ((reply = (struct batch_reply *)calloc(1, sizeof(struct batch_reply))) == NULL)
+    {
+    }
+  else if ((rc = decode_DIS_replyCmd(chan, reply)))
     {
     free(reply);
-    if (DIS_tcp_istimeout(sock) == TRUE)
+    if (chan->IsTimeout == TRUE)
       {
       rc = PBSE_TIMEOUT;
       }
@@ -125,7 +129,14 @@ int parse_response_svr(
       {
       rc = PBSE_PROTOCOL;
       }
-    *err_msg = strdup(pbs_strerror(rc));
+    if ((tmp_val = pbs_strerror(rc)) == NULL)
+      {
+      char err_buf[80];
+      snprintf(err_buf, 79, "Error creating error message for code %d", rc);
+      *err_msg = strdup(err_buf);
+      }
+    else
+      *err_msg = strdup(tmp_val);
     }
   else
     {
@@ -136,7 +147,7 @@ int parse_response_svr(
       }
     free(reply);
     }
-  DIS_tcp_shutdown(sock);
+  DIS_tcp_cleanup(chan);
   return rc;
   }
 
@@ -207,7 +218,7 @@ void send_svr_disconnect(int sock, char *user_name)
   if ((rc = socket_write(sock, resp_msg, resp_msg_len)) != resp_msg_len)
     {
     if (debug_mode == TRUE)
-      fprintf(stderr, "Can not close socket to pbs_server!! (socket #%d)\n", sock);
+      fprintf(stderr, "Can not send close message to pbs_server!! (socket #%d)\n", sock);
     }
   free(resp_msg);
   }
@@ -231,7 +242,7 @@ void *process_svr_conn(
   int msg_len = 0;
   int debug_mark = 0;
   int local_socket = *(int *)sock;
-  free(sock);
+  /*free(sock);*/
   /* incoming message format is:
    * trq_system_len|trq_system|trq_port|Validation_type|user_len|user|psock|
    * message format to pbs_server is:
@@ -331,5 +342,6 @@ void *process_svr_conn(
   if (send_message != NULL)
     free(send_message);
   socket_close(local_socket);
+  free(sock);
   return NULL;
   }

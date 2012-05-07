@@ -93,7 +93,7 @@
 
 int encode_DIS_MessageJob(
     
-  int   sock,
+  struct tcp_chan *chan,
   char *jobid,
   int   fileopt,
   char *msg)
@@ -101,9 +101,9 @@ int encode_DIS_MessageJob(
   {
   int   rc;
 
-  if ((rc = diswst(sock, jobid) != 0) ||
-      (rc = diswui(sock, fileopt) != 0) ||
-      (rc = diswst(sock, msg) != 0))
+  if ((rc = diswst(chan, jobid) != 0) ||
+      (rc = diswui(chan, fileopt) != 0) ||
+      (rc = diswst(chan, msg) != 0))
     return rc;
 
   return 0;

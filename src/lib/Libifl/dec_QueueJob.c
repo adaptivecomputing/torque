@@ -98,7 +98,7 @@
 
 int decode_DIS_QueueJob(
 
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
@@ -106,21 +106,21 @@ int decode_DIS_QueueJob(
 
   CLEAR_HEAD(preq->rq_ind.rq_queuejob.rq_attr);
 
-  rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_queuejob.rq_jid);
+  rc = disrfst(chan, PBS_MAXSVRJOBID, preq->rq_ind.rq_queuejob.rq_jid);
 
   if (rc != 0)
     {
     return(rc);
     }
 
-  rc = disrfst(sock, PBS_MAXDEST, preq->rq_ind.rq_queuejob.rq_destin);
+  rc = disrfst(chan, PBS_MAXDEST, preq->rq_ind.rq_queuejob.rq_destin);
 
   if (rc != 0)
     {
     return(rc);
     }
 
-  rc = decode_DIS_svrattrl(sock, &preq->rq_ind.rq_queuejob.rq_attr);
+  rc = decode_DIS_svrattrl(chan, &preq->rq_ind.rq_queuejob.rq_attr);
 
   return(rc);
   }  /* END decode_DIS_QueueJob() */

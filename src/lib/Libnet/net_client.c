@@ -264,15 +264,14 @@ int client_to_svr(
 
   {
   const char id[] = "client_to_svr";
-
   struct sockaddr_in local;
-
   struct sockaddr_in remote;
   int                sock;
   unsigned short     tryport = 777;
 
 #ifndef NOPRIVPORTS
   int                errorsock;
+  int                bind_retry;
   int                flags;
 #endif
   int                one = 1;
@@ -368,7 +367,26 @@ retry:  /* retry goto added (rentec) */
      * http://www.supercluster.org/pipermail/torqueusers/2006-June/003740.html
      */
 
-		errorsock = bindresvport(sock, &local);
+    for (bind_retry = 0; bind_retry < 3; bind_retry++)
+      {
+		  errorsock = bindresvport(sock, &local);
+      if(errorsock == 0)
+        break;
+      usleep(1000);
+      }
+
+    if(errorsock != 0)
+      {
+      /* bindresvport could not get a privileged port */
+      if (EMsg != NULL)
+        sprintf(EMsg, "cannot bind to reserved port in %s - errno: %d %s",
+          id,
+          errno,
+          strerror(errno));
+
+      close(sock);
+      return(PBS_NET_RC_FATAL);
+      }
 
 		tryport = ntohs(local.sin_port);
 

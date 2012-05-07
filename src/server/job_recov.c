@@ -116,6 +116,9 @@
 #ifndef PBS_MOM
 #include "array.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
+#include "job_func.h" /* job_free */
+#else
+#include "../resmom/mom_job_func.h" /* mom_job_free */
 #endif
 
 #ifndef TRUE
@@ -550,9 +553,11 @@ job *job_recov(
 
 #ifndef PBS_MOM
     pthread_mutex_unlock(pj->ji_mutex);
+    job_free(pj, FALSE);
+#else
+    mom_job_free(pj);
 #endif
 
-    job_free(pj);
 
     close(fds);
 

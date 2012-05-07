@@ -1597,7 +1597,37 @@ int move_to_job_cpuset(
 
 
 
+int get_cpuset_size(char *cpusetStr)
+  {
+  int val1 = -1;
+  int val2 = -2;
+  int j;
+  int range = FALSE;
+  int len = 0;
+  char *ptr;
 
+  val1 = atoi(cpusetStr);
+  range = TRUE;
+
+  len = strlen(cpusetStr);
+  for (j=0; j<len; j++)
+    {
+    if (cpusetStr[j] == '-')
+      {
+      range = TRUE;
+      ptr = cpusetStr;
+      ptr += j + 1;
+      val2 = atoi(ptr);
+      break;
+      }
+    }
+  
+  if (val2 != -1)
+    return(val2+1);
+  else
+    return(val1);
+  
+  }
 
 
 /**
@@ -1693,18 +1723,23 @@ void remove_boot_set(
   static char  id[] = "remove_boot_set";
   int          j;
   int          first;
-  int          cpusetMap[MAXPATHLEN];
+  int          *cpusetMap;
+  int          cpuset_size;
   char         tmpBuf[MAXPATHLEN];
 
   if ((rootStr == NULL) ||
       (bootStr == NULL))
     return;
 
-  /* clear out map */
-  for (j=0; j<1024; j++)
+  cpuset_size = get_cpuset_size(rootStr);
+  if (cpuset_size <= 0)
     {
-    cpusetMap[j] = 0;
+    return;
     }
+
+    cpusetMap = (int *)calloc(1, cpuset_size + 1);
+    if(cpusetMap == NULL)
+      return;
 
   if (LOGLEVEL >= 7)
     {
@@ -1723,7 +1758,7 @@ void remove_boot_set(
   /* convert the cpuset map back into the root cpuset string */
   rootStr[0] = '\0';
   first = TRUE;
-  for (j=0; j<1024; j++)
+  for (j=0; j<cpuset_size; j++)
     {
     if (cpusetMap[j] > 0 )
       {
@@ -1747,6 +1782,9 @@ void remove_boot_set(
         rootStr);
     log_ext(-1, id, log_buffer, LOG_DEBUG);
     }
+
+  free(cpusetMap);
+  return;
 
   } /* END remove_boot_set() */
 

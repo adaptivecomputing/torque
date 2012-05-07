@@ -10,7 +10,7 @@
 
 int svr_enquejob(job *pjob, int has_sv_qs_mutex, int);
 
-void svr_dequejob(job *pjob, int);
+int svr_dequejob(char *job_id, int);
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int);
 

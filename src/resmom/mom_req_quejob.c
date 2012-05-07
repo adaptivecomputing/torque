@@ -103,6 +103,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "svrfunc.h"
+#include "mom_job_func.h" /* job_purge */
 
 #include "mom_func.h"
 #include "utils.h"

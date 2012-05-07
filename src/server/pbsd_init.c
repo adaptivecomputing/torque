@@ -125,6 +125,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "login_nodes.h"
 #include "track_alps_reservations.h"
+#include "job_func.h" /* job_purge */
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -231,7 +232,6 @@ extern void   acct_close(void);
 
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int     net_move(job *, struct batch_request *);
-void         *job_clone_wt(void *vp);
 void          on_job_exit(struct work_task *);
 
 /* Private functions in this file */
@@ -1795,7 +1795,9 @@ int pbsd_init(
   while ((pa = next_array(&iter)) != NULL)
     {
     int job_template_exists = FALSE;
+
     pthread_mutex_lock(pa->ai_mutex);
+
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "%s: locked ai_mutex", __func__);
@@ -1808,9 +1810,21 @@ int pbsd_init(
       pthread_mutex_unlock(pjob->ji_mutex);
       }
 
+    /* if no jobs were recovered, delete this array */
+    if (pa->jobs_recovered == 0)
+      {
+      if ((pjob = find_job(pa->ai_qs.parent_id)) != NULL)
+        job_purge(pjob);
+
+      array_delete(pa);
+
+      /* move on to the next array */
+      continue;
+      }
+
     /* see if we need to upgrade the array version. */
     /* We will upgrade from version 3 or later */
-    if(pa->ai_qs.struct_version == 3)
+    if (pa->ai_qs.struct_version == 3)
       {
       pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
       pa->ai_qs.num_purged = pa->ai_qs.num_jobs - pa->jobs_recovered;
@@ -2036,9 +2050,11 @@ int pbsd_init_job(
   unsigned int      d;
 
   time_t            time_now = time(NULL);
-  char             *jobid_copy;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   int               local_errno = 0;
+  char  job_id[PBS_MAXSVRJOBID+1];
+  long  job_atr_hold;
+  int   job_exit_status;
 
   pjob->ji_momhandle = -1;
 
@@ -2206,9 +2222,7 @@ int pbsd_init_job(
 
       apply_job_delete_nanny(pjob, time_now + 60);
 
-      jobid_copy = strdup(pjob->ji_qs.ji_jobid);
-
-      set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
+      set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
       pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -2217,9 +2231,7 @@ int pbsd_init_job(
     case JOB_SUBSTATE_COMPLETE:
 
       /* Completed jobs are no longer purged on startup */
-      jobid_copy = strdup(pjob->ji_qs.ji_jobid);
-
-      set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
+      set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
       pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -2231,14 +2243,20 @@ int pbsd_init_job(
 
         if (pjob != NULL)
           {
-          update_array_values(pa,pjob,JOB_STATE_RUNNING,aeTerminate);
+          strcpy(job_id, pjob->ji_qs.ji_jobid);
+          job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
+          job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+          pthread_mutex_unlock(pjob->ji_mutex);
+          update_array_values(pa,JOB_STATE_RUNNING,aeTerminate,
+              job_id, job_atr_hold, job_exit_status);
           
-          pthread_mutex_unlock(pa->ai_mutex);
           if (LOGLEVEL >= 7)
             {
             sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
-            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
             }
+          pthread_mutex_unlock(pa->ai_mutex);
+          pjob = find_job(job_id);
           }
          
         }
@@ -2284,18 +2302,21 @@ int pbsd_init_job(
   /* if job has IP address of Mom, it may have changed */
   /* reset based on hostname                           */
 
-  if ((pjob->ji_qs.ji_un_type == JOB_UNION_TYPE_EXEC) &&
-      (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != 0))
+  if (pjob != NULL)
     {
-    if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
+    if ((pjob->ji_qs.ji_un_type == JOB_UNION_TYPE_EXEC) &&
+        (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != 0))
       {
-      char *tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &d);
-      pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(&local_errno, tmp);
-      free(tmp);
-      }
-    else
-      {
-      pjob->ji_qs.ji_un.ji_exect.ji_momaddr = 0;
+      if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
+        {
+        char *tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &d);
+        pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(&local_errno, tmp);
+        free(tmp);
+        }
+      else
+        {
+        pjob->ji_qs.ji_un.ji_exect.ji_momaddr = 0;
+        }
       }
     }
 
@@ -2335,7 +2356,7 @@ void pbsd_init_reque(
     }
 
   pthread_mutex_lock(server.sv_qs_mutex);
-  if (svr_enquejob(pjob, TRUE, -1) == 0)
+  if (svr_enquejob(pjob, TRUE, -1) == PBSE_NONE)
     {
     strcat(logbuf, msg_init_queued);
     strcat(logbuf, pjob->ji_qs.ji_queue);

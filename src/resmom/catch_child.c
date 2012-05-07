@@ -34,6 +34,8 @@
 #include "pbs_error.h"
 #include "pbs_proto.h"
 #include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
+#include "../server/svr_connect.h" /* svr_disconnect_sock */
+#include "mom_job_func.h" /* job_purge */
 #ifdef ENABLE_CPA
 #include "pbs_cpa.h"
 #endif
@@ -76,7 +78,6 @@ extern char  *PMOMCommand[];
 u_long resc_used(job *, char *, u_long(*f) (resource *));
 void *preobit_reply (void *);
 void *obit_reply (void *);
-extern int tm_reply (int, int, tm_event_t);
 extern u_long addclient (char *);
 extern void encode_used (job *, int, tlist_head *);
 extern void encode_flagged_attrs (job *, int, tlist_head *);
@@ -156,6 +157,7 @@ int send_task_obit_response(
   int i;
   int ret;
   int stream;
+  struct tcp_chan *chan = NULL;
  
   for (i = 0; i < 5; i++)
     {
@@ -164,25 +166,30 @@ int send_task_obit_response(
 
     if (IS_VALID_STREAM(stream))
       {
-      DIS_tcp_setup(stream);
-      
-      ret = im_compose(
-        pnode->hn_stream,
-        pjob->ji_qs.ji_jobid,
-        cookie,
-        IM_ALL_OKAY,
-        pobit->oe_info.fe_event,
-        pobit->oe_info.fe_taskid);
-
-      if (ret == DIS_SUCCESS)
+      if ((chan = DIS_tcp_setup(stream)) != NULL)
         {
-        if ((ret = diswsi(pnode->hn_stream, exitstat)) == DIS_SUCCESS)
+        if ((ret = im_compose(
+            chan,
+            pjob->ji_qs.ji_jobid,
+            cookie,
+            IM_ALL_OKAY,
+            pobit->oe_info.fe_event,
+            pobit->oe_info.fe_taskid)) != DIS_SUCCESS)
           {
-          ret = DIS_tcp_wflush(stream);
           }
+        else if ((ret = diswsi(chan, exitstat)) != DIS_SUCCESS)
+          {
+          }
+        else
+          {
+          ret = DIS_tcp_wflush(chan);
+          }
+        DIS_tcp_close(chan);
         }
-        
-      close(stream);
+      else
+        {
+        close(stream);
+        }
       }
 
     if (ret == DIS_SUCCESS)
@@ -525,21 +532,19 @@ void scan_for_exiting(void)
             (pjob->ji_nodeid == pnode->hn_node))
 #endif /* ndef NUMA_SUPPORT */
           {
-          task *tp;
+          task *tmp_task;
 
           /* send event to local child */
 
-          tp = task_find(pjob, pobit->oe_info.fe_taskid);
+          tmp_task = task_find(pjob, pobit->oe_info.fe_taskid);
 
-          assert(tp != NULL);
-
-          if (tp->ti_fd != -1)
+          if ((tmp_task != NULL) && (tmp_task->ti_chan != NULL))
             {
-            tm_reply(tp->ti_fd, IM_ALL_OKAY, pobit->oe_info.fe_event);
+            tm_reply(tmp_task->ti_chan, IM_ALL_OKAY, pobit->oe_info.fe_event);
 
-            diswsi(tp->ti_fd, ptask->ti_qs.ti_exitstat);
+            diswsi(tmp_task->ti_chan, ptask->ti_qs.ti_exitstat);
 
-            DIS_tcp_wflush(tp->ti_fd);
+            DIS_tcp_wflush(tmp_task->ti_chan);
             }
           }
 #ifndef NUMA_SUPPORT 
@@ -558,7 +563,7 @@ void scan_for_exiting(void)
         free(pobit);
         }  /* END while (pobit) */
 
-      ptask->ti_fd = -1;
+      ptask->ti_chan = NULL;
 
       ptask->ti_qs.ti_status = TI_STATE_DEAD;
 
@@ -735,8 +740,9 @@ void scan_for_exiting(void)
         "calling mom_open_socket_to_jobs_server");
       }
 
-    post_epilogue(pjob, pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0);
+    run_epilogues(pjob);
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
+    send_job_status(pjob);
 
     if (found_one++ >= ObitsAllowed)
       {
@@ -840,6 +846,46 @@ int run_epilogues(
   }
 
 
+
+int send_job_status(
+    job *pjob)
+  {
+  int rc = PBSE_NONE;
+  int sock = -1;
+  struct tcp_chan *chan = NULL;
+
+  if ((sock = mom_open_socket_to_jobs_server(pjob, __func__, preobit_reply)) >= 0)
+    {
+    if ((chan = DIS_tcp_setup(sock)) == NULL)
+      {
+      }
+    else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_StatusJob, pbs_current_user)) != PBSE_NONE)
+      {
+      }
+    else if ((rc = encode_DIS_Status(chan, pjob->ji_qs.ji_jobid, NULL)) != PBSE_NONE)
+      {
+      }
+    else if ((rc = encode_DIS_ReqExtend(chan, NULL)) != PBSE_NONE)
+      {
+      }
+    else if ((rc = DIS_tcp_wflush(chan)) != PBSE_NONE)
+      {
+      }
+    if (chan != NULL)
+      DIS_tcp_cleanup(chan);
+    }
+  else
+    {
+    if ((errno == EINPROGRESS) || (errno == ETIMEDOUT) || (errno == EINTR))
+      sprintf(log_buffer, "connect to server unsuccessful after 5 seconds - will retry");
+    set_mom_server_down(pjob->ji_qs.ji_un.ji_momt.ji_svraddr);
+    rc = PBSE_CONNECT;
+    }
+  return rc;
+  }
+
+
+
 /**
  * Send obit to server.
  *
@@ -859,14 +905,13 @@ int post_epilogue(
   int                   sock;
   int                   resc_access_perm;
   struct batch_request *preq;
+  struct tcp_chan *chan = NULL;
 
   if (LOGLEVEL >= 2)
     {
     sprintf(log_buffer, "preparing obit message for job %s", pjob->ji_qs.ji_jobid);
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
-
-  run_epilogues(pjob);
 
   /* open new connection - register obit_reply as handler */
   sock = mom_open_socket_to_jobs_server(pjob, __func__, obit_reply);
@@ -940,11 +985,12 @@ int post_epilogue(
 
   encode_flagged_attrs(pjob, resc_access_perm, &preq->rq_ind.rq_jobobit.rq_attr);
 
-  DIS_tcp_setup(sock);
-
-  if (encode_DIS_ReqHdr(sock, PBS_BATCH_JobObit, pbs_current_user) ||
-      encode_DIS_JobObit(sock, preq) ||
-      encode_DIS_ReqExtend(sock, 0))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    }
+  else if (encode_DIS_ReqHdr(chan, PBS_BATCH_JobObit, pbs_current_user) ||
+      encode_DIS_JobObit(chan, preq) ||
+      encode_DIS_ReqExtend(chan, 0))
     {
     /* FAILURE */
 
@@ -954,17 +1000,18 @@ int post_epilogue(
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
 
-    close_conn(sock, FALSE);
-
+    close_conn(chan->sock, FALSE);
+    DIS_tcp_cleanup(chan);
     free_br(preq);
-
     return(1);
     }
 
-  DIS_tcp_wflush(sock);
-
+  if (chan != NULL)
+    {
+    DIS_tcp_wflush(chan);
+    DIS_tcp_cleanup(chan);
+    }
   free_br(preq);
-
   /* SUCCESS */
 
   /* FYI: socket gets closed and pjob->ji_momhandle is unset in obit_reply, the reply handler */
@@ -1007,26 +1054,34 @@ void *preobit_reply(
 
   struct brp_status    *pstatus;
   svrattrl             *sattrl;
-  int                   runepilogue = 0;
   int                   deletejob = 0;
   int                   jobiscorrupt = 0;
 
   char                 *path_epiloguserjob;
   resource             *presc;
   int                   sock = *(int *)new_sock;
+  struct tcp_chan      *chan = NULL;
 
   /* struct batch_status *bsp = NULL; */
   log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, "top of preobit_reply");
 
   /* read and decode the reply */
-  preq = alloc_br(PBS_BATCH_StatusJob);
+  if ((preq = alloc_br(PBS_BATCH_StatusJob)) == NULL)
+    return NULL;
 
   CLEAR_HEAD(preq->rq_ind.rq_status.rq_attr);
 
-  while ((irtn = DIS_reply_read(sock, &preq->rq_reply)) &&
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    free_br(preq);
+    return NULL;
+    }
+
+  while ((irtn = DIS_reply_read(chan, &preq->rq_reply)) &&
          (errno == EINTR));
 
   pbs_disconnect_socket(sock);
+  DIS_tcp_cleanup(chan);
   close_conn(sock, FALSE);
 
   if (irtn != 0)
@@ -1074,7 +1129,6 @@ void *preobit_reply(
         "cannot locate job that triggered req");
 
     free_br(preq);
-
     return NULL;
     }  /* END if (pjob != NULL) */
 
@@ -1156,24 +1210,11 @@ void *preobit_reply(
 
             deletejob = 1;
             }
-          else
-            {
-            /* job was run locally */
-
-            runepilogue = 1;
-            }
-
           break;
           }
 
         sattrl = (svrattrl *)GET_NEXT(sattrl->al_link);
         }  /* END while (sattrl != NULL) */
-
-      if (jobiscorrupt == 1)
-        {
-        /* runepilogue = 1; */
-        }
-
       break;
 
     case - 1:
@@ -1214,21 +1255,6 @@ void *preobit_reply(
       }
 
     mom_deljob(pjob);
-
-    return NULL;
-    }
-
-  if (!runepilogue)
-    {
-    log_record(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
-
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-    pjob->ji_momhandle = -1;
-    exiting_tasks = 1;  /* job exit will be picked up again */
 
     return NULL;
     }
@@ -1396,15 +1422,25 @@ void *obit_reply(
   struct batch_request *preq;
   int                   x; /* dummy */
   int                   sock = *(int *)new_sock;
+  struct tcp_chan      *chan = NULL;
 
   /* read and decode the reply */
 
-  preq = alloc_br(PBS_BATCH_JobObit);
+  if ((preq = alloc_br(PBS_BATCH_JobObit)) == NULL)
+    return(NULL);
 
   CLEAR_HEAD(preq->rq_ind.rq_jobobit.rq_attr);
 
-  while ((irtn = DIS_reply_read(sock, &preq->rq_reply)) &&
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    free_br(preq);
+    return(NULL);
+    }
+
+  while ((irtn = DIS_reply_read(chan, &preq->rq_reply)) &&
          (errno == EINTR));
+
+  DIS_tcp_cleanup(chan);
 
   if (irtn != 0)
     {
@@ -1575,7 +1611,6 @@ void *obit_reply(
           log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
           }
-        break;
         /* Commenting for now. The mom's are way to chatty right now */
 /*        else
           {
@@ -1598,7 +1633,8 @@ void *obit_reply(
 
   free_br(preq);
 
-/*  pbs_disconnect_socket(sock); */
+  /* MUTSU - Should these two commands be moved to the top? */
+  pbs_disconnect_socket(sock);
   close_conn(sock, FALSE);
 
   if (PBSNodeCheckEpilog)
@@ -2113,6 +2149,7 @@ int send_job_obit_to_ms(
   int          command;
   tm_event_t   event;
   hnodent     *np;
+  struct tcp_chan *chan = NULL;
 
   if (mom_radix)
     np = pjob->ji_sisters;
@@ -2146,26 +2183,25 @@ int send_job_obit_to_ms(
       
     if (IS_VALID_STREAM(stream))
       {
-      DIS_tcp_setup(stream);
-  
-      rc = im_compose(stream,pjob->ji_qs.ji_jobid,cookie,command,event,TM_NULL_TASK);
-      
-      /* write the resources used for this job */
-      if (rc == DIS_SUCCESS)
+      if ((chan = DIS_tcp_setup(stream)) == NULL)
         {
-        if ((rc = diswul(stream, cput)) == DIS_SUCCESS)
+        }
+      /* write the resources used for this job */
+      else if ((rc = im_compose(chan,pjob->ji_qs.ji_jobid,cookie,command,event,TM_NULL_TASK)) == DIS_SUCCESS)
+        {
+        if ((rc = diswul(chan, cput)) == DIS_SUCCESS)
           {
-          if ((rc = diswul(stream, mem)) == DIS_SUCCESS)
+          if ((rc = diswul(chan, mem)) == DIS_SUCCESS)
             {
-            if ((rc = diswul(stream, vmem)) == DIS_SUCCESS)
+            if ((rc = diswul(chan, vmem)) == DIS_SUCCESS)
               {
               if (mom_radix >= 2)
                 {
-                rc = diswsi(stream, pjob->ji_nodeid);		
+                rc = diswsi(chan, pjob->ji_nodeid);		
                 }
               
               if (rc == DIS_SUCCESS)
-                rc = DIS_tcp_wflush(stream);
+                rc = DIS_tcp_wflush(chan);
 
               if (rc == DIS_SUCCESS)
                 {
@@ -2183,14 +2219,15 @@ int send_job_obit_to_ms(
                     pjob->ji_qs.ji_jobid,
                     log_buffer);
                   }
-
-                close(stream);
+                close(chan->sock);
                 break;
                 }
               }
             }
           }
         }
+      if (chan != NULL)
+        DIS_tcp_cleanup(chan);
             
       close(stream);
       } /* END work on a valid stream */

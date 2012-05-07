@@ -113,7 +113,7 @@
 
 long disrsl(
 
-  int  stream,
+  struct tcp_chan *chan,
   int *retval)
 
   {
@@ -121,15 +121,12 @@ long disrsl(
   int  negate;
   long  value;
   unsigned long uvalue;
-  int (*disr_commit)(int stream, int commit);
 
   assert(retval != NULL);
 
-  disr_commit = tcp_rcommit;
-
   value = 0;
 
-  switch (locret = disrsl_(stream, &negate, &uvalue, 1))
+  switch (locret = disrsl_(chan, &negate, &uvalue, 1))
     {
 
     case DIS_SUCCESS:
@@ -147,7 +144,7 @@ long disrsl(
       value = negate ? LONG_MIN : LONG_MAX;
     }
 
-  *retval = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?
+  *retval = (tcp_rcommit(chan, locret == DIS_SUCCESS) < 0) ?
             DIS_NOCOMMIT : locret;
 
   return (value);

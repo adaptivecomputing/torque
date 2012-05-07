@@ -102,6 +102,7 @@ int pbs_asyrunjob_err(
   struct batch_reply *reply;
   unsigned int        resch = 0;
   int                 sock;
+  struct tcp_chan *chan = NULL;
 
   if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
     {
@@ -117,25 +118,26 @@ int pbs_asyrunjob_err(
 
   /* setup DIS support routines for following DIS calls */
 
-  DIS_tcp_setup(sock);
-
-  /* send run request */
-
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_AsyrunJob, pbs_current_user)) ||
-      (rc = encode_DIS_RunJob(sock, jobid, location, resch)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    rc = PBSE_PROTOCOL;
+    return rc;
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_AsyrunJob, pbs_current_user))
+      || (rc = encode_DIS_RunJob(chan, jobid, location, resch))
+      || (rc = encode_DIS_ReqExtend(chan, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
 
-  if (DIS_tcp_wflush(sock))
+  if (DIS_tcp_wflush(chan))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
 
@@ -148,7 +150,7 @@ int pbs_asyrunjob_err(
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   PBSD_FreeReply(reply);
-
+  DIS_tcp_cleanup(chan);
   return(rc);
   }  /* END pbs_asyrunjob_err() */
 

@@ -230,7 +230,7 @@ int build_var_list(
 
 int encode_DIS_attropl_hash_single(
     
-  int       sock,
+  struct tcp_chan *chan,
   job_data *attrs,
   int       is_res)
 
@@ -261,25 +261,25 @@ int encode_DIS_attropl_hash_single(
       len = strlen(atr->name) + 1;
     len += strlen(atr->value) + 1;
 /*     fprintf(stderr, "[%s]=[%s]\n", atr->name, atr->value); */
-    if ((rc = diswui(sock, len)))             /* total length */
+    if ((rc = diswui(chan, len)))             /* total length */
       break;
     if (is_res)
       {
-      if ((rc = diswst(sock, ATTR_l)) ||      /* name */
-          (rc = diswui(sock, 1))      ||      /* resource name exists */
-          (rc = diswst(sock, atr->name)))     /* resource name */
+      if ((rc = diswst(chan, ATTR_l)) ||      /* name */
+          (rc = diswui(chan, 1))      ||      /* resource name exists */
+          (rc = diswst(chan, atr->name)))     /* resource name */
       break;
       }
     else
       {
-      if ((rc = diswst(sock, atr->name)) || /* name */
-          (rc = diswui(sock, 0)))           /* no resource */
+      if ((rc = diswst(chan, atr->name)) || /* name */
+          (rc = diswui(chan, 0)))           /* no resource */
         break;
       }
 
     /* Value is always populated. "\0" == "" */
-    if ((rc = diswst(sock, atr->value)) ||               /* value */
-        (rc = diswui(sock, (unsigned int)atr->op_type))) /* op */
+    if ((rc = diswst(chan, atr->value)) ||               /* value */
+        (rc = diswui(chan, (unsigned int)atr->op_type))) /* op */
       break;
 
     }
@@ -291,7 +291,7 @@ int encode_DIS_attropl_hash_single(
 
 int encode_DIS_attropl_hash(
 
-  int   sock,
+  struct tcp_chan *chan,
   memmgr **mm,
   job_data *job_attr,
   job_data *res_attr)
@@ -314,21 +314,21 @@ int encode_DIS_attropl_hash(
 
   if (rc != PBSE_NONE)
     {}
-  else if ((rc = diswui(sock, ct)))
+  else if ((rc = diswui(chan, ct)))
     {}
-  else if ((rc = encode_DIS_attropl_hash_single(sock, job_attr, 0)))
+  else if ((rc = encode_DIS_attropl_hash_single(chan, job_attr, 0)))
     {}
-  else if ((rc = encode_DIS_attropl_hash_single(sock, res_attr, 1)))
+  else if ((rc = encode_DIS_attropl_hash_single(chan, res_attr, 1)))
     {}
   else
     {
     len = strlen(ATTR_v) + 1;
     len += strlen(var_list) + 1;
-    if ((rc = diswui(sock, len))               ||  /* attr length */
-        (rc = diswst(sock, ATTR_v))            ||  /* attr name */
-        (rc = diswui(sock, 0))                 ||  /* no resource */
-        (rc = diswst(sock, var_list))          ||  /* attr value */
-        (rc = diswui(sock, (unsigned int)SET)))    /* attr op type */
+    if ((rc = diswui(chan, len))               ||  /* attr length */
+        (rc = diswst(chan, ATTR_v))            ||  /* attr name */
+        (rc = diswui(chan, 0))                 ||  /* no resource */
+        (rc = diswst(chan, var_list))          ||  /* attr value */
+        (rc = diswui(chan, (unsigned int)SET)))    /* attr op type */
       {}
     }
   memmgr_destroy(&var_mm);

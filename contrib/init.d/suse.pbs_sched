@@ -18,7 +18,7 @@
 #	available etc.  It then makes decisions as to which jobs to run.
 ### END INIT INFO
 
-PBS_DAEMON=/usr/sbin/pbs_sched
+PBS_DAEMON=/usr/local/sbin/pbs_sched
 PBS_HOME=/var/spool/torque
 export PBS_DAEMON
 

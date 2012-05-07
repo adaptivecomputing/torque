@@ -110,7 +110,7 @@
 
 int decode_DIS_attrl(
     
-  int            sock,
+  struct tcp_chan *chan,
   struct attrl **ppatt)
 
   {
@@ -124,13 +124,13 @@ int decode_DIS_attrl(
   int   rc;
 
 
-  numpat = disrui(sock, &rc);
+  numpat = disrui(chan, &rc);
 
   if (rc) return rc;
 
   for (i = 0; i < numpat; ++i)
     {
-    disrui(sock, &rc); /* name_len is unusued here */
+    disrui(chan, &rc); /* name_len is unusued here */
 
     if (rc) break;
 
@@ -147,27 +147,27 @@ int decode_DIS_attrl(
 
     pat->value    = (char *)0;
 
-    pat->name = disrst(sock, &rc);
+    pat->name = disrst(chan, &rc);
 
     if (rc) break;
 
-    hasresc = disrui(sock, &rc);
+    hasresc = disrui(chan, &rc);
 
     if (rc) break;
 
     if (hasresc)
       {
-      pat->resource = disrst(sock, &rc);
+      pat->resource = disrst(chan, &rc);
 
       if (rc) break;
       }
 
-    pat->value = disrst(sock, &rc);
+    pat->value = disrst(chan, &rc);
 
     if (rc) break;
 
     /* discard the op field */
-    (void)disrui(sock, &rc);
+    disrui(chan, &rc);
 
     if (rc) break;
 

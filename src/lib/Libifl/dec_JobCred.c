@@ -98,10 +98,11 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_JobCred(
     
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
@@ -109,11 +110,11 @@ int decode_DIS_JobCred(
   size_t rqsize;
 
   preq->rq_ind.rq_jobcred.rq_data = 0;
-  preq->rq_ind.rq_jobcred.rq_type = disrui(sock, &rc);
+  preq->rq_ind.rq_jobcred.rq_type = disrui(chan, &rc);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_jobcred.rq_data = disrcs(sock, &rqsize, &rc);
+  preq->rq_ind.rq_jobcred.rq_data = disrcs(chan, &rqsize, &rc);
 
   preq->rq_ind.rq_jobcred.rq_size = rqsize;
 

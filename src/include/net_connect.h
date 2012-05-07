@@ -202,7 +202,7 @@ unsigned int  get_svrport(char *, char *, unsigned int);
 int  init_network(unsigned int, void *(*readfunc)(void *));
 void net_close(int);
 int  wait_request(time_t waittime, long *);
-void net_add_close_func(int, void(*func)(int), int);
+void net_add_close_func(int, void(*func)(int));
 int get_max_num_descriptors(void);
 int get_fdset_size(void);
 char * netaddr_pbs_net_t(pbs_net_t);
@@ -220,6 +220,7 @@ struct connection
   void *(*cn_func)(void *);  /* read function when data rdy */
   void (*cn_oncl)(int);  /* func to call on close */
   pthread_mutex_t *cn_mutex;
+  int cn_stay_open; /* Set to TRUE when the connection needs to remain open */
   };
 
 struct netcounter
@@ -228,7 +229,7 @@ struct netcounter
   int     counter;
   };
 
-int *netcounter_get();
+void netcounter_get(int netrates[]);
 #define MAXLISTENERS  3
 
 typedef struct listener_connection

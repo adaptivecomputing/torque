@@ -99,23 +99,24 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_ReqExtend(
 
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
   int i;
   int rc;
 
-  i = disrui(sock, &rc); /* indicates if an extension exists */
+  i = disrui(chan, &rc); /* indicates if an extension exists */
 
   if (rc == 0)
     {
     if (i != 0)
       {
-      preq->rq_extend = disrst(sock, &rc);
+      preq->rq_extend = disrst(chan, &rc);
       }
     }
 

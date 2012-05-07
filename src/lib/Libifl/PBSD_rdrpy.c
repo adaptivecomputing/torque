@@ -108,6 +108,7 @@ struct batch_reply *PBSD_rdrpy(
   struct batch_reply *reply;
   int      sock;
   const char    *the_msg = NULL;
+  struct tcp_chan *chan = NULL;
 
   sock = connection[c].ch_socket;
   /* clear any prior error message */
@@ -128,13 +129,14 @@ struct batch_reply *PBSD_rdrpy(
     return(NULL);
     }
 
-  DIS_tcp_setup(sock);
-
-  if ((rc = decode_DIS_replyCmd(sock, reply)))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    }
+  else if ((rc = decode_DIS_replyCmd(chan, reply)))
     {
     free(reply);
 
-    if (DIS_tcp_istimeout(sock) == TRUE)
+    if (chan->IsTimeout == TRUE)
       {
       *local_errno = PBSE_TIMEOUT;
       }
@@ -148,11 +150,12 @@ struct batch_reply *PBSD_rdrpy(
       {
       connection[c].ch_errtxt = strdup(the_msg);
       }
+    DIS_tcp_cleanup(chan);
 
     return(NULL);
     }
 
-  DIS_tcp_reset(sock, 0); /* reset DIS read buffer */
+  DIS_tcp_cleanup(chan);
 
   connection[c].ch_errno = reply->brp_code;
 

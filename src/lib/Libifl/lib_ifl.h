@@ -6,6 +6,7 @@
 #include "batch_request.h" /* batch_request */
 #include "tm_.h" /* tm_task_id, tm_node_id, tm_event_t */
 #include "tm.h" /* tm_roots */
+#include "tcp.h" /* tcp_chan */
 
 /* trq_auth.c */
 #define AUTH_TYPE_IFF 1
@@ -16,9 +17,6 @@ int parse_response_svr(int sock, char **msg);
 int build_response_client(int code, char *msg, char **send_message);
 int get_trq_server_addr(char *server_name, char **server_addr, int *server_addr_len);
 void *process_svr_conn(void *sock);
-
-/* PBSD_gpuctrl2.c */
-int PBSD_gpu_put(int c, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol, char *extend);
 
 /* PBSD_gpuctrl2.c */
 int PBSD_gpu_put(int c, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol, char *extend);
@@ -67,152 +65,152 @@ void PBS_free_aopl(struct attropl *aoplp);
 /* PBS_data.c */
 
 /* dec_Authen.c */
-int decode_DIS_Authen(int sock, struct batch_request *preq);
-int decode_DIS_AltAuthen(int sock, struct batch_request *preq);
+int decode_DIS_Authen(struct tcp_chan *chan, struct batch_request *preq);
+int decode_DIS_AltAuthen(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_CpyFil.c */
-int decode_DIS_CopyFiles(int sock, struct batch_request *preq);
+int decode_DIS_CopyFiles(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_Gpu.c */
-int decode_DIS_GpuCtrl(int sock, struct batch_request *preq);
+int decode_DIS_GpuCtrl(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_JobCred.c */
-int decode_DIS_JobCred(int sock, struct batch_request *preq);
+int decode_DIS_JobCred(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_JobFile.c */
-int decode_DIS_JobFile(int sock, struct batch_request *preq);
+int decode_DIS_JobFile(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_JobId.c */
-int decode_DIS_JobId(int sock, char *jobid);
+int decode_DIS_JobId(struct tcp_chan *chan, char *jobid);
 
 /* dec_JobObit.c */
-int decode_DIS_JobObit(int sock, struct batch_request *preq); 
+int decode_DIS_JobObit(struct tcp_chan *chan, struct batch_request *preq); 
 
 /* dec_Manage.c */
-int decode_DIS_Manage(int sock, struct batch_request *preq);
+int decode_DIS_Manage(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_MoveJob.c */
-int decode_DIS_MoveJob(int sock, struct batch_request *preq);
+int decode_DIS_MoveJob(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_MsgJob.c */
-int decode_DIS_MessageJob(int sock, struct batch_request *preq);
+int decode_DIS_MessageJob(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_QueueJob.c */
-int decode_DIS_QueueJob(int sock, struct batch_request *preq);
+int decode_DIS_QueueJob(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_Reg.c */
-int decode_DIS_Register(int sock, struct batch_request *preq);
+int decode_DIS_Register(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_ReqExt.c */
-int decode_DIS_ReqExtend(int sock, struct batch_request *preq);
+int decode_DIS_ReqExtend(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_ReqHdr.c */
-int decode_DIS_ReqHdr(int sock, struct batch_request *preq, int *proto_type, int *proto_ver);
+int decode_DIS_ReqHdr(struct tcp_chan *chan, struct batch_request *preq, int *proto_type, int *proto_ver);
 
 /* dec_Resc.c */
-int decode_DIS_Rescl(int sock, struct batch_request *preq);
+int decode_DIS_Rescl(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_ReturnFile.c */
-int decode_DIS_ReturnFiles(int sock, struct batch_request *preq);
+int decode_DIS_ReturnFiles(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_RunJob.c */
-int decode_DIS_RunJob(int sock, struct batch_request *preq);
+int decode_DIS_RunJob(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_Shut.c */
-int decode_DIS_ShutDown(int sock, struct batch_request *preq);
+int decode_DIS_ShutDown(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_Sig.c */
-int decode_DIS_SignalJob(int sock, struct batch_request *preq);
+int decode_DIS_SignalJob(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_Status.c */
-int decode_DIS_Status(int sock, struct batch_request *preq);
+int decode_DIS_Status(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_Track.c */
-int decode_DIS_TrackJob(int sock, struct batch_request *preq);
+int decode_DIS_TrackJob(struct tcp_chan *chan, struct batch_request *preq);
 
 /* dec_attrl.c */
-int decode_DIS_attrl(int sock, struct attrl **ppatt);
+int decode_DIS_attrl(struct tcp_chan *chan, struct attrl **ppatt);
 
 /* dec_attropl.c */
-int decode_DIS_attropl(int sock, struct attropl **ppatt);
+int decode_DIS_attropl(struct tcp_chan *chan, struct attropl **ppatt);
 
 /* dec_rpyc.c */
-int decode_DIS_replyCmd(int sock, struct batch_reply *reply);
+int decode_DIS_replyCmd(struct tcp_chan *chan, struct batch_reply *reply);
 
 /* dec_rpys.c */
-int decode_DIS_replySvr(int sock, struct batch_reply *reply); 
+int decode_DIS_replySvr(struct tcp_chan *chan, struct batch_reply *reply); 
 
 /* dec_svrattrl.c */
-int decode_DIS_svrattrl(int sock, tlist_head *phead);
+int decode_DIS_svrattrl(struct tcp_chan *chan, tlist_head *phead);
 
 /* enc_CpyFil.c */
-int encode_DIS_CopyFiles(int sock, struct batch_request *preq);
+int encode_DIS_CopyFiles(struct tcp_chan *chan, struct batch_request *preq);
 
 /* enc_Gpu.c */
-int encode_DIS_GpuCtrl(int sock, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol);
+int encode_DIS_GpuCtrl(struct tcp_chan *chan, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol);
 
 /* enc_JobCred.c */
-int encode_DIS_JobCred(int sock, int type, char *cred, int len);
+int encode_DIS_JobCred(struct tcp_chan *chan, int type, char *cred, int len);
 
 /* enc_JobFile.c */
-int encode_DIS_JobFile(int sock, int seq, char *buf, int len, char *jobid, int which);
+int encode_DIS_JobFile(struct tcp_chan *chan, int seq, char *buf, int len, char *jobid, int which);
 
 /* enc_JobId.c */
-int encode_DIS_JobId(int sock, char *jobid);
+int encode_DIS_JobId(struct tcp_chan *chan, char *jobid);
 
 /* enc_JobObit.c */
-int encode_DIS_JobObit(int sock, struct batch_request *preq); 
+int encode_DIS_JobObit(struct tcp_chan *chan, struct batch_request *preq); 
 
 /* enc_Manage.c */
-int encode_DIS_Manage(int sock, int command, int objtype, char *objname, struct attropl *aoplp);
+int encode_DIS_Manage(struct tcp_chan *chan, int command, int objtype, char *objname, struct attropl *aoplp);
 
 /* enc_MoveJob.c */
-int encode_DIS_MoveJob(int sock, char *jobid, char *destin); 
+int encode_DIS_MoveJob(struct tcp_chan *chan, char *jobid, char *destin); 
 
 /* enc_MsgJob.c */
-int encode_DIS_MessageJob(int sock, char *jobid, int fileopt, char *msg);
+int encode_DIS_MessageJob(struct tcp_chan *chan, char *jobid, int fileopt, char *msg);
 
 /* enc_QueueJob.c */
-int encode_DIS_QueueJob(int sock, char *jobid, char *destin, struct attropl *aoplp);
+int encode_DIS_QueueJob(struct tcp_chan *chan, char *jobid, char *destin, struct attropl *aoplp);
 
 /* enc_Reg.c */
-int encode_DIS_Register(int sock, struct batch_request *preq);
+int encode_DIS_Register(struct tcp_chan *chan, struct batch_request *preq);
 
 /* enc_ReqExt.c */
-int encode_DIS_ReqExtend(int sock, char *extend);
+int encode_DIS_ReqExtend(struct tcp_chan *chan, char *extend);
 
 /* enc_ReqHdr.c */
-int encode_DIS_ReqHdr(int sock, int reqt, char *user);
+int encode_DIS_ReqHdr(struct tcp_chan *chan, int reqt, char *user);
 
 /* enc_ReturnFile.c */
-int encode_DIS_ReturnFiles(int sock, struct batch_request *preq);
+int encode_DIS_ReturnFiles(struct tcp_chan *chan, struct batch_request *preq);
 
 /* enc_RunJob.c */
-int encode_DIS_RunJob(int sock, char *jobid, char *where, unsigned int resch); 
+int encode_DIS_RunJob(struct tcp_chan *chan, char *jobid, char *where, unsigned int resch); 
 
 /* enc_Shut.c */
-int encode_DIS_ShutDown(int sock, int manner); 
+int encode_DIS_ShutDown(struct tcp_chan *chan, int manner); 
 
 /* enc_Sig.c */
-int encode_DIS_SignalJob(int sock, char *jobid, char *signal);
+int encode_DIS_SignalJob(struct tcp_chan *chan, char *jobid, char *signal);
 
 /* enc_Status.c */
-int encode_DIS_Status(int sock, char *objid, struct attrl *pattrl);
+int encode_DIS_Status(struct tcp_chan *chan, char *objid, struct attrl *pattrl);
 
 /* enc_Track.c */
-int encode_DIS_TrackJob(int sock, struct batch_request *preq);
+int encode_DIS_TrackJob(struct tcp_chan *chan, struct batch_request *preq);
 
 /* enc_attrl.c */
-int encode_DIS_attrl(int sock, struct attrl *pattrl);
+int encode_DIS_attrl(struct tcp_chan *chan, struct attrl *pattrl);
 
 /* enc_attropl.c */
-int encode_DIS_attropl(int sock, struct attropl *pattropl);
+int encode_DIS_attropl(struct tcp_chan *chan, struct attropl *pattropl);
 
 /* enc_reply.c */
-int encode_DIS_reply(int sock, struct batch_reply *reply);
+int encode_DIS_reply(struct tcp_chan *chan, struct batch_reply *reply);
 
 /* enc_svrattrl.c */
-int encode_DIS_svrattrl(int sock, svrattrl *psattl);
+int encode_DIS_svrattrl(struct tcp_chan *chan, svrattrl *psattl);
 
 /* get_svrport.c */
 unsigned int get_svrport(char *service_name, char *ptype, unsigned int pdefault); 
@@ -271,7 +269,7 @@ ssize_t send_unix_creds(int sd);
 #endif 
 int pbs_original_connect(char *server); 
 int pbs_disconnect(int connect); 
-int pbs_disconnect_socket(int sock); 
+int pbs_disconnect_socket(int socket);
 int pbs_connect(char *server_name_ptr); 
 int pbs_connect_with_retry(char *server_name_ptr, int retry_seconds); 
 int pbs_query_max_connections(void);
@@ -385,6 +383,7 @@ void blog_init(char *s, int len);
 int blog_write(char *s);
 void blog_out(char *filename);
 /* static int next_seq(int *seq); */
+char * netaddr_long(long ap, char *out);
 char * netaddr(struct sockaddr_in *ap);
 void set_rpp_throttle_sleep_time(long sleep_time);
 /* static void rpp_form_pkt(int index, int type, int seq, u_char *buf, int len); */
@@ -429,28 +428,22 @@ int RPPReset(void);
 int rpp_get_stream_state(int index);
 
 /* tcp_dis.c */
-void DIS_tcp_init(int sock);
 void DIS_tcp_settimeout(long timeout); 
-int DIS_tcp_istimeout(int sock);
 /* static void tcp_pack_buff(struct tcpdisbuf *tp); */
-int tcp_read(int fd, long *read_len, long *avail_len); 
-int DIS_tcp_wflush(int fd); 
+int tcp_read(struct tcp_chan *chan, long *read_len, long *avail_len); 
+int DIS_tcp_wflush(struct tcp_chan *chan); 
 /* static void DIS_tcp_clear(struct tcpdisbuf *tp); */
-void DIS_tcp_reset(int fd, int i);
-int tcp_rskip(int fd, size_t ct);
-int tcp_getc(int fd);
-int tcp_gets(int fd, char *str, size_t ct);
-int PConnTimeout(int sock); 
-int TConnGetReadErrno(int sock); 
-int TConnGetSelectErrno(int sock); 
-int tcp_puts(int fd, const char *str, size_t ct); 
-int tcp_rcommit(int fd, int commit_flag); 
-int tcp_wcommit(int fd, int commit_flag);
+void DIS_tcp_reset(struct tcp_chan *chan, int i);
+int tcp_rskip(struct tcp_chan *chan, size_t ct);
+int tcp_getc(struct tcp_chan *chan);
+int tcp_gets(struct tcp_chan *chan, char *str, size_t ct);
+int tcp_puts(struct tcp_chan *chan, const char *str, size_t ct); 
+int tcp_rcommit(struct tcp_chan *chan, int commit_flag); 
+int tcp_wcommit(struct tcp_chan *chan, int commit_flag);
 int lock_all_channels();
 int unlock_all_channels(); 
-int resize_tcp_array_if_needed(int fd);
-void DIS_tcp_setup(int fd);
-void DIS_tcp_shutdown(int fd);
+struct tcp_chan * DIS_tcp_setup(int fd);
+void DIS_tcp_cleanup(struct tcp_chan *chan);
 
 /* tm.c */
 /* static event_info * find_event(tm_event_t x); */

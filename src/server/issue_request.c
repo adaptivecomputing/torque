@@ -111,6 +111,8 @@
 #include <stdint.h>
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "process_request.h" /* dispatch_request */
+#include "svr_connect.h" /* svr_disconnect_sock */
+#include "node_manager.h" /* tfind_addr */
 
 
 /* Global Data Items: */
@@ -128,7 +130,6 @@ extern unsigned int pbs_mom_port;
 extern unsigned int pbs_server_port_dis;
 
 extern struct  connection svr_conn[];
-extern struct pbsnode *tfind_addr(const u_long, uint16_t,job *); 
 
 extern int       LOGLEVEL;
 
@@ -153,13 +154,14 @@ int relay_to_mom(
   void                  (*func)(struct work_task *))
 
   {
-  int             conn; /* a client style connection handle */
+  int             handle; /* a client style connection handle */
   int             rc;
   int             local_errno = 0;
   pbs_net_t       addr;
   unsigned short  port;
   job            *pjob = *pjob_ptr;
   char            jobid[PBS_MAXSVRJOBID + 1];
+  char *job_momname = NULL;
 
   struct pbsnode *node;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
@@ -167,18 +169,23 @@ int relay_to_mom(
   /* if MOM is down don't try to connect */
   addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
   port = pjob->ji_qs.ji_un.ji_exect.ji_momport;
+  job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  if (job_momname == NULL)
+    return PBSE_MEM_MALLOC;
 
-  if ((node = tfind_addr(addr, port, pjob)) == NULL)
+  if ((node = tfind_addr(addr, port, job_momname)) == NULL)
     {
+    free(job_momname);
     free_br(request);
     return(PBSE_NORELYMOM);
     }
+  free(job_momname);
 
   if ((node != NULL) &&
       (node->nd_state & INUSE_DOWN))
     {
     unlock_node(node, __func__, "no rely mom", LOGLEVEL);
-    free_br(request);
+       free_br(request);
     return(PBSE_NORELYMOM);
     }
 
@@ -192,17 +199,17 @@ int relay_to_mom(
     free(tmp);
     }
 
-  conn = svr_connect(
+  unlock_node(node, __func__, "after svr_connect", LOGLEVEL);
+  handle = svr_connect(
            pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
            pjob->ji_qs.ji_un.ji_exect.ji_momport,
            &local_errno,
-           node,
+           NULL,
            NULL,
            ToServerDIS);
     
-  unlock_node(node, __func__, "after svr_connect", LOGLEVEL);
 
-  if (conn < 0)
+  if (handle < 0)
     {
     log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_REQUEST,"",msg_norelytomom);
 
@@ -215,7 +222,7 @@ int relay_to_mom(
 
   request->rq_orgconn = request->rq_conn; /* save client socket */
 
-  rc = issue_Drequest(conn, request, func, NULL);
+  rc = issue_Drequest(handle, request, func, NULL);
 
   *pjob_ptr = find_job(jobid);
 
@@ -417,10 +424,12 @@ int issue_Drequest(
   struct work_task *ptask;
 
   struct svrattrl  *psvratl;
-  int               rc;
+  int               rc = PBSE_NONE;
+  int               tmp_rc = PBSE_NONE;
   int               sock = 0;
   enum work_type    wt;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
+  struct tcp_chan  *chan = NULL;
 
   if (conn == PBS_LOCAL_CONNECTION)
     {
@@ -440,19 +449,15 @@ int issue_Drequest(
 
     wt = WORK_Deferred_Reply;
 
-    DIS_tcp_setup(sock);
-    }
+    if ((chan = DIS_tcp_setup(sock)) == NULL)
+      {
+      log_err(PBSE_MEM_MALLOC, __func__,
+        "Could not allocate memory for socket buffer");
 
-  ptask = set_task(wt, (long)conn, func, (void *)request, FALSE);
+      close_conn(sock, FALSE);
 
-  if (ppwt != NULL)
-    *ppwt = ptask;
-
-  if (ptask == NULL)
-    {
-    log_err(errno, __func__, "could not set_task");
-
-    return(-1);
+      return(PBSE_MEM_MALLOC);
+      }
     }
 
   if (conn == PBS_LOCAL_CONNECTION)
@@ -462,6 +467,23 @@ int issue_Drequest(
     dispatch_request(PBS_LOCAL_CONNECTION, request);
 
     return(0);
+    }
+
+  if (func != NULL)
+    {
+    ptask = set_task(wt, (long)conn, func, (void *)request, FALSE);
+
+    if (ppwt != NULL)
+      *ppwt = ptask;
+
+    if (ptask == NULL)
+      {
+      log_err(errno, __func__, "could not set_task");
+      close_conn(sock, FALSE);
+      if (chan != NULL)
+        DIS_tcp_cleanup(chan);
+      return(PBSE_MEM_MALLOC);
+      }
     }
 
   /* the request is bound to another server, encode/send the request */
@@ -561,31 +583,31 @@ int issue_Drequest(
 
     case PBS_BATCH_Rerun:
 
-      if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_Rerun, msg_daemonname)))
+      if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_Rerun, msg_daemonname)))
         break;
 
-      if ((rc = encode_DIS_JobId(sock, request->rq_ind.rq_rerun)))
+      if ((rc = encode_DIS_JobId(chan, request->rq_ind.rq_rerun)))
         break;
 
-      if ((rc = encode_DIS_ReqExtend(sock, 0)))
+      if ((rc = encode_DIS_ReqExtend(chan, 0)))
         break;
 
-      rc = DIS_tcp_wflush(sock);
+      rc = DIS_tcp_wflush(chan);
 
       break;
 
     case PBS_BATCH_RegistDep:
 
-      if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_RegistDep, msg_daemonname)))
+      if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_RegistDep, msg_daemonname)))
         break;
 
-      if ((rc = encode_DIS_Register(sock, request)))
+      if ((rc = encode_DIS_Register(chan, request)))
         break;
 
-      if ((rc = encode_DIS_ReqExtend(sock, 0)))
+      if ((rc = encode_DIS_ReqExtend(chan, 0)))
         break;
 
-      rc = DIS_tcp_wflush(sock);
+      rc = DIS_tcp_wflush(chan);
 
       break;
 
@@ -614,61 +636,61 @@ int issue_Drequest(
 
     case PBS_BATCH_TrackJob:
 
-      if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_TrackJob, msg_daemonname)))
+      if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_TrackJob, msg_daemonname)))
         break;
 
-      if ((rc = encode_DIS_TrackJob(sock, request)))
+      if ((rc = encode_DIS_TrackJob(chan, request)))
         break;
 
-      if ((rc = encode_DIS_ReqExtend(sock, 0)))
+      if ((rc = encode_DIS_ReqExtend(chan, 0)))
         break;
 
-      rc = DIS_tcp_wflush(sock);
+      rc = DIS_tcp_wflush(chan);
 
       break;
 
     case PBS_BATCH_ReturnFiles:
 
-      if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_ReturnFiles, msg_daemonname)))
+      if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_ReturnFiles, msg_daemonname)))
         break;
 
-      if ((rc = encode_DIS_ReturnFiles(sock, request)))
+      if ((rc = encode_DIS_ReturnFiles(chan, request)))
         break;
 
-      if ((rc = encode_DIS_ReqExtend(sock, 0)))
+      if ((rc = encode_DIS_ReqExtend(chan, 0)))
         break;
 
-      rc = DIS_tcp_wflush(sock);
+      rc = DIS_tcp_wflush(chan);
 
       break;
 
     case PBS_BATCH_CopyFiles:
 
-      if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_CopyFiles, msg_daemonname)))
+      if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_CopyFiles, msg_daemonname)))
         break;
 
-      if ((rc = encode_DIS_CopyFiles(sock, request)))
+      if ((rc = encode_DIS_CopyFiles(chan, request)))
         break;
 
-      if ((rc = encode_DIS_ReqExtend(sock, 0)))
+      if ((rc = encode_DIS_ReqExtend(chan, 0)))
         break;
 
-      rc = DIS_tcp_wflush(sock);
+      rc = DIS_tcp_wflush(chan);
 
       break;
 
     case PBS_BATCH_DelFiles:
 
-      if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_DelFiles, msg_daemonname)))
+      if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_DelFiles, msg_daemonname)))
         break;
 
-      if ((rc = encode_DIS_CopyFiles(sock, request)))
+      if ((rc = encode_DIS_CopyFiles(chan, request)))
         break;
 
-      if ((rc = encode_DIS_ReqExtend(sock, 0)))
+      if ((rc = encode_DIS_ReqExtend(chan, 0)))
         break;
 
-      rc = DIS_tcp_wflush(sock);
+      rc = DIS_tcp_wflush(chan);
 
       break;
 
@@ -678,16 +700,16 @@ int issue_Drequest(
 
       /* who is sending obit request? */
 
-      if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_JobObit, msg_daemonname)))
+      if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_JobObit, msg_daemonname)))
         break;
 
-      if ((rc = encode_DIS_JobObit(sock, request)))
+      if ((rc = encode_DIS_JobObit(chan, request)))
         break;
 
-      if ((rc = encode_DIS_ReqExtend(sock, 0)))
+      if ((rc = encode_DIS_ReqExtend(chan, 0)))
         break;
 
-      rc = DIS_tcp_wflush(sock);
+      rc = DIS_tcp_wflush(chan);
 
       break;
 
@@ -710,84 +732,27 @@ int issue_Drequest(
 
       break;
     }  /* END switch (request->rq_type) */
-  if ((rc = DIS_reply_read(sock, &request->rq_reply)) != 0)
+
+  if ((tmp_rc = DIS_reply_read(chan, &request->rq_reply)) != 0)
     {
-    close_conn(sock, FALSE);
-    request->rq_reply.brp_code = rc;
+    sprintf(log_buf, "DIS_reply_read failed: %d", tmp_rc);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+
+    request->rq_reply.brp_code = tmp_rc;
     request->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
     }
+
+  DIS_tcp_cleanup(chan);
+  svr_disconnect(conn);
+
   if (func != NULL)
     dispatch_task(ptask);
+
   return(rc);
   }  /* END issue_Drequest() */
 
 
 
-
-
-/*
- * process_reply - process the reply received for a request issued to
- * another server via issue_request()
- *
- * should be called when the relevant svr_conn mutex is already held
- */
-
-void *process_Dreply(
-
-  void *new_sock)
-
-  {
-  int    handle;
-
-  struct work_task *ptask;
-  int    rc;
-  int    iter = -1;
-
-  struct batch_request *request;
-  int sock = *(int *)new_sock;
-
-  pthread_mutex_lock(svr_conn[sock].cn_mutex);
-
-  /* find the work task for the socket, it will point us to the request */
-  handle = svr_conn[sock].cn_handle;
-
-  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-
-  while ((ptask = next_task(&task_list_event,&iter)) != NULL)
-    {
-    if ((ptask->wt_type == WORK_Deferred_Reply) &&
-        (ptask->wt_event == handle))
-      break;
-
-    pthread_mutex_unlock(ptask->wt_mutex);
-    }
-
-  if (ptask == NULL)
-    {
-    log_err(-1, __func__, "Unable to find work task for connection");
-
-    close_conn(sock, FALSE);
-
-    return(NULL);
-    }
-
-  request = ptask->wt_parm1;
-
-  /* read and decode the reply */
-
-  if ((rc = DIS_reply_read(sock, &request->rq_reply)) != 0)
-    {
-    close_conn(sock, FALSE);
-
-    request->rq_reply.brp_code = rc;
-    request->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-    }
-
-  /* now dispatch the reply to the routine in the work task */
-  dispatch_task(ptask);
-
-  return(NULL);
-  }  /* END process_Dreply() */
 
 /* END issue_request.c */
 

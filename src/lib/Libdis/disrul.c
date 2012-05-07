@@ -113,18 +113,15 @@
 
 unsigned long disrul(
 
-  int  stream,  /* I */
+  struct tcp_chan *chan,  /* I */
   int *retval)  /* O */
 
   {
   int  locret;
   int  negate;
   unsigned long value;
-  int (*disr_commit)(int stream, int commit);
 
-  disr_commit = tcp_rcommit;
-
-  locret = disrsl_(stream, &negate, &value, 1);
+  locret = disrsl_(chan, &negate, &value, 1);
 
   if (locret != DIS_SUCCESS)
     {
@@ -137,7 +134,7 @@ unsigned long disrul(
     locret = DIS_BADSIGN;
     }
 
-  if ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0)
+  if (tcp_rcommit(chan, locret == DIS_SUCCESS) < 0)
     {
     /* FAILURE */
 

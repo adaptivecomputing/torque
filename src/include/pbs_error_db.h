@@ -239,9 +239,18 @@ PbsErrClient(PBSE_CLIENT_INVALID, "client is not allowed/trusted")
 PbsErrClient(PBSE_PREMATURE_EOF, "Premature End of File")
 PbsErrClient(PBSE_CAN_NOT_SAVE_FILE, "Error saving file")
 PbsErrClient(PBSE_CAN_NOT_OPEN_FILE, "Error opening file")
-PbsErrClient(PBSE_CAN_NOT_WRITE_FILE, "Error opening file")
+PbsErrClient(PBSE_CAN_NOT_WRITE_FILE, "Error writing file")
 PbsErrClient(PBSE_JOB_FILE_CORRUPT, "Job file corrupt")
 PbsErrClient(PBSE_JOB_RERUN, "Job can not be rerun")
+/* 15120 */
+PbsErrClient(PBSE_CONNECT, "Can not establish connection")
+PbsErrClient(PBSE_JOBWORKDELAY, "Job function must be temporarily delayed")
+PbsErrClient(PBSE_BAD_PARAMETER, "Parameter of function was invalid")
+PbsErrClient(PBSE_CONTINUE, "Continue processing on job. (Not an error)")
+PbsErrClient(PBSE_JOBSUBSTATE, "Current sub state does not allow trasaction.")
+PbsErrClient(PBSE_CAN_NOT_MOVE_FILE, "Error moving file")
+
+
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

@@ -88,7 +88,7 @@
 
 int diswui_(
     
-  int      stream,
+  struct tcp_chan *chan,
   unsigned value)
 
   {
@@ -96,10 +96,6 @@ int diswui_(
   char  *cp = NULL;
   char  scratch[DIS_BUFSIZ+1];
   
-  int (*dis_puts)(int stream, const char *, size_t);
-
-  dis_puts = tcp_puts;
-
   memset(scratch, 0, DIS_BUFSIZ+1);
   cp = discui_(&scratch[DIS_BUFSIZ], value, &ndigs);
   if  (cp == NULL)
@@ -112,7 +108,7 @@ int diswui_(
   while (ndigs > 1)
     cp = discui_(cp, ndigs, &ndigs);
 
-  if ((*dis_puts)(stream, cp, strlen(cp)) < 0)
+  if (tcp_puts(chan, cp, strlen(cp)) < 0)
     return(DIS_PROTO);
 
   return (DIS_SUCCESS);

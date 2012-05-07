@@ -533,7 +533,7 @@ static void altdsp_statjob(
   char *jstate;
   char *eltimecpu;
   char *eltimewal;
-  char tmpLine[MAX_LINE_LEN+1];
+  char tmpLine[MAX_LINE_LEN];
 
   int   usecput;
   static char  pfs[SIZEL];
@@ -709,7 +709,7 @@ static void altdsp_statjob(
       pat = pat->next;
       }
 
-    snprintf(tmpLine, MAX_LINE_LEN, "%%-20.%ds %%-11.11s %%-8.8s ",
+    snprintf(tmpLine, sizeof(tmpLine), "%%-20.%ds %%-11.11s %%-8.8s ",
 
              PBS_NAMELEN);
 
@@ -735,7 +735,7 @@ static void altdsp_statjob(
       }
     else
       {
-      snprintf(tmpLine, MAX_LINE_LEN, "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%5.5s %%1.1s %%5.5s",
+      snprintf(tmpLine, sizeof(tmpLine), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%5.5s %%1.1s %%5.5s",
                PBS_NAMELEN, PBS_NAMELEN);
 
       printf(tmpLine,
@@ -1135,7 +1135,10 @@ void display_statjob(
               }
             else
               {
-              prt_attr(a->name, a->resource, a->value);
+              if ((!strcmp(a->name, "Walltime")) && (a->value[0] == '-'))
+                prt_attr(a->name, "Exceeded", a->value);
+              else
+                prt_attr(a->name, a->resource, a->value);
 
               printf("\n");
               }

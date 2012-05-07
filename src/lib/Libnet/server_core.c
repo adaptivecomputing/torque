@@ -22,7 +22,7 @@ int start_listener(
   {
   struct sockaddr_in adr_svr, adr_client;
   int rc = PBSE_NONE;
-  int sockoptval;
+  int sockoptval = 1;
   int len_inet = sizeof(struct sockaddr_in);
   int *new_conn_port = NULL;
   int listen_socket = 0;
@@ -46,6 +46,10 @@ int start_listener(
   else if (bind(listen_socket, (struct sockaddr *)&adr_svr, sizeof(struct sockaddr_in)) == -1)
     {
     /* Can not bind local socket */
+    rc = PBSE_SOCKET_FAULT;
+    }
+  else if (setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR, (void *)&sockoptval, sizeof(sockoptval)) == -1)
+    {
     rc = PBSE_SOCKET_FAULT;
     }
   else if (listen(listen_socket, 128) == -1)
@@ -87,8 +91,6 @@ int start_listener(
         }
       else
         {
-        sockoptval = 1;
-        setsockopt(*new_conn_port, SOL_SOCKET, SO_REUSEADDR, (void *)&sockoptval, sizeof(sockoptval));
         if (debug_mode == TRUE)
           {
           process_meth((void *)new_conn_port);
@@ -173,6 +175,7 @@ int start_listener_addrinfo(
     }
   else
     {
+    freeaddrinfo(adr_svr);
     while (1)
       {
       len_inet = sizeof(struct sockaddr);

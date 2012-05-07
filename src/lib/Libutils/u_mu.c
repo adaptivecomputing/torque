@@ -2,6 +2,7 @@
 
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/time.h>
 
 #include "utils.h"
 #include "../Liblog/pbs_log.h"
@@ -11,16 +12,9 @@
 unsigned int get_random_number()
 
   {
-  FILE         *rando_file = fopen("/dev/random", "r");
-  int           fd = fileno(rando_file);
-  unsigned int  ans;
-  char         *ptr = (char *)&ans;
-  
-  while (read(fd, ptr, sizeof(ans)) <= 0) ;
-  
-  fclose(rando_file);
-  
-  return(ans);
+  struct timeval t_time;
+  gettimeofday(&t_time, 0);
+  return(unsigned int)t_time.tv_usec;
   } /* END get_random_number() */
 
 

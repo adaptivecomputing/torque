@@ -24,9 +24,3 @@ void DIS_tcp_setup(int fd)
   fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
   exit(1);
   }
-
-int DIS_tcp_istimeout(int sock)
-  {
-  fprintf(stderr, "The call to DIS_tcp_istimeout needs to be mocked!!\n");
-  exit(1);
-  }

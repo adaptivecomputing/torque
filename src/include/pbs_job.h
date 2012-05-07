@@ -99,6 +99,7 @@
 #include "hash_table.h"
 #include "mom_hierarchy.h"
 #include "dynamic_string.h"
+#include "tcp.h" /* tcp_chan */
 
 #define SAVEJOB_BUF_SIZE 8192
 
@@ -545,6 +546,7 @@ struct job
   tm_task_id     ji_taskid; /* generate task id's for job */
   char           ji_altid[PBS_MAXSVRJOBID + 1];
   tm_event_t     ji_obit; /* event for end-of-job */
+  tm_event_t     ji_intermediate_join_event; /* event to write back from join job for intermediate moms */
   hnodent        *ji_hosts; /* ptr to job host management stuff */
   hnodent        *ji_sisters; /* ptr to job host management stuff for intermediate moms */
   vnodent        *ji_vnods; /* ptr to job vnode management stuff */
@@ -726,7 +728,7 @@ typedef struct task
   {
   job  *ti_job; /* pointer to owning job */
   list_link ti_jobtask; /* links to tasks for this job */
-  int  ti_fd;  /* DIS file descriptor to task */
+  struct tcp_chan *ti_chan;  /* DIS file descriptor to task */
   int  ti_flags; /* task internal flags */
   tm_event_t ti_register; /* event if task registers - never used*/
   tlist_head ti_obits; /* list of obit events */
@@ -1060,8 +1062,6 @@ extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM
 extern job  *job_clone(job *,struct job_array *, int);
 #endif
-extern void  job_free(job *);
-extern void  job_purge(job *);
 extern job  *job_recov(char *);
 extern int   job_save(job *, int, int);
 extern int   modify_job_attr(job *, svrattrl *, int, int *);
@@ -1069,7 +1069,7 @@ extern char *prefix_std_file(job *, dynamic_string *, int);
 extern char *add_std_filename(job *, char *, int, dynamic_string *);
 extern int   set_jobexid(job *, pbs_attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *, int);
-void  svr_dequejob(job *, int);
+int  svr_dequejob(char *, int);
 extern int   svr_enquejob(job *, int, int);
 extern void  svr_evaljobstate(job *, int *, int *, int);
 extern void  svr_mailowner(job *, int, int, char *);

@@ -30,15 +30,15 @@ int check_if_checkpoint_restart_failed(job *pjob);
 
 int handle_exiting_or_abort_substate(job *pjob);
 
-int handle_returnstd(job *pjob, struct batch_request *preq, int handle, int type);
+int handle_returnstd(job *pjob, struct batch_request *preq, int type);
 
-int handle_stageout(job *pjob, int type, int handle, struct batch_request *preq);
+int handle_stageout(job *pjob, int type, struct batch_request *preq);
 
-int handle_stagedel(job *pjob, int type, int handle, struct batch_request *preq);
+int handle_stagedel(job *pjob, int type, struct batch_request *preq);
 
-int handle_exited(job *pjob, int handle);
+int handle_exited(job *pjob);
 
-int handle_complete_first_time(job *pjob, int handle);
+int handle_complete_first_time(job *pjob);
 
 int handle_complete_second_time(job *pjob);
 

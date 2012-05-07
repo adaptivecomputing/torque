@@ -840,28 +840,43 @@ next_seq(int *seq)
   }
 
 /*
+** Put a human readable representation of a network addres passed
+** in as a long and return a staticly allocated string.
+*/
+char * netaddr_long(long ap, char *out)
+  {
+  u_long  ipadd;
+
+  ipadd = ap;
+
+  sprintf(out, "%ld.%ld.%ld.%ld",
+          (ipadd & 0xff000000) >> 24,
+          (ipadd & 0x00ff0000) >> 16,
+          (ipadd & 0x0000ff00) >> 8,
+          (ipadd & 0x000000ff));
+
+  return out; 
+  }
+
+/*
 ** Put a human readable representation of a network addres into
 ** a staticly allocated string.
 */
 char * netaddr(struct sockaddr_in *ap)
   {
   static char out[80];
-  u_long  ipadd;
+  char tmp[80];
 
   if (ap == NULL)
     return "unknown";
 
-  ipadd = ntohl(ap->sin_addr.s_addr);
+  netaddr_long( ntohl(ap->sin_addr.s_addr), tmp);
 
-  sprintf(out, "%ld.%ld.%ld.%ld:%d",
-          (ipadd & 0xff000000) >> 24,
-          (ipadd & 0x00ff0000) >> 16,
-          (ipadd & 0x0000ff00) >> 8,
-          (ipadd & 0x000000ff),
-          ntohs(ap->sin_port));
+  sprintf(out, "%s:%d", tmp, ntohs(ap->sin_port));
 
   return out;
   }
+
 
 
 /*

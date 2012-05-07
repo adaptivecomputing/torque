@@ -16,7 +16,7 @@
 # authorize client connections.
 ### END INIT INFO
 
-PBS_DAEMON=/usr/sbin/trqauthd
+PBS_DAEMON=/usr/local/sbin/trqauthd
 PBS_HOME=/var/spool/torque
 export PBS_DAEMON
 

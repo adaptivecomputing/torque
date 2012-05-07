@@ -106,27 +106,8 @@
 #endif
 
 #define MAX_SOCKETS 65536
-static struct tcp_chan *tcparray[MAX_SOCKETS] = {NULL};
+time_t pbs_tcp_timeout = 600;  /* reduced from 60 to 20 (CRI - Nov/03/2004) */
 
-time_t pbs_tcp_timeout = 20;  /* reduced from 60 to 20 (CRI - Nov/03/2004) */
-
-
-
-void DIS_tcp_init(int sock)
-  {
-  int pos = 0;
-  if (sock > 0)
-    {
-    for (pos = 0; pos < MAX_SOCKETS; pos++)
-      {
-      tcparray[pos] = NULL;
-      }
-    }
-  else
-    {
-    tcparray[pos] = NULL;
-    }
-  }
 
 
 void DIS_tcp_settimeout(
@@ -138,30 +119,6 @@ void DIS_tcp_settimeout(
 
   return;
   }  /* END DIS_tcp_settimeout() */
-
-
-
-int DIS_tcp_istimeout(
-
-  int sock)
-
-  {
-  int rc;
-
-  if (tcparray == NULL)
-    {
-    return(0);
-    }
-
-  pthread_mutex_lock(&(tcparray[sock]->tcp_mutex));
-
-  rc = tcparray[sock]->IsTimeout;
-
-  pthread_mutex_unlock(&(tcparray[sock]->tcp_mutex));
-
-  return(rc);
-  }  /* END DIS_tcp_istimeout() */
-
 
 
 
@@ -216,7 +173,7 @@ static void tcp_pack_buff(
  */
 
 int tcp_read(
-  int fd,
+  struct tcp_chan *chan,
   long long *read_len,
   long long *avail_len)
   {
@@ -233,18 +190,16 @@ int tcp_read(
   char              err_msg[1024];
 
 
-  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-  tp = &tcparray[fd]->readbuf;
+  tp = &chan->readbuf;
 
   /* must compact any uncommitted data into bottom of buffer */
   tcp_pack_buff(tp);
 
-  tcparray[fd]->IsTimeout = 0;
-  tcparray[fd]->SelectErrno = 0;
-  tcparray[fd]->ReadErrno = 0;
+  chan->IsTimeout = 0;
+  chan->SelectErrno = 0;
+  chan->ReadErrno = 0;
   tdis_buf_len = tp->tdis_bufsize;
   max_read_len = tp->tdis_bufsize - (tp->tdis_eod - tp->tdis_thebuf);
-  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
 
   /*
    * we don't want to be locked out by an attack on the port to
@@ -252,28 +207,27 @@ int tcp_read(
    * deliver promptly
    */
 
-  if ((rc = socket_read(fd, &new_data, read_len)) != PBSE_NONE)
+  if ((rc = socket_read(chan->sock, &new_data, read_len)) != PBSE_NONE)
     {
-    pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
     switch (rc)
       {
       case PBSE_TIMEOUT:
-        tcparray[fd]->IsTimeout = 1;
+        chan->IsTimeout = 1;
         /* This return 0. This isn't accurate on a timeout */
 /*        rc = 0; */
         break;
       default:
-        tcparray[fd]->SelectErrno = rc;
-        tcparray[fd]->ReadErrno = rc;
+        chan->SelectErrno = rc;
+        chan->ReadErrno = rc;
         break;
       }
-    pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
+    if (new_data != NULL)
+      free(new_data);
     return rc;
     }
   /* data read is less than buffer size */
   else if (max_read_len > *read_len)
     {
-    pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
 /*This is a check to see if the ptr's have changed. Needed only in testing
  * if (max_read_len != (int)(tp->tdis_bufsize - (tp->tdis_eod - tp->tdis_thebuf)))
       {
@@ -286,7 +240,6 @@ int tcp_read(
     tp->tdis_eod += *read_len;
     *avail_len = tp->tdis_eod - tp->tdis_leadp;
     max_read_len = tp->tdis_eod - tp->tdis_thebuf;
-    pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
     if (max_read_len > tdis_buf_len)
       {
       snprintf(err_msg, sizeof(err_msg), "eod ptr BEYOND end of buffer!! (fit) Remaining buffer = %d, read_len = %lld", max_read_len, *read_len);
@@ -305,14 +258,12 @@ int tcp_read(
       free(new_data);
       return rc;
       }
-    pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
 
     tmp_leadp = tp->tdis_leadp - tp->tdis_thebuf;
     tmp_trailp = tp->tdis_trailp - tp->tdis_thebuf;
     tmp_eod = tp->tdis_eod - tp->tdis_thebuf;
 
     snprintf(ptr, newsize, "%s%s", tp->tdis_thebuf, new_data);
-    memset(tp->tdis_thebuf, '2', tp->tdis_bufsize);
     free(tp->tdis_thebuf);
     tp->tdis_thebuf = ptr;
     tp->tdis_bufsize = newsize;
@@ -323,7 +274,6 @@ int tcp_read(
 
     max_read_len = tp->tdis_eod - tp->tdis_thebuf;
     tdis_buf_len = newsize;
-    pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
 
     if (max_read_len > tdis_buf_len)
       {
@@ -331,7 +281,6 @@ int tcp_read(
       log_err(PBSE_INTERNAL,__func__,err_msg);
       }
     free(new_data);
-
     }
   return rc;
   }  /* END tcp_read() */
@@ -352,7 +301,7 @@ int tcp_read(
 
 int DIS_tcp_wflush(
 
-  int fd)  /* I */
+  struct tcp_chan *chan)  /* I */
 
   {
   size_t ct;
@@ -367,9 +316,7 @@ int DIS_tcp_wflush(
 
   pbs_debug = getenv("PBSDEBUG");
 
-  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-
-  tp = &tcparray[fd]->writebuf;
+  tp = &chan->writebuf;
   pb = tp->tdis_thebuf;
   ct = tp->tdis_trailp - tp->tdis_thebuf;
 
@@ -383,12 +330,10 @@ int DIS_tcp_wflush(
     memcpy(orig_temp_pb, pb, ct);
   temp_pb = orig_temp_pb;
 
-  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-
   if (rc != PBSE_NONE)
     return(-1);
  
-  while ((i = write(fd, temp_pb, ct)) != (ssize_t)ct)
+  while ((i = write(chan->sock, temp_pb, ct)) != (ssize_t)ct)
     {
     if (i == -1)
       {
@@ -401,8 +346,9 @@ int DIS_tcp_wflush(
 
       if (pbs_debug != NULL)
         {
-        fprintf(stderr, "TCP write of %d bytes (%.32s) failed, errno=%d (%s)\n",
-          (int)ct, temp_pb, errno, strerror(errno));
+        fprintf(stderr,
+            "TCP write of %d bytes (%.32s) [sock=%d] failed, errno=%d (%s)\n",
+          (int)ct, temp_pb, chan->sock, errno, strerror(errno));
         }
       free(orig_temp_pb);
       return(-1);
@@ -417,18 +363,10 @@ int DIS_tcp_wflush(
   /* SUCCESS */
 
   free(orig_temp_pb);
-  /* make sure something did not clean up the connection while
-     we were writing */
-  if (tcparray[fd] == NULL)
-    return (-1);
-
-  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
 
   tp->tdis_eod = tp->tdis_leadp;
 
   tcp_pack_buff(tp);
-
-  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
 
   return(0);
   }  /* END DIS_tcp_wflush() */
@@ -446,7 +384,6 @@ static void DIS_tcp_clear(
   struct tcpdisbuf *tp)
 
   {
-  memset(tp->tdis_thebuf, 0, tp->tdis_bufsize);
   tp->tdis_leadp  = tp->tdis_thebuf;
   tp->tdis_trailp = tp->tdis_thebuf;
   tp->tdis_eod    = tp->tdis_thebuf;
@@ -460,24 +397,14 @@ static void DIS_tcp_clear(
 
 void DIS_tcp_reset(
 
-  int fd,
+  struct tcp_chan *chan,
   int i)
 
   {
-
-  struct tcp_chan *tcp;
-
-  tcp = tcparray[fd];
-
-  pthread_mutex_lock(&tcp->tcp_mutex);
-
   if (i == 0)
-    DIS_tcp_clear(&tcp->readbuf);
+    DIS_tcp_clear(&chan->readbuf);
   else
-    DIS_tcp_clear(&tcp->writebuf);
-
-  pthread_mutex_unlock(&tcp->tcp_mutex);
-
+    DIS_tcp_clear(&chan->writebuf);
   return;
   }  /* END DIS_tcp_reset() */
 
@@ -493,29 +420,18 @@ void DIS_tcp_reset(
 
 int tcp_rskip(
 
-  int    fd,
+  struct tcp_chan *chan,
   size_t ct)
 
   {
-
   struct tcpdisbuf *tp;
-
-  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-
-  tp = &tcparray[fd]->readbuf;
-
+  tp = &chan->readbuf;
   if (tp->tdis_leadp - tp->tdis_eod < (ssize_t)ct)
     {
     /* this isn't the best thing to do, but this isn't used, so */
-    pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-
     return(-1);
     }
-
   tp->tdis_leadp += ct;
-
-  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-
   return(0);
   }
 
@@ -531,7 +447,7 @@ int tcp_rskip(
 
 int tcp_gets(
 
-  int     fd,
+  struct tcp_chan *chan,
   char   *str,
   size_t  ct)
 
@@ -541,19 +457,14 @@ int tcp_gets(
   long long data_read = 0;
   long long data_avail = 0;
 
-  if (tcparray[fd] == NULL)
-    return(-2);
-
-  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-  tp = &tcparray[fd]->readbuf;
+  tp = &chan->readbuf;
   /* length of usable data in current buffer */
   data_avail = tp->tdis_eod - tp->tdis_leadp;
-  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
 
   while ((size_t)data_avail < ct)
     {
     /* not enough data, try to get more */
-    if ((rc = tcp_read(fd, &data_read, &data_avail)) != PBSE_NONE)
+    if ((rc = tcp_read(chan, &data_read, &data_avail)) != PBSE_NONE)
       {
       if (data_read == 0)
         rc = -2;
@@ -562,12 +473,8 @@ int tcp_gets(
       return(rc);  /* Error or EOF */
       }
     }
-
-  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
   memcpy((char *)str, tp->tdis_leadp, ct);
   tp->tdis_leadp += ct;
-  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-
   return((int)ct);
   }  /* END tcp_gets() */
 
@@ -578,88 +485,15 @@ int tcp_gets(
 
 int tcp_getc(
 
-  int fd)
+  struct tcp_chan *chan)
 
   {
   int rc = DIS_SUCCESS;
   char ret_val;
-  if ((rc = tcp_gets(fd, &ret_val, 1)) < 0)
+  if ((rc = tcp_gets(chan, &ret_val, 1)) < 0)
     return rc;
   return (int)ret_val;
   }  /* END tcp_getc() */
-
-
-int PConnTimeout(
-
-  int sock)  /* I */
-
-  {
-  int rc; 
-
-  if ((tcparray == NULL) || (tcparray[sock] == NULL))
-    {
-    return(0);
-    }
-
-  pthread_mutex_lock(&(tcparray[sock]->tcp_mutex));
-
-  rc = (tcparray[sock]->IsTimeout == 1);
-
-  pthread_mutex_unlock(&(tcparray[sock]->tcp_mutex));
-
-  return(rc);
-  }  /* END PConnTimeout() */
-
-
-
-
-int TConnGetReadErrno(
-
-  int sock)  /* I */
-
-  {
-  int rc;
-
-  if ((tcparray == NULL) || (tcparray[sock] == NULL))
-    {
-    return(0);
-    }
-
-  pthread_mutex_lock(&(tcparray[sock]->tcp_mutex));
-
-  rc = tcparray[sock]->ReadErrno;
-
-  pthread_mutex_unlock(&(tcparray[sock]->tcp_mutex));
-
-  return(rc);
-  }  /* END TConnGetReadErrno() */
-
-
-
-
-
-int TConnGetSelectErrno(
-
-  int sock)  /* I */
-
-  {
-  int rc;
-
-  if ((tcparray == NULL) || (tcparray[sock] == NULL))
-    {
-    return(0);
-    }
-
-  pthread_mutex_lock(&(tcparray[sock]->tcp_mutex));
-  
-  rc = tcparray[sock]->SelectErrno;
-
-  pthread_mutex_unlock(&(tcparray[sock]->tcp_mutex));
-
-  return(rc);
-  }  /* END TConnGetSelectErrno() */
-
-
 
 
 
@@ -673,7 +507,7 @@ int TConnGetSelectErrno(
 
 int tcp_puts(
 
-  int         fd,  /* I */
+  struct tcp_chan *chan,  /* I */
   const char *str, /* I */
   size_t      ct)  /* I */
 
@@ -682,7 +516,6 @@ int tcp_puts(
   char *id = "tcp_puts";
 #endif
 
-  struct tcp_chan  *tcp = NULL;
   struct tcpdisbuf *tp = NULL;
   char             *temp = NULL;
   int               leadpct;
@@ -690,18 +523,11 @@ int tcp_puts(
   size_t            newbufsize;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
-  tcp = tcparray[fd];
-
-  if (tcp == NULL)
-    return(-2);
-
-  pthread_mutex_lock(&tcp->tcp_mutex);
-
   /* NOTE:  currently, failures may occur if THE_BUF_SIZE is not large enough */
   /*        this should be changed to allow proper operation with degraded    */
   /*        performance (how?) */
 
-  tp = &tcp->writebuf;
+  tp = &chan->writebuf;
   if ((tp->tdis_thebuf + tp->tdis_bufsize - tp->tdis_leadp) < (ssize_t)ct)
     {
     /* not enough room, reallocate the buffer */
@@ -718,9 +544,6 @@ int tcp_puts(
         (int)(tp->tdis_leadp - tp->tdis_thebuf),
         (int)ct);
       log_err(ENOMEM,id,log_buf);
-
-      pthread_mutex_unlock(&tcp->tcp_mutex);
-
       return(-1);
       }
 
@@ -732,21 +555,18 @@ int tcp_puts(
           __LINE__);
       log_err(ENOMEM, __func__, log_buf);
       }
-    memset(tp->tdis_thebuf, 170, tp->tdis_bufsize);
-
     free(tp->tdis_thebuf);
     tp->tdis_thebuf = temp;
     tp->tdis_bufsize = newbufsize;
     tp->tdis_leadp = tp->tdis_thebuf - leadpct;
     tp->tdis_trailp = tp->tdis_thebuf - trailpct;
+    tp->tdis_eod = tp->tdis_thebuf + newbufsize;
 
     }
 
   memcpy(tp->tdis_leadp, (char *)str, ct);
 
   tp->tdis_leadp += ct;
-
-  pthread_mutex_unlock(&tcp->tcp_mutex);
 
   return(ct);
   }  /* END tcp_puts() */
@@ -760,19 +580,14 @@ int tcp_puts(
 
 int tcp_rcommit(
 
-  int fd,
+  struct tcp_chan *chan,
   int commit_flag)
 
   {
 
   struct tcpdisbuf *tp;
 
-  if (tcparray[fd] == NULL)
-    return(-2);
-
-  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-
-  tp = &tcparray[fd]->readbuf;
+  tp = &chan->readbuf;
 
   if (commit_flag)
     {
@@ -786,8 +601,6 @@ int tcp_rcommit(
 
     tp->tdis_leadp = tp->tdis_trailp;
     }
-
-  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
 
   return(0);
   }  /* END tcp_rcommit() */
@@ -802,19 +615,14 @@ int tcp_rcommit(
 
 int tcp_wcommit(
 
-  int fd,
+  struct tcp_chan *chan,
   int commit_flag)
 
   {
 
   struct tcpdisbuf *tp;
 
-  if (tcparray[fd] == NULL)
-    return(-2);
-
-  pthread_mutex_lock(&(tcparray[fd]->tcp_mutex));
-
-  tp = &tcparray[fd]->writebuf;
+  tp = &chan->writebuf;
 
   if (commit_flag)
     {
@@ -828,11 +636,23 @@ int tcp_wcommit(
 
     tp->tdis_leadp = tp->tdis_trailp;
     }
-
-  pthread_mutex_unlock(&(tcparray[fd]->tcp_mutex));
-
   return(0);
   }
+
+
+
+int tcp_chan_has_data(
+    struct tcp_chan *chan)
+  {
+  int rc = FALSE;
+  struct tcpdisbuf *tp;
+  tp = &chan->readbuf;
+
+  if (tp->tdis_eod != tp->tdis_leadp)
+    rc = TRUE;
+  return rc;
+  }
+
 
 
 /*
@@ -845,106 +665,74 @@ int tcp_wcommit(
  * NOTE:  does not return FAILURE - FIXME
  */
 
-void DIS_tcp_setup(
+struct tcp_chan * DIS_tcp_setup(
 
   int fd)
 
   {
-  struct tcp_chan  *tcp = NULL;
+  struct tcp_chan  *chan = NULL;
   struct tcpdisbuf *tp = NULL;
-  int tcp_setup = FALSE;
 
   /* check for bad file descriptor */
 
   if (fd < 0)
     {
-    return;
+    return NULL;
     }
 
-  lock_tcp_table();
-  if (tcparray[fd] == NULL)
+  if ((chan = (struct tcp_chan *)calloc(1, sizeof(struct tcp_chan))) == NULL)
     {
-    if ((tcparray[fd] = (struct tcp_chan *)calloc(1, sizeof(struct tcp_chan))) == NULL)
-      {
-      log_err(ENOMEM, "DIS_tcp_setup", "calloc failure");
-      }
-    else
-      {
-      tcp_setup = TRUE;
-      }
+    log_err(ENOMEM, "DIS_tcp_setup", "calloc failure");
+    return NULL;
     }
-  unlock_tcp_table();
-  if (tcparray[fd] == NULL)
+  /* Assign socket to struct */
+  chan->sock = fd;
+
+  /* Setting up the read buffer */
+  tp = &chan->readbuf;
+  if ((tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE+1)) == NULL)
     {
-    goto error;
+    free(chan);
+    log_err(errno,"DIS_tcp_setup","calloc failure");
+    return NULL;
     }
+  tp->tdis_bufsize = THE_BUF_SIZE;
+  DIS_tcp_clear(tp);
 
-  tcp = tcparray[fd];
-  if (tcp_setup == TRUE)
+  /* Setting up the write buffer */
+  tp = &chan->writebuf;
+  if ((tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE+1)) == NULL)
     {
-
-    pthread_mutex_init(&tcp->tcp_mutex,NULL);
-    pthread_mutex_lock(&tcp->tcp_mutex);
-
-    /* Setting up the read buffer */
-    tp = &tcp->readbuf;
-
-    tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE+1);
-    if (tp->tdis_thebuf == NULL)
-      {
-      pthread_mutex_unlock(&tcp->tcp_mutex);
-
-      log_err(errno,"DIS_tcp_setup","calloc failure");
-
-      goto error;
-      }
-
-    tp->tdis_bufsize = THE_BUF_SIZE;
-
-    /* Setting up the write buffer */
-    tp = &tcp->writebuf;
-
-    tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE+1);
-    if (tp->tdis_thebuf == NULL)
-      {
-      pthread_mutex_unlock(&tcp->tcp_mutex);
-
-      log_err(errno,"DIS_tcp_setup","calloc failure");
-
-      goto error;
-      }
-
-    tp->tdis_bufsize = THE_BUF_SIZE;
-
+    free(chan->readbuf.tdis_thebuf);
+    free(chan);
+    log_err(errno,"DIS_tcp_setup","calloc failure");
+    return NULL;
     }
-  else
-    pthread_mutex_lock(&tcp->tcp_mutex);
-
-  /* initialize read and write buffers */
-  DIS_tcp_clear(&tcp->readbuf);
-
-  DIS_tcp_clear(&tcp->writebuf);
-
-  pthread_mutex_unlock(&tcp->tcp_mutex);
-
-error:
-
-  return;
+  tp->tdis_bufsize = THE_BUF_SIZE;
+  DIS_tcp_clear(tp);
+  return chan;
   }  /* END DIS_tcp_setup() */
 
-void DIS_tcp_shutdown(int fd)
+
+
+void DIS_tcp_cleanup(struct tcp_chan *chan)
   {
-  struct tcp_chan  *tcp = NULL;
   struct tcpdisbuf *tp = NULL;
-  lock_tcp_table();
-  tcp = tcparray[fd];
-  tcparray[fd] = NULL;
-  unlock_tcp_table();
-  tp = &tcp->readbuf;
+  tp = &chan->readbuf;
   free(tp->tdis_thebuf);
-  tp = &tcp->writebuf;
+
+  tp = &chan->writebuf;
   free(tp->tdis_thebuf);
-  pthread_mutex_destroy(&tcp->tcp_mutex);
-  free(tcp);
+
+  free(chan);
   }
+
+void DIS_tcp_close(struct tcp_chan *chan)
+  {
+  int sock = chan->sock;
+  DIS_tcp_cleanup(chan);
+  if (sock != -1)
+    close(sock);
+  }
+
 /* END tcp_dis.c */

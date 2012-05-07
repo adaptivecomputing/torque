@@ -100,28 +100,29 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_TrackJob(
     
-  int                   sock, 
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
   int rc;
 
-  rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_track.rq_jid);
+  rc = disrfst(chan, PBS_MAXSVRJOBID, preq->rq_ind.rq_track.rq_jid);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_track.rq_hopcount = disrui(sock, &rc);
+  preq->rq_ind.rq_track.rq_hopcount = disrui(chan, &rc);
 
   if (rc) return rc;
 
-  rc = disrfst(sock, PBS_MAXDEST, preq->rq_ind.rq_track.rq_location);
+  rc = disrfst(chan, PBS_MAXDEST, preq->rq_ind.rq_track.rq_location);
 
   if (rc) return rc;
 
-  preq->rq_ind.rq_track.rq_state[0] = disruc(sock, &rc);
+  preq->rq_ind.rq_track.rq_state[0] = disruc(chan, &rc);
 
   return rc;
   }

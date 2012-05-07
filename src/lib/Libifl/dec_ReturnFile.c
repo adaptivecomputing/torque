@@ -10,10 +10,11 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_ReturnFiles(
     
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
@@ -23,15 +24,15 @@ int decode_DIS_ReturnFiles(
 
   prfs = &preq->rq_ind.rq_returnfiles;
 
-  if ((rc = disrfst(sock, PBS_MAXSVRJOBID, prfs->rq_jobid)) != 0)
+  if ((rc = disrfst(chan, PBS_MAXSVRJOBID, prfs->rq_jobid)) != 0)
     return rc;
 
-  prfs->rq_return_stdout = disrsi(sock, &rc);
+  prfs->rq_return_stdout = disrsi(chan, &rc);
 
   if (rc != 0)
     return rc;
 
-  prfs->rq_return_stderr = disrsi(sock, &rc);
+  prfs->rq_return_stderr = disrsi(chan, &rc);
 
   if (rc != 0)
     return rc;

@@ -103,10 +103,11 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_Manage(
 
-  int   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
@@ -116,28 +117,28 @@ int decode_DIS_Manage(
 
   /* parse request */
 
-  preq->rq_ind.rq_manager.rq_cmd = disrui(sock, &rc);
+  preq->rq_ind.rq_manager.rq_cmd = disrui(chan, &rc);
 
   if (rc)
     {
     return(rc);
     }
 
-  preq->rq_ind.rq_manager.rq_objtype = disrui(sock, &rc);
+  preq->rq_ind.rq_manager.rq_objtype = disrui(chan, &rc);
 
   if (rc)
     {
     return(rc);
     }
 
-  rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_manager.rq_objname);
+  rc = disrfst(chan, PBS_MAXSVRJOBID, preq->rq_ind.rq_manager.rq_objname);
 
   if (rc)
     {
     return(rc);
     }
 
-  rc = decode_DIS_svrattrl(sock, &preq->rq_ind.rq_manager.rq_attr);
+  rc = decode_DIS_svrattrl(chan, &preq->rq_ind.rq_manager.rq_attr);
 
   return (rc);
   }  /* END decode_DIS_Manage() */

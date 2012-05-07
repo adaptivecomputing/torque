@@ -78,12 +78,6 @@ AvlTree AVL_delete_node(u_long key, uint16_t port, AvlTree tree)
   exit(1);
   }
 
-void *process_Dreply(void *new_sock)
-  {
-  fprintf(stderr, "The call to process_Dreply needs to be mocked!!\n");
-  exit(1);
-  }
-
 char *netaddr_pbs_net_t(pbs_net_t ipadd)
   {
   fprintf(stderr, "The call to netaddr_pbs_net_t needs to be mocked!!\n");

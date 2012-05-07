@@ -88,6 +88,7 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 
 
@@ -104,7 +105,7 @@
 
 int decode_DIS_JobObit(
 
-  int                   sock,  /* I */
+  struct tcp_chan *chan,
   struct batch_request *preq)  /* O */
 
   {
@@ -112,14 +113,14 @@ int decode_DIS_JobObit(
 
   CLEAR_HEAD(preq->rq_ind.rq_jobobit.rq_attr);
 
-  rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_jobobit.rq_jid);
+  rc = disrfst(chan, PBS_MAXSVRJOBID, preq->rq_ind.rq_jobobit.rq_jid);
 
   if (rc != 0)
     {
     return(rc);
     }
 
-  preq->rq_ind.rq_jobobit.rq_status = disrsi(sock, &rc);
+  preq->rq_ind.rq_jobobit.rq_status = disrsi(chan, &rc);
 
   if (rc != 0)
     {
@@ -128,7 +129,7 @@ int decode_DIS_JobObit(
 
   /* decode list of svrattrl (if any) */
 
-  rc = decode_DIS_svrattrl(sock, &preq->rq_ind.rq_jobobit.rq_attr);
+  rc = decode_DIS_svrattrl(chan, &preq->rq_ind.rq_jobobit.rq_attr);
 
   return(rc);
   }  /* END decode_DIS_JobObit() */

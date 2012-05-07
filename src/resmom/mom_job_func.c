@@ -83,7 +83,7 @@
  *
  *   job_abt   abort (remove from server) a job
  *   job_alloc    allocate job struct and initialize defaults
- *   job_free   free space allocated to the job structure and its
+ *   mom_job_free   free space allocated to the job structure and its
  *    childern structures.
  *   job_purge   purge job from server
  *
@@ -135,6 +135,7 @@
 #include "portability.h"
 #include "threadpool.h"
 #include "alps_functions.h"
+#include "dis.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -225,7 +226,12 @@ void tasks_free(
       ip = (infoent *)GET_NEXT(tp->ti_info);
       }
 
-    close_conn(tp->ti_fd, FALSE);
+    if (tp->ti_chan != NULL)
+      {
+      close_conn(tp->ti_chan->sock, FALSE);
+      DIS_tcp_cleanup(tp->ti_chan);
+      tp->ti_chan = NULL;
+      }
 
     delete_link(&tp->ti_jobtask);
 
@@ -502,10 +508,10 @@ job *job_alloc(void)
 
 
 /*
- * job_free - free job structure and its various sub-structures
+ * mom_job_free - free job structure and its various sub-structures
  */
 
-void job_free(
+void mom_job_free(
 
   job *pj)  /* I (modified) */
 
@@ -555,7 +561,7 @@ void job_free(
   free((char *)pj);
 
   return;
-  }  /* END job_free() */
+  }  /* END mom_job_free() */
 
 
  /*
@@ -875,7 +881,7 @@ void job_purge(
 
 #endif   /* IBM SP */
 
-  job_free(pjob);
+  mom_job_free(pjob);
 
   /* if no jobs are left, check if MOM should be restarted */
 

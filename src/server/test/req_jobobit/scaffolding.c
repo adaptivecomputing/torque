@@ -68,7 +68,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-void job_purge(job *pjob)
+int job_purge(job *pjob)
   {
   fprintf(stderr, "The call to job_purge to be mocked!!\n");
   exit(1);
@@ -119,12 +119,6 @@ void cleanup_restart_file( job *pjob)
 void release_req(struct work_task *pwt)
   {
   fprintf(stderr, "The call to release_req to be mocked!!\n");
-  exit(1);
-  }
-
-void *process_Dreply(void *new_sock)
-  {
-  fprintf(stderr, "The call to process_Dreply to be mocked!!\n");
   exit(1);
   }
 
@@ -194,7 +188,7 @@ void set_resc_assigned(job *pjob, enum batch_op op)
   exit(1);
   }
 
-void update_array_values(job_array *pa, void *j, int old_state, enum ArrayEventsEnum event)
+void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status)
   {
   fprintf(stderr, "The call to update_array_values to be mocked!!\n");
   exit(1);

@@ -13,16 +13,16 @@
 
 int encode_DIS_ReturnFiles(
     
-  int                   sock,
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
   int   rc;
 
 
-  if ((rc = diswst(sock, preq->rq_ind.rq_returnfiles.rq_jobid) != 0)         ||
-      (rc = diswsi(sock, preq->rq_ind.rq_returnfiles.rq_return_stdout) != 0) ||
-      (rc = diswsi(sock, preq->rq_ind.rq_returnfiles.rq_return_stderr) != 0))
+  if ((rc = diswst(chan, preq->rq_ind.rq_returnfiles.rq_jobid) != 0)         ||
+      (rc = diswsi(chan, preq->rq_ind.rq_returnfiles.rq_return_stdout) != 0) ||
+      (rc = diswsi(chan, preq->rq_ind.rq_returnfiles.rq_return_stderr) != 0))
     return rc;
 
   return 0;

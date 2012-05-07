@@ -108,24 +108,19 @@
 
 char *disrst(
 
-  int  stream,
+  struct tcp_chan *chan,
   int *retval)
 
   {
   int        locret;
   int        negate;
   unsigned int count;
-  int (*disr_commit)(int stream, int commit);
-  int (*dis_gets)(int, char *, size_t);
 
   char *value = NULL;
 
   assert(retval != NULL);
 
-  disr_commit = tcp_rcommit;
-  dis_gets = tcp_gets;
-
-  locret = disrsi_(stream, &negate, &count, 1);
+  locret = disrsi_(chan, &negate, &count, 1);
 
   if (locret == DIS_SUCCESS)
     {
@@ -143,7 +138,7 @@ char *disrst(
         }
       else
         {
-        if ((*dis_gets)(stream, value, (size_t)count) != (int)count)
+        if (tcp_gets(chan, value, (size_t)count) != (int)count)
           locret = DIS_PROTO;
 
 #ifndef NDEBUG
@@ -155,7 +150,7 @@ char *disrst(
           value[count] = '\0';
         }
       }
-    locret = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?  DIS_NOCOMMIT : locret;
+    locret = (tcp_rcommit(chan, locret == DIS_SUCCESS) < 0) ?  DIS_NOCOMMIT : locret;
     }
 
   *retval = locret;

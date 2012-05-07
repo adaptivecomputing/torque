@@ -72,7 +72,7 @@ char *find_ts_node(void)
   exit(1);
   }
 
-void stat_mom_job(job *pjob)
+void stat_mom_job(char *job_id)
   {
   fprintf(stderr, "The call to stat_mom_job to be mocked!!\n");
   exit(1);
@@ -180,7 +180,7 @@ int job_set_wait(pbs_attribute *pattr, void *pjob, int mode)
   exit(1);
   }
 
-void update_array_values(job_array *pa, void *j, int old_state, enum ArrayEventsEnum event)
+void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status)
   {
   fprintf(stderr, "The call to update_array_values to be mocked!!\n");
   exit(1);
@@ -234,7 +234,7 @@ void DIS_tcp_settimeout(long timeout)
   exit(1);
   }
 
-int send_job_work(job *pjob, char *node_name, int type, int *my_err, struct batch_request *preq)
+int send_job_work(char *job_id, char *node_name, int type, int *my_err, struct batch_request *preq)
   {
   fprintf(stderr, "The call to send_job_work to be mocked!!\n");
   exit(1);

@@ -97,7 +97,7 @@
 
 int encode_DIS_QueueJob(
 
-  int    sock,
+  struct tcp_chan *chan,
   char  *jobid,
   char  *destin,
   struct attropl *aoplp)
@@ -111,13 +111,13 @@ int encode_DIS_QueueJob(
   if (destin == (char *)0)
     destin = "";
 
-  if ((rc = diswst(sock, jobid) != 0) ||
-      (rc = diswst(sock, destin) != 0))
+  if ((rc = diswst(chan, jobid) != 0) ||
+      (rc = diswst(chan, destin) != 0))
     {
     return rc;
     }
 
-  return(encode_DIS_attropl(sock, aoplp));
+  return(encode_DIS_attropl(chan, aoplp));
   }  /* END encode_DIS_QueueJob() */
 
 

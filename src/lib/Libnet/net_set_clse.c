@@ -97,16 +97,11 @@ extern struct connection svr_conn[];
 void net_add_close_func(
     
   int    sd, 
-  void (*func)(int),
-  int    has_mutex)
+  void (*func)(int))
 
   {
-  if (has_mutex == FALSE)
-    pthread_mutex_lock(svr_conn[sd].cn_mutex);
-
+  pthread_mutex_lock(svr_conn[sd].cn_mutex);
   if (svr_conn[sd].cn_active != Idle)
     svr_conn[sd].cn_oncl =  func;
-
-  if (has_mutex == FALSE)
-    pthread_mutex_unlock(svr_conn[sd].cn_mutex);
+  pthread_mutex_unlock(svr_conn[sd].cn_mutex);
   }

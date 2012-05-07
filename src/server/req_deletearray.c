@@ -20,12 +20,12 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
+#include "job_func.h"
 
 #include "array.h"
 
 extern int LOGLEVEL;
 extern int  svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host);
-extern void job_purge(job *pjob);
 
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int has_job_delete_nanny(struct job *);
@@ -58,7 +58,6 @@ int attempt_delete(
   int        skipped = FALSE;
   int        release_mutex = TRUE;
 
-  char      *jobid_copy;
   job       *pjob;
   time_t     time_now = time(NULL);
   char       log_buf[LOCAL_LOG_BUF_SIZE];
@@ -123,14 +122,13 @@ int attempt_delete(
     pjob->ji_momhandle = -1;
     
     /* force new connection */
-    jobid_copy = strdup(pjob->ji_qs.ji_jobid);
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
-    set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
+    set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
@@ -170,15 +168,13 @@ int attempt_delete(
         0);
       pthread_mutex_unlock(server.sv_attr_mutex);
       
-      jobid_copy = strdup(pjob->ji_qs.ji_jobid);
-      
       if (LOGLEVEL >= 7)
         {
         sprintf(log_buf, "calling on_job_exit from %s", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
       
-      set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, jobid_copy, FALSE);
+      set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
       }
     else
       release_mutex = FALSE;
@@ -208,7 +204,7 @@ void req_deletearray(
   struct work_task *ptask;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
-  int               num_skipped;
+  int               num_skipped = 0;
   char              owner[PBS_MAXUSER + 1];
   time_t            time_now = time(NULL);
 
@@ -289,18 +285,11 @@ void req_deletearray(
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
-    num_skipped = delete_whole_array(pa);
+    if ((num_skipped = delete_whole_array(pa)) == NO_JOBS_IN_ARRAY)
+      array_delete(pa);
     }
 
-  pthread_mutex_unlock(pa->ai_mutex);
-  if (LOGLEVEL >= 7)
-    {
-    sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    }
-
-  /* check if the array is gone */
-  if ((pa = get_array(preq->rq_ind.rq_delete.rq_objname)) != NULL)
+  if (num_skipped != NO_JOBS_IN_ARRAY)
     {
     pthread_mutex_unlock(pa->ai_mutex);
     if (LOGLEVEL >= 7)
@@ -308,26 +297,36 @@ void req_deletearray(
       sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
-
-    /* some jobs were not deleted.  They must have been running or had
-       JOB_SUBSTATE_TRANSIT */
-    if (num_skipped != 0)
+    
+    /* check if the array is gone */
+    if ((pa = get_array(preq->rq_ind.rq_delete.rq_objname)) != NULL)
       {
-      ptask = set_task(WORK_Timed, time_now + 10, array_delete_wt, preq, FALSE);
-
-      if (ptask)
+      pthread_mutex_unlock(pa->ai_mutex);
+      if (LOGLEVEL >= 7)
         {
-        return;
+        sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        }
+      
+      /* some jobs were not deleted.  They must have been running or had
+         JOB_SUBSTATE_TRANSIT */
+      if (num_skipped != 0)
+        {
+        ptask = set_task(WORK_Timed, time_now + 10, array_delete_wt, preq, FALSE);
+        
+        if (ptask)
+          {
+          return;
+          }
         }
       }
     }
-
+  
   /* now that the whole array is deleted, we should mail the user if necessary */
-
   reply_ack(preq);
 
   return;
-  }
+  } /* END req_deletearray() */
 
 
 
@@ -362,7 +361,6 @@ void array_delete_wt(
 
   int                   i;
 
-  char                 *jobid_copy;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   int                   num_jobs = 0;
   int                   num_prerun = 0;
@@ -411,14 +409,12 @@ void array_delete_wt(
           pjob->ji_momhandle = -1;
           
           /* force new connection */
-          jobid_copy = strdup(pjob->ji_qs.ji_jobid);
-          
           if (LOGLEVEL >= 7)
             {
             sprintf(log_buf, "calling on_job_exit from %s", __func__);
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
             }
-          set_task(WORK_Immed, 0, on_job_exit, jobid_copy, FALSE);
+          set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
           
           pthread_mutex_unlock(pjob->ji_mutex);
           }

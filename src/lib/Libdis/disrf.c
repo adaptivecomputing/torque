@@ -112,7 +112,7 @@ static double dval;
 
 static int disrd_(
 
-  int          stream,
+  struct tcp_chan *chan,
   unsigned int count)
 
   {
@@ -121,20 +121,13 @@ static int disrd_(
   unsigned int  unum;
   char  *cp;
   char scratch[DIS_BUFSIZ+1];
-  int (*dis_getc)(int);
-  int (*disr_skip)(int,size_t);
-  int (*dis_gets)(int, char *, size_t);
 
   if (dis_umaxd == 0)
     disiui_();
 
   memset(scratch, 0, DIS_BUFSIZ+1);
 
-  dis_getc = tcp_getc;
-  dis_gets = tcp_gets;
-  disr_skip = tcp_rskip;
-
-  c = (*dis_getc)(stream);
+  c = tcp_getc(chan);
 
   switch (c)
     {
@@ -157,7 +150,7 @@ static int disrd_(
 
       do
         {
-        c = (*dis_getc)(stream);
+        c = tcp_getc(chan);
 
         if ((c < '0') || (c > '9'))
           {
@@ -179,7 +172,7 @@ static int disrd_(
         {
         count--;
 
-        switch ((*dis_getc)(stream))
+        switch (tcp_getc(chan))
           {
 
           case '5':
@@ -212,7 +205,7 @@ static int disrd_(
           case '4':
 
             if ((count > 0) &&
-                ((*disr_skip)(stream, (size_t)count) < 0))
+                (tcp_rskip(chan, (size_t)count) < 0))
               {
               return(DIS_EOD);
               }
@@ -265,7 +258,7 @@ static int disrd_(
 
       if (count > 1)
         {
-        if ((*dis_gets)(stream, scratch + 1, count - 1) != (int)count - 1)
+        if (tcp_gets(chan, scratch + 1, count - 1) != (int)count - 1)
           {
           return(DIS_EOD);
           }
@@ -296,7 +289,7 @@ static int disrd_(
           }
         }
 
-      return(disrd_(stream, unum));
+      return(disrd_(chan, unum));
 
       /*NOTREACHED*/
 
@@ -337,7 +330,7 @@ static int disrd_(
 
 float disrf(
 
-  int  stream,
+  struct tcp_chan *chan,
   int *retval)
 
   {
@@ -347,13 +340,12 @@ float disrf(
   int  negate;
 
   assert(retval != NULL);
-  assert(stream >= 0);
 
   dval = 0.0;
 
-  if ((locret = disrd_(stream, 1)) == DIS_SUCCESS)
+  if ((locret = disrd_(chan, 1)) == DIS_SUCCESS)
     {
-    locret = disrsi_(stream, &negate, &uexpon, 1);
+    locret = disrsi_(chan, &negate, &uexpon, 1);
 
     if (locret == DIS_SUCCESS)
       {
@@ -394,7 +386,7 @@ float disrf(
       }
     }
 
-  if (tcp_rcommit(stream, locret == DIS_SUCCESS) < 0)
+  if (tcp_rcommit(chan, locret == DIS_SUCCESS) < 0)
     locret = DIS_NOCOMMIT;
 
   *retval = locret;

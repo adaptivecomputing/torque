@@ -599,7 +599,6 @@ int get_parent_dest_queues(
       (index_dest < 0))
     {
     rc = -1;
-    lock_queue(*parent, __func__, NULL, 0);
     }
   else
     {
@@ -611,7 +610,6 @@ int get_parent_dest_queues(
         (pque_dest == NULL))
       {
       rc = -1;
-      lock_queue(*parent, __func__, NULL, 0);
       }
     else
       {

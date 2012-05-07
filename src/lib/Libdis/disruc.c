@@ -117,20 +117,17 @@
 
 unsigned char disruc(
     
-  int  stream,
+  struct tcp_chan *chan,
   int *retval)
   
   {
   int  locret;
   int  negate;
   unsigned value;
-  int (*disr_commit)(int stream, int commit);
 
   assert(retval != NULL);
 
-  disr_commit = tcp_rcommit;
-
-  locret = disrsi_(stream, &negate, &value, 1);
+  locret = disrsi_(chan, &negate, &value, 1);
 
   if (locret != DIS_SUCCESS)
     {
@@ -147,7 +144,7 @@ unsigned char disruc(
     locret = DIS_OVERFLOW;
     }
 
-  *retval = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?
+  *retval = (tcp_rcommit(chan, locret == DIS_SUCCESS) < 0) ?
 
             DIS_NOCOMMIT : locret;
   return ((unsigned char)value);

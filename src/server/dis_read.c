@@ -100,6 +100,7 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "net_connect.h"
+#include "tcp.h" /* tcp_chan */
 
 
 
@@ -121,7 +122,7 @@ extern int       LOGLEVEL;
 
 int dis_request_read(
 
-  int                   sfds,  /* socket to read */
+  struct tcp_chan *chan,
   struct batch_request *request) /* server internal structure */
 
   {
@@ -130,17 +131,15 @@ int dis_request_read(
   int   rc;  /* return code */
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
-/*  DIS_tcp_setup(sfds);*/ /* setup for DIS over tcp */
-
 #ifdef PBS_MOM
   /* NYI: talk to Ken about this. This is necessary due to the changes to 
    * decode_DIS_ReqHdr */
-  proto_type = disrui(sfds, &rc);
+  proto_type = disrui(chan, &rc);
 #endif
 
   /* Decode the Request Header, that will tell the request type */
 
-  if ((rc = decode_DIS_ReqHdr(sfds, request, &proto_type, &proto_ver)))
+  if ((rc = decode_DIS_ReqHdr(chan, request, &proto_type, &proto_ver)))
     {
     if (rc == DIS_EOF)
       {
@@ -194,7 +193,7 @@ int dis_request_read(
 
     case PBS_BATCH_Disconnect:
 
-      return(-1);  /* set EOF return */
+      return(PBSE_SOCKET_CLOSE);  /* set EOF return */
 
       /*NOTREACHED*/
 
@@ -204,13 +203,13 @@ int dis_request_read(
 
       CLEAR_HEAD(request->rq_ind.rq_queuejob.rq_attr);
 
-      rc = decode_DIS_QueueJob(sfds, request);
+      rc = decode_DIS_QueueJob(chan, request);
 
       break;
 
     case PBS_BATCH_JobCred:
 
-      rc = decode_DIS_JobCred(sfds, request);
+      rc = decode_DIS_JobCred(chan, request);
 
       break;
 
@@ -218,7 +217,7 @@ int dis_request_read(
 
     case PBS_BATCH_MvJobFile:
 
-      rc = decode_DIS_JobFile(sfds, request);
+      rc = decode_DIS_JobFile(chan, request);
 
       break;
 
@@ -228,7 +227,7 @@ int dis_request_read(
 
     case PBS_BATCH_Rerun:
 
-      rc = decode_DIS_JobId(sfds, request->rq_ind.rq_commit);
+      rc = decode_DIS_JobId(chan, request->rq_ind.rq_commit);
 
       break;
 
@@ -242,37 +241,37 @@ int dis_request_read(
 
     case PBS_BATCH_AsyModifyJob:
 
-      rc = decode_DIS_Manage(sfds, request);
+      rc = decode_DIS_Manage(chan, request);
 
       break;
 
     case PBS_BATCH_MessJob:
 
-      rc = decode_DIS_MessageJob(sfds, request);
+      rc = decode_DIS_MessageJob(chan, request);
 
       break;
 
     case PBS_BATCH_Shutdown:
 
-      rc = decode_DIS_ShutDown(sfds, request);
+      rc = decode_DIS_ShutDown(chan, request);
 
       break;
 
     case PBS_BATCH_SignalJob:
 
-      rc = decode_DIS_SignalJob(sfds, request);
+      rc = decode_DIS_SignalJob(chan, request);
 
       break;
 
     case PBS_BATCH_StatusJob:
 
-      rc = decode_DIS_Status(sfds, request);
+      rc = decode_DIS_Status(chan, request);
 
       break;
 
     case PBS_BATCH_GpuCtrl:
 
-      rc = decode_DIS_GpuCtrl(sfds, request);
+      rc = decode_DIS_GpuCtrl(chan, request);
 
       break;
 
@@ -280,7 +279,7 @@ int dis_request_read(
 
     case PBS_BATCH_LocateJob:
 
-      rc = decode_DIS_JobId(sfds, request->rq_ind.rq_locate);
+      rc = decode_DIS_JobId(chan, request->rq_ind.rq_locate);
 
       break;
 
@@ -288,7 +287,7 @@ int dis_request_read(
 
     case PBS_BATCH_ReleaseJob:
 
-      rc = decode_DIS_Manage(sfds, request);
+      rc = decode_DIS_Manage(chan, request);
 
       break;
 
@@ -296,7 +295,7 @@ int dis_request_read(
 
     case PBS_BATCH_OrderJob:
 
-      rc = decode_DIS_MoveJob(sfds, request);
+      rc = decode_DIS_MoveJob(chan, request);
 
       break;
 
@@ -306,7 +305,7 @@ int dis_request_read(
 
     case PBS_BATCH_StageIn:
 
-      rc = decode_DIS_RunJob(sfds, request);
+      rc = decode_DIS_RunJob(chan, request);
 
       break;
 
@@ -316,7 +315,7 @@ int dis_request_read(
 
       CLEAR_HEAD(request->rq_ind.rq_select);
 
-      rc = decode_DIS_svrattrl(sfds, &request->rq_ind.rq_select);
+      rc = decode_DIS_svrattrl(chan, &request->rq_ind.rq_select);
 
       break;
 
@@ -327,13 +326,13 @@ int dis_request_read(
     case PBS_BATCH_StatusSvr:
       /* DIAGTODO: add PBS_BATCH_StatusDiag */
 
-      rc = decode_DIS_Status(sfds, request);
+      rc = decode_DIS_Status(chan, request);
 
       break;
 
     case PBS_BATCH_TrackJob:
 
-      rc = decode_DIS_TrackJob(sfds, request);
+      rc = decode_DIS_TrackJob(chan, request);
 
       break;
 
@@ -343,29 +342,29 @@ int dis_request_read(
 
     case PBS_BATCH_ReleaseResc:
 
-      rc = decode_DIS_Rescl(sfds, request);
+      rc = decode_DIS_Rescl(chan, request);
 
       break;
 
     case PBS_BATCH_RegistDep:
 
-      rc = decode_DIS_Register(sfds, request);
+      rc = decode_DIS_Register(chan, request);
 
       break;
 
 	case PBS_BATCH_AuthenUser:
 
-      rc = decode_DIS_Authen(sfds, request);
+      rc = decode_DIS_Authen(chan, request);
 
       break;
 
 	case PBS_BATCH_AltAuthenUser:
-	  rc = decode_DIS_AltAuthen(sfds, request);
+	  rc = decode_DIS_AltAuthen(chan, request);
 	  break;
 
     case PBS_BATCH_JobObit:
 
-      rc = decode_DIS_JobObit(sfds, request);
+      rc = decode_DIS_JobObit(chan, request);
 
       break;
 
@@ -374,7 +373,7 @@ int dis_request_read(
       /* pbs_mom services */
 
     case PBS_BATCH_ReturnFiles:
-      rc = decode_DIS_ReturnFiles(sfds, request);
+      rc = decode_DIS_ReturnFiles(chan, request);
 
       break;
 
@@ -382,7 +381,7 @@ int dis_request_read(
 
     case PBS_BATCH_DelFiles:
 
-      rc = decode_DIS_CopyFiles(sfds, request);
+      rc = decode_DIS_CopyFiles(chan, request);
 
       break;
 
@@ -405,7 +404,7 @@ int dis_request_read(
   if (rc == 0)
     {
     /* Decode the Request Extension, if present */
-    rc = decode_DIS_ReqExtend(sfds, request);
+    rc = decode_DIS_ReqExtend(chan, request);
 
     if (rc != 0)
       {
@@ -448,13 +447,11 @@ int dis_request_read(
 
 int DIS_reply_read(
 
-  int                 sock,    /* I */
+  struct tcp_chan *chan,
   struct batch_reply *preply)  /* I (modified) */
 
   {
-  DIS_tcp_setup(sock);
-
-  return(decode_DIS_replySvr(sock, preply));
+  return(decode_DIS_replySvr(chan, preply));
   }
 
 /* END dis_read.c */

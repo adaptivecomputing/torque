@@ -464,9 +464,9 @@ int insert_task_first(
     log_err(rc, __func__, "Cannot allocate space to resize the array");
     }
 
+  wt->wt_tasklist = at;
   pthread_mutex_unlock(at->alltasks_mutex);
   
-  wt->wt_tasklist = at;
 
   return(rc);
   } /* END insert_task_first() */
@@ -551,14 +551,13 @@ work_task *next_task_from_recycler(
   int       *iter)
 
   {
-  work_task *wt;
+  work_task *wt = NULL;
 
   pthread_mutex_lock(at->alltasks_mutex);
   wt = next_thing(at->ra,iter);
-  pthread_mutex_unlock(at->alltasks_mutex);
-
   if (wt != NULL)
     pthread_mutex_lock(wt->wt_mutex);
+  pthread_mutex_unlock(at->alltasks_mutex);
 
   return(wt);
   } /* END next_task_from_recycler() */

@@ -84,6 +84,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int pbs_movejob_err(
     
@@ -98,6 +99,7 @@ int pbs_movejob_err(
 
   struct batch_reply *reply;
   int                 sock;
+  struct tcp_chan *chan = NULL;
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
     return (PBSE_IVALREQ);
@@ -111,23 +113,27 @@ int pbs_movejob_err(
 
   /* setup DIS support routines for following DIS calls */
 
-  DIS_tcp_setup(sock);
-
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_MoveJob, pbs_current_user)) ||
-      (rc = encode_DIS_MoveJob(sock, jobid, destin))   ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    pthread_mutex_unlock(connection[c].ch_mutex);
+    rc = PBSE_PROTOCOL;
+    return rc;
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_MoveJob, pbs_current_user)) ||
+      (rc = encode_DIS_MoveJob(chan, jobid, destin))   ||
+      (rc = encode_DIS_ReqExtend(chan, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
 
-  if (DIS_tcp_wflush(sock))
+  if (DIS_tcp_wflush(chan))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
 
@@ -140,7 +146,7 @@ int pbs_movejob_err(
   rc = connection[c].ch_errno;
 
   pthread_mutex_unlock(connection[c].ch_mutex);
-
+  DIS_tcp_cleanup(chan);
   return(rc);
   } /* END pbs_movejob_err() */
 

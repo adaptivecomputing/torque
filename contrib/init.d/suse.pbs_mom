@@ -16,7 +16,7 @@
 #	MOM, on the local host.
 ### END INIT INFO
 
-PBS_DAEMON=/usr/sbin/pbs_mom
+PBS_DAEMON=/usr/local/sbin/pbs_mom
 PBS_HOME=/var/spool/torque
 PIDFILE=$PBS_HOME/mom_priv/mom.lock
 export PBS_DAEMON PBS_HOME PIDFILE

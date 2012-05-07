@@ -221,6 +221,8 @@ void *req_orderjob(
   char                  tmpqn[PBS_MAXQUEUENAME+1];
   struct batch_request *req = (struct batch_request *)vp;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  char                  job_id1[PBS_MAXSVRJOBID+1];
+  char                  job_id2[PBS_MAXSVRJOBID+1];
   pbs_queue            *pque1;
   pbs_queue            *pque2;
 
@@ -318,17 +320,21 @@ void *req_orderjob(
     strcpy(tmpqn, pjob1->ji_qs.ji_queue);
     strcpy(pjob1->ji_qs.ji_queue, pjob2->ji_qs.ji_queue);
     strcpy(pjob2->ji_qs.ji_queue, tmpqn);
-    svr_dequejob(pjob1, FALSE);
-    svr_dequejob(pjob2, FALSE);
-    if (strlen(pjob1->ji_qs.ji_jobid) > 0)
-      svr_enquejob(pjob1, FALSE, -1);
-    else
-      pjob1 = NULL;
+    strcpy(job_id1, pjob1->ji_qs.ji_jobid);
+    strcpy(job_id2, pjob2->ji_qs.ji_jobid);
+    pthread_mutex_unlock(pjob1->ji_mutex);
+    pthread_mutex_unlock(pjob2->ji_mutex);
+    pjob1 = NULL;
+    pjob2 = NULL;
 
-    if (strlen(pjob2->ji_qs.ji_jobid) > 0)
+    svr_dequejob(job_id1, FALSE);
+    svr_dequejob(job_id2, FALSE);
+
+    if ((pjob1 = find_job(job_id1)) != NULL)
+      svr_enquejob(pjob1, FALSE, -1);
+
+    if ((pjob2 = find_job(job_id2)) != NULL)
       svr_enquejob(pjob2, FALSE, -1);
-    else
-      pjob2 = NULL;
     }
   else
     {
@@ -342,17 +348,19 @@ void *req_orderjob(
 
   /* need to update disk copy of both jobs to save new order */
   if (pjob1 != NULL)
+    {
     job_save(pjob1, SAVEJOB_FULL, 0);
-  if (pjob2 != NULL)
-    job_save(pjob2, SAVEJOB_FULL, 0);
+    pthread_mutex_unlock(pjob1->ji_mutex);
+    }
 
-  reply_ack(req);
+  if (pjob2 != NULL)
+    {
+    job_save(pjob2, SAVEJOB_FULL, 0);
+    pthread_mutex_unlock(pjob2->ji_mutex);
+    }
 
   /* SUCCESS */
-  if (pjob1 != NULL)
-    pthread_mutex_unlock(pjob1->ji_mutex);
-  if (pjob2 != NULL)
-    pthread_mutex_unlock(pjob2->ji_mutex);
+  reply_ack(req);
 
   return(NULL);
   }  /* END req_orderjob() */

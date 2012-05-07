@@ -78,7 +78,7 @@
 */
 /*
  * Synopsis:
- *  double disrd(int stream, int *retval)
+ *  double disrd(struct tcp_chan *chan, int *retval)
  *
  * Gets a Data-is-Strings floating point number from <stream> and converts
  * it into a double which it returns.  The number from <stream> consists of
@@ -109,7 +109,7 @@
 
 double disrd(
     
-  int  stream,
+  struct tcp_chan *chan,
   int *retval)
   
   {
@@ -120,18 +120,15 @@ double disrd(
   unsigned ndigs;
   unsigned nskips;
   dis_long_double_t ldval;
-  int (*disr_commit)(int stream, int commit);
 
   assert(retval != NULL);
 
-  disr_commit = tcp_rcommit;
-
   ldval = 0.0L;
-  locret = disrl_(stream, &ldval, &ndigs, &nskips, DBL_DIG, 1);
+  locret = disrl_(chan, &ldval, &ndigs, &nskips, DBL_DIG, 1);
 
   if (locret == DIS_SUCCESS)
     {
-    locret = disrsi_(stream, &negate, &uexpon, 1);
+    locret = disrsi_(chan, &negate, &uexpon, 1);
 
     if (locret == DIS_SUCCESS)
       {
@@ -172,7 +169,7 @@ double disrd(
       }
     }
 
-  if ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0)
+  if (tcp_rcommit(chan, locret == DIS_SUCCESS) < 0)
     locret = DIS_NOCOMMIT;
 
   *retval = locret;

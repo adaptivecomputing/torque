@@ -98,14 +98,15 @@
 #include "pbs_error.h"
 #include "pbs_ifl.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_JobId(
     
-  int   sock,
+  struct tcp_chan *chan,
   char *jobid)
 
   {
-  return (disrfst(sock, PBS_MAXSVRJOBID, jobid));
+  return (disrfst(chan, PBS_MAXSVRJOBID, jobid));
   }
 
 

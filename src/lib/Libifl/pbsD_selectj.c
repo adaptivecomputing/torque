@@ -93,6 +93,7 @@
 #include <stdlib.h>
 #include "libpbs.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 static int PBSD_select_put(int, int, struct attropl *, char *);
 static char **PBSD_select_get(int *, int);
@@ -178,8 +179,9 @@ static int PBSD_select_put(
   char           *extend)
 
   {
-  int rc;
+  int rc = PBSE_NONE;
   int sock;
+  struct tcp_chan *chan = NULL;
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -187,16 +189,20 @@ static int PBSD_select_put(
 
   /* setup DIS support routines for following DIS calls */
 
-  DIS_tcp_setup(sock);
-
-  if ((rc = encode_DIS_ReqHdr(sock, type, pbs_current_user)) ||
-      (rc = encode_DIS_attropl(sock, attrib)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    pthread_mutex_unlock(connection[c].ch_mutex);
+    rc = PBSE_PROTOCOL;
+    return rc;
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, type, pbs_current_user)) ||
+      (rc = encode_DIS_attropl(chan, attrib)) ||
+      (rc = encode_DIS_ReqExtend(chan, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return (PBSE_PROTOCOL);
     }
 
@@ -204,12 +210,13 @@ static int PBSD_select_put(
 
   /* write data */
 
-  if (DIS_tcp_wflush(sock))
+  if (DIS_tcp_wflush(chan))
     {
-    return(PBSE_PROTOCOL);
+    rc = PBSE_PROTOCOL;
     }
 
-  return(PBSE_NONE);
+  DIS_tcp_cleanup(chan);
+  return rc;
   } /* END pbs_selstat() */
 
 

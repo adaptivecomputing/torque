@@ -55,7 +55,7 @@ void *req_rescq(void *vp)
   exit(1);
   }
 
-void job_purge(job *pjob)
+int job_purge(job *pjob)
   {
   fprintf(stderr, "The call to job_purge needs to be mocked!!\n");
   exit(1);
@@ -259,7 +259,7 @@ void req_rescreserve(struct batch_request *preq)
   exit(1);
   }
 
-void req_quejob(struct batch_request *preq)
+void req_quejob(struct batch_request *preq, char **job_id)
   {
   fprintf(stderr, "The call to req_quejob needs to be mocked!!\n");
   exit(1);
@@ -403,7 +403,7 @@ void *req_stat_node(void *vp)
   exit(1);
   }
 
-void net_add_close_func(int sd, void (*func)(int), int has_mutex)
+void net_add_close_func(int sd, void (*func)(int))
   {
   fprintf(stderr, "The call to net_add_close_func needs to be mocked!!\n");
   exit(1);

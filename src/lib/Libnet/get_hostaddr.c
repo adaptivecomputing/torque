@@ -163,7 +163,8 @@ int  get_hostaddr_hostent_af(
   int             *host_addr_len)
 
   {
-  struct addrinfo       *addr_info;
+  int                    addr_rc;
+  struct sockaddr_in     sa;
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
   char                  *tmp_ip = NULL;
 
@@ -185,26 +186,28 @@ int  get_hostaddr_hostent_af(
       *dash = '\0';
 
       /* check if this resolves to a hostname without the dash */
-      if ((*rc = getaddrinfo(hostname, NULL, NULL, &addr_info)) != 0)
+      if ((addr_rc = get_addr_info(hostname, &sa, 3)) != 0)
         {
         /* not a numa-owned node, act normal */
         *dash = '-';
       
-        *rc = getaddrinfo(hostname, NULL, NULL, &addr_info);
+        addr_rc = get_addr_info(hostname, &sa, 3);
         }
       }
     /* otherwise proceed with just the parent hostname so 
      * it can be resolved */
     else
-      *rc = getaddrinfo(hostname, NULL, NULL, &addr_info);
+      addr_rc = get_addr_info(hostname, &sa, 3);
     }
   else
-    *rc = getaddrinfo(hostname, NULL, NULL, &addr_info);
+    addr_rc = get_addr_info(hostname, &sa, 3);
 #else
-  *rc = getaddrinfo(hostname, NULL, NULL, &addr_info);
+  addr_rc = get_addr_info(hostname, &sa, 3);
 #endif /* NUMA_SUPPORT */
 
-  if (*rc != 0)
+  *rc = PBSE_NONE;
+
+  if (addr_rc != 0)
     {
     snprintf(log_buf, sizeof(log_buf),
       "cannot resolve IP address for host '%s' herror=%d: %s",
@@ -231,13 +234,12 @@ int  get_hostaddr_hostent_af(
     }
   else
     {
-    memcpy(tmp_ip, &((struct sockaddr_in *)addr_info->ai_addr)->sin_addr, sizeof(struct in_addr));
+    memcpy(tmp_ip, &sa.sin_addr, sizeof(struct in_addr));
     *host_addr = tmp_ip;
     *host_addr_len = sizeof(struct in_addr);
-    *af_family = addr_info->ai_family;
+    *af_family = sa.sin_family;
     }
 
-  freeaddrinfo(addr_info);
 
   return(*rc);
   }  /* END get_hostaddr_hostent() */

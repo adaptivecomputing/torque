@@ -224,7 +224,7 @@ void req_messagejob(struct batch_request *preq)
   exit(1);
   }
 
-void net_add_close_func(int sd, void (*func)(int), int has_mutex)
+void net_add_close_func(int sd, void (*func)(int))
   {
   fprintf(stderr, "The call to net_add_close_func needs to be mocked!!\n");
   exit(1);

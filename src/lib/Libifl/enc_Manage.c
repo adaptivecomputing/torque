@@ -92,7 +92,7 @@
 
 int encode_DIS_Manage(
     
-  int             sock,
+  struct tcp_chan *chan,
   int             command,
   int             objtype,
   char           *objname,
@@ -101,11 +101,11 @@ int encode_DIS_Manage(
   {
   int   rc;
 
-  if ((rc = diswui(sock, command) != 0) ||
-      (rc = diswui(sock, objtype) != 0) ||
-      (rc = diswst(sock, objname) != 0))
+  if ((rc = diswui(chan, command) != 0) ||
+      (rc = diswui(chan, objtype) != 0) ||
+      (rc = diswst(chan, objname) != 0))
     return rc;
 
-  return (encode_DIS_attropl(sock, aoplp));
+  return (encode_DIS_attropl(chan, aoplp));
   }
 

@@ -12,7 +12,6 @@ extern int   chk_hold_priv(long hold, int priv);
 extern void  get_jobowner(char *from, char *to); 
 extern char *parse_servername(char *, unsigned int *);
 extern void  process_Areply(int);
-extern void  *process_Dreply(void *);
 extern void  *mom_process_request(void *);
 extern void  process_dis_request(int);
 extern int   save_struct(char *, unsigned int, int, char *, size_t *, size_t);
@@ -89,9 +88,6 @@ struct stat_cntl    /* used in req_stat_job */
   void (*sc_post)(struct stat_cntl *);
   char        sc_jobid[PBS_MAXSVRJOBID+1];
   };
-
-extern int stat_to_mom(job *, struct stat_cntl *);
-
 
 /*
  * the following defines are due to the fact that O_SYNC was not

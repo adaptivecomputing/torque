@@ -39,6 +39,7 @@
 #include "u_tree.h"
 #include "threadpool.h"
 #include "dis.h"
+#include "mom_job_func.h"
 
 /*
  * mom_process_request - this function gets, checks, and invokes the proper
@@ -129,36 +130,47 @@ void *mom_process_request(
   int                   rc;
   struct batch_request *request = NULL;
   int                   sfds = *(int *)sock_num;
+  struct tcp_chan *chan = NULL;
 
   time_now = time(NULL);
 
-  request = alloc_br(0);
+  if ((request = alloc_br(0)) == NULL)
+    {
+    mom_close_client(sfds);
+    return NULL;
+    }
 
   request->rq_conn = sfds;
 
-  /*
-   * Read in the request and decode it to the internal request structure.
-   */
 
-  DIS_tcp_setup(sfds);
-  rc = dis_request_read(sfds, request);
-
-  if (rc == -1)
+  if ((chan = DIS_tcp_setup(sfds)) == NULL)
     {
-    /* FAILURE */
-    /* premature end of file */
     mom_close_client(sfds);
     free_br(request);
     return NULL;
     }
 
-  if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL))
+  /* Read in the request and decode it to the internal request structure.  */
+  rc = dis_request_read(chan, request);
+
+  if (rc == -1)
+    {
+    /* FAILURE */
+    /* premature end of file */
+    mom_close_client(chan->sock);
+    free_br(request);
+    DIS_tcp_cleanup(chan);
+    return NULL;
+    }
+
+  if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL) || (rc == PBSE_SOCKET_CLOSE))
     {
     /* FAILURE */
     /* read error, likely cannot send reply so just disconnect */
     /* ??? not sure about this ??? */
-    mom_close_client(sfds);
+    mom_close_client(chan->sock);
     free_br(request);
+    DIS_tcp_cleanup(chan);
     return NULL;
     }
 
@@ -172,25 +184,27 @@ void *mom_process_request(
      */
 
     req_reject(rc, 0, request, NULL, "cannot decode message");
-    mom_close_client(sfds);
+    mom_close_client(chan->sock);
+    DIS_tcp_cleanup(chan);
     return NULL;
     }
 
-  if (get_connecthost(sfds, request->rq_host, PBS_MAXHOSTNAME) != 0)
+  if (get_connecthost(chan->sock, request->rq_host, PBS_MAXHOSTNAME) != 0)
     {
     char tmpLine[MAXLINE];
 
     sprintf(log_buffer, "%s: %lu",
             pbse_to_txt(PBSE_BADHOST),
-            get_connectaddr(sfds,FALSE));
+            get_connectaddr(chan->sock,FALSE));
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buffer);
 
     snprintf(tmpLine, sizeof(tmpLine), "cannot determine hostname for connection from %lu",
-             get_connectaddr(sfds,FALSE));
+             get_connectaddr(chan->sock,FALSE));
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-    mom_close_client(sfds);
+    mom_close_client(chan->sock);
+    DIS_tcp_cleanup(chan);
     return NULL;
     }
 
@@ -202,7 +216,7 @@ void *mom_process_request(
       reqtype_to_txt(request->rq_type),
       request->rq_user,
       request->rq_host,
-      sfds);
+      chan->sock);
 
     log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", log_buffer);
     }
@@ -229,7 +243,7 @@ void *mom_process_request(
         log_buffer);
       }
 
-    if (!AVL_is_in_tree_no_port_compare(svr_conn[sfds].cn_addr, 0, okclients))
+    if (!AVL_is_in_tree_no_port_compare(svr_conn[chan->sock].cn_addr, 0, okclients))
       {
       sprintf(log_buffer, "request type %s from host %s rejected (host not authorized)",
         reqtype_to_txt(request->rq_type),
@@ -237,7 +251,8 @@ void *mom_process_request(
 
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
       req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
-      mom_close_client(sfds);
+      mom_close_client(chan->sock);
+      DIS_tcp_cleanup(chan);
       return NULL;
       }
 
@@ -250,7 +265,7 @@ void *mom_process_request(
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
       }
 
-    mom_server_update_receive_time_by_ip(svr_conn[sfds].cn_addr, reqtype_to_txt(request->rq_type));
+    mom_server_update_receive_time_by_ip(svr_conn[chan->sock].cn_addr, reqtype_to_txt(request->rq_type));
     }    /* END BLOCK */
 
   request->rq_fromsvr = 1;
@@ -267,7 +282,9 @@ void *mom_process_request(
    * the request struture.
    */
 
-  mom_dispatch_request(sfds, request);
+  mom_dispatch_request(chan->sock, request);
+
+  DIS_tcp_cleanup(chan);
 
   return NULL;
   }  /* END mom_process_request() */
@@ -303,7 +320,7 @@ void mom_dispatch_request(
     {
     case PBS_BATCH_QueueJob:
 
-      net_add_close_func(sfds, close_quejob, FALSE);
+      net_add_close_func(sfds, close_quejob);
 
       req_quejob(request);
       
@@ -331,7 +348,7 @@ void mom_dispatch_request(
 
       req_commit(request);
 
-      net_add_close_func(sfds, (void (*)())0, FALSE);
+      net_add_close_func(sfds, NULL);
 
       break;
 

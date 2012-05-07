@@ -145,7 +145,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(), v
   exit(1);
   }
 
-void svr_dequejob(job *pjob, int val)
+int svr_dequejob(char *job_id, int val)
   {
   fprintf(stderr, "The call to svr_dequejob needs to be mocked!!\n");
   exit(1);
@@ -223,7 +223,7 @@ int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index)
   exit(1);
   }
 
-void update_array_values(job_array *pa, void *j, int old_state, enum ArrayEventsEnum event)
+void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status)
   {
   fprintf(stderr, "The call to update_array_values needs to be mocked!!\n");
   exit(1);

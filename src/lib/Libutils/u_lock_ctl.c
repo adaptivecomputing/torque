@@ -37,15 +37,12 @@ int lock_init()
     rc = PBSE_MEM_MALLOC;
   else if ((locks->conn_table = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
     rc = PBSE_MEM_MALLOC;
-  else if ((locks->tcp_table = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
-    rc = PBSE_MEM_MALLOC;
   else if ((locks->setup_save = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
     rc = PBSE_MEM_MALLOC;
   else
     {
     pthread_mutex_init(locks->startup, &startup_attr);
     pthread_mutex_init(locks->conn_table, &conn_attr);
-    pthread_mutex_init(locks->tcp_table, &tcp_attr);
     pthread_mutex_init(locks->setup_save, &ss_attr);
     }
   return rc;
@@ -57,8 +54,6 @@ void lock_destroy()
   free(locks->startup);
   pthread_mutex_destroy(locks->conn_table);
   free(locks->conn_table);
-  pthread_mutex_destroy(locks->tcp_table);
-  free(locks->tcp_table);
   pthread_mutex_destroy(locks->setup_save);
   free(locks->setup_save);
   free(locks);
@@ -113,30 +108,6 @@ int unlock_conn_table()
   return(PBSE_NONE);
   }
 
-int lock_tcp_table()
-  {
-  if (locks == NULL)
-    lock_init();
-  /* fprintf(stdout, "tcp lock\n"); */
-  if (pthread_mutex_lock(locks->tcp_table) != 0)
-    {
-    log_err(-1,"mutex_lock","ALERT:   cannot lock tcp_table mutex!\n");
-    return(PBSE_MUTEX);
-    }
-  return(PBSE_NONE);
-  }
-
-int unlock_tcp_table()
-  {
-  /* fprintf(stdout, "tcp unlock\n"); */
-  if (pthread_mutex_unlock(locks->tcp_table) != 0)
-    {
-    log_err(-1,"mutex_unlock","ALERT:   cannot unlock tcp_table mutex!\n");
-    return(PBSE_MUTEX);
-    }
-  return(PBSE_NONE);
-  }
-
 int lock_ss()
   {
   if (locks == NULL)
@@ -174,7 +145,7 @@ int lock_node(
   char  err_msg[MSG_LEN_LONG + 1];
   char  stub_msg[] = "no pos";
   
-  if (logging >= 6)
+  if (logging >= 7)
     {
     if (msg == NULL)
       msg = stub_msg;
@@ -185,7 +156,7 @@ int lock_node(
   
   if (pthread_mutex_lock(the_node->nd_mutex) != 0)
     {
-    if (logging >= 6)
+    if (logging >= 7)
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock node %s mutex in method %s",
           the_node->nd_name, id);
@@ -194,7 +165,7 @@ int lock_node(
     rc = PBSE_MUTEX;
     }
   
-  if (logging >= 6)
+  if (logging >= 7)
     {
     snprintf(err_msg, MSG_LEN_LONG, "locking complete %s in method %s", the_node->nd_name, id);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
@@ -215,7 +186,7 @@ int unlock_node(
   char  err_msg[MSG_LEN_LONG + 1];
   char  stub_msg[] = "no pos";
 
-  if (logging >= 6)
+  if (logging >= 7)
     {
     if (msg == NULL)
       msg = stub_msg;
@@ -225,7 +196,7 @@ int unlock_node(
 
   if (pthread_mutex_unlock(the_node->nd_mutex) != 0)
     {
-    if (logging >= 6)
+    if (logging >= 7)
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock node %s mutex in method %s",
           the_node->nd_name, id);

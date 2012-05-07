@@ -1,85 +1,4 @@
-/*
-*         OpenPBS (Portable Batch System) v2.3 Software License
-*
-* Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
-* All rights reserved.
-*
-* ---------------------------------------------------------------------------
-* For a license to use or redistribute the OpenPBS software under conditions
-* other than those described below, or to purchase support for this software,
-* please contact Veridian Systems, PBS Products Department ("Licensor") at:
-*
-*    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
-*                        877 902-4PBS (US toll-free)
-* ---------------------------------------------------------------------------
-*
-* This license covers use of the OpenPBS v2.3 software (the "Software") at
-* your site or location, and, for certain users, redistribution of the
-* Software to other sites and locations.  Use and redistribution of
-* OpenPBS v2.3 in source and binary forms, with or without modification,
-* are permitted provided that all of the following conditions are met.
-* After December 31, 2001, only conditions 3-6 must be met:
-*
-* 1. Commercial and/or non-commercial use of the Software is permitted
-*    provided a current software registration is on file at www.OpenPBS.org.
-*    If use of this software contributes to a publication, product, or
-*    service, proper attribution must be given; see www.OpenPBS.org/credit.html
-*
-* 2. Redistribution in any form is only permitted for non-commercial,
-*    non-profit purposes.  There can be no charge for the Software or any
-*    software incorporating the Software.  Further, there can be no
-*    expectation of revenue generated as a consequence of redistributing
-*    the Software.
-*
-* 3. Any Redistribution of source code must retain the above copyright notice
-*    and the acknowledgment contained in paragraph 6, this list of conditions
-*    and the disclaimer contained in paragraph 7.
-*
-* 4. Any Redistribution in binary form must reproduce the above copyright
-*    notice and the acknowledgment contained in paragraph 6, this list of
-*    conditions and the disclaimer contained in paragraph 7 in the
-*    documentation and/or other materials provided with the distribution.
-*
-* 5. Redistributions in any form must be accompanied by information on how to
-*    obtain complete source code for the OpenPBS software and any
-*    modifications and/or additions to the OpenPBS software.  The source code
-*    must either be included in the distribution or be available for no more
-*    than the cost of distribution plus a nominal fee, and all modifications
-*    and additions to the Software must be freely redistributable by any party
-*    (including Licensor) without restriction.
-*
-* 6. All advertising materials mentioning features or use of the Software must
-*    display the following acknowledgment:
-*
-*     "This product includes software developed by NASA Ames Research Center,
-*     Lawrence Livermore National Laboratory, and Veridian Information
-*     Solutions, Inc.
-*     Visit www.OpenPBS.org for OpenPBS software support,
-*     products, and information."
-*
-* 7. DISCLAIMER OF WARRANTY
-*
-* THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
-* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-* OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
-* ARE EXPRESSLY DISCLAIMED.
-*
-* IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
-* U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
-* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*
-* This license will be governed by the laws of the Commonwealth of Virginia,
-* without reference to its choice of law rules.
-*/
-
-
-
-
+#include "license_pbs.h" /* See here for the software license */
 /*
  * node_func.c - various functions dealing with nodes, properties and
  *   the following global variables:
@@ -129,6 +48,7 @@
 #include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
 #include "req_manager.h" /* mgr_set_node_attr */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
+#include "../lib/Libnet/lib_net.h" /* get_addr_info */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "alps_constants.h"
 #include "login_nodes.h"
@@ -226,7 +146,7 @@ void bad_node_warning(
   {
   time_t          now;
   time_t          last;
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  char            log_buf[LOCAL_LOG_BUF_SIZE+1];
 
   struct pbsnode *pnode = NULL;
 
@@ -245,7 +165,8 @@ void bad_node_warning(
     if (!last && (now - last >= 3600))
       {
       /* once per hour, log a warning that we can't reach the node */
-      sprintf(log_buf, "ALERT: unable to contact node %s", pnode->nd_name);
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+          "ALERT: unable to contact node %s", pnode->nd_name);
       log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buf);
       
       pnode->nd_warnbad = now;
@@ -477,7 +398,7 @@ int chk_characteristic(
 
   {
   char  tmpLine[1024];
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char  log_buf[LOCAL_LOG_BUF_SIZE+1];
 
   tmpLine[0] = '\0';
 
@@ -502,7 +423,7 @@ int chk_characteristic(
       {
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buf, "node %s state modified (%s)\n",
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "node %s state modified (%s)\n",
           pnode->nd_name,
           tmpLine);
         
@@ -883,6 +804,7 @@ static int process_host_name_part(
 
   int              hindex;
   int              size = 0;
+  int              rc = PBSE_NONE;
   ulong           *tmp = NULL;
 
   len = strlen(objname);
@@ -911,7 +833,7 @@ static int process_host_name_part(
 
   if (getaddrinfo(phostname, NULL, &hints, &addr_info) != 0)
     {
-    sprintf(log_buf, "host %s not found", objname);
+    snprintf(log_buf, sizeof(log_buf), "host %s not found", objname);
 
     log_err(PBSE_UNKNODE, __func__, log_buf);
 
@@ -998,9 +920,9 @@ static int process_host_name_part(
       continue;
       }
     
-    if (getaddrinfo(hptr, NULL, NULL, &addr_iter) != 0)
+    if ((rc = getaddrinfo(hptr, NULL, NULL, &addr_iter)) != 0)
       {
-      sprintf(log_buf, "bad cname %s, h_errno=%d errno=%d (%s)",
+      snprintf(log_buf, sizeof(log_buf), "bad cname %s, h_errno=%d errno=%d (%s)",
         hptr,
         h_errno,
         errno,
@@ -1505,7 +1427,7 @@ int setup_node_boards(
   char           *allocd_name;
   int             np;
   int             gpus;
-  int             rc;
+  int             rc = PBSE_NONE;
 
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -1753,7 +1675,7 @@ int create_pbs_node(
     {
     free(pname);
 
-    snprintf(log_buf, sizeof(log_buf),
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, 
       "no valid IP addresses found for '%s' - check name service",
       objname);
 
@@ -2011,14 +1933,16 @@ int setup_nodes(void)
 
     if (err != 0)
       {
-      sprintf(log_buf, "invalid character in token \"%s\" on line %d", token, linenum);
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+          "invalid character in token \"%s\" on line %d", token, linenum);
 
       goto errtoken2;
       }
 
     if (!isalpha((int)*token))
       {
-      sprintf(log_buf, "token \"%s\" doesn't start with alpha on line %d", token, linenum);
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+          "token \"%s\" doesn't start with alpha on line %d", token, linenum);
 
       goto errtoken2;
       }
@@ -2052,8 +1976,6 @@ int setup_nodes(void)
         if (pal == NULL)
           {
           strcpy(log_buf, "cannot create node attribute");
-
-          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
           goto errtoken2;
           }
@@ -2092,9 +2014,8 @@ int setup_nodes(void)
           strcpy(log_buf, "cannot create node attribute");
           
           log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-          
+
           /* FAILURE */
-          
           return(-1);
           }
         
@@ -2122,11 +2043,9 @@ int setup_nodes(void)
       if ((dash == NULL) ||
           (close_bracket == NULL))
         {
-        sprintf(log_buf,
+        snprintf(log_buf, sizeof(log_buf),
           "malformed nodename with range: %s, must be of form [x-y]\n",
           nodename);
-
-        log_err(-1, __func__, log_buf);
 
         goto errtoken2;
         }
@@ -2182,18 +2101,16 @@ int setup_nodes(void)
 
     if (err == PBSE_NODEEXIST)
       {
-      sprintf(log_buf, "duplicate node \"%s\"on line %d",
+      snprintf(log_buf, sizeof(log_buf), "duplicate node \"%s\"on line %d",
         nodename,
         linenum);
-      
-      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
       goto errtoken2;
       }
 
     if (err != 0)
       {
-      sprintf(log_buf, "could not create node \"%s\", error = %d",
+      snprintf(log_buf, sizeof(log_buf), "could not create node \"%s\", error = %d",
         nodename,
         err);
 
@@ -2225,7 +2142,7 @@ int setup_nodes(void)
 
     if (LOGLEVEL >= 3)
       {
-      sprintf(log_buf, "node '%s' successfully loaded from nodes file", nodename);
+      snprintf(log_buf, sizeof(log_buf), "node '%s' successfully loaded from nodes file", nodename);
 
       log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
@@ -2282,7 +2199,8 @@ int setup_nodes(void)
         
         if (np->nd_note == NULL)
           {
-          sprintf(log_buf, "couldn't allocate space for note (node = %s)", np->nd_name);          
+          snprintf(log_buf, sizeof(log_buf),
+            "couldn't allocate space for note (node = %s)", np->nd_name);          
           log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
           }
         
@@ -2299,9 +2217,10 @@ int setup_nodes(void)
 
 errtoken1:
 
-  sprintf(log_buf, "token \"%s\" in error on line %d of file nodes",
-          token,
-          linenum);
+  snprintf(log_buf, sizeof(log_buf),
+    "token \"%s\" in error on line %d of file nodes",
+    token,
+    linenum);
 
 errtoken2:
 
@@ -3117,7 +3036,7 @@ void *send_hierarchy_threadtask(
   {
   hello_info     *hi = (hello_info *)vp;
   struct pbsnode *pnode = find_nodebyname(hi->name);
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  char            log_buf[LOCAL_LOG_BUF_SIZE+1];
   unsigned short  port;
 
   if (pnode != NULL)
@@ -3168,25 +3087,15 @@ int send_hierarchy(
   {
   char                log_buf[LOCAL_LOG_BUF_SIZE];
   char               *string;
-  int                 ret;
+  int                 ret = PBSE_NONE;
   int                 sock;
-  struct addrinfo    *addr_info;
   struct sockaddr_in  sa;
+  struct tcp_chan    *chan = NULL;
 
-  if (getaddrinfo(name, NULL, NULL, &addr_info) != 0)
-    {
-    int local_errno = errno;
-    snprintf(log_buf, sizeof(log_buf),
-      "Can't get address information for %s - %s", name, strerror(local_errno));
-    log_err(PBSE_BADHOST, __func__, log_buf);
+  if ((ret = get_addr_info(name, &sa, 3)) != PBSE_NONE)
+    return(ret);
 
-    return(PBSE_BADHOST);
-    }
-
-  sa.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-  sa.sin_family = AF_INET;
   sa.sin_port = htons(port);
-  freeaddrinfo(addr_info);
 
   /* for now we'll only try once as this is going to be tried once each time in the loop */
   sock = tcp_connect_sockaddr((struct sockaddr *)&sa, sizeof(sa));
@@ -3195,7 +3104,7 @@ int send_hierarchy(
     {
     /* could not connect */
     /* - quiting after 5 retries",*/
-    snprintf(log_buf, sizeof(log_buf),
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
       "Could not send mom hierarchy to host %s:%d",
       name, port);
     log_err(-1, __func__, log_buf);
@@ -3204,26 +3113,26 @@ int send_hierarchy(
     }
   add_conn(sock, ToServerDIS, ntohl(sa.sin_addr.s_addr), sa.sin_port, PBS_SOCK_INET, NULL);
 
-  DIS_tcp_setup(sock);
-
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    ret = PBSE_MEM_MALLOC;
+    }
   /* write the protocol, version and command */
-  ret = is_compose(sock, IS_CLUSTER_ADDRS);
-
-  if (ret == DIS_SUCCESS)
+  else if ((ret = is_compose(chan, IS_CLUSTER_ADDRS)) == DIS_SUCCESS)
     {
     for (string = hierarchy_holder->str; string != NULL && *string != '\0'; string += strlen(string) + 1)
       {
-      if ((ret = diswst(sock, string)) != DIS_SUCCESS)
+      if ((ret = diswst(chan, string)) != DIS_SUCCESS)
         {
         if (ret > 0)
           {
-          snprintf(log_buf, sizeof(log_buf),
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
             "Could not send mom hierarchy to host %s - %s",
             name, dis_emsg[ret]);
           }
         else
           {
-          snprintf(log_buf, sizeof(log_buf),
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
             "Unknown error when sending mom hierarchy to host %s",
             name);
           }
@@ -3234,12 +3143,14 @@ int send_hierarchy(
         }
       }
 
-    diswst(sock, IS_EOL_MESSAGE);
+    diswst(chan, IS_EOL_MESSAGE);
 
-    DIS_tcp_wflush(sock);
+    DIS_tcp_wflush(chan);
     }
 
   close_conn(sock, FALSE);
+  if (chan != NULL)
+    DIS_tcp_cleanup(chan);
 
   return(ret);
   } /* END send_hierarchy() */

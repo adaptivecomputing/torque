@@ -101,7 +101,7 @@
 
 int encode_DIS_QueueJob_hash(
 
-  int    sock,
+  struct tcp_chan *chan,
   char  *jobid,
   char  *destin,
   memmgr **mm,
@@ -117,13 +117,13 @@ int encode_DIS_QueueJob_hash(
   if (destin == (char *)0)
     destin = "";
 
-  if ((rc = diswst(sock, jobid) != 0) ||
-      (rc = diswst(sock, destin) != 0))
+  if ((rc = diswst(chan, jobid) != 0) ||
+      (rc = diswst(chan, destin) != 0))
     {
     return rc;
     }
 
-  return(encode_DIS_attropl_hash(sock, mm, job_attr, res_attr));
+  return(encode_DIS_attropl_hash(chan, mm, job_attr, res_attr));
   }  /* END encode_DIS_QueueJob() */
 
 

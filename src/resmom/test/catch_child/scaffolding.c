@@ -653,11 +653,11 @@ task *task_find(job *pjob, tm_task_id taskid)
   task *tp = (task *)calloc(1, sizeof(task));
   if (ran_one == 9)
     {
-    tp->ti_fd = -1;
+    tp->ti_chan = NULL;
     }
   else if (ran_one == 10)
     {
-    tp->ti_fd = 0;
+    tp->ti_chan = NULL;
     }
   return tp;
   }

@@ -154,7 +154,6 @@ pthread_mutex_t *global_sock_read_mutex = NULL;
 
 void *(*read_func[2])(void *);
 
-pthread_mutex_t *netrates_mutex = NULL;
 pthread_mutex_t *nc_list_mutex  = NULL;
 
 pbs_net_t        pbs_server_addr;
@@ -169,13 +168,14 @@ static struct netcounter nc_list[60];
 void netcounter_incr(void)
 
   {
-  time_t now, lastmin;
-  int i;
+  time_t now;
+  time_t lastmin;
+  int    time_diff = 0;
+
+  pthread_mutex_lock(nc_list_mutex);
 
   now = time(NULL);
   lastmin = now - 60;
-
-  pthread_mutex_lock(nc_list_mutex);
 
   if (nc_list[0].time == now)
     {
@@ -183,18 +183,19 @@ void netcounter_incr(void)
     }
   else
     {
-    memmove(&nc_list[1], &nc_list[0], sizeof(struct netcounter)*59);
-
-    nc_list[0].time = now;
-    nc_list[0].counter = 1;
-
-    for (i = 0;i < 60;i++)
+    time_diff = (int)(now - nc_list[0].time);
+    if (time_diff > 60)
       {
-      if (nc_list[i].time < lastmin)
-        {
-        nc_list[i].time = 0;
-        nc_list[i].counter = 0;
-        }
+      memset(&nc_list, 0, sizeof(nc_list));
+      nc_list[0].time = now;
+      nc_list[0].counter = 1;
+      }
+    else
+      {
+      memmove(&nc_list[time_diff], &nc_list[0], sizeof(struct netcounter)*(60-time_diff));
+      memset(&nc_list[0], 0, sizeof(struct netcounter)*time_diff);
+      nc_list[0].time = now;
+      nc_list[0].counter = 1;
       }
     }
 
@@ -214,20 +215,14 @@ int get_num_connections()
   }
 
 
-int *netcounter_get(void)
+void netcounter_get(
+    
+  int netrates[])
 
   {
-  static int netrates[3];
   int netsums[3] = {0, 0, 0};
   int i;
 
-  if (netrates_mutex == NULL)
-    {
-    netrates_mutex = calloc(1, sizeof(pthread_mutex_t));
-    pthread_mutex_init(netrates_mutex,NULL);
-    }
-
-  pthread_mutex_lock(netrates_mutex);
   pthread_mutex_lock(nc_list_mutex);
 
   for (i = 0;i < 5;i++)
@@ -263,8 +258,7 @@ int *netcounter_get(void)
     netrates[2] = 0;
     }
 
-  return netrates;
-  }
+  } /* END netcounter_get() */
 
 /**
  * init_network - initialize the network interface
@@ -280,9 +274,9 @@ int init_network(
   void        *(*readfunc)(void *))
 
   {
-  int   i;
+  int         i;
   static int  initialized = 0;
-  int    sock;
+  int         sock;
 
   int MaxNumDescriptors = 0;
 
@@ -305,7 +299,6 @@ int init_network(
 
   if (initialized == 0)
     {
-    DIS_tcp_init(-1);
     initialize_connections_table();
 
     for (i = 0;i < PBS_NET_MAX_CONNECTIONS;i++)
@@ -441,28 +434,21 @@ int init_network(
 
 #endif  /* END ENABLE_UNIX_SOCKETS */
 
-  if (port != 0)
+  /* allocate a minute's worth of counter structs */
+  if (nc_list_mutex == NULL)
     {
-    /* allocate a minute's worth of counter structs */
-
-    if (nc_list_mutex == NULL)
-      {
-      nc_list_mutex = calloc(1, sizeof(pthread_mutex_t));
-      pthread_mutex_init(nc_list_mutex,NULL);
-      }
+    nc_list_mutex = calloc(1, sizeof(pthread_mutex_t));
+    pthread_mutex_init(nc_list_mutex,NULL);
 
     pthread_mutex_lock(nc_list_mutex);
 
-    for (i = 0;i < 60;i++)
-      {
-      nc_list[i].time = 0;
-      nc_list[i].counter = 0;
-      }
+    memset(nc_list, 0, sizeof(nc_list));
+    nc_list[0].time = time(NULL);
 
     pthread_mutex_unlock(nc_list_mutex);
     }
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END init_network() */
 
 
@@ -545,11 +531,7 @@ int wait_request(
 
         /* clean up SdList and bad sd... */
 
-        pthread_mutex_lock(global_sock_read_mutex);
-        FD_CLR(i, GlobalSocketReadSet);
-        pthread_mutex_unlock(global_sock_read_mutex);
-        pthread_mutex_unlock(svr_conn[i].cn_mutex);
-
+        globalset_del_sock(i);
         } /* END for each socket in global read set */
 
       free(SelectSet);
@@ -591,13 +573,11 @@ int wait_request(
         }
       else
         {
-        pthread_mutex_lock(global_sock_read_mutex);
-        FD_CLR(i, GlobalSocketReadSet);
-        pthread_mutex_unlock(global_sock_read_mutex);
-
-        close_conn(i, TRUE);
-
         pthread_mutex_unlock(svr_conn[i].cn_mutex);
+
+        globalset_del_sock(i);
+        close_conn(i, FALSE);
+
         pthread_mutex_lock(num_connections_mutex);
 
         sprintf(tmpLine, "closed connections to fd %d - num_connections=%d (select bad socket)",
@@ -753,6 +733,31 @@ void *accept_conn(
 
 
 
+void globalset_add_sock(
+
+  int sock)
+
+  {
+  pthread_mutex_lock(global_sock_read_mutex);
+  FD_SET(sock, GlobalSocketReadSet);
+  pthread_mutex_unlock(global_sock_read_mutex);
+  } /* END globalset_add_sock() */
+
+
+
+ 
+void globalset_del_sock(
+
+  int sock)
+
+  {
+  pthread_mutex_lock(global_sock_read_mutex);
+  FD_CLR(sock, GlobalSocketReadSet);
+  pthread_mutex_unlock(global_sock_read_mutex);
+  } /* END globalset_del_sock() */
+
+
+
 /*
  * add_conn - add a connection to the svr_conn array.
  * The params addr and port are in host order.
@@ -780,9 +785,7 @@ int add_conn(
   num_connections++;
   pthread_mutex_unlock(num_connections_mutex);
 
-  pthread_mutex_lock(global_sock_read_mutex);
-  FD_SET(sock, GlobalSocketReadSet);
-  pthread_mutex_unlock(global_sock_read_mutex);
+  globalset_add_sock(sock);
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
 
@@ -841,9 +844,15 @@ void close_conn(
   int has_mutex) /* I */
 
   {
-  char log_message[LOG_BUF_SIZE];
-  if ((sd < 0) || (max_connection <= sd))
+  int rc;
+  char log_message[LOG_BUF_SIZE+1];
+  
+  if ((sd < 0) ||
+      (max_connection <= sd))
     {
+    snprintf(log_message, LOG_BUF_SIZE, "sd is invalid %d!!!", sd);
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_message);
+
     return;
     }
 
@@ -855,17 +864,6 @@ void close_conn(
     if (has_mutex == FALSE)
       pthread_mutex_unlock(svr_conn[sd].cn_mutex);
 
-    snprintf(log_message, LOG_BUF_SIZE, "%s: svr_conn[%d] is idle", __func__, sd);
-    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,"close_conn",log_message);
-
-/*    close(sd);
-    svr_conn[sd].cn_addr = 0;
-    svr_conn[sd].cn_handle = -1;
-    svr_conn[sd].cn_active = Idle;
-    svr_conn[sd].cn_func = (void *(*)())0;
-    svr_conn[sd].cn_authen = 0;*/
-    
-    pthread_mutex_unlock(svr_conn[sd].cn_mutex);
     return;
     }
 
@@ -874,8 +872,9 @@ void close_conn(
   if (svr_conn[sd].cn_oncl != 0)
     {
     snprintf(log_message, LOG_BUF_SIZE, "Connection %d - func %lx",
-        sd, (unsigned long)svr_conn[sd].cn_oncl);
-    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,"close_conn",log_message);
+      sd, (unsigned long)svr_conn[sd].cn_oncl);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_message);
+
     svr_conn[sd].cn_oncl(sd);
     }
 
@@ -886,22 +885,18 @@ void close_conn(
 
   if (GlobalSocketReadSet != NULL)
     {
-    pthread_mutex_lock(global_sock_read_mutex);
-    FD_CLR(sd, GlobalSocketReadSet);
-    pthread_mutex_unlock(global_sock_read_mutex);
+    globalset_del_sock(sd);
     }
 
   close(sd);
 
   svr_conn[sd].cn_addr = 0;
-
   svr_conn[sd].cn_handle = -1;
-
   svr_conn[sd].cn_active = Idle;
-
   svr_conn[sd].cn_func = (void *(*)())0;
-
   svr_conn[sd].cn_authen = 0;
+  svr_conn[sd].cn_stay_open = FALSE;
+  rc = close(sd);
     
   if (has_mutex == FALSE)
     pthread_mutex_unlock(svr_conn[sd].cn_mutex);
@@ -976,32 +971,42 @@ pbs_net_t get_connectaddr(
     pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
   return(tmp);
-  }
+  } /* END get_connectaddr() */
 
-void set_localhost_name(char *localhost_name, size_t len)
+
+
+
+void set_localhost_name(
+    
+  char   *localhost_name,
+  size_t  len)
+
   {
   struct sockaddr sa;
   int             rc;
-
+ 
   memset(&sa, 0, sizeof(struct sockaddr));
+
   sa.sa_family = AF_INET;
   sa.sa_data[2] = 0x7F;
   sa.sa_data[5] = 1;
-  rc = getnameinfo(&sa, sizeof(sa), local_host_name, local_host_name_len, NULL, 0, 0);
-  if(rc != 0)
+
+  if ((rc = getnameinfo(&sa, sizeof(sa), local_host_name, local_host_name_len, NULL, 0, 0)) != 0)
     {
     strcpy(local_host_name, "localhost");
     strncpy(localhost_name, "localhost", len);
     }
   else
     strncpy(localhost_name, local_host_name, len);
-  }
+  } /* END set_localhost_name() */
 
-                    
+
+
 
 /*
  * get_connecthost - return name of host connected via the socket
  */
+
 int get_connecthost(
 
   int   sock,     /* I */
@@ -1015,17 +1020,9 @@ int get_connecthost(
   struct sockaddr_in      addr_in;
   static struct in_addr   serveraddr;
   static char            *server_name = NULL;
-  static pthread_mutex_t *get_connecthost_mutex = NULL;
-
-  if (get_connecthost_mutex == NULL)
-    {
-    get_connecthost_mutex = calloc(1, sizeof(pthread_mutex_t));
-    pthread_mutex_init(get_connecthost_mutex,NULL);
-    }
 
   addr_in.sin_family = AF_INET;
   addr_in.sin_port = 0;
-  pthread_mutex_lock(get_connecthost_mutex);
 
   if ((server_name == NULL) && (pbs_server_addr != 0))
     {
@@ -1046,13 +1043,15 @@ int get_connecthost(
   addr_in.sin_addr = addr;
   addr_info_ptr = (struct sockaddr *)&addr_in;
 
-  if ((server_name != NULL) && (svr_conn[sock].cn_socktype & PBS_SOCK_UNIX))
+  if ((server_name != NULL) &&
+      (svr_conn[sock].cn_socktype & PBS_SOCK_UNIX))
     {
     /* lookup request is for local server */
 
     strcpy(namebuf, server_name);
     }
-  else if ((server_name != NULL) && (addr.s_addr == serveraddr.s_addr))
+  else if ((server_name != NULL) &&
+           (addr.s_addr == serveraddr.s_addr))
     {
     /* lookup request is for local server */
 
@@ -1075,9 +1074,8 @@ int get_connecthost(
     }
 
   /* SUCCESS */
-  pthread_mutex_unlock(get_connecthost_mutex);
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END get_connecthost() */
 
 
@@ -1086,7 +1084,9 @@ int get_connecthost(
 ** a staticly allocated string.
 */
 char *netaddr_pbs_net_t(
+
   pbs_net_t ipadd)
+
   {
   char  out[80];
   char *return_value;

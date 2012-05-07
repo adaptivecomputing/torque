@@ -49,7 +49,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-void job_purge(job *pjob)
+int job_purge(job *pjob)
   {
   fprintf(stderr, "The call to job_purge to be mocked!!\n");
   exit(1);

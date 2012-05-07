@@ -99,20 +99,21 @@
 #include "credential.h"
 #include "batch_request.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int decode_DIS_MoveJob(
     
-  int                   sock, 
+  struct tcp_chan *chan,
   struct batch_request *preq)
 
   {
   int rc;
 
-  rc = disrfst(sock, PBS_MAXSVRJOBID, preq->rq_ind.rq_move.rq_jid);
+  rc = disrfst(chan, PBS_MAXSVRJOBID, preq->rq_ind.rq_move.rq_jid);
 
   if (rc) return rc;
 
-  rc = disrfst(sock,
+  rc = disrfst(chan,
       (PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID : PBS_MAXDEST),
       preq->rq_ind.rq_move.rq_destin);
 

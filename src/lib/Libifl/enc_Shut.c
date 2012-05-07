@@ -88,13 +88,14 @@
 #include "libpbs.h"
 #include "pbs_error.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int encode_DIS_ShutDown(
 
-  int sock, 
+  struct tcp_chan *chan, 
   int manner)
 
   {
-  return (diswui(sock, manner));
+  return (diswui(chan, manner));
   }
 

@@ -437,7 +437,7 @@ node_comm_t *update_current_path(
 
 int write_tcp_reply(
 
-  int sock,
+  struct tcp_chan *chan,
   int protocol,
   int version,
   int command,
@@ -446,14 +446,14 @@ int write_tcp_reply(
   {
   int ret;
 
-  if ((ret = diswsi(sock,protocol)) == DIS_SUCCESS)
+  if ((ret = diswsi(chan,protocol)) == DIS_SUCCESS)
     {
-    if ((ret = diswsi(sock,version)) == DIS_SUCCESS)
+    if ((ret = diswsi(chan,version)) == DIS_SUCCESS)
       {
-      if ((ret = diswsi(sock,command)) == DIS_SUCCESS)
+      if ((ret = diswsi(chan,command)) == DIS_SUCCESS)
         {
-        if ((ret = diswsi(sock,exit_code)) == DIS_SUCCESS)
-          ret = DIS_tcp_wflush(sock);
+        if ((ret = diswsi(chan,exit_code)) == DIS_SUCCESS)
+          ret = DIS_tcp_wflush(chan);
 
         return(ret);
         }
@@ -472,7 +472,7 @@ int write_tcp_reply(
  */
 int read_tcp_reply(
 
-  int  sock,
+  struct tcp_chan *chan,
   int  protocol,
   int  version,
   int  command,
@@ -487,11 +487,11 @@ int read_tcp_reply(
 
   if(LOGLEVEL >= 6)
     {
-    sprintf(log_buf, "protocol: %d  version: %d  command:%d  sock:%d", protocol, version, command,sock);
+    sprintf(log_buf, "protocol: %d  version: %d  command:%d  sock:%d", protocol, version, command, chan->sock);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,__func__, log_buf);
     }
 
-  if ((value = disrsi(sock,&ret)) != protocol)
+  if ((value = disrsi(chan,&ret)) != protocol)
     {
     snprintf(log_buf,sizeof(log_buf),
       "Mismatching protocols. Expected protocol %d but read reply for %d\n",
@@ -502,7 +502,7 @@ int read_tcp_reply(
   else if (ret != DIS_SUCCESS)
     {
     }
-  else if ((value = disrsi(sock,&ret)) != version)
+  else if ((value = disrsi(chan,&ret)) != version)
     {
     snprintf(log_buf, sizeof(log_buf),
       "Mismatching versions. Expected version %d for protocol %d but read version %d\n",
@@ -514,7 +514,7 @@ int read_tcp_reply(
   else if (ret != DIS_SUCCESS)
     {
     }
-  else if ((value = disrsi(sock,&ret)) != command)
+  else if ((value = disrsi(chan,&ret)) != command)
     {
     snprintf(log_buf, sizeof(log_buf),
       "Mismatching commands. Expected command %d for protocol %d but read command %d\n",
@@ -529,9 +529,9 @@ int read_tcp_reply(
   else
     {
     /* read the exit code */
-    *exit_status = disrsi(sock,&ret);
+    *exit_status = disrsi(chan,&ret);
     
-    DIS_tcp_reset(sock,0);
+/*    DIS_tcp_reset(chan,0); */
     }
 
   if (ret != DIS_SUCCESS)

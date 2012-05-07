@@ -114,18 +114,15 @@
 
 unsigned disrui(
 
-  int  stream,  /* I */
+  struct tcp_chan *chan,  /* I */
   int *retval)  /* O */
 
   {
   int       locret;
   int       negate;
   unsigned  value;
-  int (*disr_commit)(int stream, int commit);
 
-  disr_commit = tcp_rcommit;
-
-  locret = disrsi_(stream, &negate, &value, 1);
+  locret = disrsi_(chan, &negate, &value, 1);
 
   if (locret != DIS_SUCCESS)
     {
@@ -138,7 +135,7 @@ unsigned disrui(
     locret = DIS_BADSIGN;
     }
 
-  *retval = ((*disr_commit)(stream, locret == DIS_SUCCESS) < 0) ?
+  *retval = (tcp_rcommit(chan, locret == DIS_SUCCESS) < 0) ?
 
             DIS_NOCOMMIT : locret;
 
@@ -150,7 +147,7 @@ unsigned disrui(
 
 unsigned disrui_peek(
     
-  int  stream,  /* I */
+  struct tcp_chan *chan,  /* I */
   int *retval)  /* O */
 
   {
@@ -158,7 +155,7 @@ unsigned disrui_peek(
   int       negate;
   unsigned  value;
   
-  locret = disrsi_(stream, &negate, &value, 1);
+  locret = disrsi_(chan, &negate, &value, 1);
   
   *retval = locret;
   

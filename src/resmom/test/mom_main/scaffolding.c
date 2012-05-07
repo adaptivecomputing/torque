@@ -224,7 +224,7 @@ char *pbs_get_server_list(void)
   exit(1);
   }
 
-int tm_request(int fd, int version)
+int tm_request(tcp_chan *chan, int version)
   {
   fprintf(stderr, "The call to tm_request needs to be mocked!!\n");
   exit(1);
@@ -350,7 +350,7 @@ void check_busy(double mla)
   exit(1);
   }
 
-void mom_is_request(int stream, int version, int *cmdp)
+void mom_is_request(struct tcp_chan *chan, int version, int *cmdp)
   {
   fprintf(stderr, "The call to mom_is_request needs to be mocked!!\n");
   exit(1);
@@ -584,7 +584,7 @@ unsigned long mom_checkpoint_set_checkpoint_run_exe_name(char *value)
   exit(1);
   }
 
-void im_request(int stream, int version)
+void im_request(struct tcp_chan *chan, int version)
   {
   fprintf(stderr, "The call to im_request needs to be mocked!!\n");
   exit(1);

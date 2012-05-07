@@ -224,6 +224,7 @@ int initialize_procct(
        by the time this function is called */
     sprintf(log_buf, "%s: Resource_List is NULL. Cannot proceed", __func__);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+
     return(ROUTE_PERM_FAILURE);
     }
 
@@ -236,8 +237,10 @@ int initialize_procct(
       {
       sprintf(log_buf, "%s: Could not get nodes resource definition. Cannot proceed", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+
       return(ROUTE_PERM_FAILURE);
       }
+
     pnodesp = find_resc_entry(pattr, pnodes_def);
 
     /* Get the procs count if the procs resource pbs_attribute is set */
@@ -258,13 +261,16 @@ int initialize_procct(
         {
         sprintf(log_buf, "%s: Could not get procct resource definition. Cannot proceed", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+
         return(ROUTE_PERM_FAILURE);
         }
+
       procctp = find_resc_entry(pattr, procct_def);
       if (procctp == NULL)
         {
         sprintf(log_buf, "%s: Could not get nodes nor procs entry from Resource_List. Cannot proceed", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+
         return(ROUTE_PERM_FAILURE);
         }
       }
@@ -301,6 +307,7 @@ int initialize_procct(
       {
       procctp->rs_value.at_val.at_long += pprocsp->rs_value.at_val.at_long;
       }
+
     procctp->rs_value.at_flags |= ATR_VFLAG_SET;
     }
   else
@@ -309,6 +316,7 @@ int initialize_procct(
        by the time this function is called */
     sprintf(log_buf, "%s: Resource_List not set. Cannot proceed", __func__);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+
     return(ROUTE_PERM_FAILURE);
     }
 
@@ -333,14 +341,15 @@ int remove_procct(
        by the time this function is called */
     sprintf(log_buf, "%s: Resource_List is NULL. Cannot proceed", __func__);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+
     return(ROUTE_PERM_FAILURE);
     }
 
- /* unset the procct resource if it has been set */
-    pctdef = find_resc_def(svr_resc_def, "procct", svr_resc_size);
-
-    if ((pctresc = find_resc_entry(pattr, pctdef)) != NULL)
-      pctdef->rs_free(&pctresc->rs_value);
+  /* unset the procct resource if it has been set */
+  pctdef = find_resc_def(svr_resc_def, "procct", svr_resc_size);
+  
+  if ((pctresc = find_resc_entry(pattr, pctdef)) != NULL)
+    pctdef->rs_free(&pctresc->rs_value);
 
   return(PBSE_NONE);
   } /* END remove_procct */
@@ -433,11 +442,11 @@ int default_router(
 
       case ROUTE_PERM_FAILURE: /* permanent failure */
 
-        rc = remove_procct(jobp);
-        if(rc != PBSE_NONE)
+        if ((rc = remove_procct(jobp)) != PBSE_NONE)
           {
           return(rc);
           }
+
         add_dest(jobp);
 
         break;

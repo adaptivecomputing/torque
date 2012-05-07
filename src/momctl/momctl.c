@@ -455,20 +455,22 @@ int main(
 
 int send_command(
 
-  int stream,
+  struct tcp_chan *chan,
   int cmd)
 
   {
   int rc;
 
-  rc = diswsi(stream,cmd);
+  rc = diswsi(chan,cmd);
 
   if (cmd == RM_CMD_CONFIG)
     {
-    diswst(stream,ConfigBuf);
+    diswst(chan,ConfigBuf);
     }
 
-  DIS_tcp_wflush(stream);
+  DIS_tcp_wflush(chan);
+  if (cmd == RM_CMD_CLOSE)
+    DIS_tcp_close(chan);
 
   return(rc);
   } /* END send_command() */
@@ -486,19 +488,19 @@ int send_command(
 
 int send_command_str(
 
-  int   stream,  /* I */
+  struct tcp_chan *chan,
   int   cmd,
   char *query)     /* I */
 
   {
-  int rc = send_command(stream,cmd);
+  int rc = send_command(chan,cmd);
 
   if (rc != DIS_SUCCESS)
     return(rc);
 
-  rc = diswcs(stream,query,strlen(query));
+  rc = diswcs(chan,query,strlen(query));
 
-  DIS_tcp_wflush(stream);
+  DIS_tcp_wflush(chan);
 
   return(rc);
   } /* END send_command_str() */
@@ -509,12 +511,12 @@ int send_command_str(
 
 int check_success(
 
-  int stream)
+  struct tcp_chan *chan)
 
   {
   int rc;
   int local_errno;
-  int status = disrsi(stream,&rc);
+  int status = disrsi(chan,&rc);
 
   if (rc != DIS_SUCCESS)
     return(rc);
@@ -538,16 +540,16 @@ int check_success(
 char *read_mom_reply(
 
   int *local_errno, /* O */
-  int  stream)      /* I */
+  struct tcp_chan *chan)
 
   {
   int   rc;
   char *value;
 
-  if (check_success(stream))
+  if (check_success(chan))
     return(NULL);
 
-  value = disrst(stream,&rc);
+  value = disrst(chan,&rc);
 
   if (rc != DIS_SUCCESS)
     {
@@ -564,24 +566,22 @@ char *read_mom_reply(
 
 int start_dialogue(
 
-  int stream)
+  struct tcp_chan *chan)
 
   {
   int rc;
 
-  DIS_tcp_setup(stream);
-
-  rc = diswsi(stream, RM_PROTOCOL);
+  rc = diswsi(chan, RM_PROTOCOL);
 
   if (rc != DIS_SUCCESS)
     return(rc);
 
-  rc = diswsi(stream, RM_PROTOCOL_VER);
+  rc = diswsi(chan, RM_PROTOCOL_VER);
 
   if (rc != DIS_SUCCESS)
     return(rc);
 
-  rc = diswsi(stream, QueryI);
+  rc = diswsi(chan, QueryI);
 
   return(rc);
   } /* END start_dialogue() */
@@ -596,10 +596,11 @@ int do_mom(
   int   CmdIndex)
 
   {
-  int sd;
+  int socket;
   int local_errno = 0;
+  struct tcp_chan *chan = NULL;
 
-  if ((sd = openrm(HPtr, MOMPort)) < 0)
+  if ((socket = openrm(HPtr, MOMPort)) < 0)
     {
     /* FAILURE */
 
@@ -616,21 +617,26 @@ int do_mom(
               TRMEMsg);
       }
 
-    return(sd);
+    return(socket);
+    }
+  else if ((chan = DIS_tcp_setup(socket)) == NULL)
+    {
+    fprintf(stderr, "%s: can not allocate memory of socket buffers\n", __func__);
+    return -1;
     }
 
   /* send protocol and version, plus how many queries we're sending */
   if (QueryI == 0)
     QueryI = 1;
 
-  if (start_dialogue(sd) != DIS_SUCCESS)
+  if (start_dialogue(chan) != DIS_SUCCESS)
     {
     fprintf(stderr,"ERROR:    Unable to write the number of queries to %s (errno=%d-%s)\n",
         HPtr,
         errno,
         strerror(errno));
     
-    send_command(sd,RM_CMD_CLOSE);
+    send_command(chan,RM_CMD_CLOSE);
     
     return(-1);
     }
@@ -654,7 +660,7 @@ int do_mom(
       snprintf(tmpLine, 1024, "clearjob=%s",
                (JPtr != NULL) ? JPtr : "all");
 
-      if (send_command_str(sd, RM_CMD_REQUEST, tmpLine) != 0)
+      if (send_command_str(chan, RM_CMD_REQUEST, tmpLine) != 0)
         {
         /* FAILURE */
 
@@ -663,12 +669,12 @@ int do_mom(
           errno,
           strerror(errno));
 
-        send_command(sd,RM_CMD_CLOSE);
+        send_command(chan,RM_CMD_CLOSE);
 
         return(-1);
         }
 
-      if ((Value = (char *)read_mom_reply(&local_errno, sd)) == NULL)
+      if ((Value = (char *)read_mom_reply(&local_errno, chan)) == NULL)
         {
         /* FAILURE */
 
@@ -679,7 +685,7 @@ int do_mom(
           local_errno,
           pbs_strerror(local_errno));
 
-        send_command(sd,RM_CMD_CLOSE);
+        send_command(chan,RM_CMD_CLOSE);
 
         return(-1);
         }
@@ -695,8 +701,8 @@ int do_mom(
     case momShutdown:
 
       {
-      if ((send_command(sd,RM_CMD_SHUTDOWN) != PBSE_NONE) ||
-          (check_success(sd) != PBSE_NONE))
+      if ((send_command(chan,RM_CMD_SHUTDOWN) != PBSE_NONE) ||
+          (check_success(chan) != PBSE_NONE))
         {
         /* FAILURE */
 
@@ -705,7 +711,7 @@ int do_mom(
           errno,
           pbs_strerror(errno));
 
-        send_command(sd,RM_CMD_CLOSE);
+        send_command(chan,RM_CMD_CLOSE);
 
         exit(EXIT_FAILURE);
         }
@@ -719,8 +725,8 @@ int do_mom(
     case momReconfig:
 
       {
-      if ((send_command(sd,RM_CMD_CONFIG) != PBSE_NONE) ||
-          (check_success(sd) != PBSE_NONE))
+      if ((send_command(chan,RM_CMD_CONFIG) != PBSE_NONE) ||
+          (check_success(chan) != PBSE_NONE))
         {
         /* FAILURE */
 
@@ -729,7 +735,7 @@ int do_mom(
           errno,
           pbs_strerror(errno));
 
-        send_command(sd,RM_CMD_CLOSE);
+        send_command(chan,RM_CMD_CLOSE);
 
         return(-1);
         }
@@ -753,7 +759,7 @@ int do_mom(
 
       for (rindex = 0; rindex < QueryI; rindex++)
         {
-        if (send_command_str(sd, RM_CMD_REQUEST, Query[rindex]) != 0)
+        if (send_command_str(chan, RM_CMD_REQUEST, Query[rindex]) != 0)
           {
           fprintf(stderr,"ERROR:    cannot add query for '%s' on %s (errno=%d-%s)\n",
             Query[rindex],
@@ -770,7 +776,7 @@ int do_mom(
           *ptr = '\0';
           }
 
-        if ((Value = (char *)read_mom_reply(&local_errno, sd)) == NULL)
+        if ((Value = (char *)read_mom_reply(&local_errno, chan)) == NULL)
           {
           fprintf(stderr, "ERROR:    query[%d] '%s' failed on %s (errno=%d - %s : %d - %s)\n",
             rindex,
@@ -813,7 +819,7 @@ int do_mom(
     break;
     }  /* END switch(CmdIndex) */
 
-  send_command(sd,RM_CMD_CLOSE);
+  send_command(chan,RM_CMD_CLOSE);
 
   return(0);
   } /* END do_mom() */

@@ -31,6 +31,7 @@
 #include "batch_request.h"
 #include "work_task.h"
 #include "utils.h"
+#include "tcp.h" /* tcp_chan */
 
 
 
@@ -99,25 +100,29 @@ static int dis_reply_write(
   struct batch_reply *preply)  /* I */
 
   {
-  int          rc;
-  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  int              rc;
+  char             log_buf[LOCAL_LOG_BUF_SIZE];
+  struct tcp_chan *chan = NULL;
 
   /* setup for DIS over tcp */
-
-  DIS_tcp_setup(sfds);
+  if ((chan = DIS_tcp_setup(sfds)) == NULL)
+    {
+    }
 
   /* send message to remote client */
-
-  if ((rc = encode_DIS_reply(sfds, preply)) ||
-      (rc = DIS_tcp_wflush(sfds)))
+  else if ((rc = encode_DIS_reply(chan, preply)) ||
+           (rc = DIS_tcp_wflush(chan)))
     {
     sprintf(log_buf, "DIS reply failure, %d", rc);
 
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
     /* don't need to get the lock here because we already have it from process request */
-    close_conn(sfds, FALSE);
+    close_conn(chan->sock, FALSE);
     }
+
+  if (chan != NULL)
+    DIS_tcp_cleanup(chan);
 
   return(rc);
   }  /* END dis_reply_write() */

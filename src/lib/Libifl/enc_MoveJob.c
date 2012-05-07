@@ -93,15 +93,15 @@
 
 int encode_DIS_MoveJob(
 
-  int   sock,
+  struct tcp_chan *chan,
   char *jobid,
   char *destin)
 
   {
   int   rc;
 
-  if ((rc = diswst(sock, jobid) != 0) ||
-      (rc = diswst(sock, destin) != 0))
+  if ((rc = diswst(chan, jobid) != 0) ||
+      (rc = diswst(chan, destin) != 0))
     {
     /* FAILURE */
 

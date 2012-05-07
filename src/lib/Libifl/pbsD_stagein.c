@@ -86,6 +86,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 #include "dis.h"
+#include "tcp.h" /* tcp_chan */
 
 int pbs_stagein(
     
@@ -100,6 +101,7 @@ int pbs_stagein(
 
   struct batch_reply   *reply;
   int                   sock;
+  struct tcp_chan *chan = NULL;
 
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
@@ -114,25 +116,28 @@ int pbs_stagein(
 
   /* setup DIS support routines for following DIS calls */
 
-  DIS_tcp_setup(sock);
-
-  /* send stagein request, a run request with a different id */
-
-  if ((rc = encode_DIS_ReqHdr(sock, PBS_BATCH_StageIn, pbs_current_user)) ||
-      (rc = encode_DIS_RunJob(sock, jobid, location, 0)) ||
-      (rc = encode_DIS_ReqExtend(sock, extend)))
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    pthread_mutex_unlock(connection[c].ch_mutex);
+    rc = PBSE_PROTOCOL;
+    return rc;
+    }
+    /* send stagein request, a run request with a different id */
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_StageIn, pbs_current_user)) ||
+      (rc = encode_DIS_RunJob(chan, jobid, location, 0)) ||
+      (rc = encode_DIS_ReqExtend(chan, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return (PBSE_PROTOCOL);
     }
 
-  if (DIS_tcp_wflush(sock))
+  if (DIS_tcp_wflush(chan))
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
-
+    DIS_tcp_cleanup(chan);
     return (PBSE_PROTOCOL);
     }
 
@@ -145,6 +150,6 @@ int pbs_stagein(
   pthread_mutex_unlock(connection[c].ch_mutex);
 
   PBSD_FreeReply(reply);
-
+  DIS_tcp_cleanup(chan);
   return(rc);
   }

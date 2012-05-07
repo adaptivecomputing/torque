@@ -47,6 +47,7 @@ int socket_read_one_byte(int socket, char *one_char);
 int socket_read_num(int socket, long long *the_num);
 int socket_read_str(int socket, char **the_str, long long *str_len);
 int socket_close(int socket);
+int get_addr_info(char *name, struct sockaddr_in *sa_info, int retry);
 
 /* from file server_core.c */
 int start_listener(char *server_ip, int server_port, void *(*process_meth)(void *));
@@ -68,11 +69,13 @@ fd_set *global_sock_getlist();
 int global_sock_verify();
 void netcounter_incr(void);
 int get_num_connections();
-int *netcounter_get(void);
+void netcounter_get(int netrates[]);
 int init_network(unsigned int port, void *(*readfunc)(void *));
 int thread_func(int active_sockets, fd_set *select_set);
 int wait_request(time_t waittime, long *SState); 
 /* static void accept_conn(void *new_conn); */
+void globalset_add_sock(int sock);
+void globalset_del_sock(int sock);
 int add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
 void close_conn(int sd, int has_mutex); 
 void net_close(int but); 
@@ -81,7 +84,7 @@ int get_connecthost(int sock, char *namebuf, int size);
 char *netaddr_pbs_net_t(pbs_net_t ipadd);
 
 /* from file net_set_clse.c */
-void net_add_close_func(int, void (*func)(int), int);
+void net_add_close_func(int, void (*func)(int));
  
 /* from file port_forwarding.c */
 void port_forwarder(struct pfwdsock *socks, int (*connfunc)(char *, int, char *), char *phost, int pport, char *EMsg);

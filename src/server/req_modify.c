@@ -244,6 +244,19 @@ void mom_cleanup_checkpoint_hold(
     }
 
   pjob = find_job(jobid);
+  if (pjob == NULL)
+    {
+    if (LOGLEVEL >= 3)
+      {
+      sprintf(log_buf,
+        "%s:failed to find job\n",
+        __func__);
+
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buf);
+      }
+    free(jobid);
+    return;
+    }
   free(jobid);
 
   if (LOGLEVEL >= 7)
@@ -757,7 +770,8 @@ int copy_batchrequest(
           strcpy(newpal->al_atopl.name, pal->al_atopl.name);
           newpal->al_nameln = pal->al_nameln;
           newpal->al_atopl.resource = newpal->al_atopl.name + newpal->al_nameln;
-          strcpy(newpal->al_atopl.resource, pal->al_atopl.resource);
+          if (pal->al_atopl.resource != NULL)
+            strcpy(newpal->al_atopl.resource, pal->al_atopl.resource);
           newpal->al_rescln = pal->al_rescln;
           newpal->al_atopl.value = newpal->al_atopl.name + newpal->al_nameln + newpal->al_rescln;
           strcpy(newpal->al_atopl.value, pal->al_atopl.value);

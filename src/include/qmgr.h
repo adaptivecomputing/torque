@@ -112,6 +112,7 @@ struct objname *default_server_name();
 
 struct objname *temp_objname(char *, char *, struct server *);
 int parse_request(char *, char [][MAX_REQ_WORD_LEN]);
+void clean_up();
 void clean_up_and_exit(int);
 void freeattrl(struct attrl *);
 void freeattropl(struct attropl *);

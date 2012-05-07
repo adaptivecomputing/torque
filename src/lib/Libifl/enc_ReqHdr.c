@@ -93,16 +93,16 @@
 
 int encode_DIS_ReqHdr(
     
-  int   sock,
+  struct tcp_chan *chan,
   int   reqt,
   char *user)
   {
   int rc;
 
-  if ((rc = diswui(sock, PBS_BATCH_PROT_TYPE)) ||
-      (rc = diswui(sock, PBS_BATCH_PROT_VER)) ||
-      (rc = diswui(sock, reqt))   ||
-      (rc = diswst(sock, user)))
+  if ((rc = diswui(chan, PBS_BATCH_PROT_TYPE)) ||
+      (rc = diswui(chan, PBS_BATCH_PROT_VER)) ||
+      (rc = diswui(chan, reqt))   ||
+      (rc = diswst(chan, user)))
     {
     return rc;
     }

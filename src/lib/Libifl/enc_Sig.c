@@ -92,15 +92,15 @@
 
 int encode_DIS_SignalJob(
     
-  int   sock,
+  struct tcp_chan *chan,
   char *jobid,
   char *signal)
 
   {
   int   rc;
 
-  if ((rc = diswst(sock, jobid) != 0) ||
-      (rc = diswst(sock, signal) != 0))
+  if ((rc = diswst(chan, jobid) != 0) ||
+      (rc = diswst(chan, signal) != 0))
     return rc;
 
   return 0;
