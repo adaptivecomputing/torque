@@ -19,6 +19,8 @@ evans
       job array is submitted.
   e - Allow pbs_mom to change users group on stderr/stdout files. Enabled by configuring
       Torque with CFLAGS='-DRESETGROUP'. TRQ-908.
+  b - Fix so pbs_mom will compile when configured with --with-nvml-lib=/usr/lib and
+      --with-nvml-include. TRQ-926.
 
 4.0.1
   b - Fix trqauthd init scripts to use correct path to trqauthd.

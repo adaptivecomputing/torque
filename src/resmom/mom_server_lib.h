@@ -7,6 +7,9 @@
 #include "mom_hierarchy.h" /* node_comm_t */
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "tcp.h" /* tcp_chan */
+#if defined(NVIDIA_GPUS) && defined(NVML_API)
+#include "nvml.h"
+#endif  /* NVIDIA_GPUS and NVML_API */
 
 void mom_server_init(mom_server *pms);
 
