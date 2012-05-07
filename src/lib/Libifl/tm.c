@@ -1813,7 +1813,12 @@ tm_poll_error:
  *
  */
 
-int tm_adopt(char *id, int adoptCmd, pid_t pid)
+int tm_adopt(
+    
+  char  *id,
+  int    adoptCmd,
+  pid_t  pid)
+
   {
   int rc = TM_SUCCESS;
   int status, ret;
@@ -1867,8 +1872,7 @@ int tm_adopt(char *id, int adoptCmd, pid_t pid)
     }
 
   /* write the pid so the adopted process can be part of the cpuset if needed */
-
-  if (diswsi(chan,sid) != DIS_SUCCESS)
+  if (diswsi(chan, pid) != DIS_SUCCESS)
     {
     rc =  TM_ENOTCONNECTED;
     goto tm_adopt_cleanup;
