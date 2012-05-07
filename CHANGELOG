@@ -21,6 +21,7 @@ evans
       Torque with CFLAGS='-DRESETGROUP'. TRQ-908.
   b - Fix so pbs_mom will compile when configured with --with-nvml-lib=/usr/lib and
       --with-nvml-include. TRQ-926.
+  b - fix pbs_track to add its process to the cpuset as well. TRQ-925.
 
 4.0.1
   b - Fix trqauthd init scripts to use correct path to trqauthd.
