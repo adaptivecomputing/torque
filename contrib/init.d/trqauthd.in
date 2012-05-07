@@ -1,0 +1,62 @@
+#!/bin/sh
+#
+# trqauthd	This script will start and stop the Torque Authorization Daemon
+#
+# chkconfig: 345 95 5
+# description: PBS is a batch versatile batch system for SMPs and clusters
+#
+# Source the library functions
+. /etc/rc.d/init.d/functions
+
+
+# NOTE: customize these two variables as needed
+PBS_DAEMON=@sbindir@/trqauthd
+PBS_HOME=@PBS_HOME@
+
+if [ -f /etc/sysconfig/trqauthd ]; then
+  . /etc/sysconfig/trqauthd
+fi
+
+# let see how we were called
+case "$1" in
+	start) 
+		echo -n "Starting TORQUE Authorization Daemon: "
+		status trqauthd 2>&1 > /dev/null
+		RET=$?
+		[ $RET -eq 0 ] && echo -n "trqauthd already running" && success && echo && exit 0
+
+		daemon $PBS_DAEMON
+		RET=$?
+		[ $RET -eq 0 ] && touch /var/lock/subsys/trqauthd
+		echo
+		;;
+	stop)
+		echo -n "Shutting down TORQUE Authorization Daemon: "
+		status trqauthd 2>&1 > /dev/null
+		RET=$?
+		[ ! $RET -eq 0 ] && echo -n "trqauthd already stopped" && success && echo && exit 0
+
+		killproc trqauthd
+		RET=$?
+		rm -f /var/lock/subsys/trqauthd
+		echo
+		;;
+	status)
+		status trqauthd
+		RET=$?
+		;;
+	restart)
+		$0 stop
+		$0 start
+		;;
+	reload) 
+		echo -n "Reloading TORQUE Authorization Daemon: "
+		killproc trqauthd -HUP
+		RET=$?
+		echo
+		;;
+	*)
+		echo "Usage: trqauthd {start|stop|restart|status}"
+		exit 1
+esac
+exit $RET

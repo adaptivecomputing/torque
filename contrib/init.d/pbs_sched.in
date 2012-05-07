@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+# pbs_sched	This script will start and stop the PBS Scheduler
+#
+# chkconfig: 345 95 5
+# description: PBS is a batch versatile batch system for SMPs and clusters
+#
+# Source the library functions
+. /etc/rc.d/init.d/functions
+
+PBS_DAEMON=@sbindir@/pbs_sched
+PBS_HOME=@PBS_HOME@
+export PBS_DAEMON PBS_HOME
+
+if [ -f /etc/sysconfig/pbs_sched ];then
+   . /etc/sysconfig/pbs_sched
+fi
+
+# let see how we were called
+case "$1" in
+	start) 
+		echo -n "Starting TORQUE Scheduler: "
+		status pbs_sched 2>&1 > /dev/null
+		RET=$?
+		[ $RET -eq 0 ] && echo -n "pbs_sched already running" && success && echo && exit 0
+
+		daemon $PBS_DAEMON -d $PBS_HOME
+		RET=$?
+		[ $RET -eq 0 ] && touch /var/lock/subsys/pbs_sched
+		echo
+		;;
+	stop)
+		echo -n "Shutting down TORQUE Scheduler: "
+		status pbs_sched 2>&1 > /dev/null
+		RET=$?
+		[ ! $RET -eq 0 ] && echo -n "pbs_sched already stopped" && success && echo && exit 0
+
+		killproc pbs_sched
+		RET=$?
+		rm -f /var/lock/subsys/pbs_sched
+		echo
+		;;
+	status)
+		status pbs_sched
+		RET=$?
+		;;
+	restart)
+		$0 stop
+		$0 start
+		;;
+	reload) 
+		echo -n "Reloading pbs_sched: "
+		killproc pbs_sched -HUP
+		RET=$?
+		echo
+		;;
+	*)
+		echo "Usage: pbs_sched {start|stop|restart|status}"
+		exit 1
+esac
+exit $RET

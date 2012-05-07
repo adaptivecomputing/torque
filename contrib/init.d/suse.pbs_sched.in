@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+# pbs_sched	This script will start and stop the PBS Scheduler
+#
+### BEGIN INIT INFO
+# Provides:       pbs_sched
+# Required-Start: $syslog $remote_fs
+# Should-Start: pbs_server
+# Required-Stop: $syslog $remote_fs
+# Should-Stop: $null
+# Default-Start:  2 3 5
+# Default-Stop:
+# Short-Description: Torque scheduler
+# Description: Torque is a versatile batch system for SMPs and clusters.
+#	Starts the PBS scheduler, which runs in conjunction with the PBS server.
+#	it queries the server about the state of PBS and communicates with
+#	pbs_mon to get information about the status of running jobs, memory
+#	available etc.  It then makes decisions as to which jobs to run.
+### END INIT INFO
+
+PBS_DAEMON=@sbindir@/pbs_sched
+PBS_HOME=@PBS_HOME@
+export PBS_DAEMON
+
+# Source the library functions
+. /etc/rc.status
+
+[ -f /etc/sysconfig/pbs_sched ] && . /etc/sysconfig/pbs_sched
+[ -x $PBS_DAEMON ] || exit
+
+# let see how we were called
+case "$1" in
+	start) 
+		echo -n "Starting TORQUE Scheduler: "
+		startproc $PBS_DAEMON
+		rc_status -v
+		;;
+	stop)
+		echo -n "Shutting down TORQUE Scheduler: "
+		killproc pbs_sched
+		rc_status -v
+		;;
+	status)
+		checkproc pbs_sched
+		rc_status -v
+		;;
+	restart)
+		$0 stop
+		$0 start
+		rc_status
+		;;
+	try-restart)
+		$0 status >/dev/null && $0 restart
+		rc_status
+		;;
+	reload|force-reload) 
+		echo -n "Reloading TORQUE Scheduler: "
+		killproc pbs_sched -HUP
+		rc_status -v
+		;;
+	*)
+		echo "Usage: pbs_sched {start|stop|status|try-restart|restart|force-reload|reload}"
+		exit 1
+rc_exit
+esac

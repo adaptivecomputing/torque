@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# pbs_server	This script will start and stop the PBS Server
+#
+### BEGIN INIT INFO
+# Provides:       pbs_server
+# Required-Start: $syslog $remote_fs
+# Should-Start:
+# Required-Stop: $syslog $remote_fs
+# Should-Stop: $null
+# Default-Start:  2 3 5
+# Default-Stop:
+# Short-Description: Torque server
+# Description: Torque is a versatile batch system for SMPs and clusters.
+#	Starts the PBS batch server, which operates as batch server
+#	on the local host.
+### END INIT INFO
+
+PBS_DAEMON=@sbindir@/pbs_server
+PBS_HOME=@PBS_HOME@
+PIDFILE=$PBS_HOME/server_priv/server.lock
+export PBS_DAEMON PBS_HOME PIDFILE
+
+# Source the library functions
+. /etc/rc.status
+rc_reset
+
+[ -f /etc/sysconfig/pbs_server ] && . /etc/sysconfig/pbs_server
+[ -x $PBS_DAEMON ] || exit
+
+
+# let see how we were called
+case "$1" in
+	start) 
+		echo -n "Starting TORQUE Server: "
+#		if [ -r $PBS_HOME/server_priv/serverdb ]
+#		then
+# Commented out by dbeer. This if check (and -t create possibility) will blow
+# away the serverdb file if $TORQUE_HOME isn't the default
+			startproc $PBS_DAEMON $SERVER_ARGS
+#		else
+#			startproc $PBS_DAEMON -t create $DAEMON_ARGS
+#		fi
+		rc_status -v
+		;;
+	stop)
+		echo -n "Shutting down TORQUE Server: "
+		killproc -p $PIDFILE $PBS_DAEMON
+		rc_status -v
+		;;
+	status)
+		echo -n "Checking TORQUE Server: "
+		checkproc -p $PIDFILE pbs_server
+		rc_status -v
+		;;
+	restart)
+		$0 stop
+		$0 start
+		rc_status
+		;;
+	try-restart)
+		$0 status >/dev/null && $0 restart
+		rc_status
+		;;
+	reload|force-reload)
+		echo -n "Reloading TORQUE Server: "
+		killproc -p $PIDFILE pbs_server -HUP
+		rc_status -v
+		;;
+	*)
+		echo "Usage: pbs_server {start|stop|status|try-restart|restart|force-reload|reload}"
+		exit 1
+esac
+rc_exit
