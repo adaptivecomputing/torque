@@ -48,6 +48,13 @@ pbs_server -t create
 # up. If we go to qmgr right away it will fail.
 sleep 2
 
+ps -ef | grep -v grep | grep pbs_server 
+
+if [ "$?" -ne "0" ] ; then
+  echo "ERROR: pbs_server failed to start, check syslog and server logs for more information"
+  exit 1;
+fi
+
 echo set server operators += $USER | qmgr
 
 if [ "$?" -ne "0" ] ; then
