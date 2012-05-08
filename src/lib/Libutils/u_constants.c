@@ -81,6 +81,7 @@
 
 const int   apbasil_fail_transient = -10;
 const int   apbasil_fail_permanent = -11;
+const char *message                = "Message";
 const char *response_data          = "ResponseData";
 const char *node_array             = "NodeArray";
 const char *node_name              = "Node";

@@ -92,12 +92,13 @@
 #define CLOSE_RESERVE_ARRAY         "</ReserveParamArray>"
 #define APBASIL_RESERVE_REQ         "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='RESERVE'>"
 #define CLOSE_BASIL_REQ             "</BasilRequest>"
-#define CONFIRM_BASIL_REQ           "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='CONFIRM' reservation_id='%s' pagg_id='%lld'/>\" | %s"
-#define DELETE_BASIL_REQ            "echo <?xml version='1.0'?><BasilRequest protocol='%s' method='RELEASE' reservation_id='%s'/>\" | %s"
+#define CONFIRM_BASIL_REQ           "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='CONFIRM' reservation_id='%s' %s='%lld'/>\" | %s"
+#define DELETE_BASIL_REQ            "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='RELEASE' reservation_id='%s'/>\" | %s"
 
 
 extern const int   apbasil_fail_transient;
 extern const int   apbasil_fail_permanent;
+extern const char *message;
 extern const char *response_data;
 extern const char *node_array;
 extern const char *node_name;

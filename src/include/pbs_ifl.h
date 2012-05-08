@@ -192,10 +192,8 @@
 #define ATTR_node_exclusive "node_exclusive"
 #define ATTR_exec_gpus   "exec_gpus"
 #define ATTR_J           "job_id"
-
-#ifdef USEJOBCREATE
 #define ATTR_pagg         "pagg_id"
-#endif /* USEJOBCREATE */
+
 
 #ifdef NVIDIA_GPUS
   /* JOB_ATR_gpu_flags */

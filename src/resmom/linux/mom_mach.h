@@ -115,10 +115,12 @@ struct startjob_rtn
   {
   int   sj_code; /* error code */
   pid_t sj_session; /* session */
-
 #ifdef USEJOBCREATE
   jid_t sj_jobid;
-#endif /* USEJOBCREATE */
+#else
+  int   sj_jobid;
+#endif
+  int   sj_rsvid;
   };
 
 extern int mom_set_limits(job *, int); /* Set job's limits */

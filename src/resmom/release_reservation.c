@@ -203,7 +203,8 @@ int destroy_alps_reservation(
   char      command_buf[MAXLINE * 2];
 
   snprintf(command_buf, sizeof(command_buf), DELETE_BASIL_REQ,
-    apbasil_protocol, reservation_id,
+    (apbasil_protocol != NULL) ? apbasil_protocol : DEFAULT_APBASIL_PROTOCOL,
+    reservation_id,
     (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
 
   while ((rc != PBSE_NONE) &&
@@ -211,6 +212,7 @@ int destroy_alps_reservation(
          (retry_count < APBASIL_RETRIES))
     {
     rc = execute_alps_release(command_buf);
+    retry_count++;
     }
 
   return(rc);

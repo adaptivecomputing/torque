@@ -218,7 +218,7 @@ dynamic_string *get_reservation_command(
 
   /* place the top header */
   snprintf(buf, sizeof(buf), APBASIL_RESERVE_REQ, 
-    (apbasil_protocol != NULL) ? apbasil_protocol : "1.0");
+    (apbasil_protocol != NULL) ? apbasil_protocol : DEFAULT_APBASIL_PROTOCOL);
   append_dynamic_string(command, buf);
 
   /* place the reserve header */
@@ -271,26 +271,33 @@ int find_error_type(
   char    *attr_val = (char *)xmlGetProp(node, (const xmlChar *)error_class);
   int      rc = apbasil_fail_transient;
   xmlNode *child;
+  xmlNode *grandchild;
 
   if (!strcmp(attr_val, "PERMANENT"))
     rc = apbasil_fail_permanent;
 
   for (child = node->children; child != NULL; child = child->next)
     {
-    if (!strcmp((const char *)child->name, text_name))
+    if (!strcmp((const char *)child->name, message))
       {
-      char *errtext = (char *)xmlNodeGetContent(child);
-      if (strstr(errtext, "error") != NULL)
+      for (grandchild = child->children; grandchild != NULL; grandchild = grandchild->next)
         {
-        snprintf(log_buffer, sizeof(log_buffer), "%s alps error: '%s'",
-          attr_val, errtext);
-        log_err(-1, __func__, log_buffer);
+        if (!strcmp((const char *)child->name, text_name))
+          {
+          char *errtext = (char *)xmlNodeGetContent(child);
+          if (strstr(errtext, "error") != NULL)
+            {
+            snprintf(log_buffer, sizeof(log_buffer), "%s alps error: '%s'",
+              attr_val, errtext);
+            log_err(-1, __func__, log_buffer);
+            }
+          }
         }
       }
     }
 
   return(rc);
-  } /* END find_and_log_error() */
+  } /* END find_error_type() */
 
 
 
@@ -450,12 +457,57 @@ int parse_confirmation_output(
 
 
 
+/*
+ * creates and returns a dynamic string containing the command that
+ * will be executed in order to confirm an apbasil reservation. This will be 
+ *
+ * echo \"<?xml version='1.0'?><BasilRequest protocol='A' method='CONFIRM' 
+ * reservation_id='B' 'C=D' />\" | E
+ * A is the protocol version, 1.0 by default
+ * B is the reservation id returned from the reservation creation
+ * C is either admin_cookie in version 1.0 or pagg_id in later versions
+ * D is the value of the admin cookie or the pagg id
+ * E is the path to apbasil, most likely /usr/bin/apbasil
+ *
+ */
+
+int get_confirm_command(
+
+  char      *rsv_id,
+  long long  pagg_id_value,
+  char      *apbasil_protocol,
+  char      *apbasil_path,
+  char      *command_buf,
+  int        size)
+
+  {
+  const char *pagg_str;
+
+  if ((apbasil_protocol == NULL) ||
+      (!strcmp(apbasil_protocol, DEFAULT_APBASIL_PROTOCOL)))
+    pagg_str = admin_cookie;
+  else
+    pagg_str = pagg_id;
+
+  snprintf(command_buf, size, CONFIRM_BASIL_REQ,
+    (apbasil_protocol != NULL) ? apbasil_protocol : DEFAULT_APBASIL_PROTOCOL,
+    rsv_id,
+    pagg_str,
+    pagg_id_value,
+    (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
+
+  return(PBSE_NONE);
+  } /* END get_confirm_command() */
+
+
+
+
 
 int confirm_reservation(
 
   char       *jobid,
-  char      **reservation_id,
-  long long   pagg_id,
+  char       *reservation_id,
+  long long   pagg_id_value,
   char       *apbasil_path,
   char       *apbasil_protocol)
 
@@ -469,9 +521,12 @@ int confirm_reservation(
   int       bytes_read;
   int       total_bytes_read = 0;
 
-  snprintf(command_buf, sizeof(command_buf), CONFIRM_BASIL_REQ,
-    apbasil_protocol, *reservation_id, pagg_id,
-    (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
+  get_confirm_command(reservation_id, 
+    pagg_id_value,
+    apbasil_protocol,
+    apbasil_path,
+    command_buf,
+    sizeof(command_buf));
 
   if ((alps_pipe = popen(command_buf, "r")) == NULL)
     {
@@ -517,7 +572,7 @@ int create_alps_reservation(
   char       *jobid,
   char       *apbasil_path,
   char       *apbasil_protocol,
-  long long   pagg_id,
+  long long   pagg_id_value,
   char      **reservation_id)
 
   {
@@ -556,7 +611,7 @@ int create_alps_reservation(
            (rc != apbasil_fail_permanent) &&
            (rc != PBSE_NONE))
       {
-      rc = confirm_reservation(jobid, reservation_id, pagg_id, apbasil_path, apbasil_protocol);
+      rc = confirm_reservation(jobid, *reservation_id, pagg_id_value, apbasil_path, apbasil_protocol);
       }
     }
 

@@ -2819,19 +2819,20 @@ void handle_reservation(
   {
   long long  pagg = 0;
   int        j;
-  char      *rsv_id;
+  char      *rsv_id = NULL;
 
   if (is_login_node == TRUE)
     {
 #ifdef USEJOBCREATE
     /* Get a jobid from the system */
-    sjr->sj_jobid  = get_jobid(pjob->ji_qs.ji_jobid);
-    
-    pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll = sjr->sj_jobid;
-    pjob->ji_wattr[JOB_ATR_pagg_id].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-   
-    pagg = sjr->sj_jobid;
+    pagg = get_jobid(pjob->ji_qs.ji_jobid);
+#else
+    pagg = rand();
 #endif /* USEJOBCREATE */
+    
+    sjr->sj_jobid = pagg;
+    pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll = pagg;
+    pjob->ji_wattr[JOB_ATR_pagg_id].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
     }
 
  /* set up the job session (update sjr) */
@@ -2850,8 +2851,7 @@ void handle_reservation(
     
     if (rsv_id != NULL)
       {
-      pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
-      pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsv_id;
+      sjr->sj_rsvid = atoi(rsv_id);
       }
     
     if (j < 0)
@@ -3801,15 +3801,7 @@ int TMomFinalizeChild(
   char                  *shell;
   char                  *shellname;
   char                  *idir;
-
-#ifdef USEJOBCREATE
-  struct startjob_rtn    sjr = { 0, 0, 0};
-
-#else
-  struct startjob_rtn    sjr = { 0, 0};
-
-#endif /* USEJOBCREATE */
-
+  struct startjob_rtn    sjr = { 0, 0, 0, 0};
   job                   *pjob;
   task                  *ptask;
   struct passwd         *pwdp;
@@ -4405,6 +4397,21 @@ int TMomFinalizeJob3(
   pjob->ji_wattr[JOB_ATR_session_id].at_flags =
   ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
 
+  if (is_login_node == TRUE)
+    {
+    if (sjr.sj_rsvid != 0)
+      {
+      char buf[MAXLINE];
+
+      sprintf(buf, "%d", sjr.sj_rsvid);
+      pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(buf);
+      pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
+    
+      pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll = sjr.sj_jobid;
+      pjob->ji_wattr[JOB_ATR_pagg_id].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+      }
+    }
+
 #ifdef USEJOBCREATE
   pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll = sjr.sj_jobid;
   pjob->ji_wattr[JOB_ATR_pagg_id].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
@@ -4471,22 +4478,10 @@ int start_process(
   char         *rsv_id;
   long long     pagg;
 
-#ifdef USEJOBCREATE
-
   struct  startjob_rtn sjr =
     {
-    0, 0, 0
+    0, 0, 0, 0
     };
-
-#else
-
-  struct  startjob_rtn sjr =
-    {
-    0, 0
-    };
-
-#endif /* USEJOBCREATE */
-
 
   if (pipe(pipes) == -1)
     {

@@ -1035,7 +1035,6 @@ attribute_def job_attr_def[] =
    ATR_TYPE_STR,
    PARENT_TYPE_JOB},
 
-#ifdef USEJOBCREATE
   /* JOB_ATR_pagg_id */
   { ATTR_pagg,  /* "pagg_id" */
     decode_ll,
@@ -1048,7 +1047,6 @@ attribute_def job_attr_def[] =
     ATR_TYPE_LL,
     PARENT_TYPE_JOB
   },
-#endif /* USEJOBCREATE */
 
 #ifdef NVIDIA_GPUS
   /* JOB_ATR_gpu_flags */
