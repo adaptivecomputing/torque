@@ -49,7 +49,6 @@ typedef struct
    this was done without consideration to backward compatibility. */
 struct job_array_259
   {
-  list_link all_arrays;      /* node in server's linked list of all arrays */
   tlist_head request_tokens; /* head of linked list of request tokens, used 
                                 during cloning (cloning is the process of 
                                 copying the "template" job to generate all of the 
@@ -98,7 +97,6 @@ typedef struct job_array_259 job_array_259;
 
 struct job_array
   {
-  list_link all_arrays;      /* node in server's linked list of all arrays */
   tlist_head request_tokens; /* head of linked list of request tokens, used 
                                 during cloning (cloning is the process of 
                                 copying the "template" job to generate all of the 

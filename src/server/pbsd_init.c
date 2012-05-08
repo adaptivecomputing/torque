@@ -905,85 +905,14 @@ int get_default_threads()
 
 
 
-
-/*
- * This file contains the functions to initialize the PBS Batch Server.
- * The code is called once when the server is brought up.
- */
-
-int pbsd_init(
-
-  int type)  /* type of initialization   */
+int setup_limits()
 
   {
-  int               baselen = 0;
-  char              basen[MAXPATHLEN+1];
-
-  struct dirent    *pdirent;
-  DIR              *dir;
-  int               fd;
-  int               had;
-  int               i;
-  char             *job_suffix = JOB_FILE_SUFFIX;
-  int               job_suf_len = strlen(job_suffix);
-  int               array_suf_len = strlen(ARRAY_FILE_SUFFIX);
-  int               logtype;
-  char             *new_tag = ".new";
-  job              *pjob = NULL;
-  pbs_queue        *pque = NULL;
-  char             *psuffix;
-  int               rc;
-  int               Index;
-  int               iter;
-  long              min_threads;
-  long              max_threads;
-  long              cray_enabled;
-  long              thread_idle_time = DEFAULT_THREAD_IDLE;
-  int               job_count = 0; /* Count of recovered jobs */
-
-  struct stat       statbuf;
-  char             *suffix_slash = "/";
-
-  struct sigaction  act;
-
-  struct sigaction  oact;
-
-  job_array        *pa;
-  char              log_buf[LOCAL_LOG_BUF_SIZE];
-  time_t            time_now = time(NULL);
-
-#if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-  char   EMsg[1024];
-#endif /* not DEBUG and not NO_SECURITY_CHECK */
-
-  min_threads = get_default_threads();
-  max_threads = min_threads;
-
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_flags = AI_CANONNAME;
-
-  /* The following is code to reduce security risks */
-
-  if (setup_env(PBS_ENVIRON) == -1)
-    {
-    return(-1);
-    }
-
-  i = getgid();
-
-  /* secure suppl. groups */
-  if (setgroups(1,(gid_t *)&i) != 0)
-    {
-    snprintf(log_buf, sizeof(log_buf),
-      "Unable to drop secondary groups. Some MAC framework is active?\n");
-    log_err(errno, __func__, log_buf);
-    snprintf(log_buf, sizeof(log_buf),
-      "setgroups(group = %lu) failed: %s\n",
-      (unsigned long)i, strerror(errno));
-    log_err(errno, __func__, log_buf);
-
-    return(-1);
-    }
+#ifndef DEBUG
+#ifndef _CRAY
+  struct rlimit rlimit;
+#endif
+#endif
 
 #ifndef DEBUG
 #ifdef _CRAY
@@ -996,34 +925,32 @@ int pbsd_init(
   limit(C_JOB,      0, L_MEM  , 0);
   limit(C_JOBPROCS, 0, L_MEM  , 0);
 #else /* not  _CRAY */
-    {
-
-    struct rlimit rlimit;
-
-    rlimit.rlim_cur = RLIM_INFINITY;
-    rlimit.rlim_max = RLIM_INFINITY;
-    setrlimit(RLIMIT_CPU,   &rlimit);
-    setrlimit(RLIMIT_FSIZE, &rlimit);
-    setrlimit(RLIMIT_DATA,  &rlimit);
-    setrlimit(RLIMIT_STACK, &rlimit);
+  rlimit.rlim_cur = RLIM_INFINITY;
+  rlimit.rlim_max = RLIM_INFINITY;
+  setrlimit(RLIMIT_CPU,   &rlimit);
+  setrlimit(RLIMIT_FSIZE, &rlimit);
+  setrlimit(RLIMIT_DATA,  &rlimit);
+  setrlimit(RLIMIT_STACK, &rlimit);
 #ifdef RLIMIT_RSS
-    setrlimit(RLIMIT_RSS,   &rlimit);
+  setrlimit(RLIMIT_RSS,   &rlimit);
 #endif /* RLIMIT_RSS */
 #ifdef RLIMIT_VMEM
-    setrlimit(RLIMIT_VMEM,  &rlimit);
+  setrlimit(RLIMIT_VMEM,  &rlimit);
 #endif /* RLIMIT_VMEM */
-    }
 #endif /* not _CRAY */
 #endif /* DEBUG */
   
-  /* setup the threadpool for use */
-  get_svr_attr_l(SRV_ATR_minthreads, &min_threads);
-  get_svr_attr_l(SRV_ATR_maxthreads, &max_threads);
-  get_svr_attr_l(SRV_ATR_threadidleseconds, &thread_idle_time);
-  
-  initialize_threadpool(&request_pool,min_threads,max_threads,thread_idle_time);
+  return(PBSE_NONE);
+  } /* END setup_limits() */
 
-  /* 1. set up to catch or ignore various signals */
+
+
+
+int setup_signal_handling()
+
+  {
+  struct sigaction  act;
+  struct sigaction  oact;
 
   sigemptyset(&act.sa_mask);
 
@@ -1132,43 +1059,53 @@ int pbsd_init(
     return(2);
     }
 
-  /* 2. set up the various paths and other global variables we need */
+  return(PBSE_NONE);
+  } /* END setup_signal_handling() */
+
+
+
+
+int initialize_paths()
+
+  {
+  int          rc = PBSE_NONE;
+  char        *suffix_slash = "/";
+  char        *new_tag = ".new";
+  struct stat  statbuf;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
+#if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
+  char         EMsg[1024];
+#endif /* not DEBUG and not NO_SECURITY_CHECK */
 
   if (path_priv == NULL)
-    {
-    path_priv      = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
-    }
+    path_priv        = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
 
-  path_arrays    = build_path(path_priv, PBS_ARRAYDIR, suffix_slash);
-  path_spool     = build_path(path_home, PBS_SPOOLDIR, suffix_slash);
-  path_queues    = build_path(path_priv, PBS_QUEDIR,   suffix_slash);
-  path_jobs      = build_path(path_priv, PBS_JOBDIR,   suffix_slash);
-  path_credentials = build_path(path_priv, PBS_CREDENTIALDIR, suffix_slash);
-  path_acct  = build_path(path_priv, PBS_ACCT,     suffix_slash);
+  path_arrays        = build_path(path_priv, PBS_ARRAYDIR, suffix_slash);
+  path_spool         = build_path(path_home, PBS_SPOOLDIR, suffix_slash);
+  path_queues        = build_path(path_priv, PBS_QUEDIR,   suffix_slash);
+  path_jobs          = build_path(path_priv, PBS_JOBDIR,   suffix_slash);
+  path_credentials   = build_path(path_priv, PBS_CREDENTIALDIR, suffix_slash);
+  path_acct          = build_path(path_priv, PBS_ACCT,     suffix_slash);
 
   if (path_svrdb == NULL)
-    {
-    path_svrdb     = build_path(path_priv, PBS_SERVERDB, NULL);
-    }
+    path_svrdb       = build_path(path_priv, PBS_SERVERDB, NULL);
 
-  path_svrdb_new = build_path(path_priv, PBS_SERVERDB, new_tag);
-  path_svrlog = build_path(path_home, PBS_LOGFILES, suffix_slash);
-  path_jobinfo_log = build_path(path_home, PBS_JOBINFOLOGDIR, suffix_slash);
-  path_track  = build_path(path_priv, PBS_TRACKING, NULL);
-  path_nodes  = build_path(path_priv, NODE_DESCRIP, NULL);
-  path_nodes_new = build_path(path_priv, NODE_DESCRIP, new_tag);
-  path_nodestate = build_path(path_priv, NODE_STATUS,  NULL);
-  path_nodenote  = build_path(path_priv, NODE_NOTE,    NULL);
-  path_nodenote_new = build_path(path_priv, NODE_NOTE, new_tag);
+  path_svrdb_new     = build_path(path_priv, PBS_SERVERDB, new_tag);
+  path_svrlog        = build_path(path_home, PBS_LOGFILES, suffix_slash);
+  path_jobinfo_log   = build_path(path_home, PBS_JOBINFOLOGDIR, suffix_slash);
+  path_track         = build_path(path_priv, PBS_TRACKING, NULL);
+  path_nodes         = build_path(path_priv, NODE_DESCRIP, NULL);
+  path_nodes_new     = build_path(path_priv, NODE_DESCRIP, new_tag);
+  path_nodestate     = build_path(path_priv, NODE_STATUS,  NULL);
+  path_nodenote      = build_path(path_priv, NODE_NOTE,    NULL);
+  path_nodenote_new  = build_path(path_priv, NODE_NOTE, new_tag);
   path_mom_hierarchy = build_path(path_priv, PBS_MOM_HIERARCHY, NULL);
-
 
 #ifdef SERVER_CHKPTDIR
   /* need to make sure path ends with a '/' */
-
   if (*(SERVER_CHKPTDIR + strlen(SERVER_CHKPTDIR) - 1)  == '/')
     {
-    path_checkpoint = strdup(SERVER_CHKPTDIR);
+    path_checkpoint  = strdup(SERVER_CHKPTDIR);
     }
   else
     {
@@ -1178,7 +1115,7 @@ int pbsd_init(
     }
 
 #else
-  path_checkpoint     = build_path(path_home, PBS_CHKPTDIR, suffix_slash);
+  path_checkpoint    = build_path(path_home, PBS_CHKPTDIR, suffix_slash);
 #endif
 
   /* check existance amd make sure it is a directory */
@@ -1214,8 +1151,7 @@ int pbsd_init(
 
   if (svr_resc_def == NULL)
     {
-    rc = init_resc_defs();
-    if (rc != 0)
+    if ((rc = init_resc_defs()) != PBSE_NONE)
       {
       log_err(rc, __func__, msg_init_baddb);
       
@@ -1232,12 +1168,21 @@ int pbsd_init(
   rc |= chk_file_sec(path_credentials,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
   rc |= chk_file_sec(PBS_ENVIRON, 0, 0, S_IWGRP | S_IWOTH, 1, EMsg);
 
-  if (rc != 0)
+  if (rc != PBSE_NONE)
     {
     return(3);
     }
-
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
+
+  return(rc);
+  } /* END initialize_paths() */
+
+
+
+int initialize_data_structures_and_mutexes()
+
+  {
+  long cray_enabled = FALSE;
 
   svr_do_schedule_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(svr_do_schedule_mutex, NULL);
@@ -1288,12 +1233,25 @@ int pbsd_init(
     initialize_login_holder();
     initialize_alps_reservations();
     }
+  
+  acctfile_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(acctfile_mutex, NULL);
 
-  time_now = time((time_t *)0);
+  return(PBSE_NONE);
+  } /* END initialize_data_structures_and_mutexes() */
 
-  /* 3. Set default server attibutes values */
+
+
+int setup_server_attrs(
+    
+  int type)
+
+  {
+  int i;
+  int rc = PBSE_NONE;
+
   pthread_mutex_lock(server.sv_attr_mutex);
-  for (i = 0;i < SRV_ATR_LAST;i++)
+  for (i = 0; i < SRV_ATR_LAST; i++)
     clear_attr(&server.sv_attr[i], &svr_attr_def[i]);
 
   server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long =  PBS_SCHEDULE_CYCLE;
@@ -1327,20 +1285,17 @@ int pbsd_init(
   server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_long = TRUE;
   server.sv_attr[SRV_ATR_MoabArrayCompatible].at_flags = ATR_VFLAG_SET;
 
-  /* 4. force logging of all types */
-
+  /* force logging of all types */
   server.sv_attr[SRV_ATR_log_events].at_val.at_long = PBSEVENT_MASK;
   server.sv_attr[SRV_ATR_log_events].at_flags = ATR_VFLAG_SET;
 
-  /* 5. If not a "create" initialization, recover server db */
-
+  /* If not a "create" initialization, recover server db */
   rc = chk_save_file(path_svrdb);
 
   if (type != RECOV_CREATE)
     {
     /* Open the server database (save file) and read it in */
-
-    if ((rc != 0) || ((rc = svr_recov_xml(path_svrdb, FALSE)) == -1)) 
+    if ((rc != PBSE_NONE) || ((rc = svr_recov_xml(path_svrdb, FALSE)) == -1)) 
       {
       log_err(rc, __func__, msg_init_baddb);
 
@@ -1355,19 +1310,9 @@ int pbsd_init(
     }
   else
     {
-    if (rc == 0)
+    if (rc == PBSE_NONE)
       {
       /* path_svrdb exists */
-
-      /* will exit on (n)o response */
-
-/*      if (TForceUpdate == 0)
-        {
-        need_y_response(type);
-        }*/
-
-      /* (y)es response received */
-
       rm_files(path_priv);
 
       pthread_mutex_unlock(server.sv_attr_mutex);
@@ -1377,17 +1322,13 @@ int pbsd_init(
     }
 
   svr_attr_def[SRV_ATR_version].at_decode(
-
     &server.sv_attr[SRV_ATR_version],
     0,
     0,
     PACKAGE_VERSION,
     0);
 
-  /* 6. open accounting file and job log file if logging is set */
-  acctfile_mutex = calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(acctfile_mutex, NULL);
-
+  /* open accounting file and job log file if logging is set */
   if (acct_open(acct_file) != 0)
     {
     pthread_mutex_unlock(server.sv_attr_mutex);
@@ -1398,7 +1339,7 @@ int pbsd_init(
     {
     rc = job_log_open(job_log_file, path_jobinfo_log);
 
-    if (rc != 0)
+    if (rc != PBSE_NONE)
       {
       fprintf(stderr, "Could not open job_logs \n");
       pthread_mutex_unlock(server.sv_attr_mutex);
@@ -1406,23 +1347,27 @@ int pbsd_init(
       }
     }
 
-
-  /* 7. Set up other server and global variables */
-
+  /* set up other server and global variables */
   if (a_opt_init != -1)
     {
     /* a_option was set, overrides saved value of scheduling attr */
-
     server.sv_attr[SRV_ATR_scheduling].at_val.at_long = a_opt_init;
     server.sv_attr[SRV_ATR_scheduling].at_flags |= ATR_VFLAG_SET;
     }
       
   pthread_mutex_unlock(server.sv_attr_mutex);
 
-  /* Open and read in node list if one exists */
+  return(rc);
+  } /* END setup_server_attrs() */
+
+
+
+int initialize_nodes()
+
+  {
   initialize_all_nodes_array(&allnodes);
 
-  if ((rc = setup_nodes()) == -1)
+  if (setup_nodes() == -1)
     {
     return(-1);
     }
@@ -1430,10 +1375,24 @@ int pbsd_init(
   add_server_names_to_acl_hosts();
   update_default_np();
 
-  /*
-   * 8. If not a "create" initialization, recover queues.
-   *    If a create, remove any queues that might be there.
-   */
+  return(PBSE_NONE);
+  } /* END initialize_nodes() */
+
+
+
+
+int handle_queue_recovery(
+    
+  int type)
+
+  {
+  int               rc = PBSE_NONE;
+  struct dirent    *pdirent;
+  DIR              *dir;
+  int               had;
+  pbs_queue        *pque = NULL;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
+  int               logtype;
 
   if (chdir(path_queues) != 0)
     {
@@ -1444,10 +1403,7 @@ int pbsd_init(
     return(-1);
     }
 
-  pthread_mutex_lock(server.sv_qs_mutex);
-
   had = server.sv_qs.sv_numque;
-
   server.sv_qs.sv_numque = 0;
 
   dir = opendir(".");
@@ -1466,18 +1422,15 @@ int pbsd_init(
     if (pdirent->d_name == NULL)
       {
       /* invalid name returned */
-
       continue;
       }
 
     if (chk_save_file(pdirent->d_name) == 0)
       {
       /* recover queue */
-
       if ((pque = que_recov_xml(pdirent->d_name)) != NULL)
         {
         /* que_recov increments sv_numque */
-
         sprintf(log_buf, msg_init_recovque, pque->qu_qs.qu_name);
 
         log_event(
@@ -1488,8 +1441,7 @@ int pbsd_init(
 
         if (pque->qu_attr[QE_ATR_ResourceAssn].at_flags & ATR_VFLAG_SET)
           {
-          que_attr_def[QE_ATR_ResourceAssn].at_free(
-            &pque->qu_attr[QE_ATR_ResourceAssn]);
+          que_attr_def[QE_ATR_ResourceAssn].at_free(&pque->qu_attr[QE_ATR_ResourceAssn]);
           }
 
         unlock_queue(pque, __func__, NULL, LOGLEVEL);
@@ -1508,12 +1460,25 @@ int pbsd_init(
 
   log_event(logtype, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
 
-  /*
-   * 9. If not "create" or "clean" recovery, recover the jobs.
-   *    If a a create or clean recovery, delete any jobs.
-   */
+  return(rc);
+  } /* END handle_queue_recovery() */
 
-  /* 9.a, recover job array info */
+
+
+
+int handle_array_recovery(
+    
+  int type)
+
+  {
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
+  struct dirent    *pdirent;
+  DIR              *dir;
+  int               rc = PBSE_NONE;
+  job_array        *pa = NULL;
+  int               baselen = 0;
+  int               array_suf_len = strlen(ARRAY_FILE_SUFFIX);
+  char             *psuffix;
 
   if (chdir(path_arrays) != 0)
     {
@@ -1530,14 +1495,13 @@ int pbsd_init(
 
   while ((pdirent = readdir(dir)) != NULL)
     {
-
-    if (chk_save_file(pdirent->d_name) == 0)
+    if (chk_save_file(pdirent->d_name) == PBSE_NONE)
       {
       /* if not create or clean recovery, recover arrays */
 
-      if ((type != RECOV_CREATE) && (type != RECOV_COLD))
+      if ((type != RECOV_CREATE) && 
+          (type != RECOV_COLD))
         {
-
         /* skip files without the proper suffix */
         baselen = strlen(pdirent->d_name) - array_suf_len;
 
@@ -1546,42 +1510,64 @@ int pbsd_init(
         if (strcmp(psuffix, ARRAY_FILE_SUFFIX))
           continue;
 
-        rc = array_recov(pdirent->d_name, &pa);
-
-        if (rc != PBSE_NONE)
+        if ((rc = array_recov(pdirent->d_name, &pa)) != PBSE_NONE)
           {
           sprintf(log_buf,
-            "could not recover array-struct from file %s--skipping. "
-            "job array can not be recovered.",
+            "could not recover array-struct from file %s--skipping. job array can not be recovered.",
             pdirent->d_name);
 
           log_err(errno, __func__, log_buf);
+
           pthread_mutex_unlock(server.sv_qs_mutex);
+
           return(rc);
           }
 
         pa->jobs_recovered = 0;
 
         pthread_mutex_unlock(pa->ai_mutex);
+
         if (LOGLEVEL >= 7)
           {
           sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
           }
-                    
         }
       else
         {
         unlink(pdirent->d_name);
         }
-
       }
-
     }
 
   closedir(dir);
 
-  /* 9.b,  recover jobs */
+  return(rc);
+  } /* handle_array_recovery() */
+
+
+
+
+int handle_job_recovery(
+
+  int type)
+
+  {
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
+  struct dirent    *pdirent;
+  DIR              *dir;
+  int               had;
+  int               rc = PBSE_NONE;
+  job              *pjob;
+  int               logtype;
+  int               baselen = 0;
+  char             *psuffix;
+  int               job_count = 0; /* Count of recovered jobs */
+  char             *job_suffix = JOB_FILE_SUFFIX;
+  int               job_suf_len = strlen(job_suffix);
+  char              basen[MAXPATHLEN+1];
+  int               Index;
+  int               iter = -1;
 
   if (chdir(path_jobs) != 0)
     {
@@ -1698,7 +1684,7 @@ int pbsd_init(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%d total files read from disk", job_count);
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
     closedir(dir);
-    qsort(Array.Data,Array.AppendIndex,sizeof(Array.Data[0]),SortPrioAscend);
+    qsort(Array.Data, Array.AppendIndex, sizeof(Array.Data[0]), SortPrioAscend);
 
     for (Index = 0; Index < Array.AppendIndex; Index++)
       {
@@ -1764,7 +1750,6 @@ int pbsd_init(
     log_event(logtype,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
     }  /* END else */
 
-
   /* If queue_rank has gone negative, renumber all jobs and reset rank */
   if (queue_rank < 0)
     {
@@ -1772,7 +1757,7 @@ int pbsd_init(
 
     queue_rank = 0;
 
-    while ((pjob = next_job(&alljobs,&iter)) != NULL)
+    while ((pjob = next_job(&alljobs, &iter)) != NULL)
       {
       pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       
@@ -1782,11 +1767,20 @@ int pbsd_init(
       }
     }
 
-  /* finish setting up array structs
-     look for empty arrays and delete them
-     also look for arrays that weren't fully built and setup a work task to
-     continue the cloning process*/
-  iter = -1;
+  return(rc);
+  } /* END handle_job_recovery() */
+
+
+
+
+int cleanup_recovered_arrays()
+
+  {
+  job_array *pa;
+  job       *pjob;
+  int        iter = -1;
+  int        rc = PBSE_NONE;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   while ((pa = next_array(&iter)) != NULL)
     {
@@ -1835,7 +1829,6 @@ int pbsd_init(
       if (job_template_exists == FALSE)
         {
         int        i;
-        job_array *temp;
 
         for (i = 0; i < pa->ai_qs.array_size; i++)
           {
@@ -1850,9 +1843,7 @@ int pbsd_init(
             }
           }
 
-        temp = (job_array*)GET_NEXT(pa->all_arrays);
         array_delete(pa);
-        pa = temp;
         continue;
         }
       else
@@ -1867,9 +1858,7 @@ int pbsd_init(
     else if ((pa->ai_qs.jobs_done == pa->ai_qs.num_jobs) && 
              (job_template_exists == FALSE))
       {
-      job_array *temp = (job_array*)GET_NEXT(pa->all_arrays);
       array_delete(pa);
-      pa = temp;
       continue;
       }
 
@@ -1882,24 +1871,44 @@ int pbsd_init(
     pthread_mutex_unlock(pa->ai_mutex);
     } /* END for each array */
 
-
-  /* Put us back in the Server's Private directory */
-
-  if (chdir(path_priv) != 0)
-    {
-    sprintf(log_buf, msg_init_chdir, path_priv);
-
-    log_err(-1, __func__, log_buf);
-
-    return(3);
-    }
+  return(rc);
+  } /* END cleanup_recovered_arrays() */
 
 
-  /* 10. Open and read in tracking records */
 
-  fd = open(path_track, O_RDONLY | O_CREAT, 0600);
 
-  if (fd < 0)
+int handle_job_and_array_recovery(
+
+  int type)
+
+  {
+  int rc;
+
+  if ((rc = handle_array_recovery(type)) != PBSE_NONE)
+    return(rc);
+  else if ((rc = handle_job_recovery(type)) != PBSE_NONE)
+    return(rc);
+  else
+    rc = cleanup_recovered_arrays(type);
+
+  return(rc);
+  } /* END handle_job_and_array_recovery() */
+
+
+
+
+int handle_tracking_records()
+
+  {
+  int          fd;
+  int          rc = PBSE_NONE;
+  int          i;
+  struct stat  statbuf;
+#if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
+  char         EMsg[1024];
+#endif /* not DEBUG and not NO_SECURITY_CHECK */
+
+  if ((fd = open(path_track, O_RDONLY | O_CREAT, 0600)) < 0)
     {
     log_err(errno, __func__, "unable to open tracking file");
 
@@ -1907,7 +1916,6 @@ int pbsd_init(
     }
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-
   if (chk_file_sec(path_track, 0, 0, S_IWGRP | S_IWOTH, 0, EMsg) != 0)
     {
     return(-1);
@@ -1922,30 +1930,24 @@ int pbsd_init(
     return(-1);
     }
 
-  i = (statbuf.st_size + sizeof(struct tracking) - 1) / sizeof(struct tracking);
+  server.sv_tracksize = (statbuf.st_size + sizeof(struct tracking) - 1) / sizeof(struct tracking);
 
-  if (i < PBS_TRACK_MINSIZE)
+  if (server.sv_tracksize < PBS_TRACK_MINSIZE)
     server.sv_tracksize = PBS_TRACK_MINSIZE;
-  else
-    server.sv_tracksize = i;
 
-  if ((server.sv_track = (struct tracking *)calloc(server.sv_tracksize,sizeof(struct tracking))) == NULL)
+  if ((server.sv_track = calloc(server.sv_tracksize, sizeof(struct tracking))) == NULL)
     {
     /* FAILURE - cannot alloc memory */
-
-    log_err(errno,"pbs_init","calloc failure");
+    log_err(errno, "pbs_init", "calloc failure");
 
     return(-1);
     }
 
-  for (i = 0;i < server.sv_tracksize;i++)
+  for (i = 0; i < server.sv_tracksize; i++)
     (server.sv_track + i)->tk_mtime = 0;
 
   /* NOTE:  tracking file records are optional */
-
-  i = read(fd, (char *)server.sv_track, server.sv_tracksize * sizeof(struct tracking));
-
-  if (i < 0)
+  if (read(fd, (char *)server.sv_track, server.sv_tracksize * sizeof(struct tracking)) < 0)
     {
     log_err(errno, "pbs_init", "unable to read tracksize from tracking file");
     }
@@ -1955,7 +1957,115 @@ int pbsd_init(
   server.sv_trackmodifed = 0;
   
   /* set work task to periodically save the tracking records */
-  set_task(WORK_Timed, (long)(time_now + PBS_SAVE_TRACK_TM), track_save, NULL, FALSE);
+  set_task(WORK_Timed, (long)(time(NULL) + PBS_SAVE_TRACK_TM), track_save, NULL, FALSE);
+
+  return(rc);
+  } /* END handle_tracking_records() */
+
+
+
+
+void setup_threadpool()
+
+  {
+  long              min_threads;
+  long              max_threads;
+  long              thread_idle_time = DEFAULT_THREAD_IDLE;
+  
+  min_threads = get_default_threads();
+  max_threads = min_threads;
+  
+  /* setup the threadpool for use */
+  get_svr_attr_l(SRV_ATR_minthreads, &min_threads);
+  get_svr_attr_l(SRV_ATR_maxthreads, &max_threads);
+  get_svr_attr_l(SRV_ATR_threadidleseconds, &thread_idle_time);
+  
+  initialize_threadpool(&request_pool, min_threads, max_threads, thread_idle_time);
+  } /* END setup_threadpool() */
+
+
+
+
+/*
+ * This file contains the functions to initialize the PBS Batch Server.
+ * The code is called once when the server is brought up.
+ */
+
+int pbsd_init(
+
+  int type)  /* type of initialization   */
+
+  {
+  int               ret = PBSE_NONE;
+  gid_t             gid;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_flags = AI_CANONNAME;
+
+  /* The following is code to reduce security risks */
+  if (setup_env(PBS_ENVIRON) == -1)
+    {
+    return(-1);
+    }
+
+  gid = getgid();
+
+  /* secure suppl. groups */
+  if (setgroups(1, &gid) != 0)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Unable to drop secondary groups. Some MAC framework is active?\n");
+    log_err(errno, __func__, log_buf);
+    snprintf(log_buf, sizeof(log_buf),
+      "setgroups(group = %lu) failed: %s\n",
+      (unsigned long)gid, strerror(errno));
+    log_err(errno, __func__, log_buf);
+
+    return(-1);
+    }
+
+  setup_threadpool();
+
+  setup_limits();
+
+  /* 1. set up to catch or ignore various signals */
+  if ((ret = setup_signal_handling()) != PBSE_NONE)
+    return(ret);
+
+  /* 2. set up the various paths and other global variables we need */
+  initialize_paths();
+
+  initialize_data_structures_and_mutexes();
+
+  /* 3. Set default server attibutes values */
+  if ((ret = setup_server_attrs(type)) != PBSE_NONE)
+    return(ret);
+
+  /* Open and read in node list if one exists */
+  if ((ret = initialize_nodes()) != PBSE_NONE)
+    return(ret);
+
+  /* the functions we're calling assume this mutex is locked */
+  pthread_mutex_lock(server.sv_qs_mutex);
+
+  if ((ret = handle_queue_recovery(type)) != PBSE_NONE)
+    return(ret);
+
+  if ((ret = handle_job_and_array_recovery(type)) != PBSE_NONE)
+    return(ret);
+
+  /* Put us back in the Server's Private directory */
+  if (chdir(path_priv) != 0)
+    {
+    sprintf(log_buf, msg_init_chdir, path_priv);
+
+    log_err(-1, __func__, log_buf);
+
+    return(3);
+    }
+
+  handle_tracking_records();
 
   /* read the hierarchy file */
   if ((hierarchy_holder = prepare_mom_hierarchy()) == NULL)
@@ -1971,7 +2081,7 @@ int pbsd_init(
   start_request_pool();
 
   /* SUCCESS */
-  return(0);
+  return(PBSE_NONE);
   }  /* END pbsd_init() */
 
 

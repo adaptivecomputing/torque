@@ -475,8 +475,6 @@ int array_recov(
   }
 
   /* initialize the linked list nodes */
-  CLEAR_LINK(pa->all_arrays);
-
   CLEAR_HEAD(pa->request_tokens);
 
   fd = open(path, O_RDONLY, 0);
@@ -753,7 +751,6 @@ int setup_array_struct(
   char                log_buf[LOCAL_LOG_BUF_SIZE];
   long                max_array_size;
 
-  /* setup a link to this job array in the servers all_arrays list */
   pa = (job_array *)calloc(1,sizeof(job_array));
 
   pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
@@ -764,7 +761,6 @@ int setup_array_struct(
   snprintf(pa->ai_qs.submit_host, sizeof(pa->ai_qs.submit_host), "%s", get_variable(pjob, pbs_o_host));
 
   pa->ai_qs.num_cloned = 0;
-  CLEAR_LINK(pa->all_arrays);
   CLEAR_HEAD(pa->request_tokens);
 
   pa->ai_mutex = calloc(1, sizeof(pthread_mutex_t));

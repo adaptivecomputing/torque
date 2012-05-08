@@ -3992,28 +3992,21 @@ void process_config_file(
     if ((param_val = get_param("SUBMITFILTER", config_buf)) != NULL)
       {
       hash_add_or_exit(&ji->mm, &ji->client_attr, ATTR_pbs_o_submit_filter, param_val, CONFIG_DATA);
-/*      strncpy(PBS_Filter, param_val, sizeof(PBS_Filter));
-      PBS_Filter[sizeof(PBS_Filter) - 1] = '\0'; */
       }
 
     if ((param_val = get_param("SERVERHOST", config_buf)) != NULL)
       {
       hash_add_or_exit(&ji->mm, &ji->client_attr, "serverhost", param_val, CONFIG_DATA);
-/*      strncpy(server_host, param_val, sizeof(server_host));
-      server_host[sizeof(server_host) - 1] = '\0'; */
       }
 
     if ((param_val = get_param("QSUBHOST", config_buf)) != NULL)
       {
       hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_submit_host, param_val, CONFIG_DATA);
-/*      strncpy(qsub_host, param_val, sizeof(qsub_host));
-      qsub_host[sizeof(qsub_host) - 1] = '\0'; */
       }
 
     if ((param_val = get_param("QSUBSENDUID", config_buf)) != NULL)
       {
       hash_add_or_exit(&ji->mm, &ji->client_attr, ATTR_pbs_o_uid, param_val, ENV_DATA);
-/*      sprintf(owner_uid, "%d", (int)getuid()); */
       }
 
     if ((param_val = get_param("QSUBSENDGROUPLIST", config_buf)) != NULL)
@@ -4023,79 +4016,49 @@ void process_config_file(
 
       if (gpent != NULL)
         {
-/*        set_attr(&attrib, ATTR_g, gpent->gr_name); */
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_g, gpent->gr_name, ENV_DATA);
         hash_add_or_exit(&ji->mm, &ji->client_attr, "qsubsendgrouplist", gpent->gr_name, CONFIG_DATA);
         }
       }
 
-/* This is here twice?
-    if ((param_val = get_param("QSUBSENDGROUPLIST", config_buf)) != NULL)
-      {
-      gid_t group_id = getgid();
-      struct group *gpent = getgrgid(group_id);
-
-      if (gpent != NULL)
-        {
-        set_attr(&attrib, ATTR_g, gpent->gr_name);
-        }
-      }
-*/
     if ((param_val = get_param("XAUTHPATH", config_buf)) != NULL)
       {
       hash_add_or_exit(&ji->mm, &ji->client_attr, "xauth_path", param_val, CONFIG_DATA);
-/*      strncpy(xauth_path, param_val, sizeof(xauth_path));
-      xauth_path[sizeof(xauth_path) - 1] = '\0';
-      */
       }
 
     if ((param_val = get_param("CLIENTRETRY", config_buf)) != NULL)
       {
       /* The value of this will be verified later */
       hash_add_or_exit(&ji->mm, &ji->client_attr, "cnt2server_retry", param_val, CONFIG_DATA);
-/*      if (cnt2server_retry == -100)
-        cnt2server_retry = atoi(param_val);
-      */
       }
 
     if ((param_val = get_param("VALIDATEGROUP", config_buf)) != NULL)
       {
       if (getgrgid(getgid()) == NULL)
         print_qsub_usage_exit("qsub: cannot validate submit group.");
-/*        {
-        fprintf(stderr, "qsub: cannot validate submit group.\n");
-
-        exit(1);
-        }
-        */
 
       hash_add_or_exit(&ji->mm, &ji->client_attr, "validate_group", param_val, CONFIG_DATA);
-/*      validate_group = TRUE; */
       }
 
     if ((param_val = get_param("DEFAULTCKPT", config_buf)) != NULL)
       {
       hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_c, param_val, CONFIG_DATA);
-/*      strncpy(default_ckpt, param_val, sizeof(default_ckpt)); */
       }
 
     if ((param_val = get_param("VALIDATEPATH", config_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "false"))
         hash_del_item(&ji->mm, &ji->client_attr, "validate_path");
-/*        validate_path = 0; */
       }
     if ((param_val = get_param("RERUNNABLEBYDEFAULT", config_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "false"))
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_r, "FALSE", STATIC_DATA);
-/*        rerunnable_by_default = 0; */
       }
     if ((param_val = get_param("FAULT_TOLERANT_BY_DEFAULT", config_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "true"))
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_r, "TRUE", STATIC_DATA);
-/*        fault_tolerant_by_default = 1; */
       }
     }    /* END if (load_config(config_buf,sizeof(config_buf)) == 0) */
   }
