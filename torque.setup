@@ -30,6 +30,17 @@ fi
 
 pbs_server -t create
 
+# We need to pause a second to allow the server to finish coming
+# up.
+sleep 2
+
+ps -ef | grep -v grep | grep pbs_server 
+
+if [ "$?" -ne "0" ] ; then
+  echo "ERROR: pbs_server failed to start, check syslog and server logs for more information"
+  exit 1;
+fi
+
 echo set server operators += $USER | qmgr
 
 if [ "$?" -ne "0" ] ; then
