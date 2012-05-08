@@ -1763,8 +1763,6 @@ void on_job_exit(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
     }
 
-  free(job_id);
-
   /* NOTE: pjob is unlocked in all error cases */
   /* MOM has killed everything it can kill, so we can stop the nanny */
   switch (pjob->ji_qs.ji_substate)
