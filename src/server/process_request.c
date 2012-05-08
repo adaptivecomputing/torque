@@ -305,6 +305,8 @@ int get_creds(
  *    That function MUST free the request by calling free_br()
  *
  * NOTE: the caller functions hold the mutex for the connection
+ * NOTE: The socket connection must be returned in an open state.
+ *       The connection will be closed by start_process_pbs_server_port.
  */
 
 int process_request(

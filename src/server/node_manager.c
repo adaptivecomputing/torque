@@ -2167,6 +2167,16 @@ const char *PBSServerCmds2[] =
 
 
 
+/*************************************************
+ * svr_is_request
+ *
+ * Return: svr_is_request always returns a non-zero value
+ *         and it must call close_conn to close the connection
+ *         before returning. PBSE_SOCKET_CLOSE is the code
+ *         for a successful return. But which ever retun 
+ *         code is iused it must terminate the while loop
+ *         in start_process_pbs_server_port.
+ *************************************************/
 int svr_is_request(
     
   struct tcp_chan *chan,

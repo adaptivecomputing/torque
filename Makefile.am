@@ -34,18 +34,6 @@ EXTRA_DIST = acinclude.m4 \
 	buildutils/self-extract-head-sh.in \
 	buildutils/torque.spec.in \
 	contrib/AddPrivileges \
-	contrib/init.d/debian.pbs_mom \
-	contrib/init.d/debian.pbs_sched \
-	contrib/init.d/debian.pbs_server \
-	contrib/init.d/debian.trqauthd \
-	contrib/init.d/pbs_mom \
-	contrib/init.d/pbs_sched \
-	contrib/init.d/pbs_server \
-	contrib/init.d/trqauthd \
-	contrib/init.d/suse.pbs_mom \
-	contrib/init.d/suse.pbs_sched \
-	contrib/init.d/suse.pbs_server \
-	contrib/init.d/suse.trqauthd \
   contrib/hwloc_install.sh \
   contrib/mom_gencfg \
 	contrib/pam_authuser.tar.gz \

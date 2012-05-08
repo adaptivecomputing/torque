@@ -2510,11 +2510,7 @@ static void add_static(
     name,
     str);
 
-  log_record(
-    PBSEVENT_DEBUG,
-    0,
-    "add_static",
-    log_buffer);
+  log_record(PBSEVENT_DEBUG, 0, "add_static", log_buffer);
 
   config_list = cp;
 
@@ -5544,9 +5540,8 @@ int tcp_read_proto_version(
     *version = disrsi(chan, &rc);
     if (rc != DIS_SUCCESS)
       {
-      sprintf(log_buffer, "no protocol version number %s (errno %d)",
-          dis_emsg[rc], errno);
-      log_err(rc, __func__, log_buffer);
+      sprintf(log_buffer, "End of messages on socket %d", chan->sock);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
       }
     }
 
@@ -5744,7 +5739,7 @@ void *tcp_request(
       break;
     }  /* END for (c = 0) */
 
-  DBPRT(("%s:(exit socket %d) processed %d\n", __func__, socket, c))
+  DBPRT(("%s:(exit loop for socket %d) processed %d\n", __func__, socket, c))
 
   return NULL;
   }  /* END tcp_request() */

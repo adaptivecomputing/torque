@@ -139,7 +139,6 @@
 #include "tcp.h" /* tcp_chan */
 
 #define TASK_CHECK_INTERVAL    10
-#define RETRY_ROUTING_INTERVAL 45
 #define HELLO_WAIT_TIME        600
 #define TSERVER_HA_CHECK_TIME  1  /* 1 second sleep time between checks on the lock file for high availability */
 
@@ -204,7 +203,6 @@ void          restore_attr_default (struct pbs_attribute *);
 
 /* Global Data Items */
 
-time_t                  last_routing_retry_time = 0;
 time_t                  last_task_check_time = 0;
 int                     lockfds = -1;
 int                     ForceCreation = FALSE;
@@ -249,6 +247,8 @@ listener_connection     listener_conns[MAXLISTENERS];
 int                     queue_rank = 0;
 int                     a_opt_init = -1;
 int                     wait_for_moms_hierarchy = FALSE;
+
+int                     route_retry_interval = 10; /* time in seconds to check routing queues */
 /* HA global data items */
 long                    HALockCheckTime = 0;
 long                    HALockUpdateTime = 0;
@@ -268,7 +268,6 @@ char                    server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:servic
 int                     svr_do_schedule = SCH_SCHEDULE_NULL;
 pthread_mutex_t        *svr_do_schedule_mutex;
 pthread_mutex_t        *check_tasks_mutex;
-pthread_mutex_t        *retry_routing_mutex;
 extern all_queues       svr_queues;
 extern int              listener_command;
 extern hello_container  hellos;
@@ -989,6 +988,7 @@ void parse_command_line(
 
 /* Globals to thread the accept port */
 pthread_t      accept_thread_id = -1;
+pthread_t      route_retry_thread_id = -1;
 
 
 /*
@@ -1111,14 +1111,10 @@ void *handle_queue_routing_retries(
   {
   pbs_queue *pque;
   int        iter = -1;
-  time_t     time_now = time(NULL);
 
-  pthread_mutex_lock(retry_routing_mutex);
-
-  if (time_now - last_routing_retry_time > RETRY_ROUTING_INTERVAL)
+  while(1)
     {
-    last_routing_retry_time = time_now;
-    
+    sleep(route_retry_interval);
     while ((pque = next_queue(&svr_queues, &iter)) != NULL)
       {
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
@@ -1128,8 +1124,6 @@ void *handle_queue_routing_retries(
       }
     }
   
-  pthread_mutex_unlock(retry_routing_mutex);
-
   return(NULL);
   } /* END handle_queue_routing_retries() */
 
@@ -1150,6 +1144,7 @@ void *handle_scheduler_contact(
 
 
 void *start_accept_listener()
+
   {
   char server_name_trimmed[PBS_MAXSERVERNAME + 1];
   char *colon_pos = NULL;
@@ -1159,11 +1154,14 @@ void *start_accept_listener()
   else
     strncpy(server_name_trimmed, server_name, colon_pos - server_name);
   start_listener_addrinfo(server_name_trimmed, pbs_server_port_dis, start_process_pbs_server_port);
-  return NULL;
-  }
+  return(NULL);
+  } /* END start_accept_listener() */
+
+
 
 
 void start_accept_thread()
+
   {
   pthread_attr_t accept_attr;
   if ((pthread_attr_init(&accept_attr)) != 0)
@@ -1181,7 +1179,32 @@ void start_accept_thread()
     perror("could not start listener for pbs_server");
     log_err(-1, msg_daemonname, "Failed to start listener for pbs_server");
     }
-  }
+  } /* END start_accept_thread() */
+
+
+
+void start_routing_retry_thread()
+
+  {
+  pthread_attr_t routing_attr;
+  if ((pthread_attr_init(&routing_attr)) != 0)
+    {
+    perror("pthread_attr_init failed. Could not start accept thread");
+    log_err(-1, msg_daemonname,"pthread_attr_init failed. Could not start accept thread");
+    }
+  else if ((pthread_attr_setdetachstate(&routing_attr, PTHREAD_CREATE_DETACHED) != 0))
+    {
+    perror("pthread_attr_setdetatchedstate failed. Could not start accept thread");
+    log_err(-1, msg_daemonname,"pthread_attr_setdetachedstate failed. Could not start accept thread");
+    }
+  else if ((pthread_create(&route_retry_thread_id, &routing_attr, handle_queue_routing_retries, NULL)) != 0)
+    {
+    perror("could not start listener for pbs_server");
+    log_err(-1, msg_daemonname, "Failed to start listener for pbs_server");
+    }
+  } /* END start_routing_retry_thread() */
+
+
 
 
 void monitor_accept_thread()
@@ -1190,7 +1213,19 @@ void monitor_accept_thread()
     {
     start_accept_thread();
     }
-  }
+  } /* END monitor_accept_thread() */
+
+
+
+
+void monitor_route_retry_thread()
+  {
+  if (pthread_kill(route_retry_thread_id, 0) == ESRCH)
+    {
+    start_routing_retry_thread();
+    }
+  } /* END monitor_route_retry_thread() */
+
 
 
 
@@ -1289,6 +1324,7 @@ void main_loop(void)
     try_hellos = time_now + HELLO_WAIT_TIME;
 
   start_accept_thread();
+  start_routing_retry_thread();
 
   while (state != SV_STATE_DOWN)
     {
@@ -1296,6 +1332,7 @@ void main_loop(void)
     last_jobstat_time = time_now = time(NULL);
 
     monitor_accept_thread();
+    monitor_route_retry_thread();
 
     if (try_hellos <= time_now)
       send_any_hellos_needed();
@@ -1351,10 +1388,6 @@ void main_loop(void)
         set_svr_attr(SRV_ATR_State, &state);
         }
       }
-
-    /* retry routing as needed */
-    if (time_now - last_routing_retry_time > RETRY_ROUTING_INTERVAL)
-      enqueue_threadpool_request(handle_queue_routing_retries, NULL);
 
     /* wait for a request and process it */
     if (wait_request(waittime, &state) != 0)

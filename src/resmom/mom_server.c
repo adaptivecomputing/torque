@@ -327,34 +327,11 @@ void node_comm_error(node_comm_t *, char *);
 #ifdef NVIDIA_GPUS
 int    nvidia_gpu_modes[50];
 #endif  /* NVIDIA_GPUS */
-/**
- * mom_server_init
- *
- * Does the memory intialization for an instance of a mom server
- * structure.
- *
- * @param pms pointer to mom_server instance
- * @see mom_server_all_init
- */
-
-void mom_server_init(
-
-  mom_server *pms)
-
-  {
-  pms->MOMLastRecvFromServerTime = 0;
-  pms->ReportMomState = 1;
-
-  return;
-  }
-
 
 
 
 /* clear servers */
-
 void clear_servers()
-
   {
   mom_server *pms;
   int         sindex;
@@ -385,15 +362,7 @@ void clear_servers()
 void mom_server_all_init(void)
 
   {
-  int sindex;
-
-  for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
-    {
-    mom_server_init(&mom_servers[sindex]);
-    }
-
   mom_server_count = 0;
-
   return;
   }  /* END mom_server_all_init() */
 

@@ -7987,21 +7987,27 @@ void fork_demux(
   job *pjob)
 
   {
-  pid_t cpid;
-  struct timeval timeout;
-  int i, retries;
-  int maxfd;
-  int n;
-  int newsock;
-  int fd1, fd2;
-  int im_mom_stdout, im_mom_stderr;
-  fd_set selset;
-  pid_t  parent;
-  u_long ipaddr;
-	struct sigaction act;
-  struct routefd  *routem;
-  int open_sockets = 0;
-  int amt_read = 0;
+  pid_t             cpid;
+  struct timeval    timeout;
+  int               i;
+  int               retries;
+  int               maxfd;
+  int               n;
+  int               newsock;
+  int               fd1;
+  int               fd2;
+  int               im_mom_stdout; 
+  int               im_mom_stderr;
+  fd_set            selset;
+  pid_t             parent;
+  u_long            ipaddr;
+	struct sigaction  act;
+  struct routefd   *routem;
+  int               open_sockets = 0;
+  int               amt_read = 0;
+  int               pipes[2];
+  int               pipe_failed = FALSE;
+  char              buf[MAXLINE];
 
   maxfd = sysconf(_SC_OPEN_MAX);
 
@@ -8012,7 +8018,7 @@ void fork_demux(
     return;
     }
 
-  for(i = 0; i < maxfd; i++)
+  for (i = 0; i < maxfd; i++)
     {
     routem[i].r_which = invalid;
     routem[i].r_fd = -1;
@@ -8048,12 +8054,39 @@ void fork_demux(
 
   parent = getppid();
 
+  /* create pipe so that child can tell us when the demux is opened */
+  if (pipe(pipes) == -1)
+    {
+    log_err(errno, __func__, "Couldn't create the pipe!");
+    pipe_failed = TRUE;
+    }
+
   cpid = fork_me(-1);
   if (cpid)
     {
-    sleep(2);
+    /* parent - wait for the child to confirm the demux was opened */
+    close(pipes[1]); /* parent doesn't use the write end */
+
+    if (pipe_failed == TRUE)
+      sleep(2);
+    else
+      {
+      /* read the pipe and then continue */
+      while ((read(pipes[0], &buf, sizeof(buf) - 1) == -1) &&
+             (errno == EINTR))
+        ;
+
+      /* NYI: what should we do if opening the buf failed? !strcmp(buf, "fail") */
+
+      close(pipes[0]);
+      }
+
     return;
     }
+
+  /* child - open the demux and then inform the parent */
+
+  close(pipes[0]); /* child doesn't use the read end */
 
   ipaddr = pjob->ji_sisters[0].sock_addr.sin_addr.s_addr;
 
@@ -8068,6 +8101,10 @@ void fork_demux(
     perror("listen on out");
     close(im_mom_stdout);
     close(im_mom_stderr);
+
+    write(pipes[1], "fail", strlen("fail"));
+    close(pipes[1]);
+
     _exit(5);
     }
 
@@ -8076,6 +8113,10 @@ void fork_demux(
     perror("listen on err");
     close(im_mom_stdout);
     close(im_mom_stderr);
+
+    write(pipes[1], "fail", strlen("fail"));
+    close(pipes[1]);
+
     _exit(5);
     }
 
@@ -8092,11 +8133,15 @@ void fork_demux(
     retries++;
     } while(retries < 10);
 
-  if(retries >= 10)
+  if (retries >= 10)
     {
     perror("could not open demux to parent");
     close(im_mom_stdout);
     close(im_mom_stderr);
+    
+    write(pipes[1], "fail", strlen("fail"));
+    close(pipes[1]);
+
     _exit(5);
     }
 
@@ -8108,8 +8153,15 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
     close(fd1);
+
+    write(pipes[1], "fail", strlen("fail"));
+    close(pipes[1]);
+
     _exit(5);
     }
+
+  write(pipes[1], "success", strlen("success"));
+  close(pipes[1]);
   
   while (1)
     {

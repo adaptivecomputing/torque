@@ -1661,7 +1661,7 @@ int req_stat_svr(
   
   pthread_mutex_unlock(server.sv_jobstates_mutex);
 
-  netcounter_get(netrates); /* locks netrates mutex */
+  netcounter_get(netrates);
   snprintf(nc_buf, 127, "%d %d %d", netrates[0], netrates[1], netrates[2]);
 
   if (server.sv_attr[SRV_ATR_NetCounter].at_val.at_str != NULL)
