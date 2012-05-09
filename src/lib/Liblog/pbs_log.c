@@ -399,7 +399,7 @@ int job_log_open(
 
   if (job_log_opened > 0)
     {
-    log_err(-1, id, "job log already open");
+    /*log_err(-1, id, "job log already open");*/
     return(1); /* already open */
     }
 
