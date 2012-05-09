@@ -29,6 +29,7 @@ evans
   b - fix pbs_track to add its process to the cpuset as well. TRQ-925.
   b - Fix so gpu count gets written out to server nodes file when using
       --enable-nvidia-gpus. TRQ-927.
+  b - change pbs_server to listen on all interfaces. TRQ-923
 
 4.0.1
   b - Fix trqauthd init scripts to use correct path to trqauthd.

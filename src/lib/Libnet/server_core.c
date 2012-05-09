@@ -16,9 +16,11 @@ extern void *(*read_func[])(void *);
 
 /* Note, in extremely high load cases, the alloc value in /proc/net/sockstat can exceed the max value. This will substantially slow down throughput and generate connection failures (accept gets a EMFILE error). As the client is designed to run on each submit host, that issue shouldn't occur. The client must be restarted to clear out this issue. */
 int start_listener(
-    char *server_ip,
-    int server_port,
-    void *(*process_meth)(void *))
+    
+  char   *server_ip,
+  int     server_port,
+  void *(*process_meth)(void *))
+
   {
   struct sockaddr_in adr_svr, adr_client;
   int rc = PBSE_NONE;
@@ -117,43 +119,52 @@ int start_listener(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, "net_srvr",
                 "Socket close of network listener requested");
     }
+
   close(listen_socket);
-  return rc;
-  }
+
+  return(rc);
+  } /* END start_listener() */
 
 
 int start_listener_addrinfo(
-  char *host_name,
-  int server_port,
-  void *(*process_meth)(void *))
-  {
-  struct addrinfo *adr_svr;
-  struct sockaddr adr_client;
-  struct sockaddr_in *in_addr;
-  socklen_t len_inet;
-  int rc = PBSE_NONE;
-  int sockoptval;
-  int *new_conn_port = NULL;
-  int listen_socket = 0;
-  int total_cntr = 0;
-  unsigned short port_net_byte_order;
-  pthread_t tid;
-  pthread_attr_t t_attr;
 
-  if(!(getaddrinfo(host_name, NULL, NULL, &adr_svr) == 0))
+  char   *host_name,
+  int     server_port,
+  void *(*process_meth)(void *))
+
+  {
+  struct addrinfo    *adr_svr;
+  struct sockaddr     adr_client;
+  struct sockaddr_in *in_addr;
+  struct sockaddr_in  svr_address;
+  socklen_t           len_inet;
+  int                 rc = PBSE_NONE;
+  int                 sockoptval;
+  int                *new_conn_port = NULL;
+  int                 listen_socket = 0;
+  int                 total_cntr = 0;
+  unsigned short      port_net_byte_order;
+  pthread_t           tid;
+  pthread_attr_t      t_attr;
+
+  if (!(getaddrinfo(host_name, NULL, NULL, &adr_svr) == 0))
     {
     rc = PBSE_SOCKET_FAULT;
     }
 
   port_net_byte_order = htons(server_port);
   memcpy(&adr_svr->ai_addr->sa_data, &port_net_byte_order, sizeof(unsigned short));
+
+  svr_address.sin_family      = adr_svr->ai_family;
+  svr_address.sin_port        = htons(server_port);
+  svr_address.sin_addr.s_addr = htonl(INADDR_ANY);
     
   if ((listen_socket = get_listen_socket(adr_svr)) < 0)
     {
     /* Can not get socket for listening */
     rc = PBSE_SOCKET_FAULT;
     }
-  else if ((bind(listen_socket, adr_svr->ai_addr, adr_svr->ai_addrlen)) == -1)
+  else if ((bind(listen_socket, (struct sockaddr *)&svr_address, sizeof(svr_address))) == -1)
     {
     /* Can not bind local socket */
     rc = PBSE_SOCKET_FAULT;
@@ -219,16 +230,6 @@ int start_listener_addrinfo(
           NULL);
           pthread_create(&tid, &t_attr, process_meth, (void *)new_conn_port);
           }
-        /* add_conn is not protocol independent. We need to 
-           do some IPv4 stuff here */
-       /* in_addr = (struct sockaddr_in *)&adr_client;
-        add_conn(
-          *new_conn_port,
-          FromClientDIS,
-          in_addr->sin_addr.s_addr,
-          (unsigned int)htons(in_addr->sin_port),
-          PBS_SOCK_INET,
-          read_func[Primary]);*/
         }
       if (debug_mode == TRUE)
         {
@@ -247,6 +248,8 @@ int start_listener_addrinfo(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, "net_srvr",
                 "Socket close of network listener requested");
     }
+
   close(listen_socket);
-  return rc;
-  } 
+
+  return(rc);
+  } /* END start_listener_addrinfo() */
