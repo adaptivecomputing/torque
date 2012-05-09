@@ -14,6 +14,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       Torque with CFLAGS='-DRESETGROUP'. TRQ-908. (backported from 4.0.2)
   b - Fix so gpu count gets written out to server nodes file when using
       --enable-nvidia-gpus. TRQ-927. (backported from 4.0.2)
+  b - fixed a memory leak on the MOM when running with --enable-nvidia-gpus. TRQ-904
      
 
 2.5.11
