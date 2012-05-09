@@ -1321,6 +1321,8 @@ int setup_server_attrs(
       }
     }
 
+  rc = PBSE_NONE;
+
   svr_attr_def[SRV_ATR_version].at_decode(
     &server.sv_attr[SRV_ATR_version],
     0,
