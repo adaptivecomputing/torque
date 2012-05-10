@@ -2344,6 +2344,7 @@ void generate_server_gpustatus_smi(
     MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
     copy_to_end_of_dynamic_string(gpu_status, "timestamp=");
     append_dynamic_string(gpu_status, EP->Val);
+    MXMLDestroyE(&EP);
     }
   else
     {
@@ -2355,6 +2356,7 @@ void generate_server_gpustatus_smi(
     MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
     copy_to_end_of_dynamic_string(gpu_status, "driver_ver=");
     append_dynamic_string(gpu_status, EP->Val);
+    MXMLDestroyE(&EP);
     }
   else
     {
@@ -2378,10 +2380,10 @@ void generate_server_gpustatus_smi(
         {
         gpuid++;
         }
+      MXMLDestroyE(&EP);
       
       if (MOMNvidiaDriverVersion == 260)
         {
-        gpuid = atoi(EP->AVal[0]);
         /* Get and add mode rules information for driver 260 */
         
         if (!have_modes)
@@ -2439,6 +2441,7 @@ void generate_server_gpustatus_smi(
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           copy_to_end_of_dynamic_string(gpu_status, "gpu_pci_device_id=");
           append_dynamic_string(gpu_status, EP->Val);
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2451,6 +2454,7 @@ void generate_server_gpustatus_smi(
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           copy_to_end_of_dynamic_string(gpu_status, "gpu_pci_location_id=");
           append_dynamic_string(gpu_status, EP->Val);
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2463,6 +2467,7 @@ void generate_server_gpustatus_smi(
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           copy_to_end_of_dynamic_string(gpu_status, "gpu_display=");
           append_dynamic_string(gpu_status, EP->Val);
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2475,6 +2480,7 @@ void generate_server_gpustatus_smi(
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           copy_to_end_of_dynamic_string(gpu_status, "gpu_temperature=");
           append_dynamic_string(gpu_status, EP->Val);
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2487,6 +2493,7 @@ void generate_server_gpustatus_smi(
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           copy_to_end_of_dynamic_string(gpu_status, "gpu_fan_speed=");
           append_dynamic_string(gpu_status, EP->Val);
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2499,6 +2506,7 @@ void generate_server_gpustatus_smi(
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           copy_to_end_of_dynamic_string(gpu_status, "gpu_utilization=");
           append_dynamic_string(gpu_status, EP->Val);
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2510,6 +2518,7 @@ void generate_server_gpustatus_smi(
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           copy_to_end_of_dynamic_string(gpu_status, "gpu_memory_utilization=");
           append_dynamic_string(gpu_status, EP->Val);
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2524,6 +2533,7 @@ void generate_server_gpustatus_smi(
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             copy_to_end_of_dynamic_string(gpu_status, "gpu_single_bit_ecc_errors=");
             append_dynamic_string(gpu_status, EP->Val);
+            MXMLDestroyE(&EP);
             }
           
           if ((tmpptr1 = strstr(dataptr, "<double_bit>")) != NULL)
@@ -2532,6 +2542,7 @@ void generate_server_gpustatus_smi(
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             copy_to_end_of_dynamic_string(gpu_status, "gpu_double_bit_ecc_errors=");
             append_dynamic_string(gpu_status, EP->Val);
+            MXMLDestroyE(&EP);
             }
           }
         else
@@ -2549,6 +2560,7 @@ void generate_server_gpustatus_smi(
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           copy_to_end_of_dynamic_string(gpu_status, "gpu_product_name=");
           append_dynamic_string(gpu_status, EP->Val);
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2561,6 +2573,7 @@ void generate_server_gpustatus_smi(
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           copy_to_end_of_dynamic_string(gpu_status, "gpu_display=");
           append_dynamic_string(gpu_status, EP->Val);
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2573,6 +2586,7 @@ void generate_server_gpustatus_smi(
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           copy_to_end_of_dynamic_string(gpu_status, "gpu_pci_device_id=");
           append_dynamic_string(gpu_status, EP->Val);
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2585,6 +2599,7 @@ void generate_server_gpustatus_smi(
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           copy_to_end_of_dynamic_string(gpu_status, "gpu_pci_location_id=");
           append_dynamic_string(gpu_status, EP->Val);
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2597,6 +2612,7 @@ void generate_server_gpustatus_smi(
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
           copy_to_end_of_dynamic_string(gpu_status, "gpu_fan_speed=");
           append_dynamic_string(gpu_status, EP->Val);
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2610,6 +2626,7 @@ void generate_server_gpustatus_smi(
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             copy_to_end_of_dynamic_string(gpu_status, "gpu_memory_total=");
             append_dynamic_string(gpu_status, EP->Val);
+            MXMLDestroyE(&EP);
             }
           
           if ((tmpptr1 = strstr(dataptr, "<used>")) != NULL)
@@ -2617,6 +2634,7 @@ void generate_server_gpustatus_smi(
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             copy_to_end_of_dynamic_string(gpu_status, "gpu_memory_used=");
             append_dynamic_string(gpu_status, EP->Val);
+            MXMLDestroyE(&EP);
             }
           }
         else
@@ -2650,6 +2668,7 @@ void generate_server_gpustatus_smi(
             {
             nvidia_gpu_modes[gpuid] = -1;
             }
+          MXMLDestroyE(&EP);
           }
         else
           {
@@ -2664,6 +2683,7 @@ void generate_server_gpustatus_smi(
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             copy_to_end_of_dynamic_string(gpu_status, "gpu_utilization=");
             append_dynamic_string(gpu_status, EP->Val);
+            MXMLDestroyE(&EP);
             }
           
           if ((tmpptr1 = strstr(dataptr, "<memory_util>")) != NULL)
@@ -2671,6 +2691,7 @@ void generate_server_gpustatus_smi(
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             copy_to_end_of_dynamic_string(gpu_status, "gpu_memory_utilization=");
             append_dynamic_string(gpu_status, EP->Val);
+            MXMLDestroyE(&EP);
             }
           }
         else
@@ -2685,6 +2706,7 @@ void generate_server_gpustatus_smi(
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             copy_to_end_of_dynamic_string(gpu_status, "gpu_ecc_mode=");
             append_dynamic_string(gpu_status, EP->Val);
+            MXMLDestroyE(&EP);
             }
           }
         else
@@ -2702,6 +2724,7 @@ void generate_server_gpustatus_smi(
               MXMLFromString(&EP, tmpptr2, &Tail, Emsg, sizeof(Emsg));
               copy_to_end_of_dynamic_string(gpu_status, "gpu_single_bit_ecc_errors=");
               append_dynamic_string(gpu_status, EP->Val);
+              MXMLDestroyE(&EP);
               }
             
             if ((tmpptr2 = strstr(tmpptr1, "<double_bit>")) != NULL)
@@ -2710,6 +2733,7 @@ void generate_server_gpustatus_smi(
               MXMLFromString(&EP, tmpptr2, &Tail, Emsg, sizeof(Emsg));
               copy_to_end_of_dynamic_string(gpu_status, "gpu_double_bit_ecc_errors=");
               append_dynamic_string(gpu_status, EP->Val);
+              MXMLDestroyE(&EP);
               }
             }
           }
@@ -2726,6 +2750,7 @@ void generate_server_gpustatus_smi(
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
             copy_to_end_of_dynamic_string(gpu_status, "gpu_temperature=");
             append_dynamic_string(gpu_status, EP->Val);
+            MXMLDestroyE(&EP);
             }
           }
         else

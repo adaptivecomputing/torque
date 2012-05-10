@@ -4,6 +4,8 @@ evans
   e - make free_nodes() only look at nodes in the exec_host list and not examine
       all nodes to check if the job at hand was there. This should greatly speed
       up freeing nodes.
+  b - Fixed memory leaks in generate_server_gpustats_smi. Only used with --enable-nvidia-gpus
+      is on.
 
 4.0.2
   e - Change so init.d script variables get set based on the configure command.
