@@ -30,6 +30,7 @@ evans
   b - Fix so gpu count gets written out to server nodes file when using
       --enable-nvidia-gpus. TRQ-927.
   b - change pbs_server to listen on all interfaces. TRQ-923
+  b - Fix so "pbs_server --ha" does not fail when checking path for server.lock file. TRQ-907.
 
 4.0.1
   b - Fix trqauthd init scripts to use correct path to trqauthd.
