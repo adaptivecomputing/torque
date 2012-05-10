@@ -906,6 +906,7 @@ void clean_up()
     next_svr = cur_svr -> next;
     pbs_disconnect(cur_svr->s_connect);
     cur_svr = next_svr;
+    nservers--;
     }
 
   fflush(NULL);   /* peter h IPSec+jan n NANCO 2009 * fix truncated output. */

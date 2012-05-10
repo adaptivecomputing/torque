@@ -33,6 +33,8 @@ evans
       --enable-nvidia-gpus. TRQ-927.
   b - change pbs_server to listen on all interfaces. TRQ-923
   b - Fix so "pbs_server --ha" does not fail when checking path for server.lock file. TRQ-907.
+  b - Fixed a problem in qmgr where only 9 commands could be completed before a failure. 
+      Bugzilla 192 and TRQ-931
 
 4.0.1
   b - Fix trqauthd init scripts to use correct path to trqauthd.
