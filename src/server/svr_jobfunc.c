@@ -506,7 +506,9 @@ int svr_enquejob(
     /* do anything needed doing regarding job dependencies */
     unlock_queue(pque, __func__, "anything", LOGLEVEL);
 
-    if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+    if ((pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) && 
+      (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
+      (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET))
       {
       if ((rc = depend_on_que(&
                               pjob->ji_wattr[JOB_ATR_depend],

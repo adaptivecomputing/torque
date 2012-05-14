@@ -1835,6 +1835,11 @@ void on_job_exit(
       else
         handle_complete_second_time(pjob);
       break;
+
+    default:
+
+      pthread_mutex_unlock(pjob->ji_mutex);
+      break;
     }  /* END switch (pjob->ji_qs.ji_substate) */
 
   if (job_id != NULL)
