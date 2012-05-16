@@ -196,7 +196,6 @@ int req_runjob(
   char                  failhost[MAXLINE];
   char                  emsg[MAXLINE];
   char                  log_buf[LOCAL_LOG_BUF_SIZE + 1];
-  int                   reply_sent = FALSE;
   char                  job_id[PBS_MAXSVRJOBID+1];
   long                  job_atr_hold;
   int                   job_exit_status;
@@ -243,17 +242,8 @@ int req_runjob(
   if ((preq != NULL) &&
       (preq->rq_type == PBS_BATCH_AsyrunJob))
     {
-    /* This is less than graceful...
-     * Down in reply_ack, if the req is of type
-     * PBS_BATCH_AsyModifyJob && noreply is false, the req is not free'd,
-     * so this is set temporarily to NOT free preq and reassigned to
-     * original settings afterwards
-     */
-    preq->rq_type = PBS_BATCH_AsyModifyJob;
-    preq->rq_noreply = FALSE;
     reply_ack(preq);
-    preq->rq_type = PBS_BATCH_AsyrunJob;
-    reply_sent = TRUE;
+    preq->rq_noreply = TRUE;
     }
 
   /* if the job is part of an array, check the slot limit */
@@ -286,8 +276,7 @@ int req_runjob(
         {
         rc = PBSE_JOBNOTFOUND;
 
-        if (reply_sent == FALSE)
-          req_reject(rc, 0, preq, NULL, "Job deleted while updating array values");
+        req_reject(rc, 0, preq, NULL, "Job deleted while updating array values");
 
         pthread_mutex_unlock(pa->ai_mutex);
 
@@ -301,9 +290,8 @@ int req_runjob(
         "Cannot run job. Array slot limit is %d and there are already %d jobs running\n",
         pa->ai_qs.slot_limit,
         pa->ai_qs.jobs_running);
-      
-      if (reply_sent == FALSE)
-        req_reject(PBSE_IVALREQ,0,preq,NULL,log_buf);
+     
+      req_reject(PBSE_IVALREQ,0,preq,NULL,log_buf);
       
       if (LOGLEVEL >= 7)
         {

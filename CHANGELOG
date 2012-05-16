@@ -37,6 +37,8 @@ evans
       Bugzilla 192 and TRQ-931
   b - Fix to prevent deadlock on server restart with completed job that had a dependency.
       TRQ-936.
+  b - prevent TORQUE from losing connectivity with Moab when starting jobs asynchronously
+      TRQ-918
 
 4.0.1
   b - Fix trqauthd init scripts to use correct path to trqauthd.
