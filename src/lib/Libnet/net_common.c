@@ -368,15 +368,28 @@ int socket_wait_for_write(
   int socket)
 
   {
-  int rc = PBSE_NONE;
-  int write_soc = 0, val;
-  socklen_t len = sizeof(int);
-  fd_set wfd;
+  int            rc = PBSE_NONE;
+  int            write_soc = 0, val;
+  socklen_t      len = sizeof(int);
+  fd_set         wfd;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
   struct timeval timeout;
-  timeout.tv_sec = pbs_tcp_timeout;
+
+  /* don't allow timeouts of less than 5 minutes */
+  if (pbs_tcp_timeout < 300)
+    {
+    snprintf(log_buf, sizeof(log_buf), "pbs_tcp_timeout set to %ld -- ignoring",
+      pbs_tcp_timeout);
+    log_err(-1, __func__, log_buf);
+    timeout.tv_sec = 300;
+    }
+  else
+    timeout.tv_sec = pbs_tcp_timeout;
   timeout.tv_usec = 0;
+
   FD_ZERO(&wfd);
   FD_SET(socket, &wfd);
+
   if ((write_soc = select(socket+1, 0, &wfd, 0, &timeout)) != 1)
     {
     rc = PBSE_TIMEOUT;
@@ -425,12 +438,27 @@ int socket_wait_for_read(
   int socket)
 
   {
-  int rc = PBSE_NONE;
-  int countdown = pbs_tcp_timeout*10;
+  int           rc = PBSE_NONE;
+  int           countdown;
   struct pollfd pfd;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
+
+  /* don't allow timeouts of less than 5 minutes */
+  if (pbs_tcp_timeout < 300)
+    {
+    snprintf(log_buf, sizeof(log_buf), "pbs_tcp_timeout set to %ld -- ignoring",
+      pbs_tcp_timeout);
+    log_err(-1, __func__, log_buf);
+
+    countdown = 3000; /* 300 * 10 */
+    }
+  else
+    countdown = pbs_tcp_timeout*10;
+
   pfd.fd = socket;
   pfd.events = POLLIN | POLLHUP; /* | POLLRDNORM; */
   pfd.revents = 0;
+
   while (pfd.revents == 0)
     {
     if (poll(&pfd, 1, 100) > 0)
