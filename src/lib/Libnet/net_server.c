@@ -455,6 +455,70 @@ int init_network(
 
 
 
+/**
+ * check_network_port - initialize the network interface
+ * allocate a socket and bind it to the service port,
+ */
+
+int check_network_port(
+
+  unsigned int  port)
+
+  {
+  int   i;
+  int    sock;
+
+  struct sockaddr_in socname;
+
+  memset(&socname, 0, sizeof(socname));
+
+  if (port == 0)
+    {
+    return(-1);
+    }
+  else
+    {
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (sock < 0)
+      {
+      /* FAILURE */
+
+      return(-1);
+      }
+
+    i = 1;
+
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(i));
+
+    /* name that socket "in three notes" */
+
+    socname.sin_port = htons((unsigned short)port);
+
+    socname.sin_addr.s_addr = INADDR_ANY;
+
+    socname.sin_family = AF_INET;
+
+    if (bind(sock, (struct sockaddr *)&socname, sizeof(socname)) < 0)
+      {
+      /* FAILURE */
+
+      close(sock);
+
+      return(-1);
+      }
+
+    close (sock);
+
+    } /* END if (port != 0) */
+
+  return(0);
+  }  /* END check_network_port() */
+
+
+
+
+
 /*
  * wait_request - wait for a request (socket with data to read)
  * This routine does a select on the readset of sockets,

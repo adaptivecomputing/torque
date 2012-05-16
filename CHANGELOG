@@ -41,6 +41,8 @@ evans
       TRQ-918
   b - prevent the API from segfaulting when passed a negative socket descriptor
   b - don't allow pbs_tcp_timeout to ever be less than 5 minutes - may be temporary
+  b - fix pbs_server so it fails if another instance of pbs_server is already
+      running on same port. TRQ-914.
 
 4.0.1
   b - Fix trqauthd init scripts to use correct path to trqauthd.

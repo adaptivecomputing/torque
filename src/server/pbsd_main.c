@@ -1834,6 +1834,15 @@ int main(
     log_buf);
 
 
+  if (check_network_port(pbs_server_port_dis) != 0)
+    {
+    perror("pbs_server: network");
+
+    log_err(-1, msg_daemonname, "pbs_server port already bound");
+
+    exit(3);
+    }
+
   if (init_network(0, start_process_pbs_server_port) != 0)
     {
     perror("pbs_server: unix domain socket");
