@@ -39,6 +39,7 @@ evans
       TRQ-936.
   b - prevent TORQUE from losing connectivity with Moab when starting jobs asynchronously
       TRQ-918
+  b - prevent the API from segfaulting when passed a negative socket descriptor
 
 4.0.1
   b - Fix trqauthd init scripts to use correct path to trqauthd.

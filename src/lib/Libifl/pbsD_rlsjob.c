@@ -100,7 +100,7 @@ int pbs_rlsjob_err(
   struct attropl aopl;
 
 
-  if ((jobid == (char *)0) || (*jobid == '\0'))
+  if ((jobid == (char *)0) || (*jobid == '\0') || c < 0)
     return (PBSE_IVALREQ);
 
   aopl.name = ATTR_h;
