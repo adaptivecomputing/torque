@@ -120,7 +120,7 @@ extern int           LOGLEVEL;
  * req_track - record job tracking information
  */
 
-void *req_track(
+int req_track(
 
   void *vp)
 
@@ -141,7 +141,7 @@ void *req_track(
     {
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   /* attempt to locate tracking record for this job    */
@@ -179,7 +179,7 @@ void *req_track(
 
         reply_ack(preq);
 
-        return(NULL);
+        return(PBSE_NONE);
         }
       }
     else if (empty == NULL)
@@ -210,7 +210,7 @@ void *req_track(
 
         req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 
-        return(NULL);
+        return(PBSE_NONE);
         }
 
       memcpy(new, server.sv_track, server.sv_tracksize);
@@ -245,7 +245,7 @@ void *req_track(
 
   reply_ack(preq);
 
-  return(NULL);
+  return(PBSE_NONE);
   } /* END req_track() */
 
 

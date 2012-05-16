@@ -792,7 +792,7 @@ int handle_single_delete(
  *          |                |                |
  */
 
-void req_deletejob(
+int req_deletejob(
 
   struct batch_request *preq)  /* I */
 
@@ -809,7 +809,7 @@ void req_deletejob(
       /* purge_completed_jobs will respond with either an ack or reject */
       purge_completed_jobs(preq);
       
-      return;
+      return(PBSE_NONE);
       }
     else if (strncmp(preq->rq_extend, deldelaystr, strlen(deldelaystr)) &&
         strncmp(preq->rq_extend, delasyncstr, strlen(delasyncstr)) &&
@@ -826,7 +826,7 @@ void req_deletejob(
         req_reject(PBSE_PERM, 0, preq, NULL,
           "must have operator or manager privilege to use -m parameter");
 
-        return;
+        return(PBSE_NONE);
         }
       }
     /* check if we are getting a asynchronous delete */
@@ -852,7 +852,7 @@ void req_deletejob(
     handle_single_delete(preq, preq_tmp, Msg);
     }
 
-  return;
+  return(PBSE_NONE);
   }  /* END req_deletejob() */
 
 

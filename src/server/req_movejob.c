@@ -117,7 +117,7 @@ job  *chk_job_request(char *, struct batch_request *);
  * req_movejob = move a job to a new destination (local or remote)
  */
 
-void *req_movejob(
+int req_movejob(
 
   void *vp) /* I */
 
@@ -131,7 +131,7 @@ void *req_movejob(
 
   if (jobp == NULL)
     {
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   if ((jobp->ji_qs.ji_state != JOB_STATE_QUEUED) &&
@@ -148,7 +148,7 @@ void *req_movejob(
 
     pthread_mutex_unlock(jobp->ji_mutex);
 
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   /*
@@ -196,7 +196,7 @@ void *req_movejob(
 
   pthread_mutex_unlock(jobp->ji_mutex);
 
-  return(NULL);
+  return(PBSE_NONE);
   }  /* END req_movejob() */
 
 
@@ -208,7 +208,7 @@ void *req_movejob(
  * req_orderjob = reorder the jobs in a queue
  */
 
-void *req_orderjob(
+int req_orderjob(
 
   void *vp) /* I */
 
@@ -228,12 +228,12 @@ void *req_orderjob(
 
   if ((pjob1 = chk_job_request(req->rq_ind.rq_move.rq_jid, req)) == NULL)
     {
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   if ((pjob2 = chk_job_request(req->rq_ind.rq_move.rq_destin, req)) == NULL)
     {
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   if (((pjob = pjob1)->ji_qs.ji_state == JOB_STATE_RUNNING) ||
@@ -258,7 +258,7 @@ void *req_orderjob(
     pthread_mutex_unlock(pjob1->ji_mutex);
     pthread_mutex_unlock(pjob2->ji_mutex);
 
-    return(NULL);
+    return(PBSE_NONE);
     }
   else if ((pjob1->ji_qhdr == NULL) || (pjob2->ji_qhdr == NULL))
     {
@@ -302,7 +302,7 @@ void *req_orderjob(
       if (pjob2 != NULL)
         pthread_mutex_unlock(pjob2->ji_mutex);
 
-      return(NULL);
+      return(PBSE_NONE);
       }
     }
 
@@ -362,6 +362,6 @@ void *req_orderjob(
   /* SUCCESS */
   reply_ack(req);
 
-  return(NULL);
+  return(PBSE_NONE);
   }  /* END req_orderjob() */
 

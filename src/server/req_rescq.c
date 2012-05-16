@@ -116,7 +116,7 @@ resource_t next_resource_tag;
  * Currently only recognizes "nodes"
  */
 
-void *req_rescq(
+int req_rescq(
     
   void *vp)
 
@@ -134,7 +134,7 @@ void *req_rescq(
   if (prescq->rq_num < 1)
     {
     req_reject(RM_ERR_BADPARAM, 0, preq, NULL, NULL);
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   preply = &preq->rq_reply.brp_un.brp_rescq;
@@ -151,7 +151,7 @@ void *req_rescq(
       (preply->brq_resvd == 0) || (preply->brq_down  == 0))
     {
     req_reject(PBSE_SYSTEM, errno, preq, NULL, NULL);
-    return(NULL);
+    return(PBSE_NONE);
     }
 
 
@@ -184,20 +184,20 @@ void *req_rescq(
                            preply->brq_down + i)) != 0)
         {
         req_reject(rc, 0, preq, NULL, NULL);
-        return(NULL);
+        return(PBSE_NONE);
         }
       }
     else
       {
       req_reject(RM_ERR_BADPARAM, 0, preq, NULL, NULL);
-      return(NULL);
+      return(PBSE_NONE);
       }
 
     }
 
   reply_send_svr(preq);
 
-  return(NULL);
+  return(PBSE_NONE);
   } /* END req_rescq() */
 
 
@@ -209,7 +209,7 @@ void *req_rescq(
  * Reserve a set of resources (only "nodes" for now)
  */
 
-void *req_rescreserve(
+int req_rescreserve(
     
   void *vp)
 
@@ -228,13 +228,13 @@ void *req_rescreserve(
   if ((preq->rq_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)) == 0)
     {
     req_reject(PBSE_PERM, 0, preq, NULL, NULL);
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   if (prescq->rq_num < 1)
     {
     req_reject(RM_ERR_BADPARAM, 0, preq, NULL, NULL);
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   tag = prescq->rq_rhandle;
@@ -279,7 +279,7 @@ void *req_rescreserve(
       if (rc < 0)
         {
         req_reject(rc, 0, preq, NULL, NULL);
-        return(NULL);
+        return(PBSE_NONE);
 
         }
       else if (rc == 0)
@@ -290,7 +290,7 @@ void *req_rescreserve(
     else
       {
       req_reject(PBSE_RMUNKNOWN, 0, preq, NULL, NULL);
-      return(NULL);
+      return(PBSE_NONE);
       }
     }
 
@@ -303,7 +303,7 @@ void *req_rescreserve(
 
   reply_send_svr(preq);
 
-  return(NULL);
+  return(PBSE_NONE);
   } /* END req_rescreserve() */
 
 
@@ -313,7 +313,7 @@ void *req_rescreserve(
  * req_rescfree - Free a reserved set of resources
  */
 
-void *req_rescfree(
+int req_rescfree(
     
   void *vp)
 
@@ -322,13 +322,13 @@ void *req_rescfree(
   if ((preq->rq_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)) == 0)
     {
     req_reject(PBSE_PERM, 0, preq, NULL, NULL);
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   node_unreserve(preq->rq_ind.rq_rescq.rq_rhandle);
 
   reply_ack(preq);
 
-  return(NULL);
+  return(PBSE_NONE);
   } /* END req_rescfree() */
 

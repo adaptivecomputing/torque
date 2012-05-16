@@ -77,7 +77,7 @@ void hold_job(
 
 
 
-void *req_holdarray(
+int req_holdarray(
     
   void *vp) /* I */
 
@@ -100,7 +100,7 @@ void *req_holdarray(
     /* this shouldn't happen since we verify that this is a valid array
        just prior to calling this function */
     req_reject(PBSE_UNKARRAYID, 0, preq, NULL, "unable to find array");
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   get_jobowner(pa->ai_qs.owner, owner);
@@ -121,7 +121,7 @@ void *req_holdarray(
     pthread_mutex_unlock(pa->ai_mutex);
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
-    return(NULL);
+    return(PBSE_NONE);
     }
 
 
@@ -137,7 +137,7 @@ void *req_holdarray(
     pthread_mutex_unlock(pa->ai_mutex);
 
     req_reject(rc, 0, preq, NULL, NULL);
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   /* if other than HOLD_u is being set, must have privil */
@@ -153,7 +153,7 @@ void *req_holdarray(
     pthread_mutex_unlock(pa->ai_mutex);
 
     req_reject(rc, 0, preq, NULL, NULL);
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   /* get the range of jobs to iterate over */
@@ -167,7 +167,7 @@ void *req_holdarray(
 
       req_reject(rc,0,preq,NULL,
         "Error in specified array range");
-      return(NULL);
+      return(PBSE_NONE);
       }
     }
   else
@@ -206,6 +206,6 @@ void *req_holdarray(
 
   reply_ack(preq);
 
-  return(NULL);
+  return(PBSE_NONE);
   } /* END req_holdarray() */
 

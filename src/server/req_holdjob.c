@@ -160,7 +160,7 @@ int chk_hold_priv(
  * The state of the job may change as a result.
  */
 
-void *req_holdjob(
+int req_holdjob(
 
   void *vp) /* I */
 
@@ -182,7 +182,7 @@ void *req_holdjob(
 
   if (pjob == NULL)
     {
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   /* cannot do anything until we decode the holds to be set */
@@ -194,7 +194,7 @@ void *req_holdjob(
 
     pthread_mutex_unlock(pjob->ji_mutex);
 
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   /* if other than HOLD_u is being set, must have privil */
@@ -205,7 +205,7 @@ void *req_holdjob(
 
     pthread_mutex_unlock(pjob->ji_mutex);
 
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   hold_val = &pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
@@ -291,7 +291,7 @@ void *req_holdjob(
   if (pjob != NULL)
     pthread_mutex_unlock(pjob->ji_mutex);
 
-  return(NULL);
+  return(PBSE_NONE);
   }  /* END req_holdjob() */
 
 
@@ -443,7 +443,7 @@ int release_job(
  * As a result, the job might change state.
  */
 
-void *req_releasejob(
+int req_releasejob(
 
   void *vp) /* ptr to the decoded request   */
 
@@ -456,7 +456,7 @@ void *req_releasejob(
 
   if (pjob == NULL)
     {
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   if ((rc = release_job(preq,pjob)) != 0)
@@ -470,7 +470,7 @@ void *req_releasejob(
 
   pthread_mutex_unlock(pjob->ji_mutex);
 
-  return(NULL);
+  return(PBSE_NONE);
   }  /* END req_releasejob() */
 
 
@@ -513,7 +513,7 @@ int release_whole_array(
 
 
 
-void *req_releasearray(
+int req_releasearray(
 
   void *vp) /* I */
 
@@ -530,7 +530,7 @@ void *req_releasearray(
   if (pa == NULL)
     {
     req_reject(PBSE_IVALREQ,0,preq,NULL,"Cannot find array");
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   while (TRUE)
@@ -540,7 +540,7 @@ void *req_releasearray(
       {
       pthread_mutex_unlock(pa->ai_mutex);
 
-      return(NULL);
+      return(PBSE_NONE);
       }
 
     if ((pjob = find_job(pa->job_ids[index])) == NULL)
@@ -559,7 +559,7 @@ void *req_releasearray(
     pthread_mutex_unlock(pa->ai_mutex);
     pthread_mutex_unlock(pjob->ji_mutex);
 
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   pthread_mutex_unlock(pjob->ji_mutex);
@@ -580,7 +580,7 @@ void *req_releasearray(
 
       req_reject(rc,0,preq,NULL,NULL);
 
-      return(NULL);
+      return(PBSE_NONE);
       }
     }
   else if ((rc = release_whole_array(pa,preq)) != 0)
@@ -595,7 +595,7 @@ void *req_releasearray(
 
     req_reject(rc,0,preq,NULL,NULL);
 
-    return(NULL);
+    return(PBSE_NONE);
     }
   
   if (LOGLEVEL >= 7)
@@ -608,7 +608,7 @@ void *req_releasearray(
 
   reply_ack(preq);
 
-  return(NULL);
+  return(PBSE_NONE);
   } /* END req_releasearray() */
 
 

@@ -192,7 +192,7 @@ int attempt_delete(
 
 
 
-void req_deletearray(
+int req_deletearray(
     
   struct batch_request *preq)
 
@@ -213,7 +213,7 @@ void req_deletearray(
   if (pa == NULL)
     {
     reply_ack(preq);
-    return;
+    return(PBSE_NONE);
     }
 
   /* check authorization */
@@ -238,7 +238,7 @@ void req_deletearray(
       }
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
-    return;
+    return(PBSE_NONE);
     }
 
   /* get the range of jobs to iterate over */
@@ -270,7 +270,7 @@ void req_deletearray(
         }
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error in specified array range");
-      return;
+      return(PBSE_NONE);
       }
     }
   else
@@ -316,7 +316,7 @@ void req_deletearray(
         
         if (ptask)
           {
-          return;
+          return(PBSE_NONE);
           }
         }
       }
@@ -325,7 +325,7 @@ void req_deletearray(
   /* now that the whole array is deleted, we should mail the user if necessary */
   reply_ack(preq);
 
-  return;
+  return(PBSE_NONE);
   } /* END req_deletearray() */
 
 
