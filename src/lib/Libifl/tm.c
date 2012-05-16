@@ -567,7 +567,7 @@ static int startcom(
   struct tcp_chan **pchan)
 
   {
-  int     ret;
+  int     ret = DIS_SUCCESS;
   struct tcp_chan *chan = NULL;
 
   if (localmom() == -1)

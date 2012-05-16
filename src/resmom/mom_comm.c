@@ -8005,6 +8005,7 @@ void fork_demux(
   struct routefd   *routem;
   int               open_sockets = 0;
   int               amt_read = 0;
+  int               amt_written = 0;
   int               pipes[2];
   int               pipe_failed = FALSE;
   char              buf[MAXLINE];
@@ -8102,7 +8103,7 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
 
-    write(pipes[1], "fail", strlen("fail"));
+    amt_written = write(pipes[1], "fail", strlen("fail"));
     close(pipes[1]);
 
     _exit(5);
@@ -8114,7 +8115,7 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
 
-    write(pipes[1], "fail", strlen("fail"));
+    amt_written = write(pipes[1], "fail", strlen("fail"));
     close(pipes[1]);
 
     _exit(5);
@@ -8139,7 +8140,7 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
     
-    write(pipes[1], "fail", strlen("fail"));
+    amt_written = write(pipes[1], "fail", strlen("fail"));
     close(pipes[1]);
 
     _exit(5);
@@ -8154,13 +8155,13 @@ void fork_demux(
     close(im_mom_stderr);
     close(fd1);
 
-    write(pipes[1], "fail", strlen("fail"));
+    amt_written = write(pipes[1], "fail", strlen("fail"));
     close(pipes[1]);
 
     _exit(5);
     }
 
-  write(pipes[1], "success", strlen("success"));
+  amt_written = write(pipes[1], "success", strlen("success"));
   close(pipes[1]);
   
   while (1)

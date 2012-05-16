@@ -82,9 +82,11 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include <sys/time.h>
 #include <memory.h>
 #include <time.h>
+#include <pwd.h>
 #include <sys/param.h>
 #if HAVE_SYS_UCRED_H
 #include <sys/ucred.h>

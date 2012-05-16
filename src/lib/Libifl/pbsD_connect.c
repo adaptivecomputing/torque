@@ -860,7 +860,6 @@ int pbs_original_connect(
   if (use_unixsock)
     {
     connection[out].ch_socket = socket(AF_UNIX, SOCK_STREAM, 0);
-    DIS_tcp_init(connection[out].ch_socket);
 
     if (connection[out].ch_socket < 0)
       {

@@ -421,7 +421,7 @@ int issue_Drequest(
   {
   struct attropl   *patrl;
 
-  struct work_task *ptask;
+  struct work_task *ptask = NULL;
 
   struct svrattrl  *psvratl;
   int               rc = PBSE_NONE;
