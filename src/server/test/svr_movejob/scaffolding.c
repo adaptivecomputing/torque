@@ -249,3 +249,20 @@ int get_parent_dest_queues(char *queue_parent_name, char *queue_dest_name, pbs_q
   fprintf(stderr, "The call to get_parent_dest_queues to be mocked!!\n");
   exit(1);
   }
+
+void close_conn(
+
+  int sd,        /* I */
+  int has_mutex) /* I */
+
+  {
+  }
+
+struct pbs_queue *lock_queue_with_job_held(
+
+  struct pbs_queue  *pque,
+  job              **pjob_ptr)
+
+  {
+  return(NULL);
+  }

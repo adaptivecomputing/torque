@@ -257,3 +257,11 @@ int safe_strncat(char *str, char *to_append, size_t space_remaining)
   exit(1);
   }
 
+int load_config(
+
+  char *config_buf, /* O */
+  int   BufSize)    /* I */
+
+  {
+  return(0);
+  }

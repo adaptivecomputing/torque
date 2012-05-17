@@ -12,7 +12,7 @@ int LOGLEVEL = 0;
 all_tasks task_list_event;
 
 
-int encode_DIS_reply(int sock, struct batch_reply *reply)
+int encode_DIS_reply(struct tcp_chan *chan, struct batch_reply *reply)
   {
   fprintf(stderr, "The call to encode_DIS_reply needs to be mocked!!\n");
   exit(1);
@@ -82,3 +82,5 @@ int safe_strncat(char *str, char *to_append, size_t space_remaining)
   {
   return(0);
   }
+
+void DIS_tcp_cleanup(struct tcp_chan *chan) {}

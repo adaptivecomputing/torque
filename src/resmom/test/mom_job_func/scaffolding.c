@@ -11,6 +11,9 @@
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "pbs_job.h" /* job_file_delete_info */
 
+int is_login_node = 0;
+char *apbasil_path = NULL;
+char *apbasil_protocol = NULL;
 char *path_jobs; /* mom_main.c */
 int multi_mom = 1; /* mom_main.c */
 attribute_def job_attr_def[10]; /* job_attr_def.c */
@@ -102,4 +105,16 @@ void close_conn(int sd, int has_mutex)
   {
   fprintf(stderr, "The call to close_conn needs to be mocked!!\n");
   exit(1);
+  }
+
+void DIS_tcp_cleanup(struct tcp_chan *chan) {}
+
+int destroy_alps_reservation(
+
+  char *reservation_id,
+  char *apbasil_path,
+  char *apbasil_protocol)
+
+  {
+  return(0);
   }

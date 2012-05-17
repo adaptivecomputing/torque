@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
+#include "tcp.h"
 #include "list_link.h" /* tlist_head, list_link */
 
 int decode_DIS_svrattrl(struct tcp_chan *chan, tlist_head *phead)
@@ -38,5 +39,9 @@ int disrsi(int stream, int *retval)
   {
   fprintf(stderr, "The call to disrsi needs to be mocked!!\n");
   exit(1);
+  }
+
+void log_record(int eventtype, int objclass, const char *objname, char *text)
+  {
   }
 

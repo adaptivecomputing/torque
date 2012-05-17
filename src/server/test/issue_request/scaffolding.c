@@ -26,7 +26,7 @@ char *parse_servername(char *name, unsigned int *service)
   exit(1);
   }
 
-int encode_DIS_Register(int sock, struct batch_request *preq)
+int encode_DIS_Register(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to encode_DIS_Register needs to be mocked!!\n");
   exit(1);
@@ -44,7 +44,7 @@ int PBSD_mgr_put(int c, int function, int command, int objtype, char *objname, s
   exit(1);
   }
 
-int encode_DIS_JobId(int sock, char *jobid)
+int encode_DIS_JobId(struct tcp_chan *chan, char *jobid)
   {
   fprintf(stderr, "The call to encode_DIS_JobId needs to be mocked!!\n");
   exit(1);
@@ -56,7 +56,7 @@ pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   exit(1);
   }
 
-int DIS_reply_read(int sock, struct batch_reply *preply)
+int DIS_reply_read(struct tcp_chan *chan, struct batch_reply *preply)
   {
   fprintf(stderr, "The call to DIS_reply_read needs to be mocked!!\n");
   exit(1);
@@ -74,7 +74,7 @@ void free_br(struct batch_request *preq)
   exit(1);
   }
 
-int encode_DIS_ReturnFiles(int sock, struct batch_request *preq)
+int encode_DIS_ReturnFiles(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to encode_DIS_ReturnFiles needs to be mocked!!\n");
   exit(1);
@@ -92,7 +92,7 @@ void DIS_tcp_setup(int fd)
   exit(1);
   }
 
-int encode_DIS_TrackJob (int socket, struct batch_request *br)
+int encode_DIS_TrackJob(struct tcp_chan *chan, struct batch_request *br)
   {
   fprintf(stderr, "The call to encode_DIS_TrackJob needs to be mocked!!\n");
   exit(1);
@@ -122,13 +122,13 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int encode_DIS_CopyFiles(int sock, struct batch_request *preq)
+int encode_DIS_CopyFiles(struct tcp_chan *chan, struct batch_request *preq)
   {
   fprintf(stderr, "The call to encode_DIS_CopyFiles needs to be mocked!!\n");
   exit(1);
   }
 
-int encode_DIS_ReqHdr(int sock, int reqt, char *user)
+int encode_DIS_ReqHdr(struct tcp_chan *chan, int reqt, char *user)
   {
   fprintf(stderr, "The call to encode_DIS_ReqHdr needs to be mocked!!\n");
   exit(1);
@@ -188,7 +188,7 @@ struct pbsnode *tfind_addr(const u_long key, uint16_t port, job *pjob)
   exit(1);
   }
 
-int encode_DIS_ReqExtend(int sock, char *extend)
+int encode_DIS_ReqExtend(struct tcp_chan *chan, char *extend)
   {
   fprintf(stderr, "The call to encode_DIS_ReqExtend needs to be mocked!!\n");
   exit(1);
@@ -209,4 +209,8 @@ int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
 job *find_job (char *name)
   {
   return(NULL);
+  }
+
+void DIS_tcp_cleanup(struct tcp_chan *chan)
+  {
   }

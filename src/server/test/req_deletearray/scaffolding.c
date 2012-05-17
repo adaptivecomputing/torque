@@ -144,3 +144,11 @@ job *find_job(char *jobid)
   {
   return(NULL);
   }
+
+int array_delete(
+    
+  job_array *pa)
+
+  {
+  return(0);
+  }

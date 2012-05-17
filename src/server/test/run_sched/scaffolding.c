@@ -8,6 +8,7 @@
 #include "server_limits.h" /* PBS_NET_MAX_CONNECTIONS */
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "pbs_nodes.h" /* pbsnode */
+#include "tcp.h"
 
 unsigned int pbs_scheduler_port;
 listener_connection listener_conns[MAXLISTENERS];
@@ -78,5 +79,10 @@ void net_add_close_func(int sd, void (*func)(int))
   exit(1);
   }
 
+void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
+void *process_pbs_server_port_scheduler(void *new_sock)
+  {
+  return(NULL);
+  }
 

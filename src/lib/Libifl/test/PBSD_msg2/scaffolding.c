@@ -10,7 +10,7 @@ char pbs_current_user[PBS_MAXUSER];
 const char *dis_emsg[10];
 
 
-void DIS_tcp_setup(int fd)
+struct tcp_chan *DIS_tcp_setup(int fd)
   {
   fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
   exit(1);
@@ -22,22 +22,26 @@ int DIS_tcp_wflush(int fd)
   exit(1);
   }
 
-int encode_DIS_ReqHdr(int sock, int reqt, char *user)
+int encode_DIS_ReqHdr(struct tcp_chan *chan, int reqt, char *user)
   {
   fprintf(stderr, "The call to encode_DIS_ReqHdr needs to be mocked!!\n");
   exit(1);
   }
 
-int encode_DIS_ReqExtend(int sock, char *extend)
+int encode_DIS_ReqExtend(struct tcp_chan *chan, char *extend)
   {
   fprintf(stderr, "The call to encode_DIS_ReqExtend needs to be mocked!!\n");
   exit(1);
   }
 
-int encode_DIS_MessageJob(int sock, char *jobid, int fileopt, char *msg)
+int encode_DIS_MessageJob(struct tcp_chan *chan, char *jobid, int fileopt, char *msg)
   {
   fprintf(stderr, "The call to encode_DIS_MessageJob needs to be mocked!!\n");
   exit(1);
+  }
+
+void DIS_tcp_cleanup(struct tcp_chan *chan)
+  {
   }
 
 

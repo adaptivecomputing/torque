@@ -7,20 +7,18 @@
 struct connect_handle connection[10];
 const char *dis_emsg[10];
 
-void DIS_tcp_reset(int fd, int i)
-  {
-  fprintf(stderr, "The call to DIS_tcp_reset needs to be mocked!!\n");
-  exit(1);
-  }
-
-int decode_DIS_replyCmd(int sock, struct batch_reply *reply)
+int decode_DIS_replyCmd(struct tcp_chan *chan, struct batch_reply *reply)
   {
   fprintf(stderr, "The call to decode_DIS_replyCmd needs to be mocked!!\n");
   exit(1);
   }
 
-void DIS_tcp_setup(int fd)
+struct tcp_chan *DIS_tcp_setup(int fd)
   {
   fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
   exit(1);
+  }
+
+void DIS_tcp_cleanup(struct tcp_chan *chan)
+  {
   }

@@ -7,6 +7,7 @@
 #include "net_connect.h" /* pbs_net_t, conn_type, connection */
 #include "pbs_nodes.h" /* pbsnode */
 #include "server_limits.h" /* PBS_NET_MAX_CONNECTIONS */
+#include "tcp.h"
 
 struct connect_handle connection[10];
 char pbs_current_user[PBS_MAXUSER];
@@ -77,7 +78,7 @@ int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *E
   exit(1);
   }
 
-int encode_DIS_ReqHdr(int sock, int reqt, char *user)
+int encode_DIS_ReqHdr(struct tcp_chan *chan, int reqt, char *user)
   {
   fprintf(stderr, "The call to encode_DIS_ReqHdr to be mocked!!\n");
   exit(1);
@@ -88,3 +89,5 @@ void close_conn(int sd, int has_mutex)
   fprintf(stderr, "The call to close_conn to be mocked!!\n");
   exit(1);
   }
+
+void DIS_tcp_cleanup(struct tcp_chan *chan) {}

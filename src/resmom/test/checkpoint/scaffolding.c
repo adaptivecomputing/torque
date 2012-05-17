@@ -10,6 +10,9 @@
 #include "mom_func.h" /* startjob_rtn */
 
 
+int is_login_node = FALSE;
+char *apbasil_path = NULL;
+char *apbasil_protocol = NULL;
 int lockfds; /* mom_main */
 char *path_jobs; /* mom_main.c */
 int multi_mom = 1; /* mom_main.c */
@@ -246,4 +249,16 @@ int pbs_alterjob_err(int c, char *jobid, struct attrl *attrib, char *extend, int
  exit(1);
  }
 
+int create_alps_reservation(
 
+  char       *exec_hosts,
+  char       *username,
+  char       *jobid,
+  char       *apbasil_path,
+  char       *apbasil_protocol,
+  long long   pagg_id_value,
+  char      **reservation_id)
+
+  {
+  return(0);
+  }

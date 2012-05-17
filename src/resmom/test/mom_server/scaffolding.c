@@ -17,7 +17,9 @@
 #include "list_link.h" /* list_link, tlist_head */
 #include "pbs_nodes.h" /* pbsnode */
 
-
+char *apbasil_protocol = NULL;
+char *apbasil_path = NULL;
+int is_reporter_mom = 0;
 resizable_array *received_statuses;
 mom_hierarchy_t *mh;
 struct config *config_array = NULL;
@@ -34,6 +36,7 @@ float max_load_val = -1.0;
 char TMOMRejectConn[MAXLINE];
 int PBSNodeCheckInterval;
 int UpdateFailCount = 0;
+time_t first_update_time;
 char *auto_ideal_load = NULL;
 char *path_spool;
 char *auto_max_load = NULL;
@@ -89,7 +92,7 @@ char *reqgres(struct rm_attribute *attrib)
   exit(1);
   }
 
-int read_tcp_reply(int sock, int protocol, int version, int command, int *exit_status)
+int read_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command, int *exit_status)
   {
   fprintf(stderr, "The call to read_tcp_reply needs to be mocked!!\n");
   exit(1);
@@ -321,4 +324,16 @@ int AVL_list(AvlTree tree, char **Buf, long *current_len, long *max_len)
   {
   fprintf(stderr, "The call to AVL_list needs to be mocked!!\n");
   exit(1);
+  }
+
+void DIS_tcp_cleanup(struct tcp_chan *chan) {}
+
+int generate_alps_status(
+
+  dynamic_string *status,
+  const char     *apbasil_path,
+  const char     *apbasil_protocol)
+
+  {
+  return(0);
   }

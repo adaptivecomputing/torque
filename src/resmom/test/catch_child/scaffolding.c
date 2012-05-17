@@ -667,23 +667,23 @@ int tm_reply(int stream, int com, tm_event_t event)
   return 0;
   }
 
-int diswsl(int stream, long value)
+int diswsl(struct tcp_chan *chan, long value)
   {
   return 0;
   }
 
 #undef diswsi
-int diswsi(int stream, int value)
+int diswsi(struct tcp_chan *chan, int value)
   {
-  return diswsl(stream, (long) value);
+  return diswsl(chan, (long) value);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(struct tcp_chan *chan)
   {
   return 0;
   }
 
-int im_compose(int stream, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
+int im_compose(struct tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
   {
   return 0;
   }
@@ -816,15 +816,20 @@ int mom_open_socket_to_jobs_server(job *pjob, const char *caller_id, void *(*mes
   return sock;
   }
 
-void DIS_tcp_setup(int fd)
+struct tcp_chan *DIS_tcp_setup(int sock)
   {
+  return(NULL);
   }
+
+void DIS_tcp_close(struct tcp_chan *chan) {}
+
+void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
 void set_mom_server_down(pbs_net_t server_address)
   {
   }
 
-int encode_DIS_ReqHdr(int sock, int reqt, char *user)
+int encode_DIS_ReqHdr(struct tcp_chan *chan, int reqt, char *user)
   {
   int rc = 1;
   if (func_num == POST_EPILOGUE)
@@ -856,7 +861,7 @@ int encode_DIS_ReqHdr(int sock, int reqt, char *user)
   return rc;
   }
 
-int encode_DIS_Status(int sock, char *objid, struct attrl *pattrl)
+int encode_DIS_Status(struct tcp_chan *chan, char *objid, struct attrl *pattrl)
   {
   int rc= 1;
   if (func_num == SCAN_FOR_EXITING)
@@ -873,7 +878,7 @@ int encode_DIS_Status(int sock, char *objid, struct attrl *pattrl)
   return rc;
   }
 
-int encode_DIS_ReqExtend(int sock, char *extend)
+int encode_DIS_ReqExtend(struct tcp_chan *chan, char *extend)
   {
   int rc = 1;
   if (func_num == POST_EPILOGUE)
@@ -937,7 +942,7 @@ void encode_flagged_attrs(job *pjob, tlist_head *phead)
   {
   }
 
-int encode_DIS_JobObit(int sock, struct batch_request *preq)
+int encode_DIS_JobObit(struct tcp_chan *chan, struct batch_request *preq)
   {
   int rc = 1;
   if (func_num == POST_EPILOGUE)
@@ -962,7 +967,7 @@ void free_br(struct batch_request *preq)
   {
   }
 
-int DIS_reply_read(int sock, struct batch_reply *preply)
+int DIS_reply_read(struct tcp_chan *chan, struct batch_reply *preply)
   {
   int rc = 0;
   switch (func_num)
@@ -1278,7 +1283,7 @@ unsigned long gettime(resource *pres)
   exit(1);
   }
 
-int diswul(int stream, unsigned long value)
+int diswul(struct tcp_chan *chan, unsigned long value)
   {
   return 0;
   }

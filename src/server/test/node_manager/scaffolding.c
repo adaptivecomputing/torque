@@ -150,7 +150,7 @@ int node_status_list(pbs_attribute *new, void *pnode, int actmode)
   exit(1);
   }
 
-int write_tcp_reply(int sock, int protocol, int version, int command, int exit_code)
+int write_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command, int exit_code)
   {
   fprintf(stderr, "The call to write_tcp_replwrite_tcp_reply needs to be mocked!!\n");
   exit(1);
@@ -328,4 +328,21 @@ char *threadsafe_tokenizer(char **str, char *delims)
 int get_svr_attr_l(int index, long *l)
   {
   return(0);
+  }
+
+int process_alps_status(
+
+  char           *nd_name,
+  dynamic_string *status_info)
+
+  {
+  return(0);
+  }
+
+struct pbsnode *get_next_login_node(
+
+  struct prop *needed)
+
+  {
+  return(NULL);
   }

@@ -75,3 +75,5 @@ int task_save(task *ptask)
   fprintf(stderr, "The call to task_save needs to be mocked!!\n");
   exit(1);
   }
+
+void check_partition_confirm_script(char *path, char *msg) {}

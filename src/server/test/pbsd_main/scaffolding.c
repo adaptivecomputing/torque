@@ -454,3 +454,28 @@ unsigned int get_random_number()
   fprintf(stderr, "The call to get_random_number needs to be mocked!\n");
   exit(1);
   }
+
+int check_network_port(
+
+  unsigned int  port)
+
+  {
+  return(0);
+  }
+
+void set_localhost_name(char *localhost_name, size_t len)
+  {
+  }
+
+int start_listener_addrinfo(
+
+  char   *host_name,
+  int     server_port,
+  void *(*process_meth)(void *))
+  {
+  return(0);
+  }
+
+void netcounter_incr(void) {}
+
+void DIS_tcp_cleanup(struct tcp_chan *chan) {}

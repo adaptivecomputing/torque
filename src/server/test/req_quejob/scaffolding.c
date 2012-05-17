@@ -303,3 +303,12 @@ dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
   return(NULL);
   }
+
+int enqueue_threadpool_request(
+
+  void *(*func)(void *),
+  void *arg)
+
+  {
+  return(0);
+  }

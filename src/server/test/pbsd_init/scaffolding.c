@@ -35,6 +35,8 @@ char *path_checkpoint;
 char *job_log_file = NULL;
 char *plogenv = NULL;
 pthread_mutex_t *node_state_mutex = NULL;
+pthread_mutex_t *acctfile_mutex = NULL;
+pthread_mutex_t *check_tasks_mutex = NULL;
 char *msg_init_queued = "Requeued in queue: ";
 char *path_svrlog;
 char path_acct[_POSIX_PATH_MAX];
@@ -548,3 +550,16 @@ int add_hello_after(hello_container *hc, char *node_name, int index)
   fprintf(stderr, "The call to add_hello_after needs to be mocked!!\n");
   exit(1);
   }
+
+int enqueue_threadpool_request(
+
+  void *(*func)(void *),
+  void *arg)
+
+  {
+  return(0);
+  }
+
+void initialize_login_holder() {}
+
+void initialize_alps_reservations() {}

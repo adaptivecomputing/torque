@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "dis.h"
+#include "tcp.h"
 
 unsigned dis_dmx10 = 0;
 double *dis_dp10 = NULL;
@@ -13,13 +14,13 @@ dis_long_double_t *dis_lp10 = NULL;
 dis_long_double_t *dis_ln10 = NULL;
 
 
-int tcp_puts(int fd, const char *str, size_t ct)
+int tcp_puts(struct tcp_chan *chan, const char *str, size_t ct)
   {
   fprintf(stderr, "The call to tcp_puts needs to be mocked!!\n");
   exit(1);
   }
 
-int tcp_wcommit(int fd, int commit_flag)
+int tcp_wcommit(struct tcp_chan *chan, int commit_flag)
   {
   fprintf(stderr, "The call to tcp_wcommit needs to be mocked!!\n");
   exit(1);

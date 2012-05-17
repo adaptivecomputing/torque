@@ -3,6 +3,7 @@
 #include <stdio.h> /* fprintf */
 
 #include <pbs_ifl.h> /* batch_status */
+#include "tcp.h"
 
 char TRMEMsg[1024]; /* global rm error message */
 
@@ -31,7 +32,7 @@ int IamRoot()
   exit(1);
   }
 
-int diswsl(int stream, long value)
+int diswsl(struct tcp_chan *chan, long value)
   {
   fprintf(stderr, "The call to diswsl needs to be mocked!!\n");
   exit(1);
@@ -43,7 +44,7 @@ void pbs_statfree(struct batch_status *bsp)
   exit(1);
   }
 
-void DIS_tcp_setup(int fd)
+struct tcp_chan *DIS_tcp_setup(int fd)
   {
   fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
   exit(1);
@@ -61,19 +62,19 @@ int DIS_tcp_wflush(int fd)
   exit(1);
   }
 
-int diswcs(int stream, const char *value, size_t nchars)
+int diswcs(struct tcp_chan *chan, const char *value, size_t nchars)
   {
   fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
   exit(1);
   }
 
-char *disrst(int stream, int *retval)
+char *disrst(struct tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrst needs to be mocked!!\n");
   exit(1);
   }
 
-long disrsl(int stream, int *retval)
+long disrsl(struct tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrsl needs to be mocked!!\n");
   exit(1);
@@ -90,3 +91,5 @@ char *pbs_default(void)
   fprintf(stderr, "The call to pbs_default needs to be mocked!!\n");
   exit(1);
   }
+
+void DIS_tcp_close(struct tcp_chan *chan) {}

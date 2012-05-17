@@ -12,6 +12,7 @@ char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %
 const char *PJobState[] = {"hi", "hello"};
 struct server server;
 char *server_host;
+char server_localhost[PBS_MAXHOSTNAME + 1];
 
 
 char *site_map_user(char *uname, char *host)

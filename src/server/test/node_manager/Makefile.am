@@ -1,6 +1,7 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage `xml2-config --cflags`
+AM_LIBS=`xml2-config --libs`
 
 lib_LTLIBRARIES = libnode_manager.la
 

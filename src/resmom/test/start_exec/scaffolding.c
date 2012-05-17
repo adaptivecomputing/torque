@@ -18,6 +18,9 @@
 #include "mom_mach.h" /* startjob_rtn */
 #include "mom_func.h" /* var_table */
 
+int is_login_node = 0;
+char *apbasil_protocol = NULL;
+char *apbasil_path = NULL;
 int lockfds = -1;
 char *path_jobs;
 int multi_mom = 1;
@@ -121,7 +124,7 @@ char *get_local_script_path(job *pjob, char *base)
   exit(1);
   }
 
-int read_tcp_reply(int sock, int protocol, int version, int command, int *exit_status)
+int read_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command, int *exit_status)
   {
   fprintf(stderr, "The call to read_tcp_reply needs to be mocked!!\n");
   exit(1);
@@ -451,4 +454,18 @@ int get_hostaddr_hostent_af(int *local_errno, char *hostname, unsigned short *af
   exit(1);
   }
 
+void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
+int create_alps_reservation(
+
+  char       *exec_hosts,
+  char       *username,
+  char       *jobid,
+  char       *apbasil_path,
+  char       *apbasil_protocol,
+  long long   pagg_id_value,
+  char      **reservation_id)
+
+  {
+  return(0);
+  }

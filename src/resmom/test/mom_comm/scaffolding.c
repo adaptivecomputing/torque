@@ -286,7 +286,7 @@ void free_sisterlist(struct radix_buf **list, int radix)
   exit(1);
   }
 
-int write_tcp_reply(int sock, int protocol, int version, int command, int exit_code)
+int write_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command, int exit_code)
   {
   fprintf(stderr, "The call to write_tcp_reply needs to be mocked!!\n");
   exit(1);
@@ -448,3 +448,12 @@ int get_hostaddr_hostent_af(int *local_errno, char *hostname, unsigned short *af
   fprintf(stderr, "The call to get_hostaddr_hostent_af needs to be mocked!!\n");
   exit(1);
   }
+
+pid_t fork_me(int conn) 
+  {
+  return(0);
+  }
+
+void DIS_tcp_close(struct tcp_chan *chan) {}
+
+void DIS_tcp_cleanup(struct tcp_chan *chan) {}

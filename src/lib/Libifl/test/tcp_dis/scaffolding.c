@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include "tcp.h"
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   {
@@ -37,4 +38,5 @@ int socket_read(int socket, char **the_str, long long *str_len)
   fprintf(stderr, "The call to socket_read needs to be mocked!!\n");
   return(1);
   }
+
 

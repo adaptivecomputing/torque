@@ -190,7 +190,7 @@ struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
   exit(1);
   }
 
-int *netcounter_get(void)
+void netcounter_get(int netrates[])
   {
   fprintf(stderr, "The call to netcounter_get to be mocked!!\n");
   exit(1);
@@ -288,4 +288,15 @@ int get_svr_attr_l(int index, long *l)
 pbs_queue *get_jobs_queue(job **pjob)
   {
   return((*pjob)->ji_qhdr);
+  }
+
+int get_alps_statuses(
+
+  struct pbsnode       *parent,
+  struct batch_request *preq,
+  int                  *bad,
+  tlist_head           *pstathd)
+
+  {
+  return(0);
   }

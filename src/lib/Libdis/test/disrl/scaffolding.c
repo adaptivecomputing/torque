@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "tcp.h"
 #include "dis.h"
 
 dis_long_double_t disp10l_(int expon)
@@ -17,7 +18,7 @@ int disrl_(int stream, dis_long_double_t *ldval, unsigned *ndigs, unsigned *nski
   exit(1);
   }
 
-int tcp_rcommit(int fd, int commit_flag)
+int tcp_rcommit(struct tcp_chan *chan, int commit_flag)
   {
   fprintf(stderr, "The call to tcp_rcommit needs to be mocked!!\n");
   exit(1);

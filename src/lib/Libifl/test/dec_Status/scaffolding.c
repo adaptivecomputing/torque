@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
+#include "tcp.h"
 #include "list_link.h" /* tlist_head */
 
 int decode_DIS_svrattrl(struct tcp_chan *chan, tlist_head *phead)

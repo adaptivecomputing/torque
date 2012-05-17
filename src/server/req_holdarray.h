@@ -3,6 +3,7 @@
 #define _REQ_HOLDARRAY_H
 
 #include "attribute.h" /* pbs_attribute */
+#include "batch_request.h"
 
 void hold_job(pbs_attribute *temphold, void *j);
 

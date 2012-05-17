@@ -70,4 +70,11 @@ int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
   return(0);
   }
 
+int svr_get_privilege(
 
+  char *user,  /* I */
+  char *host)  /* I */
+
+  {
+  return(0);
+  }

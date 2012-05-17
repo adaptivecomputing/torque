@@ -10,7 +10,7 @@ struct connect_handle connection[10];
 char pbs_current_user[PBS_MAXUSER];
 const char *dis_emsg[10];
 
-int encode_DIS_RunJob(int sock, char *jobid, char *where, unsigned int resch)
+int encode_DIS_RunJob(struct tcp_chan *chan, char *jobid, char *where, unsigned int resch)
   {
   fprintf(stderr, "The call to encode_DIS_RunJob needs to be mocked!!\n");
   exit(1);
@@ -34,7 +34,7 @@ struct batch_reply *PBSD_rdrpy(int *local_errno, int c)
   exit(1);
   }
 
-int encode_DIS_ReqHdr(int sock, int reqt, char *user)
+int encode_DIS_ReqHdr(struct tcp_chan *chan, int reqt, char *user)
   {
   fprintf(stderr, "The call to encode_DIS_ReqHdr needs to be mocked!!\n");
   exit(1);
@@ -46,8 +46,12 @@ void PBSD_FreeReply(struct batch_reply *reply)
   exit(1);
   }
 
-int encode_DIS_ReqExtend(int sock, char *extend)
+int encode_DIS_ReqExtend(struct tcp_chan *chan, char *extend)
   {
   fprintf(stderr, "The call to encode_DIS_ReqExtend needs to be mocked!!\n");
   exit(1);
+  }
+
+void DIS_tcp_cleanup(struct tcp_chan *chan)
+  {
   }

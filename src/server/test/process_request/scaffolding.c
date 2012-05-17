@@ -127,7 +127,7 @@ int *req_stat_job(struct batch_request *preq)
   exit(1);
   }
 
-int dis_request_read(int sfds, struct batch_request *request)
+int dis_request_read(struct tcp_chan *chan, struct batch_request *request)
   {
   fprintf(stderr, "The call to dis_request_read needs to be mocked!!\n");
   exit(1);
@@ -460,3 +460,9 @@ int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
   return(0);
   }
 
+void globalset_del_sock(int sock) {}
+
+char * netaddr_long(long ap, char *out)
+  {
+  return(NULL);
+  }

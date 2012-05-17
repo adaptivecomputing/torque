@@ -12,6 +12,7 @@
 #include "hash_table.h" /* hash_table_t */
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_task, work_type */
+#include "tcp.h"
 
 hello_container failures;
 int svr_tsnodes = 0; 
@@ -250,3 +251,32 @@ int insert_thing_after(resizable_array *ra, void *thing, int index)
   exit(1);
   }
 
+int get_addr_info(char *name, struct sockaddr_in *sa_info, int retry)
+  {
+  return(0);
+  }
+
+int is_compose(
+
+  struct tcp_chan *chan,
+  char *server_name,
+  int   command)
+
+  {
+  return(0);
+  }
+
+void DIS_tcp_cleanup(struct tcp_chan *chan)
+  {
+  }
+
+int add_to_login_holder(
+
+  struct pbsnode *pnode)
+
+  {
+  return(0);
+  }
+
+const char *alps_reporter_feature  = "alps_reporter";
+const char *alps_starter_feature   = "alps_starter";

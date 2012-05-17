@@ -64,7 +64,11 @@ int socket_read_num(int socket, long long *the_num)
   exit(1);
   }
 
-int encode_DIS_ReqHdr(int sock, int reqt, char *user)
+void DIS_tcp_cleanup(struct tcp_chan *chan)
+  {
+  }
+
+int encode_DIS_ReqHdr(struct tcp_chan *chan, int reqt, char *user)
   {
   fprintf(stderr, "The call to encode_DIS_ReqHdr needs to be mocked!!\n");
   exit(1);
@@ -104,4 +108,9 @@ int get_hostaddr_hostent_af(int *local_errno, char *hostname, unsigned short *af
   {
   fprintf(stderr, "The call to get_hostaddr_hostent needs to be mocked!!\n");
   exit(1);
+  }
+
+int socket_close(int sock)
+  {
+  return(0);
   }

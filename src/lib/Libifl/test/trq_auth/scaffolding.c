@@ -15,7 +15,7 @@ int socket_write(int socket, char *data, int data_len)
   exit(1);
   }
 
-int decode_DIS_replyCmd(int sock, struct batch_reply *reply)
+int decode_DIS_replyCmd(struct tcp_chan *chan, struct batch_reply *reply)
   {
   fprintf(stderr, "The call to decode_DIS_replyCmd needs to be mocked!!\n");
   exit(1);
@@ -75,4 +75,15 @@ int get_hostaddr_hostent(int *local_errno, char *hostname, char **host_addr, int
   exit(1);
   }
 
+int  get_hostaddr_hostent_af(
+
+  int             *rc,
+  char            *hostname,
+  unsigned short  *af_family,
+  char           **host_addr,
+  int             *host_addr_len)
+
+  {
+  return(0);
+  }
 

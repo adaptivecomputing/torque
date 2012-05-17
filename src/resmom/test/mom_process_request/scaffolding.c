@@ -80,13 +80,13 @@ int req_stat_job(struct batch_request *preq)
   exit(1);
   }
 
-int dis_request_read(int sfds, struct batch_request *request)
+int dis_request_read(struct tcp_chan *chan, struct batch_request *request)
   {
   fprintf(stderr, "The call to dis_request_read needs to be mocked!!\n");
   exit(1);
   }
 
-void DIS_tcp_setup(int fd)
+struct tcp_chan *DIS_tcp_setup(int fd)
   {
   fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
   exit(1);
@@ -230,5 +230,17 @@ void net_add_close_func(int sd, void (*func)(int))
   exit(1);
   }
 
+void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
+int mom_req_stat_job(
+
+  struct batch_request *preq) 
+
+  {
+  return(0);
+  }
+
+void req_delete_reservation(
+    
+  struct batch_request *request) {}
 

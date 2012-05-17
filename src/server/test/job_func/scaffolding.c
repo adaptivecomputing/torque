@@ -402,3 +402,63 @@ int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int log
   exit(1);
   }
 
+struct pbs_queue *lock_queue_with_job_held(
+
+  struct pbs_queue  *pque,
+  job       **pjob_ptr)
+
+  {
+  return(NULL);
+  }
+
+int decode_ll(
+
+  pbs_attribute *patr,
+  char          *name,  /* pbs_attribute name */
+  char          *rescn, /* resource name, unused here */
+  char          *val,   /* pbs_attribute value */
+  int            perm)  /* only used for resources */
+
+  {
+  return(0);
+  }
+
+int set_ll(
+   
+  pbs_attribute *attr, 
+  pbs_attribute *new,
+  enum batch_op  op)
+
+  {
+  return(0);
+  }
+
+int encode_ll(
+
+  pbs_attribute  *attr,   /* ptr to pbs_attribute */
+  tlist_head     *phead,   /* head of attrlist list */
+  char           *atname,  /* pbs_attribute name */
+  char           *rsname,  /* resource name or null */
+  int             mode,   /* encode mode, unused here */
+  int             perm)  /* only used for resources */
+
+  {
+  return(0);
+  }
+
+int comp_ll(
+   
+  pbs_attribute *attr,
+  pbs_attribute *with)
+
+  {
+  return(0);
+  }
+
+int remove_alps_reservation(
+    
+  char *rsv_id)
+
+  {
+  return(0);
+  }

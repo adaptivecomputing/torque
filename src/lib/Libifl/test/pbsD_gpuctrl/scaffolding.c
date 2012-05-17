@@ -26,8 +26,12 @@ struct batch_reply *PBSD_rdrpy(int *local_errno, int c)
   exit(1);
   }
 
-  void PBSD_FreeReply(struct batch_reply *reply)
+void PBSD_FreeReply(struct batch_reply *reply)
   {
   fprintf(stderr, "The call to PBSD_FreeReply needs to be mocked!!\n");
   exit(1);
+  }
+
+void DIS_tcp_cleanup(struct tcp_chan *chan)
+  {
   }

@@ -21,3 +21,11 @@ char *pbs_fbserver(void)
   fprintf(stderr, "The call to pbs_fbserver needs to be mocked!!\n");
   exit(1);
   }
+
+char *pbs_strerror(
+
+  int err)  /* I */
+
+  {
+  return(NULL);
+  }

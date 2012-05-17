@@ -97,9 +97,9 @@ node_comm_t *force_path_update(mom_hierarchy_t *nt);
 
 node_comm_t *update_current_path(mom_hierarchy_t *nt);
 
-int write_tcp_reply(int sock, int protocol, int version, int command, int exit_code);
+int write_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command, int exit_code);
 
-int read_tcp_reply(int sock, int protocol, int version, int command, int *exit_status);
+int read_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command, int *exit_status);
 
 /* u_mu.c */
 int is_whitespace(char c);

@@ -3,6 +3,8 @@
 
 #include "utils.h"
 #include "dynamic_string.h"
+#include "batch_request.h"
+#include "work_task.h"
 #include "attribute.h"
 #include "u_tree.h"
 
@@ -2493,4 +2495,97 @@ int encode_arst( pbs_attribute *attr, tlist_head *phead, char *atname, char *rsn
 
 void free_null(struct pbs_attribute *attr) {}
 
+int is_orphaned(
 
+  char *rsv_id)
+
+  {
+  return(0);
+  }
+
+job *find_job(char *jobid)
+  {
+  return(NULL);
+  }
+
+void free_br(struct batch_request *preq) {}
+
+int issue_Drequest(
+
+  int                    conn,
+  struct batch_request  *request,
+  void                 (*func) (struct work_task *),
+  struct work_task     **ppwt)
+
+  {
+  return(0);
+  }
+
+pbs_net_t get_hostaddr(
+
+  int  *local_errno, /* O */    
+  char *hostname)    /* I */
+
+  {
+  return(0);
+  }
+
+int create_alps_reservation(
+
+  char       *exec_hosts,
+  char       *username,
+  char       *jobid,
+  char       *apbasil_path,
+  char       *apbasil_protocol,
+  long long   pagg_id_value,
+  char      **reservation_id)
+
+  {
+  return(0);
+  }
+
+int svr_connect(
+
+  pbs_net_t        hostaddr,  /* host order */
+  unsigned int     port,   /* I */
+  int             *my_err,
+  struct pbsnode  *pnode,
+  void           *(*func)(void *),
+  enum conn_type   cntype)
+
+  {
+  return(0);
+  }
+
+int svr_clnodes = 0;
+
+void release_req(
+
+  struct work_task *pwt)
+
+  {
+  }
+
+int already_recorded(
+
+  char *rsv_id)
+
+  {
+  return(0);
+  }
+
+struct pbsnode *get_next_login_node(
+
+  struct prop *needed)
+
+  {
+  return(NULL);
+  }
+
+struct batch_request *alloc_br(
+
+  int type)
+
+  {
+  return(NULL);
+  }
