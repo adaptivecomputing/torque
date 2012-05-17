@@ -636,6 +636,8 @@ struct batch_request *duplicate_request(
     preq->rq_ind.rq_manager.rq_objname, PBS_MAXSVRJOBID + 1);
   memcpy(preq_tmp->rq_user, preq->rq_user, PBS_MAXUSER + 1);
   memcpy(preq_tmp->rq_host, preq->rq_host, PBS_MAXHOSTNAME + 1);
+  if (preq->rq_extend != NULL)
+    preq_tmp->rq_extend = strdup(preq->rq_extend);
 
   return(preq_tmp);
   } /* END duplicate_request() */
@@ -669,6 +671,8 @@ int handle_delete_all(
   
   while ((pjob = next_job(&alljobs,&iter)) != NULL)
     {
+    rc = forced_jobpurge(pjob, preq_dup);
+
     if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
       {
       pthread_mutex_unlock(pjob->ji_mutex);
@@ -679,7 +683,7 @@ int handle_delete_all(
     total_jobs++;
     
     /* mutex is freed below */
-    if ((rc = forced_jobpurge(pjob,preq_dup)) == PBSE_NONE)
+    if (rc == PBSE_NONE)
       rc = execute_job_delete(pjob,Msg,preq_dup);
     
     if (rc != PURGE_SUCCESS)
