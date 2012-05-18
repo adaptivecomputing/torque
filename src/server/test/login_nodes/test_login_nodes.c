@@ -78,7 +78,6 @@ void increment_counts(
 
 
 
-/*
 START_TEST(retrieval_test)
   {
   struct pbsnode  n1;
@@ -121,7 +120,7 @@ START_TEST(retrieval_test)
   fail_unless(n2_rtd == 2, "Should have used n2 twice");
   fail_unless(n3_rtd == 2, "Should have used n3 twice");
   }
-END_TEST*/
+END_TEST
 
 
 
@@ -195,10 +194,10 @@ Suite *node_func_suite(void)
   tc_core = tcase_create("add_test");
   tcase_add_test(tc_core, add_test);
   suite_add_tcase(s, tc_core);
-/*
+
   tc_core = tcase_create("retrieval_test");
   tcase_add_test(tc_core, retrieval_test);
-  suite_add_tcase(s, tc_core);*/
+  suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("prop_test");
   tcase_add_test(tc_core, prop_test);

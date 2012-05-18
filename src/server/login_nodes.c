@@ -208,6 +208,7 @@ void update_next_node_index(
 
     prev_index = iter;
     }
+
   } /* END update_next_node_index() */
 
 
@@ -240,9 +241,9 @@ struct pbsnode *get_next_login_node(
     
     /* must have at least one execution slot available */
     if ((pnode->nd_nsn - pnode->nd_np_to_be_used < 1) ||
-        ((pnode->nd_state & INUSE_DOWN) == 0) ||
-        ((pnode->nd_state & INUSE_OFFLINE) == 0) ||
-        ((pnode->nd_state & INUSE_DELETED) == 0))
+        ((pnode->nd_state & INUSE_DOWN) != 0) ||
+        ((pnode->nd_state & INUSE_OFFLINE) != 0) ||
+        ((pnode->nd_state & INUSE_DELETED) != 0))
       {
       node_fits = FALSE;
       }
