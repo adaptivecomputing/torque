@@ -657,17 +657,13 @@ static int tcp_puts(
 
   tcp = tcparray[fd];
 
-  /* NOTE:  currently, failures may occur if THE_BUF_SIZE is not large enough */
-  /*        this should be changed to allow proper operation with degraded    */
-  /*        performance (how?) */
-
   tp = &tcp->writebuf;
   if ((tp->tdis_thebuf + tp->tdis_bufsize - tp->tdis_leadp) < (ssize_t)ct)
     {
     /* not enough room, reallocate the buffer */
     leadpct = (int)(tp->tdis_thebuf - tp->tdis_leadp);
     trailpct = (int)(tp->tdis_thebuf - tp->tdis_trailp);
-    newbufsize = tp->tdis_bufsize + THE_BUF_SIZE;
+    newbufsize = tp->tdis_bufsize + THE_BUF_SIZE + ct;
     temp = (char *)malloc(newbufsize);
     if(!temp)
       {
