@@ -38,15 +38,18 @@ START_TEST(set_ncpus_test)
 END_TEST
 
 
-/*
+
 START_TEST(set_state_test)
   {
   struct pbsnode  pnode;
-  char           *up_str   = "UP";
-  char           *down_str = "DOWN";
+  char           *up_str   = "state=UP";
+  char           *down_str = "state=DOWN";
+
+  memset(&pnode, 0, sizeof(pnode));
 
   set_state(&pnode, up_str);
-  fail_unless(pnode.nd_state == INUSE_FREE, "Couldn't set the state to up");
+  snprintf(buf, sizeof(buf), "Couldn't set state to up, state is %d", pnode.nd_state);
+  fail_unless(pnode.nd_state == INUSE_FREE, buf);
   set_state(&pnode, down_str);
   fail_unless((pnode.nd_state & INUSE_DOWN) != 0, "Couldn't set the state to down");
 
@@ -55,7 +58,7 @@ START_TEST(set_state_test)
   set_state(&pnode, down_str);
   fail_unless((pnode.nd_state & INUSE_DOWN) != 0, "Couldn't set the state to down 2");
   }
-END_TEST*/
+END_TEST
 
 
 
@@ -73,9 +76,9 @@ Suite *node_func_suite(void)
   tcase_add_test(tc_core, set_ncpus_test);
   suite_add_tcase(s, tc_core);
   
-  /*tc_core = tcase_create("set_state_test");*/
-  /*tcase_add_test(tc_core, set_state_test);*/
-  /*suite_add_tcase(s, tc_core);*/
+  tc_core = tcase_create("set_state_test");
+  tcase_add_test(tc_core, set_state_test);
+  suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("whole_test");
   tcase_add_test(tc_core, whole_test);
