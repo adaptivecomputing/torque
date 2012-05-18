@@ -7,6 +7,7 @@
 
 int set_ncpus(struct pbsnode *, char *);
 int set_state(struct pbsnode *, char *);
+char *finish_gpu_status(char *str);
 
 char buf[4096];
 
@@ -62,6 +63,31 @@ END_TEST
 
 
 
+
+START_TEST(finish_gpu_status_test)
+  {
+  char  status[] = "o\0n\0</cray_gpu_status>\0tom";
+  char  str[sizeof(status)];
+  char *end;
+
+  memcpy(str, status, sizeof(status));
+
+  end = finish_gpu_status(str);
+  snprintf(buf, sizeof(buf), "penultimate string isn't correct, should be '%s' but is '%s'",
+    CRAY_GPU_STATUS_END, end);
+  fail_unless(!strcmp(end, CRAY_GPU_STATUS_END), buf);
+
+  end += strlen(end) + 1;
+  snprintf(buf, sizeof(buf), "last string isn't correct, should be 'tom' but is '%s'",
+    end);
+  fail_unless(!strcmp(end, "tom"), buf);
+
+  }
+END_TEST
+
+
+
+
 START_TEST(whole_test)
   {
   }
@@ -78,6 +104,10 @@ Suite *node_func_suite(void)
   
   tc_core = tcase_create("set_state_test");
   tcase_add_test(tc_core, set_state_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("finish_gpu_status_test");
+  tcase_add_test(tc_core, finish_gpu_status_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("whole_test");
