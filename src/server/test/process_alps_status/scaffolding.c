@@ -213,7 +213,7 @@ struct pbssubn *create_subnode(
   {
   pnode->nd_nsn++;
   pnode->nd_nsnfree++;
-  
+
   return((struct pbssubn *)1);
   }  /* END create_subnode() */
 
@@ -566,243 +566,14 @@ int mgr_set_node_attr(
                              this func at this time*/
 
   {
-  int              i;
-  int              index;
-  int              nstatus = 0;
-  int              nprops = 0;
-  int              rc;
-  pbs_attribute   *new;
-  pbs_attribute   *unused = NULL;
-  pbs_attribute   *pnew;
+  static int count = 0;
 
-  struct pbsnode   tnode;  /*temporary node*/
+  count++;
 
-  struct pbssubn   tsnd;  /*temporary subnode */
-
-  struct pbssubn  *xtmp;
-
-  struct prop     *pdest;
-
-  struct prop    **plink;
-  char             log_buf[LOCAL_LOG_BUF_SIZE];
-
-  if (plist == NULL)
-    {
-    return(0);  /* nothing to do, return success */
-    }
-
-  /* Get heap space for a temporary node-pbs_attribute array and use the
-   *    * various "node-attribute action" functions defined in the file
-   *       * "node_attr_def.c" to set the current values of each entry's
-   *          * structure members
-   *             */
-
-  new = (pbs_attribute *)calloc((unsigned int)limit, sizeof(pbs_attribute));
-
-  if (new == NULL)
-    {
-    return(PBSE_SYSTEM);
-    }
-
-  for (index = 0; index < limit; index++)
-    {
-    if ((pdef + index)->at_action)
-      {
-      if ((rc = (pdef + index)->at_action(new + index, (void *)pnode, ATR_ACTION_NEW)))
-        {
-        attr_atomic_kill(new, pdef, limit);
-
-        return(rc);
-        }
-      }
-    }
-
-  /*
-   * The function "attr_atomic_node_set" does the following:
-   * successively decodes the new pbs_attribute modifications carried in the
-   * the request list, "plist", into a temporary pbs_attribute (on stack).
-   * Updates each pbs_attribute in the derived node-attribute array using the
-   * decoded values.  If a failure of some sort occurs, as evidenced by
-   * a non-zero return code (rc), call attr_atomic_kill() to undo
-   * everything-- calls upon the "at_free" function for each pbs_attribute
-   * to free hanging structures, then frees up the "new" array
-   * return code (rc) shapes caller's reply
-   */
-
-  if ((rc = attr_atomic_node_set(plist, unused, new, pdef, limit, -1, privil, bad)) != 0)
-    {
-    attr_atomic_kill(new, pdef, limit);
-
-    return(rc);
-    }
-
-  /*
-   * Use the updated pbs_attribute values in pbs_attribute array, "new", to update a
-   * temporary (on stack) pbsnode, which is a copy of the one pointed to by
-   * pnode.  If all goes well, we are home free-- just copy the information
-   * in the temporary pbsnode, after it has gotten modified, back to the
-   * node pointed to by "pnode" and free the pbs_attribute array "new".
-   */
-
-  tnode = *pnode;
-
-  tsnd  = *pnode->nd_psn;
-
-  tnode.nd_psn = &tsnd;
-
-  tsnd.host = &tnode;
-
-  for (index = 0;index < limit;index++)
-    {
-    pnew = new + index;
-
-    if (pnew->at_flags & ATR_VFLAG_MODIFY)
-      {
-      /*
-       *        * for each pbs_attribute which is to cause modification to the node, "tnode",
-       *               * call the specified "at_action" routine for that pbs_attribute passing it
-       *                      * the address of the temporary pbs_attribute and the address of the temporary
-       *                             * pbsnode object.  If any of the update actions fail along the way, undo
-       *                                    * everything.   Any calloc'd substructures should be hanging off the
-       *                                           * appropriate pbs_attribute of the pbs_attribute array "new".
-       *                                                  */
-
-      if ((pdef + index)->at_action)
-        {
-        if ((rc = (pdef + index)->at_action(new + index, (void *)&tnode, ATR_ACTION_ALTER)))
-          {
-          attr_atomic_kill(new, pdef, limit);
-
-          return(rc);
-          }
-        }
-      }
-    }
-
-  /*
-   *    * we have successfully updated tnode; use it to modify pnode
-   *       * if pnode has any calloc-ed storage that is being replaced
-   *          * be sure to free the old.
-   *             */
-
-  if (pnode->nd_prop && (pnode->nd_prop != tnode.nd_prop))
-    {
-    if (pnode->nd_prop->as_buf)
-      free(pnode->nd_prop->as_buf);
-
-    free(pnode->nd_prop);
-
-    pnode->nd_prop = NULL;
-    }
-
-  /* NOTE:  nd_status properly freed during pbs_attribute alter */
-
-  if ((pnode->nd_state != tnode.nd_state))
-    {
-    char OrigState[1024];
-    char FinalState[1024];
-
-    /* changing node state */
-
-    /* log change */
-
-    PNodeStateToString(pnode->nd_state, OrigState, sizeof(OrigState));
-    PNodeStateToString(tnode.nd_state, FinalState, sizeof(FinalState));
-
-    sprintf(log_buf, "node %s state changed from %s to %s",
-        pnode->nd_name,
-        OrigState,
-        FinalState);
-
-    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_NODE,pnode->nd_name,log_buf);
-    }
-
-  /* NOTE:  nd_status properly freed during pbs_attribute alter */
-
-  /*
-   *     if ((pnode->nd_status != NULL) && (pnode->nd_status != tnode.nd_status))
-   *           {
-   *                 if (pnode->nd_status->as_buf != NULL)
-   *                         free(pnode->nd_status->as_buf);
-   *
-   *                               free(pnode->nd_status)*/
-
-  xtmp                = pnode->nd_psn;
-
-  *pnode              = tnode;        /* updates all data including linking in props */
-
-  pnode->nd_psn       = xtmp;
-
-  *pnode->nd_psn      = tsnd;
-
-  pnode->nd_psn->host = pnode;
-
-  free(new);  /*any new  prop list has been put on pnode*/
-
-  /*dispense with the pbs_attribute array itself*/
-
-  /* update prop list based on new prop array */
-
-  free_prop_list(pnode->nd_first);
-
-  plink = &pnode->nd_first;
-
-  if (pnode->nd_prop)
-    {
-    nprops = pnode->nd_prop->as_usedptr;
-
-    for (i = 0;i < nprops;++i)
-      {
-      pdest = init_prop(pnode->nd_prop->as_string[i]);
-
-      *plink = pdest;
-      plink  = &pdest->next;
-      }
-    }
-
-  /* now add in name as last prop */
-
-  pdest  = init_prop(pnode->nd_name);
-
-  *plink = pdest;
-
-  pnode->nd_last = pdest;
-
-  pnode->nd_nprops = nprops + 1;
-
-  /* update status list based on new status array */
-
-  free_prop_list(pnode->nd_f_st);
-
-  plink = &pnode->nd_f_st;
-
-  if (pnode->nd_status != NULL)
-    {
-    nstatus = pnode->nd_status->as_usedptr;
-
-    for (i = 0;i < nstatus;++i)
-      {
-      pdest = init_prop(pnode->nd_status->as_string[i]);
-      *plink = pdest;
-      plink  = &pdest->next;
-      }
-    }
-
-  /* now add in name as last status */
-
-  pdest  = init_prop(pnode->nd_name);
-
-  *plink = pdest;
-
-  pnode->nd_l_st = pdest;
-
-  pnode->nd_nstatus = nstatus + 1;
-
-  /* now update subnodes */
-
-  update_subnode(pnode);
-
-  return(0);
+  if (count < 2)
+    return(0);
+  else
+    return(1);
   }  /* END mgr_set_node_attr() */
 
 
@@ -1101,7 +872,7 @@ int get_value_hash(
   if (key[0] == 'n')
     return(1);
   else
-    return(0);
+    return(-1);
   } /* END get_value_hash() */
 
 
@@ -1810,30 +1581,11 @@ struct pbsnode *AVL_find(
 
 int insert_node(
 
-    all_nodes      *an,    /* M */
-    struct pbsnode *pnode) /* I */
+  all_nodes      *an,    /* M */
+  struct pbsnode *pnode) /* I */
 
   {
-  static char *id = "insert_node";
-  int          rc;
-
-  pthread_mutex_lock(an->allnodes_mutex);
-
-  if ((rc = insert_thing(an->ra,pnode)) == -1)
-    {
-    rc = ENOMEM;
-    log_err(rc,id,"No memory to resize the array...SYSTEM FAILURE");
-    }
-  else
-    {
-    add_hash(an->ht,rc,pnode->nd_name);
-
-    rc = PBSE_NONE;
-    }
-
-  pthread_mutex_unlock(an->allnodes_mutex);
-
-  return(rc);
+  return(0);
   } /* END insert_node() */
 
 
@@ -1849,32 +1601,6 @@ int initialize_pbsnode(
 
   {
   memset(pnode, 0, sizeof(struct pbsnode));
-
-  pnode->nd_name            = pname;
-  pnode->nd_mom_port        = PBS_MOM_SERVICE_PORT;
-  pnode->nd_mom_rm_port     = PBS_MANAGER_SERVICE_PORT;
-  pnode->nd_addrs           = pul;       /* list of host byte order */
-  pnode->nd_ntype           = ntype;
-  pnode->nd_nsn             = 0;
-  pnode->nd_nsnfree         = 0;
-  pnode->nd_needed          = 0;
-  pnode->nd_order           = 0;
-  pnode->nd_prop            = NULL;
-  pnode->nd_status          = NULL;
-  pnode->nd_note            = NULL;
-  pnode->nd_psn             = NULL;
-  pnode->nd_state           = INUSE_NEEDS_HELLO_PING | INUSE_DOWN;
-  pnode->nd_first           = init_prop(pnode->nd_name);
-  pnode->nd_last            = pnode->nd_first;
-  pnode->nd_f_st            = init_prop(pnode->nd_name);
-  pnode->nd_l_st            = pnode->nd_f_st;
-  pnode->nd_hierarchy_level = -1; /* maximum unsigned short */
-  pnode->nd_nprops          = 0;
-  pnode->nd_nstatus         = 0;
-  pnode->nd_warnbad         = 0;
-  pnode->nd_ngpus           = 0;
-  pnode->nd_gpustatus       = NULL;
-  pnode->nd_ngpustatus      = 0;
 
   pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
@@ -2500,7 +2226,7 @@ int is_orphaned(
   char *rsv_id)
 
   {
-  return(0);
+  return(1);
   }
 
 job *find_job(char *jobid)
@@ -2579,7 +2305,8 @@ struct pbsnode *get_next_login_node(
   struct prop *needed)
 
   {
-  return(NULL);
+  static struct pbsnode login;
+  return(&login);
   }
 
 struct batch_request *alloc_br(
@@ -2587,5 +2314,6 @@ struct batch_request *alloc_br(
   int type)
 
   {
-  return(NULL);
+  static struct batch_request preq;
+  return(&preq);
   }

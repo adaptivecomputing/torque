@@ -140,7 +140,7 @@ struct pbsnode *create_alps_subnode(
   svrattrl       *plist = NULL;
   int             bad;
   int             rc;
-  
+
   if (initialize_pbsnode(subnode, strdup(node_id), NULL, NTYPE_CLUSTER) != PBSE_NONE)
     {
     free(subnode);
@@ -485,6 +485,8 @@ int process_alps_status(
 
   {
   char           *str;
+  char            node_index_buf[MAXLINE];
+  int             node_index = 0;
   struct pbsnode *parent;
   struct pbsnode *current = NULL;
   int             rc;
@@ -508,7 +510,11 @@ int process_alps_status(
     if (!strncmp(str, "node=", strlen("node=")))
       {
       if (str != status_info->str)
+        {
+        snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%d", node_index++);
+        decode_arst(&temp, NULL, NULL, node_index_buf, 0);
         save_node_status(current, &temp);
+        }
 
       if ((current = determine_node_from_str(str, parent, current)) == NULL)
         break;
@@ -547,6 +553,8 @@ int process_alps_status(
 
   if (current != NULL)
     {
+    snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%d", node_index++);
+    decode_arst(&temp, NULL, NULL, node_index_buf, 0);
     save_node_status(current, &temp);
     unlock_node(current, __func__, NULL, 0);
     }

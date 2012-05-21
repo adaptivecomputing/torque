@@ -8,6 +8,10 @@
 int set_ncpus(struct pbsnode *, char *);
 int set_state(struct pbsnode *, char *);
 char *finish_gpu_status(char *str);
+struct pbsnode *create_alps_subnode(struct pbsnode *parent, char *node_id);
+struct pbsnode *find_alpsnode_by_name(struct pbsnode *parent, char *node_id);
+struct pbsnode *determine_node_from_str(char *str, struct pbsnode *parent, struct pbsnode *current);
+int check_if_orphaned(char *str);
 
 char buf[4096];
 
@@ -88,6 +92,83 @@ END_TEST
 
 
 
+START_TEST(find_alpsnode_test)
+  {
+  struct pbsnode  parent;
+  char           *node_id = "tom";
+  struct pbsnode *alpsnode;
+
+  parent.alps_subnodes.allnodes_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(parent.alps_subnodes.allnodes_mutex, NULL);
+
+  alpsnode = find_alpsnode_by_name(&parent, node_id);
+  fail_unless(alpsnode == NULL, "returned a non-NULL node?");
+
+  }
+END_TEST
+
+
+
+
+START_TEST(determine_node_from_str_test)
+  {
+  struct pbsnode  parent;
+  char           *node_str1 = "node=tom";
+  char           *node_str2 = "node=george";
+  struct pbsnode *new_node;
+
+  memset(&parent, 0, sizeof(parent));
+  parent.nd_name = strdup("george");
+  parent.alps_subnodes.allnodes_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(parent.alps_subnodes.allnodes_mutex, NULL);
+
+  new_node = determine_node_from_str(node_str1, &parent, &parent);
+  fail_unless(new_node != NULL, "new node is NULL?");
+  fail_unless(new_node->nd_lastupdate != 0, "update time not set");
+
+  new_node = determine_node_from_str(node_str2, &parent, &parent);
+  fail_unless(new_node == &parent, "advanced current when current should've remained the same");
+
+  }
+END_TEST
+
+
+
+
+START_TEST(check_orphaned_test)
+  {
+  char *rsv_id = "tom";
+
+  fail_unless(check_if_orphaned(rsv_id) == 0, "bad return code");
+  }
+END_TEST
+
+
+
+
+START_TEST(create_alps_subnode_test)
+  {
+  struct pbsnode  parent;
+  char           *node_id = "tom";
+  struct pbsnode *subnode;
+
+  memset(&parent, 0, sizeof(struct pbsnode));
+
+  subnode = create_alps_subnode(&parent, node_id);
+  fail_unless(subnode != NULL, "subnode was returned NULL?");
+  fail_unless(subnode->parent == &parent, "parent set incorrectly");
+  fail_unless(subnode->nd_ntype == NTYPE_CLUSTER, "node type incorrect");
+
+  /* scaffolding makes it fail the second time */
+  subnode = create_alps_subnode(&parent, node_id);
+  fail_unless(subnode == NULL, "subnode isn't NULL when it should be");
+  }
+END_TEST
+
+
+
+
+
 START_TEST(whole_test)
   {
   }
@@ -112,6 +193,22 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("whole_test");
   tcase_add_test(tc_core, whole_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("create_alps_subnode_test");
+  tcase_add_test(tc_core, create_alps_subnode_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("find_alpsnode_test");
+  tcase_add_test(tc_core, find_alpsnode_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("determine_node_from_str_test");
+  tcase_add_test(tc_core, determine_node_from_str_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("check_orphaned_test");
+  tcase_add_test(tc_core, check_orphaned_test);
   suite_add_tcase(s, tc_core);
   
   return(s);
