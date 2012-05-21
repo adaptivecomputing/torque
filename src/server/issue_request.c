@@ -324,7 +324,8 @@ int issue_to_svr(
         {
         rc = preq->rq_reply.brp_code;
         }
-      return rc;
+
+      return(rc);
       }
     else if (handle == PBS_NET_RC_RETRY)
       {
@@ -336,18 +337,18 @@ int issue_to_svr(
 
   if (do_retry)
     {
-    pwt = set_task(WORK_Timed,(long)(time_now + PBS_NET_RETRY_TIME),reissue_to_svr,preq,TRUE);
+    pwt = set_task(WORK_Timed, (long)(time_now + PBS_NET_RETRY_TIME), reissue_to_svr, preq, TRUE);
 
     pwt->wt_parmfunc = replyfunc;
 
     pthread_mutex_unlock(pwt->wt_mutex);
 
-    return PBSE_NONE;
+    return(PBSE_NONE);
     }
 
   /* FAILURE */
 
-  return PBSE_INTERNAL;
+  return(PBSE_INTERNAL);
   }  /* END issue_to_svr() */
 
 

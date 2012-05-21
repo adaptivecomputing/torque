@@ -1791,8 +1791,6 @@ int job_purge(
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
     }
 
-  job_free(pjob, TRUE);
-
   return(PBSE_NONE);
   }  /* END job_purge() */
 

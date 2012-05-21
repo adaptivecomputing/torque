@@ -669,9 +669,12 @@ int handle_delete_all(
     preq->rq_noreply = TRUE; /* set for no more replies */
     }
   
-  while ((pjob = next_job(&alljobs,&iter)) != NULL)
+  while ((pjob = next_job(&alljobs, &iter)) != NULL)
     {
-    rc = forced_jobpurge(pjob, preq_dup);
+    if ((rc = forced_jobpurge(pjob, preq_dup)) == PURGE_SUCCESS)
+      {
+      continue;
+      }
 
     if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
       {
@@ -684,7 +687,7 @@ int handle_delete_all(
     
     /* mutex is freed below */
     if (rc == PBSE_NONE)
-      rc = execute_job_delete(pjob,Msg,preq_dup);
+      rc = execute_job_delete(pjob, Msg, preq_dup);
     
     if (rc != PURGE_SUCCESS)
       {
@@ -699,7 +702,12 @@ int handle_delete_all(
     }
   
   if (failed_deletes == 0)
+    {
     reply_ack(preq);
+
+    if (rc == PURGE_SUCCESS)
+      free_br(preq_dup);
+    }
   else
     {
     snprintf(tmpLine,sizeof(tmpLine),"Deletes failed for %d of %d jobs",
@@ -741,8 +749,8 @@ int handle_single_delete(
       }
     
     /* mutex is freed below */
-    if ((rc = forced_jobpurge(pjob,preq)) == PBSE_NONE)
-      rc = execute_job_delete(pjob,Msg,preq);
+    if ((rc = forced_jobpurge(pjob, preq)) == PBSE_NONE)
+      rc = execute_job_delete(pjob, Msg, preq);
     }
   
   if ((rc == PBSE_NONE) ||

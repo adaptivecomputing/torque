@@ -574,33 +574,7 @@ int svr_dequejob(
   /* remove job from server's all job list and reduce server counts */
 
   if ((pjob = find_job(job_id)) == NULL)
-    return PBSE_JOBNOTFOUND;
-
-  /* the only error is if the job isn't present */
-  if (remove_job(&alljobs, pjob) == PBSE_NONE)
-    {
-    if (!pjob->ji_is_array_template)
-      {
-      pthread_mutex_lock(server.sv_qs_mutex);
-
-      if (--server.sv_qs.sv_numjobs < 0)
-        {
-        bad_ct = 1;
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "sv_numjobs < 0. Recount required.");
-        }
-      
-      pthread_mutex_unlock(server.sv_qs_mutex);
-      pthread_mutex_lock(server.sv_jobstates_mutex);
-
-      if (--server.sv_jobstates[pjob->ji_qs.ji_state] < 0)
-        {
-        bad_ct = 1;
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "sv_jobstates < 0. Recount required.");
-        }
-      
-      pthread_mutex_unlock(server.sv_jobstates_mutex);
-      }
-    }
+    return(PBSE_JOBNOTFOUND);
 
   if (parent_queue_mutex_held == FALSE)
     {
@@ -608,7 +582,7 @@ int svr_dequejob(
     if (pjob == NULL)
       {
       log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
-      return PBSE_JOBNOTFOUND;
+      return(PBSE_JOBNOTFOUND);
       }
     }
   else
@@ -647,7 +621,7 @@ int svr_dequejob(
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   else if (pjob == NULL)
-    return PBSE_JOBNOTFOUND;
+    return(PBSE_JOBNOTFOUND);
 
 #ifndef NDEBUG
 
@@ -682,6 +656,32 @@ int svr_dequejob(
       }
     }
 
+  /* the only error is if the job isn't present */
+  if (remove_job(&alljobs, pjob) == PBSE_NONE)
+    {
+    if (!pjob->ji_is_array_template)
+      {
+      pthread_mutex_lock(server.sv_qs_mutex);
+
+      if (--server.sv_qs.sv_numjobs < 0)
+        {
+        bad_ct = 1;
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "sv_numjobs < 0. Recount required.");
+        }
+      
+      pthread_mutex_unlock(server.sv_qs_mutex);
+      pthread_mutex_lock(server.sv_jobstates_mutex);
+
+      if (--server.sv_jobstates[pjob->ji_qs.ji_state] < 0)
+        {
+        bad_ct = 1;
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "sv_jobstates < 0. Recount required.");
+        }
+      
+      pthread_mutex_unlock(server.sv_jobstates_mutex);
+      }
+    }
+
   /* notify scheduler a job has been removed */
 
   pthread_mutex_lock(svr_do_schedule_mutex);
@@ -691,7 +691,7 @@ int svr_dequejob(
   listener_command = SCH_SCHEDULE_TERM;
   pthread_mutex_unlock(listener_command_mutex);
 
-  return PBSE_NONE;
+  return(PBSE_NONE);
   }  /* END svr_dequejob() */
 
 

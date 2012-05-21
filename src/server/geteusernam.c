@@ -380,9 +380,7 @@ int set_jobexid(
 
       free_puser = TRUE;
 
-      sprintf(tmpLine, "%s",
-
-              puser);
+      sprintf(tmpLine, "%s", puser);
 
       /* end of change to use userlist instead of owner 10/17/2007 */
       }
@@ -490,6 +488,9 @@ int set_jobexid(
             snprintf(EMsg, 1024, "root user %s fails ACL check",
                      puser);
 
+          if (free_puser == TRUE)
+            free(puser);
+
           return(PBSE_BADUSER); /* root not allowed */
           }
         }
@@ -498,6 +499,9 @@ int set_jobexid(
         if (EMsg != NULL)
           snprintf(EMsg, 1024, "root user %s not allowed",
                    puser);
+          
+        if (free_puser == TRUE)
+          free(puser);
 
         return(PBSE_BADUSER); /* root not allowed */
         }
@@ -518,12 +522,18 @@ int set_jobexid(
         puser,
         pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str);
       log_err(PBSE_BADUSER, __func__, log_buf);
+          
+      if (free_puser == TRUE)
+        free(puser);
 
       return(PBSE_BADUSER);
       }
 
     if (site_check_user_map(pjob, puser, EMsg, LOGLEVEL) == -1)
       {
+      if (free_puser == TRUE)
+        free(puser);
+
       return(PBSE_BADUSER);
       }
 

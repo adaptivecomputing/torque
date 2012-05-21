@@ -1404,14 +1404,16 @@ handle_stagedel_cleanup:
 
 
 int handle_exited(
-  job          *pjob)
+
+  job *pjob)
+
   {
   struct batch_request *preq;
   pbs_queue            *pque;
   char                  log_buf[LOCAL_LOG_BUF_SIZE+1];
   int                   rc;
-  int handle = -1;
-  char job_id[PBS_MAXSVRJOBID+1];
+  int                   handle = -1;
+  char                  job_id[PBS_MAXSVRJOBID+1];
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
@@ -1433,7 +1435,7 @@ int handle_exited(
     else
       {
       pthread_mutex_unlock(pjob->ji_mutex);
-      if ((rc = issue_Drequest(handle, preq, NULL, 0)) != PBSE_NONE)
+      if ((rc = issue_Drequest(handle, preq, release_req, 0)) != PBSE_NONE)
         {
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d", rc);
 
@@ -1448,7 +1450,7 @@ int handle_exited(
     }
   else
     pthread_mutex_unlock(pjob->ji_mutex);
-  free_br(preq);
+
   preq = NULL;
   
   if ((pjob = find_job(job_id)) == NULL)

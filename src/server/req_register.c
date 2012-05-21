@@ -999,17 +999,16 @@ static void post_doq(
 
   {
   struct batch_request *preq = (struct batch_request *)pwt->wt_parm1;
+
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  char                 *jobid = preq->rq_ind.rq_register.rq_child;
+  char                 *msg;
 
-  char *jobid = preq->rq_ind.rq_register.rq_child;
+  job                  *pjob;
+  pbs_attribute        *pattr;
 
-  char *msg;
-  job  *pjob;
-  pbs_attribute       *pattr;
-
-  struct depend     *pdp;
-
-  struct depend_job *pdjb;
+  struct depend        *pdp;
+  struct depend_job    *pdjb;
 
   if (preq->rq_reply.brp_code)
     {
@@ -2136,7 +2135,7 @@ static int send_depend_req(
     {
     log_err(errno, myid, msg_err_malloc);
     pthread_mutex_unlock(pjob->ji_mutex);
-    return PBSE_SYSTEM;
+    return(PBSE_SYSTEM);
     }
 
   for (i = 0;i < PBS_MAXUSER;++i)
@@ -2192,9 +2191,11 @@ static int send_depend_req(
   if ((rc = issue_to_svr(pparent->dc_svr, preq, postfunc)) != PBSE_NONE)
     {
     sprintf(log_buf, "Unable to perform dependency with job %s\n", pparent->dc_child);
-    return rc;
+    free_br(preq);
+    return(rc);
     }
-  return PBSE_NONE;
+
+  return(PBSE_NONE);
   }  /* END send_depend_req() */
 
 
