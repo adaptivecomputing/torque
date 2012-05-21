@@ -2208,24 +2208,24 @@ int send_job_obit_to_ms(
                 /* Don't wait for a reply from Mother Superior since this could lead to a 
                    live lock. That is Mother Superior is waiting for a read from us and
                    we are waiting on this read */
-               /* read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB, &rc);*/
+                /* read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB, &rc);*/
                 /* SUCCESS - no more retries needed */
                 if (LOGLEVEL >= 6)
                   {
                   sprintf(log_buffer, "%s: all tasks complete - purging job as sister: %d",  __func__, rc);
-                  log_event(
-                    PBSEVENT_JOB,
-                    PBS_EVENTCLASS_JOB,
-                    pjob->ji_qs.ji_jobid,
-                    log_buffer);
+                  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
                   }
+
                 close(chan->sock);
+                DIS_tcp_cleanup(chan);
+
                 break;
                 }
               }
             }
           }
         }
+
       if (chan != NULL)
         DIS_tcp_cleanup(chan);
             

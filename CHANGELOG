@@ -9,6 +9,7 @@ evans
 
 4.0.3
   b - fix qdel -p all - was performing a qdel all. TRQ-947
+  b - fix some memory leaks in 4.0.2 on the mom and server TRQ-944
 
 4.0.2
   e - Change so init.d script variables get set based on the configure command.

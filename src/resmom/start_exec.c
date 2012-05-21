@@ -1745,7 +1745,7 @@ void free_sisterlist(
   if (list == NULL)
   return;
 
-  for(i = 0; i < radix; i++)
+  for (i = 0; i < radix; i++)
     {
     if (list[i])
       {
@@ -1777,13 +1777,13 @@ struct radix_buf **allocate_sister_list(
   int                i;
   
   /* create sister lists to send out to intermediate moms */
-  if ((sister_list = calloc((size_t)radix, sizeof(struct radix_buf))) == NULL)
+  if ((sister_list = calloc((size_t)radix, sizeof(struct radix_buf *))) == NULL)
     {
     log_err(ENOMEM,__func__,"");
     return(NULL);
     }
 
-  for(i = 0; i < radix; i++)
+  for (i = 0; i < radix; i++)
     {
     if ((sister_list[i] = calloc(1, sizeof(struct radix_buf))) == NULL)
       {
@@ -6088,7 +6088,7 @@ int start_exec(
     
     sister_job_nodes(pjob, sister_list[0]->host_list, sister_list[0]->port_list);
     
-    free_sisterlist(sister_list, mom_radix);
+    free_sisterlist(sister_list, mom_radix + 1);
     
     /* The first element in the sister list will be the
        originator of the IM_JOIN_JOB_RADIX request. When

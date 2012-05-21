@@ -334,16 +334,13 @@ int DArrayAppend(
       Array->AppendIndex = 0;
       return(FAILURE);
       }
+
     memcpy(tmp, Array->Data, sizeof(Array->Data[0]) * Array->Length);
     free(Array->Data);
     Array->Data = tmp;
     Array->Length = newLength;
     }
 
-  /*
-  assert(Array->AppendIndex >= 0);
-  assert(Array->AppendIndex < Array->Length);
-   */
   Array->Data[Array->AppendIndex++] = Item;
   return(SUCCESS);
   } /* END DArrayAppend */
@@ -1655,9 +1652,8 @@ int handle_job_recovery(
 
           if (DArrayAppend(&Array,pjob) == FAILURE)
             {
-            log_err(ENOMEM,"main","out of memory reloading jobs");
+            log_err(ENOMEM, "main", "out of memory reloading jobs");
             exit(-1);
-
             }
 
           pthread_mutex_unlock(pjob->ji_mutex);

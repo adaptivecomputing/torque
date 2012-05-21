@@ -464,6 +464,7 @@ int run_pelog(
     if (getgroups(num_gids,real_gids) < 0)
       {
       log_err(errno,id,"getgroups failed\n");
+      free(real_gids);
       
       return(-1);
       }
@@ -485,6 +486,7 @@ int run_pelog(
         log_err(errno, id, log_buffer);
       
         undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+        free(real_gids);
       
         return(-1);
         }
@@ -494,6 +496,7 @@ int run_pelog(
       sprintf(log_buffer, "pjob->ji_grpcache is null. check_pwd likely failed.");
       log_err(-1, id, log_buffer);
       undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      free(real_gids);
       return(-1);
       }
     
@@ -508,6 +511,7 @@ int run_pelog(
       log_err(errno, id, log_buffer);
       
       undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      free(real_gids);
       
       return(-1);
       }
@@ -522,6 +526,7 @@ int run_pelog(
       log_err(errno, id, log_buffer);
       
       undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      free(real_gids);
 
       return(-1);
       }
@@ -577,11 +582,13 @@ int run_pelog(
 #endif /* ENABLE_CSA */
 
       undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      free(real_gids);
 
       return(0);
       }
       
     undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+    free(real_gids);
 
     return(pelog_err(pjob,pelog,errno,"cannot stat"));
     }
@@ -605,6 +612,7 @@ int run_pelog(
         (!(sbuf.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH))))
       {
       undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      free(real_gids);
       return(pelog_err(pjob,pelog,-1,"permission Error"));
       }
     }
@@ -618,6 +626,7 @@ int run_pelog(
           (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
         {
         undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+        free(real_gids);
         return(pelog_err(pjob,pelog,-1,"permission Error"));
         }
       }
@@ -627,6 +636,7 @@ int run_pelog(
         (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
       {
       undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      free(real_gids);
       return(pelog_err(pjob,pelog,-1,"permission Error"));
       }
     
@@ -637,6 +647,7 @@ int run_pelog(
       if ((sbuf.st_mode & (S_IROTH | S_IXOTH)) != (S_IROTH | S_IXOTH))
         {
         undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+        free(real_gids);
         return(pelog_err(pjob, pelog, -1, "permission Error"));
         }
       }
@@ -647,6 +658,7 @@ int run_pelog(
   if (fd_input < 0)
     {
     undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+    free(real_gids);
     return(pelog_err(pjob, pelog, -2, "no pro/epilogue input file"));
     }
 
@@ -664,6 +676,7 @@ int run_pelog(
 
     /* switch back to root if necessary */
     undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+    free(real_gids);
 
     act.sa_handler = pelogalm;
 

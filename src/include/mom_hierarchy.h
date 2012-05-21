@@ -138,5 +138,6 @@ node_comm_t *update_current_path(mom_hierarchy_t *);
 int tcp_connect_sockaddr(struct sockaddr *,size_t);
 int write_tcp_reply(struct tcp_chan *chan,int,int,int,int);
 int read_tcp_reply(struct tcp_chan *chan,int,int,int,int *);
+void free_mom_hierarchy(mom_hierarchy_t *);
 
 #endif /* ndef MOM_HIERARCHY_H */

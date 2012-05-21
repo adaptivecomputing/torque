@@ -103,6 +103,46 @@
 
 extern int LOGLEVEL;
 
+
+void free_mom_hierarchy(
+
+  mom_hierarchy_t *mh)
+
+  {
+  resizable_array *paths;
+  resizable_array *levels;
+  node_comm_t     *nc;
+  int              paths_iter = -1;
+  int              levels_iter = -1;
+  int              node_iter = -1;
+
+  while ((paths = (resizable_array *)next_thing(mh->paths, &paths_iter)) != NULL)
+    {
+    levels_iter = -1;
+
+    /* free each level */
+    while ((levels = (resizable_array *)next_thing(paths, &levels_iter)) != NULL)
+      {
+      node_iter = -1;
+
+      /* free each node_comm_t */
+      while ((nc = (node_comm_t *)next_thing(levels, &node_iter)) != NULL)
+        {
+        free(nc);
+        }
+
+      free_resizable_array(levels);
+      }
+
+    free_resizable_array(paths);
+    }
+
+  free(mh);
+  } /* END free_mom_hierarchy() */
+
+
+
+
 mom_hierarchy_t *initialize_mom_hierarchy()
 
   {
