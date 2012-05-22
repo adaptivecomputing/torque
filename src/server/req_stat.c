@@ -1039,15 +1039,7 @@ void stat_update(
         else
           {
           /* save so we can recover resources used */
-          job_save(pjob, SAVEJOB_FULL);
-          }
-#endif    /* USESAVEDRESOURCES */
-
-#ifdef USESAVEDRESOURCES
-        else
-          {
-          /* save so we can recover resources used */
-          job_save(pjob, SAVEJOB_FULL);
+          job_save(pjob, SAVEJOB_FULL, 0);
           }
 #endif    /* USESAVEDRESOURCES */
 

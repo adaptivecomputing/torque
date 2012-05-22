@@ -2436,12 +2436,12 @@ void encode_job_used(
     val = rs->rs_value; /* copy resource pbs_attribute */
 
     rc = rd->rs_encode(
-
            &val,
            phead,
            ad->at_name,
            rd->rs_name,
-           ATR_ENCODE_CLIENT);
+           ATR_ENCODE_CLIENT,
+           ATR_DFLAG_ACCESS);
 
     if (rc < 0)
       break;
