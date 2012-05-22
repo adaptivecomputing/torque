@@ -990,22 +990,14 @@ struct batch_request *alloc_br(
   {
 
   struct batch_request *req = NULL;
-  int rc = PBSE_NONE;
 
-  memmgr *mm = NULL;
-  if ((rc = memmgr_init(&mm, 0)) != PBSE_NONE)
+  if ((req = (struct batch_request *)calloc(1, sizeof(struct batch_request))) == NULL)
     {
-    printf("rc = %d\n", rc);
-    log_err(errno, "alloc_br", "memmgr_init in alloc_br failed");
-    }
-  else if ((req = (struct batch_request *)memmgr_calloc(&mm, 1, sizeof(struct batch_request))) == NULL)
-    {
-    log_err(errno, "alloc_br", msg_err_malloc);
+    log_err(errno, __func__, msg_err_malloc);
     }
   else
     {
 
-    req->mm = mm;
     req->rq_type = type;
 
     req->rq_conn = -1;  /* indicate not connected */
@@ -1065,8 +1057,6 @@ void free_br(
   struct batch_request *preq)
 
   {
-  memmgr *mm = preq->mm;
-
 
   reply_free(&preq->rq_reply);
 
@@ -1193,7 +1183,7 @@ void free_br(
       break;
     }  /* END switch (preq->rq_type) */
 
-  memmgr_destroy(&mm);
+  free(preq);
 
   return;
   }  /* END free_br() */

@@ -10,6 +10,7 @@ evans
 4.0.3
   b - fix qdel -p all - was performing a qdel all. TRQ-947
   b - fix some memory leaks in 4.0.2 on the mom and server TRQ-944
+  b - removed memory manager from alloc_br and free_br to solve a memory leak
   c - TRQ-973. Fix a possibility of a segfault in netcounter_incr()
 
 4.0.2
