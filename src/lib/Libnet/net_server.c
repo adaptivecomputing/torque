@@ -170,7 +170,6 @@ void netcounter_incr(void)
   {
   time_t now;
   time_t lastmin;
-  int    time_diff = 0;
 
   pthread_mutex_lock(nc_list_mutex);
 
@@ -183,19 +182,15 @@ void netcounter_incr(void)
     }
   else
     {
-    time_diff = (int)(now - nc_list[0].time);
-    if (time_diff > 60)
+    memmove(&nc_list[1], &nc_list[0], sizeof(struct netcounter) * 59);
+
+    nc_list[0].time = now;
+    nc_list[0].counter = 1;
+
+    for (i = 1; i < 60; i++)
       {
-      memset(&nc_list, 0, sizeof(nc_list));
-      nc_list[0].time = now;
-      nc_list[0].counter = 1;
-      }
-    else
-      {
-      memmove(&nc_list[time_diff], &nc_list[0], sizeof(struct netcounter)*(60-time_diff));
-      memset(&nc_list[0], 0, sizeof(struct netcounter)*time_diff);
-      nc_list[0].time = now;
-      nc_list[0].counter = 1;
+      nc_list[i].time = 0;
+      nc_list[i].counter = 0;
       }
     }
 
