@@ -96,6 +96,7 @@ const char *clock_mhz              = "clock_mhz";
 const char *reservation_id         = "reservation_id";
 const char *processor_array        = "ProcessorArray";
 const char *processor              = "Processor";
+const char *ProcessorAllocation    = "ProcessorAllocation";
 const char *memory_array           = "MemoryArray";
 const char *memory_name            = "Memory";
 const char *label_array            = "LabelArray";

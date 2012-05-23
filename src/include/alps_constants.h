@@ -113,6 +113,7 @@ extern const char *clock_mhz;
 extern const char *reservation_id;
 extern const char *processor_array;
 extern const char *processor;
+extern const char *ProcessorAllocation;
 extern const char *memory_array;
 extern const char *memory_name;
 extern const char *label_array;

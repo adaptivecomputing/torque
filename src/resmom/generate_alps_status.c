@@ -105,6 +105,24 @@ int process_reservations(
 
 
 
+xmlNode *find_processor_allocation(
+
+  xmlNode *child)
+
+  {
+  xmlNode *processor_allocation;
+
+  for (processor_allocation = child->children; processor_allocation != NULL; processor_allocation = processor_allocation->next)
+    {
+    if (!strcmp(processor_allocation->name, ProcessorAllocation))
+      break;
+    }
+
+  return(processor_allocation);
+  } /* find_processor_allocation() */
+
+
+
 int process_processor_array(
 
   xmlNode  *node,
@@ -126,10 +144,10 @@ int process_processor_array(
       
       /* children would be Processorallocation. If this doesn't exist, then count as
        * available */
-      if ((processor_allocation = child->children) == NULL)
+      if ((processor_allocation = find_processor_allocation(child)) == NULL)
         avail_procs++;
       else if (*rsv_id == NULL)
-        *rsv_id = strdup((char *)xmlGetProp(processor_allocation, (const xmlChar *)reservation_id));
+          *rsv_id = strdup((char *)xmlGetProp(processor_allocation, (const xmlChar *)reservation_id));
       }
     }
 
