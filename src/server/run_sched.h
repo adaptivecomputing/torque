@@ -10,7 +10,7 @@ int schedule_jobs(void);
 
 void notify_listeners(void);
 
-/* static void scheduler_close(int sock); */
+/* static void scheduler_close(); */
 
 /* static void listener_close(int sock); */
 

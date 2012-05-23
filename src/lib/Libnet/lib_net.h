@@ -19,7 +19,7 @@ pbs_net_t get_hostaddr(int *, char *hostname);
 int get_hostaddr_hostent_af(int *, char *hostname, unsigned short *af_family, char **host_addr, int *host_addr_len);
 
 /* from file get_hostname.c */
-int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg); 
+int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg);
 
 /* from file md5.c */
 void MD5Init(MD5_CTX *mdContext);
@@ -73,20 +73,21 @@ void netcounter_get(int netrates[]);
 int init_network(unsigned int port, void *(*readfunc)(void *));
 int check_network_port(unsigned int port);
 int thread_func(int active_sockets, fd_set *select_set);
-int wait_request(time_t waittime, long *SState); 
+int wait_request(time_t waittime, long *SState);
 /* static void accept_conn(void *new_conn); */
 void globalset_add_sock(int sock);
 void globalset_del_sock(int sock);
 int add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
-void close_conn(int sd, int has_mutex); 
-void net_close(int but); 
-pbs_net_t get_connectaddr(int sock, int mutex); 
-int get_connecthost(int sock, char *namebuf, int size); 
+int add_scheduler_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
+void close_conn(int sd, int has_mutex);
+void net_close(int but);
+pbs_net_t get_connectaddr(int sock, int mutex);
+int get_connecthost(int sock, char *namebuf, int size);
 char *netaddr_pbs_net_t(pbs_net_t ipadd);
 
 /* from file net_set_clse.c */
 void net_add_close_func(int, void (*func)(int));
- 
+
 /* from file port_forwarding.c */
 void port_forwarder(struct pfwdsock *socks, int (*connfunc)(char *, int, char *), char *phost, int pport, char *EMsg);
 void set_nodelay(int fd);
@@ -102,12 +103,12 @@ int openrm(char *host, unsigned int port);
 /* static int simplecom(int stream, int com); */
 /* static int simpleget(int stream); */
 int closerm(int stream);
-int downrm(int stream); 
-int configrm(int stream, char *file); 
+int downrm(int stream);
+int configrm(int stream, char *file);
 /* static int doreq(struct out *op, char *line); */
 int addreq(int stream, char *line);
 int allreq(char *line);
-char *getreq(int stream); 
+char *getreq(int stream);
 int flushreq(void);
 int activereq(void);
 void fullresp(int flag);

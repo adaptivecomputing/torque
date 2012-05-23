@@ -159,6 +159,7 @@ extern int  svr_startjob(job *, struct batch_request *, char *, char *);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
 void stream_eof(int, u_long, uint16_t, int);
+extern void scheduler_close();
 
 #ifndef MAX_PATH_LEN
 #define MAX_PATH_LEN 256
@@ -254,7 +255,7 @@ long                    HALockCheckTime = 0;
 long                    HALockUpdateTime = 0;
 char                    HALockFile[MAXPATHLEN+1];
 char                    OriginalPath[MAXPATHLEN+1];
-mutex_t                 EUIDMutex; /* prevents thread from trying to lock the file 
+mutex_t                 EUIDMutex; /* prevents thread from trying to lock the file
                                       from a different euid */
 int                     HALockFD;
 
@@ -376,7 +377,8 @@ static void need_y_response(
 
 int process_pbs_server_port(
      
-  int sock)
+  int sock,
+  int is_scheduler_port)
  
   {
   int          proto_type;
@@ -427,13 +429,25 @@ int process_pbs_server_port(
         addr = (struct sockaddr_in *)&s_addr;
 
         if (proto_type == 0)
-          snprintf(log_buf, sizeof(log_buf),
-              "Socket (%d) close detected from %s", sock, netaddr(addr));
-        else 
+          {
+          /* 
+           * Don't log error if close is on scheduler port.  Scheduler is
+           * responsible for closing the connection
+           */
+          if (!is_scheduler_port)
+            {
+            snprintf(log_buf, sizeof(log_buf),
+                "Socket (%d) close detected from %s", sock, netaddr(addr));
+            log_err(-1, __func__, log_buf);
+            }
+          }
+        else
+          {
           snprintf(log_buf,sizeof(log_buf),
               "Socket (%d) Unknown protocol %d from %s", sock, proto_type, netaddr(addr));
+          log_err(-1, __func__, log_buf);
+          }
 
-        log_err(-1, __func__, log_buf);
         }
 
       rc = PBSE_SOCKET_DATA;
@@ -456,19 +470,32 @@ int process_pbs_server_port(
  * This function is a wrapper for process_pbs_server_port
  * whose signature has been changed to make torques
  * accept process fully multithreaded. 
- * This will be run from wait request after being scheduled
- * by contact_sched
+ * This will be run from contact_sched
  */
 
-void *process_pbs_server_port_scheduler(
+void process_pbs_server_port_scheduler(
     
-  void *new_sock)
+  int *new_sock)
 
   {
-  int sock = *(int *)new_sock;
- 
-  process_pbs_server_port(sock);
-  return(NULL);
+  int rc = PBSE_NONE;
+
+  while ((rc != PBSE_SOCKET_DATA) && (rc != PBSE_SOCKET_INFORMATION)
+        && (rc != PBSE_INTERNAL) && (rc != PBSE_SYSTEM)  && (rc != PBSE_SOCKET_CLOSE))
+    {
+    netcounter_incr();
+    rc = process_pbs_server_port(sock, TRUE);
+    }
+
+  /* 
+   * Socket should have been closed by scheduler, except in error cases,
+   * but we still need to call close_conn() to clean up connections.
+   */
+
+  close_conn(sock, FALSE);
+
+  scheduler_close();
+  return;
   }
 
 
@@ -492,7 +519,7 @@ void *start_process_pbs_server_port(
     {
     netcounter_incr();
 
-    rc = process_pbs_server_port(sock);
+    rc = process_pbs_server_port(sock, FALSE);
     }
 
   close_conn(sock, FALSE);
@@ -587,7 +614,7 @@ int PBSShowUsage(
  */
 
 void parse_command_line(
-    
+
   int   argc,
   char *argv[])
 
@@ -618,7 +645,7 @@ void parse_command_line(
     { "create", RECOV_CREATE },
     { "", RECOV_Invalid }
     };
-  
+
   ForceCreation = FALSE;
 
   while ((c = getopt(argc, argv, "A:a:cd:DefhH:L:l:mM:p:R:S:t:uv-:")) != -1)
@@ -1037,7 +1064,7 @@ void *check_tasks()
     listener_command = SCH_SCHEDULE_TIME;
     pthread_mutex_unlock(listener_command_mutex);
     }
-  
+
   pthread_mutex_unlock(check_tasks_mutex);
 
   return(NULL);
@@ -1059,7 +1086,7 @@ static int start_hot_jobs(void)
   job *pjob;
 
   int  iter = -1;
-  
+
   while ((pjob = next_job(&alljobs,&iter)) != NULL)
     {
 
@@ -1076,7 +1103,7 @@ static int start_hot_jobs(void)
 
       ct++;
       }
-    
+
     pthread_mutex_unlock(pjob->ji_mutex);
     }
 
@@ -1119,11 +1146,11 @@ void *handle_queue_routing_retries(
       {
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
         queue_route(pque);
-      
+
       unlock_queue(pque, __func__, NULL, 0);
       }
     }
-  
+
   return(NULL);
   } /* END handle_queue_routing_retries() */
 
@@ -1390,7 +1417,7 @@ void main_loop(void)
         }
 
       /* If more than _LIMIT seconds since start, stop */
-      if ((c == 0) || 
+      if ((c == 0) ||
           (time_now > server.sv_started + SVR_HOT_LIMIT))
         {
         server_init_type = RECOV_WARM;
@@ -1437,13 +1464,13 @@ void main_loop(void)
       /* at this point kill the threadpool */
       destroy_request_pool();
       }
-    
+
     pthread_mutex_unlock(server.sv_jobstates_mutex);
 
     get_svr_attr_l(SRV_ATR_State, &state);
     usleep(100);
     }    /* END while (*state != SV_STATE_DOWN) */
-  
+
   pthread_cancel(accept_thread_id);
 
   svr_save(&server, SVR_SAVE_FULL); /* final recording of server */
@@ -1457,7 +1484,7 @@ void main_loop(void)
     {
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);
-    
+
     pthread_mutex_unlock(pjob->ji_mutex);
     }
 
@@ -1680,7 +1707,7 @@ int main(
 
   if (recov_svr_attr(server_init_type) == -1)
     {
-    fprintf(stderr,"%s: failed to get server attributes\n", 
+    fprintf(stderr,"%s: failed to get server attributes\n",
       ProgName);
 
     return(1);
@@ -1691,7 +1718,7 @@ int main(
    * If server lockfile pbs_attribute has been set use it.
    * If not use default location for it
    */
-  pthread_mutex_lock(server.sv_attr_mutex); 
+  pthread_mutex_lock(server.sv_attr_mutex);
   if ((server.sv_attr[SRV_ATR_lockfile].at_flags & ATR_VFLAG_SET) &&
                (server.sv_attr[SRV_ATR_lockfile].at_val.at_str))
     {
@@ -1701,7 +1728,7 @@ int main(
 
     if (LockfilePtr[0] == '/')
       {
-      snprintf(lockfile,sizeof(lockfile),"%s",LockfilePtr);     
+      snprintf(lockfile,sizeof(lockfile),"%s",LockfilePtr);
       }
     else
       {
@@ -1723,7 +1750,7 @@ int main(
   snprintf(HALockFile,MAXPATHLEN,"%s", lockfile);
   HALockCheckTime = server.sv_attr[SRV_ATR_LockfileCheckTime].at_val.at_long;
   HALockUpdateTime = server.sv_attr[SRV_ATR_LockfileUpdateTime].at_val.at_long;
-  pthread_mutex_unlock(server.sv_attr_mutex); 
+  pthread_mutex_unlock(server.sv_attr_mutex);
 
   /* apply HA defaults */
 
@@ -1923,19 +1950,19 @@ void check_job_log(
     snprintf(log_buf,sizeof(log_buf),"checking for old job logs in dir '%s' (older than %ld days)",
       path_svrlog,
       keep_days);
-    
+
     log_event(
       PBSEVENT_SYSTEM | PBSEVENT_FORCE,
       PBS_EVENTCLASS_SERVER,
       msg_daemonname,
       log_buf);
-    
+
     if (log_remove_old(path_jobinfo_log, keep_days * SECS_PER_DAY) != 0)
       {
       log_err(-1,"check_job_log","failure occurred when checking for old job logs");
       }
     }
-  
+
   if (max_size != 0)
     {
     if ((job_log_size() >= max_size) &&
@@ -1948,7 +1975,7 @@ void check_job_log(
         PBS_EVENTCLASS_SERVER,
         msg_daemonname,
         "Rolling job log file");
-      
+
       if (roll_depth != -1)
         {
         depth = roll_depth;
@@ -1991,24 +2018,24 @@ void check_log(
     snprintf(log_buf,sizeof(log_buf),"checking for old pbs_server logs in dir '%s' (older than %ld days)",
       path_svrlog,
       keep_days);
-    
+
     log_event(
       PBSEVENT_SYSTEM | PBSEVENT_FORCE,
       PBS_EVENTCLASS_SERVER,
       msg_daemonname,
       log_buf);
-    
+
     if (log_remove_old(path_svrlog, keep_days * SECS_PER_DAY) != 0)
       {
       log_err(-1,"check_log","failure occurred when checking for old pbs_server logs");
       }
     }
-  
+
   if (get_svr_attr_l(SRV_ATR_LogFileMaxSize, &max_size) == PBSE_NONE)
     {
     long roll_depth = 1;
 
-    if ((log_size() >= max_size) && 
+    if ((log_size() >= max_size) &&
         (max_size > 0))
       {
       log_event(
@@ -2016,7 +2043,7 @@ void check_log(
         PBS_EVENTCLASS_SERVER,
         msg_daemonname,
         "Rolling log file");
-      
+
       get_svr_attr_l(SRV_ATR_LogFileRollDepth, &roll_depth);
 
       if ((roll_depth >= INT_MAX) || (roll_depth < 1))
@@ -2029,7 +2056,7 @@ void check_log(
         }
       }
     }
-  
+
 
   /* periodically record the version and loglevel */
   get_svr_attr_str(SRV_ATR_version, &version);
@@ -2066,13 +2093,13 @@ void check_acct_log(
       (keep_days >= 0))
     {
     sprintf(log_buf,"Checking accounting files - keep days = %ld", keep_days);
-    
+
     log_event(
       PBSEVENT_SYSTEM | PBSEVENT_FORCE,
       PBS_EVENTCLASS_SERVER,
       msg_daemonname,
       log_buf);
-     
+
     acct_cleanup(keep_days);
     }
 
@@ -2144,7 +2171,7 @@ static int get_port(
 
 
 /**
- * This function will extract the directory portion of 
+ * This function will extract the directory portion of
  * the given path and copy it into the Dir parameter
  *
  * @param FullPath (I)
@@ -2251,7 +2278,7 @@ int is_ha_lock_file_valid(
   }  /* END is_ha_lock_file_valid() */
 
 
-      
+
 /**
  * Try to release a lock on the given file
  *
@@ -2318,7 +2345,7 @@ int release_file_lock(
 
 
 
-/** 
+/**
  * Try to acquire a lock on the given file
  *
  * @param LockFile (I) the name of the file to lock.
@@ -2339,7 +2366,7 @@ int acquire_file_lock(
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((LockFile == NULL) ||
-      (LockFD == NULL) || 
+      (LockFD == NULL) ||
       (FileType == NULL))
     {
     return(FAILURE);
@@ -2439,15 +2466,15 @@ void *update_ha_lock_thread(
 
     rc = 0;
     LocalErrno = 0;
-    
+
     mutex_lock(&EUIDMutex);
-    
+
     errno = 0;
     if (stat(HALockFile,&statbuf) == 0)
       {
       /* check to make sure that no other process has modified this file
        * since the last time we did */
-      
+
       if ((LastModifyTime > 0) && (LastModifyTime != statbuf.st_mtime))
         {
         snprintf(EMsg,sizeof(EMsg),"update time changed unexpectedly");
@@ -2461,7 +2488,7 @@ void *update_ha_lock_thread(
         LastModifyTime  = time(NULL);
         timebuf.actime  = LastModifyTime;
         timebuf.modtime = LastModifyTime;
-        
+
         errno = 0;
         rc = utime(HALockFile,&timebuf);
         LocalErrno = errno;
@@ -2494,7 +2521,7 @@ void *update_ha_lock_thread(
           EMsg,
           LocalErrno,
           ErrorString);
-        
+
         log_err(LocalErrno, __func__, log_buf);
         }
       else
@@ -2502,7 +2529,7 @@ void *update_ha_lock_thread(
         sprintf(log_buf,"could not update HA lock file '%s' in heartbeat thread (%s)",
           HALockFile,
           EMsg);
-        
+
         log_err(-1, __func__, log_buf);
         }
 
@@ -2541,7 +2568,7 @@ int start_update_ha_lock_thread()
     return(FAILURE);
     }
 
-  snprintf(smallBuf,sizeof(smallBuf),"%ld\n",(long)sid); 
+  snprintf(smallBuf,sizeof(smallBuf),"%ld\n",(long)sid);
   if (write(fds,smallBuf,strlen(smallBuf)) != (ssize_t)strlen(smallBuf))
     {
     log_err(-1, __func__, "Couldn't write the pid to the lockfile\n");
@@ -2644,7 +2671,7 @@ static void lock_out_ha()
       usleep(DEF_USPERSECOND * HALockCheckTime);
 
       time_now = time(NULL);
-      
+
       UseFLock = FALSE;
       if (MutexLockFD > 0)
         close(MutexLockFD);
@@ -2661,11 +2688,11 @@ static void lock_out_ha()
       while (acquire_file_lock(MutexLockFile,&MutexLockFD,"HA") == FAILURE)
         {
         sprintf(log_buf,"Could not acquire HA flock--trying again in 1 second\n");
-        
+
         usleep(DEF_USPERSECOND);
         }
       }
-    
+
     /* check if file lock exists */
 
     if (stat(HALockFile,&StatBuf) == 0)
@@ -2684,21 +2711,21 @@ static void lock_out_ha()
       /* update the file to mark it as ours */
 
       utime(HALockFile,NULL);
-      
+
       FilePossession = TRUE;
       }
     else
       {
       /* file doesn't exist--wait required amount of time and check again */
-      
+
       if (FileIsMissing == FALSE)
         {
         FileIsMissing = TRUE;
-        
+
         /* if we don't have a mutex to protect file creation
          * race conditions, we need to wait and check again:
          * otherwise we can safely create it immediately */
-        
+
         if (UseFLock == FALSE)
           continue;
         }
@@ -2707,33 +2734,33 @@ static void lock_out_ha()
        * probably safe to create it */
 
       HALockFD = open(HALockFile,O_CREAT|O_EXCL|O_RDONLY,0600);
-      
+
       if (HALockFD < 0)
         {
         sprintf(log_buf,"could not create HA lock file '%s'--errno %d:%s",
           HALockFile,
           errno,
           strerror(errno));
-        
+
         continue;
         }
-      
+
       FilePossession = TRUE;
       }
-    
+
     if (FilePossession == TRUE)
       {
       /* start heartbeat thread */
-      
+
       start_update_ha_lock_thread();
       }
-    
+
     if (UseFLock == TRUE)
       close(MutexLockFD); /* unlock file mutex */
     } /* END while (!FilePossession) */
-  
+
   /* we have the file lock--go ahead and log this fact */
-  
+
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
@@ -2758,35 +2785,35 @@ static int daemonize_server(
   int *sid)           /* O */
 
   {
-  int    pid;          
+  int    pid;
   FILE  *dummyfile;
-  
+
   if (!DoBackground)
-    {  
+    {
     /* handle foreground (i.e. debug mode) */
-    
+
     *sid = getpid();
-    
+
     setvbuf(stdout,NULL,_IOLBF,0);
     setvbuf(stderr,NULL,_IOLBF,0);
-    
+
     return(SUCCESS);
     }
-  
+
   /* run pbs_server in the background */
-  
+
   /* fork to disconnect from terminal */
-  
+
   if ((pid = fork()) == -1)
     {
     log_err(errno, __func__, "cannot fork into background");
-    
+
     return(FAILURE);
    }
-  
-  
+
+
   if (pid != 0)
-    {        
+    {
      /* exit if parent */
 
      log_event(
@@ -2794,41 +2821,41 @@ static int daemonize_server(
        PBS_EVENTCLASS_SERVER,
        __func__,
        "INFO:      parent is exiting");
-   
+
      exit(0);
     }
 
   /* NOTE: setsid() disconnects from controlling-terminal */
-  
+
   if ((*sid = setsid()) == -1)
     {
     log_err(errno, __func__, "Could not disconnect from controlling terminal");
 
     return(FAILURE);
-    }    
+    }
 
   /* disconnect stdin,stdout,stderr */
 
   fclose(stdin);
   fclose(stdout);
   fclose(stderr);
-    
+
   dummyfile = fopen("/dev/null","r");
   assert((dummyfile != 0) && (fileno(dummyfile) == 0));
-    
+
   dummyfile = fopen("/dev/null","w");
   assert((dummyfile != 0) && (fileno(dummyfile) == 1));
 
   dummyfile = fopen("/dev/null","w");
   assert((dummyfile != 0) && (fileno(dummyfile) == 2));
-    
+
   if ((pid = fork()) == -1)
     {
     log_err(errno, __func__, "cannot fork into background");
-      
+
     return(FAILURE);
     }
-    
+
   if (pid != 0)
     {
     /* exit if parent */
@@ -2838,10 +2865,10 @@ static int daemonize_server(
       PBS_EVENTCLASS_SERVER,
       __func__,
       "INFO:      parent is exiting");
-      
+
     exit(0);
     }
-  
+
   /* update the sid (pid written to the lock file) so that
    * the correct pid is present */
   *sid = getpid();
@@ -2851,7 +2878,7 @@ static int daemonize_server(
     PBS_EVENTCLASS_SERVER,
     __func__,
     "INFO:      child process in background");
-    
+
   return(SUCCESS);
   } /* END daemonize_server() */
 
@@ -2877,39 +2904,39 @@ int get_file_info(
   long          *FileSize,    /* O (optional */
   bool_t        *IsExe,       /* O (optional */
   bool_t        *IsDir)       /* O (optional */
-    
+
   {
   int          rc;
   char        *ptr;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
-  
+
   struct stat  sbuf;
-  
+
   if (IsExe != NULL)
     *IsExe = FALSE;
 
   if (ModifyTime != NULL)
     *ModifyTime = 0;
-  
+
   if (FileSize != NULL)
     *FileSize = 0;
-  
+
   if (IsDir != NULL)
     *IsDir = FALSE;
-  
+
   if ((FileName == NULL) || (FileName[0] == '\0'))
     {
-    return(FAILURE);   
+    return(FAILURE);
     }
 
   /* FORMAT:   <FILENAME>[ <ARG>]... */
-  
+
   /* NOTE:  mask off, then restore possible args */
   ptr = strchr(FileName,' ');
-  
+
   if (ptr != NULL)
     *ptr = '\0';
-  
+
   rc = stat(FileName,&sbuf);
 
   if (rc == -1)
@@ -2918,22 +2945,22 @@ int get_file_info(
       FileName,
       errno,
       strerror(errno));
-    
+
     log_err(errno, __func__, log_buf);
-    
+
     return(FAILURE);
     }
-  
+
   if (ModifyTime != NULL)
     {
     *ModifyTime = (unsigned long)sbuf.st_mtime;
     }
-  
+
   if (FileSize != NULL)
     {
     *FileSize = (long)sbuf.st_size;
     }
-  
+
   if (IsExe != NULL)
     {
     if (sbuf.st_mode & S_IXUSR)
@@ -2941,7 +2968,7 @@ int get_file_info(
     else
       *IsExe = FALSE;
     }
-  
+
   if (IsDir != NULL)
    {
    if (sbuf.st_mode & S_IFDIR)
@@ -2949,7 +2976,7 @@ int get_file_info(
    else
      *IsDir = FALSE;
    }
-  
+
   return(SUCCESS);
   } /* end get_file_info() */
 
@@ -2975,16 +3002,16 @@ int get_full_path(
   char    tmpPath[MAX_LINE];
   bool_t  IsExe = FALSE;
   bool_t  IsDir = FALSE;
-  
+
   if (Cmd[0] == '/')
     {
     /* absolute path specified */
-    
+
     if (get_file_info(Cmd,NULL,NULL,&IsExe,&IsDir) == FAILURE)
       {
       return(FAILURE);
       }
-    
+
     if ((IsExe == FALSE) && (IsDir == FALSE))
       {
       return(FAILURE);
@@ -2994,7 +3021,7 @@ int get_full_path(
 
     return(SUCCESS);
     }
-    
+
   PathLocation = strtok_r(OriginalPath,Delims,&TokPtr);
 
   while (PathLocation != NULL)
@@ -3002,10 +3029,10 @@ int get_full_path(
     if (strlen(PathLocation) <= 0)
       {
       PathLocation = strtok_r(NULL,Delims,&TokPtr);
-      
+
       continue;
       }
-    
+
     if (PathLocation[strlen(PathLocation) - 1] == '/')
       {
       sprintf(tmpPath,"%s%s",
@@ -3018,26 +3045,26 @@ int get_full_path(
         PathLocation,
         Cmd);
       }
-    
+
     if (get_file_info(tmpPath,NULL,NULL,&IsExe,NULL) == FAILURE)
       {
       PathLocation = strtok_r(NULL,Delims,&TokPtr);
-      
+
       continue;
      }
-    
+
     if (IsExe == FALSE)
       {
       PathLocation = strtok_r(NULL,Delims,&TokPtr);
-      
+
       continue;
       }
-    
+
     snprintf(GoodCmd,GoodCmdLen,"%s",tmpPath);
-    
+
     return(SUCCESS);
     } /* END while (PathLocation != NULL) */
-  
+
   return(FAILURE);
   } /* END get_full_path() */
 
@@ -3052,65 +3079,65 @@ int svr_restart()
 
   {
   int   rc;
-  
+
   char  FullCmd[MAX_LINE];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
-  
+
   if (get_full_path(
         ArgV[0],
         FullCmd,
         sizeof(FullCmd)) == FAILURE)
     {
     sprintf(log_buf, "ALERT:      cannot locate full path for '%s'\n", ArgV[0]);
-    
+
     log_err(-1, __func__, log_buf);
 
     exit(-10);
     }
-  
+
   /* shut down network connections */
   net_close(-1);   /* close all network connections */
-  
-  /* copying FullCmd to ArV[0] is necessary for multiple restarts because 
+
+  /* copying FullCmd to ArV[0] is necessary for multiple restarts because
    * the path changes when we run pbs_server in the background. */
-  
+
   if (strcmp(FullCmd,ArgV[0]) != 0)
     {
     free(ArgV[0]);
-    
+
     ArgV[0] = calloc(sizeof(char), (strlen(FullCmd) + 1));
-    
+
     if (ArgV[0] == NULL)
       {
       /* could not calloc */
-      
+
       log_err(errno, __func__, "ERROR:     cannot allocate memory for full command, cannot restart\n");
-      
+
       exit(-10);
       }
-    
+
     strcpy(ArgV[0],FullCmd);
     }
 
   sprintf(log_buf, "INFO:     about to exec '%s'\n", ArgV[0]);
 
   log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-  
+
   pthread_mutex_lock(log_mutex);
   log_close(1);
   pthread_mutex_unlock(log_mutex);
-  
+
   if ((rc = execv(FullCmd,ArgV)) == -1)
     {
     /* exec failed */
-    
+
     exit(-10);
     }
-  
+
   /* NOT REACHED */
-  
+
   exit(0);
-  
+
   return(SUCCESS);
   }  /* END svr_restart() */
 
@@ -3162,11 +3189,11 @@ void restore_attr_default(
 
       server.sv_attr[SRV_ATR_LogLevel].at_val.at_long = 0;
 
-      break; 
+      break;
 
     default:
 
-      /* should never get here, but if we do then reset the flags so the user knows 
+      /* should never get here, but if we do then reset the flags so the user knows
        * that the value hasn't been cleared */
 
       attr->at_flags |= ATR_VFLAG_SET;

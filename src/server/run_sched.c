@@ -123,7 +123,6 @@ extern pthread_mutex_t *scheduler_sock_jobct_mutex;
 /* Functions private to this file */
 
 static int  put_4byte(int sock, unsigned int val);
-static void scheduler_close(int);
 static void listener_close(int);
 
 
@@ -159,9 +158,9 @@ const char *PSchedCmdType[] =
  * contact_sched - open connection to the scheduler and send it a command
  */
 
-static int contact_sched(
+void *contact_sched(
 
-  int cmd)  /* I */
+  void *new_cmd)  /* I */
 
   {
   int   sock;
@@ -170,6 +169,7 @@ static int contact_sched(
   char  EMsg[1024];
 
   char  log_buf[LOCAL_LOG_BUF_SIZE];
+  int cmd = *(int *)new_cmd;
 
   /* connect to the Scheduler */
   sock = client_to_svr(pbs_scheduler_addr, pbs_scheduler_port, 1, EMsg);
@@ -181,19 +181,24 @@ static int contact_sched(
     return(-1);
     }
 
-  add_conn(
+    /* Thread exit */
+    return(NULL);
+    }
+  add_scheduler_conn(
     sock,
     FromClientDIS,
     pbs_scheduler_addr,
     pbs_scheduler_port,
     PBS_SOCK_INET,
-    process_pbs_server_port_scheduler);
+    NULL);
+
+  pthread_mutex_lock(scheduler_sock_jobct_mutex);
+  scheduler_sock = sock;
+  pthread_mutex_unlock(scheduler_sock_jobct_mutex);
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
   svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-
-  net_add_close_func(sock, scheduler_close);
 
   /* send command to Scheduler */
 
@@ -207,14 +212,24 @@ static int contact_sched(
 
     close_conn(sock, FALSE);
 
-    return(-1);
+    /* Thread exit */
+    return(NULL);
     }
-    
+
+  /*
+   * call process_pbs_server_port_scheduler which will
+   * handle 1 or more batch requests that may be received
+   * from the scheduler.
+   */
+
+  process_pbs_server_port_scheduler(sock);
+
   sprintf(log_buf, msg_sched_called, (cmd != SCH_ERROR) ? PSchedCmdType[cmd] : "ERROR");
 
   log_event(PBSEVENT_SCHED,PBS_EVENTCLASS_SERVER,server_name,log_buf);
 
-  return (sock);
+  /* Thread exit */
+  return(NULL);
   }  /* END contact_sched() */
 
 
@@ -237,6 +252,9 @@ int schedule_jobs(void)
 
   static int first_time = 1;
   int tmp_sched_sock = -1;
+  pthread_t tid;
+  pthread_attr_t t_attr;
+  int   *new_cmd = NULL;
 
   pthread_mutex_lock(svr_do_schedule_mutex);
 
@@ -257,15 +275,36 @@ int schedule_jobs(void)
     tmp_sched_sock = scheduler_sock;
   pthread_mutex_unlock(scheduler_sock_jobct_mutex);
 
-  if (tmp_sched_sock != -1)
+  if (tmp_sched_sock == -1)
     {
-    if ((tmp_sched_sock = contact_sched(cmd)) < 0)
+    if (pthread_attr_init(&t_attr) != 0)
       {
-      return(-1);
+      /* Can not init thread attribute structure */
+      perror("could not create listener thread for scheduler");
+      log_err(-1, __func__, "Failed to create listener thread for scheduler");
       }
-    pthread_mutex_lock(scheduler_sock_jobct_mutex);
-    scheduler_sock = tmp_sched_sock;
-    pthread_mutex_unlock(scheduler_sock_jobct_mutex);
+    else if (pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED) != 0)
+      {
+      /* Can not set thread initial state as detached */
+      pthread_attr_destroy(&t_attr);
+      perror("could not detach listener thread for scheduler");
+      log_err(-1, __func__, "Failed to detach listener thread for scheduler");
+      }
+    else
+      {
+      new_cmd = (int *)calloc(1, sizeof(int));
+      *new_cmd = cmd;
+
+      if (pthread_create(&tid, &t_attr, contact_sched, (void *)new_cmd)
+   != 0)
+        {
+        perror("could not start listener thread for scheduler");
+        log_err(-1, __func__, "Failed to start listener thread for scheduler");
+      return(-1);
+        }
+      }
+
+    pthread_attr_destroy(&t_attr);
 
     first_time = 0;
 
@@ -311,7 +350,7 @@ static int contact_listener(
     listener_command = SCH_SCHEDULE_FIRST;
     pthread_mutex_unlock(listener_command_mutex);
     }
- 
+
   /* connect to the Listener */
   sock = client_to_svr(listener_conns[l_idx].address,
                        listener_conns[l_idx].port, 1, EMsg);
@@ -357,7 +396,7 @@ static int contact_listener(
   if (put_4byte(sock, listener_command) < 0)
     {
     pthread_mutex_unlock(listener_command_mutex);
-    
+
     sprintf(tmpLine, "%s %d - port %d",
             msg_listnr_nocall,
             l_idx + 1,
@@ -366,7 +405,7 @@ static int contact_listener(
     log_err(errno, __func__, tmpLine);
 
     close_conn(sock, FALSE);
-  
+
 
     return(-1);
     }
@@ -419,10 +458,7 @@ void notify_listeners(void)
 /*
  * scheduler_close - connection to scheduler has closed, clear scheduler_called
  */
-
-static void scheduler_close(
-
-  int sock)
+void scheduler_close()
 
   {
   pthread_mutex_lock(scheduler_sock_jobct_mutex);
@@ -450,7 +486,7 @@ static void scheduler_close(
     listener_command = SCH_SCHEDULE_RECYC;
     pthread_mutex_unlock(listener_command_mutex);
     }
-    
+
   pthread_mutex_unlock(scheduler_sock_jobct_mutex);
 
   return;

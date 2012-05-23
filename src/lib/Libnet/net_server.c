@@ -819,20 +819,21 @@ void globalset_del_sock(
 
 
 /*
- * add_conn - add a connection to the svr_conn array.
+ * add_connection - add a connection to the svr_conn array.
  * The params addr and port are in host order.
  *
  * NOTE:  This routine cannot fail.
  */
 
-int add_conn(
+int add_connection(
 
   int            sock,    /* socket associated with connection */
   enum conn_type type,    /* type of connection */
   pbs_net_t      addr,    /* IP address of connected host */
   unsigned int   port,    /* port number (host order) on connected host */
   unsigned int   socktype, /* inet or unix */
-  void *(*func)(void *))  /* function to invoke on data rdy to read */
+  void *(*func)(void *),  /* function to invoke on data rdy to read */
+  int            add_wait_request) /* True to add into global select set */
 
   {
   if (num_connections_mutex == NULL)
@@ -845,7 +846,15 @@ int add_conn(
   num_connections++;
   pthread_mutex_unlock(num_connections_mutex);
 
-  globalset_add_sock(sock);
+  if (add_wait_request)
+    {
+    globalset_add_sock(sock);
+    }
+  else
+    {
+    /* just to make sure it's cleared */
+    globalset_del_sock(sock);
+    }
 
   pthread_mutex_lock(svr_conn[sock].cn_mutex);
 
@@ -887,7 +896,53 @@ int add_conn(
   pthread_mutex_unlock(svr_conn[sock].cn_mutex);
 
   return PBSE_NONE;
+  }  /* END add_connection() */
+
+
+
+/*
+ * add_conn - add a connection to the svr_conn array.
+ * The params addr and port are in host order.
+ *
+ * NOTE:  This routine cannot fail.
+ */
+
+int add_conn(
+
+  int            sock,    /* socket associated with connection */
+  enum conn_type type,    /* type of connection */
+  pbs_net_t      addr,    /* IP address of connected host */
+  unsigned int   port,    /* port number (host order) on connected host */
+  unsigned int   socktype, /* inet or unix */
+  void *(*func)(void *))  /* function to invoke on data rdy to read */
+
+  {
+  return(add_connection(sock, type, addr, port, socktype, func, TRUE));
   }  /* END add_conn() */
+
+
+
+/*
+ * add_scheduler_conn - add a connection to the svr_conn array.
+ * The params addr and port are in host order.
+ * This version is specific to connections the server makes to the scheduler.
+ * These connections must be outside the control of wait_request().
+ *
+ * NOTE:  This routine cannot fail.
+ */
+
+int add_scheduler_conn(
+
+  int            sock,    /* socket associated with connection */
+  enum conn_type type,    /* type of connection */
+  pbs_net_t      addr,    /* IP address of connected host */
+  unsigned int   port,    /* port number (host order) on connected host */
+  unsigned int   socktype, /* inet or unix */
+  void *(*func)(void *))  /* function to invoke on data rdy to read */
+
+  {
+  return(add_connection(sock, type, addr, port, socktype, func, FALSE));
+  }  /* END add_scheduler_conn() */
 
 
 

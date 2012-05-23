@@ -25,7 +25,7 @@ pthread_mutex_t *scheduler_sock_jobct_mutex;
 pthread_mutex_t *listener_command_mutex;
 
 
-void *process_pbs_server_port(void *new_sock)
+int process_pbs_server_port(int sock, int is_scheduler_port)
   {
   fprintf(stderr, "The call to process_pbs_server_port to be mocked!!\n");
   exit(1);
@@ -81,7 +81,7 @@ void net_add_close_func(int sd, void (*func)(int))
 
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
-void *process_pbs_server_port_scheduler(void *new_sock)
+void process_pbs_server_port_scheduler(int sock)
   {
   return(NULL);
   }
