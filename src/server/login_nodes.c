@@ -266,4 +266,15 @@ struct pbsnode *get_next_login_node(
   } /* END get_next_login_node() */
 
 
+int login_node_count()
+
+  {
+  int count = 0;
+
+  pthread_mutex_lock(logins.ln_mutex);
+  count = logins.ra->num;
+  pthread_mutex_unlock(logins.ln_mutex);
+
+  return(count);
+  } /* END login_node_count() */
 

@@ -3684,63 +3684,6 @@ int is_compute_node(
 
 
 
-int set_first_node_properties(
-    
-  char *spec_param,
-  char *first_node_prop,
-  int   prop_space)
-
-  {
-  int spec_len = strlen(spec_param);
-  int i;
-  int prop_index = 0;
-  int rc = PBSE_NONE;
-
-  for (i = 0; i < spec_len; i++)
-    {
-    if (spec_param[i] == '+')
-      break;
-
-    while (spec_param[i] == ':')
-      {
-      i++;
-
-      if ((isdigit(spec_param[i]) == FALSE) &&
-          (is_reserved_property(spec_param + i) == FALSE))
-        {
-        /* seperate multiple properties with ':' */
-        if (prop_index > 0)
-          first_node_prop[prop_index++] = ':';
-
-        /* copy the property */
-        while (i < spec_len)
-          {
-          if (prop_index >= prop_space - 1)
-            {
-            rc = -1;
-            break;
-            }
-
-          if (spec_param[i] == ':')
-            break;
-
-          first_node_prop[prop_index] = spec_param[i];
-
-          prop_index++;
-          i++;
-          }
-        }
-      }
-    }
-
-  first_node_prop[prop_index] = '\0';
-
-  return(rc);
-  } /* END set_first_node_properties() */
-
-
-
-
 void release_node_allocation(
     
   node_job_add_info *naji)
@@ -3768,7 +3711,7 @@ void release_node_allocation(
 int add_login_node_if_needed(
 
   char              **first_node_name_ptr,
-  char               *first_node_prop,
+  char               *login_prop,
   node_job_add_info  *naji)
 
   {
@@ -3793,9 +3736,9 @@ int add_login_node_if_needed(
 
   if (need_to_add_login == TRUE)
     {
-    if (first_node_prop[0] != '\0')
+    if (login_prop != NULL)
       {
-      proplist(&first_node_prop, &prop, &dummy1, &dummy2);
+      proplist(&login_prop, &prop, &dummy1, &dummy2);
       }
 
 
@@ -3847,12 +3790,12 @@ int node_spec(
   char              *ProcBMStr,  /* I */
   char              *FailNode,   /* O (optional,minsize=1024) */
   node_job_add_info *naji,       /* O (optional) */
-  char              *EMsg)       /* O (optional,minsize=1024) */
+  char              *EMsg,       /* O (optional,minsize=1024) */
+  char              *login_prop) /* I (optional) */
 
   {
   struct pbsnode     *pnode;
   char                first_node_name[PBS_MAXHOSTNAME + 1];
-  char                first_node_prop[PBS_MAXHOSTNAME];
   char               *first_name_ptr;
   node_iterator       iter;
   char                log_buf[LOCAL_LOG_BUF_SIZE];
@@ -3892,15 +3835,15 @@ int node_spec(
 
   if (cray_enabled == TRUE)
     {
-    set_first_node_properties(spec_param, first_node_prop, sizeof(first_node_prop));
-
     first_name_ptr = first_node_name;
-    if (add_login_node_if_needed(&first_name_ptr, first_node_prop, naji) != PBSE_NONE)
+
+    if (add_login_node_if_needed(&first_name_ptr, login_prop, naji) != PBSE_NONE)
       {
       snprintf(log_buf, sizeof(log_buf), 
         "Couldn't find an acceptable login node for spec '%s' with feature request '%s'",
         spec_param,
-        first_node_prop);
+        (login_prop != NULL) ? login_prop : "null");
+
       log_err(-1, __func__, log_buf);
       return(-1);
       }
@@ -4993,6 +4936,7 @@ int set_nodes(
   int                NCount;
   short              newstate;
 
+  char              *login_prop = NULL;
   char              *gpu_str = NULL;
   char               ProcBMStr[MAX_BM];
   char               log_buf[LOCAL_LOG_BUF_SIZE];
@@ -5025,8 +4969,11 @@ int set_nodes(
 
   naji = calloc(1, sizeof(node_job_add_info));
 
+  if (pjob->ji_wattr[JOB_ATR_login_prop].at_flags & ATR_VFLAG_SET)
+    login_prop = pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str;
+
   /* allocate nodes */
-  if ((i = node_spec(spec, 1, 1, ProcBMStr, FailHost, naji, EMsg)) == 0) /* check spec */
+  if ((i = node_spec(spec, 1, 1, ProcBMStr, FailHost, naji, EMsg, login_prop)) == 0) /* check spec */
     {
     /* no resources located, request failed */
     if (EMsg != NULL)
@@ -5318,7 +5265,7 @@ int node_avail_complex(
   {
   int ret;
 
-  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL);
+  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL);
 
   *navail = ret;
   *nalloc = 0;
@@ -5499,7 +5446,7 @@ int node_reserve(
 
   naji = calloc(1, sizeof(node_job_add_info));
 
-  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL)) >= 0)
+  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL)) >= 0)
     {
     /*
     ** Zero or more of the needed Nodes are available to be

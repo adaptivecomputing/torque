@@ -599,7 +599,8 @@ int create_alps_reservation(
     {
     rc = execute_reservation(command->str, reservation_id);
 
-    usleep(100);
+    if (rc != PBSE_NONE)
+      usleep(100);
     }
 
   free_dynamic_string(command);
@@ -615,7 +616,8 @@ int create_alps_reservation(
       {
       rc = confirm_reservation(jobid, *reservation_id, pagg_id_value, apbasil_path, apbasil_protocol);
 
-      usleep(100);
+      if (rc != PBSE_NONE)
+        usleep(100);
       }
     }
 

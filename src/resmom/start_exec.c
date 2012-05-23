@@ -2820,6 +2820,8 @@ void handle_reservation(
   long long  pagg = 0;
   int        j;
   char      *rsv_id = NULL;
+  
+  sjr->sj_session = setsid();
 
   if (is_login_node == TRUE)
     {
@@ -2827,7 +2829,7 @@ void handle_reservation(
     /* Get a jobid from the system */
     pagg = get_jobid(pjob->ji_qs.ji_jobid);
 #else
-    pagg = rand();
+    pagg = sjr->sj_session;
 #endif /* USEJOBCREATE */
     
     sjr->sj_jobid = pagg;
@@ -2836,7 +2838,6 @@ void handle_reservation(
     }
 
  /* set up the job session (update sjr) */
-  sjr->sj_session = setsid();
   memcpy(TJE->sjr, sjr, sizeof(struct startjob_rtn));
     
   if (is_login_node == TRUE)
@@ -4475,8 +4476,6 @@ int start_process(
   int           fd2;
   u_long        ipaddr;
   unsigned int  momport = 0;
-  char         *rsv_id;
-  long long     pagg;
 
   struct  startjob_rtn sjr =
     {
@@ -5053,49 +5052,7 @@ int start_process(
    * directly to fd 2, with a \n, and ended with fsync(2)
    *******************************************************/
 
-    sjr.sj_session = setsid();
-
-    if (is_login_node == TRUE)
-      {
-#ifdef USEJOBCREATE
-      pagg = pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll;
-#else
-      pagg = 0;
-#endif
-      j = create_alps_reservation(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
-          pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-          pjob->ji_qs.ji_jobid,
-          apbasil_path,
-          apbasil_protocol,
-          pagg,
-          &rsv_id);
-      
-      if (rsv_id != NULL)
-        {
-        pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
-        pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsv_id;
-        }
-      
-      if (j < 0)
-        snprintf(log_buffer, sizeof(log_buffer),
-          "Couldn't create the reservation for job %s",
-          pjob->ji_qs.ji_jobid);
-      }
-    else
-      j = 0; 
-
-  if (j < 0)
-    {
-    if (write(2, log_buffer, strlen(log_buffer)) == -1)
-      {
-      }
-
-    fsync(2);
-
-    log_err(errno, __func__, log_buffer);
-
-    starter_return(kid_write, kid_read, JOB_EXEC_FAIL2, &sjr);
-    }
+  sjr.sj_session = setsid();
 
   ptask->ti_qs.ti_sid = sjr.sj_session;
 

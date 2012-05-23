@@ -103,6 +103,7 @@ typedef struct login_holder
 
 extern login_holder logins;
 
+int  login_node_count();
 void initialize_login_holder();
 int  add_to_login_holder(struct pbsnode *pnode);
 struct pbsnode *get_next_login_node(struct prop *needed);

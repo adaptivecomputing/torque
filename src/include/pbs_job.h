@@ -368,6 +368,7 @@ enum job_atr
   JOB_ATR_arguments,
   JOB_ATR_reservation_id,
   JOB_ATR_login_node_id,
+  JOB_ATR_login_prop,
 #include "site_job_attr_enum.h"
 
   JOB_ATR_UNKN,  /* the special "unknown" type    */

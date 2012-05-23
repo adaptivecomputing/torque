@@ -2152,6 +2152,18 @@ int setup_nodes(void)
     free_attrlist(&atrlist);
     }  /* END for (linenum) */
 
+  if (cray_enabled == TRUE)
+    {
+    if (login_node_count() == 0)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "pbs_server is Cray enabled but no login nodes are configured. Jobs cannot run. Exiting");
+      log_err(-1, __func__, log_buf);
+
+      return(-1);
+      }
+    }
+
   fclose(nin);
 
   nin = fopen(path_nodestate, "r");
