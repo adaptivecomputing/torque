@@ -176,14 +176,11 @@ void *contact_sched(
 
   if (sock < 0)
     {
-    /* FAILURE */
-
-    return(-1);
-    }
-
     /* Thread exit */
+
     return(NULL);
     }
+
   add_scheduler_conn(
     sock,
     FromClientDIS,

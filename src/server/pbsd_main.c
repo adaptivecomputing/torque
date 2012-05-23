@@ -479,6 +479,7 @@ void process_pbs_server_port_scheduler(
 
   {
   int rc = PBSE_NONE;
+  int sock = *new_sock;
 
   while ((rc != PBSE_SOCKET_DATA) && (rc != PBSE_SOCKET_INFORMATION)
         && (rc != PBSE_INTERNAL) && (rc != PBSE_SYSTEM)  && (rc != PBSE_SOCKET_CLOSE))
