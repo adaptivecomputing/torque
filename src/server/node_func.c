@@ -1989,11 +1989,15 @@ int setup_nodes(void)
       else
         {
         /* old style properity */
-
-        if (propstr[0] != '\0')
-          strcat(propstr, ",");
-
-        strcat(propstr, token);
+        if (!strcmp(token, alps_starter_feature))
+          is_alps_starter = TRUE;
+        else
+          {
+          if (propstr[0] != '\0')
+            strcat(propstr, ",");
+          
+          strcat(propstr, token);
+          }
         }
       }    /* END while(1) */
 
@@ -2003,8 +2007,6 @@ int setup_nodes(void)
       {
       if (!strcmp(propstr, alps_reporter_feature))
         is_alps_reporter = TRUE;
-      else if (!strcmp(propstr, alps_starter_feature))
-        is_alps_starter = TRUE;
       else
         {
         pal = attrlist_create(ATTR_NODE_properties, 0, strlen(propstr) + 1);
@@ -2795,7 +2797,7 @@ struct pbsnode *get_my_next_alps_node(
   unlock_node(pnode, __func__, NULL, 0);
 
   return(alps_node);
-  } /* END get_my_nexT_alps_node() */
+  } /* END get_my_next_alps_node() */
 
 
 
@@ -2839,6 +2841,8 @@ struct pbsnode *next_node(
     } /* END first iteration */
   else
     {
+    long cray_enabled = FALSE;
+
     /* if current is a numa subnode, go back to the parent */
     if ((iter->numa_index >= 0) ||
         (iter->alps_index >= 0))
@@ -2849,21 +2853,42 @@ struct pbsnode *next_node(
       current = tmp;
       }
 
+    get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
     /* move to the next host or get my next node board? */
-    if (iter->alps_index >= 0)
+    if (cray_enabled == TRUE)
       {
-      if ((next = get_my_next_alps_node(iter, current)) == NULL)
+      if (current->nd_is_alps_reporter == TRUE)
+        {
+        if ((next = get_my_next_alps_node(iter, current)) == NULL)
+          {
+          iter->alps_index = -1;
+          
+          pthread_mutex_lock(an->allnodes_mutex);
+          next = next_thing(an->ra, &iter->node_index);
+          pthread_mutex_unlock(an->allnodes_mutex);
+          
+          if (next != NULL)
+            {
+            lock_node(next, __func__, NULL, 0);
+            
+            if (next->nd_is_alps_reporter)
+              next = get_my_next_alps_node(iter, next);
+            }
+          }
+        }
+      else
         {
         iter->alps_index = -1;
-
+        
         pthread_mutex_lock(an->allnodes_mutex);
         next = next_thing(an->ra, &iter->node_index);
         pthread_mutex_unlock(an->allnodes_mutex);
-
+        
         if (next != NULL)
           {
           lock_node(next, __func__, NULL, 0);
-
+          
           if (next->nd_is_alps_reporter)
             next = get_my_next_alps_node(iter, next);
           }

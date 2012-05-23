@@ -3057,12 +3057,17 @@ static int property(
   char        *dest = *prop;
   int          i = 0;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
+  long         cray_enabled = FALSE;
 
   if (!isalpha(*str))
     {
-    sprintf(log_buf, "first character of property (%s) not a letter", str);
-
-    return(1);
+    if ((cray_enabled == FALSE) ||
+        (is_compute_node(str) == FALSE))
+      {
+      sprintf(log_buf, "first character of property (%s) not a letter", str);
+      
+      return(1);
+      }
     }
 
   while (isalnum(*str) || *str == '-' || *str == '.' || *str == '=' || *str == '_')
@@ -3469,6 +3474,8 @@ int parse_req_data(
 
   single_spec_data *req;
 
+  all_reqs->total_nodes = 0;
+
   for (i = 0; i < all_reqs->num_reqs; i++)
     {
     req = all_reqs->reqs + i;
@@ -3477,8 +3484,11 @@ int parse_req_data(
     req->ppn   = 1;
     req->prop  = NULL;
 
-    if ((j = number(&(all_reqs->req_start[i]), &(req->nodes))) == -1)
-      return(j);
+    if (is_compute_node(all_reqs->req_start[i]) == FALSE)
+      {
+      if ((j = number(&(all_reqs->req_start[i]), &(req->nodes))) == -1)
+        return(j);
+      }
 
     if (j == 0)
       {
@@ -3500,6 +3510,8 @@ int parse_req_data(
           return(-1);
         }
       }
+
+    all_reqs->total_nodes += req->nodes;
     }
 
   return(PBSE_NONE);
@@ -3632,6 +3644,39 @@ int is_reserved_property(
     return(FALSE);
   } /* END is_reserved_property() */
 
+
+
+
+int is_compute_node(
+
+  char *node_id)
+
+  {
+  struct pbsnode *pnode;
+  int             rc = FALSE;
+  char           *colon;
+  char           *plus;
+
+  if ((colon = strchr(node_id, ':')) != NULL)
+    *colon = '\0';
+  
+  if ((plus = strchr(node_id, '+')) != NULL)
+    *plus = '\0';
+
+  if ((pnode = find_nodebyname(node_id)) != NULL)
+    {
+    rc = TRUE;
+    unlock_node(pnode, __func__, NULL, 0);
+    }
+
+  if (colon != NULL)
+    *colon = ':';
+
+  if (plus != NULL)
+    *plus = '+';
+
+  return(rc);
+  } /* END is_compute_node() */
 
 
 
@@ -3920,33 +3965,6 @@ int node_spec(
 
   str = spec;
 
-  num = ctnodes(str);
-
-#ifndef CRAY_MOAB_PASSTHRU
-  if (num > svr_clnodes)
-    {
-    /* FAILURE */
-
-    free(spec);
-
-    sprintf(log_buf, "job allocation request exceeds available cluster nodes, %d requested, %d available",
-      num,
-      svr_clnodes);
-
-    if (LOGLEVEL >= 6)
-      {
-      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-      }
-
-    if (EMsg != NULL)
-      {
-      snprintf(EMsg, 1024, "%s", log_buf);
-      }
-
-    return(-1);
-    }
-#endif
-
   all_reqs.total_nodes = num;
   all_reqs.num_reqs = 1;
   plus = spec;
@@ -3997,6 +4015,33 @@ int node_spec(
 
     return(rc);
     }
+
+  num = all_reqs.total_nodes;
+
+#ifndef CRAY_MOAB_PASSTHRU
+  if (num > svr_clnodes)
+    {
+    /* FAILURE */
+
+    free(spec);
+
+    sprintf(log_buf, "job allocation request exceeds available cluster nodes, %d requested, %d available",
+      num,
+      svr_clnodes);
+
+    if (LOGLEVEL >= 6)
+      {
+      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+      }
+
+    if (EMsg != NULL)
+      {
+      snprintf(EMsg, 1024, "%s", log_buf);
+      }
+
+    return(-1);
+    }
+#endif
 
   if (LOGLEVEL >= 6)
     {
