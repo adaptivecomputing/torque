@@ -194,6 +194,7 @@ extern int              multi_mom;
 #define MAX_BM          64
 #endif
 
+int is_compute_node(char *node_id);
 int hasprop(struct pbsnode *, struct prop *);
 int add_job_to_node(struct pbsnode *,struct pbssubn *,short,job *,int);
 int node_satisfies_request(struct pbsnode *,char *);
@@ -3967,7 +3968,6 @@ int node_spec(
 
   str = spec;
 
-  all_reqs.total_nodes = num;
   all_reqs.num_reqs = 1;
   plus = spec;
 

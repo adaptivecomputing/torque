@@ -219,7 +219,7 @@ void *contact_sched(
    * from the scheduler.
    */
 
-  process_pbs_server_port_scheduler(sock);
+  process_pbs_server_port_scheduler(&sock);
 
   sprintf(log_buf, msg_sched_called, (cmd != SCH_ERROR) ? PSchedCmdType[cmd] : "ERROR");
 

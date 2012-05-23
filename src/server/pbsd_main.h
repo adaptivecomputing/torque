@@ -10,7 +10,7 @@
 
 /* static void need_y_response(int type); */
 
-void process_pbs_server_port_scheduler(int sock);
+void process_pbs_server_port_scheduler(int *sock);
 
 void clear_listeners(void);
 

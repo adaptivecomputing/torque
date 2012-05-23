@@ -114,7 +114,7 @@ xmlNode *find_processor_allocation(
 
   for (processor_allocation = child->children; processor_allocation != NULL; processor_allocation = processor_allocation->next)
     {
-    if (!strcmp(processor_allocation->name, ProcessorAllocation))
+    if (!strcmp((char *)processor_allocation->name, ProcessorAllocation))
       break;
     }
 
