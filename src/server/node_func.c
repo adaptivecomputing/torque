@@ -2879,6 +2879,7 @@ struct pbsnode *next_node(
         }
       else
         {
+        unlock_node(current, __func__, NULL, 0);
         iter->alps_index = -1;
         
         pthread_mutex_lock(an->allnodes_mutex);

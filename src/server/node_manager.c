@@ -3059,6 +3059,8 @@ static int property(
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   long         cray_enabled = FALSE;
 
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
   if (!isalpha(*str))
     {
     if ((cray_enabled == FALSE) ||
