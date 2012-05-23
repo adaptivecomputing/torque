@@ -282,9 +282,9 @@ int find_error_type(
       {
       for (grandchild = child->children; grandchild != NULL; grandchild = grandchild->next)
         {
-        if (!strcmp((const char *)child->name, text_name))
+        if (!strcmp((const char *)grandchild->name, text_name))
           {
-          char *errtext = (char *)xmlNodeGetContent(child);
+          char *errtext = (char *)xmlNodeGetContent(grandchild);
           if (strstr(errtext, "error") != NULL)
             {
             snprintf(log_buffer, sizeof(log_buffer), "%s alps error: '%s'",
@@ -598,6 +598,8 @@ int create_alps_reservation(
          (rc != PBSE_NONE))
     {
     rc = execute_reservation(command->str, reservation_id);
+
+    usleep(100);
     }
 
   free_dynamic_string(command);
@@ -612,6 +614,8 @@ int create_alps_reservation(
            (rc != PBSE_NONE))
       {
       rc = confirm_reservation(jobid, *reservation_id, pagg_id_value, apbasil_path, apbasil_protocol);
+
+      usleep(100);
       }
     }
 
