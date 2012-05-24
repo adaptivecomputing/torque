@@ -3474,9 +3474,11 @@ int parse_req_data(
   {
   int               i;
   int               j;
+  long              cray_enabled = FALSE;
 
   single_spec_data *req;
 
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   all_reqs->total_nodes = 0;
 
   for (i = 0; i < all_reqs->num_reqs; i++)
@@ -3487,7 +3489,8 @@ int parse_req_data(
     req->ppn   = 1;
     req->prop  = NULL;
 
-    if (is_compute_node(all_reqs->req_start[i]) == FALSE)
+    if ((cray_enabled == FALSE) ||
+        (is_compute_node(all_reqs->req_start[i]) == FALSE))
       {
       if ((j = number(&(all_reqs->req_start[i]), &(req->nodes))) == -1)
         return(j);
@@ -4041,8 +4044,11 @@ int node_spec(
 
   free(all_reqs.reqs);
   free(all_reqs.req_start);
+
   for (i = 0; i < all_reqs.num_reqs; i++)
-    free_prop(all_reqs.reqs[i].prop);
+    if (all_reqs.reqs[i].prop != NULL)
+      free_prop(all_reqs.reqs[i].prop);
+
   free(spec);
 
 #ifndef CRAY_MOAB_PASSTHRU
