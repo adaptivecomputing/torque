@@ -83,6 +83,5 @@ void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
 void process_pbs_server_port_scheduler(int sock)
   {
-  return(NULL);
   }
 

@@ -346,3 +346,4 @@ struct pbsnode *get_next_login_node(
   {
   return(NULL);
   }
+
