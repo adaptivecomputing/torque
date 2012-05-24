@@ -1691,13 +1691,42 @@ char *get_correct_spec_string(
           if ((outer_plus = strchr(mode_string, '+')) != NULL)
             *outer_plus = '\0';
 
-          strcpy(mode, mode_string);
+          /* 
+           * The neednodes original value may have non gpu things in it, so we
+           * can not rely on the requested gpu mode being the first item in the
+           * the string after the gpus=x:.
+           */
+
+          if (strstr(mode_string, "exclusive_thread"))
+            {
+            strcpy(mode, ":exclusive_thread");
+            }
+          else if (strstr(mode_string, "exclusive_process"))
+            {
+            strcpy(mode, ":exclusive_process");
+            }
+          else if (strstr(mode_string, "exclusive"))
+            {
+            strcpy(mode, ":exclusive");
+            }
+          else if (strstr(mode_string, "default"))
+            {
+            strcpy(mode, ":default");
+            }
+          else if (strstr(mode_string, "shared"))
+            {
+            strcpy(mode, ":shared");
+            }
+          else
+            {
+            strcpy(mode, "");
+            }
 
           if (outer_plus != NULL)
             *outer_plus = '+';
 
-          /* 20 is a little more than the max length of gpu modes */
-          len = strlen(given) + 1 + (num_gpu_reqs * 20);
+          /* now using the actual length of requested gpu mode */
+          len = strlen(given) + 1 + (num_gpu_reqs * strlen(mode));
           if ((correct_spec = calloc(1, len)) != NULL)
             {
             one_req = given;

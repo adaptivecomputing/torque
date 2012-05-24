@@ -13,6 +13,7 @@ evans
   b - removed memory manager from alloc_br and free_br to solve a memory leak
   c - TRQ-973. Fix a possibility of a segfault in netcounter_incr()
   b - fixes to communications between pbs_sched and pbs_server. TRQ-884
+  b - fix server crash caused by gpu mode not being right after gpus=x:. TRQ-948.
 
 4.0.2
   e - Change so init.d script variables get set based on the configure command.
