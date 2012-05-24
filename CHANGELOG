@@ -15,6 +15,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix so gpu count gets written out to server nodes file when using
       --enable-nvidia-gpus. TRQ-927. (backported from 4.0.2)
   b - fixed a memory leak on the MOM when running with --enable-nvidia-gpus. TRQ-904
+  b - fix server crash caused by gpu mode not being right after gpus=x:. TRQ-948.
+      (backported from 4.0.3)
      
 
 2.5.11
