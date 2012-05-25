@@ -456,6 +456,57 @@ int chk_characteristic(
 
 
 
+int login_encode_jobs(
+
+  struct pbsnode *pnode,
+  tlist_head     *phead)
+
+  {
+  struct pbssubn *psubn;
+  struct jobinfo *jip;
+  job            *pjob;
+  char           *login_id;
+  dynamic_string *job_str = get_dynamic_string(-1, NULL);
+  char            str_buf[MAXLINE*2];
+  svrattrl       *pal;
+
+  for (psubn = pnode->nd_psn;psubn != NULL;psubn = psubn->next)
+    {
+    for (jip = psubn->jobs;jip != NULL;jip = jip->next)
+      {
+      pjob = get_job_from_jobinfo(jip, pnode);
+      login_id = pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str;
+
+      if (strncmp(pnode->nd_name, login_id, strlen(pnode->nd_name)))
+        {
+        if (job_str->used != 0)
+          snprintf(str_buf, sizeof(str_buf), ",%d/%s", psubn->index, jip->jobid);
+        else
+          snprintf(str_buf, sizeof(str_buf), "%d/%s", psubn->index, jip->jobid);
+
+        append_dynamic_string(job_str, str_buf);
+        }
+      }
+    }
+
+  if ((pal = attrlist_create(ATTR_NODE_jobs, NULL, strlen(job_str->str) + 1)) == NULL)
+    {
+    log_err(ENOMEM, __func__, "");
+    return(ENOMEM);
+    }
+
+  strcpy(pal->al_value, job_str->str);
+  pal->al_flags = ATR_VFLAG_SET;
+
+  free_dynamic_string(job_str);
+
+  append_link(phead, &pal->al_link, pal);
+
+  return(PBSE_NONE);
+  } /* END login_encode_jobs() */
+
+
+
 
 /* status_nodeattrib() - add status of each requested (or all) node-pbs_attribute to
  *    the status reply
@@ -560,13 +611,19 @@ int status_nodeattrib(
 
       if ((padef + index)->at_flags & priv)
         {
-        rc = ((padef + index)->at_encode(
+        if ((index == ND_ATR_jobs) &&
+            (pnode->nd_is_alps_login == TRUE))
+          rc = login_encode_jobs(pnode, phead);
+        else
+          {
+          rc = ((padef + index)->at_encode(
                 &atemp[index],
                 phead,
                 (padef + index)->at_name,
                 NULL,
                 ATR_ENCODE_CLIENT,
                 0));
+          }
 
         if (rc < 0)
           {
@@ -2135,7 +2192,7 @@ int setup_nodes(void)
       else if (is_alps_starter == TRUE)
         {
         np = find_nodebyname(nodename);
-        np->nd_is_alps_starter = TRUE;
+        np->nd_is_alps_login = TRUE;
         add_to_login_holder(np);
         /* NYI: add to login node list */
         unlock_node(np, __func__, NULL, 0);

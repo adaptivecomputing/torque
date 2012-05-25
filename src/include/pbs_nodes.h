@@ -324,7 +324,7 @@ struct pbsnode
   char                 *gpu_str;             /* comma-delimited string of the number of gpus for each nodeboard */
   
   unsigned char         nd_is_alps_reporter;
-  unsigned char         nd_is_alps_starter;
+  unsigned char         nd_is_alps_login;
   all_nodes             alps_subnodes;
 
   pthread_mutex_t      *nd_mutex;            /* semaphore for accessing this node's data */

@@ -3731,7 +3731,7 @@ int add_login_node_if_needed(
     need_to_add_login = TRUE;
   else
     {
-    if (login->nd_is_alps_starter == FALSE)
+    if (login->nd_is_alps_login == FALSE)
       need_to_add_login = TRUE;
 
     unlock_node(login, __func__, NULL, 0);
@@ -5814,6 +5814,15 @@ void free_nodes(
     }
 
   free(exec_hosts);
+
+  if (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL)
+    {
+    if ((pnode = find_nodebyname(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str)) != NULL)
+      {
+      remove_job_from_node(pnode, pjob);
+      unlock_node(pnode, __func__, NULL, 0);
+      }
+    }
 
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HasNodes;
 
