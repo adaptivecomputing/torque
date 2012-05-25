@@ -913,6 +913,7 @@ int svr_save_xml(
 
   if ((rc = write_buffer(buf,len,fds)))
     {
+    sprintf(log_buf, "%s:2", __func__);
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
     free(tmp_file);
     return(rc);
@@ -920,6 +921,7 @@ int svr_save_xml(
 
   if ((rc = save_attr_xml(svr_attr_def,ps->sv_attr,SRV_ATR_LAST,fds)) != 0)
     {
+    sprintf(log_buf, "%s:3", __func__);
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
     free(tmp_file);
     return(rc);
@@ -929,7 +931,7 @@ int svr_save_xml(
   snprintf(buf,sizeof(buf),"</server_db>");
   if ((rc = write_buffer(buf,strlen(buf),fds)))
     {
-    sprintf(log_buf, "%s:2", __func__);
+    sprintf(log_buf, "%s:4", __func__);
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
     free(tmp_file);
     return(rc);
@@ -942,7 +944,7 @@ int svr_save_xml(
     rc = PBSE_CAN_NOT_MOVE_FILE;
     }
 
-  sprintf(log_buf, "%s:3", __func__);
+  sprintf(log_buf, "%s:5", __func__);
   unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
   free(tmp_file);
