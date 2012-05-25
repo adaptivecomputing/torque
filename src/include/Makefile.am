@@ -1,6 +1,8 @@
 include $(top_srcdir)/buildutils/config.mk
 
-include_HEADERS = libcmds.h license_pbs.h pbs_constants.h pbs_cmds.h pbs_error.h pbs_error_db.h pbs_ifl.h rm.h rpp.h tm.h tm_.h u_hash_map_structs.h u_memmgr.h uthash.h
+include_HEADERS = libcmds.h license_pbs.h pbs_constants.h pbs_cmds.h pbs_error.h \
+									pbs_error_db.h pbs_ifl.h rm.h rpp.h tm.h tm_.h u_hash_map_structs.h \
+									u_memmgr.h uthash.h tcp.h
 
 noinst_HEADERS = acct.h array.h assertions.h attribute.h batch_request.h \
 		 cmds.h credential.h csv.h \
@@ -13,7 +15,7 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h batch_request.h \
 		 server_limits.h svrfunc.h tracking.h work_task.h \
 		 port_forwarding.h pbs_cpa.h pbs_cpuset.h  \
 		 pbs_batchreqtype_db.h utils.h u_tree.h threadpool.h \
-		 resizable_array.h hash_table.h tcp.h mom_hierarchy.h \
+		 resizable_array.h hash_table.h mom_hierarchy.h \
 		 dynamic_string.h mom_server.h alps_constants.h \
 		 alps_functions.h login_nodes.h track_alps_reservations.h
 
