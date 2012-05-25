@@ -542,7 +542,7 @@ int req_quejob(
 
     get_svr_attr_l(SRV_ATR_display_job_server_suffix, &server_suffix);
 
-    pthread_mutex_lock(server.sv_qs_mutex);
+    lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
     if ((alias != NULL) &&
         (server_suffix == TRUE))
@@ -593,7 +593,7 @@ int req_quejob(
       server.sv_qs.sv_jobidnumber = 0; /* wrap it */
 
     jobid_number = server.sv_qs.sv_jobidnumber;
-    pthread_mutex_unlock(server.sv_qs_mutex);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
     /* Make the current job number visible in qmgr print server commnad. */
     pthread_mutex_lock(server.sv_attr_mutex);

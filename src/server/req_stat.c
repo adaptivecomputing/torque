@@ -1637,9 +1637,9 @@ int req_stat_svr(
   memset(netrates, 0, sizeof(netrates));
 
   /* update count and state counts from sv_numjobs and sv_jobstates */
-  pthread_mutex_lock(server.sv_qs_mutex);
+  lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
   numjobs = server.sv_qs.sv_numjobs;
-  pthread_mutex_unlock(server.sv_qs_mutex);
+  unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
   
   pthread_mutex_lock(server.sv_attr_mutex);
   server.sv_attr[SRV_ATR_TotalJobs].at_val.at_long = numjobs;

@@ -270,6 +270,9 @@ extern struct server server;
 extern int svr_recov_xml(char *, int);
 extern int svr_save(struct server *, int);
 
+int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string);
+int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string);
+
 
 /*
 ** Macros for fast min/max.

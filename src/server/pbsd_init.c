@@ -1411,7 +1411,8 @@ int handle_queue_recovery(
     {
     log_err(-1, __func__, msg_init_noqueues);
 
-    pthread_mutex_unlock(server.sv_qs_mutex);
+    sprintf(log_buf, "%s:1", __func__);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
     return(-1);
     }
@@ -1485,7 +1486,8 @@ int handle_array_recovery(
 
     log_err(errno, __func__, log_buf);
 
-    pthread_mutex_unlock(server.sv_qs_mutex);
+    sprintf(log_buf, "%s:2", __func__);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
     return(-1);
     }
@@ -1517,7 +1519,8 @@ int handle_array_recovery(
 
           log_err(errno, __func__, log_buf);
 
-          pthread_mutex_unlock(server.sv_qs_mutex);
+          sprintf(log_buf, "%s:3", __func__);
+          unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
           return(rc);
           }
@@ -1574,7 +1577,8 @@ int handle_job_recovery(
 
     log_err(errno, __func__, log_buf);
 
-    pthread_mutex_unlock(server.sv_qs_mutex);
+    sprintf(log_buf, "%s:1", __func__);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
     return(-1);
     }
@@ -1582,7 +1586,8 @@ int handle_job_recovery(
   had = server.sv_qs.sv_numjobs;
 
   server.sv_qs.sv_numjobs = 0;
-  pthread_mutex_unlock(server.sv_qs_mutex);
+  sprintf(log_buf, "%s:2", __func__);
+  unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
   dir = opendir(".");
 
@@ -1730,7 +1735,8 @@ int handle_job_recovery(
       }
 
     DArrayFree(&Array);
-    pthread_mutex_lock(server.sv_qs_mutex);
+    sprintf(log_buf, "%s:1", __func__);
+    lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
     if ((had != server.sv_qs.sv_numjobs) &&
         (type != RECOV_CREATE) &&
@@ -1744,7 +1750,8 @@ int handle_job_recovery(
       }
 
     sprintf(log_buf, msg_init_exptjobs, had, server.sv_qs.sv_numjobs);
-    pthread_mutex_unlock(server.sv_qs_mutex);
+    sprintf(log_buf, "%s:3", __func__);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
     log_event(logtype,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
     }  /* END else */
 
@@ -2045,7 +2052,8 @@ int pbsd_init(
     return(ret);
 
   /* the functions we're calling assume this mutex is locked */
-  pthread_mutex_lock(server.sv_qs_mutex);
+  sprintf(log_buf, "%s:1", __func__);
+  lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
   if ((ret = handle_queue_recovery(type)) != PBSE_NONE)
     return(ret);
@@ -2440,6 +2448,7 @@ void pbsd_init_reque(
   char logbuf[265];
   int newstate;
   int newsubstate;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   sprintf(logbuf, msg_init_substate,
           pjob->ji_qs.ji_substate);
@@ -2459,7 +2468,8 @@ void pbsd_init_reque(
     set_statechar(pjob);
     }
 
-  pthread_mutex_lock(server.sv_qs_mutex);
+  sprintf(log_buf, "%s:1", __func__);
+  lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
   if (svr_enquejob(pjob, TRUE, -1) == PBSE_NONE)
     {
     strcat(logbuf, msg_init_queued);
@@ -2486,7 +2496,8 @@ void pbsd_init_reque(
 
     /* NOTE:  pjob freed but dangling pointer remains */
     }
-  pthread_mutex_unlock(server.sv_qs_mutex);
+  sprintf(log_buf, "%s:1", __func__);
+  unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
   return;
   }  /* END pbsd_init_reque() */
 

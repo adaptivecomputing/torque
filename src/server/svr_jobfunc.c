@@ -338,12 +338,12 @@ int svr_enquejob(
       insert_job_after_index(&alljobs, prev_job_index, pjob);
 
     if (has_sv_qs_mutex == FALSE)
-      pthread_mutex_lock(server.sv_qs_mutex);
+      lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
     server.sv_qs.sv_numjobs++;
     
     if (has_sv_qs_mutex == FALSE)
-      pthread_mutex_unlock(server.sv_qs_mutex);
+      unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
     pthread_mutex_lock(server.sv_jobstates_mutex);
 
@@ -661,7 +661,7 @@ int svr_dequejob(
     {
     if (!pjob->ji_is_array_template)
       {
-      pthread_mutex_lock(server.sv_qs_mutex);
+      lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
       if (--server.sv_qs.sv_numjobs < 0)
         {
@@ -669,7 +669,7 @@ int svr_dequejob(
         log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "sv_numjobs < 0. Recount required.");
         }
       
-      pthread_mutex_unlock(server.sv_qs_mutex);
+      unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
       pthread_mutex_lock(server.sv_jobstates_mutex);
 
       if (--server.sv_jobstates[pjob->ji_qs.ji_state] < 0)
@@ -2684,11 +2684,11 @@ void correct_ct()
   char          log_buf[LOCAL_LOG_BUF_SIZE];
   
   lock_startup();
-  pthread_mutex_lock(server.sv_qs_mutex);
+  lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
   sprintf(log_buf, "Job state counts incorrect, server %d: ", server.sv_qs.sv_numjobs);
   
   server.sv_qs.sv_numjobs = 0;
-  pthread_mutex_unlock(server.sv_qs_mutex);
+  unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
   
   pthread_mutex_lock(server.sv_jobstates_mutex);
   
@@ -2743,9 +2743,10 @@ void correct_ct()
     unlock_queue(pque, "correct_ct", NULL, LOGLEVEL);
     } /* END for each queue */
   
-  pthread_mutex_lock(server.sv_qs_mutex);
+  sprintf(log_buf, "%s:2", __func__);
+  lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
   server.sv_qs.sv_numjobs = num_jobs;
-  pthread_mutex_unlock(server.sv_qs_mutex);
+  unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
   
   pthread_mutex_lock(server.sv_jobstates_mutex);
   for (i = 0; i < PBS_NUMJOBSTATE; i++)

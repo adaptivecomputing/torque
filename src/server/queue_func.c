@@ -254,10 +254,10 @@ pbs_queue *que_alloc(
   insert_queue(&svr_queues,pq);
  
   if (sv_qs_mutex_held == FALSE)
-    pthread_mutex_lock(server.sv_qs_mutex);
+    lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
   server.sv_qs.sv_numque++;
   if (sv_qs_mutex_held == FALSE)
-    pthread_mutex_unlock(server.sv_qs_mutex);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
   /* set the working attributes to "unspecified" */
 
@@ -306,10 +306,10 @@ void que_free(
 
   /* now free the main structure */
   if (sv_qs_mutex_held == FALSE)
-    pthread_mutex_lock(server.sv_qs_mutex);
+    lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
   server.sv_qs.sv_numque--;
   if (sv_qs_mutex_held == FALSE)
-    pthread_mutex_unlock(server.sv_qs_mutex);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
   remove_queue(&svr_queues, pq);
   pq->q_being_recycled = TRUE;

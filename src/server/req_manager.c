@@ -2551,6 +2551,7 @@ int set_nextjobnum(
   enum batch_op  op)
 
   {
+  char log_buf[LOCAL_LOG_BUF_SIZE + 1];
   /* this is almost identical to set_l, but we need to grab the
      current value of server.sv_qs.sv_jobidnumber before we INCR/DECR the value of
      attr->at_val.at_long.  In fact, it probably should be moved to Libattr/ */
@@ -2560,7 +2561,7 @@ int set_nextjobnum(
    * Otherwise, if the number is in the default range, it sets it to the new range.
    */
 
-  pthread_mutex_lock(server.sv_qs_mutex);
+  lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
   switch (op)
     {
 
@@ -2587,7 +2588,8 @@ int set_nextjobnum(
 
     default:
      
-      pthread_mutex_unlock(server.sv_qs_mutex);
+      sprintf(log_buf, "%s:1", __func__);
+      unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
       return(PBSE_SYSTEM);
     }
 
@@ -2595,7 +2597,8 @@ int set_nextjobnum(
 
   server.sv_qs.sv_jobidnumber = attr->at_val.at_long;
 
-  pthread_mutex_unlock(server.sv_qs_mutex);
+  sprintf(log_buf, "%s:2", __func__);
+  unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
   return(PBSE_NONE);
   } /* END set_nextjobnum() */

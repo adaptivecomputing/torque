@@ -3204,6 +3204,35 @@ void restore_attr_default(
 
   } /* END restore_attr_default() */
 
+int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
+  {
+  int rc;
+  char log_buf[LOCAL_LOG_BUF_SIZE + 1];
+
+  if (LOGLEVEL >= 6)
+    {
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%s: locking sv_qs_mutex", msg_string);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+    }
+
+  rc = pthread_mutex_lock(sv_qs_mutex);
+  return(rc);
+  }
+
+int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
+  {
+  int rc;
+  char log_buf[LOCAL_LOG_BUF_SIZE + 1];
+
+  if (LOGLEVEL >= 6)
+    {
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%s: unlocking sv_qs_mutex", msg_string);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+    }
+
+  rc = pthread_mutex_unlock(sv_qs_mutex);
+  return(rc);
+  }
 
 /* END pbsd_main.c */
 
