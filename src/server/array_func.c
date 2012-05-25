@@ -475,6 +475,7 @@ int array_recov(
   }
 
   /* initialize the linked list nodes */
+
   CLEAR_HEAD(pa->request_tokens);
 
   fd = open(path, O_RDONLY, 0);
@@ -751,7 +752,7 @@ int setup_array_struct(
   char                log_buf[LOCAL_LOG_BUF_SIZE];
   long                max_array_size;
 
-  pa = (job_array *)calloc(1,sizeof(job_array));
+    pa = (job_array *)calloc(1,sizeof(job_array));
 
   pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
   
@@ -783,9 +784,7 @@ int setup_array_struct(
       }
 
     pthread_mutex_unlock(pa->ai_mutex);
-
     job_purge(pjob);
-
     /* Does job array need to be removed? */
 
     if (LOGLEVEL >= 6)
@@ -869,8 +868,6 @@ int setup_array_struct(
     }
 
   pjob->ji_arraystruct = pa;
-
-  insert_array(pa);
 
   insert_array(pa);
 
