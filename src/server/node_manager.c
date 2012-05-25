@@ -3956,10 +3956,11 @@ int node_spec(
   if ((rc = parse_req_data(&all_reqs)) != PBSE_NONE)
     {
     /* FAILURE */
-    free(all_reqs.reqs);
-    free(all_reqs.req_start);
     for (i = 0; i < all_reqs.num_reqs; i++)
       free_prop(all_reqs.reqs[i].prop);
+    
+    free(all_reqs.reqs);
+    free(all_reqs.req_start);
 
     return(rc);
     }
