@@ -174,6 +174,8 @@ int svr_recov(
 
   if (i != sizeof(struct server_qs))
     {
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
+
     if (i < 0)
       log_err(errno, __func__, "read of serverdb failed");
     else
@@ -198,6 +200,7 @@ int svr_recov(
         0,
         !read_only) != 0 ) 
     {
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
     log_err(errno, __func__, "error on recovering server attr");
 
     close(sdb);
@@ -242,7 +245,7 @@ int svr_recov(
       }
     }    /* END for (i) */
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END svr_recov() */
 
 
@@ -877,7 +880,7 @@ int svr_save_xml(
   if ((tmp_file = calloc(sizeof(char), tmp_file_len)) == NULL)
     {
     rc = PBSE_MEM_MALLOC;
-    return rc;
+    return(rc);
     }
   else
     {
@@ -905,19 +908,18 @@ int svr_save_xml(
     ps->sv_qs.sv_jobidnumber,
     time_now);
   
-  
   len = strlen(buf);
 
   if ((rc = write_buffer(buf,len,fds)))
     {
-    pthread_mutex_unlock(server.sv_attr_mutex);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
     free(tmp_file);
     return(rc);
     }
 
   if ((rc = save_attr_xml(svr_attr_def,ps->sv_attr,SRV_ATR_LAST,fds)) != 0)
     {
-    pthread_mutex_unlock(server.sv_attr_mutex);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
     free(tmp_file);
     return(rc);
     }
@@ -938,11 +940,13 @@ int svr_save_xml(
     {
     rc = PBSE_CAN_NOT_MOVE_FILE;
     }
+
   sprintf(log_buf, "%s:3", __func__);
   unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
   free(tmp_file);
-  return(0);
+
+  return(PBSE_NONE);
   } /* END svr_save_xml */
 
 
