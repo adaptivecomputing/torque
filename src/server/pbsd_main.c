@@ -3209,7 +3209,7 @@ int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   int rc;
   char log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
-  if (LOGLEVEL >= 6)
+  if (LOGLEVEL >= 7)
     {
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%s: locking sv_qs_mutex", msg_string);
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
@@ -3224,7 +3224,7 @@ int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   int rc;
   char log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
-  if (LOGLEVEL >= 6)
+  if (LOGLEVEL >= 7)
     {
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%s: unlocking sv_qs_mutex", msg_string);
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
