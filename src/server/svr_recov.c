@@ -141,8 +141,9 @@ int svr_recov(
   int read_only)  /* I */
 
   {
-  int i;
-  int sdb;
+  int  i;
+  int  sdb;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   void recov_acl(pbs_attribute *, attribute_def *, char *, char *);
 
