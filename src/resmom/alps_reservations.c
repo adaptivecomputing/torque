@@ -585,6 +585,12 @@ int create_alps_reservation(
 
   host_req_list = parse_exec_hosts(exec_hosts);
 
+  if (host_req_list->num == 0)
+    {
+    /* this is a login only job */
+    return(PBSE_NONE);
+    }
+
   if ((aroba = strchr(user, '@')) != NULL)
     *aroba = '\0';
   
