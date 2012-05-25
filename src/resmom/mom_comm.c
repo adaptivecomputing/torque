@@ -577,16 +577,13 @@ task *task_check(
     return(NULL);
     }
 
-  if ((ptask->ti_chan == NULL) || (ptask->ti_chan->sock < 0))
+  if ((ptask->ti_chan == NULL) ||
+      (ptask->ti_chan->sock < 0))
     {
     sprintf(log_buffer, "cannot tm_reply to task %ld",
             (long)taskid);
 
-    log_record(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buffer);
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
     return(NULL);
     }
@@ -1967,7 +1964,7 @@ int reply_to_join_job_as_sister(
 
   for (retry_count = 0; retry_count < 5; retry_count++)
     {
-    if(job_radix)
+    if (job_radix)
       socket = get_radix_reply_stream(pjob);
     else
       socket = get_reply_stream(pjob);
@@ -2437,7 +2434,7 @@ int im_join_job_as_sister(
       sister_job_nodes(pjob,radix_hosts,radix_ports);
 
       np = &pjob->ji_sisters[0];
-      if(np != NULL)
+      if (np != NULL)
         {
         ret = get_hostaddr_hostent_af(&local_errno, np->hn_host, &af_family, &host_addr, &addr_len);
         memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
@@ -2464,7 +2461,7 @@ int im_join_job_as_sister(
   append_link(&svr_alljobs, &pjob->ji_alljobs, pjob);
   
   /* establish a connection and write the reply back */
-  if(job_radix)
+  if (job_radix)
     {
     if ((reply_to_join_job_as_sister(pjob, addr, cookie, event, fromtask, job_radix)) == DIS_SUCCESS)
       ret = IM_DONE;
@@ -4764,7 +4761,7 @@ void im_request(
       {
       for (nodeidx = 0;nodeidx < pjob->ji_numnodes;nodeidx++)
         {
-        if(pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
+        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
           np = &pjob->ji_sisters[nodeidx];
         else
           np = &pjob->ji_hosts[nodeidx];
@@ -5846,7 +5843,7 @@ void tm_eof(
       ptask != NULL;
       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
       {
-      if(ptask->ti_chan == NULL)
+      if (ptask->ti_chan == NULL)
         continue;
 
       if (ptask->ti_chan->sock == fd)
@@ -5890,11 +5887,11 @@ void tm_eof(
  */
 void tm_request_init(
 
-    job  *pjob,
-    task *ptask,
-    int  *ret,
-    int   event,
-    int   prev_error)
+  job  *pjob,
+  task *ptask,
+  int  *ret,
+  int   event,
+  int   prev_error)
 
   {
   int      vnodenum;
@@ -7358,27 +7355,39 @@ int tm_request(
     {
  
     case TM_TASKS:
+
       rc = tm_tasks_request(ptask->ti_chan,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
+
       break;
  
     case TM_SPAWN:
+
       rc = tm_spawn_request(ptask->ti_chan,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
+
       break;
  
     case TM_SIGNAL:
+
       rc = tm_signal_request(ptask->ti_chan,pjob,prev_error,event,cookie,fromtask,&ret,&reply,phost,nodeid);
+
       break;
  
     case TM_OBIT:
+
       rc = tm_obit_request(ptask->ti_chan,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
+
       break;
  
     case TM_GETINFO:
+
       rc = tm_getinfo_request(ptask->ti_chan,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
+
       break;
  
     case TM_RESOURCES:
+
       rc = tm_resources_request(ptask->ti_chan,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
+
       break;
 
    default:
@@ -7420,11 +7429,10 @@ tm_req_finish:
           command,
           jobid);
         }
-
       
       log_err(errno, id, log_buffer);
       
-      if(ptask->ti_chan != NULL)
+      if (ptask->ti_chan != NULL)
         {
         close_conn(ptask->ti_chan->sock, FALSE);
         DIS_tcp_cleanup(ptask->ti_chan);
@@ -8239,7 +8247,7 @@ void fork_demux(
           case new_out:
             
             amt_read = readit(i, fd1);
-            if(amt_read <= 0)
+            if (amt_read <= 0)
               {
               routem[i].r_fd = -1;
               routem[i].r_which = invalid;
@@ -8249,7 +8257,7 @@ void fork_demux(
           case new_err:
             
             amt_read = readit(i, fd2);
-            if(amt_read <= 0)
+            if (amt_read <= 0)
               {
               routem[i].r_fd = -1;
               routem[i].r_which = invalid;
