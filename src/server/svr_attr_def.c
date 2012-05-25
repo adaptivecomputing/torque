@@ -1296,7 +1296,19 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_CrayEnabled */
-  {ATTR_crayenabled,   /* cray_enabled */
+  {ATTR_crayenabled,   /* "cray_enabled" */
+   decode_b,
+   encode_b,
+   set_b,
+   comp_b,
+   free_null,
+   NULL_FUNC,
+   MGR_ONLY_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER},
+
+  /* SRV_ATR_InteractiveJobsCanRoam */ /* NOTE: this only has effect if pbs_server is cray enabled */
+  {ATTR_interactivejobscanroam, /* "interactive_jobs_can_roam" */
    decode_b,
    encode_b,
    set_b,

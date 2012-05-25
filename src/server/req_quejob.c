@@ -124,6 +124,7 @@
 #include "array_func.h" /* setup_array_struct */
 #include "threadpool.h"
 #include "job_func.h" /* job_purge */
+#include "pbs_nodes.h"
 
 
 #include "work_task.h"
@@ -2000,6 +2001,57 @@ int req_rdytocommit(
 
 
 
+int set_interactive_job_roaming_policy(
+
+  job *pjob)
+
+  {
+  long            interactive_roaming = FALSE;
+  long            cray_enabled = FALSE;
+  struct pbsnode *pnode;
+  char           *submit_node_id;
+  char           *dot;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  int             rc = PBSE_NONE;
+  
+  get_svr_attr_l(SRV_ATR_InteractiveJobsCanRoam, &interactive_roaming);
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
+  if (cray_enabled == TRUE)
+    {
+    if (interactive_roaming == FALSE)
+      {
+      submit_node_id = strdup(pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
+      if ((pnode = find_nodebyname(submit_node_id)) == NULL)
+        {
+        if ((dot = strchr(submit_node_id, '.')) != NULL)
+          {
+          *dot = '\0';
+          pnode = find_nodebyname(submit_node_id);
+          }
+        }
+
+      if (pnode != NULL)
+        {
+        pjob->ji_wattr[JOB_ATR_login_prop].at_flags |= ATR_VFLAG_SET;
+        pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = submit_node_id;
+        }
+      else
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "Couldn't determine which login node is %s",
+          pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
+        log_err(PBSE_UNKNODE, __func__, log_buf);
+        rc = -1;
+        }
+      }
+    }
+
+  return(rc);
+  } /* END set_interactive_job_roaming_policy() */
+
+
+
 
 /*
  * req_commit - commit ownership of job
@@ -2177,13 +2229,12 @@ int req_commit(
     }  /* end if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET) */
 
   svr_evaljobstate(pj, &newstate, &newsub, 1);
-
   svr_setjobstate(pj, newstate, newsub, FALSE);
 
+  set_interactive_job_roaming_policy(pj);
+
   /* set the queue rank attribute */
-
   pj->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
-
   pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
   if ((rc = svr_enquejob(pj, FALSE, -1)) != PBSE_NONE)
