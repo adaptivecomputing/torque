@@ -1596,7 +1596,7 @@ static job *chk_job_torun(
 
 int set_mother_superior_ports(
     
-  job *pjob,
+  job  *pjob,
   char *list)
 
   {
@@ -1614,7 +1614,7 @@ int set_mother_superior_ports(
   ptr = list;
 
   /* get the first name in list. This is Mother Superior */
-  for(i = 0; ptr && (*ptr != '/') && (i < PBS_MAXHOSTNAME); i++)
+  for (i = 0; ptr && (*ptr != '/') && (i < PBS_MAXHOSTNAME); i++)
     {
     ms[i] = *ptr;
     ptr++;
@@ -2014,7 +2014,7 @@ static int assign_hosts(
 
     pjob->ji_qs.ji_un.ji_exect.ji_momaddr = momaddr;
 
-    rc = set_mother_superior_ports(pjob, list);
+    rc = set_mother_superior_ports(pjob, pjob->ji_qs.ji_destin);
 
     }  /* END if (rc == 0) */
 

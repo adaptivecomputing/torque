@@ -3473,7 +3473,7 @@ int parse_req_data(
 
   {
   int               i;
-  int               j;
+  int               j = 0;
   long              cray_enabled = FALSE;
 
   single_spec_data *req;
@@ -4775,7 +4775,7 @@ int build_hostlist_nodes_req(
   short               newstate, /* I */
   struct howl       **hlist,    /* O */
   struct howl       **gpu_list, /* O */
-  node_job_add_info  *naji)     /* I */
+  node_job_add_info  *naji)     /* I - freed */
 
   {
   struct pbsnode    *pnode = NULL;
@@ -4817,6 +4817,8 @@ int build_hostlist_nodes_req(
 
     current = current->next;
     } /* END processing reserved nodes */
+   
+  free_naji(naji);
 
   if (failure == TRUE)
     {
@@ -4830,8 +4832,6 @@ int build_hostlist_nodes_req(
       
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
-    
-    free_naji(naji);
 
     return(PBSE_RESCUNAV);
     }
@@ -5009,10 +5009,8 @@ int set_nodes(
 
   if ((rc = build_hostlist_nodes_req(pjob, EMsg, spec, newstate, &hlist, &gpu_list, naji)) != PBSE_NONE)
     {
-    free_naji(naji);
     return(rc);
     }
-  free_naji(naji);
 
   if ((rc = build_hostlist_procs_req(pjob, procs, newstate, &hlist)) != PBSE_NONE)
     {
