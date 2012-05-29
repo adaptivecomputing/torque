@@ -475,6 +475,7 @@ int login_encode_jobs(
     for (jip = psubn->jobs;jip != NULL;jip = jip->next)
       {
       pjob = get_job_from_jobinfo(jip, pnode);
+      login_id = NULL;
 
       if (pjob != NULL)
         {
@@ -482,7 +483,8 @@ int login_encode_jobs(
         pthread_mutex_unlock(pjob->ji_mutex);
         }
 
-      if (strncmp(pnode->nd_name, login_id, strlen(pnode->nd_name)))
+      if ((login_id == NULL) ||
+          (strncmp(pnode->nd_name, login_id, strlen(pnode->nd_name))))
         {
         if (job_str->used != 0)
           snprintf(str_buf, sizeof(str_buf), ",%d/%s", psubn->index, jip->jobid);
@@ -2061,6 +2063,8 @@ int setup_nodes(void)
         /* old style properity */
         if (!strcmp(token, alps_starter_feature))
           is_alps_starter = TRUE;
+        else if (!strcmp(token, alps_reporter_feature))
+          is_alps_reporter = TRUE;
         else
           {
           if (propstr[0] != '\0')
@@ -2075,28 +2079,23 @@ int setup_nodes(void)
 
     if (propstr[0] != '\0')
       {
-      if (!strcmp(propstr, alps_reporter_feature))
-        is_alps_reporter = TRUE;
-      else
+      pal = attrlist_create(ATTR_NODE_properties, 0, strlen(propstr) + 1);
+      
+      if (pal == NULL)
         {
-        pal = attrlist_create(ATTR_NODE_properties, 0, strlen(propstr) + 1);
+        strcpy(log_buf, "cannot create node attribute");
         
-        if (pal == NULL)
-          {
-          strcpy(log_buf, "cannot create node attribute");
-          
-          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-
-          /* FAILURE */
-          return(-1);
-          }
+        log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
         
-        strcpy(pal->al_value, propstr);
-        
-        pal->al_flags = SET;
-        
-        append_link(&atrlist, &pal->al_link, pal);
+        /* FAILURE */
+        return(-1);
         }
+      
+      strcpy(pal->al_value, propstr);
+      
+      pal->al_flags = SET;
+      
+      append_link(&atrlist, &pal->al_link, pal);
       }
 
     /* now create node and subnodes */
