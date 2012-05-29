@@ -3814,7 +3814,7 @@ int node_spec(
   complete_spec_data  all_reqs;
   char               *spec;
   char               *plus;
-  long                cray_enabled;
+  long                cray_enabled = FALSE;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';

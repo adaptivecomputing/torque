@@ -1937,7 +1937,7 @@ int setup_nodes(void)
   int             end = -1;
   int             is_alps_reporter = FALSE;
   int             is_alps_starter = FALSE;
-  long            cray_enabled;
+  long            cray_enabled = FALSE;
 
   struct pbsnode *np;
   char           *val;
