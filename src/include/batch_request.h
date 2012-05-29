@@ -391,15 +391,6 @@ struct batch_request
     } rq_ind;
   };
 
-typedef struct batch_request batch_request;
-
-typedef struct batch_request_holder 
-  {
-  int              brh_index;
-  pthread_mutex_t *brh_mutex;
-  resizable_array *brh_ra;
-  hash_table_t    *brh_ht;
-  } batch_request_holder;
 
 extern struct batch_request *alloc_br (int type);
 extern void  reply_ack (struct batch_request *);
