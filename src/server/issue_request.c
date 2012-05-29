@@ -453,10 +453,8 @@ int issue_Drequest(
     if ((chan = DIS_tcp_setup(sock)) == NULL)
       {
       log_err(PBSE_MEM_MALLOC, __func__,
-        "Could not allocate memory for socket buffer");
-
+          "Could not allocate memory for socket buffer");
       close_conn(sock, FALSE);
-
       return(PBSE_MEM_MALLOC);
       }
     }
@@ -738,11 +736,9 @@ int issue_Drequest(
     {
     sprintf(log_buf, "DIS_reply_read failed: %d", tmp_rc);
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-
     request->rq_reply.brp_code = tmp_rc;
     request->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-    }
-
+    }  
   DIS_tcp_cleanup(chan);
   svr_disconnect(conn);
 

@@ -999,11 +999,9 @@ static void post_doq(
 
   {
   struct batch_request *preq = (struct batch_request *)pwt->wt_parm1;
-
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   char                 *jobid = preq->rq_ind.rq_register.rq_child;
   char                 *msg;
-
   job                  *pjob;
   pbs_attribute        *pattr;
 

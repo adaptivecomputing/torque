@@ -190,9 +190,7 @@ int req_runjob(
   job                  *pjob;
   int                   rc;
   void                 *bp;
-
   int                   setneednodes;
-
   char                  failhost[MAXLINE];
   char                  emsg[MAXLINE];
   char                  log_buf[LOCAL_LOG_BUF_SIZE + 1];
@@ -200,6 +198,7 @@ int req_runjob(
   long                  job_atr_hold;
   int                   job_exit_status;
   int                   job_state;
+
 
   /* chk_job_torun will extract job id and assign hostlist if specified */
 
@@ -254,11 +253,10 @@ int req_runjob(
 
     if (pjob == NULL)
       {
-      req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
-
+      rc = PBSE_JOBNOTFOUND;
+      req_reject(rc, 0, preq, NULL, "Job unexpectedly deleted");
       pthread_mutex_unlock(pa->ai_mutex);
-
-      return(PBSE_JOBNOTFOUND);
+      return(rc);
       }
     
     if ((pa->ai_qs.slot_limit < 0) ||
@@ -267,19 +265,15 @@ int req_runjob(
       job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
       job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
       job_state = pjob->ji_qs.ji_state;
-
       pthread_mutex_unlock(pjob->ji_mutex);
-
-      update_array_values(pa,job_state,aeRun, job_id, job_atr_hold, job_exit_status);
-
+      update_array_values(pa,job_state,aeRun,
+          job_id, job_atr_hold, job_exit_status);
       if ((pjob = find_job(job_id)) == NULL)
         {
         rc = PBSE_JOBNOTFOUND;
-
-        req_reject(rc, 0, preq, NULL, "Job deleted while updating array values");
-
+        req_reject(rc, 0, preq, NULL,
+          "Job deleted while updating array values");
         pthread_mutex_unlock(pa->ai_mutex);
-
         return(rc);
         }
 
@@ -1447,7 +1441,7 @@ static job *chk_job_torun(
     }
   else if (pjob == NULL)
     {
-    req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
+    req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "job vanished while trying to lock queue.");
     return(NULL);
     }
 
@@ -1602,12 +1596,31 @@ static job *chk_job_torun(
 
 int set_mother_superior_ports(
     
-  job *pjob)
+  job *pjob,
+  char *list)
 
   {
+  char ms[PBS_MAXHOSTNAME];
+  char *ptr;
+  int  i;
   struct pbsnode *pnode;
 
-  pnode = find_nodebyname(pjob->ji_qs.ji_destin);
+  if (list == NULL)
+    {
+    return(PBSE_UNKNODEATR);
+    }
+
+  memset(ms, 0, PBS_MAXHOSTNAME);
+  ptr = list;
+
+  /* get the first name in list. This is Mother Superior */
+  for(i = 0; ptr && (*ptr != '/') && (i < PBS_MAXHOSTNAME); i++)
+    {
+    ms[i] = *ptr;
+    ptr++;
+    }
+
+  pnode = find_nodebyname(ms);
 
   if (pnode != NULL)
     {
@@ -2001,7 +2014,7 @@ static int assign_hosts(
 
     pjob->ji_qs.ji_un.ji_exect.ji_momaddr = momaddr;
 
-    rc = set_mother_superior_ports(pjob);
+    rc = set_mother_superior_ports(pjob, list);
 
     }  /* END if (rc == 0) */
 

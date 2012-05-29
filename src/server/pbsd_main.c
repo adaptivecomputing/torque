@@ -408,9 +408,7 @@ int process_pbs_server_port(
       if (rc != DIS_SUCCESS)
         {
         log_err(-1,  __func__, "Cannot read version - skipping this request.\n");
-
         close_conn(sock,FALSE);
-
         break;
         }
       

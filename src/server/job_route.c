@@ -237,7 +237,6 @@ int initialize_procct(
       {
       sprintf(log_buf, "%s: Could not get nodes resource definition. Cannot proceed", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-
       return(ROUTE_PERM_FAILURE);
       }
 
@@ -261,7 +260,6 @@ int initialize_procct(
         {
         sprintf(log_buf, "%s: Could not get procct resource definition. Cannot proceed", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-
         return(ROUTE_PERM_FAILURE);
         }
 
@@ -270,7 +268,6 @@ int initialize_procct(
         {
         sprintf(log_buf, "%s: Could not get nodes nor procs entry from Resource_List. Cannot proceed", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-
         return(ROUTE_PERM_FAILURE);
         }
       }
@@ -316,7 +313,6 @@ int initialize_procct(
        by the time this function is called */
     sprintf(log_buf, "%s: Resource_List not set. Cannot proceed", __func__);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-
     return(ROUTE_PERM_FAILURE);
     }
 
@@ -341,7 +337,6 @@ int remove_procct(
        by the time this function is called */
     sprintf(log_buf, "%s: Resource_List is NULL. Cannot proceed", __func__);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-
     return(ROUTE_PERM_FAILURE);
     }
 

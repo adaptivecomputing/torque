@@ -420,6 +420,13 @@ int modify_job(
 
   job *pjob = (job *)*j;
   
+  if (pjob == NULL)
+    {
+    sprintf(log_buf, "job structure is NULL");
+    log_err(PBSE_IVALREQ, __func__, log_buf);
+    return(PBSE_IVALREQ);
+    }
+
   /* cannot be in exiting or transit, exiting has already been checked */
 
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)

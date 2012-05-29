@@ -1039,7 +1039,7 @@ static void post_delete_mom1(
       pthread_mutex_unlock(server.sv_attr_mutex);
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
       }
-    else if (pjob == NULL)
+    else if (pjob != NULL)
       return;
     }
 

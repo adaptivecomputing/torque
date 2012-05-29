@@ -1629,8 +1629,7 @@ int handle_complete_second_time(
   job *pjob)
 
   {
-  char         log_buf[LOCAL_LOG_BUF_SIZE];
-  char        *jobid;
+  char         log_buf[LOCAL_LOG_BUF_SIZE+1];
   time_t       time_now = time(NULL);
   int          rc = PBSE_NONE;
   char         job_id[PBS_MAXSVRJOBID+1];
@@ -1645,28 +1644,27 @@ int handle_complete_second_time(
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "Bypassing job %s waiting for purge completed command",
-        pjob->ji_qs.ji_jobid);
+        job_id);
       
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
       }
     
-    jobid = strdup(pjob->ji_qs.ji_jobid);
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
       }
 
-    set_task(WORK_Timed, time_now + JOBMUSTREPORTDEFAULTKEEP, on_job_exit, jobid, FALSE);
-    
-    rc = PBSE_JOBWORKDELAY; 
+    set_task(WORK_Timed, time_now + JOBMUSTREPORTDEFAULTKEEP, on_job_exit, strdup(job_id), FALSE);
+    rc = PBSE_JOBWORKDELAY;
     }
   else
     {
-    if ((rc = job_purge(pjob)) == PBSE_UNKJOBID)
+    rc = job_purge(pjob);
+    if (rc == PBSE_UNKJOBID)
       pthread_mutex_unlock(pjob->ji_mutex);
+    
     }
-
   return(rc); 
   } /* END handle_complete_second_time() */
 
@@ -1698,9 +1696,7 @@ void on_job_exit(
   {
   int                   rc = PBSE_NONE;
   job                  *pjob;
-
   struct batch_request *preq;
-
   char                 *job_id;
   int                   type = ptask->wt_type;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1750,9 +1746,7 @@ void on_job_exit(
     {
     sprintf(log_buf, "%s called with INVALID jobid: %s", __func__, job_id);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, "NULL", log_buf);
-
     free(job_id);
-
     return;
     }
   else

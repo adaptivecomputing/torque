@@ -1435,9 +1435,10 @@ int req_stat_node(
 
   if (svr_totnodes <= 0)
     {
-    req_reject(PBSE_NONODES, 0, preq, NULL, "node list is empty - check 'server_priv/nodes' file");
+    rc = PBSE_NONODES;
+    req_reject(rc, 0, preq, NULL, "node list is empty - check 'server_priv/nodes' file");
 
-    return(PBSE_NONODES);
+    return rc;
     }
 
   name = preq->rq_ind.rq_status.rq_id;

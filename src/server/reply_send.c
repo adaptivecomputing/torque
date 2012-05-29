@@ -118,7 +118,7 @@ static int dis_reply_write(
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
     /* don't need to get the lock here because we already have it from process request */
-    close_conn(chan->sock, FALSE);
+    close_conn(sfds, FALSE);
     }
 
   if (chan != NULL)
@@ -221,7 +221,6 @@ int reply_send_svr(
 
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
-
       }
     }
 

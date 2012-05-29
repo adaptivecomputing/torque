@@ -1049,7 +1049,6 @@ void *job_clone_wt(
 
     if (template_job != NULL)
       pthread_mutex_unlock(template_job->ji_mutex);
-
     return(NULL);
     }
 
@@ -1172,7 +1171,6 @@ void *job_clone_wt(
     }
   
   pthread_mutex_unlock(pa->ai_mutex);
-    
   return(NULL);
   }  /* END job_clone_wt */
 
@@ -1667,7 +1665,7 @@ int job_purge(
         }
       }
     else
-      return(PBSE_NONE);
+      return PBSE_JOBNOTFOUND;
     }
 
 

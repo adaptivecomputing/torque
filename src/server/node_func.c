@@ -1326,12 +1326,15 @@ int create_a_gpusubnode(
   struct pbsnode *pnode)
 
   {
+  int rc = PBSE_NONE;
   struct gpusubn *tmp = calloc((1 + pnode->nd_ngpus), sizeof(struct gpusubn));
 
   if (tmp == NULL)
     {
-    log_err(ENOMEM, __func__, "Couldn't allocate memory for a subnode. EPIC FAILURE");
-    return(ENOMEM);
+    rc = PBSE_MEM_MALLOC;
+    log_err(rc,__func__,
+        "Couldn't allocate memory for a subnode. EPIC FAILURE");
+    return(rc);
     }
 
   if (pnode->nd_ngpus > 0)
@@ -1357,7 +1360,7 @@ int create_a_gpusubnode(
   pnode->nd_ngpus++;
   pnode->nd_ngpus_free++;
 
-  return(PBSE_NONE);
+  return(rc);
   } /* END create_a_gpusubnode() */
 
 
@@ -1680,7 +1683,7 @@ int create_pbs_node(
     if (host_info == NULL)
       {
       log_err(-1, __func__, "create_pbs_node calloc failed");
-      return(PBSE_SYSTEM);
+      return(PBSE_MEM_MALLOC);
       }
 
     CLEAR_HEAD(host_info->atrlist);
@@ -1695,7 +1698,7 @@ int create_pbs_node(
       if (pattrl == NULL)
         {
         log_err(-1, __func__, "cannot create node attribute");
-        return(PBSE_SYSTEM);
+        return(PBSE_MEM_MALLOC);
         }
 
       strcpy(pattrl->al_value, pal->al_atopl.value);
@@ -1716,7 +1719,7 @@ int create_pbs_node(
         {
         free(host_info);
         log_err(-1, __func__, "create_pbs_node calloc failed");
-        return(PBSE_SYSTEM);
+        return(PBSE_MEM_MALLOC);
         }
 
       strcpy(host_info->nodename, objname);
@@ -1792,14 +1795,15 @@ int create_pbs_node(
     {
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buf, "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+          "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
         pnode->nd_name,
         (pul[i] & 0xff000000) >> 24,
         (pul[i] & 0x00ff0000) >> 16,
         (pul[i] & 0x0000ff00) >> 8,
         (pul[i] & 0x000000ff));
 
-      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,__func__,log_buf);
       }
     
     addr = pul[i];
@@ -1953,8 +1957,9 @@ int setup_nodes(void)
 
   if ((nin = fopen(path_nodes, "r")) == NULL)
     {
-    sprintf(log_buf, "cannot open node description file '%s' in setup_nodes()\n",
-            path_nodes);
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+        "cannot open node description file '%s' in setup_nodes()\n",
+        path_nodes);
 
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,server_name,log_buf);
 
@@ -2169,9 +2174,10 @@ int setup_nodes(void)
 
     if (err != 0)
       {
-      snprintf(log_buf, sizeof(log_buf), "could not create node \"%s\", error = %d",
-        nodename,
-        err);
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+          "could not create node \"%s\", error = %d",
+          nodename,
+          err);
 
       log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
