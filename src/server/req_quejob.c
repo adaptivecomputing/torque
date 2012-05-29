@@ -125,6 +125,7 @@
 #include "threadpool.h"
 #include "job_func.h" /* job_purge */
 #include "pbs_nodes.h"
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 
 
 #include "work_task.h"
@@ -1916,36 +1917,39 @@ int set_interactive_job_roaming_policy(
 
   if (cray_enabled == TRUE)
     {
-    if (interactive_roaming == FALSE)
+    if (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long == TRUE)
       {
-      submit_node_id = strdup(pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
-      if ((pnode = find_nodebyname(submit_node_id)) == NULL)
+      if (interactive_roaming == FALSE)
         {
-        if ((dot = strchr(submit_node_id, '.')) != NULL)
+        submit_node_id = strdup(pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
+        if ((pnode = find_nodebyname(submit_node_id)) == NULL)
           {
-          *dot = '\0';
-          pnode = find_nodebyname(submit_node_id);
+          if ((dot = strchr(submit_node_id, '.')) != NULL)
+            {
+            *dot = '\0';
+            pnode = find_nodebyname(submit_node_id);
+            }
           }
-        }
-
-      if (pnode != NULL)
-        {
-        pjob->ji_wattr[JOB_ATR_login_prop].at_flags |= ATR_VFLAG_SET;
-        pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = submit_node_id;
-
-        unlock_node(pnode, __func__, NULL, 0);
-        }
-      else
-        {
-        snprintf(log_buf, sizeof(log_buf),
-          "Couldn't determine which login node is %s",
-          pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
-        log_err(PBSE_UNKNODE, __func__, log_buf);
-        rc = -1;
+        
+        if (pnode != NULL)
+          {
+          pjob->ji_wattr[JOB_ATR_login_prop].at_flags |= ATR_VFLAG_SET;
+          pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = submit_node_id;
+          
+          unlock_node(pnode, __func__, NULL, 0);
+          }
+        else
+          {
+          snprintf(log_buf, sizeof(log_buf),
+            "Couldn't determine which login node is %s",
+            pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
+          log_err(PBSE_UNKNODE, __func__, log_buf);
+          rc = -1;
+          }
         }
       }
     }
-
+  
   return(rc);
   } /* END set_interactive_job_roaming_policy() */
 
