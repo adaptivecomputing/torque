@@ -1932,6 +1932,8 @@ int set_interactive_job_roaming_policy(
         {
         pjob->ji_wattr[JOB_ATR_login_prop].at_flags |= ATR_VFLAG_SET;
         pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = submit_node_id;
+
+        unlock_node(pnode, __func__, NULL, 0);
         }
       else
         {
