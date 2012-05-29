@@ -475,7 +475,12 @@ int login_encode_jobs(
     for (jip = psubn->jobs;jip != NULL;jip = jip->next)
       {
       pjob = get_job_from_jobinfo(jip, pnode);
-      login_id = pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str;
+
+      if (pjob != NULL)
+        {
+        login_id = pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str;
+        pthread_mutex_unlock(pjob->ji_mutex);
+        }
 
       if (strncmp(pnode->nd_name, login_id, strlen(pnode->nd_name)))
         {
@@ -648,8 +653,11 @@ int status_nodeattrib(
 
     for (index = 0; index < limit; index++)
       {
-      if (((padef + index)->at_flags & priv) &&
-          !((padef + index)->at_flags & ATR_DFLAG_NOSTAT))
+      if ((index == ND_ATR_jobs) &&
+          (pnode->nd_is_alps_login == TRUE))
+        rc = login_encode_jobs(pnode, phead);
+      else if (((padef + index)->at_flags & priv) &&
+               !((padef + index)->at_flags & ATR_DFLAG_NOSTAT))
         {
         rc = (padef + index)->at_encode(
                &atemp[index],
