@@ -19,6 +19,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix server crash caused by gpu mode not being right after gpus=x:. TRQ-948.
   b - fix logic in torque.setup so it does not say successfully started when
       trqauthd failed to start. TRQ-938.
+  b - fix segfaults on job deletes, dependencies, and cases where a batch 
+      request is held in multiple places. TRQ-933, 988, 990
 
 4.0.2
   e - Change so init.d script variables get set based on the configure command.
