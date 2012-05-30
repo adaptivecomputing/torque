@@ -912,6 +912,20 @@ fi
 
 
 
+dnl
+dnl add an option to specify a different path where TORQUE should look for HWLOC 
+dnl lib and include files
+dnl
+AC_ARG_WITH(hwloc-path, [
+  --with-hwloc-path=PATH   
+                       Specifies the path to the hwloc libraries and include files.
+                       Example: ./configure --with-hwloc-path=/usr/local/hwloc-1.1
+                       Will specify that the include files are in /usr/local/hwloc-1.1/include and
+                       the libraries are in /usr/local/hwloc-1.1/lib],
+  [HWLOC_LIBS="-L ${withval}/lib -hwloc"; HWLOC_CFLAGS="-I${withval}/include"],
+  [TOM="BOB"])
+
+
 
 dnl For Linux 2.6 cpusets, libhwloc is needed for pbs_mom.
 dnl We are using pkg-config to figure out libs and cflags.
