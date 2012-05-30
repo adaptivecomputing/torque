@@ -14,7 +14,7 @@ TRQ_CHECK_RES=$?
 if [ "$TRQ_CHECK_RES" = "1" ]; then
   TRQ_START=`trqauthd`
   TRQ_START_RES=$?
-  if [ "$TRQ_START_RES" = "1" ]; then
+  if [ "$TRQ_START_RES" -ne "0" ]; then
     echo "trqauthd failed to start!!! exiting setup"
     exit 1
   else

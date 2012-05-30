@@ -17,6 +17,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   c - TRQ-973. Fix a possibility of a segfault in netcounter_incr()
   b - fixes to communications between pbs_sched and pbs_server. TRQ-884
   b - fix server crash caused by gpu mode not being right after gpus=x:. TRQ-948.
+  b - fix logic in torque.setup so it does not say successfully started when
+      trqauthd failed to start. TRQ-938.
 
 4.0.2
   e - Change so init.d script variables get set based on the configure command.
