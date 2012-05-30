@@ -366,7 +366,13 @@ void array_delete_wt(
   int                   num_prerun = 0;
   job                  *pjob;
 
-  preq = ptask->wt_parm1;
+  preq = get_remove_batch_request((char *)ptask->wt_parm1);
+  
+  free(ptask->wt_mutex);
+  free(ptask);
+
+  if (preq == NULL)
+    return;
 
   pa = get_array(preq->rq_ind.rq_delete.rq_objname);
 
@@ -375,8 +381,6 @@ void array_delete_wt(
     /* jobs must have exited already */
     reply_ack(preq);
 
-    free(ptask->wt_mutex);
-    free(ptask);
     return;
     }
 
@@ -458,8 +462,6 @@ void array_delete_wt(
     req_deletearray(preq);
     }
 
-  free(ptask->wt_mutex);
-  free(ptask);
   } /* END array_delete_wt() */
 
 

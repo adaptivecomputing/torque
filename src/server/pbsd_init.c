@@ -204,7 +204,8 @@ dynamic_string         *hierarchy_holder;
 hello_container         hellos;
 hello_container         failures;
 
-reservation_holder alps_reservations;
+reservation_holder      alps_reservations;
+batch_request_holder    brh;
 
 extern pthread_mutex_t *acctfile_mutex;
 pthread_mutex_t        *scheduler_sock_jobct_mutex;
@@ -1206,6 +1207,7 @@ int initialize_data_structures_and_mutexes()
    * they can be called by a signal handler */
 
   initialize_recycler();
+  initialize_batch_request_holder();
 
   initialize_all_tasks_array(&task_list_timed);
   initialize_all_tasks_array(&task_list_event);

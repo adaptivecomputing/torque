@@ -130,7 +130,13 @@ static void post_rerun(
   struct batch_request *preq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  preq = (struct batch_request *)pwt->wt_parm1;
+  preq = get_remove_batch_request(pwt->wt_parm1);
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  if (preq == NULL)
+    return;
 
   if (preq->rq_reply.brp_code != 0)
     {
@@ -148,7 +154,7 @@ static void post_rerun(
       }
     }
 
-  release_req(pwt);
+  free_br(preq);
 
   return;
   }  /* END post_rerun() */

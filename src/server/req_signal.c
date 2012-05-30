@@ -288,10 +288,14 @@ static void post_signal_req(
 
   svr_disconnect(pwt->wt_event); /* disconnect from MOM */
 
-  preq = pwt->wt_parm1;
+  preq = get_remove_batch_request((char *)pwt->wt_parm1);
  
   free(pwt->wt_mutex);
   free(pwt);
+
+  /* request has been handled elsewhere */
+  if (preq == NULL)
+    return;
 
   preq->rq_conn = preq->rq_orgconn;  /* restore client socket */
 

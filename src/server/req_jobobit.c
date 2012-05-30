@@ -1708,12 +1708,20 @@ void on_job_exit(
     preq = NULL;
 
     job_id = strdup((char *)ptask->wt_parm1);
+
     free(ptask->wt_parm1);
+    free(ptask->wt_mutex);
+    free(ptask);
     }
   else
     {
-    preq = (struct batch_request *)ptask->wt_parm1;
-    if (preq->rq_extra != NULL)
+    preq = get_remove_batch_request(ptask->wt_parm1);
+      
+    free(ptask->wt_mutex);
+    free(ptask);
+
+    if ((preq != NULL) &&
+        (preq->rq_extra != NULL))
       {
       job_id = strdup((char *)preq->rq_extra);
       free(preq->rq_extra);
@@ -1721,15 +1729,9 @@ void on_job_exit(
       }
     else
       {
-      /* Something is broken. */
-      free(ptask->wt_mutex);
-      free(ptask);
       return;
       }
     }
-  
-  free(ptask->wt_mutex);
-  free(ptask);
 
   /* check for calloc errors */
   if (job_id == NULL)
@@ -1882,7 +1884,12 @@ void on_job_rerun(
     }
   else
     {
-    preq = (struct batch_request *)ptask->wt_parm1;
+    if ((preq = get_remove_batch_request(ptask->wt_parm1)) == NULL)
+      {
+      free(ptask->wt_mutex);
+      free(ptask);
+      }
+
     jobid = (char *)preq->rq_extra;
     }
 
@@ -2300,7 +2307,10 @@ static void wait_for_send(
   struct work_task *ptask)
 
   {
-  req_jobobit((struct batch_request *)ptask->wt_parm1);
+  batch_request *preq = get_remove_batch_request(ptask->wt_parm1);
+
+  if (preq != NULL)
+    req_jobobit(preq);
 
   return;
   }

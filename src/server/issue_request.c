@@ -243,20 +243,23 @@ static void reissue_to_svr(
   struct work_task *pwt)
 
   {
-  time_t                time_now = time(NULL);
-  struct batch_request *preq = pwt->wt_parm1;
+  time_t         time_now = time(NULL);
+  char          *br_id = pwt->wt_parm1;
+  batch_request *preq = get_remove_batch_request(br_id);
 
   /* if not timed-out, retry send to remote server */
-
-  if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
-      (issue_to_svr(preq->rq_host, preq, pwt->wt_parmfunc) != PBSE_NONE))
+  if (preq != NULL)
     {
-    /* either timed-out or got hard error, tell post-function  */
-
-    pwt->wt_aux = -1; /* seen as error by post function  */
-    pwt->wt_event = -1; /* seen as connection by post func */
-
-    ((void (*)())pwt->wt_parmfunc)(pwt);
+    if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
+        (issue_to_svr(preq->rq_host, preq, pwt->wt_parmfunc) != PBSE_NONE))
+      {
+      /* either timed-out or got hard error, tell post-function  */
+      
+      pwt->wt_aux = -1; /* seen as error by post function  */
+      pwt->wt_event = -1; /* seen as connection by post func */
+      
+      ((void (*)())pwt->wt_parmfunc)(pwt);
+      }
     }
 
   free(pwt->wt_mutex);
@@ -337,7 +340,10 @@ int issue_to_svr(
 
   if (do_retry)
     {
-    pwt = set_task(WORK_Timed, (long)(time_now + PBS_NET_RETRY_TIME), reissue_to_svr, preq, TRUE);
+    if (preq->rq_id == NULL)
+      get_batch_request_id(preq);
+
+    pwt = set_task(WORK_Timed, (long)(time_now + PBS_NET_RETRY_TIME), reissue_to_svr, preq->rq_id, TRUE);
 
     pwt->wt_parmfunc = replyfunc;
 
@@ -371,7 +377,11 @@ void release_req(
   struct work_task *pwt)
 
   {
-  free_br((struct batch_request *)pwt->wt_parm1);
+  batch_request *preq;
+  char          *br_id = pwt->wt_parm1;
+
+  if ((preq = get_remove_batch_request(br_id)) != NULL)
+    free_br(preq);
 
   if (pwt->wt_event != -1)
     svr_disconnect(pwt->wt_event);
@@ -470,7 +480,10 @@ int issue_Drequest(
 
   if (func != NULL)
     {
-    ptask = set_task(wt, (long)conn, func, (void *)request, FALSE);
+    if (request->rq_id == NULL)
+      get_batch_request_id(request);
+
+    ptask = set_task(wt, (long)conn, func, request->rq_id, FALSE);
 
     if (ppwt != NULL)
       *ppwt = ptask;

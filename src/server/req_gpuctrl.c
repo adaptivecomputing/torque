@@ -303,7 +303,14 @@ void process_gpu_request_reply(
 
   svr_disconnect(pwt->wt_event); /* close connection to MOM */
 
-  preq = pwt->wt_parm1;
+  preq = get_remove_batch_request((char *)pwt->wt_parm1);
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  if (preq == NULL)
+    return;
+
   preq->rq_conn = preq->rq_orgconn;  /* restore client socket */
 
   if (preq->rq_reply.brp_code != 0)
@@ -334,8 +341,5 @@ void process_gpu_request_reply(
 
     reply_ack(preq);
     }
-
-  free(pwt->wt_mutex);
-  free(pwt);
   }
 #endif  /* NVIDIA_GPUS */

@@ -153,12 +153,18 @@ static void post_modify_req(
   {
 
   struct batch_request *preq;
-  job  *pjob;
+  job                  *pjob;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   svr_disconnect(pwt->wt_event);  /* close connection to MOM */
 
-  preq = pwt->wt_parm1;
+  preq = get_remove_batch_request(pwt->wt_parm1);
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  if (preq == NULL)
+    return;
 
   preq->rq_conn = preq->rq_orgconn;  /* restore socket to client */
 
@@ -181,8 +187,6 @@ static void post_modify_req(
       if ((pjob = find_job(preq->rq_ind.rq_modify.rq_objname)) == NULL)
         {
         req_reject(preq->rq_reply.brp_code, 0, preq, NULL, NULL);
-        free(pwt->wt_mutex);
-        free(pwt);
         return;
         }
       else
@@ -204,9 +208,6 @@ static void post_modify_req(
 
     reply_ack(preq);
     }
-
-  free(pwt->wt_mutex);
-  free(pwt);
 
   return;
   }  /* END post_modify_req() */
@@ -333,12 +334,19 @@ void chkpt_xfr_hold(
   struct work_task *ptask)
 
   {
-  job       *pjob;
+  job                  *pjob;
 
   struct batch_request *preq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  preq = (struct batch_request *)ptask->wt_parm1;
+  preq = get_remove_batch_request(ptask->wt_parm1);
+
+  free(ptask->wt_mutex);
+  free(ptask);
+
+  if (preq == NULL)
+    return;
+
   pjob = (job *)preq->rq_extra;
 
   pthread_mutex_lock(pjob->ji_mutex);
@@ -350,10 +358,10 @@ void chkpt_xfr_hold(
       PJobState[pjob->ji_qs.ji_state],
       PJobSubState[pjob->ji_qs.ji_substate]);
 
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
     }
   
-  release_req(ptask);
+  free_br(preq);
 
   set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
@@ -1451,7 +1459,14 @@ void post_modify_arrayreq(
 
   svr_disconnect(pwt->wt_event);  /* close connection to MOM */
 
-  preq = pwt->wt_parm1;
+  preq = get_remove_batch_request(pwt->wt_parm1);
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  if (preq == NULL)
+    return;
+
   parent_req = preq->rq_extra; /* This is the original batch_request allocated by process_request */
 
   preq->rq_conn = preq->rq_orgconn;  /* restore socket to client */
@@ -1478,9 +1493,6 @@ void post_modify_arrayreq(
       if ((pjob = find_job(preq->rq_ind.rq_modify.rq_objname)) == NULL)
         {
         parent_req->rq_refcount--;
-
-        free(pwt->wt_mutex);
-        free(pwt);
 
         if (parent_req->rq_refcount == 0)
           {
@@ -1521,9 +1533,6 @@ void post_modify_arrayreq(
     else
       free_br(preq);
     }
-
-  free(pwt->wt_mutex);
-  free(pwt);
 
   return;
   }  /* END post_modify_arrayreq() */

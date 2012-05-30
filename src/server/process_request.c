@@ -1057,6 +1057,12 @@ void free_br(
   struct batch_request *preq)
 
   {
+  if (preq->rq_id != NULL)
+    {
+    remove_batch_request(preq->rq_id);
+    free(preq->rq_id);
+    preq->rq_id = NULL;
+    }
 
   reply_free(&preq->rq_reply);
 

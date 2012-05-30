@@ -416,7 +416,14 @@ static void post_checkpoint(
 
   struct batch_request *preq;
 
-  preq = (struct batch_request *)ptask->wt_parm1;
+  preq = get_remove_batch_request((char *)ptask->wt_parm1);
+
+  free(ptask->wt_mutex);
+  free(ptask);
+
+  if (preq == NULL)
+    return;
+
   pjob = find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname);
 
   if (preq->rq_reply.brp_code == 0)
@@ -444,7 +451,7 @@ static void post_checkpoint(
       }
     }
 
-  release_req(ptask);
+  free_br(preq);
 
   if (pjob != NULL)
     pthread_mutex_unlock(pjob->ji_mutex);

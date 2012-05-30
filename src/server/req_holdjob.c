@@ -702,7 +702,15 @@ static void process_hold_reply(
 
   svr_disconnect(pwt->wt_event); /* close connection to MOM */
 
-  preq = pwt->wt_parm1;
+  preq = get_remove_batch_request(pwt->wt_parm1);
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  /* preq was handled previously */
+  if (preq == NULL)
+    return;
+
   preq->rq_conn = preq->rq_orgconn;  /* restore client socket */
 
   if ((pjob = find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname)) == (job *)0)
@@ -711,9 +719,6 @@ static void process_hold_reply(
               preq->rq_ind.rq_hold.rq_orig.rq_objname,
               msg_postmomnojob);
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, msg_postmomnojob);
-
-    free(pwt->wt_mutex);
-    free(pwt);
 
     return;
     }
@@ -773,8 +778,6 @@ static void process_hold_reply(
 
   pthread_mutex_unlock(pjob->ji_mutex);
 
-  free(pwt->wt_mutex);
-  free(pwt);
   } /* END process_hold_reply() */
 
 /*
@@ -794,7 +797,15 @@ static void process_checkpoint_reply(
 
   svr_disconnect(pwt->wt_event); /* close connection to MOM */
 
-  preq = pwt->wt_parm1;
+  preq = get_remove_batch_request(pwt->wt_parm1);
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  /* preq handled previously */
+  if (preq == NULL)
+    return;
+
   preq->rq_conn = preq->rq_orgconn;  /* restore client socket */
 
   if ((pjob = find_job(preq->rq_ind.rq_manager.rq_objname)) == (job *)0)
@@ -813,8 +824,5 @@ static void process_checkpoint_reply(
 
     pthread_mutex_unlock(pjob->ji_mutex);
     }
-
-  free(pwt->wt_mutex);
-  free(pwt);
   } /* END process_checkpoint_reply() */
 

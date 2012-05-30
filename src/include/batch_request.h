@@ -104,7 +104,10 @@
 #include "credential.h"
 #include "pbs_job.h"
 #include "u_memmgr.h" /* memmgr */
+#include "resizable_array.h"
+#include "hash_table.h"
 
+#define  INITIAL_REQUEST_HOLDER_SIZE 20
 
 /*
  * The rest of this stuff is for the Batch Request Structure
@@ -319,89 +322,109 @@ struct rq_jobobit
 
 struct batch_request
   {
-  list_link rq_link; /* linkage of all requests   */
-  int rq_type; /* type of request   */
-  int rq_perm; /* access permissions for the user */
-  int rq_fromsvr; /* true if request from another server */
-  int rq_conn; /* socket connection to client/server */
-  int rq_orgconn; /* original socket if relayed to MOM */
-  int rq_extsz; /* size of "extension" data  */
-  long rq_time; /* time batch request created  */
-  char rq_user[PBS_MAXUSER+1];     /* user name request is from    */
-  char rq_host[PBS_MAXHOSTNAME+1]; /* name of host sending request */
-  int   rq_refcount;
-  void *rq_extra; /* optional ptr to extra info  */
-  int   rq_noreply; /* Set true if no reply is required */
-  char *rq_extend; /* request "extension" data  */
-  memmgr *mm;         /* Memory manager for this batch_request */
+  list_link           rq_link; /* linkage of all requests   */
+  int                 rq_type; /* type of request   */
+  int                 rq_perm; /* access permissions for the user */
+  int                 rq_fromsvr; /* true if request from another server */
+  int                 rq_conn; /* socket connection to client/server */
+  int                 rq_orgconn; /* original socket if relayed to MOM */
+  int                 rq_extsz; /* size of "extension" data  */
+  long                rq_time; /* time batch request created  */
+  char                rq_user[PBS_MAXUSER+1];     /* user name request is from    */
+  char                rq_host[PBS_MAXHOSTNAME+1]; /* name of host sending request */
+  int                 rq_refcount;
+  void               *rq_extra; /* optional ptr to extra info  */
+  int                 rq_noreply; /* Set true if no reply is required */
+  char               *rq_extend; /* request "extension" data  */
+  char               *rq_id;      /* the batch request's id */
+  memmgr             *mm;         /* Memory manager for this batch_request */
 
   struct batch_reply  rq_reply;   /* the reply area for this request */
 
   union indep_request
     {
 
-    struct rq_authen rq_authen;
-    int   rq_connect;
+    struct rq_authen      rq_authen;
+    int                   rq_connect;
 
-    struct rq_queuejob rq_queuejob;
+    struct rq_queuejob    rq_queuejob;
 
-    struct rq_jobcred       rq_jobcred;
+    struct rq_jobcred     rq_jobcred;
 
-    struct rq_jobfile rq_jobfile;
-    char          rq_rdytocommit[PBS_MAXSVRJOBID+1];
-    char          rq_commit[PBS_MAXSVRJOBID+1];
+    struct rq_jobfile     rq_jobfile;
+    char                  rq_rdytocommit[PBS_MAXSVRJOBID+1];
+    char                  rq_commit[PBS_MAXSVRJOBID+1];
 
-    struct rq_manage rq_delete;
+    struct rq_manage      rq_delete;
 
-    struct rq_hold  rq_hold;
-    char          rq_locate[PBS_MAXSVRJOBID+1];
+    struct rq_hold        rq_hold;
+    char                  rq_locate[PBS_MAXSVRJOBID+1];
 
-    struct rq_manage rq_manager;
+    struct rq_manage      rq_manager;
 
-    struct rq_message rq_message;
+    struct rq_message     rq_message;
 
-    struct rq_manage rq_modify;
+    struct rq_manage      rq_modify;
 
-    struct rq_move  rq_move;
+    struct rq_move        rq_move;
 
-    struct rq_register rq_register;
+    struct rq_register    rq_register;
 
-    struct rq_manage rq_release;
-    char          rq_rerun[PBS_MAXSVRJOBID+1];
+    struct rq_manage      rq_release;
+    char                  rq_rerun[PBS_MAXSVRJOBID+1];
 
-    struct rq_rescq  rq_rescq;
+    struct rq_rescq       rq_rescq;
 
-    struct rq_runjob        rq_run;
-    tlist_head         rq_select; /* svrattrlist */
-    int   rq_shutdown;
+    struct rq_runjob      rq_run;
+    tlist_head            rq_select; /* svrattrlist */
+    int                   rq_shutdown;
 
-    struct rq_signal rq_signal;
+    struct rq_signal      rq_signal;
 
-    struct rq_status        rq_status;
+    struct rq_status      rq_status;
 
-    struct rq_track  rq_track;
+    struct rq_track       rq_track;
 
-    struct rq_gpuctrl  rq_gpuctrl;
+    struct rq_gpuctrl     rq_gpuctrl;
 
-    struct rq_cpyfile rq_cpyfile;
+    struct rq_cpyfile     rq_cpyfile;
 
     struct rq_returnfiles rq_returnfiles;
 
-    struct rq_jobobit rq_jobobit;
+    struct rq_jobobit     rq_jobobit;
     } rq_ind;
   };
 
+typedef struct batch_request batch_request;
+ 
+typedef struct batch_request_holder 
+  {
+  int              brh_index;
+  pthread_mutex_t *brh_mutex;
+  resizable_array *brh_ra;
+  hash_table_t    *brh_ht;
+  } batch_request_holder;
 
-extern struct batch_request *alloc_br (int type);
-extern void  reply_ack (struct batch_request *);
-extern void  req_reject (int code, int aux, struct batch_request *, char *, char *);
-extern void  reply_badattr (int code, int aux, svrattrl *, struct batch_request *);
-extern void  reply_text (struct batch_request *, int code, char *text);
-extern int   reply_jobid (struct batch_request *, char *, int);
-extern void  reply_free (struct batch_reply *);
-extern int   authenticate_user (struct batch_request *, struct credential *, char **);
-extern void  free_br (struct batch_request *);
-extern int   isode_request_read (int, struct batch_request *);
+extern batch_request_holder brh;
+
+
+batch_request *alloc_br (int type);
+extern void    reply_ack (struct batch_request *);
+extern void    req_reject (int code, int aux, struct batch_request *, char *, char *);
+extern void    reply_badattr (int code, int aux, svrattrl *, struct batch_request *);
+extern void    reply_text (struct batch_request *, int code, char *text);
+extern int     reply_jobid (struct batch_request *, char *, int);
+extern void    reply_free (struct batch_reply *);
+extern int     authenticate_user (struct batch_request *, struct credential *, char **);
+extern void    free_br (struct batch_request *);
+extern int     isode_request_read (int, struct batch_request *);
+
+void           initialize_batch_request_holder();
+int            get_batch_request_id(batch_request *preq);
+int            insert_batch_request(batch_request *preq);
+batch_request *get_batch_request(char *br_id);
+batch_request *get_remove_batch_request(char *br_id);
+int            remove_batch_request(char *br_id);
 
 #ifndef PBS_MOM
 extern void  req_connect (struct batch_request *req);

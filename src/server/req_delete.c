@@ -931,7 +931,10 @@ static void post_delete_route(
   struct work_task *pwt)
 
   {
-  req_deletejob((struct batch_request *)pwt->wt_parm1);
+  batch_request *preq = get_remove_batch_request((char *)pwt->wt_parm1);
+
+  if (preq != NULL)
+    req_deletejob(preq);
 
   free(pwt->wt_mutex);
   free(pwt);
@@ -965,11 +968,18 @@ static void post_delete_mom1(
   int                   rc;
   time_t                time_now = time(NULL);
 
-  preq_sig = pwt->wt_parm1;
+  preq_sig = get_remove_batch_request((char *)pwt->wt_parm1);
+  
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  if (preq_sig == NULL)
+    return;
+
   rc       = preq_sig->rq_reply.brp_code;
   preq_clt = preq_sig->rq_extra;
 
-  release_req(pwt);
+  free_br(preq_sig);
 
   pjob = find_job(preq_clt->rq_ind.rq_delete.rq_objname);
 
@@ -1299,14 +1309,21 @@ static void post_job_delete_nanny(
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   long                  nanny = 0;
 
-  preq_sig = pwt->wt_parm1;
+  preq_sig = get_remove_batch_request((char *)pwt->wt_parm1);
+  
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  if (preq_sig == NULL)    
+    return;
+
   rc       = preq_sig->rq_reply.brp_code;
 
   get_svr_attr_l(SRV_ATR_JobNanny, &nanny);
   if (!nanny)
     {
     /* the admin disabled nanny within the last minute or so */
-    release_req(pwt);
+    free_br(preq_sig);
 
     return;
     }
@@ -1330,7 +1347,7 @@ static void post_job_delete_nanny(
 
     set_resc_assigned(pjob, DECR);
   
-    release_req(pwt);
+    free_br(preq_sig);
 
     job_purge(pjob);
 
@@ -1340,7 +1357,7 @@ static void post_job_delete_nanny(
   pthread_mutex_unlock(pjob->ji_mutex);
 
   /* free task */
-  release_req(pwt);
+  free_br(preq_sig);
 
   return;
   } /* END post_job_delete_nanny() */

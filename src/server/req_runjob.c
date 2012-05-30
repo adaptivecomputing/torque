@@ -380,7 +380,14 @@ static void post_checkpointsend(
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   time_t                time_now = time(NULL);
 
-  preq = pwt->wt_parm1;
+  preq = get_remove_batch_request(pwt->wt_parm1);
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  if (preq == NULL)
+    return;
+
   code = preq->rq_reply.brp_code;
   pjob = find_job(preq->rq_extra);
 
@@ -449,7 +456,7 @@ static void post_checkpointsend(
       pthread_mutex_unlock(pjob->ji_mutex);
     }    /* END if (pjob != NULL) */
 
-  release_req(pwt); /* close connection and release request */
+  free_br(preq); /* close connection and release request */
 
   return;
   }  /* END post_checkpointsend() */
@@ -601,7 +608,15 @@ static void post_stagein(
   pbs_attribute        *pwait;
   time_t                time_now = time(NULL);
 
-  preq = pwt->wt_parm1;
+  preq = get_remove_batch_request(pwt->wt_parm1);
+    
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  /* preq handled previously */
+  if (preq == NULL)
+    return;
+
   code = preq->rq_reply.brp_code;
   pjob = find_job(preq->rq_extra);
 
@@ -677,7 +692,7 @@ static void post_stagein(
       pthread_mutex_unlock(pjob->ji_mutex);
     }    /* END if (pjob != NULL) */
 
-  release_req(pwt); /* close connection and release request */
+  free_br(preq); /* close connection and release request */
 
   return;
   }  /* END post_stagein() */

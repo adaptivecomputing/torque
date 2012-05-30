@@ -181,10 +181,11 @@ int reply_send_svr(
      * the immediate list for dispatching.
      */
 
-    while ((ptask = next_task(&task_list_event,&iter)) != NULL)
+    while ((ptask = next_task(&task_list_event, &iter)) != NULL)
       {
       if ((ptask->wt_type == WORK_Deferred_Local) &&
-          (ptask->wt_parm1 == (void *)request))
+          (ptask->wt_parm1 != NULL) &&
+          (!strcmp((char *)ptask->wt_parm1, request->rq_id)))
         {
         if (ptask->wt_tasklist)
           remove_task(ptask->wt_tasklist,ptask);
