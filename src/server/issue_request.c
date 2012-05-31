@@ -323,8 +323,11 @@ int issue_to_svr(
 
     if (handle >= 0)
       {
-      if ((rc = issue_Drequest(handle, preq, replyfunc, NULL)) == PBSE_NONE)
+      if (((rc = issue_Drequest(handle, preq, replyfunc, NULL)) == PBSE_NONE) &&
+          (handle != PBS_LOCAL_CONNECTION))
         {
+        /* preq is already freed if handle == PBS_LOCAL_CONNECTION - a reply 
+         * has always been sent */
         rc = preq->rq_reply.brp_code;
         }
 
