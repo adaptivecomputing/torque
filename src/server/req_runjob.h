@@ -27,8 +27,6 @@ void finish_sendmom(char *job_id, struct batch_request *preq, long start_time, c
 
 /* static job *chk_job_torun(struct batch_request *preq, int setnn); */
 
-int set_mother_superior_ports(job *pjob, char *list);
-
 /* static int assign_hosts(job *pjob, char *given, int set_exec_host, char *FailHost, char *EMsg); */
 
 #endif /* _REQ_RUNJOB_H */

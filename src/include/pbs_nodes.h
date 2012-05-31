@@ -84,6 +84,7 @@
 */
 
 #include <pthread.h>
+#include <netinet/in.h> /* sockaddr_in */
 #include "resizable_array.h"
 #include "hash_table.h"
 #include "net_connect.h" /* pbs_net_t */
@@ -293,6 +294,7 @@ struct pbsnode
   enum psit             nd_flag;
   unsigned short        nd_mom_port;         /* For multi-mom-mode unique port value PBS_MOM_SERVICE_PORT*/
   unsigned short        nd_mom_rm_port;      /* For multi-mom-mode unique port value PBS_MANAGER_SERVICE_PORT */
+  struct sockaddr_in    nd_sock_addr;        /* address information */
   short                 nd_nprops;           /* number of properties */
   short                 nd_nstatus;          /* number of status items */
   short                 nd_nsn;              /* number of VPs  */
