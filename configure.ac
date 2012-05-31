@@ -922,7 +922,7 @@ AC_ARG_WITH(hwloc-path, [
                        Example: ./configure --with-hwloc-path=/usr/local/hwloc-1.1
                        Will specify that the include files are in /usr/local/hwloc-1.1/include and
                        the libraries are in /usr/local/hwloc-1.1/lib],
-  [HWLOC_LIBS="-L ${withval}/lib -hwloc"; HWLOC_CFLAGS="-I${withval}/include"],
+  [HWLOC_LIBS="-L${withval}/lib -hwloc"; HWLOC_CFLAGS="-I${withval}/include"],
   [TOM="BOB"])
 
 
