@@ -1594,6 +1594,7 @@ int main(
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   unsigned int server_name_file_port = 0;
 
+  extern char  pbs_server_name[];
   extern char *msg_svrdown; /* log message   */
   extern char *msg_startup1; /* log message   */
 
@@ -1664,6 +1665,8 @@ int main(
   get_port_from_server_name_file(&server_name_file_port);
   if (server_name_file_port != 0)
     pbs_server_port_dis = server_name_file_port;
+
+  strcpy(pbs_server_name, server_name);
   /* The following port numbers might have been initialized in set_globals_from_environment() above. */
 
   if (pbs_server_port_dis <= 0)

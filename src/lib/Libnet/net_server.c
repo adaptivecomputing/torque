@@ -133,6 +133,9 @@ extern char local_host_name[];
 void initialize_connections_table();
 
 extern time_t time(time_t *);
+struct in_addr   net_serveraddr;
+char            *net_server_name = NULL;
+char             pbs_server_name[PBS_MAXSERVERNAME + 1];
 
 /* Global Data (I wish I could make it private to the library, sigh, but
  * C don't support that scope of control.)
@@ -297,6 +300,30 @@ int init_network(
   if (initialized == 0)
     {
     initialize_connections_table();
+
+    if (net_server_name == NULL)
+      {
+      /* cache local server addr info */
+      struct in_addr          addr;
+
+      struct addrinfo        *addr_info;
+      char                    namebuf[MAXLINE*2];
+
+      if (getaddrinfo(pbs_server_name, NULL, NULL, &addr_info) == 0)
+        {
+        if (getnameinfo(addr_info->ai_addr, addr_info->ai_addrlen, namebuf, sizeof(namebuf), NULL, 0, 0) == 0)
+          {
+          net_server_name = strdup(namebuf);
+          }
+
+        net_serveraddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr; 
+        }
+
+      freeaddrinfo(addr_info);
+
+      if (net_server_name == NULL)
+        net_server_name = strdup(inet_ntoa(net_serveraddr));
+      }
 
     for (i = 0;i < PBS_NET_MAX_CONNECTIONS;i++)
       {
@@ -1134,27 +1161,10 @@ int get_connecthost(
 
   struct sockaddr        *addr_info_ptr;
   struct sockaddr_in      addr_in;
-  static struct in_addr   serveraddr;
-  static char            *server_name = NULL;
   char                   *name;
 
   addr_in.sin_family = AF_INET;
   addr_in.sin_port = 0;
-
-  if ((server_name == NULL) && (pbs_server_addr != 0))
-    {
-    /* cache local server addr info */
-    serveraddr.s_addr = htonl(pbs_server_addr);
-    addr_in.sin_addr = serveraddr;
-    addr_info_ptr = (struct sockaddr *)&addr_in;
-
-    if ((name = get_cached_nameinfo(&addr_in)) != NULL)
-      server_name = strdup(name);
-    else if (getnameinfo(addr_info_ptr, sizeof(addr_in), namebuf, size, NULL, 0, 0) == 0)
-      server_name = strdup(namebuf);
-    else
-      server_name = strdup(inet_ntoa(serveraddr));
-    }
 
   size--;
 
@@ -1162,19 +1172,19 @@ int get_connecthost(
   addr_in.sin_addr = addr;
   addr_info_ptr = (struct sockaddr *)&addr_in;
 
-  if ((server_name != NULL) &&
+  if ((net_server_name != NULL) &&
       (svr_conn[sock].cn_socktype & PBS_SOCK_UNIX))
     {
     /* lookup request is for local server */
 
-    strcpy(namebuf, server_name);
+    strcpy(namebuf, net_server_name);
     }
-  else if ((server_name != NULL) &&
-           (addr.s_addr == serveraddr.s_addr))
+  else if ((net_server_name != NULL) &&
+           (addr.s_addr == net_serveraddr.s_addr))
     {
     /* lookup request is for local server */
 
-    snprintf(namebuf, size, "%s", server_name);
+    snprintf(namebuf, size, "%s", net_server_name);
     }
   else if ((name = get_cached_nameinfo(&addr_in)) != NULL)
     {
