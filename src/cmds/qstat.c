@@ -31,6 +31,7 @@
 #include "mcom.h"
 #include "utils.h"
 #include "libcmds.h" /* TShowAbout_exit */
+#include "net_cache.h"
 
 
 static void states();
@@ -2037,6 +2038,8 @@ int main(
   option[0] = '-';
   option[2] = '\0';
 #endif
+
+  initialize_network_info();
 
   if (getenv("PBS_QSTAT_EXECONLY") != NULL)
     exec_only = 1;

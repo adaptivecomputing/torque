@@ -2279,7 +2279,7 @@ int svr_is_request(
       sprintf(nodename, "0x%lX", tmpaddr);
       }
     else
-      insert_addr_name_info(nodename, addr);
+      insert_addr_name_info(nodename, NULL, addr);
 
     err = create_partial_pbs_node(nodename, ipaddr, perm);
 

@@ -83,6 +83,7 @@
 typedef struct network_info
   {
   char               *hostname;
+  char               *full_hostname;
   struct sockaddr_in  sai;
   } network_info;
 
@@ -92,6 +93,7 @@ typedef struct network_info
 void                initialize_network_info();
 char               *get_cached_nameinfo(struct sockaddr_in *sai);
 struct sockaddr_in *get_cached_addrinfo(char *hostname);
-int                 insert_addr_name_info(char *hostname, struct sockaddr_in *sai);
+char               *get_cached_fullhostname(char *shortname, struct sockaddr_in *sai);
+int                 insert_addr_name_info(char *hostname, char *full_hostname, struct sockaddr_in *sai);
 
 

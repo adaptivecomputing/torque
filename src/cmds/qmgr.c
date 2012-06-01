@@ -68,6 +68,7 @@
 /* PBS include files */
 #include "cmds.h"
 #include "qmgr.h"
+#include "net_cache.h"
 
 
 
@@ -107,6 +108,8 @@ int main(
   struct attropl *attribs = NULL;   /* Pointer to attribute list */
 
   struct objname *svrs;
+  
+  initialize_network_info();
 
   /* Command line options */
 

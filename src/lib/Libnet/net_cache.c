@@ -144,6 +144,41 @@ char *get_cached_nameinfo(
 
 
 
+char *get_cached_fullhostname(
+
+  char               *hostname,
+  struct sockaddr_in *sai)
+
+  {
+  network_info *ni;
+  int           index = -1;
+  char         *fullname = NULL;
+
+  if (cache.nc_mutex == NULL)
+    return(NULL);
+
+  pthread_mutex_lock(cache.nc_mutex);
+
+  if (hostname != NULL)
+    index = get_value_hash(cache.nc_namekey, hostname);
+
+  if ((index == -1) &&
+      (sai != NULL))
+    index = get_value_hash(cache.nc_saikey, sai);
+
+  if (index >= 0)
+    {
+    ni = (network_info *)cache.nc_ra->slots[index].item;
+    fullname = ni->full_hostname;
+    }
+
+  pthread_mutex_unlock(cache.nc_mutex);
+
+  return(fullname);
+  } /* END get_cached_fullhostname() */
+
+
+
 struct sockaddr_in *get_cached_addrinfo(
     
   char               *hostname)
@@ -176,6 +211,7 @@ struct sockaddr_in *get_cached_addrinfo(
 network_info *get_network_info_holder(
 
   char               *hostname,
+  char               *full_hostname,
   struct sockaddr_in *sai)
 
   {
@@ -183,6 +219,10 @@ network_info *get_network_info_holder(
   network_info *ni = calloc(1, sizeof(network_info));
 
   ni->hostname = strdup(hostname);
+
+  if (full_hostname != NULL)
+    ni->full_hostname = strdup(hostname);
+
   memcpy(&ni->sai, sai, sizeof(struct sockaddr_in));
 
   return(ni);
@@ -194,6 +234,7 @@ network_info *get_network_info_holder(
 int insert_addr_name_info(
     
   char               *hostname,
+  char               *full_hostname,
   struct sockaddr_in *sai)
 
   {
@@ -201,12 +242,15 @@ int insert_addr_name_info(
   int           index;
   network_info *ni;
 
+  if (cache.nc_mutex == NULL)
+    return(-1);
+
   pthread_mutex_lock(cache.nc_mutex);
 
   /* only insert if it isn't already there */
   if (get_value_hash(cache.nc_namekey, hostname) < 0)
     {
-    ni = get_network_info_holder(hostname, sai);
+    ni = get_network_info_holder(hostname, full_hostname, sai);
 
     if ((index = insert_thing(cache.nc_ra, ni)) < 0)
       rc = ENOMEM;

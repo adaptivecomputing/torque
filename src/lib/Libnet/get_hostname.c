@@ -88,6 +88,7 @@
 #include <errno.h>
 #include "portability.h"
 #include "utils.h"
+#include "net_cache.h"
 
 /*
  * get_fullhostname - get the fully qualified name of a host
@@ -113,6 +114,7 @@ int get_fullhostname(
   char             hostname[MAXLINE];
   struct addrinfo *addr_info = NULL;
   struct addrinfo  hints;
+  char            *full_name;
 
   int              index;
   int              tmp_len = 0;
@@ -145,6 +147,12 @@ int get_fullhostname(
 
     if (pbkslh)
       *pbkslh = '\\';
+    }
+
+  if ((full_name = get_cached_fullhostname(shortname, NULL)) != NULL)
+    {
+    snprintf(namebuf, bufsize, "%s", full_name);
+    return(PBSE_NONE);
     }
 
   memset(&hints,0,sizeof(hints));
@@ -195,6 +203,8 @@ int get_fullhostname(
 
     return(-1);
     }
+
+  insert_addr_name_info(shortname, addr_info->ai_canonname, (struct sockaddr_in *)addr_info->ai_addr);
 
   snprintf(namebuf, bufsize, "%s", addr_info->ai_canonname);
   freeaddrinfo(addr_info);

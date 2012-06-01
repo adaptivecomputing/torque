@@ -19,6 +19,7 @@
 #include <poll.h> /* poll functionality */
 #include "../lib/Liblog/pbs_log.h" /* log_err */
 #include "log.h" /* LOCAL_LOG_BUF_SIZE */
+#include "net_cache.h"
 
 #include "pbs_error.h" /* torque error codes */
 
@@ -749,7 +750,12 @@ int socket_close(int socket)
 
 
 
-int get_addr_info(char *name, struct sockaddr_in *sa_info, int retry)
+int get_addr_info(
+    
+  char               *name,
+  struct sockaddr_in *sa_info,
+  int                 retry)
+
   {
   int rc = PBSE_NONE;
   int cntr = 0;
@@ -783,13 +789,9 @@ int get_addr_info(char *name, struct sockaddr_in *sa_info, int retry)
       {
       sa_info->sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
       sa_info->sin_family = addr_info->ai_family;
+      insert_addr_name_info(name, addr_info->ai_canonname, sa_info);
       freeaddrinfo(addr_info);
       gettimeofday(&end_time, 0);
-/*      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-          "Success resolving %s. Elapsed call time {%d}",
-          name, (int)(end_time.tv_sec-start_time.tv_sec));
-      log_err(-1, __func__, log_buf);
-      */
       rc = PBSE_NONE;
       break;
       }
