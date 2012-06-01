@@ -98,6 +98,7 @@
 #include "mcom.h"
 #include "utils.h"
 #include "svr_func.h" /* get_svr_attr_* */
+#include "net_cache.h"
 
 /* Global Data */
 
@@ -261,6 +262,8 @@ int svr_get_privilege(
   char  host_no_port[PBS_MAXHOSTNAME+1];
   char *colon_loc = NULL;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char *other_host;
+  int   other_priv;
 
   if (!user)
     {
@@ -360,6 +363,16 @@ int svr_get_privilege(
     priv |= (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR);
     }
   pthread_mutex_unlock(server.sv_attr_mutex);
+
+  /* resolve using the other hostname (if available) and give the higher privilege */
+  other_host = get_cached_fullhostname(host, NULL);
+  
+  if ((other_host != NULL) &&
+      (strcmp(host, other_host)))
+    other_priv = svr_get_privilege(user, other_host);
+
+  if (other_priv > priv)
+    priv = other_priv;
 
   return(priv);
   }  /* END svr_get_privilege() */
