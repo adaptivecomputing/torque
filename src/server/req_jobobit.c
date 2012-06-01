@@ -1907,6 +1907,18 @@ void on_job_rerun(
   pjob = find_job(jobid);
   free(jobid);
 
+  /* the job has already exited */
+  if (pjob == NULL)
+    {
+    if (preq != NULL)
+      free_br(preq);
+
+    free(ptask->wt_mutex);
+    free(ptask);
+
+    return;
+    }
+
   if ((handle = mom_comm(pjob, on_job_rerun)) < 0)
     {
     pthread_mutex_unlock(pjob->ji_mutex);
