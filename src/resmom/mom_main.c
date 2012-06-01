@@ -80,6 +80,7 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
 #include "mom_server.h"
 #include "mom_job_func.h" /* job_purge */
+#include "net_cache.h"
 
 #include "mcom.h"
 #include "mom_server_lib.h" /* shutdown_to_server */
@@ -6961,6 +6962,8 @@ int setup_program_environment(void)
     {
     return(1);
     }
+
+  initialize_network_info();
 
   /* The following is code to reduce security risks                */
   /* start out with standard umask, system resource limit infinite */

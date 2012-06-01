@@ -789,6 +789,7 @@ int verify_moms_up(
   char               *hostlist;
   char               *hostlist_ptr;
 
+  struct sockaddr_in *sai;
   struct sockaddr_in  saddr;
 
   badplace           *bp;
@@ -817,9 +818,9 @@ int verify_moms_up(
       }
 
     /* Lookup IP address of host. */
-    if (getaddrinfo(nodestr, NULL, NULL, &addr_info) != 0)
+    if ((sai = get_cached_addrinfo(nodestr)) == NULL)
       {
-      sprintf(log_buf, "could not contact %s (getaddrinfo() failed, errno: %d (%s))",
+      sprintf(log_buf, "could not contact %s (no address info, errno: %d (%s))",
         nodestr,
         errno,
         pbs_strerror(errno));
@@ -886,10 +887,8 @@ int verify_moms_up(
       }
 
     /* Set the host information. */
-    memset(&saddr, '\0', sizeof(saddr));
+    memcpy(&saddr, sai, sizeof(saddr));
     saddr.sin_family = AF_INET;
-    saddr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-    freeaddrinfo(addr_info);
     saddr.sin_port = htons(pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport);
 
     /* Connect to the host. */

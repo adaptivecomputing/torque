@@ -658,7 +658,7 @@ void free_hash(
 int get_hash(
     
   hash_table_t *ht,
-  char         *key)
+  void         *key)
 
   {
   size_t   len = strlen(key);
@@ -687,7 +687,7 @@ void add_to_bucket(
 
   bucket **buckets,
   int      index,
-  char    *key,
+  void    *key,
   int      value)
 
   {
@@ -722,7 +722,7 @@ int add_hash(
     
   hash_table_t *ht,
   int           value,
-  char         *key)
+  void         *key)
 
   {
   int index;
@@ -746,7 +746,7 @@ int add_hash(
 
       while (b != NULL)
         {
-        new_index = get_hash(ht,b->key);
+        new_index = get_hash(ht, b->key);
 
         add_to_bucket(tmp,new_index,b->key,b->value);
 
@@ -761,7 +761,7 @@ int add_hash(
     ht->buckets = tmp;
     } /* END if (need to rehash) */
 
-  index = get_hash(ht,key);
+  index = get_hash(ht, key);
 
   add_to_bucket(ht->buckets,index,key,value);
 
@@ -781,7 +781,7 @@ int remove_hash(
 
   {
   int     rc = PBSE_NONE;
-  int     index = get_hash(ht,key);
+  int     index = get_hash(ht, key);
   bucket *b = ht->buckets[index];
   bucket *prev = NULL;
 
@@ -835,11 +835,11 @@ int remove_hash(
 int get_value_hash(
     
   hash_table_t *ht,
-  char         *key)
+  void         *key)
 
   {
   int     value = -1;
-  bucket *b = ht->buckets[get_hash(ht,key)];
+  bucket *b = ht->buckets[get_hash(ht, key)];
 
   while (b != NULL)
     {
@@ -867,7 +867,7 @@ void change_value_hash(
   int           new_value)
 
   {
-  int index = get_hash(ht,key);
+  int index = get_hash(ht, key);
   bucket *b = ht->buckets[index];
 
   while (b != NULL)

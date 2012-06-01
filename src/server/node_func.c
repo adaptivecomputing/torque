@@ -52,6 +52,8 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "alps_constants.h"
 #include "login_nodes.h"
+#include "work_task.h"
+#include "net_cache.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 extern int h_errno;
@@ -100,7 +102,6 @@ extern dynamic_string  *hierarchy_holder;
  */
 
 
-#include "work_task.h"
 
 struct pbsnode *alps_reporter;
 
@@ -852,29 +853,30 @@ static int process_host_name_part(
   int   *ntype) /* node type; time-shared, not   */
 
   {
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  char                log_buf[LOCAL_LOG_BUF_SIZE];
 
-  struct addrinfo *addr_info;
-  struct addrinfo *addr_iter;
+  struct addrinfo    *addr_info;
+  struct addrinfo    *addr_iter;
+  struct sockaddr_in *sai;
 
-  struct in_addr   addr;
-  char            *phostname;  /* caller supplied hostname   */
-  int              ipcount = 0;
-  int              len;
-  int              totalipcount;
+  struct in_addr      addr;
+  char               *phostname;  /* caller supplied hostname   */
+  int                 ipcount = 0;
+  int                 len;
+  int                 totalipcount;
 
-  char             hname[MAXLINE];
-  char             tmpHName[MAXLINE];
-  char            *hptr;
+  char                hname[MAXLINE];
+  char                tmpHName[MAXLINE];
+  char               *hptr;
 
-  static int       NodeSuffixIsSet = 0;
+  static int          NodeSuffixIsSet = 0;
 
-  static char     *NodeSuffix;
+  static char        *NodeSuffix;
 
-  int              hindex;
-  int              size = 0;
-  int              rc = PBSE_NONE;
-  ulong           *tmp = NULL;
+  int                 hindex;
+  int                 size = 0;
+  int                 rc = PBSE_NONE;
+  ulong              *tmp = NULL;
 
   len = strlen(objname);
 
@@ -924,7 +926,9 @@ static int process_host_name_part(
     log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, tmpLine);
     }
 
-  addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+  sai = (struct sockaddr_in *)addr_info->ai_addr;
+  insert_addr_name_info(phostname, sai);
+  addr = sai->sin_addr;
 
   if (addr_info->ai_canonname == NULL)
     {
@@ -3200,10 +3204,22 @@ int send_hierarchy(
   int                 ret = PBSE_NONE;
   int                 sock;
   struct sockaddr_in  sa;
+  struct sockaddr_in *sai;
   struct tcp_chan    *chan = NULL;
 
-  if ((ret = get_addr_info(name, &sa, 3)) != PBSE_NONE)
-    return(ret);
+  if ((sai = get_cached_addrinfo(name)) != NULL)
+    {
+    memcpy(&sa, sai, sizeof(sa));
+    }
+  else
+    {
+    if ((ret = get_addr_info(name, &sa, 3)) != PBSE_NONE)
+      return(ret);
+    else
+      {
+      insert_addr_name_info(name, &sa);
+      }
+    }
 
   sa.sin_port = htons(port);
 

@@ -89,8 +89,9 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
         ../Libnet/net_server.c ../Libnet/net_set_clse.c \
 				../Libnet/server_core.c \
 		    ../Libnet/rm.c ../Libnet/port_forwarding.c \
-				../Libutils/u_lock_ctl.c \
-				../Libutils/u_hash_map_structs.c ../Libutils/u_memmgr.c
+				../Libnet/net_cache.c ../Libutils/u_lock_ctl.c \
+				../Libutils/u_hash_map_structs.c ../Libutils/u_memmgr.c \
+				../Libutils/u_hash_table.c ../Libutils/u_resizable_array.c
 
 
 
