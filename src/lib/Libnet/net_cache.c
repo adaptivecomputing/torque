@@ -221,7 +221,7 @@ network_info *get_network_info_holder(
   ni->hostname = strdup(hostname);
 
   if (full_hostname != NULL)
-    ni->full_hostname = strdup(hostname);
+    ni->full_hostname = strdup(full_hostname);
 
   memcpy(&ni->sai, sai, sizeof(struct sockaddr_in));
 
