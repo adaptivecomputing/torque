@@ -1677,7 +1677,6 @@ int job_purge(
     rc = svr_dequejob(job_id, FALSE);
     if (rc != PBSE_JOBNOTFOUND)
       {
-      pthread_mutex_lock(pjob->ji_mutex);
       job_free(pjob, TRUE);
       }
     }
