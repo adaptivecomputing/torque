@@ -2135,10 +2135,11 @@ static int send_depend_req(
   void               (*postfunc)(struct work_task *))
 
   {
-  int rc = 0;
+  int                   rc = 0;
   int                   i;
   char                 *myid = "send_depend_req";
   char                  job_id[PBS_MAXSVRJOBID + 1];
+  char                  br_id[MAXLINE];
 
   struct batch_request *preq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -2202,10 +2203,16 @@ static int send_depend_req(
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   pthread_mutex_unlock(pjob->ji_mutex);
 
+  get_batch_request_id(preq);
+  strcpy(br_id, preq->rq_id);
+
   if ((rc = issue_to_svr(pparent->dc_svr, preq, postfunc)) != PBSE_NONE)
     {
     sprintf(log_buf, "Unable to perform dependency with job %s\n", pparent->dc_child);
-    free_br(preq);
+
+    if ((preq = get_remove_batch_request(br_id)) != NULL)
+      free_br(preq);
+
     return(rc);
     }
 

@@ -2513,7 +2513,9 @@ void pbsd_init_reque(
 
     log_err(-1, "pbsd_init_reque", logbuf);
 
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
     job_abt(&pjob, logbuf);
+    lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
     /* NOTE:  pjob freed but dangling pointer remains */
     }
