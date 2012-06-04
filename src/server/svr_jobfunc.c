@@ -2337,6 +2337,16 @@ void get_jobowner(
   {
   int i;
 
+  if (to == NULL)
+    return;
+
+  if (from == NULL)
+    {
+    *to = 0;
+    return;
+    }
+
+
   for (i = 0;i < PBS_MAXUSER;++i)
     {
     if ((*(from + i) == '@') || (*(from + i) == '\0'))
