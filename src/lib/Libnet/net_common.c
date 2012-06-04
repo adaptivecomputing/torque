@@ -757,14 +757,20 @@ int get_addr_info(
   int                 retry)
 
   {
-  int rc = PBSE_NONE;
-  int cntr = 0;
-  struct addrinfo *addr_info;
-  struct addrinfo hints;
-  char log_buf[LOCAL_LOG_BUF_SIZE+1];
-  struct timeval start_time;
-  struct timeval end_time;
+  int                 rc = PBSE_NONE;
+  int                 cntr = 0;
+  struct addrinfo    *addr_info;
+  struct addrinfo     hints;
+  struct timeval      start_time;
+  struct timeval      end_time;
+  struct sockaddr_in *cached_sai;
 
+  /* retrieve from cache if possible */
+  if ((cached_sai = get_cached_addrinfo(name)) != NULL)
+    {
+    memcpy(sa_info, cached_sai, sizeof(struct sockaddr_in));
+    return(PBSE_NONE);
+    }
 
   memset(&hints, 0, sizeof(struct addrinfo));
   hints.ai_socktype = SOCK_STREAM;
@@ -773,17 +779,12 @@ int get_addr_info(
   while (cntr < retry)
     {
     gettimeofday(&start_time, 0);
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%s call #%d", name, cntr);
-    /*log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);*/
 
     if ((rc = getaddrinfo(name, NULL, &hints, &addr_info)) != 0)
       {
       gettimeofday(&end_time, 0);
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-          "Can't get address information for [%s] - (%d-%s) [retry %d]time{%d}",
-          name, rc, gai_strerror(rc), cntr, (int)(end_time.tv_sec-start_time.tv_sec));
+
       rc = PBSE_BADHOST;
-      /*log_err(rc, __func__, log_buf);*/
       }
     else
       {
@@ -792,11 +793,15 @@ int get_addr_info(
       insert_addr_name_info(name, addr_info->ai_canonname, sa_info);
       freeaddrinfo(addr_info);
       gettimeofday(&end_time, 0);
+
       rc = PBSE_NONE;
+
       break;
       }
+
     cntr++;
     }
-  return rc;
+
+  return(rc);
   }
 
