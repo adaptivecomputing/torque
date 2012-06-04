@@ -304,8 +304,6 @@ int init_network(
     if (net_server_name == NULL)
       {
       /* cache local server addr info */
-      struct in_addr          addr;
-
       struct addrinfo        *addr_info = NULL;
       char                    namebuf[MAXLINE*2];
 
