@@ -416,6 +416,24 @@ int run_pelog(
 
   char          *ptr;
 
+  int            moabenvcnt = 14;  /* # of entries in moabenvs */
+  static char   *moabenvs[] = {
+      "MOAB_NODELIST",
+      "MOAB_JOBID",
+      "MOAB_JOBNAME",
+      "MOAB_USER",
+      "MOAB_GROUP",
+      "MOAB_CLASS",
+      "MOAB_TASKMAP",
+      "MOAB_QOS",
+      "MOAB_PARTITION",
+      "MOAB_PROCCOUNT",
+      "MOAB_NODECOUNT",
+      "MOAB_MACHINE",
+      "MOAB_JOBARRAYINDEX",
+      "MOAB_JOBARRAYRANGE"
+      };
+
   if ((pjob == NULL) || (specpelog == NULL) || (specpelog[0] == '\0'))
     {
     return(0);
@@ -1173,6 +1191,32 @@ int run_pelog(
           strcpy(envstr,vstrs->as_string[j]);
 
           putenv(envstr);
+          }
+        }
+      }
+
+    /* Set some Moab env variables if they exist */
+
+  if ((which == PE_PROLOG) || (which == PE_EPILOG))
+      {
+      char *tmp_val;
+      char *envstr;
+
+      for (aindex=0;aindex<moabenvcnt;aindex++)
+        {
+        tmp_val = get_job_envvar(pjob,moabenvs[aindex]);
+        if (tmp_val != NULL)
+          {
+          envstr = calloc((strlen(tmp_val) + strlen(moabenvs[aindex]) + 2), sizeof(char));
+
+          if (envstr != NULL)
+            {
+            sprintf(envstr,"%s=%s",
+              moabenvs[aindex],
+              tmp_val);
+
+            putenv(envstr);
+            }
           }
         }
       }
