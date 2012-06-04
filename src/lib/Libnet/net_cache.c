@@ -188,6 +188,9 @@ struct sockaddr_in *get_cached_addrinfo(
   int                 index;
   struct sockaddr_in *sai;
 
+  if (cache.nc_mutex == NULL)
+    return(NULL);
+
   pthread_mutex_lock(cache.nc_mutex);
 
   if ((index = get_value_hash(cache.nc_namekey, hostname)) >= 0)
