@@ -2494,7 +2494,7 @@ int req_jobobit(
   int                   newsubst;
   int                   local_errno = 0;
   char                 *pc;
-  char                 *tmp;
+  char                 *tmp = NULL;
   job                  *pjob;
   char                  job_id[PBS_MAXSVRJOBID+1];
   long  job_atr_hold;
@@ -2506,14 +2506,16 @@ int req_jobobit(
   char                  log_buf[LOCAL_LOG_BUF_SIZE+1];
   time_t                time_now = time(NULL);
   long                  events = 0;
+  pbs_net_t             mom_addr;
 
   strcpy(job_id, preq->rq_ind.rq_jobobit.rq_jid);  /* This will be needed later for logging after preq is freed. */
-  pjob = find_job(job_id);
 
   tmp = parse_servername(preq->rq_host, &dummy);
+  mom_addr = get_hostaddr(&local_errno, tmp);
 
+  pjob = find_job(job_id);
   if ((pjob == NULL) ||
-      (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != get_hostaddr(&local_errno, tmp)))
+      (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != mom_addr))
     {
     /* not found or from wrong node */
 
