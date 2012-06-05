@@ -843,7 +843,7 @@ int get_value_hash(
 
   while (b != NULL)
     {
-    if (!strcmp(b->key,key))
+    if (!strcmp(b->key, key))
       {
       value = b->value;
       break;
