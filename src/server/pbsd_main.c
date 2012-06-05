@@ -1202,6 +1202,7 @@ void start_accept_thread()
     }
   else if ((pthread_create(&accept_thread_id, &accept_attr, start_accept_listener, NULL)) != 0)
     {
+    accept_thread_id = -1;
     perror("could not start listener for pbs_server");
     log_err(-1, msg_daemonname, "Failed to start listener for pbs_server");
     }
@@ -1235,7 +1236,9 @@ void start_routing_retry_thread()
 
 void monitor_accept_thread()
   {
-  if (pthread_kill(accept_thread_id, 0) == ESRCH)
+  if (accept_thread_id == (pthread_t)-1)
+    start_accept_thread();
+  else if (pthread_kill(accept_thread_id, 0) == ESRCH)
     {
     start_accept_thread();
     }
