@@ -186,7 +186,7 @@ struct sockaddr_in *get_cached_addrinfo(
   {
   network_info       *ni;
   int                 index;
-  struct sockaddr_in *sai;
+  struct sockaddr_in *sai = NULL;
 
   if (cache.nc_mutex == NULL)
     return(NULL);

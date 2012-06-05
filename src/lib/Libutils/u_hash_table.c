@@ -787,7 +787,7 @@ int remove_hash(
 
   while (b != NULL)
     {
-    if (!strcmp(key,b->key))
+    if (!strcmp(key, b->key))
       break;
 
     prev = b;
@@ -843,7 +843,7 @@ int get_value_hash(
 
   while (b != NULL)
     {
-    if (!strcmp(b->key,key))
+    if (!strcmp(b->key, key))
       {
       value = b->value;
       break;
@@ -872,7 +872,7 @@ void change_value_hash(
 
   while (b != NULL)
     {
-    if (!strcmp(b->key,key))
+    if (!strcmp(b->key, key))
       {
       b->value = new_value;
       break;
