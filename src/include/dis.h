@@ -251,6 +251,7 @@ int diswl_ (struct tcp_chan *chan, dis_long_double_t value, unsigned int ndigs);
 int diswf (struct tcp_chan *chan, double value);
 #endif
 
+void disiui_();
 
 extern const char *dis_emsg[];
 
