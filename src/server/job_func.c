@@ -787,6 +787,7 @@ job *job_clone(
     sprintf(log_buf, "taskid %d", taskid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
+
   if (taskid > PBS_MAXJOBARRAY)
     {
     log_err(-1, __func__, "taskid out of range");
@@ -1076,6 +1077,12 @@ void *job_clone_wt(
         }
 
       svr_evaljobstate(pjobclone, &newstate, &newsub, 1);
+
+      /* do this so that  svr_setjobstate() doesn't alter sv_jobstates,
+       * these are set later in svr_enquejob() */
+      pjobclone->ji_qs.ji_state = newstate;
+      pjobclone->ji_qs.ji_substate = newsub;
+
       svr_setjobstate(pjobclone, newstate, newsub, FALSE);
 
       pjobclone->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
