@@ -15,9 +15,9 @@
 int disrsi_(
 
   struct tcp_chan *chan,
-  int      *negate,
-  unsigned *value,
-  unsigned  count)
+  int             *negate,
+  unsigned        *value,
+  unsigned         count)
 
   {
   int  c;
@@ -34,8 +34,10 @@ int disrsi_(
     return DIS_INVALID;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
+
   if (dis_umaxd == 0)
     disiui_();
+  
   if (count > DIS_BUFSIZ)
     return DIS_INVALID;
 

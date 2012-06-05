@@ -85,8 +85,10 @@
 #include "dis.h"
 #include "lib_dis.h"
 
-char *dis_umax = NULL;
-unsigned dis_umaxd = 0;
+/* these variables are read-only once initialized so they don't need to be 
+ * mutex protected */
+char     *dis_umax = NULL;
+unsigned  dis_umaxd = 0;
 
 /*
  * Allocate and fill a counted string containing the constant, UINT_MAX,
@@ -97,19 +99,18 @@ unsigned dis_umaxd = 0;
  * dis_umax[0] through dis_umax[dis_umaxd - 1] = the digits, in order.
  */
 
-void
-disiui_(void)
+void disiui_(void)
   {
   char  *cp;
   char  scratch[DIS_BUFSIZ+1];
 
-  assert(dis_umax == NULL);
-  assert(dis_umaxd == 0);
+  if ((dis_umax != NULL) ||
+      (dis_umaxd != 0))
+    return;
 
   memset(scratch, 0, DIS_BUFSIZ+1);
   cp = discui_(&scratch[DIS_BUFSIZ], UINT_MAX, &dis_umaxd);
-  assert(dis_umaxd > 0);
   dis_umax = (char *)calloc(1, dis_umaxd+1);
-  assert(dis_umax != NULL);
   memcpy(dis_umax, cp, dis_umaxd);
   }
+
