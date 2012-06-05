@@ -753,10 +753,14 @@ int svr_setjobstate(
       {
       changed = 1;
 
-      pthread_mutex_lock(server.sv_jobstates_mutex);
-      server.sv_jobstates[oldstate]--;
-      server.sv_jobstates[newstate]++;
-      pthread_mutex_unlock(server.sv_jobstates_mutex);
+      /* the array job isn't actually a job so don't count it here */
+      if (pjob->ji_is_array_template == FALSE)
+        {
+        pthread_mutex_lock(server.sv_jobstates_mutex);
+        server.sv_jobstates[oldstate]--;
+        server.sv_jobstates[newstate]++;
+        pthread_mutex_unlock(server.sv_jobstates_mutex);
+        }
 
       if (has_queue_mutex == FALSE)
         {
@@ -773,8 +777,12 @@ int svr_setjobstate(
 
       if (pque != NULL)
         {
-        pque->qu_njstate[oldstate]--;
-        pque->qu_njstate[newstate]++;
+        /* the array job isn't actually a job so don't count it here */
+        if (pjob->ji_is_array_template == FALSE)
+          {
+          pque->qu_njstate[oldstate]--;
+          pque->qu_njstate[newstate]++;
+          }
 
         /* if execution queue, and eligibility to run has improved, */
         /* notify the scheduler */

@@ -362,7 +362,7 @@ enum job_atr
   JOB_ATR_init_work_dir,    /* initial working directory */
   JOB_ATR_pagg_id,
 #ifdef NVIDIA_GPUS
-  JOB_ATR_gpu_flags,		/* gpu flags - mode and reset flags */
+  JOB_ATR_gpu_flags,   /* gpu flags - mode and reset flags */
 #endif  /* NVIDIA_GPUS */
   JOB_ATR_job_id,
   JOB_ATR_arguments,
@@ -929,7 +929,7 @@ typedef struct send_job_request
 
 #define JOB_FILE_COPY           ".JC"    /* tmp copy while updating */
 #define JOB_FILE_SUFFIX         ".JB"    /* job control file */
-#define JOB_FILE_BACKUP			".BK"	 /* job file backup */
+#define JOB_FILE_BACKUP         ".BK"    /* job file backup */
 #define JOB_SCRIPT_SUFFIX       ".SC"    /* job script file  */
 #define JOB_STDOUT_SUFFIX       ".OU"    /* job standard out */
 #define JOB_STDERR_SUFFIX       ".ER"    /* job standard error */
