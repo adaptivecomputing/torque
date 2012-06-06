@@ -293,6 +293,7 @@ void scan_for_exiting(void)
   obitent      *pobit;
   char         *cookie;
   task         *task_find(job *, tm_task_id);
+  int          rc = PBSE_NONE;
 
   unsigned int  momport = 0;
   static int    ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
@@ -300,6 +301,7 @@ void scan_for_exiting(void)
   int           mom_radix = 0;
 
   int           NumSisters;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   /*
   ** Look through the jobs.  Each one has it's tasks examined
@@ -599,6 +601,7 @@ void scan_for_exiting(void)
     */
 
     if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) && 
+        (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXIT_WAIT) &&
         (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
       {
       if (LOGLEVEL >= 3)
@@ -681,7 +684,8 @@ void scan_for_exiting(void)
 
     pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
-    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE)
+    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE) &&
+       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXIT_WAIT))
       kill_job(pjob, SIGKILL, __func__, "local task termination detected");
     else
       {
@@ -704,7 +708,7 @@ void scan_for_exiting(void)
             ptask->ti_qs.ti_exitstat = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
           else
             ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
-          ptask->ti_qs.ti_status   = TI_STATE_EXITED;
+          ptask->ti_qs.ti_status = TI_STATE_EXITED;
 
           task_save(ptask);
           }
@@ -740,9 +744,24 @@ void scan_for_exiting(void)
         "calling mom_open_socket_to_jobs_server");
       }
 
-    run_epilogues(pjob);
+    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXIT_WAIT)
+      run_epilogues(pjob);
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
-    send_job_status(pjob);
+    rc = send_job_status(pjob);
+    if (rc != PBSE_NONE)
+      {
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+      if(LOGLEVEL >= 4)
+        {
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "could not contact server for job %s: error: %d", 
+            pjob->ji_qs.ji_jobid, rc);
+        log_record(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            __func__,
+            log_buf);
+        }
+      }
 
     if (found_one++ >= ObitsAllowed)
       {
@@ -858,18 +877,23 @@ int send_job_status(
     {
     if ((chan = DIS_tcp_setup(sock)) == NULL)
       {
+      rc = PBSE_MEM_MALLOC;
       }
     else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_StatusJob, pbs_current_user)) != PBSE_NONE)
       {
+      rc = PBSE_SYSTEM;
       }
     else if ((rc = encode_DIS_Status(chan, pjob->ji_qs.ji_jobid, NULL)) != PBSE_NONE)
       {
+      rc = PBSE_SYSTEM;
       }
     else if ((rc = encode_DIS_ReqExtend(chan, NULL)) != PBSE_NONE)
       {
+      rc = PBSE_SYSTEM;
       }
     else if ((rc = DIS_tcp_wflush(chan)) != PBSE_NONE)
       {
+      rc = PBSE_SYSTEM;
       }
     if (chan != NULL)
       DIS_tcp_cleanup(chan);
