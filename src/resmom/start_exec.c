@@ -184,6 +184,7 @@ typedef enum
 /* Global Variables */
 
 
+extern int  exec_with_exec;
 extern int  attempttomakedir;
 extern int  spoolasfinalname;
 extern int  num_var_env;
@@ -2013,6 +2014,15 @@ int TMomFinalizeJob2(
     {
     int k;
 
+    if (exec_with_exec)
+      {
+      if (strlen(buf)+5 <= MAXPATHLEN) 
+        {
+        memmove(buf + 5, buf, strlen(buf) + 1);
+        strncpy(buf, "exec ", 5);
+        }
+      }
+
     /* pass name of shell script on pipe */
     /* will be stdin of shell  */
 
@@ -3657,7 +3667,7 @@ int TMomFinalizeChild(
       arg[aindex] = malloc(
                           strlen(path_jobs) +
                           strlen(pjob->ji_qs.ji_fileprefix) +
-                          strlen(JOB_SCRIPT_SUFFIX) + 1);
+                          strlen(JOB_SCRIPT_SUFFIX) + 6);
 
       if (arg[aindex] == NULL)
         {
@@ -3670,7 +3680,14 @@ int TMomFinalizeChild(
         return(-1);
         }
 
-      strcpy(arg[aindex], path_jobs);
+      if (exec_with_exec)
+        {
+        strcpy(arg[aindex], "exec ");
+        strcat(arg[aindex], path_jobs);
+        }
+      else
+        strcpy(argg[aindex], path_jobs);
+
       strcat(arg[aindex], pjob->ji_qs.ji_fileprefix);
       strcat(arg[aindex], JOB_SCRIPT_SUFFIX);
 
