@@ -9,6 +9,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   f - add the server parameter interactive_jobs_can_roam (Cray only). When set to
       true, interactive jobs can have any login as mother superior, but by default
       all interactive jobs with have their submit_host as mother superior
+  b - Fixed TRQ-696. Jobs get stuck in running state. 
 
 4.0.3
   b - fix qdel -p all - was performing a qdel all. TRQ-947
