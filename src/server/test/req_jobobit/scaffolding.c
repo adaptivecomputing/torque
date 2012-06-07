@@ -277,3 +277,18 @@ void close_conn(int sd, int mutex)
   exit(1);
   }
 
+batch_request *get_remove_batch_request(
+
+  char *br_id)
+
+  {
+  return(NULL);
+  }
+
+int get_batch_request_id(
+
+  batch_request *preq)
+
+  {
+  return(0);
+  }

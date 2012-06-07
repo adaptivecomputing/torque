@@ -86,3 +86,10 @@ void log_event(int eventtype, int objclass, const char *objname, char *text)
   {
   }
 
+void *next_thing(resizable_array *ra, int *iter)
+  {
+  return(NULL);
+  }
+
+void free_resizable_array(resizable_array *ra) {}
+

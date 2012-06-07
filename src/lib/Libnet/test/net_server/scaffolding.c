@@ -1,10 +1,21 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h>
+#include <netinet/in.h>
 
 #include "net_connect.h"
 
 char *msg_daemonname = "unset";
+
+void disiui_() {}
+
+char *get_cached_nameinfo(
+    
+  struct sockaddr_in  *sai)
+
+  {
+  return(NULL);
+  }
 
 void log_event(int eventtype, int objclass, const char *objname, char *text)
   {

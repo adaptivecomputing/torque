@@ -347,3 +347,21 @@ struct pbsnode *get_next_login_node(
   return(NULL);
   }
 
+char *get_cached_nameinfo(
+    
+  struct sockaddr_in  *sai)
+
+  {
+  return(NULL);
+  }
+
+int insert_addr_name_info(
+    
+  char               *hostname,
+  char               *full_hostname,
+  struct sockaddr_in *sai)
+
+  {
+  return(0);
+  }
+

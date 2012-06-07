@@ -231,3 +231,19 @@ dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
   return(NULL);
   }
+
+batch_request *get_remove_batch_request(
+
+  char *br_id)
+
+  {
+  return(NULL);
+  }
+
+int get_batch_request_id(
+
+  batch_request *preq)
+
+  {
+  return(0);
+  }

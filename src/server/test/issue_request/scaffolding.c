@@ -214,3 +214,19 @@ job *find_job (char *name)
 void DIS_tcp_cleanup(struct tcp_chan *chan)
   {
   }
+
+batch_request *get_remove_batch_request(
+
+  char *br_id)
+
+  {
+  return(NULL);
+  }
+
+int get_batch_request_id(
+
+  batch_request *preq)
+
+  {
+  return(0);
+  }

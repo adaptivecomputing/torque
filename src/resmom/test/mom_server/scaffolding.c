@@ -337,3 +337,5 @@ int generate_alps_status(
   {
   return(0);
   }
+
+void free_mom_hierarchy(mom_hierarchy_t *mh) {}

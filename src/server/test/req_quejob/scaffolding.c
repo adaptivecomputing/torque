@@ -312,3 +312,23 @@ int enqueue_threadpool_request(
   {
   return(0);
   }
+
+int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
+  {
+  return(0);
+  }
+
+int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
+  {
+  return(0);
+  }
+
+struct pbsnode *find_nodebyname(
+
+  char *nodename) /* I */
+
+  {
+  return(NULL);
+  }
+
+void unlock_node(struct pbsnode *pnode, const char *func_id, char *msg, int logging) {} 

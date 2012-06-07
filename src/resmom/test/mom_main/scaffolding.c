@@ -671,3 +671,6 @@ unsigned int get_random_number()
 void shutdown_to_server(int ServerIndex) {}
 
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
+
+void initialize_network_info() {}
+
