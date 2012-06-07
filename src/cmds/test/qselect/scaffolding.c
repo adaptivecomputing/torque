@@ -60,3 +60,6 @@ char *pbs_strerror(int err)
   fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
+
+void initialize_network_info() {}
+

@@ -150,3 +150,6 @@ char *pbs_default(void)
   fprintf(stderr, "The call to pbs_default needs to be mocked!!\n");
   exit(1);
   }
+
+void initialize_network_info() {}
+

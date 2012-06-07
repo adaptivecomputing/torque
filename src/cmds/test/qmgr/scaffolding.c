@@ -90,4 +90,5 @@ struct batch_status *pbs_statque_err(int c, char *id, struct attrl *attrib, char
   exit(1);
   }
 
+void initialize_network_info() {}
 
