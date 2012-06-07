@@ -101,3 +101,21 @@ job *chk_job_request(char *jobid, struct batch_request *preq)
   fprintf(stderr, "The call to chk_job_request to be mocked!!\n");
   exit(1);
   }
+
+batch_request *get_remove_batch_request(
+
+  char *br_id)
+
+  {
+  return(NULL);
+  }
+
+int get_batch_request_id(
+
+  batch_request *preq)
+
+  {
+  return(0);
+  }
+
+void free_br(batch_request *preq) {} 

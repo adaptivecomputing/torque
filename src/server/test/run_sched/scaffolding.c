@@ -85,3 +85,15 @@ void process_pbs_server_port_scheduler(int sock)
   {
   }
 
+int add_scheduler_conn(
+
+  int            sock,    /* socket associated with connection */
+  enum conn_type type,    /* type of connection */
+  pbs_net_t      addr,    /* IP address of connected host */
+  unsigned int   port,    /* port number (host order) on connected host */
+  unsigned int   socktype, /* inet or unix */
+  void *(*func)(void *))  /* function to invoke on data rdy to read */
+
+  {
+  return(0);
+  }

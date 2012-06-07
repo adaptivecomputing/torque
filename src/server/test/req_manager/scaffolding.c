@@ -308,3 +308,13 @@ int safe_strncat(char *str, char *to_append, size_t space_remaining)
   {
   return(0);
   }
+
+int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
+  {
+  return(0);
+  }
+
+int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
+  {
+  return(0);
+  }

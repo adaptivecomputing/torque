@@ -2,18 +2,25 @@
 #include <stdlib.h>
 #include <check.h>
 
+#include "dynamic_string.h"
 #include "alps_constants.h"
 #include "pbs_nodes.h"
 
 int set_ncpus(struct pbsnode *, char *);
+int set_ngpus(struct pbsnode *, int);
 int set_state(struct pbsnode *, char *);
 char *finish_gpu_status(char *str);
 struct pbsnode *create_alps_subnode(struct pbsnode *parent, char *node_id);
 struct pbsnode *find_alpsnode_by_name(struct pbsnode *parent, char *node_id);
 struct pbsnode *determine_node_from_str(char *str, struct pbsnode *parent, struct pbsnode *current);
 int check_if_orphaned(char *str);
+int process_alps_status(char *, dynamic_string *);
+int process_reservation_id(struct pbsnode *pnode, char *rsv_id_str);
 
 char buf[4096];
+
+char *alps_status = "node=1\0CPROC=12\0state=UP\0reservation_id=12\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";
+/*node=2\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0node=3\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";*/
 
 
 
@@ -39,8 +46,34 @@ START_TEST(set_ncpus_test)
   snprintf(buf, sizeof(buf), "ncpus should be 8 but is %d", pnode.nd_nsn);
   fail_unless(pnode.nd_nsn == 8, buf);
   }
-
 END_TEST
+
+
+
+
+START_TEST(set_ngpus_test)
+  {
+  struct pbsnode pnode;
+
+  memset(&pnode, 0, sizeof(pnode));
+
+  fail_unless(set_ngpus(&pnode, 2) == 0, "Couldn't set ngpus to 2");
+  snprintf(buf, sizeof(buf), "ngpus should be 2 but id %d", pnode.nd_ngpus);
+  fail_unless(pnode.nd_ngpus == 2, buf);
+
+  pnode.nd_ngpus = 0;
+  fail_unless(set_ngpus(&pnode, 4) == 0, "Couldn't set ngpus to 4");
+  snprintf(buf, sizeof(buf), "ngpus should be 4 but id %d", pnode.nd_ngpus);
+  fail_unless(pnode.nd_ngpus == 4, buf);
+
+  pnode.nd_ngpus = 0;
+  fail_unless(set_ngpus(&pnode, 8) == 0, "Couldn't set ngpus to 8");
+  snprintf(buf, sizeof(buf), "ngpus should be 8 but id %d", pnode.nd_ngpus);
+  fail_unless(pnode.nd_ngpus == 8, buf);
+  }
+END_TEST
+
+
 
 
 
@@ -167,10 +200,34 @@ END_TEST
 
 
 
-
-
 START_TEST(whole_test)
   {
+  dynamic_string *ds = get_dynamic_string(2048, NULL);
+  int             rc;
+  
+  ds->str = alps_status;
+ 
+  rc = process_alps_status("tom", ds);
+  fail_unless(rc == 0, "didn't process alps status");
+  }
+END_TEST
+
+
+
+START_TEST(process_reservation_id_test)
+  {
+  struct pbsnode pnode;
+  struct pbssubn sub;
+
+  memset(&pnode, 0, sizeof(struct pbsnode));
+  memset(&sub, 0, sizeof(struct pbssubn));
+  sub.jobs = calloc(1, sizeof(struct jobinfo));
+  strcpy(sub.jobs->jobid, "bob");
+  pnode.nd_psn = &sub;
+
+  fail_unless(process_reservation_id(&pnode, "12") == 0, "couldn't process reservation");
+  fail_unless(process_reservation_id(&pnode, "13") == 0, "couldn't process reservation");
+  fail_unless(process_reservation_id(&pnode, "14") == 0, "couldn't process reservation");
   }
 END_TEST
 
@@ -191,10 +248,6 @@ Suite *node_func_suite(void)
   tcase_add_test(tc_core, finish_gpu_status_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("whole_test");
-  tcase_add_test(tc_core, whole_test);
-  suite_add_tcase(s, tc_core);
-
   tc_core = tcase_create("create_alps_subnode_test");
   tcase_add_test(tc_core, create_alps_subnode_test);
   suite_add_tcase(s, tc_core);
@@ -209,6 +262,18 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("check_orphaned_test");
   tcase_add_test(tc_core, check_orphaned_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("set_ngpus_test");
+  tcase_add_test(tc_core, set_ngpus_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("whole_test");
+  tcase_add_test(tc_core, whole_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("process_reservation_id_test");
+  tcase_add_test(tc_core, process_reservation_id_test);
   suite_add_tcase(s, tc_core);
   
   return(s);

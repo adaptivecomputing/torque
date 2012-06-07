@@ -110,3 +110,13 @@ int append_dynamic_string_xml(dynamic_string *ds, const char *str)
  fprintf(stderr, "The call to append_dynamic_string_xml to be mocked!!\n");
  exit(1);
  }
+
+int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
+  {
+  return(0);
+  }
+
+int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
+  {
+  return(0);
+  }

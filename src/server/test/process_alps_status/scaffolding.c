@@ -275,66 +275,20 @@ struct pbsnode *find_nodebyname(
   char *nodename) /* I */
 
   {
-  char           *pslash;
-  char           *dash = NULL;
-  char           *tmp;
+  static struct pbsnode pnode;
+  static int    initialized = 0;
 
-  struct pbsnode *pnode = NULL;
-  struct pbsnode *numa  = NULL;
-
-  int             i;
-  int             numa_index;
-
-  if ((pslash = strchr(nodename, (int)'/')) != NULL)
-    *pslash = '\0';
-
-  pthread_mutex_lock(allnodes.allnodes_mutex);
-  i = get_value_hash(allnodes.ht, nodename);
-
-  if (i >= 0)
-    pnode = (struct pbsnode *)allnodes.ra->slots[i].item;
-  if (pnode != NULL)
-    lock_node(pnode, __func__, NULL, LOGLEVEL);
-  else
+  if (initialized == 0)
     {
-    /* check if it was a numa node */
-    tmp = nodename;
-    while ((tmp = strchr(tmp, '-')) != NULL)
-      {
-      dash = tmp;
-      tmp++;
-      }
-
-    if (dash != NULL)
-      {
-      *dash = '\0';
-      numa_index = atoi(dash + 1);
-
-      if ((i = get_value_hash(allnodes.ht, nodename)) >= 0)
-        {
-        if ((pnode = (struct pbsnode *)allnodes.ra->slots[i].item) != NULL)
-          {
-          lock_node(pnode, __func__, NULL, LOGLEVEL);
-
-          /* get the NUMA node */
-          numa = AVL_find(numa_index, pnode->nd_mom_port, pnode->node_boards);
-          if (numa != NULL)
-            lock_node(numa, __func__, NULL, LOGLEVEL);
-
-          unlock_node(pnode, __func__, NULL, LOGLEVEL);
-          pnode = numa;
-          }
-        }
-
-      *dash = '-';
-      }
+    memset(&pnode, 0, sizeof(struct pbsnode));
+    pnode.nd_name = strdup("george");
+    pnode.alps_subnodes.allnodes_mutex = calloc(1, sizeof(pthread_mutex_t));
+    pthread_mutex_init(pnode.alps_subnodes.allnodes_mutex, NULL);
     }
-  pthread_mutex_unlock(allnodes.allnodes_mutex);
 
-  if (pslash != NULL)
-    *pslash = '/'; /* restore the slash */
+  initialized++;
 
-  return(pnode);
+  return(&pnode);
   }  /* END find_nodebyname() */
 
 
@@ -1514,33 +1468,6 @@ int create_a_gpusubnode(
   struct pbsnode *pnode)
 
   {
-  struct gpusubn *tmp = calloc((1 + pnode->nd_ngpus), sizeof(struct gpusubn));
-
-  if (tmp == NULL)
-    {
-    log_err(ENOMEM, __func__, "Couldn't allocate memory for a subnode. EPIC FAILURE");
-    return(ENOMEM);
-    }
-
-  if (pnode->nd_ngpus > 0)
-    {
-    /* copy old memory to the new place */
-    memcpy(tmp,pnode->nd_gpusn,(sizeof(struct gpusubn) * pnode->nd_ngpus));
-    }
-
-  /* now use the new memory */
-  free(pnode->nd_gpusn);
-  pnode->nd_gpusn = tmp;
-
-  /* initialize the node */
-  pnode->nd_gpus_real = FALSE;
-  pnode->nd_gpusn[pnode->nd_ngpus].inuse = FALSE;
-  pnode->nd_gpusn[pnode->nd_ngpus].mode = gpu_normal;
-  pnode->nd_gpusn[pnode->nd_ngpus].state = gpu_unallocated;
-  pnode->nd_gpusn[pnode->nd_ngpus].flag = 0;
-  pnode->nd_gpusn[pnode->nd_ngpus].index = pnode->nd_ngpus;
-  pnode->nd_gpusn[pnode->nd_ngpus].gpuid = NULL;
-
   /* increment the number of gpu subnodes and gpus free */
   pnode->nd_ngpus++;
   pnode->nd_ngpus_free++;
@@ -2231,7 +2158,16 @@ int is_orphaned(
 
 job *find_job(char *jobid)
   {
-  return(NULL);
+  static struct job pjob;
+  static int    i = 0;
+
+  if (i == 0)
+    {
+    pjob.ji_mutex = calloc(1, sizeof(pthread_mutex_t));
+    }
+  i++;
+
+  return(&pjob);
   }
 
 void free_br(struct batch_request *preq) {}
@@ -2297,7 +2233,11 @@ int already_recorded(
   char *rsv_id)
 
   {
-  return(0);
+  static int i = 0;
+  if (i++ % 2 == 0)
+    return(1);
+  else
+    return(0);
   }
 
 struct pbsnode *get_next_login_node(

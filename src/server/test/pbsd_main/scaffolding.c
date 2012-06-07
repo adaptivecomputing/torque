@@ -33,6 +33,7 @@ char *msg_startup1 = "Server %s started, initialization type = %d";
 int svr_chngNodesfile = 0; /* 1 signals want nodes file update */
 int svr_totnodes = 0; /* total number nodes defined */
 hello_container hellos;
+char pbs_server_name[1];
 
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime)
@@ -479,3 +480,5 @@ int start_listener_addrinfo(
 void netcounter_incr(void) {}
 
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
+
+void scheduler_close() {}

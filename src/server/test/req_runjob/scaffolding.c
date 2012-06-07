@@ -286,3 +286,18 @@ int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int log
   return(0);
   }
 
+batch_request *get_remove_batch_request(
+
+  char *br_id)
+
+  {
+  return(NULL);
+  }
+
+int get_batch_request_id(
+
+  batch_request *preq)
+
+  {
+  return(0);
+  }

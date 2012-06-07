@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <netdb.h> /* addrinfo */
+#include <netinet/in.h>
 
 
 #include "resizable_array.h" /* resizable_array */
@@ -13,6 +14,8 @@
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_task, work_type */
 #include "tcp.h"
+#include "pbs_job.h"
+
 
 hello_container failures;
 int svr_tsnodes = 0; 
@@ -273,6 +276,59 @@ void DIS_tcp_cleanup(struct tcp_chan *chan)
 int add_to_login_holder(
 
   struct pbsnode *pnode)
+
+  {
+  return(0);
+  }
+
+int append_dynamic_string(
+
+  dynamic_string *ds,
+  const char     *str)
+
+  {
+  return(0);
+  }
+
+dynamic_string *get_dynamic_string(
+
+  int         size,
+  const char *str)
+
+  {
+  return(NULL);
+  }
+
+int login_node_count() 
+
+  {
+  return(0);
+  }
+
+struct sockaddr_in *get_cached_addrinfo(
+    
+  char               *hostname)
+
+  {
+  return(NULL);
+  }
+
+void free_dynamic_string(dynamic_string *ds) {}
+
+job *get_job_from_jobinfo(
+    
+  struct jobinfo *jp,
+  struct pbsnode *pnode)
+
+  {
+  return(NULL);
+  }
+
+int insert_addr_name_info(
+    
+  char               *hostname,
+  char               *full_hostname,
+  struct sockaddr_in *sai)
 
   {
   return(0);

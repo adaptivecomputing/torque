@@ -77,3 +77,12 @@ int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
   {
   return(0);
   }
+
+char *get_cached_fullhostname(
+
+  char               *hostname,
+  struct sockaddr_in *sai)
+
+  {
+  return(NULL);
+  }
