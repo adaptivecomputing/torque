@@ -658,7 +658,7 @@ int handle_delete_all(
   int                   iter = -1;
   int                   failed_deletes = 0;
   int                   total_jobs = 0;
-  int                   rc;
+  int                   rc = PBSE_NONE;
   char                  tmpLine[MAXLINE];
 
   preq_dup->rq_noreply = TRUE;

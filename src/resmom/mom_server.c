@@ -3132,7 +3132,7 @@ int write_status_strings(
  
   {
   int            fds = nc->stream;
-  int            rc;
+  int            rc = DIS_SUCCESS;
   struct tcp_chan *chan = NULL;
 
   if (LOGLEVEL >= 9)
