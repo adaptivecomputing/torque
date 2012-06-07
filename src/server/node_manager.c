@@ -5616,7 +5616,7 @@ int remove_job_from_nodes_gpus(
 
   {
   struct gpusubn *gn;
-  char           *gpu_str;
+  char           *gpu_str = NULL;
   int             i;
 #ifdef NVIDIA_GPUS
   char            log_buf[LOCAL_LOG_BUF_SIZE];

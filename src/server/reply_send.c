@@ -100,7 +100,7 @@ static int dis_reply_write(
   struct batch_reply *preply)  /* I */
 
   {
-  int              rc;
+  int              rc = PBSE_NONE;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
   struct tcp_chan *chan = NULL;
 

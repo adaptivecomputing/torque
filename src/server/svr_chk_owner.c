@@ -263,7 +263,7 @@ int svr_get_privilege(
   char *colon_loc = NULL;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   char *other_host;
-  int   other_priv;
+  int   other_priv = 0;
 
   if (!user)
     {
