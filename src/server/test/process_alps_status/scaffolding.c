@@ -866,10 +866,10 @@ int node_gpustatus_list(
 int get_value_hash(
 
   hash_table_t *ht,
-  char         *key)
+  void         *key)
   
   {
-  if (key[0] == 'n')
+  if (((char *)key)[0] == 'n')
     return(1);
   else
     return(-1);
@@ -1892,7 +1892,7 @@ uint32_t hashbig( const void *key, size_t length, uint32_t initval)
 int get_hash(
 
   hash_table_t *ht,
-  char         *key)
+  void         *key)
 
   {
   /* since key is a job name, just get the numbers from the front */
@@ -1970,7 +1970,7 @@ void free_buckets(
 
 
 
-int add_hash(hash_table_t *ht, int value, char *key)
+int add_hash(hash_table_t *ht, int value, void *key)
   {
   int index;
 

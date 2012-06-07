@@ -260,17 +260,17 @@ void free_buckets(
 int get_hash(
     
   hash_table_t *ht,
-  char         *key)
+  void         *key)
 
   {
-  return(atoi(key) % ht->size);
+  return(atoi((char *)key) % ht->size);
   } /* END get_hash() */
 
 int add_hash(
     
   hash_table_t *ht,
   int           value,
-  char         *key)
+  void         *key)
 
   {
   int index;
@@ -321,7 +321,7 @@ int add_hash(
 int get_value_hash(
     
   hash_table_t *ht,
-  char         *key)
+  void         *key)
 
   {
   int     value = -1;
