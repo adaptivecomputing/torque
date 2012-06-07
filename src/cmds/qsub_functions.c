@@ -3460,7 +3460,7 @@ void process_opts(
           */
 
 /*           if (!getenv("DISPLAY")) */
-        if (hash_find(ji->user_attr, "display", &tmp_job_info))
+        if (hash_find(ji->user_attr, "DISPLAY", &tmp_job_info))
           hash_add_or_exit(&ji->mm, &ji->client_attr, "display", tmp_job_info->value, LOGIC_DATA);
         else
           print_qsub_usage_exit("qsub: DISPLAY not set");
