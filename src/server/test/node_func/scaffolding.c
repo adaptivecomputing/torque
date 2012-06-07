@@ -70,7 +70,7 @@ AvlTree AVL_delete_node(u_long key, uint16_t port, AvlTree tree)
   exit(1);
   }
 
-int add_hash(hash_table_t *ht, int value, char *key)
+int add_hash(hash_table_t *ht, int value, void *key)
   {
   fprintf(stderr, "The call to add_hash needs to be mocked!!\n");
   exit(1);
@@ -100,7 +100,7 @@ void free_prop_list(struct prop *prop)
   exit(1);
   }
 
-int get_value_hash(hash_table_t *ht, char *key)
+int get_value_hash(hash_table_t *ht, void *key)
   {
   fprintf(stderr, "The call to get_value_hash needs to be mocked!!\n");
   exit(1);
