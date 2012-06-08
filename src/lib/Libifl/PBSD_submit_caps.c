@@ -170,8 +170,8 @@ int PBSD_commit_get_sid(
     return(PBSE_MEM_MALLOC);
     }
   else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_Commit, pbs_current_user)) ||
-      (rc = encode_DIS_JobId(chan, jobid)) ||
-      (rc = encode_DIS_ReqExtend(chan, NULL)))
+           (rc = encode_DIS_JobId(chan, jobid)) ||
+           (rc = encode_DIS_ReqExtend(chan, NULL)))
     {
     pthread_mutex_lock(connection[connect].ch_mutex);
     connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
@@ -185,6 +185,7 @@ int PBSD_commit_get_sid(
     DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
+
   DIS_tcp_cleanup(chan);
 
   /* PBSD_rdrpy sets connection[connect].ch_errno */
@@ -193,23 +194,32 @@ int PBSD_commit_get_sid(
   pthread_mutex_lock(connection[connect].ch_mutex);
   rc = connection[connect].ch_errno;
   pthread_mutex_unlock(connection[connect].ch_mutex);
- 
-  /* read the sid if given and no error */
-  if (rc == PBSE_NONE)
-    {
-    if (reply->brp_choice == BATCH_REPLY_CHOICE_Text)
-      {
-      if (sid != NULL)
-        *sid = atol(reply->brp_un.brp_txt.brp_str);
-      }
-    else
-      /* (reply->brp_choice == BATCH_REPLY_CHOICE_NULL) */
-      {
-      *sid = reply->brp_code;
-      }
-    }
 
-  PBSD_FreeReply(reply);
+  if (reply == NULL)
+    {
+    /* couldn't read a response */
+    if (rc == PBSE_NONE)
+      rc = PBSE_PROTOCOL;
+    }
+  else
+    {
+    /* read the sid if given and no error */
+    if (rc == PBSE_NONE)
+      {
+      if (reply->brp_choice == BATCH_REPLY_CHOICE_Text)
+        {
+        if (sid != NULL)
+          *sid = atol(reply->brp_un.brp_txt.brp_str);
+        }
+      else
+        /* (reply->brp_choice == BATCH_REPLY_CHOICE_NULL) */
+        {
+        *sid = reply->brp_code;
+        }
+      }
+    
+    PBSD_FreeReply(reply);
+    }
 
   return(rc);
   } /* END PBSD_commit_get_sid() */
