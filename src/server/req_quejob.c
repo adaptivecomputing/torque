@@ -603,14 +603,8 @@ int req_quejob(
     server.sv_attr[SRV_ATR_NextJobNumber].at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
     pthread_mutex_unlock(server.sv_attr_mutex);
 
-
-    if (svr_save(&server, SVR_SAVE_QUICK))
-      {
-      /* FAILURE */
-      rc = PBSE_CAN_NOT_SAVE_FILE;
-      req_reject(rc, 0, preq, NULL, "Server file save failed");
-      return rc;
-      }
+    /* Change - do not fail if the server can't be saved - the job file is saved */
+    svr_save(&server, SVR_SAVE_QUICK);
     }
 
   /* does job already exist, check both old and new jobs */
