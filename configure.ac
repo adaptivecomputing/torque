@@ -35,10 +35,15 @@ AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
 AC_CANONICAL_HOST
+
+dnl add this line for backwards compatibility with older versions of 
+dnl autotools. Newer versions make this directory automatically but 
+dnl older versions don't.
+mkdir -p m4
+
 AC_CONFIG_MACRO_DIR([m4])
 
 LT_INIT
-
 
 AC_CHECK_PROGS(MAKE,$MAKE make gmake,error)
 if test "x$MAKE" = "xerror" ;then
@@ -59,6 +64,7 @@ if test "$program_suffix" = "NONE";then
 fi
 AC_SUBST(program_prefix)
 AC_SUBST(program_suffix)
+
 
 m4_pattern_allow([RPM_AC_OPTS])
 RPM_AC_OPTS=""
@@ -2087,11 +2093,6 @@ AH_VERBATIM([NEED_BLOCKING_CONNECTIONS],
 #define write(a,b,c) write_nonblocking_socket(a,b,c)
 #define read(a,b,c) read_nonblocking_socket(a,b,c)
 #endif])
-
-dnl add this line for backwards compatibility with older versions of 
-dnl autotools. Newer versions make this directory automatically but 
-dnl older versions don't.
-m4_exists=`mkdir -p m4`
 
 pbs_build_host=`uname -n`
 pbs_build_date=`date`
