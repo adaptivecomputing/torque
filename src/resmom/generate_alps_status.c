@@ -288,6 +288,7 @@ int process_node(
 
   {
   char               *attr_value;
+  char               *role_value;
   xmlNode            *child;
   xmlNode            *segments;
   xmlNode            *segment_child;
@@ -306,9 +307,16 @@ int process_node(
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)node_id);
   append_dynamic_string(status, attr_value);
 
+  /* check to see if the role is interactive - report these as down */
+  role_value = (char *)xmlGetProp(node, (const xmlChar *)role);
+
   copy_to_end_of_dynamic_string(status, "state=");
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)state);
-  append_dynamic_string(status, attr_value);
+  if ((role_value != NULL) &&
+      (!strcmp(role_value, interactive_caps)))
+    append_dynamic_string(status, "DOWN");
+  else
+    append_dynamic_string(status, attr_value);
 
   copy_to_end_of_dynamic_string(status, "ARCH=");
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)architecture);
