@@ -109,6 +109,8 @@ extern const char *architecture;
 extern const char *state;
 extern const char *success;
 extern const char *status;
+extern const char *role;
+extern const char *interactive_caps;
 extern const char *clock_mhz;
 extern const char *reservation_id;
 extern const char *processor_array;

@@ -6041,6 +6041,7 @@ int start_exec(
       memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
       np->sock_addr.sin_port = htons(np->hn_port);
       np->sock_addr.sin_family = af_family;
+      free(host_addr);
       }
     
     sister_job_nodes(pjob, sister_list[0]->host_list, sister_list[0]->port_list);

@@ -809,14 +809,13 @@ int register_array_depend(
       CLEAR_HEAD(pdep->dp_jobs);
       pdep->dp_type = type;
 
-      append_link(&pa->ai_qs.deps,&pdep->dp_link,pdep);
+      append_link(&pa->ai_qs.deps, &pdep->dp_link, pdep);
       }
     else
       return(PBSE_SYSTEM);
     }
 
   /* now we have the dependency, add the job to it */
-
   pdj = (struct array_depend_job *)GET_NEXT(pdep->dp_jobs);
 
   /* verify the job isn't already there */
