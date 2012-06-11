@@ -2088,6 +2088,11 @@ AH_VERBATIM([NEED_BLOCKING_CONNECTIONS],
 #define read(a,b,c) read_nonblocking_socket(a,b,c)
 #endif])
 
+dnl add this line for backwards compatibility with older versions of 
+dnl autotools. Newer versions make this directory automatically but 
+dnl older versions don't.
+m4_exists=`mkdir -p m4`
+
 pbs_build_host=`uname -n`
 pbs_build_date=`date`
 pbs_build_dir=`pwd`
