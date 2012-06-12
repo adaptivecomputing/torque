@@ -579,6 +579,7 @@ struct job
   struct job_array *ji_arraystruct; /* pointer to job_array for this array */
   int               ji_is_array_template;    /* set to TRUE if this is a "template job" for a job array*/
   int               ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
+  int               ji_cold_restart; /* set to TRUE if this job has been loaded through a cold restart */
 #endif/* PBS_MOM */   /* END SERVER ONLY */
 
   pthread_mutex_t *ji_mutex;

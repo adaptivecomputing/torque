@@ -171,6 +171,8 @@ void *contact_sched(
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int cmd = *(int *)new_cmd;
 
+  free(new_cmd);
+
   /* connect to the Scheduler */
   sock = client_to_svr(pbs_scheduler_addr, pbs_scheduler_port, 1, EMsg);
 

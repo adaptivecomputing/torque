@@ -687,7 +687,13 @@ int handle_delete_all(
     
     /* mutex is freed below */
     if (rc == PBSE_NONE)
-      rc = execute_job_delete(pjob, Msg, preq_dup);
+      {
+      if ((rc = execute_job_delete(pjob, Msg, preq_dup)) == PBSE_NONE)
+        reply_ack(preq_dup);
+       
+      /* mark this as NULL because it has been freed */
+      preq_dup = NULL;
+      }
     
     if (rc != PURGE_SUCCESS)
       {
@@ -705,8 +711,13 @@ int handle_delete_all(
     {
     reply_ack(preq);
 
+    /* PURGE SUCCESS means this was qdel -p all. In this case no reply_*() 
+     * functions have been called */
     if (rc == PURGE_SUCCESS)
+      {
       free_br(preq_dup);
+      preq_dup = NULL;
+      }
     }
   else
     {
@@ -716,6 +727,11 @@ int handle_delete_all(
     
     req_reject(PBSE_SYSTEM, 0, preq, NULL, tmpLine);
     }
+    
+  /* preq_dup happens at the end of the loop, so free the extra one if
+   * it is there */
+  if (preq_dup != NULL)
+    free_br(preq_dup);
 
   return(PBSE_NONE);
   } /* END handle_delete_all() */

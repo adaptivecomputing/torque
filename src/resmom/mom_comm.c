@@ -259,15 +259,13 @@ int task_save(
   task *ptask)  /* I */
 
   {
-  static char id[] = "task_save";
-
-  job *pjob = ptask->ti_job;
-  int fds;
-  int i;
-  int TaskID = 0;
-  char namebuf[MAXPATHLEN];
-  char portname[MAXPATHLEN];
-  int openflags;
+  job  *pjob = ptask->ti_job;
+  int   fds;
+  int   i;
+  int   TaskID = 0;
+  char  namebuf[MAXPATHLEN];
+  char  portname[MAXPATHLEN];
+  int   openflags;
 
   strcpy(namebuf, path_jobs);     /* job directory path */
   strcat(namebuf, pjob->ji_qs.ji_fileprefix);
@@ -287,11 +285,7 @@ int task_save(
     sprintf(log_buffer, "saving task in %s",
             namebuf);
 
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
 
 #if defined(HAVE_OPEN64) && defined(LARGEFILE_WORKS)
@@ -304,7 +298,7 @@ int task_save(
 
   if (fds < 0)
     {
-    log_err(errno, id, "error on open");
+    log_err(errno, __func__, "error on open");
 
     return(-1);
     }
@@ -324,7 +318,7 @@ int task_save(
   if (lseek(fds, (off_t)(TaskID*sizeof(ptask->ti_qs)), SEEK_SET) < 0)
 #endif
     {
-    log_err(errno, id, "lseek");
+    log_err(errno, __func__, "lseek");
 
     close(fds);
 
@@ -352,7 +346,7 @@ int task_save(
       if (lseek(fds, (off_t)(TaskID*sizeof(ptask->ti_qs)), SEEK_SET) < 0)
 #endif
         {
-        log_err(errno, id, "lseek");
+        log_err(errno, __func__, "lseek");
 
         close(fds);
 
@@ -362,7 +356,7 @@ int task_save(
       continue;
       }
 
-    log_err(errno, id, "quickwrite");
+    log_err(errno, __func__, "quickwrite");
 
     close(fds);
 
@@ -437,22 +431,22 @@ task *pbs_task_create(
   tm_task_id  taskid)
 
   {
-  static char  id[] = "pbs_task_create";
-  task  *ptask;
+  task          *ptask;
   pbs_attribute *at;
-  resource_def *rd;
-  resource *pres;
-  u_long  tasks;
+  resource_def  *rd;
+  resource      *pres;
+  u_long         tasks;
 
   /* DJH 27 feb 2002. Check that we aren't about to run into the */
   /* task IDs that we use to label adopted tasks. */
 
-  if ((taskid == TM_NULL_TASK) && (pjob->ji_taskid >= TM_ADOPTED_TASKID_BASE))
+  if ((taskid == TM_NULL_TASK) &&
+      (pjob->ji_taskid >= TM_ADOPTED_TASKID_BASE))
     {
     sprintf(log_buffer, "Ran into reserved task IDs on job %s",
             pjob->ji_qs.ji_jobid);
-    log_err(-1, id, log_buffer);
-    return NULL;
+    log_err(-1, __func__, log_buffer);
+    return(NULL);
     }
 
   for (ptask = (task *)GET_NEXT(pjob->ji_tasks), tasks = 0;
@@ -467,7 +461,7 @@ task *pbs_task_create(
    * be in production code, so I figure this is better than that --dbeer */
   if (rd == NULL)
     {
-    log_err(-1,id,"No tasks per node resource definition? TORQUE is very broken!");
+    log_err(-1, __func__, "No tasks per node resource definition? TORQUE is very broken!");
     return(NULL);
     }
 
@@ -485,7 +479,7 @@ task *pbs_task_create(
 
   if (ptask == NULL)
     {
-    log_err(ENOMEM,id,"No memory to allocate task! IMMINENT FAILURE");
+    log_err(ENOMEM, __func__, "No memory to allocate task! IMMINENT FAILURE");
 
     return(NULL);
     }
@@ -555,7 +549,6 @@ task *task_check(
   tm_task_id  taskid)
 
   {
-  static char  id[] = "task_check";
   task        *ptask;
 
   if (taskid == TM_NULL_TASK)
@@ -572,7 +565,7 @@ task *task_check(
             pjob->ji_qs.ji_jobid,
             (long)taskid);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     return(NULL);
     }
@@ -607,9 +600,8 @@ int task_recov(
   job *pjob)
 
   {
-  static char id[] = "task_recov";
-  int  fds;
-  task  *pt;
+  int   fds;
+  task *pt;
   char  namebuf[MAXPATHLEN];
   char  portname[MAXPATHLEN];
 
@@ -635,7 +627,7 @@ int task_recov(
 
   if (fds < 0)
     {
-    log_err(errno, id, "open of task file");
+    log_err(errno, __func__, "open of task file");
 
     unlink(namebuf);
 
@@ -662,7 +654,7 @@ int task_recov(
 
     if ((pt = pbs_task_create(pjob, tid)) == NULL)
       {
-      log_err(errno, id, "cannot create task");
+      log_err(errno, __func__, "cannot create task");
 
       close(fds);
 
@@ -737,7 +729,6 @@ int im_compose(
   tm_task_id taskid)
 
   {
-  static char *id = "im_compose";
   int ret;
 
   if (chan->sock < 0)
@@ -777,7 +768,7 @@ int im_compose(
       "send error %s\n",
       dis_emsg[ret]);
 
-    log_err(-1,id,log_buffer);
+    log_err(-1, __func__, log_buffer);
     }
 
   return(ret);
@@ -806,8 +797,6 @@ int send_sisters(
   int  using_radix)  /* I (TRUE if this job has a job radix, false otherwise */
 
   {
-  static char *id = "send_sisters";
-
   int              i;
   int              num;
   int              ret = PBSE_NONE;
@@ -826,7 +815,7 @@ int send_sisters(
             pjob->ji_qs.ji_jobid,
             com);
 
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, id, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
 
   if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
@@ -835,7 +824,7 @@ int send_sisters(
     snprintf(log_buffer, sizeof(log_buffer),
       "cookie not set in send_sisters for job %s",
       pjob->ji_qs.ji_jobid);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, id, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     return(0);
     }
 
@@ -849,7 +838,7 @@ int send_sisters(
       "sending ABORT to sisters for job %s",
       pjob->ji_qs.ji_jobid);
 
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, id, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
 
   if (using_radix == TRUE)
@@ -900,10 +889,10 @@ int send_sisters(
     if (np->hn_sister != SISTER_OKAY) /* sister is gone? */
       {
       snprintf(log_buffer, 1024, "%s:  sister #%d (%s) is not ok (%d)",
-               id,
-               i,
-               (np->hn_host != NULL) ? np->hn_host : "NULL",
-               np->hn_sister);
+        __func__,
+        i,
+        (np->hn_host != NULL) ? np->hn_host : "NULL",
+        np->hn_sister);
 
       log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
@@ -940,7 +929,7 @@ int send_sisters(
         }
 
       snprintf(log_buffer, sizeof(log_buffer), "%s:  cannot open tcp connection to sister #%d (%s)",
-        id,
+        __func__,
         i,
         (np->hn_host != NULL) ? np->hn_host : "NULL");
       
@@ -979,7 +968,7 @@ int send_sisters(
 
       snprintf(log_buffer, sizeof(log_buffer),
         "%s:  cannot compose message to sister #%d (%s) - %d",
-        id, i, (np->hn_host != NULL) ? np->hn_host : "NULL", ret);
+        __func__, i, (np->hn_host != NULL) ? np->hn_host : "NULL", ret);
 
       log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
@@ -1008,8 +997,6 @@ hnodent *find_node(
   tm_node_id   nodeid)
 
   {
-  static char id[] = "find_node";
-
   int                 i;
   unsigned long       connecting_ipaddr;
   unsigned long       node_ipaddr;
@@ -1024,7 +1011,7 @@ hnodent *find_node(
 
   if (getpeername(stream,&connecting_stack_addr,&len) != 0)
     {
-    log_err(errno,id,"Couldn't find connecting information for this stream");
+    log_err(errno, __func__, "Couldn't find connecting information for this stream");
     return(NULL);
     }
 
@@ -1041,7 +1028,7 @@ hnodent *find_node(
     sprintf(log_buffer, "node %d not found",
       nodeid);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     return(NULL);
     }
@@ -1059,7 +1046,7 @@ hnodent *find_node(
       connecting_ipaddr,
       node_ipaddr);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     hp = NULL;
     }
@@ -1082,8 +1069,6 @@ void job_start_error(
   char  *nodename) /* I */
 
   {
-  static  char   id[] = "job_start_error";
-
   static char    abortjobid[64];
   static int     abortcount = -1;
 
@@ -1097,9 +1082,8 @@ void job_start_error(
     }
 
   sprintf(log_buffer, "job_start_error from node %s in %s",
-
-          nodename,
-          id);
+    nodename,
+    __func__);
 
   log_err(code, pjob->ji_qs.ji_jobid, log_buffer);
 
@@ -1110,8 +1094,8 @@ void job_start_error(
       /* abort is not working, do not send sisters again */
 
       sprintf(log_buffer, "abort attempted 16 times in %s.  ignoring abort request from node %s",
-              id,
-              nodename);
+        __func__,
+        nodename);
 
       log_err(code, pjob->ji_qs.ji_jobid, log_buffer);
 
@@ -1199,8 +1183,6 @@ void node_bailout(
   hnodent *np)    /* I */
 
   {
-  static char id[] = "node_bailout";
-
   task         *ptask;
   eventent     *ep;
   int          i;
@@ -1228,7 +1210,7 @@ void node_bailout(
           np->hn_host,
           np->hn_node);
 
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
 
         job_start_error(pjob, PBSE_SISCOMM, np->hn_host);
 
@@ -1248,11 +1230,11 @@ void node_bailout(
         */
 
         sprintf(log_buffer, "%s: received KILL/ABORT request for job %s from node %s",
-                id,
-                pjob->ji_qs.ji_jobid,
-                np->hn_host);
+          __func__,
+          pjob->ji_qs.ji_jobid,
+          np->hn_host);
 
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
 
         for (i = 1;i < pjob->ji_numnodes;i++)
           {
@@ -1297,7 +1279,7 @@ void node_bailout(
           {
           snprintf(log_buffer,sizeof(log_buffer),
             "%s: REQUEST %d %s\n",
-            id,
+            __func__,
             ep->ee_command,
             pjob->ji_qs.ji_jobid);
 
@@ -1331,7 +1313,7 @@ void node_bailout(
           np->hn_host,
           np->hn_node);
 
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
 
 #else /* __TRR */
 
@@ -1356,7 +1338,7 @@ void node_bailout(
           pjob->ji_nodekill = np->hn_node;
           }
 
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
 
 #endif /* __TRR */
 
@@ -1391,7 +1373,7 @@ void node_bailout(
         sprintf(log_buffer, "unknown command %d saved",
                 ep->ee_command);
 
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
 
         break;
       }  /* END switch (ep->ee_command) */
@@ -1875,10 +1857,9 @@ void send_im_error(
   tm_task_id  fromtask)
 
   {
-  static char *id = "send_im_error";
-  int          socket;
-  int          i;
-  int          rc = DIS_SUCCESS;
+  int              socket;
+  int              i;
+  int              rc = DIS_SUCCESS;
   struct tcp_chan *local_chan = NULL;
   
   if (reply)
@@ -1929,12 +1910,12 @@ void send_im_error(
           add_to_resend_things(mc);
         }
 
-      snprintf(log_buffer,sizeof(log_buffer),
+      snprintf(log_buffer, sizeof(log_buffer),
         "Could not send error on event %d for job %s",
         event,
         pjob->ji_qs.ji_jobid);
       
-      log_err(-1,id,log_buffer);
+      log_err(-1, __func__, log_buffer);
       }
     }
 
@@ -1953,11 +1934,10 @@ int reply_to_join_job_as_sister(
   int                 job_radix)
 
   {
-  static char *id = "reply_to_join_job_as_sister";
-  int          socket;
-  int          retry_count;
-  int          ret = DIS_SUCCESS;
-  int          command;
+  int              socket;
+  int              retry_count;
+  int              ret = DIS_SUCCESS;
+  int              command;
   struct tcp_chan *local_chan = NULL;
 
   command = IM_RADIX_ALL_OK;
@@ -2033,7 +2013,7 @@ int reply_to_join_job_as_sister(
         netaddr(addr));
       }
     
-    log_err(-1,id,log_buffer);
+    log_err(-1, __func__, log_buffer);
     }
 
   return(ret);
@@ -2070,7 +2050,6 @@ int im_join_job_as_sister(
   int                 job_radix)
 
   {
-  static char         *id = "im_join_job_as_sister";
   hnodent             *np = NULL;
   attribute_def       *pdef;
   job                 *pjob;
@@ -2103,7 +2082,7 @@ int im_join_job_as_sister(
       jobid,
       dis_emsg[ret]);
     
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
     
     return(IM_FAILURE);
     }
@@ -2117,7 +2096,7 @@ int im_join_job_as_sister(
       jobid,
       dis_emsg[ret]);
     
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
     
     return(IM_FAILURE);
     }
@@ -2125,7 +2104,7 @@ int im_join_job_as_sister(
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buffer, "%s: JOIN_JOB %s node %d",
-      id,
+      __func__,
       jobid,
       nodeid);
     
@@ -2156,12 +2135,12 @@ int im_join_job_as_sister(
     if (ret != DIS_SUCCESS)
       {
       sprintf(log_buffer, "%s: join_job_radix request to node %d for job %s failed - %s (radix_hosts)",
-        id,
+        __func__,
         nodeid,
         jobid,
         dis_emsg[ret]);
       
-      log_err(-1, id, log_buffer);
+      log_err(-1, __func__, log_buffer);
       
       return(IM_FAILURE);
       }
@@ -2170,12 +2149,12 @@ int im_join_job_as_sister(
     if (ret != DIS_SUCCESS)
       {
       sprintf(log_buffer, "%s: join_job_radix request to node %d for job %s failed - %s (radix_ports)",
-        id,
+        __func__,
         nodeid,
         jobid,
         dis_emsg[ret]);
       
-      log_err(-1, id, log_buffer);
+      log_err(-1, __func__, log_buffer);
       
       return(IM_FAILURE);
       }
@@ -2184,12 +2163,12 @@ int im_join_job_as_sister(
     if (ret != DIS_SUCCESS)
       {
       sprintf(log_buffer, "%s: join_job_radix request to node %d for job %s failed - %s (radix_ports)",
-        id,
+        __func__,
         nodeid,
         jobid,
         dis_emsg[ret]);
       
-      log_err(-1, id, log_buffer);
+      log_err(-1, __func__, log_buffer);
       
       return(IM_FAILURE);
       }
@@ -2200,12 +2179,12 @@ int im_join_job_as_sister(
   if (decode_DIS_svrattrl(chan, &lhead) != DIS_SUCCESS)
     {
     sprintf(log_buffer, "%s: join_job request to node %d for job %s failed - %s (decode)",
-      id,
+      __func__,
       nodeid,
       jobid,
       dis_emsg[ret]);
     
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
     
     return(IM_FAILURE);
     }
@@ -2280,7 +2259,7 @@ int im_join_job_as_sister(
     if (LOGLEVEL >= 6)
       {
       sprintf(log_buffer, "%s:error %d received in joinjob - purging job",
-        id, 
+        __func__, 
         rc);
       
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
@@ -2352,14 +2331,14 @@ int im_join_job_as_sister(
     sprintf(log_buffer, "about to create cpuset for job %s.\n",
       pjob->ji_qs.ji_jobid);
     
-    log_ext(-1, id, log_buffer, LOG_INFO);
+    log_ext(-1, __func__, log_buffer, LOG_INFO);
 
     if (create_job_cpuset(pjob) == FAILURE)
       {
       sprintf(log_buffer, "Could not create cpuset for job %s.\n",
         pjob->ji_qs.ji_jobid);
 
-      log_err(-1, id, log_buffer);
+      log_err(-1, __func__, log_buffer);
       }
     }
   
@@ -2379,7 +2358,7 @@ int im_join_job_as_sister(
     {
     send_im_error(PBSE_SYSTEM,1,pjob,cookie,event,fromtask);
     
-    log_err(-1, id, "cannot load sp switch table");
+    log_err(-1, __func__, "cannot load sp switch table");
     
     job_purge(pjob);
       
@@ -2498,8 +2477,6 @@ void im_kill_job_as_sister(
   int           radix)   /* I */
 
   {
-  static char *id = "im_kill_job_as_sister";
-
   /* If we are an intermediate mom we need to tell our radix the job has been killed */
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) &&
       (radix == TRUE))
@@ -2513,7 +2490,7 @@ void im_kill_job_as_sister(
    * die and are reaped.
    */
 
-  kill_job(pjob, SIGKILL, id, "kill_job message received");
+  kill_job(pjob, SIGKILL, __func__, "kill_job message received");
   
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
   
@@ -2568,7 +2545,6 @@ int im_spawn_task(
   job                *pjob)     /* M */
   
   {
-  static char         *id = "im_spawn_task";
   int                  ret;
   int                  taskid;
   int                  num;
@@ -2632,7 +2608,7 @@ int im_spawn_task(
   else if (strcmp(pjob->ji_globid, globid) != 0)
     {
     DBPRT(("%s: globid job %s received %s\n",
-          id,
+          __func__,
           pjob->ji_globid,
           globid))
 
@@ -2894,16 +2870,15 @@ int im_signal_task(
   tm_task_id  fromtask)
 
   {
-  static char *id = "im_signal_task";
-  int       nodeid;
-  int       taskid;
-  int       ret;
-  int       sig;
-  int       socket;
+  int              nodeid;
+  int              taskid;
+  int              ret;
+  int              sig;
+  int              socket;
   struct tcp_chan *local_chan = NULL;
-  char     *jobid = pjob->ji_qs.ji_jobid;
-  task     *ptask = NULL;
-  hnodent  *np;
+  char            *jobid = pjob->ji_qs.ji_jobid;
+  task            *ptask = NULL;
+  hnodent         *np;
 
   /* first read all of the data */
   nodeid = disrsi(chan, &ret);
@@ -2932,7 +2907,7 @@ int im_signal_task(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: SIGNAL_TASK %s from node %d all tasks signal %d\n",
-      id,
+      __func__,
       jobid,
       nodeid,
       sig);
@@ -2969,7 +2944,7 @@ int im_signal_task(
 
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: SIGNAL_TASK %s from node %d task %d signal %d\n",
-      id,
+      __func__,
       jobid,
       nodeid,
       taskid,
@@ -3040,15 +3015,14 @@ int im_obit_task(
   tm_task_id  fromtask)
 
   {
-  static char *id = "im_obit_task";
-  int       nodeid;
-  int       taskid;
-  int       ret;
-  int       local_socket;
+  int              nodeid;
+  int              taskid;
+  int              ret;
+  int              local_socket;
   struct tcp_chan *local_chan = NULL;
-  char     *jobid = pjob->ji_qs.ji_jobid;
-  task     *ptask = NULL;
-  hnodent  *np;
+  char            *jobid = pjob->ji_qs.ji_jobid;
+  task            *ptask = NULL;
+  hnodent         *np;
 
   nodeid = disrsi(chan, &ret);
 
@@ -3078,7 +3052,7 @@ int im_obit_task(
 
   snprintf(log_buffer,sizeof(log_buffer),
     "%s: OBIT_TASK %s from node %d task %d\n",
-    id,
+    __func__,
     jobid,
     nodeid,
     taskid);
@@ -3147,7 +3121,7 @@ int im_obit_task(
     
     if (op == NULL)
       {
-      log_err(ENOMEM,id,"Cannot allocate memory for the obit entry");
+      log_err(ENOMEM, __func__, "Cannot allocate memory for the obit entry");
       }
     else
       {
@@ -3184,17 +3158,16 @@ int im_get_info(
   tm_task_id  fromtask)
 
   {
-  static char *id = "im_get_info";
-  int       nodeid;
-  int       taskid;
-  int       ret;
-  int       local_socket;
+  int              nodeid;
+  int              taskid;
+  int              ret;
+  int              local_socket;
   struct tcp_chan *local_chan = NULL;
-  char     *jobid = pjob->ji_qs.ji_jobid;
-  char     *name;
-  task     *ptask = NULL;
-  hnodent  *np;
-  infoent  *ip;
+  char            *jobid = pjob->ji_qs.ji_jobid;
+  char            *name;
+  task            *ptask = NULL;
+  hnodent         *np;
+  infoent         *ip;
 
   nodeid = disrsi(chan, &ret);
 
@@ -3227,7 +3200,7 @@ int im_get_info(
 
   snprintf(log_buffer,sizeof(log_buffer),
     "%s: GET_INFO %s from node %d task %d name %s\n",
-    id,
+    __func__,
     jobid,
     nodeid,
     taskid,
@@ -3285,15 +3258,14 @@ int im_get_resc_as_sister(
   tm_task_id  fromtask)
 
   {
-  static char *id = "im_get_resc_as_sister";
-  int       nodeid;
-  int       ret;
-  int       i;
-  int       local_socket;
+  int              nodeid;
+  int              ret;
+  int              i;
+  int              local_socket;
   struct tcp_chan *local_chan = NULL;
-  char     *jobid = pjob->ji_qs.ji_jobid;
-  char     *info = NULL;
-  vnodent  *vp;
+  char            *jobid = pjob->ji_qs.ji_jobid;
+  char            *info = NULL;
+  vnodent         *vp;
 
   nodeid = disrsi(chan, &ret);
 
@@ -3312,7 +3284,7 @@ int im_get_resc_as_sister(
     sprintf(log_buffer, "node %d not found",
       nodeid);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     send_im_error(PBSE_BADHOST,1,pjob,cookie,event,fromtask);
       
@@ -3321,7 +3293,7 @@ int im_get_resc_as_sister(
   
   snprintf(log_buffer,sizeof(log_buffer),
     "%s: GET_RESC %s from node %d\n",
-    id,
+    __func__,
     jobid,
     nodeid);
 
@@ -3412,20 +3384,19 @@ int im_poll_job_as_sister(
     tm_task_id  fromtask) /* I */
 
   {
-  static char  *id = "im_poll_job_as_sister";
-  int           should_kill_job = FALSE;
-  int           ret;
-  int           local_socket;
+  int              should_kill_job = FALSE;
+  int              ret;
+  int              local_socket;
   struct tcp_chan *local_chan = NULL;
-  unsigned int  momport = 0;
-  char         *jobid = pjob->ji_qs.ji_jobid;
+  unsigned int     momport = 0;
+  char            *jobid = pjob->ji_qs.ji_jobid;
 
   
   if (LOGLEVEL >= 3)
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: POLL_JOB %s - %d\n",
-      id, jobid, event);
+      __func__, jobid, event);
     
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
@@ -3513,16 +3484,14 @@ int im_abort_job(
   tm_task_id          fromtask)  /* I */
 
   {
-  static char *id = "im_abort_job";
   char *jobid = pjob->ji_qs.ji_jobid;
-
 
   if (LOGLEVEL >= 2)
     {
     sprintf(log_buffer, "%s: received KILL/ABORT request for job %s from node %s",
-        id,
-        jobid,
-        netaddr(addr));
+      __func__,
+      jobid,
+      netaddr(addr));
     
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
@@ -3550,15 +3519,14 @@ int im_get_tid(
   tm_task_id  fromtask)  /* I */
 
   {
-  static char *id = "im_get_tid";
-  char *jobid = pjob->ji_qs.ji_jobid;
-  int   ret;
-  int   local_socket;
+  char            *jobid = pjob->ji_qs.ji_jobid;
+  int              ret;
+  int              local_socket;
   struct tcp_chan *local_chan = NULL;
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {
-    log_err(-1, id, "got GET_TID and I'm not MS");
+    log_err(-1, __func__, "got GET_TID and I'm not MS");
     
     return(IM_FAILURE);
     }
@@ -3567,7 +3535,7 @@ int im_get_tid(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: GET_TID %s\n",
-      id,
+      __func__,
       jobid);
     
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
@@ -3577,7 +3545,7 @@ int im_get_tid(
   
   if (IS_ADOPTED_TASK(pjob->ji_taskid))
     {
-    log_err(-1, id, "Ran into reserved task ids");
+    log_err(-1, __func__, "Ran into reserved task ids");
     return(IM_FAILURE);
     }
 
@@ -3624,7 +3592,6 @@ int handle_im_join_job_response(
   struct sockaddr_in *addr)   /* I */
 
   {
-  static char *id = "handle_im_join_job_response";
   int       i;
 
   hnodent  *np = NULL;
@@ -3632,7 +3599,7 @@ int handle_im_join_job_response(
   
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {
-    log_err(-1, id, "got JOIN_JOB OKAY and I'm not MS");
+    log_err(-1, __func__, "got JOIN_JOB OKAY and I'm not MS");
     
     return(IM_FAILURE);
     }
@@ -3660,7 +3627,7 @@ int handle_im_join_job_response(
         tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
         timeval_subtract(&result, &tv, tv_attr);
         sprintf(log_buffer, "%s: total wire-up time for job %ld.%ld", 
-          id,
+          __func__,
           result.tv_sec, 
           result.tv_usec);
 
@@ -3686,7 +3653,7 @@ int handle_im_join_job_response(
     if (LOGLEVEL >= 4)
       {
       sprintf(log_buffer, "%s:joinjob response received from node %s, (still waiting for %s)",
-        id,
+        __func__,
         netaddr(addr),
         np->hn_host);
       
@@ -3722,7 +3689,6 @@ int handle_im_kill_job_response(
   int      nodeidx)
 
   {
-  static char  *id = "handle_im_kill_job_response";
   int           ret;
   int           i;
   unsigned int  momport = 0;
@@ -3731,13 +3697,13 @@ int handle_im_kill_job_response(
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {
-    log_err(-1, id, "got KILL_JOB OKAY and I'm not MS");
+    log_err(-1, __func__, "got KILL_JOB OKAY and I'm not MS");
     return(IM_FAILURE);
     }
 
   if (LOGLEVEL >= 2)
     {
-    sprintf(log_buffer, "%s:KILL_JOB acknowledgement received", id);
+    sprintf(log_buffer, "%s:KILL_JOB acknowledgement received", __func__);
     
     log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
     }
@@ -3758,7 +3724,7 @@ int handle_im_kill_job_response(
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "%s: %s FINAL from %d  cpu %lu sec  mem %lu kb  vmem %ld kb\n",
-        id,
+        __func__,
         jobid,
         nodeidx,
         pjob->ji_resources[nodeidx - 1].nr_cput,
@@ -3788,7 +3754,7 @@ int handle_im_kill_job_response(
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "%s: ALL DONE, set EXITING job %s\n",
-        id,
+        __func__,
         jobid);
 
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
@@ -3830,8 +3796,6 @@ int handle_im_spawn_task_response(
   tm_event_t  event)
 
   {
-  static char *id = "handle_im_spawn_task_response";
-
   int   taskid;
   int   ret;
   task *ptask;
@@ -3843,7 +3807,7 @@ int handle_im_spawn_task_response(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "%s: SPAWN_TASK %s OKAY task %d\n", id, pjob->ji_qs.ji_jobid, taskid);
+    sprintf(log_buffer, "%s: SPAWN_TASK %s OKAY task %d\n", __func__, pjob->ji_qs.ji_jobid, taskid);
     
     log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
     }
@@ -3880,12 +3844,11 @@ int handle_im_signal_task_response(
   tm_event_t  event)      /* I */
 
   {
-  char *id = "handle_im_signal_task_response";
   task *ptask;
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "%s: SIGNAL_TASK %s OKAY %d\n", id, pjob->ji_qs.ji_jobid, event_task);
+    sprintf(log_buffer, "%s: SIGNAL_TASK %s OKAY %d\n", __func__, pjob->ji_qs.ji_jobid, event_task);
     
     log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
     }
@@ -3925,15 +3888,13 @@ int handle_im_get_tasks_response(
   tm_event_t  event)      /* I */
 
   {
-  static char *id = "handle_im_get_tasks_response";
-
   task *ptask;
   int   taskid;
   int   ret;
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "%s: GET_TASKS %s OKAY \n", id, pjob->ji_qs.ji_jobid);
+    sprintf(log_buffer, "%s: GET_TASKS %s OKAY \n", __func__, pjob->ji_qs.ji_jobid);
     
     log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
     }
@@ -3990,8 +3951,6 @@ int handle_im_obit_task_response(
   tm_event_t  event)      /* I */
 
   {
-  static char *id = "handle_im_obit_task_response";
-
   int   exitval;
   int   ret;
   char *jobid = pjob->ji_qs.ji_jobid;
@@ -4004,7 +3963,7 @@ int handle_im_obit_task_response(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "%s: OBIT_TASK %s OKAY %d exit val %d\n", id, jobid, event_task, exitval);
+    sprintf(log_buffer, "%s: OBIT_TASK %s OKAY %d exit val %d\n", __func__, jobid, event_task, exitval);
 
     log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
@@ -4234,16 +4193,14 @@ int handle_im_poll_job_response(
 
 int handle_im_get_tid_response(
     
-  struct tcp_chan *chan,
-  job       *pjob,   /* I */
-  char      *cookie, /* I */
-  char     **argv,   /* M */
-  char     **envp,   /* M */
-  fwdevent  *efwd)   /* I */
+  struct tcp_chan  *chan,
+  job              *pjob,   /* I */
+  char             *cookie, /* I */
+  char            **argv,   /* M */
+  char            **envp,   /* M */
+  fwdevent         *efwd)   /* I */
 
   {
-  static char *id = "handle_im_get_tid_response";
-
   int       taskid;
   int       ret;
   int       i;
@@ -4266,7 +4223,7 @@ int handle_im_get_tid_response(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "%s: GET_TID %s OKAY task %d\n", id, jobid, taskid);
+    sprintf(log_buffer, "%s: GET_TID %s OKAY task %d\n", __func__, jobid, taskid);
     
     log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
@@ -4489,8 +4446,6 @@ void im_request(
   int version)  /* I */
 
   {
-  static char         *id = "im_request";
-
   int                  command = 0;
   int                  event_com = 0;
   int                  ret;
@@ -4537,7 +4492,7 @@ void im_request(
     svr_conn[chan->sock].cn_stay_open = FALSE;
     chan->sock = -1;
     sprintf(log_buffer, "protocol version %d unknown", version);
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
     goto im_req_finish;
     }
 
@@ -4553,7 +4508,7 @@ void im_request(
     {
     sprintf(log_buffer, "connect from %s", netaddr(addr));
  
-    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
   
   if (AVL_is_in_tree_no_port_compare(ipaddr, 0, okclients) == 0 )
@@ -4584,7 +4539,7 @@ void im_request(
     
     if (tmp_line != NULL)
       free(tmp_line);
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     goto im_req_finish;
     }
@@ -4625,7 +4580,7 @@ void im_request(
     {
     sprintf(log_buffer,
         "%s:rec req '%s' (%d) for job %s from %s ev %d task %d cookie %s",
-        id,
+        __func__,
         PMOMCommand[MIN(command,IM_MAX)],
         command,
         jobid,
@@ -4924,7 +4879,6 @@ void im_request(
         log_err(-1, __func__, "check_ms error IM_POLL_JOB");
         goto err;
         }
-      svr_conn[chan->sock].cn_stay_open = TRUE;
 
       /* im_poll_job_as_sister will create a new connection and send
          an IM_ALL_OKAY message which will then be processed by the 
@@ -4948,7 +4902,7 @@ void im_request(
         }
       
       im_abort_job(pjob,addr,cookie,event,fromtask);
-      svr_conn[chan->sock].cn_stay_open = TRUE;
+
       break;
       }
     
@@ -4962,16 +4916,17 @@ void im_request(
         log_err(-1, __func__, "im_get_tid error");
         goto err;
         }
+
       svr_conn[chan->sock].cn_stay_open = TRUE;
+
       break;
       }
 
     case IM_ALL_OKAY: /* this is a response message */
       {
       /* Sender is another MOM telling me that a request has completed successfully */
-
-
       svr_conn[chan->sock].cn_stay_open = FALSE;
+
       switch (event_com)
         {
         case IM_JOIN_JOB:
@@ -5584,7 +5539,7 @@ void im_request(
            */
           if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
             {
-            log_err(-1, id, "JOIN_JOB ERROR and I'm not MS");
+            log_err(-1, __func__, "JOIN_JOB ERROR and I'm not MS");
             goto err;
             }
           
@@ -5683,7 +5638,7 @@ void im_request(
             {
             snprintf(log_buffer,sizeof(log_buffer),
               "%s: REQUEST %d %s returned ERROR %d\n",
-              id,
+              __func__,
               event_com,
               jobid,
               errcode);
@@ -5712,7 +5667,7 @@ void im_request(
 
           if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
             {
-            log_err(-1, id, "POLL_JOB ERROR and I'm not MS");
+            log_err(-1, __func__, "POLL_JOB ERROR and I'm not MS");
             goto err;
             }
           
@@ -5720,7 +5675,7 @@ void im_request(
             {
             snprintf(log_buffer,sizeof(log_buffer),
               "%s: POLL_JOB %s returned ERROR %d\n",
-              id,
+              __func__,
               jobid,
               errcode);
             
@@ -5743,7 +5698,7 @@ void im_request(
             {
             snprintf(log_buffer,sizeof(log_buffer),
               "%s: GET_TID %s returned ERROR %d\n",
-              id,
+              __func__,
               jobid,
               errcode);
             
@@ -5770,7 +5725,7 @@ void im_request(
           
           snprintf(log_buffer,sizeof(log_buffer),
             "%s: job %s received event_com %d event %d. (IM_ERROR) No handler!!!\n",
-            id, jobid, command, event_com);
+            __func__, jobid, command, event_com);
             log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
           goto err;
 
@@ -5803,7 +5758,7 @@ err:
       "error processing command %d event_com %d for job %s from %s:(%d)",
     command, event_com, jobid ? jobid : "unknown", netaddr(addr), sender_port);
   
-  log_err(-1, id, log_buffer);
+  log_err(-1, __func__, log_buffer);
   
 im_req_finish:
   
@@ -5812,6 +5767,7 @@ im_req_finish:
   
   if (cookie != NULL)
     free(cookie);
+
   return;
   }  /* END im_request() */
 
@@ -5826,8 +5782,6 @@ void tm_eof(
   {
   job  *pjob;
   task *ptask;
-
-  char *id = "tm_eof";
 
   /*
   ** Search though all the jobs looking for this fd.
@@ -5869,7 +5823,7 @@ void tm_eof(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_SERVER,
-      id,
+      __func__,
       "no matching task found");
     }
 
@@ -5962,7 +5916,6 @@ int tm_postinfo(
   size_t  *len)        /* I */
 
   {
-  static char *id = "tm_postinfo";
   name = disrst(ptask->ti_chan, ret);
 
   if (*ret == DIS_SUCCESS)
@@ -5980,7 +5933,7 @@ int tm_postinfo(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: POSTINFO %s task %d sent info %s:%s(%d)\n",
-      id,
+      __func__,
       jobid,
       fromtask,
       name,
@@ -6034,7 +5987,6 @@ int tm_spawn_request(
   int         nodeid)     /* I */
  
   {
-  static char   *id = "tm_spawn_request";
   char         **argv = NULL;
   char         **envp = NULL;
   char          *jobid = pjob->ji_qs.ji_jobid;
@@ -6054,7 +6006,7 @@ int tm_spawn_request(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: SPAWN %s on node %d\n",
-      id,
+      __func__,
       jobid,
       nodeid);
     
@@ -6070,7 +6022,7 @@ int tm_spawn_request(
   
   if (argv == NULL)
     {
-    log_err(ENOMEM,id,"No memory available, cannot calloc!");
+    log_err(ENOMEM, __func__, "No memory available, cannot calloc!");
     
     return(TM_ERROR);
     }
@@ -6095,7 +6047,7 @@ int tm_spawn_request(
   
   if (envp == NULL)
     {
-    log_err(ENOMEM,id,"No memory available, cannot calloc!");
+    log_err(ENOMEM, __func__, "No memory available, cannot calloc!");
     
     return(TM_ERROR);
     }
@@ -6355,7 +6307,7 @@ int tm_spawn_request(
       phost->hn_host,
       pjob->ji_qs.ji_jobid);
 
-    log_err(-1,id,log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     /* NYI: shouldn't we kill the job here instead of letting it run forever?? */
     }
@@ -6384,19 +6336,19 @@ int tm_spawn_request(
  * particular node has charge of.
  */
 int tm_tasks_request(
+
   struct tcp_chan *chan,
-  job        *pjob,       /* I */
-  int         prev_error, /* I */
-  int         event,      /* I */
-  char       *cookie,     /* I */
-  int        *reply_ptr,  /* O */
-  int        *ret,        /* O */
-  tm_task_id  fromtask,   /* I */
-  hnodent    *phost,      /* M */
-  int         nodeid)     /* I */
+  job             *pjob,       /* I */
+  int              prev_error, /* I */
+  int              event,      /* I */
+  char            *cookie,     /* I */
+  int             *reply_ptr,  /* O */
+  int             *ret,        /* O */
+  tm_task_id       fromtask,   /* I */
+  hnodent         *phost,      /* M */
+  int              nodeid)     /* I */
+
   {
-  static char *id = "tm_tasks_request";
- 
   char     *jobid = pjob->ji_qs.ji_jobid;
   task     *ptask;
 #ifndef NUMA_SUPPORT
@@ -6408,7 +6360,7 @@ int tm_tasks_request(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: TASKS %s on node %d\n",
-      id,
+      __func__,
       jobid,
       nodeid);
     
@@ -6489,18 +6441,17 @@ int tm_tasks_request(
 int tm_signal_request(
   
   struct tcp_chan *chan,
-  job        *pjob,       /* I */
-  int         prev_error, /* I */
-  int         event,      /* I */
-  char       *cookie,     /* I */
-  tm_task_id  fromtask,   /* I */
-  int        *ret,        /* O */
-  int        *reply_ptr,  /* O */
-  hnodent    *phost,      /* M */
-  int         nodeid)     /* I */
+  job             *pjob,       /* I */
+  int              prev_error, /* I */
+  int              event,      /* I */
+  char            *cookie,     /* I */
+  tm_task_id       fromtask,   /* I */
+  int             *ret,        /* O */
+  int             *reply_ptr,  /* O */
+  hnodent         *phost,      /* M */
+  int              nodeid)     /* I */
  
   {
-  static char *id = "tm_signal_request";
   int       taskid;
   int       signum;
   char     *jobid = pjob->ji_qs.ji_jobid;
@@ -6525,7 +6476,7 @@ int tm_signal_request(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: SIGNAL %s on node %d task %d sig %d\n",
-      id,
+      __func__,
       jobid,
       nodeid,
       taskid,
@@ -6590,7 +6541,7 @@ int tm_signal_request(
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buffer, "%s: TM_SIGNAL %s from node %d task %d signal %d",
-      id, jobid, nodeid, taskid, signum);
+      __func__, jobid, nodeid, taskid, signum);
     
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
@@ -6628,7 +6579,6 @@ int tm_obit_request(
   int         nodeid)     /* I */
  
   {
-  static char *id = "tm_obit_request";
   int       taskid;
   char     *jobid = pjob->ji_qs.ji_jobid;
   task     *ptask;
@@ -6647,7 +6597,7 @@ int tm_obit_request(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: OBIT %s on node %d task %d\n",
-      id,
+      __func__,
       jobid,
       nodeid,
       taskid);
@@ -6690,7 +6640,7 @@ int tm_obit_request(
         "Could not pass along obit for job %s to host %s",
         pjob->ji_qs.ji_jobid,
         phost->hn_host);
-      log_err(-1,id,log_buffer);
+      log_err(-1, __func__, log_buffer);
       }
 
     close(local_socket);
@@ -6728,7 +6678,7 @@ int tm_obit_request(
     
     if (op == NULL)
       {
-      log_err(ENOMEM,id,"No memory! Cannot calloc!");
+      log_err(ENOMEM, __func__, "No memory! Cannot calloc!");
       return(TM_ERROR);
       }
     
@@ -6775,7 +6725,6 @@ int tm_getinfo_request(
   int         nodeid)     /* I */
  
   {
-  static char *id = "tm_getinfo_request";
   int       taskid;
   char     *jobid = pjob->ji_qs.ji_jobid;
   char     *name;
@@ -6801,7 +6750,7 @@ int tm_getinfo_request(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: GETINFO %s from node %d task %d name %s\n",
-      id,
+      __func__,
       jobid,
       nodeid,
       taskid,
@@ -6889,18 +6838,19 @@ int tm_getinfo_request(
  * get resource string for a node 
  */
 int tm_resources_request(
+
   struct tcp_chan *chan,
-  job        *pjob,       /* I */
-  int         prev_error, /* I */
-  int         event,      /* I */
-  char       *cookie,     /* I */
-  int        *reply_ptr,  /* O */
-  int        *ret,        /* O */
-  tm_task_id  fromtask,   /* I */
-  hnodent    *phost,      /* M */
-  int         nodeid)     /* I */
+  job             *pjob,       /* I */
+  int              prev_error, /* I */
+  int              event,      /* I */
+  char            *cookie,     /* I */
+  int             *reply_ptr,  /* O */
+  int             *ret,        /* O */
+  tm_task_id       fromtask,   /* I */
+  hnodent         *phost,      /* M */
+  int              nodeid)     /* I */
+
   {
-  static char *id = "tm_resources_request";
   char    *jobid = pjob->ji_qs.ji_jobid;
   char    *info = NULL;
 
@@ -6913,7 +6863,7 @@ int tm_resources_request(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: RESOURCES %s for node %d task %d\n",
-      id,
+      __func__,
       jobid,
       nodeid, 
       fromtask);
@@ -7792,8 +7742,7 @@ int get_job_struct(
   tm_node_id           nodeid)
 
   {
-  char *id = "get_job_struct";
-  int ret;
+  int  ret;
   job *new_job;
 
   new_job = find_job(jobid);
@@ -7844,9 +7793,7 @@ int get_job_struct(
   if ((new_job = job_alloc()) == NULL)
     {
     /* out of memory */
-
-    log_err(-1, id, "insufficient memory to create job");
-
+    log_err(-1, __func__, "insufficient memory to create job");
 
     ret = PBSE_SYSTEM;
 
@@ -7858,12 +7805,12 @@ int get_job_struct(
   if (ret != DIS_SUCCESS)
     {
     sprintf(log_buffer, "%s: join_job request to node %d for job %s failed - %s (stdout)",
-            id,
-            nodeid,
-            jobid,
-            dis_emsg[ret]);
+      __func__,
+      nodeid,
+      jobid,
+      dis_emsg[ret]);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     ret = PBSE_DISPROTO;
     goto done;
@@ -7874,12 +7821,12 @@ int get_job_struct(
   if (ret != DIS_SUCCESS)
     {
     sprintf(log_buffer, "%s: join_job request to node %d for job %s failed - %s (stderr)",
-            id,
-            nodeid,
-            jobid,
-            dis_emsg[ret]);
+      __func__,
+      nodeid,
+      jobid,
+      dis_emsg[ret]);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     ret = PBSE_DISPROTO;
     goto done;
@@ -7887,9 +7834,13 @@ int get_job_struct(
 
   ret = PBSE_NONE;
   *pjob = new_job;
-  done:
+
+done:
   return(ret);
-  }
+  } /* END get_job_struct() */
+
+
+
 
 int run_prologue_scripts(
     
@@ -8201,7 +8152,7 @@ void fork_demux(
       if (getppid() != parent)
         {
 #ifdef DEBUG
-        fprintf(stderr, "%s: Parent has gone, and so will I\n", id);
+        fprintf(stderr, "%s: Parent has gone, and so will I\n", __func__);
 #endif /* DEBUG */
         
         break;

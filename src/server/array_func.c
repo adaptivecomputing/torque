@@ -618,10 +618,12 @@ int array_delete(
   job_array *pa)
 
   {
-  int                 i;
-  char                path[MAXPATHLEN + 1];
-  char                log_buf[LOCAL_LOG_BUF_SIZE];
-  array_request_node *rn;
+  int                      i;
+  char                     path[MAXPATHLEN + 1];
+  char                     log_buf[LOCAL_LOG_BUF_SIZE];
+  array_request_node      *rn;
+  struct array_depend     *pdep;
+  struct array_depend_job *pdj;
 
   /* first thing to do is take this out of the servers list of all arrays */
   remove_array(pa);
@@ -632,6 +634,7 @@ int array_delete(
     sprintf(log_buf, "%s: unlocking ai_mutex: %s", __func__, pa->ai_qs.parent_id);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
+
   pthread_mutex_unlock(pa->ai_mutex);
   free(pa->ai_mutex);
 
@@ -646,10 +649,9 @@ int array_delete(
     }
 
   /* clear array request linked list */
-
-  for (rn = (array_request_node*)GET_NEXT(pa->request_tokens);
+  for (rn = (array_request_node *)GET_NEXT(pa->request_tokens);
        rn != NULL;
-       rn = (array_request_node*)GET_NEXT(pa->request_tokens))
+       rn = (array_request_node *)GET_NEXT(pa->request_tokens))
     {
     delete_link(&rn->request_tokens_link);
     free(rn);
@@ -661,7 +663,26 @@ int array_delete(
     if (pa->job_ids[i] != NULL)
       free(pa->job_ids[i]);
     }
+
   free(pa->job_ids);
+
+  /* free the dependencies, if any */
+  for (pdep = (struct array_depend *)GET_NEXT(pa->ai_qs.deps); 
+       pdep != NULL;
+       pdep = (struct array_depend *)GET_NEXT(pa->ai_qs.deps))
+    {
+    delete_link(&pdep->dp_link);
+
+    for (pdj = (struct array_depend_job *)GET_NEXT(pdep->dp_jobs);
+         pdj != NULL;
+         pdj = (struct array_depend_job *)GET_NEXT(pdep->dp_jobs))
+      {
+      delete_link(&pdj->dc_link);
+      free(pdj);
+      }
+
+    free(pdep);
+    }
 
   /* purge the "template" job, 
      this also deletes the shared script file for the array*/

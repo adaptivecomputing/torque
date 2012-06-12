@@ -1644,7 +1644,6 @@ int handle_job_recovery(
       if (chk_save_file(pdirent->d_name) == 0)
         {
         /* recover the jobs */
-
         baselen = strlen(pdirent->d_name) - job_suf_len;
 
         psuffix = pdirent->d_name + baselen;
@@ -1660,13 +1659,15 @@ int handle_job_recovery(
               log_err(ENOMEM,"main","out of memory reloading jobs");
               exit(-1);
               }
+
+            if (type == RECOV_COLD)
+              pjob->ji_cold_restart = TRUE;
             
             pthread_mutex_unlock(pjob->ji_mutex);
             }
 
           continue;
           }
-
 
         if (strcmp(psuffix, job_suffix))
           continue;
@@ -1679,6 +1680,9 @@ int handle_job_recovery(
             log_err(ENOMEM, "main", "out of memory reloading jobs");
             exit(-1);
             }
+
+          if (type == RECOV_COLD)
+            pjob->ji_cold_restart = TRUE;
 
           pthread_mutex_unlock(pjob->ji_mutex);
           }

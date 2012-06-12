@@ -658,7 +658,7 @@ job *job_alloc(void)
   
   if (pj == NULL)
     {
-    log_err(errno, "job_alloc", "no memory");
+    log_err(errno, __func__, "no memory");
     
     return(NULL);
     }
@@ -1679,9 +1679,15 @@ int job_purge(
   if ((job_substate != JOB_SUBSTATE_TRANSIN) &&
       (job_substate != JOB_SUBSTATE_TRANSICM))
     {
+    int need_deque = !pjob->ji_cold_restart;
+
     pthread_mutex_unlock(pjob->ji_mutex);
 
-    rc = svr_dequejob(job_id, FALSE);
+    /* jobs that are being deleted after a cold restart
+     * haven't been queued */
+    if (need_deque == TRUE)
+      rc = svr_dequejob(job_id, FALSE);
+
     if (rc != PBSE_JOBNOTFOUND)
       {
       job_free(pjob, TRUE);
