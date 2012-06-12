@@ -499,16 +499,17 @@ int remove_queue(
   pbs_queue  *pque)
 
   {
-  int rc = PBSE_NONE;
-  int index;
+  int  rc = PBSE_NONE;
+  int  index;
   char log_buf[1000];
 
   if (pthread_mutex_trylock(aq->allques_mutex))
     {
-    unlock_queue(pque, "remove_queue", NULL, LOGLEVEL);
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     pthread_mutex_lock(aq->allques_mutex);
-    lock_queue(pque, "remove_queue", NULL, LOGLEVEL);
+    lock_queue(pque, __func__, NULL, LOGLEVEL);
     }
+
   if ((index = get_value_hash(aq->ht,pque->qu_qs.qu_name)) < 0)
     rc = THING_NOT_FOUND;
   else
@@ -516,6 +517,7 @@ int remove_queue(
     remove_thing_from_index(aq->ra,index);
     remove_hash(aq->ht,pque->qu_qs.qu_name);
     }
+
   snprintf(log_buf, sizeof(log_buf), "index = %d, name = %s", index, pque->qu_qs.qu_name);
   log_err(-1, __func__, log_buf);
 

@@ -409,7 +409,7 @@ pbs_queue *que_recov(
 
   if (pq == NULL)
     {
-    log_err(-1, "que_recov", "que_alloc failed");
+    log_err(-1, __func__, "que_alloc failed");
 
     return(NULL);
     }
@@ -420,7 +420,7 @@ pbs_queue *que_recov(
 
   if (fds < 0)
     {
-    log_err(errno, "que_recov", "open error");
+    log_err(errno, __func__, "open error");
 
     que_free(pq, TRUE);
 
@@ -432,7 +432,7 @@ pbs_queue *que_recov(
   if (read(fds, (char *)&pq->qu_qs, sizeof(struct queuefix)) !=
       sizeof(struct queuefix))
     {
-    log_err(errno, "que_recov", "read error");
+    log_err(errno, __func__, "read error");
     que_free(pq, TRUE);
     close(fds);
     return ((pbs_queue *)0);
@@ -443,7 +443,7 @@ pbs_queue *que_recov(
   if (recov_attr(fds, pq, que_attr_def, pq->qu_attr,
 	               QA_ATR_LAST, 0, TRUE) != 0)
     {
-    log_err(-1, "que_recov", "recov_attr[common] failed");
+    log_err(-1, __func__, "recov_attr[common] failed");
     que_free(pq, TRUE);
     close(fds);
     return ((pbs_queue *)0);

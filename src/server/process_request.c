@@ -330,7 +330,7 @@ int process_request(
   unsigned short        conn_socktype;
   unsigned short        conn_authen;
   unsigned long         conn_addr;
-  int sfds = chan->sock;
+  int                   sfds = chan->sock;
 
   pthread_mutex_lock(svr_conn[sfds].cn_mutex);
   conn_active = svr_conn[sfds].cn_active;
@@ -658,12 +658,9 @@ int process_request(
 
   rc = dispatch_request(sfds, request);
 
-
   return(rc);
 
 process_request_cleanup:
-
-  /*close_conn(sfds, FALSE);*/
 
   if (free_request == TRUE)
     free_br(request);
@@ -683,7 +680,7 @@ process_request_cleanup:
 
 int dispatch_request(
 
-  int          sfds,    /* I */
+  int                   sfds,    /* I */
   struct batch_request *request) /* I */
 
   {
