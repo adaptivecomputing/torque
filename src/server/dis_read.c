@@ -122,7 +122,7 @@ extern int       LOGLEVEL;
 
 int dis_request_read(
 
-  struct tcp_chan *chan,
+  struct tcp_chan      *chan,
   struct batch_request *request) /* server internal structure */
 
   {
@@ -147,10 +147,9 @@ int dis_request_read(
       }
 
     sprintf(log_buf, "req header bad, dis error %d (%s), type=%s",
-
-            rc,
-            dis_emsg[rc],
-            reqtype_to_txt(request->rq_type));
+      rc,
+      dis_emsg[rc],
+      reqtype_to_txt(request->rq_type));
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 

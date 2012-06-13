@@ -448,7 +448,6 @@ int process_request(
     }
 
   /* is the request from a host acceptable to the server */
-
   if (conn_socktype & PBS_SOCK_UNIX)
     {
     strcpy(request->rq_host, server_name);
@@ -550,7 +549,9 @@ int process_request(
       /* If munge_on is true we will validate the connection now */
       if (request->rq_type == PBS_BATCH_AltAuthenUser)
         {
-        rc = req_altauthenuser(request); 
+        rc = req_altauthenuser(request);
+        free_request = FALSE;
+        goto process_request_cleanup;
         }
       else
         {
