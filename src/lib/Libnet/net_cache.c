@@ -82,6 +82,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "net_cache.h"
 #include "resizable_array.h"
@@ -124,10 +125,13 @@ char *get_cached_nameinfo(
   network_info *ni;
   char         *hostname = NULL;
   int           index;
+  char          s_addr_key[65];
 
   pthread_mutex_lock(cache.nc_mutex);
 
-  if ((index = get_value_hash(cache.nc_saikey, sai)) >= 0)
+  sprintf (s_addr_key, "%d", sai->sin_addr.s_addr);
+
+  if ((index = get_value_hash(cache.nc_saikey, s_addr_key)) >= 0)
     {
     ni = (network_info *)cache.nc_ra->slots[index].item;
 
@@ -153,6 +157,7 @@ char *get_cached_fullhostname(
   network_info *ni;
   int           index = -1;
   char         *fullname = NULL;
+  char          s_addr_key[65];
 
   if (cache.nc_mutex == NULL)
     return(NULL);
@@ -164,7 +169,10 @@ char *get_cached_fullhostname(
 
   if ((index == -1) &&
       (sai != NULL))
-    index = get_value_hash(cache.nc_saikey, sai);
+    {
+    sprintf (s_addr_key, "%d", sai->sin_addr.s_addr);
+    index = get_value_hash(cache.nc_saikey, s_addr_key);
+    }
 
   if (index >= 0)
     {
@@ -244,6 +252,7 @@ int insert_addr_name_info(
   int           rc = PBSE_NONE;
   int           index;
   network_info *ni;
+  char          s_addr_key[65];
 
   if (cache.nc_mutex == NULL)
     return(-1);
@@ -261,7 +270,8 @@ int insert_addr_name_info(
       {
       /* store the key in both hash tables so we can look things up either way */
       add_hash(cache.nc_namekey, index, ni->hostname);
-      add_hash(cache.nc_saikey, index, &ni->sai);
+      sprintf (s_addr_key, "%d", sai->sin_addr.s_addr);
+      add_hash(cache.nc_saikey, index, s_addr_key);
       }
     }
 

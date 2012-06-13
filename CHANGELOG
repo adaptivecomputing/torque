@@ -29,6 +29,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       to allow installing hwloc to a non-default location.
   e - change so some Moab envirionment variables will be put into environment for
       the prologue and epilogue scripts. TRQ-967.
+  b - Fix network hashed cache so jobs don't get stuck in running state because
+      rq_host got set incorrectly.
 
 4.0.2
   e - Change so init.d script variables get set based on the configure command.
