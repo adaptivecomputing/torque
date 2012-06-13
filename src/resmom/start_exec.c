@@ -3686,7 +3686,7 @@ int TMomFinalizeChild(
         strcat(arg[aindex], path_jobs);
         }
       else
-        strcpy(argg[aindex], path_jobs);
+        strcpy(arg[aindex], path_jobs);
 
       strcat(arg[aindex], pjob->ji_qs.ji_fileprefix);
       strcat(arg[aindex], JOB_SCRIPT_SUFFIX);
