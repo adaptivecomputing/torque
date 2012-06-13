@@ -27,6 +27,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       request is held in multiple places. TRQ-933, 988, 990
   e - TRQ-961/bugzilla-176 - add the configure option --with-hwloc-path=PATH
       to allow installing hwloc to a non-default location.
+  b - Fix network hashed cache so jobs don't get stuck in running state because
+      rq_host got set incorrectly.
 
 4.0.2
   e - Change so init.d script variables get set based on the configure command.
