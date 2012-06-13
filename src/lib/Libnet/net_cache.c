@@ -271,7 +271,7 @@ int insert_addr_name_info(
       /* store the key in both hash tables so we can look things up either way */
       add_hash(cache.nc_namekey, index, ni->hostname);
       sprintf (s_addr_key, "%d", sai->sin_addr.s_addr);
-      add_hash(cache.nc_saikey, index, s_addr_key);
+      add_hash(cache.nc_saikey, index, strdup(s_addr_key));
       }
     }
 
