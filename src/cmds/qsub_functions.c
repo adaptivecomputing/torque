@@ -59,6 +59,12 @@
 #include "u_memmgr.h" /* global memmgr for client */
 #include "utils.h"
 
+#if defined(PBS_NO_POSIX_VIOLATION)
+#define GETOPT_ARGS "a:A:c:C:e:EF:hj:k:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
+#else
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hIj:J:k:l:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
+#endif /* PBS_NO_POSIX_VIOLATION */
+
 /* START: These are needed for bailout purposes */
 int inter_sock = -1;
 int interactivechild = 0;
@@ -238,6 +244,51 @@ char *x11_get_proto(
 
   return(authstring);
   }  /* END x11_get_proto() */
+
+
+
+int find_job_script_index(
+
+  int    start_index,
+  int    argc,
+  char **argv)
+
+  {
+  char search_str[3];
+  int  ignore_next = FALSE;
+  int  i;
+  int  script_index = -1;
+
+  search_str[1] = ':';
+  search_str[2] = '\0';
+
+  for (i = start_index; i < argc; i++)
+    {
+    if (ignore_next == FALSE)
+      {
+      if (*(argv[i]) == '-')
+        {
+        /* found an option */
+        /* grab the first character to see if that character is in GETOPT_ARGS
+         * as <char>:. If so, ignore the next argument, as it pertains to this
+         * option */
+        search_str[0] = *(argv[i] + 1);
+        if (strstr(GETOPT_ARGS, search_str) != NULL)
+          ignore_next = TRUE;
+        }
+      else
+        {
+        /* found a loose string with no index in front of it. This is the job script */
+        script_index = i;
+        break;
+        }
+      }
+    else
+      ignore_next = FALSE;
+    }
+
+  return(script_index);
+  } /* END find_job_script_index() */
 
 
 
@@ -2343,12 +2394,7 @@ void process_opts(
   char *err_msg = NULL;
   /* Moved from global to local */
   char path_out[MAXPATHLEN + 1];
-
-#if defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:c:C:e:EF:hj:k:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
-#else
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hIj:J:k:l:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
-#endif /* PBS_NO_POSIX_VIOLATION */
+  
   /* Note:
    * All other #ifdef's for PBS_NO_POSIX_VIOLATION are being removed because
    * the get_opts functionality will only process options in the list.
@@ -4207,6 +4253,7 @@ void main_func(
   int errflg;                         /* option error */
   char script[MAXPATHLEN + 1] = ""; /* name of script file */
   char script_tmp[MAXPATHLEN + 1] = "";    /* name of script file copy */
+  int  script_index;
   char *bnp;
   FILE *script_fp;                    /* FILE pointer to the script */
 /*   char *q_n_out; */                /* This is not used, moved inside if */
@@ -4231,6 +4278,7 @@ void main_func(
   /* Allocate Memmgr */
   int debug = FALSE;
   job_info ji;
+
   memset(&ji, 0, sizeof(job_info));
   if (memmgr_init(&ji.mm, 8192) != PBSE_NONE)
     {
@@ -4245,8 +4293,8 @@ void main_func(
 
   /* The order of precedence for processing options follows:
    * 1 - processing logic (includes submitfilter)
-   * 2 - #PBS information & script
-   * 3 - cmdline information
+   * 2 - cmdline information
+   * 3 - #PBS information & script
    * 4 - config file options
    * 5 - environment variables
    * 6 - predefined code defaults
@@ -4284,16 +4332,11 @@ void main_func(
 #else
   optind = 1;  /* prime getopt's starting point */
 #endif
-  /* (3) cmdline options */
-  process_opts(argc, argv, &ji, CMDLINE_DATA);
 
-  if (((optind + 1) < argc) && (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) == FALSE))
-    print_qsub_usage_exit("index issues");
+  script_index = find_job_script_index(optind + 1, argc, argv);
 
-  post_check_attributes(&ji);
-
-  if (optind < argc)
-    strcpy(script, argv[optind]);
+  if (script_index != -1)
+    strcpy(script, argv[script_index]);
 
   script_idx = argc - optind;
   if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info))
@@ -4304,19 +4347,6 @@ void main_func(
       strcat(script, argv[optind + idx]);
       }
     }
-
-  /* store the saved args string in "submit_args" attribute */
-  /* Moved to add_submit_args_to_job function */
-
-/*  if (submit_args_str != NULL)
-    {
-    set_attr(&attrib, ATTR_submit_args, submit_args_str);
-
-    free(submit_args_str);
-    }
-    */
-
-  /* end setting submit_args */
 
   if (hash_find(ji.client_attr, "display", &tmp_job_info))
     {
@@ -4332,11 +4362,8 @@ void main_func(
     if ((x11authstr = x11_get_proto(tmp_job_info->value, debug)) != NULL)
       {
       /* stuff this info into the job */
-
       hash_add_or_exit(&ji.mm, &ji.job_attr, ATTR_forwardx11, x11authstr, ENV_DATA);
-/*      set_attr(&attrib, ATTR_forwardx11, x11authstr); */
-
-/*      if (getenv("PBSDEBUG") != NULL) */
+      
       if (debug)
         fprintf(stderr, "x11auth string: %s\n",
                 x11authstr);
@@ -4346,16 +4373,14 @@ void main_func(
     }
 
   /* if script is empty, get standard input */
-
   if (!strcmp(script, "") || !strcmp(script, "-"))
     {
     if (hash_find(ji.job_attr, ATTR_N, &tmp_job_info) == FALSE)
       hash_add_or_exit(&ji.mm, &ji.job_attr, ATTR_N, "STDIN", CMDLINE_DATA);
-/*      set_attr(&attrib, ATTR_N, "STDIN"); */
 
     if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) == FALSE)
       {
-      /* (2) */
+      /* (3) */
       if ((errflg = get_script(
                       argc,
                       argv,
@@ -4405,12 +4430,11 @@ void main_func(
 
         if (check_job_name(bnp, 0) == 0)
           hash_add_or_exit(&ji.mm, &ji.job_attr, ATTR_N, bnp, CMDLINE_DATA);
-/*           set_attr(&attrib, ATTR_N, bnp); */
         else
           print_qsub_usage_exit("qsub: cannot form a valid job name from the script name");
         }
 
-      /* (2) */
+      /* (3) */
       if ((errflg = get_script(
                       argc,
                       argv,
@@ -4429,9 +4453,16 @@ void main_func(
       print_qsub_usage_exit("qsub: opening script file:");
       }
     }    /* END else (!strcmp(script,"") || !strcmp(script,"-")) */
-  
-  /* interactive job can not be job array */
+ 
+  /* (2) cmdline options */
+  process_opts(argc, argv, &ji, CMDLINE_DATA);
 
+  if (((optind + 1) < argc) && (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) == FALSE))
+    print_qsub_usage_exit("index issues");
+  
+  post_check_attributes(&ji);
+
+  /* interactive job can not be job array */
   if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) &&
       hash_find(ji.job_attr, ATTR_t, &tmp_job_info))
     {

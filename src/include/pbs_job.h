@@ -348,7 +348,7 @@ enum job_atr
   JOB_ATR_checkpoint_time,   /* timestamp of start of last checkpoint */
   JOB_ATR_checkpoint_restart_status,   /* checkpoint restart status */
   JOB_ATR_restart_name,   /* name of checkpoint restart file */
-  JOB_ATR_fault_tolerant, /* indicates if a job should keep going if it looses a sister */
+  JOB_ATR_fault_tolerant, /* indicates if a job should keep going if it can't contact a sister while polling */
   JOB_ATR_comp_time,  /* time when job was completed */
   JOB_ATR_reported, /* tracks whether job has been reported to scheduler */
   JOB_ATR_jobtype,     /* opaque job type string */
