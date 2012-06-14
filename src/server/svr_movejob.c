@@ -359,7 +359,8 @@ static int local_move(
   unlock_queue(dest_que, __func__, NULL, 0);
   unlock_queue(routing_que, __func__, "success", LOGLEVEL);
 
-  *my_err = svr_enquejob(pjob, FALSE, -1);
+  if (*my_err = svr_enquejob(pjob, FALSE, -1) == PBSE_UNKJOBID)
+    return(-1);
 
   if (parent_queue_mutex_held == TRUE)
     {

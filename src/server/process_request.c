@@ -1010,9 +1010,12 @@ struct batch_request *alloc_br(
 
 
 
-int close_quejob_by_jobid(char *job_id)
+int close_quejob_by_jobid(
+    
+  char *job_id)
+
   {
-  int rc = PBSE_NONE;
+  int  rc = PBSE_NONE;
   job *pjob = NULL;
 
   if ((pjob = find_job(job_id)) == NULL)
@@ -1031,17 +1034,21 @@ int close_quejob_by_jobid(char *job_id)
     pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
     rc = svr_enquejob(pjob, FALSE, -1);
-    if (rc == PBSE_JOBNOTFOUND)
+
+    if ((rc == PBSE_JOBNOTFOUND) ||
+        (rc == PBSE_UNKJOBID))
       {
       pjob = NULL;
       }
     else if (rc != PBSE_NONE)
       job_abt(&pjob, msg_err_noqueue);
     }
+
   if (pjob != NULL)
     pthread_mutex_unlock(pjob->ji_mutex);
-  return rc;
-  }
+
+  return(rc);
+  } /* close_quejob_by_jobid() */
 
 
 

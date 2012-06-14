@@ -331,10 +331,12 @@ int req_orderjob(
     svr_dequejob(job_id2, FALSE);
 
     if ((pjob1 = find_job(job_id1)) != NULL)
-      svr_enquejob(pjob1, FALSE, -1);
+      if (svr_enquejob(pjob1, FALSE, -1) == PBSE_UNKJOBID)
+        pjob1 = NULL;
 
     if ((pjob2 = find_job(job_id2)) != NULL)
-      svr_enquejob(pjob2, FALSE, -1);
+      if (svr_enquejob(pjob2, FALSE, -1) == PBSE_UNKJOBID)
+        pjob2 = NULL;
     }
   else
     {

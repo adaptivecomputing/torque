@@ -344,12 +344,12 @@ void chkpt_xfr_hold(
   free(ptask->wt_mutex);
   free(ptask);
 
-  if (preq == NULL)
+  if ((preq == NULL) ||
+      (preq->rq_extra == NULL))
     return;
 
-  pjob = (job *)preq->rq_extra;
-
-  pthread_mutex_lock(pjob->ji_mutex);
+  if ((pjob = find_job(preq->rq_extra)) == NULL)
+    return;
 
   if (LOGLEVEL >= 7)
     {
@@ -641,8 +641,7 @@ int modify_job(
     if (momreq != NULL)
       {
       /* have files to copy */
-
-      momreq->rq_extra = (void *)pjob;
+      momreq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
       /* The momreq is freed in relay_to_mom (failure)
        * or in issue_Drequest (success) */

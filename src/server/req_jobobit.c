@@ -2246,8 +2246,6 @@ void on_job_rerun(
         {
         strcpy(preq->rq_ind.rq_delete.rq_objname, pjob->ji_qs.ji_jobid);
 
-        preq->rq_extra = (void *)pjob;
-
         rc = issue_Drequest(handle, preq, release_req, 0);
 
         if (rc != 0)

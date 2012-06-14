@@ -1092,7 +1092,10 @@ void *job_clone_wt(
         {
         /* XXX need more robust error handling */
         pthread_mutex_unlock(pa->ai_mutex);
-        job_purge(pjobclone);
+
+        if (rc != PBSE_UNKJOBID)
+          job_purge(pjobclone);
+
         pthread_mutex_lock(pa->ai_mutex);
         continue;
         }
@@ -1112,7 +1115,8 @@ void *job_clone_wt(
       
       rn->start++;
       
-      pthread_mutex_unlock(pjobclone->ji_mutex);
+      if (prev_index != -1)
+        pthread_mutex_unlock(pjobclone->ji_mutex);
       }  /* END for (i) */
 
     if (rn->start > rn->end)
@@ -2290,6 +2294,12 @@ int get_jobs_index(
     pthread_mutex_unlock(pjob->ji_mutex);
     pthread_mutex_lock(aj->alljobs_mutex);
     pthread_mutex_lock(pjob->ji_mutex);
+
+    if (pjob->ji_being_recycled == TRUE)
+      {
+      pthread_mutex_unlock(aj->alljobs_mutex);
+      return(-1);
+      }
     }
 
   index = get_value_hash(aj->ht, pjob->ji_qs.ji_jobid);
@@ -2350,6 +2360,12 @@ int  remove_job(
     pthread_mutex_unlock(pjob->ji_mutex);
     pthread_mutex_lock(aj->alljobs_mutex);
     pthread_mutex_lock(pjob->ji_mutex);
+
+    if (pjob->ji_being_recycled == TRUE)
+      {
+      pthread_mutex_unlock(aj->alljobs_mutex);
+      return(PBSE_UNKJOBID);
+      }
     }
 
   if ((index = get_value_hash(aj->ht,pjob->ji_qs.ji_jobid)) < 0)
