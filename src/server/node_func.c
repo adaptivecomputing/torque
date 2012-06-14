@@ -1562,6 +1562,7 @@ int setup_node_boards(
     /* make sure the server communicates on the correct ports */
     pn->nd_mom_port = pnode->nd_mom_port;
     pn->nd_mom_rm_port = pnode->nd_mom_rm_port;
+    memcpy(&pn->nd_sock_addr, &pnode->nd_sock_addr, sizeof(pn->nd_sock_addr));
 
     /* update the np string pointer */
     if (np_ptr != NULL)
