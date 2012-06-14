@@ -17,8 +17,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.0.3
   b - fix qdel -p all - was performing a qdel all. TRQ-947
   b - fix some memory leaks in 4.0.2 on the mom and server TRQ-944
-  b - removed memory manager from alloc_br and free_br to solve a memory leak
   c - TRQ-973. Fix a possibility of a segfault in netcounter_incr()
+  b - removed memory manager from alloc_br and free_br to solve a memory leak
   b - fixes to communications between pbs_sched and pbs_server. TRQ-884
   b - fix server crash caused by gpu mode not being right after gpus=x:. TRQ-948.
   b - fix logic in torque.setup so it does not say successfully started when
@@ -27,8 +27,13 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       request is held in multiple places. TRQ-933, 988, 990
   e - TRQ-961/bugzilla-176 - add the configure option --with-hwloc-path=PATH
       to allow installing hwloc to a non-default location.
-  b - Fix network hashed cache so jobs don't get stuck in running state because
-      rq_host got set incorrectly.
+  c - fix a crash when using job dependencies that fail - TRQ-990
+  e - Cache addresses and names to prevent calling getnameinfo() and getaddrinfo()
+      too often. TRQ-993
+  c - fix a crash around re-running jobs
+  e - change so some Moab envirionment variables will be put into environment for
+      the prologue and epilogue scripts. TRQ-967.
+  b - make command line arguments override the job script arguments. TRQ-1033.
 
 4.0.2
   e - Change so init.d script variables get set based on the configure command.
