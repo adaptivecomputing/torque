@@ -35,13 +35,7 @@ AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
 AC_CANONICAL_HOST
-
-dnl add this line for backwards compatibility with older versions of 
-dnl autotools. Newer versions make this directory automatically but 
-dnl older versions don't.
-mkdir -p m4
-
-AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_MACRO_DIR([buildutils])
 
 LT_INIT
 
