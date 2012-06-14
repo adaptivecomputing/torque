@@ -176,7 +176,7 @@ int unlock_queue(
   char *err_msg = NULL;
   char stub_msg[] = "no pos";
 
-  if (logging >= 6)
+  if (logging >= 7)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)
@@ -187,7 +187,7 @@ int unlock_queue(
 
   if (pthread_mutex_unlock(the_queue->qu_mutex) != 0)
     {
-    if (logging >= 6)
+    if (logging >= 7)
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock queue %s mutex in method %s",
           the_queue->qu_qs.qu_name, id);

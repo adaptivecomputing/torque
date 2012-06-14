@@ -662,6 +662,11 @@ int req_quejob(
     return rc;
     }
 
+  /* unlock the queue. We validated that it was there, now let someone else
+     use it until we need it */
+  sprintf(log_buf, "Just validated queue");
+  unlock_queue(pque, __func__, log_buf, LOGLEVEL);
+
   /*
    * make up job file name, it is based on the jobid, however the
    * minimun acceptable file name limit is only 14 character in POSIX,
@@ -692,7 +697,6 @@ int req_quejob(
             snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
               "job file %s corrupt (%d - %s)",
               namebuf, errno, strerror(errno));
-            unlock_queue(pque, __func__, log_buf, LOGLEVEL);
             log_err(rc, __func__, log_buf);
             req_reject(rc, 0, preq, NULL, log_buf);
             return(rc);
@@ -708,7 +712,6 @@ int req_quejob(
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
           "cannot create job file %s (%d - %s)",
           namebuf, errno, strerror(errno));
-        unlock_queue(pque, __func__, log_buf, LOGLEVEL);
         log_err(rc, __func__, log_buf);
         req_reject(PBSE_SYSTEM, 0, preq, NULL, log_buf);
         return(rc);
@@ -728,7 +731,6 @@ int req_quejob(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
         "can not alloc memory for new job %s - (%d - %s)",
         namebuf, errno, strerror(errno));
-    unlock_queue(pque, __func__, log_buf, LOGLEVEL);
     log_err(rc, __func__, log_buf);
     unlink(namebuf);
     req_reject(PBSE_SYSTEM, 0, preq, NULL, log_buf);
@@ -778,7 +780,6 @@ int req_quejob(
       {
       /* FAILURE */
       rc = PBSE_ATTRRO;
-      unlock_queue(pque, __func__, "attr ro", LOGLEVEL);
       job_purge(pj);
       reply_badattr(rc, 1, psatl, preq);
       return(rc);
@@ -813,7 +814,6 @@ int req_quejob(
         if (rc != 0)
           {
           /* FAILURE */
-          unlock_queue(pque, __func__, "gpus attribute error", LOGLEVEL);
           /* any other error is fatal */
           job_purge(pj);
           reply_badattr(rc, 1, psatl, preq);
@@ -845,7 +845,6 @@ int req_quejob(
         if (pque->qu_qs.qu_type == QTYPE_Execution)
           {
           /* FAILURE */
-          unlock_queue(pque, __func__, "bad attr", LOGLEVEL);
           job_purge(pj);
           reply_badattr(rc, 1, psatl, preq);
           return(rc);
@@ -854,7 +853,6 @@ int req_quejob(
       else
         {
         /* FAILURE */
-        unlock_queue(pque, __func__, "random error", LOGLEVEL);
         /* any other error is fatal */
         job_purge(pj);
         reply_badattr(rc, 1, psatl, preq);
@@ -886,7 +884,6 @@ int req_quejob(
 
       if (rc)
         {
-        unlock_queue(pque, __func__, "attr exec fail", LOGLEVEL);
         job_purge(pj);
         req_reject(rc, i, preq, NULL, "cannot execute attribute action");
         return(rc);
@@ -928,7 +925,6 @@ int req_quejob(
           (pj->ji_wattr[JOB_ATR_priority].at_val.at_long > 1024))
         {
         rc = PBSE_BADATVAL;
-        unlock_queue(pque, __func__, "invalid job priority", LOGLEVEL);
         job_purge(pj);
         req_reject(rc, 0, preq, NULL, "invalid job priority");
         return rc;
@@ -957,7 +953,6 @@ int req_quejob(
         {
         pthread_mutex_unlock(tmpjob->ji_mutex);
 
-        unlock_queue(pque, __func__, "job duplication", LOGLEVEL);
         /* not unique, reject job */
         job_purge(pj);
        
@@ -1189,7 +1184,6 @@ int req_quejob(
         (pj->ji_wattr[JOB_ATR_errpath].at_val.at_str == NULL))
       {
       rc = PBSE_NOATTR;
-      unlock_queue(pque, __func__, "no output/error file", LOGLEVEL);
       job_purge(pj);
       req_reject(rc, 0, preq, NULL, "no output/error file specified");
       return rc;
@@ -1199,7 +1193,9 @@ int req_quejob(
      * set any "unspecified" checkpoint with queue default values, if any
      */
 
+    lock_queue(pque, __func__, "locking for set_chkpt_deflt", LOGLEVEL);
     set_chkpt_deflt(pj, pque);
+    unlock_queue(pque, __func__, "unlocking for set_chkpt_deflt", LOGLEVEL);
 
     /* If queue has checkpoint directory name specified, propagate it to the job. */
 
@@ -1265,7 +1261,6 @@ int req_quejob(
             pj->ji_wattr[JOB_ATR_account].at_val.at_str) == 0)
         {
         rc = PBSE_BADACCT;
-        unlock_queue(pque, __func__, "invalid account", LOGLEVEL);
         job_purge(pj);
         req_reject(rc, 0, preq, NULL, "invalid account");
         return rc;
@@ -1286,7 +1281,6 @@ int req_quejob(
         {
         /* no default found */
         rc = PBSE_BADACCT;
-        unlock_queue(pque, __func__, "no default account", LOGLEVEL);
         job_purge(pj);
         req_reject(rc, 0, preq, NULL, "no default account available");
         return rc;
@@ -1305,7 +1299,6 @@ int req_quejob(
       {
       rc = PBSE_IVALREQ;
       snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "no job owner specified");
-      unlock_queue(pque, __func__, log_buf, LOGLEVEL);
       job_purge(pj);
       log_err(rc, __func__, log_buf);
       req_reject(rc, 0, preq, NULL, log_buf);
@@ -1317,7 +1310,6 @@ int req_quejob(
     if (++pj->ji_wattr[JOB_ATR_hopcount].at_val.at_long > PBS_MAX_HOPCOUNT)
       {
       rc = PBSE_HOPCOUNT;
-      unlock_queue(pque, __func__, "max job hop", LOGLEVEL);
       job_purge(pj);
       req_reject(rc, 0, preq, NULL, "max job hop reached");
       return rc;
@@ -1369,6 +1361,7 @@ int req_quejob(
     free(oldid);    
     }
 
+  lock_queue(pque, __func__, "lock for svr_chkque", LOGLEVEL);
   if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
     {
     unlock_queue(pque, __func__, "can not move", LOGLEVEL);
@@ -1376,6 +1369,7 @@ int req_quejob(
     req_reject(rc, 0, preq, NULL, EMsg);
     return(rc);
     }
+  unlock_queue(pque, __func__, "unlock for svr_chkque", LOGLEVEL);
 
   /* FIXME: if EMsg[0] != '\0', send a warning email to the user */
 
@@ -1409,7 +1403,6 @@ int req_quejob(
     {
     /* reply failed, purge the job and close the connection */
     rc = PBSE_SOCKET_WRITE; /* Re-write reply_jobid to return the error */
-    unlock_queue(pque, __func__, "reply fail", LOGLEVEL);
     job_purge(pj);
     return rc;
     }
@@ -1417,7 +1410,6 @@ int req_quejob(
   /* link job into server's new jobs list request  */
   insert_job(&newjobs,pj);
 
-  unlock_queue(pque, __func__, "success", LOGLEVEL);
   *pjob_id = strdup(pj->ji_qs.ji_jobid);
   pthread_mutex_unlock(pj->ji_mutex);
 
