@@ -314,9 +314,16 @@ int svr_enquejob(
     {
     return(PBSE_UNKQUE);
     }
+
   /* This is called when a job is not yet in the queue,
    * so find_job can not be used.... */
   pthread_mutex_lock(pjob->ji_mutex);
+
+  if (pjob->ji_being_recycled == TRUE)
+    {
+    unlock_queue(pque, __func__, NULL, 0);
+    return(PBSE_UNKJOBID);
+    }
 
   /* add job to server's 'all job' list and update server counts */
 

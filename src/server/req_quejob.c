@@ -2110,22 +2110,35 @@ int req_commit(
 
   if ((rc = svr_enquejob(pj, FALSE, -1)) != PBSE_NONE)
     {
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not queue job %s",
-        pj->ji_qs.ji_jobid);
-    if (LOGLEVEL >= 6)
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
-    job_purge(pj);
+    if (rc != PBSE_UNKJOBID)
+      {
+      if (LOGLEVEL >= 6)
+        {
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not queue job %s",
+          pj->ji_qs.ji_jobid);
+        
+        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+        }
+
+      job_purge(pj);
+      }
+
     req_reject(rc, 0, preq, NULL, log_buf);
+
     return(rc);
     }
 
   if (job_save(pj, SAVEJOB_FULL, 0) != 0)
     {
     rc = PBSE_CAN_NOT_SAVE_FILE;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not save job %s",
-        pj->ji_qs.ji_jobid);
     if (LOGLEVEL >= 6)
+      {
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not save job %s",
+        pj->ji_qs.ji_jobid);
+
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+      }
+
     job_purge(pj);
     req_reject(rc, 0, preq, NULL, log_buf);
     return(rc);
