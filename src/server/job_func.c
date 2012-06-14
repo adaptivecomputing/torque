@@ -2376,6 +2376,8 @@ job *next_job(
 
   {
   job *pjob;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  int  last_index = *iter;
 
   pthread_mutex_lock(aj->alljobs_mutex);
 
@@ -2389,6 +2391,13 @@ job *next_job(
 
     if (pjob->ji_being_recycled == TRUE)
       {
+      if (LOGLEVEL >= 7)
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "job at index %d is being recycled, going to the next job", last_index);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        }
+
       pthread_mutex_unlock(pjob->ji_mutex);
 
       pjob = next_job(aj,iter);

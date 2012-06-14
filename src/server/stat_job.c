@@ -127,11 +127,11 @@ extern struct server server;
 
 int status_job(
 
-  job      *pjob, /* ptr to job to status */
+  job                  *pjob,    /* ptr to job to status */
   struct batch_request *preq,
-  svrattrl   *pal, /* specific attributes to status */
-  tlist_head *pstathd, /* RETURN: head of list to append status to */
-  int        *bad) /* RETURN: index of first bad pbs_attribute */
+  svrattrl             *pal,     /* specific attributes to status */
+  tlist_head           *pstathd, /* RETURN: head of list to append status to */
+  int                  *bad)     /* RETURN: index of first bad pbs_attribute */
 
   {
   struct brp_status *pstat;
@@ -168,7 +168,6 @@ int status_job(
   append_link(pstathd, &pstat->brp_stlink, pstat);
 
   /* add attributes to the status reply */
-
   *bad = 0;
 
   if (status_attrib(

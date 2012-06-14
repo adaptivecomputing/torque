@@ -200,8 +200,8 @@ int svr_authorize_jobreq(
 int svr_authorize_req(
 
   struct batch_request *preq,
-  char *owner,
-  char *submit_host)
+  char                 *owner,
+  char                 *submit_host)
 
   {
   /* does requestor have special privileges? */
