@@ -124,12 +124,14 @@ pbs_net_t get_hostaddr(
 
   {
   pbs_net_t       rval = 0;
+  int             rc = PBSE_NONE;
   char           *tmp_addr = NULL;
   struct in_addr  hostaddr;
   int             tmp_addr_len = 0;
   unsigned short  af_family;
 
-  if ((rval = get_hostaddr_hostent_af(local_errno, hostname, &af_family, &tmp_addr, &tmp_addr_len)) == PBSE_NONE)
+  rc = get_hostaddr_hostent_af(local_errno, hostname, &af_family, &tmp_addr, &tmp_addr_len);
+  if (rc == PBSE_NONE)
     {
     memcpy((void *)&hostaddr, (void *)tmp_addr, tmp_addr_len);
     rval = (pbs_net_t)ntohl(hostaddr.s_addr);
