@@ -451,7 +451,7 @@ int job_abt(
     {
     svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_ABORT, FALSE);
 
-    if ((rc = issue_signal(&pjob, "SIGKILL", release_req, 0)) != 0)
+    if ((rc = issue_signal(&pjob, "SIGKILL", release_req, NULL)) != 0)
       {
       if (pjob != NULL)
         {
