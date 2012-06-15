@@ -1193,9 +1193,7 @@ int req_quejob(
      * set any "unspecified" checkpoint with queue default values, if any
      */
 
-    lock_queue(pque, __func__, "locking for set_chkpt_deflt", LOGLEVEL);
     set_chkpt_deflt(pj, pque);
-    unlock_queue(pque, __func__, "unlocking for set_chkpt_deflt", LOGLEVEL);
 
     /* If queue has checkpoint directory name specified, propagate it to the job. */
 
@@ -1361,15 +1359,12 @@ int req_quejob(
     free(oldid);    
     }
 
-  lock_queue(pque, __func__, "lock for svr_chkque", LOGLEVEL);
   if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
     {
-    unlock_queue(pque, __func__, "can not move", LOGLEVEL);
     job_purge(pj);
     req_reject(rc, 0, preq, NULL, EMsg);
     return(rc);
     }
-  unlock_queue(pque, __func__, "unlock for svr_chkque", LOGLEVEL);
 
   /* FIXME: if EMsg[0] != '\0', send a warning email to the user */
 
