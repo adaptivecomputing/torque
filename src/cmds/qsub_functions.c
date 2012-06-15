@@ -251,6 +251,7 @@ int find_job_script_index(
 
   int    start_index,
   int   *interactive,
+  int   *prefix_index,
   int    argc,
   char **argv)
 
@@ -278,7 +279,14 @@ int find_job_script_index(
         if (search_str[0] == 'I')
           *interactive = TRUE;
         else if (strstr(GETOPT_ARGS, search_str) != NULL)
+          {
           ignore_next = TRUE;
+
+          if (search_str[0] == 'C')
+            {
+            *prefix_index = i + 1;
+            }
+          }
         }
       else
         {
@@ -831,11 +839,11 @@ void post_check_attributes(job_info *ji)
 
 int get_script(
 
-  int    ArgC,                /* I */
-  char **ArgV,                /* I */
-  FILE  *file,                /* I */
-  char  *script,              /* O (minsize=X) */
-  job_info *ji)               /* M */
+  int        ArgC,     /* I */
+  char     **ArgV,     /* I */
+  FILE      *file,     /* I */
+  char      *script,   /* O (minsize=X) */
+  job_info  *ji)       /* M */
 
   {
   char  s[MAX_LINE_LEN + 1];
@@ -4263,6 +4271,7 @@ void main_func(
   char             *errmsg = NULL;                /* return from pbs_geterrmsg */
   int               local_errno = 0;
   int               job_is_interactive = FALSE;
+  int               prefix_index = -1;
 
   struct stat       statbuf;
 
@@ -4326,10 +4335,13 @@ void main_func(
   optind = 1;  /* prime getopt's starting point */
 #endif
 
-  script_index = find_job_script_index(optind + 1, &job_is_interactive, argc, argv);
+  script_index = find_job_script_index(optind + 1, &job_is_interactive, &prefix_index, argc, argv);
 
   if (script_index != -1)
     strcpy(script, argv[script_index]);
+
+  if (prefix_index != -1)
+    hash_add_or_exit(&ji.mm, &ji.client_attr, "pbs_dprefix", argv[prefix_index], CMDLINE_DATA);
 
   script_idx = argc - optind;
   if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info))
