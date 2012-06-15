@@ -9,7 +9,8 @@
 #include "log.h" /* log_event, PBSEVENT_JOB, PBS_EVENTCLASS_JOB */
 #include "../Liblog/log_event.h" /* log_event */
 #include "../Libifl/lib_ifl.h" /* process_svr_conn */
-#include "../Libnet/lib_net.h" 
+#include "../Libnet/lib_net.h"
+#include "threadpool.h"
 
 extern int debug_mode;
 extern void *(*read_func[])(void *);
@@ -144,7 +145,6 @@ int start_listener_addrinfo(
   int                 listen_socket = 0;
   int                 total_cntr = 0;
   unsigned short      port_net_byte_order;
-  pthread_t           tid;
   pthread_attr_t      t_attr;
 
   if (!(getaddrinfo(host_name, NULL, NULL, &adr_svr) == 0))
@@ -218,17 +218,18 @@ int start_listener_addrinfo(
           }
         else
           {
-        /* add_conn is not protocol independent. We need to 
-           do some IPv4 stuff here */
-        in_addr = (struct sockaddr_in *)&adr_client;
-        add_conn(
-          *new_conn_port,
-          FromClientDIS,
-          (pbs_net_t)ntohl(in_addr->sin_addr.s_addr),
-          (unsigned int)htons(in_addr->sin_port),
-          PBS_SOCK_INET,
-          NULL);
-          pthread_create(&tid, &t_attr, process_meth, (void *)new_conn_port);
+          /* add_conn is not protocol independent. We need to 
+             do some IPv4 stuff here */
+          in_addr = (struct sockaddr_in *)&adr_client;
+          add_conn(
+            *new_conn_port,
+            FromClientDIS,
+            (pbs_net_t)ntohl(in_addr->sin_addr.s_addr),
+            (unsigned int)htons(in_addr->sin_port),
+            PBS_SOCK_INET,
+            NULL);
+          enqueue_threadpool_request(process_meth, new_conn_port);
+          /*pthread_create(&tid, &t_attr, process_meth, (void *)new_conn_port);*/
           }
         }
       if (debug_mode == TRUE)

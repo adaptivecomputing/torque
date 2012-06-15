@@ -2001,7 +2001,7 @@ void setup_threadpool()
   long              thread_idle_time = DEFAULT_THREAD_IDLE;
   
   min_threads = get_default_threads();
-  max_threads = min_threads;
+  max_threads = min_threads * 10;
   
   /* setup the threadpool for use */
   get_svr_attr_l(SRV_ATR_minthreads, &min_threads);
