@@ -322,7 +322,7 @@ int svr_enquejob(
   if (pjob->ji_being_recycled == TRUE)
     {
     unlock_queue(pque, __func__, NULL, 0);
-    return(PBSE_UNKJOBID);
+    return(PBSE_JOB_RECYCLED);
     }
 
   /* add job to server's 'all job' list and update server counts */

@@ -1036,7 +1036,7 @@ int close_quejob_by_jobid(
     rc = svr_enquejob(pjob, FALSE, -1);
 
     if ((rc == PBSE_JOBNOTFOUND) ||
-        (rc == PBSE_UNKJOBID))
+        (rc == PBSE_JOB_RECYCLED))
       {
       pjob = NULL;
       }
