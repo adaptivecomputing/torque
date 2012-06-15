@@ -250,6 +250,7 @@ char *x11_get_proto(
 int find_job_script_index(
 
   int    start_index,
+  int   *interactive,
   int    argc,
   char **argv)
 
@@ -273,7 +274,10 @@ int find_job_script_index(
          * as <char>:. If so, ignore the next argument, as it pertains to this
          * option */
         search_str[0] = *(argv[i] + 1);
-        if (strstr(GETOPT_ARGS, search_str) != NULL)
+
+        if (search_str[0] == 'I')
+          *interactive = TRUE;
+        else if (strstr(GETOPT_ARGS, search_str) != NULL)
           ignore_next = TRUE;
         }
       else
@@ -846,7 +850,6 @@ int get_script(
   int   index;
 
   /* START WRAPPER */
-
   char cfilter[MAXPATHLEN + 1024];
 
   char tmp_name2[] = "/tmp/qsub.XXXXXX";
@@ -869,10 +872,8 @@ int get_script(
     }
 
   if (hash_find(ji->job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
-/*   if (stat(tmp_job_info->value, &sfilter) != -1) */
     {
     /* run the copy through the submit filter. */
-
     if ((tmpfd = mkstemp(tmp_name2)) < 0)
       {
       fprintf(stderr,
@@ -4250,34 +4251,30 @@ void main_func(
   char **envp)  /* I */
 
   {
-  int errflg;                         /* option error */
-  char script[MAXPATHLEN + 1] = ""; /* name of script file */
-  char script_tmp[MAXPATHLEN + 1] = "";    /* name of script file copy */
-  int  script_index;
-  char *bnp;
-  FILE *script_fp;                    /* FILE pointer to the script */
-/*   char *q_n_out; */                /* This is not used, moved inside if */
-  char *destination = NULL;           /* Changed from global to local */
-  char *s_n_out;                      /* server part of destination */
-  /* server:port to send request to */
-  int   sock_num;                     /* return from pbs_connect */
-  char *errmsg = NULL;                /* return from pbs_geterrmsg */
-  int   local_errno = 0;
+  int               errflg;                         /* option error */
+  char              script[MAXPATHLEN + 1] = ""; /* name of script file */
+  char              script_tmp[MAXPATHLEN + 1] = "";    /* name of script file copy */
+  int               script_index;
+  char             *bnp;
+  FILE             *script_fp;                    /* FILE pointer to the script */
+  char             *destination = NULL;           /* Changed from global to local */
+  char             *s_n_out;                      /* server part of destination */
+  int               sock_num;                     /* return from pbs_connect */
+  char             *errmsg = NULL;                /* return from pbs_geterrmsg */
+  int               local_errno = 0;
+  int               job_is_interactive = FALSE;
 
-  struct stat statbuf;
+  struct stat       statbuf;
 
-  struct sigaction act;
+  struct sigaction  act;
 
-/*   char *submit_args_str = NULL;*/       /* buffer to hold args */
-/*   int   argi = 0; */
-  int   script_idx = 0;
-/*  , argslen = 0; */          /* argslen is no longer in use */
-  int   idx;
-  int   have_intr_cmd = FALSE;
-  job_data *tmp_job_info = NULL;
+  int               script_idx = 0;
+  int               idx;
+  int               have_intr_cmd = FALSE;
+  job_data         *tmp_job_info = NULL;
   /* Allocate Memmgr */
-  int debug = FALSE;
-  job_info ji;
+  int               debug = FALSE;
+  job_info          ji;
 
   memset(&ji, 0, sizeof(job_info));
   if (memmgr_init(&ji.mm, 8192) != PBSE_NONE)
@@ -4285,10 +4282,6 @@ void main_func(
     printf("Error allocating memory for job submission\n");
     exit(1);
     }
-/*   job_data *job_attr = NULL; */
-/*   job_data *res_attr = NULL; */
-/*   job_data *user_attr = NULL; */
-/*   job_data *client_attr = NULL; */
 
 
   /* The order of precedence for processing options follows:
@@ -4333,7 +4326,7 @@ void main_func(
   optind = 1;  /* prime getopt's starting point */
 #endif
 
-  script_index = find_job_script_index(optind + 1, argc, argv);
+  script_index = find_job_script_index(optind + 1, &job_is_interactive, argc, argv);
 
   if (script_index != -1)
     strcpy(script, argv[script_index]);
@@ -4378,7 +4371,7 @@ void main_func(
     if (hash_find(ji.job_attr, ATTR_N, &tmp_job_info) == FALSE)
       hash_add_or_exit(&ji.mm, &ji.job_attr, ATTR_N, "STDIN", CMDLINE_DATA);
 
-    if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) == FALSE)
+    if (job_is_interactive == FALSE)
       {
       /* (3) */
       if ((errflg = get_script(
@@ -4493,8 +4486,6 @@ void main_func(
     }
 
   /* Given the change in parameter management, this is moving to the top of this function for ease of understanding */
-/*  set_job_defaults(&job_attr);  *//* set option default values */
-
   server_out[0] = '\0';
 
   if (hash_find(ji.client_attr, "destination", &tmp_job_info))
