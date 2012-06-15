@@ -1093,7 +1093,7 @@ void *job_clone_wt(
         /* XXX need more robust error handling */
         pthread_mutex_unlock(pa->ai_mutex);
 
-        if (rc != PBSE_UNKJOBID)
+        if (rc != PBSE_JOB_RECYCLED)
           job_purge(pjobclone);
 
         pthread_mutex_lock(pa->ai_mutex);
@@ -2364,7 +2364,7 @@ int  remove_job(
     if (pjob->ji_being_recycled == TRUE)
       {
       pthread_mutex_unlock(aj->alljobs_mutex);
-      return(PBSE_UNKJOBID);
+      return(PBSE_JOB_RECYCLED);
       }
     }
 

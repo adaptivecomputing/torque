@@ -2110,7 +2110,7 @@ int req_commit(
 
   if ((rc = svr_enquejob(pj, FALSE, -1)) != PBSE_NONE)
     {
-    if (rc != PBSE_UNKJOBID)
+    if (rc != PBSE_JOB_RECYCLED)
       {
       if (LOGLEVEL >= 6)
         {
