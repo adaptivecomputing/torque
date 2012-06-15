@@ -1971,16 +1971,33 @@ void on_job_rerun(
         strcpy(preq->rq_ind.rq_rerun, pjob->ji_qs.ji_jobid);
 
         preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
+        jobid = strdup(pjob->ji_qs.ji_jobid); 
+        pthread_mutex_unlock(pjob->ji_mutex);
 
         if (issue_Drequest(handle, preq, on_job_rerun, 0) == 0)
           {
           /* request ok, will come back when its done */
-          pthread_mutex_unlock(pjob->ji_mutex);
+          free(jobid);
           free(ptask->wt_mutex);
           free(ptask);
 
           return;
           }
+        pjob = find_job(jobid);
+        if(pjob == NULL)
+          {
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Job %s removed during call to issue_Drequest", jobid );
+          log_event(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              __func__,
+              log_buf);
+          free(jobid);
+          free(ptask->wt_mutex);
+          free(ptask);
+          return;
+          }
+        free(jobid);
 
         /* cannot issue request to mom, set up as if mom returned error */
 
@@ -2271,7 +2288,9 @@ void on_job_rerun(
               __func__,
               log_buf);
           free(jobid);
-          goto on_job_rerun_done;
+          free(ptask->wt_mutex);
+          free(ptask);
+          return;
           }
         free(jobid);
 
@@ -2311,7 +2330,6 @@ void on_job_rerun(
     }  /* END switch (pjob->ji_qs.ji_substate) */
 
   pthread_mutex_unlock(pjob->ji_mutex);
-on_job_rerun_done:    
   free(ptask->wt_mutex);
   free(ptask);
 
