@@ -478,7 +478,7 @@ static void rerun_or_kill(
     {
     /* job is rerunable, mark it to be requeued */
 
-    issue_signal(&pjob, "SIGKILL", release_req, 0);
+    issue_signal(&pjob, "SIGKILL", release_req, NULL);
 
     if (pjob != NULL)
       {

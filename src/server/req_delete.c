@@ -450,8 +450,9 @@ jump:
      * Send signal request to MOM.  The server will automagically
      * pick up and "finish" off the client request when MOM replies.
      */
+    get_batch_request_id(preq);
 
-    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1, preq)))
+    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1, strdup(preq->rq_id))))
       {
       /* cant send to MOM */
 
@@ -978,9 +979,10 @@ static void post_delete_mom1(
 
   pbs_queue            *pque;
 
-  struct batch_request *preq_sig;  /* signal request to MOM */
+  char                 *preq_clt_id;
+  struct batch_request *preq_sig;         /* signal request to MOM */
 
-  struct batch_request *preq_clt;  /* original client request */
+  struct batch_request *preq_clt = NULL;  /* original client request */
   int                   rc;
   time_t                time_now = time(NULL);
 
@@ -992,10 +994,20 @@ static void post_delete_mom1(
   if (preq_sig == NULL)
     return;
 
-  rc       = preq_sig->rq_reply.brp_code;
-  preq_clt = preq_sig->rq_extra;
+  rc          = preq_sig->rq_reply.brp_code;
+  preq_clt_id = preq_sig->rq_extra;
 
   free_br(preq_sig);
+
+  if (preq_clt_id != NULL)
+    {
+    preq_clt = get_remove_batch_request(preq_clt_id);
+    free(preq_clt_id);
+    }
+
+  /* the client request has been handled another way, nothing left to do */
+  if (preq_clt == NULL)
+    return;
 
   pjob = find_job(preq_clt->rq_ind.rq_delete.rq_objname);
 
@@ -1111,7 +1123,7 @@ static void post_delete_mom2(
     {
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
-      issue_signal(&pjob, sigk, release_req, 0);
+      issue_signal(&pjob, sigk, release_req, NULL);
       
       if (pjob != NULL)
         {
