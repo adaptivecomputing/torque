@@ -693,6 +693,7 @@ static int return_file(
       }
 
     DIS_tcp_cleanup(chan);
+    chan = NULL;
     }    /* END while ((amt = read()) */
 
   if (chan != NULL)
