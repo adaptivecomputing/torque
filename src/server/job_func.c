@@ -739,7 +739,7 @@ void job_free(
   else
     {
     pthread_mutex_unlock(pj->ji_mutex);
-    free(pj->ji_mutex);
+    pthread_mutex_destroy(pj->ji_mutex);
     memset(pj, 254, sizeof(job));
     free(pj);
     }
@@ -1694,7 +1694,9 @@ int job_purge(
 
     if (rc != PBSE_JOBNOTFOUND)
       {
-      job_free(pjob, TRUE);
+      pjob = find_job(job_id);
+      if (pjob != NULL)
+        job_free(pjob, TRUE);
       }
     }
   else

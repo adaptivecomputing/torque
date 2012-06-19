@@ -563,6 +563,7 @@ int svr_enquejob(
 
 /*
  * svr_dequejob() - remove job from whatever queue its in and reduce counts
+ * Make sure job mutex is unlocked before exiting
  */
 
 int svr_dequejob(
@@ -697,6 +698,7 @@ int svr_dequejob(
   pthread_mutex_lock(listener_command_mutex);
   listener_command = SCH_SCHEDULE_TERM;
   pthread_mutex_unlock(listener_command_mutex);
+  pthread_mutex_unlock(pjob->ji_mutex);
 
   return(PBSE_NONE);
   }  /* END svr_dequejob() */
