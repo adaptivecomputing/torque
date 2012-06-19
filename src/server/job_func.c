@@ -1694,9 +1694,12 @@ int job_purge(
 
     if (rc != PBSE_JOBNOTFOUND)
       {
-      pjob = find_job(job_id);
-      if (pjob != NULL)
+      /* we came out of svr_dequejob with pjob locked. Our pointer is still good */
+      /* job_free will unlock the mutex for us */
+      if(pjob->ji_being_recycled == FALSE)
         job_free(pjob, TRUE);
+      else
+        pthread_mutex_unlock(pjob->ji_mutex);
       }
     }
   else

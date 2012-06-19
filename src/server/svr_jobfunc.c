@@ -698,7 +698,6 @@ int svr_dequejob(
   pthread_mutex_lock(listener_command_mutex);
   listener_command = SCH_SCHEDULE_TERM;
   pthread_mutex_unlock(listener_command_mutex);
-  pthread_mutex_unlock(pjob->ji_mutex);
 
   return(PBSE_NONE);
   }  /* END svr_dequejob() */
