@@ -266,6 +266,7 @@ static int local_move(
   int        mtype;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   char       job_id[PBS_MAXSVRJOBID+1];
+  int        rc;
 
   /* search for destination queue */
   /* CAUTION!!! This code is very complex - be very careful editing */
@@ -348,9 +349,9 @@ static int local_move(
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   pthread_mutex_unlock(pjob->ji_mutex);
-  svr_dequejob(job_id, TRUE);
-  if ((pjob = find_job(job_id)) == NULL)
-    return(PBSE_JOBNOTFOUND);
+  rc = svr_dequejob(job_id, TRUE); /* if we come out of svr_dequejob successfully pjob->ji_mutex will be locked */
+  if (rc)
+    return(rc);
 
   strcpy(pjob->ji_qs.ji_queue, destination);
 
@@ -626,6 +627,7 @@ int send_job_work(
 
   {
   int                   rc = LOCUTION_FAIL;
+  int                   ret = PBSE_NONE;
   int                   local_errno = 0;
   tlist_head            attrl;
   enum conn_type        cntype = ToServerDIS;
@@ -711,9 +713,9 @@ int send_job_work(
 
     /* clear default resource settings */
     pthread_mutex_unlock(pjob->ji_mutex);
-    svr_dequejob(job_id, FALSE);
-    if ((pjob = find_job(job_id)) == NULL)
-      return PBSE_JOBNOTFOUND;
+    ret = svr_dequejob(job_id, FALSE);
+    if (ret)
+      return(ret);
     }
 
   pattr = pjob->ji_wattr;
