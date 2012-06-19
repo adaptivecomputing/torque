@@ -171,7 +171,7 @@ tells who the author is and who to send comments, bugs, suggestions to.
 .IP "Close" 15
 for exiting \fBxpbsmon\fP plus saving the current setup information
 (if anything had changed) in the user's $HOME/.xpbsmonrc file. Information
-saved include the the specified list of sites, servers on each site, nodes
+saved include the specified list of sites, servers on each site, nodes
 known to each server, and system resource queries to send to node's pbs_mom.
 .IP "Minimize Button" 15
 shows the iconized view of Site Information where nodes are represented
@@ -585,7 +585,7 @@ how the main region looks like visually (style)
 distance of the main region from the menu and info regions.
 .IP *bigScrollBorderWidth
 if the main region has a scrollbar, this is its distance from other widgets
-appearing on the the region.
+appearing on the region.
 .IP *bigScrollBackground
 background color of the scrollbar appearing outside a server box and node
 box.
