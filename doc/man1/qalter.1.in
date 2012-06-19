@@ -135,7 +135,7 @@ equivalent to the local time on the system where the command is being executed.
 This attribute can be altered once the job has begun execution, but it will
 not take affect until the job is rerun.
 .IP "\-A account_string " 8
-Replaces the
+Replaces
 .if !\n(Pb .ig Ig
 the
 .At Account_Name
@@ -208,7 +208,7 @@ attributes is set to the string specified by
 This attribute can be altered once the job has begun execution, but the
 new value does not take affect until the job is rerun.
 .IP "\-e path" 8
-Replaces the 
+Replaces 
 .if !\n(Pb .ig Ig
 .At Error_Path
 attribute,
@@ -250,7 +250,7 @@ specified.
 This attribute can be altered once the job has begun execution, but it will
 not take affect until the job is rerun.
 .IP "\-h hold_list" 8
-Updates the 
+Updates
 .if !\n(Pb .ig Ig
 .At Hold_Types
 attribute,
