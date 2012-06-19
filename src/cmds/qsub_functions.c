@@ -280,7 +280,10 @@ int find_job_script_index(
           *interactive = TRUE;
         else if (strstr(GETOPT_ARGS, search_str) != NULL)
           {
-          ignore_next = TRUE;
+          int len = strlen(argv[i]);
+
+          if (len <= 2)
+            ignore_next = TRUE;
 
           if (search_str[0] == 'C')
             {
