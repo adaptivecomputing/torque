@@ -922,7 +922,7 @@ AC_ARG_WITH(hwloc-path, [
                        Example: ./configure --with-hwloc-path=/usr/local/hwloc-1.1
                        Will specify that the include files are in /usr/local/hwloc-1.1/include and
                        the libraries are in /usr/local/hwloc-1.1/lib],
-  [HWLOC_LIBS="-L${withval}lib -lhwloc"; HWLOC_CFLAGS="-I${withval}include"],
+  [HWLOC_LIBS="-L${withval}/lib -lhwloc"; HWLOC_CFLAGS="-I${withval}/include"],
   [TOM="BOB"])
 
 
@@ -934,7 +934,7 @@ dnl In addition, we check libhwloc for hwloc_bitmap_alloc (present since v1.1).
 if test "${build_l26_cpuset}" = "yes" ; then
   if test "${build_mom}" = "yes" ; then
     PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.1],
-      [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CPPFLAGS="$CPPFLAGS $HWLOC_CFLAGS" ],
+      [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS" ],
       [ AC_MSG_ERROR([cpuset support requires the hwloc package
 
 $HWLOC_PKG_ERRORS
