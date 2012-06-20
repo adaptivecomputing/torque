@@ -790,7 +790,7 @@ void effective_node_delete(
   u_long          *up;
 
   remove_node(&allnodes,pnode);
-  unlock_node(pnode, "effective_node_delete", NULL, LOGLEVEL);
+  unlock_node(pnode, __func__, NULL, LOGLEVEL);
   free(pnode->nd_mutex);
 
   psubn = pnode->nd_psn;
@@ -1165,6 +1165,12 @@ int update_nodes_file(
     for (j = 0;j < np->nd_nprops - 1;++j)
       fprintf(nin, " %s", np->nd_prop->as_string[j]);
 
+    if (np->nd_is_alps_reporter == TRUE)
+      fprintf(nin, " %s", alps_reporter_feature);
+
+    if (np->nd_is_alps_login == TRUE)
+      fprintf(nin, " %s", alps_starter_feature);
+
     /* finish off line with new-line */
     fprintf(nin, "\n");
 
@@ -1181,13 +1187,13 @@ int update_nodes_file(
       fclose(nin);
     
       if (held != np)
-        unlock_node(np, "update_nodes_file", "error", LOGLEVEL);
+        unlock_node(np, __func__, "error", LOGLEVEL);
 
       return(-1);
       }
     
     if (held != np)
-      unlock_node(np, "update_nodes_file", "loop", LOGLEVEL);
+      unlock_node(np, __func__, "loop", LOGLEVEL);
     } /* for each node */
 
   fclose(nin);
