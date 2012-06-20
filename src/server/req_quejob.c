@@ -1898,7 +1898,7 @@ int set_interactive_job_roaming_policy(
 
   if (cray_enabled == TRUE)
     {
-    if (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long == TRUE)
+    if (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
       {
       if (interactive_roaming == FALSE)
         {
