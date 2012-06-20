@@ -1266,7 +1266,6 @@ void main_loop(void)
   time_t        waittime = 5;
   job          *pjob;
   int           iter;
-  time_t        last_jobstat_time;
   long          when = 0;
   long          timeout = 0;
   long          log = 0;
@@ -1283,7 +1282,6 @@ void main_loop(void)
   void check_job_log(struct work_task *);
   void check_acct_log(struct work_task *);
 
-  last_jobstat_time = time_now;
   server.sv_started = time_now; /* time server started */
 
 
@@ -1355,8 +1353,6 @@ void main_loop(void)
   while (state != SV_STATE_DOWN)
     {
     /* first process any task whose time delay has expired */
-    last_jobstat_time = time_now = time(NULL);
-
     monitor_accept_thread();
     monitor_route_retry_thread();
 

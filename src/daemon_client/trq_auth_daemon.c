@@ -70,7 +70,6 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
   int gid;
   pid_t pid;
   int   rc;
-  FILE *fd;
   char  error_buf[1024];
 
   umask(022);
@@ -112,9 +111,9 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
       fclose(stderr);
       /* We closed 0 (stdin), 1 (stdout), and 2 (stderr). fopen should give us
          0, 1 and 2 in that order. this is a UNIX practice */
-      fd = fopen("/dev/null", "r");
-      fd = fopen("/dev/null", "r");
-      fd = fopen("/dev/null", "r");
+      (void)fopen("/dev/null", "r");
+      (void)fopen("/dev/null", "r");
+      (void)fopen("/dev/null", "r");
       }
     }
   else

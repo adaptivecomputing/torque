@@ -822,24 +822,22 @@ int handle_returnstd(
   int                   type)
 
   {
-  int rc = PBSE_NONE;
-  int         KeepSeconds = 0;
-  int         IsFaked = 0;
-  char       *namebuf2;
-  char        namebuf[MAXPATHLEN + 1];
-  char        log_buf[LOCAL_LOG_BUF_SIZE+1];
-  pbs_queue  *pque;
-  int handle = -1;
-  char job_id[PBS_MAXSVRJOBID+1];
-  char job_fileprefix[PBS_JOBBASE+1];
-  unsigned long job_momaddr;
-  unsigned short job_momport;
-  char *job_momname = NULL;
+  int            rc = PBSE_NONE;
+  int            KeepSeconds = 0;
+  int            IsFaked = 0;
+  char          *namebuf2;
+  char           namebuf[MAXPATHLEN + 1];
+  char           log_buf[LOCAL_LOG_BUF_SIZE+1];
+  pbs_queue     *pque;
+  int            handle = -1;
+  char           job_id[PBS_MAXSVRJOBID+1];
+  char           job_fileprefix[PBS_JOBBASE+1];
+  unsigned long  job_momaddr;
+  char          *job_momname = NULL;
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
   job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
-  job_momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
     {
     pthread_mutex_unlock(pjob->ji_mutex);

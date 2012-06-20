@@ -3810,7 +3810,6 @@ int node_spec(
   node_iterator       iter;
   char                log_buf[LOCAL_LOG_BUF_SIZE];
 
-  char               *str;
   char               *globs;
   char               *cp;
   char               *hold;
@@ -3918,8 +3917,6 @@ int node_spec(
 
     free(globs);
     }  /* END if ((globs = strchr(spec,'#')) != NULL) */
-
-  str = spec;
 
   all_reqs.num_reqs = 1;
   plus = spec;
