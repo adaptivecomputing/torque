@@ -744,7 +744,6 @@ void job_free(
     free(pj);
     }
 
-
   return;
   }  /* END job_free() */
 
@@ -1696,7 +1695,7 @@ int job_purge(
       {
       /* we came out of svr_dequejob with pjob locked. Our pointer is still good */
       /* job_free will unlock the mutex for us */
-      if(pjob->ji_being_recycled == FALSE)
+      if (pjob->ji_being_recycled == FALSE)
         job_free(pjob, TRUE);
       else
         pthread_mutex_unlock(pjob->ji_mutex);
@@ -2033,9 +2032,10 @@ char *get_correct_jobname(
  */
 
 job *find_job_by_array(
-    struct all_jobs *aj,
-    char *job_id,
-    int need_recycled)
+    
+  struct all_jobs *aj,
+  char *job_id)
+
   {
   job *pj = NULL;
   int  i;
@@ -2053,7 +2053,7 @@ job *find_job_by_array(
   
   if (pj != NULL)
     {
-    if ((pj->ji_being_recycled == TRUE) && (need_recycled == FALSE))
+    if (pj->ji_being_recycled == TRUE)
       {
       pthread_mutex_unlock(pj->ji_mutex);
       pj = NULL;
@@ -2100,7 +2100,7 @@ job *find_job(
 
   if (strstr(jobid,"[]") == NULL)
     {
-    pj = find_job_by_array(&alljobs, comp, FALSE);
+    pj = find_job_by_array(&alljobs, comp);
     }
 
   /* when remotely routing jobs, they are removed from the 
@@ -2108,7 +2108,7 @@ job *find_job(
    * Attempt to find them there if NULL
    * OR it's an array, try to find the job */
   if (pj == NULL)
-    pj = find_job_by_array(&array_summary, comp, FALSE);
+    pj = find_job_by_array(&array_summary, comp);
 
   if (at)
     *at = '@'; /* restore @server_name */
@@ -2303,6 +2303,7 @@ int get_jobs_index(
     if (pjob->ji_being_recycled == TRUE)
       {
       pthread_mutex_unlock(aj->alljobs_mutex);
+      pthread_mutex_unlock(pjob->ji_mutex);
       return(-1);
       }
     }
@@ -2369,6 +2370,7 @@ int  remove_job(
     if (pjob->ji_being_recycled == TRUE)
       {
       pthread_mutex_unlock(aj->alljobs_mutex);
+      pthread_mutex_unlock(pjob->ji_mutex);
       return(PBSE_JOB_RECYCLED);
       }
     }

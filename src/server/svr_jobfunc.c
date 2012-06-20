@@ -322,6 +322,7 @@ int svr_enquejob(
   if (pjob->ji_being_recycled == TRUE)
     {
     unlock_queue(pque, __func__, NULL, 0);
+    pthread_mutex_unlock(pjob->ji_mutex);
     return(PBSE_JOB_RECYCLED);
     }
 

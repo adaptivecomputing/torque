@@ -85,7 +85,7 @@
 #include "threadpool.h"
 
 extern job_recycler recycler;
-
+extern int          LOGLEVEL;
 
 
 void initialize_recycler()
@@ -163,6 +163,14 @@ int insert_into_recycler(
   {
   int              rc;
   pthread_mutex_t *tmp = pjob->ji_mutex;
+  char             log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Adding job %s to the recycler", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   memset(pjob, 0, sizeof(job));
   pjob->ji_mutex = tmp;
@@ -177,7 +185,7 @@ int insert_into_recycler(
     enqueue_threadpool_request(remove_some_recycle_jobs,NULL);
     }
     
-  rc = insert_job(&recycler.rc_jobs,pjob);
+  rc = insert_job(&recycler.rc_jobs, pjob);
     
   update_recycler_next_id();
 
@@ -212,10 +220,7 @@ job *get_recycled_job()
 void update_recycler_next_id() 
 
   {
-  if (recycler.rc_next_id >= recycler.rc_max_id)
-    recycler.rc_next_id = 0;
-  else
-    recycler.rc_next_id++;
+  recycler.rc_next_id++;
   } /* END update_recycler_next_id() */
 
 
