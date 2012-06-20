@@ -703,7 +703,6 @@ typedef struct job_recycler
   unsigned int     rc_next_id;
   struct all_jobs  rc_jobs;
   int              rc_iter;
-  unsigned int     rc_max_id;
   pthread_mutex_t *rc_mutex;
   } job_recycler;
 

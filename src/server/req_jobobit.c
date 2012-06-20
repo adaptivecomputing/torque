@@ -1453,7 +1453,7 @@ int handle_exited(
   
   if ((pjob = find_job(job_id)) == NULL)
     return PBSE_JOBNOTFOUND;
-  /* NOTE: we never check if MOM actually deleted the job */
+
   rel_resc(pjob); /* free any resc assigned to the job */
   
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
@@ -1475,15 +1475,17 @@ int handle_exited(
     {
     pque->qu_numcompleted++;
 
-    unlock_queue(pque, "handle_exited", NULL, LOGLEVEL);
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   else if (pjob == NULL)
     {
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
     return(PBSE_JOBNOTFOUND);
     }
+
   pthread_mutex_unlock(pjob->ji_mutex);
-  return PBSE_NONE;
+
+  return(PBSE_NONE);
   } /* END handle_exited() */
 
 
@@ -1751,9 +1753,9 @@ void on_job_exit(
     }
   else
     {
-    sprintf(log_buf, "%s valid pjob: %p (substate=%d)",
+    sprintf(log_buf, "%s valid pjob: %s (substate=%d)",
       __func__,
-      (void *)pjob,
+      job_id,
       pjob->ji_qs.ji_substate);
     
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
