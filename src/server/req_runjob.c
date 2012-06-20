@@ -1828,7 +1828,6 @@ static int assign_hosts(
   char         *list = NULL;
   char         *portlist = NULL;
   char         *hosttoalloc = NULL;
-  pbs_net_t     momaddr = 0;
   resource     *pres;
   int           rc = 0;
   int           procs=0;
@@ -1915,7 +1914,6 @@ static int assign_hosts(
     else
       {
       hosttoalloc = mom_host;
-      momaddr = pbs_mom_addr;
       }
     }
   else if (def_node != NULL)
@@ -1988,8 +1986,6 @@ static int assign_hosts(
     else
       {
       /* leave exec_host alone and reuse old IP address */
-      momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
-
       hosttoalloc = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
       portlist = pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str;
       }
