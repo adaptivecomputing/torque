@@ -434,11 +434,50 @@ int authenticate_user(
 
   if (strncmp(preq->rq_host, pcred->hostname, PBS_MAXHOSTNAME))
     {
-    *autherr = strdup("Hosts do not match");
-    sprintf(error_msg, "%s: Requested host %s: credential host: %s",
-                   *autherr, preq->rq_host, pcred->hostname);
-    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, error_msg);
-    return(PBSE_BADCRED);
+    struct sockaddr_in *sai1;
+    struct sockaddr_in *sai2;
+    struct addrinfo    *addr_info1;
+    struct addrinfo    *addr_info2;
+
+    sai1 = get_cached_addrinfo(preq->rq_host);
+    sai2 = get_cached_addrinfo(pcred->hostname);
+
+    if ((sai1 == NULL) &&
+        (getaddrinfo(preq->rq_host, NULL, NULL, &addr_info1) == PBSE_NONE))
+      {
+      sai1 = (struct sockaddr_in *)addr_info1->ai_addr;
+      insert_addr_name_info(preq->rq_host, addr_info1->ai_canonname, sai1);
+      }
+
+    if ((sai2 == NULL) &&
+        (getaddrinfo(pcred->hostname, NULL, NULL, &addr_info2) == PBSE_NONE))
+      {
+      sai2 = (struct sockaddr_in *)addr_info2->ai_addr;
+      insert_addr_name_info(pcred->hostname, addr_info2->ai_canonname, sai2);
+      }
+
+    if ((sai1 == NULL) ||
+        (sai2 == NULL) ||
+        (memcmp(sai1, sai2, sizeof(struct sockaddr_in))))
+      {
+      *autherr = strdup("Hosts do not match");
+      
+      sprintf(error_msg, "%s: Requested host %s: credential host: %s",
+        *autherr, preq->rq_host, pcred->hostname);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, error_msg);
+    
+      if (addr_info1 != NULL)
+        freeaddrinfo(addr_info1);
+      if (addr_info2 != NULL)
+        freeaddrinfo(addr_info2);
+      
+      return(PBSE_BADCRED);
+      }
+      
+    if (addr_info1 != NULL)
+      freeaddrinfo(addr_info1);
+    if (addr_info2 != NULL)
+      freeaddrinfo(addr_info2);
     }
 
   if (pcred->timestamp)
