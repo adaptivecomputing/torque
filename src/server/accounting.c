@@ -107,6 +107,8 @@
 #ifdef USESAVEDRESOURCES
 #include "resource.h"
 #endif
+#include "svr_func.h"
+#include "server.h"
 
 /* Local Data */
 
@@ -140,6 +142,7 @@ int acct_job(
 
   {
   int         rc;
+  long        cray_enabled = FALSE;
   int         resc_access_perm = READ_ONLY;
   char        local_buf[MAXLINE*4];
   pbs_queue  *pque;
@@ -236,6 +239,16 @@ int acct_job(
   append_dynamic_string(ds, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
   if ((rc = append_dynamic_string(ds, " ")) != PBSE_NONE)
     return(rc);
+
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+  if ((cray_enabled == TRUE) &&
+      (pjob->ji_wattr[JOB_ATR_login_node_id].at_flags & ATR_VFLAG_SET))
+    {
+    append_dynamic_string(ds, "login_node=");
+    append_dynamic_string(ds, pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str);
+    if ((rc = append_dynamic_string(ds, " ")) != PBSE_NONE)
+      return(rc);
+    }
 
   /* now encode the job's resource_list pbs_attribute */
   job_attr_def[JOB_ATR_resource].at_encode(

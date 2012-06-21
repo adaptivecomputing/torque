@@ -1256,7 +1256,7 @@ int modify_job_attr(
 
       if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
         {
-        long lim = 0;
+        long lim = TRUE;
         int comp_resc_lt;
        
         get_svr_attr_l(SRV_ATR_QCQLimits, &lim);
