@@ -433,7 +433,7 @@ int socket_wait_for_read(
   int           countdown;
   struct pollfd pfd;
 
-  countdown = pbs_tcp_timeout*10;
+  countdown = pbs_tcp_timeout * 10;
 
   pfd.fd = socket;
   pfd.events = POLLIN | POLLHUP; /* | POLLRDNORM; */

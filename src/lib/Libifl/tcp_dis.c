@@ -173,9 +173,11 @@ static void tcp_pack_buff(
  */
 
 int tcp_read(
+
   struct tcp_chan *chan,
-  long long *read_len,
-  long long *avail_len)
+  long long       *read_len,
+  long long       *avail_len)
+
   {
   int               rc = PBSE_NONE;
   unsigned long     newsize;
