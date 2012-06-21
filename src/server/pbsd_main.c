@@ -1354,6 +1354,8 @@ void main_loop(void)
   while (state != SV_STATE_DOWN)
     {
     /* first process any task whose time delay has expired */
+    time_now = time(NULL);
+
     monitor_accept_thread();
     monitor_route_retry_thread();
 
