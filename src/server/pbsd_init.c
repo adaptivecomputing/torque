@@ -2064,7 +2064,8 @@ int pbsd_init(
     return(ret);
 
   /* 2. set up the various paths and other global variables we need */
-  initialize_paths();
+  if ((ret = initialize_paths()) != PBSE_NONE)
+    return(ret);
 
   initialize_data_structures_and_mutexes();
 
