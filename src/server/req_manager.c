@@ -143,20 +143,21 @@
 
 /* Global Data Items: */
 
-extern int LOGLEVEL;
-extern struct server server;
+extern int            LOGLEVEL;
+extern struct server  server;
 extern all_queues     svr_queues;
-extern attribute_def que_attr_def[];
-extern attribute_def svr_attr_def[];
+extern attribute_def  que_attr_def[];
+extern attribute_def  svr_attr_def[];
 extern attribute_def  node_attr_def[];   /* node attributes defs */
-extern int  svr_chngNodesfile;
-extern char *msg_attrtype;
-extern char *msg_daemonname;
-extern char *msg_manager;
-extern char *msg_man_cre;
-extern char *msg_man_del;
-extern char *msg_man_set;
-extern char *msg_man_uns;
+extern int            svr_chngNodesfile;
+extern char          *msg_attrtype;
+extern char          *msg_daemonname;
+extern char          *msg_manager;
+extern char          *msg_man_cre;
+extern char          *msg_man_del;
+extern char          *msg_man_set;
+extern char          *msg_man_uns;
+extern int            disable_timeout_check;
 
 
 extern int que_purge(pbs_queue *);
@@ -399,11 +400,11 @@ static int mgr_set_attr(
   int            mode)
 
   {
-  int   index;
+  int            index;
   pbs_attribute *new;
   pbs_attribute *pnew;
   pbs_attribute *pold;
-  int   rc;
+  int            rc;
 
   if (plist == (struct svrattrl *)0)
     {
@@ -457,6 +458,10 @@ static int mgr_set_attr(
             }
           }
         }
+
+      if ((index == SRV_ATR_tcp_timeout) &&
+          (pnew->at_val.at_long < 300))
+        disable_timeout_check = TRUE;
 
       /* now replace the old values with any modified new values */
 

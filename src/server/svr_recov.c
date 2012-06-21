@@ -126,6 +126,8 @@ extern char     *path_priv;
 extern char     *msg_svdbopen;
 extern char     *msg_svdbnosv;
 
+long             recovered_tcp_timeout = 5000;
+extern int       disable_timeout_check;
 
 /**
  * Recover server state from server database.
@@ -534,6 +536,9 @@ int str_to_attr(
 
       attr[index].at_val.at_long = atol(val);
 
+      if (index == SRV_ATR_tcp_timeout)
+        recovered_tcp_timeout = attr[index].at_val.at_long;
+
       break;
 
     case ATR_TYPE_CHAR:
@@ -691,7 +696,7 @@ int str_to_attr(
 int svr_recov_xml(
 
   char *svrfile,  /* I */
-  int read_only)  /* I */
+  int   read_only)  /* I */
 
   {
   int   sdb;
@@ -833,6 +838,9 @@ int svr_recov_xml(
           break;
           }
         }
+
+      if (recovered_tcp_timeout < 300)
+        disable_timeout_check = TRUE;
       }
     else
       {
