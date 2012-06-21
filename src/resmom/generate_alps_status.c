@@ -310,14 +310,6 @@ int process_node(
   /* check to see if the role is interactive - report these as down */
   role_value = (char *)xmlGetProp(node, (const xmlChar *)role);
 
-  copy_to_end_of_dynamic_string(status, "state=");
-  attr_value = (char *)xmlGetProp(node, (const xmlChar *)state);
-  if ((role_value != NULL) &&
-      (!strcmp(role_value, interactive_caps)))
-    append_dynamic_string(status, "DOWN");
-  else
-    append_dynamic_string(status, attr_value);
-
   copy_to_end_of_dynamic_string(status, "ARCH=");
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)architecture);
   append_dynamic_string(status, attr_value);
@@ -381,6 +373,20 @@ int process_node(
     {
     copy_to_end_of_dynamic_string(status, "reservation=");
     append_dynamic_string(status, rsv_id);
+
+    /* if there's a reservation on this node, the state is busy */
+    copy_to_end_of_dynamic_string(status, "state=BUSY");
+    }
+  else
+    {
+    /* no reservation, evaluate the state normally */
+    copy_to_end_of_dynamic_string(status, "state=");
+    attr_value = (char *)xmlGetProp(node, (const xmlChar *)state);
+    if ((role_value != NULL) &&
+        (!strcmp(role_value, interactive_caps)))
+      append_dynamic_string(status, "DOWN");
+    else
+      append_dynamic_string(status, attr_value);
     }
 
   if (features->used > 0)
