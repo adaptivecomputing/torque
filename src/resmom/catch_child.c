@@ -1013,8 +1013,8 @@ int post_epilogue(
     {
     }
   else if (encode_DIS_ReqHdr(chan, PBS_BATCH_JobObit, pbs_current_user) ||
-      encode_DIS_JobObit(chan, preq) ||
-      encode_DIS_ReqExtend(chan, 0))
+           encode_DIS_JobObit(chan, preq) ||
+           encode_DIS_ReqExtend(chan, 0))
     {
     /* FAILURE */
 
@@ -1035,6 +1035,7 @@ int post_epilogue(
     DIS_tcp_wflush(chan);
     DIS_tcp_cleanup(chan);
     }
+
   free_br(preq);
   /* SUCCESS */
 

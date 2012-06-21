@@ -297,6 +297,8 @@ int set_state(
     update_node_state(pnode, INUSE_FREE);
   else if (!strcmp(state_str, "DOWN"))
     update_node_state(pnode, INUSE_DOWN);
+  else if (!strcmp(state_str, "BUSY"))
+    update_node_state(pnode, INUSE_BUSY);
 
   return(PBSE_NONE);
   } /* END set_state() */
@@ -442,7 +444,7 @@ int record_reservation(
       {
       if ((pjob = find_job(sub_node->jobs->jobid)) != NULL)
         {
-        pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(pjob->ji_qs.ji_jobid);
+        pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
         pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
 
         create_alps_reservation(pjob);
