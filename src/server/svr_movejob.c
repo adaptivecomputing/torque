@@ -422,6 +422,8 @@ void finish_routing_processing(
         {
         /* job delete in progress, just set to queued status */
         svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
+        
+        svr_mailowner(pjob, 'a', TRUE, "Coudln't route job to remote server");
 
         pthread_mutex_unlock(pjob->ji_mutex);
 
@@ -433,6 +435,8 @@ void finish_routing_processing(
       /* fall through */
 
     default: /* try routing again */
+       
+      svr_mailowner(pjob, 'a', TRUE, "Coudln't route job to remote server");
 
       /* force re-eval of job state out of Transit */
 
