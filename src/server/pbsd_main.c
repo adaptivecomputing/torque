@@ -205,6 +205,7 @@ void          restore_attr_default (struct pbs_attribute *);
 /* Global Data Items */
 
 time_t                  last_task_check_time = 0;
+int                     disable_timeout_check = FALSE;
 int                     lockfds = -1;
 int                     ForceCreation = FALSE;
 int                     high_availability_mode = FALSE;
@@ -1362,19 +1363,22 @@ void main_loop(void)
     if (time_now - last_task_check_time > TASK_CHECK_INTERVAL)
       enqueue_threadpool_request(check_tasks, NULL);
 
-    get_svr_attr_l(SRV_ATR_tcp_timeout, &timeout);
-
-    /* don't allow timeouts to go below 300 seconds - this is a safety
-     * net for an extremely rare error */
-    if (timeout < 300)
+    if (disable_timeout_check == FALSE)
       {
-      snprintf(log_buf, sizeof(log_buf), "tcp timeout was %ld resetting to 300",
-        timeout);
-      timeout = 300;
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
-      }
+      get_svr_attr_l(SRV_ATR_tcp_timeout, &timeout);
 
-    DIS_tcp_settimeout(timeout);
+      /* don't allow timeouts to go below 300 seconds - this is a safety
+       * net for an extremely rare error */
+      if (timeout < 300)
+        {
+        snprintf(log_buf, sizeof(log_buf), "tcp timeout was %ld resetting to 300",
+          timeout);
+        timeout = 300;
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
+        }
+      
+      DIS_tcp_settimeout(timeout);
+      }
 
     waittime = MAX(1, waittime);
 
