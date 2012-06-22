@@ -21,7 +21,7 @@ NOTE: currently, processors are reported for the entire system, so numbers like 
 
 the numa node will need to be marked as one for the server. It should have the additional attribute defined:
 
-num_numa_nodes=X
+num_node_boards=X
 
 X should be the number of different numa nodes that will be reported by that mom. For the above mom.layout example, this would be num_numa_nodes=3.
 
