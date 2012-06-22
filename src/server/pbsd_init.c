@@ -1917,7 +1917,7 @@ int handle_job_and_array_recovery(
   else if ((rc = handle_job_recovery(type)) != PBSE_NONE)
     return(rc);
   else
-    rc = cleanup_recovered_arrays(type);
+    rc = cleanup_recovered_arrays();
 
   return(rc);
   } /* END handle_job_and_array_recovery() */
