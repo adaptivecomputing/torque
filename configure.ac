@@ -694,7 +694,7 @@ AC_CHECK_LIB(ssl, SSL_accept,
   [AC_MSG_ERROR([TORQUE needs lib openssl-devel in order to build]) ])
 AC_CHECK_LIB(crypto, BN_init,
   [],
-  [AC_MSG_ERROR([TORQUE needs lib crypto (often openssl-devl) in order to build]) ])
+  [AC_MSG_ERROR([TORQUE needs lib crypto (often openssl-devel) in order to build]) ])
 
 
 
@@ -707,14 +707,6 @@ dnl skip the first two chars because its -l<libname>
 AC_CHECK_LIB(${xmlLib:2}, xmlGetProp,
   [],
   [AC_MSG_ERROR([TORQUE needs libxml2-devel in order to build]) ])
-
-dnl we need -lssl and -lcrypto, lets make sure they exist
-AC_CHECK_LIB(ssl, SSL_accept,
-  [],
-  [AC_MSG_ERROR([TORQUE needs lib ssl in order to build]) ])
-AC_CHECK_LIB(crypto, BN_init,
-  [],
-  [AC_MSG_ERROR([TORQUE needs lib crypto in order to build]) ])
 
 
 

@@ -128,6 +128,8 @@ int parse_release_output(
       else
         rc = PBSE_NONE;
 
+      free(attr_val);
+
       break;
       }
     else if (!strcmp((const char *)node->name, text_name))
