@@ -2331,11 +2331,27 @@ int has_job(
   job             *pjob)
 
   {
-  int rc;
+  int  rc;
+  char jobid[PBS_MAXSVRJOBID + 1];
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
 
-  if (get_value_hash(aj->ht,pjob->ji_qs.ji_jobid) < 0)
+  if (pthread_mutex_trylock(aj->alljobs_mutex))
+    {
+    pthread_mutex_unlock(pjob->ji_mutex);
+    pthread_mutex_lock(aj->alljobs_mutex);
+    pthread_mutex_lock(pjob->ji_mutex);
+
+    if (pjob->ji_being_recycled == TRUE)
+      {
+      pthread_mutex_unlock(aj->alljobs_mutex);
+      pthread_mutex_unlock(pjob->ji_mutex);
+
+      return(PBSE_JOB_RECYCLED);
+      }
+    }
+
+  if (get_value_hash(aj->ht, pjob->ji_qs.ji_jobid) < 0)
     rc = FALSE;
   else
     rc = TRUE;
