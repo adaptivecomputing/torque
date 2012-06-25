@@ -296,6 +296,8 @@ int find_error_type(
       }
     }
 
+  free(attr_val);
+
   return(rc);
   } /* END find_error_type() */
 
@@ -338,10 +340,13 @@ int parse_reservation_output(
       if (strcmp(attr_val, success))
         {
         /* FAILURE - permanent or transient? */
+        free(attr_val);
         return(find_error_type(node));
         }
       else
         rc = PBSE_NONE;
+        
+      free(attr_val);
       }
     else if (!strcmp((const char *)node->name, reserved))
       {
@@ -443,6 +448,8 @@ int parse_confirmation_output(
         }
       else
         rc = PBSE_NONE;
+
+      free(attr_val);
 
       break;
       }

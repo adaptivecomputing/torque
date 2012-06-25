@@ -147,7 +147,7 @@ int process_processor_array(
       if ((processor_allocation = find_processor_allocation(child)) == NULL)
         avail_procs++;
       else if (*rsv_id == NULL)
-          *rsv_id = strdup((char *)xmlGetProp(processor_allocation, (const xmlChar *)reservation_id));
+        *rsv_id = (char *)xmlGetProp(processor_allocation, (const xmlChar *)reservation_id);
       }
     }
 
@@ -178,9 +178,11 @@ int process_memory_array(
       {
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)"page_size_kb");
       page_size  = atoi(attr_value);
+      free(attr_value);
       
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)"page_count");
       page_count = strtol(attr_value, NULL, 10);
+      free(attr_value);
       
       /* note: CMEMORY is in megabytes */
       *memory += page_size * (page_count / 1024);
@@ -221,6 +223,8 @@ int process_label_array(
           append_dynamic_string(feature_list, feature_name);
           }
         }
+
+      free(attr_value);
       }
     }
 
@@ -253,23 +257,29 @@ int process_accelerator_array(
       snprintf(buf, sizeof(buf), "%s-%d", attr_value, atoi(attr_value2));
       copy_to_end_of_dynamic_string(status, "gpu_id=");
       append_dynamic_string(status, buf);
+      free(attr_value);
+      free(attr_value2);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)state);
       copy_to_end_of_dynamic_string(status, "state=");
       append_dynamic_string(status, attr_value);
+      free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)family);
       copy_to_end_of_dynamic_string(status, "family=");
       append_dynamic_string(status, attr_value);
+      free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)memory_mb);
       copy_to_end_of_dynamic_string(status, "memory=");
       append_dynamic_string(status, attr_value);
       append_dynamic_string(status, "mb");
+      free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)clock_mhz);
       copy_to_end_of_dynamic_string(status, "clock_mhz=");
       append_dynamic_string(status, attr_value);
+      free(attr_value);
       }
     }
   
@@ -306,6 +316,7 @@ int process_node(
   copy_to_end_of_dynamic_string(status, "node=");
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)node_id);
   append_dynamic_string(status, attr_value);
+  free(attr_value);
 
   /* check to see if the role is interactive - report these as down */
   role_value = (char *)xmlGetProp(node, (const xmlChar *)role);
@@ -313,10 +324,12 @@ int process_node(
   copy_to_end_of_dynamic_string(status, "ARCH=");
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)architecture);
   append_dynamic_string(status, attr_value);
+  free(attr_value);
 
   copy_to_end_of_dynamic_string(status, "name=");
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)name);
   append_dynamic_string(status, attr_value);
+  free(attr_value);
 
   /* process the children */
   for (child = node->children; child != NULL; child = child->next)
@@ -374,6 +387,8 @@ int process_node(
     copy_to_end_of_dynamic_string(status, "reservation=");
     append_dynamic_string(status, rsv_id);
 
+    free(rsv_id);
+
     /* if there's a reservation on this node, the state is busy */
     copy_to_end_of_dynamic_string(status, "state=BUSY");
     }
@@ -382,12 +397,17 @@ int process_node(
     /* no reservation, evaluate the state normally */
     copy_to_end_of_dynamic_string(status, "state=");
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)state);
+    
     if ((role_value != NULL) &&
         (!strcmp(role_value, interactive_caps)))
       append_dynamic_string(status, "DOWN");
     else
       append_dynamic_string(status, attr_value);
+
+    free(attr_value);
     }
+
+  free(role_value);
 
   if (features->used > 0)
     {
@@ -441,9 +461,14 @@ int process_element(
     {
     str = (char *)xmlGetProp(node, (const xmlChar *)"status");
     if (strcmp(str, success))
+      {
+      free(str);
       return(ALPS_QUERY_FAILURE);
+      }
     else
       rc = process_element(status, node->children);
+
+    free(str);
     }
   else if (!strcmp((const char *)node->name, node_array))
     {

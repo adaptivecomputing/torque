@@ -2853,6 +2853,7 @@ void handle_reservation(
     if (rsv_id != NULL)
       {
       sjr->sj_rsvid = atoi(rsv_id);
+      free(rsv_id);
       }
     
     if (j < 0)

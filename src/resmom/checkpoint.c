@@ -1732,7 +1732,7 @@ int blcr_restart_job(
 #ifdef USEJOBCREATE
 	uint64_t       job_id;
 #endif /* USEJOBCREATE */
-  char          *rsv_id;
+  char          *rsv_id = NULL;
   long long      pagg = 0;
 
 
