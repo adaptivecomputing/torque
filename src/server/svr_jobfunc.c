@@ -591,7 +591,9 @@ int svr_dequejob(
   if (parent_queue_mutex_held == FALSE)
     {
     pque = get_jobs_queue(&pjob);
-    if (pjob == NULL)
+
+    if ((pjob == NULL) ||
+        (pque == NULL))
       {
       log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
       return(PBSE_JOBNOTFOUND);
@@ -602,7 +604,7 @@ int svr_dequejob(
 
   if (pque != NULL)
     {
-    if ((rc = remove_job(pque->qu_jobs,pjob)) == PBSE_NONE)
+    if ((rc = remove_job(pque->qu_jobs, pjob)) == PBSE_NONE)
       {
       if (--pque->qu_numjobs < 0)
         {
@@ -630,7 +632,7 @@ int svr_dequejob(
       }
 
     /* the only reason to care about the error is if the job is gone */
-    if (remove_job(pque->qu_jobs_array_sum,pjob) == PBSE_JOB_RECYCLED)
+    if (remove_job(pque->qu_jobs_array_sum, pjob) == PBSE_JOB_RECYCLED)
       return(PBSE_JOBNOTFOUND);
 
     pjob->ji_qhdr = NULL;
@@ -659,7 +661,6 @@ int svr_dequejob(
   /* clear any default resource values.  */
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
-  pthread_mutex_unlock(pjob->ji_mutex);
 
   if (pattr->at_flags & ATR_VFLAG_SET)
     {

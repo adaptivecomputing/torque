@@ -349,7 +349,9 @@ static int local_move(
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   pthread_mutex_unlock(pjob->ji_mutex);
-  rc = svr_dequejob(job_id, TRUE); /* if we come out of svr_dequejob successfully pjob->ji_mutex will be locked */
+  
+  /* if we come out of svr_dequejob successfully pjob->ji_mutex will be locked */
+  rc = svr_dequejob(job_id, TRUE); 
   if (rc)
     return(rc);
 
