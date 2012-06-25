@@ -324,8 +324,6 @@ int req_orderjob(
     strcpy(job_id2, pjob2->ji_qs.ji_jobid);
     pthread_mutex_unlock(pjob1->ji_mutex);
     pthread_mutex_unlock(pjob2->ji_mutex);
-    pjob1 = NULL;
-    pjob2 = NULL;
 
     svr_dequejob(job_id1, FALSE);
     svr_dequejob(job_id2, FALSE);
