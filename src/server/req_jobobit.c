@@ -1701,8 +1701,6 @@ void on_job_exit(
   int                   type = ptask->wt_type;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  extern void remove_job_delete_nanny(struct job *);
-
   if (ptask->wt_type != WORK_Deferred_Reply)
     {
     preq = NULL;
