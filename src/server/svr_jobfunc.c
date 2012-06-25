@@ -367,7 +367,7 @@ int svr_enquejob(
       {
       insert_job(&array_summary, pjob);
       }
-    else if (rc = PBSE_JOB_RECYCLED)
+    else if (rc == PBSE_JOB_RECYCLED)
       return(rc);
     } /* END if (pjob->is_array_template) */
 
