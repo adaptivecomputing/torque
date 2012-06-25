@@ -574,6 +574,7 @@ int svr_dequejob(
 
   {
   int            bad_ct = 0;
+  int            rc = PBSE_NONE;
   job           *pjob = NULL;
   pbs_attribute *pattr;
   pbs_queue     *pque;
@@ -599,7 +600,7 @@ int svr_dequejob(
 
   if (pque != NULL)
     {
-    if (remove_job(pque->qu_jobs,pjob) == PBSE_NONE)
+    if ((rc = remove_job(pque->qu_jobs,pjob)) == PBSE_NONE)
       {
       if (--pque->qu_numjobs < 0)
         {
@@ -620,9 +621,15 @@ int svr_dequejob(
         bad_ct = 1;
         }
       }
+    else if (rc == PBSE_JOB_RECYCLED)
+      {
+      /* calling functions know this return code means the job is gone */
+      return(PBSE_JOBNOTFOUND);
+      }
 
-    /* just call remove job because nothing happens if it isn't there */
-    remove_job(pque->qu_jobs_array_sum,pjob);
+    /* the only reason to care about the error is if the job is gone */
+    if (remove_job(pque->qu_jobs_array_sum,pjob) == PBSE_JOB_RECYCLED)
+      return(PBSE_JOBNOTFOUND);
 
     pjob->ji_qhdr = NULL;
 
@@ -666,7 +673,7 @@ int svr_dequejob(
     }
 
   /* the only error is if the job isn't present */
-  if (remove_job(&alljobs, pjob) == PBSE_NONE)
+  if ((rc = remove_job(&alljobs, pjob)) == PBSE_NONE)
     {
     if (!pjob->ji_is_array_template)
       {
@@ -689,6 +696,11 @@ int svr_dequejob(
       
       pthread_mutex_unlock(server.sv_jobstates_mutex);
       }
+    }
+  else if (rc == PBSE_JOB_RECYCLED)
+    {
+    /* calling functions know this return code means the job is gone */
+    return(PBSE_JOBNOTFOUND);
     }
 
   /* notify scheduler a job has been removed */
