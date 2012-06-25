@@ -363,10 +363,12 @@ int svr_enquejob(
   /* place into array_summary if necessary */
   if (pjob->ji_is_array_template || pjob->ji_arraystruct == NULL)
     {
-    if (has_job(&array_summary, pjob) == FALSE)
+    if ((rc = has_job(&array_summary, pjob)) == FALSE)
       {
       insert_job(&array_summary, pjob);
       }
+    else if (rc == PBSE_JOB_RECYCLED)
+      return(rc);
     } /* END if (pjob->is_array_template) */
 
   /* place into queue in order of queue rank starting at end */
