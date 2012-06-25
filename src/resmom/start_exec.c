@@ -1982,7 +1982,7 @@ int TMomFinalizeJob1(
       
       get_chkpt_dir_to_use(pjob, buf);
       strcat(buf, "/");
-      strcat(buf, pjob->ji_wattr[JOB_ATR_restart_name].at_val.at_str);
+      strcat(buf, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
       
       stat(buf, &sb);
 
