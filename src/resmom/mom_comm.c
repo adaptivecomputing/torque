@@ -5811,6 +5811,8 @@ void tm_eof(
             "matching task located, marking interface closed");
           }
 
+        DIS_tcp_cleanup(ptask->ti_chan);
+
         ptask->ti_chan = NULL;
 
         return;
