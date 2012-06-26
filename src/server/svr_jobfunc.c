@@ -386,7 +386,10 @@ int svr_enquejob(
     while ((pjcur = next_job_from_back(pque->qu_jobs,&iter)) != NULL)
       {
       if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
+        {
+        pthread_mutex_unlock(pjcur->ji_mutex);
         break;
+        }
       if (strcmp(job_id, pjcur->ji_qs.ji_jobid) == 0)
         {
         pthread_mutex_unlock(pjcur->ji_mutex);
@@ -426,7 +429,10 @@ int svr_enquejob(
     while ((pjcur = next_job_from_back(pque->qu_jobs_array_sum,&iter)) != NULL)
       {
       if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
+        {
+        pthread_mutex_unlock(pjcur->ji_mutex);
         break;
+        }
       if (strcmp(job_id, pjcur->ji_qs.ji_jobid) == 0)
         {
         pthread_mutex_unlock(pjcur->ji_mutex);
