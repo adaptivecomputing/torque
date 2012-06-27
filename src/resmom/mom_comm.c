@@ -491,7 +491,6 @@ task *pbs_task_create(
   CLEAR_LINK(ptask->ti_jobtask);
   append_link(&pjob->ji_tasks, &ptask->ti_jobtask, ptask);
 
-  ptask->ti_chan = NULL;
   ptask->ti_flags = 0;
   ptask->ti_register = TM_NULL_EVENT;
   CLEAR_HEAD(ptask->ti_obits);
@@ -4061,7 +4060,6 @@ int handle_im_get_resc_response(
   tm_event_t  event)      /* I */
 
   {
-  static char *id = "handle_im_get_resc_response";
   int   ret;
   char *info = disrst(chan, &ret);
   task *ptask;
@@ -4073,7 +4071,7 @@ int handle_im_get_resc_response(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: GET_RESC %s OKAY %d\n",
-      id,
+      __func__,
       pjob->ji_qs.ji_jobid,
       event_task);
     
@@ -4121,13 +4119,12 @@ int handle_im_poll_job_response(
   hnodent *np)       /* I */
 
   {
-  static char *id = "handle_im_poll_job_response";
   int exitval;
   int ret;
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {
-    log_err(-1, id, "got POLL_JOB and I'm not MS");
+    log_err(-1, __func__, "got POLL_JOB and I'm not MS");
     
     return(IM_FAILURE);
     }
@@ -4151,7 +4148,7 @@ int handle_im_poll_job_response(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: POLL_JOB %s OKAY kill %d  cpu=%lu  mem=%lu  vmem=%lu\n",
-      id,
+      __func__,
       pjob->ji_qs.ji_jobid,
       exitval,
       pjob->ji_resources[nodeidx - 1].nr_cput,
@@ -4829,7 +4826,6 @@ void im_request(
     case IM_OBIT_TASK:
       {
       ret = im_obit_task(chan,pjob,cookie,event,fromtask);
-      svr_conn[chan->sock].cn_stay_open = TRUE;
       
       if (ret == IM_FAILURE)
         {
@@ -4916,8 +4912,6 @@ void im_request(
         log_err(-1, __func__, "im_get_tid error");
         goto err;
         }
-
-      svr_conn[chan->sock].cn_stay_open = TRUE;
 
       break;
       }
@@ -5042,8 +5036,9 @@ void im_request(
           break;
 
         case IM_GET_TID:
+
           ret = handle_im_get_tid_response(chan,pjob,cookie,argv,envp,&efwd);
-          close_conn(chan->sock, FALSE);
+          svr_conn[chan->sock].cn_stay_open = FALSE;
           chan->sock = -1;
 
           switch (ret)
@@ -5651,7 +5646,6 @@ void im_request(
           if (ptask == NULL)
             break;
          
-
           tm_reply(ptask->ti_chan, TM_ERROR, event);
           diswsi(ptask->ti_chan, errcode);
           DIS_tcp_wflush(ptask->ti_chan);
@@ -5787,13 +5781,11 @@ void tm_eof(
   ** Search though all the jobs looking for this fd.
   */
 
-  for (
-    pjob = (job *)GET_NEXT(svr_alljobs);
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
     pjob != NULL;
     pjob = (job *)GET_NEXT(pjob->ji_alljobs))
     {
-    for (
-      ptask = (task *)GET_NEXT(pjob->ji_tasks);
+    for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
       ptask != NULL;
       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
       {
@@ -5820,11 +5812,7 @@ void tm_eof(
 
   if (LOGLEVEL >= 1)
     {
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_SERVER,
-      __func__,
-      "no matching task found");
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, "no matching task found");
     }
 
   return;
@@ -7192,6 +7180,10 @@ int tm_request(
     }
  
   svr_conn[chan->sock].cn_oncl = tm_eof;
+
+  if ((ptask->ti_chan != NULL) &&
+      (ptask->ti_chan != chan))
+    DIS_tcp_cleanup(ptask->ti_chan);
  
   ptask->ti_chan = chan;
  
@@ -7215,6 +7207,7 @@ int tm_request(
        break;
  
     case TM_POSTINFO:
+
       rc = tm_postinfo(name,info,jobid,fromtask,prev_error,event,&ret,ptask,&len);
  
       goto tm_req_finish;
@@ -7301,7 +7294,6 @@ int tm_request(
  
   switch (command)
     {
- 
     case TM_TASKS:
 
       rc = tm_tasks_request(ptask->ti_chan,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
@@ -7337,23 +7329,23 @@ int tm_request(
       rc = tm_resources_request(ptask->ti_chan,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
 
       break;
-
-   default:
-
-     sprintf(log_buffer, "unknown command %d", command);
-     
-     tm_reply(ptask->ti_chan, TM_ERROR, event);
-     
-     diswsi(ptask->ti_chan, TM_EUNKNOWNCMD);
-     
-     DIS_tcp_wflush(ptask->ti_chan);
-     
-     rc = TM_ERROR;
-     
-     /*NOTREACHED*/
-     
-     break;
-    }  /* END switch (command) */
+      
+    default:
+      
+      sprintf(log_buffer, "unknown command %d", command);
+      
+      tm_reply(ptask->ti_chan, TM_ERROR, event);
+      
+      diswsi(ptask->ti_chan, TM_EUNKNOWNCMD);
+      
+      DIS_tcp_wflush(ptask->ti_chan);
+      
+      rc = TM_ERROR;
+      
+      /*NOTREACHED*/
+      
+      break;
+    } /* END switch (command) */
   
   if (rc == TM_ERROR)
     goto err;
@@ -7362,7 +7354,8 @@ tm_req_finish:
   
   if (reply)
     {
-    if ((ret != DIS_SUCCESS) || (DIS_tcp_wflush(ptask->ti_chan) == -1))
+    if ((ret != DIS_SUCCESS) ||
+        (DIS_tcp_wflush(ptask->ti_chan) == -1))
       {
       if (ret >= 0)
         {
@@ -7458,11 +7451,11 @@ err:
 
 static int adoptSession(
 
-  pid_t sid,
-  pid_t pid,
-  char *id,
-  int   command,
-  char *cookie)
+  pid_t  sid,
+  pid_t  pid,
+  char  *id,
+  int    command,
+  char  *cookie)
 
   {
   job *pjob = NULL;
