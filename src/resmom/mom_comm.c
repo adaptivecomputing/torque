@@ -4812,7 +4812,6 @@ void im_request(
     case IM_SIGNAL_TASK:
       {
       ret = im_signal_task(chan,pjob,cookie,event,fromtask);
-      svr_conn[chan->sock].cn_stay_open = TRUE;
       
       if (ret == IM_FAILURE)
         {
@@ -4839,7 +4838,6 @@ void im_request(
     case IM_GET_INFO:
       {
       ret = im_get_info(chan,pjob,cookie,event,fromtask);
-      svr_conn[chan->sock].cn_stay_open = TRUE;
       
       if (ret == IM_FAILURE)
         {
@@ -4853,7 +4851,6 @@ void im_request(
     case IM_GET_RESC:
       {
       ret = im_get_resc_as_sister(chan,pjob,cookie,event,fromtask);
-      svr_conn[chan->sock].cn_stay_open = TRUE;
       
       if (ret == IM_FAILURE)
         {
