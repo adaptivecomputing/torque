@@ -540,7 +540,8 @@ void scan_for_exiting(void)
 
           tmp_task = task_find(pjob, pobit->oe_info.fe_taskid);
 
-          if ((tmp_task != NULL) && (tmp_task->ti_chan != NULL))
+          if ((tmp_task != NULL) &&
+              (tmp_task->ti_chan != NULL))
             {
             tm_reply(tmp_task->ti_chan, IM_ALL_OKAY, pobit->oe_info.fe_event);
 
@@ -565,7 +566,11 @@ void scan_for_exiting(void)
         free(pobit);
         }  /* END while (pobit) */
 
-      ptask->ti_chan = NULL;
+      if (ptask->ti_chan != NULL)
+        {
+        DIS_tcp_cleanup(ptask->ti_chan);
+        ptask->ti_chan = NULL;
+        }
 
       ptask->ti_qs.ti_status = TI_STATE_DEAD;
 
@@ -708,6 +713,7 @@ void scan_for_exiting(void)
             ptask->ti_qs.ti_exitstat = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
           else
             ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
+
           ptask->ti_qs.ti_status = TI_STATE_EXITED;
 
           task_save(ptask);

@@ -3287,7 +3287,6 @@ char *sessions(
          ptask != NULL;
          ptask = (task *)GET_NEXT(ptask->ti_jobtask))
       {
-
       if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
@@ -4173,7 +4172,9 @@ void scan_non_child_tasks(void)
     {
     task *task;
 
-    for (task = GET_NEXT(job->ji_tasks);task != NULL;task = GET_NEXT(task->ti_jobtask))
+    for (task = GET_NEXT(job->ji_tasks);
+         task != NULL;
+         task = GET_NEXT(task->ti_jobtask))
       {
 #ifdef PENABLE_LINUX26_CPUSETS
       struct pidl   *pids = NULL;
