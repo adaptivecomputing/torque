@@ -1,87 +1,103 @@
-				                       Release Notes
+                                                                     
+                                                                     
+                                                                     
+                                             
+TORQUE Resource Manager 4.1.0 Release Notes
 
-TORQUE Resource Manager
-
-Software Version 4.0.0
-
-		                   	-------- WARNING! --------
-
-TORQUE 4.0.0 is not backwards compatible in any way. When you upgrade to 4.0.0, 
-everything has to be upgraded at once.
-
----------------------------------------------------------------------------
-CONTENTS
-
-   This document contains the following sections:
-     
-     * Overview
-     * What's New
-     * Requirements
-     * Installation
-
---------------------------------------------------------------------------
-OVERVIEW
-
-    TORQUE needs to be able to scale to newer, larger systems. This includes:
-    handling larger numbers of jobs, nodes, and commands per second. TORQUE 
-    also needs to become far more reliable. To respond to these challenges,
-    TORQUE has undergone a huge makeover - pbs_server is now multi-threaded,
-    RPP/UDP is no longer used, mom reporting can be organized into 
-    hierarchies, job reporting can be divided into a tree structure, and 
-    many other smaller yet significant changes.
-    
----------------------------------------------------------------------------
-WHAT'S NEW
+June 2012
 
 
-    pbs_server is now multi-threaded so that it will respond to user commands 
-    much faster, and most importantly, one user command doesn't tie up the 
-    system and block other things.
+****************************************************************
+The release notes file contains the following sections:
 
-    TORQUE no longer uses rpp to communicate - tcp is used in all cases. rpp 
-    allows the network to drop its packets when it is at a high load. tcp 
-    does not allow this in the protocol, making it more reliable.
-
-    TORQUE now has the option of using a mom hierarchy to specify how the moms report
-    to the server. If not specified, each mom will report directly to the server as 
-    previous versions have, but if specified direct traffic on the server can be 
-    greatly reduced. Details on providing a mom hierarchy file are found here:
-    http://www.adaptivecomputing.com/resources/docs/torque/4-0/help.htm in 
-    section 1.3.2 
-    (1.0 Installation and configuration > 1.3 Advanced configuration > 1.3.2 Server configuration)
-    
-    pbs_iff has been replaced with a daemon that needs to be running on any
-    submit host (under the condition that you are using iff, not munge or unix
-    sockets) To start the iff replacement, run trqauthd as root.
-
-    TORQUE now includes a job_radix option (-W job_radix=X) to specify how
-    many moms each mom should communicate with for that job. Moms are then an 
-    n-branch tree communications-wise
-
-    More detail can be found in README.new_in_4.0
-
-REQUIREMENTS
-------------
-
-An ANSI C compiler is required.   The native C compiler is recommended if it
-is ANSI, otherwise use gcc.
-
-A fully POSIX make is required.  If you are unable to "make" PBS with your
-make, we suggest use of gmake from GNU.
-
-Tcl/Tk version 8 or higher is required if you plan to build the GUI portion
-of TORQUE or use a Tcl based scheduler.
+- Overview
+- New Features
+- Known Issues
+- System Requirements
+- Installation Information
+- Upgrading and Backward Compatibility
+- Documentation
+****************************************************************
 
 
-BUILD AND INSTALLATION DIRECTIONS
----------------------------------
+=== Overview ===
 
-The directions to build and install are found in the PBS Administrators Guide.
-A postscript and PDF copy are found in this directory.  Please read and
-follow the directions CAREFULLY.
+TORQUE 4.1.0 ehnaces support for Cray. With this release, all apbasil commands are executed by the pbs_mom daemons inside the Cray network. TORQUE 4.1.0 scales to newer, larger systems and can handle larger numbers of jobs, nodes, and commands per second.
 
-Also consider additional considerations in README.building_40.
-
-Installation instructions can also be found at http://www.clusterresources.com/products/torque/docs/
+The New Features section provides more information about what TORQUE 4.1.0 has to offer.
 
 
+=== New Features ===
+
+Cray: Improved ALPS interaction
+
+With this release, ALPS interaction is no longer handled via scripts. All apbasil commands are executed by the pbs_mom daemons, which provides two major benefits: speed and mobility (meaning that pbs_server and Moab can be moved outside of Cray).
+
+The mobility offers many benefits:
+  - High availability is now possible.
+  - You can place pbs_server and Moab on external nodes where you choose the size (meaning you can make these hosts as fast as you like).
+  - If your Cray goes down, you can still submit jobs and look at queued jobs (though you cannot run them).
+
+
+Hostname lookup
+
+pbs_server now only looks up a hostname one time. All information is cached and pbs_server retreives information from the cache. This reduces the stress on the DNS and increases speed within TORQUE 4.1.0.
+
+
+=== Known Issues ===
+
+Certain machines report frequent errors in Moab querying of TORQUE. However, Moab recovers from these errors, which do not appear to affect scheduling.
+
+
+=== System Requirements  ===
+
+The following software is required to run TORQUE 4.0.2:
+
+- libxml2-devel package
+- openssl-devel package
+- ANSI C compiler (The native C compiler is recommended if it is ANSI; otherwise use gcc.) 
+- A fully POSIX make. If you are unable to "make" PBS with your make, we suggest using gmake from GNU. 
+- Tcl/Tk version 8 or higher if you plan to build the GUI portion of TORQUE or use a Tcl-based scheduler. 
+- If you use cpusets, libhwloc 1.1 or later is required (for TORQUE 4.0 and later)
+
+
+=== Installation Information ===
+
+The directions to install and configure TORQUE are in chapter 1 of the TORQUE 4.1.0 Administrator Guide [http://www.adaptivecomputing.com/resources/docs/torque/4-1-0/help.htm]. Also note additional instructions in the PBS Administrators Guide and README.building_40.
+
+Note that you may need to install libssl-dev in order for the source to make successfully. Specifically, the build system is looking for libssl.so and libcrypto.so. For non-RPM setups, you may need to make a symbolic link from the ssl and crypto libraries to the respective .so names.
+
+
+=== Upgrading to TORQUE 4.1.0 and Backward Compatibility ===
+
+TORQUE 4.1.0 is not backward compatible with versions of TORQUE prior to 4.0. When you upgrade to TORQUE 4.1.0, all MOM and server daemons must be upgraded at the same time. 
+
+The job format is compatible between 4.1.0 and previous versions of TORQUE. Any queued jobs will upgrade to the new version with the exception of job arrays in TORQUE 2.4 and earlier. It is not recommended to upgrade TORQUE while jobs are in a running state.
+
+Because TORQUE 4.1.0 has removed all use of UDP/IP and moved all communication to use TCP/IP, previous versions of TORQUE will not be able to communicate with the components of TORQUE 4.1.0. However, all files in the /var/spool/torque ($TORQUE_HOME) directory and all subdirectories are forwardly compatible.
+
+++ Job Arrays ++
+
+Job arrays from TORQUE version 2.5 and 3.0 are compatible with TORQUE 4.1.0. Job arrays were introduced in TORQUE version 2.4 but modified in 2.5. If upgrading from TORQUE 2.4, you will need to make sure all job arrays are complete before upgrading.
+
+++ serverdb ++
+
+The pbs_server configuration is saved in the file $TORQUE_HOME/server_priv/serverdb. When running TORQUE 4.1.0 for the first time, this file converts from a binary file to an XML-like format. This format can be used by TORQUE versions 2.5 and 3.0, but not earlier versions. Back up the $TORQUE_HOME/server_priv/serverdb file before moving to TORQUE 4.1.0.
+
+++ Upgrading ++
+
+Because TORQUE 4.1.0 will not communicate with previous versions of TORQUE, it is not possible to upgrade one component and not upgrade the others. Rolling upgrades will not work.
+
+Before upgrading the system, all running jobs must complete. To prevent queued jobs from starting, nodes can be set to offline or all queues can be disabled. Once all running jobs are complete, the upgrade can be made. Remember to allow any job arrays in version 2.4 to complete before upgrading. Queued array jobs will be lost.
+
+== Cray ==
+
+For upgrading TORQUE to 4.1.0 on a Cray system, refer to the Installation Notes for Moab and TORQUE on a Cray System [http://www.adaptivecomputing.com/resources/docs/mwm/7-1-0/help.htm#xtinstall.html] in Appendix G of the Moab Workload Manager Administrator Guide.
+
+
+=== Documentation ===
+
+The online help for TORQUE 4.1.0 is available in HTML [http://www.adaptivecomputing.com/resources/docs/torque/4-1-0/help.htm] and PDF [http://www.adaptivecomputing.com/resources/docs/torque/4-1-0/torqueAdminGuide-4.1.0.pdf] format.
+
+
+© Copyright 2012, Adaptive Computing Enterprises, Inc.
