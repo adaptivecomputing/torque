@@ -118,6 +118,7 @@
 #include "../lib/Liblog/pbs_log.h" /* print_trace */
 #include "node_func.h" /* addr_ok */
 #include "tcp.h" /* tcp_chan */
+#include "../lib/Libutils/u_lock_ctl.h"
 
 
 /* global data */
@@ -194,9 +195,16 @@ int svr_connect(
     return(PBS_NET_RC_RETRY);
     }
 
-  /* establish socket connection to specified host */
+  /* don't keep the node locked through the connecting */
+  if (pnode != NULL)
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
+  /* establish socket connection to specified host */
   sock = client_to_svr(hostaddr, port, 1, EMsg);
+ 
+  /* re-lock the node after connecting */
+  if (pnode != NULL)
+    lock_node(pnode, __func__, NULL, LOGLEVEL);
  
   time(&ETime);
 

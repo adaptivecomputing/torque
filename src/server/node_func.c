@@ -3240,6 +3240,7 @@ int send_hierarchy(
 
     return(-1);
     }
+
   add_conn(sock, ToServerDIS, ntohl(sa.sin_addr.s_addr), sa.sin_port, PBS_SOCK_INET, NULL);
 
   if ((chan = DIS_tcp_setup(sock)) == NULL)

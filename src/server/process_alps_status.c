@@ -97,6 +97,7 @@
 #include "login_nodes.h"
 #include "svrfunc.h"
 #include "issue_request.h"
+#include "threadpool.h"
 
 extern attribute_def    node_attr_def[];
 int save_node_status(struct pbsnode *current, pbs_attribute *temp);
@@ -187,11 +188,12 @@ struct pbsnode *create_alps_subnode(
 
 
 
-int check_if_orphaned(
+void *check_if_orphaned(
 
-  char *rsv_id)
+  void *vp)
 
   {
+  char                 *rsv_id = (char *)vp;
   struct batch_request *preq;
   int                   handle;
   struct pbsnode       *pnode;
@@ -199,23 +201,28 @@ int check_if_orphaned(
   if (is_orphaned(rsv_id) == TRUE)
     {
     preq = alloc_br(PBS_BATCH_DeleteReservation);
-    preq->rq_extra = strdup(rsv_id);
+    preq->rq_extend = strdup(rsv_id);
 
     if ((pnode = get_next_login_node(NULL)) != NULL)
       {
-      int       local_errno;
-      pbs_net_t momaddr = get_hostaddr(&local_errno, pnode->nd_name);
+      struct in_addr hostaddr;
+      int            local_errno;
+      pbs_net_t      momaddr;
 
-      handle = svr_connect(momaddr, pnode->nd_mom_port, &local_errno, NULL, NULL, ToServerDIS);
+      memcpy(&hostaddr, &pnode->nd_sock_addr.sin_addr, sizeof(hostaddr));
+      momaddr = ntohl(hostaddr.s_addr);
 
-      if (issue_Drequest(handle, preq, release_req, 0) == 0)
-        free_br(preq);
+      handle = svr_connect(momaddr, pnode->nd_mom_port, &local_errno, pnode, NULL, ToServerDIS);
 
+      /* unlock before the network transaction */
       unlock_node(pnode, __func__, NULL, 0);
+      
+      if (issue_Drequest(handle, preq, release_req, 0) != PBSE_NONE)
+        free_br(preq);
       }
     }
 
-  return(PBSE_NONE);
+  return(NULL);
   } /* END check_if_orphaned() */
 
 
@@ -437,6 +444,7 @@ int record_reservation(
   {
   struct pbssubn *sub_node;
   job            *pjob;
+  int             found_job = FALSE;
   
   for (sub_node = pnode->nd_psn; sub_node != NULL; sub_node = sub_node->next)
     {
@@ -448,12 +456,16 @@ int record_reservation(
         pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
 
         create_alps_reservation(pjob);
+        found_job = TRUE;
 
         pthread_mutex_unlock(pjob->ji_mutex);
         break;
         }
       }
     }
+
+  if (found_job == FALSE)
+    return(-1);
 
   return(PBSE_NONE);
   } /* END record_reservation() */
@@ -467,12 +479,12 @@ int process_reservation_id(
   char           *rsv_id_str)
 
   {
-  char           *rsv_id = rsv_id_str + strlen(reservation_id);
+  char           *rsv_id = rsv_id_str + strlen(reservation_id) + 1;
 
   if (already_recorded(rsv_id) == TRUE)
-    check_if_orphaned(rsv_id);
-  else
-    record_reservation(pnode, rsv_id);
+    enqueue_threadpool_request(check_if_orphaned, rsv_id);
+  else if (record_reservation(pnode, rsv_id) != PBSE_NONE)
+    enqueue_threadpool_request(check_if_orphaned, rsv_id);
 
   return(PBSE_NONE);
   } /* END process_reservation_id() */

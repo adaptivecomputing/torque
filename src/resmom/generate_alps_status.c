@@ -384,7 +384,7 @@ int process_node(
 
   if (rsv_id != NULL)
     {
-    copy_to_end_of_dynamic_string(status, "reservation=");
+    copy_to_end_of_dynamic_string(status, "reservation_id=");
     append_dynamic_string(status, rsv_id);
 
     free(rsv_id);

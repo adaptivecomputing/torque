@@ -350,36 +350,40 @@ int dis_request_read(
       rc = decode_DIS_Register(chan, request);
 
       break;
-
-	case PBS_BATCH_AuthenUser:
-
+      
+    case PBS_BATCH_AuthenUser:
+      
       rc = decode_DIS_Authen(chan, request);
-
+      
       break;
-
-	case PBS_BATCH_AltAuthenUser:
-	  rc = decode_DIS_AltAuthen(chan, request);
-	  break;
-
+      
     case PBS_BATCH_JobObit:
-
+      
       rc = decode_DIS_JobObit(chan, request);
-
+      
       break;
 
 #else  /* PBS_MOM */
+      
+    /* pbs_mom services */
+    
+    case PBS_BATCH_DeleteReservation:
 
-      /* pbs_mom services */
-
-    case PBS_BATCH_ReturnFiles:
-      rc = decode_DIS_ReturnFiles(chan, request);
+      /* NO-OP: this one is just a header and an extension string */
 
       break;
-
+      
+      
+    case PBS_BATCH_ReturnFiles:
+      
+      rc = decode_DIS_ReturnFiles(chan, request);
+      
+      break;
+      
     case PBS_BATCH_CopyFiles:
-
+      
     case PBS_BATCH_DelFiles:
-
+      
       rc = decode_DIS_CopyFiles(chan, request);
 
       break;
@@ -400,7 +404,7 @@ int dis_request_read(
       break;
     }  /* END switch (request->rq_type) */
 
-  if (rc == 0)
+  if (rc == DIS_SUCCESS)
     {
     /* Decode the Request Extension, if present */
     rc = decode_DIS_ReqExtend(chan, request);
