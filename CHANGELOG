@@ -1,5 +1,8 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.1.1
+  e - pbs_server will now detect and release orphaned ALPS reservations
+
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine
       all nodes to check if the job at hand was there. This should greatly speed
