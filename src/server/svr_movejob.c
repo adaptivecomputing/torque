@@ -677,7 +677,6 @@ int send_job_work(
   job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
   job_momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
 
-
   if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT)
     has_job_script = TRUE;
 

@@ -254,6 +254,8 @@ int is_orphaned(
     else
       orphaned = TRUE;
     }
+  else
+    orphaned = TRUE;
 
   return(orphaned);
   } /* END is_orphaned() */

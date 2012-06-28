@@ -711,6 +711,18 @@ int issue_Drequest(
 
       break;
 
+    case PBS_BATCH_DeleteReservation:
+
+      if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_DeleteReservation, msg_daemonname)))
+        break;
+
+      if ((rc = encode_DIS_ReqExtend(chan, request->rq_extend)))
+        break;
+
+      rc = DIS_tcp_wflush(chan);
+      
+      break;
+
 #else /* PBS_MOM */
 
     case PBS_BATCH_JobObit:
