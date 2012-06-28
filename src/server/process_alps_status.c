@@ -97,6 +97,7 @@
 #include "login_nodes.h"
 #include "svrfunc.h"
 #include "issue_request.h"
+#include "threadpool.h"
 
 extern attribute_def    node_attr_def[];
 int save_node_status(struct pbsnode *current, pbs_attribute *temp);
