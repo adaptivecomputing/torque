@@ -259,7 +259,13 @@ int add_verify_resources(
       if (v)
         {
         if (gpugres)
+          {
+          char *gpu_eq = strchr(r, '=');
+
+          *gpu_eq = ':';
           snprintf(value, vlen, "%s", r);
+          *gpu_eq = '=';
+          }
         else
           snprintf(value, vlen, "%s", v);
 
