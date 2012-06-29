@@ -79,7 +79,7 @@
 #include "mom_hierarchy.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
 #include "mom_server.h"
-#include "mom_job_func.h" /* job_purge */
+#include "mom_job_func.h" /* mom_job_purge */
 #include "net_cache.h"
 
 #include "mcom.h"
@@ -4627,7 +4627,7 @@ int rm_request(
 
                     pjobnext = (job *)GET_NEXT(pjob->ji_alljobs);
 
-                    job_purge(pjob);
+                    mom_job_purge(pjob);
 
                     pjob = pjobnext;
 
@@ -4638,14 +4638,14 @@ int rm_request(
 
                 strcat(output, "clear completed");
                 }
-              else if ((pjob = find_job(ptr)) != NULL)
+              else if ((pjob = mom_find_job(ptr)) != NULL)
                 {
                 sprintf(tmpLine, "clearing job %s",
                         pjob->ji_qs.ji_jobid);
 
                 log_record(PBSEVENT_SYSTEM, 0, id, tmpLine);
 
-                job_purge(pjob);
+                mom_job_purge(pjob);
 
                 strcpy(output, tmpLine);
                 }
@@ -6381,7 +6381,7 @@ time_t MOMGetFileMtime(
 /*
  * MOMCheckRestart() - set mom_run_state to restart if appropriate.
  *                     this is called when no jobs are running (below
- *                     in the main loop, and in job_purge().)
+ *                     in the main loop, and in mom_job_purge().)
  */
 
 void MOMCheckRestart(void)

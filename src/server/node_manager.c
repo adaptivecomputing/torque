@@ -775,7 +775,7 @@ void *sync_node_jobs(
           {
           unlock_node(np, __func__, "is_job_on_node == FALSE", LOGLEVEL);
           np = NULL;
-          pjob = find_job(jobidstr);
+          pjob = svr_find_job(jobidstr);
           
           if (pjob != NULL)
             {
@@ -886,7 +886,7 @@ void update_job_data(
     if (strstr(jobidstr, server_name) != NULL)
       {
       on_node = is_job_on_node(np, jobidstr);
-      pjob = find_job(jobidstr);
+      pjob = svr_find_job(jobidstr);
 
       if (pjob != NULL)
         {
@@ -5975,7 +5975,7 @@ job *get_job_from_jobinfo(
   job *pjob;
 
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
-  pjob = find_job(jp->jobid);
+  pjob = svr_find_job(jp->jobid);
   lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(pjob);

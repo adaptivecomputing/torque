@@ -559,7 +559,7 @@ static void close_quejob(
         /* delete the job */
         delete_link(&pjob->ji_alljobs);
 
-        job_purge(pjob);
+        mom_job_purge(pjob);
 
         pjob = NULL;
         }

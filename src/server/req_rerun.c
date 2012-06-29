@@ -144,7 +144,7 @@ static void post_rerun(
 
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_signal.rq_jid,log_buf);
 
-    if ((pjob = find_job(preq->rq_ind.rq_signal.rq_jid)))
+    if ((pjob = svr_find_job(preq->rq_ind.rq_signal.rq_jid)))
       {
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
 

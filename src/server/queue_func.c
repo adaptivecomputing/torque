@@ -627,7 +627,7 @@ int get_parent_dest_queues(
 
   pthread_mutex_unlock(svr_queues.allques_mutex);
 
-  if ((*pjob_ptr = find_job(jobid)) == NULL)
+  if ((*pjob_ptr = svr_find_job(jobid)) == NULL)
     rc = -1;
 
   return(rc);
@@ -655,7 +655,7 @@ pbs_queue *lock_queue_with_job_held(
       pthread_mutex_unlock(pjob->ji_mutex);
       lock_queue(pque, __func__, NULL, LOGLEVEL);
 
-      if ((pjob = find_job(jobid)) == NULL)
+      if ((pjob = svr_find_job(jobid)) == NULL)
         {
         unlock_queue(pque, __func__, NULL, 0);
         pque = NULL;

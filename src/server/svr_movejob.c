@@ -130,7 +130,7 @@
 extern void remove_stagein(job **);
 extern void remove_checkpoint(job **);
 extern int  job_route(job *);
-extern int job_purge(job *);
+extern int svr_job_purge(job *);
 int PBSD_commit_get_sid(int ,long *,char *);
 int get_job_file_path(job *,enum job_file, char *, int);
 
@@ -413,7 +413,7 @@ void finish_routing_processing(
           remove_checkpoint(&pjob);
 
         if (pjob != NULL)
-          job_purge(pjob); /* need to remove server job struct */
+          svr_job_purge(pjob); /* need to remove server job struct */
         }
 
       break;
@@ -514,7 +514,7 @@ void finish_moving_processing(
         req->rq_ind.rq_move.rq_destin, req->rq_user, req->rq_host);
 
       if (pjob != NULL)
-        job_purge(pjob);
+        svr_job_purge(pjob);
     
       reply_ack(req);
 
@@ -554,7 +554,7 @@ void finish_move_process(
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE+1];
-  job  *pjob = find_job(job_id);
+  job  *pjob = svr_find_job(job_id);
 
   if (pjob == NULL)
     {
@@ -666,7 +666,7 @@ int send_job_work(
   unsigned long         job_momaddr = -1;
   unsigned short        job_momport = -1;
 
-  if ((pjob = find_job(job_id)) == NULL)
+  if ((pjob = svr_find_job(job_id)) == NULL)
     return(PBSE_JOBNOTFOUND);
 
   if (strlen(pjob->ji_qs.ji_destin) != 0)
@@ -830,7 +830,7 @@ int send_job_work(
       {
       if (change_substate_on_attempt_to_queue == TRUE)
         {
-        if ((pjob = find_job(job_id)) != NULL)
+        if ((pjob = svr_find_job(job_id)) != NULL)
           {
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUT;
           job_save(pjob, SAVEJOB_QUICK, 0);
@@ -894,7 +894,7 @@ int send_job_work(
           }
         }
 
-      if ((pjob = find_job(job_id)) != NULL)
+      if ((pjob = svr_find_job(job_id)) != NULL)
         {
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUTCM;      
         job_save(pjob, SAVEJOB_QUICK, 0);
@@ -972,7 +972,7 @@ int send_job_work(
     else if (sid != -1)
       {
       /* save the sid */
-      if ((pjob = find_job(job_id)) != NULL)
+      if ((pjob = svr_find_job(job_id)) != NULL)
         {
         pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long = sid;
         pjob->ji_wattr[JOB_ATR_session_id].at_flags |= ATR_VFLAG_SET;
@@ -1061,7 +1061,7 @@ void *send_job(
   struct batch_request *preq = (struct batch_request *)args->data;
   struct pbsnode       *np;
 
-  pjob = find_job(job_id);
+  pjob = svr_find_job(job_id);
 
   if (pjob != NULL)
     {

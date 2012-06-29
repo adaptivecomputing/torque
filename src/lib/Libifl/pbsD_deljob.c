@@ -111,7 +111,7 @@
                                                   req_cpyfile
                                                   req_deletejob()  (resmom/requests.c)
                                                     mom_deljob()   (resmom/catch_child.c)
-                                                      job_purge()  (server/job_func.c)
+                                                      svr_job_purge()  (server/job_func.c)
                                                     reply_ack()
 
                             wait_request()                       (net_server.c)

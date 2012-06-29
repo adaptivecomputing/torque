@@ -268,7 +268,7 @@ int req_runjob(
       pthread_mutex_unlock(pjob->ji_mutex);
       update_array_values(pa,job_state,aeRun,
           job_id, job_atr_hold, job_exit_status);
-      if ((pjob = find_job(job_id)) == NULL)
+      if ((pjob = svr_find_job(job_id)) == NULL)
         {
         rc = PBSE_JOBNOTFOUND;
         req_reject(rc, 0, preq, NULL,
@@ -389,7 +389,7 @@ static void post_checkpointsend(
     return;
 
   code = preq->rq_reply.brp_code;
-  pjob = find_job(preq->rq_extra);
+  pjob = svr_find_job(preq->rq_extra);
 
   free(preq->rq_extra);
 
@@ -618,7 +618,7 @@ static void post_stagein(
     return;
 
   code = preq->rq_reply.brp_code;
-  pjob = find_job(preq->rq_extra);
+  pjob = svr_find_job(preq->rq_extra);
 
   free(preq->rq_extra);
 
@@ -1141,7 +1141,7 @@ static int svr_strtjob2(
     {
     /* SUCCESS */
     DIS_tcp_settimeout(tcp_timeout);
-    if ((pjob = find_job(job_id)) != NULL)
+    if ((pjob = svr_find_job(job_id)) != NULL)
       {
       *pjob_ptr = pjob;
       }
@@ -1152,7 +1152,7 @@ static int svr_strtjob2(
     {
     DIS_tcp_settimeout(tcp_timeout);
 
-    if ((pjob = find_job(job_id)) != NULL)
+    if ((pjob = svr_find_job(job_id)) != NULL)
       {
       sprintf(tmpLine, "unable to run job, send to MOM '%lu' failed", job_momaddr);
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,tmpLine);
@@ -1187,7 +1187,7 @@ void finish_sendmom(
   time_t     time_now = time(NULL);
   job *pjob;
 
-  if ((pjob = find_job(job_id)) == NULL)
+  if ((pjob = svr_find_job(job_id)) == NULL)
     {
     req_reject(PBSE_JOBNOTFOUND, 0, preq, node_name, log_buf);
     return;
@@ -1337,7 +1337,7 @@ void finish_sendmom(
           /* update mom-based job status */
           pthread_mutex_unlock(pjob->ji_mutex);
           stat_mom_job(job_id);
-          pjob = find_job(job_id);
+          pjob = svr_find_job(job_id);
           }
         else
           {

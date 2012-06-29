@@ -20,8 +20,6 @@ int job_unlink_file(job *pjob, const char *name);
 
 void *delete_job_files(void *vp);
 
-void job_purge(job *pjob);
-
-job *find_job(char *jobid);
+void mom_job_purge(job *pjob);
 
 #endif /* _JOB_FUNC_H */

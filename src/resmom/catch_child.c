@@ -35,7 +35,7 @@
 #include "pbs_proto.h"
 #include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
 #include "../server/svr_connect.h" /* svr_disconnect_sock */
-#include "mom_job_func.h" /* job_purge */
+#include "mom_job_func.h" /* mom_job_purge */
 #ifdef ENABLE_CPA
 #include "pbs_cpa.h"
 #endif
@@ -245,7 +245,7 @@ int send_task_obit_response(
  *  - preobit_reply()
  *      o validates server response to preobit message
  *        If the server returns unknown job id (it may have been purged),
- *        then the job is deleted from the mom: mom_deljob -> job_purge,
+ *        then the job is deleted from the mom: mom_deljob -> mom_job_purge,
  *        and that should be it for the job. Otherwise, we fork:
  *      - fork_me()
  *        o parent registers post_epilog in job ji_mompost pbs_attribute, sets job
@@ -2059,7 +2059,7 @@ void mom_deljob(
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
     }
 
-  job_purge(pjob);
+  mom_job_purge(pjob);
 
   return;
   }  /* END mom_deljob() */
@@ -2340,7 +2340,7 @@ void exit_mom_job(
 
   send_job_obit_to_ms(pjob, mom_radix);
   
-  job_purge(pjob);
+  mom_job_purge(pjob);
   } /* END exit_mom_job() */
 
 

@@ -706,11 +706,11 @@ void delete_blcr_files(
 /**
  * mom_checkpoint_delete_files
  *
- * This routine is called from the job_purge routine
+ * This routine is called from the mom_job_purge routine
  * which cleans up all files related to a job.
  *
  * @param pjob Pointer to the job structure
- * @see job_purge
+ * @see mom_job_purge
  */
 
 void mom_checkpoint_delete_files(

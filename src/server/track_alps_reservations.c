@@ -244,7 +244,7 @@ int is_orphaned(
 
   if (ar != NULL)
     {
-    if ((pjob = find_job(ar->job_id)) != NULL)
+    if ((pjob = svr_find_job(ar->job_id)) != NULL)
       {
       if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
         orphaned = TRUE;

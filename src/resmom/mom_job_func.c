@@ -81,11 +81,10 @@
  *
  * Included public functions are:
  *
- *   job_abt   abort (remove from server) a job
  *   job_alloc    allocate job struct and initialize defaults
  *   mom_job_free   free space allocated to the job structure and its
  *    childern structures.
- *   job_purge   purge job from server
+ *   mom_job_purge   purge job from server
  *
  *   job_unlink_file() unlinks a given file using job credentials
  *
@@ -143,7 +142,7 @@
 #endif
 
 int conn_qsub(char *, long, char *);
-void job_purge(job *);
+void mom_job_purge(job *);
 
 /* External functions */
 extern void mom_checkpoint_delete_files(job_file_delete_info *);
@@ -803,7 +802,7 @@ int release_job_reservation(
 
 
 
-void job_purge(
+void mom_job_purge(
 
   job *pjob)  /* I (modified) */
 
@@ -889,20 +888,20 @@ void job_purge(
     MOMCheckRestart();
 
   return;
-  }  /* END job_purge() */
+  }  /* END mom_job_purge() */
 
 
 
 
 
 /*
- * find_job() - find job by jobid
+ * mom_find_job() - find job by jobid
  *
  * Search list of all server jobs for one with same jobid
  * Return NULL if not found or pointer to job struct if found
  */
 
-job *find_job(
+job *mom_find_job(
 
   char *jobid)
 
@@ -927,7 +926,7 @@ job *find_job(
     *at = '@'; /* restore @server_name */
 
   return(pj);  /* may be NULL */
-  }   /* END find_job() */
+  }   /* END mom_find_job() */
 
 /* END job_func.c */
 

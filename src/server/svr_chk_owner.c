@@ -637,7 +637,7 @@ job *chk_job_request(
   {
   job *pjob = NULL;
 
-  if ((pjob = find_job(jobid)) == NULL)
+  if ((pjob = svr_find_job(jobid)) == NULL)
     {
     log_event(
       PBSEVENT_DEBUG,

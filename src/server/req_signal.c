@@ -319,9 +319,8 @@ static void post_signal_req(
       return;
       }
 
-    if ((pjob = find_job(jobid)) != NULL)
+    if ((pjob = svr_find_job(jobid)) != NULL)
       {
-  
       if (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_SUSPEND) == 0)
         {
         if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
