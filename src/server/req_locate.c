@@ -119,18 +119,20 @@ extern int    LOGLEVEL;
  */
 
 int  req_locatejob(
-    struct batch_request *preq)
+
+  struct batch_request *preq)
+
   {
-  int rc = PBSE_NONE;
+  int     rc = PBSE_NONE;
   char   *at;
-  int   i;
-  job  *pjob;
-  char  *location = (char *)0;
+  int     i;
+  job    *pjob;
+  char   *location = (char *)0;
 
   if ((at = strchr(preq->rq_ind.rq_locate, (int)'@')))
     * at = '\0';  /* strip off @server_name */
 
-  pjob = find_job(preq->rq_ind.rq_locate);
+  pjob = svr_find_job(preq->rq_ind.rq_locate);
 
   if (pjob)
     {

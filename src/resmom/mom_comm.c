@@ -125,7 +125,7 @@
 #include "utils.h"
 #include "../lib/Libnet/lib_net.h" /* get_hostaddr_hostent_af */
 #include "mom_server.h"
-#include "mom_job_func.h" /* job_purge */
+#include "mom_job_func.h" /* mom_job_purge */
 #include "tcp.h" /* tcp_chan */
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
@@ -2266,7 +2266,7 @@ int im_join_job_as_sister(
     
     send_im_error(rc,1,pjob,cookie,event,fromtask);
    
-    job_purge(pjob);
+    mom_job_purge(pjob);
       
     return(IM_DONE);
     }
@@ -2297,7 +2297,7 @@ int im_join_job_as_sister(
     
     send_im_error(PBSE_BADUSER,1,pjob,cookie,event,fromtask);
     
-    job_purge(pjob);
+    mom_job_purge(pjob);
       
     return(IM_DONE);
     }
@@ -2316,7 +2316,7 @@ int im_join_job_as_sister(
       
       send_im_error(PBSE_BADUSER,1,pjob,cookie,event,fromtask);
       
-      job_purge(pjob);
+      mom_job_purge(pjob);
         
       return(IM_DONE);
       }
@@ -2359,7 +2359,7 @@ int im_join_job_as_sister(
     
     log_err(-1, __func__, "cannot load sp switch table");
     
-    job_purge(pjob);
+    mom_job_purge(pjob);
       
     return(IM_DONE);
     }
@@ -3495,7 +3495,7 @@ int im_abort_job(
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
 
-  job_purge(pjob);
+  mom_job_purge(pjob);
   
   return(IM_DONE);
   } /* END im_abort_job() */
@@ -4628,7 +4628,7 @@ void im_request(
   /*
   ** Check if job already exists.
   */
-  pjob = find_job(jobid);
+  pjob = mom_find_job(jobid);
  
   if (pjob == NULL)
     {
@@ -5096,7 +5096,7 @@ void im_request(
           svr_conn[chan->sock].cn_stay_open = FALSE;
           chan->sock = -1;
 
-          pjob = find_job(jobid);
+          pjob = mom_find_job(jobid);
           if (pjob != NULL)
             {
             if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0) &&
@@ -7070,7 +7070,7 @@ int tm_request(
     }
  
   /* verify the jobid is known and the cookie matches */
-  if ((pjob = find_job(jobid)) == NULL)
+  if ((pjob = mom_find_job(jobid)) == NULL)
     {
     sprintf(log_buffer, "job %s not found",
             jobid);
@@ -7735,8 +7735,7 @@ int get_job_struct(
   int  ret;
   job *new_job;
 
-  new_job = find_job(jobid);
-
+  new_job = mom_find_job(jobid);
 
   if (new_job != NULL)
     {
@@ -7759,7 +7758,7 @@ int get_job_struct(
           log_buffer);
         }
 
-      job_purge(new_job);
+      mom_job_purge(new_job);
       }
     else
       {
@@ -7772,7 +7771,7 @@ int get_job_struct(
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
         }
 
-      /* should local job be purged, ie 'job_purge(pjob);' ? */
+      /* should local job be purged, ie 'mom_job_purge(pjob);' ? */
 
       ret = PBSE_JOBEXIST;
 
@@ -7851,7 +7850,7 @@ int run_prologue_scripts(
 
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
-    job_purge(pjob);
+    mom_job_purge(pjob);
 
     ret = PBSE_SYSTEM;
     goto done;
@@ -7869,7 +7868,7 @@ int run_prologue_scripts(
 
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
 
-    job_purge(pjob);
+    mom_job_purge(pjob);
 
     ret = PBSE_SYSTEM;
     goto done;

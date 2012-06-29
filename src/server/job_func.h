@@ -33,11 +33,9 @@ void cleanup_restart_file(job *pjob);
 
 int record_jobinfo(job *pjob);
 
-int job_purge(job *pjob);
+int svr_job_purge(job *pjob);
 
 char *get_correct_jobname(const char *jobid);
-
-job *find_job(char *jobid);
 
 #ifndef PBS_MOM
 void initialize_all_jobs_array(struct all_jobs *aj);

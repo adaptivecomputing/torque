@@ -85,7 +85,7 @@
  *   job_alloc    allocate job struct and initialize defaults
  *   job_free   free space allocated to the job structure and its
  *    childern structures.
- *   job_purge   purge job from server
+ *   svr_job_purge   purge job from server
  *
  *   job_clone    clones a job (for use with job_arrays)
  *   job_clone_wt work task for cloning a job
@@ -93,7 +93,7 @@
  * Include private function:
  *   job_init_wattr() initialize job working pbs_attribute array to "unspecified"
  *
- * NOTE: for multi-threaded TORQUE, all functions in here except find_job assume that
+ * NOTE: for multi-threaded TORQUE, all functions in here except svr_find_job assume that
  * the caller holds any relevant mutexes
  */
 
@@ -471,7 +471,7 @@ int job_abt(
         if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
           {
           depend_on_term(pjob);
-          pjob = find_job(job_id);
+          pjob = svr_find_job(job_id);
           }
         
         /* update internal array bookeeping values */
@@ -495,12 +495,12 @@ int job_abt(
               log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
               }
             pthread_mutex_unlock(pa->ai_mutex);
-            pjob = find_job(job_id);
+            pjob = svr_find_job(job_id);
             }
           }
       
         if (pjob != NULL)
-          job_purge(pjob);
+          svr_job_purge(pjob);
 
         *pjobp = NULL;
         }
@@ -532,7 +532,7 @@ int job_abt(
       {
       strcpy(job_id, pjob->ji_qs.ji_jobid);
       depend_on_term(pjob);
-      pjob = find_job(job_id);
+      pjob = svr_find_job(job_id);
       }
 
     /* update internal array bookeeping values */
@@ -556,12 +556,12 @@ int job_abt(
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
           }
         pthread_mutex_unlock(pa->ai_mutex);
-        pjob = find_job(job_id);
+        pjob = svr_find_job(job_id);
         }
       }
 
     if (pjob != NULL)
-      job_purge(pjob);
+      svr_job_purge(pjob);
 
     *pjobp = NULL;
     }
@@ -1042,7 +1042,7 @@ void *job_clone_wt(
     }
 
   /* don't call get_jobs_array because the template job isn't part of the array */
-  if (((template_job = find_job(jobid)) == NULL) ||
+  if (((template_job = svr_find_job(jobid)) == NULL) ||
       ((pa = get_jobs_array(&template_job)) == NULL))
     {
     free(jobid);
@@ -1093,7 +1093,7 @@ void *job_clone_wt(
         pthread_mutex_unlock(pa->ai_mutex);
 
         if (rc != PBSE_JOB_RECYCLED)
-          job_purge(pjobclone);
+          svr_job_purge(pjobclone);
 
         pthread_mutex_lock(pa->ai_mutex);
         continue;
@@ -1103,7 +1103,7 @@ void *job_clone_wt(
         {
         /* XXX need more robust error handling */
         pthread_mutex_unlock(pa->ai_mutex);
-        job_purge(pjobclone);
+        svr_job_purge(pjobclone);
         pthread_mutex_lock(pa->ai_mutex);
         continue;
         }
@@ -1135,7 +1135,7 @@ void *job_clone_wt(
     
     actual_job_count++;
     
-    if ((pjob = find_job(pa->job_ids[i])) == NULL)
+    if ((pjob = svr_find_job(pa->job_ids[i])) == NULL)
       {
       free(pa->job_ids[i]);
       pa->job_ids[i] = NULL;
@@ -1583,7 +1583,7 @@ int record_jobinfo(
 
 
 /*
- * job_purge - purge job from system
+ * svr_job_purge - purge job from system
  *
  * The job is dequeued; the job control file, script file and any spooled
  * output files are unlinked, and the job structure is freed.
@@ -1591,7 +1591,7 @@ int record_jobinfo(
  * removed.
  */
 
-int job_purge(
+int svr_job_purge(
 
   job *pjob)  /* I (modified) */
 
@@ -1814,7 +1814,7 @@ int job_purge(
     }
 
   return(PBSE_NONE);
-  }  /* END job_purge() */
+  }  /* END svr_job_purge() */
 
 
 
@@ -2071,13 +2071,13 @@ job *find_job_by_array(
 
 
 /*
- * find_job() - find job by jobid
+ * svr_find_job() - find job by jobid
  *
  * Search list of all server jobs for one with same job id
  * Return NULL if not found or pointer to job struct if found
  */
 
-job *find_job(
+job *svr_find_job(
 
   char *jobid)
 
@@ -2124,7 +2124,7 @@ job *find_job(
     free(comp);
 
   return(pj);  /* may be NULL */
-  }   /* END find_job() */
+  }   /* END svr_find_job() */
 
 
 
@@ -2558,7 +2558,7 @@ job_array *get_jobs_array(
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
       
-      if ((pjob = find_job(jobid)) == NULL)
+      if ((pjob = svr_find_job(jobid)) == NULL)
         {
         pthread_mutex_unlock(pa->ai_mutex);
         pa = NULL;

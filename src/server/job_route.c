@@ -639,7 +639,7 @@ void *reroute_job(
   jobid = (char *)vp;
 
   if ((jobid != NULL) &&
-      ((pjob = find_job(jobid)) != NULL))
+      ((pjob = svr_find_job(jobid)) != NULL))
     {
     pque = get_jobs_queue(&pjob);
 

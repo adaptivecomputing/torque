@@ -116,7 +116,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_jobobit.h" /* req_jobobit */
 #include "svr_connect.h" /* svr_connect */
-#include "job_func.h" /* job_purge */
+#include "job_func.h" /* svr_job_purge */
 
 
 #define RESC_USED_BUF 2048
@@ -387,7 +387,7 @@ static struct batch_request *return_stdfile(
  * is to be copied, if so set up the Copy Files request.
  */
 
-static struct batch_request *cpy_stdfile(
+struct batch_request *cpy_stdfile(
 
   struct batch_request *preq,
   job                  *pjob,
@@ -803,7 +803,8 @@ int handle_exiting_or_abort_substate(
     pjob = NULL;
     }
  
-  if ((pjob != NULL) || ((pjob = find_job(job_id)) != NULL))
+  if ((pjob != NULL) ||
+      ((pjob = svr_find_job(job_id)) != NULL))
     {
     svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_RETURNSTD, FALSE);
     pthread_mutex_unlock(pjob->ji_mutex);
@@ -1012,7 +1013,7 @@ int handle_returnstd(
     free_br(preq);
     }
 
-  if ((pjob = find_job(job_id)) != NULL)
+  if ((pjob = svr_find_job(job_id)) != NULL)
     {
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEOUT, FALSE);
     pthread_mutex_unlock(pjob->ji_mutex);
@@ -1035,20 +1036,21 @@ int handle_stageout(
   struct batch_request *preq)
 
   {
-  int rc = PBSE_NONE;
+  int     rc = PBSE_NONE;
   int     IsFaked = 0;
   int     spool_file_exists;
   char    log_buf[LOCAL_LOG_BUF_SIZE+1];
   char    namebuf[MAXPATHLEN + 1];
   char   *namebuf2;
-  int handle = -1;
-  char job_id[PBS_MAXSVRJOBID+1];
-  char *job_momname = NULL;
-  char job_fileprefix[PBS_JOBBASE+1];
+  int     handle = -1;
+  char    job_id[PBS_MAXSVRJOBID+1];
+  char   *job_momname = NULL;
+  char    job_fileprefix[PBS_JOBBASE+1];
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
   job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+
   if (job_momname == NULL)
     {
     pthread_mutex_unlock(pjob->ji_mutex);
@@ -1160,7 +1162,7 @@ int handle_stageout(
           LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
         }
       
-      if ((pjob = find_job(job_id)) == NULL)
+      if ((pjob = svr_find_job(job_id)) == NULL)
         {
         rc = PBSE_JOBNOTFOUND;
         goto handle_stageout_cleanup;
@@ -1249,7 +1251,7 @@ int handle_stageout(
     preq = NULL;
     } /* END if preq != NULL */
 
-  if ((pjob = find_job(job_id)) != NULL)
+  if ((pjob = svr_find_job(job_id)) != NULL)
     {
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEDEL, FALSE);
     pthread_mutex_unlock(pjob->ji_mutex);
@@ -1373,7 +1375,7 @@ int handle_stagedel(
           LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
         }
       
-      if ((pjob = find_job(job_id)) == NULL)
+      if ((pjob = svr_find_job(job_id)) == NULL)
         {
         rc = PBSE_JOBNOTFOUND;
         goto handle_stagedel_cleanup;
@@ -1385,7 +1387,7 @@ int handle_stagedel(
     free_br(preq);
     }
 
-  if ((pjob = find_job(job_id)) != NULL)
+  if ((pjob = svr_find_job(job_id)) != NULL)
     {
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITED, FALSE);
     pthread_mutex_unlock(pjob->ji_mutex);
@@ -1451,7 +1453,7 @@ int handle_exited(
 
   preq = NULL;
   
-  if ((pjob = find_job(job_id)) == NULL)
+  if ((pjob = svr_find_job(job_id)) == NULL)
     return PBSE_JOBNOTFOUND;
 
   rel_resc(pjob); /* free any resc assigned to the job */
@@ -1548,10 +1550,12 @@ int handle_complete_first_time(
 
   if (KeepSeconds <= 0)
     {
-    rc = job_purge(pjob);
+    rc = svr_job_purge(pjob);
+
     if (rc == PBSE_UNKJOBID)
       pthread_mutex_unlock(pjob->ji_mutex);
-    return rc;
+
+    return(rc);
     }
 
   job_complete = pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE ? 1 : 0;
@@ -1660,10 +1664,10 @@ int handle_complete_second_time(
     }
   else
     {
-    rc = job_purge(pjob);
+    rc = svr_job_purge(pjob);
+
     if (rc == PBSE_UNKJOBID)
       pthread_mutex_unlock(pjob->ji_mutex);
-    
     }
   return(rc); 
   } /* END handle_complete_second_time() */
@@ -1739,7 +1743,7 @@ void on_job_exit(
     }
 
   /* make sure the job is actually still there */
-  pjob = find_job(job_id);
+  pjob = svr_find_job(job_id);
 
   /* if the job doesn't exist, just exit */
   if (pjob == NULL)
@@ -1781,7 +1785,8 @@ void on_job_exit(
        * and keep_completed is a positive value. This is so that a completed
        * job can be restarted from a checkpoint file.
        */
-      if ((pjob == NULL) && ((pjob = find_job(job_id)) == NULL))
+      if ((pjob == NULL) && 
+          ((pjob = svr_find_job(job_id)) == NULL))
         break;
 
       if ((rc = handle_returnstd(pjob,preq,type)) != PBSE_NONE)
@@ -1792,7 +1797,8 @@ void on_job_exit(
 
     case JOB_SUBSTATE_STAGEOUT:
 
-      if ((pjob == NULL) && ((pjob = find_job(job_id)) == NULL))
+      if ((pjob == NULL) &&
+          ((pjob = svr_find_job(job_id)) == NULL))
         break;
 
       if ((rc = handle_stageout(pjob,type,preq)) != PBSE_NONE)
@@ -1803,7 +1809,8 @@ void on_job_exit(
 
     case JOB_SUBSTATE_STAGEDEL:
 
-      if ((pjob == NULL) && ((pjob = find_job(job_id)) == NULL))
+      if ((pjob == NULL) &&
+          ((pjob = svr_find_job(job_id)) == NULL))
         break;
 
       if ((rc = handle_stagedel(pjob,type,preq)) != PBSE_NONE)
@@ -1813,7 +1820,8 @@ void on_job_exit(
 
     case JOB_SUBSTATE_EXITED:
 
-      if ((pjob == NULL) && ((pjob = find_job(job_id)) == NULL))
+      if ((pjob == NULL) &&
+          ((pjob = svr_find_job(job_id)) == NULL))
         break;
 
       if ((rc = handle_exited(pjob)) == PBSE_JOBNOTFOUND)
@@ -1823,7 +1831,8 @@ void on_job_exit(
 
     case JOB_SUBSTATE_COMPLETE:
 
-      if ((pjob == NULL) && ((pjob = find_job(job_id)) == NULL))
+      if ((pjob == NULL) &&
+          ((pjob = svr_find_job(job_id)) == NULL))
         break;
 
       if (type == WORK_Immed) /* WORK_Immed == PBSE_NONE.... */
@@ -1902,7 +1911,7 @@ void on_job_rerun(
     return;
     }
 
-  pjob = find_job(jobid);
+  pjob = svr_find_job(jobid);
   free(jobid);
 
   /* the job has already exited */
@@ -2509,7 +2518,7 @@ int req_jobobit(
   tmp = parse_servername(preq->rq_host, &dummy);
   mom_addr = get_hostaddr(&local_errno, tmp);
 
-  pjob = find_job(job_id);
+  pjob = svr_find_job(job_id);
   if ((pjob == NULL) ||
       (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != mom_addr))
     {
@@ -2935,7 +2944,7 @@ int req_jobobit(
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
         }
       pthread_mutex_unlock(pa->ai_mutex);
-      pjob = find_job(job_id);
+      pjob = svr_find_job(job_id);
       if (pjob == NULL)
         return(PBSE_UNKJOBID);
       }

@@ -103,7 +103,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "svrfunc.h"
-#include "mom_job_func.h" /* job_purge */
+#include "mom_job_func.h" /* mom_job_purge */
 
 #include "mom_func.h"
 #include "utils.h"
@@ -241,7 +241,7 @@ void req_quejob(
 
   /* does job already exist, check both old and new jobs */
 
-  if ((pj = find_job(jid)) == NULL)
+  if ((pj = mom_find_job(jid)) == NULL)
     {
     pj = (job *)GET_NEXT(svr_newjobs);
 
@@ -357,7 +357,7 @@ void req_quejob(
 
       /* didn`t recognize the name */
 
-      job_purge(pj);   /* CRI - 12/20/2004 */
+      mom_job_purge(pj);   /* CRI - 12/20/2004 */
 
       reply_badattr(PBSE_NOATTR, 1, psatl, preq);
 
@@ -372,7 +372,7 @@ void req_quejob(
       {
       /* FAILURE */
 
-      job_purge(pj);
+      mom_job_purge(pj);
 
       reply_badattr(PBSE_ATTRRO, 1, psatl, preq);
 
@@ -405,7 +405,7 @@ void req_quejob(
 
       /* all errors are fatal for MOM */
 
-      job_purge(pj);
+      mom_job_purge(pj);
 
       reply_badattr(rc, 1, psatl, preq);
 
@@ -423,7 +423,7 @@ void req_quejob(
 
         if (prdef == NULL)
           {
-          job_purge(pj);
+          mom_job_purge(pj);
 
           reply_badattr(rc, 1, psatl, preq);
 
@@ -497,7 +497,7 @@ void req_quejob(
 
     close_conn(sock, FALSE);
 
-    job_purge(pj);
+    mom_job_purge(pj);
 
     return;
     }
@@ -715,7 +715,7 @@ void req_mvjobfile(
   pj = locate_new_job(preq->rq_conn, NULL);
 
   if (pj == NULL)
-    pj = find_job(preq->rq_ind.rq_jobfile.rq_jobid);
+    pj = mom_find_job(preq->rq_ind.rq_jobfile.rq_jobid);
 
   if (pj == NULL)
     {
@@ -899,7 +899,7 @@ void req_rdytocommit(
 
     close_conn(sock, FALSE);
 
-    job_purge(pj);
+    mom_job_purge(pj);
 
     return;
     }

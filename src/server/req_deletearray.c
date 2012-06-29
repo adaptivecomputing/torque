@@ -389,7 +389,7 @@ void array_delete_wt(
     if (pa->job_ids[i] == NULL)
       continue;
     
-    if ((pjob = find_job(pa->job_ids[i])) == NULL)
+    if ((pjob = svr_find_job(pa->job_ids[i])) == NULL)
       {
       free(pa->job_ids[i]);
       pa->job_ids[i] = NULL;
@@ -430,7 +430,7 @@ void array_delete_wt(
         
         if (pjob != NULL)
           {
-          /* job_abt() calls job_purge which will try to lock the array again */
+          /* job_abt() calls svr_job_purge which will try to lock the array again */
           pthread_mutex_unlock(pa->ai_mutex);
           job_abt(&pjob, NULL);
           pthread_mutex_lock(pa->ai_mutex);
@@ -438,7 +438,7 @@ void array_delete_wt(
         }
       else
         {
-        /* job_abt() calls job_purge which will try to lock the array again */
+        /* job_abt() calls svr_job_purge which will try to lock the array again */
         pthread_mutex_unlock(pa->ai_mutex);
         job_abt(&pjob, NULL);
         pthread_mutex_lock(pa->ai_mutex);

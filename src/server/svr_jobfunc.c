@@ -316,7 +316,7 @@ int svr_enquejob(
     }
 
   /* This is called when a job is not yet in the queue,
-   * so find_job can not be used.... */
+   * so svr_find_job can not be used.... */
   pthread_mutex_lock(pjob->ji_mutex);
 
   if (pjob->ji_being_recycled == TRUE)
@@ -398,7 +398,7 @@ int svr_enquejob(
         }
       pthread_mutex_unlock(pjcur->ji_mutex);
       }
-    if ((pjob = find_job(job_id)) == NULL)
+    if ((pjob = svr_find_job(job_id)) == NULL)
       {
       unlock_queue(pque, __func__, "array_template check lost job", LOGLEVEL);
       return(PBSE_JOBNOTFOUND);
@@ -441,7 +441,7 @@ int svr_enquejob(
         }
       pthread_mutex_unlock(pjcur->ji_mutex);
       } /* end of while */
-    if ((pjob = find_job(job_id)) == NULL)
+    if ((pjob = svr_find_job(job_id)) == NULL)
       {
       unlock_queue(pque, __func__, "array_template check lost job", LOGLEVEL);
       return(PBSE_JOBNOTFOUND);
@@ -591,7 +591,7 @@ int svr_dequejob(
 
   /* remove job from server's all job list and reduce server counts */
 
-  if ((pjob = find_job(job_id)) == NULL)
+  if ((pjob = svr_find_job(job_id)) == NULL)
     return(PBSE_JOBNOTFOUND);
 
   if (parent_queue_mutex_held == FALSE)
@@ -2123,7 +2123,7 @@ void job_wait_over(
     return;
     }
 
-  pjob = find_job(jobid);
+  pjob = svr_find_job(jobid);
   free(jobid);
 
   if (pjob != NULL)

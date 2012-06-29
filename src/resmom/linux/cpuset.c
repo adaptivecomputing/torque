@@ -970,7 +970,7 @@ void cleanup_torque_cpuset(void)
        * If not, delete the cpuset.
        */
 
-      if (find_job(pdirent->d_name) == NULL)
+      if (mom_find_job(pdirent->d_name) == NULL)
         {
         if (LOGLEVEL >= 6)
           {

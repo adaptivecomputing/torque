@@ -144,7 +144,7 @@
 #include "req_rerun.h" /* req_rerunjob */
 #include "req_select.h" /* req_selectjobs */
 #include "req_register.h" /* req_register, req_registerarray */
-#include "job_func.h" /* job_purge */
+#include "job_func.h" /* svr_job_purge */
 #include "tcp.h" /* tcp_chan */
 
 /*
@@ -596,7 +596,7 @@ int process_request(
         *dptr = '\0';
         }
       
-      if ((pjob = find_job(request->rq_ind.rq_modify.rq_objname)) != (job *)0)
+      if ((pjob = svr_find_job(request->rq_ind.rq_modify.rq_objname)) != (job *)0)
         {
         if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
           {
@@ -1018,14 +1018,14 @@ int close_quejob_by_jobid(
   int  rc = PBSE_NONE;
   job *pjob = NULL;
 
-  if ((pjob = find_job(job_id)) == NULL)
+  if ((pjob = svr_find_job(job_id)) == NULL)
     {
     rc = PBSE_JOBNOTFOUND;
     }
   else if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
     {
     remove_job(&newjobs,pjob);
-    job_purge(pjob);
+    svr_job_purge(pjob);
     pjob = NULL;
     }
   else if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
