@@ -280,7 +280,7 @@ int set_resources(
       if (!strncmp(r,"gpus",strlen("gpus")))
         {
         /* handle gpus specially */
-        char *gpu_suffix = "gpus=";
+        char *gpu_suffix = "gpus:";
         int   gpu_len = strlen(gpu_suffix) + 1 + (e - v);
 
         str = calloc(1, gpu_len);
