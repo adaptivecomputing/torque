@@ -195,6 +195,7 @@ extern int              multi_mom;
 #define MAX_BM          64
 #endif
 
+int handle_complete_first_time(job *pjob);
 int is_compute_node(char *node_id);
 int hasprop(struct pbsnode *, struct prop *);
 int add_job_to_node(struct pbsnode *,struct pbssubn *,short,job *,int);
@@ -587,7 +588,7 @@ int check_node_for_job(
   for (np = pnode->nd_psn;np != NULL;np = np->next)
     {
     /* for each jobinfo on subnode on node ... */
-    for (jp = np->jobs;jp != NULL;jp = jp->next)
+    for (jp = np->jobs; jp != NULL; jp = jp->next)
       {
       if (jp->jobid != NULL)
         {
@@ -643,7 +644,7 @@ int is_job_on_node(
     }
   else
     {
-    present = check_node_for_job(pnode,jobid);
+    present = check_node_for_job(pnode, jobid);
     }
 
   if (at != NULL)
@@ -660,22 +661,25 @@ int is_job_on_node(
  * List format is similiar to: gpuati+gpu/1+gpunvidia/4+gpu/5
  */
 int node_in_exechostlist(
-    char *node_name,
-    char *node_ehl)
+    
+  char *node_name,
+  char *node_ehl)
+
   {
-  int rc = FALSE;
+  int   rc = FALSE;
   char *cur_pos = node_ehl;
   char *new_pos = cur_pos;
-  int name_len = strlen(node_name);
+  int   name_len = strlen(node_name);
+
   while (1)
     {
     if ((new_pos = strstr(cur_pos, node_name)) == NULL)
       break;
     else if (new_pos == node_ehl)
       {
-      if ((new_pos+name_len == NULL)
-        || (*(new_pos+name_len) == '+')
-        || (*(new_pos+name_len) == '/'))
+      if ((new_pos+name_len == NULL) ||
+          (*(new_pos+name_len) == '+') ||
+          (*(new_pos+name_len) == '/'))
         {
         rc = TRUE;
         break;
@@ -683,18 +687,179 @@ int node_in_exechostlist(
       }
     else if (*(new_pos-1) == '+')
       {
-      if ((new_pos+name_len == NULL)
-        || (*(new_pos+name_len) == '+')
-        || (*(new_pos+name_len) == '/'))
+      if ((new_pos+name_len == NULL) ||
+          (*(new_pos+name_len) == '+') ||
+          (*(new_pos+name_len) == '/'))
         {
         rc = TRUE;
         break;
         }
       }
+
     cur_pos = new_pos+1;
     }
-  return rc;
-  }
+
+  return(rc);
+  } /* END node_in_exechostlist() */
+
+
+
+
+int kill_job_on_mom(
+
+  char           *jobid,
+  struct pbsnode *pnode)
+
+  {
+  struct batch_request *preq;
+  int                   rc = -1;
+  int                   conn;
+  int                   local_errno = 0;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+
+  /* job is reported by mom but server has no record of job */
+  sprintf(log_buf, "stray job %s found on %s", jobid, pnode->nd_name);
+  log_err(-1, __func__, log_buf);
+  
+  conn = svr_connect(pnode->nd_addrs[0], pnode->nd_mom_port, &local_errno, pnode, NULL, ToServerDIS);
+
+  if (conn >= 0)
+    {
+    if ((preq = alloc_br(PBS_BATCH_SignalJob)) == NULL)
+      {
+      log_err(-1, __func__, "unable to allocate SignalJob request-trouble!");
+      svr_disconnect(conn);
+      }
+    else
+      {
+      strcpy(preq->rq_ind.rq_signal.rq_jid, jobid);
+      strcpy(preq->rq_ind.rq_signal.rq_signame, "SIGKILL");
+      
+      unlock_node(pnode, __func__, NULL, 0);
+      rc = issue_Drequest(conn, preq, release_req, 0);
+      lock_node(pnode, __func__, NULL, 0);
+      
+      if (rc == PBSE_MEM_MALLOC)
+        {
+        free_br(preq);
+        }
+      }
+    }
+
+  return(rc);
+  } /* END kill_job_on_mom() */
+
+
+
+
+int job_should_be_on_node(
+    
+  char           *jobid,
+  struct pbsnode *pnode)
+
+  {
+  int  should_be_on_node = TRUE;
+  job *pjob;
+  
+  if (strstr(jobid, server_name) != NULL)
+    {
+    if ((is_job_on_node(pnode, jobid)) == FALSE)
+      {
+      pjob = svr_find_job(jobid);
+      
+      if (pjob != NULL)
+        {
+        /* job exists, but doesn't currently have resources assigned
+         * to this node double check the job struct because we
+         * could be in the middle of moving the job around because
+         * of data staging, suspend, or rerun */            
+        if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
+          {
+          pthread_mutex_unlock(pjob->ji_mutex);
+          
+          should_be_on_node = FALSE;
+          }
+        else if (node_in_exechostlist(pnode->nd_name, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str) == FALSE)
+          {
+          pthread_mutex_unlock(pjob->ji_mutex);
+          
+          should_be_on_node = FALSE;
+          }
+        else
+          pthread_mutex_unlock(pjob->ji_mutex);
+        }
+      else
+        should_be_on_node = FALSE;
+      }
+    }
+
+  return(should_be_on_node);
+  } /* END job_should_be_on_node() */
+
+
+
+
+void *finish_job(
+
+  void *vp)
+
+  {
+  char *jobid = (char *)vp;
+  job  *pjob;
+
+  if (jobid == NULL)
+    return(NULL);
+  else if ((pjob = svr_find_job(jobid)) == NULL)
+    {
+    free(jobid);
+
+    return(NULL);
+    }
+
+  free(jobid);
+
+  free_nodes(pjob);
+
+  svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
+
+  handle_complete_first_time(pjob);
+
+  return(NULL);
+  } /* END finish_job() */
+
+
+
+
+int remove_jobs_that_have_disappeared(
+
+  struct pbsnode  *pnode,
+  resizable_array *reported_ms_jobs)
+
+  {
+  int   iter = -1;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char *jobid;
+  
+  while ((jobid = (char *)pop_thing(pnode->nd_ms_jobs)) != NULL)
+    {
+    /* mom didn't report this job - it has exited unexpectedly */
+    snprintf(log_buf, sizeof(log_buf),
+      "Server thinks job %s is on node %s, but the mom doesn't. Terminating job",
+      jobid, pnode->nd_name);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);  
+
+    enqueue_threadpool_request(finish_job, jobid);
+    }
+
+  /* now replace the old resizable array with the ones currently reported */
+  while ((jobid = (char *)next_thing(reported_ms_jobs, &iter)) != NULL)
+    insert_thing(pnode->nd_ms_jobs, jobid);
+
+  return(PBSE_NONE);
+  } /* END remove_jobs_that_have_disappeared() */
+
+
+
 
 /*
  * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
@@ -718,17 +883,8 @@ void *sync_node_jobs(
   char                 *jobstring_in;
   char                 *joblist;
   char                 *jobidstr;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-
-  struct batch_request *preq;
-  int                   conn;
-  int                   local_errno = 0;
+  resizable_array      *ms_jobs;
   int                   rc;
-  unsigned long         node_addr;
-  unsigned short        node_port;
-
-  job                  *pjob;
-  char  node_name[PBS_MAXHOSTNAME + 1];
 
   if (vp == NULL)
     return(NULL);
@@ -744,14 +900,13 @@ void *sync_node_jobs(
   else
     {
     /* bad input */
-    if (raw_input != NULL)
-      free(raw_input);
+    free(raw_input);
+
     return(NULL);
     }
-
-  if (!isdigit(*jobstring_in))
+    
+  if ((np = find_nodebyname(node_id)) == NULL)
     {
-    /* NO-OP */
     free(raw_input);
 
     return(NULL);
@@ -760,82 +915,36 @@ void *sync_node_jobs(
   /* FORMAT <JOBID>[ <JOBID>]... */
   joblist = jobstring_in;
   jobidstr = threadsafe_tokenizer(&joblist, " ");
+  
+  ms_jobs = initialize_resizable_array(MAX(np->nd_ms_jobs->num, 2));
 
-  while ((jobidstr != NULL) && isdigit(*jobidstr))
+  while ((jobidstr != NULL) && 
+         (isdigit(*jobidstr)) != FALSE)
     {
-    if ((np = find_nodebyname(node_id)) != NULL)
+    if (job_should_be_on_node(jobidstr, np) == FALSE)
       {
-      node_addr = np->nd_addrs[0];
-      node_port = np->nd_mom_port;
-      memset(node_name, 0, PBS_MAXHOSTNAME);
-      strncpy(node_name, np->nd_name, PBS_MAXHOSTNAME);
-      if (strstr(jobidstr, server_name) != NULL)
-        {
-        if ((is_job_on_node(np, jobidstr)) == FALSE)
-          {
-          unlock_node(np, __func__, "is_job_on_node == FALSE", LOGLEVEL);
-          np = NULL;
-          pjob = svr_find_job(jobidstr);
-          
-          if (pjob != NULL)
-            {
-            /* job exists, but doesn't currently have resources assigned
-             * to this node double check the job struct because we
-             * could be in the middle of moving the job around because
-             * of data staging, suspend, or rerun */            
-            if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
-              {
-              pthread_mutex_unlock(pjob->ji_mutex);
-              
-              pjob = NULL;
-              }
-            else if (node_in_exechostlist(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, node_name) == FALSE)
-              {
-              pthread_mutex_unlock(pjob->ji_mutex);
-              
-              pjob = NULL;
-              }
-            else
-              pthread_mutex_unlock(pjob->ji_mutex);
-            }
-          
-          if (pjob == NULL)
-            {
-            /* job is reported by mom but server has no record of job */
-            sprintf(log_buf, "stray job %s found on %s", jobidstr, node_name);
-            log_err(-1, __func__, log_buf);
-            conn = svr_connect(node_addr,node_port,&local_errno,NULL,NULL,ToServerDIS);
-            if (conn >= 0)
-              {
-              if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
-                {
-                log_err(-1, __func__,
-                    "unable to allocate DeleteJob request-trouble!");
-                svr_disconnect(conn);
-                }
-              else
-                {
-                strcpy(preq->rq_ind.rq_delete.rq_objname, jobidstr);
-                rc = issue_Drequest(conn, preq, release_req, 0);
-                if (rc == PBSE_MEM_MALLOC)
-                  {
-                  sprintf(log_buf, "%d  freeing %ld", rc, (long)preq);
-                  log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, log_buf);
-                  free_br(preq);
-                  }
-                }
-              }
-            }
-          } /* END is_job_on_node == NULL */
-        }
-      if (np != NULL)
-        unlock_node(np, __func__, "end job check", LOGLEVEL);
-      } /* end if np != NULL */
+      rc = kill_job_on_mom(jobidstr, np);
+      }
+    else
+      {
+      char *jobid = remove_thing_memcmp(np->nd_ms_jobs, jobidstr, strlen(jobidstr));
+
+      if (jobid != NULL)
+        insert_thing(ms_jobs, jobid);
+      }
+    
     jobidstr = threadsafe_tokenizer(&joblist, " ");
-    }  /* END while ((jobidstr != NULL) && ...) */
+    } /* END while ((jobidstr != NULL) && ...) */
 
   /* SUCCESS */
   free(raw_input);
+
+  /* now check if the mom is reporting any jobs that the server doesn't know about */
+  remove_jobs_that_have_disappeared(np, ms_jobs);
+
+  free_resizable_array(ms_jobs);
+
+  unlock_node(np, __func__, NULL, 0);
 
   return(NULL);
   }  /* END sync_node_jobs() */
@@ -2816,8 +2925,8 @@ static int gpu_count(
         count,
         (freeonly? "free":"available"),
         pnode->nd_name);
-
-		  log_ext(-1, __func__, log_buf, LOG_DEBUG);
+    
+      log_ext(-1, __func__, log_buf, LOG_DEBUG);
       }
     return (count);
     }
@@ -2868,7 +2977,7 @@ static int gpu_count(
       (freeonly? "free":"available"),
       pnode->nd_name);
 
-	  log_ext(-1, __func__, log_buf, LOG_DEBUG);
+    log_ext(-1, __func__, log_buf, LOG_DEBUG);
     }
 
   return(count);
@@ -4922,6 +5031,28 @@ int build_hostlist_procs_req(
 
 
 
+int add_to_ms_list(
+    
+  char *node_name,
+  job  *pjob)
+
+  {
+  struct pbsnode *pnode = find_nodebyname(node_name);
+
+  if (pnode != NULL)
+    {
+    insert_thing(pnode->nd_ms_jobs, strdup(pjob->ji_qs.ji_jobid));
+
+    unlock_node(pnode, __func__, NULL, 0);
+    }
+
+  return(PBSE_NONE);
+  } /* END add_to_ms_list() */
+
+
+
+
+
 /*
  * set_nodes() - Call node_spec() to allocate nodes then set them inuse.
  * Build list of allocated nodes to pass back in rtnlist.
@@ -5039,6 +5170,9 @@ int set_nodes(
 
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HasNodes;  /* indicate has nodes */
 
+  /* add this job to ms's job list */
+  add_to_ms_list(hlist->name, pjob);
+
   /* build list of allocated nodes, gpus, and ports */
   if ((rc = translate_howl_to_string(hlist, EMsg, &NCount, rtnlist, rtnportlist, TRUE)) != PBSE_NONE)
     {
@@ -5098,14 +5232,14 @@ int set_nodes(
       pjob->ji_wattr[JOB_ATR_gpu_flags].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
       
       if (LOGLEVEL >= 7)
-	      {
+        {
         sprintf(log_buf, "setting gpu_flags for job %s to %d %ld",
           pjob->ji_qs.ji_jobid,
           gpu_flags,
           pjob->ji_wattr[JOB_ATR_gpu_flags].at_val.at_long);
 
-  		  log_ext(-1, __func__, log_buf, LOG_DEBUG);
-	      }
+        log_ext(-1, __func__, log_buf, LOG_DEBUG);
+        }
 /*      job_save(pjob,SAVEJOB_FULL,0); */
       }
 #endif  /* NVIDIA_GPUS */

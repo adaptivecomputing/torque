@@ -2855,7 +2855,7 @@ void init_abt_job(
   svr_job_purge(pjob);
 
   return;
-  }
+  } /* END init_abt_job() */
 
 
 

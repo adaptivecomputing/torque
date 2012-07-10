@@ -145,6 +145,9 @@ extern int LOGLEVEL;
 /* data global only to this file */
 
 static const unsigned int quicksize = sizeof(struct jobfix);
+#ifndef PBS_MOM
+int add_to_ms_list(char *node_name, job *pjob);
+#endif
 
 /*
  * job_save() - Saves (or updates) a job structure image on disk
@@ -563,6 +566,25 @@ job *job_recov(
 
     return(NULL);
     }
+
+#ifndef PBS_MOM
+  if (pj->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+    {
+    /* add job to the mother superior list for it's node */
+    char *ms = strdup(pj->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    char *end = strchr(ms, '/');
+
+    if (end != NULL)
+      *end = '\0';
+
+    if ((end = strchr(ms, '+')) != NULL)
+      *end = '\0';
+
+    add_to_ms_list(ms, pj);
+
+    free(ms);
+    }
+#endif
 
 #ifdef PBS_MOM
   /* read in tm sockets and ips */

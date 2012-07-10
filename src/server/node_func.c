@@ -690,6 +690,8 @@ int status_nodeattrib(
   }  /* END status_nodeattrib() */
 
 
+
+
 /*
  * initialize_pbsnode - carries out initialization on a new
  * pbs node.  The assumption is that all the parameters are valid.
@@ -731,6 +733,7 @@ int initialize_pbsnode(
   pnode->nd_ngpus           = 0;
   pnode->nd_gpustatus       = NULL;
   pnode->nd_ngpustatus      = 0;
+  pnode->nd_ms_jobs         = initialize_resizable_array(20);
 
   pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)

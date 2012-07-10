@@ -10,7 +10,9 @@ char  buf[4096];
 char *napali = "napali";
 char *l11 =    "l11";
 
+int   node_in_exechostlist(char *, char *);
 char *get_next_exec_host(char **);
+int   job_should_be_on_node(char *, struct pbsnode *);
 
 START_TEST(get_next_exec_host_test)
   {
@@ -44,12 +46,61 @@ START_TEST(get_next_exec_host_test)
   }
 END_TEST
 
-START_TEST(test_two)
+
+
+
+START_TEST(job_should_be_on_node_test)
   {
+  struct pbsnode pnode;
+  struct pbssubn subnode;
+  struct jobinfo jinfo;
 
+  memset(&pnode, 0, sizeof(pnode));
+  memset(&jinfo, 0, sizeof(jinfo));
+  memset(&subnode, 0, sizeof(subnode));
 
+  pnode.nd_name = "tom";
+  pnode.nd_psn = &subnode;
+  subnode.jobs = &jinfo;
+  strcpy(jinfo.jobid, "1");
+
+  fail_unless(job_should_be_on_node("2", &pnode) == FALSE, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_on_node("3", &pnode) == FALSE, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_on_node("4", &pnode) == FALSE, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_on_node("1", &pnode) == TRUE, "false positive");
+  fail_unless(job_should_be_on_node("5", &pnode) == TRUE, "false positive");
   }
 END_TEST
+
+
+
+
+START_TEST(node_in_exechostlist_test)
+  {
+  char *eh1 = "tom/0+bob/0";
+  char *eh2 = "mytom/0+tommy/0+tom1/0";
+  char *node1 = "tom";
+  char *node2 = "bob";
+  char *node3 = "mytom";
+  char *node4 = "tommy";
+  char *node5 = "tom1";
+
+  fail_unless(node_in_exechostlist(node1, eh1) == TRUE, "blah1");
+  fail_unless(node_in_exechostlist(node2, eh1) == TRUE, "blah2");
+  fail_unless(node_in_exechostlist(node3, eh1) == FALSE, "blah3");
+  fail_unless(node_in_exechostlist(node4, eh1) == FALSE, "blah4");
+  fail_unless(node_in_exechostlist(node5, eh1) == FALSE, "blah5");
+  
+  fail_unless(node_in_exechostlist(node1, eh2) == FALSE, "blah6");
+  fail_unless(node_in_exechostlist(node2, eh2) == FALSE, "blah7");
+  fail_unless(node_in_exechostlist(node3, eh2) == TRUE, "blah8");
+  fail_unless(node_in_exechostlist(node4, eh2) == TRUE, "blah9");
+  fail_unless(node_in_exechostlist(node5, eh2) == TRUE, "blah10");
+  }
+END_TEST
+
+
+
 
 Suite *node_manager_suite(void)
   {
@@ -58,11 +109,15 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, get_next_exec_host_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("job_should_be_on_node_test");
+  tcase_add_test(tc_core, job_should_be_on_node_test);
   suite_add_tcase(s, tc_core);
 
-  return s;
+  tc_core = tcase_create("node_in_exechostlist_test");
+  tcase_add_test(tc_core, node_in_exechostlist_test);
+  suite_add_tcase(s, tc_core);
+
+  return(s);
   }
 
 void rundebug()
