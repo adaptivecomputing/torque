@@ -2125,6 +2125,12 @@ void stream_eof(
 
   struct pbsnode *np = NULL;
 
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buf, "stream: %d, addr: %ld, port %d", stream, addr, port);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
   if (addr != 0)
     {
     np = AVL_find(addr, port, ipaddrs);
@@ -2138,15 +2144,15 @@ void stream_eof(
     }
 
   /* Before we mark this node down see if we can connect */
+  lock_node(np, __func__, "parent", LOGLEVEL);
   conn = svr_connect(addr, port, &my_err, np, NULL, cntype);
   if(conn >= 0)
     {
+    unlock_node(np, __func__, "parent", LOGLEVEL);
     close_conn(conn, FALSE);
     return;
     }
 
-
-  lock_node(np, __func__, "parent", LOGLEVEL);
 
   sprintf(log_buf,
     "connection to %s is no longer valid, connection may have been closed remotely, remote service may be down, or message may be corrupt (%s).  setting node state to down",

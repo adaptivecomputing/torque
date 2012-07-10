@@ -2,6 +2,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations
+  b - Fixed a deadlock with nodes in stream_eof after call to svr_connect.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine
