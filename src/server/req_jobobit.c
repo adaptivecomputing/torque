@@ -1498,20 +1498,17 @@ int handle_complete_first_time(
   job *pjob)
 
   {
-  int rc = PBSE_NONE;
+  int          rc = PBSE_NONE;
   pbs_queue   *pque;
   int          KeepSeconds = 0;
   time_t       time_now = time(NULL);
   char         log_buf[LOCAL_LOG_BUF_SIZE+1];
   long         must_report = FALSE;
   int          job_complete = 0;
-  char job_id[PBS_MAXSVRJOBID+1];
-
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   /* first time in */
   if (LOGLEVEL >= 4)
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,"JOB_SUBSTATE_COMPLETE");
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "JOB_SUBSTATE_COMPLETE");
   
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
@@ -1567,19 +1564,15 @@ int handle_complete_first_time(
      * better be restarting.
      * use the comp_time to determine task invocation time
      */
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s: rc = -1", __func__);
-      log_event(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      job_id,
-      log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
     set_task(WORK_Timed,
       pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
-      on_job_exit, strdup(job_id), FALSE);
+      on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
   else
     {
@@ -1591,17 +1584,13 @@ int handle_complete_first_time(
     pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long = (long)time(NULL);
     pjob->ji_wattr[JOB_ATR_comp_time].at_flags |= ATR_VFLAG_SET;
     
-    if(LOGLEVEL >= 7)
+    if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s", __func__);
-      log_event(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      job_id,
-      log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
-    set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, strdup(job_id), FALSE);
+    set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
     
     if (gettimeofday(&tv, &tz) == 0)
       {
@@ -1619,6 +1608,7 @@ int handle_complete_first_time(
     
     job_save(pjob, SAVEJOB_FULL, 0);
     }
+
   pthread_mutex_unlock(pjob->ji_mutex);
   
   return(FALSE);

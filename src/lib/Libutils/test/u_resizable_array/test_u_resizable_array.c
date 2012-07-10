@@ -376,6 +376,25 @@ END_TEST
 
 
 
+START_TEST(removing_thing_memcmp)
+  {
+  resizable_array *ra = initialize_resizable_array(20);
+  int              i;
+  unsigned int     size = sizeof(a[0]);
+
+  for (i = 0; i < num_elements; i++)
+    fail_unless(remove_thing_memcmp(ra, a[i], size) == NULL, "removing things from empty ra");
+
+  for (i = 0; i < num_elements; i++)
+    insert_thing(ra, a[i]);
+
+  for (i = 0; i < num_elements; i++)
+    fail_unless(remove_thing_memcmp(ra, a[i], size) != NULL, "unable to remove added things");
+  }
+END_TEST
+
+
+
 
 Suite *u_resizable_array_suite(void)
   {
@@ -404,7 +423,11 @@ Suite *u_resizable_array_suite(void)
   tcase_add_test(tc_core, error_cases);
   suite_add_tcase(s, tc_core);
 
-  return s;
+  tc_core = tcase_create("removing_thing_memcmp");
+  tcase_add_test(tc_core, removing_thing_memcmp);
+  suite_add_tcase(s, tc_core);
+
+  return(s);
   }
 
 void rundebug()

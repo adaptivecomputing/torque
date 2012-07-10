@@ -435,6 +435,42 @@ int remove_thing(
 
 
 
+void *remove_thing_memcmp(
+
+  resizable_array *ra,
+  void            *thing,
+  unsigned int     size)
+
+  {
+  int   i = ra->slots[ALWAYS_EMPTY_INDEX].next;
+  void *item = NULL;
+
+  while (i != ALWAYS_EMPTY_INDEX)
+    {
+    /* check if equal */
+    if (!memcmp(ra->slots[i].item, thing, size))
+      {
+      item = ra->slots[i].item;
+
+      unlink_slot(ra, i);
+
+      ra->num--;
+
+      if (i < ra->next_slot)
+        ra->next_slot = i;
+
+      break;
+      }
+
+    i = ra->slots[i].next;
+    }
+
+  return(item);
+  } /* END remove_thing_memcmp() */
+
+
+
+
 /*
  * pop the first thing from the array
  *

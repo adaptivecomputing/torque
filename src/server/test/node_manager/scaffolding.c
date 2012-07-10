@@ -234,10 +234,31 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *find_job(char *jobid)
+job *svr_find_job(char *jobid)
   {
-  fprintf(stderr, "The call to find_job needs to be mocked!!\n");
-  exit(1);
+  static job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+  pjob.ji_mutex = calloc(1, sizeof(pthread_mutex_t));
+  strcpy(pjob.ji_qs.ji_jobid, jobid);
+
+  if ((!strcmp(jobid, "1")) ||
+      (!strcmp(jobid, "5")))
+    {
+    pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("tom/0");
+    }
+  else if (!strcmp(jobid, "4"))
+    {
+    return(NULL);
+    }
+  else if (strcmp(jobid, "2"))
+    {
+    pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("bob/5");
+    }
+  else
+    pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
+
+  return(&pjob);
   }
 
 int update_nodes_file(struct pbsnode *held)
@@ -365,3 +386,34 @@ int insert_addr_name_info(
   return(0);
   }
 
+void *next_thing(resizable_array *ra, int *iter)
+  {
+  return(NULL);
+  }
+
+resizable_array *initialize_resizable_array(int size)
+  {
+  return(NULL);
+  }
+
+int handle_complete_first_time(job *pjob)
+  {
+  return(0);
+  }
+
+void free_resizable_array(resizable_array *ra) {}
+
+void *remove_thing_memcmp(resizable_array *ra, void *thing, unsigned int size)
+  {
+  return(NULL);
+  }
+
+int insert_thing(resizable_array *ra, void *thing)
+  {
+  return(0);
+  }
+
+int svr_setjobstate(job *pjob, int newstate, int newsubstate, int has_queue_mutex)
+  {
+  return(0);
+  }
