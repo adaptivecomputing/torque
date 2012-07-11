@@ -24,7 +24,7 @@ void free_resizable_array(
   free(ra);
   } /* END resizable_array() */
 
-job *find_job(
+job *svr_find_job(
 
   char *job_id)
 

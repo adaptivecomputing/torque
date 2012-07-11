@@ -39,4 +39,5 @@ int pbs_gpumode_err(int c, char *node, char *gpuid, int gpumode)
   fprintf(stderr, "The call to pbs_gpumode_err needs to be mocked!!\n");
   exit(1);
   }
-
+  
+void initialize_network_info() {}

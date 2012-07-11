@@ -124,7 +124,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-int job_purge(job *pjob)
+int svr_job_purge(job *pjob)
   {
   fprintf(stderr, "The call to job_purge needs to be mocked!!\n");
   exit(1);
@@ -436,7 +436,7 @@ void acct_close(void)
   exit(1);
   }
 
-job *find_job(char *jobid)
+job *svr_find_job(char *jobid)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
   exit(1);
@@ -563,3 +563,37 @@ int enqueue_threadpool_request(
 void initialize_login_holder() {}
 
 void initialize_alps_reservations() {}
+
+int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
+  {
+  return(0);
+  }
+
+int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
+  {
+  return(0);
+  }
+
+void initialize_network_info() {}
+
+struct sockaddr_in *get_cached_addrinfo(
+    
+  char               *hostname)
+
+  {
+  return(NULL);
+  }
+
+void initialize_batch_request_holder() {}
+
+int insert_addr_name_info(
+    
+  char               *hostname,
+  char               *full_hostname,
+  struct sockaddr_in *sai)
+  
+  {
+  return(0);
+  }
+
+

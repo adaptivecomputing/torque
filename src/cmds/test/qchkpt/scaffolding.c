@@ -46,3 +46,5 @@ int pbs_checkpointjob_err(int c, char *jobid, char *extend, int *local_err)
   fprintf(stderr, "The call to pbs_checkpointjob_err needs to be mocked!!\n");
   exit(1);
   }
+
+void initialize_network_info() {}

@@ -39,7 +39,7 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
-job *find_job(char *jobid)
+job *svr_find_job(char *jobid)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -83,6 +83,23 @@ char *get_cached_fullhostname(
   char               *hostname,
   struct sockaddr_in *sai)
 
+  {
+  return(NULL);
+  }
+
+int insert_addr_name_info(
+    
+  char               *hostname,
+  char               *full_hostname,
+  struct sockaddr_in *sai)
+
+  {
+  return(0);
+  }
+  
+struct sockaddr_in *get_cached_addrinfo(
+    
+  char               *hostname)
   {
   return(NULL);
   }

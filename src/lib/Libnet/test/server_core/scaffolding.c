@@ -36,4 +36,11 @@ int add_conn(
   return(0);
   }
 
+int enqueue_threadpool_request(
 
+  void *(*func)(void *),
+  void *arg)
+
+  {
+  return(0);
+  }

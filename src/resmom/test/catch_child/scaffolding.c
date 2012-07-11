@@ -1266,7 +1266,7 @@ int mom_do_poll(job *pjob)
   return retval;
   }
 
-void job_purge(job *pjob)
+void mom_job_purge(job *pjob)
   {
   return;
   }

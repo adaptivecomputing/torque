@@ -417,3 +417,8 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int has_queue_mute
   {
   return(0);
   }
+
+void *pop_thing(resizable_array *ra)
+  {
+  return(NULL);
+  }

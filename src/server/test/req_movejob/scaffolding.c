@@ -89,7 +89,7 @@ job *chk_job_request(char *jobid, struct batch_request *preq)
   exit(1);
   }
 
-job *find_job(
+job *svr_find_job(
 
   char *jobid)
 

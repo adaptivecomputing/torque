@@ -59,3 +59,8 @@ pbs_queue *get_jobs_queue(job **pjob)
   return((*pjob)->ji_qhdr);
   }
 
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+

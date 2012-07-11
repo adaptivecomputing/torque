@@ -6,6 +6,7 @@
 #include "resizable_array.h"
 
 job_recycler recycler;
+int          LOGLEVEL;
 
 
 int enqueue_threadpool_request(void *(*func)(void *),void *arg)
