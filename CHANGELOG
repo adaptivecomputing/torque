@@ -1,5 +1,13 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.1.1
+  e - pbs_server will now detect and release orphaned ALPS reservations
+  b - Fixed a deadlock with nodes in stream_eof after call to svr_connect.
+  b - resources_used information now appears in the accounting log again
+      TRQ-1083 and bugzilla 198.
+  b - Fixed a seg-fault found a LBNL where freeaddrinfo would crash because
+      of uninitialized memory.
+
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine
       all nodes to check if the job at hand was there. This should greatly speed

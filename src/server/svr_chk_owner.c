@@ -436,8 +436,8 @@ int authenticate_user(
     {
     struct sockaddr_in *sai1;
     struct sockaddr_in *sai2;
-    struct addrinfo    *addr_info1;
-    struct addrinfo    *addr_info2;
+    struct addrinfo    *addr_info1 = NULL;
+    struct addrinfo    *addr_info2 = NULL;
 
     sai1 = get_cached_addrinfo(preq->rq_host);
     sai2 = get_cached_addrinfo(pcred->hostname);
