@@ -11,7 +11,7 @@ char *msg_svdbopen = "Unable to open server data base";
 char *path_svrdb = NULL;
 struct server server;
 attribute_def svr_attr_def[10];
-
+int disable_timeout_check;
 
 
 

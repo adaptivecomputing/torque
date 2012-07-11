@@ -121,3 +121,4 @@ int parse_at_list(char *list, int use_count, int abs_path)
   exit(1);
   }
 
+void initialize_network_info() {}

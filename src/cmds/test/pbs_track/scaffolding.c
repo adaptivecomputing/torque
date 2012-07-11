@@ -20,3 +20,4 @@ int get_server(char *job_id_in, char *job_id_out, char *server_out)
   exit(1);
   }
 
+void initialize_network_info() {}

@@ -59,3 +59,4 @@ char *pbs_default(void)
   exit(1);
   }
 
+void initialize_network_info() {}

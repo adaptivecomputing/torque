@@ -2156,7 +2156,7 @@ int is_orphaned(
   return(1);
   }
 
-job *find_job(char *jobid)
+job *svr_find_job(char *jobid)
   {
   static struct job pjob;
   static int    i = 0;
@@ -2256,4 +2256,13 @@ struct batch_request *alloc_br(
   {
   static struct batch_request preq;
   return(&preq);
+  }
+
+int enqueue_threadpool_request(
+
+  void *(*func)(void *),
+  void *arg)
+
+  {
+  return(0);
   }

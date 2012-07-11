@@ -55,7 +55,7 @@ void *req_rescq(void *vp)
   exit(1);
   }
 
-int job_purge(job *pjob)
+int svr_job_purge(job *pjob)
   {
   fprintf(stderr, "The call to job_purge needs to be mocked!!\n");
   exit(1);
@@ -367,7 +367,7 @@ void close_conn(int sd, int has_mutex)
   exit(1);
   }
 
-job *find_job(char *jobid)
+job *svr_find_job(char *jobid)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
   exit(1);

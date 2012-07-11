@@ -140,7 +140,7 @@ int delete_whole_array(job_array *pa)
   exit(1);
   }
 
-job *find_job(char *jobid)
+job *svr_find_job(char *jobid)
   {
   return(NULL);
   }

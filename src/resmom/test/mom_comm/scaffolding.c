@@ -56,7 +56,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-void job_purge(job *pjob)
+void mom_job_purge(job *pjob)
   {
   fprintf(stderr, "The call to job_purge needs to be mocked!!\n");
   exit(1);
@@ -388,7 +388,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *find_job(char *jobid)
+job *mom_find_job(char *jobid)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
   exit(1);

@@ -91,3 +91,25 @@ void close_conn(int sd, int has_mutex)
   }
 
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
+
+int lock_node(
+    
+  struct pbsnode *the_node,
+  const char     *id,
+  char           *msg,
+  int             logging)
+
+  {
+  return(0);
+  }
+
+int unlock_node(
+    
+  struct pbsnode *the_node,
+  const char     *id,
+  char           *msg,
+  int             logging)
+
+  {
+  return(0);
+  }

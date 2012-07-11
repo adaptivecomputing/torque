@@ -44,7 +44,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-int job_purge(job *pjob)
+int svr_job_purge(job *pjob)
   {
   fprintf(stderr, "The call to job_purge needs to be mocked!!\n");
   exit(1);
@@ -176,7 +176,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   exit(1);
   }
 
-job *find_job(char *jobid)
+job *svr_find_job(char *jobid)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
   exit(1);

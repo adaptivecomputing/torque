@@ -96,3 +96,8 @@ int write_buffer(char *buf, int len, int fds)
   {
   return(0);
   }
+
+int add_to_ms_list(char *node_id, job *pjob)
+  {
+  return(0);
+  }

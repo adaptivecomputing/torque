@@ -14,6 +14,7 @@
 
 all_nodes allnodes;
 int svr_resc_size = 0;
+int disable_timeout_check = 1;
 all_queues svr_queues;
 char *msg_daemonname = "unset";
 char *msg_man_del = "deleted";

@@ -52,3 +52,5 @@ int pbs_rerunjob_err(int c, char *jobid, char *extend, int *local_errno)
   fprintf(stderr, "The call to pbs_rerunjob_err needs to be mocked!!\n");
   exit(1);
   }
+
+void initialize_network_info() {}

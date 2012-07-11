@@ -31,12 +31,6 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-int job_purge(job *pjob)
-  {
-  fprintf(stderr, "The call to job_purge needs to be mocked!!\n");
-  exit(1);
-  }
-
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   {
   fprintf(stderr, "The call to read_nonblocking_socket needs to be mocked!!\n");
@@ -197,8 +191,12 @@ int is_svr_attr_set(int attr_index)
   return(0);
   }
 
-job *find_job(char *name)
+job *svr_find_job(char *name)
   {
   return(NULL);
   }
 
+int svr_job_purge(job *pjob)
+  {
+  return(0);
+  }

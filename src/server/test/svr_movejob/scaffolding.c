@@ -62,7 +62,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-int job_purge(job *pjob)
+int svr_job_purge(job *pjob)
   {
   fprintf(stderr, "The call to job_purge to be mocked!!\n");
   exit(1);
@@ -200,7 +200,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   exit(1);
   }
 
-job *find_job(char *jobid)
+job *svr_find_job(char *jobid)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -266,3 +266,12 @@ struct pbs_queue *lock_queue_with_job_held(
   {
   return(NULL);
   }
+
+void svr_mailowner(
+
+  job   *pjob,      /* I */
+  int    mailpoint, /* note, single character  */
+  int    force,     /* if set to MAIL_FORCE, force mail delivery */
+  char  *text)      /* (optional) additional message text */
+
+  {}

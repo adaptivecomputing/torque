@@ -48,3 +48,4 @@ char *pbs_strerror(int err)
   exit(1);
   }
 
+void initialize_network_info() {}
