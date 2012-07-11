@@ -2515,9 +2515,7 @@ int req_jobobit(
   char                  acctbuf[RESC_USED_BUF];
   int                   accttail;
   int                   exitstatus;
-#ifdef USESAVEDRESOURCES
   int                   have_resc_used = FALSE;
-#endif
   char                  mailbuf[RESC_USED_BUF];
   int                   newstate;
   int                   newsubst;
@@ -2669,8 +2667,7 @@ int req_jobobit(
     ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
     &rc);
 
-  sprintf(acctbuf, msg_job_end_stat,
-          pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
+  sprintf(acctbuf, msg_job_end_stat, pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
 
   if (exitstatus < 10000)
     {
@@ -2684,8 +2681,9 @@ int req_jobobit(
 
   accttail = strlen(acctbuf);
 
-#ifdef USESAVEDRESOURCES
   have_resc_used = get_used(patlist, acctbuf);
+
+#ifdef USESAVEDRESOURCES
 
   /* if we don't have resources from the obit, use what the job already had */
 
@@ -2905,7 +2903,7 @@ int req_jobobit(
 
     /* replace new-lines with blanks for log message */
 
-    for (pc = acctbuf;*pc;++pc)
+    for (pc = acctbuf; *pc; ++pc)
       {
       if (*pc == '\n')
         *pc = ' ';
