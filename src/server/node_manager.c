@@ -128,6 +128,7 @@
 #include "login_nodes.h"
 #include "svr_connect.h" /* svr_disconnect_sock */
 #include "net_cache.h"
+#include "ji_mutex.h"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 #define SEND_HELLO 11
@@ -775,18 +776,18 @@ int job_should_be_on_node(
          * of data staging, suspend, or rerun */            
         if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
           {
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           
           should_be_on_node = FALSE;
           }
         else if (node_in_exechostlist(pnode->nd_name, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str) == FALSE)
           {
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
           
           should_be_on_node = FALSE;
           }
         else
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
         }
       else
         should_be_on_node = FALSE;
@@ -842,6 +843,19 @@ int remove_jobs_that_have_disappeared(
   
   while ((jobid = (char *)pop_thing(pnode->nd_ms_jobs)) != NULL)
     {
+    job *pjob;
+
+    pjob = svr_find_job(jobid);
+    if (pjob == NULL)
+      continue;
+
+    if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+      {
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      continue;
+      }
+
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     /* mom didn't report this job - it has exited unexpectedly */
     snprintf(log_buf, sizeof(log_buf),
       "Server thinks job %s is on node %s, but the mom doesn't. Terminating job",
@@ -1036,7 +1050,7 @@ void update_job_data(
           attr_name = threadsafe_tokenizer(&jobdata_ptr, "=");
           }
         
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       
       if (on_node == FALSE)
@@ -1730,14 +1744,14 @@ int gpu_has_job(
               found_str = strstr (gpu_str, tmp_str);
               if (found_str != NULL)
                 {
-                pthread_mutex_unlock(pjob->ji_mutex);
+                unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
                 return(TRUE);
                 }
               }
             }
           
           /* done with job, unlock the mutex */
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
           }
         }
       } /* END for each job on the subnode */

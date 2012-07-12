@@ -17,6 +17,7 @@
 #include "svrfunc.h"
 #include "array.h"
 #include "csv.h"
+#include "ji_mutex.h"
 
 extern int chk_hold_priv(long val, int perm);
 extern int get_hold(tlist_head *, char **, pbs_attribute *);
@@ -192,7 +193,7 @@ int req_holdarray(
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
           }
 
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       }
     }

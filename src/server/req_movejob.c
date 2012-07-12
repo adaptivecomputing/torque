@@ -100,6 +100,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "pbs_error.h"
 #include "queue.h"
+#include "ji_mutex.h"
 
 /* Global Data Items: */
 
@@ -146,7 +147,7 @@ int req_movejob(
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);
 
-    pthread_mutex_unlock(jobp->ji_mutex);
+    unlock_ji_mutex(jobp, __func__, "1", LOGLEVEL);
 
     return(PBSE_NONE);
     }
@@ -194,7 +195,7 @@ int req_movejob(
       break;
     }  /* END switch (svr_movejob(jobp,req->rq_ind.rq_move.rq_destin,req)) */
 
-  pthread_mutex_unlock(jobp->ji_mutex);
+  unlock_ji_mutex(jobp, __func__, "1", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END req_movejob() */
@@ -255,8 +256,8 @@ int req_orderjob(
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);
 
-    pthread_mutex_unlock(pjob1->ji_mutex);
-    pthread_mutex_unlock(pjob2->ji_mutex);
+    unlock_ji_mutex(pjob1, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob2, __func__, "2", LOGLEVEL);
 
     return(PBSE_NONE);
     }
@@ -298,9 +299,9 @@ int req_orderjob(
       req_reject(rc, 0, req, NULL, NULL);
 
       if (pjob1 != NULL)
-        pthread_mutex_unlock(pjob1->ji_mutex);
+        unlock_ji_mutex(pjob1, __func__, "3", LOGLEVEL);
       if (pjob2 != NULL)
-        pthread_mutex_unlock(pjob2->ji_mutex);
+        unlock_ji_mutex(pjob2, __func__, "4", LOGLEVEL);
 
       return(PBSE_NONE);
       }
@@ -322,8 +323,8 @@ int req_orderjob(
     strcpy(pjob2->ji_qs.ji_queue, tmpqn);
     strcpy(job_id1, pjob1->ji_qs.ji_jobid);
     strcpy(job_id2, pjob2->ji_qs.ji_jobid);
-    pthread_mutex_unlock(pjob1->ji_mutex);
-    pthread_mutex_unlock(pjob2->ji_mutex);
+    unlock_ji_mutex(pjob1, __func__, "5", LOGLEVEL);
+    unlock_ji_mutex(pjob2, __func__, "6", LOGLEVEL);
 
     svr_dequejob(job_id1, FALSE);
     svr_dequejob(job_id2, FALSE);
@@ -348,13 +349,13 @@ int req_orderjob(
   if (pjob1 != NULL)
     {
     job_save(pjob1, SAVEJOB_FULL, 0);
-    pthread_mutex_unlock(pjob1->ji_mutex);
+    unlock_ji_mutex(pjob1, __func__, "7", LOGLEVEL);
     }
 
   if (pjob2 != NULL)
     {
     job_save(pjob2, SAVEJOB_FULL, 0);
-    pthread_mutex_unlock(pjob2->ji_mutex);
+    unlock_ji_mutex(pjob2, __func__, "8", LOGLEVEL);
     }
 
   /* SUCCESS */

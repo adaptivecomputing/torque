@@ -126,7 +126,7 @@
 #include "job_func.h" /* svr_job_purge */
 #include "pbs_nodes.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
-
+#include "ji_mutex.h"
 
 #include "work_task.h"
 
@@ -618,7 +618,7 @@ int req_quejob(
       if (!strcmp(pj->ji_qs.ji_jobid, jid))
         break;
       
-      pthread_mutex_unlock(pj->ji_mutex);
+      unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
       }
     }
 
@@ -629,7 +629,7 @@ int req_quejob(
     rc = PBSE_JOBEXIST;
     log_err(rc, __func__, "cannot queue new job, job already exists");
     req_reject(rc, 0, preq, NULL, NULL);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
     return rc;
     }
 
@@ -951,7 +951,7 @@ int req_quejob(
       /* make sure the job id doesn't already exist */
       if ((tmpjob = svr_find_job(tmp_job_id)) != NULL)
         {
-        pthread_mutex_unlock(tmpjob->ji_mutex);
+        unlock_ji_mutex(tmpjob, __func__, "3", LOGLEVEL);
 
         /* not unique, reject job */
         svr_job_purge(pj);
@@ -1406,7 +1406,7 @@ int req_quejob(
   insert_job(&newjobs,pj);
 
   *pjob_id = strdup(pj->ji_qs.ji_jobid);
-  pthread_mutex_unlock(pj->ji_mutex);
+  unlock_ji_mutex(pj, __func__, "4", LOGLEVEL);
 
   return rc;
   }  /* END req_quejob() */
@@ -1443,12 +1443,12 @@ int req_jobcredential(
     {
     rc = PBSE_PERM;
     req_reject(rc, 0, preq, NULL, "job request not authorized");
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
     return rc;
     }
 
   reply_ack(preq);
-  pthread_mutex_unlock(pj->ji_mutex);
+  unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
   return rc;
   }  /* END req_jobcredential() */
 
@@ -1510,7 +1510,7 @@ int req_jobscript(
       }
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
     return(rc);
     }
 
@@ -1522,7 +1522,7 @@ int req_jobscript(
         preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
     return rc;
     }
 
@@ -1549,7 +1549,7 @@ int req_jobscript(
              msg_script_open);
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "3", LOGLEVEL);
     return rc;
     }
 
@@ -1567,7 +1567,7 @@ int req_jobscript(
     log_err(rc, __func__, log_buf);
     req_reject(PBSE_INTERNAL, 0, preq, NULL, log_buf);
     close(fds);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "4", LOGLEVEL);
     return rc;
     }
 
@@ -1581,7 +1581,7 @@ int req_jobscript(
     (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT;
 
   /* SUCCESS */
-  pthread_mutex_unlock(pj->ji_mutex);
+  unlock_ji_mutex(pj, __func__, "5", LOGLEVEL);
 
   reply_ack(preq);
 
@@ -1626,7 +1626,7 @@ int req_mvjobfile(
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, NULL);
     if (pj != NULL)
-      pthread_mutex_unlock(pj->ji_mutex);
+      unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
     return(rc);
     }
 
@@ -1660,7 +1660,7 @@ int req_mvjobfile(
           pj->ji_qs.ji_jobid, errno, strerror(errno));
       log_err(rc, __func__, log_buf);
       req_reject(rc, 0, preq, NULL, log_buf);
-      pthread_mutex_unlock(pj->ji_mutex);
+      unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
       return(rc);
       break;
     }
@@ -1681,7 +1681,7 @@ int req_mvjobfile(
         namebuf, pj->ji_qs.ji_jobid, errno, strerror(errno), msg_script_open);
     log_err(errno, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "3", LOGLEVEL);
     return(rc);
     }
 
@@ -1697,7 +1697,7 @@ int req_mvjobfile(
     log_err(rc, "req_jobfile", log_buf);
     req_reject(PBSE_SYSTEM, 0, preq, NULL, log_buf);
     close(fds);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "4", LOGLEVEL);
     return(rc);
     }
 
@@ -1719,7 +1719,7 @@ int req_mvjobfile(
 
   reply_ack(preq);
 
-  pthread_mutex_unlock(pj->ji_mutex);
+  unlock_ji_mutex(pj, __func__, "5", LOGLEVEL);
 
   return(rc);
   }  /* END req_mvjobfile() */
@@ -1782,7 +1782,7 @@ int req_rdytocommit(
         preq->rq_ind.rq_rdytocommit, errno, strerror(errno));
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
     return(rc);
     }
 
@@ -1792,7 +1792,7 @@ int req_rdytocommit(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not authorize job req %s",
         preq->rq_ind.rq_rdytocommit);
     req_reject(rc, 0, preq, NULL, log_buf);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
     return(rc);
     }
 
@@ -1840,7 +1840,7 @@ int req_rdytocommit(
     pj->ji_wattr[JOB_ATR_state].at_flags = OrigFlags;
 
     req_reject(rc, 0, preq, NULL, log_buf);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "3", LOGLEVEL);
     return(rc);
     }
 
@@ -1848,7 +1848,7 @@ int req_rdytocommit(
   strcpy(jobid, pj->ji_qs.ji_jobid);
 
   /* unlock now to prevent a potential deadlock */
-  pthread_mutex_unlock(pj->ji_mutex);
+  unlock_ji_mutex(pj, __func__, "4", LOGLEVEL);
 
   if (reply_jobid(preq, jobid, BATCH_REPLY_CHOICE_RdytoCom) != 0)
     {
@@ -1996,6 +1996,9 @@ int req_commit(
     return(rc);
     }
 
+  if (LOGLEVEL >= 10)
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pj->ji_qs.ji_jobid);
+
 #ifdef QUICKCOMMIT
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
     {
@@ -2005,7 +2008,7 @@ int req_commit(
         errno, strerror(errno));
     log_err(rc, __func__, log_buf);
     req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buf);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "5", LOGLEVEL);
     return(rc);
     }
 
@@ -2038,7 +2041,7 @@ int req_commit(
         errno, strerror(errno));
     log_err(rc, __func__, "cannot commit job in unexpected state");
     req_reject(rc, 0, preq, NULL, NULL);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "6", LOGLEVEL);
     return(rc);
     }
 
@@ -2050,7 +2053,7 @@ int req_commit(
     req_reject(rc, 0, preq, NULL, log_buf);
     if (LOGLEVEL >= 6)
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "7", LOGLEVEL);
     return(rc);
     }
 
@@ -2090,7 +2093,7 @@ int req_commit(
         req_reject(rc, 0, preq, NULL, NULL);
         }
 
-      pthread_mutex_unlock(pj->ji_mutex);
+      unlock_ji_mutex(pj, __func__, "8", LOGLEVEL);
 
       return(rc);
       }
@@ -2228,7 +2231,7 @@ int req_commit(
     issue_track(pj);
     }
 
-  pthread_mutex_unlock(pj->ji_mutex);
+  unlock_ji_mutex(pj, __func__, "9", LOGLEVEL);
 
 #ifdef AUTORUN_JOBS
   /* If we are auto running jobs with start_count = 0 then the
@@ -2311,7 +2314,7 @@ static job *locate_new_job(
 
       break;
       }
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
     }  /* END while(pj != NULL) */
 
   /* return job slot located (NULL on FAILURE) */

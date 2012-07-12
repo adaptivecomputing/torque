@@ -120,6 +120,7 @@
 #else
 #include "../resmom/mom_job_func.h" /* mom_job_free */
 #endif
+#include "ji_mutex.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -449,7 +450,7 @@ job *job_recov(
     log_err(errno, __func__, log_buf);
 
 #ifndef PBS_MOM
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
     free(pj->ji_mutex);
 #endif
 
@@ -470,7 +471,7 @@ job *job_recov(
     log_err(errno, __func__, log_buf);
 
 #ifndef PBS_MOM
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
     free(pj->ji_mutex);
 #endif
 
@@ -499,7 +500,7 @@ job *job_recov(
       log_err(-1, __func__, log_buf);
 
 #ifndef PBS_MOM
-      pthread_mutex_unlock(pj->ji_mutex);
+      unlock_ji_mutex(pj, __func__, "3", LOGLEVEL);
       free(pj->ji_mutex);
 #endif
 
@@ -528,7 +529,7 @@ job *job_recov(
     log_err(-1, __func__, log_buf);
 
 #ifndef PBS_MOM
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "4", LOGLEVEL);
     free(pj->ji_mutex);
 #endif
 
@@ -555,7 +556,7 @@ job *job_recov(
     log_err(-1, __func__, log_buf);
 
 #ifndef PBS_MOM
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "5", LOGLEVEL);
     job_free(pj, FALSE);
 #else
     mom_job_free(pj);

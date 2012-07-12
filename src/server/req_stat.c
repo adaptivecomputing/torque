@@ -120,7 +120,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "alps_functions.h"
 #include "node_manager.h" /* tfind_addr */
-
+#include "ji_mutex.h"
 
 /* Global Data Items: */
 
@@ -254,7 +254,7 @@ int req_stat_job(
       }
    
     if (pjob != NULL)
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
   else if (isalpha(name[0]))
     {
@@ -477,7 +477,7 @@ static void req_stat_job_step2(
               {
               if ((pjob = svr_find_job(pa->job_ids[job_array_index])) != NULL)
                 {
-                pthread_mutex_unlock(pjob->ji_mutex);
+                unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
                 break;
                 }
               }
@@ -494,7 +494,7 @@ static void req_stat_job_step2(
       else
         {
         strcpy(job_id, pjob->ji_qs.ji_jobid);
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
         if (type == tjstJob)
           break;
@@ -511,7 +511,7 @@ static void req_stat_job_step2(
               {
               if ((pjob = svr_find_job(pa->job_ids[job_array_index])) != NULL)
                 {
-                pthread_mutex_unlock(pjob->ji_mutex);
+                unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
                 break;
                 }
               }
@@ -529,7 +529,7 @@ static void req_stat_job_step2(
       job_substate = pjob->ji_qs.ji_substate;
       job_momstattime = pjob->ji_momstat;
       strcpy(cntl->sc_jobid, job_id);
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
       pjob = NULL;
 
       /* PBS_RESTAT_JOB defaults to 30 seconds */
@@ -687,7 +687,7 @@ static void req_stat_job_step2(
 
       /* loop through jobs in queue */
       if (pjob != NULL)
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
 
       iter = -1;
 
@@ -697,7 +697,7 @@ static void req_stat_job_step2(
             (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))
           {
           /* max_report of queued jobs reached for queue */
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
 
           continue;
           }
@@ -724,7 +724,7 @@ static void req_stat_job_step2(
               log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
               }
             }
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
           unlock_queue(pque, "req_stat_job_step2", "perm", LOGLEVEL);
           return;
           }
@@ -734,7 +734,7 @@ static void req_stat_job_step2(
         if (pjob->ji_qs.ji_state == JOB_STATE_QUEUED)
           qjcounter++;
 
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "8", LOGLEVEL);
         }    /* END foreach (pjob from pque) */
 
       if (LOGLEVEL >= 5)
@@ -814,7 +814,7 @@ static void req_stat_job_step2(
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
           }
         }
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "9", LOGLEVEL);
 
       req_reject(rc, bad, preq, NULL, NULL);
 
@@ -826,7 +826,7 @@ static void req_stat_job_step2(
 nextjob:
 
     if (pjob != NULL)
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "10", LOGLEVEL);
 
     if (type == tjstJob)
       break;
@@ -919,7 +919,7 @@ int stat_to_mom(
   job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
   job_momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
   job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   if (job_momname == NULL)
     return PBSE_MEM_MALLOC;
@@ -1047,7 +1047,7 @@ void stat_update(
 
         pjob->ji_momstat = time_now;
 
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
 
       pstatus = (struct brp_status *)GET_NEXT(pstatus->brp_stlink);
@@ -1155,7 +1155,7 @@ void poll_job_task(
     if (pjob != NULL)
       {
       job_state = pjob->ji_qs.ji_state;
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
       if ((poll_jobs) && (job_state == JOB_STATE_RUNNING))
         {

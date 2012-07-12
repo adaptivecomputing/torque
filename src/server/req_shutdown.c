@@ -105,6 +105,7 @@
 #include "csv.h"
 #include "threadpool.h"
 #include "svr_func.h" /* get_svr_attr_* */
+#include "ji_mutex.h"
 
 
 /* Private Fuctions Local to this File */
@@ -239,7 +240,7 @@ void svr_shutdown(
         if (shutdown_checkpoint(&pjob) == 0)
           {
           if (pjob != NULL)
-            pthread_mutex_unlock(pjob->ji_mutex);
+            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
           continue;
           }
@@ -251,7 +252,7 @@ void svr_shutdown(
       rerun_or_kill(pjob, msg_on_shutdown);
       }
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     }
 
   return;
@@ -454,7 +455,7 @@ static void post_checkpoint(
   free_br(preq);
 
   if (pjob != NULL)
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
   }  /* END post_checkpoint() */
 
 

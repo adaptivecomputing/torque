@@ -109,6 +109,7 @@
 #include "svrfunc.h"
 #include "array.h"
 #include "svr_func.h" /* get_svr_attr_* */
+#include "ji_mutex.h"
 
 #define CHK_HOLD 1
 #define CHK_CONT 2
@@ -202,7 +203,7 @@ static void post_modify_req(
           log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
           }
         
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       }
 
@@ -296,7 +297,7 @@ void mom_cleanup_checkpoint_hold(
           
           log_err(rc, __func__, log_buf);
           
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           }
 
         return;
@@ -319,7 +320,7 @@ void mom_cleanup_checkpoint_hold(
     }
 
   if (pjob != NULL)
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
   } /* END mom_cleanup_checkpoint_hold() */
 
 
@@ -365,7 +366,7 @@ void chkpt_xfr_hold(
 
   set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   return;
   }  /* END chkpt_xfr_hold() */
@@ -875,7 +876,7 @@ int modify_whole_array(
         rc = copy_batchrequest(&array_req, preq, 0, i);
         if (rc != 0)
           {
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           return(rc);
           }
 
@@ -895,7 +896,7 @@ int modify_whole_array(
               "Unable to relay information to mom for job '%s'\n",
               pjob->ji_qs.ji_jobid);
             log_err(rc, __func__, log_buf);
-            pthread_mutex_unlock(pjob->ji_mutex);
+            unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
             }
 
           return(rc); /* unable to get to MOM */
@@ -903,7 +904,7 @@ int modify_whole_array(
         }
 
       if (pjob != NULL)
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
       }
     } /* END foreach job in array */
 
@@ -1069,7 +1070,7 @@ void *req_modifyarray(
         sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       req_reject(rc,0,preq,NULL,NULL);
       return(NULL);
@@ -1083,12 +1084,12 @@ void *req_modifyarray(
         sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       
       return(NULL);
       }
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     }
 
   /* SUCCESS */
@@ -1143,7 +1144,7 @@ void *req_modifyjob(
     reply_ack(preq);
 
     /* SUCCESS */
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(NULL);
     }
@@ -1177,7 +1178,7 @@ void *req_modifyjob(
       reply_badattr(rc,1,plist,preq);
     else if ( rc == PBSE_RELAYED_TO_MOM )
       {
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       
       return(NULL);
       }
@@ -1187,7 +1188,7 @@ void *req_modifyjob(
   else
     reply_ack(preq);
 
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
   
   return(NULL);
   }  /* END req_modifyjob() */
@@ -1227,7 +1228,7 @@ int modify_job_attr(
     }
   else
     {
-    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 5");
     return(PBSE_JOBNOTFOUND);
     }
 
@@ -1283,7 +1284,7 @@ int modify_job_attr(
           }
         else if (pjob == NULL)
           {
-          log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+          log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 6");
           return(PBSE_JOBNOTFOUND);
           }
         else
@@ -1518,7 +1519,7 @@ void post_modify_arrayreq(
           log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
           }
         
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       }
 

@@ -54,6 +54,7 @@
 #include "login_nodes.h"
 #include "work_task.h"
 #include "net_cache.h"
+#include "ji_mutex.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 extern int h_errno;
@@ -481,7 +482,7 @@ int login_encode_jobs(
       if (pjob != NULL)
         {
         login_id = pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str;
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
 
       if ((login_id == NULL) ||

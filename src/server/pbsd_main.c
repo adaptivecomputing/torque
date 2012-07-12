@@ -137,6 +137,7 @@
 #include "process_request.h" /* process_request */
 #include "net_connect.h" /* set_localhost_name */
 #include "tcp.h" /* tcp_chan */
+#include "ji_mutex.h"
 
 #define TASK_CHECK_INTERVAL    10
 #define HELLO_WAIT_TIME        600
@@ -1104,7 +1105,7 @@ static int start_hot_jobs(void)
       ct++;
       }
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
   return(ct);
@@ -1489,7 +1490,7 @@ void main_loop(void)
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
   if (svr_chngNodesfile)

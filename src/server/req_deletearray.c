@@ -24,6 +24,8 @@
 
 #include "array.h"
 
+#include "ji_mutex.h"
+
 extern int LOGLEVEL;
 extern int  svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host);
 
@@ -105,7 +107,7 @@ int attempt_delete(
         change_restart_comment_if_needed(pjob);
         }
 
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     
     return(!skipped);
@@ -181,7 +183,7 @@ int attempt_delete(
     }
 
   if (release_mutex == TRUE)
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   return(!skipped);
   } /* END attempt_delete() */
@@ -420,7 +422,7 @@ void array_delete_wt(
             }
           set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
           
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           }
         }
       else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)

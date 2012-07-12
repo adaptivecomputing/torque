@@ -83,6 +83,7 @@
 #include "pbs_job.h"
 #include "utils.h"
 #include "threadpool.h"
+#include "ji_mutex.h"
 
 extern job_recycler recycler;
 extern int          LOGLEVEL;
@@ -115,7 +116,7 @@ job *next_job_from_recycler(
   pthread_mutex_unlock(aj->alljobs_mutex);
 
   if (pjob != NULL)
-    pthread_mutex_lock(pjob->ji_mutex);
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   return(pjob);
   } /* END next_job_from_recycler() */
@@ -132,6 +133,9 @@ void *remove_some_recycle_jobs(
   int  iter = -1;
   job *pjob;
 
+  if (LOGLEVEL >= 10)
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+
   pthread_mutex_lock(recycler.rc_mutex);
 
   for (i = 0; i < JOBS_TO_REMOVE; i++)
@@ -142,7 +146,7 @@ void *remove_some_recycle_jobs(
       break;
 
     remove_job(&recycler.rc_jobs,pjob);
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     free(pjob->ji_mutex);
     memset(pjob, 255, sizeof(job));
     free(pjob);

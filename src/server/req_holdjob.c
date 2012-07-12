@@ -105,6 +105,7 @@
 #include "svrfunc.h"
 #include "csv.h"
 #include "array.h"
+#include "ji_mutex.h"
 
 /* Private Functions Local to this file */
 
@@ -192,7 +193,7 @@ int req_holdjob(
     {
     req_reject(rc, 0, preq, NULL, NULL);
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(PBSE_NONE);
     }
@@ -203,7 +204,7 @@ int req_holdjob(
     {
     req_reject(rc, 0, preq, NULL, NULL);
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
     return(PBSE_NONE);
     }
@@ -289,7 +290,7 @@ int req_holdjob(
     }
 
   if (pjob != NULL)
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END req_holdjob() */
@@ -360,7 +361,7 @@ void *req_checkpointjob(
     }
 
   if (pjob != NULL)
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   return(NULL);
   }  /* END req_checkpointjob() */
@@ -468,7 +469,7 @@ int req_releasejob(
     reply_ack(preq);
     }
 
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END req_releasejob() */
@@ -499,11 +500,11 @@ int release_whole_array(
       {
       if ((rc = release_job(preq, pjob)) != 0)
         {
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         return(rc);
         }
   
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       }
     }
 
@@ -557,12 +558,12 @@ int req_releasearray(
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
 
     pthread_mutex_unlock(pa->ai_mutex);
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(PBSE_NONE);
     }
 
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   range = preq->rq_extend;
   if ((range != NULL) &&
@@ -776,7 +777,7 @@ static void process_hold_reply(
     reply_ack(preq);
     }
 
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   } /* END process_hold_reply() */
 
@@ -822,7 +823,7 @@ static void process_checkpoint_reply(
     account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed"); /* note in accounting file */
     reply_ack(preq);
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
   } /* END process_checkpoint_reply() */
 

@@ -100,11 +100,13 @@
 #include "../lib/Liblog/log_event.h"
 #include "acct.h"
 #include "svrfunc.h"
+#include "ji_mutex.h"
 
 /* Private Function local to this file */
 
 /* Global Data Items: */
 
+extern int   LOGLEVEL;
 extern char *msg_manager;
 extern char *msg_jobrerun;
 
@@ -150,7 +152,7 @@ static void post_rerun(
 
       svr_setjobstate(pjob, newstate, newsub, FALSE);
 
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     }
 
@@ -219,7 +221,7 @@ int req_rerunjob(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "job %s is in a bad state",
         preq->rq_ind.rq_rerun);
     req_reject(rc, 0, preq, NULL, log_buf);
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     return rc;
     }
 
@@ -232,7 +234,7 @@ int req_rerunjob(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
         "additional permissions required (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)");
     req_reject(rc, 0, preq, NULL, log_buf);
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     return rc;
     }
 
@@ -249,7 +251,7 @@ int req_rerunjob(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "job %s not rerunnable",
         preq->rq_ind.rq_rerun);
     req_reject(rc, 0, preq, NULL, log_buf);
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
     return rc;
     }
 
@@ -321,7 +323,7 @@ int req_rerunjob(
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Rejected by mom");
         req_reject(rc, 0, preq, NULL, log_buf);
         if (pjob != NULL)
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
         return rc;
         }
       else
@@ -399,7 +401,7 @@ int req_rerunjob(
   
     /* note in accounting file */
     account_record(PBS_ACCT_RERUN, pjob, NULL);
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
     }
 
   return rc;

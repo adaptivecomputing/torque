@@ -198,7 +198,7 @@ int acct_job(
     }
   else if (pjob == NULL)
     {
-    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 1");
     return(PBSE_JOBNOTFOUND);
     }
 

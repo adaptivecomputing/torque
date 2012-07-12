@@ -113,6 +113,7 @@
 #include "utils.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "job_func.h" /* svr_job_purge */
+#include "ji_mutex.h"
 
 #define PURGE_SUCCESS 1
 #define MOM_DELETE    2
@@ -306,7 +307,7 @@ int execute_job_delete(
     /* see note in req_delete - not sure this is possible still,
      * but the deleted code is irrelevant now. I will leave this
      * part --dbeer */
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(-1);
     }
@@ -363,7 +364,7 @@ int execute_job_delete(
 
     pwtnew = set_task(WORK_Timed,time_now + 1,post_delete_route,preq,FALSE);
     
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
     if (pwtnew == NULL)
       {
@@ -437,7 +438,7 @@ jump:
 
     if (pjob->ji_has_delete_nanny == TRUE)
       {
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "job cancel in progress");
 
@@ -465,7 +466,7 @@ jump:
       sprintf(log_buf, msg_delrunjobsig, sigt);
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
   
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
       }
 
     return(-1);
@@ -526,12 +527,12 @@ jump:
             svr_setjobstate(tmp, newstate, newsub, FALSE);
             job_save(tmp, SAVEJOB_FULL, 0);
 
-            pthread_mutex_unlock(tmp->ji_mutex);
+            unlock_ji_mutex(tmp, __func__, "5", LOGLEVEL);
             
             break;
             }
 
-          pthread_mutex_unlock(tmp->ji_mutex);
+          unlock_ji_mutex(tmp, __func__, "6", LOGLEVEL);
           }
         }
 
@@ -613,7 +614,7 @@ jump:
     }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
 
   if (has_mutex == TRUE)
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
 
   return(PBSE_NONE);
   } /* END execute_job_delete() */
@@ -679,7 +680,7 @@ int handle_delete_all(
 
     if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
       {
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       
       continue;
       }
@@ -1046,7 +1047,7 @@ static void post_delete_mom1(
       {
       req_reject(rc, 0, preq_clt, NULL, NULL);
 
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
 
     return;
@@ -1089,7 +1090,7 @@ static void post_delete_mom1(
    */
   apply_job_delete_nanny(pjob, time_now + delay + 60);
 
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
   }  /* END post_delete_mom1() */
 
 
@@ -1133,7 +1134,7 @@ static void post_delete_mom2(
       }
     
     if (pjob != NULL)
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
   }  /* END post_delete_mom2() */
 
@@ -1174,7 +1175,7 @@ static int forced_jobpurge(
         /* FAILURE */
         req_reject(PBSE_PERM, 0, preq, NULL, NULL);
 
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
         return(-1);
         }
@@ -1298,7 +1299,7 @@ static void job_delete_nanny(
           {
           apply_job_delete_nanny(pjob, time_now + 60);
   
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           }
         }
       }
@@ -1382,7 +1383,7 @@ static void post_job_delete_nanny(
     return;
     }
   
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   /* free task */
   free_br(preq_sig);
@@ -1460,7 +1461,7 @@ void purge_completed_jobs(
       job_save(pjob, SAVEJOB_FULL, 0); 
       }
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
 

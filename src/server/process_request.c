@@ -146,6 +146,7 @@
 #include "req_register.h" /* req_register, req_registerarray */
 #include "job_func.h" /* svr_job_purge */
 #include "tcp.h" /* tcp_chan */
+#include "ji_mutex.h"
 
 /*
  * process_request - this function gets, checks, and invokes the proper
@@ -612,7 +613,7 @@ int process_request(
             }
 
           }
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       
       if (!skip)
@@ -1018,6 +1019,11 @@ int close_quejob_by_jobid(
   int  rc = PBSE_NONE;
   job *pjob = NULL;
 
+  if (LOGLEVEL >= 10)
+    {
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, job_id);
+    }
+
   if ((pjob = svr_find_job(job_id)) == NULL)
     {
     rc = PBSE_JOBNOTFOUND;
@@ -1045,7 +1051,7 @@ int close_quejob_by_jobid(
     }
 
   if (pjob != NULL)
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   return(rc);
   } /* close_quejob_by_jobid() */

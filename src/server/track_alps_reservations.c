@@ -85,6 +85,10 @@
 #include "track_alps_reservations.h"
 #include "utils.h"
 #include "batch_request.h"
+#include "ji_mutex.h"
+
+/* Global Data declarations */
+extern int LOGLEVEL;
 
 
 /*
@@ -249,7 +253,7 @@ int is_orphaned(
       if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
         orphaned = TRUE;
 
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     else
       orphaned = TRUE;
