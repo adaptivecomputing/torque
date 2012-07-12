@@ -116,7 +116,7 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_stat.h" /* stat_mom_job */
-
+#include "ji_mutex.h"
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -219,7 +219,7 @@ int req_runjob(
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   if (strstr(pjob->ji_qs.ji_jobid,"[]") != NULL)
     {
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "cannot run a job array");
     return(PBSE_IVALREQ);
     }
@@ -265,7 +265,7 @@ int req_runjob(
       job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
       job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
       job_state = pjob->ji_qs.ji_state;
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       update_array_values(pa,job_state,aeRun,
           job_id, job_atr_hold, job_exit_status);
       if ((pjob = svr_find_job(job_id)) == NULL)
@@ -293,7 +293,7 @@ int req_runjob(
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
         }
 
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
       pthread_mutex_unlock(pa->ai_mutex);
 
       return(PBSE_IVALREQ);
@@ -329,7 +329,7 @@ int req_runjob(
       }
     }
 
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
 
   return(rc);
   }  /* END req_runjob() */
@@ -453,7 +453,7 @@ static void post_checkpointsend(
       }
 
     if (pjob != NULL)
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }    /* END if (pjob != NULL) */
 
   free_br(preq); /* close connection and release request */
@@ -565,7 +565,7 @@ int req_stagein(
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
  
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(PBSE_IVALREQ);
     }
@@ -581,7 +581,7 @@ int req_stagein(
     req_reject(rc, 0, preq, NULL, NULL);
     }
 
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   return(rc);
   }  /* END req_stagein() */
@@ -689,7 +689,7 @@ static void post_stagein(
       }
 
     if (pjob != NULL)
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }    /* END if (pjob != NULL) */
 
   free_br(preq); /* close connection and release request */
@@ -1133,7 +1133,7 @@ static int svr_strtjob2(
     }
   job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
   strcpy(job_id, pjob->ji_qs.ji_jobid);
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
   *pjob_ptr = NULL;
   pjob = NULL;
 
@@ -1335,7 +1335,7 @@ void finish_sendmom(
           pjob->ji_momstat = 0;
           
           /* update mom-based job status */
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
           stat_mom_job(job_id);
           pjob = svr_find_job(job_id);
           }
@@ -1356,7 +1356,7 @@ void finish_sendmom(
       break;
       }
     }  /* END switch (status) */
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
   } /* END finish_sendmom() */
 
@@ -1406,7 +1406,7 @@ static job *chk_job_torun(
 
     req_reject(PBSE_BADSTATE, 0, preq, NULL, "job already running");
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(NULL);
     }
@@ -1419,7 +1419,7 @@ static job *chk_job_torun(
 
       req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
       return(NULL);
       }
@@ -1431,7 +1431,7 @@ static job *chk_job_torun(
 
     req_reject(PBSE_PERM, 0, preq, NULL, NULL);
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
     return(NULL);
     }
@@ -1446,7 +1446,7 @@ static job *chk_job_torun(
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "job not in execution queue");
   
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
   
       return(NULL);
       }
@@ -1475,7 +1475,7 @@ static job *chk_job_torun(
       if ((exec_host = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str)) == NULL)
         {
         req_reject(PBSE_RMSYSTEM, 0, preq, NULL, "Cannot allocate memory");
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
         return(NULL);
         }
 
@@ -1492,7 +1492,7 @@ static job *chk_job_torun(
         else
           req_reject(PBSE_EXECTHERE, 0, preq, NULL, "allocated nodes must match input file stagein location");
 
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
         
         return(NULL);
         }
@@ -1513,7 +1513,7 @@ static job *chk_job_torun(
         {
         req_reject(PBSE_EXECTHERE, 0, preq, FailHost, EMsg);
 
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
         
         return(NULL);
         }
@@ -1549,7 +1549,7 @@ static job *chk_job_torun(
 
       req_reject(rc, 0, preq, FailHost, EMsg);
 
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "8", LOGLEVEL);
 
       return(NULL);
       }

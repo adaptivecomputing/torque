@@ -113,6 +113,7 @@
 #include "process_request.h" /* dispatch_request */
 #include "svr_connect.h" /* svr_disconnect_sock */
 #include "node_manager.h" /* tfind_addr */
+#include "ji_mutex.h"
 
 
 /* Global Data Items: */
@@ -218,7 +219,7 @@ int relay_to_mom(
     }
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   request->rq_orgconn = request->rq_conn; /* save client socket */
 

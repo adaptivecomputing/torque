@@ -102,6 +102,7 @@
 #include "svrfunc.h"
 #include "array.h"
 #include "svr_func.h" /* get_svr_attr_* */
+#include "ji_mutex.h"
 
 #define SYNC_SCHED_HINT_NULL 0
 #define SYNC_SCHED_HINT_FIRST 1
@@ -255,7 +256,7 @@ int req_register(
     rc = PBSE_BADSTATE;
     req_reject(rc, 0, preq, NULL, NULL);
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     
     return(rc);
     }
@@ -606,7 +607,7 @@ int req_register(
     }
 
   if (pjob != NULL)
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   return(rc);
   }  /* END req_register() */
@@ -975,7 +976,7 @@ void set_array_depend_holds(
           set_depend_hold(pjob,&pjob->ji_wattr[JOB_ATR_depend]);
           }
 
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
 
       pdj = (struct array_depend_job *)GET_NEXT(pdj->dc_link);
@@ -1055,7 +1056,7 @@ static void post_doq(
 
         set_depend_hold(pjob, pattr);
 
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       }
     }
@@ -1090,7 +1091,7 @@ static void alter_unreg(
   char               job_id[PBS_MAXSVRJOBID+1];
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
   pjob = NULL;
 
   for (poldd = (struct depend *)GET_NEXT(old->at_val.at_list);
@@ -1164,7 +1165,7 @@ int depend_on_que(
     {
     if (pjob == NULL)
       {
-      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 8");
       return(PBSE_JOBNOTFOUND);
       }
     else
@@ -1287,7 +1288,7 @@ static void post_doe(
       del_depend(pdep);
       }
     
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
   free_br(preq);
@@ -1541,7 +1542,7 @@ int depend_on_term(
     pdep = (struct depend *)GET_NEXT(pdep->dp_link);
     }
   if (!job_unlocked)
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   return(0);
   }  /* END depend_on_term() */
@@ -1699,7 +1700,7 @@ void set_depend_hold(
             }
 
           if (djp != NULL)
-            pthread_mutex_unlock(djp->ji_mutex);
+            unlock_ji_mutex(djp, __func__, "1", LOGLEVEL);
           }
 
         break;
@@ -2151,7 +2152,7 @@ static int send_depend_req(
   if (preq == NULL)
     {
     log_err(errno, myid, msg_err_malloc);
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     return(PBSE_SYSTEM);
     }
 
@@ -2203,7 +2204,7 @@ static int send_depend_req(
 
   /* save jobid and unlock mutex */
   strcpy(job_id, pjob->ji_qs.ji_jobid);
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   get_batch_request_id(preq);
   strcpy(br_id, preq->rq_id);

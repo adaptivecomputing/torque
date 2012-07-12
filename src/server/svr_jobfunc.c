@@ -137,7 +137,9 @@
 #include "array.h"
 #include "queue_func.h" /* find_queuebyname */
 #include "../lib/Libutils/u_lock_ctl.h" /* *startup */
+#include "ji_mutex.h"
 
+#define MSG_LEN_LONG 160
 
 /* Private Functions */
 
@@ -307,7 +309,7 @@ int svr_enquejob(
   /* make sure queue is still there, there exists a small window ... */
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   strcpy(queue_name, pjob->ji_qs.ji_queue);
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
   pque = find_queuebyname(queue_name);
 
   if (pque == NULL)
@@ -317,12 +319,12 @@ int svr_enquejob(
 
   /* This is called when a job is not yet in the queue,
    * so svr_find_job can not be used.... */
-  pthread_mutex_lock(pjob->ji_mutex);
+  lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   if (pjob->ji_being_recycled == TRUE)
     {
     unlock_queue(pque, __func__, NULL, 0);
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     return(PBSE_JOB_RECYCLED);
     }
 
@@ -382,21 +384,21 @@ int svr_enquejob(
     /* we have to unlock the job because next_job_from_back may 
        give us this job */
     job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
     while ((pjcur = next_job_from_back(pque->qu_jobs,&iter)) != NULL)
       {
       if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
         {
-        pthread_mutex_unlock(pjcur->ji_mutex);
+        unlock_ji_mutex(pjcur, __func__, "5", LOGLEVEL);
         break;
         }
       if (strcmp(job_id, pjcur->ji_qs.ji_jobid) == 0)
         {
-        pthread_mutex_unlock(pjcur->ji_mutex);
+        unlock_ji_mutex(pjcur, __func__, "6", LOGLEVEL);
         unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
         return PBSE_NONE;
         }
-      pthread_mutex_unlock(pjcur->ji_mutex);
+      unlock_ji_mutex(pjcur, __func__, "7", LOGLEVEL);
       }
     if ((pjob = svr_find_job(job_id)) == NULL)
       {
@@ -412,7 +414,7 @@ int svr_enquejob(
       {
       /* link after 'current' job in list */
       insert_job_after(pque->qu_jobs,pjcur,pjob);
-      pthread_mutex_unlock(pjcur->ji_mutex);
+      unlock_ji_mutex(pjcur, __func__, "8", LOGLEVEL);
       }
 
     /* update counts: queue and queue by state */
@@ -425,21 +427,21 @@ int svr_enquejob(
     iter = -1;
 
     job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "9", LOGLEVEL);
     while ((pjcur = next_job_from_back(pque->qu_jobs_array_sum,&iter)) != NULL)
       {
       if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
         {
-        pthread_mutex_unlock(pjcur->ji_mutex);
+        unlock_ji_mutex(pjcur, __func__, "10", LOGLEVEL);
         break;
         }
       if (strcmp(job_id, pjcur->ji_qs.ji_jobid) == 0)
         {
-        pthread_mutex_unlock(pjcur->ji_mutex);
+        unlock_ji_mutex(pjcur, __func__, "11", LOGLEVEL);
         unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
         return PBSE_NONE;
         }
-      pthread_mutex_unlock(pjcur->ji_mutex);
+      unlock_ji_mutex(pjcur, __func__, "12", LOGLEVEL);
       } /* end of while */
     if ((pjob = svr_find_job(job_id)) == NULL)
       {
@@ -456,7 +458,7 @@ int svr_enquejob(
       /* link after 'current' job in list */
       insert_job_after(pque->qu_jobs_array_sum,pjcur,pjob);
 
-      pthread_mutex_unlock(pjcur->ji_mutex);
+      unlock_ji_mutex(pjcur, __func__, "13", LOGLEVEL);
       }
     }
 
@@ -594,6 +596,10 @@ int svr_dequejob(
   if ((pjob = svr_find_job(job_id)) == NULL)
     return(PBSE_JOBNOTFOUND);
 
+
+  if (LOGLEVEL >= 10)
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+
   if (parent_queue_mutex_held == FALSE)
     {
     pque = get_jobs_queue(&pjob);
@@ -601,7 +607,7 @@ int svr_dequejob(
     if ((pjob == NULL) ||
         (pque == NULL))
       {
-      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 10");
       return(PBSE_JOBNOTFOUND);
       }
     }
@@ -798,7 +804,7 @@ int svr_setjobstate(
 
         if (pjob == NULL)
           {
-          log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+          log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 11");
           return(PBSE_JOBNOTFOUND);
           }
         }
@@ -1514,7 +1520,7 @@ int count_queued_jobs(
           {
           found = TRUE;
 
-          pthread_mutex_unlock(pj->ji_mutex);
+          unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
 
           break;
           }
@@ -1527,7 +1533,7 @@ int count_queued_jobs(
         }
       }
 
-    pthread_mutex_unlock(pj->ji_mutex);
+    unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
     }
 
   /* also count any jobs not yet queued that have already been accepted
@@ -2142,7 +2148,7 @@ void job_wait_over(
         /* recreate the work task entry */
         set_task(WORK_Timed, when, job_wait_over, strdup(pjob->ji_qs.ji_jobid), FALSE);
         
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         
         return;
         }
@@ -2160,7 +2166,7 @@ void job_wait_over(
     svr_evaljobstate(pjob, &newstate, &newsub, 0);
     svr_setjobstate(pjob, newstate, newsub, FALSE);
     
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     }
 
   return;
@@ -2501,7 +2507,7 @@ void set_resc_deflt(
     pque = get_jobs_queue(&pjob);
     if (pjob == NULL)
       {
-      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 12");
       return;
       }
     }
@@ -2559,7 +2565,7 @@ void set_resc_deflt(
     }
   else if (pjob == NULL)
     {
-    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 13");
     }
  
   return;
@@ -2785,7 +2791,7 @@ void correct_ct()
       if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
         pque->qu_numcompleted++;
       
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     
     unlock_queue(pque, "correct_ct", NULL, LOGLEVEL);
@@ -2806,7 +2812,81 @@ void correct_ct()
   }  /* END correct_ct() */
 
 
+int lock_ji_mutex(
 
+  job        *pjob,
+  const char *id,
+  char       *msg,
+  int        logging)
+  {
+  int rc = PBSE_NONE;
+  char *err_msg = NULL;
+  char stub_msg[] = "no pos";
+
+  if (logging >= 20)
+    {
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    if (msg == NULL)
+      msg = stub_msg;
+    snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    }
+
+  if (pthread_mutex_lock(pjob->ji_mutex) != 0)
+    {
+    if (logging >= 20)
+      {
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock queue %s mutex in method %s",
+                                   pjob->ji_qs.ji_jobid, id);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      }
+    rc = PBSE_MUTEX;
+    }
+
+  if (err_msg != NULL)
+  free(err_msg);
+
+  return rc;
+  }
+
+
+
+int unlock_ji_mutex(
+
+  job        *pjob,
+  const char *id,
+  char       *msg,
+  int        logging)
+  {
+  int rc = PBSE_NONE;
+  char *err_msg = NULL;
+  char stub_msg[] = "no pos";
+
+  if (logging >= 20)
+    {
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    if (msg == NULL)
+      msg = stub_msg;
+    snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    }
+
+  if (pthread_mutex_unlock(pjob->ji_mutex) != 0)
+    {
+    if (logging >= 20)
+      {
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock queue %s mutex in method %s",
+                                          pjob->ji_qs.ji_jobid, id);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      }
+    rc = PBSE_MUTEX;
+    }
+
+   if (err_msg != NULL)
+     free(err_msg);
+
+   return rc;
+   }
 
 
 #endif  /* NDEBUG */

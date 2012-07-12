@@ -127,6 +127,7 @@
 #include "track_alps_reservations.h"
 #include "job_func.h" /* svr_job_purge */
 #include "net_cache.h"
+#include "ji_mutex.h"
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -1663,7 +1664,7 @@ int handle_job_recovery(
             if (type == RECOV_COLD)
               pjob->ji_cold_restart = TRUE;
             
-            pthread_mutex_unlock(pjob->ji_mutex);
+            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
             }
 
           continue;
@@ -1684,7 +1685,7 @@ int handle_job_recovery(
           if (type == RECOV_COLD)
             pjob->ji_cold_restart = TRUE;
 
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
           }
         else
           {
@@ -1716,7 +1717,7 @@ int handle_job_recovery(
       {
       job *pjob = (job *)Array.Data[Index];
 
-      pthread_mutex_lock(pjob->ji_mutex);
+      lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
       if (pbsd_init_job(pjob, type) == FAILURE)
         {
@@ -1726,7 +1727,7 @@ int handle_job_recovery(
           pjob->ji_qs.ji_jobid,
           msg_script_open);
 
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
 
         continue;
         }
@@ -1750,11 +1751,11 @@ int handle_job_recovery(
           }
         else
           {
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
           }
         }
       else
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
       }
 
     DArrayFree(&Array);
@@ -1791,7 +1792,7 @@ int handle_job_recovery(
       
       job_save(pjob, SAVEJOB_FULL, 0);
       
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
       }
     }
 
@@ -1825,7 +1826,7 @@ int cleanup_recovered_arrays()
     if ((pjob = svr_find_job(pa->ai_qs.parent_id)) != NULL)
       {
       job_template_exists = TRUE;
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
 
     /* if no jobs were recovered, delete this array */
@@ -2384,7 +2385,7 @@ int pbsd_init_job(
           strcpy(job_id, pjob->ji_qs.ji_jobid);
           job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
           job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-          pthread_mutex_unlock(pjob->ji_mutex);
+          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           update_array_values(pa,JOB_STATE_RUNNING,aeTerminate,
               job_id, job_atr_hold, job_exit_status);
           
@@ -2754,7 +2755,7 @@ void resume_net_move(
   
     net_move(pjob, 0);
     
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     free(jobid);
     }

@@ -7,6 +7,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       TRQ-1083 and bugzilla 198.
   b - Fixed a seg-fault found a LBNL where freeaddrinfo would crash because
       of uninitialized memory.
+  b - Fixed a deadlock in handle_complete_second_time. We were not unlocking
+      when exiting svr_job_purge.
+  e - Added the wrappers lock_ji_mutex and unlock_ji_mutex to do the mutex locking
+      for all job->ji_mutex locks.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine

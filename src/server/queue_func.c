@@ -114,6 +114,7 @@
 #include "queue_recycler.h"
 #include "svrfunc.h"
 #include "svr_func.h" /* get_svr_attr_* */
+#include "ji_mutex.h"
 
 
 #define MSG_LEN_LONG 160
@@ -140,7 +141,7 @@ int lock_queue(
   int rc = PBSE_NONE;
   char *err_msg = NULL;
 
-  if (logging >= 6)
+  if (logging >= 7)
     { 
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s", the_queue->qu_qs.qu_name, id);
@@ -149,7 +150,7 @@ int lock_queue(
 
   if (pthread_mutex_lock(the_queue->qu_mutex) != 0)
     { 
-    if (logging >= 6) 
+    if (logging >= 7) 
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock queue %s mutex in method %s",
           the_queue->qu_qs.qu_name, id);
@@ -585,7 +586,7 @@ int get_parent_dest_queues(
   int        rc = PBSE_NONE;
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   unlock_queue(*parent, __func__, NULL, 0);
 
@@ -652,7 +653,7 @@ pbs_queue *lock_queue_with_job_held(
       {
       /* if fail */
       strcpy(jobid, pjob->ji_qs.ji_jobid);
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       lock_queue(pque, __func__, NULL, LOGLEVEL);
 
       if ((pjob = svr_find_job(jobid)) == NULL)

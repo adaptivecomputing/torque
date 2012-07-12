@@ -105,6 +105,7 @@
 #include "log.h"
 #include "../lib/Liblog/log_event.h"
 #include "reply_send.h" /* reply_send_svr */
+#include "ji_mutex.h"
 
 /* Global Data Items: */
 
@@ -136,7 +137,7 @@ int  req_locatejob(
 
   if (pjob)
     {
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     location = server_name;
     }

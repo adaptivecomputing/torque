@@ -330,7 +330,7 @@ void set_resc_assigned(
     }
   else if (pjob == NULL)
     {
-    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue");
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 9");
     }
 
   return;

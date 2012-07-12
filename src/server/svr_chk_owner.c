@@ -99,9 +99,11 @@
 #include "utils.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "net_cache.h"
+#include "ji_mutex.h"
 
 /* Global Data */
 
+extern int    LOGLEVEL;
 extern struct credential conn_credent[PBS_NET_MAX_CONNECTIONS];
 extern char *pbs_o_host;
 extern char  server_host[];
@@ -573,7 +575,7 @@ void chk_job_req_permissions(
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     *pjob_ptr = NULL;
     }
@@ -606,7 +608,7 @@ void chk_job_req_permissions(
 
         req_reject(PBSE_BADSTATE, 0, preq, NULL, tmpLine);
 
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
         *pjob_ptr = NULL;
 

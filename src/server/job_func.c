@@ -147,6 +147,7 @@
 #include "track_alps_reservations.h"
 #include "req_signal.h" /* issue_signal */
 #include "issue_request.h" /* release_req */
+#include "ji_mutex.h"
 
 
 #ifndef TRUE
@@ -428,6 +429,10 @@ int job_abt(
   old_state = pjob->ji_qs.ji_state;
   old_substate = pjob->ji_qs.ji_substate;
 
+
+
+  if (LOGLEVEL >= 6)
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
   /* notify user of abort if notification was requested */
 
   if (text != NULL)
@@ -485,7 +490,7 @@ int job_abt(
             {
             job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
             job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-            pthread_mutex_unlock(pjob->ji_mutex);
+            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
             update_array_values(pa,old_state,aeTerminate,
                 job_id, job_atr_hold, job_exit_status);
             
@@ -515,7 +520,7 @@ int job_abt(
       pjob->ji_qs.ji_jobid,
       old_substate);
     log_err(-1, myid, log_buf);
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     }
   else
     {
@@ -546,7 +551,7 @@ int job_abt(
         {
         job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
         update_array_values(pa,old_state,aeTerminate,
             job_id, job_atr_hold, job_exit_status);
         
@@ -665,7 +670,7 @@ job *job_alloc(void)
 
   pj->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(pj->ji_mutex,NULL);
-  pthread_mutex_lock(pj->ji_mutex);
+  lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
 
   pj->ji_qs.qs_version = PBS_QS_VERSION;
 
@@ -734,11 +739,13 @@ void job_free(
   if (use_recycle)
     {
     insert_into_recycler(pj);
-    pthread_mutex_unlock(pj->ji_mutex);
+    sprintf(log_buf, "1: jobid = %s", pj->ji_qs.ji_jobid);
+    unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
     }
   else
     {
-    pthread_mutex_unlock(pj->ji_mutex);
+    sprintf(log_buf, "2: jobid = %s", pj->ji_qs.ji_jobid);
+    unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
     pthread_mutex_destroy(pj->ji_mutex);
     memset(pj, 254, sizeof(job));
     free(pj);
@@ -1048,7 +1055,7 @@ void *job_clone_wt(
     free(jobid);
 
     if (template_job != NULL)
-      pthread_mutex_unlock(template_job->ji_mutex);
+      unlock_ji_mutex(template_job, __func__, "1", LOGLEVEL);
     return(NULL);
     }
 
@@ -1056,7 +1063,7 @@ void *job_clone_wt(
 
   snprintf(namebuf, sizeof(namebuf), "%s%s.AR",
     path_jobs, template_job->ji_qs.ji_fileprefix);
-  pthread_mutex_unlock(template_job->ji_mutex);
+  unlock_ji_mutex(template_job, __func__, "2", LOGLEVEL);
 
   while ((rn = (array_request_node *)GET_NEXT(pa->request_tokens)) != NULL)
     {
@@ -1065,9 +1072,9 @@ void *job_clone_wt(
 
     for (i = start; i <= end; i++)
       {
-      pthread_mutex_lock(template_job->ji_mutex);
+      lock_ji_mutex(template_job, __func__, NULL, LOGLEVEL);
       pjobclone = job_clone(template_job, pa, i);
-      pthread_mutex_unlock(template_job->ji_mutex);
+      unlock_ji_mutex(template_job, __func__, "3", LOGLEVEL);
 
       if (pjobclone == NULL)
         {
@@ -1115,7 +1122,7 @@ void *job_clone_wt(
       rn->start++;
       
       if (prev_index != -1)
-        pthread_mutex_unlock(pjobclone->ji_mutex);
+        unlock_ji_mutex(pjobclone, __func__, "4", LOGLEVEL);
       }  /* END for (i) */
 
     if (rn->start > rn->end)
@@ -1170,7 +1177,7 @@ void *job_clone_wt(
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
       
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
       }
     }
 
@@ -1617,6 +1624,9 @@ int svr_job_purge(
   job_has_arraystruct = ((pjob->ji_arraystruct == NULL)?FALSE:TRUE);
   job_has_checkpoint_file = pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags;
 
+  if (LOGLEVEL >= 10)
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+
   /* check to see if we are keeping a log of all jobs completed */
   get_svr_attr_l(SRV_ATR_RecordJobInfo, &record_job_info);
   if (record_job_info)
@@ -1688,7 +1698,7 @@ int svr_job_purge(
     {
     int need_deque = !pjob->ji_cold_restart;
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     /* jobs that are being deleted after a cold restart
      * haven't been queued */
@@ -1702,7 +1712,7 @@ int svr_job_purge(
       if (pjob->ji_being_recycled == FALSE)
         job_free(pjob, TRUE);
       else
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       }
     }
   else
@@ -2051,7 +2061,7 @@ job *find_job_by_array(
   if (i >= 0)
     pj = (job *)aj->ra->slots[i].item;
   if (pj != NULL)
-    pthread_mutex_lock(pj->ji_mutex);
+    lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
   
   pthread_mutex_unlock(aj->alljobs_mutex);
   
@@ -2059,7 +2069,7 @@ job *find_job_by_array(
     {
     if (pj->ji_being_recycled == TRUE)
       {
-      pthread_mutex_unlock(pj->ji_mutex);
+      unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
       pj = NULL;
       }
     }
@@ -2087,6 +2097,10 @@ job *svr_find_job(
   int   different = FALSE;
 
   job  *pj = NULL;
+
+
+  if (LOGLEVEL >= 10)
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, jobid);
 
   if ((at = strchr(jobid, (int)'@')) != NULL)
     * at = '\0'; /* strip off @server_name */
@@ -2303,14 +2317,14 @@ int get_jobs_index(
 
   if (pthread_mutex_trylock(aj->alljobs_mutex))
     {
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(aj->alljobs_mutex);
-    pthread_mutex_lock(pjob->ji_mutex);
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (pjob->ji_being_recycled == TRUE)
       {
       pthread_mutex_unlock(aj->alljobs_mutex);
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       return(-1);
       }
     }
@@ -2341,14 +2355,14 @@ int has_job(
 
   if (pthread_mutex_trylock(aj->alljobs_mutex))
     {
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(aj->alljobs_mutex);
-    pthread_mutex_lock(pjob->ji_mutex);
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (pjob->ji_being_recycled == TRUE)
       {
       pthread_mutex_unlock(aj->alljobs_mutex);
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       return(PBSE_JOB_RECYCLED);
       }
@@ -2384,16 +2398,18 @@ int  remove_job(
   int rc = PBSE_NONE;
   int index;
 
+  if (LOGLEVEL >= 10)
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
   if (pthread_mutex_trylock(aj->alljobs_mutex))
     {
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(aj->alljobs_mutex);
-    pthread_mutex_lock(pjob->ji_mutex);
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (pjob->ji_being_recycled == TRUE)
       {
       pthread_mutex_unlock(aj->alljobs_mutex);
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       return(PBSE_JOB_RECYCLED);
       }
     }
@@ -2431,11 +2447,11 @@ job *next_job(
 
   if (pjob != NULL)
     {
-    pthread_mutex_lock(pjob->ji_mutex);
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (pjob->ji_being_recycled == TRUE)
       {
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       pjob = next_job(aj,iter);
       }
@@ -2460,7 +2476,7 @@ job *next_job_from_back(
 
   pjob = (job *)next_thing_from_back(aj->ra,iter);
   if (pjob != NULL)
-    pthread_mutex_lock(pjob->ji_mutex);
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   pthread_mutex_unlock(aj->alljobs_mutex);
 
@@ -2468,7 +2484,7 @@ job *next_job_from_back(
     {
     if (pjob->ji_being_recycled == TRUE)
       {
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       pjob = next_job_from_back(aj,iter);
       }
@@ -2545,7 +2561,7 @@ job_array *get_jobs_array(
       {
       strcpy(jobid, pjob->ji_qs.ji_jobid);
       
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       if (LOGLEVEL >=7)
         {
         sprintf(log_buf, "locking ai_mutex: %s", __func__);

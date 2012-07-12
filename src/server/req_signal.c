@@ -101,6 +101,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
+#include "ji_mutex.h"
 
 /* Private Function local to this file */
 
@@ -148,7 +149,7 @@ int req_signaljob(
     {
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     return(PBSE_NONE);
     }
 
@@ -162,7 +163,7 @@ int req_signaljob(
       /* for suspend/resume, must be mgr/op */
       req_reject(PBSE_PERM, 0, preq, NULL, NULL);
       
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       return(PBSE_NONE);
       }
   
@@ -183,7 +184,7 @@ int req_signaljob(
     {
     req_reject(PBSE_JOBTYPE, 0, preq, NULL, NULL);
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     return(PBSE_NONE);
     }
 
@@ -220,7 +221,7 @@ int req_signaljob(
     }
 
   /* If successful we ack after mom replies to us, we pick up in post_signal_req() */
-  pthread_mutex_unlock(pjob->ji_mutex);
+  unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END req_signaljob() */
@@ -352,7 +353,7 @@ static void post_signal_req(
           }
         }
     
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
       }
     else
       {

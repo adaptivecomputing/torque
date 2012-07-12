@@ -98,11 +98,15 @@
 #include "svrfunc.h"
 #include "issue_request.h"
 #include "threadpool.h"
+#include "ji_mutex.h"
 
+/* Global Data */
+extern int LOGLEVEL;
 extern attribute_def    node_attr_def[];
-int save_node_status(struct pbsnode *current, pbs_attribute *temp);
 extern int svr_clnodes;
 
+/* Prototypes */
+int save_node_status(struct pbsnode *current, pbs_attribute *temp);
 
 struct pbsnode *find_alpsnode_by_name(
 
@@ -458,7 +462,7 @@ int record_reservation(
         create_alps_reservation(pjob);
         found_job = TRUE;
 
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         break;
         }
       }

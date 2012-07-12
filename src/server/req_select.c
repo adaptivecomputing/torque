@@ -107,7 +107,7 @@
 #include "reply_send.h" /* reply_send_svr */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_stat.h" /* stat_mom_job */
-
+#include "ji_mutex.h"
 
 /* Private Data */
 
@@ -460,7 +460,7 @@ static void sel_step2(
         strcpy(job_id, pjob->ji_qs.ji_jobid);
         job_substate = pjob->ji_qs.ji_substate;
         job_momstattime = pjob->ji_momstat;
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
         if ((job_substate == JOB_SUBSTATE_RUNNING) &&
             ((time_now - job_momstattime) > JobStatRate))
@@ -482,10 +482,10 @@ static void sel_step2(
           }
         }
       else
-        pthread_mutex_unlock(pjob->ji_mutex);
+        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       }
     else
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     }
 
   sel_step3(cntl);
@@ -609,7 +609,7 @@ static void sel_step3(
             {
             rc = PBSE_SYSTEM;
 
-            pthread_mutex_unlock(pjob->ji_mutex);
+            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
             
             break;
             }
@@ -630,7 +630,7 @@ static void sel_step3(
 
           if (rc && (rc != PBSE_PERM))
             {
-            pthread_mutex_unlock(pjob->ji_mutex);
+            unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
             
             break;
             }
@@ -640,7 +640,7 @@ static void sel_step3(
 
 nextjob:
     
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
     if (summarize_arrays)
       {

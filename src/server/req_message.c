@@ -99,6 +99,7 @@
 #include "log.h"
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
+#include "ji_mutex.h"
 
 
 /* Private Function local to this file */
@@ -109,6 +110,7 @@ static void post_message_req(struct work_task *);
 
 extern int   pbs_mom_port;
 extern char *msg_messagejob;
+extern int   LOGLEVEL;
 
 extern job  *chk_job_request(char *, struct batch_request *);
 int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
@@ -138,7 +140,7 @@ void *req_messagejob(
     {
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     
     return(NULL);
     }
@@ -157,7 +159,7 @@ void *req_messagejob(
 
   /* After MOM acts and replies to us, we pick up in post_message_req() */
   if (pjob != NULL)
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   return(NULL);
   } /* END req_messagejob() */

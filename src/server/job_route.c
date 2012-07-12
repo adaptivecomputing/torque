@@ -113,6 +113,7 @@
 #if __STDC__ != 1
 #include <memory.h>
 #endif
+#include "ji_mutex.h"
 
 #define ROUTE_RETRY_TIME 30
 
@@ -128,6 +129,7 @@ void queue_route(pbs_queue *);
 /* Global Data */
 extern char *msg_routexceed;
 extern char *msg_err_malloc;
+extern int LOGLEVEL;
 
 /*
  * Add an entry to the list of bad destinations for a job.
@@ -659,7 +661,7 @@ void *reroute_job(
       unlock_queue(pque, __func__, NULL, 0);
 
     if (pjob != NULL)
-      pthread_mutex_unlock(pjob->ji_mutex);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
   return(NULL);      
@@ -700,7 +702,7 @@ void queue_route(
       enqueue_threadpool_request(reroute_job, strdup(pjob->ji_qs.ji_jobid));
       }
 
-    pthread_mutex_unlock(pjob->ji_mutex);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
   return;
