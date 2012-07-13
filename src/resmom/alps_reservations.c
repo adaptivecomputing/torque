@@ -227,19 +227,8 @@ dynamic_string *get_reservation_command(
 
   while ((hr = (host_req *)next_thing(host_req_list, &iter)) != NULL)
     {
-    /* find the node list for nodes of equal ppn */
-    if ((nppn != 0) &&
-        (nppn != hr->ppn))
-      {
-      save_current_reserve_param(command, node_list, width, nppn);
-
-      /* clear values */
-      width = 0;
-      clear_dynamic_string(node_list);
-      }
-    
     width += hr->ppn;
-    nppn = hr->ppn;
+    nppn = MAX(nppn,hr->ppn);
     
     if (node_list->used != 0)
       append_dynamic_string(node_list, ",");
@@ -368,13 +357,13 @@ int execute_reservation(
   char **reservation_id)
 
   {
-  int       rc;
-  FILE     *alps_pipe;
-  int       fd;
-  char      output[MAXLINE * 4];
-  char     *ptr;
-  int       bytes_read;
-  int       total_bytes_read = 0;
+  int             rc;
+  FILE           *alps_pipe;
+  int             fd;
+  dynamic_string *output = NULL;
+  char            tmpBuf[MAXLINE];
+  int             bytes_read;
+  int             total_bytes_read = 0;
 
   if ((alps_pipe = popen(command_str, "r")) == NULL)
     {
@@ -389,13 +378,12 @@ int execute_reservation(
   fd = fileno(alps_pipe);
 
   /* now read from the pipe */
-  ptr = output;
-  memset(output, 0, sizeof(output));
-
-  while ((bytes_read = read(fd, ptr, sizeof(output) - total_bytes_read - 1)) > 0)
+  output = get_dynamic_string(-1, NULL);
+  while ((bytes_read = read(fd, tmpBuf, sizeof(tmpBuf) - 1)) > 0)
     {
     total_bytes_read += bytes_read;
-    ptr += bytes_read;
+    tmpBuf[bytes_read] = '\0';
+    append_dynamic_string(output, tmpBuf);
     }
 
   /* perform post-processing */
@@ -406,8 +394,10 @@ int execute_reservation(
     rc = READING_PIPE_ERROR;
   else
     {
-    rc = parse_reservation_output(output, reservation_id);
+    rc = parse_reservation_output(output->str, reservation_id);
     }
+
+  free_dynamic_string(output);
 
   return(rc);
   } /* END execute_reservation() */
