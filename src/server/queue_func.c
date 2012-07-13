@@ -141,20 +141,20 @@ int lock_queue(
   int rc = PBSE_NONE;
   char *err_msg = NULL;
 
-  if (logging >= 7)
+  if (logging >= 10)
     { 
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s", the_queue->qu_qs.qu_name, id);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
     }
 
   if (pthread_mutex_lock(the_queue->qu_mutex) != 0)
     { 
-    if (logging >= 7) 
+    if (logging >= 10) 
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock queue %s mutex in method %s",
           the_queue->qu_qs.qu_name, id);
-      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
       }
     rc = PBSE_MUTEX;
     } 
@@ -177,22 +177,22 @@ int unlock_queue(
   char *err_msg = NULL;
   char stub_msg[] = "no pos";
 
-  if (logging >= 7)
+  if (logging >= 10)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)
       msg = stub_msg;
     snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", the_queue->qu_qs.qu_name, id, msg);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
     }
 
   if (pthread_mutex_unlock(the_queue->qu_mutex) != 0)
     {
-    if (logging >= 7)
+    if (logging >= 10)
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock queue %s mutex in method %s",
           the_queue->qu_qs.qu_name, id);
-      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
       }
     rc = PBSE_MUTEX;
     }

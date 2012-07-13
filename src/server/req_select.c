@@ -966,11 +966,14 @@ static int build_selist(
             (pc != plist->al_value))
           {
 
+
           /* does specified destination exist? */
-          *pque = find_queuebyname(plist->al_value); /* mutex freed later */
+          *pque = find_queuebyname(plist->al_value); 
 
           if (*pque == (pbs_queue *)0)
             return (PBSE_UNKQUE);
+          
+          unlock_queue(*pque, __func__, NULL, LOGLEVEL);
           }
         }
       }

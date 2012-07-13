@@ -2607,7 +2607,9 @@ pbs_queue *get_jobs_queue(
 
   {
   job       *pjob = *pjob_ptr;
-  pbs_queue *pque = lock_queue_with_job_held(pjob->ji_qhdr, pjob_ptr);
+  pbs_queue *pque;
+
+  pque = lock_queue_with_job_held(pjob->ji_qhdr, pjob_ptr);
 
   return(pque);
   } /* END get_jobs_queue() */
