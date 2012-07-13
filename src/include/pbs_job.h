@@ -582,8 +582,8 @@ struct job
   int               ji_cold_restart; /* set to TRUE if this job has been loaded through a cold restart */
 #endif/* PBS_MOM */   /* END SERVER ONLY */
 
-  pthread_mutex_t *ji_mutex;
-  char    ji_being_recycled;
+  pthread_mutex_t  *ji_mutex;
+  char              ji_being_recycled;
 
   /*
    * fixed size internal data - maintained via "quick save"

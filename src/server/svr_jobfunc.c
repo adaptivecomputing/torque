@@ -138,6 +138,7 @@
 #include "queue_func.h" /* find_queuebyname */
 #include "../lib/Libutils/u_lock_ctl.h" /* *startup */
 #include "ji_mutex.h"
+#include "user_info.h"
 
 #define MSG_LEN_LONG 160
 

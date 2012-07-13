@@ -77,105 +77,165 @@
 * without reference to its choice of law rules.
 */
 
-/*
- * This is a list of public server attributes
- *
- * FORMAT:
- *  attr1,
- *   attr2, <--- important the last has a comma after it
- *
- *  This file will be used for the initialization of an array
- *
- */
+#include <stdio.h>
+#include <errno.h>
+#include "user_info.h"
+#include "svrfunc.h"
+#include "array.h"
+#include "server.h"
 
-/* sync w/SRV_ATR_* in server.h, server/svr_attr_def.c, and ATTR_* in pbs_ifl.h  */
+user_info_holder users;
 
-ATTR_aclhten,
-ATTR_aclhost,
-ATTR_acluren,
-ATTR_acluser,
-ATTR_aclroot,
-ATTR_comment,
-ATTR_defnode,
-ATTR_dfltque,
-ATTR_locsvrs,
-ATTR_logevents,
-ATTR_loglevel,
-ATTR_managers,
-ATTR_mailfrom,
-ATTR_maxrun,
-ATTR_maxuserrun,
-ATTR_maxgrprun,
-ATTR_nodepack,
-ATTR_nodesuffix,
-ATTR_operators,
-ATTR_queryother,
-ATTR_rescavail,
-ATTR_resccost,
-ATTR_rescdflt,
-ATTR_rescmax,
-ATTR_schedit,
-ATTR_scheduling,
-ATTR_syscost,
-ATTR_pingrate,
-ATTR_ndchkrate,
-ATTR_tcptimeout,
-ATTR_jobstatrate,
-ATTR_polljobs,
-ATTR_downonerror,
-ATTR_disableserveridcheck,
-ATTR_jobnanny,
-ATTR_ownerpurge,
-ATTR_qcqlimits,
-ATTR_momjobsync,
-ATTR_maildomain,
-ATTR_killdelay,
-ATTR_acllogic,
-ATTR_aclgrpslpy,
-ATTR_keepcompleted,
-ATTR_submithosts,
-ATTR_allownodesubmit,
-ATTR_allowproxyuser,
-ATTR_servername,
-ATTR_autonodenp,
-ATTR_logfilemaxsize,
-ATTR_logfilerolldepth,
-ATTR_logkeepdays,
-ATTR_nextjobnum,
-ATTR_tokens,
-ATTR_extraresc,
-ATTR_schedversion,
-ATTR_acctkeepdays,
-ATTR_lockfile,
-ATTR_LockfileUpdateTime,
-ATTR_LockfileCheckTime,
-ATTR_credentiallifetime,
-ATTR_jobmustreport,
-ATTR_checkpoint_dir,
-ATTR_dispsvrsuffix,
-ATTR_jobsuffixalias,
-ATTR_mailsubjectfmt,
-ATTR_mailbodyfmt,
-ATTR_npdefault,
-ATTR_clonebatchsize,
-ATTR_clonebatchdelay,
-ATTR_jobstarttimeout,
-ATTR_jobforcecanceltime,
-ATTR_maxarraysize,
-ATTR_maxslotlimit,
-ATTR_recordjobinfo,
-ATTR_recordjobscript,
-ATTR_joblogfilemaxsize,
-ATTR_joblogfilerolldepth,
-ATTR_joblogkeepdays,
-#ifdef MUNGE_AUTH
-ATTR_authusers,
-#endif
-ATTR_minthreads,
-ATTR_maxthreads,
-ATTR_threadidleseconds,
-ATTR_moabarraycompatible,
-ATTR_nomailforce,
-ATTR_crayenabled,
-ATTR_interactivejobscanroam,
-ATTR_maxuserqueuable,
+
+void initialize_user_info_holder()
+  {
+  users.ui_ra = initialize_resizable_array(INITIAL_USER_INFO_COUNT);
+  users.ui_ht = create_hash(INITIAL_HASH_SIZE);
+
+  users.ui_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(users.ui_mutex, NULL);
+  } /* END initialize_user_info_holder() */
+
+
+
+unsigned int get_num_queued(
+    
+  char *user_name)
+
+  {
+  unsigned int  num_queued = 0;
+  int           index;
+  user_info    *ui = NULL;
+
+  pthread_mutex_lock(users.ui_mutex);
+
+  if ((index = get_value_hash(users.ui_ht, user_name)) > 0)
+    {
+    ui = users.ui_ra->slots[index].item;
+    num_queued = ui->num_jobs_queued;
+    }
+
+  pthread_mutex_unlock(users.ui_mutex);
+
+  return(num_queued);
+  } /* END get_num_queued() */
+
+
+
+unsigned int count_jobs_submitted(
+
+  job *pjob)
+
+  {
+  unsigned int num_to_add = 1;
+
+  if (pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str != NULL)
+    {
+    num_to_add = num_array_jobs(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str);
+    }
+
+  return(num_to_add);
+  } /* END count_jobs_submitted() */
+
+
+
+
+int  can_queue_new_job(
+    
+  char *user_name,
+  job  *pjob)
+
+  {
+  long         max_queuable = -1;
+  int          can_queue_another = TRUE;
+  unsigned int num_queued = 0;
+  unsigned int num_to_add;
+
+  get_svr_attr_l(SRV_ATR_MaxUserQueuable, &max_queuable);
+
+  if (max_queuable >= 0)
+    {
+    num_to_add = count_jobs_submitted(pjob);
+    num_queued = get_num_queued(user_name);
+
+    if (num_queued + num_to_add > max_queuable)
+      can_queue_another = FALSE;
+    }
+  
+  return(can_queue_another);
+  } /* END can_queue_new_job() */
+
+
+
+
+int  increment_queued_jobs(
+    
+  char *user_name,
+  job  *pjob)
+
+  {
+  int           rc = PBSE_NONE;
+  user_info    *ui;
+  int           index;
+  unsigned int  num_submitted = count_jobs_submitted(pjob);
+
+  pthread_mutex_lock(users.ui_mutex);
+
+  /* get the user if there is one */
+  if ((index = get_value_hash(users.ui_ht, user_name)) > 0)
+    {
+    ui = users.ui_ra->slots[index].item;
+    ui->num_jobs_queued += num_submitted;
+    }
+  else
+    {
+    /* user doesn't exist, create a new one and insert */
+    ui = calloc(1, sizeof(user_info));
+    ui->user_name = strdup(user_name);
+    ui->num_jobs_queued = num_submitted;
+
+    if ((index = insert_thing(users.ui_ra, ui)) == -1)
+      {
+      rc = ENOMEM;
+      log_err(rc, __func__, "Can't resize the user info array");
+      }
+    else
+      {
+      add_hash(users.ui_ht, index, ui->user_name);
+      }
+    }
+
+  pthread_mutex_unlock(users.ui_mutex);
+
+  return(rc);
+  } /* END increment_queued_jobs() */
+
+
+
+
+int  decrement_queued_jobs(
+    
+  char *user_name)
+
+  {
+  user_info *ui;
+  int        index;
+  int        rc = THING_NOT_FOUND;
+
+  pthread_mutex_lock(users.ui_mutex);
+
+  if ((index = get_value_hash(users.ui_ht, user_name)) > 0)
+    {
+    ui = users.ui_ra->slots[index].item;
+    ui->num_jobs_queued -= 1;
+    rc = PBSE_NONE;
+    }
+
+  pthread_mutex_unlock(users.ui_mutex);
+
+  return(rc);
+  } /* END decrement_queued_jobs() */
+
+
+
+
