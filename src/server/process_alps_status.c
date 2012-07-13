@@ -199,7 +199,8 @@ void *check_if_orphaned(
   {
   char                 *rsv_id = (char *)vp;
   struct batch_request *preq;
-  int                   handle;
+  int                   handle = -1;
+  int                   retries = 0;
   struct pbsnode       *pnode;
 
   if (is_orphaned(rsv_id) == TRUE)
@@ -216,12 +217,22 @@ void *check_if_orphaned(
       memcpy(&hostaddr, &pnode->nd_sock_addr.sin_addr, sizeof(hostaddr));
       momaddr = ntohl(hostaddr.s_addr);
 
-      handle = svr_connect(momaddr, pnode->nd_mom_port, &local_errno, pnode, NULL, ToServerDIS);
+      while ((handle < 0) &&
+             (retries < 3))
+        {
+        handle = svr_connect(momaddr, pnode->nd_mom_port, &local_errno, pnode, NULL, ToServerDIS);
+        retries++;
+        }
 
       /* unlock before the network transaction */
       unlock_node(pnode, __func__, NULL, 0);
       
-      if (issue_Drequest(handle, preq, release_req, 0) != PBSE_NONE)
+      if (handle >= 0)
+        {
+        if (issue_Drequest(handle, preq, release_req, 0) != PBSE_NONE)
+          free_br(preq);
+        }
+      else
         free_br(preq);
       }
     }
