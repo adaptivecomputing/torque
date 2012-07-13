@@ -11,6 +11,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       when exiting svr_job_purge.
   e - Added the wrappers lock_ji_mutex and unlock_ji_mutex to do the mutex locking
       for all job->ji_mutex locks.
+  e - admins can now set the global max_user_queuable limit using qmgr. TRQ-978.
+  b - No longer make multiple alps reservation parameters for each alps reservation.
+      This creates problems for the aprun -B command.
+  b - Fix a problem running extremely large jobs with alps 1.1 and 1.2. Reservations
+      weren't correctly created in the past. TRQ-1092.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine
