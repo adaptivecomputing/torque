@@ -150,7 +150,7 @@ int lock_node(
     if (msg == NULL)
       msg = stub_msg;
     snprintf(err_msg, MSG_LEN_LONG, "locking start %s in method %s-%s", the_node->nd_name, id, msg);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
     }
 
   
@@ -160,7 +160,7 @@ int lock_node(
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock node %s mutex in method %s",
           the_node->nd_name, id);
-      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
       }
     rc = PBSE_MUTEX;
     }
@@ -168,7 +168,7 @@ int lock_node(
   if (logging >= 7)
     {
     snprintf(err_msg, MSG_LEN_LONG, "locking complete %s in method %s", the_node->nd_name, id);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
     }
 
   return rc;
@@ -191,7 +191,7 @@ int unlock_node(
     if (msg == NULL)
       msg = stub_msg;
     snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", the_node->nd_name, id, msg);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
     }
 
   if (pthread_mutex_unlock(the_node->nd_mutex) != 0)
@@ -200,7 +200,7 @@ int unlock_node(
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock node %s mutex in method %s",
           the_node->nd_name, id);
-      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
       }
     rc = PBSE_MUTEX;
     }
