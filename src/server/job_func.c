@@ -148,6 +148,7 @@
 #include "req_signal.h" /* issue_signal */
 #include "issue_request.h" /* release_req */
 #include "ji_mutex.h"
+#include "user_info.h"
 
 
 #ifndef TRUE
@@ -710,6 +711,9 @@ void job_free(
 
     log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
     }
+
+  if (pj->ji_qs.ji_state != JOB_STATE_TRANSIT)
+    decrement_queued_jobs(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
 
   /* remove any calloc working pbs_attribute space */
   for (i = 0;i < JOB_ATR_LAST;i++)
@@ -2153,7 +2157,7 @@ void initialize_all_jobs_array(
   aj->ht = create_hash(INITIAL_HASH_SIZE);
 
   aj->alljobs_mutex = calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(aj->alljobs_mutex,NULL);
+  pthread_mutex_init(aj->alljobs_mutex, NULL);
   } /* END initialize_all_jobs_array() */
 
 

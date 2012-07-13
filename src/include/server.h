@@ -200,6 +200,7 @@ enum srv_atr
   SRV_ATR_NoMailForce,
   SRV_ATR_CrayEnabled,
   SRV_ATR_InteractiveJobsCanRoam,
+  SRV_ATR_MaxUserQueuable,
 
 #include "site_svr_attr_enum.h"
   /* This must be last */

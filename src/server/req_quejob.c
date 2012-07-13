@@ -127,7 +127,7 @@
 #include "pbs_nodes.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "ji_mutex.h"
-
+#include "user_info.h"
 #include "work_task.h"
 
 
@@ -1324,6 +1324,28 @@ int req_quejob(
     NULL,
     server_name,
     resc_access_perm);
+
+  /* make sure its okay to submit this job */
+  if (can_queue_new_job(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj) == FALSE)
+    {
+    long max_queuable;
+
+    get_svr_attr_l(SRV_ATR_MaxUserQueuable, &max_queuable);
+    snprintf(log_buf, sizeof(log_buf),
+      "Job %s violates the global server limit of %ld jobs queued per user",
+      pj->ji_qs.ji_jobid,
+      max_queuable);
+
+    svr_job_purge(pj);
+
+    req_reject(PBSE_MAXQUED, 0, preq, NULL, log_buf);
+    
+    return(PBSE_MAXQUED);
+    }
+  else
+    {
+    increment_queued_jobs(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+    }
 
   /*
    * See if the job is qualified to go into the requested queue.

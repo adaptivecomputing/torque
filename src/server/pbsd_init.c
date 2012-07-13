@@ -128,6 +128,7 @@
 #include "job_func.h" /* svr_job_purge */
 #include "net_cache.h"
 #include "ji_mutex.h"
+#include "user_info.h"
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -1237,6 +1238,8 @@ int initialize_data_structures_and_mutexes()
   initialize_hello_container(&failures);
   initialize_task_recycler();
   initialize_queue_recycler();
+
+  initialize_user_info_holder();
 
   CLEAR_HEAD(svr_newnodes);
 

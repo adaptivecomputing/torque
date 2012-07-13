@@ -1319,6 +1319,18 @@ attribute_def svr_attr_def[] =
    ATR_TYPE_LONG,
    PARENT_TYPE_SERVER},
 
+  /* SRV_ATR_MaxUserQueuable */
+  {ATTR_maxuserqueuable, /* "max_user_queuable" */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   MGR_ONLY_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER},
+
   /* site supplied server pbs_attribute definitions if any, see site_svr_attr_*.h  */
 #include "site_svr_attr_def.h"
 

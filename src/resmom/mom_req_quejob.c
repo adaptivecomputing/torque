@@ -114,7 +114,6 @@
 
 extern int  reply_jid(char *);
 extern int  svr_authorize_jobreq(struct batch_request *, job *);
-extern int  svr_chkque(job *, pbs_queue *, char *, int, char *);
 int         reply_send_mom(struct batch_request *request);
 extern void check_state(int);
 extern void mom_server_all_update_stat();
@@ -179,8 +178,6 @@ static int user_account_read_user(char *);
 
 /*
  * req_quejob - Queue Job Batch Request processing routine
- *  NOTE:  calls svr_chkque() to validate queue access
- *
  */
 
 void req_quejob(
