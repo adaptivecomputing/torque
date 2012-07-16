@@ -1596,10 +1596,10 @@ int record_jobinfo(
 /*
  * svr_job_purge - purge job from system
  *
+ * pjob->ji_mutex comes into this function locked but 
+ * will always exit unlocked.
  * The job is dequeued; the job control file, script file and any spooled
  * output files are unlinked, and the job structure is freed.
- * If we are MOM, the task files and checkpoint files are also
- * removed.
  */
 
 int svr_job_purge(
@@ -1693,7 +1693,10 @@ int svr_job_purge(
         }
       }
     else
+      {
+      unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
       return PBSE_JOBNOTFOUND;
+      }
     }
 
 
