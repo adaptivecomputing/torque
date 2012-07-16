@@ -1572,10 +1572,6 @@ int handle_complete_first_time(
   if (KeepSeconds <= 0)
     {
     rc = svr_job_purge(pjob);
-
-    if (rc == PBSE_UNKJOBID)
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
     return(rc);
     }
 
@@ -1681,12 +1677,8 @@ int handle_complete_second_time(
     rc = PBSE_JOBWORKDELAY;
     }
   else
-    {
     rc = svr_job_purge(pjob);
 
-    if (rc != PBSE_UNKJOBID)
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    }
   return(rc); 
   } /* END handle_complete_second_time() */
 
