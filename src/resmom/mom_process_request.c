@@ -126,7 +126,6 @@ void *mom_process_request(
   void *sock_num) /* file descriptor (socket) to get request */
 
   {
-  char                 *id = "mom_process_request";
   int                   rc;
   struct batch_request *request = NULL;
   int                   sfds = *(int *)sock_num;
@@ -236,11 +235,7 @@ void *mom_process_request(
         reqtype_to_txt(request->rq_type),
         request->rq_host);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
 
     if (!AVL_is_in_tree_no_port_compare(svr_conn[chan->sock].cn_addr, 0, okclients))
@@ -249,7 +244,7 @@ void *mom_process_request(
         reqtype_to_txt(request->rq_type),
         request->rq_host);
 
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
       mom_close_client(chan->sock);
       DIS_tcp_cleanup(chan);
@@ -262,7 +257,7 @@ void *mom_process_request(
         reqtype_to_txt(request->rq_type),
         request->rq_host);
 
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
 
     mom_server_update_receive_time_by_ip(svr_conn[chan->sock].cn_addr, reqtype_to_txt(request->rq_type));
@@ -305,15 +300,13 @@ void mom_dispatch_request(
   struct batch_request *request) /* I */
 
   {
-  char *id = "dispatch_request";
-
   if (LOGLEVEL >= 5)
     {
     sprintf(log_buffer,"dispatching request %s on sd=%d",
       reqtype_to_txt(request->rq_type),
       sfds);
 
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
   switch (request->rq_type)

@@ -3996,13 +3996,11 @@ int handle_im_obit_task_response(
 int handle_im_get_info_response(
     
   struct tcp_chan *chan,
-  job        *pjob,       /* I */
-  tm_task_id  event_task, /* I */
-  tm_event_t  event)      /* I */
+  job             *pjob,       /* I */
+  tm_task_id       event_task, /* I */
+  tm_event_t       event)      /* I */
 
   {
-  static char *id = "handle_im_get_info_response";
-
   char   *info;
   char   *jobid = pjob->ji_qs.ji_jobid;
   int     ret;
@@ -4018,7 +4016,7 @@ int handle_im_get_info_response(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: GET_INFO %s OKAY %d\n",
-      id,
+      __func__,
       jobid,
       event_task);
     
@@ -7493,8 +7491,8 @@ static int adoptSession(
     {
     /* Didn't find a job with this resource id. Complain. */
     (void)sprintf(log_buffer,
-                  "Adoption rejected: no job with id %1.30s",
-                  id);
+      "Adoption rejected: no job with id %1.30s",
+      id);
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
                "adoptSession()", log_buffer);
     return TM_ERROR;
@@ -7605,7 +7603,7 @@ static int adoptSession(
         pid_str,
         cpuset_path);
 
-      log_err(-1,id,log_buffer);
+      log_err(-1, __func__, log_buffer);
       }
     fclose(fp);
     }
@@ -7615,7 +7613,7 @@ static int adoptSession(
       "Unable to open the cpuset's task file (%s)\n",
       cpuset_path);
 
-    log_err(-1,id,log_buffer);
+    log_err(-1, __func__, log_buffer);
     }
 #endif /* def PENABLE_LINUX26_CPUSETS */
 
