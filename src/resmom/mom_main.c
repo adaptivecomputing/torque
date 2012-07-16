@@ -684,9 +684,7 @@ char *nullproc(
   struct rm_attribute *attrib)
 
   {
-  char *id = "nullproc";
-
-  log_err(-1,id,"should not be called");
+  log_err(-1, __func__, "should not be called");
 
   return(NULL);
   }  /* END nullproc() */
@@ -699,13 +697,11 @@ static char *arch(
   struct rm_attribute *attrib)  /* I */
 
   {
-  char *id = "arch";
-
   struct config *cp;
 
   if (attrib != NULL)
     {
-    log_err(-1, id, extra_parm);
+    log_err(-1, __func__, extra_parm);
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -741,13 +737,11 @@ static char *opsys(
   struct rm_attribute *attrib)  /* I */
 
   {
-  char *id = "opsys";
-
   struct config *cp;
 
   if (attrib != NULL)
     {
-    log_err(-1, id, extra_parm);
+    log_err(-1, __func__, extra_parm);
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -816,11 +810,9 @@ static char *reqmsg(
   struct rm_attribute *attrib)
 
   {
-  char  *id = "reqmsg";
-
   if (attrib != NULL)
     {
-    log_err(-1, id, extra_parm);
+    log_err(-1, __func__, extra_parm);
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -943,8 +935,6 @@ static char *reqvarattr(
   struct rm_attribute *attrib)  /* I */
 
   {
-  static char id[] = "reqvarattr";
-
   static char    *list = NULL, *child_spot;
   static int      listlen = 0;
 
@@ -966,7 +956,7 @@ static char *reqvarattr(
       {
       /* FAILURE - cannot alloc memory */
 
-      log_err(errno,id,"cannot alloc memory");
+      log_err(errno, __func__, "cannot alloc memory");
 
       return(" ");
       }
@@ -1005,7 +995,7 @@ static char *reqvarattr(
 
           if (list == NULL)
             {
-            log_err(errno,id,"cannot alloc memory");
+            log_err(errno, __func__, "cannot alloc memory");
 
             return(" ");
             }
@@ -1055,7 +1045,7 @@ retryread:
           if (errno == EINTR)
             goto retryread;
 
-          log_err(errno, id, "pipe read");
+          log_err(errno, __func__, "pipe read");
 
           sprintf(pva->va_value, "? %d",
             RM_ERR_SYSTEM);
@@ -1115,7 +1105,7 @@ retryread:
 
       if (list == NULL)
         {
-        log_err(errno,id,"cannot alloc memory");
+        log_err(errno, __func__, "cannot alloc memory");
 
         return(" ");
         }
@@ -1137,8 +1127,6 @@ char *reqgres(
   struct rm_attribute *attrib)  /* I (ignored) */
 
   {
-  char  *id = "reqgres";
-
   struct config *cp;
 
   static char   GResBuf[1024];
@@ -1148,7 +1136,7 @@ char *reqgres(
 
   if (attrib != NULL)
     {
-    log_err(-1, id, extra_parm);
+    log_err(-1, __func__, extra_parm);
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -1256,12 +1244,11 @@ static char *requname(
   struct rm_attribute *attrib)
 
   {
-  char *id = "uname";
   char *cp;
 
   if (attrib != NULL)
     {
-    log_err(-1, id, extra_parm);
+    log_err(-1, __func__, extra_parm);
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -1282,13 +1269,11 @@ static char *validuser(
   struct rm_attribute *attrib)
 
   {
-  char *id = "valid_user";
-
   struct passwd *p;
 
   if ((attrib == NULL) || (attrib->a_value == NULL))
     {
-    log_err(-1, id, no_parm);
+    log_err(-1, __func__, no_parm);
     rm_errno = RM_ERR_NOPARAM;
 
     return(NULL);
@@ -1315,13 +1300,12 @@ char *loadave(
    * so there's no way to obtain the load average of a numa node */
   return(NULL);
 #else
-  char       *id = "loadave";
   static char  ret_string[20];
   double       la;
 
   if (attrib)
     {
-    log_err(-1, id, extra_parm);
+    log_err(-1, __func__, extra_parm);
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -1431,9 +1415,7 @@ char *dependent(
 void initialize(void)
 
   {
-  char *id = "initialize";
-
-  log_record(PBSEVENT_SYSTEM, 0, id, "independent");
+  log_record(PBSEVENT_SYSTEM, 0, __func__, "independent");
 
   dep_initialize();
 
@@ -1463,18 +1445,16 @@ void die(
   int sig)
 
   {
-  char *id = "die";
-
   if (sig > 0)
     {
     sprintf(log_buffer, "caught signal %d",
             sig);
 
-    log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+    log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
     }
   else
     {
-    log_record(PBSEVENT_SYSTEM, 0, id, "abnormal termination");
+    log_record(PBSEVENT_SYSTEM, 0, __func__, "abnormal termination");
     }
 
   cleanup();
@@ -1530,7 +1510,6 @@ void checkret(
   long   len)
 
   {
-  char *id = "checkret";
   char *hold;
 
   if ((*spot - ret_string) < (ret_size - len))
@@ -1543,7 +1522,7 @@ void checkret(
   sprintf(log_buffer, "size increased to %ld",
           ret_size);
 
-  log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+  log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
 
   hold = realloc(ret_string, ret_size); /* new buf */
 
@@ -1674,8 +1653,6 @@ u_long addclient(
   char *name)  /* I */
 
   {
-  static char      id[] = "addclient";
-
   struct addrinfo *addr_info;
   struct in_addr   saddr;
   u_long           ipaddr;
@@ -1687,7 +1664,7 @@ u_long addclient(
     sprintf(log_buffer, "host %s not found",
             name);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     return(0);
     }
@@ -1742,14 +1719,12 @@ static u_long setpbsserver(
   char *value)  /* I */
 
   {
-  static char   id[] = "setpbsserver";
-
   if ((value == NULL) || (*value == '\0'))
     {
     return(1);    /* FAILURE - nothing specified */
     }
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
 
 
   return(mom_server_add(value));
@@ -1763,13 +1738,11 @@ static u_long settmpdir(
   char *Value)
 
   {
-  static  char    id[] = "settmpdir";
-
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, Value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, Value);
 
   if (*Value != '/')
     {
-    log_err(-1, id, "tmpdir must be a full path");
+    log_err(-1, __func__, "tmpdir must be a full path");
 
     return(0);
     }
@@ -1784,13 +1757,11 @@ static u_long setxauthpath(
   char *Value)
 
   {
-  static  char    id[] = "setxauthpath";
-
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, Value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, Value);
 
   if (*Value != '/')
     {
-    log_err(-1, id, "xauthpath must be a full path");
+    log_err(-1, __func__, "xauthpath must be a full path");
 
     return(0);
     }
@@ -1809,14 +1780,13 @@ static u_long setrcpcmd(
   char *Value)  /* I */
 
   {
-  static char  id[] = "rcpcmd";
   static char *ptr;
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, Value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, Value);
 
   if (*Value != '/')
     {
-    log_err(-1, id, "rcpcmd must be a full path");
+    log_err(-1, __func__, "rcpcmd must be a full path");
 
     /* FAILURE */
 
@@ -1874,11 +1844,9 @@ static u_long restricted(
   char *name)
 
   {
-  static char id[] = "restricted";
-
   char **tmpMaskClient;
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, name);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, name);
 
   if (mask_max == 0)
     {
@@ -1886,7 +1854,7 @@ static u_long restricted(
       {
       /* FAILURE - cannot alloc memory */
 
-      log_err(errno,id,"cannot alloc memory");
+      log_err(errno, __func__, "cannot alloc memory");
 
       return(-1);
       }
@@ -1900,7 +1868,7 @@ static u_long restricted(
     {
     /* FAILURE - cannot alloc memory */
 
-    log_err(errno,id,"cannot alloc memory");
+    log_err(errno, __func__, "cannot alloc memory");
 
     return(-1);
     }
@@ -1919,7 +1887,7 @@ static u_long restricted(
       {
       /* FAILURE - cannot alloc memory */
 
-      log_err(errno,id,"cannot alloc memory");
+      log_err(errno, __func__, "cannot alloc memory");
 
       return(-1);
       }
@@ -1941,9 +1909,7 @@ static u_long configversion(
   char *Value)  /* I */
 
   {
-  static char   id[] = "configversion";
-
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, Value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, Value);
 
   if (Value == NULL)
     {
@@ -2003,9 +1969,7 @@ static u_long cputmult(
   char *value)  /* I */
 
   {
-  static char id[] = "cputmult";
-
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
 
   if ((cputfactor = atof(value)) == 0.0)
     {
@@ -2024,8 +1988,6 @@ static u_long wallmult(
   char *value)
 
   {
-  static char id[] = "wallmult";
-
   double tmpD;
 
   if (value == NULL)
@@ -2035,7 +1997,7 @@ static u_long wallmult(
     return(0);
     }
 
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
 
   tmpD = atof(value);
 
@@ -2066,19 +2028,13 @@ static u_long usecp(
 
   struct cphosts   *newp = NULL;
 
-  static char *id = "usecp";
-
   /* FORMAT:  <HOST>:<FROM> <TO> */
 
   /*
    * HvB and Willem added this for logging purpose
    */
 
-  log_record(
-    PBSEVENT_SYSTEM,
-    PBS_EVENTCLASS_SERVER,
-    id,
-    value);
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
 
   if (cphosts_max == 0)
     {
@@ -2087,9 +2043,9 @@ static u_long usecp(
     if (pcphosts == NULL)
       {
       sprintf(log_buffer, "%s: out of memory while allocating pcphosts",
-        id);
+        __func__);
 
-      log_err(-1, id, log_buffer);
+      log_err(-1, __func__, log_buffer);
 
       return(0);
       }
@@ -2107,9 +2063,9 @@ static u_long usecp(
       /* FAILURE */
 
       sprintf(log_buffer,"%s: out of memory while reallocating pcphosts",
-        id);
+        __func__);
 
-      log_err(-1,id,log_buffer);
+      log_err(-1, __func__, log_buffer);
 
       return(0);
       }
@@ -2128,7 +2084,7 @@ static u_long usecp(
     sprintf(log_buffer, "invalid host specification: %s",
       value);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     return(0);
     }
@@ -2142,9 +2098,9 @@ static u_long usecp(
     /* FAILURE */
 
     sprintf(log_buffer, "%s: out of memory in strdup(cph_hosts)",
-      id);
+      __func__);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     return(0);
     }
@@ -2157,10 +2113,10 @@ static u_long usecp(
       {
       sprintf(log_buffer, "invalid '%s' specification %s: "
         "missing destination path",
-        id,
+        __func__,
         value);
 
-      log_err(-1, id, log_buffer);
+      log_err(-1, __func__, log_buffer);
 
       free(pcphosts[cphosts_num].cph_hosts);
 
@@ -2177,9 +2133,9 @@ static u_long usecp(
   if (pcphosts[cphosts_num].cph_from == NULL)
     {
     sprintf(log_buffer, "%s: out of memory in strdup(cph_from)",
-      id);
+      __func__);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     free(pcphosts[cphosts_num].cph_hosts);
 
@@ -2191,9 +2147,9 @@ static u_long usecp(
   if (pcphosts[cphosts_num].cph_to == NULL)
     {
     sprintf(log_buffer, "%s: out of memory in strdup(cph_to)",
-      id);
+      __func__);
 
-    log_err(-1, id, log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     free(pcphosts[cphosts_num].cph_hosts);
     free(pcphosts[cphosts_num].cph_from);
@@ -2310,9 +2266,6 @@ static unsigned long setpreexec(
   char *value)  /* I */
 
   {
-#if SHELL_USE_ARGV == 0
-  static char *id = "setpreexec";
-#endif
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
@@ -2322,7 +2275,7 @@ static unsigned long setpreexec(
   strncpy(PRE_EXEC, value, sizeof(PRE_EXEC));
 
 #if SHELL_USE_ARGV == 0
-  log_err(0, id, "pbs_mom not configured with enable-shell-user-argv option");
+  log_err(0, __func__, "pbs_mom not configured with enable-shell-user-argv option");
 #endif
 
   return(1);
@@ -2981,8 +2934,6 @@ static u_long setvarattr(
   char *value)  /* I */
 
   {
-  static char *id = "setvarattr";
-
   struct varattr *pva;
   char           *ptr;
 
@@ -2992,7 +2943,7 @@ static u_long setvarattr(
     {
     /* FAILURE */
 
-    log_err(errno, id, "no memory");
+    log_err(errno, __func__, "no memory");
 
     return(0);
     }
@@ -3499,8 +3450,6 @@ int read_config(
   char *file)  /* I */
 
   {
-  static char id[] = "read_config";
-
   FILE                 *conf;
 
   struct stat            sb;
@@ -3530,11 +3479,7 @@ int read_config(
     sprintf(log_buffer, "updating configuration using file '%s'",
             (file != NULL) ? file : "NULL");
 
-    log_record(
-      PBSEVENT_SYSTEM,
-      PBS_EVENTCLASS_SERVER,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
 
   for (i = 0;i < mask_num;i++)
@@ -3554,7 +3499,7 @@ int read_config(
     log_record(
       PBSEVENT_SYSTEM,
       PBS_EVENTCLASS_SERVER,
-      id,
+      __func__,
       "ALERT:  no config file specified");
 
     IgnConfig = 1;  /* no config file */
@@ -3567,7 +3512,7 @@ int read_config(
     sprintf(log_buffer, "fstat: %s",
             file);
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
 
     if (config_file_specified != 0)
       {
@@ -3576,7 +3521,7 @@ int read_config(
       log_record(
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_SERVER,
-        id,
+        __func__,
         "ALERT:  cannot open config file - no file");
 
       rc = 1;
@@ -3590,11 +3535,7 @@ int read_config(
         sprintf(log_buffer, "cannot open file '%s'",
                 file);
 
-        log_record(
-          PBSEVENT_SYSTEM,
-          PBS_EVENTCLASS_SERVER,
-          id,
-          log_buffer);
+        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         }
 
       rc = 0;
@@ -3612,7 +3553,7 @@ int read_config(
       log_record(
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_SERVER,
-        id,
+        __func__,
         "ALERT:  cannot open config file - permissions");
 
       IgnConfig = 1;
@@ -3630,7 +3571,7 @@ int read_config(
       sprintf(log_buffer, "fopen: %s",
               file);
 
-      log_err(errno, id, log_buffer);
+      log_err(errno, __func__, log_buffer);
 
       IgnConfig = 1;
 
@@ -3667,11 +3608,7 @@ int read_config(
         sprintf(log_buffer, "processing config line '%.64s'",
                 str);
 
-        log_record(
-          PBSEVENT_SYSTEM,
-          PBS_EVENTCLASS_SERVER,
-          id,
-          log_buffer);
+        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         }
 
       if (*str == '$')
@@ -3693,7 +3630,7 @@ int read_config(
           sprintf(log_buffer, "special command name %s not found (ignoring line)",
                   name);
 
-          log_err(-1, id, log_buffer);
+          log_err(-1, __func__, log_buffer);
 
           continue;
           }
@@ -3705,12 +3642,12 @@ int read_config(
         if (special[i].handler(str) == 0)
           {
           sprintf(log_buffer, "%s[%d] special command %s failed with %s",
-                  file,
-                  linenum,
-                  name,
-                  str);
+            file,
+            linenum,
+            name,
+            str);
 
-          log_err(-1, id, log_buffer);
+          log_err(-1, __func__, log_buffer);
           }
 
         continue;
@@ -3856,12 +3793,10 @@ struct rm_attribute *momgetattr(
         char *str) /* I */
 
   {
-  char *id = "momgetattr";
-
-  static char cookie[] = "tag:"; /* rm_attribute to ignore */
+  static char  cookie[] = "tag:"; /* rm_attribute to ignore */
   static char *hold = NULL;
-  static char qual[80] = "";
-  static char valu[4096] = "";
+  static char  qual[80] = "";
+  static char  valu[4096] = "";
 
   static struct rm_attribute attr =
     {
@@ -3926,11 +3861,7 @@ struct rm_attribute *momgetattr(
               qual,
               valu);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
     }
   while (strncmp(qual, cookie, sizeof(cookie) - 1) == 0);
@@ -3943,11 +3874,7 @@ struct rm_attribute *momgetattr(
             qual,
             valu);
 
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      id,
-      log_buffer);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
   return(&attr);
@@ -3970,16 +3897,17 @@ char *conf_res(
   struct rm_attribute *attr)    /* I */
 
   {
-  char *id = "conf_res";
-
   char *name[RM_NPARM];
   char *value[RM_NPARM];
-  int used[RM_NPARM];  /* (boolean) */
-  char param[80], *d;
-  int i, fd, len;
+  int   used[RM_NPARM];  /* (boolean) */
+  char  param[80];
+  char *d;
+  int   i;
+  int   fd;
+  int   len;
   FILE *child;
   char *child_spot;
-  int child_len;
+  int   child_len;
 
   if (resline == NULL)
     {
@@ -4034,10 +3962,9 @@ char *conf_res(
   if (attr != NULL)
     {
     /* too many params */
-    log_err(-1, id, "too many params");
+    log_err(-1, __func__, "too many params");
 
-    sprintf(ret_string, "? %d",
-            RM_ERR_BADPARAM);
+    sprintf(ret_string, "? %d", RM_ERR_BADPARAM);
 
     goto done;
     }
@@ -4093,11 +4020,9 @@ char *conf_res(
     if (!used[i])
       {
       /* parameter sent but not used */
-      log_err(-1, id,
-              "unused parameters");
+      log_err(-1, __func__, "unused parameters");
 
-      sprintf(ret_string, "? %d",
-              RM_ERR_BADPARAM);
+      sprintf(ret_string, "? %d", RM_ERR_BADPARAM);
 
       goto done;
       }
@@ -4110,10 +4035,9 @@ char *conf_res(
 
   if ((child = popen(ret_string, "r")) == NULL)
     {
-    log_err(errno, id, "popen");
+    log_err(errno, __func__, "popen");
 
-    sprintf(ret_string, "? %d",
-            RM_ERR_SYSTEM);
+    sprintf(ret_string, "? %d", RM_ERR_SYSTEM);
 
     goto done;
     }
@@ -4157,10 +4081,9 @@ retryread:
       goto retryread;
       }
 
-    log_err(errno, id, "pipe read");
+    log_err(errno, __func__, "pipe read");
 
-    sprintf(ret_string, "? %d",
-            RM_ERR_SYSTEM);
+    sprintf(ret_string, "? %d", RM_ERR_SYSTEM);
 
     fclose(child);
 
@@ -4255,14 +4178,11 @@ static void catch_hup(
  * Clean up and reinit the dependent code.
  */
 
-static void
-process_hup(void)
+static void process_hup(void)
 
   {
-  char *id = "process_hup";
-
   call_hup = 0;
-  log_record(PBSEVENT_SYSTEM, 0, id, "reset");
+  log_record(PBSEVENT_SYSTEM, 0, __func__, "reset");
 
   pthread_mutex_lock(log_mutex);
   log_close(1);
@@ -4298,9 +4218,7 @@ void toolong(
   int sig)
 
   {
-  char *id = "toolong";
-
-  log_record(PBSEVENT_SYSTEM, 0, id, "alarm call");
+  log_record(PBSEVENT_SYSTEM, 0, __func__, "alarm call");
 
   if (LOGLEVEL >= 1)
     DBPRT(("alarm call\n"))
@@ -4465,26 +4383,29 @@ static void mom_lock(
 int rm_request(
 
   struct tcp_chan *chan,
-  int version)
+  int              version)
 
   {
-  static char id[] = "rm_request";
-  char name[100];
-  char output[BUFSIZ << 2];
-  int len;
-  int  command, ret;
-  int  restrictrm = 0;
-  char  *curr, *value, *cp, *body;
-  int sindex;
+  char                 name[100];
+  char                 output[BUFSIZ << 2];
+  int                  len;
+  int                  command;
+  int                  ret;
+  int                  restrictrm = 0;
+  char                *curr;
+  char                *value;
+  char                *cp;
+  char                *body;
+  int                  sindex;
 
-  struct config  *ap;
+  struct config       *ap;
 
   struct rm_attribute *attr;
 
-  unsigned long ipadd;
-  u_short port;
+  unsigned long             ipadd;
+  u_short                   port;
 
-  extern struct connection svr_conn[];
+  extern struct connection  svr_conn[];
 
   int   NotTrusted = 0;
 
@@ -4623,7 +4544,7 @@ int rm_request(
                     sprintf(tmpLine, "clearing job %s",
                             pjob->ji_qs.ji_jobid);
 
-                    log_record(PBSEVENT_SYSTEM, 0, id, tmpLine);
+                    log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine);
 
                     pjobnext = (job *)GET_NEXT(pjob->ji_alljobs);
 
@@ -4643,7 +4564,7 @@ int rm_request(
                 sprintf(tmpLine, "clearing job %s",
                         pjob->ji_qs.ji_jobid);
 
-                log_record(PBSEVENT_SYSTEM, 0, id, tmpLine);
+                log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine);
 
                 mom_job_purge(pjob);
 
@@ -4659,7 +4580,7 @@ int rm_request(
 
             strcpy(output, "messages cleared");
 
-            log_record(PBSEVENT_SYSTEM, 0, id, "messages cleared");
+            log_record(PBSEVENT_SYSTEM, 0, __func__, "messages cleared");
             }
           else if (!strncasecmp(name, "cycle", strlen("cycle")))
             {
@@ -4669,7 +4590,7 @@ int rm_request(
 
             strcpy(output, "cycle forced");
 
-            log_record(PBSEVENT_SYSTEM, 0, id, "reporting cycle forced");
+            log_record(PBSEVENT_SYSTEM, 0, __func__, "reporting cycle forced");
             }
           else if (!strncasecmp(name, "status_update_time", strlen("status_update_time")))
             {
@@ -5219,7 +5140,7 @@ int rm_request(
 
             MUStrNCat(&BPtr, &BSpace, "\ndiagnostics complete\n");
 
-            log_record(PBSEVENT_SYSTEM, 0, id, "internal diagnostics complete");
+            log_record(PBSEVENT_SYSTEM, 0, __func__, "internal diagnostics complete");
             }
           else
             {
@@ -5228,7 +5149,7 @@ int rm_request(
             attr = momgetattr(curr);
 
             if (LOGLEVEL >= 3)
-              log_record(PBSEVENT_SYSTEM, 0, id, "setting alarm in rm_request");
+              log_record(PBSEVENT_SYSTEM, 0, __func__, "setting alarm in rm_request");
 
             alarm(alarm_time);
 
@@ -5283,7 +5204,7 @@ int rm_request(
 
         if (DIS_tcp_wflush(chan) == -1)
           {
-          log_err(errno, id, "flush");
+          log_err(errno, __func__, "flush");
 
           goto bad;
           }
@@ -5299,20 +5220,20 @@ int rm_request(
 
       if (MOMConfigRReconfig == FALSE)
         {
-        log_err(-1, id,
-                "remote reconfiguration disabled, ignoring request");
+        log_err(-1, __func__,
+          "remote reconfiguration disabled, ignoring request");
 
         goto bad;
         }
 
       if (restrictrm)
         {
-        log_err(-1, id, "restricted configure attempt");
+        log_err(-1, __func__, "restricted configure attempt");
 
         goto bad;
         }
 
-      log_record(PBSEVENT_SYSTEM, 0, id, "configure");
+      log_record(PBSEVENT_SYSTEM, 0, __func__, "configure");
 
       body = disrst(chan, &ret);
 
@@ -5384,7 +5305,7 @@ int rm_request(
 
       if (DIS_tcp_wflush(chan) == -1)
         {
-        log_err(errno, id, "flush");
+        log_err(errno, __func__, "flush");
 
         goto bad;
         }
@@ -5397,12 +5318,12 @@ int rm_request(
 
       if (restrictrm)
         {
-        log_err(-1, id, "restricted shutdown attempt");
+        log_err(-1, __func__, "restricted shutdown attempt");
 
         goto bad;
         }
 
-      log_record(PBSEVENT_SYSTEM, 0, id, "shutdown");
+      log_record(PBSEVENT_SYSTEM, 0, __func__, "shutdown");
 
       ret = diswsi(chan, RM_RSP_OK);
 
@@ -5411,7 +5332,7 @@ int rm_request(
         sprintf(log_buffer, "write shutdown response failed %s",
                 dis_emsg[ret]);
 
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
         }
 
       DIS_tcp_wflush(chan);
@@ -5450,7 +5371,7 @@ int rm_request(
       sprintf(log_buffer, "unknown command %d",
               command);
 
-      log_err(-1, id, log_buffer);
+      log_err(-1, __func__, log_buffer);
 
       ret = diswsi(chan, RM_RSP_ERROR);
 
@@ -5494,7 +5415,7 @@ bad:
 
   strcat(log_buffer, output);
 
-  log_err(errno, id, log_buffer);
+  log_err(errno, __func__, log_buffer);
 
   return DIS_EOD;
   }  /* END rm_request() */
@@ -7718,8 +7639,6 @@ int TMOMScanForStarting(void)
   list_link *tmpL;
 #endif
 
-  const char *id = "TMOMScanForStarting";
-
 #ifdef MSIC
   /* NOTE:  solaris system is choking on GET_NEXT - isolate */
 
@@ -7742,8 +7661,9 @@ int TMOMScanForStarting(void)
 
       if (LOGLEVEL >= 2)
         {
-        snprintf(log_buffer, 1024, "checking job start in %s - examining pipe from child",
-                 id);
+        snprintf(log_buffer, sizeof(log_buffer),
+          "checking job start in %s - examining pipe from child",
+          __func__);
 
         log_record(
           PBSEVENT_JOB | PBSEVENT_FORCE,
@@ -7830,7 +7750,7 @@ int TMOMScanForStarting(void)
           if (LOGLEVEL >= 3)
             {
             sprintf(log_buffer, "%s:job %s reported successful start",
-              id,
+              __func__,
               pjob->ji_qs.ji_jobid);
 
             log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
@@ -7858,7 +7778,6 @@ int TMOMScanForStarting(void)
 void examine_all_polled_jobs(void)
 
   {
-  static char id[] = "examine_all_polled_jobs";
   job         *pjob;
   int         c;
 
@@ -7898,14 +7817,14 @@ void examine_all_polled_jobs(void)
 
     if (c & JOB_SVFLG_OVERLMT2)
       {
-      kill_job(pjob, SIGKILL, id, "job is over-limit-2");
+      kill_job(pjob, SIGKILL, __func__, "job is over-limit-2");
 
       continue;
       }
 
     if (c & JOB_SVFLG_OVERLMT1)
       {
-      kill_job(pjob, SIGTERM, id, "job is over-limit-1");
+      kill_job(pjob, SIGTERM, __func__, "job is over-limit-1");
 
       pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
 
@@ -7939,7 +7858,7 @@ void examine_all_polled_jobs(void)
           }
         }
 
-      kill_job(pjob, SIGTERM, id, "job is over-limit-0");
+      kill_job(pjob, SIGTERM, __func__, "job is over-limit-0");
 
       pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
       }
@@ -8189,7 +8108,6 @@ int mark_for_resend(
 void prepare_child_tasks_for_delete()
 
   {
-  char *id = "prepare_child_tasks_for_delete";
   job *job;
 
 
@@ -8209,7 +8127,7 @@ void prepare_child_tasks_for_delete()
               task->ti_qs.ti_task,
               job->ji_qs.ji_jobid);
 
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
 
       task->ti_qs.ti_exitstat = 0;  /* actually unknown */
       task->ti_qs.ti_status = TI_STATE_EXITED;
@@ -8233,8 +8151,6 @@ void prepare_child_tasks_for_delete()
 void main_loop(void)
 
   {
-  static char   id[] = "main_loop";
-
   extern time_t wait_time;
   double        myla;
   job          *pjob;
@@ -8339,7 +8255,7 @@ void main_loop(void)
     /* unblock signals */
 
     if (sigprocmask(SIG_UNBLOCK, &allsigs, NULL) == -1)
-      log_err(errno, id, "sigprocmask(UNBLOCK)");
+      log_err(errno, __func__, "sigprocmask(UNBLOCK)");
 
     time_now = time((time_t *)0);
 
@@ -8372,7 +8288,7 @@ void main_loop(void)
     /* block signals while we do things */
 
     if (sigprocmask(SIG_BLOCK, &allsigs, NULL) == -1)
-      log_err(errno, id, "sigprocmask(BLOCK)");
+      log_err(errno, __func__, "sigprocmask(BLOCK)");
 
 
     if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
@@ -8398,8 +8314,6 @@ void restart_mom(
   char *argv[])
 
   {
-  static char id[] = "restart_mom";
-
   char *envstr;
 
   envstr = calloc(1, (strlen("PATH") + strlen(orig_path) + 2) * sizeof(char));
@@ -8410,7 +8324,7 @@ void restart_mom(
             strerror(errno),
             errno);
 
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
 
     return;
     }
@@ -8427,7 +8341,7 @@ void restart_mom(
           strerror(errno),
           errno);
 
-  log_err(errno, id, log_buffer);
+  log_err(errno, __func__, log_buffer);
 
   return;
   }  /* END restart_mom() */
@@ -8445,7 +8359,6 @@ void restart_mom(
 int read_layout_file()
 
   {
-  char          *id = "read_layout_file";
   FILE          *layout;
   char           line[MAX_LINE];
   char          *delims = " \t\n\r=";
@@ -8460,7 +8373,7 @@ int read_layout_file()
     snprintf(log_buffer,sizeof(log_buffer),
       "Unable to read the layout file in %s\n",
       path_layout);
-    log_err(errno,id,log_buffer);
+    log_err(errno, __func__, log_buffer);
 
     return(NO_LAYOUT_FILE);
     }
@@ -8500,7 +8413,7 @@ int read_layout_file()
         /* Allocate temp nodeset */
         if ((nodeset = hwloc_bitmap_alloc()) == NULL)
           {
-          log_err(errno,id,"failed to allocate nodeset");
+          log_err(errno, __func__, "failed to allocate nodeset");
           return(-1);
           }
 
@@ -8546,7 +8459,7 @@ int read_layout_file()
         /* Store nodeset of node_boards[i], may be empty */
         if ((node_boards[i].nodeset = hwloc_bitmap_dup(nodeset)) == NULL)
           {
-          log_err(errno,id,"failed to duplicate nodeset");      
+          log_err(errno, __func__, "failed to duplicate nodeset");      
           return(-1);
           }
 
@@ -8559,7 +8472,7 @@ int read_layout_file()
         hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer),
                                  sizeof(log_buffer) - strlen(log_buffer),
                                  node_boards[i].nodeset);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
         }
       else
         {
@@ -8580,13 +8493,13 @@ int read_layout_file()
     "Setting up this mom to function as %d numa nodes\n",
     num_node_boards);
 
-  log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
+  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
 
   return(PBSE_NONE);
 
 failure:
  
-  log_err(-1,id,log_buffer);
+  log_err(-1, __func__, log_buffer);
 
   if (nodeset)
     hwloc_bitmap_free(nodeset);
@@ -8610,7 +8523,6 @@ failure:
 int setup_nodeboards()
 
   {
-  char *id = "setup_nodeboards";
   hwloc_obj_t     obj;
   hwloc_obj_t     pu;
   int             i;
@@ -8622,7 +8534,7 @@ int setup_nodeboards()
   /* Read mom.layout, init nodesets */
   if ((rc = read_layout_file()) != PBSE_NONE)
     {
-    log_err(-1,id,"Could not read layout file!\n");
+    log_err(-1, __func__, "Could not read layout file!\n");
     
     exit(rc);
     } 
@@ -8637,7 +8549,7 @@ int setup_nodeboards()
     /* Allocate cpuset for this nodeboard */
     if ((node_boards[i].cpuset = hwloc_bitmap_alloc()) == NULL)
       {
-      log_err(errno, id, "failed to allocate cpuset");
+      log_err(errno, __func__, "failed to allocate cpuset");
 
       exit(-1);
       }
@@ -8684,7 +8596,7 @@ int setup_nodeboards()
       {
       if ((node_boards[i].path_meminfo = (char **)calloc(node_boards[i].num_nodes, sizeof(char *))) == NULL)
         {
-        log_err(errno,id,"failed to allocate memory");   
+        log_err(errno, __func__, "failed to allocate memory");   
         exit(-1);
         }
 
@@ -8693,7 +8605,7 @@ int setup_nodeboards()
         {
         if ((node_boards[i].path_meminfo[k] = (char *)calloc(1, mempath_len)) == NULL)
           {
-          log_err(errno,id,"failed to allocate memory");   
+          log_err(errno, __func__, "failed to allocate memory");   
           exit(-1);
           }
 
@@ -8723,7 +8635,7 @@ int setup_nodeboards()
       node_boards[i].nodeset);
     snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       ")");
-    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
 
     } /* END for each nodeboard */
 
@@ -8842,7 +8754,6 @@ im_compose_info *create_compose_reply_info(
   tm_task_id  taskid)
 
   {
-  static char     *id = "create_compose_reply_info";
   im_compose_info *ici = calloc(1, sizeof(im_compose_info));
 
   if (ici != NULL)
@@ -8855,7 +8766,7 @@ im_compose_info *create_compose_reply_info(
     ici->taskid  = taskid;
     }
   else
-    log_err(ENOMEM, id, "Cannot allocate memory!");
+    log_err(ENOMEM, __func__, "Cannot allocate memory!");
 
   return(ici);
   } /* END create_compose_reply_info() */
@@ -9064,7 +8975,6 @@ int resend_obit_task_reply(
 void resend_things()
 
   {
-  static char        *id = "resend_things";
   int                 iter = -1;
   int                 ret;
   resend_momcomm     *mc;
@@ -9108,7 +9018,7 @@ void resend_things()
         snprintf(log_buffer, sizeof(log_buffer), 
           "I don't recognize send mom communication of type %d",
           mc->mc_type);
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
 
         /* remove the garbage */
         ret = DIS_SUCCESS;
