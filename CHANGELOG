@@ -20,6 +20,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - add the mom config option exec_with_exec. When set to true, the pbs_mom will exec 
       the job script instead of piping it to stdin. This makes signal trapping easier 
       because the shell doesn't have to be configured to trap the signal as well.
+  e - Added RPM support for nvidia_gpus to torque.spec.in file. Submitted by  Lloyd Brown
+      Fulton supercomputing Lab, BYU.
      
 
 2.5.11

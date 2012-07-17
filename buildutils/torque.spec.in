@@ -17,6 +17,7 @@
 
 ### Features disabled by default
 %bcond_with    blcr
+%bcond_with    nvidia_gpus
 %bcond_with    cpuset
 %bcond_with    drmaa
 %bcond_with    gui
@@ -31,6 +32,7 @@
 
 ### Autoconf macro expansions
 %define ac_with_blcr    --%{?with_blcr:en}%{!?with_blcr:dis}able-blcr
+%define ac_with_nvidia_gpus --%{?with_nvidia_gpus:en}%{!?with_nvidia_gpus:dis}able-nvidia-gpus
 %define ac_with_cpuset  --%{?with_cpuset:en}%{!?with_cpuset:dis}able-cpuset
 %define ac_with_drmaa   --%{?with_drmaa:en}%{!?with_drmaa:dis}able-drmaa
 %define ac_with_gui     --%{?with_gui:en}%{!?with_gui:dis}able-gui --with%{!?with_gui:out}-tcl
@@ -176,8 +178,8 @@ export CFLAGS CXXFLAGS
     --with-server-home=%{torque_home} --with-sendmail=%{sendmail_path} \
     --disable-dependency-tracking %{ac_with_gui} %{ac_with_scp} %{ac_with_syslog} \
     --disable-gcc-warnings %{ac_with_munge} %{ac_with_pam} %{ac_with_drmaa} %{ac_with_ha} \
-    --disable-qsub-keep-override %{ac_with_blcr} %{ac_with_cpuset} %{ac_with_spool} \
-    --enable-server-xml %{?acflags}
+    --disable-qsub-keep-override %{ac_with_blcr} %{ac_with_nvidia_gpus}  %{ac_with_cpuset} \
+     %{ac_with_spool} --enable-server-xml %{?acflags}
 %{__make} %{?_smp_mflags} %{?mflags}
 
 %install

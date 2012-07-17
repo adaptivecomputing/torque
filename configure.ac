@@ -763,6 +763,35 @@ if test "x$GCC" = "xyes" ;then
   fi
 fi
 
+dnl compile for munge library based authorization - link with munge library
+dnl instead of using expensive popen() calls. This option requires munge 
+dnl libraries to be installed during compilation.
+
+AC_ARG_ENABLE(munge_library, [ 
+  --enable-munge-library Use MUNGE library calls instead of expensive and slow popen.
+                         Munge library is required. This method is much faster than old munge-auth ] )
+
+AC_MSG_CHECKING([whether to use MUNGE library API for authentication])
+if test  "x$GCC" = "xyes" ; then
+  if test "${enable_munge_library}" = "yes" ; then
+
+    AC_MSG_RESULT([yes])
+    AC_CHECK_LIB(munge,munge_ctx_create,LDFLAGS="$LDFLAGS -lmunge")
+    AC_CHECK_HEADERS([munge.h])
+
+    if test "$ac_cv_header_munge_h" = "yes" && test "$ac_cv_lib_munge_munge_ctx_create" = "yes"; then 
+       CFLAGS="$CFLAGS -DMUNGE_AUTH_LIB -DMUNGE_AUTH"
+    else
+       AC_MSG_ERROR([requested munge library API support is disabled - cannot find library or headers])
+    fi
+  else
+    AC_MSG_RESULT([no])
+  fi
+
+  AM_CONDITIONAL([WITH_MUNGE_LIBRARY], [ test "${enable_munge_library}" = "yes" ])
+
+fi
+
 
 dnl
 dnl arch-specific libs
