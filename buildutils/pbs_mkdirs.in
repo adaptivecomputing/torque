@@ -351,8 +351,9 @@ mk_mom_dirs()
 mk_default_ld_lib_file()
 {
   echo "loadlibfile = $HAVE_LOAD_LIB_FILE"
-  if [ "$HAVE_LOAD_LIB_FILE" = "yes" ]; then
-    test -n "$verbose" && echo Making libtorque.conf
+  test -n "$verbose" && echo "loadlibfile = $HAVE_LOAD_LIB_FILE"
+    if [ "$HAVE_LOAD_LIB_FILE" = "yes" ]; then
+      test -n "$verbose" && echo Making libtorque.conf
 
     if [ ! -d $PBS_LOAD_LIB_DIR ]; then
       echo $PBS_LOAD_LIB_DIR missing

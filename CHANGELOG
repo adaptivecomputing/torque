@@ -52,6 +52,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the prologue and epilogue scripts. TRQ-967.
   b - make command line arguments override the job script arguments. TRQ-1033.
   b - fix a pbs_mom crash when using blcr. TRQ-1020.
+  e - Added patch to buildutils/pbs_mkdirs.in which enables pbs_mkdirs to run
+      silently. Patch submitted by Bas van der Vlies. Bugzilla 199.
 
 4.0.2
   e - Change so init.d script variables get set based on the configure command.
