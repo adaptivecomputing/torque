@@ -1520,6 +1520,7 @@ int is_gpustat_get(
 
         return(DIS_NOCOMMIT);
         }
+      free(ret_info);
       continue;
       }
 
@@ -1539,6 +1540,7 @@ int is_gpustat_get(
         return(DIS_NOCOMMIT);
         }
       drv_ver = atoi(ret_info + 11);
+      free(ret_info);
       continue;
       }
 
@@ -1711,6 +1713,8 @@ int is_gpustat_get(
         }
       }
 
+    free(ret_info);
+
     } /* end of while disrst */
 
     if (strlen(gpuinfo) > 0)
@@ -1720,8 +1724,6 @@ int is_gpustat_get(
         DBPRT(("is_gpustat_get: cannot add attributes\n"));
 
         free_arst(&temp);
-
-        free(ret_info);
 
         rpp_eom(stream);
 

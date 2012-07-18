@@ -3,6 +3,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 2.5.13
   e - Added RPM support for nvidia_gpus to torque.spec.in file. Submitted by  Lloyd Brown
         Fulton supercomputing Lab, BYU.
+  b - Fixed a memory leak with --enable-nvidia-gpus option. pbs_server was leaking memory 
+      after each  update from the MOMs getting gpu information. Bugzilla 205 and TRQ-1090.
 
 2.5.12
   b - Fix so child pbs_mom does not remain running after qdel on slow starting job.
