@@ -240,7 +240,10 @@ int acl_check_my_array_string(
   int (*match_func)(const char *, const char *);
   int   i;
   char *pstr;
- 
+
+  if (pas == NULL)
+    return(default_rtn);
+
   match_func = get_my_match_func(type);
 
   for (i = 0; i < pas->as_usedptr;i++)
