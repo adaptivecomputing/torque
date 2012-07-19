@@ -7,7 +7,7 @@
 #include "work_task.h" /* work_task */
 
 char *msg_messagejob = "Message request to job status %d";
-
+int LOGLEVEL = 0;
 
 void reply_ack(struct batch_request *preq)
   {
@@ -52,6 +52,11 @@ int get_batch_request_id(
 
   batch_request *preq)
 
+  {
+  return(0);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }

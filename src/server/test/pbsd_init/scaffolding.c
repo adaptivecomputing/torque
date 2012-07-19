@@ -596,4 +596,14 @@ int insert_addr_name_info(
   return(0);
   }
 
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
 
+
+
+int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }

@@ -43,3 +43,13 @@ void *next_thing(resizable_array *ra, int *iter)
   {
   return(NULL);
   }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }

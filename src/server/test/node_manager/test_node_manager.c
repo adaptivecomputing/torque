@@ -13,6 +13,8 @@ char *l11 =    "l11";
 int   node_in_exechostlist(char *, char *);
 char *get_next_exec_host(char **);
 int   job_should_be_on_node(char *, struct pbsnode *);
+int   check_for_node_type(complete_spec_data *, enum node_types);
+int   record_external_node(job *, struct pbsnode *);
 
 START_TEST(get_next_exec_host_test)
   {
@@ -102,6 +104,79 @@ END_TEST
 
 
 
+START_TEST(check_for_node_type_test)
+  {
+  complete_spec_data all_reqs;
+  single_spec_data   req;
+  enum node_types    nt = ND_TYPE_CRAY;
+  struct prop        p;
+
+  memset(&all_reqs, 0, sizeof(all_reqs));
+  memset(&req, 0, sizeof(req));
+  memset(&p, 0, sizeof(p));
+
+  all_reqs.num_reqs = 1;
+  all_reqs.reqs = &req;
+
+  fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "empty prop should always return false");
+  nt = ND_TYPE_EXTERNAL;
+  fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "empty prop should always return false");
+
+  p.name = "bob";
+  req.prop = &p;
+
+  fail_unless(check_for_node_type(&all_reqs, nt) == TRUE, "didn't find the external node");
+  nt = ND_TYPE_CRAY;
+  fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "found a cray when only the external was requested");
+
+  p.name = "cray";
+  fail_unless(check_for_node_type(&all_reqs, nt) == TRUE, "found a cray when only the external was requested");
+  nt = ND_TYPE_EXTERNAL;
+  fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "found a cray when only the external was requested");
+
+  }
+END_TEST
+
+
+
+
+START_TEST(record_external_node_test)
+  {
+  job            pjob;
+  struct pbsnode pnode1;
+  struct pbsnode pnode2;
+  struct pbsnode pnode3;
+  char           buf[4096];
+
+  memset(&pjob, 0, sizeof(pjob));
+  memset(&pnode1, 0, sizeof(pnode1));
+  memset(&pnode2, 0, sizeof(pnode2));
+  memset(&pnode3, 0, sizeof(pnode3));
+
+  pnode1.nd_name = "tom";
+  pnode2.nd_name = "bob";
+  pnode3.nd_name = "jim";
+
+  record_external_node(&pjob, &pnode1);
+  snprintf(buf, sizeof(buf), "attr should be tom but is %s",
+    pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str);
+  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str, "tom"), buf);
+
+  record_external_node(&pjob, &pnode2);
+  snprintf(buf, sizeof(buf), "attr should be tom+bob but is %s",
+    pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str);
+  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str, "tom+bob"), buf);
+
+  record_external_node(&pjob, &pnode3);
+  snprintf(buf, sizeof(buf), "attr should be tom+bob+jim but is %s",
+    pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str);
+  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str, "tom+bob+jim"), buf);
+  }
+END_TEST
+
+
+
+
 Suite *node_manager_suite(void)
   {
   Suite *s = suite_create("node_manager_suite methods");
@@ -115,6 +190,14 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("node_in_exechostlist_test");
   tcase_add_test(tc_core, node_in_exechostlist_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("check_for_node_type_test");
+  tcase_add_test(tc_core, check_for_node_type_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("record_external_node_test");
+  tcase_add_test(tc_core, record_external_node_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

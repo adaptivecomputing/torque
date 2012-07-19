@@ -247,6 +247,14 @@ struct grpcache
 
 #endif /* END NGROUPS_MAX */
 
+enum job_types
+  {
+  JOB_TYPE_normal,       /* no cray nodes involved */
+  JOB_TYPE_cray,         /* only cray nodes involved */
+  JOB_TYPE_login,        /* only cray login nodes involved */
+  JOB_TYPE_heterogeneous /* both cray computes and external nodes involved */
+  };
+
 /*
  * Job attributes/resources are maintained in one of two ways.
  * Most of the attributes are maintained in a decoded or parsed form.
@@ -369,6 +377,7 @@ enum job_atr
   JOB_ATR_reservation_id,
   JOB_ATR_login_node_id,
   JOB_ATR_login_prop,
+  JOB_ATR_external_nodes,
 #include "site_job_attr_enum.h"
 
   JOB_ATR_UNKN,  /* the special "unknown" type    */
@@ -580,10 +589,12 @@ struct job
   int               ji_is_array_template;    /* set to TRUE if this is a "template job" for a job array*/
   int               ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
   int               ji_cold_restart; /* set to TRUE if this job has been loaded through a cold restart */
-#endif/* PBS_MOM */   /* END SERVER ONLY */
+  struct job       *ji_external_clone;
+  struct job       *ji_cray_clone;
 
   pthread_mutex_t  *ji_mutex;
   char              ji_being_recycled;
+#endif/* PBS_MOM */   /* END SERVER ONLY */
 
   /*
    * fixed size internal data - maintained via "quick save"
@@ -1077,6 +1088,7 @@ extern void  svr_mailowner(job *, int, int, char *);
 extern void  set_resc_deflt(job *, pbs_attribute *, int);
 extern void  set_statechar(job *);
 extern int   svr_setjobstate(job *, int, int, int);
+int          split_job(job *);
 
 #ifdef BATCH_REQUEST_H
 extern job  *chk_job_request(char *, struct batch_request *);

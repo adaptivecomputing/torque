@@ -760,6 +760,49 @@ void job_free(
 
 
 
+job *copy_job(
+
+  job       *parent)
+
+  {
+  job           *pnewjob;
+
+  int            i;
+
+  if ((pnewjob = job_alloc()) == NULL)
+    {
+    log_err(errno, __func__, "no memory");
+
+    return(NULL);
+    }
+
+  job_init_wattr(pnewjob);
+
+  /* new job structure is allocated,
+     now we need to copy the old job, but modify based on taskid */
+  CLEAR_HEAD(pnewjob->ji_rejectdest);
+  pnewjob->ji_modified = 1;   /* struct changed, needs to be saved */
+
+  /* copy the fixed size quick save information */
+  memcpy(&pnewjob->ji_qs, &parent->ji_qs, sizeof(struct jobfix));
+
+  /* copy job attributes. some of these are going to have to be modified */
+  for (i = 0; i < JOB_ATR_LAST; i++)
+    {
+    if (parent->ji_wattr[i].at_flags & ATR_VFLAG_SET)
+      {
+      job_attr_def[i].at_set(
+        &(pnewjob->ji_wattr[i]),
+        &(parent->ji_wattr[i]),
+        SET);
+      }
+    }
+
+  return(pnewjob);
+  } /* END copy_job() */
+
+
+
 
 
 /*
@@ -2607,6 +2650,186 @@ pbs_queue *get_jobs_queue(
 
   return(pque);
   } /* END get_jobs_queue() */
+
+
+
+
+int hostname_in_externals(
+
+  char *hostname,
+  char *externals)
+
+  {
+  char *ptr = strstr(externals, hostname);
+  int   found = FALSE;
+  char *end_word;
+
+  if (ptr != NULL)
+    {
+    end_word = ptr + strlen(hostname);
+
+    if ((ptr > externals) &&
+        (*(ptr - 1) != '+'))
+      found = FALSE;
+    else if ((*end_word != '\0') &&
+             (*end_word != '+'))
+      found = FALSE;
+    else
+      found = TRUE;
+    }
+
+  return(found);
+  } /* END hostname_in_externals() */
+
+
+
+
+int fix_external_exec_hosts(
+
+  job *pjob) /* the external sub-job */
+
+  {
+  dynamic_string *external_execs;
+  char           *exec_host = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+  char           *externals = pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str;
+  char           *exec_ptr;
+  char           *plus;
+  char           *slash;
+
+  if ((exec_host == NULL) ||
+      (externals == NULL))
+    return(-2);
+
+  external_execs = get_dynamic_string(-1, NULL);
+  exec_ptr = exec_host;
+
+  while (exec_ptr != NULL)
+    {
+    /* remove the extra parts after the hostname and get the point we'll advance to.
+     * exec_host strings are in the format hostname/index[hostname/index[+...]] */
+    if ((plus = strchr(exec_ptr, '+')) != NULL)
+      {
+      *plus = '\0';
+      plus++;
+      }
+
+    if ((slash = strchr(exec_ptr, '/')) != NULL)
+      *slash = '\0';
+
+    /* if we find a match, copy in that exec host entry */
+    if (hostname_in_externals(exec_ptr, externals) == TRUE)
+      {
+      if (slash != NULL)
+        *slash = '/';
+
+      /* delimit with + */
+      if (external_execs->used != 0)
+        append_dynamic_string(external_execs, "+");
+
+      append_dynamic_string(external_execs, exec_ptr);
+      }
+
+    exec_ptr = plus;
+    }
+
+  free(exec_host);
+  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(external_execs->str);
+
+  free_dynamic_string(external_execs);
+
+  return(PBSE_NONE);
+  } /* END fix_external_exec_hosts() */
+
+
+
+
+int fix_cray_exec_hosts(
+
+  job *pjob)
+
+  {
+  char *external = pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str;
+  char *exec = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+  char *new_exec = calloc(1, strlen(exec) + 1);
+  char *exec_ptr = exec;
+  char *plus;
+  char *slash;
+
+  while (exec_ptr != NULL)
+    {
+    if ((plus = strchr(exec_ptr, '+')) != NULL)
+      {
+      *plus = '\0';
+      plus++;
+      }
+
+    if ((slash = strchr(exec_ptr, '/')) != NULL)
+      *slash = '\0';
+
+    /* if the hostname isn't in the externals, copy it in */
+    if (hostname_in_externals(exec_ptr, external) == FALSE)
+      {
+      if (slash != NULL)
+        *slash = '/';
+
+      if (*new_exec != '\0')
+        strcat(new_exec, "+");
+
+      strcat(new_exec, exec_ptr);
+      }
+
+    exec_ptr = plus;
+    }
+
+  free(exec);
+  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = new_exec;
+
+  return(PBSE_NONE);
+  } /* END fix_cray_exec_hosts() */
+
+
+
+
+int change_external_job_name(
+
+  job *pjob)
+
+  {
+  char  tmp_jobid[PBS_MAXSVRJOBID + 1];
+  char *dot = strchr(pjob->ji_qs.ji_jobid, '.');
+
+  if (dot != NULL)
+    *dot = '\0';
+
+  snprintf(tmp_jobid, sizeof(tmp_jobid), "%s-0.%s",
+    pjob->ji_qs.ji_jobid, dot + 1);
+
+  strcpy(pjob->ji_qs.ji_jobid, tmp_jobid);
+
+  return(PBSE_NONE);
+  } /* END change_external_job_name() */
+
+
+
+
+int split_job(
+
+  job *pjob)
+
+  {
+  job            *external       = copy_job(pjob);
+  job            *cray           = copy_job(pjob);
+
+  fix_external_exec_hosts(external);
+
+  fix_cray_exec_hosts(cray);
+  change_external_job_name(external);
+
+  pjob->ji_external_clone = external;
+  pjob->ji_cray_clone     = cray;
+
+  return(PBSE_NONE);
+  } /* END split_job() */
 
 
 

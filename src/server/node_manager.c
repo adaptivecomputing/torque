@@ -3672,7 +3672,8 @@ int save_node_for_adding(
   node_job_add_info *naji,
   struct pbsnode    *pnode,
   single_spec_data  *req,
-  char              *first_node_name)
+  char              *first_node_name,
+  int                is_external_node)
 
   {
   node_job_add_info *to_add;
@@ -3690,6 +3691,7 @@ int save_node_for_adding(
     strcpy(naji->node_name, pnode->nd_name);
     naji->ppn_needed = req->ppn;
     naji->gpu_needed = req->gpu;
+    naji->is_external = is_external_node;
     }
   else
     {
@@ -3705,6 +3707,7 @@ int save_node_for_adding(
     strcpy(to_add->node_name, pnode->nd_name);
     to_add->ppn_needed = req->ppn;
     to_add->gpu_needed = req->gpu;
+    to_add->is_external = is_external_node;
 
     /* fix pointers, NOTE: works even if old_next == NULL */
     old_next = naji->next;
@@ -3842,7 +3845,112 @@ void release_node_allocation(
       }
     current = current->next;
     }
-  }
+  } /* END release_node_allocation() */
+
+
+
+
+int check_for_node_type(
+
+  complete_spec_data *all_reqs,
+  enum node_types     nt)
+
+  {
+  single_spec_data *req;
+  int               i;
+  int               found_type = FALSE;
+  struct pbsnode   *pnode;
+  struct pbsnode   *reporter = alps_reporter;
+  struct prop      *p;
+
+  if (reporter == NULL)
+    {
+    /* this shouldn't be possible */
+    log_err(-1, __func__, "Checking for node types with a non-cray enabled pbs_server??");
+    return(-1);
+    }
+
+  lock_node(reporter, __func__, NULL, 0);
+
+  for (i = 0; i < all_reqs->num_reqs; i++)
+    {
+    req = all_reqs->reqs + i;
+
+    for (p = req->prop; p != NULL; p = p->next)
+      {
+      pnode = find_node_in_allnodes(&(reporter->alps_subnodes), p->name);
+
+      if (pnode != NULL)
+        {
+        unlock_node(pnode, __func__, NULL, 0);
+
+        if (nt == ND_TYPE_CRAY)
+          {
+          found_type = TRUE;
+  
+          break;
+          }
+        }
+      else if (nt != ND_TYPE_CRAY)
+        {
+        int login = FALSE;
+
+        if ((pnode = find_nodebyname(p->name)) != NULL)
+          {
+          if (pnode->nd_is_alps_login == TRUE)
+            login = TRUE;
+
+          unlock_node(pnode, __func__, NULL, 0);
+
+          if (nt == ND_TYPE_EXTERNAL)
+            {
+            if (login == FALSE)
+              found_type = TRUE;
+            }
+          else if (nt == ND_TYPE_LOGIN)
+            if (login == TRUE)
+              found_type = TRUE;
+
+          break;
+          }
+        }
+      }
+
+    if (found_type == TRUE)
+      break;
+    }
+  
+  unlock_node(reporter, __func__, NULL, 0);
+
+  return(found_type);
+  } /* END check_for_node_type() */
+
+
+
+
+enum job_types find_job_type(
+
+  complete_spec_data *all_reqs)
+
+  {
+  enum job_types jt = JOB_TYPE_login;
+  
+  if (check_for_node_type(all_reqs, ND_TYPE_CRAY) == TRUE)
+    {
+    if (check_for_node_type(all_reqs, ND_TYPE_EXTERNAL) == TRUE)
+      jt = JOB_TYPE_heterogeneous;
+    else
+      jt = JOB_TYPE_cray;
+    }
+  else if (check_for_node_type(all_reqs, ND_TYPE_EXTERNAL) == TRUE)
+    {
+    jt = JOB_TYPE_normal;
+    }
+  else if (check_for_node_type(all_reqs, ND_TYPE_LOGIN) == TRUE)
+    jt = JOB_TYPE_login;
+
+  return(jt);
+  } /* END find_job_type() */
 
 
 
@@ -3880,7 +3988,6 @@ int add_login_node_if_needed(
       proplist(&login_prop, &prop, &dummy1, &dummy2);
       }
 
-
     if ((login = get_next_login_node(prop)) == NULL)
       rc = -1;
     else
@@ -3892,7 +3999,7 @@ int add_login_node_if_needed(
         req.ppn = 1;
         req.gpu = 0;
         req.prop = NULL;
-        save_node_for_adding(naji, login, &req, login->nd_name);
+        save_node_for_adding(naji, login, &req, login->nd_name, FALSE);
         strcpy(*first_node_name_ptr, login->nd_name);
         }
       
@@ -3907,6 +4014,26 @@ int add_login_node_if_needed(
 
   return(rc);
   } /* END add_login_node_if_needed() */
+
+
+
+
+int node_is_external(
+
+  struct pbsnode *pnode)
+
+  {
+  int is_external = FALSE;
+
+  /* all logins have nd_is_alps_login set to true.
+   * all cray computes have their parent pointer set to alps_reporter.
+   * if neither of these are found, it must be an external node */
+  if ((pnode->nd_is_alps_login == FALSE) &&
+      (pnode->parent == NULL))
+    is_external = TRUE;
+  
+  return(is_external);
+  } /* END node_is_external() */
 
 
 
@@ -3950,6 +4077,7 @@ int node_spec(
   char               *spec;
   char               *plus;
   long                cray_enabled = FALSE;
+  enum job_types      job_type = JOB_TYPE_normal;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -3970,22 +4098,6 @@ int node_spec(
 
   set_first_node_name(spec_param, first_node_name);
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
-  if (cray_enabled == TRUE)
-    {
-    first_name_ptr = first_node_name;
-
-    if (add_login_node_if_needed(&first_name_ptr, login_prop, naji) != PBSE_NONE)
-      {
-      snprintf(log_buf, sizeof(log_buf), 
-        "Couldn't find an acceptable login node for spec '%s' with feature request '%s'",
-        spec_param,
-        (login_prop != NULL) ? login_prop : "null");
-
-      log_err(-1, __func__, log_buf);
-      return(-1);
-      }
-    }
 
   spec = strdup(spec_param);
 
@@ -4137,6 +4249,28 @@ int node_spec(
     DBPRT(("%s\n", log_buf));
     }
 
+  if (cray_enabled == TRUE)
+    {
+    job_type = find_job_type(&all_reqs);
+
+    first_name_ptr = first_node_name;
+
+    if ((job_type == JOB_TYPE_cray) ||
+        (job_type == JOB_TYPE_heterogeneous))
+      {
+      if (add_login_node_if_needed(&first_name_ptr, login_prop, naji) != PBSE_NONE)
+        {
+        snprintf(log_buf, sizeof(log_buf), 
+          "Couldn't find an acceptable login node for spec '%s' with feature request '%s'",
+          spec_param,
+          (login_prop != NULL) ? login_prop : "null");
+        
+        log_err(-1, __func__, log_buf);
+        return(-1);
+        }
+      }
+    }
+
   reinitialize_node_iterator(&iter);
   pnode = NULL;
 
@@ -4154,7 +4288,13 @@ int node_spec(
           {
           if (naji != NULL)
             {
-            save_node_for_adding(naji, pnode, req, first_node_name);
+            /* for heterogeneous jobs on the cray, record the external 
+             * nodes in a separate attribute */
+            if ((job_type == JOB_TYPE_heterogeneous) &&
+                (node_is_external(pnode) == TRUE))
+              save_node_for_adding(naji, pnode, req, first_node_name, TRUE);
+            else
+              save_node_for_adding(naji, pnode, req, first_node_name, FALSE);
             }
 
           /* decrement needed nodes */
@@ -4768,8 +4908,8 @@ int place_subnodes_in_hostlist(
       }
     
     /* Mark subnode as being IN USE */
-    add_job_to_node(pnode,snp,newstate,pjob,exclusive);
-    build_host_list(hlist,snp,pnode);
+    add_job_to_node(pnode, snp, newstate, pjob, exclusive);
+    build_host_list(hlist, snp, pnode);
     naji->ppn_needed--;
     }  /* END for (snp) */
 
@@ -4897,6 +5037,45 @@ void free_naji(
 
 
 /*
+ * external nodes refers only to nodes outside of the cray
+ * for jobs that also have cray compute nodes
+ */
+
+int record_external_node(
+
+  job            *pjob,
+  struct pbsnode *pnode)
+
+  {
+  char         *external_nodes;
+  unsigned int  len;
+
+  if (pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str == NULL)
+    {
+    pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str = strdup(pnode->nd_name);
+    pjob->ji_wattr[JOB_ATR_external_nodes].at_flags |= ATR_VFLAG_SET;
+    }
+  else
+    {
+    len = strlen(pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str) + strlen(pnode->nd_name) + 2;
+    external_nodes = calloc(1, len);
+
+    snprintf(external_nodes, len, "%s+%s",
+      pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str, pnode->nd_name);
+
+    free(pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str);
+
+    pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str = external_nodes;
+    }
+
+  return(PBSE_NONE);
+  } /* END record_external_node() */
+
+
+
+
+
+/*
  * builds the hostlist based on the nodes=... part of the request
  */
 
@@ -4933,6 +5112,11 @@ int build_hostlist_nodes_req(
         {
         place_gpus_in_hostlist(pnode, pjob, current, gpu_list);      
         place_subnodes_in_hostlist(hlist, pjob, newstate, pnode, current);
+        
+        if (current->is_external == TRUE)
+          {
+          record_external_node(pjob, pnode);
+          }
 
         if ((naji->gpu_needed > 0) || 
             (naji->ppn_needed > 0))
@@ -5279,6 +5463,8 @@ int set_nodes(
 
   return(PBSE_NONE);
   }  /* END set_nodes() */
+
+
 
 
 /* count the number of requested processors in a node spec

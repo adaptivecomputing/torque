@@ -256,6 +256,35 @@ int addr_ok(
 
 
 
+struct pbsnode *find_node_in_allnodes(
+
+  all_nodes *an,
+  char      *nodename)
+
+  {
+  struct pbsnode *pnode = NULL;
+  int             index;
+
+  pthread_mutex_lock(an->allnodes_mutex);
+
+  index = get_value_hash(an->ht, nodename);
+
+  if (index > 0)
+    {
+    pnode = (struct pbsnode *)an->ra->slots[index].item;
+
+    if (pnode != NULL)
+      lock_node(pnode, __func__, NULL, 0);
+    }
+
+  pthread_mutex_unlock(an->allnodes_mutex);
+
+  return(pnode);
+  } /* END find_node_in_allnodes() */
+
+
+
+
 /*
  * find_nodebyname() - find a node host by its name
  */

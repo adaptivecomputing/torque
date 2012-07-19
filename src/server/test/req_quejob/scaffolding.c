@@ -343,3 +343,18 @@ int lock_queue(
   {
   return(0);
   }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int  can_queue_new_job(char *user_name, job *pjob)
+  {
+  return(0);
+  }
+
+int  increment_queued_jobs(char *user_name, job *pjob)
+  {
+  return(0);
+  }

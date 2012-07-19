@@ -2001,7 +2001,17 @@ static int assign_hosts(
     
     free(tmp);
 
-    rc = set_job_exec_info(pjob, pjob->ji_qs.ji_destin);
+    if ((cray_enabled == TRUE) &&
+        (pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str != NULL))
+      {
+      split_job(pjob);
+      rc = set_job_exec_info(pjob->ji_external_clone, pjob->ji_qs.ji_destin);
+      rc = set_job_exec_info(pjob->ji_cray_clone, pjob->ji_qs.ji_destin);
+      }
+    else
+      {
+      rc = set_job_exec_info(pjob, pjob->ji_qs.ji_destin);
+      }
 
     if (rc != 0)
       {

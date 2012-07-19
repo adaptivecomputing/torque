@@ -267,11 +267,9 @@ struct pbs_queue *lock_queue_with_job_held(
   return(NULL);
   }
 
-void svr_mailowner(
+void svr_mailowner(job *pjob, int mailpoint, int force, char *text) {}
 
-  job   *pjob,      /* I */
-  int    mailpoint, /* note, single character  */
-  int    force,     /* if set to MAIL_FORCE, force mail delivery */
-  char  *text)      /* (optional) additional message text */
-
-  {}
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }

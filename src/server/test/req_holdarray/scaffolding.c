@@ -81,3 +81,8 @@ job *svr_find_job(char *jobid)
   {
   return(NULL);
   }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }

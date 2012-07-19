@@ -334,5 +334,10 @@ int insert_addr_name_info(
   return(0);
   }
 
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
 const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_starter";

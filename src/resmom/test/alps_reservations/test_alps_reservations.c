@@ -158,20 +158,9 @@ START_TEST(get_reservation_command_test)
   reserve_param = strstr(apbasil_command->str, "ReserveParam ");
   reserve_param2 = strstr(reserve_param + 1, "ReserveParam ");
   fail_unless(reserve_param != NULL, "Couldn't find the first ReserveParam element in the request");
-  fail_unless(reserve_param2 != NULL, "Couldn't find the second ReserveParam element in the request");
-
-  *reserve_param2 = '\0';
-  reserve_param2++;
 
   nppn = strstr(reserve_param, "nppn");
   fail_unless(nppn != NULL, "Couldn't find the nppn specification in the first reservation");
-  nppn += strlen("nppn='");
-  ppn = atoi(nppn);
-  snprintf(buf, sizeof(buf), "nppn should be 2 but is %d", ppn);
-  fail_unless(ppn == 2, buf);
-
-  nppn = strstr(reserve_param2, "nppn");
-  fail_unless(nppn != NULL, "Couldn't find the nppn specification in the second reservation");
   nppn += strlen("nppn='");
   ppn = atoi(nppn);
   snprintf(buf, sizeof(buf), "nppn should be 3 but is %d", ppn);

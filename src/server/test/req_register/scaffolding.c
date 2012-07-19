@@ -175,3 +175,8 @@ int get_batch_request_id(
   }
 
 void free_br(batch_request *preq) {} 
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }

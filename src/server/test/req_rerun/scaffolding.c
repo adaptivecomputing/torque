@@ -10,6 +10,7 @@
 char *msg_jobrerun = "Job Rerun";
 attribute_def job_attr_def[10];
 char *msg_manager = "%s at request of %s@%s";
+int LOGLEVEL = 0;
 
 
 void account_record(int acctype, job *pjob, char *text)
@@ -119,3 +120,8 @@ int get_batch_request_id(
   }
 
 void free_br(batch_request *preq) {} 
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }

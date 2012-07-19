@@ -13,6 +13,7 @@ const char *PJobState[] = {"hi", "hello"};
 struct server server;
 char *server_host;
 char server_localhost[PBS_MAXHOSTNAME + 1];
+int LOGLEVEL;
 
 
 char *site_map_user(char *uname, char *host)
@@ -102,4 +103,9 @@ struct sockaddr_in *get_cached_addrinfo(
   char               *hostname)
   {
   return(NULL);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
   }
