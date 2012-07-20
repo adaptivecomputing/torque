@@ -229,8 +229,7 @@ void *check_if_orphaned(
       
       if (handle >= 0)
         {
-        if (issue_Drequest(handle, preq, release_req, 0) != PBSE_NONE)
-          free_br(preq);
+        issue_Drequest(handle, preq, release_req, 0);
         }
       else
         free_br(preq);

@@ -739,11 +739,6 @@ int kill_job_on_mom(
       unlock_node(pnode, __func__, NULL, 0);
       rc = issue_Drequest(conn, preq, release_req, 0);
       lock_node(pnode, __func__, NULL, 0);
-      
-      if (rc == PBSE_MEM_MALLOC)
-        {
-        free_br(preq);
-        }
       }
     }
 

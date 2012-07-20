@@ -17,6 +17,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix a problem running extremely large jobs with alps 1.1 and 1.2. Reservations
       weren't correctly created in the past. TRQ-1092.
   b - Fixed a deadlock with a queue mutex caused by call qstat -a <queue1> <queue2>
+  b - Fixed a memory corruption bug, double free in check_if_orphaned. To fix this
+      issue_Drequest was modified to always free the batch request regardless of
+      any errors.
   b - Fix a potential segfault when using munge but not having set authorized users.
       TRQ-1102
 

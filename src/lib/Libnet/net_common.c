@@ -99,6 +99,7 @@ int socket_get_tcp()
   return local_socket;
   }
 
+
 int get_listen_socket(struct addrinfo *addr_info)
   {
   int local_socket = 0;
