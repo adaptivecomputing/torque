@@ -424,6 +424,10 @@ void release_req(
  * CONNECTION (connection handle not socket) and FREE THE REQUEST
  * STRUCTURE.  The connection (non-negative if open) is in wt_event
  * and the pointer to the request structure is in wt_parm1.
+ * If issue_Drequest fails before creating the work task then the 
+ * batch request needs to be freed. The bottom line is that the 
+ * batch request will always be freed after a call to issue_Drequest
+ * either within issue_Drequest or in the work_task.
  */
 
 int issue_Drequest(
@@ -469,7 +473,7 @@ int issue_Drequest(
       log_err(PBSE_MEM_MALLOC, __func__,
           "Could not allocate memory for socket buffer");
       close_conn(sock, FALSE);
-
+      free_br(request);
       return(PBSE_MEM_MALLOC);
       }
     }
@@ -499,7 +503,7 @@ int issue_Drequest(
 
       if (chan != NULL)
         DIS_tcp_cleanup(chan);
-
+      free_br(request);
       return(PBSE_MEM_MALLOC);
       }
     }
