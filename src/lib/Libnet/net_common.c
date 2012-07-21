@@ -431,10 +431,8 @@ int socket_wait_for_read(
 
   {
   int           rc = PBSE_NONE;
-  int           countdown;
+  int           ret;
   struct pollfd pfd;
-
-  countdown = pbs_tcp_timeout * 10;
 
   pfd.fd = socket;
   pfd.events = POLLIN | POLLHUP; /* | POLLRDNORM; */
@@ -442,7 +440,8 @@ int socket_wait_for_read(
 
   while (pfd.revents == 0)
     {
-    if (poll(&pfd, 1, 100) > 0)
+    ret = poll(&pfd, 1, pbs_tcp_timeout * 1000); /* poll's timeout is in milliseconds */
+    if (ret > 0)
       {
       char buf[8];
       if (recv(socket, buf, 7, MSG_PEEK | MSG_DONTWAIT) == 0)
@@ -454,14 +453,14 @@ int socket_wait_for_read(
       else
         break; /* data exists */
       }
-    if (countdown <=0)
+    else if (ret == 0)
       {
       /* Server timeout reached */
       rc = PBSE_TIMEOUT;
       break;
       }
-    else
-      countdown -= 1;
+    else /* something bad happened to poll */
+      rc = PBSE_SOCKET_DATA;
     }
   if (pfd.revents & POLLNVAL)
     {
