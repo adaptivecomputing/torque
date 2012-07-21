@@ -427,8 +427,18 @@ int process_pbs_server_port(
       if (getpeername(sock, &s_addr, &len) == 0)
         {
         addr = (struct sockaddr_in *)&s_addr;
+        
+        if (chan->IsTimeout == 1)
+          {
+          if(LOGLEVEL >= 8)
+            {
+            snprintf(log_buf, sizeof(log_buf), "poll timed out  waiting for %s. Will try again", netaddr(addr));
+            log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+            }
+          rc = PBSE_NONE;
+          }
 
-        if (proto_type == 0)
+        else if (proto_type == 0)
           {
           /* 
            * Don't log error if close is on scheduler port.  Scheduler is
@@ -436,21 +446,23 @@ int process_pbs_server_port(
            */
           if (!is_scheduler_port)
             {
-            snprintf(log_buf, sizeof(log_buf),
-                "Socket (%d) close detected from %s", sock, netaddr(addr));
-            log_err(-1, __func__, log_buf);
+            if (LOGLEVEL >= 8)
+              {
+              snprintf(log_buf, sizeof(log_buf),
+                "proto_type: %d: Socket (%d) close detected from %s", proto_type, sock, netaddr(addr));
+              log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+              }
             }
+          rc = PBSE_SOCKET_CLOSE;
           }
         else
           {
           snprintf(log_buf,sizeof(log_buf),
               "Socket (%d) Unknown protocol %d from %s", sock, proto_type, netaddr(addr));
           log_err(-1, __func__, log_buf);
+          rc = PBSE_SOCKET_DATA;
           }
-
         }
-
-      rc = PBSE_SOCKET_DATA;
 
       break;
       }
