@@ -24,6 +24,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       TRQ-1102
   b - Fixed code so Moab no longer gets a End of File or other premature close 
       messages on the Moab to TORQUE connection. TRQ-1098
+  b - Added a modified version of a patch submitted by Matt Ezell for Bugzilla 207. 
+      This fixes a seg-fault in qsub if Moab passes an environment variable without
+      a value.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine

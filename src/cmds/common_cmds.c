@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include "pbs_error_db.h"
 
 void strtolower(
   char *value)
@@ -36,6 +37,10 @@ int parse_env_line(
 
   len_total = strlen(one_var);
   tmp_char = strchr(one_var, '=');
+  /* check to make sure we got an '=' */
+  if(tmp_char == NULL)
+    return(PBSE_BAD_PARAMETER);
+
   pos_eq = tmp_char - one_var;
   len_name = pos_eq;
   tmp_pos = pos_eq + 1;
@@ -65,7 +70,7 @@ int parse_env_line(
     strncpy(*value, one_var + tmp_pos, len_value);
     }
 
-  return(len_name);
+  return(PBSE_NONE);
   } /* END parse_env_line() */
 
 
@@ -80,10 +85,18 @@ void set_env_opts(
   int   var_num = 0;
   char *name = NULL;
   char *value = NULL;
+  int   rc = PBSE_NONE;
 
   while (envp[var_num] != NULL)
     {
-    parse_env_line(mm, envp[var_num], &name, &value);
+    rc = parse_env_line(mm, envp[var_num], &name, &value);
+    if (rc != PBSE_NONE) 
+      {
+      fprintf(stderr, "Malformed environment variable %s. Will not add to job environment\n", envp[var_num]);
+      ;
+      exit(1);
+      }
+
     if (value != NULL)
       {
 /*      strtolower(name); */
