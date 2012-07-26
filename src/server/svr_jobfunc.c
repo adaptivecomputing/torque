@@ -1964,9 +1964,16 @@ int svr_chkque(
         (pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long >= 0))
       {
       /* count number of jobs user has in queue */
+      char jobid[PBS_MAXSVRJOBID+1];
+
+      strcpy(jobid, pjob->ji_qs.ji_jobid);
+      unlock_ji_mutex(pjob, __func__, NULL, 0);
 
       user_jobs = count_queued_jobs(pque,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+
+      if ((pjob = svr_find_job(jobid)) == NULL)
+        return(PBSE_JOB_RECYCLED);
 
       if (user_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
         {
