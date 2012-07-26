@@ -761,7 +761,10 @@ int job_should_be_on_node(
     {
     if ((is_job_on_node(pnode, jobid)) == FALSE)
       {
+      /* must lock the job before the node */
+      unlock_node(pnode, __func__, NULL, 0);
       pjob = svr_find_job(jobid);
+      lock_node(pnode, __func__, NULL, 0);
       
       if (pjob != NULL)
         {
