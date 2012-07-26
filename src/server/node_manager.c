@@ -870,7 +870,7 @@ int remove_jobs_that_have_disappeared(
     if ((pjob->ji_qs.ji_state == JOB_STATE_COMPLETE) ||
         (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) ||
         (pjob->ji_qs.ji_state == JOB_STATE_EXITING) ||
-        (pjob->ji_wattr[JOB_ATR_start_time].at_val.at_long > timestamp + 45))
+        (pjob->ji_wattr[JOB_ATR_start_time].at_val.at_long > timestamp - 45))
       {
       free(jobid);
 
