@@ -88,6 +88,7 @@
 #include "dynamic_string.h"
 #include "utils.h"
 #include "alps_constants.h"
+#include "alps_functions.h"
 
 
 
@@ -463,6 +464,9 @@ int process_element(
     if (strcmp(str, success))
       {
       free(str);
+
+      find_error_type(node);
+
       return(ALPS_QUERY_FAILURE);
       }
     else
@@ -590,6 +594,11 @@ int generate_alps_status(
     }
 
   free_dynamic_string(alps_output);
+
+  if (rc != PBSE_NONE)
+    {
+    log_err(-1, __func__, "Couldn't correctly get the alps inventory! System is down");
+    }
 
   return(rc);
   } /* END generate_alps_status() */
