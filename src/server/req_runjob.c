@@ -1097,14 +1097,6 @@ static int svr_strtjob2(
   old_state = pjob->ji_qs.ji_state;
   old_subst = pjob->ji_qs.ji_substate;
 
-  pattr = &pjob->ji_wattr[JOB_ATR_start_time];
-
-  if ((pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET) == 0)
-    {
-    pattr->at_val.at_long = time(NULL);
-    pattr->at_flags |= ATR_VFLAG_SET;
-    }
-
   pattr = &pjob->ji_wattr[JOB_ATR_start_count];
 
   pattr->at_val.at_long++;
@@ -1117,7 +1109,6 @@ static int svr_strtjob2(
     pattr->at_val.at_timeval.tv_sec = start_time.tv_sec;
     pattr->at_val.at_timeval.tv_usec = start_time.tv_usec;
     }
-
 
   /* send the job to MOM */
 
@@ -1231,6 +1222,12 @@ void finish_sendmom(
         svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_RUNNING, FALSE);
 
         /* above saves job structure */
+        }
+      
+      if ((pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET) == 0)
+        {
+        pjob->ji_wattr[JOB_ATR_start_time].at_val.at_long = time(NULL);
+        pjob->ji_wattr[JOB_ATR_start_time].at_flags |= ATR_VFLAG_SET;
         }
       
       /* accounting log for start or restart */

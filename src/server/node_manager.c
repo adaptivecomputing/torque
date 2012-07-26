@@ -215,6 +215,14 @@ pthread_mutex_t        *node_state_mutex = NULL;
 
 
 
+typedef struct sync_job_info
+  {
+  char   *input;
+  time_t  timestamp;
+  } sync_job_info;
+
+
+
 /**
 **      Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
 */
@@ -832,7 +840,8 @@ void *finish_job(
 int remove_jobs_that_have_disappeared(
 
   struct pbsnode  *pnode,
-  resizable_array *reported_ms_jobs)
+  resizable_array *reported_ms_jobs,
+  time_t           timestamp)
 
   {
   int   iter = -1;
@@ -855,9 +864,13 @@ int remove_jobs_that_have_disappeared(
       continue;
       }
 
+    /* 45 seconds is typically the time between intervals for each update 
+     * from the mom. Add this in case a stale update is processed and the job
+     * hadn't started at the time the update was sent */
     if ((pjob->ji_qs.ji_state == JOB_STATE_COMPLETE) ||
         (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) ||
-        (pjob->ji_qs.ji_state == JOB_STATE_EXITING))
+        (pjob->ji_qs.ji_state == JOB_STATE_EXITING) ||
+        (pjob->ji_wattr[JOB_ATR_start_time].at_val.at_long > timestamp + 45))
       {
       free(jobid);
 
@@ -902,7 +915,8 @@ void *sync_node_jobs(
 
   {
   struct pbsnode       *np;
-  char                 *raw_input = (char *)vp;
+  sync_job_info        *sji = (sync_job_info *)vp;
+  char                 *raw_input;
   char                 *node_id;
   char                 *jobstring_in;
   char                 *joblist;
@@ -912,6 +926,8 @@ void *sync_node_jobs(
 
   if (vp == NULL)
     return(NULL);
+
+  raw_input = sji->input;
 
   /* raw_input's format is:
    *   node name:<JOBID>[ <JOBID>]... */
@@ -925,6 +941,7 @@ void *sync_node_jobs(
     {
     /* bad input */
     free(raw_input);
+    free(sji);
 
     return(NULL);
     }
@@ -932,6 +949,7 @@ void *sync_node_jobs(
   if ((np = find_nodebyname(node_id)) == NULL)
     {
     free(raw_input);
+    free(sji);
 
     return(NULL);
     }
@@ -964,7 +982,9 @@ void *sync_node_jobs(
   free(raw_input);
 
   /* now check if the mom is reporting any jobs that the server doesn't know about */
-  remove_jobs_that_have_disappeared(np, ms_jobs);
+  remove_jobs_that_have_disappeared(np, ms_jobs, sji->timestamp);
+
+  free(sji);
 
   free_resizable_array(ms_jobs);
 
@@ -1621,14 +1641,17 @@ int process_status_info(
              (!strncmp(str, "jobs=", 5)))
       {
       /* walk job list reported by mom */
-      size_t  len = strlen(str) + strlen(current->nd_name) + 2;
-      char   *jobstr = calloc(1, len);
+      size_t         len = strlen(str) + strlen(current->nd_name) + 2;
+      char          *jobstr = calloc(1, len);
+      sync_job_info *sji = calloc(1, sizeof(sync_job_info));
 
       if (jobstr != NULL)
         {
         sprintf(jobstr, "%s:%s", current->nd_name, str+5);
+        sji->input = jobstr;
+        sji->timestamp = time(NULL);
         /* jobstr must be freed in sync_node_jobs */
-        enqueue_threadpool_request(sync_node_jobs, jobstr);
+        enqueue_threadpool_request(sync_node_jobs, sji);
         }
       }
     else if (auto_np)
