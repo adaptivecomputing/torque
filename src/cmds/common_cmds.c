@@ -22,6 +22,64 @@ void strtolower(
   } /* END strtolower() */
 
 
+/* Copies env variable into an allocated string 
+ * and escapes nested characters if necessary.
+ */
+int copy_env_value(
+  memmgr **mm,            /* memory manager */
+  char    *cur_val,
+  char   **value)
+  {
+  char *tmpPtr;
+  int   escape_count = 0, len_value = 0;
+  char  escape_chars[] = {'"', '\'', '\\', '\n', ',', '\0'};
+
+  len_value = strlen(cur_val);
+
+  tmpPtr = cur_val;
+  while (*tmpPtr)
+    { 
+    int escape_index = 0;
+    for (; escape_chars[escape_index] != '\0'; escape_index++)
+      {
+      if (*tmpPtr == escape_chars[escape_index])
+        {
+        escape_count++;
+        break;
+        }
+      }
+
+    tmpPtr++;
+    }
+
+  calloc_or_fail(mm, value, len_value + escape_count + 1, "Allocating value for hash_map");
+
+  if (escape_count > 0)
+    {
+    char *tmpVal = *value;
+    tmpPtr = cur_val;
+    while(*tmpPtr)
+      {
+      int escape_index = 0;
+      for (; escape_chars[escape_index] != '\0'; escape_index++)
+        {
+        if (*tmpPtr == escape_chars[escape_index])
+          {
+          *tmpVal++ = '\\';
+          break;
+          }
+        }
+
+      *tmpVal++ = *tmpPtr++;
+      }
+    }
+  else
+    strncpy(*value, cur_val, len_value);
+
+  return (PBSE_NONE);
+  }
+
+
 /* Parse a single command line and return the name/value
  * name & value are both allocated inside the function
  */
@@ -65,9 +123,11 @@ int parse_env_line(
     }
   else
     {
-    calloc_or_fail(mm, value, len_value+1, "Allocating value for hash_map");
+    /* Env values can contain nested commas which must be 
+     * escaped to be preserved. */
+
+    copy_env_value(mm, one_var + tmp_pos, value);
     strncpy(*name, one_var, len_name);
-    strncpy(*value, one_var + tmp_pos, len_value);
     }
 
   return(PBSE_NONE);
@@ -97,14 +157,10 @@ void set_env_opts(
       exit(1);
       }
 
-    if (value != NULL)
-      {
 /*      strtolower(name); */
-      hash_add_item(mm, env_attr, name, value, ENV_DATA, SET);
-      memmgr_free(mm, name); name = NULL;
-      memmgr_free(mm, value); value = NULL;
-      }
-    if (name) memmgr_free(mm, name);
+    hash_add_item(mm, env_attr, name, value, ENV_DATA, SET);
+    memmgr_free(mm, name); name = NULL;
+    memmgr_free(mm, value); value = NULL;
 
     var_num++;
     }

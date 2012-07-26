@@ -27,6 +27,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Added a modified version of a patch submitted by Matt Ezell for Bugzilla 207. 
       This fixes a seg-fault in qsub if Moab passes an environment variable without
       a value.
+  b - fix an error in parsing environment variables with commas, newlines, etc. TRQ-1113
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine

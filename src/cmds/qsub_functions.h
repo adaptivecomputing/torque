@@ -162,12 +162,6 @@ void do_dir(
     job_info *ji,
     int data_type);
 
-
-char *copy_env_value(
-    char *dest,           /* destination  */
-    char *pv,             /* value string */
-    int   quote_flg);     /* non-zero then assume single word (quoting on) */
-
 int set_job_env(
     char **envp);         /* I */
 
