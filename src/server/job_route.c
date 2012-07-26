@@ -436,7 +436,6 @@ int default_router(
 
     switch (svr_movejob(jobp, destination, &local_errno, NULL, TRUE))
       {
-
       case ROUTE_PERM_FAILURE: /* permanent failure */
 
         if ((rc = remove_procct(jobp)) != PBSE_NONE)
@@ -459,13 +458,14 @@ int default_router(
         break;
 
       case ROUTE_RETRY:  /* failed, but try destination again */
-      /* There are no available queues for this job so it is 
+        
+        /* There are no available queues for this job so it is 
          going to stay in the routing queue. But we need to remove
          procct from the Resource_List so it does not get sent
          to the scheduler as part of the job. procct is for 
          TORQUE use only. */
-        rc = remove_procct(jobp);
-        if(rc != PBSE_NONE)
+
+        if ((rc = remove_procct(jobp)) != PBSE_NONE)
           {
           return(rc);
           }
