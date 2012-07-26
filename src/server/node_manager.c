@@ -849,10 +849,18 @@ int remove_jobs_that_have_disappeared(
     lock_node(pnode, __func__, NULL, 0);
 
     if (pjob == NULL)
-      continue;
-
-    if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
       {
+      free(jobid);
+
+      continue;
+      }
+
+    if ((pjob->ji_qs.ji_state == JOB_STATE_COMPLETE) ||
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) ||
+        (pjob->ji_qs.ji_state == JOB_STATE_EXITING))
+      {
+      free(jobid);
+
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       continue;
       }
