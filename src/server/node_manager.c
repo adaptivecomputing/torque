@@ -840,7 +840,11 @@ int remove_jobs_that_have_disappeared(
     {
     job *pjob;
 
+    /* locking priority is job before node */
+    unlock_node(pnode, __func__, NULL, 0);
     pjob = svr_find_job(jobid);
+    lock_node(pnode, __func__, NULL, 0);
+
     if (pjob == NULL)
       continue;
 
