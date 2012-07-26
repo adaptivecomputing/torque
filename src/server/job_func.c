@@ -1694,8 +1694,7 @@ int svr_job_purge(
       }
     else
       {
-      unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-      return PBSE_JOBNOTFOUND;
+      return(PBSE_JOBNOTFOUND);
       }
     }
 
@@ -2581,13 +2580,14 @@ job_array *get_jobs_array(
       if (LOGLEVEL >=7)
         {
         sprintf(log_buf, "locking ai_mutex: %s", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);
         }
+
       pthread_mutex_lock(pa->ai_mutex);
       if (LOGLEVEL >=7)
         {
         sprintf(log_buf, "locked ai_mutex: %s", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);
         }
       
       if ((pjob = svr_find_job(jobid)) == NULL)
