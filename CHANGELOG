@@ -29,6 +29,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       a value.
   b - fix an error in parsing environment variables with commas, newlines, etc. TRQ-1113
   b - fixed a deadlock with array jobs running simultaneously with qstat. 
+  e - Added a new showjobs utility to the contrib directory. New showjobs contributed by
+      Gareth Williams.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine

@@ -118,15 +118,15 @@ if ($num)
 {
     my ($firstIndex, $lastIndex);
     if ($specifiedJobId)
-      {
-      $firstIndex = 0;
-      $lastIndex = ($num < $#jobFiles) ? $num : $#jobFiles;
-      }
+    {
+        $firstIndex = 0;
+        $lastIndex = ($num < $#jobFiles) ? $num : $#jobFiles;
+    }
     else
-      {
-      $firstIndex = ($num <= @jobFiles) ? @jobFiles - $num : 0;
-      $lastIndex = $#jobFiles;
-      }
+    {
+        $firstIndex = ($num <= @jobFiles) ? @jobFiles - $num : 0;
+        $lastIndex = $#jobFiles;
+    }
     @jobFiles = @jobFiles[$firstIndex .. $lastIndex];
 }
 
@@ -158,7 +158,7 @@ OUTER: foreach my $jobFile (@jobFiles)
         {
             $jobAttr{'Account Name'} = $1;
         }
-        elsif ($line =~ /<arch>([^<]+)</ && $context eq 'resource_List')
+        elsif ($line =~ /<arch>([^<]+)</ && $context eq 'Resource_List')
         {
             $jobAttr{'Architecture'} = $1;
         }
@@ -206,7 +206,15 @@ OUTER: foreach my $jobFile (@jobFiles)
         {
             $jobAttr{'vmem Used'} = ktoMG($1);
         }
-        elsif ($line =~ /<opsys>([^<]+)</ && $context eq 'resource_List')
+        elsif ($line =~ /<mem>([^<]+)</ && $context eq 'Resource_List')
+        {
+            $jobAttr{'Memory Limit'} = ktoMG($1);
+        }
+        elsif ($line =~ /<vmem>([^<]+)</ && $context eq 'Resource_List')
+        {
+            $jobAttr{'vmem Limit'} = ktoMG($1);
+        }
+        elsif ($line =~ /<opsys>([^<]+)</ && $context eq 'Resource_List')
         {
             $jobAttr{'Operating System'} = $1;
         }
@@ -214,14 +222,14 @@ OUTER: foreach my $jobFile (@jobFiles)
         {
             $jobAttr{'Output File'} = $1;
         }
-        elsif ($line =~ /<qos>([^<]+)</ && $context eq 'resource_List')
+        elsif ($line =~ /<qos>([^<]+)</ && $context eq 'Resource_List')
         {
             $jobAttr{'Quality Of Service'} = $1;
         }
         elsif ($line =~ /<qtime>([^<]+)</) { $jobAttr{'Submit Time'} = $1; }
         elsif ($line =~ /<queue>([^<]+)</) { $jobAttr{'Queue Name'} = $1; }
-        elsif ($line =~ /<resource_List>/)    { $context = 'resource_List'; }
-        elsif ($line =~ /<\/resource_List>/)  { $context = 'JobInfo'; }
+        elsif ($line =~ /<Resource_List>/)    { $context = 'Resource_List'; }
+        elsif ($line =~ /<\/Resource_List>/)  { $context = 'JobInfo'; }
         elsif ($line =~ /<resources_used>/)   { $context = 'resources_used'; }
         elsif ($line =~ /<\/resources_used>/) { $context = 'JobInfo'; }
         elsif ($line =~ /<job_script>([^<]*)/)
@@ -268,7 +276,7 @@ OUTER: foreach my $jobFile (@jobFiles)
                 #}
             }
         }
-        elsif ($line =~ /<walltime>([^<]+)</ && $context eq 'resource_List')
+        elsif ($line =~ /<walltime>([^<]+)</ && $context eq 'Resource_List')
         {
             $jobAttr{'Wallclock Limit'} = $1;
         }
@@ -342,7 +350,9 @@ foreach my $job (@jobs)
         'Wallclock Duration',
         'CPUTime',
         'Memory Used',
+        'Memory Limit',
         'vmem Used',
+        'vmem Limit',
         'Submit Time',
         'Start Time',
         'End Time',
@@ -465,7 +475,7 @@ B<showjobs> - list historical job information
 
 =head1 SYNOPSIS
 
-B<showjobs> [B<-u> I<user_name>] [B<-g> I<group_name>] [B<-a> I<account_name>] [B<-q> I<queue_name>] [B<-s> I<start date>] [B<-e> I<end date>] [B<-n> I<days>] [B<--help>] [B<--man>] [[B<-j>] <job id>]
+B<showjobs> [B<-u> I<user_name>] [B<-g> I<group_name>] [B<-a> I<account_name>] [B<-q> I<queue_name>] [B<-s> I<start date>] [B<-e> I<end date>] [B<-n> I<days>] [B<-o|--oneonly>] [B<--help>] [B<--man>] [[B<-j>] <job id>]
 
 =head1 DESCRIPTION
 
