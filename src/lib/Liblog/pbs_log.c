@@ -109,6 +109,8 @@
 #include <errno.h>
 #include <dirent.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 #include "log.h"
 #if SYSLOG
@@ -733,6 +735,7 @@ void log_record(
   {
   int tryagain = 2;
   time_t now;
+  pid_t  thr_id = -1;
 
   struct tm *ptm;
   struct tm  tmpPtm;
@@ -741,6 +744,7 @@ void log_record(
   char  *start = NULL, *end = NULL;
   size_t nchars;
 
+  thr_id = syscall(SYS_gettid);
   pthread_mutex_lock(log_mutex);
 
   if (log_opened < 1)
@@ -788,7 +792,7 @@ void log_record(
     while (tryagain)
       {
       rc = fprintf(logfile,
-              "%02d/%02d/%04d %02d:%02d:%02d;%04x;%10.10s;%s;%s;%s%.*s\n",
+              "%02d/%02d/%04d %02d:%02d:%02d;%04x;%10.10s.%d;%s;%s;%s%.*s\n",
               ptm->tm_mon + 1,
               ptm->tm_mday,
               ptm->tm_year + 1900,
@@ -797,6 +801,7 @@ void log_record(
               ptm->tm_sec,
               (eventtype & ~PBSEVENT_FORCE),
               msg_daemonname,
+              thr_id,
               class_names[objclass],
               objname,
               (text == start ? "" : "[continued]"),

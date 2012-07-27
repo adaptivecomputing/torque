@@ -491,6 +491,15 @@ typedef struct
   } pjobexec_t;
 
 
+/* on the server this array will replace many of the doubly linked-lists */
+typedef struct all_jobs
+  {
+  resizable_array *ra;
+  hash_table_t    *ht;
+
+  pthread_mutex_t *alljobs_mutex;
+  }all_jobs;
+
 
 
 
@@ -685,14 +694,8 @@ typedef struct job job;
 #define TOO_MANY_JOBS_IN_RECYCLER -1
 #define JOBS_TO_REMOVE             1000
 
-/* on the server this array will replace many of the doubly linked-lists */
-struct all_jobs
-  {
-  resizable_array *ra;
-  hash_table_t    *ht;
 
-  pthread_mutex_t *alljobs_mutex;
-  };
+
 
 void initialize_all_jobs_array(struct all_jobs *);
 int  insert_job(struct all_jobs *, job *);
