@@ -338,6 +338,7 @@ int process_request(
   conn_socktype = svr_conn[sfds].cn_socktype;
   conn_authen = svr_conn[sfds].cn_authen;
   conn_addr = svr_conn[sfds].cn_addr;
+  svr_conn[sfds].cn_lasttime = time_now;
   pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
   if ((request = alloc_br(0)) == NULL)
