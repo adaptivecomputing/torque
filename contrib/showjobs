@@ -367,7 +367,8 @@ foreach my $job (@jobs)
         {
             my $value = $jobAttr{$name};
             if    ($name =~ / Time$/)     { $value = localtime $value; }
-            elsif ($name =~ / Duration$/) { $value = ddhhmmss($value); }
+            elsif ($name =~ /Wallclock/) { $value = ddhhmmss($value); }
+            elsif ($name =~ /CPUTime/) { $value = ddhhmmss($value); }
             printf "%-18s: %s\n", $name, $value;
             delete $jobAttr{$name};
         }
