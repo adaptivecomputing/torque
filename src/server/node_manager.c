@@ -867,9 +867,8 @@ int remove_jobs_that_have_disappeared(
     /* 45 seconds is typically the time between intervals for each update 
      * from the mom. Add this in case a stale update is processed and the job
      * hadn't started at the time the update was sent */
-    if ((pjob->ji_qs.ji_state == JOB_STATE_COMPLETE) ||
-        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) ||
-        (pjob->ji_qs.ji_state == JOB_STATE_EXITING) ||
+    if ((pjob->ji_qs.ji_state >= JOB_STATE_EXITING) ||
+        (pjob->ji_qs.ji_substate < JOB_SUBSTATE_RUNNING) ||
         (pjob->ji_wattr[JOB_ATR_start_time].at_val.at_long > timestamp - 45))
       {
       free(jobid);
