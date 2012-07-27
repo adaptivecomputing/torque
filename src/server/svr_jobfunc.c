@@ -1661,6 +1661,9 @@ int svr_chkque(
 
   struct array_strings *pas;
   int j = 0;
+  char jobid[PBS_MAXSVRJOBID+1];
+
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -1969,26 +1972,31 @@ int svr_chkque(
       return(PBSE_QUNOENB);
       }
 
-    if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET) &&
-        ((count_queued_jobs(pque,NULL) + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long))
-      {
-      if (EMsg)
-        snprintf(EMsg, 1024,
-          "total number of jobs in queue exceeds the queue limit: "
-          "user %s, queue %s",
-          pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-          pque->qu_qs.qu_name);
 
-      return(PBSE_MAXQUED);
+    if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET)) 
+      {
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      user_jobs =count_queued_jobs(pque,NULL);
+      if ((pjob = svr_find_job(jobid)) == NULL)
+        return(PBSE_JOB_RECYCLED);
+
+      if ((user_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
+        {
+        if (EMsg)
+          snprintf(EMsg, 1024,
+            "total number of jobs in queue exceeds the queue limit: "
+            "user %s, queue %s",
+            pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+            pque->qu_qs.qu_name);
+
+        return(PBSE_MAXQUED);
+        }
       }
 
     if ((pque->qu_attr[QA_ATR_MaxUserJobs].at_flags & ATR_VFLAG_SET) &&
         (pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long >= 0))
       {
       /* count number of jobs user has in queue */
-      char jobid[PBS_MAXSVRJOBID+1];
-
-      strcpy(jobid, pjob->ji_qs.ji_jobid);
       unlock_ji_mutex(pjob, __func__, NULL, 0);
 
       user_jobs = count_queued_jobs(pque,
