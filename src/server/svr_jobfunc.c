@@ -665,7 +665,29 @@ int svr_dequejob(
   log_event(PBSEVENT_DEBUG2,PBS_EVENTCLASS_JOB,job_id,log_buf);
 
   if (bad_ct)   /* state counts are all messed up */
+    {
+    char queue_name[PBS_MAXQUEUENAME];
+
+    /* this function will lock queues and jobs */
+    unlock_ji_mutex(pjob, __func__, NULL, 0);
+
+    if (parent_queue_mutex_held == TRUE)
+      {
+      strcpy(queue_name, pque->qu_qs.qu_name);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      }
+
     correct_ct();
+
+    /* lock queue then job */
+    if (parent_queue_mutex_held == TRUE)
+      {
+      pque = find_queuebyname(queue_name);
+      }
+
+    if ((pjob = svr_find_job(job_id)) == NULL)
+      return(PBSE_JOBNOTFOUND);
+    }
 
 #endif /* NDEBUG */
 
@@ -2802,7 +2824,7 @@ void correct_ct()
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     
-    unlock_queue(pque, "correct_ct", NULL, LOGLEVEL);
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     } /* END for each queue */
   
   sprintf(log_buf, "%s:2", __func__);
