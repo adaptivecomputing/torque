@@ -5378,7 +5378,6 @@ void job_nodes(
     }
 
   pjob->ji_hosts = (hnodent *)calloc(nodenum + 1, sizeof(hnodent));
-
   pjob->ji_vnods = (vnodent *)calloc(nodenum + 1, sizeof(vnodent));
 
   if ((pjob->ji_hosts == NULL) ||
@@ -5435,16 +5434,21 @@ void job_nodes(
 
     *dp = '\0';
 
-    /* see if we already have this host */
-
-    for (j = 0;j < nhosts;++j)
+    /* see if we already have this host - we only need to check the
+     * last host as of 4.0.0 because each node can only be in the list
+     * a maximum of one time */
+    if (strcmp(nodename, pjob->ji_hosts[nhosts - 1].hn_host) == 0)
+      j = nhosts - 1;
+    else
       {
-      if (strcmp(nodename, pjob->ji_hosts[j].hn_host) == 0)
-        break;
+      /* we need a new host */
+      j = nhosts;
       }
 
     /* Get the port number for this host */
-    for (cp = portstr, portptr = portnumber, portcount = 0; portcount < (MAXPORTLEN+1) && *cp; cp++, portptr++, portcount++)
+    for (cp = portstr, portptr = portnumber, portcount = 0; 
+         portcount < (MAXPORTLEN+1) && *cp; 
+         cp++, portptr++, portcount++)
       {
       if (*cp == '+')
         {
