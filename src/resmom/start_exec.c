@@ -5437,7 +5437,8 @@ void job_nodes(
     /* see if we already have this host - we only need to check the
      * last host as of 4.0.0 because each node can only be in the list
      * a maximum of one time */
-    if (strcmp(nodename, pjob->ji_hosts[nhosts - 1].hn_host) == 0)
+    if ((nhosts > 0) &&
+        (strcmp(nodename, pjob->ji_hosts[nhosts - 1].hn_host) == 0))
       j = nhosts - 1;
     else
       {
