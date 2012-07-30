@@ -43,6 +43,7 @@ int load_config(
   if ((fread(config_buf, BufSize, 1, config_stream) <= 0) && (ferror(config_stream) != 0))
     {
     /* FAILURE */
+    fclose(config_stream);
     return(1);
     }
 
@@ -58,6 +59,7 @@ int load_config(
     }   /* END while ((ptr = strchr(ptr,'#')) != NULL) */
 
   /* SUCCESS */
+  fclose(config_stream);
   return(0);
   }  /* END load_config() */
 
