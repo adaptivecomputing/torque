@@ -830,13 +830,18 @@ void validate_qsub_host_pbs_o_server(
     else
       hash_add_or_exit(mm, job_attr, ATTR_pbs_o_server, tmp_host, LOGIC_DATA);
     }
-  }
+  } /* END validate_qsub_host_pbs_o_server() */
+
+
+
 
 void post_check_attributes(job_info *ji)
   {
   validate_pbs_o_workdir(&ji->mm, &ji->job_attr);
   validate_qsub_host_pbs_o_server(&ji->mm, &ji->job_attr);
-  }
+  } /* END post_check_attributes() */
+
+
 
 /* return 3, 4, 5, 6, -1 on FAILURE, 0 on success */
 
