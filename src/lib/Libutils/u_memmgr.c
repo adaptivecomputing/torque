@@ -243,7 +243,6 @@ void *memmgr_realloc(memmgr **mgr, void *ptr, int new_size)
           mm->alloc_size =  new_alloc;
           mm->remaining = 0;
           mm->current_pos = NULL;
-          mm->the_mem[new_alloc] = '\0';
           memcpy(mm->the_mem, &new_size, sizeof(int));
           }
         else
@@ -256,7 +255,7 @@ void *memmgr_realloc(memmgr **mgr, void *ptr, int new_size)
       else
         {
         memset(mm->the_mem + sizeof(int) + size, 0, new_size - size);
-        mm->the_mem[new_size] = '\0';
+        mm->the_mem[new_size - 1] = '\0';
         mm->remaining = mm->alloc_size - new_alloc;
         mm->current_pos = mm->the_mem + new_alloc;
         res_mem = mm->the_mem + sizeof(int);
