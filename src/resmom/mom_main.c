@@ -3181,7 +3181,7 @@ static unsigned long setapbasilpath(
 
   if (value != NULL)
     {
-    if (value[0] != '/')
+    if (value[0] == '/')
       apbasil_path = strdup(value);
     else
       {
