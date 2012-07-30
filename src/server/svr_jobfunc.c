@@ -401,7 +401,7 @@ int svr_enquejob(
         }
       unlock_ji_mutex(pjcur, __func__, "7", LOGLEVEL);
       }
-    if ((pjob = svr_find_job(job_id)) == NULL)
+    if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
       {
       unlock_queue(pque, __func__, "array_template check lost job", LOGLEVEL);
       return(PBSE_JOBNOTFOUND);
@@ -444,7 +444,7 @@ int svr_enquejob(
         }
       unlock_ji_mutex(pjcur, __func__, "12", LOGLEVEL);
       } /* end of while */
-    if ((pjob = svr_find_job(job_id)) == NULL)
+    if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
       {
       unlock_queue(pque, __func__, "array_template check lost job", LOGLEVEL);
       return(PBSE_JOBNOTFOUND);
@@ -594,7 +594,7 @@ int svr_dequejob(
 
   /* remove job from server's all job list and reduce server counts */
 
-  if ((pjob = svr_find_job(job_id)) == NULL)
+  if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     return(PBSE_JOBNOTFOUND);
 
 
@@ -685,7 +685,7 @@ int svr_dequejob(
       pque = find_queuebyname(queue_name);
       }
 
-    if ((pjob = svr_find_job(job_id)) == NULL)
+    if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
       return(PBSE_JOBNOTFOUND);
     }
 
@@ -1977,7 +1977,7 @@ int svr_chkque(
       {
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       user_jobs =count_queued_jobs(pque,NULL);
-      if ((pjob = svr_find_job(jobid)) == NULL)
+      if ((pjob = svr_find_job(jobid, FALSE)) == NULL)
         return(PBSE_JOB_RECYCLED);
 
       if ((user_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
@@ -2002,7 +2002,7 @@ int svr_chkque(
       user_jobs = count_queued_jobs(pque,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
 
-      if ((pjob = svr_find_job(jobid)) == NULL)
+      if ((pjob = svr_find_job(jobid, FALSE)) == NULL)
         return(PBSE_JOB_RECYCLED);
 
       if (user_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
@@ -2167,7 +2167,7 @@ void job_wait_over(
     return;
     }
 
-  pjob = svr_find_job(jobid);
+  pjob = svr_find_job(jobid, TRUE);
   free(jobid);
 
   if (pjob != NULL)

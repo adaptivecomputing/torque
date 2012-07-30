@@ -320,7 +320,7 @@ static void post_signal_req(
       return;
       }
 
-    if ((pjob = svr_find_job(jobid)) != NULL)
+    if ((pjob = svr_find_job(jobid, FALSE)) != NULL)
       {
       if (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_SUSPEND) == 0)
         {

@@ -598,8 +598,11 @@ struct job
   int               ji_is_array_template;    /* set to TRUE if this is a "template job" for a job array*/
   int               ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
   int               ji_cold_restart; /* set to TRUE if this job has been loaded through a cold restart */
-  struct job       *ji_external_clone;
-  struct job       *ji_cray_clone;
+
+  /* these three are only used for heterogeneous jobs */
+  struct job       *ji_external_clone; /* the sub-job on the external (to the cray) nodes */
+  struct job       *ji_cray_clone;     /* the sub-job on the cray nodes */
+  struct job       *ji_parent_job;     /* parent job (only populated on the sub-jobs */
 
   pthread_mutex_t  *ji_mutex;
   char              ji_being_recycled;
@@ -1072,8 +1075,8 @@ extern int   job_abt(job **, char *);
 extern job  *job_alloc();
 extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM
-extern job  *job_clone(job *,struct job_array *, int);
-extern job  *svr_find_job(char *);
+job         *job_clone(job *,struct job_array *, int);
+job         *svr_find_job(char *jobid, int get_subjob);
 #else
 extern job  *mom_find_job(char *);
 #endif

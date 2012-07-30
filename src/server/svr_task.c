@@ -435,6 +435,8 @@ int insert_task_before(
       rc = ENOMEM;
       log_err(rc, __func__, "Cannot allocate space to resize the array");
       }
+    else
+      rc = PBSE_NONE;
     }
 
   pthread_mutex_unlock(at->alltasks_mutex);

@@ -771,7 +771,7 @@ int job_should_be_on_node(
       {
       /* must lock the job before the node */
       unlock_node(pnode, __func__, NULL, 0);
-      pjob = svr_find_job(jobid);
+      pjob = svr_find_job(jobid, TRUE);
       lock_node(pnode, __func__, NULL, 0);
       
       if (pjob != NULL)
@@ -816,7 +816,7 @@ void *finish_job(
 
   if (jobid == NULL)
     return(NULL);
-  else if ((pjob = svr_find_job(jobid)) == NULL)
+  else if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
     {
     free(jobid);
 
@@ -854,7 +854,7 @@ int remove_jobs_that_have_disappeared(
 
     /* locking priority is job before node */
     unlock_node(pnode, __func__, NULL, 0);
-    pjob = svr_find_job(jobid);
+    pjob = svr_find_job(jobid, TRUE);
     lock_node(pnode, __func__, NULL, 0);
 
     if (pjob == NULL)
@@ -1038,7 +1038,7 @@ void update_job_data(
     if (strstr(jobidstr, server_name) != NULL)
       {
       on_node = is_job_on_node(np, jobidstr);
-      pjob = svr_find_job(jobidstr);
+      pjob = svr_find_job(jobidstr, TRUE);
 
       if (pjob != NULL)
         {
@@ -6347,7 +6347,7 @@ job *get_job_from_jobinfo(
   job *pjob;
 
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
-  pjob = svr_find_job(jp->jobid);
+  pjob = svr_find_job(jp->jobid, TRUE);
   lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(pjob);

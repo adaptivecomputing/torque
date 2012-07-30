@@ -491,7 +491,7 @@ int release_whole_array(
     if (pa->job_ids[i] == NULL)
       continue;
 
-    if ((pjob = svr_find_job(pa->job_ids[i])) == NULL)
+    if ((pjob = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
       {
       free(pa->job_ids[i]);
       pa->job_ids[i] = NULL;
@@ -544,7 +544,7 @@ int req_releasearray(
       return(PBSE_NONE);
       }
 
-    if ((pjob = svr_find_job(pa->job_ids[index])) == NULL)
+    if ((pjob = svr_find_job(pa->job_ids[index], FALSE)) == NULL)
       {
       free(pa->job_ids[index]);
       pa->job_ids[index] = NULL;
@@ -714,7 +714,7 @@ static void process_hold_reply(
 
   preq->rq_conn = preq->rq_orgconn;  /* restore client socket */
 
-  if ((pjob = svr_find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname)) == (job *)0)
+  if ((pjob = svr_find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname, FALSE)) == NULL)
     {
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB,
               preq->rq_ind.rq_hold.rq_orig.rq_objname,
@@ -809,7 +809,7 @@ static void process_checkpoint_reply(
 
   preq->rq_conn = preq->rq_orgconn;  /* restore client socket */
 
-  if ((pjob = svr_find_job(preq->rq_ind.rq_manager.rq_objname)) == (job *)0)
+  if ((pjob = svr_find_job(preq->rq_ind.rq_manager.rq_objname, FALSE)) == NULL)
     {
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB,
       preq->rq_ind.rq_manager.rq_objname,

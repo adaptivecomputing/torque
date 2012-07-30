@@ -639,7 +639,7 @@ job *chk_job_request(
   {
   job *pjob = NULL;
 
-  if ((pjob = svr_find_job(jobid)) == NULL)
+  if ((pjob = svr_find_job(jobid, FALSE)) == NULL)
     {
     log_event(
       PBSEVENT_DEBUG,

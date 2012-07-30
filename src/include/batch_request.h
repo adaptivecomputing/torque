@@ -480,4 +480,6 @@ extern int encode_DIS_svrattrl (struct tcp_chan *chan, svrattrl *);
 
 extern int dis_request_read (struct tcp_chan *chan, struct batch_request *);
 extern int dis_reply_read (struct tcp_chan *chan, struct batch_reply *);
+
+batch_request *duplicate_request(batch_request *preq);
 #endif /* BATCH_REQUEST_H */

@@ -261,7 +261,7 @@ void ensure_deleted(
 
   if (jobid != NULL)
     {
-    if ((pjob = svr_find_job(jobid)) != NULL)
+    if ((pjob = svr_find_job(jobid, FALSE)) != NULL)
       {
       force_purge_work(pjob);
       }
@@ -507,7 +507,7 @@ jump:
         if (!strcmp(pa->job_ids[i], pjob->ji_qs.ji_jobid))
           continue;
 
-        if ((tmp = svr_find_job(pa->job_ids[i])) == NULL)
+        if ((tmp = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
           {
           free(pa->job_ids[i]);
           pa->job_ids[i] = NULL;
@@ -627,17 +627,21 @@ struct batch_request *duplicate_request(
   struct batch_request *preq)
 
   {
-  struct batch_request *preq_tmp = alloc_br(PBS_BATCH_DeleteJob);
+  struct batch_request *preq_tmp = alloc_br(preq->rq_type);
+
   preq_tmp->rq_perm = preq->rq_perm;
   preq_tmp->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
   preq_tmp->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
   preq_tmp->rq_fromsvr = preq->rq_fromsvr;
   preq_tmp->rq_extsz = preq->rq_extsz;
   preq_tmp->rq_conn = preq->rq_conn;
+
   memcpy(preq_tmp->rq_ind.rq_manager.rq_objname,
     preq->rq_ind.rq_manager.rq_objname, PBS_MAXSVRJOBID + 1);
+
   memcpy(preq_tmp->rq_user, preq->rq_user, PBS_MAXUSER + 1);
   memcpy(preq_tmp->rq_host, preq->rq_host, PBS_MAXHOSTNAME + 1);
+
   if (preq->rq_extend != NULL)
     preq_tmp->rq_extend = strdup(preq->rq_extend);
 
@@ -750,7 +754,7 @@ int handle_single_delete(
   {
   int   rc= -1;
   char *jobid = preq->rq_ind.rq_delete.rq_objname;
-  job  *pjob = svr_find_job(jobid);
+  job  *pjob = svr_find_job(jobid, FALSE);
 
   if (pjob == NULL)
     {
@@ -1010,7 +1014,7 @@ static void post_delete_mom1(
   if (preq_clt == NULL)
     return;
 
-  pjob = svr_find_job(preq_clt->rq_ind.rq_delete.rq_objname);
+  pjob = svr_find_job(preq_clt->rq_ind.rq_delete.rq_objname, FALSE);
 
   if (pjob == NULL)
     {
@@ -1117,7 +1121,7 @@ static void post_delete_mom2(
     return;
     }
 
-  pjob = svr_find_job(jobid);
+  pjob = svr_find_job(jobid, FALSE);
   free(jobid);
 
   if (pjob != NULL)
@@ -1279,7 +1283,7 @@ static void job_delete_nanny(
     
     if (jobid != NULL)
       {
-      pjob = svr_find_job(jobid);
+      pjob = svr_find_job(jobid, FALSE);
       
       if (pjob != NULL)
         {
@@ -1358,7 +1362,7 @@ static void post_job_delete_nanny(
     }
 
   /* extract job id from task */
-  pjob = svr_find_job(preq_sig->rq_ind.rq_signal.rq_jid);
+  pjob = svr_find_job(preq_sig->rq_ind.rq_signal.rq_jid, FALSE);
 
   if (pjob == NULL)
     {

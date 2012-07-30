@@ -225,7 +225,7 @@ int relay_to_mom(
 
   rc = issue_Drequest(handle, request, func, NULL);
 
-  *pjob_ptr = svr_find_job(jobid);
+  *pjob_ptr = svr_find_job(jobid, TRUE);
 
   return(rc);
   }  /* END relay_to_mom() */

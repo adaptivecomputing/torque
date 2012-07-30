@@ -425,7 +425,7 @@ static void post_checkpoint(
   if (preq == NULL)
     return;
 
-  pjob = svr_find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname);
+  pjob = svr_find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname, FALSE);
 
   if (preq->rq_reply.brp_code == 0)
     {

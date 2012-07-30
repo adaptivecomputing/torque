@@ -477,7 +477,7 @@ int job_abt(
         if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
           {
           depend_on_term(pjob);
-          pjob = svr_find_job(job_id);
+          pjob = svr_find_job(job_id, TRUE);
           }
         
         /* update internal array bookeeping values */
@@ -501,7 +501,7 @@ int job_abt(
               log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
               }
             pthread_mutex_unlock(pa->ai_mutex);
-            pjob = svr_find_job(job_id);
+            pjob = svr_find_job(job_id, TRUE);
             }
           }
       
@@ -538,7 +538,7 @@ int job_abt(
       {
       strcpy(job_id, pjob->ji_qs.ji_jobid);
       depend_on_term(pjob);
-      pjob = svr_find_job(job_id);
+      pjob = svr_find_job(job_id, TRUE);
       }
 
     /* update internal array bookeeping values */
@@ -562,7 +562,7 @@ int job_abt(
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
           }
         pthread_mutex_unlock(pa->ai_mutex);
-        pjob = svr_find_job(job_id);
+        pjob = svr_find_job(job_id, TRUE);
         }
       }
 
@@ -710,6 +710,18 @@ void job_free(
     sprintf(log_buf, "freeing job");
 
     log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
+    }
+
+  if (pj->ji_cray_clone != NULL)
+    {
+    lock_ji_mutex(pj->ji_cray_clone, __func__, NULL, 0);
+    job_free(pj->ji_cray_clone, TRUE);
+    }
+
+  if (pj->ji_external_clone != NULL)
+    {
+    lock_ji_mutex(pj->ji_external_clone, __func__, NULL, 0);
+    job_free(pj->ji_external_clone, TRUE);
     }
 
   if (pj->ji_qs.ji_state != JOB_STATE_TRANSIT)
@@ -1096,7 +1108,7 @@ void *job_clone_wt(
     }
 
   /* don't call get_jobs_array because the template job isn't part of the array */
-  if (((template_job = svr_find_job(jobid)) == NULL) ||
+  if (((template_job = svr_find_job(jobid, TRUE)) == NULL) ||
       ((pa = get_jobs_array(&template_job)) == NULL))
     {
     free(jobid);
@@ -1189,7 +1201,7 @@ void *job_clone_wt(
     
     actual_job_count++;
     
-    if ((pjob = svr_find_job(pa->job_ids[i])) == NULL)
+    if ((pjob = svr_find_job(pa->job_ids[i], TRUE)) == NULL)
       {
       free(pa->job_ids[i]);
       pa->job_ids[i] = NULL;
@@ -2090,14 +2102,20 @@ char *get_correct_jobname(
   return(correct);
   } /* END get_correct_jobname() */
 
+
+
+
+
 /*
  * Searches the array passed in for the job_id
+ * @parent svr_find_job()
  */
 
 job *find_job_by_array(
     
   struct all_jobs *aj,
-  char *job_id)
+  char            *job_id,
+  int              get_subjob)
 
   {
   job *pj = NULL;
@@ -2116,6 +2134,16 @@ job *find_job_by_array(
   
   if (pj != NULL)
     {
+    if (get_subjob == TRUE)
+      {
+      if (pj->ji_cray_clone != NULL)
+        {
+        pj = pj->ji_cray_clone;
+        unlock_ji_mutex(pj->ji_parent_job, __func__, NULL, LOGLEVEL);
+        lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
+        }
+      }
+
     if (pj->ji_being_recycled == TRUE)
       {
       unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
@@ -2134,25 +2162,43 @@ job *find_job_by_array(
  *
  * Search list of all server jobs for one with same job id
  * Return NULL if not found or pointer to job struct if found
+ * @param jobid - get the job whose jobid matches jobid
+ * @param get_subjob - whether or not we should return the sub
+ * job (for heterogeneous jobs) if there is one
  */
 
 job *svr_find_job(
 
-  char *jobid)
+  char *jobid,      /* I */
+  int   get_subjob) /* I */
 
   {
   char *at;
   char *comp;
   int   different = FALSE;
+  char *dash;
+  char  without_dash[PBS_MAXSVRJOBID + 1];
 
   job  *pj = NULL;
-
 
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, jobid);
 
-  if ((at = strchr(jobid, (int)'@')) != NULL)
-    * at = '\0'; /* strip off @server_name */
+  if ((at = strchr(jobid, '@')) != NULL)
+    *at = '\0'; /* strip off @server_name */
+
+  /* jobid-0.server indicates the external sub-job of a heterogeneous
+   * job. For this case we want to get jobid.server, find that, and 
+   * the get the external sub-job */
+  if (get_subjob == TRUE)
+    {
+    if ((dash = strchr(jobid, '-')) != NULL)
+      {
+      *dash = '\0';
+      snprintf(without_dash, sizeof(without_dash), "%s%s", jobid, dash + 2);
+      jobid = without_dash;
+      }
+    }
 
   if ((is_svr_attr_set(SRV_ATR_display_job_server_suffix)) ||
       (is_svr_attr_set(SRV_ATR_job_suffix_alias)))
@@ -2170,7 +2216,10 @@ job *svr_find_job(
 
   if (strstr(jobid,"[]") == NULL)
     {
-    pj = find_job_by_array(&alljobs, comp);
+    /* if we're searching for the external we want find_job_by_array to 
+     * return the parent, but if we're searching for the cray subjob then
+     * we want find_job_by_array to return the sub job */
+    pj = find_job_by_array(&alljobs, comp, (dash != NULL) ? FALSE : get_subjob);
     }
 
   /* when remotely routing jobs, they are removed from the 
@@ -2178,10 +2227,41 @@ job *svr_find_job(
    * Attempt to find them there if NULL
    * OR it's an array, try to find the job */
   if (pj == NULL)
-    pj = find_job_by_array(&array_summary, comp);
+    {
+    /* see the comment on the above call to find_job_by_array() */
+    pj = find_job_by_array(&array_summary, comp, (dash != NULL) ? FALSE : get_subjob);
+    }
 
   if (at)
     *at = '@'; /* restore @server_name */
+
+  if ((get_subjob == TRUE) &&
+      (pj != NULL))
+    {
+    if (dash != NULL)
+      {
+      *dash = '-';
+      
+      if (pj->ji_external_clone != NULL)
+        {
+        pj = pj->ji_external_clone;
+        
+        lock_ji_mutex(pj, __func__, NULL, 0);
+        unlock_ji_mutex(pj->ji_parent_job, __func__, NULL, 0);
+
+        if (pj->ji_being_recycled == TRUE)
+          {
+          unlock_ji_mutex(pj, __func__, NULL, 0);
+          pj = NULL;
+          }
+        }
+      else
+        {
+        unlock_ji_mutex(pj, __func__, NULL, 0);
+        pj = NULL;
+        }
+      }
+    }
 
   if (different)
     free(comp);
@@ -2624,7 +2704,7 @@ job_array *get_jobs_array(
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);
         }
       
-      if ((pjob = svr_find_job(jobid)) == NULL)
+      if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
         {
         pthread_mutex_unlock(pa->ai_mutex);
         pa = NULL;
@@ -2700,6 +2780,9 @@ int fix_external_exec_hosts(
       (externals == NULL))
     return(-2);
 
+  /* wipe out the current destination */
+  pjob->ji_qs.ji_destin[0] = '\0';
+
   external_execs = get_dynamic_string(-1, NULL);
   exec_ptr = exec_host;
 
@@ -2719,6 +2802,10 @@ int fix_external_exec_hosts(
     /* if we find a match, copy in that exec host entry */
     if (hostname_in_externals(exec_ptr, externals) == TRUE)
       {
+      /* capture the first external as my mother superior */
+      if (pjob->ji_qs.ji_destin[0] == '\0')
+        snprintf(pjob->ji_qs.ji_destin, sizeof(pjob->ji_qs.ji_destin), "%s", exec_ptr);
+
       if (slash != NULL)
         *slash = '/';
 
@@ -2730,6 +2817,21 @@ int fix_external_exec_hosts(
       }
 
     exec_ptr = plus;
+    }
+
+  /* also remove the login attributes */
+  if (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL)
+    {
+    free(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str = NULL;
+    pjob->ji_wattr[JOB_ATR_login_node_id].at_flags &= ~ATR_VFLAG_SET;
+    }
+
+  if (pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str != NULL)
+    {
+    free(pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = NULL;
+    pjob->ji_wattr[JOB_ATR_login_prop].at_flags &= ~ATR_VFLAG_SET;
     }
 
   free(exec_host);
@@ -2825,8 +2927,14 @@ int split_job(
   fix_cray_exec_hosts(cray);
   change_external_job_name(external);
 
+  external->ji_parent_job = pjob;
+  cray->ji_parent_job     = pjob;
+
   pjob->ji_external_clone = external;
   pjob->ji_cray_clone     = cray;
+
+  unlock_ji_mutex(external, __func__, NULL, 0);
+  unlock_ji_mutex(cray, __func__, NULL, 0);
 
   return(PBSE_NONE);
   } /* END split_job() */

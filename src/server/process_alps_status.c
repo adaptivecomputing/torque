@@ -464,7 +464,7 @@ int record_reservation(
     {
     if (sub_node->jobs != NULL)
       {
-      if ((pjob = svr_find_job(sub_node->jobs->jobid)) != NULL)
+      if ((pjob = svr_find_job(sub_node->jobs->jobid, TRUE)) != NULL)
         {
         pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
         pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;

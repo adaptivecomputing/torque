@@ -179,7 +179,7 @@ int req_holdarray(
       if (pa->job_ids[i] == NULL)
         continue;
 
-      if ((pjob = svr_find_job(pa->job_ids[i])) == NULL)
+      if ((pjob = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
         {
         free(pa->job_ids[i]);
         pa->job_ids[i] = NULL;

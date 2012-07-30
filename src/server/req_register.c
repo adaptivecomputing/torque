@@ -198,7 +198,7 @@ int req_register(
 
   /* find the "parent" job specified in the request */
 
-  if ((pjob = svr_find_job(preq->rq_ind.rq_register.rq_parent)) == NULL)
+  if ((pjob = svr_find_job(preq->rq_ind.rq_register.rq_parent, TRUE)) == NULL)
     {
     /*
      * job not found... if server is initializing, it may not
@@ -944,7 +944,7 @@ void set_array_depend_holds(
 
     while (pdj != NULL)
       {
-      pjob = svr_find_job(pdj->dc_child);
+      pjob = svr_find_job(pdj->dc_child, TRUE);
 
       if (pjob != NULL)
         {
@@ -1022,7 +1022,7 @@ static void post_doq(
     snprintf(log_buf, sizeof(log_buf), "%s%s", msg_regrej, preq->rq_ind.rq_register.rq_parent);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);
 
-    pjob = svr_find_job(jobid);
+    pjob = svr_find_job(jobid, TRUE);
 
     if ((msg = pbse_to_txt(preq->rq_reply.brp_code)) != NULL)
       {
@@ -1110,7 +1110,7 @@ static void alter_unreg(
         {
         if ((pnewd == 0) || (find_dependjob(pnewd, oldjd->dc_child) == 0))
           {
-          if ((pjob = svr_find_job(job_id)) == NULL)
+          if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
               return;
 
           send_depend_req(
@@ -1186,7 +1186,7 @@ int depend_on_que(
     /* if there are dependencies being removed, unregister them */
 
     alter_unreg(pjob, &(pjob)->ji_wattr[JOB_ATR_depend], pattr);
-    if ((pjob = svr_find_job(job_id)) == NULL)
+    if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
       return PBSE_JOBNOTFOUND;
     }
 
@@ -1220,13 +1220,13 @@ int depend_on_que(
       while (pparent)
         {
         if ((pjob == NULL) &&
-            ((pjob = svr_find_job(job_id)) == NULL))
+            ((pjob = svr_find_job(job_id, TRUE)) == NULL))
           {
           return PBSE_JOBNOTFOUND;
           }
         if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq)) != PBSE_NONE)
           {
-          pjob = svr_find_job(job_id);
+          pjob = svr_find_job(job_id, TRUE);
           return(rc);
           }
         pjob = NULL;
@@ -1270,7 +1270,7 @@ static void post_doe(
 
   jobid = preq->rq_ind.rq_register.rq_child;
 
-  pjob = svr_find_job(jobid);
+  pjob = svr_find_job(jobid, TRUE);
 
   if (pjob != NULL)
     {
@@ -1336,7 +1336,7 @@ int depend_on_exec(
         post_doe);
       pjob = NULL; /* send_depend_req returns unlocked, NULL--> unlocked */
 
-      if ((pjob = svr_find_job(jobid)) == NULL)
+      if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
         return PBSE_JOBNOTFOUND;
 
       pdj = (struct depend_job *)GET_NEXT(pdj->dc_link);
@@ -1364,7 +1364,7 @@ int depend_on_exec(
         SYNC_SCHED_HINT_NULL,
         release_req);
       if ((pjob == NULL) &&
-          ((pjob = svr_find_job(jobid)) == NULL))
+          ((pjob = svr_find_job(jobid, TRUE)) == NULL))
         return PBSE_JOBNOTFOUND;
       }
     }
@@ -1498,7 +1498,7 @@ int depend_on_term(
           while (pparent)
             {
             if ((pjob == NULL) && 
-                ((pjob = svr_find_job(job_id)) == NULL))
+                ((pjob = svr_find_job(job_id, TRUE)) == NULL))
               return(PBSE_JOBNOTFOUND);
 
             rc = send_depend_req(pjob, pparent, type,
@@ -1524,7 +1524,7 @@ int depend_on_term(
       while (pparent)
         {
         if ((pjob == NULL) && 
-            ((pjob = svr_find_job(job_id)) == NULL))
+            ((pjob = svr_find_job(job_id, TRUE)) == NULL))
           return(PBSE_JOBNOTFOUND);
 
         /* "release" the job to execute */
@@ -1607,7 +1607,7 @@ static void release_cheapest(
       {
       cheapest->dc_state = JOB_DEPEND_OP_RELEASE;
       }
-    pjob = svr_find_job(job_id);
+    pjob = svr_find_job(job_id, TRUE);
     }
 
   return;
@@ -1678,7 +1678,7 @@ void set_depend_hold(
 
         if (djob)
           {
-          djp = svr_find_job(djob->dc_child);
+          djp = svr_find_job(djob->dc_child, TRUE);
 
           if (!djp ||
               ((pdp->dp_type == JOB_DEPEND_TYPE_AFTERSTART) &&
