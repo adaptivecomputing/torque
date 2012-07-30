@@ -226,7 +226,7 @@ int get_batch_request_id(
   return(0);
   }
 
-job *svr_find_job(char *jobid)
+job *svr_find_job(char *jobid, int get_subjob)
   {
   return(NULL);
   }

@@ -27,7 +27,7 @@ void free_resizable_array(
 
 job *svr_find_job(
 
-  char *job_id)
+  char *job_id, int get_subjob)
 
   {
   static int  count = 0;

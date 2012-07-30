@@ -2156,7 +2156,7 @@ int is_orphaned(
   return(1);
   }
 
-job *svr_find_job(char *jobid)
+job *svr_find_job(char *jobid, int get_subjob)
   {
   static struct job pjob;
   static int    i = 0;
