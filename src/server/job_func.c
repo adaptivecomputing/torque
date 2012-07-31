@@ -2176,7 +2176,7 @@ job *svr_find_job(
   char *at;
   char *comp;
   int   different = FALSE;
-  char *dash;
+  char *dash = NULL;
   char  without_dash[PBS_MAXSVRJOBID + 1];
 
   job  *pj = NULL;
@@ -2919,22 +2919,27 @@ int split_job(
   job *pjob)
 
   {
-  job            *external       = copy_job(pjob);
-  job            *cray           = copy_job(pjob);
+  job            *external;
+  job            *cray;
 
-  fix_external_exec_hosts(external);
+  if (pjob->ji_external_clone == NULL)
+    {
+    external = copy_job(pjob);
+    fix_external_exec_hosts(external);
+    change_external_job_name(external);
+    external->ji_parent_job = pjob;
+    pjob->ji_external_clone = external;
+    unlock_ji_mutex(external, __func__, NULL, 0);
+    }
 
-  fix_cray_exec_hosts(cray);
-  change_external_job_name(external);
-
-  external->ji_parent_job = pjob;
-  cray->ji_parent_job     = pjob;
-
-  pjob->ji_external_clone = external;
-  pjob->ji_cray_clone     = cray;
-
-  unlock_ji_mutex(external, __func__, NULL, 0);
-  unlock_ji_mutex(cray, __func__, NULL, 0);
+  if (pjob->ji_cray_clone == NULL)
+    {
+    cray = copy_job(pjob);
+    fix_cray_exec_hosts(cray);
+    cray->ji_parent_job     = pjob;
+    pjob->ji_cray_clone     = cray;
+    unlock_ji_mutex(cray, __func__, NULL, 0);
+    }
 
   return(PBSE_NONE);
   } /* END split_job() */

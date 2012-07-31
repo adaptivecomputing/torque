@@ -503,9 +503,9 @@ int login_encode_jobs(
   char            str_buf[MAXLINE*2];
   svrattrl       *pal;
 
-  for (psubn = pnode->nd_psn;psubn != NULL;psubn = psubn->next)
+  for (psubn = pnode->nd_psn; psubn != NULL; psubn = psubn->next)
     {
-    for (jip = psubn->jobs;jip != NULL;jip = jip->next)
+    for (jip = psubn->jobs; jip != NULL; jip = jip->next)
       {
       pjob = get_job_from_jobinfo(jip, pnode);
       login_id = NULL;
@@ -1339,25 +1339,13 @@ struct pbssubn *create_subnode(
     }
 
   /* initialize the subnode and link into the parent node */
-
   psubn->host  = pnode;
-
-  psubn->next  = NULL;
-
-  psubn->jobs  = NULL;
-
   psubn->flag  = okay;
-
-  psubn->inuse = 0;
-
   psubn->index = pnode->nd_nsn++;
-
   pnode->nd_nsnfree++;
 
   if ((pnode->nd_state & (INUSE_JOB | INUSE_JOBSHARE)) != 0)
     pnode->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
-
-  psubn->allocto = (resource_t)0;
 
   if (pnode->nd_psn == NULL)
     pnode->nd_psn = psubn;
@@ -2111,8 +2099,16 @@ int setup_nodes(void)
         /* old style properity */
         if (!strcmp(token, alps_starter_feature))
           is_alps_starter = TRUE;
-        else if (!strcmp(token, alps_reporter_feature))
+
+        if (!strcmp(token, alps_reporter_feature))
+          {
           is_alps_reporter = TRUE;
+
+          if (propstr[0] != '\0')
+            strcat(propstr, ",");
+
+          strcat(propstr, "cray_compute");
+          }
         else
           {
           if (propstr[0] != '\0')

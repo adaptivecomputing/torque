@@ -1226,6 +1226,10 @@ int modify_job_attr(
 
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
+  else if (pjob->ji_parent_job != NULL)
+    {
+    allow_unkn = JOB_ATR_UNKN;
+    }
   else
     {
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 5");

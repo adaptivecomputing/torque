@@ -345,6 +345,7 @@ int             insert_node(all_nodes *,struct pbsnode *);
 int             remove_node(all_nodes *,struct pbsnode *);
 struct pbsnode *next_node(all_nodes *,struct pbsnode *,node_iterator *);
 struct pbsnode *next_host(all_nodes *,int *,struct pbsnode *);
+int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
 
 
 #define HELLO_RESEND_WAIT_TIME 10

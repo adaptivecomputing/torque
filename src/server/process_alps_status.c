@@ -182,6 +182,9 @@ struct pbsnode *create_alps_subnode(
   subnode->nd_ntype = NTYPE_CLUSTER;
   subnode->parent = parent;
 
+  /* add any properties to the subnodes */
+  copy_properties(subnode, parent);
+
   lock_node(subnode, __func__, NULL, 0);
     
   insert_node(&(parent->alps_subnodes), subnode);
@@ -206,7 +209,7 @@ void *check_if_orphaned(
   if (is_orphaned(rsv_id) == TRUE)
     {
     preq = alloc_br(PBS_BATCH_DeleteReservation);
-    preq->rq_extend = strdup(rsv_id);
+    preq->rq_extend = rsv_id;
 
     if ((pnode = get_next_login_node(NULL)) != NULL)
       {
@@ -235,6 +238,8 @@ void *check_if_orphaned(
         free_br(preq);
       }
     }
+  else
+    free(rsv_id);
 
   return(NULL);
   } /* END check_if_orphaned() */
@@ -493,12 +498,14 @@ int process_reservation_id(
   char           *rsv_id_str)
 
   {
-  char           *rsv_id = rsv_id_str + strlen(reservation_id) + 1;
+  char           *rsv_id = strdup(rsv_id_str + strlen(reservation_id) + 1);
 
   if (already_recorded(rsv_id) == TRUE)
     enqueue_threadpool_request(check_if_orphaned, rsv_id);
   else if (record_reservation(pnode, rsv_id) != PBSE_NONE)
     enqueue_threadpool_request(check_if_orphaned, rsv_id);
+  else
+    free(rsv_id);
 
   return(PBSE_NONE);
   } /* END process_reservation_id() */

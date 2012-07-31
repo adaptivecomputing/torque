@@ -1521,7 +1521,7 @@ int req_stat_node(
       }
     }
 
-  if (!rc)
+  if (rc == PBSE_NONE)
     {
     /* SUCCESS */
 

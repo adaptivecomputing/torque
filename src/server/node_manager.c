@@ -129,6 +129,7 @@
 #include "svr_connect.h" /* svr_disconnect_sock */
 #include "net_cache.h"
 #include "ji_mutex.h"
+#include "alps_constants.h"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 #define SEND_HELLO 11
@@ -3910,6 +3911,10 @@ int check_for_node_type(
 
     for (p = req->prop; p != NULL; p = p->next)
       {
+      if ((!strcmp(p->name, "cray_compute")) ||
+          (!strcmp(p->name, alps_starter_feature)))
+        continue;
+
       pnode = find_node_in_allnodes(&(reporter->alps_subnodes), p->name);
 
       if (pnode != NULL)
@@ -3927,7 +3932,11 @@ int check_for_node_type(
         {
         int login = FALSE;
 
-        if ((pnode = find_nodebyname(p->name)) != NULL)
+        unlock_node(reporter, __func__, NULL, 0);
+        pnode = find_nodebyname(p->name);
+        lock_node(reporter, __func__, NULL, 0);
+
+        if (pnode != NULL)
           {
           if (pnode->nd_is_alps_login == TRUE)
             login = TRUE;
@@ -5637,11 +5646,11 @@ int procs_requested(
 
 int node_avail_complex(
 
-  char *spec,  /* I - node spec */
+  char *spec,   /* I - node spec */
   int  *navail, /* O - number available */
-  int *nalloc, /* O - number allocated */
-  int *nresvd, /* O - number reserved  */
-  int *ndown)  /* O - number down      */
+  int  *nalloc, /* O - number allocated */
+  int  *nresvd, /* O - number reserved  */
+  int  *ndown)  /* O - number down      */
 
   {
   int ret;
@@ -6073,7 +6082,7 @@ int remove_job_from_node(
   {
   struct pbssubn *np;
   struct jobinfo *jp;
-  struct jobinfo *prev;
+  struct jobinfo *prev = NULL;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   
   /* examine all subnodes in node */

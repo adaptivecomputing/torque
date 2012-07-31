@@ -645,6 +645,12 @@ struct batch_request *duplicate_request(
   if (preq->rq_extend != NULL)
     preq_tmp->rq_extend = strdup(preq->rq_extend);
 
+  if (preq->rq_type == PBS_BATCH_RunJob)
+    {
+    if (preq->rq_ind.rq_run.rq_destin)
+      preq_tmp->rq_ind.rq_run.rq_destin = strdup(preq->rq_ind.rq_run.rq_destin);
+    }
+
   return(preq_tmp);
   } /* END duplicate_request() */
 
