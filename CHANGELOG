@@ -31,6 +31,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fixed a deadlock with array jobs running simultaneously with qstat. 
   e - Added a new showjobs utility to the contrib directory. New showjobs contributed by
       Gareth Williams.
+  b - PBS_O_WORKDIR and some other environment variables sometimes didn't appear in the 
+      job's environment. Correct this. Thank you to Matt Ezell for the patch.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine
