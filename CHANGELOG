@@ -33,6 +33,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       Gareth Williams.
   b - PBS_O_WORKDIR and some other environment variables sometimes didn't appear in the 
       job's environment. Correct this. Thank you to Matt Ezell for the patch.
+  b - gpus weren't being released once a job finished. Fixed.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine

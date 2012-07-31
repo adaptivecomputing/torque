@@ -5998,6 +5998,7 @@ void free_nodes(
     if ((pnode = find_nodebyname(hostname)) != NULL)
       {
       remove_job_from_node(pnode, pjob);
+      remove_job_from_nodes_gpus(pnode, pjob);
       unlock_node(pnode, __func__, NULL, 0);
       }
     }
