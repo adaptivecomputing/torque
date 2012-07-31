@@ -706,6 +706,8 @@ int istext(
   }  /* END FileIsText() */
 
 
+
+
 /* PBS_Filter check has ben consolidated
  * The validity preference follows:
  * Config file
@@ -744,7 +746,10 @@ int validate_submit_filter(
   else
     hash_del_item(mm, a_hash, ATTR_pbs_o_submit_filter);
   return rc;
-  }
+  } /* validate_submit_filter() */
+
+
+
 
 void validate_pbs_o_workdir(
     
@@ -753,11 +758,12 @@ void validate_pbs_o_workdir(
 
   {
   job_data *tmp_job_info = NULL;
-  char *the_val = NULL;
-  char null_val[] = "\0";
+  char     *the_val = NULL;
+  char      null_val[] = "\0";
+
   if (hash_find(*job_attr, ATTR_init_work_dir, &tmp_job_info) == FALSE)
     {
-    if (hash_find(*job_attr, "pwd",  &tmp_job_info))
+    if (hash_find(*job_attr, "PWD",  &tmp_job_info))
       the_val = tmp_job_info->value;
     else
       {
@@ -771,9 +777,12 @@ void validate_pbs_o_workdir(
     }
   else
     the_val = tmp_job_info->value;
-  hash_add_or_exit(mm, job_attr, ATTR_init_work_dir, the_val, ENV_DATA);
+
   hash_add_or_exit(mm, job_attr, ATTR_pbs_o_workdir, the_val, ENV_DATA);
-  }
+  } /* END validate_pbs_o_workdir() */
+
+
+
 
 /*
  * validate qsub_host, if not valid fail
@@ -3915,27 +3924,28 @@ void set_client_attr_defaults(memmgr **mm, job_data **client_attr)
 void update_job_env_names(job_info *ji)
   {
   job_data *tmp_job_info = NULL;
-  if (hash_find(ji->user_attr, "home", &tmp_job_info))
+
+  if (hash_find(ji->user_attr, "HOME", &tmp_job_info))
     hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_home, tmp_job_info->value, ENV_DATA);
   else
     hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_home, "/", ENV_DATA);
 
-  if (hash_find(ji->user_attr, "logname", &tmp_job_info))
+  if (hash_find(ji->user_attr, "LOGNAME", &tmp_job_info))
     hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_logname, tmp_job_info->value, ENV_DATA);
 
-  if (hash_find(ji->user_attr, "path", &tmp_job_info))
+  if (hash_find(ji->user_attr, "PATH", &tmp_job_info))
     hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_path, tmp_job_info->value, ENV_DATA);
 
-  if (hash_find(ji->user_attr, "mail", &tmp_job_info))
+  if (hash_find(ji->user_attr, "MAIL", &tmp_job_info))
     hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_mail, tmp_job_info->value, ENV_DATA);
 
-  if (hash_find(ji->user_attr, "shell", &tmp_job_info))
+  if (hash_find(ji->user_attr, "SHELL", &tmp_job_info))
     hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_shell, tmp_job_info->value, ENV_DATA);
 
-  if (hash_find(ji->user_attr, "tz", &tmp_job_info))
+  if (hash_find(ji->user_attr, "TZ", &tmp_job_info))
     hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_tz, tmp_job_info->value, ENV_DATA);
 
-  if (hash_find(ji->user_attr, "lang", &tmp_job_info))
+  if (hash_find(ji->user_attr, "LANG", &tmp_job_info))
     hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_lang, tmp_job_info->value, ENV_DATA);
 
   }
@@ -4266,7 +4276,7 @@ void main_func(
       }
     }
 
-  if (hash_find(ji.client_attr, "display", &tmp_job_info))
+  if (hash_find(ji.client_attr, "DISPLAY", &tmp_job_info))
     {
     char *x11authstr;
     hash_find(ji.client_attr, "xauth_path", &tmp_job_info);
