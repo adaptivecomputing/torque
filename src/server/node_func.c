@@ -309,10 +309,12 @@ struct pbsnode *find_nodebyname(
     *pslash = '\0';
 
   pthread_mutex_lock(allnodes.allnodes_mutex);
+
   i = get_value_hash(allnodes.ht, nodename);
 
   if (i >= 0)
     pnode = (struct pbsnode *)allnodes.ra->slots[i].item;
+
   if (pnode != NULL)
     lock_node(pnode, __func__, NULL, LOGLEVEL);
   else

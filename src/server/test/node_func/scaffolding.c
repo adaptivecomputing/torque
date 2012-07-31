@@ -47,6 +47,7 @@ const char *dis_emsg[] = {"No error",
   "End of File"
 };
 dynamic_string *hierarchy_holder;
+extern int cray_enabled;
 
 
 int insert_thing(resizable_array *ra, void *thing)
@@ -105,8 +106,16 @@ void free_prop_list(struct prop *prop)
 
 int get_value_hash(hash_table_t *ht, void *key)
   {
-  fprintf(stderr, "The call to get_value_hash needs to be mocked!!\n");
-  exit(1);
+  char *str = (char *)key;
+
+  if (str == NULL)
+    return(-1);
+  else if (!strcmp(str, "bob"))
+    return(1);
+  else if (!strcmp(str, "tom"))
+    return(2);
+  else
+    return(-1);
   }
 
 void *get_next(list_link pl, char *file, int line)
@@ -123,8 +132,17 @@ resizable_array *initialize_resizable_array(int size)
 
 struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
   {
-  fprintf(stderr, "The call to AVL_find needs to be mocked!!\n");
-  exit(1);
+  static struct pbsnode numa;
+  static char           buf[20];
+
+  if (key > 2)
+    return(NULL);
+  else
+    {
+    sprintf(buf, "%lu", key);
+    numa.nd_name = buf;
+    return(&numa);
+    }
   }
 
 void free_attrlist(tlist_head *pattrlisthead)
@@ -164,22 +182,19 @@ AvlTree AVL_insert(u_long key, uint16_t port, struct pbsnode *node, AvlTree tree
   }
 
 int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
-  { 
-  fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
-  exit(1);                    
+  {
+  return(0); 
   }                           
 
 int lock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
   { 
-  fprintf(stderr, "The call to lock_node needs to be mocked!!\n");
-  exit(1);                    
+  return(0); 
   }                           
 
 void *pop_thing(resizable_array *ra)
 
   {
-  fprintf(stderr, "The call to pop_thing needs to be mocked!!\n");
-  exit(1);                    
+  return(NULL);
   }
 
 int is_present(resizable_array *ra, void *thing)
@@ -225,6 +240,9 @@ int diswsi(int sock, int value)
 
 int get_svr_attr_l(int index, long *l)
   {
+  if (index == SRV_ATR_CrayEnabled)
+    *l = cray_enabled;
+
   return(0);
   }
 
