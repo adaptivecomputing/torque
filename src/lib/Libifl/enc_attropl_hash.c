@@ -210,17 +210,6 @@ int build_var_list(
     {
     hash_del_item(mm, attrs, ATTR_v);
     }
-  /* This a temporary work around until the server code has been changed */
-  if (workdir_val)
-    {
-    offset = strlen(*var_list);
-    current_len = offset + 1; /* Existing string, */
-    current_len += strlen("PBS_O_WORKDIR") + 1; /* name= */
-    current_len += strlen(workdir_val) + 1; /* value\0 */
-    tmp_var_list = memmgr_realloc(mm, *var_list, current_len);
-    sprintf(tmp_var_list + offset, ",PBS_O_WORKDIR=%s", workdir_val);
-    *var_list = tmp_var_list;
-    }
 
   return(item_count);
   } /* END build_var_list() */

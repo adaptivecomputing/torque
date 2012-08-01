@@ -2561,7 +2561,7 @@ void process_opts(
           if ((rc == 0) || (rc == 3))
             hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_e, path_out, data_type);
           else
-            print_qsub_usage_exit("qsub: illegal -D value");
+            print_qsub_usage_exit("qsub: illegal -e value");
 
         break;
 
