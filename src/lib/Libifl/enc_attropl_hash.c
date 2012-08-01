@@ -127,8 +127,6 @@ int build_var_list(
   int       name_len = 0;
   int       value_len = 0;
   int       item_count = 0;
-  int       offset = 0;
-  char     *tmp_var_list = NULL;
   char     *workdir_val = NULL;
   int       preexisting_var_list = FALSE;
 
