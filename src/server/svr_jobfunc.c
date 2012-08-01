@@ -386,35 +386,40 @@ int svr_enquejob(
        give us this job */
     job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
     unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
-    while ((pjcur = next_job_from_back(pque->qu_jobs,&iter)) != NULL)
+
+    while ((pjcur = next_job_from_back(pque->qu_jobs, &iter)) != NULL)
       {
       if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
         {
         unlock_ji_mutex(pjcur, __func__, "5", LOGLEVEL);
         break;
         }
+
       if (strcmp(job_id, pjcur->ji_qs.ji_jobid) == 0)
         {
         unlock_ji_mutex(pjcur, __func__, "6", LOGLEVEL);
         unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
-        return PBSE_NONE;
+        return(PBSE_NONE);
         }
+
       unlock_ji_mutex(pjcur, __func__, "7", LOGLEVEL);
       }
+
     if ((pjob = svr_find_job(job_id)) == NULL)
       {
       unlock_queue(pque, __func__, "array_template check lost job", LOGLEVEL);
       return(PBSE_JOBNOTFOUND);
       }
+
     if (pjcur == NULL)
       {
       /* link first in list */
-      insert_job_first(pque->qu_jobs,pjob);
+      insert_job_first(pque->qu_jobs, pjob);
       }
     else
       {
       /* link after 'current' job in list */
-      insert_job_after(pque->qu_jobs,pjcur,pjob);
+      insert_job_after(pque->qu_jobs, pjcur, pjob);
       unlock_ji_mutex(pjcur, __func__, "8", LOGLEVEL);
       }
 
@@ -429,6 +434,7 @@ int svr_enquejob(
 
     job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
     unlock_ji_mutex(pjob, __func__, "9", LOGLEVEL);
+
     while ((pjcur = next_job_from_back(pque->qu_jobs_array_sum,&iter)) != NULL)
       {
       if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
@@ -436,19 +442,23 @@ int svr_enquejob(
         unlock_ji_mutex(pjcur, __func__, "10", LOGLEVEL);
         break;
         }
+
       if (strcmp(job_id, pjcur->ji_qs.ji_jobid) == 0)
         {
         unlock_ji_mutex(pjcur, __func__, "11", LOGLEVEL);
         unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
         return PBSE_NONE;
         }
+
       unlock_ji_mutex(pjcur, __func__, "12", LOGLEVEL);
       } /* end of while */
+
     if ((pjob = svr_find_job(job_id)) == NULL)
       {
       unlock_queue(pque, __func__, "array_template check lost job", LOGLEVEL);
       return(PBSE_JOBNOTFOUND);
       }
+
     if (pjcur == NULL)
       {
       /* link first in list */
@@ -1977,8 +1987,13 @@ int svr_chkque(
       {
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       user_jobs =count_queued_jobs(pque,NULL);
-      if ((pjob = svr_find_job(jobid)) == NULL)
+
+      lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      if (pjob->ji_being_recycled == TRUE)
+        {
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         return(PBSE_JOB_RECYCLED);
+        }
 
       if ((user_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
         {
@@ -2002,8 +2017,12 @@ int svr_chkque(
       user_jobs = count_queued_jobs(pque,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
 
-      if ((pjob = svr_find_job(jobid)) == NULL)
+      lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      if (pjob->ji_being_recycled == TRUE)
+        {
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         return(PBSE_JOB_RECYCLED);
+        }
 
       if (user_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
         {
