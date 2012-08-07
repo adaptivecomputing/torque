@@ -38,6 +38,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Diabled mom_job_sync functionality. This was inteded to be released with 4.1.1
       but it does not yet cover all cases of jobs needed. This was causing data corruption
       with the .JB files.
+  b - Fixed a bug with qmove where the server would hang if the destination queue
+      was the same as the queue where the job was already assigned.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine

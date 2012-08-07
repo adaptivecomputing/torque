@@ -250,7 +250,7 @@ PbsErrClient(PBSE_CONTINUE, "Continue processing on job. (Not an error)")
 PbsErrClient(PBSE_JOBSUBSTATE, "Current sub state does not allow trasaction.")
 PbsErrClient(PBSE_CAN_NOT_MOVE_FILE, "Error moving file")
 PbsErrClient(PBSE_JOB_RECYCLED,      "Job is being recycled")
-
+PbsErrClient(PBSE_JOB_ALREADY_IN_QUEUE, "Job is already in destination queue.")
 
 
 /* pbs client errors ceiling (max_client_err + 1) */
