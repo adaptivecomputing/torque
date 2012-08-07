@@ -93,7 +93,7 @@
  * alphabetic if comining from a -N option (chk_alpha = 1).
  */
 
-#define PBS_MAXJOBNAMELEN  256
+#define PBS_MAXJOBNAMELEN  8196
 
 int check_job_name(
 

@@ -373,9 +373,16 @@ pbs_queue *find_queuebyname(
   char  *pc;
   pbs_queue *pque = NULL;
   char   qname[PBS_MAXDEST + 1];
+  char   log_buf[LOCAL_LOG_BUF_SIZE+1];
   int    i;
 
   snprintf(qname, sizeof(qname), "%s", quename);
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s", quename);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   pc = strchr(qname, (int)'@'); /* strip off server (fragment) */
 
@@ -580,10 +587,17 @@ int get_parent_dest_queues(
   pbs_queue *pque_parent;
   pbs_queue *pque_dest;
   char       jobid[PBS_MAXSVRJOBID + 1];
+  char       log_buf[LOCAL_LOG_BUF_SIZE + 1];
   job       *pjob = *pjob_ptr;
   int        index_parent;
   int        index_dest;
   int        rc = PBSE_NONE;
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
   unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);

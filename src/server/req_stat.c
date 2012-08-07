@@ -395,6 +395,12 @@ static void req_stat_job_step2(
 
   /* See pbs_server_attributes(1B) for details on "poll_jobs" behaviour */
 
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "note");
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
   if (dpal == NULL)
     {
     /* build 'delta' pbs_attribute list */
@@ -1216,6 +1222,15 @@ int req_stat_que(
       req_reject(rc, 0, preq, NULL, log_buf);
       return rc;
       }
+    }
+
+  if (LOGLEVEL >= 7)
+    {
+    if (type == 1)
+      sprintf(log_buf, "no name");
+    else
+      sprintf(log_buf, "%s", name);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
   preply = &preq->rq_reply;

@@ -1436,6 +1436,12 @@ void mgr_queue_set(
     return;
     }
 
+  if (LOGLEVEL >= 7 )
+    {
+    sprintf(log_buf, "%s", qname);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
   /* set the attributes */
   sprintf(log_buf, msg_manager, msg_man_set, preq->rq_user, preq->rq_host);
 
@@ -1547,6 +1553,12 @@ void mgr_queue_unset(
     req_reject(PBSE_UNKQUE, 0, preq, NULL, NULL);
 
     return;
+    }
+
+  if (LOGLEVEL >= 7 )
+    {
+    sprintf(log_buf, "%s", qname);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
   sprintf(log_buf, msg_manager, msg_man_uns, preq->rq_user, preq->rq_host);
