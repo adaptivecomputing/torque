@@ -764,7 +764,7 @@ int job_should_be_on_node(
   {
   int  should_be_on_node = TRUE;
   job *pjob;
-  
+
   if (strstr(jobid, server_name) != NULL)
     {
     if ((is_job_on_node(pnode, jobid)) == FALSE)
@@ -776,11 +776,16 @@ int job_should_be_on_node(
       
       if (pjob != NULL)
         {
+        if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+          {
+          unlock_ji_mutex(pjob, __func__, "A", LOGLEVEL);
+          should_be_on_node = FALSE;
+          }
         /* job exists, but doesn't currently have resources assigned
          * to this node double check the job struct because we
          * could be in the middle of moving the job around because
          * of data staging, suspend, or rerun */            
-        if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
+        else if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
           {
           unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           
@@ -1636,11 +1641,11 @@ int process_status_info(
       /* update job attributes based on what the MOM gives us */      
       update_job_data(current, str + strlen("jobdata="));
       }
-    else if ((mom_job_sync == TRUE) &&
+    /*else if ((mom_job_sync == TRUE) &&
              (!strncmp(str, "jobs=", 5)))
-      {
+      {*/
       /* walk job list reported by mom */
-      size_t         len = strlen(str) + strlen(current->nd_name) + 2;
+      /*size_t         len = strlen(str) + strlen(current->nd_name) + 2;
       char          *jobstr = calloc(1, len);
       sync_job_info *sji = calloc(1, sizeof(sync_job_info));
 
@@ -1648,11 +1653,11 @@ int process_status_info(
         {
         sprintf(jobstr, "%s:%s", current->nd_name, str+5);
         sji->input = jobstr;
-        sji->timestamp = time(NULL);
+        sji->timestamp = time(NULL);*/
         /* jobstr must be freed in sync_node_jobs */
-        enqueue_threadpool_request(sync_node_jobs, sji);
+      /*  enqueue_threadpool_request(sync_node_jobs, sji);
         }
-      }
+      }*/
     else if (auto_np)
       {
       if (!(strncmp(str, "ncpus=", 6)))

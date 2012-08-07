@@ -35,6 +35,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       job's environment. Correct this. Thank you to Matt Ezell for the patch.
   b - gpus weren't being released once a job finished. Fixed.
   b - Removed code that added PBS_O_WORKDIR twice to the Variable_List attribute.
+  b - Diabled mom_job_sync functionality. This was inteded to be released with 4.1.1
+      but it does not yet cover all cases of jobs needed. This was causing data corruption
+      with the .JB files.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine
@@ -49,6 +52,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed a problem where interactive jobs using X-forwarding would fail
       because TORQUE though DISPLAY was not set. The problem was that 
       DISPLAY was set using lowercase internally. TRQ-1010
+
 
 4.0.3
   b - fix qdel -p all - was performing a qdel all. TRQ-947
