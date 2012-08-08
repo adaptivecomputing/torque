@@ -152,7 +152,7 @@
  * PBS_NET_MAX_CONNECTIONS should be larger than ulimit -n due to more socket
  * handles being handed out than sockets are available.
  */
-#define PBS_NET_MAX_CONNECTIONS 10240  /* increased from 256--should be larger than ulimit -n */
+#define PBS_NET_MAX_CONNECTIONS 65535  /* increased from 256--should be larger than ulimit -n */
 #endif /* PBS_NET_MAX_CONNECTIONS */
 
 #define PBS_LOCAL_CONNECTION PBS_NET_MAX_CONNECTIONS
