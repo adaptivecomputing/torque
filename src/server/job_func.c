@@ -1669,7 +1669,7 @@ int svr_job_purge(
     if (pjob != NULL)
       {
       /* erase the pointer to this job in the job array */
-      if (pa->jobids != NULL)
+      if (pa->job_ids != NULL)
         {
         free(pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long]);
         pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = NULL;
