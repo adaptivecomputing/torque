@@ -113,13 +113,7 @@ int req_holdarray(
 
     log_event(PBSEVENT_SECURITY, PBS_EVENTCLASS_JOB, preq->rq_ind.rq_delete.rq_objname, log_buf);
 
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
-      }
-
-    pthread_mutex_unlock(pa->ai_mutex);
+    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
     return(PBSE_NONE);
@@ -129,13 +123,7 @@ int req_holdarray(
   if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset,
                      &temphold)) != 0)
     {
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
-      }
-    
-    pthread_mutex_unlock(pa->ai_mutex);
+    unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
 
     req_reject(rc, 0, preq, NULL, NULL);
     return(PBSE_NONE);
@@ -145,13 +133,7 @@ int req_holdarray(
 
   if ((rc = chk_hold_priv(temphold.at_val.at_long, preq->rq_perm)) != 0)
     {
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
-      }
-
-    pthread_mutex_unlock(pa->ai_mutex);
+    unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
 
     req_reject(rc, 0, preq, NULL, NULL);
     return(PBSE_NONE);
@@ -164,7 +146,7 @@ int req_holdarray(
     {
     if ((rc = hold_array_range(pa,range_str,&temphold)) != 0)
       {
-      pthread_mutex_unlock(pa->ai_mutex);
+      unlock_ai_mutex(pa, __func__, "4", LOGLEVEL);
 
       req_reject(rc,0,preq,NULL,
         "Error in specified array range");
@@ -187,23 +169,12 @@ int req_holdarray(
       else
         {
         hold_job(&temphold,pjob);
-        if (LOGLEVEL >= 7)
-          {
-          sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
-          }
-
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
         }
       }
     }
 
-  if (LOGLEVEL >= 7)
-    {
-    sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
-    }
-  pthread_mutex_unlock(pa->ai_mutex);
+  unlock_ai_mutex(pa, __func__, "6", LOGLEVEL);
 
   reply_ack(preq);
 

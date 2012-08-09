@@ -519,7 +519,6 @@ int req_releasearray(
   void *vp) /* I */
 
   {
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
   job                  *pjob;
   job_array            *pa;
   char                 *range;
@@ -539,7 +538,7 @@ int req_releasearray(
     if (((index = first_job_index(pa)) == -1) ||
         (pa->job_ids[index] == NULL))
       {
-      pthread_mutex_unlock(pa->ai_mutex);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
       return(PBSE_NONE);
       }
@@ -557,7 +556,7 @@ int req_releasearray(
     {
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
 
-    pthread_mutex_unlock(pa->ai_mutex);
+    unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(PBSE_NONE);
@@ -572,12 +571,7 @@ int req_releasearray(
     /* parse the array range */
     if ((rc = release_array_range(pa,preq,range)) != 0)
       {
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
-        }
-      pthread_mutex_unlock(pa->ai_mutex);
+      unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
 
       req_reject(rc,0,preq,NULL,NULL);
 
@@ -586,26 +580,14 @@ int req_releasearray(
     }
   else if ((rc = release_whole_array(pa,preq)) != 0)
     {
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-      }
-    
-    pthread_mutex_unlock(pa->ai_mutex);
+    unlock_ai_mutex(pa, __func__, "4", LOGLEVEL);
 
     req_reject(rc,0,preq,NULL,NULL);
 
     return(PBSE_NONE);
     }
   
-  if (LOGLEVEL >= 7)
-    {
-    sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-    }
-
-  pthread_mutex_unlock(pa->ai_mutex);
+  unlock_ai_mutex(pa, __func__, "5", LOGLEVEL);
 
   reply_ack(preq);
 

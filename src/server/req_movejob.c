@@ -134,7 +134,12 @@ int req_movejob(
     {
     return(PBSE_NONE);
     }
-
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+  
   if ((jobp->ji_qs.ji_state != JOB_STATE_QUEUED) &&
       (jobp->ji_qs.ji_state != JOB_STATE_HELD) &&
       (jobp->ji_qs.ji_state != JOB_STATE_WAITING))

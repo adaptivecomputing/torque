@@ -1573,11 +1573,11 @@ int count_queued_jobs(
    * into the queue */
   for (i = 0; i < num_arrays; i++)
     {
-    pthread_mutex_lock(arrays[i]->ai_mutex);
+    lock_ai_mutex(arrays[i], __func__, NULL, LOGLEVEL);
 
     num_jobs += (arrays[i]->ai_qs.num_jobs - arrays[i]->ai_qs.num_cloned);
 
-    pthread_mutex_unlock(arrays[i]->ai_mutex);
+    unlock_ai_mutex(arrays[i], __func__, NULL, LOGLEVEL);
     }
 
   return(num_jobs);
@@ -2893,7 +2893,7 @@ int lock_ji_mutex(
     {
     if (logging >= 20)
       {
-      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock queue %s mutex in method %s",
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock job %s mutex in method %s",
                                    pjob->ji_qs.ji_jobid, id);
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
       }
@@ -2932,7 +2932,7 @@ int unlock_ji_mutex(
     {
     if (logging >= 20)
       {
-      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock queue %s mutex in method %s",
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock job %s mutex in method %s",
                                           pjob->ji_qs.ji_jobid, id);
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
       }
@@ -2946,4 +2946,80 @@ int unlock_ji_mutex(
    }
 
 
+int lock_ai_mutex(
+
+  job_array  *pa,
+  const char *id,
+  char       *msg,
+  int        logging)
+  {
+  int rc = PBSE_NONE;
+  char *err_msg = NULL;
+  char stub_msg[] = "no pos";
+
+  if (logging >= 10)
+    {
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    if (msg == NULL)
+      msg = stub_msg;
+    snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s-%s", pa->ai_qs.parent_id, id, msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    }
+
+  if (pthread_mutex_lock(pa->ai_mutex) != 0)
+    {
+    if (logging >= 20)
+      {
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock job array %s mutex in method %s",
+                                   pa->ai_qs.parent_id, id);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      }
+    rc = PBSE_MUTEX;
+    }
+
+  if (err_msg != NULL)
+  free(err_msg);
+
+  return rc;
+  }
+
+
+int unlock_ai_mutex(
+
+  job_array  *pa,
+  const char *id,
+  char       *msg,
+  int        logging)
+  {
+  int rc = PBSE_NONE;
+  char *err_msg = NULL;
+  char stub_msg[] = "no pos";
+
+  if (logging >= 10)
+    {
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    if (msg == NULL)
+      msg = stub_msg;
+    snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", pa->ai_qs.parent_id, id, msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    }
+
+  if (pthread_mutex_unlock(pa->ai_mutex) != 0)
+    {
+    if (logging >= 20)
+      {
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock job array %s mutex in method %s",
+                                   pa->ai_qs.parent_id, id);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      }
+    rc = PBSE_MUTEX;
+    }
+
+  if (err_msg != NULL)
+  free(err_msg);
+
+  return rc;
+  }
+
+  
 #endif  /* NDEBUG */

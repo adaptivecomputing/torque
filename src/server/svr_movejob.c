@@ -196,7 +196,13 @@ int svr_movejob(
   char         *toserver;
   char          log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if (strlen(destination) >= (size_t)PBS_MAXROUTEDEST)
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
+ if (strlen(destination) >= (size_t)PBS_MAXROUTEDEST)
     {
     sprintf(log_buf, "name %s over maximum length of %d\n",
       destination,
@@ -268,6 +274,11 @@ static int local_move(
   char       job_id[PBS_MAXSVRJOBID+1];
   int        rc;
 
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
   /* search for destination queue */
   /* CAUTION!!! This code is very complex - be very careful editing */
   if (parent_queue_mutex_held == TRUE)

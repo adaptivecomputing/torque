@@ -536,12 +536,7 @@ jump:
           }
         }
 
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-        }
-      pthread_mutex_unlock(pa->ai_mutex);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       }
     } /* END MoabArrayCompatible check */
 

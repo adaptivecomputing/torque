@@ -625,7 +625,6 @@ int req_registerarray(
   struct batch_request *preq)  /* I */
 
   {
-  char        log_buf[LOCAL_LOG_BUF_SIZE + 1];
   job_array  *pa;
   char        array_name[PBS_MAXSVRJOBID + 1];
   char        range[MAXPATHLEN];
@@ -725,13 +724,7 @@ int req_registerarray(
 
   if (type < JOB_DEPEND_TYPE_AFTERSTARTARRAY)
     {
-    pthread_mutex_unlock(pa->ai_mutex);
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      }
-
+    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
     rc = PBSE_IVALREQ;
     req_reject(rc,0,preq,NULL,
       "Arrays may only be given array dependencies");
@@ -765,12 +758,7 @@ int req_registerarray(
       break;
     } /* END switch (preq->rq_ind.rq_register.rq_op */
 
-  pthread_mutex_unlock(pa->ai_mutex);
-  if (LOGLEVEL >= 7)
-    {
-    sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    }
+  unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
 
   return(rc);
   } /* END req_registerarray() */
