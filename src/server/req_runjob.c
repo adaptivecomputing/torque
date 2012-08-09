@@ -256,7 +256,7 @@ int req_runjob(
       {
       rc = PBSE_JOBNOTFOUND;
       req_reject(rc, 0, preq, NULL, "Job unexpectedly deleted");
-      pthread_mutex_unlock(pa->ai_mutex);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       return(rc);
       }
     
@@ -274,7 +274,7 @@ int req_runjob(
         rc = PBSE_JOBNOTFOUND;
         req_reject(rc, 0, preq, NULL,
           "Job deleted while updating array values");
-        pthread_mutex_unlock(pa->ai_mutex);
+        unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
         return(rc);
         }
 
@@ -288,25 +288,13 @@ int req_runjob(
      
       req_reject(PBSE_IVALREQ,0,preq,NULL,log_buf);
       
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
-        }
-
       unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
-      pthread_mutex_unlock(pa->ai_mutex);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
       return(PBSE_IVALREQ);
       }
     
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
-      }
-    
-    pthread_mutex_unlock(pa->ai_mutex);
+    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
     }
 
   /* NOTE:  nodes assigned to job in svr_startjob() */

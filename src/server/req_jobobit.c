@@ -3222,13 +3222,7 @@ int req_jobobit(
       update_array_values(pa, JOB_STATE_RUNNING, aeTerminate,
           job_id, job_atr_hold, job_exit_status);
         
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buf, "%s: unlocking ai_mutex", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
-        }
-
-      pthread_mutex_unlock(pa->ai_mutex);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
       pjob = svr_find_job(job_id, TRUE);
 

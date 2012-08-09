@@ -549,14 +549,8 @@ static void req_stat_job_step2(
           continue;
           }
         
-        if (LOGLEVEL >= 7)
-          {
-          sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-          }
-
         if (pa != NULL)
-          pthread_mutex_unlock(pa->ai_mutex);
+          unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
         return; /* will pick up after mom replies */
         }
@@ -565,12 +559,7 @@ static void req_stat_job_step2(
     if (rc != 0)
       {
       if (pa != NULL)
-        pthread_mutex_unlock(pa->ai_mutex);
-        if(LOGLEVEL >= 7)
-          {
-          sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-          }
+        unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
 
       reply_free(preply);
 
@@ -717,12 +706,7 @@ static void req_stat_job_step2(
 
           if (pa != NULL)
             {
-            pthread_mutex_unlock(pa->ai_mutex);
-            if(LOGLEVEL >= 7)
-              {
-              sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
-              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-              }
+            unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
             }
           unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
           unlock_queue(pque, "req_stat_job_step2", "perm", LOGLEVEL);
@@ -749,14 +733,8 @@ static void req_stat_job_step2(
       unlock_queue(pque, __func__, "end while", LOGLEVEL);
       }      /* END for (pque) */
       
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
-      }
-
     if (pa != NULL)
-      pthread_mutex_unlock(pa->ai_mutex);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
     reply_send_svr(preq);
 
@@ -807,12 +785,7 @@ static void req_stat_job_step2(
       {
       if (pa != NULL)
         {
-        pthread_mutex_unlock(pa->ai_mutex);
-        if (LOGLEVEL >= 7)
-          {
-          sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-          }
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
         }
       unlock_ji_mutex(pjob, __func__, "9", LOGLEVEL);
 
@@ -860,12 +833,7 @@ nextjob:
 
   if (pa != NULL)
     {
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: unlocked ai_mutex", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
-      }
-    pthread_mutex_unlock(pa->ai_mutex);
+    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
     }
  
   reply_send_svr(preq);

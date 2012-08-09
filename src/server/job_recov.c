@@ -120,6 +120,7 @@
 #else
 #include "../resmom/mom_job_func.h" /* mom_job_free */
 #endif
+#include "array.h"
 #include "ji_mutex.h"
 
 #ifndef TRUE
@@ -641,12 +642,7 @@ job *job_recov(
 
     if (pa != NULL)
       {
-      pthread_mutex_unlock(pa->ai_mutex);
-      if(LOGLEVEL >=7)
-        {
-        sprintf(log_buf, "unlocked ai_mutex: %s", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
-        }
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       }
     }
 

@@ -495,12 +495,7 @@ int job_abt(
             update_array_values(pa,old_state,aeTerminate,
                 job_id, job_atr_hold, job_exit_status);
             
-            if (LOGLEVEL >= 7)
-              {
-              sprintf(log_buf, "unlocking ai_mutex: %s", myid);
-              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
-              }
-            pthread_mutex_unlock(pa->ai_mutex);
+            unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
             pjob = svr_find_job(job_id, TRUE);
             }
           }
@@ -556,12 +551,7 @@ int job_abt(
         update_array_values(pa,old_state,aeTerminate,
             job_id, job_atr_hold, job_exit_status);
         
-        if (LOGLEVEL >= 7)
-          {
-          sprintf(log_buf, "unlocking ai_mutex: %s", myid);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
-          }
-        pthread_mutex_unlock(pa->ai_mutex);
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
         pjob = svr_find_job(job_id, TRUE);
         }
       }
@@ -1052,12 +1042,7 @@ job *job_clone(
 
   if (release_mutex == TRUE)
     {
-    pthread_mutex_unlock(pa->ai_mutex);
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "unlocked ai_mutex: %s", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pnewjob->ji_qs.ji_jobid, log_buf);
-      }
+    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
     }
 
   return(pnewjob);
@@ -1080,7 +1065,6 @@ void *job_clone_wt(
   void *cloned_id)
 
   {
-  char                log_buf[LOCAL_LOG_BUF_SIZE];
   job                *template_job;
   job                *pjob;
   job                *pjobclone;
@@ -1156,21 +1140,21 @@ void *job_clone_wt(
       if ((rc = svr_enquejob(pjobclone, FALSE, prev_index)))
         {
         /* XXX need more robust error handling */
-        pthread_mutex_unlock(pa->ai_mutex);
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
         if (rc != PBSE_JOB_RECYCLED)
           svr_job_purge(pjobclone);
 
-        pthread_mutex_lock(pa->ai_mutex);
+        lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
         continue;
         }
 
       if (job_save(pjobclone, SAVEJOB_FULL, 0) != 0)
         {
         /* XXX need more robust error handling */
-        pthread_mutex_unlock(pa->ai_mutex);
+        unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
         svr_job_purge(pjobclone);
-        pthread_mutex_lock(pa->ai_mutex);
+        lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
         continue;
         }
       
@@ -1240,13 +1224,7 @@ void *job_clone_wt(
       }
     }
 
-  if (LOGLEVEL >= 7)
-    {
-    sprintf(log_buf, "unlocked ai_mutex: %s", __func__);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pa->ai_qs.parent_id, log_buf);
-    }
-  
-  pthread_mutex_unlock(pa->ai_mutex);
+  unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
   return(NULL);
   }  /* END job_clone_wt */
 
@@ -1739,12 +1717,7 @@ int svr_job_purge(
         {
         array_save(pa);
         
-        pthread_mutex_unlock(pa->ai_mutex);
-        if (LOGLEVEL >=7)
-          {
-          sprintf(log_buf, "unlocked ai_mutex: %s", __func__);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-          }
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
         }
       }
     else
@@ -2686,27 +2659,28 @@ job_array *get_jobs_array(
 
   if (pa != NULL)
     {
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "Trying to lock ai_mutex, %s", pjob->ji_qs.ji_jobid);
+      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
     if (pthread_mutex_trylock(pa->ai_mutex))
       {
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buf, "ai_mutex already locked for %s", pjob->ji_qs.ji_jobid);
+        LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        }
+
       strcpy(jobid, pjob->ji_qs.ji_jobid);
       
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-      if (LOGLEVEL >=7)
-        {
-        sprintf(log_buf, "locking ai_mutex: %s", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);
-        }
 
-      pthread_mutex_lock(pa->ai_mutex);
-      if (LOGLEVEL >=7)
-        {
-        sprintf(log_buf, "locked ai_mutex: %s", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);
-        }
+      lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
       
       if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
         {
-        pthread_mutex_unlock(pa->ai_mutex);
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
         pa = NULL;
         *pjob_ptr = NULL;
         }

@@ -376,6 +376,13 @@ int default_router(
   int                   last;
   int                   local_errno = 0;
   int                   rc = 0;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
+      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
 
   if (qp->qu_attr[QR_ATR_RouteDestin].at_flags & ATR_VFLAG_SET)
     {
@@ -517,6 +524,12 @@ int job_route(
 
   if (qp == NULL)
     return(PBSE_QUENOEN);
+  
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   /* see if the job is able to be routed */
   switch (jobp->ji_qs.ji_state)
@@ -641,12 +654,19 @@ void *reroute_job(
   char      *jobid;
   job       *pjob;
   int        rc;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   jobid = (char *)vp;
 
   if ((jobid != NULL) &&
       ((pjob = svr_find_job(jobid, FALSE)) != NULL))
     {
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
+      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
+
     pque = get_jobs_queue(&pjob);
 
     if ((pque != NULL) &&
