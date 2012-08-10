@@ -932,15 +932,11 @@ if test "${build_l26_cpuset}" = "yes" ; then
 
 $HWLOC_PKG_ERRORS
 
-Perhaps you should add the directory containing 'hwloc.pc'
+This can be solved by configuring with --with-hwloc-path=<path>. This path
+should be the path to the directory containing the lib/ and include/ directories
+for your version of hwloc.
+Another option is adding the directory containing 'hwloc.pc'
 to the PKG_CONFIG_PATH environment variable.
-
-Alternatively, you may set the environment variables 
-HWLOC_CFLAGS and HWLOC_LIBS before running configure.
-
-Example:
-export HWLOC_CFLAGS='-I/usr/local/hwloc-1.1/include'
-export HWLOC_LIBS='-L/usr/local/hwloc-1.1/lib -lhwloc'
 ])])
     olibs=$LIBS
     LIBS="$LIBS $HWLOC_LIBS";
