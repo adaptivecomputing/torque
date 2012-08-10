@@ -356,6 +356,12 @@ int dis_request_read(
       rc = decode_DIS_Authen(chan, request);
       
       break;
+
+    case PBS_BATCH_AltAuthenUser:
+
+      rc = decode_DIS_AltAuthen(chan, request);
+      
+      break;
       
     case PBS_BATCH_JobObit:
       
