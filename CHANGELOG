@@ -27,6 +27,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       a value.
   b - fix an error in parsing environment variables with commas, newlines, etc. TRQ-1113
   b - fixed a deadlock with array jobs running simultaneously with qstat. 
+  b - Fixed qsub -v option. Variable list was not getting passed in to job environment.
+      TRQ-1128
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine
