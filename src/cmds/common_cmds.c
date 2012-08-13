@@ -219,6 +219,21 @@ void parse_variable_list(
     /* The string is improperly formatted (, found when = should have been) */
     /* The start character is a , or = */
     if ((delim == NULL) || (*delim == ',') || (delim == s))
+      {
+      if (delim == NULL && s != NULL)
+        {
+        alloc_size = strlen(s)+1;
+        calloc_or_fail(mm, &tmp_name, alloc_size, "parse_variable_list name");
+        memcpy(tmp_name, s, alloc_size);
+        if ((hash_find(user_env, tmp_name, &hash_var)))
+          {
+          calloc_or_fail(mm, &name, alloc_size+8, "parse_variable_list name");
+          memcpy(name, "pbs_var_", 8);
+          memcpy(name+8, s, alloc_size);
+          hash_add_or_exit(mm, dest_hash, name, hash_var->value, hash_var->var_type);
+          }
+        }
+      }
       break;
 
     e = strchr(delim+1, ',');
