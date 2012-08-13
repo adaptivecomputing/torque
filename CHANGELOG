@@ -40,6 +40,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       with the .JB files.
   b - Fixed a bug with qmove where the server would hang if the destination queue
       was the same as the queue where the job was already assigned.
+  b - Fixed qsub -v option. Variable list was not getting passed in to job environment.
+      TRQ-1128
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine

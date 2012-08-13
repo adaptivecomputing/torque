@@ -233,8 +233,8 @@ void parse_variable_list(
           hash_add_or_exit(mm, dest_hash, name, hash_var->value, hash_var->var_type);
           }
         }
-      }
       break;
+      }
 
     e = strchr(delim+1, ',');
     /* This is last value */
