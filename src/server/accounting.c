@@ -506,12 +506,13 @@ void account_jobend(
   char *used) /* job usage information, see req_jobobit() */
 
   {
-  time_t              time_now = time(NULL);
   dynamic_string     *ds;
   char                local_buf[MAXLINE * 4];
 #ifdef USESAVEDRESOURCES
   pbs_attribute      *pattr;
   long                walltime_val = 0;
+#else
+  time_t              time_now = time(NULL);
 #endif
 
   /* pack in general information about the job */

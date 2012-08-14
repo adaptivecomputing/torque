@@ -2648,12 +2648,17 @@ int handle_subjob_exit_status(
 
 int rerun_job(
 
-  job *pjob,
-  int  newstate,
-  int  newsubst)
+  job  *pjob,
+  int   newstate,
+  int   newsubst,
+  char *acctbuf)
 
   {
-  int rc = PBSE_NONE;
+  int   rc = PBSE_NONE;
+
+#ifdef RERUNUSAGE
+  char *pc;
+#endif
  
   /* Rerunning job, if not checkpointed, clear "resources_used and requeue job */
   if ((pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE | JOB_SVFLG_CHECKPOINT_MIGRATEABLE)) == 0)
@@ -2722,16 +2727,17 @@ int rerun_job(
 
 int handle_rerunning_heterogeneous_jobs(
 
-  job *pjob,
-  int  newstate,
-  int  newsubst)
+  job  *pjob,
+  int   newstate,
+  int   newsubst,
+  char *acctbuf)
 
   {
   job *parent_job = pjob->ji_parent_job;
   job *other_subjob;
   int  rc = PBSE_NONE;
   
-  if ((rc = rerun_job(pjob, newstate, newsubst)) == PBSE_NONE)
+  if ((rc = rerun_job(pjob, newstate, newsubst, acctbuf)) == PBSE_NONE)
     {
     unlock_ji_mutex(pjob, __func__, NULL, 0);
     lock_ji_mutex(parent_job, __func__, NULL, 0);
@@ -2744,12 +2750,12 @@ int handle_rerunning_heterogeneous_jobs(
     unlock_ji_mutex(parent_job, __func__, NULL, 0);
     lock_ji_mutex(other_subjob, __func__, NULL, 0);
     
-    if ((rc = rerun_job(other_subjob, newstate, newsubst)) == PBSE_NONE)
+    if ((rc = rerun_job(other_subjob, newstate, newsubst, acctbuf)) == PBSE_NONE)
       {
       unlock_ji_mutex(other_subjob, __func__, NULL, 0);
       lock_ji_mutex(parent_job, __func__, NULL, 0);
       
-      if ((rc = rerun_job(parent_job, newstate, newsubst)) == PBSE_NONE)
+      if ((rc = rerun_job(parent_job, newstate, newsubst, acctbuf)) == PBSE_NONE)
         unlock_ji_mutex(parent_job, __func__, NULL, 0);
       }
     }
@@ -3252,13 +3258,13 @@ int req_jobobit(
     /* if this is a heterogeneous sub-job, handle it appropriately */
     if (pjob->ji_parent_job != NULL)
       {
-      rc = handle_rerunning_heterogeneous_jobs(pjob, newstate, newsubst);
+      rc = handle_rerunning_heterogeneous_jobs(pjob, newstate, newsubst, acctbuf);
         
       return(rc);
       }
     else
       {
-      if ((rc = rerun_job(pjob, newstate, newsubst)) != PBSE_NONE)
+      if ((rc = rerun_job(pjob, newstate, newsubst, acctbuf)) != PBSE_NONE)
         return(rc);
       }
     }  /* END else */
