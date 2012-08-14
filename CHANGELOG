@@ -4,6 +4,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - fix a security loophole that potentially allowed an interactive job to run 
       as root due to not resetting a value when $attempt_to_make_dir and $tmpdir
       are set. TRQ-1078.
+  b - fix down_on_error for the server. TRQ-1074
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations

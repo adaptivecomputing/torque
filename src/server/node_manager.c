@@ -1540,6 +1540,7 @@ int process_status_info(
   long            mom_job_sync = FALSE;
   long            auto_np = FALSE;
   long            down_on_error = FALSE;
+  int             dont_change_state = FALSE;
   pbs_attribute   temp;
   int             rc = PBSE_NONE;
   int             send_hello = FALSE;
@@ -1572,6 +1573,8 @@ int process_status_info(
       /* if we've already processed some, save this before moving on */
       if (str != status_info->str)
         save_node_status(current, &temp);
+      
+      dont_change_state = FALSE;
 
       if ((current = get_numa_from_str(str, current)) == NULL)
         break;
@@ -1583,6 +1586,8 @@ int process_status_info(
       /* if we've already processed some, save this before moving on */
       if (str != status_info->str)
         save_node_status(current, &temp);
+
+      dont_change_state = FALSE;
 
       if ((current = get_node_from_str(str, name, current)) == NULL)
         break;
@@ -1618,7 +1623,8 @@ int process_status_info(
 
     if (!strncmp(str, "state", 5))
       {
-      process_state_str(current, str);
+      if (dont_change_state == FALSE)
+        process_state_str(current, str);
       }
     else if ((allow_any_mom == TRUE) &&
              (!strncmp(str, "uname", 5))) 
@@ -1629,7 +1635,10 @@ int process_status_info(
       {
       if ((!strncmp(str, "message=ERROR", 13)) &&
           (down_on_error == TRUE))
+        {
         update_node_state(current, INUSE_DOWN);
+        dont_change_state = TRUE;
+        }
       }
     else if ((mom_job_sync == TRUE) &&
              (!strncmp(str, "jobdata=", 8)))
