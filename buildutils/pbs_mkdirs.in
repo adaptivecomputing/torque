@@ -306,7 +306,7 @@ mk_server_dirs()
 	    "\n## Example:\n##    host01 np=8 featureA featureB"  \
 	    "\n##    host02 np=8 featureA featureB\n##" \
 	    "\n## for more information, please visit:\n##"  \
-	    "\n## http://www.clusterresources.com/torquedocs/nodeconfig.shtml\n" > $PBS_NODES_FILE && \
+	    "\n## http://www.adaptivecomputing.com/resources/docs/\n" > $PBS_NODES_FILE && \
 	    chmod 644 $PBS_NODES_FILE || return 1
 	fi
 
