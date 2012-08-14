@@ -556,28 +556,22 @@ int wait_request(
   long   *SState)     /* I (optional) */
 
   {
-  int i;
-  int n;
+  int             i;
+  int             n;
+  time_t          now;
 
-  time_t now;
+  fd_set         *SelectSet = NULL;
+  int             SelectSetSize = 0;
+  int             MaxNumDescriptors = 0;
 
-  fd_set *SelectSet = NULL;
-  int SelectSetSize = 0;
-
-  int MaxNumDescriptors = 0;
-
-  char id[] = "wait_request";
-  char tmpLine[1024];
-
-  struct timeval timeout;
-
-  long OrigState = 0;
+  char            tmpLine[1024];
+  struct timeval  timeout;
+  long            OrigState = 0;
 
   if (SState != NULL)
     OrigState = *SState;
 
   timeout.tv_usec = 0;
-
   timeout.tv_sec  = waittime;
 
   SelectSetSize = sizeof(char) * get_fdset_size();
@@ -624,16 +618,14 @@ int wait_request(
 
       free(SelectSet);
 
-      log_err(errno, id, "Unable to select sockets to read requests");
-
+      log_err(errno, __func__, "Unable to select sockets to read requests");
 
       return(-1);
       }  /* END else (errno == EINTR) */
     }    /* END if (n == -1) */
 
-  for (i = 0; (i < max_connection) && (n != 0); i++)
+  for (i = 0; (i < max_connection) && (n > 0); i++)
     {
-
     if (FD_ISSET(i, SelectSet))
       {
       pthread_mutex_lock(svr_conn[i].cn_mutex);
@@ -673,7 +665,7 @@ int wait_request(
           num_connections);
 
         pthread_mutex_unlock(num_connections_mutex);
-        log_err(-1, id, tmpLine);
+        log_err(-1, __func__, tmpLine);
         }
       }
     } /* END for i */
@@ -736,7 +728,7 @@ int wait_request(
     pthread_mutex_unlock(svr_conn[i].cn_mutex);
     }  /* END for (i) */
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END wait_request() */
 
 

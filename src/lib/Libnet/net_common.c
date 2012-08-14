@@ -42,8 +42,8 @@ unsigned availBytesOnDescriptor(
   if (ioctl(pLocalSocket, FIONREAD, &availBytes) != -1)
     return availBytes;
   perror("availBytes");
-  return 0;
-  }
+  return(0);
+  } /* END availBytesOnDescriptor() */
 
 
 
@@ -56,8 +56,11 @@ int socket_avail_bytes_on_descriptor(
   unsigned avail_bytes;
   if (ioctl(socket, FIONREAD, &avail_bytes) != -1)
     return avail_bytes;
-  return 0;
-  }
+  return(0);
+  } /* END socket_avail_bytes_on_descriptor() */
+
+
+
 
 int socket_get_tcp()
 
@@ -97,10 +100,15 @@ int socket_get_tcp()
     }
     */
   return local_socket;
-  }
+  } /* END socket_get_tcp() */
 
 
-int get_listen_socket(struct addrinfo *addr_info)
+
+
+int get_listen_socket(
+    
+  struct addrinfo *addr_info)
+
   {
   int local_socket = 0;
   struct linger l_delay;
@@ -133,8 +141,8 @@ int get_listen_socket(struct addrinfo *addr_info)
     local_socket = -6;
     }
 
-    return(local_socket);
-  }
+  return(local_socket);
+  } /* END get_listen_socket() */
    
 
 
@@ -144,7 +152,7 @@ int get_random_reserved_port()
   int res_port = 0;
   res_port = (rand() % RES_PORT_RANGE) + RES_PORT_START;
   return res_port;
-  }
+  } /* END get_random_reserved_port() */
 
 
 
@@ -254,7 +262,9 @@ int socket_get_tcp_priv()
     local_socket = -1;
     }
   return local_socket;
-  }
+  } /* END socket_get_tcp_priv() */
+
+
 
 
 int socket_connect(
@@ -396,7 +406,7 @@ int socket_wait_for_write(
     rc = PBSE_SOCKET_WRITE;
     }
   return rc;
-  }
+  } /* END socket_wait_for_write() */
 
 
 
@@ -423,7 +433,10 @@ int socket_wait_for_xbytes(
       }
     }
   return rc;
-  }
+  } /* END socket_wait_for_xbytes() */
+
+
+
 
 int socket_wait_for_read(
     
@@ -462,12 +475,17 @@ int socket_wait_for_read(
     else /* something bad happened to poll */
       rc = PBSE_SOCKET_DATA;
     }
+
   if (pfd.revents & POLLNVAL)
     {
     rc = PBSE_SOCKET_CLOSE;
     }
-  return rc;
-  }
+
+  return(rc);
+  } /* END socket_wait_for_read() */
+
+
+
 
 void socket_read_flush(
     
@@ -486,7 +504,7 @@ void socket_read_flush(
     if (i < 0)
       break;
     }
-  }
+  } /* END socket_read_flush() */
 
 
 
@@ -511,7 +529,10 @@ int socket_write(
       }
     }
   return data_len_actual;
-  }
+  } /* END socket_write() */
+
+
+
 
 int socket_read_force(
 
@@ -566,7 +587,7 @@ int socket_read_force(
       }
     }
   return rc;
-  }
+  } /* END socket_read_force() */
 
 
 
@@ -596,6 +617,7 @@ int socket_read(
       break;
       }
     }
+
   if (rc != PBSE_NONE)
     {
     }
@@ -615,10 +637,18 @@ int socket_read(
             avail_bytes, byte_count);
     *str_len = byte_count;
     }
-  return rc;
-  }
 
-int socket_read_one_byte(int socket, char *one_char)
+  return(rc);
+  } /* END socket_read() */
+
+
+
+
+int socket_read_one_byte(
+    
+  int   socket,
+  char *one_char)
+
   {
   int rc = PBSE_NONE;
   int avail_bytes = socket_avail_bytes_on_descriptor(socket);
@@ -632,9 +662,16 @@ int socket_read_one_byte(int socket, char *one_char)
       rc = PBSE_NONE;
     }
   return rc;
-  }
+  } /* END socket_read_one_byte() */
 
-int socket_read_num(int socket, long long *the_num)
+
+
+
+int socket_read_num(
+    
+  int        socket,
+  long long *the_num)
+
   {
   int rc =  PBSE_INTERNAL;
   int pos = 0;
@@ -680,12 +717,20 @@ int socket_read_num(int socket, long long *the_num)
   if (str_ll[0] == 0)
     rc = PBSE_SOCKET_READ;
   return rc;
-  }
+  } /* END socket_read_num() */
+
+
+
 
 /* memory for "the_str" is allocated in inside this function.
  * "str_len" is not.
  */
-int socket_read_str(int socket, char **the_str, long long *str_len)
+int socket_read_str(
+    
+  int         socket,
+  char      **the_str,
+  long long  *str_len)
+
   {
   int rc =  PBSE_NONE;
   long long tmp_len = 0;
@@ -735,9 +780,15 @@ int socket_read_str(int socket, char **the_str, long long *str_len)
     /* SUCCESS */
     }
   return rc;
-  }
+  } /* socket_read_str() */
 
-int socket_close(int socket)
+
+
+
+int socket_close(
+    
+  int socket)
+
   {
   int rc;
   socket_read_flush(socket);
@@ -746,7 +797,7 @@ int socket_close(int socket)
   else
     rc = PBSE_SYSTEM;
   return rc;
-  }
+  } /* END socket_close() */
 
 
 
@@ -803,5 +854,5 @@ int get_addr_info(
     }
 
   return(rc);
-  }
+  } /* END get_addr_info() */
 

@@ -383,10 +383,10 @@ int process_pbs_server_port(
   int is_scheduler_port)
  
   {
-  int          proto_type;
-  int          rc = PBSE_NONE;
-  int          version;
-  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  int              proto_type;
+  int              rc = PBSE_NONE;
+  int              version;
+  char             log_buf[LOCAL_LOG_BUF_SIZE];
   struct tcp_chan *chan = NULL;
    
   if ((chan = DIS_tcp_setup(sock)) == NULL)
@@ -428,17 +428,7 @@ int process_pbs_server_port(
         {
         addr = (struct sockaddr_in *)&s_addr;
         
-        if (chan->IsTimeout == 1)
-          {
-          if(LOGLEVEL >= 8)
-            {
-            snprintf(log_buf, sizeof(log_buf), "poll timed out  waiting for %s. Will try again", netaddr(addr));
-            log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-            }
-          rc = PBSE_NONE;
-          }
-
-        else if (proto_type == 0)
+        if (proto_type == 0)
           {
           /* 
            * Don't log error if close is on scheduler port.  Scheduler is
@@ -453,6 +443,7 @@ int process_pbs_server_port(
               log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
               }
             }
+
           rc = PBSE_SOCKET_CLOSE;
           }
         else
@@ -493,8 +484,11 @@ void process_pbs_server_port_scheduler(
   int rc = PBSE_NONE;
   int sock = *new_sock;
 
-  while ((rc != PBSE_SOCKET_DATA) && (rc != PBSE_SOCKET_INFORMATION)
-        && (rc != PBSE_INTERNAL) && (rc != PBSE_SYSTEM)  && (rc != PBSE_SOCKET_CLOSE))
+  while ((rc != PBSE_SOCKET_DATA) && 
+         (rc != PBSE_SOCKET_INFORMATION) &&
+         (rc != PBSE_INTERNAL) &&
+         (rc != PBSE_SYSTEM) &&
+         (rc != PBSE_SOCKET_CLOSE))
     {
     netcounter_incr();
     rc = process_pbs_server_port(sock, TRUE);
