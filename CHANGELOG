@@ -1,5 +1,10 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.1.2
+  b - fix a security loophole that potentially allowed an interactive job to run 
+      as root due to not resetting a value when $attempt_to_make_dir and $tmpdir
+      are set. TRQ-1078.
+
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations
   b - Fixed a deadlock with nodes in stream_eof after call to svr_connect.

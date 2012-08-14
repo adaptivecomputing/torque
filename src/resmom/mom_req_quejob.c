@@ -325,6 +325,15 @@ void req_quejob(
     pj->ji_qs.ji_svrflags = created_here;
 
     pj->ji_qs.ji_un_type  = JOB_UNION_TYPE_NEW;
+
+    /* changing the union type overwrites the euid for the job, and if
+     * ji_grpcache is set this potentially allows jobs to run as root. Unsetting
+     * ji_grpcache fixes this problem --dbeer */
+    if (pj->ji_grpcache != NULL)
+      {
+      free(pj->ji_grpcache);
+      pj->ji_grpcache = NULL;
+      }
     }
 
   /* decode attributes from request into job structure */
@@ -451,6 +460,12 @@ void req_quejob(
 
       append_link(&svr_newjobs,&pj->ji_alljobs,pj);
 
+      if (pj->ji_grpcache != NULL)
+        {
+        free(pj->ji_grpcache);
+        pj->ji_grpcache = NULL;
+        }
+
       pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
       pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
       pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock,FALSE);
@@ -481,6 +496,12 @@ void req_quejob(
 
   pj->ji_wattr[JOB_ATR_mtime].at_val.at_long = (long)time_now;
   pj->ji_wattr[JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
+
+  if (pj->ji_grpcache != NULL)
+    {
+    free(pj->ji_grpcache);
+    pj->ji_grpcache = NULL;
+    }
 
   pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
   pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;

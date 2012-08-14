@@ -457,11 +457,11 @@ int PBSD_munge_authenticate(
     {
     rc = PBSE_MEM_MALLOC;
     }
-  else if ((rc = encode_DIS_ReqHdr(chan,PBS_BATCH_AltAuthenUser,pwent->pw_name))
-      || (rc = diswui(chan, user_port))
-      || (rc = diswst(chan, munge_buf))
-      || (rc = encode_DIS_ReqExtend(chan, NULL))
-      || (rc = DIS_tcp_wflush(chan)))
+  else if ((rc = encode_DIS_ReqHdr(chan,PBS_BATCH_AltAuthenUser,pwent->pw_name)) ||
+           (rc = diswui(chan, user_port)) ||
+           (rc = diswst(chan, munge_buf)) ||
+           (rc = encode_DIS_ReqExtend(chan, NULL)) ||
+           (rc = DIS_tcp_wflush(chan)))
     {
     /* ERROR */
     }
@@ -470,6 +470,7 @@ int PBSD_munge_authenticate(
     /* read the reply */
     if ((reply = PBSD_rdrpy(&local_errno, handle)) != NULL)
       free(reply);
+
     rc = PBSE_NONE;
     }
   if (chan != NULL)
