@@ -5,6 +5,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       as root due to not resetting a value when $attempt_to_make_dir and $tmpdir
       are set. TRQ-1078.
   b - fix down_on_error for the server. TRQ-1074
+  b - prevent pbs_server from spinning in select due to sockets in CLOSE_WAIT.
+      TRQ-1161.
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations
