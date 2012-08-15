@@ -1081,6 +1081,7 @@ static int svr_strtjob2(
   long             tcp_timeout = 0;
   unsigned long    job_momaddr = -1;
   char             job_id[PBS_MAXSVRJOBID+1];
+  char            *mail_text = NULL;
 
   old_state = pjob->ji_qs.ji_state;
   old_subst = pjob->ji_qs.ji_substate;
@@ -1110,11 +1111,14 @@ static int svr_strtjob2(
     {
     DIS_tcp_settimeout(job_timeout);
     }
+
   job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
   *pjob_ptr = NULL;
   pjob = NULL;
+  if (preq->rq_reply.brp_un.brp_txt.brp_str != NULL)
+    mail_text = strdup(preq->rq_reply.brp_un.brp_txt.brp_str);
 
   if (send_job_work(job_id, NULL, MOVE_TYPE_Exec, &my_err, preq) == PBSE_NONE)
     {
@@ -1124,6 +1128,15 @@ static int svr_strtjob2(
       {
       *pjob_ptr = pjob;
       }
+
+    svr_mailowner(
+        pjob,
+        MAIL_BEGIN,
+        MAIL_FORCE,
+        mail_text);
+
+    if (mail_text != NULL)
+      free(mail_text);
 
     return(PBSE_NONE);
     }
@@ -1140,6 +1153,9 @@ static int svr_strtjob2(
       
       svr_setjobstate(pjob, old_state, old_subst, FALSE);
       }
+
+    if (mail_text != NULL)
+      free(mail_text);
     
     return(my_err);
     }
