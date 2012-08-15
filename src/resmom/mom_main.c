@@ -9006,6 +9006,7 @@ void resend_things()
   while ((mc = (resend_momcomm *)next_thing(things_to_resend, &iter)) != NULL)
     {
     ret = -1;
+    mc->resend_attempts += 1;
 
     switch (mc->mc_type)
       {
@@ -9047,7 +9048,8 @@ void resend_things()
         break;
       }
 
-    if (ret == DIS_SUCCESS)
+    if ((ret == DIS_SUCCESS) ||
+        (mc->resend_attempts > 3))
       {
       remove_thing(things_to_resend, mc);
       free(mc);

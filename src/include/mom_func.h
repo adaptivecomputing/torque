@@ -150,6 +150,7 @@ typedef struct resend_momcomm
   {
   enum momcomm_type  mc_type;
   void              *mc_struct;
+  int                resend_attempts;
   } resend_momcomm;
 
 typedef struct im_compose_info
