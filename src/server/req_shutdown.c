@@ -136,6 +136,28 @@ extern attribute_def svr_attr_def[];
 extern int    LOGLEVEL;
 extern struct all_jobs alljobs;
 
+
+
+/*
+ * saves the queues to file
+ */
+
+void save_queues()
+
+  {
+  struct pbs_queue *pque;
+  int               iter = -1;
+
+  while ((pque = next_queue(&svr_queues, &iter)) != NULL)
+    {
+    que_save(pque);
+    unlock_queue(pque, __func__, NULL, 0);
+    }
+  } /* END save_queues() */
+
+
+
+
 /*
  * svr_shutdown() - Perform (or start of) the shutdown of the server
  */
@@ -152,6 +174,8 @@ void svr_shutdown(
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   close(lockfds);
+
+  save_queues();
 
   /* Lets start by logging shutdown and saving everything */
   get_svr_attr_l(SRV_ATR_State, &state);

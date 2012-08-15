@@ -145,7 +145,6 @@
 
 extern int            LOGLEVEL;
 extern struct server  server;
-extern all_queues     svr_queues;
 extern attribute_def  que_attr_def[];
 extern attribute_def  svr_attr_def[];
 extern attribute_def  node_attr_def[];   /* node attributes defs */

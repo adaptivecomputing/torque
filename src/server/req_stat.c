@@ -127,7 +127,6 @@
 extern struct all_jobs alljobs;
 extern struct all_jobs array_summary;
 extern struct server   server;
-extern all_queues      svr_queues;
 extern char            server_name[];
 extern attribute_def   svr_attr_def[];
 extern attribute_def   que_attr_def[];

@@ -207,6 +207,9 @@ typedef struct pbs_queue
   } pbs_queue;
 
 
+int que_save(struct pbs_queue *pque);
+
+
 typedef struct all_queues
   {
   resizable_array *ra;
@@ -230,6 +233,8 @@ pbs_queue *get_recycled_queue();
 void update_recycler_queue_next_id();
 void initialize_recycler_trash();
 void garbage_collect_recycling();
+
+extern all_queues svr_queues;
 
 struct job;
 
