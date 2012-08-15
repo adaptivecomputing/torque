@@ -157,7 +157,6 @@ extern char  *msg_badwait;  /* error message */
 extern char  *msg_daemonname;
 extern char  *pbs_o_host;
 extern char   server_name[];
-extern all_queues svr_queues;
 extern int    comp_resc_lt;
 extern int    comp_resc_gt;
 extern int    svr_do_schedule;

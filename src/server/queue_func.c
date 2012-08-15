@@ -127,7 +127,6 @@ extern char     *msg_err_unlink;
 extern char *path_queues;
 
 extern struct    server server;
-extern all_queues svr_queues;
 extern queue_recycler q_recycler;
 
 int lock_queue(
