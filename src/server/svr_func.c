@@ -298,7 +298,7 @@ void set_resc_assigned(
 
           if (pr == NULL)
             {
-            unlock_queue(pque, "set_resc_assigned", "sysru", LOGLEVEL);
+            unlock_queue(pque, __func__, "sysru", LOGLEVEL);
             return;
             }
           }
@@ -315,7 +315,7 @@ void set_resc_assigned(
 
           if (pr == NULL)
             {
-            unlock_queue(pque, "set_resc_assigned", "queru", LOGLEVEL);
+            unlock_queue(pque, __func__, "queru", LOGLEVEL);
             return;
             }
           }
@@ -326,7 +326,7 @@ void set_resc_assigned(
       jobrsc = (resource *)GET_NEXT(jobrsc->rs_link);
       }  /* END while (jobrsc != NULL) */
 
-    unlock_queue(pque, "set_resc_assigned", "success", LOGLEVEL);
+    unlock_queue(pque, __func__, "success", LOGLEVEL);
     }
   else if (pjob == NULL)
     {

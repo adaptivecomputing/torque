@@ -2591,7 +2591,7 @@ void set_resc_deflt(
 #endif
     pthread_mutex_unlock(server.sv_attr_mutex);
 
-    unlock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
 
   for (i = 0;i < JOB_ATR_LAST;++i)
@@ -2618,7 +2618,7 @@ void set_resc_deflt(
       }
 
     if (has_queue_mutex == FALSE)
-      unlock_queue(pque, "set_resc_deflt", NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   else if (pjob == NULL)
     {

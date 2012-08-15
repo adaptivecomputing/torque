@@ -754,7 +754,11 @@ static void req_stat_job_step2(
         }
       else
         {
+        if (pa != NULL)
+          pthread_mutex_unlock(pa->ai_mutex);
         pque = get_jobs_queue(&pjob);
+        if (pa != NULL)
+          pthread_mutex_lock(pa->ai_mutex);
 
         if ((pjob == NULL) ||
             (pque == NULL))

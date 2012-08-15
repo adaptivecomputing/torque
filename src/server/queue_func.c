@@ -666,7 +666,7 @@ pbs_queue *lock_queue_with_job_held(
     }
 
   return(pque);
-  } /* END get_jobs_queue() */
+  } /* END lock_queue_with_job_held() */
 
 
 

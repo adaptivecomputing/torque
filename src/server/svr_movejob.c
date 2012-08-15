@@ -268,6 +268,7 @@ static int local_move(
   {
   pbs_queue *routing_que;
   pbs_queue *dest_que;
+  pbs_queue *tmp_que;
   char      *destination = pjob->ji_qs.ji_destin;
   int        mtype;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
@@ -379,8 +380,10 @@ static int local_move(
   if (parent_queue_mutex_held == TRUE)
     {
     /* re-lock the routing queue */
-    if ((routing_que = lock_queue_with_job_held(routing_que, &pjob)) == NULL)
+    if ((tmp_que = lock_queue_with_job_held(routing_que, &pjob)) == NULL)
       lock_queue(routing_que, __func__, NULL, 0);
+    else
+      routing_que = tmp_que;
     }
 
   if (*my_err != PBSE_NONE)

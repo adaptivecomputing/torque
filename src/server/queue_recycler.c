@@ -14,6 +14,7 @@ extern int LOGLEVEL;
 
 
 void initialize_queue_recycler()
+
   {
   pthread_mutexattr_t t_attr;
   pthread_mutexattr_init(&t_attr);
@@ -31,8 +32,10 @@ void initialize_queue_recycler()
 
 
 pbs_queue *next_queue_from_recycler(
-    struct all_queues *aq,
-    int             *iter)
+    
+  struct all_queues *aq,
+  int             *iter)
+
   {
   pbs_queue *pq;
 
@@ -42,7 +45,6 @@ pbs_queue *next_queue_from_recycler(
     lock_queue(pq, __func__, NULL, LOGLEVEL);
   pthread_mutex_unlock(aq->allques_mutex);
 
-
   return(pq);
   } /* END next_queue_from_recycler() */
 
@@ -50,9 +52,11 @@ pbs_queue *next_queue_from_recycler(
 
 
 void *remove_some_recycle_queues(
-    void *vp)
+
+  void *vp)
+
   {
-  int  iter = -1;
+  int        iter = -1;
   pbs_queue *pq;
 
   pthread_mutex_lock(q_recycler.mutex);
@@ -76,8 +80,12 @@ void *remove_some_recycle_queues(
   } /* END remove_some_recycle_queues() */
 
 
+
+
 int insert_into_queue_recycler(
-    pbs_queue *pq)
+
+  pbs_queue *pq)
+
   {
   int              rc;
 
@@ -91,6 +99,7 @@ int insert_into_queue_recycler(
     {
     enqueue_threadpool_request(remove_some_recycle_queues,NULL);
     }
+
   rc = insert_queue(&q_recycler.queues,pq);
 
   update_queue_recycler_next_id();
@@ -101,10 +110,14 @@ int insert_into_queue_recycler(
   } /* END insert_into_queue_recycler() */
 
 
+
+
 void update_queue_recycler_next_id()
+
   {
   if (q_recycler.next_id >= q_recycler.max_id)
     q_recycler.next_id = 0;
   else
     q_recycler.next_id++;
   } /* END update_queue_recycler_next_id() */
+
