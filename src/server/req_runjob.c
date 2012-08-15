@@ -1071,6 +1071,7 @@ int send_job_to_mom(
   int              my_err = 0;
   int              external = FALSE;
   char             tmpLine[MAXLINE];
+  char            *mail_text = NULL;
 
   if (parent_job != NULL)
     external = pjob == parent_job->ji_external_clone;
@@ -1094,6 +1095,8 @@ int send_job_to_mom(
   unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
   *pjob_ptr = NULL;
   pjob = NULL;
+  if (preq->rq_reply.brp_un.brp_txt.brp_str != NULL)
+    mail_text = strdup(preq->rq_reply.brp_un.brp_txt.brp_str);
 
   if (send_job_work(job_id, NULL, MOVE_TYPE_Exec, &my_err, preq) == PBSE_NONE)
     {
@@ -1107,6 +1110,15 @@ int send_job_to_mom(
         *pjob_ptr = pjob;
         }
       }
+
+    svr_mailowner(
+        pjob,
+        MAIL_BEGIN,
+        MAIL_FORCE,
+        mail_text);
+
+    if (mail_text != NULL)
+      free(mail_text);
 
     return(PBSE_NONE);
     }
@@ -1133,6 +1145,9 @@ int send_job_to_mom(
       
       svr_setjobstate(pjob, old_state, old_subst, FALSE);
       }
+
+    if (mail_text != NULL)
+      free(mail_text);
     
     return(my_err);
     }
