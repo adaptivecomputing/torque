@@ -370,11 +370,11 @@ pbs_queue *find_queuebyname(
   char *quename) /* I */
 
   {
-  char  *pc;
+  char      *pc;
   pbs_queue *pque = NULL;
-  char   qname[PBS_MAXDEST + 1];
-  char   log_buf[LOCAL_LOG_BUF_SIZE+1];
-  int    i;
+  char       qname[PBS_MAXDEST + 1];
+  char       log_buf[LOCAL_LOG_BUF_SIZE+1];
+  int        i;
 
   snprintf(qname, sizeof(qname), "%s", quename);
 
@@ -680,7 +680,7 @@ pbs_queue *lock_queue_with_job_held(
     }
 
   return(pque);
-  } /* END get_jobs_queue() */
+  } /* END lock_queue_with_job_held() */
 
 
 

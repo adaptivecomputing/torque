@@ -866,7 +866,16 @@ int modify_whole_array(
     else
       {
       /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
+      pthread_mutex_unlock(pa->ai_mutex);
       rc = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
+      pa = get_jobs_array(&pjob);
+
+      if ((pjob == NULL) &&
+          (pa != NULL))
+        {
+        pa->job_ids[i] = NULL;
+        continue;
+        }
 
       if (rc == PBSE_RELAYED_TO_MOM)
         {
@@ -1404,8 +1413,11 @@ int modify_job_attr(
 
   pjob->ji_modified = 1;
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END modify_job_attr() */
+
+
+
 
 /*
  * post_modify_arrayreq - clean up after sending modify request to MOM

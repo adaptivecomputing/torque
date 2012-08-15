@@ -1115,14 +1115,15 @@ int delete_array_range(
   char      *range_str)
 
   {
-  tlist_head tl;
+  tlist_head          tl;
   array_request_node *rn;
   array_request_node *to_free;
-  job *pjob;
-  char *range;
+  job                *pjob;
+  char               *range;
 
-  int i;
-  int num_skipped = 0;
+  int                 i;
+  int                 num_skipped = 0;
+  int                 deleted;
 
   /* get just the numeric range specified, '=' should
    * always be there since we put it there in qdel */
@@ -1164,7 +1165,10 @@ int delete_array_range(
           continue;
           }
 
-        if (attempt_delete((void *)pjob) == FALSE)
+        pthread_mutex_unlock(pa->ai_mutex);
+        deleted = attempt_delete(pjob);
+
+        if (deleted == FALSE)
           {
           /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
            * release it here */
@@ -1172,6 +1176,8 @@ int delete_array_range(
 
           num_skipped++;
           }
+
+        pthread_mutex_lock(pa->ai_mutex);
         }
       }
 
@@ -1226,6 +1232,7 @@ int delete_whole_array(
   int i;
   int num_skipped = 0;
   int num_jobs = 0;
+  int deleted;
 
   job *pjob;
 
@@ -1249,13 +1256,18 @@ int delete_whole_array(
         continue;
         }
 
-      if (attempt_delete((void *)pjob) == FALSE)
+      pthread_mutex_unlock(pa->ai_mutex);
+      deleted = attempt_delete(pjob);
+
+      if (deleted == FALSE)
         {
         /* if the job was deleted, this mutex would be taked care of elsewhere.
          * When it fails, release it here */
         unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
         num_skipped++;
         }
+
+      pthread_mutex_lock(pa->ai_mutex);
       }
     }
 
@@ -1264,6 +1276,8 @@ int delete_whole_array(
 
   return(num_skipped);
   } /* END delete_whole_array() */
+
+
 
 
 /*
@@ -1461,7 +1475,9 @@ int modify_array_range(
           }
         else
           {
+          pthread_mutex_unlock(pa->ai_mutex);
           rc = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
+          pa = get_jobs_array(&pjob);
           
           if (pjob != NULL)
             {
@@ -1500,6 +1516,8 @@ int modify_array_range(
           
             unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
             }
+          else
+            pa->job_ids[i] = NULL;
 
           }
         }
