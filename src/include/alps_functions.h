@@ -97,3 +97,5 @@ int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apb
 int create_alps_reservation(char *exec_hosts, char *username, char *jobid, char *apbasil_path, char *apbasil_protocol, long long pagg_id, char **reservation_id);
 
 int find_error_type(xmlNode *node);
+
+struct pbsnode *create_alps_subnode(struct pbsnode *parent, char *node_id);

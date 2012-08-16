@@ -40,6 +40,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed qsub -v option. Variable list was not getting passed in to job environment.
       TRQ-1128
   b - TRQ-1116. mail is now sent on job start again.
+  b - TRQ-1118. Cray jobs are now recovered correctly after a restart.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine

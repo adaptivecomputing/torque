@@ -6226,6 +6226,34 @@ void free_nodes(
 
 
 
+struct pbsnode *get_compute_node(
+
+  char *node_name)
+
+  {
+  struct pbsnode *ar = alps_reporter;
+  struct pbsnode *compute_node = NULL;
+  unsigned int    i;
+  unsigned int    len = strlen(node_name);
+
+  for (i = 0; i < len; i++)
+    {
+    if (isdigit(node_name[i]) == FALSE)
+      {
+      /* found a non-numeric character - not a compute node */
+      return(NULL);
+      }
+    }
+
+  lock_node(ar, __func__, NULL, 0);
+  compute_node = create_alps_subnode(ar, node_name);
+  unlock_node(ar, __func__, NULL, 0);
+
+  return(compute_node);
+  } /* END get_compute_node() */
+
+
+
 
 /*
  * set_one_old - set a named node as allocated to a job
@@ -6245,6 +6273,7 @@ void set_one_old(
 
   struct jobinfo *jp;
   char           *pc;
+  long            cray_enabled = FALSE;
 
   if ((pc = strchr(name, (int)'/')))
     {
@@ -6257,7 +6286,23 @@ void set_one_old(
     index = 0;
     }
 
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
   pnode = find_nodebyname(name);
+
+  if (cray_enabled == TRUE)
+    {
+    if (pnode == NULL)
+      pnode = get_compute_node(name);
+
+    if (pnode->parent == alps_reporter)
+      {
+      while (index >= pnode->nd_nsn)
+        {
+        create_subnode(pnode);
+        }
+      }
+    }
 
   if (pnode != NULL)
     {

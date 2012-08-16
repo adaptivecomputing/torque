@@ -2175,9 +2175,10 @@ int pbsd_init_job(
   time_t            time_now = time(NULL);
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   int               local_errno = 0;
-  char  job_id[PBS_MAXSVRJOBID+1];
-  long  job_atr_hold;
-  int   job_exit_status;
+  char              job_id[PBS_MAXSVRJOBID+1];
+  long              job_atr_hold;
+  int               job_exit_status;
+  long              cray_enabled = FALSE;
 
   pjob->ji_momhandle = -1;
 
@@ -2427,7 +2428,17 @@ int pbsd_init_job(
       {
       if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
         {
-        char *tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &d);
+        char *tmp;
+        get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
+        if ((cray_enabled == TRUE) &&
+            (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
+          {
+          tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &d);
+          }
+        else
+          tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &d);
+
         pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(&local_errno, tmp);
         free(tmp);
         }
