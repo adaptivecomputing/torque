@@ -2544,8 +2544,8 @@ int req_jobobit(
   char                 *tmp = NULL;
   job                  *pjob;
   char                  job_id[PBS_MAXSVRJOBID+1];
-  long  job_atr_hold;
-  int   job_exit_status;
+  long                  job_atr_hold;
+  int                   job_exit_status;
 
   struct work_task     *ptask;
   svrattrl             *patlist;
