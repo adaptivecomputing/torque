@@ -496,10 +496,6 @@ int tcp_puts(
   size_t      ct)  /* I */
 
   {
-#ifndef NDEBUG
-  char *id = "tcp_puts";
-#endif
-
   struct tcpdisbuf *tp = NULL;
   char             *temp = NULL;
   int               leadpct;
@@ -527,7 +523,7 @@ int tcp_puts(
         tp->tdis_bufsize,
         (int)(tp->tdis_leadp - tp->tdis_thebuf),
         (int)ct);
-      log_err(ENOMEM,id,log_buf);
+      log_err(ENOMEM, __func__, log_buf);
       return(-1);
       }
 

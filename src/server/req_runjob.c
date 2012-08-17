@@ -1114,7 +1114,7 @@ int send_job_to_mom(
     svr_mailowner(
         pjob,
         MAIL_BEGIN,
-        MAIL_FORCE,
+        MAIL_NORMAL,
         mail_text);
 
     if (mail_text != NULL)
