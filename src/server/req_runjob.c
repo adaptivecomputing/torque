@@ -1132,7 +1132,7 @@ static int svr_strtjob2(
     svr_mailowner(
         pjob,
         MAIL_BEGIN,
-        MAIL_FORCE,
+        MAIL_NORMAL,
         mail_text);
 
     if (mail_text != NULL)
