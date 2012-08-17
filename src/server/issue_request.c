@@ -130,8 +130,6 @@ extern char *msg_err_malloc;
 extern unsigned int pbs_mom_port;
 extern unsigned int pbs_server_port_dis;
 
-extern struct  connection svr_conn[];
-
 extern int       LOGLEVEL;
 
 int issue_to_svr(char *, struct batch_request *, void (*f)(struct work_task *));
@@ -503,7 +501,9 @@ int issue_Drequest(
 
       if (chan != NULL)
         DIS_tcp_cleanup(chan);
+
       free_br(request);
+
       return(PBSE_MEM_MALLOC);
       }
     }
@@ -774,6 +774,7 @@ int issue_Drequest(
     request->rq_reply.brp_code = tmp_rc;
     request->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
     }  
+
   DIS_tcp_cleanup(chan);
   svr_disconnect(conn);
 

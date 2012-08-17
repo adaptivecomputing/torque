@@ -626,7 +626,7 @@ int process_request(
       {
       request->rq_perm = svr_get_privilege(request->rq_user, request->rq_host);
       }
-    }  /* END else (svr_conn[sfds].cn_authen == PBS_NET_CONN_FROM_PRIVIL) */
+    }  /* END else (conn_authen == PBS_NET_CONN_FROM_PRIVIL) */
 
   /* if server shutting down, disallow new jobs and new running */
   get_svr_attr_l(SRV_ATR_State, &state);
