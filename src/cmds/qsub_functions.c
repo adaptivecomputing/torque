@@ -2166,7 +2166,7 @@ void interactive(
       exit(1);
       }
 
-    if (hash_find(client_attr, "display", &tmp_job_info))
+    if (hash_find(client_attr, "DISPLAY", &tmp_job_info))
       {
       if ((x11child = fork()) == 0)
         {
@@ -4271,30 +4271,6 @@ void main_func(
       }
     }
 
-  if (hash_find(ji.client_attr, "DISPLAY", &tmp_job_info))
-    {
-    char *x11authstr;
-    hash_find(ji.client_attr, "xauth_path", &tmp_job_info);
-    /* get the DISPLAY's auth proto, data, and screen number */
-    if (debug)
-      {
-      fprintf(stderr, "xauth_path=%s\n",
-              tmp_job_info->value);
-      }
-
-    if ((x11authstr = x11_get_proto(tmp_job_info->value, debug)) != NULL)
-      {
-      /* stuff this info into the job */
-      hash_add_or_exit(&ji.mm, &ji.job_attr, ATTR_forwardx11, x11authstr, ENV_DATA);
-      
-      if (debug)
-        fprintf(stderr, "x11auth string: %s\n",
-                x11authstr);
-      }
-    else
-      print_qsub_usage_exit("qsub: Failed to get xauth data (check $DISPLAY variable)");
-    }
-
   /* if script is empty, get standard input */
   if (!strcmp(script, "") || !strcmp(script, "-"))
     {
@@ -4384,6 +4360,31 @@ void main_func(
     print_qsub_usage_exit("index issues");
   
   post_check_attributes(&ji);
+
+  if (hash_find(ji.client_attr, "DISPLAY", &tmp_job_info))
+    {
+    char *x11authstr;
+    hash_find(ji.client_attr, "xauth_path", &tmp_job_info);
+    /* get the DISPLAY's auth proto, data, and screen number */
+    if (debug)
+      {
+      fprintf(stderr, "xauth_path=%s\n",
+              tmp_job_info->value);
+      }
+
+    if ((x11authstr = x11_get_proto(tmp_job_info->value, debug)) != NULL)
+      {
+      /* stuff this info into the job */
+      hash_add_or_exit(&ji.mm, &ji.job_attr, ATTR_forwardx11, x11authstr, ENV_DATA);
+      
+      if (debug)
+        fprintf(stderr, "x11auth string: %s\n",
+                x11authstr);
+      }
+    else
+      print_qsub_usage_exit("qsub: Failed to get xauth data (check $DISPLAY variable)");
+    }
+
 
   /* interactive job can not be job array */
   if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) &&
