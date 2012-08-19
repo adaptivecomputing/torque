@@ -2775,8 +2775,7 @@ void take_care_of_nodes_file(
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
 
 #ifdef NVIDIA_GPUS
-    if ((use_nvidia_gpu) && 
-        setup_gpus_for_job(pjob) == -1)
+    if ((use_nvidia_gpu) && setup_gpus_for_job(pjob) == -1)
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
 #endif  /* NVIDIA_GPUS */
     }   /* END if (pjob->ji_flags & MOM_HAS_NODEFILE) */
@@ -2978,13 +2977,13 @@ int start_interactive_session(
   struct startjob_rtn *sjr,
   pjobexec_t          *TJE,
   int                 *pts_ptr,
-  int                 *qsub_sock_ptr)
+  int                 *qsub_sock_ptr,
+  char                *qsubhostname)
 
   {
   struct sigaction  act;
   int               pport = 0;
   char             *phost;
-  char              qsubhostname[MAXLINE];
   char             *termtype;
   char              EMsg[MAXLINE];
 
@@ -2994,7 +2993,6 @@ int start_interactive_session(
   /*************************************************************/
   
   sigemptyset(&act.sa_mask);
-
 #ifdef SA_INTERRUPT
   act.sa_flags   = SA_INTERRUPT;
 #else
@@ -3092,7 +3090,8 @@ int start_interactive_session(
   act.sa_flags   = 0;
   
   sigaction(SIGALRM, &act, NULL);
-  
+
+
   /* open the slave pty as the controlling tty */
   if ((*pts_ptr = open_pty(pjob)) < 0)
     {
@@ -3143,7 +3142,8 @@ void setup_interactive_job(
   struct startjob_rtn *sjr,
   pjobexec_t          *TJE,
   int                 *pts_ptr,
-  int                 *qsub_sock_ptr)
+  int                 *qsub_sock_ptr,
+  char                *qsubhostname)
 
   {
   struct sigaction       act;
@@ -3152,7 +3152,7 @@ void setup_interactive_job(
 
   handle_reservation(pjob, sjr, TJE);
   
-  start_interactive_session(pjob, sjr, TJE, pts_ptr, qsub_sock_ptr);
+  start_interactive_session(pjob, sjr, TJE, pts_ptr, qsub_sock_ptr, qsubhostname);
   
   act.sa_handler = SIG_IGN;  /* setup to ignore SIGTERM */
   
@@ -3866,13 +3866,13 @@ int TMomFinalizeChild(
     log_ext(-1, __func__, "env initialized", LOG_DEBUG);
 
   /* Create the job's nodefile */
-  take_care_of_nodes_file(pjob, &sjr, TJE);
-
-  /* Set PBS_VNODENUM */
   vnodenum = pjob->ji_numvnod;
+
+  take_care_of_nodes_file(pjob, &sjr, TJE);
 
   sprintf(buf, "%d", 0);
 
+  /* Set PBS_VNODENUM */
   bld_env_variables(&vtable, "PBS_VNODENUM", buf);
 
   /* PBS_NP */
@@ -3919,7 +3919,7 @@ int TMomFinalizeChild(
 
   if (TJE->is_interactive == TRUE)
     {
-    setup_interactive_job(pjob, &sjr, TJE, &pts, &qsub_sock);
+    setup_interactive_job(pjob, &sjr, TJE, &pts, &qsub_sock, qsubhostname);
     }     /* END if (TJE->is_interactive == TRUE) */
   else
     {

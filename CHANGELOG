@@ -41,6 +41,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       TRQ-1128
   b - TRQ-1116. mail is now sent on job start again.
   b - TRQ-1118. Cray jobs are now recovered correctly after a restart.
+  b - TRQ-1109. Fixed x11 forwarding for interactive jobs. (qsub -I -X). Previous to
+      this fix interactive jobs would not run any x applications such as xterm, xclock,
+      etc.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine
