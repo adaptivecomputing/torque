@@ -57,6 +57,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-1109. Fixed x11 forwarding for interactive jobs. (qsub -I -X). Previous to
       this fix interactive jobs would not run any x applications such as xterm, xclock,
       etc.
+  b - TRQ-1161, Fixes a problem where TORQUE gets into a high CPU utilization condition.
+      The problem was that in the function process_pbs_server_port there was not
+      error returned if the call to getpeername() failed in the default case.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine
