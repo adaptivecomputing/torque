@@ -453,6 +453,8 @@ int process_pbs_server_port(
           rc = PBSE_SOCKET_DATA;
           }
         }
+      else
+        rc = PBSE_SOCKET_CLOSE;
 
       break;
       }
