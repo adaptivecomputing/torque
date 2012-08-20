@@ -2978,7 +2978,8 @@ int start_interactive_session(
   pjobexec_t          *TJE,
   int                 *pts_ptr,
   int                 *qsub_sock_ptr,
-  char                *qsubhostname)
+  char                *qsubhostname,
+  int                  qsubhostname_size)
 
   {
   struct sigaction  act;
@@ -3033,13 +3034,13 @@ int start_interactive_session(
   
   if (submithost_suffix != NULL)
     {
-    snprintf(qsubhostname, sizeof(qsubhostname), "%s%s",
+    snprintf(qsubhostname, qsubhostname_size, "%s%s",
       phost,
       submithost_suffix);
     }
   else
     {
-    snprintf(qsubhostname, sizeof(qsubhostname), "%s", phost);
+    snprintf(qsubhostname, qsubhostname_size, "%s", phost);
     }
 
   if ((*qsub_sock_ptr = conn_qsub(qsubhostname, pport, EMsg)) < 0)
@@ -3143,7 +3144,8 @@ void setup_interactive_job(
   pjobexec_t          *TJE,
   int                 *pts_ptr,
   int                 *qsub_sock_ptr,
-  char                *qsubhostname)
+  char                *qsubhostname,
+  int                  qsubhostname_size)
 
   {
   struct sigaction       act;
@@ -3152,7 +3154,7 @@ void setup_interactive_job(
 
   handle_reservation(pjob, sjr, TJE);
   
-  start_interactive_session(pjob, sjr, TJE, pts_ptr, qsub_sock_ptr, qsubhostname);
+  start_interactive_session(pjob, sjr, TJE, pts_ptr, qsub_sock_ptr, qsubhostname, qsubhostname_size);
   
   act.sa_handler = SIG_IGN;  /* setup to ignore SIGTERM */
   
@@ -3919,7 +3921,7 @@ int TMomFinalizeChild(
 
   if (TJE->is_interactive == TRUE)
     {
-    setup_interactive_job(pjob, &sjr, TJE, &pts, &qsub_sock, qsubhostname);
+    setup_interactive_job(pjob, &sjr, TJE, &pts, &qsub_sock, qsubhostname, sizeof(qsubhostname));
     }     /* END if (TJE->is_interactive == TRUE) */
   else
     {
