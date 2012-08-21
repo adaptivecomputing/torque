@@ -52,6 +52,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       and error but the code would close the connection and return the error code which
       was a value less than 20. start_process_pbs_server_port did not recognize the low
       error code value and would keep calling into process_pbs_server_port.
+  b - qdel'ing a running job in the cray environment was trying to communicate with the
+      cray compute instead of the login node. This is now fixed. TRQ-1184.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine

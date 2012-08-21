@@ -643,12 +643,23 @@ int mom_comm(
 
   int               local_errno = 0;
   int               handle = -1;
+  long              cray_enabled = FALSE;
 
   /* need to make connection, called from pbsd_init() */
   if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0)
     {
-    char *tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
+    char *tmp;
+    get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
+    if ((cray_enabled == TRUE) &&
+        (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
+      tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
+    else
+      tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
+
     pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(&local_errno, tmp);
+
+    free(tmp);
     }
 
   handle = svr_connect(
