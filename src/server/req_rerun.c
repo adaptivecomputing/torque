@@ -176,14 +176,16 @@ static void post_rerun(
  */
 
 int req_rerunjob(
-    struct batch_request *preq)
-  {
-  int rc = PBSE_NONE;
-  job                  *pjob;
+   
+  struct batch_request *preq)
 
-  int                   Force;
-  int                   MgrRequired = TRUE;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  {
+  int     rc = PBSE_NONE;
+  job    *pjob;
+
+  int     Force;
+  int     MgrRequired = TRUE;
+  char    log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check if requestor is admin, job owner, etc */
 
@@ -328,19 +330,29 @@ int req_rerunjob(
         }
       else
         {
-        int newstate, newsubst;
-        unsigned int dummy;
-        char *tmp;
+        int           newstate;
+        int           newsubst;
+        unsigned int  dummy;
+        char         *tmp;
+        long          cray_enabled = FALSE;
        
         if (pjob != NULL)
           {
-          tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
+          get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
+          if ((cray_enabled == TRUE) &&
+              (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
+            tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
+          else
+            tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
           
           /* Cannot communicate with MOM, forcibly requeue job.
              This is a relatively disgusting thing to do */
           
           sprintf(log_buf, "rerun req to %s failed (rc=%d), forcibly requeueing job",
             tmp, rc);
+
+          free(tmp);
   
           log_event(
             PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
@@ -348,7 +360,7 @@ int req_rerunjob(
             pjob->ji_qs.ji_jobid,
             log_buf);
           
-          log_err(-1, "req_rerunjob", log_buf);
+          log_err(-1, __func__, log_buf);
           
           strcat(log_buf, ", previous output files may be lost");
   
