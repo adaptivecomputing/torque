@@ -1239,7 +1239,7 @@ int initialize_data_structures_and_mutexes()
   initialize_task_recycler();
   initialize_queue_recycler();
 
-  initialize_user_info_holder();
+  initialize_user_info_holder(&users);
 
   CLEAR_HEAD(svr_newnodes);
 

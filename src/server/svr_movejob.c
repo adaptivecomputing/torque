@@ -762,7 +762,7 @@ int send_job_work(
   attrl_fixlink(&attrl);
 
   /* put together the job script file name */
-  if (pjob->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_arraystruct != NULL)
     {
     snprintf(script_name, sizeof(script_name), "%s%s%s",
       path_jobs, pjob->ji_arraystruct->ai_qs.fileprefix, JOB_SCRIPT_SUFFIX);

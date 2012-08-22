@@ -247,7 +247,7 @@ pbs_queue *que_alloc(
   initialize_all_jobs_array(pq->qu_jobs);
   initialize_all_jobs_array(pq->qu_jobs_array_sum);
   pthread_mutex_init(pq->qu_mutex,NULL);
-  lock_queue(pq, "que_alloc", NULL, LOGLEVEL);
+  lock_queue(pq, __func__, NULL, LOGLEVEL);
 
   strncpy(pq->qu_qs.qu_name, name, PBS_MAXQUEUENAME);
 
@@ -258,6 +258,10 @@ pbs_queue *que_alloc(
   server.sv_qs.sv_numque++;
   if (sv_qs_mutex_held == FALSE)
     unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
+
+  /* set up the user info struct */
+  pq->qu_uih = calloc(1, sizeof(user_info_holder));
+  initialize_user_info_holder(pq->qu_uih);
 
   /* set the working attributes to "unspecified" */
 
@@ -310,6 +314,8 @@ void que_free(
   server.sv_qs.sv_numque--;
   if (sv_qs_mutex_held == FALSE)
     unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
+
+  free_user_info_holder(pq->qu_uih);
 
   remove_queue(&svr_queues, pq);
   pq->q_being_recycled = TRUE;

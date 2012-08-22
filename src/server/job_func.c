@@ -703,7 +703,7 @@ void job_free(
     }
 
   if (pj->ji_qs.ji_state != JOB_STATE_TRANSIT)
-    decrement_queued_jobs(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+    decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
 
   /* remove any calloc working pbs_attribute space */
   for (i = 0;i < JOB_ATR_LAST;i++)
@@ -897,7 +897,8 @@ job *job_clone(
 
   for (i = 0; i < JOB_ATR_LAST; i++)
     {
-    if (template_job->ji_wattr[i].at_flags & ATR_VFLAG_SET)
+    if ((template_job->ji_wattr[i].at_flags & ATR_VFLAG_SET) &&
+        (i != JOB_ATR_job_array_request))
       {
       if ((i == JOB_ATR_errpath) || (i == JOB_ATR_outpath) || (i == JOB_ATR_jobname))
         {
