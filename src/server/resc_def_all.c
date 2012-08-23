@@ -119,6 +119,8 @@ static int set_node_ct(resource *, attribute *, int actmode);
 static int set_proc_ct(resource  *, attribute *, int actmode);
 static int set_tokens(struct attribute *attr, struct attribute *new, enum batch_op actmode);
 static int set_mppnodect(resource *, attribute *, int actmode);
+int        encode_procct(attribute *, tlist_head *phead, char *atname, char *rsname, int mode);
+
 resource_def *svr_resc_def;
 
 resource_def svr_resc_def_const[] =
@@ -302,7 +304,7 @@ resource_def svr_resc_def_const[] =
     { 
     "procct",   /* count of number of processors requested */
     decode_l,   /* read-only, set by server whenever       */
-    encode_l,   /* "nodes" and/or "procs" is set           */
+    encode_procct,   /* "nodes" and/or "procs" is set           */
     set_l,
     comp_l,
     free_null,
@@ -1322,3 +1324,18 @@ static int set_mppnodect(
   return (0);
 
   } /* END set_mppnodect() */
+
+
+
+int encode_procct(
+
+  attribute  *attr,   /* ptr to pbs_attribute */
+  tlist_head     *phead,  /* head of attrlist list */
+  char           *atname, /* pbs_attribute name */
+  char           *rsname, /* resource name or null */
+  int             mode)   /* encode mode, unused here */
+
+  {
+  return(0);
+  }
+
