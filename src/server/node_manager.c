@@ -2209,7 +2209,7 @@ void stream_eof(
   if(conn >= 0)
     {
     unlock_node(np, __func__, "parent", LOGLEVEL);
-    close_conn(conn, FALSE);
+    svr_disconnect(conn);
     return;
     }
 
