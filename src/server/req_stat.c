@@ -956,6 +956,7 @@ int stat_to_mom(
     }
   else
     rc = PBSE_CONNECT;
+
   if (rc == PBSE_SYSTEM)
     rc = PBSE_MEM_MALLOC;
 
@@ -1078,7 +1079,9 @@ void stat_update(
  */
 
 void stat_mom_job(
-    char *job_id)
+
+  char *job_id)
+
   {
   struct stat_cntl *cntl;
 

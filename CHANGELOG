@@ -15,6 +15,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       reservations. TRQ-1181. (Thanks Matt Ezell)
   b - If interrupted when reading the terminal type for an interactive job continue 
       trying to read instead of giving up. TRQ-1091.
+  b - Fix displaying elapsed time for a job. TRQ-1133.
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations
