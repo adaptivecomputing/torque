@@ -5,6 +5,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
         Fulton supercomputing Lab, BYU.
   b - Fixed a memory leak with --enable-nvidia-gpus option. pbs_server was leaking memory 
       after each  update from the MOMs getting gpu information. Bugzilla 205 and TRQ-1090.
+  b - If interrupted when reading the terminal type for an interactive job continue 
+      trying to read instead of giving up. TRQ-1091.
 
 2.5.12
   b - Fix so child pbs_mom does not remain running after qdel on slow starting job.
