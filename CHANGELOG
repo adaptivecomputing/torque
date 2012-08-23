@@ -65,6 +65,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       to a MOM to see if it was still there. On successful connection the connection
       is closed but the wrong function (close_conn) with the wrong argument (the
       handle returned by svr_connect()) was used. Replaced with svr_disconnect
+  b - Make it so that procct is never shown to Moab or users. TRQ-872.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine
