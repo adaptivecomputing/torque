@@ -54,6 +54,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       error code value and would keep calling into process_pbs_server_port.
   b - qdel'ing a running job in the cray environment was trying to communicate with the
       cray compute instead of the login node. This is now fixed. TRQ-1184.
+  b - TRQ-1161. Fixed a problem in stream_eof where a svr_connect was used to connect
+      to a MOM to see if it was still there. On successful connection the connection
+      is closed but the wrong function (close_conn) with the wrong argument (the
+      handle returned by svr_connect()) was used. Replaced with svr_disconnect
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine
