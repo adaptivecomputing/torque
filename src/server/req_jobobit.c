@@ -1859,8 +1859,12 @@ void on_job_exit(
           ((pjob = svr_find_job(job_id)) == NULL))
         break;
 
-      if ((rc = handle_exited(pjob)) == PBSE_JOBNOTFOUND)
+      rc = handle_exited(pjob);
+
+      if ((rc == JOB_NOT_FOUND) ||
+          (rc == PBSE_CONNECT))
         break;
+
       type = rc;
       pjob = NULL;
 
