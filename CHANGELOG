@@ -10,7 +10,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Have pbs_server save the queues each time before exiting so that legacy 
       formats are converted to xml after upgrading. TRQ-1120.
   b - Fix phantom jobs being left on the pbs_moms and blocking jobs for Cray 
-      hardware. TRQ-1162.
+      hardware. TRQ-1162. (Thanks Matt Ezell)
+  b - Fix a race condition on free'd memory when check for orphaned alps
+      reservations. TRQ-1181. (Thanks Matt Ezell)
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations

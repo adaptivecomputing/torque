@@ -236,6 +236,8 @@ void *check_if_orphaned(
       }
     }
 
+  free(rsv_id);
+
   return(NULL);
   } /* END check_if_orphaned() */
 
@@ -493,12 +495,14 @@ int process_reservation_id(
   char           *rsv_id_str)
 
   {
-  char           *rsv_id = rsv_id_str + strlen(reservation_id) + 1;
+  char           *rsv_id = strdup(rsv_id_str + strlen(reservation_id) + 1);
 
   if (already_recorded(rsv_id) == TRUE)
     enqueue_threadpool_request(check_if_orphaned, rsv_id);
   else if (record_reservation(pnode, rsv_id) != PBSE_NONE)
     enqueue_threadpool_request(check_if_orphaned, rsv_id);
+  else
+    free(rsv_id);
 
   return(PBSE_NONE);
   } /* END process_reservation_id() */
