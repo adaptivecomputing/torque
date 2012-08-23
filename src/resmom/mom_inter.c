@@ -150,6 +150,8 @@ static int read_net(
     if (got < 0)
       {
       /* FAILURE */
+      if (errno == EINTR)
+        continue;
 
       return(-1);
       }
