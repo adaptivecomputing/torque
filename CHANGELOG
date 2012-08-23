@@ -13,6 +13,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       hardware. TRQ-1162. (Thanks Matt Ezell)
   b - Fix a race condition on free'd memory when check for orphaned alps
       reservations. TRQ-1181. (Thanks Matt Ezell)
+  b - If interrupted when reading the terminal type for an interactive job continue 
+      trying to read instead of giving up. TRQ-1091.
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations
