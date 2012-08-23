@@ -1932,7 +1932,10 @@ void on_job_exit(
           ((pjob = svr_find_job(job_id, TRUE)) == NULL))
         break;
 
-      if ((rc = handle_exited(pjob)) == PBSE_JOBNOTFOUND)
+      rc = handle_exited(pjob);
+
+      if ((rc == PBSE_JOBNOTFOUND) ||
+          (rc == PBSE_CONNECT))
         break;
 
       type = rc;
