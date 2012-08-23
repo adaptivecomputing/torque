@@ -556,15 +556,15 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("\n                                                 Req'd  Req'd   Elap \n");
+      printf("\n                                                       Req'd  Req'd   Elap \n");
 
-      printf("Job ID               Username    Queue    NDS   TSK    Memory Time  S Time   BIG  FAST   PFS\n");
+      printf("Job ID               Username    Queue    NDS   TSK    Memory Time  S Time      BIG  FAST   PFS\n");
 
-      printf("-------------------- ----------- -------- ----- ------ ------ ----- - ----- ----- ----- -----\n");
+      printf("-------------------- ----------- -------- ----- ------ ------ ----- - -----    ----- ----- -----\n");
       }
     else
       {
-      printf("\n                                                                         Req'd  Req'd   Elap\n");
+      printf("\n                                                                               Req'd  Req'd   Elap\n");
 
       printf("Job ID               Username    Queue    Jobname          SessID NDS   TSK    Memory Time  S Time\n");
 
@@ -721,7 +721,7 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("%5.5s %*.*s %6.6s %5.5s %1.1s %5.5s %5.5s %5.5s %5.5s",
+      printf("%5.5s %*.*s %6.6s %5.5s %1.1s %8.8s %5.5s %5.5s %5.5s",
              nodect,
              tasksize,
              tasksize,
@@ -736,7 +736,7 @@ static void altdsp_statjob(
       }
     else
       {
-      snprintf(tmpLine, sizeof(tmpLine), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%5.5s %%1.1s %%5.5s",
+      snprintf(tmpLine, sizeof(tmpLine), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%5.5s %%1.1s %%8.8s",
                PBS_NAMELEN, PBS_NAMELEN);
 
       printf(tmpLine,
