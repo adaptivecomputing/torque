@@ -356,9 +356,7 @@ int svr_enquejob(
       unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
     pthread_mutex_lock(server.sv_jobstates_mutex);
-
     server.sv_jobstates[pjob->ji_qs.ji_state]++;
-
     pthread_mutex_unlock(server.sv_jobstates_mutex);
     }
   
@@ -538,8 +536,8 @@ int svr_enquejob(
     unlock_queue(pque, __func__, "anything", LOGLEVEL);
 
     if ((pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) && 
-      (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
-      (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET))
+        (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
+        (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET))
       {
       if ((rc = depend_on_que(&
                               pjob->ji_wattr[JOB_ATR_depend],
@@ -551,7 +549,6 @@ int svr_enquejob(
       }
 
     /* set eligible time */
-
     if (((pjob->ji_wattr[JOB_ATR_etime].at_flags & ATR_VFLAG_SET) == 0) &&
         (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))
       {
