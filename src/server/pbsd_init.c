@@ -2469,7 +2469,7 @@ void pbsd_init_reque(
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
   sprintf(logbuf, msg_init_substate,
-          pjob->ji_qs.ji_substate);
+    pjob->ji_qs.ji_substate);
 
   /* re-enqueue the job into the queue it was in */
 
@@ -2509,7 +2509,7 @@ void pbsd_init_reque(
         pjob->ji_qs.ji_jobid,
         pjob->ji_qs.ji_queue);
     
-      log_err(-1, "pbsd_init_reque", logbuf);
+      log_err(rc, __func__, logbuf);
       }
 
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
