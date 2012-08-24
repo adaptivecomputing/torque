@@ -1731,7 +1731,7 @@ int handle_job_recovery(
 
       if ((type != RECOV_COLD) &&
           (type != RECOV_CREATE) &&
-          (pjob->ji_arraystruct != NULL) &&
+          (pjob->ji_arraystruct == NULL) &&
           (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
         {
         snprintf(basen, sizeof(basen), "%s%s", pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
