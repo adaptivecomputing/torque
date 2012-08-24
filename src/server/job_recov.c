@@ -600,9 +600,9 @@ job *job_recov(
     log_err(-1, __func__, log_buf);
     }
 
-#else /* PBS_MOM */
+#else /* not PBS_MOM */
 
-  if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+  if (strchr(pj->ji_qs.ji_jobid, '[') != NULL)
     {
     /* job is part of an array.  We need to put a link back to the server
     job array struct for this array. We also have to link this job into
