@@ -1619,7 +1619,7 @@ void mgr_node_set(
 
   struct pbsnode   *pnode = NULL;
   struct pbsnode  **problem_nodes = NULL;
-  struct prop props;
+  struct prop       props;
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@') ||

@@ -2694,7 +2694,7 @@ void *write_node_state_work(
 
   while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
     {
-    if (!(np->nd_state & INUSE_OFFLINE))
+    if (np->nd_state & INUSE_OFFLINE)
       {
       fprintf(nstatef, fmt, np->nd_name, np->nd_state & savemask);
       }
