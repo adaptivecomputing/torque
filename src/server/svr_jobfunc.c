@@ -541,7 +541,7 @@ int svr_enquejob(
                               pjob,
                               ATR_ACTION_NOOP)) != 0)
         {
-        return(rc);
+        return(PBSE_BADDEPEND);
         }
       }
 
