@@ -17,6 +17,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       trying to read instead of giving up. TRQ-1091.
   b - Fix displaying elapsed time for a job. TRQ-1133.
   b - Make offlining nodes persistent after shutting down. TRQ-1087.
+  b - Fixed a memory leak when calling net_move. net_move allocates memory for args
+      and starts a thread on send_job. However, args were not getting released
+      in send_job.  TRQ-1199
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations
