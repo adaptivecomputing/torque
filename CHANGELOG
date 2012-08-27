@@ -79,6 +79,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       is closed but the wrong function (close_conn) with the wrong argument (the
       handle returned by svr_connect()) was used. Replaced with svr_disconnect
   b - Make it so that procct is never shown to Moab or users. TRQ-872.
+  b - TRQ-1182. Fixed a problem where jobs with dependencies were deleted on
+      the restart of pbs_server.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine

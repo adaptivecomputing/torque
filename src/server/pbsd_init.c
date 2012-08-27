@@ -246,7 +246,7 @@ void  change_logs(int);
 void  change_log_level(int);
 int   chk_save_file(char *);
 int   pbsd_init_job(job *, int);
-void  pbsd_init_reque(job *, int);
+int   pbsd_init_reque(job *, int);
 void  resume_net_move(struct work_task *);
 void  rm_files(char *);
 void  stop_me(int);
@@ -1716,7 +1716,9 @@ int handle_job_recovery(
 
       lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
-      if (pbsd_init_job(pjob, type) == FAILURE)
+      rc = pbsd_init_job(pjob, type);
+
+      if (rc == FAILURE)
         {
         log_event(
           PBSEVENT_ERROR | PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_JOB | PBSEVENT_FORCE,
@@ -2171,7 +2173,7 @@ int pbsd_init_job(
 
   {
   unsigned int      d;
-
+  int               rc = PBSE_NONE;
   time_t            time_now = time(NULL);
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   int               local_errno = 0;
@@ -2229,7 +2231,7 @@ int pbsd_init_job(
         pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
 
-        pbsd_init_reque(pjob, CHANGE_STATE);
+        rc = pbsd_init_reque(pjob, CHANGE_STATE);
         }
       else
         {
@@ -2253,7 +2255,7 @@ int pbsd_init_job(
 
       /* requeue as queued */
 
-      pbsd_init_reque(pjob, CHANGE_STATE);
+      rc = pbsd_init_reque(pjob, CHANGE_STATE);
 
       break;
 
@@ -2261,7 +2263,7 @@ int pbsd_init_job(
 
       /* requeue as is - rdy to cmt */
 
-      pbsd_init_reque(pjob, KEEP_STATE);
+      rc = pbsd_init_reque(pjob, KEEP_STATE);
 
       /* resend rtc */
 
@@ -2297,13 +2299,13 @@ int pbsd_init_job(
 
     case JOB_SUBSTATE_ARRAY_TEMP:
 
-      pbsd_init_reque(pjob, CHANGE_STATE);
+      rc = pbsd_init_reque(pjob, CHANGE_STATE);
 
       break;
 
     case JOB_SUBSTATE_RUNNING:
 
-      pbsd_init_reque(pjob, KEEP_STATE);
+      rc = pbsd_init_reque(pjob, KEEP_STATE);
 
       pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_RescAssn;
 
@@ -2327,7 +2329,7 @@ int pbsd_init_job(
 
       depend_clrrdy(pjob);
 
-      pbsd_init_reque(pjob, CHANGE_STATE);
+      rc = pbsd_init_reque(pjob, CHANGE_STATE);
 
       break;
 
@@ -2348,7 +2350,7 @@ int pbsd_init_job(
 
       set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
-      pbsd_init_reque(pjob, KEEP_STATE);
+      rc = pbsd_init_reque(pjob, KEEP_STATE);
 
       break;
 
@@ -2357,7 +2359,7 @@ int pbsd_init_job(
       /* Completed jobs are no longer purged on startup */
       set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
-      pbsd_init_reque(pjob, KEEP_STATE);
+      rc = pbsd_init_reque(pjob, KEEP_STATE);
 
       /* do array bookeeping */
       if ((pjob->ji_arraystruct != NULL) &&
@@ -2387,7 +2389,7 @@ int pbsd_init_job(
       if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
         set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
-      pbsd_init_reque(pjob, KEEP_STATE);
+      rc = pbsd_init_reque(pjob, KEEP_STATE);
 
       break;
 
@@ -2397,7 +2399,7 @@ int pbsd_init_job(
 
       set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
-      pbsd_init_reque(pjob, KEEP_STATE);
+      rc = pbsd_init_reque(pjob, KEEP_STATE);
 
       break;
 
@@ -2449,14 +2451,14 @@ int pbsd_init_job(
       }
     }
 
-  return(SUCCESS);
+  return(rc);
   }  /* END pbsd_init_job() */
 
 
 
 
 
-void pbsd_init_reque(
+int pbsd_init_reque(
 
   job *pjob,         /* I (modified/possibly freed) */
   int  change_state) /* I */
@@ -2502,7 +2504,8 @@ void pbsd_init_reque(
   else
     {
     /* Oops, this should never happen */
-    if (rc != PBSE_JOB_RECYCLED)
+    if ((rc != PBSE_JOB_RECYCLED) &&
+        (rc != PBSE_BADDEPEND))
       {
       sprintf(logbuf, "%s; job %s queue %s",
         msg_err_noqueue,
@@ -2514,7 +2517,8 @@ void pbsd_init_reque(
 
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
-    if (rc != PBSE_JOB_RECYCLED)
+    if ((rc != PBSE_JOB_RECYCLED) &&
+        (rc != PBSE_BADDEPEND))
       job_abt(&pjob, logbuf);
 
     lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
@@ -2524,6 +2528,7 @@ void pbsd_init_reque(
 
   sprintf(log_buf, "%s:1", __func__);
   unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
+  return(rc);
   }  /* END pbsd_init_reque() */
 
 
