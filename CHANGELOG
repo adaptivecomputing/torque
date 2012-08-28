@@ -20,6 +20,13 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed a memory leak when calling net_move. net_move allocates memory for args
       and starts a thread on send_job. However, args were not getting released
       in send_job.  TRQ-1199
+  b - Changed pbs_connect to check for a server name. If it is passed in only that
+      server name is tried for a connection. If no server name is given then the 
+      default list is used. The previous behavior was to try the name passed in and
+      the default server list. This would lead to confusion in utilities like qstat
+      when querying for a specific server. If the server specified was no available
+      information from the remaining list would still be returned.
+      TRQ-1143.
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations

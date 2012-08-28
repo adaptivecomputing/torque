@@ -1979,7 +1979,7 @@ int main(
   char job_id[PBS_MAXCLTJOBID];
 
   char job_id_out[PBS_MAXCLTJOBID];
-  char server_out[MAXSERVERNAME];
+  char server_out[MAXSERVERNAME] = "";
   char server_old[MAXSERVERNAME] = "";
   char rmt_server[MAXSERVERNAME];
   char destination[PBS_MAXDEST + 1];
@@ -2543,7 +2543,13 @@ job_no_args:
           {
           any_failed = -1 * connect;
 
-          fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+          if (server_out[0] != 0)
+            fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+                server_out,
+                any_failed,
+                pbs_strerror(any_failed));
+          else
+            fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
                   pbs_server,
                   any_failed,
                   pbs_strerror(any_failed));
@@ -2674,8 +2680,17 @@ que_no_args:
         if (connect <= 0)
           {
           any_failed = -1 * connect;
-          fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
-                  pbs_server, any_failed, pbs_strerror(any_failed));
+          if (server_out[0] != 0)
+            fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+                server_out,
+                any_failed,
+                pbs_strerror(any_failed));
+          else
+            fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+                  pbs_server,
+                  any_failed,
+                  pbs_strerror(any_failed));
+
           tcl_stat(error, NULL, f_opt);
           break;
           }
@@ -2734,9 +2749,18 @@ svr_no_args:
         if (connect <= 0)
           {
           any_failed = -1 * connect;
+          if (server_out[0] != 0)
+            fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+                server_out,
+                any_failed,
+                pbs_strerror(any_failed));
+          else
+            fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+                  pbs_server,
+                  any_failed,
+                  pbs_strerror(any_failed));
 
-          fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
-                  pbs_server, any_failed, pbs_strerror(any_failed));
+
           tcl_stat(error, NULL, f_opt);
           any_failed = connect;
           break;

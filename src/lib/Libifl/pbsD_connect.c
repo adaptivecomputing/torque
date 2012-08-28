@@ -1248,13 +1248,9 @@ int pbs_connect(
    * If a server name is passed in, append it at the beginning. */
 
   if (server_name_ptr && server_name_ptr[0])
-    {
     snprintf(server_name_list, sizeof(server_name_list), "%s", server_name_ptr);
-    strcat(server_name_list, ",");
-    }
-
-  strncat(server_name_list, pbs_get_server_list(),
-      sizeof(server_name_list) -1 - strlen(server_name_ptr) - 1);
+  else
+    snprintf(server_name_list, sizeof(server_name_list), "%s", pbs_get_server_list());
 
   if (getenv("PBSDEBUG"))
     fprintf(stderr, "pbs_connect using following server list \"%s\"\n",

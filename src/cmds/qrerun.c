@@ -30,7 +30,7 @@ int main(
   char job_id[PBS_MAXCLTJOBID];       /* from the command line */
 
   char job_id_out[PBS_MAXCLTJOBID];
-  char server_out[PBS_MAXSERVERNAME];
+  char server_out[PBS_MAXSERVERNAME] = "";
   char rmt_server[MAXSERVERNAME];
 
   char extend[1024];
@@ -134,10 +134,17 @@ cnt:
       {
       any_failed = -1 * connect;
 
-      fprintf(stderr, "qrerun: cannot connect to server %s (errno=%d) %s\n",
+      if (server_out[0] != 0)
+        fprintf(stderr, "qrerun: cannot connect to server %s (errno=%d) %s\n",
+              server_out,
+              any_failed,
+              pbs_strerror(any_failed));
+      else
+        fprintf(stderr, "qrerun: cannot connect to server %s (errno=%d) %s\n",
               pbs_server,
               any_failed,
               pbs_strerror(any_failed));
+
 
       continue;
       }

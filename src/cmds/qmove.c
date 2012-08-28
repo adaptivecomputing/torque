@@ -28,7 +28,7 @@ int main(int argc, char **argv) /* qmove */
   char *q_n_out, *s_n_out;
 
   char job_id_out[PBS_MAXCLTJOBID];
-  char server_out[MAXSERVERNAME];
+  char server_out[MAXSERVERNAME] = "";
   char rmt_server[MAXSERVERNAME];
 
   if (argc < 3)
@@ -71,8 +71,12 @@ cnt:
       {
       any_failed = -1 * connect;
 
-      fprintf(stderr, "qmove: cannot connect to server %s (errno=%d) %s\n",
-        pbs_server, any_failed, pbs_strerror(any_failed));
+      if (server_out[0] != 0)
+        fprintf(stderr, "qmove: cannot connect to server %s (errno=%d) %s\n",
+          server_out, any_failed, pbs_strerror(any_failed));
+      else
+        fprintf(stderr, "qmove: cannot connect to server %s (errno=%d) %s\n",
+          pbs_server, any_failed, pbs_strerror(any_failed));
       continue;
       }
 
