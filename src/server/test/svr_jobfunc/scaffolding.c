@@ -257,11 +257,6 @@ int lock_startup()
   return(0);
   }
 
-int remove_procct(job *pjob)
-  {
-  return(0);
-  }
-
 int insert_job_after_index(struct all_jobs *aj, int index, job *pjob)
   {
   return(0);

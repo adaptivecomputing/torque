@@ -221,7 +221,7 @@ int req_track(
         (new + i)->tk_mtime = 0;
 
       server.sv_tracksize = need;
-
+      free(server.sv_track);
       server.sv_track     = new;
       }
 

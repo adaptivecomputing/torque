@@ -649,6 +649,7 @@ void free_hash(
 
   {
   free_buckets(ht->buckets, ht->size);
+  free(ht->buckets);
   free(ht);
   } /* END free_hash() */
 
