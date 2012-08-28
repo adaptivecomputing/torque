@@ -4112,7 +4112,9 @@ void mom_is_request(
 
     getnameinfo(&s_addr,sizeof(s_addr),hostname,sizeof(hostname),NULL,0,0);
     }
-
+  if (err_msg)
+    free(err_msg);
+ 
   command = disrsi(chan, &ret);
 
   if (ret != DIS_SUCCESS)

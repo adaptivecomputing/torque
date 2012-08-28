@@ -176,7 +176,6 @@ extern int  svr_clnodes;
 extern int node_avail_complex(char *, int *, int *, int *, int *);
 extern int procs_available(int proc_ct);
 extern int procs_requested(char *spec);
-extern int remove_procct(job *);
 
 /* Private Functions */
 
@@ -2553,12 +2552,6 @@ void set_resc_deflt(
   
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
-    if (pque->qu_qs.qu_type == QTYPE_Execution)
-      {
-      /* unset the procct resource if it has been set */
-      remove_procct(pjob);
-      }
-
     if (has_queue_mutex == FALSE)
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }

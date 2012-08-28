@@ -85,6 +85,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Make it so that procct is never shown to Moab or users. TRQ-872.
   b - TRQ-1182. Fixed a problem where jobs with dependencies were deleted on
       the restart of pbs_server.
+  b - TRQ-1199. Fixed memory leaks found by Valgrind. Fixed a leak when routing jobs
+      to a remote server, memory leak with procct, memory leak creating queues, 
+      memory leak with mom_server_valid_message_source and a memory leak in req_track.
 
 4.1.0
   e - make free_nodes() only look at nodes in the exec_host list and not examine
