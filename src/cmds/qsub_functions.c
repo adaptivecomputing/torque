@@ -1786,10 +1786,17 @@ void bailout(void)
 
   if (c <= 0)
     {
-    fprintf(stderr, "qsub: cannot connect to server %s (errno=%d) %s\n",
+    if (server_out[0] != 0)
+      fprintf(stderr, "qsub: cannot connect to server %s (errno=%d) %s\n",
+            server_out,
+            c * -1,
+            pbs_strerror(c * -1));
+    else
+      fprintf(stderr, "qsub: cannot connect to server %s (errno=%d) %s\n",
             pbs_server,
             c * -1,
             pbs_strerror(c * -1));
+
 
     fprintf(stderr, "qsub: pbs_server daemon may not be running on host %s or hostname in file '$TORQUEHOME/server_name' may be incorrect)\n", pbs_server);
 
@@ -4491,10 +4498,17 @@ void main_func(
     {
     local_errno = -1 * sock_num;
 
-    fprintf(stderr, "qsub: cannot connect to server %s (errno=%d) %s\n",
-      pbs_server,
-      local_errno,
-      pbs_strerror(local_errno));
+    if (server_out[0] != 0)
+      fprintf(stderr, "qsub: cannot connect to server %s (errno=%d) %s\n",
+        server_out,
+        local_errno,
+        pbs_strerror(local_errno));
+    else
+      fprintf(stderr, "qsub: cannot connect to server %s (errno=%d) %s\n",
+        pbs_server,
+        local_errno,
+        pbs_strerror(local_errno));
+
 
     if (debug)
       {

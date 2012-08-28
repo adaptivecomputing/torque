@@ -25,7 +25,7 @@ int main(
   int  port2 = 0;
   char server_out1[MAXSERVERNAME+1];
   char server_out2[MAXSERVERNAME+1];
-  char svrtmp[MAXSERVERNAME+1];
+  char svrtmp[MAXSERVERNAME+1] = "";
   int connect;
   int stat = 0;
   int rc = 0;
@@ -143,7 +143,13 @@ int main(
     {
     local_errno = -1 * connect;
 
-    fprintf(stderr, "qorder: cannot connect to server %s (errno=%d) %s\n",
+    if (svrtmp[0] != 0)
+      fprintf(stderr, "qorder: cannot connect to server %s (errno=%d) %s\n",
+            svrtmp,
+            local_errno,
+            pbs_strerror(local_errno));
+    else
+      fprintf(stderr, "qorder: cannot connect to server %s (errno=%d) %s\n",
             pbs_server,
             local_errno,
             pbs_strerror(local_errno));

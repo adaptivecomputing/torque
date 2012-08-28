@@ -20,9 +20,9 @@ int main(int argc, char **argv) /* qchkpt */
 
   char job_id[PBS_MAXCLTJOBID];       /* from the command line */
 
-  char job_id_out[PBS_MAXCLTJOBID];
-  char server_out[MAXSERVERNAME];
-  char rmt_server[MAXSERVERNAME];
+  char job_id_out[PBS_MAXCLTJOBID] = "";
+  char server_out[MAXSERVERNAME] = "";
+  char rmt_server[MAXSERVERNAME] = "";
 
   if (argc == 1)
     {
@@ -55,7 +55,11 @@ cnt:
       {
       any_failed = -1 * connect;
 
-      fprintf(stderr, "qchkpt: cannot connect to server %s (errno=%d)\n",
+      if (server_out != 0)
+        fprintf(stderr, "qchkpt: cannot connect to server %s (errno=%d)\n",
+              server_out, any_failed);
+      else
+        fprintf(stderr, "qchkpt: cannot connect to server %s (errno=%d)\n",
               pbs_server, any_failed);
       continue;
       }

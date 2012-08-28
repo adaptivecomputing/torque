@@ -41,13 +41,13 @@ int main(
   time_t after;
   char a_value[80];
 
-  char job_id[PBS_MAXCLTJOBID];
+  char job_id[PBS_MAXCLTJOBID] = "";
 
-  char job_id_out[PBS_MAXCLTJOBID];
-  char server_out[MAXSERVERNAME];
-  char rmt_server[MAXSERVERNAME];
-  char path_out[MAXPATHLEN + 1];
-  char extend[MAXPATHLEN];
+  char job_id_out[PBS_MAXCLTJOBID] = "";
+  char server_out[MAXSERVERNAME] = "";
+  char rmt_server[MAXSERVERNAME] = "";
+  char path_out[MAXPATHLEN + 1] = "";
+  char extend[MAXPATHLEN] = "";
   char *extend_ptr = NULL; /* only give value if extend has value */
 
   initialize_network_info();
@@ -656,7 +656,13 @@ cnt:
       {
       local_errno = -1 * connect;
 
-      fprintf(stderr, "qalter: cannot connect to server %s (errno=%d) %s\n",
+      if (server_out[0] != 0)
+        fprintf(stderr, "qalter: cannot connect to server %s (errno=%d) %s\n",
+              server_out,
+              local_errno,
+              pbs_strerror(local_errno));
+      else
+        fprintf(stderr, "qalter: cannot connect to server %s (errno=%d) %s\n",
               pbs_server,
               local_errno,
               pbs_strerror(local_errno));
