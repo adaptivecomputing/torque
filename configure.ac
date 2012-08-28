@@ -937,6 +937,9 @@ should be the path to the directory containing the lib/ and include/ directories
 for your version of hwloc.
 Another option is adding the directory containing 'hwloc.pc'
 to the PKG_CONFIG_PATH environment variable.
+
+If you have done these and still get this  error, try running ./autogen.sh and
+then configuring again.
 ])])
     olibs=$LIBS
     LIBS="$LIBS $HWLOC_LIBS";
