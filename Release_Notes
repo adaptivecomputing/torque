@@ -107,4 +107,20 @@ x11Forwarding was broken in 4.1.0 and has now been fixed in 4.1.1.
 
 For a complete list of bugs fixed for this version of TORQUE please see the CHANGELOG.
 
+=== Known Issues ===
+
+-------------------------------------------------------------------------------
+Jobs will occasionally get stuck in an exiting state. 
+
+Elapsed time as displayed in qstat -r is garbage. 
+
+Multi-req jobs with MPMD alps reservations currently not implemented
+
+pbs_connect will use the default server list even if a specific server is requested.
+
+TORQUE does not keep nodes offline after reboot
+-------------------------------------------------------------------------------------
+
+Each of these issues will be fixed in TORQUE 4.1.2.
+
 © Copyright 2012, Adaptive Computing Enterprises, Inc.
