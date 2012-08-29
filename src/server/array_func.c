@@ -355,7 +355,7 @@ int read_and_convert_259_array(
   job_array_259 *pa_259; /* This is for a backward compatibility problem put 
                             into 2.5.9 and 3.0.3 */
   /* allocate the storage for the struct */
-  pa_259 = (job_array_259*)calloc(1,sizeof(job_array));
+  pa_259 = (job_array_259*)calloc(1, sizeof(job_array_259));
 
   if (pa_259 == NULL)
     {
@@ -411,8 +411,10 @@ int read_and_convert_259_array(
   strncpy(pa->ai_qs.submit_host, pa_259->ai_qs.submit_host, PBS_MAXSERVERNAME + 1);
   array_save(pa);
 
-  return PBSE_NONE;
-  }
+  return(PBSE_NONE);
+  } /* END read_and_convert_259_array() */
+
+
 
 
 /* array_recov reads in  an array struct saved to disk and inserts it into
@@ -449,7 +451,7 @@ int array_recov(
 
   fd = open(path, O_RDONLY, 0);
 
-  if ( array_259_upgrade )
+  if (array_259_upgrade)
     {
     rc = read_and_convert_259_array(fd, pa, path);
     if(rc != PBSE_NONE)
@@ -469,7 +471,7 @@ int array_recov(
     if ((len < 0) || ((len < (int)sizeof(pa->ai_qs)) && (pa->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION)))
       {
       sprintf(log_buf, "error reading %s", path);
-      log_err(errno, "array_recov", log_buf);
+      log_err(errno, __func__, log_buf);
       free(pa);
       close(fd);
       return PBSE_SYSTEM;
@@ -481,7 +483,7 @@ int array_recov(
       if(rc)
         {
         sprintf(log_buf, "Cannot upgrade array version %d to %d", pa->ai_qs.struct_version, ARRAY_QS_STRUCT_VERSION);
-        log_err(errno, "array_recov", log_buf);
+        log_err(errno, __func__, log_buf);
         free(pa);
         close(fd);
         return rc;
@@ -489,8 +491,7 @@ int array_recov(
       }
     }
 
-  pa->job_ids = malloc(sizeof(job *) * pa->ai_qs.array_size);
-  memset(pa->job_ids,0,sizeof(job *) * pa->ai_qs.array_size);
+  pa->job_ids = calloc(pa->ai_qs.array_size, sizeof(char *));
 
   /* check to see if there is any additional info saved in the array file */
   /* check if there are any array request tokens that haven't been fully
@@ -501,7 +502,7 @@ int array_recov(
     if (read(fd, &num_tokens, sizeof(int)) != sizeof(int))
       {
       sprintf(log_buf, "error reading token count from %s", path);
-      log_err(errno, "array_recov", log_buf);
+      log_err(errno, __func__, log_buf);
 
       free(pa);
       close(fd);
@@ -510,13 +511,13 @@ int array_recov(
 
     for (i = 0; i < num_tokens; i++)
       {
-      rn = (array_request_node*)malloc(sizeof(array_request_node));
+      rn = (array_request_node *)calloc(1, sizeof(array_request_node));
 
       if (read(fd, rn, sizeof(array_request_node)) != sizeof(array_request_node))
         {
 
         sprintf(log_buf, "error reading array_request_node from %s", path);
-        log_err(errno, "array_recov", log_buf);
+        log_err(errno, __func__, log_buf);
 
         free(rn);
 

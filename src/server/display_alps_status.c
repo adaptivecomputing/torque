@@ -19,7 +19,7 @@ int get_alps_statuses(
   {
   struct pbsnode *alps_node;
   int             iter = -1;
-  int             rc;
+  int             rc = PBSE_NONE;
 
   while ((alps_node = next_host(&(parent->alps_subnodes), &iter, NULL)) != NULL)
     {

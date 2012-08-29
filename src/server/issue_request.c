@@ -257,7 +257,8 @@ static void reissue_to_svr(
       pwt->wt_aux = -1; /* seen as error by post function  */
       pwt->wt_event = -1; /* seen as connection by post func */
       
-      ((void (*)())pwt->wt_parmfunc)(pwt);
+      if (pwt->wt_parmfunc != NULL)
+        ((void (*)())pwt->wt_parmfunc)(pwt);
       }
     }
 

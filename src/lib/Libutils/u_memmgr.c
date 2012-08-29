@@ -123,25 +123,40 @@ void *memmgr_calloc(memmgr **mgr, int qty, int size)
   return new_mem;
   }
 
-char *memmgr_strdup(memmgr **mgr, char *value, int *size)
+
+
+
+char *memmgr_strdup(
+    
+  memmgr **mgr,
+  char    *value,
+  int     *size)
+
   {
   char *rv = NULL;
-  int t_size = 0;
+  int   t_size = 0;
+
   if (value == NULL)
     t_size = 0;
   else
-    t_size = strlen(value);
+    t_size = strlen(value) + 1;
+
   if (t_size <= 0)
     {
     }
   else if ((rv = (char *)memmgr_calloc(mgr, 1, t_size)) != NULL)
     {
     strcpy(rv, value);
+
     if (size != NULL)
       *size = t_size;
     }
-  return rv;
-  }
+
+  return(rv);
+  } /* END memmgr_strdup() */
+
+
+
 
 char *memmgr_strcat(memmgr **mgr, char *val1, char *val2, int *size)
   {

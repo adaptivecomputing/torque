@@ -119,10 +119,10 @@ void insert_link(
 #ifndef NDEBUG
   /* first make sure unlinked entries are pointing to themselves     */
 
-  if ((pobj == (void *)0) ||
-      (old == (struct list_link *)0) ||
-      (old->ll_prior == (list_link *)0) ||
-      (old->ll_next  == (list_link *)0) ||
+  if ((pobj == NULL) ||
+      (old == NULL) ||
+      (old->ll_prior == NULL) ||
+      (old->ll_next  == NULL) ||
       (new->ll_prior != (list_link *)new) ||
       (new->ll_next  != (list_link *)new))
     {
@@ -131,11 +131,14 @@ void insert_link(
     if (pobj == NULL)
       fprintf(stderr, "ERROR:  bad pobj pointer in insert_link\n");
 
-    if (old->ll_prior == NULL)
-      fprintf(stderr, "ERROR:  bad head->ll_prior pointer in insert_link\n");
-
-    if (old->ll_next == NULL)
-      fprintf(stderr, "ERROR:  bad head->ll_next pointer in insert_link\n");
+    if (old != NULL)
+      {
+      if (old->ll_prior == NULL)
+        fprintf(stderr, "ERROR:  bad head->ll_prior pointer in insert_link\n");
+      
+      if (old->ll_next == NULL)
+        fprintf(stderr, "ERROR:  bad head->ll_next pointer in insert_link\n");
+      }
 
     if (new->ll_prior != (list_link *)new)
       fprintf(stderr, "ERROR:  bad new->ll_prior pointer in insert_link\n");

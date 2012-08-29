@@ -1269,13 +1269,13 @@ int set_mppnodect(
   int            op)
 
   {
-  int width;
-  int nppn;
-  int nodect;
-  int have_mppwidth = 0;
-  int have_mppnppn = 0;
+  int           width;
+  int           nppn;
+  int           nodect;
+  int           have_mppwidth = 0;
+  int           have_mppnppn = 0;
   resource_def *pdef;
-  resource *pent = NULL;
+  resource     *pent = NULL;
 
   /* Go find the currently known width, nppn attributes */
 
@@ -1283,44 +1283,47 @@ int set_mppnodect(
   nppn = 0;
 
   if (((pdef = find_resc_def(svr_resc_def,"mppwidth",svr_resc_size))) &&
-    ((pent = find_resc_entry(attr,pdef))))
+      ((pent = find_resc_entry(attr,pdef))))
     {
     width = pent->rs_value.at_val.at_long;
     have_mppwidth = 1;
     }
 
   if (((pdef = find_resc_def(svr_resc_def,"mppnppn",svr_resc_size))) &&
-    ((pent = find_resc_entry(attr,pdef))))
+      ((pent = find_resc_entry(attr,pdef))))
     {
     nppn = pent->rs_value.at_val.at_long;
     have_mppnppn = 1;
-    }
-
-  /* Check for width less than a node */
-
-  if ((width) && (width < nppn))
-    {
-    nppn = width;
-    pent->rs_value.at_val.at_long = nppn;
-    pent->rs_value.at_flags |= ATR_VFLAG_SET;
+  
+    /* Check for width less than a node */
+    if ((width) && (width < nppn))
+      {
+      nppn = width;
+      pent->rs_value.at_val.at_long = nppn;
+      pent->rs_value.at_flags |= ATR_VFLAG_SET;
+      }
     }
 
   /* Compute an estimate for the number of nodes needed */
 
   nodect = width;
-  if (nppn>1)
+  if (nppn > 1)
     {
     nodect = (nodect + nppn - 1) / nppn;
     }
 
   /* Find or create the "mppnodect" pbs_attribute entry */
 
-  if (((pdef = find_resc_def(svr_resc_def,"mppnodect",svr_resc_size))) &&
-    (((pent = find_resc_entry(attr,pdef)) == NULL)) &&
-    (((pent = add_resource_entry(attr,pdef)) == 0)))
+  if ((pdef = find_resc_def(svr_resc_def,"mppnodect",svr_resc_size))) 
     {
-    return (PBSE_SYSTEM);
+    if (((pent = find_resc_entry(attr,pdef)) == NULL) &&
+        ((pent = add_resource_entry(attr,pdef)) == NULL))
+      {
+      return(PBSE_SYSTEM);
+      }
     }
+  else
+    return(PBSE_SYSTEM);
 
   /* Update the value */
 
@@ -1332,10 +1335,10 @@ int set_mppnodect(
     {
     pent->rs_value.at_val.at_long = nodect;
     }
+
   pent->rs_value.at_flags |= ATR_VFLAG_SET;
 
-  return (0);
-
+  return(PBSE_NONE);
   } /* END set_mppnodect() */
 
 

@@ -69,6 +69,9 @@ int MXMLSetChild(
   mxml_t **CE)    /* O */
 
   {
+  if (CE == NULL)
+    return(FAILURE);
+
   if (CE != NULL)
     *CE = NULL;
 

@@ -838,13 +838,14 @@ int copy_batchrequest(
  * modify_whole_array()
  * modifies the entire job array 
  * @SEE req_modify_array PARENT
- */ 
+ */
+
 int modify_whole_array(
 
-  job_array *pa,              /* I/O */
-  svrattrl  *plist,           /* I */
-  struct batch_request *preq, /* I */
-  int        checkpoint_req)  /* I */
+  job_array            *pa,             /* I/O */
+  svrattrl             *plist,          /* I */
+  struct batch_request *preq,           /* I */
+  int                   checkpoint_req) /* I */
 
   {
   int   i;
@@ -875,6 +876,10 @@ int modify_whole_array(
         {
         pa->job_ids[i] = NULL;
         continue;
+        }
+      else if (pa == NULL)
+        {
+        return(PBSE_JOB_RECYCLED);
         }
 
       if (rc == PBSE_RELAYED_TO_MOM)

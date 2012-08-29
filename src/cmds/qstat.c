@@ -1369,25 +1369,25 @@ void display_statque(
 
   struct batch_status *p;
 
-  struct attrl *a = NULL;
-  int l;
-  char *c;
-  char *name;
-  char *max;
-  char *tot;
-  char ena[MAXNUML + 1];
-  char str[MAXNUML + 1];
-  char que[MAXNUML + 1];
-  char run[MAXNUML + 1];
-  char hld[MAXNUML + 1];
-  char wat[MAXNUML + 1];
-  char trn[MAXNUML + 1];
-  char ext[MAXNUML + 1];
-  char dne[MAXNUML + 1];
-  char *type;
-  char format[80];
+  struct attrl        *a = NULL;
+  int                  l;
+  char                *c;
+  char                *name;
+  char                *max;
+  char                *tot;
+  char                 ena[MAXNUML + 1];
+  char                 str[MAXNUML + 1];
+  char                 que[MAXNUML + 1];
+  char                 run[MAXNUML + 1];
+  char                 hld[MAXNUML + 1];
+  char                 wat[MAXNUML + 1];
+  char                 trn[MAXNUML + 1];
+  char                 ext[MAXNUML + 1];
+  char                 dne[MAXNUML + 1];
+  char                *type;
+  char                 format[80];
 
-  int  NUML = 5;
+  int                  NUML = 5;
 
 
   sprintf(format, "%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds %%%ds\n",
@@ -1454,7 +1454,8 @@ void display_statque(
         {
         l = strlen(p->name);
 
-        if (l > PBS_NAMELEN)
+        if ((l > PBS_NAMELEN) &&
+            (a != NULL))
           {
           c = a->name + PBS_NAMELEN;
 

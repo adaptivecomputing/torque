@@ -1418,7 +1418,8 @@ int depend_on_term(
 
   pdep = (struct depend *)GET_NEXT(pattr->at_val.at_list);
 
-  while (pdep != NULL)
+  while ((pdep != NULL) &&
+         (pjob != NULL))
     {
     op = -1;
 
@@ -1522,6 +1523,7 @@ int depend_on_term(
           {
           return (rc);
           }
+
         job_unlocked = 1;
 
         pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
@@ -1529,7 +1531,8 @@ int depend_on_term(
       }
 
     pdep = (struct depend *)GET_NEXT(pdep->dp_link);
-    }
+    } /* END loop over each dependency */
+
   if (!job_unlocked)
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 

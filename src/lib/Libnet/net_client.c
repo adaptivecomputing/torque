@@ -114,6 +114,7 @@ int bindresvport(int sd, struct sockaddr_in *sin);
  */
 
 int get_max_num_descriptors(void)
+
   {
   static int max_num_descriptors = 0;
 
@@ -130,6 +131,7 @@ int get_max_num_descriptors(void)
  */
 
 int get_fdset_size(void)
+
   {
   unsigned int MaxNumDescriptors = 0;
   int NumFDSetsNeeded = 0;

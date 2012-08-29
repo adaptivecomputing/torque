@@ -66,6 +66,8 @@ int MXMLSetChild(
   {
   if (CE != NULL)
     *CE = NULL;
+  else
+    return(FAILURE);
 
   if ((E == NULL) || (CName == NULL))
     {

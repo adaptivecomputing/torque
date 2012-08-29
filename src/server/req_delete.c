@@ -689,7 +689,13 @@ int handle_delete_all(
         reply_ack(preq_dup);
        
       /* mark this as NULL because it has been freed */
-      preq_dup = NULL;
+      if (rc == PURGE_SUCCESS)
+        {
+        preq_dup = duplicate_request(preq);
+        preq_dup->rq_noreply = TRUE;
+        }
+      else
+        preq_dup = NULL;
       }
     
     if (rc != PURGE_SUCCESS)
@@ -1073,7 +1079,7 @@ static void post_delete_mom1(
       pthread_mutex_unlock(server.sv_attr_mutex);
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
       }
-    else if (pjob != NULL)
+    else if (pjob == NULL)
       return;
     }
 
@@ -1144,7 +1150,7 @@ static void post_delete_mom2(
  * return 1 if the job was deleted, and -1 if the job hasn't been deleted and can't be
  */
 
-static int forced_jobpurge(
+int forced_jobpurge(
 
   job                  *pjob,
   struct batch_request *preq)

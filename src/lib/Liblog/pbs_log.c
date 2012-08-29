@@ -1338,7 +1338,8 @@ long job_log_size(void)
 
   struct stat file_stat;
 #endif
-  
+ 
+  memset(&file_stat, 0, sizeof(file_stat));
   pthread_mutex_lock(job_log_mutex);
 
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
@@ -1350,7 +1351,7 @@ long job_log_size(void)
     {
     /* FAILURE */
 
-    log_err(errno, "log_size", "PBS cannot fstat joblogfile");
+    log_err(errno, __func__, "PBS cannot fstat joblogfile");
     pthread_mutex_unlock(job_log_mutex);
 
     return(0);
@@ -1362,14 +1363,18 @@ long job_log_size(void)
   }
 
 
-void print_trace(int socknum)
+void print_trace(
+    
+  int socknum)
+
   {
-  void *array[10];
-  int size;
+  void  *array[10];
+  int    size;
   char **meth_names;
-  int cntr;
-  char msg[120];
-  char meth_name[20];
+  int    cntr;
+  char   msg[120];
+  char   meth_name[20];
+
   size = backtrace(array, 10);
   meth_names = backtrace_symbols(array, size);
   snprintf(meth_name, sizeof(meth_name), "pt - pos %d", socknum);
@@ -1381,4 +1386,5 @@ void print_trace(int socknum)
     }
   free(meth_names);
   }
+
 /* END pbs_log.c */

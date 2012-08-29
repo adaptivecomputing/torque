@@ -2685,11 +2685,17 @@ int im_spawn_task(
     
     if (i == num - 1)
       {
-      num *= 2;
-      
-      envp = (char **)realloc(envp, num * sizeof(char **));
-      
-      assert(envp);
+      char **tmp = calloc(num * 2, sizeof(char **));
+
+      if (tmp == NULL)
+        return(ENOMEM);
+      else
+        {
+        memcpy(tmp, envp, sizeof(char **) * num);
+        free(envp);
+        envp = tmp;
+        num *= 2;
+        }
       }
     
     envp[i] = cp;
@@ -3087,7 +3093,7 @@ int im_obit_task(
         
         if (mc != NULL)
           {
-          if ((ot = calloc(1, sizeof(obit_task_info))) != NULL)
+          if ((ot = calloc(1, sizeof(obit_task_info))) == NULL)
             {
             free(mc);
             }

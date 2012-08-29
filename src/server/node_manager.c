@@ -6105,11 +6105,14 @@ void set_one_old(
     if (pnode == NULL)
       pnode = get_compute_node(name);
 
-    if (pnode->parent == alps_reporter)
+    if (pnode != NULL)
       {
-      while (index >= pnode->nd_nsn)
+      if (pnode->parent == alps_reporter)
         {
-        create_subnode(pnode);
+        while (index >= pnode->nd_nsn)
+          {
+          create_subnode(pnode);
+          }
         }
       }
     }

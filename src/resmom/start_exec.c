@@ -3825,6 +3825,15 @@ int TMomFinalizeChild(
 
   pwdp  = (struct passwd *)TJE->pwdp;
 
+  if (pwdp == NULL)
+    {
+    log_err(PBSE_BADUSER, __func__, "Running job with no password entry?");
+
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
+
+    exit(-254);
+    }
+
   /*******************************************/
   /*                                         */
   /* The child process - will become the job */
@@ -4234,14 +4243,20 @@ int TMomFinalizeJob3(
   int        *SC)          /* O (return code) */
 
   {
-  struct startjob_rtn sjr;
+  struct startjob_rtn  sjr;
 
-  job  *pjob;
-  task *ptask;
-  unsigned int momport = 0;
+  job                 *pjob;
+  task                *ptask;
+  unsigned int         momport = 0;
 
   pjob = (job *)TJE->pjob;
   ptask = (task *)TJE->ptask;
+
+  if (pjob == NULL)
+    {
+    log_err(-1, __func__, "This function needs a valid job pointer");
+    return(FAILURE);
+    }
 
   /* sjr populated in TMomFinalizeJob2() */
 
@@ -5377,6 +5392,11 @@ void job_nodes(
           nodenum++;
         }
       }
+    }
+  else
+    {
+    log_err(-1, __func__, "Cannot parse the nodes for a job without exec hosts being set");
+    return;
     }
 
   pjob->ji_hosts = (hnodent *)calloc(nodenum + 1, sizeof(hnodent));
