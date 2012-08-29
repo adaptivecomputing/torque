@@ -230,10 +230,10 @@ void scan_for_terminated(void) /* linux */
   unsigned int  momport = 0;
 
 #ifdef USESAVEDRESOURCES
-  int  update_stats = TRUE;
+  int           update_stats = TRUE;
 #endif /* USESAVEDRESOURCES */
 
-  int    tcount;
+  int           tcount;
 
   if (LOGLEVEL >= 7)
     {
@@ -435,6 +435,9 @@ void scan_for_terminated(void) /* linux */
 
       continue;
       }  /* END if (pid == pjob->ji_momsubt) */
+
+    if (ptask == NULL)
+      continue;
 
     /* what happens if mom PID is reaped before subtask? */
 

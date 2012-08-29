@@ -109,21 +109,25 @@
  * each string is null terminated.
  */
 
-int parse_equal_string(start, name, value)
-char  *start;
-char **name;
-char **value;
+int parse_equal_string(
+    
+  char  *start,
+  char **name,
+  char **value)
+  
   {
-  static char *pc; /* where prior call left off */
+  static char *pc = NULL; /* where prior call left off */
   char        *backup;
-  int      quoting = 0;
+  int          quoting = 0;
 
   if (start != (char *)0)
     pc = start;
+  else if (pc == NULL)
+    return(-1);
 
   if (*pc == '\0')
     {
-    *name = (char *)0;
+    *name = NULL;
     return (0); /* already at end, return no strings */
     }
 
@@ -134,7 +138,7 @@ char **value;
 
   if (*pc == '\0')
     {
-    *name = (char *)0; /* null name */
+    *name = NULL; /* null name */
     return (0);
     }
   else if ((*pc == '=') || (*pc == ','))

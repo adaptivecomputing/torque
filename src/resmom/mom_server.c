@@ -3674,7 +3674,7 @@ mom_server *mom_server_valid_message_source(
    * message came from.
    */
 
-  if (getpeername(chan->sock,&addr,&len) < 0)
+  if (getpeername(chan->sock,&addr,&len) != 0)
     return(NULL);
  
   ipaddr = ntohl(((struct sockaddr_in *)&addr)->sin_addr.s_addr);  /* Extract IP address of source of the message. */
@@ -4093,25 +4093,30 @@ void mom_is_request(
   /* check that machine is okay to be a server */
   if ((pms = mom_server_valid_message_source(chan, &err_msg)) == NULL)
     {
-    getpeername(chan->sock, &s_addr, &len);
-    addr = (struct sockaddr_in *)&s_addr;
-    ipaddr = ntohl(addr->sin_addr.s_addr);
-    if (AVL_is_in_tree_no_port_compare(ipaddr,0,okclients) == 0)
+    if (getpeername(chan->sock, &s_addr, &len) == 0)
       {
-      if (err_msg)
+      addr = (struct sockaddr_in *)&s_addr;
+      ipaddr = ntohl(addr->sin_addr.s_addr);
+  
+      if (AVL_is_in_tree_no_port_compare(ipaddr,0,okclients) == 0)
         {
-        log_ext(-1,"mom_server_valid_message_source",err_msg,LOG_ALERT);
-        free(err_msg);
+        if (err_msg)
+          {
+          log_ext(-1,"mom_server_valid_message_source",err_msg,LOG_ALERT);
+          free(err_msg);
+          }
+        else
+          log_ext(-1, __func__, "Invalid source for IS_REQUEST", LOG_ALERT);
+        
+        close_conn(chan->sock, FALSE);
+        chan->sock = -1;
+        return;
         }
-      else
-        log_ext(-1, __func__, "Invalid source for IS_REQUEST", LOG_ALERT);
-      close_conn(chan->sock, FALSE);
-      chan->sock = -1;
-      return;
+    
+      getnameinfo(&s_addr,sizeof(s_addr),hostname,sizeof(hostname),NULL,0,0);
       }
-
-    getnameinfo(&s_addr,sizeof(s_addr),hostname,sizeof(hostname),NULL,0,0);
     }
+
   if (err_msg)
     free(err_msg);
  

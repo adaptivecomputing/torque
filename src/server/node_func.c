@@ -1296,10 +1296,9 @@ void recompute_ntype_cnts(void)
 
 struct prop *init_prop(
 
-        char *pname) /* I */
+  char *pname) /* I */
 
   {
-
   struct prop *pp;
 
   if ((pp = (struct prop *)calloc(1, sizeof(struct prop))) != NULL)
@@ -1435,6 +1434,8 @@ int copy_properties(
   /* copy features/properties */
   if (src->nd_prop == NULL)
     return(PBSE_NONE);
+  else if (dest->nd_first == NULL)
+    return(PBSE_BAD_PARAMETER);
 
   main_node = src->nd_prop;
  
@@ -2004,8 +2005,8 @@ int setup_nodes(void)
   if ((nin = fopen(path_nodes, "r")) == NULL)
     {
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "cannot open node description file '%s' in setup_nodes()\n",
-        path_nodes);
+      "cannot open node description file '%s' in setup_nodes()\n",
+      path_nodes);
 
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,server_name,log_buf);
 
@@ -2019,7 +2020,6 @@ int setup_nodes(void)
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
   /* clear out line so we don't have residual data if there is no LF */
-
   memset(line, '\0', sizeof(line));
 
   for (linenum = 1;fgets(line, sizeof(line), nin);linenum++)
@@ -2031,7 +2031,6 @@ int setup_nodes(void)
     is_alps_starter = FALSE;
 
     /* first token is the node name, may have ":ts" appended */
-
     propstr[0] = '\0';
 
     token = parse_node_token(line, 1, 0, &err, &xchar);
@@ -2042,7 +2041,7 @@ int setup_nodes(void)
     if (err != 0)
       {
       snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-          "invalid character in token \"%s\" on line %d", token, linenum);
+        "invalid character in token \"%s\" on line %d", token, linenum);
 
       goto errtoken2;
       }
@@ -2050,7 +2049,7 @@ int setup_nodes(void)
     if (!isalpha((int)*token))
       {
       snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-          "token \"%s\" doesn't start with alpha on line %d", token, linenum);
+        "token \"%s\" doesn't start with alpha on line %d", token, linenum);
 
       goto errtoken2;
       }
@@ -2059,7 +2058,6 @@ int setup_nodes(void)
 
     /* now process remaining tokens (if any), they may be either */
     /* attributes (keyword=value) or old style properties        */
-
     while (1)
       {
       token = parse_node_token(NULL, 0, 0, &err, &xchar);
@@ -2073,7 +2071,6 @@ int setup_nodes(void)
       if (xchar == '=')
         {
         /* have new style pbs_attribute, keyword=value */
-
         val = parse_node_token(NULL, 0, 1, &err, &xchar);
 
         if ((val == NULL) || (err != 0) || (xchar == '='))
@@ -2120,7 +2117,6 @@ int setup_nodes(void)
       }    /* END while(1) */
 
     /* if any properties, create property attr and add to list */
-
     if (propstr[0] != '\0')
       {
       pal = attrlist_create(ATTR_NODE_properties, 0, strlen(propstr) + 1);
@@ -2143,7 +2139,6 @@ int setup_nodes(void)
       }
 
     /* now create node and subnodes */
-
     pal = GET_NEXT(atrlist);
 
     if ((open_bracket = strchr(nodename,'[')) != NULL)

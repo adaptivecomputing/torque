@@ -1074,7 +1074,7 @@ int chk_svr_resc_limit(
   resource     *svrc;
   resource     *cmpwith;
 
-  int           LimitIsFromQueue;
+  int           LimitIsFromQueue = FALSE;
   char         *LimitName;
 
   /* NOTE:  support Cray-specific evaluation */
@@ -1324,7 +1324,7 @@ int chk_svr_resc_limit(
       mpp_nodect = (mpp_nodect + mpp_nppn - 1) / mpp_nppn;
       }
 
-    LimitIsFromQueue = 0;
+    LimitIsFromQueue = FALSE;
     LimitName = mppnodect_resource->rs_defin->rs_name;
     
     pthread_mutex_lock(server.sv_attr_mutex);

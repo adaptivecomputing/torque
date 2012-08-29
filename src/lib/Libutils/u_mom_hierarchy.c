@@ -153,6 +153,7 @@ mom_hierarchy_t *initialize_mom_hierarchy()
     {
     free(nt);
     nt = NULL;
+    return(nt);
     }
 
   nt->current_path  = -1;

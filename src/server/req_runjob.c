@@ -1076,6 +1076,11 @@ int send_job_to_mom(
   if (parent_job != NULL)
     external = pjob == parent_job->ji_external_clone;
 
+  if (preq == NULL)
+    {
+    return(PBSE_BAD_PARAMETER);
+    }
+
   old_state = pjob->ji_qs.ji_state;
   old_subst = pjob->ji_qs.ji_substate;
 
@@ -1095,6 +1100,7 @@ int send_job_to_mom(
   unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
   *pjob_ptr = NULL;
   pjob = NULL;
+
   if (preq->rq_reply.brp_un.brp_txt.brp_str != NULL)
     mail_text = strdup(preq->rq_reply.brp_un.brp_txt.brp_str);
 

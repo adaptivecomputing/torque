@@ -2875,15 +2875,16 @@ int parse_request(
   char  req[][MAX_REQ_WORD_LEN])
 
   {
-  char *foreptr, *backptr;
-  int len;
-  int i = 0;
-  int chars_parsed = 0;
-  int error = 0;
+  char *foreptr;
+  char *backptr;
+  int   len = 0;
+  int   i = 0;
+  int   chars_parsed = 0;
+  int   error = 0;
 
   foreptr = request;
 
-  for (i = 0;!EOL(*foreptr) && (i < MAX_REQ_WORDS) && (error == 0);)
+  for (i = 0; !EOL(*foreptr) && (i < MAX_REQ_WORDS) && (error == 0);)
     {
     while (White(*foreptr))
       foreptr++;
@@ -2895,7 +2896,7 @@ int parse_request(
 
     len = foreptr - backptr;
 
-    if (len > MAX_REQ_WORD_LEN)
+    if (len >= MAX_REQ_WORD_LEN)
       {
       error = 1;
       chars_parsed = (int)(foreptr - request);
@@ -2905,9 +2906,8 @@ int parse_request(
       CaretErr(request, chars_parsed);
       }
 
-    strncpy(req[i], backptr, len);
+    snprintf(req[i], sizeof(req[i]), "%s", backptr);
 
-    req[i][len] = '\0';
     i++;
     }  /* END for (i) */
 

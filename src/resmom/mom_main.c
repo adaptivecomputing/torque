@@ -486,7 +486,7 @@ static char *opsys(struct rm_attribute *);
 static char *requname(struct rm_attribute *);
 static char *validuser(struct rm_attribute *);
 static char *reqmsg(struct rm_attribute *);
-char *reqgres(struct rm_attribute *);
+char        *reqgres(struct rm_attribute *);
 static char *reqstate(struct rm_attribute *);
 static char *getjoblist(struct rm_attribute *);
 static char *reqvarattr(struct rm_attribute *);
@@ -938,7 +938,8 @@ static char *reqvarattr(
   struct rm_attribute *attrib)  /* I */
 
   {
-  static char    *list = NULL, *child_spot;
+  static char    *list = NULL;
+  char           *child_spot;
   static int      listlen = 0;
 
   struct varattr *pva;
@@ -1030,24 +1031,23 @@ static char *reqvarattr(
         child_len  = 0;
         child_spot[0] = '\0';
 
-retryread:
-
-        while ((len = read(fd, child_spot, TMAX_VARBUF - child_len)) > 0)
+        while (child_len < TMAX_VARBUF)
           {
+          len = read(fd, child_spot, TMAX_VARBUF - child_len);
+
+          if ((len <= 0) &&
+              (errno != EINTR))
+            break;
+          else if (len < 0)
+            continue;
+
           child_len  += len;
           child_spot += len;
-
-          if (child_len >= TMAX_VARBUF - 1)
-            break;
-          }  /* END while ((len = read() > 0) */
+          }
 
         if (len == -1)
           {
           /* FAILURE - cannot read var script output */
-
-          if (errno == EINTR)
-            goto retryread;
-
           log_err(errno, __func__, "pipe read");
 
           sprintf(pva->va_value, "? %d",
@@ -1157,7 +1157,7 @@ char *reqgres(
     return(GResBuf);
     }
 
-  for (cp = config_array;cp->c_name != NULL;cp++)
+  for (cp = config_array; cp->c_name != NULL; cp++)
     {
     if (cp->c_u.c_value == NULL)
       continue;
@@ -1207,7 +1207,9 @@ char *reqgres(
       continue;
 
     if (GResBuf[0] != '\0')
-      strncat(GResBuf, "+", 1024);
+      {
+      strncat(GResBuf, "+", sizeof(GResBuf) - 1 - strlen(GResBuf));
+      }
 
     snprintf(tmpLine, 1024, "%s:%s",
              cp->c_name,
@@ -3811,7 +3813,7 @@ static u_long setmempressdur(
 
 struct rm_attribute *momgetattr(
 
-        char *str) /* I */
+  char *str) /* I */
 
   {
   static char  cookie[] = "tag:"; /* rm_attribute to ignore */
@@ -3828,6 +3830,9 @@ struct rm_attribute *momgetattr(
 
   if (str == NULL) /* if NULL is passed, use prev value */
     str = hold;
+
+  if (str == NULL)
+    return(NULL);
 
   /* FORMAT: ??? */
 

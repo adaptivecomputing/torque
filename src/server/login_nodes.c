@@ -220,12 +220,13 @@ struct pbsnode *get_next_login_node(
   struct prop *needed)
 
   {
-  struct pbsnode *pnode;
+  struct pbsnode *pnode = NULL;
   login_node     *ln;
   int             node_fits = TRUE;
 
   pthread_mutex_lock(logins.ln_mutex);
   ln = (login_node *)logins.ra->slots[logins.next_node].item;
+
   if (ln != NULL)
     {
     pnode = ln->pnode;

@@ -290,9 +290,15 @@ int set_ncpus(
   char           *str)
 
   {
-  int ncpus = atoi(str + cproc_eq_len);
-  int difference = ncpus - current->nd_nsn;
+  int ncpus;
+  int difference;
   int i;
+
+  if (current == NULL)
+    return(PBSE_BAD_PARAMETER);
+  
+  ncpus = atoi(str + cproc_eq_len);
+  difference = ncpus - current->nd_nsn;
 
   for (i = 0; i < difference; i++)
     {
@@ -318,6 +324,9 @@ int set_state(
 
   {
   char *state_str = str + strlen("state=");
+
+  if (pnode == NULL)
+    return(PBSE_BAD_PARAMETER);
 
   if (!strcmp(state_str, "UP"))
     update_node_state(pnode, INUSE_FREE);
@@ -498,7 +507,12 @@ int process_reservation_id(
   char           *rsv_id_str)
 
   {
-  char           *rsv_id = strdup(rsv_id_str + strlen(reservation_id) + 1);
+  char           *rsv_id;
+
+  if (pnode == NULL)
+    return(PBSE_BAD_PARAMETER);
+ 
+  rsv_id = strdup(rsv_id_str + strlen(reservation_id) + 1);
 
   if (already_recorded(rsv_id) == TRUE)
     enqueue_threadpool_request(check_if_orphaned, rsv_id);

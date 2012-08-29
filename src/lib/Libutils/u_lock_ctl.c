@@ -17,6 +17,7 @@ lock_cntr *cntr = NULL;
 
 /* additional lock, unlock method exist in queue_func.*, node_func.* */
 int lock_init()
+
   {
   int rc = PBSE_NONE;
   pthread_mutexattr_t startup_attr;
@@ -31,6 +32,7 @@ int lock_init()
   pthread_mutexattr_settype(&tcp_attr, PTHREAD_MUTEX_NORMAL);
   pthread_mutexattr_init(&ss_attr);
   pthread_mutexattr_settype(&ss_attr, PTHREAD_MUTEX_NORMAL);
+
   if ((locks = (lock_ctl *)calloc(1, sizeof(lock_ctl))) == NULL)
     rc = PBSE_MEM_MALLOC;
   else if ((locks->startup = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
@@ -45,92 +47,145 @@ int lock_init()
     pthread_mutex_init(locks->conn_table, &conn_attr);
     pthread_mutex_init(locks->setup_save, &ss_attr);
     }
-  return rc;
-  }
+
+  return(rc);
+  } /* END lock_init() */
+
+
+
 
 void lock_destroy()
+
   {
   pthread_mutex_destroy(locks->startup);
   free(locks->startup);
+
   pthread_mutex_destroy(locks->conn_table);
   free(locks->conn_table);
+
   pthread_mutex_destroy(locks->setup_save);
   free(locks->setup_save);
+
   free(locks);
   locks = NULL;
-  }
+  } /* END lock_destroy() */
+
+
+
 
 int lock_startup()
+
   {
+  int rc = PBSE_NONE;
+
   if (locks == NULL)
-    lock_init();
-  /* fprintf(stdout, "startup lock\n"); */
-  if (pthread_mutex_lock(locks->startup) != 0)
     {
-    log_err(-1,"mutex_lock","ALERT:   cannot lock startup mutex!\n");
-    return(PBSE_MUTEX);
+    if ((rc = lock_init()) == PBSE_NONE)
+      {
+      if (pthread_mutex_lock(locks->startup) != 0)
+        {
+        log_err(-1,"mutex_lock","ALERT:   cannot lock startup mutex!\n");
+        return(PBSE_MUTEX);
+        }
+      }
     }
-  return(PBSE_NONE);
-  }
+
+  return(rc);
+  } /* END lock_startup() */
+
+
+
 
 int unlock_startup()
+
   {
-  /* fprintf(stdout, "startup unlock\n"); */
   if (pthread_mutex_unlock(locks->startup) != 0)
     {
     log_err(-1,"mutex_unlock","ALERT:   cannot unlock startup mutex!\n");
     return(PBSE_MUTEX);
     }
+
   return(PBSE_NONE);
-  }
+  } /* END unlock_startup() */
+
+
+
 
 int lock_conn_table()
+
   {
+  int rc = PBSE_NONE;
+
   if (locks == NULL)
-    lock_init();
-  /* fprintf(stdout, "conn lock\n"); */
-  if (pthread_mutex_lock(locks->conn_table) != 0)
     {
-    log_err(-1,"mutex_lock","ALERT:   cannot lock conn_table mutex!\n");
-    return(PBSE_MUTEX);
+    if ((rc = lock_init()) == PBSE_NONE)
+      {
+      lock_init();
+      
+      if (pthread_mutex_lock(locks->conn_table) != 0)
+        {
+        log_err(-1,"mutex_lock","ALERT:   cannot lock conn_table mutex!\n");
+        return(PBSE_MUTEX);
+        }
+      }
     }
-  return(PBSE_NONE);
-  }
+
+  return(rc);
+  } /* END lock_conn_table() */
+
+
+
 
 int unlock_conn_table()
   {
-  /* fprintf(stdout, "conn unlock\n"); */
   if (pthread_mutex_unlock(locks->conn_table) != 0)
     {
-    log_err(-1,"mutex_unlock","ALERT:   cannot unlock conn_table mutex!\n");
+    log_err(-1, "mutex_unlock", "ALERT:   cannot unlock conn_table mutex!\n");
     return(PBSE_MUTEX);
     }
+
   return(PBSE_NONE);
-  }
+  } /* END unlock_conn_table() */
+
+
+
 
 int lock_ss()
+
   {
+  int rc = PBSE_NONE;
+
   if (locks == NULL)
-    lock_init();
-  /* fprintf(stdout, "ss lock\n"); */
-  if (pthread_mutex_lock(locks->setup_save) != 0)
     {
-    log_err(-1,"mutex_lock","ALERT:   cannot lock setup_save mutex!\n");
-    return(PBSE_MUTEX);
+    if ((rc = lock_init()) == PBSE_NONE)
+      {
+    
+      if (pthread_mutex_lock(locks->setup_save) != 0)
+        {
+        log_err(-1,"mutex_lock","ALERT:   cannot lock setup_save mutex!\n");
+        return(PBSE_MUTEX);
+        }
+      }
     }
-  return(PBSE_NONE);
-  }
+
+  return(rc);
+  } /* END lock_ss() */
+
+
+
 
 int unlock_ss()
   {
-  /* fprintf(stdout, "ss unlock\n"); */
   if (pthread_mutex_unlock(locks->setup_save) != 0)
     {
     log_err(-1,"mutex_unlock","ALERT:   cannot unlock setup_save mutex!\n");
     return(PBSE_MUTEX);
     }
+
   return(PBSE_NONE);
-  }
+  } /* END unlock_ss() */
+
+
 
 
 int lock_node(
