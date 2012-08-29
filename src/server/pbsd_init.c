@@ -454,6 +454,7 @@ int pbsd_init(
   char *psuffix;
   int  rc;
   int Index;
+  char *tmp_ptr;
 
   struct stat statbuf;
   char *suffix_slash = "/";
@@ -1167,6 +1168,9 @@ int pbsd_init(
             exit(-1);
 
             }
+          strcpy(pjob->ji_jobid_filename, pdirent->d_name);
+          tmp_ptr = strstr(pjob->ji_jobid_filename, JOB_FILE_SUFFIX);
+          *tmp_ptr = 0;
           }
         else
           {
@@ -1218,7 +1222,7 @@ int pbsd_init(
           (!(pjob->ji_wattr[(int)JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)) &&
           (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
         {
-        strcpy(basen, pjob->ji_qs.ji_jobid);
+        strcpy(basen, pjob->ji_jobid_filename);
 
         strcat(basen, JOB_SCRIPT_SUFFIX);
 

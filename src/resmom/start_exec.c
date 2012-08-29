@@ -2503,9 +2503,7 @@ int TMomFinalizeChild(
 
   close(TJE->mjspipe[1]);
 
-  /*
-   * find which shell to use, one specified or the login shell
-   */
+  /* find which shell to use, one specified or the login shell */
 
   shell = set_shell(pjob, pwdp); /* in the machine dependent section */
 
@@ -2513,7 +2511,6 @@ int TMomFinalizeChild(
     log_ext(-1, id, "shell initialized", LOG_DEBUG);
 
   /* Setup user env */
-
   if (InitUserEnv(pjob, ptask, NULL, pwdp, shell) < 0)
     {
     log_err(-1, id, "failed to setup user env");
@@ -2525,27 +2522,21 @@ int TMomFinalizeChild(
     log_ext(-1, id, "env initialized", LOG_DEBUG);
 
   /* Create the job's nodefile */
-
   vnodenum = pjob->ji_numvnod;
 
   if (pjob->ji_flags & MOM_HAS_NODEFILE)
     {
-
     if (write_nodes_to_file(pjob) == -1)
       {
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
-
       /*NOTREACHED*/
-
       exit(1);
       }
 
     if (write_gpus_to_file(pjob) == -1)
       {
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
-
       /*NOTREACHED*/
-
       exit(1);
       }
 
@@ -2553,22 +2544,17 @@ int TMomFinalizeChild(
     if ((use_nvidia_gpu) && setup_gpus_for_job(pjob) == -1)
       {
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
-
       /*NOTREACHED*/
-
       exit(1);
       }
 #endif  /* NVIDIA_GPUS */
-
     }   /* END if (pjob->ji_flags & MOM_HAS_NODEFILE) */
 
   if (LOGLEVEL >= 10)
     log_ext(-1, id, "node file created", LOG_DEBUG);
 
   /* Set PBS_VNODENUM */
-
   sprintf(buf, "%d", 0);
-
   bld_env_variables(&vtable, "PBS_VNODENUM", buf);
 
   /* PBS_NP */
@@ -2579,18 +2565,16 @@ int TMomFinalizeChild(
 
   if (use_cpusets(pjob) == TRUE)
     {
-    sprintf(log_buffer, "about to create cpuset for job %s.\n",
-            pjob->ji_qs.ji_jobid);
-
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer, "about to create cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
+      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      }
 
     if (create_jobset(pjob) == FAILURE)
       {
       /* FAILURE */
-
-      sprintf(log_buffer, "Could not create cpuset for job %s.\n",
-              pjob->ji_qs.ji_jobid);
-
+      sprintf(log_buffer, "Could not create cpuset for job %s.\n", pjob->ji_qs.ji_jobid);
       log_err(-1, id, log_buffer);
 
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
@@ -2663,17 +2647,14 @@ int TMomFinalizeChild(
     /* once we connect to qsub and open a pty, the user can send us
      * a ctrl-c.  It is important that we block this until we exec()
      * the user's shell or we exit and the job gets stuck */
-
     act.sa_handler = SIG_IGN;
 
     sigaction(SIGINT, &act, (struct sigaction *)0);
 
     /* Set environment to reflect interactive */
-
     bld_env_variables(&vtable, "PBS_ENVIRONMENT", "PBS_INTERACTIVE");
 
     /* get host where qsub resides */
-
     phost = arst_string("PBS_O_HOST", &pjob->ji_wattr[(int)JOB_ATR_variables]);
     pport = pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long;
 
@@ -2766,7 +2747,6 @@ int TMomFinalizeChild(
     alarm(0);
 
     act.sa_handler = SIG_DFL;
-
     act.sa_flags   = 0;
 
     sigaction(SIGALRM, &act, NULL);

@@ -604,6 +604,7 @@ struct job
 
   int  maxAdoptedTaskId;  /* DJH 27 Feb 2002. Keep track of the task ids
                              the local mom allocates to adopted tasks; */
+  char    ji_jobid_filename[PBS_MAXSVRJOBID + 1]; /* used for recovering jobs */
   };
 
 typedef struct job job;

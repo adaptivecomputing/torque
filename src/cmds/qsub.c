@@ -2700,6 +2700,7 @@ interactive(void)
 
   while (amt > 0)
     {
+    /* The mom is going to send us the job id for validation */
     fromlen = read(news, pc, amt);
 
     if (fromlen <= 0)

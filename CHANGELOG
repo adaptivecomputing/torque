@@ -7,6 +7,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       after each  update from the MOMs getting gpu information. Bugzilla 205 and TRQ-1090.
   b - If interrupted when reading the terminal type for an interactive job continue 
       trying to read instead of giving up. TRQ-1091.
+  b - Backported revision 6750 from 3.0-fixes to fix TRQ-1137. This fixed a problem where all 
+      jobs get deleted if Moab is configured with SYNCJOBID=TRUE and ROOTPROXYJOBSUBMISSION 
+      set in the RMCFG flags.
 
 2.5.12
   b - Fix so child pbs_mom does not remain running after qdel on slow starting job.
