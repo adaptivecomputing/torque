@@ -2,9 +2,14 @@
                                                                      
                                                                      
                                              
-TORQUE Resource Manager 4.1.0 Release Notes
+TORQUE Resource Manager 4.1.1 Release Notes
 
-June 2012
+We have left the 4.1.0 release notes in place to make it easier for the user to know what were 
+the major changes in the TORQUE 4.1.x branch.
+
+Changes specific to 4.1.1 will be designated as 4.1.1 changes.
+
+August 2012
 
 
 ****************************************************************
@@ -44,14 +49,9 @@ Hostname lookup
 pbs_server now only looks up a hostname one time. All information is cached and pbs_server retreives information from the cache. This reduces the stress on the DNS and increases speed within TORQUE 4.1.0.
 
 
-=== Known Issues ===
-
-Certain machines report frequent errors in Moab querying of TORQUE. However, Moab recovers from these errors, which do not appear to affect scheduling.
-
-
 === System Requirements  ===
 
-The following software is required to run TORQUE 4.0.2:
+The following software is required to run TORQUE 4.1.1:
 
 - libxml2-devel package
 - openssl-devel package
@@ -68,25 +68,25 @@ The directions to install and configure TORQUE are in chapter 1 of the TORQUE 4.
 Note that you may need to install libssl-dev in order for the source to make successfully. Specifically, the build system is looking for libssl.so and libcrypto.so. For non-RPM setups, you may need to make a symbolic link from the ssl and crypto libraries to the respective .so names.
 
 
-=== Upgrading to TORQUE 4.1.0 and Backward Compatibility ===
+=== Upgrading to TORQUE 4.1.1 and Backward Compatibility ===
 
-TORQUE 4.1.0 is not backward compatible with versions of TORQUE prior to 4.0. When you upgrade to TORQUE 4.1.0, all MOM and server daemons must be upgraded at the same time. 
+TORQUE 4.1.1 is not backward compatible with versions of TORQUE prior to 4.0. When you upgrade to TORQUE 4.1.1, all MOM and server daemons must be upgraded at the same time. 
 
-The job format is compatible between 4.1.0 and previous versions of TORQUE. Any queued jobs will upgrade to the new version with the exception of job arrays in TORQUE 2.4 and earlier. It is not recommended to upgrade TORQUE while jobs are in a running state.
+The job format is compatible between 4.1.1 and previous versions of TORQUE. Any queued jobs will upgrade to the new version with the exception of job arrays in TORQUE 2.4 and earlier. It is not recommended to upgrade TORQUE while jobs are in a running state.
 
-Because TORQUE 4.1.0 has removed all use of UDP/IP and moved all communication to use TCP/IP, previous versions of TORQUE will not be able to communicate with the components of TORQUE 4.1.0. However, all files in the /var/spool/torque ($TORQUE_HOME) directory and all subdirectories are forwardly compatible.
+Because TORQUE 4.1.1 has removed all use of UDP/IP and moved all communication to use TCP/IP, previous versions of TORQUE will not be able to communicate with the components of TORQUE 4.1.1. However, all files in the /var/spool/torque ($TORQUE_HOME) directory and all subdirectories are forwardly compatible.
 
 ++ Job Arrays ++
 
-Job arrays from TORQUE version 2.5 and 3.0 are compatible with TORQUE 4.1.0. Job arrays were introduced in TORQUE version 2.4 but modified in 2.5. If upgrading from TORQUE 2.4, you will need to make sure all job arrays are complete before upgrading.
+Job arrays from TORQUE version 2.5 and 3.0 are compatible with TORQUE 4.1.1. Job arrays were introduced in TORQUE version 2.4 but modified in 2.5. If upgrading from TORQUE 2.4, you will need to make sure all job arrays are complete before upgrading.
 
 ++ serverdb ++
 
-The pbs_server configuration is saved in the file $TORQUE_HOME/server_priv/serverdb. When running TORQUE 4.1.0 for the first time, this file converts from a binary file to an XML-like format. This format can be used by TORQUE versions 2.5 and 3.0, but not earlier versions. Back up the $TORQUE_HOME/server_priv/serverdb file before moving to TORQUE 4.1.0.
+The pbs_server configuration is saved in the file $TORQUE_HOME/server_priv/serverdb. When running TORQUE 4.1.1 for the first time, this file converts from a binary file to an XML-like format. This format can be used by TORQUE versions 2.5 and 3.0, but not earlier versions. Back up the $TORQUE_HOME/server_priv/serverdb file before moving to TORQUE 4.1.1.
 
 ++ Upgrading ++
 
-Because TORQUE 4.1.0 will not communicate with previous versions of TORQUE, it is not possible to upgrade one component and not upgrade the others. Rolling upgrades will not work.
+Because TORQUE 4.1.0 will not communicate with versions of TORQUE prior to 4.0.x, it is not possible to upgrade one component and not upgrade the others. Rolling upgrades will not work.
 
 Before upgrading the system, all running jobs must complete. To prevent queued jobs from starting, nodes can be set to offline or all queues can be disabled. Once all running jobs are complete, the upgrade can be made. Remember to allow any job arrays in version 2.4 to complete before upgrading. Queued array jobs will be lost.
 
@@ -99,5 +99,12 @@ For upgrading TORQUE to 4.1.0 on a Cray system, refer to the Installation Notes 
 
 The online help for TORQUE 4.1.0 is available in HTML [http://www.adaptivecomputing.com/resources/docs/torque/4-1-0/help.htm] and PDF [http://www.adaptivecomputing.com/resources/docs/torque/4-1-0/torqueAdminGuide-4.1.0.pdf] format.
 
+=== What's new in 4.1.1 ===
+
+Several problems with deadlocks were fixed in the area of job arrays and routing queues. Unfortunately, this combination did not get tested prior to the release of 4.1.0. However, we believe we have resolved the issues around this combination of functionality.
+
+x11Forwarding was broken in 4.1.0 and has now been fixed in 4.1.1.
+
+For a complete list of bugs fixed for this version of TORQUE please see the CHANGELOG.
 
 © Copyright 2012, Adaptive Computing Enterprises, Inc.
