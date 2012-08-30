@@ -355,23 +355,17 @@ static int is_checkpoint_restart(
  * post_checkpointsend - process reply from MOM to checkpoint copy request
  */
 
-static void post_checkpointsend(
+void post_checkpointsend(
 
-  struct work_task *pwt)
+  batch_request *preq)
 
   {
   int                   code;
   job                  *pjob;
 
-  struct batch_request *preq;
-  pbs_attribute            *pwait;
+  pbs_attribute        *pwait;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   time_t                time_now = time(NULL);
-
-  preq = get_remove_batch_request(pwt->wt_parm1);
-
-  free(pwt->wt_mutex);
-  free(pwt);
 
   if (preq == NULL)
     return;
@@ -494,8 +488,10 @@ static int svr_send_checkpoint(
 
   /* The momreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  if ((rc = relay_to_mom(&pjob, momreq, post_checkpointsend)) == 0)
+  if ((rc = relay_to_mom(&pjob, momreq, NULL)) == PBSE_NONE)
     {
+    post_checkpointsend(momreq);
+
     if (pjob != NULL)
       svr_setjobstate(pjob, state, substate, FALSE);
 
@@ -509,6 +505,7 @@ static int svr_send_checkpoint(
     }
   else
     {
+    free_br(momreq);
     free(tmp_jobid);
     }
 
@@ -582,9 +579,9 @@ int req_stagein(
  * post_stagein - process reply from MOM to stage-in request
  */
 
-static void post_stagein(
+void post_stagein(
 
-  struct work_task *pwt)
+  batch_request *preq)
 
   {
   int                   code;
@@ -592,14 +589,8 @@ static void post_stagein(
   int                   newsub;
   job                  *pjob;
 
-  struct batch_request *preq;
   pbs_attribute        *pwait;
   time_t                time_now = time(NULL);
-
-  preq = get_remove_batch_request(pwt->wt_parm1);
-    
-  free(pwt->wt_mutex);
-  free(pwt);
 
   /* preq handled previously */
   if (preq == NULL)
@@ -732,8 +723,10 @@ static int svr_stagein(
 
   /* The momreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  if ((rc = relay_to_mom(&pjob, momreq, post_stagein)) == 0)
+  if ((rc = relay_to_mom(&pjob, momreq, NULL)) == PBSE_NONE)
     {
+    post_stagein(momreq);
+
     if (pjob != NULL)
       svr_setjobstate(pjob, state, substate, FALSE);
 
@@ -747,6 +740,7 @@ static int svr_stagein(
     }
   else
     {
+    free_br(momreq);
     free(tmp_jobid);
     }
 

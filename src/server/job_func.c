@@ -145,7 +145,6 @@
 #include "dynamic_string.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "track_alps_reservations.h"
-#include "req_signal.h" /* issue_signal */
 #include "issue_request.h" /* release_req */
 #include "ji_mutex.h"
 #include "user_info.h"
@@ -169,6 +168,7 @@ extern struct batch_request *setup_cpyfiles(struct batch_request *,job *,char*,c
 extern int job_log_open(char *, char *);
 extern int log_job_record(char *buf);
 extern void check_job_log(struct work_task *ptask);
+int issue_signal(job **, char *, void(*)(batch_request *), void *);
 
 /* Local Private Functions */
 
@@ -457,7 +457,7 @@ int job_abt(
     {
     svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_ABORT, FALSE);
 
-    if ((rc = issue_signal(&pjob, "SIGKILL", release_req, NULL)) != 0)
+    if ((rc = issue_signal(&pjob, "SIGKILL", free_br, NULL)) != 0)
       {
       if (pjob != NULL)
         {
@@ -1384,7 +1384,7 @@ void remove_checkpoint(
     preq->rq_extra = NULL;
     /* The preq is freed in relay_to_mom (failure)
      * or in issue_Drequest (success) */
-    if (relay_to_mom(&pjob, preq, release_req) == 0)
+    if (relay_to_mom(&pjob, preq, NULL) == PBSE_NONE)
       {
       if (pjob != NULL)
         pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_COPIED;
@@ -1399,6 +1399,8 @@ void remove_checkpoint(
         pjob->ji_qs.ji_jobid,
         "unable to remove checkpoint file for job");
       }
+
+    free_br(preq);
     }
 
   return;

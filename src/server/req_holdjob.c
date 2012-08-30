@@ -109,8 +109,8 @@
 
 /* Private Functions Local to this file */
 
-static void process_checkpoint_reply(struct work_task *);
-static void process_hold_reply(struct work_task *);
+void process_checkpoint_reply(batch_request *);
+void process_hold_reply(batch_request *);
 
 /* Global Data Items: */
 
@@ -233,13 +233,16 @@ int req_holdjob(
       }
     /* The dup_req is freed in relay_to_mom (failure)
      * or in issue_Drequest (success) */
-    else if ((rc = relay_to_mom(&pjob, dup_req, process_hold_reply)) != 0)
+    else if ((rc = relay_to_mom(&pjob, dup_req, NULL)) != PBSE_NONE)
       {
+      free_br(dup_req);
       *hold_val = old_hold;  /* reset to the old value */
       req_reject(rc, 0, preq, NULL, NULL);
       }
     else
       {
+      process_hold_reply(dup_req);
+
       if (pjob != NULL)
         {
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
@@ -266,7 +269,7 @@ int req_holdjob(
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL,
-        "job not held since checkpointing is expected but not enabled for job");
+      "job not held since checkpointing is expected but not enabled for job");
     }
 #endif
   else
@@ -336,12 +339,15 @@ void *req_checkpointjob(
       }
     /* The dup_req is freed in relay_to_mom (failure)
      * or in issue_Drequest (success) */
-    else if ((rc = relay_to_mom(&pjob, dup_req, process_checkpoint_reply)) != 0)
+    else if ((rc = relay_to_mom(&pjob, dup_req, NULL)) != 0)
       {
       req_reject(rc, 0, preq, NULL, NULL);
+      free_br(dup_req);
       }
     else
       {
+      process_checkpoint_reply(dup_req);
+
       if (pjob != NULL)
         {
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
@@ -668,27 +674,19 @@ int get_hold(
  * is received.  Completes the hold request for running jobs.
  */
 
-static void process_hold_reply(
+void process_hold_reply(
 
-  struct work_task *pwt)
+  batch_request *preq)
 
   {
   job                  *pjob;
   pbs_attribute         temphold;
 
-  struct batch_request *preq;
   int                   newstate;
   int                   newsub;
   int                   rc;
   char                 *pset;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-
-  svr_disconnect(pwt->wt_event); /* close connection to MOM */
-
-  preq = get_remove_batch_request(pwt->wt_parm1);
-
-  free(pwt->wt_mutex);
-  free(pwt);
 
   /* preq was handled previously */
   if (preq == NULL)
@@ -763,27 +761,21 @@ static void process_hold_reply(
 
   } /* END process_hold_reply() */
 
+
+
+
 /*
  * process_checkpoint_reply
  * called when a checkpoint request was sent to MOM and the answer
  * is received.  Completes the checkpoint request for running jobs.
  */
 
-static void process_checkpoint_reply(
+void process_checkpoint_reply(
 
-  struct work_task *pwt)
+  batch_request *preq)
 
   {
-  job       *pjob;
-
-  struct batch_request *preq;
-
-  svr_disconnect(pwt->wt_event); /* close connection to MOM */
-
-  preq = get_remove_batch_request(pwt->wt_parm1);
-
-  free(pwt->wt_mutex);
-  free(pwt);
+  job *pjob;
 
   /* preq handled previously */
   if (preq == NULL)

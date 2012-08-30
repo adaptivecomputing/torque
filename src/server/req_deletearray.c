@@ -33,6 +33,7 @@ extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int has_job_delete_nanny(struct job *);
 extern void remove_stagein(job **pjob);
 extern void change_restart_comment_if_needed(struct job *);
+int issue_signal(job **, char *, void(*)(batch_request *), void *);
 
 extern char *msg_unkarrayid;
 extern char *msg_permlog;
@@ -40,7 +41,7 @@ extern char *msg_permlog;
 void post_delete(struct work_task *pwt);
 
 void array_delete_wt(struct work_task *ptask);
-void          on_job_exit(struct work_task *);
+void          on_job_exit_task(struct work_task *);
 
 extern int LOGLEVEL;
 
@@ -96,7 +97,7 @@ int attempt_delete(
       
       /* need to issue a signal to the mom, but we don't want to sent an ack to the
        * client when the mom replies */
-      issue_signal(&pjob, "SIGTERM", post_delete, NULL);
+      issue_signal(&pjob, "SIGTERM", NULL, NULL);
       }
 
     if (pjob != NULL)
@@ -130,7 +131,7 @@ int attempt_delete(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
-    set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
@@ -176,7 +177,7 @@ int attempt_delete(
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
       
-      set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
+      set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
       }
     else
       release_mutex = FALSE;
@@ -312,21 +313,6 @@ int req_deletearray(
 
 
 
-void post_delete(
-    
-  struct work_task *pwt)
-
-  {
-  /* no op - do not reply to client */
-
-  if (pwt)
-    {
-    free(pwt->wt_mutex);
-    free(pwt);
-    }
-  }
-
-
 /* if jobs were in the prerun state , this attempts to keep track
    of if it was called continuously on the same array for over 10 seconds.
    If that is the case then it deletes prerun jobs no matter what.
@@ -400,7 +386,7 @@ void array_delete_wt(
             sprintf(log_buf, "calling on_job_exit from %s", __func__);
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
             }
-          set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
+          set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
           
           unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           }

@@ -112,7 +112,7 @@ extern int gpu_entry_by_id(struct pbsnode *,char *, int);
 /* Private Functions Local to this file */
 
 #ifdef NVIDIA_GPUS
-static void process_gpu_request_reply(struct work_task *);
+static void process_gpu_request_reply(batch_request *preq);
 #endif
 
 /* Global Data Items: */
@@ -253,10 +253,10 @@ int req_gpuctrl_svr(
 
   if (conn >= 0)
     {
-    if ((rc = issue_Drequest(conn, preq, process_gpu_request_reply, NULL)) != 0)
-      {
+    if ((rc = issue_Drequest(conn, preq, NULL, NULL)) != PBSE_NONE)
       req_reject(rc, 0, preq, NULL, NULL);
-      }
+    else
+      process_gpu_request_reply(preq);
     }
   else
     {
@@ -295,18 +295,10 @@ int req_gpuctrl_svr(
 #ifdef NVIDIA_GPUS
 void process_gpu_request_reply(
 
-  struct work_task *pwt)
+  batch_request *preq)
 
   {
-  struct batch_request *preq;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-
-  svr_disconnect(pwt->wt_event); /* close connection to MOM */
-
-  preq = get_remove_batch_request((char *)pwt->wt_parm1);
-
-  free(pwt->wt_mutex);
-  free(pwt);
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (preq == NULL)
     return;
@@ -341,5 +333,5 @@ void process_gpu_request_reply(
 
     reply_ack(preq);
     }
-  }
+  } /* END process_gpu_request_reply() */
 #endif  /* NVIDIA_GPUS */

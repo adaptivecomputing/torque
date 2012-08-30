@@ -133,6 +133,7 @@ extern unsigned int pbs_server_port_dis;
 extern int       LOGLEVEL;
 
 int issue_to_svr(char *, struct batch_request *, void (*f)(struct work_task *));
+int issue_Drequest(int conn, struct batch_request  *request);
 
 /*
  * relay_to_mom - relay a (typically existing) batch_request to MOM
@@ -221,7 +222,7 @@ int relay_to_mom(
 
   request->rq_orgconn = request->rq_conn; /* save client socket */
 
-  rc = issue_Drequest(handle, request, func, NULL);
+  rc = issue_Drequest(handle, request);
 
   *pjob_ptr = svr_find_job(jobid);
 
@@ -323,7 +324,7 @@ int issue_to_svr(
 
     if (handle >= 0)
       {
-      if (((rc = issue_Drequest(handle, preq, replyfunc, NULL)) == PBSE_NONE) &&
+      if (((rc = issue_Drequest(handle, preq)) == PBSE_NONE) &&
           (handle != PBS_LOCAL_CONNECTION))
         {
         /* preq is already freed if handle == PBS_LOCAL_CONNECTION - a reply 
@@ -396,125 +397,52 @@ void release_req(
 
 
 
-/* The following functions exist for the new DIS protocol */
+int handle_local_request(
+
+  int            conn,
+  batch_request *request)
+
+  {
+  request->rq_conn = PBS_LOCAL_CONNECTION;
+
+  return(dispatch_request(PBS_LOCAL_CONNECTION, request));
+  } /* END handle_local_request() */
 
 
-/*
- * issue_request - issue a batch request to another server or to a MOM
- * or even to ourself!
- *
- * If the request is meant for this very server, then
- *  Set up work-task of type WORK_Deferred_Local with a dummy
- *  connection handle (PBS_LOCAL_CONNECTION).
- *
- *  Dispatch the request to be processed.  [reply_send() will
- *  dispatch the reply via the work task entry.]
- *
- * If the request is to another server/MOM, then
- *  Set up work-task of type WORK_Deferred_Reply with the
- *  connection handle as the event.
- *
- *  Encode and send the request.
- *
- *  When the reply is ready,  process_reply() will decode it and
- *  dispatch the work task.
- *
- * IT IS UP TO THE FUNCTION DISPATCHED BY THE WORK TASK TO CLOSE THE
- * CONNECTION (connection handle not socket) and FREE THE REQUEST
- * STRUCTURE.  The connection (non-negative if open) is in wt_event
- * and the pointer to the request structure is in wt_parm1.
- * If issue_Drequest fails before creating the work task then the 
- * batch request needs to be freed. The bottom line is that the 
- * batch request will always be freed after a call to issue_Drequest
- * either within issue_Drequest or in the work_task.
- */
 
-int issue_Drequest(
 
-  int                    conn,
-  struct batch_request  *request,
-  void                 (*func) (struct work_task *),
-  struct work_task     **ppwt)
+int send_request_to_remote_server(
+    
+  int            conn,
+  batch_request *request)
 
   {
   struct attropl   *patrl;
-
-  struct work_task *ptask = NULL;
 
   struct svrattrl  *psvratl;
   int               rc = PBSE_NONE;
   int               tmp_rc = PBSE_NONE;
   int               sock = 0;
-  enum work_type    wt;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   struct tcp_chan  *chan = NULL;
-
-  if (conn == PBS_LOCAL_CONNECTION)
+    
+  pthread_mutex_lock(connection[conn].ch_mutex);
+  sock = connection[conn].ch_socket;
+  pthread_mutex_unlock(connection[conn].ch_mutex);
+  
+  request->rq_conn = sock;
+  
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
-    wt = WORK_Deferred_Local;
-
-    request->rq_conn = PBS_LOCAL_CONNECTION;
-    }
-  else
-    {
-    pthread_mutex_lock(connection[conn].ch_mutex);
-
-    sock = connection[conn].ch_socket;
-
-    pthread_mutex_unlock(connection[conn].ch_mutex);
-
-    request->rq_conn = sock;
-
-    wt = WORK_Deferred_Reply;
-
-    if ((chan = DIS_tcp_setup(sock)) == NULL)
-      {
-      log_err(PBSE_MEM_MALLOC, __func__,
-          "Could not allocate memory for socket buffer");
-      close_conn(sock, FALSE);
-      free_br(request);
-      return(PBSE_MEM_MALLOC);
-      }
-    }
-
-  if (conn == PBS_LOCAL_CONNECTION)
-    {
-    /* the request should be issued to ourself */
-    rc = dispatch_request(PBS_LOCAL_CONNECTION, request);
-
-    return(rc);
-    }
-
-  if (func != NULL)
-    {
-    if (request->rq_id == NULL)
-      get_batch_request_id(request);
-
-    ptask = set_task(wt, (long)conn, func, request->rq_id, FALSE);
-
-    if (ppwt != NULL)
-      *ppwt = ptask;
-
-    if (ptask == NULL)
-      {
-      log_err(errno, __func__, "could not set_task");
-      close_conn(sock, FALSE);
-
-      if (chan != NULL)
-        DIS_tcp_cleanup(chan);
-
-      free_br(request);
-
-      return(PBSE_MEM_MALLOC);
-      }
+    log_err(PBSE_MEM_MALLOC, __func__,
+      "Could not allocate memory for socket buffer");
+    close_conn(sock, FALSE);
+    return(PBSE_MEM_MALLOC);
     }
 
   /* the request is bound to another server, encode/send the request */
-
   switch (request->rq_type)
     {
-#ifndef PBS_MOM
-
     case PBS_BATCH_DeleteJob:
 
       rc = PBSD_mgr_put(
@@ -729,39 +657,11 @@ int issue_Drequest(
       
       break;
 
-#else /* PBS_MOM */
-
-    case PBS_BATCH_JobObit:
-
-      /* who is sending obit request? */
-
-      if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_JobObit, msg_daemonname)))
-        break;
-
-      if ((rc = encode_DIS_JobObit(chan, request)))
-        break;
-
-      if ((rc = encode_DIS_ReqExtend(chan, 0)))
-        break;
-
-      rc = DIS_tcp_wflush(chan);
-
-      break;
-
-#endif /* PBS_MOM */
-
     default:
 
-      sprintf(log_buf, msg_issuebad,
-              request->rq_type);
+      sprintf(log_buf, msg_issuebad, request->rq_type);
 
       log_err(-1, __func__, log_buf);
-
-      pthread_mutex_lock(ptask->wt_mutex);
-      if (ptask->wt_being_recycled == FALSE)
-        delete_task(ptask);
-      else
-        pthread_mutex_unlock(ptask->wt_mutex);
 
       rc = -1;
 
@@ -779,9 +679,58 @@ int issue_Drequest(
   DIS_tcp_cleanup(chan);
   svr_disconnect(conn);
 
-  if (func != NULL)
-    dispatch_task(ptask);
+  return(rc);
+  } /* END send_request_to_remote_server() */
 
+
+
+
+/* The following functions exist for the new DIS protocol */
+
+
+/*
+ * issue_request - issue a batch request to another server or to a MOM
+ * or even to ourself!
+ *
+ * If the request is meant for this very server, then
+ *  Set up work-task of type WORK_Deferred_Local with a dummy
+ *  connection handle (PBS_LOCAL_CONNECTION).
+ *
+ *  Dispatch the request to be processed.  [reply_send() will
+ *  dispatch the reply via the work task entry.]
+ *
+ * If the request is to another server/MOM, then
+ *  Set up work-task of type WORK_Deferred_Reply with the
+ *  connection handle as the event.
+ *
+ *  Encode and send the request.
+ *
+ *  When the reply is ready,  process_reply() will decode it and
+ *  dispatch the work task.
+ *
+ * IT IS UP TO THE FUNCTION DISPATCHED BY THE WORK TASK TO CLOSE THE
+ * CONNECTION (connection handle not socket) and FREE THE REQUEST
+ * STRUCTURE.  The connection (non-negative if open) is in wt_event
+ * and the pointer to the request structure is in wt_parm1.
+ * If issue_Drequest fails before creating the work task then the 
+ * batch request needs to be freed. The bottom line is that the 
+ * batch request will always be freed after a call to issue_Drequest
+ * either within issue_Drequest or in the work_task.
+ */
+
+int issue_Drequest(
+
+  int                    conn,
+  struct batch_request  *request)
+
+  {
+  int rc;
+
+  if (conn == PBS_LOCAL_CONNECTION)
+    rc = handle_local_request(conn, request);
+  else
+    rc = send_request_to_remote_server(conn, request);
+  
   return(rc);
   }  /* END issue_Drequest() */
 

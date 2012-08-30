@@ -228,14 +228,14 @@ extern struct server server;
 
 /* External Functions Called */
 
-extern void   on_job_rerun(struct work_task *);
+extern void   on_job_rerun_task(batch_request *preq, char *job_id);
 extern void   set_resc_assigned(job *, enum batch_op);
 extern void   set_old_nodes(job *);
 extern void   acct_close(void);
 
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int     net_move(job *, struct batch_request *);
-void          on_job_exit(struct work_task *);
+void          on_job_exit_task(batch_request *preq, char *job_id);
 
 /* Private functions in this file */
 
@@ -2348,7 +2348,7 @@ int pbsd_init_job(
 
       apply_job_delete_nanny(pjob, time_now + 60);
 
-      set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
+      set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
       rc = pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -2357,7 +2357,7 @@ int pbsd_init_job(
     case JOB_SUBSTATE_COMPLETE:
 
       /* Completed jobs are no longer purged on startup */
-      set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
+      set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
       rc = pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -2387,7 +2387,7 @@ int pbsd_init_job(
     case JOB_SUBSTATE_RERUN:
 
       if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
-        set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
+        set_task(WORK_Immed, 0, on_job_rerun_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
       rc = pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -2397,7 +2397,7 @@ int pbsd_init_job(
 
     case JOB_SUBSTATE_RERUN2:
 
-      set_task(WORK_Immed, 0, on_job_rerun, strdup(pjob->ji_qs.ji_jobid), FALSE);
+      set_task(WORK_Immed, 0, on_job_rerun_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
       rc = pbsd_init_reque(pjob, KEEP_STATE);
 

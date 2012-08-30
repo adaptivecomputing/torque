@@ -139,30 +139,21 @@ extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum 
 int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
 
 /* prototypes */
-void post_modify_arrayreq(struct work_task *pwt);
-static void post_modify_req(struct work_task *pwt);
+void post_modify_arrayreq(batch_request *preq);
+void post_modify_req(batch_request *preq);
 
 
 /*
  * post_modify_req - clean up after sending modify request to MOM
  */
 
-static void post_modify_req(
+void post_modify_req(
 
-  struct work_task *pwt)
+  batch_request *preq)
 
   {
-
-  struct batch_request *preq;
-  job                  *pjob;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-
-  svr_disconnect(pwt->wt_event);  /* close connection to MOM */
-
-  preq = get_remove_batch_request(pwt->wt_parm1);
-
-  free(pwt->wt_mutex);
-  free(pwt);
+  job  *pjob;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (preq == NULL)
     return;
@@ -287,7 +278,7 @@ void mom_cleanup_checkpoint_hold(
       strcpy(preq->rq_ind.rq_delete.rq_objname, pjob->ji_qs.ji_jobid);
       /* The preq is freed in relay_to_mom (failure)
        * or in issue_Drequest (success) */
-      if ((rc = relay_to_mom(&pjob, preq, release_req)) != 0)
+      if ((rc = relay_to_mom(&pjob, preq, NULL)) != PBSE_NONE)
         {
         if (pjob != NULL)
           {
@@ -300,8 +291,12 @@ void mom_cleanup_checkpoint_hold(
           unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           }
 
+        free_br(preq);
+
         return;
         }
+      else
+        free_br(preq);
 
       if ((LOGLEVEL >= 7) &&
           (pjob != NULL))
@@ -332,18 +327,13 @@ void mom_cleanup_checkpoint_hold(
 
 void chkpt_xfr_hold(
 
-  struct work_task *ptask)
+  batch_request *preq)
 
   {
   job                  *pjob;
 
-  struct batch_request *preq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  preq = get_remove_batch_request(ptask->wt_parm1);
-
-  free(ptask->wt_mutex);
-  free(ptask);
 
   if ((preq == NULL) ||
       (preq->rq_extra == NULL))
@@ -381,16 +371,10 @@ void chkpt_xfr_hold(
 
 void chkpt_xfr_done(
 
-  struct work_task *ptask)
+  batch_request *preq)
 
   {
-  /* Why are we grabbing a pointer to the job or the request here??? 
-   * Nothing is done??!!?? 
-   * If implemented later, thread protection must be added */
-  
-  release_req(ptask);
-
-  return;
+  free_br(preq);
   }  /* END chkpt_xfr_done() */
 
 
@@ -616,8 +600,10 @@ int modify_job(
         }
       /* The dup_req is freed in relay_to_mom (failure)
        * or in issue_Drequest (success) */
-      else if ((rc = relay_to_mom(&pjob, dup_req, post_modify_req)))
+      else if ((rc = relay_to_mom(&pjob, dup_req, NULL)))
         {
+        free_br(dup_req);
+
         if (pjob != NULL)
           {
           snprintf(log_buf,sizeof(log_buf),
@@ -629,6 +615,8 @@ int modify_job(
 
         return(rc); /* unable to get to MOM */
         }
+      else
+        post_modify_req(dup_req);
       }
 
     return(PBSE_RELAYED_TO_MOM);
@@ -646,17 +634,12 @@ int modify_job(
 
       /* The momreq is freed in relay_to_mom (failure)
        * or in issue_Drequest (success) */
-      if (checkpoint_req == CHK_HOLD)
-        {
-        rc = relay_to_mom(&pjob, momreq, chkpt_xfr_hold);
-        }
-      else
-        {
-        rc = relay_to_mom(&pjob, momreq, chkpt_xfr_done);
-        }
+      rc = relay_to_mom(&pjob, momreq, NULL);
 
       if (rc != 0)
         {
+        free_br(momreq);
+
         if (pjob != NULL)
           {
           snprintf(log_buf,sizeof(log_buf),
@@ -668,6 +651,10 @@ int modify_job(
 
         return(PBSE_NONE);  /* come back when mom replies */
         }
+      else if (checkpoint_req == CHK_HOLD)
+        chkpt_xfr_hold(momreq);
+      else
+        chkpt_xfr_done(momreq);
       }
     else
       {
@@ -902,8 +889,10 @@ int modify_whole_array(
         mom_relay++;
         /* The array_req is freed in relay_to_mom (failure)
          * or in issue_Drequest (success) */
-        if ((rc = relay_to_mom(&pjob, array_req, post_modify_arrayreq)))
+        if ((rc = relay_to_mom(&pjob, array_req, NULL)))
           {
+          free_br(array_req);
+
           if (pjob != NULL)
             {
             snprintf(log_buf,sizeof(log_buf),
@@ -915,6 +904,8 @@ int modify_whole_array(
 
           return(rc); /* unable to get to MOM */
           }
+        else
+          post_modify_arrayreq(array_req);
         }
 
       if (pjob != NULL)
@@ -1430,21 +1421,13 @@ int modify_job_attr(
 
 void post_modify_arrayreq(
 
-  struct work_task *pwt)
+  batch_request *preq)
 
   {
 
-  struct batch_request *preq;
   struct batch_request *parent_req;
   job                  *pjob;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-
-  svr_disconnect(pwt->wt_event);  /* close connection to MOM */
-
-  preq = get_remove_batch_request(pwt->wt_parm1);
-
-  free(pwt->wt_mutex);
-  free(pwt);
 
   if (preq == NULL)
     return;

@@ -131,14 +131,16 @@ extern struct server server;
 extern int   LOGLEVEL;
 extern struct all_jobs alljobs;
 
+int issue_signal(job **, char *, void (*)(batch_request *), void *);
+
 /* Private Functions in this file */
 
 static void post_delete_route(struct work_task *);
-static void post_delete_mom1(struct work_task *);
+void post_delete_mom1(batch_request *);
 static void post_delete_mom2(struct work_task *);
 static int forced_jobpurge(job *,struct batch_request *);
 static void job_delete_nanny(struct work_task *);
-static void post_job_delete_nanny(struct work_task *);
+void post_job_delete_nanny(batch_request *);
 static void purge_completed_jobs(struct batch_request *);
 
 /* Public Functions in this file */
@@ -159,7 +161,7 @@ extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 extern int   svr_chk_owner(struct batch_request *, job *);
 void chk_job_req_permissions(job **,struct batch_request *);
-void          on_job_exit(struct work_task *);
+void          on_job_exit_task(struct work_task *);
 
 /*
  * remove_stagein() - request that mom delete staged-in files for a job
@@ -194,7 +196,7 @@ void remove_stagein(
 
     /* The preq is freed in relay_to_mom (failure)
      * or in issue_Drequest (success) */
-    if (relay_to_mom(&pjob, preq, release_req) == 0)
+    if (relay_to_mom(&pjob, preq, NULL) == 0)
       {
       if (pjob != NULL)
         pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
@@ -209,6 +211,8 @@ void remove_stagein(
         pjob->ji_qs.ji_jobid,
         "unable to remove staged in files for job");
       }
+
+    free_br(preq);
     }
 
   return;
@@ -554,7 +558,7 @@ jump:
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
-    set_task(WORK_Immed, 0, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
@@ -602,7 +606,7 @@ jump:
 
     if (pjob != NULL)
       {
-      set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit, strdup(pjob->ji_qs.ji_jobid), FALSE);
+      set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
       }
     else
       has_mutex = FALSE;
@@ -970,9 +974,9 @@ static void post_delete_route(
  * responds to the SIGTERM signal request.
  */
 
-static void post_delete_mom1(
+void post_delete_mom1(
 
-  struct work_task *pwt)
+  batch_request *preq_sig)
 
   {
   int                   delay = 0;
@@ -982,16 +986,10 @@ static void post_delete_mom1(
   pbs_queue            *pque;
 
   char                 *preq_clt_id;
-  struct batch_request *preq_sig;         /* signal request to MOM */
 
   struct batch_request *preq_clt = NULL;  /* original client request */
   int                   rc;
   time_t                time_now = time(NULL);
-
-  preq_sig = get_remove_batch_request((char *)pwt->wt_parm1);
-  
-  free(pwt->wt_mutex);
-  free(pwt);
 
   if (preq_sig == NULL)
     return;
@@ -1125,7 +1123,7 @@ static void post_delete_mom2(
     {
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
-      issue_signal(&pjob, sigk, release_req, NULL);
+      issue_signal(&pjob, sigk, free_br, NULL);
       
       if (pjob != NULL)
         {
@@ -1328,21 +1326,15 @@ static void job_delete_nanny(
  * to MS (and to release the req.)
  */
 
-static void post_job_delete_nanny(
+void post_job_delete_nanny(
 
-  struct work_task *pwt)
+  batch_request *preq_sig)
 
   {
-  struct batch_request *preq_sig;  /* signal request to MOM */
   int                   rc;
   job                  *pjob;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   long                  nanny = 0;
-
-  preq_sig = get_remove_batch_request((char *)pwt->wt_parm1);
-  
-  free(pwt->wt_mutex);
-  free(pwt);
 
   if (preq_sig == NULL)    
     return;

@@ -119,7 +119,6 @@
 #include "utils.h"
 #include "u_tree.h"
 #include "threadpool.h"
-#include "issue_request.h" /* issue_Drequest */
 #include "node_func.h" /* find_nodebyname */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "../lib/Libnet/lib_net.h" /* socket_read_flush */
@@ -745,7 +744,8 @@ int kill_job_on_mom(
       strcpy(preq->rq_ind.rq_signal.rq_signame, "SIGKILL");
       
       unlock_node(pnode, __func__, NULL, 0);
-      rc = issue_Drequest(conn, preq, release_req, 0);
+      rc = issue_Drequest(conn, preq);
+      free_br(preq);
       lock_node(pnode, __func__, NULL, 0);
       }
     }
