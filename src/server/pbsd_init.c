@@ -1815,7 +1815,7 @@ int cleanup_recovered_arrays()
 
     lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
      
-    if ((pjob = svr_find_job(pa->ai_qs.parent_id)) != NULL)
+    if ((pjob = svr_find_job(pa->ai_qs.parent_id, FALSE)) != NULL)
       {
       job_template_exists = TRUE;
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
@@ -1824,7 +1824,7 @@ int cleanup_recovered_arrays()
     /* if no jobs were recovered, delete this array */
     if (pa->jobs_recovered == 0)
       {
-      if ((pjob = svr_find_job(pa->ai_qs.parent_id)) != NULL)
+      if ((pjob = svr_find_job(pa->ai_qs.parent_id, FALSE)) != NULL)
         svr_job_purge(pjob);
 
       array_delete(pa);
@@ -1855,7 +1855,7 @@ int cleanup_recovered_arrays()
           {
           if (pa->job_ids[i] != NULL)
             {
-            if ((pjob = svr_find_job(pa->job_ids[i])) != NULL)
+            if ((pjob = svr_find_job(pa->job_ids[i], FALSE)) != NULL)
               {
               unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
               svr_job_purge(pjob);
@@ -2377,7 +2377,7 @@ int pbsd_init_job(
               job_id, job_atr_hold, job_exit_status);
           
           unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-          pjob = svr_find_job(job_id);
+          pjob = svr_find_job(job_id, FALSE);
           }
          
         }
@@ -2746,7 +2746,7 @@ void resume_net_move(
 
   if (jobid != NULL)
     {
-    pjob = svr_find_job(jobid);
+    pjob = svr_find_job(jobid, FALSE);
   
     net_move(pjob, 0);
     

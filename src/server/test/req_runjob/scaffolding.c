@@ -110,8 +110,12 @@ char *PAddrToString(pbs_net_t *Addr)
 
 struct pbsnode *find_nodebyname(char *nodename)
   {
-  fprintf(stderr, "The call to find_nodebyname to be mocked!!\n");
-  exit(1);
+  static struct pbsnode pnode;
+
+  if (!strcmp("bob", nodename))
+    return(&pnode);
+  else
+    return(NULL);
   }
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
@@ -210,10 +214,12 @@ void account_jobstr(job *pjob)
   exit(1);
   }
 
-int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
+int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mutex)
   {
-  fprintf(stderr, "The call to svr_setjobstate to be mocked!!\n");
-  exit(1);
+  pjob->ji_qs.ji_state    = newstate;
+  pjob->ji_qs.ji_substate = newsubstate;
+
+  return(0);
   }
 
 resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
@@ -222,7 +228,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *svr_find_job(char *jobid)
+job *svr_find_job(char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -300,4 +306,29 @@ int get_batch_request_id(
 
   {
   return(0);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int split_job(job *pjob)
+  {
+  return(0);
+  }
+
+int kill_job_on_mom(char *jobid, struct pbsnode *pnode)
+  {
+  return(0);
+  }
+
+int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+batch_request *duplicate_request(struct batch_request *preq)
+  {
+  return(NULL);
   }

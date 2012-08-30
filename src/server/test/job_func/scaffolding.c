@@ -89,8 +89,15 @@ ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
-  fprintf(stderr, "The call to clear_attr needs to be mocked!!\n");
-  exit(1);
+  memset(pattr, 0, sizeof(pbs_attribute));
+
+  pattr->at_type = pdef->at_type;
+
+  if ((pattr->at_type == ATR_TYPE_RESC) ||
+      (pattr->at_type == ATR_TYPE_LIST))
+    {
+    CLEAR_HEAD(pattr->at_val.at_list);
+    }
   }
 
 pbs_net_t get_hostaddr(int *local_errno, char *hostname)
@@ -353,14 +360,80 @@ void change_value_hash(hash_table_t *ht, char *key, int new_value)
 
 int lock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
   {
-  fprintf(stderr, "The call to lock_queue needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
+
+
+size_t need_to_grow(
+
+  dynamic_string *ds,
+  const char     *to_check)
+
+  {
+  size_t to_add = strlen(to_check) + 1;
+  size_t to_grow = 0;
+
+  if (ds->size < ds->used + to_add)
+    {
+    to_grow = to_add + ds->size;
+
+    if (to_grow < (ds->size * 4))
+      to_grow = ds->size * 4;
+    }
+
+  return(to_grow);
+  } /* END need_to_grow() */
+
+
+
+
+int resize_if_needed(
+
+  dynamic_string *ds,
+  const char     *to_check)
+
+  {
+  size_t  new_size = need_to_grow(ds, to_check);
+  size_t  difference;
+  char   *tmp;
+
+  if (new_size > 0)
+    {
+    /* need to resize */
+    difference = new_size - ds->size;
+
+    if ((tmp = realloc(ds->str, new_size)) == NULL)
+      return(-1);
+
+    ds->str = tmp;
+    /* zero out the new space as well */
+    memset(ds->str + ds->size, 0, difference);
+    ds->size = new_size;
+    }
+
+  return(PBSE_NONE);
+  } /* END resize_if_needed() */
 
 int append_dynamic_string(dynamic_string *ds, const char *to_append)
   {
-  fprintf(stderr, "The call to append_dynamic_string needs to be mocked!!\n");
-  exit(1);
+  int len = strlen(to_append);
+  int add_one = FALSE;
+  int offset = ds->used;
+
+  if (ds->used == 0)
+    add_one = TRUE;
+  else
+    offset -= 1;
+
+  resize_if_needed(ds, to_append);
+  strcat(ds->str + offset, to_append);
+    
+  ds->used += len;
+
+  if (add_one == TRUE)
+    ds->used += 1;
+
+  return(PBSE_NONE);
   }
 
 void clear_dynamic_string(dynamic_string *ds)
@@ -371,15 +444,41 @@ void clear_dynamic_string(dynamic_string *ds)
 
 dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
-  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
-  exit(1);
+  dynamic_string *ds = calloc(1, sizeof(dynamic_string));
+
+  if (ds == NULL)
+    return(ds);
+
+  if (initial_size > 0)
+    ds->size = initial_size;
+  else
+    ds->size = DS_INITIAL_SIZE;
+    
+  ds->str = calloc(1, ds->size);
+
+  if (ds->str == NULL)
+    {
+    free(ds);
+    return(NULL);
+    }
+    
+  /* initialize empty str */
+  ds->used = 0;
+
+  /* add the string if it exists */
+  if (str != NULL)
+    {
+    if (append_dynamic_string(ds,str) != PBSE_NONE)
+      {
+      free_dynamic_string(ds);
+      return(NULL);
+      }
+    }
+
+  return(ds);
   }
 
-void free_dynamic_string(dynamic_string *ds)
-  {
-  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
-  exit(1);
-  }
+void free_dynamic_string(dynamic_string *ds) {}
 
 int get_svr_attr_l(int index, long *l)
   {
@@ -398,8 +497,7 @@ int get_svr_attr_str(int index, char **str)
 
 int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
   {
-  fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 struct pbs_queue *lock_queue_with_job_held(
@@ -461,4 +559,105 @@ int remove_alps_reservation(
 
   {
   return(0);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int  decrement_queued_jobs(char *user_name)
+  {
+  return(0);
+  }
+
+int set_str(
+    
+  pbs_attribute *attr,
+  pbs_attribute *new,
+  enum batch_op  op)
+
+  {
+  char *new_value;
+  char *p;
+  size_t nsize;
+
+  nsize = strlen(new->at_val.at_str) + 1; /* length of new string */
+
+  if ((op == INCR) && (attr->at_val.at_str == NULL))
+    op = SET; /* no current string, change INCR to SET */
+
+  switch (op)
+    {
+
+    case SET: /* set is replace old string with new */
+
+      if ((new_value = calloc(1, nsize)) == NULL)
+        return (PBSE_SYSTEM);
+
+      if (attr->at_val.at_str)
+        (void)free(attr->at_val.at_str);
+      attr->at_val.at_str = new_value;
+
+      (void)strcpy(attr->at_val.at_str, new->at_val.at_str);
+
+      break;
+
+    case INCR: /* INCR is concatenate new to old string */
+
+      nsize += strlen(attr->at_val.at_str);
+      new_value = calloc(1, nsize + 1);
+
+      if (new_value == NULL)
+        return (PBSE_SYSTEM);
+
+      strcat(new_value, attr->at_val.at_str);
+      strcat(new_value, new->at_val.at_str);
+
+      free(attr->at_val.at_str);
+      attr->at_val.at_str = new_value;
+
+      break;
+
+    case DECR: /* DECR is remove substring if match, start at end */
+
+      if (attr->at_val.at_str == NULL)
+        break;
+
+      if (--nsize == 0)
+        break;
+
+      p = attr->at_val.at_str + strlen(attr->at_val.at_str) - nsize;
+
+      while (p >= attr->at_val.at_str)
+        {
+        if (strncmp(p, new->at_val.at_str, (int)nsize) == 0)
+          {
+          do
+            {
+            *p = *(p + nsize);
+            }
+          while (*p++);
+          }
+
+        p--;
+        }
+
+      break;
+
+    default:
+      return (PBSE_INTERNAL);
+    }
+
+  if ((attr->at_val.at_str != (char *)0) && (*attr->at_val.at_str != '\0'))
+    attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+  else
+    attr->at_flags &= ~ATR_VFLAG_SET;
+
+  return (0);
   }

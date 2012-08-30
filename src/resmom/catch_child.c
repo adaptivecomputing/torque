@@ -65,6 +65,7 @@ extern char  *path_aux;
 
 extern int   multi_mom;
 extern int   pbs_rm_port;
+extern int   is_login_node;
 
 extern int   LOGLEVEL;
 
@@ -873,11 +874,24 @@ int run_epilogues(
 
 
 int send_job_status(
-    job *pjob)
+    
+  job *pjob)
+
   {
-  int rc = PBSE_NONE;
-  int sock = -1;
+  int              rc = PBSE_NONE;
+  int              sock = -1;
   struct tcp_chan *chan = NULL;
+  char             jobid_to_send[PBS_MAXSVRJOBID + 1];
+  char            *dash;
+  char            *send_ptr = pjob->ji_qs.ji_jobid;
+
+  if ((dash = strchr(pjob->ji_qs.ji_jobid, '-')) != NULL)
+    {
+    *dash = '\0';
+    snprintf(jobid_to_send, sizeof(jobid_to_send), "%s%s", pjob->ji_qs.ji_jobid, dash + 2);
+    *dash = '-';
+    send_ptr = jobid_to_send;
+    }
 
   if ((sock = mom_open_socket_to_jobs_server(pjob, __func__, preobit_reply)) >= 0)
     {
@@ -889,7 +903,7 @@ int send_job_status(
       {
       rc = PBSE_SYSTEM;
       }
-    else if ((rc = encode_DIS_Status(chan, pjob->ji_qs.ji_jobid, NULL)) != PBSE_NONE)
+    else if ((rc = encode_DIS_Status(chan, send_ptr, NULL)) != PBSE_NONE)
       {
       rc = PBSE_SYSTEM;
       }
@@ -908,11 +922,13 @@ int send_job_status(
     {
     if ((errno == EINPROGRESS) || (errno == ETIMEDOUT) || (errno == EINTR))
       sprintf(log_buffer, "connect to server unsuccessful after 5 seconds - will retry");
+
     set_mom_server_down(pjob->ji_qs.ji_un.ji_momt.ji_svraddr);
     rc = PBSE_CONNECT;
     }
-  return rc;
-  }
+
+  return(rc);
+  } /* END send_job_status() */
 
 
 
@@ -1084,7 +1100,6 @@ void *preobit_reply(
   struct batch_request *preq;
 
   struct brp_status    *pstatus;
-  svrattrl             *sattrl;
   int                   deletejob = 0;
 
   char                 *path_epiloguserjob;
@@ -1216,31 +1231,6 @@ void *preobit_reply(
         break;
         }
 
-      /* determine if job has exechost set - if set, and task 0 host is X ... */
-
-      sattrl = (svrattrl *)GET_NEXT(pstatus->brp_attr);
-
-      while (sattrl != NULL)
-        {
-        if (!strcmp(sattrl->al_name, ATTR_exechost))
-          {
-          if (strncmp(
-                sattrl->al_value,
-                pjob->ji_hosts[0].hn_host,
-                strlen(pjob->ji_hosts[0].hn_host)))
-            {
-            /* the job was re-run elsewhere */
-
-            sprintf(log_buffer, "first host DOES NOT match me: %s != %s",
-                    sattrl->al_value, pjob->ji_hosts[0].hn_host);
-
-            deletejob = 1;
-            }
-          break;
-          }
-
-        sattrl = (svrattrl *)GET_NEXT(sattrl->al_link);
-        }  /* END while (sattrl != NULL) */
       break;
 
     case - 1:

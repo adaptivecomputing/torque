@@ -477,7 +477,7 @@ int job_abt(
         if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
           {
           depend_on_term(pjob);
-          pjob = svr_find_job(job_id);
+          pjob = svr_find_job(job_id, TRUE);
           }
         
         /* update internal array bookeeping values */
@@ -496,7 +496,7 @@ int job_abt(
                 job_id, job_atr_hold, job_exit_status);
             
             unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-            pjob = svr_find_job(job_id);
+            pjob = svr_find_job(job_id, TRUE);
             }
           }
       
@@ -533,7 +533,7 @@ int job_abt(
       {
       strcpy(job_id, pjob->ji_qs.ji_jobid);
       depend_on_term(pjob);
-      pjob = svr_find_job(job_id);
+      pjob = svr_find_job(job_id, TRUE);
       }
 
     /* update internal array bookeeping values */
@@ -552,7 +552,7 @@ int job_abt(
             job_id, job_atr_hold, job_exit_status);
         
         unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-        pjob = svr_find_job(job_id);
+        pjob = svr_find_job(job_id, TRUE);
         }
       }
 
@@ -702,6 +702,18 @@ void job_free(
     log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
     }
 
+  if (pj->ji_cray_clone != NULL)
+    {
+    lock_ji_mutex(pj->ji_cray_clone, __func__, NULL, 0);
+    job_free(pj->ji_cray_clone, TRUE);
+    }
+
+  if (pj->ji_external_clone != NULL)
+    {
+    lock_ji_mutex(pj->ji_external_clone, __func__, NULL, 0);
+    job_free(pj->ji_external_clone, TRUE);
+    }
+
   if (pj->ji_qs.ji_state != JOB_STATE_TRANSIT)
     decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
 
@@ -747,6 +759,49 @@ void job_free(
 
   return;
   }  /* END job_free() */
+
+
+
+job *copy_job(
+
+  job       *parent)
+
+  {
+  job           *pnewjob;
+
+  int            i;
+
+  if ((pnewjob = job_alloc()) == NULL)
+    {
+    log_err(errno, __func__, "no memory");
+
+    return(NULL);
+    }
+
+  job_init_wattr(pnewjob);
+
+  /* new job structure is allocated,
+     now we need to copy the old job, but modify based on taskid */
+  CLEAR_HEAD(pnewjob->ji_rejectdest);
+  pnewjob->ji_modified = 1;   /* struct changed, needs to be saved */
+
+  /* copy the fixed size quick save information */
+  memcpy(&pnewjob->ji_qs, &parent->ji_qs, sizeof(struct jobfix));
+
+  /* copy job attributes. some of these are going to have to be modified */
+  for (i = 0; i < JOB_ATR_LAST; i++)
+    {
+    if (parent->ji_wattr[i].at_flags & ATR_VFLAG_SET)
+      {
+      job_attr_def[i].at_set(
+        &(pnewjob->ji_wattr[i]),
+        &(parent->ji_wattr[i]),
+        SET);
+      }
+    }
+
+  return(pnewjob);
+  } /* END copy_job() */
 
 
 
@@ -1038,7 +1093,7 @@ void *job_clone_wt(
     }
 
   /* don't call get_jobs_array because the template job isn't part of the array */
-  if (((template_job = svr_find_job(jobid)) == NULL) ||
+  if (((template_job = svr_find_job(jobid, TRUE)) == NULL) ||
       ((pa = get_jobs_array(&template_job)) == NULL))
     {
     free(jobid);
@@ -1131,7 +1186,7 @@ void *job_clone_wt(
     
     actual_job_count++;
     
-    if ((pjob = svr_find_job(pa->job_ids[i])) == NULL)
+    if ((pjob = svr_find_job(pa->job_ids[i], TRUE)) == NULL)
       {
       free(pa->job_ids[i]);
       pa->job_ids[i] = NULL;
@@ -2024,14 +2079,20 @@ char *get_correct_jobname(
   return(correct);
   } /* END get_correct_jobname() */
 
+
+
+
+
 /*
  * Searches the array passed in for the job_id
+ * @parent svr_find_job()
  */
 
 job *find_job_by_array(
     
   struct all_jobs *aj,
-  char *job_id)
+  char            *job_id,
+  int              get_subjob)
 
   {
   job *pj = NULL;
@@ -2050,6 +2111,16 @@ job *find_job_by_array(
   
   if (pj != NULL)
     {
+    if (get_subjob == TRUE)
+      {
+      if (pj->ji_cray_clone != NULL)
+        {
+        pj = pj->ji_cray_clone;
+        unlock_ji_mutex(pj->ji_parent_job, __func__, NULL, LOGLEVEL);
+        lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
+        }
+      }
+
     if (pj->ji_being_recycled == TRUE)
       {
       unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
@@ -2068,25 +2139,43 @@ job *find_job_by_array(
  *
  * Search list of all server jobs for one with same job id
  * Return NULL if not found or pointer to job struct if found
+ * @param jobid - get the job whose jobid matches jobid
+ * @param get_subjob - whether or not we should return the sub
+ * job (for heterogeneous jobs) if there is one
  */
 
 job *svr_find_job(
 
-  char *jobid)
+  char *jobid,      /* I */
+  int   get_subjob) /* I */
 
   {
   char *at;
   char *comp;
   int   different = FALSE;
+  char *dash = NULL;
+  char  without_dash[PBS_MAXSVRJOBID + 1];
 
   job  *pj = NULL;
-
 
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, jobid);
 
-  if ((at = strchr(jobid, (int)'@')) != NULL)
-    * at = '\0'; /* strip off @server_name */
+  if ((at = strchr(jobid, '@')) != NULL)
+    *at = '\0'; /* strip off @server_name */
+
+  /* jobid-0.server indicates the external sub-job of a heterogeneous
+   * job. For this case we want to get jobid.server, find that, and 
+   * the get the external sub-job */
+  if (get_subjob == TRUE)
+    {
+    if ((dash = strchr(jobid, '-')) != NULL)
+      {
+      *dash = '\0';
+      snprintf(without_dash, sizeof(without_dash), "%s%s", jobid, dash + 2);
+      jobid = without_dash;
+      }
+    }
 
   if ((is_svr_attr_set(SRV_ATR_display_job_server_suffix)) ||
       (is_svr_attr_set(SRV_ATR_job_suffix_alias)))
@@ -2104,7 +2193,10 @@ job *svr_find_job(
 
   if (strstr(jobid,"[]") == NULL)
     {
-    pj = find_job_by_array(&alljobs, comp);
+    /* if we're searching for the external we want find_job_by_array to 
+     * return the parent, but if we're searching for the cray subjob then
+     * we want find_job_by_array to return the sub job */
+    pj = find_job_by_array(&alljobs, comp, (dash != NULL) ? FALSE : get_subjob);
     }
 
   /* when remotely routing jobs, they are removed from the 
@@ -2112,10 +2204,41 @@ job *svr_find_job(
    * Attempt to find them there if NULL
    * OR it's an array, try to find the job */
   if (pj == NULL)
-    pj = find_job_by_array(&array_summary, comp);
+    {
+    /* see the comment on the above call to find_job_by_array() */
+    pj = find_job_by_array(&array_summary, comp, (dash != NULL) ? FALSE : get_subjob);
+    }
 
   if (at)
     *at = '@'; /* restore @server_name */
+
+  if ((get_subjob == TRUE) &&
+      (pj != NULL))
+    {
+    if (dash != NULL)
+      {
+      *dash = '-';
+      
+      if (pj->ji_external_clone != NULL)
+        {
+        pj = pj->ji_external_clone;
+        
+        lock_ji_mutex(pj, __func__, NULL, 0);
+        unlock_ji_mutex(pj->ji_parent_job, __func__, NULL, 0);
+
+        if (pj->ji_being_recycled == TRUE)
+          {
+          unlock_ji_mutex(pj, __func__, NULL, 0);
+          pj = NULL;
+          }
+        }
+      else
+        {
+        unlock_ji_mutex(pj, __func__, NULL, 0);
+        pj = NULL;
+        }
+      }
+    }
 
   if (different)
     free(comp);
@@ -2568,7 +2691,7 @@ job_array *get_jobs_array(
 
       lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
       
-      if ((pjob = svr_find_job(jobid)) == NULL)
+      if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
         {
         unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
         pa = NULL;
@@ -2594,6 +2717,219 @@ pbs_queue *get_jobs_queue(
 
   return(pque);
   } /* END get_jobs_queue() */
+
+
+
+
+int hostname_in_externals(
+
+  char *hostname,
+  char *externals)
+
+  {
+  char *ptr = strstr(externals, hostname);
+  int   found = FALSE;
+  char *end_word;
+
+  if (ptr != NULL)
+    {
+    end_word = ptr + strlen(hostname);
+
+    if ((ptr > externals) &&
+        (*(ptr - 1) != '+'))
+      found = FALSE;
+    else if ((*end_word != '\0') &&
+             (*end_word != '+'))
+      found = FALSE;
+    else
+      found = TRUE;
+    }
+
+  return(found);
+  } /* END hostname_in_externals() */
+
+
+
+
+int fix_external_exec_hosts(
+
+  job *pjob) /* the external sub-job */
+
+  {
+  dynamic_string *external_execs;
+  char           *exec_host = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+  char           *externals = pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str;
+  char           *exec_ptr;
+  char           *plus;
+  char           *slash;
+
+  if ((exec_host == NULL) ||
+      (externals == NULL))
+    return(-2);
+
+  /* wipe out the current destination */
+  pjob->ji_qs.ji_destin[0] = '\0';
+
+  external_execs = get_dynamic_string(-1, NULL);
+  exec_ptr = exec_host;
+
+  while (exec_ptr != NULL)
+    {
+    /* remove the extra parts after the hostname and get the point we'll advance to.
+     * exec_host strings are in the format hostname/index[hostname/index[+...]] */
+    if ((plus = strchr(exec_ptr, '+')) != NULL)
+      {
+      *plus = '\0';
+      plus++;
+      }
+
+    if ((slash = strchr(exec_ptr, '/')) != NULL)
+      *slash = '\0';
+
+    /* if we find a match, copy in that exec host entry */
+    if (hostname_in_externals(exec_ptr, externals) == TRUE)
+      {
+      /* capture the first external as my mother superior */
+      if (pjob->ji_qs.ji_destin[0] == '\0')
+        snprintf(pjob->ji_qs.ji_destin, sizeof(pjob->ji_qs.ji_destin), "%s", exec_ptr);
+
+      if (slash != NULL)
+        *slash = '/';
+
+      /* delimit with + */
+      if (external_execs->used != 0)
+        append_dynamic_string(external_execs, "+");
+
+      append_dynamic_string(external_execs, exec_ptr);
+      }
+
+    exec_ptr = plus;
+    }
+
+  /* also remove the login attributes */
+  if (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL)
+    {
+    free(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str = NULL;
+    pjob->ji_wattr[JOB_ATR_login_node_id].at_flags &= ~ATR_VFLAG_SET;
+    }
+
+  if (pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str != NULL)
+    {
+    free(pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = NULL;
+    pjob->ji_wattr[JOB_ATR_login_prop].at_flags &= ~ATR_VFLAG_SET;
+    }
+
+  free(exec_host);
+  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(external_execs->str);
+
+  free_dynamic_string(external_execs);
+
+  return(PBSE_NONE);
+  } /* END fix_external_exec_hosts() */
+
+
+
+
+int fix_cray_exec_hosts(
+
+  job *pjob)
+
+  {
+  char *external = pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str;
+  char *exec = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+  char *new_exec = calloc(1, strlen(exec) + 1);
+  char *exec_ptr = exec;
+  char *plus;
+  char *slash;
+
+  while (exec_ptr != NULL)
+    {
+    if ((plus = strchr(exec_ptr, '+')) != NULL)
+      {
+      *plus = '\0';
+      plus++;
+      }
+
+    if ((slash = strchr(exec_ptr, '/')) != NULL)
+      *slash = '\0';
+
+    /* if the hostname isn't in the externals, copy it in */
+    if (hostname_in_externals(exec_ptr, external) == FALSE)
+      {
+      if (slash != NULL)
+        *slash = '/';
+
+      if (*new_exec != '\0')
+        strcat(new_exec, "+");
+
+      strcat(new_exec, exec_ptr);
+      }
+
+    exec_ptr = plus;
+    }
+
+  free(exec);
+  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = new_exec;
+
+  return(PBSE_NONE);
+  } /* END fix_cray_exec_hosts() */
+
+
+
+
+int change_external_job_name(
+
+  job *pjob)
+
+  {
+  char  tmp_jobid[PBS_MAXSVRJOBID + 1];
+  char *dot = strchr(pjob->ji_qs.ji_jobid, '.');
+
+  if (dot != NULL)
+    *dot = '\0';
+
+  snprintf(tmp_jobid, sizeof(tmp_jobid), "%s-0.%s",
+    pjob->ji_qs.ji_jobid, dot + 1);
+
+  strcpy(pjob->ji_qs.ji_jobid, tmp_jobid);
+
+  return(PBSE_NONE);
+  } /* END change_external_job_name() */
+
+
+
+
+int split_job(
+
+  job *pjob)
+
+  {
+  job            *external;
+  job            *cray;
+
+  if (pjob->ji_external_clone == NULL)
+    {
+    external = copy_job(pjob);
+    fix_external_exec_hosts(external);
+    change_external_job_name(external);
+    external->ji_parent_job = pjob;
+    pjob->ji_external_clone = external;
+    unlock_ji_mutex(external, __func__, NULL, 0);
+    }
+
+  if (pjob->ji_cray_clone == NULL)
+    {
+    cray = copy_job(pjob);
+    fix_cray_exec_hosts(cray);
+    cray->ji_parent_job     = pjob;
+    pjob->ji_cray_clone     = cray;
+    unlock_ji_mutex(cray, __func__, NULL, 0);
+    }
+
+  return(PBSE_NONE);
+  } /* END split_job() */
 
 
 

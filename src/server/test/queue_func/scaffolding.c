@@ -96,7 +96,7 @@ int get_svr_attr_str(int index, char **str)
   return(0);
   }
 
-job *svr_find_job(char *jobid)
+job *svr_find_job(char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
   exit(1);
@@ -108,6 +108,11 @@ int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   }
 
 int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
+  {
+  return(0);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }

@@ -2156,7 +2156,7 @@ int is_orphaned(
   return(1);
   }
 
-job *svr_find_job(char *jobid)
+job *svr_find_job(char *jobid, int get_subjob)
   {
   static struct job pjob;
   static int    i = 0;
@@ -2263,6 +2263,11 @@ int enqueue_threadpool_request(
   void *(*func)(void *),
   void *arg)
 
+  {
+  return(0);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }

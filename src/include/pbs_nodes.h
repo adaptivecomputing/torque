@@ -184,6 +184,7 @@ typedef struct node_job_add_info
   char                      node_name[PBS_MAXNODENAME + 1];
   int                       ppn_needed;
   int                       gpu_needed;
+  int                       is_external;
   struct node_job_add_info *next;
   } node_job_add_info;
 
@@ -345,6 +346,7 @@ int             insert_node(all_nodes *,struct pbsnode *);
 int             remove_node(all_nodes *,struct pbsnode *);
 struct pbsnode *next_node(all_nodes *,struct pbsnode *,node_iterator *);
 struct pbsnode *next_host(all_nodes *,int *,struct pbsnode *);
+int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
 
 
 #define HELLO_RESEND_WAIT_TIME 10
@@ -497,6 +499,13 @@ enum nodeattr
 
 
 
+enum node_types
+  {
+  ND_TYPE_CRAY,
+  ND_TYPE_EXTERNAL,
+  ND_TYPE_LOGIN
+  };
+
 
 typedef struct node_check_info
   {
@@ -513,6 +522,7 @@ typedef struct node_check_info
 
 
 extern all_nodes allnodes; 
+extern struct pbsnode *alps_reporter;
 
 extern int    svr_totnodes;  /* number of nodes (hosts) */
 extern int    svr_tsnodes;  /* number of timeshared nodes */
@@ -525,6 +535,7 @@ extern int update_nodes_file(struct pbsnode *);
 extern void bad_node_warning(pbs_net_t, struct pbsnode *);
 
 struct pbsnode  *find_nodebyname(char *);
+struct pbsnode  *find_node_in_allnodes(all_nodes *an, char *nodename);
 int              create_partial_pbs_node(char *, unsigned long, int);
 struct pbssubn  *create_subnode(struct pbsnode *pnode);
 

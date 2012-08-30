@@ -31,6 +31,8 @@ char *path_nodenote_new;
 struct server server;
 int LOGLEVEL = 0;
 hello_container hellos;
+struct pbsnode reporter;
+struct pbsnode *alps_reporter = &reporter;
 
 
 
@@ -98,8 +100,26 @@ int enqueue_threadpool_request(void *(*func)(void *), void *arg)
 
 struct pbsnode *find_nodebyname(char *nodename)
   {
-  fprintf(stderr, "The call to find_nodebyname needs to be mocked!!\n");
-  exit(1);
+  static struct pbsnode bob;
+
+  memset(&bob, 0, sizeof(bob));
+
+  if (!strcmp(nodename, "bob"))
+    return(&bob);
+  else
+    return(NULL);
+  }
+
+struct pbsnode *find_node_in_allnodes(struct all_nodes *an, char *nodename)
+  {
+  static struct pbsnode cray;
+
+  memset(&cray, 0, sizeof(cray));
+
+  if (!strcmp(nodename, "cray"))
+    return(&cray);
+  else
+    return(NULL);
   }
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
@@ -234,7 +254,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *svr_find_job(char *jobid)
+job *svr_find_job(char *jobid, int get_subjob)
   {
   static job pjob;
 
@@ -286,28 +306,18 @@ void reinitialize_node_iterator(node_iterator *iter)
   }
 
 int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
-  { 
-  fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
-  exit(1);      
+  {
+  return(0);
   }        
 
 int lock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
-  { 
-  fprintf(stderr, "The call to lock_node needs to be mocked!!\n");
-  exit(1);                            
+  {
+  return(0);
   }        
 
-void socket_read_flush(int socket)
-  { 
-  fprintf(stderr, "The call to socket_read_flush needs to be mocked!!\n");
-  exit(1);                            
-  }        
+void socket_read_flush(int socket) {}        
 
-void close_conn(int sock,int has_mut)
-  { 
-  fprintf(stderr, "The call to close_conn needs to be mocked!!\n");
-  exit(1);                            
-  }
+void close_conn(int sock,int has_mut) {}
 
 int remove_hello(hello_container *hc, char *nodename)
   { 
@@ -421,4 +431,9 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int has_queue_mute
 void *pop_thing(resizable_array *ra)
   {
   return(NULL);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
   }

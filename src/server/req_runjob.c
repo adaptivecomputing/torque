@@ -174,6 +174,7 @@ char *DispatchNode[20];
 extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
 void poll_job_task(work_task *);
+int  kill_job_on_mom(char *jobid, struct pbsnode *pnode);
 
 
 /*
@@ -268,7 +269,7 @@ int req_runjob(
       unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       update_array_values(pa,job_state,aeRun,
           job_id, job_atr_hold, job_exit_status);
-      if ((pjob = svr_find_job(job_id)) == NULL)
+      if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
         {
         rc = PBSE_JOBNOTFOUND;
         req_reject(rc, 0, preq, NULL,
@@ -377,7 +378,7 @@ static void post_checkpointsend(
     return;
 
   code = preq->rq_reply.brp_code;
-  pjob = svr_find_job(preq->rq_extra);
+  pjob = svr_find_job(preq->rq_extra, FALSE);
 
   free(preq->rq_extra);
 
@@ -606,7 +607,7 @@ static void post_stagein(
     return;
 
   code = preq->rq_reply.brp_code;
-  pjob = svr_find_job(preq->rq_extra);
+  pjob = svr_find_job(preq->rq_extra, FALSE);
 
   free(preq->rq_extra);
 
@@ -1051,60 +1052,32 @@ int svr_startjob(
   }  /* END svr_startjob() */
 
 
-/* PATH
-    req_runjob()
- >    svr_startjob()
-        svr_strtjob2()
-          send_job()         - svr_movejob.c
-            svr_connect()
-            PBSD_queuejob()
-*/
 
 
-
-
-static int svr_strtjob2(
-
-  job                  **pjob_ptr, /* I */
-  struct batch_request  *preq)     /* I (modified - report status) */
+int send_job_to_mom(
+ 
+  job           **pjob_ptr,   /* M */
+  batch_request  *preq,       /* I */
+  job            *parent_job) /* I - for heterogeneous jobs only */
 
   {
   job             *pjob = *pjob_ptr;
   int              old_state;
   int              old_subst;
-  int              my_err = 0;
-  pbs_attribute   *pattr;
-  char             tmpLine[MAXLINE];
-  struct timeval   start_time;
-  struct timezone  tz;
   long             job_timeout = 0;
   long             tcp_timeout = 0;
   unsigned long    job_momaddr = -1;
   char             job_id[PBS_MAXSVRJOBID+1];
-  char            *mail_text = NULL;
+  int              my_err = 0;
+  int              external = FALSE;
+  char             tmpLine[MAXLINE];
+  char            *mail_text;
 
-  if (preq == NULL)
-    {
-    return(PBSE_BAD_PARAMETER);
-    }
+  if (parent_job != NULL)
+    external = pjob == parent_job->ji_external_clone;
 
   old_state = pjob->ji_qs.ji_state;
   old_subst = pjob->ji_qs.ji_substate;
-
-  pattr = &pjob->ji_wattr[JOB_ATR_start_count];
-
-  pattr->at_val.at_long++;
-  pattr->at_flags |= ATR_VFLAG_SET;
-
-  /* This marks the start of total run time from the server's perspective */
-  pattr = &pjob->ji_wattr[JOB_ATR_total_runtime];
-  if (gettimeofday(&start_time, &tz) == 0)
-    {
-    pattr->at_val.at_timeval.tv_sec = start_time.tv_sec;
-    pattr->at_val.at_timeval.tv_usec = start_time.tv_usec;
-    }
-
-  /* send the job to MOM */
 
   svr_setjobstate(pjob,JOB_STATE_RUNNING,JOB_SUBSTATE_PRERUN, FALSE);
 
@@ -1130,19 +1103,19 @@ static int svr_strtjob2(
     {
     /* SUCCESS */
     DIS_tcp_settimeout(tcp_timeout);
-    if ((pjob = svr_find_job(job_id)) != NULL)
+    
+    if (parent_job == NULL)
       {
-      *pjob_ptr = pjob;
+      if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
+        {
+        *pjob_ptr = pjob;
+
+        svr_mailowner(pjob, MAIL_BEGIN, MAIL_NORMAL, mail_text);
+        
+        if (mail_text != NULL)
+          free(mail_text);
+        }
       }
-
-    svr_mailowner(
-        pjob,
-        MAIL_BEGIN,
-        MAIL_NORMAL,
-        mail_text);
-
-    if (mail_text != NULL)
-      free(mail_text);
 
     return(PBSE_NONE);
     }
@@ -1150,10 +1123,20 @@ static int svr_strtjob2(
     {
     DIS_tcp_settimeout(tcp_timeout);
 
-    if ((pjob = svr_find_job(job_id)) != NULL)
+    if (parent_job == NULL)
+      pjob = svr_find_job(job_id, TRUE);
+    else
+      {
+      if (external == TRUE)
+        pjob = parent_job->ji_external_clone;
+      else
+        pjob = parent_job->ji_cray_clone;
+      }
+
+    if (pjob != NULL)
       {
       sprintf(tmpLine, "unable to run job, send to MOM '%lu' failed", job_momaddr);
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,tmpLine);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, tmpLine);
       *pjob_ptr = pjob;
       pjob->ji_qs.ji_destin[0] = '\0';
       
@@ -1165,6 +1148,164 @@ static int svr_strtjob2(
     
     return(my_err);
     }
+  } /* END send_job_to_mom() */
+
+
+
+
+/*
+ * kills the job on the mom and requeues the job
+ */
+int requeue_job(
+
+  job *pjob)
+
+  {
+  struct pbsnode *pnode = find_nodebyname(pjob->ji_qs.ji_destin);
+  int             retry = 0;
+  int             rc = -1;
+
+  if (pnode == NULL)
+    return(-1);
+
+  /* setting this makes it so that the obit will be ignored by pbs_server */
+  pjob->ji_qs.ji_un.ji_exect.ji_momaddr = 0;
+
+  while ((rc != PBSE_NONE) &&
+         (retry < 3))
+    {
+    rc = kill_job_on_mom(pjob->ji_qs.ji_jobid, pnode);
+    retry++;
+    }
+
+  /* set the job's state to queued */
+  svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
+
+  pjob->ji_qs.ji_destin[0] = '\0';
+
+  return(rc);
+  } /* END requeue_job() */
+
+
+
+int handle_heterogeneous_job_launch(
+
+  job           *pjob,
+  batch_request *preq)
+
+  {
+  job           *external_clone = pjob->ji_external_clone;
+  job           *cray_clone     = pjob->ji_cray_clone;
+  int            both_running   = FALSE;
+  int            rc             = PBSE_NONE;
+  batch_request *external_preq;
+  batch_request *cray_preq;
+  
+  unlock_ji_mutex(pjob, __func__, NULL, 0);
+  lock_ji_mutex(external_clone, __func__, NULL, 0);
+  lock_ji_mutex(cray_clone, __func__, NULL, 0);
+  
+  /* clone the batch requests to avoid double frees */
+  external_preq = duplicate_request(preq);
+  cray_preq     = duplicate_request(preq);
+  
+  /* client doesn't need a response from these */
+  external_preq->rq_noreply = TRUE;
+  cray_preq->rq_noreply     = TRUE;
+  
+  if ((rc = send_job_to_mom(&external_clone, external_preq, pjob)) == PBSE_NONE)
+    {
+    if ((rc = send_job_to_mom(&cray_clone, cray_preq, pjob)) != PBSE_NONE)
+      {
+      /* requeue the external job */
+      requeue_job(external_clone);
+      }
+    else
+      both_running = TRUE;
+    }
+  else
+    free_br(cray_preq);
+  
+  if (cray_clone != NULL)
+    unlock_ji_mutex(cray_clone, __func__, NULL, 0);
+  
+  if (external_clone != NULL)
+    unlock_ji_mutex(external_clone, __func__, NULL, 0);
+  
+  lock_ji_mutex(pjob, __func__, NULL, 0);
+  
+  if (both_running == TRUE)
+    {
+    svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_RUNNING, FALSE);
+    reply_ack(preq);
+    }
+  else
+    {
+    req_reject(rc, 0, preq, NULL, NULL);
+    }
+
+  return(rc);
+  } /* END handle_heterogenenous_job_launch() */
+
+
+
+
+/* PATH
+    req_runjob()
+ >    svr_startjob()
+        svr_strtjob2()
+          send_job()         - svr_movejob.c
+            svr_connect()
+            PBSD_queuejob()
+*/
+
+
+
+
+static int svr_strtjob2(
+
+  job                  **pjob_ptr, /* I */
+  struct batch_request  *preq)     /* I (modified - report status) */
+
+  {
+  job             *pjob = *pjob_ptr;
+  pbs_attribute   *pattr;
+  struct timeval   start_time;
+  struct timezone  tz;
+  int              rc = PBSE_NONE;
+  long             cray_enabled = FALSE;
+
+  pattr = &pjob->ji_wattr[JOB_ATR_start_time];
+
+  if ((pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET) == 0)
+    {
+    pattr->at_val.at_long = time(NULL);
+    pattr->at_flags |= ATR_VFLAG_SET;
+    }
+
+  pattr = &pjob->ji_wattr[JOB_ATR_start_count];
+
+  pattr->at_val.at_long++;
+  pattr->at_flags |= ATR_VFLAG_SET;
+
+  /* This marks the start of total run time from the server's perspective */
+  pattr = &pjob->ji_wattr[JOB_ATR_total_runtime];
+  if (gettimeofday(&start_time, &tz) == 0)
+    {
+    pattr->at_val.at_timeval.tv_sec = start_time.tv_sec;
+    pattr->at_val.at_timeval.tv_usec = start_time.tv_usec;
+    }
+
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
+  /* check if this is a special heterogeneous job */
+  if ((cray_enabled == TRUE) &&
+      (pjob->ji_external_clone != NULL))
+    rc = handle_heterogeneous_job_launch(pjob, preq);
+  else
+    rc = send_job_to_mom(&pjob, preq, NULL);
+
+  return(rc);
   }    /* END svr_strtjob2() */
 
 
@@ -1188,7 +1329,7 @@ void finish_sendmom(
   time_t     time_now = time(NULL);
   job *pjob;
 
-  if ((pjob = svr_find_job(job_id)) == NULL)
+  if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
     {
     req_reject(PBSE_JOBNOTFOUND, 0, preq, node_name, log_buf);
     return;
@@ -1344,7 +1485,7 @@ void finish_sendmom(
           /* update mom-based job status */
           unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
           stat_mom_job(job_id);
-          pjob = svr_find_job(job_id);
+          pjob = svr_find_job(job_id, TRUE);
           }
         else
           {
@@ -2008,7 +2149,17 @@ static int assign_hosts(
     
     free(tmp);
 
-    rc = set_job_exec_info(pjob, pjob->ji_qs.ji_destin);
+    if ((cray_enabled == TRUE) &&
+        (pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str != NULL))
+      {
+      split_job(pjob);
+      rc = set_job_exec_info(pjob->ji_external_clone, pjob->ji_external_clone->ji_qs.ji_destin);
+      rc = set_job_exec_info(pjob->ji_cray_clone, pjob->ji_qs.ji_destin);
+      }
+    else
+      {
+      rc = set_job_exec_info(pjob, pjob->ji_qs.ji_destin);
+      }
 
     if (rc != 0)
       {

@@ -18,6 +18,7 @@
 #include "mom_mach.h" /* startjob_rtn */
 #include "mom_func.h" /* var_table */
 
+int exec_with_exec;
 int is_login_node = 0;
 char *apbasil_protocol = NULL;
 char *apbasil_path = NULL;

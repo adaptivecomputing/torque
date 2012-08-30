@@ -4015,7 +4015,7 @@ int read_cluster_addresses(
       {
       AVL_list(okclients, &okclients_list, &list_len, &list_size);
       snprintf(log_buffer, sizeof(log_buffer),
-        "Successfully received the mom hiearchy file. My okclients list is '%s', and the hierarchy file is '%s'",
+        "Successfully received the mom hierarchy file. My okclients list is '%s', and the hierarchy file is '%s'",
         okclients_list, hierarchy_file->str);
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
 

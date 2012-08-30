@@ -133,7 +133,7 @@ int  req_locatejob(
   if ((at = strchr(preq->rq_ind.rq_locate, (int)'@')))
     * at = '\0';  /* strip off @server_name */
 
-  pjob = svr_find_job(preq->rq_ind.rq_locate);
+  pjob = svr_find_job(preq->rq_ind.rq_locate, FALSE);
 
   if (pjob)
     {

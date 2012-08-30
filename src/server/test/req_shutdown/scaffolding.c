@@ -77,7 +77,7 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
-job *svr_find_job(char *jobid)
+job *svr_find_job(char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -123,6 +123,11 @@ int get_batch_request_id(
 
   batch_request *preq)
 
+  {
+  return(0);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }

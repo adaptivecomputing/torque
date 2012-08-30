@@ -191,12 +191,17 @@ int is_svr_attr_set(int attr_index)
   return(0);
   }
 
-job *svr_find_job(char *name)
+job *svr_find_job(char *name, int get_subjob)
   {
   return(NULL);
   }
 
 int svr_job_purge(job *pjob)
+  {
+  return(0);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }

@@ -223,7 +223,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *svr_find_job(char *jobid)
+job *svr_find_job(char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -340,6 +340,21 @@ int lock_queue(
   char             *msg,
   int               logging)
 
+  {
+  return(0);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int  can_queue_new_job(char *user_name, job *pjob)
+  {
+  return(0);
+  }
+
+int  increment_queued_jobs(char *user_name, job *pjob)
   {
   return(0);
   }

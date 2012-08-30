@@ -182,6 +182,9 @@ struct pbsnode *create_alps_subnode(
   subnode->nd_ntype = NTYPE_CLUSTER;
   subnode->parent = parent;
 
+  /* add any properties to the subnodes */
+  copy_properties(subnode, parent);
+
   lock_node(subnode, __func__, NULL, 0);
     
   insert_node(&(parent->alps_subnodes), subnode);
@@ -475,7 +478,7 @@ int record_reservation(
     {
     if (sub_node->jobs != NULL)
       {
-      if ((pjob = svr_find_job(sub_node->jobs->jobid)) != NULL)
+      if ((pjob = svr_find_job(sub_node->jobs->jobid, TRUE)) != NULL)
         {
         pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
         pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;

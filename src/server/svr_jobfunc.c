@@ -401,7 +401,7 @@ int svr_enquejob(
       unlock_ji_mutex(pjcur, __func__, "7", LOGLEVEL);
       }
 
-    if ((pjob = svr_find_job(job_id)) == NULL)
+    if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
       {
       unlock_queue(pque, __func__, "array_template check lost job", LOGLEVEL);
       return(PBSE_JOBNOTFOUND);
@@ -452,7 +452,7 @@ int svr_enquejob(
       unlock_ji_mutex(pjcur, __func__, "12", LOGLEVEL);
       } /* end of while */
 
-    if ((pjob = svr_find_job(job_id)) == NULL)
+    if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
       {
       unlock_queue(pque, __func__, "array_template check lost job", LOGLEVEL);
       return(PBSE_JOBNOTFOUND);
@@ -602,7 +602,7 @@ int svr_dequejob(
 
   /* remove job from server's all job list and reduce server counts */
 
-  if ((pjob = svr_find_job(job_id)) == NULL)
+  if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     return(PBSE_JOBNOTFOUND);
 
 
@@ -698,7 +698,7 @@ int svr_dequejob(
       pque = find_queuebyname(queue_name);
       }
 
-    if ((pjob = svr_find_job(job_id)) == NULL)
+    if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
       return(PBSE_JOBNOTFOUND);
     }
 
@@ -2127,7 +2127,7 @@ void job_wait_over(
     return;
     }
 
-  pjob = svr_find_job(jobid);
+  pjob = svr_find_job(jobid, TRUE);
   free(jobid);
 
   if (pjob != NULL)

@@ -28,6 +28,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       information from the remaining list would still be returned.
       TRQ-1143.
 
+4.1.2
+  e - Add the ability to run a single job partially on CRAY hardware and partially
+      on hardware external to the CRAY in order to allow visualization of 
+      large simulations.
+
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations
   b - Fixed a deadlock with nodes in stream_eof after call to svr_connect.

@@ -218,7 +218,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   exit(1);
   }
 
-job *svr_find_job(char *jobid)
+job *svr_find_job(char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -288,6 +288,44 @@ batch_request *get_remove_batch_request(
 int get_batch_request_id(
 
   batch_request *preq)
+
+  {
+  return(0);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+struct pbsnode *find_nodebyname(
+
+  char *nodename) /* I */
+
+  {
+  return(NULL);
+  }
+
+int kill_job_on_mom(
+
+  char           *jobid,
+  struct pbsnode *pnode)
+
+  {
+  return(0);
+  }
+
+int unlock_node(
+    
+  struct pbsnode *the_node,
+  const char     *id,
+  char           *msg,
+  int             logging)
 
   {
   return(0);

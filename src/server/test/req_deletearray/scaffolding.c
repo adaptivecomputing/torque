@@ -140,7 +140,7 @@ int delete_whole_array(job_array *pa)
   exit(1);
   }
 
-job *svr_find_job(char *jobid)
+job *svr_find_job(char *jobid, int get_subjob)
   {
   return(NULL);
   }
@@ -165,6 +165,11 @@ int get_batch_request_id(
 
   batch_request *preq)
 
+  {
+  return(0);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }

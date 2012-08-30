@@ -11,6 +11,7 @@
 char *msg_err_malloc = "malloc failed";
 char *msg_routexceed = "Route queue lifetime exceeded";
 int svr_resc_size = 0;
+int LOGLEVEL = 0;
 resource_def *svr_resc_def;
 
 int svr_movejob(job *jobp, char *destination, struct batch_request *req)
@@ -95,8 +96,13 @@ int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg
   exit(1);
   }
 
-job *svr_find_job(char *jobid)
+job *svr_find_job(char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
   exit(1);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
   }

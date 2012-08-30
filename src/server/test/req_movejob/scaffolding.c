@@ -91,8 +91,13 @@ job *chk_job_request(char *jobid, struct batch_request *preq)
 
 job *svr_find_job(
 
-  char *jobid)
+  char *jobid, int get_subjob)
 
   {
   return(NULL);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
   }

@@ -598,7 +598,7 @@ int process_request(
         *dptr = '\0';
         }
       
-      if ((pjob = svr_find_job(request->rq_ind.rq_modify.rq_objname)) != (job *)0)
+      if ((pjob = svr_find_job(request->rq_ind.rq_modify.rq_objname, FALSE)) != (job *)0)
         {
         if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
           {
@@ -1025,7 +1025,7 @@ int close_quejob_by_jobid(
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, job_id);
     }
 
-  if ((pjob = svr_find_job(job_id)) == NULL)
+  if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     {
     rc = PBSE_JOBNOTFOUND;
     }

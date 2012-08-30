@@ -185,7 +185,7 @@ static void post_modify_req(
     {
     if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
       {
-      if ((pjob = svr_find_job(preq->rq_ind.rq_modify.rq_objname)) == NULL)
+      if ((pjob = svr_find_job(preq->rq_ind.rq_modify.rq_objname, FALSE)) == NULL)
         {
         req_reject(preq->rq_reply.brp_code, 0, preq, NULL, NULL);
         return;
@@ -245,7 +245,7 @@ void mom_cleanup_checkpoint_hold(
     return;
     }
 
-  pjob = svr_find_job(jobid);
+  pjob = svr_find_job(jobid, FALSE);
   if (pjob == NULL)
     {
     if (LOGLEVEL >= 3)
@@ -349,7 +349,7 @@ void chkpt_xfr_hold(
       (preq->rq_extra == NULL))
     return;
 
-  if ((pjob = svr_find_job(preq->rq_extra)) == NULL)
+  if ((pjob = svr_find_job(preq->rq_extra, FALSE)) == NULL)
     return;
 
   if (LOGLEVEL >= 7)
@@ -859,7 +859,7 @@ int modify_whole_array(
     if (pa->job_ids[i] == NULL)
       continue;
 
-    if ((pjob = svr_find_job(pa->job_ids[i])) == NULL)
+    if ((pjob = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
       {
       free(pa->job_ids[i]);
       pa->job_ids[i] = NULL;
@@ -1205,6 +1205,10 @@ int modify_job_attr(
 
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
+  else if (pjob->ji_parent_job != NULL)
+    {
+    allow_unkn = JOB_ATR_UNKN;
+    }
   else
     {
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 5");
@@ -1472,7 +1476,7 @@ void post_modify_arrayreq(
     {
     if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
       {
-      if ((pjob = svr_find_job(preq->rq_ind.rq_modify.rq_objname)) == NULL)
+      if ((pjob = svr_find_job(preq->rq_ind.rq_modify.rq_objname, FALSE)) == NULL)
         {
         parent_req->rq_refcount--;
 

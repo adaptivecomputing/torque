@@ -609,7 +609,7 @@ int req_quejob(
 
   /* does job already exist, check both old and new jobs */
 
-  if ((pj = svr_find_job(jid)) == NULL)
+  if ((pj = svr_find_job(jid, FALSE)) == NULL)
     {
     int  iter = -1;
 
@@ -949,7 +949,7 @@ int req_quejob(
         }
 
       /* make sure the job id doesn't already exist */
-      if ((tmpjob = svr_find_job(tmp_job_id)) != NULL)
+      if ((tmpjob = svr_find_job(tmp_job_id, FALSE)) != NULL)
         {
         unlock_ji_mutex(tmpjob, __func__, "3", LOGLEVEL);
 
@@ -1638,7 +1638,7 @@ int req_mvjobfile(
   pj = locate_new_job(preq->rq_conn, NULL);
 
   if (pj == NULL)
-    pj = svr_find_job(preq->rq_ind.rq_jobfile.rq_jobid);
+    pj = svr_find_job(preq->rq_ind.rq_jobfile.rq_jobid, FALSE);
 
   if ((preq->rq_fromsvr == 0) || (pj == NULL))
     {
@@ -1884,7 +1884,7 @@ int req_rdytocommit(
       strerror(errno));
     log_err(rc, __func__, log_buf);
 
-    if ((pj = svr_find_job(jobid)) != NULL)
+    if ((pj = svr_find_job(jobid, FALSE)) != NULL)
       svr_job_purge(pj);
 
     return(rc);

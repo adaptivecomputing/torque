@@ -7,6 +7,7 @@
 #include "pbs_nodes.h"
 #include "batch_request.h"
 
+int LOGLEVEL;
 
 int unlock_node(struct pbsnode *the_node, const char *method_name, char *msg, int logging)
   {
@@ -26,7 +27,7 @@ void free_resizable_array(
 
 job *svr_find_job(
 
-  char *job_id)
+  char *job_id, int get_subjob)
 
   {
   static int  count = 0;
@@ -453,3 +454,8 @@ int remove_hash(
   return(rc);
   } /* END remove_hash() */
 
+
+int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
