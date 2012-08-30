@@ -113,7 +113,6 @@ extern char *msg_jobrerun;
 extern void rel_resc(job *);
 
 extern job  *chk_job_request(char *, struct batch_request *);
-int          issue_signal(job **, char *, void(*)(batch_request *), void *);
 
 /*
  * post_rerun - handler for reply from mom on signal_job sent in req_rerunjob
@@ -121,16 +120,22 @@ int          issue_signal(job **, char *, void(*)(batch_request *), void *);
  * If mom rejected the signal for unknown jobid, then force local requeue.
  */
 
-void post_rerun(
+static void post_rerun(
 
-  batch_request *preq)
+  struct work_task *pwt)
 
   {
-  int   newstate;
-  int   newsub;
-  job  *pjob;
+  int  newstate;
+  int  newsub;
+  job *pjob;
 
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  struct batch_request *preq;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+
+  preq = get_remove_batch_request(pwt->wt_parm1);
+
+  free(pwt->wt_mutex);
+  free(pwt);
 
   if (preq == NULL)
     return;

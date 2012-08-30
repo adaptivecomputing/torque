@@ -52,7 +52,7 @@ extern int array_upgrade(job_array *, int, int, int *);
 extern char *get_correct_jobname(const char *jobid);
 extern int count_user_queued_jobs(pbs_queue *,char *);
 extern int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
-extern void post_modify_arrayreq(batch_request *preq);
+extern void post_modify_arrayreq(struct work_task *pwt);
 
 /* global data items used */
 
@@ -1502,7 +1502,7 @@ int modify_array_range(
               /* The array_req is freed in relay_to_mom (failure)
                * or in issue_Drequest (success) */
               
-              if ((rc = relay_to_mom(&pjob, array_req, NULL)))
+              if ((rc = relay_to_mom(&pjob, array_req, post_modify_arrayreq)))
                 {  
                 snprintf(log_buf,sizeof(log_buf),
                   "Unable to relay information to mom for job '%s'\n",
@@ -1513,8 +1513,6 @@ int modify_array_range(
                 
                 return(rc); /* unable to get to MOM */
                 }
-              else
-                post_modify_arrayreq(array_req);
               }
           
             unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
