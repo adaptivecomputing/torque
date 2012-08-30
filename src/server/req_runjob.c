@@ -1071,7 +1071,7 @@ int send_job_to_mom(
   int              my_err = 0;
   int              external = FALSE;
   char             tmpLine[MAXLINE];
-  char            *mail_text;
+  char            *mail_text = NULL;
 
   if (parent_job != NULL)
     external = pjob == parent_job->ji_external_clone;
