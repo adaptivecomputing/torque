@@ -2597,6 +2597,53 @@ void encode_job_used(
 
 
 
+/*
+ * This routine logs a comment on the parent job telling which subjob 
+ * exited with a non-zero exit status. It is only called when one job
+ * exited with an error and the second variable indicates if it was
+ * the cray subjob or the exterior sub-job.
+ *
+ * @param parent_job - the job that needs the comment added
+ * @param cray_subjob_exited_nonzero - TRUE if the cray subjob exited 
+ * with an error, or FALSE if the external subjob exited with an error.
+ * @param exit_status - the exit status in question
+ * @return PBSE_NONE on success or ENOMEM if you can't alloc memory
+ */
+
+int add_comment_to_parent(
+
+  job *parent_job,
+  int  cray_subjob_exited_nonzero,
+  int  exit_status)
+
+  {
+  char  comment_buf[MAXLINE*2];
+  char *comment;
+
+  if (cray_subjob_exited_nonzero == TRUE)
+    snprintf(comment_buf, sizeof(comment_buf),
+      "Job terminated because the cray sub-job exited with code '%d'",
+      exit_status);
+  else
+    snprintf(comment_buf, sizeof(comment_buf),
+      "Job terminated because the external sub-job exited with code '%d'",
+      exit_status);
+
+  if ((comment = strdup(comment_buf)) == NULL)
+    return(ENOMEM);
+
+  if (parent_job->ji_wattr[JOB_ATR_Comment].at_val.at_str != NULL)
+    free(parent_job->ji_wattr[JOB_ATR_Comment].at_val.at_str);
+
+  parent_job->ji_wattr[JOB_ATR_Comment].at_val.at_str = comment;
+  parent_job->ji_wattr[JOB_ATR_Comment].at_flags |= ATR_VFLAG_SET;
+
+  return(PBSE_NONE);
+  } /* END add_comment_to_parent() */
+
+
+
+
 int handle_subjob_exit_status(
 
   job *pjob)
@@ -2610,6 +2657,7 @@ int handle_subjob_exit_status(
   char            other_jobid[PBS_MAXSVRJOBID + 1];
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   struct pbsnode *pnode = NULL;
+  int             cray_exited_nonzero = FALSE;
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
 
@@ -2625,9 +2673,16 @@ int handle_subjob_exit_status(
     if (exit_status != 0)
       {
       if (parent_job->ji_cray_clone != pjob)
+        {
         other_subjob = parent_job->ji_cray_clone;
+        }
       else
+        {
+        cray_exited_nonzero = TRUE;
         other_subjob = parent_job->ji_external_clone;
+        }
+        
+      add_comment_to_parent(parent_job, cray_exited_nonzero, exit_status);
     
       unlock_ji_mutex(parent_job, __func__, NULL, 0);
       lock_ji_mutex(other_subjob, __func__, NULL, 0);

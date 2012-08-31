@@ -6559,15 +6559,15 @@ int tm_signal_request(
 int tm_obit_request(
   
   struct tcp_chan *chan,
-  job        *pjob,       /* I */
-  int         prev_error, /* I */
-  int         event,      /* I */
-  char       *cookie,     /* I */
-  int        *reply_ptr,  /* O */
-  int        *ret,        /* O */
-  tm_task_id  fromtask,   /* I */
-  hnodent    *phost,      /* M */
-  int         nodeid)     /* I */
+  job             *pjob,       /* I */
+  int              prev_error, /* I */
+  int              event,      /* I */
+  char            *cookie,     /* I */
+  int             *reply_ptr,  /* O */
+  int             *ret,        /* O */
+  tm_task_id       fromtask,   /* I */
+  hnodent         *phost,      /* M */
+  int              nodeid)     /* I */
  
   {
   int       taskid;
@@ -7470,16 +7470,16 @@ static int adoptSession(
   char  *cookie)
 
   {
-  job *pjob = NULL;
-  task *ptask = NULL;
-  unsigned short momport = 0;
+  job            *pjob = NULL;
+  task           *ptask = NULL;
+  unsigned short  momport = 0;
 
 #ifdef PENABLE_LINUX26_CPUSETS
-  unsigned int len;
+  unsigned int    len;
 
-  FILE *fp;
-  char  cpuset_path[MAXPATHLEN];
-  char  pid_str[MAXPATHLEN];
+  FILE           *fp;
+  char            cpuset_path[MAXPATHLEN];
+  char            pid_str[MAXPATHLEN];
 #endif
 
   /* extern  int next_sample_time; */
@@ -7579,13 +7579,14 @@ static int adoptSession(
 
   ptask->ti_qs.ti_status = TI_STATE_RUNNING;
 
-  (void)task_save(ptask);
+  task_save(ptask);
 
   /* Mark the job as running if we need to. This is copied from start_process() */
   if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
     {
     pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+
     if (multi_mom)
       {
       momport = pbs_rm_port;
@@ -7643,7 +7644,7 @@ static int adoptSession(
   log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
              pjob->ji_qs.ji_jobid, log_buffer);
 
-  return TM_OKAY;
+  return(TM_OKAY);
   }
 
 /*
