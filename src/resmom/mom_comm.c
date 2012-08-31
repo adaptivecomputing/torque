@@ -7031,9 +7031,9 @@ int tm_request(
   if ((command == TM_ADOPT_ALTID) || 
       (command == TM_ADOPT_JOBID))
     {
-    pid_t sid;
-    char *id = NULL;
-    int adoptStatus;
+    pid_t  sid;
+    char  *id = NULL;
+    int    adoptStatus;
  
     reply = TRUE;
  
@@ -7067,12 +7067,21 @@ int tm_request(
     /* Let the tm_adopt() call know if it was adopted or
        not. This is synchronous - doesn't use the event stuff.*/
  
-    ret = diswsi(chan, adoptStatus);
+    if ((ret = diswsi(chan, adoptStatus)) == DIS_SUCCESS)
+      ret = DIS_tcp_wflush(chan);
  
     if (ret != DIS_SUCCESS) 
       goto err;
- 
-    goto tm_req_finish;
+
+    DIS_tcp_cleanup(chan);
+  
+    if (jobid)
+      free(jobid);
+    
+    if (cookie)
+      free(cookie);
+
+    return(PBSE_NONE);  
     }
  
   /* verify the jobid is known and the cookie matches */
@@ -7391,7 +7400,7 @@ tm_req_finish:
   if (cookie)
     free(cookie);
   
-  return PBSE_NONE;
+  return(PBSE_NONE);
   
 err:
   

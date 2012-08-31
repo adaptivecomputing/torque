@@ -5518,7 +5518,7 @@ int do_tcp(
     {
     sprintf(log_buffer, "Can not allocate memory for socket buffer");
     log_err(errno, __func__, log_buffer);
-    return PBSE_MEM_MALLOC;
+    return(PBSE_MEM_MALLOC);
     }
 
   if ((rc = tcp_read_proto_version(chan, &proto, &version)) != DIS_SUCCESS)
