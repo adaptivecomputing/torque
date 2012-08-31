@@ -3845,7 +3845,16 @@ int is_compute_node(
   char           *plus;
 
   if ((colon = strchr(node_id, ':')) != NULL)
-    *colon = '\0';
+    {
+    if ((!strcmp(colon + 1, "external")) ||
+        (!strcmp(colon + 1, alps_reporter_feature)) || 
+        (!strcmp(colon + 1, alps_starter_feature)))
+      {
+      return(rc);
+      }
+    else
+      *colon = '\0';
+    }
   
   if ((plus = strchr(node_id, '+')) != NULL)
     *plus = '\0';
