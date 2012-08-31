@@ -247,6 +247,7 @@ int issue_signal(
   int                   rc;
   job                  *pjob = *pjob_ptr;
   struct batch_request *newreq;
+  char                  jobid[PBS_MAXSVRJOBID];
 
   /* build up a Signal Job batch request */
 
@@ -266,8 +267,16 @@ int issue_signal(
   /* The newreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
   rc = relay_to_mom(&pjob, newreq, NULL);
+
+
   if (rc == PBSE_NONE)
+    {
+    strcpy(jobid, pjob->ji_qs.ji_jobid);
+    unlock_ji_mutex(pjob, __func__, NULL, 0);
     func(newreq);
+
+    *pjob_ptr = svr_find_job(jobid, TRUE);
+    }
   else
     free_br(newreq);
 
