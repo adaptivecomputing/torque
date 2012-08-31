@@ -22,8 +22,6 @@ struct batch_request *setup_cpyfiles(struct batch_request *preq, job *pjob, char
 
 struct batch_request *cpy_stage(struct batch_request *preq, job *pjob, enum job_atr ati, int direction);
 
-int mom_comm(job *pjob, void (*func)(struct work_task *));
-
 void rel_resc(job *pjob);
 
 int check_if_checkpoint_restart_failed(job *pjob);
@@ -40,11 +38,7 @@ int handle_exited(job *pjob);
 
 int handle_complete_first_time(job *pjob);
 
-int handle_complete_second_time(job *pjob);
-
-void on_job_exit(struct work_task *ptask);
-
-void on_job_rerun(struct work_task *ptask);
+void on_job_rerun(batch_request *preq, char *jobid);
 
 /* static void wait_for_send(struct work_task *ptask); */
 

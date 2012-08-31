@@ -108,10 +108,13 @@
 #include "ji_mutex.h"
 
 
+
+int          issue_signal(job **, char *, void(*)(batch_request *), void *);
+
 /* Private Fuctions Local to this File */
 
 static int shutdown_checkpoint(job **);
-static void post_checkpoint(struct work_task *);
+static void post_checkpoint(batch_request *preq);
 static void rerun_or_kill(job *, char *text);
 
 /* Private Data Items */
@@ -394,12 +397,15 @@ static int shutdown_checkpoint(
 
   /* The phold is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  if (relay_to_mom(&pjob, phold, post_checkpoint) != 0)
+  if (relay_to_mom(&pjob, phold, NULL) != PBSE_NONE)
     {
     /* FAILURE */
+    free_br(phold);
 
     return(-1);
     }
+  else
+    post_checkpoint(phold);
 
   if (pjob != NULL)
     {
@@ -432,19 +438,12 @@ static int shutdown_checkpoint(
  * the job.
  */
 
-static void post_checkpoint(
+void post_checkpoint(
 
-  struct work_task *ptask)
+  batch_request *preq)
 
   {
-  job                  *pjob;
-
-  struct batch_request *preq;
-
-  preq = get_remove_batch_request((char *)ptask->wt_parm1);
-
-  free(ptask->wt_mutex);
-  free(ptask);
+  job *pjob;
 
   if (preq == NULL)
     return;
@@ -503,7 +502,7 @@ static void rerun_or_kill(
     {
     /* job is rerunable, mark it to be requeued */
 
-    issue_signal(&pjob, "SIGKILL", release_req, NULL);
+    issue_signal(&pjob, "SIGKILL", free_br, NULL);
 
     if (pjob != NULL)
       {

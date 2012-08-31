@@ -105,7 +105,7 @@
 
 /* Private Function local to this file */
 
-static void post_signal_req (struct work_task *);
+static void post_signal_req (batch_request *preq);
 
 /* Global Data Items: */
 
@@ -211,12 +211,14 @@ int req_signaljob(
     }
   /* The dup_req is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  else if ((rc = relay_to_mom(&pjob, dup_req, post_signal_req)) != 0)
+  else if ((rc = relay_to_mom(&pjob, dup_req, NULL)) != PBSE_NONE)
     {
+    free_br(dup_req);
     req_reject(rc, 0, preq, NULL, NULL);  /* unable to get to MOM */
     }
   else
     {
+    post_signal_req(dup_req);
     free_br(preq);
     }
 
@@ -238,7 +240,7 @@ int issue_signal(
 
   job  **pjob_ptr,
   char  *signame, /* name of the signal to send */
-  void  (*func)(struct work_task *),
+  void  (*func)(batch_request *),
   void  *extra) /* extra parameter to be stored in sig request */
 
   {
@@ -263,7 +265,11 @@ int issue_signal(
 
   /* The newreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  rc = relay_to_mom(&pjob, newreq, func);
+  rc = relay_to_mom(&pjob, newreq, NULL);
+  if (rc == PBSE_NONE)
+    func(newreq);
+  else
+    free_br(newreq);
 
   return(rc);
   }  /* END issue_signal() */
@@ -276,23 +282,15 @@ int issue_signal(
  * post_signal_req - complete a Signal Job Request (externally generated)
  */
 
-static void post_signal_req(
+void post_signal_req(
 
-  struct work_task *pwt)
+  batch_request *preq)
 
   {
   char                 *jobid;
   job                  *pjob;
 
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  struct batch_request *preq;
-
-  svr_disconnect(pwt->wt_event); /* disconnect from MOM */
-
-  preq = get_remove_batch_request((char *)pwt->wt_parm1);
- 
-  free(pwt->wt_mutex);
-  free(pwt);
 
   /* request has been handled elsewhere */
   if (preq == NULL)
