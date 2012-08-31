@@ -598,7 +598,7 @@ static void req_stat_job_step2(
 
   else if (type == tjstArray)
     {
-    job_array_index = 0;
+    job_array_index = -1;
     pjob = NULL;
     /* increment job_array_index until we find a non-null pointer or hit the end */
     while (++job_array_index < pa->ai_qs.array_size)

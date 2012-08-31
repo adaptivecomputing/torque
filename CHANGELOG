@@ -30,6 +30,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Make issue_Drequest wait for the reply and have functions continue processing
       immediately after instead of the added overhead of using the threadpool.
   c - tm_adopt() calls caused pbs_mom to crash. Fix this. TRQ-1210.
+  b - Array element 0 wasn't showing up in qstat -t output. TRQ-1155.
 
 4.1.2
   e - Add the ability to run a single job partially on CRAY hardware and partially
