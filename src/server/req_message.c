@@ -104,7 +104,7 @@
 
 /* Private Function local to this file */
 
-static void post_message_req(struct work_task *);
+void post_message_req(batch_request *preq);
 
 /* Global Data Items: */
 
@@ -152,10 +152,16 @@ void *req_messagejob(
   /* pass the request on to MOM */
   /* The dup_req is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  else if ((rc = relay_to_mom(&pjob, dup_req, post_message_req)) != 0)
+  else if ((rc = relay_to_mom(&pjob, dup_req, NULL)) != PBSE_NONE)
+    {
     req_reject(rc, 0, preq, NULL, NULL); /* unable to get to MOM */
+    free_br(dup_req);
+    }
   else
+    {
+    post_message_req(dup_req);
     free_br(preq);
+    }
 
   /* After MOM acts and replies to us, we pick up in post_message_req() */
   if (pjob != NULL)
@@ -168,20 +174,12 @@ void *req_messagejob(
  * post_message_req - complete a Message Job Request
  */
 
-static void post_message_req(
+void post_message_req(
     
-  struct work_task *pwt)
+  batch_request *preq)
 
   {
-  struct batch_request *preq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-
-  svr_disconnect(pwt->wt_event); /* close connection to MOM */
-
-  preq = get_remove_batch_request(pwt->wt_parm1);
-
-  free(pwt->wt_mutex);
-  free(pwt);
 
   /* preq has been hadnled previously */
   if (preq == NULL)

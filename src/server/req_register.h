@@ -50,8 +50,6 @@ void depend_clrrdy(job *pjob);
 
 /* static struct depend_job *make_dependjob(struct depend *pdep, char *jobid, char *host); */
 
-/* static int send_depend_req(job *pjob, struct depend_job *pparent, int type, int op, int schedhint, void (*postfunc)(struct work_task *)) */
-
 int decode_depend(pbs_attribute *patr, char *name, char *rescn, char *val, int perm);
 
 /* static void cat_jobsvr(char **Dest, char *Src); */

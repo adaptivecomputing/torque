@@ -106,7 +106,7 @@
 
 /* External functions */
 
-extern int issue_to_svr(char *svr, struct batch_request *, void (*func)(struct work_task *));
+int issue_to_svr(char *svr, struct batch_request *, void (*func)(struct work_task *));
 
 /* Global Data Items: */
 
@@ -346,5 +346,6 @@ void issue_track(
   while (*pc != '.')
     pc++;
 
-  (void)issue_to_svr(++pc, preq, release_req);
+  issue_to_svr(++pc, preq, NULL);
+  free_br(preq);
   }

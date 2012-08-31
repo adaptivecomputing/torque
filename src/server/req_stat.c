@@ -940,10 +940,7 @@ int stat_to_mom(
   /* Unlock job here */
   if (handle >= 0)
     {
-    if ((rc = issue_Drequest(handle, newrq, NULL, NULL)) != PBSE_NONE)
-      {
-      }
-    else
+    if ((rc = issue_Drequest(handle, newrq)) == PBSE_NONE)
       {
       stat_update(newrq, cntl);
       }

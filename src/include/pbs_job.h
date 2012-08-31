@@ -1104,6 +1104,7 @@ extern int   svr_chk_owner(struct batch_request *, job *);
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 extern struct batch_request *setup_cpyfiles(struct batch_request *, job *, char *, char *, int, int);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
+int   issue_signal(job **, char *, void(*)(struct work_task *), void *);
 #endif /* BATCH_REQUEST_H */
 
 #ifdef QUEUE_H
@@ -1114,10 +1115,6 @@ extern int   site_alt_router(job *, pbs_queue *, long);
 extern int   site_acl_check(job *, pbs_queue *);
 extern void  set_chkpt_deflt(job *, pbs_queue *);
 #endif /* QUEUE_H */
-
-#ifdef WORK_TASK_H
-int   issue_signal(job **, char *, void(*)(struct work_task *), void *);
-#endif /* WORK_TASK_H */
 
 #endif /* PBS_JOB_H */
 

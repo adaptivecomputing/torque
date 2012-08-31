@@ -139,7 +139,7 @@ static int    build_depend(pbs_attribute *, char *);
 static void   clear_depend(struct depend *, int type, int exists);
 static void   del_depend(struct depend *);
 static void   release_cheapest(job *, struct depend *);
-static int    send_depend_req(job *, struct depend_job *pparent, int, int, int, void (*postfunc)(struct work_task *));
+int           send_depend_req(job *, struct depend_job *pparent, int, int, int, void (*postfunc)(batch_request *));
 
 /* External Global Data Items */
 
@@ -981,12 +981,11 @@ void set_array_depend_holds(
  * i.e. the sending of register operations.
  */
 
-static void post_doq(
+void post_doq(
 
-  struct work_task *pwt)
+  batch_request *preq)
 
   {
-  struct batch_request *preq = get_remove_batch_request(pwt->wt_parm1);
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   char                 *msg;
   job                  *pjob;
@@ -995,9 +994,6 @@ static void post_doq(
   struct depend        *pdp;
   struct depend_job    *pdjb;
   char                 *jobid;
-
-  free(pwt->wt_mutex);
-  free(pwt);
 
   if (preq == NULL)
     return;
@@ -1101,13 +1097,7 @@ static void alter_unreg(
           if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
               return;
 
-          send_depend_req(
-            pjob,
-            oldjd,
-            type,
-            JOB_DEPEND_OP_UNREG,
-            SYNC_SCHED_HINT_NULL,
-            release_req);
+          send_depend_req(pjob, oldjd, type, JOB_DEPEND_OP_UNREG, SYNC_SCHED_HINT_NULL, free_br);
           pjob = NULL;
           }
 
@@ -1236,12 +1226,11 @@ int depend_on_que(
  * post_doe - Post (reply) processing of requests processing for depend_on_exec
  */
 
-static void post_doe(
+void post_doe(
 
-  struct work_task *pwt)
+  batch_request *preq)
 
   {
-  struct batch_request *preq = get_remove_batch_request(pwt->wt_parm1);
   pbs_attribute        *pattr;
 
   struct depend        *pdep;
@@ -1250,9 +1239,6 @@ static void post_doe(
   job                  *pjob;
   char                 *jobid;
  
-  free(pwt->wt_mutex);
-  free(pwt);
-
   if (preq == NULL)
     return;
 
@@ -1344,13 +1330,7 @@ int depend_on_exec(
 
     if (pdj != NULL)
       {
-      send_depend_req(
-        pjob,
-        pdj,
-        pdep->dp_type,
-        JOB_DEPEND_OP_READY,
-        SYNC_SCHED_HINT_NULL,
-        release_req);
+      send_depend_req(pjob, pdj, pdep->dp_type, JOB_DEPEND_OP_READY, SYNC_SCHED_HINT_NULL, free_br);
       if ((pjob == NULL) &&
           ((pjob = svr_find_job(jobid, TRUE)) == NULL))
         return PBSE_JOBNOTFOUND;
@@ -1490,10 +1470,7 @@ int depend_on_term(
                 ((pjob = svr_find_job(job_id, TRUE)) == NULL))
               return(PBSE_JOBNOTFOUND);
 
-            rc = send_depend_req(pjob, pparent, type,
-                            JOB_DEPEND_OP_DELETE,
-                            SYNC_SCHED_HINT_NULL,
-                            release_req);
+            rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br);
 
             pjob = NULL;
             job_unlocked = 1;
@@ -1517,8 +1494,7 @@ int depend_on_term(
           return(PBSE_JOBNOTFOUND);
 
         /* "release" the job to execute */
-        if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL,
-                release_req)) != PBSE_NONE)
+        if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, free_br)) != PBSE_NONE)
           {
           return (rc);
           }
@@ -1588,13 +1564,8 @@ static void release_cheapest(
     if (nreleased == 0)
       hint = SYNC_SCHED_HINT_FIRST;
 
-    if (send_depend_req(
-          pjob,
-          cheapest,
-          JOB_DEPEND_TYPE_SYNCWITH,
-          JOB_DEPEND_OP_RELEASE,
-          hint,
-          release_req) == 0)
+    if (send_depend_req(pjob, cheapest, JOB_DEPEND_TYPE_SYNCWITH,
+          JOB_DEPEND_OP_RELEASE, hint, free_br) == PBSE_NONE)
       {
       cheapest->dc_state = JOB_DEPEND_OP_RELEASE;
       }
@@ -2119,19 +2090,18 @@ static struct depend_job *make_dependjob(
  * send_depend_req - build and send a Register Dependent request
  */
 
-static int send_depend_req(
+int send_depend_req(
 
   job                *pjob,
   struct depend_job  *pparent,
   int                 type,
   int                 op,
   int                 schedhint,
-  void               (*postfunc)(struct work_task *))
+  void               (*postfunc)(batch_request *))
 
   {
   int                   rc = 0;
   int                   i;
-  char                 *myid = "send_depend_req";
   char                  job_id[PBS_MAXSVRJOBID + 1];
   char                  br_id[MAXLINE];
 
@@ -2142,7 +2112,7 @@ static int send_depend_req(
 
   if (preq == NULL)
     {
-    log_err(errno, myid, msg_err_malloc);
+    log_err(errno, __func__, msg_err_malloc);
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     return(PBSE_SYSTEM);
     }
@@ -2200,8 +2170,13 @@ static int send_depend_req(
   get_batch_request_id(preq);
   strcpy(br_id, preq->rq_id);
 
-  if ((rc = issue_to_svr(pparent->dc_svr, preq, postfunc)) != PBSE_NONE)
+  if ((rc = issue_to_svr(pparent->dc_svr, preq, NULL)) != PBSE_NONE)
     {
+    if (strcmp(pparent->dc_svr, server_name))
+      {
+      free_br(preq);
+      }
+
     sprintf(log_buf, "Unable to perform dependency with job %s\n", pparent->dc_child);
 
     if ((preq = get_remove_batch_request(br_id)) != NULL)
@@ -2209,6 +2184,8 @@ static int send_depend_req(
 
     return(rc);
     }
+  else if (strcmp(pparent->dc_svr, server_name))
+    postfunc(preq);
 
   return(PBSE_NONE);
   }  /* END send_depend_req() */

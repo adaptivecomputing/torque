@@ -654,17 +654,17 @@ struct tcp_chan * DIS_tcp_setup(
   struct tcpdisbuf *tp = NULL;
 
   /* check for bad file descriptor */
-
   if (fd < 0)
     {
-    return NULL;
+    return(NULL);
     }
 
   if ((chan = (struct tcp_chan *)calloc(1, sizeof(struct tcp_chan))) == NULL)
     {
     log_err(ENOMEM, "DIS_tcp_setup", "calloc failure");
-    return NULL;
+    return(NULL);
     }
+
   /* Assign socket to struct */
   chan->sock = fd;
 
@@ -674,8 +674,9 @@ struct tcp_chan * DIS_tcp_setup(
     {
     free(chan);
     log_err(errno,"DIS_tcp_setup","calloc failure");
-    return NULL;
+    return(NULL);
     }
+
   tp->tdis_bufsize = THE_BUF_SIZE;
   DIS_tcp_clear(tp);
 
@@ -686,16 +687,21 @@ struct tcp_chan * DIS_tcp_setup(
     free(chan->readbuf.tdis_thebuf);
     free(chan);
     log_err(errno,"DIS_tcp_setup","calloc failure");
-    return NULL;
+    return(NULL);
     }
+
   tp->tdis_bufsize = THE_BUF_SIZE;
   DIS_tcp_clear(tp);
-  return chan;
+
+  return(chan);
   }  /* END DIS_tcp_setup() */
 
 
 
-void DIS_tcp_cleanup(struct tcp_chan *chan)
+void DIS_tcp_cleanup(
+    
+  struct tcp_chan *chan)
+
   {
   struct tcpdisbuf *tp = NULL;
   tp = &chan->readbuf;
@@ -707,7 +713,10 @@ void DIS_tcp_cleanup(struct tcp_chan *chan)
   free(chan);
   }
 
-void DIS_tcp_close(struct tcp_chan *chan)
+void DIS_tcp_close(
+    
+  struct tcp_chan *chan)
+
   {
   int sock = chan->sock;
   DIS_tcp_cleanup(chan);
