@@ -1,10 +1,6 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 4.1.3
-  e - Make issue_Drequest wait for the reply and have functions continue processing
-      immediately after instead of the added overhead of using the threadpool.
-
-4.1.2
   b - fix a security loophole that potentially allowed an interactive job to run 
       as root due to not resetting a value when $attempt_to_make_dir and $tmpdir
       are set. TRQ-1078.
@@ -31,6 +27,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       when querying for a specific server. If the server specified was no available
       information from the remaining list would still be returned.
       TRQ-1143.
+  e - Make issue_Drequest wait for the reply and have functions continue processing
+      immediately after instead of the added overhead of using the threadpool.
+  c - tm_adopt() calls caused pbs_mom to crash. Fix this. TRQ-1210.
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations
