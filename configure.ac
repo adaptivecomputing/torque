@@ -906,6 +906,23 @@ fi
 
 
 dnl
+dnl add the option to view coverage when executing TORQUE 
+dnl
+AC_ARG_ENABLE(coverage, [
+  --with-coverage   Builds TORQUE with --coverage in order to allow evaluation of what parts of the code are being exercised. This is mainly useful for quality assurance.])
+if test "x$GCC" = "xyes" ;then
+  AC_MSG_CHECKING([whether to compile with coverage])
+  if test "${enable_coverage}" = "yes" ; then
+    AC_MSG_RESULT([yes])
+    CFLAGS="$CFLAGS --coverage"
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+
+
+dnl
 dnl add an option to specify a different path where TORQUE should look for HWLOC 
 dnl lib and include files
 dnl
