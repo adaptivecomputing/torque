@@ -18,6 +18,7 @@
 
 /* This section is for manipulting function return values */
 #include "test_job_func.h" /* *_SUITE */
+#include "user_info.h"
 int func_num = 0; /* Suite number being run */
 int tc = 0; /* Used for test routining */
 int iter_num = 0;
@@ -38,6 +39,8 @@ struct all_jobs array_summary;
 char *path_jobinfo_log;
 int LOGLEVEL = 0;
 pthread_mutex_t *job_log_mutex;
+
+user_info_holder users;
 
 int array_save(job_array *pa)
   {
@@ -571,7 +574,7 @@ int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   return(0);
   }
 
-int  decrement_queued_jobs(char *user_name)
+int  decrement_queued_jobs(user_info_holder *uih, char *user_name)
   {
   return(0);
   }
@@ -660,4 +663,15 @@ int set_str(
     attr->at_flags &= ~ATR_VFLAG_SET;
 
   return (0);
+  }
+
+
+int lock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int unlock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
+  {
+  return(0);
   }

@@ -205,3 +205,34 @@ int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }
+
+int unlock_ai_mutex(
+
+  job_array  *pa,
+  const char *id,
+  char       *msg,
+  int        logging)
+
+  {
+  return(0);
+  }
+
+job_array *get_jobs_array(
+
+  job **pjob_ptr)
+
+  {
+  return(NULL);
+  }
+
+int lock_ai_mutex(
+
+  job_array  *pa,
+  const char *id,
+  char       *msg,
+  int        logging)
+
+  {
+  return(0);
+  }
+

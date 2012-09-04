@@ -2271,3 +2271,8 @@ int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }
+
+int copy_properties(struct pbsnode *dest, struct pbsnode *src)
+  {
+  return(0);
+  }

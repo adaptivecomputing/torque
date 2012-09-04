@@ -330,3 +330,8 @@ int unlock_node(
   {
   return(0);
   }
+
+int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
