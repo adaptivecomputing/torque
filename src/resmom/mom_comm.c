@@ -2039,7 +2039,7 @@ int reply_to_join_job_as_sister(
 
 int im_join_job_as_sister(
 
-  struct tcp_chan *chan,
+  struct tcp_chan    *chan,
   char               *jobid,  /* I */
   struct sockaddr_in *addr,
   char               *cookie,  /* I */
@@ -7743,7 +7743,7 @@ int get_job_struct(
   job                **pjob, 
   char                *jobid, 
   int                  command, 
-  struct tcp_chan *chan,
+  struct tcp_chan     *chan,
   struct sockaddr_in  *addr,
   tm_node_id           nodeid)
 
