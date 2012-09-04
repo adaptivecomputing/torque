@@ -31,6 +31,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       immediately after instead of the added overhead of using the threadpool.
   c - tm_adopt() calls caused pbs_mom to crash. Fix this. TRQ-1210.
   b - Array element 0 wasn't showing up in qstat -t output. TRQ-1155.
+  b - Cores with multiple processing units were being incorrectly assigned in cpusets.
+      Additionally, multi-node jobs were getting the cpu list from each node in each
+      cpuset, also causing problems. TRQ-1202.
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations

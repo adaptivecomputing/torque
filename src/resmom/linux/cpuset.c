@@ -195,7 +195,6 @@ int init_cpusets(void)
   {
   int           rc   = -1;
 #ifdef USELIBCPUSET
-  static char   id[] = "init_cpusets";
   struct cpuset *cp  = NULL;
 #else
   char           path[MAXPATHLEN + 1];
@@ -208,7 +207,7 @@ int init_cpusets(void)
   /* Allocate a cpuset */
   if ((cp = cpuset_alloc()) == NULL)
     {
-    log_err(errno, id, "failed to allocate cpuset");
+    log_err(errno, __func__, "failed to allocate cpuset");
     return(-1);
     }
 
@@ -216,11 +215,11 @@ int init_cpusets(void)
   if ((rc = cpuset_query(cp, TROOTCPUSET_BASE)) == -1)
     {
     if (errno == ENOSYS)
-      log_err(errno, id, "failed to query root cpuset, cpusets not supported on this system");
+      log_err(errno, __func__, "failed to query root cpuset, cpusets not supported on this system");
     else if (errno == ENODEV)
-      log_err(errno, id, "failed to query root cpuset, cpusets not enabled on this system");
+      log_err(errno, __func__, "failed to query root cpuset, cpusets not enabled on this system");
     else
-      log_err(errno, id, "failed to query root cpuset");
+      log_err(errno, __func__, "failed to query root cpuset");
     }
 
   cpuset_free(cp);
@@ -291,13 +290,12 @@ int init_cpusets(void)
 
 int create_cpuset(
 
-    const char           *name,  /* I */
-    const hwloc_bitmap_t  cpus,  /* I */
-    const hwloc_bitmap_t  mems,  /* I */
-    mode_t                flags) /* I */
+  const char           *name,  /* I */
+  const hwloc_bitmap_t  cpus,  /* I */
+  const hwloc_bitmap_t  mems,  /* I */
+  mode_t                flags) /* I */
 
   {
-  static char     id[]  = "create_cpuset";
   char            cpuset_path[MAXPATHLEN + 1];
 #ifdef USELIBCPUSET
   struct cpuset  *cp   = NULL;
@@ -323,7 +321,7 @@ int create_cpuset(
   /* Allocate a cpuset */
   if ((cp = cpuset_alloc()) == NULL)
     {
-    sprintf(log_buffer, "(%s) failed to allocate cpuset", id);
+    sprintf(log_buffer, "(%s) failed to allocate cpuset", __func__);
     return(-1);
     }
 
@@ -337,7 +335,7 @@ int create_cpuset(
     {
     if ((flags & (O_CREAT | O_EXCL)) == (O_CREAT | O_EXCL))
       {
-      sprintf(log_buffer, "(%s) failed to create cpuset %s", id, cpuset_path);
+      sprintf(log_buffer, "(%s) failed to create cpuset %s", __func__, cpuset_path);
       errno = EEXIST;
       cpuset_free(cp);
       return(-1);
@@ -349,14 +347,14 @@ int create_cpuset(
     {
     if ((flags & O_CREAT) != O_CREAT)
       {
-      sprintf(log_buffer, "(%s) failed to modify cpuset %s", id, cpuset_path);
+      sprintf(log_buffer, "(%s) failed to modify cpuset %s", __func__, cpuset_path);
       cpuset_free(cp);
       return(-1);
       }
     }
   else
     {
-    sprintf(log_buffer, "(%s) failed to query cpuset %s", id, cpuset_path);
+    sprintf(log_buffer, "(%s) failed to query cpuset %s", __func__, cpuset_path);
     cpuset_free(cp);
     return(-1);
     }
@@ -366,7 +364,7 @@ int create_cpuset(
     {
     if ((mask = bitmask_alloc(cpuset_cpus_nbits())) == NULL)
       {
-      sprintf(log_buffer, "(%s) failed to allocate bitmask", id);
+      sprintf(log_buffer, "(%s) failed to allocate bitmask", __func__);
       cpuset_free(cp);
       return(-1);
       }
@@ -377,7 +375,7 @@ int create_cpuset(
 
     if (cpuset_setcpus(cp, mask) == -1)
       {
-      sprintf(log_buffer, "(%s) failed to set cpus in cpuset %s", id, cpuset_path);
+      sprintf(log_buffer, "(%s) failed to set cpus in cpuset %s", __func__, cpuset_path);
       bitmask_free(mask);
       cpuset_free(cp);
       return(-1);
@@ -391,7 +389,7 @@ int create_cpuset(
     {
     if ((mask = bitmask_alloc(cpuset_mems_nbits())) == NULL)
       {
-      sprintf(log_buffer, "(%s) failed to allocate bitmask", id);
+      sprintf(log_buffer, "(%s) failed to allocate bitmask", __func__);
       cpuset_free(cp);
       return(-1);
       }
@@ -402,7 +400,7 @@ int create_cpuset(
 
     if (cpuset_setmems(cp, mask) == -1)
       {
-      sprintf(log_buffer, "(%s) failed to set mems in cpuset %s", id, cpuset_path);
+      sprintf(log_buffer, "(%s) failed to set mems in cpuset %s", __func__, cpuset_path);
       bitmask_free(mask);
       cpuset_free(cp);
       return(-1);
@@ -416,22 +414,22 @@ int create_cpuset(
     {
     if (cpuset_create(cpuset_path, cp) == -1)
       {
-      sprintf(log_buffer, "(%s) failed to create cpuset %s", id, cpuset_path);
+      sprintf(log_buffer, "(%s) failed to create cpuset %s", __func__, cpuset_path);
       cpuset_free(cp);
       return(-1);
       }
 
-    sprintf(log_buffer, "(%s) successfully created cpuset %s", id, cpuset_path);
+    sprintf(log_buffer, "(%s) successfully created cpuset %s", __func__, cpuset_path);
     }
   else
     {
     if (cpuset_modify(cpuset_path, cp) == -1)
       {
-      sprintf(log_buffer, "(%s) failed to modify cpuset %s", id, cpuset_path);
+      sprintf(log_buffer, "(%s) failed to modify cpuset %s", __func__, cpuset_path);
       cpuset_free(cp);
       return(-1);
       }
-    sprintf(log_buffer, "(%s) successfully modified cpuset %s", id, cpuset_path);
+    sprintf(log_buffer, "(%s) successfully modified cpuset %s", __func__, cpuset_path);
     }
 
   /* Done */
@@ -457,7 +455,7 @@ int create_cpuset(
     {
     if ((flags & (O_CREAT | O_EXCL)) == (O_CREAT | O_EXCL))
       {
-      sprintf(log_buffer, "(%s) failed to create cpuset %s", id, cpuset_path);
+      sprintf(log_buffer, "(%s) failed to create cpuset %s", __func__, cpuset_path);
       errno = EEXIST;
       return(-1);
       }
@@ -468,13 +466,13 @@ int create_cpuset(
     {
     if ((flags & O_CREAT) != O_CREAT)
       {
-      sprintf(log_buffer, "(%s) failed to modify cpuset %s", id, cpuset_path);
+      sprintf(log_buffer, "(%s) failed to modify cpuset %s", __func__, cpuset_path);
       return(-1);
       }
     }
   else
     {
-    sprintf(log_buffer, "(%s) failed to stat cpuset %s", id, cpuset_path);
+    sprintf(log_buffer, "(%s) failed to stat cpuset %s", __func__, cpuset_path);
     return(-1);
     }
 
@@ -483,7 +481,7 @@ int create_cpuset(
     {
     if (mkdir(cpuset_path, 0755) == -1)
       {
-      sprintf(log_buffer, "(%s) failed to create cpuset %s", id, cpuset_path);
+      sprintf(log_buffer, "(%s) failed to create cpuset %s", __func__, cpuset_path);
       return(-1);
       }
     }
@@ -495,7 +493,7 @@ int create_cpuset(
 
     if ((fd = fopen(path, "w")) == NULL)
       {
-      sprintf(log_buffer, "(%s) failed to open %s", id, path);
+      sprintf(log_buffer, "(%s) failed to open %s", __func__, path);
       return(-1);
       }
 
@@ -503,7 +501,7 @@ int create_cpuset(
 
     if (fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fd) != strlen(cpuset_buf))
       {
-      sprintf(log_buffer, "(%s) failed to write %s", id, path);
+      sprintf(log_buffer, "(%s) failed to write %s", __func__, path);
       fclose(fd);
       return(-1);
       }
@@ -518,7 +516,7 @@ int create_cpuset(
 
     if ((fd = fopen(path, "w")) == NULL)
       {
-      sprintf(log_buffer, "(%s) failed to open %s", id, path);
+      sprintf(log_buffer, "(%s) failed to open %s", __func__, path);
       return(-1);
       }
 
@@ -526,7 +524,7 @@ int create_cpuset(
 
     if (fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fd) != strlen(cpuset_buf))
       {
-      sprintf(log_buffer, "(%s) failed to write %s", id, path);
+      sprintf(log_buffer, "(%s) failed to write %s", __func__, path);
       fclose(fd);
       return(-1);
       }
@@ -536,9 +534,9 @@ int create_cpuset(
 
   /* Success */
   if ((flags & O_CREAT) == O_CREAT)
-    sprintf(log_buffer, "(%s) successfully created cpuset %s", id, cpuset_path);
+    sprintf(log_buffer, "(%s) successfully created cpuset %s", __func__, cpuset_path);
   else
-    sprintf(log_buffer, "(%s) successfully modified cpuset %s", id, cpuset_path);
+    sprintf(log_buffer, "(%s) successfully modified cpuset %s", __func__, cpuset_path);
 
   return(PBSE_NONE);
 #endif
@@ -581,7 +579,6 @@ int read_cpuset(
     hwloc_bitmap_t  mems)  /* O */
 
   {
-  static char    id[]  = "create_cpuset";
   char           cpuset_path[MAXPATHLEN + 1];
   char           cpuset_buf[MAXPATHLEN + 1];
   int            rc    = -1;
@@ -614,7 +611,7 @@ int read_cpuset(
   /* Allocate a cpuset */
   if ((cp = cpuset_alloc()) == NULL)
     {
-    sprintf(log_buffer, "(%s) failed to allocate cpuset", id);
+    sprintf(log_buffer, "(%s) failed to allocate cpuset", __func__);
     return(-1);
     }
 
@@ -626,14 +623,14 @@ int read_cpuset(
       {
       if ((mask = bitmask_alloc(cpuset_cpus_nbits())) == NULL)
         {
-        sprintf(log_buffer, "(%s) failed to allocate bitmask", id);
+        sprintf(log_buffer, "(%s) failed to allocate bitmask", __func__);
         cpuset_free(cp);
         return(-1);
         }
 
       if (cpuset_getcpus(cp, mask) == -1)
         {
-        sprintf(log_buffer, "(%s) failed to read cpus in cpuset %s", id, cpuset_path);
+        sprintf(log_buffer, "(%s) failed to read cpus in cpuset %s", __func__, cpuset_path);
         bitmask_free(mask);
         cpuset_free(cp);
         return(-1);
@@ -653,14 +650,14 @@ int read_cpuset(
       {
       if ((mask = bitmask_alloc(cpuset_mems_nbits())) == NULL)
         {
-        sprintf(log_buffer, "(%s) failed to allocate bitmask", id);
+        sprintf(log_buffer, "(%s) failed to allocate bitmask", __func__);
         cpuset_free(cp);
         return(-1);
         }
 
       if (cpuset_getmems(cp, mask) == -1)
         {
-        sprintf(log_buffer, "(%s) failed to read mems in cpuset %s", id, cpuset_path);
+        sprintf(log_buffer, "(%s) failed to read mems in cpuset %s", __func__, cpuset_path);
         bitmask_free(mask);
         cpuset_free(cp);
         return(-1);
@@ -705,7 +702,7 @@ int read_cpuset(
 
       if ((fd = fopen(path, "r")) == NULL)
         {
-        sprintf(log_buffer, "(%s) failed to open %s", id, path);
+        sprintf(log_buffer, "(%s) failed to open %s", __func__, path);
         return(-1);
         }
 
@@ -713,7 +710,7 @@ int read_cpuset(
         {
         if (hwloc_bitmap_parselist(cpuset_buf, cpus) < 0)
           {
-          sprintf(log_buffer, "(%s) failed to parse %s: %s", id, path, cpuset_buf);
+          sprintf(log_buffer, "(%s) failed to parse %s: %s", __func__, path, cpuset_buf);
           fclose(fd);
           errno = EINVAL;
           return(-1);
@@ -730,7 +727,7 @@ int read_cpuset(
 
       if ((fd = fopen(path, "r")) == NULL)
         {
-        sprintf(log_buffer, "(%s) failed to open %s", id, path);
+        sprintf(log_buffer, "(%s) failed to open %s", __func__, path);
         return(-1);
         }
 
@@ -738,7 +735,7 @@ int read_cpuset(
         {
         if (hwloc_bitmap_parselist(cpuset_buf, mems) < 0)
           {
-          sprintf(log_buffer, "(%s) failed to parse %s: %s", id, path, cpuset_buf);
+          sprintf(log_buffer, "(%s) failed to parse %s: %s", __func__, path, cpuset_buf);
           fclose(fd);
           errno = EINVAL;
           return(-1);
@@ -751,7 +748,7 @@ int read_cpuset(
     }
   else
     {
-    sprintf(log_buffer, "(%s) failed to stat %s", id, cpuset_path);
+    sprintf(log_buffer, "(%s) failed to stat %s", __func__, cpuset_path);
     }
 
   /* Done */
@@ -794,7 +791,6 @@ int delete_cpuset(
     const char *name)  /* I */
 
   {
-  static char    id[] = "delete_cpuset";
   char           cpuset_path[MAXPATHLEN + 1];
 #ifndef USELIBCPUSET
   char           path[MAXPATHLEN + 1];
@@ -823,7 +819,7 @@ int delete_cpuset(
     if (LOGLEVEL >= 6)
       {
       sprintf(log_buffer, "successfully nuked cpuset %s", cpuset_path);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
       }
 
     return(PBSE_NONE);
@@ -833,7 +829,7 @@ int delete_cpuset(
   if (errno != ENOENT)
     {
     sprintf(log_buffer, "failed to nuke cpuset %s", cpuset_path);
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
     }
 
   return(-1);
@@ -906,7 +902,7 @@ int delete_cpuset(
     if (LOGLEVEL >= 6)
       {
       sprintf(log_buffer, "successfully deleted cpuset %s", cpuset_path);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
       }
 
     return(PBSE_NONE);
@@ -916,7 +912,7 @@ int delete_cpuset(
   if (errno != ENOENT)
     {
     sprintf(log_buffer, "failed to delete cpuset %s", cpuset_path);
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
     }
 
   return(-1);
@@ -936,7 +932,6 @@ int delete_cpuset(
 void cleanup_torque_cpuset(void)
 
   {
-  char          *id = "cleanup_torque_cpuset";
   char           path[MAXPATHLEN + 1];
   struct dirent *pdirent;
   struct stat    statbuf;
@@ -944,7 +939,7 @@ void cleanup_torque_cpuset(void)
 
   if ((dir = opendir(TTORQUECPUSET_PATH)) == NULL)
     {
-    log_err(errno, id, "failed to open TORQUE cpuset hierarchy");
+    log_err(errno, __func__, "failed to open TORQUE cpuset hierarchy");
     return;
     }
 
@@ -975,20 +970,20 @@ void cleanup_torque_cpuset(void)
         if (LOGLEVEL >= 6)
           {
           sprintf(log_buffer, "about to delete orphaned cpuset %s", path);
-          log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+          log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
           }
 
         if (delete_cpuset(pdirent->d_name) == 0)
           {
           sprintf(log_buffer, "deleted orphaned cpuset %s", path);
-          log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+          log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
           }
 
         }
       else
         {
         sprintf(log_buffer, "found active cpuset %s", path);
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         }
       }
     }  /* END while((pdirent = readdir(dir)) != NULL) */
@@ -1034,7 +1029,6 @@ void cleanup_torque_cpuset(void)
 int init_torque_cpuset(void)
 
   {
-  static char    id[]  = "init_torque_cpuset";
   hwloc_bitmap_t cpus = NULL;
   hwloc_bitmap_t mems = NULL;
   int            rc   = -1;
@@ -1052,7 +1046,7 @@ int init_torque_cpuset(void)
   sprintf(log_buffer, "Init cpuset %s", TTORQUECPUSET_PATH);
 #endif
 
-  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
   /* Check if cpusets are supported, return error if not */
   if ((init_cpusets()) == -1)
@@ -1062,7 +1056,7 @@ int init_torque_cpuset(void)
   if (((cpus = hwloc_bitmap_alloc()) == NULL) ||
       ((mems = hwloc_bitmap_alloc()) == NULL))
     {
-    log_err(ENOMEM, id, "failed to allocate bitmap");
+    log_err(ENOMEM, __func__, "failed to allocate bitmap");
     return(-1);
     }
 
@@ -1088,7 +1082,7 @@ int init_torque_cpuset(void)
       if (errno != ENOENT)
         {
         /* Error */
-        log_err(errno, id, log_buffer);
+        log_err(errno, __func__, log_buffer);
         goto finish;
         }
       }
@@ -1097,11 +1091,11 @@ int init_torque_cpuset(void)
       /* Exists, tell what we have and return */
       sprintf(log_buffer, "cpus = ");
       hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), cpus);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
       sprintf(log_buffer, "mems = ");
       hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), mems);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
       rc = 0;
       goto finish;
@@ -1114,7 +1108,7 @@ int init_torque_cpuset(void)
     if (read_cpuset(TROOTCPUSET_PATH, cpus, mems) == -1)
 #endif
       {
-      log_err(errno, id, log_buffer);
+      log_err(errno, __func__, log_buffer);
       goto finish;
       }
 
@@ -1145,12 +1139,12 @@ int init_torque_cpuset(void)
   /* Allocate bitmaps before querying boot cpuset */
   if ((bootcpus = hwloc_bitmap_alloc()) == NULL)
     {
-    log_err(errno, id, "failed to allocate bitmap");
+    log_err(errno, __func__, "failed to allocate bitmap");
     goto finish;
     }
   if ((bootmems = hwloc_bitmap_alloc()) == NULL)
     {
-    log_err(errno, id, "failed to allocate bitmap");
+    log_err(errno, __func__, "failed to allocate bitmap");
     goto finish;
     }
 
@@ -1168,7 +1162,7 @@ int init_torque_cpuset(void)
       if (errno != ENOENT)
         {
         /* Error */
-        log_err(errno, id, log_buffer);
+        log_err(errno, __func__, log_buffer);
         goto finish;
         }
       }
@@ -1176,11 +1170,11 @@ int init_torque_cpuset(void)
       {
       sprintf(log_buffer, "subtracting cpus of boot cpuset: ");
       hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootcpus);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
       sprintf(log_buffer, "subtracting mems of boot cpuset: ");
       hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootmems);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
       hwloc_bitmap_andnot(cpus, cpus, bootcpus);
       hwloc_bitmap_andnot(mems, mems, bootmems);
@@ -1190,18 +1184,18 @@ int init_torque_cpuset(void)
 
   sprintf(log_buffer, "setting cpus = ");
   hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), cpus);
-  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
   sprintf(log_buffer, "setting mems = ");
   hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), mems);
-  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
 #ifdef USELIBCPUSET
   if ((rc = create_cpuset(TTORQUECPUSET_BASE, cpus, mems, O_CREAT)) == -1)
 #else
-    if ((rc = create_cpuset(TTORQUECPUSET_PATH, cpus, mems, O_CREAT)) == -1)
+  if ((rc = create_cpuset(TTORQUECPUSET_PATH, cpus, mems, O_CREAT)) == -1)
 #endif
-      log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
 
 #ifndef NUMA_SUPPORT
 finish:
@@ -1242,16 +1236,16 @@ finish:
 
 int add_obj_from_cpuset(
 
-    hwloc_bitmap_t cpuset, /* I   */
-    hwloc_bitmap_t cpus,   /* I/O */
-    unsigned       idx)    /* I   */
+  hwloc_bitmap_t cpuset, /* I   */
+  hwloc_bitmap_t cpus,   /* I/O */
+  unsigned       idx)    /* I   */
 
   {
   hwloc_obj_t obj = NULL;
 
   /* Figure out core or pu at position idx in cpuset */
-  if ((obj = hwloc_get_obj_inside_cpuset_by_type(topology, cpuset, HWLOC_OBJ_CORE, idx)) == NULL)
-    if ((obj = hwloc_get_obj_inside_cpuset_by_type(topology, cpuset, HWLOC_OBJ_PU, idx)) == NULL)
+  if ((obj = hwloc_get_obj_inside_cpuset_by_type(topology, cpuset, HWLOC_OBJ_PU, idx)) == NULL)
+    if ((obj = hwloc_get_obj_inside_cpuset_by_type(topology, cpuset, HWLOC_OBJ_CORE, idx)) == NULL)
       return(-1);
 
   /* Add cpuset of found object */
@@ -1285,10 +1279,9 @@ int add_obj_from_cpuset(
 
 int create_job_cpuset(
 
-    job *pjob) /* I */
+  job *pjob) /* I */
 
   {
-  static char     id[]  = "create_job_cpuset";
   vnodent        *np = pjob->ji_vnods;
   hwloc_bitmap_t  cpus = NULL;
   hwloc_bitmap_t  mems = NULL;
@@ -1313,7 +1306,7 @@ int create_job_cpuset(
   if (((cpus = hwloc_bitmap_alloc()) == NULL) ||
       ((mems = hwloc_bitmap_alloc()) == NULL))
     {
-    log_err(errno, id, "failed to allocate bitmap");
+    log_err(errno, __func__, "failed to allocate bitmap");
     goto finish;
     }
 
@@ -1334,7 +1327,7 @@ int create_job_cpuset(
     else
       {
       sprintf(log_buffer, "failed to parse node number from nodeboard name %s", np->vn_host->hn_host);
-      log_err(-1, id, log_buffer);
+      log_err(-1, __func__, log_buffer);
       continue;
       }
 
@@ -1351,7 +1344,7 @@ int create_job_cpuset(
       if (add_obj_from_cpuset(node_boards[numa_idx].cpuset, cpus, np->vn_index) == -1)
         {
         sprintf(log_buffer, "nodeboard %s cpuset contains no CPU at index %d", np->vn_host->hn_host, np->vn_index);
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
         }
 
       /* Set mems to all memory nodes covered by cpus */
@@ -1363,7 +1356,7 @@ int create_job_cpuset(
   /* Allocate bitmap for cpus of TORQUE cpuset */
   if ((tcpus = hwloc_bitmap_alloc()) == NULL)
     {
-    log_err(errno, id, "failed to allocate bitmap");
+    log_err(errno, __func__, "failed to allocate bitmap");
     goto finish;
     }
 
@@ -1376,7 +1369,7 @@ int create_job_cpuset(
 #endif
       {
       /* Error */
-      log_err(errno, id, log_buffer);
+      log_err(errno, __func__, log_buffer);
       goto finish;
       }
 
@@ -1394,7 +1387,7 @@ int create_job_cpuset(
       if ((obj = hwloc_get_pu_obj_by_os_index(topology, np->vn_index)) == NULL)
         {
         sprintf(log_buffer, "topology contains no CPU at os-index %d", np->vn_index);
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
         continue;
         }
 
@@ -1402,7 +1395,7 @@ int create_job_cpuset(
       if (!hwloc_bitmap_isincluded(obj->cpuset, tcpus))
         {
         sprintf(log_buffer, "TORQUE cpuset contains no CPU at os-index %d", np->vn_index);
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
         continue;
         }
 
@@ -1431,10 +1424,13 @@ int create_job_cpuset(
       for (j = 0; j < pjob->ji_numvnod; ++j, np++)
         {
         /* Add core at position vn_index in TORQUE cpuset */
-        if (add_obj_from_cpuset(tcpus, cpus, np->vn_index) == -1)
+        if (pjob->ji_nodeid == np->vn_host->hn_node)
           {
-          sprintf(log_buffer, "TORQUE cpuset contains no CPU at index %d", np->vn_index);
-          log_err(-1, id, log_buffer);
+          if (add_obj_from_cpuset(tcpus, cpus, np->vn_index) == -1)
+            {
+            sprintf(log_buffer, "TORQUE cpuset contains no CPU at index %d", np->vn_index);
+            log_err(-1, __func__, log_buffer);
+            }
           }
         } /* END for(j) */
 
@@ -1465,20 +1461,20 @@ int create_job_cpuset(
       mems);
 
   snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), ")");
-  log_ext(-1, id, log_buffer, LOG_INFO);
+  log_ext(-1, __func__, log_buffer, LOG_INFO);
 
   if (create_cpuset(pjob->ji_qs.ji_jobid, cpus, mems, O_CREAT) == 0)
     {
     /* Success */
     if (LOGLEVEL >= 4)
-      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
 
     rc = SUCCESS;
     }
   else
     {
     /* Failure */
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
     rc = FAILURE;
     }
 
@@ -1523,7 +1519,6 @@ int move_to_job_cpuset(
     job   *pjob)  /* I */
 
   {
-  static char   id[] = "move_to_job_cpuset";
   char          cpuset_path[MAXPATHLEN + 1];
 #ifndef USELIBCPUSET
   char          path[MAXPATHLEN + 1];
@@ -1543,14 +1538,14 @@ int move_to_job_cpuset(
     if (LOGLEVEL >= 4)
       {
       sprintf(log_buffer, "successfully moved pid %d to cpuset %s", pid, cpuset_path);
-      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
       }
     return(SUCCESS);
     }
 
   /* Failure */
   sprintf(log_buffer, "failed to move pid %d to cpuset %s", pid, cpuset_path);
-  log_err(errno, id, log_buffer);
+  log_err(errno, __func__, log_buffer);
   return(FAILURE);
 
 #else
@@ -1568,7 +1563,7 @@ int move_to_job_cpuset(
     {
     /* Failure */
     sprintf(log_buffer, "failed to move pid %d to cpuset %s", pid, cpuset_path);
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
     return(FAILURE);
     }
 
@@ -1577,7 +1572,7 @@ int move_to_job_cpuset(
   if (fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fd) != strlen(cpuset_buf))
     {
     sprintf(log_buffer, "failed to move pid %d to cpuset %s", pid, cpuset_path);
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
     fclose(fd);
     return(FAILURE);
     }
@@ -1588,7 +1583,7 @@ int move_to_job_cpuset(
   if (LOGLEVEL >= 4)
     {
     sprintf(log_buffer, "successfully moved pid %d to cpuset %s", pid, cpuset_path);
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
   return(SUCCESS);
@@ -1716,11 +1711,10 @@ void adjust_root_map(
 
 void remove_boot_set(
 
-    char *rootStr, /* I/O */
-    char *bootStr) /* I */
+  char *rootStr, /* I/O */
+  char *bootStr) /* I */
 
   {
-  static char  id[] = "remove_boot_set";
   int          j;
   int          first;
   int          *cpusetMap;
@@ -1746,7 +1740,7 @@ void remove_boot_set(
     sprintf(log_buffer,
         "removing boot cpuset (%s) from root cpuset (%s)",
         bootStr, rootStr);
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
   /* add the root cpuset to the map */
@@ -1780,12 +1774,12 @@ void remove_boot_set(
     sprintf(log_buffer,
         "resulting root cpuset (%s)",
         rootStr);
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
   free(cpusetMap);
-  return;
 
+  return;
   } /* END remove_boot_set() */
 
 
@@ -1806,7 +1800,7 @@ void remove_boot_set(
 
 static int PidIsPid(
 
-    pid_t pid)
+  pid_t pid)
 
   {
   char    path[1024];
@@ -1857,11 +1851,10 @@ static int PidIsPid(
 
 struct pidl *get_cpuset_pidlist(
 
-    const char  *name, /* I */
-    struct pidl *pids) /* I */
+  const char  *name, /* I */
+  struct pidl *pids) /* I */
 
   {
-  static char            id[] = "get_cpuset_pidlist";
   char                   cpuset_path[MAXPATHLEN + 1];
   char                   path[MAXPATHLEN + 1];
   struct pidl           *pl, *pp;
@@ -1896,7 +1889,7 @@ struct pidl *get_cpuset_pidlist(
     if (errno != ENOENT)
       {
       sprintf(log_buffer, "%s: cpuset_init_pidlist", path);
-      log_err(errno, id, log_buffer);
+      log_err(errno, __func__, log_buffer);
       }
     return(NULL);
     }
@@ -1915,7 +1908,7 @@ struct pidl *get_cpuset_pidlist(
 
     if ((pp = (struct pidl *)calloc(1,sizeof(struct pidl))) == NULL)
       {
-      log_err(errno, id, "calloc");
+      log_err(errno, __func__, "calloc");
       break;
       }
 
@@ -1946,7 +1939,7 @@ struct pidl *get_cpuset_pidlist(
     if (errno != ENOENT)
       {
       sprintf(log_buffer, "%s: opendir", path);
-      log_err(errno, id, log_buffer);
+      log_err(errno, __func__, log_buffer);
       }
     }
   else
@@ -2004,7 +1997,7 @@ struct pidl *get_cpuset_pidlist(
 
             if ((pp = (struct pidl *)calloc(1, sizeof(struct pidl))) == NULL)
               {
-              log_err(errno, id, "calloc");
+              log_err(errno, __func__, "calloc");
               break;
               }
             else
@@ -2034,7 +2027,7 @@ struct pidl *get_cpuset_pidlist(
   if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer, "%s contains %d PIDs", cpuset_path, npids);
-    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
 
   return(pids);
@@ -2059,10 +2052,9 @@ struct pidl *get_cpuset_pidlist(
 
 int get_cpuset_mempressure(
 
-    const char *name) /* I */
+  const char *name) /* I */
 
   {
-  static char id[] = "get_cpuset_mempressure";
   char        path[MAXPATHLEN + 1];
   int         rc;
 #ifdef USELIBCPUSET
@@ -2086,7 +2078,7 @@ int get_cpuset_mempressure(
     if (errno != ENOENT)
       {
       sprintf(log_buffer, "%s: cpuset_open_memory_pressure", path);
-      log_err(errno, id, log_buffer);
+      log_err(errno, __func__, log_buffer);
       }
 
     return(-1);
@@ -2095,7 +2087,7 @@ int get_cpuset_mempressure(
   if ((rc = cpuset_read_memory_pressure(fd)) == -1)
     {
     sprintf(log_buffer, "%s: cpuset_read_memory_pressure", path);
-    log_err(errno, id, log_buffer);
+    log_err(errno, __func__, log_buffer);
     }
 
   cpuset_close_memory_pressure(fd);
@@ -2103,7 +2095,7 @@ int get_cpuset_mempressure(
   if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer, "%s/memory_pressure=%d", path, rc);
-    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
 
 #else
@@ -2120,7 +2112,7 @@ int get_cpuset_mempressure(
     if (errno != ENOENT)
       {
       sprintf(log_buffer, "%s: fopen", path);
-      log_err(errno, id, log_buffer);
+      log_err(errno, __func__, log_buffer);
       }
     return(-1);
     }
@@ -2136,7 +2128,7 @@ int get_cpuset_mempressure(
   if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer, "%s=%d", path, rc);
-    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
 
 #endif
