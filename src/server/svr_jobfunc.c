@@ -2941,6 +2941,7 @@ int lock_ai_mutex(
   const char *id,
   char       *msg,
   int        logging)
+
   {
   int rc = PBSE_NONE;
   char *err_msg = NULL;

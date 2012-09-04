@@ -9,6 +9,7 @@
 #include "work_task.h" /* work_task */
 #include "queue.h"
 
+all_queues              svr_queues;
 int lockfds=0;
 char *msg_daemonname = "unset";
 char *msg_shutdown_start = "Starting to shutdown the server, type is ";
@@ -131,3 +132,15 @@ int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }
+
+int que_save(pbs_queue *pque)
+
+  {
+  return(0);
+  }
+
+pbs_queue *next_queue(all_queues *aq, int        *iter)
+  {
+  return(NULL);
+  }
+

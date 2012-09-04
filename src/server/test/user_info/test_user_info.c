@@ -5,12 +5,12 @@
 
 #include "user_info.h"
 
-unsigned int get_num_queued(char *);
+unsigned int get_num_queued(user_info_holder *, char *);
 unsigned int count_jobs_submitted(job *);
 
 START_TEST(initialize_user_info_holder_test)
   {
-  initialize_user_info_holder();
+  initialize_user_info_holder(&users);
 
   fail_unless(users.ui_ra != NULL, "resizable array not initialized");
   fail_unless(users.ui_ht != NULL, "hash table not initialized");
@@ -24,12 +24,12 @@ END_TEST
 START_TEST(get_num_queued_test)
   {
   unsigned int queued;
-  initialize_user_info_holder();
+  initialize_user_info_holder(&users);
 
-  queued = get_num_queued("bob");
+  queued = get_num_queued(&users, "bob");
   fail_unless(queued == 0, "incorrect queued count for bob");
 
-  queued = get_num_queued("tom");
+  queued = get_num_queued(&users, "tom");
   fail_unless(queued == 1, "incorrect queued count for tom");
   }
 END_TEST
@@ -43,7 +43,7 @@ START_TEST(count_jobs_submitted_test)
   job          pjob;
 
   memset(&pjob, 0, sizeof(pjob));
-  initialize_user_info_holder();
+  initialize_user_info_holder(&users);
 
   submitted = count_jobs_submitted(&pjob);
   fail_unless(submitted == 1, "incorrect count for non-array job");
@@ -61,7 +61,7 @@ START_TEST(can_queue_new_job_test)
   job pjob;
 
   memset(&pjob, 0, sizeof(pjob));
-  initialize_user_info_holder();
+  initialize_user_info_holder(&users);
 
   fail_unless(can_queue_new_job("bob", &pjob) == TRUE, "user without a job can't queue one?");
   fail_unless(can_queue_new_job("tom", &pjob) == FALSE, "tom allowed over limit");
@@ -79,11 +79,11 @@ START_TEST(increment_queued_jobs_test)
   job pjob;
 
   memset(&pjob, 0, sizeof(pjob));
-  initialize_user_info_holder();
+  initialize_user_info_holder(&users);
 
-  fail_unless(increment_queued_jobs("tom", &pjob) == 0, "can't increment queued jobs");
-  fail_unless(increment_queued_jobs("bob", &pjob) == 0, "can't increment queued jobs");
-  fail_unless(increment_queued_jobs("bob", &pjob) == ENOMEM, "didn't get failure");
+  fail_unless(increment_queued_jobs(&users, "tom", &pjob) == 0, "can't increment queued jobs");
+  fail_unless(increment_queued_jobs(&users, "bob", &pjob) == 0, "can't increment queued jobs");
+  fail_unless(increment_queued_jobs(&users, "bob", &pjob) == ENOMEM, "didn't get failure");
   }
 END_TEST
 
@@ -92,11 +92,11 @@ END_TEST
 
 START_TEST(decrement_queued_jobs_test)
   {
-  initialize_user_info_holder();
+  initialize_user_info_holder(&users);
 
-  fail_unless(decrement_queued_jobs("bob") == THING_NOT_FOUND, "decremented for non-existent user");
-  fail_unless(decrement_queued_jobs("tom") == 0, "couldn't decrement for tom?");
-  fail_unless(get_num_queued("tom") == 0, "didn't actually decrement tom");
+  fail_unless(decrement_queued_jobs(&users, "bob") == THING_NOT_FOUND, "decremented for non-existent user");
+  fail_unless(decrement_queued_jobs(&users, "tom") == 0, "couldn't decrement for tom?");
+  fail_unless(get_num_queued(&users, "tom") == 0, "didn't actually decrement tom");
 
   }
 END_TEST

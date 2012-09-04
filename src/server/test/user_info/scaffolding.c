@@ -61,3 +61,6 @@ hash_table_t *create_hash(int size)
 
 void log_err(int error, const char *func_id, char *msg) {}
 
+void free_hash(hash_table_t *ht) {}
+
+void free_resizable_array(resizable_array *ra) {}

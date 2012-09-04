@@ -173,3 +173,17 @@ int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }
+
+int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int lock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+void free_br(struct batch_request *preq) {}
+
+void on_job_exit_task(struct work_task *ptask) {} 

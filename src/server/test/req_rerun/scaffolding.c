@@ -125,3 +125,8 @@ int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }

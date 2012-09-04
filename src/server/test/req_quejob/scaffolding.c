@@ -12,6 +12,7 @@
 #include "batch_request.h" /* batch_request */
 #include "work_task.h" /* work_task, work_type */
 #include "dynamic_string.h"
+#include "user_info.h"
 
 const char *PJobSubState[10];
 char *path_jobs;
@@ -29,6 +30,7 @@ char *path_spool;
 struct server server;
 int LOGLEVEL = 0;
 char *msg_daemonname = "unset";
+user_info_holder users;
 
 
 int setup_array_struct(job *pjob)
@@ -354,7 +356,7 @@ int  can_queue_new_job(char *user_name, job *pjob)
   return(0);
   }
 
-int  increment_queued_jobs(char *user_name, job *pjob)
+int  increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob)
   {
   return(0);
   }

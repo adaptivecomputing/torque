@@ -17,6 +17,7 @@
 #include "batch_request.h" /* batch_request */
 #include "net_connect.h" /* pbs_net_t */
 #include "queue.h" /* all_queues, pbs_queue */
+#include "user_info.h"
 
 int scheduler_sock=0;
 int scheduler_jobct = 0;
@@ -91,14 +92,14 @@ pthread_mutex_t *listener_command_mutex;
 pthread_mutex_t *acctfile_mutex;
 pthread_mutex_t *check_tasks_mutex;
 pthread_mutex_t *retry_routing_mutex;
+user_info_holder users;
 
 
-
-void on_job_rerun(struct work_task *ptask)
+void on_job_rerun_task(struct work_task *ptask)
   {
-  fprintf(stderr, "The call to on_job_rerun needs to be mocked!!\n");
-  exit(1);
   }
+
+void initialize_user_info_holder(user_info_holder *uih) {}
 
 job_array *get_jobs_array(job **pjob)
   {
@@ -166,10 +167,8 @@ pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   exit(1);
   }
 
-void on_job_exit(struct work_task *ptask)
+void on_job_exit_task(struct work_task *ptask)
   {
-  fprintf(stderr, "The call to on_job_exit needs to be mocked!!\n");
-  exit(1);
   }
 
 int job_log_open(char *filename, char *directory)
@@ -607,3 +606,14 @@ int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }
+
+int lock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int unlock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
+  {
+  return(0);
+  }
+

@@ -33,7 +33,8 @@ int LOGLEVEL = 0;
 hello_container hellos;
 struct pbsnode reporter;
 struct pbsnode *alps_reporter = &reporter;
-
+const char *alps_reporter_feature  = "alps_reporter";
+const char *alps_starter_feature   = "alps_login";
 
 
 
@@ -436,4 +437,19 @@ void *pop_thing(resizable_array *ra)
 int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
+  }
+
+struct pbssubn *create_subnode(struct pbsnode *pnode)
+
+  {
+  return(NULL);
+  }
+
+struct pbsnode *create_alps_subnode(
+
+  struct pbsnode *parent,
+  char           *node_id)
+
+  {
+  return(NULL);
   }

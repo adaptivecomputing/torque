@@ -116,3 +116,7 @@ int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }
+
+void initialize_user_info_holder(user_info_holder *uih) {}
+
+void free_user_info_holder(user_info_holder *uih) {} 
