@@ -87,6 +87,7 @@
 #include "pbs_ifl.h" /* PBS_MAXQUEUENAME */
 #include "server_limits.h" /* PBS_NUMJOBSTATE */
 #include "attribute.h" /* attribute_def, pbs_attribute */
+#include "user_info.h"
 
 #define INITIAL_QUEUE_SIZE 5
 
@@ -204,6 +205,8 @@ typedef struct pbs_queue
   /* the queue attributes */
 
   pbs_attribute qu_attr[QA_ATR_LAST];
+
+  user_info_holder *qu_uih;
   } pbs_queue;
 
 
@@ -233,6 +236,13 @@ pbs_queue *get_recycled_queue();
 void update_recycler_queue_next_id();
 void initialize_recycler_trash();
 void garbage_collect_recycling();
+
+int   count_user_queued_jobs(pbs_queue *,char *);
+int   svr_chkque(job *, pbs_queue *, char *, int, char *);
+int   default_router(job *, pbs_queue *, long);
+int   site_alt_router(job *, pbs_queue *, long);
+int   site_acl_check(job *, pbs_queue *);
+void  set_chkpt_deflt(job *, pbs_queue *);
 
 extern all_queues svr_queues;
 

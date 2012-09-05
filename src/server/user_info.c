@@ -87,35 +87,39 @@
 user_info_holder users;
 
 
-void initialize_user_info_holder()
-  {
-  users.ui_ra = initialize_resizable_array(INITIAL_USER_INFO_COUNT);
-  users.ui_ht = create_hash(INITIAL_HASH_SIZE);
+void initialize_user_info_holder(
+    
+  user_info_holder *uih)
 
-  users.ui_mutex = calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(users.ui_mutex, NULL);
+  {
+  uih->ui_ra = initialize_resizable_array(INITIAL_USER_INFO_COUNT);
+  uih->ui_ht = create_hash(INITIAL_HASH_SIZE);
+
+  uih->ui_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(uih->ui_mutex, NULL);
   } /* END initialize_user_info_holder() */
 
 
 
 unsigned int get_num_queued(
     
-  char *user_name)
+  user_info_holder *uih,
+  char             *user_name)
 
   {
   unsigned int  num_queued = 0;
   int           index;
   user_info    *ui = NULL;
 
-  pthread_mutex_lock(users.ui_mutex);
+  pthread_mutex_lock(uih->ui_mutex);
 
-  if ((index = get_value_hash(users.ui_ht, user_name)) > 0)
+  if ((index = get_value_hash(uih->ui_ht, user_name)) > 0)
     {
-    ui = users.ui_ra->slots[index].item;
+    ui = uih->ui_ra->slots[index].item;
     num_queued = ui->num_jobs_queued;
     }
 
-  pthread_mutex_unlock(users.ui_mutex);
+  pthread_mutex_unlock(uih->ui_mutex);
 
   return(num_queued);
   } /* END get_num_queued() */
@@ -141,7 +145,7 @@ unsigned int count_jobs_submitted(
 
 
 int  can_queue_new_job(
-    
+
   char *user_name,
   job  *pjob)
 
@@ -156,7 +160,7 @@ int  can_queue_new_job(
   if (max_queuable >= 0)
     {
     num_to_add = count_jobs_submitted(pjob);
-    num_queued = get_num_queued(user_name);
+    num_queued = get_num_queued(&users, user_name);
 
     if (num_queued + num_to_add > max_queuable)
       can_queue_another = FALSE;
@@ -169,9 +173,10 @@ int  can_queue_new_job(
 
 
 int  increment_queued_jobs(
-    
-  char *user_name,
-  job  *pjob)
+   
+  user_info_holder *uih,
+  char             *user_name,
+  job              *pjob)
 
   {
   int           rc = PBSE_NONE;
@@ -179,12 +184,12 @@ int  increment_queued_jobs(
   int           index;
   unsigned int  num_submitted = count_jobs_submitted(pjob);
 
-  pthread_mutex_lock(users.ui_mutex);
+  pthread_mutex_lock(uih->ui_mutex);
 
   /* get the user if there is one */
-  if ((index = get_value_hash(users.ui_ht, user_name)) > 0)
+  if ((index = get_value_hash(uih->ui_ht, user_name)) > 0)
     {
-    ui = users.ui_ra->slots[index].item;
+    ui = uih->ui_ra->slots[index].item;
     ui->num_jobs_queued += num_submitted;
     }
   else
@@ -194,18 +199,18 @@ int  increment_queued_jobs(
     ui->user_name = strdup(user_name);
     ui->num_jobs_queued = num_submitted;
 
-    if ((index = insert_thing(users.ui_ra, ui)) == -1)
+    if ((index = insert_thing(uih->ui_ra, ui)) == -1)
       {
       rc = ENOMEM;
       log_err(rc, __func__, "Can't resize the user info array");
       }
     else
       {
-      add_hash(users.ui_ht, index, ui->user_name);
+      add_hash(uih->ui_ht, index, ui->user_name);
       }
     }
 
-  pthread_mutex_unlock(users.ui_mutex);
+  pthread_mutex_unlock(uih->ui_mutex);
 
   return(rc);
   } /* END increment_queued_jobs() */
@@ -214,27 +219,42 @@ int  increment_queued_jobs(
 
 
 int  decrement_queued_jobs(
-    
-  char *user_name)
+
+  user_info_holder *uih,    
+  char             *user_name)
 
   {
   user_info *ui;
   int        index;
   int        rc = THING_NOT_FOUND;
 
-  pthread_mutex_lock(users.ui_mutex);
+  pthread_mutex_lock(uih->ui_mutex);
 
-  if ((index = get_value_hash(users.ui_ht, user_name)) > 0)
+  if ((index = get_value_hash(uih->ui_ht, user_name)) > 0)
     {
-    ui = users.ui_ra->slots[index].item;
+    ui = uih->ui_ra->slots[index].item;
     ui->num_jobs_queued -= 1;
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(users.ui_mutex);
+  pthread_mutex_unlock(uih->ui_mutex);
 
   return(rc);
   } /* END decrement_queued_jobs() */
+
+
+
+void free_user_info_holder(
+
+  user_info_holder *uih)
+
+  {
+  free_resizable_array(uih->ui_ra);
+  free_hash(uih->ui_ht);
+
+  free(uih->ui_mutex);
+  free(uih);
+  } /* END free_user_info_holder() */
 
 
 

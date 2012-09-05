@@ -644,6 +644,9 @@ int mom_comm(
   int               local_errno = 0;
   int               handle = -1;
   long              cray_enabled = FALSE;
+  pbs_net_t         momaddr;
+  unsigned short    momport;
+  char              jobid[PBS_MAXSVRJOBID + 1];
 
   /* need to make connection, called from pbsd_init() */
   if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0)
@@ -662,6 +665,12 @@ int mom_comm(
     free(tmp);
     }
 
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
+  momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
+  momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
+
+  unlock_ji_mutex(pjob, __func__, NULL, 0);
+
   handle = svr_connect(
       pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
       pjob->ji_qs.ji_un.ji_exect.ji_momport,
@@ -669,6 +678,11 @@ int mom_comm(
       NULL,
       NULL,
       ToServerDIS);
+
+  if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
+    {
+    return(PBSE_JOB_RECYCLED);
+    }
 
   if (handle < 0)
     {

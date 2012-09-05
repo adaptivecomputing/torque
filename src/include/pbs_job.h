@@ -1107,14 +1107,6 @@ extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum 
 int   issue_signal(job **, char *, void(*)(struct work_task *), void *);
 #endif /* BATCH_REQUEST_H */
 
-#ifdef QUEUE_H
-extern int   count_user_queued_jobs(pbs_queue *,char *);
-extern int   svr_chkque(job *, pbs_queue *, char *, int, char *);
-extern int   default_router(job *, pbs_queue *, long);
-extern int   site_alt_router(job *, pbs_queue *, long);
-extern int   site_acl_check(job *, pbs_queue *);
-extern void  set_chkpt_deflt(job *, pbs_queue *);
-#endif /* QUEUE_H */
 
 #endif /* PBS_JOB_H */
 

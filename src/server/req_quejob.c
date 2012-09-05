@@ -1344,7 +1344,7 @@ int req_quejob(
     }
   else
     {
-    increment_queued_jobs(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+    increment_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
     }
 
   /*
@@ -2124,7 +2124,7 @@ int req_commit(
 
       return(rc);
       }
-    }  /* end if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET) */
+    }  /* end if (pj->ji_is_array_template) */
 
   svr_evaljobstate(pj, &newstate, &newsub, 1);
   svr_setjobstate(pj, newstate, newsub, FALSE);

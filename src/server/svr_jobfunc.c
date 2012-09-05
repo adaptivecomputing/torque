@@ -422,6 +422,9 @@ int svr_enquejob(
     /* update counts: queue and queue by state */
     pque->qu_numjobs++;
     pque->qu_njstate[pjob->ji_qs.ji_state]++;
+    
+    /* increment this user's job count for this queue */
+    increment_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
     }
 
   if (pjob->ji_is_array_template || pjob->ji_arraystruct == NULL)
@@ -641,6 +644,11 @@ int svr_dequejob(
         {
         log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "qu_numcompleted < 0. Recount required.");
         bad_ct = 1;
+        }
+
+      if (pjob->ji_is_array_template == FALSE)
+        {
+        decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
         }
       }
     else if (rc == PBSE_JOB_RECYCLED)
@@ -1506,74 +1514,12 @@ int count_queued_jobs(
   char      *user) /* I */
 
   {
-  job       *pj;
+  int num_jobs = 0;
 
-  int        num_jobs = 0;
-  int        i;
-  int        iter = -1;
-  int        num_arrays = 0;
-  job_array *arrays[PBS_MAXJOBARRAY];
-
-  if (pque == NULL)
-    {
-    return(-1);
-    }
-
-  while ((pj = next_job(pque->qu_jobs,&iter)) != NULL)
-    {
-    if (pj->ji_qs.ji_state <= JOB_STATE_RUNNING)
-      {
-      if (user != NULL)
-        {
-        if (!strcmp(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,user))
-          {
-          num_jobs++;
-          }
-        }
-      else
-        {
-        num_jobs++;
-        }
-      }
-
-    /* record arrays in queue to check later */
-    if (pj->ji_arraystruct != NULL)
-      {
-      int found = FALSE;
-
-      /* make sure to not insert a duplicate */
-      for (i = 0; i < num_arrays; i++)
-        {
-        if (arrays[i] == pj->ji_arraystruct)
-          {
-          found = TRUE;
-
-          unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
-
-          break;
-          }
-        }
-
-      if (found == FALSE)
-        {
-        arrays[num_arrays] = pj->ji_arraystruct;
-        num_arrays++;
-        }
-      }
-
-    unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
-    }
-
-  /* also count any jobs not yet queued that have already been accepted
-   * into the queue */
-  for (i = 0; i < num_arrays; i++)
-    {
-    lock_ai_mutex(arrays[i], __func__, NULL, LOGLEVEL);
-
-    num_jobs += (arrays[i]->ai_qs.num_jobs - arrays[i]->ai_qs.num_cloned);
-
-    unlock_ai_mutex(arrays[i], __func__, NULL, LOGLEVEL);
-    }
+  if (user == NULL)
+    num_jobs = pque->qu_numjobs;
+  else
+    num_jobs = get_num_queued(pque->qu_uih, user);
 
   return(num_jobs);
   } /* END count_queued_jobs */
@@ -1981,7 +1927,7 @@ int svr_chkque(
     if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET)) 
       {
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-      user_jobs =count_queued_jobs(pque,NULL);
+      user_jobs = count_queued_jobs(pque, NULL);
 
       lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       if (pjob->ji_being_recycled == TRUE)
